@@ -4,11 +4,12 @@ export const DEFAULT_ROOMS=['awakening-bay','passenger-vault','communal-atrium',
 // use only browser globals and the debug hook inside these small functions.
 // The same legal heavy fixture with a settled diagnostics window, for render-cost comparisons.
 // Inline the existing staging function into this page-evaluated setup instead of adding globals.
-function benchmarkSetup(tier,algorithm='gtao'){
+function benchmarkSetup(tier,algorithm='gtao',status=false){
  return new Function('room',`return (async()=>{
   const d=window.__containmentDebug;
   await d.gotoRoom(room);d.renderer.setQuality(${JSON.stringify(tier)});d.renderer.setAmbientOcclusionAlgorithm?.(${JSON.stringify(algorithm)});
-  (${stageCombat.toString()})({status:false});
+  if(${status})d.grantBoons(['cryogenic','permafrost','absolute-zero','incendiary','caustic-rounds','arc-filament','conductive-shell','cryo-conductor']);
+  (${stageCombat.toString()})({status:${status}});
   for(let i=0;i<480;i++)await new Promise(requestAnimationFrame);
   const visible=d.game.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y));
   if(visible.length<12)throw Error('Settled heavy benchmark lost visible threats');
@@ -31,18 +32,22 @@ export const SCENARIOS=[
  {id:'dead',state:'dead',required:['.result-panel','#start'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('breached-loading-bay');d.invulnerable(false);d.game.hurt(100000);d.refresh();}},
  {id:'shop',state:'reward',phase:'reward',required:['.service-shop','#claim'],setup:async()=>{await window.__containmentDebug.gotoRoom('communal-atrium',{phase:'reward'});}},
  {id:'g1-benchmark-high',rooms:true,state:'playing',setup:benchmarkSetup('high')},
+ {id:'g1-benchmark-status',rooms:true,state:'playing',setup:benchmarkSetup('high','gtao',true)},
  {id:'g1-benchmark-contact',rooms:true,state:'playing',setup:benchmarkSetup('high','contact')},
  {id:'g1-benchmark-low',rooms:true,state:'playing',setup:benchmarkSetup('low')},
  // G1 additions preserve the original baseline fixtures unchanged.
  {id:'g1-recovery',state:'playing',room:'armory',setup:async()=>{
   const d=window.__containmentDebug,r=d.renderer;await d.gotoRoom('armory');d.invulnerable(true);d.refresh();
-  const before={...r.renderer.info.memory};
-  for(let i=0;i<3;i++){r.setQuality('low');d.refresh();r.setQuality('high');await d.gotoRoom('infested-workshop');await d.gotoRoom('armory');d.refresh();}
-  const afterRooms={...r.renderer.info.memory},gl=r.renderer.getContext(),ext=gl.getExtension('WEBGL_lose_context');if(!ext)throw Error('Context-loss extension unavailable');
+  const before={...r.renderer.info.memory},roomCycles=[];
+  for(let i=0;i<3;i++){r.setQuality('low');d.refresh();r.setQuality('high');await d.gotoRoom('infested-workshop');await d.gotoRoom('armory');d.refresh();roomCycles.push({...r.renderer.info.memory});}
+  if(JSON.stringify(roomCycles[1])!==JSON.stringify(roomCycles[2]))throw Error('GPU resources grew between equivalent room cycles '+JSON.stringify(roomCycles));
+  const afterRooms={...r.renderer.info.memory},gl=r.renderer.getContext(),ext=gl.getExtension('WEBGL_lose_context'),drawErrors=[],originalRender=r.renderer.render;
+  r.renderer.render=function(scene,camera){const beforeError=gl.getError();if(beforeError&&beforeError!==gl.CONTEXT_LOST_WEBGL)drawErrors.push({when:'before',error:beforeError,stack:new Error().stack});const result=originalRender.call(this,scene,camera),error=gl.getError();if(error&&error!==gl.CONTEXT_LOST_WEBGL)drawErrors.push({name:scene===r.scene?'world':scene===r.hudScene?'hud':scene.children[0]?.material?.name||'other',error,shadow:this.shadowMap.enabled,stack:new Error().stack});return result;};if(!ext)throw Error('Context-loss extension unavailable');
   await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error('Context restoration timeout')),30000);r.canvas.addEventListener('webglcontextrestored',()=>{clearTimeout(timeout);resolve();},{once:true});ext.loseContext();setTimeout(()=>ext.restoreContext(),250);});
   for(let i=0;i<900&&r.roomLoading;i++)await new Promise(requestAnimationFrame);
-  if(r.roomLoading)throw Error('Graphics preparation did not recover');d.game.resume();d.refresh();
-  d.recoveryProof={before,afterRooms,afterRestore:{...r.renderer.info.memory},programs:r.renderer.info.programs.length,contextLost:gl.isContextLost()};
+  if(r.roomLoading)throw Error('Graphics preparation did not recover');d.game.resume();d.refresh();await d.gotoRoom('infested-workshop');await d.gotoRoom('armory');d.refresh();
+  r.renderer.render=originalRender;if(drawErrors.length)throw Error('Recovery draw errors '+JSON.stringify(drawErrors));
+  d.recoveryProof={before,roomCycles,afterRooms,afterRestore:{...r.renderer.info.memory},programs:r.renderer.info.programs.length,contextLost:gl.isContextLost()};
  }},
  {id:'g1-exposure-calm',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.invulnerable(true);d.measureLuminance=true;d.refresh();}},
  {id:'g1-low',rooms:true,state:'playing',combat:true,burst:true,setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setQuality('low');d.refresh();}},
@@ -56,17 +61,17 @@ export const SCENARIOS=[
   const bounds=g.geometry.bounds,candidates=[];
   for(let y=150;y<bounds.height-150;y+=70)for(let x=150;x<bounds.width-150;x+=70)for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]){
    if(!d.canStand(x,y,28)||!d.canStand(x-Math.cos(angle)*100,y-Math.sin(angle)*100,28))continue;
-   let score=0;for(const range of [200,290,380,470])for(let i=0;i<7;i++){const a=angle+(i-3)*.24,p={x:x+Math.cos(a)*range,y:y+Math.sin(a)*range};if(d.canStand(p.x,p.y,28)&&d.clearShot(p.x,p.y,{x,y}))score++;}
+   let score=0;for(const range of [170,230,290,350])for(let i=0;i<7;i++){const a=angle+(i-3)*.24,p={x:x+Math.cos(a)*range,y:y+Math.sin(a)*range};if(d.canStand(p.x,p.y,28)&&d.clearShot(p.x,p.y,{x,y}))score++;}
    candidates.push({x,y,angle,score});
   }
   candidates.sort((a,b)=>b.score-a.score);if(!candidates.length)throw Error('No legal kiting lane');
   const lane=candidates[0];Object.assign(g.player,{x:lane.x,y:lane.y,angle:lane.angle});d.setInput({x:0,y:0,fire:false,angle:lane.angle,autoAim:false});d.step(600);
-  const enemies=[];for(const range of [200,290,380,470])for(let i=0;i<7&&enemies.length<12;i++){
+  const enemies=[];for(const range of [170,230,290,350])for(let i=0;i<7&&enemies.length<12;i++){
    const angle=lane.angle+(i-3)*.24,p={x:lane.x+Math.cos(angle)*range,y:lane.y+Math.sin(angle)*range};
-   if(!d.canStand(p.x,p.y,28)||!d.clearShot(p.x,p.y)||enemies.some(e=>Math.hypot(e.x-p.x,e.y-p.y )<72))continue;
+   if(!d.canStand(p.x,p.y,28)||!d.clearShot(p.x,p.y)||enemies.some(e=>Math.hypot(e.x-p.x,e.y-p.y )<55))continue;
    const id=d.spawn(['brute','crawler','spitter','stalker','crawler','carrier'][enemies.length%6],p.x,p.y,enemies.length%5===0);if(id)enemies.push({...p,id});
   }
-  if(enemies.length<10)throw Error('Kiting fixture requires ten spread threats');
+  if(enemies.length<10)throw Error('Kiting fixture requires ten spread threats; got '+enemies.length+' at '+JSON.stringify(lane));
   g.switchWeapon('rifle');d.setInput({x:-Math.cos(lane.angle)*.55,y:-Math.sin(lane.angle)*.55,fire:true,angle:lane.angle,autoAim:false});g.grenade();d.step(300);
  }},
 
