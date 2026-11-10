@@ -335,7 +335,7 @@ describe('power placement, deployable collision and lifetimes', () => {
       w.system.setIntent(0, 0, { x: 10000, y: 0 });
       w.traversal(() => false);
       expect(w.system.use('power')).toBe(false);
-      expect(w.system.snapshot.slots!.power.ready).toBe(true);
+      expect(w.system.snapshot.slots!.power).toMatchObject({ready:false,charges:1,cooldownRemainingMs:0});
       expect(w.events.at(-1)).toMatchObject({ phase: 'denied', denial: 'blocked' });
       w.traversal(() => true);
       expect(w.system.use('power')).toBe(true);
@@ -396,7 +396,7 @@ describe('power placement, deployable collision and lifetimes', () => {
     w.system.setIntent(0, 0, { x: 300, y: 0 });
     w.traversal((from, to) => Math.abs(to.y - from.y) < 100);
     expect(w.system.use('power')).toBe(false);
-    expect(w.system.snapshot.slots!.power.ready).toBe(true);
+    expect(w.system.snapshot.slots!.power).toMatchObject({ready:false,charges:1,cooldownRemainingMs:0});
     expect(w.events.at(-1)).toMatchObject({ phase: 'denied', denial: 'blocked' });
     expect(w.system.snapshot.deployables).toEqual([]);
   });
@@ -427,15 +427,61 @@ describe('power placement, deployable collision and lifetimes', () => {
     w.add(190);
     w.hidden.add(4);
     w.advance(499);
-    expect(w.hits).toEqual([]);
+    expect(w.hits).toEqual([{ id: 1, amount: 12 }]);
     w.advance(1);
-    expect(w.hits).toEqual([{ id: 3, amount: 26 }, { id: 1, amount: 12 }]);
+    expect(w.hits).toEqual([{ id: 1, amount: 12 }, { id: 3, amount: 26 }]);
     expect(w.system.blocksMovement({ x: 0, y: 0 }, { x: 400, y: 0 }, 14)).toBe(false);
     w.player.x = -100;
     w.advance(500);
     expect(w.hits.slice(2)).toEqual([{ id: 3, amount: 26 }]);
     w.advance(8000);
     expect(w.system.snapshot.deployables).toEqual([]);
+  });
+
+  it('damages an enemy crossing the pylon link between zap pulses, with a per-target 500ms cooldown', () => {
+    const w=world('arc');w.system.setIntent(0,0,{x:200,y:0});w.use('power');
+    const target=w.add(100,-60);w.advance(50);
+    target.y=60;w.advance(50);
+    expect(w.hits).toEqual([{id:target.id,amount:12}]);
+    expect(w.events.at(-1)).toMatchObject({phase:'link',width:28,targetIds:[target.id]});
+    target.y=-60;w.advance(50);
+    expect(w.hits.filter(h=>h.amount===12)).toHaveLength(1);
+    w.advance(400);target.y=0;w.advance(50);
+    expect(w.hits.filter(h=>h.amount===12)).toHaveLength(2);
+  });
+
+  it('detects a marine-swept link even when the target is outside both endpoint links', () => {
+    const w=world('arc');w.system.setIntent(0,0,{x:200,y:0});w.use('power');
+    w.add(100,40);w.advance(50);expect(w.hits).toEqual([]);
+    w.player.y=160;w.advance(50);
+    expect(w.hits).toEqual([{id:1,amount:12}]);
+    const snapshot=w.system.snapshot;
+    expect(snapshot.links).toEqual([{id:snapshot.deployables[0].id,ability:'tesla-pylon',element:'arc',x:200,y:0,targetX:0,targetY:160,width:28}]);
+    expect(Object.isFrozen(snapshot.links)).toBe(true);expect(Object.isFrozen(snapshot.links![0])).toBe(true);
+    expect(snapshot.deployables[0]).not.toHaveProperty('linkCooldowns');
+    expect(snapshot.deployables[0]).not.toHaveProperty('tick');
+    expect(w.system.snapshot).toBe(snapshot);
+    w.player.x=-100;expect(w.system.snapshot.links).toEqual([]);
+  });
+
+  it('does not sweep a disconnected link on reconnection or hit through world occlusion', () => {
+    const w=world('arc');w.system.setIntent(0,0,{x:200,y:0});w.use('power');
+    w.player.x=-100;w.add(100,40);w.advance(50);
+    w.player.x=0;w.player.y=160;w.advance(50);expect(w.hits).toEqual([]);
+    w.hidden.add(1);w.player.y=0;w.advance(50);expect(w.hits).toEqual([]);
+    w.visibility(()=>false);w.advance(1);expect(w.system.snapshot.links).toEqual([]);
+  });
+
+  it('bounds and prunes pylon target histories and cooldowns without exposing mutable maps', () => {
+    const w=world('arc');w.system.setIntent(0,0,{x:200,y:0});w.use('power');
+    for(let i=0;i<200;i++)w.add(100,-60);
+    w.advance(50);for(const t of w.targets)t.y=60;w.advance(50);
+    expect(w.hits).toHaveLength(ABILITY_LIMITS.targets);
+    expect(w.system['previousTargets'].size).toBe(ABILITY_LIMITS.targets);
+    expect(w.system['deployables'][0].linkCooldowns.size).toBe(ABILITY_LIMITS.targets);
+    w.targets.length=0;w.advance(50);
+    expect(w.system['previousTargets'].size).toBe(0);expect(w.system['deployables'][0].linkCooldowns.size).toBe(0);
+    w.system.resetRoom();expect(w.system.snapshot.links).toEqual([]);
   });
 });
 describe('Overdrive effects and exact bounds', () => {
@@ -753,4 +799,17 @@ describe('snapshot reads by synchronous presentation subscribers', () => {
     expect(w.system.snapshot.slots!.dash.charges).toBe(2);
     expect(w.system.snapshot.slots!.tactical.cooldownRemainingMs).toBe(5540);
   });
+});
+
+
+it('power readiness predicts the current legal placement and preserves charges on blocked input', () => {
+  const w=world('pyro');w.traversal((_from,to)=>to.x<300);
+  w.system.setIntent(0,0,{x:100,y:0});
+  expect(w.system.snapshot.slots!.power.ready).toBe(true);
+  const ready=w.system.snapshot;expect(w.system.snapshot).toBe(ready);
+  w.system.setIntent(0,0,{x:400,y:0});
+  expect(w.system.snapshot.slots!.power).toMatchObject({ready:false,charges:1,cooldownRemainingMs:0});
+  const blocked=w.system.snapshot;expect(w.system.use('power')).toBe(false);
+  expect(w.system.snapshot).toBe(blocked);
+  w.system.setIntent(0,0,{x:200,y:0});expect(w.system.snapshot.slots!.power.ready).toBe(true);
 });

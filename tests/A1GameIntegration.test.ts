@@ -273,6 +273,17 @@ describe('desktop simulation collision and hostile time isolation', () => {
     expect(effects.some(e=>e.type==='sync-corpse')).toBe(true);
   });
 
+  it('places the legal near twin Glacier when the base wall clips an authored pallet bank', () => {
+    const {game}=arena('cryo');
+    game.geometry=createExpeditionGeometry({...game.node,templateId:'receiving'});
+    game.navigation=new FacilityNavigation(game.geometry);
+    game.combat.setBuild({rig:'cryo',mutations:['twin-glacier']});
+    Object.assign(game.player,{x:400,y:440,angle:Math.PI/2});game.setAimPoint({x:400,y:550});
+    expect(game.useAbility('power')).toBe(true);advance(game,150);
+    expect(game.abilities.snapshot.deployables).toHaveLength(1);
+    expect(game.abilities.snapshot.deployables[0]).toMatchObject({kind:'ice-wall',x:400,y:510});
+  });
+
   it('lets real pursuing enemies attack a blocking wall and resume navigation after it breaks', () => {
     const {game} = arena('breacher');
     const enemy=spawn(game,'brute',620,440);

@@ -1,6 +1,7 @@
 import { sweptCircle } from '../combat/enemyContact';
+import { sweptLinkContact } from './linkGeometry';
 import { ABILITY_CATALOG, ABILITY_SLOTS, RIG_CATALOG, DASH_DURATION_MS, DASH_INVULNERABLE_MS } from './catalog';
-import type { AbilitiesSnapshot, AbilityEvent, AbilityId, AbilitySlot, AbilityZoneSnapshot, DeployableSnapshot, RigId } from './contract';
+import type { AbilitiesSnapshot, AbilityDefinition, AbilityEvent, AbilityId, AbilitySlot, AbilityZoneSnapshot, DeployableSnapshot, RigId } from './contract';
 import type { MutationId } from '../roguelike/types';
 import type { MutationTarget } from '../roguelike/MutationRuntime';
 
@@ -27,10 +28,11 @@ export interface AbilityHost {
   emit: (event: AbilityEvent, x: number, y: number) => void;
 }
 type SlotState = { cooldowns: number[]; cast: number; active: number };
-type Cast = { id: AbilityId; x: number; y: number; angle: number; target: AbilityPoint; remaining: number };
+type Placement = AbilityPoint & { radius?: number };
+type Cast = { id: AbilityId; x: number; y: number; angle: number; target: AbilityPoint; remaining: number; placements?: readonly Placement[] };
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 type Zone = Mutable<AbilityZoneSnapshot> & { tick: number; pulses: number; damage: number };
-type Deployable = Mutable<DeployableSnapshot> & { tick: number; assault: number };
+type Deployable = Mutable<DeployableSnapshot> & { tick: number; assault: number; linkCooldowns: Map<number, number> };
 /** Hard caps on persistent entities and per-effect target fanout. */
 export const ABILITY_LIMITS = Object.freeze({ zones: 24, deployables: 8, targets: 64 });
 
@@ -58,6 +60,12 @@ export class AbilitySystem {
   private cachedEnabled = true;
   private aimPoint: AbilityPoint | null = null;
   private movement = { x: 0, y: 0 };
+  private previousTargets = new Map<number, { x: number; y: number }>();
+  private currentTargetIds = new Set<number>();
+  private previousMarine = { x: 0, y: 0 };
+  private hasPreviousMarine = false;
+  private cachedLinkX = 0;
+  private cachedLinkY = 0;
   constructor(private host: AbilityHost) {}
 
   /** Select a rig and reset transient state. Charge is explicitly restored by the run host. */
@@ -70,6 +78,7 @@ export class AbilitySystem {
   resetRoom(): void {
     this.casts.length = this.zones.length = this.deployables.length = this.afterquakes.length = 0;
     this.dash = null; this.immune = 0; this.aimPoint = null; this.movement.x = this.movement.y = 0;
+    this.previousTargets.clear(); this.currentTargetIds.clear(); this.hasPreviousMarine = false;
     for (const state of Object.values(this.states)) { state.cooldowns.length = 0; state.cast = state.active = 0; }
     this.cached = null;
   }
@@ -106,16 +115,19 @@ export class AbilitySystem {
     if (denial) { this.event(d.id, 'denied', p, { denial }); return false; }
     let angle = p.angle;
     if (slot === 'dash') { const m = this.movement; if (m.x || m.y) angle = Math.atan2(m.y, m.x); }
-    const desired = this.aimPoint ?? { x: p.x + Math.cos(angle) * d.range, y: p.y + Math.sin(angle) * d.range };
-    const distance = Math.hypot(desired.x - p.x, desired.y - p.y), scale = Math.min(1, d.range / (distance || 1));
-    const target = d.targeting === 'point' ? { x: p.x + (desired.x - p.x) * scale, y: p.y + (desired.y - p.y) * scale } : { x: p.x + Math.cos(angle) * d.range, y: p.y + Math.sin(angle) * d.range };
-    if (d.targeting === 'point' && !this.host.traverse(p, target, d.id === 'tesla-pylon' ? 18 : 4)) { this.event(d.id, 'denied', p, { denial: 'blocked' }); return false; }
-    if (d.shape.kind === 'wall' && !this.wallFits(target, angle, d.shape.length, d.shape.thickness)) { this.event(d.id, 'denied', p, { denial: 'blocked' }); return false; }
+    const target = this.targetFor(d, p, angle);
+    const cast: Cast = { id: d.id, x: p.x, y: p.y, angle, target, remaining: d.castMs };
+    if (slot === 'power') {
+      cast.placements = this.planPlacements(cast);
+      if (!cast.placements.length) { this.event(d.id, 'denied', p, { denial: 'blocked' }); return false; }
+    }
     if (slot === 'overdrive') this.charge = 0; else state.cooldowns.push(d.cooldownMs);
     this.cached = null;
-    const cast: Cast = { id: d.id, x: p.x, y: p.y, angle, target, remaining: d.castMs };
     if (d.castMs) { state.cast = d.castMs; this.casts.push(cast); }
-    this.event(d.id, 'cast', p, { angle, targetX: target.x, targetY: target.y, durationMs: d.castMs });
+    for (const preview of cast.placements ?? [target]) this.event(d.id, 'cast', p, {
+      angle, targetX: preview.x, targetY: preview.y, durationMs: d.castMs,
+      ...('radius' in preview ? { radius: preview.radius } : {}),
+    });
     if (!d.castMs) this.resolve(cast);
     return true;
   }
@@ -159,12 +171,41 @@ export class AbilitySystem {
     const dx = -Math.sin(angle) * length / 2, dy = Math.cos(angle) * length / 2;
     return this.host.traverse({ x: p.x - dx, y: p.y - dy }, { x: p.x + dx, y: p.y + dy }, thickness / 2);
   }
+  private targetFor(d: AbilityDefinition, p: AbilityPoint, angle: number): AbilityPoint {
+    const desired = this.aimPoint ?? { x: p.x + Math.cos(angle) * d.range, y: p.y + Math.sin(angle) * d.range };
+    const distance = Math.hypot(desired.x - p.x, desired.y - p.y), scale = Math.min(1, d.range / (distance || 1));
+    return d.targeting === 'point' ? { x: p.x + (desired.x - p.x) * scale, y: p.y + (desired.y - p.y) * scale }
+      : { x: p.x + Math.cos(angle) * d.range, y: p.y + Math.sin(angle) * d.range };
+  }
+  private powerPlacementAvailable(): boolean {
+    const d = this.definition('power'), p = this.host.player();
+    return this.planPlacements({ id: d.id, x: p.x, y: p.y, angle: p.angle,
+      target: this.targetFor(d, p, p.angle), remaining: d.castMs }).length > 0;
+  }
+  private planPlacements(cast: Cast): Placement[] {
+    const d = ABILITY_CATALOG[cast.id];
+    const glacier = cast.id === 'glacier', pylon = cast.id === 'tesla-pylon';
+    const triplet = cast.id === 'napalm-charge' && this.host.has('napalm-triplet');
+    const offsets = glacier && this.host.has('twin-glacier') ? [-40, 40]
+      : pylon && this.host.has('twin-pylon') ? [-50, 50] : triplet ? [-100, 0, 100] : [0];
+    const radius = triplet ? 80 : d.shape.kind === 'circle' ? d.shape.radius : undefined;
+    const result: Placement[] = [];
+    for (const offset of offsets) {
+      const along = glacier ? offset : 0, lateral = glacier ? 0 : offset;
+      const p: Placement = { x: cast.target.x + Math.cos(cast.angle) * along - Math.sin(cast.angle) * lateral,
+        y: cast.target.y + Math.sin(cast.angle) * along + Math.cos(cast.angle) * lateral,
+        ...(radius === undefined ? {} : { radius }) };
+      if (this.host.traverse(cast, p, pylon ? 18 : 4) &&
+        (d.shape.kind !== 'wall' || this.wallFits(p, cast.angle, d.shape.length, d.shape.thickness))) result.push(p);
+    }
+    return result;
+  }
   private deploy(cast: Cast, p: AbilityPoint): void {
     const d = ABILITY_CATALOG[cast.id], wall = d.shape.kind === 'wall' ? d.shape : null;
     if (this.deployables.length >= ABILITY_LIMITS.deployables) this.removeDeployable(this.deployables[0]);
     const reinforced = cast.id === 'bulwark' && this.host.has('reinforced-bulwark' as MutationId);
     const duration = d.durationMs + (reinforced ? 2000 : 0), health = (cast.id === 'glacier' ? 160 : cast.id === 'bulwark' ? 240 : 100) * (reinforced ? 2 : 1);
-    const entity: Deployable = { id: ++this.serial, ability: cast.id, element: d.element, kind: cast.id === 'glacier' ? 'ice-wall' : cast.id === 'bulwark' ? 'barrier' : 'pylon', x: p.x, y: p.y, angle: cast.angle, length: wall?.length ?? 0, thickness: wall?.thickness ?? 0, radius: cast.id === 'tesla-pylon' ? 18 : 0, remainingMs: duration, durationMs: duration, health, maxHealth: health, tick: 500, assault: 250 };
+    const entity: Deployable = { id: ++this.serial, ability: cast.id, element: d.element, kind: cast.id === 'glacier' ? 'ice-wall' : cast.id === 'bulwark' ? 'barrier' : 'pylon', x: p.x, y: p.y, angle: cast.angle, length: wall?.length ?? 0, thickness: wall?.thickness ?? 0, radius: cast.id === 'tesla-pylon' ? 18 : 0, remainingMs: duration, durationMs: duration, health, maxHealth: health, tick: 500, assault: 250, linkCooldowns: new Map() };
     this.deployables.push(entity); this.states[d.slot].active = Math.max(this.states[d.slot].active, duration);
     this.event(cast.id, 'tick', p, { entityId: entity.id, durationMs: duration, angle: cast.angle });
   }
@@ -204,20 +245,11 @@ export class AbilitySystem {
       }
       case 'overload': ids = this.chain(cast, 60, this.host.has('forked-overload' as MutationId) ? 8 : 6); break;
       case 'bulwark': case 'glacier': case 'tesla-pylon': {
-        const twin = cast.id === 'glacier' && this.host.has('twin-glacier' as MutationId) || cast.id === 'tesla-pylon' && this.host.has('twin-pylon' as MutationId);
-        for (const offset of twin ? [-1, 1] : [0]) {
-          const along = cast.id === 'glacier' ? 40 * offset : 0, lateral = cast.id === 'tesla-pylon' ? 50 * offset : 0;
-          const p = { x: cast.target.x + Math.cos(cast.angle) * along - Math.sin(cast.angle) * lateral, y: cast.target.y + Math.sin(cast.angle) * along + Math.cos(cast.angle) * lateral };
-          if (this.host.traverse(cast, p, cast.id === 'tesla-pylon' ? 18 : 4) && (!('length' in d.shape) || this.wallFits(p, cast.angle, d.shape.length, d.shape.kind === 'wall' ? d.shape.thickness : 0))) this.deploy(cast, p);
-        }
+        for (const p of cast.placements ?? this.planPlacements(cast)) this.deploy(cast, p);
         break;
       }
       case 'napalm-charge': {
-        const triplet = this.host.has('napalm-triplet' as MutationId);
-        for (const offset of triplet ? [-100, 0, 100] : [0]) {
-          const p = { x: cast.target.x - Math.sin(cast.angle) * offset, y: cast.target.y + Math.cos(cast.angle) * offset };
-          if (this.host.traverse(cast, p, 4)) this.addZone(cast.id, p, triplet ? 80 : 120, 6000, 4.5);
-        }
+        for (const p of cast.placements ?? this.planPlacements(cast)) this.addZone(cast.id, p, p.radius ?? 120, 6000, 4.5);
         break;
       }
       case 'railbreaker': {
@@ -303,25 +335,64 @@ export class AbilitySystem {
     return { x: zone.x + f * dx, y: zone.y + f * dy };
   }
   private stepDeployables(ms: number, hostileScale: number): void {
+    if (!this.deployables.length) return;
+    const targets = this.host.targets(), p = this.host.player();
+    this.currentTargetIds.clear();
+    for (let i = 0; i < Math.min(targets.length, ABILITY_LIMITS.targets); i++) if (targets[i].health > 0) this.currentTargetIds.add(targets[i].id);
     for (const d of this.deployables.slice()) {
       const live = Math.min(ms, d.remainingMs); d.remainingMs = countdown(d.remainingMs, ms); d.tick -= live; d.assault -= live * hostileScale;
       if (d.assault <= TIMER_EPSILON) {
         d.assault += 250;
         for (const t of this.host.targets().slice(0, ABILITY_LIMITS.targets)) if (!this.host.statuses(t.id).frozen && !this.host.statuses(t.id).shocked && this.touches(d, t, t, t.radius + 20) && this.host.visible(d, t)) d.health -= 20;
       }
-      if (d.kind === 'pylon' && d.tick <= TIMER_EPSILON && d.health > 0) {
-        d.tick += 500;
-        const targets = this.nearby(d, 220).slice(0, 1), p = this.host.player();
-        for (const t of targets) { this.host.arc({ id: 0, x: d.x, y: d.y, radius: 0, health: 1 }, [t]); this.hit(t, 26, 'shock', 120); this.event(d.ability, 'link', d, { entityId: d.id, targetX: t.x, targetY: t.y, targetIds: [t.id] }); }
-        if (Math.hypot(p.x - d.x, p.y - d.y) <= 280 && this.host.visible(p, d)) {
-          const ids: number[] = [];
-          for (const t of this.host.targets().slice(0, ABILITY_LIMITS.targets)) if (segmentDistance(t, p, d) <= 14 && this.host.visible(d, t)) { this.hit(t, 12, 'shock', 120); ids.push(t.id); }
-          this.event(d.ability, 'link', d, { entityId: d.id, targetX: p.x, targetY: p.y, width: 28, targetIds: ids });
+      if (d.kind === 'pylon' && d.health > 0) {
+        const pulse = d.tick <= TIMER_EPSILON;
+        if (pulse) {
+          d.tick += 500;
+          for (const t of this.nearby(d, 220).slice(0, 1)) { this.host.arc({ id: 0, x: d.x, y: d.y, radius: 0, health: 1 }, [t]); this.hit(t, 26, 'shock', 120); this.event(d.ability, 'link', d, { entityId: d.id, targetX: t.x, targetY: t.y, targetIds: [t.id] }); }
         }
-        this.event(d.ability, 'tick', d, { entityId: d.id });
+        for (const [id, remaining] of d.linkCooldowns) {
+          const next = countdown(remaining, live);
+          if (!next || !this.currentTargetIds.has(id)) d.linkCooldowns.delete(id);
+          else d.linkCooldowns.set(id, next);
+        }
+        if (this.linkActive(d, p)) {
+          const ids: number[] = [];
+          for (let i = 0; i < Math.min(targets.length, ABILITY_LIMITS.targets); i++) {
+            const t = targets[i];
+            if (t.health <= 0 || d.linkCooldowns.has(t.id) || !this.host.visible(d, t)) continue;
+            const previous = this.previousTargets.get(t.id) ?? t;
+            // A previously disconnected rope cannot sweep across the room on reconnection.
+            const fromMarine = this.hasPreviousMarine && this.linkActive(d, this.previousMarine) ? this.previousMarine : p;
+            if (!sweptLinkContact(previous, t, d, fromMarine, p, 14)) continue;
+            d.linkCooldowns.set(t.id, 500); this.hit(t, 12, 'shock', 120); ids.push(t.id);
+          }
+          if (ids.length || pulse) this.event(d.ability, 'link', d, { entityId: d.id, targetX: p.x, targetY: p.y, width: 28, targetIds: ids });
+        }
+        if (pulse) this.event(d.ability, 'tick', d, { entityId: d.id });
       }
       if (d.health <= 0 || d.remainingMs <= 0) this.removeDeployable(d);
     }
+  }
+  private linkActive(d: Deployable, p: AbilityPoint): boolean {
+    return d.kind === 'pylon' && d.health > 0 && Math.hypot(p.x - d.x, p.y - d.y) <= 280 && this.host.visible(p, d);
+  }
+  /** Reuse bounded motion records; no target object or internal cooldown map escapes in snapshots. */
+  private rememberLinkMotion(): void {
+    if (!this.deployables.some(d => d.kind === 'pylon')) {
+      this.previousTargets.clear(); this.hasPreviousMarine = false; return;
+    }
+    const targets = this.host.targets();
+    this.currentTargetIds.clear();
+    for (let i = 0; i < Math.min(targets.length, ABILITY_LIMITS.targets); i++) {
+      const t = targets[i]; if (t.health <= 0) continue;
+      this.currentTargetIds.add(t.id);
+      const record = this.previousTargets.get(t.id);
+      if (record) { record.x = t.x; record.y = t.y; }
+      else this.previousTargets.set(t.id, { x: t.x, y: t.y });
+    }
+    for (const id of this.previousTargets.keys()) if (!this.currentTargetIds.has(id)) this.previousTargets.delete(id);
+    const p = this.host.player(); this.previousMarine.x = p.x; this.previousMarine.y = p.y; this.hasPreviousMarine = true;
   }
   private contact(d: Deployable, from: AbilityPoint, to: AbilityPoint, radius: number): number | null {
     if (d.kind === 'pylon') return sweptCircle(from, to, d, d.radius + radius);
@@ -416,18 +487,25 @@ export class AbilitySystem {
       for (const entity of this.deployables) if (ABILITY_CATALOG[entity.ability].slot === slot) active = Math.max(active, entity.remainingMs);
       this.states[slot].active = active;
     }
+    this.rememberLinkMotion();
     this.cached = null; // Discard any intermediate snapshot retained by a synchronous subscriber.
   }
 
   /** Stable immutable presentation snapshot until simulation state changes. */
   get snapshot(): AbilitiesSnapshot {
-    const enabled = this.host.enabled?.() !== false;
-    if (this.cached && this.cachedEnabled === enabled && (!this.rig || this.cached.slots?.dash.maxCharges === this.maxCharges('dash'))) return this.cached;
+    const p = this.host.player();
+    const enabled = this.host.enabled?.() !== false && Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.angle);
+    const powerReady = !!this.rig && enabled && !this.casts.length && !this.dash && this.states.power.cooldowns.length < this.maxCharges('power') && this.powerPlacementAvailable();
+    if (this.cached && this.cachedEnabled === enabled && (!this.deployables.some(d => d.kind === 'pylon') || (this.cachedLinkX === p.x && this.cachedLinkY === p.y)) && (!this.rig || (this.cached.slots?.dash.maxCharges === this.maxCharges('dash') && this.cached.slots?.power.ready === powerReady))) return this.cached;
     this.cachedEnabled = enabled;
+    this.cachedLinkX = p.x; this.cachedLinkY = p.y;
     const slots = this.rig ? Object.fromEntries(ABILITY_SLOTS.map(slot => {
       const d = this.definition(slot), state = this.states[slot], charges = slot === 'overdrive' ? +(this.charge >= 1) : Math.max(0, this.maxCharges(slot) - state.cooldowns.length);
-      return [slot, Object.freeze({ slot, id: d.id, ready: enabled && !this.casts.length && !this.dash && charges > 0 && (slot !== 'overdrive' || !state.active), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs)) })];
+      return [slot, Object.freeze({ slot, id: d.id, ready: enabled && !this.casts.length && !this.dash && charges > 0 && (slot !== 'overdrive' || !state.active) && (slot !== 'power' || powerReady), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs)) })];
     })) as AbilitiesSnapshot['slots'] : null;
-    return this.cached = Object.freeze({ rig: this.rig, slots: slots && Object.freeze(slots), overdrive: Object.freeze({ charge: this.charge, ready: this.charge >= 1, active: this.states.overdrive.active > 0, activeRemainingMs: this.states.overdrive.active }), invulnerable: this.invulnerable, dashing: this.dashing, hostileTimeScale: this.hostileTimeScale, deployables: Object.freeze(this.deployables.map(d => Object.freeze({ ...d }))), zones: Object.freeze(this.zones.map(z => Object.freeze({ ...z }))) });
+    return this.cached = Object.freeze({ rig: this.rig, slots: slots && Object.freeze(slots), overdrive: Object.freeze({ charge: this.charge, ready: this.charge >= 1, active: this.states.overdrive.active > 0, activeRemainingMs: this.states.overdrive.active }), invulnerable: this.invulnerable, dashing: this.dashing, hostileTimeScale: this.hostileTimeScale,
+      deployables: Object.freeze(this.deployables.map(d => { const { tick, assault, linkCooldowns, ...entity } = d; return Object.freeze(entity); })),
+      zones: Object.freeze(this.zones.map(z => { const { tick, pulses, damage, ...zone } = z; return Object.freeze(zone); })),
+      links: Object.freeze(this.deployables.filter(d => this.linkActive(d, p)).map(d => Object.freeze({ id: d.id, ability: 'tesla-pylon' as const, element: 'arc' as const, x: d.x, y: d.y, targetX: p.x, targetY: p.y, width: 28 }))) });
   }
 }

@@ -117,8 +117,10 @@ for (const config of cases) describe(`${config.augment} placement telegraphs`,()
   });
 
   it('denies an entirely obstructed placement without a telegraph or spent cooldown',()=>{
-    const w=world(config), before=w.system.snapshot.slots!.power;
+    const w=world(config);
     w.allow(()=>false);
+    const before=w.system.snapshot.slots!.power;
+    expect(before.ready).toBe(false);
     expect(w.system.use('power')).toBe(false);
     expect(w.telegraphs()).toEqual([]);
     expect(w.entities()).toEqual([]);
