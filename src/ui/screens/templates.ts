@@ -19,6 +19,15 @@ const arrow = () => icon('arrow', 'screen-arrow');
 const total = (game: DepthGame) => runLength(game.expedition.run.version);
 const serial = (value: number) => String(value).padStart(2, '0');
 const familyIcon = (family: string) => `boon-${family}`;
+const profiles: Readonly<Record<RigId, readonly [number, number, number]>> = {
+  breacher: [2, 3, 2], cryo: [3, 2, 2], pyro: [1, 3, 3], arc: [3, 2, 3],
+};
+/** Qualitative combat identity, rather than a damage or cooldown statistic. */
+function rigProfile(id: RigId): string {
+  const names = ['Control', 'Burst', 'Mobility'];
+  return `<span class="rig-profile" aria-label="Playstyle: ${names.map((name,index)=>`${name} ${['','low','medium','high'][profiles[id][index]]}`).join(', ')}">${names.map((name,index)=>`<span><small>${name}</small><span class="rig-profile-pips" aria-hidden="true">${[1,2,3].map(level=>`<i class="${level<=profiles[id][index]?'lit':''}"></i>`).join('')}</span></span>`).join('')}</span>`;
+}
+
 
 /** Standalone schematic keeps the title composed even without the 3D background. */
 export function titleScreen(game: DepthGame, settings: string, settingsOpen: boolean, creditsOpen: boolean): string {
@@ -34,7 +43,7 @@ export function titleScreen(game: DepthGame, settings: string, settingsOpen: boo
 
 /** Catalog-driven descriptions are shared by rig preview and paused loadout. */
 export function abilityPreview(rig: RigId): string {
-  return `<div class="ability-preview">${ABILITY_SLOTS.map(slot => {
+  return `<div class="ability-preview" tabindex="0" role="region" aria-label="Ability manifest">${ABILITY_SLOTS.map(slot => {
     const ability = ABILITY_CATALOG[RIG_CATALOG[rig].abilities[slot]];
     return `<article class="ability-detail" data-element="${ability.element}"><div class="ability-detail-icon">${icon(ability.id)}</div><div><header><kbd>${ABILITY_KEYS[slot]}</kbd><span>${slot==='overdrive'?'OVERDRIVE':slot.toUpperCase()}</span><h3>${ability.name}</h3></header><p>${ability.description}</p><dl>${ability.stats.map(stat=>`<div><dt>${stat.label}</dt><dd>${stat.value}</dd></div>`).join('')}</dl></div></article>`;
   }).join('')}</div>`;
@@ -42,9 +51,9 @@ export function abilityPreview(rig: RigId): string {
 
 export function rigScreen(selected: RigId): string {
   const rig = RIG_CATALOG[selected];
-  return `<section class="panel rig-panel screen-enter" aria-labelledby="rig-title">${tag('COMBAT SYSTEMS / 01')}<div class="screen-heading"><div><h2 id="rig-title">Choose your rig.</h2><p class="panel-intro">Four systems. One way through.</p></div><span class="keyboard-guide"><kbd>←</kbd><kbd>→</kbd> inspect · <kbd>1–4</kbd> select · <kbd>Enter</kbd> equip</span></div>
-    <div class="rig-grid" role="group" aria-label="Combat rigs">${RIG_IDS.map((id,index)=>`<button class="rig-card ${id===selected?'selected':''}" data-rig="${id}" data-element="${RIG_CATALOG[id].element}" aria-pressed="${id===selected}"><span class="rig-number">${serial(index+1)} <kbd>${index+1}</kbd></span>${icon(id,'rig-emblem')}<h3>${RIG_CATALOG[id].name}</h3><p>${RIG_CATALOG[id].tagline}</p><span class="rig-path">${RIG_CATALOG[id].boonPath}</span></button>`).join('')}</div>
-    <div class="rig-detail-head" data-element="${rig.element}"><div><span class="eyebrow">${rig.boonPath}</span><h3>${rig.name} / ${rig.tagline}</h3><p>${rig.description}</p></div><button id="equip-rig" class="primary">Equip ${rig.name} ${arrow()}</button></div>${abilityPreview(selected)}<p class="screen-footnote">Dash passes through enemies, never walls. Overdrive charges through damage and kills and carries between rooms.</p></section>`;
+  return `<section class="panel rig-panel screen-enter" data-element="${rig.element}" aria-labelledby="rig-title">${tag('COMBAT SYSTEMS / 01')}<div class="screen-heading"><div><h2 id="rig-title">Choose your rig.</h2><p class="panel-intro">Four systems. One way through.</p></div><span class="keyboard-guide"><kbd>←</kbd><kbd>→</kbd> inspect · <kbd>1–4</kbd> select · <kbd>Enter</kbd> equip</span></div>
+    <div class="rig-grid" role="group" aria-label="Combat rigs">${RIG_IDS.map((id,index)=>`<button class="rig-card ${id===selected?'selected':''}" data-rig="${id}" data-element="${RIG_CATALOG[id].element}" aria-pressed="${id===selected}"><span class="rig-number">${serial(index+1)} <kbd>${index+1}</kbd></span>${icon(id,'rig-emblem')}<h3>${RIG_CATALOG[id].name}</h3><p>${RIG_CATALOG[id].tagline}</p>${rigProfile(id)}<span class="rig-path sr-only">${RIG_CATALOG[id].boonPath}</span></button>`).join('')}</div>
+    <div class="rig-detail-head" data-element="${rig.element}"><div><span class="eyebrow">${rig.boonPath}</span><h3>${rig.name} / ${rig.tagline}</h3><p>${rig.description}</p></div><button id="equip-rig" class="primary">Equip ${rig.name} ${arrow()}</button></div>${abilityPreview(selected)}<p class="screen-footnote rig-footnote"><span>SCROLL ABILITY MANIFEST TO INSPECT</span>Dash passes through enemies, never walls. Overdrive charges through damage and kills and carries between rooms.</p></section>`;
 }
 
 export function draftScreen(game: DepthGame): string {

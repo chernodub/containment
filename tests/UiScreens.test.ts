@@ -117,6 +117,24 @@ test('fixture rig selection is catalog-driven, keyboard navigable, and never sim
   } finally {await page.close();}
 });
 
+test.each([[1280,720],[1920,1080]])('all four rigs retain element accents and a visible footnote at %i × %i',async(width,height)=>{
+  const page=await mount(width,height);
+  try {
+    await page.evaluate(()=>{const ui=(window as any).ui;ui.api.setUiFixture(ui.game,{phase:'rig-select'});ui.screens.syncScreen();});
+    for(const [rig,element] of [['breacher','kinetic'],['cryo','cryo'],['pyro','pyro'],['arc','arc']]) {
+      await page.locator(`[data-rig="${rig}"]`).click();
+      expect(await page.locator('.rig-panel').getAttribute('data-element')).toBe(element);
+      expect(await page.locator(`[data-rig="${rig}"] .rig-profile`).getAttribute('aria-label')).toContain('Control');
+      const footer=await page.locator('.rig-footnote').boundingBox();
+      expect(footer!.y).toBeGreaterThanOrEqual(0);
+      expect(footer!.y+footer!.height).toBeLessThanOrEqual(height);
+      const manifest=await page.locator('.rig-panel>.ability-preview').evaluate(element=>({height:element.clientHeight,scroll:element.scrollHeight,overflow:getComputedStyle(element).overflowY}));
+      expect(manifest.height).toBeGreaterThan(70);
+      if(manifest.scroll>manifest.height) expect(manifest.overflow).toBe('auto');
+    }
+  } finally {await page.close();}
+});
+
 test('boon number and reroll keys dispatch offered native controls once, including repeat guard',async()=>{
   const page=await mount();
   try {

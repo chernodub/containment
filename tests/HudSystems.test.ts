@@ -161,7 +161,9 @@ it('hides offscreen damage while keeping bounded elite attack threats and direct
         const threats = page.locator('.threat-marker:not([hidden])');
         expect(await threats.count()).toBeGreaterThan(0);
         expect(await threats.count()).toBeLessThanOrEqual(8);
-        expect(await threats.allTextContents()).toEqual(expect.arrayContaining([expect.stringMatching(/ATTACK.*m/)]));
+        for (const content of await threats.allTextContents())
+            expect(content).toMatch(/^\d*$/);
+        expect(await page.locator('.threat-marker[data-attacking="true"]:not([hidden])').count()).toBeGreaterThan(0);
         expect(await page.locator('.threat-marker[data-elite="true"]:not([hidden])').count()).toBeGreaterThan(0);
         expect(await page.locator('.damage-direction:not([hidden])').count()).toBe(1);
         await page.evaluate(() => {
@@ -222,6 +224,40 @@ it('groups owned boon glyphs by family with full accessible rules, capped stacks
         expect(result.frames[0].success).toBe(true);
         expect(result.frames[0].actorHits).toEqual([]);
         expect(result.frames[0].invalid).toEqual([]);
+    }
+    finally {
+        await page.close();
+    }
+});
+it('makes ready rigs elemental, fills Overdrive energy, marks low ammunition and keeps the hint in the lower lip', async () => {
+    const page = await mountHud(1920, 1080);
+    try {
+        await liveHud(page);
+        await page.evaluate(() => { const { game, hud, adapter, fixtures } = (window as any).__live; adapter.setUiFixture(game, { abilities: fixtures.abilityFixture('cryo', 'ready') }); hud(); });
+        const ready = await page.locator('[data-ability=tactical]').evaluate(el => { const node = el as HTMLElement; return { color: getComputedStyle(node.querySelector('.ability-icon')!).color, opacity: Number(getComputedStyle(node.querySelector('.ability-icon')!).opacity), border: getComputedStyle(node.querySelector('.cooldown-dial')!).boxShadow }; });
+        expect(ready.color).toBe('rgb(127, 214, 255)');
+        expect(ready.opacity).toBe(1);
+        expect(ready.border).not.toBe('none');
+        await page.evaluate(() => { const { game, hud, adapter, fixtures } = (window as any).__live; adapter.setUiFixture(game, { abilities: fixtures.abilityFixture('cryo', 'cooling') }); hud(); });
+        const cooling = await page.locator('[data-ability=tactical] .ability-icon').evaluate(el => Number(getComputedStyle(el).opacity));
+        expect(cooling).toBeLessThan(ready.opacity);
+        expect(await page.locator('[data-ability=tactical] .ability-value').textContent()).toMatch(/s$/);
+        await page.evaluate(() => { const { game, hud, adapter, fixtures } = (window as any).__live; adapter.setUiFixture(game, { abilities: fixtures.abilityFixture('arc', 'overdrive') }); hud(); });
+        const full = await page.locator('[data-ability=overdrive]').evaluate(el => ({ background: getComputedStyle(el).backgroundImage, key: getComputedStyle(el.querySelector('kbd')!).backgroundColor, edge: getComputedStyle(el, '::after').animationName }));
+        expect(full.background).not.toBe('none');
+        expect(full.key).toBe('rgb(183, 156, 255)');
+        expect(full.edge).toBe('overdrive-energy');
+        await page.evaluate(() => { const { game, hud } = (window as any).__live; const resources = game.combat.getRunResources(); resources.ammo.pistol.magazine = 1; game.combat.restoreRunResources(resources); hud(); game.combat.startReload(); game.combat.update(300); hud(); });
+        expect(await page.locator('.weapon-hud').getAttribute('data-ammo')).toBe('low');
+        expect(await page.locator('.weapon-hud').getAttribute('data-reloading')).toBe('true');
+        await page.waitForFunction(()=>parseFloat(getComputedStyle(document.getElementById('magazine')!,'::after').width)>0);
+        const ammo = await page.locator('#magazine').evaluate(el => ({ progress: parseFloat(getComputedStyle(el).getPropertyValue('--reload-progress')), stripe: parseFloat(getComputedStyle(el, '::after').width) }));
+        expect(ammo.progress).toBeGreaterThan(0);
+        expect(ammo.stripe).toBeGreaterThan(0);
+        const hint = await page.evaluate(() => { const hint = document.querySelector('.desktop-hint')!.getBoundingClientRect(), bar = document.getElementById('action-bar')!.getBoundingClientRect(); return { inside: hint.left >= bar.left && hint.right <= bar.right && hint.top >= bar.top && hint.bottom <= bar.bottom }; });
+        expect(hint.inside).toBe(true);
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        expect(await page.locator('[data-ability=overdrive]').evaluate(el => getComputedStyle(el, '::after').animationName)).toBe('none');
     }
     finally {
         await page.close();

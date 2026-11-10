@@ -28,11 +28,11 @@ it('fades every contact from a quiet peak without a full-opacity hold', () => {
         marker.confirm(contact);
         expect(element.dataset.contact).toBe(contact);
         expect(Number(element.style.opacity)).toBeCloseTo(.65);
-        marker.update(.025, true);
+        marker.update(.03, true);
         expect(Number(element.style.opacity)).toBeCloseTo(.4875);
-        marker.update(.025, true);
+        marker.update(.03, true);
         expect(Number(element.style.opacity)).toBeCloseTo(.325);
-        marker.update(.051, true);
+        marker.update(.061, true);
         expect(element.hidden).toBe(true);
         expect(Number(element.style.opacity)).toBe(0);
     }
@@ -45,16 +45,17 @@ it('fades every contact from a quiet peak without a full-opacity hold', () => {
     marker.update(0, true);
     expect(Number(element.style.opacity)).toBe(0);
 });
-it('uses an open-center pointer reticle with independent reload and contact layers', () => {
-    const css = readFileSync(new URL('../src/ui/styles/hud.css', import.meta.url), 'utf8');
-    expect(css).toContain('#hit-confirmation');
-    expect(css).toContain('.reticle-ring');
-    expect(css).toContain('pointer-events:none');
+it('uses separately outlined spread, reload and contact layers without intercepting gameplay', () => {
+    const css = readFileSync(new URL('../src/ui/styles/reticle.css', import.meta.url), 'utf8');
+    expect(css).toContain('.reticle-spread');
+    expect(css).toContain('.reticle-outline');
+    expect(css).toContain('.reticle-reload-progress');
+    expect(css).toContain('pointer-events: none');
     expect(css).toContain('--contact-opacity');
     expect(css).toContain('[data-contact=armor]');
     expect(css).toContain('[data-contact=blocked]');
     expect(css).toContain('[data-kill=true]');
-    expect(css).toContain('@media(prefers-reduced-motion:reduce)');
+    expect(css).toContain('@media (prefers-reduced-motion: reduce)');
 });
 it('keeps the opted-in reticle visible between hits and expands from real weapon spread', () => {
     const properties: Record<string, string> = {};
@@ -75,5 +76,24 @@ it('keeps the opted-in reticle visible between hits and expands from real weapon
     expect(element.hidden).toBe(true);
     marker.clear();
     marker.snapshot({ playing: true });
+    expect(element.hidden).toBe(true);
+});
+
+it('rejects invalid pointer/weapon values and clears stale contact and reload state', () => {
+    const element = {style: {left: '', top: '', opacity: '', width: '', height: ''}, dataset: {contact: '', kill: '', reloading: ''}, hidden: true};
+    const marker = new HitConfirmation(element);
+    marker.point(Number.NaN, 200);
+    marker.confirm('damage');
+    expect(element.hidden).toBe(true);
+    marker.snapshot({spreadRadians: Number.NaN, bloomRadians: Number.POSITIVE_INFINITY, reloadProgress: Number.NaN});
+    expect(element.style.width).toBe('28px');
+    marker.point(120, 200);
+    marker.confirm('armor', true);
+    marker.clear();
+    expect(element.hidden).toBe(true);
+    expect(element.dataset).toEqual({contact: '', kill: 'false', reloading: 'false'});
+    marker.snapshot({playing: false});
+    marker.point(130, 210);
+    marker.confirm('damage');
     expect(element.hidden).toBe(true);
 });

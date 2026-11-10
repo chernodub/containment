@@ -18,7 +18,6 @@ html, body, #app {
 
 body { font-size: var(--text-base); line-height: 1.5; user-select: none; }
 button, input, select, textarea { font: inherit; }
-button, a, input, select, summary { -webkit-tap-highlight-color: transparent; }
 button { color: inherit; cursor: pointer; }
 button:disabled { cursor: default; }
 a { color: var(--cyan); text-underline-offset: 4px; }

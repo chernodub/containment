@@ -1,9 +1,10 @@
 import {describe, expect, it, vi} from 'vitest';
+import {OrthographicCamera, PerspectiveCamera, Vector3} from 'three';
 import {DepthGame} from '../src/DepthGame';
 import type {DepthRenderer} from '../src/render/DepthRenderer';
 import {GRAPHICS_PRESETS} from '../src/render/graphicsOptions';
 import {abilityFixture} from '../src/ui/fixtures';
-import {chooseRig, getAbilities, getGraphicsOptions, getRunStats, getUiPhase, setGraphicsOptions, setGraphicsTier, setUiFixture, useAbility} from '../src/ui/gameAdapter';
+import {chooseRig, getAbilities, getCameraFootprint, getGraphicsOptions, getRunStats, getUiPhase, setGraphicsOptions, setGraphicsTier, setUiFixture, useAbility} from '../src/ui/gameAdapter';
 
 describe('version-tolerant presentation adapter', () => {
   it('keeps a legacy game inert without abilities or invented run statistics', () => {
@@ -44,6 +45,25 @@ describe('version-tolerant presentation adapter', () => {
     expect(getGraphicsOptions(renderer)).toEqual({...GRAPHICS_PRESETS.low, screenShake: .3, flashIntensity: .2});
     expect(renderer.setQuality).toHaveBeenCalledWith('low');
     expect((renderer as unknown as {setGraphicsOptions: ReturnType<typeof vi.fn>}).setGraphicsOptions).toHaveBeenLastCalledWith(getGraphicsOptions(renderer));
+  });
+});
+
+describe('camera footprint without DOM measurements', () => {
+  it.each(['orthographic','perspective'])('unprojects the %s view corners onto the real floor', kind => {
+    const camera=kind==='orthographic'?new OrthographicCamera(-12,12,7,-7,.1,150):new PerspectiveCamera(45,16/9,.1,150);
+    camera.position.set(10,26,30);camera.lookAt(10,0,10);camera.updateMatrixWorld(true);
+    const out=Array.from({length:4},()=>({x:0,y:0}));
+    const renderer={camera,canvas:{getBoundingClientRect:()=>{throw Error('No layout reads');}}} as unknown as DepthRenderer;
+    expect(getCameraFootprint(renderer,out)).toBe(true);
+    for(const [i,point] of out.entries()) {
+      const screen=new Vector3(point.x/32,0,point.y/32).project(camera);
+      expect(screen.x).toBeCloseTo(i===0||i===3?-1:1);
+      expect(screen.y).toBeCloseTo(i<2?1:-1);
+    }
+  });
+  it('keeps title reachable when a live abandoned run is still awaiting a rig', () => {
+    const game={status:'menu',expedition:{run:{phase:'rig-select'}}} as unknown as DepthGame;
+    expect(getUiPhase(game)).toBe('menu');
   });
 });
 

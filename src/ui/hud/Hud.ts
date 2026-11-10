@@ -28,6 +28,7 @@ export type HudController = (() => void) & {
 const clamp = (n: number) => Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
 const seconds = (ms: number) => ms >= 10000 ? `${Math.ceil(ms / 1000)}s` : `${(Math.ceil(ms / 100) / 10).toFixed(1)}s`;
 const familyColors: Record<string, string> = { Kinetic: '#ffb454', Cryo: '#7fd6ff', Reactor: '#b79cff', Recovery: '#9fe8ff' };
+const abilityColors: Record<string, string> = { kinetic: '#ffb454', cryo: '#7fd6ff', pyro: '#ff7a2e', arc: '#b79cff' };
 const familyIcons: Record<string, string> = { Kinetic: 'kinetic', Cryo: 'cryo', Reactor: 'arc', Recovery: 'health' };
 /** Cached DOM snapshots; events and frame ticks feed bounded presentation pools. */
 export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud: () => void, preferences: () => HudPreferences = () => ({ combatText: true, radar: false })): HudController {
@@ -52,6 +53,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (nodes[id].style.width !== next)
             nodes[id].style.width = next;
     };
+    const weaponPanel = document.querySelector<HTMLElement>('.weapon-hud')!;
     const weapons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-weapon]'));
     const phases = Array.from(document.querySelectorAll<HTMLElement>('[data-boss-phase]'));
     const slots = (['dash', 'tactical', 'power', 'overdrive'] as const).map(slot => {
@@ -61,7 +63,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     const combatText = new CombatText(el('combat-text'), renderer);
     const threats = new ThreatIndicators(el('threat-indicators'), el('damage-directions'), renderer);
     const toasts = new HudToasts(el('hud-toasts'));
-    const radar = new Radar(el('radar-hud'), el('radar-map') as unknown as SVGSVGElement);
+    const radar = new Radar(el('radar-hud'), el('radar-map') as unknown as SVGSVGElement, renderer);
     let health = 100, armor = 50, maxArmor = 50, hpGhost = 100, armorGhost = 50, hpDelay = 0, armorDelay = 0;
     let lastWeapon = '', lastBuild = '__unbound__', buildSeen = false, lastCheckpoint = '', revision = game.roomRevision, disposed = false, wasPlaying = false;
     const owned = new Set<string>();
@@ -76,6 +78,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             entry.node.title = `${definition.name} · ${definition.summary}`;
             entry.node.setAttribute('aria-label', `${definition.name}: ${definition.summary}`);
             entry.ability = s.id;
+            entry.node.style.setProperty('--ability-color', abilityColors[definition.element]);
+            entry.node.dataset.element = definition.element;
         }
         const overdrive = entry.slot === 'overdrive';
         let state = entry.denied > 0 ? 'denied' : s.castRemainingMs > 0 ? 'casting' : s.activeRemainingMs > 0 ? 'active' : (overdrive ? snapshot.overdrive.ready : s.ready) ? 'ready' : 'cooling';
@@ -104,6 +108,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (entry.progress) {
             const progress = s.castRemainingMs > 0 ? 1 - s.castRemainingMs / Math.max(1, definition.castMs) : s.activeRemainingMs > 0 ? s.activeRemainingMs / Math.max(1, s.activeMs) : s.ready ? 1 : 1 - s.cooldownRemainingMs / Math.max(1, s.cooldownMs);
             entry.progress.style.strokeDashoffset = String(132 * (1 - clamp(progress)));
+            entry.node.style.setProperty('--cooldown-remaining', String(1 - clamp(progress)));
         }
         if (entry.meter)
             entry.meter.style.width = `${clamp(snapshot.overdrive.charge) * 100}%`;
@@ -161,6 +166,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             }
         }
         text('magazine', String(s.magazine).padStart(2, '0'));
+        weaponPanel.dataset.ammo = s.magazine === 0 ? 'empty' : s.magazine / Math.max(1, s.magazineCapacity) <= .25 ? 'low' : 'normal';
+        weaponPanel.dataset.reloading = String(s.reloading);
+        weaponPanel.style.setProperty('--reload-progress', `${s.reloading ? clamp(1 - s.reloadRemainingMs / Math.max(1, s.reloadDurationMs)) * 100 : 0}%`);
         text('reserve', `/ ${Number.isFinite(s.reserve) ? s.reserve : '∞'}`);
         text('reload-label', s.reloading ? 'RELOADING' : s.magazine === 0 ? (s.reserve === 0 ? 'EMPTY · SWITCH WEAPON' : 'R · RELOAD') : '');
         width('reload-bar', s.reloading ? 1 - s.reloadRemainingMs / Math.max(1, s.reloadDurationMs) : 0);
@@ -252,7 +260,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (playing) {
             protect();
             positionHud();
-            threats.update(game.enemies.snapshot.enemies, game.player, bounds);
+            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q);
         }
         else if (wasPlaying) {
             combatText.clear();

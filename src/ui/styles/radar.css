@@ -1,0 +1,48 @@
+/* North-up deck diagram: quiet structure, clear contacts, no sweeping animation. */
+#hud #radar-hud {
+  width: 176px;
+  padding: 10px;
+  background: #071118f7;
+  border-color: #9fe8ff2b;
+  box-shadow: 0 6px 20px #0004;
+}
+#radar-hud .radar-label {
+  gap: 6px;
+  color: #8ca4af;
+  font-size: 9px;
+  letter-spacing: .12em;
+}
+#radar-hud .radar-label > .icon { display: none; }
+#radar-hud .radar-label::after {
+  content: 'N ↑';
+  margin-left: auto;
+  color: #bdd7df;
+  letter-spacing: .03em;
+}
+#radar-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 8px;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+}
+#radar-map .radar-floor { fill: #11212a; stroke: #4b6470; stroke-width: .65; }
+#radar-map .radar-wall { fill: #2a3b44; stroke: none; }
+#radar-map .radar-camera {
+  fill: #9fe8ff07;
+  stroke: #9fe8ff60;
+  stroke-width: .7;
+  stroke-linejoin: round;
+}
+#radar-map .radar-breach { fill: none; stroke: #a77767; stroke-width: .7; opacity: .6; }
+#radar-map .radar-enemy { fill: #ff7056; stroke: none; }
+#radar-map .radar-enemy[data-kind='elite'] { fill: #121b21; stroke: #ff7056; stroke-width: 1; }
+#radar-map .radar-enemy[data-kind='champion'] { fill: #ff7056; stroke: #ffb2a3; stroke-width: .8; stroke-dasharray: 1.2 1; }
+#radar-map .radar-exit { fill: #071118; stroke: #a8c4c8; stroke-width: .9; stroke-linejoin: round; }
+#radar-map .radar-objective { fill: #071118; stroke: #ffd27a; stroke-width: .9; stroke-linejoin: round; }
+#radar-map .radar-player { fill: #b9f1ff; stroke: #071118; stroke-width: 1; stroke-linejoin: round; }
+@media (max-width: 1100px), (max-height: 650px) {
+  #hud #radar-hud { width: 140px; padding: 8px; }
+}

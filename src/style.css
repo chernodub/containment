@@ -4,4 +4,7 @@
 @import './ui/styles/screens.css';
 @import './ui/styles/settings.css';
 @import './ui/styles/hud.css';
+@import './ui/styles/radar.css';
+@import './ui/styles/reticle.css';
+@import './ui/styles/combat-text.css';
 @import './ui/styles/system.css';

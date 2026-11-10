@@ -391,3 +391,39 @@
 #overlay .orbital-one {border-top-color:#9fe8ff77;border-right-color:#9fe8ff2e;animation:instrument-sweep 28s linear infinite}
 @keyframes instrument-sweep {to {transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){#overlay .orbital-one{animation:none}}
+/* Rig identities stay glanceable; the rules region alone scrolls in short windows. */
+#overlay .rig-profile{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px;text-align:left}
+#overlay .rig-profile>span{display:flex;flex-direction:column;gap:6px}
+#overlay .rig-profile small{font-size:10px;letter-spacing:.02em;color:#b7c8d1}
+#overlay .rig-profile-pips{display:flex;gap:3px}
+#overlay .rig-profile-pips i{height:3px;flex:1;background:#4c626c55}
+#overlay .rig-profile-pips .lit{background:var(--element)}
+#overlay .rig-detail-head{border-bottom-color:color-mix(in srgb,var(--element) 65%,transparent)}
+#overlay .rig-panel{display:flex;flex-direction:column;overflow:hidden}
+#overlay .rig-panel>.eyebrow,#overlay .rig-panel>.screen-heading,#overlay .rig-panel>.rig-grid,#overlay .rig-panel>.rig-detail-head,#overlay .rig-panel>.rig-footnote{flex-shrink:0}
+#overlay .rig-panel>.ability-preview{min-height:0;overflow:auto;flex:1;scrollbar-width:thin;scrollbar-color:#4f7888 #08131b;padding:2px 6px 10px 0}
+#overlay .rig-panel::after{display:none}
+#overlay .rig-footnote{border-top:1px solid #9fe8ff26;margin:12px 0 0;padding-top:10px;font-size:12px}
+#overlay .rig-footnote>span{display:block;font-size:10px;letter-spacing:.1em;color:var(--element);margin-bottom:5px}
+@media(max-height:820px){
+ #overlay .rig-card{min-height:140px;padding:10px 14px}
+ #overlay .rig-card .rig-number{line-height:1.1}
+ #overlay .rig-card h3{font-size:25px;margin-bottom:4px}
+ #overlay .rig-emblem{height:28px;width:28px;margin:2px 0}
+ #overlay .rig-profile{margin-top:10px;gap:6px}
+ #overlay .rig-panel .screen-heading .panel-intro{margin-bottom:14px}
+ #overlay .rig-panel .rig-detail-head{margin-bottom:12px;padding-bottom:12px}
+ #overlay .rig-panel .rig-detail-head h3{font-size:26px}
+ #overlay .rig-footnote{font-size:11px;line-height:1.4}
+}
+@media(min-height:821px){
+ #overlay .rig-panel h2{font-size:56px;margin:10px 0 12px}
+ #overlay .rig-panel .panel-intro{margin-bottom:18px}
+ #overlay .rig-card{padding-top:14px;padding-bottom:14px}
+ #overlay .rig-card .rig-emblem{width:40px;height:40px;margin:5px 0 3px}
+ #overlay .rig-card h3{font-size:29px}
+ #overlay .rig-profile{margin-top:10px}
+ #overlay .rig-panel .rig-detail-head{margin-bottom:18px;padding-bottom:16px}
+ #overlay .rig-panel .rig-detail-head h3{font-size:28px}
+ #overlay .rig-footnote>span{display:none}
+}

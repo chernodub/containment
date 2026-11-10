@@ -203,6 +203,7 @@ export function createScreens(context: ScreenContext) {
       setPauseTab(tabs[index],true); return;
     }
     if(status==='rig-select') {
+      if(target?.closest('.ability-preview')&&['ArrowUp','ArrowDown','PageUp','PageDown','Home','End'].includes(event.key)) return;
       if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
         event.preventDefault(); const delta=event.key==='ArrowLeft'||event.key==='ArrowUp'?3:1;
         inspectRig(RIG_IDS[(RIG_IDS.indexOf(selectedRig)+delta)%4],true);

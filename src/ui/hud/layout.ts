@@ -70,13 +70,7 @@ export function positionHudPanels(player: ScreenBox, width: number, height: numb
             continue;
         const dx = last?.x ?? 0, dy = last?.y ?? 0;
         let box = { left: r.left - dx, right: r.right - dx, top: r.top - dy, bottom: r.bottom - dy };
-        if (selector === '#action-bar') {
-            const hint = element.querySelector<HTMLElement>('.desktop-hint');
-            if (hint) {
-                const h = hint.getBoundingClientRect();
-                box = { left: Math.min(box.left, h.left - dx), right: Math.max(box.right, h.right - dx), top: Math.min(box.top, h.top - dy), bottom: Math.max(box.bottom, h.bottom - dy) };
-            }
-        }
+        // The keyboard legend now belongs to the action bar's padded lower lip.
         groups.push({ element, box, previous: last?.box, dx, dy });
     }
     groups.sort((a, b) => (b.box.right - b.box.left) * (b.box.bottom - b.box.top) - (a.box.right - a.box.left) * (a.box.bottom - a.box.top));

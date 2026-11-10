@@ -1,0 +1,29 @@
+/* Bare condensed numerals, keyed in dark ink, read over both cryo white and ship shadow. */
+#combat-text .combat-float {
+  position: absolute;
+  padding: 0 3px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: #f0fbff;
+  font: 600 34px/1 var(--font-display, 'Barlow Condensed', sans-serif);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+  white-space: nowrap;
+  -webkit-text-stroke: .65px #061018;
+  paint-order: stroke fill;
+  text-shadow: -1px 0 #061018, 1px 0 #061018, 0 -1px #061018, 0 2px 1px #020609, 0 3px 4px #020609cc;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+#combat-text .combat-float[data-kind=status] { font: 600 12px/1.2 var(--font-body, sans-serif); letter-spacing: .08em; }
+#combat-text .combat-float[data-element=fire], #combat-text .combat-float[data-element=burn] { color: #ffb580; }
+#combat-text .combat-float[data-element=ice], #combat-text .combat-float[data-element=frost], #combat-text .combat-float[data-element=freeze], #combat-text .combat-float[data-element=shatter] { color: #9fdfff; }
+#combat-text .combat-float[data-element=poison], #combat-text .combat-float[data-element=acid] { color: #b6ff84; }
+#combat-text .combat-float[data-element=arc], #combat-text .combat-float[data-element=shock], #combat-text .combat-float[data-element=overload] { color: #d4c5ff; }
+#combat-text .combat-float[data-critical=true] { font-size: 40px; }
+#combat-text .combat-float[data-lethal=true] { color: #ffd27a; font-size: 42px; }
+#combat-text .combat-float[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  #combat-text .combat-float { animation: none; transition: none; will-change: auto; }
+}

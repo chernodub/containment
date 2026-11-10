@@ -90,6 +90,49 @@ export function setGraphicsTier(renderer: DepthRenderer, tier: GraphicsTier): vo
 }
 
 export type ScreenPoint = {x: number; y: number; visible: boolean};
+const footprintCorners = [[-1, 1], [1, 1], [1, -1], [-1, -1]] as const;
+
+/** Fill four pooled floor intersections from the public camera, with no DOM measurement. */
+export function getCameraFootprint(renderer: DepthRenderer, out: {x: number; y: number}[]): boolean {
+  if (out.length < 4) return false;
+  const camera = renderer.camera;
+  const inverse = camera?.projectionMatrixInverse?.elements;
+  const world = camera?.matrixWorld?.elements;
+  if (!inverse || !world) {
+    // Test/legacy render facades may expose only the existing public floor ray helper.
+    if (typeof renderer.pointer !== 'function') return false;
+    const width = renderer.canvas.clientWidth, height = renderer.canvas.clientHeight;
+    for (let i = 0; i < 4; i++) {
+      const corner = footprintCorners[i];
+      const point = renderer.pointer((corner[0] + 1) * width / 2, (1 - corner[1]) * height / 2);
+      if (!point) return false;
+      out[i].x = point.x; out[i].y = point.y;
+    }
+    return true;
+  }
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = footprintCorners[i];
+    let nearX = 0, nearY = 0, nearZ = 0, farX = 0, farY = 0, farZ = 0;
+    for (let plane = 0; plane < 2; plane++) {
+      const z = plane ? 1 : -1;
+      const w = inverse[3] * x + inverse[7] * y + inverse[11] * z + inverse[15];
+      const vx = (inverse[0] * x + inverse[4] * y + inverse[8] * z + inverse[12]) / w;
+      const vy = (inverse[1] * x + inverse[5] * y + inverse[9] * z + inverse[13]) / w;
+      const vz = (inverse[2] * x + inverse[6] * y + inverse[10] * z + inverse[14]) / w;
+      const wx = world[0] * vx + world[4] * vy + world[8] * vz + world[12];
+      const wy = world[1] * vx + world[5] * vy + world[9] * vz + world[13];
+      const wz = world[2] * vx + world[6] * vy + world[10] * vz + world[14];
+      if (plane) {farX = wx; farY = wy; farZ = wz;}
+      else {nearX = wx; nearY = wy; nearZ = wz;}
+    }
+    const t = -nearY / (farY - nearY);
+    if (!Number.isFinite(t) || t < 0 || t > 1) return false;
+    out[i].x = (nearX + (farX - nearX) * t) * 32;
+    out[i].y = (nearZ + (farZ - nearZ) * t) * 32;
+  }
+  return true;
+}
+
 /** Project using the public camera matrices; accepts an output object for pooled UI. */
 export function projectWorld(renderer: DepthRenderer, x: number, y: number, out: ScreenPoint, height = .8): ScreenPoint {
   const next = renderer as NextRenderer;

@@ -16,7 +16,7 @@ export async function stopHudHarness() { await browser?.close(); await server?.c
 export const hudCopy = { health: '100', armor: '50', 'depth-label': 'ENGINEERING · 12 / 20', 'room-name': 'Safety-interlock station', credits: '1250 CR', 'encounter-count': '26 remaining', 'story-status': 'New Earth warned · Passengers alive · Purge kills everyone · AI knew before awakening', 'room-objective': 'Clear the interlock station. Review the pre-awakening safety record.', 'story-line': 'LOCAL RECORD, BEFORE AWAKENING: Rescue impossible. AI acknowledged. Survival promise issued afterward.', 'weapon-name': 'SHOTGUN', magazine: '08', reserve: '/ 21', 'reload-label': 'RELOADING', 'boss-phase': 'ARMORED · 12s' };
 export async function mountHud(width: number, height: number): Promise<Page> {
     const page = await browser.newPage({ viewport: { width, height } });
-    await page.route('**/__hud-test', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head><link rel="stylesheet" href="/src/style.css"><link rel="stylesheet" href="/src/ui/styles/hud.css"></head><body data-state="playing"><div id="app"></div></body></html>' }));
+    await page.route('**/__hud-test', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head><link rel="stylesheet" href="/src/style.css"></head><body data-state="playing"><div id="app"></div></body></html>' }));
     await page.goto(origin + '/__hud-test');
     await page.evaluate(async (copy) => {
         const load = new Function('path', 'return import(path)') as (p: string) => Promise<any>;

@@ -215,3 +215,53 @@ body[data-state=playing] #world{cursor:none}
 #hud.low-health .vitals::after{content:'';position:absolute;inset:-1px;border:1px solid #ff5a36;border-radius:inherit;pointer-events:none;animation:critical-pressure 1.4s ease-in-out infinite}
 @keyframes critical-pressure{0%,100%{opacity:.3}50%{opacity:.9}}
 @media(prefers-reduced-motion:reduce){#hud.low-health .vitals::after{animation:none;opacity:.5}}
+/* Spatial threat language: the outer chevron bears toward danger, the inner
+   silhouette identifies its class. Only merged counts become text. */
+.threat-marker{position:absolute;left:0;top:0;display:block;width:38px;height:38px;min-height:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;color:#ffb09a;opacity:var(--threat-opacity,1);pointer-events:none;line-height:1}
+.threat-marker .threat-chevron{position:absolute;inset:0;width:38px;height:38px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:square;stroke-linejoin:miter;transform:rotate(var(--bearing));filter:drop-shadow(0 1px 2px #000) drop-shadow(0 0 3px #081014)}
+.threat-marker .threat-type{position:absolute;left:6px;top:6px;width:26px;height:26px;fill:#081014db;stroke:#ffd1bf;stroke-width:1.7;filter:drop-shadow(0 1px 2px #000)}
+.threat-marker[data-kind=standard] .threat-type{width:19px;height:19px;left:9.5px;top:9.5px;fill:#ffd1bf;stroke-width:1}
+.threat-marker[data-kind=ranged] .threat-type{stroke:#ffd1bf}
+.threat-marker[data-kind=elite] .threat-type,.threat-marker[data-kind=champion] .threat-type{stroke:#fff1d5;stroke-width:2}
+.threat-marker[data-kind=boss] .threat-type{fill:#671e14;stroke:#ffe4dc;stroke-width:2}
+.threat-marker[data-kind=champion] .threat-chevron,.threat-marker[data-kind=boss] .threat-chevron{stroke-width:3.5}
+.threat-marker .threat-count{position:absolute;right:-3px;bottom:-2px;min-width:17px;height:17px;padding:2px 3px;border:1px solid #ff917055;border-radius:50%;background:#100c0af2;color:#fff5ee;text-align:center;font:600 11px/1 var(--font-body,Arial,sans-serif);box-shadow:0 1px 3px #0008}
+.threat-marker[data-attacking=true]{color:#ff5a36;background:none;border:0;animation:threat-pressure .65s ease-in-out infinite;opacity:1}
+.threat-marker[data-attacking=true] .threat-type{stroke:#fff0e8}
+@keyframes threat-pressure{0%,100%{filter:brightness(1);opacity:.85}50%{filter:brightness(1.5);opacity:1}}
+/* A ready rig emits its element. The cooldown arc removes the perimeter while
+   its seconds stay white; a fully charged Overdrive occupies its whole cell. */
+#hud [data-ability]{--ability-color:#9fe8ff}
+#hud [data-ability][data-state=ready]{color:var(--ability-color)}
+#hud [data-ability][data-state=ready] .ability-icon{color:var(--ability-color);opacity:1;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--ability-color) 35%,transparent))}
+#hud .ability-slot[data-state=ready] .cooldown-dial{border-radius:50%;box-shadow:0 0 0 1px color-mix(in srgb,var(--ability-color) 55%,transparent),0 0 12px color-mix(in srgb,var(--ability-color) 10%,transparent)}
+#hud [data-ability][data-state=ready] .dial-progress{stroke:var(--ability-color)}
+#hud [data-ability][data-state=cooling] .ability-icon{color:#b7cbd5;opacity:.65;filter:saturate(0)}
+#hud [data-ability][data-state=cooling] .dial-progress{stroke:#c8e1ee;stroke-width:2.5}
+#hud [data-ability][data-state=cooling] .dial-track{stroke:#6b8a9b33;stroke-width:2.5}
+#hud [data-ability][data-state=cooling] .ability-value{color:#e8fbff}
+#hud .overdrive-slot[data-state=ready]{background:linear-gradient(115deg,color-mix(in srgb,var(--ability-color) 42%,#08131a),color-mix(in srgb,var(--ability-color) 13%,#08131a));color:#e8fbff;border-left-color:var(--ability-color);border-radius:3px;padding-right:6px}
+#hud .overdrive-slot[data-state=ready] .overdrive-top,#hud .overdrive-slot[data-state=ready] .ability-value{color:#fff}
+#hud .overdrive-slot[data-state=ready] .overdrive-top kbd{background:var(--ability-color);color:#08131a;border-color:#fff8;box-shadow:0 0 10px color-mix(in srgb,var(--ability-color) 45%,transparent);font-weight:700}
+#hud .overdrive-slot[data-state=ready] .overdrive-meter i{background:var(--ability-color);box-shadow:0 0 12px var(--ability-color)}
+#hud .overdrive-slot[data-state=ready]::after{inset:-4px -4px -4px 7px;border:1px solid var(--ability-color);box-shadow:inset 0 0 14px color-mix(in srgb,var(--ability-color) 15%,transparent),0 0 10px color-mix(in srgb,var(--ability-color) 28%,transparent);animation:overdrive-energy 1.6s ease-in-out infinite}
+@keyframes overdrive-energy{0%,100%{opacity:.65;filter:brightness(1)}50%{opacity:1;filter:brightness(1.5)}}
+/* Reload advances directly beneath the ammunition numerals. */
+#hud #magazine{position:relative;display:inline-block;padding-bottom:3px}
+#hud #magazine::after{content:'';position:absolute;bottom:0;left:0;width:var(--reload-progress,0%);height:2px;background:#9fe8ff;box-shadow:0 0 6px #9fe8ff55;transition:width 80ms linear}
+#hud .weapon-hud[data-reloading=true] #magazine{background:linear-gradient(90deg,#9fe8ff16 var(--reload-progress,0%),transparent var(--reload-progress,0%))}
+#hud .weapon-hud[data-ammo=low] #magazine{color:#ffb454}
+#hud .weapon-hud[data-ammo=empty] #magazine{color:#ff7654}
+#hud .weapon-hud[data-ammo=low] #reload-label,#hud .weapon-hud[data-ammo=empty] #reload-label{color:#ffb49f}
+/* The key legend is part of the lower lip, never a floating strip. */
+#hud #action-bar{padding-bottom:26px}
+#hud .desktop-hint,#hud .desktop-hint[data-side=left]{left:50%;top:auto;bottom:5px;transform:translateX(-50%);background:none;box-shadow:none;border:0;max-width:calc(100% - 20px);padding:0;font-size:9px;line-height:1.1;letter-spacing:0}
+#hud .desktop-hint span{font-size:9px}
+#hud .vital-caption{font-size:9px;letter-spacing:.1em;margin-bottom:7px}
+#hud #vital-state{font-size:9px}
+#hud .vital-line b{font-size:39px}
+#hud .vital-line .meter{height:10px}
+@media(max-width:850px){#hud .desktop-hint,#hud .desktop-hint span{font-size:7px}#hud #action-bar{padding-bottom:22px}}
+@media(max-height:650px){#hud .vital-line b{font-size:31px}#hud .vital-caption{font-size:9px}#hud #action-bar{padding-bottom:23px}}
+@media(max-height:450px){#hud .vital-line b{font-size:28px}#hud .vital-caption{margin-bottom:4px}#hud #action-bar{padding-bottom:19px}#hud .desktop-hint{bottom:4px}#hud .weapon-hud .ammo-line{height:29px;min-height:29px}}
+@media(prefers-reduced-motion:reduce){.threat-marker[data-attacking=true],#hud .overdrive-slot[data-state=ready]::after{animation:none;filter:none;opacity:1}#hud #magazine::after{transition:none}}
