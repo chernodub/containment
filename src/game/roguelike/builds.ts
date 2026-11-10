@@ -1,6 +1,8 @@
 import type { BuildState, MutationId } from './types';
 import { MUTATION_CATALOG, MUTATION_IDS, type MutationDefinition } from './mutationCatalog';
 import {BOON_PATHS,activePaths,prerequisitesMet} from './boonPaths';
+import { RIG_CATALOG } from '../abilities/catalog';
+import type { RigId } from '../abilities/contract';
 
 const record = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const finite = (value: unknown, min = 0, max = 1_000_000): value is number => typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
@@ -13,21 +15,21 @@ const dense = (value: readonly unknown[]): boolean => {
 };
 
 export function isValidBuildState(value: unknown): value is BuildState {
-  return record(value) && Object.keys(value).length === 1 && Array.isArray(value.mutations) && value.mutations.length <= MUTATION_IDS.length && dense(value.mutations) && value.mutations.every(ownedId) && new Set(value.mutations).size === value.mutations.length;
+  return record(value) && Object.hasOwn(value,'mutations') && Object.keys(value).length===(Object.hasOwn(value,'rig')?2:1) && Object.keys(value).every(key=>key==='mutations'||key==='rig') && (!Object.hasOwn(value,'rig') || typeof value.rig==='string' && Object.hasOwn(RIG_CATALOG,value.rig)) && Array.isArray(value.mutations) && value.mutations.length <= MUTATION_IDS.length && dense(value.mutations) && value.mutations.every(ownedId) && new Set(value.mutations).size === value.mutations.length;
 }
-export const createBuild = (): BuildState => ({ mutations: [] });
+export const createBuild = (rig?:RigId): BuildState => rig===undefined?{mutations:[]}:{mutations:[],rig};
 
 export function addMutation(build: BuildState, mutation: MutationId): BuildState {
   if (!isValidBuildState(build) || !ownedId(mutation) || build.mutations.includes(mutation) || !(MUTATION_CATALOG[mutation].requires??[]).every(id=>build.mutations.includes(id)) || !!MUTATION_CATALOG[mutation].requiresAny?.length && !MUTATION_CATALOG[mutation].requiresAny!.some(id=>build.mutations.includes(id))) throw new Error('Invalid or already owned mutation');
-  return { mutations: [...build.mutations, mutation] };
+  return { ...build, mutations: [...build.mutations, mutation] };
 }
 
 /** Seeded, build-aware sampling without replacement. Rerolls prefer unseen cards. */
-export function draftMutationOffers(seed:number,build:BuildState,rare=false,exclude:readonly MutationId[]=[],depth=0):readonly MutationDefinition[]{
- if(!integer(seed,0,0xffffffff)||!isValidBuildState(build)||typeof rare!=='boolean')throw new Error('Invalid mutation draft');
+export function draftMutationOffers(seed:number,build:BuildState,rare=false,exclude:readonly MutationId[]=[],depth=0,rig?:RigId):readonly MutationDefinition[]{
+ if(!integer(seed,0,0xffffffff)||!isValidBuildState(build)||typeof rare!=='boolean'||rig!==undefined&&!Object.hasOwn(RIG_CATALOG,rig))throw new Error('Invalid mutation draft');
  let state=seed>>>0;const next=()=>{state=(state+0x6d2b79f5)>>>0;let x=Math.imul(state^(state>>>15),1|state);x^=x+Math.imul(x^(x>>>7),61|x);return((x^(x>>>14))>>>0)/4294967296;};
- let pool=MUTATION_IDS.filter(id=>!build.mutations.includes(id)&&prerequisitesMet(MUTATION_CATALOG[id],build));
- const paths=activePaths(build),result:MutationDefinition[]=[];
+ let pool=MUTATION_IDS.filter(id=>{const m=MUTATION_CATALOG[id];return !build.mutations.includes(id)&&prerequisitesMet(m,build)&&(!m.abilityOnly||rig!==undefined)&&(!m.rig||m.rig===rig);});
+ const paths=activePaths(rig===undefined?build:{...build,rig}),result:MutationDefinition[]=[];
  const pick=(candidates:MutationId[])=>{
   const fresh=candidates.filter(id=>!exclude.includes(id));if(fresh.length)candidates=fresh;
   let total=0;const weights=candidates.map(id=>{const m=MUTATION_CATALOG[id];
@@ -38,7 +40,7 @@ export function draftMutationOffers(seed:number,build:BuildState,rare=false,excl
   let roll=next()*total,index=0;for(;index<weights.length-1&&roll>=weights[index];index++)roll-=weights[index];
   const chosen=candidates[index];if(chosen){result.push(MUTATION_CATALOG[chosen]);pool=pool.filter(id=>id!==chosen);}
  };
- const starters=()=>pool.filter(id=>BOON_PATHS.some(p=>p.starter===id&&!paths.includes(p)));
+ const starters=()=>pool.filter(id=>BOON_PATHS.some(p=>p.starter===id&&(!build.mutations.length||!paths.includes(p))));
  if(!build.mutations.length&&!rare){
   // Four paths, three choices. Reuse starters only when a reroll exhausts them.
   while(result.length<3&&starters().length)pick(starters());
