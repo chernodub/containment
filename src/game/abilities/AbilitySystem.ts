@@ -7,6 +7,7 @@ import type { MutationTarget } from '../roguelike/MutationRuntime';
 export type AbilityPoint = Readonly<{ x: number; y: number }>;
 /** Simulation adapters: world collision and all damage/status reactions remain authoritative in the host. */
 export interface AbilityHost {
+  enabled?: () => boolean;
   player: () => AbilityPoint & { angle: number; radius: number; vx: number; vy: number };
   targets: () => readonly MutationTarget[];
   visible: (from: AbilityPoint, to: AbilityPoint) => boolean;
@@ -49,6 +50,7 @@ export class AbilitySystem {
   private killDepth = 0;
   private afterquakes: Array<Cast & { delay: number }> = [];
   private cached: AbilitiesSnapshot | null = null;
+  private cachedEnabled = true;
   private aimPoint: AbilityPoint | null = null;
   private movement = { x: 0, y: 0 };
   constructor(private host: AbilityHost) {}
@@ -92,6 +94,7 @@ export class AbilitySystem {
   use(slot: AbilitySlot, enabled = true): boolean {
     if (!this.rig) { this.event(RIG_CATALOG.breacher.abilities[slot], 'denied', this.host.player(), { denial: 'no-rig' }); return false; }
     const d = this.definition(slot), p = this.host.player(), state = this.states[slot];
+    enabled = enabled && this.host.enabled?.() !== false;
     const denial = !enabled || !Number.isFinite(p.x) || !Number.isFinite(p.y) || !Number.isFinite(p.angle) ? 'blocked' : this.casts.length || this.dash ? 'casting' : slot === 'overdrive' ? this.charge < 1 || state.active > 0 ? 'no-charge' : null : state.cooldowns.length >= this.maxCharges(slot) ? 'cooldown' : null;
     if (denial) { this.event(d.id, 'denied', p, { denial }); return false; }
     let angle = p.angle;
@@ -385,10 +388,12 @@ export class AbilitySystem {
 
   /** Stable immutable presentation snapshot until simulation state changes. */
   get snapshot(): AbilitiesSnapshot {
-    if (this.cached && (!this.rig || this.cached.slots?.dash.maxCharges === this.maxCharges('dash'))) return this.cached;
+    const enabled = this.host.enabled?.() !== false;
+    if (this.cached && this.cachedEnabled === enabled && (!this.rig || this.cached.slots?.dash.maxCharges === this.maxCharges('dash'))) return this.cached;
+    this.cachedEnabled = enabled;
     const slots = this.rig ? Object.fromEntries(ABILITY_SLOTS.map(slot => {
       const d = this.definition(slot), state = this.states[slot], charges = slot === 'overdrive' ? +(this.charge >= 1) : Math.max(0, this.maxCharges(slot) - state.cooldowns.length);
-      return [slot, Object.freeze({ slot, id: d.id, ready: !this.casts.length && !this.dash && charges > 0 && (slot !== 'overdrive' || !state.active), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs)) })];
+      return [slot, Object.freeze({ slot, id: d.id, ready: enabled && !this.casts.length && !this.dash && charges > 0 && (slot !== 'overdrive' || !state.active), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs)) })];
     })) as AbilitiesSnapshot['slots'] : null;
     return this.cached = Object.freeze({ rig: this.rig, slots: slots && Object.freeze(slots), overdrive: Object.freeze({ charge: this.charge, ready: this.charge >= 1, active: this.states.overdrive.active > 0, activeRemainingMs: this.states.overdrive.active }), invulnerable: this.invulnerable, dashing: this.dashing, hostileTimeScale: this.hostileTimeScale, deployables: Object.freeze(this.deployables.map(d => Object.freeze({ ...d }))), zones: Object.freeze(this.zones.map(z => Object.freeze({ ...z }))) });
   }

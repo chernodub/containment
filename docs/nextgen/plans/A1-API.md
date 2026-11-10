@@ -48,6 +48,7 @@ segmentDistance(p:AbilityPoint,a:AbilityPoint,b:AbilityPoint):number;
 `AbilityPoint = Readonly<{x:number;y:number}>`. Exported `AbilityHost` has these callbacks:
 
 ```ts
+enabled?():boolean; // the game supplies status===playing; cached readiness follows phase changes
 player():AbilityPoint & {angle:number;radius:number;vx:number;vy:number};
 targets():readonly MutationTarget[];
 visible(from:AbilityPoint,to:AbilityPoint):boolean;

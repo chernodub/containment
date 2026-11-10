@@ -129,7 +129,7 @@ export class RunStats {
     this.cached = null;
   }
 
-  /** Applied health damage, after defenses and clamping overkill. */
+  /** Actual health and armor removed, after defenses and clamping overkill. */
   recordDamage(source: DamageSource, amount: number): void {
     if (!SOURCES.includes(source) || !Number.isFinite(amount) || amount <= 0) return;
     const next = increment(this.value.damageDealt[source], amount);

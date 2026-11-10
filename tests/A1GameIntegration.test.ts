@@ -58,6 +58,17 @@ function hash(game: DepthGame, effects: readonly GameEffect[]) {
 }
 
 describe('DepthGame Combat Rig flow and persistence', () => {
+  it('reports slot readiness accurately across menu, playing, pause and resume without advancing timers', () => {
+    const fresh=new DepthGame();expect(fresh.abilities.snapshot.slots!.dash.ready).toBe(false);
+    const {game}=arena();
+    const before=game.abilities.snapshot;expect(before.slots!.dash.ready).toBe(true);
+    game.pause();const paused=game.abilities.snapshot;
+    expect(paused).not.toBe(before);expect(paused.slots!.dash.ready).toBe(false);
+    expect(game.abilities.snapshot).toBe(paused);expect(game.useAbility('dash')).toBe(false);
+    game.resume();expect(game.abilities.snapshot.slots!.dash.ready).toBe(true);
+    expect(game.abilities.snapshot.slots!.dash.charges).toBe(2);
+  });
+
   it('reflects a newly drafted dash capacity immediately in cached snapshots', () => {
     const {game} = arena();
     expect(game.abilities.snapshot.slots!.dash.maxCharges).toBe(2);
