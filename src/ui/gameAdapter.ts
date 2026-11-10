@@ -21,6 +21,7 @@ export type UiFixture = Readonly<{
   phase?: string;
   abilities?: AbilitiesSnapshot | null;
   stats?: Readonly<Record<string, unknown>>;
+  preferences?: Readonly<{combatText?: boolean; radar?: boolean}>;
 }>;
 const fixtures = new WeakMap<DepthGame, UiFixture>();
 const graphics = new WeakMap<DepthRenderer, GraphicsOptions>();
@@ -31,9 +32,9 @@ export function setUiFixture(game: DepthGame, fixture: UiFixture | null): void {
   else fixtures.delete(game);
 }
 
-/** Live run phase wins outside an explicitly staged visual fixture. */
+/** Title always remains reachable, even when an abandoned run awaits a rig. */
 export function getUiPhase(game: DepthGame): string {
-  return fixtures.get(game)?.phase ?? String(game.expedition.run.phase);
+  return fixtures.get(game)?.phase ?? (game.status === 'menu' ? 'menu' : String(game.expedition.run.phase));
 }
 
 /** No rig means no ability slots; legacy runs retain their normal actions. */
@@ -62,6 +63,11 @@ export function useAbility(game: DepthGame, slot: AbilitySlot): boolean {
 /** Only real statistics are shown; unsupported counters are omitted. */
 export function getRunStats(game: DepthGame): Readonly<Record<string, unknown>> {
   return fixtures.get(game)?.stats ?? (game as NextGame).stats ?? {};
+}
+
+/** Presentation fixture overrides stay separate from persisted player preferences. */
+export function getUiPreferences<T extends Readonly<{combatText?: boolean; radar?: boolean}>>(game: DepthGame, defaults: T): Readonly<{combatText?: boolean; radar?: boolean}> {
+  return fixtures.get(game)?.preferences ?? defaults;
 }
 
 /** Read renderer options when available, preserving preferences before G1 merges. */

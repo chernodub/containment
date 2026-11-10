@@ -2,50 +2,233 @@ import type {DepthGame} from '../../DepthGame';
 import type {DepthRenderer} from '../../render/DepthRenderer';
 import type {InputController} from '../../InputController';
 import type {AudioSystem} from '../../game/audio/AudioSystem';
-import {loadAudioPreferences,saveAudioPreferences} from '../../game/audio/preferences';
-import {boonHint,pathFor} from '../../game/roguelike/boonPaths';
-import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
-import {generateRun,runLength} from '../../game/roguelike/run';
-import {expeditionRewardOffers,rerollCost} from '../../game/roguelike/expedition';
-import {storyRoomFor,SACRIFICE_ENDING} from '../../game/roguelike/storyRooms';
-import {progressionFor} from '../../game/roguelike/progression';
-import {MUTATION_CATALOG} from '../../game/roguelike/mutationCatalog';
+import {loadAudioPreferences, saveAudioPreferences} from '../../game/audio/preferences';
+import {expeditionRewardOffers} from '../../game/roguelike/expedition';
 import type {MutationId} from '../../game/roguelike/types';
+import {RIG_IDS} from '../../game/abilities/catalog';
+import type {RigId} from '../../game/abilities/contract';
 import type {HitConfirmation} from '../hud/HitConfirmation';
+import {chooseRig, getAbilities, getRunStats, getUiPhase} from '../gameAdapter';
 import {el} from '../shell';
+import {controlsScreen, destroyScreen, draftScreen, escapeHtml, pauseScreen, resultsScreen, rigScreen, routeScreen, shopScreen, titleScreen, type PauseTab} from './templates';
+import '../styles/screens.css';
 
-/** Owns blocking screen rendering and native menu actions. */
-export function createScreens(context:{game:DepthGame;renderer:DepthRenderer;input:InputController;audio:AudioSystem;confirmation:HitConfirmation;storage:Storage|null;pause:()=>void;start:(resume?:boolean)=>void;graphicsLost:()=>boolean;recovering:()=>boolean}){
-const {game,renderer,input,audio,confirmation,storage,pause,start}=context;
-let settingsOpen=false,screenKey='',quality:'high'|'low'='high';
-let audioPreferences=loadAudioPreferences(storage);
-const routeCopy={combat:'Hostiles · boon',elite:'Elite hostiles · rare boon',medical:'Health + armor · recovery shop',armory:'Ammunition + grenade · recovery shop',boss:'Survive the armor cycle. Strike when exposed.'};
-const depthTotal=()=>runLength(game.expedition.run.version);
-const buildDetails=()=>`<details class="build-details"><summary>Boons · ${game.expedition.build.mutations.length}</summary>${game.expedition.build.mutations.map(id=>`<p><b>${MUTATION_CATALOG[id].name}</b> — ${MUTATION_CATALOG[id].description}</p>`).join('')}<p>Three in a family: Kinetic +12% damage · Cryo longer, stronger chill · Reactor 10% faster reload · Recovery stronger magnet and 6 armor each room.</p></details>`;
-function settings(){return `<div class="settings"><label>Graphics<select id="quality"><option value="high" ${quality==='high'?'selected':''}>High</option><option value="low" ${quality==='low'?'selected':''}>Low</option></select></label><div class="sound-settings"><div class="sound-heading"><label for="master-volume">Master volume</label><output id="volume-value" for="master-volume">${Math.round(audioPreferences.master*100)}%</output></div><div class="sound-controls"><input id="master-volume" type="range" min="0" max="100" step="1" value="${Math.round(audioPreferences.master*100)}" aria-valuetext="${Math.round(audioPreferences.master*100)} percent${audioPreferences.muted?', muted':''}"><button id="sound" class="text-button" aria-label="Mute sound" aria-pressed="${audioPreferences.muted}">${audioPreferences.muted?'Unmute':'Mute'}</button></div></div><p class="controls-copy"><span class="desktop-copy">WASD to move · mouse to aim and fire<br>1–5 weapons · R reload · G grenade · E heal<br>Hold Space for aim-assisted fire · Esc pause</span></p><p class="controls-copy">Weapon reserves replenish during combat and refill between rooms.</p><a href="${import.meta.env.BASE_URL}audio-credits.html" target="_blank" rel="noopener">Credits ↗</a></div>`;}
-function syncScreen(force=false){el('room-loading').hidden=game.status!=='playing'||!context.recovering();const key=`${game.status}:${game.node.id}:${settingsOpen}:${game.checkpointStatus}`;if(!force&&key===screenKey)return;screenKey=key;confirmation.clear();const status=game.status,isMenu=status==='menu';document.body.dataset.state=status;el('hud').hidden=isMenu;el('signature').hidden=!isMenu;el('shade').classList.toggle('visible',status!=='playing');el('overlay').className=isMenu?'menu-overlay':'modal-overlay';
- if(status==='playing'){el('overlay').innerHTML='';audio.resumeAll();return;}input.reset();if(status!=='menu')audio.pauseAll();
- let html='';
- if(isMenu)html=`<main class="title-screen"><div class="edition"><i></i> A CONTAINMENT EXPEDITION</div><h1>CONTAINMENT<span>DEPTH</span></h1><p class="premise">Twenty rooms aboard a colony ship.<br>Wake up. Restore the uplink. Warn New Earth.</p><div class="menu-buttons"><button class="primary" id="start">Wake up <span>↗</span></button>${game.canContinue?'<button class="secondary" id="continue">Continue expedition <span>↗</span></button>':''}<button id="settings" class="quiet">${settingsOpen?'Close settings':'Settings & controls'}</button></div>${settingsOpen?settings():''}</main>`;
- else if(status==='paused')html=`<section class="panel pause-panel"><span class="eyebrow">${ROOM_TEMPLATES[game.node.templateId].name}</span><h2>${context.graphicsLost()?'Restoring graphics…':'Paused'}</h2><button id="resume" class="primary" ${context.graphicsLost()?'disabled':''}>Back to the fight <span>↗</span></button>${context.graphicsLost()?'<button id="recover" class="secondary">Reload game</button>':''}${settings()}${buildDetails()}<button id="menu" class="quiet">Return to title</button><p class="save-note">${game.checkpointNote}</p></section>`;
- else if(status==='reward'){
-  const offers=expeditionRewardOffers(game.expedition);html=`<section class="panel choice-panel"><span class="eyebrow">SECTOR ${String(game.node.depth+1).padStart(2,'0')} / ${depthTotal()} · ${game.expedition.run.phase==='starting-boon'?'BEFORE COMBAT':'CLEAR'}</span><h2>${offers.length?'Choose a boon':game.node.reward==='healing'?'Infirmary':'Supply cache'}</h2><p class="panel-intro">${offers.length?'Choose one. Keep it for this descent.':game.node.reward==='healing'?`Restore ${35+progressionFor(game.node).act*5} health and ${15+progressionFor(game.node).act*5} armor.`:'Rifle, shotgun, plasma and rocket ammunition. One grenade.'}</p>${offers.length?`<div class="choice-grid">${offers.map(m=>`<button class="choice-card ${m.rarity}" data-family="${m.family}" data-mutation="${m.id}" data-risk="${m.risk===true}"><span class="boon-path">${pathFor(m.id)?.name??m.family}<span>${m.rarity==='rare'?'RARE':''}</span></span><h3>${m.name}</h3><p>${MUTATION_CATALOG[m.id].description}</p><small class="boon-condition">${MUTATION_CATALOG[m.id].tradeoff}</small><span class="boon-hint">${boonHint(m,game.expedition.build)}</span><span class="card-arrow">↗</span></button>`).join('')}</div><div class="reward-footer"><span>${game.combat.snapshot.credits} credits</span><button id="reroll" class="secondary" ${game.expedition.run.version===1||(game.expedition.run.draftRoll??0)>=2||game.combat.snapshot.credits<rerollCost(game.expedition)?'disabled':''}>${(game.expedition.run.draftRoll??0)>=2?'No rerolls left':`Reroll · ${rerollCost(game.expedition)} credits`}</button></div>`:'<button id="claim" class="primary">Collect supplies <span>↗</span></button>'+`<div class="service-shop"><span>${game.combat.snapshot.credits} credits · add one before leaving</span>${([['heal','30 health',100],['armor','25 armor',90],['ammo','Extra ammunition',100]] as const).map(([id,label,cost])=>`<button class="secondary" data-purchase="${id}" ${game.combat.snapshot.credits<cost?'disabled':''}>Supplies + ${label} · ${cost}</button>`).join('')}</div>`}</section>`;
- }else if(status==='route'&&game.node.templateId==='manual-control-chamber'){
-  html=`<section class="panel result-panel"><span class="eyebrow">MANUAL CONTROL / OVERLOAD NOT ARMED</span><h2>Destroy the ship?</h2><p class="panel-intro">The passengers are alive. Overload will kill them and you. New Earth has received the warning.</p><button id="destroy-ship" class="primary">Destroy ship</button><button id="menu" class="quiet">Not yet · return to title</button></section>`;
- }else if(status==='route'){
-  const graph=generateRun(game.expedition.run.seed,game.expedition.run.version),choices=game.node.next.map(id=>graph.nodes.find(n=>n.id===id)!);html=`<section class="panel route-panel"><div class="progress-track">${Array.from({length:depthTotal()},(_,i)=>`<i class="${i<=game.node.depth?'done':''}"></i>`).join('')}</div><span class="eyebrow">DESCENT ${game.node.depth+2} / ${depthTotal()}</span><h2>${choices.length>1?'Choose your route.':'Next room'}</h2><p class="panel-intro">${game.storyRoom?game.storyStatus:'Reach the next sector.'}</p><div class="route-grid">${choices.map(n=>`<button class="route-card ${n.kind==='elite'?'danger':''}" data-route="${n.id}"><span class="eyebrow">${n.kind==='elite'?'HIGH RISK':n.kind==='boss'?'REACTOR CORE':n.kind.toUpperCase()}</span><h3>${ROOM_TEMPLATES[n.templateId].name}</h3><p>${storyRoomFor(n.templateId)?.objective??routeCopy[n.kind]}</p><span class="card-arrow">↗</span></button>`).join('')}</div></section>`;
- }else html=`<section class="panel result-panel"><span class="eyebrow">EXPEDITION ${status==='complete'?'COMPLETE':'LOST'}</span><h2>${status==='complete'?(game.storyRoom?'Ship destroyed.':'The core is silent.'):'Mission lost.'}</h2><p class="panel-intro">${status==='complete'?(game.storyRoom?SACRIFICE_ENDING:'Containment restored.'):'You died before the mission was complete.'}</p><div class="result-stats"><div><b>${game.expedition.run.completedNodeIds.length}/${depthTotal()}</b><span>ROOMS</span></div><div><b>${game.expedition.build.mutations.length}</b><span>BOONS</span></div></div><button id="start" class="primary">${status==='complete'?'Play again':'New expedition'} <span>↗</span></button><button id="menu" class="quiet">Return to title</button></section>`;
- if(game.checkpointWarning&&status!=='paused')html=html.replace(/<\/(main|section)>$/,`<p class="save-note" role="status">${game.checkpointWarning}</p></$1>`);
- el('overlay').innerHTML=html;
- el('destroy-ship')?.addEventListener('click',()=>{if(game.authorizeDestruction()){input.reset();audio.playUI();syncScreen();}});
- el('recover')?.addEventListener('click',()=>location.reload());el('start')?.addEventListener('click',()=>start());el('continue')?.addEventListener('click',()=>start(true));el('settings')?.addEventListener('click',()=>{settingsOpen=!settingsOpen;syncScreen(true);});el('resume')?.addEventListener('click',pause);el('menu')?.addEventListener('click',()=>{game.menu();settingsOpen=false;audio.pauseAll();syncScreen(true);});el('reroll')?.addEventListener('click',()=>{if(game.reroll()){audio.playUI();syncScreen(true);}});document.querySelectorAll<HTMLButtonElement>('[data-purchase]').forEach(b=>b.addEventListener('click',()=>{game.claimResources(b.dataset.purchase as 'heal'|'armor'|'ammo');syncScreen();}));el('claim')?.addEventListener('click',()=>{game.claimResources();syncScreen();});
- document.querySelectorAll<HTMLButtonElement>('[data-mutation]').forEach(b=>b.addEventListener('click',()=>{game.chooseMutation(b.dataset.mutation as MutationId);audio.playUI();syncScreen();}));document.querySelectorAll<HTMLButtonElement>('[data-route]').forEach(b=>b.addEventListener('click',()=>{game.route(b.dataset.route!);audio.playUI();syncScreen();}));el('quality')?.addEventListener('change',e=>{quality=(e.target as HTMLSelectElement).value==='low'?'low':'high';renderer.setQuality(quality);});el('master-volume')?.addEventListener('input',e=>{audioPreferences={...audioPreferences,master:(e.target as HTMLInputElement).valueAsNumber/100};updateSound();});el('sound')?.addEventListener('click',()=>{audioPreferences={...audioPreferences,muted:!audioPreferences.muted};updateSound();if(!audioPreferences.muted)void audio.unlock();});
-}
-function updateSound(){
- audio.setMasterVolume(audioPreferences.muted?0:audioPreferences.master);saveAudioPreferences(storage,audioPreferences);
- const percent=Math.round(audioPreferences.master*100);el('volume-value').textContent=`${percent}%`;el('master-volume').setAttribute('aria-valuetext',`${percent} percent${audioPreferences.muted?', muted':''}`);
- el('sound').textContent=audioPreferences.muted?'Unmute':'Mute';el('sound').setAttribute('aria-pressed',String(audioPreferences.muted));
-}
+export type ScreenSettings = {
+  render(): string;
+  bind(root: HTMLElement): void;
+  reset?(): void;
+  readonly quality: 'high'|'low';
+};
+export type ScreenContext = {
+  game: DepthGame;
+  renderer: DepthRenderer;
+  input: InputController;
+  audio: AudioSystem;
+  confirmation: HitConfirmation;
+  storage: Storage|null;
+  pause: () => void;
+  start: (resume?: boolean) => void;
+  graphicsLost: () => boolean;
+  recovering: () => boolean;
+  settings?: ScreenSettings;
+};
 
-return {syncScreen,resetSettings(){settingsOpen=false;},get quality(){return quality;}};
+/** Owns blocking screens and native actions; simulation remains behind public methods. */
+export function createScreens(context: ScreenContext) {
+  const {game, renderer, input, audio, confirmation, storage, pause, start} = context;
+  let settingsOpen = false;
+  let creditsOpen = false;
+  let screenKey = '';
+  let previousStatus = '';
+  let selectedRig: RigId = 'breacher';
+  let pauseTab: PauseTab = 'resume';
+  let legacyQuality: 'high'|'low' = 'high';
+  let audioPreferences = loadAudioPreferences(storage);
+
+  // Retain the original audio controls until the persisted settings view is supplied.
+  function legacySettings(): string {
+    return `<div class="settings"><label>Graphics<select id="quality"><option value="high" ${legacyQuality==='high'?'selected':''}>High</option><option value="low" ${legacyQuality==='low'?'selected':''}>Low</option></select></label><div class="sound-settings"><div class="sound-heading"><label for="master-volume">Master volume</label><output id="volume-value" for="master-volume">${Math.round(audioPreferences.master*100)}%</output></div><div class="sound-controls"><input id="master-volume" type="range" min="0" max="100" step="1" value="${Math.round(audioPreferences.master*100)}" aria-valuetext="${Math.round(audioPreferences.master*100)} percent${audioPreferences.muted?', muted':''}"><button id="sound" class="text-button" aria-label="Mute sound" aria-pressed="${audioPreferences.muted}">${audioPreferences.muted?'Unmute':'Mute'}</button></div></div>${controlsScreen()}<a href="${import.meta.env.BASE_URL}audio-credits.html" target="_blank" rel="noopener">Credits ↗</a></div>`;
+  }
+
+  function listen(id: string, callback: () => void): void {
+    el(id)?.addEventListener('click', callback);
+  }
+
+  function updateSound(): void {
+    audio.setMasterVolume(audioPreferences.muted?0:audioPreferences.master);
+    saveAudioPreferences(storage,audioPreferences);
+    const percent=Math.round(audioPreferences.master*100);
+    el('volume-value').textContent=`${percent}%`;
+    el('master-volume').setAttribute('aria-valuetext',`${percent} percent${audioPreferences.muted?', muted':''}`);
+    el('sound').textContent=audioPreferences.muted?'Unmute':'Mute';
+    el('sound').setAttribute('aria-pressed',String(audioPreferences.muted));
+  }
+
+  function inspectRig(id: RigId, focusCard = false): void {
+    selectedRig = id;
+    syncScreen(true);
+    if (focusCard) el('overlay').querySelector<HTMLButtonElement>(`[data-rig="${id}"]`)?.focus();
+  }
+
+  function setPauseTab(tab: PauseTab, focusTab = false): void {
+    pauseTab = tab;
+    syncScreen(true);
+    if (focusTab) el(`tab-${tab}`).focus();
+  }
+
+  function bindActions(root: HTMLElement): void {
+    listen('destroy-ship',()=>{
+      if(game.authorizeDestruction()) { input.reset(); audio.playUI(); syncScreen(); }
+    });
+    listen('recover',()=>location.reload());
+    listen('start',()=>start());
+    listen('continue',()=>start(true));
+    listen('settings',()=>{settingsOpen=!settingsOpen; creditsOpen=false; syncScreen(true);});
+    listen('credits',()=>{creditsOpen=!creditsOpen; settingsOpen=false; syncScreen(true);});
+    listen('close-credits',()=>{creditsOpen=false; syncScreen(true); el('credits')?.focus();});
+    listen('resume',pause);
+    listen('menu',()=>{
+      game.menu(); settingsOpen=false; creditsOpen=false; pauseTab='resume';
+      audio.pauseAll(); syncScreen(true);
+    });
+    listen('reroll',()=>{if(game.reroll()) {audio.playUI(); syncScreen(true);}});
+    listen('claim',()=>{game.claimResources(); syncScreen();});
+    listen('equip-rig',()=>{if(chooseRig(game,selectedRig)) {audio.playUI(); syncScreen(true);}});
+    root.querySelectorAll<HTMLButtonElement>('[data-purchase]').forEach(button=>button.addEventListener('click',()=>{
+      game.claimResources(button.dataset.purchase as 'heal'|'armor'|'ammo'); syncScreen();
+    }));
+    root.querySelectorAll<HTMLButtonElement>('[data-mutation]').forEach(button=>button.addEventListener('click',()=>{
+      game.chooseMutation(button.dataset.mutation as MutationId); audio.playUI(); syncScreen();
+    }));
+    root.querySelectorAll<HTMLButtonElement>('[data-route]').forEach(button=>button.addEventListener('click',()=>{
+      game.route(button.dataset.route!); audio.playUI(); syncScreen();
+    }));
+    root.querySelectorAll<HTMLButtonElement>('[data-rig]').forEach(button=>{
+      const id=button.dataset.rig as RigId;
+      button.addEventListener('click',()=>inspectRig(id,true));
+      button.addEventListener('focus',()=>{if(selectedRig!==id) inspectRig(id,true);});
+    });
+    root.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button=>button.addEventListener('click',()=>setPauseTab(button.dataset.tab as PauseTab,true)));
+    if (context.settings) context.settings.bind(root);
+    else {
+      el('quality')?.addEventListener('change',event=>{
+        legacyQuality=(event.target as HTMLSelectElement).value==='low'?'low':'high';
+        renderer.setQuality(legacyQuality);
+      });
+      el('master-volume')?.addEventListener('input',event=>{
+        audioPreferences={...audioPreferences,master:(event.target as HTMLInputElement).valueAsNumber/100}; updateSound();
+      });
+      listen('sound',()=>{
+        audioPreferences={...audioPreferences,muted:!audioPreferences.muted}; updateSound();
+        if(!audioPreferences.muted) void audio.unlock();
+      });
+    }
+  }
+
+  function syncScreen(force = false): void {
+    el('room-loading').hidden=game.status!=='playing'||!context.recovering();
+    const phase=getUiPhase(game);
+    const status=phase==='rig-select'||String(game.status)==='rig-select'?'rig-select':game.status;
+    const run=game.expedition.run;
+    const blocked=status!=='playing';
+    // Snapshot values appear in the key only on their relevant screen, never at combat frequency.
+    const key=JSON.stringify([status,phase,game.node.id,settingsOpen,creditsOpen,pauseTab,selectedRig,
+      game.checkpointStatus,game.checkpointWarning,game.checkpointNote,context.graphicsLost(),
+      blocked?game.storyStatus:null,status==='menu'?game.canContinue:null,
+      blocked?game.combat.snapshot.credits:0,blocked?run.draftRoll:0,
+      blocked?game.expedition.build.mutations:[],status==='rig-select'||status==='paused'?getAbilities(game)?.rig:null,
+      status==='complete'||status==='dead'?getRunStats(game):null]);
+    if(!force&&key===screenKey) return;
+    screenKey=key;
+    if(status!==previousStatus||blocked) confirmation.clear();
+    const isMenu=status==='menu';
+    document.body.dataset.state=status;
+    el('hud').hidden=isMenu||status==='rig-select';
+    el('signature').hidden=!isMenu;
+    el('shade').classList.toggle('visible',blocked);
+    el('overlay').className=isMenu?'menu-overlay':'modal-overlay';
+    const root=el('overlay');
+    if(!blocked) {root.innerHTML='';audio.resumeAll();previousStatus=status;return;}
+    input.reset();
+    if(!isMenu) audio.pauseAll();
+    const settings = () => context.settings?.render()??legacySettings();
+    let html: string;
+    if(isMenu) html=titleScreen(game,settingsOpen?settings():'',settingsOpen,creditsOpen);
+    else if(status==='rig-select') html=rigScreen(selectedRig);
+    else if(status==='paused') html=pauseScreen(game,pauseTab,pauseTab==='settings'?settings():'',context.graphicsLost());
+    else if(status==='reward') html=expeditionRewardOffers(game.expedition).length?draftScreen(game):shopScreen(game);
+    else if(status==='route') html=game.node.templateId==='manual-control-chamber'?destroyScreen():routeScreen(game);
+    else html=resultsScreen(game);
+    if(game.checkpointWarning&&status!=='paused') html=html.replace(/<\/(main|section)>$/,`<p class="save-note" role="status">${escapeHtml(game.checkpointWarning)}</p></$1>`);
+    const active=document.activeElement as HTMLElement|null;
+    const focusId=root.contains(active)?active?.id:'';
+    root.innerHTML=html;
+    bindActions(root);
+    const focusReplacement=focusId?root.querySelector<HTMLElement>(`[id="${focusId}"]`):null;
+    if(focusReplacement) focusReplacement.focus({preventScroll:true});
+    else if(status!==previousStatus) {
+      // A held fire key must never activate a newly arrived choice or restart.
+      // Keyboard users can deliberately Tab to a native action or use its number key.
+      if(['reward','route','dead','complete'].includes(status)) {
+        const panel=root.firstElementChild as HTMLElement|null;
+        if(panel) {panel.tabIndex=-1;panel.focus({preventScroll:true});}
+      } else {
+        root.querySelector<HTMLElement>('button:not(:disabled), a[href], [tabindex="0"]')?.focus({preventScroll:true});
+      }
+    }
+    previousStatus=status;
+    const current=root.querySelector<HTMLElement>('.deck-node.current');
+    const map=root.querySelector<HTMLElement>('.deck-map-scroll');
+    if(current&&map) map.scrollLeft=Math.max(0,current.offsetLeft-80);
+  }
+
+  function onKeyDown(event: KeyboardEvent): void {
+    if(event.defaultPrevented||event.repeat||event.altKey||event.ctrlKey||event.metaKey) return;
+    const target=event.target as HTMLElement|null;
+    const root=el('overlay');
+    if(!root.children.length) return;
+    const status=document.body.dataset.state;
+    if(event.key==='Tab') {
+      const focusable=[...root.querySelectorAll<HTMLElement>('button:not(:disabled):not([tabindex="-1"]), a[href], input:not(:disabled), select:not(:disabled), summary, [tabindex="0"]')];
+      const first=focusable[0],last=focusable.at(-1);
+      if(event.shiftKey&&(document.activeElement===first||!root.contains(document.activeElement))) {event.preventDefault();last?.focus();}
+      else if(!event.shiftKey&&(document.activeElement===last||!root.contains(document.activeElement))) {event.preventDefault();first?.focus();}
+      return;
+    }
+    if(target?.matches('input, select, textarea, [contenteditable="true"]')) return;
+    if(target?.getAttribute('role')==='tab'&&['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) {
+      event.preventDefault();
+      const tabs: PauseTab[]=['resume','loadout','settings','controls'];
+      const index=event.key==='Home'?0:event.key==='End'?3:(tabs.indexOf(pauseTab)+(event.key==='ArrowRight'?1:3))%4;
+      setPauseTab(tabs[index],true); return;
+    }
+    if(status==='rig-select') {
+      if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
+        event.preventDefault(); const delta=event.key==='ArrowLeft'||event.key==='ArrowUp'?3:1;
+        inspectRig(RIG_IDS[(RIG_IDS.indexOf(selectedRig)+delta)%4],true);
+      } else if(/^[1-4]$/.test(event.key)) {
+        event.preventDefault(); inspectRig(RIG_IDS[Number(event.key)-1],true);
+      } else if(event.key==='Enter'&&!target?.closest('#equip-rig')) {
+        event.preventDefault(); el('equip-rig')?.click();
+      }
+      return;
+    }
+    if(status==='reward'&&/^[1-3]$/.test(event.key)) {
+      const choice=root.querySelectorAll<HTMLButtonElement>('[data-mutation]')[Number(event.key)-1];
+      if(choice) {event.preventDefault();choice.click();}
+    } else if(status==='reward'&&event.key.toLowerCase()==='r') {
+      const reroll=root.querySelector<HTMLButtonElement>('#reroll:not(:disabled)');
+      if(reroll) {event.preventDefault();reroll.click();}
+    } else if(status==='route'&&/^[1-9]$/.test(event.key)) {
+      const route=root.querySelectorAll<HTMLButtonElement>('[data-route]')[Number(event.key)-1];
+      if(route) {event.preventDefault();route.click();}
+    }
+  }
+  document.addEventListener('keydown',onKeyDown);
+  return {
+    syncScreen,
+    resetSettings() {settingsOpen=false;creditsOpen=false;pauseTab='resume';context.settings?.reset?.();},
+    get quality() {return context.settings?.quality??legacyQuality;},
+    dispose() {document.removeEventListener('keydown',onKeyDown);},
+  };
 }

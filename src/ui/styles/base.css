@@ -95,3 +95,5 @@ body:not([data-state='menu']) #shade { background: #030c13b8; backdrop-filter: b
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+/* Custom cards and HUD controls share a physical pressed response. */
+button:active:not(:disabled) {filter: brightness(.9);}

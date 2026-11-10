@@ -44,8 +44,8 @@ describe('useful boon offers',()=>{
  });
  it('shows path and owned synergy on reward cards without ornamental numbering',()=>{
   const source=uiSource;
-  expect(source).toContain('boonHint(m,game.expedition.build)');
-  expect(source).toContain('pathFor(m.id)?.name');
+  expect(source).toMatch(/boonHint\(\w+,\s*game.expedition.build\)/);
+  expect(source).toMatch(/pathFor\(\w+.id\)\?\.name/);
   expect(source).toContain('boon-hint');expect(source).toContain('data-risk');
   expect(source).not.toContain('0${i+1}<span>${m.family}');
  });

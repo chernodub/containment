@@ -12,8 +12,8 @@ function harness(){
  let held=true;const input={read:()=>({x:held?1:0,y:0,fire:held,angle:0,autoAim:false}),reset:vi.fn(()=>{held=false;})};
  const node={hidden:true,setAttribute:vi.fn()},audio={syncCombat:vi.fn(),setMusicIntensity:vi.fn(),syncFrozen:vi.fn()};
  const source=uiSource;
- const body=source.slice(source.indexOf('function frame(now:number)'),source.indexOf('lastRoom=game.roomRevision;syncScreen(true)'));
- const factory=new Function('game','renderer','input','el','audio',`let lastRoom=-1,lastStatus='',graphicsLost=false,roomRecovering=true,hudTime=0;const positionHud=()=>{},requestAnimationFrame=()=>{},document={hidden:false},pacer={sample:()=>.05,reset:()=>{}},confirmation={update:()=>{}},performance={now:()=>0},syncScreen=()=>{},hud=()=>{},diagnostics={record:()=>{}};${ts.transpile(body)};return frame;`);
+ const body=source.slice(source.indexOf('function frame('),source.indexOf('\n    lastRoom = game.roomRevision;'));
+ const factory=new Function('game','renderer','input','el','audio',`let lastRoom=-1,lastStatus='',graphicsLost=false,roomRecovering=true,hudTime=0,hudLastMs=0,hudTotalMs=0,hudSamples=0;const positionHud=()=>{},requestAnimationFrame=()=>{},document={hidden:false},pacer={sample:()=>.05,reset:()=>{}},confirmation={update:()=>{}},performance={now:()=>0},syncScreen=()=>{},hud=()=>{},syncHud=()=>{},diagnostics={record:()=>{}};${ts.transpile(body)};return frame;`);
  return {game,renderer,input,node,audio,frame:factory(game,renderer,input,()=>node,audio)};
 }
 const snapshot=(g:DepthGame)=>JSON.stringify({player:g.player,combat:g.combat.snapshot,enemies:g.enemies.snapshot,bullets:g.bullets,pools:g.pools,elapsed:g.elapsed,remaining:g.encounterRemaining,expedition:g.expedition,story:g.storyPresentation});

@@ -1,0 +1,393 @@
+/* Blocking ship systems screens. Desktop windows resize; content remains scrollable. */
+#overlay.menu-overlay {
+  display: block;
+  padding: 0;
+  background: radial-gradient(ellipse at 74% 35%, #36596516, transparent 60%), linear-gradient(90deg, #030a10f5 0%, #07131bc7 53%, #07131b35 100%);
+}
+#overlay.modal-overlay {
+  align-items: safe center;
+  justify-content: center;
+  padding: clamp(20px, 4vh, 54px) clamp(24px, 4vw, 80px);
+}
+#overlay .panel {
+  width: min(1160px, 100%);
+  max-height: calc(100dvh - clamp(40px, 8vh, 108px));
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: clamp(26px, 3vw, 48px);
+  border: 1px solid #9fe8ff38;
+  border-radius: 0;
+  background: linear-gradient(135deg, #16262ef7, #091219fa 64%);
+  box-shadow: 0 36px 130px #0009, inset 0 1px #c0eeff15;
+  position: relative;
+  scrollbar-color: #4f7888 #08131b;
+  scrollbar-width: thin;
+}
+#overlay .panel::before {
+  content: '';
+  position: absolute;
+  width: 72px;
+  height: 3px;
+  left: 0;
+  top: 0;
+  background: var(--cyan, #9fe8ff);
+}
+#overlay h2, #overlay h3, #overlay h4 {
+  font-family: var(--font-display, 'Barlow Condensed', 'Arial Narrow', sans-serif);
+  font-weight: 600;
+  color: var(--text, #e8f3f7);
+}
+#overlay h2 {font-size: clamp(40px, 4vw, 64px); line-height: 1; margin: 12px 0 16px; letter-spacing: .01em;}
+#overlay h3 {font-size: 28px; line-height: 1.1; margin: 0 0 12px;}
+#overlay p {font-size: 15px; line-height: 1.65;}
+#overlay .eyebrow, #overlay .edition {font-size: 12px; letter-spacing: .16em; font-weight: 600;}
+#overlay .panel-intro {color: #b4c7d0; font-size: 16px; line-height: 1.6; margin: 0 0 24px; max-width: 76ch;}
+#overlay button, #overlay a, #overlay input, #overlay select, #overlay summary, #overlay [tabindex='0'] {scroll-margin: 12px;}
+#overlay :is(button, a, input, select, summary, [tabindex='0']):focus-visible {outline: 2px solid var(--cyan, #9fe8ff); outline-offset: 4px;}
+#overlay button {transition: background 160ms ease-out, border-color 160ms ease-out, box-shadow 160ms ease-out;}
+#overlay button:disabled {opacity: .48; cursor: not-allowed;}
+#overlay .primary, #overlay .secondary {min-height: 54px; padding: 14px 20px; border-radius: 0; font-size: 15px; gap: 22px;}
+#overlay .primary {background: #d4f0f6; color: #0a1a23; border: 1px solid #d4f0f6; box-shadow: inset 3px 0 #fff;}
+#overlay .primary:hover {background: #f0fcff; box-shadow: 0 0 28px #9fe8ff21;}
+#overlay .secondary {background: #152a35; color: #e2f2f6; border: 1px solid #63829185;}
+#overlay .secondary:hover {background: #213f4c; border-color: #9fe8ff;}
+#overlay .quiet {color: #b1c5cf; font-size: 14px; min-height: 44px; padding: 10px 0; display: flex; align-items: center; gap: 10px;}
+#overlay .quiet:hover {color: #f0fbff;}
+#overlay .screen-arrow {width: 20px; height: 20px; flex-shrink: 0;}
+#overlay kbd {font: 600 12px var(--font-body, sans-serif); letter-spacing: 0; color: #d1e6ee; border: 1px solid #7698a55e; background: #07131b; border-radius: 2px; padding: 3px 6px; white-space: nowrap; box-shadow: 0 2px #02070a;}
+#overlay .screen-heading {display: flex; justify-content: space-between; align-items: center; gap: 24px;}
+#overlay .screen-footnote {font-size: 13px; color: #a2b9c5; line-height: 1.6; margin: 22px 0 0;}
+#overlay .save-note {font-size: 12px; line-height: 1.55; color: #bbccd4; margin: 20px 0 0;}
+#overlay .save-note:empty {display: none;}
+#overlay svg {vertical-align: middle;}
+.screen-enter {animation: screen-arrive 180ms ease-out both;}
+@keyframes screen-arrive {from {opacity: 0; transform: translateY(7px);} to {opacity: 1; transform: none;}}
+
+/* The title is a full canvas composition, with a separately scrollable system drawer. */
+#overlay .title-screen {
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  padding: clamp(48px, 9vh, 130px) clamp(56px, 7vw, 180px);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+}
+#overlay .title-screen::before {content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: repeating-linear-gradient(0deg, transparent 0 47px, #9fe8ff03 47px 48px), repeating-linear-gradient(90deg, transparent 0 47px, #9fe8ff03 47px 48px); mask-image: linear-gradient(90deg, transparent 20%, black 90%);}
+#overlay .title-copy {position: relative; z-index: 1; width: min(790px, 62vw);}
+#overlay .edition {color: #aec7d3; margin: 0 0 42px; gap: 14px;}
+#overlay .edition i {background: #ff754f; box-shadow: 0 0 14px #ff5a3666; width: 6px; height: 6px; border-radius: 0;}
+#overlay .title-screen h1 {font-family: var(--font-display, 'Barlow Condensed', Impact, sans-serif); margin: 0; text-transform: uppercase; font-weight: 700; letter-spacing: .035em; line-height: .88;}
+#overlay .title-screen h1 span {margin: 0; background: none; color: #e1eef1; -webkit-text-fill-color: currentColor;}
+#overlay .title-word {font-size: clamp(54px, 6.15vw, 148px); font-weight: 600; letter-spacing: -.015em; display: block; line-height: .95;}
+#overlay .title-depth {font-size: clamp(138px, 16vw, 350px); line-height: .85; display: flex; align-items: flex-end; font-weight: 700; letter-spacing: .025em; text-shadow: 0 1px #d6f4ff, 0 16px 90px #9fe8ff12;}
+#overlay .title-screen h1 .title-index {display: inline-block; font: 500 13px var(--font-body, sans-serif); color: #89a6b4; letter-spacing: .14em; margin: 0 0 14px 22px; border-top: 1px solid #6c9aab80; padding-top: 8px; white-space: nowrap;}
+#overlay .title-screen .premise {font-size: 17px; line-height: 1.65; margin: 32px 0; color: #b7cbd3; max-width: 440px;}
+#overlay .menu-buttons {width: 360px; max-width: 100%; gap: 12px;}
+#overlay #start {min-height: 76px;}
+#overlay #start>span {font-size: 24px; font-family: var(--font-display, sans-serif); font-weight: 600; line-height: 1.1;}
+#overlay #start small {display: block; font: 600 10px var(--font-body, sans-serif); letter-spacing: .16em; margin: 0 0 7px;}
+#overlay .title-utilities {display: flex; gap: 28px;}
+#overlay .title-version {margin-top: 52px; font: 600 12px var(--font-display, sans-serif); letter-spacing: .18em; color: #abc0c9;}
+#overlay .title-version span {display: block; font: 400 10px var(--font-body, sans-serif); margin-top: 8px; letter-spacing: .12em; color: #809dab;}
+#overlay .title-instrument {position: absolute; width: min(54vw, 980px); aspect-ratio: 1; right: -2vw; top: 50%; transform: translateY(-50%) rotate(-13deg); color: #8bc1d345; pointer-events: none; z-index: 0;}
+#overlay .title-instrument svg {width: 100%; height: 100%; stroke-width: .8; filter: drop-shadow(0 0 25px #9fe8ff20);}
+#overlay .orbital {border: 1px solid #9fe8ff1a; position: absolute; inset: -4%; border-radius: 50%;}
+#overlay .orbital-two {inset: 16%; border-style: dashed; transform: rotate(25deg);}
+#overlay .schematic-label {position: absolute; font-size: 10px; letter-spacing: .18em; line-height: 2; transform: rotate(13deg); color: #84aabb;}
+#overlay .schematic-top {right: 18%; top: 13%;}
+#overlay .schematic-bottom {left: 29%; bottom: 7%;}
+#overlay .schematic-bottom b {color: #e79b85; font-weight: 500;}
+#overlay .title-drawer {position: absolute; right: 5vw; top: 5vh; bottom: 5vh; width: min(510px, 41vw); overflow: auto; z-index: 3; background: #09151df7; border: 1px solid #9fe8ff52; border-top: 3px solid var(--cyan, #9fe8ff); padding: 32px; box-shadow: -30px 0 90px #0008; scrollbar-color: #4f7888 #08131b;}
+#overlay .title-drawer h2 {font-size: 42px;}
+#overlay .title-drawer .settings {position: static; display: block; width: 100%; max-width: none; margin-top: 12px;}
+#overlay .title-drawer .controls-reference {grid-template-columns: 1fr; gap: 18px;}
+#overlay .title-drawer .controls-reference dl {margin-bottom: 0;}
+#overlay .title-drawer .controls-reference dd {font-size: 13px;}
+#overlay .credits-drawer p {color: #b8ccd5;}
+#overlay .credits-drawer a {color: var(--cyan, #9fe8ff); font-size: 15px;}
+#overlay .credits-drawer button {margin-top: 32px; width: 100%;}
+
+/* Rig selection: four identity cards above a dense, readable ability manifest. */
+#overlay [data-element='kinetic'] {--element: #ffb454;}
+#overlay [data-element='cryo'] {--element: #7fd6ff;}
+#overlay [data-element='pyro'] {--element: #ff9552;}
+#overlay [data-element='arc'] {--element: #c5b0ff;}
+#overlay .rig-panel {width: min(1300px, 100%);}
+#overlay .keyboard-guide {font-size: 12px; color: #b3c6ce; white-space: nowrap;}
+#overlay .rig-grid {display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 6px 0 24px;}
+#overlay .rig-card {position: relative; border: 1px solid #63829150; padding: 16px 18px; background: linear-gradient(145deg, #20333f88, #09131b); text-align: left; min-height: 192px; color: var(--element);}
+#overlay .rig-card::after {content: ''; position: absolute; bottom: 0; left: 0; width: 30%; height: 2px; background: var(--element); opacity: .45;}
+#overlay .rig-card.selected {border-color: var(--element); background: linear-gradient(130deg, color-mix(in srgb, var(--element) 11%, #15232e), #0a1720); box-shadow: inset 0 0 28px color-mix(in srgb, var(--element) 5%, transparent);}
+#overlay .rig-card:hover {border-color: var(--element);}
+#overlay .rig-number {display: flex; justify-content: space-between; color: #9eb4c0; font-size: 12px;}
+#overlay .rig-emblem {width: 48px; height: 48px; margin: 8px 0 5px;}
+#overlay .rig-card h3 {font-size: 31px; margin: 0 0 6px; color: var(--element);}
+#overlay .rig-card p {font-size: 14px; margin: 0; color: #cedce2;}
+#overlay .rig-path {display: block; color: #9db2bd; font-size: 12px; margin-top: 10px;}
+#overlay .rig-detail-head {display: flex; justify-content: space-between; gap: 32px; align-items: center; margin: 0 0 24px; padding: 0 0 20px; border-bottom: 1px solid var(--line, #9fe8ff30);}
+#overlay .rig-detail-head h3 {margin: 6px 0; font-size: 30px;}
+#overlay .rig-detail-head p {font-size: 14px; margin: 0; color: #b3c6d0;}
+#overlay .rig-detail-head .eyebrow {color: var(--element);}
+#overlay .rig-detail-head button {flex-shrink: 0;}
+#overlay .ability-preview {display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px 32px;}
+#overlay .ability-detail {display: grid; grid-template-columns: 42px 1fr; gap: 14px;}
+#overlay .ability-detail-icon {color: var(--element); padding-top: 5px;}
+#overlay .ability-detail-icon svg {width: 36px; height: 36px;}
+#overlay .ability-detail header {display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
+#overlay .ability-detail header>span {font-size: 10px; letter-spacing: .1em; color: #9bb5c2;}
+#overlay .ability-detail h3 {font-size: 24px; width: 100%; margin: 4px 0 0;}
+#overlay .ability-detail p {font-size: 14px; line-height: 1.55; color: #bbccd5; margin: 9px 0 12px;}
+#overlay .ability-detail dl {display: flex; gap: 16px; margin: 0; flex-wrap: wrap;}
+#overlay .ability-detail dl>div {display: flex; gap: 6px; align-items: baseline;}
+#overlay .ability-detail dt {font-size: 11px; color: #98b0bd;}
+#overlay .ability-detail dd {font: 600 15px var(--font-display, sans-serif); color: var(--element); margin: 0;}
+
+/* Draft: readable rules, a clear trade-off, then a dedicated synergy footer. */
+#overlay .draft-signal {display: flex; align-items: center; gap: 10px; color: #a1b8c7; font-size: 10px; letter-spacing: .14em;}
+#overlay .draft-signal svg {width: 26px; height: 26px; color: var(--cyan, #9fe8ff);}
+#overlay .choice-grid {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px;}
+#overlay [data-family='Kinetic'] {--boon-color: #ffbd6c;}
+#overlay [data-family='Cryo'] {--boon-color: #98deff;}
+#overlay [data-family='Reactor'] {--boon-color: #c5b4ff;}
+#overlay [data-family='Recovery'] {--boon-color: #c4d99b;}
+#overlay .choice-panel .choice-card {padding: 24px 24px 0; display: flex; flex-direction: column; background: linear-gradient(160deg, #1e3441, #0c1822); border: 1px solid #71919f58; border-top: 2px solid var(--boon-color); border-radius: 0; min-height: 390px;}
+#overlay .choice-card:hover {background: linear-gradient(160deg, #294453, #122532); border-color: var(--boon-color); box-shadow: 0 8px 32px #0004;}
+#overlay .choice-card.rare {background: linear-gradient(155deg, #58452b22, #101d28 55%); border-color: #cfb0707a;}
+#overlay .boon-card-top {display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 24px;}
+#overlay .boon-emblem {width: 42px; height: 42px; color: var(--boon-color); margin-right: auto;}
+#overlay .boon-rarity {font-size: 10px; letter-spacing: .12em; color: #bdcdd5; display: flex; align-items: center; gap: 4px;}
+#overlay .rare .boon-rarity {color: var(--gold, #ffd27a);}
+#overlay .boon-rarity svg {width: 16px; height: 16px;}
+#overlay .boon-path {font-size: 12px; color: var(--boon-color); margin: 0; font-weight: 500;}
+#overlay .choice-card h3 {font-size: clamp(29px, 2.25vw, 40px); margin: 10px 0 16px;}
+#overlay .choice-card p {font-size: 15px; line-height: 1.6; color: #d0dce2; margin: 0 0 20px;}
+#overlay .choice-panel .boon-condition {font-size: 13px; line-height: 1.55; color: #a8bfcc; margin: 0 0 20px; display: block;}
+#overlay .boon-condition>span {display: block; font-size: 9px; letter-spacing: .13em; color: #8aa5b5; margin-bottom: 6px;}
+#overlay .choice-card[data-risk='true'] .boon-condition {color: #ffb19b;}
+#overlay .boon-hint {display: flex; align-items: start; gap: 8px; font-size: 13px; line-height: 1.5; color: var(--boon-color); margin: auto 0 20px;}
+#overlay .boon-hint svg {width: 17px; height: 17px; flex-shrink: 0;}
+#overlay .boon-select {margin: 0 -24px; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #7894a633; color: #cfe3ed; font-size: 10px; letter-spacing: .14em; background: #020c1235;}
+#overlay .reward-footer {margin-top: 26px; display: flex; justify-content: space-between; align-items: center; gap: 24px;}
+#overlay .credit-balance {display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gold, #ffd27a); letter-spacing: .08em;}
+#overlay .credit-balance svg {width: 22px; height: 22px;}
+#overlay .credit-balance b {font: 600 26px var(--font-display, sans-serif);}
+#overlay .credit-balance small {margin-left: 16px; font-size: 12px; color: #a4bdc9; letter-spacing: 0;}
+
+/* Recovery is a two-column allocation manifest, not another draft. */
+#overlay .shop-panel {width: min(1040px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 56px;}
+#overlay .supply-hero {display: flex; flex-direction: column; justify-content: center; align-items: start; padding: 14px 0;}
+#overlay .supply-emblem {width: 96px; height: 96px; color: var(--cyan, #9fe8ff); margin: 0 0 28px; padding: 20px; border: 1px solid #9fe8ff52; background: radial-gradient(circle, #9fe8ff15, transparent);}
+#overlay .supply-hero h2 {font-size: 64px; margin-bottom: 22px;}
+#overlay .supply-hero .primary {width: 100%; margin-top: 12px;}
+#overlay .supply-label {font-size: 10px; letter-spacing: .12em; margin-top: 14px; color: #a7c1ce;}
+#overlay .service-shop {display: flex; flex-direction: column; flex-wrap: nowrap; border-left: 1px solid #9fe8ff26; padding-left: 40px; margin: 0; gap: 12px;}
+#overlay .shop-heading {margin-bottom: 12px;}
+#overlay .shop-heading h3 {font-size: 31px; margin: 8px 0 18px;}
+#overlay .shop-heading p {font-size: 13px; color: #9fb6c3; margin: 14px 0 0;}
+#overlay .service-card {display: flex; align-items: center; text-align: left; gap: 14px; background: #182d39; border: 1px solid #62849458; padding: 18px 16px; min-height: 88px; flex: none;}
+#overlay .service-card:hover {border-color: var(--cyan, #9fe8ff); background: #223e4c;}
+#overlay .service-card>svg:first-child {width: 30px; height: 30px; color: var(--cyan, #9fe8ff); flex-shrink: 0;}
+#overlay .service-card>span {flex: 1;}
+#overlay .service-card b {font-size: 15px; display: block; margin-bottom: 5px;}
+#overlay .service-card small {font-size: 11px; color: #a6becb;}
+#overlay .service-card strong {color: var(--gold, #ffd27a); font: 600 25px var(--font-display, sans-serif);}
+#overlay .shop-panel>.save-note {grid-column: 1 / -1;}
+
+/* Navigation: a connected, horizontally scrollable deck graph above the next actions. */
+#overlay .route-panel {width: min(1320px, 100%);}
+#overlay .route-position {font: 500 65px var(--font-display, sans-serif); color: #c9e9f5; white-space: nowrap;}
+#overlay .route-position small {font-size: 16px; color: #9ab4c4;}
+#overlay .map-legend {display: flex; align-items: center; gap: 22px; font-size: 10px; letter-spacing: .08em; color: #b2c6d1; margin: 0 0 12px;}
+#overlay .map-legend span:nth-child(2) {color: var(--cyan, #9fe8ff);}
+#overlay .map-legend span:nth-child(3) {color: var(--gold, #ffd27a);}
+#overlay .map-legend small {margin-left: auto; font-size: 9px; color: #88a5b5;}
+#overlay .deck-map-scroll {overflow: auto; max-width: 100%; background: linear-gradient(#060f17cc, #12263277); border: 1px solid #7298a638; scrollbar-color: #557e92 #08131b; margin: 0 0 28px; overscroll-behavior: contain;}
+#overlay .deck-map {position: relative;}
+#overlay .deck-connections {position: absolute; left: 0; top: 0; pointer-events: none;}
+#overlay .deck-connections path {stroke: #486071; fill: none; stroke-width: 1; stroke-dasharray: 4 4;}
+#overlay .deck-connections path.traversed {stroke: #8ebacb; stroke-dasharray: none;}
+#overlay .deck-node {width: 184px; min-height: 87px; position: absolute; border: 1px solid #52748469; padding: 9px 11px; background: #0c1a24; opacity: .75;}
+#overlay .deck-node-top {display: flex; align-items: center; gap: 5px; font-size: 10px; color: #a4bbc8;}
+#overlay .deck-node-top svg {width: 15px; height: 15px;}
+#overlay .deck-node-top small {margin-left: auto; font-size: 8px; letter-spacing: .08em;}
+#overlay .deck-node b {font: 500 17px var(--font-display, sans-serif); display: block; margin: 5px 0 3px; color: #d9e8ef; line-height: 1.1;}
+#overlay .deck-node>span:last-child {font-size: 10px; color: #a0b7c3;}
+#overlay .deck-node.visited {border-color: #638d9c; opacity: 1;}
+#overlay .deck-node.current {border: 1px solid var(--cyan, #9fe8ff); background: #193440; opacity: 1; box-shadow: 0 0 24px #9fe8ff15;}
+#overlay .deck-node.available {border-color: var(--gold, #ffd27a); opacity: 1;}
+#overlay .deck-node.available .deck-node-top small {color: var(--gold, #ffd27a);}
+#overlay .route-grid {display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;}
+#overlay .route-card {background: linear-gradient(145deg, #1d3441, #101f2a); border: 1px solid #7997a658; border-radius: 0; padding: 22px; min-height: 190px;}
+#overlay .route-card:hover {border-color: var(--cyan, #9fe8ff); background: #203e4c;}
+#overlay .route-card.danger {border-color: #e3856870;}
+#overlay .route-card-top {display: flex; align-items: center; gap: 10px;}
+#overlay .route-card-top>svg {width: 25px; height: 25px; color: var(--cyan, #9fe8ff);}
+#overlay .route-card-top>kbd {margin-left: auto;}
+#overlay .route-card h3 {margin: 16px 0 8px; font-size: 32px;}
+#overlay .route-card p {font-size: 14px; color: #b8cbd6; margin: 0 0 20px; max-width: 90%;}
+#overlay .route-reward {display: flex; align-items: center; gap: 8px; color: var(--gold, #ffd27a); font-size: 12px;}
+#overlay .route-reward svg {width: 18px; height: 18px;}
+
+/* Pause uses a wide manifest with native accessible tabs. */
+#overlay .pause-panel {width: min(1110px, 100%);}
+#overlay .paused-indicator {display: flex; gap: 9px; align-items: center; font-size: 10px; color: #a3c0cf; letter-spacing: .12em;}
+#overlay .paused-indicator svg {width: 17px; height: 17px;}
+#overlay .pause-tabs {display: flex; gap: 8px; border-bottom: 1px solid #7a9bab50; margin: 14px 0 28px;}
+#overlay .pause-tabs button {background: none; font-size: 14px; text-transform: capitalize; color: #a6bdcb; padding: 14px 22px; border-bottom: 2px solid transparent; min-height: 48px;}
+#overlay .pause-tabs button[aria-selected='true'] {color: var(--cyan, #9fe8ff); border-bottom-color: var(--cyan, #9fe8ff); background: #9fe8ff08;}
+#overlay .pause-tabs button:hover {color: #eefaff; background: #9fe8ff10;}
+#overlay #pause-tabpanel {min-height: 260px;}
+#overlay .resume-content {display: grid; grid-template-columns: 250px 1fr; gap: 50px; align-items: center; padding: 30px 10px;}
+#overlay .resume-coordinate {font: 600 140px/.85 var(--font-display, sans-serif); color: #d9f3fc; display: flex; gap: 10px; align-items: flex-end; letter-spacing: -.02em;}
+#overlay .resume-coordinate>span {font-size: 34px; color: #7f9dae; letter-spacing: 0;}
+#overlay .resume-coordinate small {display: block; font: 500 10px var(--font-body, sans-serif); letter-spacing: .18em; margin-top: 8px;}
+#overlay .resume-content h3 {font-size: 32px;}
+#overlay .resume-content p {color: #adc5d2; margin: 0 0 20px;}
+#overlay .resume-content .primary {width: min(360px, 100%); margin: 0;}
+#overlay .resume-content .secondary {margin-top: 12px;}
+#overlay .pause-footer {display: flex; justify-content: space-between; align-items: center; gap: 40px; border-top: 1px solid #7899a538; margin-top: 24px; padding-top: 14px;}
+#overlay .pause-footer .save-note {margin: 0; text-align: right; max-width: 60%;}
+#overlay .controls-reference {display: grid; grid-template-columns: 1fr 1fr; gap: 44px;}
+#overlay .controls-reference dl {margin: 16px 0;}
+#overlay .controls-reference dl>div {display: flex; align-items: center; gap: 16px; min-height: 42px; border-bottom: 1px solid #7a9bab20;}
+#overlay .controls-reference dt {min-width: 125px;}
+#overlay .controls-reference dd {margin: 0; color: #b9cdd7; font-size: 14px;}
+#overlay .settings {max-width: none; margin: 0;}
+#overlay .settings label {font-size: 14px;}
+#overlay .settings select {font-size: 14px; padding: 9px 12px;}
+#overlay .settings .controls-reference {margin-top: 28px;}
+#overlay .loadout-rig {display: flex; align-items: center; gap: 22px; padding: 0 0 24px; margin-bottom: 24px; border-bottom: 1px solid #779baa40;}
+#overlay .loadout-rig>svg {width: 65px; height: 65px; color: var(--element); flex-shrink: 0;}
+#overlay .loadout-rig h3 {font-size: 36px; margin: 6px 0;}
+#overlay .loadout-rig p {color: #b8ccd7; margin: 0; font-size: 14px;}
+#overlay .build-heading {margin: 28px 0 18px; padding-top: 20px; border-top: 1px solid #779baa40;}
+#overlay .build-heading span {font-size: 18px; color: #8daab9; margin-left: 8px;}
+#overlay .owned-boons {display: grid; grid-template-columns: 1fr 1fr; gap: 16px;}
+#overlay .owned-boon {display: flex; gap: 16px; padding: 18px; border: 1px solid #7a9bab30; background: #12232e;}
+#overlay .owned-boon>svg {width: 26px; height: 26px; color: var(--boon-color); flex-shrink: 0;}
+#overlay .owned-boon h4 {font-size: 25px; margin: 5px 0 8px;}
+#overlay .owned-boon span {color: var(--boon-color); font-size: 11px;}
+#overlay .owned-boon p {font-size: 14px; color: #bdd0db; margin: 0 0 10px;}
+#overlay .owned-boon small {color: #a4bccb; font-size: 12px; line-height: 1.5; display: block;}
+
+/* The debrief has its own strong numerical hierarchy and expandable manifest. */
+#overlay .debrief-panel {width: min(1080px, 100%);}
+#overlay .debrief-heading {padding-left: 24px; border-left: 3px solid #ff7758;}
+#overlay [data-outcome='complete'] .debrief-heading {border-left-color: var(--gold, #ffd27a);}
+#overlay .debrief-heading .eyebrow {color: #ffab91;}
+#overlay [data-outcome='complete'] .debrief-heading .eyebrow {color: var(--gold, #ffd27a);}
+#overlay .debrief-heading h2 {font-size: clamp(54px, 5vw, 78px);}
+#overlay .debrief-heading p {max-width: 75ch;}
+#overlay .result-stats {display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 20px 28px; margin: 32px 0 26px; padding: 26px 0; border-top: 1px solid #789ba44d; border-bottom: 1px solid #789ba44d;}
+#overlay .result-stats b {font: 600 54px/1 var(--font-display, sans-serif); color: #e1f3fa; display: block; margin-bottom: 10px; font-variant-numeric: tabular-nums;}
+#overlay .result-stats b small {font-size: 26px; color: #89a9ba;}
+#overlay .result-stats span {font-size: 10px; letter-spacing: .12em; color: #9fbbc9;}
+#overlay .build-details {font-size: 14px; color: #b6cbd6; margin: 20px 0;}
+#overlay .build-details summary {padding: 12px 0; color: var(--cyan, #9fe8ff); cursor: pointer; font-size: 15px;}
+#overlay .build-details[open] .build-recap {padding-top: 20px;}
+#overlay .result-actions {display: flex; align-items: center; gap: 28px;}
+#overlay .result-actions .primary {width: min(340px, 50%); margin: 12px 0 0;}
+#overlay .destroy-panel {width: min(650px, 100%); padding: 48px; border-color: #ef957a60; background: radial-gradient(ellipse at 90% 5%, #d2472820, transparent 60%), #0c171f;}
+#overlay .destroy-panel::before {background: #ff7956;}
+#overlay .destroy-emblem {width: 54px; height: 54px; display: block; color: #ff9b77; margin-bottom: 24px;}
+#overlay .destroy-panel .eyebrow {color: #ffb49c;}
+#overlay .destroy-panel h2 {font-size: 62px; margin: 18px 0 24px;}
+#overlay .destroy-panel .panel-intro {color: #e2c8bf; font-size: 17px;}
+#overlay .destroy-divider {height: 1px; background: #e8886450; margin: 32px 0;}
+#overlay #destroy-ship {background: #b44931; color: #fff4ef; border: 1px solid #f18b6d; width: 100%; box-shadow: none;}
+#overlay #destroy-ship:hover {background: #cd5438;}
+#overlay .system-panel {width: min(640px, 100%); text-align: center;}
+#overlay .system-panel>svg {display: block; width: 48px; height: 48px; margin: 0 auto 22px; color: var(--cyan, #9fe8ff);}
+#overlay .system-panel p {color: #bed2dd;}
+#overlay .system-panel .primary {margin: 28px auto 0;}
+
+/* Compact desktop height preserves readable text and scrolls the panel, never the body. */
+@media (max-height: 820px) {
+  #overlay .title-screen {padding-top: 46px; padding-bottom: 46px;}
+  #overlay .title-screen .edition {margin-bottom: 30px;}
+  #overlay .title-word {font-size: clamp(54px, 5.5vw, 100px);}
+  #overlay .title-depth {font-size: clamp(130px, 13.5vw, 225px);}
+  #overlay .title-screen .premise {margin: 24px 0; font-size: 16px;}
+  #overlay .title-version {margin-top: 26px;}
+  #overlay .panel {padding: 28px 32px;}
+  #overlay h2 {font-size: 46px;}
+  #overlay .choice-card h3 {font-size: 31px;}
+  #overlay .choice-panel .choice-card {min-height: 350px; padding-top: 18px;}
+  #overlay .boon-card-top {margin-bottom: 18px;}
+  #overlay .rig-card {min-height: 174px; padding: 12px 16px;}
+  #overlay .rig-emblem {width: 35px; height: 35px; margin: 3px 0;}
+  #overlay .rig-card h3 {font-size: 27px;}
+  #overlay .ability-detail p {font-size: 14px;}
+  #overlay .supply-emblem {width: 76px; height: 76px; margin-bottom: 24px;}
+  #overlay .supply-hero h2 {font-size: 58px;}
+  #overlay .resume-content {padding: 24px 0;}
+  #overlay #pause-tabpanel {min-height: 220px;}
+}
+@media (max-width: 1440px) {
+  #overlay .title-drawer {right: 3vw; width: 43vw; padding: 26px;}
+  #overlay .title-copy {width: 62vw;}
+  #overlay .keyboard-guide {white-space: normal; max-width: 240px; line-height: 2; text-align: right;}
+  #overlay .draft-signal {max-width: 150px; line-height: 1.7;}
+  #overlay .choice-panel .choice-card {padding-left: 20px; padding-right: 20px;}
+  #overlay .boon-select {margin-left: -20px; margin-right: -20px; padding-left: 20px; padding-right: 20px;}
+  #overlay .shop-panel {gap: 36px;}
+  #overlay .service-shop {padding-left: 28px;}
+}
+@media (prefers-reduced-motion: reduce) {
+  #overlay .screen-enter {animation: none;}
+  #overlay button {transition: none;}
+}
+#overlay .title-screen>.save-note {position: absolute; left: clamp(56px, 7vw, 180px); bottom: 22px; max-width: 50%; margin: 0;}
+#overlay .pause-footer .primary {width: auto; min-width: 200px; margin: 0;}
+#overlay .pause-footer .secondary {min-width: 130px;}
+#overlay .pause-footer .quiet {white-space: nowrap;}
+/* Rules and map metadata remain legible at the minimum desktop viewport. */
+#overlay .boon-rarity, #overlay .boon-condition>span, #overlay .boon-select,
+#overlay .ability-detail dt, #overlay .ability-detail header>span,
+#overlay .rig-number, #overlay .draft-signal, #overlay .paused-indicator,
+#overlay .map-legend, #overlay .map-legend small, #overlay .deck-node-top,
+#overlay .deck-node-top small, #overlay .deck-node>span:last-child,
+#overlay .result-stats span, #overlay .owned-boon span,
+#overlay .service-card small, #overlay .supply-label {font-size: 12px;}
+#overlay .deck-node-top small {font-size: 10px;}
+#overlay .deck-node-top {letter-spacing: 0;}
+#overlay .title-version span {font-size: 12px;}
+
+/* The full-height title fades without moving beyond the viewport. */
+#overlay .title-screen.screen-enter {animation-name: title-arrive;}
+@keyframes title-arrive {from {opacity: 0;} to {opacity: 1;}}
+#overlay .choice-panel .choice-card {text-align: left; align-items: stretch;}
+#overlay .title-screen .menu-buttons {display: grid;}
+
+#overlay .route-card {text-align: left;}
+#overlay .choice-card[data-path='Wildfire'] {--boon-color: #ffb580;}
+#overlay [data-family='Recovery'] {--boon-color: #9fe8ff;}
+#overlay .boon-condition>span, #overlay .boon-rarity, #overlay .boon-select {font-size: 11px;}
+#overlay .route-card .card-arrow {display: block; text-align: right;}
+@supports (corner-shape: bevel) {
+  #overlay .panel {corner-shape: bevel; border-radius: 0 16px 0 16px;}
+  #overlay .choice-panel .choice-card, #overlay .rig-card, #overlay .route-card {corner-shape: bevel; border-radius: 0 10px 0 10px;}
+  #overlay .title-drawer {corner-shape: bevel; border-radius: 0 12px 0 12px;}
+}
+
+#overlay .title-instrument-clip {position: absolute; inset: 0; overflow: hidden; pointer-events: none;}
+@media (max-height: 820px) {
+  #overlay .title-screen {padding-top: 32px; padding-bottom: 32px;}
+  #overlay .title-screen .edition {margin-bottom: 22px;}
+  #overlay .title-version {margin-top: 18px;}
+}
+/* Loadout and expanded settings scroll within the paused content, keeping Resume in view. */
+#overlay .pause-panel {display:flex;flex-direction:column;overflow:hidden}
+#overlay .pause-panel>.eyebrow,#overlay .pause-panel>.screen-heading,#overlay .pause-panel>.pause-tabs,#overlay .pause-panel>.pause-footer {flex-shrink:0}
+#overlay .pause-panel #pause-tabpanel {min-height:0;overflow:auto;flex:1;padding:20px 4px 8px 0;scrollbar-width:thin;scrollbar-color:#4f7888 #08131b}
+#overlay .pause-panel .pause-footer {gap:24px}
+#overlay .result-stats {grid-template-columns:repeat(var(--stat-columns,2),minmax(0,1fr))}
+#overlay .result-stats b {overflow-wrap:anywhere}
+#overlay .rig-panel::after {content:'SCROLL TO INSPECT FULL ABILITY MANIFEST';display:block;text-align:right;margin-top:16px;color:#a1b6c0;font-size:11px;letter-spacing:.12em}
+/* A slow instrument sweep keeps the title alive independently of its 3D backdrop. */
+#overlay .orbital-one {border-top-color:#9fe8ff77;border-right-color:#9fe8ff2e;animation:instrument-sweep 28s linear infinite}
+@keyframes instrument-sweep {to {transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){#overlay .orbital-one{animation:none}}

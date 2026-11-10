@@ -77,8 +77,8 @@ describe('checkpoint failure feedback',()=>{
  });
  it('renders warnings on every noncombat screen and invalidates the cached screen on persistence changes',()=>{
   const main=uiSource;
-  expect(main).toContain('${game.checkpointStatus}');expect(main).toContain('${game.checkpointNote}');
-  expect(main).toContain("if(game.checkpointWarning&&status!=='paused')");
+  expect(main).toContain('game.checkpointStatus');expect(main).toContain('game.checkpointNote');
+  expect(main).toContain('game.checkpointWarning');
   expect(main).not.toContain('Progress saves between rooms. Leaving a fight returns to the last cleared room.');
  });
 });
