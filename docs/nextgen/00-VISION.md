@@ -134,7 +134,7 @@ extra dash charge, faster Overdrive charge, cooldown refund on kills). Target fo
 
 ## 5. Experience upgrades by area
 
-**Camera & feel:** smooth follow with aim look-ahead; trauma-based shake scaled by a user setting; recoil kick; zoom punch on
+**Camera & feel:** a closer hero camera (marine ≈ 110–140 px tall at 1080p, about 1.7–2× closer than the baseline's whole-room view) that follows the marine; rooms extend past the screen and out-of-bounds space is designed, never flat black; off-screen threats are surfaced by HUD indicators and a room radar; smooth follow with aim look-ahead; trauma-based shake scaled by a user setting; recoil kick; zoom punch on
 explosions and Overdrive; micro hit-stop on heavy hits/kills; slow-motion beat on the final kill of a room; all disabled or
 reduced under `prefers-reduced-motion` and a "Screen shake" setting.
 
