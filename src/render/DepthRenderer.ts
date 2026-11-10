@@ -314,6 +314,7 @@ export class DepthRenderer {
   for(let x=3;x<w;x+=6){box(this.world,x,2.65,.58,.12,.28,.8,MAT.dark);}
   for(const b of t.breaches){const x=b.x/UNIT,z=b.y/UNIT;box(this.world,x,.04,z,1.25,.06,1.1,MAT.black);for(let i=-4;i<=4;i++)box(this.world,x+i*.12,.085,z,.05,.04,.9,MAT.edge,.01);}
   if(environment&&!atrium)environmentArchitecture(this.world,environment,w,h,node.templateId);
+  if(node.templateId==='reactor-vault'){const hot=MAT.cyan.clone();hot.name='ship-cold-practical';hot.userData.actorMaterial=true;this.world.traverse(object=>{if(object instanceof T.Mesh&&object.material===MAT.cyan)object.material=hot;});}
   this.bakeWorld();
   }
   if(node.templateId==='residential-gallery')this.residentialGalleryEquipment=attachResidentialGalleryEquipment(this.world,staticLoaded);
