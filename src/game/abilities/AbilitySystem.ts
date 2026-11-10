@@ -4,6 +4,10 @@ import type { AbilitiesSnapshot, AbilityEvent, AbilityId, AbilitySlot, AbilityZo
 import type { MutationId } from '../roguelike/types';
 import type { MutationTarget } from '../roguelike/MutationRuntime';
 
+const TIMER_EPSILON = 1e-7;
+const countdown = (remaining: number, ms: number): number => remaining - ms <= TIMER_EPSILON ? 0 : remaining - ms;
+
+/** Coordinates in deterministic world units. */
 export type AbilityPoint = Readonly<{ x: number; y: number }>;
 /** Simulation adapters: world collision and all damage/status reactions remain authoritative in the host. */
 export interface AbilityHost {
@@ -27,6 +31,7 @@ type Cast = { id: AbilityId; x: number; y: number; angle: number; target: Abilit
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 type Zone = Mutable<AbilityZoneSnapshot> & { tick: number; pulses: number; damage: number };
 type Deployable = Mutable<DeployableSnapshot> & { tick: number; assault: number };
+/** Hard caps on persistent entities and per-effect target fanout. */
 export const ABILITY_LIMITS = Object.freeze({ zones: 24, deployables: 8, targets: 64 });
 
 /** Distance to a finite segment; shared by actual strip/beam/link and blocker collision tests. */
@@ -116,7 +121,8 @@ export class AbilitySystem {
   addCharge(damage: number, kills = 0): void {
     if (!this.rig || !Number.isFinite(damage) || !Number.isFinite(kills) || damage < 0 || kills < 0) return;
     const before = this.charge;
-    this.charge = Math.min(1, this.charge + (damage / 6000 + kills * .025) * (this.host.has('drive-dynamo' as MutationId) ? 1.3 : 1));
+    const next = this.charge + (damage / 6000 + kills * .025) * (this.host.has('drive-dynamo' as MutationId) ? 1.3 : 1);
+    this.charge = next >= 1 - TIMER_EPSILON ? 1 : next;
     if (before !== this.charge) this.cached = null;
     if (before < 1 && this.charge === 1) this.event(this.definition('overdrive').id, 'overdrive-ready', this.host.player());
   }
@@ -244,7 +250,7 @@ export class AbilitySystem {
       dash.hit.add(t.id); const side = (t.x - p.x) * -Math.sin(dash.angle) + (t.y - p.y) * Math.cos(dash.angle) < 0 ? -1 : 1;
       this.host.launch(t, -Math.sin(dash.angle) * 350 * side, Math.cos(dash.angle) * 350 * side); this.host.status(t, 'shock', 180); this.hit(t, 18);
     }
-    dash.remaining -= step;
+    dash.remaining = countdown(dash.remaining, step);
     const blocked = Math.hypot(p.x - before.x, p.y - before.y) < Math.hypot(dash.x, dash.y) * step / DASH_DURATION_MS - .01;
     if (dash.remaining <= 0 || blocked) {
       this.dash = null;
@@ -253,12 +259,14 @@ export class AbilitySystem {
       this.event(id, 'dash-end', dash.start, { targetX: p.x, targetY: p.y, angle: dash.angle });
     }
   }
-  private stepZones(ms: number): void {
+  private stepZones(ms: number, existingThrough: number): void {
     for (let i = this.zones.length - 1; i >= 0; i--) {
-      const zone = this.zones[i], live = Math.min(ms, zone.remainingMs);
+      const zone = this.zones[i];
+      if (zone.id > existingThrough) continue; // A dash trail begins at this step’s arrival, not its start.
+      const live = Math.min(ms, zone.remainingMs);
       if (zone.attached) { const p = this.host.player(); zone.x = p.x; zone.y = p.y; }
-      zone.tick -= live; zone.remainingMs = Math.max(0, zone.remainingMs - ms);
-      if (zone.tick <= 0) {
+      zone.tick -= live; zone.remainingMs = countdown(zone.remainingMs, ms);
+      if (zone.tick <= TIMER_EPSILON) {
         zone.tick += 250; zone.pulses++;
         const ids: number[] = [];
         for (const t of this.host.targets().slice(0, ABILITY_LIMITS.targets)) {
@@ -281,12 +289,12 @@ export class AbilitySystem {
   }
   private stepDeployables(ms: number, hostileScale: number): void {
     for (const d of this.deployables.slice()) {
-      const live = Math.min(ms, d.remainingMs); d.remainingMs = Math.max(0, d.remainingMs - ms); d.tick -= live; d.assault -= live * hostileScale;
-      if (d.assault <= 0) {
+      const live = Math.min(ms, d.remainingMs); d.remainingMs = countdown(d.remainingMs, ms); d.tick -= live; d.assault -= live * hostileScale;
+      if (d.assault <= TIMER_EPSILON) {
         d.assault += 250;
         for (const t of this.host.targets().slice(0, ABILITY_LIMITS.targets)) if (!this.host.statuses(t.id).frozen && !this.host.statuses(t.id).shocked && this.touches(d, t, t, t.radius + 20) && this.host.visible(d, t)) d.health -= 20;
       }
-      if (d.kind === 'pylon' && d.tick <= 0 && d.health > 0) {
+      if (d.kind === 'pylon' && d.tick <= TIMER_EPSILON && d.health > 0) {
         d.tick += 500;
         const targets = this.nearby(d, 220).slice(0, 1), p = this.host.player();
         for (const t of targets) { this.host.arc({ id: 0, x: d.x, y: d.y, radius: 0, health: 1 }, [t]); this.hit(t, 26, 'shock', 120); this.event(d.ability, 'link', d, { entityId: d.id, targetX: t.x, targetY: t.y, targetIds: [t.id] }); }
@@ -364,25 +372,34 @@ export class AbilitySystem {
     if (!this.immune && !this.dash && !this.casts.length && !this.zones.length && !this.deployables.length && !this.afterquakes.length && ABILITY_SLOTS.every(slot => !this.states[slot].cooldowns.length && !this.states[slot].active)) return;
     const hostileScale = this.hostileDelta(ms) / ms;
     this.cached = null;
-    this.immune = Math.max(0, this.immune - ms);
+    this.immune = countdown(this.immune, ms);
     for (const slot of ABILITY_SLOTS) {
       const state = this.states[slot];
       for (let i = state.cooldowns.length - 1; i >= 0; i--) {
-        state.cooldowns[i] -= ms;
+        state.cooldowns[i] = countdown(state.cooldowns[i], ms);
         if (state.cooldowns[i] <= 0) { state.cooldowns.splice(i, 1); this.event(this.definition(slot).id, 'ready', this.host.player()); }
       }
-      state.cast = Math.max(0, state.cast - ms);
+      state.cast = countdown(state.cast, ms);
       const wasActive = state.active > 0;
-      state.active = Math.max(0, state.active - ms);
+      state.active = countdown(state.active, ms);
       if (wasActive && !state.active && this.definition(slot).id === 'overclock') this.event('overclock', 'end', this.host.player());
     }
+    const existingThrough = this.serial;
     this.stepDash(ms);
-    this.stepZones(ms);
+    this.stepZones(ms, existingThrough);
     this.stepDeployables(ms, hostileScale);
-    for (let i = this.afterquakes.length - 1; i >= 0; i--) { const cast = this.afterquakes[i]; cast.delay -= ms; if (cast.delay <= 0) { this.afterquakes.splice(i, 1); const ids = this.radial(cast, 190, 35, undefined, 350); this.event(cast.id, 'impact', cast, { targetIds: ids }); } }
+    for (let i = this.afterquakes.length - 1; i >= 0; i--) { const cast = this.afterquakes[i]; cast.delay = countdown(cast.delay, ms); if (cast.delay <= 0) { this.afterquakes.splice(i, 1); const ids = this.radial(cast, 190, 35, undefined, 350); this.event(cast.id, 'impact', cast, { targetIds: ids }); } }
     for (let i = this.casts.length - 1; i >= 0; i--) {
-      const cast = this.casts[i]; cast.remaining -= ms;
+      const cast = this.casts[i]; cast.remaining = countdown(cast.remaining, ms);
       if (cast.remaining <= 0) { this.casts.splice(i, 1); this.resolve(cast); }
+    }
+    // Derive lingering slot time after every entity has advanced (including twin constructs).
+    for (const slot of ABILITY_SLOTS) {
+      if (this.definition(slot).id === 'overclock') continue;
+      let active = 0;
+      for (const zone of this.zones) if (ABILITY_CATALOG[zone.ability].slot === slot) active = Math.max(active, zone.remainingMs);
+      for (const entity of this.deployables) if (ABILITY_CATALOG[entity.ability].slot === slot) active = Math.max(active, entity.remainingMs);
+      this.states[slot].active = active;
     }
   }
 

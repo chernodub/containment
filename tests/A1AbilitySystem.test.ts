@@ -684,3 +684,41 @@ describe('deterministic ability replay and bounded soak', () => {
       expect(replay(rig)).toEqual(replay(rig));
     });
 });
+
+
+describe('fractional fixed-step ability boundaries', () => {
+  it('keeps every 60Hz zone pulse, including the exact final pulse and freeze boundary', () => {
+    const pyro=world('pyro',[],1);pyro.add(50);pyro.use('overdrive');
+    for(let i=0;i<30;i++)pyro.system.update(1000/60);
+    expect(pyro.hits).toHaveLength(2);
+    for(let i=30;i<480;i++)pyro.system.update(1000/60);
+    expect(pyro.hits).toHaveLength(32);
+    expect(pyro.system.snapshot.zones).toHaveLength(0);
+    expect(phases(pyro,'meltdown').filter(p=>p==='end')).toHaveLength(1);
+    const cryo=world('cryo',[],1);cryo.add(50);cryo.use('overdrive');
+    for(let i=0;i<120;i++)cryo.system.update(1000/60);
+    expect(cryo.controls.filter(c=>c.kind==='freeze')).toHaveLength(1);
+  });
+  it('starts dash trails with their full catalog lifetime and clears slot activity with the last zone', () => {
+    const w=world('cryo');w.use('dash');w.advance(140);
+    expect(w.system.snapshot.zones[0].remainingMs).toBe(2500);
+    expect(w.system.snapshot.slots!.dash.activeRemainingMs).toBe(2500);
+    w.advance(2499);expect(w.system.snapshot.zones[0].remainingMs).toBe(1);
+    w.advance(1);expect(w.system.snapshot.zones).toHaveLength(0);
+    expect(w.system.snapshot.slots!.dash.activeRemainingMs).toBe(0);
+  });
+  it('resolves casts, restores charges and ends Overclock without an extra fractional frame', () => {
+    const ram=world();ram.use('dash');
+    for(let i=0;i<156;i++)ram.system.update(1000/60);
+    expect(ram.system.snapshot.slots!.dash.charges).toBe(2);
+    expect(phases(ram,'ram').filter(p=>p==='ready')).toHaveLength(1);
+    const slam=world();slam.add(50);slam.system.use('tactical');
+    for(let i=0;i<6;i++)slam.system.update(220/6);
+    expect(slam.hits).toHaveLength(1);expect(slam.system.snapshot.slots!.tactical.castRemainingMs).toBe(0);
+    const arc=world('arc',[],1);arc.use('overdrive');
+    for(let i=0;i<360;i++)arc.system.update(1000/60);
+    expect(arc.system.snapshot.overdrive.activeRemainingMs).toBe(0);
+    expect(arc.system.hostileTimeScale).toBe(1);
+    expect(phases(arc,'overclock').filter(p=>p==='end')).toHaveLength(1);
+  });
+});
