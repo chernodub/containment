@@ -8,6 +8,7 @@ import {SceneLighting,ContactShadows} from './SceneLighting';
 import {authoredRoom} from './AuthoredRooms';
 import {ActorPool} from './ActorPool';
 import type {GraphicsTier} from './FrameBudget';
+import {GRAPHICS_PRESETS,type GraphicsOptions} from './graphicsOptions';
 import {EnvironmentMaterials} from './EnvironmentMaterials';
 import {shipEnvironment,environmentObstacle,environmentArchitecture,appendEnvironment,type ShipEnvironment} from './ShipEnvironments';
 import {serviceShaftLanding} from './ServiceShaftLanding';
@@ -43,6 +44,7 @@ export class DepthRenderer {
  private pendingShots:GameEffect[]=[];private shotSocket=new T.Vector3();
  private spotlight:T.SpotLight;private focus=new T.Vector3(18,0,14);private raycaster=new T.Raycaster();private ground=new T.Plane(new T.Vector3(0,1,0),0);
  private composer:EffectComposer;private bloom:UnrealBloomPass;private tier:GraphicsTier='high';private shadowTime=0;private shadowsDirty=true;private pixelRatio=1;
+ private options:GraphicsOptions={...GRAPHICS_PRESETS.high};
  private time=0;private recoil=0;private roomKey='';private temporaryMaterials:T.Material[]=[];
  private bulletMesh:T.InstancedMesh;private dummy=new T.Object3D();
  private pickupMeshes=new Map<number,T.Group>();private exit:T.Group|null=null;
@@ -70,10 +72,18 @@ export class DepthRenderer {
   this.resize();
  }
  get qualityTier(){return this.tier;}
- setQuality(value:'high'|'low'='high'){
-  this.tier=value==='low'?'low':'high';this.ragdolls?.setQuality(this.tier);while(this.corpses.length>(this.tier==='low'?6:12)){const c=this.corpses.shift()!;this.ragdolls.remove(c.id);this.actorPool.release(c.model);}this.applyQuality();
+ /** Current immutable settings; selecting a tier resets its overrides. */
+ get graphicsOptions(){return this.options;}
+ /** Apply presentation settings without changing deterministic game state. */
+ setGraphicsOptions(partial:Partial<GraphicsOptions>){
+  const next={...(this.options??GRAPHICS_PRESETS.high),...partial};
+  for(const key of ['resolutionScale','screenShake','flashIntensity'] as const){const value=Number(next[key]);next[key]=Number.isFinite(value)?Math.max(key==='resolutionScale'?.5:0,Math.min(1,value)):GRAPHICS_PRESETS[this.tier??'high'][key];}
+  this.options=Object.freeze(next);this.applyQuality();
  }
- private applyQuality(){this.renderer.shadowMap.enabled=this.tier!=='low';this.shadowsDirty=true;this.resize();}
+ setQuality(value:'high'|'low'='high'){
+  this.tier=value==='low'?'low':'high';this.options=GRAPHICS_PRESETS[this.tier];this.ragdolls?.setQuality(this.tier);while(this.corpses.length>(this.tier==='low'?6:12)){const c=this.corpses.shift()!;this.ragdolls.remove(c.id);this.actorPool.release(c.model);}this.applyQuality();
+ }
+ private applyQuality(){this.renderer.shadowMap.enabled=this.options.shadows!=='off';this.shadowsDirty=true;this.resize();}
  resize(){
   const w=window.innerWidth,h=window.innerHeight,post=this.tier==='high';this.pixelRatio=Math.min(devicePixelRatio||1,post?1.5:1);
   this.renderer.setPixelRatio(this.pixelRatio);this.renderer.setSize(w,h,false);this.composer.setPixelRatio(post?this.pixelRatio:1);this.composer.setSize(post?w:1,post?h:1);
