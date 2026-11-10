@@ -7,6 +7,7 @@ import {LightPool} from './lighting/LightPool';
 import {MarineLamp} from './lighting/MarineLamp';
 
 type Fixture={x:number;y:number;z:number;color:number};
+export type ReactorStaging=Readonly<{coreX:number;coreY:number;coreZ:number;coreColor:number;coreRadius:number}>;
 /** Stable room lights, motivated practicals and a bounded combat-light pool. */
 export class SceneLighting {
  readonly root=new T.Group();
@@ -19,6 +20,8 @@ export class SceneLighting {
  readonly pool=new LightPool('high',9);
  readonly lamp=new MarineLamp();
  mood:EnvironmentMood=getEnvironmentMood();
+ staging:ReactorStaging|null=null;
+ private authoredFixtures:Fixture[]=[];private nearbyFixtures:Fixture[]=[];private playerX=NaN;private playerZ=NaN;private fixtureTint=new T.Color();
  private blastLife=0;private time=0;private tier:GraphicsTier='high';private fixtureCount=0;private dynamicLights=true;private flashIntensity=1;private disposed=false;
  constructor(){
   this.key.castShadow=true;
@@ -38,9 +41,11 @@ export class SceneLighting {
   if(!dynamicLights){this.blastLife=0;this.blast.intensity=0;}
   for(let i=0;i<this.fixtures.length;i++){this.fixtures[i].visible=tier==='high'||i<2;if(!this.fixtures[i].visible)this.fixtures[i].intensity=0;}
  }
- loadRoom(world:T.Group,width:number,height:number,environment?:ShipEnvironment){
+ loadRoom(world:T.Group,width:number,height:number,environment?:ShipEnvironment,templateId?:string){
   this.blastLife=0;this.blast.intensity=0;this.pool.reset();this.time=0;
-  this.mood=getEnvironmentMood(environment);this.applyMood(width,height);
+  this.mood=getEnvironmentMood(environment??(templateId==='reactor-vault'?'reactor':undefined));
+  this.staging=templateId==='reactor-vault'?{coreX:width/2,coreY:2.6,coreZ:height/2,coreColor:0xffdfab,coreRadius:4.9}:null;
+  this.applyMood(width,height);
   world.updateWorldMatrix(true,true);const candidates:Fixture[]=[],position=new T.Vector3();
   world.traverse(object=>{
    const authored=object.userData.lightFixtures as Fixture[]|undefined;
@@ -52,16 +57,51 @@ export class SceneLighting {
    object.getWorldPosition(position);if(position.y<.65)return;
    candidates.push({x:position.x,y:position.y,z:position.z,color:material.emissive.getHex()});
   });
+  this.authoredFixtures=candidates.slice();this.playerX=this.playerZ=NaN;
   const selected:Fixture[]=[];
   candidates.sort((a,b)=>Math.hypot(a.x-width/2,a.z-height/2)-Math.hypot(b.x-width/2,b.z-height/2));
   while(candidates.length&&selected.length<this.fixtures.length){
    if(selected.length)candidates.sort((a,b)=>Math.min(...selected.map(s=>Math.hypot(b.x-s.x,b.z-s.z)))-Math.min(...selected.map(s=>Math.hypot(a.x-s.x,a.z-s.z))));
    const next=candidates.shift()!;if(selected.every(s=>Math.hypot(next.x-s.x,next.z-s.z)>2))selected.push(next);
   }
+  if(this.staging){selected.unshift({x:this.staging.coreX,y:this.staging.coreY,z:this.staging.coreZ,color:this.staging.coreColor});selected.length=Math.min(selected.length,this.fixtures.length);}
   this.fixtureCount=selected.length;
-  this.fixtures.forEach((light,i)=>{const fixture=selected[i];light.intensity=fixture&&light.visible?this.mood.practical.intensity:0;if(fixture){light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color).lerp(new T.Color(this.mood.practical.color),.32);light.distance=this.mood.practical.distance;}});
+  this.fixtures.forEach((light,i)=>{
+   const fixture=selected[i],core=!!this.staging&&i===0;
+   light.userData.reactorCore=core;light.intensity=fixture&&light.visible?(core?46:this.mood.practical.intensity):0;
+   if(fixture){
+    light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);
+    if(!core){
+     const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.practical.color;
+     light.color.lerp(new T.Color(accent),this.mood.environment==='reactor'||this.mood.environment==='infested'?.92:.32);
+    }
+    light.distance=core?15:this.mood.environment==='reactor'?7.5:this.mood.practical.distance;
+   }
+  });
  }
- setPlayer(x:number,z:number,aimRadians:number){this.lamp.update(x,z,aimRadians);}
+ setPlayer(x:number,z:number,aimRadians:number){
+  this.lamp.update(x,z,aimRadians);
+  if(Number.isFinite(this.playerX)&&Math.hypot(x-this.playerX,z-this.playerZ)<1.25)return false;
+  this.playerX=x;this.playerZ=z;
+  const selected=this.nearbyFixtures;selected.length=0;
+  if(this.staging)selected.push({x:this.staging.coreX,y:this.staging.coreY,z:this.staging.coreZ,color:this.staging.coreColor});
+  this.authoredFixtures.sort((a,b)=>(a.x-x)**2+(a.z-z)**2-((b.x-x)**2+(b.z-z)**2));
+  for(const fixture of this.authoredFixtures){
+   let separate=true;for(const other of selected)if(Math.hypot(fixture.x-other.x,fixture.z-other.z)<2){separate=false;break;}
+   if(separate)selected.push(fixture);if(selected.length===4)break;
+  }
+  this.fixtureCount=selected.length;
+  for(let i=0;i<4;i++){
+   const light=this.fixtures[i],fixture=selected[i],core=!!this.staging&&i===0;
+   light.userData.reactorCore=core;
+   if(!fixture){light.intensity=0;continue;}
+   light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);
+   if(!core){const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.environment==='security'&&i%2?0xf1f4ff:this.mood.practical.color;this.fixtureTint.setHex(accent);light.color.lerp(this.fixtureTint,this.mood.environment==='reactor'||this.mood.environment==='infested'||this.mood.environment==='security'?.92:.5);}
+   light.distance=core?15:this.mood.environment==='reactor'?7.5:this.mood.practical.distance;
+   light.intensity=light.visible?(core?46:this.mood.practical.intensity):0;
+  }
+  return true;
+ }
  explosion(x:number,z:number,radius:number){if(!this.dynamicLights)return;this.blast.position.set(x,.9,z);this.blast.distance=Math.min(7,Math.max(3,radius*1.5));this.blastLife=.18;this.blast.intensity=12*this.flashIntensity;}
  update(dt:number){
   const delta=Number.isFinite(dt)?Math.max(0,dt):0;this.time+=delta;this.pool.update(delta);
@@ -70,14 +110,16 @@ export class SceneLighting {
   for(let i=0;i<this.fixtureCount;i++){
    const light=this.fixtures[i];if(!light.visible)continue;
    const phase=this.time+i*1.73;
-   const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.8+.2*Math.sin(phase*1.4):behavior==='reactor'?.84+.16*Math.sin(phase*2.1):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
-   light.intensity=this.mood.practical.intensity*(1+(animated-1)*this.flashIntensity);
+   const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.72+.28*Math.sin(phase*1.4):behavior==='reactor'?.78+.22*Math.sin(this.time*2.1+i*.65):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
+   light.intensity=(light.userData.reactorCore?46:this.mood.practical.intensity)*(1+(animated-1)*this.flashIntensity);
   }
  }
  dispose(){if(this.disposed)return;this.disposed=true;this.key.shadow.dispose();this.pool.dispose();this.lamp.dispose();this.root.removeFromParent();}
  private applyMood(width:number,height:number){
   const mood=this.mood;this.ambient.color.setHex(mood.ambient.sky);this.ambient.groundColor.setHex(mood.ambient.ground);this.ambient.intensity=mood.ambient.intensity;
+  this.lamp.light.intensity=mood.environment==='infested'?8:12;
   for(const [light,data] of [[this.key,mood.key],[this.fill,mood.fill],[this.rim,mood.rim]] as const){light.color.setHex(data.color);light.intensity=data.intensity;light.target.position.set(width/2,0,height/2);light.position.set(width/2+data.offset[0],data.offset[1],height/2+data.offset[2]);}
+  if(this.staging){this.key.position.set(width/2-18,7,height/2-12);this.rim.intensity=1.8;}
  }
 }
 

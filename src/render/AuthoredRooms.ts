@@ -34,7 +34,7 @@ class Fabricator{
  readonly ribs=this.mat(0x697164,.48,.64);readonly bolts=this.mat(0x69767a,.78,.47);
  readonly seam=this.mat(0x293a40,.3,.88);readonly stencil=this.mat(0x77745c,.2,.9);
  constructor(){
-  this.contact.userData.actorMaterial=true;this.contact.name='environment-contact';this.shaft.name='shaft-liner';
+  this.contact.userData.actorMaterial=true;this.contact.name='environment-contact';this.cold.name='ship-cold-practical';this.warm.name='ship-warm-practical';this.shaft.name='shaft-liner';
   const contactData=new Uint8Array(32*32*4);for(let y=0;y<32;y++)for(let x=0;x<32;x++){const edge=Math.min(x,y,31-x,31-y)/6;contactData.set([255,255,255,Math.round(255*Math.min(1,edge)**2)],(y*32+x)*4);}
   const contactMap=new T.DataTexture(contactData,32,32);contactMap.needsUpdate=true;contactMap.magFilter=T.LinearFilter;this.contact.map=contactMap;this.contact.addEventListener('dispose',()=>contactMap.dispose());
   this.chitin.name='boarding-carapace';this.ribs.name='boarding-ribs';this.bolts.name='reactor-fasteners';this.deck.name='painted-steel-deck';

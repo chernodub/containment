@@ -20,9 +20,14 @@ export class RoomReflectionCapture {
     const camera = new T.CubeCamera(.1, 100, cube);
     const pmrem = new T.PMREMGenerator(this.renderer);
     const environment = this.scene.environment;
+    // A room capture precedes the first shadow draw. Sampling an unallocated
+    // comparison shadow texture is invalid on WebGL2; the blurred reflection
+    // needs room radiance, and does not need six extra shadow renders.
+    const shadowEnabled = this.renderer.shadowMap?.enabled;
     const visibility = excluded.map(object => object.visible);
     try {
       this.scene.environment = null;
+      if (this.renderer.shadowMap) this.renderer.shadowMap.enabled = false;
       for (const object of excluded) object.visible = false;
       camera.position.set(x, y, z); camera.update(this.renderer, this.scene);
       this.target = pmrem.fromCubemap(cube.texture);
@@ -31,6 +36,7 @@ export class RoomReflectionCapture {
       return true;
     } finally {
       if (!this.captured) this.scene.environment = environment;
+      if (this.renderer.shadowMap) this.renderer.shadowMap.enabled = shadowEnabled!;
       for (let i = 0; i < excluded.length; i++) excluded[i].visible = visibility[i];
       pmrem.dispose(); cube.dispose();
     }

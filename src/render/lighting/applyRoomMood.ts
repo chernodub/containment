@@ -1,13 +1,18 @@
 import * as T from 'three';
 import type { ShipEnvironment } from '../ShipEnvironments';
 import { getEnvironmentMood } from './EnvironmentMoods';
+import { applyFloorVariation } from './FloorVariation';
+import { optimizeLocalLights } from './LocalLightShading';
+import { applyHotFixtureSurface } from './HotFixtureSurface';
 
 const originals = new WeakMap<T.MeshStandardMaterial, { color: T.Color; roughness: number; metalness: number; emissiveIntensity: number }>();
+// Subtle surface tint only: environment identity comes from motivated light, not tinted black paint.
 const deckTint: Readonly<Record<ShipEnvironment, number>> = {
-  cryogenics: 0xb3d9e8, habitation: 0xdec6a8, security: 0xbdc9d4, cargo: 0xdec3a1,
-  communications: 0xa2c8d6, engineering: 0xd4c89f, maintenance: 0x9acabc,
-  infested: 0xaac19b, containment: 0xc7c5e4, reactor: 0xd1b7a0,
+  cryogenics: 0xf1f6fa, habitation: 0xfaf5ee, security: 0xf4f6fa, cargo: 0xf9f5ec,
+  communications: 0xeff6f9, engineering: 0xf9f6ee, maintenance: 0xeff7f3,
+  infested: 0xf1f6f0, containment: 0xf4f3fa, reactor: 0xf9f4ed,
 };
+const readableSteel = new T.Color(0x8d9498);
 
 /** Tune room-owned surfaces and hot fixtures without changing warning, enemy or navigation colors. */
 export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 'cryogenics') {
@@ -28,12 +33,20 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
       if (material.name === 'painted-steel-deck' || material.name === 'environment-floor') {
         material.roughness = environment === 'maintenance' ? mood.floorRoughness : Math.max(.82, mood.floorRoughness);
         material.metalness = environment === 'maintenance' ? Math.max(.38, original.metalness) : original.metalness;
-        material.color.copy(original.color).multiply(tint);
+        if (material.name === 'painted-steel-deck') {
+          // Original near-black paint multiplied by colored light hid traversable floor below sRGB 30.
+          material.color.copy(original.color).lerp(readableSteel, .85).multiply(tint);
+        } else {
+          material.color.copy(material.userData.roomBaseColor ?? original.color).lerp(new T.Color(0xb0b8bd),.8).multiply(tint);
+        }
+        applyFloorVariation(material, environment);
       }
+      if(environment==='reactor'&&material.name==='ship-cold-practical'){material.color.setHex(0xffe5b9);material.emissive.setHex(0xffd69a);material.emissiveIntensity=3.4;applyHotFixtureSurface(material);}
       // Keep the authored hue: red warning strips and green safe routes retain their meaning.
-      if (original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {
+      if (!(environment === 'reactor' && material.name === 'ship-cold-practical') && original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {
         material.emissiveIntensity = Math.max(2.6, original.emissiveIntensity * 1.75);
       }
+      optimizeLocalLights(material);
     }
   });
 }

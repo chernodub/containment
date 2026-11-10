@@ -12,9 +12,11 @@ export class MarineLamp {
     geometry.translate(0, -3.75, 0);
     const material = new T.ShaderMaterial({
       transparent: true, depthWrite: false, side: T.DoubleSide, blending: T.AdditiveBlending,
-      uniforms: { color: { value: new T.Color(0x9fe8ff) }, strength: { value: .018 } },
-      vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-      fragmentShader: 'uniform vec3 color;uniform float strength;varying vec2 vUv;void main(){float a=pow(vUv.y,1.4)*smoothstep(0.0,0.12,vUv.y)*strength;gl_FragColor=vec4(color,a);}',
+      uniforms: { color: { value: new T.Color(0x9fe8ff) }, strength: { value: .009 } },
+      vertexShader: 'varying vec2 vUv;varying vec3 vNormal;varying vec3 vView;void main(){vUv=uv;vNormal=normalMatrix*normal;vec4 view=modelViewMatrix*vec4(position,1.0);vView=-view.xyz;gl_Position=projectionMatrix*view;}',
+      // Clamping matters at the open cone end: tiny interpolated negative UVs
+      // raised to a fractional power otherwise poison the HDR buffer with NaNs.
+      fragmentShader: 'uniform vec3 color;uniform float strength;varying vec2 vUv;varying vec3 vNormal;varying vec3 vView;void main(){float y=clamp(vUv.y,0.0,1.0);float facing=abs(dot(normalize(vNormal),normalize(vView)));float a=pow(y,1.4)*smoothstep(0.0,0.12,y)*pow(max(0.0,facing),.8)*strength;gl_FragColor=vec4(color,a);}',
     });
     this.cone = new T.Mesh(geometry, material);
     this.root.name = 'marine-lamp'; this.cone.name = 'marine-lamp-scattering'; this.cone.renderOrder = 2;
