@@ -79,6 +79,10 @@ MutationRuntime.launchAbility(target:MutationTarget,x:number,y:number):void;
 MutationRuntime.abilityArc(origin:MutationTarget,targets:readonly MutationTarget[]):void;
 CombatSystem.setOverclock(active:boolean):void;
 CombatSystem.instantReload():boolean;
+ElementalRuntime.shock(target:MutationTarget,duration:number):void;
+ElementalRuntime.stagger(target:MutationTarget):void;
+ElementalRuntime.shocked(id:number):boolean;
+activePaths(build:BuildState):Array<(typeof BOON_PATHS)[number]>; // includes the selected rig's path
 ```
 
 `MutationTarget` adds optional `resistant?:boolean`. `statuses()` adds `shocked:boolean`. `MutationHost.damage(id,amount,source?:'status'|'boon')` attributes shared damage without parallel statuses. Freeze/shock also halt ordinary enemy AI/attack timers until expiration. Standard ammo transfers still dispatch normal reload events; game adapters call completedReload for Cold Snap/Combat Medic.
