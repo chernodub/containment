@@ -17,7 +17,9 @@ async function stageAbility({ rig, slot, id, nativeInput = false }) {
   if (!boon) throw Error('Starting boon missing after rig selection');
   boon.click();
   await d.prepare();
-  g.combat.setBuild({ mutations: [], rig });
+  const build = Object.freeze({ mutations: Object.freeze([]), rig });
+  g.expedition = Object.freeze({ ...g.expedition, build });
+  g.combat.setBuild(build);
   g.skipStory(); d.invulnerable(true); g.enemies.reset();
   Object.assign(g.player, { x: 320, y: 440, angle: -Math.PI / 2, vx: 0, vy: 0 });
   d.setInput({ x: 0, y: 0, fire: false, angle: -Math.PI / 2, autoAim: false });
