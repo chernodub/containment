@@ -1,6 +1,7 @@
 import {expect,it,vi} from 'vitest';
 import * as T from 'three';
 import {PracticalPools} from '../src/render/lighting/PracticalPools';
+import {applyRoomMood} from '../src/render/lighting/applyRoomMood';
 import {addRoomPracticals} from '../src/render/lighting/RoomPracticals';
 import {disposeModel} from '../src/render/meshParts';
 import {optimizeLocalLights} from '../src/render/lighting/LocalLightShading';
@@ -29,6 +30,7 @@ it('retains the original material hook and rejects only zero-contribution direct
 it('keeps physical practical origins and retires per-room instance buffers and materials',()=>{
  const room=new T.Group();addRoomPracticals(room,24,18,'infested');
  const fixtures=room.userData.lightFixtures;expect(fixtures.length).toBe(8);expect(new Set(fixtures.map((f:any)=>f.color)).size).toBe(2);
+ applyRoomMood(room,'infested');const shader={fragmentShader:T.ShaderLib.standard.fragmentShader};const emitter=(room.children[1] as T.Mesh).material as T.MeshStandardMaterial;emitter.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);expect(shader.fragmentShader).toContain('#ifdef USE_COLOR');expect(emitter.emissiveIntensity).toBe(1.3);
  const meshes=room.children as T.InstancedMesh[],geometries=meshes.map(m=>vi.spyOn(m.geometry,'dispose')),materials=meshes.map(m=>vi.spyOn(m.material as T.Material,'dispose')),buffers=meshes.map(m=>vi.spyOn(m,'dispose'));
  disposeModel(room);for(const spy of [...geometries,...materials,...buffers])expect(spy).toHaveBeenCalledOnce();
 });

@@ -6,7 +6,7 @@ import {getEnvironmentMood,type EnvironmentMood} from './lighting/EnvironmentMoo
 import {LightPool} from './lighting/LightPool';
 import {MarineLamp} from './lighting/MarineLamp';
 
-type Fixture={x:number;y:number;z:number;color:number};
+type Fixture={x:number;y:number;z:number;color:number;nativeColor?:boolean};
 export type ReactorStaging=Readonly<{coreX:number;coreY:number;coreZ:number;coreColor:number;coreRadius:number}>;
 /** Stable room lights, motivated practicals and a bounded combat-light pool. */
 export class SceneLighting {
@@ -71,7 +71,7 @@ export class SceneLighting {
    light.userData.reactorCore=core;light.intensity=fixture&&light.visible?(core?46:this.mood.practical.intensity):0;
    if(fixture){
     light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);
-    if(!core){
+    if(!core&&!fixture.nativeColor){
      const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.practical.color;
      light.color.lerp(new T.Color(accent),this.mood.environment==='reactor'||this.mood.environment==='infested'?.92:.32);
     }
@@ -96,7 +96,7 @@ export class SceneLighting {
    light.userData.reactorCore=core;
    if(!fixture){light.intensity=0;continue;}
    light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);
-   if(!core){const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.environment==='security'&&i%2?0xf1f4ff:this.mood.practical.color;this.fixtureTint.setHex(accent);light.color.lerp(this.fixtureTint,this.mood.environment==='reactor'||this.mood.environment==='infested'||this.mood.environment==='security'?.92:.5);}
+   if(!core&&!fixture.nativeColor){const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.environment==='security'&&i%2?0xf1f4ff:this.mood.practical.color;this.fixtureTint.setHex(accent);light.color.lerp(this.fixtureTint,this.mood.environment==='reactor'||this.mood.environment==='infested'||this.mood.environment==='security'?.92:.5);}
    light.distance=core?15:this.mood.environment==='reactor'?7.5:this.mood.practical.distance;
    light.intensity=light.visible?(core?46:this.mood.practical.intensity):0;
   }

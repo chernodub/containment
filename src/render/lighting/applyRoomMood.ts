@@ -30,10 +30,10 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         originals.set(material, original);
       }
       // Authored deck materials are shared by their baked floor meshes only.
-      if (material.name === 'painted-steel-deck' || material.name === 'environment-floor') {
+      if (material.name === 'painted-steel-deck' || material.name === 'annulus-deck' || material.name === 'environment-floor') {
         material.roughness = environment === 'maintenance' ? mood.floorRoughness : Math.max(.82, mood.floorRoughness);
         material.metalness = environment === 'maintenance' ? Math.max(.38, original.metalness) : original.metalness;
-        if (material.name === 'painted-steel-deck') {
+        if (material.name === 'painted-steel-deck' || material.name === 'annulus-deck') {
           // Original near-black paint multiplied by colored light hid traversable floor below sRGB 30.
           material.color.copy(original.color).lerp(readableSteel, .85).multiply(tint);
         } else {
@@ -43,7 +43,7 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
       }
       if(environment==='reactor'&&material.name==='ship-cold-practical'){material.color.setHex(0xffe5b9);material.emissive.setHex(0xffd69a);material.emissiveIntensity=3.4;applyHotFixtureSurface(material);}
       // Keep the authored hue: red warning strips and green safe routes retain their meaning.
-      if (!(environment === 'reactor' && material.name === 'ship-cold-practical') && original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {
+      if (!(environment === 'reactor' && material.name === 'ship-cold-practical') && !material.userData.motivatedEmitter && original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {
         material.emissiveIntensity = Math.max(2.6, original.emissiveIntensity * 1.75);
       }
       optimizeLocalLights(material);
