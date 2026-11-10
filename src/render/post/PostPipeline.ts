@@ -221,7 +221,7 @@ export class PostPipeline {
     const scene = this.target(1, 1, true);
     const ao = this.target(1, 1);
     const aoDenoised = this.target(1, 1);
-    const gtao = new DepthGTAO(scene.depthTexture!, this.camera);
+    const gtao = new DepthGTAO(scene.depthTexture!, this.camera, ao.texture);
     const bloomA = this.target(1, 1);
     const bloomB = this.target(1, 1);
     const distortion = this.target(1, 1);

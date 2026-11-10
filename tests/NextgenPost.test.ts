@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  ACESFilmicToneMapping, Camera, Color, HalfFloatType, NoToneMapping, OrthographicCamera,
+  ACESFilmicToneMapping, AgXToneMapping, Camera, Color, DataUtils, HalfFloatType, NoToneMapping, OrthographicCamera,
   PerspectiveCamera, Scene, ShaderMaterial, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { GRAPHICS_PRESETS } from '../src/render/graphicsOptions';
@@ -59,7 +59,7 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.render(1 / 60);
     expect(resources(pipeline)).toBeUndefined();
     expect(frames).toHaveLength(1);
-    expect(frames[0]).toMatchObject({ scene, target: null, mapping: ACESFilmicToneMapping });
+    expect(frames[0]).toMatchObject({ scene, target: null, mapping: AgXToneMapping });
     expect(pipeline.distortion.activeCount).toBe(0);
     expect(gpu.compileAsync).toHaveBeenCalledTimes(1);
     expect(gpu.autoClear).toBe(false);
@@ -187,7 +187,11 @@ describe('HDR post lifecycle without a WebGL context', () => {
     expect(r.gtao.material.fragmentShader).toContain('cosHorizons');
     expect(r.gtao.denoiseMaterial.fragmentShader).toContain('denoiseSample');
     expect(r.gtao.material.defines).toMatchObject({ NORMAL_VECTOR_TYPE: 0, SAMPLES: 12, PERSPECTIVE_CAMERA: 0 });
-    expect(r.gtao.denoiseMaterial.defines).toMatchObject({ NORMAL_VECTOR_TYPE: 0, SAMPLES: 8 });
+    expect(r.gtao.denoiseMaterial.defines).toMatchObject({ NORMAL_VECTOR_TYPE: 1, SAMPLES: 8, SAMPLE_LUMINANCE: 'a.r' });
+    expect(r.gtao.material.defines.FRAGMENT_OUTPUT).toBe('vec4(ao, packNormalToRGB(viewNormal))');
+    expect(r.gtao.denoiseMaterial.uniforms.tNormal.value).toBe(r.ao.texture);
+    expect(r.gtao.denoiseMaterial.fragmentShader).toContain('texelFetch(tNormal, pixel, 0).gba');
+    expect(r.gtao.denoiseMaterial.fragmentShader).toContain('if (planeError > 0.015) return computeNormalFromDepth(uv)');
     expect(r.gtao.material.uniforms.tDepth.value).toBe(r.scene.depthTexture);
     expect(r.gtao.denoiseMaterial.uniforms.tDepth.value).toBe(r.scene.depthTexture);
     expect(r.gtao.denoiseMaterial.uniforms.tDiffuse.value).toBe(r.ao.texture);
@@ -280,4 +284,73 @@ describe('finite AO shader numerics', () => {
     expect(compositeFragment).toContain('float ao = finiteOcclusion(texture2D(tAO, uv).r)');
   });
 
+});
+
+describe('post shader work and packed normal precision', () => {
+  // Specialize only uniform-coherent branches, leaving per-pixel branches
+  // untouched. This checks the actual shader's texture work, not a second shader.
+  function specialize(source: string, enabled: boolean): string {
+    const branch = /if \((?:ao|bloom|distortion|lens|atmosphere)Enabled > 0\.5\)\s*/g;
+    let result = '';
+    let cursor = 0;
+    for (;;) {
+      branch.lastIndex = cursor;
+      const match = branch.exec(source);
+      if (!match) return result + source.slice(cursor);
+      result += source.slice(cursor, match.index);
+      const start = branch.lastIndex;
+      let end = start;
+      if (source[start] === '{') {
+        let depth = 1;
+        for (end = start + 1; depth > 0; end++) {
+          if (source[end] === '{') depth++;
+          if (source[end] === '}') depth--;
+        }
+      } else end = source.indexOf(';', start) + 1;
+      if (enabled) result += source.slice(start, end);
+      cursor = end;
+    }
+  }
+
+  it('leaves only one scene texture sample when optional composite effects are disabled', () => {
+    const disabled = specialize(compositeFragment, false);
+    expect(disabled.match(/texture2D\(tScene,/g)).toHaveLength(1);
+    for (const sampler of ['tDistortion', 'tAO', 'tBloom', 'tDepth']) {
+      expect(disabled).not.toContain(`texture2D(${sampler},`);
+    }
+    expect(disabled).not.toContain('float haze =');
+    expect(disabled).not.toContain('float grain =');
+    expect(disabled).toContain('AgXToneMapping(color)');
+    expect(disabled).toContain('float dither =');
+    const enabled = specialize(compositeFragment, true);
+    expect(enabled.match(/texture2D\(tScene,/g)).toHaveLength(7);
+    for (const sampler of ['tDistortion', 'tAO', 'tBloom', 'tDepth']) {
+      expect(enabled).toContain(`texture2D(${sampler},`);
+    }
+    expect(enabled).toContain('float haze =');
+    expect(enabled).toContain('float grain =');
+  });
+
+  it('retains AO and unit normal accuracy in the existing half-float RGBA target', () => {
+    const half = (value: number) => DataUtils.fromHalfFloat(DataUtils.toHalfFloat(value));
+    for (const normal of [[1, 0, 0], [0, 0, 1], [0.31, -0.52, 0.8]]) {
+      const length = Math.hypot(...normal);
+      const unit = normal.map(value => value / length);
+      const decoded = unit.map(value => half(value * 0.5 + 0.5) * 2 - 1);
+      const decodedLength = Math.hypot(...decoded);
+      const agreement = unit.reduce((sum, value, i) => sum + value * decoded[i] / decodedLength, 0);
+      expect(agreement).toBeGreaterThan(0.99999);
+    }
+    for (const ao of [0, 0.12, 0.55, 1]) expect(Math.abs(half(ao) - ao)).toBeLessThan(0.0005);
+    const { pipeline } = fixture();
+    pipeline.setOptions(GRAPHICS_PRESETS.high, 'high'); pipeline.render(0);
+    const r = resources(pipeline)!;
+    // Explicit texel fetch preserves the selected side of a silhouette even
+    // though AO itself retains linear filtering for denoise interpolation.
+    expect(r.gtao.denoiseMaterial.fragmentShader).toContain('ivec2 pixel = clamp(ivec2(uv * vec2(size))');
+    expect(r.gtao.denoiseMaterial.fragmentShader).not.toContain('return unpackRGBToNormal(textureLod(tNormal, uv, 0.).rgb)');
+    expect(r.gtao.denoiseMaterial.fragmentShader).toContain('float depthSimilarity =');
+    expect(r.gtao.denoiseMaterial.defines.FRAGMENT_OUTPUT).toBe('vec4(vec3(denoised.r), 1.0)');
+    pipeline.dispose();
+  });
 });

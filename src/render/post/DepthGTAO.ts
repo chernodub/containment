@@ -1,4 +1,4 @@
-import { Camera, DepthTexture, Matrix4, ShaderMaterial, UniformsUtils } from 'three';
+import { Camera, DepthTexture, Matrix4, ShaderMaterial, Texture, UniformsUtils } from 'three';
 import { generateMagicSquareNoise, GTAOShader } from 'three/addons/shaders/GTAOShader.js';
 import {
   generatePdSamplePointInitializer, PoissonDenoiseShader,
@@ -7,6 +7,23 @@ import { screenVertex } from './shaders';
 
 type ProjectionCamera = Camera & { near?: number; far?: number; isPerspectiveCamera?: boolean };
 
+// Sample one stored normal, never a bilinear blend across a silhouette. If the
+// selected half-resolution pixel belongs to a different depth surface, retain
+// the original full-resolution reconstruction for that edge sample.
+const packedNormalLookup = /* glsl */ `
+  ivec2 size = textureSize(tNormal, 0);
+  ivec2 pixel = clamp(ivec2(uv * vec2(size)), ivec2(0), size - ivec2(1));
+  vec3 normal = normalize(unpackRGBToNormal(texelFetch(tNormal, pixel, 0).gba));
+  vec2 packedUv = (vec2(pixel) + 0.5) / vec2(size);
+  vec3 packedPosition = getViewPosition(packedUv, getDepth(packedUv));
+  vec3 samplePosition = getViewPosition(uv, getDepth(uv));
+  float planeError = abs(dot(packedPosition - samplePosition, normal));
+  if (planeError > 0.015) return computeNormalFromDepth(uv);
+  return normal;`;
+const packedDenoiseFragment = PoissonDenoiseShader.fragmentShader.replace(
+  'return unpackRGBToNormal(textureLod(tNormal, uv, 0.).rgb);', packedNormalLookup,
+);
+
 /** Three's horizon-integrated GTAO and bilateral Poisson denoise, using existing depth. */
 export class DepthGTAO {
   readonly noise = generateMagicSquareNoise(5);
@@ -14,11 +31,14 @@ export class DepthGTAO {
   readonly material: ShaderMaterial;
   readonly denoiseMaterial: ShaderMaterial;
 
-  constructor(depth: DepthTexture, camera: Camera) {
+  constructor(depth: DepthTexture, camera: Camera, packedAO: Texture) {
     this.material = new ShaderMaterial({
       name: 'Containment depth GTAO', vertexShader: screenVertex,
       fragmentShader: GTAOShader.fragmentShader,
-      defines: { ...GTAOShader.defines, NORMAL_VECTOR_TYPE: 0, SAMPLES: 12 },
+      defines: {
+        ...GTAOShader.defines, NORMAL_VECTOR_TYPE: 0, SAMPLES: 12,
+        FRAGMENT_OUTPUT: 'vec4(ao, packNormalToRGB(viewNormal))',
+      },
       uniforms: UniformsUtils.clone(GTAOShader.uniforms),
       depthTest: false, depthWrite: false, toneMapped: false,
     });
@@ -34,16 +54,19 @@ export class DepthGTAO {
     u.scale.value = 1;
     this.denoiseMaterial = new ShaderMaterial({
       name: 'Containment GTAO Poisson denoise', vertexShader: screenVertex,
-      fragmentShader: PoissonDenoiseShader.fragmentShader,
+      fragmentShader: packedDenoiseFragment,
       defines: {
-        ...PoissonDenoiseShader.defines, NORMAL_VECTOR_TYPE: 0,
+        ...PoissonDenoiseShader.defines, NORMAL_VECTOR_TYPE: 1,
         SAMPLES: 8, SAMPLE_VECTORS: generatePdSamplePointInitializer(8, 2, 1),
+        SAMPLE_LUMINANCE: 'a.r', FRAGMENT_OUTPUT: 'vec4(vec3(denoised.r), 1.0)',
       },
       uniforms: UniformsUtils.clone(PoissonDenoiseShader.uniforms),
       depthTest: false, depthWrite: false, toneMapped: false,
     });
     const denoise = this.denoiseMaterial.uniforms;
     denoise.tDepth.value = depth;
+    denoise.tDiffuse.value = packedAO;
+    denoise.tNormal.value = packedAO;
     denoise.tNoise.value = this.denoiseNoise;
     denoise.radius.value = 4;
     denoise.lumaPhi.value = 0.4;
