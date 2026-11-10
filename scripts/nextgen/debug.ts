@@ -19,8 +19,8 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
  game.hurt=n=>{if(!immune)hurt(n);};
  const refresh=()=>{render(game,0,game.status==='menu');sync();};
  const ready=async()=>{beforePrepare();await renderer.prepare(game.node);refresh();};
- const api={game,renderer,events,
-  async startRun(value=seed){seed=value;controls={x:0,y:0,fire:false,angle:null,autoAim:true};game.newRun(seed);events.length=0;await ready();},
+ const api={game,renderer,events,prepare:ready,
+  async startRun(value=seed,options:{rigSelect?:boolean}={}){seed=value;controls={x:0,y:0,fire:false,angle:null,autoAim:true};game.newRun(seed,options);events.length=0;await ready();},
   async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route'}={}){
    const version=options.version??3,nodes=generateRun(seed,version).nodes,index=nodes.findIndex(n=>n.templateId===templateId);
    if(index<0)throw Error(`Room ${templateId} is not in run v${version}`);
