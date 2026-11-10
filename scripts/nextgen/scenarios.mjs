@@ -4,8 +4,27 @@ export const DEFAULT_ROOMS=['awakening-bay','passenger-vault','communal-atrium',
 // use only browser globals and the debug hook inside these small functions.
 export const SCENARIOS=[
  {id:'title',state:'menu',required:['.title-screen','#start'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();}},
- {id:'title-settings',state:'menu',required:['.settings','#quality'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();document.querySelector('#settings').click();}},
+ {id:'title-settings',state:'menu',required:['[data-ui-settings]','#quality'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();document.querySelector('#settings').click();}},
  {id:'starting-boon',state:'reward',phase:'starting-boon',required:['.choice-grid'],setup:async()=>{await window.__containmentDebug.startRun();}},
+ {id:'rig-select',state:'reward',uiState:'rig-select',required:['.rig-panel','[data-rig]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.uiFixture({phase:'rig-select'});}},
+ {id:'ability-ready',state:'playing',room:'armory',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.abilityFixture('breacher','ready');}},
+ {id:'ability-cryo',state:'playing',room:'awakening-bay',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('awakening-bay');d.abilityFixture('cryo','ready');}},
+ {id:'ability-pyro',state:'playing',room:'infested-workshop',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('infested-workshop');d.abilityFixture('pyro','active');}},
+ {id:'ability-arc',state:'playing',room:'relay-racks',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('relay-racks');d.abilityFixture('arc','ready');}},
+ {id:'ability-cooling',state:'playing',room:'armory',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.abilityFixture('cryo','cooling');}},
+ {id:'ability-casting',state:'playing',room:'armory',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.abilityFixture('breacher','casting');}},
+ {id:'ability-denied',state:'playing',room:'armory',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.abilityFixture('pyro','denied');}},
+ {id:'ability-overdrive',state:'playing',room:'armory',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.abilityFixture('arc','overdrive');}},
+ {id:'combat-kiting',state:'playing',room:'breached-loading-bay',burst:true,setup:async()=>{
+   const d=window.__containmentDebug,g=d.game;await d.gotoRoom('breached-loading-bay');d.invulnerable(true);g.enemies.reset();
+   const candidates=[];for(let y=100;y<g.geometry.bounds.height-100;y+=90)for(let x=100;x<g.geometry.bounds.width-100;x+=90)if(d.canStand(x,y,28))candidates.push({x,y});
+   const center=candidates.reduce((best,p)=>Math.hypot(p.x-g.geometry.bounds.width*.5,p.y-g.geometry.bounds.height*.5)<Math.hypot(best.x-g.geometry.bounds.width*.5,best.y-g.geometry.bounds.height*.5)?p:best,candidates[0]);
+   Object.assign(g.player,center);let count=0;const placed=[];
+   for(const p of candidates){const distance=Math.hypot(p.x-center.x,p.y-center.y);if(distance<220||distance>900||placed.some(e=>Math.hypot(e.x-p.x,e.y-p.y)<120))continue;const id=d.spawn(['crawler','spitter','brute','stalker'][count%4],p.x,p.y,count%5===0);if(id){placed.push({...p,id});count++;}if(count>=15)break;}
+   g.switchWeapon('rifle');d.setInput({x:.6,y:-.4,fire:true,angle:null,autoAim:true});d.abilityFixture('cryo','cooling',{radar:true,combatText:true});d.step(450);d.cameraZoom(1.75);
+   for(const [i,p] of placed.slice(0,5).entries())d.uiEvent({type:'hit',x:p.x,y:p.y,id:p.id,damage:24+i*7,lethal:i===4,source:'rifle'});
+   d.uiEvent({type:'boon',boon:'shatter',x:center.x+100,y:center.y});d.refresh();
+ }},
  {id:'combat-calm',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.invulnerable(true);d.refresh();}},
  {id:'combat-heavy',rooms:true,state:'playing',combat:true,burst:true,setup:async room=>{await window.__containmentDebug.gotoRoom(room);}},
  {id:'status-vfx',state:'playing',combat:true,status:true,burst:true,room:'communal-atrium',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('communal-atrium');d.grantBoons(['cryogenic','permafrost','absolute-zero','incendiary','caustic-rounds','arc-filament','conductive-shell','cryo-conductor']);}},
@@ -13,6 +32,13 @@ export const SCENARIOS=[
  {id:'reward',state:'reward',phase:'reward',required:['.choice-grid'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'reward'});}},
  {id:'route',state:'route',required:['.route-grid','[data-route]'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'route'});}},
  {id:'pause',state:'paused',required:['.pause-panel','#resume'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();}},
+ {id:'pause-loadout',state:'paused',required:['.owned-boons','.ability-preview'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.grantBoons(['cryogenic','permafrost','arc-filament']);d.abilityFixture('cryo','ready');d.game.pause();d.refresh();document.querySelector('[data-pause-tab=loadout]').click();}},
+ {id:'pause-settings',state:'paused',required:['[data-ui-settings]','#quality'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();document.querySelector('[data-pause-tab=settings]').click();document.querySelector('.settings-advanced')?.setAttribute('open','');}},
+ {id:'pause-controls',state:'paused',required:['.controls-reference'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();document.querySelector('[data-pause-tab=controls]').click();}},
+ {id:'destroy-confirm',state:'route',required:['#destroy-ship'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('manual-control-chamber',{phase:'route'});}},
+ {id:'results-fixture',state:'dead',required:['.result-stats'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('breached-loading-bay');d.game.hurt(100000);d.uiFixture({stats:{kills:284,damageDealt:14682,shotsFired:812,abilitiesUsed:36,elapsedSeconds:487}});}},
+ {id:'complete-fixture',state:'complete',required:['.result-panel'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('overload-floor');d.game.status='complete';d.uiFixture({stats:{kills:652,damageDealt:41082,elapsedSeconds:1227}});}},
+ {id:'critical-health',state:'playing',room:'awakening-bay',required:['#hud.low-health'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('awakening-bay');d.invulnerable(false);d.game.hurt(130);d.abilityFixture('breacher','cooling');d.refresh();}},
  {id:'dead',state:'dead',required:['.result-panel','#start'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('breached-loading-bay');d.invulnerable(false);d.game.hurt(100000);d.refresh();}},
  {id:'shop',state:'reward',phase:'reward',required:['.service-shop','#claim'],setup:async()=>{await window.__containmentDebug.gotoRoom('communal-atrium',{phase:'reward'});}},
 ];
@@ -54,5 +80,5 @@ export function inspectFrame(){
  // Read the just-rendered default framebuffer before the browser clears it.
  const xs=[];for(let y=0;y<18;y++)for(let x=0;x<32;x++){const p=new Uint8Array(4);gl.readPixels(Math.floor((x+.5)*gl.drawingBufferWidth/32),Math.floor((y+.5)*gl.drawingBufferHeight/18),1,1,gl.RGBA,gl.UNSIGNED_BYTE,p);xs.push(`${p[0]>>3},${p[1]>>3},${p[2]>>3}`);}
  const enemies=g.enemies.snapshot.enemies.filter(e=>e.health>0),visible=enemies.filter(e=>r.visible(e.x,e.y));
- return {recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden};
+ return {recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden};
 }

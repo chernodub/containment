@@ -57,10 +57,11 @@ try{
  await new Promise((ok,fail)=>{server.once('error',fail);server.listen(0,'127.0.0.1',ok);});const origin=`http://127.0.0.1:${server.address().port}`;
  browser=await launch();context=await browser.newContext({viewport,deviceScaleFactor:dpr});
  await context.addInitScript(value=>{let s=value;window.__captureSeed=n=>{s=n>>>0;};Math.random=()=>{s=(s+0x6d2b79f5)>>>0;let t=Math.imul(s^(s>>>15),1|s);t^=t+Math.imul(t^(t>>>7),61|t);return((t^(t>>>14))>>>0)/4294967296;};},seed);
- const fontStyles=new Map();
- await context.route('https://fonts.googleapis.com/**',async route=>{const url=route.request().url();if(fontStyles.has(url)){await route.fulfill(fontStyles.get(url));return;}let response;try{const fetched=await route.fetch({timeout:8000});if(!fetched.ok())throw Error(`Font HTTP ${fetched.status()}`);response={status:200,contentType:'text/css',body:await fetched.body()};}catch(error){manifest.fontFallbacks.push({url,reason:String(error)});response={status:200,contentType:'text/css',body:'/* Offline: use the game’s system font fallback. */'};}fontStyles.set(url,response);await route.fulfill(response);});
- const fontFiles=new Map();
- await context.route('https://fonts.gstatic.com/**',async route=>{const url=route.request().url();let response=fontFiles.get(url);if(!response){try{const fetched=await route.fetch({timeout:8000});if(!fetched.ok())throw Error(`Font HTTP ${fetched.status()}`);response={status:200,contentType:fetched.headers()['content-type']??'font/woff2',body:await fetched.body()};}catch(error){manifest.fontFallbacks.push({url,reason:String(error)});response={status:204,body:''};}fontFiles.set(url,response);}await route.fulfill(response);});
+ // Font dependencies must be local; a CDN request is a regression, not a fallback.
+ for(const host of ['fonts.googleapis.com','fonts.gstatic.com'])await context.route(`https://${host}/**`,async route=>{
+  manifest.errors.push({type:'font',message:`External font request: ${route.request().url()}`});
+  await route.abort('blockedbyclient');
+ });
  page=await context.newPage();page.setDefaultTimeout(120000);
  page.on('pageerror',error=>manifest.errors.push({type:'pageerror',message:error.message}));
  page.on('console',message=>{if(message.type()==='error')manifest.errors.push({type:'console',message:message.text()});});
@@ -80,12 +81,14 @@ try{
    await page.evaluate(seed=>window.__captureSeed(seed),seed);
    let staging;if(scenario.combat)staging=await page.evaluate(stageCombat,{status:!!scenario.status});
    await page.waitForFunction(()=>!window.__containmentDebug.renderer.roomLoading&&document.querySelector('#world').getAttribute('aria-busy')!=='true');
+   if(scenario.state==='playing')await page.mouse.move(Math.round(viewport.width*.64),Math.round(viewport.height*.48));
    const count=scenario.burst?burst:1;let projectiles=false,muzzle=false,explosion=false;const observed=new Set();
    for(let frame=0;frame<count;frame++){
     if(frame)await page.evaluate(()=>window.__containmentDebug.step(150));
     const evidence=await page.evaluate(inspectFrame);
     for(const selector of scenario.required??[])assert(await page.locator(selector).first().isVisible(),`${name}: missing ${selector}`);
     if(scenario.phase)assert.equal(evidence.phase,scenario.phase,`${name}: wrong run phase`);
+    if(scenario.uiState)assert.equal(evidence.uiState,scenario.uiState,`${name}: wrong fixture UI phase`);
     if(scenario.id==='combat-calm')assert.equal(evidence.enemies,0,`${name}: calm room contains enemies`);
     assert.equal(evidence.state,scenario.state,`${name}: wrong game state`);assert(evidence.canvas.colors>8&&!evidence.canvas.contextLost&&!evidence.canvas.error,`${name}: missing/invalid canvas pixels ${JSON.stringify(evidence.canvas)}`);
     if(scenario.room)assert.equal(evidence.templateId,scenario.room);

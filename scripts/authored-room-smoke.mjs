@@ -44,7 +44,7 @@ try{
     if(id==='overload-floor'){assert.match(await page.locator('.panel-intro').innerText(),/kill them and you/);await page.locator('#destroy-ship').click();}else await page.locator(`[data-route="${nodes[index].id}"]`).click();
    }
    await page.waitForFunction(name=>document.body.dataset.state==='playing'&&document.querySelector('#room-name')?.textContent===name,ROOM_TEMPLATES[id].name);
-   await page.locator('#pause').click();await page.waitForFunction(()=>document.body.dataset.state==='paused');await page.locator('#quality').selectOption('low');await page.locator('#resume').click();
+   await page.locator('#pause').click();await page.waitForFunction(()=>document.body.dataset.state==='paused');await page.locator('[data-pause-tab=settings]').click();await page.locator('#quality').selectOption('low');await page.locator('#resume').click();
    if(await page.locator('#skip-story').isVisible())await page.locator('#skip-story').click();
    const ammo=await page.locator('#magazine').textContent();
    {await page.keyboard.down('d');await page.keyboard.down('Space');await page.waitForFunction(before=>document.querySelector('#magazine').textContent!==before,ammo);await page.keyboard.up('Space');await page.keyboard.up('d');}

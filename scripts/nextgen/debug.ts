@@ -1,4 +1,7 @@
 // Imported only by main.ts when ?debug=1. Production gameplay never installs these overrides.
+import {setUiFixture, type UiFixture} from '../../src/ui/gameAdapter';
+import {abilityFixture, type AbilityFixtureState} from '../../src/ui/fixtures';
+import type {RigId} from '../../src/game/abilities/contract';
 import type {DepthGame,GameInput} from '../../src/DepthGame';
 import type {DepthRenderer} from '../../src/render/DepthRenderer';
 import {generateRun} from '../../src/game/roguelike/run';
@@ -10,7 +13,7 @@ import {ENEMIES} from '../../src/game/enemies/catalog';
 import type {StandardEnemyId} from '../../src/game/enemies/types';
 import type {MutationId} from '../../src/game/roguelike/types';
 
-export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void){
+export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{}){
  const update=game.update.bind(game),render=renderer.render.bind(renderer),hurt=game.hurt.bind(game),effect=renderer.effect.bind(renderer);
  const events:Array<{type:string;boon?:string;at:number}>=[];renderer.effect=e=>{events.push({type:e.type,boon:e.boon,at:game.elapsed});if(events.length>300)events.shift();effect(e);};
  let controls:GameInput={x:0,y:0,fire:false,angle:null,autoAim:true},immune=false,seed=Number(new URLSearchParams(location.search).get('seed')??1729);
@@ -20,11 +23,11 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
  const refresh=()=>{render(game,0,game.status==='menu');sync();};
  const ready=async()=>{beforePrepare();await renderer.prepare(game.node);refresh();};
  const api={game,renderer,events,
-  async startRun(value=seed){seed=value;controls={x:0,y:0,fire:false,angle:null,autoAim:true};game.newRun(seed);events.length=0;await ready();},
+  async startRun(value=seed){seed=value;controls={x:0,y:0,fire:false,angle:null,autoAim:true};setUiFixture(game,null);game.newRun(seed);events.length=0;await ready();},
   async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route'}={}){
    const version=options.version??3,nodes=generateRun(seed,version).nodes,index=nodes.findIndex(n=>n.templateId===templateId);
    if(index<0)throw Error(`Room ${templateId} is not in run v${version}`);
-   game.newRun(seed);events.length=0;controls={x:0,y:0,fire:false,angle:null,autoAim:true};
+   setUiFixture(game,null);game.newRun(seed);events.length=0;controls={x:0,y:0,fire:false,angle:null,autoAim:true};
    if(index===0)game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
    else{
     const target=nodes[index],path:typeof nodes[number][]=[];let cursor=target;while(cursor.depth>0){cursor=nodes.find(n=>n.depth===cursor.depth-1&&n.next.includes(cursor.id))!;if(!cursor)throw Error('No route to target');path.unshift(cursor);}
@@ -48,6 +51,12 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   setInput(value:Partial<GameInput>){controls={...controls,...value};},
   step(ms:number){if(!Number.isFinite(ms)||ms<0||ms>60000)throw Error('step expects 0..60000 ms');if(renderer.roomLoading)throw Error('Room is still loading');for(let remaining=ms;remaining>1e-7;){const dt=Math.min(1000/60,remaining);update(dt,controls);render(game,dt/1000,game.status==='menu');remaining-=dt;}refresh();},
   invulnerable(value:boolean){immune=value;},
+  /** A presentation-only close-camera stress case; never changes native gameplay defaults. */
+  cameraZoom(value:number){if(!Number.isFinite(value)||value<1||value>3)throw Error('cameraZoom expects 1..3');renderer.camera.zoom=value;renderer.camera.updateProjectionMatrix();refresh();},
+  /** Presentation-only fixtures: never install simulation APIs or alter hit results. */
+  uiFixture(value:UiFixture|null){setUiFixture(game,value);refresh();},
+  abilityFixture(rig:RigId,state:AbilityFixtureState,preferences?:UiFixture['preferences']){setUiFixture(game,{abilities:abilityFixture(rig,state),preferences});refresh();if(state==='denied')uiEvent({type:'ability',x:game.player.x,y:game.player.y,ability:{phase:'denied',slot:'tactical',rig,ability:abilityFixture(rig,state).slots!.tactical.id,element:rig==='breacher'?'kinetic':rig,denial:'cooldown'}});},
+  uiEvent(event:Record<string,unknown>){uiEvent(event);refresh();},
   refresh,
  };
  Object.defineProperty(window,'__containmentDebug',{value:api,configurable:true});

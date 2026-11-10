@@ -36,15 +36,15 @@ try {
     page.setDefaultTimeout(60000);
     const errors = [], assets = new Set();
     page.on('pageerror', error => errors.push(error.message));
-    page.on('console', message => {if(message.type()==='error') errors.push(message.text());});
+    page.on('console', message => {if(message.type()==='error') errors.push(`${message.text()} (${message.location().url||'browser'})`);});
     page.on('response', response => {
       if (!response.url().startsWith(origin)) return;
       if(response.status() >= 400) errors.push(`${response.status()} ${response.url()}`);
       if(response.url().includes('/assets/')) assets.add(new URL(response.url()).pathname);
     });
     page.on('requestfailed', request => {if(request.url().startsWith(origin)) errors.push(request.url()+': '+request.failure()?.errorText);});
-    // Fonts are optional external decoration; keep the smoke independent of Google availability.
-    await page.route('https://fonts.googleapis.com/**', route => route.fulfill({status:200,contentType:'text/css',body:''}));
+    // Self-hosted type must not issue requests to a font CDN.
+    page.on('request', request => {if (/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(request.url())) errors.push('External font request: '+request.url());});
     await page.goto(origin + prefix);
     await page.waitForFunction(() => document.body.dataset.state === 'menu');
     // New sessions use fixed High on desktop; only High and Low exist.
@@ -59,12 +59,13 @@ try {
       await page.locator('#settings').click(); await page.locator('#settings').click();
       assert.equal(await page.locator('#quality').inputValue(), selection);
     }
-    // Graphics is session-only; reloading returns to High, not implicit Auto.
+    // The explicit tier persists across reloads; fresh sessions still start on High.
     await page.locator('#quality').selectOption('low');
     await page.reload(); await page.waitForFunction(() => document.body.dataset.state === 'menu');
     await page.locator('#settings').click();
-    assert.equal(await page.locator('#quality').inputValue(), 'high');
-    assert.equal(await page.evaluate(() => window.__containmentPerformance.quality), 'high');
+    assert.equal(await page.locator('#quality').inputValue(), 'low');
+    assert.equal(await page.evaluate(() => window.__containmentPerformance.quality), 'low');
+    await page.locator('#quality').selectOption('high');
     await page.locator('#settings').click();
     console.log(`Graphics High/Low defaults and selection passed: desktop`);
     timing.start('menu-audio');
@@ -73,7 +74,7 @@ try {
       await page.locator('#start').click();
       await page.waitForFunction(() => document.body.dataset.state === 'reward' && Number(document.querySelector('#magazine').textContent)>0);
       assert.equal(await page.locator('[data-mutation]').count(),3);
-      assert.equal(await page.locator('.choice-panel h2').textContent(),'Choose a boon');
+      assert.match(await page.locator('.choice-panel h2').textContent(),/^Choose a boon\.?$/);
       assert.match(await page.locator('.choice-panel > .eyebrow').textContent(),/BEFORE COMBAT/);
       assert.equal(await page.locator('#reroll').isDisabled(),true);
       const resources = () => page.locator('#health, #armor, #magazine, #reserve, #credits, #desktop-stock').allTextContents();
@@ -94,8 +95,9 @@ try {
       await card.focus();await page.keyboard.press('Enter');
       await page.waitForFunction(() => document.body.dataset.state === 'playing');
       await page.locator('#pause').click();
-      assert.equal(await page.locator('.build-details summary').textContent(),'Boons · 1');
-      assert.equal(await page.locator('.build-details b').textContent(),name);
+      await page.locator('[data-pause-tab=loadout]').click();
+      assert.equal(await page.locator('.owned-boon').count(),1);
+      assert.equal(await page.locator('.owned-boon h4').textContent(),name);
       await page.locator('#resume').click();
       return name;
     };
@@ -117,6 +119,7 @@ try {
     await page.locator('#pause').click();
     await page.waitForFunction(() => document.body.dataset.state === 'paused');
     timing.start('paused-audio');
+    await page.locator('[data-pause-tab=settings]').click();
     await checkPausedSound(page, selectedVolume);
     timing.start('credits-and-assets');
     const credits = await page.locator('a', {hasText:'Credits'}).getAttribute('href');
