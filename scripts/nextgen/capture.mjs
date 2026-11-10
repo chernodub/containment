@@ -81,7 +81,7 @@ try{
    await page.evaluate(seed=>window.__captureSeed(seed),seed);
    let staging;if(scenario.combat)staging=await page.evaluate(stageCombat,{status:!!scenario.status});
    await page.waitForFunction(()=>!window.__containmentDebug.renderer.roomLoading&&document.querySelector('#world').getAttribute('aria-busy')!=='true');
-   if(scenario.state==='playing')await page.mouse.move(Math.round(viewport.width*.64),Math.round(viewport.height*.48));
+   if(scenario.state==='playing')await page.mouse.move(Math.round(viewport.width*.64),Math.round(viewport.height*.48));else await page.mouse.move(4,4);
    const count=scenario.burst?burst:1;let projectiles=false,muzzle=false,explosion=false;const observed=new Set();
    for(let frame=0;frame<count;frame++){
     if(frame)await page.evaluate(()=>window.__containmentDebug.step(150));
@@ -94,6 +94,7 @@ try{
     if(scenario.room)assert.equal(evidence.templateId,scenario.room);
     if(scenario.state==='playing'){assert(evidence.hud&&evidence.player.visible&&!evidence.overlay,`${name}: HUD/player missing or overlay blocks scene`);}
     if(scenario.combat){assert(evidence.visibleEnemies>=12,`${name}: only ${evidence.visibleEnemies} visible enemies`);projectiles||=evidence.playerBullets>0;muzzle||=evidence.muzzle>0;}
+    if(scenario.id==='combat-kiting'&&frame<4)assert(evidence.ui.damageNumbers.length>0,`${name}: staged damage numbers expired before capture`);
     if(scenario.id==='boss')assert(evidence.boss&&evidence.bossHud,'Queen/boss HUD missing');
     explosion||=evidence.recentEffects.some(e=>e.type==='explosion');
     for(const s of evidence.statuses)for(const key of ['burning','chilled','frozen','poisoned'])if(s[key])observed.add(key);

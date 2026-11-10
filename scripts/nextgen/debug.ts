@@ -13,14 +13,14 @@ import {ENEMIES} from '../../src/game/enemies/catalog';
 import type {StandardEnemyId} from '../../src/game/enemies/types';
 import type {MutationId} from '../../src/game/roguelike/types';
 
-export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{}){
+export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{},advanceUi:(dt:number)=>void=()=>{}){
  const update=game.update.bind(game),render=renderer.render.bind(renderer),hurt=game.hurt.bind(game),effect=renderer.effect.bind(renderer);
  const events:Array<{type:string;boon?:string;at:number}>=[];renderer.effect=e=>{events.push({type:e.type,boon:e.boon,at:game.elapsed});if(events.length>300)events.shift();effect(e);};
  let controls:GameInput={x:0,y:0,fire:false,angle:null,autoAim:true},immune=false,seed=Number(new URLSearchParams(location.search).get('seed')??1729);
  // RAF still owns resource recovery and diagnostics; only explicit steps advance time.
  game.update=()=>{};renderer.render=(g,_dt,menu)=>render(g,0,menu);
  game.hurt=n=>{if(!immune)hurt(n);};
- const refresh=()=>{render(game,0,game.status==='menu');sync();};
+ const refresh=()=>{render(game,0,game.status==='menu');sync();advanceUi(0);};
  const ready=async()=>{beforePrepare();await renderer.prepare(game.node);refresh();};
  const api={game,renderer,events,
   async startRun(value=seed){seed=value;controls={x:0,y:0,fire:false,angle:null,autoAim:true};setUiFixture(game,null);game.newRun(seed);events.length=0;await ready();},
@@ -49,7 +49,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   canStand(x:number,y:number,radius=16){return canOccupyExpedition(game.geometry,{x,y},radius);},
   clearShot(x:number,y:number,from:{x:number;y:number}=game.player){return hasClearExpeditionShot(game.geometry,from,{x,y});},
   setInput(value:Partial<GameInput>){controls={...controls,...value};},
-  step(ms:number){if(!Number.isFinite(ms)||ms<0||ms>60000)throw Error('step expects 0..60000 ms');if(renderer.roomLoading)throw Error('Room is still loading');for(let remaining=ms;remaining>1e-7;){const dt=Math.min(1000/60,remaining);update(dt,controls);render(game,dt/1000,game.status==='menu');remaining-=dt;}refresh();},
+  step(ms:number){if(!Number.isFinite(ms)||ms<0||ms>60000)throw Error('step expects 0..60000 ms');if(renderer.roomLoading)throw Error('Room is still loading');for(let remaining=ms;remaining>1e-7;){const dt=Math.min(1000/60,remaining);update(dt,controls);render(game,dt/1000,game.status==='menu');advanceUi(dt/1000);remaining-=dt;}refresh();},
   invulnerable(value:boolean){immune=value;},
   /** A presentation-only close-camera stress case; never changes native gameplay defaults. */
   cameraZoom(value:number){if(!Number.isFinite(value)||value<1||value>3)throw Error('cameraZoom expects 1..3');renderer.camera.zoom=value;renderer.camera.updateProjectionMatrix();refresh();},

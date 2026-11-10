@@ -24,7 +24,7 @@ let browser;
 let timing = createSmokePhaseTimer('setup');
 try {
   timing.start('browser-and-subpath');
-  browser = await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,args:['--no-sandbox','--enable-unsafe-swiftshader']});
+  browser = await chromium.launch({channel:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH?undefined:'chromium',executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,args:['--no-sandbox','--enable-unsafe-swiftshader',...(process.platform==='darwin'?['--use-angle=metal','--enable-gpu','--ignore-gpu-blocklist']:[])]});
   assert.equal((await fetch(origin + prefix + 'missing.js')).status, 404);
   timing.finish('passed');
   for (const viewport of viewports) {

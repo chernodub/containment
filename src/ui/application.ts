@@ -158,6 +158,11 @@ export async function bootstrap() {
     renderer.canvas.addEventListener('webglcontextrestored', () => { graphicsLost = false; settings.apply(); syncScreen(true); });
     window.addEventListener('resize', () => renderer.resize());
     let hudTime = 0, hudLastMs = 0, hudTotalMs = 0, hudSamples = 0;
+    let presentationFrozen = false;
+    const advancePresentation = (dt: number) => {
+        hud.tick?.(dt);
+        confirmation.update(dt, game.status === 'playing' && !graphicsLost && !renderer.roomLoading && !roomRecovering);
+    };
     const pacer = new FramePacer(), diagnostics = new FrameDiagnostics();
     document.addEventListener('visibilitychange', () => pacer.reset());
     Object.defineProperty(window, '__containmentPerformance', { get: () => ({
@@ -190,8 +195,6 @@ export async function bootstrap() {
             game.update(dt * 1000, input.read());
         if (game.status === 'playing' && !blocked && !recovering)
             audio.syncFrozen(game.enemies.snapshot.enemies.filter(e => e.health > 0 && game.boonStatuses(e.id).frozen).map(e => e.id), game.roomRevision);
-        hud.tick?.(blocked || recovering ? 0 : dt);
-        confirmation.update(blocked || recovering ? 0 : dt, game.status === 'playing' && !blocked && !recovering);
         const updated = performance.now();
         if (!blocked) {
             renderer.render(game, recovering ? 0 : dt, game.status === 'menu');
@@ -203,6 +206,8 @@ export async function bootstrap() {
         }
         else
             roomRecovering = true;
+        // Project pooled UI from the camera's current rendered pose, including follow-camera moves.
+        advancePresentation(blocked || recovering || presentationFrozen ? 0 : dt);
         el('room-loading').hidden = !blocked || game.status !== 'playing';
         el('world').setAttribute('aria-busy', String(blocked));
         const rendered = performance.now();
@@ -229,6 +234,7 @@ export async function bootstrap() {
     // Explicit opt-in only: fixed-step visual review of the real production game.
     if (new URLSearchParams(location.search).get('debug') === '1') {
         const { installDebug } = await import('../../scripts/nextgen/debug');
-        installDebug(game, renderer, () => { syncScreen(true); syncHud(); }, () => { lastRoom = game.roomRevision; roomRecovering = true; }, event => uiEffect(event as GameEffect));
+        presentationFrozen = true;
+        installDebug(game, renderer, () => { syncScreen(); syncHud(); }, () => { lastRoom = game.roomRevision; roomRecovering = true; }, event => uiEffect(event as GameEffect), advancePresentation);
     }
 }

@@ -50,7 +50,7 @@ Scenarios fail on the wrong state/room, page or console errors, absent WebGL pix
 
 ## Debug API
 
-`window.__containmentDebug` is installed **only** with `?debug=1`. The normal application does not import its module or change its update/input behavior. The hook freezes automatic simulation/VFX advancement, while the existing RAF still handles graphics recovery, HUD synchronization, rendering and diagnostics. Call `step()` to advance the fixture.
+`window.__containmentDebug` is installed **only** with `?debug=1`. The normal application does not import its module or change its update/input behavior. The hook freezes automatic simulation/VFX and pooled UI effect advancement, while the existing RAF still handles graphics recovery, HUD synchronization, rendering and diagnostics. Call `step()` to advance the fixture and its combat text, threat warnings, damage lag and reticle feedback on the same clock.
 
 - `game`, `renderer`: actual `DepthGame` and `DepthRenderer` instances.
 - `await startRun(seed = currentSeed)`: resets a run at its starting boon draft and waits for room assets/shaders. The initial seed is 1729 (or the capture URL’s `seed` query parameter).
