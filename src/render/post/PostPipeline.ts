@@ -7,16 +7,20 @@ import {
 import type { GraphicsTier } from '../FrameBudget';
 import { GRAPHICS_PRESETS, type GraphicsOptions } from '../graphicsOptions';
 import { DistortionField, distortionFragment } from './DistortionField';
+import { DepthGTAO } from './DepthGTAO';
 import {
   bloomBlurFragment, bloomExtractFragment, compositeFragment, occlusionFragment, screenVertex,
 } from './shaders';
 import { DEFAULT_POST_MOOD, type PostMood } from './types';
 
 export type { PostMood } from './types';
+export type AmbientOcclusionAlgorithm = 'contact' | 'gtao';
 
 type PostResources = {
   scene: WebGLRenderTarget;
   ao: WebGLRenderTarget;
+  aoDenoised: WebGLRenderTarget;
+  gtao: DepthGTAO;
   bloomA: WebGLRenderTarget;
   bloomB: WebGLRenderTarget;
   distortion: WebGLRenderTarget;
@@ -43,7 +47,9 @@ export class PostPipeline {
   private pixelRatio = 1;
   private time = 0;
   private disposed = false;
-  private agx = false;
+  private agx = true;
+  private occlusionAlgorithm: AmbientOcclusionAlgorithm = 'gtao';
+  private readonly savedClearColor = new Color();
 
   constructor(
     private readonly renderer: WebGLRenderer,
@@ -63,7 +69,15 @@ export class PostPipeline {
   }
 
   /** Swaps projection without rebuilding targets, including depth reconstruction. */
-  setCamera(camera: Camera): void { this.camera = camera; }
+  setCamera(camera: Camera): void {
+    this.camera = camera;
+    this.resources?.gtao.setCamera(camera);
+  }
+
+  /** GTAO is the default; contact is retained for matching-scene cost comparisons. */
+  setAmbientOcclusionAlgorithm(algorithm: AmbientOcclusionAlgorithm): void {
+    this.occlusionAlgorithm = algorithm;
+  }
 
   /** EnvironmentMoods can pass its complete mood here without conversion. */
   setMood(mood: PostMood): void {
@@ -71,7 +85,7 @@ export class PostPipeline {
     if (this.resources) this.applyMood(this.resources.composite);
   }
 
-  /** ACES is the default; this switch supports matching-scene AgX evaluation. */
+  /** AgX is the default; this switch supports matching-scene AgX evaluation. */
   setToneMapping(operator: 'aces' | 'agx'): void { this.agx = operator === 'agx'; }
 
   /** CSS size plus DPR; resolutionScale is applied exactly once to post targets. */
@@ -102,7 +116,8 @@ export class PostPipeline {
       // Compile the actual screen color-space variants before the offscreen draw.
       this.renderer.setRenderTarget(null);
       this.renderer.toneMapping = NoToneMapping;
-      for (const material of [resources.occlusion, resources.extract, resources.blur, resources.distort, resources.composite]) {
+      for (const material of [resources.occlusion, resources.gtao.material, resources.gtao.denoiseMaterial,
+        resources.extract, resources.blur, resources.distort, resources.composite]) {
         if (this.disposed || this.resources !== resources) return;
         resources.triangle.material = material;
         await this.renderer.compileAsync(resources.screenScene, resources.screenCamera);
@@ -129,6 +144,8 @@ export class PostPipeline {
     const originalMapping = renderer.toneMapping;
     const originalExposure = renderer.toneMappingExposure;
     const originalAutoClear = renderer.autoClear;
+    renderer.getClearColor(this.savedClearColor);
+    const originalClearAlpha = renderer.getClearAlpha();
     try {
       renderer.autoClear = true;
       if (this.tier === 'low') {
@@ -146,7 +163,18 @@ export class PostPipeline {
       renderer.render(this.scene, this.camera);
       r.occlusion.uniforms.projectionInverse.value.copy(this.camera.projectionMatrixInverse);
       r.occlusion.uniforms.projection.value.copy(this.camera.projectionMatrix);
-      if (this.options.ambientOcclusion || warm) this.draw(r.occlusion, r.ao);
+      if (this.options.ambientOcclusion || warm) {
+        // GTAO discards background pixels; white clear preserves unoccluded sky.
+        renderer.setClearColor(0xffffff, 1);
+        if (warm) this.draw(r.occlusion, r.ao);
+        if (this.occlusionAlgorithm === 'gtao' || warm) {
+          r.gtao.update(this.camera);
+          this.draw(r.gtao.material, r.ao);
+          r.gtao.denoiseMaterial.uniforms.tDiffuse.value = r.ao.texture;
+          this.draw(r.gtao.denoiseMaterial, r.aoDenoised);
+        } else this.draw(r.occlusion, r.ao);
+        renderer.setClearColor(this.savedClearColor, originalClearAlpha);
+      }
       if (this.options.bloom || warm) {
         this.draw(r.extract, r.bloomA);
         r.blur.uniforms.tInput.value = r.bloomA.texture;
@@ -161,6 +189,7 @@ export class PostPipeline {
       r.distort.uniforms.time.value = this.time;
       if (hasDistortion || warm) this.draw(r.distort, r.distortion);
       const u = r.composite.uniforms;
+      u.tAO.value = this.occlusionAlgorithm === 'gtao' ? r.aoDenoised.texture : r.ao.texture;
       u.projectionInverse.value.copy(this.camera.projectionMatrixInverse);
       u.cameraWorld.value.copy(this.camera.matrixWorld);
       u.time.value = this.time;
@@ -175,6 +204,7 @@ export class PostPipeline {
       renderer.toneMapping = originalMapping;
       renderer.toneMappingExposure = originalExposure;
       renderer.autoClear = originalAutoClear;
+      renderer.setClearColor(this.savedClearColor, originalClearAlpha);
       renderer.setRenderTarget(originalTarget);
     }
   }
@@ -190,6 +220,8 @@ export class PostPipeline {
     if (this.resources) return this.resources;
     const scene = this.target(1, 1, true);
     const ao = this.target(1, 1);
+    const aoDenoised = this.target(1, 1);
+    const gtao = new DepthGTAO(scene.depthTexture!, this.camera);
     const bloomA = this.target(1, 1);
     const bloomB = this.target(1, 1);
     const distortion = this.target(1, 1);
@@ -224,7 +256,7 @@ export class PostPipeline {
     const screenScene = new Scene();
     screenScene.add(triangle);
     this.resources = {
-      scene, ao, bloomA, bloomB, distortion, occlusion, extract, blur, distort, composite,
+      scene, ao, aoDenoised, gtao, bloomA, bloomB, distortion, occlusion, extract, blur, distort, composite,
       geometry, triangle, screenScene, screenCamera: new OrthographicCamera(-1, 1, 1, -1, 0, 1),
     };
     this.applyMood(composite);
@@ -240,7 +272,7 @@ export class PostPipeline {
     target.texture.name = depth ? 'Containment HDR scene' : 'Containment post';
     if (depth) {
       target.depthTexture = new DepthTexture(width, height, UnsignedIntType);
-      target.samples = Math.min(4, this.renderer.capabilities.maxSamples);
+      target.samples = Math.min(2, this.renderer.capabilities.maxSamples);
     }
     return target;
   }
@@ -260,6 +292,8 @@ export class PostPipeline {
     const height = Math.max(1, Math.round(this.height * this.pixelRatio * scale));
     r.scene.setSize(width, height);
     r.ao.setSize(Math.max(1, Math.ceil(width / 2)), Math.max(1, Math.ceil(height / 2)));
+    r.aoDenoised.setSize(r.ao.width, r.ao.height);
+    r.gtao.setSize(r.ao.width, r.ao.height);
     const quarterWidth = Math.max(1, Math.ceil(width / 4));
     const quarterHeight = Math.max(1, Math.ceil(height / 4));
     r.bloomA.setSize(quarterWidth, quarterHeight);
@@ -287,7 +321,8 @@ export class PostPipeline {
   private releaseResources(): void {
     const r = this.resources;
     if (!r) return;
-    for (const target of [r.scene, r.ao, r.bloomA, r.bloomB, r.distortion]) target.dispose();
+    for (const target of [r.scene, r.ao, r.aoDenoised, r.bloomA, r.bloomB, r.distortion]) target.dispose();
+    r.gtao.dispose();
     for (const material of [r.occlusion, r.extract, r.blur, r.distort, r.composite]) material.dispose();
     r.geometry.dispose();
     r.screenScene.clear();

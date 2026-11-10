@@ -1,15 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  ACESFilmicToneMapping, Camera, HalfFloatType, NoToneMapping, OrthographicCamera,
+  ACESFilmicToneMapping, Camera, Color, HalfFloatType, NoToneMapping, OrthographicCamera,
   PerspectiveCamera, Scene, ShaderMaterial, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { GRAPHICS_PRESETS } from '../src/render/graphicsOptions';
 import { DISTORTION_CAPACITY, DistortionField } from '../src/render/post/DistortionField';
 import { PostPipeline } from '../src/render/post/PostPipeline';
 import { DEFAULT_POST_MOOD } from '../src/render/post/types';
+import type { DepthGTAO } from '../src/render/post/DepthGTAO';
+import { compositeFragment, finiteOcclusionGLSL } from '../src/render/post/shaders';
 
 type Resources = {
   scene: WebGLRenderTarget; ao: WebGLRenderTarget;
+  aoDenoised: WebGLRenderTarget; gtao: DepthGTAO;
   bloomA: WebGLRenderTarget; bloomB: WebGLRenderTarget; distortion: WebGLRenderTarget;
   composite: ShaderMaterial; occlusion: ShaderMaterial;
   extract: ShaderMaterial; blur: ShaderMaterial; distort: ShaderMaterial;
@@ -22,10 +25,18 @@ function resources(pipeline: PostPipeline): Resources | undefined {
 
 function fixture() {
   let target: WebGLRenderTarget | null = null;
+  const clearColor = new Color(0x123456);
+  let clearAlpha = 0.7;
   const frames: { scene: object; target: WebGLRenderTarget | null; mapping: number; camera: Camera }[] = [];
   const gpu = {
     capabilities: { maxSamples: 4 }, toneMapping: ACESFilmicToneMapping,
     toneMappingExposure: 1.3, autoClear: false,
+    getClearColor: vi.fn((output: Color) => output.copy(clearColor)),
+    getClearAlpha: vi.fn(() => clearAlpha),
+    setClearColor: vi.fn((color: Color | number, alpha?: number) => {
+      clearColor.set(color);
+      if (alpha !== undefined) clearAlpha = alpha;
+    }),
     getRenderTarget: vi.fn(() => target),
     setRenderTarget: vi.fn((next: WebGLRenderTarget | null) => { target = next; }),
     compileAsync: vi.fn(async () => {}),
@@ -63,13 +74,13 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.render(1 / 60);
     const r = resources(pipeline)!;
     expect(r.scene.texture.type).toBe(HalfFloatType);
-    expect(r.scene.samples).toBe(4);
+    expect(r.scene.samples).toBe(2);
     expect(r.scene.depthTexture).toBeTruthy();
     expect([r.scene.width, r.scene.height]).toEqual([1200, 900]);
     expect([r.ao.width, r.ao.height]).toEqual([600, 450]);
     expect([r.bloomA.width, r.bloomA.height]).toEqual([300, 225]);
     expect([r.distortion.width, r.distortion.height]).toEqual([300, 225]);
-    expect(frames).toHaveLength(6); // scene + AO + extract + blur X/Y + composite
+    expect(frames).toHaveLength(7); // scene + GTAO/denoise + extract + blur X/Y + composite
     expect(frames.every(frame => frame.mapping === NoToneMapping)).toBe(true);
     pipeline.setSize(400, 300, 1);
     expect([r.scene.width, r.scene.height]).toEqual([300, 225]);
@@ -95,8 +106,9 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.setOptions(GRAPHICS_PRESETS.high, 'high');
     pipeline.render(0);
     const r = resources(pipeline)!;
-    const owned = [r.scene, r.ao, r.bloomA, r.bloomB, r.distortion,
-      r.occlusion, r.extract, r.blur, r.distort, r.composite, r.geometry];
+    const owned = [r.scene, r.ao, r.aoDenoised, r.bloomA, r.bloomB, r.distortion,
+      r.occlusion, r.gtao.material, r.gtao.denoiseMaterial, r.gtao.noise, r.gtao.denoiseNoise,
+      r.extract, r.blur, r.distort, r.composite, r.geometry];
     const disposals = owned.map(value => vi.spyOn(value, 'dispose'));
     pipeline.setOptions(GRAPHICS_PRESETS.low, 'low');
     pipeline.setOptions(GRAPHICS_PRESETS.low, 'low');
@@ -116,8 +128,8 @@ describe('HDR post lifecycle without a WebGL context', () => {
     const { pipeline, gpu, frames } = fixture();
     pipeline.setOptions(GRAPHICS_PRESETS.high, 'high');
     await pipeline.prepare();
-    expect(gpu.compileAsync).toHaveBeenCalledTimes(6);
-    expect(frames).toHaveLength(7);
+    expect(gpu.compileAsync).toHaveBeenCalledTimes(8);
+    expect(frames).toHaveLength(9);
     expect(frames.every(frame => frame.target !== null)).toBe(true);
     const warmTarget = frames.at(-1)!.target!;
     expect([warmTarget.width, warmTarget.height]).toEqual([1, 1]);
@@ -154,6 +166,61 @@ describe('HDR post lifecycle without a WebGL context', () => {
     expect(resources(pipeline)).toBe(r);
     expect(r.composite.uniforms.projectionInverse.value.equals(camera.projectionMatrixInverse)).toBe(true);
     expect(r.composite.uniforms.cameraWorld.value.equals(camera.matrixWorld)).toBe(true);
+    expect(r.gtao.material.defines.PERSPECTIVE_CAMERA).toBe(1);
+    expect(r.gtao.material.uniforms.cameraNear.value).toBe(0.1);
+    expect(r.gtao.material.uniforms.cameraFar.value).toBe(180);
+    expect(r.gtao.material.uniforms.cameraProjectionMatrix.value.equals(camera.projectionMatrix)).toBe(true);
+    expect(r.gtao.denoiseMaterial.uniforms.cameraProjectionMatrixInverse.value.equals(camera.projectionMatrixInverse)).toBe(true);
+    const ortho = new OrthographicCamera(-12, 12, 8, -8, 1, 120);
+    pipeline.setCamera(ortho);
+    expect(r.gtao.material.defines.PERSPECTIVE_CAMERA).toBe(0);
+    expect(r.gtao.material.uniforms.cameraNear.value).toBe(1);
+    pipeline.dispose();
+  });
+
+  it('uses real GTAO with shared depth, fixed noise, and a half-resolution denoise target by default', () => {
+    const { pipeline, frames, scene, gpu } = fixture();
+    pipeline.setOptions(GRAPHICS_PRESETS.high, 'high');
+    pipeline.setSize(1280, 720);
+    pipeline.render(0);
+    const r = resources(pipeline)!;
+    expect(r.gtao.material.fragmentShader).toContain('cosHorizons');
+    expect(r.gtao.denoiseMaterial.fragmentShader).toContain('denoiseSample');
+    expect(r.gtao.material.defines).toMatchObject({ NORMAL_VECTOR_TYPE: 0, SAMPLES: 12, PERSPECTIVE_CAMERA: 0 });
+    expect(r.gtao.denoiseMaterial.defines).toMatchObject({ NORMAL_VECTOR_TYPE: 0, SAMPLES: 8 });
+    expect(r.gtao.material.uniforms.tDepth.value).toBe(r.scene.depthTexture);
+    expect(r.gtao.denoiseMaterial.uniforms.tDepth.value).toBe(r.scene.depthTexture);
+    expect(r.gtao.denoiseMaterial.uniforms.tDiffuse.value).toBe(r.ao.texture);
+    expect(r.composite.uniforms.tAO.value).toBe(r.aoDenoised.texture);
+    expect([r.aoDenoised.width, r.aoDenoised.height]).toEqual([640, 360]);
+    expect(frames.filter(frame => frame.scene === scene)).toHaveLength(1);
+    const noise = r.gtao.noise;
+    pipeline.render(0.016);
+    expect(resources(pipeline)!.gtao.noise).toBe(noise);
+    const restored = new Color();
+    gpu.getClearColor(restored);
+    expect(restored.getHex()).toBe(0x123456);
+    expect(gpu.getClearAlpha()).toBe(0.7);
+    pipeline.dispose();
+  });
+
+  it('switches to contact AO without reallocating or drawing denoise, then back to GTAO', () => {
+    const { pipeline, frames } = fixture();
+    pipeline.setOptions(GRAPHICS_PRESETS.high, 'high');
+    pipeline.render(0);
+    const r = resources(pipeline)!;
+    frames.length = 0;
+    pipeline.setAmbientOcclusionAlgorithm('contact');
+    pipeline.render(0);
+    expect(resources(pipeline)).toBe(r);
+    expect(frames).toHaveLength(6);
+    expect(frames.some(frame => frame.target === r.aoDenoised)).toBe(false);
+    expect(r.composite.uniforms.tAO.value).toBe(r.ao.texture);
+    pipeline.setAmbientOcclusionAlgorithm('gtao');
+    frames.length = 0;
+    pipeline.render(0);
+    expect(frames).toHaveLength(7);
+    expect(r.composite.uniforms.tAO.value).toBe(r.aoDenoised.texture);
     pipeline.dispose();
   });
 
@@ -190,4 +257,27 @@ describe('pooled shockwave and heat distortion', () => {
     expect(field.activeCount).toBe(0);
     field.dispose();
   });
+});
+
+describe('finite AO shader numerics', () => {
+  // These small scalar GLSL guards have JS-compatible bodies. Execute those
+  // shipping bodies with GLSL clamp semantics instead of duplicating the logic.
+  function scalarGuard(source: string): (value: number) => number {
+    const body = source.slice(source.indexOf('{') + 1, source.lastIndexOf('}'));
+    const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
+    const evaluate = new Function('value', 'clamp', body) as (value: number, clamp: Function) => number;
+    return value => evaluate(value, clamp);
+  }
+
+  it('preserves valid AO and makes non-finite samples unoccluded before HDR multiplication', () => {
+    const guard = scalarGuard(finiteOcclusionGLSL);
+    for (const value of [0, 0.18, 0.55, 1]) expect(guard(value)).toBe(value);
+    for (const value of [NaN, Infinity, -Infinity, -0.01, 1.01]) {
+      expect(guard(value)).toBe(1);
+      expect(3.5 * guard(value)).toBe(3.5);
+    }
+    expect(compositeFragment).toContain(finiteOcclusionGLSL);
+    expect(compositeFragment).toContain('float ao = finiteOcclusion(texture2D(tAO, uv).r)');
+  });
+
 });

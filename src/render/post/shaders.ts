@@ -14,6 +14,13 @@ vec3 viewPosition(vec2 uv, float depth) {
   return p.xyz / p.w;
 }`;
 
+/** Invalid AO must leave scene lighting intact rather than contaminate HDR color. */
+export const finiteOcclusionGLSL = /* glsl */ `
+float finiteOcclusion(float value) {
+  if (value >= 0.0 && value <= 1.0) return value;
+  return 1.0;
+}`;
+
 /** Depth-derived contact AO: no normals prepass or additional scene traversal. */
 export const occlusionFragment = /* glsl */ `
 varying vec2 vUv;
@@ -95,6 +102,7 @@ uniform vec3 fogColor;
 uniform float fogDensity;
 uniform float fogHeight;
 ${reconstruct}
+${finiteOcclusionGLSL}
 float noise(vec2 p) {
   return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
 }
@@ -110,7 +118,7 @@ void main() {
     + texture2D(tScene, uv + vec2(0.0, invSize.y)).rgb
     + texture2D(tScene, uv - vec2(0.0, invSize.y)).rgb) * 0.25;
   color = max(color + clamp(color - average, -0.15, 0.15) * 0.12, 0.0);
-  float ao = texture2D(tAO, uv).r;
+  float ao = finiteOcclusion(texture2D(tAO, uv).r);
   color *= mix(1.0, ao, aoEnabled * 0.8);
   color += texture2D(tBloom, uv).rgb * bloomEnabled * 0.13;
   float depth = texture2D(tDepth, uv).x;
@@ -121,14 +129,15 @@ void main() {
     // not absolute distance from the eye, which would blanket the whole room.
     float altitude = exp(-max(world.y, 0.0) / max(fogHeight, 0.1));
     float path = min(length(view.xy) + max(fogHeight - world.y, 0.0) * 2.0, 24.0);
-    float haze = min(0.17, 1.0 - exp(-fogDensity * path * altitude));
-    color = mix(color, fogColor, haze * atmosphereEnabled);
+    float haze = min(0.075, 1.0 - exp(-fogDensity * path * altitude * 0.55));
+    color = mix(color, fogColor * 0.36, haze * atmosphereEnabled);
   }
   color = max((color + lift) * gain, 0.0);
   color = useAgX > 0.5 ? AgXToneMapping(color) : ACESFilmicToneMapping(color);
   float luminance = dot(color, vec3(0.2126, 0.7152, 0.0722));
   color = mix(vec3(luminance), color, saturation);
-  color = (color - 0.18) * contrast + 0.18;
+  // A toe-preserving contrast curve retains information in industrial shadows.
+  color = pow(max(color, vec3(0.0)), vec3(contrast));
   color += (shadowTint - 0.5) * (1.0 - smoothstep(0.0, 0.35, luminance)) * 0.018;
   color += (highlightTint - 0.5) * smoothstep(0.45, 1.0, luminance) * 0.012;
   float vignette = smoothstep(0.23, 0.76, length((vUv - 0.5) * vec2(1.0, 0.85)));

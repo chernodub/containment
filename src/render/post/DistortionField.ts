@@ -102,7 +102,8 @@ void main() {
     if (wave.z <= 0.0 || wave.w <= 0.0 || shape.w < 0.5) continue;
     vec2 delta = (vUv - wave.xy) / wave.zw;
     float distance = length(delta);
-    float ring = exp(-pow((distance - 1.0) * 11.0, 2.0));
+    float band = (distance - 1.0) * 11.0;
+    float ring = exp(-band * band);
     vec2 direction = delta / max(distance, 0.01);
     vec2 heat = vec2(sin(delta.y * 13.0 + time * 6.0), cos(delta.x * 11.0 - time * 4.0));
     float envelope = 1.0 - smoothstep(0.3, 1.0, distance);
