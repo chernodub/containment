@@ -39,6 +39,13 @@ describe('desktop Combat Rig input', () => {
     expect(f.input.read().aimPoint).toEqual({ x: f.game.player.x + 40, y: f.game.player.y + 100 });
     expect(f.game.player.angle).toBeCloseTo(Math.atan2(100, 40));
   });
+  it('keeps cursor placement available while Space continues to aim-assist weapon fire', () => {
+    const f=fixture(),use=vi.spyOn(f.game,'useAbility').mockReturnValue(true),point=vi.spyOn(f.game,'setAimPoint');
+    f.canvas.dispatchEvent(Object.assign(new Event('pointermove'),{pointerType:'mouse',clientX:300,clientY:200}));
+    f.key(' ');const expected={x:f.game.player.x+40,y:f.game.player.y+100};
+    expect(f.input.read()).toMatchObject({angle:null,autoAim:true,fire:true,aimPoint:expected});
+    f.key('f');expect(use).toHaveBeenCalledWith('power');expect(point).toHaveBeenLastCalledWith(expected);
+  });
   it('ignores actions while typing, loading or outside play, and blur clears held directions and cursor aim', () => {
     const f = fixture(), use = vi.spyOn(f.game, 'useAbility');
     for (const k of ['Shift', 'q', 'f', 'v']) f.key(k, 'keydown', false, true);

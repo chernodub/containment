@@ -17,7 +17,7 @@ game.damage(id:number, amount:number, impulse?:{x:number;y:number},
   {applied:boolean;died:boolean;absorbedByArmor:number;damage:number};
 ```
 
-`newRun(seed)` retains starting-boon + default Breacher. Opt-in rig selection keeps game status reward until choosing a rig and the starting boon. Seed omission uses a deterministic per-instance LCG sequence. `GameInput` adds optional `aimPoint?: {x:number;y:number}|null`; input feeds world cursor position and movement intent on the same keyboard edge. Shift/Q/F/V are edge-triggered, ignored outside gameplay/loading/typing, and reset on blur. Existing controls remain.
+`newRun(seed)` retains starting-boon + default Breacher. Opt-in rig selection keeps game status reward until choosing a rig and the starting boon. Seed omission uses a deterministic per-instance LCG sequence. `GameInput` adds optional `aimPoint?: {x:number;y:number}|null`; input feeds world cursor position and movement intent on the same keyboard edge. Shift/Q/F/V are edge-triggered, ignored outside gameplay/loading/typing, and reset on blur. Space retains weapon aim assist while the cursor point remains available for placed powers. Existing controls remain.
 
 `GameEffect.type` adds `ability`. Optional `ability?:AbilityEvent`, `damage?:number`, `lethal?:boolean`, `source?:'weapon'|'ability'|'status'|'boon'` carry confirmed receipts. Damage includes actual armor + health removed, clamped against overkill. Status/delayed-boon receipts coalesce by target/source per simulation update (at most128 entries). Projectile pellet/piercing hits share a shot receipt for accuracy statistics.
 
