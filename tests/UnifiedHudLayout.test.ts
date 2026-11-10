@@ -1,3 +1,4 @@
+import {uiSource} from './uiSource';
 import {readFileSync} from 'node:fs';
 import {beforeAll,afterAll,expect,it} from 'vitest';
 import {chromium,type Browser,type Page} from 'playwright';
@@ -7,14 +8,14 @@ import ts from 'typescript';
 // Real desktop DOM only. No WebGL renderer, encounter or frame-time claim.
 // The original 180-case RED audit remains /workspace/unified-hud-audit.{json,log}.
 const css=readFileSync(new URL('../src/style.css',import.meta.url),'utf8').replace(/@import[^;]+;/g,'');
-const main=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
+const main=uiSource;
 const markup=main.slice(main.indexOf('<div id="hud"'),main.indexOf('<div id="room-loading"'))
  .replace("${icon('pause')}",'Ⅱ')
  .replace(/\$\{\(\['pistol'[\s\S]*?join\(''\)\}/,['pistol','rifle','shotgun','plasma','rocket'].map((id,i)=>`<button data-weapon="${id}" aria-label="Equip ${id}"><small>${i+1}</small><span>${id}</span></button>`).join(''));
 // Exercise actual startup listeners/capture registration, with execution counters
 // standing in for game actions. Do not silently install a test-only capture hook.
 const registrationStart=main.indexOf("captureWeaponPointer(el('pause')");
-const registration=main.slice(registrationStart>=0?registrationStart:main.indexOf("el('pause').addEventListener"),main.indexOf('const routeCopy='));
+const registration=main.slice(registrationStart>=0?registrationStart:main.indexOf("el('pause').addEventListener"),main.indexOf('// END HUD INPUT'));
 const listeners=ts.transpileModule(`
 const el=(id:string)=>document.getElementById(id)!;
 const captureWeaponPointer=(window as any).__weapon.captureWeaponPointer;

@@ -1,3 +1,4 @@
+import {uiSource} from './uiSource';
 import {readFileSync} from 'node:fs';
 import {beforeAll,afterAll,expect,it} from 'vitest';
 import {chromium,type Browser} from 'playwright';
@@ -7,7 +8,7 @@ import {DepthRenderer} from '../src/render/DepthRenderer';
 import {weaponHudSide,type ScreenBox} from '../src/WeaponHud';
 
 const css=readFileSync(new URL('../src/style.css',import.meta.url),'utf8').replace(/@import[^;]+;/g,'');
-const main=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
+const main=uiSource;
 const markup=main.slice(main.indexOf('<div class="weapon-hud"'),main.indexOf('<div id="weapon-picker"'));
 const script=ts.transpileModule(readFileSync(new URL('../src/WeaponHud.ts',import.meta.url),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText.replace(/^export /gm,'')+'\nwindow.__placeWeaponHud=positionWeaponHud; window.__captureWeaponPointer=captureWeaponPointer;';
 const intersects=(a:ScreenBox,b:ScreenBox)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;

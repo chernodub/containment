@@ -1,3 +1,4 @@
+import {uiSource} from './uiSource';
 import {readFileSync} from 'node:fs';
 import {afterAll, beforeAll, expect, test} from 'vitest';
 import {chromium, type Browser, type Page} from 'playwright';
@@ -5,7 +6,7 @@ import {positionStatusHud,positionVitalsHud} from '../src/StatusHud';
 
 // CPU-only DOM regression. This does not render the game or prove actor visibility.
 const css=readFileSync(new URL('../src/style.css',import.meta.url),'utf8').replace(/@import[^;]+;/g,'');
-const main=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
+const main=uiSource;
 const markup=main.slice(main.indexOf('<div id="hud"'),main.indexOf('<div id="weapon-picker"')).replace("${icon('pause')}",'Ⅱ')+'</div>';
 const copy={
   'story-status':'Passengers alive · AI promises survival',

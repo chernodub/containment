@@ -1,3 +1,4 @@
+import {uiSource} from './uiSource';
 import {readFileSync} from 'node:fs';
 import {describe,it,expect} from 'vitest';
 import {DepthGame} from '../src/DepthGame';
@@ -75,7 +76,7 @@ describe('checkpoint failure feedback',()=>{
   expect(game.status).toBe('reward');expect(game.checkpointNote).toContain('Saving is unavailable');
  });
  it('renders warnings on every noncombat screen and invalidates the cached screen on persistence changes',()=>{
-  const main=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
+  const main=uiSource;
   expect(main).toContain('${game.checkpointStatus}');expect(main).toContain('${game.checkpointNote}');
   expect(main).toContain("if(game.checkpointWarning&&status!=='paused')");
   expect(main).not.toContain('Progress saves between rooms. Leaving a fight returns to the last cleared room.');

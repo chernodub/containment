@@ -1,3 +1,4 @@
+import {uiSource} from './uiSource';
 import {it,expect,vi} from 'vitest';
 import {readFileSync} from 'node:fs';
 import ts from 'typescript';
@@ -10,7 +11,7 @@ function harness(){
  const renderer={roomLoading:true,loadRoom:vi.fn(),render:vi.fn(),observeFrame:vi.fn(),playerScreenBounds:()=>({left:0,top:0,right:0,bottom:0})};
  let held=true;const input={read:()=>({x:held?1:0,y:0,fire:held,angle:0,autoAim:false}),reset:vi.fn(()=>{held=false;})};
  const node={hidden:true,setAttribute:vi.fn()},audio={syncCombat:vi.fn(),setMusicIntensity:vi.fn(),syncFrozen:vi.fn()};
- const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
+ const source=uiSource;
  const body=source.slice(source.indexOf('function frame(now:number)'),source.indexOf('lastRoom=game.roomRevision;syncScreen(true)'));
  const factory=new Function('game','renderer','input','el','audio',`let lastRoom=-1,lastStatus='',graphicsLost=false,roomRecovering=true,hudTime=0;const positionHud=()=>{},requestAnimationFrame=()=>{},document={hidden:false},pacer={sample:()=>.05,reset:()=>{}},confirmation={update:()=>{}},performance={now:()=>0},syncScreen=()=>{},hud=()=>{},diagnostics={record:()=>{}};${ts.transpile(body)};return frame;`);
  return {game,renderer,input,node,audio,frame:factory(game,renderer,input,()=>node,audio)};

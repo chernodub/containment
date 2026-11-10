@@ -1,3 +1,4 @@
+import {uiSource} from './uiSource';
 import {expeditionRewardOffers} from '../src/game/roguelike/expedition';
 import {readFileSync} from 'node:fs';
 import {describe,it,expect} from 'vitest';
@@ -5,7 +6,7 @@ import * as story from '../src/game/roguelike/storyRooms';
 import {DepthGame} from '../src/DepthGame';
 
 const css=readFileSync(new URL('../src/style.css',import.meta.url),'utf8');
-const main=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
+const main=uiSource;
 describe('bright cryo floor HUD readability',()=>{
  it('backs each floating readout locally, never the full playfield',()=>{
   const rules=[...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
