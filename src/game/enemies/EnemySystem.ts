@@ -369,6 +369,7 @@ export class EnemySystem {
     this.#rebuildSpatialHash();
 
     for (const enemy of this.#enemies.values()) {
+      if(enemy.speed===0)continue; // Shared freeze/shock suspends hostile wind-ups as well as movement.
       enemy.contactCooldownRemainingMs = Math.max(
         0,
         enemy.contactCooldownRemainingMs - timerDelta,
@@ -390,12 +391,14 @@ export class EnemySystem {
     }
 
     for (const enemy of this.#enemies.values()) {
+      if(enemy.speed===0)continue;
       if (enemy.decisionCooldownRemainingMs === 0) {
         this.#decide(enemy, player);
       }
     }
 
     for (const enemy of this.#enemies.values()) {
+      if(enemy.speed===0)continue;
       this.#integrate(enemy, movementDelta);
       this.#collectAttacks(enemy, player, events);
     }
