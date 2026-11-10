@@ -99,3 +99,8 @@ function frame(now:number){
  diagnostics.record(elapsed*1000,updated-started,rendered-updated);
 }
 lastRoom=game.roomRevision;syncScreen(true);requestAnimationFrame(frame);
+// Explicit opt-in only: fixed-step visual review of the real production game.
+if(new URLSearchParams(location.search).get('debug')==='1'){
+ const {installDebug}=await import('../scripts/nextgen/debug');
+ installDebug(game,renderer,()=>{syncScreen(true);hud();},()=>{lastRoom=game.roomRevision;roomRecovering=true;});
+}
