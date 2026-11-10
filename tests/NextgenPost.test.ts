@@ -66,6 +66,13 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.dispose();
   });
 
+  it('retires context-owned attachments and recreates the same High pipeline after restore', () => {
+    const {pipeline}=fixture();pipeline.setOptions(GRAPHICS_PRESETS.high,'high');pipeline.render(0);
+    const old=resources(pipeline)!,dispose=vi.spyOn(old.scene,'dispose');pipeline.distortion.shockwave(0,0);
+    pipeline.invalidate();expect(resources(pipeline)).toBeUndefined();expect(dispose).toHaveBeenCalledOnce();expect(pipeline.distortion.activeCount).toBe(0);
+    pipeline.render(0);expect(resources(pipeline)!.scene).not.toBe(old.scene);expect(resources(pipeline)!.scene.texture.type).toBe(HalfFloatType);pipeline.dispose();
+  });
+
   it('allocates half-float MSAA+depth lazily and applies DPR/render scale once', () => {
     const { pipeline, frames } = fixture();
     pipeline.setOptions({ ...GRAPHICS_PRESETS.high, resolutionScale: 0.75 }, 'high');

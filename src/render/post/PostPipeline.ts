@@ -130,6 +130,9 @@ export class PostPipeline {
     }
   }
 
+  /** Recreate offscreen attachments after a WebGL context replacement. */
+  invalidate(): void { this.releaseResources(); this.distortion.clear(); }
+
   /** Releases all GPU resources; safe to repeat during context recovery. */
   dispose(): void {
     if (this.disposed) return;
