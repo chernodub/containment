@@ -254,6 +254,38 @@ describe('desktop simulation collision and hostile time isolation', () => {
     expect(canOccupyExpedition(game.geometry, game.player, game.player.radius)).toBe(true);
   });
 
+  it('lets real pursuing enemies attack a blocking wall and resume navigation after it breaks', () => {
+    const {game} = arena('breacher');
+    const enemy=spawn(game,'brute',620,440);
+    expect(game.useAbility('power')).toBe(true);
+    let assaulted=false;
+    for(let i=0;i<120;i++){
+      const before=game.enemies.getSnapshot(enemy.id)!;
+      game.update(50);
+      const wall=game.abilities.snapshot.deployables[0],after=game.enemies.getSnapshot(enemy.id)!;
+      if(wall){assaulted ||= wall.health<wall.maxHealth;expect(game.abilities.blocksMovement(before,after,after.radius)).toBe(false);}
+    }
+    expect(assaulted).toBe(true);
+    expect(game.abilities.snapshot.deployables).toHaveLength(0);
+    expect(game.enemies.getSnapshot(enemy.id)!.x).toBeLessThan(470);
+    expect(game.status).toBe('playing');
+  });
+
+  it('intercepts real hostile projectiles while letting the marine’s rounds cross Bulwark', () => {
+    const {game}=arena('breacher');
+    expect(game.useAbility('power')).toBe(true);
+    const hostile=projectile('hazard',490,440);hostile.request={...hostile.request,angle:Math.PI};
+    const health=game.combat.snapshot.health,armor=game.combat.snapshot.armor;
+    game.bullets.push(hostile);game.update(50);
+    expect(game.bullets).not.toContain(hostile);
+    expect(game.abilities.snapshot.deployables[0].health).toBe(235);
+    expect(game.combat.snapshot).toMatchObject({health,armor});
+    const enemy=spawn(game,'brute',560,440);
+    game.switchWeapon('pistol');game.update(50,{...idle,fire:true});advance(game,250);
+    const after=game.enemies.getSnapshot(enemy.id)!;expect(after.health+after.armor).toBeLessThan(enemy.health+enemy.armor);
+    expect(game.stats.damageDealt.weapon).toBeGreaterThan(0);
+  });
+
   it('integrates the full six-second Overclock window and a partial final step exactly', () => {
     const {game} = arena('arc');
     game.abilities.addCharge(6000); game.useAbility('overdrive');

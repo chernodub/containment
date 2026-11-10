@@ -1,10 +1,10 @@
-import {ABILITY_SCENARIOS} from './ability-scenarios.mjs';
+import {ABILITY_SCENARIOS,DESKTOP_ABILITY_SCENARIO} from './ability-scenarios.mjs';
 export const DEFAULT_ROOMS=['awakening-bay','passenger-vault','communal-atrium','armory','breached-loading-bay','relay-racks','safety-interlock-station','infested-workshop','containment-annulus','overload-floor'];
 
 // Declarative entries are expanded by capture.mjs. setup runs in the real page;
 // use only browser globals and the debug hook inside these small functions.
 export const SCENARIOS=[
- ...ABILITY_SCENARIOS,
+ ...ABILITY_SCENARIOS,DESKTOP_ABILITY_SCENARIO,
  {id:'title',state:'menu',required:['.title-screen','#start'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();}},
  {id:'title-settings',state:'menu',required:['.settings','#quality'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();document.querySelector('#settings').click();}},
  {id:'starting-boon',state:'reward',phase:'starting-boon',required:['.choice-grid'],setup:async()=>{await window.__containmentDebug.startRun();}},

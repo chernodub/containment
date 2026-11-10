@@ -124,7 +124,7 @@ isValidCheckpointExtensions(value:unknown):boolean;
 
 ## Capture API additions
 
-Debug-only `startRun(seed?:number,options?:{rigSelect?:boolean}):Promise<void>` and `prepare():Promise<void>` synchronize room revision before preparing assets. All16 `ability:<id>` scenarios use public game actions; each captured frame includes abilities/stats. Declarative scenario `setupArgument` supplies serializable setup data. Capture waits two compositor frames after refresh without advancing frozen simulation. `node scripts/nextgen/ability-driver.mjs --label=A1-abilities` checks all16 production fixtures.
+Debug-only `startRun(seed?:number,options?:{rigSelect?:boolean}):Promise<void>` and `prepare():Promise<void>` synchronize room revision before preparing assets. All16 `ability:<id>` scenarios use public game actions; each captured frame includes abilities/stats. Declarative scenario `setupArgument` supplies serializable setup data. Capture waits two compositor frames after refresh without advancing frozen simulation. `node scripts/nextgen/ability-driver.mjs --label=A1-abilities` checks all16 production fixtures plus actual Shift/Q/F/V keyboard input through the production InputController.
 
 ## Integration request: immediate production HUD refresh
 

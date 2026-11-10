@@ -75,6 +75,7 @@ try{
    // Reload isolates renderer animation time, effect pools, caches, and random state.
    if(scenarioIndex++){await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);}
    await page.evaluate(seed=>{window.__captureSeed(seed);},seed);await page.evaluate(scenario.setup,scenario.setupArgument??scenario.room);
+   if(scenario.nativeKeys){await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));for(const [key,ms]of scenario.nativeKeys){await page.keyboard.press(key);await page.evaluate(ms=>window.__containmentDebug.step(ms),ms);}}
    // Asset warm-up may consume random values asynchronously. Restart the visual
    // stream only after room preparation, before synchronous combat/VFX staging.
    await page.evaluate(seed=>window.__captureSeed(seed),seed);
@@ -86,6 +87,7 @@ try{
     const evidence=await page.evaluate(inspectFrame);
     for(const selector of scenario.required??[])assert(await page.locator(selector).first().isVisible(),`${name}: missing ${selector}`);
     if(scenario.phase)assert.equal(evidence.phase,scenario.phase,`${name}: wrong run phase`);
+    if(scenario.nativeInput){assert.equal(evidence.abilities.rig,'breacher');for(const slot of ['dash','tactical','power','overdrive'])assert.equal(evidence.stats.abilityUses[slot],1,`Native ${slot} input failed`);assert.equal(evidence.stats.overdrivesUsed,1);}
     if(scenario.ability){assert.equal(evidence.abilities.rig,scenario.ability.rig);assert.equal(evidence.abilities.slots[scenario.ability.slot].id,scenario.ability.id);assert.equal(evidence.stats.abilityUses[scenario.ability.slot],1);assert(evidence.abilities.zones.length<=24&&evidence.abilities.deployables.length<=8,'Ability counts unbounded');}
     if(scenario.id==='combat-calm')assert.equal(evidence.enemies,0,`${name}: calm room contains enemies`);
     assert.equal(evidence.state,scenario.state,`${name}: wrong game state`);assert(evidence.canvas.colors>8&&!evidence.canvas.contextLost&&!evidence.canvas.error,`${name}: missing/invalid canvas pixels ${JSON.stringify(evidence.canvas)}`);

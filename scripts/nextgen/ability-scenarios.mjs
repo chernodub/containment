@@ -8,7 +8,7 @@ const kits = [
 const slots = ['dash', 'tactical', 'power', 'overdrive'];
 
 /** Exercise real opt-in rig selection and a single native ability in legal authored space. */
-async function stageAbility({ rig, slot, id }) {
+async function stageAbility({ rig, slot, id, nativeInput = false }) {
   const d = window.__containmentDebug, g = d.game;
   await d.startRun(1729, { rigSelect: true });
   if (g.expedition.run.phase !== 'rig-select' || !g.chooseRig(rig)) throw Error('Rig selection failed');
@@ -27,6 +27,7 @@ async function stageAbility({ rig, slot, id }) {
     if (!d.canStand(x, y, 28) || !d.clearShot(x, y) || !d.spawn('brute', x, y)) throw Error(`Illegal ability target ${x},${y}`);
   }
   g.setAimPoint({ x: 320, y: 220 });
+  if (nativeInput) { g.abilities.addCharge(6000); d.refresh(); return; }
   if (slot === 'overdrive') g.abilities.addCharge(6000);
   if (!g.useAbility(slot)) throw Error(`Ability denied: ${id}`);
   const windup = g.abilities.snapshot.slots[slot].castRemainingMs;
@@ -46,3 +47,10 @@ export const ABILITY_SCENARIOS = kits.flatMap(([rig, abilities]) => abilities.ma
   id: `ability:${id}`, state: 'playing', room: 'awakening-bay', burst: true,
   ability: { id, rig, slot: slots[index] }, setupArgument: { id, rig, slot: slots[index] }, setup: stageAbility,
 })));
+
+/** Native Playwright keyboard events use the production InputController, then explicit debug simulation steps. */
+export const DESKTOP_ABILITY_SCENARIO = {
+  id:'ability:desktop-input',state:'playing',room:'awakening-bay',burst:true,nativeInput:true,
+  setupArgument:{rig:'breacher',slot:'dash',id:'ram',nativeInput:true},setup:stageAbility,
+  nativeKeys:[['Shift',160],['q',240],['f',20],['v',650]],
+};
