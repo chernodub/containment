@@ -223,6 +223,7 @@ export class CombatSystem {
   #weaponId: WeaponId = INITIAL_WEAPON;
   #ammo = createAmmoState();
   #reloading = false;
+  #overclock = false;
   #reloadDurationMs = 0;
   #reloadRemainingMs = 0;
   #grenades = INITIAL_GRENADES;
@@ -268,12 +269,12 @@ export class CombatSystem {
 
   setBuild(build: BuildState): boolean {
     if (!isValidBuildState(build)) return false;
-    this.#build = { mutations: [...build.mutations] };
+    this.#build = { mutations: [...build.mutations],...(build.rig?{rig:build.rig}:{}) };
     this.#emit();
     return true;
   }
 
-  get build(): BuildState { return { mutations: [...this.#build.mutations] }; }
+  get build(): BuildState { return { mutations: [...this.#build.mutations],...(this.#build.rig?{rig:this.#build.rig}:{}) }; }
 
   nextMutationEventId(prefix = 'event'): string {
     return `${prefix.slice(0, 32)}-${this.#mutationSequence++}`;
@@ -490,7 +491,7 @@ export class CombatSystem {
       this.#dead ||
       this.#reloading ||
       ammo.cooldownRemainingMs > 0 ||
-      ammo.magazine === 0
+      (!this.#overclock && ammo.magazine === 0)
     ) {
       return Object.freeze([]);
     }
@@ -503,14 +504,14 @@ export class CombatSystem {
     const mutationShotId = this.nextMutationEventId('shot');
     const cyclePrimed=this.hasMutation('magnetic-feed')&&this.#cyclePrimed;
     const resolution = this.resolveMutationEvent({ id: mutationShotId, cause: { chainId: mutationShotId, depth: 0 },
-      type: 'shot', weapon: this.#weaponId, magazineBefore: ammo.magazine });
+      type: 'shot', weapon: this.#weaponId, magazineBefore: Math.max(1,ammo.magazine) });
     const reloadBonus = resolution.commands.reduce((factor, command) => command.type === 'shot-bonus' ? factor * command.damageMultiplier : factor, 1);
     const shotBonus = reloadBonus * (cyclePrimed ? 1.5 : 1);
     const primed = shotBonus > 1;
     this.#cyclePrimed = false;
     this.#cycleCharged = this.hasMutation('magnetic-feed') && !primed;
-    ammo.magazine -= 1;
-    ammo.cooldownRemainingMs = 1_000 / weapon.roundsPerSecond * stats.shotIntervalMultiplier;
+    if(!this.#overclock)ammo.magazine -= 1;
+    ammo.cooldownRemainingMs = 1_000 / weapon.roundsPerSecond * stats.shotIntervalMultiplier / (this.#overclock?1.5:1);
     ammo.bloomRadians = Math.min(weapon.maxBloomRadians, ammo.bloomRadians + weapon.bloomPerShotRadians);
     ammo.shotSequence = (ammo.shotSequence + 1) >>> 0;
 
@@ -545,6 +546,7 @@ export class CombatSystem {
   }
 
   startReload(): boolean {
+    if(this.#overclock)return this.instantReload();
     const ammo = this.#ammo[this.#weaponId];
     const weapon = WEAPONS[this.#weaponId];
     if (
@@ -563,12 +565,31 @@ export class CombatSystem {
     return true;
   }
 
+  /** Reload immediately using ordinary reserve transfer and reload boon events. */
+  instantReload(): boolean {
+    const ammo=this.#ammo[this.#weaponId];
+    if(this.#dead||ammo.magazine>=ammo.capacity||ammo.reserve<=0)return false;
+    this.#completeReload();
+    this.#emit();
+    return true;
+  }
+
+  /** Overclock changes shot cadence, leaving marine and grenade clocks at normal speed. */
+  setOverclock(active:boolean):void {
+    if(active===this.#overclock)return;
+    this.#overclock=active;
+    for(const ammo of Object.values(this.#ammo))ammo.cooldownRemainingMs*=active?1/1.5:1.5;
+    if(active){this.instantReload();this.#cancelReload();}
+    this.#emit();
+  }
+
   switchWeapon(weaponId: WeaponId): boolean {
     if (!isWeaponId(weaponId) || weaponId === this.#weaponId) return false;
 
     this.#cancelReload();
     if(this.hasMutation('magnetic-feed') && this.#cycleCharged){this.#cyclePrimed=true;this.#cycleCharged=false;}
     this.#weaponId = weaponId;
+    if(this.#overclock)this.instantReload();
     this.#emit();
     return true;
   }
@@ -712,6 +733,7 @@ export class CombatSystem {
   }
 
   reset(): void {
+    this.#overclock=false;
     this.#supplyClock=0;this.#supplyTicks={rifle:0,shotgun:0,plasma:0,rocket:0};
     this.#weaponId = INITIAL_WEAPON;
     this.#ammo = createAmmoState();
