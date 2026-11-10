@@ -1,5 +1,7 @@
 --- a/src/main.ts
 +++ b/src/main.ts
-@@ -48,1 +48,1 @@
+@@ -47,3 +47,3 @@
+ const input=new InputController(game,renderer,(toggle)=>{if(game.status==='playing'||toggle&&game.status==='paused')pause();},()=>!graphicsLost&&!roomRecovering&&lastRoom===game.roomRevision&&!renderer.roomLoading);let roomRecovering=true;let graphicsLost=false;let lastStatus='',lastRoom=-1,screenKey='',settingsOpen=false;let quality:'high'|'low'='high';
 -const start=(resume=false)=>{void audio.unlock();audio.resumeAll();input.reset();settingsOpen=false;if(resume){if(!game.continueRun())return;}else game.newRun();syncScreen(true);};
 +const start=(resume=false)=>{void audio.unlock();audio.resumeAll();input.reset();settingsOpen=false;if(resume){if(!game.continueRun())return;}else game.newRun();syncScreen(true);hud();};
+ captureWeaponPointer(el('pause') as HTMLButtonElement);captureWeaponPointer(el('skip-story') as HTMLButtonElement);
