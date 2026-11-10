@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { ABILITY_SCENARIOS, DESKTOP_ABILITY_SCENARIO } from './ability-scenarios.mjs';
 const label = process.argv.find(a => a.startsWith('--label='))?.slice(8) ?? 'A1-abilities';
 assert.match(label, /^[a-zA-Z0-9_-]+$/);
-const args = ['scripts/nextgen/capture.mjs', `--label=${label}`, `--scenarios=${[...ABILITY_SCENARIOS, DESKTOP_ABILITY_SCENARIO].map(s => s.id).join(',')}`, '--burst=2', '--width=1280', '--height=720'];
+const args = ['scripts/nextgen/capture.mjs', `--label=${label}`, `--scenarios=${[...ABILITY_SCENARIOS, DESKTOP_ABILITY_SCENARIO].map(s => s.id).join(',')}`, '--burst=2', '--width=1920', '--height=1080'];
 const code = await new Promise((ok, fail) => { const p = spawn(process.execPath, args, { stdio: 'inherit' }); p.on('error', fail); p.on('exit', ok); });
 assert.equal(code, 0, 'Production ability captures failed');
 const manifest = JSON.parse(await readFile(resolve('artifacts/nextgen', label, 'manifest.json'), 'utf8'));
