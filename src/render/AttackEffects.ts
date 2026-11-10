@@ -162,6 +162,7 @@ export class AttackEffects {
   if(e.type==='boon'){
    if(this.boonBursts++>=8)return;
    const colors={frost:0x8cdeed,arc:0xb3bbff,burn:0xf89847,impact:0xf5dab0,leech:0xbb7385,shield:0x86c9ce,overload:0xf4b96b,poison:0x5dd8b6,charge:0xd6b9f3,blast:0xcbd8dc,combustion:0xffba71,shatter:0xa3eaf3,field:0x75bdcf},color=colors[e.boon??'impact'];
+   if(e.boon==='arc'||e.boon==='burn'||e.boon==='frost'||e.boon==='shatter')this.flash(p,color,e.boon==='arc'?2.5:1.6,3,.16,2);
    if(e.targetX!==undefined&&e.targetY!==undefined){
     if(e.boon==='impact'||e.boon==='frost'){
      const end=new T.Vector3(e.targetX/32,.8,e.targetY/32),frost=e.boon==='frost';

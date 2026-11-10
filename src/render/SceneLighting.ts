@@ -1,6 +1,7 @@
 import * as T from 'three';
 import type {ShipEnvironment} from './ShipEnvironments';
 import type {GraphicsTier} from './FrameBudget';
+import type {ShadowQuality} from './graphicsOptions';
 import {getEnvironmentMood,type EnvironmentMood} from './lighting/EnvironmentMoods';
 import {LightPool} from './lighting/LightPool';
 import {MarineLamp} from './lighting/MarineLamp';
@@ -29,10 +30,10 @@ export class SceneLighting {
   this.applyMood(0,0);
  }
  /** Settings changes may alter shader topology; updates and combat effects never do. */
- setQuality(tier:GraphicsTier,dynamicLights=true,atmosphere=true,flashIntensity=1){
+ setQuality(tier:GraphicsTier,dynamicLights=true,atmosphere=true,flashIntensity=1,shadows:ShadowQuality='high'){
   this.tier=tier;this.dynamicLights=dynamicLights;this.flashIntensity=Math.max(0,Math.min(1,flashIntensity));
   this.pool.setIntensityScale(this.flashIntensity);
-  this.key.castShadow=tier==='high';this.pool.setQuality(tier,tier==='high'&&dynamicLights);
+  this.key.castShadow=tier==='high'&&shadows!=='off';const size=shadows==='low'?512:1024;if(this.key.shadow.mapSize.x!==size){this.key.shadow.map?.dispose();this.key.shadow.map=null;this.key.shadow.mapSize.set(size,size);this.key.shadow.needsUpdate=true;}this.pool.setQuality(tier,tier==='high'&&dynamicLights);
   this.blast.visible=dynamicLights;this.lamp.setQuality(tier==='high',atmosphere);
   if(!dynamicLights){this.blastLife=0;this.blast.intensity=0;}
   for(let i=0;i<this.fixtures.length;i++){this.fixtures[i].visible=tier==='high'||i<2;if(!this.fixtures[i].visible)this.fixtures[i].intensity=0;}
