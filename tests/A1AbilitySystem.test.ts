@@ -729,3 +729,28 @@ describe('fractional fixed-step ability boundaries', () => {
     expect(phases(arc,'overclock').filter(p=>p==='end')).toHaveLength(1);
   });
 });
+
+
+describe('snapshot reads by synchronous presentation subscribers', () => {
+  for(const [rig,slot,mutations] of [['pyro','overdrive',[]],['cryo','dash',[]],['arc','power',['twin-pylon']]] as const)
+    it(`keeps ${rig} ${slot} activation and entities fresh after subscriber reads`, () => {
+      const w=world(rig,[...mutations],1),emit=w.system['host'].emit;
+      w.system['host'].emit=(event,x,y)=>{emit(event,x,y);void w.system.snapshot;};
+      w.system.setIntent(0,0,{x:300,y:0});
+      expect(w.system.use(slot)).toBe(true);
+      if(slot==='dash')expect(w.system.snapshot.dashing).toBe(true);
+      if(slot==='overdrive')expect(w.system.snapshot.overdrive.active).toBe(true);
+      if(slot==='power'){
+        expect(w.system.snapshot.slots!.power.castRemainingMs).toBe(100);
+        w.advance(100);expect(w.system.snapshot.deployables).toHaveLength(2);
+      }
+      const snapshot=w.system.snapshot;expect(w.system.snapshot).toBe(snapshot);
+    });
+  it('does not retain another slot’s old cooldown from a ready-event read', () => {
+    const w=world(),emit=w.system['host'].emit;
+    w.system['host'].emit=(event,x,y)=>{emit(event,x,y);void w.system.snapshot;};
+    w.use('dash');w.advance(140);w.use('tactical');w.advance(2240);
+    expect(w.system.snapshot.slots!.dash.charges).toBe(2);
+    expect(w.system.snapshot.slots!.tactical.cooldownRemainingMs).toBe(5540);
+  });
+});

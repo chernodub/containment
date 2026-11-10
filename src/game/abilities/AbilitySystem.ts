@@ -90,6 +90,8 @@ export class AbilitySystem {
   private definition(slot: AbilitySlot) { return ABILITY_CATALOG[RIG_CATALOG[this.rig!].abilities[slot]]; }
   private maxCharges(slot: AbilitySlot): number { return this.definition(slot).charges + (slot === 'dash' && this.host.has('reserve-thruster' as MutationId) ? 1 : 0); }
   private event(id: AbilityId, phase: AbilityEvent['phase'], p: AbilityPoint, extra: Partial<AbilityEvent> = {}): void {
+    // Subscribers may synchronously inspect the snapshot during an emitted phase.
+    if (phase !== 'denied') this.cached = null;
     const d = ABILITY_CATALOG[id], s = d.shape;
     this.host.emit({ ability: id, slot: d.slot, rig: d.rig, element: d.element, phase,
       ...(s.kind === 'circle' ? { radius: s.radius } : s.kind === 'cone' ? { length: s.range, arcRadians: s.arcRadians } : s.kind === 'line' || s.kind === 'wall' ? { length: s.length, width: s.kind === 'wall' ? s.thickness : s.width } : s.kind === 'dash' ? { length: s.distance, width: s.width } : {}), ...extra }, p.x, p.y);
@@ -112,8 +114,9 @@ export class AbilitySystem {
     if (slot === 'overdrive') this.charge = 0; else state.cooldowns.push(d.cooldownMs);
     this.cached = null;
     const cast: Cast = { id: d.id, x: p.x, y: p.y, angle, target, remaining: d.castMs };
+    if (d.castMs) { state.cast = d.castMs; this.casts.push(cast); }
     this.event(d.id, 'cast', p, { angle, targetX: target.x, targetY: target.y, durationMs: d.castMs });
-    if (d.castMs) { state.cast = d.castMs; this.casts.push(cast); } else this.resolve(cast);
+    if (!d.castMs) this.resolve(cast);
     return true;
   }
 
@@ -413,6 +416,7 @@ export class AbilitySystem {
       for (const entity of this.deployables) if (ABILITY_CATALOG[entity.ability].slot === slot) active = Math.max(active, entity.remainingMs);
       this.states[slot].active = active;
     }
+    this.cached = null; // Discard any intermediate snapshot retained by a synchronous subscriber.
   }
 
   /** Stable immutable presentation snapshot until simulation state changes. */

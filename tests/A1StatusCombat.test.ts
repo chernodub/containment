@@ -54,6 +54,12 @@ function rifle(magazine: number, reserve: number) {
 }
 
 describe('ability statuses share elemental and mutation reactions', () => {
+  it('emits one physical wall contact for a native launch without inventing boon damage', () => {
+    const w=world();w.block();w.runtime.launchAbility(w.targets[0],700,0);w.advance(100);
+    expect(w.slams).toBe(1);expect(w.hits).toEqual([]);
+    w.advance(500);expect(w.slams).toBe(1);
+  });
+
   it('adds capped chill without Cryogenic and uses Permafrost duration', () => {
     const w = world(['permafrost']);
     w.runtime.applyAbilityStatus(w.targets[0], 'chill', 2);

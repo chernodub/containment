@@ -207,7 +207,7 @@ export class MutationRuntime {
   #dispatch(event: BuildEvent, wallVisual?:()=>void): boolean {
     const result = this.#combat.resolveMutationEvent(event);
     if(result.rejected)return false;
-    if(result.commands.some(c=>(c.type==='damage'||c.type==='explosion')&&c.visual==='wall-slam'))wallVisual?.();
+    wallVisual?.(); // Native ability launches still make physical contact when no damage boon is owned.
     this.#commands.push(...result.commands);
     if (this.#executing) return true;
     this.#executing = true;
