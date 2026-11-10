@@ -74,6 +74,8 @@ export class AbilitySystem {
   get invulnerable(): boolean { return this.immune > 0; }
   get dashing(): boolean { return this.dash !== null; }
   get hostileTimeScale(): number { return this.active('overclock') ? .3 : 1; }
+  /** Hostile simulation time for the next friendly step, including a partial Overclock expiry. */
+  hostileDelta(ms: number): number { return Number.isFinite(ms) && ms > 0 ? ms - (this.overclocked ? Math.min(ms, this.states.overdrive.active) * .7 : 0) : 0; }
   get moveSpeedMultiplier(): number { return this.active('meltdown') ? 1.25 : 1; }
   get overclocked(): boolean { return this.active('overclock'); }
   get ignitingShots(): boolean { return this.active('meltdown'); }
@@ -90,7 +92,7 @@ export class AbilitySystem {
   use(slot: AbilitySlot, enabled = true): boolean {
     if (!this.rig) { this.event(RIG_CATALOG.breacher.abilities[slot], 'denied', this.host.player(), { denial: 'no-rig' }); return false; }
     const d = this.definition(slot), p = this.host.player(), state = this.states[slot];
-    const denial = !enabled ? 'blocked' : this.casts.length || this.dash ? 'casting' : slot === 'overdrive' ? this.charge < 1 || state.active > 0 ? 'no-charge' : null : state.cooldowns.length >= this.maxCharges(slot) ? 'cooldown' : null;
+    const denial = !enabled || !Number.isFinite(p.x) || !Number.isFinite(p.y) || !Number.isFinite(p.angle) ? 'blocked' : this.casts.length || this.dash ? 'casting' : slot === 'overdrive' ? this.charge < 1 || state.active > 0 ? 'no-charge' : null : state.cooldowns.length >= this.maxCharges(slot) ? 'cooldown' : null;
     if (denial) { this.event(d.id, 'denied', p, { denial }); return false; }
     let angle = p.angle;
     if (slot === 'dash') { const m = this.movement; if (m.x || m.y) angle = Math.atan2(m.y, m.x); }
@@ -274,9 +276,9 @@ export class AbilitySystem {
     const dx = zone.x2 - zone.x, dy = zone.y2 - zone.y, f = Math.max(0, Math.min(1, ((t.x - zone.x) * dx + (t.y - zone.y) * dy) / (dx * dx + dy * dy || 1)));
     return { x: zone.x + f * dx, y: zone.y + f * dy };
   }
-  private stepDeployables(ms: number): void {
+  private stepDeployables(ms: number, hostileScale: number): void {
     for (const d of this.deployables.slice()) {
-      const live = Math.min(ms, d.remainingMs); d.remainingMs = Math.max(0, d.remainingMs - ms); d.tick -= live; d.assault -= live * this.hostileTimeScale;
+      const live = Math.min(ms, d.remainingMs); d.remainingMs = Math.max(0, d.remainingMs - ms); d.tick -= live; d.assault -= live * hostileScale;
       if (d.assault <= 0) {
         d.assault += 250;
         for (const t of this.host.targets().slice(0, ABILITY_LIMITS.targets)) if (!this.host.statuses(t.id).frozen && !this.host.statuses(t.id).shocked && this.touches(d, t, t, t.radius + 20) && this.host.visible(d, t)) d.health -= 20;
@@ -357,6 +359,7 @@ export class AbilitySystem {
     if (!Number.isFinite(ms) || ms <= 0 || !this.rig) return;
     ms = Math.min(ms, 100);
     if (!this.immune && !this.dash && !this.casts.length && !this.zones.length && !this.deployables.length && !this.afterquakes.length && ABILITY_SLOTS.every(slot => !this.states[slot].cooldowns.length && !this.states[slot].active)) return;
+    const hostileScale = this.hostileDelta(ms) / ms;
     this.cached = null;
     this.immune = Math.max(0, this.immune - ms);
     for (const slot of ABILITY_SLOTS) {
@@ -372,7 +375,7 @@ export class AbilitySystem {
     }
     this.stepDash(ms);
     this.stepZones(ms);
-    this.stepDeployables(ms);
+    this.stepDeployables(ms, hostileScale);
     for (let i = this.afterquakes.length - 1; i >= 0; i--) { const cast = this.afterquakes[i]; cast.delay -= ms; if (cast.delay <= 0) { this.afterquakes.splice(i, 1); const ids = this.radial(cast, 190, 35, undefined, 350); this.event(cast.id, 'impact', cast, { targetIds: ids }); } }
     for (let i = this.casts.length - 1; i >= 0; i--) {
       const cast = this.casts[i]; cast.remaining -= ms;
@@ -382,10 +385,10 @@ export class AbilitySystem {
 
   /** Stable immutable presentation snapshot until simulation state changes. */
   get snapshot(): AbilitiesSnapshot {
-    if (this.cached) return this.cached;
+    if (this.cached && (!this.rig || this.cached.slots?.dash.maxCharges === this.maxCharges('dash'))) return this.cached;
     const slots = this.rig ? Object.fromEntries(ABILITY_SLOTS.map(slot => {
       const d = this.definition(slot), state = this.states[slot], charges = slot === 'overdrive' ? +(this.charge >= 1) : Math.max(0, this.maxCharges(slot) - state.cooldowns.length);
-      return [slot, Object.freeze({ slot, id: d.id, ready: !this.casts.length && !this.dash && charges > 0 && (slot !== 'overdrive' || !state.active), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.durationMs, state.active) })];
+      return [slot, Object.freeze({ slot, id: d.id, ready: !this.casts.length && !this.dash && charges > 0 && (slot !== 'overdrive' || !state.active), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs)) })];
     })) as AbilitiesSnapshot['slots'] : null;
     return this.cached = Object.freeze({ rig: this.rig, slots: slots && Object.freeze(slots), overdrive: Object.freeze({ charge: this.charge, ready: this.charge >= 1, active: this.states.overdrive.active > 0, activeRemainingMs: this.states.overdrive.active }), invulnerable: this.invulnerable, dashing: this.dashing, hostileTimeScale: this.hostileTimeScale, deployables: Object.freeze(this.deployables.map(d => Object.freeze({ ...d }))), zones: Object.freeze(this.zones.map(z => Object.freeze({ ...z }))) });
   }

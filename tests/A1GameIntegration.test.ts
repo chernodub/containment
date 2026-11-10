@@ -58,6 +58,15 @@ function hash(game: DepthGame, effects: readonly GameEffect[]) {
 }
 
 describe('DepthGame Combat Rig flow and persistence', () => {
+  it('reflects a newly drafted dash capacity immediately in cached snapshots', () => {
+    const {game} = arena();
+    expect(game.abilities.snapshot.slots!.dash.maxCharges).toBe(2);
+    game.combat.setBuild({rig:'breacher',mutations:['reserve-thruster']});
+    expect(game.abilities.snapshot.slots!.dash.maxCharges).toBe(3);
+    const stable=game.abilities.snapshot;
+    expect(game.abilities.snapshot).toBe(stable);
+  });
+
   it('keeps legacy newRun starting directly at the boon with Breacher', () => {
     const game = new DepthGame();
     game.newRun(137);
@@ -243,6 +252,22 @@ describe('desktop simulation collision and hostile time isolation', () => {
     expect(game.player.x).toBeLessThanOrEqual(1184);
     expect(game.player.x).toBeGreaterThan(1160);
     expect(canOccupyExpedition(game.geometry, game.player, game.player.radius)).toBe(true);
+  });
+
+  it('integrates the full six-second Overclock window and a partial final step exactly', () => {
+    const {game} = arena('arc');
+    game.abilities.addCharge(6000); game.useAbility('overdrive');
+    advance(game, 5990);
+    const hostile = projectile('hazard', 700, 600); game.bullets.push(hostile);
+    game.pools.push({id: 1, x: 900, y: 700, radius: 20, life: 2, warning: 0, damage: 6, tick: .5});
+    game.update(50);
+    // Ten friendly ms at 30%, then forty ms at normal hostile speed.
+    expect(hostile.x).toBeCloseTo(700 + 260 * .043);
+    expect(hostile.life).toBeCloseTo(2 - .043);
+    expect(game.pools[0].life).toBeCloseTo(2 - .043);
+    expect(game.abilities.snapshot.overdrive.active).toBe(false);
+    game.update(50);
+    expect(hostile.x).toBeCloseTo(700 + 260 * .093);
   });
 
   it('slows enemy attack clocks, movement, hostile bullets and pools while friendly clocks remain normal', () => {
