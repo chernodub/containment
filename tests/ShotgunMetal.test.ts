@@ -97,9 +97,11 @@ describe('supported body-slam contacts',()=>{
   const c=wallContact({...rect,voids:[triangle]},{x:154,y:145},{x:150,y:153},2);
   expect(c.normal.x).toBeCloseTo(Math.SQRT1_2);expect(c.normal.y).toBeCloseTo(-Math.SQRT1_2);
  });
- it('does not reinterpret enemy hits or other weapons',()=>{
+ it('keeps enemy hits unmarked and rifle contacts as compact bullet holes, not body slams',()=>{
   const fx=new AttackEffects(new T.Scene());fx.event({type:'hit',weapon:'shotgun',x:100,y:100,targetId:1});expect(fx.counts.decals).toBe(0);
-  fx.clear();fx.event({...hit(),type:'hit',weapon:'rifle'});expect(fx.counts.decals).toBe(0);
+  fx.clear();fx.event({...hit(),type:'hit',weapon:'rifle'});expect(fx.counts.decals).toBe(1);
+  const mark=(fx as unknown as {decals:{variant:number;size:number}[]}).decals[0];
+  expect(mark.variant).toBe(0);expect(mark.size).toBeLessThan(.25);expect(fx.counts.fire).toBe(0);expect(fx.counts.pulses).toBe(0);
  });
  it('expires transient strikes and marks and stays bounded under saturation',()=>{
   const scene=new T.Scene(),fx=new AttackEffects(scene,undefined,strikeWorld()),camera=new T.PerspectiveCamera();
