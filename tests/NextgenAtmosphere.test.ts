@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as T from 'three';
 import { ATMOSPHERE_CAPS, ATMOSPHERE_PROFILES, Atmosphere } from '../src/render/atmosphere/Atmosphere';
+import { SHIP_BACKDROP_CAPS, ShipBackdrop } from '../src/render/atmosphere/ShipBackdrop';
 
 const camera = new T.PerspectiveCamera();
 
@@ -139,5 +140,85 @@ describe('bounded room atmosphere', () => {
     expect(atmosphere.root.visible).toBe(false);
     expect(atmosphere.root.children).toHaveLength(0);
     expect(scene.children).not.toContain(atmosphere.root);
+  });
+});
+
+describe('ship structure beyond the playable deck', () => {
+  function worldWithDeck() {
+    const world = new T.Group();
+    const floor = new T.Mesh(new T.BoxGeometry(20, .32, 17), new T.MeshStandardMaterial());
+    floor.material.name = 'environment-floor';
+    floor.position.set(10, -.18, 8.5);
+    world.add(floor);
+    // Overhead utility pipes must not restore the old, much deeper camera envelope.
+    const pipe = new T.Mesh(new T.BoxGeometry(1, 1, 40), new T.MeshBasicMaterial());
+    pipe.position.set(0, 3, 20);
+    world.add(pipe);
+    return { world, floor, pipe };
+  }
+
+  it('uses physical deck bounds instead of legacy room size or outboard pipes', () => {
+    const { world, floor, pipe } = worldWithDeck();
+    const backdrop = new ShipBackdrop();
+    backdrop.loadRoom(world, 20, 27.5, 'habitation');
+    expect(backdrop.footprint.min.z).toBeCloseTo(0);
+    expect(backdrop.footprint.max.z).toBeCloseTo(17);
+    expect(backdrop.plates.material.uniforms.footprint.value.toArray()).toEqual([0, 0, 20, 17]);
+    expect(world.children).toEqual([floor, pipe]);
+    expect(backdrop.root.children).toHaveLength(2);
+    expect(backdrop.plates.count).toBe(SHIP_BACKDROP_CAPS.plates);
+    expect(backdrop.struts.count).toBeLessThanOrEqual(SHIP_BACKDROP_CAPS.struts);
+    const matrix = new T.Matrix4(), position = new T.Vector3(), heights = new Set<number>();
+    for (let i = 0; i < backdrop.plates.count; i++) {
+      backdrop.plates.getMatrixAt(i, matrix);
+      position.setFromMatrixPosition(matrix);
+      expect(position.y).toBeLessThan(-1.4);
+      heights.add(position.y);
+    }
+    expect(heights.size).toBeGreaterThan(10);
+    backdrop.dispose();
+    floor.geometry.dispose(); floor.material.dispose(); pipe.geometry.dispose(); pipe.material.dispose();
+  });
+
+  it('reuses GPU topology on room changes, keeps Low at one draw, and preserves world-space parallax', () => {
+    const backdrop = new ShipBackdrop(), world = new T.Group();
+    const geometry = backdrop.plates.geometry, matrices = backdrop.plates.instanceMatrix;
+    backdrop.loadRoom(world, 12, 14, 'reactor');
+    const reactorAccent = backdrop.plates.material.uniforms.accent.value.getHex();
+    backdrop.setQuality('low');
+    expect(backdrop.root.visible).toBe(true);
+    expect(backdrop.struts.visible).toBe(false);
+    const position = backdrop.root.position.clone();
+    backdrop.update(.1, new T.Vector3(2, 0, 3));
+    expect(backdrop.root.position.equals(position)).toBe(true);
+    backdrop.loadRoom(world, 22, 24, 'infested');
+    expect(backdrop.plates.geometry).toBe(geometry);
+    expect(backdrop.plates.instanceMatrix).toBe(matrices);
+    expect(backdrop.struts.visible).toBe(false);
+    expect(backdrop.plates.material.uniforms.accent.value.getHex()).not.toBe(reactorAccent);
+    expect(backdrop.footprint.max.z).toBe(24);
+    backdrop.setQuality('high');
+    expect(backdrop.struts.visible).toBe(true);
+    backdrop.dispose();
+  });
+
+  it('prewarms the hidden material and disposes both resource pairs exactly once', () => {
+    const scene = new T.Scene(), backdrop = new ShipBackdrop(scene);
+    const spies = [backdrop.plates, backdrop.struts]
+      .flatMap(mesh => [vi.spyOn(mesh.geometry, 'dispose'), vi.spyOn(mesh.material, 'dispose')]);
+    backdrop.setQuality('low');
+    const restore = backdrop.prepare();
+    expect(backdrop.struts.visible).toBe(true);
+    expect(backdrop.plates.count).toBe(1);
+    expect(backdrop.struts.count).toBe(1);
+    restore();
+    expect(backdrop.struts.visible).toBe(false);
+    expect(backdrop.plates.count).toBe(0);
+    expect(backdrop.struts.count).toBe(0);
+    backdrop.dispose(); backdrop.dispose(); restore();
+    backdrop.setQuality('high');
+    expect(backdrop.root.visible).toBe(false);
+    expect(scene.children).not.toContain(backdrop.root);
+    expect(spies.every(spy => spy.mock.calls.length === 1)).toBe(true);
   });
 });

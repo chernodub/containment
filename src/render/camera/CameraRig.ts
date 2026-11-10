@@ -1,6 +1,9 @@
 import * as T from 'three';
 
-const CAMERA_DISTANCE = Math.hypot(26, 19);
+/** Shared deck framing tilt. Keep room clamping and safety correction in sync. */
+export const CAMERA_OFFSET_Y = 26;
+export const CAMERA_OFFSET_Z = 19;
+const CAMERA_DISTANCE = Math.hypot(CAMERA_OFFSET_Y, CAMERA_OFFSET_Z);
 
 /** Render-only camera response. No clock reads, randomness or gameplay decisions. */
 export class CameraRig {
@@ -83,7 +86,7 @@ export class CameraRig {
     const z = this.focus.z + (this.shake.y + this.recoil.y) * scale;
     const distance = camera instanceof T.PerspectiveCamera
       ? viewHeight / (2 * Math.tan(T.MathUtils.degToRad(camera.fov / 2))) : CAMERA_DISTANCE;
-    camera.position.set(x, 26 / CAMERA_DISTANCE * distance, z + 19 / CAMERA_DISTANCE * distance);
+    camera.position.set(x, CAMERA_OFFSET_Y / CAMERA_DISTANCE * distance, z + CAMERA_OFFSET_Z / CAMERA_DISTANCE * distance);
     camera.lookAt(x, 0, z);
     const zoom = baseZoom * (1 - this.currentPunch() * scale);
     if (camera.zoom !== zoom) { camera.zoom = zoom; camera.updateProjectionMatrix(); }

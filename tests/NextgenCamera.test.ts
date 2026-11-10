@@ -1,12 +1,16 @@
-import {describe, expect, it, vi} from 'vitest';
+import {beforeAll, describe, expect, it, vi} from 'vitest';
 import * as T from 'three';
-import {CameraRig} from '../src/render/camera/CameraRig';
+import {CameraRig, CAMERA_OFFSET_Y, CAMERA_OFFSET_Z} from '../src/render/camera/CameraRig';
 import {DepthRenderer} from '../src/render/DepthRenderer';
-import {EnemyHealthBars} from '../src/render/EnemyHealthBars';
+import {EnemyHealthBars, healthBarColor} from '../src/render/EnemyHealthBars';
 import {roomFocus} from '../src/render/roomFraming';
 import {ROOM_TEMPLATES} from '../src/game/roguelike/roomTemplates';
 import {ROOM_STORY_ROUTE} from '../src/game/roguelike/storyRooms';
 import {environmentArchitecture} from '../src/render/ShipEnvironments';
+import {marine, disposeModel} from '../src/render/models';
+import {loadModels} from './loadModels';
+
+beforeAll(loadModels);
 
 type Projection = 'orthographic' | 'perspective';
 type RendererProbe = Pick<DepthRenderer, 'camera' | 'pointer' | 'visible' | 'playerScreenBounds' | 'resize' | 'setCameraProjection'> & {
@@ -19,7 +23,7 @@ const projections: Projection[] = ['orthographic', 'perspective'];
 
 /** Real renderer projection methods, without creating a WebGL context. */
 function rendererProbe(projection: Projection, width: number, height: number) {
-  const viewHeight = height > width ? 31 : 22;
+  const viewHeight = height > width ? 18 : 13;
   const viewWidth = viewHeight * width / height;
   const camera = projection === 'perspective'
     ? new T.PerspectiveCamera(28, width / height, .1, 160)
@@ -35,6 +39,7 @@ function rendererProbe(projection: Projection, width: number, height: number) {
     player,
     cameraRig: rig,
     focus: new T.Vector3(),
+    visiblePoint: new T.Vector3(),
     screenPoint: new T.Vector3(),
     screenTarget: new T.Vector3(),
     raycaster: new T.Raycaster(),
@@ -56,6 +61,22 @@ function expectPlayerInFrame(probe: ReturnType<typeof rendererProbe>) {
   expect(bounds.right).toBeLessThanOrEqual(probe.rect.left + probe.rect.width);
   expect(bounds.top).toBeGreaterThanOrEqual(probe.rect.top + 8);
   expect(bounds.bottom).toBeLessThanOrEqual(probe.rect.top + probe.rect.height);
+}
+
+/** Project the production skinned vertices, rather than the safety envelope. */
+function marineSilhouetteHeight(model: ReturnType<typeof marine>, camera: T.Camera, viewportHeight: number) {
+  const point = new T.Vector3();
+  let top = -Infinity, bottom = Infinity;
+  model.root.updateMatrixWorld(true);
+  model.body.traverse(object => {
+    if (!(object instanceof T.Mesh)) return;
+    for (let i = 0; i < object.geometry.getAttribute('position').count; i++) {
+      object.getVertexPosition(i, point);
+      point.applyMatrix4(object.matrixWorld).project(camera);
+      top = Math.max(top, point.y); bottom = Math.min(bottom, point.y);
+    }
+  });
+  return (top - bottom) * viewportHeight / 2;
 }
 
 describe('CameraRig', () => {
@@ -244,10 +265,11 @@ it('uses actual renderer resize and projection switching across all authored-roo
       for (const [width, height] of desktopSizes) {
         viewport.innerWidth = probe.rect.width = width;
         viewport.innerHeight = probe.rect.height = height;
-        const viewHeight = height > width ? 31 : 22;
+        const viewHeight = height > width ? 18 : 13;
         for (const projection of projections) {
           probe.renderer.setCameraProjection(projection);
           probe.renderer.resize();
+          if (probe.renderer.camera instanceof T.OrthographicCamera) expect(probe.renderer.camera.top - probe.renderer.camera.bottom).toBe(viewHeight);
           for (const [x, z] of [[.5, .5], [room.width / 32 - .5, room.height / 32 - .5]]) {
             const focus = roomFocus(x, z, room.width / 32, room.height / 32, viewHeight * width / height, viewHeight, room.id);
             probe.rig.reset(focus.x, focus.z); probe.rig.apply(probe.renderer.camera, 1, viewHeight);
@@ -275,7 +297,7 @@ describe('perspective enemy health labels', () => {
     rig.reset(15, 12); rig.apply(camera, 1, viewHeight);
     const entries = [
       {x: 3, z: 2, height: 1, health: 25, maxHealth: 100},
-      {x: 16, z: 24, height: 2, health: 100, maxHealth: 100},
+      {x: 16, z: 24, height: 2, health: 75, maxHealth: 100},
       {x: 24, z: 7, height: 4, health: 50, maxHealth: 100, elite: true},
     ];
     for (const height of [720, 1080]) for (const zoom of [1, 1.23]) {
@@ -285,8 +307,8 @@ describe('perspective enemy health labels', () => {
       const matrix = new T.Matrix4();
       expect(fill.count).toBe(3);
       for (let i = 0; i < entries.length; i++) {
-        const width = entries[i].elite ? 38 : 32;
-        for (const [mesh, expectedWidth, expectedHeight] of [[background, width + 2, 6], [fill, width * entries[i].health / 100, 4]] as const) {
+        const width = 32;
+        for (const [mesh, expectedWidth, expectedHeight] of [[background, width + 2, 3], [fill, width * entries[i].health / 100, 2]] as const) {
           mesh.getMatrixAt(i, matrix);
           const left = new T.Vector3(-.5, 0, 0).applyMatrix4(matrix).project(camera);
           const right = new T.Vector3(.5, 0, 0).applyMatrix4(matrix).project(camera);
@@ -302,4 +324,44 @@ describe('perspective enemy health labels', () => {
     expect(bars.root.visible).toBe(false);
     bars.dispose();
   });
+});
+
+it.each(projections)('puts the production marine in the 110–140px target for ordinary aiming poses with %s', projection => {
+  const model = marine();
+  const {camera, rig, viewHeight} = rendererProbe(projection, 1920, 1080);
+  expect(model.height).toBeCloseTo(2.05, 5);
+  expect(CAMERA_OFFSET_Y).toBe(26); expect(CAMERA_OFFSET_Z).toBe(19);
+  rig.reset(0, 0); rig.apply(camera, 1, viewHeight);
+  try {
+    // Aiming away from the camera foreshortens the arms differently; that full
+    // silhouette is intentionally taller than the ordinary east/south poses.
+    for (const angle of [0, Math.PI / 2]) {
+      model.animate(0, 0, angle);
+      const height = marineSilhouetteHeight(model, camera, 1080);
+      expect(height).toBeGreaterThanOrEqual(110);
+      expect(height).toBeLessThanOrEqual(140);
+    }
+  } finally {
+    model.stop?.(); disposeModel(model.root);
+  }
+});
+
+it('shows thin bars only for damaged enemies/nests and elites, with health and status colors', () => {
+  const bars = new EnemyHealthBars(6);
+  const {camera, rig, viewHeight} = rendererProbe('orthographic', 1920, 1080);
+  rig.reset(0, 0); rig.apply(camera, 1, viewHeight);
+  const enemy = {x: 1, z: 2, height: 1, health: 100, maxHealth: 100};
+  bars.update([enemy, {...enemy, elite: true}, {...enemy, health: 50}, {...enemy, height: 1.35}, {...enemy, height: 1.35, health: 90}, {...enemy, health: 0}], camera, 1080);
+  const [background, fill] = bars.root.children as T.InstancedMesh[];
+  expect(background.count).toBe(3); expect(fill.count).toBe(3);
+  expect(healthBarColor({...enemy, health: 20})).toBe(0xe98672);
+  expect(healthBarColor({...enemy, health: 80, armor: 10})).toBe(0xb2bfba);
+  expect(healthBarColor({...enemy, elite: true})).toBe(0xd8b279);
+  expect(healthBarColor({...enemy, status: {frozen: true}})).toBe(0xb6e4ef);
+  expect(healthBarColor({...enemy, status: {shocked: true}})).toBe(0xb5a4d7);
+  expect(healthBarColor({...enemy, status: {burning: true}})).toBe(0xd7a374);
+  expect(healthBarColor({...enemy, status: {poisoned: true}})).toBe(0xa3bf7d);
+  expect(healthBarColor({...enemy, status: {chilled: true}})).toBe(0x8ec9d5);
+  expect(healthBarColor({...enemy, health: 20, armor: 10, status: {frozen: true}})).toBe(0xe98672);
+  bars.dispose();
 });

@@ -157,7 +157,7 @@ export class Atmosphere {
       transparent: true, depthWrite: false, depthTest: true, side: T.DoubleSide, blending: T.AdditiveBlending,
       uniforms: { strength: { value: .012 } },
       vertexShader: 'attribute vec3 fixtureTint;varying vec2 vUv;varying vec3 vTint;void main(){vUv=uv;vTint=fixtureTint;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}',
-      fragmentShader: 'uniform float strength;varying vec2 vUv;varying vec3 vTint;void main(){float a=smoothstep(0.0,.25,vUv.y)*(1.0-smoothstep(.8,1.0,vUv.y))*pow(vUv.y,.65);gl_FragColor=vec4(vTint,a*strength);}',
+      fragmentShader: 'uniform float strength;varying vec2 vUv;varying vec3 vTint;void main(){float a=smoothstep(0.0,.25,vUv.y)*(1.0-smoothstep(.8,1.0,vUv.y))*pow(max(0.0,vUv.y),.65);gl_FragColor=vec4(vTint,a*strength);}',
     });
     this.shafts = new T.InstancedMesh(geometry, material, ATMOSPHERE_CAPS.shafts);
     this.shafts.name = 'practical-light-shafts';
@@ -188,6 +188,11 @@ export class Atmosphere {
       uniforms.opacity.value = mesh === this.motes ? profile.opacity : mesh === this.fog ? profile.fogOpacity : profile.plumeOpacity;
       mesh.visible = mesh.geometry.instanceCount > 0;
     }
+    this.syncFixtures(fixtures);
+  }
+
+  /** Follow the practical pool when its sources move between authored fixture origins. */
+  syncFixtures(fixtures:readonly AtmosphereFixture[]):void {
     this.shafts.count = 0;
     const colors = this.shafts.geometry.getAttribute('fixtureTint') as T.InstancedBufferAttribute;
     for (const fixture of fixtures) {

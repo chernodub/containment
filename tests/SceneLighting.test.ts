@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 
 it('wires lighting and contact patches into the production renderer and reset lifecycle',()=>{
  const source=readFileSync('src/render/DepthRenderer.ts','utf8');
- expect(source).toMatch(/this\.lighting\.loadRoom\(this\.world,w,h(?:,environment)?\)/);
+ expect(source).toContain('this.lighting.loadRoom(this.world,w,h,environment,node.templateId)');
  expect(source).toContain('this.lighting.update(dt)');
  expect(source).toContain('this.contacts.end()');
  expect(source).toContain('this.lighting.dispose()');
@@ -43,7 +43,8 @@ it('retains unmerged fixture positions through the real legacy renderer bake',()
 it.each([
  {y:1.2,offset:1,included:true},
  {y:.1,offset:1,included:true},
- {y:1.2,offset:-1,included:false},
+ {y:1.2,offset:-1,included:true},
+ {y:1.2,offset:-2,included:false},
 ])('bakes flattened legacy fixture matrix origins with y=$y and offset=$offset',({y,offset,included})=>{
  const renderer=Object.create(DepthRenderer.prototype) as {world:T.Group;floorMaterial:T.Material;bakeWorld():void};
  renderer.world=new T.Group();renderer.floorMaterial=new T.MeshStandardMaterial();
@@ -64,13 +65,13 @@ it.each([
  expect(records).toHaveLength(included?1:0);
  if(included){
   const record=records[0];
-  expect(new T.Vector3(record.x,record.y,record.z).distanceTo(localOrigin)).toBeLessThan(1e-6);
+  expect(new T.Vector3(record.x,record.y,record.z).distanceTo(new T.Vector3(localOrigin.x,Math.max(.32,localOrigin.y),localOrigin.z))).toBeLessThan(1e-6);
   expect(record.color).toBe(0x66cddd);
  }
  const rig=new SceneLighting();rig.loadRoom(renderer.world,24,16);
  const lights=rig.fixtures.filter(light=>light.intensity>0);
  expect(lights).toHaveLength(included?1:0);
- if(included)expect(lights[0].position.distanceTo(worldOrigin)).toBeLessThan(1e-6);
+ if(included)expect(lights[0].position.distanceTo(new T.Vector3(localOrigin.x,Math.max(.32,localOrigin.y),localOrigin.z).applyMatrix4(renderer.world.matrixWorld))).toBeLessThan(1e-6);
  rig.dispose();disposeModel(renderer.world);geometry.dispose();material.dispose();renderer.floorMaterial.dispose();
 });
 
