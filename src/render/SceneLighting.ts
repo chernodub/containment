@@ -1,48 +1,83 @@
 import * as T from 'three';
+import type {ShipEnvironment} from './ShipEnvironments';
+import type {GraphicsTier} from './FrameBudget';
+import {getEnvironmentMood,type EnvironmentMood} from './lighting/EnvironmentMoods';
+import {LightPool} from './lighting/LightPool';
+import {MarineLamp} from './lighting/MarineLamp';
 
 type Fixture={x:number;y:number;z:number;color:number};
-/** One shadow map, four fixture pools and one shared blast light on every tier. */
+/** Stable room lights, motivated practicals and a bounded combat-light pool. */
 export class SceneLighting {
  readonly root=new T.Group();
- readonly ambient=new T.HemisphereLight(0xb9d4e5,0x303b46,.78);
- readonly key=new T.DirectionalLight(0xc9dfff,3.2);
- readonly fixtures=Array.from({length:4},()=>new T.PointLight(0x9edcec,0,5.5,2));
+ readonly ambient=new T.HemisphereLight();
+ readonly key=new T.DirectionalLight();
+ readonly fill=new T.DirectionalLight();
+ readonly rim=new T.DirectionalLight();
+ readonly fixtures=Array.from({length:4},()=>new T.PointLight(0x9edcec,0,5.8,2));
  readonly blast=new T.PointLight(0xffc18a,0,7,2);
- private blastLife=0;
+ readonly pool=new LightPool('high',9);
+ readonly lamp=new MarineLamp();
+ mood:EnvironmentMood=getEnvironmentMood();
+ private blastLife=0;private time=0;private tier:GraphicsTier='high';private fixtureCount=0;private dynamicLights=true;private flashIntensity=1;private disposed=false;
  constructor(){
-  const fill=new T.DirectionalLight(0x7296b0,.22);fill.position.set(-8,8,-12);
-  this.key.castShadow=true;this.key.position.set(-16,14,10);
+  this.key.castShadow=true;
   const shadow=this.key.shadow;shadow.mapSize.set(1024,1024);
   Object.assign(shadow.camera,{left:-24,right:24,top:24,bottom:-24,near:.5,far:70});
-  shadow.normalBias=.015;shadow.bias=-.0002;
-  this.root.add(this.ambient,this.key,this.key.target,fill,...this.fixtures,this.blast);
+  shadow.normalBias=.015;shadow.bias=-.0002;shadow.radius=2;
+  this.root.name='scene-lighting';
+  this.root.add(this.ambient,this.key,this.key.target,this.fill,this.fill.target,this.rim,this.rim.target,...this.fixtures,this.blast,this.pool.root,this.lamp.root);
+  this.applyMood(0,0);
  }
- loadRoom(world:T.Group,width:number,height:number){
-  this.blastLife=0;this.blast.intensity=0;
-  this.key.target.position.set(width/2,0,height/2);this.key.position.copy(this.key.target.position).add(new T.Vector3(-16,14,10));
+ /** Settings changes may alter shader topology; updates and combat effects never do. */
+ setQuality(tier:GraphicsTier,dynamicLights=true,atmosphere=true,flashIntensity=1){
+  this.tier=tier;this.dynamicLights=dynamicLights;this.flashIntensity=Math.max(0,Math.min(1,flashIntensity));
+  this.pool.setIntensityScale(this.flashIntensity);
+  this.key.castShadow=tier==='high';this.pool.setQuality(tier,tier==='high'&&dynamicLights);
+  this.blast.visible=dynamicLights;this.lamp.setQuality(tier==='high',atmosphere);
+  if(!dynamicLights){this.blastLife=0;this.blast.intensity=0;}
+  for(let i=0;i<this.fixtures.length;i++){this.fixtures[i].visible=tier==='high'||i<2;if(!this.fixtures[i].visible)this.fixtures[i].intensity=0;}
+ }
+ loadRoom(world:T.Group,width:number,height:number,environment?:ShipEnvironment){
+  this.blastLife=0;this.blast.intensity=0;this.pool.reset();this.time=0;
+  this.mood=getEnvironmentMood(environment);this.applyMood(width,height);
   world.updateWorldMatrix(true,true);const candidates:Fixture[]=[],position=new T.Vector3();
   world.traverse(object=>{
    const authored=object.userData.lightFixtures as Fixture[]|undefined;
    if(authored)for(const fixture of authored){position.set(fixture.x,fixture.y,fixture.z).applyMatrix4(object.matrixWorld);candidates.push({...fixture,x:position.x,y:position.y,z:position.z});}
-   // Authored meshes are merged by material, so their centers are not fixtures.
+   // Authored meshes are merged by material: their centers are never fixture origins.
    if(object.userData.bakedEnvironment||!(object instanceof T.Mesh)||Array.isArray(object.material))return;
    const material=object.material;
    if(!(material instanceof T.MeshStandardMaterial)||material.emissiveIntensity<.5||material.emissive.getHex()===0)return;
    object.getWorldPosition(position);if(position.y<.65)return;
    candidates.push({x:position.x,y:position.y,z:position.z,color:material.emissive.getHex()});
   });
-  // Deterministic farthest-point spacing avoids spending all four pools on one bank.
   const selected:Fixture[]=[];
   candidates.sort((a,b)=>Math.hypot(a.x-width/2,a.z-height/2)-Math.hypot(b.x-width/2,b.z-height/2));
   while(candidates.length&&selected.length<this.fixtures.length){
    if(selected.length)candidates.sort((a,b)=>Math.min(...selected.map(s=>Math.hypot(b.x-s.x,b.z-s.z)))-Math.min(...selected.map(s=>Math.hypot(a.x-s.x,a.z-s.z))));
    const next=candidates.shift()!;if(selected.every(s=>Math.hypot(next.x-s.x,next.z-s.z)>2))selected.push(next);
   }
-  this.fixtures.forEach((light,i)=>{const fixture=selected[i];light.intensity=fixture?5:0;if(fixture){light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);}});
+  this.fixtureCount=selected.length;
+  this.fixtures.forEach((light,i)=>{const fixture=selected[i];light.intensity=fixture&&light.visible?this.mood.practical.intensity:0;if(fixture){light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color).lerp(new T.Color(this.mood.practical.color),.32);light.distance=this.mood.practical.distance;}});
  }
- explosion(x:number,z:number,radius:number){this.blast.position.set(x,.9,z);this.blast.distance=Math.min(7,Math.max(3,radius*1.5));this.blastLife=.18;this.blast.intensity=12;}
- update(dt:number){this.blastLife=Math.max(0,this.blastLife-dt);this.blast.intensity=12*(this.blastLife/.18)**2;}
- dispose(){this.key.shadow.dispose();this.root.removeFromParent();}
+ setPlayer(x:number,z:number,aimRadians:number){this.lamp.update(x,z,aimRadians);}
+ explosion(x:number,z:number,radius:number){if(!this.dynamicLights)return;this.blast.position.set(x,.9,z);this.blast.distance=Math.min(7,Math.max(3,radius*1.5));this.blastLife=.18;this.blast.intensity=12*this.flashIntensity;}
+ update(dt:number){
+  const delta=Number.isFinite(dt)?Math.max(0,dt):0;this.time+=delta;this.pool.update(delta);
+  this.blastLife=Math.max(0,this.blastLife-delta);this.blast.intensity=12*this.flashIntensity*(this.blastLife/.18)**2;
+  const behavior=this.mood.practical.behavior;
+  for(let i=0;i<this.fixtureCount;i++){
+   const light=this.fixtures[i];if(!light.visible)continue;
+   const phase=this.time+i*1.73;
+   const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.8+.2*Math.sin(phase*1.4):behavior==='reactor'?.84+.16*Math.sin(phase*2.1):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
+   light.intensity=this.mood.practical.intensity*(1+(animated-1)*this.flashIntensity);
+  }
+ }
+ dispose(){if(this.disposed)return;this.disposed=true;this.key.shadow.dispose();this.pool.dispose();this.lamp.dispose();this.root.removeFromParent();}
+ private applyMood(width:number,height:number){
+  const mood=this.mood;this.ambient.color.setHex(mood.ambient.sky);this.ambient.groundColor.setHex(mood.ambient.ground);this.ambient.intensity=mood.ambient.intensity;
+  for(const [light,data] of [[this.key,mood.key],[this.fill,mood.fill],[this.rim,mood.rim]] as const){light.color.setHex(data.color);light.intensity=data.intensity;light.target.position.set(width/2,0,height/2);light.position.set(width/2+data.offset[0],data.offset[1],height/2+data.offset[2]);}
+ }
 }
 
 /** Soft grounding survives the performance tier without another shadow render. */

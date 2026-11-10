@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 
 it('wires lighting and contact patches into the production renderer and reset lifecycle',()=>{
  const source=readFileSync('src/render/DepthRenderer.ts','utf8');
- expect(source).toContain('this.lighting.loadRoom(this.world,w,h)');
+ expect(source).toMatch(/this\.lighting\.loadRoom\(this\.world,w,h(?:,environment)?\)/);
  expect(source).toContain('this.lighting.update(dt)');
  expect(source).toContain('this.contacts.end()');
  expect(source).toContain('this.lighting.dispose()');
@@ -90,10 +90,10 @@ describe('bounded presentation lighting',()=>{
   for(const light of rig.fixtures)expect(room.userData.lightFixtures.some((f:{x:number;y:number;z:number})=>light.position.equals(new T.Vector3(f.x+40,f.y+2,f.z+20)))).toBe(true);
   rig.dispose();disposeModel(room);
  });
- it('uses a cool directional key and a readable, subordinate ambient fill',()=>{
+ it('uses a cool directional key and a readable, subordinate mood-driven ambient fill',()=>{
   const rig=new SceneLighting();
   expect(rig.key.color.b).toBeGreaterThan(rig.key.color.r);
-  expect(rig.ambient.intensity).toBeGreaterThanOrEqual(.6);
+  expect(rig.ambient.intensity).toBeGreaterThanOrEqual(.45);
   expect(rig.ambient.intensity).toBeLessThanOrEqual(.85);
   const offset=rig.key.position.clone().sub(rig.key.target.position);
   expect(Math.hypot(offset.x,offset.z)).toBeGreaterThan(offset.y);
