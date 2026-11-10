@@ -165,6 +165,17 @@ export class AbilitySystem {
     this.deployables.push(entity); this.states[d.slot].active = Math.max(this.states[d.slot].active, duration);
     this.event(cast.id, 'tick', p, { entityId: entity.id, durationMs: duration, angle: cast.angle });
   }
+  private wallDistance(target: MutationTarget, dx: number, dy: number): number {
+    const maximum = 1600; // Beyond the longest authored room dimension; bounded binary search.
+    if (this.host.traverse(target, { x: target.x + dx * maximum, y: target.y + dy * maximum }, target.radius)) return maximum;
+    let clear = 0, blocked = maximum;
+    for (let i = 0; i < 12; i++) {
+      const middle = (clear + blocked) / 2;
+      if (this.host.traverse(target, { x: target.x + dx * middle, y: target.y + dy * middle }, target.radius)) clear = middle;
+      else blocked = middle;
+    }
+    return clear;
+  }
   private resolve(cast: Cast): void {
     const d = ABILITY_CATALOG[cast.id];
     let ids: number[] = [];
@@ -211,8 +222,9 @@ export class AbilitySystem {
         for (const t of this.host.targets().slice(0, ABILITY_LIMITS.targets)) {
           const along = (t.x - cast.x) * Math.cos(cast.angle) + (t.y - cast.y) * Math.sin(cast.angle);
           if (along < 0 || along > 900 || segmentDistance(t, cast, end) > 22 || !this.host.visible(cast, t)) continue;
-          const side = (t.x - cast.x) * -Math.sin(cast.angle) + (t.y - cast.y) * Math.cos(cast.angle) < 0 ? -1 : 1;
-          this.host.launch(t, -Math.sin(cast.angle) * 1100 * side, Math.cos(cast.angle) * 1100 * side); this.hit(t, 420); ids.push(t.id);
+          const px = -Math.sin(cast.angle), py = Math.cos(cast.angle), positive = this.wallDistance(t, px, py), negative = this.wallDistance(t, -px, -py);
+          const side = Math.abs(positive - negative) < .5 ? ((t.x - cast.x) * px + (t.y - cast.y) * py < 0 ? -1 : 1) : positive < negative ? 1 : -1;
+          this.host.launch(t, px * 4800 * side, py * 4800 * side); this.hit(t, 420); ids.push(t.id);
         }
         this.event(cast.id, 'link', cast, { angle: cast.angle, targetX: end.x, targetY: end.y, targetIds: ids }); break;
       }

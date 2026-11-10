@@ -265,6 +265,14 @@ describe('desktop simulation collision and hostile time isolation', () => {
     expect(canOccupyExpedition(game.geometry, game.player, game.player.radius)).toBe(true);
   });
 
+  it('carries a lethal Railbreaker body into an actual wall from the middle of a room', () => {
+    const {game,effects}=arena('breacher');game.combat.setBuild({rig:'breacher',mutations:['breacher']});
+    const target=spawn(game,'brute',600,440);game.damage(target.id,target.health+target.armor-1);game.abilities.addCharge(6000);
+    expect(game.useAbility('overdrive')).toBe(true);advance(game,850);
+    expect(effects.some(e=>e.type==='wall-slam')).toBe(true);
+    expect(effects.some(e=>e.type==='sync-corpse')).toBe(true);
+  });
+
   it('lets real pursuing enemies attack a blocking wall and resume navigation after it breaks', () => {
     const {game} = arena('breacher');
     const enemy=spawn(game,'brute',620,440);

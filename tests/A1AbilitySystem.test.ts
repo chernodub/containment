@@ -439,6 +439,13 @@ describe('power placement, deployable collision and lifetimes', () => {
   });
 });
 describe('Overdrive effects and exact bounds', () => {
+  it('Railbreaker chooses the nearer collision wall rather than the target’s side of the aim line', () => {
+    const w=world('breacher',[],1);w.add(100,1);
+    w.traversal((_from,to)=>to.y>=-100&&to.y<=1000);
+    w.use('overdrive');
+    expect(w.launches[0].y).toBe(-4800);
+    expect(w.hits).toEqual([{id:1,amount:420}]);
+  });
   it('Railbreaker waits 600ms, pierces the 900x44 aim line and launches affected targets sideways', () => {
     const w = world('breacher', [], 1);
     w.add(900, 22);
@@ -453,7 +460,7 @@ describe('Overdrive effects and exact bounds', () => {
     expect(w.hits).toEqual([]);
     w.advance(1);
     expect(w.hits).toEqual([{ id: 1, amount: 420 }, { id: 5, amount: 420 }]);
-    expect(w.launches).toEqual([{ id: 1, x: -0, y: 1100 }, { id: 5, x: 0, y: -1100 }]);
+    expect(w.launches).toEqual([{ id: 1, x: -0, y: 4800 }, { id: 5, x: 0, y: -4800 }]);
     expect(w.events.find(e => e.ability === 'railbreaker' && e.phase === 'link')).toMatchObject({ length: 900, width: 44, targetX: 900, targetY: 0 });
   });
   it('Whiteout follows the marine, chills visible targets, freezes every two seconds and shatters frozen kills', () => {
