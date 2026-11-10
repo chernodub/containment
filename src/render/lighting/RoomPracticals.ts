@@ -7,7 +7,7 @@ export function addRoomPracticals(world:T.Group,width:number,depth:number,enviro
   const organic=environment==='infested',count=Math.min(32,Math.max(4,Math.ceil(depth/4.5)*2));
   const geometry=organic?new T.SphereGeometry(1,12,8):new T.BoxGeometry(1,1,1);
   const material=new T.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:organic?1.3:1.5,roughness:.45,metalness:.15});
-  material.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n#ifdef USE_COLOR\n totalEmissiveRadiance*=vColor;\n#endif');};
+  material.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n#ifdef USE_COLOR\n totalEmissiveRadiance*=vColor.rgb;\n#endif');};
   material.customProgramCacheKey=()=> 'room-practical-emission-v1';
   const lights=new T.InstancedMesh(geometry,material,count),mounts=new T.InstancedMesh(new T.BoxGeometry(1,1,1),new T.MeshStandardMaterial({color:0x28363b,roughness:.65,metalness:.6}),count);
   material.userData.actorMaterial=true;material.userData.motivatedEmitter=true;(mounts.material as T.Material).userData.actorMaterial=true;
