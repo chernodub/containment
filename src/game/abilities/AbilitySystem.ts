@@ -256,7 +256,7 @@ export class AbilitySystem {
       this.event(cast.id, 'dash-start', cast, { angle: cast.angle, targetX: cast.x + this.dash.x, targetY: cast.y + this.dash.y, durationMs: DASH_DURATION_MS });
     } else switch (cast.id) {
       case 'seismic-slam':
-        ids = this.radial(cast, 230, 90, undefined, 700);
+        ids = this.radial(cast, 230, 110, undefined, 700);
         if (this.host.has('afterquake' as MutationId) && this.afterquakes.length < 4) { this.afterquakes.push({ ...cast, delay: 450 }); this.event(cast.id, 'cast', cast, { durationMs: 450 }); }
         break;
       case 'cryo-nova': {
