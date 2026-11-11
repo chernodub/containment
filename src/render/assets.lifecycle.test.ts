@@ -34,6 +34,35 @@ describe('model template loading ownership', () => {
     expect(loader).toHaveBeenCalledTimes(ASSET_NAMES.length);
   });
 
+  it('keeps shared template images and geometry alive when an instance retires', async () => {
+    vi.resetModules();
+    const {registerAsset, instantiateAsset} = await import('./assets');
+    const {disposeModel} = await import('./meshParts');
+    const scene = new T.Group(), geometry = new T.BoxGeometry(), texture = new T.Texture();
+    const material = new T.MeshStandardMaterial({map:texture});
+    scene.add(new T.Mesh(geometry, material));
+    registerAsset('marine', {scene, animations:[]} as unknown as GLTF);
+    const first = instantiateAsset('marine'), second = instantiateAsset('marine');
+    const mesh = (root:T.Group) => root.children[0] as T.Mesh<T.BufferGeometry, T.MeshStandardMaterial>;
+    const firstMesh = mesh(first.root), secondMesh = mesh(second.root);
+    expect(firstMesh.material).not.toBe(material);
+    expect(firstMesh.material).not.toBe(secondMesh.material);
+    expect(firstMesh.material.map).toBe(texture);
+    expect(secondMesh.material.map).toBe(texture);
+    expect(firstMesh.geometry).toBe(geometry);
+    const retireMaterial = vi.spyOn(firstMesh.material, 'dispose');
+    const retireGeometry = vi.spyOn(geometry, 'dispose'), retireTexture = vi.spyOn(texture, 'dispose');
+    disposeModel(first.root);
+    expect(retireMaterial).toHaveBeenCalledTimes(1);
+    expect(retireGeometry).not.toHaveBeenCalled();
+    expect(retireTexture).not.toHaveBeenCalled();
+    expect(secondMesh.material.map).toBe(texture);
+    disposeModel(second.root);
+    expect(retireGeometry).not.toHaveBeenCalled();
+    expect(retireTexture).not.toHaveBeenCalled();
+    geometry.dispose(); texture.dispose(); material.dispose();
+  });
+
   it('evicts failed in-flight work so a subsequent boot retries only the failed model', async () => {
     vi.resetModules();
     const {preloadAssets, ASSET_NAMES} = await import('./assets');
