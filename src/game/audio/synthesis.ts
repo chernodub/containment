@@ -60,29 +60,36 @@ export function synthesize(recipe: CueRecipe, sampleRate = SYNTH_SAMPLE_RATE, va
     const start = Math.round(delay * sampleRate), count = Math.min(samples.length - start, Math.ceil(duration * sampleRate));
     let phase = 0, low = 0;
     const frequency = layer.frequency ?? 180, end = layer.endFrequency ?? frequency;
+    let currentFrequency = frequency, envelope = 1;
+    const frequencyStep = Math.pow(end / frequency, 1 / (duration * sampleRate));
+    const envelopeStep = Math.exp(-(layer.decay ?? (recipe.loop ? 0 : 4)) / (duration * sampleRate));
     const alpha = 1 - Math.exp(-2 * Math.PI * Math.min(layer.cutoff ?? 7000, sampleRate * .45) / sampleRate);
     const line = layer.wave === 'pluck' ? new Float32Array(Math.max(3, Math.round(sampleRate / frequency))) : null;
     if (line) for (let j = 0; j < line.length; j++) line[j] = random();
     for (let i = 0; i < count; i++) {
-      const t = i / sampleRate, u = t / duration;
-      phase += 2 * Math.PI * (frequency * Math.pow(end / frequency, u)) / sampleRate;
+      const t = i / sampleRate;
       let value: number;
       if (line) {
         const j = i % line.length;
         value = line[j]; line[j] = .496 * (value + line[(j + 1) % line.length]);
       } else if (layer.wave === 'noise') value = random();
       else {
+        phase += 2 * Math.PI * currentFrequency / sampleRate;
+        currentFrequency *= frequencyStep;
         const fm = (layer.fm ?? 0) * Math.sin(phase * (layer.modRate ?? 1.43));
         value = Math.sin(phase + fm);
         if (layer.wave === 'metal') value = .56 * value + .28 * Math.sin(phase * 1.483 + fm) + .16 * Math.sin(phase * 2.731);
       }
       low += alpha * (value - low);
       value = layer.highpass ? value - low : low;
-      const attack = Math.min(1, t / (layer.attack ?? .004));
-      const release = Math.min(1, (duration - t) / (recipe.loop ? .025 : .025));
-      const decay = Math.exp(-(layer.decay ?? (recipe.loop ? 0 : 4)) * u);
-      const amplitude = 1 - (layer.am ?? 0) * (.5 + .5 * Math.cos(2 * Math.PI * (layer.pulse ?? 7) * t));
-      samples[start + i] += value * layer.gain * attack * release * decay * amplitude;
+      // A bed's entry fade belongs on the source gain, not inside repeating PCM.
+      // Keep authored short attacks for drips, clock ticks and heartbeats.
+      const persistent = recipe.loop && delay === 0 && duration >= recipe.duration * .9;
+      const attack = Math.min(1, t / (persistent ? .003 : layer.attack ?? .004));
+      const release = Math.min(1, (duration - t) / (persistent ? .003 : .025));
+      const amplitude = layer.am ? 1 - layer.am * (.5 + .5 * Math.cos(2 * Math.PI * (layer.pulse ?? 7) * t)) : 1;
+      samples[start + i] += value * layer.gain * attack * release * envelope * amplitude;
+      envelope *= envelopeStep;
     }
   }
   // Remove DC, taper both edges, then level-match without flattening transients.
@@ -91,7 +98,7 @@ export function synthesize(recipe: CueRecipe, sampleRate = SYNTH_SAMPLE_RATE, va
   mean /= samples.length;
   let energy = 0, peak = 0;
   for (let i = 0; i < samples.length; i++) {
-    const taper = Math.min(1, i / (sampleRate * .003), (samples.length - 1 - i) / (sampleRate * .012));
+    const taper = Math.min(1, i / (sampleRate * .003), (samples.length - 1 - i) / (sampleRate * (recipe.loop ? .003 : .012)));
     samples[i] = (samples[i] - mean) * taper;
     energy += samples[i] * samples[i]; peak = Math.max(peak, Math.abs(samples[i]));
   }

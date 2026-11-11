@@ -1,5 +1,6 @@
 import {describe,it,expect,vi} from 'vitest';
 import {AudioSystem} from '../src/game/audio/AudioSystem';
+import {FakeAudioContext} from './audioFake';
 import {elementalCueSamples,type ElementalCue} from '../src/game/audio/elementalCues';
 
 describe('elemental audio',()=>{
@@ -26,15 +27,12 @@ describe('elemental audio',()=>{
   audio.syncFrozen([3],2);expect(play).toHaveBeenCalledTimes(4);
   audio.destroy();audio.syncFrozen([4],2);expect(play).toHaveBeenCalledTimes(4);
  });
- it('caches three buffers, rate-limits bursts, and uses the existing paused voice path',()=>{
-  const audio=new AudioSystem(),clock={state:'running',currentTime:0,sampleRate:48000,
-   createBuffer:vi.fn((_channels:number,length:number)=>({getChannelData:()=>new Float32Array(length)}))};
-  Object.assign(audio,{context:clock,effectsGain:{}});
-  const play=vi.spyOn(audio as unknown as {playBuffer:(...args:unknown[])=>null},'playBuffer').mockReturnValue(null);
+ it('caches three buffers, rate-limits bursts, and suppresses paused voices',async()=>{
+  const clock=new FakeAudioContext(),audio=new AudioSystem({}, {context:clock.asContext(),loadSamples:false,prewarm:false});await audio.unlock();
   for(const kind of ['freeze','shatter','reactor'] as const){audio.playElemental(kind);audio.playElemental(kind);}
-  expect(play).toHaveBeenCalledTimes(3);expect(clock.createBuffer).toHaveBeenCalledTimes(3);
-  clock.currentTime=1;for(const kind of ['freeze','shatter','reactor'] as ElementalCue[])audio.playElemental(kind);
-  expect(play).toHaveBeenCalledTimes(6);expect(clock.createBuffer).toHaveBeenCalledTimes(3);
-  audio.pauseAll();clock.currentTime=2;audio.playElemental('shatter');expect(play).toHaveBeenCalledTimes(6);
+  expect(clock.sources).toHaveLength(3);expect(clock.buffers).toHaveLength(3);
+  clock.advance(1);for(const kind of ['freeze','shatter','reactor'] as ElementalCue[])audio.playElemental(kind);
+  expect(clock.sources).toHaveLength(6);expect(clock.buffers).toHaveLength(3);
+  audio.pauseAll();clock.advance(1);audio.playElemental('shatter');expect(clock.sources).toHaveLength(6);audio.destroy();
  });
 });

@@ -7,11 +7,13 @@ export const LOOP_LIMIT = 10;
 const clamp = (n: number, max = 1) => Number.isFinite(n) ? Math.max(0, Math.min(max, n)) : 0;
 export type MixVoice = {
   source: AudioBufferSourceNode; gain: GainNode; nodes: AudioNode[];
-  bus: AudioBus; priority: number; loop: boolean; retiring: boolean; end: number;
+  bus: AudioBus; priority: number; loop: boolean; retiring: boolean; end: number; level: number;
+  rate: number; start: number; contentDuration: number; consumed: number; rateUpdatedAt: number;
 };
 export type VoiceOptions = {
   bus: AudioBus; level?: number; priority?: number; pan?: number; distance?: number;
   rate?: number; delay?: number; offset?: number; duration?: number; loop?: boolean;
+  fadeIn?: number;
 };
 
 /** One graph for legacy samples and original PCM. All sources count toward the cap. */
@@ -24,6 +26,7 @@ export class MixEngine {
   readonly musicFilter: BiquadFilterNode;
   private readonly duckMusic: GainNode;
   private readonly duckAmbience: GainNode;
+  private readonly musicFocus: GainNode;
   private readonly nodes: AudioNode[] = [];
   private readonly reverbInput: GainNode;
   private reverbs: { convolver: ConvolverNode; gain: GainNode }[] = [];
@@ -39,6 +42,7 @@ export class MixEngine {
     this.master.gain.value = volumes.master * .85;
     this.effects.gain.value = volumes.effects; this.music.gain.value = volumes.music;
     this.duckMusic = context.createGain(); this.duckAmbience = context.createGain();
+    this.musicFocus = context.createGain();
     this.musicFilter = context.createBiquadFilter(); this.musicFilter.type = 'lowpass'; this.musicFilter.frequency.value = 20000;
     const compressor = context.createDynamicsCompressor();
     compressor.threshold.value = -9; compressor.knee.value = 8; compressor.ratio.value = 5;
@@ -46,7 +50,7 @@ export class MixEngine {
     const limiter = context.createWaveShaper(), curve = new Float32Array(4097);
     for (let i = 0; i < curve.length; i++) curve[i] = .96 * Math.tanh((i / (curve.length - 1) * 2 - 1) / .96);
     limiter.curve = curve; limiter.oversample = '2x';
-    this.effects.connect(this.master); this.music.connect(this.musicFilter).connect(this.duckMusic).connect(this.master);
+    this.effects.connect(this.master); this.music.connect(this.musicFilter).connect(this.musicFocus).connect(this.duckMusic).connect(this.master);
     this.master.connect(compressor).connect(limiter).connect(context.destination);
     this.reverbInput = context.createGain(); this.reverbInput.gain.value = .13;
     for (let i = 0; i < 2; i++) {
@@ -62,7 +66,7 @@ export class MixEngine {
       if (bus !== 'music' && bus !== 'ui' && bus !== 'ambience') node.connect(this.reverbInput);
       this.nodes.push(node);
     }
-    this.nodes.push(this.master, this.effects, this.music, this.duckMusic, this.duckAmbience, this.musicFilter, compressor, limiter, this.reverbInput);
+    this.nodes.push(this.master, this.effects, this.music, this.duckMusic, this.duckAmbience, this.musicFocus, this.musicFilter, compressor, limiter, this.reverbInput);
   }
 
   /** Admission keeps eight spare physical voices for click-free stealing tails. */
@@ -87,7 +91,7 @@ export class MixEngine {
     const duration = Math.max(.001, Math.min(options.duration ?? buffer.duration - offset, buffer.duration - offset));
     const level = clamp(options.level ?? 1, 2) / (1 + Math.max(0, options.distance ?? 0) / 420);
     source.buffer = buffer; source.loop = options.loop ?? false; source.playbackRate.value = rate;
-    gain.gain.setValueAtTime(0, start); gain.gain.linearRampToValueAtTime(level, start + Math.min(.004, duration / rate / 3));
+    gain.gain.setValueAtTime(0, start); gain.gain.linearRampToValueAtTime(level, start + (source.loop ? Math.max(.004, options.fadeIn ?? .004) : Math.min(.004, duration / rate / 3)));
     if (!source.loop) {
       gain.gain.setValueAtTime(level, start + Math.max(.004, duration / rate - .018));
       gain.gain.linearRampToValueAtTime(0, start + duration / rate);
@@ -96,7 +100,7 @@ export class MixEngine {
     const nodes: AudioNode[] = [gain];
     const pan = this.context.createStereoPanner(); pan.pan.value = Math.max(-.85, Math.min(.85, options.pan ?? 0));
     gain.connect(pan).connect(this.buses[options.bus]); nodes.push(pan);
-    const voice: MixVoice = { source, gain, nodes, priority, bus: options.bus, loop: source.loop, retiring: false, end: source.loop ? Infinity : start + duration / rate };
+    const voice: MixVoice = { source, gain, nodes, priority, bus: options.bus, loop: source.loop, retiring: false, end: source.loop ? Infinity : start + duration / rate, level, rate, start, contentDuration: duration, consumed: 0, rateUpdatedAt: start };
     this.voices.add(voice); this.admitted++; this.highWater = Math.max(this.highWater, this.voices.size);
     source.addEventListener('ended', () => this.release(voice), { once: true });
     if (source.loop) source.start(start, offset); else source.start(start, offset, duration);
@@ -112,6 +116,30 @@ export class MixEngine {
     try { voice.source.stop(now + fade); } catch { this.release(voice); }
   }
   stopAll(): void { for (const voice of this.voices) this.stop(voice); }
+  /** Preserve the remaining buffer duration and release when hostile time changes. */
+  setRate(voice: MixVoice, rate: number): void {
+    if (voice.loop || voice.retiring || !this.voices.has(voice)) return;
+    const now = this.context.currentTime;
+    voice.consumed += Math.max(0, now - voice.rateUpdatedAt) * voice.rate;
+    voice.rate = Math.max(.25, Math.min(3, rate)); voice.rateUpdatedAt = Math.max(now, voice.start);
+    voice.end = Math.max(now, voice.start) + Math.max(0, voice.contentDuration - voice.consumed) / voice.rate;
+    voice.source.playbackRate.setValueAtTime(voice.rate, now);
+    voice.gain.gain.cancelAndHoldAtTime(now);
+    const attackEnd = Math.max(now, voice.start) + Math.min(.004, Math.max(.001, voice.end - Math.max(now, voice.start)) / 3);
+    if (now < voice.start) voice.gain.gain.setValueAtTime(0, voice.start);
+    voice.gain.gain.linearRampToValueAtTime(voice.level, attackEnd);
+    voice.gain.gain.setValueAtTime(voice.level, Math.max(attackEnd, voice.end - .018));
+    voice.gain.gain.linearRampToValueAtTime(0, Math.max(now + .002, voice.end));
+    voice.source.stop(voice.end);
+  }
+  /** Safety expiry for missed end events, with the same release ramp as explicit stops. */
+  expire(voice: MixVoice, seconds: number): void {
+    const end = this.context.currentTime + Math.max(.05, seconds);
+    voice.gain.gain.setValueAtTime(voice.level, end - .025);
+    voice.gain.gain.linearRampToValueAtTime(0, end);
+    voice.end = end;
+    voice.source.stop(end);
+  }
   private release(voice: MixVoice): void {
     if (!this.voices.delete(voice)) return;
     voice.source.disconnect(); for (const node of voice.nodes) node.disconnect();
@@ -134,12 +162,13 @@ export class MixEngine {
   }
   setTreatment(danger: number, slowed: boolean, overdrive: boolean): void {
     this.musicFilter.frequency.setTargetAtTime(slowed ? 1100 : danger > .7 ? 3600 : 20000, this.context.currentTime, .12);
-    if (overdrive) this.duck(.42, .20);
+    this.musicFocus.gain.setTargetAtTime(overdrive ? .66 : 1, this.context.currentTime, .12);
   }
   /** Dual reverbs let a room's old reflections decay through the crossfade. */
   setReverb(seconds: number, damping: number): void {
     const next = 1 - this.reverbIndex, bank = this.reverbs[next], now = this.context.currentTime;
-    const pcm = impulseSamples(12000, seconds, damping), buffer = this.context.createBuffer(2, pcm[0].length, 12000);
+    const rate = this.context.sampleRate;
+    const pcm = impulseSamples(rate, seconds, damping), buffer = this.context.createBuffer(2, pcm[0].length, rate);
     buffer.getChannelData(0).set(pcm[0]); buffer.getChannelData(1).set(pcm[1]);
     bank.convolver.buffer = buffer;
     bank.gain.gain.setTargetAtTime(.5, now, .24);
