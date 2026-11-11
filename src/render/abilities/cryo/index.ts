@@ -150,24 +150,27 @@ class CryoPresentation implements AbilityPresentation {
     const age = (zone.durationMs - zone.remainingMs) / 1000;
     // Continuous, ankle-low mass stays inside the authoritative capsule rectangle.
     k.draw('solid', x + dx * .5, .055, z + dz * .5, length, .095, half * 1.88, DEEP, fade * .62, -direction);
-    const plates = k.low ? 5 : 11;
+    const plates = k.low ? 5 : 9;
     for (let i = 0; i < plates; i++) {
-      const t = (i + .5) / plates, r = half * (.56 + .12 * Math.sin(i * 3.7) ** 2);
-      k.draw('shard', x + dx * t, .08, z + dz * t,
-        Math.min(length / plates * .72, half * .7), .065, r, i % 3 ? ICE : CORE, fade * .56, -direction, 0);
+      const seed = i * 2.731 + zone.id * .83, variation = Math.sin(seed) ** 2;
+      const t = (i + .5 + Math.sin(seed * 3) * .21) / plates, r = half * (.35 + .2 * variation);
+      const lateral = Math.sin(seed * 1.7) * half * .17;
+      k.draw('shard', x + dx * t - sz * lateral, .07 + variation * .025, z + dz * t + cx * lateral,
+        Math.min(length / plates * (.36 + variation * .42), half * .85), .045 + variation * .035, r,
+        i % 5 ? ICE : CORE, fade * (.24 + variation * .3), -direction + Math.sin(seed * .7) * .24, 0);
     }
     // Faceted caps fill the rounded ends without extending beyond the real capsule.
     k.draw('shard', x, .055, z, half * .94, .08, half * .94, ICE, fade * .58, -direction);
     k.draw('shard', x + dx, .055, z + dz, half * .94, .08, half * .94, ICE, fade * .58, -direction);
     for (let i = 0; i <= count; i++) {
-      const along = length * i / count;
       const seed = i * 1.873 + zone.id;
       for (let side = -1; side <= 1; side += 2) {
+        const along = length * Math.min(1, Math.max(0, (i + Math.sin(seed + side * 1.3) * .25) / count));
         const inset = half * (.64 + Math.sin(seed) ** 2 * .14);
         const px = x + cx * along - sz * inset * side, pz = z + sz * along + cx * inset * side;
         const growth = Math.min(1, Math.max(0, age * 12 - i * .05));
         k.draw('shard', px, .1, pz, Math.min(.09, half * .12), (.23 + Math.sin(seed * 2) ** 2 * .18) * growth, Math.min(.1, half * .15),
-          i % 3 ? ICE : CORE, fade * .8, -direction, side * .2);
+          i % 7 ? ICE : CORE, fade * (.4 + Math.sin(seed * 2.9 + side) ** 2 * .35), -direction + Math.sin(seed + side) * .18, side * .2);
         if (!k.low && this.emitMist && i % 5 === 0) {
           k.mote('smoke', px, .12, pz, -sz * .22, .08, cx * .22, .4, .8, 0xb5d9e5);
         }
@@ -194,6 +197,7 @@ class CryoPresentation implements AbilityPresentation {
       }
     }
     const time = k.reducedMotion ? 0 : k.time;
+    const wind = .65 + Math.sin(time * .3) * .18, windX = Math.cos(wind), windZ = Math.sin(wind);
     const count = k.low ? 24 : 96;
     for (let i = 0; i < count; i++) {
       const seed = i * 2.39996323 + zone.id * .7;
@@ -201,10 +205,10 @@ class CryoPresentation implements AbilityPresentation {
       const r = radius * (.25 + .69 * ((i * 17 % count) / count));
       const px = x + Math.cos(angle) * r, pz = z + Math.sin(angle) * r;
       const height = .12 + Math.sin(seed * 3) ** 2 * (k.low ? .25 : 1.15);
-      k.draw('shard', px, height, pz, .023, .035, .17 + i % 3 * .06, i % 4 ? ICE : CORE, fade * .62, -angle, .6);
+      k.draw('shard', px, height, pz, .023, .035, .17 + i % 3 * .06, i % 4 ? ICE : CORE, fade * .62, Math.PI / 2 - wind + Math.sin(seed) * .13, .6);
       if (!k.low && i % 4 === 0) {
-        const tail = angle - .11;
-        k.ribbon(px, height, pz, x + Math.cos(tail) * r, height + .035, z + Math.sin(tail) * r, ICE, .013, fade * .42, false);
+        const trail = Math.min(.48, radius - r - .06);
+        k.ribbon(px, height, pz, px - windX * trail, height + .035, pz - windZ * trail, ICE, .013, fade * .42, false);
       }
     }
     // Open, low boundary sections imply a dome without a full-screen translucent shell.
@@ -267,11 +271,17 @@ class CryoPresentation implements AbilityPresentation {
     }
     const count = k.low ? 5 : 9, column = length / count;
     for (let i = 0; i < count; i++) {
-      const offset = -length / 2 + column * (i + .5), seed = i * 1.731 + wall.id;
+      const seed = i * 1.731 + wall.id;
+      const variation = Math.sin(seed * 2.37) ** 2;
+      const offset = -length / 2 + column * (i + .5 + Math.sin(seed) * .02);
       const rise = k.reducedMotion ? 1 : Math.min(1, Math.max(.02, (age - i * .009) / .09));
-      const height = (2.05 + Math.sin(seed * 3) ** 2 * .45) * rise;
+      const height = (2.05 + Math.sin(seed * 3) ** 2 * .8) * rise;
       const px = x + alongX * offset, pz = z + alongZ * offset;
-      k.iceColumn(px, pz, column, thickness, height, wall.angle, fade * (1 + (state?.flash ?? 0) * .2));
+      k.iceColumn(px, pz, column * (.82 + variation * .13), thickness * (.74 + variation * .22), height, wall.angle, fade * (1 + (state?.flash ?? 0) * .2));
+      // A ragged blue pressure foot grounds the wall; pale facets stay above a solid skirt.
+      const skirt = (.43 + variation * .3) * rise;
+      k.draw('solid', px, skirt * .5, pz, thickness * .98, skirt, column * .95,
+        0x39779b, fade * .74, -wall.angle);
       if (!k.low) {
         const crack = Math.max(damage, expiry);
         if (crack > .1 && i % 2 === 0) {
