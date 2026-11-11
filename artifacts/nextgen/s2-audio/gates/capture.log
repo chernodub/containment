@@ -1,0 +1,14 @@
+> containment-depth@2.0.0 capture
+> node scripts/nextgen/capture.mjs --label=s2-audio-production --scenarios=title,combat-heavy:armory,status-vfx,boss --burst=2
+
+WebGL2: ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)
+Capturing title…
+  1 PNGs verified
+Capturing combat-heavy-armory…
+  2 PNGs verified
+Capturing status-vfx-communal-atrium…
+  2 PNGs verified
+Capturing boss-reactor-vault…
+  2 PNGs verified
+7 PNGs in 18.05s
+artifacts/nextgen/s2-audio-production/index.html

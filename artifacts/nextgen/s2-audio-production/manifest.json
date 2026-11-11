@@ -1,0 +1,3083 @@
+{
+  "gitSHA": "f3c97ff9b34d84f7c593a8fb93b47f939ce8d31c",
+  "timestamp": "2026-11-11T01:38:59.479Z",
+  "label": "s2-audio-production",
+  "seed": 1729,
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "deviceScaleFactor": 1,
+  "shots": [
+    {
+      "scenario": "title",
+      "room": null,
+      "frame": null,
+      "file": "title.png",
+      "simulationMs": 0,
+      "performance": {
+        "samples": 41,
+        "stallsOver50ms": 2,
+        "frameMs": {
+          "average": 29.882926731574827,
+          "p95": 40.900001525878906
+        },
+        "updateMs": {
+          "average": 0.021951218930686394,
+          "p95": 0.10000002384185791
+        },
+        "renderSubmissionMs": {
+          "average": 21.592682911128534,
+          "p95": 237.5
+        },
+        "quality": "high",
+        "drawCalls": 104,
+        "triangles": 302290,
+        "geometries": 111,
+        "textures": 103,
+        "graphicsLost": false,
+        "hudMs": {
+          "last": 0.10000002384185791,
+          "average": 0.2222222089767456,
+          "samples": 9
+        }
+      },
+      "errors": [],
+      "pixels": {
+        "width": 1920,
+        "height": 1080,
+        "samples": 12432,
+        "litFraction": 1,
+        "colors": 136
+      },
+      "evidence": {
+        "abilities": {
+          "rig": "breacher",
+          "slots": {
+            "dash": {
+              "slot": "dash",
+              "id": "ram",
+              "ready": false,
+              "charges": 2,
+              "maxCharges": 2,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 2600,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            },
+            "tactical": {
+              "slot": "tactical",
+              "id": "seismic-slam",
+              "ready": false,
+              "charges": 1,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 8000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            },
+            "power": {
+              "slot": "power",
+              "id": "bulwark",
+              "ready": false,
+              "charges": 1,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 16000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 6000
+            },
+            "overdrive": {
+              "slot": "overdrive",
+              "id": "railbreaker",
+              "ready": false,
+              "charges": 0,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 0,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            }
+          },
+          "overdrive": {
+            "charge": 0,
+            "ready": false,
+            "active": false,
+            "activeRemainingMs": 0
+          },
+          "invulnerable": false,
+          "dashing": false,
+          "hostileTimeScale": 1,
+          "deployables": [],
+          "zones": [],
+          "links": []
+        },
+        "stats": {
+          "kills": {
+            "total": 0,
+            "byFamily": {
+              "crawler": 0,
+              "brute": 0,
+              "spitter": 0,
+              "stalker": 0,
+              "carrier": 0,
+              "queen": 0
+            }
+          },
+          "damageDealt": {
+            "weapon": 0,
+            "ability": 0,
+            "status": 0,
+            "boon": 0
+          },
+          "damageTaken": 0,
+          "shotsFired": 0,
+          "shotsHit": 0,
+          "abilityUses": {
+            "dash": 0,
+            "tactical": 0,
+            "power": 0,
+            "overdrive": 0
+          },
+          "overdrivesUsed": 0,
+          "highestMultiKill": 0,
+          "roomTimeMs": {
+            "1729:v3-r0": 0
+          },
+          "creditsEarned": 0
+        },
+        "recentEffects": [],
+        "state": "menu",
+        "uiState": "menu",
+        "phase": "starting-boon",
+        "templateId": "awakening-bay",
+        "elapsed": 0,
+        "player": {
+          "x": 230,
+          "y": 440,
+          "visible": true
+        },
+        "enemies": 0,
+        "visibleEnemies": 0,
+        "bullets": 0,
+        "playerBullets": 0,
+        "muzzle": 0,
+        "boss": false,
+        "statuses": [],
+        "performance": {
+          "samples": 41,
+          "stallsOver50ms": 2,
+          "frameMs": {
+            "average": 29.882926731574827,
+            "p95": 40.900001525878906
+          },
+          "updateMs": {
+            "average": 0.021951218930686394,
+            "p95": 0.10000002384185791
+          },
+          "renderSubmissionMs": {
+            "average": 21.592682911128534,
+            "p95": 237.5
+          },
+          "quality": "high",
+          "drawCalls": 104,
+          "triangles": 302290,
+          "geometries": 111,
+          "textures": 103,
+          "graphicsLost": false,
+          "hudMs": {
+            "last": 0.10000002384185791,
+            "average": 0.2222222089767456,
+            "samples": 9
+          }
+        },
+        "canvas": {
+          "colors": 68,
+          "litSamples": 573,
+          "contextLost": false,
+          "error": 0
+        },
+        "hud": false,
+        "overlay": "COLONY VESSEL / SYSTEMS SCANLIFE SIGNS DETECTEDCONTAINMENT COMPROMISED\n     COLONY SHIP // EMERGENCY WAKE PROTOCOLCONTAINMENTDEPTH20 / 01Twenty rooms aboard a colony ship.Wake up. Restore the uplink. Warn New Earth.\n    BEGIN EXPEDITIONWake upContinue expedition  Settings & controlsCredits\n    CONTAINMENT / DEPTH BUILD 2.0.0 · DESKTOP EDITION",
+        "bossHud": false,
+        "ui": {
+          "toasts": [],
+          "abilitySlots": [
+            {
+              "slot": "dash",
+              "state": "cooling",
+              "title": "Ram",
+              "value": "BLOCKED",
+              "icon": true
+            },
+            {
+              "slot": "tactical",
+              "state": "cooling",
+              "title": "Seismic Slam",
+              "value": "BLOCKED",
+              "icon": true
+            },
+            {
+              "slot": "power",
+              "state": "cooling",
+              "title": "Bulwark",
+              "value": "BLOCKED",
+              "icon": true
+            },
+            {
+              "slot": "overdrive",
+              "state": "cooling",
+              "title": "Railbreaker",
+              "value": "0%",
+              "icon": true
+            }
+          ],
+          "damageNumbers": [],
+          "threats": 0
+        }
+      }
+    },
+    {
+      "scenario": "combat-heavy",
+      "room": "armory",
+      "frame": 1,
+      "file": "combat-heavy-armory-01.png",
+      "simulationMs": 1960,
+      "performance": {
+        "samples": 28,
+        "stallsOver50ms": 2,
+        "frameMs": {
+          "average": 55.396430356161936,
+          "p95": 66.5999984741211
+        },
+        "updateMs": {
+          "average": 0.028571422610964094,
+          "p95": 0.10000002384185791
+        },
+        "renderSubmissionMs": {
+          "average": 16.310714381081716,
+          "p95": 77.80000305175781
+        },
+        "quality": "high",
+        "drawCalls": 120,
+        "triangles": 311451,
+        "geometries": 69,
+        "textures": 98,
+        "graphicsLost": false,
+        "hudMs": {
+          "last": 0.3999999761581421,
+          "average": 0.9833333492279053,
+          "samples": 6
+        }
+      },
+      "errors": [],
+      "pixels": {
+        "width": 1920,
+        "height": 1080,
+        "samples": 12432,
+        "litFraction": 0.9732142857142857,
+        "colors": 342
+      },
+      "staging": {
+        "staged": 26,
+        "player": {
+          "x": 360,
+          "y": 680
+        }
+      },
+      "evidence": {
+        "abilities": {
+          "rig": "breacher",
+          "slots": {
+            "dash": {
+              "slot": "dash",
+              "id": "ram",
+              "ready": true,
+              "charges": 2,
+              "maxCharges": 2,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 2600,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            },
+            "tactical": {
+              "slot": "tactical",
+              "id": "seismic-slam",
+              "ready": true,
+              "charges": 1,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 8000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            },
+            "power": {
+              "slot": "power",
+              "id": "bulwark",
+              "ready": false,
+              "charges": 1,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 16000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 6000
+            },
+            "overdrive": {
+              "slot": "overdrive",
+              "id": "railbreaker",
+              "ready": false,
+              "charges": 0,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 0,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            }
+          },
+          "overdrive": {
+            "charge": 0.025,
+            "ready": false,
+            "active": false,
+            "activeRemainingMs": 0
+          },
+          "invulnerable": false,
+          "dashing": false,
+          "hostileTimeScale": 1,
+          "deployables": [],
+          "zones": [],
+          "links": []
+        },
+        "stats": {
+          "kills": {
+            "total": 0,
+            "byFamily": {
+              "crawler": 0,
+              "brute": 0,
+              "spitter": 0,
+              "stalker": 0,
+              "carrier": 0,
+              "queen": 0
+            }
+          },
+          "damageDealt": {
+            "weapon": 150,
+            "ability": 0,
+            "status": 0,
+            "boon": 0
+          },
+          "damageTaken": 0,
+          "shotsFired": 3,
+          "shotsHit": 2,
+          "abilityUses": {
+            "dash": 0,
+            "tactical": 0,
+            "power": 0,
+            "overdrive": 0
+          },
+          "overdrivesUsed": 0,
+          "highestMultiKill": 0,
+          "roomTimeMs": {
+            "1729:v3-r0": 0,
+            "1729:v3-r5": 1960.0000000000032
+          },
+          "creditsEarned": 0
+        },
+        "recentEffects": [
+          {
+            "type": "explosion",
+            "at": 1.7099999999999989
+          },
+          {
+            "type": "acid",
+            "at": 1.7766666666666653
+          },
+          {
+            "type": "acid",
+            "at": 1.8099999999999985
+          },
+          {
+            "type": "acid",
+            "at": 1.8099999999999985
+          },
+          {
+            "type": "enemy-attack",
+            "at": 1.826666666666665
+          },
+          {
+            "type": "hit",
+            "at": 1.8599999999999983
+          },
+          {
+            "type": "acid",
+            "at": 1.8599999999999983
+          },
+          {
+            "type": "shot",
+            "at": 1.959999999999998
+          }
+        ],
+        "state": "playing",
+        "uiState": "playing",
+        "phase": "combat",
+        "templateId": "armory",
+        "elapsed": 1.959999999999998,
+        "player": {
+          "x": 360,
+          "y": 680,
+          "visible": true
+        },
+        "enemies": 26,
+        "visibleEnemies": 26,
+        "bullets": 5,
+        "playerBullets": 1,
+        "muzzle": 4.857142857142857,
+        "boss": false,
+        "statuses": [
+          {
+            "id": 1,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 2,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 3,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 4,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 5,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 6,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 7,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 8,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 9,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 10,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 11,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 12,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 13,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 14,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 15,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 16,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 17,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 18,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 19,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 20,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 21,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 22,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 23,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 24,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 25,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 26,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          }
+        ],
+        "performance": {
+          "samples": 28,
+          "stallsOver50ms": 2,
+          "frameMs": {
+            "average": 55.396430356161936,
+            "p95": 66.5999984741211
+          },
+          "updateMs": {
+            "average": 0.028571422610964094,
+            "p95": 0.10000002384185791
+          },
+          "renderSubmissionMs": {
+            "average": 16.310714381081716,
+            "p95": 77.80000305175781
+          },
+          "quality": "high",
+          "drawCalls": 120,
+          "triangles": 311451,
+          "geometries": 69,
+          "textures": 98,
+          "graphicsLost": false,
+          "hudMs": {
+            "last": 0.3999999761581421,
+            "average": 0.9833333492279053,
+            "samples": 6
+          }
+        },
+        "canvas": {
+          "colors": 70,
+          "litSamples": 576,
+          "contextLost": false,
+          "error": 0
+        },
+        "hud": true,
+        "overlay": "",
+        "bossHud": false,
+        "ui": {
+          "toasts": [],
+          "abilitySlots": [
+            {
+              "slot": "dash",
+              "state": "ready",
+              "title": "Ram",
+              "value": "READY",
+              "icon": true
+            },
+            {
+              "slot": "tactical",
+              "state": "ready",
+              "title": "Seismic Slam",
+              "value": "READY",
+              "icon": true
+            },
+            {
+              "slot": "power",
+              "state": "cooling",
+              "title": "Bulwark",
+              "value": "BLOCKED",
+              "icon": true
+            },
+            {
+              "slot": "overdrive",
+              "state": "cooling",
+              "title": "Railbreaker",
+              "value": "2%",
+              "icon": true
+            }
+          ],
+          "damageNumbers": [
+            "30",
+            "30",
+            "30",
+            "30",
+            "30"
+          ],
+          "threats": 0
+        }
+      }
+    },
+    {
+      "scenario": "combat-heavy",
+      "room": "armory",
+      "frame": 2,
+      "file": "combat-heavy-armory-02.png",
+      "simulationMs": 2110,
+      "performance": {
+        "samples": 57,
+        "stallsOver50ms": 2,
+        "frameMs": {
+          "average": 36.09824660786411,
+          "p95": 33.400001525878906
+        },
+        "updateMs": {
+          "average": 0.7438596424303556,
+          "p95": 1.5999999046325684
+        },
+        "renderSubmissionMs": {
+          "average": 9.049122862648545,
+          "p95": 70.5
+        },
+        "quality": "high",
+        "drawCalls": 120,
+        "triangles": 311859,
+        "geometries": 69,
+        "textures": 98,
+        "graphicsLost": false,
+        "hudMs": {
+          "last": 0.2999999523162842,
+          "average": 0.625,
+          "samples": 12
+        }
+      },
+      "errors": [],
+      "pixels": {
+        "width": 1920,
+        "height": 1080,
+        "samples": 12432,
+        "litFraction": 0.9732142857142857,
+        "colors": 320
+      },
+      "staging": {
+        "staged": 26,
+        "player": {
+          "x": 360,
+          "y": 680
+        }
+      },
+      "evidence": {
+        "abilities": {
+          "rig": "breacher",
+          "slots": {
+            "dash": {
+              "slot": "dash",
+              "id": "ram",
+              "ready": true,
+              "charges": 2,
+              "maxCharges": 2,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 2600,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            },
+            "tactical": {
+              "slot": "tactical",
+              "id": "seismic-slam",
+              "ready": true,
+              "charges": 1,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 8000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            },
+            "power": {
+              "slot": "power",
+              "id": "bulwark",
+              "ready": false,
+              "charges": 1,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 16000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 6000
+            },
+            "overdrive": {
+              "slot": "overdrive",
+              "id": "railbreaker",
+              "ready": false,
+              "charges": 0,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 0,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            }
+          },
+          "overdrive": {
+            "charge": 0.035,
+            "ready": false,
+            "active": false,
+            "activeRemainingMs": 0
+          },
+          "invulnerable": false,
+          "dashing": false,
+          "hostileTimeScale": 1,
+          "deployables": [],
+          "zones": [],
+          "links": []
+        },
+        "stats": {
+          "kills": {
+            "total": 0,
+            "byFamily": {
+              "crawler": 0,
+              "brute": 0,
+              "spitter": 0,
+              "stalker": 0,
+              "carrier": 0,
+              "queen": 0
+            }
+          },
+          "damageDealt": {
+            "weapon": 210,
+            "ability": 0,
+            "status": 0,
+            "boon": 0
+          },
+          "damageTaken": 0,
+          "shotsFired": 3,
+          "shotsHit": 3,
+          "abilityUses": {
+            "dash": 0,
+            "tactical": 0,
+            "power": 0,
+            "overdrive": 0
+          },
+          "overdrivesUsed": 0,
+          "highestMultiKill": 0,
+          "roomTimeMs": {
+            "1729:v3-r0": 0,
+            "1729:v3-r5": 2110.000000000003
+          },
+          "creditsEarned": 0
+        },
+        "recentEffects": [
+          {
+            "type": "hit",
+            "at": 1.8599999999999983
+          },
+          {
+            "type": "acid",
+            "at": 1.8599999999999983
+          },
+          {
+            "type": "shot",
+            "at": 1.959999999999998
+          },
+          {
+            "type": "acid",
+            "at": 1.9933333333333312
+          },
+          {
+            "type": "acid",
+            "at": 2.0266666666666646
+          },
+          {
+            "type": "acid",
+            "at": 2.0766666666666644
+          },
+          {
+            "type": "enemy-warning",
+            "at": 2.1099999999999977
+          },
+          {
+            "type": "enemy-warning",
+            "at": 2.1099999999999977
+          },
+          {
+            "type": "enemy-warning",
+            "at": 2.1099999999999977
+          }
+        ],
+        "state": "playing",
+        "uiState": "playing",
+        "phase": "combat",
+        "templateId": "armory",
+        "elapsed": 2.1099999999999977,
+        "player": {
+          "x": 360,
+          "y": 680,
+          "visible": true
+        },
+        "enemies": 26,
+        "visibleEnemies": 26,
+        "bullets": 4,
+        "playerBullets": 1,
+        "muzzle": 0,
+        "boss": false,
+        "statuses": [
+          {
+            "id": 1,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 2,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 3,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 4,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 5,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 6,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 7,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 8,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 9,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 10,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 11,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 12,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 13,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 14,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 15,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 16,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 17,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 18,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 19,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 20,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 21,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 22,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 23,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 24,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 25,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 26,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          }
+        ],
+        "performance": {
+          "samples": 57,
+          "stallsOver50ms": 2,
+          "frameMs": {
+            "average": 36.09824660786411,
+            "p95": 33.400001525878906
+          },
+          "updateMs": {
+            "average": 0.7438596424303556,
+            "p95": 1.5999999046325684
+          },
+          "renderSubmissionMs": {
+            "average": 9.049122862648545,
+            "p95": 70.5
+          },
+          "quality": "high",
+          "drawCalls": 120,
+          "triangles": 311859,
+          "geometries": 69,
+          "textures": 98,
+          "graphicsLost": false,
+          "hudMs": {
+            "last": 0.2999999523162842,
+            "average": 0.625,
+            "samples": 12
+          }
+        },
+        "canvas": {
+          "colors": 65,
+          "litSamples": 576,
+          "contextLost": false,
+          "error": 0
+        },
+        "hud": true,
+        "overlay": "",
+        "bossHud": false,
+        "ui": {
+          "toasts": [],
+          "abilitySlots": [
+            {
+              "slot": "dash",
+              "state": "ready",
+              "title": "Ram",
+              "value": "READY",
+              "icon": true
+            },
+            {
+              "slot": "tactical",
+              "state": "ready",
+              "title": "Seismic Slam",
+              "value": "READY",
+              "icon": true
+            },
+            {
+              "slot": "power",
+              "state": "cooling",
+              "title": "Bulwark",
+              "value": "BLOCKED",
+              "icon": true
+            },
+            {
+              "slot": "overdrive",
+              "state": "cooling",
+              "title": "Railbreaker",
+              "value": "3%",
+              "icon": true
+            }
+          ],
+          "damageNumbers": [
+            "30",
+            "30",
+            "30",
+            "30",
+            "30",
+            "30",
+            "30"
+          ],
+          "threats": 0
+        }
+      }
+    },
+    {
+      "scenario": "status-vfx",
+      "room": "communal-atrium",
+      "frame": 1,
+      "file": "status-vfx-communal-atrium-01.png",
+      "simulationMs": 733,
+      "performance": {
+        "samples": 31,
+        "stallsOver50ms": 2,
+        "frameMs": {
+          "average": 25.580645161290324,
+          "p95": 75.9000015258789
+        },
+        "updateMs": {
+          "average": 0.0677419324075022,
+          "p95": 0.19999992847442627
+        },
+        "renderSubmissionMs": {
+          "average": 15.654838538938954,
+          "p95": 95.19999694824219
+        },
+        "quality": "high",
+        "drawCalls": 122,
+        "triangles": 265161,
+        "geometries": 71,
+        "textures": 96,
+        "graphicsLost": false,
+        "hudMs": {
+          "last": 0.20000004768371582,
+          "average": 0.7833333214124044,
+          "samples": 6
+        }
+      },
+      "errors": [],
+      "pixels": {
+        "width": 1920,
+        "height": 1080,
+        "samples": 12432,
+        "litFraction": 0.5249356499356499,
+        "colors": 433
+      },
+      "staging": {
+        "staged": 24,
+        "player": {
+          "x": 520,
+          "y": 520
+        }
+      },
+      "evidence": {
+        "abilities": {
+          "rig": "cryo",
+          "slots": {
+            "dash": {
+              "slot": "dash",
+              "id": "frost-trail",
+              "ready": true,
+              "charges": 2,
+              "maxCharges": 2,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 2600,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 2500
+            },
+            "tactical": {
+              "slot": "tactical",
+              "id": "cryo-nova",
+              "ready": false,
+              "charges": 0,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 8966.666666666668,
+              "cooldownMs": 9000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            },
+            "power": {
+              "slot": "power",
+              "id": "glacier",
+              "ready": false,
+              "charges": 1,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 15000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 5000
+            },
+            "overdrive": {
+              "slot": "overdrive",
+              "id": "whiteout",
+              "ready": false,
+              "charges": 0,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 0,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 8000
+            }
+          },
+          "overdrive": {
+            "charge": 0.060666666666666653,
+            "ready": false,
+            "active": false,
+            "activeRemainingMs": 0
+          },
+          "invulnerable": false,
+          "dashing": false,
+          "hostileTimeScale": 1,
+          "deployables": [],
+          "zones": [],
+          "links": []
+        },
+        "stats": {
+          "kills": {
+            "total": 0,
+            "byFamily": {
+              "crawler": 0,
+              "brute": 0,
+              "spitter": 0,
+              "stalker": 0,
+              "carrier": 0,
+              "queen": 0
+            }
+          },
+          "damageDealt": {
+            "weapon": 16,
+            "ability": 330,
+            "status": 0,
+            "boon": 18
+          },
+          "damageTaken": 0,
+          "shotsFired": 2,
+          "shotsHit": 1,
+          "abilityUses": {
+            "dash": 0,
+            "tactical": 1,
+            "power": 0,
+            "overdrive": 0
+          },
+          "overdrivesUsed": 0,
+          "highestMultiKill": 0,
+          "roomTimeMs": {
+            "1729:v3-r0": 0,
+            "1729:v3-r3": 733.333333333333
+          },
+          "creditsEarned": 0
+        },
+        "recentEffects": [
+          {
+            "type": "shot",
+            "at": 0.6166666666666668
+          },
+          {
+            "type": "enemy-warning",
+            "at": 0.6166666666666668
+          },
+          {
+            "type": "enemy-warning",
+            "at": 0.6166666666666668
+          },
+          {
+            "type": "enemy-warning",
+            "at": 0.6166666666666668
+          },
+          {
+            "type": "enemy-warning",
+            "at": 0.6166666666666668
+          },
+          {
+            "type": "acid",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "poison",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "burn",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "ability",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "shatter",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "ability",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "shot",
+            "at": 0.7333333333333338
+          }
+        ],
+        "state": "playing",
+        "uiState": "playing",
+        "phase": "combat",
+        "templateId": "communal-atrium",
+        "elapsed": 0.7333333333333338,
+        "player": {
+          "x": 520,
+          "y": 520,
+          "visible": true
+        },
+        "enemies": 24,
+        "visibleEnemies": 24,
+        "bullets": 1,
+        "playerBullets": 1,
+        "muzzle": 4.857142857142857,
+        "boss": false,
+        "statuses": [
+          {
+            "id": 1,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 2,
+            "chilled": true,
+            "chillStacks": 3,
+            "burning": true,
+            "poisoned": true,
+            "frozen": true,
+            "shocked": false
+          },
+          {
+            "id": 3,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 4,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 5,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 6,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 7,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 8,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 9,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 10,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 11,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 12,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 13,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 14,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 15,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 16,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 17,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 18,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 19,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 20,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 21,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 22,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 23,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 24,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          }
+        ],
+        "performance": {
+          "samples": 31,
+          "stallsOver50ms": 2,
+          "frameMs": {
+            "average": 25.580645161290324,
+            "p95": 75.9000015258789
+          },
+          "updateMs": {
+            "average": 0.0677419324075022,
+            "p95": 0.19999992847442627
+          },
+          "renderSubmissionMs": {
+            "average": 15.654838538938954,
+            "p95": 95.19999694824219
+          },
+          "quality": "high",
+          "drawCalls": 122,
+          "triangles": 265161,
+          "geometries": 71,
+          "textures": 96,
+          "graphicsLost": false,
+          "hudMs": {
+            "last": 0.20000004768371582,
+            "average": 0.7833333214124044,
+            "samples": 6
+          }
+        },
+        "canvas": {
+          "colors": 72,
+          "litSamples": 240,
+          "contextLost": false,
+          "error": 0
+        },
+        "hud": true,
+        "overlay": "",
+        "bossHud": false,
+        "ui": {
+          "toasts": [
+            "Cryo Conductor acquired",
+            "Permafrost acquired",
+            "Absolute Zero acquired"
+          ],
+          "abilitySlots": [
+            {
+              "slot": "dash",
+              "state": "ready",
+              "title": "Frost Trail",
+              "value": "READY",
+              "icon": true
+            },
+            {
+              "slot": "tactical",
+              "state": "cooling",
+              "title": "Cryo Nova",
+              "value": "9.0s",
+              "icon": true
+            },
+            {
+              "slot": "power",
+              "state": "cooling",
+              "title": "Glacier",
+              "value": "BLOCKED",
+              "icon": true
+            },
+            {
+              "slot": "overdrive",
+              "state": "cooling",
+              "title": "Whiteout",
+              "value": "6%",
+              "icon": true
+            }
+          ],
+          "damageNumbers": [
+            "16",
+            "30",
+            "30",
+            "30",
+            "18",
+            "30",
+            "30",
+            "30",
+            "30",
+            "30",
+            "30",
+            "30",
+            "30"
+          ],
+          "threats": 0
+        }
+      }
+    },
+    {
+      "scenario": "status-vfx",
+      "room": "communal-atrium",
+      "frame": 2,
+      "file": "status-vfx-communal-atrium-02.png",
+      "simulationMs": 883,
+      "performance": {
+        "samples": 48,
+        "stallsOver50ms": 4,
+        "frameMs": {
+          "average": 24.335416734218597,
+          "p95": 66.9000015258789
+        },
+        "updateMs": {
+          "average": 0.3333333283662796,
+          "p95": 0.9000000953674316
+        },
+        "renderSubmissionMs": {
+          "average": 10.958333229025206,
+          "p95": 79.0999984741211
+        },
+        "quality": "high",
+        "drawCalls": 123,
+        "triangles": 264249,
+        "geometries": 71,
+        "textures": 96,
+        "graphicsLost": false,
+        "hudMs": {
+          "last": 0.2999999523162842,
+          "average": 0.5599999904632569,
+          "samples": 10
+        }
+      },
+      "errors": [],
+      "pixels": {
+        "width": 1920,
+        "height": 1080,
+        "samples": 12432,
+        "litFraction": 0.5248552123552124,
+        "colors": 404
+      },
+      "staging": {
+        "staged": 24,
+        "player": {
+          "x": 520,
+          "y": 520
+        }
+      },
+      "evidence": {
+        "abilities": {
+          "rig": "cryo",
+          "slots": {
+            "dash": {
+              "slot": "dash",
+              "id": "frost-trail",
+              "ready": true,
+              "charges": 2,
+              "maxCharges": 2,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 2600,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 2500
+            },
+            "tactical": {
+              "slot": "tactical",
+              "id": "cryo-nova",
+              "ready": false,
+              "charges": 0,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 8816.666666666673,
+              "cooldownMs": 9000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            },
+            "power": {
+              "slot": "power",
+              "id": "glacier",
+              "ready": false,
+              "charges": 1,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 15000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 5000
+            },
+            "overdrive": {
+              "slot": "overdrive",
+              "id": "whiteout",
+              "ready": false,
+              "charges": 0,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 0,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 8000
+            }
+          },
+          "overdrive": {
+            "charge": 0.06333333333333332,
+            "ready": false,
+            "active": false,
+            "activeRemainingMs": 0
+          },
+          "invulnerable": false,
+          "dashing": false,
+          "hostileTimeScale": 1,
+          "deployables": [],
+          "zones": [],
+          "links": []
+        },
+        "stats": {
+          "kills": {
+            "total": 0,
+            "byFamily": {
+              "crawler": 0,
+              "brute": 0,
+              "spitter": 0,
+              "stalker": 0,
+              "carrier": 0,
+              "queen": 0
+            }
+          },
+          "damageDealt": {
+            "weapon": 32,
+            "ability": 330,
+            "status": 0,
+            "boon": 18
+          },
+          "damageTaken": 0,
+          "shotsFired": 3,
+          "shotsHit": 2,
+          "abilityUses": {
+            "dash": 0,
+            "tactical": 1,
+            "power": 0,
+            "overdrive": 0
+          },
+          "overdrivesUsed": 0,
+          "highestMultiKill": 0,
+          "roomTimeMs": {
+            "1729:v3-r0": 0,
+            "1729:v3-r3": 883.3333333333327
+          },
+          "creditsEarned": 0
+        },
+        "recentEffects": [
+          {
+            "type": "acid",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "poison",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "burn",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "ability",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "shatter",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "hit",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "ability",
+            "at": 0.7000000000000004
+          },
+          {
+            "type": "shot",
+            "at": 0.7333333333333338
+          },
+          {
+            "type": "acid",
+            "at": 0.8166666666666674
+          },
+          {
+            "type": "boon",
+            "boon": "frost",
+            "at": 0.8166666666666674
+          },
+          {
+            "type": "shot",
+            "at": 0.8500000000000009
+          }
+        ],
+        "state": "playing",
+        "uiState": "playing",
+        "phase": "combat",
+        "templateId": "communal-atrium",
+        "elapsed": 0.8833333333333342,
+        "player": {
+          "x": 520,
+          "y": 520,
+          "visible": true
+        },
+        "enemies": 24,
+        "visibleEnemies": 24,
+        "bullets": 1,
+        "playerBullets": 1,
+        "muzzle": 0,
+        "boss": false,
+        "statuses": [
+          {
+            "id": 1,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 2,
+            "chilled": true,
+            "chillStacks": 3,
+            "burning": true,
+            "poisoned": true,
+            "frozen": true,
+            "shocked": false
+          },
+          {
+            "id": 3,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 4,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 5,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 6,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 7,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 8,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 9,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 10,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 11,
+            "chilled": true,
+            "chillStacks": 2,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 12,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 13,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 14,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 15,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 16,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 17,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 18,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 19,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 20,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 21,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 22,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 23,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          },
+          {
+            "id": 24,
+            "chilled": false,
+            "chillStacks": 0,
+            "burning": false,
+            "poisoned": false,
+            "frozen": false,
+            "shocked": false
+          }
+        ],
+        "performance": {
+          "samples": 48,
+          "stallsOver50ms": 4,
+          "frameMs": {
+            "average": 24.335416734218597,
+            "p95": 66.9000015258789
+          },
+          "updateMs": {
+            "average": 0.3333333283662796,
+            "p95": 0.9000000953674316
+          },
+          "renderSubmissionMs": {
+            "average": 10.958333229025206,
+            "p95": 79.0999984741211
+          },
+          "quality": "high",
+          "drawCalls": 123,
+          "triangles": 264249,
+          "geometries": 71,
+          "textures": 96,
+          "graphicsLost": false,
+          "hudMs": {
+            "last": 0.2999999523162842,
+            "average": 0.5599999904632569,
+            "samples": 10
+          }
+        },
+        "canvas": {
+          "colors": 67,
+          "litSamples": 240,
+          "contextLost": false,
+          "error": 0
+        },
+        "hud": true,
+        "overlay": "",
+        "bossHud": false,
+        "ui": {
+          "toasts": [
+            "Cryo Conductor acquired",
+            "Permafrost acquired",
+            "Absolute Zero acquired"
+          ],
+          "abilitySlots": [
+            {
+              "slot": "dash",
+              "state": "ready",
+              "title": "Frost Trail",
+              "value": "READY",
+              "icon": true
+            },
+            {
+              "slot": "tactical",
+              "state": "cooling",
+              "title": "Cryo Nova",
+              "value": "8.9s",
+              "icon": true
+            },
+            {
+              "slot": "power",
+              "state": "cooling",
+              "title": "Glacier",
+              "value": "BLOCKED",
+              "icon": true
+            },
+            {
+              "slot": "overdrive",
+              "state": "cooling",
+              "title": "Whiteout",
+              "value": "6%",
+              "icon": true
+            }
+          ],
+          "damageNumbers": [
+            "32",
+            "30",
+            "30",
+            "30",
+            "18",
+            "30",
+            "30",
+            "30",
+            "30",
+            "30",
+            "30",
+            "30",
+            "30"
+          ],
+          "threats": 0
+        }
+      }
+    },
+    {
+      "scenario": "boss",
+      "room": "reactor-vault",
+      "frame": 1,
+      "file": "boss-reactor-vault-01.png",
+      "simulationMs": 1600,
+      "performance": {
+        "samples": 27,
+        "stallsOver50ms": 3,
+        "frameMs": {
+          "average": 28.448147773742676,
+          "p95": 125
+        },
+        "updateMs": {
+          "average": 0.011111109345047563,
+          "p95": 0.10000002384185791
+        },
+        "renderSubmissionMs": {
+          "average": 16.99629639696192,
+          "p95": 76.80000305175781
+        },
+        "quality": "high",
+        "drawCalls": 60,
+        "triangles": 86007,
+        "geometries": 69,
+        "textures": 79,
+        "graphicsLost": false,
+        "hudMs": {
+          "last": 0.20000004768371582,
+          "average": 0.5999999841054281,
+          "samples": 6
+        }
+      },
+      "errors": [],
+      "pixels": {
+        "width": 1920,
+        "height": 1080,
+        "samples": 12432,
+        "litFraction": 0.9864864864864865,
+        "colors": 307
+      },
+      "evidence": {
+        "abilities": {
+          "rig": "breacher",
+          "slots": {
+            "dash": {
+              "slot": "dash",
+              "id": "ram",
+              "ready": true,
+              "charges": 2,
+              "maxCharges": 2,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 2600,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            },
+            "tactical": {
+              "slot": "tactical",
+              "id": "seismic-slam",
+              "ready": true,
+              "charges": 1,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 8000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            },
+            "power": {
+              "slot": "power",
+              "id": "bulwark",
+              "ready": true,
+              "charges": 1,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 16000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 6000
+            },
+            "overdrive": {
+              "slot": "overdrive",
+              "id": "railbreaker",
+              "ready": false,
+              "charges": 0,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 0,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            }
+          },
+          "overdrive": {
+            "charge": 0,
+            "ready": false,
+            "active": false,
+            "activeRemainingMs": 0
+          },
+          "invulnerable": false,
+          "dashing": false,
+          "hostileTimeScale": 1,
+          "deployables": [],
+          "zones": [],
+          "links": []
+        },
+        "stats": {
+          "kills": {
+            "total": 0,
+            "byFamily": {
+              "crawler": 0,
+              "brute": 0,
+              "spitter": 0,
+              "stalker": 0,
+              "carrier": 0,
+              "queen": 0
+            }
+          },
+          "damageDealt": {
+            "weapon": 0,
+            "ability": 0,
+            "status": 0,
+            "boon": 0
+          },
+          "damageTaken": 0,
+          "shotsFired": 6,
+          "shotsHit": 0,
+          "abilityUses": {
+            "dash": 0,
+            "tactical": 0,
+            "power": 0,
+            "overdrive": 0
+          },
+          "overdrivesUsed": 0,
+          "highestMultiKill": 0,
+          "roomTimeMs": {
+            "1729:v3-r0": 0,
+            "1729:v2-r11-boss": 1599.9999999999998
+          },
+          "creditsEarned": 0
+        },
+        "recentEffects": [
+          {
+            "type": "shot",
+            "at": 1.5999999999999976
+          },
+          {
+            "type": "hit",
+            "at": 1.5999999999999976
+          }
+        ],
+        "state": "playing",
+        "uiState": "playing",
+        "phase": "combat",
+        "templateId": "reactor-vault",
+        "elapsed": 1.5999999999999976,
+        "player": {
+          "x": 520,
+          "y": 780,
+          "visible": true
+        },
+        "enemies": 0,
+        "visibleEnemies": 0,
+        "bullets": 4,
+        "playerBullets": 4,
+        "muzzle": 4.857142857143137,
+        "boss": true,
+        "statuses": [],
+        "performance": {
+          "samples": 27,
+          "stallsOver50ms": 3,
+          "frameMs": {
+            "average": 28.448147773742676,
+            "p95": 125
+          },
+          "updateMs": {
+            "average": 0.011111109345047563,
+            "p95": 0.10000002384185791
+          },
+          "renderSubmissionMs": {
+            "average": 16.99629639696192,
+            "p95": 76.80000305175781
+          },
+          "quality": "high",
+          "drawCalls": 60,
+          "triangles": 86007,
+          "geometries": 69,
+          "textures": 79,
+          "graphicsLost": false,
+          "hudMs": {
+            "last": 0.20000004768371582,
+            "average": 0.5999999841054281,
+            "samples": 6
+          }
+        },
+        "canvas": {
+          "colors": 63,
+          "litSamples": 576,
+          "contextLost": false,
+          "error": 0
+        },
+        "hud": true,
+        "overlay": "",
+        "bossHud": true,
+        "ui": {
+          "toasts": [],
+          "abilitySlots": [
+            {
+              "slot": "dash",
+              "state": "ready",
+              "title": "Ram",
+              "value": "READY",
+              "icon": true
+            },
+            {
+              "slot": "tactical",
+              "state": "ready",
+              "title": "Seismic Slam",
+              "value": "READY",
+              "icon": true
+            },
+            {
+              "slot": "power",
+              "state": "ready",
+              "title": "Bulwark",
+              "value": "READY",
+              "icon": true
+            },
+            {
+              "slot": "overdrive",
+              "state": "cooling",
+              "title": "Railbreaker",
+              "value": "0%",
+              "icon": true
+            }
+          ],
+          "damageNumbers": [],
+          "threats": 0
+        }
+      }
+    },
+    {
+      "scenario": "boss",
+      "room": "reactor-vault",
+      "frame": 2,
+      "file": "boss-reactor-vault-02.png",
+      "simulationMs": 1750,
+      "performance": {
+        "samples": 58,
+        "stallsOver50ms": 5,
+        "frameMs": {
+          "average": 25.891379315277625,
+          "p95": 125
+        },
+        "updateMs": {
+          "average": 0.03275861822325608,
+          "p95": 0.10000002384185791
+        },
+        "renderSubmissionMs": {
+          "average": 8.374137972963267,
+          "p95": 73.5
+        },
+        "quality": "high",
+        "drawCalls": 60,
+        "triangles": 86069,
+        "geometries": 69,
+        "textures": 79,
+        "graphicsLost": false,
+        "hudMs": {
+          "last": 0.19999992847442627,
+          "average": 0.3999999761581421,
+          "samples": 12
+        }
+      },
+      "errors": [],
+      "pixels": {
+        "width": 1920,
+        "height": 1080,
+        "samples": 12432,
+        "litFraction": 0.9864864864864865,
+        "colors": 284
+      },
+      "evidence": {
+        "abilities": {
+          "rig": "breacher",
+          "slots": {
+            "dash": {
+              "slot": "dash",
+              "id": "ram",
+              "ready": true,
+              "charges": 2,
+              "maxCharges": 2,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 2600,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            },
+            "tactical": {
+              "slot": "tactical",
+              "id": "seismic-slam",
+              "ready": true,
+              "charges": 1,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 8000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            },
+            "power": {
+              "slot": "power",
+              "id": "bulwark",
+              "ready": true,
+              "charges": 1,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 16000,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 6000
+            },
+            "overdrive": {
+              "slot": "overdrive",
+              "id": "railbreaker",
+              "ready": false,
+              "charges": 0,
+              "maxCharges": 1,
+              "cooldownRemainingMs": 0,
+              "cooldownMs": 0,
+              "castRemainingMs": 0,
+              "activeRemainingMs": 0,
+              "activeMs": 0
+            }
+          },
+          "overdrive": {
+            "charge": 0,
+            "ready": false,
+            "active": false,
+            "activeRemainingMs": 0
+          },
+          "invulnerable": false,
+          "dashing": false,
+          "hostileTimeScale": 1,
+          "deployables": [],
+          "zones": [],
+          "links": []
+        },
+        "stats": {
+          "kills": {
+            "total": 0,
+            "byFamily": {
+              "crawler": 0,
+              "brute": 0,
+              "spitter": 0,
+              "stalker": 0,
+              "carrier": 0,
+              "queen": 0
+            }
+          },
+          "damageDealt": {
+            "weapon": 0,
+            "ability": 0,
+            "status": 0,
+            "boon": 0
+          },
+          "damageTaken": 0,
+          "shotsFired": 6,
+          "shotsHit": 0,
+          "abilityUses": {
+            "dash": 0,
+            "tactical": 0,
+            "power": 0,
+            "overdrive": 0
+          },
+          "overdrivesUsed": 0,
+          "highestMultiKill": 0,
+          "roomTimeMs": {
+            "1729:v3-r0": 0,
+            "1729:v2-r11-boss": 1750.0000000000005
+          },
+          "creditsEarned": 0
+        },
+        "recentEffects": [
+          {
+            "type": "shot",
+            "at": 1.5999999999999976
+          },
+          {
+            "type": "hit",
+            "at": 1.5999999999999976
+          },
+          {
+            "type": "hit",
+            "at": 1.6333333333333309
+          }
+        ],
+        "state": "playing",
+        "uiState": "playing",
+        "phase": "combat",
+        "templateId": "reactor-vault",
+        "elapsed": 1.7499999999999971,
+        "player": {
+          "x": 520,
+          "y": 780,
+          "visible": true
+        },
+        "enemies": 0,
+        "visibleEnemies": 0,
+        "bullets": 3,
+        "playerBullets": 3,
+        "muzzle": 0,
+        "boss": true,
+        "statuses": [],
+        "performance": {
+          "samples": 58,
+          "stallsOver50ms": 5,
+          "frameMs": {
+            "average": 25.891379315277625,
+            "p95": 125
+          },
+          "updateMs": {
+            "average": 0.03275861822325608,
+            "p95": 0.10000002384185791
+          },
+          "renderSubmissionMs": {
+            "average": 8.374137972963267,
+            "p95": 73.5
+          },
+          "quality": "high",
+          "drawCalls": 60,
+          "triangles": 86069,
+          "geometries": 69,
+          "textures": 79,
+          "graphicsLost": false,
+          "hudMs": {
+            "last": 0.19999992847442627,
+            "average": 0.3999999761581421,
+            "samples": 12
+          }
+        },
+        "canvas": {
+          "colors": 63,
+          "litSamples": 576,
+          "contextLost": false,
+          "error": 0
+        },
+        "hud": true,
+        "overlay": "",
+        "bossHud": true,
+        "ui": {
+          "toasts": [],
+          "abilitySlots": [
+            {
+              "slot": "dash",
+              "state": "ready",
+              "title": "Ram",
+              "value": "READY",
+              "icon": true
+            },
+            {
+              "slot": "tactical",
+              "state": "ready",
+              "title": "Seismic Slam",
+              "value": "READY",
+              "icon": true
+            },
+            {
+              "slot": "power",
+              "state": "ready",
+              "title": "Bulwark",
+              "value": "READY",
+              "icon": true
+            },
+            {
+              "slot": "overdrive",
+              "state": "cooling",
+              "title": "Railbreaker",
+              "value": "0%",
+              "icon": true
+            }
+          ],
+          "damageNumbers": [],
+          "threats": 0
+        }
+      }
+    }
+  ],
+  "failures": [],
+  "errors": [],
+  "fontFallbacks": [],
+  "gpuAttempts": [
+    {
+      "mode": "hardware-metal",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+      "software": false
+    }
+  ],
+  "runtimeSeconds": 18.05,
+  "note": "Production game, High graphics, fixed-step staged combat. Capture diagnostics include idle RAF and screenshot overhead; not a performance benchmark.",
+  "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+  "hardwareAccelerated": true,
+  "launch": {
+    "headless": true,
+    "args": [
+      "--no-sandbox",
+      "--use-angle=metal",
+      "--enable-gpu",
+      "--ignore-gpu-blocklist"
+    ],
+    "timeout": 45000,
+    "channel": "chromium",
+    "mode": "hardware-metal"
+  },
+  "fonts": [
+    {
+      "family": "Barlow",
+      "status": "loaded",
+      "weight": "400"
+    },
+    {
+      "family": "Barlow",
+      "status": "loaded",
+      "weight": "500 800"
+    },
+    {
+      "family": "Barlow Condensed",
+      "status": "loaded",
+      "weight": "400 900"
+    }
+  ]
+}

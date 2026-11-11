@@ -1,0 +1,7 @@
+RUN  v4.1.10 /Users/chernodub/.t3/worktrees/containment-game/t3-30b2dd58
+
+
+ Test Files  3 passed (3)
+      Tests  39 passed (39)
+   Start at  04:45:24
+   Duration  3.05s (transform 311ms, setup 0ms, import 585ms, tests 3.40s, environment 0ms)

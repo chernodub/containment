@@ -1,0 +1,18 @@
+--- a/scripts/checkpoint-feedback-check.mjs
++++ b/scripts/checkpoint-feedback-check.mjs
+@@ -19,6 +19,7 @@
+     assert.ok(value, 'valid completed-room reward fixture');
+   } finally { await ssr.close(); }
+   await page.evaluate(({key,value})=>localStorage.setItem(key,value), {key,value});
++  await page.waitForLoadState('networkidle');
+   await page.reload();
+   await page.locator('#continue').click();
+   await page.evaluate(key=>{
+@@ -36,6 +37,7 @@
+   await page.locator('#reroll').click();
+   assert.equal(await page.locator('.save-note').count(), 0);
+   await page.locator('[data-mutation]').first().click();
++  await page.waitForLoadState('networkidle');
+   await page.reload();
+   await page.evaluate(key=>{
+     const original = Storage.prototype.removeItem;
