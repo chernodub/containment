@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {box,rod,batch,disposeModel} from '../meshParts';
 import {sleepingPassenger} from './EquipmentDetail';
+import {optimizeLocalLights} from '../lighting/LocalLightShading';
 
 /** Original occupied berth display: faint human form behind frost, with individual life telemetry. */
 function occupiedGlass():T.DataTexture {
@@ -37,6 +38,8 @@ export class TitlePresentation {
       black=material('title-gaskets',0x070e13,.15,.85),glass=material('title-pod-glass',0x14303b,.82,.15),
       cold=material('title-cold-strip',0x8ac5db,.5,.3,0x9fe8ff,2.2),warm=material('title-emergency',0x865c3c,.5,.4,0xff9362,1.5);
     const occupants=occupiedGlass();glass.map=glass.emissiveMap=occupants;glass.color.setHex(0xc5e0e5);glass.emissive.setHex(0x9fe8ff);glass.emissiveIntensity=.7;glass.metalness=.25;glass.roughness=.34;
+    // The occupied displays use the same mapped/emissive room material program.
+    optimizeLocalLights(glass);
     glass.addEventListener('dispose',()=>occupants.dispose());
     box(this.root,23,-.18,12,32,.3,30,steel,0);
     // The visible broken berth behind the hero establishes the awakening beat.

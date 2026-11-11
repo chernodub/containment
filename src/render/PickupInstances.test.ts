@@ -18,7 +18,9 @@ it('keeps distinct shallow supply silhouettes and a soft locator within four pre
         expect(child.geometry.getAttribute('position').array.every(Number.isFinite)).toBe(true);
         if(child.material instanceof T.ShaderMaterial){
           beams++;expect(child.material.transparent).toBe(true);expect(child.material.depthWrite).toBe(false);
-          expect(child.castShadow).toBe(false);expect(child.geometry.getAttribute('color')).toBeDefined();
+          expect(child.castShadow).toBe(false);expect(child.geometry.getAttribute('color')).toBeUndefined();
+          expect(child.material.uniforms.indicatorMode.value).toBe(1);
+          expect((child.material.uniforms.indicatorColor.value as T.Color).getHex()).toBe(kind==='credits'?0xffd27a:kind==='grenade'?0xffb454:0xb5edff);
         }else{
           expect(child.material).toBeInstanceOf(T.MeshStandardMaterial);
           solids.add(child.clone());

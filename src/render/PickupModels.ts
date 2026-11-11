@@ -1,17 +1,17 @@
 import * as T from 'three';
 import {MAT,box,rod,ring,batch} from './meshParts';
+import {groundIndicatorMaterial} from './vfx/GroundIndicatorMaterial';
 
 const point=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
-const locatorMaterial=new T.ShaderMaterial({
-  vertexColors:true,transparent:true,depthWrite:false,side:T.DoubleSide,toneMapped:false,
-  vertexShader:`varying vec2 vUv;varying vec3 vColor;void main(){vUv=uv;vColor=color;vec4 p=vec4(position,1.0);
-    #ifdef USE_INSTANCING
-      p=instanceMatrix*p;
-    #endif
-    gl_Position=projectionMatrix*modelViewMatrix*p;}`,
-  fragmentShader:`varying vec2 vUv;varying vec3 vColor;void main(){float edge=1.0-smoothstep(.06,.5,abs(vUv.x-.5));float fade=pow(clamp(1.0-vUv.y,0.0,1.0),1.8);gl_FragColor=vec4(vColor,edge*fade*.19);}`,
-});
-locatorMaterial.name='supply-locator';
+const locatorMaterials=new Map<string,T.ShaderMaterial>();
+function supplyLocatorMaterial(kind:string):T.ShaderMaterial {
+  let material=locatorMaterials.get(kind);
+  if(!material){
+    material=groundIndicatorMaterial('beam',kind==='credits'?0xffd27a:kind==='grenade'?0xffb454:0xb5edff);
+    material.name='supply-locator';locatorMaterials.set(kind,material);
+  }
+  return material;
+}
 
 /** Large semantic pictograms on shallow supply cases; all finishes are shared/prewarmed. */
 export function pickupModel(kind:string):T.Group {
@@ -45,12 +45,9 @@ export function pickupModel(kind:string):T.Group {
       rod(root,point(i*.15,.03,.13),point(i*.15,.03,.22),.008,.052,MAT.supplyWhite);
     }
   }
-  const locatorColor=new T.Color(kind==='credits'?0xffd27a:kind==='grenade'?0xffb454:0xb5edff);
+  const locatorMaterial=supplyLocatorMaterial(kind);
   for(const angle of [0,Math.PI/2]) {
     const geometry=new T.PlaneGeometry(.16,1.25);geometry.translate(0,.73,0);geometry.rotateY(angle);
-    const colors=new Float32Array(geometry.getAttribute('position').count*3);
-    for(let i=0;i<colors.length;i+=3)locatorColor.toArray(colors,i);
-    geometry.setAttribute('color',new T.BufferAttribute(colors,3));
     root.add(new T.Mesh(geometry,locatorMaterial));
   }
   batch(root);

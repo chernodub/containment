@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {groundIndicatorMaterial} from './vfx/GroundIndicatorMaterial';
 import type {ShipEnvironment} from './ShipEnvironments';
 import type {GraphicsTier} from './FrameBudget';
 import type {ShadowQuality} from './graphicsOptions';
@@ -219,10 +220,7 @@ export class ContactShadows {
  private dummy=new T.Object3D();private count=0;
  constructor(){
   const geometry=new T.PlaneGeometry(2,2);geometry.rotateX(-Math.PI/2);
-  const material=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{},
-   vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}',
-   fragmentShader:'varying vec2 vUv; void main(){float d=length(vUv*2.0-1.0);float a=(1.0-smoothstep(0.1,1.0,d))*0.4;gl_FragColor=vec4(0.025,0.035,0.045,a);}',
-  });
+  const material=groundIndicatorMaterial('contact',new T.Color(.025,.035,.045));
   this.mesh=new T.InstancedMesh(geometry,material,64);this.mesh.name='actor-contact-shadows';this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.mesh.frustumCulled=false;this.mesh.count=0;
  }
  begin(){this.count=0;}
