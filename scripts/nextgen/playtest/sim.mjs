@@ -40,7 +40,7 @@ const plugins = [{ name: 'simulation-snapshot', load(id) { if (id === root + '/s
         } } }];
 const source = resolve(out, 'source');
 await mkdir(source, { recursive: true });
-for (const file of ['sim-core.ts', 'sim.mjs', 'sim-metrics.mjs', 'sim-worker.mjs', 'policy.mjs', 'bot-navigation.ts', 'bot-navigation-version.mjs'])
+for (const file of ['sim-core.ts', 'sim.mjs', 'sim-metrics.mjs', 'sim-worker.mjs', 'policy.mjs', 'ability-aim.ts', 'bot-navigation.ts', 'bot-navigation-version.mjs'])
     await writeFile(resolve(source, file), await readFile(resolve('scripts/nextgen/playtest', file)));
 await build({ configFile: false, publicDir: false, plugins, logLevel: 'error', build: { ssr: resolve('scripts/nextgen/playtest/sim-core.ts'), outDir: source, emptyOutDir: false, rollupOptions: { output: { entryFileNames: 'sim-core.mjs' } } } });
 if (args.tuning && !sourceCache.has(tuningFile)) throw Error('--tuning requires a game revision with the I5 encounter flag');
@@ -55,7 +55,7 @@ if (!rigs.length || rigs.some(rig => !['breacher', 'cryo', 'pyro', 'arc'].includ
 if (args.rooms && (!Number.isInteger(Number(args.rooms)) || Number(args.rooms) < 1 || Number(args.rooms) > 20))
     throw Error('rooms must be 1..20');
 const reports = [], metrics = await actorMetrics();
-const policyHash = createHash('sha256').update(await readFile(resolve('scripts/nextgen/playtest/policy.mjs'))).update(await readFile(resolve('scripts/nextgen/playtest/bot-navigation.ts'))).update(await readFile(resolve('scripts/nextgen/playtest/bot-navigation-version.mjs'))).digest('hex');
+const policyHash = createHash('sha256').update(await readFile(resolve('scripts/nextgen/playtest/policy.mjs'))).update(await readFile(resolve('scripts/nextgen/playtest/ability-aim.ts'))).update(await readFile(resolve('scripts/nextgen/playtest/bot-navigation.ts'))).update(await readFile(resolve('scripts/nextgen/playtest/bot-navigation-version.mjs'))).digest('hex');
 const gameHash = createHash('sha256').update([...sourceCache].sort(([a], [b]) => a.localeCompare(b)).map(([path, content]) => path.slice(root.length + 1) + '\n' + content).join('\n')).digest('hex');
 for (const path of ['src/DepthGame.ts', 'src/game/abilities/AbilitySystem.ts', 'src/game/roguelike/progression.ts', 'src/game/waves/EncounterDirector.ts', 'src/game/enemies/EnemySystem.ts', 'src/game/roguelike/i5Tuning.ts'])
     if (sourceCache.has(resolve(path))) {

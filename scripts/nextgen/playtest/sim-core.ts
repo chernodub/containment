@@ -11,9 +11,11 @@ import { CameraRig } from '../../../src/render/camera/CameraRig';
 import { roomFocus } from '../../../src/render/roomFraming';
 import { canOccupyExpedition, hasClearExpeditionShot } from '../../../src/game/world/expeditionGeometry';
 import { expeditionRewardOffers } from '../../../src/game/roguelike/expedition';
+import {progressionFor} from '../../../src/game/roguelike/progression';
 import { generateRun } from '../../../src/game/roguelike/run';
 import type { RigId } from '../../../src/game/abilities/contract';
-import { chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, distance } from './policy.mjs';
+import {observeAbilityAims} from './ability-aim';
+import { BOT_POLICY_VERSION, chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, distance } from './policy.mjs';
 import {botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
 const TICK = 1000 / 60;
 const WIDTH = 1920, HEIGHT = 1080, VIEW = 13;
@@ -168,7 +170,7 @@ export function runSimulation(options: SimOptions) {
         const hurt = game.hurt.bind(game);
         game.hurt = (n, origin) => hurt(n * .15, origin);
     }
-    const report = { mode: 'sim-policy-v4', policyVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, assisted: !!options.assisted, legacy: !!options.legacy,
+    const report = { mode: 'sim-policy-v5', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, assisted: !!options.assisted, legacy: !!options.legacy,
         policy: 'Shared policy.mjs; 250ms decisions, 60Hz GameFeel, real DepthGame actions; analytic camera observer.',
         limitations: ['No GPU, audio or DOM. Uses shared camera follow/framing/ability-event hooks, exact actor metrics and held-screen ray/torso selection; resource preparation and RAF synchronization are omitted. Matched browser validation remains required before using campaign outcomes as native-policy predictions.'],
         rooms: [] as any[], outcome: 'running', deathRoom: null as number | null, stats: null as any, final: null as any, wallSeconds: 0, trace: options.trace ? [] as any[] : undefined };
@@ -199,7 +201,10 @@ export function runSimulation(options: SimOptions) {
         }
         const telegraph = game.boss.snapshot.pendingTelegraph;
         return { rig: options.rig, player: { ...game.player }, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
-            abilities: game.abilities.snapshot, hazards: [...(telegraph ? [{ x: telegraph.targetX, y: telegraph.targetY, radius: telegraph.radius }] : []), ...game.pools,
+            abilityAims: observeAbilityAims(game,enemies,point=>{
+                const projected=camera.project(point.x,point.y,0);
+                return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});
+            }), abilities: game.abilities.snapshot, hazards: [...(telegraph ? [{ x: telegraph.targetX, y: telegraph.targetY, radius: telegraph.radius }] : []), ...game.pools,
                 ...game.bullets.filter(b => b.kind === 'hazard').map(b => ({ x: b.x, y: b.y, radius: 35 })),
                 ...events.filter(e => e.type === 'enemy-warning' && game.elapsed - e.at < (e.durationMs ?? 800) / 1000).map(e => ({ x: e.targetX ?? e.x, y: e.targetY ?? e.y, radius: e.radius ?? 50 }))] };
     }
@@ -243,7 +248,7 @@ export function runSimulation(options: SimOptions) {
         }
         if (game.status !== 'playing') {
             if (game.status === 'reward' && ['medical', 'armory'].includes(game.node.kind) && game.expedition.run.completedNodeIds.includes(game.node.id) && !report.rooms.some(r => r.nodeId === game.node.id))
-                report.rooms.push({ id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, result: 'clear', autoClear: true, seconds: 0, damageTaken: 0, damageDealt: { weapon: 0, ability: 0, status: 0, boon: 0 }, abilityUses: { dash: 0, tactical: 0, power: 0, overdrive: 0 }, overdrives: 0, boons: [...game.expedition.build.mutations] });
+                report.rooms.push({ id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, result: 'clear', autoClear: true, seconds: 0, damageTaken: 0, damageDealt: { weapon: 0, ability: 0, status: 0, boon: 0 }, abilityUses: { dash: 0, tactical: 0, power: 0, overdrive: 0 }, overdrives: 0, boons: [...game.expedition.build.mutations] });
             input = { x: 0, y: 0, fire: false, angle: null, autoAim: false };
             previous = { x: 0, y: 0 };
             screen = null;
@@ -282,7 +287,7 @@ export function runSimulation(options: SimOptions) {
                 break;
             }
             progressSignature = ''; lastProgressElapsed = game.elapsed;
-            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
+            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
                 startHealth: game.combat.snapshot.health, startArmor: game.combat.snapshot.armor, boons: [...game.expedition.build.mutations] };
             report.rooms.push(room);
         }
@@ -301,7 +306,7 @@ export function runSimulation(options: SimOptions) {
         const actions = chooseActions(s);
         recentDecisions.push({elapsed: game.elapsed, nodeId: game.node.id, player: playerBefore,
             target: target ? {id: target.id, type: target.type, x: target.x, y: target.y, health: target.health, clear: target.clear, visible: target.visible} : null,
-            movement: {...move}, input: {...input}, actions: [...actions], weapon,
+            movement: {...move}, input: {...input}, actions: [...actions], abilityAims: s.abilityAims, weapon,
             remaining: game.encounterRemaining, visibleClearTargets: s.enemies.filter(e => e.visible && e.clear && e.vulnerable !== false).length});
         if (recentDecisions.length > 20) recentDecisions.shift();
         game.setAimPoint(input.aimPoint ?? null);
@@ -310,8 +315,18 @@ export function runSimulation(options: SimOptions) {
         for (const key of actions) {
             const slot = ({ Shift: 'dash', q: 'tactical', f: 'power', v: 'overdrive' } as const)[key];
             if (slot) {
-                game.abilities.setIntent(input.x, input.y, input.aimPoint ?? null);
+                const aim = s.abilityAims[slot];
+                if (aim) {
+                    const projected = camera.project(aim.x, aim.y, 0);
+                    const abilityPoint = camera.pointer({x: Math.max(4,Math.min(1916,projected.x)),y: Math.max(4,Math.min(1000,projected.y))}, game, options.metrics ?? {});
+                    if (!abilityPoint) continue;
+                    game.player.angle = Math.atan2(abilityPoint.y-game.player.y, abilityPoint.x-game.player.x);
+                    game.setAimPoint(abilityPoint);
+                    game.abilities.setIntent(input.x,input.y,abilityPoint);
+                } else game.abilities.setIntent(input.x, input.y, input.aimPoint ?? null);
                 game.useAbility(slot);
+                game.setAimPoint(input.aimPoint ?? null);
+                if(input.angle!==null)game.player.angle=input.angle;
             }
             else if (key === 'e')
                 game.heal();

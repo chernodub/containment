@@ -6,8 +6,9 @@ import {readFile, writeFile, mkdir, appendFile, stat} from 'node:fs/promises';
 import {resolve, extname, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
+import {loadavg,cpus} from 'node:os';
 import {chromium} from 'playwright';
-import {RIGS, chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, quantiles, distance, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
+import {BOT_POLICY_VERSION, RIGS, chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, quantiles, distance, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
 import {sampleWorldPng} from './visuals.mjs';
 import {BOT_NAVIGATION_VERSION} from './bot-navigation-version.mjs';
 import {loadEarnedBoundary} from './resume.mjs';
@@ -46,12 +47,12 @@ await mkdir(out, {recursive:true});
 await writeFile(resolve(out,'trace.ndjson'),'');
 await mkdir(resolve(out,'source'),{recursive:true});
 const harnessHashes={};
-for(const file of ['runner.mjs','policy.mjs','lifecycle.mjs','diagnostics.mjs','evidence.mjs','resume.mjs','visuals.mjs','bot-navigation.ts','bot-navigation-version.mjs']){const content=await readFile(resolve('scripts/nextgen/playtest',file));harnessHashes[file]=createHash('sha256').update(content).digest('hex');await writeFile(resolve(out,'source',file),content);}
+for(const file of ['runner.mjs','policy.mjs','ability-aim.ts','lifecycle.mjs','diagnostics.mjs','evidence.mjs','resume.mjs','visuals.mjs','bot-navigation.ts','bot-navigation-version.mjs']){const content=await readFile(resolve('scripts/nextgen/playtest',file));harnessHashes[file]=createHash('sha256').update(content).digest('hex');await writeFile(resolve(out,'source',file),content);}
 const report = {
-  label, rig, seed, distributionDirectory:distRoot, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
+  label, rig, seed, hostLoad:{start:loadavg(),logicalCores:cpus().length}, distributionDirectory:distRoot, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
   legacy: resumed?.parent.legacy??!!options.legacy, fastRendering:!!options.fast, lifecycleOnly:!!options['death-probe'], presentation:true, roomLimit, harnessHashes, head: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
   branch: execFileSync('git',['branch','--show-current'],{encoding:'utf8'}).trim(), started: new Date().toISOString(),
-  policyVersion:BOT_NAVIGATION_VERSION,
+  policyVersion:BOT_POLICY_VERSION, navigationVersion:BOT_NAVIGATION_VERSION,
   policy: 'Native WASD and mouse; spitter/champion focus; obstacle-probed kiting with marine-only fallback navigation for unusable waypoints; rig-path/augment boon heuristic; safer route, medical if health<75; heal<40%; Q/F opportunity; V at 6+ or boss/champion.',
   clock: options.realtime ? 'native production RAF, passive observation; no audio/effect/core wrappers' : options.fast ? 'native fixed 60Hz; 250ms policy decisions; scene/camera every tick, GPU draw at batch end' : 'native fixed 60Hz; 250ms policy decisions; render every fixed tick',
   rooms: resumed?resumed.parent.rooms.filter(r=>['clear','complete'].includes(r.result)&&resumed.checkpoint.run.completedNodeIds.includes(r.nodeId)):[], errors: resumed?[...resumed.parent.errors]:[], defects: resumed?[...resumed.parent.defects]:[], checkpoints: [], screenshots: [], inputs: [], outcome: 'running',
@@ -64,6 +65,7 @@ const escape = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;',
 let previousEvents=[];
 let browser, server, page, context, room, last, hardest = -1, hardestFrames = [], held = new Set(), shooting = false, wallStart = performance.now();
 async function save() {
+  report.hostLoad.latest=loadavg();
   report.wallSeconds = (performance.now()-wallStart)/1000;report.totalWallSeconds=report.wallSeconds+(resumed?.parent.totalWallSeconds??resumed?.parent.wallSeconds??0);
   await writeFile(resolve(out,'report.json'), JSON.stringify(report,null,2));
   const images = report.screenshots.map(f => `<figure><a href="${escape(f)}"><img loading="lazy" src="${escape(f)}"></a><figcaption>${escape(f)}</figcaption></figure>`).join('');
@@ -76,13 +78,14 @@ function listen(p) {
   p.on('response', r => {if(r.status()>=400) report.errors.push({type:'http',message:`${r.status()} ${r.url()}`});});
 }
 async function enableNative() {
-  const tuningEnabled = await page.evaluate(({scale,realtime,fast,navigationVersion}) => {
+  const tuningEnabled = await page.evaluate(({scale,realtime,fast,navigationVersion,policyVersion}) => {
     const d=window.__containmentDebug;
     if(!d.botWaypoint||d.botNavigationVersion!==navigationVersion)throw Error(`Rebuild dist for ${navigationVersion}; loaded ${d.botNavigationVersion??'unversioned navigation'}`);
+    if(d.botPolicyVersion!==policyVersion)throw Error(`Rebuild dist for ${policyVersion}; loaded ${d.botPolicyVersion??'old policy'}`);
     if(realtime&&d.liveObservation!==true)throw Error('Rebuild dist for passive live observation');
     d.nativeInput(true);if(fast){if(!d.fastNativeRendering)throw Error('Rebuild dist for native fast rendering');d.fastNativeRendering(true);}d.presentation(true);if(scale<1)d.incomingDamageScale(scale);d.realtime(realtime);
     return typeof d.encounterTuningEnabled === 'boolean' ? d.encounterTuningEnabled : null;
-  }, {scale:report.incomingDamageScale,realtime:!!options.realtime,fast:!!options.fast,navigationVersion:BOT_NAVIGATION_VERSION});
+  }, {scale:report.incomingDamageScale,realtime:!!options.realtime,fast:!!options.fast,navigationVersion:BOT_NAVIGATION_VERSION,policyVersion:BOT_POLICY_VERSION});
   if (typeof tuningEnabled === 'boolean') {
     report.tuningEnabled = tuningEnabled;
     if (resumed && resumed.parent.tuningEnabled !== tuningEnabled) {
@@ -118,9 +121,9 @@ async function snapshot() {
     const perf=window.__containmentPerformance;
     const slots=[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,value:n.querySelector('.ability-value')?.textContent}));
     return {
-      rig:g.abilities.snapshot.rig,status:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,
+      encounterGuardian:d.encounterGuardian,rig:g.abilities.snapshot.rig,status:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,
       run:g.expedition.run,build:g.expedition.build,node:g.node,elapsed:g.elapsed,player:{...g.player,screen:project(g.player.x,g.player.y)},
-      combat:{...g.combat.snapshot,weapon:g.combat.snapshot.weaponId},resources:g.combat.getRunResources(),abilities:g.abilities.snapshot,enemies,candidates,
+      combat:{...g.combat.snapshot,weapon:g.combat.snapshot.weaponId},resources:g.combat.getRunResources(),abilities:g.abilities.snapshot,abilityAims:Object.fromEntries(Object.entries(d.botAbilityAims(enemies)).map(([slot,aim])=>[slot,aim?{...aim,screen:project(aim.x,aim.y,0)}:null])),enemies,candidates,
       hazards:[...(g.boss.snapshot.pendingTelegraph?[{x:g.boss.snapshot.pendingTelegraph.targetX,y:g.boss.snapshot.pendingTelegraph.targetY,radius:g.boss.snapshot.pendingTelegraph.radius}]:[]),...g.pools,...g.bullets.filter(b=>b.kind==='hazard').map(b=>({x:b.x,y:b.y,radius:35})),...d.events.filter(e=>e.type==='enemy-warning'&&g.elapsed-e.at<(e.durationMs??800)/1000).map(e=>({x:e.targetX??e.x,y:e.targetY??e.y,radius:e.radius??50}))],
       boss:g.boss.snapshot,remaining:g.encounterRemaining,stats:g.stats,events:d.events,performance:perf,
       memory:{heap:performance.memory?.usedJSHeapSize??null,geometries:perf.geometries,textures:perf.textures,programs:r.renderer.info.programs?.length??null},
@@ -238,7 +241,7 @@ try {
     }
     if(s.status!=='playing') {
       await release();
-      if(s.status==='reward'&&['medical','armory'].includes(s.node.kind)&&s.run.completedNodeIds.includes(s.node.id)&&!report.rooms.some(r=>r.nodeId===s.node.id)){report.rooms.push({id:s.node.templateId,nodeId:s.node.id,depth:s.node.depth,result:'clear',autoClear:true,seconds:0,damageTaken:0,damageDealt:{weapon:0,ability:0,status:0,boon:0},abilityUses:{dash:0,tactical:0,power:0,overdrive:0},overdrives:0,boons:s.build.mutations,memoryStart:s.memory,memory:s.memory,performance:s.performance,credits:s.combat.credits});await shot(`r${s.node.depth+1}-${s.node.templateId}-clear`,s);await save();}
+      if(s.status==='reward'&&['medical','armory'].includes(s.node.kind)&&s.run.completedNodeIds.includes(s.node.id)&&!report.rooms.some(r=>r.nodeId===s.node.id)){report.rooms.push({id:s.node.templateId,nodeId:s.node.id,depth:s.node.depth,nodeKind:s.node.kind,holdout:!report.legacy&&[9,19].includes(s.node.depth),guardian:s.encounterGuardian,result:'clear',autoClear:true,seconds:0,damageTaken:0,damageDealt:{weapon:0,ability:0,status:0,boon:0},abilityUses:{dash:0,tactical:0,power:0,overdrive:0},overdrives:0,boons:s.build.mutations,memoryStart:s.memory,memory:s.memory,performance:s.performance,credits:s.combat.credits});await shot(`r${s.node.depth+1}-${s.node.templateId}-clear`,s);await save();}
       if(s.phase==='rig-select') {
         await page.locator(`[data-rig="${rig}"]`).click();await page.locator('#equip-rig').click();
       } else if(s.status==='reward') {
@@ -264,7 +267,7 @@ try {
     if(room?.nodeId!==s.node.id) {
       if(room?.result==='playing')await finishRoom(s,'transition');
       if(report.rooms.filter(r=>r.result==='clear').length>=roomLimit){report.outcome='room-limit';report.final=s;break;}
-      room={id:s.node.templateId,nodeId:s.node.id,depth:s.node.depth,startedElapsed:s.elapsed,startStats:s.stats,result:'playing',cpuSamples:[],damageSourcesInferred:{},memoryStart:s.memory,boons:[...s.build.mutations],loadingHolds:[]};
+      room={id:s.node.templateId,nodeId:s.node.id,depth:s.node.depth,nodeKind:s.node.kind,holdout:!report.legacy&&[9,19].includes(s.node.depth),guardian:s.encounterGuardian,startedElapsed:s.elapsed,startStats:s.stats,result:'playing',cpuSamples:[],damageSourcesInferred:{},memoryStart:s.memory,boons:[...s.build.mutations],loadingHolds:[]};
       room.timingReset=await page.evaluate(()=>{const d=window.__containmentDebug;if(!d.resetStepPerformance)return false;d.resetStepPerformance();return true;});
       room.abilityReceipts={};room.denials={};
       report.rooms.push(room);console.log(`${label}: room ${s.node.depth+1} ${s.node.templateId}`);
@@ -288,10 +291,16 @@ try {
     const desired=near<180&&ammo.shotgun.magazine+ammo.shotgun.reserve>0?'shotgun':ammo.rifle.magazine+ammo.rifle.reserve>0?'rifle':ammo.plasma.magazine+ammo.plasma.reserve>0?'plasma':'pistol';
     if(s.combat.weapon!==desired)await page.keyboard.press(String(['pistol','rifle','shotgun','plasma','rocket'].indexOf(desired)+1));
     const actions=options['death-probe']?[]:chooseActions(s);
-    for(const key of actions)await page.keyboard.press(key);
+    for(const key of actions){
+      const slot={q:'tactical',f:'power',v:'overdrive'}[key],aim=slot?s.abilityAims[slot]:null;
+      if(aim)await page.mouse.move(Math.max(4,Math.min(1916,aim.screen.x)),Math.max(4,Math.min(1000,aim.screen.y)));
+      await page.keyboard.press(key);
+      if(aim&&target)await page.mouse.move(Math.max(4,Math.min(1916,target.screen.x)),Math.max(4,Math.min(1000,target.screen.y)));
+    }
+    if(target)await page.mouse.move(Math.max(4,Math.min(1916,target.screen.x)),Math.max(4,Math.min(1000,target.screen.y)));
     const freshEvents=newEventReceipts(previousEvents,s.events);previousEvents=s.events;
     for(const e of freshEvents){if(e.type!=='ability'||!e.ability)continue;const a=e.ability,bucket=room.abilityReceipts[a.ability]??={phases:{},reportedDamage:0};bucket.phases[a.phase]=(bucket.phases[a.phase]??0)+1;bucket.reportedDamage+=a.totalDamage??0;if(a.phase==='denied')room.denials[a.denial]=(room.denials[a.denial]??0)+1;}
-    const input={tick:steps++,elapsed:s.elapsed,room:s.node.templateId,dx:movement.dx,dy:movement.dy,target:target?.id,aim:target?{screen:{x:Math.max(4,Math.min(1916,target.screen.x)),y:Math.max(4,Math.min(1000,target.screen.y))},world:{x:target.x,y:target.y}}:null,fire:!!target,stepMs:250,keys:actions,weapon:desired};
+    const input={tick:steps++,elapsed:s.elapsed,room:s.node.templateId,dx:movement.dx,dy:movement.dy,target:target?.id,aim:target?{screen:{x:Math.max(4,Math.min(1916,target.screen.x)),y:Math.max(4,Math.min(1000,target.screen.y))},world:{x:target.x,y:target.y}}:null,fire:!!target,stepMs:250,keys:actions,abilityAims:s.abilityAims,weapon:desired};
     report.inputs.push(input);
     await appendFile(resolve(out,'trace.ndjson'),JSON.stringify({input,events:freshEvents,state:{status:s.status,phase:s.phase,elapsed:s.elapsed,player:s.player,combat:s.combat,remaining:s.remaining,enemies:s.enemies.map(e=>({id:e.id,type:e.type,champion:e.champion,health:e.health,x:e.x,y:e.y,clear:e.clear,visible:e.visible})),stats:s.stats,abilities:s.abilities}})+'\n');
     if(options.realtime)await page.waitForTimeout(250);else await advance(250);

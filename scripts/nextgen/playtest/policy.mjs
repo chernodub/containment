@@ -1,4 +1,5 @@
 /** Deterministic decision helpers; these never call game actions. */
+export {BOT_POLICY_VERSION} from './bot-navigation-version.mjs';
 export const RIGS = ['breacher', 'cryo', 'pyro', 'arc'];
 const PATHS = {
   breacher: ['breacher', 'heavy-pellets', 'chain-reaction', 'seismic-impact', 'afterquake', 'reinforced-bulwark'],
@@ -61,11 +62,14 @@ export function chooseActions(s) {
   if (s.combat.health < 40 && s.combat.medkits > 0) keys.push('e');
   if (danger && slots?.dash?.ready) keys.push('Shift');
   if (slots?.tactical?.ready && near < (s.rig === 'arc' ? 500 : 240)) keys.push('q');
-  if (slots?.power?.ready && s.enemies.length >= 2) keys.push('f');
+  if ((slots?.power?.ready || s.abilityAims?.power && slots?.power?.charges > 0 && !s.abilities.dashing && !Object.values(slots).some(slot => slot.castRemainingMs > 0)) && s.enemies.length >= 2) keys.push('f');
   if (s.abilities.overdrive.ready && (s.enemies.length >= 6 || s.enemies.some(e => e.champion || e.id < 0))) keys.push('v');
   if (s.combat.magazine < s.combat.magazineCapacity * .25 && !s.combat.reloading && near > 300) keys.push('r');
   if (s.combat.grenades > 0 && s.enemies.filter(e => distance(e, s.player) < 400).length >= 5) keys.push('g');
-  return keys;
+  return keys.filter(key => {
+    const slot = {q:'tactical', f:'power', v:'overdrive'}[key];
+    return !slot || !s.abilityAims || !(slot in s.abilityAims) || !!s.abilityAims[slot];
+  });
 }
 /** Exact sample quantiles, avoiding averages-of-percentiles. */
 export function quantiles(values) {

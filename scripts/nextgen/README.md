@@ -366,3 +366,24 @@ The deterministic `AbilityBudgets.test.ts`, `InstanceBatch.test.ts`, `ActorHotPa
 `DeathRagdolls.test.ts` checks bound inventories, scratch/buffer reuse and hierarchy work. Timing
 budgets are hardware acceptance criteria, not flaky wall-clock unit tests. Do not certify quiet-host
 60fps from a contested-host table or from frozen gallery timings.
+
+## I5 corrected ability-aim epoch
+
+`i5-catalog-ability-aim-v1` retains marine-navigation v3 and the existing weapon,
+movement, boon, healing and opportunity heuristics. Shared `ability-aim.ts`
+searches current visible, vulnerable targets using catalog cone/line/chain/
+point-circle/wall shapes, native LOS and legal placement; it also accounts for
+Scorched Fan and the native multi-placement/fanout augments. It scores actual
+pointer picking before choosing each Q/F/V cursor and suppresses targeted casts
+with no eligible target. It restores weapon aim between presses. Evasive dash
+remains governed by movement intent; self-targeted opportunities are unchanged.
+The search is finite and deterministic; it does not predict enemy AI or promise
+perfect future damage. Source hashes include the helper. Browser readiness
+rejects stale policy builds. Never pool this epoch with earlier cohorts.
+
+Native reports record start/latest host load averages and logical core count.
+Fresh room metadata distinguishes node kind, holdouts and planned champions.
+Balance summaries reject mixed known source/backend identities within one named
+cohort; multiple explicit input directories become separate named cohorts.
+Strict ordinary-room cap evidence includes death attempts; unknown historical
+classifications cannot certify it. Broad non-holdout pacing is reported apart.

@@ -9,10 +9,14 @@ import {restoreExpedition,completeExpeditionRoom,expeditionRewardOffers} from '.
 import {serializeCheckpoint,parseCheckpoint} from '../../src/game/roguelike/checkpoints';
 import {addMutation} from '../../src/game/roguelike/builds';
 import {canOccupyExpedition,hasClearExpeditionShot} from '../../src/game/world/expeditionGeometry';
+import {enemyShotRadius} from '../../src/game/combat/enemyContact';
 import {ENEMIES} from '../../src/game/enemies/catalog';
 import type {StandardEnemyId} from '../../src/game/enemies/types';
 import type {MutationId} from '../../src/game/roguelike/types';
 import {BOT_NAVIGATION_VERSION,botWaypoint as observeBotWaypoint} from './playtest/bot-navigation';
+import {observeAbilityAims, type AimEnemy} from './playtest/ability-aim';
+import {BOT_POLICY_VERSION} from './playtest/bot-navigation-version.mjs';
+import {progressionFor} from '../../src/game/roguelike/progression';
 import {I5_ENCOUNTER_TUNING_ENABLED} from '../../src/game/roguelike/i5Tuning';
 
 export type PresentationDebug = {
@@ -94,8 +98,17 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   clearShot(x:number,y:number,from:{x:number;y:number}=game.player){return hasClearExpeditionShot(game.geometry,from,{x,y});},
   /** The runner verifies this build's shared policy before collecting a cohort. */
   get botNavigationVersion(){return BOT_NAVIGATION_VERSION;},
+  get botPolicyVersion(){return BOT_POLICY_VERSION;},
+  botAbilityAims(enemies:readonly AimEnemy[]){
+   const targets=game.targets().filter(t=>hasClearExpeditionShot(game.geometry,game.player,t)).map(t=>{const e=t.id>0?game.enemies.getSnapshot(t.id):undefined;return {...t,radius:e?enemyShotRadius(e.type,e.elite):t.radius};});
+   return observeAbilityAims(game,enemies,point=>{
+    const p=renderer.camera.position.clone().set(point.x/32,0,point.y/32).project(renderer.camera);
+    return renderer.pointer(Math.max(4,Math.min(1916,(p.x+1)*innerWidth/2)),Math.max(4,Math.min(1000,(1-p.y)*innerHeight/2)),targets);
+   });
+  },
   /** Build-time profile provenance only; this getter never changes simulation state. */
   get encounterTuningEnabled(){return I5_ENCOUNTER_TUNING_ENABLED;},
+  get encounterGuardian(){return progressionFor(game.node).guardianKind;},
   /** Read-only marine path observer; never replaces the simulation's enemy navigation. */
   botWaypoint(target:{x:number;y:number}){return observeBotWaypoint(game,target);},
   setInput(value:Partial<GameInput>){controls={...controls,...value};},
