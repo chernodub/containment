@@ -1,6 +1,6 @@
 import {afterEach, expect, it, vi} from 'vitest';
 import {installDebug} from '../scripts/nextgen/debug';
-import type {DepthGame} from '../src/DepthGame';
+import type {DepthGame, GameInput} from '../src/DepthGame';
 import type {DepthRenderer} from '../src/render/DepthRenderer';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -34,4 +34,43 @@ it('advances simulation, renderer and pooled UI on the same explicit capture clo
   expect(() => debug.step(-1)).toThrow('step expects');
   rendererStub.roomLoading = true;
   expect(() => debug.step(16)).toThrow('Room is still loading');
+});
+
+it('bypasses presentation timing by default and opts in only for requested feel captures', () => {
+  const target: Record<string, any> = {};
+  vi.stubGlobal('window', target);
+  vi.stubGlobal('location', {search: '?debug=1&seed=1729'});
+  const update = vi.fn(), render = vi.fn(), advanceUi = vi.fn();
+  const game = {update, hurt: vi.fn(), status: 'playing', elapsed: 0} as unknown as DepthGame;
+  const renderer = {render, effect: vi.fn(), roomLoading: false} as unknown as DepthRenderer;
+  const presentation = {
+    setEnabled: vi.fn(), reset: vi.fn(), effect: vi.fn(),
+    step: vi.fn((ms: number, input: GameInput, original: (ms: number, input: GameInput) => void) => original(ms * .3, input)),
+  };
+  installDebug(game, renderer, vi.fn(), vi.fn(), vi.fn(), advanceUi, presentation);
+  const debug = target.__containmentDebug;
+  debug.setInput({x: .6, y: -.4, fire: true});
+  debug.step(100);
+  expect(presentation.step).not.toHaveBeenCalled();
+  expect(update.mock.calls.reduce((sum, [ms]) => sum + ms, 0)).toBeCloseTo(100);
+  expect(() => debug.presentationEvent({type: 'beat', kind: 'room-clear'})).toThrow('Enable presentation first');
+
+  update.mockClear();
+  debug.presentation(true);
+  debug.presentationEvent({type: 'beat', kind: 'room-clear'});
+  debug.step(100);
+  expect(presentation.setEnabled).toHaveBeenLastCalledWith(true);
+  expect(presentation.effect).toHaveBeenCalledWith({type: 'beat', kind: 'room-clear'});
+  expect(presentation.step).toHaveBeenCalled();
+  expect(update.mock.calls.reduce((sum, [ms]) => sum + ms, 0)).toBeCloseTo(30);
+  for (const [, input] of update.mock.calls) expect(input).toMatchObject({x: .6, y: -.4, fire: true});
+
+  update.mockClear(); presentation.step.mockClear();
+  debug.presentation(false);
+  debug.step(100);
+  expect(presentation.setEnabled).toHaveBeenLastCalledWith(false);
+  expect(presentation.step).not.toHaveBeenCalled();
+  expect(update.mock.calls.reduce((sum, [ms]) => sum + ms, 0)).toBeCloseTo(100);
+  // UI and renderer always advance by explicit capture time, including during hit-stop/slow motion.
+  expect(advanceUi.mock.calls.reduce((sum, [dt]) => sum + dt, 0)).toBeCloseTo(.3);
 });
