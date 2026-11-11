@@ -305,11 +305,11 @@ export async function stageKiting(attempt=0){
   for(let y=bounds.y+70;y<bounds.y+bounds.height-70;y+=35)for(let x=bounds.x+70;x<bounds.x+bounds.width-70;x+=35)collect({x,y});
   chooseLane();
  }
- const initialVisible=best.length;
+ const initialVisible=best.length,viewMinimum=g.node.templateId==='communal-atrium'?15:18;
  // The closer camera legitimately exposes only part of an authored room. Keep
  // the burst's twelve-visible guarantee and eighteen legal world threats;
  // additional offscreen hostiles also exercise the bearing/radar integration.
- if(best.length>=12&&best.length<18&&shotAngle!==null){
+ if(best.length>=viewMinimum&&best.length<18&&shotAngle!==null){
   const fx=Math.cos(shotAngle),fy=Math.sin(shotAngle);
   for(let y=bounds.y+70;y<bounds.y+bounds.height-70&&best.length<26;y+=35)for(let x=bounds.x+70;x<bounds.x+bounds.width-70&&best.length<26;x+=35){
    const dx=x-origin.x,dy=y-origin.y,distance=Math.hypot(dx,dy),along=dx*fx+dy*fy,across=Math.abs(dx*fy-dy*fx);
@@ -317,7 +317,7 @@ export async function stageKiting(attempt=0){
    best.push({x,y});
   }
  }
- if((best.length<18||initialVisible<12)&&attempt<23)return stageKiting(attempt+1);
+ if((best.length<18||initialVisible<viewMinimum)&&attempt<23)return stageKiting(attempt+1);
  if(shotAngle===null)throw Error('No clear kiting firing lane');
  const placed=[];
  for(const p of best){
