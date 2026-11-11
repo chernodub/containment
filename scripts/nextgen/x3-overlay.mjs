@@ -9,7 +9,9 @@ const base=JSON.parse(await readFile(resolve(destination,'manifest.json'),'utf8'
 const overlay=JSON.parse(await readFile(resolve(source,'manifest.json'),'utf8'));
 assert.deepEqual(overlay.errors,[]);assert.deepEqual(overlay.failures,[]);
 assert.deepEqual(base.viewport,overlay.viewport);assert.equal(base.deviceScaleFactor,overlay.deviceScaleFactor);
-const js=assets=>Object.fromEntries(Object.entries(assets).filter(([file])=>file.endsWith('.js')));
+// Vite can rename the entry after a stylesheet change even when its bytes
+// remain identical. Compare the complete multiset of content hashes and counts.
+const js=assets=>Object.entries(assets).filter(([file])=>file.endsWith('.js')).map(([,hash])=>hash).sort();
 assert.deepEqual(js(base.appAssets),js(overlay.appAssets),'A CSS-only overlay must preserve every application JS asset');
 const backup=resolve(destination,'pre-readability-correction');await mkdir(backup,{recursive:true});
 await writeFile(resolve(backup,'manifest.json'),JSON.stringify(base,null,2)+'\n');

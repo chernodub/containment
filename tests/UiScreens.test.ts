@@ -534,7 +534,7 @@ test('boon element accents remain separate from family membership throughout dra
     expect(await fire.getAttribute('data-family')).toBe('Reactor');
     expect(await fire.locator('.boon-emblem').getAttribute('data-icon')).toBe('pyro');
     expect(await fire.locator('.family-progress').innerText()).toContain('Counts toward Reactor set');
-    expect(await fire.locator('.boon-condition>span').innerText()).toBe('RULE');
+    expect(await fire.locator('.boon-condition>span').innerText()).toBe('LIMIT');
     await page.evaluate(()=>{const ui=(window as any).ui;ui.game.expedition={...ui.game.expedition,build:{rig:'pyro',mutations:['incendiary','caustic-rounds','field-medic']}};});
     await phase(page,'dead');
     await page.locator('.result-details>summary').click();
