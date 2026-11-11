@@ -5,6 +5,19 @@ import type {DepthRenderer} from '../src/render/DepthRenderer';
 
 afterEach(() => vi.unstubAllGlobals());
 
+it('preserves authoritative incoming-damage provenance through the diagnostic hurt wrapper', () => {
+  const target:Record<string,any>={};
+  vi.stubGlobal('window',target);vi.stubGlobal('location',{search:'?debug=1'});
+  const hurt=vi.fn(),game={update:vi.fn(),hurt,status:'playing',elapsed:0} as unknown as DepthGame;
+  const renderer={render:vi.fn(),effect:vi.fn(),roomLoading:false} as unknown as DepthRenderer;
+  installDebug(game,renderer,vi.fn(),vi.fn());
+  const origin={x:4,y:5},source={source:'enemy-contact' as const,enemyFamily:'brute' as const};
+  game.hurt(22,origin,source);
+  expect(hurt).toHaveBeenLastCalledWith(22,origin,source);
+  target.__containmentDebug.invulnerable(true);game.hurt(22,origin,source);
+  expect(hurt).toHaveBeenCalledTimes(1);
+});
+
 it('advances simulation, renderer and pooled UI on the same explicit capture clock', () => {
   const target: Record<string, any> = {};
   vi.stubGlobal('window', target);

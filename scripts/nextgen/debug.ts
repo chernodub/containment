@@ -38,7 +38,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
  if(!liveObservation){
   game.update=(dt,input)=>{nativeRealtimeUiDt=null;if(!realtime||nativeInput&&!canStepNative())return;if(nativeInput){const intent=input??nativeRead!();nativeRealtimeUiDt=dt/1000;if(presentationEnabled&&presentation)presentation.step(dt,intent,update);else update(dt,intent);}else update(dt,controls);};
   renderer.render=(g,dt,menu)=>{render(g,realtime?dt:0,menu);if(realtime){const uiDt=nativeInput?(canStepNative()?nativeRealtimeUiDt??0:0):dt;nativeRealtimeUiDt=null;advanceUi(uiDt);}};
-  game.hurt=(n,origin)=>{if(!immune){const scaled=Number.isFinite(n)?n*incomingDamageScale:n;if(origin===undefined)hurt(scaled);else hurt(scaled,origin);}};
+  game.hurt=(n,origin,source)=>{if(!immune){const scaled=Number.isFinite(n)?n*incomingDamageScale:n;if(source!==undefined)hurt(scaled,origin,source);else if(origin===undefined)hurt(scaled);else hurt(scaled,origin);}};
  }
  const refresh=()=>{render(game,0,game.status==='menu');sync();advanceUi(0);};
  const ready=async()=>{beforePrepare();await renderer.prepare(game.node);refresh();};

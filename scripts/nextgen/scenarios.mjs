@@ -79,14 +79,15 @@ export const SCENARIOS=[
    const d=window.__containmentDebug;
    for(let seed=1729;seed<1769;seed++){
      await d.startRun(seed);await d.gotoRoom('awakening-bay',{phase:'reward',rig:'cryo'});d.grantBoons(['cryogenic']);
+     for(let frame=0;frame<120&&!document.querySelector('.choice-grid');frame++)await new Promise(requestAnimationFrame);
      if(document.querySelector('[data-mutation=spreading-nova], [data-mutation=twin-glacier]'))return;
    }
    throw Error('No seeded live Cryo augment reward draft found');
  }},
  {id:'rig-select',state:'reward',phase:'rig-select',uiState:'rig-select',required:['.rig-panel','[data-rig]','.rig-footnote'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});}},
- {id:'rig-select-cryo',state:'reward',uiState:'rig-select',required:['.rig-panel [data-element=cryo]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});document.querySelector('[data-rig=cryo]').click();}},
- {id:'rig-select-pyro',state:'reward',uiState:'rig-select',required:['.rig-panel [data-element=pyro]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});document.querySelector('[data-rig=pyro]').click();}},
- {id:'rig-select-arc',state:'reward',uiState:'rig-select',required:['.rig-panel [data-element=arc]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});document.querySelector('[data-rig=arc]').click();}},
+ {id:'rig-select-cryo',state:'reward',uiState:'rig-select',required:['.rig-panel [data-element=cryo]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});for(let frame=0;frame<900&&!document.querySelector('[data-rig=cryo]');frame++)await new Promise(requestAnimationFrame);document.querySelector('[data-rig=cryo]').click();}},
+ {id:'rig-select-pyro',state:'reward',uiState:'rig-select',required:['.rig-panel [data-element=pyro]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});for(let frame=0;frame<900&&!document.querySelector('[data-rig=pyro]');frame++)await new Promise(requestAnimationFrame);document.querySelector('[data-rig=pyro]').click();}},
+ {id:'rig-select-arc',state:'reward',uiState:'rig-select',required:['.rig-panel [data-element=arc]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});for(let frame=0;frame<900&&!document.querySelector('[data-rig=arc]');frame++)await new Promise(requestAnimationFrame);document.querySelector('[data-rig=arc]').click();}},
  {id:'ability-ready',state:'playing',room:'armory',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.abilityFixture('breacher','ready');}},
  {id:'ability-cryo',state:'playing',room:'awakening-bay',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('awakening-bay');d.abilityFixture('cryo','ready');}},
  {id:'ability-pyro',state:'playing',room:'infested-workshop',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('infested-workshop');d.abilityFixture('pyro','active');}},
@@ -115,6 +116,7 @@ export const SCENARIOS=[
  {id:'onboarding',state:'playing',room:'awakening-bay',resetPreferences:['containment.onboarding.v1'],required:['#contextual-onboarding[data-action]'],setup:async()=>{
    const d=window.__containmentDebug;await d.startRun(1729,{rigSelect:true});
    if(!d.game.chooseRig('cryo'))throw Error('Onboarding rig selection failed');d.refresh();
+   for(let frame=0;frame<900&&!document.querySelector('[data-mutation]');frame++)await new Promise(requestAnimationFrame);
    const first=document.querySelector('[data-mutation]');if(!first)throw Error('Onboarding starter missing');
    first.click();await d.prepare();d.game.skipStory();d.step(100);d.refresh();
  }},
@@ -147,9 +149,10 @@ export const SCENARIOS=[
  {id:'graphics-options',state:'paused',required:['[data-setting=\"graphics.bloom\"]'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();for(let i=0;i<900&&!document.querySelector('[data-pause-tab=settings]');i++)await new Promise(requestAnimationFrame);document.querySelector('[data-pause-tab=settings]').click();const advanced=document.querySelector('.settings-advanced');if(advanced)advanced.open=true;}},
  {id:'pause-controls',state:'paused',required:['.controls-reference'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();for(let i=0;i<900&&!document.querySelector('[data-pause-tab=controls]');i++)await new Promise(requestAnimationFrame);document.querySelector('[data-pause-tab=controls]').click();}},
  {id:'destroy-confirm',state:'route',required:['#destroy-ship'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('manual-control-chamber',{phase:'route'});}},
- {id:'results',state:'dead',required:['.result-stats','.result-panel','#start'],setup:async()=>{
+ {id:'results',state:'dead',required:['.result-details','.result-panel','#start'],setup:async()=>{
    const d=window.__containmentDebug,g=d.game;await d.startRun(undefined,{rigSelect:true});
    if(!g.chooseRig('arc'))throw Error('Live results rig selection failed');d.refresh();
+   for(let frame=0;frame<900&&!document.querySelector('[data-mutation]');frame++)await new Promise(requestAnimationFrame);
    document.querySelector('[data-mutation]').click();await d.prepare();g.skipStory();d.invulnerable(true);g.enemies.reset();
    Object.assign(g.player,{x:320,y:440,angle:-Math.PI/2,vx:0,vy:0});
    // Survive the opening Overload so the debrief also exercises confirmed weapon receipts.
@@ -159,8 +162,12 @@ export const SCENARIOS=[
    if(!g.useAbility('overdrive'))throw Error('Live results Overdrive denied');d.step(5000);d.setInput({fire:false});
    d.invulnerable(false);g.hurt(100000);d.refresh();
  }},
- {id:'results-fixture',state:'dead',required:['.result-stats'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('breached-loading-bay',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','spreading-nova','twin-glacier','reserve-thruster','drive-dynamo']);d.game.hurt(100000);d.uiFixture({stats:{...d.game.stats,kills:{total:284,byFamily:{crawler:184,brute:40,spitter:30,stalker:20,carrier:10,queen:0}},damageDealt:{weapon:12000,ability:2000,status:582,boon:100},shotsFired:812,shotsHit:620,abilityUses:{dash:18,tactical:12,power:5,overdrive:1},overdrivesUsed:1,highestMultiKill:6,roomTimeMs:{...d.game.stats.roomTimeMs,'fixture':487000}}});}},
+ {id:'results-fixture',state:'dead',required:['.result-details'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('breached-loading-bay',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','spreading-nova','twin-glacier','reserve-thruster','drive-dynamo']);d.game.hurt(100000);d.uiFixture({stats:{...d.game.stats,kills:{total:284,byFamily:{crawler:184,brute:40,spitter:30,stalker:20,carrier:10,queen:0}},damageDealt:{weapon:12000,ability:2000,status:582,boon:100},shotsFired:812,shotsHit:620,abilityUses:{dash:18,tactical:12,power:5,overdrive:1},overdrivesUsed:1,highestMultiKill:6,roomTimeMs:{...d.game.stats.roomTimeMs,'fixture':487000}}});}},
  {id:'complete-fixture',state:'complete',required:['.result-panel'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('overload-floor',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','spreading-nova','twin-glacier','reserve-thruster','drive-dynamo']);d.game.status='complete';d.uiFixture({stats:{...d.game.stats,kills:{total:652,byFamily:{crawler:450,brute:80,spitter:50,stalker:40,carrier:31,queen:1}},damageDealt:{weapon:30000,ability:8000,status:2082,boon:1000},roomTimeMs:{...d.game.stats.roomTimeMs,'fixture':1227000}}});}},
+ {id:'x3-failure-analysis',state:'dead',required:['.incoming-report','.fatal-source','.incoming-breakdown'],setup:async()=>{const d=window.__containmentDebug,g=d.game;await d.gotoRoom('breached-loading-bay',{rig:'cryo'});g.enemies.reset();g.hurt(55,{x:g.player.x+60,y:g.player.y},{source:'acid-pool'});d.step(300);g.hurt(40,{x:g.player.x-60,y:g.player.y},{source:'enemy-projectile',enemyFamily:'spitter'});d.step(300);g.hurt(1000,{x:g.player.x,y:g.player.y+60},{source:'enemy-contact',enemyFamily:'brute'});d.refresh();}},
+ {id:'x3-hud-compact',state:'playing',room:'awakening-bay',required:['#action-bar','#status-hud'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'cryo'});d.invulnerable(true);d.step(4500);d.refresh();}},
+ {id:'x3-denial-reticle',state:'playing',room:'armory',required:['#ability-denial'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory',{rig:'cryo'});d.uiEvent({type:'ability',x:d.game.player.x,y:d.game.player.y,ability:{phase:'denied',ability:'glacier',slot:'power',rig:'cryo',element:'cryo',denial:'blocked',targetX:d.game.player.x,targetY:d.game.player.y}});d.refresh();}},
+ {id:'x3-status-priority',state:'playing',room:'armory',required:['.combat-float[data-kind=status]:not([hidden])'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory',{rig:'cryo'});const p=d.game.player;for(const elements of [['ice'],['fire'],['freeze'],['poison']])d.uiEvent({type:'hit',x:p.x+200,y:p.y,targetId:123,damage:12,elements});d.refresh();}},
  {id:'critical-health',state:'playing',room:'awakening-bay',required:['#hud.low-health'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('awakening-bay');d.invulnerable(false);d.game.hurt(130);d.abilityFixture('breacher','cooling');d.refresh();}},
  {id:'dead',state:'dead',required:['.result-panel','#start'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('breached-loading-bay');d.invulnerable(false);d.game.hurt(100000);d.refresh();}},
  {id:'feel-impact-fixture',state:'playing',room:'awakening-bay',burst:true,stepMs:25,feelImpact:true,setup:async()=>{
