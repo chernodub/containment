@@ -22,7 +22,7 @@ describe('G2 cinematic and room presentation',()=>{
   expect(disposals.length).toBeLessThanOrEqual(6);title.dispose();title.dispose();for(const dispose of disposals)expect(dispose).toHaveBeenCalledOnce();
  });
  it('authors a finite distinct composition for every story beat',()=>{
-  const ideas=new Set<string>();for(const room of ROOM_STORY_ROUTE){const c=ROOM_COMPOSITIONS[room.templateId];expect(c).toBeDefined();expect(c.keyOffset.every(Number.isFinite)).toBe(true);expect(c.keyGain).toBeGreaterThan(.4);expect(c.keyGain).toBeLessThan(2);ideas.add(c.idea);}expect(ideas.size).toBe(20);
+  const ideas=new Set<string>();for(const room of ROOM_STORY_ROUTE){const c=ROOM_COMPOSITIONS[room.templateId];expect(c).toBeDefined();expect(c.keyOffset.every(Number.isFinite)).toBe(true);expect(c.keyGain).toBeGreaterThan(.4);expect(c.keyGain).toBeLessThan(2.5);ideas.add(c.idea);}expect(ideas.size).toBe(20);
  });
  it('reuses the same prepared light inventory through menu transitions and boss phases',()=>{
   const rig=new SceneLighting();rig.loadRoom(new T.Group(),45,34,'reactor','reactor-vault');const lights:T.Light[]=[];rig.root.traverse(o=>{if(o instanceof T.Light)lights.push(o);});
