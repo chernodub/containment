@@ -2,6 +2,7 @@
 @import './ui/styles/base.css';
 @import './ui/styles/components.css';
 @import './ui/styles/screens.css';
+@import './ui/styles/results.css';
 @import './ui/styles/settings.css';
 @import './ui/styles/hud.css';
 @import './ui/styles/radar.css';

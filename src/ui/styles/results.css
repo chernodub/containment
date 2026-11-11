@@ -1,0 +1,48 @@
+/* Failure analysis leads; optional output telemetry remains one native disclosure away. */
+#overlay .incoming-report {
+  display: grid;
+  grid-template-columns: .9fr 1.1fr;
+  gap: 28px;
+  margin: 16px 0 24px;
+  padding: 22px;
+  border: 1px solid #ff79504d;
+  border-left: 3px solid var(--danger);
+  background: linear-gradient(110deg, #48251c55, #080f17b3);
+}
+#overlay .fatal-source .eyebrow { color: #ffad8f; }
+#overlay .fatal-source h3 { margin: 10px 0; font-size: clamp(30px, 2.4vw, 42px); }
+#overlay .fatal-source p { margin: 0; color: #ecdee0; }
+#overlay .fatal-source p span { white-space: nowrap; color: #c5d1d8; }
+#overlay .incoming-breakdown { border-left: 1px solid #ffffff24; padding-left: 24px; }
+#overlay .incoming-breakdown .telemetry-heading { gap: 14px; }
+#overlay .incoming-breakdown .eyebrow { color: #d5e9ee; font-size: 10px; }
+#overlay .incoming-breakdown strong { color: #ffe0d3; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#overlay .incoming-breakdown ol { list-style: none; margin: 14px 0 0; padding: 0; }
+#overlay .incoming-breakdown li { display: grid; grid-template-columns: minmax(110px,1fr) 1fr auto; align-items: center; gap: 12px; margin: 7px 0; font-size: 13px; }
+#overlay .incoming-breakdown li i { display: block; height: 5px; background: linear-gradient(90deg,#ff9771 var(--incoming-share),#d2e8ef1a var(--incoming-share)); }
+#overlay .result-details { margin: 18px 0; border-top: 1px solid #9fe8ff40; }
+#overlay .result-details>summary { color: #e5f6ff; padding: 16px 4px; cursor: pointer; font-size: 15px; letter-spacing: .02em; }
+#overlay .result-details[open]>summary { margin-bottom: 14px; }
+#overlay:has(.debrief-panel[data-outcome='complete']) { padding: 0; align-items: flex-start; }
+#overlay .debrief-panel[data-outcome='complete'] { width: 100vw; min-height: 100dvh; max-height: 100dvh; overflow-y: auto; border: 0; border-radius: 0; padding: clamp(20px,4vh,50px) clamp(24px,7vw,150px); background: radial-gradient(ellipse at 50% 0,#253c47e6,#040b12f5 70%); animation: none; transform: none; }
+#overlay .debrief-panel[data-outcome='complete']::before { display: none; }
+#overlay .completion-ending { min-height: 62vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 38px 20px 22px; }
+#overlay .completion-ending .ending-exact { max-width: 1100px; margin: 22px 0; font: 500 clamp(32px,4.3vw,68px)/1.3 var(--font-display); letter-spacing: .08em; color: #e1f5ff; }
+#overlay .ending-rule { margin: 18px 0 24px; width: 90px; height: 2px; background: #9fe8ff; box-shadow: 0 0 20px #9fe8ff66; }
+@media (max-height:800px) {
+  #overlay .incoming-report { padding: 16px; margin: 12px 0 18px; }
+  #overlay .completion-ending { min-height: 58vh; padding: 20px 12px; }
+  #overlay .completion-ending h2 { margin: 14px 0; }
+}
+@media (max-width:800px) {
+  #overlay .incoming-report { grid-template-columns: 1fr; gap: 16px; }
+  #overlay .incoming-breakdown { border-left: 0; border-top: 1px solid #ffffff24; padding: 14px 0 0; }
+}
+/* Opening telemetry gives the existing compact debrief the viewport. The
+   authored ending/failure analysis remains the initial primary view. */
+#overlay .debrief-panel:has(.result-details[open]) .incoming-report {display:none;}
+#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .completion-ending {min-height:0;padding:0;align-items:flex-start;text-align:left;}
+#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .ending-exact {font-size:20px;line-height:1.4;letter-spacing:.03em;margin:0 0 12px;max-width:none;}
+#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .ending-rule,#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .completion-ending>.eyebrow {display:none;}
+#overlay .debrief-panel:has(.result-details[open]) .result-details {margin-top:8px;}
+#overlay .debrief-panel:has(.result-details[open]) .result-details>summary {padding:10px 4px;}

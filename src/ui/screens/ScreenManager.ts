@@ -244,7 +244,9 @@ export function createScreens(context: ScreenContext) {
     if(game.checkpointWarning&&status!=='paused') html=html.replace(/<\/(main|section)>$/,`<p class="save-note" role="status">${escapeHtml(game.checkpointWarning)}</p></$1>`);
     const active=document.activeElement as HTMLElement|null;
     const focusId=root.contains(active)?active?.id:'';
+    const resultExpanded=status===previousStatus&&!!root.querySelector<HTMLDetailsElement>('.result-details')?.open;
     root.innerHTML=html;
+    if(resultExpanded) root.querySelector<HTMLDetailsElement>('.result-details')?.setAttribute('open','');
     bindActions(root);
     const focusReplacement=focusId?root.querySelector<HTMLElement>(`[id="${focusId}"]`):null;
     if(focusReplacement) focusReplacement.focus({preventScroll:true});
