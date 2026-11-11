@@ -21,7 +21,7 @@ export class HudToasts {
             this.pool.push({ node, label, glyph, life: 0, key: '' });
         }
     }
-    show(text: string, glyph = 'check', kind = 'info', key = text): void {
+    show(text: string, glyph = 'check', kind = 'info', key = text, elementColor = ''): void {
         let toast = this.pool.find(t => t.key === key && t.life > 0) ?? this.pool.find(t => !t.life);
         if (!toast) {
             toast = this.pool[0];
@@ -34,6 +34,7 @@ export class HudToasts {
         toast.life = kind === 'warning' ? 7 : 3.5;
         toast.label.textContent = text;
         toast.glyph.innerHTML = icon(glyph);
+        toast.glyph.style.color = elementColor;
         toast.node.dataset.kind = kind;
         toast.node.hidden = false;
     }

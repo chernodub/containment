@@ -1,4 +1,4 @@
-import { invalidateHudLayout } from './layout';
+import { invalidateHudLayout, hudLayoutRevision } from './layout';
 import type { DepthGame } from '../../DepthGame';
 import type { DepthRenderer } from '../../render/DepthRenderer';
 import { familyCount } from '../../game/roguelike/builds';
@@ -8,7 +8,9 @@ import { ACT_NAMES, runLength } from '../../game/roguelike/run';
 import { ROOM_TEMPLATES } from '../../game/roguelike/roomTemplates';
 import { ABILITY_CATALOG } from '../../game/abilities/catalog';
 import type { AbilitySlotSnapshot, AbilitiesSnapshot } from '../../game/abilities/contract';
-import { getAbilities } from '../gameAdapter';
+import { boonElement, boonIcon } from '../boonPresentation';
+import { playerFacingText } from '../units';
+import { getAbilities, showInvalidAbilityPlacement } from '../gameAdapter';
 import { icon } from '../icons';
 import { el } from '../shell';
 import { CombatText } from './CombatText';
@@ -30,7 +32,7 @@ export type HudController = (() => void) & {
 const clamp = (n: number) => Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
 const seconds = (ms: number) => ms >= 10000 ? `${Math.ceil(ms / 1000)}s` : `${(Math.ceil(ms / 100) / 10).toFixed(1)}s`;
 const familyColors: Record<string, string> = { Kinetic: '#ffb454', Cryo: '#7fd6ff', Reactor: '#b79cff', Recovery: '#9fe8ff' };
-const abilityColors: Record<string, string> = { kinetic: '#ffb454', cryo: '#7fd6ff', pyro: '#ff7a2e', arc: '#b79cff' };
+const abilityColors: Record<string, string> = { kinetic: '#ffb454', cryo: '#7fd6ff', pyro: '#ff7a2e', arc: '#b79cff', recovery: '#d7ffdb', acid: '#9dff5a' };
 const familyIcons: Record<string, string> = { Kinetic: 'kinetic', Cryo: 'cryo', Reactor: 'arc', Recovery: 'health' };
 /** Cached DOM snapshots; events and frame ticks feed bounded presentation pools. */
 export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud: () => void, preferences: () => HudPreferences = () => ({ combatText: true, radar: false }), storage: Pick<Storage,'getItem'|'setItem'> | null = null): HudController {
@@ -60,8 +62,48 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     const phases = Array.from(document.querySelectorAll<HTMLElement>('[data-boss-phase]'));
     const slots = (['dash', 'tactical', 'power', 'overdrive'] as const).map(slot => {
         const node = document.querySelector<HTMLElement>(`[data-ability="${slot}"]`)!;
-        return { slot, node, icon: node.querySelector<HTMLElement>('.ability-icon')!, title: node.querySelector<HTMLElement>('.ability-title')!, value: node.querySelector<HTMLElement>('.ability-value')!, charges: node.querySelector<HTMLElement>('.ability-charges'), progress: node.querySelector<SVGCircleElement>('.dial-progress'), meter: node.querySelector<HTMLElement>('.overdrive-meter i'), pips: Array.from(node.querySelectorAll<HTMLElement>('.dash-pips i')), ability: '', denied: 0, denial: 'DENIED', flash: 0 };
+        return { slot, node, icon: node.querySelector<HTMLElement>('.ability-icon')!, title: node.querySelector<HTMLElement>('.ability-title')!, value: node.querySelector<HTMLElement>('.ability-value')!, charges: node.querySelector<HTMLElement>('.ability-charges'), progress: node.querySelector<SVGCircleElement>('.dial-progress'), meter: node.querySelector<HTMLElement>('.overdrive-meter i'), pips: Array.from(node.querySelectorAll<HTMLElement>('.dash-pips i')), ability: '', denied: 0, denial: 'No charge', flash: 0 };
     });
+    const weaponBank = document.querySelector<HTMLElement>('.weapon-bank')!;
+    const statusPanel = el('status-hud');
+    const denial = document.createElement('aside');
+    denial.id = 'ability-denial'; denial.className = 'reticle-denial'; denial.hidden = true;
+    denial.setAttribute('role','status'); denial.setAttribute('aria-live','polite');
+    (document.getElementById('app') ?? nodes.hud).append(denial);
+    let weaponInspect = 0, roomIntro = 4, inspectObjective = false, objectiveHover = false, weaponHover = false, denialLife = 0;
+    let pointerX = innerWidth * .64, pointerY = innerHeight * .48, inspectionRevision=-1;
+    let weaponBounds={left:0,right:0,top:0,bottom:0}, objectiveBounds={left:0,right:0,top:0,bottom:0};
+    const refreshInspection = () => {
+        const expanded = weaponInspect > 0 || weaponHover;
+        const narrative = roomIntro > 0 || inspectObjective || objectiveHover;
+        if (weaponBank.dataset.expanded !== String(expanded)) {weaponBank.dataset.expanded=String(expanded);layoutDirty=true;}
+        if (statusPanel.dataset.expanded !== String(narrative)) {statusPanel.dataset.expanded=String(narrative);layoutDirty=true;}
+    };
+    const onKey = (event: KeyboardEvent) => {
+        const target=event.target as HTMLElement | null;
+        if (game.status!=='playing' || target?.matches('input,textarea,select,[contenteditable=true]')) return;
+        if (event.code==='Tab') {inspectObjective=event.type==='keydown';refreshInspection();}
+        if (event.type==='keydown' && /^Digit[1-5]$/.test(event.code)) {weaponInspect=1.5;refreshInspection();}
+    };
+    const onBlur = () => {inspectObjective=false;weaponHover=false;objectiveHover=false;refreshInspection();};
+    const onPointer = (event: PointerEvent) => {
+        if(event.pointerType!=='mouse')return;pointerX=event.clientX;pointerY=event.clientY;
+        const inside=(box:typeof weaponBounds)=>pointerX>=box.left&&pointerX<=box.right&&pointerY>=box.top&&pointerY<=box.bottom;
+        weaponHover=inside(weaponBounds);objectiveHover=inside(objectiveBounds);refreshInspection();
+    };
+    const enterWeapon = () => {weaponHover=true;refreshInspection();};
+    const leaveWeapon = () => {weaponHover=false;weaponInspect=1.5;refreshInspection();};
+    const enterObjective = () => {objectiveHover=true;refreshInspection();};
+    const leaveObjective = () => {objectiveHover=false;refreshInspection();};
+    weaponBank.addEventListener('pointerenter',enterWeapon);weaponBank.addEventListener('pointerleave',leaveWeapon);
+    statusPanel.addEventListener('pointerenter',enterObjective);statusPanel.addEventListener('pointerleave',leaveObjective);
+    document.addEventListener('keydown',onKey);document.addEventListener('keyup',onKey);
+    document.addEventListener('pointermove',onPointer,{passive:true});window.addEventListener('blur',onBlur);
+    const showDenial = (reason:string) => {
+        denialLife=.9;denial.textContent=reason;denial.hidden=false;
+        denial.style.left=`${Math.max(85,Math.min(innerWidth-85,pointerX))}px`;
+        denial.style.top=`${Math.max(10,Math.min(innerHeight-80,pointerY))}px`;
+    };
     const combatText = new CombatText(el('combat-text'), renderer);
     const threats = new ThreatIndicators(el('threat-indicators'), el('damage-directions'), renderer);
     const toasts = new HudToasts(el('hud-toasts'));
@@ -95,8 +137,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             layoutDirty = true;
             entry.icon.innerHTML = icon(s.id);
             entry.title.textContent = definition.name;
-            entry.node.title = `${definition.name} · ${definition.summary}`;
-            entry.node.setAttribute('aria-label', `${definition.name}: ${definition.summary}`);
+            entry.node.title = `${definition.name} · ${playerFacingText(definition.summary)}`;
+            entry.node.setAttribute('aria-label', `${definition.name}: ${playerFacingText(definition.summary)}`);
             entry.ability = s.id;
             abilityHints.update(entry.slot, s.id);
             entry.node.style.setProperty('--ability-color', abilityColors[definition.element]);
@@ -106,7 +148,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         let state = entry.denied > 0 ? 'denied' : s.castRemainingMs > 0 ? 'casting' : s.activeRemainingMs > 0 ? 'active' : (overdrive ? snapshot.overdrive.ready : s.ready) ? 'ready' : 'cooling';
         const previous = entry.node.dataset.state;
         if (previous && previous !== state && state === 'ready')
-            entry.flash = .22;
+            entry.flash = entry.slot === 'overdrive' ? 0 : .22;
         if (entry.node.dataset.state !== state)
             entry.node.dataset.state = state;
         entry.node.dataset.flash = String(entry.flash > 0);
@@ -114,18 +156,21 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (state === 'denied')
             value = entry.denial;
         else if (s.castRemainingMs > 0)
-            value = `CAST ${seconds(s.castRemainingMs)}`;
+            value = `Casting ${seconds(s.castRemainingMs)}`;
         else if (s.activeRemainingMs > 0)
             value = seconds(s.activeRemainingMs);
         else if (overdrive)
             value = snapshot.overdrive.roomLimited && snapshot.overdrive.charge >= 1 ? 'NEXT ROOM' : snapshot.overdrive.ready ? 'READY' : `${Math.floor(clamp(snapshot.overdrive.charge) * 100)}%`;
         else if (!s.ready)
-            value = s.cooldownRemainingMs > 0 ? seconds(s.cooldownRemainingMs) : s.charges > 0 ? 'BLOCKED' : 'NO CHARGE';
+            value = s.cooldownRemainingMs > 0 ? seconds(s.cooldownRemainingMs) : s.charges <= 0 ? 'No charge' : snapshot.dashing || snapshot.slots && (snapshot.slots.dash.castRemainingMs > 0 || snapshot.slots.tactical.castRemainingMs > 0 || snapshot.slots.power.castRemainingMs > 0 || snapshot.slots.overdrive.castRemainingMs > 0) ? 'Casting' : entry.slot === 'power' ? 'Need clear ground' : 'Unavailable';
+        entry.node.dataset.reason = state === 'cooling' && s.cooldownRemainingMs > 0 ? 'Recharging' : '';
+        if (entry.node.dataset.reason) entry.node.setAttribute('data-state-label','Recharging');
+        else entry.node.removeAttribute('data-state-label');
         if (entry.value.textContent !== value)
             entry.value.textContent = value;
         entry.node.dataset.charges = String(s.charges);
         entry.node.dataset.cooldown = String(Math.ceil(s.cooldownRemainingMs));
-        entry.node.setAttribute('aria-label', `${definition.name}, ${value}${s.maxCharges > 1 ? `, ${s.charges} of ${s.maxCharges} charges` : ''}`);
+        entry.node.setAttribute('aria-label', `${definition.name}, ${entry.node.dataset.reason ? `${entry.node.dataset.reason} ` : ''}${value}${s.maxCharges > 1 ? `, ${s.charges} of ${s.maxCharges} charges` : ''}`);
         if (entry.charges)
             entry.charges.textContent = s.maxCharges > 1 ? String(s.charges) : '';
         if (entry.progress) {
@@ -157,6 +202,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const s = game.combat.snapshot, playing = game.status === 'playing';
         if (revision !== game.roomRevision) {
             revision = game.roomRevision;
+            roomIntro=4;denialLife=0;denial.hidden=true;showInvalidAbilityPlacement(renderer,null);
             combatText.clear();
             threats.clear();
             toasts.clear();
@@ -188,9 +234,15 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         width('hp-bar', s.health / 100);
         width('armor-bar', s.armor / Math.max(1, s.maxArmor));
         const low = s.health <= 25;
+        const medkitAvailable=String(low&&s.medkits>0);
+        if(nodes.hud.dataset.medkitAvailable!==medkitAvailable){
+            nodes.hud.dataset.medkitAvailable=medkitAvailable;
+            el('desktop-stock').setAttribute('aria-label', medkitAvailable==='true' ? 'Low health. E: use a medkit.' : 'Medical and grenade supplies');
+        }
         nodes.hud.classList.toggle('low-health', low);
         text('vital-state', low ? 'CRITICAL' : s.health <= 50 ? 'DAMAGED' : 'NOMINAL');
         if (lastWeapon !== s.weaponId) {
+            weaponInspect=1.5;
             lastWeapon = s.weaponId;
             text('weapon-name', s.weaponId);
             nodes['current-weapon-icon'].innerHTML = icon(s.weaponId);
@@ -244,16 +296,18 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                     glyph.className = 'boon-owned';
                     glyph.dataset.boon = id;
                     glyph.dataset.rarity = boon.rarity;
-                    glyph.title = `${boon.name} · ${boon.description}`;
+                    glyph.title = `${boon.name} · ${playerFacingText(boon.description)} · Counts toward ${boon.family} set`;
+                    glyph.style.color=abilityColors[boonElement(boon)];
+                    glyph.style.borderColor=abilityColors[boonElement(boon)];
                     glyph.setAttribute('aria-label', glyph.title);
-                    glyph.innerHTML = icon(boon.abilityOnly ? boon.id : familyIcons[family]);
+                    glyph.innerHTML = icon(boonIcon(boon));
                     stack.append(glyph);
                 }
                 if (familyBoons.length > 3) {
                     const more = document.createElement('span');
                     more.className = 'boon-more';
                     more.textContent = `+${familyBoons.length - 3}`;
-                    more.title = familyBoons.slice(3).map(id => `${MUTATION_CATALOG[id].name} · ${MUTATION_CATALOG[id].description}`).join(' / ');
+                    more.title = familyBoons.slice(3).map(id => `${MUTATION_CATALOG[id].name} · ${playerFacingText(MUTATION_CATALOG[id].description)}`).join(' / ');
                     stack.append(more);
                 }
                 group.insertBefore(stack, group.querySelector('.boon-set'));
@@ -264,7 +318,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             for (const id of owned) if (!build.mutations.some(mutation => mutation === id)) owned.delete(id);
             for (const id of build.mutations) {
                 if (buildSeen && !owned.has(id))
-                    toasts.show(`${MUTATION_CATALOG[id].name} acquired`, MUTATION_CATALOG[id].abilityOnly ? id : familyIcons[MUTATION_CATALOG[id].family], 'reward', `boon:${id}`);
+                    toasts.show(`${MUTATION_CATALOG[id].name} acquired`, boonIcon(MUTATION_CATALOG[id]), 'reward', `boon:${id}`, abilityColors[boonElement(MUTATION_CATALOG[id])]);
                 owned.add(id);
             }
         }
@@ -298,6 +352,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             }
             lastCheckpoint = checkpoint;
         }
+        refreshInspection();
         if (layoutDirty) {
             invalidateHudLayout();
             layoutDirty = false;
@@ -305,6 +360,11 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (playing) {
             protect();
             positionHud();
+            if(inspectionRevision!==hudLayoutRevision()){
+                inspectionRevision=hudLayoutRevision();
+                const copy=(node:HTMLElement)=>{const r=node.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom};};
+                weaponBounds=copy(weaponBank);objectiveBounds=copy(statusPanel);
+            }
             threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q);
         }
         else if (wasPlaying) {
@@ -341,11 +401,15 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 entry.flash = 0;
                 entry.node.dataset.flash = 'false';
                 entry.node.dataset.state = 'denied';
-                entry.denial = ({blocked: 'BLOCKED', cooldown: 'COOLDOWN', casting: 'CASTING', 'no-charge': 'NO CHARGE', 'no-rig': 'NO RIG'} as const)[event.ability.denial ?? 'no-charge'];
+                const reason = event.ability.denial as string | undefined;
+                const definition=ABILITY_CATALOG[event.ability.ability];
+                entry.denial = reason==='blocked' ? entry.slot==='overdrive'&&getAbilities(game)?.overdrive.roomLimited ? 'Next room' : entry.slot==='power' ? 'Need clear ground' : 'Unavailable' : ({cooldown:'Recharging',casting:'Casting','no-charge':'No charge','no-rig':'Choose a rig','no-target':'No target'} as Record<string,string>)[reason??'no-charge'] ?? 'No target';
+                showDenial(entry.denial);
+                if(reason==='blocked'&&definition.targeting==='point')showInvalidAbilityPlacement(renderer,definition.id,event.ability.targetX,event.ability.targetY);
                 entry.value.textContent = entry.denial;
             }
             if (event.ability.phase === 'ready' || event.ability.phase === 'overdrive-ready') {
-                entry.flash = .22;
+                entry.flash = entry.slot === 'overdrive' ? 0 : .22;
                 entry.node.dataset.flash = 'true';
             }
             if (event.ability.phase === 'overdrive-ready')
@@ -360,6 +424,10 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (disposed)
             return;
         const elapsed = Number.isFinite(dt) ? Math.max(0, Math.min(dt, .1)) : 0;
+        weaponInspect=Math.max(0,weaponInspect-elapsed);roomIntro=Math.max(0,roomIntro-elapsed);
+        denialLife=Math.max(0,denialLife-elapsed);
+        if(!denialLife&&!denial.hidden){denial.hidden=true;showInvalidAbilityPlacement(renderer,null);}
+        refreshInspection();
         streakWindow = Math.max(0, streakWindow - elapsed); streakCooldown = Math.max(0, streakCooldown - elapsed);
         for (const entry of slots) {
             entry.denied = Math.max(0, entry.denied - elapsed);
@@ -368,6 +436,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 entry.node.dataset.flash = 'false';
         }
         if (game.status !== 'playing') {
+            denial.hidden=true;denialLife=0;inspectObjective=false;showInvalidAbilityPlacement(renderer,null);
             combatText.clear();
             threats.clear();
             abilityHints.tick(bounds, false);
@@ -392,6 +461,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (disposed)
             return;
         disposed = true;
+        document.removeEventListener('keydown',onKey);document.removeEventListener('keyup',onKey);document.removeEventListener('pointermove',onPointer);window.removeEventListener('blur',onBlur);
+        weaponBank.removeEventListener('pointerenter',enterWeapon);weaponBank.removeEventListener('pointerleave',leaveWeapon);
+        statusPanel.removeEventListener('pointerenter',enterObjective);statusPanel.removeEventListener('pointerleave',leaveObjective);denial.remove();showInvalidAbilityPlacement(renderer,null);
         combatText.dispose();
         threats.dispose();
         toasts.dispose();

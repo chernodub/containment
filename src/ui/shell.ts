@@ -12,7 +12,7 @@ export function renderShell(): string {
   <div id="desktop-stock"><span>${key('E')}${icon('medkit')}<b id="medkit-count">2</b><span>MEDKIT</span></span><span>${key('G')}${icon('grenade')}<b id="grenade-count">3</b><span>GRENADE</span></span></div>
  </div></div>
  <div id="boss-hud" hidden><div class="boss-heading"><span>${icon('boss')} THE QUEEN</span><span id="boss-phase"></span></div><div class="meter boss-meter"><i id="boss-bar"></i></div><div class="boss-phase-track"><span data-boss-phase="armored">I · ARMORED</span><span data-boss-phase="exposed">II · EXPOSED</span><span data-boss-phase="nests">III · NESTS</span></div></div>
- <div id="status-hud"><div class="room-heading"><div class="room-label"><span id="depth-label"></span><b id="room-name"></b></div><button id="pause" class="icon-button" aria-label="Pause game">${icon('pause')}</button></div>
+ <div id="status-hud" aria-label="Room objective. Hold Tab or hover to inspect."><div class="room-heading"><div class="room-label"><span id="depth-label"></span><b id="room-name"></b></div><button id="pause" class="icon-button" aria-label="Pause game">${icon('pause')}</button></div>
   <div id="run-stock"><span id="credits"></span><span id="encounter-count"></span></div>
   <aside id="story-hud" hidden><p id="story-status" role="status"></p><p id="room-objective"></p><div id="story-presentation"><span id="story-line"></span><button id="skip-story" aria-label="Skip dialogue">Skip ${key('↵')}</button></div></aside>
   <div id="build-strip" aria-label="Owned boon families"></div>

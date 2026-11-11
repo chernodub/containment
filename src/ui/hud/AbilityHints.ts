@@ -1,3 +1,4 @@
+import { playerFacingText, playerFacingStat } from '../units';
 import {hudLayoutRevision} from './layout';
 import { ABILITY_CATALOG } from '../../game/abilities/catalog';
 import type { AbilityId, AbilitySlot } from '../../game/abilities/contract';
@@ -54,8 +55,8 @@ export class AbilityHints {
     const definition = ABILITY_CATALOG[id];
     hint.ability = id;
     const name = document.createElement('b'); name.textContent = definition.name;
-    const rules = document.createElement('span'); rules.textContent = definition.description;
-    const stats = document.createElement('small'); stats.textContent = definition.stats.map(stat => `${stat.label}: ${stat.value}`).join(' · ');
+    const rules = document.createElement('span'); rules.textContent = playerFacingText(definition.description);
+    const stats = document.createElement('small'); stats.textContent = definition.stats.map(stat => `${stat.label}: ${playerFacingStat(stat.label, stat.value)}`).join(' · ');
     hint.node.replaceChildren(name, rules, stats);
     this.dirty=true;
   }

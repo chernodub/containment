@@ -42,16 +42,21 @@ export class HitConfirmation {
             marker.appendChild!(node);
             return node;
         };
+        // A closed aim silhouette remains a stable screen-space anchor. The
+        // outer continuous ring conveys weapon spread without cutting its edge.
+        const core = svg('reticle-core');
+        for (const layer of ['reticle-outline', 'reticle-arc']) {
+            const ring = document.createElementNS(svgNamespace, 'circle');
+            for (const [key, value] of Object.entries({cx: '20', cy: '20', r: '11', class: layer})) ring.setAttribute(key, value);
+            ring.setAttribute('vector-effect', 'non-scaling-stroke');
+            core.append(ring);
+        }
         const spread = svg('reticle-spread');
-        for (let quadrant = 0; quadrant < 4; quadrant++) {
-            for (const layer of ['reticle-outline', 'reticle-arc']) {
-                const arc = document.createElementNS(svgNamespace, 'path');
-                arc.setAttribute('d', 'M13.2 5.5A16 16 0 0 1 26.8 5.5');
-                arc.setAttribute('transform', `rotate(${quadrant * 90} 20 20)`);
-                arc.setAttribute('class', layer);
-                arc.setAttribute('vector-effect', 'non-scaling-stroke');
-                spread.append(arc);
-            }
+        for (const layer of ['reticle-outline', 'reticle-spread-ring']) {
+            const ring = document.createElementNS(svgNamespace, 'circle');
+            for (const [key, value] of Object.entries({cx: '20', cy: '20', r: '17', class: layer})) ring.setAttribute(key, value);
+            ring.setAttribute('vector-effect', 'non-scaling-stroke');
+            spread.append(ring);
         }
         const reload = svg('reticle-reload');
         for (const layer of ['reticle-reload-track', 'reticle-reload-progress']) {
@@ -99,9 +104,10 @@ export class HitConfirmation {
         this.reticle = true;
         this.playing = state.playing !== false;
         const cone = Math.max(0, finite(state.spreadRadians ?? state.spread) + finite(state.bloomRadians));
-        const size = Math.round(Math.max(26, Math.min(64, 28 + cone * 100)));
-        this.marker.style.width = `${size}px`;
-        this.marker.style.height = `${size}px`;
+        const size = Math.round(Math.max(40, Math.min(72, 40 + cone * 80)));
+        this.marker.style.setProperty?.('--spread-size', `${size}px`);
+        this.marker.style.width = '40px';
+        this.marker.style.height = '40px';
         const reload = Math.max(0, Math.min(1, finite(state.reloadProgress ?? state.reload)));
         this.marker.dataset.reloading = String(state.reloading ?? reload > 0);
         if (this.ring) this.ring.style.strokeDashoffset = String(100 * (1 - reload));

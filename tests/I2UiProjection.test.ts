@@ -171,3 +171,16 @@ describe('I2 live camera / UI projection seam', () => {
     expect(getCameraFootprint(renderer, out.slice(0, 3))).toBe(false);
   });
 });
+
+it('aligns all offscreen bearings to one inset rectangle rather than a floating ellipse',()=>{
+  for(const [width,height] of [[1280,720],[1920,1080]]){
+    for(let i=0;i<32;i++){
+      const angle=i/32*Math.PI*2;
+      const edge=threatEdgePoint(width/2,height/2,angle,width,height,{x:0,y:0});
+      expect(Math.min(Math.abs(edge.x-42),Math.abs(edge.x-(width-42)),Math.abs(edge.y-42),Math.abs(edge.y-(height-42)))).toBeLessThan(.001);
+      expect(edge.x).toBeGreaterThanOrEqual(42-.001);expect(edge.x).toBeLessThanOrEqual(width-42+.001);
+      expect(edge.y).toBeGreaterThanOrEqual(42-.001);expect(edge.y).toBeLessThanOrEqual(height-42+.001);
+      expect(Math.atan2(edge.y-height/2,edge.x-width/2)).toBeCloseTo(Math.atan2(Math.sin(angle),Math.cos(angle)));
+    }
+  }
+});

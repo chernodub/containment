@@ -57,7 +57,7 @@ it('uses separately outlined spread, reload and contact layers without intercept
     expect(css).toContain('[data-kill=true]');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
 });
-it('keeps the opted-in reticle visible between hits and expands from real weapon spread', () => {
+it('keeps a fixed screen-space aim silhouette and expands only the real weapon spread ring', () => {
     const properties: Record<string, string> = {};
     const element = { style: { left: '', top: '', opacity: '', width: '', height: '', setProperty: (key: string, value: string) => { properties[key] = value; } }, dataset: { contact: '', kill: '', reloading: '' }, hidden: true };
     const marker = new HitConfirmation(element);
@@ -65,7 +65,8 @@ it('keeps the opted-in reticle visible between hits and expands from real weapon
     expect(element.hidden).toBe(true);
     marker.point(120, 200);
     expect(element.hidden).toBe(false);
-    expect(element.style.width).toBe('56px');
+    expect(element.style.width).toBe('40px');
+    expect(properties['--spread-size']).toBe('62px');
     expect(element.dataset.reloading).toBe('true');
     marker.confirm('damage', true);
     expect(element.dataset.kill).toBe('true');
@@ -86,7 +87,7 @@ it('rejects invalid pointer/weapon values and clears stale contact and reload st
     marker.confirm('damage');
     expect(element.hidden).toBe(true);
     marker.snapshot({spreadRadians: Number.NaN, bloomRadians: Number.POSITIVE_INFINITY, reloadProgress: Number.NaN});
-    expect(element.style.width).toBe('28px');
+    expect(element.style.width).toBe('40px');
     marker.point(120, 200);
     marker.confirm('armor', true);
     marker.clear();
@@ -96,4 +97,17 @@ it('rejects invalid pointer/weapon values and clears stale contact and reload st
     marker.point(130, 210);
     marker.confirm('damage');
     expect(element.hidden).toBe(true);
+});
+
+it('retains a 40 CSS-pixel minimum silhouette even when weapon spread is zero or maximum',()=>{
+    const properties:Record<string,string>={};
+    const element={style:{left:'',top:'',opacity:'',width:'',height:'',setProperty:(key:string,value:string)=>{properties[key]=value;}},dataset:{contact:''},hidden:true};
+    const marker=new HitConfirmation(element);
+    for(const spreadRadians of [0,.01,1,100]){
+        marker.snapshot({spreadRadians});marker.point(480,270);
+        expect(element.style.width).toBe('40px');expect(element.style.height).toBe('40px');
+        expect(parseInt(properties['--spread-size'])).toBeGreaterThanOrEqual(40);
+        expect(parseInt(properties['--spread-size'])).toBeLessThanOrEqual(72);
+        expect(element.hidden).toBe(false);
+    }
 });
