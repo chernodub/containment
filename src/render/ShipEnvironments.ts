@@ -21,7 +21,7 @@ const legacyMoods:Readonly<Record<string,ShipEnvironment>>=Object.freeze({
  'rail-depot':'cargo','quarantine-cross':'containment','cryo-gallery':'cryogenics','filtration':'maintenance',
  'turbine-hall':'engineering','waste-processing':'infested','power-conduits':'engineering','hive-approach':'infested',
 });
-export function shipEnvironment(templateId:string):ShipEnvironment|undefined{return SHIP_ENVIRONMENTS[roomPairs.findIndex(pair=>pair.includes(templateId))]??legacyMoods[templateId];}
+export function shipEnvironment(templateId:string):ShipEnvironment|undefined{return SHIP_ENVIRONMENTS[roomPairs.findIndex(pair=>pair.includes(templateId))]??(Object.hasOwn(legacyMoods,templateId)?legacyMoods[templateId]:undefined);}
 export type Footprint={x:number;y:number;width:number;height:number};
 const v=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
 
