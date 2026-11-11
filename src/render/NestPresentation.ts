@@ -11,11 +11,11 @@ export function nest():T.Group {
   const skin=MAT.flesh.clone(),rib=MAT.shellDark.clone(),core=MAT.flesh.clone();
   skin.name='nest-membrane';skin.color.setHex(0x713947);skin.roughness=.5;
   rib.name='nest-root-ribs';rib.color.setHex(0x322a35);rib.roughness=.76;
-  core.name='nest-vulnerable-organ';core.color.setHex(0xff85bd);core.emissive.setHex(0xff2c95);core.emissiveIntensity=1.6;
+  core.name='nest-vulnerable-organ';core.color.setHex(0xffb2d3);core.emissive.setHex(0xff2c95);core.emissiveIntensity=1.6;
   for(const material of [skin,rib,core]){material.userData.actorMaterial=true;optimizeLocalLights(material);}
   // Skin is recessed between thick external ribs, with an exposed weak organ.
   shell(live,0,.56,0,.52,.48,1.12,skin);
-  shell(live,-.025,.83,.02,.22,.25,.45,core);
+  shell(live,-.025,.96,.02,.24,.28,.46,core);
   for(let i=0;i<9;i++){
     const a=i*Math.PI*2/9,c=Math.cos(a),s=Math.sin(a),reach=.82+(i%3)*.055;
     const p0=point(c*reach,.035,s*reach),p1=point(c*.53,.19,s*.53),p2=point(c*.43,.63,s*.43),p3=point(c*.20,1.05,s*.20);

@@ -256,14 +256,16 @@ it('preserves directional contrast, neutral steel and a stable local readability
 
 it('structures hot reactor emissives using a shared presentation clock and stable shader hook', () => {
   const material = new T.MeshStandardMaterial({ emissive: 0xffd69a, emissiveIntensity: 3.4 });
-  applyHotFixtureSurface(material);
+  applyHotFixtureSurface(material,{x:12,z:8,radius:3});
   const hook = material.onBeforeCompile, key = material.customProgramCacheKey();
   const shader = {
     uniforms: {} as Record<string, { value: unknown }>,
-    vertexShader: '#include <common>\n#include <uv_vertex>',
+    vertexShader: '#include <common>\n#include <uv_vertex>\n#include <worldpos_vertex>',
     fragmentShader: '#include <common>\n#include <emissivemap_fragment>',
   };
   hook(shader as Parameters<T.Material['onBeforeCompile']>[0], {} as T.WebGLRenderer);
+  expect((shader.uniforms.hotFixtureCore.value as T.Vector3).toArray()).toEqual([12,8,3]);
+  expect(shader.vertexShader).toContain('vHotFixturePosition=(modelMatrix*vec4(transformed,1.0)).xyz');
   expect(shader.fragmentShader).toContain('hotFixturePearl');
   expect(shader.fragmentShader).toContain('hotFixtureSeam');
   expect(shader.fragmentShader).toContain('totalEmissiveRadiance*=');

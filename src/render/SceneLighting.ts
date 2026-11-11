@@ -158,8 +158,9 @@ export class SceneLighting {
    const light=this.fixtures[i];if(!light.visible)continue;
    const phase=this.time+i*1.73;
    const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.72+.28*Math.sin(phase*1.4):behavior==='reactor'?(light.userData.reactorCore?.9+.1*Math.sin(this.time*2.1):.65+.35*Math.pow(Math.max(0,Math.cos(this.time*1.2-i*Math.PI/2)),4)):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
+   const overload=this.mood.environment==='reactor'&&!!this.staging&&!this.bossArena&&!this.manualConsole;if(overload&&i>0){light.color.setHex(0xff5a23);light.distance=4.2;}
    const failed=this.mood.environment==='habitation'&&i===1?.35+.65*Math.pow(Math.min(1,Math.max(0,Math.sin(this.time*5.3)+.35*Math.sin(this.time*17.1))),2):1;
-   light.intensity=(light.userData.reactorCore?this.bossArena?25:14:this.mood.practical.intensity*this.composition.practicalGain)*(1+(animated*failed-1)*this.flashIntensity);
+   light.intensity=(light.userData.reactorCore?this.bossArena?25:14:overload?65:this.mood.practical.intensity*this.composition.practicalGain)*(1+(animated*failed-1)*this.flashIntensity);
   }
  }
  /** Reuses the prepared fixed lights; menu transitions create no shader topology. */

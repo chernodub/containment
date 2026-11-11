@@ -45,6 +45,13 @@ export function armoryCarousel():T.Group{
  cylinder('carousel-deck',2.12,.09,1.185,graphite);
  cylinder('carousel-spindle',.24,2.25,2.35,pale);
  cylinder('carousel-spindle-cap',.38,.14,3.545,edge);
+ for(const y of [1.47,2.07,3.31])cylinder('spindle-machined-collar',.27,.065,y,graphite);
+ box(root,'spindle-motor-inspection-recess',600/32,2.62,450/32+.231,.28,.67,.028,rubber);
+ for(let slot=0;slot<6;slot++)box(root,'spindle-motor-cooling-fin',600/32,2.37+slot*.095,450/32+.251,.22,.025,.018,edge);
+ for(let bolt=0;bolt<8;bolt++){
+  const a=bolt*Math.PI/4,fastener=add('spindle-cap-fastener',new T.CylinderGeometry(.018,.018,.012,6),graphite);
+  fastener.position.set(600/32+Math.cos(a)*.3,3.622,450/32+Math.sin(a)*.3);
+ }
  for(let i=0;i<24;i++){
   const a=i*Math.PI/12,g=new T.Group();g.position.set(600/32,0,450/32);g.rotation.y=-a;root.add(g);
   box(g,'gear-tooth',2.38,1.11,0,.15,.18,.35,edge);
@@ -55,6 +62,8 @@ export function armoryCarousel():T.Group{
   box(mount,'radial-spoke',.81,2.03,0,1.5,.10,.10,graphite);
   box(mount,'spindle-collar',.28,2.03,0,.16,.26,.20,edge);
   box(mount,'secured-clamp',1.55,2.03,0,.18,.38,.36,edge);
+  box(mount,'mount-recessed-lock',1.55,2.227,0,.14,.014,.24,rubber);
+  for(const dz of [-.1,.1])box(mount,'mount-lock-fastener',1.55,2.24,dz,.04,.012,.035,pale);
   const rifle=createStoredArmoryRifle();rifle.position.set(1.55,2.03,.21);rifle.rotation.z=Math.PI/2;mount.add(rifle);
  }
  const station=(degrees:number,name:string)=>{const a=degrees*Math.PI/180,g=new T.Group();g.name=name;g.position.set((600+255*Math.cos(a))/32,1.14,(450+255*Math.sin(a))/32);g.rotation.y=Math.PI/2-a;root.add(g);return g;};

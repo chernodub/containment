@@ -106,7 +106,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   if(text){const texture=instrumentTexture(text);display.map=display.emissiveMap=texture;display.addEventListener('dispose',()=>texture.dispose());root.userData.displayText=[...text];}
   if(templateId==='passenger-vault'){
     const texture=passengerObservationTexture();display.map=display.emissiveMap=texture;
-    display.color.setHex(0xc0e2ec);display.emissiveIntensity=.04;display.metalness=.45;display.roughness=.23;
+    display.color.setHex(0xd9eef2);display.emissiveIntensity=.24;display.metalness=.22;display.roughness=.23;
     display.addEventListener('dispose',()=>texture.dispose());root.userData.occupiedWindows=16;
   }
   const materials=[steel,dark,paint,resin,signal,vein,display],buckets=new Map<T.Material,T.BufferGeometry[]>();
@@ -131,10 +131,11 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     const left=r.x/UNIT,right=(r.x+r.width)/UNIT,near=r.y/UNIT,far=(r.y+r.height)/UNIT,w=right-left,d=far-near;
     if(Math.min(w,d)<.8)continue;
     const cx=(left+right)/2,cz=(near+far)/2;
-    for(let n=0;n<Math.min(6,Math.ceil(w*d/9));n++){
+    const looseFittings=environment==='communications'||environment==='maintenance'||environment==='cargo'?0:Math.min(6,Math.ceil(w*d/9));
+    for(let n=0;n<looseFittings;n++){
       const margin=Math.min(.52,w*.35,d*.35),x=left+margin+random()*Math.max(0,w-2*margin),z=near+margin+random()*Math.max(0,d-2*margin);
       ray.set(point(x,20,z),down);const hit=ray.intersectObject(world,true).find(h=>h.point.y>.15&&(templateId!=='armory'||h.point.y<1.5));if(!hit)continue;
-      const y=hit.point.y+.015,angle=random()*Math.PI,span=Math.min(.34,w*.12,d*.12);
+      const y=hit.point.y+.015,angle=environment==='habitation'||environment==='infested'?random()*Math.PI:w>d?Math.PI/2:0,span=Math.min(.34,w*.12,d*.12);
       if(environment==='habitation'){
         // Luggage, a folded blanket and a worn personal data slate form a lived-in cluster.
         box(paint,x,y+.07,z,span*1.5,.14,span,angle);box(dark,x,y+.146,z,span*1.35,.012,span*.84,angle);

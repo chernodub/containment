@@ -75,3 +75,31 @@ it('switches a rooted brood sac into its retained ruptured husk without allocati
   expect(dispose).not.toHaveBeenCalled();disposeModel(model);expect(dispose).toHaveBeenCalledOnce();
  }finally{vi.restoreAllMocks();}
 });
+
+it('gives brute shoulder armor a closed curved volume rather than flat white cards',()=>{
+ const model=alien('brute'),identity=model.root.getObjectByName('brute-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
+ const role=identity.geometry.getAttribute('identityRole'),normal=identity.geometry.getAttribute('normal'),position=identity.geometry.getAttribute('position');
+ const directions=new Set<string>(),bounds=new T.Box3(),point=new T.Vector3();
+ try{
+  for(let i=0;i<role.count;i++)if(role.getX(i)===4){
+   directions.add([normal.getX(i),normal.getY(i),normal.getZ(i)].map(n=>n.toFixed(2)).join(','));
+   bounds.expandByPoint(point.fromBufferAttribute(position,i));
+  }
+  expect(directions.size).toBeGreaterThan(50);
+  expect(bounds.getSize(point).y).toBeGreaterThan(.15);
+  expect(identity.geometry.getAttribute('position').count/3).toBeLessThan(3000);
+ }finally{disposeModel(model.root);}
+});
+
+it('retracts each Queen plate as a rigid side without stretching triangles across the open core',()=>{
+ const model=alien('queen'),identity=model.root.getObjectByName('queen-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
+ const role=identity.geometry.getAttribute('identityRole'),side=identity.geometry.getAttribute('identitySide');
+ let plates=0;
+ try{
+  for(let i=0;i<role.count;i+=3)if(role.getX(i)===5){
+   plates++;expect(Math.abs(side.getX(i))).toBe(1);expect(side.getX(i+1)).toBe(side.getX(i));expect(side.getX(i+2)).toBe(side.getX(i));
+  }
+  expect(plates).toBeGreaterThan(100);
+  expect(identity.material.vertexShader).toContain('p.x+=identitySide*identityOpening');
+ }finally{disposeModel(model.root);}
+});

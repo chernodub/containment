@@ -56,7 +56,7 @@ const vertexShader = /* glsl */ `
     if (vStory > .5) {
       float cycle=fract(variation.y+t*(vStory>3.5?.4:vStory<1.5?.9:vStory<2.5?.23:1.1));
       float size=.04;
-      if(vStory>3.5){p+=vec3(sin(variation.y*12.+t)*cycle*.3,cycle*1.35,cos(variation.z*12.+t*.7)*cycle*.3);size=.026;vFade=sin(cycle*3.14159)*.8;}
+      if(vStory>3.5){p+=vec3(sin(variation.y*12.+t)*cycle*.3,cycle*1.9,cos(variation.z*12.+t*.7)*cycle*.3);size=.042;vFade=sin(cycle*3.14159)*.8;}
       else if(vStory<1.5){p+=vec3((variation.z-.5)*cycle*.6,-cycle*cycle*.75+cycle*.22,(variation.y-.5)*cycle*.6);size=.022;vFade=pow(1.-cycle,2.);}
       else if(vStory<2.5){p+=vec3(sin(variation.z*12.+t*.4)*cycle*.14,cycle*.9,cos(variation.y*14.)*cycle*.12);size=.15+cycle*.32;vFade=sin(cycle*3.14159)*.13;}
       else{p.y-=cycle*.7;size=.019;vFade=sin(cycle*3.14159)*.5;}

@@ -608,10 +608,11 @@ function breachedBay(f:Fabricator,t:RoomPlan){
 }
 function reactorFloor(f:Fabricator,t:RoomPlan){
  for(const hole of t.voids??[]){const b=bounds(hole),radius=Math.min(b.w,b.d)*.42;
+  f.root.userData.hotCore={x:b.x,z:b.z,radius};
   f.pipe(v(b.x,-4.5,b.z),v(b.x,-.5,b.z),radius*.7,f.dark);
   for(const y of [-3.3,-1.4,.15]){f.ring(b.x,y,b.z,radius,.15,f.edge);f.ring(b.x,y+.2,b.z,radius*.83,.055,f.cold);}
   f.pipe(v(b.x,-3.9,b.z),v(b.x,.65,b.z),radius*.32,f.cold);
-  f.ring(b.x,.72,b.z,radius*.45,.19,f.bronze);f.ring(b.x,.86,b.z,radius*.66,.13,f.ivory);
+  f.ring(b.x,.72,b.z,radius*.45,.19,f.bronze);f.ring(b.x,.86,b.z,radius*.66,.13,f.edge);
   // A compact incandescent heart and twisting energy cages stay inside the real well.
   f.ellipsoid(b.x,.7,b.z,radius*.27,.065,radius*.27,f.cold);
   for(let strand=0;strand<3;strand++)for(let segment=0;segment<14;segment++){

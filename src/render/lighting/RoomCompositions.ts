@@ -23,7 +23,7 @@ export const ROOM_COMPOSITIONS:Readonly<Record<string,RoomComposition>>=Object.f
   'shielding-gate':composition('Clinical violet barriers before the core',[-15,11,10],1.05,1.02,4.5),
   'containment-annulus':composition('An ordered violet ring around the forbidden center',[-16,11,10]),
   'manual-control-chamber':composition('One lit authorization console faces the occupied ship',[0,3.2,0],1.2,1.55,1.35),
-  'overload-floor':composition('White-hot energy inside the failed reactor well',[0,3.2,0],.9,1.6,.85),
+  'overload-floor':composition('White-hot energy inside the failed reactor well',[0,3.2,0],.38,1.3,.85),
   'reactor-vault':composition('The Queen owns the brightest key and a cold counter-rim',[0,9,7],1,1,1),
   receiving:composition('Amber arrival lanes between the surviving cargo',[-15,8,12],2.2,1.8,3.2),
   'forklift-loop':composition('Warm service pools around the dark freight block',[-15,8,12],2.6,2,4),

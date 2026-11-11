@@ -5,8 +5,16 @@ import { ROOM_STORY_ROUTE } from '../game/roguelike/storyRooms';
 import { applyFloorVariation,setFloorLeaks } from './lighting/FloorVariation';
 import { addDeckMarkings, deckMarkingSupported } from './world/DeckMarkings';
 import { disposeModel } from './meshParts';
+import { environmentArchitecture } from './ShipEnvironments';
 
 describe('G2 physical deck identities', () => {
+  it('keeps cargo hazard paint flush, matte and nonemissive',()=>{
+    const world=new T.Group();environmentArchitecture(world,'cargo',24,20,'freight-hold');let count=0;
+    world.traverse(object=>{if(!(object instanceof T.Mesh)||object.name!=='flush-worn-cargo-paint')return;count++;
+      const material=object.material as T.MeshStandardMaterial;expect(material.emissive.getHex()).toBe(0);expect(material.roughness).toBeGreaterThan(.9);
+      expect(object.position.y).toBeCloseTo(-.017);expect(object.castShadow).toBe(false);expect(object.geometry.getAttribute('position').count).toBe(4);
+    });expect(count).toBeGreaterThan(20);disposeModel(world);
+  });
   it('retains fixed leak uniforms and clears departed-room puddles without recompiling',()=>{
     const material=new T.MeshStandardMaterial();material.name='environment-floor';applyFloorVariation(material,'maintenance');
     const key=material.customProgramCacheKey(),shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:T.ShaderLib.standard.vertexShader,fragmentShader:T.ShaderLib.standard.fragmentShader};

@@ -4,6 +4,7 @@ import type {ShipEnvironment} from '../ShipEnvironments';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import {environmentClock} from '../lighting/HotFixtureSurface';
 import {createAnchoredStoryParticles} from '../atmosphere/Atmosphere';
+import {GROWTH_MAT} from './OrganicGrowth';
 
 type Origin={x:number;y:number;z:number;kind:number};
 const point=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
@@ -24,7 +25,7 @@ export function addEnvironmentalStory(world:T.Group,template:RoomTemplate,enviro
       for(let j=1;j<=segments;j++){
         const t=j/segments,p=from.clone().lerp(to,t);p.x+=Math.sin(t*8+seed*.013+i)*.19*Math.sin(t*Math.PI);p.z+=Math.sin(t*11+i)*.12*Math.sin(t*Math.PI);
         if(onDeck(previous)&&onDeck(p)){
-          const delta=p.clone().sub(previous),mesh=new T.Mesh(geometry('x2-flush-root',()=>new T.BoxGeometry(1,1,1)),i%3?MAT.flesh:MAT.shellDark);mesh.position.set((p.x+previous.x)/2,.012,(p.z+previous.z)/2);mesh.scale.set(delta.length()+.025,.018,.055+(i%3)*.025);mesh.rotation.y=-Math.atan2(delta.z,delta.x);mesh.castShadow=false;root.add(mesh);
+          const delta=p.clone().sub(previous),mesh=new T.Mesh(geometry('x2-flush-root',()=>new T.BoxGeometry(1,1,1)),i%3?GROWTH_MAT.tissue:GROWTH_MAT.carapace);mesh.position.set((p.x+previous.x)/2,.012,(p.z+previous.z)/2);mesh.scale.set(delta.length()+.025,.018,.12+(i%3)*.055);mesh.rotation.y=-Math.atan2(delta.z,delta.x);mesh.castShadow=false;root.add(mesh);
         }
         previous=p;
       }
@@ -44,7 +45,7 @@ export function addEnvironmentalStory(world:T.Group,template:RoomTemplate,enviro
   }
   if(environment==='reactor'&&templateId==='overload-floor'&&template.voids?.length){
     const hole=template.voids[0],x=hole.reduce((sum,p)=>sum+p.x,0)/hole.length/32,z=hole.reduce((sum,p)=>sum+p.y,0)/hole.length/32;
-    origins.push({x,y:.85,z,kind:3});
+    for(let i=0;i<3;i++)origins.push({x:x+Math.cos(i*2.1)*.24,y:.85,z:z+Math.sin(i*2.1)*.24,kind:3});
   }
   if(environment==='maintenance'){
     const leaks=world.getObjectByName('g2-world-dressing')?.userData.leakOrigins as Array<{x:number;y:number;z:number}>|undefined;

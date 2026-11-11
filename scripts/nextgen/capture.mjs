@@ -55,7 +55,8 @@ async function save(){
  manifest.runtimeSeconds=Number(((performance.now()-started)/1000).toFixed(2));
  await writeFile(resolve(out,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
  // Large room matrices exceed V8's string limit when every PNG is embedded.
- const linked=manifest.shots.length+manifest.sprites.length>100;
+ const pngBytes=(await Promise.all([...manifest.shots,...manifest.sprites].map(async s=>(await stat(resolve(out,s.file))).size))).reduce((sum,size)=>sum+size,0);
+ const linked=pngBytes>64*1024*1024;
  manifest.galleryMode=linked?'file-linked':'embedded';
  await writeFile(resolve(out,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
  const spriteCards=await Promise.all(manifest.sprites.map(async s=>`<figure><img src="${linked?encodeURIComponent(s.file):'data:image/png;base64,'+(await readFile(resolve(out,s.file))).toString('base64')}" alt="${escape(s.file)}" loading="lazy"><figcaption><b>${escape(s.file)}</b><br>${s.frames} fixed-step frames · ${s.stepMs} ms spacing · read left to right, top to bottom</figcaption></figure>`));

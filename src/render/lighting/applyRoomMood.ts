@@ -19,7 +19,8 @@ const reactorSteel = new T.Color(0x626b73);
 export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 'cryogenics', templateId?:string) {
   const mood = getEnvironmentMood(environment), seen = new Set<T.MeshStandardMaterial>();
   const legacyBounce=['cold-aisle','cryo-gallery','turbine-hall','power-conduits'].includes(templateId??'')?.006:0;
-  const tint = new T.Color(deckTint[environment]);
+  const tint = new T.Color(deckTint[environment]),reactorDeck=templateId==='overload-floor'?new T.Color(0x46505a):reactorSteel;
+  let hotCore:{x:number;z:number;radius:number}|undefined;world.traverse(object=>{if(object.userData.hotCore)hotCore=object.userData.hotCore;});
   world.traverse(object => {
     if (!(object instanceof T.Mesh)) return;
     const materials = Array.isArray(object.material) ? object.material : [object.material];
@@ -37,13 +38,13 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         material.metalness = environment === 'maintenance' ? Math.max(.38, original.metalness) : original.metalness;
         if (material.name === 'painted-steel-deck' || material.name === 'annulus-deck') {
           // Original near-black paint multiplied by colored light hid traversable floor below sRGB 30.
-          material.color.copy(original.color).lerp(environment==='reactor'?reactorSteel:readableSteel, .85).multiply(tint);
+          material.color.copy(original.color).lerp(environment==='reactor'?reactorDeck:readableSteel, .85).multiply(tint);
         } else {
           material.color.copy(material.userData.roomBaseColor ?? original.color).lerp(new T.Color(environment==='reactor'?0x747e88:0x8896a1),.8).multiply(tint);
         }
         applyFloorVariation(material, environment);
       }
-      if(environment==='reactor'&&material.name==='ship-cold-practical'){material.color.setHex(0xfff4e8);material.emissive.setHex(0xffe6d5);material.emissiveIntensity=7.5;applyHotFixtureSurface(material);}
+      if(environment==='reactor'&&material.name==='ship-cold-practical'){material.color.setHex(0xfff4e8);material.emissive.setHex(0xffe6d5);material.emissiveIntensity=7.5;applyHotFixtureSurface(material,hotCore);}
       // Keep the authored hue: red warning strips and green safe routes retain their meaning.
       if (!(environment === 'reactor' && material.name === 'ship-cold-practical') && !material.userData.motivatedEmitter && original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {
         material.emissiveIntensity = Math.max(2.6, original.emissiveIntensity * 1.75);

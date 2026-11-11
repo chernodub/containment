@@ -7,6 +7,49 @@ export type EquipmentDetailWriter = {
 };
 export type EquipmentFinishes = {steel:T.Material;dark:T.Material;paint:T.Material;signal:T.Material};
 
+/** Recessed rack face and connected jacketed tails, using the host's existing finishes. */
+export function cabinetFace(writer:EquipmentDetailWriter,m:EquipmentFinishes,x:number,y:number,z:number,width:number,height:number):void {
+  const {box,pipe}=writer;
+  box(m.dark,x,y,z,width,height,.026);
+  for(const side of [-1,1]){
+    box(m.steel,x+side*width*.48,y,z+.025,width*.035,height,.045);
+    box(m.steel,x,y+side*height*.48,z+.025,width,.035,.045);
+  }
+  for(let row=0;row<5;row++){
+    const ry=y+(row-2)*height*.18;
+    box(m.steel,x,ry,z+.025,width*.86,height*.13,.045);
+    box(m.dark,x-width*.12,ry,z+.051,width*.55,height*.095,.012);
+    for(let slot=0;slot<5;slot++)box(m.paint,x-width*.33+slot*width*.095,ry,z+.06,width*.027,height*.058,.009);
+    box(m.signal,x+width*.29,ry+.025,z+.055,width*.03,height*.018,.016);
+    box(m.paint,x+width*.37,ry,z+.06,width*.055,height*.07,.021);
+  }
+  for(const side of [-1,1])for(let cable=0;cable<2;cable++){
+    const px=x+side*(width*.39-cable*.055);
+    pipe(m.dark,new T.Vector3(px,y+height*.43,z+.065),new T.Vector3(px,y-height*.40,z+.065),.018);
+    pipe(m.dark,new T.Vector3(px,y-height*.40,z+.065),new T.Vector3(px-side*.08,y-height*.48,z-.08),.018);
+  }
+}
+
+/** A pressure barrel gains bolted end plates, machined bands and a plumbed instrument union. */
+export function pressureCylinderDetail(writer:EquipmentDetailWriter,m:EquipmentFinishes,x:number,y:number,z:number,radius:number,length:number):void {
+  const {box,pipe}=writer,p=(dx:number,dy:number,dz:number)=>new T.Vector3(x+dx,y+dy,z+dz);
+  for(const band of [-.34,.34])pipe(m.steel,p(0,0,length*band-.025),p(0,0,length*band+.025),radius*1.07);
+  for(const side of [-1,1]){
+    const end=side*(length*.5+.014);
+    pipe(m.steel,p(0,0,end-.018),p(0,0,end+.018),radius*.96);
+    pipe(m.dark,p(0,0,end+side*.019),p(0,0,end+side*.027),radius*.73);
+    for(let bolt=0;bolt<6;bolt++){
+      const angle=bolt*Math.PI/3,dx=Math.cos(angle)*radius*.81,dy=Math.sin(angle)*radius*.81;
+      box(m.paint,x+dx,y+dy,z+end+side*.031,.045,.045,.028);
+    }
+  }
+  for(const dx of [-radius*.38,radius*.38])box(m.dark,x+dx,y+radius*.94,z,.024,.022,length*.62);
+  pipe(m.steel,p(radius*.45,radius*.65,0),p(radius*.45,radius*1.32,0),.04);
+  pipe(m.paint,p(radius*.45,radius*1.29,0),p(radius*.45,radius*1.36,0),.12);
+  pipe(m.dark,p(radius*.45,radius*1.36,0),p(radius*.45,radius*1.39,0),.095);
+  box(m.signal,x+radius*.45,y+radius*1.41,z,.024,.007,.10);
+}
+
 /** A single supported service cartridge, emitted into the caller's material batches. */
 export function serviceCartridge(writer:EquipmentDetailWriter,materials:EquipmentFinishes,x:number,y:number,z:number,span:number,angle:number,variant:number):void {
   const {box,pipe}=writer,{steel,dark,paint,signal}=materials;
@@ -55,10 +98,10 @@ export function passengerObservationTexture():T.DataTexture {
     const edge=Math.pow(Math.max(Math.abs(dx)*2,Math.abs(v-.5)*2),6);
     const grain=((Math.imul(x+17,374761393)^Math.imul(y+31,668265263))>>>5)%23/23;
     const frost=edge*(.35+grain*.65),streak=Math.sin(x*.59+y*.032)> .97?.08:0;
-    const i=(y*width+x)*4,value=person?-.025:.045;
-    pixels[i]=Math.round(15+value*255+frost*46+streak*255);
-    pixels[i+1]=Math.round(36+value*255+frost*63+streak*255);
-    pixels[i+2]=Math.round(46+value*255+frost*68+streak*255);
+    const i=(y*width+x)*4;
+    pixels[i]=Math.round((person?20:65)+frost*30+streak*100);
+    pixels[i+1]=Math.round((person?42:110)+frost*30+streak*100);
+    pixels[i+2]=Math.round((person?53:125)+frost*30+streak*100);
     pixels[i+3]=255;
   }
   const texture=new T.DataTexture(pixels,width,height);texture.colorSpace=T.SRGBColorSpace;

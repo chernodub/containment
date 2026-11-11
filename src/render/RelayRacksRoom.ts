@@ -93,7 +93,7 @@ export function relayRacksRoom():T.Group{
      // Jacketed multi-fiber looms replace the single tidy hose silhouette.
      for(let cable=0;cable<3;cable++){
       const curve=new T.CatmullRomCurve3([[x-25,58,bz-13+cable*3],[x-30-cable,63+cable*3,bz+7],[x+19,68+cable*2,bz+10],[x+25,58,bz-13+cable*3]].map(p=>new T.Vector3(p[0]/32,p[1]/32,p[2]/32)));
-      add(g,new T.TubeGeometry(curve,8,1.15/32,5,false),cable===1?cyan:dark,'relay-cable-bundles');
+      add(g,new T.TubeGeometry(curve,6,1.15/32,5,false),cable===1?cyan:dark,'relay-cable-bundles');
      }
     }else{
      // Missing tray and short fallen rail are contained inside the damaged bay.
@@ -106,11 +106,22 @@ export function relayRacksRoom():T.Group{
    add(g,new T.CylinderGeometry(33/32,33/32,40/32,16).translate(x/32,32/32,(z-26)/32),amber,'relay-distribution-drum');
    const flanges=group('relay-drum-flanges');g.add(flanges);
    for(const y of [12,54])add(flanges,new T.CylinderGeometry(42/32,42/32,8/32,20).translate(x/32,y/32,(z-26)/32),rail);
+   // Concentric machined seating and radial fasteners break up the exposed flange cap.
+   add(flanges,new T.RingGeometry(17/32,31/32,24).rotateX(-Math.PI/2).translate(x/32,58.2/32,(z-26)/32),dark);
+   add(flanges,new T.RingGeometry(29/32,31/32,24).rotateX(-Math.PI/2).translate(x/32,58.4/32,(z-26)/32),pale);
+   for(let bolt=0;bolt<8;bolt++){
+    const a=bolt*Math.PI/4;
+    box(flanges,x+Math.cos(a)*36,58.8,z-26+Math.sin(a)*36,3,1.4,3,pale);
+   }
    for(const dx of [-24,24])box(g,x+dx,8,z-26,16,8,68,dark);
    // Broad ribs tie the two flanges together, leaving the reel visible between.
    for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5]){
     const dx=Math.cos(angle)*34,dz=Math.sin(angle)*34;
     pipe(g,[x+dx,16,z-26+dz],[x+dx,50,z-26+dz],3,rail);
+   }
+   for(let rib=0;rib<8;rib++){
+    const a=(rib+.5)*Math.PI/4;
+    box(g,x+Math.cos(a)*32,32,z-26+Math.sin(a)*32,3,32,3,dark);
    }
    const fork=group('relay-fork-guides');g.add(fork);
    for(const side of [-1,1]){
@@ -134,6 +145,10 @@ export function relayRacksRoom():T.Group{
     box(jaw,x+side*31,12,z+54,28,8,40,rail);
     box(jaw,x+side*30,28,z+54,24,24,34,dark);
     box(jaw,x+side*21,41,z+54,10,18,30,pale);
+    box(jaw,x+side*21,50.15,z+54,7,.3,24,dark);
+    for(const dz of [45,50,55,60])box(jaw,x+side*21,50.4,z+dz,5,.3,1.2,rail);
+    box(jaw,x+side*31,40.2,z+54,12,.4,22,dark);
+    for(let tick=0;tick<3;tick++)box(jaw,x+side*31+(tick-1)*3,40.6,z+58,1.3,.4,2,tick===0?cyan:rail);
     for(const dz of [46,62])box(jaw,x+side*12,41,z+dz,10,6,6,amber);
     for(const dz of [40,68])box(jaw,x+side*36,43,z+dz,8,6,6,rail);
    }
