@@ -21,6 +21,15 @@ function fixture() {
 }
 
 describe('authoritative incoming damage provenance', () => {
+  it('keeps fractional fixed-step timestamps valid across multiple rooms', () => {
+    const stats=new RunStats();
+    for(let room=0;room<20;room++) {
+      stats.enterRoom(`1729:v3-r${room}`);
+      for(let frame=0;frame<730;frame++) stats.update(1000/60);
+      stats.recordDamageTaken(2,{source:'acid-pool'});
+      expect(isValidRunStatsSnapshot(stats.snapshot),`room ${room}`).toBe(true);
+    }
+  });
   it('records actual damage, fatal source and room, while denied and paused hurt never rewrite history', () => {
     const game = fixture();
     game.hurt(8, {x: 10, y: 20}, {source: 'enemy-contact', enemyFamily: 'crawler'});

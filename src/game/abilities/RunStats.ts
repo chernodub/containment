@@ -203,7 +203,11 @@ export class RunStats {
     const receipt: IncomingDamageReceipt = {
       source: INCOMING_SOURCES.includes(origin.source) ? origin.source : 'unknown',
       ...(origin.enemyFamily && FAMILIES.includes(origin.enemyFamily) ? {enemyFamily: origin.enemyFamily} : {}),
-      amount: Math.min(amount, RUN_STATS_LIMITS.counter), room: this.room, atMs: this.time,
+      // Match the persisted timer aggregation exactly. Summing fixed steps
+      // across rooms in another order can otherwise put a receipt a fraction
+      // of a microsecond beyond the serialized run clock.
+      amount: Math.min(amount, RUN_STATS_LIMITS.counter), room: this.room,
+      atMs: Object.values(this.value.roomTimeMs).reduce((sum, elapsed) => sum + elapsed, 0),
     };
     this.value.lastDamage = receipt;
     if (this.value.recentDamage.length === INCOMING_DAMAGE_CAPACITY) this.value.recentDamage.shift();
