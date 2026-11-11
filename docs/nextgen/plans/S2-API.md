@@ -15,7 +15,7 @@ audio.handleEffect(effect:GameEffect,listener:Readonly<{x:number;y:number}>):voi
 audio.playUi(cue:UiCue):void;
 audio.setEnvironment(environment:AudioEnvironment|null):void;
 audio.setCombatState(state:AudioCombatState):void;
-audio.setBossPhase(phase:1|2|3):void; // optional richer Queen snapshot hook
+audio.setBossPhase(phase:1|2|3|QueenBossPhase):void; // optional richer Queen snapshot hook
 
 audio.setVolumes(volumes:Partial<AudioVolumes>):void;
 audio.setMasterVolume(value:number):void;
@@ -55,7 +55,7 @@ The existing `GameAudioDirector`, `AudioCombatState`, `AudioEnvironment`, `Audio
 2. Push coarse state with `setCombatState`: intensity, boss presence, `abilities.overdrive.active`, danger (1 minus health fraction), `abilities.hostileTimeScale`, and paused. Keep `syncCombat` for authoritative reload/switch/death transitions; `syncFrozen` remains available for freeze onsets not explicitly emitted by the simulation.
 3. On room change, call `setEnvironment(environment)` using the authored environment ID. Call `setEnvironment(null)` on room exit/menu; this clears ability loops even when the next room has the same environment. Existing `syncFrozen(...,roomRevision)` also clears old loops on revision changes.
 4. Call `playUi` for all menu/reward/checkpoint/presentation beats. Continue using existing `pauseAll`/`resumeAll` for pause, visibility and graphics recovery. `playUi` schedules no paused sound; the legacy gesture helper `playUI()` preserves existing paused-menu click behavior. Call the death/victory stinger before pausing the whole engine if it should be heard.
-5. Optional: forward Queen `snapshot.phase` through `setBossPhase`. The coarse frozen audio state carries only `boss:boolean`; it cannot carry phase by itself. Champion/warden/matron recipes exist, but current GameEffect only carries native family/elite, so those events use their family-specific elite identity until richer champion metadata is supplied. No gameplay inference is performed in audio.
+5. Optional: forward Queen `snapshot.phase` through `setBossPhase` (armored = base voice, nest-spawn = second voice, vulnerable = third voice). The coarse frozen audio state carries only `boss:boolean`; it cannot carry phase by itself. Champion/warden/matron recipes exist, but current GameEffect only carries native family/elite, so those events use their family-specific elite identity until richer champion metadata is supplied. No gameplay inference is performed in audio.
 
 ## Lifecycle and performance
 

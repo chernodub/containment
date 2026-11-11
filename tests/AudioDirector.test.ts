@@ -4,6 +4,8 @@ import { ABILITY_CATALOG } from '../src/game/abilities/catalog';
 import type { AbilityEvent, AbilityEventPhase, AbilityId } from '../src/game/abilities/contract';
 import type { AudioCombatState } from '../src/game/audio/contract';
 import { UI_CUES } from '../src/game/audio/uiCues';
+import { enemyRecipe } from '../src/game/audio/combatCues';
+import { synthesize } from '../src/game/audio/synthesis';
 import { FakeAudioContext } from './audioFake';
 
 const state = (patch: Partial<AudioCombatState> = {}): AudioCombatState => ({ intensity: .5, boss: false, overdrive: false, danger: 0, hostileTimeScale: 1, paused: false, ...patch });
@@ -121,6 +123,18 @@ describe('audio director', () => {
     audio.setCombatState(state({ danger: .69 })); expect(clock.sources.filter(source => source.loop)).toHaveLength(0);
     audio.setCombatState(state({ danger: .8 })); expect(clock.sources.filter(source => source.loop)).toHaveLength(1);
     audio.setCombatState(state({ danger: .6 })); clock.advance(.03); expect(clock.sources.filter(source => source.loop && !source.ended)).toHaveLength(0); audio.destroy();
+  });
+  it('accepts the real Queen phase vocabulary and keeps spawn warnings separate from Queen tells', async () => {
+    const { audio, clock } = await setup();
+    audio.handleEffect({ type: 'enemy-warning', x: 0, y: 0 }, listener);
+    expect(clock.sources.at(-1)!.buffer!.getChannelData(0)).toEqual(synthesize(enemyRecipe('crawler', 'warning')));
+    audio.setCombatState(state({ boss: true })); audio.setBossPhase('nest-spawn');
+    expect(clock.sources.at(-1)!.buffer!.getChannelData(0)).toEqual(synthesize(enemyRecipe('queen-phase-2', 'warning', true)));
+    const before = audio.diagnostics.admitted; audio.setBossPhase('nest-spawn'); expect(audio.diagnostics.admitted).toBe(before);
+    audio.setBossPhase('vulnerable');
+    audio.handleEffect({ type: 'enemy-attack', id: -1, x: 0, y: 0 }, listener);
+    expect(clock.sources.at(-1)!.buffer!.getChannelData(0)).toEqual(synthesize(enemyRecipe('queen-phase-3', 'attack')));
+    audio.destroy();
   });
   it('cancels all pending reload Foley when cancelled/switched/dead and resumes only its last latch', async () => {
     const { audio, clock } = await setup();

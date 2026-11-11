@@ -1,5 +1,6 @@
 import type { GameEffect } from '../../DepthGame';
 import type { CombatSnapshot } from '../combat/CombatSystem';
+import type { QueenBossPhase } from '../enemies/QueenBossSystem';
 import type { AbilityEvent } from '../abilities/contract';
 import { ABILITY_CATALOG } from '../abilities/catalog';
 import { elementalCueSamples, type ElementalCue } from './elementalCues';
@@ -149,10 +150,11 @@ export class AudioSystem implements GameAudioDirector {
     this.intensity = next; this.mixMusic();
   }
   /** Optional richer boss snapshot hook; the frozen coarse state has no phase field. */
-  setBossPhase(phase: 1 | 2 | 3): void {
-    if (phase === this.bossPhase) return;
-    this.bossPhase = phase;
-    if (this.boss) this.enemy(phase === 1 ? 'queen' : `queen-phase-${phase}`, 'warning', true);
+  setBossPhase(phase: 1 | 2 | 3 | QueenBossPhase): void {
+    const next = typeof phase === 'number' ? phase : phase === 'nest-spawn' ? 2 : phase === 'vulnerable' ? 3 : 1;
+    if (next === this.bossPhase) return;
+    this.bossPhase = next;
+    if (this.boss && phase !== 'idle' && phase !== 'defeated') this.enemy(next === 1 ? 'queen' : `queen-phase-${next}`, 'warning', true);
   }
   pauseMusic(): void { this.musicPaused = true; this.stopStems(); }
   pauseAll(): void {
