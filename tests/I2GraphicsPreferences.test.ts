@@ -163,14 +163,22 @@ it.each(['high', 'low'] as const)('keeps persisted %s overrides through a contex
 });
 
 
-it('redraws replacement low-resolution shadows before the post warm frame samples them', async () => {
+it('draws the selected low-resolution shadows before the post warm frame samples them', async () => {
   const {renderer, resources, recovery} = recoveryProbe();
   renderer.setGraphicsOptions({shadows: 'low'});
-  resources.renderer.render.mockImplementation(() => {resources.renderer.shadowMap.needsUpdate = false;});
-  resources.post.prepare = vi.fn(async () => {
+  let shadowReady = false;
+  resources.renderer.render.mockImplementation(() => {
     expect(renderer.graphicsOptions.shadows).toBe('low');
     expect(resources.renderer.shadowMap.enabled).toBe(true);
     expect(resources.renderer.shadowMap.needsUpdate).toBe(true);
+    resources.renderer.shadowMap.needsUpdate = false;
+    shadowReady = true;
+  });
+  resources.post.prepare = vi.fn(async () => {
+    expect(renderer.graphicsOptions.shadows).toBe('low');
+    expect(resources.renderer.shadowMap.enabled).toBe(true);
+    expect(shadowReady).toBe(true);
+    expect(resources.renderer.shadowMap.needsUpdate).toBe(false);
   });
   recovery.queueRoomWarmup();
   await recovery.roomWarmWork;

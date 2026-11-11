@@ -131,7 +131,7 @@ export class DepthRenderer {
  get graphicsOptions(){return this.options;}
  /** Apply presentation settings without changing deterministic game state. */
  setGraphicsOptions(partial:Partial<GraphicsOptions>){
-  const previous=this.options;this.options=resolveGraphicsOptions(this.options??GRAPHICS_PRESETS.high,partial);this.applyQuality();if(this.materialWarmup&&(previous.dynamicLights!==this.options.dynamicLights||previous.shadows!==this.options.shadows||previous.atmosphere!==this.options.atmosphere))this.queueRoomWarmup();
+  const previous=this.options??GRAPHICS_PRESETS[this.tier??'high'];this.options=resolveGraphicsOptions(this.options??GRAPHICS_PRESETS.high,partial);this.applyQuality();if(this.materialWarmup&&(previous.dynamicLights!==this.options.dynamicLights||previous.shadows!==this.options.shadows||previous.atmosphere!==this.options.atmosphere))this.queueRoomWarmup();
  }
  setQuality(value:'high'|'low'='high'){
   const previous=this.options,wasLow=this.tier==='low';this.tier=value==='low'?'low':'high';this.options=GRAPHICS_PRESETS[this.tier];this.ragdolls?.setQuality(this.tier);while(this.corpses.length>(this.tier==='low'?6:12)){const c=this.corpses.shift()!;this.ragdolls.remove(c.id);this.actorPool.release(c.model);}this.applyQuality();if(this.materialWarmup&&(wasLow!==(this.tier==='low')||previous?.dynamicLights!==this.options.dynamicLights||previous?.shadows!==this.options.shadows||previous?.atmosphere!==this.options.atmosphere))this.queueRoomWarmup();
@@ -440,13 +440,14 @@ export class DepthRenderer {
  syncCorpse(id:number,x:number,y:number){const corpse=this.corpses.find(c=>c.id===id);if(corpse){corpse.x=x/UNIT;corpse.y=y/UNIT;corpse.vx=corpse.vy=0;if(this.ragdolls.has(id))this.ragdolls.sync(id,x/UNIT,y/UNIT);else{corpse.model.root.position.x=x/UNIT;corpse.model.root.position.z=y/UNIT;}}}
  get roomLoading(){return this.roomWarmPending||this.recoveringGraphics||this.communalGarden?.state==='loading'||this.residentialGalleryEquipment?.state==='loading'||this.passengerVault?.state==='loading'||this.recoveryKit?.state==='loading'||this.sealedBank?.state==='loading'||this.releasedBerth?.state==='loading';}
  render(game:DepthGame,delta:number,menu=false){
-  if((game.status==='reward'||game.status==='route')&&this.aheadKey!==game.node.id){this.aheadKey=game.node.id;const nodes=generateRun(game.expedition.run.seed,game.expedition.run.version).nodes;this.prepareAhead(nodes.filter(node=>game.node.next.includes(node.id)));}
   if(this.roomKey!==game.node.id)this.loadRoom(game.node);
   // ImageBitmap completion shares browser/GPU scheduling with WebGL. Do not
   // queue expensive fallback frames ahead of the room's bounded optional decode.
   // Main freezes gameplay/input until a settled room frame has rendered.
   // Both owners retain their independent 8-second fallback deadlines.
-  if(this.roomLoading)return;this.captureRoomReflections();
+  if(this.roomLoading)return;
+  if((game.status==='reward'||game.status==='route')&&this.aheadKey!==game.node.id){this.aheadKey=game.node.id;const nodes=generateRun(game.expedition.run.seed,game.expedition.run.version).nodes;this.prepareAhead(nodes.filter(node=>game.node.next.includes(node.id)));}
+  this.captureRoomReflections();
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
   const dt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds;
