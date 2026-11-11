@@ -4,10 +4,11 @@ export const DEFAULT_ROOMS=['awakening-bay','passenger-vault','communal-atrium',
 // use only browser globals and the debug hook inside these small functions.
 // The same legal heavy fixture with a settled diagnostics window, for render-cost comparisons.
 // Inline the existing staging function into this page-evaluated setup instead of adding globals.
-function benchmarkSetup(tier,algorithm='gtao',status=false){
+function benchmarkSetup(tier,algorithm='gtao',status=false,nativeRoom=false){
  return new Function('room',`return (async()=>{
   const d=window.__containmentDebug;
-  await d.gotoRoom(room);d.renderer.setQuality(${JSON.stringify(tier)});d.renderer.setAmbientOcclusionAlgorithm?.(${JSON.stringify(algorithm)});
+  const prepare=d.renderer.prepare;if(${nativeRoom})d.renderer.prepare=async node=>{d.renderer.loadRoom(node);for(let i=0;i<900&&d.renderer.roomLoading;i++)await new Promise(requestAnimationFrame);if(d.renderer.roomLoading)throw Error('Native room assets did not settle');d.refresh();};
+  try{await d.gotoRoom(room);}finally{d.renderer.prepare=prepare;}d.renderer.setQuality(${JSON.stringify(tier)});d.renderer.setAmbientOcclusionAlgorithm?.(${JSON.stringify(algorithm)});
   if(${status})d.grantBoons(['cryogenic','permafrost','absolute-zero','incendiary','caustic-rounds','arc-filament','conductive-shell','cryo-conductor']);
   const gl=d.renderer.renderer.getContext(),create=gl.createProgram;const oldPrograms=new Set(d.renderer.renderer.info.programs);let compiled=0;gl.createProgram=function(){compiled++;return create.call(gl);};
   try{(${stageCombat.toString()})({status:${status}});}finally{gl.createProgram=create;}
@@ -34,6 +35,7 @@ export const SCENARIOS=[
  {id:'dead',state:'dead',required:['.result-panel','#start'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('breached-loading-bay');d.invulnerable(false);d.game.hurt(100000);d.refresh();}},
  {id:'shop',state:'reward',phase:'reward',required:['.service-shop','#claim'],setup:async()=>{await window.__containmentDebug.gotoRoom('communal-atrium',{phase:'reward'});}},
  {id:'g1-benchmark-high',rooms:true,state:'playing',setup:benchmarkSetup('high')},
+ {id:'g1-native-room-shaders',rooms:true,state:'playing',setup:benchmarkSetup('high','gtao',false,true)},
  {id:'g1-benchmark-status',rooms:true,state:'playing',setup:benchmarkSetup('high','gtao',true)},
  {id:'g1-benchmark-contact',rooms:true,state:'playing',setup:benchmarkSetup('high','contact')},
  {id:'g1-benchmark-low',rooms:true,state:'playing',setup:benchmarkSetup('low')},

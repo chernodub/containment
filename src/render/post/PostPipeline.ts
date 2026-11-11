@@ -104,9 +104,9 @@ export class PostPipeline {
   }
 
   /** Compiles every post shader and draws a complete offscreen warm frame. */
-  async prepare(): Promise<void> {
+  async prepare(compile:(scene:Scene,camera:Camera)=>Promise<unknown>=(scene,camera)=>this.renderer.compileAsync(scene,camera)): Promise<void> {
     if (this.disposed) return;
-    await this.renderer.compileAsync(this.scene, this.camera);
+    await compile(this.scene, this.camera);
     if (this.disposed || this.tier === 'low') return;
     const resources = this.ensureResources();
     const originalTarget = this.renderer.getRenderTarget();
@@ -120,7 +120,7 @@ export class PostPipeline {
         resources.extract, resources.blur, resources.distort, resources.composite]) {
         if (this.disposed || this.resources !== resources) return;
         resources.triangle.material = material;
-        await this.renderer.compileAsync(resources.screenScene, resources.screenCamera);
+        await compile(resources.screenScene, resources.screenCamera);
       }
       if (!this.disposed && this.tier === 'high') this.renderTo(0, warmTarget, true);
     } finally {
