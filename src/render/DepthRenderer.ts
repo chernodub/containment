@@ -24,6 +24,8 @@ import {attachReleasedBerth} from './ReleasedBerth';
 import {SceneLighting,ContactShadows} from './SceneLighting';
 import {authoredRoom} from './AuthoredRooms';
 import {ActorPool} from './ActorPool';
+import {PickupInstances} from './PickupInstances';
+import {batch} from './meshParts';
 import type {GraphicsTier} from './FrameBudget';
 import {GRAPHICS_PRESETS,resolveGraphicsOptions,type GraphicsOptions} from './graphicsOptions';
 import {EnvironmentMaterials} from './EnvironmentMaterials';
@@ -44,7 +46,7 @@ import {applyRoomMood} from './lighting/applyRoomMood';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {attachPassengerVault} from './PassengerVault';
 import {attachResidentialGalleryEquipment} from './ResidentialGalleryEquipment';
-import {MAT,box,ball,rod,marine,alien,nest,pickupModel,disposeModel,freezeCorpse,type ActorModel} from './models';
+import {MAT,box,ball,rod,marine,alien,nest,disposeModel,freezeCorpse,type ActorModel} from './models';
 import {DeathRagdolls} from './DeathRagdolls';
 import {ROOM_TEMPLATES} from '../game/roguelike/roomTemplates';
 import type {DepthGame,GameEffect} from '../DepthGame';
@@ -70,12 +72,12 @@ export class DepthRenderer {
  private options:GraphicsOptions=GRAPHICS_PRESETS.high;
  private cameraRig=new CameraRig();private viewHeight=13;private viewWidth=13;private desiredFocus=new T.Vector3();private screenPoint=new T.Vector3();private screenTarget=new T.Vector3();private bulletColor=new T.Color();private playerVelocity={x:0,y:0};private attachedLight={x:0,y:1,z:0,color:0xffffff,intensity:1,distance:3,duration:.1,priority:1};
  private canvasRect?:DOMRect;private projectedPlayer?:{left:number;top:number;right:number;bottom:number};
- private visiblePoint=new T.Vector3();private activePoolIds=new Set<number>();private frameFocus={x:0,z:0};private activeActorIds=new Set<number>();private activeNestIds=new Set<number>();private activePickupIds=new Set<number>();private healthEntries:HealthBarEntry[]=Array.from({length:128},()=>({x:0,z:0,height:0,health:0,maxHealth:1,elite:false,armor:0,maxArmor:0}));private projectileLightIds=new WeakMap<object,number>();private nextProjectileLight=-1000;
+ private visiblePoint=new T.Vector3();private activePoolIds=new Set<number>();private frameFocus={x:0,z:0};private activeActorIds=new Set<number>();private activeNestIds=new Set<number>();private healthEntries:HealthBarEntry[]=Array.from({length:128},()=>({x:0,z:0,height:0,health:0,maxHealth:1,elite:false,armor:0,maxArmor:0}));private projectileLightIds=new WeakMap<object,number>();private nextProjectileLight=-1000;
  private motionChanged=()=>this.applyQuality();
  private motionQuery=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
  private disposed=false;private time=0;private recoil=0;private roomKey='';private temporaryMaterials:T.Material[]=[];
  private bulletMesh:T.InstancedMesh;private dummy=new T.Object3D();
- private pickupMeshes=new Map<number,T.Group>();private exit:T.Group|null=null;
+ private pickupInstances=new PickupInstances();private exit:T.Group|null=null;
  private warning=new T.Group();private poolMeshes=new Map<number,T.Mesh<T.CircleGeometry,AcidPoolMaterial>>();private menuActors=new T.Group();private menuMarine=marine();private menuAlien=alien('brute',true);private lastMenu=false;
  private title=new TitlePresentation(this.scene);
  constructor(readonly canvas:HTMLCanvasElement){
@@ -92,7 +94,7 @@ export class DepthRenderer {
   // Match their future shaders to the retained generic material family before preparation.
   for(const material of Object.values(MAT))optimizeLocalLights(material);
   this.surfaces=new EnvironmentMaterials(this.renderer.capabilities.getMaxAnisotropy());this.floorMaterial=this.surfaces.floor;this.materialWarmup=new MaterialWarmup(this.surfaces);this.scene.add(this.materialWarmup.root);this.materialWarmup.register(this.interimAbilities.root);this.materialWarmup.register(this.title.root);
-  this.scene.add(this.world,this.player.root);
+  this.scene.add(this.world,this.player.root,this.pickupInstances.root);this.materialWarmup.register(this.pickupInstances.root);
   this.muzzle=new T.PointLight(0xffc679,0,3,2);this.scene.add(this.muzzle);
   this.effects=new AttackEffects(this.scene,undefined,this.world);
   this.effects.setFeedback({flash:event=>this.lighting.pool.flash({x:event.position.x,y:event.position.y,z:event.position.z,color:event.color,intensity:event.intensity,distance:event.radius,duration:event.duration,priority:event.priority},true),shockwave:event=>this.post.distortion.shockwave(event.position.x,event.position.z,event.radius,event.strength*.012,event.duration)});
@@ -270,7 +272,7 @@ export class DepthRenderer {
   this.releasedBerth?.dispose();this.releasedBerth=undefined;
   this.reflection?.invalidate();this.roomEnvironment=environment??'cryogenics';this.roomKey=node.id;this.shadowsDirty=true;disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.temporaryMaterials=[];this.world=new T.Group();this.scene.add(this.world);this.effects.setWorld(this.world);
   for(const m of this.actors.values())this.actorPool.release(m);this.actors.clear();for(const n of this.nests.values())disposeModel(n);this.nests.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;
-  this.ragdolls?.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];for(const p of this.pickupMeshes.values())disposeModel(p);this.pickupMeshes.clear();this.effects.clear();this.interimAbilities.clear();this.afflictions.clear();this.pendingShots=[];this.projectileLightIds=new WeakMap();this.nextProjectileLight=-1000;this.muzzleLife=0;this.recoil=0;
+  this.ragdolls?.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.pickupInstances?.clear();this.effects.clear();this.interimAbilities.clear();this.afflictions.clear();this.pendingShots=[];this.projectileLightIds=new WeakMap();this.nextProjectileLight=-1000;this.muzzleLife=0;this.recoil=0;
   const t=ROOM_TEMPLATES[node.templateId],w=t.width/UNIT,h=t.height/UNIT;this.roomWidth=w;this.roomHeight=h;
   const atrium=node.templateId==='communal-atrium';
   this.corpseIds?.clear();this.staticDirty=false;const staticLoaded=this.staticLoaded(this.world);
@@ -373,6 +375,8 @@ export class DepthRenderer {
   this.exit=new T.Group();this.exit.position.set(t.exit.x/UNIT,0,t.exit.y/UNIT);this.world.add(this.exit);
   for(const side of [-1,1]){box(this.exit,0,.7,side*.7,.12,1.4,.18,MAT.steel);box(this.exit,.08,.7,side*.7,.04,1.05,.05,MAT.cyan,.01);}
   box(this.exit,0,1.5,0,.2,.2,1.6,MAT.dark);box(this.exit,0,.035,0,1.7,.02,1.55,MAT.dark);
+  // Rigid exit parts share finishes and transforms; retain three merged draws.
+  batch(this.exit);
   // Flat markings and obstacle-supported dressing are registered before room preparation.
   addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
@@ -478,8 +482,8 @@ export class DepthRenderer {
   this.effects.update(dt,this.camera,game.bullets);
   let index=0;for(const b of game.bullets){if(index>=320)break;if(b.kind==='player'&&(2-b.life)*b.request.speed<(b.visualMuzzle?.distance??0))continue;this.dummy.position.set(b.x/UNIT,b.kind==='grenade'?1+Math.sin((1-b.life/1.1)*Math.PI)*1.4:b.visualMuzzle?.y??.95,b.y/UNIT);this.dummy.rotation.set(0,Math.PI/2-b.request.angle,0);this.dummy.scale.set(b.kind==='hazard'?.09:.025,.025,b.request.weaponId==='rocket'?.35:.24);this.dummy.updateMatrix();this.bulletMesh.setMatrixAt(index,this.dummy.matrix);if(this.tier==='high'&&this.options.dynamicLights&&(b.request.weaponId==='plasma'||b.request.weaponId==='rocket')){let id=this.projectileLightIds.get(b);if(id===undefined){id=this.nextProjectileLight--;this.projectileLightIds.set(b,id);}const light=this.attachedLight;light.x=this.dummy.position.x;light.y=this.dummy.position.y;light.z=this.dummy.position.z;light.color=b.request.weaponId==='plasma'?0x9fe8ff:0xffb454;light.intensity=1.7;light.priority=1;this.lighting.pool.attach(id,light);light.y=1;}this.bulletMesh.setColorAt(index,this.bulletColor.setHex(b.kind==='hazard'?0xa4e875:b.request.weaponId==='plasma'?0x73eced:0xffd58f));index++;}this.bulletMesh.count=index;this.bulletMesh.instanceMatrix.needsUpdate=true;if(this.bulletMesh.instanceColor)this.bulletMesh.instanceColor.needsUpdate=true;
 
-  const pickupIds=this.activePickupIds;pickupIds.clear();for(const item of game.pickups.snapshot){pickupIds.add(item.id);let model=this.pickupMeshes.get(item.id);if(!model){model=pickupModel(item.kind);this.pickupMeshes.set(item.id,model);this.scene.add(model);this.contextResources?.track(model);}model.position.set(item.x/UNIT,.26+Math.sin(this.time*2+item.id)*.07,item.y/UNIT);model.rotation.y=this.time*.6;}
-  for(const[id,model]of this.pickupMeshes)if(!pickupIds.has(id)){disposeModel(model);this.pickupMeshes.delete(id);}
+  this.pickupInstances?.update(game.pickups.snapshot,this.time);
+  if(this.pickupInstances)this.pickupInstances.root.visible=!menu;
   this.shadowTime+=dt;this.renderer.shadowMap.needsUpdate=this.shadowsDirty||this.shadowTime>=1/30;
   if(this.renderer.shadowMap.needsUpdate){this.shadowTime=0;this.shadowsDirty=false;}
   this.afflictions.update(this.scene.children,this.camera,this.time);this.renderer.info.reset();
@@ -545,5 +549,5 @@ export class DepthRenderer {
   for(const[id,mesh]of this.poolMeshes)if(!poolIds.has(id)){mesh.geometry.dispose();mesh.material.dispose();mesh.removeFromParent();this.poolMeshes.delete(id);}
  }
  private clearPools(){for(const mesh of this.poolMeshes.values()){mesh.geometry.dispose();mesh.material.dispose();mesh.removeFromParent();}this.poolMeshes.clear();}
- dispose(){if(this.disposed)return;this.disposed=true;this.ragdolls.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.corpseIds?.clear();for(const model of this.actors.values())this.actorPool.release(model);this.actors.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;this.communalGarden?.dispose();this.communalGarden=undefined;this.residentialGalleryEquipment?.dispose();this.residentialGalleryEquipment=undefined;this.passengerVault?.dispose();this.clearPools();this.recoveryKit?.dispose();this.sealedBank?.dispose();this.releasedBerth?.dispose();disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.practicalPools?.dispose();this.arena?.dispose();this.title?.dispose();this.backdrop?.dispose();this.atmosphere.dispose();this.lighting.dispose();this.contacts.dispose();this.afflictions.dispose();this.actorPool.dispose();this.healthBars.dispose();this.playerBeacon?.dispose();this.effects.dispose();this.interimAbilities.dispose();for(const model of [this.player,this.menuMarine,this.menuAlien])if(model){model.stop?.();disposeModel(model.root);}if(this.bulletMesh.geometry){this.bulletMesh.geometry.dispose();(this.bulletMesh.material as T.Material).dispose();}for(const object of this.warning.children)if(object instanceof T.Mesh){object.geometry.dispose();(object.material as T.Material).dispose();}this.canvas.removeEventListener('webglcontextlost',this.loseGraphics);this.canvas.removeEventListener('webglcontextrestored',this.restoreGraphics);this.motionQuery?.removeEventListener('change',this.motionChanged);this.reflection.dispose();this.post.dispose();this.materialWarmup?.dispose();this.contextResources?.invalidate();this.renderer.dispose();this.surfaces.dispose();}
+ dispose(){if(this.disposed)return;this.disposed=true;this.ragdolls.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.corpseIds?.clear();for(const model of this.actors.values())this.actorPool.release(model);this.actors.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;this.communalGarden?.dispose();this.communalGarden=undefined;this.residentialGalleryEquipment?.dispose();this.residentialGalleryEquipment=undefined;this.passengerVault?.dispose();this.clearPools();this.recoveryKit?.dispose();this.sealedBank?.dispose();this.releasedBerth?.dispose();disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.practicalPools?.dispose();this.arena?.dispose();this.title?.dispose();this.backdrop?.dispose();this.atmosphere.dispose();this.lighting.dispose();this.contacts.dispose();this.afflictions.dispose();this.actorPool.dispose();this.healthBars.dispose();this.pickupInstances?.dispose();this.playerBeacon?.dispose();this.effects.dispose();this.interimAbilities.dispose();for(const model of [this.player,this.menuMarine,this.menuAlien])if(model){model.stop?.();disposeModel(model.root);}if(this.bulletMesh.geometry){this.bulletMesh.geometry.dispose();(this.bulletMesh.material as T.Material).dispose();}for(const object of this.warning.children)if(object instanceof T.Mesh){object.geometry.dispose();(object.material as T.Material).dispose();}this.canvas.removeEventListener('webglcontextlost',this.loseGraphics);this.canvas.removeEventListener('webglcontextrestored',this.restoreGraphics);this.motionQuery?.removeEventListener('change',this.motionChanged);this.reflection.dispose();this.post.dispose();this.materialWarmup?.dispose();this.contextResources?.invalidate();this.renderer.dispose();this.surfaces.dispose();}
 }

@@ -101,13 +101,15 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   return {
     mesh,
     update(time:number,windup:number,champion:string|undefined,exposed:boolean,alpha:number,dead:boolean){
+      // Death already discards every fragment; skip the empty draw entirely.
+      mesh.visible=!dead;
       const u=mesh.material.uniforms;
       u.identityPulse.value=dead?.18:1+Math.sin(time*2.7)*.06+Math.max(0,Math.min(1,windup))*1.2;
       u.identityChampion.value=champion==='warden'?1:champion==='matron'?2:0;
       u.identityElite.value=elite||kind==='queen'||champion?1:0;
       u.identityExposed.value=exposed?1:0;u.identityAlpha.value=alpha;u.identityDeath.value=dead?1:0;
     },
-    reset(){const u=mesh.material.uniforms;u.identityPulse.value=1;u.identityElite.value=elite||kind==='queen'?1:0;u.identityChampion.value=0;u.identityExposed.value=0;u.identityAlpha.value=1;u.identityDeath.value=0;},
+    reset(){mesh.visible=true;const u=mesh.material.uniforms;u.identityPulse.value=1;u.identityElite.value=elite||kind==='queen'?1:0;u.identityChampion.value=0;u.identityExposed.value=0;u.identityAlpha.value=1;u.identityDeath.value=0;},
   };
 }
 

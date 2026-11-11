@@ -34,6 +34,16 @@ for(const room of rooms){
  await writeFile(resolve(out,file),sheet.png);const {png,...dimensions}=sheet;
  manifest.sprites.push({scenario:'room-calm-kiting',room,file,...dimensions,sourceFiles:sources.map(s=>s.file),simulationMs:sources.map(s=>s.simulationMs)});
 }
+manifest.appAssets=appAssets;
+// Overview sheets complement the full per-room/per-ability motion sheets.
+for(const [scenario,file,shots] of [
+ ['ability-overview','abilities-overview.png',manifest.shots.filter(s=>s.scenario.startsWith('ability:')&&s.frame===3)],
+ ['rooms-overview','rooms-overview.png',manifest.shots.filter(s=>s.scenario==='g2-calm-high')],
+]){
+ if(!shots.length)continue;
+ const sheet=stitchPngFrames(await Promise.all(shots.map(s=>readFile(resolve(out,s.file))))),{png,...dimensions}=sheet;
+ await writeFile(resolve(out,file),png);manifest.sprites.unshift({scenario,file,...dimensions,sourceFiles:shots.map(s=>s.file)});
+}
 await writeFile(resolve(out,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
 await writeFile(resolve(out,'pngs.txt'),[...manifest.shots,...manifest.sprites].map(s=>resolve(out,s.file)).join('\n')+'\n');
 const escape=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
