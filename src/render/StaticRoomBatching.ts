@@ -1,6 +1,7 @@
 import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { geometries } from './meshParts';
+import { getStaticColliderParts, setStaticColliderParts } from './StaticColliderParts';
 
 export type StaticRoomBatchStats = Readonly<{
   meshesBefore: number;
@@ -141,6 +142,11 @@ export function batchStaticRoom(root: T.Object3D): StaticRoomBatchStats {
       geometry.computeBoundingBox();
       geometry.computeBoundingSphere();
       const first = meshes[0], merged = new T.Mesh(geometry, material);
+      setStaticColliderParts(merged, meshes.flatMap(mesh => {
+        const originals = getStaticColliderParts(mesh);
+        return originals ? originals.map(part => ({ ...part, matrix: mesh.matrix.clone().multiply(part.matrix) })) :
+          [{ geometry: mesh.geometry, matrix: mesh.matrix.clone(), name: mesh.name }];
+      }));
       merged.name = first.name;
       merged.userData = { ...first.userData };
       merged.castShadow = first.castShadow;

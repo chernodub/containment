@@ -5,6 +5,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { batchOwnedStaticAsset } from './OwnedStaticAssetBatching';
 import { attachRecoveryKit } from './RecoveryKit';
 import { RoomModelCache, retireRoomModels } from './RoomModelCache';
+import { getStaticColliderParts } from './StaticColliderParts';
+import { DeathRagdolls, initDeathPhysics } from './DeathRagdolls';
+import { ROOM_TEMPLATES } from '../game/roguelike/roomTemplates';
 
 class Bitmap {
   width = 512;
@@ -56,9 +59,51 @@ function surface(root: T.Object3D) {
   return result;
 }
 
+function colliderDecisions(root: T.Object3D, partitions = true) {
+  root.updateWorldMatrix(true, true);
+  const result: { name: string; count: number; proxy: boolean; bounds: number[] }[] = [];
+  for (const mesh of meshes(root)) {
+    const parts = partitions ? getStaticColliderParts(mesh) : undefined;
+    const sources = parts ?? [{ geometry: mesh.geometry, matrix: new T.Matrix4(), name: mesh.name }];
+    for (const part of sources) {
+      const g = part.geometry.clone().applyMatrix4(new T.Matrix4().multiplyMatrices(mesh.matrixWorld, part.matrix));
+      g.computeBoundingBox();
+      const size = g.boundingBox!.getSize(new T.Vector3());
+      const count = g.index?.count ?? g.attributes.position.count;
+      result.push({ name: part.name, count, proxy: count > 12288 && size.x < 8 && size.z < 8 && size.y > .15,
+        bounds: [...g.boundingBox!.min.toArray(), ...g.boundingBox!.max.toArray()] });
+      g.dispose();
+    }
+  }
+  return result.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('owned recovery kit finish consolidation', () => {
+  it('retains all 21 original corpse collider partitions and the exact fitted console proxy', async () => {
+    const asset = await actualKit(), root = asset.scene;
+    root.position.set(204 / 32, 0, 700 / 32);
+    const originalGeometries = new Set(meshes(root).map(mesh => mesh.geometry));
+    const geometryDisposed = vi.spyOn(T.BufferGeometry.prototype, 'dispose');
+    const before = colliderDecisions(root);
+    expect(before).toHaveLength(21);
+    expect(before.filter(value => value.proxy).map(value => value.name)).toEqual(['Batch_02_graphite_powdercoat']);
+    batchOwnedStaticAsset(root);
+    expect(colliderDecisions(root, false)).toHaveLength(8);
+    expect(colliderDecisions(root, false).filter(value => value.proxy)).toHaveLength(0);
+    expect(colliderDecisions(root)).toEqual(before);
+    await initDeathPhysics();
+    const physics = new DeathRagdolls();
+    physics.setRoom(ROOM_TEMPLATES['awakening-bay'], root);
+    expect(physics.snapshot().staticColliders).toBe(21);
+    physics.dispose();
+    // Noncached original geometry remains owned by its merged render geometry.
+    for (const geometry of originalGeometries) expect(geometryDisposed.mock.contexts.filter(value => value === geometry)).toHaveLength(0);
+    retireRoomModels(root); retireRoomModels(root);
+    for (const geometry of originalGeometries) expect(geometryDisposed.mock.contexts.filter(value => value === geometry)).toHaveLength(1);
+  });
+
   it('merges the production kit21→8 with identical world surfaces, PBR values, map identities and named anchors', async () => {
     const asset = await actualKit(), root = asset.scene;
     const originals = meshes(root), before = surface(root);

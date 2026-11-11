@@ -1,5 +1,6 @@
 import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { getStaticColliderParts, setStaticColliderParts } from './StaticColliderParts';
 
 const unsupported = Symbol('unsupported');
 
@@ -89,7 +90,9 @@ export function batchOwnedStaticAsset(root: T.Group): number {
     const combined = finish + key, list = buckets.get(combined) ?? [];
     list.push(object); buckets.set(combined, list);
   }
-  const oldGeometries = new Set<T.BufferGeometry>(), oldMaterials = new Set<T.Material>();
+  const oldMaterials = new Set<T.Material>();
+  const collisionOwners = new Map<T.BufferGeometry, number>();
+  const liveGeometries = new Set<T.BufferGeometry>();
   let saved = 0;
   for (const meshes of buckets.values()) {
     if (meshes.length < 2) continue;
@@ -100,23 +103,43 @@ export function batchOwnedStaticAsset(root: T.Group): number {
     geometry.computeBoundingBox(); geometry.computeBoundingSphere();
     const first = meshes[0], material = first.material as T.Material;
     const merged = new T.Mesh(geometry, material);
+    // The corpse-contact builder applies its dense-equipment proxy threshold
+    // per original mesh. Render batching must never change those partitions.
+    setStaticColliderParts(merged, meshes.flatMap(mesh => {
+      const originals = getStaticColliderParts(mesh);
+      return originals ? originals.map(part => ({ ...part, matrix: mesh.matrix.clone().multiply(part.matrix) })) :
+        [{ geometry: mesh.geometry, matrix: mesh.matrix.clone(), name: mesh.name }];
+    }));
+    const ownedParts = new Set(meshes.map(mesh => mesh.geometry).filter(part => !part.userData.sharedAsset));
+    for (const part of ownedParts) collisionOwners.set(part, (collisionOwners.get(part) ?? 0) + 1);
+    if (ownedParts.size) {
+      let retired = false;
+      geometry.addEventListener('dispose', () => {
+        if (retired) return;
+        retired = true;
+        for (const part of ownedParts) {
+          const references = collisionOwners.get(part)! - 1;
+          collisionOwners.set(part, references);
+          if (!references && !liveGeometries.has(part)) part.dispose();
+        }
+      });
+    }
     merged.name = `batched-${first.name}`;
     merged.castShadow = first.castShadow; merged.receiveShadow = first.receiveShadow;
     merged.frustumCulled = first.frustumCulled; merged.renderOrder = first.renderOrder;
     merged.layers.mask = first.layers.mask;
     for (const mesh of meshes) {
       root.add(new T.Group().copy(mesh, false));
-      mesh.removeFromParent(); oldGeometries.add(mesh.geometry);
+      mesh.removeFromParent();
       if (mesh.material !== material) oldMaterials.add(mesh.material as T.Material);
     }
     root.add(merged); saved += meshes.length - 1;
   }
   root.traverse(object => {
     if (!(object instanceof T.Mesh)) return;
-    oldGeometries.delete(object.geometry);
+    liveGeometries.add(object.geometry);
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) oldMaterials.delete(material);
   });
-  for (const geometry of oldGeometries) if (!geometry.userData.sharedAsset) geometry.dispose();
   for (const material of oldMaterials) material.dispose();
   return saved;
 }

@@ -6,6 +6,7 @@ import { appendEnvironment, environmentObstacle } from './ShipEnvironments';
 import { authoredRoom } from './AuthoredRooms';
 import { ROOM_TEMPLATES } from '../game/roguelike/roomTemplates';
 import type { ShipEnvironment } from './ShipEnvironments';
+import { getStaticColliderParts } from './StaticColliderParts';
 
 function finish() {
   const material = new T.MeshStandardMaterial({ color: 0x71828a, roughness: .67, metalness: .2 });
@@ -50,6 +51,24 @@ function genericRoom(id: keyof typeof ROOM_TEMPLATES, environment: ShipEnvironme
 }
 
 describe('static room finish consolidation', () => {
+  it('retains original collision partitions and composes them through subsequent render merges', () => {
+    const root = new T.Group(), a = mesh(root), b = mesh(root);
+    a.position.x = 1; b.position.x = 3;
+    const originals = [a.geometry, b.geometry];
+    batchStaticRoom(root);
+    const first = root.children[0] as T.Mesh;
+    expect(getStaticColliderParts(first)!.map(part => part.geometry)).toEqual(originals);
+    expect(getStaticColliderParts(first)!.map(part => part.matrix.elements[12])).toEqual([1, 3]);
+    first.position.x = 4;
+    const c = mesh(root); c.position.x = 9;
+    batchStaticRoom(root);
+    const parts = getStaticColliderParts(root.children[0] as T.Mesh)!;
+    expect(parts.map(part => part.geometry)).toEqual([...originals, c.geometry]);
+    expect(parts.map(part => part.matrix.elements[12])).toEqual([5, 7, 9]);
+    expect(root.children[0].userData).toEqual({ bakedEnvironment: true });
+    disposeModel(root);
+  });
+
   it.each([
     ['manual-control-chamber', 'reactor', 15, 7],
     ['safety-interlock-station', 'engineering', 16, 8],
