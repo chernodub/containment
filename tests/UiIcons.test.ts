@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ABILITY_CATALOG, RIG_IDS } from '../src/game/abilities/catalog';
+import {AUGMENT_BOONS} from '../src/game/abilities/augmentCatalog';
 import { icon, ICON_NAMES } from '../src/ui/icons';
 
 describe('ship-system icon contract', () => {
   it('covers every rig, ability, weapon and readable status with original glyphs', () => {
     const names = [
-      ...Object.keys(ABILITY_CATALOG), ...RIG_IDS,
+      ...Object.keys(ABILITY_CATALOG), ...Object.keys(AUGMENT_BOONS), ...RIG_IDS,
       'pistol', 'rifle', 'shotgun', 'plasma', 'rocket',
       'grenade', 'medkit', 'health', 'armor', 'credits',
       'burn', 'chill', 'freeze', 'shock', 'acid',
@@ -23,6 +24,8 @@ describe('ship-system icon contract', () => {
       icon(name).replace(/data-icon="[^"]+"/, ''),
     );
     expect(new Set(abilityShapes).size).toBe(16);
+    const augmentShapes=Object.keys(AUGMENT_BOONS).map(name=>icon(name).replace(/data-icon="[^"]+"/,''));
+    expect(new Set(augmentShapes).size).toBe(12);
   });
 
   it('keeps every glyph decorative, monochrome, and on the shared 32 px grid', () => {

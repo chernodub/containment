@@ -427,3 +427,10 @@
  #overlay .rig-panel .rig-detail-head h3{font-size:28px}
  #overlay .rig-footnote>span{display:none}
 }
+
+/* Live augments identify the modified rig separately from their set-bonus family. */
+#overlay .boon-path {display:flex;align-items:center;gap:6px;}
+#overlay .boon-path svg {width:16px;height:16px;flex-shrink:0;}
+#overlay .result-stats .stat-detail {display:block;margin-top:7px;font-size:11px;line-height:1.4;color:#adc7d5;letter-spacing:.02em;}
+#overlay .debrief-panel .result-stats {gap:20px 24px;}
+#overlay .debrief-panel .result-stats b {font-size:clamp(32px,3.5vw,48px);}

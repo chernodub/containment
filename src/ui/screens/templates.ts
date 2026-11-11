@@ -2,7 +2,7 @@ import type {DepthGame} from '../../DepthGame';
 import {ABILITY_CATALOG, ABILITY_KEYS, ABILITY_SLOTS, RIG_CATALOG, RIG_IDS} from '../../game/abilities/catalog';
 import type {RigId} from '../../game/abilities/contract';
 import {boonHint, pathFor} from '../../game/roguelike/boonPaths';
-import {MUTATION_CATALOG} from '../../game/roguelike/mutationCatalog';
+import {MUTATION_CATALOG, type MutationDefinition} from '../../game/roguelike/mutationCatalog';
 import {expeditionRewardOffers, rerollCost} from '../../game/roguelike/expedition';
 import {progressionFor} from '../../game/roguelike/progression';
 import {generateRun, ROOM_REWARD_LABELS, runLength} from '../../game/roguelike/run';
@@ -19,6 +19,9 @@ const arrow = () => icon('arrow', 'screen-arrow');
 const total = (game: DepthGame) => runLength(game.expedition.run.version);
 const serial = (value: number) => String(value).padStart(2, '0');
 const familyIcon = (family: string) => `boon-${family}`;
+/** Augments have distinct catalog glyphs and retain their rig and family identity. */
+const boonIcon = (mutation: MutationDefinition) => mutation.abilityOnly ? mutation.id : pathFor(mutation.id)?.name==='Wildfire' ? 'pyro' : familyIcon(mutation.family);
+const boonPath = (mutation: MutationDefinition) => mutation.abilityOnly ? `${mutation.rig ? RIG_CATALOG[mutation.rig].name : 'Universal'} augment · ${mutation.family}` : pathFor(mutation.id)?.name??mutation.family;
 const profiles: Readonly<Record<RigId, readonly [number, number, number]>> = {
   breacher: [2, 3, 2], cryo: [3, 2, 2], pyro: [1, 3, 3], arc: [3, 2, 3],
 };
@@ -62,7 +65,7 @@ export function draftScreen(game: DepthGame): string {
   const cost = rerollCost(game.expedition);
   const exhausted = (game.expedition.run.draftRoll??0)>=2;
   return `<section class="panel choice-panel draft-panel screen-enter">${tag(`SECTOR ${serial(game.node.depth+1)} / ${total(game)} · ${starting?'BEFORE COMBAT':'CLEAR'}`)}<div class="screen-heading"><div><h2>Choose a boon.</h2><p class="panel-intro">Choose one. Keep it for this descent.</p></div><span class="draft-signal">${icon('boon-reactor')} SUIT REWRITE AVAILABLE</span></div>
-    <div class="choice-grid">${offers.map((mutation,index)=>`<button class="choice-card ${mutation.rarity}" data-family="${mutation.family}" data-path="${pathFor(mutation.id)?.name??mutation.family}" data-mutation="${mutation.id}" data-risk="${mutation.risk===true}"><span class="boon-card-top">${icon(pathFor(mutation.id)?.name==='Wildfire'?'pyro':familyIcon(mutation.family),'boon-emblem')}<span class="boon-rarity">${icon(mutation.rarity==='rare'?'rarity-rare':'rarity-common')} ${mutation.rarity.toUpperCase()}</span><kbd>${index+1}</kbd></span><span class="boon-path">${pathFor(mutation.id)?.name??mutation.family}</span><h3>${mutation.name}</h3><p>${mutation.description}</p><span class="boon-condition"><span>TRADE-OFF / RULE</span>${mutation.tradeoff}</span><span class="boon-hint">${icon('check')}${boonHint(mutation,game.expedition.build)}</span><span class="boon-select">INSTALL BOON ${arrow()}</span></button>`).join('')}</div>
+    <div class="choice-grid">${offers.map((mutation,index)=>`<button class="choice-card ${mutation.rarity}" data-family="${mutation.family}" data-path="${pathFor(mutation.id)?.name??mutation.family}" data-mutation="${mutation.id}" data-risk="${mutation.risk===true}" data-augment="${mutation.abilityOnly===true}" data-augment-rig="${mutation.rig??'universal'}"><span class="boon-card-top">${icon(boonIcon(mutation),'boon-emblem')}<span class="boon-rarity">${icon(mutation.rarity==='rare'?'rarity-rare':'rarity-common')} ${mutation.rarity.toUpperCase()}</span><kbd>${index+1}</kbd></span><span class="boon-path">${mutation.rig?icon(mutation.rig):mutation.abilityOnly?icon('loadout'):''}${boonPath(mutation)}</span><h3>${mutation.name}</h3><p>${mutation.description}</p><span class="boon-condition"><span>TRADE-OFF / RULE</span>${mutation.tradeoff}</span><span class="boon-hint">${icon('check')}${boonHint(mutation,game.expedition.build)}</span><span class="boon-select">INSTALL BOON ${arrow()}</span></button>`).join('')}</div>
     <div class="reward-footer"><span class="credit-balance">${icon('credits')} <b>${game.combat.snapshot.credits}</b> CREDITS <small><kbd>1–3</kbd> install · <kbd>R</kbd> reroll</small></span><button id="reroll" class="secondary" ${game.expedition.run.version===1||exhausted||game.combat.snapshot.credits<cost?'disabled':''}>${exhausted?'No rerolls left':`Reroll · ${cost} credits`}</button></div></section>`;
 }
 
@@ -97,7 +100,7 @@ export function routeScreen(game: DepthGame): string {
 
 export function buildRecap(game: DepthGame): string {
   const rig=getAbilities(game)?.rig;
-  return `<div class="build-recap">${rig?`<div class="loadout-rig" data-element="${RIG_CATALOG[rig].element}">${icon(rig)}<div>${tag('COMBAT RIG')}<h3>${RIG_CATALOG[rig].name}</h3><p>${RIG_CATALOG[rig].description}</p></div></div>${abilityPreview(rig)}`:'<p class="screen-footnote">Standard marine loadout · weapon systems online.</p>'}<h3 class="build-heading">Boons <span>${game.expedition.build.mutations.length}</span></h3><div class="owned-boons">${game.expedition.build.mutations.map(id=>{const m=MUTATION_CATALOG[id];return `<article class="owned-boon" data-family="${m.family}">${icon(familyIcon(m.family))}<div><span>${pathFor(id)?.name??m.family} / ${m.rarity}</span><h4>${m.name}</h4><p>${m.description}</p><small>${m.tradeoff}</small></div></article>`;}).join('')||'<p>No boons installed yet.</p>'}</div><p class="screen-footnote">Three in a family: Kinetic +12% damage · Cryo longer, stronger chill · Reactor 10% faster reload · Recovery stronger magnet and 6 armor each room.</p></div>`;
+  return `<div class="build-recap">${rig?`<div class="loadout-rig" data-element="${RIG_CATALOG[rig].element}">${icon(rig)}<div>${tag('COMBAT RIG')}<h3>${RIG_CATALOG[rig].name}</h3><p>${RIG_CATALOG[rig].description}</p></div></div>${abilityPreview(rig)}`:'<p class="screen-footnote">Standard marine loadout · weapon systems online.</p>'}<h3 class="build-heading">Boons <span>${game.expedition.build.mutations.length}</span></h3><div class="owned-boons">${game.expedition.build.mutations.map(id=>{const m=MUTATION_CATALOG[id];return `<article class="owned-boon" data-family="${m.family}" data-boon="${m.id}" data-augment="${m.abilityOnly===true}">${icon(boonIcon(m))}<div><span>${boonPath(m)} / ${m.rarity}</span><h4>${m.name}</h4><p>${m.description}</p><small>${m.tradeoff}</small></div></article>`;}).join('')||'<p>No boons installed yet.</p>'}</div><p class="screen-footnote">Three in a family: Kinetic +12% damage · Cryo longer, stronger chill · Reactor 10% faster reload · Recovery stronger magnet and 6 armor each room.</p></div>`;
 }
 
 export function controlsScreen(): string {
@@ -120,9 +123,31 @@ export function destroyScreen(): string {
 
 export function resultsScreen(game: DepthGame): string {
   const complete=game.status==='complete';
-  const stats=Object.entries(getRunStats(game)).filter(([,value])=>typeof value==='number'&&Number.isFinite(value));
-  const count=2+stats.length, columns=Math.ceil(count/Math.ceil(count/4));
-  return `<section class="panel result-panel debrief-panel screen-enter" data-outcome="${complete?'complete':'dead'}"><div class="debrief-heading">${tag(`EXPEDITION ${complete?'COMPLETE':'LOST'}`)}<h2>${complete?(game.storyRoom?'Ship destroyed.':'The core is silent.'):'Mission lost.'}</h2><p class="panel-intro">${complete?(game.storyRoom?SACRIFICE_ENDING:'Containment restored.'):'You died before the mission was complete.'}</p></div><div class="result-stats" style="--stat-columns:${columns}"><div><b>${game.expedition.run.completedNodeIds.length}<small>/${total(game)}</small></b><span>ROOMS</span></div><div><b>${game.expedition.build.mutations.length}</b><span>BOONS</span></div>${stats.map(([name,value])=>`<div><b>${Number(value).toLocaleString('en-US',{maximumFractionDigits:1})}</b><span>${escapeHtml(name.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/_/g,' ').toUpperCase())}</span></div>`).join('')}</div><details class="build-details"><summary>Expedition build recap</summary>${buildRecap(game)}</details><div class="result-actions"><button id="start" class="primary">${complete?'Play again':'New expedition'} ${arrow()}</button><button id="menu" class="quiet">Return to title</button></div></section>`;
+  const stats=getRunStats(game);
+  const format = (value: number) => value.toLocaleString('en-US',{maximumFractionDigits:0});
+  const elapsedSeconds=Math.floor(Object.values(stats.roomTimeMs).reduce((sum,ms)=>sum+ms,0)/1000);
+  const time=`${Math.floor(elapsedSeconds/60)}:${String(elapsedSeconds%60).padStart(2,'0')}`;
+  const uses=ABILITY_SLOTS.reduce((sum,slot)=>sum+stats.abilityUses[slot],0);
+  const damage=Object.values(stats.damageDealt).reduce((sum,value)=>sum+value,0);
+  const cells: ReadonlyArray<readonly [string,string,string,string?]> = [
+    ['rooms',`${game.expedition.run.completedNodeIds.length}<small>/${total(game)}</small>`,'ROOMS'],
+    ['kills',format(stats.kills.total),'KILLS'],
+    ['multi-kill',format(stats.highestMultiKill),'BEST MULTI-KILL'],
+    ['time',time,'COMBAT TIME'],
+    ['damage',format(damage),'DAMAGE DEALT'],
+    ['weapon',format(stats.damageDealt.weapon),'WEAPON DAMAGE'],
+    ['ability',format(stats.damageDealt.ability),'ABILITY DAMAGE'],
+    ['status',format(stats.damageDealt.status),'STATUS DAMAGE'],
+    ['boon',format(stats.damageDealt.boon),'BOON DAMAGE'],
+    ['taken',format(stats.damageTaken),'DAMAGE TAKEN'],
+    ['accuracy',stats.shotsFired?`${Math.round(stats.shotsHit/stats.shotsFired*100)}%`:'—','ACCURACY'],
+    ['shots',format(stats.shotsFired),'SHOTS FIRED',`${format(stats.shotsHit)} confirmed hits`],
+    ['uses',format(uses),'ABILITY USES',ABILITY_SLOTS.map(slot=>`${ABILITY_KEYS[slot]} ${stats.abilityUses[slot]}`).join(' · ')],
+    ['overdrives',format(stats.overdrivesUsed),'OVERDRIVES'],
+    ['credits',format(stats.creditsEarned),'CREDITS EARNED'],
+    ['boons',String(game.expedition.build.mutations.length),'BOONS'],
+  ];
+  return `<section class="panel result-panel debrief-panel screen-enter" data-outcome="${complete?'complete':'dead'}"><div class="debrief-heading">${tag(`EXPEDITION ${complete?'COMPLETE':'LOST'}`)}<h2>${complete?(game.storyRoom?'Ship destroyed.':'The core is silent.'):'Mission lost.'}</h2><p class="panel-intro">${complete?(game.storyRoom?SACRIFICE_ENDING:'Containment restored.'):'You died before the mission was complete.'}</p></div><div class="result-stats" style="--stat-columns:4">${cells.map(([id,value,label,detail])=>`<div data-stat="${id}"><b>${value}</b><span>${label}</span>${detail?`<small class="stat-detail">${detail}</small>`:''}</div>`).join('')}</div><details class="build-details"><summary>Expedition build recap</summary>${buildRecap(game)}</details><div class="result-actions"><button id="start" class="primary">${complete?'Play again':'New expedition'} ${arrow()}</button><button id="menu" class="quiet">Return to title</button></div></section>`;
 }
 
 /** Recovery templates keep system messaging consistent when the bootstrap needs them. */

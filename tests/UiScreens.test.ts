@@ -22,8 +22,12 @@ beforeAll(async()=>{
         return `import {createScreens} from ${JSON.stringify(root+'src/ui/screens/ScreenManager.ts')};
           import {setUiFixture} from ${JSON.stringify(root+'src/ui/gameAdapter.ts')};
           import {generateRun} from ${JSON.stringify(root+'src/game/roguelike/run.ts')};
+          import {RunStats} from ${JSON.stringify(root+'src/game/abilities/RunStats.ts')};
+          import {abilityFixture} from ${JSON.stringify(root+'src/ui/fixtures.ts')};
+          import {AUGMENT_BOONS} from ${JSON.stringify(root+'src/game/abilities/augmentCatalog.ts')};
+          import {draftScreen} from ${JSON.stringify(root+'src/ui/screens/templates.ts')};
           import {createExpedition} from ${JSON.stringify(root+'src/game/roguelike/expedition.ts')};
-          window.screenTestApi={createScreens,setUiFixture,generateRun,createExpedition};`;
+          window.screenTestApi={createScreens,setUiFixture,generateRun,createExpedition,RunStats,abilityFixture,AUGMENT_BOONS,draftScreen};`;
       },
     }],
     build:{write:false,minify:false,rollupOptions:{input:entry,output:{format:'iife'}},target:'es2022'},
@@ -48,9 +52,10 @@ async function mount(width=1280,height=720): Promise<Page> {
     const expedition=api.createExpedition(1729,resources);
     const game: any={
       status:'menu', expedition, node:api.generateRun(1729,3).nodes[0],
-      combat:{snapshot:resources},canContinue:true,storyRoom:null,storyStatus:'Original story status',
+      combat:{snapshot:resources},abilities:{snapshot:api.abilityFixture('breacher','ready')},stats:new api.RunStats().snapshot,canContinue:true,storyRoom:null,storyStatus:'Original story status',
       checkpointStatus:'saved',checkpointWarning:'',checkpointNote:'Checkpoint saved.',
       chooseMutation(id:string) {actions.push('boon:'+id);},
+      chooseRig(id:string) {actions.push('rig:'+id);return true;},
       reroll() {actions.push('reroll');return true;},
       route(id:string) {actions.push('route:'+id);},
       claimResources(id?:string) {actions.push('supplies:'+(id??'standard'));},
@@ -96,7 +101,7 @@ test('title uses native actions and settings input never triggers menu shortcuts
   } finally {await page.close();}
 });
 
-test('fixture rig selection is catalog-driven, keyboard navigable, and never simulates a missing action',async()=>{
+test('rig selection is catalog-driven, keyboard navigable, and dispatches the public action once',async()=>{
   const page=await mount();
   try {
     await page.evaluate(()=>{const ui=(window as any).ui;ui.api.setUiFixture(ui.game,{phase:'rig-select'});ui.screens.syncScreen();});
@@ -106,12 +111,10 @@ test('fixture rig selection is catalog-driven, keyboard navigable, and never sim
     expect(await page.locator('[data-rig="pyro"]').getAttribute('aria-pressed')).toBe('true');
     expect(await page.locator('.ability-detail h3').allTextContents()).toEqual(['Afterburn','Flashfire','Napalm Charge','Meltdown']);
     await page.keyboard.press('Enter');
-    expect(await page.locator('body').getAttribute('data-state')).toBe('rig-select');
-    expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual([]);
-    await page.evaluate(()=>{const ui=(window as any).ui;ui.game.chooseRig=(id:string)=>ui.actions.push('rig:'+id);});
+    expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual(['rig:pyro']);
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Enter');
-    expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual(['rig:arc']);
+    expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual(['rig:pyro','rig:arc']);
     await page.evaluate(()=>document.dispatchEvent(new KeyboardEvent('keydown',{key:'1',repeat:true,bubbles:true})));
     expect(await page.locator('[data-rig="arc"]').getAttribute('aria-pressed')).toBe('true');
   } finally {await page.close();}
@@ -251,17 +254,88 @@ test('deck map includes the actual full generated branching graph and rewards',a
   } finally {await page.close();}
 });
 
-test('real adapter result counters update without fabricated stats',async()=>{
+test('debrief renders nested authoritative counters, source totals and accuracy, and refreshes changes',async()=>{
   const page=await mount();
   try {
+    await page.evaluate(()=>{
+      const ui=(window as any).ui,stats=new ui.api.RunStats();
+      stats.recordKill('crawler');stats.recordKill('brute');
+      stats.recordDamage('weapon',1234);stats.recordDamage('ability',345);
+      stats.recordDamage('status',67);stats.recordDamage('boon',89);
+      stats.recordDamageTaken(42);stats.recordShot(true);stats.recordShot(false);
+      stats.recordAbilityUse('tactical');stats.recordAbilityUse('overdrive');
+      stats.recordCredits(76);stats.enterRoom('1729:v3-r0');stats.update(125000);
+      ui.game.stats=stats.snapshot;
+    });
     await phase(page,'dead');
-    expect(await page.locator('.result-stats>div').count()).toBe(2);
-    await page.evaluate(()=>{const ui=(window as any).ui;ui.api.setUiFixture(ui.game,{stats:{kills:47,damageDealt:1234}});ui.screens.syncScreen();});
-    expect(await page.locator('.result-stats').innerText()).toContain('47');
-    expect(await page.locator('.result-stats').innerText()).toContain('DAMAGE DEALT');
-    await page.evaluate(()=>{const ui=(window as any).ui;ui.api.setUiFixture(ui.game,{stats:{kills:48}});ui.screens.syncScreen();});
-    expect(await page.locator('.result-stats').innerText()).toContain('48');
-    expect(await page.locator('.result-stats').innerText()).not.toContain('DAMAGE DEALT');
+    expect(await page.locator('.result-stats>div').count()).toBe(16);
+    expect(await page.locator('[data-stat=kills] b').innerText()).toBe('2');
+    expect(await page.locator('[data-stat=weapon] b').innerText()).toBe('1,234');
+    expect(await page.locator('[data-stat=ability] b').innerText()).toBe('345');
+    expect(await page.locator('[data-stat=status] b').innerText()).toBe('67');
+    expect(await page.locator('[data-stat=boon] b').innerText()).toBe('89');
+    expect(await page.locator('[data-stat=damage] b').innerText()).toBe('1,735');
+    expect(await page.locator('[data-stat=accuracy] b').innerText()).toBe('50%');
+    expect(await page.locator('[data-stat=uses] b').innerText()).toBe('2');
+    expect(await page.locator('[data-stat=uses] .stat-detail').innerText()).toContain('Q 1');
+    expect(await page.locator('[data-stat=overdrives] b').innerText()).toBe('1');
+    expect(await page.locator('[data-stat=taken] b').innerText()).toBe('42');
+    expect(await page.locator('[data-stat=time] b').innerText()).toBe('2:05');
+    expect(await page.locator('[data-stat=credits] b').innerText()).toBe('76');
+    await page.evaluate(()=>{const ui=(window as any).ui;ui.game.stats={...ui.game.stats,creditsEarned:78};ui.screens.syncScreen();});
+    expect(await page.locator('[data-stat=credits] b').innerText()).toBe('78');
+  } finally {await page.close();}
+});
+
+test('live loadout lists all catalog augments with dedicated glyphs and the four real rig rules',async()=>{
+  const page=await mount();
+  try {
+    await page.evaluate(()=>{
+      const ui=(window as any).ui;
+      ui.game.abilities.snapshot=ui.api.abilityFixture('cryo','ready');
+      ui.game.expedition={...ui.game.expedition,build:{rig:'cryo',mutations:Object.keys(ui.api.AUGMENT_BOONS)}};
+    });
+    await phase(page,'paused');
+    await page.locator('[data-pause-tab=loadout]').click();
+    expect(await page.locator('.ability-detail h3').allTextContents()).toEqual(['Frost Trail','Cryo Nova','Glacier','Whiteout']);
+    expect(await page.locator('.owned-boon[data-augment=true]').count()).toBe(12);
+    const icons=await page.locator('.owned-boon').evaluateAll(nodes=>nodes.map(node=>({id:node.getAttribute('data-boon'),icon:node.querySelector('svg')?.getAttribute('data-icon')})));
+    for(const entry of icons) expect(entry.icon).toBe(entry.id);
+    expect(await page.locator('.owned-boon[data-boon=twin-glacier]').innerText()).toContain('Cryo augment');
+    expect(await page.locator('.owned-boon[data-boon=reserve-thruster]').innerText()).toContain('Universal augment');
+  } finally {await page.close();}
+});
+
+test('draft augments retain dedicated glyphs, rarity, matching rig identity and synergy rules',async()=>{
+  const page=await mount();
+  try {
+    const evidence=await page.evaluate(()=>{
+      const ui=(window as any).ui,seen=new Map();
+      const doc=document.createElement('div');
+      for(const rig of ['breacher','cryo','pyro','arc']) {
+        for(let seed=1;seed<=1000;seed++) {
+          const expedition=ui.api.createExpedition(seed,ui.game.combat.snapshot);
+          ui.game.expedition={...expedition,build:{rig,mutations:['pressure-point']}};
+          doc.innerHTML=ui.api.draftScreen(ui.game);
+          for(const card of doc.querySelectorAll<HTMLElement>('[data-augment=true]')) {
+            const id=card.dataset.mutation!,definition=ui.api.AUGMENT_BOONS[id];
+            seen.set(id,{id,icon:card.querySelector('.boon-emblem')?.getAttribute('data-icon'),rig:card.dataset.augmentRig,
+              family:card.dataset.family,rarity:card.querySelector('.boon-rarity')?.textContent?.trim(),hint:card.querySelector('.boon-hint')?.textContent,
+              rigIcon:card.querySelector('.boon-path svg')?.getAttribute('data-icon'),expected:definition});
+          }
+        }
+      }
+      return [...seen.values()];
+    });
+    expect(evidence).toHaveLength(12);
+    for(const entry of evidence) {
+      expect(entry.icon).toBe(entry.id);
+      expect(entry.rig).toBe(entry.expected.rig??'universal');
+      expect(entry.rigIcon).toBe(entry.expected.rig??'loadout');
+      expect(entry.family).toBe(entry.expected.family);
+      expect(entry.rarity).toBe(entry.expected.rarity.toUpperCase());
+      expect(entry.hint).toContain('augment');
+    }
   } finally {await page.close();}
 });
 
