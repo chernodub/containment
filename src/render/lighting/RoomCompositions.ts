@@ -25,6 +25,21 @@ export const ROOM_COMPOSITIONS:Readonly<Record<string,RoomComposition>>=Object.f
   'manual-control-chamber':composition('One lit authorization console faces the occupied ship',[0,3.2,0],1.2,1.55,1.35),
   'overload-floor':composition('Orange-white core light consumes the final deck',[0,3.2,0]),
   'reactor-vault':composition('The Queen owns the brightest key and a cold counter-rim',[0,9,7],1,1,1),
+  receiving:composition('Amber arrival lanes between the surviving cargo',[-15,8,12],2.2,1.8,3.2),
+  'forklift-loop':composition('Warm service pools around the dark freight block',[-15,8,12],2.6,2,4),
+  'freight-crossing':composition('Sodium pools cut the crossing cargo lanes',[-15,8,12],2.1,1.8,3),
+  'rail-depot':composition('Lit freight labels interrupt the long rail shadow',[-15,8,12],2.6,2,4),
+  'cold-aisle':composition('A cold task-light chain follows the open berths',[-12,11,12],.8,.95,1.1),
+  'cryo-gallery':composition('Cold ranks recede into quiet blue steel',[-12,11,12],.55,.9,.95),
+  'pump-ring':composition('Teal light traces the copper pump circuit',[-15,9,11],1.2,1.1,1.25),
+  filtration:composition('Wet steel catches the filtering machinery light',[-15,9,11],1.15,1.1,1.4),
+  'specimen-bay':composition('Violet task light isolates the specimen shelves',[-15,11,10],.75,.9,2.5),
+  'quarantine-cross':composition('Violet barriers divide the transfer crossing',[-15,11,10],1,1,1.3),
+  'security-lock':composition('Hard warning pools flank the security line',[-14,12,9],.6,.85,.85),
+  'turbine-hall':composition('Amber screen rows emerge from the turbine shadow',[-16,5,10],.85,.95,.9),
+  'power-conduits':composition('The remaining power follows the bright service spine',[-16,5,10],.9,.95,.9),
+  'waste-processing':composition('Living green tissue occupies the abandoned waste works',[-14,9,10],.85,1,.7),
+  'hive-approach':composition('Brood glow leads toward the occupied reactor',[-14,9,10]),
 });
 export const DEFAULT_ROOM_COMPOSITION=composition('Industrial light follows the surviving ship systems',[-16,10,10]);
 export function roomComposition(id?:string):RoomComposition{return id&&ROOM_COMPOSITIONS[id]||DEFAULT_ROOM_COMPOSITION;}
