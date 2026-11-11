@@ -16,7 +16,7 @@ import {PickupSystem} from './game/pickups/PickupSystem';
 import {EncounterDirector,type EncounterEvent} from './game/waves/EncounterDirector';
 import {FacilityNavigation} from './game/world/FacilityNavigation';
 import {createExpeditionGeometry,canOccupyExpedition,canTraverseExpedition,hasClearExpeditionShot} from './game/world/expeditionGeometry';
-import {rerollExpedition,createExpedition,completeExpeditionRoom,claimExpeditionMutation,claimExpeditionResources,chooseExpeditionRoute,defeatExpedition,restoreExpedition,type Expedition} from './game/roguelike/expedition';
+import {rerollExpedition,createExpedition,completeExpeditionRoom,claimExpeditionMutation,claimExpeditionResources,chooseExpeditionRoute,defeatExpedition,restoreExpedition,type Expedition,type ExpeditionStartOptions} from './game/roguelike/expedition';
 import {progressionFor} from './game/roguelike/progression';
 import {generateRun} from './game/roguelike/run';
 import {authorizeExpeditionDestruction} from './game/roguelike/expedition';
@@ -72,7 +72,7 @@ export class DepthGame {
  private flushFeedback(){for(const effect of this.feedback.values())this.presentation.push(effect);this.feedback.clear();this.feedbackBatch=false;}
  get encounterRemaining(){return this.director.snapshot.remaining+this.enemies.activeCount+this.enemies.reservedCount+this.pending.reduce((n,p)=>n+(p.type==='carrier'?4:1),0);}
  get canContinue(){const cp=this.suppressSave?null:loadCheckpoint(this.storage);if(!cp)return false;const c=new CombatSystem();c.setBuild(cp.build);return c.restoreRunResources(cp.resources);}
- newRun(seed=(this.runSequence=Math.imul(this.runSequence,1664525)+1013904223>>>0),options:{rigSelect?:boolean}={}){this.presentation.reset();this.discardCheckpoint();this.combat=new CombatSystem();this.combat.switchWeapon('shotgun');this.expedition=createExpedition(seed,this.combat.getRunResources(),options);this.runStats.reset();this.abilities.setRig(this.expedition.build.rig??'breacher');this.kills=0;this.elapsed=0;this.enterRoom(false);this.status='reward';if(this.checkpointState!=='clear-failed')this.save();}
+ newRun(seed=(this.runSequence=Math.imul(this.runSequence,1664525)+1013904223>>>0),options:ExpeditionStartOptions={}){const nextCombat=new CombatSystem();nextCombat.switchWeapon('shotgun');const nextExpedition=createExpedition(seed,nextCombat.getRunResources(),options);this.presentation.reset();this.discardCheckpoint();this.combat=nextCombat;this.expedition=nextExpedition;this.runStats.reset();this.abilities.setRig(this.expedition.build.rig??'breacher');this.kills=0;this.elapsed=0;const combat=this.expedition.run.phase==='combat';this.enterRoom(combat);if(!combat)this.status='reward';if(this.checkpointState!=='clear-failed')this.save();}
  continueRun(){const cp=this.suppressSave?null:loadCheckpoint(this.storage);if(!cp)return false;const c=new CombatSystem();c.setBuild(cp.build);if(!c.restoreRunResources(cp.resources))return false;this.combat=c;this.expedition=restoreExpedition(cp);this.runStats.reset(cp.stats);this.abilities.setRig(this.expedition.build.rig??'breacher',cp.abilities?.overdriveCharge??0);this.kills=this.runStats.snapshot.kills.total;this.elapsed=Object.values(this.runStats.snapshot.roomTimeMs).reduce((a,b)=>a+b,0)/1000;this.enterRoom(false);this.status=cp.run.phase==='route'?'route':'reward';this.checkpointState='saved';return true;}
  private enterRoom(start=true){this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.enemies=this.makeEnemies();this.boss.reset();this.bossSlow=1;this.pickups.reset(this.expedition.run.seed+this.node.depth);this.bullets=[];this.pools=[];this.pending=[];this.clearRequested=false;this.emergencyUsed=false;this.hurtCooldown=0;this.broodTimer=5;this.broods=0;this.mutations=this.makeMutations();this.director=this.makeDirector();this.combat.setBuild(this.expedition.build);this.combat.setWave(this.node.depth+1);Object.assign(this.player,this.geometry.playerSpawn,{angle:0,moving:false,vx:0,vy:0});this.roomRevision++;this.status='playing';if(start){this.combat.replenishReserves();if(familyBonuses(this.expedition.build).recovery)this.combat.restoreArmor(6);this.encounterEvents(this.director.start());}}
  pause(){if(this.status==='playing'){this.status='paused';this.player.moving=false;}}
@@ -81,11 +81,22 @@ export class DepthGame {
  private save(){const result=saveCheckpoint(this.storage,{version:1,savedAt:Math.round(this.elapsed*1000),...this.expedition,abilities:{overdriveCharge:this.abilities.snapshot.overdrive.charge},stats:this.stats});if(result.status==='saved'){this.suppressSave=false;this.checkpointState='saved';}else if(result.status==='unavailable'||result.status==='invalid'){if(this.checkpointState!=='clear-failed')this.checkpointState=this.storage?'save-failed':'unavailable';}}
  chooseMutation(id:MutationId){if(this.status!=='reward'||this.expedition.run.phase==='rig-select')return;this.expedition=claimExpeditionMutation(this.expedition,id);this.combat.setBuild(this.expedition.build);if(this.expedition.run.phase==='combat'){this.enterRoom();return;}this.status='route';this.save();}
  reroll(){if(this.status!=='reward')return false;try{this.expedition=rerollExpedition(this.expedition);this.combat.setCredits(this.expedition.resources.credits);this.save();return true;}catch{return false;}}
+ private applyHealingAllocation(combat:CombatSystem){const act=progressionFor(this.node).act;combat.restoreHealth(35+act*5);combat.restoreArmor(15+act*5);}
+ /** A paid service must add value beyond the standard allocation; preview on detached resources. */
+ canPurchaseService(purchase:'heal'|'armor'|'ammo'){
+  if(this.status!=='reward'||this.expedition.run.phase!=='reward'||!['healing','supplies'].includes(this.node.reward)||this.combat.snapshot.dead)return false;
+  const costs={heal:100,armor:90,ammo:100};if(this.combat.snapshot.credits<costs[purchase])return false;
+  if(purchase==='ammo')return true;
+  const preview=new CombatSystem();preview.setBuild(this.expedition.build);if(!preview.restoreRunResources(this.combat.getRunResources()))return false;
+  if(this.node.reward==='healing')this.applyHealingAllocation(preview);
+  const before=preview.mutationResources();if(purchase==='heal')preview.restoreHealth(30);else preview.restoreArmor(25);
+  const after=preview.mutationResources();return after.health>before.health||after.armor>before.armor;
+ }
  claimResources(purchase:'heal'|'armor'|'ammo'|null=null){
-  if(this.status!=='reward'||!['healing','supplies'].includes(this.node.reward))return;
+  if(this.status!=='reward'||this.expedition.run.phase!=='reward'||!['healing','supplies'].includes(this.node.reward))return;
   const costs={heal:100,armor:90,ammo:100},act=progressionFor(this.node).act;
-  if(purchase&&this.combat.snapshot.credits<costs[purchase])return;
-  if(this.node.reward==='healing'){this.combat.restoreHealth(35+act*5);this.combat.restoreArmor(15+act*5);}
+  if(purchase&&!this.canPurchaseService(purchase))return;
+  if(this.node.reward==='healing')this.applyHealingAllocation(this.combat);
   const pack=(boost=false)=>{const r=this.combat.getRunResources(),ammo={...r.ammo};for(const [id,amount]of Object.entries({rifle:60+act*15,shotgun:18+act*6,plasma:24+act*6,rocket:2})){const key=id as WeaponId;ammo[key]={...ammo[key],reserve:Math.min(100000,ammo[key].reserve+Math.max(1,Math.round(amount*(boost?.65:1)/3)))};}this.combat.restoreRunResources({...r,ammo,grenades:Math.min(6,r.grenades+(boost?0:1))});};
   if(this.node.reward==='supplies')pack();
   if(purchase){this.combat.setCredits(this.combat.snapshot.credits-costs[purchase]);if(purchase==='heal')this.combat.restoreHealth(30);else if(purchase==='armor')this.combat.restoreArmor(25);else pack(true);}

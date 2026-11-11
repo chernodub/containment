@@ -9,6 +9,7 @@ import {configureIntegratedRenderer, presentationCameraBeat} from './integration
 import {PresentationBeats} from './hud/beats/PresentationBeats';
 import { loadAudioPreferences } from '../game/audio/preferences';
 import { FramePacer, FrameDiagnostics } from '../render/FrameBudget';
+import {NativeFrameSamples} from './performance';
 import { HitConfirmation } from './hud/HitConfirmation';
 import { captureWeaponPointer } from '../WeaponHud';
 import { positionHudPanels } from '../HudLayout';
@@ -20,6 +21,18 @@ import type { AudioSystem } from '../game/audio/AudioSystem';
 import {warmDeathPhysics} from './loading/DeferredRagdolls';
 import type { WeaponId } from '../game/combat/types';
 import { WEAPONS } from '../game/combat/catalog';
+/** Passive diagnostics keep the normal RAF pipeline only with both explicit query opt-ins. */
+export function debugLiveObservation(search: string): boolean {
+    const query = new URLSearchParams(search);
+    return query.get('debug') === '1' && query.get('playtest-live') === '1';
+}
+/** Seeded native UI starts are opt-in diagnostic runs; normal play keeps its sequence. */
+export function debugRunSeed(search: string): number | undefined {
+    const query = new URLSearchParams(search), raw = query.get('seed');
+    if (query.get('debug') !== '1' || raw === null || !/^\d+$/.test(raw)) return undefined;
+    const seed = Number(raw);
+    return Number.isInteger(seed) && seed >= 0 && seed <= 0xffffffff ? seed : undefined;
+}
 /** Initialize assets, game, input and graphics recovery. */
 export async function bootstrap() {
     mountShell();
@@ -81,7 +94,7 @@ export async function bootstrap() {
     settings.apply();
     const feel = new GameFeel();
     let beats: PresentationBeats | null = null;
-    let presentationEnabled = new URLSearchParams(location.search).get('debug') !== '1';
+    let presentationEnabled = new URLSearchParams(location.search).get('debug') !== '1' || debugLiveObservation(location.search);
     const motion = matchMedia('(prefers-reduced-motion: reduce)');
     const timingContext = {dashing: false, critical: false, remaining: 0};
     const feelContext = () => {
@@ -148,7 +161,7 @@ export async function bootstrap() {
         void audio.unlock(); audio.resumeAll(); input.reset(); screens.resetSettings();
         if (resume) {
             if (!game.continueRun()) {screens.continueFailed();syncHud();return;}
-        } else game.newRun(undefined, {rigSelect: true});
+        } else game.newRun(debugRunSeed(location.search), {rigSelect: true});
         feel.reset(); beats?.reset();
         syncScreen(true);
         syncHud();
@@ -198,7 +211,7 @@ export async function bootstrap() {
         hud.tick?.(dt);
         confirmation.update(dt, game.status === 'playing' && !graphicsLost && !renderer.roomLoading && !roomRecovering);
     };
-    const pacer = new FramePacer(), diagnostics = new FrameDiagnostics();
+    const pacer = new FramePacer(), diagnostics = new FrameDiagnostics(), nativeFrameSamples = new NativeFrameSamples();
     document.addEventListener('visibilitychange', () => {pacer.reset(); syncAudio();});
     Object.defineProperty(window, '__containmentPerformance', { get: () => ({
         ...diagnostics.snapshot, quality: renderer.qualityTier,
@@ -206,6 +219,8 @@ export async function bootstrap() {
         triangles: renderer.renderer.info.render.triangles,
         geometries: renderer.renderer.info.memory.geometries,
         textures: renderer.renderer.info.memory.textures, graphicsLost,
+        debugFixedStep: (window as Window & {__containmentDebug?: {stepPerformance?: unknown}}).__containmentDebug?.stepPerformance,
+        nativeUpdateRenderMs: nativeFrameSamples.snapshot,
         hudMs: {last: hudLastMs, average: hudSamples ? hudTotalMs / hudSamples : 0, samples: hudSamples},
     }) });
     let controlsForStep: GameInput = {x: 0, y: 0, fire: false, angle: null, autoAim: false};
@@ -272,6 +287,7 @@ export async function bootstrap() {
             hudSamples++;
         }
         diagnostics.record(elapsed * 1000, updated - started, rendered - updated);
+        nativeFrameSamples.record(rendered - started);
     }
     lastRoom = game.roomRevision;
     syncScreen(true);
@@ -279,12 +295,13 @@ export async function bootstrap() {
     // Explicit opt-in only: fixed-step visual review of the real production game.
     if (new URLSearchParams(location.search).get('debug') === '1') {
         const { installDebug } = await import('../../scripts/nextgen/debug');
-        presentationFrozen = true;
+        const liveObservation = debugLiveObservation(location.search);
+        presentationFrozen = !liveObservation;
         installDebug(game, renderer, () => { beats?.sync(); syncScreen(); syncHud(); }, () => { lastRoom = game.roomRevision; roomRecovering = true; }, event => uiEffect(event as GameEffect), advancePresentation, {
             setEnabled(enabled) {presentationEnabled = enabled; feel.setEnabled(enabled && !matchMedia('(prefers-reduced-motion: reduce)').matches); beats?.setEnabled(enabled);},
             reset() {feel.reset(); beats?.reset();},
             effect(event) {if (event.type === 'beat') beats?.show(event.kind as import('./hud/beats/PresentationBeats').BeatKind); else {feel.effect(event as GameEffect, feelContext()); beats?.effect(event as GameEffect); uiEffect(event as GameEffect);}},
             step(ms, controls, update) {feel.advance(ms, feelContext(), dt => update(dt, controls)); beats?.sync();},
-        });
+        }, () => input.read(), () => !graphicsLost && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading, liveObservation);
     }
 }

@@ -85,8 +85,13 @@ export function draftScreen(game: DepthGame): string {
 export function shopScreen(game: DepthGame): string {
   const healing = game.node.reward==='healing';
   const act = progressionFor(game.node).act;
+  const services=([['heal','30 health',100,'health'],['armor','25 armor',90,'armor'],['ammo','Extra ammunition',100,'rifle']] as const).map(([id,label,cost,symbol])=>{
+    const affordable=game.combat.snapshot.credits>=cost,available=game.canPurchaseService?.(id)??affordable;
+    const reason=!affordable?`Requires ${cost} credits.`:!available?id==='armor'?'Armor full after allocation.':'No extra recovery after allocation.':`Supplies + ${label}`;
+    return `<button class="service-card" data-purchase="${id}" aria-describedby="service-${id}-reason" ${available?'':'disabled'}>${icon(symbol)}<span><b>${label}</b><small id="service-${id}-reason">${reason}</small></span><strong>${cost} <small>CR</small></strong>${arrow()}</button>`;
+  }).join('');
   return `<section class="panel shop-panel screen-enter"><div class="supply-hero">${icon(healing?'medkit':'armory','supply-emblem')}${tag(`RECOVERY STATION / SECTOR ${serial(game.node.depth+1)}`)}<h2>${healing?'Infirmary':'Supply cache'}</h2><p class="panel-intro">${healing?`Restore ${35+act*5} health and ${15+act*5} armor.`:'Rifle, shotgun, plasma and rocket ammunition. One grenade.'}</p><button id="claim" class="primary">Collect supplies ${arrow()}</button><span class="supply-label">STANDARD ALLOCATION / NO COST</span></div>
-    <div class="service-shop"><div class="shop-heading">${tag('OPTIONAL REQUISITION')}<h3>Take what you need.</h3><span class="credit-balance">${icon('credits')} ${game.combat.snapshot.credits} credits</span><p>Standard supplies plus one service. Purchasing also collects the standard allocation.</p></div>${([['heal','30 health',100,'health'],['armor','25 armor',90,'armor'],['ammo','Extra ammunition',100,'rifle']] as const).map(([id,label,cost,symbol])=>`<button class="service-card" data-purchase="${id}" ${game.combat.snapshot.credits<cost?'disabled':''}>${icon(symbol)}<span><b>${label}</b><small>Supplies + ${label}</small></span><strong>${cost} <small>CR</small></strong>${arrow()}</button>`).join('')}</div></section>`;
+    <div class="service-shop"><div class="shop-heading">${tag('OPTIONAL REQUISITION')}<h3>Take what you need.</h3><span class="credit-balance">${icon('credits')} ${game.combat.snapshot.credits} credits</span><p>Standard supplies plus one service. Purchasing also collects the standard allocation.</p></div>${services}</div></section>`;
 }
 
 /** Compact sectional map: environment decks descend, actual graph edges remain intact. */
