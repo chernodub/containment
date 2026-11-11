@@ -20,6 +20,7 @@ type Float = {
     height: number;
     point: ScreenPoint;
 };
+const sourceLanes: Record<string, number> = {weapon: 0, ability: 1, status: 2, boon: 3};
 const statusLabels: Record<string, string> = { ice: 'CHILLED', freeze: 'FROZEN', frost: 'CHILLED', shatter: 'SHATTER', fire: 'BURNING', burn: 'BURNING', poison: 'ACID', acid: 'ACID', shock: 'SHOCK', arc: 'SHOCK', overload: 'OVERLOAD' };
 /** A bounded DOM pool; same-target pellets merge instead of covering the encounter. */
 export class CombatText {
@@ -49,7 +50,7 @@ export class CombatText {
         const target = e.targetId ?? e.id;
         const element = e.elements?.find(value => !!statusLabels[value]) ?? (typeof e.source === 'string' && statusLabels[e.source] ? e.source : e.type === 'acid' && !e.source ? 'acid' : '');
         if ((e.type === 'hit' || e.type === 'acid' || e.contact) && typeof e.damage === 'number' && e.damage > 0 && Number.isFinite(e.damage))
-            this.add(e.x, e.y, target, e.damage, 'damage', element, !!e.lethal, !!e.critical, typeof e.source === 'string' && ['weapon', 'ability', 'status', 'boon'].includes(e.source) ? e.source : '');
+            this.add(e.x, e.y, target, e.damage, 'damage', element, !!e.lethal, !!e.critical, typeof e.source === 'string' && Object.hasOwn(sourceLanes, e.source) ? e.source : '');
         // Never invent damage totals for old events. Element labels acknowledge real status events.
         if (e.type === 'hit' && e.elements)
             for (const element of e.elements) {
@@ -62,7 +63,9 @@ export class CombatText {
     }
     private add(x: number, y: number, target: number | undefined, amount: number, kind: string, status: string, lethal: boolean, critical = false, source = ''): void {
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-        let entry = this.pool.find(p => p.life > 0 && p.age < .18 && p.kind === kind && p.source === source && (kind === 'damage' || p.status === status) && (target !== undefined ? p.target === target : Math.hypot(p.x - x, p.y - y) < 25));
+        // Reuse a visible receipt until there is a quiet gap. Repeated zone/status ticks
+        // cannot stack new labels faster than old ones expire.
+        let entry = this.pool.find(p => p.life > 0 && p.kind === kind && p.source === source && (kind === 'damage' || p.status === status) && (target !== undefined ? p.target === target : Math.hypot(p.x - x, p.y - y) < (kind === 'status' ? 72 : 25)));
         if (!entry)
             entry = this.pool.find(p => p.life <= 0);
         if (!entry) {
@@ -71,7 +74,7 @@ export class CombatText {
                 if (p.life < entry.life)
                     entry = p;
         }
-        const merge = entry.life > 0 && entry.age < .18 && entry.kind === kind && entry.source === source && (kind === 'damage' || entry.status === status) && (target !== undefined ? entry.target === target : Math.hypot(entry.x - x, entry.y - y) < 25);
+        const merge = entry.life > 0 && entry.kind === kind && entry.source === source && (kind === 'damage' || entry.status === status) && (target !== undefined ? entry.target === target : Math.hypot(entry.x - x, entry.y - y) < (kind === 'status' ? 72 : 25));
         entry.amount = (merge ? entry.amount : 0) + amount;
         entry.lethal = lethal || merge && entry.lethal;
         entry.critical = critical || merge && entry.critical;
@@ -119,7 +122,14 @@ export class CombatText {
             p.node.hidden = false;
             const rise = this.reducedMotion ? 0 : 26 * (1 - Math.exp(-p.age * 6));
             let x = Math.max(8, Math.min(w - p.width - 8, point.x - p.width / 2));
-            let y = Math.max(8, Math.min(h - p.height - 8, point.y - p.height - 10 - rise - (p.kind === 'status' ? 40 : 0)));
+            let lane = 0;
+            if (p.kind === 'damage' && p.target !== undefined) {
+                for (const other of this.pool) {
+                    if (other === p || other.life <= 0 || other.kind !== 'damage' || other.target !== p.target) continue;
+                    if ((sourceLanes[other.source] ?? 0) < (sourceLanes[p.source] ?? 0)) lane++;
+                }
+            }
+            let y = Math.max(8, Math.min(h - p.height - 8, point.y - p.height - 10 - rise - (p.kind === 'status' ? 48 : lane * 36)));
             if (x < player.right + 8 && x + p.width > player.left - 8 && y < player.bottom + 8 && y + p.height > player.top - 8) {
                 if (player.top >= p.height + 20) y = player.top - p.height - 12 - (p.kind === 'status' ? 20 : 0);
                 else if (player.bottom + p.height + 20 <= h) y = player.bottom + 12;

@@ -245,3 +245,21 @@ it('styles confirmed damage by source, merges receipts per target/source, and pr
     expect(await page.locator('[data-source=boon]:not([hidden])').evaluate(node=>getComputedStyle(node).fontSize)).toBe('42px');
   } finally {await page.close();}
 });
+
+it('coalesces sustained zone pulses and spatial status labels until a quiet gap', async () => {
+  const page = await mount();
+  try {
+    await page.evaluate(() => {
+      const {combat,player}=(window as any).combatTest;
+      for(let pulse=0;pulse<20;pulse++) {
+        combat.effect({type:'hit',x:350,y:300,targetId:1,damage:4,source:'ability'});
+        combat.effect({type:'boon',x:350+(pulse%2)*30,y:300,boon:'ice'});
+        combat.tick(.25,player);
+      }
+    });
+    expect(await page.locator('.combat-float[data-kind=damage]:not([hidden])').allTextContents()).toEqual(['80']);
+    expect(await page.locator('.combat-float[data-kind=status]:not([hidden])').allTextContents()).toEqual(['CHILLED']);
+    await page.evaluate(() => {const {combat,player}=(window as any).combatTest;combat.tick(.8,player);});
+    expect(await page.locator('.combat-float:not([hidden])').count()).toBe(0);
+  } finally {await page.close();}
+});
