@@ -248,3 +248,16 @@ The audit wraps WebGL methods only for the measured trial. `benchmark.json` reta
 Shadow counts come from actual shadow-map target bindings and draws inside `shadowMap.render`, including zero when cached shadows skip rendering. Post counts include the scene color pass and each fullscreen pass; each pass retains the actual target width/height, calls per frame, and aggregate pixel count. Low therefore records its forward scene pass with zero fullscreen post passes. Attack particle counts measure entries visited by `drawParticles`; ability counts measure live particles advanced by `ElementKit.begin`, with its full slot scan count retained separately. GPU atmosphere particles are excluded from CPU particle simulation counts.
 
 All wrappers are restored after the trial. Audit timings include intentional JavaScript probe overhead and must not be presented as quiet frame-budget certification. Gameplay, population, draw, program-creation and resource assertions remain active. `--profile` can additionally retain the existing CPU/heap/GC profiles, with both kinds of instrumentation explicitly flagged in the report.
+
+## P1 room preparation audit
+
+`npm run bench:rooms` visits all twenty story rooms and the legacy Queen arena, first on a fresh page for each room, then through one retained renderer session. It prints a per-room phase table and retains host load, program inventory, new combat programs, resource counts, and bounded renderer preparation diagnostics in `rooms.json`. The retained traversal tests program accumulation and is explicitly not an organic campaign. Input must remain held through owner readiness and shader preparation.
+
+```sh
+npm run bench:rooms -- --label=p1-rooms-after
+npm run bench:rooms -- --label=p1-rooms-before --dist=artifacts/nextgen/p1/before-dist --no-build --baseline
+```
+
+The production manifest now includes preparation phases, texture uploads, shader-family counts and compile passes. The audit guards room holds at 3 seconds, retained programs at 400, material families at 160 and compile passes at 12; timing misses remain visible on noisy hosts. Existing zero-combat-compilation assertions remain. The combat benchmark additionally records and enforces the P1 330-draw headroom target alongside its original 350-draw budget.
+
+`node scripts/nextgen/restart-stress.mjs --label=p1-restarts --cycles=20` uses native Start/title/Continue actions under CDP CPU/network throttling. It records blob lifetimes, actual decode errors and bitmap closure; it rejects console/page errors, missing room owners and closed images still referenced by live materials.

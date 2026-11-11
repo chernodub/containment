@@ -318,7 +318,7 @@ try{
   summary.updateRender=stats(data.samples.update.map((v,i)=>v+data.samples.render[i]));
   // HUD synchronization runs after render; include it in the conservative main-thread total.
   summary.cpu=stats(data.samples.update.map((v,i)=>v+data.samples.render[i]+data.samples.hud[i]));
-  const budget={cpuP95:summary.cpu.p95<=8,frameP95:summary.frame.p95<=16.6,draws:summary.draws.max<=350,programs:data.programs===0};
+  const budget={cpuP95:summary.cpu.p95<=8,frameP95:summary.frame.p95<=16.6,draws:summary.draws.max<=350,headroomDraws:summary.draws.max<=330,programs:data.programs===0};
   const run={name,room,rig,tier,repeat,nativeAudioContexts:[...audioContexts.values()],before,after:host(),profile,profiling,summary,budget,...data,cdp:{initial:initial.metrics,final:final.metrics}};
   report.runs.push(run);await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));
   console.log(`${name}: frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
@@ -326,6 +326,7 @@ try{
   assert(!data.glError&&!data.contextLost,'WebGL error or lost context during combat');
   assert.equal(data.finalLightInventory,data.sceneLightInventory,'Combat allocated new scene lights');assert.equal(data.finalInstanceMeshInventory,data.instanceMeshInventory,'Combat allocated new instance meshes');
   if(!baseline&&!budget.draws)report.budgetFailures.push({scenario:name,metric:'draws',observed:summary.draws.max,limit:350});
+  if(!baseline&&!budget.headroomDraws)report.budgetFailures.push({scenario:name,metric:'headroomDraws',observed:summary.draws.max,limit:330});
   assert(summary.lights.max<=(tier==='high'?9:2),'Shared light budget exceeded');
   assert(summary.instances.max<=4096,'Fixed ability instance inventory exceeded');
   assert(Object.values(data.uses).every(n=>n>0),'Full kit lacks accepted native slot receipts');
