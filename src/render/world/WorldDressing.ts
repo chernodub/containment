@@ -86,7 +86,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   const point=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
   // Query the actual renderer's roof so fittings cannot float over lower kit pieces.
   world.updateWorldMatrix(true,true);const ray=new T.Raycaster(),down=new T.Vector3(0,-1,0);
-  let fittings=0;
+  let fittings=0;const signatureIndex=template.obstacles.reduce((best,r,index)=>r.y<template.obstacles[best].y?index:best,0);
   for(const [index,r] of template.obstacles.entries()){
     if(index>=12)break;
     const left=r.x/UNIT,right=(r.x+r.width)/UNIT,near=r.y/UNIT,far=(r.y+r.height)/UNIT,w=right-left,d=far-near;
@@ -112,8 +112,14 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
       fittings++;
     }
     // Fine trim, label pads and cable looms belong to equipment roofs, not routes.
-    ray.set(point(cx,20,cz),down);const centerHit=ray.intersectObject(world,true).find(h=>h.point.y>.2);
-    if(centerHit&&index<4){
+    ray.set(point(cx,20,cz),down);let centerHit=ray.intersectObject(world,true).find(h=>h.point.y>.2),highest=centerHit?.point.y??0;
+    if(index===signatureIndex){
+      for(const fx of [.2,.5,.8])for(const fz of [.2,.5,.8]){
+        ray.set(point(left+w*fx,20,near+d*fz),down);const hit=ray.intersectObject(world,true).find(h=>h.point.y>.2);
+        if(hit){highest=Math.max(highest,hit.point.y);if(!centerHit)centerHit=hit;}
+      }
+    }
+    if(centerHit&&(index<4||index===signatureIndex)){
       const top=centerHit.point.y+.018,sw=Math.min(w*.46,1.6),sd=Math.min(d*.22,.48);
       box(dark,cx,top+.025,cz,sw,.05,sd);
       for(let tick=0;tick<7;tick++)box(tick===0?signal:paint,cx-sw*.4+tick*sw*.12,top+.055,cz,sw*.055,.008,sd*(tick%3===0?.6:.3));
@@ -121,20 +127,24 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
         const radius=Math.min(.21,w*.1,d*.1);const dial=new T.TorusGeometry(radius,.025,6,24);dial.rotateX(-Math.PI/2);add(dial,steel,cx,top+.12,cz);
         box(signal,cx,top+.09,cz,radius*1.5,.015,radius*1.5);box(dark,cx,top+.13,cz,.026,.01,radius*1.3,.8);
       }
-      if(index===0&&(templateId==='diagnostic-gallery'||templateId==='safety-interlock-station'||templateId==='manual-control-chamber'||templateId==='service-shaft-landing')){
-        const width=Math.min(w*.72,3.3),depth=Math.min(d*.65,1.25);
-        box(dark,cx,top+.08,cz,width,.16,depth);
-        box(display,cx,top+.166,cz,width*.88,.012,depth*.79);
-        for(const side of [-1,1])box(steel,cx+side*width*.46,top+.18,cz,.025,.02,depth*.85);
+      if(index===signatureIndex&&(templateId==='diagnostic-gallery'||templateId==='safety-interlock-station'||templateId==='manual-control-chamber'||templateId==='service-shaft-landing')){
+        const width=Math.min(w*.72,3.3),depth=Math.min(d*.65,1.25),displayY=highest+.25;
+        for(const side of [-1,1]){
+          const px=cx+side*width*.38;ray.set(point(px,20,cz),down);const support=ray.intersectObject(world,true).find(h=>h.point.y>0)?.point.y??.02;
+          pipe(steel,point(px,support,cz),point(px,displayY+.04,cz),.045);
+        }
+        box(dark,cx,displayY+.08,cz,width,.16,depth);
+        box(display,cx,displayY+.166,cz,width*.88,.012,depth*.79);
+        for(const side of [-1,1])box(steel,cx+side*width*.46,displayY+.18,cz,.025,.02,depth*.85);
         // The manual authorization retains one concentrated console light.
-        root.userData.lightFixtures=[{x:cx,y:top+.28,z:cz,color:MOOD_ACCENT[environment],nativeColor:true}];
+        root.userData.lightFixtures=[{x:cx,y:displayY+.28,z:cz,color:MOOD_ACCENT[environment],nativeColor:true}];
       }
-      if(templateId==='transmission-chamber'&&index===0){
-        const radius=Math.min(w,d)*.32,profile=[new T.Vector2(0,0),new T.Vector2(radius*.3,.05),new T.Vector2(radius*.65,.18),new T.Vector2(radius,.44)];
-        add(new T.LatheGeometry(profile,40),paint,cx,top+.08,cz);
-        const rim=new T.TorusGeometry(radius,.035,8,48);rim.rotateX(Math.PI/2);add(rim,signal,cx,top+.52,cz);
-        pipe(steel,point(cx,top+.08,cz),point(cx,top+.78,cz),.045);sphere(signal,cx,top+.78,cz,.09,.09,.09);
-        root.userData.lightFixtures=[{x:cx,y:top+.8,z:cz,color:0x71dac4,nativeColor:true}];
+      if(templateId==='transmission-chamber'&&index===signatureIndex){
+        const dishY=highest+.08,radius=Math.min(1.6,Math.min(w,d)*.3),profile=[new T.Vector2(0,0),new T.Vector2(radius*.3,.05),new T.Vector2(radius*.65,.18),new T.Vector2(radius,.44)];
+        pipe(steel,point(cx,centerHit.point.y,cz),point(cx,dishY+.1,cz),.14);add(new T.LatheGeometry(profile.reverse(),40),paint,cx,dishY,cz);
+        const rim=new T.TorusGeometry(radius,.035,8,48);rim.rotateX(Math.PI/2);add(rim,signal,cx,dishY+.44,cz);
+        pipe(steel,point(cx,dishY,cz),point(cx,dishY+.7,cz),.045);sphere(signal,cx,dishY+.7,cz,.09,.09,.09);
+        root.userData.lightFixtures=[{x:cx,y:dishY+.72,z:cz,color:0x71dac4,nativeColor:true}];
       }
     }
   }

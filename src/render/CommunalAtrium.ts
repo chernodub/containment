@@ -6,6 +6,18 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import gardenTrees from './garden-trees.json';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 
+/** Weld only normal direction at trunk seams; donor vertices and reservations stay intact. */
+function smoothGardenTrunk(geometry:T.BufferGeometry):void {
+ const positions=geometry.getAttribute('position'),normals=geometry.getAttribute('normal'),sums=new Map<string,T.Vector3>();
+ for(let i=0;i<positions.count;i++){
+  const key=`${positions.getX(i).toFixed(5)}/${positions.getY(i).toFixed(5)}/${positions.getZ(i).toFixed(5)}`;
+  const sum=sums.get(key)??new T.Vector3();sum.add(new T.Vector3().fromBufferAttribute(normals,i));sums.set(key,sum);
+ }
+ for(let i=0;i<positions.count;i++){
+  const key=`${positions.getX(i).toFixed(5)}/${positions.getY(i).toFixed(5)}/${positions.getZ(i).toFixed(5)}`,normal=sums.get(key)!.normalize();normals.setXYZ(i,normal.x,normal.y,normal.z);
+ }
+}
+
 /** Smoothed, overlapping foliage lobes with serrated leaf edges, fitted to the donor crown. */
 function gardenCanopy(source:T.BufferGeometry,seed:number):T.BufferGeometry {
  source.computeBoundingBox();const target=source.boundingBox!,size=target.getSize(new T.Vector3()),center=target.getCenter(new T.Vector3()),parts:T.BufferGeometry[]=[];
@@ -98,7 +110,7 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
    const roles:Record<string,T.Material>={ca_support:support,ca_ceramic:ceramic,ca_soil:soil,ca_leaf:leaf,ca_irrigation:bark};
    garden.updateWorldMatrix(true,true);let triangles=0;
    garden.traverse(o=>{if(o instanceof T.Mesh){
-    const donor=own(o.geometry.clone());donor.applyMatrix4(o.matrixWorld);const isLeaf=(o.material as T.Material).name==='ca_leaf';const g=isLeaf?own(gardenCanopy(donor,Number(o.name.match(/tree(\d+)/)?.[1]??0))):donor;g.translate(cx/32,0,cz/32);
+    const donor=own(o.geometry.clone());donor.applyMatrix4(o.matrixWorld);const isLeaf=(o.material as T.Material).name==='ca_leaf';const g=isLeaf?own(gardenCanopy(donor,Number(o.name.match(/tree(\d+)/)?.[1]??0))):donor;if((o.material as T.Material).name==='ca_irrigation')smoothGardenTrunk(g);g.translate(cx/32,0,cz/32);
     const mesh=new T.Mesh(g,roles[(o.material as T.Material).name]);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);
     triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;
    }});root.userData.authoredGardenTriangles=triangles;
@@ -110,7 +122,7 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
     const g=own(new T.BufferGeometry());
     g.setAttribute('position',new T.Float32BufferAttribute(tree.positions,3));
     g.setAttribute('normal',new T.Float32BufferAttribute(tree.normals,3));g.setIndex(tree.indices);
-    const upgraded=tree.role==='ca_leaf'?own(gardenCanopy(g,Number(tree.name.match(/tree(\d+)/)?.[1]??0))):g;upgraded.translate(cx/32,0,cz/32);
+    const upgraded=tree.role==='ca_leaf'?own(gardenCanopy(g,Number(tree.name.match(/tree(\d+)/)?.[1]??0))):g;if(tree.role==='ca_irrigation')smoothGardenTrunk(upgraded);upgraded.translate(cx/32,0,cz/32);
     const crown=new T.Mesh(upgraded,tree.role==='ca_leaf'?leaf:bark);
     crown.castShadow=crown.receiveShadow=true;root.add(crown);
    }

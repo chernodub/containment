@@ -28,6 +28,15 @@ export function armoryCarousel():T.Group{
  const a=240*Math.PI/180,b=Math.PI/2-a;
  const viseRecess=[[-.72,-.70],[.72,-.70],[.72,.70],[-.72,.70]].map(([x,z])=>({x:600+255*Math.cos(a)+32*(Math.cos(b)*x+Math.sin(b)*z),y:450+255*Math.sin(a)+32*(-Math.sin(b)*x+Math.cos(b)*z)}));
  slab('horseshoe-worktop',ARMORY_COUNTER,1.04,.10,graphite,[viseRecess]);
+ // Inset brushed-metal safety edges stay strictly inside the segmented solid.
+ for(const [inner,outer] of [[216,219],[290,294]] as const){
+  const strip=[...Array.from({length:25},(_,i)=>{const angle=(150+i*10)*Math.PI/180;return{x:600+outer*Math.cos(angle),y:450+outer*Math.sin(angle)};}),...Array.from({length:25},(_,i)=>{const angle=(390-i*10)*Math.PI/180;return{x:600+inner*Math.cos(angle),y:450+inner*Math.sin(angle)};})];
+  slab('worktop-machined-edge',strip,1.142,.012,pale);
+ }
+ for(let degrees=155;degrees<=385;degrees+=20){
+  const angle=degrees*Math.PI/180;const bolt=add('counter-captive-fastener',new T.CylinderGeometry(.025,.025,.012,8),edge);bolt.position.set((600+283*Math.cos(angle))/32,1.149,(450+283*Math.sin(angle))/32);
+ }
+
  slab('carousel-solid-geared-foot',ARMORY_CAROUSEL,0,1.02,graphite);
  cylinder('carousel-bearing',2.23,.12,1.08,edge);
  // Two slim machined races break the broad flat base without concealing its teeth.
