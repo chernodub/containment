@@ -38,7 +38,14 @@ try {
   await context.addInitScript(() => {
     const state = {urls:[], decodes:[], failures:[]};
     Object.defineProperty(window, '__textureLifecycle', {value:state});
-    const urls = new Map(), create = URL.createObjectURL, revoke = URL.revokeObjectURL;
+    const urls = new Map(), bitmaps = new WeakMap(), create = URL.createObjectURL, revoke = URL.revokeObjectURL;
+    if (typeof ImageBitmap !== 'undefined') {
+      const close = ImageBitmap.prototype.close;
+      ImageBitmap.prototype.close = function() {
+        const entry = bitmaps.get(this); if (entry) entry.closes.push(performance.now());
+        return close.call(this);
+      };
+    }
     URL.createObjectURL = function(blob) {
       const url = create.call(this, blob), entry = {url, size:blob.size, type:blob.type, created:performance.now(), revoked:null};
       state.urls.push(entry); urls.set(url, entry); return url;
@@ -58,9 +65,12 @@ try {
     };
     const bitmap = window.createImageBitmap;
     if (bitmap) window.createImageBitmap = async function(...parameters) {
-      const input = parameters[0], entry = {size:input instanceof Blob ? input.size : null, type:input instanceof Blob ? input.type : null, started:performance.now(), ended:null, error:null};
+      const input = parameters[0], entry = {size:input instanceof Blob ? input.size : null, type:input instanceof Blob ? input.type : null, started:performance.now(), ended:null, error:null, width:null, height:null, closes:[]};
       state.decodes.push(entry);
-      try { return await bitmap.apply(this, parameters); }
+      try {
+        const image = await bitmap.apply(this, parameters);
+        entry.width = image.width; entry.height = image.height; bitmaps.set(image, entry); return image;
+      }
       catch (error) { entry.error = String(error); state.failures.push({stage:'bitmap', ...entry}); throw error; }
       finally { entry.ended = performance.now(); }
     };
@@ -109,15 +119,22 @@ try {
     await settled();
     const evidence = await page.evaluate(() => {
       const d = window.__containmentDebug, r = d.renderer, gl = r.renderer.getContext();
-      const owners = {};
+      const owners = {}, closedMaps = [];
+      for (const scene of [r.scene, r.hudScene]) scene.traverse(object => {
+        const materials = object.material ? (Array.isArray(object.material) ? object.material : [object.material]) : [];
+        for (const material of materials) for (const [slot, texture] of Object.entries(material)) {
+          if (texture?.isTexture && typeof ImageBitmap !== 'undefined' && texture.image instanceof ImageBitmap && (!texture.image.width || !texture.image.height)) closedMaps.push({object:object.name, material:material.name, slot});
+        }
+      });
       for (const name of ['sealedBank', 'releasedBerth', 'recoveryKit']) {
         const owner = r[name]; owners[name] = {state:owner?.state, error:owner?.error ? String(owner.error) : null};
       }
-      return {state:document.body.dataset.state, room:d.game.node.templateId, owners, memory:{...r.renderer.info.memory}, programs:r.renderer.info.programs.length, glError:gl.getError(), contextLost:gl.isContextLost(), blobUrls:window.__textureLifecycle.urls.length, bitmapDecodes:window.__textureLifecycle.decodes.length};
+      return {closedMaps, state:document.body.dataset.state, room:d.game.node.templateId, owners, memory:{...r.renderer.info.memory}, programs:r.renderer.info.programs.length, glError:gl.getError(), contextLost:gl.isContextLost(), blobUrls:window.__textureLifecycle.urls.length, bitmapDecodes:window.__textureLifecycle.decodes.length};
     });
     report.runs.push({cycle, durationMs:Date.now() - started, ...evidence});
     assert.equal(evidence.room, 'awakening-bay');
     assert.equal(evidence.state, 'playing');
+    assert.deepEqual(evidence.closedMaps, [], 'A live scene retained a closed ImageBitmap');
     assert(!evidence.contextLost && evidence.glError === 0, 'Graphics failure');
     for (const [name, owner] of Object.entries(evidence.owners)) assert.equal(owner.state, 'ready', `${name} fell back`);
     assert.equal(report.errors.length, 0, JSON.stringify(report.errors));
@@ -128,6 +145,7 @@ try {
   await settled();
   report.lifecycle = await page.evaluate(() => window.__textureLifecycle);
   assert.equal(report.lifecycle.failures.length, 0, 'Texture fetch/decode failures');
+  assert.equal(report.lifecycle.decodes.filter(entry => entry.closes.length > 1).length, 0, 'ImageBitmap closed by multiple owners');
   assert.equal(report.lifecycle.urls.filter(entry => entry.revoked === null).length, 0, 'Unreleased GLTF blob URLs');
   // Expected aborts may cancel an obsolete room HTTP transfer, never an embedded texture.
   assert.equal(report.requests.filter(request => request.url.startsWith('blob:')).length, 0, 'Embedded texture request failed');
