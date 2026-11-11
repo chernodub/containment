@@ -35,7 +35,8 @@ try{
   try{
    await page.goto(origin+prefix);await page.waitForFunction(()=>document.body.dataset.state==='menu');
    if(index===0){
-    await page.locator('#start').click();await page.waitForFunction(()=>document.body.dataset.state==='reward');
+    await page.locator('#start').click();await page.waitForFunction(()=>document.body.dataset.state==='rig-select');
+    assert.equal(await page.locator('[data-rig]').count(),4);await page.locator('#equip-rig').click();await page.waitForFunction(()=>document.body.dataset.state==='reward');
     assert.equal(await page.locator('[data-mutation]').count(),3);
     assert.equal(await page.locator('#reroll').isDisabled(),true);
     const card=page.locator('[data-mutation]').first();await card.click();

@@ -67,7 +67,7 @@ export async function checkMenuSound(page) {
   assert.equal(await mute(page).getAttribute('aria-pressed'), 'true');
   // Starting a run while muted must initialize the real gain at silence.
   await page.locator('#start').click();
-  await page.waitForFunction(() => document.body.dataset.state === 'reward');
+  await page.waitForFunction(() => document.body.dataset.state === 'rig-select');
   await gainIs(page, 0);
   await page.reload(); await page.waitForFunction(() => document.body.dataset.state === 'menu');
   await openSettings(page);

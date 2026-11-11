@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {checkCheckpointFeedback} from './checkpoint-feedback-check.mjs';
+import {checkCombatRig} from './combat-rig-check.mjs';
 import {observeAudio,checkMenuSound,checkPausedSound} from './sound-controls-check.mjs';
 import {createServer} from 'node:http';
 import {readFile, mkdir} from 'node:fs/promises';
@@ -72,6 +73,9 @@ try {
     const selectedVolume = await checkMenuSound(page);
     const chooseStartingBoon = async (capture = false) => {
       await page.locator('#start').click();
+      await page.waitForFunction(() => document.body.dataset.state === 'rig-select');
+      assert.equal(await page.locator('[data-rig]').count(),4);
+      await page.locator('#equip-rig').click();
       await page.waitForFunction(() => document.body.dataset.state === 'reward' && Number(document.querySelector('#magazine').textContent)>0);
       assert.equal(await page.locator('[data-mutation]').count(),3);
       assert.match(await page.locator('.choice-panel h2').textContent(),/^Choose a boon\.?$/);
@@ -148,6 +152,8 @@ try {
     console.log(JSON.stringify({viewport:'desktop 1280x720',startingBoon,restart:'fresh boon selected',state:'playing',assets:assets.size,errors,performance:await page.evaluate(()=>window.__containmentPerformance)}));
     timing.start('checkpoint-feedback');
     await checkCheckpointFeedback(page);
+    timing.start('combat-rig');
+    await checkCombatRig(page);
     assert.deepEqual(errors,[]);
     timing.start('context-close');
     await context.close();
