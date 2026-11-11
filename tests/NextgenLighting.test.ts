@@ -143,7 +143,8 @@ it('stages the Queen reactor core within the fixed practical budget and preserve
   expect(rig.fixtures[0].intensity).toBe(14);
   expect(rig.key).toBe(rig.coreKey);expect(rig.coreKey.castShadow).toBe(true);expect(rig.coreKey.intensity).toBeGreaterThan(300);
   expect(rig.fixtures[1].color.r).toBeGreaterThan(rig.fixtures[1].color.b);
-  expect(rig.key.position.y).toBeLessThan(8);
+  // The bespoke Queen key comes from above/in front of the armored face.
+  expect(rig.key.position.y).toBeGreaterThan(7);expect(rig.key.position.z).toBeGreaterThan(rig.staging!.coreZ);expect(rig.key.target.position.y).toBeGreaterThan(0);
   rig.setQuality('low'); expect(rig.fixtures.filter(light => light.visible)).toHaveLength(2);
   rig.loadRoom(room, 45, 33.75, 'infested');
   expect(rig.staging).toBeNull(); expect(rig.key.color.g).toBeGreaterThan(rig.key.color.r);
