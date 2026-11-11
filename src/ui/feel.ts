@@ -10,11 +10,12 @@ export class GameFeel {
   private remainder = 0;
   private enabled = true;
   private slowArmed = false;
+  private hadThreats = false;
 
   setEnabled(value: boolean): void { if (this.enabled !== value) this.reset(); this.enabled = value; }
   get renderScale(): number {return this.enabled && this.slowMs > 0 ? .3 : 1;}
   get snapshot() { return {hitStopMs: this.stopMs, slowMotionMs: this.slowMs, remainderMs: this.remainder}; }
-  reset(): void { this.stopMs = this.slowMs = this.remainder = 0; this.slowArmed = false; }
+  reset(): void { this.stopMs = this.slowMs = this.remainder = 0; this.slowArmed = false; this.hadThreats = false; }
 
   /** Bounded impact pause. A dash or critical-health escape cancels any pending freeze. */
   effect(event: GameEffect, context: FeelContext): void {
@@ -23,7 +24,13 @@ export class GameFeel {
       || event.type === 'wall-slam' || event.type === 'corpse' && event.elite
       || !!event.lethal && (event.weapon === 'rocket' || event.source === 'ability');
     if (heavy) this.stopMs = Math.min(90, Math.max(this.stopMs, event.elite ? 65 : 40));
-    if ((event.lethal || event.type === 'corpse') && context.remaining <= 1 && !this.slowArmed) {
+    this.observeThreats(context);
+  }
+
+  /** Read the authoritative threat count, including queued waves and the boss. */
+  private observeThreats(context: FeelContext): void {
+    if (context.remaining > 0) this.hadThreats = true;
+    if (this.enabled && !context.dashing && !context.critical && this.hadThreats && context.remaining === 0 && !this.slowArmed) {
       this.slowMs = 420; this.slowArmed = true;
     }
   }
@@ -31,11 +38,15 @@ export class GameFeel {
   /** Accumulate scaled wall time, preserving step order and input-to-step replay identity. */
   advance(wallMs: number, context: FeelContext, step: (ms: number) => void): number {
     if (!Number.isFinite(wallMs) || wallMs <= 0) return 0;
+    this.observeThreats(context);
     let available = Math.min(50, wallMs);
     if (context.dashing || context.critical) this.stopMs = 0;
     if (this.enabled && this.stopMs > 0) {
       const held = Math.min(available, this.stopMs);
       this.stopMs -= held; available -= held;
+      // A previous multi-step frame may have deferred whole steps. Keep that
+      // backlog untouched until the stop has actually expired.
+      if (this.stopMs > 0) return 0;
     }
     let scaled = available;
     if (this.enabled && this.slowMs > 0) {

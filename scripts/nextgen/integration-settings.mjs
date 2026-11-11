@@ -27,6 +27,6 @@ export const INTEGRATION_SETTINGS_SCENARIO = {
   if(JSON.stringify(r.graphicsOptions)!==JSON.stringify(expected))throw Error('Context recovery reset graphics overrides');
   if(r.renderer.shadowMap.enabled!==true||r.renderer.getPixelRatio()!==.75)throw Error('Recovered GPU state disagrees with overrides');
   d.settingsProof={expected,afterRestore:r.graphicsOptions,persisted,contextLost:gl.isContextLost()};
-  d.game.resume();d.refresh();
+  d.refresh();document.querySelector('#graphics-continue')?.click();document.querySelector('#resume')?.click();d.refresh();
  },
 };

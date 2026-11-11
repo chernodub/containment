@@ -20,7 +20,7 @@ const integer=(name,fallback,min,max)=>{const n=Number(option(name,fallback));as
 if(args.includes('--help')){console.log('npm run capture -- --label=baseline --scenarios=all [--rooms=id,id] [--burst=4 --step-ms=150 --sprite-width=960] [--compare=labelA,labelB] [--width=1920 --height=1080 --dpr=1] [--build] [--headed] [--keep-going] [--timestamp=ISO] [--seed=1729]\nSee scripts/nextgen/README.md');process.exit(0);}
 const comparison=option('compare','');
 const label=option('label',comparison?'comparison-'+comparison.replaceAll(',','-'):'baseline');assert(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(label),'Unsafe label');
-const viewport={width:integer('width',1920,640,7680),height:integer('height',1080,480,4320)},dpr=Number(option('dpr',1));assert(dpr>=.5&&dpr<=4,'--dpr must be .5..4');
+const viewport={width:integer('width',1920,640,7680),height:integer('height',1080,360,4320)},dpr=Number(option('dpr',1));assert(dpr>=.5&&dpr<=4,'--dpr must be .5..4');
 const burst=integer('burst',4,1,30),seed=integer('seed',1729,0,0xffffffff),keepGoing=args.includes('--keep-going');
 const rooms=option('rooms',DEFAULT_ROOMS.join(',')).split(',');assert(rooms.length&&rooms.every(id=>/^[a-z0-9-]+$/.test(id)),'Invalid room list');
 const selection=option('scenarios','all').split(','),requested=selection.includes('all')?SCENARIOS.map(s=>s.id):selection;
@@ -107,7 +107,7 @@ try{
     if(scenario.feelImpact){if(feelStart===null)feelStart=evidence.elapsed*1000;const advanced=evidence.elapsed*1000-feelStart,wall=frame*frameStepMs;if(wall<40)assert(Math.abs(advanced)<.001,`${name}: hit-stop did not hold simulation`);if(wall>=60)assert(advanced>0&&advanced<wall,`${name}: hit-stop did not resume on a delayed fixed step`);}
     for(const selector of scenario.required??[])assert(await page.locator(selector).first().isVisible(),`${name}: missing ${selector}`);
     if(scenario.map){assert.equal(evidence.ui.map.nodes,evidence.ui.map.expectedNodes,`${name}: incomplete actual run map`);assert(evidence.ui.map.edges>0&&evidence.ui.map.current===1&&evidence.ui.map.confirmation,`${name}: map connections/current/confirmation missing`);if(scenario.legacyBranch)assert(evidence.ui.map.choices>1,`${name}: legacy branch choices missing`);}
-    if(scenario.state!=='playing')for(const box of evidence.ui.layout)assert(!box.overflowX&&!box.overflowY&&!box.outsideViewport,`${name}: primary screen clips/scrolls: ${JSON.stringify(box)}`);
+    if(scenario.state!=='playing')for(const box of evidence.ui.layout)assert(!box.overflowX&&!box.outsideViewport&&(!box.overflowY||viewport.height<600&&/auto|scroll/.test(box.overflow)),`${name}: primary screen clips/scrolls: ${JSON.stringify(box)}`);
     if(scenario.phase)assert.equal(evidence.phase,scenario.phase,`${name}: wrong run phase`);
     if(scenario.nativeInput){assert.equal(evidence.abilities.rig,'breacher');for(const slot of ['dash','tactical','power','overdrive'])assert.equal(evidence.stats.abilityUses[slot],1,`Native ${slot} input failed`);assert.equal(evidence.stats.overdrivesUsed,1);}
     if(scenario.ability){assert.equal(evidence.abilities.rig,scenario.ability.rig);assert.equal(evidence.abilities.slots[scenario.ability.slot].id,scenario.ability.id);assert.equal(evidence.stats.abilityUses[scenario.ability.slot],1);assert(evidence.abilities.zones.length<=24&&evidence.abilities.deployables.length<=8,'Ability counts unbounded');}

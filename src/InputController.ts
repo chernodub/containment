@@ -19,18 +19,24 @@ function shortcutModifier(event:KeyboardEvent):boolean{
  return event.ctrlKey||event.metaKey||event.altKey||/^(Control|Meta|Alt)(Left|Right)$/.test(event.code)
   ||!event.code&&['control','meta','alt','altgraph'].includes(event.key.toLowerCase());
 }
+/** Any focusable HUD/overlay owns its native keyboard interaction. */
+function uiOwnsKeys(target: HTMLElement|null): boolean {
+ if(target?.tagName==='CANVAS')return false;
+ return !!(target?.isContentEditable || target?.closest?.('button,a[href],input,select,textarea,summary,[contenteditable],[tabindex],[role="button"],[role="tab"],[role="slider"]') || target?.matches?.('input,select,textarea,[contenteditable="true"],[contenteditable=""]'));
+}
 /** Desktop keyboard movement, mouse aiming and Space aim assist. */
 export class InputController {
  private keys=new Set<string>();private mouse={x:0,y:0,active:false};private shooting=false;
  constructor(private game:DepthGame,private view:DepthRenderer,private onPause:(toggle?:boolean)=>void,private gameplayReady:()=>boolean=()=>true){
-  const canvas=view.canvas;canvas.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')this.mouse={x:e.clientX,y:e.clientY,active:true};});canvas.addEventListener('pointerdown',e=>{if(!this.gameplayReady()||e.pointerType!=='mouse'||e.button!==0||game.status!=='playing')return;this.shooting=true;this.mouse={x:e.clientX,y:e.clientY,active:true};canvas.setPointerCapture(e.pointerId);});['pointerup','pointercancel','lostpointercapture'].forEach(t=>canvas.addEventListener(t,()=>{this.shooting=false;}));
+  const canvas=view.canvas;canvas.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')this.mouse={x:e.clientX,y:e.clientY,active:true};});canvas.addEventListener('pointerdown',e=>{if(!this.gameplayReady()||e.pointerType!=='mouse'||e.button!==0||game.status!=='playing')return;canvas.focus?.({preventScroll:true});this.shooting=true;this.mouse={x:e.clientX,y:e.clientY,active:true};canvas.setPointerCapture(e.pointerId);});['pointerup','pointercancel','lostpointercapture'].forEach(t=>canvas.addEventListener(t,()=>{this.shooting=false;}));
   document.addEventListener('keydown',e=>{
+   if(e.defaultPrevented)return;
    if(shortcutModifier(e)){this.keys.clear();return;}
    const code=gameplayCode(e),target=e.target as HTMLElement|null;
+   if(code!=='Escape'&&uiOwnsKeys(target)){this.reset();return;}
    if(!code)return;
-   if(code!=='Escape'&&(target?.isContentEditable||target?.matches?.('input,select,textarea,[contenteditable="true"],[contenteditable=""]')))return;
    if(game.status==='playing'&&['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(code))e.preventDefault();
-   if(code==='Escape'){if(!e.repeat)this.onPause(true);return;}
+   if(code==='Escape'){if(!e.repeat){if(game.status==='playing'||game.status==='paused')e.preventDefault();this.onPause(true);}return;}
    if(!this.gameplayReady()||game.status!=='playing')return;
    if(e.repeat||this.keys.has(code))return;
    this.keys.add(code);
@@ -41,6 +47,7 @@ export class InputController {
    if(code==='KeyE')game.heal();
    if(/^Digit[1-5]$/.test(code))game.switchWeapon(WEAPONS[Number(code.slice(-1))-1]);
   });
+  document.addEventListener('focusin',e=>{if(uiOwnsKeys(e.target as HTMLElement|null))this.reset();});
   document.addEventListener('keyup',e=>{
    const code=gameplayCode(e);if(code)this.keys.delete(code);
    if(shortcutModifier(e))this.keys.clear();

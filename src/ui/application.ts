@@ -1,7 +1,7 @@
 import { app, el, mountShell } from './shell';
 import { createHud } from './hud/Hud';
 import { createScreens } from './screens/ScreenManager';
-import { systemScreen } from './screens/templates';
+import { systemScreen } from './screens/initialTemplates';
 import { createSettings } from './settings';
 import {getUiPreferences, getAbilities, hasAudioDirector, forwardAudioEffect, playUiCue, playPresentationCue, syncAudioDirector, cameraEffect} from './gameAdapter';
 import {GameFeel} from './feel';
@@ -14,9 +14,10 @@ import { captureWeaponPointer } from '../WeaponHud';
 import { positionHudPanels } from '../HudLayout';
 import { DepthGame, type GameEffect, type GameInput } from '../DepthGame';
 import { preloadAssets } from '../render/assets';
-import { DepthRenderer } from '../render/DepthRenderer';
+import type { DepthRenderer } from '../render/DepthRenderer';
 import { InputController } from '../InputController';
-import { AudioSystem } from '../game/audio/AudioSystem';
+import type { AudioSystem } from '../game/audio/AudioSystem';
+import {warmDeathPhysics} from './loading/DeferredRagdolls';
 import type { WeaponId } from '../game/combat/types';
 import { WEAPONS } from '../game/combat/catalog';
 /** Initialize assets, game, input and graphics recovery. */
@@ -28,11 +29,13 @@ export async function bootstrap() {
     };
     function positionHud() { positionHudPanels(renderer.playerScreenBounds(game.player.radius), innerWidth, innerHeight); }
     el('overlay').innerHTML = '<div class="asset-loading"><span>CONTAINMENT / DEPTH</span><h2>Establishing connection</h2><p>Synchronizing ship systems</p><div role="progressbar" aria-label="Loading assets" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="asset-track"><i id="asset-progress"></i></div><small>AWAITING MARINE WAKE PROTOCOL</small></div>';
+    const rendererCode=import('../render/DepthRenderer');
+    const audioCode=import('../game/audio/AudioSystem');
     try {
         await preloadAssets(fraction => {
             el('asset-progress').style.width = `${fraction * 100}%`;
             el('asset-track').setAttribute('aria-valuenow', String(Math.round(fraction * 100)));
-        });
+        }, async()=>{});
         await Promise.all([
             document.fonts.load('400 16px Barlow'),
             document.fonts.load('600 16px Barlow'),
@@ -46,6 +49,7 @@ export async function bootstrap() {
     }
     let renderer: DepthRenderer;
     try {
+        const {DepthRenderer}=await rendererCode;
         renderer = new DepthRenderer(el('world') as HTMLCanvasElement);
         renderer.setQuality('high');
         configureIntegratedRenderer(renderer);
@@ -70,6 +74,7 @@ export async function bootstrap() {
             confirmation.point(e.clientX, e.clientY); });
     let uiEffect: (event: GameEffect) => void = () => { };
     let audioPreferences = loadAudioPreferences(storage);
+    const {AudioSystem}=await audioCode;
     const audio = new AudioSystem({ master: audioPreferences.muted ? 0 : audioPreferences.master, music: .38, effects: .8 });
     void AudioSystem.preload();
     const settings = createSettings({renderer, audio, storage});
@@ -119,7 +124,7 @@ export async function bootstrap() {
             // One synchronous cue is admitted before the transport stops every voice.
             playUiCue(audio, 'back');
             game.pause(); input.reset(); audio.pauseAll();
-        } else if (game.status === 'paused' && !document.hidden && !graphicsLost) {
+        } else if (game.status === 'paused' && !document.hidden && !graphicsLost && !screens.graphicsBlocked) {
             game.resume(); audio.resumeAll();
             playUiCue(audio, 'confirm');
         }
@@ -134,14 +139,15 @@ export async function bootstrap() {
         throw error;
     }
     const input = new InputController(game, renderer, (toggle) => { if (game.status === 'playing' || toggle && game.status === 'paused')
-        pause(); }, () => !graphicsLost && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading);
+        pause(); }, () => !graphicsLost && !screens.graphicsBlocked && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading);
     let roomRecovering = true;
     let graphicsLost = false;
     let lastStatus = '', lastRoom = -1;
     const start = (resume = false) => {
+        if(graphicsLost||screens.graphicsBlocked)return;
         void audio.unlock(); audio.resumeAll(); input.reset(); screens.resetSettings();
         if (resume) {
-            if (!game.continueRun()) return;
+            if (!game.continueRun()) {screens.continueFailed();syncHud();return;}
         } else game.newRun(undefined, {rigSelect: true});
         feel.reset(); beats?.reset();
         syncScreen(true);
@@ -179,12 +185,13 @@ export async function bootstrap() {
         // Reload/switch/death transitions have no separate UI sound path.
         audio.syncCombat(game.combat.snapshot);
     }
-    function syncScreen(force = false) { syncAudio(); if (!beats?.blocking) screens.syncScreen(force); }
+    function syncScreen(force = false) { syncAudio(); if (graphicsLost || screens.graphicsBlocked || !beats?.blocking) screens.syncScreen(force); }
     renderer.canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); graphicsLost = true; game.pause(); input.reset(); audio.pauseAll(); syncScreen(true); });
     renderer.canvas.addEventListener('webglcontextrestored', () => { graphicsLost = false; settings.apply(); syncScreen(true); });
     window.addEventListener('resize', () => renderer.resize());
     let hudTime = 0, hudLastMs = 0, hudTotalMs = 0, hudSamples = 0;
     let presentationFrozen = false;
+    let optionalPresentationStarted=false;
     const advancePresentation = (dt: number) => {
         beats?.tick(dt);
         beats?.position(renderer.playerScreenBounds(game.player.radius));
@@ -219,9 +226,10 @@ export async function bootstrap() {
             roomRecovering = true;
         }
         const blocked = graphicsLost || renderer.roomLoading;
+        const graphicsHeld = screens.graphicsBlocked;
         const recovering = roomRecovering;
         syncAudioDirector(audio, game, {paused: game.status === 'paused' || blocked || recovering, loading: blocked || recovering});
-        if (blocked || recovering)
+        if (blocked || recovering || graphicsHeld)
             input.reset();
         else if (presentationFrozen) game.update(dt * 1000, input.read());
         else {
@@ -229,12 +237,14 @@ export async function bootstrap() {
             controlsForStep = input.read();
             feel.advance(dt * 1000, feelContext(), stepSimulation);
         }
+        if(screens.graphicsBlocked) syncScreen();
         beats?.sync();
         if (!hasAudioDirector(audio as object) && game.status === 'playing' && !blocked && !recovering)
             audio.syncFrozen(game.enemies.snapshot.enemies.filter(e => e.health > 0 && game.boonStatuses(e.id).frozen).map(e => e.id), game.roomRevision);
         const updated = performance.now();
         if (!blocked) {
             renderer.render(game, recovering ? 0 : dt * feel.renderScale, game.status === 'menu');
+            if(!optionalPresentationStarted) {optionalPresentationStarted=true;setTimeout(()=>{void warmDeathPhysics();},0);}
             if (game.status === 'playing')
                 positionHud();
             roomRecovering = false;

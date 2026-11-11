@@ -10,6 +10,8 @@ export type HudEffect = Readonly<{
     critical?: boolean;
     lethal?: boolean;
     source?: unknown;
+    sourceX?: number;
+    sourceY?: number;
     contact?: string;
     elements?: readonly string[];
     boon?: string;

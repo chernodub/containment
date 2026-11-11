@@ -13,7 +13,8 @@ import type {HitConfirmation} from '../hud/HitConfirmation';
 import {chooseRig, getAbilities, getRunStats, getUiPhase, hasAudioDirector, playUiCue} from '../gameAdapter';
 import {el} from '../shell';
 import {hasCinematicMenu} from '../integrationPresentation';
-import {controlsScreen, destroyScreen, draftScreen, escapeHtml, pauseScreen, resultsScreen, rigScreen, routeScreen, shopScreen, titleScreen, type PauseTab} from './templates';
+import {controlsScreen,escapeHtml,titleScreen,systemScreen} from './initialTemplates';
+import type {PauseTab} from './templates';
 import '../styles/screens.css';
 
 export type ScreenSettings = {
@@ -39,9 +40,14 @@ export type ScreenContext = {
 /** Owns blocking screens and native actions; simulation remains behind public methods. */
 export function createScreens(context: ScreenContext) {
   const {game, renderer, input, audio, confirmation, storage, pause, start} = context;
+  let secondary:typeof import('./templates')|undefined;
+  let secondaryLoad:Promise<void>|undefined;
   let settingsOpen = false;
   let creditsOpen = false;
   let controlsOpen = false;
+  let recoveryPending = false;
+  let recoveryFocus = '';
+  let recoveryStatus = '';
   let selectedRoute = '';
   let routeNode = '';
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -58,7 +64,24 @@ export function createScreens(context: ScreenContext) {
   }
 
   function listen(id: string, callback: () => void): void {
-    el(id)?.addEventListener('click', callback);
+    el('overlay').querySelector<HTMLElement>(`[id="${id}"]`)?.addEventListener('click', () => {
+      if ((context.graphicsLost() || recoveryPending) && !['recover','graphics-continue'].includes(id)) return;
+      callback();
+    });
+  }
+
+  function closeDrawer(): void {
+    const focus=settingsOpen?'settings':controlsOpen?'controls':'credits';
+    settingsOpen=false;controlsOpen=false;creditsOpen=false;
+    playUiCue(audio,'back');syncScreen(true);el('overlay').querySelector<HTMLElement>(`[id="${focus}"]`)?.focus();
+  }
+
+  function continueGraphics(): void {
+    if (context.graphicsLost() || context.recovering()) return;
+    recoveryPending=false;syncScreen(true);
+    // Combat always returns to pause; only the player's Resume releases it.
+    const restored=recoveryFocus?el('overlay').querySelector<HTMLElement>(`[id="${recoveryFocus}"]`):null;
+    if(restored)restored.focus();else {const panel=el('overlay').firstElementChild as HTMLElement|null;if(panel){panel.tabIndex=-1;panel.focus();}}
   }
 
   function updateSound(): void {
@@ -99,11 +122,12 @@ export function createScreens(context: ScreenContext) {
     listen('recover',()=>location.reload());
     listen('start',()=>{playUiCue(audio,'confirm');start();});
     listen('continue',()=>{playUiCue(audio,'confirm');start(true);});
-    listen('settings',()=>{settingsOpen=!settingsOpen; creditsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);});
-    listen('credits',()=>{creditsOpen=!creditsOpen; settingsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);});
-    listen('controls',()=>{controlsOpen=!controlsOpen;settingsOpen=false;creditsOpen=false;playUiCue(audio,'tab');syncScreen(true);});
-    listen('close-drawer',()=>{const focus=settingsOpen?'settings':controlsOpen?'controls':'credits';settingsOpen=false;controlsOpen=false;creditsOpen=false;playUiCue(audio,'back');syncScreen(true);el(focus)?.focus();});
-    listen('close-credits',()=>{creditsOpen=false; playUiCue(audio,'back'); syncScreen(true); el('credits')?.focus();});
+    listen('settings',()=>{settingsOpen=!settingsOpen; creditsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);if(settingsOpen)el('close-drawer')?.focus();});
+    listen('credits',()=>{creditsOpen=!creditsOpen; settingsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);if(creditsOpen)el('close-drawer')?.focus();});
+    listen('controls',()=>{controlsOpen=!controlsOpen;settingsOpen=false;creditsOpen=false;playUiCue(audio,'tab');syncScreen(true);if(controlsOpen)el('close-drawer')?.focus();});
+    listen('close-drawer',closeDrawer);
+    listen('graphics-continue',continueGraphics);
+    listen('close-credits',()=>{creditsOpen=false; playUiCue(audio,'back'); syncScreen(true); el('overlay').querySelector<HTMLElement>('button#credits')?.focus();});
     listen('resume',pause);
     listen('menu',()=>{
       game.menu(); settingsOpen=false; creditsOpen=false; controlsOpen=false; pauseTab='resume';
@@ -157,14 +181,21 @@ export function createScreens(context: ScreenContext) {
     const phase=getUiPhase(game);
     const status=phase==='rig-select'||String(game.status)==='rig-select'?'rig-select':game.status;
     const run=game.expedition.run;
-    const blocked=status!=='playing';
+    if (context.graphicsLost() && !recoveryPending) {
+      recoveryPending=true;recoveryStatus=status;
+      recoveryFocus=(document.activeElement as HTMLElement|null)?.id??'';
+      input.reset();
+    }
+    // Restoration never dismisses this gate or changes the current choice.
+    const graphicsBlocked=context.graphicsLost()||recoveryPending;
+    const blocked=status!=='playing'||graphicsBlocked;
     if(routeNode!==game.node.id) {routeNode=game.node.id;selectedRoute=game.node.next[0]??'';}
     const saved=status==='menu'&&game.canContinue?loadCheckpoint(storage):null;
     const savedNode=saved?generateRun(saved.run.seed,saved.run.version).nodes.find(node=>node.id===saved.run.currentNodeId):null;
     const continuation=saved&&savedNode?{rig:saved.run.phase==='rig-select'?'Rig selection':saved.build.rig?RIG_CATALOG[saved.build.rig].name:'Marine',sector:savedNode.depth+1,total:runLength(saved.run.version),boons:saved.build.mutations.length,phase:saved.run.phase}:null;
     // Snapshot values appear in the key only on their relevant screen, never at combat frequency.
     const key=JSON.stringify([status,phase,game.node.id,settingsOpen,creditsOpen,controlsOpen,pauseTab,selectedRig,selectedRoute,continuation,
-      game.checkpointStatus,game.checkpointWarning,game.checkpointNote,context.graphicsLost(),
+      game.checkpointStatus,game.checkpointWarning,game.checkpointNote,context.graphicsLost(),recoveryPending,graphicsBlocked?context.recovering():false,
       blocked?game.storyStatus:null,status==='menu'?game.canContinue:null,
       blocked?game.combat.snapshot.credits:0,blocked?run.draftRoll:0,
       blocked?game.expedition.build.mutations:[],status==='rig-select'||status==='paused'?getAbilities(game)?.rig:null,
@@ -177,19 +208,39 @@ export function createScreens(context: ScreenContext) {
     el('hud').hidden=isMenu||status==='rig-select';
     el('signature').hidden=!isMenu;
     el('shade').classList.toggle('visible',blocked);
-    el('overlay').className=isMenu?'menu-overlay':'modal-overlay';
+    el('overlay').className=isMenu&&!graphicsBlocked?'menu-overlay':'modal-overlay';
     const root=el('overlay');
+    for (const id of ['hud','world','signature']) {
+      const background=el(id);
+      if (!background) continue;
+      background.inert=blocked;
+      if(blocked) background.setAttribute('aria-hidden','true');else background.removeAttribute('aria-hidden');
+    }
+    root.setAttribute('role',blocked?'dialog':'presentation');
+    if(blocked) root.setAttribute('aria-modal','true');else root.removeAttribute('aria-modal');
+    root.setAttribute('aria-label',graphicsBlocked?'Graphics recovery':isMenu?'Main menu':`${status} expedition screen`);
     if(!blocked) {root.innerHTML='';if(!hasAudioDirector(audio as object)) audio.resumeAll();previousStatus=status;return;}
     input.reset();
     if(!isMenu&&!hasAudioDirector(audio as object)) audio.pauseAll();
     const settings = () => context.settings?.render()??legacySettings();
+    if(!isMenu&&!graphicsBlocked&&!secondary) {
+      root.innerHTML=systemScreen('Preparing interface','Loading expedition controls…');
+      secondaryLoad??=import('./templates').then(module=>{secondary=module;syncScreen(true);}).catch(()=>{
+        root.innerHTML=systemScreen('Interface interrupted','Reload to restore your last checkpoint.',{id:'recover',label:'Reload game'});bindActions(root);
+      });
+      return;
+    }
     let html: string;
-    if(isMenu) html=titleScreen(game,settingsOpen?settings():'',settingsOpen,creditsOpen,controlsOpen,continuation,hasCinematicMenu(renderer));
-    else if(status==='rig-select') html=rigScreen(selectedRig);
-    else if(status==='paused') html=pauseScreen(game,pauseTab,pauseTab==='settings'?settings():'',context.graphicsLost());
-    else if(status==='reward') html=expeditionRewardOffers(game.expedition).length?draftScreen(game):shopScreen(game);
-    else if(status==='route') html=game.node.templateId==='manual-control-chamber'?destroyScreen():routeScreen(game,selectedRoute);
-    else html=resultsScreen(game);
+    if(graphicsBlocked) {
+      const restoring=context.graphicsLost()||context.recovering();
+      html=`<section class="panel recovery-panel" aria-labelledby="recovery-title"><h2 id="recovery-title">${restoring?'Restoring graphics…':'Graphics restored.'}</h2><p role="status">${restoring?'Your expedition is on hold. Wait for graphics to return, or reload your last checkpoint.':'Your expedition is still on hold. Continue when you are ready.'}</p><button id="graphics-continue" class="primary" ${restoring?'disabled':''}>${recoveryStatus==='paused'||recoveryStatus==='playing'?'Return to pause':'Continue'}</button><button id="recover" class="secondary">Reload game</button></section>`;
+    }
+    else if(isMenu) html=titleScreen(game,settingsOpen?settings():'',settingsOpen,creditsOpen,controlsOpen,continuation,hasCinematicMenu(renderer));
+    else if(status==='rig-select') html=secondary!.rigScreen(selectedRig);
+    else if(status==='paused') html=secondary!.pauseScreen(game,pauseTab,pauseTab==='settings'?settings():'',context.graphicsLost());
+    else if(status==='reward') html=expeditionRewardOffers(game.expedition).length?secondary!.draftScreen(game):secondary!.shopScreen(game);
+    else if(status==='route') html=game.node.templateId==='manual-control-chamber'?secondary!.destroyScreen():secondary!.routeScreen(game,selectedRoute);
+    else html=secondary!.resultsScreen(game);
     if(game.checkpointWarning&&status!=='paused') html=html.replace(/<\/(main|section)>$/,`<p class="save-note" role="status">${escapeHtml(game.checkpointWarning)}</p></$1>`);
     const active=document.activeElement as HTMLElement|null;
     const focusId=root.contains(active)?active?.id:'';
@@ -197,7 +248,7 @@ export function createScreens(context: ScreenContext) {
     bindActions(root);
     const focusReplacement=focusId?root.querySelector<HTMLElement>(`[id="${focusId}"]`):null;
     if(focusReplacement) focusReplacement.focus({preventScroll:true});
-    else if(status!==previousStatus) {
+    else if(status!==previousStatus||graphicsBlocked) {
       // A held fire key must never activate a newly arrived choice or restart.
       // Keyboard users can deliberately Tab to a native action or use its number key.
       if(['reward','route','dead','complete'].includes(status)) {
@@ -212,7 +263,7 @@ export function createScreens(context: ScreenContext) {
   }
 
   function onKeyDown(event: KeyboardEvent): void {
-    if(event.defaultPrevented||event.repeat||event.altKey||event.ctrlKey||event.metaKey) return;
+    if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey) return;
     const target=event.target as HTMLElement|null;
     const root=el('overlay');
     if(!root.children.length) return;
@@ -222,6 +273,20 @@ export function createScreens(context: ScreenContext) {
       const first=focusable[0],last=focusable.at(-1);
       if(event.shiftKey&&(document.activeElement===first||!root.contains(document.activeElement))) {event.preventDefault();last?.focus();}
       else if(!event.shiftKey&&(document.activeElement===last||!root.contains(document.activeElement))) {event.preventDefault();first?.focus();}
+      return;
+    }
+    // Repeated Tab must remain contained; only action shortcuts reject repeats.
+    if(event.repeat) return;
+    if(context.graphicsLost()||recoveryPending) {
+      if(event.key==='Escape') {event.preventDefault();el('recover')?.focus();}
+      return;
+    }
+    if(event.key==='Escape') {
+      if(status==='menu'&&(settingsOpen||creditsOpen||controlsOpen)) {event.preventDefault();closeDrawer();}
+      else if(status==='paused') {event.preventDefault();pause();}
+      // Mandatory draft/route decisions stay pending. Escape returns focus to
+      // the screen heading instead of committing or destroying run progress.
+      else if(status!=='menu') {event.preventDefault();const panel=root.firstElementChild as HTMLElement|null;if(panel){panel.tabIndex=-1;panel.focus();}}
       return;
     }
     if(target?.matches('input, select, textarea, [contenteditable="true"]')) return;
@@ -274,13 +339,25 @@ export function createScreens(context: ScreenContext) {
     title?.style.setProperty('--parallax-y',`${(event.clientY/innerHeight-.5)*7}px`);
   };
   const onResize=()=>{const active=document.activeElement;if(active instanceof HTMLElement&&active.matches('.owned-boon')) positionBuildTooltip(active);};
+  const onAction=(event:Event)=>{
+    if((context.graphicsLost()||recoveryPending)&&!(event.target as HTMLElement).closest('#recover,#graphics-continue')) {event.preventDefault();event.stopImmediatePropagation();}
+  };
+  el('overlay').addEventListener('click',onAction,true);
+  const onStorage=()=>{if(game.status==='menu')syncScreen(true);};
+  window.addEventListener('storage',onStorage);
   window.addEventListener('resize',onResize);
   document.addEventListener('keydown',onKeyDown);
   document.addEventListener('pointermove',onPointerMove);
   return {
     syncScreen,
-    resetSettings() {settingsOpen=false;creditsOpen=false;controlsOpen=false;pauseTab='resume';context.settings?.reset?.();},
+    continueFailed() {
+      const notice=el('application-notice');
+      if(notice) {notice.hidden=false;notice.className='ui-toast';notice.textContent='Checkpoint unavailable. It may have changed in another tab. Start a new expedition.';}
+      syncScreen(true);el('start')?.focus();
+    },
+    get graphicsBlocked() {return context.graphicsLost()||recoveryPending;},
+    resetSettings() {const notice=el('application-notice');if(notice)notice.hidden=true;settingsOpen=false;creditsOpen=false;controlsOpen=false;pauseTab='resume';context.settings?.reset?.();},
     get quality() {return context.settings?.quality??legacyQuality;},
-    dispose() {window.removeEventListener('resize',onResize);document.removeEventListener('keydown',onKeyDown);document.removeEventListener('pointermove',onPointerMove);},
+    dispose() {window.removeEventListener('storage',onStorage);el('overlay').removeEventListener('click',onAction,true);window.removeEventListener('resize',onResize);document.removeEventListener('keydown',onKeyDown);document.removeEventListener('pointermove',onPointerMove);},
   };
 }

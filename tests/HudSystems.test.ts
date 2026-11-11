@@ -157,7 +157,7 @@ it('hides offscreen damage while keeping bounded elite attack threats and direct
             hud.tick(.05);
             hud();
             hud.effect({ type: 'enemy-attack', x: -10000, y: 0 });
-            hud.effect({ type: 'hurt', x: game.player.x, y: game.player.y });
+            hud.effect({ type: 'hurt', x: game.player.x, y: game.player.y, sourceX:-10000,sourceY:0 });
             hud.tick(.05);
         });
         expect(await page.locator('.combat-float:not([hidden])').count()).toBe(0);

@@ -185,7 +185,9 @@ test('all pause tabs preserve Resume, use accessible arrow navigation, and hold 
     expect(await page.locator('[data-pause-tab="controls"]').getAttribute('aria-selected')).toBe('true');
     expect(await page.locator('.controls-reference').innerText()).toContain('Overdrive');
     await page.evaluate(()=>{const ui=(window as any).ui;ui.setLost(true);ui.screens.syncScreen();});
-    expect(await page.locator('#resume').isDisabled()).toBe(true);
+    expect(await page.locator('#resume').count()).toBe(0);
+    expect(await page.locator('#graphics-continue').isDisabled()).toBe(true);
+    expect(await page.locator('#hud').getAttribute('inert')).not.toBeNull();
     expect(await page.locator('h2').innerText()).toBe('Restoring graphics…');
   } finally {await page.close();}
 });

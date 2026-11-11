@@ -124,3 +124,18 @@ it('caps, prioritizes attacking directions and reuses every DOM node across burs
         await page.close();
     }
 });
+it('never reuses a cached spitter bearing for source-less damage',async()=>{
+    const page=await mountHud(1280,900);
+    try{
+      await rig(page);
+      await page.evaluate(()=>{
+        const {threats,player}=(window as any).__threat;
+        threats.effect({type:'enemy-attack',id:8,family:'spitter',x:-200,y:10},player);
+        threats.effect({type:'hurt',x:0,y:0},player);
+      });
+      expect(await page.locator('.damage-direction:not([hidden])').count()).toBe(0);
+      await page.evaluate(()=>{const {threats,player}=(window as any).__threat;threats.effect({type:'hurt',x:0,y:0,sourceX:200,sourceY:0},player);});
+      expect(await page.locator('.damage-direction:not([hidden])').count()).toBe(1);
+      expect(await page.locator('.damage-direction:not([hidden])').getAttribute('style')).toContain('1.570796');
+    }finally{await page.close();}
+});
