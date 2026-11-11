@@ -1,5 +1,6 @@
 import * as T from 'three';
-import { EnergyRibbonBatch, TelegraphBatch } from '../vfx';
+import { FriendlyBoundaryBatch } from './FriendlyBoundary';
+import { AbilityLightningBatch } from './LightningBatch';
 import type { EnergyRibbon, Telegraph } from '../vfx';
 import type { GraphicsOptions } from '../graphicsOptions';
 import type { GraphicsTier } from '../FrameBudget';
@@ -70,8 +71,8 @@ export interface AbilityServices {
 export class ElementKit {
     readonly root = new T.Group();
     readonly batches: Record<Primitive, InstanceBatch>;
-    readonly rings = new TelegraphBatch(this.root, 160);
-    readonly ribbons = new EnergyRibbonBatch(this.root, 2048);
+    readonly rings = new FriendlyBoundaryBatch(this.root, 160);
+    readonly ribbons = new AbilityLightningBatch(this.root, 2048);
     time = 0;
     low = false;
     reducedMotion = false;
@@ -111,10 +112,10 @@ export class ElementKit {
         if (tier === 'low' && !this.low) {
             for (let i = 160; i < this.particles.length; i++)
                 this.particles[i].live = false;
-            for (const beam of this.beams)
-                beam.ribbon.lightning = false;
+
         }
         this.low = tier === 'low';
+        this.ribbons.low = this.low;
         this.reducedMotion = reducedMotion;
         this.flashIntensity = options.flashIntensity * (reducedMotion ? .5 : 1);
         this.dynamicLights = options.dynamicLights;
@@ -186,7 +187,7 @@ export class ElementKit {
         r.end.set(tx, ty, tz);
         r.color = color;
         r.width = width;
-        r.lightning = lightning && !this.low;
+        r.lightning = lightning;
         r.seed = ++this.serial;
     }
     ribbon(x: number, y: number, z: number, tx: number, ty: number, tz: number, color: number, width = .035, opacity = .6, lightning = true): void {
@@ -196,9 +197,9 @@ export class ElementKit {
         r.color = color;
         r.width = width;
         r.opacity = opacity * this.flashIntensity;
-        r.lightning = lightning && !this.low;
+        r.lightning = lightning;
         r.seed = 7;
-        this.ribbons.append(r, this.time, this.reducedMotion || this.low);
+        this.ribbons.append(r, this.time, this.reducedMotion);
     }
     decal(x: number, z: number, radius: number, color: number, life = 5, angle = 0): void {
         const p = this.decals[this.decalCursor++ % this.decals.length];
@@ -241,21 +242,32 @@ export class ElementKit {
         this.beam(x, y, z, tx, ty, tz, color, width * 1.6, .19, lightning, delay);
         this.beam(x, y, z, tx, ty, tz, color, width * .45, life, lightning, delay);
     }
-    /** Flowing ground liquid; persistent zone bounds remain snapshot-owned. */
-    liquidFire(x: number, z: number, radius: number, opacity = 1): void {
-        const b = this.batches.decal;
-        if (this.instanceCount >= ABILITY_VFX_LIMITS.instances) return;
-        const before = b.mesh.count;
-        b.draw(x, .038, z, radius, radius, 1, 0xff7a2e, opacity, 0, 0, 6);
-        this.instanceCount += b.mesh.count - before;
+    /** Broken rising tongues vary size and lifetime without allocations. */
+    flameTongue(x: number, z: number, width: number, height: number, seed: number, opacity = 1, core = false): void {
+        const cycle = this.reducedMotion ? .43 : (this.time * (1.7 + Math.sin(seed) * .35) + seed * .6180339) % 1;
+        const life = Math.sin(cycle * Math.PI);
+        const h = height * (.6 + life * .4);
+        this.draw('flame', x + Math.sin(seed * 7.1 + cycle * 5) * width * .16,
+            .04 + h * .5 + cycle * .13, z + Math.cos(seed * 3.7 + cycle * 6) * width * .12,
+            width * (.65 + life * .35), h * .5, 1, core ? 0xffedb5 : 0xff7a2e, opacity * (.3 + life * .55));
     }
-    /** Exact transient flame-cone body, submitted with the existing deck batch. */
+    /** Sparse rising fuel tongues replace the luminous planar liquid surface. */
+    liquidFire(x: number, z: number, radius: number, opacity = 1): void {
+        const count = this.low ? 5 : 12;
+        for (let i = 0; i < count; i++) {
+            const a = i * 2.39996323, r = radius * (.2 + .65 * Math.sin(i * 7.13) ** 2);
+            this.flameTongue(x + Math.cos(a) * r, z + Math.sin(a) * r, .18 + i % 3 * .055, .55 + i % 4 * .22, i * 1.73, opacity);
+        }
+    }
+    /** Turbulent volume inside the exact cone; its outline is rendered separately. */
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1): void {
-        const b = this.batches.decal;
-        if (this.instanceCount >= ABILITY_VFX_LIMITS.instances) return;
-        const before = b.mesh.count;
-        b.draw(x, .045, z, radius, radius, 1, 0xff7a2e, opacity, 0, -angle, 7 + arc / (Math.PI * 4));
-        this.instanceCount += b.mesh.count - before;
+        const count = this.low ? 16 : 48;
+        for (let i = 0; i < count; i++) {
+            const seed = i * 2.39996323, r = radius * (.12 + .79 * Math.sqrt((i + .5) / count));
+            const a = angle + Math.sin(seed * 3.17) * arc * .43;
+            this.flameTongue(x + Math.cos(a) * r, z + Math.sin(a) * r, .2 + Math.sin(seed) ** 2 * .18,
+                .5 + Math.sin(seed * 7.13) ** 2, seed, opacity, r < radius * .28);
+        }
     }
     /** Solid-looking faceted translucent column, with a narrow luminous internal vein. */
     iceColumn(x: number, z: number, width: number, depth: number, height: number, angle: number, opacity = 1): void {
@@ -344,6 +356,7 @@ export class ElementKit {
         this.time += dt;
         this.warm = this.cool = 0;
         this.instanceCount = 0;
+        this.rings.setTime(this.time, this.reducedMotion);
         this.rings.clear();
         this.ribbons.begin();
         for (const kind in this.batches)
@@ -403,7 +416,7 @@ export class ElementKit {
             if (p.age < p.delay)
                 continue;
             p.ribbon.opacity = (1 - (p.age - p.delay) / p.life) * this.flashIntensity;
-            this.ribbons.append(p.ribbon, this.time, this.reducedMotion || this.low);
+            this.ribbons.append(p.ribbon, this.time, this.reducedMotion);
         }
         for (const p of this.decals) {
             if (!p.live)

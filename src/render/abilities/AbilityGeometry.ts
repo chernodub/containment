@@ -1,6 +1,8 @@
 import * as T from 'three';
 import type { AbilitiesSnapshot, AbilityElement, AbilityEvent } from '../../game/abilities/contract';
-import { TelegraphBatch, EnergyRibbonBatch, createDeployableShieldMaterial } from '../vfx';
+import { createDeployableShieldMaterial } from '../vfx';
+import { FriendlyBoundaryBatch, FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
+import { AbilityLightningBatch } from './LightningBatch';
 import type { Telegraph, EnergyRibbon } from '../vfx';
 import { bindAbilityShape } from './shape';
 import { createAbilityZoneMaterial } from './ZoneMaterials';
@@ -37,9 +39,9 @@ const NO_LINKS: NonNullable<AbilitiesSnapshot['links']> = [];
  */
 export class AbilityGeometry {
     readonly root = new T.Group();
-    private readonly footprints = new TelegraphBatch(this.root, 112);
-    private readonly telegraphs = new TelegraphBatch(this.root, ABILITY_GEOMETRY_LIMITS.events);
-    private readonly ribbons = new EnergyRibbonBatch(this.root, 80);
+    private readonly footprints = new FriendlyBoundaryBatch(this.root, 112);
+    private readonly telegraphs = new FriendlyBoundaryBatch(this.root, ABILITY_GEOMETRY_LIMITS.events);
+    private readonly ribbons = new AbilityLightningBatch(this.root, 80);
     private readonly circle = new T.PlaneGeometry(2, 2);
     private readonly strip = new T.PlaneGeometry(2, 2);
     private readonly box = new T.BoxGeometry(1, 1, 1);
@@ -70,11 +72,6 @@ export class AbilityGeometry {
     constructor(scene: T.Object3D) {
         // Retained debug inventory name keeps the existing capture evidence contract working.
         this.root.name = 'interim-ability-visuals';
-        const ink = this.telegraphs.mesh.material as T.ShaderMaterial;
-        ink.fragmentShader = ink.fragmentShader.replace('edge*.72+filled*.14', 'edge*.55+filled*.012*pow(.5+.5*sin(atan(p.y,p.x+.00001)*16.+data.y*12.),12.)').replace('vec4(ink.rgb,a*ink.a)', 'vec4(mix(ink.rgb,vec3(.68,.9,1.1),edge*.75),a*ink.a)');
-        ink.fragmentShader = ink.fragmentShader.replace('.018,.035', '.003,.009').replace('.014,.035', '.003,.009');
-        const footprints = this.footprints.mesh.material as T.ShaderMaterial;
-        footprints.fragmentShader = footprints.fragmentShader.replace('edge*.72+filled*.14', 'edge*.36+filled*0.0').replace('.018,.035', '.003,.009').replace('.014,.035', '.003,.009');
         // Interim footprints mark boundaries while preserving the authored deck and hostile silhouettes.
         for (const material of Object.values(this.zoneMaterials))
             material.uniforms.strength.value = 1;
@@ -132,6 +129,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
     }
     private ground(geometry: T.BufferGeometry): T.Mesh {
         const mesh = new T.Mesh(geometry, this.zoneMaterials.cryo);
+        mesh.renderOrder = FRIENDLY_GROUND_ORDER;
         mesh.rotation.x = -Math.PI / 2;
         mesh.visible = false;
         this.root.add(mesh);
@@ -191,6 +189,8 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
         this.root.visible = visible;
         for (const material of this.materials)
             material.uniforms.time.value = this.time;
+        this.footprints.setTime(this.time, this.reducedMotion);
+        this.telegraphs.setTime(this.time, this.reducedMotion);
         this.footprints.clear();
         this.telegraphs.clear();
         this.ribbons.begin();
@@ -199,7 +199,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
             slot.body.visible = slot.start.visible = slot.end.visible = false;
             if (!zone || zone.remainingMs <= 0)
                 continue;
-            const material = zone.ability === 'meltdown' ? this.auraMaterial : (this.low ? this.flatMaterials : this.zoneMaterials)[zone.element === 'kinetic' ? 'arc' : zone.element];
+            const material = zone.ability === 'meltdown' ? this.auraMaterial : this.zoneMaterials[zone.element === 'kinetic' ? 'arc' : zone.element];
             slot.body.material = slot.start.material = slot.end.material = material;
             const x = zone.x / UNIT, z = zone.y / UNIT;
             if (zone.shape === 'circle') {
@@ -258,7 +258,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
             this.link.end.set(ex, .35, ez);
             this.link.width = .035;
             this.link.color = COLORS.arc;
-            this.ribbons.append(this.link, this.time, this.reducedMotion);
+
         }
         for (const slot of this.events) {
             if (!slot.live)
