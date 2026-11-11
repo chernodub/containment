@@ -188,7 +188,7 @@ class PyroPresentation implements AbilityPresentation {
     const fade = Math.max(0, 1 - Math.max(0, p.age - .35) / .37);
     kit.fireFan(p.x, p.z, p.range * grow, p.angle, p.arc, fade * .85);
     // Sparse, irregular far smoke breaks the silhouette without drawing a triangular backing plane.
-    const smoke = kit.low ? 2 : 5;
+    const smoke = kit.low ? 0 : 5;
     for (let i = 0; i < smoke; i++) {
       const seed = i * 2.731 + .71, a = p.angle + Math.sin(seed * 3.17) * p.arc * .4;
       const r = p.range * grow * (.77 + Math.sin(seed * 7.1) ** 2 * .17);

@@ -31,6 +31,16 @@ function position(mesh: T.InstancedMesh, index: number): T.Vector3 {
 }
 
 describe('Pyro presentation lifecycle and readability', () => {
+  it.each(['high', 'low'] as const)('keeps cone volume while reserving the far-smoke draw for High (%s)', tier => {
+    const { kit, fx, step, dispose } = setup();
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    fx.event(event(), 64, 96); step(.15);
+    expect(kit.batches.flame.mesh.count).toBeGreaterThan(12);
+    if (tier === 'low') expect(kit.batches.smoke.mesh.count).toBe(0);
+    else expect(kit.batches.smoke.mesh.count).toBeGreaterThan(0);
+    expect(kit.batches.decal.mesh.count).toBe(1); dispose();
+  });
+
   it('keeps a lobbed canister on the captured trajectory and retires it on authoritative impact', () => {
     const { kit, fx, step, dispose } = setup();
     fx.event(event({ ability: 'napalm-charge', slot: 'power', phase: 'cast', targetX: 256, targetY: 128, durationMs: 350 }), 64, 128);
