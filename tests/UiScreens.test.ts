@@ -565,6 +565,7 @@ test('loadout marks modified ability slots and presents their changed values',as
     await page.locator('[data-pause-tab=loadout]').click();
     expect(await page.locator('.ability-augment-badge').count()).toBe(3);
     expect(await page.locator('.ability-changed-value').allTextContents()).toEqual(['2 → 3 dash charges','+0.63 m radius per chilled enemy · max +3.13 m','1 → 2 ice walls']);
+    expect(await page.locator('.ability-detail').first().locator('dl dd').first().innerText()).toBe('3');
     expect(await page.locator('.ability-preview').innerText()).not.toContain('Radius 300');
   } finally {await page.close();}
 });
