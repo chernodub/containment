@@ -35,8 +35,9 @@ class CryoPresentation implements AbilityPresentation {
           k.beam(px, .075, pz, event.targetX! / UNIT, .075, event.targetY! / UNIT, ICE, .045, .22, false);
         }
       } else if (event.phase === 'dash-end') {
-        this.wave(px, pz, .8, .45, false);
-        k.burst(px, .12, pz, 'cryo', 12, 1.7, .65);
+        const tx=(event.targetX??x)/UNIT,tz=(event.targetY??y)/UNIT;
+        this.wave(tx, tz, .8, .45, false);
+        k.burst(tx, .12, tz, 'cryo', 12, 1.7, .65);
       }
       return;
     }

@@ -36,10 +36,11 @@ class ArcPresentation implements AbilityPresentation {
         k.burst(px, .9, pz, 'arc', 12, 1.6, .3);
         k.flash(px, pz, VIOLET, 4, 3.5, 3, .1);
       } else if (event.phase === 'dash-end') {
-        this.blink(px, pz, event.angle ?? 0);
-        k.ring(px, pz, .9, VIOLET, .3);
-        k.distort(px, pz, 1.3, .0025, .28);
-        k.burst(px, .2, pz, 'arc', 18, 2.4, .45);
+        const tx=(event.targetX??x)/UNIT,tz=(event.targetY??y)/UNIT;
+        this.blink(tx, tz, event.angle ?? 0);
+        k.ring(tx, tz, .9, VIOLET, .3);
+        k.distort(tx, tz, 1.3, .0025, .28);
+        k.burst(tx, .2, tz, 'arc', 18, 2.4, .45);
       } else if (event.phase === 'link') this.strike(event, px, pz, .012);
       return;
     }

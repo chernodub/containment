@@ -10,6 +10,8 @@ async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false}
  const bounds=g.geometry.bounds,candidates=[];
  for(let y=170;y<bounds.height-170;y+=50)for(let x=170;x<bounds.width-170;x+=50)for(const angle of [-Math.PI/2,0,Math.PI/2,Math.PI]){
   if(!d.canStand(x,y,28)||!d.canStand(x+Math.cos(angle)*150,y+Math.sin(angle)*150,28))continue;
+  let placement=true;for(const forward of [70,150])for(const side of [-125,0,125])if(!d.canStand(x+Math.cos(angle)*forward-Math.sin(angle)*side,y+Math.sin(angle)*forward+Math.cos(angle)*side,20))placement=false;
+  if(!placement)continue;
   let score=0;for(const r of [170,230,290,350])for(let k=-3;k<=3;k++){
    const a=angle+k*.22,tx=x+Math.cos(a)*r,ty=y+Math.sin(a)*r;
    if(d.canStand(tx,ty,28)&&d.clearShot(tx,ty,{x,y}))score++;
@@ -18,11 +20,11 @@ async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false}
  candidates.sort((a,b)=>b.score-a.score);if(!candidates.length)throw Error('No V2 legal lane');
  const p=candidates[0];Object.assign(g.player,{x:p.x,y:p.y,angle:p.angle,vx:0,vy:0});d.setInput({x:0,y:0,fire:false,angle:p.angle,autoAim:false});d.step(3800);g.enemies.reset();d.refresh();
  const placed=[];
- for(const r of [170,230,290,350,410,470])for(let k=-5;k<=5;k++){
+ for(const r of (heavy?[170,230,290,350,410,470]:slot==='power'?[300,380]:[170,230,290]))for(const k of (heavy?[-5,-4,-3,-2,-1,0,1,2,3,4,5]:[0,-2,2,-1,1])){
   if(placed.length>=(heavy?25:5))break;
   const a=p.angle+k*.22,x=p.x+Math.cos(a)*r,y=p.y+Math.sin(a)*r;
   if(!d.canStand(x,y,26)||!d.clearShot(x,y)||placed.some(e=>Math.hypot(e.x-x,e.y-y)<43))continue;
-  const eid=d.spawn(heavy?['brute','spitter','crawler','stalker','carrier'][placed.length%5]:'brute',x,y,heavy&&placed.length%6===0);
+  const eid=d.spawn(heavy?['brute','spitter','crawler','stalker','carrier'][placed.length%5]:slot==='power'?'spitter':'brute',x,y,heavy&&placed.length%6===0);
   if(eid)placed.push({x,y,id:eid});
  }
  // Larger rooms can place remaining stress actors around the rear half of the lane.

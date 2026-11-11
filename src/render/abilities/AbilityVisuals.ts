@@ -7,6 +7,8 @@ import { AbilityGeometry } from './AbilityGeometry';
 import { createBreacherPresentation } from './breacher';
 import { createCryoPresentation } from './cryo';
 import { createPyroPresentation } from './pyro';
+import { createArcPresentation } from './arc';
+import { createSystemPresentation } from './system';
 import { ElementKit, type AbilityServices } from './ElementKit';
 import type { AbilityFrame, AbilityPresentation, PresentationFactory } from './types';
 
@@ -17,26 +19,33 @@ export class AbilityVisuals extends AbilityGeometry {
   private system?:AbilityPresentation;
   private frame:AbilityFrame={snapshot:undefined,dt:0,visible:true};
   private dead=false;
+  private wasVisible=true;
   constructor(scene:T.Object3D){
     super(scene);
     this.register('breacher',createBreacherPresentation);
     this.register('cryo',createCryoPresentation);
     this.register('pyro',createPyroPresentation);
+    this.register('arc',createArcPresentation);
+    this.registerSystem(createSystemPresentation);
   }
   register(rig:RigId,factory:PresentationFactory):void {this.registry.get(rig)?.dispose();this.registry.set(rig,factory(this.kit));}
   registerSystem(factory:PresentationFactory):void {this.system?.dispose();this.system=factory(this.kit);}
   bind(services:AbilityServices):void {this.kit.bind(services);}
-  setOptions(options:GraphicsOptions,tier:GraphicsTier,reducedMotion:boolean):void {this.kit.setOptions(options,tier,reducedMotion);this.setReducedMotion(reducedMotion);}
+  setOptions(options:GraphicsOptions,tier:GraphicsTier,reducedMotion:boolean):void {this.kit.setOptions(options,tier,reducedMotion);super.setOptions(options,tier,reducedMotion);}
   override event(event:AbilityEvent,x:number,y:number):void {
     if(this.dead||!Number.isFinite(x)||!Number.isFinite(y))return;
     if(event.phase==='cast')super.event(event,x,y);this.registry.get(event.rig)?.event(event,x,y);this.system?.event(event,x,y);
   }
   override update(snapshot:AbilitiesSnapshot|undefined,dt:number,visible=true,game?:DepthGame,marine?:T.Object3D):void {
     if(this.dead)return;
-    dt=Number.isFinite(dt)?Math.max(0,dt):0;
-    super.update(snapshot,dt,visible);this.kit.begin(dt);
+    if(game&&(game.status==='dead'||game.status==='complete'||game.status==='menu'))visible=false;
+    if(!visible&&this.wasVisible)this.clear();
+    this.wasVisible=visible;
+    dt=visible&&Number.isFinite(dt)?Math.max(0,dt):0;
+    super.update(visible?snapshot:undefined,dt,visible);this.kit.begin(dt);
     const f=this.frame;f.snapshot=snapshot;f.dt=dt;f.visible=visible;f.game=game;f.marine=marine;
-    if(visible){if(snapshot?.rig)this.registry.get(snapshot.rig)?.update(f);this.system?.update(f);}
+    if(visible&&snapshot?.rig)this.registry.get(snapshot.rig)?.update(f);
+    this.system?.update(f);
     this.kit.end();
   }
   override clear():void {super.clear();this.kit?.clear();if(this.registry)for(const p of this.registry.values())p.clear();this.system?.clear();}

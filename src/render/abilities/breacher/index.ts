@@ -46,13 +46,14 @@ export class BreacherPresentation implements AbilityPresentation {
     }
     if (event.ability === 'ram' && event.phase === 'dash-start') {
       this.impact('ram', x, z, angle, (event.length ?? 150) / UNIT, .32);
-      this.kit.camera(.075, angle);
+      // Universal dash camera/pose feedback is applied once by the system presentation.
       return;
     }
     if (event.ability === 'ram' && event.phase === 'dash-end') {
-      this.kit.burst(x, .25, z, 'kinetic', 12, 2.3, .42);
-      this.dust(x, z, 1.4, 8);
-      this.kit.flash(x, z, AMBER, 3.5, 2.5, 2, .1);
+      const tx=(event.targetX??worldX)/UNIT,tz=(event.targetY??worldY)/UNIT;
+      this.kit.burst(tx, .25, tz, 'kinetic', 12, 2.3, .42);
+      this.dust(tx, tz, 1.4, 8);
+      this.kit.flash(tx, tz, AMBER, 3.5, 2.5, 2, .1);
       return;
     }
     if (event.phase !== 'impact' && event.phase !== 'burst') return;

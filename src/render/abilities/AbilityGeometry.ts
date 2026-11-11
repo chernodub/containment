@@ -3,6 +3,8 @@ import type { AbilitiesSnapshot, AbilityElement, AbilityEvent } from '../../game
 import { TelegraphBatch, EnergyRibbonBatch, createGroundZoneMaterial, createDeployableShieldMaterial } from '../vfx';
 import type { Telegraph, EnergyRibbon } from '../vfx';
 import { bindAbilityShape } from './shape';
+import type { GraphicsOptions } from '../graphicsOptions';
+import type { GraphicsTier } from '../FrameBudget';
 
 const UNIT = 32;
 /** Interim budgets mirror A1's bounded inventory, with independent event slots. */
@@ -32,7 +34,11 @@ export class AbilityGeometry {
   private readonly shieldMaterials = {
     kinetic: createDeployableShieldMaterial(COLORS.kinetic), cryo: createDeployableShieldMaterial(COLORS.cryo), arc: createDeployableShieldMaterial(COLORS.arc),
   };
-  private readonly materials = [...Object.values(this.zoneMaterials), ...Object.values(this.shieldMaterials)];
+  private readonly flatMaterials = {
+    cryo: this.flat(COLORS.cryo), pyro: this.flat(COLORS.pyro), arc: this.flat(COLORS.arc),
+  };
+  private low = false;
+  private readonly materials = [...Object.values(this.zoneMaterials), ...Object.values(this.shieldMaterials), ...Object.values(this.flatMaterials)];
   private readonly animatedMaterials = [...Object.values(this.zoneMaterials), ...Object.values(this.shieldMaterials)];
   private readonly zones: ZoneSlot[] = [];
   private readonly deployables: DeployableSlot[] = [];
@@ -46,7 +52,10 @@ export class AbilityGeometry {
   private disposed = false;
 
   constructor(scene: T.Object3D) {
+    // Retained debug inventory name keeps the existing capture evidence contract working.
     this.root.name = 'interim-ability-visuals';
+    const ink = this.telegraphs.mesh.material as T.ShaderMaterial;
+    ink.fragmentShader = ink.fragmentShader.replace('vec4(ink.rgb,a*ink.a)', 'vec4(mix(ink.rgb,vec3(.68,.9,1.1),edge*.75),a*ink.a)');
     // Interim footprints mark boundaries while preserving the authored deck and hostile silhouettes.
     for (const material of Object.values(this.zoneMaterials)) material.uniforms.strength.value = .35;
     // Retain every selectable material in the tracked hierarchy even while no
@@ -76,6 +85,22 @@ export class AbilityGeometry {
       ribbon: { start: new T.Vector3(), end: new T.Vector3(), lightning: false },
     });
     scene.add(this.root);
+  }
+
+  private flat(color:number):T.ShaderMaterial {
+    return new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,
+      uniforms:{color:{value:new T.Color(color)},strength:{value:.16},time:{value:0},motion:{value:0}},
+      vertexShader:'varying vec2 p;void main(){p=uv*2.-1.;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+      fragmentShader:`uniform vec3 color;uniform float strength;varying vec2 p;
+void main(){float r=length(p);if(r>1.)discard;gl_FragColor=vec4(color,strength*(.2+smoothstep(.9,1.,r)*.5));
+#include <tonemapping_fragment>
+#include <colorspace_fragment>
+}`});
+  }
+
+  setOptions(options:GraphicsOptions,tier:GraphicsTier,reducedMotion:boolean):void {
+    this.low=tier==='low';this.setReducedMotion(reducedMotion);
+    for(const material of Object.values(this.zoneMaterials))material.uniforms.strength.value=(material===this.zoneMaterials.pyro?.2:.12)*(.5+.5*options.flashIntensity);
   }
 
   private ground(geometry: T.BufferGeometry): T.Mesh {
@@ -131,7 +156,7 @@ export class AbilityGeometry {
       const slot = this.zones[i], zone = snapshot?.zones[i];
       slot.body.visible = slot.start.visible = slot.end.visible = false;
       if (!zone || zone.remainingMs <= 0) continue;
-      const material = this.zoneMaterials[zone.element === 'kinetic' ? 'arc' : zone.element];
+      const material = (this.low ? this.flatMaterials : this.zoneMaterials)[zone.element === 'kinetic' ? 'arc' : zone.element];
       slot.body.material = slot.start.material = slot.end.material = material;
       const x = zone.x / UNIT, z = zone.y / UNIT;
       if (zone.shape === 'circle') {
@@ -183,13 +208,13 @@ export class AbilityGeometry {
 
   private circleFootprint(x: number, z: number, radius: number, color: number): void {
     const shape = this.footprint;
-    shape.shape = 'circle'; shape.x = x; shape.z = z; shape.radius = radius; shape.color = color; shape.opacity = .32;
+    shape.shape = 'circle'; shape.x = x; shape.z = z; shape.radius = radius; shape.color = color; shape.opacity = .22;
     this.footprints.add(shape);
   }
 
   private lineFootprint(x: number, z: number, length: number, width: number, angle: number, color: number): void {
     const shape = this.footprint;
-    shape.shape = 'line'; shape.x = x; shape.z = z; shape.length = length; shape.width = width; shape.angle = angle; shape.color = color; shape.opacity = .32;
+    shape.shape = 'line'; shape.x = x; shape.z = z; shape.length = length; shape.width = width; shape.angle = angle; shape.color = color; shape.opacity = .22;
     this.footprints.add(shape);
   }
 

@@ -41,6 +41,8 @@ export class ElementKit {
   private line:EnergyRibbon={start:new T.Vector3(),end:new T.Vector3()};
   private light={x:0,y:1,z:0,color:0,intensity:0,distance:1,duration:.15,priority:2};
   private disposed=false;
+  private instanceCount=0;
+  peakLights=0;
   peakParticles=0;peakInstances=0;
   constructor(root:T.Object3D){
     root.add(this.root);this.root.name='ability-element-kit';
@@ -48,12 +50,16 @@ export class ElementKit {
   }
   bind(services:AbilityServices):void {this.services=services;}
   setOptions(options:GraphicsOptions,tier:GraphicsTier,reducedMotion:boolean):void {
+    if(tier==='low'&&!this.low)for(let i=160;i<this.particles.length;i++)this.particles[i].live=false;
     this.low=tier==='low';this.reducedMotion=reducedMotion;this.flashIntensity=options.flashIntensity*(reducedMotion?.5:1);
     this.dynamicLights=options.dynamicLights;this.distortion=options.distortion;
   }
   /** Allocation-free solid, crystal, ember, smoke, flame, decal or ghost instance. */
   draw(kind:Primitive,x:number,y:number,z:number,sx:number,sy:number,sz:number,color:number,opacity=1,angle=0,tilt=0):void {
-    this.batches[kind].draw(x,y,z,sx,sy,sz,color,opacity*(kind==='spark'||kind==='flame'? .35+.65*this.flashIntensity:1),angle,tilt);
+    if(this.instanceCount>=ABILITY_VFX_LIMITS.instances)return;
+    const batch=this.batches[kind],before=batch.mesh.count;
+    batch.draw(x,y,z,sx,sy,sz,color,opacity*(kind==='spark'||kind==='flame'? .35+.65*this.flashIntensity:1),angle,tilt);
+    this.instanceCount+=batch.mesh.count-before;
   }
   mote(kind:Primitive,x:number,y:number,z:number,vx:number,vy:number,vz:number,size:number,life:number,color:number):void {
     const cap=this.low?160:this.particles.length,p=this.particles[this.cursor++%cap];
@@ -75,10 +81,10 @@ export class ElementKit {
   }
   beam(x:number,y:number,z:number,tx:number,ty:number,tz:number,color:number,width=.035,life=.22,lightning=true,delay=0):void {
     const p=this.beams[this.beamCursor++%this.beams.length];p.live=true;p.age=0;p.life=life;p.delay=delay;
-    const r=p.ribbon;r.start.set(x,y,z);r.end.set(tx,ty,tz);r.color=color;r.width=width;r.lightning=lightning;r.seed=++this.serial;
+    const r=p.ribbon;r.start.set(x,y,z);r.end.set(tx,ty,tz);r.color=color;r.width=width;r.lightning=lightning&&!this.low;r.seed=++this.serial;
   }
   ribbon(x:number,y:number,z:number,tx:number,ty:number,tz:number,color:number,width=.035,opacity=.6,lightning=true):void {
-    const r=this.line;r.start.set(x,y,z);r.end.set(tx,ty,tz);r.color=color;r.width=width;r.opacity=opacity*this.flashIntensity;r.lightning=lightning;r.seed=7;
+    const r=this.line;r.start.set(x,y,z);r.end.set(tx,ty,tz);r.color=color;r.width=width;r.opacity=opacity*this.flashIntensity;r.lightning=lightning&&!this.low;r.seed=7;
     this.ribbons.append(r,this.time,this.reducedMotion||this.low);
   }
   decal(x:number,z:number,radius:number,color:number,life=5,angle=0):void {
@@ -87,12 +93,17 @@ export class ElementKit {
   flash(x:number,z:number,color:number,intensity=8,distance=5,priority=3,duration=.18):void {
     if(this.low||!this.dynamicLights)return;
     const r=this.light;r.x=x;r.z=z;r.color=color;r.intensity=intensity;r.distance=distance;r.priority=priority;r.duration=duration;
-    this.services?.lights.flash(r);
+    this.services?.lights.flash(r);this.measureLights();
   }
   lightAt(id:number,x:number,z:number,color:number,intensity=2,distance=4):void {
     if(this.low||!this.dynamicLights)return;
     const r=this.light;r.x=x;r.z=z;r.color=color;r.intensity=intensity;r.distance=distance;r.priority=2;r.duration=.1;
-    this.services?.lights.attach(-200000-id,r);
+    this.services?.lights.attach(-200000-id,r);this.measureLights();
+  }
+  private measureLights():void {
+    const lights=this.services?.lights.lights;if(!lights)return;
+    let live=0;for(const light of lights)if(light.intensity>0)live++;
+    this.peakLights=Math.max(this.peakLights,live);
   }
   distort(x:number,z:number,radius:number,strength=.004,life=.6,heat=false):void {
     if(this.low||this.reducedMotion||!this.distortion)return;
@@ -104,7 +115,7 @@ export class ElementKit {
     if(angle!==undefined)this.services?.camera.kick(angle,weight*.1);
   }
   begin(dt:number):void {
-    this.time+=dt;this.rings.clear();this.ribbons.begin();for(const kind in this.batches)this.batches[kind as Primitive].begin();
+    this.time+=dt;this.instanceCount=0;this.rings.clear();this.ribbons.begin();for(const kind in this.batches)this.batches[kind as Primitive].begin();
     let live=0;
     for(const p of this.particles){if(!p.live)continue;p.age+=dt;if(p.age>=p.life){p.live=false;continue;}live++;
       const motion=this.reducedMotion?.2:1;p.x+=p.vx*dt*motion;p.y+=p.vy*dt*motion;p.z+=p.vz*dt*motion;
@@ -124,7 +135,7 @@ export class ElementKit {
     }
   }
   end():void {this.ribbons.end();let n=0;for(const kind in this.batches){const b=this.batches[kind as Primitive];b.end();n+=b.mesh.count;}this.peakInstances=Math.max(this.peakInstances,n);}
-  get counts(){let particles=0,rings=0,beams=0;for(const p of this.particles)if(p.live)particles++;for(const p of this.waves)if(p.live)rings++;for(const p of this.beams)if(p.live)beams++;return {particles,rings,beams,peakParticles:this.peakParticles,peakInstances:this.peakInstances};}
+  get counts(){let particles=0,rings=0,beams=0;for(const p of this.particles)if(p.live)particles++;for(const p of this.waves)if(p.live)rings++;for(const p of this.beams)if(p.live)beams++;return {particles,rings,beams,peakParticles:this.peakParticles,peakInstances:this.peakInstances,peakLights:this.peakLights};}
   clear():void {for(const p of this.particles)p.live=false;for(const p of this.waves)p.live=false;for(const p of this.beams)p.live=false;for(const p of this.decals)p.live=false;this.rings.clear();this.ribbons.clear();for(const k in this.batches)this.batches[k as Primitive].begin();}
   dispose():void {if(this.disposed)return;this.disposed=true;this.clear();for(const k in this.batches)this.batches[k as Primitive].dispose();this.rings.dispose();this.ribbons.dispose();this.root.removeFromParent();}
 }
