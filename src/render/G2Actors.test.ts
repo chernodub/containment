@@ -92,3 +92,27 @@ it('fits identity details to the rest skin once per family and never scans skin 
     expect(vertices).not.toHaveBeenCalled();
   }finally{vertices.mockRestore();if(first)disposeModel(first.root);if(second)disposeModel(second.root);}
 });
+
+it('emerges vertically over220ms at the real spawn position and settles before ragdoll handoff',()=>{
+  const model=alien('crawler'),restY=model.body.position.y;
+  model.root.position.set(4,0,8);model.animate(0,0,.4);
+  expect(model.body.position.y).toBeLessThan(restY-.03);
+  for(let i=1;i<=15;i++)model.animate(i/60,0,.4);
+  expect(model.body.position.y).toBeCloseTo(restY);expect(model.root.position.toArray()).toEqual([4,0,8]);
+  model.reset!();model.animate(1,0,0);expect(model.body.position.y).toBeLessThan(restY-.03);
+  freezeCorpse(model);expect(model.body.position.y).toBe(restY);expect(model.body.rotation.x).toBe(0);
+  model.reset!();model.setAffliction!({chilled:true,burning:false,frozen:true});model.animate(2,0,0);
+  expect(model.body.position.y).toBe(restY);disposeModel(model.root);
+});
+
+it('retains the last frost, burn or acid finish through freeze and resets it for live reuse',()=>{
+  for(const [status,expected] of [[{chilled:true,burning:false,frozen:true},1],[{chilled:false,burning:true},2],[{chilled:false,burning:false,poisoned:true},3]] as const){
+    const model=alien('brute');model.setAffliction!(status);freezeCorpse(model);
+    let material:T.MeshStandardMaterial|undefined;model.root.traverse(o=>{if(o instanceof T.SkinnedMesh&&!material)material=(Array.isArray(o.material)?o.material[0]:o.material) as T.MeshStandardMaterial;});
+    const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:T.ShaderLib.standard.vertexShader,fragmentShader:T.ShaderLib.standard.fragmentShader};
+    material!.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);
+    expect(shader.uniforms.actorDeathStyle.value).toBe(expected);
+    expect(shader.fragmentShader).toContain('deathFracture');
+    model.reset!();expect(shader.uniforms.actorDeathStyle.value).toBe(0);disposeModel(model.root);
+  }
+});
