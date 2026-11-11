@@ -138,7 +138,7 @@ export function serviceShaftLanding(t:RoomTemplate):T.Group{
  beam(local,[384,18,436],[384,-18,438],3.5,fiber);
  // A retained local task light survives the lost uplink, mounted on the junction itself.
  beam(local,[359,36,405],[359,76,405],1.8,zinc);box(local,359,76,405,14,5,11,steel);
- const task=material('local-task-light',0xbadbe0,.15,0x9fe8ff);task.emissiveIntensity=2;box(local,359,73,405,10,2,7,task);
+ fiber.emissiveIntensity=1.25;box(local,359,73,405,10,2,7,fiber);
  root.userData.lightFixtures=[{x:359/U,y:73/U,z:405/U,color:0x9fe8ff,nativeColor:true}];
  // Mount the sign on the north curb, clear of the raised rear truss.
  // Canvas is room-local and disposed with it.
