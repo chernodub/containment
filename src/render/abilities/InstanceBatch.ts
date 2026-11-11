@@ -62,7 +62,7 @@ ${atlas ? `
  ${kind === 'flame' ? `
  float heat=clamp(dot(s.rgb,vec3(.32,.52,.16)),0.,1.);
  // HDR hot core, orange body and deep-red feather: no opaque pale triangles.
- c=mix(vec3(.9,.025,.001),vec3(3.6,.53,.018),smoothstep(.03,.38,heat));
+ c=mix(vec3(1.05,.065,.003),vec3(4.,.7,.025),smoothstep(.008,.28,heat));
  c=mix(c,vec3(10.,5.2,.95),pow(smoothstep(.48,.94,heat),2.6));
  float hotBias=clamp((ink.g-.19)*2.,0.,1.);c=mix(c,vec3(10.,6.,1.2),hotBias*heat*heat*.35);
  a*=.78*(.35+.65*flash);
@@ -74,8 +74,8 @@ ${kind === 'decal' ? `
  float n=fract(sin(dot(floor(p*31.),vec2(127.1,311.7)))*43758.5);
  float brokenAngle=a0*11.+sin(d*26.+floor(a0*3.)*6.)*.7+sin(d*73.+a0*7.)*.2;
  float cracks=pow(1.-abs(sin(brokenAngle)),24.)*step(.14,n)*(1.-smoothstep(.8,1.,d));
- if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,(1.-smoothstep(.65,1.,d))*(.08+n*.1));c=mix(ink,vec3(1.5,.42,.025),pow(cracks,3.)*.25*flash);}
- else if(variant<1.5){if(d>1.)discard;vec2 cell=floor(p*17.);vec2 f=fract(p*17.)-.5;float seed=fract(sin(dot(cell,vec2(43.1,87.7)))*9781.7);float frost=pow(max(0.,1.-abs(sin(atan(f.y,f.x)*3.+seed*6.283))),18.)*(1.-smoothstep(.1,.65,length(f)));a*=(.08+n*.16+frost*.35)*(1.-smoothstep(.82,1.,d));c*=1.4;}
+ if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,(1.-smoothstep(.65,1.,d))*(.08+n*.1));}
+ else if(variant<1.5){if(d>1.)discard;vec2 cell=floor(p*17.);vec2 f=fract(p*17.)-.5;float seed=fract(sin(dot(cell,vec2(43.1,87.7)))*9781.7);float frost=pow(max(0.,1.-abs(sin(atan(f.y,f.x)*3.+seed*6.283))),18.)*(1.-smoothstep(.1,.65,length(f)));vec2 g=fract(p*31.);g=g*g*(3.-2.*g);vec2 b=floor(p*31.);float n10=fract(sin(dot(b+vec2(1.,0.),vec2(127.1,311.7)))*43758.5);float n01=fract(sin(dot(b+vec2(0.,1.),vec2(127.1,311.7)))*43758.5);float n11=fract(sin(dot(b+vec2(1.),vec2(127.1,311.7)))*43758.5);float powder=mix(mix(n,n10,g.x),mix(n01,n11,g.x),g.y);a*=(.07+powder*.09+frost*.22)*(1.-smoothstep(.82,1.,d));c*=1.4;}
  else if(variant<2.5){float edge=abs(p.y);float slag=pow(max(0.,1.-abs(p.y+sin(p.x*31.)*.12)*4.),3.)*(.4+n*.6);a*=(1.-smoothstep(.7,1.,abs(p.x)))*(1.-smoothstep(.5,1.,edge))*(.5+n*.4);c=mix(ink,vec3(2.8,.5,.015),slag*fract(phase)*10.*flash);}
  else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.83,1.,d))*(.3+n*.4+cracks*.3);}
  else if(variant<4.5){if(d>1.)discard;float star=pow(1.-abs(sin(a0*5.+floor(d*11.)*.18)),22.);a*=(star*.85+(.2+n*.2)*(1.-smoothstep(.1,.5,d)))*(1.-smoothstep(.8,1.,d));}

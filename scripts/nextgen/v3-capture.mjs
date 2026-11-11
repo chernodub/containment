@@ -10,7 +10,7 @@ const option = (name, fallback = '') => process.argv.find(a => a.startsWith(`--$
 const label = option('label', 'v3-round1'), mode = option('mode', 'core');
 assert(/^[\w.-]+$/.test(label));
 const dist = resolve(option('dist', 'dist'));
-const sha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+const sha = option('dist-source-sha', execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim());
 const out = resolve('artifacts/nextgen', label);
 await mkdir(out, { recursive: true });
 const rigs = {
