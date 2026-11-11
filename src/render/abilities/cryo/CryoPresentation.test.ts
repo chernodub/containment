@@ -10,6 +10,7 @@ function recordingKit() {
     time: 1, low: false, reducedMotion: false, flashIntensity: 1,
     draw: vi.fn(), mote: vi.fn(), burst: vi.fn(), ring: vi.fn(), outline: vi.fn(), beam: vi.fn(),
     ribbon: vi.fn(), decal: vi.fn(), flash: vi.fn(), distort: vi.fn(), camera: vi.fn(), lightAt: vi.fn(),
+    front: vi.fn(), scar: vi.fn(), debris: vi.fn(), iceColumn: vi.fn(),
   };
 }
 const snapshot = (extra: Partial<AbilitiesSnapshot> = {}): AbilitiesSnapshot => ({
@@ -34,42 +35,46 @@ describe('Cryo signatures', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     fx.event(receipt({ radius: 310 }), 64, 96);
     expect(kit.ring).toHaveBeenCalledWith(2, 3, 310 / 32, 0xe8fbff, .5);
-    expect(kit.decal).toHaveBeenCalledWith(2, 3, 310 / 32, 0x4e8baf, 4.2);
+    expect(kit.scar).toHaveBeenCalledWith('frost', 2, 3, 310 / 32, 0x7fd6ff, 6.5);
     fx.update(frame({}, .15));
     const shards = kit.draw.mock.calls.filter(c => c[0] === 'shard');
-    expect(shards.length).toBe(36);
+    expect(shards.length).toBe(60);
     for (const draw of shards) expect(Math.hypot(draw[1] - 2, draw[3] - 3)).toBeLessThanOrEqual(310 / 32);
+    expect(kit.front.mock.calls[0][2]).toBe(310 / 32);
+    expect(kit.front.mock.calls[0][3]).toBeGreaterThan(.95);
+    expect(kit.front.mock.calls[0][5]).toBeGreaterThan(1);
   });
 
   it('keeps Glacier columns perpendicular to its authoritative facing and inside its length', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     fx.update(frame({ deployables: [wall()] }, 0));
-    const solids = kit.draw.mock.calls.filter(c => c[0] === 'solid');
-    expect(solids.length).toBe(9);
-    for (const draw of solids) {
-      expect(draw[1]).toBe(10);
-      expect(Math.abs(draw[3] - 10) + draw[6] / 2).toBeLessThanOrEqual(200 / 32 / 2);
-      expect(draw[4]).toBeLessThanOrEqual(26 / 32);
+    const columns = kit.iceColumn.mock.calls;
+    expect(columns.length).toBe(9);
+    for (const column of columns) {
+      expect(column[0]).toBe(10);
+      expect(Math.abs(column[1] - 10) + column[2] / 2).toBeLessThanOrEqual(200 / 32 / 2 + .00001);
+      expect(column[3]).toBeLessThanOrEqual(26 / 32);
+      expect(column[4]).toBeGreaterThanOrEqual(2);
     }
-    kit.draw.mockClear();
+    kit.iceColumn.mockClear();
     fx.update(frame({ deployables: [wall({ angle: Math.PI / 2 })] }, 0));
-    for (const draw of kit.draw.mock.calls.filter(c => c[0] === 'solid')) {
-      expect(draw[3]).toBeCloseTo(10);
-      expect(draw[9]).toBeCloseTo(-Math.PI / 2);
+    for (const column of kit.iceColumn.mock.calls) {
+      expect(column[1]).toBeCloseTo(10);
+      expect(column[5]).toBeCloseTo(Math.PI / 2);
     }
   });
 
   it('grows bottom-up from snapshot age and pauses without advancing that geometry', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     fx.update(frame({ deployables: [wall({ remainingMs: 5000 })] }, 0));
-    const emerging = kit.draw.mock.calls.filter(c => c[0] === 'solid').map(c => c[5]);
-    kit.draw.mockClear();
+    const emerging = kit.iceColumn.mock.calls.map(c => c[4]);
+    kit.iceColumn.mockClear();
     fx.update(frame({ deployables: [wall({ remainingMs: 4850 })] }, 0));
-    const raised = kit.draw.mock.calls.filter(c => c[0] === 'solid').map(c => c[5]);
+    const raised = kit.iceColumn.mock.calls.map(c => c[4]);
     expect(raised[0]).toBeGreaterThan(emerging[0] * 20);
-    kit.draw.mockClear();
+    kit.iceColumn.mockClear();
     fx.update(frame({ deployables: [wall({ remainingMs: 4850 })] }, 0));
-    expect(kit.draw.mock.calls.filter(c => c[0] === 'solid').map(c => c[5])).toEqual(raised);
+    expect(kit.iceColumn.mock.calls.map(c => c[4])).toEqual(raised);
   });
 
   it('reacts once to real wall health loss and does not emit while paused', () => {
@@ -85,6 +90,8 @@ describe('Cryo signatures', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     const strip = zone({ ability: 'frost-trail', shape: 'strip', attached: false, radius: 0, x: 64, y: 96, x2: 224, y2: 96, width: 44, remainingMs: 2000, durationMs: 2500 });
     fx.update(frame({ zones: [strip] }, 0));
+    const sheet = kit.draw.mock.calls.find(c => c[0] === 'solid')!;
+    expect(sheet.slice(1, 7)).toEqual([4.5, .055, 3, 5, .095, 44 / 32 / 2 * 1.88]);
     for (const draw of kit.draw.mock.calls.filter(c => c[0] === 'shard')) {
       expect(draw[1]).toBeGreaterThanOrEqual(2); expect(draw[1]).toBeLessThanOrEqual(7);
       expect(Math.abs(draw[3] - 3) + draw[6]).toBeLessThan(44 / 32 / 2);
@@ -105,6 +112,26 @@ describe('Cryo signatures', () => {
     expect(kit.ring).toHaveBeenCalledTimes(1);
     fx.update(frame({ zones: [zone({ remainingMs: 3990 })] }));
     expect(kit.ring).toHaveBeenCalledTimes(2);
+  });
+
+  it('shatters Glacier into dozens of pooled tumbling shards and persistent full-radius frost', () => {
+    const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
+    fx.event(receipt({ ability: 'glacier', phase: 'burst', radius: 180 }), 64, 96);
+    expect(kit.debris).toHaveBeenCalledWith(2, 3, 180 / 32, 'cryo', 48);
+    expect(kit.scar).toHaveBeenCalledWith('frost', 2, 3, 180 / 32, 0x7fd6ff, 7);
+    fx.update(frame({}, .15));
+    expect(kit.front.mock.calls[0][5]).toBe(.5);
+  });
+
+  it('drives dense snow inside the real Whiteout radius and frosts only actual nearby blocker rims', () => {
+    const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
+    const f = frame({ zones: [zone()] }, 0);
+    f.game = { geometry: { blockers: [{ x: 300, y: 300, width: 40, height: 40 }, { x: 900, y: 900, width: 40, height: 40 }] } } as never;
+    fx.update(f);
+    const shards = kit.draw.mock.calls.filter(c => c[0] === 'shard');
+    expect(shards.length).toBe(96 + 24 + 4);
+    for (const draw of shards) expect(Math.hypot(draw[1] - 10, draw[3] - 10)).toBeLessThan(300 / 32);
+    expect(kit.ribbon.mock.calls.length).toBe(24 + 4);
   });
 
   it('keeps low-tier silhouettes while reducing geometry and omitting decorative ribbons', () => {
