@@ -131,7 +131,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     const left=r.x/UNIT,right=(r.x+r.width)/UNIT,near=r.y/UNIT,far=(r.y+r.height)/UNIT,w=right-left,d=far-near;
     if(Math.min(w,d)<.8)continue;
     const cx=(left+right)/2,cz=(near+far)/2;
-    const looseFittings=environment==='communications'||environment==='maintenance'||environment==='cargo'?0:Math.min(6,Math.ceil(w*d/9));
+    const looseFittings=environment==='communications'||environment==='maintenance'||environment==='cargo'||environment==='infested'?0:Math.min(6,Math.ceil(w*d/9));
     for(let n=0;n<looseFittings;n++){
       const margin=Math.min(.52,w*.35,d*.35),x=left+margin+random()*Math.max(0,w-2*margin),z=near+margin+random()*Math.max(0,d-2*margin);
       ray.set(point(x,20,z),down);const hit=ray.intersectObject(world,true).find(h=>h.point.y>.15&&(templateId!=='armory'||h.point.y<1.5));if(!hit)continue;
@@ -172,7 +172,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
         if(hit){highest=Math.max(highest,hit.point.y);if(!centerHit)centerHit=hit;}
       }
     }
-    if(centerHit&&(index<4||index===signatureIndex)){
+    if(environment!=='infested'&&centerHit&&(index<4||index===signatureIndex)){
       const top=centerHit.point.y+.018,sw=Math.min(w*.46,1.6),sd=Math.min(d*.22,.48);
       box(dark,cx,top+.025,cz,sw,.05,sd);
       for(let tick=0;tick<7;tick++)box(tick===0?signal:paint,cx-sw*.4+tick*sw*.12,top+.055,cz,sw*.055,.008,sd*(tick%3===0?.6:.3));

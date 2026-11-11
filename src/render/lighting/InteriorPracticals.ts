@@ -1,7 +1,7 @@
 import * as T from 'three';
 import type { ShipEnvironment } from '../ShipEnvironments';
 import { getEnvironmentMood } from './EnvironmentMoods';
-import {organicGeometry} from '../world/OrganicGrowth';
+import {organicGeometry,organicFissureGeometry} from '../world/OrganicGrowth';
 
 type Polygon = readonly Readonly<{ x: number; y: number }>[];
 type InteriorPlan = Readonly<{ obstacles: readonly Readonly<{ x: number; y: number; width: number; height: number }>[]; voids?: readonly Polygon[] }>;
@@ -93,22 +93,22 @@ export function addInteriorPracticals(world: T.Group, template: InteriorPlan, en
   if (!anchors.length) return;
   world.userData.interiorPracticals = true;
   const organic = environment === 'infested';
-  const geometry = organic ? organicGeometry().clone() : new T.BoxGeometry(1, 1, 1);
-  const material = new T.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: organic ? 1.3 : 1.5, roughness: .45, metalness: .15 });
+  const geometry = organic ? organicFissureGeometry().clone() : new T.BoxGeometry(1, 1, 1);
+  const material = new T.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: organic ? .48 : 1.5, roughness: .45, metalness: .15 });
   material.userData.actorMaterial = true; material.userData.motivatedEmitter = true;
   material.onBeforeCompile = shader => { shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n#ifdef USE_COLOR\n totalEmissiveRadiance*=vColor.rgb;\n#endif'); };
   material.customProgramCacheKey = () => 'interior-practical-emission-v1';
   const emitters = new T.InstancedMesh(geometry, material, anchors.length);
   const housingMaterial = new T.MeshStandardMaterial({ color: 0x28363b, roughness: .65, metalness: .6 }); housingMaterial.userData.actorMaterial = true;
   const housings = new T.InstancedMesh(organic?organicGeometry().clone():new T.BoxGeometry(1, 1, 1), housingMaterial, anchors.length);
-  if(organic){housingMaterial.color.setHex(0x776055);housingMaterial.metalness=.05;housingMaterial.roughness=.85;}
+  if(organic){housingMaterial.color.setHex(0x593746);housingMaterial.metalness=.05;housingMaterial.roughness=.85;}
   emitters.name = 'interior-practical-emitters'; housings.name = 'interior-practical-housings';
   const dummy = new T.Object3D(), color = new T.Color(), fixtures = world.userData.lightFixtures ??= [];
   for (let i = 0; i < anchors.length; i++) {
     const {point:anchor,tiny} = anchors[i];
     const tint = organic ? i % 3 === 1 ? 0xdc68ca : 0xa1ef72 : environment === 'communications' ? i % 2 ? 0x58e4bc : 0x69d9ef : environment === 'security' ? 0xe8f1ff : environment === 'containment' && i % 2 ? 0xe5eaff : getEnvironmentMood(environment).practical.color;
-    dummy.position.copy(anchor); dummy.position.y += .045; dummy.scale.set(organic?tiny?.05:.17:tiny?.12:.65,organic?tiny?.065:.14:.09,organic?tiny?.05:.2:tiny?.12:.42); dummy.updateMatrix(); housings.setMatrixAt(i, dummy.matrix);
-    dummy.position.y += organic ? tiny?.045:.12 : .09; dummy.scale.set(tiny?organic?.012:.09:organic?.025:environment==='communications'?.12:.5, organic?tiny?.025:.045:.08, tiny?organic?.045:.09:organic?.13:environment==='communications'?.1:.25); dummy.updateMatrix(); emitters.setMatrixAt(i, dummy.matrix); emitters.setColorAt(i, color.setHex(tint));
+    dummy.rotation.set(0,0,0);dummy.position.copy(anchor); dummy.position.y += .045; dummy.scale.set(organic?tiny?.05:.17:tiny?.12:.65,organic?tiny?.065:.14:.09,organic?tiny?.05:.2:tiny?.12:.42); dummy.updateMatrix(); housings.setMatrixAt(i, dummy.matrix);
+    dummy.position.y += organic ? tiny?.045:.12 : .09;if(organic)dummy.rotation.z=Math.PI/2;dummy.scale.set(tiny?organic?.05:.09:organic?.1:environment==='communications'?.12:.5, organic?tiny?.06:.19:.08, tiny?organic?.05:.09:organic?.17:environment==='communications'?.1:.25); dummy.updateMatrix(); emitters.setMatrixAt(i, dummy.matrix); emitters.setColorAt(i, color.setHex(tint));
     fixtures.push({ x: dummy.position.x, y: dummy.position.y, z: dummy.position.z, color: tint, nativeColor: true });
   }
   for (const mesh of [housings, emitters]) { mesh.frustumCulled = false; mesh.instanceMatrix.needsUpdate = true; mesh.geometry.addEventListener('dispose', () => mesh.dispose()); }

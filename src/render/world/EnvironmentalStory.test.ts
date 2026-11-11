@@ -1,6 +1,6 @@
 import {describe,expect,it,vi} from 'vitest';
 import * as T from 'three';
-import {addBroodCell} from './OrganicGrowth';
+import {addBroodCell,GROWTH_MAT,organicGeometry} from './OrganicGrowth';
 import {addEnvironmentalStory,setEnvironmentalStoryOptions} from './EnvironmentalStory';
 import {environmentObstacle} from '../ShipEnvironments';
 import {addRoomPracticals} from '../lighting/RoomPracticals';
@@ -28,7 +28,9 @@ describe('X2 environmental story rendering',()=>{
     const template=ROOM_TEMPLATES['swarm-junction'],before=JSON.stringify(template),world=new T.Group();
     const root=addEnvironmentalStory(world,template,'infested',template.id,1729);
     expect(JSON.stringify(template)).toBe(before);expect(root.children.length).toBeGreaterThan(0);expect(root.children.length).toBeLessThanOrEqual(2);
-    root.traverse(object=>{if(object instanceof T.Mesh){const p=object.geometry.getAttribute('position');for(let i=0;i<p.count;i++)expect(p.getY(i)).toBeLessThan(.03);}});
+    const heights=new Set<number>();expect(root.userData.sinuousRoots).toBeGreaterThan(2);
+    root.traverse(object=>{if(object instanceof T.Mesh){const p=object.geometry.getAttribute('position');for(let i=0;i<p.count;i++){expect(p.getY(i)).toBeLessThanOrEqual(.025);expect(p.getY(i)).toBeGreaterThanOrEqual(0);heights.add(Math.round(p.getY(i)*100000));}}});
+    expect(heights.size).toBeGreaterThan(8); // Tapered elliptical sections, not two flat plank faces.
     disposeModel(root);
   });
   it('keeps the shared primitive inventory bounded across new room seeds',()=>{
@@ -43,7 +45,8 @@ describe('X2 environmental story rendering',()=>{
     addInteriorPracticals(world,{obstacles:[{x:16,y:16,width:96,height:96}]},'infested');
     const housing=world.getObjectByName('interior-practical-housings') as T.InstancedMesh,emitter=world.getObjectByName('interior-practical-emitters') as T.InstancedMesh,matrix=new T.Matrix4();
     housing.getMatrixAt(0,matrix);const size=new T.Vector3().setFromMatrixScale(matrix);expect(size.x).toBeLessThan(.2);expect(size.y/size.x).toBeGreaterThan(.5);expect(size.z).toBeLessThan(.25);
-    emitter.getMatrixAt(0,matrix);const fissure=new T.Vector3().setFromMatrixScale(matrix);expect(fissure.z/fissure.x).toBeGreaterThan(4);expect(fissure.x).toBeLessThan(.04);
+    emitter.getMatrixAt(0,matrix);const fissure=emitter.geometry.clone().applyMatrix4(matrix),cut=new T.Box3().setFromBufferAttribute(fissure.getAttribute('position') as T.BufferAttribute).getSize(new T.Vector3());
+    expect(cut.y).toBeLessThan(.01);expect(Math.max(cut.x,cut.z)).toBeGreaterThan(.12);expect(Math.max(cut.x,cut.z)/cut.y).toBeGreaterThan(20);fissure.dispose();
     expect(world.children.filter(child=>child instanceof T.InstancedMesh)).toHaveLength(2);disposeModel(world);(platform.material as T.Material).dispose();
   });
   it('uses irregular wall nodules instead of a repeated fixture row without increasing batches',()=>{
@@ -52,7 +55,14 @@ describe('X2 environmental story rendering',()=>{
     const mesh=world.getObjectByName('living-bioluminescent-nodules') as T.InstancedMesh,matrix=new T.Matrix4(),ys=new Set<number>();
     for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,matrix);ys.add(Math.round(matrix.elements[13]*100));}
     expect(ys.size).toBeGreaterThan(mesh.count/2);expect((mesh.material as T.MeshStandardMaterial).emissiveIntensity).toBeLessThan(1);
+    const fan=world.getObjectByName('wall-practical-housings') as T.InstancedMesh;fan.geometry.computeBoundingBox();const fanSize=fan.geometry.boundingBox!.getSize(new T.Vector3());
+    expect(fanSize.x/Math.max(fanSize.y,fanSize.z)).toBeLessThan(.2); // Attached membrane fan has no central spherical pad.
     disposeModel(world);
+  });
+  it('bounds slumped topology to three reusable bins and reserves green for internal fissures',()=>{
+    const bins=[0,1,2].map(organicGeometry);expect(new Set(bins).size).toBe(3);expect(organicGeometry(5)).toBe(bins[2]);
+    for(const material of [GROWTH_MAT.tissue,GROWTH_MAT.carapace]){expect(material.color.g).toBeLessThan(material.color.r);expect(material.color.g).toBeLessThan(material.color.b);expect(material.emissiveIntensity).toBe(1);expect(material.emissive.getHex()).toBe(0);}
+    expect(GROWTH_MAT.fissure.emissive.g).toBeGreaterThan(GROWTH_MAT.fissure.emissive.r);
   });
   it('anchors drip particles at visible leaks and shares the prepared motion clock',()=>{
     const template=ROOM_TEMPLATES['coolant-plant'],world=new T.Group(),dressing=new T.Group();dressing.name='g2-world-dressing';

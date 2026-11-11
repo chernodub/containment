@@ -147,7 +147,10 @@ it('stages the Queen reactor core within the fixed practical budget and preserve
   expect(rig.key.position.y).toBeGreaterThan(7);expect(rig.key.position.z).toBeGreaterThan(rig.staging!.coreZ);expect(rig.key.target.position.y).toBeGreaterThan(0);
   rig.setQuality('low'); expect(rig.fixtures.filter(light => light.visible)).toHaveLength(2);
   rig.loadRoom(room, 45, 33.75, 'infested');
-  expect(rig.staging).toBeNull(); expect(rig.key.color.g).toBeGreaterThan(rig.key.color.r);
+  expect(rig.staging).toBeNull();
+  expect(Math.max(...rig.key.color.toArray())-Math.min(...rig.key.color.toArray())).toBeLessThan(.15);
+  const innerGlow=new T.Color(rig.mood.practical.color);expect(innerGlow.g).toBeGreaterThan(innerGlow.r);
+  expect(rig.mood.practical.distance).toBeLessThan(3);
   expect(rig.fill.color.b).toBeGreaterThan(rig.fill.color.r);
   expect(rig.rim.color.b).toBeGreaterThan(rig.rim.color.g);
   expect(rig.fixtures.every(light => !light.userData.reactorCore)).toBe(true);

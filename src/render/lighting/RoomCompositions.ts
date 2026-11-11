@@ -18,7 +18,7 @@ export const ROOM_COMPOSITIONS:Readonly<Record<string,RoomComposition>>=Object.f
   'safety-interlock-station':composition('Amber evidence preserved on the service recorder',[-16,5,10]),
   'coolant-plant':composition('Wet teal steel beneath warm copper coolant loops',[-15,9,11],1,1.03,1.4),
   'service-shaft-landing':composition('A fading green bridge above the disconnected ship',[-16,9,10],1.45,1.35,1.5),
-  'infested-workshop':composition('Human machinery reclaimed by living tissue',[-16,8,10],1,1,1.5),
+  'infested-workshop':composition('Human machinery reclaimed by living tissue',[-16,8,10],1,1,.9),
   'swarm-junction':composition('Brood eggs glowing against magenta vascular growth',[-14,9,10],.82,.85,.82),
   'shielding-gate':composition('Clinical violet barriers before the core',[-15,11,10],1.05,1.02,4.5),
   'containment-annulus':composition('An ordered violet ring around the forbidden center',[-16,11,10]),
