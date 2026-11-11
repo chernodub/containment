@@ -305,7 +305,19 @@ export async function stageKiting(attempt=0){
   for(let y=bounds.y+70;y<bounds.y+bounds.height-70;y+=35)for(let x=bounds.x+70;x<bounds.x+bounds.width-70;x+=35)collect({x,y});
   chooseLane();
  }
- if(best.length<18&&attempt<23)return stageKiting(attempt+1);
+ const initialVisible=best.length;
+ // The closer camera legitimately exposes only part of an authored room. Keep
+ // the burst's twelve-visible guarantee and eighteen legal world threats;
+ // additional offscreen hostiles also exercise the bearing/radar integration.
+ if(best.length>=12&&best.length<18&&shotAngle!==null){
+  const fx=Math.cos(shotAngle),fy=Math.sin(shotAngle);
+  for(let y=bounds.y+70;y<bounds.y+bounds.height-70&&best.length<26;y+=35)for(let x=bounds.x+70;x<bounds.x+bounds.width-70&&best.length<26;x+=35){
+   const dx=x-origin.x,dy=y-origin.y,distance=Math.hypot(dx,dy),along=dx*fx+dy*fy,across=Math.abs(dx*fy-dy*fx);
+   if(distance<135||distance>650||along>0&&along<320&&across<75||d.renderer.visible(x,y)||!d.canStand(x,y,28)||!d.clearShot(x,y)||best.some(p=>Math.hypot(p.x-x,p.y-y)<65))continue;
+   best.push({x,y});
+  }
+ }
+ if((best.length<18||initialVisible<12)&&attempt<23)return stageKiting(attempt+1);
  if(shotAngle===null)throw Error('No clear kiting firing lane');
  const placed=[];
  for(const p of best){
@@ -319,7 +331,7 @@ export async function stageKiting(attempt=0){
  d.setInput({x:0,y:0,fire:true,angle:shotAngle,autoAim:false});d.step(1000/60);
  if(!(d.renderer.muzzle.intensity>0&&g.bullets.some(bullet=>bullet.kind==='player')))throw Error(`No travelling rifle round in verified kiting lane: ${JSON.stringify({player:origin,shotAngle,weapon:g.combat.snapshot.weaponId,magazine:g.combat.snapshot.magazine,shots:g.stats.shotsFired,bullets:g.bullets.length,state:g.status})}`);
  d.uiFixture({preferences:{radar:true,combatText:true}});
- return {staged:placed.length,laneAttempt:attempt,player:origin,dashStart:start,heading,shotAngle,reservedFiringLane:{length:320,halfWidth:75},liveRig:'cryo',script:'Frost Trail into open center; Nova + rifle; Glacier at frame 2; Whiteout at frame 3',invulnerable:true};
+ return {staged:placed.length,initialVisible,offscreenStaged:placed.length-initialVisible,laneAttempt:attempt,player:origin,dashStart:start,heading,shotAngle,reservedFiringLane:{length:320,halfWidth:75},liveRig:'cryo',script:'Frost Trail into open center; Nova + rifle; Glacier at frame 2; Whiteout at frame 3',invulnerable:true};
 }
 
 /** Deterministic motion and public ability actions are keyed to burst frame index. */

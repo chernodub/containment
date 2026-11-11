@@ -163,3 +163,7 @@ I3 keeps the canonical kiting thresholds unchanged with the native closer camera
 the real dash, chooses a reserved firing lane from actual visible legal floor, and tries bounded alternate legal
 starting lanes if the footprint cannot fit eighteen spread targets. Retries begin a fresh real room through the validated route helper;
 no zoom, cooldown, target-health or collision override is applied. `staging.laneAttempt` records the selected attempt.
+
+For narrow native views (notably the Atrium), staging keeps at least twelve visible targets and adds legal offscreen
+threats to preserve at least eighteen total enemies. `initialVisible` and `offscreenStaged` make that split explicit.
+The original twelve-visible assertion still runs on every frame, with actual movement, travelling rounds and abilities.
