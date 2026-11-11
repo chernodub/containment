@@ -17,6 +17,7 @@ import type { RigId } from '../../../src/game/abilities/contract';
 import {observeAbilityAims} from './ability-aim';
 import { BOT_POLICY_VERSION, chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, distance } from './policy.mjs';
 import {botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
+import {applyNativeImmediateKey, recordNativeObservedEvent, nativeWarningHazards, nativeDiagnosticBurst} from './sim-native-emulation';
 const TICK = 1000 / 60;
 const WIDTH = 1920, HEIGHT = 1080, VIEW = 13;
 const WEAPONS = ['pistol', 'rifle', 'shotgun', 'plasma', 'rocket'] as const;
@@ -134,9 +135,8 @@ export function runSimulation(options: SimOptions) {
     const systemPresentation = createSystemPresentation(kit);
     const context = () => ({ dashing: game.abilities.dashing, critical: game.combat.snapshot.health <= 25, remaining: game.encounterRemaining });
     const onEffect = (e: GameEffect) => {
-        events.push({ ...e, at: game.elapsed });
-        if (events.length > 300)
-            events.shift();
+        if(e.type==='sync-corpse') return;
+        recordNativeObservedEvent(events, e, game.elapsed);
         if (e.type === 'ability' && e.ability) {
             presentations[e.ability.rig].event(e.ability, e.x, e.y);
             systemPresentation.event(e.ability, e.x, e.y);
@@ -170,10 +170,10 @@ export function runSimulation(options: SimOptions) {
         const hurt = game.hurt.bind(game);
         game.hurt = (n, origin) => hurt(n * .15, origin);
     }
-    const report = { mode: 'sim-policy-v7', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, assisted: !!options.assisted, legacy: !!options.legacy,
+    const report = { mode: 'sim-policy-v8', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, assisted: !!options.assisted, legacy: !!options.legacy,
         policy: 'Shared policy.mjs; 250ms decisions, 60Hz GameFeel, real DepthGame actions; analytic camera observer.',
         limitations: ['No GPU, audio or DOM. Uses shared camera follow/framing/ability-event hooks, exact actor metrics and held-screen ray/torso selection; resource preparation and RAF synchronization are omitted. Matched browser validation remains required before using campaign outcomes as native-policy predictions.'],
-        rooms: [] as any[], outcome: 'running', deathRoom: null as number | null, stats: null as any, final: null as any, wallSeconds: 0, trace: options.trace ? [] as any[] : undefined };
+        rooms: [] as any[], outcome: 'running', finalReason: null as string | null, deathRoom: null as number | null, stats: null as any, final: null as any, wallSeconds: 0, trace: options.trace ? [] as any[] : undefined };
     let room: any, previous = { x: 0, y: 0 }, input: GameInput = { x: 0, y: 0, fire: false, angle: null, autoAim: false }, decisions = 0, hardest = -1;
     let screen: {
         x: number;
@@ -206,7 +206,7 @@ export function runSimulation(options: SimOptions) {
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});
             }), abilities: game.abilities.snapshot, hazards: [...(telegraph ? [{ x: telegraph.targetX, y: telegraph.targetY, radius: telegraph.radius }] : []), ...game.pools,
                 ...game.bullets.filter(b => b.kind === 'hazard').map(b => ({ x: b.x, y: b.y, radius: 35 })),
-                ...events.filter(e => e.type === 'enemy-warning' && game.elapsed - e.at < (e.durationMs ?? 800) / 1000).map(e => ({ x: e.targetX ?? e.x, y: e.targetY ?? e.y, radius: e.radius ?? 50 }))] };
+                ...nativeWarningHazards(events, game.elapsed)] };
     }
     function advance(ms: number) {
         for (let remaining = ms; remaining > 1e-7;) {
@@ -271,7 +271,6 @@ export function runSimulation(options: SimOptions) {
                     game.route(choice.id);
                 }
                 feel.reset();
-                events.length = 0;
                 for (const presentation of Object.values(presentations))
                     presentation.clear();
                 systemPresentation.clear();
@@ -296,63 +295,49 @@ export function runSimulation(options: SimOptions) {
         previous = { x: move.dx, y: move.dy };
         const ammo = game.combat.getRunResources().ammo, near = Math.min(Infinity, ...s.enemies.map(e => distance(e, s.player)));
         const weapon = near < 180 && ammo.shotgun.magazine + ammo.shotgun.reserve > 0 ? 'shotgun' : ammo.rifle.magazine + ammo.rifle.reserve > 0 ? 'rifle' : ammo.plasma.magazine + ammo.plasma.reserve > 0 ? 'plasma' : 'pistol';
-        game.switchWeapon(weapon);
+        if (s.combat.weapon !== weapon) game.switchWeapon(weapon);
         if (target) {
             const projected = camera.project(target.x, target.y);
             screen = { x: Math.max(4, Math.min(1916, projected.x)), y: Math.max(4, Math.min(1000, projected.y)) };
         }
-        const point = screen ? camera.pointer(screen, game, options.metrics ?? {}) : null;
-        input = { x: move.dx, y: move.dy / .81, fire: !!target, angle: point ? Math.atan2(point.y - game.player.y, point.x - game.player.x) : null, aimPoint: point, autoAim: false };
+        const weaponScreen: {x:number;y:number}|null = screen;
+        const readInput = (): GameInput => {
+            const point = screen ? camera.pointer(screen, game, options.metrics ?? {}) : null;
+            return {x: move.dx, y: move.dy / .81, fire: !!target, angle: point ? Math.atan2(point.y-game.player.y,point.x-game.player.x) : null, aimPoint: point, autoAim: false};
+        };
+        input = readInput();
         const actions = chooseActions(s);
         recentDecisions.push({elapsed: game.elapsed, nodeId: game.node.id, player: playerBefore,
             target: target ? {id: target.id, type: target.type, x: target.x, y: target.y, health: target.health, clear: target.clear, visible: target.visible} : null,
             movement: {...move}, input: {...input}, actions: [...actions], abilityAims: s.abilityAims, weapon,
             remaining: game.encounterRemaining, visibleClearTargets: s.enemies.filter(e => e.visible && e.clear && e.vulnerable !== false).length});
         if (recentDecisions.length > 20) recentDecisions.shift();
-        game.setAimPoint(input.aimPoint ?? null);
-        if (input.angle !== null)
-            game.player.angle = input.angle;
+        // Mouse moves do not immediately change game facing. Only ability keydowns call read().
         for (const key of actions) {
-            const slot = ({ Shift: 'dash', q: 'tactical', f: 'power', v: 'overdrive' } as const)[key];
-            if (slot) {
-                const aim = s.abilityAims[slot];
-                if (aim) {
-                    const projected = camera.project(aim.x, aim.y, 0);
-                    const abilityPoint = camera.pointer({x: Math.max(4,Math.min(1916,projected.x)),y: Math.max(4,Math.min(1000,projected.y))}, game, options.metrics ?? {});
-                    if (!abilityPoint) continue;
-                    game.player.angle = Math.atan2(abilityPoint.y-game.player.y, abilityPoint.x-game.player.x);
-                    game.setAimPoint(abilityPoint);
-                    game.abilities.setIntent(input.x,input.y,abilityPoint);
-                } else game.abilities.setIntent(input.x, input.y, input.aimPoint ?? null);
-                game.useAbility(slot);
-                game.setAimPoint(input.aimPoint ?? null);
-                if(input.angle!==null)game.player.angle=input.angle;
+            const slot = ({q: 'tactical', f: 'power', v: 'overdrive'} as const)[key];
+            const aim = slot ? s.abilityAims[slot] : null;
+            if (aim) {
+                const projected = camera.project(aim.x, aim.y, 0);
+                screen = {x: Math.max(4,Math.min(1916,projected.x)), y: Math.max(4,Math.min(1000,projected.y))};
             }
-            else if (key === 'e')
-                game.heal();
-            else if (key === 'g')
-                game.grenade();
-            else if (key === 'r')
-                game.reload();
+            applyNativeImmediateKey(game, key, readInput);
+            if (aim && target) screen = weaponScreen;
         }
+        if (target) screen = weaponScreen;
+        input = readInput();
         report.trace?.push({ elapsed: game.elapsed, depth: game.node.depth, input: { ...input }, keys: actions, weapon, stats: statsBefore, player: playerBefore, enemies: s.enemies.map(e => ({ id: e.id, type: e.type, x: e.x, y: e.y, health: e.health, clear: e.clear, visible: e.visible })), screen: { ...screen } });
         advance(250);
-        const pressure = game.enemies.snapshot.enemies.filter(e => e.health > 0).length * 5 + (100 - game.combat.snapshot.health) * 2;
-        if (pressure > hardest + 40 && game.status === 'playing') {
-            hardest = pressure;
-            for (let frame = 0; frame < 3 && game.status === 'playing'; frame++)
-                advance(1000 / 15);
-        }
         const progressStats = game.stats;
         const signature = `${progressStats.kills.total}:${game.encounterRemaining}:${Math.round(Object.values(progressStats.damageDealt).reduce((a, b) => a + b, 0))}`;
         if (signature !== progressSignature) {progressSignature = signature; lastProgressElapsed = game.elapsed;}
+        const diagnostic = nativeDiagnosticBurst(game,lastProgressElapsed,room.startedElapsed,options.maxRoomSeconds ?? 240,hardest,advance);
+        hardest = diagnostic.hardest;
+        if (diagnostic.reason) {
+            report.finalReason = diagnostic.reason;
+            finish('stalled'); report.outcome = 'stalled'; break;
+        }
         if (game.status !== 'playing')
             finish(game.status === 'dead' ? 'dead' : game.status === 'complete' ? 'complete' : 'clear');
-        else if (game.elapsed - room.startedElapsed > (options.maxRoomSeconds ?? 240)) {
-            finish('stalled');
-            report.outcome = 'stalled';
-            break;
-        }
     }
     if (report.outcome === 'running')
         report.outcome = 'decision-limit';
@@ -360,7 +345,7 @@ export function runSimulation(options: SimOptions) {
     const finalState = snapshot();
     report.final = {...finalState, node: {...game.node}, status: game.status, phase: game.expedition.run.phase,
         elapsed: game.elapsed, remaining: game.encounterRemaining, stats: game.stats, resources: game.combat.getRunResources(),
-        reason: report.outcome === 'stalled' ? 'max-room-seconds' : report.outcome,
+        reason: report.finalReason ?? report.outcome,
         noCombatProgressSeconds: game.elapsed - lastProgressElapsed,
         noCombatProgressOver45s: game.elapsed - lastProgressElapsed > 45,
         recentDecisions};
