@@ -22,7 +22,7 @@ const storyRooms=['awakening-bay','passenger-vault','residential-gallery','commu
 await mkdir(out,{recursive:true});
 if(!args.includes('--no-build'))execFileSync('npm',['run','build'],{stdio:'inherit'});
 const host=()=>({at:new Date().toISOString(),load:loadavg(),cores:cpus().length});
-const report={baseline,sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,host:host(),scan:[],runs:[],errors:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
+const report={baseline,sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
 let browser;const timers=new Set();
 const server=createServer(async(req,res)=>{
  const file=resolve(dist,decodeURIComponent(new URL(req.url,'http://localhost').pathname).replace(/^\/containment\//,'')||'index.html');
@@ -189,7 +189,7 @@ try{
   console.log(`${name}: frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
   assert.equal(data.programs,0,'Mid-combat shader compile');
   assert(!data.glError&&!data.contextLost,'WebGL error or lost context during combat');
-  if(!baseline)assert(summary.draws.max<=350,'Draw-call budget exceeded: '+summary.draws.max);
+  if(!baseline&&!budget.draws)report.budgetFailures.push({scenario:name,metric:'draws',observed:summary.draws.max,limit:350});
   assert(summary.lights.max<=(tier==='high'?9:2),'Shared light budget exceeded');
   assert(summary.instances.max<=4096,'Fixed ability instance inventory exceeded');
   assert(Object.values(data.uses).every(n=>n>0),'Full kit lacks accepted native slot receipts');
@@ -201,4 +201,5 @@ try{
  console.table(report.runs.map(r=>({scenario:r.name,load:r.before.load[0].toFixed(1),frame:triple(r.summary.frame),update:triple(r.summary.update),render:triple(r.summary.render),hud:triple(r.summary.hud),audioSync:triple(r.summary.audio),cpu:triple(r.summary.cpu),gpu:triple(r.summary.gpu)})));
  console.table(report.runs.map(r=>({scenario:r.name,draws:r.summary.draws.max,triangles:r.summary.triangles.max,lights:r.summary.lights.max,instances:r.summary.instances.max,programs:r.programInventory,compiles:r.programs,allocationBytesPerSecond:r.profiling?.sampledAllocationBytesPerSecond??'not sampled',gcMaxMs:r.profiling?Math.max(0,...r.profiling.gcPausesMs):'not traced'})));
  assert.equal(report.errors.length,0,report.errors.join('\n'));
+ if(report.budgetFailures.length){console.error('Final resource budget misses:',JSON.stringify(report.budgetFailures));process.exitCode=2;}
 }catch(error){report.errors.push({type:'runner',message:String(error)});throw error;}finally{for(const timer of timers)clearInterval(timer);await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));await browser?.close();await new Promise(ok=>server.close(ok));}
