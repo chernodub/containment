@@ -243,6 +243,24 @@ The title Credits control is `#menu-credits`; `#credits` remains the stable HUD 
 
 ## I5 native browser fast mode
 
+Render-free seeded sweeps use the installed game and shared player policy:
+
+```sh
+npm run playtest:sim -- --label=my-cohort --workers=2
+npm run playtest:sim -- --label=my-baseline --game-revision=<commit> --workers=2
+node scripts/nextgen/playtest/balance-summary.mjs artifacts/nextgen/playtest/my-cohort --out=artifacts/nextgen/my-summary.json
+node scripts/nextgen/playtest/native-batch.mjs --label=my-native --seeds=1729,2718 --workers=2 --fast --dist-dir=artifacts/nextgen/my-dist
+```
+
+The simulation defaults to ten fixed seeds for each of the four rigs. It records
+immutable bundles, policy/source hashes, deaths, censors and per-room results;
+`--seeds` and `--rigs` select an explicit cohort. It is approximate native-policy
+evidence, so validate the selected numbers in browser campaigns. See
+[`I5-SIM.md`](../../docs/nextgen/I5-SIM.md) for calibration and limitations.
+Native batch workers are limited to one or two; do not overlap browser gates.
+Batch exit zero accepts natural deaths: use each report's `outcome`, not its
+process status, when calculating completion.
+
 `npm run playtest -- --rig=arc --seed=1729 --fast --label=i5-fast-arc-1729`
 keeps native keyboard/mouse actions, the presentation clock, 60 Hz simulation,
 and the real scene/camera/actor update on every tick. It omits only intermediate
