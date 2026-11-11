@@ -62,7 +62,7 @@ export function summarizeRun(report, reportPath = null) {
       cause: report.deathCause ?? report.final?.deathCause ?? null,
       nearbySourcesInferred: lastRoom?.damageSourcesInferred ?? {}} : null;
   const fixedStepSnapshots = rooms.filter(room => room.performance?.debugFixedStep).map(room => ({
-    room: room.id, depth: room.depth + 1, result: room.result,
+    room: room.id, depth: room.depth + 1, result: room.result, scope:room.frameScope??'Page-lifetime diagnostic window (pilot)',
     ...room.performance.debugFixedStep,
   }));
   const finalFixedStep = report.final?.performance?.debugFixedStep;
@@ -75,7 +75,7 @@ export function summarizeRun(report, reportPath = null) {
     roomsCleared: Math.max(completedRooms.length, report.final?.run?.completedNodeIds?.length ?? 0),
     medianClearSeconds: median(completedRooms.map(room => room.seconds)),
     clearSeconds: completedRooms.map(room => room.seconds).filter(finite),
-    deathRoom, wallSeconds: report.wallSeconds ?? null,
+    deathRoom, continuation:report.continuation??null, wallSeconds: report.totalWallSeconds??report.wallSeconds ?? null,
     damageTaken: stats?.damageTaken ?? sum(rooms.map(room => room.damageTaken)),
     damageTakenSourcesInferred: sumRecords(rooms.map(room => room.damageSourcesInferred)),
     damageDealt: stats?.damageDealt ?? sumRecords(rooms.map(room => room.damageDealt)),
@@ -87,7 +87,7 @@ export function summarizeRun(report, reportPath = null) {
     fixedStep: {
       latest: finalFixedStep ?? fixedStepSnapshots.at(-1) ?? null,
       snapshots: fixedStepSnapshots,
-      scope: (report.checkpoints?.length ?? 0) ? 'Cumulative within each page lifetime; checkpoint page recreation resets samples.'
+      scope: rooms.some(room=>room.timingReset) ? 'Reset at room entry; percentiles cover latest 2048 ticks within that room, mean/max cover all ticks since its reset.' : (report.checkpoints?.length ?? 0) ? 'Cumulative within each page lifetime; checkpoint page recreation resets samples.'
         : 'Cumulative within this page lifetime; percentile window is limited to retained samples.',
     },
     memory: memoryTrend(rooms), gpu: report.gpu, clock: report.clock,

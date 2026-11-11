@@ -1,9 +1,11 @@
 import {describe, it, expect} from 'vitest';
-import {chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, quantiles} from './policy.mjs';
+import {chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, quantiles, pointerFirePlan, assessLoading} from './policy.mjs';
 describe('organic playtest policy', () => {
   it('prefers rig enablers and augments over unrelated damage', () => {
     expect(chooseBoon(['incendiary', 'cryogenic'], 'cryo')).toBe('cryogenic');
     expect(chooseBoon(['cryogenic', 'twin-glacier'], 'cryo')).toBe('twin-glacier');
+    expect(chooseBoon(['incendiary', 'tactical-salvage'], 'arc')).toBe('tactical-salvage');
+    expect(chooseBoon(['incendiary', 'slide-loader'], 'arc')).toBe('slide-loader');
   });
   it('uses the documented safe/heal route rule deterministically', () => {
     expect(chooseRoute([{id:'a',kind:'elite'},{id:'b',kind:'medical'}], 20).id).toBe('b');
@@ -28,4 +30,15 @@ describe('organic playtest policy', () => {
     expect(quantiles([9,1,3,2,4])).toEqual({samples:5,p50:3,p95:9,max:9});
     expect(quantiles([]).max).toBeNull();
   });
+});
+
+it('captures native fire on canvas before aiming over opaque HUD panels', () => {
+  expect(pointerFirePlan({x:1700,y:150},{left:600,right:700,top:500,bottom:650},false)).toEqual([{type:'move',x:650,y:575},{type:'down'},{type:'move',x:1700,y:150}]);
+  expect(pointerFirePlan({x:1700,y:150},{left:600,right:700,top:500,bottom:650},true)).toEqual([{type:'move',x:1700,y:150}]);
+});
+it('records a >5s loading hold once while allowing the earned run to continue', () => {
+  expect(assessLoading(4999)).toEqual({record:false,timeout:false});
+  expect(assessLoading(6000)).toEqual({record:true,timeout:false});
+  expect(assessLoading(6000,true)).toEqual({record:false,timeout:false});
+  expect(assessLoading(120001,true)).toEqual({record:false,timeout:true});
 });

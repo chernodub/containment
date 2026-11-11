@@ -79,7 +79,7 @@ export function detectSnapshotDefects(s, previous) {
     if (healthMismatch(s) && healthMismatch(previous)) add('hud-health-desync', 'ui', 'medium', {shown: s.hud.health, actual: s.combat.health});
     if (ammoMismatch(s) && ammoMismatch(previous)) add('hud-ammo-desync', 'ui', 'medium', {shown: s.hud.magazine ?? s.hud.ammo, actual: s.combat.magazine});
   }
-  if (s.status === 'playing') {
+  if (settled) {
     for (const panel of s.hud?.opaqueBounds ?? []) {
       const area = overlapArea(s.hud.marine, panel.bounds);
       if (area > 0) add('hud-covers-marine', 'ui', 'medium', {panel: panel.id, overlapPixels: area, marine: s.hud.marine, bounds: panel.bounds});

@@ -106,6 +106,8 @@ it('reports fixed-step update plus render percentiles separately from realtime f
   expect(d.stepPerformance.samples).toBe(0);
   d.step(50);
   expect(d.stepPerformance).toEqual({samples: 3, retained: 3, updateRenderMs: {average: 2, p50: 2, p95: 3, max: 3}});
+  d.resetStepPerformance();
+  expect(d.stepPerformance).toEqual({samples: 0, retained: 0, updateRenderMs: {average: 0, p50: 0, p95: 0, max: 0}});
 });
 
 it('keeps bounded real effect receipts with damage attribution and denial details', () => {

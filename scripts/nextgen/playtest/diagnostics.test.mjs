@@ -68,8 +68,11 @@ describe('playtest snapshot diagnostics', () => {
   it('checks only explicitly collected opaque panels against the projected marine', () => {
     const s = snapshot(); s.hud.marine = {left: 100, top: 100, right: 140, bottom: 160};
     s.hud.opaqueBounds = [{id: 'action-bar', bounds: {left: 120, top: 150, right: 300, bottom: 200}}];
-    const defects = detectSnapshotDefects(s);
+    const defects = detectSnapshotDefects(s, structuredClone(s));
     expect(defects[0]).toMatchObject({kind: 'hud-covers-marine', panel: 'action-bar', overlapPixels: 200});
+    s.loading=true;expect(kinds(s,structuredClone(s))).toEqual([]);
+    const recovering=structuredClone(s);s.loading=false;expect(kinds(s,recovering)).toEqual([]);
+    expect(kinds(s,structuredClone(s))).toEqual(['hud-covers-marine']);
   });
 });
 

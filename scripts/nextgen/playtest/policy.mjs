@@ -14,7 +14,7 @@ export function chooseBoon(ids, rig, owned = []) {
     if (path.slice(-2).includes(id)) return 130;
     if (id === path[0] && !owned.includes(path[0])) return 120;
     if (path.includes(id)) return 100;
-    if (['reserve-thruster', 'drive-dynamo', 'feedback-loop', 'quick-circuit'].includes(id)) return 90;
+    if (['reserve-thruster', 'drive-dynamo', 'tactical-salvage', 'slide-loader'].includes(id)) return 90;
     if (/plating|armor|vital|scavenger|vamp|recovery/.test(id)) return 60;
     return 10;
   };
@@ -72,4 +72,19 @@ export function quantiles(values) {
   const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
   const at = q => sorted[Math.max(0, Math.ceil(sorted.length * q) - 1)] ?? null;
   return {samples: sorted.length, p50: at(.5), p95: at(.95), max: at(1)};
+}
+
+/** Begin a mouse hold over the marine's unobstructed canvas, then aim anywhere. */
+export function pointerFirePlan(target, marine, alreadyHeld) {
+  const aim = {type:'move',x:target.x,y:target.y};
+  if (alreadyHeld) return [aim];
+  return [
+    {type:'move',x:(marine.left+marine.right)/2,y:(marine.top+marine.bottom)/2},
+    {type:'down'}, aim,
+  ];
+}
+
+/** A long preparation is evidence; only the separately bounded timeout aborts play. */
+export function assessLoading(elapsedMs, recorded = false) {
+  return {record:elapsedMs>5000&&!recorded,timeout:elapsedMs>120000};
 }

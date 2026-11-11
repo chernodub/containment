@@ -15,7 +15,7 @@
     "verify": "npm test && npm run test:room-evidence && npm run build && npm run test:smoke && npm run test:authored-smoke:all",
     "test:authored-smoke:all": "npm run test:authored-smoke -- --viewport=desktop --out=artifacts/authored-smoke/desktop",
     "playtest": "node scripts/nextgen/playtest/runner.mjs",
-    "playtest:smoke": "node scripts/nextgen/playtest/runner.mjs --rig=arc --seed=1729 --rooms=3 --label=smoke"
+    "playtest:smoke": "node scripts/nextgen/playtest/runner.mjs --rig=arc --seed=1729 --rooms=3 --label=smoke --max-wall-seconds=235"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.20.0",
