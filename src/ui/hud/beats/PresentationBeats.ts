@@ -27,7 +27,6 @@ export class PresentationBeats {
   private low = false;
   private enabled = true;
   private roomKills = 0;
-  private roomSeconds = 0;
   private kind: BeatKind | '' = '';
   private media = matchMedia('(prefers-reduced-motion: reduce)');
   private skip = (event: KeyboardEvent) => {
@@ -53,7 +52,7 @@ export class PresentationBeats {
     this.hold = ['room-clear', 'death', 'victory', 'boss-defeated'].includes(kind) ? this.media.matches ? .15 : .55 : 0;
     const room = ROOM_TEMPLATES[game.node.templateId];
     const data: Record<BeatKind, [string, string, string, string]> = {
-      'room-enter': ['rooms', `SECTOR ${String(game.node.depth + 1).padStart(2, '0')} / ${runLength(game.expedition.run.version)} · ${game.storyRoom?.environment.toUpperCase() ?? 'COLONY VESSEL'}`, room.name.toUpperCase(), game.storyRoom?.objective ?? 'Clear the sector. Reach the next deck.'],
+      'room-enter': [game.node.kind, `SECTOR ${String(game.node.depth + 1).padStart(2, '0')} / ${runLength(game.expedition.run.version)} · ${game.storyRoom?.environment.toUpperCase() ?? 'COLONY VESSEL'}`, room.name.toUpperCase(), game.storyRoom?.objective ?? 'Clear the sector. Reach the next deck.'],
       'room-clear': ['check', 'THREAT SIGNAL / ZERO', 'SECTOR CLEAR', `${Math.max(0, game.stats.kills.total - this.roomKills)} HOSTILES ELIMINATED · ${((game.stats.roomTimeMs[game.node.id] ?? 0) / 1000).toFixed(1)} s`],
       'boss-intro': ['boss', 'PRIORITY THREAT', 'THE QUEEN', 'ARMORED → EXPOSED → NESTS · Strike when the core opens.'],
       'boss-defeated': ['boss', 'PRIORITY THREAT / SILENCED', 'QUEEN NEUTRALIZED', 'The deck is yours.'],
@@ -69,6 +68,7 @@ export class PresentationBeats {
   }
   effect(event: GameEffect): void {
     if (!this.enabled) return;
+    if (this.kind === 'room-enter' && (event.type === 'shot' || event.type === 'ability' && event.ability?.phase === 'cast')) this.remaining = Math.min(this.remaining, .22);
     if (event.type === 'ability' && event.ability?.phase === 'overdrive-ready' && !this.ready) {
       this.ready = true;
       // The HUD owns the near-slot ready callout; audio answers the same event.
@@ -80,13 +80,13 @@ export class PresentationBeats {
     const game = this.game;
     if (!this.enabled) {this.previousStatus = game.status; return;}
     if (game.status === 'playing' && this.revision !== game.roomRevision) {
-      this.revision = game.roomRevision; this.roomKills = game.stats.kills.total; this.roomSeconds = 0;
+      this.revision = game.roomRevision; this.roomKills = game.stats.kills.total;
       this.bossSeen = this.bossAlive = false; this.show('room-enter');
     }
     if (game.status !== this.previousStatus) {
       if (this.previousStatus === 'playing' && game.status === 'reward') this.show(this.bossAlive ? 'boss-defeated' : 'room-clear');
       else if (this.previousStatus === 'playing' && game.status === 'dead') this.show('death');
-      else if (this.previousStatus === 'playing' && game.status === 'complete') this.show('victory');
+      else if (this.previousStatus === 'playing' && game.status === 'complete') this.show(this.bossAlive ? 'boss-defeated' : 'victory');
       else if (['menu', 'rig-select', 'paused'].includes(game.status)) this.dismiss();
       this.previousStatus = game.status;
     }
@@ -101,7 +101,6 @@ export class PresentationBeats {
   tick(dt: number): void {
     if (!this.enabled) return;
     const elapsed = Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0;
-    if (this.game.status === 'playing') this.roomSeconds += elapsed;
     this.hold = Math.max(0, this.hold - elapsed); this.remaining = Math.max(0, this.remaining - elapsed);
     this.node.dataset.leaving = String(this.remaining > 0 && this.remaining < .2);
     if (!this.remaining) this.node.hidden = true;

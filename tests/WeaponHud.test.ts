@@ -17,12 +17,13 @@ it('protects the actual projected marine in Room15 frame500 without changing the
     try {
         const success = await page.evaluate(player => (window as any).__place(player, innerWidth, innerHeight), player);
         expect(success).toBe(true);
-        for (const selector of ['.weapon-hud', '#weapon-picker', '.desktop-hint']) {
+        for (const selector of ['.weapon-hud', '#weapon-picker', '#action-bar']) {
             const box = await page.locator(selector).evaluate(el => el.getBoundingClientRect().toJSON());
             expect(overlap(box, player)).toBe(0);
             expect(box.left).toBeGreaterThanOrEqual(0);
             expect(box.right).toBeLessThanOrEqual(1280);
         }
+        expect(await page.locator('.desktop-hint').count()).toBe(0);
         expect(camera.projectionMatrix.toArray()).toEqual(matrix);
         expect(await page.locator('#magazine').innerText()).toBe('08');
         expect(await page.locator('#reserve').innerText()).toBe('/ 21');
@@ -37,7 +38,7 @@ it.each([[600, 600], [960, 540], [1280, 900], [1920, 1080]])('keeps all ammuniti
         const normal = await page.locator('#action-bar').evaluate(el => el.getBoundingClientRect().toJSON());
         const player = { left: normal.left + 5, right: normal.right - 5, top: normal.top, bottom: normal.bottom };
         expect(await page.evaluate(player => (window as any).__place(player, innerWidth, innerHeight), player)).toBe(true);
-        for (const selector of ['.weapon-hud', '#weapon-picker', '.desktop-hint']) {
+        for (const selector of ['.weapon-hud', '#weapon-picker', '#action-bar']) {
             const box = await page.locator(selector).evaluate(el => el.getBoundingClientRect().toJSON());
             expect(overlap(box, player)).toBe(0);
             expect(box.left).toBeGreaterThanOrEqual(0);
@@ -85,7 +86,7 @@ it('clears all lower controls at the recorded armory frame746 and mirrored/narro
         try {
             for (const player of [{ left: width - 73.7337876049503, top: height - 145.886189163229, right: width - 32.8246966958593, bottom: height - 63.3756156464713 }, { left: 33, top: height - 146, right: 74, bottom: height - 63 }, { left: width / 2 - 21, top: height - 80, right: width / 2 + 21, bottom: height - 5 }]) {
                 expect(await page.evaluate(player => (window as any).__place(player, innerWidth, innerHeight), player)).toBe(true);
-                for (const selector of ['.weapon-hud', '#weapon-picker', '.desktop-hint']) {
+                for (const selector of ['.weapon-hud', '#weapon-picker', '#action-bar']) {
                     const box = await page.locator(selector).evaluate(el => el.getBoundingClientRect().toJSON());
                     expect(overlap(box, player)).toBe(0);
                     expect(box.left).toBeGreaterThanOrEqual(0);

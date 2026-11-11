@@ -26,7 +26,7 @@ const rooms=option('rooms',DEFAULT_ROOMS.join(',')).split(',');assert(rooms.leng
 const selection=option('scenarios','all').split(','),requested=selection.includes('all')?SCENARIOS.map(s=>s.id):selection;
 const scenarios=requested.flatMap(item=>{const direct=SCENARIOS.find(s=>s.id===item);if(direct&&!direct.rooms)return [{...direct}];const [id,room,...extra]=item.split(':'),entry=SCENARIOS.find(s=>s.id===id);assert(entry&&!extra.length&&(!room||entry.rooms),`Unknown scenario ${item}`);return entry.rooms?(room?[{...entry,room}]:rooms.map(room=>({...entry,room}))):[{...entry}];});
 const out=resolve('artifacts/nextgen',label);
-if(comparison){const result=await compareGalleries(resolve('artifacts/nextgen'),comparison.split(','),out);console.log(`${result.pairs} matched views\n${result.file}`);process.exit(0);}
+if(comparison){const result=await compareGalleries(resolve('artifacts/nextgen'),comparison.split(','),out);console.log(`${result.pairs} aligned views (missing counterparts labelled)\n${result.file}`);process.exit(0);}
 const stepMs=integer('step-ms',150,1,1000),spriteWidth=integer('sprite-width',960,160,1920);
 const prefix='/containment/',dist=resolve('dist');
 const timestamp=option('timestamp',new Date().toISOString());assert(Number.isFinite(Date.parse(timestamp)),'Invalid --timestamp');
@@ -60,7 +60,7 @@ async function save(){
 try{
  await mkdir(out,{recursive:true});await buildIfNeeded();
  const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.jpg':'image/jpeg','.png':'image/png','.glb':'model/gltf-binary','.ogg':'audio/ogg','.mp3':'audio/mpeg','.wav':'audio/wav','.woff2':'font/woff2'};
- server=createServer(async(req,res)=>{const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname),file=resolve(dist,path.slice(prefix.length)||'index.html');if(!path.startsWith(prefix)||!file.startsWith(dist+'/')){res.writeHead(404).end();return;}try{res.writeHead(200,{'Content-Type':types[extname(file)]??'application/octet-stream'}).end(await readFile(file));}catch{res.writeHead(404).end();}});
+ server=createServer(async(req,res)=>{const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname),file=resolve(dist,path.slice(prefix.length)||'index.html');if(!path.startsWith(prefix)||!file.startsWith(dist+'/')){res.writeHead(404).end();return;}try{const bytes=await readFile(file);res.writeHead(200,{'Content-Type':types[extname(file)]??'application/octet-stream'}).end(bytes);}catch{res.writeHead(404).end();}});
  await new Promise((ok,fail)=>{server.once('error',fail);server.listen(0,'127.0.0.1',ok);});const origin=`http://127.0.0.1:${server.address().port}`;
  browser=await launch();context=await browser.newContext({viewport,deviceScaleFactor:dpr});
  await context.addInitScript(value=>{let s=value;window.__captureSeed=n=>{s=n>>>0;};Math.random=()=>{s=(s+0x6d2b79f5)>>>0;let t=Math.imul(s^(s>>>15),1|s);t^=t+Math.imul(t^(t>>>7),61|t);return((t^(t>>>14))>>>0)/4294967296;};},seed);

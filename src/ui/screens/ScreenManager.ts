@@ -84,6 +84,13 @@ export function createScreens(context: ScreenContext) {
     if (focusTab) el(`tab-${tab}`).focus();
   }
 
+  function positionBuildTooltip(card: HTMLElement): void {
+    const box=card.getBoundingClientRect(), width=Math.min(240,innerWidth-24);
+    const left=box.left+box.width/2-width/2;
+    const shift=Math.max(12-left,Math.min(0,innerWidth-12-left-width));
+    card.style.setProperty('--tooltip-shift',`${shift}px`);
+  }
+
   function bindActions(root: HTMLElement): void {
     listen('destroy-ship',()=>{
       if(game.authorizeDestruction()) { input.reset(); playUiCue(audio,'confirm'); syncScreen(); }
@@ -123,6 +130,10 @@ export function createScreens(context: ScreenContext) {
       button.addEventListener('focus',()=>{if(selectedRig!==id) inspectRig(id,true);});
     });
     root.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button=>button.addEventListener('click',()=>setPauseTab(button.dataset.tab as PauseTab,true)));
+    root.querySelectorAll<HTMLElement>('.owned-boon').forEach(card=>{
+      card.addEventListener('focus',()=>positionBuildTooltip(card));
+      card.addEventListener('pointerenter',()=>positionBuildTooltip(card));
+    });
     if (context.settings) context.settings.bind(root);
     else {
       el('quality')?.addEventListener('change',event=>{
@@ -258,12 +269,14 @@ export function createScreens(context: ScreenContext) {
     title?.style.setProperty('--parallax-x',`${(event.clientX/innerWidth-.5)*10}px`);
     title?.style.setProperty('--parallax-y',`${(event.clientY/innerHeight-.5)*7}px`);
   };
+  const onResize=()=>{const active=document.activeElement;if(active instanceof HTMLElement&&active.matches('.owned-boon')) positionBuildTooltip(active);};
+  window.addEventListener('resize',onResize);
   document.addEventListener('keydown',onKeyDown);
   document.addEventListener('pointermove',onPointerMove);
   return {
     syncScreen,
     resetSettings() {settingsOpen=false;creditsOpen=false;controlsOpen=false;pauseTab='resume';context.settings?.reset?.();},
     get quality() {return context.settings?.quality??legacyQuality;},
-    dispose() {document.removeEventListener('keydown',onKeyDown);document.removeEventListener('pointermove',onPointerMove);},
+    dispose() {window.removeEventListener('resize',onResize);document.removeEventListener('keydown',onKeyDown);document.removeEventListener('pointermove',onPointerMove);},
   };
 }

@@ -396,6 +396,7 @@ test('rig previews expose every catalog shape and full keyboard-readable rules w
       await page.locator('.ability-detail').first().focus();
       expect(await page.locator('.ability-detail').first().locator('.ability-rules').isVisible()).toBe(true);
       expect(await page.locator('.ability-detail').first().getAttribute('aria-label')).toContain('Dash');
+      if(rig==='arc') expect(await page.locator('.ability-detail').last().locator('.ability-shape').getAttribute('aria-label')).toBe('SELF effect');
     }
   } finally {await page.close();}
 });
@@ -414,5 +415,32 @@ test.each([[1280,720],[1920,1080]])('settings and controls fit title and pause c
     expect(await page.locator('.drawn-key').count()).toBe(14);
     await phase(page,'paused');await page.locator('[data-tab=settings]').click();await fit('.pause-panel');await fit('#pause-tabpanel');
     await page.locator('[data-tab=controls]').click();await fit('.pause-panel');await fit('#pause-tabpanel');
+  } finally {await page.close();}
+});
+
+test('legacy duplicate room names remain distinct by room kind and reward before selection',async()=>{
+  const page=await mount();
+  try {
+    await phase(page,'route',1,2);
+    const labels=await page.locator('.destination-choices button').evaluateAll(nodes=>nodes.map(node=>({name:node.querySelector('b')?.textContent,detail:node.querySelector('small')?.textContent,aria:node.getAttribute('aria-label')})));
+    expect(labels).toHaveLength(2);
+    expect(labels[0].name).toBe(labels[1].name);
+    expect(labels[0].detail).not.toBe(labels[1].detail);
+    expect(labels[0].aria).not.toBe(labels[1].aria);
+    expect(labels.map(label=>label.detail).join(' ')).toContain('ARMORY');
+    expect(labels.map(label=>label.detail).join(' ')).toContain('MEDICAL');
+    expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual([]);
+  } finally {await page.close();}
+});
+
+test('visible build rules stay inside the viewport when focused near the right edge',async()=>{
+  const page=await mount();
+  try {
+    await page.evaluate(()=>{const ui=(window as any).ui;ui.game.expedition={...ui.game.expedition,build:{mutations:['incendiary','breacher','cryogenic','permafrost','arc-filament','pressure-point','heavy-pellets','absolute-zero']}};});
+    await phase(page,'dead');
+    for(const card of await page.locator('.owned-boon').all()) {
+      await card.focus();const tooltip=(await card.locator('.boon-tooltip').boundingBox())!;
+      expect(tooltip.x).toBeGreaterThanOrEqual(8);expect(tooltip.x+tooltip.width).toBeLessThanOrEqual(1272);
+    }
   } finally {await page.close();}
 });

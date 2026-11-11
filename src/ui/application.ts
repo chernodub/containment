@@ -11,7 +11,7 @@ import { FramePacer, FrameDiagnostics } from '../render/FrameBudget';
 import { HitConfirmation } from './hud/HitConfirmation';
 import { captureWeaponPointer } from '../WeaponHud';
 import { positionHudPanels } from '../HudLayout';
-import { DepthGame, type GameEffect } from '../DepthGame';
+import { DepthGame, type GameEffect, type GameInput } from '../DepthGame';
 import { preloadAssets } from '../render/assets';
 import { DepthRenderer } from '../render/DepthRenderer';
 import { InputController } from '../InputController';
@@ -185,6 +185,8 @@ export async function bootstrap() {
         textures: renderer.renderer.info.memory.textures, graphicsLost,
         hudMs: {last: hudLastMs, average: hudSamples ? hudTotalMs / hudSamples : 0, samples: hudSamples},
     }) });
+    let controlsForStep: GameInput = {x: 0, y: 0, fire: false, angle: null, autoAim: false};
+    const stepSimulation = (ms: number) => game.update(ms, controlsForStep);
     function frame(now: number) {
         requestAnimationFrame(frame);
         if (document.hidden)
@@ -207,8 +209,8 @@ export async function bootstrap() {
         else if (presentationFrozen) game.update(dt * 1000, input.read());
         else {
             feel.setEnabled(presentationEnabled && !motion.matches);
-            const controls = input.read();
-            feel.advance(dt * 1000, feelContext(), ms => game.update(ms, controls));
+            controlsForStep = input.read();
+            feel.advance(dt * 1000, feelContext(), stepSimulation);
         }
         beats?.sync();
         if (!hasAudioDirector(audio) && game.status === 'playing' && !blocked && !recovering)
@@ -241,7 +243,8 @@ export async function bootstrap() {
             hudLastMs = performance.now() - hudStarted;
             hudTotalMs += hudLastMs;
             hudSamples++;
-            if (!hasAudioDirector(audio)) audio.syncCombat(game.combat.snapshot);
+            // Reload and weapon-switch edges have no GameEffect; the existing state bridge remains authoritative.
+            audio.syncCombat(game.combat.snapshot);
             syncAudioDirector(audio, game);
         }
         diagnostics.record(elapsed * 1000, updated - started, rendered - updated);

@@ -7,9 +7,9 @@ const normal = {dashing: false, critical: false, remaining: 10};
 const impact: GameEffect = {type: 'wall-slam', x: 0, y: 0};
 
 describe('presentation pacing preserves fixed-step simulation', () => {
-  it('replays the same seeded combat input sequence identically through stop/slow and plain clocks', () => {
+  it.each(['breacher', 'cryo', 'pyro', 'arc'] as const)('replays the same seeded %s combat and ability sequence identically through stop/slow and plain clocks', rig => {
     const run = (enabled: boolean) => {
-      const game = new DepthGame(); game.newRun(1729);
+      const game = new DepthGame(); game.newRun(1729, {rigSelect:true}); game.chooseRig(rig);
       game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
       const feel = new GameFeel(); feel.setEnabled(enabled);
       let index = 0, wallFrames = 0;
@@ -17,6 +17,9 @@ describe('presentation pacing preserves fixed-step simulation', () => {
         feel.advance([8, 16, 33, 12][wallFrames % 4], normal, ms => {
           if (index >= 180) return;
           const input: GameInput = {x: index < 30 ? 1 : index < 60 ? -1 : 0, y: index % 90 < 45 ? .2 : -.2, fire: true, angle: .4, autoAim: false};
+          if (index === 30) game.useAbility('dash');
+          if (index === 60) game.useAbility('tactical');
+          if (index === 90) {game.setAimPoint({x:game.player.x + 100, y:game.player.y}); game.useAbility('power');}
           game.update(ms, input);
           if (index === 20 || index === 70) feel.effect(impact, normal);
           if (index === 110) feel.effect({type: 'corpse', x: 0, y: 0}, {...normal, remaining: 0});
@@ -24,7 +27,7 @@ describe('presentation pacing preserves fixed-step simulation', () => {
         });
       }
       expect(index).toBe(180);
-      return {wallFrames, result: JSON.stringify({player: game.player, enemies: game.enemies.snapshot, combat: game.combat.snapshot, stats: game.stats, elapsed: game.elapsed, run: game.expedition})};
+      return {wallFrames, result: JSON.stringify({player: game.player, enemies: game.enemies.snapshot, combat: game.combat.snapshot, abilities: game.abilities.snapshot, stats: game.stats, elapsed: game.elapsed, run: game.expedition})};
     };
     const plain = run(false), directed = run(true);
     expect(directed.wallFrames).toBeGreaterThan(plain.wallFrames);
