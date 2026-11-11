@@ -41,6 +41,18 @@ describe('V2 common marine and struck feedback', () => {
     fx.dispose(); kit.dispose();
   });
 
+  it('leaves Static Step to electrical body feedback rather than rectangular shared ghosts', () => {
+    const { kit, fx, update } = fixture();
+    fx.event(event(), 128, 128); update(snapshot(), .01);
+    expect(kit.batches.ghost.mesh.count).toBeGreaterThan(0);
+    fx.event(event({ ability: 'static-step', rig: 'arc', element: 'arc' }), 128, 128);
+    update(snapshot({ rig: 'arc', dashing: true }), .01);
+    expect(kit.batches.ghost.mesh.count).toBe(0);
+    fx.event(event({ ability: 'static-step', rig: 'arc', element: 'arc', phase: 'dash-end' }), 200, 128);
+    update(snapshot({ rig: 'arc' }), .01); expect(kit.batches.ghost.mesh.count).toBe(0);
+    fx.dispose(); kit.dispose();
+  });
+
   it('keeps pose transforms absolute across paused refreshes and restores authored values', () => {
     const { kit, fx, body, update } = fixture();
     const cast: AbilitySlotSnapshot = { id: 'seismic-slam', slot: 'tactical', ready: false, charges: 0, maxCharges: 1, cooldownMs: 6000, cooldownRemainingMs: 6000, castRemainingMs: 100, activeRemainingMs: 0, activeMs: 0 };
