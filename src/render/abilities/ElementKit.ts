@@ -122,11 +122,11 @@ export class ElementKit {
         this.distortion = options.distortion;
     }
     /** Allocation-free solid, crystal, ember, smoke, flame, decal or ghost instance. */
-    draw(kind: Primitive, x: number, y: number, z: number, sx: number, sy: number, sz: number, color: number, opacity = 1, angle = 0, tilt = 0): void {
+    draw(kind: Primitive, x: number, y: number, z: number, sx: number, sy: number, sz: number, color: number, opacity = 1, angle = 0, tilt = 0, variant = 0): void {
         if (this.instanceCount >= ABILITY_VFX_LIMITS.instances)
             return;
         const batch = this.batches[kind], before = batch.mesh.count;
-        batch.draw(x, y, z, sx, sy, sz, color, opacity * (kind === 'spark' || kind === 'flame' ? .35 + .65 * this.flashIntensity : 1), angle, tilt);
+        batch.draw(x, y, z, sx, sy, sz, color, opacity * (kind === 'spark' || kind === 'flame' ? .35 + .65 * this.flashIntensity : 1), angle, tilt, variant);
         this.instanceCount += batch.mesh.count - before;
     }
     mote(kind: Primitive, x: number, y: number, z: number, vx: number, vy: number, vz: number, size: number, life: number, color: number): void {

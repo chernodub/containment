@@ -75,7 +75,7 @@ export class BreacherPresentation implements AbilityPresentation {
     if (event.ability === 'seismic-slam') {
       const radius = (event.radius ?? 230) / UNIT;
       this.impact('slam', x, z, angle, radius, 1.05);
-      this.kit.ring(x, z, radius, AMBER, .28);
+      this.kit.ring(x, z, radius, AMBER, .18);
       this.kit.distort(x, z, radius, .007, .55);
       this.kit.flash(x, z, CORE, 28, radius + 1, 5, .035);
       this.kit.flash(x, z, AMBER, 13, radius, 4, .18);
@@ -263,8 +263,7 @@ export class BreacherPresentation implements AbilityPresentation {
   private drawSlam(p: Impact): void {
     const t = p.age / p.life, progress = Math.min(1, .12 + p.age / .14), radius = p.size * progress;
     const count = this.kit.low ? 7 : 18, frontFade = Math.max(0, 1 - p.age / .36);
-    // A low pressure ridge and broken dust wake preserve deck markings and incoming warnings.
-    this.kit.front(p.x, p.z, p.size, progress, AMBER, .045, frontFade * .15);
+    // The thin expanding boundary owns the pressure front; only broken dust follows it.
     for (let i = 0; i < count; i++) {
       const seed = Math.sin(i * 7.1) ** 2, a = i * TAU / count + Math.sin(i * 3.73) * .08;
       const r = radius * (.71 + seed * .24);
@@ -406,7 +405,7 @@ export class BreacherPresentation implements AbilityPresentation {
       const rows = this.kit.low ? 1 : 2, cellHeight = Math.min(.31, h * .17);
       // Sparse hex cells share the continuous field. Only cells near the loaded node brighten.
       for (let column = 0; column < columns; column++) for (let row = 0; row < rows; row++) {
-        const along = ((column + .5 + (row % 2) * .15) / columns - .5) * length;
+        const along = Math.max(-length * .5 + cellWidth, Math.min(length * .5 - cellWidth, ((column + .5 + (row % 2) * .15) / columns - .5) * length));
         const local = slot.pulse * Math.max(0, 1 - Math.abs(along - slot.contact) / Math.max(.4, length * .24));
         if (this.kit.low && local <= .04) continue;
         const centerY = h * (this.kit.low ? .5 : .3 + row * .4) + .06;

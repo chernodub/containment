@@ -6,7 +6,8 @@ const vertex = `
 attribute float abilityAlpha;attribute float abilityPhase;
 varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;
 void main(){alpha=abilityAlpha;phase=abilityPhase;ink=instanceColor;uvLocal=uv;facetNormal=normalize(normalMatrix*mat3(instanceMatrix)*normal);
-gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.);screenPosition=gl_Position;}`;
+vec3 posedPosition=position;/* ability shape */
+gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(posedPosition,1.);screenPosition=gl_Position;}`;
 
 /** Fixed GPU inventory. Flame/smoke share the game's licensed flipbook assets. */
 export class InstanceBatch {
@@ -50,6 +51,8 @@ export class InstanceBatch {
     const fragment = `
 uniform float abilityTime;uniform sampler2D map;uniform float flash;
 varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;
+float abilityHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
+float abilityNoise(vec2 p){vec2 b=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(abilityHash(b),abilityHash(b+vec2(1.,0.)),f.x),mix(abilityHash(b+vec2(0.,1.)),abilityHash(b+vec2(1.)),f.x),f.y);}
 void main(){
  vec2 p=uvLocal*2.-1.;float a=alpha;vec3 c=ink;
 ${atlas ? `
@@ -72,7 +75,7 @@ ${atlas ? `
 ${kind === 'spark' ? 'float d=dot(p,p);if(d>1.)discard;a*=pow(1.-d,2.);c*=3.5;' : ''}
 ${kind === 'decal' ? `
  float d=length(p);float a0=atan(p.y,p.x);float variant=floor(phase+.01);
- float n=fract(sin(dot(floor(p*31.),vec2(127.1,311.7)))*43758.5);
+ float n=abilityNoise(p*19.);
  float spoke=floor((a0+3.141593)/6.283185*13.);
  float jag=sin(d*39.+spoke*17.)*.025+sin(d*93.+spoke*3.)*.009;
  float ray=abs(sin(a0*6.5+jag/max(.08,d)))*d;
@@ -80,11 +83,16 @@ ${kind === 'decal' ? `
  float seam=step(.025,abs(fract((p.x+p.y*.13)*4.)-.5));
  float cracks=max(1.-smoothstep(.001,.004,ray),(1.-smoothstep(.001,.003,fork))*smoothstep(.32,.5,d)*.6)*seam*(1.-smoothstep(.82,1.,d));
  if(variant<.5){if(d>1.)discard;a*=cracks*.62;c=mix(vec3(.012,.009,.006),ink,.14);}
- else if(variant<1.5){if(d>1.)discard;vec2 cell=floor(p*17.);vec2 f=fract(p*17.)-.5;float seed=fract(sin(dot(cell,vec2(43.1,87.7)))*9781.7);float frost=pow(max(0.,1.-abs(sin(atan(f.y,f.x)*3.+seed*6.283))),18.)*(1.-smoothstep(.1,.65,length(f)));vec2 g=fract(p*31.);g=g*g*(3.-2.*g);vec2 b=floor(p*31.);float n10=fract(sin(dot(b+vec2(1.,0.),vec2(127.1,311.7)))*43758.5);float n01=fract(sin(dot(b+vec2(0.,1.),vec2(127.1,311.7)))*43758.5);float n11=fract(sin(dot(b+vec2(1.),vec2(127.1,311.7)))*43758.5);float powder=mix(mix(n,n10,g.x),mix(n01,n11,g.x),g.y);a*=(.07+powder*.09+frost*.22)*(1.-smoothstep(.82,1.,d));c*=1.4;}
+ else if(variant<1.5){
+  if(d>1.)discard;
+  float powder=abilityNoise(p*31.);
+  float fern=pow(1.-abs(sin(a0*17.+sin(d*39.)*.4)),24.)*smoothstep(.5,.8,powder);
+  a*=(powder*.018+fern*.045)*(1.-smoothstep(.82,1.,d))*smoothstep(.18,.42,d);c*=.85;
+ }
  else if(variant<2.5){float edge=abs(p.y);float slag=pow(max(0.,1.-abs(p.y+sin(p.x*31.)*.12)*4.),3.)*(.4+n*.6);a*=(1.-smoothstep(.7,1.,abs(p.x)))*(1.-smoothstep(.5,1.,edge))*(.5+n*.4);c=mix(ink,vec3(2.8,.5,.015),slag*fract(phase)*10.*flash);}
  else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.72+sin(a0*23.)*.05,.96,d))*(.14+cracks*.12);}
  else if(variant<4.5){if(d>1.)discard;float star=pow(1.-abs(sin(a0*5.+floor(d*11.)*.18)),22.);a*=(star*.85+(.2+n*.2)*(1.-smoothstep(.1,.5,d)))*(1.-smoothstep(.8,1.,d));}
- else if(variant<5.5){if(d>1.)discard;a*=(.22+n*.4)*(1.-smoothstep(.65,1.,d));}
+ else if(variant<5.5){if(d>1.)discard;a*=(.14+n*.16)*(1.-smoothstep(.65,1.,d));}
  else {if(d>1.)discard;if(variant>6.5&&abs(a0)>fract(phase)*6.283185)discard;a*=.035*(1.-smoothstep(.6,1.,d));c=vec3(.014,.009,.006);}
  ` : ''}
 ${kind === 'front' ? `
@@ -103,7 +111,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
 }`;
     const material = new T.ShaderMaterial({
       uniforms: { abilityTime: { value: 0 }, map: { value: this.texture ?? null }, flash: { value: 1 } },
-      vertexShader: vertex,
+      vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){posedPosition.y=position.y>.5?1.:-1.;if(position.y>.5)posedPosition.xz+=vec2(.23,-.16);}' : ''),
       fragmentShader: fragment,
       transparent: true,
       depthWrite: false,
@@ -170,7 +178,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
     }
     this.mesh.instanceColor!.setXYZ(i, this.colorValues[rgb], this.colorValues[rgb + 1], this.colorValues[rgb + 2]);
     this.alpha.setX(i, opacity);
-    this.phase.setX(i, this.kind === 'decal' ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
+    this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
   }
 

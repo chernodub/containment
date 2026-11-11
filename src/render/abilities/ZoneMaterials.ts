@@ -28,7 +28,7 @@ void main(){
  if(kind>2.5){
   float shimmer=.75+.25*sin(atan(p.y,p.x)*19.-t*3.);alpha=0.; color=vec3(.02);
  }else if(kind<.5){
-  vec2 flow=p*5.+vec2(t*.28,-t*.75);float n=low>.5?hash(floor(p*13.)):noise(flow+vec2(noise(flow*1.8-t*.3),noise(flow*1.4+t*.2)));
+  vec2 flow=p*5.+vec2(t*.28,-t*.75);float n=low>.5?noise(p*5.):noise(flow+vec2(noise(flow*1.8-t*.3),noise(flow*1.4+t*.2)));
   float vein=pow(max(0.,1.-abs(n-.51)*7.),5.);
   float hot=pow(smoothstep(.56,.82,n),3.);float edge=smoothstep(.65,.93,d);
   energy=vein*(.25+edge*.65)+hot*.22;
@@ -36,7 +36,7 @@ void main(){
   color=mix(vec3(.014,.009,.006),vec3(.065,.018,.004),vein);
   color=mix(color,vec3(.18,.04,.005),hot*.15);
  }else if(kind<1.5){
-  float grain=low>.5?hash(floor(p*24.)):noise(p*24.+vec2(t*.025,0.));
+  float grain=low>.5?noise(p*16.):noise(p*24.+vec2(t*.025,0.));
   float crystal=pow(max(0.,1.-abs(sin(atan(p.y,p.x)*9.+d*37.))),30.)*step(.56,grain);
   float fringe=smoothstep(.68,.95,d);
   alpha=(grain*.014+crystal*(.012+fringe*.025))*fade*smoothstep(.25,.52,d);

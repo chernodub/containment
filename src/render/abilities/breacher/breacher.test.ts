@@ -111,21 +111,21 @@ describe('Breacher presentation', () => {
   it('gives Slam an exact pressure-front radius, deck cracks, debris and one impact camera response', () => {
     const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
     fx.event(event({ radius: 310 }), 64, 96);
-    expect(kit.ring).toHaveBeenCalledWith(2, 3, 310 / 32, 0xffb454, .28);
+    expect(kit.ring).toHaveBeenCalledWith(2, 3, 310 / 32, 0xffb454, .18);
     expect(kit.distort).toHaveBeenCalledWith(2, 3, 310 / 32, .007, .55);
     expect(kit.scar).toHaveBeenCalledWith('crack', 2, 3, 310 / 32, 0x211a13, 10);
     expect(kit.debris).toHaveBeenCalledWith(2, 3, 310 / 32, 'kinetic', 32);
     expect(kit.camera).toHaveBeenCalledTimes(1);
     expect(kit.anticipate).toHaveBeenCalledWith(34, .045);
     fx.update(frame([], .15));
-    expect(kit.front).toHaveBeenCalledWith(2, 3, 310 / 32, 1, 0xffb454, .045, expect.any(Number));
-    expect(kit.front).toHaveBeenCalledTimes(1);
+    expect(kit.front).not.toHaveBeenCalled();
+    expect(kit.ring).toHaveBeenCalledWith(2, 3, 310 / 32, 0xffb454, .18);
     expect(kit.scar).toHaveBeenCalledTimes(1);
     const chips = kit.draw.mock.calls.filter(c => c[0] === 'shard');
     expect(chips.length).toBeGreaterThan(0);
     for (const chip of chips) { expect(chip[4]).toBeLessThan(.13); expect(chip[6]).toBeLessThan(.09); }
     expect(kit.draw.mock.calls.some(c => c[0] === 'solid')).toBe(false);
-    for (const call of kit.front.mock.calls) expect(call[3]).toBeLessThanOrEqual(1);
+    for (const call of kit.draw.mock.calls) expect(Math.hypot(call[1] - 2, call[3] - 3)).toBeLessThanOrEqual(310 / 32);
     fx.dispose();
   });
 

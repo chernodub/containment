@@ -286,16 +286,16 @@ class CryoPresentation implements AbilityPresentation {
       const depth = thickness * (.25 + Math.sin(seed * 2.1) ** 2 * .055);
       // Overlapping dark rear facets and offset lit spires replace the backing box and diamond fence.
       k.draw('shard', px - faceX * thickness * .08, height * .46, pz - faceZ * thickness * .08,
-        depth, height * .46, width, 0x27536d, fade * .91, yaw);
+        depth, height * .46, width, 0x27536d, fade * .91, yaw, 0, 1);
       k.draw('shard', px + alongX * width * .15, height * .51, pz + alongZ * width * .15,
-        depth * .8, height * .51, width * .73, i % 3 ? 0x6bb6d3 : 0x99d9ed, fade * .56, yaw + .06);
+        depth * .8, height * .51, width * .73, i % 3 ? 0x6bb6d3 : 0x99d9ed, fade * .56, yaw + .06, 0, 1);
       // Broken ankle-high frost clusters stay irregular without a continuous rectangular skirt.
       k.draw('shard', px, .09 + variation * .09, pz, thickness * .39,
         (.12 + variation * .15) * rise, Math.min(width * 1.12, length / 2 - Math.abs(offset)), 0x4e8baf, fade * .55, -wall.angle);
       if (!k.low) {
         k.draw('shard', px + faceX * depth * .1 - alongX * width * .16, height * .55,
           pz + faceZ * depth * .1 - alongZ * width * .16,
-          depth * .13, height * .36, width * .15, CORE, fade * (.17 + (state?.flash ?? 0) * .15), yaw);
+          depth * .13, height * .36, width * .15, CORE, fade * (.17 + (state?.flash ?? 0) * .15), yaw, 0, 1);
         const crack = Math.max(damage, expiry);
         if (crack > .1 && i % 2 === 0) {
           const frontX = px + faceX * depth * .8, frontZ = pz + faceZ * depth * .8;
