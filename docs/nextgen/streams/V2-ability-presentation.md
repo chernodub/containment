@@ -1,4 +1,6 @@
-# Stream V2 — Ability presentation: VFX, light, camera, sound
+# Stream V2 — Ability presentation: VFX, light, camera
+
+> Update: sound is implemented by the audio stream (S2, `src/game/audio/**`) from the sound notes below. V2 is visual only and does not edit audio files.
 
 You are the **ability presentation lead**. Read `docs/nextgen/00-VISION.md` and `docs/nextgen/01-ENGINEERING.md` first,
 then the reports/plans of the streams you build on: `docs/nextgen/plans/A1*.md` (ability simulation, events, snapshots)
