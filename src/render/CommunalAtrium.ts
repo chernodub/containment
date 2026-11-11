@@ -132,9 +132,11 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
    padded(cx,22,cz,f.w,4,f.h,.8,ceramic);
    b(cx,19,cz,f.w-3,2,f.h-3,support);
    for(const dx of [-f.w/2+6,f.w/2-6])for(const dz of [-f.h/2+6,f.h/2-6])b(cx+dx,9,cz+dz,8,18,8,support);
-   padded(cx-8,25,cz-8,16,2,20,.5,seat);b(cx-8,26.2,cz-8,11,.4,14,ceramic);
-   padded(cx+9,26,cz+8,14,4,17,.8,support);
-   for(const dx of [5,13])b(cx+dx,28.2,cz+8,1,.4,15,ceramic);
+   // Personal items are stowed beneath the reviewed tabletop height.
+   b(cx-f.w/2+6,12,cz+f.h/2-1.98,7,10,.25,seat);
+   b(cx-f.w/2+6,12,cz+f.h/2-1.82,5,7,.05,ceramic);
+   padded(cx+9,13,cz+8,14,10,17,.8,support);
+   for(const dx of [5,13])b(cx+dx,18.5,cz+8,1,2,15,ceramic);
   }else if(f.kind.startsWith('seat-')){
    // A padded insert above a full-width metal seat pan. Keep the old envelope,
    // support contacts and outward-facing backs; no fixture moves.
@@ -142,8 +144,8 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
    b(cx,9.4,cz,f.w,2,f.h,support);
    padded(cx,12.4,cz,f.w-2,4,f.h-2,1,seat);
    // A split upholstery seam and dropped personal bag stay on the seat's existing solid.
-   b(cx,14.46,cz,Math.min(f.w-6,12),.12,1.8,support);
-   for(let thread=0;thread<4;thread++)b(cx-4.2+thread*2.8,14.55,cz,.35,.08,2.4,ceramic);
+   b(cx-3,14.46,cz,Math.min(f.w-6,9),.12,1.8,support);
+   for(let thread=0;thread<4;thread++)b(cx-6.5+thread*2.3,14.55,cz,.35,.08,2.4,ceramic);
    if(index%2===0){
     padded(cx,17.2,cz+1,Math.min(f.w-6,13),5.2,Math.min(f.h-6,10),.6,support);
     for(const dx of [-3.4,3.4])b(cx+dx,20,cz+1,.8,.4,Math.min(f.h-7,9),ceramic);

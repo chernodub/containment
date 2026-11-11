@@ -26,7 +26,8 @@ const legacyMoods:Readonly<Record<string,ShipEnvironment>>=Object.freeze({
 export function shipEnvironment(templateId:string):ShipEnvironment|undefined{return SHIP_ENVIRONMENTS[roomPairs.findIndex(pair=>pair.includes(templateId))]??(Object.hasOwn(legacyMoods,templateId)?legacyMoods[templateId]:undefined);}
 export type Footprint={x:number;y:number;width:number;height:number};
 const v=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
-const fieldMaterial=new T.MeshStandardMaterial({color:0x84719f,emissive:0x9870df,emissiveIntensity:.65,roughness:.8,metalness:.1});fieldMaterial.userData.motivatedEmitter=true;
+/** Session-owned field finish, shared by every containment room and emitter. */
+export const fieldMaterial=new T.MeshStandardMaterial({color:0x84719f,emissive:0x9870df,emissiveIntensity:.65,roughness:.8,metalness:.1});fieldMaterial.userData.motivatedEmitter=true;
 
 /** All models are authored in a local cell, then fitted inside the authoritative collision rectangle. */
 export function environmentObstacle(environment:ShipEnvironment,footprint:Footprint,index=0,templateId='',seed=1729):T.Group{

@@ -46,8 +46,8 @@ export function armoryCarousel():T.Group{
  cylinder('carousel-spindle',.24,2.25,2.35,pale);
  cylinder('carousel-spindle-cap',.38,.14,3.545,edge);
  for(const y of [1.47,2.07,3.31])cylinder('spindle-machined-collar',.27,.065,y,graphite);
- box(root,'spindle-motor-inspection-recess',600/32,2.62,450/32+.231,.28,.67,.028,rubber);
- for(let slot=0;slot<6;slot++)box(root,'spindle-motor-cooling-fin',600/32,2.37+slot*.095,450/32+.251,.22,.025,.018,edge);
+ box(root,'spindle-motor-inspection-recess',600/32+.231,2.62,450/32,.028,.67,.28,rubber);
+ for(let slot=0;slot<6;slot++)box(root,'spindle-motor-cooling-fin',600/32+.251,2.37+slot*.095,450/32,.018,.025,.22,edge);
  for(let bolt=0;bolt<8;bolt++){
   const a=bolt*Math.PI/4,fastener=add('spindle-cap-fastener',new T.CylinderGeometry(.018,.018,.012,6),graphite);
   fastener.position.set(600/32+Math.cos(a)*.3,3.622,450/32+Math.sin(a)*.3);

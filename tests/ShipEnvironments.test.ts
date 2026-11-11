@@ -1,10 +1,11 @@
 import {describe,expect,it,vi} from 'vitest';
 import * as T from 'three';
-import {SHIP_ENVIRONMENTS,appendEnvironment,environmentArchitecture,environmentObstacle,shipEnvironment,type ShipEnvironment} from '../src/render/ShipEnvironments';
+import {SHIP_ENVIRONMENTS,appendEnvironment,environmentArchitecture,environmentObstacle,shipEnvironment,fieldMaterial,type ShipEnvironment} from '../src/render/ShipEnvironments';
 import {MAT,disposeModel,geometries} from '../src/render/meshParts';
 import {DepthRenderer} from '../src/render/DepthRenderer';
 import {WORKSHOP_MAT} from '../src/render/InfestedWorkshopMaterials';
-const sharedMaterials=[...Object.values(MAT),...new Set(Object.values(WORKSHOP_MAT))];
+import {GROWTH_MAT} from '../src/render/world/OrganicGrowth';
+const sharedMaterials=[...new Set([...Object.values(MAT),...Object.values(WORKSHOP_MAT),...Object.values(GROWTH_MAT),fieldMaterial])];
 
 // Independent route contract: do not derive expected IDs from the renderer table.
 const rooms:Record<ShipEnvironment,string[]>={
@@ -43,8 +44,13 @@ describe('ship environments',()=>{
   it(`${env} batches to a bounded material set and disposes only owned resources`,()=>{
    const world=new T.Group();environmentArchitecture(world,env,32,24);
    appendEnvironment(world,environmentObstacle(env,{x:5,y:5,width:4,height:8},0,rooms[env][0]));
-   const originals=meshes(world),ownedGeometry=originals.filter(m=>env==='infested'&&['directional-resin','tendon-brace','broken-guard'].includes(m.name)).map(m=>m.geometry);
-   if(env==='infested'){expect(ownedGeometry).toHaveLength(4);for(const g of ownedGeometry)expect(g.userData.environmentUV).toBe(true);}
+   const originals=meshes(world),cachedGeometry=new Set(geometries.values());
+   const workshopGeometry=originals.filter(m=>env==='infested'&&['directional-resin','tendon-brace','broken-guard'].includes(m.name)).map(m=>m.geometry);
+   const ownedGeometry=[...new Set(originals.map(m=>m.geometry).filter(g=>g.userData.environmentUV&&!cachedGeometry.has(g)))];
+   if(env==='infested'){
+    expect(workshopGeometry).toHaveLength(4);for(const g of workshopGeometry)expect(g.userData.environmentUV).toBe(true);
+    expect(ownedGeometry).toEqual(expect.arrayContaining(workshopGeometry));expect(ownedGeometry.length).toBeGreaterThan(workshopGeometry.length);
+   }
    const sharedGeometry=new Set(originals.map(m=>m.geometry).filter(g=>!ownedGeometry.includes(g)));
    const originalOwnedSpies=ownedGeometry.map(g=>vi.spyOn(g,'dispose'));
    const localMaterials=new Set(originals.map(m=>m.material as T.MeshStandardMaterial).filter(m=>!sharedMaterials.includes(m)));

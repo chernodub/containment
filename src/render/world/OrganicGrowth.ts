@@ -14,6 +14,7 @@ function rod(parent:T.Group,a:T.Vector3,b:T.Vector3,r:number,_r2:number,material
   const mesh=new T.Mesh(geometry('x2-organic-taper',()=>new T.CylinderGeometry(.65,1,1,8)),material);
   mesh.position.copy(a).add(b).multiplyScalar(.5);mesh.scale.set(r,a.distanceTo(b),r);mesh.quaternion.setFromUnitVectors(up,b.clone().sub(a).normalize());mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);return mesh;
 }
+/** Session-owned finishes; retiring an individual room never disposes this palette. */
 export const GROWTH_MAT={
   tissue:new T.MeshStandardMaterial({color:0x84675c,roughness:.9,metalness:.02}),
   carapace:new T.MeshStandardMaterial({color:0x435040,roughness:.82,metalness:.04}),
