@@ -24,7 +24,7 @@ async function stageAbility({ rig, slot, id, nativeInput = false }) {
   Object.assign(g.player, { x: 320, y: 440, angle: -Math.PI / 2, vx: 0, vy: 0 });
   d.setInput({ x: 0, y: 0, fire: false, angle: -Math.PI / 2, autoAim: false });
   d.step(3800); // Settle the native camera and expire draft/checkpoint toasts before staging targets.
-  g.enemies.reset();
+  g.enemies.reset(); d.refresh(); // Retire rendered actors before reset IDs are reused.
   for (const [x, y] of [[320, 280], [350, 260], [290, 230]]) {
     if (!d.canStand(x, y, 28) || !d.clearShot(x, y) || !d.spawn('brute', x, y)) throw Error(`Illegal ability target ${x},${y}`);
   }

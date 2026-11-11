@@ -48,7 +48,7 @@ export const SCENARIOS=[
  {id:'reload-fixture',state:'playing',room:'armory',required:['#reload-label'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.invulnerable(true);d.game.switchWeapon('rifle');d.setInput({fire:true,angle:0,autoAim:false});d.step(500);d.setInput({fire:false});d.game.reload();d.step(d.game.combat.snapshot.reloadDurationMs*.4);d.abilityFixture('arc','ready');d.refresh();}},
  {id:'combat-calm',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.invulnerable(true);d.refresh();}},
  {id:'combat-heavy',rooms:true,state:'playing',combat:true,burst:true,setup:async room=>{await window.__containmentDebug.gotoRoom(room);}},
- {id:'status-vfx',state:'playing',combat:true,status:true,burst:true,room:'communal-atrium',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('communal-atrium');d.grantBoons(['cryogenic','permafrost','absolute-zero','incendiary','caustic-rounds','arc-filament','conductive-shell','cryo-conductor']);}},
+ {id:'status-vfx',state:'playing',combat:true,status:true,burst:true,room:'communal-atrium',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('communal-atrium',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','absolute-zero','incendiary','caustic-rounds','arc-filament','conductive-shell','cryo-conductor']);}},
  {id:'boss',state:'playing',burst:true,room:'reactor-vault',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.invulnerable(true);const q=d.game.boss.snapshot;const candidates=[];for(let y=q.y+120;y<=q.y+330;y+=30)for(let x=q.x-200;x<=q.x+200;x+=30)if(d.canStand(x,y))candidates.push({x,y});if(!q.active||!candidates.length)throw Error('Queen encounter unavailable');Object.assign(d.game.player,candidates[Math.floor(candidates.length/2)]);d.setInput({fire:true,angle:Math.atan2(q.y-d.game.player.y,q.x-d.game.player.x),autoAim:false});d.game.switchWeapon('plasma');d.step(1600);}},
  {id:'boss-radar',state:'playing',room:'reactor-vault',required:['#radar-hud','.radar-objective'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.uiFixture({preferences:{radar:true,combatText:true}});}},
  {id:'reward',state:'reward',phase:'reward',required:['.choice-grid'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'reward'});}},
@@ -104,12 +104,27 @@ export function stageCombat({status=false}){
  if(!status){g.grenade();d.step(700);}
  g.switchWeapon(status?'rifle':'plasma');d.setInput({fire:true,angle:null,autoAim:true});
  if(status){
-  // Repeated genuine rifle hits on tough targets build all three chill stacks.
-  const targets=staged.filter(e=>g.enemies.getSnapshot(e.id)?.type==='brute').slice(0,4);
-  for(const target of targets){d.setInput({angle:Math.atan2(target.y-g.player.y,target.x-g.player.x),autoAim:false});d.step(460);}
- }else d.step(360);
- if(status){for(let i=0;i<120;i++){const states=g.enemies.snapshot.enemies.map(e=>g.boonStatuses(e.id));if(['burning','chilled','frozen','poisoned'].every(k=>states.some(s=>s[k]))&&d.renderer.muzzle.intensity>0)break;d.step(1000/60);}}
- else for(let i=0;i<60&&!(d.renderer.muzzle.intensity>0&&g.bullets.some(b=>b.kind==='player')&&d.events.some(e=>e.type==='explosion'&&g.elapsed-e.at<.25));i++)d.step(1000/60);
+  // A confirmed rifle hit supplies burn, poison and chill; native Cryo Nova then
+  // freezes that already-chilled target. Capture the actual next muzzle pulse.
+  const target=staged.find(e=>{const enemy=g.enemies.getSnapshot(e.id);return enemy?.type==='brute'&&!enemy.elite;});
+  if(!target)throw Error('No ordinary status target');
+  d.setInput({angle:Math.atan2(target.y-g.player.y,target.x-g.player.x),autoAim:false});
+  let primed=false;
+  for(let i=0;i<120;i++){
+   const s=g.boonStatuses(target.id);
+   if(s.chilled&&s.burning&&s.poisoned){primed=true;break;}
+   d.step(1000/60);
+  }
+  if(!primed||!g.useAbility('tactical'))throw Error('Live Cryo status staging failed');
+  for(let i=0;i<90;i++){
+   const states=g.enemies.snapshot.enemies.map(e=>g.boonStatuses(e.id));
+   if(['burning','chilled','frozen','poisoned'].every(k=>states.some(s=>s[k]))&&d.renderer.muzzle.intensity>0)break;
+   d.step(1000/60);
+  }
+ }else{
+  d.step(360);
+  for(let i=0;i<60&&!(d.renderer.muzzle.intensity>0&&g.bullets.some(b=>b.kind==='player')&&d.events.some(e=>e.type==='explosion'&&g.elapsed-e.at<.25));i++)d.step(1000/60);
+ }
  return {staged:staged.length,player:{x:g.player.x,y:g.player.y}};
 }
 
