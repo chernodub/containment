@@ -80,8 +80,8 @@ describe('A1 review: authoritative telegraphs and cached placement',()=>{
     const after=w.system.snapshot;for(let i=0;i<100;i++)expect(w.system.snapshot).toBe(after);expect(traverse).not.toHaveBeenCalled();
   });
   it('placement caching invalidates on aim, orientation, position, rig and placement augments',()=>{
-    const w=world('cryo'),traverse=vi.spyOn(w.host,'traverse');void w.system.snapshot;
-    for(const mutate of [()=>w.system.setIntent(0,0,{x:200,y:0}),()=>w.player.angle=.3,()=>w.player.x=5,()=>w.owned.add('twin-glacier')]){
+    const w=world('cryo'),traverse=vi.spyOn(w.host,'traverse');let revision={};w.host.placementRevision=()=>revision;void w.system.snapshot;
+    for(const mutate of [()=>w.system.setIntent(0,0,{x:200,y:0}),()=>w.player.angle=.3,()=>w.player.x=5,()=>w.owned.add('twin-glacier'),()=>{revision={};}]){
       traverse.mockClear();mutate();void w.system.snapshot;expect(traverse).toHaveBeenCalled();
     }
     w.system.setRig('arc');traverse.mockClear();void w.system.snapshot;expect(traverse).toHaveBeenCalled();
@@ -91,8 +91,18 @@ describe('A1 review: authoritative telegraphs and cached placement',()=>{
 describe('A1 review: dash invulnerability budget',()=>{
   it.each(RIG_IDS)('%s never exceeds35%% even with every relevant augment and cooldown refund kills',rig=>{
     const all=Object.keys(AUGMENT_BOONS) as MutationId[];
-    const w=world(rig,all);let immune=0;const total=60_000,step=5;
-    for(let t=0;t<total;t+=step){if(w.system.snapshot.slots!.dash.ready)w.system.use('dash');if(w.system.invulnerable)immune+=step;w.system.onKill(w.targets[0],false);w.system.update(step);}
-    expect(immune/total).toBeLessThanOrEqual(.35);expect(immune/total).toBeGreaterThan(.15);
+    const uptime=(mutations:MutationId[])=>{
+      const w=world(rig,mutations);let immune=0;const total=60_000,step=5;
+      // Wait until immunity ends: spending early would overlap i-frames and understate maximum uptime.
+      for(let t=0;t<total;t+=step){
+        if(!w.system.invulnerable&&w.system.snapshot.slots!.dash.ready)w.system.use('dash');
+        if(w.system.invulnerable)immune+=step;
+        w.system.onKill(w.targets[0],false);w.system.update(step);
+      }
+      return immune/total;
+    };
+    const augmented=uptime(all),native=uptime([]);
+    expect(augmented).toBeLessThanOrEqual(.35);expect(augmented).toBeGreaterThan(.24);
+    expect(native).toBeGreaterThan(.16);expect(native).toBeLessThan(.19);
   });
 });
