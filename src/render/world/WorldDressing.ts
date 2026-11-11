@@ -85,7 +85,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   };
   const point=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
   // Query the actual renderer's roof so fittings cannot float over lower kit pieces.
-  world.updateMatrixWorld(true,true);const ray=new T.Raycaster(),down=new T.Vector3(0,-1,0);
+  world.updateWorldMatrix(true,true);const ray=new T.Raycaster(),down=new T.Vector3(0,-1,0);
   let fittings=0;
   for(const [index,r] of template.obstacles.entries()){
     if(index>=12)break;
@@ -154,7 +154,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     box(dark,x,.009,z,1.28,.018,1.08);
     for(let slat=-4;slat<=4;slat++)box(steel,x+slat*.13,.026,z,.044,.014,.87);
     for(const side of [-1,1]){
-      box(paint,x+side*.67,.029,z,.055,.012,1.12);
+      box(steel,x+side*.67,.029,z,.055,.012,1.12);
       box(signal,x+side*.59,.035,z-.42,.07,.012,.12);
     }
     if(organic){

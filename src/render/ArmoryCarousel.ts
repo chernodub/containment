@@ -22,7 +22,7 @@ export function armoryCarousel():T.Group{
   for(const hole of holes)shape.holes.push(new T.Path(hole.map(p=>new T.Vector2(p.x/32,-p.y/32))));
   const g=new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false,steps:1});g.rotateX(-Math.PI/2);g.translate(0,bottom,0);return add(name,g,m);
  };
- const box=(parent:T.Object3D,name:string,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const p=add(name,new RoundedBoxGeometry(w,h,d,1,Math.min(.025,w*.12,h*.12,d*.12)),m,parent);p.position.set(x,y,z);return p;};
+ const box=(parent:T.Object3D,name:string,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const beveled=name==='tray-bed'||name==='vise-jaw'||name==='secured-clamp';const p=add(name,beveled?new RoundedBoxGeometry(w,h,d,1,Math.min(.025,w*.12,h*.12,d*.12)):new T.BoxGeometry(w,h,d),m,parent);p.position.set(x,y,z);return p;};
  const cylinder=(name:string,radius:number,height:number,y:number,m:T.Material)=>{const p=add(name,new T.CylinderGeometry(radius,radius,height,48),m);p.position.set(600/32,y,450/32);return p;};
  slab('horseshoe-solid',ARMORY_COUNTER,0,1.04,graphite);
  const a=240*Math.PI/180,b=Math.PI/2-a;
