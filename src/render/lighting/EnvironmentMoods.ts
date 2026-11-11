@@ -67,7 +67,7 @@ export const ENVIRONMENT_MOODS: Readonly<Record<ShipEnvironment, EnvironmentMood
   cargo: localMood('cargo',0xffd398,0xffa54d,'steady',0x8b8375,.94,.07,1.15,.22,.25,380,5.8,8,0x8293a7),
   communications: localMood('communications',0xbddfe9,0x58e4bc,'flicker',0x687b87,.86,.09,1.25,.245,.25,440,5.2,10,0x769ba8),
   engineering: localMood('engineering',0xffe2a9,0xffbb47,'flicker',0x8b8374,.88,.07,1.85,.32,.25,500,6.2,5,0x85949f),
-  maintenance: localMood('maintenance',0xc0e0d6,0x73d7af,'flicker',0x6f8981,.28,.10,1.2,.22,.30,620,5.2,9,0x789d99),
+  maintenance: localMood('maintenance',0xc0e0d6,0x73d7af,'flicker',0x6f8981,.28,.10,1.85,.34,.30,620,5.2,9,0x789d99),
   infested: artMood(localMood('infested',0xb7d7b0,0xa8ff72,'pulse',0x768579,.9,.10,2.0,.35,.35,640,6.4,8,0x718a86),{rim:Object.freeze({color:0xe26acf,intensity:.35,offset:[6,6,-9] as RGB})}),
   containment: shadowToe(localMood('containment',0xe4ebff,0xb99bff,'pulse',0x818594,.82,.16,1.65,.30,.32,400,5,11,0x8a94b1)),
   reactor: artMood(mood('reactor', 0xffe0bc, 0xff8a39, 'reactor', 0x596675, 1.06, .97, .85, .24, 18), {
