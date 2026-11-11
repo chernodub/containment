@@ -214,10 +214,10 @@ export class ElementKit {
         p.kind = 0;
     }
     /** Persistent shaped floor aftermath; half-length/half-width are exact bounds. */
-    scar(kind: ScarKind, x: number, z: number, radius: number, color: number, life = 8, angle = 0, width = radius): void {
+    scar(kind: ScarKind, x: number, z: number, radius: number, color: number, life = 8, angle = 0, width = radius, arc = 1.28): void {
         this.decal(x, z, radius, color, life, -angle);
         const p = this.decals[(this.decalCursor - 1) % this.decals.length];
-        p.width = width; p.kind = SCAR_KIND[kind];
+        p.width = width; p.kind = SCAR_KIND[kind] + (kind === 'fan' ? arc / (Math.PI * 4) : 0);
     }
     /** One instanced volume, its outer radius never exceeds the authoritative radius. */
     front(x: number, z: number, radius: number, progress: number, color: number, height = 1.5, opacity = .65): void {
@@ -405,6 +405,7 @@ export class ElementKit {
                 p.live = false;
                 continue;
             }
+            if (this.instanceCount >= ABILITY_VFX_LIMITS.instances) continue;
             const b = this.batches.decal, before = b.mesh.count;
             b.draw(p.x, .027, p.z, p.radius, p.width, 1, p.color, Math.min(1, (p.life - p.age) / Math.min(3, p.life * .4)) * .8, 0, p.angle, p.kind);
             this.instanceCount += b.mesh.count - before;

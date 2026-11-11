@@ -32,6 +32,8 @@ class SystemPresentation implements AbilityPresentation {
   private readyX = 0;
   private readyZ = 0;
   private readyColor = FRIENDLY;
+  private castAge = 1;
+  private castColor = FRIENDLY;
   private rest?: MarineRest;
   private game?: DepthGame;
   private statusFor?: (id: number) => Status;
@@ -43,6 +45,7 @@ class SystemPresentation implements AbilityPresentation {
     if (this.disposed || !Number.isFinite(x) || !Number.isFinite(y)) return;
     const k = this.kit, color = ELEMENT_COLORS[event.element];
     if (event.phase === 'denied' || event.phase === 'ready') return;
+    if (event.phase === 'cast' || event.phase === 'dash-start') { this.castAge = 0; this.castColor = color; }
     if (event.phase === 'dash-start') {
       this.dashTime = .22;
       this.ghostClock = .035;
@@ -81,6 +84,7 @@ class SystemPresentation implements AbilityPresentation {
     if (dead) { this.clear(); return; }
     this.dashTime = Math.max(0, this.dashTime - dt);
     this.readyAge += dt;
+    this.castAge += dt;
     for (const receipt of this.receipts) {
       if (!receipt.live) continue;
       receipt.age += dt;
@@ -101,12 +105,13 @@ class SystemPresentation implements AbilityPresentation {
       if (snapshot?.invulnerable) this.invulnerability(x, z, p.angle);
       this.pose(frame, !!snapshot?.dashing);
       if (this.readyAge < .5) this.readyVents(x, z, p.angle);
+      if (this.castAge < .3) this.suitPulse(x, z, p.angle);
     } else if (this.readyAge < .5) this.readyVents(this.readyX, this.readyZ, 0);
     for (const ghost of this.ghosts) {
       if (!ghost.live) continue;
       ghost.age += dt;
       if (ghost.age >= ghost.life) { ghost.live = false; continue; }
-      this.drawGhost(ghost, (1 - ghost.age / ghost.life) * (k.low ? .12 : .22));
+      this.drawGhost(ghost, (1 - ghost.age / ghost.life) * (k.low ? .25 : .42));
     }
     let drawn = 0;
     const queen = g?.boss?.snapshot;
@@ -151,16 +156,7 @@ class SystemPresentation implements AbilityPresentation {
   }
 
   private drawGhost(g: Ghost, opacity: number): void {
-    const k = this.kit, c = Math.cos(g.angle), s = Math.sin(g.angle), yaw = -g.angle;
-    // Articulated helmet, vest, arms, two stepping legs and weapon: a marine silhouette, not a capsule.
-    k.draw('ghost', g.x + c * g.lean, 1.74, g.z + s * g.lean, .29, .32, .32, g.color, opacity, yaw);
-    k.draw('ghost', g.x + c * g.lean * .6, 1.23, g.z + s * g.lean * .6, .34, .63, .58, g.color, opacity * .75, yaw);
-    for (let side = -1; side <= 1; side += 2) {
-      const lateral = side * .19, step = side * .08;
-      k.draw('ghost', g.x + c * step - s * lateral, .48, g.z + s * step + c * lateral, .24, .72, .21, g.color, opacity * .6, yaw, side * .08);
-      if (!k.low) k.draw('ghost', g.x + c * .25 - s * side * .34, 1.26, g.z + s * .25 + c * side * .34, .43, .22, .2, g.color, opacity * .7, yaw);
-    }
-    k.draw('ghost', g.x + c * .55 - s * .13, 1.28, g.z + s * .55 + c * .13, .72, .12, .12, WHITE, opacity * .65, yaw);
+    this.kit.afterImage(g.x, g.z, g.angle, g.color, opacity, g.lean);
   }
 
   private invulnerability(x: number, z: number, angle: number): void {
@@ -210,13 +206,14 @@ class SystemPresentation implements AbilityPresentation {
     const k = this.kit, fade = Math.max(0, 1 - this.readyAge / .5), c = Math.cos(angle), s = Math.sin(angle);
     for (let side = -1; side <= 1; side += 2) {
       const px = x - c * .18 - s * side * .28, pz = z - s * .18 + c * side * .28;
-      k.draw('spark', px, 1.35 + this.readyAge * .9, pz, .05 + fade * .04, .22 * fade, .05, this.readyColor, fade * .5);
-      if (!k.low) k.draw('smoke', px, 1.32 + this.readyAge * .45, pz, .12, .19, .08, this.readyColor, fade * .12);
+      k.draw('spark', px, 1.35 + this.readyAge * .9, pz, .1 + fade * .09, .48 * fade, .05, this.readyColor, fade * .8);
+      if (!k.low) k.draw('smoke', px, 1.32 + this.readyAge * .45, pz, .22, .36, .08, this.readyColor, fade * .3);
     }
   }
 
   private frozenShell(x: number, z: number, radius: number, height: number, seed: number, flash: number): void {
-    const k = this.kit, count = k.low ? 3 : 7;
+    const k = this.kit, count = k.low ? 2 : 5;
+    k.iceShell(x, z, radius, height, .22 + flash * .2);
     for (let i = 0; i < count; i++) {
       const a = i * Math.PI * 2 / count + seed * .73;
       k.draw('shard', x + Math.cos(a) * radius * .76, height * (.38 + i % 3 * .16), z + Math.sin(a) * radius * .76,
@@ -250,6 +247,7 @@ class SystemPresentation implements AbilityPresentation {
       const length = Math.min(1.7, speed / UNIT * .065), a = Math.atan2(enemy.velocityY, enemy.velocityX), c = Math.cos(a), s = Math.sin(a);
       k.ribbon(x, height * .35, z, x - c * length, height * .3, z - s * length, ELEMENT_COLORS.kinetic, .025, fade * .4, false);
       if (!k.low) k.ribbon(x - s * radius * .4, .1, z + c * radius * .4, x - c * length - s * radius * .4, .07, z - s * length + c * radius * .4, ELEMENT_COLORS.kinetic, .012, fade * .2, false);
+      k.draw('smoke', x - c * length * .55, .23, z - s * length * .55, .3 + length * .18, .24, .1, 0x968673, fade * .5);
     }
     k.draw('spark', x, height * .6, z, radius * .22, .08, .05, ELEMENT_COLORS.kinetic, fade * .3);
   }
@@ -258,7 +256,14 @@ class SystemPresentation implements AbilityPresentation {
     this.restorePose();
     for (const ghost of this.ghosts) ghost.live = false;
     for (const receipt of this.receipts) receipt.live = false;
-    this.dashTime = 0; this.ghostClock = 0; this.readyAge = 1;
+    this.dashTime = 0; this.ghostClock = 0; this.readyAge = 1; this.castAge = 1;
+  }
+
+  private suitPulse(x: number, z: number, angle: number): void {
+    const fade = Math.max(0, 1 - this.castAge / .3), sx = -Math.sin(angle), sz = Math.cos(angle);
+    for (let side = -1; side <= 1; side += 2) {
+      this.kit.draw('spark', x + sx * .32 * side, 1.28, z + sz * .32 * side, .07, .2, .05, this.castColor, fade * .75);
+    }
   }
 
   dispose(): void {

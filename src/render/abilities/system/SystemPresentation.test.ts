@@ -116,7 +116,8 @@ describe('V2 common marine and struck feedback', () => {
     expect(kit.batches.shard.mesh.count).toBe(targets * shards);
     // First shard belongs to the Queen; the crowd uses the remaining budget.
     const position = new T.Vector3(), matrix = new T.Matrix4(); kit.batches.shard.mesh.getMatrixAt(0, matrix); position.setFromMatrixPosition(matrix);
-    expect(Math.hypot(position.x - queen.x / 32, position.z - queen.y / 32)).toBeCloseTo(92 / 32 * .76, 5);
+    // The first facet now encases the complete actor; glints retain the outer target-bound ring.
+    expect(Math.hypot(position.x - queen.x / 32, position.z - queen.y / 32)).toBeCloseTo(0, 5);
     queen.active = false; update(snapshot(), 0);
     expect(kit.batches.shard.mesh.count).toBe(targets * shards);
     expect(kit.batches.shard.mesh.geometry).toBe(geometry); expect(kit.batches.shard.mesh.instanceMatrix.array).toBe(buffer);
