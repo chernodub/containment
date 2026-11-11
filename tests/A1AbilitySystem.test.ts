@@ -257,7 +257,7 @@ describe('all four rig dashes', () => {
       w.use('dash');
       w.advance(140);
       const zone = w.system.snapshot.zones[0];
-      expect(zone).toMatchObject({ ability: id, shape: 'strip', x: 0, y: 0, x2: rig==='pyro'?240:150, y2: 0, width: 44, durationMs: 2500 });
+      expect(zone).toMatchObject({ ability: id, shape: 'strip', x: 0, y: 0, x2: rig==='pyro'?220:150, y2: 0, width: 44, durationMs: 2500 });
       w.add(60, 22);
       w.add(60, 22.01);
       const hidden = w.add(70, 0);
@@ -270,12 +270,12 @@ describe('all four rig dashes', () => {
       expect(phases(w, id)).toContain('end');
     });
   }
-  it('Afterburn travels 240 units, protects for 220ms and independently recharges after 2600ms', () => {
+  it('Afterburn travels 220 units, protects for 220ms and independently recharges after 2600ms', () => {
     const w=world('pyro');
     w.use('dash');
     expect(w.system.snapshot.slots!.dash.charges).toBe(1);
     w.advance(140);
-    expect(w.player.x).toBeCloseTo(240);
+    expect(w.player.x).toBeCloseTo(220);
     expect(w.system.dashing).toBe(false);
     expect(w.system.invulnerable).toBe(true);
     w.advance(79);
@@ -300,16 +300,16 @@ describe('all four rig dashes', () => {
   });
 });
 describe('tactical ability shape, line of sight and wind-up', () => {
-  it('Pyro keeps eight-second tactical and sixteen-second power recovery boundaries', () => {
+  it('Pyro keeps six-second tactical and twelve-second power recovery boundaries', () => {
     const w = world('pyro');
     w.system.setIntent(0, 0, {x: 300, y: 0});
     expect(w.system.use('tactical')).toBe(true);
-    w.advance(7999);
+    w.advance(5999);
     expect(w.system.snapshot.slots!.tactical).toMatchObject({ready: false, cooldownRemainingMs: 1});
     w.advance(1);
     expect(w.system.snapshot.slots!.tactical.ready).toBe(true);
     expect(w.system.use('power')).toBe(true);
-    w.advance(15999);
+    w.advance(11999);
     expect(w.system.snapshot.slots!.power).toMatchObject({ready: false, cooldownRemainingMs: 1});
     w.advance(1);
     expect(w.system.snapshot.slots!.power.ready).toBe(true);
