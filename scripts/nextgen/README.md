@@ -112,3 +112,11 @@ npm run capture -- --label=integration-1a --width=1920 --height=1080 --scenarios
 `debug.realtime(true|false)` is opt-in capture instrumentation: it lets the production RAF call original update/render with the existing debug controls, aging pooled UI on the same clock. Default debug captures remain fixed-step. Capture metadata retains both UI/ability receipts and G1 lighting/preparation diagnostics.
 
 The default room list now covers all ten distinct environments (including maintenance at Service Shaft Landing). Passenger Vault remains selectable explicitly, as do all twenty authored rooms.
+
+## G2 world review
+
+`g2-calm-high`, `g2-calm-low`, `g2-kiting-high`, `g2-kiting-low` expand over `--rooms` (supply all20storyIDs). Kiting uses the same legal short G1 backpedal/grenade fixture on both tiers. `g2-title-low` and `g2-boss-low` complement title/boss. `g2-champions`, `g2-pickups` and `g2-queen-exposed` exercise actual promotion, pickup and boss-phase APIs. `g2-legacy-high/low` use legal version2checkpoint paths with recorded deterministic seeds.
+
+`node scripts/nextgen/g2-review.mjs artifacts/nextgen/<label>` decodes actual PNGs, writes masked/unmasked ROI histograms and marine-local3m samples to luminance.json, and creates native PNG review sheets without another browser. `g2-comparison.mjs` creates all20 baseline/before/after sheets with explicit missing-baseline labels and provenance. `g2-surfaces.mjs` regenerates the three original128² floor finishes.
+
+`--dist=/absolute/preserved/build --dist-source-sha=<renderer-sha>` bypasses rebuilding only for an explicit preserved production snapshot. The manifest records that provenance separately from the currently checked-out harness SHA. This permits before/after benchmarking in one worktree without reverting source or touching another checkout.
