@@ -286,3 +286,6 @@ body[data-state=playing] #world{cursor:none}
 #hud #action-bar {padding-bottom:16px;}
 @media(max-width:850px){#hud #action-bar{padding-bottom:10px;}#hud .overdrive-slot[data-state=ready] .overdrive-body .icon{width:28px;height:28px;}#hud .dash-duration{display:none!important;}}
 @media(max-height:450px){#hud #action-bar{padding-bottom:8px;}}
+/* Boss camera reserves the bottom band for chrome; keep radar out of the Queen's right silhouette. */
+#hud:has(#boss-hud:not([hidden])) #radar-hud {top:auto;bottom:24px;}
+@media(max-height:650px){#hud:has(#boss-hud:not([hidden])) #radar-hud{bottom:8px;}}
