@@ -29,7 +29,7 @@ const source = resolve(out, 'source');
 await mkdir(source, { recursive: true });
 for (const file of ['sim-core.ts', 'sim.mjs', 'sim-metrics.mjs', 'sim-worker.mjs', 'policy.mjs', 'bot-navigation.ts', 'bot-navigation-version.mjs'])
     await writeFile(resolve(source, file), await readFile(resolve('scripts/nextgen/playtest', file)));
-await build({ configFile: false, plugins, logLevel: 'error', build: { ssr: resolve('scripts/nextgen/playtest/sim-core.ts'), outDir: source, emptyOutDir: false, rollupOptions: { output: { entryFileNames: 'sim-core.mjs' } } } });
+await build({ configFile: false, publicDir: false, plugins, logLevel: 'error', build: { ssr: resolve('scripts/nextgen/playtest/sim-core.ts'), outDir: source, emptyOutDir: false, rollupOptions: { output: { entryFileNames: 'sim-core.mjs' } } } });
 const { runSimulation, summarizeSimulations } = await import(pathToFileURL(resolve(source, 'sim-core.mjs')).href + '?' + Date.now());
 const seeds = String(args.seeds ?? args.seed ?? '1729,2718,31415,42,137,8675309,2026,9001,65537,123456').split(',').map(Number);
 const rigs = String(args.rigs ?? args.rig ?? 'breacher,cryo,pyro,arc').split(',');

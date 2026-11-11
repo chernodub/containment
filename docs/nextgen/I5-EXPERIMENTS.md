@@ -1,6 +1,6 @@
 # I5 archived balance experiments
 
-This archive records four completed **40-attempt simulation cohorts** collected before the navigation-observer correction. It preserves every death and censored attempt. These experiments informed tuning; **they do not establish that the final balance targets are met**. Later navigation pilots and native browser campaigns are separate evidence.
+This archive records two separate phases of four completed **40-attempt simulation cohorts** each: 160 original-policy attempts and 160 matched Nav3 attempts. It preserves every death and censored attempt. These experiments informed tuning; **they do not establish that the final balance targets are met**. The two native Breacher probes are labeled separately below.
 
 ## Cohort and measurement rules
 
@@ -170,4 +170,150 @@ These are render-free simulator measurements, not native browser campaign result
 
 The original navigation observer could produce unresolved fights; those recorded stalls remain explicit here. Partial navigation-observer v2 pilots (including the earlier `i5-nav-baseline-40` / `i5-nav-candidate-40` attempts and `i5-nav-v2-native-pyro-1729`) are obsolete for balance aggregation and are excluded from all 160 attempts above. Later navigation-observer v3 collections must be reported under their own policy/game hashes and must not be pooled into these cohorts. A native proof or a short smoke is not substituted for full-campaign validation.
 
-Next work: finish the corrected-policy matched cohorts, judge cadence and per-rig completion together, run final native campaigns and the required desktop gates, and obtain human feedback on pressure, telegraphs and holdout climax. Keep the existing full-kit invariants and persistence/accessibility assertions unchanged.
+The corrected-policy matched cohorts are archived separately below. Subsequent experimental and native evidence must retain its own source identity. Keep the existing full-kit invariants and persistence/accessibility assertions unchanged.
+
+## Corrected navigation policy: four additional matched cohorts
+
+This phase is separate from the preceding 160 old-policy attempts. It adds **160 completed attempts**, all with `policyVersion:"i5-navigation-observer-v3"` and simulator mode `sim-policy-v4`. The same ten seeds and four rigs are used in each cohort. All attempts terminate as an ending or a natural death: **zero censors in every cohort**. The `final-policy` folder prefix identifies the frozen bot policy; it does not label an accepted final game balance.
+
+Every cohort in this phase has the same combined policy hash (decision helpers + navigation helper + version module):
+
+`e4e6c2e75850aa0a80052f082c748c64fa0e1ccc065cdca8f10747b5c5e2a8ff`
+
+The frozen simulator core is identical across these four cohorts: `sim-core.ts` SHA-256 `0d0b76075efbce29c18e6f1ab241534ded8683b25781b0d1e203938db5344f87`. Shared navigation source SHA-256 is `334bc5a8b110a9f68841ed77abee8f5ae9290d7fec6ea2b03d99e9e9c9d164ad`; the version module is `f583b313a06e675b074de36eb556b7efd9f4b4a0320c32e85b4f2a0f9de88eec`. Each evidence JSON records the exact driver/worker source hashes as well as the game and bundled player hashes.
+
+### Corrected-policy numerical variants
+
+The Nav3 baseline reuses the original baseline game (old charge and 40-request Transmission). V2 uses half charge, 32-request Transmission, `.28` damage pressure, `.07` speed pressure, story elite HP `1.25×`, elite damage `1.2×`, and ordinary elite chance `.06 + (depth−5)*.008`. Unlike the earlier v2 archive, its added guardians are always marked elite after consuming the ordinary elite random draw, and lighter elite HP is scoped after room 5.
+
+| Variant | Added speed pressure | Added damage pressure | Story elite HP | Story elite damage | Ordinary elite chance |
+|---|---:|---:|---:|---:|---|
+| Nav3 v2 | .07 | .28 | 1.25× | 1.2× | `.06 + (depth−5)*.008` |
+| Nav3 v3 | .025 | .08 | 1.15× | 1.05× | `.10 + (depth−5)*.012` |
+| Nav3 v4 | .05 | .18 | 1.08× | 1.05× | `.14 + (depth−5)*.018` |
+
+V2/v3/v4 share the **eight-slot late ordinary pool** (crawler×2, brute, spitter×2, stalker×2, carrier), increased caps, tempo, authored guardian rooms and holdout exceptions described above. Elite HP/damage changes are story-only after room 5; the opening and legacy progression are preserved. Transmission remains excluded from additional progression pressure and ordinary composition/elite changes; the finale still uses the older holdout composition and has no ordinary elite rolls in these three variants. Basic health and rigs/boons are unchanged.
+
+### Corrected-policy totals
+
+| Experiment | Endings | Deaths | Censors | Completion | Median rooms/OD | Non-holdout time | Transmission |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Nav3 baseline | 37/40 | 3 | 0 | 92.5% | 0.690 | 33.6 s | 80.5 s |
+| Nav3 threat v2 | 18/40 | 22 | 0 | 45.0% | 1.429 | 33.1 s | 65.7 s |
+| Nav3 threat v3 | 30/40 | 10 | 0 | 75.0% | 1.429 | 33.5 s | 67.2 s |
+| Nav3 threat v4 | 23/40 | 17 | 0 | 57.5% | 1.429 | 33.4 s | 64.8 s |
+
+None of these variants meets the combined acceptance targets. V2’s 45% aggregate completion masks **0% Pyro** and 70% Cryo/Arc. V3 is too easy overall at **75%**, with Pyro 25 points below its mean and Arc 25 above it. V4 reaches **57.5%** aggregate completion, but Pyro is **37.5 percentage points below the mean** and Cryo/Arc are 22.5 above it. New experimental collections remain pending; no later candidate is assigned an outcome here.
+
+### Nav3 baseline
+
+Evidence: [`i5-final-policy-baseline-40.json`](evidence/I5/i5-final-policy-baseline-40.json). Pooled death-room histogram: **15×1, 16×2**.
+
+| Rig | Completion | Deaths | Censors | Median rooms/OD [p10–p90] | Non-holdout median | Transmission median |
+|---|---:|---:|---:|---:|---:|---:|
+| Breacher | 10/10 (100%) | 0 | 0 | 0.678 [0.588–0.714] | 35.1 s | 86.6 s |
+| Cryo | 10/10 (100%) | 0 | 0 | 0.702 [0.645–0.741] | 34.9 s | 93.3 s |
+| Pyro | 7/10 (70%) | 3 | 0 | 0.728 [0.606–0.824] | 31.1 s | 74.7 s |
+| Arc | 10/10 (100%) | 0 | 0 | 0.690 [0.571–0.741] | 32.5 s | 70.3 s |
+
+| Rig | Weapon / A / S / B share | Non-weapon sum | Act 1 damage | Act 2 damage | Act 3 damage | Act 4 damage |
+|---|---|---:|---:|---:|---:|---:|
+| Breacher | 57.5 / 21.4 / 5.6 / 15.5% | 42.5% | 0.0 | 11.0 | 15.6 | 39.5 |
+| Cryo | 47.3 / 20.8 / 6.7 / 25.2% | 52.7% | 0.0 | 11.0 | 13.6 | 14.6 |
+| Pyro | 46.3 / 17.9 / 16.8 / 19.0% | 53.7% | 0.0 | 12.6 | 20.1 | 44.1 |
+| Arc | 62.6 / 23.5 / 5.9 / 8.0% | 37.4% | 0.0 | 0.0 | 0.0 | 0.0 |
+
+Per-rig death rooms: **Breacher** —; **Cryo** —; **Pyro** 15×1, 16×2; **Arc** —.
+
+- HEAD: `01af5fe5a053f215a5069ae4df117f449180a79f`
+- Game hash: `603632e6f8b30ad2a5bf8d1262bb24af3ad5e76c8b30d6dbf995a4d48dcdfbe4`
+- Bundled player hash: `16a70aec1d2eb4894ec37758f4a24907bbd1b1b82418860b04518db819c9cb1e`
+- Driver (`sim.mjs`) hash: `c5a7977d97e3f4eb4a1f894676512b03fb1e8286667b691ba3fe37fd417ca1f8`
+
+### Nav3 threat v2
+
+Evidence: [`i5-final-policy-v2-40.json`](evidence/I5/i5-final-policy-v2-40.json). Pooled death-room histogram: **11×2, 13×1, 14×1, 16×6, 17×3, 18×4, 19×1, 20×4**.
+
+| Rig | Completion | Deaths | Censors | Median rooms/OD [p10–p90] | Non-holdout median | Transmission median |
+|---|---:|---:|---:|---:|---:|---:|
+| Breacher | 4/10 (40%) | 6 | 0 | 1.429 [1.118–1.600] | 33.5 s | 74.2 s |
+| Cryo | 7/10 (70%) | 3 | 0 | 1.429 [1.267–1.545] | 37.1 s | 72.2 s |
+| Pyro | 0/10 (0%) | 10 | 0 | 1.646 [1.308–1.714] | 29.9 s | 58.7 s |
+| Arc | 7/10 (70%) | 3 | 0 | 1.333 [1.176–1.462] | 32.2 s | 60.0 s |
+
+| Rig | Weapon / A / S / B share | Non-weapon sum | Act 1 damage | Act 2 damage | Act 3 damage | Act 4 damage |
+|---|---|---:|---:|---:|---:|---:|
+| Breacher | 58.1 / 21.0 / 5.5 / 15.5% | 41.9% | 0.0 | 26.8 | 41.3 | 71.1 |
+| Cryo | 50.6 / 19.2 / 6.6 / 23.7% | 49.4% | 0.0 | 20.1 | 53.4 | 49.2 |
+| Pyro | 50.5 / 17.0 / 17.9 / 14.6% | 49.5% | 0.0 | 24.7 | 39.7 | 64.7 |
+| Arc | 59.4 / 26.3 / 6.1 / 8.3% | 40.6% | 0.0 | 11.5 | 15.3 | 51.4 |
+
+Per-rig death rooms: **Breacher** 11×1, 16×1, 17×1, 18×1, 19×1, 20×1; **Cryo** 16×1, 18×1, 20×1; **Pyro** 11×1, 13×1, 14×1, 16×3, 17×2, 18×2; **Arc** 16×1, 20×2.
+
+- HEAD: `01af5fe5a053f215a5069ae4df117f449180a79f`
+- Game hash: `ac4a47d6386fab6a68ea0e0e99bd247ef38d61cec547a28d8945aedd4bc2bd2d`
+- Bundled player hash: `ec0d9d1b902aa08488d864c7efd964252d3a416fd6555c7cbe15d9f4acdb730b`
+- Driver (`sim.mjs`) hash: `c5a7977d97e3f4eb4a1f894676512b03fb1e8286667b691ba3fe37fd417ca1f8`
+
+### Nav3 threat v3
+
+Evidence: [`i5-final-policy-v3-40.json`](evidence/I5/i5-final-policy-v3-40.json). Pooled death-room histogram: **13×1, 15×1, 17×2, 18×2, 19×1, 20×3**.
+
+| Rig | Completion | Deaths | Censors | Median rooms/OD [p10–p90] | Non-holdout median | Transmission median |
+|---|---:|---:|---:|---:|---:|---:|
+| Breacher | 7/10 (70%) | 3 | 0 | 1.387 [1.111–1.429] | 34.3 s | 68.6 s |
+| Cryo | 8/10 (80%) | 2 | 0 | 1.429 [1.250–1.462] | 36.6 s | 69.5 s |
+| Pyro | 5/10 (50%) | 5 | 0 | 1.429 [1.111–1.750] | 30.8 s | 62.0 s |
+| Arc | 10/10 (100%) | 0 | 0 | 1.333 [1.176–1.429] | 31.5 s | 67.3 s |
+
+| Rig | Weapon / A / S / B share | Non-weapon sum | Act 1 damage | Act 2 damage | Act 3 damage | Act 4 damage |
+|---|---|---:|---:|---:|---:|---:|
+| Breacher | 58.7 / 20.8 / 5.5 / 14.9% | 41.3% | 0.0 | 24.4 | 26.5 | 56.8 |
+| Cryo | 50.7 / 19.2 / 6.6 / 23.5% | 49.3% | 0.0 | 20.1 | 28.0 | 47.8 |
+| Pyro | 47.4 / 17.1 / 17.5 / 18.1% | 52.6% | 0.0 | 19.9 | 31.6 | 59.4 |
+| Arc | 59.2 / 26.5 / 6.1 / 8.3% | 40.8% | 0.0 | 11.1 | 12.8 | 44.4 |
+
+Per-rig death rooms: **Breacher** 18×1, 20×2; **Cryo** 13×1, 20×1; **Pyro** 15×1, 17×2, 18×1, 19×1; **Arc** —.
+
+- HEAD: `01af5fe5a053f215a5069ae4df117f449180a79f`
+- Game hash: `12a6a05ce28f45ae3cd0ed3cf788a4d42ce5b5e70b6487675d41ce072cba2d2e`
+- Bundled player hash: `0b298627b94a743122d263ae175c837f9f64e89846ed5a5a351d874058aa7855`
+- Driver (`sim.mjs`) hash: `c5a7977d97e3f4eb4a1f894676512b03fb1e8286667b691ba3fe37fd417ca1f8`
+
+### Nav3 threat v4
+
+Evidence: [`i5-final-policy-v4-40.json`](evidence/I5/i5-final-policy-v4-40.json). Pooled death-room histogram: **10×1, 11×1, 13×1, 14×2, 15×1, 16×2, 17×1, 18×1, 19×2, 20×5**.
+
+| Rig | Completion | Deaths | Censors | Median rooms/OD [p10–p90] | Non-holdout median | Transmission median |
+|---|---:|---:|---:|---:|---:|---:|
+| Breacher | 5/10 (50%) | 5 | 0 | 1.429 [1.111–1.625] | 33.9 s | 65.5 s |
+| Cryo | 8/10 (80%) | 2 | 0 | 1.429 [1.333–1.538] | 37.3 s | 67.9 s |
+| Pyro | 2/10 (20%) | 8 | 0 | 1.573 [1.111–2.000] | 31.2 s | 58.4 s |
+| Arc | 8/10 (80%) | 2 | 0 | 1.345 [1.176–1.429] | 31.9 s | 60.2 s |
+
+| Rig | Weapon / A / S / B share | Non-weapon sum | Act 1 damage | Act 2 damage | Act 3 damage | Act 4 damage |
+|---|---|---:|---:|---:|---:|---:|
+| Breacher | 59.4 / 21.8 / 5.3 / 13.4% | 40.6% | 0.0 | 25.1 | 42.6 | 49.4 |
+| Cryo | 50.3 / 19.1 / 6.9 / 23.6% | 49.7% | 0.0 | 13.6 | 46.5 | 56.7 |
+| Pyro | 47.9 / 17.5 / 18.0 / 16.6% | 52.1% | 0.0 | 27.7 | 29.8 | 79.7 |
+| Arc | 59.4 / 26.3 / 6.1 / 8.3% | 40.6% | 0.0 | 0.0 | 12.7 | 32.0 |
+
+Per-rig death rooms: **Breacher** 10×1, 14×1, 19×2, 20×1; **Cryo** 16×1, 20×1; **Pyro** 11×1, 13×1, 14×1, 15×1, 16×1, 17×1, 18×1, 20×1; **Arc** 20×2.
+
+- HEAD: `1f26b264925bdc893a29e32256dc4b89b964201e`
+- Game hash: `16128afdf5694b9e237317029fb572b3cb94a29007ed82831107ee7521d498c6`
+- Bundled player hash: `7b2272f1b695057d4379d3df975f4843ae35120a69b4952d80305cebadb8a0a2`
+- Driver (`sim.mjs`) hash: `0836c5c238f465d5453208c0e5b5597eeb49740d882f5ba44a9679f4893028b0`
+
+### V4 native Breacher probes
+
+Two native-input fast-render campaigns use the same Nav3 policy version. They advance scene/camera every fixed tick and submit the GPU draw at the batch boundary. Both record **zero errors and zero defects**; both outcomes are natural deaths. A runner exit of zero is valid for a death and must not be read as a campaign clear.
+
+| Seed | Native outcome | Cleared rooms | Matched Node V4 outcome | Errors / defects |
+|---|---|---:|---|---|
+| 1729 | Dead in room 17 (Shielding gate) | 16 | Complete, 20 rooms | 0 / 0 |
+| 2718 | Dead in room 14 (Service-shaft landing) | 13 | Dead in room 14 | 0 / 0 |
+
+Raw folders: `artifacts/nextgen/playtest/i5-v4-native-breacher-breacher-1729/` and `i5-v4-native-breacher-breacher-2718/`. Compact evidence: [`i5-v4-native-breacher.json`](evidence/I5/i5-v4-native-breacher.json), including report SHA-256 and native harness hashes. Native HEAD is `1f26b264925bdc893a29e32256dc4b89b964201e`; its combined frozen policy-source hash equals `e4e6c2e75850aa0a80052f082c748c64fa0e1ccc065cdca8f10747b5c5e2a8ff`. No native game/bundle hash is invented where the report did not record one.
+
+**Seed 1729 demonstrates a native/Node outcome mismatch.** Shared policy/version hashes and clean diagnostic runs do not certify full-campaign parity. These probes are not the required final two native campaigns per rig, and they do not validate V4 as balanced. The simulator remains an experimental tuning aid; final native evidence and human playtesting must be assessed separately. The original full-kit invariants still apply.
