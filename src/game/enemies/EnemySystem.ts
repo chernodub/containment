@@ -46,7 +46,7 @@ export type CollisionSteeringContext = Readonly<{
 }>;
 
 export type EnemySystemOptions = Readonly<{
-  balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean;chargeWindupMs?:number;chargeCooldownMs?:number;chargeInitialCooldownMs?:number};
+  balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean;chargeWindupMs?:number;chargeCooldownMs?:number;chargeInitialCooldownMs?:number;championHealth?:number;championDamage?:number};
   canAttack?: (from:EnemyPlayerState & {type:StandardEnemyId},to:EnemyPlayerState)=>boolean;
   route?: (enemy: EnemyPlayerState & {radius:number}, player:EnemyPlayerState) => EnemyPlayerState|null;
   canMove?: (context: CollisionSteeringContext) => boolean;
@@ -356,7 +356,7 @@ export class EnemySystem {
    const e=this.#enemies.get(id);if(!e)return;
    // Promotion keeps the authored Warden opening after an ordinary elite received a longer initial delay.
    if(kind==='warden'&&e.type==='brute'&&e.elite&&this.#balance.chargeInitialCooldownMs!==undefined)e.specialCooldownMs=1500;
-   e.champion=kind;e.health=e.maxHealth=kind==='warden'?760:1150;e.armor=e.maxArmor=kind==='warden'?120:0;e.speed=e.baseSpeed=kind==='warden'?88:76;e.contactDamage=kind==='warden'?28:24;e.creditReward=kind==='warden'?100:150;
+   e.champion=kind;e.health=e.maxHealth=(kind==='warden'?760:1150)*(this.#balance.championHealth??1);e.armor=e.maxArmor=kind==='warden'?120:0;e.speed=e.baseSpeed=kind==='warden'?88:76;e.contactDamage=(kind==='warden'?28:24)*(this.#balance.championDamage??1);e.creditReward=kind==='warden'?100:150;
   }
 
   update(deltaMs: number, player: EnemyPlayerState): readonly EnemyEvent[] {
