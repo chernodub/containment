@@ -38,7 +38,8 @@ describe('useful boon offers',()=>{
   expect(boonHint(catalog['absolute-zero'],build('cold-snap'))).toBe('Works with Cold Snap.');
  });
  it('keeps saved IDs and marks only Blood Price as risk',()=>{
-  expect(MUTATION_IDS).toHaveLength(48);
+  expect(MUTATION_IDS).toHaveLength(60);
+  expect(MUTATION_IDS.filter(id=>catalog[id].abilityOnly)).toHaveLength(12);
   expect(MUTATION_IDS.filter(id=>catalog[id].risk)).toEqual(['blood-price']);
  });
  it('shows path and owned synergy on reward cards without ornamental numbering',()=>{

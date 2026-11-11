@@ -1,3 +1,4 @@
+import {isValidRunStatsSnapshot} from '../abilities/RunStats';
 import {MUTATION_IDS} from './mutationCatalog';
 import { isValidBuildState } from './builds';
 import { isValidRunState } from './run';
@@ -52,12 +53,25 @@ function validRun(value: unknown): value is RunState {
     isValidRunState(value);
 }
 
+/** Exact bounded optional runtime data; unknown extension fields are rejected. */
+export function isValidCheckpointExtensions(value: unknown): boolean {
+  try {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+    const record = value as Record<string,unknown>;
+    if (Object.hasOwn(record,'abilities') && (!exactRecord(record.abilities,['overdriveCharge']) || !boundedNumber(record.abilities.overdriveCharge,0,1))) return false;
+    if (Object.hasOwn(record,'stats') && !isValidRunStatsSnapshot(record.stats)) return false;
+    return true;
+  } catch { return false; }
+}
+
 function validCheckpoint(value: unknown): value is RunCheckpoint {
-  if (!exactRecord(value, ['version', 'savedAt', 'run', 'build', 'resources']) ||
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const optional = ['abilities','stats'].filter(key=>Object.hasOwn(value,key));
+  if (!exactRecord(value, ['version', 'savedAt', 'run', 'build', 'resources', ...optional]) || !isValidCheckpointExtensions(value) ||
     value.version !== 1 || !boundedNumber(value.savedAt, 0, Number.MAX_SAFE_INTEGER, true) ||
     !validRun(value.run) ||
     (value.run.phase !== 'reward' && value.run.phase !== 'route') ||
-    !exactRecord(value.build, ['mutations']) || !Array.isArray(value.build.mutations) ||
+    !(exactRecord(value.build, ['mutations']) || exactRecord(value.build,['mutations','rig'])) || !Array.isArray(value.build.mutations) ||
     value.build.mutations.length > MUTATION_IDS.length || !isValidBuildState(value.build) ||
     !isValidRunResources(value.resources) || value.resources.health <= 0) {
     return false;

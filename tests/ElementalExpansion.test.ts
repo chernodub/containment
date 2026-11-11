@@ -21,7 +21,7 @@ function world(ids:MutationId[],visible=true){
  return{combat,targets,hits,effects,slows,runtime,hit,advance};
 }
 describe('elemental expansion and supply economy',()=>{
- it('supports 48 unique boons',()=>{expect(MUTATION_IDS).toHaveLength(48);expect(new Set(MUTATION_IDS).size).toBe(48);expect(isValidBuildState({mutations:MUTATION_IDS})).toBe(true);});
+ it('supports 60 unique boons including rig augments',()=>{expect(MUTATION_IDS).toHaveLength(60);expect(new Set(MUTATION_IDS).size).toBe(60);expect(isValidBuildState({mutations:MUTATION_IDS})).toBe(true);});
  it('refreshes poison without stacking, and secondary poison kills spread within cover limits',()=>{
   const w=world(['caustic-rounds']);w.hit();w.hit('second');w.advance(3000);expect(w.hits.reduce((sum,h)=>sum+h.amount,0)).toBe(30);expect(w.runtime.statuses(1).poisoned).toBe(false);
   const bloom=world(['caustic-rounds','toxic-bloom']);bloom.targets[0].health=5;bloom.hit();bloom.advance(500);expect(bloom.runtime.statuses(2).poisoned).toBe(true);bloom.advance(3000);expect(bloom.targets[1].health).toBe(970);

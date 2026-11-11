@@ -52,8 +52,9 @@ Scenarios fail on the wrong state/room, page or console errors, absent WebGL pix
 
 `window.__containmentDebug` is installed **only** with `?debug=1`. The normal application does not import its module or change its update/input behavior. The hook freezes automatic simulation/VFX advancement, while the existing RAF still handles graphics recovery, HUD synchronization, rendering and diagnostics. Call `step()` to advance the fixture.
 
+- `await prepare()`: synchronizes room revision and awaits assets after a direct game transition such as choosing the starting boon.
 - `game`, `renderer`: actual `DepthGame` and `DepthRenderer` instances.
-- `await startRun(seed = currentSeed)`: resets a run at its starting boon draft and waits for room assets/shaders. The initial seed is 1729 (or the capture URL’s `seed` query parameter).
+- `await startRun(seed = currentSeed, options = {})`: resets a run at its starting boon draft and waits for room assets/shaders. Pass `{rigSelect:true}` to exercise rig selection. The initial seed is 1729 (or the capture URL’s `seed` query parameter).
 - `await gotoRoom(templateId, { version = 3, phase = 'combat' } = {})`: regenerates a legal ancestor path, serializes/parses/restores a validated prior-room checkpoint, then uses normal route/overload authorization methods. `version` may be 1, 2 or 3. `phase` can be `combat`, `reward`, or `route`; boundary fixtures use the expedition completion/reward APIs.
 - `grantBoons(ids)`: adds catalog mutations with their normal prerequisite checks, then applies the build to combat.
 - `spawn(type, x, y, elite = false)`: uses real enemy spawning after legal occupancy/player-distance checks; returns enemy id or `false`. Callers handle spacing between enemies.
@@ -86,3 +87,7 @@ Add a small declarative entry to `SCENARIOS` in `scenarios.mjs`:
 Exact IDs may include a colon (for example `ability:cryo`); select them with `--scenarios=ability:cryo`. Their filename uses a hyphen.
 
 `setup` executes inside the page, so it must be self-contained and reference browser globals only. `rooms: true` expands a scenario over `--rooms` and permits `scenario:room` selection; `combat: true` invokes the shared legal busy-fight fixture and its stronger checks. `burst: true` captures `--burst` frames. Set `state` to the expected real game state, `phase` when a specific run boundary matters, and `required` to selectors that must be visible (for example service-shop controls). Extend the array and the runner's explicit validation for new mechanics requiring additional evidence.
+
+## Combat Rig scenarios
+
+`ability:<id>` is registered for every one of the sixteen catalog abilities. `node scripts/nextgen/ability-driver.mjs --label=A1-abilities` captures two frames of each plus a native Shift/Q/F/V fixture and validates actual rig selection, accepted slot use, zones/deployables and hostile time scale. These fixtures use a legal Awakening Bay lane, normal public game actions and no boons; snapshots and run statistics are included in each manifest shot. Ability VFX/HUD remain the presentation streams’ responsibility.

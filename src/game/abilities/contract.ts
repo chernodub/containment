@@ -137,6 +137,18 @@ export type AbilityZoneSnapshot = Readonly<{
   durationMs: number;
 }>;
 
+/** Current continuous pylon-to-marine damage link; endpoints are authoritative world coordinates. */
+export type AbilityLinkSnapshot = Readonly<{
+  id: number;
+  ability: 'tesla-pylon';
+  element: 'arc';
+  x: number;
+  y: number;
+  targetX: number;
+  targetY: number;
+  width: number;
+}>;
+
 export type AbilitiesSnapshot = Readonly<{
   rig: RigId | null;
   slots: Readonly<Record<AbilitySlot, AbilitySlotSnapshot>> | null;
@@ -149,6 +161,8 @@ export type AbilitiesSnapshot = Readonly<{
   hostileTimeScale: number;
   deployables: readonly DeployableSnapshot[];
   zones: readonly AbilityZoneSnapshot[];
+  /** Present in the Combat Rig runtime; additive for existing presentation consumers. */
+  links?: readonly AbilityLinkSnapshot[];
 }>;
 
 /**
