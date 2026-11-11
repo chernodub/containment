@@ -1,4 +1,5 @@
 import { sweptCircle } from '../combat/enemyContact';
+import { I5_ENCOUNTER_TUNING_ENABLED } from '../roguelike/i5Tuning';
 import { sweptLinkContact } from './linkGeometry';
 import { ABILITY_CATALOG, ABILITY_SLOTS, RIG_CATALOG, DASH_DURATION_MS, DASH_INVULNERABLE_MS } from './catalog';
 import type { AbilitiesSnapshot, AbilityDefinition, AbilityEvent, AbilityId, AbilitySlot, AbilityZoneSnapshot, DeployableSnapshot, RigId } from './contract';
@@ -149,7 +150,7 @@ export class AbilitySystem {
   addCharge(damage: number, kills = 0): void {
     if (!this.rig || !Number.isFinite(damage) || !Number.isFinite(kills) || damage < 0 || kills < 0) return;
     const before = this.charge;
-    const next = this.charge + (damage / 12000 + kills * .0125) * (this.host.has('drive-dynamo' as MutationId) ? 1.3 : 1);
+    const next = this.charge + (damage / 12000 + kills * (I5_ENCOUNTER_TUNING_ENABLED ? .015 : .0125)) * (this.host.has('drive-dynamo' as MutationId) ? 1.3 : 1);
     this.charge = next >= 1 - TIMER_EPSILON ? 1 : next;
     if (before !== this.charge) this.cached = null;
     if (before < 1 && this.charge === 1) this.event(this.definition('overdrive').id, 'overdrive-ready', this.host.player());

@@ -1,7 +1,10 @@
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 import {EnemySystem, type EnemyEvent, type EnemyPlayerState, type EnemySystemOptions} from '../src/game/enemies/EnemySystem';
 import {progressionFor} from '../src/game/roguelike/progression';
 import {generateRun} from '../src/game/roguelike/run';
+
+// Keep the unaccepted v21 profile reviewable without enabling it in production.
+vi.mock('../src/game/roguelike/i5Tuning', () => ({I5_ENCOUNTER_TUNING_ENABLED: true}));
 
 const BASE = {health: 1, damage: 1, speed: 1, eliteHealth: 1.65, eliteDamage: 1.2, specials: true};
 const PLAYER = {x: 400, y: 200};
@@ -40,6 +43,37 @@ function firstWarning(h: ReturnType<typeof fixture>, initialCooldown = 1500) {
 }
 
 describe('I5 encounter charge tempo parameters', () => {
+  it('wires charge overrides only after Transmission and never into either legacy graph', () => {
+    for (const seed of [0, 1729, 0xffff_ffff]) {
+      for (const version of [1, 2, 3] as const) {
+        for (const node of generateRun(seed, version).nodes) {
+          const balance = progressionFor(node);
+          if (version === 3 && node.depth >= 10) {
+            expect(balance).toMatchObject({chargeWindupMs: 1150, chargeCooldownMs: 6500, chargeInitialCooldownMs: 5000});
+          } else {
+            for (const key of ['chargeWindupMs', 'chargeCooldownMs', 'chargeInitialCooldownMs']) {
+              expect(Object.hasOwn(balance, key), `graph ${version}, room ${node.depth + 1}, ${key}`).toBe(false);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it.each(['ordinary-elite', 'warden'] as const)('uses progression-wired opening and charge tempo for %s', role => {
+    const warden = role === 'warden';
+    const node = generateRun(1729).nodes[warden ? 18 : 10];
+    const h = fixture(progressionFor(node), true, warden);
+    const initial = warden ? 1500 : 5000, windup = warden ? 850 : 1150, cooldown = warden ? 4600 : 6500;
+    expect(h.snapshot().specialCooldownMs).toBe(initial);
+    expect(firstWarning(h, initial)).toMatchObject({durationMs: windup});
+    expect(h.snapshot()).toMatchObject({windupMs: windup, specialCooldownMs: cooldown, pendingAttack: 'charge'});
+    expect(advance(h.enemies, windup - 1)).toEqual([]);
+    expect(h.snapshot()).toMatchObject({windupMs: 1, chargeMs: 0});
+    h.enemies.update(1, PLAYER);
+    expect(h.snapshot()).toMatchObject({windupMs: 0, chargeMs: 650, velocityX: 330, velocityY: 0});
+  });
+
   it.each(['default', 'legacy-v2'] as const)('keeps %s elite charge warning and cooldown at 850/4600 ms', mode => {
     const balance = mode === 'default' ? BASE : progressionFor(generateRun(1729, 2).nodes.find(node => node.depth === 4)!);
     const h = fixture(balance);
