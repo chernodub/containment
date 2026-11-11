@@ -29,8 +29,8 @@ export function chooseRoute(routes, health = 100) {
 }
 /** Focus a visible spitter/champion; never aim at a dead or occluded target. */
 export function chooseTarget(enemies, player) {
-  return enemies.filter(e => e.health > 0 && e.clear && e.visible).sort((a, b) => {
-    const score = e => (e.champion || e.id < 0 ? 600 : 0) + (e.type === 'spitter' ? 400 : 0) + (e.elite ? 180 : 0) - distance(e, player);
+  return enemies.filter(e => e.health > 0 && e.clear && e.visible && e.vulnerable !== false).sort((a, b) => {
+    const score = e => (e.id === -1 ? 1000 : e.champion || e.id < 0 ? 600 : 0) + (e.type === 'spitter' ? 400 : 0) + (e.elite ? 180 : 0) - distance(e, player);
     return score(b) - score(a) || a.id - b.id;
   })[0];
 }

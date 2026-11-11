@@ -42,3 +42,10 @@ it('records a >5s loading hold once while allowing the earned run to continue', 
   expect(assessLoading(6000,true)).toEqual({record:false,timeout:false});
   expect(assessLoading(120001,true)).toEqual({record:false,timeout:true});
 });
+
+it('uses the Queen exposure window and stops firing into her armored phase', () => {
+  const queen={id:-1,type:'queen',x:300,y:0,health:1000,clear:true,visible:true,vulnerable:true};
+  const nest={id:-101,type:'queen',x:100,y:0,health:300,clear:true,visible:true};
+  expect(chooseTarget([nest,queen],{x:0,y:0}).id).toBe(-1);
+  queen.vulnerable=false;expect(chooseTarget([queen,nest],{x:0,y:0}).id).toBe(-101);
+});

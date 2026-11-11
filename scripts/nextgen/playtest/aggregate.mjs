@@ -27,6 +27,43 @@ function sumRecords(records) {
   return result;
 }
 
+/** Annotate exact reviewed evidence matches without mutating or removing raw receipts. */
+export function applyTriage(report, sidecar) {
+  if (sidecar === undefined) return report;
+  assert(sidecar && typeof sidecar === 'object' && !Array.isArray(sidecar)
+    && Array.isArray(sidecar.defects), 'Malformed triage: expected an object with a defects array.');
+  const entries = new Map();
+  for (const entry of sidecar.defects) {
+    assert(entry && typeof entry === 'object' && !Array.isArray(entry)
+      && entry.status === 'dismissed'
+      && ['evidence', 'reason', 'source'].every(key => typeof entry[key] === 'string' && entry[key].trim().length > 0),
+    'Malformed triage: each dismissal needs exact evidence, status=dismissed, reason and source.');
+    assert(!entries.has(entry.evidence), `Malformed triage: duplicate evidence ${entry.evidence}`);
+    entries.set(entry.evidence, entry);
+  }
+  return {
+    ...report,
+    defects: (report.defects ?? []).map(defect => {
+      const entry = typeof defect.evidence === 'string' && defect.evidence.trim().length
+        ? entries.get(defect.evidence) : null;
+      return entry ? {...defect, disposition: 'dismissed', reason: entry.reason, source: entry.source} : {...defect};
+    }),
+    triage: structuredClone(sidecar),
+  };
+}
+
+/** Load an explicit report and its optional review sidecar; only missing sidecars are optional. */
+export async function loadReport(path) {
+  const report = JSON.parse(await readFile(path, 'utf8'));
+  let triage;
+  try {
+    triage = JSON.parse(await readFile(join(dirname(path), 'triage.json'), 'utf8'));
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  return {path, report: applyTriage(report, triage)};
+}
+
 /** Preserve first/last resource measurements without interpreting room changes as leaks. */
 export function memoryTrend(rooms) {
   const points = rooms.map(room => ({
@@ -97,7 +134,10 @@ export function summarizeRun(report, reportPath = null) {
       damageDealt: room.damageDealt ?? {}, abilityUses: room.abilityUses ?? {},
       overdrives: room.overdrives ?? null, credits: room.credits ?? null, boons: room.boons ?? [],
     })),
-    errors: report.errors ?? [], defects: report.defects ?? [],
+    errors: report.errors ?? [],
+    defects: (report.defects ?? []).filter(defect => defect.disposition !== 'dismissed'),
+    dismissedDefects: (report.defects ?? []).filter(defect => defect.disposition === 'dismissed'),
+    triage: report.triage ?? null,
     checkpoints: (report.checkpoints ?? []).map(receipt => ({
       label: receipt.label, passed: receipt.passed, expectedRollback: receipt.expectedRollback,
       beforePhase: receipt.before?.run?.phase, afterPhase: receipt.after?.run?.phase,
@@ -110,7 +150,7 @@ export function summarizeRun(report, reportPath = null) {
 
 /** Group only explicitly selected runs, separating assistance and legacy campaign graphs. */
 export function aggregateReports(reports) {
-  const runs = reports.map(({report, path}) => summarizeRun(report, path));
+  const runs = reports.map(({report, path, triage}) => summarizeRun(applyTriage(report, triage), path));
   const keys = [...new Set(runs.map(run => `${run.assisted ? 'assisted' : 'unassisted'}:${run.legacy ? 'legacy-v2' : 'story-v3'}:${run.rig}`))].sort();
   const groups = keys.map(key => {
     const selected = runs.filter(run => `${run.assisted ? 'assisted' : 'unassisted'}:${run.legacy ? 'legacy-v2' : 'story-v3'}:${run.rig}` === key);
@@ -151,6 +191,7 @@ export function aggregateReports(reports) {
       abilityUses: sumRecords(selected.map(run => run.abilityUses)), overdrives,
       clearedRoomsPerOverdrive: overdrives ? completedRoomCount / overdrives : null,
       errors: sum(selected.map(run => run.errors.length)), defects: sum(selected.map(run => run.defects.length)),
+      dismissedDefects: sum(selected.map(run => run.dismissedDefects.length)),
       checkpoints: {total: sum(selected.map(run => run.checkpoints.length)), failed: sum(selected.map(run => run.checkpoints.filter(receipt => !receipt.passed).length))},
     };
   });
@@ -165,6 +206,7 @@ export function aggregateReports(reports) {
       'Heap observations include nondeterministic GC. Different rooms have different asset populations; cross-room growth alone is not a leak proof.',
       'Incoming damage source proximity is inferred, not authoritative attribution. Ability damage is authoritative but control value is not quantified.',
       'Checkpoint probes intentionally roll combat back to its last saved boundary; checkpoint runs must not be interpreted as uninterrupted attempts.',
+      'Reviewed collector false positives are annotated by exact evidence matches in optional sibling triage.json files; raw reports and all dismissal receipts remain available.',
     ],
     groups, runs,
     findings: runs.flatMap(run => [
@@ -172,6 +214,12 @@ export function aggregateReports(reports) {
       ...run.defects.map(defect => ({label: run.label, seed: run.seed, rig: run.rig, assisted: run.assisted, type: 'defect', reportPath: run.reportPath,
         evidencePath: run.reportPath && typeof defect.evidence === 'string' ? resolve(dirname(run.reportPath), defect.evidence) : null, detail: defect})),
     ]),
+    dismissedFindings: runs.flatMap(run => run.dismissedDefects.map(defect => ({
+      label: run.label, seed: run.seed, rig: run.rig, assisted: run.assisted,
+      type: 'dismissed-collector-defect', reportPath: run.reportPath,
+      evidencePath: run.reportPath && typeof defect.evidence === 'string' ? resolve(dirname(run.reportPath), defect.evidence) : null,
+      detail: defect,
+    }))),
   };
 }
 
@@ -180,12 +228,12 @@ const number = value => finite(value) ? value.toFixed(2) : '—';
 
 /** Standalone review table with exact timing receipts and evidence links. */
 export function renderSummary(summary) {
-  const rows = summary.groups.map(group => `<tr><td>${escapeHtml(group.key)}</td><td>${group.runs}</td><td>${group.deepestRoom}</td><td>${group.fullClears}/${group.runs} (${Math.round(group.clearRate * 100)}%)</td><td>${number(group.medianClearSeconds)}</td><td>${escapeHtml(JSON.stringify(group.outcomes))}</td><td>${escapeHtml(JSON.stringify(group.deathsByRoom))}</td><td>${group.errors}/${group.defects}</td></tr>`).join('');
+  const rows = summary.groups.map(group => `<tr><td>${escapeHtml(group.key)}</td><td>${group.runs}</td><td>${group.deepestRoom}</td><td>${group.fullClears}/${group.runs} (${Math.round(group.clearRate * 100)}%)</td><td>${number(group.medianClearSeconds)}</td><td>${escapeHtml(JSON.stringify(group.outcomes))}</td><td>${escapeHtml(JSON.stringify(group.deathsByRoom))}</td><td>${group.errors}/${group.defects} (${group.dismissedDefects ?? 0} dismissed)</td></tr>`).join('');
   const runs = summary.runs.map(run => {
     const timing = run.fixedStep.latest;
     return `<article><h2>${escapeHtml(run.label)} · ${escapeHtml(run.outcome)}</h2><p>Seed ${run.seed} · ${run.assisted ? 'ASSISTED' : 'UNASSISTED'} · deepest ${run.deepestRoom} · cleared ${run.roomsCleared} · <a href="${escapeHtml(run.reportPath ? pathToFileURL(run.reportPath).href : '#')}">source JSON</a></p><p>Exact latest fixed-step update+render ms: p50 ${number(timing?.updateRenderMs?.p50)}, p95 ${number(timing?.updateRenderMs?.p95)}, max ${number(timing?.updateRenderMs?.max)}; samples ${timing?.samples ?? '—'}, retained ${timing?.retained ?? '—'}. ${escapeHtml(run.fixedStep.scope)}</p><p>Damage ${escapeHtml(JSON.stringify(run.damageDealt))}; uses ${escapeHtml(JSON.stringify(run.abilityUses))}; Overdrives ${run.overdrives}.</p><p>Memory first → last delta: heap ${number(run.memory.delta.heap === null ? null : run.memory.delta.heap / 1e6)} MB, geometries ${run.memory.delta.geometries ?? '—'}, textures ${run.memory.delta.textures ?? '—'}.</p><details><summary>Per-room memory / exact timings / checkpoint receipts</summary><pre>${escapeHtml(JSON.stringify({memory: run.memory, timing: run.fixedStep.snapshots, checkpoints: run.checkpoints}, null, 2))}</pre></details></article>`;
   }).join('');
-  return `<!doctype html><html lang="en"><meta charset="utf-8"><title>Containment campaign playtests</title><style>body{font:15px system-ui;background:#111820;color:#e0ebf0;margin:24px;line-height:1.5}a{color:#99dcff}table{border-collapse:collapse;width:100%}td,th{border:1px solid #526170;padding:8px;text-align:left}pre{white-space:pre-wrap;overflow-wrap:anywhere}article{border-top:1px solid #526170;margin-top:24px}li{margin:8px 0}</style><h1>Containment campaign playtests</h1><p>${escapeHtml(summary.selection)}</p><ul>${summary.caveats.map(caveat => `<li>${escapeHtml(caveat)}</li>`).join('')}</ul><table><thead><tr><th>Mode / graph / rig</th><th>Runs</th><th>Deepest</th><th>Ending clear rate</th><th>Median cleared room s</th><th>End states</th><th>Deaths by room</th><th>Errors/defects</th></tr></thead><tbody>${rows}</tbody></table>${runs}<h2>Errors and defect receipts</h2><pre>${escapeHtml(JSON.stringify(summary.findings, null, 2))}</pre></html>`;
+  return `<!doctype html><html lang="en"><meta charset="utf-8"><title>Containment campaign playtests</title><style>body{font:15px system-ui;background:#111820;color:#e0ebf0;margin:24px;line-height:1.5}a{color:#99dcff}table{border-collapse:collapse;width:100%}td,th{border:1px solid #526170;padding:8px;text-align:left}pre{white-space:pre-wrap;overflow-wrap:anywhere}article{border-top:1px solid #526170;margin-top:24px}li{margin:8px 0}</style><h1>Containment campaign playtests</h1><p>${escapeHtml(summary.selection)}</p><ul>${summary.caveats.map(caveat => `<li>${escapeHtml(caveat)}</li>`).join('')}</ul><table><thead><tr><th>Mode / graph / rig</th><th>Runs</th><th>Deepest</th><th>Ending clear rate</th><th>Median cleared room s</th><th>End states</th><th>Deaths by room</th><th>Errors/active defects (dismissed)</th></tr></thead><tbody>${rows}</tbody></table>${runs}<h2>Errors and active defect receipts</h2><pre>${escapeHtml(JSON.stringify(summary.findings, null, 2))}</pre><h2>Dismissed collector findings</h2><pre>${escapeHtml(JSON.stringify(summary.dismissedFindings ?? [], null, 2))}</pre></html>`;
 }
 
 /** Resolve explicitly selected report labels or report directories; never sweep stale attempts. */
@@ -207,7 +255,7 @@ export function parseArguments(args, root = ROOT) {
 
 async function main() {
   const {paths, out} = parseArguments(process.argv.slice(2));
-  const reports = await Promise.all(paths.map(async path => ({path, report: JSON.parse(await readFile(path, 'utf8'))})));
+  const reports = await Promise.all(paths.map(loadReport));
   const summary = aggregateReports(reports);
   await mkdir(out, {recursive: true});
   await writeFile(join(out, 'campaign-summary.json'), JSON.stringify(summary, null, 2));

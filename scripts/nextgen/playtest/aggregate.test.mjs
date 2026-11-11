@@ -1,5 +1,8 @@
 import {describe, expect, it} from 'vitest';
-import {aggregateReports, median, memoryTrend, parseArguments, renderSummary, summarizeRun} from './aggregate.mjs';
+import {mkdir, mkdtemp, rm, writeFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {aggregateReports, applyTriage, loadReport, median, memoryTrend, parseArguments, renderSummary, summarizeRun} from './aggregate.mjs';
 
 function report(label, changes = {}) {
   return {
@@ -97,5 +100,91 @@ describe('campaign aggregation', () => {
     expect(html).not.toContain('<script>bad</script>');
     expect(html).toContain('&lt;script&gt;bad&lt;/script&gt;');
     expect(html).toContain('p95 8.00');
+  });
+});
+
+describe('reviewed collector defect sidecars', () => {
+  const dismissal = (evidence = 'defect-1.png') => ({
+    evidence, status: 'dismissed', reason: 'Marine projection sampled during loading.',
+    source: 'defect-1.json loading=true; inspected defect-1.png after load.',
+  });
+
+  it('annotates only exact evidence matches while retaining and not mutating all raw receipts', () => {
+    const raw = report('reviewed', {
+      defects: [Object.freeze({kind: 'hud-covers-marine', evidence: 'defect-1.png'}),
+        Object.freeze({kind: 'room-loading>5s', evidence: 'loading-1.png'})],
+      errors: [Object.freeze({type: 'console', message: 'real error'})],
+    });
+    Object.freeze(raw.defects);
+    const original = structuredClone(raw), sidecar = {defects: [dismissal()]};
+    const annotated = applyTriage(raw, sidecar);
+    expect(raw).toEqual(original);
+    expect(annotated.defects).toHaveLength(2);
+    expect(annotated.defects[0]).toMatchObject({disposition: 'dismissed', reason: dismissal().reason, source: dismissal().source});
+    expect(annotated.defects[1]).toEqual(raw.defects[1]);
+    expect(annotated.errors).toBe(raw.errors);
+    expect(annotated.triage).toEqual(sidecar);
+    expect(annotated.triage).not.toBe(sidecar);
+  });
+
+  it('cannot dismiss a different evidence spelling, an unknown entry or evidence-free findings', () => {
+    const raw = report('unmatched', {defects: [
+      {kind: 'exact-extension', evidence: 'defect-1.png'}, {kind: 'missing'},
+      {kind: 'empty', evidence: ''}, {kind: 'whitespace', evidence: ' '},
+      {kind: 'non-string', evidence: 123},
+    ]});
+    const sidecar = {defects: [dismissal('defect-1'), dismissal('unseen.png'), dismissal('123')]};
+    const run = summarizeRun(applyTriage(raw, sidecar));
+    expect(run.defects).toEqual(raw.defects);
+    expect(run.dismissedDefects).toEqual([]);
+    expect(run.triage).toEqual(sidecar);
+  });
+
+  it('keeps active invariants and console errors counted while exposing dismissal evidence in JSON and HTML', () => {
+    const raw = report('reviewed', {defects: [
+      {kind: 'hud-covers-marine', evidence: 'defect-1.png'},
+      {kind: 'invalid-combat-resource', evidence: 'invalid.png'},
+    ], errors: [{type: 'console', message: 'real error'}]});
+    const sidecar = {defects: [dismissal()]};
+    const summary = aggregateReports([{report: raw, path: '/tmp/run/report.json', triage: sidecar}]);
+    expect(summary.groups[0]).toMatchObject({defects: 1, dismissedDefects: 1, errors: 1});
+    expect(summary.runs[0].defects[0].kind).toBe('invalid-combat-resource');
+    expect(summary.runs[0].dismissedDefects[0].evidence).toBe('defect-1.png');
+    expect(summary.runs[0].triage).toEqual(sidecar);
+    expect(summary.findings.map(item => item.type)).toEqual(['error', 'defect']);
+    expect(summary.dismissedFindings[0]).toMatchObject({type: 'dismissed-collector-defect', evidencePath: '/tmp/run/defect-1.png'});
+    expect(JSON.stringify(summary)).toContain(dismissal().reason);
+    const html = renderSummary(summary);
+    expect(html).toContain('Dismissed collector findings');
+    expect(html).toContain(dismissal().reason);
+    expect(html).toContain('invalid-combat-resource');
+    expect(html).toContain('real error');
+  });
+
+  it('rejects malformed, unsupported, duplicate and evidence-free sidecar entries', () => {
+    for (const invalid of [null, [], {}, {defects: null}, {defects: [dismissal('')]},
+      {defects: [{...dismissal(), status: 'accepted'}]},
+      {defects: [{...dismissal(), reason: ' '}]}, {defects: [{...dismissal(), source: ''}]},
+      {defects: [dismissal(), dismissal()]},
+    ]) expect(() => applyTriage(report('bad-sidecar'), invalid)).toThrow(/Malformed triage/);
+  });
+
+  it('loads optional sibling sidecars but ignores only ENOENT, not invalid JSON, schema or filesystem errors', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'containment-triage-'));
+    const path = join(directory, 'report.json'), sidecarPath = join(directory, 'triage.json');
+    try {
+      await writeFile(path, JSON.stringify(report('disk', {defects: [{kind: 'hud-covers-marine', evidence: 'defect-1.png'}]})));
+      const absent = await loadReport(path);
+      expect(absent.report.defects[0]).not.toHaveProperty('disposition');
+      await writeFile(sidecarPath, JSON.stringify({defects: [dismissal()]}));
+      expect((await loadReport(path)).report.defects[0].disposition).toBe('dismissed');
+      await writeFile(sidecarPath, '{ broken');
+      await expect(loadReport(path)).rejects.toBeInstanceOf(SyntaxError);
+      await writeFile(sidecarPath, 'null');
+      await expect(loadReport(path)).rejects.toThrow(/Malformed triage/);
+      await rm(sidecarPath);
+      await mkdir(sidecarPath);
+      await expect(loadReport(path)).rejects.toMatchObject({code: 'EISDIR'});
+    } finally { await rm(directory, {recursive: true, force: true}); }
   });
 });
