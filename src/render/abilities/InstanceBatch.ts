@@ -72,7 +72,7 @@ ${kind === 'decal' ? `
  float d=length(p);float a0=atan(p.y,p.x);float variant=floor(phase+.01);
  float n=fract(sin(dot(floor(p*31.),vec2(127.1,311.7)))*43758.5);
  float cracks=pow(1.-abs(sin(a0*11.+floor(d*9.)*.14)),24.)*step(.14,n)*(1.-smoothstep(.8,1.,d));
- if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,(1.-smoothstep(.65,1.,d))*(.08+n*.1));}
+ if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,(1.-smoothstep(.65,1.,d))*(.08+n*.1));c=mix(ink,vec3(1.5,.42,.025),pow(cracks,3.)*.7*flash);}
  else if(variant<1.5){if(d>1.)discard;float frost=pow(1.-abs(sin(a0*13.+d*35.)),12.);a*=(.16+n*.2+frost*.6)*(1.-smoothstep(.82,1.,d));c*=1.4;}
  else if(variant<2.5){float edge=abs(p.y);a*=(1.-smoothstep(.7,1.,abs(p.x)))*(1.-smoothstep(.5,1.,edge))*(.5+n*.4);c=mix(ink,vec3(2.8,.5,.015),smoothstep(.35,.6,edge)*step(edge,.7)*flash);}
  else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.83,1.,d))*(.3+n*.4+cracks*.3);}

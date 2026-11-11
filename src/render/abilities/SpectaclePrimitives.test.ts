@@ -24,7 +24,7 @@ describe('V3 shared spectacle', () => {
     k.scar('trench', 10, 4, 14, 0x201711, 9, Math.PI / 2, .55);
     k.begin(8); k.end(); expect(k.batches.decal.mesh.count).toBe(1);
     k.batches.decal.mesh.getMatrixAt(0, m);
-    const bounds = new T.Box3().setFromBufferAttribute(k.batches.decal.mesh.geometry.getAttribute('position')).applyMatrix4(m);
+    const bounds = new T.Box3().setFromBufferAttribute(k.batches.decal.mesh.geometry.getAttribute('position') as T.BufferAttribute).applyMatrix4(m);
     expect(bounds.max.z - bounds.min.z).toBeCloseTo(28);
     expect(bounds.max.x - bounds.min.x).toBeCloseTo(1.1);
     const before = m.elements.slice(); k.begin(0); k.end(); k.batches.decal.mesh.getMatrixAt(0, m);
