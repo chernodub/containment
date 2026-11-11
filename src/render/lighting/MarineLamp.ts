@@ -33,7 +33,7 @@ export class MarineLamp {
     this.cone.quaternion.setFromUnitVectors(this.down, this.direction);
   }
   /** Stable local illumination keeps the full movement neighborhood readable in every room. */
-  setRoom() { this.suitFill.visible=true;this.suitFill.intensity=24; }
+  setRoom(intensity=24) { this.suitFill.visible=true;this.suitFill.intensity=intensity; }
   setReactor(_reactor: boolean) { this.setRoom(); }
   setQuality(high: boolean, atmosphere = true) { this.cone.visible = high && atmosphere; }
   dispose() { this.cone.geometry.dispose(); this.cone.material.dispose(); this.root.removeFromParent(); }

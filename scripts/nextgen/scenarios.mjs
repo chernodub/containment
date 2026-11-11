@@ -125,7 +125,7 @@ export function inspectFrame(){
    if(!d.canStand(x,y,12))continue;
    point.set(x/32,.04,y/32).project(r.camera);
    const px=(point.x+1)/2,py=(1-point.y)/2;
-   if(px>.15&&px<.85&&py>.2&&py<.8){const sample=[Math.round(px*canvas.clientWidth),Math.round(py*canvas.clientHeight)];playfieldSamples.push(sample);if(Math.hypot(x-g.player.x,y-g.player.y)<=96)marineLocalSamples.push(sample);}
+   const sample=[Math.round(px*canvas.clientWidth),Math.round(py*canvas.clientHeight)];if(px>.15&&px<.85&&py>.2&&py<.8)playfieldSamples.push(sample);if(px>0&&px<1&&py>0&&py<1&&Math.hypot(x-g.player.x,y-g.player.y)<=96)marineLocalSamples.push(sample);
   }
  }
  return {shaderCompilations:d.shaderCompilations??null,recoveryProof:d.recoveryProof??null,lighting:r.lighting?.fixtures?.map(l=>({x:l.position.x,y:l.position.y,z:l.position.z,energy:l.intensity,visible:l.visible})),poolLights:r.lighting?.pool?.lights?.filter(l=>l.visible).length,playfieldSamples,marineLocalSamples,recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden};

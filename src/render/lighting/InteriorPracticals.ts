@@ -15,15 +15,39 @@ function inside(polygon: Polygon, x: number, z: number): boolean {
   }
   return result;
 }
-function fits(polygon: Polygon, x: number, z: number): boolean {
-  return inside(polygon,x,z) && inside(polygon,x-.35,z-.35) && inside(polygon,x+.35,z-.35) && inside(polygon,x-.35,z+.35) && inside(polygon,x+.35,z+.35);
+function fits(polygon: Polygon, x: number, z: number, clearance: number): boolean {
+  return inside(polygon,x,z) && inside(polygon,x-clearance,z-clearance) && inside(polygon,x+clearance,z-clearance) && inside(polygon,x-clearance,z+clearance) && inside(polygon,x+clearance,z+clearance);
+}
+
+function place(anchor: T.Vector3, polygon: Polygon | undefined, x0: number, z0: number, x1: number, z1: number, clearance: number): boolean {
+  if(x1-x0<clearance*2||z1-z0<clearance*2)return false;
+  const startX=anchor.x,startZ=anchor.z,cx=(x0+x1)/2,cz=(z0+z1)/2;
+  const accept=(x:number,z:number)=>{
+    if(x<x0+clearance||x>x1-clearance||z<z0+clearance||z>z1-clearance||polygon&&!fits(polygon,x,z,clearance))return false;
+    anchor.x=x;anchor.z=z;return true;
+  };
+  if(accept(Math.max(x0+clearance,Math.min(x1-clearance,startX)),Math.max(z0+clearance,Math.min(z1-clearance,startZ))))return true;
+  for(let step=1;step<=10;step++){const amount=step/10;if(accept(startX+(cx-startX)*amount,startZ+(cz-startZ)*amount))return true;}
+  // A concave ring's centroid may be ordinary floor. Search around the source first.
+  for(let ring=1;ring<=4;ring++)for(let angle=0;angle<16;angle++){
+    const radians=angle*Math.PI/8,radius=clearance*ring*1.2;
+    if(accept(startX+Math.cos(radians)*radius,startZ+Math.sin(radians)*radius))return true;
+  }
+  if(polygon)for(let i=0;i<polygon.length;i++){
+    const a=polygon[i],b=polygon[(i+1)%polygon.length],mx=(a.x+b.x)/64,mz=(a.y+b.y)/64;
+    for(let angle=0;angle<16;angle++){
+      const radians=angle*Math.PI/8;
+      if(accept(mx+Math.cos(radians)*clearance*1.5,mz+Math.sin(radians)*clearance*1.5))return true;
+    }
+  }
+  return false;
 }
 
 /** Add bounded practical emitters on real non-walkable equipment surfaces, never in circulation lanes. */
 export function addInteriorPracticals(world: T.Group, template: InteriorPlan, environment: ShipEnvironment): void {
   if (environment === 'reactor' || environment === 'cryogenics' || environment === 'habitation' || world.userData.interiorPracticals) return;
-  const anchors: T.Vector3[] = [];
-  const point = new T.Vector3(), relative = new T.Matrix4(), inverse = new T.Matrix4();
+  const anchors: {point:T.Vector3;tiny:boolean}[] = [];
+  const point = new T.Vector3(), relative = new T.Matrix4(), objectRelative = new T.Matrix4(), instance = new T.Matrix4(), inverse = new T.Matrix4();
   world.updateWorldMatrix(true, true); inverse.copy(world.matrixWorld).invert();
   const footprints = template.obstacles.map(obstacle => ({...obstacle, polygon: undefined as Polygon | undefined}));
   for (const polygon of template.voids ?? []) {
@@ -39,31 +63,30 @@ export function addInteriorPracticals(world: T.Group, template: InteriorPlan, en
     world.traverse(object => {
       if (!(object instanceof T.Mesh) || (object.material as T.Material).name === 'environment-contact') return;
       const vertices = object.geometry.getAttribute('position'); if (!vertices) return;
-      relative.multiplyMatrices(inverse, object.matrixWorld);
-      for (let i = 0; i < vertices.count; i++) {
+      objectRelative.multiplyMatrices(inverse, object.matrixWorld);
+      const count=object instanceof T.InstancedMesh?object.count:1;
+      for(let slot=0;slot<count;slot++){
+       if(object instanceof T.InstancedMesh){object.getMatrixAt(slot,instance);relative.multiplyMatrices(objectRelative,instance);}else relative.copy(objectRelative);
+       for (let i = 0; i < vertices.count; i++) {
         point.fromBufferAttribute(vertices, i).applyMatrix4(relative);
-        if (point.x < x0 || point.x > x1 || point.z < z0 || point.z > z1 || point.y < .35 || point.y > 3.5) continue;
+        if (point.x < x0-1e-5 || point.x > x1+1e-5 || point.z < z0-1e-5 || point.z > z1+1e-5 || point.y < .35 || point.y > 3.5) continue;
         if (obstacle.polygon && !inside(obstacle.polygon,point.x,point.z)) continue;
         const distance = (point.x - cx) ** 2 + (point.z - cz) ** 2;
         if (point.y > bestY + .08 || point.y >= bestY - .08 && distance < bestDistance) {
           bestY = point.y; bestDistance = distance;
           if (!anchor) anchor = new T.Vector3(); anchor.copy(point);
         }
+       }
       }
     });
     if (anchor) {
       const mounted = anchor as T.Vector3;
-      if (x1-x0 < .72 || z1-z0 < .72) continue;
-      mounted.x=Math.max(x0+.36,Math.min(x1-.36,mounted.x));mounted.z=Math.max(z0+.36,Math.min(z1-.36,mounted.z));
-      if (obstacle.polygon && !fits(obstacle.polygon,mounted.x,mounted.z)) {
-        const startX=mounted.x,startZ=mounted.z;let found=false;
-        for(let step=1;step<=10;step++){
-          const amount=step/10,nx=startX+(cx-startX)*amount,nz=startZ+(cz-startZ)*amount;
-          if(fits(obstacle.polygon,nx,nz)){mounted.x=nx;mounted.z=nz;found=true;break;}
-        }
-        if(!found)continue;
+      let tiny=false;
+      if(!place(mounted,obstacle.polygon,x0,z0,x1,z1,.35)){
+        if(!place(mounted,obstacle.polygon,x0,z0,x1,z1,.065))continue;
+        tiny=true;
       }
-      anchors.push(mounted);
+      anchors.push({point:mounted,tiny});
     }
   }
   if (!anchors.length) return;
@@ -80,10 +103,10 @@ export function addInteriorPracticals(world: T.Group, template: InteriorPlan, en
   emitters.name = 'interior-practical-emitters'; housings.name = 'interior-practical-housings';
   const dummy = new T.Object3D(), color = new T.Color(), fixtures = world.userData.lightFixtures ??= [];
   for (let i = 0; i < anchors.length; i++) {
-    const anchor = anchors[i];
+    const {point:anchor,tiny} = anchors[i];
     const tint = organic ? i % 3 === 1 ? 0xdc68ca : 0xa1ef72 : environment === 'communications' ? i % 2 ? 0x58e4bc : 0x69d9ef : environment === 'security' ? i % 2 ? 0xff6650 : 0xe8f1ff : environment === 'containment' && i % 2 ? 0xe5eaff : getEnvironmentMood(environment).practical.color;
-    dummy.position.copy(anchor); dummy.position.y += .045; dummy.scale.set(.65, .09, .42); dummy.updateMatrix(); housings.setMatrixAt(i, dummy.matrix);
-    dummy.position.y += organic ? .19 : .09; dummy.scale.set(organic ? .24 : .5, organic ? .23 : .08, organic ? .24 : .25); dummy.updateMatrix(); emitters.setMatrixAt(i, dummy.matrix); emitters.setColorAt(i, color.setHex(tint));
+    dummy.position.copy(anchor); dummy.position.y += .045; dummy.scale.set(tiny?.12:.65, .09, tiny?.12:.42); dummy.updateMatrix(); housings.setMatrixAt(i, dummy.matrix);
+    dummy.position.y += organic ? tiny?.085:.19 : .09; dummy.scale.set(tiny?organic?.045:.09:organic?.24:.5, organic?tiny?.075:.23:.08, tiny?organic?.045:.09:organic?.24:.25); dummy.updateMatrix(); emitters.setMatrixAt(i, dummy.matrix); emitters.setColorAt(i, color.setHex(tint));
     fixtures.push({ x: dummy.position.x, y: dummy.position.y, z: dummy.position.z, color: tint, nativeColor: true });
   }
   for (const mesh of [housings, emitters]) { mesh.frustumCulled = false; mesh.instanceMatrix.needsUpdate = true; mesh.geometry.addEventListener('dispose', () => mesh.dispose()); }

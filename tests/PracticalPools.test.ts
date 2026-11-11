@@ -44,7 +44,7 @@ it('keeps actual bounce hue and defined gaps in every environment while preservi
  expect(pools.root.geometry.getAttribute('reactorPoolAmount').getX(0)).toBe(1);
  light.userData.reactorMood=false;pools.update([light],true);pools.root.getColorAt(0,color);
  expect(color.g/color.r).toBeCloseTo(light.color.g/light.color.r);
- pools.root.getMatrixAt(0,matrix);expect(new T.Vector3().setFromMatrixScale(matrix).x).toBeCloseTo(3.75);
+ pools.root.getMatrixAt(0,matrix);expect(new T.Vector3().setFromMatrixScale(matrix).x).toBeCloseTo(3.6);
  expect(pools.root.geometry.getAttribute('reactorPoolAmount').getX(0)).toBe(1);
  pools.dispose();
 });
