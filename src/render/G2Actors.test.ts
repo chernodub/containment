@@ -1,7 +1,7 @@
 import {beforeAll,expect,it,vi} from 'vitest';
 import * as T from 'three';
 import {loadModels} from '../../tests/loadModels';
-import {alien,marine,pickupModel,disposeModel,freezeCorpse} from './models';
+import {alien,marine,pickupModel,disposeModel,freezeCorpse,MAT} from './models';
 import {FAMILY_IDENTITY,RIG_ACCENTS} from './ActorIdentity';
 import {MarineLamp} from './lighting/MarineLamp';
 import {EnemyHealthBars} from './EnemyHealthBars';
@@ -56,11 +56,24 @@ it('changes rig colors through uniforms while keeping torso attachment and shade
   disposeModel(model.root);
 });
 
-it('uses distinct physical pickup silhouettes and only existing standard finishes',()=>{
-  const health=pickupModel('health'),ammo=pickupModel('ammo');
-  expect(health.name).not.toBe(ammo.name);
-  const counts=(root:T.Group)=>{let triangles=0;root.traverse(o=>{if(o instanceof T.Mesh){expect(o.material).toBeInstanceOf(T.MeshStandardMaterial);triangles+=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3;}});return triangles;};
-  expect(counts(health)).not.toBe(counts(ammo));disposeModel(health);disposeModel(ammo);
+it('gives every pickup a distinct physical silhouette using at most four existing standard finishes',()=>{
+  const signatures=new Set<string>(),models=['health','ammo','credits','armor','grenade'].map(pickupModel);
+  for(const model of models){
+    let triangles=0,draws=0;const materials=new Set<T.Material>();
+    model.traverse(o=>{if(o instanceof T.Mesh){
+      draws++;expect(o.material).toBeInstanceOf(T.MeshStandardMaterial);
+      const material=o.material as T.MeshStandardMaterial;materials.add(material);
+      expect(Object.values(material).some(value=>value instanceof T.Texture)).toBe(false);
+      triangles+=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3;
+    }});
+    expect(draws).toBeLessThanOrEqual(4);expect(materials.size).toBeLessThanOrEqual(4);
+    const size=new T.Box3().setFromObject(model,true).getSize(new T.Vector3());
+    signatures.add(JSON.stringify([triangles,...size.toArray().map(n=>Math.round(n*100))]));
+    if(model.name==='pickup-grenade')expect(size.y).toBeGreaterThan(size.x);
+    if(model.name==='pickup-armor')expect(size.y).toBeLessThan(size.z);
+    if(model.name==='pickup-credits')expect([...materials]).toContain(MAT.trim);
+  }
+  expect(signatures.size).toBe(5);models.forEach(disposeModel);
 });
 
 it('raises the broad suit fill to avoid a clipped foot hotspot while retaining a soft forward lamp',()=>{

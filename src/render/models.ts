@@ -1,6 +1,6 @@
 import * as T from 'three';
 import {ENEMY_SPAN} from '../game/combat/enemyContact';
-import {MAT,shell,rod,batch,disposeModel} from './meshParts';
+import {MAT,shell,rod,box,ring,batch,disposeModel} from './meshParts';
 import {instantiateAsset,type AssetName} from './assets';
 import {afflictionEffects,NO_AFFLICTION,type AfflictionStatus} from './afflictions';
 import {weaponModel,WEAPON_FIT,WEAPON_APPEARANCE,type GunModel} from './weapons';
@@ -84,15 +84,38 @@ export function nest():T.Group{
 /** Physical supply silhouettes with semantic symbols; uses only prewarmed shared finishes. */
 export function pickupModel(kind:string):T.Group{
  const g=new T.Group();g.name=`pickup-${kind}`;
- const health=kind==='health',accent=health?MAT.acid:MAT.cyan;
- shell(g,0,0,0,.25,.16,.42,MAT.dark);
- if(health){
-  for(const side of [-1,1])rod(g,vec(side*.19,-.08,-.16),vec(side*.19,-.08,.16),.035,.035,MAT.steel);
-  shell(g,0,.14,0,.16,.035,.3,accent);
-  rod(g,vec(-.105,.19,0),vec(.105,.19,0),.025,.025,MAT.armor);
-  rod(g,vec(0,.19,-.105),vec(0,.19,.105),.025,.025,MAT.armor);
+ if(kind==='credits'){
+  box(g,0,-.06,0,.48,.07,.36,MAT.dark,.02);
+  for(let stack=0;stack<3;stack++)for(let coin=0;coin<stack+2;coin++){
+   const x=(stack-1)*.125,z=stack%2?.045:-.03,y=coin*.034;
+   rod(g,vec(x,y,z),vec(x,y+.026,z),.09,.09,MAT.trim);
+  }
+  box(g,0,.1,.045,.055,.009,.07,MAT.amber,.003);
+ }else if(kind==='armor'){
+  const shape=new T.Shape();shape.moveTo(-.22,.18);shape.lineTo(.22,.18);shape.lineTo(.22,-.05);shape.lineTo(0,-.28);shape.lineTo(-.22,-.05);shape.closePath();
+  const geometry=new T.ExtrudeGeometry(shape,{depth:.065,bevelEnabled:true,bevelSegments:1,steps:1,bevelSize:.012,bevelThickness:.012});geometry.rotateX(-Math.PI/2);
+  g.add(new T.Mesh(geometry,MAT.dark));
+  for(let i=0;i<3;i++){
+   const width=.34-i*.07,z=-.105+i*.112;
+   box(g,0,.082,z,width,.04,.085,MAT.armor,.012);
+   box(g,0,.108,z,.025,.008,.059,MAT.cyan,.003);
+  }
+ }else if(kind==='grenade'){
+  rod(g,vec(0,-.12,0),vec(0,.2,0),.13,.15,MAT.shellDark);
+  rod(g,vec(0,.025,0),vec(0,.065,0),.151,.151,MAT.amber);
+  rod(g,vec(0,.2,0),vec(0,.265,0),.105,.105,MAT.steel);
+  box(g,.125,.15,0,.035,.31,.075,MAT.steel,.008);
+  ring(g,.045,.3,.015,.062,.012,MAT.steel);
  }else{
-  for(let i=-1;i<=1;i++){rod(g,vec(i*.11,-.05,-.13),vec(i*.11,.15,.13),.035,.035,MAT.trim);shell(g,i*.11,.16,.13,.035,.055,.06,accent);}
+  shell(g,0,0,0,.25,.16,.42,MAT.dark);
+  if(kind==='health'){
+   for(const side of [-1,1])rod(g,vec(side*.19,-.08,-.16),vec(side*.19,-.08,.16),.035,.035,MAT.steel);
+   shell(g,0,.14,0,.16,.035,.3,MAT.acid);
+   rod(g,vec(-.105,.19,0),vec(.105,.19,0),.025,.025,MAT.armor);
+   rod(g,vec(0,.19,-.105),vec(0,.19,.105),.025,.025,MAT.armor);
+  }else{
+   for(let i=-1;i<=1;i++){rod(g,vec(i*.11,-.05,-.13),vec(i*.11,.15,.13),.035,.035,MAT.trim);shell(g,i*.11,.16,.13,.035,.055,.06,MAT.cyan);}
+  }
  }
  batch(g);return g;
 }
