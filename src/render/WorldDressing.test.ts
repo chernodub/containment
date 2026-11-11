@@ -8,6 +8,7 @@ import {disposeModel} from './meshParts';
 function platformWorld(template:typeof ROOM_TEMPLATES['armory']){
  const root=new T.Group();
  for(const r of template.obstacles){const mesh=new T.Mesh(new T.BoxGeometry(r.width/32,1,r.height/32),new T.MeshStandardMaterial());mesh.position.set((r.x+r.width/2)/32,.5,(r.y+r.height/2)/32);root.add(mesh);}
+ for(const polygon of template.voids??[]){const shape=new T.Shape(polygon.map(p=>new T.Vector2(p.x/32,-p.y/32))),geometry=new T.ExtrudeGeometry(shape,{depth:1,bevelEnabled:false,steps:1});geometry.rotateX(-Math.PI/2);root.add(new T.Mesh(geometry,new T.MeshStandardMaterial()));}
  return root;
 }
 function arrays(root:T.Object3D){const all:number[][]=[];root.traverse(o=>{if(o instanceof T.Mesh)all.push(Array.from(o.geometry.attributes.position.array));});return all;}

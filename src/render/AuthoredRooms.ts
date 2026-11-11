@@ -612,6 +612,14 @@ function reactorFloor(f:Fabricator,t:RoomPlan){
   for(const y of [-3.3,-1.4,.15]){f.ring(b.x,y,b.z,radius,.15,f.edge);f.ring(b.x,y+.2,b.z,radius*.83,.055,f.cold);}
   f.pipe(v(b.x,-3.9,b.z),v(b.x,.65,b.z),radius*.32,f.cold);
   f.ring(b.x,.72,b.z,radius*.45,.19,f.bronze);f.ring(b.x,.86,b.z,radius*.66,.13,f.ivory);
+  // A compact incandescent heart and twisting energy cages stay inside the real well.
+  f.ellipsoid(b.x,.7,b.z,radius*.27,.065,radius*.27,f.cold);
+  for(let strand=0;strand<3;strand++)for(let segment=0;segment<14;segment++){
+   const a=segment/14*TAU+strand*TAU/3,beta=(segment+1)/14*TAU+strand*TAU/3;
+   const y=.73+segment/14*1.05,ny=.73+(segment+1)/14*1.05,r=radius*(.11+.045*Math.sin(a*2));
+   f.pipe(v(b.x+Math.cos(a)*r,y,b.z+Math.sin(a)*r),v(b.x+Math.cos(beta)*r,ny,b.z+Math.sin(beta)*r),.025,f.cold,.018);
+  }
+  for(let ember=0;ember<9;ember++){const a=ember*2.399,r=radius*(.13+.02*(ember%4));f.ellipsoid(b.x+Math.cos(a)*r,.96+(ember%4)*.28,b.z+Math.sin(a)*r,.018,.055,.018,f.warm);}
   for(let i=0;i<12;i++){const a=i*TAU/12,dx=Math.cos(a),dz=Math.sin(a);
    f.pipe(v(b.x+dx*radius*.82,-3.4,b.z+dz*radius*.82),v(b.x+dx*radius*.61,.55,b.z+dz*radius*.61),.16,f.bronze);
    // Suspended clamps are contained inside the non-walkable well.

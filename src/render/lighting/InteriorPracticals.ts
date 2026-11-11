@@ -99,14 +99,15 @@ export function addInteriorPracticals(world: T.Group, template: InteriorPlan, en
   material.customProgramCacheKey = () => 'interior-practical-emission-v1';
   const emitters = new T.InstancedMesh(geometry, material, anchors.length);
   const housingMaterial = new T.MeshStandardMaterial({ color: 0x28363b, roughness: .65, metalness: .6 }); housingMaterial.userData.actorMaterial = true;
-  const housings = new T.InstancedMesh(new T.BoxGeometry(1, 1, 1), housingMaterial, anchors.length);
+  const housings = new T.InstancedMesh(organic?new T.SphereGeometry(1,10,6):new T.BoxGeometry(1, 1, 1), housingMaterial, anchors.length);
+  if(organic){housingMaterial.color.setHex(0x392c35);housingMaterial.metalness=.05;housingMaterial.roughness=.85;}
   emitters.name = 'interior-practical-emitters'; housings.name = 'interior-practical-housings';
   const dummy = new T.Object3D(), color = new T.Color(), fixtures = world.userData.lightFixtures ??= [];
   for (let i = 0; i < anchors.length; i++) {
     const {point:anchor,tiny} = anchors[i];
     const tint = organic ? i % 3 === 1 ? 0xdc68ca : 0xa1ef72 : environment === 'communications' ? i % 2 ? 0x58e4bc : 0x69d9ef : environment === 'security' ? 0xe8f1ff : environment === 'containment' && i % 2 ? 0xe5eaff : getEnvironmentMood(environment).practical.color;
     dummy.position.copy(anchor); dummy.position.y += .045; dummy.scale.set(tiny?.12:.65, .09, tiny?.12:.42); dummy.updateMatrix(); housings.setMatrixAt(i, dummy.matrix);
-    dummy.position.y += organic ? tiny?.085:.19 : .09; dummy.scale.set(tiny?organic?.045:.09:organic?.24:.5, organic?tiny?.075:.23:.08, tiny?organic?.045:.09:organic?.24:.25); dummy.updateMatrix(); emitters.setMatrixAt(i, dummy.matrix); emitters.setColorAt(i, color.setHex(tint));
+    dummy.position.y += organic ? tiny?.035:.05 : .09; dummy.scale.set(tiny?organic?.025:.09:organic?.075:environment==='communications'?.12:.5, organic?tiny?.025:.055:.08, tiny?organic?.045:.09:organic?.18:environment==='communications'?.1:.25); dummy.updateMatrix(); emitters.setMatrixAt(i, dummy.matrix); emitters.setColorAt(i, color.setHex(tint));
     fixtures.push({ x: dummy.position.x, y: dummy.position.y, z: dummy.position.z, color: tint, nativeColor: true });
   }
   for (const mesh of [housings, emitters]) { mesh.frustumCulled = false; mesh.instanceMatrix.needsUpdate = true; mesh.geometry.addEventListener('dispose', () => mesh.dispose()); }

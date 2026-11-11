@@ -2,6 +2,7 @@ import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import type {ShipEnvironment} from '../ShipEnvironments';
+import {COMMUNAL_ATRIUM_BLOCKOUT} from '../../game/roguelike/authoredRoomTopologies';
 import {passengerObservationTexture,serviceCartridge,serviceHousingGeometry} from './EquipmentDetail';
 
 const UNIT=32;
@@ -73,7 +74,8 @@ function insideSolid(x:number,z:number,polygon:readonly {x:number;y:number}[]):b
 function equipmentReservations(template:RoomTemplate,templateId:string):Array<{x:number;y:number;width:number;height:number}> {
   const reservations=[...template.obstacles];
   if(templateId==='passenger-vault')return reservations;
-  for(const polygon of template.voids??[]){
+  const polygons=templateId==='communal-atrium'?COMMUNAL_ATRIUM_BLOCKOUT.filter(f=>f.kind==='table').map(f=>f.footprint):template.voids??[];
+  for(const polygon of polygons){
     const left=Math.min(...polygon.map(p=>p.x)),right=Math.max(...polygon.map(p=>p.x));
     const near=Math.min(...polygon.map(p=>p.y)),far=Math.max(...polygon.map(p=>p.y));
     const width=Math.min(48,(right-left)*.65),height=Math.min(42,(far-near)*.65);
@@ -82,7 +84,7 @@ function equipmentReservations(template:RoomTemplate,templateId:string):Array<{x
     for(const fz of [.26,.74,.5])for(const fx of [.26,.74,.5]){
       if(count===2)break;
       const x=left+(right-left)*fx,y=near+(far-near)*fz;
-      if(![-1,1].every(sx=>[-1,1].every(sz=>insideSolid(x+sx*width*.5,y+sz*height*.5,polygon))))continue;
+      if(![-1,0,1].every(sx=>[-1,0,1].every(sz=>insideSolid(x+sx*width*.5,y+sz*height*.5,polygon))))continue;
       reservations.push({x:x-width*.5,y:y-height*.5,width,height});count++;
     }
   }
@@ -131,7 +133,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     const cx=(left+right)/2,cz=(near+far)/2;
     for(let n=0;n<Math.min(6,Math.ceil(w*d/9));n++){
       const margin=Math.min(.52,w*.35,d*.35),x=left+margin+random()*Math.max(0,w-2*margin),z=near+margin+random()*Math.max(0,d-2*margin);
-      ray.set(point(x,20,z),down);const hit=ray.intersectObject(world,true).find(h=>h.point.y>.15);if(!hit)continue;
+      ray.set(point(x,20,z),down);const hit=ray.intersectObject(world,true).find(h=>h.point.y>.15&&(templateId!=='armory'||h.point.y<1.5));if(!hit)continue;
       const y=hit.point.y+.015,angle=random()*Math.PI,span=Math.min(.34,w*.12,d*.12);
       if(environment==='habitation'){
         // Luggage, a folded blanket and a worn personal data slate form a lived-in cluster.

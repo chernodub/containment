@@ -44,13 +44,24 @@ const vertexShader = /* glsl */ `
   varying vec2 vUv;
   varying vec2 vSeed;
   varying float vFade;
+  varying float vStory;
   void main() {
     vUv = uv;
     vSeed = variation.yz;
+    vStory = variation.w;
     float phase = variation.y * 6.2831853;
     vec3 p = origin;
     float t = time;
     vFade = 1.0;
+    if (vStory > .5) {
+      float cycle=fract(variation.y+t*(vStory<1.5?.9:vStory<2.5?.23:1.1));
+      float size=.04;
+      if(vStory<1.5){p+=vec3((variation.z-.5)*cycle*.6,-cycle*cycle*.75+cycle*.22,(variation.y-.5)*cycle*.6);size=.022;vFade=pow(1.-cycle,2.);}
+      else if(vStory<2.5){p+=vec3(sin(variation.z*12.+t*.4)*cycle*.14,cycle*.9,cos(variation.y*14.)*cycle*.12);size=.15+cycle*.32;vFade=sin(cycle*3.14159)*.13;}
+      else{p.y-=cycle*.7;size=.019;vFade=sin(cycle*3.14159)*.5;}
+      vec4 view=modelViewMatrix*vec4(p,1.);view.xy+=position.xy*vec2(size,vStory>2.5?size*3.:size);gl_Position=projectionMatrix*view;
+      return;
+    }
     if (layer < 0.5) {
       p.y = .25 + fract((origin.y - .25) / 2.8 + t * rise) * 2.8;
       p.x += sin(t * .17 + phase) * .16;
@@ -88,9 +99,15 @@ const fragmentShader = /* glsl */ `
   varying vec2 vUv;
   varying vec2 vSeed;
   varying float vFade;
+  varying float vStory;
   void main() {
     vec2 p = vUv * 2.0 - 1.0;
     float r = dot(p, p);
+    if(vStory>.5){float alpha=pow(max(0.,1.-sqrt(r)),2.)*vFade;vec3 color=vStory<1.5?vec3(3.,1.1,.15):vStory<2.5?vec3(.7,.77,.8):vec3(.3,.5,.43);gl_FragColor=vec4(color,alpha);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+      return;
+    }
     float alpha = pow(max(0.0, 1.0 - r), layer < .5 ? 2.0 : 3.0);
     if (layer > .5) {
       float folds = sin(p.x * 5.0 + vSeed.x * 20.0 + time * .13)
@@ -126,6 +143,19 @@ function batch(name: string, capacity: number, layer: number): Batch {
   mesh.name = name;
   mesh.frustumCulled = false;
   mesh.renderOrder = 2;
+  return mesh;
+}
+
+/** Reuse the prepared atmosphere program for tiny source-anchored sparks, vapor and drips. */
+export function createAnchoredStoryParticles(origins:readonly {x:number;y:number;z:number;kind:number}[],clock:{value:number}):Batch {
+  const count=origins.reduce((sum,origin)=>sum+(origin.kind===1?8:12),0),mesh=batch('source-anchored-story-particles',count,0);
+  const positions=mesh.geometry.getAttribute('origin') as T.InstancedBufferAttribute,variations=mesh.geometry.getAttribute('variation') as T.InstancedBufferAttribute;
+  let index=0;
+  for(const [i,origin]of origins.entries())for(let j=0;j<(origin.kind===1?8:12);j++){
+    positions.setXYZ(index,origin.x,origin.y,origin.z);variations.setXYZW(index,1,(j*.61803398875+i*.37)%1,(j*.41421356+i*.23)%1,origin.kind+1);index++;
+  }
+  mesh.geometry.instanceCount=count;positions.needsUpdate=variations.needsUpdate=true;
+  mesh.material.uniforms.time=clock;mesh.material.name=mesh.name;mesh.material.userData.actorMaterial=true;
   return mesh;
 }
 

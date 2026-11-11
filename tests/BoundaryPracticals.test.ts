@@ -69,29 +69,25 @@ describe('practicals follow physical room boundaries', () => {
     disposeModel(enormous);
   });
 
-  it('preserves exact legacy rectangular placement when the optional polygon is omitted', () => {
-    const world = new T.Group();
-    addRoomPracticals(world, 24, 18, 'infested');
+  it('keeps irregular organic emitters anchored to rectangular side walls with stable seeded transforms', () => {
+    const world = new T.Group(), repeat = new T.Group();
+    addRoomPracticals(world, 24, 18, 'infested');addRoomPracticals(repeat,24,18,'infested');
     const fixtures = world.userData.lightFixtures as Fixture[];
-    expect(fixtures).toHaveLength(8);
+    expect(fixtures).toHaveLength(8);expect(repeat.userData.lightFixtures).toEqual(fixtures);
+    const heights=new Set<number>(),matrices:number[][]=[];
     for (let i = 0; i < fixtures.length; i++) {
-      const index = i % 4;
-      expect(fixtures[i]).toEqual({
-        x: i >= 4 ? 24 - .32 : .32,
-        y: .9,
-        z: 1.8 + (18 - 3.6) * (index + .5) / 4,
-        color: index % 3 === 1 ? 0xdc68ca : 0xa1ef72,
-        nativeColor: true,
-      });
-      const matrix = new T.Matrix4();
-      (world.children[1] as T.InstancedMesh).getMatrixAt(i, matrix);
-      const expected = new T.Object3D();
-      expected.position.set(fixtures[i].x, 1.05, fixtures[i].z);
-      expected.scale.set(.26, .52, .37);
-      expected.updateMatrix();
-      expect(matrix.elements).toEqual(Array.from(new Float32Array(expected.matrix.elements)));
+      const fixture=fixtures[i],index=i%4;
+      expect(fixture.x).toBe(i>=4?24-.32:.32);expect(fixture.z).toBeGreaterThan(1.2);expect(fixture.z).toBeLessThan(16.8);
+      expect(fixture.y).toBeGreaterThan(.7);expect(fixture.y).toBeLessThan(1.6);heights.add(fixture.y);
+      expect(fixture.color).toBe(index%3===1?0xdc68ca:0xa1ef72);expect(fixture.nativeColor).toBe(true);
+      const matrix=new T.Matrix4(),same=new T.Matrix4(),position=new T.Vector3();
+      (world.children[1] as T.InstancedMesh).getMatrixAt(i,matrix);(repeat.children[1] as T.InstancedMesh).getMatrixAt(i,same);
+      expect(matrix.elements).toEqual(same.elements);expect(matrix.elements.every(Number.isFinite)).toBe(true);
+      position.setFromMatrixPosition(matrix);expect(position.x).toBeCloseTo(fixture.x);expect(position.y).toBeCloseTo(fixture.y);expect(position.z).toBeCloseTo(fixture.z);
+      expect(matrix.determinant()).toBeGreaterThan(0);matrices.push(matrix.elements);
     }
-    disposeModel(world);
+    expect(heights.size).toBe(fixtures.length);expect(new Set(matrices.map(matrix=>matrix[0])).size).toBeGreaterThan(4);
+    disposeModel(world);disposeModel(repeat);
   });
 
   it('retires both room draw resources and instance buffers once through the existing owner lifecycle', () => {

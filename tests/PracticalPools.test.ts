@@ -30,21 +30,22 @@ it('retains the original material hook and rejects only zero-contribution direct
 it('keeps physical practical origins and retires per-room instance buffers and materials',()=>{
  const room=new T.Group();addRoomPracticals(room,24,18,'infested');
  const fixtures=room.userData.lightFixtures;expect(fixtures.length).toBe(8);expect(new Set(fixtures.map((f:any)=>f.color)).size).toBe(2);
- applyRoomMood(room,'infested');const shader={fragmentShader:T.ShaderLib.standard.fragmentShader};const emitter=(room.children[1] as T.Mesh).material as T.MeshStandardMaterial;emitter.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);expect(shader.fragmentShader).toContain('#ifdef USE_COLOR');expect(emitter.emissiveIntensity).toBe(1.3);
+ applyRoomMood(room,'infested');const shader={fragmentShader:T.ShaderLib.standard.fragmentShader};const emitter=(room.children[1] as T.Mesh).material as T.MeshStandardMaterial;emitter.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);expect(shader.fragmentShader).toContain('#ifdef USE_COLOR');expect(emitter.emissiveIntensity).toBeGreaterThan(0);expect(emitter.emissiveIntensity).toBeLessThan(1);
  const meshes=room.children as T.InstancedMesh[],geometries=meshes.map(m=>vi.spyOn(m.geometry,'dispose')),materials=meshes.map(m=>vi.spyOn(m.material as T.Material,'dispose')),buffers=meshes.map(m=>vi.spyOn(m,'dispose'));
  disposeModel(room);for(const spy of [...geometries,...materials,...buffers])expect(spy).toHaveBeenCalledOnce();
 });
 
-it('keeps actual bounce hue and defined gaps in every environment while preserving the reactor footprint',()=>{
+it('keeps bounce hue and physical origins while containing reactor falloff inside the ordinary pool footprint',()=>{
  const scene=new T.Scene(),pools=new PracticalPools(scene),light=new T.PointLight(0xff6a28,18,7.5);
  light.position.set(3,2,5);light.userData.reactorMood=true;pools.update([light],true);
  const color=new T.Color(),matrix=new T.Matrix4();pools.root.getColorAt(0,color);pools.root.getMatrixAt(0,matrix);
  expect(color.g/color.r).toBeCloseTo(light.color.g/light.color.r);
- expect(new T.Vector3().setFromMatrixScale(matrix).x).toBeCloseTo(3.6);
+ const reactorRadius=new T.Vector3().setFromMatrixScale(matrix).x;expect(reactorRadius).toBeGreaterThanOrEqual(2);expect(reactorRadius).toBeLessThan(3.6);
+ expect(new T.Vector3().setFromMatrixPosition(matrix).toArray()).toEqual([3,expect.closeTo(.035),5]);expect(pools.root.material.uniforms.poolIntensity.value).toBeLessThan(.22);
  expect(pools.root.geometry.getAttribute('reactorPoolAmount').getX(0)).toBe(1);
  light.userData.reactorMood=false;pools.update([light],true);pools.root.getColorAt(0,color);
  expect(color.g/color.r).toBeCloseTo(light.color.g/light.color.r);
- pools.root.getMatrixAt(0,matrix);expect(new T.Vector3().setFromMatrixScale(matrix).x).toBeCloseTo(3.6);
+ pools.root.getMatrixAt(0,matrix);expect(new T.Vector3().setFromMatrixScale(matrix).x).toBeCloseTo(3.6);expect(new T.Vector3().setFromMatrixScale(matrix).x).toBeGreaterThan(reactorRadius);
  expect(pools.root.geometry.getAttribute('reactorPoolAmount').getX(0)).toBe(1);
  pools.dispose();
 });

@@ -43,7 +43,7 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         }
         applyFloorVariation(material, environment);
       }
-      if(environment==='reactor'&&material.name==='ship-cold-practical'){material.color.setHex(0xffe5b9);material.emissive.setHex(0xffd69a);material.emissiveIntensity=3.4;applyHotFixtureSurface(material);}
+      if(environment==='reactor'&&material.name==='ship-cold-practical'){material.color.setHex(0xfff4e8);material.emissive.setHex(0xffe6d5);material.emissiveIntensity=7.5;applyHotFixtureSurface(material);}
       // Keep the authored hue: red warning strips and green safe routes retain their meaning.
       if (!(environment === 'reactor' && material.name === 'ship-cold-practical') && !material.userData.motivatedEmitter && original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {
         material.emissiveIntensity = Math.max(2.6, original.emissiveIntensity * 1.75);

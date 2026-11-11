@@ -10,6 +10,7 @@ import {shieldingGateBlockout} from './ShieldingGateBlockout';
 import {infestedWorkshop} from './InfestedWorkshop';
 import {infestedWorkshopArchitecture} from './InfestedWorkshopArchitecture';
 import {crewCheckpointBlockout} from './CrewCheckpointBlockout';
+import {addBroodCell,addWallRoots} from './world/OrganicGrowth';
 
 export const SHIP_ENVIRONMENTS=['cryogenics','habitation','security','cargo','communications','engineering','maintenance','infested','containment','reactor'] as const;
 export type ShipEnvironment=typeof SHIP_ENVIRONMENTS[number];
@@ -26,7 +27,7 @@ export type Footprint={x:number;y:number;width:number;height:number};
 const v=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
 
 /** All models are authored in a local cell, then fitted inside the authoritative collision rectangle. */
-export function environmentObstacle(environment:ShipEnvironment,footprint:Footprint,index=0,templateId=''):T.Group{
+export function environmentObstacle(environment:ShipEnvironment,footprint:Footprint,index=0,templateId='',seed=1729):T.Group{
  if(environment==='engineering'&&templateId==='safety-interlock-station')return safetyInterlockBlockout(footprint,index);
  if(environment==='security'&&templateId==='armory')return armoryBlockout(footprint,index);
  if(environment==='reactor'&&templateId==='manual-control-chamber')return manualControlBlockout(footprint,index);
@@ -138,15 +139,7 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
     break;
    }
    case 'infested':{
-    b(0,.3,0,1.66,.6,2.2,MAT.steel);
-    shell(cell,0,.65,0,.89,.48,2.4,MAT.flesh);
-    for(let n=0;n<5;n++){
-     const z=-.94+n*.46,x=Math.sin(n*2.3+index)*.35;
-     shell(cell,x,.9+n%2*.3,z,.43,.65,.76,MAT.shellDark);
-     ball(cell,x+.12,1.22+n%2*.3,z,.14,.16,.18,MAT.acid);
-     rod(cell,v(-.79,.15,z),v(x,1.38,z-.1),.035,.14,MAT.bone);
-     rod(cell,v(.79,.15,z),v(x,1.38,z-.1),.035,.12,MAT.flesh);
-    }break;
+    addBroodCell(cell,seed,index*count+i);break;
    }
    case 'containment':{
     b(0,.16,0,1.9,.32,2.5,MAT.black);
@@ -190,13 +183,13 @@ export function appendEnvironment(parent:T.Group,model:T.Group){
 }
 
 /** Flush deck inlays and outboard rear architecture never occupy a walkable tile. */
-export function environmentArchitecture(parent:T.Group,env:ShipEnvironment,w:number,h:number,templateId=''){
+export function environmentArchitecture(parent:T.Group,env:ShipEnvironment,w:number,h:number,templateId='',seed=1729){
  if(env==='security'&&templateId==='armory'){appendEnvironment(parent,armoryCarousel());return;}
  if(env==='engineering'&&templateId==='safety-interlock-station'){const shell=new T.Group();safetyInterlockArchitecture(shell,w,h);appendEnvironment(parent,shell);return;}
  if(env==='reactor'&&templateId==='manual-control-chamber'){manualControlArchitecture(parent,w);return;}
  if(env==='infested'&&templateId==='infested-workshop')return infestedWorkshopArchitecture(parent,w,h);
  const residential=env==='habitation'&&templateId==='residential-gallery';
- const accent=env==='habitation'?MAT.bone:env==='infested'?MAT.acid:['security','engineering','containment','maintenance'].includes(env)?MAT.amber:MAT.cyan;
+ const accent=env==='habitation'?MAT.bone:env==='infested'?MAT.acid:env==='containment'?MAT.purple:['security','engineering','maintenance'].includes(env)?MAT.amber:MAT.cyan;
  const inlay=(x:number,z:number,width:number,depth:number,mat:T.Material)=>{const m=box(parent,x,-.007,z,width,.018,depth,mat,0);m.castShadow=false;return m;};
  // Deck language stays readable even when the nearest prop is off camera.
  if(env==='cryogenics'){
@@ -255,7 +248,7 @@ export function environmentArchitecture(parent:T.Group,env:ShipEnvironment,w:num
   }else if(residential){
    // Retain the rear envelope without a competing row of false cabin doors.
   }else if(env==='infested'){
-   shell(parent,x,1.4,-.45,.7,1.3,.6,MAT.flesh);
+   addWallRoots(parent,x,seed,Math.round(x));
   }else{
    box(parent,x,2.1,-.04,env==='communications'?1.8:1,.12,.06,accent);
    if(env==='engineering')box(parent,x,1.3,-.035,2,1.1,.05,MAT.black);
@@ -263,6 +256,7 @@ export function environmentArchitecture(parent:T.Group,env:ShipEnvironment,w:num
  }
  if(env==='reactor'||env==='containment'){
   if(templateId!=='reactor-vault')for(const radius of [.22,.33,.44]){const r=ring(parent,w/2,.005,h/2,Math.min(w,h)*radius,.018,accent);r.rotation.x=-Math.PI/2;r.scale.z=.1;r.castShadow=false;}
+  if(env==='containment')for(let i=0;i<6;i++){const a=i*Math.PI/3,r=Math.min(w,h)*.33,x=w/2+Math.cos(a)*r,z=h/2+Math.sin(a)*r;box(parent,x,.027,z,.28,.05,.28,MAT.steel,.025);box(parent,x,.056,z,.12,.008,.12,MAT.purple,.01);}
  }else if(env==='maintenance'){
   for(let z=1;z<h-1;z+=.35)for(const x of [1,w-1])box(parent,x,-.005,z,1.2,.018,.06,MAT.black,0);
  }else{

@@ -157,8 +157,9 @@ export class SceneLighting {
   for(let i=0;i<this.fixtureCount;i++){
    const light=this.fixtures[i];if(!light.visible)continue;
    const phase=this.time+i*1.73;
-   const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.72+.28*Math.sin(phase*1.4):behavior==='reactor'?.78+.22*Math.sin(this.time*2.1+i*.65):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
-   light.intensity=(light.userData.reactorCore?this.bossArena?25:14:this.mood.practical.intensity*this.composition.practicalGain)*(1+(animated-1)*this.flashIntensity);
+   const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.72+.28*Math.sin(phase*1.4):behavior==='reactor'?(light.userData.reactorCore?.9+.1*Math.sin(this.time*2.1):.65+.35*Math.pow(Math.max(0,Math.cos(this.time*1.2-i*Math.PI/2)),4)):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
+   const failed=this.mood.environment==='habitation'&&i===1?.35+.65*Math.pow(Math.min(1,Math.max(0,Math.sin(this.time*5.3)+.35*Math.sin(this.time*17.1))),2):1;
+   light.intensity=(light.userData.reactorCore?this.bossArena?25:14:this.mood.practical.intensity*this.composition.practicalGain)*(1+(animated*failed-1)*this.flashIntensity);
   }
  }
  /** Reuses the prepared fixed lights; menu transitions create no shader topology. */
@@ -176,9 +177,9 @@ export class SceneLighting {
  setBossState(x:number,z:number,vulnerable:boolean,defeated:boolean){
   if(!this.bossArena||this.menuPresentation)return;
   this.coreKey.position.set(x,9,z+7);this.coreKey.target.position.set(x,1.2,z);
-  this.coreKey.color.setHex(vulnerable?0xe5ffd4:0xffe6c6);this.coreKey.intensity=defeated?480:720;
+  this.coreKey.color.setHex(vulnerable?0xffd9f4:0xffe6c6);this.coreKey.intensity=defeated?480:720;
   this.fill.intensity=defeated?.45:.58;this.rim.intensity=.55;
-  this.fixtures[0].position.set(x,4.5,z+1.8);this.fixtures[0].color.setHex(vulnerable?0xb6ff85:0xc0dcff);this.fixtures[0].distance=14;
+  this.fixtures[0].position.set(x,4.5,z+1.8);this.fixtures[0].color.setHex(vulnerable?0xff83ce:0xc0dcff);this.fixtures[0].distance=14;
  }
  invalidateShadows(){for(const light of [this.directionalKey,this.coreKey]){light.shadow.map?.dispose();light.shadow.map=null;light.shadow.mapPass?.dispose();light.shadow.mapPass=null;light.shadow.needsUpdate=true;}}
  dispose(){if(this.disposed)return;this.disposed=true;this.directionalKey.shadow.dispose();this.coreKey.shadow.dispose();this.pool.dispose();this.lamp.dispose();this.root.removeFromParent();}
