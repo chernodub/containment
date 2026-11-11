@@ -9,7 +9,7 @@ npm run capture -- --label=ui --scenarios=title,title-settings,starting-boon,rew
 npm run capture -- --label=vfx --scenarios=status-vfx,boss --burst=8 --headed
 ```
 
-The runner automatically builds missing/stale `dist/`, then serves it under `/containment/`, like the production smoke. It never serves Vite development modules. Google Fonts is allowed online; a timed-out/failed font stylesheet falls back to the application's system font stack and is recorded in the manifest.
+The runner automatically builds missing/stale `dist/`, then serves it under `/containment/`, like the production smoke. It never serves Vite development modules. Fonts are self-hosted under `public/fonts/` with OFL licenses. Requests to a font CDN fail the capture gate; the manifest records loaded font faces.
 
 ## Options
 
@@ -50,7 +50,7 @@ Scenarios fail on the wrong state/room, page or console errors, absent WebGL pix
 
 ## Debug API
 
-`window.__containmentDebug` is installed **only** with `?debug=1`. The normal application does not import its module or change its update/input behavior. The hook freezes automatic simulation/VFX advancement, while the existing RAF still handles graphics recovery, HUD synchronization, rendering and diagnostics. Call `step()` to advance the fixture.
+`window.__containmentDebug` is installed **only** with `?debug=1`. The normal application does not import its module or change its update/input behavior. The hook freezes automatic simulation/VFX and pooled UI effect advancement, while the existing RAF still handles graphics recovery, HUD synchronization, rendering and diagnostics. Call `step()` to advance the fixture and its combat text, threat warnings, damage lag and reticle feedback on the same clock.
 
 - `await prepare()`: synchronizes room revision and awaits assets after a direct game transition such as choosing the starting boon.
 - `game`, `renderer`: actual `DepthGame` and `DepthRenderer` instances.
@@ -91,3 +91,8 @@ Exact IDs may include a colon (for example `ability:cryo`); select them with `--
 ## Combat Rig scenarios
 
 `ability:<id>` is registered for every one of the sixteen catalog abilities. `node scripts/nextgen/ability-driver.mjs --label=A1-abilities` captures two frames of each plus a native Shift/Q/F/V fixture and validates actual rig selection, accepted slot use, zones/deployables and hostile time scale. These fixtures use a legal Awakening Bay lane, normal public game actions and no boons; snapshots and run statistics are included in each manifest shot. Ability VFX/HUD remain the presentation streams’ responsibility.
+## U1 presentation fixtures
+
+`rig-select`, `ability-ready`, `ability-cryo`, `ability-pyro`, `ability-arc`, `ability-cooling`, `ability-casting`, `ability-denied` and `ability-overdrive` inject the frozen shared contract through `debug.uiFixture()` / `debug.abilityFixture()`. They do not install fake simulation actions. `combat-kiting` uses legal, spaced enemy placement, real movement/fire and a debug-only 1.75× camera zoom to stress close-camera readability. Its optional damage/status callouts are explicit presentation events. The original `combat-heavy` remains unchanged. `pause-loadout`, `pause-settings`, `pause-controls`, `destroy-confirm` and `results-fixture` cover the complete screen set and optional stats.
+
+Additional debug methods: `uiFixture(fixture|null)` overrides phase/snapshots/preferences only; `abilityFixture(rig,state,preferences?)` supplies ready/cooling/casting/active/denied/overdrive states; `uiEvent(event)` feeds only pooled UI effects; `cameraZoom(1..3)` changes only the staged camera. Reload clears all UI fixtures, while validated player preferences remain persisted normally.

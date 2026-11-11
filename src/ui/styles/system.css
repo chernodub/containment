@@ -1,0 +1,52 @@
+/* Asset and room holds deliberately avoid intercepting game input. */
+.system-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: radial-gradient(ellipse at 70% 0, #1a3542, #060d13 72%);
+}
+.system-panel { width: min(640px, 100%); }
+.system-panel > .icon { width: 48px; height: 48px; color: var(--danger); margin-bottom: 24px; }
+.system-panel .primary { margin-top: 28px; }
+.asset-loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(ellipse at 50% 35%, #172c37, #060d13 65%);
+  color: var(--text);
+  pointer-events: none;
+}
+.asset-loading > span, .asset-loading small {
+  font-size: 12px;
+  letter-spacing: .22em;
+  color: var(--cyan);
+}
+.asset-loading h2 { font-size: 48px; margin: 28px 0 0; }
+.asset-loading p { color: var(--muted); font-size: 15px; }
+.asset-loading > div { width: 360px; height: 3px; background: #304653; margin: 32px 0; }
+.asset-loading i { display: block; height: 100%; background: var(--cyan); transition: width var(--motion-fast, 160ms) ease-out; }
+.asset-loading small { color: var(--muted); font-size: 11px; }
+#room-loading {
+  position: fixed;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+  z-index: 9;
+  min-width: 300px;
+  padding: 24px 36px;
+  border: 1px solid var(--line);
+  border-top-color: var(--cyan);
+  background: var(--hud-backplate);
+  box-shadow: 0 20px 80px #0008;
+  pointer-events: none;
+  text-align: center;
+}
+#room-loading b { display: block; font: 600 28px var(--font-display); }
+#room-loading span { display: block; color: var(--muted); margin-top: 8px; font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .asset-loading i { transition: none; } }

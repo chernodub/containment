@@ -1,3 +1,4 @@
+import {uiSource} from './uiSource';
 import {it,expect,vi} from 'vitest';
 import {readFileSync} from 'node:fs';
 import ts from 'typescript';
@@ -10,18 +11,19 @@ function harness(){
  const renderer={roomLoading:true,loadRoom:vi.fn(),render:vi.fn(),observeFrame:vi.fn(),playerScreenBounds:()=>({left:0,top:0,right:0,bottom:0})};
  let held=true;const input={read:()=>({x:held?1:0,y:0,fire:held,angle:0,autoAim:false}),reset:vi.fn(()=>{held=false;})};
  const node={hidden:true,setAttribute:vi.fn()},audio={syncCombat:vi.fn(),setMusicIntensity:vi.fn(),syncFrozen:vi.fn()};
- const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
- const body=source.slice(source.indexOf('function frame(now:number)'),source.indexOf('lastRoom=game.roomRevision;syncScreen(true)'));
- const factory=new Function('game','renderer','input','el','audio',`let lastRoom=-1,lastStatus='',graphicsLost=false,roomRecovering=true,hudTime=0;const positionHud=()=>{},requestAnimationFrame=()=>{},document={hidden:false},pacer={sample:()=>.05,reset:()=>{}},confirmation={update:()=>{}},performance={now:()=>0},syncScreen=()=>{},hud=()=>{},diagnostics={record:()=>{}};${ts.transpile(body)};return frame;`);
- return {game,renderer,input,node,audio,frame:factory(game,renderer,input,()=>node,audio)};
+ const source=uiSource;
+ const body=source.slice(source.indexOf('function frame('),source.indexOf('\n    lastRoom = game.roomRevision;'));
+ const presentation=vi.fn();
+ const factory=new Function('game','renderer','input','el','audio','advancePresentation',`const presentationFrozen=false;let lastRoom=-1,lastStatus='',graphicsLost=false,roomRecovering=true,hudTime=0,hudLastMs=0,hudTotalMs=0,hudSamples=0;const positionHud=()=>{},requestAnimationFrame=()=>{},document={hidden:false},pacer={sample:()=>.05,reset:()=>{}},confirmation={update:()=>{}},performance={now:()=>0},syncScreen=()=>{},hud=()=>{},syncHud=()=>{},diagnostics={record:()=>{}};${ts.transpile(body)};return frame;`);
+ return {game,renderer,input,node,audio,presentation,frame:factory(game,renderer,input,()=>node,audio,presentation)};
 }
 const snapshot=(g:DepthGame)=>JSON.stringify({player:g.player,combat:g.combat.snapshot,enemies:g.enemies.snapshot,bullets:g.bullets,pools:g.pools,elapsed:g.elapsed,remaining:g.encounterRemaining,expedition:g.expedition,story:g.storyPresentation});
 it('actual RAF freezes all combat/progression while pending and discards held movement/fire',()=>{
  const h=harness(),before=snapshot(h.game);for(let i=0;i<160;i++)h.frame(i*50);
  expect(snapshot(h.game)).toBe(before);expect(h.input.reset).toHaveBeenCalled();expect(h.renderer.render).not.toHaveBeenCalled();
- expect(h.node.hidden).toBe(false);expect(h.audio.syncFrozen).not.toHaveBeenCalled();
+ expect(h.node.hidden).toBe(false);expect(h.audio.syncFrozen).not.toHaveBeenCalled();expect(h.presentation.mock.calls.every(([dt])=>dt===0)).toBe(true);
  h.renderer.roomLoading=false;h.frame(9000);expect(snapshot(h.game)).toBe(before);expect(h.renderer.render).toHaveBeenCalled();expect(h.audio.syncFrozen).not.toHaveBeenCalled();
- h.frame(9050);expect(h.game.elapsed).toBeCloseTo(.05);expect(h.game.player.x).toBe(230);expect(h.game.bullets).toHaveLength(0);expect(h.audio.syncFrozen).toHaveBeenCalledOnce();
+ h.frame(9050);expect(h.game.elapsed).toBeCloseTo(.05);expect(h.presentation).toHaveBeenLastCalledWith(.05);expect(h.game.player.x).toBe(230);expect(h.game.bullets).toHaveLength(0);expect(h.audio.syncFrozen).toHaveBeenCalledOnce();
 });
 it('ready/fallback recovery does not unpause a user pause and reentry gates before update',()=>{
  const h=harness();h.frame(0);h.game.pause();const paused=snapshot(h.game);h.renderer.roomLoading=false;h.frame(9000);h.frame(9050);

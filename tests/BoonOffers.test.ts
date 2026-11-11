@@ -1,3 +1,4 @@
+import {uiSource} from './uiSource';
 import {describe,it,expect} from 'vitest';
 import {readFileSync} from 'node:fs';
 import {draftMutationOffers} from '../src/game/roguelike/builds';
@@ -43,9 +44,9 @@ describe('useful boon offers',()=>{
   expect(MUTATION_IDS.filter(id=>catalog[id].risk)).toEqual(['blood-price']);
  });
  it('shows path and owned synergy on reward cards without ornamental numbering',()=>{
-  const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
-  expect(source).toContain('boonHint(m,game.expedition.build)');
-  expect(source).toContain('pathFor(m.id)?.name');
+  const source=uiSource;
+  expect(source).toMatch(/boonHint\(\w+,\s*game.expedition.build\)/);
+  expect(source).toMatch(/pathFor\(\w+.id\)\?\.name/);
   expect(source).toContain('boon-hint');expect(source).toContain('data-risk');
   expect(source).not.toContain('0${i+1}<span>${m.family}');
  });
