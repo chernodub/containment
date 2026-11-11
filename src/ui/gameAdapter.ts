@@ -1,7 +1,7 @@
 import type {DepthGame} from '../DepthGame';
 import type {DepthRenderer} from '../render/DepthRenderer';
 import type {AbilitiesSnapshot, AbilitySlot, RigId} from '../game/abilities/contract';
-import {GRAPHICS_PRESETS, type GraphicsOptions} from '../render/graphicsOptions';
+import {GRAPHICS_PRESETS, resolveGraphicsOptions, type GraphicsOptions} from '../render/graphicsOptions';
 import type {RunStatsSnapshot} from '../game/abilities/RunStats';
 import type {GraphicsTier} from '../render/FrameBudget';
 
@@ -58,14 +58,14 @@ export function getUiPreferences<T extends Readonly<{combatText?: boolean; radar
   return fixtures.get(game)?.preferences ?? defaults;
 }
 
-/** Read renderer options when available, preserving preferences before G1 merges. */
+/** The live renderer owns effective options; facades retain the same validated contract. */
 export function getGraphicsOptions(renderer: DepthRenderer): GraphicsOptions {
   return (renderer as NextRenderer).graphicsOptions ?? graphics.get(renderer) ?? GRAPHICS_PRESETS[renderer.qualityTier];
 }
 
-/** Persisted options reach G1 by feature detection and have a stable legacy seam. */
+/** Persisted options reach the renderer through its public presentation surface. */
 export function setGraphicsOptions(renderer: DepthRenderer, patch: Partial<GraphicsOptions>): void {
-  const options = {...getGraphicsOptions(renderer), ...patch};
+  const options = resolveGraphicsOptions(getGraphicsOptions(renderer), patch);
   graphics.set(renderer, options);
   (renderer as NextRenderer).setGraphicsOptions?.(options);
 }
@@ -74,7 +74,8 @@ export function setGraphicsOptions(renderer: DepthRenderer, patch: Partial<Graph
 export function setGraphicsTier(renderer: DepthRenderer, tier: GraphicsTier): void {
   renderer.setQuality(tier);
   graphics.set(renderer, GRAPHICS_PRESETS[tier]);
-  (renderer as NextRenderer).setGraphicsOptions?.(GRAPHICS_PRESETS[tier]);
+  // The live setQuality already applies its preset, including GPU target resizing.
+  if ((renderer as NextRenderer).graphicsOptions !== GRAPHICS_PRESETS[tier]) (renderer as NextRenderer).setGraphicsOptions?.(GRAPHICS_PRESETS[tier]);
 }
 
 export type ScreenPoint = {x: number; y: number; visible: boolean};
@@ -93,7 +94,7 @@ export function getCameraFootprint(renderer: DepthRenderer, out: {x: number; y: 
     for (let i = 0; i < 4; i++) {
       const corner = footprintCorners[i];
       const point = renderer.pointer((corner[0] + 1) * width / 2, (1 - corner[1]) * height / 2);
-      if (!point) return false;
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return false;
       out[i].x = point.x; out[i].y = point.y;
     }
     return true;
@@ -115,8 +116,10 @@ export function getCameraFootprint(renderer: DepthRenderer, out: {x: number; y: 
     }
     const t = -nearY / (farY - nearY);
     if (!Number.isFinite(t) || t < 0 || t > 1) return false;
-    out[i].x = (nearX + (farX - nearX) * t) * 32;
-    out[i].y = (nearZ + (farZ - nearZ) * t) * 32;
+    const floorX = (nearX + (farX - nearX) * t) * 32;
+    const floorY = (nearZ + (farZ - nearZ) * t) * 32;
+    if (!Number.isFinite(floorX) || !Number.isFinite(floorY)) return false;
+    out[i].x = floorX; out[i].y = floorY;
   }
   return true;
 }
@@ -124,24 +127,31 @@ export function getCameraFootprint(renderer: DepthRenderer, out: {x: number; y: 
 /** Project using the public camera matrices; accepts an output object for pooled UI. */
 export function projectWorld(renderer: DepthRenderer, x: number, y: number, out: ScreenPoint, height = .8): ScreenPoint {
   const next = renderer as NextRenderer;
-  if (typeof next.worldToScreen === 'function') {
+  const v = renderer.camera?.matrixWorldInverse?.elements;
+  const p = renderer.camera?.projectionMatrix?.elements;
+  let inFrustum = true;
+  if ((!v || !p) && typeof next.worldToScreen === 'function') {
     const point = next.worldToScreen(x, y, height);
     out.x = point.x; out.y = point.y;
   } else {
     // Existing renderer uses 32 simulation units per world unit, Y-up.
-    const v = renderer.camera.matrixWorldInverse.elements;
-    const p = renderer.camera.projectionMatrix.elements;
+    if (!v || !p) {out.x = out.y = NaN; out.visible = false; return out;}
     const wx = x / 32, wz = y / 32;
     const vx = v[0] * wx + v[4] * height + v[8] * wz + v[12];
     const vy = v[1] * wx + v[5] * height + v[9] * wz + v[13];
     const vz = v[2] * wx + v[6] * height + v[10] * wz + v[14];
     const vw = v[3] * wx + v[7] * height + v[11] * wz + v[15];
     const cw = p[3] * vx + p[7] * vy + p[11] * vz + p[15] * vw;
-    const nx = (p[0] * vx + p[4] * vy + p[8] * vz + p[12] * vw) / cw;
-    const ny = (p[1] * vx + p[5] * vy + p[9] * vz + p[13] * vw) / cw;
+    const cz = p[2] * vx + p[6] * vy + p[10] * vz + p[14] * vw;
+    inFrustum = cw > 0 && cz >= -cw && cz <= cw;
+    // Behind the eye, signed division mirrors the bearing. Keep the direction
+    // for edge indicators while depth prevents combat labels appearing there.
+    const divisor = Math.max(Math.abs(cw), 1e-6);
+    const nx = (p[0] * vx + p[4] * vy + p[8] * vz + p[12] * vw) / divisor;
+    const ny = (p[1] * vx + p[5] * vy + p[9] * vz + p[13] * vw) / divisor;
     out.x = (nx + 1) * renderer.canvas.clientWidth / 2;
     out.y = (1 - ny) * renderer.canvas.clientHeight / 2;
   }
-  out.visible = out.x > 32 && out.y > 32 && out.x < renderer.canvas.clientWidth - 32 && out.y < renderer.canvas.clientHeight - 32;
+  out.visible = inFrustum && Number.isFinite(out.x) && Number.isFinite(out.y) && out.x > 32 && out.y > 32 && out.x < renderer.canvas.clientWidth - 32 && out.y < renderer.canvas.clientHeight - 32;
   return out;
 }
