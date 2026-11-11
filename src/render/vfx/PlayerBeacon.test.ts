@@ -102,3 +102,28 @@ it('retains incompatible skin groups and disposes only its own merged buffers ex
     for(const spy of own)expect(spy).toHaveBeenCalledOnce();for(const spy of sourceGeometry.values())expect(spy).not.toHaveBeenCalled();for(const spy of skeletons.values())expect(spy).not.toHaveBeenCalled();
   }finally{beacon.dispose();vi.restoreAllMocks();disposeModel(model.root);}
 });
+
+it('shares one soft radial map/material for ring and solid direction, with single-pass HUD lifetime',()=>{
+ const model=marine(),beacon=new PlayerBeacon(model.root);
+ const ring=beacon.root.children.find(o=>o instanceof T.Mesh&&o.geometry instanceof T.RingGeometry) as T.Mesh<T.RingGeometry,T.MeshBasicMaterial>;
+ const direction=beacon.root.children.find(o=>o instanceof T.Mesh&&o.geometry instanceof T.ConeGeometry) as T.Mesh<T.ConeGeometry,T.MeshBasicMaterial>;
+ const material=ring.material,texture=material.map as T.DataTexture;
+ const materialDispose=vi.spyOn(material,'dispose'),textureDispose=vi.spyOn(texture,'dispose');
+ try{
+  expect(material).toBeInstanceOf(T.MeshBasicMaterial);expect(direction.material).toBe(material);
+  expect(material.side).toBe(T.DoubleSide);expect(material.forceSinglePass).toBe(true);
+  expect(material.depthTest).toBe(false);expect(material.depthWrite).toBe(false);expect(material.toneMapped).toBe(false);
+  const {width,height,data}=texture.image;
+  expect(width).toBe(64);expect(height).toBe(64);expect(texture.generateMipmaps).toBe(true);
+  expect(texture.colorSpace).toBe(T.SRGBColorSpace);
+  const uv=direction.geometry.getAttribute('uv'),u=uv.getX(0),v=uv.getY(0);
+  for(let i=1;i<uv.count;i++){expect(uv.getX(i)).toBe(u);expect(uv.getY(i)).toBe(v);}
+  const sample=(x:number,y:number)=>Array.from(data!.slice((y*width+x)*4,(y*width+x)*4+4));
+  const bright=sample(Math.floor(u*width),Math.floor(v*height)),backing=sample(56,32),outer=sample(63,32);
+  expect(bright[0]).toBeGreaterThan(200);expect(bright[1]).toBeGreaterThan(240);expect(bright[3]).toBeGreaterThan(210);
+  expect(backing[0]).toBeLessThan(30);expect(backing[3]).toBeGreaterThan(50);
+  expect(outer[3]).toBeLessThan(backing[3]);
+  beacon.update(model.root,0);expect(ring.geometry.parameters.innerRadius).toBe(.50);expect(ring.geometry.parameters.outerRadius).toBe(.66);
+  beacon.dispose();beacon.dispose();expect(materialDispose).toHaveBeenCalledOnce();expect(textureDispose).toHaveBeenCalledOnce();
+ }finally{beacon.dispose();disposeModel(model.root);}
+});

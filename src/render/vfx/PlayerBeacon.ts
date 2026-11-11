@@ -46,13 +46,37 @@ void main(){
   #include <colorspace_fragment>
 }`;
 
+const LOCATOR_SIZE=64;
+const DIRECTION_TEXEL={x:59,y:32};
+
+/** One tiny authored radial map serves both the soft ring and the solid facing marker. */
+function locatorTexture():T.DataTexture {
+  const pixels=new Uint8Array(LOCATOR_SIZE*LOCATOR_SIZE*4);
+  for(let y=0;y<LOCATOR_SIZE;y++)for(let x=0;x<LOCATOR_SIZE;x++){
+    const radius=Math.hypot((x+.5)/LOCATOR_SIZE-.5,(y+.5)/LOCATOR_SIZE-.5)*2;
+    const band=1-T.MathUtils.smoothstep(Math.abs(radius-.86),.025,.07);
+    const soft=1-T.MathUtils.smoothstep(radius,.77,1);
+    const i=(y*LOCATOR_SIZE+x)*4;
+    pixels[i]=Math.round(T.MathUtils.lerp(4,212,band));
+    pixels[i+1]=Math.round(T.MathUtils.lerp(12,247,band));
+    pixels[i+2]=Math.round(T.MathUtils.lerp(15,255,band));
+    pixels[i+3]=Math.round(Math.max(band*.86,soft*.38)*255);
+  }
+  const texture=new T.DataTexture(pixels,LOCATOR_SIZE,LOCATOR_SIZE);
+  texture.name='marine-locator-radial';texture.colorSpace=T.SRGBColorSpace;
+  texture.magFilter=T.LinearFilter;texture.minFilter=T.LinearMipmapLinearFilter;
+  texture.generateMipmaps=true;texture.needsUpdate=true;return texture;
+}
+
 /** A quiet suit locator and borrowed-skin silhouette keep the marine findable in a crowd. */
 export class PlayerBeacon {
   readonly root = new T.Group();
   private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.28}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
   private readonly groups: SkinGroup[] = [];
-  private readonly ring = new T.Mesh(new T.RingGeometry(.50,.66,48),new T.ShaderMaterial({vertexShader:'varying vec2 ringUV;void main(){ringUV=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'varying vec2 ringUV;void main(){float r=length(ringUV-.5)*2.0;float band=1.0-smoothstep(.025,.07,abs(r-.86));float soft=1.0-smoothstep(.77,1.0,r);vec3 c=mix(vec3(.015,.045,.06),vec3(.65,.93,1.0),band);gl_FragColor=vec4(c,max(band*.83,soft*.38));\n#include <colorspace_fragment>}',transparent:true,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide}));
-  private readonly direction = new T.Mesh(new T.ConeGeometry(.10,.23,3),new T.MeshBasicMaterial({color:0xe8fbff,transparent:true,opacity:.75,depthTest:false,depthWrite:false,toneMapped:false}));
+  private readonly locatorMap=locatorTexture();
+  private readonly locatorMaterial=new T.MeshBasicMaterial({map:this.locatorMap,transparent:true,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide,forceSinglePass:true});
+  private readonly ring = new T.Mesh(new T.RingGeometry(.50,.66,48),this.locatorMaterial);
+  private readonly direction = new T.Mesh(new T.ConeGeometry(.10,.23,3),this.locatorMaterial);
   private disposed = false;
 
   constructor(player:T.Object3D,scene?:T.Scene){
@@ -72,6 +96,9 @@ export class PlayerBeacon {
     }
     this.ring.rotation.x=-Math.PI/2;this.ring.renderOrder=1199;
     this.direction.renderOrder=1201;
+    const directionUV=this.direction.geometry.getAttribute('uv');
+    for(let i=0;i<directionUV.count;i++)directionUV.setXY(i,(DIRECTION_TEXEL.x+.5)/LOCATOR_SIZE,(DIRECTION_TEXEL.y+.5)/LOCATOR_SIZE);
+    directionUV.needsUpdate=true;
     this.root.add(this.ring,this.direction);scene?.add(this.root);
   }
 
@@ -113,7 +140,7 @@ export class PlayerBeacon {
     if(this.disposed)return;this.disposed=true;
     // Only merged buffers are owned here. The pool owns source geometry/skeletons.
     for(const group of this.groups)group.merged?.geometry.dispose();
-    this.material.dispose();this.ring.geometry.dispose();this.ring.material.dispose();this.direction.geometry.dispose();this.direction.material.dispose();
+    this.material.dispose();this.ring.geometry.dispose();this.direction.geometry.dispose();this.locatorMaterial.dispose();this.locatorMap.dispose();
     this.root.clear();this.root.removeFromParent();this.groups.length=0;
   }
 }
