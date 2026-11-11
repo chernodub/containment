@@ -76,7 +76,8 @@ assertion passes. A nonfatal Vite HMR port advisory can occur during concurrent
 browser test harnesses; it does not appear as a game console/page error.
 
 The exact standalone Vitest command was rerun after the test correction:
-151 files passed, 2053 tests passed, one existing skip; 56.92 seconds.
+151 files passed, 2053 tests passed, one existing skip; the final repeat after
+strengthening the results fixture completed in 88.97 seconds.
 
 ### Inherited reviewed test updates
 
@@ -105,4 +106,49 @@ all staged crawlers before the rifle connected, leaving zero weapon damage.
 Use tougher brutes, aim assist and a five-second normal firing interval; require
 both ability damage and confirmed weapon hits in addition to the existing kill,
 tactical-use and Overdrive assertions. The isolated revised fixture passed.
-Final committed-source gallery and final review pending.
+Final committed-source capture passed: 70 PNGs across 19 scenarios in
+147.14 seconds; High at 1920×1080 / DPR 1, hardware Metal / Apple M1 Pro.
+Zero failures, zero per-shot/global console/page/network errors, zero font
+fallbacks. The manifest records merge code commit `d015c3a`.
+
+Opened all six recommended final PNGs below after regeneration:
+
+- Slam: three readable 90-damage receipts and 5.8 s tactical cooldown; clear
+  player/action-bar separation.
+- Whiteout: bounded consolidated damage numbers, CHILLED feedback and 5.9 s
+  active Overdrive timer; no stale ready announcement or duplicate tick totals.
+- Napalm: BURNING label and bounded periodic damage, 5.6 s active power timer.
+- Overclock: live Arc names, ready Q/F, active 6.0 s Overdrive countdown.
+- Rig selection: updated Slam 90 damage / 230 radius / 6 s cooldown shown from
+  the same catalog used by simulation; no clipped manifest or keyboard guide.
+- Results: 2 kills, 957.65 weapon damage (958 displayed), 154.35 ability damage
+  (154 displayed), 124 status damage, 1236 total, 61 confirmed hits / 63 shots
+  (97%), one tactical and one Overdrive use; aligned unclipped stats grid.
+
+The world presentation retains the integration parent's camera/lighting and
+existing ability-renderer limitations. No further UI correction was required
+by this final visual review.
+
+
+The final capture runs from merge commit
+`d015c3abf4af9e6c6c6729ac49cf7e7dbb28b8ee` (parents `cb8c174` and `fd0f565`).
+The follow-up evidence commit changes this report only.
+
+Final gallery directory:
+`/Users/chernodub/.t3/worktrees/containment-game/t3-fda950e5/artifacts/nextgen/integration-1b/`.
+Gate logs are retained in its `gates/` subdirectory. Captures/logs are ignored
+artifacts, not added to Git.
+
+Screenshots for the lead to inspect first:
+
+- `/Users/chernodub/.t3/worktrees/containment-game/t3-fda950e5/artifacts/nextgen/integration-1b/ability-seismic-slam-awakening-bay-01.png`
+- `/Users/chernodub/.t3/worktrees/containment-game/t3-fda950e5/artifacts/nextgen/integration-1b/ability-whiteout-awakening-bay-01.png`
+- `/Users/chernodub/.t3/worktrees/containment-game/t3-fda950e5/artifacts/nextgen/integration-1b/ability-napalm-charge-awakening-bay-04.png`
+- `/Users/chernodub/.t3/worktrees/containment-game/t3-fda950e5/artifacts/nextgen/integration-1b/ability-overclock-awakening-bay-01.png`
+- `/Users/chernodub/.t3/worktrees/containment-game/t3-fda950e5/artifacts/nextgen/integration-1b/rig-select.png`
+- `/Users/chernodub/.t3/worktrees/containment-game/t3-fda950e5/artifacts/nextgen/integration-1b/results.png`
+
+No dependencies added, integration requests outstanding, pushes made, PRs opened,
+or other worktrees modified. Dedicated ability world VFX/audio remain the
+existing renderer/audio follow-up; this integration verifies simulation/UI
+contracts and does not claim performance certification or finish that artwork.
