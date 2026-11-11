@@ -4,6 +4,7 @@ import {optimizeLocalLights} from '../lighting/LocalLightShading';
 /** Shared uniforms per actor, never per mesh or frame; adds no draws or resources. */
 export function actorSurface(materials: readonly T.MeshStandardMaterial[], friendly = false, elite = false) {
   const plateOpening={value:0},plateBounds={value:new T.Vector4(0,1,0,1)};
+  const plateTorso={value:new T.Vector2(0,1)};
   const flash = { value: 0 }, dissolve = { value: 0 }, flashIntensity = { value: 1 };
   const rimColor = { value: new T.Color(friendly ? 0x9fe8ff : elite ? 0xc1d8e5 : 0x91b9d1) };
   const camouflage = { value: 1 }, deathStyle = { value: 0 };
@@ -13,15 +14,15 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
     const previousKey = material.customProgramCacheKey();
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
-      Object.assign(shader.uniforms, { actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle });
+      Object.assign(shader.uniforms, { actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle });
       shader.vertexShader = 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;').replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
 transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
-      shader.fragmentShader = `uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
+      shader.fragmentShader = `uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
         .replace('#include <color_fragment>', `#include <color_fragment>
 float plateHeight=(actorPosition.y-actorPlateBounds.x)/actorPlateBounds.y;
-if(actorPlateOpening>.05&&plateHeight>.60&&abs(actorPosition.z-actorPlateBounds.z)<actorPlateBounds.w*.08*actorPlateOpening)discard;
+if(actorPlateOpening>.05&&plateHeight>.60&&abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y&&abs(actorPosition.z-actorPlateBounds.z)<actorPlateBounds.w*.08*actorPlateOpening)discard;
 float ash=fract(sin(dot(floor(actorPosition*65.0),vec3(12.9898,78.233,37.719)))*43758.5453);
 if(ash<actorDissolve)discard;
 float deathFracture=smoothstep(.965,.995,fract(sin(dot(floor(actorPosition*18.0),vec3(31.1,17.7,48.3)))*18643.31));
@@ -44,7 +45,7 @@ totalEmissiveRadiance+=actorRimColor*actorRim*actorRimStrength*mix(.35,1.0,actor
     optimizeLocalLights(material);
   }
   return {
-    plateBounds(minY:number,height:number,centerZ:number,spanZ:number) { plateBounds.value.set(minY,height,centerZ,spanZ); },
+    plateBounds(minY:number,height:number,centerZ:number,spanZ:number,centerX=0,torsoHalfWidth=1) { plateBounds.value.set(minY,height,centerZ,spanZ);plateTorso.value.set(centerX,torsoHalfWidth); },
     expose(value:number) { plateOpening.value=T.MathUtils.clamp(value,0,1); },
     identity(color:number,champion=false) { rimColor.value.setHex(color);rimStrength.value=champion?.66:elite?.46:.26; },
     hit(value: number) { flash.value = T.MathUtils.clamp(value, 0, 1); },

@@ -8,6 +8,8 @@ const root=resolve(process.argv[2]),out=resolve(root,'review480');
 await mkdir(out,{recursive:true});
 const files=(await readdir(root)).filter(f=>f.endsWith('.png')&&!f.includes('sprite')).sort();
 const groups=new Map();
+const lastFrames=new Map();
+for(const file of files){const match=file.match(/^(.*)-(\d\d)\.png$/);if(match)lastFrames.set(match[1],match[2]);}
 for(const file of files){
   const source=decode(await readFile(resolve(root,file))),thumb=canvas(480,270);
   for(let y=0;y<270;y++)for(let x=0;x<480;x++){
@@ -20,7 +22,7 @@ for(const file of files){
   }
   await writeFile(resolve(out,file),encode(thumb));
   const frame=file.match(/-(\d\d)\.png$/)?.[1];
-  if(frame&&frame!=='07')continue;
+  if(frame&&frame!==lastFrames.get(file.replace(/-\d\d\.png$/,'')))continue;
   const key=file.includes('calm-high')?'calm-high':file.includes('calm-low')?'calm-low':file.includes('kiting-high')?'kiting-high':file.includes('kiting-low')?'kiting-low':'focused';
   const list=groups.get(key)??[];list.push({file,thumb});groups.set(key,list);
 }

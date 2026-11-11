@@ -46,7 +46,7 @@ export function alien(kind:string,elite=false):ActorModel{
  const color=new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler).lerp(new T.Color(0xffffff),kind==='brute'?.72:.25);const value=kind==='brute'?1.9:kind==='carrier'?1.35:kind==='spitter'?1.3:kind==='stalker'?.48:kind==='queen'?.46:.9;for(const m of r.materials)m.color.multiply(color).multiplyScalar(value);
  const surface=actorSurface(r.materials,false,elite||kind==='queen');surface.identity(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,elite);
  const identity=alienIdentity(r.root,kind,def.span*(elite?1.12:1),r.height,elite);
- if(kind==='queen'){const bounds=new T.Box3();r.assetRoot.traverse(o=>{if(o instanceof T.SkinnedMesh){o.geometry.computeBoundingBox();bounds.union(o.geometry.boundingBox!);}});surface.plateBounds(bounds.min.y,bounds.max.y-bounds.min.y,(bounds.min.z+bounds.max.z)/2,bounds.max.z-bounds.min.z);}
+ if(kind==='queen'){const bounds=new T.Box3();r.assetRoot.traverse(o=>{if(o instanceof T.SkinnedMesh){o.geometry.computeBoundingBox();bounds.union(o.geometry.boundingBox!);}});surface.plateBounds(bounds.min.y,bounds.max.y-bounds.min.y,(bounds.min.z+bounds.max.z)/2,bounds.max.z-bounds.min.z,(bounds.min.x+bounds.max.x)/2,(bounds.max.x-bounds.min.x)*.18);}
  let flash=0,previous:number|undefined,exposed=false,dead=false,status:AfflictionStatus=NO_AFFLICTION,windup=0,champion:string|undefined,alpha=1,flinch=0,windupDuration=500,emergence=0,emissiveHex=-1;
  const restBodyY=r.body.position.y,emergenceDuration=.22,emergenceDepth=Math.min(.28,r.height*.14);
  const effects=afflictionEffects(r.root,def.span*(elite?1.12:1),r.height);

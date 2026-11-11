@@ -24,6 +24,10 @@ it('opens actual Queen armor and the split crown gradually with a stable prewarm
   expect(shader.uniforms.actorPlateOpening.value as number).toBeGreaterThan(.99);
   expect(shader.vertexShader).toContain('transformed.z+=');
   expect(shader.fragmentShader).toContain('actorPlateOpening>.05');
+  const torso=shader.uniforms.actorPlateTorso.value as T.Vector2;
+  const bounds=shader.uniforms.actorPlateBounds.value as T.Vector4;
+  expect(torso.y).toBeGreaterThan(0);expect(torso.y).toBeLessThan(bounds.w*.4);
+  expect(shader.fragmentShader).toContain('abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y');
   model.setExposed!(false);for(let i=31;i<=60;i++)model.animate(i*.02,0,0);
   expect(identity.material.uniforms.identityOpening.value).toBeLessThan(.01);
   expect(identity.geometry).toBe(geometry);expect(identity.material).toBe(materials);expect(material!.customProgramCacheKey()).toBe(key);
