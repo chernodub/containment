@@ -1,4 +1,4 @@
-import {describe, expect, it, vi} from 'vitest';
+import {describe, expect, it} from 'vitest';
 import {createHash} from 'node:crypto';
 import {DepthGame} from '../src/DepthGame';
 import {CombatSystem} from '../src/game/combat/CombatSystem';
@@ -10,9 +10,6 @@ import {progressionFor} from '../src/game/roguelike/progression';
 import {generateRun} from '../src/game/roguelike/run';
 import type {RunNode, RunState} from '../src/game/roguelike/types';
 import {createEncounterPlan, EncounterDirector} from '../src/game/waves/EncounterDirector';
-
-// Keep the unaccepted v21 profile reviewable without enabling it in production.
-vi.mock('../src/game/roguelike/i5Tuning', () => ({I5_ENCOUNTER_TUNING_ENABLED: true}));
 
 const SEEDS = [1729, 2718, 31415, 42, 137, 8675309, 2026, 9001, 65537, 123456];
 
@@ -66,8 +63,12 @@ function plan(seed: number, node: RunNode) {
 function pressure(seed: number, nodes: readonly RunNode[]) {
   const plans = nodes.map(node => ({node, encounter: plan(seed, node), balance: progressionFor(node)}));
   const entries = plans.flatMap(({node, encounter, balance}) => encounter.schedule.map(spawn => ({spawn, node, balance})));
-  const ordinaryPlans = plans.filter(({node}) => node.kind === 'combat' && ![9, 19].includes(node.depth));
-  const ordinary = entries.filter(({node}) => node.kind === 'combat' && ![9, 19].includes(node.depth));
+  // Match the actual ordinary-room Overdrive eligibility, including named guardians.
+  const ordinaryRoom = ({node, balance}: {node: RunNode; balance: ReturnType<typeof progressionFor>}) =>
+    node.id.includes(':v3-') && node.kind === 'combat' && !balance.guardian && ![9, 19].includes(node.depth);
+  const ordinaryPlans = plans.filter(ordinaryRoom);
+  const ordinary = entries.filter(ordinaryRoom);
+  const nonHoldoutPlans = plans.filter(({node}) => ![9, 19].includes(node.depth));
   const weights = {crawler: 1, brute: 2.5, spitter: 2, stalker: 2, carrier: 4};
   let effectiveHealth = 0, contactDps = 0, reservationBodies = 0;
   for (const {encounter, balance} of plans) {
@@ -95,10 +96,19 @@ function pressure(seed: number, nodes: readonly RunNode[]) {
     ordinaryBruteShare: ordinary.filter(({spawn}) => spawn.enemyId === 'brute').length / ordinary.length,
     meanCap: plans.reduce((sum, {encounter}) => sum + encounter.concurrentCap, 0) / plans.length,
     ordinaryLastSpawnMs: ordinaryPlans.reduce((sum, {encounter}) => sum + encounter.schedule.at(-1)!.atMs, 0) / ordinaryPlans.length,
+    nonHoldoutLastSpawnMs: nonHoldoutPlans.reduce((sum, {encounter}) => sum + encounter.schedule.at(-1)!.atMs, 0) / nonHoldoutPlans.length,
     damageRatio: plans.reduce((sum, {node, balance}) => sum + balance.damage / oldProgression(node).damage, 0) / plans.length,
     speedRatio: plans.reduce((sum, {node, balance}) => sum + balance.speed / oldProgression(node).speed, 0) / plans.length,
     budget: entries.reduce((sum, {spawn, balance}) => sum + weights[spawn.enemyId] * balance.damage * balance.speed * (spawn.elite ? balance.eliteHealth * balance.eliteDamage : 1), 0),
   };
+}
+
+function pressureByAct() {
+  return [0, 1, 2, 3].map(act => {
+    const samples = SEEDS.map(seed => pressure(seed, generateRun(seed).nodes.slice(act * 5, act * 5 + 5)));
+    return Object.fromEntries((Object.keys(samples[0]) as Array<keyof typeof samples[number]>)
+      .map(key => [key, samples.reduce((sum, sample) => sum + sample[key], 0) / samples.length])) as ReturnType<typeof pressure>;
+  });
 }
 
 function within(value: number, range: readonly [number, number], label: string) {
@@ -123,16 +133,20 @@ function oldBoundary(version: 1 | 2 | 3, depth: number, includeRig = false) {
 }
 
 describe('I5 encounter balance guardrails', () => {
-  it('keeps the unaccepted kill-charge contribution and Dynamo multiplier inside the mocked profile', () => {
-    for (const dynamo of [false, true]) {
-      const game = new DepthGame();
-      game.combat.setBuild({mutations: dynamo ? ['drive-dynamo'] : [], rig: 'breacher'});
-      game.abilities.addCharge(600, 2);
-      expect(game.abilities.snapshot.overdrive.charge).toBeCloseTo(dynamo ? .104 : .08);
+  it('keeps the approved half-rate charge contribution and Dynamo multiplier in all three graphs', () => {
+    for (const version of [1, 2, 3] as const) {
+      for (const dynamo of [false, true]) {
+        const game = new DepthGame();
+        game.newRun(1729, {version});
+        game.combat.setBuild({mutations: dynamo ? ['drive-dynamo'] : [], rig: 'breacher'});
+        game.abilities.addCharge(600, 2);
+        expect(game.abilities.snapshot.overdrive.charge).toBeCloseTo(dynamo ? .0975 : .075);
+      }
     }
   });
 
   it.each(['shotgun', 'rifle'] as const)('keeps starting %s crawler TTK within 15% of shipped tuning in every story room', weapon => {
+    const observed: number[][] = [[], [], [], []];
     for (const node of generateRun(1729).nodes) {
       const before = oldProgression(node);
       const after = progressionFor(node);
@@ -140,7 +154,16 @@ describe('I5 encounter balance guardrails', () => {
       const nextMs = crawlerTtk(after, weapon);
       expect(nextMs, `room ${node.depth + 1} ${weapon} TTK`).toBeLessThanOrEqual(previousMs * 1.15 + 1e-7);
       expect(after.health, `room ${node.depth + 1} basic health`).toBeLessThanOrEqual(before.health * 1.15);
+      observed[Math.floor(node.depth / 5)].push(nextMs);
     }
+    // Independent physical probe of the immutable V25 bundle; unchanged basic HP/weapons.
+    const expected = weapon === 'shotgun'
+      ? [[94.813, 94.813], [94.813, 95.397], [95.397, 95.397], [96.619, 96.619]]
+      : [[444.901, 444.901], [444.901, 561.430], [561.430, 678.561], [678.561, 678.561]];
+    observed.forEach((times, act) => {
+      within(Math.min(...times), [expected[act][0] - 1, expected[act][0] + 1], `act ${act + 1} ${weapon} minimum TTK ms`);
+      within(Math.max(...times), [expected[act][1] - 1, expected[act][1] + 1], `act ${act + 1} ${weapon} maximum TTK ms`);
+    });
   });
 
   it('keeps legacy v1/v2 progression and encounter tempo stable', () => {
@@ -159,57 +182,56 @@ describe('I5 encounter balance guardrails', () => {
     }
   });
 
-  it('preserves the exact shipped opening plans and progression across ten campaign seeds', () => {
+  it('preserves exact introductory plans and opening progression while adding only two authorized bodies from room three', () => {
     const openingPlans = SEEDS.flatMap(seed => generateRun(seed).nodes.slice(0, 5).map(node => {
       const {guardianKind: _guardianKind, ...balance} = progressionFor(node);
       expect(balance).toEqual(oldProgression(node));
-      return plan(seed, node);
+      const encounter = plan(seed, node);
+      expect(encounter.totalSpawns).toBe([12, 13, 15, 16, 17][node.depth]);
+      expect(encounter.schedule.every(request => !request.elite)).toBe(true);
+      return encounter;
     }));
-    // Generated independently from the frozen 76e744d director, before I5 tuning.
-    const digest = createHash('sha256').update(JSON.stringify(openingPlans)).digest('hex');
-    expect(digest).toBe('9418031045c72ac412c79f233f500060c3ceec156eca98b2180c6c96111ae326');
+    const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+    // Both references were generated independently from the frozen 76e744d director.
+    expect(digest(openingPlans.filter((_, index) => index % 5 < 2)))
+      .toBe('3a427085626c84494dddbe30f1a85dbc30ed2363e6ae61955d5e6c869aa9c5d2');
+    // Preserve the old exact five-room plan prefix, normalizing only the approved +2 requests.
+    const originalPrefixes = openingPlans.map((encounter, index) => {
+      const extra = index % 5 >= 2 ? 2 : 0;
+      return {...encounter, totalSpawns: encounter.totalSpawns - extra, schedule: encounter.schedule.slice(0, encounter.totalSpawns - extra)};
+    });
+    expect(digest(originalPrefixes)).toBe('9418031045c72ac412c79f233f500060c3ceec156eca98b2180c6c96111ae326');
   });
 
   it('holds per-act threat, specialist, elite and tempo budgets over the ten-seed campaign cohort', () => {
-    const acts = [0, 1, 2, 3].map(act => {
-      const samples = SEEDS.map(seed => pressure(seed, generateRun(seed).nodes.slice(act * 5, act * 5 + 5)));
-      const mean = (key: keyof typeof samples[number]) => samples.reduce((sum, sample) => sum + sample[key], 0) / samples.length;
-      return {
-        spawns: mean('spawns'), specialistShare: mean('specialistShare'), eliteShare: mean('eliteShare'),
-        ordinaryEliteShare: mean('ordinaryEliteShare'), ordinaryStalkerShare: mean('ordinaryStalkerShare'),
-        ordinaryCrawlerShare: mean('ordinaryCrawlerShare'), ordinarySpitterShare: mean('ordinarySpitterShare'),
-        ordinaryBruteShare: mean('ordinaryBruteShare'), meanCap: mean('meanCap'),
-        effectiveHealth: mean('effectiveHealth'), contactDps: mean('contactDps'), reservationBodies: mean('reservationBodies'),
-        ordinaryLastSpawnMs: mean('ordinaryLastSpawnMs'), damageRatio: mean('damageRatio'),
-        speedRatio: mean('speedRatio'), budget: mean('budget'),
-      };
-    });
+    const acts = pressureByAct();
     // EHP/contact budgets cover scheduled parents with actual armor and champion promotion.
     // Child reservations are counted separately; runtime Matron broods are not assumed.
     // Contact DPS assumes every attack connects: it is a threat diagnostic, not expected damage.
     // Weighted points and these envelopes do not substitute for campaign win-rate evidence.
-    // Disabled v21 profile: .60 ordinary/.90 finale damage, focused Warden duels and resistant elites.
-    // These physical pins do not assert that the pending campaign acceptance targets pass.
+    // V24/V25 shared encounter profile, independently measured from the immutable V25 bundle.
+    // Physical envelopes retain ~5% tolerance; counts and late body reservations stay exact.
+    // These pins do not assert that the pending campaign/native acceptance targets pass.
     const budgets = [
       {
-        spawns: [65, 69], threat: [105, 130], elite: [0, 0], ordinaryElite: [0, 0],
-        specialist: [.23, .28], cap: [8, 8.5], tail: [2500, 3100], damage: [1, 1], speed: [1, 1],
-        ehp: [9900, 11600], contactDps: [1175, 1425], bodies: [70, 82],
+        spawns: [73, 73], threat: [120, 133], elite: [0, 0], ordinaryElite: [0, 0],
+        specialist: [.23, .28], cap: [8, 8.5], tail: [2850, 3000], broadTail: [2850, 3000], damage: [1, 1], speed: [1, 1],
+        ehp: [11000, 12200], contactDps: [1330, 1480], bodies: [80, 86],
       },
       {
-        spawns: [100, 108], threat: [225, 275], elite: [.10, .15], ordinaryElite: [.15, .22],
-        specialist: [.44, .54], cap: [13, 14], tail: [2500, 3400], damage: [1.015, 1.035], speed: [1.003, 1.012],
-        ehp: [16000, 18800], contactDps: [1700, 2075], bodies: [140, 165],
+        spawns: [108, 108], threat: [246, 272], elite: [.10, .15], ordinaryElite: [.115, .165],
+        specialist: [.44, .52], cap: [13, 14], tail: [3150, 3350], broadTail: [3200, 3400], damage: [1.015, 1.035], speed: [1.003, 1.012],
+        ehp: [16950, 18750], contactDps: [1850, 2050], bodies: [153, 164],
       },
       {
-        spawns: [96, 102], threat: [156, 173], elite: [.60, .68], ordinaryElite: [.60, .68],
-        specialist: [.47, .54], cap: [15, 15], tail: [2950, 3350], damage: [.650, .665], speed: [1.02, 1.035],
-        ehp: [18450, 20450], contactDps: [1370, 1520], bodies: [99, 99],
+        spawns: [142, 142], threat: [279, 309], elite: [.60, .67], ordinaryElite: [.60, .66],
+        specialist: [.55, .61], cap: [15, 15], tail: [4200, 4550], broadTail: [4200, 4550], damage: [.780, .800], speed: [1.02, 1.035],
+        ehp: [26150, 28950], contactDps: [2275, 2520], bodies: [142, 142],
       },
       {
-        spawns: [134, 142], threat: [312, 346], elite: [.64, .72], ordinaryElite: [.65, .74],
-        specialist: [.52, .60], cap: [15, 15], tail: [2750, 3250], damage: [.756, .773], speed: [1.035, 1.055],
-        ehp: [28050, 31050], contactDps: [2425, 2685], bodies: [141, 141],
+        spawns: [180, 180], threat: [467, 518], elite: [.65, .72], ordinaryElite: [.67, .73],
+        specialist: [.56, .62], cap: [15, 15], tail: [4250, 4650], broadTail: [4400, 4750], damage: [.887, .910], speed: [1.035, 1.055],
+        ehp: [37150, 41150], contactDps: [3515, 3890], bodies: [183, 183],
       },
     ] as const;
     acts.forEach((act, index) => {
@@ -224,12 +246,13 @@ describe('I5 encounter balance guardrails', () => {
       within(act.specialistShare, expected.specialist, `${label} ranged/flanking frequency`);
       within(act.meanCap, expected.cap, `${label} concurrency`);
       within(act.ordinaryLastSpawnMs, expected.tail, `${label} ordinary schedule tail`);
+      within(act.nonHoldoutLastSpawnMs, expected.broadTail, `${label} broad non-holdout schedule tail`);
       within(act.damageRatio, expected.damage, `${label} damage increase`);
       within(act.speedRatio, expected.speed, `${label} pursuit increase`);
       if (index >= 2) {
         within(act.ordinaryStalkerShare, [.13, .20], `${label} stalker mix`);
-        within(act.ordinaryCrawlerShare, [.34, .44], `${label} crawler mix`);
-        within(act.ordinarySpitterShare, [.31, .39], `${label} spitter mix`);
+        within(act.ordinaryCrawlerShare, [.28, .36], `${label} crawler mix`);
+        within(act.ordinarySpitterShare, [.36, .45], `${label} spitter mix`);
         within(act.ordinaryBruteShare, [.05, .15], `${label} brute mix`);
       }
     });
@@ -259,12 +282,13 @@ describe('I5 encounter balance guardrails', () => {
     }
   });
 
-  it.each([12, 18])('keeps the disabled room-index %i duel at one Warden and eight crawlers', depth => {
+  it.each([{depth: 12, requests: 28}, {depth: 18, requests: 33}])('keeps room-index $depth as a mixed wave with its Warden first', ({depth, requests}) => {
     for (const seed of SEEDS) {
       const encounter = plan(seed, generateRun(seed).nodes[depth]);
-      expect(encounter.totalSpawns).toBe(9);
+      expect(encounter.totalSpawns).toBe(requests);
       expect(encounter.schedule[0]).toMatchObject({enemyId: 'brute', elite: true});
-      expect(encounter.schedule.slice(1).map(request => request.enemyId)).toEqual(Array(8).fill('crawler'));
+      expect(encounter.schedule.slice(1).every(request => ['crawler', 'brute', 'spitter', 'stalker'].includes(request.enemyId))).toBe(true);
+      expect(encounter.schedule.slice(1).some(request => request.enemyId === 'spitter' || request.enemyId === 'stalker')).toBe(true);
     }
   });
 
@@ -310,7 +334,9 @@ describe('I5 encounter balance guardrails', () => {
       expect({health: current.health, damage: current.damage, speed: current.speed})
         .toEqual({health: previous.health, damage: previous.damage, speed: previous.speed});
       expect(finale).toMatchObject({totalSpawns: 48, concurrentCap: 15});
-      expect(finale.totalSpawns).toBeGreaterThan(plan(seed, nodes[18]).totalSpawns * 1.8);
+      // Normal Warden waves now have 33 requests, replacing the unaccepted nine-body duel.
+      expect(plan(seed, nodes[18]).totalSpawns).toBe(33);
+      within(finale.totalSpawns / plan(seed, nodes[18]).totalSpawns, [1.4, 1.5], 'finale request-count climax');
       expect(finale.schedule[0].atMs).toBe(650);
       expect(finale.schedule.at(-1)!.atMs).toBe(42950);
       finale.schedule.forEach((spawn, index) => {
@@ -363,8 +389,8 @@ describe('I5 encounter balance guardrails', () => {
 
   it.each([
     {depth: 5, maxHealth: 760, damage: 28}, {depth: 8, maxHealth: 760, damage: 28},
-    {depth: 12, maxHealth: 1140, damage: 30.8}, {depth: 15, maxHealth: 1150, damage: 24},
-    {depth: 18, maxHealth: 1368, damage: 35},
+    {depth: 12, maxHealth: 760, damage: 28}, {depth: 15, maxHealth: 1150, damage: 24},
+    {depth: 18, maxHealth: 760, damage: 28},
   ])('spawns room-index $depth champion with its real type, elite presentation and control resistance', ({depth, maxHealth, damage}) => {
     const game = new DepthGame();
     game.newRun(1729);

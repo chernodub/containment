@@ -257,7 +257,7 @@ describe('all four rig dashes', () => {
       w.use('dash');
       w.advance(140);
       const zone = w.system.snapshot.zones[0];
-      expect(zone).toMatchObject({ ability: id, shape: 'strip', x: 0, y: 0, x2: 150, y2: 0, width: 44, durationMs: 2500 });
+      expect(zone).toMatchObject({ ability: id, shape: 'strip', x: 0, y: 0, x2: rig==='pyro'?180:150, y2: 0, width: 44, durationMs: 2500 });
       w.add(60, 22);
       w.add(60, 22.01);
       const hidden = w.add(70, 0);
@@ -270,6 +270,23 @@ describe('all four rig dashes', () => {
       expect(phases(w, id)).toContain('end');
     });
   }
+  it('Afterburn travels 180 units, protects for 500ms and independently recharges after 2500ms', () => {
+    const w=world('pyro');
+    w.use('dash');
+    expect(w.system.snapshot.slots!.dash.charges).toBe(1);
+    w.advance(140);
+    expect(w.player.x).toBeCloseTo(180);
+    expect(w.system.dashing).toBe(false);
+    expect(w.system.invulnerable).toBe(true);
+    w.advance(359);
+    expect(w.system.invulnerable).toBe(true);
+    w.advance(1);
+    expect(w.system.invulnerable).toBe(false);
+    w.advance(1999);
+    expect(w.system.snapshot.slots!.dash.charges).toBe(1);
+    w.advance(1);
+    expect(w.system.snapshot.slots!.dash.charges).toBe(2);
+  });
   it('Static Step shocks only the three nearest visible enemies at the landing point', () => {
     const w = world('arc');
     for (const x of [150, 170, 190, 210, 311])
@@ -320,12 +337,12 @@ describe('tactical ability shape, line of sight and wind-up', () => {
     w.add(Math.cos(Math.PI + .6101) * 200, Math.sin(Math.PI + .6101) * 200);
     w.add(-100);
     w.hidden.add(5);
-    expect(w.system.use('tactical')).toBe(true);
-    w.advance(79);
     expect(w.hits).toEqual([]);
-    w.advance(1);
+    expect(w.system.use('tactical')).toBe(true);
     expect(w.hits.map(h => h.id).sort()).toEqual([1, 3]);
-    expect(w.hits.every(h => h.amount === 40)).toBe(true);
+    expect(w.hits.every(h => h.amount === 35)).toBe(true);
+    w.advance(80);
+    expect(w.hits.map(h => h.id).sort()).toEqual([1, 3]);
     expect(w.controls.every(c => c.kind === 'burn')).toBe(true);
     expect(w.events.find(e => e.phase === 'impact')).toMatchObject({ length: 300, arcRadians: 1.22 });
   });
@@ -351,7 +368,7 @@ describe('tactical ability shape, line of sight and wind-up', () => {
   });
 });
 describe('power placement, deployable collision and lifetimes', () => {
-  for (const [rig, id, range, castMs] of [['cryo', 'glacier', 420, 150], ['pyro', 'napalm-charge', 480, 350], ['arc', 'tesla-pylon', 440, 100]] as const) {
+  for (const [rig, id, range, castMs] of [['cryo', 'glacier', 420, 150], ['pyro', 'napalm-charge', 480, 150], ['arc', 'tesla-pylon', 440, 100]] as const) {
     it(`${id} clamps cursor range and rejects blocked placement before consuming cooldown`, () => {
       const w = world(rig);
       w.system.setIntent(0, 0, { x: 10000, y: 0 });
@@ -433,7 +450,7 @@ describe('power placement, deployable collision and lifetimes', () => {
     w.advance(249);
     expect(w.hits).toEqual([]);
     w.advance(1);
-    expect(w.hits).toEqual([{ id: 1, amount: 4.5 }]);
+    expect(w.hits).toEqual([{ id: 1, amount: 6 }]);
     w.advance(5750);
     expect(w.hits).toHaveLength(24);
     expect(w.controls.every(c => c.kind === 'burn')).toBe(true);
@@ -556,7 +573,7 @@ describe('Overdrive effects and exact bounds', () => {
     w.add(130);
     w.add(130.01);
     w.use('overdrive');
-    expect(w.system.moveSpeedMultiplier).toBe(1.25);
+    expect(w.system.moveSpeedMultiplier).toBe(1.4);
     expect(w.system.ignitingShots).toBe(true);
     w.advance(250);
     expect(w.hits).toEqual([{ id: 1, amount: 4 }]);
@@ -575,7 +592,7 @@ describe('Overdrive effects and exact bounds', () => {
     expect(w.system.hostileTimeScale).toBe(.3);
     expect(w.system.overclocked).toBe(true);
     w.advance(1000);
-    expect(w.system.snapshot.slots!.tactical.cooldownRemainingMs).toBe(6000);
+    expect(w.system.snapshot.slots!.tactical.cooldownRemainingMs).toBe(7000);
     expect(w.system.snapshot.overdrive.activeRemainingMs).toBe(5000);
     w.advance(5000);
     expect(w.system.hostileTimeScale).toBe(1);
@@ -606,14 +623,14 @@ describe('all twelve augment runtime effects', () => {
     const before = w.system.snapshot;
     w.system.onKill(victim);
     expect(w.system.snapshot).not.toBe(before);
-    expect(w.system.snapshot.slots!.tactical.cooldownRemainingMs).toBe(6650);
+    expect(w.system.snapshot.slots!.tactical.cooldownRemainingMs).toBe(7650);
     for (let n = 0; n < 30; n++)
       w.system.onKill(victim);
     expect(w.system.snapshot.slots!.tactical.cooldownRemainingMs).toBe(0);
     expect(phases(w, 'overload').filter(p => p === 'ready')).toHaveLength(1);
     w.advance(7000);
     w.use('tactical');
-    expect(w.system.snapshot.slots!.tactical.cooldownRemainingMs).toBe(7000);
+    expect(w.system.snapshot.slots!.tactical.cooldownRemainingMs).toBe(8000);
   });
   it('Drive Dynamo multiplies damage and kill charge by 1.3 and caps at a full meter', () => {
     const w = world('arc', ['drive-dynamo']);

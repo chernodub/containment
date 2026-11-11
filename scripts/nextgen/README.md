@@ -263,22 +263,20 @@ Native batch workers are limited to one or two; do not overlap browser gates.
 Batch exit zero accepts natural deaths: use each report's `outcome`, not its
 process status, when calculating completion.
 
-The unaccepted difficulty profile is disabled by
-`src/game/roguelike/i5Tuning.ts`. Default runs measure production: half-rate
-Overdrive charge and the 32-request Transmission holdout remain active, while
-the experimental encounter parameters do not. `--tuning` enables only that
-build-time constant inside the simulation's copied bundle, leaves the working
-tree unchanged, and hashes the actual enabled source. Historical revisions
-without the flag reject `--tuning`. For a native experimental build, enable the
-constant explicitly, build to a separate immutable `--outDir`, then restore the
-default-off source before committing; the native runner records the loaded
-build's flag through a read-only debug getter.
+The I5 story encounter profile is enabled by
+`src/game/roguelike/i5Tuning.ts`. Current production uses that profile; legacy
+encounter parameters remain unchanged. `--game-revision=c3bd53b` reproduces the
+corrected-policy production baseline before encounter tuning. `--tuning` remains
+available to explicitly enable the profile in a historical source snapshot; it
+changes only the copied bundle, never the working tree, and hashes actual source.
+Historical revisions without the flag reject the switch. See
+[`I5-AIM-EXPERIMENTS.md`](../../docs/nextgen/I5-AIM-EXPERIMENTS.md) for the selected
+profile, rejected iterations, raw source identities and acceptance status.
 
-Reports with known flag state are separated into production/tuning groups.
-Earned continuations that change or cannot establish their parent's profile are
-marked mixed-profile, without blocking valid old checkpoints. Historical reports
-keep their old keys. Both aggregate commands preserve those distinctions; never
-present the default-off checkpoint as an accepted difficulty overhaul.
+Reports retain `tuningEnabled` as a build-time provenance field, not an acceptance
+claim. Enabled/disabled and mixed-profile continuations remain separated. Valid
+old checkpoints are unaffected. Both aggregation commands retain these flags;
+only explicitly selected frozen cohorts may support balance acceptance.
 
 `npm run playtest -- --rig=arc --seed=1729 --fast --label=i5-fast-arc-1729`
 keeps native keyboard/mouse actions, the presentation clock, 60 Hz simulation,

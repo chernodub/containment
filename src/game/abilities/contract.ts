@@ -49,6 +49,8 @@ export type AbilityDefinition = Readonly<{
   castMs: number;
   /** Cooldown per charge. Overdrive abilities use 0 and are gated by the Overdrive meter instead. */
   cooldownMs: number;
+  /** Dash-only immunity override; absent retains the universal default. */
+  invulnerableMs?: number;
   /** Stored uses. 1 for most abilities, 2 for the dash. */
   charges: number;
   /** Lifetime of the lingering effect (zone, deployable, self-buff). 0 = none. */
@@ -97,6 +99,8 @@ export type OverdriveSnapshot = Readonly<{
   ready: boolean;
   active: boolean;
   activeRemainingMs: number;
+  /** The room's accepted-use allowance is exhausted; earned charge carries forward. */
+  roomLimited?: boolean;
 }>;
 
 /** A world object created by an ability that persists and can be drawn: barricade, ice wall, pylon. */

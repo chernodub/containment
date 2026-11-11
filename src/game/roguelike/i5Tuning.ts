@@ -1,2 +1,2 @@
-/** Unaccepted I5 v21 profile; false retains baseline encounters plus approved charge/Transmission changes. */
-export const I5_ENCOUNTER_TUNING_ENABLED = false;
+/** I5 story encounter profile; legacy graph encounter parameters remain unchanged. */
+export const I5_ENCOUNTER_TUNING_ENABLED = true;

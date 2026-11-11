@@ -10,7 +10,7 @@ const SEEDS = [1729, 2718, 31415, 42, 137, 8675309, 2026, 9001, 65537, 123456];
 const digest = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
 // Generated independently from the frozen merged 76e744d source over all nodes of ten seeds.
-// Story plans normalize only the approved Transmission change: first 32 requests, 750 ms spacing.
+// These legacy references remain unchanged by the active story encounter profile.
 const BASELINE = {
   1: {
     plans: '466031180a772d622e938cdc9b67ebfa69ff9f514c2c737a8b31cf5b2bda75e3',
@@ -20,25 +20,28 @@ const BASELINE = {
     plans: '9ff6846741322e3727c1c9a9a570ef7fc95e42a4f1056b9bdf355b357c91fe4c',
     progression: '964df3bee34f5ea638202dbc8fbb4bbd9c7c41d770dc2b92a0ec9f929466f0b9',
   },
-  3: {
-    plans: 'd5b5809a5f0d41c2a640081467f8853c6a1f233568e9aff879ff28faa4095295',
-    progression: '37f6661b023f2007d665b007368cb121a8459865c17536f2791dffb4230fc899',
-  },
+} as const;
+
+// Independently generated from the immutable V25 bundle over all 200 story nodes.
+// Encounter/progression parameters are identical to V24; later Pyro dash trials do not change these hashes.
+const STORY_PROFILE = {
+  plans: '361a22737451637dc770c1992e1603c52893f0fadca9789258a3a30c88ce11ce',
+  progression: '99d09e9484dd593c34320ded447f0b4ee8d6503368c8c838c432d6a38b56acf0',
 } as const;
 
 const EXPERIMENT_OPTIONS = [
   'chargeWindupMs', 'chargeCooldownMs', 'chargeInitialCooldownMs', 'championHealth', 'championDamage',
 ];
 
-describe('I5 production checkpoint keeps unaccepted encounter tuning disabled', () => {
-  it('ships the experiment off and uses the approved half-rate charge arithmetic', () => {
-    expect(I5_ENCOUNTER_TUNING_ENABLED).toBe(false);
+describe('I5 active story profile keeps legacy encounters and reviewed story numbers pinned', () => {
+  it('activates the story profile and retains the approved half-rate charge arithmetic', () => {
+    expect(I5_ENCOUNTER_TUNING_ENABLED).toBe(true);
     const game = new DepthGame();
     game.abilities.addCharge(600, 2);
     expect(game.abilities.snapshot.overdrive.charge).toBeCloseTo(.075);
   });
 
-  it.each([1, 2, 3] as const)('matches every merged graph-v%i encounter and progression record across ten seeds', version => {
+  it.each([1, 2] as const)('matches every merged legacy graph-v%i encounter and progression record across ten seeds', version => {
     const nodes = SEEDS.flatMap(seed => generateRun(seed, version).nodes.map(node => ({seed, node})));
     const plans = nodes.map(({seed, node}) => createEncounterPlan({seed, node, breachIds: ['north', 'south', 'east', 'west']}));
     const balances = nodes.map(({node}) => {
@@ -50,10 +53,26 @@ describe('I5 production checkpoint keeps unaccepted encounter tuning disabled', 
     expect(digest(balances)).toBe(BASELINE[version].progression);
   });
 
-  it('keeps only the two original story guardians and the approved Transmission pacing', () => {
+  it('pins every active story encounter and progression record across ten seeds', () => {
+    const nodes = SEEDS.flatMap(seed => generateRun(seed).nodes.map(node => ({seed, node})));
+    const plans = nodes.map(({seed, node}) => createEncounterPlan({seed, node, breachIds: ['north', 'south', 'east', 'west']}));
+    const balances = nodes.map(({node}) => progressionFor(node));
+    expect(digest(plans)).toBe(STORY_PROFILE.plans);
+    expect(digest(balances)).toBe(STORY_PROFILE.progression);
+    for (const {node} of nodes) {
+      const balance = progressionFor(node);
+      if (node.depth < 10) {
+        for (const option of EXPERIMENT_OPTIONS) expect(Object.hasOwn(balance, option)).toBe(false);
+      } else {
+        expect(balance).toMatchObject({chargeWindupMs:1150, chargeCooldownMs:6500, chargeInitialCooldownMs:5000, championHealth:1, championDamage:1});
+      }
+    }
+  });
+
+  it('pins the active story guardian set and unchanged Transmission pacing', () => {
     for (const seed of SEEDS) {
       const nodes = generateRun(seed).nodes;
-      expect(nodes.filter(node => progressionFor(node).guardian).map(node => node.depth)).toEqual([5, 15]);
+      expect(nodes.filter(node => progressionFor(node).guardian).map(node => node.depth)).toEqual([5, 8, 12, 15, 18]);
       expect(progressionFor(nodes[5]).guardianKind).toBe('warden');
       expect(progressionFor(nodes[15]).guardianKind).toBe('matron');
       const transmission = createEncounterPlan({seed, node: nodes[9], breachIds: ['north', 'south', 'east', 'west']});
@@ -64,7 +83,7 @@ describe('I5 production checkpoint keeps unaccepted encounter tuning disabled', 
     }
   });
 
-  it.each([5, 15])('enters production guardian room-index %i with the original champion stats', depth => {
+  it.each([5, 8, 12, 15, 18])('enters production guardian room-index %i with the original champion stats', depth => {
     const game = new DepthGame();
     game.newRun(1729);
     const nodes = generateRun(1729).nodes, node = nodes[depth];

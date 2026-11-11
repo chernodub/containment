@@ -19,6 +19,9 @@ export const DASH_RECHARGE_MS = 2_600;
 export const DASH_DISTANCE = 150;
 export const DASH_DURATION_MS = 140;
 export const DASH_INVULNERABLE_MS = 220;
+export const PYRO_DASH_DISTANCE = 180;
+export const PYRO_DASH_RECHARGE_MS = 2_500;
+export const PYRO_DASH_INVULNERABLE_MS = 500;
 
 const dash = (
   id: AbilityId,
@@ -33,13 +36,14 @@ const dash = (
   ability({
     id, rig, slot: 'dash', element, name, summary, description,
     targeting: 'direction',
-    shape: { kind: 'dash', distance: DASH_DISTANCE, width: 44 },
+    shape: { kind: 'dash', distance: rig==='pyro'?PYRO_DASH_DISTANCE:DASH_DISTANCE, width: 44 },
     castMs: 0,
-    cooldownMs: DASH_RECHARGE_MS,
+    cooldownMs: rig==='pyro'?PYRO_DASH_RECHARGE_MS:DASH_RECHARGE_MS,
+    ...(rig==='pyro'?{invulnerableMs:PYRO_DASH_INVULNERABLE_MS}:{}),
     charges: DASH_CHARGES,
     durationMs,
     range: 0,
-    stats: [{ label: 'Charges', value: String(DASH_CHARGES) }, { label: 'Recharge', value: seconds(DASH_RECHARGE_MS) }, ...extra],
+    stats: [{ label: 'Charges', value: String(DASH_CHARGES) }, { label: 'Recharge', value: seconds(rig==='pyro'?PYRO_DASH_RECHARGE_MS:DASH_RECHARGE_MS) }, ...extra],
   });
 
 export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = Object.freeze({
@@ -67,7 +71,7 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   railbreaker: ability({
     id: 'railbreaker', rig: 'breacher', slot: 'overdrive', element: 'kinetic', name: 'Railbreaker',
     summary: 'Charge and fire a lance that pierces the whole room.',
-    description: 'Brace for a moment, then fire a lance along your aim. Everything on the line takes 420 damage and is hurled sideways into the nearest wall.',
+    description: 'Brace for a moment, then fire a lance along your aim. Everything on the line takes 420 damage and is hurled sideways into the nearest wall. One activation per ordinary story room; charge carries between rooms.',
     targeting: 'direction', shape: { kind: 'line', length: 900, width: 44 },
     castMs: 600, cooldownMs: 0, charges: 1, durationMs: 0, range: 0,
     stats: [{ label: 'Damage', value: '420' }, { label: 'Pierce', value: 'All' }],
@@ -91,13 +95,13 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
     summary: 'Raise an ice wall at the cursor. It shatters when it ends.',
     description: 'Raise a wall of ice at the cursor for 5 seconds. It blocks enemies and enemy projectiles. When it expires or is broken it shatters for 80 damage and chills everything nearby.',
     targeting: 'point', shape: { kind: 'wall', length: 200, thickness: 26 },
-    castMs: 150, cooldownMs: 15_000, charges: 1, durationMs: 5_000, range: 420,
-    stats: [{ label: 'Duration', value: seconds(5_000) }, { label: 'Shatter', value: '80' }, { label: 'Cooldown', value: seconds(15_000) }],
+    castMs: 150, cooldownMs: 18_000, charges: 1, durationMs: 5_000, range: 420,
+    stats: [{ label: 'Duration', value: seconds(5_000) }, { label: 'Shatter', value: '80' }, { label: 'Cooldown', value: seconds(18_000) }],
   }),
   whiteout: ability({
     id: 'whiteout', rig: 'cryo', slot: 'overdrive', element: 'cryo', name: 'Whiteout',
     summary: 'A blizzard follows you. Frozen enemies shatter.',
-    description: 'For 8 seconds a blizzard rages around you: constant chill and damage, a freeze pulse every 2 seconds, and enemies killed while frozen shatter for area damage.',
+    description: 'For 8 seconds a blizzard rages around you: constant chill and damage, a freeze pulse every 2 seconds, and enemies killed while frozen shatter for area damage. One activation per ordinary story room; charge carries between rooms.',
     targeting: 'self', shape: { kind: 'circle', radius: 300 },
     castMs: 0, cooldownMs: 0, charges: 1, durationMs: 8_000, range: 0,
     stats: [{ label: 'Duration', value: seconds(8_000) }, { label: 'Radius', value: '300' }],
@@ -106,31 +110,31 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   // ── PYRO ────────────────────────────────────────────────────────────────────
   afterburn: dash('afterburn', 'pyro', 'pyro', 'Afterburn',
     'Dash and leave a line of fire.',
-    'Dash in your movement direction. You cannot be hit while dashing. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    'Dash 180 units in your movement direction with 0.5 seconds of invulnerability. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     2_500, [{ label: 'Fire', value: seconds(2_500) }]),
   flashfire: ability({
     id: 'flashfire', rig: 'pyro', slot: 'tactical', element: 'pyro', name: 'Flashfire',
     summary: 'A wide cone of flame.',
-    description: 'Dump the tank in a wide cone along your aim: 40 damage and every enemy hit is ignited. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    description: 'Dump the tank in a wide cone along your aim: 35 damage and every enemy hit is ignited. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     targeting: 'direction', shape: { kind: 'cone', range: 300, arcRadians: 1.22 },
-    castMs: 80, cooldownMs: 8_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '40' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(8_000) }],
+    castMs: 0, cooldownMs: 6_000, charges: 1, durationMs: 0, range: 0,
+    stats: [{ label: 'Damage', value: '35' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(6_000) }],
   }),
   'napalm-charge': ability({
     id: 'napalm-charge', rig: 'pyro', slot: 'power', element: 'pyro', name: 'Napalm Charge',
     summary: 'Lob a canister. The pool keeps burning.',
-    description: 'Lob a canister to the cursor. It bursts into a burning pool for 6 seconds that damages and ignites everything standing in it. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    description: 'Lob a canister to the cursor. It bursts into a burning pool for 6 seconds, dealing 6 damage every 0.25 seconds and igniting everything standing in it. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     targeting: 'point', shape: { kind: 'circle', radius: 120 },
-    castMs: 350, cooldownMs: 14_000, charges: 1, durationMs: 6_000, range: 480,
-    stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Radius', value: '120' }, { label: 'Cooldown', value: seconds(14_000) }],
+    castMs: 150, cooldownMs: 12_000, charges: 1, durationMs: 6_000, range: 480,
+    stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Radius', value: '120' }, { label: 'Cooldown', value: seconds(12_000) }],
   }),
   meltdown: ability({
     id: 'meltdown', rig: 'pyro', slot: 'overdrive', element: 'pyro', name: 'Meltdown',
     summary: 'Become the fire.',
-    description: 'For 8 seconds you burn everything near you, every shot ignites, kills burst for 20 damage within 85 units, and you move 25% faster. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    description: 'For 8 seconds you burn everything near you, every shot ignites, kills burst for 20 damage within 85 units, and you move 40% faster. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence. One activation per ordinary story room; charge carries between rooms.',
     targeting: 'self', shape: { kind: 'circle', radius: 130 },
     castMs: 0, cooldownMs: 0, charges: 1, durationMs: 8_000, range: 0,
-    stats: [{ label: 'Duration', value: seconds(8_000) }, { label: 'Speed', value: '+25%' }],
+    stats: [{ label: 'Duration', value: seconds(8_000) }, { label: 'Speed', value: '+40%' }],
   }),
 
   // ── ARC ─────────────────────────────────────────────────────────────────────
@@ -143,21 +147,21 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
     summary: 'Chain lightning that stuns.',
     description: 'Lightning jumps from the enemy nearest your aim through up to six targets: 60 damage, falling 15% per jump. Shocked enemies are stunned briefly.',
     targeting: 'direction', shape: { kind: 'chain', range: 520, hopRange: 200, maxTargets: 6 },
-    castMs: 0, cooldownMs: 7_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '60' }, { label: 'Targets', value: '6' }, { label: 'Cooldown', value: seconds(7_000) }],
+    castMs: 0, cooldownMs: 8_000, charges: 1, durationMs: 0, range: 0,
+    stats: [{ label: 'Damage', value: '60' }, { label: 'Targets', value: '6' }, { label: 'Cooldown', value: seconds(8_000) }],
   }),
   'tesla-pylon': ability({
     id: 'tesla-pylon', rig: 'arc', slot: 'power', element: 'arc', name: 'Tesla Pylon',
     summary: 'Deploy a pylon that zaps and links to you.',
     description: 'Deploy a pylon at the cursor for 9 seconds. It arcs to nearby enemies, and while you stay close a live link runs between you and the pylon that damages enemies crossing it.',
     targeting: 'point', shape: { kind: 'circle', radius: 220 },
-    castMs: 100, cooldownMs: 16_000, charges: 1, durationMs: 9_000, range: 440,
-    stats: [{ label: 'Duration', value: seconds(9_000) }, { label: 'Zap', value: '26' }, { label: 'Cooldown', value: seconds(16_000) }],
+    castMs: 100, cooldownMs: 18_000, charges: 1, durationMs: 9_000, range: 440,
+    stats: [{ label: 'Duration', value: seconds(9_000) }, { label: 'Zap', value: '26' }, { label: 'Cooldown', value: seconds(18_000) }],
   }),
   overclock: ability({
     id: 'overclock', rig: 'arc', slot: 'overdrive', element: 'arc', name: 'Overclock',
     summary: 'Time slows for everything except you.',
-    description: 'For 6 seconds enemies and their projectiles move in slow motion while you do not. You fire faster, reload instantly and spend no ammunition.',
+    description: 'For 6 seconds enemies and their projectiles move in slow motion while you do not. You fire faster, reload instantly and spend no ammunition. One activation per ordinary story room; charge carries between rooms.',
     targeting: 'self', shape: { kind: 'circle', radius: 0 },
     castMs: 0, cooldownMs: 0, charges: 1, durationMs: 6_000, range: 0,
     stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Enemy speed', value: '30%' }],

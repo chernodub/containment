@@ -7,6 +7,7 @@ import type {RigId} from '../src/game/abilities/contract';
 import {ProjectileHitTracker} from '../src/game/combat/CombatSystem';
 import {WEAPONS} from '../src/game/combat/catalog';
 import type {StandardEnemyId} from '../src/game/enemies/types';
+import {generateRun} from '../src/game/roguelike/run';
 import {expeditionRewardOffers} from '../src/game/roguelike/expedition';
 import {CHECKPOINT_STORAGE_KEY, loadCheckpoint, type StorageLike} from '../src/game/roguelike/checkpoints';
 import {createExpeditionGeometry, canOccupyExpedition} from '../src/game/world/expeditionGeometry';
@@ -27,9 +28,14 @@ function start(rig: RigId = 'breacher', storage: StorageLike | null = null) {
   return {game, effects};
 }
 /** Keep real collision, enemies, combat and runtime adapters; isolate encounter scheduling in combat tests. */
-function arena(rig: RigId = 'breacher') {
+function arena(rig: RigId = 'breacher', depth = 0) {
   const fixture = start(rig);
   const game = fixture.game;
+  if (depth) {
+    const nodes=generateRun(137).nodes,node=nodes[depth];
+    game.expedition={...game.expedition,run:{...game.expedition.run,currentNodeId:node.id,completedNodeIds:nodes.slice(0,depth).map(n=>n.id),phase:'combat'}};
+    game['enterRoom']();
+  }
   game['director'].reset();
   game['pending'] = [];
   game.enemies.reset();
@@ -427,7 +433,9 @@ describe('ability replay and long-running host state', () => {
   });
 
   it.each(RIG_IDS)('keeps %s host combat finite and ability entities bounded during repeated casts', rig => {
-    const {game} = arena(rig);
+    // Stress repeated ultimates in the real holdout exception; ordinary-room limits have dedicated regressions.
+    const {game} = arena(rig,9);
+    expect(game.node.templateId).toBe('transmission-chamber');
     // Two simulated minutes of repeated real host casts and damage/status/death receipts.
     for (let frame = 0; frame < 2400; frame++) {
       if (frame % 80 === 0 && game.enemies.activeCount < 8) spawn(game, 'brute', 600 + (frame % 3) * 70, 300 + (frame % 4) * 90);

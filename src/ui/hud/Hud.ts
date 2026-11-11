@@ -118,7 +118,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         else if (s.activeRemainingMs > 0)
             value = seconds(s.activeRemainingMs);
         else if (overdrive)
-            value = snapshot.overdrive.ready ? 'READY' : `${Math.floor(clamp(snapshot.overdrive.charge) * 100)}%`;
+            value = snapshot.overdrive.roomLimited && snapshot.overdrive.charge >= 1 ? 'NEXT ROOM' : snapshot.overdrive.ready ? 'READY' : `${Math.floor(clamp(snapshot.overdrive.charge) * 100)}%`;
         else if (!s.ready)
             value = s.cooldownRemainingMs > 0 ? seconds(s.cooldownRemainingMs) : s.charges > 0 ? 'BLOCKED' : 'NO CHARGE';
         if (entry.value.textContent !== value)
