@@ -52,14 +52,67 @@ describe('Pyro presentation lifecycle and readability', () => {
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i);
       expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThanOrEqual(80 / 32 + .001);
-      // Animated lobes are taller than the rejected paper-spike version, but their
-      // complete cards remain below a standing actor's head.
+      // V3's tall licking rim stays below the 1.8m marine head; the liquid lives on the floor.
       const matrix = new T.Matrix4(); flames.getMatrixAt(i, matrix);
       const scale = new T.Vector3().setFromMatrixScale(matrix);
-      expect(p.y + scale.y).toBeLessThan(1.3);
+      expect(p.y + scale.y).toBeLessThan(1.8);
     }
     frame.snapshot = snapshot(); step(0);
     expect(flames.count).toBe(0);
+    dispose();
+  });
+
+  it('fills every radial band of the real cone through 350ms and leaves an exact sector scar', () => {
+    const { kit, fx, step, dispose } = setup(), scar = vi.spyOn(kit, 'scar');
+    fx.event(event({ length: 320, arcRadians: 1.4, angle: .2 }), 64, 96);
+    expect(scar).toHaveBeenCalledWith('fan', 2, 3, 10, 0x101619, 8, .2, 10, 1.4);
+    step(.15);
+    const flames = kit.batches.flame.mesh, bands = new Set<number>();
+    expect(flames.count).toBeGreaterThanOrEqual(40);
+    for (let i = 0; i < flames.count; i++) {
+      const p = position(flames, i), dx = p.x - 2, dz = p.z - 3;
+      const radius = Math.hypot(dx, dz), angle = Math.atan2(dz, dx) - .2;
+      expect(radius).toBeLessThanOrEqual(10);
+      expect(Math.abs(angle)).toBeLessThanOrEqual(.7);
+      bands.add(Math.floor(radius / 2));
+    }
+    expect(bands.size).toBe(5);
+    step(.18); expect(flames.count).toBeGreaterThanOrEqual(40);
+    step(.5); expect(flames.count).toBe(0); dispose();
+  });
+
+  it('keeps a continuous tall fire wall on the real dash strip on both tiers', () => {
+    for (const tier of ['high', 'low'] as const) {
+      const { kit, frame, step, dispose } = setup();
+      kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+      frame.snapshot = snapshot([zone({ ability: 'afterburn', shape: 'strip', x: 64, y: 96, x2: 256, y2: 96, width: 44 })]);
+      step(.016);
+      const flames = kit.batches.flame.mesh, matrix = new T.Matrix4();
+      let tall = 0, lowX = Infinity, highX = -Infinity;
+      for (let i = 0; i < flames.count; i++) {
+        const p = position(flames, i), scale = new T.Vector3(); flames.getMatrixAt(i, matrix); scale.setFromMatrixScale(matrix);
+        expect(p.x).toBeGreaterThanOrEqual(2); expect(p.x).toBeLessThanOrEqual(8);
+        expect(Math.abs(p.z - 3)).toBeLessThan(44 / 32 / 2);
+        if (scale.y * 2 >= .8) { tall++; lowX = Math.min(lowX, p.x); highX = Math.max(highX, p.x); }
+      }
+      expect(tall).toBeGreaterThanOrEqual(8); expect(lowX).toBeCloseTo(2); expect(highX).toBeCloseTo(8);
+      dispose();
+    }
+  });
+
+  it('layers liquid fire in the exact pool and leaves bounded burning footsteps while Meltdown moves', () => {
+    const { kit, frame, step, dispose } = setup(), liquid = vi.spyOn(kit, 'liquidFire'), grade = vi.spyOn(kit, 'grade');
+    frame.snapshot = snapshot([zone()]); step(.016);
+    expect(liquid).toHaveBeenCalledWith(4, 5, 120 / 32, .55);
+    frame.snapshot = { ...snapshot([zone({ ability: 'meltdown', attached: true })]), overdrive: { charge: 0, ready: false, active: true, activeRemainingMs: 5000 } };
+    frame.game = { player: { x: 128, y: 160, vx: 100, vy: 0, angle: .1 }, bullets: [] } as never;
+    step(.2); step(.01); expect(grade).toHaveBeenCalled(); expect(kit.batches.solid.mesh.count).toBeGreaterThan(0);
+    for (let i = 0; i < 40; i++) step(.17);
+    expect(kit.batches.solid.mesh.count).toBeLessThanOrEqual(12);
+    const before = kit.batches.solid.mesh.instanceMatrix.array.slice(); step(0);
+    expect(kit.batches.solid.mesh.instanceMatrix.array).toEqual(before);
+    fxClear();
+    function fxClear() { frame.snapshot = snapshot(); frame.game = undefined; step(2); expect(kit.batches.solid.mesh.count).toBe(0); }
     dispose();
   });
 
