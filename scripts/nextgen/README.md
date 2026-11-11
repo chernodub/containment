@@ -212,8 +212,8 @@ are fixture overrides. The default is **three 20-second wall-clock trials**, one
 
 ```sh
 npm run bench -- --label=integration-4-bench
-npm run bench -- --label=integration-4-profile --rooms=relay-racks,shielding-gate --repeat=1 --profile
-npm run bench -- --label=integration-4-repeat --rooms=relay-racks,shielding-gate --rigs=arc --tiers=high --repeat=3
+npm run bench -- --label=integration-4-profile --rooms=relay-racks,diagnostic-gallery --repeat=1 --profile
+npm run bench -- --label=integration-4-repeat --rooms=relay-racks,diagnostic-gallery --rigs=arc --tiers=high --repeat=3
 ```
 
 Use the selected `rooms` in `benchmark.json` for matched reruns; the examples are not a replacement
