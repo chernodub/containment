@@ -4,8 +4,9 @@ import type { ElementKit } from '../ElementKit';
 import { UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
 
 const FIRE = 0xff7a2e;
-const CORE = 0xffd47c;
-const SOOT = 0x182024;
+const CORE = 0xffc14b;
+const SOOT = 0x101619;
+const HOT = 0xff982f;
 const FAN = ABILITY_CATALOG.flashfire.shape;
 const FAN_RANGE = FAN.kind === 'cone' ? FAN.range / UNIT : 0;
 const FAN_ARC = FAN.kind === 'cone' ? FAN.arcRadians : 0;
@@ -56,7 +57,7 @@ class PyroPresentation implements AbilityPresentation {
         p.angle = event.angle ?? 0;
         p.tx = (event.targetX ?? x * UNIT) / UNIT;
         p.tz = (event.targetY ?? y) / UNIT;
-        kit.flash(x, z, FIRE, 4, 3, 2, .16);
+        kit.flash(x, z, FIRE, 7, 4, 2, .2);
       } else if (event.phase === 'dash-end') {
         const tx = (event.targetX ?? x * UNIT) / UNIT, tz = (event.targetY ?? y) / UNIT;
         kit.burst(tx, .15, tz, 'pyro', 16, 1.4, .4);
@@ -76,7 +77,7 @@ class PyroPresentation implements AbilityPresentation {
         p.angle = event.angle ?? 0; p.range = (event.length ?? FAN_RANGE * UNIT) / UNIT;
         p.arc = event.arcRadians ?? FAN_ARC;
         kit.flash(x + Math.cos(p.angle) * 1.2, z + Math.sin(p.angle) * 1.2, FIRE, 10, 6, 4, .22);
-        kit.distort(x + Math.cos(p.angle) * p.range * .5, z + Math.sin(p.angle) * p.range * .5, p.range * .55, .0035, .5, true);
+        kit.distort(x + Math.cos(p.angle) * p.range * .5, z + Math.sin(p.angle) * p.range * .5, p.range * .55, .0045, .65, true);
         kit.camera(.13, p.angle);
         this.scorchFan(p);
       }
@@ -113,7 +114,7 @@ class PyroPresentation implements AbilityPresentation {
         if (event.phase === 'impact') kit.camera(.28);
       } else if (event.phase === 'end') {
         kit.burst(x, .2, z, 'pyro', 12, .8, .7);
-        for (let i = 0; i < (kit.low ? 2 : 5); i++) kit.mote('smoke', x + Math.cos(i * 2.4) * .4, .5, z + Math.sin(i * 2.4) * .4, 0, .4, 0, .3, .8, SOOT);
+        for (let i = 0; i < (kit.low ? 2 : 5); i++) kit.mote('smoke', x + Math.cos(i * 2.4) * .4, .5, z + Math.sin(i * 2.4) * .4, 0, .55, 0, .5, 1.3, SOOT);
       }
     }
   }
@@ -162,25 +163,40 @@ class PyroPresentation implements AbilityPresentation {
   }
 
   private cone(p: Transient, emit: boolean): void {
-    const kit = this.kit, grow = Math.min(1, .12 + p.age / .12), fade = Math.max(0, 1 - Math.max(0, p.age - .12) / .56);
-    const lanes = kit.low ? 3 : 7, rows = kit.low ? 3 : 6;
+    const kit = this.kit, grow = Math.min(1, .12 + p.age / .12);
+    const fade = Math.max(0, 1 - Math.max(0, p.age - .12) / .56);
+    const lanes = kit.low ? 3 : 9;
+    // A broad rolling front, with overlapping lobes rather than a grid of isolated flames.
     for (let lane = 0; lane < lanes; lane++) {
-      const side = lane / Math.max(1, lanes - 1) - .5, a = p.angle + side * p.arc * .92;
-      for (let row = 1; row <= rows; row++) {
-        const r = row / rows * p.range * grow, roll = kit.reducedMotion ? .5 : .5 + .5 * Math.sin(kit.time * 17 + lane * 2.3 + row * 1.7);
-        const x = p.x + Math.cos(a) * r, z = p.z + Math.sin(a) * r;
-        const size = (.15 + r * .065) * fade;
-        const height = (.3 + roll * .35 + r * .035) * Math.max(.15, fade);
-        kit.draw('flame', x, .18 + height * .5, z, size, height, 1, Math.abs(side) < .2 ? CORE : FIRE, .38 * fade, -a + Math.PI / 2);
-        if (!kit.low) kit.draw('flame', x, .14 + height * .4, z, size * .7, height * .6, 1, FIRE, .2 * fade, -a);
+      const side = lane / Math.max(1, lanes - 1) - .5;
+      const a = p.angle + side * p.arc * .9;
+      const variation = .5 + .5 * Math.sin(lane * 12.9898 + 3.7);
+      const roll = kit.reducedMotion ? .5 : .5 + .5 * Math.sin(kit.time * 11 + lane * 1.8);
+      const r = p.range * grow * (.86 + variation * .12);
+      const x = p.x + Math.cos(a) * r, z = p.z + Math.sin(a) * r;
+      const width = (.46 + r * .09 + variation * .2) * Math.max(.25, fade);
+      const height = (.9 + variation * .65 + roll * .25) * Math.max(.15, fade);
+      kit.draw('flame', x, .06 + height * .5, z, width, height * .5, 1,
+        Math.abs(side) < .23 ? HOT : FIRE, .6 * fade, 0, (variation - .5) * .22);
+      if (!kit.low) {
+        // The hot inner fold trails the lip of the front and leaves view gaps behind it.
+        const trail = r * (.52 + variation * .15), innerHeight = height * .66;
+        kit.draw('flame', p.x + Math.cos(a) * trail, .05 + innerHeight * .5, p.z + Math.sin(a) * trail,
+          width * .78, innerHeight * .5, 1, HOT, .5 * fade, 0, -.12 + variation * .23);
+        if (lane % 2 === 0) kit.draw('smoke', x - Math.cos(a) * .3, .6 + roll * .2, z - Math.sin(a) * .3,
+          width * 1.1, .4, 1, SOOT, .17 * fade);
       }
     }
+    // The narrow jet at the origin joins the two broad flame folds into one cone.
+    const throat = 1.2 * grow, h = .65 * fade;
+    kit.draw('flame', p.x + Math.cos(p.angle) * throat, .08 + h * .5, p.z + Math.sin(p.angle) * throat,
+      .48 * fade, h * .5, 1, CORE, .55 * fade);
     if (emit && !kit.low) {
-      const r = p.range * grow * .7, a = p.angle + Math.sin(p.age * 43) * p.arc * .32;
-      kit.mote('smoke', p.x + Math.cos(a) * r, .35, p.z + Math.sin(a) * r,
-        Math.cos(a) * .4, .6, Math.sin(a) * .4, .25, 1, SOOT);
-      kit.mote('spark', p.x + Math.cos(a) * r, .3, p.z + Math.sin(a) * r,
-        Math.cos(a) * 1.7, .7, Math.sin(a) * 1.7, .04, .65, CORE);
+      const r = p.range * grow * .85, a = p.angle + Math.sin(p.age * 43) * p.arc * .35;
+      kit.mote('smoke', p.x + Math.cos(a) * r, .55, p.z + Math.sin(a) * r,
+        Math.cos(a) * .5, .65, Math.sin(a) * .5, .58, 1.25, SOOT);
+      for (let i = 0; i < 3; i++) kit.mote('spark', p.x + Math.cos(a) * r, .35, p.z + Math.sin(a) * r,
+        Math.cos(a) * (1.6 + i * .4), .8 + i * .3, Math.sin(a) * (1.6 + i * .4), .025 + i * .008, .8, CORE);
     }
   }
 
@@ -209,68 +225,102 @@ class PyroPresentation implements AbilityPresentation {
     const cx = Math.cos(p.angle), sz = Math.sin(p.angle);
     for (let side = -1; side <= 1; side += 2) {
       const bx = x - cx * .35 - sz * side * .22, bz = z - sz * .35 + cx * side * .22;
-      kit.ribbon(bx, .65, bz, bx - cx * .9 * fade, .35, bz - sz * .9 * fade, FIRE, .07 * fade, .55, false);
-      kit.draw('flame', bx - cx * .35, .52, bz - sz * .35, .18 * fade, .4 * fade, 1, CORE, .65, -p.angle + Math.PI / 2, -.25);
-      if (emit) kit.mote('spark', bx, .5, bz, -cx * 2.5, .25, -sz * 2.5, .04, .4, CORE);
+      kit.ribbon(bx, .65, bz, bx - cx * 1.2 * fade, .35, bz - sz * 1.2 * fade, HOT, .1 * fade, .7, false);
+      for (let i = 0; i < (kit.low ? 1 : 3); i++) {
+        const behind = .2 + i * .32, h = (.7 - i * .12) * fade;
+        kit.draw('flame', bx - cx * behind, .35 + h * .35, bz - sz * behind,
+          (.25 + i * .04) * fade, h * .5, 1, i === 0 ? CORE : FIRE, (.75 - i * .1) * fade, 0, side * -.15);
+      }
+      if (emit) {
+        kit.mote('spark', bx, .5, bz, -cx * 3, .65, -sz * 3, .035, .6, CORE);
+        if (!kit.low) kit.mote('smoke', bx - cx * .6, .5, bz - sz * .6, -cx * .6, .35, -sz * .6, .3, .7, SOOT);
+      }
     }
   }
 
   private ignition(p: Transient): void {
-    const kit = this.kit, t = p.age / p.life, r = p.radius * Math.min(1, .2 + t * 2), n = kit.low ? 5 : 14;
+    const kit = this.kit, t = p.age / p.life;
+    const r = p.radius * Math.min(1, .2 + t * 2), n = kit.low ? 5 : 18;
     for (let i = 0; i < n; i++) {
-      const a = i / n * Math.PI * 2, h = (.4 + (i % 3) * .15) * (1 - t);
-      kit.draw('flame', p.x + Math.cos(a) * r, .12 + h * .5, p.z + Math.sin(a) * r,
-        .23 * (1 - t), h, 1, i % 3 === 0 ? CORE : FIRE, .42 * (1 - t), -a);
+      const variation = .5 + .5 * Math.sin(i * 9.31 + 2.7);
+      const a = (i + variation * .4) / n * Math.PI * 2;
+      const h = (.7 + variation * .9) * (1 - t), width = (.28 + variation * .35) * (1 - t);
+      kit.draw('flame', p.x + Math.cos(a) * r, .06 + h * .5, p.z + Math.sin(a) * r,
+        width, h * .5, 1, i % 3 === 0 ? HOT : FIRE, .6 * (1 - t), 0, (variation - .5) * .3);
     }
   }
 
   private fireStrip(zone: AbilityZoneSnapshot, emit: boolean): void {
     const kit = this.kit, x = zone.x / UNIT, z = zone.y / UNIT, ex = zone.x2 / UNIT, ez = zone.y2 / UNIT;
     const angle = Math.atan2(ez - z, ex - x), radius = zone.width / UNIT * .5;
-    const fade = Math.min(1, zone.remainingMs / 350), points = kit.low ? 5 : 12;
+    const fade = Math.min(1, zone.remainingMs / 350), points = kit.low ? 5 : 18;
     for (let i = 0; i < points; i++) {
-      const t = (i + .5) / points, wobble = kit.reducedMotion ? .5 : .5 + .5 * Math.sin(kit.time * 13 + i * 2.4 + zone.id);
-      const lateral = Math.sin(i * 2.3) * radius * .65;
+      const variation = .5 + .5 * Math.sin(i * 13.7 + zone.id * 2.1);
+      const t = (i + .25 + variation * .5) / points;
+      const wobble = kit.reducedMotion ? .5 : .5 + .5 * Math.sin(kit.time * 9 + i * 2.4 + zone.id);
+      // The two ragged edges lick upward at unequal heights; the central lane stays open.
+      const lateral = (i % 2 ? 1 : -1) * radius * (.55 + variation * .28);
       const px = x + (ex - x) * t - Math.sin(angle) * lateral, pz = z + (ez - z) * t + Math.cos(angle) * lateral;
-      const h = (.18 + wobble * .35) * fade;
-      kit.draw('flame', px, .08 + h * .5, pz, .18, h, 1, i % 4 === 0 ? CORE : FIRE, .43 * fade, -angle + Math.PI / 2);
-      if (!kit.low && i % 3 === 0) kit.draw('flame', px, .13, pz, .24, .13, 1, FIRE, .23 * fade, -angle);
+      const h = (.48 + variation * .52 + wobble * .2) * fade;
+      kit.draw('flame', px, .045 + h * .5, pz, .22 + variation * .19, h * .5, 1,
+        i % 5 === 0 ? HOT : FIRE, (.48 + variation * .18) * fade, 0, (variation - .5) * .2);
+      if (!kit.low && i % 4 === 0) kit.draw('flame', px, .13, pz, .42, .13, 1, HOT, .35 * fade);
     }
-    kit.lightAt(zone.id, (x + ex) * .5, (z + ez) * .5, FIRE, 2.4 * fade, 3.5);
+    kit.lightAt(zone.id, (x + ex) * .5, (z + ez) * .5, FIRE, 4.5 * fade, 4.2);
     if (emit) {
       const t = (Math.floor(kit.time * 13) * .61803398875) % 1, px = x + (ex - x) * t, pz = z + (ez - z) * t;
-      kit.mote('spark', px, .25, pz, .1, .6, .08, .035, .7, CORE);
-      if (!kit.low) kit.mote('smoke', px, .35, pz, .1, .35, 0, .15, 1, SOOT);
+      for (let i = 0; i < (kit.low ? 1 : 3); i++) kit.mote('spark', px, .25, pz, .08 * i, .8 + i * .3, .06, .025, .8 + i * .15, CORE);
+      if (!kit.low) kit.mote('smoke', px, .38, pz, .12, .48, .05, .4, 1.25, SOOT);
     }
   }
 
   private firePool(zone: AbilityZoneSnapshot, emit: boolean, shimmer: boolean, frame: AbilityFrame): void {
     const kit = this.kit, x = zone.x / UNIT, z = zone.y / UNIT, radius = zone.radius / UNIT;
-    const elapsed = (zone.durationMs - zone.remainingMs) / 1000, growth = Math.min(1, .25 + elapsed / .25), fade = Math.min(1, zone.remainingMs / 600);
-    const n = kit.low ? 6 : zone.ability === 'meltdown' ? 14 : 20;
+    const elapsed = (zone.durationMs - zone.remainingMs) / 1000;
+    const growth = Math.min(1, .25 + elapsed / .25), fade = Math.min(1, zone.remainingMs / 600);
+    const meltdown = zone.ability === 'meltdown', n = kit.low ? 7 : meltdown ? 24 : 36;
     for (let i = 0; i < n; i++) {
+      const variation = .5 + .5 * Math.sin(i * 7.83 + zone.id * 3.17);
       const a = i * 2.3999632297 + zone.id * .71;
-      const r = radius * growth * (i % 3 === 0 ? .9 : .3 + (i % 5) * .12);
-      const wobble = kit.reducedMotion ? .5 : .5 + .5 * Math.sin(kit.time * 9 + i * 2.4);
-      const h = (.12 + wobble * .32) * fade;
-      kit.draw('flame', x + Math.cos(a) * r, .06 + h * .5, z + Math.sin(a) * r,
-        .16 + wobble * .07, h, 1, i % 5 === 0 ? CORE : FIRE, .37 * fade, -a);
-    }
-    if (zone.ability === 'meltdown') {
-      const angle = frame.game?.player.angle ?? 0;
-      // Place the mantle behind and below the torso, preserving the marine's head silhouette.
-      for (let i = 0; i < (kit.low ? 3 : 7); i++) {
-        const a = angle + Math.PI + (i / 6 - .5) * 2.2, r = .32;
-        const h = .32 + (i % 3) * .13;
-        kit.draw('flame', x + Math.cos(a) * r, .45 + h * .4, z + Math.sin(a) * r, .13, h, 1, i % 3 === 0 ? CORE : FIRE, .4 * fade, -a);
+      // Meltdown is an open aura; Napalm has sparse inner folds and a thicker boiling rim.
+      const edge = meltdown || i % 4 !== 0;
+      const r = radius * growth * (edge ? .79 + variation * .15 : .25 + variation * .35);
+      const wobble = kit.reducedMotion ? .5 : .5 + .5 * Math.sin(kit.time * 8 + i * 2.4);
+      const h = (.38 + variation * .55 + wobble * .22) * fade;
+      const width = .24 + variation * .28;
+      kit.draw('flame', x + Math.cos(a) * r, .04 + h * .5, z + Math.sin(a) * r,
+        width, h * .5, 1, i % 6 === 0 ? HOT : FIRE, (.44 + variation * .16) * fade, 0, (variation - .5) * .26);
+      if (!kit.low && edge && i % 5 === 0) {
+        // Broad low folds stitch neighboring tongues together without filling the damage area.
+        kit.draw('flame', x + Math.cos(a + .08) * r, .16, z + Math.sin(a + .08) * r,
+          .55, .16, 1, HOT, .36 * fade);
       }
     }
-    kit.lightAt(zone.id, x, z, FIRE, (zone.ability === 'meltdown' ? 4 : 3) * fade, Math.min(6, radius * 1.5));
-    if (shimmer) kit.distort(x, z, radius, .0015 * fade, .9, true);
+    if (meltdown) {
+      const angle = frame.game?.player.angle ?? 0, mantle = kit.low ? 4 : 10;
+      // Wreath the calves, backpack and shoulders; the hot core remains below the head.
+      for (let i = 0; i < mantle; i++) {
+        const variation = .5 + .5 * Math.sin(i * 8.17 + 2.1);
+        const a = angle + Math.PI + (i / Math.max(1, mantle - 1) - .5) * 2.4;
+        const r = .31 + variation * .11, h = .48 + variation * .36;
+        const pulse = kit.reducedMotion ? 1 : .88 + Math.sin(kit.time * 11 + i * 1.4) * .12;
+        kit.draw('flame', x + Math.cos(a) * r, .26 + h * .5, z + Math.sin(a) * r,
+          .19 + variation * .12, h * .5 * pulse, 1, i % 3 === 0 ? HOT : FIRE, .55 * fade, 0, (variation - .5) * .3);
+      }
+    }
+    kit.lightAt(zone.id, x, z, FIRE, (meltdown ? 7 : 6) * fade, Math.min(7, radius * 1.8));
+    if (shimmer) kit.distort(x, z, radius, .0027 * fade, .9, true);
     if (emit) {
-      const a = kit.time * 2.6 + zone.id, r = radius * .65;
-      kit.mote('spark', x + Math.cos(a) * r, .2, z + Math.sin(a) * r, .12, .65, .08, .035, .8, CORE);
-      if (!kit.low) kit.mote('smoke', x + Math.cos(a + 2) * r, .2, z + Math.sin(a + 2) * r, .08, .4, .04, .19, 1.2, SOOT);
+      const a = kit.time * 2.6 + zone.id, r = radius * .86;
+      for (let i = 0; i < (kit.low ? 1 : 4); i++) {
+        const ea = a + i * .48;
+        kit.mote('spark', x + Math.cos(ea) * r, .22, z + Math.sin(ea) * r,
+          Math.cos(ea) * .08, .7 + i * .19, Math.sin(ea) * .08, .022 + i * .004, .85 + i * .15, CORE);
+      }
+      if (!kit.low) {
+        kit.mote('smoke', x + Math.cos(a + 2) * r, .35, z + Math.sin(a + 2) * r, .1, .55, .05, .5, 1.4, SOOT);
+        if (meltdown) kit.mote('spark', x, .65, z, -.1, 1.2, .05, .03, .8, CORE);
+      }
     }
   }
 

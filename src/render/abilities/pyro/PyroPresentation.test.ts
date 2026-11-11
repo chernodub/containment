@@ -52,10 +52,30 @@ describe('Pyro presentation lifecycle and readability', () => {
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i);
       expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThanOrEqual(80 / 32 + .001);
-      expect(p.y).toBeLessThan(.5);
+      // Animated lobes are taller than the rejected paper-spike version, but their
+      // complete cards remain below a standing actor's head.
+      const matrix = new T.Matrix4(); flames.getMatrixAt(i, matrix);
+      const scale = new T.Vector3().setFromMatrixScale(matrix);
+      expect(p.y + scale.y).toBeLessThan(1.3);
     }
     frame.snapshot = snapshot(); step(0);
     expect(flames.count).toBe(0);
+    dispose();
+  });
+
+  it('leaves Meltdown open between its rim and body mantle and varies flame silhouettes', () => {
+    const { kit, frame, step, dispose } = setup();
+    frame.snapshot = snapshot([zone({ ability: 'meltdown', radius: 130, attached: true })]);
+    step(.016);
+    const flames = kit.batches.flame.mesh, heights = new Set<number>();
+    for (let i = 0; i < flames.count; i++) {
+      const p = position(flames, i), distance = Math.hypot(p.x - 4, p.z - 5);
+      expect(distance < .6 || distance > 130 / 32 * .75).toBe(true);
+      const matrix = new T.Matrix4(); flames.getMatrixAt(i, matrix);
+      const scale = new T.Vector3().setFromMatrixScale(matrix);
+      heights.add(Math.round(scale.y * 100));
+    }
+    expect(heights.size).toBeGreaterThan(8);
     dispose();
   });
 
