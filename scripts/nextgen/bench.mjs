@@ -107,7 +107,16 @@ try{
    let sceneLightInventory=0;r.scene.traverse(o=>{if(o.isLight)sceneLightInventory++;});
    const lane=d.benchmarkLane, start=performance.now(), initialElapsed=g.elapsed,initialPlayer={x:g.player.x,y:g.player.y},initialEnemies=g.enemies.activeCount;
    g.switchWeapon('rifle');d.fillOverdrive();
-   const uses={dash:0,tactical:0,power:0,overdrive:0};
+   const uses={dash:0,tactical:0,power:0,overdrive:0};let nextPowerTry=0;
+   const tryPower=()=>{
+    const snapshot=g.abilities.snapshot,slots=snapshot.slots;
+    if(slots.power.cooldownRemainingMs>0||snapshot.dashing||slots.tactical.castRemainingMs>0||slots.overdrive.castRemainingMs>0||slots.power.castRemainingMs>0)return;
+    for(const radius of [80,120,220,300])for(let k=0;k<16;k++){
+     const angle=g.player.angle+k*Math.PI/8,x=g.player.x+Math.cos(angle)*radius,y=g.player.y+Math.sin(angle)*radius;
+     if(!d.canStand(x,y,28)||!d.clearShot(x,y))continue;g.setAimPoint({x,y});
+     if(g.abilities.snapshot.slots.power.ready&&g.useAbility('power')){uses.power++;return;}
+    }
+   };
    d.realtime(true);
    try{
     while(performance.now()-start<seconds*1000){
@@ -115,7 +124,8 @@ try{
      // Reverse a short, legal kiting vector. Collision remains authoritative.
      const side=Math.sin(elapsed*1.2)>0?1:-1;
      d.setInput({fire:true,x:-Math.sin(lane.angle)*side*.25,y:Math.cos(lane.angle)*side*.25,angle:null,autoAim:true});
-     for(const slot of ['power','tactical','dash','overdrive'])if(g.abilities.snapshot.slots[slot].ready&&g.useAbility(slot))uses[slot]++;
+     if(elapsed>=nextPowerTry){tryPower();nextPowerTry=elapsed+.25;}
+     for(const slot of ['tactical','dash','overdrive'])if(g.abilities.snapshot.slots[slot].ready&&g.useAbility(slot))uses[slot]++;
      await new Promise(requestAnimationFrame);
     }
    }finally{d.realtime(false);d.observePerformance(undefined);gl.createProgram=create;r.render=original;}
