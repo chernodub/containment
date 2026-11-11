@@ -63,10 +63,11 @@ describe('Pyro presentation lifecycle and readability', () => {
   });
 
   it('fills every radial band of the real cone through 350ms and leaves an exact sector scar', () => {
-    const { kit, fx, step, dispose } = setup(), scar = vi.spyOn(kit, 'scar');
+    const { kit, fx, step, dispose } = setup(), scar = vi.spyOn(kit, 'scar'), fan = vi.spyOn(kit, 'fireFan');
     fx.event(event({ length: 320, arcRadians: 1.4, angle: .2 }), 64, 96);
     expect(scar).toHaveBeenCalledWith('fan', 2, 3, 10, 0x101619, 8, .2, 10, 1.4);
     step(.15);
+    expect(fan).toHaveBeenLastCalledWith(2, 3, 10, .2, 1.4, .85);
     const flames = kit.batches.flame.mesh, bands = new Set<number>();
     expect(flames.count).toBeGreaterThanOrEqual(40);
     for (let i = 0; i < flames.count; i++) {

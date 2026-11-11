@@ -186,17 +186,18 @@ class PyroPresentation implements AbilityPresentation {
     const kit = this.kit, grow = Math.min(1, .22 + p.age / .11);
     // Hold the full dump for 350ms, then let the hot folds roll into smoke.
     const fade = Math.max(0, 1 - Math.max(0, p.age - .35) / .37);
-    const bands = kit.low ? 3 : 5;
+    kit.fireFan(p.x, p.z, p.range * grow, p.angle, p.arc, fade * .85);
+    const bands = kit.low ? 3 : 7;
     for (let band = 0; band < bands; band++) {
       const fraction = (band + .65) / bands;
-      const r = p.range * grow * fraction;
       const lanes = kit.low ? 3 + band : 4 + band * 2;
       for (let lane = 0; lane < lanes; lane++) {
         const side = (lane + .5) / lanes - .5;
         const a = p.angle + side * p.arc * .94;
         const variation = .5 + .5 * Math.sin(lane * 12.9898 + band * 7.17);
+        const r = p.range * grow * Math.min(.97, fraction + Math.sin(lane * 7.73 + band * 2.17) * .055);
         const roll = kit.reducedMotion ? .5 : .5 + .5 * Math.sin(kit.time * 12 + lane * 1.8 + band * 2.2);
-        const width = (.3 + r * p.arc / lanes * .55) * (1 + variation * .18);
+        const width = (.4 + r * p.arc / lanes * .65) * (1 + variation * .18);
         const height = (.85 + fraction * .65 + roll * .22) * fade;
         const px = p.x + Math.cos(a) * r, pz = p.z + Math.sin(a) * r;
         kit.draw('flame', px, .055 + height * .5, pz, width, height * .5, 1,
@@ -292,14 +293,15 @@ class PyroPresentation implements AbilityPresentation {
     const c = Math.cos(angle), s = Math.sin(angle), length = Math.hypot(ex - x, ez - z);
     const fade = Math.min(1, zone.remainingMs / 350), points = Math.min(kit.low ? 13 : 28, Math.max(kit.low ? 7 : 14, Math.ceil(length / (kit.low ? .55 : .32))));
     for (let i = 0; i <= points; i++) {
-      const variation = .5 + .5 * Math.sin(i * 13.7 + zone.id * 2.1), t = i / points;
+      const variation = .5 + .5 * Math.sin(i * 13.7 + zone.id * 2.1);
+      const t = i === 0 || i === points ? i / points : (i + (variation - .5) * .6) / points;
       const wobble = kit.reducedMotion ? .5 : .5 + .5 * Math.sin(kit.time * 9 + i * 2.4 + zone.id);
-      const lateral = (i % 2 ? 1 : -1) * radius * .32;
+      const lateral = Math.sin(i * 2.67 + zone.id) * radius * .35;
       const px = x + (ex - x) * t - s * lateral, pz = z + (ez - z) * t + c * lateral;
-      const h = (.85 + variation * .45 + wobble * .16) * fade;
-      kit.draw('flame', px, .045 + h * .5, pz, Math.max(.32, radius * .64), h * .5, 1,
+      const h = (.86 + variation * .59 + wobble * .16) * fade;
+      kit.draw('flame', px, .045 + h * .5, pz, Math.max(.29, radius * (.48 + variation * .12)), h * .5, 1,
         i % 5 === 0 ? HOT : FIRE, (.7 + variation * .12) * fade);
-      if (!kit.low && i % 3 === 0) kit.draw('flame', px, .19, pz, .48, .19, 1, CORE, .5 * fade);
+      if (!kit.low && i % 3 === 0) kit.draw('flame', px, .19, pz, .32, .19, 1, CORE, .5 * fade);
     }
     kit.lightAt(zone.id, (x + ex) * .5, (z + ez) * .5, FIRE, 7 * fade, 5.2);
     if (emit) {
@@ -313,7 +315,7 @@ class PyroPresentation implements AbilityPresentation {
     const kit = this.kit, x = zone.x / UNIT, z = zone.y / UNIT, radius = zone.radius / UNIT;
     const elapsed = (zone.durationMs - zone.remainingMs) / 1000;
     const growth = Math.min(1, .25 + elapsed / .25), fade = Math.min(1, zone.remainingMs / 600);
-    const meltdown = zone.ability === 'meltdown', n = kit.low ? (meltdown ? 9 : 12) : meltdown ? 28 : 44;
+    const meltdown = zone.ability === 'meltdown', n = kit.low ? (meltdown ? 9 : 12) : meltdown ? 28 : 36;
     if (!meltdown) kit.liquidFire(x, z, radius * growth, .55 * fade);
     for (let i = 0; i < n; i++) {
       const variation = .5 + .5 * Math.sin(i * 7.83 + zone.id * 3.17);
@@ -323,13 +325,13 @@ class PyroPresentation implements AbilityPresentation {
       const r = radius * growth * (edge ? .77 + variation * .16 : .18 + variation * .46);
       const wobble = kit.reducedMotion ? .5 : .5 + .5 * Math.sin(kit.time * 8 + i * 2.4);
       const h = (meltdown ? .58 + variation * .5 + wobble * .2 : .85 + variation * .55 + wobble * .22) * fade;
-      const width = meltdown ? .35 + variation * .28 : .43 + variation * .33;
+      const width = meltdown ? .24 + variation * .2 : .21 + variation * .18;
       kit.draw('flame', x + Math.cos(a) * r, .04 + h * .5, z + Math.sin(a) * r,
         width, h * .5, 1, i % 6 === 0 ? HOT : FIRE, (.63 + variation * .16) * fade);
       if (!kit.low && edge && i % 5 === 0) {
         // Broad low folds stitch neighboring tongues together without filling the damage area.
         kit.draw('flame', x + Math.cos(a + .08) * r, .16, z + Math.sin(a + .08) * r,
-          .66, .22, 1, HOT, .5 * fade);
+          .33, .25, 1, HOT, .5 * fade);
       }
     }
     if (meltdown) {
@@ -338,13 +340,18 @@ class PyroPresentation implements AbilityPresentation {
       for (let i = 0; i < mantle; i++) {
         const variation = .5 + .5 * Math.sin(i * 8.17 + 2.1);
         const a = angle + Math.PI + (i / Math.max(1, mantle - 1) - .5) * 2.4;
-        const r = .31 + variation * .14, h = .68 + variation * .3;
+        const r = .36 + variation * .14, h = .85 + variation * .2;
         const pulse = kit.reducedMotion ? 1 : .88 + Math.sin(kit.time * 11 + i * 1.4) * .12;
         const level = i % 3 === 0 ? .62 : .22;
         kit.draw('flame', x + Math.cos(a) * r, level + h * .5, z + Math.sin(a) * r,
-          .25 + variation * .13, h * .5 * pulse, 1, i % 3 === 0 ? HOT : FIRE, .8 * fade);
+          .36 + variation * .14, h * .5 * pulse, 1, i % 3 === 0 ? CORE : HOT, .92 * fade);
       }
-      kit.draw('spark', x - Math.cos(angle) * .12, .95, z - Math.sin(angle) * .12, .38, .55, 1, CORE, .35 * fade);
+      for (let side = -1; side <= 1; side += 2) {
+        const px = x - Math.cos(angle) * .3 - Math.sin(angle) * side * .25;
+        const pz = z - Math.sin(angle) * .3 + Math.cos(angle) * side * .25;
+        kit.draw('flame', px, 1.05, pz, .29, .48, 1, CORE, .9 * fade);
+      }
+      kit.draw('spark', x - Math.cos(angle) * .12, .95, z - Math.sin(angle) * .12, .42, .65, 1, CORE, .5 * fade);
       kit.grade(.7 * fade);
     }
     kit.lightAt(zone.id, x, z, FIRE, (meltdown ? 11 : 12) * fade, Math.max(6, Math.min(8, radius * 1.8)));
