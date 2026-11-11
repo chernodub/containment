@@ -28,6 +28,18 @@ describe('ability instance streaming', () => {
     batch.end(); expect(batch.mesh.count).toBe(8); batch.dispose();
   });
 
+  it('streams grounded ice variants without changing default shards or adding a batch', () => {
+    const root = new T.Group(), batch = new InstanceBatch(root, 'shard', 8);
+    const phase = batch.mesh.geometry.getAttribute('abilityPhase');
+    const geometry = batch.mesh.geometry, material = batch.mesh.material;
+    batch.begin(); batch.draw(1, 2, 3, .2, 1, .3, 0x7fd6ff, .8, 0, 0, 1);
+    batch.draw(3, 4, 5, .1, .2, .3, 0x7fd6ff); batch.end();
+    expect(phase.getX(0)).toBe(1); expect(phase.getX(1)).toBe(0);
+    expect(root.children).toEqual([batch.mesh]);
+    batch.begin(); batch.draw(0, 0, 0, .3, 1, .4, 0x7fd6ff, .8, 0, 0, 1); batch.end();
+    expect(batch.mesh.geometry).toBe(geometry); expect(batch.mesh.material).toBe(material); batch.dispose();
+  });
+
   it('reuses storage and upload records, transfers the live prefix and skips empty uploads', () => {
     const batch = new InstanceBatch(new T.Group(), 'solid', 512);
     const attributes = [batch.mesh.instanceMatrix, batch.mesh.instanceColor!,

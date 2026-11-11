@@ -47,14 +47,15 @@ class SystemPresentation implements AbilityPresentation {
     if (event.phase === 'denied' || event.phase === 'ready') return;
     if (event.phase === 'cast' || event.phase === 'dash-start') { this.castAge = 0; this.castColor = color; }
     if (event.phase === 'dash-start') {
-      this.dashTime = .22;
+      this.dashTime = event.ability === 'static-step' ? 0 : .22;
+      if (event.ability === 'static-step') for (const ghost of this.ghosts) ghost.live = false;
       this.ghostClock = .035;
-      if (!k.reducedMotion) this.ghost(x / UNIT, y / UNIT, event.angle ?? 0, color, .2);
+      if (!k.reducedMotion && event.ability !== 'static-step') this.ghost(x / UNIT, y / UNIT, event.angle ?? 0, color, .2);
       k.camera(.07, event.angle ?? 0);
     } else if (event.phase === 'dash-end') {
-      this.dashTime = Math.max(this.dashTime, .07);
+      this.dashTime = event.ability === 'static-step' ? 0 : Math.max(this.dashTime, .07);
       const px = (event.targetX ?? x) / UNIT, pz = (event.targetY ?? y) / UNIT;
-      if (!k.reducedMotion) this.ghost(px, pz, event.angle ?? 0, color, .14);
+      if (!k.reducedMotion && event.ability !== 'static-step') this.ghost(px, pz, event.angle ?? 0, color, .14);
     } else if (event.phase === 'overdrive-ready') {
       this.readyAge = 0; this.readyX = x / UNIT; this.readyZ = y / UNIT; this.readyColor = color;
       k.flash(this.readyX, this.readyZ, color, 2.5, 2.6, 2, .18);
@@ -96,7 +97,8 @@ class SystemPresentation implements AbilityPresentation {
       const x = p.x / UNIT, z = p.y / UNIT;
       const color = snapshot?.rig ? ELEMENT_COLORS[RIG_ELEMENTS[snapshot.rig]] : FRIENDLY;
       const overclock = snapshot?.rig === 'arc' && snapshot.overdrive.active;
-      const trailing = snapshot?.dashing || this.dashTime > .07 || overclock;
+      const electricalDash = snapshot?.rig === 'arc' && snapshot.dashing;
+      const trailing = !electricalDash && (snapshot?.dashing || this.dashTime > .07 || overclock);
       this.ghostClock -= dt;
       if (trailing && dt > 0 && this.ghostClock <= 0 && !k.reducedMotion) {
         this.ghost(x, z, p.angle, color, snapshot?.dashing ? .22 : .06);

@@ -135,14 +135,8 @@ class ArcPresentation implements AbilityPresentation {
   private strike(event: AbilityEvent, x: number, z: number, delay: number, pylon = false): void {
     if (!Number.isFinite(event.targetX) || !Number.isFinite(event.targetY)) return;
     const k = this.kit, tx = event.targetX! / UNIT, tz = event.targetY! / UNIT;
-    k.heavyBeam(x, pylon ? 1.5 : .95, z, tx, .75, tz, VIOLET, k.low ? .06 : .095, .52, true, delay);
-    if (!k.low) {
-      // Separated branches share the real hop's destination neighborhood, never another damage lane.
-      const dx = tx - x, dz = tz - z, length = Math.hypot(dx, dz) || 1;
-      for (let side = -1; side <= 1; side += 2) k.beam(x + dx * .43, 1.1, z + dz * .43,
-        tx - dz / length * .45 * side, .45 + (side + 1) * .14, tz + dx / length * .45 * side,
-        side === 1 ? WHITE : VIOLET, .033, .28, true, delay + .018);
-    }
+    // One branching energy path: thin white-hot core and faint violet halo share a draw.
+    k.beam(x, pylon ? 1.5 : .95, z, tx, .75, tz, VIOLET, .012, .24, true, delay);
     const d = this.discharges[this.nextDischarge++ % this.discharges.length];
     d.live = true; d.x = tx; d.z = tz; d.age = 0; d.delay = delay; d.life = .68; d.fired = false; d.seed = this.nextDischarge;
   }
@@ -179,6 +173,8 @@ class ArcPresentation implements AbilityPresentation {
         k.burst(d.x, .7, d.z, 'arc', 9, 1.8, .45);
       }
       const fade = 1 - (d.age - d.delay) / d.life;
+      const contact = Math.max(0, 1 - (d.age - d.delay) / .12);
+      k.draw('spark', d.x, .75, d.z, .16, .2, 1, WHITE, contact * .9);
       const count = k.low ? 2 : 5;
       for (let i = 0; i < count; i++) {
         const a = d.seed + i * TAU / count + (k.reducedMotion ? 0 : k.time * 5);
@@ -201,8 +197,7 @@ class ArcPresentation implements AbilityPresentation {
     for (const state of this.pylons) if (!state.seen) state.id = -1;
     for (const link of frame.snapshot?.links ?? NO_LINKS) {
       const x = link.x / UNIT, z = link.y / UNIT, tx = link.targetX / UNIT, tz = link.targetY / UNIT;
-      k.ribbon(x, 1.5, z, tx, .85, tz, VIOLET, k.low ? .035 : .055, .65, !k.low);
-      if (!k.low) k.ribbon(x, 1.5, z, tx, .85, tz, WHITE, .018, .8, true);
+      k.ribbon(x, 1.5, z, tx, .85, tz, VIOLET, .009, .72, true);
       if (emit && !k.low) {
         const t = (Math.sin(k.time * 1.3) + 1) * .5;
         k.mote('spark', x + (tx - x) * t, 1.5 - t * .65, z + (tz - z) * t, 0, .2, 0, .045, .22, VIOLET);
@@ -232,20 +227,12 @@ class ArcPresentation implements AbilityPresentation {
   private bolt(x: number, z: number, tx: number, tz: number, fade: number): void {
     const k = this.kit, dx = tx - x, dz = tz - z, length = Math.hypot(dx, dz);
     if (length < .015) return;
-    const sx = -dz / length, sz = dx / length, count = k.low ? 5 : 9;
-    let px = x, pz = z;
-    for (let i = 1; i <= count; i++) {
-      const t = i / count, shift = i === count ? 0 : Math.sin(i * 13.7) * .3 * Math.sin(t * Math.PI);
-      const nx = x + dx * t + sx * shift, nz = z + dz * t + sz * shift;
-      k.ribbon(px, .85, pz, nx, .85, nz, VIOLET, .12, fade * .6, false);
-      k.ribbon(px, .85, pz, nx, .85, nz, WHITE, .045, fade, false);
-      px = nx; pz = nz;
-    }
+    k.ribbon(x, .85, z, tx, .85, tz, VIOLET, .012, fade, true);
   }
 
   private lightningBody(x: number, z: number, angle: number, fade: number): void {
     const k = this.kit, sx = -Math.sin(angle), sz = Math.cos(angle);
-    k.ribbon(x, 1.65, z, x, .7, z, WHITE, .055, fade, true);
+    k.ribbon(x, 1.65, z, x, .7, z, WHITE, .012, fade, true);
     k.ribbon(x, 1.3, z, x + sx * .42, .9, z + sz * .42, VIOLET, .019, fade, true);
     k.ribbon(x, 1.3, z, x - sx * .42, .9, z - sz * .42, VIOLET, .019, fade, true);
     k.ribbon(x, .7, z, x + sx * .22, .05, z + sz * .22, VIOLET, .023, fade, true);

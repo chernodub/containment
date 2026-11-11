@@ -57,6 +57,8 @@ export class TelegraphBatch {
       transparent: true, depthWrite: false, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
     this.mesh = new T.InstancedMesh(geometry, material, capacity);
     this.mesh.name = 'ground-telegraphs';
+    // Hostile timing fills must remain above all friendly ground decoration.
+    this.mesh.renderOrder = 20;
     this.mesh.frustumCulled = false;
     this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
     this.mesh.count = 0;

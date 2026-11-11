@@ -42,39 +42,45 @@ describe('Cryo signatures', () => {
     for (const draw of shards) expect(Math.hypot(draw[1] - 2, draw[3] - 3)).toBeLessThanOrEqual(310 / 32);
     expect(kit.front.mock.calls[0][2]).toBe(310 / 32);
     expect(kit.front.mock.calls[0][3]).toBeGreaterThan(.95);
-    expect(kit.front.mock.calls[0][5]).toBeGreaterThan(1);
+    expect(kit.front.mock.calls[0][5]).toBeGreaterThanOrEqual(.5);
+    expect(kit.front.mock.calls[0][5]).toBeLessThanOrEqual(.75);
+    expect(kit.front).toHaveBeenCalledOnce();
   });
 
-  it('keeps Glacier columns perpendicular to its authoritative facing and inside its length', () => {
+  it('builds irregular overlapping Glacier facets with no backing slab inside the blocking strip', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
-    fx.update(frame({ deployables: [wall()] }, 0));
-    const columns = kit.iceColumn.mock.calls;
-    expect(columns.length).toBe(9);
-    for (const column of columns) {
-      expect(column[0]).toBe(10);
-      expect(Math.abs(column[1] - 10) + column[2] / 2).toBeLessThanOrEqual(200 / 32 / 2 + .00001);
-      expect(column[3]).toBeLessThanOrEqual(26 / 32);
-      expect(column[4]).toBeGreaterThanOrEqual(2);
+    for (const angle of [0, Math.PI / 2, .67]) {
+      kit.draw.mockClear();
+      fx.update(frame({ deployables: [wall({ angle })] }, 0));
+      const facets = kit.draw.mock.calls;
+      expect(facets).toHaveLength(36);
+      expect(facets.every(c => c[0] === 'shard')).toBe(true);
+      const heights = new Set(facets.map(c => Number(c[5].toFixed(3))));
+      const yaws = new Set(facets.map(c => Number(c[9].toFixed(3))));
+      expect(heights.size).toBeGreaterThan(12); expect(yaws.size).toBeGreaterThan(6);
+      for (const c of facets) {
+        const dx = c[1] - 10, dz = c[3] - 10;
+        const lateral = dx * Math.cos(angle) + dz * Math.sin(angle);
+        const along = -dx * Math.sin(angle) + dz * Math.cos(angle);
+        const yaw = c[9] + angle;
+        expect(Math.abs(lateral) + Math.abs(Math.cos(yaw) * c[4]) + Math.abs(Math.sin(yaw) * c[6])).toBeLessThanOrEqual(26 / 32 / 2 + .00001);
+        expect(Math.abs(along) + Math.abs(Math.sin(yaw) * c[4]) + Math.abs(Math.cos(yaw) * c[6])).toBeLessThanOrEqual(200 / 32 / 2 + .00001);
+      }
     }
-    kit.iceColumn.mockClear();
-    fx.update(frame({ deployables: [wall({ angle: Math.PI / 2 })] }, 0));
-    for (const column of kit.iceColumn.mock.calls) {
-      expect(column[1]).toBeCloseTo(10);
-      expect(column[5]).toBeCloseTo(Math.PI / 2);
-    }
+    expect(kit.iceColumn).not.toHaveBeenCalled();
   });
 
-  it('grows bottom-up from snapshot age and pauses without advancing that geometry', () => {
+  it('grows Glacier from snapshot age and pauses without advancing its facets', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     fx.update(frame({ deployables: [wall({ remainingMs: 5000 })] }, 0));
-    const emerging = kit.iceColumn.mock.calls.map(c => c[4]);
-    kit.iceColumn.mockClear();
+    const emerging = kit.draw.mock.calls.map(c => c[5]);
+    kit.draw.mockClear();
     fx.update(frame({ deployables: [wall({ remainingMs: 4850 })] }, 0));
-    const raised = kit.iceColumn.mock.calls.map(c => c[4]);
+    const raised = kit.draw.mock.calls.map(c => c[5]);
     expect(raised[0]).toBeGreaterThan(emerging[0] * 20);
-    kit.iceColumn.mockClear();
+    kit.draw.mockClear();
     fx.update(frame({ deployables: [wall({ remainingMs: 4850 })] }, 0));
-    expect(kit.iceColumn.mock.calls.map(c => c[4])).toEqual(raised);
+    expect(kit.draw.mock.calls.map(c => c[5])).toEqual(raised);
   });
 
   it('reacts once to real wall health loss and does not emit while paused', () => {
@@ -120,27 +126,55 @@ describe('Cryo signatures', () => {
     expect(kit.debris).toHaveBeenCalledWith(2, 3, 180 / 32, 'cryo', 48);
     expect(kit.scar).toHaveBeenCalledWith('frost', 2, 3, 180 / 32, 0x7fd6ff, 7);
     fx.update(frame({}, .15));
-    expect(kit.front.mock.calls[0][5]).toBe(.5);
+    expect(kit.front).not.toHaveBeenCalled();
+    expect(kit.ring).toHaveBeenCalledWith(2, 3, 180 / 32, 0xe8fbff, .5);
   });
 
-  it('drives dense snow inside the real Whiteout radius and frosts only actual nearby blocker rims', () => {
+  it('keeps Whiteout sparse, with a clear marine region and narrow low-opacity perimeter wall', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     const f = frame({ zones: [zone()] }, 0);
-    f.game = { geometry: { blockers: [{ x: 300, y: 300, width: 40, height: 40 }, { x: 900, y: 900, width: 40, height: 40 }] } } as never;
+    f.game = { geometry: { blockers: [{ x: 480, y: 300, width: 40, height: 40 }, { x: 900, y: 900, width: 40, height: 40 }] } } as never;
     fx.update(f);
     const shards = kit.draw.mock.calls.filter(c => c[0] === 'shard');
-    expect(shards.length).toBe(96 + 24 + 4);
-    for (const draw of shards) expect(Math.hypot(draw[1] - 10, draw[3] - 10)).toBeLessThan(300 / 32);
-    expect(kit.ribbon.mock.calls.length).toBe(24 + 4);
+    expect(shards.length).toBe(48 + 4);
+    for (const draw of shards) {
+      const distance = Math.hypot(draw[1] - 10, draw[3] - 10);
+      expect(distance).toBeGreaterThan(2.25); expect(distance).toBeLessThan(300 / 32);
+      expect(draw[8]).toBeLessThanOrEqual(.37);
+    }
+    expect(kit.ribbon.mock.calls.length).toBe(8 + 24 + 4);
+    for (const c of kit.ribbon.mock.calls) expect(c[7]).toBeLessThanOrEqual(.024);
+    const wisps = kit.draw.mock.calls.filter(c => c[0] === 'smoke');
+    expect(wisps).toHaveLength(12);
+    for (const wisp of wisps) {
+      const distance = Math.hypot(wisp[1] - 10, wisp[3] - 10);
+      expect(distance).toBeGreaterThan(300 / 32 * .9);
+      expect(distance + wisp[4]).toBeLessThan(300 / 32);
+      expect(wisp[8]).toBeLessThanOrEqual(.14);
+    }
+    expect(kit.front).not.toHaveBeenCalled();
+    expect(kit.lightAt).toHaveBeenCalledWith(2, 10, 10, 0x7fd6ff, .85, 4.5);
   });
 
-  it('keeps low-tier silhouettes while reducing geometry and omitting decorative ribbons', () => {
+  it('reserves thick shock fronts for Nova and never emits them for any Whiteout phase or pulse', () => {
+    const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
+    for (const phase of ['impact', 'burst', 'end'] as const) fx.event(receipt({ ability: 'whiteout', phase, radius: 300 }), 320, 320);
+    fx.update(frame({ zones: [zone({ remainingMs: 5990 })] }, .1));
+    fx.update(frame({}, .1));
+    expect(kit.front).not.toHaveBeenCalled();
+    expect(kit.ring).toHaveBeenCalledTimes(4);
+    fx.event(receipt({ radius: 210 }), 320, 320); fx.update(frame({}, .1));
+    expect(kit.front).toHaveBeenCalled();
+  });
+
+  it('keeps low-tier wall and storm silhouettes with fewer pooled instances and segments', () => {
     const high = recordingKit(), low = recordingKit(); low.low = true;
     createCryoPresentation(high as unknown as ElementKit).update(frame({ zones: [zone()], deployables: [wall({ health: 80 })] }));
     createCryoPresentation(low as unknown as ElementKit).update(frame({ zones: [zone()], deployables: [wall({ health: 80 })] }));
     expect(low.draw.mock.calls.length).toBeGreaterThan(20);
     expect(low.draw.mock.calls.length).toBeLessThan(high.draw.mock.calls.length / 2);
-    expect(low.ribbon).not.toHaveBeenCalled();
+    expect(low.ribbon.mock.calls.length).toBe(12);
+    expect(low.front).not.toHaveBeenCalled();
   });
 
   it('renders no denied/ready world feedback and clears all transient state', () => {

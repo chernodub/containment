@@ -68,14 +68,13 @@ class CryoPresentation implements AbilityPresentation {
     } else if (event.ability === 'whiteout') {
       if (event.phase === 'impact') {
         const radius = (event.radius ?? 300) / UNIT;
-        this.wave(px, pz, radius, .9, false);
-        k.burst(px, .35, pz, 'cryo', 36, 3.6, .9);
-        k.distort(px, pz, radius, -.0025, .8);
-        k.flash(px, pz, ICE, 8, 7, 5, .3);
-        k.camera(.27);
+        // Whiteout establishes a persistent perimeter; Nova owns the thick rolling front.
+        k.ring(px, pz, radius, ICE, .65);
+        k.flash(px, pz, ICE, 1.5, 4, 3, .12);
+        k.camera(.14);
       } else if (event.phase === 'burst') {
-        this.wave(px, pz, (event.radius ?? 100) / UNIT, .62, true);
-        k.burst(px, .8, pz, 'cryo', 26, 3.6, .8);
+        k.ring(px, pz, (event.radius ?? 100) / UNIT, CORE, .45);
+        k.burst(px, .35, pz, 'cryo', 8, 1.4, .45);
       } else if (event.phase === 'end') {
         k.ring(px, pz, (event.radius ?? 300) / UNIT, ICE, .75, true);
       }
@@ -102,10 +101,9 @@ class CryoPresentation implements AbilityPresentation {
       const travel = .12 + .88 * (1 - (1 - Math.min(1, wave.age / .24)) ** 3);
       const radius = wave.radius * travel;
       const fade = (1 - progress) * (.45 + .55 * k.flashIntensity);
-      if (wave.age < wave.life) {
-        // A low, rolling body behind a hard front fills the actual radius in 240ms.
-        k.front(wave.x, wave.z, wave.radius, travel, CORE, wave.shatter ? .5 : 1.05, fade * .78);
-        if (!k.low) k.front(wave.x, wave.z, wave.radius, travel * .91, ICE, wave.shatter ? .22 : .48, fade * .42);
+      if (wave.age < wave.life && wave.aftermath) {
+        // Nova alone owns the single rolling front. Arrival/shatter pulses stay thin.
+        k.front(wave.x, wave.z, wave.radius, travel, CORE, .7, fade * .48);
       }
       const count = k.low ? 12 : 36;
       for (let i = 0; i < count && wave.age < wave.life; i++) {
@@ -192,40 +190,51 @@ class CryoPresentation implements AbilityPresentation {
       const pulse = Math.floor(age / 2000);
       if (dt > 0 && pulse > clock.pulse) {
         clock.pulse = pulse;
-        this.wave(x, z, radius, .75, false);
-        k.flash(x, z, ICE, 4, 7, 3, .14);
+        k.ring(x, z, radius, CORE, .65);
+        k.flash(x, z, ICE, 1.1, 4, 3, .1);
       }
     }
     const time = k.reducedMotion ? 0 : k.time;
-    const wind = .65 + Math.sin(time * .3) * .18, windX = Math.cos(wind), windZ = Math.sin(wind);
-    const count = k.low ? 24 : 96;
+    const wind = .65 + Math.sin(time * .3) * .18;
+    const clearRadius = Math.min(radius * .62, 2.25);
+    const count = k.low ? 14 : 48;
     for (let i = 0; i < count; i++) {
       const seed = i * 2.39996323 + zone.id * .7;
-      const angle = seed + time * (.33 + i % 3 * .06);
-      const r = radius * (.25 + .69 * ((i * 17 % count) / count));
+      const angle = seed + time * (.17 + i % 3 * .025);
+      // Most snow is driven around the wall; only one in six flakes crosses the open interior.
+      const interior = i % 6 === 0;
+      const r = interior
+        ? clearRadius + (radius * .82 - clearRadius) * (.2 + Math.sin(seed * 7.1) ** 2 * .8)
+        : radius * (.91 + Math.sin(seed * 3.7) ** 2 * .065);
       const px = x + Math.cos(angle) * r, pz = z + Math.sin(angle) * r;
-      const height = .12 + Math.sin(seed * 3) ** 2 * (k.low ? .25 : 1.15);
-      k.draw('shard', px, height, pz, .023, .035, .17 + i % 3 * .06, i % 4 ? ICE : CORE, fade * .62, Math.PI / 2 - wind + Math.sin(seed) * .13, .6);
-      if (!k.low && i % 4 === 0) {
-        const trail = Math.min(.48, radius - r - .06);
-        k.ribbon(px, height, pz, px - windX * trail, height + .035, pz - windZ * trail, ICE, .013, fade * .42, false);
+      const height = .14 + Math.sin(seed * 3) ** 2 * .7;
+      k.draw('shard', px, height, pz, .008, .012, interior ? .065 : .13,
+        i % 4 ? ICE : CORE, fade * (interior ? .22 : .37), Math.PI / 2 - wind + Math.sin(seed) * .13, .35);
+      if (!k.low && !interior && i % 3 === 0) {
+        // Short tangential driven streaks stay inside the authoritative perimeter.
+        const tail = angle - .026, tr = Math.min(radius - .055, r);
+        k.ribbon(px, height, pz, x + Math.cos(tail) * tr, height + .025, z + Math.sin(tail) * tr,
+          ICE, .004, fade * .22, false);
       }
     }
-    // Open, low boundary sections imply a dome without a full-screen translucent shell.
-    const edgeCount = k.low ? 12 : 24;
+    // A narrow slowly rotating wall of interrupted wind filaments, never a translucent dome.
+    const edgeCount = k.low ? 12 : 24, r = Math.max(0, radius - .045);
     for (let i = 0; i < edgeCount; i++) {
-      const angle = i * TAU / edgeCount;
-      const r = Math.max(0, radius - .14);
-      k.draw('shard', x + Math.cos(angle) * r, .12, z + Math.sin(angle) * r,
-        .05, .16, .13, ICE, fade * .52, -angle);
+      const a = i * TAU / edgeCount + time * .065, b = a + TAU / edgeCount * .58;
+      const height = .18 + Math.sin(i * 2.73) ** 2 * .56;
+      k.ribbon(x + Math.cos(a) * r, height, z + Math.sin(a) * r,
+        x + Math.cos(b) * r, height + Math.sin(i * 1.7) * .055, z + Math.sin(b) * r,
+        ICE, k.low ? .009 : .012, fade * .22, false);
+      if (!k.low && i % 2 === 0) {
+        // Narrow vapor wisps roll along the actual outer wall, never through the marine.
+        const middle = a + (b - a) * .5, inner = Math.max(0, radius - .5);
+        k.draw('smoke', x + Math.cos(middle) * inner, .34 + Math.sin(i * 4.1) ** 2 * .18,
+          z + Math.sin(middle) * inner, .32 + Math.sin(i * 2.7) ** 2 * .14, .3, .1,
+          0x779eae, fade * .14);
+      }
     }
-    k.lightAt(zone.id, x, z, ICE, 3.8 * fade, 8);
-    if (!k.low) this.frostRims(zone, frame, fade);
-    if (!k.low && this.emitMist) {
-      const angle = time * .6 + zone.id;
-      k.mote('smoke', x + Math.cos(angle) * radius * .75, .06, z + Math.sin(angle) * radius * .75,
-        -Math.sin(angle) * .65, .02, Math.cos(angle) * .65, .85, 1.1, 0xb0cedb);
-    }
+    k.lightAt(zone.id, x, z, ICE, .85 * fade, 4.5);
+    if (!k.low) this.frostRims(zone, frame, fade * .45);
   }
 
   private frostRims(zone: AbilityZoneSnapshot, frame: AbilityFrame, fade: number): void {
@@ -237,7 +246,8 @@ class CryoPresentation implements AbilityPresentation {
     for (const rect of blockers) {
       for (let corner = 0; corner < 4; corner++) {
         const x = rect.x + (corner % 2) * rect.width, z = rect.y + Math.floor(corner / 2) * rect.height;
-        if ((x - zone.x) ** 2 + (z - zone.y) ** 2 > radiusSquared) continue;
+        const distanceSquared = (x - zone.x) ** 2 + (z - zone.y) ** 2;
+        if (distanceSquared > radiusSquared || distanceSquared < Math.min(zone.radius * .62, 2.25 * UNIT) ** 2) continue;
         k.draw('shard', x / UNIT, .16, z / UNIT, .07, .23, .07, CORE, fade * .48, corner * Math.PI / 2);
         const alongX = corner < 2 ? .35 : 0, alongZ = corner < 2 ? 0 : .35;
         k.ribbon(x / UNIT, .13, z / UNIT, x / UNIT + alongX, .13, z / UNIT + alongZ, ICE, .024, fade * .3, false);
@@ -271,27 +281,36 @@ class CryoPresentation implements AbilityPresentation {
     }
     const count = k.low ? 5 : 9, column = length / count;
     for (let i = 0; i < count; i++) {
-      const seed = i * 1.731 + wall.id;
-      const variation = Math.sin(seed * 2.37) ** 2;
-      const offset = -length / 2 + column * (i + .5 + Math.sin(seed) * .02);
+      const seed = i * 1.731 + wall.id, variation = Math.sin(seed * 2.37) ** 2;
+      const offset = -length / 2 + column * (i + .5 + Math.sin(seed) * .29);
       const rise = k.reducedMotion ? 1 : Math.min(1, Math.max(.02, (age - i * .009) / .09));
-      const height = (2.05 + Math.sin(seed * 3) ** 2 * .8) * rise;
-      const px = x + alongX * offset, pz = z + alongZ * offset;
-      k.iceColumn(px, pz, column * (.82 + variation * .13), thickness * (.74 + variation * .22), height, wall.angle, fade * (1 + (state?.flash ?? 0) * .2));
-      // A ragged blue pressure foot grounds the wall; pale facets stay above a solid skirt.
-      const skirt = (.43 + variation * .3) * rise;
-      k.draw('solid', px, skirt * .5, pz, thickness * .98, skirt, column * .95,
-        0x39779b, fade * .74, -wall.angle);
+      const height = (1.45 + Math.sin(seed * 3) ** 2 * 1.5) * rise;
+      const lateral = Math.sin(seed * 4.1) * thickness * .075;
+      const px = x + alongX * offset + faceX * lateral, pz = z + alongZ * offset + faceZ * lateral;
+      const yaw = -wall.angle + Math.sin(seed * 5.1) * .12;
+      const width = Math.min(column * (.54 + variation * .13), Math.max(.01, length / 2 - Math.abs(offset) - thickness * .07));
+      const depth = thickness * (.25 + Math.sin(seed * 2.1) ** 2 * .055);
+      // Overlapping dark rear facets and offset lit spires replace the backing box and diamond fence.
+      k.draw('shard', px - faceX * thickness * .08, height * .46, pz - faceZ * thickness * .08,
+        depth, height * .46, width, 0x27536d, fade * .91, yaw, 0, 1);
+      const shoulder = width * Math.sin(seed * 2.9) * .32, shoulderHeight = height * (.23 + variation * .11);
+      k.draw('shard', px + alongX * shoulder, shoulderHeight, pz + alongZ * shoulder,
+        depth * .64, shoulderHeight, width * .52, i % 3 ? 0x6bb6d3 : 0x99d9ed,
+        fade * .67, -wall.angle + Math.sin(seed * 3.9) * .32, 0, 1);
+      // Broken ankle-high frost clusters stay irregular without a continuous rectangular skirt.
+      k.draw('shard', px, .09 + variation * .09, pz, thickness * .39,
+        (.12 + variation * .15) * rise, Math.min(width * 1.12, length / 2 - Math.abs(offset)), 0x4e8baf, fade * .55, -wall.angle);
       if (!k.low) {
+        k.draw('shard', px + faceX * depth * .1 - alongX * width * .16, height * .55,
+          pz + faceZ * depth * .1 - alongZ * width * .16,
+          depth * .13, height * .36, width * .15, CORE, fade * (.17 + (state?.flash ?? 0) * .15), yaw, 0, 1);
         const crack = Math.max(damage, expiry);
         if (crack > .1 && i % 2 === 0) {
-          const frontX = px + faceX * thickness * .44, frontZ = pz + faceZ * thickness * .44;
-          k.ribbon(frontX, height * .75, frontZ, frontX + alongX * column * .22, height * .4, frontZ + alongZ * column * .22,
-            CORE, .012, crack * fade * .55, false);
-          k.ribbon(frontX + alongX * column * .22, height * .4, frontZ + alongZ * column * .22,
-            frontX - alongX * column * .2, height * .2, frontZ - alongZ * column * .2, CORE, .009, crack * fade * .45, false);
+          const frontX = px + faceX * depth * .8, frontZ = pz + faceZ * depth * .8;
+          k.ribbon(frontX, height * .75, frontZ, frontX + alongX * column * .16, height * .4, frontZ + alongZ * column * .16,
+            CORE, .007, crack * fade * .4, false);
         }
-        if (this.emitMist && i % 3 === 0) k.mote('smoke', px, .2, pz, faceX * .3, .06, faceZ * .3, .6, 1.05, 0xc1dfeb);
+        if (this.emitMist && i % 3 === 0) k.mote('smoke', px, .15, pz, faceX * .15, .04, faceZ * .15, .32, .8, 0x8eafc0);
       }
     }
     k.lightAt(wall.id, x, z, ICE, 2.6 * fade, 4.8);

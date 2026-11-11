@@ -14,7 +14,7 @@ export const BREACHER_LIMITS = Object.freeze({ casts: 8, impacts: 12, barriers: 
 
 type Cast = { live: boolean; rail: boolean; x: number; z: number; angle: number; radius: number; length: number; age: number; life: number };
 type Impact = { live: boolean; kind: 'slam' | 'rail' | 'ram' | 'ram-arrival'; x: number; z: number; angle: number; size: number; age: number; life: number; wallDone: boolean };
-type Barrier = { id: number; seen: boolean; x: number; z: number; angle: number; length: number; health: number; pulse: number };
+type Barrier = { id: number; seen: boolean; x: number; z: number; angle: number; length: number; health: number; pulse: number; contact: number };
 
 /** Hard industrial kinetic language, composed entirely through the shared fixed pools. */
 export class BreacherPresentation implements AbilityPresentation {
@@ -25,7 +25,7 @@ export class BreacherPresentation implements AbilityPresentation {
     live: false, kind: 'slam', x: 0, z: 0, angle: 0, size: 1, age: 0, life: 1, wallDone: false,
   }));
   private readonly barriers: Barrier[] = Array.from({ length: BREACHER_LIMITS.barriers }, () => ({
-    id: -1, seen: false, x: 0, z: 0, angle: 0, length: 1, health: 1, pulse: 0,
+    id: -1, seen: false, x: 0, z: 0, angle: 0, length: 1, health: 1, pulse: 0, contact: 0,
   }));
   private nextCast = 0;
   private nextImpact = 0;
@@ -75,23 +75,16 @@ export class BreacherPresentation implements AbilityPresentation {
     if (event.ability === 'seismic-slam') {
       const radius = (event.radius ?? 230) / UNIT;
       this.impact('slam', x, z, angle, radius, 1.05);
-      this.kit.ring(x, z, radius, AMBER, .55);
+      this.kit.ring(x, z, radius, AMBER, .18);
       this.kit.distort(x, z, radius, .007, .55);
       this.kit.flash(x, z, CORE, 28, radius + 1, 5, .035);
       this.kit.flash(x, z, AMBER, 13, radius, 4, .18);
       this.kit.camera(.54);
       this.kit.anticipate(34, .045);
       this.kit.scar('crack', x, z, radius, 0x211a13, 10);
-      this.kit.scar('crack', x, z, radius, AMBER, .7);
-      this.kit.burst(x, .15, z, 'kinetic', 38, 6, .65);
-      this.dust(x, z, radius, this.kit.low ? 8 : 28);
+      this.kit.burst(x, .15, z, 'kinetic', 24, 6, .45);
+      this.dust(x, z, radius, this.kit.low ? 5 : 14);
       this.kit.debris(x, z, radius, 'kinetic', 32);
-      // A few heavier plate fragments emerge across the deck, between the smaller pooled chunks.
-      for (let i = 0; i < (this.kit.low ? 3 : 8); i++) {
-        const a = i * 2.399963, r = radius * (.2 + i % 4 * .055), speed = 2 + i % 3;
-        this.kit.mote('solid', x + Math.cos(a) * r, .08, z + Math.sin(a) * r,
-          Math.cos(a) * speed, 1.8 + i % 3 * .6, Math.sin(a) * speed, .18 + i % 4 * .04, 1.15, i % 3 ? STEEL : 0x51463b);
-      }
     } else if (event.ability === 'railbreaker') {
       const shape = ABILITY_CATALOG.railbreaker.shape;
       const length = (event.length ?? (shape.kind === 'line' ? shape.length : 900)) / UNIT;
@@ -268,20 +261,22 @@ export class BreacherPresentation implements AbilityPresentation {
   }
 
   private drawSlam(p: Impact): void {
-    const t = p.age / p.life, progress = Math.min(1, .2 + p.age / .18), radius = p.size * progress, count = this.kit.low ? 8 : 24;
-    const frontFade = Math.max(0, 1 - p.age / .65);
-    this.kit.front(p.x, p.z, p.size, progress, AMBER, .18, Math.max(0, 1 - p.age / .3) * .8);
-    const dustHeight = 1.5 * Math.min(1, .5 + p.age * 5) * Math.max(.2, 1 - Math.max(0, p.age - .2) * 1.8);
-    this.kit.front(p.x, p.z, p.size, progress * .96, DUST, dustHeight, frontFade * .7);
+    const t = p.age / p.life, progress = Math.min(1, .12 + p.age / .14), radius = p.size * progress;
+    const count = this.kit.low ? 7 : 18, frontFade = Math.max(0, 1 - p.age / .36);
+    // The thin expanding boundary owns the pressure front; only broken dust follows it.
     for (let i = 0; i < count; i++) {
-      const seed = Math.sin(i * 7.1) ** 2, a = i * TAU / count + Math.sin(i * 3.73) * .035, r = radius * (.78 + seed * .18);
-      // Uneven dark plate chunks lift and settle behind the front instead of forming an energy lattice.
-      const lift = Math.sin(Math.min(1, p.age / .45) * Math.PI) * (.18 + seed * .3);
-      this.kit.draw('solid', p.x + Math.cos(a) * r, .055 + lift, p.z + Math.sin(a) * r,
-        .24 + seed * .25, .08 + seed * .06, .18 + seed * .1, i % 7 === 0 && p.age < .12 ? AMBER : STEEL,
-        (1 - t) * .85, -a + seed, Math.sin(i * 2.3) * .18);
-      if (!this.kit.low) this.kit.draw('smoke', p.x + Math.cos(a) * r, .15, p.z + Math.sin(a) * r,
-        .5 + seed * .28 + t * .3, .24 + seed * .18 + t * .25, .2, DUST, (1 - t) * .35, -a);
+      const seed = Math.sin(i * 7.1) ** 2, a = i * TAU / count + Math.sin(i * 3.73) * .08;
+      const r = radius * (.71 + seed * .24);
+      const lift = Math.sin(Math.min(1, p.age / .36) * Math.PI) * (.08 + seed * .16);
+      // Fine angular chips replace the regular, broad square deck plates.
+      this.kit.draw('shard', p.x + Math.cos(a) * r, .035 + lift, p.z + Math.sin(a) * r,
+        .045 + seed * .08, .025 + seed * .035, .03 + seed * .055, i % 7 === 0 && p.age < .08 ? AMBER : STEEL,
+        (1 - t) * .72, -a + seed, Math.sin(i * 2.3) * .65);
+      if (i % (this.kit.low ? 3 : 2) === 0) {
+        const wake = radius * (.93 + seed * .04);
+        this.kit.draw('smoke', p.x + Math.cos(a) * wake, .12 + p.age * .2, p.z + Math.sin(a) * wake,
+          .3 + seed * .16 + t * .12, .14 + seed * .12 + t * .12, .2, DUST, frontFade * .2, -a);
+      }
     }
   }
 
@@ -360,58 +355,70 @@ export class BreacherPresentation implements AbilityPresentation {
     if (!slot) return;
     const x = e.x / UNIT, z = e.y / UNIT, length = e.length / UNIT, thickness = e.thickness / UNIT;
     if (slot.id !== e.id) {
-      slot.id = e.id; slot.health = e.health; slot.pulse = 0;
+      slot.id = e.id; slot.health = e.health; slot.pulse = 0; slot.contact = 0;
     } else if (dt > 0 && e.health < slot.health) {
       slot.pulse = .22;
-      const offset = Math.sin(e.health * 17.1) * length * .35;
-      this.kit.burst(x - Math.sin(e.angle) * offset, .7, z + Math.cos(e.angle) * offset, 'kinetic', 9, 1.8, .38);
+      // The snapshot reports total load rather than an impact point. Keep its response local
+      // to one projector, selected from the receipt, without implying a new gameplay hit.
+      slot.contact = Math.sin(e.health * 17.1) * length * .35;
+      this.kit.burst(x - Math.sin(e.angle) * slot.contact, .7, z + Math.cos(e.angle) * slot.contact, 'kinetic', 7, 1.4, .3);
       this.kit.flash(x, z, EDGE, 2, 3, 2, .07);
       this.kit.distort(x, z, length * .5, .0015, .22, true);
     }
     slot.seen = true; slot.health = e.health; slot.x = x; slot.z = z; slot.angle = e.angle; slot.length = length;
     slot.pulse = Math.max(0, slot.pulse - dt);
     const nx = Math.cos(e.angle), nz = Math.sin(e.angle), ux = -nz, uz = nx;
-    const age = Math.max(0, (e.durationMs - e.remainingMs) / 1000), panels = this.kit.low ? 3 : BREACHER_LIMITS.panels;
-    const panelWidth = length / panels;
+    const age = Math.max(0, (e.durationMs - e.remainingMs) / 1000);
+    const growth = this.kit.reducedMotion ? 1 : Math.min(1, age / .14), h = 2.4 * growth;
+    const fade = Math.min(1, e.remainingMs / 180), nodes = this.kit.low ? 3 : 5;
     const flicker = e.remainingMs < 1000 && !this.kit.reducedMotion && !this.kit.low
-      ? .72 + Math.sin(this.kit.time * 31 + e.id) * .15 : 1;
+      ? .82 + Math.sin(this.kit.time * 19 + e.id) * .08 : 1;
     const health = e.health / Math.max(1, e.maxHealth);
-    for (let i = 0; i < panels; i++) {
-      const growth = Math.max(0, Math.min(1, (age - i / panels * .09) / .08));
-      const along = (i + .5) * panelWidth - length / 2;
-      const baseX = x + ux * along, baseZ = z + uz * along;
-      // The full projector line is present on the impact frame, before panels rise.
-      this.kit.draw('solid', baseX, .08, baseZ, thickness, .13, panelWidth * .96, STEEL, .9, -e.angle);
-      this.kit.draw('solid', baseX + nx * thickness * .58, .12, baseZ + nz * thickness * .58,
-        .045, .04, panelWidth * .83, AMBER, .85, -e.angle);
+    // One continuous field and projector bed; no independently repeated translucent panels.
+    this.kit.draw('solid', x, .055, z, thickness * .92, .1, length, STEEL, .96 * fade, -e.angle);
+    if (growth > 0) {
+      this.kit.draw('solid', x, h / 2 + .06, z, thickness * .72, h, length, EDGE, .22 * fade * flicker, -e.angle);
+      for (let side = -1; side <= 1; side += 2) {
+        const px = x + nx * thickness * .36 * side, pz = z + nz * thickness * .36 * side;
+        this.kit.ribbon(px - ux * length * .5, h + .06, pz - uz * length * .5,
+          px + ux * length * .5, h + .06, pz + uz * length * .5, EDGE, .022, .82 * fade * flicker, false);
+      }
+      for (let end = -1; end <= 1; end += 2) {
+        const px = x + ux * length * .5 * end, pz = z + uz * length * .5 * end;
+        this.kit.ribbon(px - nx * thickness * .36, h + .06, pz - nz * thickness * .36,
+          px + nx * thickness * .36, h + .06, pz + nz * thickness * .36, EDGE, .022, .82 * fade, false);
+      }
+    }
+    for (let i = 0; i < nodes; i++) {
+      const along = (i / (nodes - 1) - .5) * Math.max(0, length - thickness * .5);
+      const px = x + ux * along, pz = z + uz * along;
+      this.kit.draw('solid', px, .115, pz, thickness, .22, thickness * .5, STEEL, fade, -e.angle);
+      this.kit.draw('solid', px + nx * thickness * .08, .245, pz + nz * thickness * .08,
+        thickness * .64, .045, thickness * .33, EDGE, .8 * fade, -e.angle);
       if (growth <= 0) continue;
-      const h = 2.4 * growth;
-      const hinge = this.kit.reducedMotion ? 0 : (1 - growth) * thickness * .16;
-      const px = x + ux * along + nx * hinge, pz = z + uz * along + nz * hinge;
-      this.kit.draw('solid', px, h / 2 + .06, pz, thickness * .82, h, panelWidth * .96, EDGE,
-        (.17 + slot.pulse * .32) * flicker, -e.angle);
-      // Cold top rim and warm uprights distinguish friendly cover from hostile red warnings.
-      this.kit.ribbon(px - ux * panelWidth * .46, h + .06, pz - uz * panelWidth * .46,
-        px + ux * panelWidth * .46, h + .06, pz + uz * panelWidth * .46, EDGE, .04, .8 * flicker, false);
-      this.kit.ribbon(px - ux * panelWidth * .46, .08, pz - uz * panelWidth * .46,
-        px - ux * panelWidth * .46, h + .06, pz - uz * panelWidth * .46, AMBER, .026, .65 * flicker, false);
-      this.kit.draw('solid', px, h * .5 + .06, pz, thickness * .96, .055, panelWidth * .96, AMBER, .5 * flicker, -e.angle);
-      if (!this.kit.low) {
-        const hexWidth = panelWidth * .36, hexHeight = Math.min(.29, h * .17);
-        for (let row = 0; row < 3; row++) {
-          const centerY = h * (.2 + row * .3) + .06;
-          for (let edge = 0; edge < 6; edge++) {
-            const a = edge * Math.PI / 3, b = (edge + 1) * Math.PI / 3;
-            const sa = Math.cos(a) * hexWidth, sb = Math.cos(b) * hexWidth;
-            this.kit.ribbon(px + ux * sa, centerY + Math.sin(a) * hexHeight, pz + uz * sa,
-              px + ux * sb, centerY + Math.sin(b) * hexHeight, pz + uz * sb,
-              slot.pulse > 0 ? CORE : EDGE, .014, (.27 + health * .12 + slot.pulse) * flicker, false);
-          }
+      const load = slot.pulse * Math.max(0, 1 - Math.abs(along - slot.contact) / Math.max(.4, length * .27));
+      this.kit.ribbon(px, .26, pz, px, h + .055, pz, AMBER, .008,
+        (.16 + load * 1.8) * fade * flicker, false);
+    }
+    if (growth > 0) {
+      const columns = this.kit.low ? 3 : 6, cellWidth = length / columns * .43;
+      const rows = this.kit.low ? 1 : 2, cellHeight = Math.min(.31, h * .17);
+      // Sparse hex cells share the continuous field. Only cells near the loaded node brighten.
+      for (let column = 0; column < columns; column++) for (let row = 0; row < rows; row++) {
+        const along = Math.max(-length * .5 + cellWidth, Math.min(length * .5 - cellWidth, ((column + .5 + (row % 2) * .15) / columns - .5) * length));
+        const local = slot.pulse * Math.max(0, 1 - Math.abs(along - slot.contact) / Math.max(.4, length * .24));
+        if (this.kit.low && local <= .04) continue;
+        const centerY = h * (this.kit.low ? .5 : .3 + row * .4) + .06;
+        const px = x + ux * along + nx * thickness * .37, pz = z + uz * along + nz * thickness * .37;
+        for (let edge = 0; edge < 6; edge++) {
+          const a = edge * Math.PI / 3, b = (edge + 1) * Math.PI / 3;
+          this.kit.ribbon(px + ux * Math.cos(a) * cellWidth, centerY + Math.sin(a) * cellHeight, pz + uz * Math.cos(a) * cellWidth,
+            px + ux * Math.cos(b) * cellWidth, centerY + Math.sin(b) * cellHeight, pz + uz * Math.cos(b) * cellWidth,
+            local > .04 ? CORE : EDGE, .006 + local * .02, (.12 + health * .06 + local * 2.5) * fade * flicker, false);
         }
       }
-      if (slot.pulse > 0) this.kit.outline(px, pz, .25 + (.22 - slot.pulse) * 2, AMBER, slot.pulse * .8);
     }
-    this.kit.lightAt(e.id, x, z, AMBER, 2.3, 4.5);
+    this.kit.lightAt(e.id, x, z, EDGE, 1.8 * fade, 4.5);
   }
 
   private collapseBarrier(b: Barrier): void {
@@ -426,7 +433,7 @@ export class BreacherPresentation implements AbilityPresentation {
   clear(): void {
     for (const c of this.casts) c.live = false;
     for (const p of this.impacts) p.live = false;
-    for (const b of this.barriers) { b.id = -1; b.seen = false; b.pulse = 0; }
+    for (const b of this.barriers) { b.id = -1; b.seen = false; b.pulse = 0; b.contact = 0; }
     this.emissionClock = 0;
     this.ramStartValid = false; this.ramStartAge = 0;
   }

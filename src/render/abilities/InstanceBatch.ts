@@ -1,11 +1,13 @@
 import * as T from 'three';
+import { FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
 
 export type Primitive = 'shard' | 'spark' | 'smoke' | 'flame' | 'solid' | 'ghost' | 'decal' | 'front';
 const vertex = `
 attribute float abilityAlpha;attribute float abilityPhase;
-varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;
-void main(){alpha=abilityAlpha;phase=abilityPhase;ink=instanceColor;uvLocal=uv;
-gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.);screenPosition=gl_Position;}`;
+varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;
+void main(){alpha=abilityAlpha;phase=abilityPhase;ink=instanceColor;uvLocal=uv;facetNormal=normalize(normalMatrix*mat3(instanceMatrix)*normal);
+vec3 posedPosition=position;/* ability shape */
+gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(posedPosition,1.);screenPosition=gl_Position;}`;
 
 /** Fixed GPU inventory. Flame/smoke share the game's licensed flipbook assets. */
 export class InstanceBatch {
@@ -48,7 +50,9 @@ export class InstanceBatch {
 
     const fragment = `
 uniform float abilityTime;uniform sampler2D map;uniform float flash;
-varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;
+varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;
+float abilityHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
+float abilityNoise(vec2 p){vec2 b=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(abilityHash(b),abilityHash(b+vec2(1.,0.)),f.x),mix(abilityHash(b+vec2(0.,1.)),abilityHash(b+vec2(1.)),f.x),f.y);}
 void main(){
  vec2 p=uvLocal*2.-1.;float a=alpha;vec3 c=ink;
 ${atlas ? `
@@ -71,16 +75,25 @@ ${atlas ? `
 ${kind === 'spark' ? 'float d=dot(p,p);if(d>1.)discard;a*=pow(1.-d,2.);c*=3.5;' : ''}
 ${kind === 'decal' ? `
  float d=length(p);float a0=atan(p.y,p.x);float variant=floor(phase+.01);
- float n=fract(sin(dot(floor(p*31.),vec2(127.1,311.7)))*43758.5);
- float brokenAngle=a0*11.+sin(d*26.+floor(a0*3.)*6.)*.7+sin(d*73.+a0*7.)*.2;
- float cracks=pow(1.-abs(sin(brokenAngle)),24.)*step(.14,n)*(1.-smoothstep(.8,1.,d));
- if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,(1.-smoothstep(.65,1.,d))*(.08+n*.1));}
- else if(variant<1.5){if(d>1.)discard;vec2 cell=floor(p*17.);vec2 f=fract(p*17.)-.5;float seed=fract(sin(dot(cell,vec2(43.1,87.7)))*9781.7);float frost=pow(max(0.,1.-abs(sin(atan(f.y,f.x)*3.+seed*6.283))),18.)*(1.-smoothstep(.1,.65,length(f)));vec2 g=fract(p*31.);g=g*g*(3.-2.*g);vec2 b=floor(p*31.);float n10=fract(sin(dot(b+vec2(1.,0.),vec2(127.1,311.7)))*43758.5);float n01=fract(sin(dot(b+vec2(0.,1.),vec2(127.1,311.7)))*43758.5);float n11=fract(sin(dot(b+vec2(1.),vec2(127.1,311.7)))*43758.5);float powder=mix(mix(n,n10,g.x),mix(n01,n11,g.x),g.y);a*=(.07+powder*.09+frost*.22)*(1.-smoothstep(.82,1.,d));c*=1.4;}
+ float n=abilityNoise(p*19.);
+ float spoke=floor((a0+3.141593)/6.283185*13.);
+ float jag=sin(d*39.+spoke*17.)*.025+sin(d*93.+spoke*3.)*.009;
+ float ray=abs(sin(a0*6.5+jag/max(.08,d)))*d;
+ float fork=abs(sin(a0*6.5+(d-.4)*1.3+jag/max(.08,d)))*d;
+ float seam=step(.025,abs(fract((p.x+p.y*.13)*4.)-.5));
+ float cracks=max(1.-smoothstep(.002,.006,ray),(1.-smoothstep(.0015,.0045,fork))*smoothstep(.32,.5,d)*.6)*seam*(1.-smoothstep(.82,1.,d));
+ if(variant<.5){if(d>1.)discard;a*=cracks*.62;c=mix(vec3(.012,.009,.006),ink,.14);}
+ else if(variant<1.5){
+  if(d>1.)discard;
+  float powder=abilityNoise(p*31.);
+  float fern=pow(1.-abs(sin(a0*17.+sin(d*39.)*.4)),24.)*smoothstep(.5,.8,powder);
+  a*=(powder*.018+fern*.045)*(1.-smoothstep(.82,1.,d))*smoothstep(.18,.42,d);c*=.85;
+ }
  else if(variant<2.5){float edge=abs(p.y);float slag=pow(max(0.,1.-abs(p.y+sin(p.x*31.)*.12)*4.),3.)*(.4+n*.6);a*=(1.-smoothstep(.7,1.,abs(p.x)))*(1.-smoothstep(.5,1.,edge))*(.5+n*.4);c=mix(ink,vec3(2.8,.5,.015),slag*fract(phase)*10.*flash);}
- else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.83,1.,d))*(.3+n*.4+cracks*.3);}
+ else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.72+sin(a0*23.)*.05,.96,d))*(.14+cracks*.12);}
  else if(variant<4.5){if(d>1.)discard;float star=pow(1.-abs(sin(a0*5.+floor(d*11.)*.18)),22.);a*=(star*.85+(.2+n*.2)*(1.-smoothstep(.1,.5,d)))*(1.-smoothstep(.8,1.,d));}
- else if(variant<5.5){if(d>1.)discard;a*=(.22+n*.4)*(1.-smoothstep(.65,1.,d));}
- else {if(d>1.)discard;if(variant>6.5&&abs(a0)>fract(phase)*6.283185)discard;float flow=sin(p.x*13.+sin(p.y*17.-abilityTime*2.5)*2.+abilityTime*1.7);a*=(.12+pow(.5+.5*flow,4.)*.4)*(1.-smoothstep(.86,1.,d));c=mix(vec3(.7,.055,.002),vec3(5.,1.3,.035),.5+.5*flow);}
+ else if(variant<5.5){if(d>1.)discard;a*=(.14+n*.16)*(1.-smoothstep(.65,1.,d));}
+ else {if(d>1.)discard;if(variant>6.5&&abs(a0)>fract(phase)*6.283185)discard;a*=.035*(1.-smoothstep(.6,1.,d));c=vec3(.014,.009,.006);}
  ` : ''}
 ${kind === 'front' ? `
  float roll=(.5+.5*sin(uvLocal.x*127.+sin(uvLocal.y*19.+abilityTime*5.)*2.))*(.55+.45*sin(uvLocal.x*43.-uvLocal.y*11.+abilityTime*3.));
@@ -88,7 +101,7 @@ ${kind === 'front' ? `
  float dusty=(1.-smoothstep(.1,.3,max(ink.r-ink.g,ink.b-ink.r)))*(1.-smoothstep(.35,.7,max(ink.r,max(ink.g,ink.b))));
  a*=vapor*mix(.2+ridge*.65,.6,dusty);c*=mix(1.2+ridge*4.*flash,.65+roll*.4,dusty);
  ` : ''}
-${kind === 'shard' || kind === 'solid' ? 'c*=.7+gl_FragCoord.y*.00008;' : ''}
+${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetNormal),normalize(vec3(-.3,.7,.6))));' : ''}
  vec2 screen=screenPosition.xy/max(.001,screenPosition.w)*.5+.5;
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  a*=1.-actionBar*.94;
@@ -98,16 +111,17 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.7+gl_FragCoord.y*.00008;' : ''}
 }`;
     const material = new T.ShaderMaterial({
       uniforms: { abilityTime: { value: 0 }, map: { value: this.texture ?? null }, flash: { value: 1 } },
-      vertexShader: vertex,
+      vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){posedPosition.y=position.y>.5?1.:-1.;if(position.y>.5)posedPosition.xz+=vec2(.23,-.16);}' : ''),
       fragmentShader: fragment,
       transparent: true,
       depthWrite: false,
       side: T.DoubleSide,
-      blending: kind === 'smoke' || kind === 'decal' || kind === 'solid' || kind === 'ghost' || kind === 'front'
+      blending: kind === 'shard' || kind === 'smoke' || kind === 'decal' || kind === 'solid' || kind === 'ghost' || kind === 'front'
         ? T.NormalBlending : T.AdditiveBlending,
     });
     this.mesh = new T.InstancedMesh(geometry, material, capacity);
     this.mesh.name = `ability-${kind}-batch`;
+    if (kind === 'decal') this.mesh.renderOrder = FRIENDLY_GROUND_ORDER;
     this.mesh.frustumCulled = false;
     this.mesh.setColorAt(0, new T.Color());
     this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
@@ -164,7 +178,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.7+gl_FragCoord.y*.00008;' : ''}
     }
     this.mesh.instanceColor!.setXYZ(i, this.colorValues[rgb], this.colorValues[rgb + 1], this.colorValues[rgb + 2]);
     this.alpha.setX(i, opacity);
-    this.phase.setX(i, this.kind === 'decal' ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
+    this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
   }
 
