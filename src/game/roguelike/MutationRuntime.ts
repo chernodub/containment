@@ -1,5 +1,6 @@
 import {ElementalRuntime,type BoonEffect} from './ElementalRuntime';
 import type { CombatSystem } from '../combat/CombatSystem';
+import { sweptCircle } from '../combat/enemyContact';
 import { BUILD_LIMITS, familyBonuses } from './builds';
 import type { BuildCause, BuildCommand, BuildEvent, BuildWeapon } from './builds';
 
@@ -163,7 +164,7 @@ export class MutationRuntime {
     this.#elements.update(deltaMs);
     const cryo=familyBonuses(this.#combat.build).cryo;for(const target of this.#host.targets())this.#refreshSlow(target,cryo);
     for(const id of this.#slow.keys())if(!active.has(id))this.#slow.delete(id);
-    // At most 100ms catch-up and <=25ms substeps prevent thin-body tunneling.
+    // At most 100ms catch-up; body contacts sweep each resolved movement substep.
     let remaining = Math.min(deltaMs, 100);
     while (remaining > 0) {
       const step = Math.min(25, remaining);
@@ -263,6 +264,7 @@ export class MutationRuntime {
       const before = launch.ghost ?? this.#host.targets().find((target) => target.id === id && target.health > 0);
       if (!before) { this.#launches.delete(id); continue; }
       this.#remember(before);
+      const from=this.#positions.get(id)!;
       const speed = Math.hypot(launch.x, launch.y);
       const dx = launch.x * deltaMs / 1000;
       const dy = launch.y * deltaMs / 1000;
@@ -275,16 +277,28 @@ export class MutationRuntime {
       const current = launch.ghost ?? this.#host.targets().find((target) => target.id === id && target.health > 0);
       if (!current) { this.#launches.delete(id); continue; }
       this.#remember(current);
-      if (blocked) {
-        this.#launches.delete(id);
-        this.#dispatch({ id: `${launch.commandId}:wall`, cause: launch.cause, type: 'wall-hit', targetId: String(id), impulse: speed },()=>this.#host.wallSlam?.(current,{x:before.x+dx,y:before.y+dy},speed));
-        continue;
+      const contacts:Array<{target:MutationTarget;entry:number}>=[];
+      const targets=this.#host.targets();
+      for(let i=0;i<Math.min(targets.length,BUILD_LIMITS.maxEncounterEvents);i++){
+        const other=targets[i];
+        if(other.health<=0||launch.touched.has(other.id))continue;
+        const entry=sweptCircle(from,current,other,other.radius+current.radius);
+        if(entry===null)continue;
+        const contact={x:from.x+(current.x-from.x)*entry,y:from.y+(current.y-from.y)*entry};
+        if(this.#host.canAffect?.(from,contact)===false||this.#host.canAffect?.(contact,other)===false)continue;
+        contacts.push({target:other,entry});
       }
-      for (const other of this.#host.targets().slice().sort((a, b) => a.id - b.id)) {
-        if (other.health <= 0 || launch.touched.has(other.id) || Math.hypot(other.x - current.x, other.y - current.y) > other.radius + current.radius) continue;
+      contacts.sort((a,b)=>a.entry-b.entry||a.target.id-b.target.id);
+      for(const {target:other}of contacts){
+        if(!this.#host.targets().some(t=>t.id===other.id&&t.health>0))continue;
         launch.touched.add(other.id);
         this.#remember(other);
         this.#dispatch({ id: `${launch.commandId}:body:${other.id}`, cause: launch.cause, type: 'body-collision', targetId: String(other.id), impulse: speed, direction: { x: launch.x, y: launch.y } });
+      }
+      if (blocked) {
+        this.#launches.delete(id);
+        this.#dispatch({ id: `${launch.commandId}:wall`, cause: launch.cause, type: 'wall-hit', targetId: String(id), impulse: speed },()=>this.#host.wallSlam?.(current,{x:from.x+dx,y:from.y+dy},speed));
+        continue;
       }
       launch.remainingMs -= deltaMs;
       const decay = Math.exp(-4 * deltaMs / 1000);
