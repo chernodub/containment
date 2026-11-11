@@ -88,3 +88,15 @@ export function pointerFirePlan(target, marine, alreadyHeld) {
 export function assessLoading(elapsedMs, recorded = false) {
   return {record:elapsedMs>5000&&!recorded,timeout:elapsedMs>120000};
 }
+
+/** Include every inspectable map destination, not only the currently selected departure. */
+export function routeOptions(actions) {
+  const choices = new Map();
+  for (const action of actions) {
+    const id = action.inspect ?? action.route;
+    if (!id) continue;
+    const kind = /medical/.test(id) ? 'medical' : /elite/.test(id) ? 'elite' : /armory/.test(id) ? 'armory' : 'combat';
+    choices.set(id, {id, kind});
+  }
+  return [...choices.values()];
+}

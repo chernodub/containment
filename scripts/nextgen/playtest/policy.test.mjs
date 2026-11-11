@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, quantiles, pointerFirePlan, assessLoading} from './policy.mjs';
+import {chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, quantiles, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
 describe('organic playtest policy', () => {
   it('prefers rig enablers and augments over unrelated damage', () => {
     expect(chooseBoon(['incendiary', 'cryogenic'], 'cryo')).toBe('cryogenic');
@@ -48,4 +48,9 @@ it('uses the Queen exposure window and stops firing into her armored phase', () 
   const nest={id:-101,type:'queen',x:100,y:0,health:300,clear:true,visible:true};
   expect(chooseTarget([nest,queen],{x:0,y:0}).id).toBe(-1);
   queen.vulnerable=false;expect(chooseTarget([queen,nest],{x:0,y:0}).id).toBe(-101);
+});
+
+it('inspects a safer map option even when the initially selected departure is elite',()=>{
+  const choices=routeOptions([{route:'1729:v2-r9-elite'},{inspect:'1729:v2-r9-elite'},{inspect:'1729:v2-r9-combat'},{inspect:'1729:v2-r9-combat'}]);
+  expect(choices).toHaveLength(2);expect(chooseRoute(choices).id).toBe('1729:v2-r9-combat');
 });

@@ -85,3 +85,10 @@ describe('rectangle overlap', () => {
     for (const value of [null, {}, {x: NaN, y: 0, width: 5, height: 5}, {left: 2, top: 2, right: 1, bottom: 1}]) expect(overlapArea(value, {x: 0, y: 0, width: 10, height: 10})).toBe(0);
   });
 });
+
+it('does not mistake a normal HUD-cadence sample during changing ammo/health for a persistent desync',()=>{
+  const before={node:{id:'r'},status:'playing',loading:false,combat:{health:90,magazine:20},hud:{health:'95',magazine:'21'},stats:{shotsFired:100,damageTaken:10}};
+  const after={node:{id:'r'},status:'playing',loading:false,combat:{health:80,magazine:17},hud:{health:'90',magazine:'18'},stats:{shotsFired:103,damageTaken:20}};
+  expect(detectSnapshotDefects(after,before)).toEqual([]);
+  expect(detectSnapshotDefects(after,structuredClone(after)).map(d=>d.kind)).toEqual(['hud-health-desync','hud-ammo-desync']);
+});

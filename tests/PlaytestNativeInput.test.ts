@@ -137,7 +137,53 @@ it('native UI seed selection is diagnostic-only and accepts only unsigned intege
   expect(parse('?debug=1&seed=4294967295')).toBe(4294967295);
   for (const search of ['', '?seed=7', '?debug=0&seed=7', '?debug=1', '?debug=1&seed=', '?debug=1&seed=-1', '?debug=1&seed=1.5', '?debug=1&seed=4294967296', '?debug=1&seed=NaN']) expect(parse(search)).toBeUndefined();
   expect(source).toContain('game.newRun(debugRunSeed(location.search), {rigSelect: true})');
-  expect(source).toContain('}, () => input.read(), () => !graphicsLost && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading);');
+  expect(source).toContain('}, () => input.read(), () => !graphicsLost && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading, liveObservation);');
+});
+
+it('opts into the normal application RAF pipeline only for explicit passive debug observation', () => {
+  const source = readFileSync(new URL('../src/ui/application.ts', import.meta.url), 'utf8');
+  const body = source.slice(source.indexOf('export function debugLiveObservation'), source.indexOf('/** Seeded native UI starts'));
+  const parse = new Function(`${ts.transpile(body.replace('export ', ''))}; return debugLiveObservation;`)();
+  expect(parse('?debug=1&playtest-live=1')).toBe(true);
+  for (const query of ['', '?debug=1', '?playtest-live=1', '?debug=0&playtest-live=1', '?debug=1&playtest-live=0', '?debug=1&playtest-live=true']) expect(parse(query)).toBe(false);
+  expect(source).toContain("let presentationEnabled = new URLSearchParams(location.search).get('debug') !== '1' || debugLiveObservation(location.search);");
+  expect(source).toContain('const liveObservation = debugLiveObservation(location.search);\n        presentationFrozen = !liveObservation;');
+});
+
+it('keeps production function identities and timing intact in passive live observation mode', () => {
+  const target: Record<string, any> = {};
+  vi.stubGlobal('window', target); vi.stubGlobal('location', {search: '?debug=1&playtest-live=1'});
+  const update = vi.fn(), hurt = vi.fn(), render = vi.fn(), effect = vi.fn(), advanceUi = vi.fn();
+  const game = {update, hurt, status: 'playing', elapsed: 0} as unknown as DepthGame;
+  const renderer = {render, effect, roomLoading: false} as unknown as DepthRenderer;
+  const intent: GameInput = {x: 1, y: 0, fire: true, angle: .5, autoAim: false};
+  const presentation = {setEnabled: vi.fn(), reset: vi.fn(), effect: vi.fn(), step: vi.fn()};
+  installDebug(game, renderer, vi.fn(), vi.fn(), vi.fn(), advanceUi, presentation, () => intent, () => true, true);
+  const d = target.__containmentDebug;
+  expect(d.liveObservation).toBe(true);
+  d.nativeInput(true); d.realtime(true); d.presentation(true); d.incomingDamageScale(1); d.invulnerable(false);
+  expect(game.update).toBe(update); expect(game.hurt).toBe(hurt);
+  expect(renderer.render).toBe(render); expect(renderer.effect).toBe(effect);
+  game.update(20, intent); renderer.render(game, .02, false); game.hurt(20);
+  renderer.effect({type: 'hurt', x: 1, y: 2});
+  expect(update).toHaveBeenCalledExactlyOnceWith(20, intent);
+  expect(render).toHaveBeenCalledExactlyOnceWith(game, .02, false);
+  expect(hurt).toHaveBeenCalledExactlyOnceWith(20);
+  expect(d.events).toEqual([]);
+  expect(advanceUi).not.toHaveBeenCalled();
+  expect(presentation.step).not.toHaveBeenCalled();
+  expect(presentation.setEnabled).not.toHaveBeenCalled();
+  d.realtime(false); d.nativeInput(false);
+  expect(game.update).toBe(update); expect(renderer.render).toBe(render);
+  expect(d.canStepNative).toBe(true);
+  (renderer as unknown as {roomLoading: boolean}).roomLoading = true;
+  expect(d.canStepNative).toBe(false);
+  expect(() => d.step(0)).toThrow('Fixed stepping unavailable in live observation mode');
+  expect(() => d.incomingDamageScale(.5)).toThrow('Assistance unavailable');
+  expect(() => d.invulnerable(true)).toThrow('Invulnerability unavailable');
+  expect(() => d.presentation(false)).toThrow('Production presentation stays enabled');
+  expect(game.update).toBe(update); expect(game.hurt).toBe(hurt);
+  expect(renderer.render).toBe(render); expect(renderer.effect).toBe(effect);
 });
 
 it('reports fixed-step update plus render percentiles separately from realtime frame timing', () => {

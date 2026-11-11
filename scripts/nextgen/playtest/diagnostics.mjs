@@ -76,8 +76,8 @@ export function detectSnapshotDefects(s, previous) {
     for (const slot of ['dash', 'tactical', 'power', 'overdrive']) {
       if (readyMismatch(s, slot) && readyMismatch(previous, slot)) add('hud-ready-authority-denied', 'ui', 'medium', {slot, hud: s.hud.slots.find(entry => entry.slot === slot), authoritative: slot === 'overdrive' ? s.abilities.overdrive : s.abilities.slots[slot]});
     }
-    if (healthMismatch(s) && healthMismatch(previous)) add('hud-health-desync', 'ui', 'medium', {shown: s.hud.health, actual: s.combat.health});
-    if (ammoMismatch(s) && ammoMismatch(previous)) add('hud-ammo-desync', 'ui', 'medium', {shown: s.hud.magazine ?? s.hud.ammo, actual: s.combat.magazine});
+    if (healthMismatch(s) && healthMismatch(previous) && s.combat.health===previous.combat.health && (s.stats?.damageTaken===undefined||s.stats.damageTaken===previous.stats?.damageTaken)) add('hud-health-desync', 'ui', 'medium', {shown: s.hud.health, actual: s.combat.health});
+    if (ammoMismatch(s) && ammoMismatch(previous) && s.combat.magazine===previous.combat.magazine && (s.stats?.shotsFired===undefined||s.stats.shotsFired===previous.stats?.shotsFired)) add('hud-ammo-desync', 'ui', 'medium', {shown: s.hud.magazine ?? s.hud.ammo, actual: s.combat.magazine});
   }
   if (settled) {
     for (const panel of s.hud?.opaqueBounds ?? []) {

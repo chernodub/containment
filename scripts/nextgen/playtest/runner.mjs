@@ -7,7 +7,7 @@ import {resolve, extname, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {chromium} from 'playwright';
-import {RIGS, chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, quantiles, distance, pointerFirePlan, assessLoading} from './policy.mjs';
+import {RIGS, chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, quantiles, distance, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
 import {sampleWorldPng} from './visuals.mjs';
 import {loadEarnedBoundary} from './resume.mjs';
 import {newEventReceipts} from './evidence.mjs';
@@ -26,11 +26,12 @@ const options = Object.fromEntries(args.map(arg => {
   return [key, value.length ? value.join('=') : true];
 }));
 const checkpointScreens=options['checkpoint-screens']?new Set(String(options['checkpoint-screens']).split(',')):null;
-if(checkpointScreens){options.checkpoints=true;for(const kind of checkpointScreens)assert(['menu','rig-select','starting-boon','combat','pause','reward','route','shop','destroy-confirm','dead','complete'].includes(kind),`Unknown checkpoint screen ${kind}`);}
+if(checkpointScreens){options.checkpoints=true;for(const kind of checkpointScreens)assert(['menu','menu-settings','menu-controls','menu-credits','rig-select','starting-boon','combat','pause','pause-loadout','pause-settings','pause-controls','reward','route','shop','destroy-confirm','dead','complete'].includes(kind),`Unknown checkpoint screen ${kind}`);}
 const shouldProbe=kind=>!!options.checkpoints&&(!checkpointScreens||checkpointScreens.has(kind));
 const resumed=options['resume-boundary']?await loadEarnedBoundary(resolve(options['resume-boundary'])):null;
 const rig = options.rig ?? resumed?.parent.rig ?? 'arc', seed = Number(options.seed ?? resumed?.checkpoint.run.seed ?? 1729), roomLimit = Number(options.rooms ?? 20);
 if(resumed){assert.equal(rig,resumed.parent.rig,'Cannot change rig while resuming');assert.equal(seed,resumed.checkpoint.run.seed,'Cannot change seed while resuming');assert.equal(!!options.assisted,resumed.parent.assisted,'Cannot change assistance while resuming');}
+assert(!(options.realtime&&options.assisted),'Passive live observation cannot reduce incoming damage; use fixed stepping for assisted coverage');
 assert(RIGS.includes(rig), 'Rig must be breacher/cryo/pyro/arc');
 assert(Number.isInteger(seed) && seed >= 0 && seed <= 0xffffffff, 'Invalid uint32 seed');
 assert(Number.isInteger(roomLimit) && roomLimit >= 1 && roomLimit <= 20, 'rooms must be 1..20');
@@ -48,7 +49,7 @@ const report = {
   legacy: resumed?.parent.legacy??!!options.legacy, lifecycleOnly:!!options['death-probe'], presentation:true, roomLimit, harnessHashes, head: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
   branch: execFileSync('git',['branch','--show-current'],{encoding:'utf8'}).trim(), started: new Date().toISOString(),
   policy: 'Native WASD and mouse; spitter/champion focus; obstacle-probed kiting; rig-path/augment boon heuristic; safer route, medical if health<75; heal<40%; Q/F opportunity; V at 6+ or boss/champion.',
-  clock: options.realtime ? 'native realtime RAF' : 'native fixed 60Hz; 250ms policy decisions; render every fixed tick',
+  clock: options.realtime ? 'native production RAF, passive observation; no audio/effect/core wrappers' : 'native fixed 60Hz; 250ms policy decisions; render every fixed tick',
   rooms: resumed?resumed.parent.rooms.filter(r=>['clear','complete'].includes(r.result)&&resumed.checkpoint.run.completedNodeIds.includes(r.nodeId)):[], errors: resumed?[...resumed.parent.errors]:[], defects: resumed?[...resumed.parent.defects]:[], checkpoints: [], screenshots: [], inputs: [], outcome: 'running',
   limitations: ['Incoming damage source is inferred from nearby threats, not authoritative attribution.', 'Accelerated CPU samples include rendering submission, not GPU completion; RAF diagnostics are separately retained.', 'A deterministic seed does not guarantee identical outcomes across policy/render timing; input trace is retained.', 'Audio spy tracks source lifecycle, not perceived sound quality.'],
 };
@@ -72,6 +73,7 @@ function listen(p) {
 async function enableNative() {
   await page.evaluate(({scale,realtime}) => {
     const d=window.__containmentDebug;
+    if(realtime&&d.liveObservation!==true)throw Error('Rebuild dist for passive live observation');
     d.nativeInput(true);d.presentation(true);if(scale<1)d.incomingDamageScale(scale);d.realtime(realtime);
   }, {scale:report.incomingDamageScale,realtime:!!options.realtime});
 }
@@ -112,7 +114,7 @@ async function snapshot() {
       onboarding:{visible:!document.querySelector('#contextual-onboarding')?.hidden,copy:document.querySelector('#contextual-onboarding')?.textContent,seen:localStorage.getItem('containment.onboarding.v1')},
       hud:{slots,marine:r.playerScreenBounds(g.player.radius),health:document.querySelector('#health')?.textContent,magazine:document.querySelector('#magazine')?.textContent,opaqueBounds:['#status-hud','#action-bar','.vitals','#boss-hud','#radar-hud','#hud-toasts'].flatMap(selector=>{const el=document.querySelector(selector);if(!el||el.hidden||!el.getClientRects().length)return [];const b=el.getBoundingClientRect();return b.width&&b.height?[{id:selector,bounds:{left:b.left,top:b.top,right:b.right,bottom:b.bottom}}]:[];})},
       loading:r.roomLoading||d.canStepNative===false||r.roomKey!==g.node.id||document.querySelector('#world')?.getAttribute('aria-busy')==='true',
-      actions:[...document.querySelectorAll('#overlay button:not(:disabled)')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>({id:b.id,mutation:b.dataset.mutation,route:b.dataset.route,purchase:b.dataset.purchase,text:b.textContent})),
+      actions:[...document.querySelectorAll('#overlay button:not(:disabled)')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>({id:b.id,mutation:b.dataset.mutation,route:b.dataset.route,inspect:b.dataset.inspectRoute,purchase:b.dataset.purchase,text:b.textContent})),
       audio:window.__containmentPlaytestAudio?{starts:window.__containmentPlaytestAudio.starts,stops:window.__containmentPlaytestAudio.stops,loopsStarted:window.__containmentPlaytestAudio.loopsStarted,loopsStopped:window.__containmentPlaytestAudio.loopsStopped}:null,
     };
   });
@@ -152,7 +154,7 @@ async function finishRoom(s,result) {
   room.damageDealt=Object.fromEntries(Object.keys(s.stats.damageDealt).map(k=>[k,s.stats.damageDealt[k]-room.startStats.damageDealt[k]]));
   room.abilityUses=Object.fromEntries(Object.keys(s.stats.abilityUses).map(k=>[k,s.stats.abilityUses[k]-room.startStats.abilityUses[k]]));
   room.overdrives=s.stats.overdrivesUsed-room.startStats.overdrivesUsed;room.memory=s.memory;
-  room.frame=s.performance.debugFixedStep?.updateRenderMs??null;room.frameScope=room.timingReset?'Latest 2048 ticks within this room; max/mean since room reset.':'Latest 2048 fixed ticks for percentiles; page-lifetime max. Not an isolated room distribution.';room.performance=s.performance;room.credits=s.combat.credits;
+  room.frame=options.realtime?s.performance.nativeUpdateRenderMs:s.performance.debugFixedStep?.updateRenderMs??null;room.frameScope=options.realtime?s.performance.nativeUpdateRenderMs?.scope:room.timingReset?'Latest 2048 ticks within this room; max/mean since room reset.':'Latest 2048 fixed ticks for percentiles; page-lifetime max. Not an isolated room distribution.';room.performance=s.performance;room.credits=s.combat.credits;
   room.audio=await readAudioSpy(page);
   await shot(`r${room.depth+1}-${room.id}-${result}`,s);
   await save();
@@ -168,9 +170,9 @@ try {
   await new Promise((ok,fail)=>{server.once('error',fail);server.listen(0,'127.0.0.1',ok);});
   browser=await chromium.launch({channel:'chromium',headless:!options.headed,args:['--no-sandbox','--enable-gpu','--ignore-gpu-blocklist',...(process.platform==='darwin'?['--use-angle=metal']:[])]});
   context=await browser.newContext({viewport:{width:1920,height:1080},deviceScaleFactor:1});
-  await installAudioSpy(context);
+  if(!options.realtime)await installAudioSpy(context);
   page=await context.newPage();listen(page);
-  await page.goto(`http://127.0.0.1:${server.address().port}/containment/?debug=1&seed=${seed}`);
+  await page.goto(`http://127.0.0.1:${server.address().port}/containment/?debug=1&seed=${seed}${options.realtime?'&playtest-live=1':''}`);
   await page.waitForFunction(()=>!!window.__containmentDebug);
   await enableNative();
   report.gpu=await page.evaluate(()=>{const r=window.__containmentDebug.renderer,gl=r.renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);});
@@ -179,6 +181,7 @@ try {
     await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await enableNative();await page.locator('#continue').click();
   }else{
   if(shouldProbe('menu'))await probe('menu');
+  for(const [kind,selector]of [['menu-settings','#settings'],['menu-controls','#controls'],['menu-credits','#menu-credits']])if(shouldProbe(kind)){await page.locator(selector).click();await page.locator(kind==='menu-settings'?'.configuration-drawer':kind==='menu-controls'?'.controls-drawer':'.credits-drawer').waitFor({state:'visible'});await probe(kind);}
   await page.locator('#start').click();
   await page.waitForFunction(()=>window.__containmentDebug.game.expedition.run.phase==='rig-select');
   if(options.legacy) {
@@ -235,9 +238,9 @@ try {
       } else if(s.status==='route') {
         if(s.actions.some(a=>a.id==='destroy-ship')) await page.locator('#destroy-ship').click();
         else {
-          const routes=s.actions.filter(a=>a.route).map(a=>({id:a.route,kind:/medical/i.test(a.route)?'medical':/elite/i.test(a.route)?'elite':/armory/i.test(a.route)?'armory':'combat'}));
+          const routes=routeOptions(s.actions);
           const route=chooseRoute(routes,s.combat.health);
-          if(route)await page.locator(`[data-route="${route.id}"]`).click();
+          if(route){if(s.actions.some(a=>a.inspect===route.id))await page.locator(`[data-inspect-route="${route.id}"]`).last().click();await page.locator(`[data-route="${route.id}"]`).click();}
         }
       } else if(s.status==='paused') await page.keyboard.press('Escape');
       if(performance.now()-screenSince>10000){report.defects.push({kind:'screen-without-progress',state:s.status,phase:s.phase,actions:s.actions});await shot('screen-stuck',s);report.outcome='screen-stuck';break;}
@@ -254,7 +257,8 @@ try {
       await shot(`r${s.node.depth+1}-${room.id}-start`,s);
       previousProgress='';stagnantSince=s.elapsed;
     }
-    if(shouldProbe('pause')&&!probed.has('pause')&&(!shouldProbe('combat')||probed.has('combat'))&&s.elapsed-room.startedElapsed>4){await release();await page.keyboard.press('Escape');await page.waitForFunction(()=>window.__containmentDebug.game.status==='paused');probed.add('pause');s=await probe('pause');room.result='checkpoint-interrupted';room=null;continue;}
+    const pauseProbe=['pause','pause-loadout','pause-settings','pause-controls'].find(kind=>shouldProbe(kind)&&!probed.has(kind));
+    if(pauseProbe&&(!shouldProbe('combat')||probed.has('combat'))&&s.elapsed-room.startedElapsed>4){await release();await page.keyboard.press('Escape');await page.waitForFunction(()=>window.__containmentDebug.game.status==='paused');if(pauseProbe!=='pause')await page.locator(`[data-pause-tab="${pauseProbe.slice(6)}"]`).click();probed.add(pauseProbe);s=await probe(pauseProbe);room.result='checkpoint-interrupted';room=null;continue;}
     if(shouldProbe('combat')&&!probed.has('combat')&&s.elapsed-room.startedElapsed>3) {
       probed.add('combat');s=await probe('combat');
       // Rollback is intentional. Restart this room measurement after re-choosing the boundary.
