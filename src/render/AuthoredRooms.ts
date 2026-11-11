@@ -50,7 +50,7 @@ class Fabricator{
    albedo.set([c,c,c,255],i);const r=Math.round(234+wear*2);rough.set([r,r,r,255],i);
    const n=new T.Vector3((relief(x-1,z)-relief(x+1,z))*.9,(relief(x,z-1)-relief(x,z+1))*.9,1).normalize();normal.set([Math.round(128+n.x*127),Math.round(128+n.y*127),Math.round(128+n.z*127),255],i);
   }
-  const texture=(data:Uint8Array)=>{const t=new T.DataTexture(data,size,size);t.wrapS=t.wrapT=T.RepeatWrapping;t.magFilter=T.LinearFilter;t.minFilter=T.LinearMipmapLinearFilter;t.generateMipmaps=true;t.needsUpdate=true;return t;};
+  const texture=(data:Uint8Array)=>{const t=new T.DataTexture(data,size,size);t.wrapS=t.wrapT=T.RepeatWrapping;t.magFilter=T.LinearFilter;t.minFilter=T.LinearMipmapLinearFilter;t.generateMipmaps=true;t.anisotropy=4;t.needsUpdate=true;return t;};
   this.deck.map=texture(albedo);this.deck.map.colorSpace=T.SRGBColorSpace;this.deck.roughnessMap=texture(rough);this.deck.normalMap=texture(normal);this.deck.normalScale.set(.65,.65);
   this.deck.addEventListener('dispose',()=>{this.deck.map?.dispose();this.deck.roughnessMap?.dispose();this.deck.normalMap?.dispose();});
  }
