@@ -19,6 +19,13 @@ import { InputController } from '../InputController';
 import { AudioSystem } from '../game/audio/AudioSystem';
 import type { WeaponId } from '../game/combat/types';
 import { WEAPONS } from '../game/combat/catalog';
+/** Seeded native UI starts are opt-in diagnostic runs; normal play keeps its sequence. */
+export function debugRunSeed(search: string): number | undefined {
+    const query = new URLSearchParams(search), raw = query.get('seed');
+    if (query.get('debug') !== '1' || raw === null || !/^\d+$/.test(raw)) return undefined;
+    const seed = Number(raw);
+    return Number.isInteger(seed) && seed >= 0 && seed <= 0xffffffff ? seed : undefined;
+}
 /** Initialize assets, game, input and graphics recovery. */
 export async function bootstrap() {
     mountShell();
@@ -142,7 +149,7 @@ export async function bootstrap() {
         void audio.unlock(); audio.resumeAll(); input.reset(); screens.resetSettings();
         if (resume) {
             if (!game.continueRun()) return;
-        } else game.newRun(undefined, {rigSelect: true});
+        } else game.newRun(debugRunSeed(location.search), {rigSelect: true});
         feel.reset(); beats?.reset();
         syncScreen(true);
         syncHud();
@@ -199,6 +206,7 @@ export async function bootstrap() {
         triangles: renderer.renderer.info.render.triangles,
         geometries: renderer.renderer.info.memory.geometries,
         textures: renderer.renderer.info.memory.textures, graphicsLost,
+        debugFixedStep: (window as Window & {__containmentDebug?: {stepPerformance?: unknown}}).__containmentDebug?.stepPerformance,
         hudMs: {last: hudLastMs, average: hudSamples ? hudTotalMs / hudSamples : 0, samples: hudSamples},
     }) });
     let controlsForStep: GameInput = {x: 0, y: 0, fire: false, angle: null, autoAim: false};
@@ -275,6 +283,6 @@ export async function bootstrap() {
             reset() {feel.reset(); beats?.reset();},
             effect(event) {if (event.type === 'beat') beats?.show(event.kind as import('./hud/beats/PresentationBeats').BeatKind); else {feel.effect(event as GameEffect, feelContext()); beats?.effect(event as GameEffect); uiEffect(event as GameEffect);}},
             step(ms, controls, update) {feel.advance(ms, feelContext(), dt => update(dt, controls)); beats?.sync();},
-        });
+        }, () => input.read());
     }
 }
