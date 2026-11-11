@@ -132,10 +132,14 @@ it('isolates title anatomy shading and restores ordinary actor identification on
  const staged=alien('brute'),live=alien('brute');
  const a=staged.root.getObjectByName('brute-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
  const b=live.root.getObjectByName('brute-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
+ let surface:T.MeshStandardMaterial|undefined;
+ staged.root.traverse(o=>{if(o instanceof T.SkinnedMesh&&!surface)surface=o.material as T.MeshStandardMaterial;});
+ const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:T.ShaderLib.standard.vertexShader,fragmentShader:T.ShaderLib.standard.fragmentShader};
+ surface!.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);
  try{
-  a.material.uniforms.identityStageLight.value=.24;staged.animate(0,0,0);live.animate(0,0,0);
-  expect(a.material.uniforms.identityStageLight.value).toBe(.24);expect(b.material.uniforms.identityStageLight.value).toBe(1);
+  staged.setStageLight!(.24);staged.animate(0,0,0);live.animate(0,0,0);
+  expect(a.material.uniforms.identityStageLight.value).toBe(.24);expect(b.material.uniforms.identityStageLight.value).toBe(1);expect(shader.uniforms.actorStageLight.value).toBe(.24);
   expect(a.geometry).toBe(b.geometry);expect(a.material.fragmentShader).toBe(b.material.fragmentShader);
-  staged.reset!();expect(a.material.uniforms.identityStageLight.value).toBe(1);
+  staged.reset!();expect(a.material.uniforms.identityStageLight.value).toBe(1);expect(shader.uniforms.actorStageLight.value).toBe(1);
  }finally{disposeModel(staged.root);disposeModel(live.root);}
 });
