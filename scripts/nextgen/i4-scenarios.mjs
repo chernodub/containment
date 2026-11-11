@@ -3,6 +3,9 @@ export const I4_SCENARIOS=[{
  id:'i4-title-new',state:'menu',resetPreferences:['containment-depth:run:v1'],required:['.title-screen','#start'],
  setup:async()=>{const d=window.__containmentDebug;d.game.menu();if(d.game.canContinue)throw Error('Fresh title retained a checkpoint');d.refresh();},
 },{
+ id:'i4-menu-after-combat',state:'menu',required:['.title-screen','#continue'],
+ setup:async()=>{const d=window.__containmentDebug,g=d.game,r=d.renderer;await d.gotoRoom('awakening-bay');g.enemies.reset();let placed=0;for(let y=8*32;y<=18*32&&placed<2;y+=32)for(let x=19*32;x<=30*32&&placed<2;x+=32){if(!d.canStand(x,y,40)||[...g.enemies.snapshot.enemies].some(e=>Math.hypot(e.x-x,e.y-y)<120))continue;if(d.spawn('brute',x,y))placed++;}if(placed<2)throw Error('Native retained title actor rejected');d.refresh();const roots=new Set([...r.actors.values()].map(model=>model.root));g.menu();d.i4Proof={kind:'cinematic-menu-retained-combat',retainedEnemies:g.enemies.activeCount,foreignDraws:0};const direct=r.renderer.renderBufferDirect;r.renderer.renderBufferDirect=function(camera,scene,geometry,material,object,group){if(scene===r.scene){let node=object;while(node){if(roots.has(node)){d.i4Proof.foreignDraws++;break;}node=node.parent;}}return direct.call(this,camera,scene,geometry,material,object,group);};d.refresh();},
+},{
  id:'i4-boss-beat-fixture',state:'playing',room:'reactor-vault',required:['#presentation-beat:not([hidden])','#boss-hud'],
  setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.invulnerable(true);d.step(600);d.uiFixture({preferences:{radar:true,combatText:true}});d.presentation(true);d.presentationEvent({type:'beat',kind:'boss-intro'});d.i4Proof={kind:'explicit-boss-intro-presentation-over-native-queen'};d.refresh();},
 },{
