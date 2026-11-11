@@ -18,7 +18,8 @@ async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,
   }candidates.push({x,y,angle,score});
  }
  candidates.sort((a,b)=>b.score-a.score);if(!candidates.length)throw Error('No V2 legal lane');
- const p=candidates[0];Object.assign(g.player,{x:p.x,y:p.y,angle:p.angle,vx:0,vy:0});d.setInput({x:0,y:0,fire:false,angle:p.angle,autoAim:false});d.step(3800);g.enemies.reset();d.refresh();
+ let p;for(const candidate of candidates){Object.assign(g.player,{x:candidate.x,y:candidate.y,angle:candidate.angle,vx:0,vy:0});g.setAimPoint({x:candidate.x+Math.cos(candidate.angle)*150,y:candidate.y+Math.sin(candidate.angle)*150});if(g.abilities.snapshot.slots.power.ready){p=candidate;break;}}
+ if(!p)throw Error('No authoritative V2 power placement');Object.assign(g.player,{x:p.x,y:p.y,angle:p.angle,vx:0,vy:0});d.setInput({x:0,y:0,fire:false,angle:p.angle,autoAim:false});d.step(3800);g.enemies.reset();d.refresh();
  const population=heavy?(showcase&&room!=='armory'?12:25):5;
  const placed=[];
  for(const r of (heavy?[170,230,290,350,410,470]:slot==='power'?[300,380]:[170,230,290]))for(const k of (heavy?[-5,-4,-3,-2,-1,0,1,2,3,4,5]:[0,-2,2,-1,1])){
@@ -94,3 +95,18 @@ for(const [rig,ids]of Object.entries(rigs)){
 }
 // Each room variant needs a unique selector; retain the compact default for Cryogenics.
 for(const s of V2_SCENARIOS)if(s.id.startsWith('v2-')&&!s.id.startsWith('v2-kit-')&&!s.id.startsWith('v2-before-')&&!s.id.startsWith('v2-full-')&&s.room!=='awakening-bay')s.id+=`-${s.room}`;
+
+V2_SCENARIOS.push({id:'v2-recovery',room:'armory',state:'playing',setup:async()=>{
+ const d=window.__containmentDebug,r=d.renderer,g=d.game;await d.gotoRoom('armory',{rig:'pyro'});d.invulnerable(true);
+ const cycles=[];
+ for(let i=0;i<3;i++){
+  r.setQuality('low');await d.prepare();r.setQuality('high');await d.gotoRoom('infested-workshop',{rig:'cryo'});await d.gotoRoom('armory',{rig:'pyro'});d.refresh();cycles.push({...r.renderer.info.memory});
+ }
+ if(JSON.stringify(cycles[1])!==JSON.stringify(cycles[2]))throw Error('V2 GPU inventory grew '+JSON.stringify(cycles));
+ d.fillOverdrive();if(!g.useAbility('overdrive'))throw Error('Recovery Overdrive denied');d.step(60);
+ const gl=r.renderer.getContext(),ext=gl.getExtension('WEBGL_lose_context');if(!ext)throw Error('No context-loss extension');
+ await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error('V2 recovery timeout')),30000);r.canvas.addEventListener('webglcontextrestored',()=>{clearTimeout(timeout);resolve();},{once:true});ext.loseContext();setTimeout(()=>ext.restoreContext(),250);});
+ for(let i=0;i<900&&r.roomLoading;i++)await new Promise(requestAnimationFrame);if(r.roomLoading)throw Error('V2 preparation did not recover');
+ g.resume();d.refresh();await d.gotoRoom('infested-workshop',{rig:'cryo'});await d.gotoRoom('armory',{rig:'pyro'});d.refresh();
+ d.recoveryProof={roomCycles:cycles,afterRestore:{...r.renderer.info.memory},programs:r.renderer.info.programs.length,contextLost:gl.isContextLost(),abilityInstances:r.interimAbilities.kit.counts};
+}});

@@ -96,6 +96,7 @@ export class BreacherPresentation implements AbilityPresentation {
       }
     } else if (event.ability === 'bulwark') {
       const px = (event.targetX ?? worldX) / UNIT, pz = (event.targetY ?? worldY) / UNIT;
+      if(event.phase==='impact'){this.kit.camera(.14);this.kit.distort(px,pz,1.1,.0015,.25);}
       this.kit.ring(px, pz, .9, EDGE, .3);
       this.kit.flash(px, pz, EDGE, 4, 4, 3, .15);
       this.kit.burst(px, .1, pz, 'kinetic', 10, 1.5, .4);

@@ -204,6 +204,9 @@ void main(){float r=length(p);if(r>1.)discard;gl_FragColor=vec4(color,strength*(
       else { slot.shape.progress = slot.cast ? slot.age / slot.life : 1; this.telegraphs.add(slot.shape); }
     }
     this.ribbons.end();
+    this.ribbons.mesh.visible=this.ribbons.mesh.count>0;
+    this.footprints.mesh.visible=this.footprints.mesh.count>0;
+    this.telegraphs.mesh.visible=this.telegraphs.mesh.count>0;
   }
 
   private circleFootprint(x: number, z: number, radius: number, color: number): void {

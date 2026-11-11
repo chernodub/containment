@@ -63,6 +63,18 @@ describe('V2 shared framework',()=>{
   const q=new T.Quaternion(),p=new T.Vector3(),scale=new T.Vector3();m.decompose(p,q,scale);
   expect(new T.Vector3(0,0,1).applyQuaternion(q).z).toBeCloseTo(1);k.dispose();
  });
+ it('retains prepared resources while retiring empty draws and settling deck debris',()=>{
+  const k=new ElementKit(new T.Scene());k.begin(0);k.end();expect(k.batches.solid.mesh.visible).toBe(false);expect(k.ribbons.mesh.visible).toBe(false);
+  k.mote('solid',0,.1,0,0,2.5,0,.1,1,0xffb454);
+  const m=new T.Matrix4();for(let i=0;i<3;i++){k.begin(.1);k.end();}k.batches.solid.mesh.getMatrixAt(0,m);const early=m.elements[13];
+  expect(k.batches.solid.mesh.visible).toBe(true);for(let i=0;i<4;i++){k.begin(.1);k.end();}k.batches.solid.mesh.getMatrixAt(0,m);
+  expect(m.elements[13]).toBeLessThan(early);expect(m.elements[13]).toBeGreaterThanOrEqual(.039);k.dispose();
+ });
+ it('gives the barrier placement one restrained camera response',()=>{
+  const v=new AbilityVisuals(new T.Scene()),camera=vi.spyOn(v.kit,'camera');
+  v.event({phase:'impact',ability:'bulwark',rig:'breacher',slot:'power',element:'kinetic',targetX:320,targetY:224},64,96);
+  expect(camera).toHaveBeenCalledExactlyOnceWith(.14);v.dispose();
+ });
  it('retains all instance/material topologies for preparation, and disposes each resource once',()=>{
   const scene=new T.Scene(),v=new AbilityVisuals(scene),surface=new T.MeshStandardMaterial(),warm=new MaterialWarmup({floor:surface,wall:surface,cover:surface});
   expect(warm.register(v.root)).toBeGreaterThan(7);v.kit.burst(0,0,0,'cryo');v.kit.begin(.1);v.kit.end();expect(warm.register(v.root)).toBe(0);

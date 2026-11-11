@@ -51,7 +51,7 @@ export class ElementKit {
   setView(camera:T.Camera):void {for(const k in this.batches)this.batches[k as Primitive].setView(camera);}
   bind(services:AbilityServices):void {this.services=services;}
   setOptions(options:GraphicsOptions,tier:GraphicsTier,reducedMotion:boolean):void {
-    if(tier==='low'&&!this.low)for(let i=160;i<this.particles.length;i++)this.particles[i].live=false;
+    if(tier==='low'&&!this.low){for(let i=160;i<this.particles.length;i++)this.particles[i].live=false;for(const beam of this.beams)beam.ribbon.lightning=false;}
     this.low=tier==='low';this.reducedMotion=reducedMotion;this.flashIntensity=options.flashIntensity*(reducedMotion?.5:1);
     this.dynamicLights=options.dynamicLights;this.distortion=options.distortion;
   }
@@ -121,7 +121,7 @@ export class ElementKit {
     let live=0;
     for(const p of this.particles){if(!p.live)continue;p.age+=dt;if(p.age>=p.life){p.live=false;continue;}live++;
       const motion=this.reducedMotion?.2:1;p.x+=p.vx*dt*motion;p.y+=p.vy*dt*motion;p.z+=p.vz*dt*motion;
-      if(p.kind==='shard'||p.kind==='spark')p.vy-=dt*4;else p.vy+=dt*.15;
+      if(p.kind==='shard'||p.kind==='spark'||p.kind==='solid')p.vy-=dt*(p.kind==='solid'?9.8:4);else p.vy+=dt*.15;
       p.y=Math.max(.04,p.y);const fade=1-p.age/p.life,s=p.size*(p.kind==='smoke'?1+p.age*2:1);
       this.draw(p.kind,p.x,p.y,p.z,s,p.kind==='spark'?s*2:s,s,p.color,fade*(p.kind==='smoke'?.22:.7),p.seed*.8,p.seed+p.age);
     }
@@ -136,7 +136,7 @@ export class ElementKit {
       this.draw('decal',p.x,.025,p.z,p.radius,p.radius,1,p.color,(1-p.age/p.life)*.55,0,p.angle);
     }
   }
-  end():void {this.ribbons.end();let n=0;for(const kind in this.batches){const b=this.batches[kind as Primitive];b.end();n+=b.mesh.count;}this.peakInstances=Math.max(this.peakInstances,n);}
+  end():void {this.ribbons.end();this.ribbons.mesh.visible=this.ribbons.mesh.count>0;this.rings.mesh.visible=this.rings.mesh.count>0;let n=0;for(const kind in this.batches){const b=this.batches[kind as Primitive];b.end();n+=b.mesh.count;}this.peakInstances=Math.max(this.peakInstances,n);}
   get counts(){let particles=0,rings=0,beams=0;for(const p of this.particles)if(p.live)particles++;for(const p of this.waves)if(p.live)rings++;for(const p of this.beams)if(p.live)beams++;return {particles,rings,beams,peakParticles:this.peakParticles,peakInstances:this.peakInstances,peakLights:this.peakLights};}
   clear():void {for(const p of this.particles)p.live=false;for(const p of this.waves)p.live=false;for(const p of this.beams)p.live=false;for(const p of this.decals)p.live=false;this.rings.clear();this.ribbons.clear();for(const k in this.batches)this.batches[k as Primitive].begin();}
   dispose():void {if(this.disposed)return;this.disposed=true;this.clear();for(const k in this.batches)this.batches[k as Primitive].dispose();this.rings.dispose();this.ribbons.dispose();this.root.removeFromParent();}

@@ -37,7 +37,7 @@ if(a<.003)discard;gl_FragColor=vec4(c,a);
     this.mesh.name = `ability-${kind}-batch`;this.mesh.frustumCulled=false;this.mesh.setColorAt(0,new T.Color());
     this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.mesh.count=0;root.add(this.mesh);
   }
-  begin(time=0):void {this.mesh.count=0;(this.mesh.material as T.ShaderMaterial).uniforms.abilityTime.value=time;}
+  begin(time=0):void {this.mesh.count=0;this.mesh.visible=false;(this.mesh.material as T.ShaderMaterial).uniforms.abilityTime.value=time;}
   draw(x:number,y:number,z:number,sx:number,sy:number,sz:number,color:number,opacity=1,rotationY=0,rotationZ=0):void {
     const i=this.mesh.count;if(i>=this.capacity||opacity<=0)return;
     if(this.view&&(this.kind==='smoke'||this.kind==='spark'||this.kind==='flame'))rotationY=Math.atan2(this.view.x-x,this.view.z-z);
@@ -45,6 +45,6 @@ if(a<.003)discard;gl_FragColor=vec4(c,a);
     this.dummy.scale.set(sx,sy,sz);this.dummy.updateMatrix();this.mesh.setMatrixAt(i,this.dummy.matrix);
     this.color.setHex(color);this.mesh.setColorAt(i,this.color);this.alpha.setX(i,opacity);this.mesh.count++;
   }
-  end():void {this.mesh.instanceMatrix.needsUpdate=true;this.mesh.instanceColor!.needsUpdate=true;this.alpha.needsUpdate=true;}
+  end():void {this.mesh.visible=this.mesh.count>0;this.mesh.instanceMatrix.needsUpdate=true;this.mesh.instanceColor!.needsUpdate=true;this.alpha.needsUpdate=true;}
   dispose():void {this.mesh.geometry.dispose();(this.mesh.material as T.Material).dispose();this.mesh.removeFromParent();}
 }
