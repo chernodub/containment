@@ -192,7 +192,9 @@ try{
   const summary=Object.fromEntries(Object.entries(data.samples).map(([k,v])=>[k,stats(k==='frame'?v.slice(1):v)]));
   // The first RAF interval begins before the measurement window; retain it raw, exclude it only from frame statistics.
   if(profile){summary.audioGraphCapacityPercent=stats(audioSamples.map(s=>s.renderCapacity));summary.audioCallbackIntervalMean=stats(audioSamples.map(s=>s.callbackIntervalMean));}
-  summary.cpu=stats(data.samples.update.map((v,i)=>v+data.samples.render[i]));
+  summary.updateRender=stats(data.samples.update.map((v,i)=>v+data.samples.render[i]));
+  // HUD synchronization runs after render; include it in the conservative main-thread total.
+  summary.cpu=stats(data.samples.update.map((v,i)=>v+data.samples.render[i]+data.samples.hud[i]));
   const budget={cpuP95:summary.cpu.p95<=8,frameP95:summary.frame.p95<=16.6,draws:summary.draws.max<=350,programs:data.programs===0};
   const run={name,room,rig,tier,repeat,nativeAudioContexts:[...audioContexts.values()],before,after:host(),profile,profiling,summary,budget,...data,cdp:{initial:initial.metrics,final:final.metrics}};
   report.runs.push(run);await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));

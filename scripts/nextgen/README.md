@@ -225,7 +225,7 @@ program creation, live enemy min/average/percentiles, replenishments, survivors,
 `--profile` additionally saves Chrome CPU profiles, sampled allocations (including collected objects),
 V8 GC traces, and native WebAudio graph-capacity/callback-interval telemetry. These are profiling runs and must be identified separately from timing trials.
 Audio sync is main-thread routing cost; individual Web Audio rendering callback CPU duration is not exposed; graph capacity and running callback-interval means are retained in profiling JSON. GPU timers include scheduling contention on a shared GPU. No software renderer is accepted.
-Update/CPU figures include measured fixture-driver CPU (native ability actions/refill work); this prevents hiding action costs outside RAF. The population guard requires median≥24 and average≥22, preserving transient burst deaths and natural reinforcements.
+Update/CPU figures include measured fixture-driver CPU (native ability actions/refill work); CPU also includes the post-render HUD synchronization cost (the updateRender field retains update+render alone); this prevents hiding action costs outside RAF. The population guard requires median≥24 and average≥22, preserving transient burst deaths and natural reinforcements.
 The debug performance observer reuses one sample object; capture arrays are deliberately retained only
 by the opt-in benchmark. Ordinary gameplay never installs the observer.
 
