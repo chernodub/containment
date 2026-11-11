@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as T from 'three';
-import { InterimAbilityVisuals, INTERIM_ABILITY_LIMITS, interimAbilityCameraFeedback } from '../src/render/abilities/InterimAbilityVisuals';
+import { AbilityGeometry, ABILITY_GEOMETRY_LIMITS } from '../src/render/abilities/AbilityGeometry';
 import { DepthRenderer } from '../src/render/DepthRenderer';
 import { ContextResources } from '../src/render/ContextResources';
 import { MaterialWarmup } from '../src/render/MaterialWarmup';
@@ -21,7 +21,7 @@ const deployable = (extra: Partial<DeployableSnapshot> = {}): DeployableSnapshot
 const event = (extra: Partial<AbilityEvent> = {}): AbilityEvent => ({
   ability: 'seismic-slam', slot: 'tactical', rig: 'breacher', element: 'kinetic', phase: 'cast', radius: 230, durationMs: 220, ...extra,
 });
-function probe(fx: InterimAbilityVisuals) {
+function probe(fx: AbilityGeometry) {
   return fx as unknown as {
     footprints: { mesh: T.InstancedMesh }; telegraphs: { mesh: T.InstancedMesh }; ribbons: { mesh: T.InstancedMesh };
     zones: { body: T.Mesh; start: T.Mesh; end: T.Mesh }[];
@@ -35,9 +35,9 @@ function transform(mesh: T.InstancedMesh, index = 0) {
   return { position, scale, rotation };
 }
 
-describe('interim ability visualization bridge', () => {
+describe('authoritative ability geometry bridge', () => {
   it('draws authoritative circular zones and follows attached snapshot positions while paused', () => {
-    const fx = new InterimAbilityVisuals(new T.Scene()), p = probe(fx);
+    const fx = new AbilityGeometry(new T.Scene()), p = probe(fx);
     fx.update(snapshot({ zones: [zone()] }), .01);
     expect(p.zones[0].start.position.toArray()).toEqual([2, .04, 3]);
     expect(p.zones[0].start.scale.toArray()).toEqual([5, 5, 1]);
@@ -50,7 +50,7 @@ describe('interim ability visualization bridge', () => {
   });
 
   it('matches strip capsules, including endpoint discs and the zero-length case', () => {
-    const fx = new InterimAbilityVisuals(new T.Scene()), p = probe(fx);
+    const fx = new AbilityGeometry(new T.Scene()), p = probe(fx);
     fx.update(snapshot({ zones: [zone({ shape: 'strip', attached: false, radius: 0 })] }), 0);
     const slot = p.zones[0];
     expect(slot.body.scale.toArray()).toEqual([2.5, .5, 1]);
@@ -66,7 +66,7 @@ describe('interim ability visualization bridge', () => {
   });
 
   it('keeps wall thickness, perpendicular length and pylon radius faithful to snapshots', () => {
-    const fx = new InterimAbilityVisuals(new T.Scene()), p = probe(fx);
+    const fx = new AbilityGeometry(new T.Scene()), p = probe(fx);
     fx.update(snapshot({ deployables: [deployable({ angle: Math.PI / 2 }), deployable({ kind: 'pylon', ability: 'tesla-pylon', element: 'arc', radius: 18 })] }), 0);
     expect(p.deployables[0].wall.scale.toArray()).toEqual([1, 1.4, 6]);
     expect(p.deployables[0].wall.rotation.y).toBeCloseTo(-Math.PI / 2);
@@ -81,7 +81,7 @@ describe('interim ability visualization bridge', () => {
   });
 
   it('keeps augmented cast radii, cone angles, line width and placed centers exact', () => {
-    const fx = new InterimAbilityVisuals(new T.Scene()), p = probe(fx);
+    const fx = new AbilityGeometry(new T.Scene()), p = probe(fx);
     fx.event(event({ ability: 'cryo-nova', radius: 310, durationMs: 200 }), 64, 96);
     fx.event(event({ ability: 'flashfire', radius: undefined, length: 300, arcRadians: 1.22, angle: 1 }), 64, 96);
     fx.event(event({ ability: 'railbreaker', radius: undefined, length: 900, width: 44, angle: 0 }), 64, 96);
@@ -101,7 +101,7 @@ describe('interim ability visualization bridge', () => {
   });
 
   it('orients placed wall casts and shows glacier bursts as circles at the wall', () => {
-    const fx = new InterimAbilityVisuals(new T.Scene()), p = probe(fx);
+    const fx = new AbilityGeometry(new T.Scene()), p = probe(fx);
     fx.event(event({ ability: 'glacier', radius: undefined, length: 200, width: 26, angle: 0, targetX: 320, targetY: 192 }), 0, 0);
     fx.event(event({ ability: 'glacier', phase: 'burst', radius: 150, length: 200, width: 26 }), 320, 192);
     fx.update(snapshot(), .01);
@@ -113,7 +113,7 @@ describe('interim ability visualization bridge', () => {
   });
 
   it('draws live pylon links from snapshot endpoints, plus bounded short event beams', () => {
-    const fx = new InterimAbilityVisuals(new T.Scene()), p = probe(fx);
+    const fx = new AbilityGeometry(new T.Scene()), p = probe(fx);
     const state = snapshot({ links: [{ id: 1, ability: 'tesla-pylon', element: 'arc', x: 32, y: 64, targetX: 192, targetY: 64, width: 28 }] });
     fx.update(state, 0);
     expect(p.ribbons.mesh.count).toBe(2); expect(p.footprints.mesh.count).toBe(3);
@@ -127,15 +127,11 @@ describe('interim ability visualization bridge', () => {
   });
 
   it('ignores non-spatial/invalid receipts and uses only ability impacts for camera feedback', () => {
-    const fx = new InterimAbilityVisuals(new T.Scene()), p = probe(fx);
+    const fx = new AbilityGeometry(new T.Scene()), p = probe(fx);
     for (const phase of ['tick', 'denied', 'ready', 'overdrive-ready', 'dash-start', 'dash-end', 'end'] as const) fx.event(event({ phase }), 0, 0);
     fx.event(event({ radius: undefined, length: 520, ability: 'overload' }), 0, 0);
     fx.event(event(), NaN, 0); fx.event(event({ radius: NaN }), 0, 0);
     fx.update(snapshot(), 0); expect(p.telegraphs.mesh.count).toBe(0);
-    const camera = { addTrauma: vi.fn(), punch: vi.fn() };
-    interimAbilityCameraFeedback(event(), camera); expect(camera.addTrauma).not.toHaveBeenCalled();
-    interimAbilityCameraFeedback(event({ phase: 'impact' }), camera); expect(camera.addTrauma).toHaveBeenCalledOnce(); expect(camera.punch).not.toHaveBeenCalled();
-    interimAbilityCameraFeedback(event({ phase: 'impact', slot: 'overdrive' }), camera); expect(camera.punch).toHaveBeenCalledOnce();
     fx.dispose();
   });
 
@@ -147,7 +143,8 @@ describe('interim ability visualization bridge', () => {
     renderer.effect({ type: 'ability', ability: event({ phase: 'impact' }), x: 32, y: 64 });
     renderer.effect({ type: 'ability', x: 0, y: 0 });
     expect(ability).toHaveBeenCalledOnce(); expect(generic).not.toHaveBeenCalled();
-    expect(camera.addTrauma).toHaveBeenCalledOnce();
+    // Ability camera language is owned by the rig; the adapter does not double-apply it.
+    expect(camera.addTrauma).not.toHaveBeenCalled();
   });
 
   it('preserves the existing single shot, hurt and explosion camera feedback paths', () => {
@@ -167,13 +164,13 @@ describe('interim ability visualization bridge', () => {
   });
 
   it('retains fixed pools on saturation, motion changes, menu hiding and room reset', () => {
-    const fx = new InterimAbilityVisuals(new T.Scene()), p = probe(fx);
+    const fx = new AbilityGeometry(new T.Scene()), p = probe(fx);
     const meshes: T.Mesh[] = []; fx.root.traverse(o => { if (o instanceof T.Mesh) meshes.push(o); });
     const geometry = meshes.map(m => m.geometry), materials = meshes.map(m => m.material);
     fx.setReducedMotion(true);
     for (let i = 0; i < 100; i++) fx.event(event(), i, 0);
     fx.update(snapshot({ zones: Array.from({ length: 40 }, () => zone()), deployables: Array.from({ length: 20 }, () => deployable()) }), .01, false);
-    expect(fx.root.visible).toBe(false); expect(p.telegraphs.mesh.count).toBe(INTERIM_ABILITY_LIMITS.events);
+    expect(fx.root.visible).toBe(false); expect(p.telegraphs.mesh.count).toBe(ABILITY_GEOMETRY_LIMITS.events);
     expect(p.footprints.mesh.count).toBeLessThanOrEqual(112);
     const material = p.zones[0].start.material as T.ShaderMaterial;
     expect(material.uniforms.motion.value).toBe(0);
@@ -188,14 +185,14 @@ describe('interim ability visualization bridge', () => {
   });
 
   it('registers all hidden shader variants before prepare, survives context retirement, and disposes once', () => {
-    const scene = new T.Scene(), fx = new InterimAbilityVisuals(scene);
+    const scene = new T.Scene(), fx = new AbilityGeometry(scene);
     const surface = new T.MeshStandardMaterial();
     const warmup = new MaterialWarmup({ floor: surface, wall: surface, cover: surface });
     expect(warmup.register(fx.root)).toBeGreaterThanOrEqual(3);
     fx.update(snapshot({ zones: [zone({ element: 'pyro' }), zone({ element: 'arc' })], deployables: [deployable({ kind: 'barrier' }), deployable({ kind: 'pylon' })] }), 0);
     expect(warmup.register(fx.root)).toBe(0);
     const inventory = fx.root.getObjectByName('interim-ability-material-library')!;
-    expect(inventory.visible).toBe(false); expect(inventory.children).toHaveLength(6);
+    expect(inventory.visible).toBe(false); expect(inventory.children).toHaveLength(10);
     const hiddenMaterials = inventory.children.map(mesh => (mesh as T.Mesh).material as T.Material);
     const retired = hiddenMaterials.map(material => vi.spyOn(material, 'dispose'));
     const resources = new ContextResources(); resources.track(fx.root); resources.invalidate(); resources.track(fx.root);
