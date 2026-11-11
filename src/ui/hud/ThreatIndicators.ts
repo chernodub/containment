@@ -161,12 +161,9 @@ export class ThreatIndicators {
         }
         if (e.type !== 'hurt')
             return;
-        const explicit = e.source && typeof e.source === 'object' ? e.source as {
-            x?: number;
-            y?: number;
-        } : undefined;
-        const recent = this.recentAttack >= 0 ? this.attacks[this.recentAttack] : undefined;
-        const origin = typeof explicit?.x === 'number' && typeof explicit.y === 'number' ? explicit as Point : recent && recent.life > 0 ? recent : undefined;
+        // Attack telegraphs remain useful for threat markers, but cannot identify
+        // the source of a later pool/contact hit. Only this event owns its bearing.
+        const origin = Number.isFinite(e.sourceX) && Number.isFinite(e.sourceY) ? {x:e.sourceX!,y:e.sourceY!} : undefined;
         if (!origin)
             return;
         projectWorld(this.renderer, origin.x, origin.y, this.source);

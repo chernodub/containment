@@ -183,7 +183,7 @@ export class CombatText {
                 x = Math.max(8, Math.min(w - p.width - 8, originX + (side === 1 ? -1 : side === 2 ? 1 : 0) * (p.width + 8)));
                 y = Math.max(8, Math.min(h - p.height - 8, originY - row * (p.height + 6)));
                 if (x < player.right + 8 && x + p.width > player.left - 8 && y < player.bottom + 8 && y + p.height > player.top - 8) continue;
-                if (hudObstructs(x,y,x+p.width,y+p.height)) continue;
+                if (hudObstructs(x,y,x+p.width,y+p.height) || presentationObstructs(x,y,x+p.width,y+p.height)) continue;
                 let occupied = false;
                 for (const other of this.pool) {
                     if (!other.placed) continue;

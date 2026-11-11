@@ -14,6 +14,9 @@ const applied = new WeakMap<HTMLElement, {
 const intersects = (a: ScreenBox, b: ScreenBox, pad = 0) => a.left - pad < b.right && a.right + pad > b.left && a.top - pad < b.bottom && a.bottom + pad > b.top;
 let cached: Group[] = [];
 let cachedWidth = 0, cachedHeight = 0, valid = false;
+let revision = 0;
+/** Revision changes only when measured HUD placement changes. */
+export const hudLayoutRevision = () => revision;
 let fontsObserved = false;
 /** Call after content or visibility can change the measured HUD geometry. */
 export function invalidateHudLayout(): void { valid = false; }
@@ -133,6 +136,7 @@ export function positionHudPanels(player: ScreenBox, width: number, height: numb
         applied.set(g.element, { x, y, box });
         g.previous = box;
     });
+    revision++;
     cached = groups;
     cachedWidth = width;
     cachedHeight = height;

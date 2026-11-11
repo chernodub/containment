@@ -27,7 +27,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
  let controls:GameInput={x:0,y:0,fire:false,angle:null,autoAim:true},immune=false,seed=Number(new URLSearchParams(location.search).get('seed')??1729);
  // RAF still owns resource recovery and diagnostics; only explicit steps advance time.
  game.update=dt=>{if(realtime)update(dt,controls);};renderer.render=(g,dt,menu)=>{render(g,realtime?dt:0,menu);if(realtime)advanceUi(dt);};
- game.hurt=n=>{if(!immune)hurt(n);};
+ game.hurt=(n,origin)=>{if(!immune)hurt(n,origin);};
  const refresh=()=>{render(game,0,game.status==='menu');sync();advanceUi(0);};
  const ready=async()=>{beforePrepare();await renderer.prepare(game.node);refresh();};
  const api={game,renderer,events,prepare:ready,
