@@ -84,7 +84,8 @@ try{
     let instances=0;const visit=o=>{if(!o.visible)return;if(o.isInstancedMesh)instances+=o.count;for(const c of o.children)visit(c);};visit(r.interimAbilities.root);values.instances[count]=instances;peakInstances=Math.max(peakInstances,instances);
     count++;
    });
-   const lane=d.benchmarkLane, start=performance.now(), initialEnemies=g.enemies.activeCount;
+   let sceneLightInventory=0;r.scene.traverse(o=>{if(o.isLight)sceneLightInventory++;});
+   const lane=d.benchmarkLane, start=performance.now(), initialElapsed=g.elapsed,initialPlayer={x:g.player.x,y:g.player.y},initialEnemies=g.enemies.activeCount;
    g.switchWeapon('rifle');d.fillOverdrive();
    const uses={dash:0,tactical:0,power:0,overdrive:0};
    d.realtime(true);
@@ -100,7 +101,7 @@ try{
    }finally{d.realtime(false);d.observePerformance(undefined);gl.createProgram=create;r.render=original;}
    const gpu=[];for(const q of pending){if(gl.getQueryParameter(q,gl.QUERY_RESULT_AVAILABLE)&&!gl.getParameter(ext.GPU_DISJOINT_EXT))gpu.push(gl.getQueryParameter(q,gl.QUERY_RESULT)/1e6);gl.deleteQuery(q);}
    for(const key of Object.keys(samples))samples[key]=Array.from(values[key].subarray(0,count));samples.gpu=gpu;
-   return {samples,count,programs,uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
+   return {samples,count,programs,uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
   },seconds);
   const final=await cdp.send('Performance.getMetrics');
   let profiling=null;
@@ -118,6 +119,8 @@ try{
   report.runs.push(run);await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));
   console.log(`${name}: frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
   assert.equal(data.programs,0,'Mid-combat shader compile');
+  assert(Object.values(data.uses).every(n=>n>0),'Full kit lacks accepted native slot receipts');
+  assert(data.initialEnemies===25&&data.simulationSeconds>0,'Benchmark did not run the live encounter');
  }
  const triple=s=>s?`${s.p50.toFixed(2)}/${s.p95.toFixed(2)}/${s.max.toFixed(2)}`:'unavailable';
  console.log('Timing columns are p50 / p95 / max milliseconds');
