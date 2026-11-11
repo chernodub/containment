@@ -24,7 +24,7 @@ try{
  const nodes=generateRun(1729,3).nodes;
  server=httpServer(async(req,res)=>{const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname),file=resolve(root,path.slice(prefix.length)||'index.html');if(!path.startsWith(prefix)||!file.startsWith(root+'/')){res.writeHead(404).end();return;}try{res.writeHead(200,{'Content-Type':types[extname(file)]??'application/octet-stream'}).end(await readFile(file));}catch{res.writeHead(404).end();}});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin=`http://127.0.0.1:${server.address().port}`;
- browser=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH||undefined,args:['--no-sandbox','--enable-unsafe-swiftshader']});await mkdir(out,{recursive:true});
+ browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH?undefined:'chromium',executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH||undefined,args:['--no-sandbox','--enable-unsafe-swiftshader',...(process.platform==='darwin'?['--use-angle=metal','--enable-gpu','--ignore-gpu-blocklist']:[])]});await mkdir(out,{recursive:true});
  for(const id of ids){
   const index=nodes.findIndex(n=>n.templateId===id);assert.ok(index>=0);const previous=nodes[index-1],resources=new CombatSystem().getRunResources();
   const checkpoint=index===0?null:serializeCheckpoint({version:1,savedAt:0,run:{version:3,seed:1729,currentNodeId:previous.id,completedNodeIds:nodes.slice(0,index).map(n=>n.id),phase:'route'},build:{mutations:[]},resources});if(index>0)assert.ok(checkpoint);
@@ -35,7 +35,8 @@ try{
   try{
    await page.goto(origin+prefix);await page.waitForFunction(()=>document.body.dataset.state==='menu');
    if(index===0){
-    await page.locator('#start').click();await page.waitForFunction(()=>document.body.dataset.state==='reward');
+    await page.locator('#start').click();await page.waitForFunction(()=>document.body.dataset.state==='rig-select');
+    assert.equal(await page.locator('[data-rig]').count(),4);await page.locator('#equip-rig').click();await page.waitForFunction(()=>document.body.dataset.state==='reward');
     assert.equal(await page.locator('[data-mutation]').count(),3);
     assert.equal(await page.locator('#reroll').isDisabled(),true);
     const card=page.locator('[data-mutation]').first();await card.click();
@@ -44,7 +45,7 @@ try{
     if(id==='overload-floor'){assert.match(await page.locator('.panel-intro').innerText(),/kill them and you/);await page.locator('#destroy-ship').click();}else await page.locator(`[data-route="${nodes[index].id}"]`).click();
    }
    await page.waitForFunction(name=>document.body.dataset.state==='playing'&&document.querySelector('#room-name')?.textContent===name,ROOM_TEMPLATES[id].name);
-   await page.locator('#pause').click();await page.waitForFunction(()=>document.body.dataset.state==='paused');await page.locator('#quality').selectOption('low');await page.locator('#resume').click();
+   await page.locator('#pause').click();await page.waitForFunction(()=>document.body.dataset.state==='paused');await page.locator('[data-pause-tab=settings]').click();await page.locator('#quality').selectOption('low');await page.locator('#resume').click();
    if(await page.locator('#skip-story').isVisible())await page.locator('#skip-story').click();
    const ammo=await page.locator('#magazine').textContent();
    {await page.keyboard.down('d');await page.keyboard.down('Space');await page.waitForFunction(before=>document.querySelector('#magazine').textContent!==before,ammo);await page.keyboard.up('Space');await page.keyboard.up('d');}

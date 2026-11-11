@@ -67,7 +67,7 @@ export async function checkMenuSound(page) {
   assert.equal(await mute(page).getAttribute('aria-pressed'), 'true');
   // Starting a run while muted must initialize the real gain at silence.
   await page.locator('#start').click();
-  await page.waitForFunction(() => document.body.dataset.state === 'reward');
+  await page.waitForFunction(() => document.body.dataset.state === 'rig-select');
   await gainIs(page, 0);
   await page.reload(); await page.waitForFunction(() => document.body.dataset.state === 'menu');
   await openSettings(page);
@@ -115,6 +115,7 @@ export async function checkPausedSound(page, selected) {
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => document.body.dataset.state === 'playing');
   await page.locator('#pause').click();
+  await page.locator('[data-pause-tab=settings]').click();
   assert.equal(await slider(page).inputValue(), '0');
   await page.locator('#quality').selectOption(quality);
   console.log(`Sound pause passed: desktop, retains choice, muted adjustment stays silent, unmute restores choice, live zero gain.`);

@@ -1,3 +1,4 @@
+import {uiSource} from './uiSource';
 import {describe,it,expect} from 'vitest';
 import {generateRun,createRun,clearRoom,finishReward,enterRoom,isValidRunState} from '../src/game/roguelike/run';
 import {DepthGame} from '../src/DepthGame';
@@ -21,7 +22,7 @@ describe('authored story campaign',()=>{
   expect(plan(19).kind).not.toBe('boss');
  });
  it('shows concise essential status and removes the facility escape story from the active UI',async()=>{
-  const {readFileSync}=await import('node:fs');const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
+  const {readFileSync}=await import('node:fs');const source=uiSource;
   expect(source).not.toMatch(/Twelve rooms below|lift carries you toward daylight/);
   expect(source).toContain('id="destroy-ship"');expect(source).toContain('game.authorizeDestruction()');
   expect(source).toContain('game.storyStatus');expect(source).toContain('game.skipStory()');

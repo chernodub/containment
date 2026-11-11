@@ -47,6 +47,7 @@ export async function checkCheckpointFeedback(page) {
   },key);
   await page.locator('#start').click();
   assert.match(await page.locator('.save-note').innerText(), /Could not remove the previous checkpoint/);
+  await page.locator('#equip-rig').click();
   await page.locator('[data-mutation]').first().click();
   await page.locator('#pause').click();
   assert.match(await page.locator('.save-note').innerText(), /Reloading may restore an old run/);

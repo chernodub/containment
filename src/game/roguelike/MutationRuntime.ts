@@ -3,12 +3,12 @@ import type { CombatSystem } from '../combat/CombatSystem';
 import { BUILD_LIMITS, familyBonuses } from './builds';
 import type { BuildCause, BuildCommand, BuildEvent, BuildWeapon } from './builds';
 
-export type MutationTarget = Readonly<{ id: number; x: number; y: number; radius: number; health: number; maxHealth?:number; immovable?:boolean }>;
+export type MutationTarget = Readonly<{ id: number; x: number; y: number; radius: number; health: number; maxHealth?:number; immovable?:boolean; resistant?:boolean }>;
 export type MutationHost = Readonly<{
   targets: () => readonly MutationTarget[];
   player?:()=>{x:number;y:number};
   /** Apply damage and ordinary death rewards; do not report another mutation kill here. */
-  damage: (id: number, amount: number) => Readonly<{ applied: boolean; died: boolean }>;
+  damage: (id: number, amount: number, source?:'status'|'boon') => Readonly<{ applied: boolean; died: boolean }>;
   /** Move through the same collision/bounds solver used by ordinary enemies. */
   move: (id: number, dx: number, dy: number) => Readonly<{ blocked: boolean }>;
   /** Same collision solver for a corpse whose live entity was already removed. */
@@ -48,9 +48,41 @@ export class MutationRuntime {
     this.#elements=new ElementalRuntime({combat,targets:host.targets,player:host.player??(()=>({x:0,y:0})),visible:(a,b)=>host.canAffect?.(a,b)!==false,
       stacks:id=>this.#stacks(id),burning:id=>(this.#burns.get(id)?.expiresAt??0)>this.#time,clearChill:id=>{this.#chill.delete(id);this.#elements.clearFreeze(id);},clearBurn:id=>{this.#burns.delete(id);},
       chill:(t,stacks,duration)=>this.#addChill(t,stacks,duration),effect:(...args)=>host.boonEffect?.(...args),
-      damage:(t,n,cause,id)=>this.#damage(t,n,{type:'damage',targetId:String(t.id),amount:n,source:'secondary',cause,id}),
-      push:(t,x,y,cause,id)=>{const old=this.#launches.get(t.id);if(!old||Math.hypot(x,y)>Math.hypot(old.x,old.y))this.#launches.set(t.id,{x,y,cause,commandId:id,remainingMs:700,touched:new Set([t.id])});},
+      damage:(t,n,cause,id,source)=>{try{this.#damage(t,n,{type:'damage',targetId:String(t.id),amount:n,source:'secondary',cause,id},source);}finally{if(source==='status')this.secondaryBudget.delete(cause.chainId);}},
+      push:(t,x,y,cause,id)=>{if(t.immovable||t.resistant){this.#elements.stagger(t);this.#refreshSlow(t);return;}const old=this.#launches.get(t.id);if(!old||Math.hypot(x,y)>Math.hypot(old.x,old.y))this.#launches.set(t.id,{x,y,cause,commandId:id,remainingMs:700,touched:new Set([t.id])});},
     });
+  }
+
+  /** Ability control shares weapon chill, elemental roots and ordinary burn reactions. */
+  applyAbilityStatus(target:MutationTarget,kind:'chill'|'freeze'|'burn'|'shock',amount:number):void {
+    if(!Number.isFinite(amount)||amount<=0||!this.#host.targets().some(t=>t.id===target.id&&t.health>0))return;
+    const id=this.#combat.nextMutationEventId(`ability-${kind}`),cause={chainId:id,depth:0};
+    if(kind==='chill'){
+      const before=this.#stacks(target.id),family=familyBonuses(this.#combat.build);
+      this.#addChill(target,Math.min(3,before+Math.floor(amount)),(this.#combat.hasMutation('permafrost')?3500:2000)+(family.cryo?500:0));
+      this.#elements.reachedChill(target,before,cause,id);
+    }else if(kind==='freeze'){
+      if(!target.immovable&&!target.resistant)this.#addChill(target,3,amount);
+      this.#elements.freeze(target,amount);
+    }else if(kind==='shock')this.#elements.shock(target,amount);
+    else this.#ignite(target,{type:'damage',targetId:String(target.id),amount:4,source:'secondary',cause,id});
+    this.#refreshSlow(target);
+  }
+
+  /** Launch abilities use the ordinary wall/body collision reaction path. */
+  launchAbility(target:MutationTarget,x:number,y:number):void {
+    if(!Number.isFinite(x)||!Number.isFinite(y)||!Math.hypot(x,y)||!this.#host.targets().some(t=>t.id===target.id&&t.health>0))return;
+    if(target.immovable||target.resistant){this.#elements.stagger(target);this.#refreshSlow(target);return;}
+    this.#remember(target);
+    const id=this.#combat.nextMutationEventId('ability-launch');
+    this.#launches.set(target.id,{x,y,cause:{chainId:id,depth:0},commandId:id,remainingMs:900,touched:new Set([target.id])});
+  }
+
+  /** Feed ability arcs into Cryo Conductor and Ball Lightning without Arc Filament. */
+  abilityArc(origin:MutationTarget,targets:readonly MutationTarget[]):void {
+    const id=this.#combat.nextMutationEventId('ability-arc');
+    const active=targets.filter(t=>t.health>0&&this.#host.targets().some(live=>live.id===t.id&&live.health>0)&&this.#host.canAffect?.(origin,t)!==false).slice(0,BUILD_LIMITS.maxAreaTargets);
+    this.#elements.arc(origin,active,{chainId:id,depth:0},id);
   }
 
   /** Call after base projectile damage, with the pre-damage target snapshot. */
@@ -125,11 +157,11 @@ export class MutationRuntime {
     for(const [id,burn]of this.#burns){
       const target=this.#host.targets().find(t=>t.id===id&&t.health>0);
       if(!target){this.#burns.delete(id);continue;}
-      let ticks=0;while(burn.nextTick<=this.#time&&burn.nextTick<=burn.expiresAt&&ticks++<4){if(!this.#host.targets().some(t=>t.id===id&&t.health>0))break;this.#damage(target,4,{...burn.command,id:`${burn.command.id}:burn:${burn.nextTick}`});burn.nextTick+=250;}
+      let ticks=0;while(burn.nextTick<=this.#time&&burn.nextTick<=burn.expiresAt&&ticks++<4){if(!this.#host.targets().some(t=>t.id===id&&t.health>0))break;const tickId=this.#combat.nextMutationEventId('burn-tick'),cause={chainId:tickId,depth:burn.command.cause.depth};try{this.#damage(target,4,{...burn.command,id:tickId,cause},'status');}finally{this.secondaryBudget.delete(tickId);}burn.nextTick+=250;}
       if(this.#time>=burn.expiresAt)this.#burns.delete(id);
     }
     this.#elements.update(deltaMs);
-    const cryoFamily=familyBonuses(this.#combat.build).cryo;for(const target of this.#host.targets()){const stacks=this.#stacks(target.id),slow=Math.min(stacks?1-stacks*.15-(cryoFamily?.05:0):1,this.#elements.slow(target));if((this.#slow.get(target.id)??1)!==slow){this.#slow.set(target.id,slow);this.#host.setSlow(target.id,slow);}}
+    const cryo=familyBonuses(this.#combat.build).cryo;for(const target of this.#host.targets())this.#refreshSlow(target,cryo);
     for(const id of this.#slow.keys())if(!active.has(id))this.#slow.delete(id);
     // At most 100ms catch-up and <=25ms substeps prevent thin-body tunneling.
     let remaining = Math.min(deltaMs, 100);
@@ -153,10 +185,11 @@ export class MutationRuntime {
     this.#combat.resetMutationEncounter();
   }
 
-  statuses(id:number){const alive=this.#host.targets().some(t=>t.id===id&&t.health>0),chillStacks=alive?this.#stacks(id):0;return{chilled:chillStacks>0,chillStacks,burning:alive&&(this.#burns.get(id)?.expiresAt??0)>this.#time,poisoned:alive&&this.#elements.poisoned(id),frozen:alive&&this.#elements.frozen(id)};}
+  statuses(id:number){const alive=this.#host.targets().some(t=>t.id===id&&t.health>0),chillStacks=alive?this.#stacks(id):0;return{chilled:chillStacks>0,chillStacks,burning:alive&&(this.#burns.get(id)?.expiresAt??0)>this.#time,poisoned:alive&&this.#elements.poisoned(id),frozen:alive&&this.#elements.frozen(id),shocked:alive&&this.#elements.shocked(id)};}
   hurt(beforeArmor:number,afterArmor:number,player:{x:number;y:number}){this.#elements.hurt(beforeArmor,afterArmor,player);}
   #stacks(id:number){const c=this.#chill.get(id);return c&&c.expiresAt>this.#time?c.stacks:0;}
   #addChill(t:MutationTarget,stacks:number,duration:number){if(!this.#host.targets().some(x=>x.id===t.id&&x.health>0))return;this.#chill.set(t.id,{stacks:Math.max(stacks,this.#stacks(t.id)),expiresAt:Math.max(this.#time+duration,this.#chill.get(t.id)?.expiresAt??0)});this.#host.boonEffect?.('frost',t.x,t.y);}
+  #refreshSlow(t:MutationTarget,cryo=familyBonuses(this.#combat.build).cryo){const stacks=this.#stacks(t.id),slow=Math.min(stacks?1-stacks*.15-(cryo?.05:0):1,this.#elements.slow(t));if((this.#slow.get(t.id)??1)!==slow){this.#slow.set(t.id,slow);this.#host.setSlow(t.id,slow);}}
   completedReload(player:Readonly<{x:number;y:number}>):void{
     this.#elements.reload(player);const build=this.#combat.build,has=(id:import('./types').MutationId)=>build.mutations.includes(id);
     if(has('hot-reload'))this.#host.boonEffect?.('overload',player.x,player.y);
@@ -174,7 +207,7 @@ export class MutationRuntime {
   #dispatch(event: BuildEvent, wallVisual?:()=>void): boolean {
     const result = this.#combat.resolveMutationEvent(event);
     if(result.rejected)return false;
-    if(result.commands.some(c=>(c.type==='damage'||c.type==='explosion')&&c.visual==='wall-slam'))wallVisual?.();
+    wallVisual?.(); // Native ability launches still make physical contact when no damage boon is owned.
     this.#commands.push(...result.commands);
     if (this.#executing) return true;
     this.#executing = true;
@@ -200,7 +233,8 @@ export class MutationRuntime {
       if(command.stacks>0)this.#host.boonEffect?.('frost',live.x,live.y);
     } else if (command.type === 'impulse') {
       const target = live ?? this.#positions.get(targetId);
-      if (!target || target.immovable) return;
+      if (!target) return;
+      if(target.immovable||target.resistant){if(live){this.#elements.stagger(target);this.#refreshSlow(target);}return;}
       this.#launches.set(targetId, { x: command.x, y: command.y, cause: command.cause, commandId: command.id, remainingMs: 900, touched: new Set([targetId]), ...(!live ? { ghost: { ...target, health: 0 } } : {}) });
     } else if (command.type === 'damage') {
       if (live){if(!command.visual)this.#host.boonEffect?.('impact',live.x,live.y);this.#damage(live, command.amount, command);}
@@ -216,11 +250,11 @@ export class MutationRuntime {
     }
   }
 
-  #damage(target: MutationTarget, amount: number, command: BuildCommand): void {
+  #damage(target: MutationTarget, amount: number, command: BuildCommand, source:'status'|'boon'='boon'): void {
     const used=this.secondaryBudget.get(command.cause.chainId)??0;
-    if((this.secondaryBudget.size>=4096&&!this.secondaryBudget.has(command.cause.chainId))||command.cause.depth>BUILD_LIMITS.maxDepth||used>=BUILD_LIMITS.maxEventsPerChain||!this.#host.targets().some(t=>t.id===target.id&&t.health>0))return;
+    if((source!=='status'&&this.secondaryBudget.size>=4096&&!this.secondaryBudget.has(command.cause.chainId))||command.cause.depth>BUILD_LIMITS.maxDepth||used>=BUILD_LIMITS.maxEventsPerChain||!this.#host.targets().some(t=>t.id===target.id&&t.health>0))return;
     this.secondaryBudget.set(command.cause.chainId,used+1);this.#remember(target);
-    const result = this.#host.damage(target.id, amount);
+    const result = this.#host.damage(target.id, amount,source);
     if (result.applied && result.died) this.kill(target, 'secondary', command.cause, `${command.id}:kill:${target.id}`);
   }
 

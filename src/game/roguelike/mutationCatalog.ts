@@ -1,4 +1,6 @@
 import {ELEMENTAL_BOONS} from './elementalCatalog';
+import { AUGMENT_BOONS } from '../abilities/augmentCatalog';
+import type { RigId } from '../abilities/contract';
 import type { MutationId } from './types';
 
 export type BoonFamily='Kinetic'|'Cryo'|'Reactor'|'Recovery';
@@ -12,6 +14,9 @@ export type MutationDefinition = Readonly<{
   requires?: readonly MutationId[];
   requiresAny?: readonly MutationId[];
   risk?: boolean;
+  /** Augments need a rig-aware draft; a specific rig also restricts eligibility. */
+  abilityOnly?: boolean;
+  rig?: RigId;
 }>;
 
 export const MUTATION_CATALOG: Readonly<Record<MutationId, MutationDefinition>> = Object.freeze({
@@ -40,6 +45,7 @@ export const MUTATION_CATALOG: Readonly<Record<MutationId, MutationDefinition>> 
   'leech-rounds': Object.freeze({id:'leech-rounds',name:'Leech Rounds',family:'Recovery',description:"Every fourth direct kill restores 4 health.",tradeoff:"Up to six heals per room.",rarity:'common'}),
   'emergency-plating': Object.freeze({id:'emergency-plating',name:'Emergency Plating',family:'Recovery',description:"Surviving a hit below 30 health grants 20 armor.",tradeoff:"Once per room. Cannot prevent a lethal hit.",rarity:'rare'}),
   ...ELEMENTAL_BOONS,
+  ...AUGMENT_BOONS,
 });
 
 export const MUTATION_IDS = Object.freeze(Object.keys(MUTATION_CATALOG) as MutationId[]);

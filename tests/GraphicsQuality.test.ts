@@ -1,3 +1,4 @@
+import {uiSource} from './uiSource';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {readFileSync} from 'node:fs';
 import {DepthRenderer} from '../src/render/DepthRenderer';
@@ -25,15 +26,15 @@ describe.each([false,true])('graphics quality with coarse pointer %s',coarse=>{
  });
 });
 it.each(['high','low'])('restores the selected %s quality after WebGL recovery',quality=>{
- const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
- const body=source.match(/webglcontextrestored',\(\)=>\{([^}]+)\}/)![1];
+ const source=uiSource;
+ const body=source.match(/webglcontextrestored',\s*\(\)\s*=>\s*\{([^}]+)\}/)![1];
  const target={setQuality:vi.fn()},syncScreen=vi.fn();
- const restored=new Function('renderer','quality','syncScreen',`let graphicsLost=true;${body};return graphicsLost;`);
- expect(restored(target,quality,syncScreen)).toBe(false);
+ const restored=new Function('settings','syncScreen',`let graphicsLost=true;${body};return graphicsLost;`);
+ expect(restored({apply:()=>target.setQuality(quality)},syncScreen)).toBe(false);
  expect(target.setQuality).toHaveBeenCalledWith(quality);expect(syncScreen).toHaveBeenCalledWith(true);
 });
 it('removes the automatic downgrade path while retaining frame pacing and diagnostics',()=>{
- const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
+ const source=uiSource;
  expect(DepthRenderer.prototype).not.toHaveProperty('observeFrame');
  expect(source).not.toContain('renderer.observeFrame(');
  expect(source).toContain('pacer.sample(now)');expect(source).toContain('diagnostics.record(');

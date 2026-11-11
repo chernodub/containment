@@ -57,10 +57,11 @@ try{
  await new Promise((ok,fail)=>{server.once('error',fail);server.listen(0,'127.0.0.1',ok);});const origin=`http://127.0.0.1:${server.address().port}`;
  browser=await launch();context=await browser.newContext({viewport,deviceScaleFactor:dpr});
  await context.addInitScript(value=>{let s=value;window.__captureSeed=n=>{s=n>>>0;};Math.random=()=>{s=(s+0x6d2b79f5)>>>0;let t=Math.imul(s^(s>>>15),1|s);t^=t+Math.imul(t^(t>>>7),61|t);return((t^(t>>>14))>>>0)/4294967296;};},seed);
- const fontStyles=new Map();
- await context.route('https://fonts.googleapis.com/**',async route=>{const url=route.request().url();if(fontStyles.has(url)){await route.fulfill(fontStyles.get(url));return;}let response;try{const fetched=await route.fetch({timeout:8000});if(!fetched.ok())throw Error(`Font HTTP ${fetched.status()}`);response={status:200,contentType:'text/css',body:await fetched.body()};}catch(error){manifest.fontFallbacks.push({url,reason:String(error)});response={status:200,contentType:'text/css',body:'/* Offline: use the game’s system font fallback. */'};}fontStyles.set(url,response);await route.fulfill(response);});
- const fontFiles=new Map();
- await context.route('https://fonts.gstatic.com/**',async route=>{const url=route.request().url();let response=fontFiles.get(url);if(!response){try{const fetched=await route.fetch({timeout:8000});if(!fetched.ok())throw Error(`Font HTTP ${fetched.status()}`);response={status:200,contentType:fetched.headers()['content-type']??'font/woff2',body:await fetched.body()};}catch(error){manifest.fontFallbacks.push({url,reason:String(error)});response={status:204,body:''};}fontFiles.set(url,response);}await route.fulfill(response);});
+ // Font dependencies must be local; a CDN request is a regression, not a fallback.
+ for(const host of ['fonts.googleapis.com','fonts.gstatic.com'])await context.route(`https://${host}/**`,async route=>{
+  manifest.errors.push({type:'font',message:`External font request: ${route.request().url()}`});
+  await route.abort('blockedbyclient');
+ });
  page=await context.newPage();page.setDefaultTimeout(120000);
  page.on('pageerror',error=>manifest.errors.push({type:'pageerror',message:error.message}));
  page.on('console',message=>{if(message.type()==='error')manifest.errors.push({type:'console',message:message.text()});});
@@ -74,26 +75,44 @@ try{
   try{
    // Reload isolates renderer animation time, effect pools, caches, and random state.
    if(scenarioIndex++){await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);}
-   await page.evaluate(seed=>{window.__captureSeed(seed);},seed);await page.evaluate(scenario.setup,scenario.room);
+   await page.evaluate(seed=>{window.__captureSeed(seed);},seed);await page.evaluate(scenario.setup,scenario.setupArgument??scenario.room);
+   if(scenario.nativeKeys){await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));for(const [key,ms]of scenario.nativeKeys){await page.keyboard.press(key);await page.evaluate(ms=>window.__containmentDebug.step(ms),ms);}}
    // Asset warm-up may consume random values asynchronously. Restart the visual
    // stream only after room preparation, before synchronous combat/VFX staging.
    await page.evaluate(seed=>window.__captureSeed(seed),seed);
    let staging;if(scenario.combat)staging=await page.evaluate(stageCombat,{status:!!scenario.status});
    await page.waitForFunction(()=>!window.__containmentDebug.renderer.roomLoading&&document.querySelector('#world').getAttribute('aria-busy')!=='true');
+   if(scenario.state==='playing')await page.mouse.move(Math.round(viewport.width*.64),Math.round(viewport.height*.48));else await page.mouse.move(4,4);
    const count=scenario.burst?burst:1;let projectiles=false,muzzle=false,explosion=false;const observed=new Set();
    for(let frame=0;frame<count;frame++){
     if(frame)await page.evaluate(()=>window.__containmentDebug.step(150));
     const evidence=await page.evaluate(inspectFrame);
     for(const selector of scenario.required??[])assert(await page.locator(selector).first().isVisible(),`${name}: missing ${selector}`);
     if(scenario.phase)assert.equal(evidence.phase,scenario.phase,`${name}: wrong run phase`);
+    if(scenario.nativeInput){assert.equal(evidence.abilities.rig,'breacher');for(const slot of ['dash','tactical','power','overdrive'])assert.equal(evidence.stats.abilityUses[slot],1,`Native ${slot} input failed`);assert.equal(evidence.stats.overdrivesUsed,1);}
+    if(scenario.ability){assert.equal(evidence.abilities.rig,scenario.ability.rig);assert.equal(evidence.abilities.slots[scenario.ability.slot].id,scenario.ability.id);assert.equal(evidence.stats.abilityUses[scenario.ability.slot],1);assert(evidence.abilities.zones.length<=24&&evidence.abilities.deployables.length<=8,'Ability counts unbounded');}
+    if(scenario.ability||scenario.nativeInput){
+     assert.equal(evidence.ui.abilitySlots.length,4,`${name}: live ability HUD incomplete`);
+     assert(!evidence.ui.toasts.some(text=>text.includes('acquired')),`${name}: stale draft acquisition toast in ability-only fixture`);
+     for(const hud of evidence.ui.abilitySlots){
+      const slot=evidence.abilities.slots[hud.slot];
+      assert(hud.title&&hud.value&&hud.icon,`${name}: ${hud.slot} HUD content missing`);
+      assert.equal(hud.title.toLowerCase().replace(/[^a-z]/g,''),slot.id.replaceAll('-',''),`${name}: HUD shows a different rig ability`);
+      if(hud.state!=='denied')assert.equal(hud.state,slot.castRemainingMs>0?'casting':slot.activeRemainingMs>0?'active':(hud.slot==='overdrive'?evidence.abilities.overdrive.ready:slot.ready)?'ready':'cooling',`${name}: ${hud.slot} HUD state differs from live snapshot`);
+     }
+    }
+    if(scenario.id==='results'){assert(evidence.stats.kills.total>0&&evidence.stats.damageDealt.ability>0&&evidence.stats.abilityUses.tactical===1&&evidence.stats.overdrivesUsed===1,'Results lack genuine combat receipts');}
+    if(scenario.uiState)assert.equal(evidence.uiState,scenario.uiState,`${name}: wrong fixture UI phase`);
     if(scenario.id==='combat-calm')assert.equal(evidence.enemies,0,`${name}: calm room contains enemies`);
     assert.equal(evidence.state,scenario.state,`${name}: wrong game state`);assert(evidence.canvas.colors>8&&!evidence.canvas.contextLost&&!evidence.canvas.error,`${name}: missing/invalid canvas pixels ${JSON.stringify(evidence.canvas)}`);
     if(scenario.room)assert.equal(evidence.templateId,scenario.room);
     if(scenario.state==='playing'){assert(evidence.hud&&evidence.player.visible&&!evidence.overlay,`${name}: HUD/player missing or overlay blocks scene`);}
     if(scenario.combat){assert(evidence.visibleEnemies>=12,`${name}: only ${evidence.visibleEnemies} visible enemies`);projectiles||=evidence.playerBullets>0;muzzle||=evidence.muzzle>0;}
+    if(scenario.id==='combat-kiting'&&frame<4)assert(evidence.ui.damageNumbers.length>0,`${name}: staged damage numbers expired before capture`);
     if(scenario.id==='boss')assert(evidence.boss&&evidence.bossHud,'Queen/boss HUD missing');
     explosion||=evidence.recentEffects.some(e=>e.type==='explosion');
     for(const s of evidence.statuses)for(const key of ['burning','chilled','frozen','poisoned'])if(s[key])observed.add(key);
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     const file=name+(scenario.burst?`-${String(frame+1).padStart(2,'0')}`:'')+'.png',bytes=await page.screenshot({path:resolve(out,file),animations:'disabled'}),pixels=samplePng(bytes);
     const errors=manifest.errors.slice(errorStart);assert.equal(errors.length,0,JSON.stringify(errors));
     manifest.shots.push({scenario:scenario.id,room:scenario.room??null,frame:scenario.burst?frame+1:null,file,simulationMs:Math.round(evidence.elapsed*1000),performance:evidence.performance,errors,pixels,staging,evidence});
