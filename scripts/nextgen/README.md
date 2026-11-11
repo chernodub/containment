@@ -192,3 +192,12 @@ inside this worktree and restores source bytes in `finally`; run it only when no
 other V2 build/capture is active. `v2-performance.py` compares matched manifests
 and creates a JSON table and PNG CPU chart. Render timing is CPU submission, not
 GPU time. Concurrent machine load and P95 must be retained in the report.
+## G2 world review
+
+`g2-calm-high`, `g2-calm-low`, `g2-kiting-high`, `g2-kiting-low` expand over `--rooms` (supply all20storyIDs). Kiting uses the same legal short G1 backpedal/grenade fixture on both tiers. `g2-title-low` and `g2-boss-low` complement title/boss. `g2-champions`, `g2-pickups` and `g2-queen-exposed` exercise actual promotion, pickup and boss-phase APIs. `g2-legacy-high/low` use legal version2checkpoint paths with recorded deterministic seeds.
+
+`node scripts/nextgen/g2-review.mjs artifacts/nextgen/<label>` decodes actual PNGs, writes masked/unmasked ROI histograms and marine-local3m samples to luminance.json, and creates native PNG review sheets without another browser. `g2-comparison.mjs` creates all20 baseline/before/after sheets with explicit missing-baseline labels and provenance. `g2-surfaces.mjs` regenerates the three original128² floor finishes.
+
+`--dist=/absolute/preserved/build --dist-source-sha=<renderer-sha>` bypasses rebuilding only for an explicit preserved production snapshot. The manifest records that provenance separately from the currently checked-out harness SHA. This permits before/after benchmarking in one worktree without reverting source or touching another checkout.
+
+`g2-overlay.mjs <final-dir> <focused-correction-dir>` assembles a final gallery after an isolated correction. It requires a clean overlay capture and exact existing fixture keys, preserves the original round manifest/PNGs, records the overlay renderer SHA per replaced shot, and regenerates the standalone gallery. It does not change captured evidence or hide failed scenarios. Rerun g2-review and g2-comparison afterward.

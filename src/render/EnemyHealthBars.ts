@@ -4,15 +4,15 @@ export type HealthBarEntry={x:number;z:number;height:number;health:number;maxHea
 export function healthFraction(health:number,maxHealth:number){return Number.isFinite(health)&&Number.isFinite(maxHealth)&&maxHealth>0?T.MathUtils.clamp(health/maxHealth,0,1):0;}
 /** Critical health stays readable; armor and active statuses tint healthier bars. */
 export function healthBarColor(entry:HealthBarEntry,fraction=healthFraction(entry.health,entry.maxHealth)){
- if(fraction<=.25)return 0xe98672;
- if((entry.armor??0)>0)return entry.elite?0xd8b279:0xb2bfba;
+ if(fraction<=.25)return 0xff8b72;
+ if((entry.armor??0)>0)return entry.elite?0xffcc86:0xd7e0df;
  if(entry.status?.frozen)return 0xb6e4ef;
  if(entry.status?.shocked)return 0xb5a4d7;
  if(entry.status?.burning)return 0xd7a374;
  if(entry.status?.poisoned)return 0xa3bf7d;
  if(entry.status?.chilled)return 0x8ec9d5;
- if(entry.elite)return 0xd8b279;
- return fraction<=.5?0xc9ae79:0xa8bfb8;
+ if(entry.elite)return 0xffcc86;
+ return fraction<=.5?0xecab8b:0xe7c8b4;
 }
 /** Two shared draw calls for damaged enemies and elites, at a constant pixel size. */
 export class EnemyHealthBars{
@@ -28,8 +28,8 @@ export class EnemyHealthBars{
   for(const e of entries){const fraction=healthFraction(e.health,e.maxHealth);if(hidden||fraction<=0||(!e.elite&&fraction>=1)||count>=this.capacity)continue;
    // Camera-space depth, rather than distance to the camera, preserves pixel
    // size for actors both off-axis and at different positions along the deck.
-   const depth=perspective?-this.cameraPoint.set(e.x,e.height+.24,e.z).applyMatrix4(camera.matrixWorldInverse).z:1;if(depth<=0)continue;const pixel=perPixel*depth,width=32*pixel,height=2*pixel;
-   this.dummy.quaternion.copy(camera.quaternion);this.dummy.position.set(e.x,e.height+.24,e.z);this.dummy.scale.set(width+2*pixel,3*pixel,1);this.dummy.updateMatrix();this.background.setMatrixAt(count,this.dummy.matrix);
+   const depth=perspective?-this.cameraPoint.set(e.x,e.height+.24,e.z).applyMatrix4(camera.matrixWorldInverse).z:1;if(depth<=0)continue;const pixel=perPixel*depth,width=32*pixel,height=4*pixel;
+   this.dummy.quaternion.copy(camera.quaternion);this.dummy.position.set(e.x,e.height+.24,e.z);this.dummy.scale.set(width+4*pixel,6*pixel,1);this.dummy.updateMatrix();this.background.setMatrixAt(count,this.dummy.matrix);
    this.dummy.position.addScaledVector(this.right,-width*(1-fraction)/2);this.dummy.scale.set(width*fraction,height,1);this.dummy.updateMatrix();this.fill.setMatrixAt(count,this.dummy.matrix);this.fill.setColorAt(count,this.color.setHex(healthBarColor(e,fraction)));count++;
   }
   this.background.count=this.fill.count=count;this.background.instanceMatrix.needsUpdate=this.fill.instanceMatrix.needsUpdate=true;if(this.fill.instanceColor)this.fill.instanceColor.needsUpdate=true;

@@ -91,8 +91,12 @@ describe('fixed dynamic lights', () => {
     const rig = new SceneLighting(); rig.setQuality('low');
     expect(rig.pool.capacity).toBe(0); expect(rig.lamp.cone.visible).toBe(false); expect(rig.key.castShadow).toBe(false);
     rig.setQuality('high', true, true, 0); rig.setPlayer(4, 6, Math.PI / 2);
-    expect(rig.lamp.light.target.position.x).toBeCloseTo(4);
-    expect(rig.lamp.light.target.position.z).toBeCloseTo(14);
+    const forward=rig.lamp.light.target.position.clone().sub(rig.lamp.light.position);
+    expect(forward.toArray().every(Number.isFinite)).toBe(true);
+    expect(forward.x).toBeCloseTo(0);expect(forward.z).toBeGreaterThan(4);expect(forward.z).toBeLessThan(8);
+    expect(forward.y).toBeLessThan(0);expect(rig.lamp.light.penumbra).toBeGreaterThan(.9);
+    const coneForward=new T.Vector3(0,-1,0).applyQuaternion(rig.lamp.cone.quaternion);
+    expect(coneForward.dot(forward.normalize())).toBeCloseTo(1);
     expect(rig.lamp.cone.visible).toBe(true);
     rig.explosion(1, 2, 3); expect(rig.blast.intensity).toBe(0);
     rig.dispose();
@@ -139,7 +143,8 @@ it('stages the Queen reactor core within the fixed practical budget and preserve
   expect(rig.fixtures[0].intensity).toBe(14);
   expect(rig.key).toBe(rig.coreKey);expect(rig.coreKey.castShadow).toBe(true);expect(rig.coreKey.intensity).toBeGreaterThan(300);
   expect(rig.fixtures[1].color.r).toBeGreaterThan(rig.fixtures[1].color.b);
-  expect(rig.key.position.y).toBeLessThan(8);
+  // The bespoke Queen key comes from above/in front of the armored face.
+  expect(rig.key.position.y).toBeGreaterThan(7);expect(rig.key.position.z).toBeGreaterThan(rig.staging!.coreZ);expect(rig.key.target.position.y).toBeGreaterThan(0);
   rig.setQuality('low'); expect(rig.fixtures.filter(light => light.visible)).toHaveLength(2);
   rig.loadRoom(room, 45, 33.75, 'infested');
   expect(rig.staging).toBeNull(); expect(rig.key.color.g).toBeGreaterThan(rig.key.color.r);
@@ -228,7 +233,12 @@ it('preserves directional contrast, neutral steel and a stable local readability
     expect(mood.key.intensity/mood.fill.intensity).toBeLessThanOrEqual(6);
     const rig=new SceneLighting();rig.loadRoom(new T.Group(),24,18,mood.environment);
     expect(rig.key.castShadow).toBe(true);expect(rig.lamp.suitFill.visible).toBe(true);
-    expect(rig.lamp.suitFill.intensity).toBeGreaterThanOrEqual(24);expect(rig.lamp.suitFill.intensity).toBeLessThanOrEqual(40);expect(rig.lamp.suitFill.distance).toBe(4.8);rig.dispose();
+    rig.setPlayer(12,9,0);const fill=rig.lamp.suitFill,h=fill.position.y;
+    // Raise and broaden the source: control the foot hotspot while retaining
+    // useful inverse-square energy throughout the marine's3m neighborhood.
+    expect(h).toBeGreaterThan(2);expect(fill.intensity/(h*h)).toBeLessThan(10);
+    expect(fill.intensity/(h*h+9)).toBeGreaterThan(1.5);expect(fill.intensity/(h*h+9)).toBeLessThan(4.5);
+    expect(fill.distance).toBeGreaterThan(Math.sqrt(h*h+9));expect(Number.isFinite(fill.intensity)).toBe(true);rig.dispose();
     expect(mood.grade.exposure).toBeGreaterThanOrEqual(1);
     expect(mood.grade.contrast).toBeLessThan(1.03);
     const room = new T.Group(), deck = new T.MeshStandardMaterial({ color: 0x263238, roughness: .91 });

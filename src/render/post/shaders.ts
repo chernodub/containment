@@ -90,6 +90,8 @@ uniform float aoEnabled;
 uniform float bloomEnabled;
 uniform float distortionEnabled;
 uniform float lensEnabled;
+uniform float focusDistance;
+uniform float menuPresentation;
 uniform float atmosphereEnabled;
 uniform float useAgX;
 uniform float saturation;
@@ -111,10 +113,27 @@ void main() {
   if (distortionEnabled > 0.5) uv += texture2D(tDistortion, vUv).rg;
   uv = clamp(uv, invSize, 1.0 - invSize);
   vec3 color = texture2D(tScene, uv).rgb;
+  vec3 sharpColor=color;
   if (lensEnabled > 0.5) {
+    // Far-field-only gameplay defocus never softens actors inside the marine's
+    // movement/aim neighborhood. Menu's close lens has a narrower focal zone.
+    float focalDepth=-viewPosition(uv,texture2D(tDepth,uv).x).z;
+    float coc=smoothstep(mix(7.0,2.5,menuPresentation),mix(15.0,7.0,menuPresentation),abs(focalDepth-focusDistance));
+    coc*=mix(smoothstep(.56,.93,abs(vUv.y-.5)*2.0),1.0,menuPresentation);
+    if(coc>.001){
+      vec2 radius=invSize*coc*mix(1.2,3.5,menuPresentation);
+      vec3 soft=color*2.0;float weight=2.0;
+      for(int i=0;i<6;i++){
+        float angle=float(i)*1.04719755;vec2 q=clamp(uv+vec2(cos(angle),sin(angle))*radius,invSize,1.0-invSize);
+        float sampleDepth=-viewPosition(q,texture2D(tDepth,q).x).z;
+        float w=1.0-smoothstep(.2,1.2,abs(sampleDepth-focalDepth));
+        soft+=texture2D(tScene,q).rgb*w;weight+=w;
+      }
+      color=mix(color,soft/weight,coc*.65);
+    }
     vec2 fringe = (uv - 0.5) * pow(length(uv - 0.5), 3.0) * 0.0015;
-    color.r = texture2D(tScene, uv + fringe).r;
-    color.b = texture2D(tScene, uv - fringe).b;
+    color.r += texture2D(tScene, uv + fringe).r-sharpColor.r;
+    color.b += texture2D(tScene, uv - fringe).b-sharpColor.b;
     // Restrained unsharp mask in HDR: preserve fine industrial surface edges.
     vec3 average = (texture2D(tScene, uv + vec2(invSize.x, 0.0)).rgb
       + texture2D(tScene, uv - vec2(invSize.x, 0.0)).rgb
@@ -141,6 +160,7 @@ void main() {
     }
   }
   color = max((color + lift) * gain, 0.0);
+  color*=1.0-menuPresentation*(1.0-smoothstep(.30,.59,vUv.x))*.78;
   color = useAgX > 0.5 ? AgXToneMapping(color) : ACESFilmicToneMapping(color);
   float luminance = dot(color, vec3(0.2126, 0.7152, 0.0722));
   color = mix(vec3(luminance), color, saturation);

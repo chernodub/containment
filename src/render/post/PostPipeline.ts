@@ -50,6 +50,8 @@ export class PostPipeline {
   private agx = true;
   private occlusionAlgorithm: AmbientOcclusionAlgorithm = 'gtao';
   private readonly savedClearColor = new Color();
+  private focusDistance = 26;
+  private menuPresentation = false;
 
   constructor(
     private readonly renderer: WebGLRenderer,
@@ -87,6 +89,12 @@ export class PostPipeline {
 
   /** AgX is the default; this switch supports matching-scene AgX evaluation. */
   setToneMapping(operator: 'aces' | 'agx'): void { this.agx = operator === 'agx'; }
+
+  /** Stable focal plane; gameplay blur is confined beyond the combat neighborhood. */
+  setFocus(distance:number, menu=false):void {
+    this.focusDistance=Number.isFinite(distance)?Math.max(1,distance):26;
+    this.menuPresentation=menu;
+  }
 
   /** CSS size plus DPR; resolutionScale is applied exactly once to post targets. */
   setSize(width: number, height: number, pixelRatio = 1): void {
@@ -200,6 +208,8 @@ export class PostPipeline {
       u.bloomEnabled.value = this.options.bloom ? 1 : 0;
       u.distortionEnabled.value = hasDistortion ? 1 : 0;
       u.lensEnabled.value = this.options.lensEffects ? 1 : 0;
+      u.focusDistance.value = this.focusDistance;
+      u.menuPresentation.value = this.menuPresentation ? 1 : 0;
       u.atmosphereEnabled.value = this.options.atmosphere ? 1 : 0;
       u.useAgX.value = this.agx ? 1 : 0;
       this.draw(r.composite, output);
@@ -246,6 +256,7 @@ export class PostPipeline {
       invSize: { value: new Vector2() }, time: { value: 0 },
       aoEnabled: { value: 0 }, bloomEnabled: { value: 0 }, distortionEnabled: { value: 0 },
       lensEnabled: { value: 0 }, atmosphereEnabled: { value: 0 }, useAgX: { value: 0 },
+      focusDistance: { value: 26 }, menuPresentation: { value: 0 },
       toneMappingExposure: { value: 1 }, saturation: { value: 1 }, contrast: { value: 1 },
       lift: { value: new Vector3() }, gain: { value: new Vector3(1, 1, 1) },
       shadowTint: { value: new Color() }, highlightTint: { value: new Color() },

@@ -64,7 +64,7 @@ describe('authored communal garden',()=>{
   const spy=vi.spyOn(texture,'dispose'),before=MAT.steel.color.getHex(),{room}=fixture();
   try{const owner=attachCommunalGarden(room,t,vi.fn(),source);await owner.ready;expect(owner.state).toBe('ready');expect(MAT.steel.color.getHex()).toBe(before);owner.dispose();expect(spy).not.toHaveBeenCalled();}finally{MAT.steel.map=old;texture.dispose();}
  });
- it('replaces rough foliage with all authored triangles in compatible owned batches',async()=>{
+ it('retains the validated donor and upgrades its canopy inside compatible owned batches',async()=>{
   const s=await source(),rough=builder.communalAtrium(t),built=(builder.communalAtrium as any)(t,undefined,s);
   const triangleCount=(r:T.Object3D)=>meshes(r).reduce((n,m)=>n+(m.geometry.index?.count??m.geometry.attributes.position.count)/3,0);
   expect(triangleCount(built)).not.toBe(triangleCount(rough));
@@ -72,8 +72,17 @@ describe('authored communal garden',()=>{
   expect(built.userData.authoredGardenTriangles).toBe(1396);
   const imported=meshes(built).filter(m=>!m.geometry.attributes.uv);expect(imported).toHaveLength(5);
   expect(triangleCount(s)).toBe(1396);
-  // One unchanged main donor, fourteen twelve-triangle leaves and the compact soil box.
-  expect(imported.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0)).toBe(triangleCount(s)+14*12+12);
+  // G2 replaces only the faceted donor crowns with smooth foliage clusters.
+  // Keep donor validation and the original material/footprint/lifecycle budgets;
+  // an exact old crown triangle count would pin the rejected blockout appearance.
+  const importedTriangles=imported.reduce((n,m)=>n+m.geometry.attributes.position.count/3,0);
+  expect(importedTriangles).toBeGreaterThan(triangleCount(s)*2);
+  expect(importedTriangles).toBeLessThan(10000);
+  const foliage=imported.filter(m=>(m.material as T.Material).name==='ca_leaf');
+  expect(foliage).toHaveLength(1);
+  let maxNormalError=0;const normal=new T.Vector3();
+  for(const mesh of foliage){const normals=mesh.geometry.getAttribute('normal');for(let i=0;i<normals.count;i++)maxNormalError=Math.max(maxNormalError,Math.abs(normal.fromBufferAttribute(normals,i).length()-1));}
+  expect(maxNormalError).toBeLessThan(.000005);
   const bounds=new T.Box3();for(const m of imported)bounds.expandByObject(m,true);
   expect(bounds.min.x*32).toBeCloseTo(480);expect(bounds.max.x*32).toBeCloseTo(698);expect(bounds.min.z*32).toBeGreaterThanOrEqual(294);expect(bounds.min.z*32).toBeLessThan(310);expect(bounds.max.z*32).toBeCloseTo(400);expect(bounds.min.y).toBeCloseTo(0);expect(bounds.max.y*32).toBeLessThan(93.909111);
   expect(new Set(meshes(built).map(m=>m.material)).size).toBe(8);
