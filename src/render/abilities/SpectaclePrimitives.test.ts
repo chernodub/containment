@@ -67,4 +67,12 @@ describe('V3 shared spectacle', () => {
     }
     k.clear(); expect(setAbilityPresentation).toHaveBeenLastCalledWith(0, 0, 0); k.dispose();
   });
+
+  it('keeps the heavy impact punch to two frames without extending it through the ordinary camera helper', () => {
+    const k = new ElementKit(new T.Scene()), punch = vi.fn(), addTrauma = vi.fn();
+    k.bind({ lights: {} as never, distortion: {} as never, camera: { punch, addTrauma, kick() {} } });
+    k.camera(.54); expect(punch).toHaveBeenLastCalledWith(.0324, 34);
+    k.setOptions(GRAPHICS_PRESETS.high, 'high', true); k.camera(.92);
+    expect(addTrauma).toHaveBeenCalledOnce(); k.dispose();
+  });
 });

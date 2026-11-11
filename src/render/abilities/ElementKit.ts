@@ -336,7 +336,7 @@ export class ElementKit {
             return;
         this.services?.camera.addTrauma(weight);
         if (weight > .2)
-            this.services?.camera.punch(Math.min(.035, weight * .06), 220);
+            this.services?.camera.punch(Math.min(.035, weight * .06), weight >= .5 ? 34 : 220);
         if (angle !== undefined)
             this.services?.camera.kick(angle, weight * .1);
     }
