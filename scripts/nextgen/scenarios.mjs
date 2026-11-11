@@ -187,7 +187,11 @@ export const SCENARIOS=[
   r.renderer.render=function(scene,camera){const beforeError=gl.getError();if(beforeError&&beforeError!==gl.CONTEXT_LOST_WEBGL)drawErrors.push({when:'before',error:beforeError,stack:new Error().stack});const result=originalRender.call(this,scene,camera),error=gl.getError();if(error&&error!==gl.CONTEXT_LOST_WEBGL)drawErrors.push({name:scene===r.scene?'world':scene===r.hudScene?'hud':scene.children[0]?.material?.name||'other',error,shadow:this.shadowMap.enabled,stack:new Error().stack});return result;};if(!ext)throw Error('Context-loss extension unavailable');
   await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error('Context restoration timeout')),30000);r.canvas.addEventListener('webglcontextrestored',()=>{clearTimeout(timeout);resolve();},{once:true});ext.loseContext();setTimeout(()=>ext.restoreContext(),250);});
   for(let i=0;i<900&&r.roomLoading;i++)await new Promise(requestAnimationFrame);
-  if(r.roomLoading)throw Error('Graphics preparation did not recover');d.refresh();document.querySelector('#graphics-continue')?.click();document.querySelector('#resume')?.click();d.refresh();await d.gotoRoom('infested-workshop');await d.gotoRoom('armory');d.refresh();
+  if(r.roomLoading)throw Error('Graphics preparation did not recover');
+  // GPU readiness can precede the application's next RAF/DOM commit. Exercise
+  // the actual enabled recovery and pause actions; never skip a missing button.
+  const control=async selector=>{for(let i=0;i<900;i++){d.refresh();const button=document.querySelector(selector);if(button&&!button.disabled&&button.getClientRects().length)return button;await new Promise(requestAnimationFrame);}throw Error('Recovery control did not become ready: '+selector);};
+  (await control('#graphics-continue')).click();(await control('#resume')).click();d.refresh();await d.gotoRoom('infested-workshop');await d.gotoRoom('armory');d.refresh();
   r.renderer.render=originalRender;if(drawErrors.length)throw Error('Recovery draw errors '+JSON.stringify(drawErrors));
   d.recoveryProof={before,roomCycles,afterRooms,afterRestore:{...r.renderer.info.memory},programs:r.renderer.info.programs.length,contextLost:gl.isContextLost()};
  }},
