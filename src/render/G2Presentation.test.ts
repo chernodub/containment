@@ -27,8 +27,8 @@ describe('G2 cinematic and room presentation',()=>{
  it('reuses the same prepared light inventory through menu transitions and boss phases',()=>{
   const rig=new SceneLighting();rig.loadRoom(new T.Group(),45,34,'reactor','reactor-vault');const lights:T.Light[]=[];rig.root.traverse(o=>{if(o instanceof T.Light)lights.push(o);});
   const count=lights.length;rig.setMenu(true);rig.setPlayer(23,13,.42);rig.update(.016);rig.setMenu(false);rig.setBossState(22,17,false,false);
-  expect(rig.coreKey.position.y).toBeGreaterThan(rig.coreKey.target.position.y+5);expect(rig.fill.intensity).toBeGreaterThan(.8);const armored=rig.coreKey.intensity;
-  rig.setBossState(22,17,true,false);expect(rig.coreKey.intensity).toBe(armored);rig.setBossState(22,17,false,true);expect(rig.coreKey.intensity).toBeGreaterThan(500);
+  expect(rig.coreKey.position.y).toBeGreaterThan(rig.coreKey.target.position.y+5);expect(rig.fill.intensity).toBeGreaterThan(.5);const armored=rig.coreKey.intensity;
+  rig.setBossState(22,17,true,false);expect(rig.coreKey.intensity).toBe(armored);rig.setBossState(22,17,false,true);expect(rig.coreKey.intensity).toBeGreaterThan(400);
   let after=0;rig.root.traverse(o=>{if(o instanceof T.Light)after++;});expect(after).toBe(count);rig.dispose();
  });
  it('keeps exit guidance flush and freezes only its presentation motion',()=>{
@@ -36,4 +36,11 @@ describe('G2 cinematic and room presentation',()=>{
   updateExitSignal(exit,3,true,false);const m=exit.userData.signal as T.ShaderMaterial;expect(m.uniforms.exitReady.value).toBe(1);expect(m.uniforms.exitTime.value).toBe(3);
   updateExitSignal(exit,4,false,true);expect(m.uniforms.exitReady.value).toBe(0);expect(m.uniforms.exitTime.value).toBe(0);disposeModel(exit);
  });
+});
+
+it('keeps optional domestic task lights supported and leaves the atrium opt-out intact',async()=>{
+ const {addInteriorPracticals}=await import('./lighting/InteriorPracticals');
+ const world=new T.Group(),solid=new T.Mesh(new T.BoxGeometry(2,1,2),new T.MeshStandardMaterial());solid.position.set(2,.5,2);world.add(solid);
+ addInteriorPracticals(world,{obstacles:[{x:32,y:32,width:64,height:64}]},'habitation',true);
+ expect(world.userData.lightFixtures).toHaveLength(1);const light=world.userData.lightFixtures[0];expect(light.y).toBeGreaterThan(1);expect(light.x).toBeGreaterThanOrEqual(1);expect(light.x).toBeLessThanOrEqual(3);disposeModel(world);solid.geometry.dispose();(solid.material as T.Material).dispose();
 });

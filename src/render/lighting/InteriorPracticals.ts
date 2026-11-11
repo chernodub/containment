@@ -44,8 +44,8 @@ function place(anchor: T.Vector3, polygon: Polygon | undefined, x0: number, z0: 
 }
 
 /** Add bounded practical emitters on real non-walkable equipment surfaces, never in circulation lanes. */
-export function addInteriorPracticals(world: T.Group, template: InteriorPlan, environment: ShipEnvironment): void {
-  if (environment === 'reactor' || environment === 'cryogenics' || environment === 'habitation' || world.userData.interiorPracticals) return;
+export function addInteriorPracticals(world: T.Group, template: InteriorPlan, environment: ShipEnvironment, domesticTaskLights=false): void {
+  if (environment === 'reactor' || environment === 'cryogenics' || environment === 'habitation'&&!domesticTaskLights || world.userData.interiorPracticals) return;
   const anchors: {point:T.Vector3;tiny:boolean}[] = [];
   const point = new T.Vector3(), relative = new T.Matrix4(), objectRelative = new T.Matrix4(), instance = new T.Matrix4(), inverse = new T.Matrix4();
   world.updateWorldMatrix(true, true); inverse.copy(world.matrixWorld).invert();

@@ -162,8 +162,8 @@ export class SceneLighting {
   if(this.menuPresentation===enabled)return;this.menuPresentation=enabled;
   if(!enabled){this.applyMood(this.width,this.height);this.playerX=this.playerZ=NaN;return;}
   this.ambient.intensity=.055;this.ambient.color.setHex(0x8098b0);
-  this.key.position.set(21,7,21);this.key.target.position.set(24,1.6,13);this.key.color.setHex(0xd5e9ff);this.key.intensity=this.key instanceof T.SpotLight?1000:3.2;
-  this.fill.position.set(28,4,7);this.fill.target.position.set(24,1,13);this.fill.color.setHex(0x749bab);this.fill.intensity=.65;
+  this.key.position.set(21,7,21);this.key.target.position.set(24,1.6,13);this.key.color.setHex(0xd5e9ff);this.key.intensity=this.key instanceof T.SpotLight?1000:4.2;
+  this.fill.position.set(28,4,7);this.fill.target.position.set(24,1,13);this.fill.color.setHex(0x749bab);this.fill.intensity=.9;
   this.rim.position.set(29,6,9);this.rim.target.position.set(24,1,13);this.rim.color.setHex(0xa3dfee);this.rim.intensity=2.4;
   for(let i=0;i<4;i++){const light=this.fixtures[i];light.position.set(i?28:23,3.5,i?8.5:12);light.color.setHex(i?0xff9d64:0x9fe8ff);light.intensity=i<2?85:0;light.distance=9;}
   this.lamp.setRoom(0);this.lamp.light.intensity=2;
@@ -172,8 +172,8 @@ export class SceneLighting {
  setBossState(x:number,z:number,vulnerable:boolean,defeated:boolean){
   if(!this.bossArena||this.menuPresentation)return;
   this.coreKey.position.set(x,9,z+7);this.coreKey.target.position.set(x,1.2,z);
-  this.coreKey.color.setHex(vulnerable?0xe5ffd4:0xffe6c6);this.coreKey.intensity=defeated?900:1250;
-  this.fill.intensity=defeated?.8:1.25;this.rim.intensity=.65;
+  this.coreKey.color.setHex(vulnerable?0xe5ffd4:0xffe6c6);this.coreKey.intensity=defeated?480:720;
+  this.fill.intensity=defeated?.45:.58;this.rim.intensity=.55;
   this.fixtures[0].position.set(x,4.5,z+1.8);this.fixtures[0].color.setHex(vulnerable?0xb6ff85:0xc0dcff);this.fixtures[0].distance=14;
  }
  invalidateShadows(){for(const light of [this.directionalKey,this.coreKey]){light.shadow.map?.dispose();light.shadow.map=null;light.shadow.mapPass?.dispose();light.shadow.mapPass=null;light.shadow.needsUpdate=true;}}
@@ -198,10 +198,10 @@ export class SceneLighting {
   for(const [light,data] of [[this.key,mood.key],[this.fill,mood.fill],[this.rim,mood.rim]] as const){light.color.setHex(data.color);light.intensity=data.intensity*(data.irradianceScale??1);light.target.position.set(width/2,0,height/2);light.position.set(width/2+data.offset[0],data.offset[1],height/2+data.offset[2]);}
   if(!reactor){const offset=this.composition===roomComposition()?mood.key.offset:this.composition.keyOffset;this.key.position.set(width/2+offset[0],offset[1],height/2+offset[2]);this.key.intensity*=this.composition.keyGain;this.fill.intensity*=this.composition.fillGain;}
   if(reactor){
-   const shadowSize=this.shadowQuality==='low'?512:1024;this.coreKey.shadow.mapSize.set(shadowSize,shadowSize);
+   this.coreKey.angle=this.bossArena?.58:Math.PI*.4;this.coreKey.penumbra=.72;const shadowSize=this.shadowQuality==='low'?512:1024;this.coreKey.shadow.mapSize.set(shadowSize,shadowSize);
    const core=this.staging;this.coreKey.position.set(core?.coreX??width/2,core?.coreY??3.2,core?.coreZ??height/2);
    this.coreKey.target.position.set(width*.12,0,core?.coreZ??height/2);this.coreKey.intensity=mood.key.intensity*980*this.composition.keyGain;this.coreKey.distance=Math.max(30,Math.hypot(width,height)*1.1);this.fill.intensity*=this.composition.fillGain;
-   if(this.bossArena){this.coreKey.position.set(width/2,9,height/2+7);this.coreKey.target.position.set(width/2,1.2,height/2);this.coreKey.intensity=1250;this.coreKey.color.setHex(0xffe6c6);this.fill.intensity=1.25;this.rim.color.setHex(0x9ecfe6);this.rim.intensity=.65;this.ambient.intensity=.13;}
+   if(this.bossArena){this.coreKey.position.set(width/2,9,height/2+7);this.coreKey.target.position.set(width/2,1.2,height/2);this.coreKey.intensity=720;this.coreKey.color.setHex(0xffe6c6);this.fill.intensity=.58;this.rim.color.setHex(0x9ecfe6);this.rim.intensity=.65;this.ambient.intensity=.09;}
   }
  }
 }

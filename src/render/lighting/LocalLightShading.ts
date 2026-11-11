@@ -20,6 +20,12 @@ float roomKeyOcclusion = 1.0;
 #endif
 `;
 const practicalOcclusion = /* glsl */ `
+  // Practical fixtures represent broad diffusers, not mathematical pin lights.
+  // Bound near-field irradiance so nearby machine roofs retain their finish.
+  #if UNROLLED_LOOP_INDEX < 4
+    float roomPracticalDistance = length( pointLight.position - geometryPosition );
+    directLight.color *= min( 1.0, roomPracticalDistance * roomPracticalDistance / 3.24 );
+  #endif
   #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0 && UNROLLED_LOOP_INDEX < 4
     directLight.color *= mix( 0.025, 1.0, roomKeyOcclusion );
   #endif
@@ -64,6 +70,6 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
     shader.uniforms??={};shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;
     shader.fragmentShader = 'uniform float roomDiffuseEnvironmentGain;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', localLights).replace('#include <lights_fragment_maps>',reflectionLighting);
   };
-  material.customProgramCacheKey = () => `${key}:local-light-rejection-v3`;
+  material.customProgramCacheKey = () => `${key}:local-light-rejection-v4`;
   material.needsUpdate = true;
 }

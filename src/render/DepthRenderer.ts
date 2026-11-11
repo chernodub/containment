@@ -98,7 +98,7 @@ export class DepthRenderer {
   const ringMat=new T.MeshBasicMaterial({color:0xff7850,transparent:true,opacity:.9,depthWrite:false,side:T.DoubleSide});
   const outer=new T.Mesh(new T.RingGeometry(.965,1,64),ringMat);outer.rotation.x=-Math.PI/2;this.warning.add(outer);
   const disk=new T.Mesh(new T.CircleGeometry(.95,64),new T.MeshBasicMaterial({color:0xf86839,transparent:true,opacity:.12,depthWrite:false,side:T.DoubleSide}));disk.rotation.x=-Math.PI/2;this.warning.add(disk);this.scene.add(this.warning);this.warning.visible=false;
-  this.menuActors.add(this.menuMarine.root,this.menuAlien.root);this.menuMarine.root.scale.setScalar(1.8);this.menuAlien.root.scale.multiplyScalar(1.5);this.scene.add(this.menuActors);
+  this.menuActors.add(this.menuMarine.root,this.menuAlien.root);this.menuMarine.root.scale.setScalar(1.8);this.menuAlien.root.scale.multiplyScalar(.95);this.menuAlien.root.traverse(o=>{if(o instanceof T.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof T.MeshStandardMaterial)m.color.multiplyScalar(.4);});this.scene.add(this.menuActors);
   this.contextResources.track(this.scene);this.contextResources.track(this.hudScene);this.resize();
  }
  get qualityTier(){return this.tier;}
@@ -366,7 +366,7 @@ export class DepthRenderer {
   // Flat markings and obstacle-supported dressing are registered before room preparation.
   addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
-  this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment);
+  this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment);
   const mood=getEnvironmentMood(environment);this.scene.fog=new T.FogExp2(mood.fog.color,mood.fog.density*.25);this.scene.background=new T.Color(mood.fog.color).multiplyScalar(.24);this.scene.environmentIntensity=mood.reflectionIntensity;this.post?.setMood(mood);this.atmosphere?.loadRoom(environment,w,h,this.lighting.fixtures);this.backdrop?.loadRoom(this.world,w,h,environment);this.arena?.loadRoom(node.templateId,w,h);this.post?.distortion.clear();this.heatClock=0;
   const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged))this.queueRoomWarmup();
  }
@@ -429,7 +429,7 @@ export class DepthRenderer {
   let healthCount=0;for(const e of enemies){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=e.x/UNIT;bar.z=e.y/UNIT;bar.height=this.actors.get(e.id)?.height??1;bar.health=e.health;bar.maxHealth=e.maxHealth;bar.elite=e.elite;bar.armor=e.armor;bar.status=this.actors.get(e.id)?.root.userData.visualStatus;}for(const n of game.boss.snapshot.nests){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=n.x/UNIT;bar.z=n.y/UNIT;bar.height=1.35;bar.health=n.health;bar.maxHealth=n.maxHealth;bar.elite=false;bar.armor=0;bar.status=undefined;}for(let i=healthCount;i<128;i++)this.healthEntries[i].health=0;
   this.healthBars.update(this.healthEntries,this.camera,this.canvas.clientHeight,menu);
   this.menuActors.visible=menu;
-  if(menu){this.menuMarine.root.position.set(23,0,13);this.menuAlien.root.position.set(28,0,9.8);this.menuMarine.animate(this.time,0,.42);this.menuAlien.animate(this.time,.12,Math.PI+.5);}
+  if(menu){this.menuMarine.root.position.set(23,0,13);this.menuAlien.root.position.set(27.2,0,6.8);this.menuMarine.animate(this.time,0,.42);this.menuAlien.animate(this.time,.12,Math.PI+.5);}
   this.lastMenu=menu;
   const q=game.boss.snapshot;this.lighting.setBossState?.(q.x/UNIT,q.y/UNIT,q.vulnerable,q.defeated);
   this.warning.visible=!!q.pendingTelegraph&&!menu;
