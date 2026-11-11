@@ -65,6 +65,7 @@ export class AbilityGeometry {
     private readonly eventShape: Telegraph = { shape: 'circle', x: 0, z: 0 };
     private readonly footprint: Telegraph = { shape: 'circle', x: 0, z: 0, progress: 1 };
     private readonly link: EnergyRibbon = { start: new T.Vector3(), end: new T.Vector3(), lightning: false };
+    protected ownsLinkPresentation = true;
     private nextEvent = 0;
     private time = 0;
     private reducedMotion = false;
@@ -258,6 +259,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
             this.link.end.set(ex, .35, ez);
             this.link.width = .035;
             this.link.color = COLORS.arc;
+            if (this.ownsLinkPresentation) this.ribbons.append(this.link, this.time, this.reducedMotion);
 
         }
         for (const slot of this.events) {
