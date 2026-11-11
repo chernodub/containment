@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {Point,RoomTemplate} from '../game/roguelike/types';
 
@@ -13,16 +14,27 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
  const finish=(name:string,color:number,roughness=.78,metalness=.2)=>{const m=new T.MeshStandardMaterial({color,roughness,metalness});m.name=name;m.userData.actorMaterial=true;return m;};
  const deck=finish('annulus-deck',0x3d4b51),ceramic=finish('annulus-ceramic',0xb8bab0,.9,.03),metal=finish('annulus-bands',0x66777b,.43,.65),dark=finish('annulus-sealed',0x273237),amber=finish('annulus-unarmed-service',0xb49852),vitals=finish('annulus-living-vitals',0x80aca0);
  const circulation=finish('annulus-circulation',0x69777a,.88,.12),ceramicShade=finish('annulus-ceramic-shadow',0x909b98,.92,.03);
+ // Ceramic glazes retain dry diffuse response; tiny manufacturing variation
+ // distinguishes them from unshaded blockout clay without adding a texture.
+ for(const m of [ceramic,ceramicShade,metal]){
+  m.onBeforeCompile=shader=>{
+   shader.vertexShader='varying vec3 annulusFinish;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nannulusFinish=position;');
+   shader.fragmentShader='varying vec3 annulusFinish;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+    float glaze=.5+.5*sin(annulusFinish.x*133.0+sin(annulusFinish.z*171.0));
+    float brushed=.5+.5*sin(annulusFinish.y*173.0+annulusFinish.z*37.0);
+    diffuseColor.rgb*=.96+glaze*.024+brushed*.016;`);
+  };m.customProgramCacheKey=()=> 'g2-annulus-manufactured-v1';
+ }
  const parts=new Map<T.Material,T.BufferGeometry[]>();
  const add=(g:T.BufferGeometry,m:T.Material,x=0,y=0,z=0,angle=0)=>{
   g.rotateY(angle);g.translate(x,y,z);const flat=g.index?g.toNonIndexed():g;if(flat!==g)g.dispose();
   const list=parts.get(m)??[];list.push(flat);parts.set(m,list);
  };
- const box=(m:T.Material,x:number,z:number,w:number,d:number,bottom:number,height:number,angle=0)=>add(new T.BoxGeometry(w/32,height/32,d/32),m,x/32,(bottom+height/2)/32,z/32,angle);
+ const box=(m:T.Material,x:number,z:number,w:number,d:number,bottom:number,height:number,angle=0)=>{const bevel=m===metal&&((bottom===11&&height===6)||(bottom===39&&height===3));add(bevel?new RoundedBoxGeometry(w/32,height/32,d/32,1,.65/32):new T.BoxGeometry(w/32,height/32,d/32),m,x/32,(bottom+height/2)/32,z/32,angle);};
  const path=(p:readonly Point[])=>p.map(q=>new T.Vector2(q.x/32,-q.y/32));
  const slab=(outline:readonly Point[],bottom:number,height:number,m:T.Material,holes:readonly (readonly Point[])[]=[])=>{
   const shape=new T.Shape(path(outline));for(const h of holes)shape.holes.push(new T.Path(path(h)));
-  const g=new T.ExtrudeGeometry(shape,{depth:height/32,bevelEnabled:false,steps:1});g.rotateX(-Math.PI/2);add(g,m,0,bottom/32,0);
+  const beveled=(m===ceramic||m===ceramicShade)&&bottom>=11;const g=new T.ExtrudeGeometry(shape,{depth:height/32,bevelEnabled:beveled,bevelSize:.45/32,bevelThickness:.25/32,bevelSegments:1,steps:1});g.rotateX(-Math.PI/2);add(g,m,0,bottom/32,0);
  };
  const boundary=t.boundary!,core=t.voids![0];
  slab(boundary,-14,14,deck,t.voids);slab(core,-14,25,dark);
@@ -48,8 +60,15 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
   const a=i*Math.PI/8;
   slab(sector(57,153,a+.012,a+Math.PI/8-.012),29,i%4===0?5:3,i%4===0?ceramicShade:ceramic);
  }
- const hatch=new T.CylinderGeometry(56/32,60/32,7/32,16);add(hatch,metal,600/32,31.5/32,440/32);
- const hatchFace=new T.CylinderGeometry(49/32,49/32,2/32,16);add(hatchFace,ceramicShade,600/32,36/32,440/32);
+ // Paired roof fasteners and segmented seal traces stay on sealed ceramic.
+ for(let i=0;i<16;i++){
+  const a=(i+.5)*Math.PI/8,top=i%4===0?34:32;
+  for(const radius of [70,139]){
+   const bolt=new T.CylinderGeometry(1.3/32,1.3/32,.8/32,10);add(bolt,metal,(600+Math.cos(a)*radius)/32,(top+.5)/32,(440+Math.sin(a)*radius*157/170)/32);
+  }
+ }
+ const hatch=new T.CylinderGeometry(56/32,60/32,7/32,48);add(hatch,metal,600/32,31.5/32,440/32);
+ const hatchFace=new T.CylinderGeometry(49/32,49/32,2/32,48);add(hatchFace,ceramicShade,600/32,36/32,440/32);
  for(const x of [579,621])box(dark,x,440,6,46,37,1);
  for(let i=0;i<16;i++){
   const a=i*Math.PI/8,start=a-Math.PI/16,end=a+Math.PI/16,near=Math.sin(a)>0;

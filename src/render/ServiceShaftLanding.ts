@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type {RoomTemplate,Point} from '../game/roguelike/types';
 
 const U=32;
@@ -10,7 +11,16 @@ export function serviceShaftLanding(t:RoomTemplate):T.Group{
   const m=new T.MeshStandardMaterial({name:`shaft-${name}`,color,metalness,roughness:.72,emissive,emissiveIntensity:emissive?.35:0});m.userData.actorMaterial=true;return m;
  };
  const steel=material('steel',0x46565f,.65),zinc=material('zinc',0x9aa8aa,.65),dark=material('depth',0x202e3a,.25),deck=material('deck',0x58676a,.25),amber=material('amber',0xcb9552,.35,0x7a481d),fiber=material('fiber',0x75acb5,.2,0x24454b);
- zinc.roughness=.48;deck.roughness=.92;dark.roughness=.88;
+ zinc.roughness=.48;steel.roughness=.58;deck.roughness=.92;dark.roughness=.88;
+ for(const m of [steel,zinc]){
+  m.onBeforeCompile=shader=>{
+   shader.vertexShader='varying vec3 shaftFinish;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nshaftFinish=position;');
+   shader.fragmentShader='varying vec3 shaftFinish;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+    float brushed=.5+.5*sin(shaftFinish.x*121.0+shaftFinish.z*71.0);
+    float weldWear=.5+.5*sin(shaftFinish.y*19.0+sin(shaftFinish.z*17.0));
+    diffuseColor.rgb*=.93+brushed*.035+weldWear*.035;`);
+  };m.customProgramCacheKey=()=> 'g2-shaft-manufactured-v1';
+ }
  const grate=material('worn-grate',0x687c83,.5);grate.roughness=.84;
  // Low-contrast rolled-metal grain, generated locally with no borrowed assets.
  const pixels=new Uint8Array(64*64*4);
@@ -28,10 +38,10 @@ export function serviceShaftLanding(t:RoomTemplate):T.Group{
   geometry.userData.environmentUV=true;
   const o=new T.Mesh(geometry,m);o.castShadow=true;o.receiveShadow=true;g.add(o);return o;
  };
- const box=(g:T.Group,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const o=mesh(g,new T.BoxGeometry(w/U,h/U,d/U),m);o.position.set(x/U,y/U,z/U);return o;};
+ const box=(g:T.Group,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const manufactured=['guides','counterweight','weight-frame','local-junction'].includes(g.name)||g.name.startsWith('sheave-');const radius=Math.min(1.1,w*.12,h*.12,d*.12)/U;const o=mesh(g,manufactured&&Math.min(w,h,d)>=6?new RoundedBoxGeometry(w/U,h/U,d/U,1,radius):new T.BoxGeometry(w/U,h/U,d/U),m);o.position.set(x/U,y/U,z/U);return o;};
  const beam=(g:T.Group,a:number[],b:number[],radius:number,m:T.Material)=>{
   const p=new T.Vector3(...a.map(n=>n/U) as [number,number,number]),q=new T.Vector3(...b.map(n=>n/U) as [number,number,number]);
-  const o=mesh(g,new T.CylinderGeometry(radius/U,radius/U,p.distanceTo(q),8),m);o.position.copy(p).add(q).multiplyScalar(.5);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),q.sub(p).normalize());return o;
+  const o=mesh(g,new T.CylinderGeometry(radius/U,radius/U,p.distanceTo(q),16),m);o.position.copy(p).add(q).multiplyScalar(.5);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),q.sub(p).normalize());return o;
  };
  const path=(points:readonly Point[])=>points.map(p=>new T.Vector2(p.x/U,-p.y/U));
  const outline=t.boundary??[{x:0,y:0},{x:t.width,y:0},{x:t.width,y:t.height},{x:0,y:t.height}];
@@ -82,9 +92,9 @@ export function serviceShaftLanding(t:RoomTemplate):T.Group{
   // Paired cheeks leave a dark rope groove. The axle runs through the hub,
   // with two bearing blocks carried by the guide head, not across the wheel.
   for(const z of [426,434]){
-   const rim=mesh(wheel,new T.TorusGeometry(22/U,3/U,8,24),zinc);rim.position.set(x/U,99/U,z/U);rim.name='rim';
+   const rim=mesh(wheel,new T.TorusGeometry(22/U,3/U,10,40),zinc);rim.position.set(x/U,99/U,z/U);rim.name='rim';
   }
-  const groove=mesh(wheel,new T.TorusGeometry(21/U,2/U,8,24),dark);groove.position.set(x/U,99/U,430/U);
+  const groove=mesh(wheel,new T.TorusGeometry(21/U,2/U,10,40),dark);groove.position.set(x/U,99/U,430/U);
   beam(wheel,[x,99,423],[x,99,439],7,steel).name='hub';
   beam(wheel,[x,99,408],[x,99,452],3,zinc).name='axle';
   for(const [z,name] of [[411,'bearing-rear'],[449,'bearing-front']] as const){
@@ -97,6 +107,12 @@ export function serviceShaftLanding(t:RoomTemplate):T.Group{
   for(const dx of [-22,22])beam(sheaves,[x+dx,-126,430],[x+dx,99,430],1.6,zinc);
  }
  box(guides,580,69,430,228,16,28,steel);
+ // Flush splice seam and captive bolt heads read as manufactured lift hardware.
+ box(guides,580,77.12,430,194,.18,1.1,dark).name='guide-head-splice';
+ for(const x of [492,526,634,668])for(const z of [421,439]){
+  const bolt=mesh(guides,new T.CylinderGeometry(1.35/U,1.35/U,.9/U,10),zinc);bolt.name='guide-captive-fastener';bolt.position.set(x/U,77.45/U,z/U);
+ }
+
  // Expose the rear structural bay above the rim. Its lower posts still reach
  // the shaft base; the diagonal is clear of the counterweight silhouette.
  for(const [z,low,high] of [[285,-15,65],[530,-128,-22]]){
