@@ -30,6 +30,10 @@ export class BreacherPresentation implements AbilityPresentation {
   private nextCast = 0;
   private nextImpact = 0;
   private emissionClock = 0;
+  private ramStartX = 0;
+  private ramStartZ = 0;
+  private ramStartAge = 0;
+  private ramStartValid = false;
   private disposed = false;
 
   constructor(private readonly kit: ElementKit) {}
@@ -47,12 +51,15 @@ export class BreacherPresentation implements AbilityPresentation {
       return;
     }
     if (event.ability === 'ram' && event.phase === 'dash-start') {
+      this.ramStartX = x; this.ramStartZ = z; this.ramStartAge = 0; this.ramStartValid = true;
       this.impact('ram', x, z, angle, (event.length ?? 150) / UNIT, .32);
       // Universal dash camera/pose feedback is applied once by the system presentation.
       return;
     }
     if (event.ability === 'ram' && event.phase === 'dash-end') {
       const tx=(event.targetX??worldX)/UNIT,tz=(event.targetY??worldY)/UNIT;
+      if (this.ramStartValid && this.ramStartAge <= .5) this.ramSkids(tx, tz);
+      this.ramStartValid = false;
       this.impact('ram-arrival', tx, tz, angle, .68, .3);
       this.kit.burst(tx, .25, tz, 'kinetic', 20, 3.3, .55);
       const nx = Math.cos(angle), nz = Math.sin(angle), dust = this.kit.low ? 4 : 10;
@@ -130,9 +137,30 @@ export class BreacherPresentation implements AbilityPresentation {
     }
   }
 
+  private ramSkids(x: number, z: number): void {
+    const dx = x - this.ramStartX, dz = z - this.ramStartZ, length = Math.hypot(dx, dz);
+    if (length < .08) return;
+    const nx = dx / length, nz = dz / length, angle = Math.atan2(dz, dx);
+    for (let side = -1; side <= 1; side += 2) {
+      const sx = -nz * side * .38, sz = nx * side * .38;
+      // Both traces stop at the observed arrival; the dash-start target is deliberately unused.
+      this.kit.scar('trench', (this.ramStartX + x) * .5 + sx, (this.ramStartZ + z) * .5 + sz,
+        length * .5, 0x352a20, 2.4, angle, .075);
+      this.kit.beam(this.ramStartX + sx, .055, this.ramStartZ + sz, x + sx, .055, z + sz,
+        AMBER, .04, .65, false);
+    }
+    const dust = this.kit.low ? 2 : 4;
+    for (let i = 0; i < dust; i++) {
+      const t = (i + .5) / dust;
+      this.kit.mote('smoke', this.ramStartX + dx * t, .12, this.ramStartZ + dz * t,
+        nx * .2, .12, nz * .2, .38 + i % 2 * .12, .85, DUST);
+    }
+  }
+
   update(frame: AbilityFrame): void {
     if (this.disposed) return;
     const dt = Number.isFinite(frame.dt) ? Math.max(0, frame.dt) : 0;
+    if (this.ramStartValid) this.ramStartAge += dt;
     this.emissionClock += dt;
     const emit = dt > 0 && this.emissionClock >= (this.kit.low ? .1 : .035);
     if (emit) this.emissionClock = 0;
@@ -400,6 +428,7 @@ export class BreacherPresentation implements AbilityPresentation {
     for (const p of this.impacts) p.live = false;
     for (const b of this.barriers) { b.id = -1; b.seen = false; b.pulse = 0; }
     this.emissionClock = 0;
+    this.ramStartValid = false; this.ramStartAge = 0;
   }
 
   dispose(): void {

@@ -159,6 +159,30 @@ describe('Breacher presentation', () => {
     }
   });
 
+  it('places two short Ram skids only between observed dash endpoints, with no speculative future mark', () => {
+    for (const low of [false, true]) {
+      const kit = kitMock(low), fx = new BreacherPresentation(kit as unknown as ElementKit);
+      fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-start', angle: 0, targetX: 960, targetY: 96 }), 64, 96);
+      expect(kit.scar).not.toHaveBeenCalled(); expect(kit.beam).not.toHaveBeenCalled();
+      fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-end', angle: 0, targetX: 192, targetY: 96 }), 64, 96);
+      expect(kit.scar).toHaveBeenCalledTimes(2); expect(kit.beam).toHaveBeenCalledTimes(2);
+      for (const scar of kit.scar.mock.calls) {
+        expect(scar[0]).toBe('trench'); expect(scar[1]).toBe(4); expect(scar[3]).toBe(2);
+        expect(Math.abs(scar[2] - 3)).toBeCloseTo(.38); expect(scar[5]).toBe(2.4);
+      }
+      for (const heat of kit.beam.mock.calls) {
+        expect(heat[0]).toBe(2); expect(heat[3]).toBe(6); expect(heat[1]).toBe(.055);
+        expect(heat[8]).toBeLessThan(1); expect(heat[9]).toBe(false);
+      }
+      fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-end', targetX: 224, targetY: 96 }), 64, 96);
+      expect(kit.scar).toHaveBeenCalledTimes(2); // A duplicate arrival cannot reuse an old start.
+      fx.clear(); kit.scar.mockClear();
+      fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-start' }), 64, 96); fx.clear();
+      fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-end', targetX: 224, targetY: 96 }), 64, 96);
+      expect(kit.scar).not.toHaveBeenCalled(); fx.dispose();
+    }
+  });
+
   it('locates Rail slag at the first authored wall, once, and emits nothing on paused refresh', () => {
     const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
     const game = { geometry: { bounds: { x: 0, y: 0, width: 960, height: 640 }, blockers: [{ x: 320, y: 64, width: 20, height: 80 }] } } as never;
