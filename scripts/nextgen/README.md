@@ -233,3 +233,18 @@ The deterministic `AbilityBudgets.test.ts`, `InstanceBatch.test.ts`, `ActorHotPa
 `DeathRagdolls.test.ts` checks bound inventories, scratch/buffer reuse and hierarchy work. Timing
 budgets are hardware acceptance criteria, not flaky wall-clock unit tests. Do not certify quiet-host
 60fps from a contested-host table or from frozen gallery timings.
+
+## Opt-in operation cost audit
+
+`--audit-costs` adds operation counts to the existing benchmark. Run this separately from quiet timing measurements:
+
+```sh
+npm run bench -- --label=p1-costs --rooms=relay-racks,diagnostic-gallery --rigs=arc --tiers=high,low --repeat=1 --audit-costs
+node scripts/nextgen/bench.mjs --self-test
+```
+
+The audit wraps WebGL methods only for the measured trial. `benchmark.json` retains per-frame typed-array samples and p50/p95/max summaries for all GL driver API calls, `useProgram` calls and changed program handles, state setter calls, uniform uploads, all matrix compositions, local Object3D compositions, and writes that recompute Object3D world matrices. State setter counts describe actual driver calls; they do not claim that every call changed its previous value. Program switches compare against the current bound program when the probe starts.
+
+Shadow counts come from actual shadow-map target bindings and draws inside `shadowMap.render`, including zero when cached shadows skip rendering. Post counts include the scene color pass and each fullscreen pass; each pass retains the actual target width/height, calls per frame, and aggregate pixel count. Low therefore records its forward scene pass with zero fullscreen post passes. Attack particle counts measure entries visited by `drawParticles`; ability counts measure live particles advanced by `ElementKit.begin`, with its full slot scan count retained separately. GPU atmosphere particles are excluded from CPU particle simulation counts.
+
+All wrappers are restored after the trial. Audit timings include intentional JavaScript probe overhead and must not be presented as quiet frame-budget certification. Gameplay, population, draw, program-creation and resource assertions remain active. `--profile` can additionally retain the existing CPU/heap/GC profiles, with both kinds of instrumentation explicitly flagged in the report.

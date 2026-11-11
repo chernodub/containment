@@ -10,6 +10,122 @@ import {chromium} from 'playwright';
 import {stageV2} from './v2-scenarios.mjs';
 import {SCENARIOS} from './scenarios.mjs';
 
+/** Opt-in browser probe; all wrappers and retained counters are removed after each trial. */
+function installCostAudit(r = globalThis.__containmentDebug.renderer) {
+ if(r.__benchCostAudit)throw Error('Cost audit already installed');
+ const renderer=r.renderer,gl=renderer.getContext(),undo=[];
+ const keys=['glDriverCalls','glUseProgramCalls','glProgramSwitches','glStateCalls','glUniformUploads','matrixComposes','localMatrixComposes','worldMatrixRecomputes','shadowMapsRendered','shadowDraws','shadowPixels','postPasses','postPixels','attackParticlesAdvanced','abilityParticlesAdvanced','abilityParticleSlotsScanned','particlesAdvanced'];
+ const postNames=['sceneColor','contactAO','gtao','aoDenoise','bloomExtract','bloomBlurHorizontal','bloomBlurVertical','distortion','composite','other'];
+ for(const name of postNames)keys.push('post_'+name);
+ const counters=Object.fromEntries(keys.map(key=>[key,0]));
+ const postPasses=postNames.map(name=>({name,resolutions:[]}));
+ function wrap(object,name,factory){
+  if(!object||typeof object[name]!=='function')return;
+  const own=Object.getOwnPropertyDescriptor(object,name),original=object[name];
+  object[name]=factory(original);
+  undo.push(()=>{if(own)Object.defineProperty(object,name,own);else delete object[name];});
+ }
+ const stateMethods=new Set(['activeTexture','bindTexture','bindBuffer','bindBufferBase','bindBufferRange','bindFramebuffer','bindRenderbuffer','bindVertexArray','blendColor','blendEquation','blendEquationSeparate','blendFunc','blendFuncSeparate','clearColor','clearDepth','clearStencil','colorMask','cullFace','depthFunc','depthMask','depthRange','disable','enable','frontFace','lineWidth','pixelStorei','polygonOffset','sampleCoverage','scissor','stencilFunc','stencilFuncSeparate','stencilMask','stencilMaskSeparate','stencilOp','stencilOpSeparate','viewport','drawBuffers','readBuffer','uniformBlockBinding']);
+ const methods=new Set();
+ for(let prototype=gl;prototype&&prototype!==Object.prototype;prototype=Object.getPrototypeOf(prototype)){
+  for(const [name,descriptor] of Object.entries(Object.getOwnPropertyDescriptors(prototype)))if(name!=='constructor'&&typeof descriptor.value==='function')methods.add(name);
+ }
+ let lastProgram=typeof gl.getParameter==='function'?gl.getParameter(gl.CURRENT_PROGRAM):undefined;
+ for(const name of methods)wrap(gl,name,original=>function(...parameters){
+  counters.glDriverCalls++;
+  if(name==='useProgram'){counters.glUseProgramCalls++;if(lastProgram!==parameters[0]){counters.glProgramSwitches++;lastProgram=parameters[0];}}
+  if(stateMethods.has(name))counters.glStateCalls++;
+  if(/^uniform(?:[1234](?:f|i|ui)v?|Matrix[234](?:x[234])?fv)$/.test(name))counters.glUniformUploads++;
+  return original.apply(this,parameters);
+ });
+ // Count actual writes to Object3D matrices, including static objects forced by ancestors.
+ // Scratch/instance matrix composition is reported separately from local object matrices.
+ const localMatrices=new WeakSet(),worldMatrices=new WeakSet();
+ const track=object=>{if(object?.matrix)localMatrices.add(object.matrix);if(object?.matrixWorld)worldMatrices.add(object.matrixWorld);};
+ for(const scene of [r.scene,r.hudScene])scene?.traverse(track);track(r.camera);
+ let objectPrototype=Object.getPrototypeOf(r.scene);
+ while(objectPrototype&&!Object.hasOwn(objectPrototype,'updateMatrix'))objectPrototype=Object.getPrototypeOf(objectPrototype);
+ for(const name of ['updateMatrix','updateMatrixWorld','updateWorldMatrix'])wrap(objectPrototype,name,original=>function(...parameters){track(this);return original.apply(this,parameters);});
+ const matrixPrototype=Object.getPrototypeOf(r.scene.matrix);
+ wrap(matrixPrototype,'compose',original=>function(...parameters){counters.matrixComposes++;if(localMatrices.has(this))counters.localMatrixComposes++;return original.apply(this,parameters);});
+ for(const name of ['copy','multiplyMatrices'])wrap(matrixPrototype,name,original=>function(...parameters){if(worldMatrices.has(this))counters.worldMatrixRecomputes++;return original.apply(this,parameters);});
+ let shadowLights=null,insidePost=false;
+ wrap(renderer.shadowMap,'render',original=>function(lights,...parameters){const previous=shadowLights;shadowLights=lights;try{return original.call(this,lights,...parameters);}finally{shadowLights=previous;}});
+ wrap(renderer,'setRenderTarget',original=>function(target,...parameters){
+  if(shadowLights&&target&&shadowLights.some(light=>light.shadow?.map===target)){counters.shadowMapsRendered++;counters.shadowPixels+=target.width*target.height;}
+  return original.call(this,target,...parameters);
+ });
+ wrap(renderer,'renderBufferDirect',original=>function(...parameters){if(shadowLights)counters.shadowDraws++;return original.apply(this,parameters);});
+ function postPass(name,target){
+  counters.postPasses++;counters['post_'+name]++;
+  const width=target?.width??gl.drawingBufferWidth,height=target?.height??gl.drawingBufferHeight;
+  counters.postPixels+=width*height;
+  const descriptor=postPasses[postNames.indexOf(name)];
+  if(!descriptor.resolutions.some(size=>size.width===width&&size.height===height))descriptor.resolutions.push({width,height});
+ }
+ wrap(r.post,'render',original=>function(...parameters){const previous=insidePost;insidePost=true;try{return original.apply(this,parameters);}finally{insidePost=previous;}});
+ wrap(renderer,'render',original=>function(scene,...parameters){if(insidePost&&scene===r.scene)postPass('sceneColor',renderer.getRenderTarget());return original.call(this,scene,...parameters);});
+ wrap(r.post,'draw',original=>function(material,target,...parameters){
+  const resources=this.resources;
+  let name='other';
+  if(material===resources?.occlusion)name='contactAO';
+  else if(material===resources?.gtao?.material)name='gtao';
+  else if(material===resources?.gtao?.denoiseMaterial)name='aoDenoise';
+  else if(material===resources?.extract)name='bloomExtract';
+  else if(material===resources?.blur)name=target===resources.bloomB?'bloomBlurHorizontal':'bloomBlurVertical';
+  else if(material===resources?.distort)name='distortion';
+  else if(material===resources?.composite)name='composite';
+  postPass(name,target);return original.call(this,material,target,...parameters);
+ });
+ // AttackEffects visits these exact lists after spawning bullet trails during update.
+ wrap(r.effects,'drawParticles',original=>function(list,mesh,dt,...parameters){if(dt>0){counters.attackParticlesAdvanced+=list.length;counters.particlesAdvanced+=list.length;}return original.call(this,list,mesh,dt,...parameters);});
+ wrap(r.interimAbilities?.kit,'begin',original=>function(dt,...parameters){
+  counters.abilityParticleSlotsScanned+=this.particles.length;
+  if(dt>0)for(const particle of this.particles)if(particle.live){counters.abilityParticlesAdvanced++;counters.particlesAdvanced++;}
+  return original.call(this,dt,...parameters);
+ });
+ const reset=()=>{for(const key of keys)counters[key]=0;};
+ const api={keys,counters,postPasses,reset,sample(values,index){for(const key of keys)values[key][index]=counters[key];reset();},dispose(){for(let index=undo.length-1;index>=0;index--)undo[index]();delete r.__benchCostAudit;}};
+ r.__benchCostAudit=api;
+ return {keys,postPasses};
+}
+
+async function costAuditSelfTest(){
+ const T=await import('three');
+ const scene=new T.Scene(),child=new T.Object3D();scene.add(child);
+ const gl={drawingBufferWidth:1920,drawingBufferHeight:1080,useProgram(){},bindTexture(){},uniform1f(){},uniformMatrix4fv(){},getError(){return 0;}};
+ const originalGL={...gl},target={width:256,height:128},light={shadow:{map:target}};
+ let currentTarget=null;
+ const renderer={getContext:()=>gl,getRenderTarget:()=>currentTarget,setRenderTarget(value){currentTarget=value;},renderBufferDirect(){},render(){},shadowMap:{render(lights){for(const entry of lights){renderer.setRenderTarget(entry.shadow.map);renderer.renderBufferDirect();}renderer.setRenderTarget(null);}}};
+ const material={},resources={extract:material},post={resources,draw(){},render(){renderer.render(scene);post.draw(material,target);}};
+ const effects={drawParticles(){}},kit={particles:[{live:true},{live:false}],begin(){}};
+ const originalCompose=T.Matrix4.prototype.compose,originalUpdate=T.Object3D.prototype.updateMatrixWorld;
+ const originalHooks={target:renderer.setRenderTarget,direct:renderer.renderBufferDirect,shadow:renderer.shadowMap.render,render:renderer.render,postRender:post.render,postDraw:post.draw,particles:effects.drawParticles,begin:kit.begin};
+ const fixture={renderer,scene,hudScene:new T.Scene(),camera:new T.PerspectiveCamera(),post,effects,interimAbilities:{kit}};
+ installCostAudit(fixture);
+ const probe=fixture.__benchCostAudit;
+ try{
+  const program={};gl.useProgram(program);gl.useProgram(program);gl.useProgram({});gl.bindTexture(1,{});gl.uniform1f(1,2);gl.uniformMatrix4fv(1,false,[]);
+  child.updateMatrix();scene.updateMatrixWorld(true);
+  renderer.shadowMap.render([light]);post.render();effects.drawParticles([1,2,3],null,.01);kit.begin(.01);
+  assert.equal(probe.counters.glDriverCalls,6);assert.equal(probe.counters.glUseProgramCalls,3);assert.equal(probe.counters.glProgramSwitches,2);assert.equal(probe.counters.glStateCalls,1);assert.equal(probe.counters.glUniformUploads,2);
+  assert.equal(probe.counters.localMatrixComposes,3);assert.equal(probe.counters.worldMatrixRecomputes,2);
+  assert.equal(probe.counters.shadowMapsRendered,1);assert.equal(probe.counters.shadowDraws,1);assert.equal(probe.counters.shadowPixels,256*128);
+  assert.equal(probe.counters.postPasses,2);assert.equal(probe.counters.post_sceneColor,1);assert.equal(probe.counters.post_bloomExtract,1);assert.equal(probe.counters.postPixels,1920*1080+256*128);
+  assert.equal(probe.counters.particlesAdvanced,4);assert.equal(probe.counters.abilityParticleSlotsScanned,2);
+  const values=Object.fromEntries(probe.keys.map(key=>[key,new Float64Array(2)]));probe.sample(values,0);
+  assert.equal(values.glUniformUploads[0],2);assert.equal(probe.counters.glUniformUploads,0);
+  assert.deepEqual(probe.postPasses.find(pass=>pass.name==='bloomExtract').resolutions,[{width:256,height:128}]);
+ }finally{probe.dispose();}
+ assert.equal(Object.hasOwn(fixture,'__benchCostAudit'),false);
+ assert.equal(T.Matrix4.prototype.compose,originalCompose);assert.equal(T.Object3D.prototype.updateMatrixWorld,originalUpdate);
+ assert.deepEqual({target:renderer.setRenderTarget,direct:renderer.renderBufferDirect,shadow:renderer.shadowMap.render,render:renderer.render,postRender:post.render,postDraw:post.draw,particles:effects.drawParticles,begin:kit.begin},originalHooks);
+ for(const [key,value] of Object.entries(originalGL))assert.equal(gl[key],value);
+ console.log('Cost audit self-test passed: driver calls, matrices, actual shadow targets, post resolutions, particles, sampling/reset, wrapper restoration.');
+}
+
+if(process.argv.includes('--self-test')){await costAuditSelfTest();process.exit(0);}
+
 const args=process.argv.slice(2),baseline=args.includes('--baseline'),heavyScan=!args.includes('--scan-calm');
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const label=option('label','integration-4-bench');
@@ -22,7 +138,8 @@ const storyRooms=['awakening-bay','passenger-vault','residential-gallery','commu
 await mkdir(out,{recursive:true});
 if(!args.includes('--no-build'))execFileSync('npm',['run','build'],{stdio:'inherit'});
 const host=()=>({at:new Date().toISOString(),load:loadavg(),cores:cpus().length});
-const report={baseline,sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
+const report={baseline,auditCosts:args.includes('--audit-costs'),sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
+if(report.auditCosts)report.notes.push('Cost audit wraps GL driver methods and matrix/particle/post/shadow operations. Counts are per observed RAF interval; timing includes intentional probe overhead and is not quiet performance certification.');
 let browser;const timers=new Set();
 const server=createServer(async(req,res)=>{
  const file=resolve(dist,decodeURIComponent(new URL(req.url,'http://localhost').pathname).replace(/^\/containment\//,'')||'index.html');
@@ -89,13 +206,17 @@ try{
   await cdp.send('Performance.enable');
   const traceEvents=[];if(profile)cdp.on('Tracing.dataCollected',event=>traceEvents.push(...event.value));
   if(profile){await cdp.send('Tracing.start',{categories:'v8,disabled-by-default-v8.gc',transferMode:'ReportEvents'});await cdp.send('Profiler.enable');await cdp.send('Profiler.start');await cdp.send('HeapProfiler.startSampling',{samplingInterval:32768,includeObjectsCollectedByMajorGC:true,includeObjectsCollectedByMinorGC:true});}
+  if(args.includes('--audit-costs'))await page.evaluate(installCostAudit);
   const initial=await cdp.send('Performance.getMetrics');
   let audioPollWork=Promise.resolve();
   const audioPoll=profile?setInterval(()=>{audioPollWork=audioPollWork.then(async()=>{for(const context of audioContexts.values())if(context.contextType==='realtime'){try{const {realtimeData}=await cdp.send('WebAudio.getRealtimeData',{contextId:context.contextId});audioSamples.push({contextId:context.contextId,...realtimeData});}catch(error){audioError=String(error);}}});},500):null;
   if(audioPoll)timers.add(audioPoll);
-  const data=await page.evaluate(async ({seconds,audit})=>{
+  const data=await page.evaluate(async ({seconds,audit,auditCosts})=>{
    const d=window.__containmentDebug,g=d.game,r=d.renderer,gl=r.renderer.getContext();
    const capacity=Math.ceil(seconds*240), samples={frame:[],update:[],render:[],hud:[],audio:[],draws:[],triangles:[],lights:[],instances:[],gpu:[],driver:[],enemies:[],sceneInstances:[],sceneLights:[]};
+   const costAudit=auditCosts?r.__benchCostAudit:null;
+   if(auditCosts&&!costAudit)throw Error('Cost audit was not installed');
+   if(costAudit)for(const key of costAudit.keys)samples[key]=[];
    const values={};for(const key of Object.keys(samples))values[key]=new Float64Array(capacity);
    let count=0,programs=0,peakInstances=0,driverMs=0;const create=gl.createProgram;
    gl.createProgram=function(){programs++;return create.call(gl);};
@@ -127,6 +248,7 @@ try{
     for(const mesh of allInstanceMeshes)if(shown(mesh))sceneInstances+=mesh.count;
     for(const light of allSceneLights)if(light.intensity>0&&shown(light))sceneLights++;
     values.sceneInstances[count]=sceneInstances;values.sceneLights[count]=sceneLights;
+    if(costAudit)costAudit.sample(values,count);
     count++;
    });
    const sceneLightInventory=allSceneLights.length,instanceMeshInventory=allInstanceMeshes.length;
@@ -157,6 +279,7 @@ try{
      if(g.abilities.snapshot.slots.power.ready&&g.useAbility('power')){uses.power++;return;}
     }
    };
+   costAudit?.reset();
    d.realtime(true);
    try{
     while(performance.now()-start<seconds*1000){
@@ -170,13 +293,13 @@ try{
      driverMs+=performance.now()-driverStarted;
      await new Promise(requestAnimationFrame);
     }
-   }finally{d.realtime(false);d.observePerformance(undefined);gl.createProgram=create;r.render=original;r.renderer.renderBufferDirect=direct;}
+   }finally{d.realtime(false);d.observePerformance(undefined);gl.createProgram=create;r.render=original;r.renderer.renderBufferDirect=direct;costAudit?.dispose();}
    const gpu=[];for(const q of pending){if(gl.getQueryParameter(q,gl.QUERY_RESULT_AVAILABLE)&&!gl.getParameter(ext.GPU_DISJOINT_EXT))gpu.push(gl.getQueryParameter(q,gl.QUERY_RESULT)/1e6);gl.deleteQuery(q);}
    for(const key of Object.keys(samples))samples[key]=Array.from(values[key].subarray(0,count));samples.gpu=gpu;
    let finalLightInventory=0,finalInstanceMeshInventory=0;
    r.scene.traverse(o=>{if(o.isLight)finalLightInventory++;if(o.isInstancedMesh)finalInstanceMeshInventory++;});r.hudScene.traverse(o=>{if(o.isInstancedMesh)finalInstanceMeshInventory++;});
-   return {instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
-  },{seconds,audit:args.includes('--audit-draws')});
+   return {costAudit:costAudit?{instrumented:true,postPasses:costAudit.postPasses,particleScope:'CPU AttackEffects.drawParticles lists and live ElementKit particles; ability slot scans retained separately; GPU atmosphere excluded',stateScope:'GL state setter API calls; program switches count changed useProgram handles'}:null,instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
+  },{seconds,audit:args.includes('--audit-draws'),auditCosts:args.includes('--audit-costs')});
   if(audioPoll){clearInterval(audioPoll);timers.delete(audioPoll);}await audioPollWork;
   const final=await cdp.send('Performance.getMetrics');
   let profiling=null;
@@ -209,6 +332,12 @@ try{
   assert(data.initialEnemies===25&&data.simulationSeconds>0,'Benchmark did not run the live encounter');
   assert(summary.enemies.average>=22&&summary.enemies.p50>=24,'Combat population fell below sustained stress threshold');
  }
+ if(report.auditCosts){
+  console.log('Cost audit columns are per-frame p50 / p95 / max counts; timings include probe overhead.');
+  console.table(report.runs.map(r=>({scenario:r.name,driverCalls:tripleCost(r.summary.glDriverCalls),useProgram:tripleCost(r.summary.glUseProgramCalls),programSwitches:tripleCost(r.summary.glProgramSwitches),stateCalls:tripleCost(r.summary.glStateCalls),uniformUploads:tripleCost(r.summary.glUniformUploads),localComposes:tripleCost(r.summary.localMatrixComposes),worldRecomputes:tripleCost(r.summary.worldMatrixRecomputes),shadowMaps:tripleCost(r.summary.shadowMapsRendered),shadowDraws:tripleCost(r.summary.shadowDraws),postPasses:tripleCost(r.summary.postPasses),postPixels:tripleCost(r.summary.postPixels),particlesAdvanced:tripleCost(r.summary.particlesAdvanced)})));
+  console.table(report.runs.flatMap(r=>r.costAudit.postPasses.filter(pass=>pass.resolutions.length).map(pass=>({scenario:r.name,pass:pass.name,resolutions:pass.resolutions.map(size=>`${size.width}x${size.height}`).join(','),calls:tripleCost(r.summary['post_'+pass.name])}))));
+ }
+ function tripleCost(s){return s?`${s.p50}/${s.p95}/${s.max}`:'unavailable';}
  const triple=s=>s?`${s.p50.toFixed(2)}/${s.p95.toFixed(2)}/${s.max.toFixed(2)}`:'unavailable';
  console.log('Timing columns are p50 / p95 / max milliseconds');
  console.table(report.runs.map(r=>({scenario:r.name,load:r.before.load[0].toFixed(1),frame:triple(r.summary.frame),update:triple(r.summary.update),render:triple(r.summary.render),hud:triple(r.summary.hud),audioSync:triple(r.summary.audio),cpu:triple(r.summary.cpu),gpu:triple(r.summary.gpu)})));
