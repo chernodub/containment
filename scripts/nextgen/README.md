@@ -223,9 +223,8 @@ without modifying source. `--seconds`, `--repeat`, `--rigs`, and `--tiers` narro
 audio-sync p50/p95/max, draw/triangle/light/ability-instance counts, program inventory, actual new
 program creation, survivors, accepted slot counts, CDP metrics and optional GPU timer queries.
 `--profile` additionally saves Chrome CPU profiles, sampled allocations (including collected objects),
-and V8 GC traces. These are profiling runs and must be identified separately from timing trials.
-Audio sync is main-thread routing cost; Web Audio rendering callback duration cannot be measured by
-this harness. GPU timers include scheduling contention on a shared GPU. No software renderer is accepted.
+V8 GC traces, and native WebAudio graph-capacity/callback-interval telemetry. These are profiling runs and must be identified separately from timing trials.
+Audio sync is main-thread routing cost; Individual Web Audio rendering callback CPU duration is not exposed; graph capacity and running callback-interval means are retained in profiling JSON. GPU timers include scheduling contention on a shared GPU. No software renderer is accepted.
 The debug performance observer reuses one sample object; capture arrays are deliberately retained only
 by the opt-in benchmark. Ordinary gameplay never installs the observer.
 
