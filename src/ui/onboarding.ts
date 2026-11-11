@@ -1,6 +1,7 @@
 import type { DepthGame } from '../DepthGame';
 import type { AbilitiesSnapshot } from '../game/abilities/contract';
 import type { HudEffect } from './hud/effects';
+import { hudObstructs } from './hud/layout';
 import './styles/onboarding.css';
 
 export const ONBOARDING_STORAGE_KEY = 'containment.onboarding.v1';
@@ -58,6 +59,12 @@ export class ContextualOnboarding {
   private viewportWidth = 0;
   private viewportHeight = 0;
   private readonly bounds: Bounds = { left: 0, right: 0, top: 0, bottom: 0 };
+  private preferredLeft = 0;
+  private preferredTop = 0;
+  private promptWidth = 0;
+  private promptHeight = 0;
+  private originX = 0;
+  private originY = 0;
 
   constructor(private readonly host: HTMLElement, private readonly storage: PreferenceStorage = null) {
     this.seen = loadOnboardingSeen(storage);
@@ -86,6 +93,9 @@ export class ContextualOnboarding {
   /** Sync at HUD cadence. The single prompt follows its action bar even when it relocates. */
   update(game: DepthGame, abilities: AbilitiesSnapshot | null): void {
     if (this.disposed) return;
+    // Slot visibility and labels may resize the bar during this HUD sync.
+    // Refresh geometry once at HUD cadence, never on ordinary animation frames.
+    this.layoutDirty = true;
     const playing = game.status === 'playing';
     const firstRoom = game.node.depth === 0;
     this.firstRoom = firstRoom;
@@ -145,7 +155,8 @@ export class ContextualOnboarding {
     if (this.enabled && this.firstRoom) this.firstRoomSeconds += dt;
     if (this.node.hidden) return;
     this.activeTime += dt;
-    if (this.layoutDirty || this.translation !== this.host.style.translate || this.viewportWidth !== innerWidth || this.viewportHeight !== innerHeight) {
+    const layoutChanged = this.layoutDirty || this.translation !== this.host.style.translate || this.viewportWidth !== innerWidth || this.viewportHeight !== innerHeight;
+    if (layoutChanged) {
       this.layoutDirty = false; this.translation = this.host.style.translate;
       this.viewportWidth = innerWidth; this.viewportHeight = innerHeight;
       const bar = this.host.getBoundingClientRect();
@@ -158,14 +169,32 @@ export class ContextualOnboarding {
       // it when there is space, then clamp without changing its input behavior.
       if (top < 8 && bar.bottom + 14 + size.height <= innerHeight - 8) top = bar.bottom + 14;
       top = Math.max(8, Math.min(innerHeight - size.height - 8, top));
-      this.node.style.left = `${center - bar.left - this.host.clientLeft}px`;
+      this.preferredLeft = center - size.width / 2; this.preferredTop = top;
+      this.promptWidth = size.width; this.promptHeight = size.height;
+      this.originX = bar.left + this.host.clientLeft; this.originY = bar.top + this.host.clientTop;
+    }
+    let left = this.preferredLeft;
+    const top = this.preferredTop, width = this.promptWidth, height = this.promptHeight;
+    let blocked = hudObstructs(left, top, left + width, top + height);
+    if (blocked) {
+      // The layout already caches toast and chrome bounds. Try nearby horizontal
+      // lanes without measuring or allocating, and return to the slot when clear.
+      for (let attempt = 1; attempt <= 18; attempt++) {
+        const offset = Math.ceil(attempt / 2) * 96 * (attempt % 2 ? 1 : -1);
+        const candidate = attempt === 17 ? 8 : attempt === 18 ? innerWidth - width - 8 : Math.max(8, Math.min(innerWidth - width - 8, this.preferredLeft + offset));
+        if (candidate < player.right + 12 && candidate + width > player.left - 12 && top < player.bottom + 12 && top + height > player.top - 12) continue;
+        if (hudObstructs(candidate, top, candidate + width, top + height)) continue;
+        left = candidate; blocked = false; break;
+      }
+    }
+    if (layoutChanged || left !== this.bounds.left || top !== this.bounds.top) {
+      this.node.style.left = `${left + width / 2 - this.originX}px`;
       this.node.style.bottom = 'auto';
-      this.node.style.top = `${top - bar.top - this.host.clientTop}px`;
-      const rect = this.node.getBoundingClientRect();
-      this.bounds.left = rect.left; this.bounds.right = rect.right; this.bounds.top = rect.top; this.bounds.bottom = rect.bottom;
+      this.node.style.top = `${top - this.originY}px`;
+      this.bounds.left = left; this.bounds.right = left + width; this.bounds.top = top; this.bounds.bottom = top + height;
     }
     const overlap = this.bounds.left < player.right + 12 && this.bounds.right > player.left - 12 && this.bounds.top < player.bottom + 12 && this.bounds.bottom > player.top - 12;
-    this.node.style.visibility = overlap ? 'hidden' : '';
+    this.node.style.visibility = blocked || overlap ? 'hidden' : '';
   }
 
   dispose(): void { this.disposed = true; this.node.remove(); }

@@ -131,3 +131,55 @@ it('keeps coaching inside the viewport when the action bar relocates to either v
     }
   } finally {await page.close();}
 });
+
+it('keeps first-room coaching clear of real acquisition and checkpoint toasts using the native HUD layout', async () => {
+  const page=await mount();
+  try {
+    const result=await page.evaluate(async()=>{
+      const load=new Function('path','return import(path)');
+      const {HudToasts}=await load('/src/ui/hud/Toasts.ts');
+      const {onboarding,game,abilities}=(window as any).__onboarding;
+      document.getElementById('ability-bar')!.hidden=false;
+      document.getElementById('story-status')!.textContent='Passengers alive · AI promises survival';
+      document.getElementById('room-objective')!.textContent='Restore communications.';
+      document.getElementById('story-presentation')!.hidden=true;
+      document.getElementById('build-strip')!.textContent='Reactor 1/3';
+      const toasts=new HudToasts(document.getElementById('hud-toasts'));
+      toasts.show('Incendiary acquired','arc','reward','boon');
+      toasts.show('Checkpoint saved','check','info','checkpoint');
+      const marine={left:230,right:286,top:300,bottom:420};
+      onboarding.update(game,abilities);
+      (window as any).__invalidate();
+      const placed=(window as any).__place(marine,innerWidth,innerHeight);
+      onboarding.tick(0,marine);
+      const prompt=document.getElementById('contextual-onboarding')!;
+      const rect=prompt.getBoundingClientRect();
+      const overlaps=[...document.querySelectorAll('#hud-toasts .hud-toast:not([hidden])')].some(node=>{const r=node.getBoundingClientRect();return rect.left<r.right&&rect.right>r.left&&rect.top<r.bottom&&rect.bottom>r.top;});
+      (window as any).__toastOnboarding={onboarding,toasts,marine};
+      return {placed,overlaps,visible:getComputedStyle(prompt).visibility,left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom,pointer:getComputedStyle(prompt).pointerEvents,hit:document.elementFromPoint((rect.left+rect.right)/2,(rect.top+rect.bottom)/2)?.id};
+    });
+    expect(result.placed).toBe(true);
+    expect(result.overlaps).toBe(false);
+    expect(result.visible).toBe('visible');expect(result.pointer).toBe('none');
+    expect(result.hit).toBe('world');
+    expect(result.left).toBeGreaterThanOrEqual(0);expect(result.right).toBeLessThanOrEqual(1280);
+    expect(result.top).toBeGreaterThanOrEqual(0);expect(result.bottom).toBeLessThanOrEqual(720);
+    const recovery=await page.evaluate(()=>{
+      const {onboarding,toasts,marine}=(window as any).__toastOnboarding;
+      toasts.clear();(window as any).__place(marine,innerWidth,innerHeight);onboarding.tick(0,marine);
+      const host=document.getElementById('action-bar')!,prompt=document.getElementById('contextual-onboarding')!;
+      const rect=prompt.getBoundingClientRect(),bank=host.querySelector('.weapon-bank')!.getBoundingClientRect();
+      let measurements=0,queries=0;
+      const hostMeasure=host.getBoundingClientRect,promptMeasure=prompt.getBoundingClientRect,hostQuery=host.querySelector,documentQuery=document.querySelector;
+      host.getBoundingClientRect=()=>{measurements++;throw Error('Ordinary frames must reuse host bounds');};
+      prompt.getBoundingClientRect=()=>{measurements++;throw Error('Ordinary frames must reuse prompt bounds');};
+      host.querySelector=()=>{queries++;throw Error('Ordinary frames must reuse the anchor');};
+      document.querySelector=()=>{queries++;throw Error('Ordinary frames must reuse HUD bounds');};
+      try {for(let frame=0;frame<60;frame++)onboarding.tick(.001,marine);}
+      finally {host.getBoundingClientRect=hostMeasure;prompt.getBoundingClientRect=promptMeasure;host.querySelector=hostQuery;document.querySelector=documentQuery;}
+      return {center:(rect.left+rect.right)/2,anchor:(bank.left+bank.right)/2,measurements,queries};
+    });
+    expect(recovery.center).toBeCloseTo(recovery.anchor,2);
+    expect(recovery.measurements).toBe(0);expect(recovery.queries).toBe(0);
+  } finally {await page.close();}
+});
