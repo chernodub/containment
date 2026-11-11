@@ -7,7 +7,15 @@ export const SCENARIOS=[
  ...ABILITY_SCENARIOS,DESKTOP_ABILITY_SCENARIO,
  {id:'title',state:'menu',required:['.title-screen','#start'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();}},
  {id:'title-settings',state:'menu',required:['[data-ui-settings]','#quality'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();document.querySelector('#settings').click();}},
- {id:'starting-boon',state:'reward',phase:'starting-boon',required:['.choice-grid'],setup:async()=>{await window.__containmentDebug.startRun();}},
+ {id:'starting-boon',state:'reward',phase:'starting-boon',required:['.choice-grid'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});if(!d.game.chooseRig('cryo'))throw Error('Starting boon rig selection failed');d.refresh();}},
+ {id:'augment-draft',state:'reward',phase:'starting-boon',required:['.choice-grid','[data-mutation=spreading-nova], [data-mutation=twin-glacier]'],setup:async()=>{
+   const d=window.__containmentDebug;await d.startRun(1729,{rigSelect:true});
+   for(let seed=1729;seed<1929;seed++){
+     d.game.newRun(seed,{rigSelect:true});if(!d.game.chooseRig('cryo'))throw Error('Augment draft rig selection failed');d.refresh();
+     if(document.querySelector('[data-mutation=spreading-nova], [data-mutation=twin-glacier]')){await d.prepare();return;}
+   }
+   throw Error('No seeded live Cryo augment draft found');
+ }},
  {id:'rig-select',state:'reward',phase:'rig-select',uiState:'rig-select',required:['.rig-panel','[data-rig]','.rig-footnote'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});}},
  {id:'rig-select-cryo',state:'reward',uiState:'rig-select',required:['.rig-panel [data-element=cryo]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});document.querySelector('[data-rig=cryo]').click();}},
  {id:'rig-select-pyro',state:'reward',uiState:'rig-select',required:['.rig-panel [data-element=pyro]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});document.querySelector('[data-rig=pyro]').click();}},
