@@ -58,7 +58,7 @@ import type {DepthGame,GameEffect} from '../DepthGame';
 import type {RunNode} from '../game/roguelike/types';
 const UNIT=32;
 const PREPARATION_CANCELLED=Symbol('graphics-generation-replaced');
-export type RoomPreparationTiming={room:string;started:number;total:number;phases:Record<string,number>;compilePasses:number;textureUploads:number;programsBefore:number;programsAfter:number};
+export type RoomPreparationTiming={room:string;started:number;total:number;phases:Record<string,number>;compilePasses:number;textureUploads:number;programsBefore:number;programsAfter:number;materialProfiles:number};
 type Corpse={model:ActorModel;x:number;y:number;vx:number;vy:number;height:number;lift:number;spin:number;age:number;id:number};
 export class DepthRenderer {
  readonly menuPresentation='cinematic' as const;
@@ -159,7 +159,7 @@ export class DepthRenderer {
  kick(angle:number,amount:number){this.cameraRig.kick(angle,amount);}
  punch(amount:number,ms:number){this.cameraRig.punch(amount,ms);}
  /** Speculate at most two known route nodes while rewards/routes leave the GPU idle. */
- prepareAhead(nodes:readonly RunNode[]){if(!this.disposed)this.aheadRooms.prepareAhead(nodes);}
+ prepareAhead(nodes:readonly RunNode[]){if(!this.disposed)this.aheadRooms?.prepareAhead(nodes);}
  private buildAhead(node:RunNode):T.Group|null{
   const t=ROOM_TEMPLATES[node.templateId],environment=shipEnvironment(node.templateId)??(node.templateId==='reactor-vault'?'reactor':'cryogenics');
   const root=node.templateId==='service-shaft-landing'?serviceShaftLanding(t):authoredRoom(node.templateId,t);
@@ -192,7 +192,7 @@ export class DepthRenderer {
   if(this.roomWarmPending){if(this.roomWarmCompiling)this.warmAgain=true;return;}
   this.roomWarmPending=true;this.roomWarmCompiling=false;const world=this.world,generation=this.graphicsGeneration,timing=this.preparationTiming,waitStarted=performance.now();
   const ready=[this.surfaces.ready,this.passengerVault?.ready,this.residentialGalleryEquipment?.ready,this.communalGarden?.ready,this.sealedBank?.ready,this.releasedBerth?.ready,this.recoveryKit?.ready];
-  this.roomWarmWork=Promise.all(ready).then(async()=>{if(this.disposed||this.world!==world||generation!==this.graphicsGeneration||this.renderer.getContext().isContextLost())return;this.roomWarmCompiling=true;if(timing)timing.phases.assets=(timing.phases.assets??0)+performance.now()-waitStarted;const captureStarted=performance.now();this.captureRoomReflections();if(timing)timing.phases.reflection=(timing.phases.reflection??0)+performance.now()-captureStarted;const warmStarted=performance.now();await this.prepareScene();if(timing){timing.phases.warm=(timing.phases.warm??0)+performance.now()-warmStarted;timing.total=performance.now()-timing.started;timing.programsAfter=this.renderer.info.programs?.length??0;}}).catch(error=>{if(error!==PREPARATION_CANCELLED&&generation===this.graphicsGeneration&&!this.renderer.getContext().isContextLost())throw error;}).finally(()=>{
+  this.roomWarmWork=Promise.all(ready).then(async()=>{if(this.disposed||this.world!==world||generation!==this.graphicsGeneration||this.renderer.getContext().isContextLost())return;this.roomWarmCompiling=true;if(timing)timing.phases.assets=(timing.phases.assets??0)+performance.now()-waitStarted;const captureStarted=performance.now();this.captureRoomReflections();if(timing)timing.phases.reflection=(timing.phases.reflection??0)+performance.now()-captureStarted;const warmStarted=performance.now();await this.prepareScene();if(timing){timing.phases.warm=(timing.phases.warm??0)+performance.now()-warmStarted;timing.total=performance.now()-timing.started;timing.programsAfter=this.renderer.info.programs?.length??0;timing.materialProfiles=this.materialWarmup?.profileCount??0;}}).catch(error=>{if(error!==PREPARATION_CANCELLED&&generation===this.graphicsGeneration&&!this.renderer.getContext().isContextLost())throw error;}).finally(()=>{
    this.roomWarmPending=false;this.roomWarmCompiling=false;const next=this.deferredRoom;this.deferredRoom=null;
    if(next)this.loadRoom(next.node,next.environment);
    if(this.warmAgain){this.warmAgain=false;this.queueRoomWarmup();}
@@ -201,9 +201,9 @@ export class DepthRenderer {
  }
  /** Generation-aware polling avoids Three's uncancellable async callbacks on a lost context. */
  private async compilePrepared(scene:T.Scene|T.Group,camera:T.Camera,targetScene?:T.Scene){
-  const generation=this.graphicsGeneration;this.checkGraphicsGeneration(generation);if(this.preparationTiming)this.preparationTiming.compilePasses++;this.renderer.compile(scene,camera,targetScene);
+  const generation=this.graphicsGeneration;this.checkGraphicsGeneration(generation);const timing=this.preparationTiming,submitted=performance.now();if(timing)timing.compilePasses++;this.renderer.compile(scene,camera,targetScene);if(timing)timing.phases.compileSubmission=(timing.phases.compileSubmission??0)+performance.now()-submitted;const waitStarted=performance.now();
   const programs=(this.renderer.info.programs??[]).slice() as unknown as {program?:unknown;isReady?:()=>boolean;getUniforms?:()=>unknown;getAttributes?:()=>unknown}[];
-  for(;;){this.checkGraphicsGeneration(generation);if(programs.every(program=>('program' in program&&program.program===undefined)||!program.isReady||program.isReady())){for(const program of programs)if(!('program' in program)||program.program!==undefined){const ready=this.introspectedPrograms??=new WeakSet<object>();if(!ready.has(program)){program.getUniforms?.();program.getAttributes?.();ready.add(program);}}return;}await new Promise<void>(resolve=>setTimeout(resolve,10));}
+  for(;;){this.checkGraphicsGeneration(generation);if(programs.every(program=>('program' in program&&program.program===undefined)||!program.isReady||program.isReady())){for(const program of programs)if(!('program' in program)||program.program!==undefined){const ready=this.introspectedPrograms??=new WeakSet<object>();if(!ready.has(program)){const started=performance.now();program.getUniforms?.();program.getAttributes?.();ready.add(program);if(timing)timing.phases.introspection=(timing.phases.introspection??0)+performance.now()-started;}}if(timing)timing.phases.compileWait=(timing.phases.compileWait??0)+performance.now()-waitStarted;return;}await new Promise<void>(resolve=>setTimeout(resolve,10));}
  }
  private checkGraphicsGeneration(generation:number){if(this.disposed||generation!==this.graphicsGeneration||this.renderer.getContext().isContextLost())throw PREPARATION_CANCELLED;}
  private freezeRoomTransforms(){freezeStaticRoom(this.world);}
@@ -216,15 +216,18 @@ export class DepthRenderer {
   const yieldTask=async()=>{if(performance.now()-sliceStarted<8)return;await new Promise<void>(resolve=>setTimeout(resolve,0));sliceStarted=performance.now();};
   const shadowEnabled=this.renderer.shadowMap.enabled,mapping=this.renderer.toneMapping,originalTarget=this.renderer.getRenderTarget(),warmTarget=new T.WebGLRenderTarget(64,64,{type:T.HalfFloatType}),restoreMaterials=this.materialWarmup.prepare(),restoreAtmosphere=this.atmosphere.prepare(),restoreBackdrop=this.backdrop.prepare(),restoreArena=this.arena.prepare();
   this.preparationTargets.add(warmTarget);
+  const actorsStarted=performance.now();
   try{
    for(const kind of ['crawler','brute','spitter','stalker','carrier','queen'])for(let i=0;i<(kind==='queen'?1:3);i++){
     const m=this.actorPool.take(kind,i===2);m.prepare?.();m.animate(0,1,0);m.root.position.copy(this.focus);warm.add(m.root);models.push(m);await yieldTask();
    }
    for(const id of ['pistol','rifle','shotgun','plasma','rocket'] as const){this.player.equip?.(id);this.player.animate(0,0,0);await yieldTask();}this.player.equip?.('shotgun');
+   if(this.preparationTiming)this.preparationTiming.phases.actors=performance.now()-actorsStarted;
    this.scene.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial&&!material.userData.retainedRoomWarmup)optimizeLocalLights(material);});
    this.contextResources?.track(this.scene);this.contextResources?.track(this.hudScene);
    const textures=new Set<T.Texture>();this.scene.traverse(o=>{if(o instanceof T.Mesh)for(const material of Array.isArray(o.material)?o.material:[o.material])for(const value of Object.values(material))if(value instanceof T.Texture)textures.add(value);});
-   for(const texture of textures){this.checkGraphicsGeneration(generation);const initialized=this.initializedTextures??=new WeakMap<T.Texture,number>();if(initialized.get(texture)!==texture.version){this.renderer.initTexture(texture);initialized.set(texture,texture.version);if(this.preparationTiming)this.preparationTiming.textureUploads++;}await yieldTask();}
+   const uploadsStarted=performance.now();for(const texture of textures){this.checkGraphicsGeneration(generation);const initialized=this.initializedTextures??=new WeakMap<T.Texture,number>();if(initialized.get(texture)!==texture.version){this.renderer.initTexture(texture);initialized.set(texture,texture.version);if(this.preparationTiming)this.preparationTiming.textureUploads++;}await yieldTask();}
+   if(this.preparationTiming)this.preparationTiming.phases.uploads=performance.now()-uploadsStarted;
    this.camera.position.copy(this.focus).add(new T.Vector3(0,26,19));this.camera.lookAt(this.focus);this.scene.updateMatrixWorld(true);
    // Prepare the selected configuration. Graphics-setting changes hold readiness
    // and come through this same queue; warming six unused configurations here
@@ -287,7 +290,7 @@ export class DepthRenderer {
  private releasedBerth:ReturnType<typeof attachReleasedBerth>|undefined;
  loadRoom(node:RunNode,environment:ShipEnvironment|undefined=shipEnvironment(node.templateId)??(node.templateId==='reactor-vault'?'reactor':undefined)){
   if(this.roomWarmPending){this.deferredRoom={node,environment};return;}
-  const timing:RoomPreparationTiming={room:node.templateId,started:performance.now(),total:0,phases:{},compilePasses:0,textureUploads:0,programsBefore:this.renderer?.info?.programs?.length??0,programsAfter:0};this.preparationTiming=timing;(this.preparationHistory??=[]).push(timing);if(this.preparationHistory.length>24)this.preparationHistory.shift();
+  const timing:RoomPreparationTiming={room:node.templateId,started:performance.now(),total:0,phases:{},compilePasses:0,textureUploads:0,programsBefore:this.renderer?.info?.programs?.length??0,programsAfter:0,materialProfiles:0};this.preparationTiming=timing;(this.preparationHistory??=[]).push(timing);if(this.preparationHistory.length>24)this.preparationHistory.shift();
   const keyChanged=(this.roomEnvironment==='reactor')!==(environment==='reactor');
   this.communalGarden?.dispose();this.communalGarden=undefined;
   this.passengerVault?.dispose();this.passengerVault=undefined;

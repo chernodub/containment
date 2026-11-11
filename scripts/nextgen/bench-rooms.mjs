@@ -79,6 +79,9 @@ try {
       if(row.combatCompiles)report.failures.push({room,mode,metric:'combatCompiles',value:row.combatCompiles,limit:0});
       if(!baseline && row.programs>Number(option('max-programs',400)))report.failures.push({room,mode,metric:'programs',value:row.programs,limit:Number(option('max-programs',400))});
       if(!baseline && row.total>Number(option('max-ms',3000)))report.failures.push({room,mode,metric:'preparationMs',value:row.total,limit:Number(option('max-ms',3000))});
+      const preparation=row.preparation?.at(-1);
+      if(!baseline && preparation?.compilePasses>12)report.failures.push({room,mode,metric:'compilePasses',value:preparation.compilePasses,limit:12});
+      if(!baseline && preparation?.materialProfiles>160)report.failures.push({room,mode,metric:'materialProfiles',value:preparation.materialProfiles,limit:160});
       console.log(`${mode} ${room}: ${row.total.toFixed(1)}ms; build ${row.phases.loadRoom?.toFixed(1)} reflection ${row.phases.captureRoomReflections?.toFixed(1)} warm ${row.phases.prepareScene?.toFixed(1)}; programs ${row.programs}; combat compiles ${row.combatCompiles}`);
       await writeFile(resolve(out,'rooms.json'),JSON.stringify(report,null,2));
     }
