@@ -163,6 +163,12 @@ export const SCENARIOS=[
   r.renderer.render=originalRender;if(drawErrors.length)throw Error('Recovery draw errors '+JSON.stringify(drawErrors));
   d.recoveryProof={before,roomCycles,afterRooms,afterRestore:{...r.renderer.info.memory},programs:r.renderer.info.programs.length,contextLost:gl.isContextLost()};
  }},
+ {id:'g2-calm-high',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.invulnerable(true);d.measureLuminance=true;d.refresh();}},
+ {id:'g2-calm-low',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setQuality('low');await d.prepare();d.invulnerable(true);d.measureLuminance=true;d.refresh();}},
+ {id:'g2-kiting-high',rooms:true,state:'playing',burst:true,setup:new Function('room',`return (${stageKiting.toString()})(room,{tier:'high'});`)},
+ {id:'g2-kiting-low',rooms:true,state:'playing',burst:true,setup:new Function('room',`return (${stageKiting.toString()})(room,{tier:'low'});`)},
+ {id:'g2-title-low',state:'menu',required:['.title-screen','#start'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.renderer.setQuality('low');await d.prepare();d.game.menu();d.refresh();}},
+ {id:'g2-boss-low',auditGraphics:true,state:'playing',burst:true,room:'reactor-vault',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.renderer.setQuality('low');await d.prepare();d.invulnerable(true);const q=d.game.boss.snapshot;for(let y=q.y+180;y<=q.y+300;y+=30)for(let x=q.x-160;x<q.x+160;x+=30)if(d.canStand(x,y)){Object.assign(d.game.player,{x,y});break;}d.setInput({fire:true,angle:Math.atan2(q.y-d.game.player.y,q.x-d.game.player.x),autoAim:false});d.game.switchWeapon('plasma');d.measureLuminance=true;d.step(1600);}},
  {id:'g1-exposure-calm',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.invulnerable(true);d.measureLuminance=true;d.refresh();}},
  {id:'g1-low',rooms:true,state:'playing',combat:true,burst:true,setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setQuality('low');d.refresh();}},
  {id:'g1-perspective',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setCameraProjection('perspective');d.refresh();}},
