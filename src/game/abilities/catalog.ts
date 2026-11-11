@@ -52,10 +52,10 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   'seismic-slam': ability({
     id: 'seismic-slam', rig: 'breacher', slot: 'tactical', element: 'kinetic', name: 'Seismic Slam',
     summary: 'Shockwave that launches everything around you.',
-    description: 'Drive the rig into the deck. After a short wind-up a shockwave deals 110 damage and launches enemies outward. Launched enemies can slam into walls and trigger Breacher boons.',
+    description: 'Drive the rig into the deck. After a short wind-up a shockwave deals 90 damage and launches enemies outward. Launched enemies can slam into walls and trigger Breacher boons.',
     targeting: 'self', shape: { kind: 'circle', radius: 230 },
-    castMs: 120, cooldownMs: 6_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '110' }, { label: 'Radius', value: '230' }, { label: 'Cooldown', value: seconds(6_000) }],
+    castMs: 220, cooldownMs: 6_000, charges: 1, durationMs: 0, range: 0,
+    stats: [{ label: 'Damage', value: '90' }, { label: 'Radius', value: '230' }, { label: 'Cooldown', value: seconds(6_000) }],
   }),
   bulwark: ability({
     id: 'bulwark', rig: 'breacher', slot: 'power', element: 'kinetic', name: 'Bulwark',
@@ -70,7 +70,7 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
     summary: 'Charge and fire a lance that pierces the whole room.',
     description: 'Brace for a moment, then fire a lance along your aim. Everything on the line takes 420 damage and is hurled sideways into the nearest wall. One activation per ordinary story room; charge carries between rooms.',
     targeting: 'direction', shape: { kind: 'line', length: 900, width: 44 },
-    castMs: 600, cooldownMs: 0, charges: 1, durationMs: 0, range: 0,
+    castMs: 250, cooldownMs: 0, charges: 1, durationMs: 0, range: 0,
     stats: [{ label: 'Damage', value: '420' }, { label: 'Pierce', value: 'All' }],
   }),
 

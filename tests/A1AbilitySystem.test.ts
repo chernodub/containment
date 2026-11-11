@@ -300,17 +300,17 @@ describe('all four rig dashes', () => {
   });
 });
 describe('tactical ability shape, line of sight and wind-up', () => {
-  it('Seismic Slam waits 120ms, then damages and launches only visible targets within 230 radius', () => {
+  it('Seismic Slam waits 220ms, then damages and launches only visible targets within 230 radius', () => {
     const w = world();
     w.add(230);
     w.add(230.01);
     const hidden = w.add(100);
     w.hidden.add(hidden.id);
     expect(w.system.use('tactical')).toBe(true);
-    w.advance(119);
+    w.advance(219);
     expect(w.hits).toEqual([]);
     w.advance(1);
-    expect(w.hits).toEqual([{ id: 1, amount: 110 }]);
+    expect(w.hits).toEqual([{ id: 1, amount: 90 }]);
     expect(w.launches).toEqual([{ id: 1, x: 700, y: 0 }]);
     expect(w.events.find(e => e.phase === 'impact')).toMatchObject({ radius: 230, targetIds: [1] });
   });
@@ -531,7 +531,7 @@ describe('Overdrive effects and exact bounds', () => {
     expect(w.launches[0].y).toBe(-4800);
     expect(w.hits).toEqual([{id:1,amount:420}]);
   });
-  it('Railbreaker waits 600ms, pierces the 900x44 aim line and launches affected targets sideways', () => {
+  it('Railbreaker waits 250ms, pierces the 900x44 aim line and launches affected targets sideways', () => {
     const w = world('breacher', [], 1);
     w.add(900, 22);
     w.add(900.01);
@@ -541,7 +541,7 @@ describe('Overdrive effects and exact bounds', () => {
     w.add(200);
     w.hidden.add(6);
     expect(w.system.use('overdrive')).toBe(true);
-    w.advance(599);
+    w.advance(249);
     expect(w.hits).toEqual([]);
     w.advance(1);
     expect(w.hits).toEqual([{ id: 1, amount: 420 }, { id: 5, amount: 420 }]);
@@ -655,9 +655,9 @@ describe('all twelve augment runtime effects', () => {
     w.use('tactical');
     w.player.x = 1000;
     w.advance(449);
-    expect(w.hits).toEqual([{ id: 1, amount: 110 }]);
+    expect(w.hits).toEqual([{ id: 1, amount: 90 }]);
     w.advance(1);
-    expect(w.hits).toEqual([{ id: 1, amount: 110 }, { id: 1, amount: 35 }]);
+    expect(w.hits).toEqual([{ id: 1, amount: 90 }, { id: 1, amount: 35 }]);
     w.advance(1000);
     expect(w.hits).toHaveLength(2);
     expect(w.events.filter(e => e.phase === 'impact').every(e => e.x === 0 && e.radius === 230)).toBe(true);
@@ -834,7 +834,7 @@ describe('snapshot reads by synchronous presentation subscribers', () => {
   it('does not retain another slot’s old cooldown from a ready-event read', () => {
     const w=world(),emit=w.system['host'].emit;
     w.system['host'].emit=(event,x,y)=>{emit(event,x,y);void w.system.snapshot;};
-    w.use('dash');w.advance(140);w.use('tactical');w.advance(2340); // Same 2600ms dash-ready boundary after the 120ms Slam cast.
+    w.use('dash');w.advance(140);w.use('tactical');w.advance(2240);
     expect(w.system.snapshot.slots!.dash.charges).toBe(2);
     expect(w.system.snapshot.slots!.tactical.cooldownRemainingMs).toBe(3540);
   });
