@@ -1,5 +1,8 @@
 /** Integration-only evidence for native breach scheduling and an authored exit. */
 export const I4_SCENARIOS=[{
+ id:'i4-title-new',state:'menu',resetPreferences:['containment-depth:run:v1'],required:['.title-screen','#start'],
+ setup:async()=>{const d=window.__containmentDebug;d.game.menu();if(d.game.canContinue)throw Error('Fresh title retained a checkpoint');d.refresh();},
+},{
  id:'i4-boss-beat-fixture',state:'playing',room:'reactor-vault',required:['#presentation-beat:not([hidden])','#boss-hud'],
  setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.invulnerable(true);d.step(600);d.uiFixture({preferences:{radar:true,combatText:true}});d.presentation(true);d.presentationEvent({type:'beat',kind:'boss-intro'});d.i4Proof={kind:'explicit-boss-intro-presentation-over-native-queen'};d.refresh();},
 },{

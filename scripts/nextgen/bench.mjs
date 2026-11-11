@@ -72,14 +72,22 @@ try{
  report.rooms=rooms;
  for(const room of (args.includes('--scan-only')?[]:rooms))for(const rig of rigs)for(const tier of tiers)for(let repeat=0;repeat<repeats;repeat++){
   const name=`${room}-${rig}-${tier}-${repeat}`, before=host();console.log(`bench ${name}, load ${before.load.map(x=>x.toFixed(2)).join('/')}`);
+  const profile=args.includes('--profile'),cdp=await page.context().newCDPSession(page);
+  const audioContexts=new Map(),audioSamples=[];let audioError=null;
+  if(profile){
+   cdp.on('WebAudio.contextCreated',e=>audioContexts.set(e.context.contextId,e.context));
+   cdp.on('WebAudio.contextChanged',e=>audioContexts.set(e.context.contextId,e.context));
+   cdp.on('WebAudio.contextWillBeDestroyed',e=>audioContexts.delete(e.contextId));
+   try{await cdp.send('WebAudio.enable');}catch(error){audioError=String(error);}
+  }
   await reset();await page.evaluate(stageV2,{rig,room,tier,heavy:true,setupOnly:true});
   await page.mouse.click(1910,10); // trusted audio unlock, outside HUD actions
-  const cdp=await page.context().newCDPSession(page);
   await cdp.send('Performance.enable');
-  const profile=args.includes('--profile');
   const traceEvents=[];if(profile)cdp.on('Tracing.dataCollected',event=>traceEvents.push(...event.value));
   if(profile){await cdp.send('Tracing.start',{categories:'v8,disabled-by-default-v8.gc',transferMode:'ReportEvents'});await cdp.send('Profiler.enable');await cdp.send('Profiler.start');await cdp.send('HeapProfiler.startSampling',{samplingInterval:32768,includeObjectsCollectedByMajorGC:true,includeObjectsCollectedByMinorGC:true});}
   const initial=await cdp.send('Performance.getMetrics');
+  let audioPollWork=Promise.resolve();
+  const audioPoll=profile?setInterval(()=>{audioPollWork=audioPollWork.then(async()=>{for(const context of audioContexts.values())if(context.contextType==='realtime'){try{const {realtimeData}=await cdp.send('WebAudio.getRealtimeData',{contextId:context.contextId});audioSamples.push({contextId:context.contextId,...realtimeData});}catch(error){audioError=String(error);}}});},500):null;
   const data=await page.evaluate(async seconds=>{
    const d=window.__containmentDebug,g=d.game,r=d.renderer,gl=r.renderer.getContext();
    const capacity=Math.ceil(seconds*240), samples={frame:[],update:[],render:[],hud:[],audio:[],draws:[],triangles:[],lights:[],instances:[],gpu:[]};
@@ -133,22 +141,28 @@ try{
    for(const key of Object.keys(samples))samples[key]=Array.from(values[key].subarray(0,count));samples.gpu=gpu;
    return {samples,count,programs,uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
   },seconds);
+  if(audioPoll)clearInterval(audioPoll);await audioPollWork;
   const final=await cdp.send('Performance.getMetrics');
   let profiling=null;
   if(profile){const cpu=await cdp.send('Profiler.stop'),heap=await cdp.send('HeapProfiler.stopSampling');
    const complete=new Promise(ok=>cdp.once('Tracing.tracingComplete',ok));await cdp.send('Tracing.end');await complete;
    await writeFile(resolve(out,name+'.trace.json'),JSON.stringify({traceEvents}));
    const gc=traceEvents.filter(e=>e.ph==='X'&&/V8.GC_SCAVENGER$|V8.GC_MARK_COMPACTOR$|MinorGC$|MajorGC$/.test(e.name)).map(e=>(e.dur??0)/1000);
-   const allocated=heap.profile.samples.reduce((n,s)=>n+s.size,0);profiling={sampledAllocationBytes:allocated,sampledAllocationBytesPerSecond:allocated/data.wallSeconds,gcPausesMs:gc};await writeFile(resolve(out,name+'.cpuprofile'),JSON.stringify(cpu.profile));await writeFile(resolve(out,name+'.heapprofile'),JSON.stringify(heap.profile));}
+   const allocated=heap.profile.samples.reduce((n,s)=>n+s.size,0);profiling={audioContexts:[...audioContexts.values()],audioSamples,audioError,sampledAllocationBytes:allocated,sampledAllocationBytesPerSecond:allocated/data.wallSeconds,gcPausesMs:gc};await writeFile(resolve(out,name+'.cpuprofile'),JSON.stringify(cpu.profile));await writeFile(resolve(out,name+'.heapprofile'),JSON.stringify(heap.profile));}
   await cdp.detach();
   const stats=values=>{if(!values.length)return null;const s=[...values].sort((a,b)=>a-b);return {p50:s[Math.floor((s.length-1)*.5)],p95:s[Math.ceil(s.length*.95)-1],max:s.at(-1),average:s.reduce((a,b)=>a+b,0)/s.length};};
   const summary=Object.fromEntries(Object.entries(data.samples).map(([k,v])=>[k,stats(k==='frame'?v.slice(1):v)]));
   // The first RAF interval begins before the measurement window; retain it raw, exclude it only from frame statistics.
+  if(profile){summary.audioGraphCapacityPercent=stats(audioSamples.map(s=>s.renderCapacity));summary.audioCallbackIntervalMean=stats(audioSamples.map(s=>s.callbackIntervalMean));}
   summary.cpu=stats(data.samples.update.map((v,i)=>v+data.samples.render[i]));
-  const run={name,room,rig,tier,repeat,before,after:host(),profile,profiling,summary,...data,cdp:{initial:initial.metrics,final:final.metrics}};
+  const budget={cpuP95:summary.cpu.p95<=8,frameP95:summary.frame.p95<=16.6,draws:summary.draws.max<=350,programs:data.programs===0};
+  const run={name,room,rig,tier,repeat,before,after:host(),profile,profiling,summary,budget,...data,cdp:{initial:initial.metrics,final:final.metrics}};
   report.runs.push(run);await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));
   console.log(`${name}: frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
   assert.equal(data.programs,0,'Mid-combat shader compile');
+  assert(summary.draws.max<=350,'Draw-call budget exceeded: '+summary.draws.max);
+  assert(summary.lights.max<=(tier==='high'?9:2),'Shared light budget exceeded');
+  assert(summary.instances.max<=4096,'Fixed ability instance inventory exceeded');
   assert(Object.values(data.uses).every(n=>n>0),'Full kit lacks accepted native slot receipts');
   assert(data.initialEnemies===25&&data.simulationSeconds>0,'Benchmark did not run the live encounter');
  }
