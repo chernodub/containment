@@ -11,6 +11,39 @@ function actor(x=5,y=2,z=5,brute=false):ActorModel {
 }
 beforeAll(initDeathPhysics);
 describe('death-only articulated physics',()=>{
+ it('maps transformed parent-first poses exactly while visiting the hierarchy once',()=>{
+  const p=new DeathRagdolls();p.setRoom(room);const m=actor(5,5,5),outer=new T.Group();outer.add(m.root);
+  outer.rotation.set(.12,.3,-.08);m.root.rotation.set(.2,-.4,.1);m.root.scale.setScalar(1.2);
+  const upper=m.root.getObjectByName('leg0_upper')!,lower=m.root.getObjectByName('leg0_lower')!,bridge=new T.Bone(),tip=new T.Bone();
+  bridge.name='unsimulated';bridge.position.set(.1,-.2,.05);bridge.rotation.set(.1,.2,.3);
+  upper.remove(lower);upper.add(bridge);bridge.add(lower);lower.add(tip);tip.position.set(.2,.1,-.3);
+  m.root.updateWorldMatrix(true,true);
+  for(const bone of [bridge,tip]){bone.matrixAutoUpdate=false;bone.updateMatrix();}
+  const reference=outer.clone(true),expectedRoot=reference.children[0],bind=new Map<string,T.Quaternion>();
+  for(const name of ['chest','leg0_upper','leg0_lower','leg1_upper','leg1_lower'])bind.set(name,m.root.getObjectByName(name)!.getWorldQuaternion(new T.Quaternion()));
+  expect(p.add(1,m,'crawler',{x:5,z:2})).toBe(true);
+  // A parent may move independently between frames; frozen intermediary bones
+  // must still follow its new world matrix before a simulated child is mapped.
+  outer.position.set(.4,.1,-.2);reference.position.copy(outer.position);
+  const nodes:T.Object3D[]=[];outer.traverse(o=>nodes.push(o));const updates=nodes.map(o=>vi.spyOn(o,'updateWorldMatrix'));
+  try{
+   p.update(1/120);expect(p.snapshot()).toMatchObject({active:1,steps:1});
+   for(const update of updates)expect(update).toHaveBeenCalledTimes(1);
+   // Reproduce the previous mapping against the same body transforms. This
+   // guards imported transforms, unsimulated paths and descendant propagation.
+   for(const part of p.inspect(1)!){
+    const bone=expectedRoot.getObjectByName(part.name)!,parent=bone.parent!,position=new T.Vector3().copy(part.position);
+    parent.updateWorldMatrix(true,false);bone.position.copy(parent.worldToLocal(position));
+    bone.quaternion.set(part.rotation.x,part.rotation.y,part.rotation.z,part.rotation.w).multiply(bind.get(part.name)!).premultiply(parent.getWorldQuaternion(new T.Quaternion()).invert());
+    bone.updateMatrix();bone.updateWorldMatrix(false,true);
+   }
+   const expected:T.Object3D[]=[];reference.traverse(o=>expected.push(o));
+   nodes.forEach((node,i)=>{
+    node.matrix.elements.forEach((value,j)=>expect(value).toBeCloseTo(expected[i].matrix.elements[j],12));
+    node.matrixWorld.elements.forEach((value,j)=>expect(value).toBeCloseTo(expected[i].matrixWorld.elements[j],12));
+   });
+  }finally{updates.forEach(update=>update.mockRestore());p.dispose();}
+ });
  function retired(y:number,world?:T.Group){
   const p=new DeathRagdolls();p.setRoom(room,world);const m=actor(5,y,5);
   m.root.add(new T.Mesh(new T.BoxGeometry(1,.2,1)));

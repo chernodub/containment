@@ -68,7 +68,8 @@ export class DepthRenderer {
  private focus=new T.Vector3(18,0,14);private raycaster=new T.Raycaster();private ground=new T.Plane(new T.Vector3(0,1,0),0);
  private post:PostPipeline;private tier:GraphicsTier='high';private shadowTime=0;private shadowsDirty=true;private pixelRatio=1;
  private options:GraphicsOptions=GRAPHICS_PRESETS.high;
- private cameraRig=new CameraRig();private viewHeight=13;private viewWidth=13;private desiredFocus=new T.Vector3();private screenPoint=new T.Vector3();private screenTarget=new T.Vector3();private bulletColor=new T.Color();private attachedLight={x:0,y:1,z:0,color:0xffffff,intensity:1,distance:3,duration:.1,priority:1};
+ private cameraRig=new CameraRig();private viewHeight=13;private viewWidth=13;private desiredFocus=new T.Vector3();private screenPoint=new T.Vector3();private screenTarget=new T.Vector3();private bulletColor=new T.Color();private playerVelocity={x:0,y:0};private attachedLight={x:0,y:1,z:0,color:0xffffff,intensity:1,distance:3,duration:.1,priority:1};
+ private canvasRect?:DOMRect;private projectedPlayer?:{left:number;top:number;right:number;bottom:number};
  private visiblePoint=new T.Vector3();private activePoolIds=new Set<number>();private frameFocus={x:0,z:0};private activeActorIds=new Set<number>();private activeNestIds=new Set<number>();private activePickupIds=new Set<number>();private healthEntries:HealthBarEntry[]=Array.from({length:128},()=>({x:0,z:0,height:0,health:0,maxHealth:1,elite:false,armor:0,maxArmor:0}));private projectileLightIds=new WeakMap<object,number>();private nextProjectileLight=-1000;
  private motionChanged=()=>this.applyQuality();
  private motionQuery=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
@@ -79,6 +80,8 @@ export class DepthRenderer {
  private title=new TitlePresentation(this.scene);
  constructor(readonly canvas:HTMLCanvasElement){
   this.renderer=new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
+  // Scene roots remain identity; only moving descendants compose local matrices.
+  this.scene.matrixAutoUpdate=false;this.hudScene.matrixAutoUpdate=false;
   this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.AgXToneMapping;this.renderer.toneMappingExposure=1.22;
   this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFShadowMap;this.renderer.shadowMap.autoUpdate=false;this.renderer.info.autoReset=false;
   this.hudScene.add(this.healthBars.root);this.scene.add(this.afflictions.root);
@@ -117,6 +120,7 @@ export class DepthRenderer {
  }
  private applyQuality(){this.renderer.shadowMap.enabled=this.tier!=='low'&&this.options.shadows!=='off';this.shadowsDirty=true;if(this.muzzle)this.muzzle.visible=this.options.dynamicLights;this.lighting?.setQuality(this.tier,this.options.dynamicLights,this.options.atmosphere,this.options.flashIntensity*(this.motionQuery?.matches?.5:1),this.options.shadows);this.post?.setOptions(this.motionQuery?.matches?{...this.options,distortion:false,lensEffects:false}:this.options,this.tier);this.effects?.setOptions({...this.options,tier:this.tier,reducedMotion:!!this.motionQuery?.matches});this.interimAbilities?.setOptions?.(this.options,this.tier,!!this.motionQuery?.matches);this.afflictions?.setOptions({...this.options,tier:this.tier,reducedMotion:!!this.motionQuery?.matches});this.atmosphere?.setOptions(this.options,this.tier,!!this.motionQuery?.matches);this.backdrop?.setQuality(this.tier);this.player?.setFlashIntensity?.(this.options.flashIntensity);for(const actor of this.actors?.values()??[])actor.setFlashIntensity?.(this.options.flashIntensity);this.queen?.setFlashIntensity?.(this.options.flashIntensity);for(const corpse of this.corpses??[])corpse.model.setFlashIntensity?.(this.options.flashIntensity);this.resize();}
  resize(){
+  this.canvasRect=this.canvas.getBoundingClientRect();
   const w=window.innerWidth,h=window.innerHeight,post=this.tier==='high';this.pixelRatio=Math.min(devicePixelRatio||1,post?1.5:1)*this.options.resolutionScale;
   this.renderer.setPixelRatio(this.pixelRatio);this.renderer.setSize(w,h,false);this.post.setSize(w,h,Math.min(devicePixelRatio||1,post?1.5:1));
   const view=h>w?18:13;this.viewHeight=view;this.viewWidth=view*w/h;if(this.camera instanceof T.OrthographicCamera){this.camera.left=-this.viewWidth/2;this.camera.right=this.viewWidth/2;this.camera.top=view/2;this.camera.bottom=-view/2;}else this.camera.aspect=w/h;this.camera.near=.1;this.camera.far=160;this.camera.updateProjectionMatrix();
@@ -159,12 +163,13 @@ export class DepthRenderer {
  /** Generation-aware polling avoids Three's uncancellable async callbacks on a lost context. */
  private async compilePrepared(scene:T.Scene,camera:T.Camera){
   const generation=this.graphicsGeneration;this.checkGraphicsGeneration(generation);this.renderer.compile(scene,camera);
-  const programs=(this.renderer.info.programs??[]).slice() as unknown as {program?:unknown;isReady?:()=>boolean}[];
-  for(;;){this.checkGraphicsGeneration(generation);if(programs.every(program=>('program' in program&&program.program===undefined)||!program.isReady||program.isReady()))return;await new Promise<void>(resolve=>setTimeout(resolve,10));}
+  const programs=(this.renderer.info.programs??[]).slice() as unknown as {program?:unknown;isReady?:()=>boolean;getUniforms?:()=>unknown;getAttributes?:()=>unknown}[];
+  for(;;){this.checkGraphicsGeneration(generation);if(programs.every(program=>('program' in program&&program.program===undefined)||!program.isReady||program.isReady())){for(const program of programs)if(!('program' in program)||program.program!==undefined){program.getUniforms?.();program.getAttributes?.();}return;}await new Promise<void>(resolve=>setTimeout(resolve,10));}
  }
  private checkGraphicsGeneration(generation:number){if(this.disposed||generation!==this.graphicsGeneration||this.renderer.getContext().isContextLost())throw PREPARATION_CANCELLED;}
+ private freezeRoomTransforms(){this.world.updateMatrixWorld(true);this.world.traverse(object=>{object.matrixAutoUpdate=false;});}
  private async prepareScene(){
-  const generation=this.graphicsGeneration;
+  const generation=this.graphicsGeneration;this.freezeRoomTransforms();
   const warm:T.Group=new T.Group(),models:ActorModel[]=[];this.scene.add(warm);
   const yieldTask=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
   const shadowEnabled=this.renderer.shadowMap.enabled,mapping=this.renderer.toneMapping,originalTarget=this.renderer.getRenderTarget(),warmTarget=new T.WebGLRenderTarget(64,64,{type:T.HalfFloatType}),restoreMaterials=this.materialWarmup.prepare(),restoreAtmosphere=this.atmosphere.prepare(),restoreBackdrop=this.backdrop.prepare(),restoreArena=this.arena.prepare();
@@ -223,10 +228,11 @@ export class DepthRenderer {
  }
  visible(x:number,y:number){const p=this.visiblePoint.set(x/UNIT,.6,y/UNIT).project(this.camera);return p.z>=-1&&p.z<=1&&Math.abs(p.x)<.9&&Math.abs(p.y)<.8;}
  playerScreenBounds(radius:number){
-  const rect=this.canvas.getBoundingClientRect(),position=this.player.root.position,point=new T.Vector3();
-  const result={left:Infinity,top:Infinity,right:-Infinity,bottom:-Infinity};
-  for(const dx of [-radius/UNIT,radius/UNIT])for(const dz of [-radius/UNIT,radius/UNIT])for(const height of [0,this.player.height]){
-   point.set(position.x+dx,position.y+height,position.z+dz).project(this.camera);
+  const rect=this.canvasRect??this.canvas.getBoundingClientRect(),position=this.player.root.position,point=this.screenPoint;
+  const result=this.projectedPlayer??={left:0,top:0,right:0,bottom:0};
+  result.left=result.top=Infinity;result.right=result.bottom=-Infinity;
+  for(let ix=-1;ix<=1;ix+=2)for(let iz=-1;iz<=1;iz+=2)for(let iy=0;iy<2;iy++){
+   point.set(position.x+ix*radius/UNIT,position.y+iy*this.player.height,position.z+iz*radius/UNIT).project(this.camera);
    const x=rect.left+(point.x+1)*rect.width/2,y=rect.top+(1-point.y)*rect.height/2;
    result.left=Math.min(result.left,x);result.right=Math.max(result.right,x);result.top=Math.min(result.top,y);result.bottom=Math.max(result.bottom,y);
   }
@@ -410,7 +416,7 @@ export class DepthRenderer {
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
   const dt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds;
-  const lead=this.motionQuery?.matches||menu?0:.6,bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated?.48:0,baseZoom=menu?1.23:bossWeight?.88:1;
+  const lead=this.motionQuery?.matches||menu?0:.6,bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated?.62:0,baseZoom=menu?1.23:bossWeight?.78:1;
   const targetX=p.x/UNIT*(1-bossWeight)+bossFrame.x/UNIT*bossWeight+Math.cos(p.angle)*lead,targetZ=p.y/UNIT*(1-bossWeight)+bossFrame.y/UNIT*bossWeight+Math.sin(p.angle)*lead;
   const framed=roomFocus(targetX,targetZ,bounds.width/UNIT,bounds.height/UNIT,this.viewWidth/baseZoom,this.viewHeight/baseZoom,game.node.templateId,this.frameFocus);
   this.desiredFocus.set(framed.x,0,framed.z);if(menu){this.desiredFocus.set(22,0,14);if(!this.lastMenu)this.cameraRig.reset(22,14);}
@@ -418,11 +424,12 @@ export class DepthRenderer {
   if(menu)this.title?.apply(this.camera,this.time,!!this.motionQuery?.matches);
   if(this.title)this.title.root.visible=menu;this.world.visible=!menu;if(this.backdrop)this.backdrop.root.visible=!menu;
   if(!menu)this.protectPlayerFraming(p.x/UNIT,p.y/UNIT,p.radius/UNIT);
+  if(bossWeight)this.protectBossFraming(p.x/UNIT,p.y/UNIT,p.radius/UNIT,bossFrame.x/UNIT,bossFrame.y/UNIT);
   // The shadow projection remains anchored to the room, avoiding subpixel shimmer.
   this.player.root.position.set(p.x/UNIT,0,p.y/UNIT);this.player.root.visible=!menu;this.player.root.rotation.z=game.combat.snapshot.dead?1.4:0;
   const combat=game.combat.snapshot;this.player.equip?.(combat.weaponId);
   this.player.setRig?.(game.abilities?.snapshot.rig??'breacher');this.menuMarine?.setRig?.(game.abilities?.snapshot.rig??'breacher');
-  this.player.animate(this.time,p.moving?1:0,p.angle,this.recoil,combat.reloading?Math.max(.001,1-combat.reloadRemainingMs/combat.reloadDurationMs):0,{x:p.vx,y:p.vy});this.recoil=Math.max(0,this.recoil-dt*14);
+  this.playerVelocity.x=p.vx;this.playerVelocity.y=p.vy;this.player.animate(this.time,p.moving?1:0,p.angle,this.recoil,combat.reloading?Math.max(.001,1-combat.reloadRemainingMs/combat.reloadDurationMs):0,this.playerVelocity);this.recoil=Math.max(0,this.recoil-dt*14);
   const socket=this.player.muzzleWorld!(this.shotSocket);
   for(const shot of this.pendingShots){const id=shot.weapon??'pistol';this.effects.shot(socket,shot.angle??p.angle,id);this.muzzleLife=id==='shotgun'?.075:.045;this.muzzle.color.setHex(WEAPON_APPEARANCE[id].color);this.muzzle.position.copy(socket);}this.pendingShots.length=0;
   for(const b of game.bullets)if(b.kind==='player'&&!b.visualMuzzle){const distance=Math.max(0,(socket.x-p.x/UNIT)*Math.cos(b.request.angle)+(socket.z-p.y/UNIT)*Math.sin(b.request.angle))*UNIT;b.visualMuzzle={x:socket.x,y:socket.y,z:socket.z,distance};}
@@ -479,6 +486,29 @@ export class DepthRenderer {
   const excluded=this.scene.children.filter(object=>object!==this.world&&object!==this.lighting.root&&object!==this.arena?.root);
   excluded.push(this.lighting.lamp.root,this.lighting.pool.root,this.lighting.blast);
   this.reflection.capture(this.roomWidth/2,2,this.roomHeight/2,excluded);
+ }
+
+ /** Fit both silhouettes below the boss header and above the desktop action bar. */
+ private protectBossFraming(px:number,pz:number,playerRadius:number,qx:number,qz:number){
+  // Reserve 18% at the top and 24% below; this envelope is independent of DOM layout.
+  const queenHeight=this.queen?.height??4.5;
+  for(let pass=0;pass<3;pass++){
+   let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
+   for(let actor=0;actor<2;actor++){
+    const x=actor?qx:px,z=actor?qz:pz,radius=actor?3.4:playerRadius,height=actor?queenHeight:this.player.height;
+    for(let ix=-1;ix<=1;ix+=2)for(let iz=-1;iz<=1;iz+=2)for(let iy=0;iy<2;iy++){
+     this.screenPoint.set(x+ix*radius,iy*height,z+iz*radius).project(this.camera);
+     left=Math.min(left,this.screenPoint.x);right=Math.max(right,this.screenPoint.x);top=Math.max(top,this.screenPoint.y);bottom=Math.min(bottom,this.screenPoint.y);
+    }
+   }
+   const scale=Math.min(1,1.8/(right-left),1.12/(top-bottom));
+   if(scale<1){this.camera.zoom*=scale*.98;this.camera.updateProjectionMatrix();continue;}
+   const dx=(left+right)*.5,dy=(top+bottom)*.5-.08;
+   this.screenPoint.set((px+qx)*.5,0,(pz+qz)*.5).project(this.camera);this.screenTarget.copy(this.screenPoint);this.screenTarget.x-=dx;this.screenTarget.y-=dy;
+   this.screenPoint.unproject(this.camera);this.screenTarget.unproject(this.camera);this.screenPoint.sub(this.screenTarget);
+   this.screenPoint.z-=this.screenPoint.y*this.camera.matrixWorld.elements[10]/this.camera.matrixWorld.elements[9];this.screenPoint.y=0;
+   this.camera.position.add(this.screenPoint);this.camera.updateMatrixWorld();
+  }
  }
 
  /** Reserve projected body headroom even while aim lead or recoil is settling. */

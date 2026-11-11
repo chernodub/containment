@@ -45,3 +45,21 @@ it('does not reblock an already prepared room when an asset repeats a known shad
  probe.staticLoaded(owner)();expect(probe.queueRoomWarmup).not.toHaveBeenCalled();
  probe.materialWarmup.register.mockReturnValue(1);probe.staticLoaded(owner)();expect(probe.queueRoomWarmup).toHaveBeenCalledOnce();
 });
+
+it('resolves lazy uniform and attribute introspection before releasing combat input',async()=>{
+ const getUniforms=vi.fn(),getAttributes=vi.fn(),probe:any=Object.assign(Object.create(DepthRenderer.prototype),{
+  graphicsGeneration:0,disposed:false,renderer:{getContext:()=>({isContextLost:()=>false}),compile:vi.fn(),info:{programs:[{program:{},isReady:()=>true,getUniforms,getAttributes}]}},
+ });
+ await probe.compilePrepared(new T.Scene(),new T.PerspectiveCamera());
+ expect(getUniforms).toHaveBeenCalledOnce();expect(getAttributes).toHaveBeenCalledOnce();
+});
+
+it('retains authored static transforms without composing their local matrices every frame',()=>{
+ const world=new T.Group(),nested=new T.Group(),mesh=new T.Mesh(new T.BoxGeometry(),new T.MeshBasicMaterial());
+ nested.position.set(2,3,4);mesh.position.set(-1,.5,2);nested.add(mesh);world.add(nested);
+ const probe:any=Object.assign(Object.create(DepthRenderer.prototype),{world});probe.freezeRoomTransforms();
+ const expected=mesh.matrixWorld.clone(),updates=vi.spyOn(mesh,'updateMatrix');
+ const scene=new T.Scene();scene.matrixAutoUpdate=false;scene.add(world);scene.updateMatrixWorld();scene.updateMatrixWorld();
+ expect(updates).not.toHaveBeenCalled();expect(mesh.matrixWorld.elements).toEqual(expected.elements);
+ mesh.geometry.dispose();(mesh.material as T.Material).dispose();
+});

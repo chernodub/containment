@@ -4,7 +4,7 @@ const rigs = {
  pyro:['afterburn','flashfire','napalm-charge','meltdown'],arc:['static-step','overload','tesla-pylon','overclock'],
 };
 const slots=['dash','tactical','power','overdrive'];
-async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,showcase=false,boons=[]}) {
+export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,showcase=false,boons=[],setupOnly=false}) {
  const d=window.__containmentDebug,g=d.game;
  await d.gotoRoom(room,{rig});d.renderer.setQuality(tier);await d.prepare();if(boons.length)d.grantBoons(boons);d.invulnerable(true);g.enemies.reset();
  const bounds=g.geometry.bounds,candidates=[];
@@ -38,6 +38,7 @@ async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,
  if(placed.length<(heavy?population:3))throw Error('V2 encounter population '+placed.length);
  g.setAimPoint({x:p.x+Math.cos(p.angle)*150,y:p.y+Math.sin(p.angle)*150});
  d.v2Proof={rig,tier,room,stagedEnemies:placed.length,baseline};d.kitingProof=d.v2Proof;
+ if(setupOnly){d.benchmarkLane=p;return;}
  if(baseline){g.switchWeapon('rifle');d.setInput({fire:true,x:-Math.cos(p.angle)*.2,y:-Math.sin(p.angle)*.2});g.grenade();d.step(300);return;}
  const gl=d.renderer.renderer.getContext(),create=gl.createProgram;let programs=0;
  gl.createProgram=function(){programs++;return create.call(gl);};

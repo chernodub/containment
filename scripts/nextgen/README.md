@@ -201,3 +201,35 @@ GPU time. Concurrent machine load and P95 must be retained in the report.
 `--dist=/absolute/preserved/build --dist-source-sha=<renderer-sha>` bypasses rebuilding only for an explicit preserved production snapshot. The manifest records that provenance separately from the currently checked-out harness SHA. This permits before/after benchmarking in one worktree without reverting source or touching another checkout.
 
 `g2-overlay.mjs <final-dir> <focused-correction-dir>` assembles a final gallery after an isolated correction. It requires a clean overlay capture and exact existing fixture keys, preserves the original round manifest/PNGs, records the overlay renderer SHA per replaced shot, and regenerates the standalone gallery. It does not change captured evidence or hide failed scenarios. Rerun g2-review and g2-comparison afterward.
+
+## I4 sequential realtime benchmark
+
+`npm run bench` builds production code, scans all twenty story rooms by native High draw calls,
+then runs each rig on High and Low in the highest-draw room and the median room. Each trial starts
+with 25 legally placed enemies, retains deaths, kites with normal collision, fires the rifle and
+attempts native abilities whenever ready. Only the initial Overdrive charge and marine invulnerability
+are fixture overrides. The default is **three 20-second wall-clock trials**, one browser at a time.
+
+```sh
+npm run bench -- --label=integration-4-bench
+npm run bench -- --label=integration-4-profile --rooms=relay-racks,shielding-gate --repeat=1 --profile
+npm run bench -- --label=integration-4-repeat --rooms=relay-racks,shielding-gate --rigs=arc --tiers=high --repeat=3
+```
+
+Use the selected `rooms` in `benchmark.json` for matched reruns; the examples are not a replacement
+for the current room ranking. `--dist=<preserved-production-dist> --no-build` serves a before build
+without modifying source. `--seconds`, `--repeat`, `--rigs`, and `--tiers` narrow diagnostic runs.
+Every trial records start/end host load averages and core count, per-frame frame/update/render-JS/HUD/
+audio-sync p50/p95/max, draw/triangle/light/ability-instance counts, program inventory, actual new
+program creation, survivors, accepted slot counts, CDP metrics and optional GPU timer queries.
+`--profile` additionally saves Chrome CPU profiles, sampled allocations (including collected objects),
+and V8 GC traces. These are profiling runs and must be identified separately from timing trials.
+Audio sync is main-thread routing cost; Web Audio rendering callback duration cannot be measured by
+this harness. GPU timers include scheduling contention on a shared GPU. No software renderer is accepted.
+The debug performance observer reuses one sample object; capture arrays are deliberately retained only
+by the opt-in benchmark. Ordinary gameplay never installs the observer.
+
+The deterministic `AbilityBudgets.test.ts`, `InstanceBatch.test.ts`, `ActorHotPaths.test.ts` and
+`DeathRagdolls.test.ts` checks bound inventories, scratch/buffer reuse and hierarchy work. Timing
+budgets are hardware acceptance criteria, not flaky wall-clock unit tests. Do not certify quiet-host
+60fps from a contested-host table or from frozen gallery timings.

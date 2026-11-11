@@ -154,7 +154,8 @@ class PyroPresentation implements AbilityPresentation {
     if (frame.snapshot.rig === 'pyro' && frame.snapshot.overdrive.active && frame.game) {
       let count = 0;
       for (const bullet of frame.game.bullets) {
-        if (bullet.kind !== 'player' || count++ >= (kit.low ? 8 : 30)) continue;
+        if (bullet.kind !== 'player') continue;
+        if (count++ >= (kit.low ? 8 : 30)) break;
         const bx = bullet.x / UNIT, bz = bullet.y / UNIT, a = bullet.request.angle;
         kit.ribbon(bx - Math.cos(a) * .5, .85, bz - Math.sin(a) * .5, bx, .85, bz, CORE, .025, .5, false);
         if (emit && !kit.low) kit.mote('spark', bx, .85, bz, -.1 * Math.cos(a), .2, -.1 * Math.sin(a), .035, .32, FIRE);
@@ -170,10 +171,11 @@ class PyroPresentation implements AbilityPresentation {
     for (let lane = 0; lane < lanes; lane++) {
       const side = lane / Math.max(1, lanes - 1) - .5;
       const a = p.angle + side * p.arc * .9;
+      const c = Math.cos(a), s = Math.sin(a);
       const variation = .5 + .5 * Math.sin(lane * 12.9898 + 3.7);
       const roll = kit.reducedMotion ? .5 : .5 + .5 * Math.sin(kit.time * 11 + lane * 1.8);
       const r = p.range * grow * (.86 + variation * .12);
-      const x = p.x + Math.cos(a) * r, z = p.z + Math.sin(a) * r;
+      const x = p.x + c * r, z = p.z + s * r;
       const width = (.46 + r * .09 + variation * .2) * Math.max(.25, fade);
       const height = (.9 + variation * .65 + roll * .25) * Math.max(.15, fade);
       kit.draw('flame', x, .06 + height * .5, z, width, height * .5, 1,
@@ -181,9 +183,9 @@ class PyroPresentation implements AbilityPresentation {
       if (!kit.low) {
         // The hot inner fold trails the lip of the front and leaves view gaps behind it.
         const trail = r * (.52 + variation * .15), innerHeight = height * .66;
-        kit.draw('flame', p.x + Math.cos(a) * trail, .05 + innerHeight * .5, p.z + Math.sin(a) * trail,
+        kit.draw('flame', p.x + c * trail, .05 + innerHeight * .5, p.z + s * trail,
           width * .78, innerHeight * .5, 1, HOT, .5 * fade, 0, -.12 + variation * .23);
-        if (lane % 2 === 0) kit.draw('smoke', x - Math.cos(a) * .3, .6 + roll * .2, z - Math.sin(a) * .3,
+        if (lane % 2 === 0) kit.draw('smoke', x - c * .3, .6 + roll * .2, z - s * .3,
           width * 1.1, .4, 1, SOOT, .17 * fade);
       }
     }
@@ -253,6 +255,7 @@ class PyroPresentation implements AbilityPresentation {
   private fireStrip(zone: AbilityZoneSnapshot, emit: boolean): void {
     const kit = this.kit, x = zone.x / UNIT, z = zone.y / UNIT, ex = zone.x2 / UNIT, ez = zone.y2 / UNIT;
     const angle = Math.atan2(ez - z, ex - x), radius = zone.width / UNIT * .5;
+    const c = Math.cos(angle), s = Math.sin(angle);
     const fade = Math.min(1, zone.remainingMs / 350), points = kit.low ? 5 : 18;
     for (let i = 0; i < points; i++) {
       const variation = .5 + .5 * Math.sin(i * 13.7 + zone.id * 2.1);
@@ -260,7 +263,7 @@ class PyroPresentation implements AbilityPresentation {
       const wobble = kit.reducedMotion ? .5 : .5 + .5 * Math.sin(kit.time * 9 + i * 2.4 + zone.id);
       // The two ragged edges lick upward at unequal heights; the central lane stays open.
       const lateral = (i % 2 ? 1 : -1) * radius * (.55 + variation * .28);
-      const px = x + (ex - x) * t - Math.sin(angle) * lateral, pz = z + (ez - z) * t + Math.cos(angle) * lateral;
+      const px = x + (ex - x) * t - s * lateral, pz = z + (ez - z) * t + c * lateral;
       const h = (.48 + variation * .52 + wobble * .2) * fade;
       kit.draw('flame', px, .045 + h * .5, pz, .22 + variation * .19, h * .5, 1,
         i % 5 === 0 ? HOT : FIRE, (.48 + variation * .18) * fade, 0, (variation - .5) * .2);

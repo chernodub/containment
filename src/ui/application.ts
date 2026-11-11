@@ -1,3 +1,4 @@
+import type {PerformanceSample} from '../../scripts/nextgen/debug';
 import { app, el, mountShell } from './shell';
 import { createHud } from './hud/Hud';
 import { createScreens } from './screens/ScreenManager';
@@ -161,6 +162,8 @@ export async function bootstrap() {
     };
     uiEffect = e => hud.effect?.(e);
     const reticle = {spreadRadians: 0, bloomRadians: 0, reloadProgress: 0, reloading: false, playing: false};
+    let benchmarkListener:((sample:PerformanceSample)=>void)|undefined;
+    const benchmarkSample:PerformanceSample={frame:0,update:0,render:0,hud:0,audio:0};
     function syncHud(): void {
         syncAudio();
         hud();
@@ -174,10 +177,12 @@ export async function bootstrap() {
     }
     const screens = createScreens({ game, renderer, input, audio, confirmation, storage, pause, start, settings, graphicsLost: () => graphicsLost, recovering: () => roomRecovering || lastRoom !== game.roomRevision || renderer.roomLoading });
     function syncAudio(): void {
+        const audioStarted=benchmarkListener?performance.now():0;
         const loading = roomRecovering || lastRoom !== game.roomRevision || renderer.roomLoading;
         syncAudioDirector(audio, game, {paused: game.status === 'paused' || graphicsLost || document.hidden || loading, loading});
         // Reload/switch/death transitions have no separate UI sound path.
         audio.syncCombat(game.combat.snapshot);
+        if(benchmarkListener)benchmarkSample.audio+=performance.now()-audioStarted;
     }
     function syncScreen(force = false) { syncAudio(); if (!beats?.blocking) screens.syncScreen(force); }
     renderer.canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); graphicsLost = true; game.pause(); input.reset(); audio.pauseAll(); syncScreen(true); });
@@ -211,6 +216,7 @@ export async function bootstrap() {
         if (elapsed === null)
             return;
         const dt = Math.min(.05, elapsed), started = performance.now();
+        benchmarkSample.audio=0;benchmarkSample.hud=0;
         // Synchronize before input/update: a boon, restart or route can change rooms between RAFs.
         if (lastRoom !== game.roomRevision) {
             feel.reset();
@@ -220,7 +226,9 @@ export async function bootstrap() {
         }
         const blocked = graphicsLost || renderer.roomLoading;
         const recovering = roomRecovering;
+        const audioStarted=benchmarkListener?performance.now():0;
         syncAudioDirector(audio, game, {paused: game.status === 'paused' || blocked || recovering, loading: blocked || recovering});
+        if(benchmarkListener)benchmarkSample.audio+=performance.now()-audioStarted;
         if (blocked || recovering)
             input.reset();
         else if (presentationFrozen) game.update(dt * 1000, input.read());
@@ -258,10 +266,12 @@ export async function bootstrap() {
             const hudStarted = performance.now();
             syncHud();
             hudLastMs = performance.now() - hudStarted;
+            benchmarkSample.hud=hudLastMs;
             hudTotalMs += hudLastMs;
             hudSamples++;
         }
         diagnostics.record(elapsed * 1000, updated - started, rendered - updated);
+        if(benchmarkListener){benchmarkSample.frame=elapsed*1000;benchmarkSample.update=updated-started;benchmarkSample.render=rendered-updated;benchmarkListener(benchmarkSample);}
     }
     lastRoom = game.roomRevision;
     syncScreen(true);
@@ -275,6 +285,6 @@ export async function bootstrap() {
             reset() {feel.reset(); beats?.reset();},
             effect(event) {if (event.type === 'beat') beats?.show(event.kind as import('./hud/beats/PresentationBeats').BeatKind); else {feel.effect(event as GameEffect, feelContext()); beats?.effect(event as GameEffect); uiEffect(event as GameEffect);}},
             step(ms, controls, update) {feel.advance(ms, feelContext(), dt => update(dt, controls)); beats?.sync();},
-        });
+        }, listener=>{benchmarkListener=listener;});
     }
 }

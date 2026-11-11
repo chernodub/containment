@@ -485,3 +485,6 @@
 /* Keep the left-hand front door readable over either the world or a cinematic menu shot. */
 #overlay .title-screen::after {content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,#02080ef2 0%,#02080ed9 30%,#02080e70 45%,transparent 65%);}
 #overlay .title-screen[data-menu-presentation="cinematic"] .title-hull-clip {display:none;}
+
+/* The cinematic renderer already supplies the right-hand scene and left exposure falloff. */
+#overlay.menu-overlay:has(.title-screen[data-menu-presentation="cinematic"]) {background:transparent;}

@@ -19,7 +19,8 @@ export type PresentationDebug = {
  effect(event:Record<string,unknown>):void;
  step(ms:number,input:GameInput,update:(ms:number,input:GameInput)=>void):void;
 };
-export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{},advanceUi:(dt:number)=>void=()=>{},presentation?:PresentationDebug){
+export type PerformanceSample = {frame:number;update:number;render:number;hud:number;audio:number};
+export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{},advanceUi:(dt:number)=>void=()=>{},presentation?:PresentationDebug, observePerformance?:(listener:((sample:PerformanceSample)=>void)|undefined)=>void){
  let presentationEnabled=false;
  const update=game.update.bind(game),render=renderer.render.bind(renderer),hurt=game.hurt.bind(game),effect=renderer.effect.bind(renderer);
  const events:Array<{type:string;boon?:string;at:number}>=[];renderer.effect=e=>{events.push({type:e.type,boon:e.boon,at:game.elapsed});if(events.length>300)events.shift();effect(e);};
@@ -31,6 +32,8 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
  const refresh=()=>{render(game,0,game.status==='menu');sync();advanceUi(0);};
  const ready=async()=>{beforePrepare();await renderer.prepare(game.node);refresh();};
  const api={game,renderer,events,prepare:ready,
+  /** Benchmark-only observer; the sample is reused and must be copied by consumers. */
+  observePerformance,
   /** Opt-in live RAF benchmark; the normal game loop measures actual simulation/render work. */
   realtime(value:boolean){realtime=value;},
   async startRun(value=seed,options:{rigSelect?:boolean}={}){seed=value;controls={x:0,y:0,fire:false,angle:null,autoAim:true};setUiFixture(game,null);presentationEnabled=false;presentation?.setEnabled(false);presentation?.reset();game.newRun(seed,options);events.length=0;await ready();},

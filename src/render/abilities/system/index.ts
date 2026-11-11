@@ -108,7 +108,8 @@ class SystemPresentation implements AbilityPresentation {
     }
     let drawn = 0;
     for (const enemy of g?.enemies.snapshot.enemies ?? EMPTY_ENEMIES) {
-      if (drawn >= (k.low ? 24 : 40) || enemy.health <= 0) continue;
+      if (drawn >= (k.low ? 24 : 40)) break;
+      if (enemy.health <= 0) continue;
       if (p && Math.hypot(enemy.x - p.x, enemy.y - p.y) > 720) continue;
       const status = this.statusFor?.(enemy.id);
       let receipt: Receipt | undefined;

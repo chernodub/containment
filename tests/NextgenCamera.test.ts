@@ -369,3 +369,16 @@ it('shows backed health bars only for damaged enemies/nests and elites, with hea
   expect(healthBarColor({...enemy, health: 20, armor: 10, status: {frozen: true}})).toBe(critical);
   bars.dispose();
 });
+
+describe('integrated Queen framing',()=>{
+ it.each([[1280,720],[1920,1080]])('keeps both actors between desktop header and action bar at %ix%i',(width,height)=>{
+  const probe=rendererProbe('perspective',width,height),r=probe.renderer as any;
+  r.queen={height:4.5};r.player.root.position.set(14,0,23);r.cameraRig.reset(16,20);r.cameraRig.apply(r.camera,.78,13,0);
+  r.protectBossFraming(14,23,.5,18,16);
+  const points=[[14,23,.5,2.2],[18,16,3.4,4.5]];
+  for(const [x,z,radius,h]of points)for(const dx of [-radius,radius])for(const dz of [-radius,radius])for(const y of [0,h]){
+   const p=new T.Vector3(x+dx,y,z+dz).project(r.camera);
+   expect(p.y).toBeLessThan(.66);expect(p.y).toBeGreaterThan(-.52);expect(Math.abs(p.x)).toBeLessThan(.94);
+  }
+ });
+});
