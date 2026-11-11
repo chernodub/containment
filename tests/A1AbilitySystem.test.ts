@@ -300,6 +300,21 @@ describe('all four rig dashes', () => {
   });
 });
 describe('tactical ability shape, line of sight and wind-up', () => {
+  it('Pyro keeps seven-second tactical and thirteen-second power recovery boundaries', () => {
+    const w = world('pyro');
+    w.system.setIntent(0, 0, {x: 300, y: 0});
+    expect(w.system.use('tactical')).toBe(true);
+    w.advance(6999);
+    expect(w.system.snapshot.slots!.tactical).toMatchObject({ready: false, cooldownRemainingMs: 1});
+    w.advance(1);
+    expect(w.system.snapshot.slots!.tactical.ready).toBe(true);
+    expect(w.system.use('power')).toBe(true);
+    w.advance(12999);
+    expect(w.system.snapshot.slots!.power).toMatchObject({ready: false, cooldownRemainingMs: 1});
+    w.advance(1);
+    expect(w.system.snapshot.slots!.power.ready).toBe(true);
+  });
+
   it('Seismic Slam waits 220ms, then damages and launches only visible targets within 230 radius', () => {
     const w = world();
     w.add(230);
