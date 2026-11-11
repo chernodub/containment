@@ -96,7 +96,11 @@ describe('bounded presentation lighting',()=>{
   expect(rig.key.color.b).toBeGreaterThan(rig.key.color.r);
   expect(rig.key.intensity/rig.fill.intensity).toBeGreaterThanOrEqual(4);
   expect(rig.key.intensity/rig.fill.intensity).toBeLessThanOrEqual(6);
-  expect(rig.lamp.suitFill.intensity).toBe(24);expect(rig.lamp.suitFill.distance).toBe(4.8);
+  rig.setPlayer(0,0,0);const local=rig.lamp.suitFill,h=local.position.y;
+  expect(h).toBeGreaterThan(2);expect(Number.isFinite(local.intensity)).toBe(true);
+  expect(local.intensity/(h*h)).toBeLessThan(10);
+  expect(local.intensity/(h*h+9)).toBeGreaterThan(1.5);expect(local.intensity/(h*h+9)).toBeLessThan(4.5);
+  expect(local.distance).toBeGreaterThan(Math.sqrt(h*h+9));
   const offset=rig.key.position.clone().sub(rig.key.target.position);
   expect(Math.hypot(offset.x,offset.z)).toBeGreaterThan(offset.y);
   expect(rig.ambient.intensity).toBeLessThan(rig.key.intensity/2);

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {createServer} from 'node:http';
 import {readFile,writeFile,mkdir,stat,readdir} from 'node:fs/promises';
 import {resolve,extname,relative,dirname} from 'node:path';
@@ -13,7 +14,7 @@ import {compareGalleries} from './gallery.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');process.chdir(root);
 const args=process.argv.slice(2),flags=new Set(['build','headed','keep-going','help']);
-const known=new Set([...flags,'label','scenarios','rooms','burst','width','height','dpr','timestamp','seed','compare','step-ms','sprite-width']);
+const known=new Set([...flags,'label','scenarios','rooms','burst','width','height','dpr','timestamp','seed','compare','step-ms','sprite-width','dist','dist-source-sha']);
 for(const arg of args){assert(arg.startsWith('--')&&known.has(arg.slice(2).split('=')[0]),`Unknown option ${arg}`);assert(arg.includes('=')||flags.has(arg.slice(2)),`Use --name=value: ${arg}`);}
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const integer=(name,fallback,min,max)=>{const n=Number(option(name,fallback));assert(Number.isInteger(n)&&n>=min&&n<=max,`--${name} must be ${min}..${max}`);return n;};
@@ -28,12 +29,12 @@ const scenarios=requested.flatMap(item=>{const direct=SCENARIOS.find(s=>s.id===i
 const out=resolve('artifacts/nextgen',label);
 if(comparison){const result=await compareGalleries(resolve('artifacts/nextgen'),comparison.split(','),out);console.log(`${result.pairs} aligned views (missing counterparts labelled)\n${result.file}`);process.exit(0);}
 const stepMs=integer('step-ms',150,1,1000),spriteWidth=integer('sprite-width',960,160,1920);
-const prefix='/containment/',dist=resolve('dist');
+const prefix='/containment/',dist=resolve(option('dist','dist'));
 const timestamp=option('timestamp',new Date().toISOString());assert(Number.isFinite(Date.parse(timestamp)),'Invalid --timestamp');
 const manifest={gitSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),timestamp,label,seed,viewport,deviceScaleFactor:dpr,burstStepMs:stepMs,shots:[],sprites:[],failures:[],errors:[],fontFallbacks:[],gpuAttempts:[],runtimeSeconds:0,note:'Production game, per-shot High/Low tiers. Fixed-step captures include idle RAF/screenshot overhead; i2 kitingProof separately records live normal-loop samples.'};
 let browser,context,server,page;const started=performance.now();
 async function latest(path){let result=0;for(const entry of await readdir(path,{withFileTypes:true})){const p=resolve(path,entry.name);result=Math.max(result,entry.isDirectory()?await latest(p):(await stat(p)).mtimeMs);}return result;}
-async function buildIfNeeded(){let built=0;try{built=(await stat(resolve(dist,'index.html'))).mtimeMs;}catch{}const source=Math.max(...await Promise.all(['src','public','scripts/nextgen'].map(latest)),...await Promise.all(['package.json','package-lock.json','vite.config.ts','tsconfig.json','index.html'].map(async p=>(await stat(p)).mtimeMs)));if(args.includes('--build')||built<source){console.log('Building production dist/…');await new Promise((ok,fail)=>{const p=spawn('npm',['run','build'],{stdio:'inherit'});p.on('error',fail);p.on('exit',code=>code===0?ok():fail(Error(`Production build failed (${code})`)));});}}
+async function buildIfNeeded(){if(option('dist','')){await stat(resolve(dist,'index.html'));manifest.distSnapshot={path:dist,sourceSHA:option('dist-source-sha','unrecorded')};return;}let built=0;try{built=(await stat(resolve(dist,'index.html'))).mtimeMs;}catch{}const source=Math.max(...await Promise.all(['src','public','scripts/nextgen'].map(latest)),...await Promise.all(['package.json','package-lock.json','vite.config.ts','tsconfig.json','index.html'].map(async p=>(await stat(p)).mtimeMs)));if(args.includes('--build')||built<source){console.log('Building production dist/…');await new Promise((ok,fail)=>{const p=spawn('npm',['run','build'],{stdio:'inherit'});p.on('error',fail);p.on('exit',code=>code===0?ok():fail(Error(`Production build failed (${code})`)));});}}
 async function launch(){
  const metal=process.platform==='darwin'?'metal':'gl';
  const modes=[{name:`hardware-${metal}`,args:[`--use-angle=${metal}`,'--enable-gpu','--ignore-gpu-blocklist']},{name:'hardware-default',args:['--enable-gpu','--ignore-gpu-blocklist']},{name:'software-fallback',args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']}];
@@ -63,6 +64,8 @@ function installDrawAudit(){
    }
 try{
  await mkdir(out,{recursive:true});await buildIfNeeded();
+ const assets=(await readdir(resolve(dist,'assets'))).filter(file=>/\.(js|css)$/.test(file));
+ manifest.appAssets=Object.fromEntries(await Promise.all(assets.map(async file=>[file,createHash('sha256').update(await readFile(resolve(dist,'assets',file))).digest('hex')])));
  const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.jpg':'image/jpeg','.png':'image/png','.glb':'model/gltf-binary','.ogg':'audio/ogg','.mp3':'audio/mpeg','.wav':'audio/wav','.woff2':'font/woff2'};
  server=createServer(async(req,res)=>{const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname),file=resolve(dist,path.slice(prefix.length)||'index.html');if(!path.startsWith(prefix)||!file.startsWith(dist+'/')){res.writeHead(404).end();return;}try{const bytes=await readFile(file);res.writeHead(200,{'Content-Type':types[extname(file)]??'application/octet-stream'}).end(bytes);}catch{res.writeHead(404).end();}});
  await new Promise((ok,fail)=>{server.once('error',fail);server.listen(0,'127.0.0.1',ok);});const origin=`http://127.0.0.1:${server.address().port}`;
@@ -84,9 +87,11 @@ try{
  for(const scenario of scenarios){
   const name=scenario.id.replaceAll(':','-')+(scenario.room?`-${scenario.room}`:'');console.log(`Capturing ${name}…`);const errorStart=manifest.errors.length;
   try{
+   // Leave combat before navigation: blur would otherwise start a lazy pause
+   // chunk during unload. Settle pending modules without ignoring failed requests.
    // Reload isolates renderer animation time, effect pools, caches, and random state.
    if(scenario.resetPreferences)await page.evaluate(keys=>{for(const key of keys)localStorage.removeItem(key);},scenario.resetPreferences);
-   if(scenarioIndex++||scenario.resetPreferences){await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);}
+   if(scenarioIndex++||scenario.resetPreferences){await page.evaluate(()=>{const d=window.__containmentDebug;d.game.menu();d.refresh();});await page.waitForLoadState('networkidle');await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);}
    if(scenario.auditGraphics)await page.evaluate(installDrawAudit);
    await page.evaluate(seed=>{window.__captureSeed(seed);},seed);await page.evaluate(scenario.setup,scenario.setupArgument??scenario.room);
    if(scenario.reloadAfterSetup){await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);if(scenario.auditGraphics)await page.evaluate(installDrawAudit);await page.evaluate(scenario.afterReload);}
@@ -122,6 +127,7 @@ try{
       if(hud.state!=='denied')assert.equal(hud.state,slot.castRemainingMs>0?'casting':slot.activeRemainingMs>0?'active':(hud.slot==='overdrive'?evidence.abilities.overdrive.ready:slot.ready)?'ready':'cooling',`${name}: ${hud.slot} HUD state differs from live snapshot`);
      }
     }
+    if(scenario.id==='i4-menu-after-combat'){assert(evidence.i4Proof.retainedEnemies>=2,'Title fixture cleared its native enemies');assert.equal(evidence.i4Proof.foreignDraws,0,'Retained gameplay actors leaked into the cinematic title');}
     if(scenario.id==='results'){assert(evidence.stats.kills.total>0&&evidence.stats.damageDealt.ability>0&&evidence.stats.damageDealt.weapon>0&&evidence.stats.shotsHit>0&&evidence.stats.abilityUses.tactical===1&&evidence.stats.overdrivesUsed===1,'Results lack genuine ability and weapon combat receipts');}
     if(scenario.uiState)assert.equal(evidence.uiState,scenario.uiState,`${name}: wrong fixture UI phase`);
     if(scenario.id==='combat-calm')assert.equal(evidence.enemies,0,`${name}: calm room contains enemies`);
@@ -155,6 +161,8 @@ try{
    }
    if(scenario.kiting)assert(projectiles&&muzzle,`${name}: kiting burst lacks real firing feedback`);
    if(scenario.combat)assert((scenario.status||projectiles)&&muzzle,`${name}: burst lacks player projectiles or muzzle flash`);
+   if(scenario.id==='i4-breach'){const shots=manifest.shots.filter(s=>s.scenario===scenario.id);assert(shots[0].evidence.i4Proof?.nativeWarning&&shots[0].evidence.i4Proof.pendingAtStart>0,'Native breach scheduling receipt missing');assert(shots.some(s=>s.evidence.i4Proof.active>0),'Breach burst never reached a native enemy spawn');}
+   if(scenario.id==='i4-exit-standby')assert(manifest.shots.at(-1).evidence.i4Proof?.visible,'Authored exit is not visible');
    if(scenario.id==='combat-heavy')assert(explosion,`${name}: burst lacks a real explosion`);
    if(scenario.status)assert(['burning','chilled','frozen','poisoned'].every(s=>observed.has(s)),`Missing elemental statuses: ${[...observed]}`);
    console.log(`  ${count} PNGs verified`);

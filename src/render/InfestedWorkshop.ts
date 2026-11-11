@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {box,rod,ring,shell} from './meshParts';
+import {box,rod,ring,shell,geometry} from './meshParts';
 import {WORKSHOP_MAT as MAT} from './InfestedWorkshopMaterials';
 import type {Footprint} from './ShipEnvironments';
 
@@ -13,7 +13,7 @@ export function infestedWorkshop(footprint:Footprint,index:number):T.Group{
   const mesh=box(cell,x,y,z,w,h,d,m,.025);mesh.name=name;return mesh;
  };
  const link=(name:string,a:T.Vector3,c:T.Vector3,r:number,m:T.Material=MAT.edge)=>{
-  const mesh=rod(cell,a,c,r,r,m);mesh.name=name;return mesh;
+  const mesh=rod(cell,a,c,r,r,m);const length=a.distanceTo(c);mesh.geometry=geometry(`g2-workshop-link:${r}/${length.toFixed(3)}`,()=>new T.CylinderGeometry(r,r,length,16));mesh.name=name;return mesh;
  };
  // Closed flattened webs flare into their supports. Unequal widths and skewed
  // ridges break the parallel cable silhouette without scattering loose tendrils.

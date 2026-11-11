@@ -33,6 +33,7 @@ export class AfflictionBatches{
  readonly root=new T.Group();
  private meshes:T.InstancedMesh[]=[];private textures:T.Texture[]=[];private dummy=new T.Object3D();private pos=new T.Vector3();private color=new T.Color();
  private fire:T.InstancedMesh;private poison:T.InstancedMesh;private ice:T.InstancedMesh;private drops:T.InstancedMesh;private embers:T.InstancedMesh;
+ private uploads:Array<{mesh:T.InstancedMesh;attributes:Array<{attribute:T.BufferAttribute;range:{start:number;count:number}}>}> = [];
  private options:AttackEffectOptions={};
  constructor(loader?:T.TextureLoader,private capacity=128){
   const atlas=(name:string,cols:number,rows:number,tint:T.Color,fire=false)=>{
@@ -58,6 +59,9 @@ void main(){vec2 p=localUV*2.0-1.0;float edge=.72+.12*sin(p.y*9.0+p.x*5.0);float
 #include <colorspace_fragment>
 }`,transparent:true,depthWrite:false,side:T.DoubleSide}),capacity*6);
   this.root.name='shared-affliction-batches';
+  for(const mesh of this.meshes){const attributes=[mesh.instanceMatrix,mesh.geometry.getAttribute('atlas'),mesh.geometry.getAttribute('particleAlpha')];if(mesh===this.ice&&mesh.instanceColor)attributes.push(mesh.instanceColor);
+   this.uploads.push({mesh,attributes:attributes.filter((attribute):attribute is T.BufferAttribute=>attribute instanceof T.BufferAttribute).map(attribute=>({attribute,range:{start:0,count:0}}))});
+  }
  }
  /** Low tier reduces sprites while preserving every status cue and frozen/chill distinction. */
  setOptions(options:AttackEffectOptions){this.options={...this.options,...options};(this.fire.material as T.ShaderMaterial).uniforms.flashScale.value=.35+.65*T.MathUtils.clamp(this.options.flashIntensity??1,0,1);}
@@ -90,7 +94,9 @@ void main(){vec2 p=localUV*2.0-1.0;float edge=.72+.12*sin(p.y*9.0+p.x*5.0);float
    }for(let i=0;i<dropCount;i++){const p=(t*.45+i/dropCount)%1,a=i*2.4;this.put(this.drops,x+Math.cos(a)*r*.8,y+h*(1-p)*.8+.05,z+Math.sin(a)*r*.8,.045,.075,.045);}}
    if(s.frozen||s.chilled){const n=s.frozen?(low?6:10):Math.min(3,Math.max(1,s.chillStacks??1))*(low?1:2);for(let i=0;i<n;i++){const a=i*2.399+d.phase,large=s.frozen?1:.82+Math.sin(t*3.2+i*.8)*.08;this.put(this.ice,x+Math.cos(a)*r,y+.08+(i%3)*h*(s.frozen?.18:.24),z+Math.sin(a)*r,.11*large,.3*large*(1+(i%3)*.35),.15*large,undefined,a);this.color.setHex(i%3?0x9cd5e5:0xe5fbff);this.ice.setColorAt(this.ice.count-1,this.color);}}
   }
-  for(const mesh of this.meshes){mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;const atlas=mesh.geometry.getAttribute('atlas'),alpha=mesh.geometry.getAttribute('particleAlpha');if(atlas)atlas.needsUpdate=true;if(alpha)alpha.needsUpdate=true;}
+  // Only the live prefix was written. Reuse range records because Three clears the list
+  // after uploading, and addUpdateRange would allocate a new object for every buffer/frame.
+  for(const {mesh,attributes} of this.uploads){if(!mesh.count)continue;for(const {attribute,range} of attributes){range.count=mesh.count*attribute.itemSize;attribute.updateRanges[0]=range;attribute.updateRanges.length=1;attribute.needsUpdate=true;}}
  }
  get counts(){return{fire:this.fire.count,poison:this.poison.count,ice:this.ice.count,drops:this.drops.count,embers:this.embers.count};}
  clear(){for(const mesh of this.meshes)mesh.count=0;}

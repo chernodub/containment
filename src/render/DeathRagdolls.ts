@@ -43,7 +43,8 @@ function fitSkin(root:T.Object3D,bones:T.Bone[]){
 }
 type BonePose={bone:T.Bone;position:T.Vector3;rotation:T.Quaternion;scale:T.Vector3;auto:boolean};
 type Part={bone:T.Bone;body:RAPIER.RigidBody;bindRotation:T.Quaternion};
-type RagdollRecord={model:ActorModel;parts:Part[];joints:RAPIER.ImpulseJoint[];poses:BonePose[];age:number;settled:boolean;falling:boolean;fallSpeed:number;support:T.Vector3;supportLift:number;rootPosition:T.Vector3;anchor:T.Vector3};
+type PoseNode={node:T.Object3D;part:Part|undefined};
+type RagdollRecord={model:ActorModel;parts:Part[];hierarchy:PoseNode[];joints:RAPIER.ImpulseJoint[];poses:BonePose[];age:number;settled:boolean;falling:boolean;fallSpeed:number;support:T.Vector3;supportLift:number;rootPosition:T.Vector3;anchor:T.Vector3};
 type Room=Pick<RoomTemplate,'width'|'height'|'obstacles'|'boundary'|'voids'>;
 
 /** Presentation-only world. Never fed back into combat, navigation or mutation state. */
@@ -51,7 +52,7 @@ export class DeathRagdolls {
  private world:RAPIER.World|undefined;
  private records=new Map<number,RagdollRecord>();
  private tier:'high'|'low'='high';private accumulator=0;
- private v=new T.Vector3();private q=new T.Quaternion();
+ private v=new T.Vector3();private q=new T.Quaternion();private scale=new T.Vector3();private inverse=new T.Matrix4();
  private elapsedMs=0;private steps=0;private overflow=0;
  setQuality(tier:'high'|'low'){
   this.tier=tier;
@@ -151,7 +152,9 @@ export class DeathRagdolls {
    const axisFrame=new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),Math.PI/2);joint.setFrameX1(axisFrame);joint.setFrameX2(frame.multiply(axisFrame));
    joint.setLimits(-1.1,1.1);joint.setContactsEnabled(false);joints.push(joint);
   }
-  this.records.set(id,{model,parts,joints,poses,age:0,settled:false,falling:false,fallSpeed:0,support:new T.Vector3(),supportLift:.25,rootPosition:model.root.position.clone(),anchor:new T.Vector3().copy(parts[0].body.translation())});return true;
+  const byBone=new Map(parts.map(p=>[p.bone,p])),hierarchy:PoseNode[]=[];
+  model.root.traverse(node=>{if(node!==model.root)hierarchy.push({node,part:byBone.get(node as T.Bone)});});
+  this.records.set(id,{model,parts,hierarchy,joints,poses,age:0,settled:false,falling:false,fallSpeed:0,support:new T.Vector3(),supportLift:.25,rootPosition:model.root.position.clone(),anchor:new T.Vector3().copy(parts[0].body.translation())});return true;
  }
  update(dt:number){
   this.elapsedMs=0;if(!this.world||dt<=0)return;
@@ -184,11 +187,21 @@ export class DeathRagdolls {
  private apply(r:RagdollRecord){
   // Parent-first world -> local mapping retains imported bind matrices and GPU
   // skinning. Unsimulated bones follow the nearest simulated parent unchanged.
-  for(const p of r.parts){
-   const position=p.body.translation(),rotation=p.body.rotation();
-   p.bone.parent!.updateWorldMatrix(true,false);
-   this.v.set(position.x,position.y,position.z);p.bone.position.copy(p.bone.parent!.worldToLocal(this.v));
-   p.bone.parent!.getWorldQuaternion(this.q).invert();p.bone.quaternion.set(rotation.x,rotation.y,rotation.z,rotation.w).multiply(p.bindRotation).premultiply(this.q);p.bone.updateMatrix();p.bone.updateWorldMatrix(false,true);
+  // The frozen hierarchy is captured at admission. Updating every node once
+  // avoids repeatedly walking ancestor chains and entire limb subtrees for
+  // worldToLocal/getWorldQuaternion on each simulated part.
+  r.model.root.updateWorldMatrix(true,false);
+  for(const {node,part:p} of r.hierarchy){
+   if(p){
+    const position=p.body.translation(),rotation=p.body.rotation(),parent=node.parent!;
+    this.inverse.copy(parent.matrixWorld).invert();
+    node.position.copy(this.v.set(position.x,position.y,position.z).applyMatrix4(this.inverse));
+    parent.matrixWorld.decompose(this.v,this.q,this.scale);this.q.invert();
+    node.quaternion.set(rotation.x,rotation.y,rotation.z,rotation.w).multiply(p.bindRotation).premultiply(this.q);
+   }
+   // Frozen unsimulated bones have matrixAutoUpdate=false, so force their world
+   // matrix to follow the already updated parent while retaining their locals.
+   node.matrixWorldNeedsUpdate=true;node.updateWorldMatrix(false,false);
   }
   r.anchor.copy(r.parts[0].body.translation());
  }
@@ -199,7 +212,7 @@ export class DeathRagdolls {
   else {bounds.getCenter(r.support);r.support.y=bounds.min.y;}
   // Recover only shallow contact slop. A ray above the whole body can catch an overhead table.
   r.supportLift=.25;
-  for(const p of r.parts){p.body.sleep();this.world!.removeRigidBody(p.body);}r.parts=[];r.joints=[];r.settled=true;r.falling=true;r.fallSpeed=0;
+  for(const p of r.parts){p.body.sleep();this.world!.removeRigidBody(p.body);}r.parts=[];r.hierarchy=[];r.joints=[];r.settled=true;r.falling=true;r.fallSpeed=0;
  }
  has(id:number){return this.records.has(id);}
  position(id:number){return this.records.get(id)?.anchor;}

@@ -3,6 +3,8 @@ import {DepthGame, type GameEffect} from '../src/DepthGame';
 import {AudioSystem} from '../src/game/audio/AudioSystem';
 import {expeditionRewardOffers} from '../src/game/roguelike/expedition';
 import {forwardAudioEffect, playPresentationCue, playUiCue, syncAudioDirector} from '../src/ui/gameAdapter';
+import {ROOM_STORY_ROUTE} from '../src/game/roguelike/storyRooms';
+import {shipEnvironment} from '../src/render/ShipEnvironments';
 import {FakeAudioContext} from './audioFake';
 
 function directorSpy() {
@@ -41,6 +43,15 @@ async function integrated() {
   sync();
   return {clock,audio,game,events,sync};
 }
+
+it('keeps renderer and audio environments aligned for all twenty story rooms',()=>{
+ const audio=directorSpy(),game=new DepthGame();play(game);
+ for(const {templateId,environment} of ROOM_STORY_ROUTE){
+  game.node={...game.node,templateId};game.roomRevision++;syncAudioDirector(audio,game,{paused:false});
+  expect(shipEnvironment(templateId)).toBe(environment);expect(audio.setEnvironment).toHaveBeenLastCalledWith(environment);
+ }
+ expect(ROOM_STORY_ROUTE).toHaveLength(20);
+});
 
 describe('UI subscription to the production audio director', () => {
   it('forwards all effects exclusively, including denied and ability-ready events', () => {

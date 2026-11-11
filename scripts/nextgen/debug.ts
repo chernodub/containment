@@ -21,7 +21,8 @@ export type PresentationDebug = {
  effect(event:Record<string,unknown>):void;
  step(ms:number,input:GameInput,update:(ms:number,input:GameInput)=>void):void;
 };
-export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{},advanceUi:(dt:number)=>void=()=>{},presentation?:PresentationDebug,nativeRead?:()=>GameInput,nativeReady?:()=>boolean,liveObservation=false){
+export type PerformanceSample = {frame:number;update:number;render:number;hud:number;audio:number};
+export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{},advanceUi:(dt:number)=>void=()=>{},presentation?:PresentationDebug,nativeRead?:()=>GameInput,nativeReady?:()=>boolean,liveObservation=false,observePerformance?:(listener:((sample:PerformanceSample)=>void)|undefined)=>void){
  let presentationEnabled=false;
  const update=game.update.bind(game),render=renderer.render.bind(renderer),hurt=game.hurt.bind(game),effect=renderer.effect.bind(renderer);
  const events:Array<GameEffect & {at:number}>=[];if(!liveObservation)renderer.effect=e=>{events.push({...e,at:game.elapsed});if(events.length>300)events.shift();effect(e);};
@@ -40,6 +41,8 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
  const api={game,renderer,events,prepare:ready,
   /** Passive mode keeps the production update/render/audio effect functions intact. */
   get liveObservation(){return liveObservation;},
+  /** Benchmark-only observer; the sample is reused and must be copied by consumers. */
+  observePerformance,
   /** Opt-in live RAF benchmark; the normal game loop measures actual simulation/render work. */
   realtime(value:boolean){realtime=value;nativeRealtimeUiDt=null;},
   /** Read the real InputController each fixed tick; never inject bot controls. */
@@ -64,7 +67,8 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    if(game.status!=='reward'||run.version!==3||run.phase!=='starting-boon'||run.seed!==value||run.completedNodeIds.length||build.mutations.length||build.rig!==rig||game.abilities.snapshot.rig!==rig)throw Error('Legacy start requires an untouched native rig choice for the same seed');
    seed=value;setUiFixture(game,null);nativeRealtimeUiDt=null;presentation?.reset();game.newRun(seed,{version:2,rig});events.length=0;await ready();
   },
-  async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId}={}){
+  async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId;seed?:number}={}){
+   if(options.seed!==undefined)seed=options.seed;
    const version=options.version??3,nodes=generateRun(seed,version).nodes,index=nodes.findIndex(n=>n.templateId===templateId);
    if(index<0)throw Error(`Room ${templateId} is not in run v${version}`);
    setUiFixture(game,null);presentationEnabled=false;presentation?.setEnabled(false);presentation?.reset();game.newRun(seed,{rigSelect:!!options.rig});if(options.rig&&!game.chooseRig(options.rig))throw Error('Debug rig selection failed');events.length=0;controls={x:0,y:0,fire:false,angle:null,autoAim:true};

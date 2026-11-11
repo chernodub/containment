@@ -14,14 +14,16 @@ const EMPTY_ENEMIES: readonly EnemySnapshot[] = [];
 const RIG_ELEMENTS = { breacher: 'kinetic', cryo: 'cryo', pyro: 'pyro', arc: 'arc' } as const;
 const CAST_SLOTS = ['tactical', 'power', 'overdrive'] as const;
 type Ghost = { live: boolean; x: number; z: number; angle: number; age: number; life: number; color: number; lean: number };
-type Receipt = { id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
+type Receipt = { live: boolean; id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
+type StruckTarget = Pick<EnemySnapshot, 'id' | 'x' | 'y' | 'radius' | 'velocityX' | 'velocityY' | 'baseSpeed'>;
 type MarineRest = { body: T.Object3D; y: number; rx: number; rz: number; sy: number };
 type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: boolean };
 
 /** Common body language and restrained, element-specific target feedback, using shared fixed pools. */
 class SystemPresentation implements AbilityPresentation {
   private ghosts: Ghost[] = Array.from({ length: GHOST_LIMIT }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0, life: .18, color: FRIENDLY, lean: 0 }));
-  private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ id: -1, element: 'kinetic', age: 0, life: 0, emitted: false }));
+  private receipts: Receipt[] = Array.from({ length: RECEIPT_LIMIT }, () => ({ live: false, id: 0, element: 'kinetic', age: 0, life: 0, emitted: false }));
+  private readonly queen = { id: -1, x: 0, y: 0, radius: 92, velocityX: 0, velocityY: 0, baseSpeed: 0 };
   private ghostCursor = 0;
   private receiptCursor = 0;
   private ghostClock = 0;
@@ -61,9 +63,9 @@ class SystemPresentation implements AbilityPresentation {
     for (const id of event.targetIds) {
       if (count++ >= RECEIPT_LIMIT || !Number.isFinite(id)) break;
       let receipt: Receipt | undefined;
-      for (const candidate of this.receipts) if (candidate.id === id) { receipt = candidate; break; }
+      for (const candidate of this.receipts) if (candidate.live && candidate.id === id) { receipt = candidate; break; }
       receipt ??= this.receipts[this.receiptCursor++ % RECEIPT_LIMIT];
-      receipt.id = id; receipt.element = event.element; receipt.age = 0;
+      receipt.live = true; receipt.id = id; receipt.element = event.element; receipt.age = 0;
       receipt.life = event.element === 'kinetic' ? .38 : .26; receipt.emitted = false;
     }
   }
@@ -80,9 +82,9 @@ class SystemPresentation implements AbilityPresentation {
     this.dashTime = Math.max(0, this.dashTime - dt);
     this.readyAge += dt;
     for (const receipt of this.receipts) {
-      if (receipt.id < 0) continue;
+      if (!receipt.live) continue;
       receipt.age += dt;
-      if (receipt.age >= receipt.life) receipt.id = -1;
+      if (receipt.age >= receipt.life) receipt.live = false;
     }
     const snapshot = frame.snapshot;
     const p = g?.player;
@@ -107,28 +109,40 @@ class SystemPresentation implements AbilityPresentation {
       this.drawGhost(ghost, (1 - ghost.age / ghost.life) * (k.low ? .12 : .22));
     }
     let drawn = 0;
-    for (const enemy of g?.enemies.snapshot.enemies ?? EMPTY_ENEMIES) {
-      if (drawn >= (k.low ? 24 : 40) || enemy.health <= 0) continue;
-      if (p && Math.hypot(enemy.x - p.x, enemy.y - p.y) > 720) continue;
-      const status = this.statusFor?.(enemy.id);
-      let receipt: Receipt | undefined;
-      for (const item of this.receipts) if (item.id === enemy.id) { receipt = item; break; }
-      if (!receipt && !status?.frozen && !status?.burning && !status?.shocked) continue;
-      drawn++;
-      const x = enemy.x / UNIT, z = enemy.y / UNIT, radius = Math.max(.3, enemy.radius / UNIT);
-      const height = enemy.type === 'crawler' ? .55 : enemy.type === 'brute' || enemy.type === 'carrier' ? 1.5 : .95;
-      if (status?.frozen) this.frozenShell(x, z, radius, height, enemy.id, receipt?.element === 'cryo' ? 1 - receipt.age / receipt.life : 0);
-      if (status?.burning) this.burning(x, z, radius, height, enemy.id);
-      if (status?.shocked) this.stunned(x, z, radius, height, enemy.id);
-      if (receipt) {
-        if (!receipt.emitted && dt > 0) {
-          receipt.emitted = true;
-          k.burst(x, height * .45, z, receipt.element, k.low ? 3 : 7, receipt.element === 'kinetic' ? 2.1 : 1.2, .3);
-        }
-        if (receipt.element === 'kinetic') this.launched(enemy, radius, height, receipt);
-        else if (receipt.element === 'cryo' && !status?.frozen) this.frozenShell(x, z, radius, height, enemy.id, (1 - receipt.age / receipt.life) * .35);
-      }
+    const queen = g?.boss?.snapshot;
+    if (queen?.active && !queen.defeated && queen.health > 0 && (!p || Math.hypot(queen.x - p.x, queen.y - p.y) <= 720)) {
+      // Queen shares the normal target budget and fixed receipt pool. Consider
+      // her first so a full minion crowd cannot hide a valid boss strike.
+      this.queen.x = queen.x; this.queen.y = queen.y;
+      if (this.struck(this.queen, 4.5, dt)) drawn++;
     }
+    for (const enemy of g?.enemies.snapshot.enemies ?? EMPTY_ENEMIES) {
+      if (drawn >= (k.low ? 24 : 40)) break;
+      if (enemy.health <= 0) continue;
+      if (p && Math.hypot(enemy.x - p.x, enemy.y - p.y) > 720) continue;
+      const height = enemy.type === 'crawler' ? .55 : enemy.type === 'brute' || enemy.type === 'carrier' ? 1.5 : .95;
+      if (this.struck(enemy, height, dt)) drawn++;
+    }
+  }
+
+  private struck(enemy: StruckTarget, height: number, dt: number): boolean {
+    const k = this.kit, status = this.statusFor?.(enemy.id);
+    let receipt: Receipt | undefined;
+    for (const item of this.receipts) if (item.live && item.id === enemy.id) { receipt = item; break; }
+    if (!receipt && !status?.frozen && !status?.burning && !status?.shocked) return false;
+    const x = enemy.x / UNIT, z = enemy.y / UNIT, radius = Math.max(.3, enemy.radius / UNIT);
+    if (status?.frozen) this.frozenShell(x, z, radius, height, enemy.id, receipt?.element === 'cryo' ? 1 - receipt.age / receipt.life : 0);
+    if (status?.burning) this.burning(x, z, radius, height, enemy.id);
+    if (status?.shocked) this.stunned(x, z, radius, height, enemy.id);
+    if (receipt) {
+      if (!receipt.emitted && dt > 0) {
+        receipt.emitted = true;
+        k.burst(x, height * .45, z, receipt.element, k.low ? 3 : 7, receipt.element === 'kinetic' ? 2.1 : 1.2, .3);
+      }
+      if (receipt.element === 'kinetic') this.launched(enemy, radius, height, receipt);
+      else if (receipt.element === 'cryo' && !status?.frozen) this.frozenShell(x, z, radius, height, enemy.id, (1 - receipt.age / receipt.life) * .35);
+    }
+    return true;
   }
 
   private ghost(x: number, z: number, angle: number, color: number, lean: number): void {
@@ -229,7 +243,7 @@ class SystemPresentation implements AbilityPresentation {
     }
   }
 
-  private launched(enemy: EnemySnapshot, radius: number, height: number, receipt: Receipt): void {
+  private launched(enemy: StruckTarget, radius: number, height: number, receipt: Receipt): void {
     const k = this.kit, x = enemy.x / UNIT, z = enemy.y / UNIT, fade = 1 - receipt.age / receipt.life;
     const speed = Math.hypot(enemy.velocityX, enemy.velocityY);
     if (speed > Math.max(260, enemy.baseSpeed * 1.6)) {
@@ -243,7 +257,7 @@ class SystemPresentation implements AbilityPresentation {
   clear(): void {
     this.restorePose();
     for (const ghost of this.ghosts) ghost.live = false;
-    for (const receipt of this.receipts) receipt.id = -1;
+    for (const receipt of this.receipts) receipt.live = false;
     this.dashTime = 0; this.ghostClock = 0; this.readyAge = 1;
   }
 

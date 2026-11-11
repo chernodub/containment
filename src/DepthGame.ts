@@ -102,7 +102,7 @@ export class DepthGame {
   if(purchase){this.combat.setCredits(this.combat.snapshot.credits-costs[purchase]);if(purchase==='heal')this.combat.restoreHealth(30);else if(purchase==='armor')this.combat.restoreArmor(25);else pack(true);}
   this.expedition=claimExpeditionResources(this.expedition,this.combat.getRunResources());this.status='route';this.save();
  }
- get boonStatuses(){return(id:number)=>this.mutations.statuses(id);}
+ readonly boonStatuses=(id:number)=>this.mutations.statuses(id);
  get storyRoom(){return storyRoomFor(this.node.templateId);}
  private storySkipped=false;
  get storyPresentation(){return this.storySkipped?undefined:this.storyRoom?.story;}

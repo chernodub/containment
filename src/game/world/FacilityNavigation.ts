@@ -4,7 +4,10 @@ import type { FacilityPoint, FacilityRect } from './facilityLayout';
 import {clearPolygonTopology,type PolygonTopology} from './polygonGeometry';
 const CELL=32,COLS=80,ROWS=45,COUNT=COLS*ROWS;
 export type NavigationGeometry = Readonly<{bounds:FacilityRect;blockers:readonly FacilityRect[]}> & PolygonTopology;
-const point=(id:number):FacilityPoint=>({x:(id%COLS+.5)*CELL,y:(Math.floor(id/COLS)+.5)*CELL});
+// Grid centers are private immutable inputs to clearance probes. Public waypoint
+// results are copied below so callers never receive the shared coordinate table.
+const points:readonly FacilityPoint[]=Object.freeze(Array.from({length:COUNT},(_,id)=>Object.freeze({x:(id%COLS+.5)*CELL,y:(Math.floor(id/COLS)+.5)*CELL})));
+const point=(id:number):FacilityPoint=>points[id];
 const index=(p:FacilityPoint)=>Math.max(0,Math.min(ROWS-1,Math.floor(p.y/CELL)))*COLS+Math.max(0,Math.min(COLS-1,Math.floor(p.x/CELL)));
 const adjacency=Array.from({length:COUNT},(_,id)=>[id%COLS>0?id-1:-1,id%COLS<COLS-1?id+1:-1,id>=COLS?id-COLS:-1,id<COUNT-COLS?id+COLS:-1].filter(i=>i>=0));
 const neighbors=(id:number)=>adjacency[id];
@@ -53,7 +56,7 @@ export class FacilityNavigation {
       if(next===undefined)break;
       const candidate=point(next);if(!this.clear(enemy,candidate,enemy.radius+2))break;
       current=next;target=candidate;
-    }return target;
+    }return {x:target.x,y:target.y};
   }
   reachable(p:FacilityPoint):boolean {return this.closest(p,true)>=0;}
 }

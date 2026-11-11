@@ -1,4 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
+import * as T from 'three';
 import {DepthRenderer} from '../src/render/DepthRenderer';
 import {generateRun} from '../src/game/roguelike/run';
 
@@ -10,7 +11,7 @@ function fixture(owners:Record<string,{ready:Promise<void>}>){
  const started=new Error('prewarm reached');
  const add=vi.fn(()=>{throw started;});
  const renderer=Object.assign(Object.create(DepthRenderer.prototype),{
-  loadRoom:vi.fn(),surfaces:{ready:Promise.resolve()},scene:{add},...owners,
+  loadRoom:vi.fn(),world:new T.Group(),surfaces:{ready:Promise.resolve()},scene:{add},...owners,
  }) as DepthRenderer;
  const prepare=renderer.prepare(node).catch(error=>{expect(error).toBe(started);});
  return {add,prepare};

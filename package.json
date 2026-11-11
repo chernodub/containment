@@ -16,7 +16,8 @@
     "test:authored-smoke:all": "npm run test:authored-smoke -- --viewport=desktop --out=artifacts/authored-smoke/desktop",
     "playtest": "node scripts/nextgen/playtest/runner.mjs",
     "playtest:sim": "node scripts/nextgen/playtest/sim.mjs",
-    "playtest:smoke": "node scripts/nextgen/playtest/runner.mjs --rig=arc --seed=1729 --rooms=3 --label=smoke --max-wall-seconds=235"
+    "playtest:smoke": "node scripts/nextgen/playtest/runner.mjs --rig=arc --seed=1729 --rooms=3 --label=smoke --max-wall-seconds=235",
+    "bench": "node scripts/nextgen/bench.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.20.0",

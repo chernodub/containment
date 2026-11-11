@@ -330,7 +330,8 @@ describe('post shader work and packed normal precision', () => {
     expect(disabled).toContain('AgXToneMapping(color)');
     expect(disabled).toContain('float dither =');
     const enabled = specialize(compositeFragment, true);
-    expect(enabled.match(/texture2D\(tScene,/g)).toHaveLength(7);
+    // Six bounded, depth-rejected far-field lens taps share the existing composite.
+    expect(enabled.match(/texture2D\(tScene,/g)).toHaveLength(8);expect(enabled).toContain('for(int i=0;i<6;i++)');expect(enabled).toContain('sampleDepth-focalDepth');
     for (const sampler of ['tDistortion', 'tAO', 'tBloom', 'tDepth']) {
       expect(enabled).toContain(`texture2D(${sampler},`);
     }

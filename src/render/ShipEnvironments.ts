@@ -15,7 +15,13 @@ export const SHIP_ENVIRONMENTS=['cryogenics','habitation','security','cargo','co
 export type ShipEnvironment=typeof SHIP_ENVIRONMENTS[number];
 const roomPairs=[['awakening-bay','passenger-vault'],['residential-gallery','communal-atrium'],['crew-checkpoint','armory'],['freight-hold','breached-loading-bay'],['relay-racks','transmission-chamber'],['diagnostic-gallery','safety-interlock-station'],['coolant-plant','service-shaft-landing'],['infested-workshop','swarm-junction'],['shielding-gate','containment-annulus'],['manual-control-chamber','overload-floor']];
 /** Stable integration contract: domain keeps its own route; renderer accepts these IDs or an explicit environment. */
-export function shipEnvironment(templateId:string):ShipEnvironment|undefined{return SHIP_ENVIRONMENTS[roomPairs.findIndex(pair=>pair.includes(templateId))];}
+const legacyMoods:Readonly<Record<string,ShipEnvironment>>=Object.freeze({
+ 'receiving':'cargo','forklift-loop':'cargo','cold-aisle':'cryogenics','freight-crossing':'cargo',
+ 'pump-ring':'maintenance','specimen-bay':'containment','security-lock':'security','reactor-vault':'reactor',
+ 'rail-depot':'cargo','quarantine-cross':'containment','cryo-gallery':'cryogenics','filtration':'maintenance',
+ 'turbine-hall':'engineering','waste-processing':'infested','power-conduits':'engineering','hive-approach':'infested',
+});
+export function shipEnvironment(templateId:string):ShipEnvironment|undefined{return SHIP_ENVIRONMENTS[roomPairs.findIndex(pair=>pair.includes(templateId))]??(Object.hasOwn(legacyMoods,templateId)?legacyMoods[templateId]:undefined);}
 export type Footprint={x:number;y:number;width:number;height:number};
 const v=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
 
@@ -36,7 +42,10 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
  for(let i=0;i<count;i++){
   const cell=new T.Group();cell.name=environment;root.add(cell);
   const b=(x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material,r=.04)=>box(cell,x,y,z,w,h,d,m,r);
-  const pipe=(a:T.Vector3,c:T.Vector3,r:number,m:T.Material)=>rod(cell,a,c,r,r,m);
+  const pipe=(a:T.Vector3,c:T.Vector3,r:number,m:T.Material)=>{
+   const length=a.distanceTo(c),g=geometry(`g2-machined-pipe:${r}/${length.toFixed(3)}`,()=>new T.CylinderGeometry(r,r,length,18));
+   const mesh=new T.Mesh(g,m);mesh.position.copy(a).add(c).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),c.clone().sub(a).normalize());mesh.castShadow=mesh.receiveShadow=true;cell.add(mesh);return mesh;
+  };
   switch(environment){
    case 'cryogenics':{
     b(0,.14,0,1.7,.28,2.5,MAT.steel,.12);
@@ -86,6 +95,9 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
      for(let rib=-.92;rib<1;rib+=.3)b(0,.93+level*.88,z+rib,1.64,.055,.055,MAT.edge,0);
      for(const x of [-.84,.84])for(const dz of [-.96,.96])b(x,.5+level*.88,z+dz,.1,.88,.13,MAT.bone);
      b(0,.5+level*.88,z+1.13,.95,.045,.02,MAT.trim,0);
+     for(const x of [-.74,.74]){b(x,.93+level*.88,z,.09,.055,1.94,MAT.black,.02);for(const dz of [-.94,.94])b(x,.95+level*.88,z+dz,.17,.045,.16,MAT.trim,.025);}
+     b(-.48,.65+level*.88,z+1.13,.38,.19,.025,MAT.bone,.015);
+     for(let serial=0;serial<6;serial++)b(-.62+serial*.052,.65+level*.88,z+1.146,.018,.13-.04*(serial%2),.006,MAT.black,0);
      for(const x of [-.34,.34])b(x,.5+level*.88,z+1.14,.04,.7,.04,MAT.edge,0);
     }break;
    }
@@ -109,6 +121,7 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
      const display=b(0,1.24,z-.01,1.25,.025,.55,MAT.cyan);display.rotation.x=.32;
      for(let n=0;n<4;n++)b(-.44+n*.29,1.29,z+.28,.13,.05,.1,n===0?MAT.amber:MAT.bone);
      for(let n=0;n<3;n++)b(-.31+n*.3,1.27,z-.1,.025,.025,.3,MAT.black,0);
+     for(const x of [-.67,.67])b(x,1.25,z,.04,.02,.57,MAT.edge,.01);
     }
     b(-.84,.83,0,.12,1.45,2.25,MAT.trim);b(.84,.83,0,.12,1.45,2.25,MAT.trim);break;
    }
@@ -116,11 +129,11 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
     b(0,.12,0,1.9,.24,2.5,MAT.steel);
     for(const x of [-.48,.48]){
      pipe(v(x,.72,-.98),v(x,.72,.98),.3,MAT.copper);
-     for(const z of [-.78,.78]){const flange=ring(cell,x,.72,z,.35,.085,MAT.edge);flange.scale.setScalar(1);}
+     for(const z of [-.78,.78]){const flange=ring(cell,x,.72,z,.35,.085,MAT.edge);flange.geometry=geometry('g2-coolant-flange',()=>new T.TorusGeometry(.35,.085,10,32));}
      b(x,.29,0,.72,.35,.7,MAT.black);
     }
     pipe(v(0,.4,0),v(0,1.3,0),.29,MAT.steel);
-    const wheel=ring(cell,0,1.36,0,.4,.06,MAT.red);wheel.rotation.x=Math.PI/2;
+    const wheel=ring(cell,0,1.36,0,.4,.06,MAT.red);wheel.geometry=geometry('g2-valve-wheel',()=>new T.TorusGeometry(.4,.06,10,32));wheel.rotation.x=Math.PI/2;
     for(const a of [0,Math.PI/2]){const spoke=b(0,1.36,0,.78,.05,.06,MAT.red);spoke.rotation.y=a;}
     break;
    }
@@ -150,7 +163,7 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
     b(0,.14,0,1.9,.28,2.5,MAT.black);
     rod(cell,v(0,.24,0),v(0,2.32,0),.48,.65,MAT.steel);
     shell(cell,0,1.3,0,.32,.95,.75,MAT.cyan);
-    for(const y of [.44,1.16,1.88,2.48]){const collar=ring(cell,0,y,0,.76,.1,y===1.16?MAT.cyan:MAT.trim);collar.rotation.x=Math.PI/2;}
+    for(const y of [.44,1.16,1.88,2.48]){const collar=ring(cell,0,y,0,.76,.1,y===1.16?MAT.cyan:MAT.trim);collar.geometry=geometry('g2-reactor-collar',()=>new T.TorusGeometry(.76,.1,10,48));collar.rotation.x=Math.PI/2;}
     for(const x of [-.75,.75]){b(x,1.25,0,.16,2.5,.25,MAT.armor);pipe(v(x,.3,0),v(x*.56,2.6,0),.065,MAT.copper);}
     for(const z of [-1,1])b(0,.35,z,1.65,.5,.22,MAT.steel);
     break;

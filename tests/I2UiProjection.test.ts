@@ -37,6 +37,32 @@ function rendererProbe(width = 1280, height = 720) {
 }
 
 describe('I2 live camera / UI projection seam', () => {
+  it('projects pooled HUD points without layout reads after each desktop resize', () => {
+    const {renderer, rig, rect, viewport} = rendererProbe();
+    const widthRead = vi.spyOn(renderer.canvas, 'clientWidth', 'get');
+    const heightRead = vi.spyOn(renderer.canvas, 'clientHeight', 'get');
+    const boundsRead = vi.spyOn(renderer.canvas, 'getBoundingClientRect');
+    const output = point();
+    for (const [width, height] of [[640, 360], [960, 540], [1280, 720], [1920, 1080], [2560, 1440], [3440, 1440], [800, 1000]]) {
+      viewport.innerWidth = rect.width = width;
+      viewport.innerHeight = rect.height = height;
+      renderer.resize();
+      rig.apply(renderer.camera, 1, height > width ? 18 : 13);
+      widthRead.mockClear(); heightRead.mockClear(); boundsRead.mockClear();
+      expect(renderer.viewportWidth).toBe(width);
+      expect(renderer.viewportHeight).toBe(height);
+      for (let i = 0; i < 28; i++) {
+        projectWorld(renderer, (8 + i / 10) * 32, 12 * 32, output, 1.2);
+        const expected = new T.Vector3(8 + i / 10, 1.2, 12).project(renderer.camera);
+        expect(output.x).toBeCloseTo((expected.x + 1) * width / 2, 8);
+        expect(output.y).toBeCloseTo((1 - expected.y) * height / 2, 8);
+      }
+      expect(widthRead).not.toHaveBeenCalled();
+      expect(heightRead).not.toHaveBeenCalled();
+      expect(boundsRead).not.toHaveBeenCalled();
+    }
+  });
+
   it('keeps aim assist inside the real near/far frustum', () => {
     const {renderer} = rendererProbe();
     Object.assign(renderer, {visiblePoint: new T.Vector3()});
