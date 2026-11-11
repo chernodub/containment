@@ -9,7 +9,7 @@ const locatorMaterial=new T.ShaderMaterial({
       p=instanceMatrix*p;
     #endif
     gl_Position=projectionMatrix*modelViewMatrix*p;}`,
-  fragmentShader:`varying vec2 vUv;varying vec3 vColor;void main(){float edge=1.0-smoothstep(.06,.5,abs(vUv.x-.5));float fade=pow(1.0-vUv.y,1.8);gl_FragColor=vec4(vColor,edge*fade*.19);}`,
+  fragmentShader:`varying vec2 vUv;varying vec3 vColor;void main(){float edge=1.0-smoothstep(.06,.5,abs(vUv.x-.5));float fade=pow(clamp(1.0-vUv.y,0.0,1.0),1.8);gl_FragColor=vec4(vColor,edge*fade*.19);}`,
 });
 locatorMaterial.name='supply-locator';
 
