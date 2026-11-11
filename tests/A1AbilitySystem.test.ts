@@ -261,19 +261,19 @@ describe('all four rig dashes', () => {
   });
 });
 describe('tactical ability shape, line of sight and wind-up', () => {
-  it('Seismic Slam waits 220ms, then damages and launches only visible targets within 190 radius', () => {
+  it('Seismic Slam waits 220ms, then damages and launches only visible targets within 230 radius', () => {
     const w = world();
-    w.add(190);
-    w.add(190.01);
+    w.add(230);
+    w.add(230.01);
     const hidden = w.add(100);
     w.hidden.add(hidden.id);
     expect(w.system.use('tactical')).toBe(true);
     w.advance(219);
     expect(w.hits).toEqual([]);
     w.advance(1);
-    expect(w.hits).toEqual([{ id: 1, amount: 70 }]);
+    expect(w.hits).toEqual([{ id: 1, amount: 90 }]);
     expect(w.launches).toEqual([{ id: 1, x: 700, y: 0 }]);
-    expect(w.events.find(e => e.phase === 'impact')).toMatchObject({ radius: 190, targetIds: [1] });
+    expect(w.events.find(e => e.phase === 'impact')).toMatchObject({ radius: 230, targetIds: [1] });
   });
   it('Cryo Nova freezes already chilled enemies, applies chill before damage and uses its exact visible radius', () => {
     const w = world('cryo');
@@ -303,7 +303,7 @@ describe('tactical ability shape, line of sight and wind-up', () => {
     expect(w.hits).toEqual([]);
     w.advance(1);
     expect(w.hits.map(h => h.id).sort()).toEqual([1, 3]);
-    expect(w.hits.every(h => h.amount === 55)).toBe(true);
+    expect(w.hits.every(h => h.amount === 40)).toBe(true);
     expect(w.controls.every(c => c.kind === 'burn')).toBe(true);
     expect(w.events.find(e => e.phase === 'impact')).toMatchObject({ length: 300, arcRadians: 1.22 });
   });
@@ -424,7 +424,7 @@ describe('power placement, deployable collision and lifetimes', () => {
     w.add(100);
     w.add(200, 200);
     w.add(150, 14.01);
-    w.add(190);
+    w.add(230);
     w.hidden.add(4);
     w.advance(499);
     expect(w.hits).toEqual([{ id: 1, amount: 12 }]);
@@ -541,7 +541,7 @@ describe('Overdrive effects and exact bounds', () => {
     const victim = w.add(130);
     victim.health = 0;
     w.system.onKill(victim, false);
-    expect(w.hits.filter(h => h.amount === 28).map(h => h.id)).toEqual([1, 2]);
+    expect(w.hits.filter(h => h.amount === 20).map(h => h.id)).toEqual([1, 2]);
     w.advance(7750);
     expect(w.system.moveSpeedMultiplier).toBe(1);
     expect(w.system.ignitingShots).toBe(false);
@@ -612,16 +612,16 @@ describe('all twelve augment runtime effects', () => {
   });
   it('Afterquake adds exactly one 35-damage pulse 450ms later at the original Slam impact point', () => {
     const w = world('breacher', ['afterquake']);
-    w.add(190);
+    w.add(230);
     w.use('tactical');
     w.player.x = 1000;
     w.advance(449);
-    expect(w.hits).toEqual([{ id: 1, amount: 70 }]);
+    expect(w.hits).toEqual([{ id: 1, amount: 90 }]);
     w.advance(1);
-    expect(w.hits).toEqual([{ id: 1, amount: 70 }, { id: 1, amount: 35 }]);
+    expect(w.hits).toEqual([{ id: 1, amount: 90 }, { id: 1, amount: 35 }]);
     w.advance(1000);
     expect(w.hits).toHaveLength(2);
-    expect(w.events.filter(e => e.phase === 'impact').every(e => e.x === 0 && e.radius === 190)).toBe(true);
+    expect(w.events.filter(e => e.phase === 'impact').every(e => e.x === 0 && e.radius === 230)).toBe(true);
   });
   it('Reinforced Bulwark doubles health and adds exactly two seconds of lifetime', () => {
     const w = world('breacher', ['reinforced-bulwark']);
@@ -797,7 +797,7 @@ describe('snapshot reads by synchronous presentation subscribers', () => {
     w.system['host'].emit=(event,x,y)=>{emit(event,x,y);void w.system.snapshot;};
     w.use('dash');w.advance(140);w.use('tactical');w.advance(2240);
     expect(w.system.snapshot.slots!.dash.charges).toBe(2);
-    expect(w.system.snapshot.slots!.tactical.cooldownRemainingMs).toBe(5540);
+    expect(w.system.snapshot.slots!.tactical.cooldownRemainingMs).toBe(3540);
   });
 });
 

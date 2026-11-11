@@ -137,10 +137,10 @@ describe('review: altered shapes have exact telegraphs and hit boundaries',()=>{
     hidden.use();expect(hidden.events.find(e=>e.phase==='cast')).toMatchObject({radius:210});
   });
 
-  it('Afterquake uses the same 190-radius telegraph and exact boundary for its delayed pulse',()=>{
+  it('Afterquake uses the same 230-radius telegraph and exact boundary for its delayed pulse',()=>{
     const w=world('seismic-slam',['afterquake']);w.use();
-    const inside=w.add(190),outside=w.add(190.001);w.advance(450);
-    expect(w.events.filter(e=>e.phase==='cast'||e.phase==='impact').every(e=>e.radius===190)).toBe(true);
+    const inside=w.add(230),outside=w.add(230.001);w.advance(450);
+    expect(w.events.filter(e=>e.phase==='cast'||e.phase==='impact').every(e=>e.radius===230)).toBe(true);
     expect(w.hits).toEqual([{id:inside.id,amount:35}]);
     expect(w.hits.some(h=>h.id===outside.id)).toBe(false);
   });

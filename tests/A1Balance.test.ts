@@ -1,136 +1,127 @@
 import {describe, expect, it} from 'vitest';
 import {DepthGame} from '../src/DepthGame';
-import {RIG_IDS} from '../src/game/abilities/catalog';
-import type {RunStatsSnapshot} from '../src/game/abilities/RunStats';
-import type {AbilityId, RigId} from '../src/game/abilities/contract';
-import {expeditionRewardOffers} from '../src/game/roguelike/expedition';
-import {createExpeditionGeometry} from '../src/game/world/expeditionGeometry';
+import {ABILITY_CATALOG, RIG_IDS} from '../src/game/abilities/catalog';
+import type {RigId} from '../src/game/abilities/contract';
+import {generateRun, isValidRunState} from '../src/game/roguelike/run';
+import {progressionFor} from '../src/game/roguelike/progression';
+import {createExpeditionGeometry, canOccupyExpedition} from '../src/game/world/expeditionGeometry';
 import {FacilityNavigation} from '../src/game/world/FacilityNavigation';
 
+const SEED = 137;
 const STEP_MS = 50;
-const FIGHT_MS = 30_000;
-const MAX_SPAWNS = 60;
-const ACTIVE_ENEMIES = 6;
+const LIMIT_MS = 240_000;
+const ROOM_DEPTH = 9;
+const CENTER = {x: 600, y: 440};
+const KITE_RADIUS = 270;
 
-/** A repeatable moving fight: ordinary AI, real rifle rounds, circle kiting, no boons or augments. */
-function fight(rig: RigId) {
-  let measuring = true;
-  let pendingAbilityDamage = 0;
-  const damageByAbility: Partial<Record<AbilityId, number>> = {};
-  const targetsByAbility: Partial<Record<AbilityId, number>> = {};
-  const poolTargets = new Map<number, number>();
-  let poolPulses = 0;
+/** Complete one real seeded Act 2 holdout: finite waves, ordinary AI, earned meter and real pistol rounds. */
+function encounter(rig: RigId | null) {
+  const impactTargets: Record<string, number> = {};
   const game = new DepthGame(effect => {
-    if (!measuring) return;
-    if (effect.source === 'ability') pendingAbilityDamage += effect.damage ?? 0;
-    const event = effect.ability;
-    if (!event || (event.phase !== 'impact' && event.phase !== 'tick' && event.phase !== 'burst')) return;
-    if (pendingAbilityDamage) {
-      damageByAbility[event.ability] = (damageByAbility[event.ability] ?? 0) + pendingAbilityDamage;
-      pendingAbilityDamage = 0;
-    }
-    if (event.targetIds) targetsByAbility[event.ability] = (targetsByAbility[event.ability] ?? 0) + event.targetIds.length;
-    if (event.ability === 'napalm-charge' && event.phase === 'tick' && event.targetIds) {
-      poolPulses++;
-      for (const id of event.targetIds) poolTargets.set(id, (poolTargets.get(id) ?? 0) + 1);
+    if (effect.ability?.phase === 'impact') {
+      const event = effect.ability;
+      impactTargets[event.ability] = (impactTargets[event.ability] ?? 0) + (event.targetIds?.length ?? 0);
     }
   });
-  game.newRun(137, {rigSelect: true});
-  game.chooseRig(rig);
-  game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
-  // Keep host adapters and AI; use a known open room and an explicit, bounded replacement budget.
-  game['director'].reset();
-  game['pending'] = [];
-  game.enemies.reset();
+  game.newRun(SEED);
+  const graph = generateRun(SEED);
+  const node = graph.nodes[ROOM_DEPTH];
+  // Start at a valid middle-act boundary without bringing previous-room boons or combat receipts into the trial.
+  game.expedition = {...game.expedition, run: {...game.expedition.run, currentNodeId: node.id, completedNodeIds: graph.nodes.slice(0, ROOM_DEPTH).map(n => n.id), phase: 'combat'}, build: {mutations: [], rig: rig ?? 'breacher'}};
+  game['enterRoom']();
   const room = createExpeditionGeometry({...game.node, templateId: 'receiving'});
   game.geometry = {...room, blockers: room.boundaryWalls};
   game.navigation = new FacilityNavigation(game.geometry);
-  game.combat.setBuild({mutations: [], rig});
-  game.switchWeapon('rifle');
-  Object.assign(game.player, {x: 820, y: 440, angle: Math.PI});
-  let spawned = 0;
-  let powerUsed = false;
+  game['director'] = game['makeDirector']();
+  game['encounterEvents'](game['director'].start());
+  game.abilities.setRig(rig ?? 'breacher');
+  game.switchWeapon('pistol');
+  if (!isValidRunState(game.expedition.run) || game.abilities.snapshot.rig !== (rig ?? 'breacher')) throw new Error('Invalid full-kit trial setup');
+  Object.assign(game.player, {x: CENTER.x + KITE_RADIUS, y: CENTER.y, angle: Math.PI});
+  const plan = game['director'].plan;
+  const composition = Object.fromEntries(['crawler', 'brute', 'spitter', 'stalker', 'carrier'].map(family => [family, plan.schedule.filter(spawn => spawn.enemyId === family).length]));
   let firstOverdriveReadyMs: number | null = null;
-  let statsAt30: RunStatsSnapshot | null = null;
-  let chargeAt30 = 0;
-  let spawnedAt30 = 0;
-  let observedThroughMs = 0;
+  let simulatedMs = 0;
 
-  // Snapshot damage at 30s; continue the same cadence only until the first fill (60s ceiling).
-  for (let elapsedMs = 0; elapsedMs < FIGHT_MS * 2; elapsedMs += STEP_MS) {
-    while (game.enemies.activeCount < ACTIVE_ENEMIES && spawned < MAX_SPAWNS) {
-      const angle = spawned * Math.PI * 2 / ACTIVE_ENEMIES;
-      const result = game.enemies.spawn(spawned % 3 === 0 ? 'brute' : 'crawler', 600 + Math.cos(angle) * 80, 440 + Math.sin(angle) * 80);
-      if (!result.spawned) throw new Error('Balance encounter exceeded its spawn budget');
-      spawned++;
+  for (; simulatedMs < LIMIT_MS && game.status === 'playing'; simulatedMs += STEP_MS) {
+    const targets = game.targets();
+    const nearest = [...targets].sort((a, b) => Math.hypot(a.x - game.player.x, a.y - game.player.y) - Math.hypot(b.x - game.player.x, b.y - game.player.y) || a.id - b.id)[0];
+    // Aim placed abilities into the nearest visible group, shared by every rig.
+    const cluster = [...targets].filter(t => Math.hypot(t.x - game.player.x, t.y - game.player.y) < 400).sort((a, b) => {
+      const neighbors = (p: {x: number; y: number}) => targets.filter(t => Math.hypot(t.x - p.x, t.y - p.y) < 160).length;
+      return neighbors(b) - neighbors(a) || Math.hypot(a.x - game.player.x, a.y - game.player.y) - Math.hypot(b.x - game.player.x, b.y - game.player.y) || a.id - b.id;
+    })[0] ?? nearest;
+    if (cluster) {
+      game.setAimPoint({x: cluster.x, y: cluster.y});
+      game.player.angle = Math.atan2(cluster.y - game.player.y, cluster.x - game.player.x);
     }
-    const nearest = [...game.targets()].sort((a, b) => Math.hypot(a.x - game.player.x, a.y - game.player.y) - Math.hypot(b.x - game.player.x, b.y - game.player.y) || a.id - b.id)[0];
-    game.setAimPoint(nearest ? {x: nearest.x, y: nearest.y} : null);
-    if (nearest) game.player.angle = Math.atan2(nearest.y - game.player.y, nearest.x - game.player.x);
-    if (!powerUsed) powerUsed = game.useAbility('power');
-    if (game.abilities.snapshot.slots?.tactical.ready) game.useAbility('tactical');
-    const phase = (elapsedMs + STEP_MS) / 1000;
-    const dx = 600 + Math.cos(phase) * 220 - game.player.x;
-    const dy = 440 + Math.sin(phase) * 220 - game.player.y;
-    const length = Math.hypot(dx, dy) || 1;
+    const radial = Math.atan2(game.player.y - CENTER.y, game.player.x - CENTER.x);
+    const desired = {x: CENTER.x + Math.cos(radial + .08) * KITE_RADIUS, y: CENTER.y + Math.sin(radial + .08) * KITE_RADIUS};
+    const dx = desired.x - game.player.x, dy = desired.y - game.player.y, length = Math.hypot(dx, dy) || 1;
+    if (rig && nearest) {
+      const slots = game.abilities.snapshot.slots!;
+      const hazardNear = game.bullets.some(b => b.kind === 'hazard' && Math.hypot(b.x - game.player.x, b.y - game.player.y) < 105);
+      if (slots.dash.ready && (hazardNear || Math.hypot(nearest.x - game.player.x, nearest.y - game.player.y) < 135)) {
+        game.abilities.setIntent(dx / length, dy / length, cluster ? {x: cluster.x, y: cluster.y} : null);
+        game.useAbility('dash');
+      }
+      if (slots.overdrive.ready) {
+        if (firstOverdriveReadyMs === null) firstOverdriveReadyMs = simulatedMs;
+        game.useAbility('overdrive');
+      }
+      const tactical = ABILITY_CATALOG[slots.tactical.id];
+      const shape = tactical.shape;
+      const tacticalRange = shape.kind === 'circle' ? shape.radius : shape.kind === 'cone' || shape.kind === 'chain' ? shape.range : shape.kind === 'line' || shape.kind === 'wall' ? shape.length : shape.distance;
+      if (slots.tactical.ready && targets.some(t => Math.hypot(t.x - game.player.x, t.y - game.player.y) <= tacticalRange)) game.useAbility('tactical');
+      if (slots.power.ready) game.useAbility('power');
+    }
+    if (game.combat.snapshot.health <= 60) game.heal();
     game.update(STEP_MS, {x: dx / length, y: dy / length, fire: true, angle: null, autoAim: true});
-    if (firstOverdriveReadyMs === null && game.abilities.snapshot.overdrive.ready) firstOverdriveReadyMs = elapsedMs + STEP_MS;
-    observedThroughMs = elapsedMs + STEP_MS;
-    if (observedThroughMs === FIGHT_MS) {
-      statsAt30 = game.stats;
-      chargeAt30 = game.abilities.snapshot.overdrive.charge;
-      spawnedAt30 = spawned;
-      measuring = false;
-    }
-    if (game.status !== 'playing') throw new Error(`${rig} balance fight ended early at ${elapsedMs + STEP_MS}ms (${game.status})`);
-    if (statsAt30 && firstOverdriveReadyMs !== null) break;
+    if (firstOverdriveReadyMs === null && game.abilities.snapshot.overdrive.ready) firstOverdriveReadyMs = simulatedMs + STEP_MS;
+    if (!canOccupyExpedition(game.geometry, game.player, game.player.radius)) throw new Error('Balance input policy left the room');
   }
-
-  if (!statsAt30) throw new Error('Balance fight did not reach thirty seconds');
-  const damage = statsAt30.damageDealt;
-  // Without weapon boons, status ticks and launch/wall impacts originate exclusively from the rig.
+  const damage = game.stats.damageDealt;
   const rigDamage = damage.ability + damage.status + damage.boon;
-  const totalDamage = damage.weapon + rigDamage;
+  const totalDamage = rigDamage + damage.weapon;
   return {
-    rig, durationMs: FIGHT_MS, spawned: spawnedAt30, kills: statsAt30.kills.total,
-    shotsFired: statsAt30.shotsFired, shotsHit: statsAt30.shotsHit,
+    rig: rig ?? 'weapons-only', seed: SEED, act: progressionFor(node).act + 1, status: game.status,
+    plannedSpawns: plan.totalSpawns, composition, kills: game.stats.kills.total,
+    clearMs: simulatedMs, firstOverdriveReadyMs,
     weaponDamage: damage.weapon, abilityDamage: damage.ability, nativeStatusDamage: damage.status,
-    nativeReactionDamage: damage.boon, totalDamage,
-    abilityShare: rigDamage / totalDamage,
-    tacticalUses: statsAt30.abilityUses.tactical, powerUses: statsAt30.abilityUses.power,
-    overdrivesUsed: statsAt30.overdrivesUsed,
-    overdriveChargeAt30: chargeAt30, firstOverdriveReadyMs, observedThroughMs,
-    damageTaken: statsAt30.damageTaken,
-    damageByAbility, targetsByAbility,
-    ...(rig === 'pyro' ? {poolPulses, poolDistinctTargets: poolTargets.size,
-      poolBurnApplications: [...poolTargets.values()].reduce((sum, count) => sum + count, 0),
-      poolRepeatApplications: [...poolTargets.values()].reduce((sum, count) => sum + Math.max(0, count - 1), 0),
-      poolApplicationsPerTarget: Object.fromEntries(poolTargets)} : {}),
+    nativeReactionDamage: damage.boon, totalDamage, abilityShare: rigDamage / totalDamage,
+    abilityUses: game.stats.abilityUses, overdrivesUsed: game.stats.overdrivesUsed,
+    damageTaken: game.stats.damageTaken, shotsFired: game.stats.shotsFired, shotsHit: game.stats.shotsHit,
+    remaining: game.encounterRemaining, impactTargets,
   };
 }
 
-describe('Combat Rig mixed-play balance measurements', () => {
-  it.each(RIG_IDS)('measures %s thirty-second damage share and first Overdrive fill under mixed play', rig => {
-    const result = fight(rig);
-    console.info(`[A1 balance] ${JSON.stringify({...result, abilityShare: Number((result.abilityShare * 100).toFixed(1)) + '%'})}`);
-    expect(result.durationMs).toBe(30_000);
-    expect(result.spawned).toBeLessThanOrEqual(MAX_SPAWNS);
-    expect(result.weaponDamage).toBeGreaterThan(0);
-    expect(result.abilityDamage).toBeGreaterThan(0);
-    expect(result.totalDamage).toBeGreaterThan(0);
-    expect(Object.values(result.damageByAbility).reduce((sum, amount) => sum + amount, 0)).toBeCloseTo(result.abilityDamage);
-    expect(Number.isFinite(result.abilityShare)).toBe(true);
-    expect(result.abilityShare).toBeGreaterThan(0);
-    expect(result.abilityShare).toBeLessThan(1);
-    expect(result.overdriveChargeAt30).toBeGreaterThan(0);
-    expect(result.overdriveChargeAt30).toBeLessThanOrEqual(1);
-    expect(result.tacticalUses).toBeGreaterThan(1);
-    expect(result.powerUses).toBe(1);
-    expect(result.overdrivesUsed).toBe(0);
-    expect(result.shotsHit).toBeGreaterThan(0);
-    if (result.firstOverdriveReadyMs !== null) {
-      expect(result.firstOverdriveReadyMs).toBeGreaterThan(0);
-      expect(result.firstOverdriveReadyMs).toBeLessThanOrEqual(FIGHT_MS * 2);
+describe('complete Combat Rig encounter balance', () => {
+  it('keeps full-kit damage shares and clear times comparable across all rigs', () => {
+    const results = [encounter(null), ...RIG_IDS.map(encounter)];
+    for (const result of results) console.info(`[A1 full-kit balance] ${JSON.stringify({...result, abilityShare: `${(result.abilityShare * 100).toFixed(1)}%`})}`);
+    const [baseline, ...rigs] = results;
+    expect(baseline.status).toBe('reward');
+    expect(baseline.abilityShare).toBe(0);
+    expect(baseline.remaining).toBe(0);
+    expect(baseline.act).toBe(2);
+    expect(baseline.plannedSpawns).toBe(40);
+    expect(baseline.composition).toEqual({crawler: 9, brute: 8, spitter: 12, stalker: 3, carrier: 8});
+    expect(baseline.abilityUses).toEqual({dash: 0, tactical: 0, power: 0, overdrive: 0});
+    for (const result of rigs) {
+      expect(result.composition).toEqual(baseline.composition);
+      expect(Object.values(result.composition).every(count => count > 0)).toBe(true);
+      expect(result.status).toBe('reward');
+      expect(result.remaining).toBe(0);
+      expect(result.clearMs).toBeLessThan(LIMIT_MS);
+      expect(result.kills).toBe(baseline.kills);
+      expect(result.totalDamage).toBeCloseTo(baseline.totalDamage);
+      expect(result.weaponDamage).toBeGreaterThan(0);
+      expect.soft(result.abilityShare, `${result.rig} damage share`).toBeGreaterThanOrEqual(.30);
+      expect.soft(result.abilityShare, `${result.rig} damage share`).toBeLessThanOrEqual(.45);
+      for (const uses of Object.values(result.abilityUses)) expect(uses).toBeGreaterThan(0);
+      expect(result.overdrivesUsed).toBeGreaterThanOrEqual(1);
     }
-  });
+    const times = rigs.map(result => result.clearMs);
+    expect.soft(Math.max(...times), 'full-kit clear-time spread').toBeLessThanOrEqual(Math.min(...times) * 1.25);
+  }, 15_000);
 });

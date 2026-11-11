@@ -1,5 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {CombatSystem} from '../src/game/combat/CombatSystem';
+import {RIG_BURN_DAMAGE} from '../src/game/abilities/catalog';
 import {WEAPONS} from '../src/game/combat/catalog';
 import {EnemySystem} from '../src/game/enemies/EnemySystem';
 import {MutationRuntime, type MutationTarget} from '../src/game/roguelike/MutationRuntime';
@@ -150,14 +151,23 @@ describe('ability statuses share elemental and mutation reactions', () => {
 
   it('burns without Incendiary and Kindling spreads an ability burn on death', () => {
     const w = world(['scavenger']);
-    w.targets[0].health = 4;
+    w.targets[0].health = RIG_BURN_DAMAGE;
     w.runtime.applyAbilityStatus(w.targets[0], 'burn', 1);
     w.advance(250);
     expect(w.runtime.statuses(2).burning).toBe(true);
-    expect(w.hits[0]).toEqual({id: 1, amount: 4, source: 'status'});
+    expect(w.hits[0]).toEqual({id: 1, amount: RIG_BURN_DAMAGE, source: 'status'});
     w.advance(1500);
     expect(w.hits.filter(h => h.id === 2)).toHaveLength(6);
     expect(w.hits.every(h => h.source === 'status')).toBe(true);
+  });
+
+  it.each([false,true])('native rig burn never weakens a stronger weapon burn (weapon first=%s)',weaponFirst=>{
+    const w=world(['incendiary']);
+    const weapon=()=>w.runtime.hit('weapon-burn','pistol',w.targets[0],{x:1,y:0});
+    const rig=()=>w.runtime.applyAbilityStatus(w.targets[0],'burn',1);
+    if(weaponFirst){weapon();rig();}else{rig();weapon();}
+    w.advance(250);
+    expect(w.hits).toEqual([{id:1,amount:4,source:'status'}]);
   });
 
   it('keeps renewed burn ticking past reaction budgets during a long fight', () => {
@@ -168,13 +178,13 @@ describe('ability statuses share elemental and mutation reactions', () => {
     }
     expect(w.hits).toHaveLength(4400);
     expect(w.hits.every(h => h.source === 'status')).toBe(true);
-    expect(w.targets[0].health).toBe(100_000 - 4400 * 4);
+    expect(w.targets[0].health).toBe(100_000 - 4400 * RIG_BURN_DAMAGE);
   });
 
   it('retains the recursion depth cap when status kills spread Kindling', () => {
     const w = world(['scavenger']);
     w.targets.splice(0, w.targets.length, ...Array.from({length: 12}, (_, id) => (
-      {id, x: id * 90, y: 0, radius: 14, health: 4}
+      {id, x: id * 90, y: 0, radius: 14, health: id===0?RIG_BURN_DAMAGE:4}
     )));
     w.runtime.applyAbilityStatus(w.targets[0], 'burn', 1);
     w.advance(3000);

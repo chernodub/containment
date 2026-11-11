@@ -250,7 +250,7 @@ export class AbilitySystem {
       this.event(cast.id, 'dash-start', cast, { angle: cast.angle, targetX: cast.x + this.dash.x, targetY: cast.y + this.dash.y, durationMs: DASH_DURATION_MS });
     } else switch (cast.id) {
       case 'seismic-slam':
-        ids = this.radial(cast, 190, 70, undefined, 700);
+        ids = this.radial(cast, 230, 90, undefined, 700);
         if (this.host.has('afterquake' as MutationId) && this.afterquakes.length < 4) { this.afterquakes.push({ ...cast, delay: 450 }); this.event(cast.id, 'cast', cast, { durationMs: 450 }); }
         break;
       case 'cryo-nova': {
@@ -259,7 +259,7 @@ export class AbilitySystem {
         this.event(cast.id, 'impact', cast, { radius, targetIds: ids }); return;
       }
       case 'flashfire': {
-        for (const t of this.nearby(cast, 300)) { const a = Math.atan2(t.y - cast.y, t.x - cast.x) - cast.angle; if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) <= 1.22 / 2) { this.hit(t, 55, 'burn'); ids.push(t.id); } }
+        for (const t of this.nearby(cast, 300)) { const a = Math.atan2(t.y - cast.y, t.x - cast.x) - cast.angle; if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) <= 1.22 / 2) { this.hit(t, 40, 'burn'); ids.push(t.id); } }
         if (cast.ground) {
           this.addZone(cast.id, cast.ground, 120, 2500, 4);
           this.event(cast.id, 'impact', cast, { targetX: cast.ground.x, targetY: cast.ground.y, radius: 120, length: undefined, arcRadians: undefined, durationMs: 2500 });
@@ -478,7 +478,7 @@ export class AbilitySystem {
     const meltdown = this.active('meltdown');
     if (!whiteout && !meltdown) return;
     this.killDepth++;
-    try { const id = whiteout ? 'whiteout' : 'meltdown', ids = this.radial({ id, x: target.x, y: target.y, angle: 0, target, remaining: 0 }, whiteout ? 100 : 85, whiteout ? 40 : 28, meltdown ? 'burn' : 'chill'); this.event(id, 'burst', target, { radius: whiteout ? 100 : 85, targetIds: ids }); }
+    try { const id = whiteout ? 'whiteout' : 'meltdown', ids = this.radial({ id, x: target.x, y: target.y, angle: 0, target, remaining: 0 }, whiteout ? 100 : 85, whiteout ? 40 : 20, meltdown ? 'burn' : 'chill'); this.event(id, 'burst', target, { radius: whiteout ? 100 : 85, targetIds: ids }); }
     finally { this.killDepth--; }
     this.cached = null;
   }
@@ -525,7 +525,7 @@ export class AbilitySystem {
       state.active = countdown(state.active, ms);
       if (wasActive && !state.active && this.definition(slot).id === 'overclock') this.event('overclock', 'end', this.host.player());
     }
-    for (let i = this.afterquakes.length - 1; i >= 0; i--) { const cast = this.afterquakes[i]; cast.delay = countdown(cast.delay, ms); if (cast.delay <= 0) { this.afterquakes.splice(i, 1); const ids = this.radial(cast, 190, 35, undefined, 350); this.event(cast.id, 'impact', cast, { targetIds: ids }); } }
+    for (let i = this.afterquakes.length - 1; i >= 0; i--) { const cast = this.afterquakes[i]; cast.delay = countdown(cast.delay, ms); if (cast.delay <= 0) { this.afterquakes.splice(i, 1); const ids = this.radial(cast, 230, 35, undefined, 350); this.event(cast.id, 'impact', cast, { targetIds: ids }); } }
     for (let i = this.casts.length - 1; i >= 0; i--) {
       const cast = this.casts[i]; cast.remaining = countdown(cast.remaining, ms);
       if (cast.remaining <= 0) { this.casts.splice(i, 1); this.resolve(cast); }

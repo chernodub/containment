@@ -1,3 +1,4 @@
+import {RIG_BURN_DAMAGE} from '../abilities/catalog';
 import {ElementalRuntime,type BoonEffect} from './ElementalRuntime';
 import type { CombatSystem } from '../combat/CombatSystem';
 import { sweptCircle } from '../combat/enemyContact';
@@ -41,7 +42,7 @@ export class MutationRuntime {
   #hitCount=0;#directKills=0;
   #activeShot:string|undefined;
   #shotWeapons=new Map<string,BuildWeapon>();
-  #burns=new Map<number,{expiresAt:number;nextTick:number;command:BuildCommand}>();
+  #burns=new Map<number,{expiresAt:number;nextTick:number;tickDamage:number;command:BuildCommand}>();
 
   constructor(combat: CombatSystem, host: MutationHost) {
     this.#combat = combat;
@@ -66,7 +67,7 @@ export class MutationRuntime {
       if(!target.immovable&&!target.resistant)this.#addChill(target,3,amount);
       this.#elements.freeze(target,amount);
     }else if(kind==='shock')this.#elements.shock(target,amount);
-    else this.#ignite(target,{type:'damage',targetId:String(target.id),amount:4,source:'secondary',cause,id});
+    else this.#ignite(target,{type:'damage',targetId:String(target.id),amount:RIG_BURN_DAMAGE,source:'secondary',cause,id},RIG_BURN_DAMAGE);
     this.#refreshSlow(target);
   }
 
@@ -118,10 +119,10 @@ export class MutationRuntime {
     } finally {this.#activeShot=undefined;}
   }
 
-  #ignite(target:MutationTarget,command:BuildCommand){
+  #ignite(target:MutationTarget,command:BuildCommand,tickDamage=4){
     if(command.cause.depth>BUILD_LIMITS.maxDepth||!this.#host.targets().some(t=>t.id===target.id&&t.health>0))return;
     const old=this.#burns.get(target.id);
-    this.#burns.set(target.id,{expiresAt:this.#time+1500,nextTick:old?.nextTick??this.#time+250,command});
+    this.#burns.set(target.id,{expiresAt:this.#time+1500,nextTick:old?.nextTick??this.#time+250,tickDamage:Math.max(old&&old.expiresAt>this.#time?old.tickDamage:0,tickDamage),command});
     if(!old)this.#host.boonEffect?.('burn',target.x,target.y);
   }
 
@@ -158,7 +159,7 @@ export class MutationRuntime {
     for(const [id,burn]of this.#burns){
       const target=this.#host.targets().find(t=>t.id===id&&t.health>0);
       if(!target){this.#burns.delete(id);continue;}
-      let ticks=0;while(burn.nextTick<=this.#time+1e-7&&burn.nextTick<=burn.expiresAt+1e-7&&ticks++<4){if(!this.#host.targets().some(t=>t.id===id&&t.health>0))break;const tickId=this.#combat.nextMutationEventId('burn-tick'),cause={chainId:tickId,depth:burn.command.cause.depth};try{this.#damage(target,4,{...burn.command,id:tickId,cause},'status');}finally{this.secondaryBudget.delete(tickId);}burn.nextTick+=250;}
+      let ticks=0;while(burn.nextTick<=this.#time+1e-7&&burn.nextTick<=burn.expiresAt+1e-7&&ticks++<4){if(!this.#host.targets().some(t=>t.id===id&&t.health>0))break;const tickId=this.#combat.nextMutationEventId('burn-tick'),cause={chainId:tickId,depth:burn.command.cause.depth};try{this.#damage(target,burn.tickDamage,{...burn.command,id:tickId,cause},'status');}finally{this.secondaryBudget.delete(tickId);}burn.nextTick+=250;}
       if(this.#time>=burn.expiresAt)this.#burns.delete(id);
     }
     this.#elements.update(deltaMs);
