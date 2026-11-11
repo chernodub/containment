@@ -72,6 +72,10 @@ export class DepthRenderer {
  private post:PostPipeline;private tier:GraphicsTier='high';private shadowTime=0;private shadowsDirty=true;private pixelRatio=1;
  private options:GraphicsOptions=GRAPHICS_PRESETS.high;
  private cameraRig=new CameraRig();private viewHeight=13;private viewWidth=13;private desiredFocus=new T.Vector3();private screenPoint=new T.Vector3();private screenTarget=new T.Vector3();private bulletColor=new T.Color();private playerVelocity={x:0,y:0};private attachedLight={x:0,y:1,z:0,color:0xffffff,intensity:1,distance:3,duration:.1,priority:1};
+ private viewportSize?:{width:number;height:number};
+ /** CSS viewport dimensions sampled on resize, shared with pooled DOM projection. */
+ get viewportWidth(){return this.viewportSize?.width??this.canvas.clientWidth;}
+ get viewportHeight(){return this.viewportSize?.height??this.canvas.clientHeight;}
  private canvasRect?:DOMRect;private projectedPlayer?:{left:number;top:number;right:number;bottom:number};
  private visiblePoint=new T.Vector3();private activePoolIds=new Set<number>();private frameFocus={x:0,z:0};private activeActorIds=new Set<number>();private activeNestIds=new Set<number>();private healthEntries:HealthBarEntry[]=Array.from({length:128},()=>({x:0,z:0,height:0,health:0,maxHealth:1,elite:false,armor:0,maxArmor:0}));private projectileLightIds=new WeakMap<object,number>();private nextProjectileLight=-1000;
  private motionChanged=()=>this.applyQuality();
@@ -127,6 +131,7 @@ export class DepthRenderer {
   this.canvasRect=this.canvas.getBoundingClientRect();
   const w=window.innerWidth,h=window.innerHeight,post=this.tier==='high';this.pixelRatio=Math.min(devicePixelRatio||1,post?1.5:1)*this.options.resolutionScale;
   this.renderer.setPixelRatio(this.pixelRatio);this.renderer.setSize(w,h,false);this.post.setSize(w,h,Math.min(devicePixelRatio||1,post?1.5:1));
+  const viewport=this.viewportSize??={width:0,height:0};viewport.width=this.canvas.clientWidth??Math.round(this.canvasRect.width);viewport.height=this.canvas.clientHeight??Math.round(this.canvasRect.height);
   const view=h>w?18:13;this.viewHeight=view;this.viewWidth=view*w/h;if(this.camera instanceof T.OrthographicCamera){this.camera.left=-this.viewWidth/2;this.camera.right=this.viewWidth/2;this.camera.top=view/2;this.camera.bottom=-view/2;}else this.camera.aspect=w/h;this.camera.near=.1;this.camera.far=160;this.camera.updateProjectionMatrix();
  }
  /** Switch projection for matched-framing art review; perspective is the shipping default. */
@@ -441,7 +446,7 @@ export class DepthRenderer {
   for(const e of enemies){if(Math.hypot(e.x-p.x,e.y-p.y)<80)crowding+=.25;active.add(e.id);let model=this.actors.get(e.id);if(!model){model=this.actorPool.take(e.type,e.elite);model.setFlashIntensity?.(this.options.flashIntensity);this.shadowsDirty=true;this.actors.set(e.id,model);this.scene.add(model.root);this.contextResources?.track(model.root);}model.root.position.set(e.x/UNIT,0,e.y/UNIT);const status=game.boonStatuses(e.id);model.setAffliction?.(status);model.root.userData.visualStatus=status;model.setThreat?.(e.windupMs,e.pendingAttack,e.champion,e.alpha);model.animate(this.time+e.id,Math.hypot(e.velocityX,e.velocityY)>2?1:.12,Math.atan2((e.type==='spitter'?game.player.y:e.targetY)-e.y,(e.type==='spitter'?game.player.x:e.targetX)-e.x));}
   for(const [id,model]of this.actors)if(!active.has(id)){this.actorPool.release(model);this.actors.delete(id);this.shadowsDirty=true;}
   let healthCount=0;for(const e of enemies){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=e.x/UNIT;bar.z=e.y/UNIT;bar.height=this.actors.get(e.id)?.height??1;bar.health=e.health;bar.maxHealth=e.maxHealth;bar.elite=e.elite||!!e.champion;bar.armor=e.armor;bar.status=this.actors.get(e.id)?.root.userData.visualStatus;}for(const n of game.boss.snapshot.nests){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=n.x/UNIT;bar.z=n.y/UNIT;bar.height=1.35;bar.health=n.health;bar.maxHealth=n.maxHealth;bar.elite=false;bar.armor=0;bar.status=undefined;}for(let i=healthCount;i<128;i++)this.healthEntries[i].health=0;
-  this.healthBars.update(this.healthEntries,this.camera,this.canvas.clientHeight,menu);
+  this.healthBars.update(this.healthEntries,this.camera,this.viewportHeight,menu);
   this.menuActors.visible=menu;
   if(menu){this.menuMarine.root.position.set(23,0,13);this.menuAlien.root.position.set(27.2,0,10);this.menuMarine.animate(this.time,0,.42);this.menuAlien.animate(this.time,.12,Math.PI+.5);}
   this.lastMenu=menu;

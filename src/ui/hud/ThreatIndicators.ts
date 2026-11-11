@@ -1,7 +1,7 @@
 import { hudObstructs, presentationObstructs } from './layout';
 import type { DepthRenderer } from '../../render/DepthRenderer';
 import type { EnemySnapshot } from '../../game/enemies/EnemySystem';
-import { projectWorld, type ScreenPoint } from '../gameAdapter';
+import { projectWorld, getViewportWidth, getViewportHeight, type ScreenPoint } from '../gameAdapter';
 import type { HudEffect } from './effects';
 export const THREAT_CAPACITY = 8;
 export type ThreatKind = 'standard' | 'ranged' | 'elite' | 'champion' | 'boss';
@@ -255,8 +255,8 @@ export class ThreatIndicators {
         right: number;
         bottom: number;
     }, bullets?: readonly ThreatBullet[], boss?: ThreatBoss): void {
-        this.width = this.renderer.canvas.clientWidth;
-        this.height = this.renderer.canvas.clientHeight;
+        this.width = getViewportWidth(this.renderer);
+        this.height = getViewportHeight(this.renderer);
         this.originX = (bounds.left + bounds.right) / 2;
         this.originY = (bounds.top + bounds.bottom) / 2;
         for (const c of this.candidates) {
