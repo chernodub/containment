@@ -101,10 +101,9 @@ class CryoPresentation implements AbilityPresentation {
       const travel = .12 + .88 * (1 - (1 - Math.min(1, wave.age / .24)) ** 3);
       const radius = wave.radius * travel;
       const fade = (1 - progress) * (.45 + .55 * k.flashIntensity);
-      if (wave.age < wave.life) {
-        // A low, rolling body behind a hard front fills the actual radius in 240ms.
-        k.front(wave.x, wave.z, wave.radius, travel, CORE, wave.shatter ? .5 : 1.05, fade * .78);
-        if (!k.low) k.front(wave.x, wave.z, wave.radius, travel * .91, ICE, wave.shatter ? .22 : .48, fade * .42);
+      if (wave.age < wave.life && wave.aftermath) {
+        // Nova alone owns the single rolling front. Arrival/shatter pulses stay thin.
+        k.front(wave.x, wave.z, wave.radius, travel, CORE, .7, fade * .48);
       }
       const count = k.low ? 12 : 36;
       for (let i = 0; i < count && wave.age < wave.life; i++) {
@@ -219,13 +218,20 @@ class CryoPresentation implements AbilityPresentation {
       }
     }
     // A narrow slowly rotating wall of interrupted wind filaments, never a translucent dome.
-    const edgeCount = k.low ? 12 : 32, r = Math.max(0, radius - .045);
+    const edgeCount = k.low ? 12 : 24, r = Math.max(0, radius - .045);
     for (let i = 0; i < edgeCount; i++) {
       const a = i * TAU / edgeCount + time * .065, b = a + TAU / edgeCount * .58;
       const height = .18 + Math.sin(i * 2.73) ** 2 * .56;
       k.ribbon(x + Math.cos(a) * r, height, z + Math.sin(a) * r,
         x + Math.cos(b) * r, height + Math.sin(i * 1.7) * .055, z + Math.sin(b) * r,
-        ICE, k.low ? .006 : .008, fade * .16, false);
+        ICE, k.low ? .009 : .012, fade * .22, false);
+      if (!k.low && i % 2 === 0) {
+        // Narrow vapor wisps roll along the actual outer wall, never through the marine.
+        const middle = a + (b - a) * .5, inner = Math.max(0, radius - .5);
+        k.draw('smoke', x + Math.cos(middle) * inner, .34 + Math.sin(i * 4.1) ** 2 * .18,
+          z + Math.sin(middle) * inner, .32 + Math.sin(i * 2.7) ** 2 * .14, .3, .1,
+          0x779eae, fade * .14);
+      }
     }
     k.lightAt(zone.id, x, z, ICE, .85 * fade, 4.5);
     if (!k.low) this.frostRims(zone, frame, fade * .45);
@@ -276,9 +282,9 @@ class CryoPresentation implements AbilityPresentation {
     const count = k.low ? 5 : 9, column = length / count;
     for (let i = 0; i < count; i++) {
       const seed = i * 1.731 + wall.id, variation = Math.sin(seed * 2.37) ** 2;
-      const offset = -length / 2 + column * (i + .5 + Math.sin(seed) * .1);
+      const offset = -length / 2 + column * (i + .5 + Math.sin(seed) * .29);
       const rise = k.reducedMotion ? 1 : Math.min(1, Math.max(.02, (age - i * .009) / .09));
-      const height = (1.75 + Math.sin(seed * 3) ** 2 * 1.25) * rise;
+      const height = (1.45 + Math.sin(seed * 3) ** 2 * 1.5) * rise;
       const lateral = Math.sin(seed * 4.1) * thickness * .075;
       const px = x + alongX * offset + faceX * lateral, pz = z + alongZ * offset + faceZ * lateral;
       const yaw = -wall.angle + Math.sin(seed * 5.1) * .12;
@@ -287,8 +293,10 @@ class CryoPresentation implements AbilityPresentation {
       // Overlapping dark rear facets and offset lit spires replace the backing box and diamond fence.
       k.draw('shard', px - faceX * thickness * .08, height * .46, pz - faceZ * thickness * .08,
         depth, height * .46, width, 0x27536d, fade * .91, yaw, 0, 1);
-      k.draw('shard', px + alongX * width * .15, height * .51, pz + alongZ * width * .15,
-        depth * .8, height * .51, width * .73, i % 3 ? 0x6bb6d3 : 0x99d9ed, fade * .56, yaw + .06, 0, 1);
+      const shoulder = width * Math.sin(seed * 2.9) * .32, shoulderHeight = height * (.23 + variation * .11);
+      k.draw('shard', px + alongX * shoulder, shoulderHeight, pz + alongZ * shoulder,
+        depth * .64, shoulderHeight, width * .52, i % 3 ? 0x6bb6d3 : 0x99d9ed,
+        fade * .67, -wall.angle + Math.sin(seed * 3.9) * .32, 0, 1);
       // Broken ankle-high frost clusters stay irregular without a continuous rectangular skirt.
       k.draw('shard', px, .09 + variation * .09, pz, thickness * .39,
         (.12 + variation * .15) * rise, Math.min(width * 1.12, length / 2 - Math.abs(offset)), 0x4e8baf, fade * .55, -wall.angle);

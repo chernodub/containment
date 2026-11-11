@@ -81,7 +81,7 @@ ${kind === 'decal' ? `
  float ray=abs(sin(a0*6.5+jag/max(.08,d)))*d;
  float fork=abs(sin(a0*6.5+(d-.4)*1.3+jag/max(.08,d)))*d;
  float seam=step(.025,abs(fract((p.x+p.y*.13)*4.)-.5));
- float cracks=max(1.-smoothstep(.001,.004,ray),(1.-smoothstep(.001,.003,fork))*smoothstep(.32,.5,d)*.6)*seam*(1.-smoothstep(.82,1.,d));
+ float cracks=max(1.-smoothstep(.002,.006,ray),(1.-smoothstep(.0015,.0045,fork))*smoothstep(.32,.5,d)*.6)*seam*(1.-smoothstep(.82,1.,d));
  if(variant<.5){if(d>1.)discard;a*=cracks*.62;c=mix(vec3(.012,.009,.006),ink,.14);}
  else if(variant<1.5){
   if(d>1.)discard;

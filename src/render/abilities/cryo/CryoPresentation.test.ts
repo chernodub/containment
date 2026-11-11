@@ -42,7 +42,9 @@ describe('Cryo signatures', () => {
     for (const draw of shards) expect(Math.hypot(draw[1] - 2, draw[3] - 3)).toBeLessThanOrEqual(310 / 32);
     expect(kit.front.mock.calls[0][2]).toBe(310 / 32);
     expect(kit.front.mock.calls[0][3]).toBeGreaterThan(.95);
-    expect(kit.front.mock.calls[0][5]).toBeGreaterThan(1);
+    expect(kit.front.mock.calls[0][5]).toBeGreaterThanOrEqual(.5);
+    expect(kit.front.mock.calls[0][5]).toBeLessThanOrEqual(.75);
+    expect(kit.front).toHaveBeenCalledOnce();
   });
 
   it('builds irregular overlapping Glacier facets with no backing slab inside the blocking strip', () => {
@@ -124,7 +126,8 @@ describe('Cryo signatures', () => {
     expect(kit.debris).toHaveBeenCalledWith(2, 3, 180 / 32, 'cryo', 48);
     expect(kit.scar).toHaveBeenCalledWith('frost', 2, 3, 180 / 32, 0x7fd6ff, 7);
     fx.update(frame({}, .15));
-    expect(kit.front.mock.calls[0][5]).toBe(.5);
+    expect(kit.front).not.toHaveBeenCalled();
+    expect(kit.ring).toHaveBeenCalledWith(2, 3, 180 / 32, 0xe8fbff, .5);
   });
 
   it('keeps Whiteout sparse, with a clear marine region and narrow low-opacity perimeter wall', () => {
@@ -139,8 +142,16 @@ describe('Cryo signatures', () => {
       expect(distance).toBeGreaterThan(2.25); expect(distance).toBeLessThan(300 / 32);
       expect(draw[8]).toBeLessThanOrEqual(.37);
     }
-    expect(kit.ribbon.mock.calls.length).toBe(8 + 32 + 4);
+    expect(kit.ribbon.mock.calls.length).toBe(8 + 24 + 4);
     for (const c of kit.ribbon.mock.calls) expect(c[7]).toBeLessThanOrEqual(.024);
+    const wisps = kit.draw.mock.calls.filter(c => c[0] === 'smoke');
+    expect(wisps).toHaveLength(12);
+    for (const wisp of wisps) {
+      const distance = Math.hypot(wisp[1] - 10, wisp[3] - 10);
+      expect(distance).toBeGreaterThan(300 / 32 * .9);
+      expect(distance + wisp[4]).toBeLessThan(300 / 32);
+      expect(wisp[8]).toBeLessThanOrEqual(.14);
+    }
     expect(kit.front).not.toHaveBeenCalled();
     expect(kit.lightAt).toHaveBeenCalledWith(2, 10, 10, 0x7fd6ff, .85, 4.5);
   });
