@@ -35,7 +35,7 @@ describe('G2 deterministic world dressing',()=>{
   const template=ROOM_TEMPLATES['diagnostic-gallery'],world=platformWorld(template),root=addWorldDressing(world,template,'engineering',template.id,1729);
   expect(root.userData.displayText).toEqual(['INDEPENDENT DIAGNOSTIC','OCCUPIED CRYO DECKS','PURGE IS FATAL']);
   const mesh=root.getObjectByName('g2-dressing-display') as T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>,texture=mesh.material.map!;
-  expect(texture).toBeInstanceOf(T.DataTexture);expect(mesh.material.emissiveMap).toBe(texture);expect(texture.image.width*texture.image.height).toBeLessThanOrEqual(65536);
+  expect(texture).toBeInstanceOf(T.DataTexture);expect(mesh.material.emissiveMap).toBe(texture);const image=texture.image as {width:number;height:number};expect(image.width*image.height).toBeLessThanOrEqual(65536);
   const retired=vi.spyOn(texture,'dispose');disposeModel(root);expect(retired).toHaveBeenCalledTimes(1);
  });
  it('same room seed reproduces every fitting while a new seed changes clutter',()=>{
