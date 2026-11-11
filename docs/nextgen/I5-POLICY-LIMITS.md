@@ -1,6 +1,6 @@
 # I5 shared combat-policy limitation
 
-The user requested difficulty targets for **“THIS bot policy.”** No combat-policy change has been made. The scope question is whether to correct directional cone aiming and rerun matched baselines, or preserve the existing combat decisions exactly. Difficulty acceptance remains unfinished; the unaccepted encounter profile is default-off.
+The user requested difficulty targets for **“THIS bot policy.”** The target, weapon, ability-opportunity and combat-spacing helpers remain unchanged; navigation-observer v3 is separately versioned in the experiment reports. No cone-aim correction has been made. The scope question is whether to correct directional cone aiming and rerun matched baselines, or preserve the existing combat decisions exactly. Difficulty acceptance remains unfinished; the unaccepted encounter profile is default-off.
 
 ## Executed minimal receipt
 
