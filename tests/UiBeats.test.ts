@@ -68,7 +68,7 @@ it('keeps beat copy clear of perspective marine bounds and cached HUD at both de
         const player={left:innerWidth*.4,right:innerWidth*.4+90,top:innerHeight*.19,bottom:innerHeight*.19+140};
         positionHudPanels(player,innerWidth,innerHeight);
         beats.show('boss-intro');beats.position(player);
-        const node=document.getElementById('presentation-beat'),box=node.getBoundingClientRect();
+        const node=document.getElementById('presentation-beat')!,box=node.getBoundingClientRect();
         const before=JSON.stringify(game.expedition);
         const protectedBefore=presentationObstructs(box.left,box.top,box.right,box.bottom);
         const data={visible:getComputedStyle(node).visibility!=='hidden',outside:box.left<8||box.right>innerWidth-8||box.top<8||box.bottom>innerHeight-8,
