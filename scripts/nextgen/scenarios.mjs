@@ -69,10 +69,11 @@ export const SCENARIOS=[
    if(!g.chooseRig('arc'))throw Error('Live results rig selection failed');d.refresh();
    document.querySelector('[data-mutation]').click();await d.prepare();g.skipStory();d.invulnerable(true);g.enemies.reset();
    Object.assign(g.player,{x:320,y:440,angle:-Math.PI/2,vx:0,vy:0});
-   for(const [x,y]of [[320,280],[350,260],[290,230]])if(!d.spawn('crawler',x,y))throw Error('Live results target unavailable');
-   g.switchWeapon('rifle');g.setAimPoint({x:320,y:220});d.setInput({fire:true,angle:-Math.PI/2,autoAim:false});
+   // Survive the opening Overload so the debrief also exercises confirmed weapon receipts.
+   for(const [x,y]of [[320,280],[350,260],[290,230]])if(!d.spawn('brute',x,y))throw Error('Live results target unavailable');
+   g.switchWeapon('rifle');g.setAimPoint({x:320,y:220});d.setInput({fire:true,angle:null,autoAim:true});
    if(!g.useAbility('tactical'))throw Error('Live results tactical denied');d.step(250);d.fillOverdrive();
-   if(!g.useAbility('overdrive'))throw Error('Live results Overdrive denied');d.step(1800);d.setInput({fire:false});
+   if(!g.useAbility('overdrive'))throw Error('Live results Overdrive denied');d.step(5000);d.setInput({fire:false});
    d.invulnerable(false);g.hurt(100000);d.refresh();
  }},
  {id:'results-fixture',state:'dead',required:['.result-stats'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('breached-loading-bay');d.game.hurt(100000);d.uiFixture({stats:{...d.game.stats,kills:{total:284,byFamily:{crawler:184,brute:40,spitter:30,stalker:20,carrier:10,queen:0}},damageDealt:{weapon:12000,ability:2000,status:582,boon:100},shotsFired:812,shotsHit:620,abilityUses:{dash:18,tactical:12,power:5,overdrive:1},overdrivesUsed:1,highestMultiKill:6,roomTimeMs:{...d.game.stats.roomTimeMs,'fixture':487000}}});}},

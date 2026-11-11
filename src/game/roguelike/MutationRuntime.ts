@@ -1,5 +1,7 @@
+import {RIG_BURN_DAMAGE} from '../abilities/catalog';
 import {ElementalRuntime,type BoonEffect} from './ElementalRuntime';
 import type { CombatSystem } from '../combat/CombatSystem';
+import { sweptCircle } from '../combat/enemyContact';
 import { BUILD_LIMITS, familyBonuses } from './builds';
 import type { BuildCause, BuildCommand, BuildEvent, BuildWeapon } from './builds';
 
@@ -40,7 +42,7 @@ export class MutationRuntime {
   #hitCount=0;#directKills=0;
   #activeShot:string|undefined;
   #shotWeapons=new Map<string,BuildWeapon>();
-  #burns=new Map<number,{expiresAt:number;nextTick:number;command:BuildCommand}>();
+  #burns=new Map<number,{expiresAt:number;nextTick:number;tickDamage:number;command:BuildCommand}>();
 
   constructor(combat: CombatSystem, host: MutationHost) {
     this.#combat = combat;
@@ -65,7 +67,7 @@ export class MutationRuntime {
       if(!target.immovable&&!target.resistant)this.#addChill(target,3,amount);
       this.#elements.freeze(target,amount);
     }else if(kind==='shock')this.#elements.shock(target,amount);
-    else this.#ignite(target,{type:'damage',targetId:String(target.id),amount:4,source:'secondary',cause,id});
+    else this.#ignite(target,{type:'damage',targetId:String(target.id),amount:RIG_BURN_DAMAGE,source:'secondary',cause,id},RIG_BURN_DAMAGE);
     this.#refreshSlow(target);
   }
 
@@ -117,10 +119,10 @@ export class MutationRuntime {
     } finally {this.#activeShot=undefined;}
   }
 
-  #ignite(target:MutationTarget,command:BuildCommand){
+  #ignite(target:MutationTarget,command:BuildCommand,tickDamage=4){
     if(command.cause.depth>BUILD_LIMITS.maxDepth||!this.#host.targets().some(t=>t.id===target.id&&t.health>0))return;
     const old=this.#burns.get(target.id);
-    this.#burns.set(target.id,{expiresAt:this.#time+1500,nextTick:old?.nextTick??this.#time+250,command});
+    this.#burns.set(target.id,{expiresAt:this.#time+1500,nextTick:old?.nextTick??this.#time+250,tickDamage:Math.max(old&&old.expiresAt>this.#time?old.tickDamage:0,tickDamage),command});
     if(!old)this.#host.boonEffect?.('burn',target.x,target.y);
   }
 
@@ -157,13 +159,13 @@ export class MutationRuntime {
     for(const [id,burn]of this.#burns){
       const target=this.#host.targets().find(t=>t.id===id&&t.health>0);
       if(!target){this.#burns.delete(id);continue;}
-      let ticks=0;while(burn.nextTick<=this.#time&&burn.nextTick<=burn.expiresAt&&ticks++<4){if(!this.#host.targets().some(t=>t.id===id&&t.health>0))break;const tickId=this.#combat.nextMutationEventId('burn-tick'),cause={chainId:tickId,depth:burn.command.cause.depth};try{this.#damage(target,4,{...burn.command,id:tickId,cause},'status');}finally{this.secondaryBudget.delete(tickId);}burn.nextTick+=250;}
+      let ticks=0;while(burn.nextTick<=this.#time+1e-7&&burn.nextTick<=burn.expiresAt+1e-7&&ticks++<4){if(!this.#host.targets().some(t=>t.id===id&&t.health>0))break;const tickId=this.#combat.nextMutationEventId('burn-tick'),cause={chainId:tickId,depth:burn.command.cause.depth};try{this.#damage(target,burn.tickDamage,{...burn.command,id:tickId,cause},'status');}finally{this.secondaryBudget.delete(tickId);}burn.nextTick+=250;}
       if(this.#time>=burn.expiresAt)this.#burns.delete(id);
     }
     this.#elements.update(deltaMs);
     const cryo=familyBonuses(this.#combat.build).cryo;for(const target of this.#host.targets())this.#refreshSlow(target,cryo);
     for(const id of this.#slow.keys())if(!active.has(id))this.#slow.delete(id);
-    // At most 100ms catch-up and <=25ms substeps prevent thin-body tunneling.
+    // At most 100ms catch-up; body contacts sweep each resolved movement substep.
     let remaining = Math.min(deltaMs, 100);
     while (remaining > 0) {
       const step = Math.min(25, remaining);
@@ -263,6 +265,7 @@ export class MutationRuntime {
       const before = launch.ghost ?? this.#host.targets().find((target) => target.id === id && target.health > 0);
       if (!before) { this.#launches.delete(id); continue; }
       this.#remember(before);
+      const from=this.#positions.get(id)!;
       const speed = Math.hypot(launch.x, launch.y);
       const dx = launch.x * deltaMs / 1000;
       const dy = launch.y * deltaMs / 1000;
@@ -275,16 +278,28 @@ export class MutationRuntime {
       const current = launch.ghost ?? this.#host.targets().find((target) => target.id === id && target.health > 0);
       if (!current) { this.#launches.delete(id); continue; }
       this.#remember(current);
-      if (blocked) {
-        this.#launches.delete(id);
-        this.#dispatch({ id: `${launch.commandId}:wall`, cause: launch.cause, type: 'wall-hit', targetId: String(id), impulse: speed },()=>this.#host.wallSlam?.(current,{x:before.x+dx,y:before.y+dy},speed));
-        continue;
+      const contacts:Array<{target:MutationTarget;entry:number}>=[];
+      const targets=this.#host.targets();
+      for(let i=0;i<Math.min(targets.length,BUILD_LIMITS.maxEncounterEvents);i++){
+        const other=targets[i];
+        if(other.health<=0||launch.touched.has(other.id))continue;
+        const entry=sweptCircle(from,current,other,other.radius+current.radius);
+        if(entry===null)continue;
+        const contact={x:from.x+(current.x-from.x)*entry,y:from.y+(current.y-from.y)*entry};
+        if(this.#host.canAffect?.(from,contact)===false||this.#host.canAffect?.(contact,other)===false)continue;
+        contacts.push({target:other,entry});
       }
-      for (const other of this.#host.targets().slice().sort((a, b) => a.id - b.id)) {
-        if (other.health <= 0 || launch.touched.has(other.id) || Math.hypot(other.x - current.x, other.y - current.y) > other.radius + current.radius) continue;
+      contacts.sort((a,b)=>a.entry-b.entry||a.target.id-b.target.id);
+      for(const {target:other}of contacts){
+        if(!this.#host.targets().some(t=>t.id===other.id&&t.health>0))continue;
         launch.touched.add(other.id);
         this.#remember(other);
         this.#dispatch({ id: `${launch.commandId}:body:${other.id}`, cause: launch.cause, type: 'body-collision', targetId: String(other.id), impulse: speed, direction: { x: launch.x, y: launch.y } });
+      }
+      if (blocked) {
+        this.#launches.delete(id);
+        this.#dispatch({ id: `${launch.commandId}:wall`, cause: launch.cause, type: 'wall-hit', targetId: String(id), impulse: speed },()=>this.#host.wallSlam?.(current,{x:from.x+dx,y:from.y+dy},speed));
+        continue;
       }
       launch.remainingMs -= deltaMs;
       const decay = Math.exp(-4 * deltaMs / 1000);

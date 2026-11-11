@@ -30,3 +30,33 @@ describe('integration initial-choice persistence', () => {
     expect(values.get(CHECKPOINT_STORAGE_KEY)).toBe(draft);
   });
 });
+
+/** Both merge parents' rules apply at initial choices, as well as later boundaries. */
+describe('integration initial-choice statistics validation', () => {
+  it.each(['rig-select', 'starting-boon'] as const)('%s requires graph-local timers and safe matching Continue', phase => {
+    const values = new Map<string,string>();
+    const storage = {getItem:(key:string)=>values.get(key)??null,setItem:(key:string,value:string)=>{values.set(key,value);},removeItem:(key:string)=>{values.delete(key);}};
+    const original = new DepthGame(()=>{},storage);
+    original.newRun(1729,{rigSelect:true});
+    if (phase === 'starting-boon') original.chooseRig('arc');
+    const saved = parseCheckpoint(values.get(CHECKPOINT_STORAGE_KEY))!;
+    for (const roomTimeMs of [{}, saved.stats!.roomTimeMs, {'99:v3-r0': 0}]) {
+      const valid = !Object.hasOwn(roomTimeMs, '99:v3-r0');
+      storage.setItem(CHECKPOINT_STORAGE_KEY, JSON.stringify({...saved, stats: {...saved.stats, roomTimeMs}}));
+      const restored = new DepthGame(()=>{},storage);
+      expect(restored.canContinue).toBe(valid);
+      expect(() => expect(restored.continueRun()).toBe(valid)).not.toThrow();
+      if (valid) {
+        expect(restored.expedition.run.phase).toBe(phase);
+        expect(restored.stats.roomTimeMs[saved.run.currentNodeId]).toBe(0);
+        expect(restored.expedition.build).toEqual(saved.build);
+      } else expect(parseCheckpoint(values.get(CHECKPOINT_STORAGE_KEY))).toBeNull();
+    }
+    for (const corruption of [{build:{...saved.build,mutations:['breacher']}}, {run:{...saved.run,completedNodeIds:[saved.run.currentNodeId]}}]) {
+      storage.setItem(CHECKPOINT_STORAGE_KEY, JSON.stringify({...saved,...corruption}));
+      const restored = new DepthGame(()=>{},storage);
+      expect(restored.canContinue).toBe(false);
+      expect(restored.continueRun()).toBe(false);
+    }
+  });
+});

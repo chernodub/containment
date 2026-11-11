@@ -13,6 +13,7 @@ import type { AbilityDefinition, AbilityId, AbilitySlot, RigDefinition, RigId } 
 const ability = (definition: AbilityDefinition): AbilityDefinition => Object.freeze(definition);
 const seconds = (ms: number) => `${(ms / 1000).toFixed(ms % 1000 ? 1 : 0)} s`;
 
+export const RIG_BURN_DAMAGE = 2;
 export const DASH_CHARGES = 2;
 export const DASH_RECHARGE_MS = 2_600;
 export const DASH_DISTANCE = 150;
@@ -50,10 +51,10 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   'seismic-slam': ability({
     id: 'seismic-slam', rig: 'breacher', slot: 'tactical', element: 'kinetic', name: 'Seismic Slam',
     summary: 'Shockwave that launches everything around you.',
-    description: 'Drive the rig into the deck. After a short wind-up a shockwave deals 70 damage and launches enemies outward. Launched enemies can slam into walls and trigger Breacher boons.',
-    targeting: 'self', shape: { kind: 'circle', radius: 190 },
-    castMs: 220, cooldownMs: 8_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '70' }, { label: 'Radius', value: '190' }, { label: 'Cooldown', value: seconds(8_000) }],
+    description: 'Drive the rig into the deck. After a short wind-up a shockwave deals 90 damage and launches enemies outward. Launched enemies can slam into walls and trigger Breacher boons.',
+    targeting: 'self', shape: { kind: 'circle', radius: 230 },
+    castMs: 220, cooldownMs: 6_000, charges: 1, durationMs: 0, range: 0,
+    stats: [{ label: 'Damage', value: '90' }, { label: 'Radius', value: '230' }, { label: 'Cooldown', value: seconds(6_000) }],
   }),
   bulwark: ability({
     id: 'bulwark', rig: 'breacher', slot: 'power', element: 'kinetic', name: 'Bulwark',
@@ -105,20 +106,20 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   // ── PYRO ────────────────────────────────────────────────────────────────────
   afterburn: dash('afterburn', 'pyro', 'pyro', 'Afterburn',
     'Dash and leave a line of fire.',
-    'Dash in your movement direction. You cannot be hit while dashing. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies.',
+    'Dash in your movement direction. You cannot be hit while dashing. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     2_500, [{ label: 'Fire', value: seconds(2_500) }]),
   flashfire: ability({
     id: 'flashfire', rig: 'pyro', slot: 'tactical', element: 'pyro', name: 'Flashfire',
     summary: 'A wide cone of flame.',
-    description: 'Dump the tank in a wide cone along your aim: 55 damage and every enemy hit is ignited.',
+    description: 'Dump the tank in a wide cone along your aim: 40 damage and every enemy hit is ignited. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     targeting: 'direction', shape: { kind: 'cone', range: 300, arcRadians: 1.22 },
-    castMs: 80, cooldownMs: 7_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '55' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(7_000) }],
+    castMs: 80, cooldownMs: 8_000, charges: 1, durationMs: 0, range: 0,
+    stats: [{ label: 'Damage', value: '40' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(8_000) }],
   }),
   'napalm-charge': ability({
     id: 'napalm-charge', rig: 'pyro', slot: 'power', element: 'pyro', name: 'Napalm Charge',
     summary: 'Lob a canister. The pool keeps burning.',
-    description: 'Lob a canister to the cursor. It bursts into a burning pool for 6 seconds that damages and ignites everything standing in it.',
+    description: 'Lob a canister to the cursor. It bursts into a burning pool for 6 seconds that damages and ignites everything standing in it. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     targeting: 'point', shape: { kind: 'circle', radius: 120 },
     castMs: 350, cooldownMs: 14_000, charges: 1, durationMs: 6_000, range: 480,
     stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Radius', value: '120' }, { label: 'Cooldown', value: seconds(14_000) }],
@@ -126,7 +127,7 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   meltdown: ability({
     id: 'meltdown', rig: 'pyro', slot: 'overdrive', element: 'pyro', name: 'Meltdown',
     summary: 'Become the fire.',
-    description: 'For 8 seconds you burn everything near you, every shot ignites, kills burst into flame, and you move 25% faster.',
+    description: 'For 8 seconds you burn everything near you, every shot ignites, kills burst for 20 damage within 85 units, and you move 25% faster. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     targeting: 'self', shape: { kind: 'circle', radius: 130 },
     castMs: 0, cooldownMs: 0, charges: 1, durationMs: 8_000, range: 0,
     stats: [{ label: 'Duration', value: seconds(8_000) }, { label: 'Speed', value: '+25%' }],

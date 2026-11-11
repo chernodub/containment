@@ -184,13 +184,15 @@ describe('confirmed damage and run statistics in DepthGame', () => {
     const target = game.targets().find(t => t.id === enemy.id)!;
     game['mutations'].hit('status-setup', 'pistol', target, {x: 1, y: 0});
     game['mutations'].applyAbilityStatus(target, 'freeze', 2000);
+    effects.length = 0;
     advance(game, 450);
     const before = game.stats.damageDealt.status;
-    effects.length = 0;
     game.update(50);
     const status = effects.filter(e => e.source === 'status');
-    expect(status).toHaveLength(1);
-    expect(status[0]).toMatchObject({targetId: enemy.id, damage: 6, lethal: true});
+    expect(status).toHaveLength(2);
+    expect(status[0]).toMatchObject({targetId: enemy.id, damage: 4, lethal: false});
+    expect(status[1]).toMatchObject({targetId: enemy.id, damage: 6, lethal: true});
+    expect(status.reduce((sum,e)=>sum+e.damage!,0)).toBe(10);
     expect(game.stats.damageDealt.status - before).toBe(6);
     expect(game.stats.damageDealt.status).toBe(10);
     expect(game.stats.kills.byFamily.spitter).toBe(1);
@@ -223,7 +225,7 @@ describe('confirmed damage and run statistics in DepthGame', () => {
     const enemy = spawn(game, 'brute', 510, 440);
     game.switchWeapon('shotgun');
     game.update(50, {...idle, fire: true});
-    advance(game, 150);
+    advance(game, 200); // Presentation receipts flush within their250ms window.
     expect(game.stats.shotsFired).toBe(1);
     expect(game.stats.shotsHit).toBe(1);
     expect(game.stats.damageDealt.weapon).toBeGreaterThan(0);

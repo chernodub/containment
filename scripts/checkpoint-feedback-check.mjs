@@ -3,7 +3,15 @@ import {createServer} from 'vite';
 
 /** Exercise actual production DOM feedback, not source-string assertions. */
 export async function checkCheckpointFeedback(page) {
-  const ssr = await createServer({configFile:false,server:{middlewareMode:true},logLevel:'error'});
+  const ssr = await createServer({configFile:false,server:{middlewareMode:true,hmr:false},logLevel:'error'});
+  const reloadSettledRoom = async () => {
+    // A screen can advance before its room assets finish. Keep real request
+    // failures meaningful by allowing those loads to settle before navigation.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await page.waitForFunction(() => document.querySelector('#world').getAttribute('aria-busy') === 'false');
+    await page.waitForLoadState('networkidle');
+    await page.reload();
+  };
   let key, value;
   try {
     const {DepthGame} = await ssr.ssrLoadModule('/src/DepthGame.ts');
@@ -19,7 +27,7 @@ export async function checkCheckpointFeedback(page) {
     assert.ok(value, 'valid completed-room reward fixture');
   } finally { await ssr.close(); }
   await page.evaluate(({key,value})=>localStorage.setItem(key,value), {key,value});
-  await page.reload();
+  await reloadSettledRoom();
   await page.locator('#continue').click();
   await page.evaluate(key=>{
     const original = Storage.prototype.setItem;
@@ -36,7 +44,7 @@ export async function checkCheckpointFeedback(page) {
   await page.locator('#reroll').click();
   assert.equal(await page.locator('.save-note').count(), 0);
   await page.locator('[data-mutation]').first().click();
-  await page.reload();
+  await reloadSettledRoom();
   await page.evaluate(key=>{
     const original = Storage.prototype.removeItem;
     window.__failCheckpointClear = true;

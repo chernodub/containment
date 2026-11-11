@@ -341,3 +341,32 @@ it('labels a stored but illegal placement as blocked instead of a zero-second co
         expect(await page.locator('[data-ability="power"]').getAttribute('data-charges')).toBe('1');
     } finally {await page.close();}
 });
+
+it('displays budgeted target receipts once without treating aggregate ability ticks as extra damage', async () => {
+    const page = await mountHud(1920, 1080);
+    try {
+        await liveHud(page);
+        await page.evaluate(async () => {
+            const load = new Function('path', 'return import(path)');
+            const {PresentationBudget} = await load('/src/game/abilities/PresentationBudget.ts');
+            const {hud} = (window as any).__live;
+            const budget = new PresentationBudget((e: unknown) => hud.effect(e));
+            const hit = {type:'hit',x:640,y:0,targetId:7,source:'ability',damage:4,elements:['ice']};
+            budget.push(hit); budget.push(hit);
+            budget.push({...hit,source:'status',damage:2});
+            budget.push({type:'ability',x:640,y:0,ability:{phase:'tick',ability:'whiteout',rig:'cryo',element:'cryo',slot:'overdrive',targetIds:[7,8],totalDamage:16}});
+            budget.update(250); hud.tick(.01);
+            (window as any).__receiptBudget = budget;
+        });
+        expect(await page.locator('.combat-float[data-kind="damage"][data-source="ability"]:not([hidden])').allTextContents()).toEqual(['8']);
+        expect(await page.locator('.combat-float[data-kind="damage"][data-source="status"]:not([hidden])').allTextContents()).toEqual(['2']);
+        expect(await page.locator('.combat-float[data-kind="status"]:not([hidden])').allTextContents()).toEqual(['CHILLED']);
+        await page.evaluate(() => {
+            const {hud} = (window as any).__live;
+            (window as any).__receiptBudget.push({type:'hit',x:640,y:0,targetId:7,source:'ability',damage:3,lethal:true});
+            hud.tick(.01);
+        });
+        expect(await page.locator('.combat-float[data-source="ability"]:not([hidden])').textContent()).toBe('11 ×');
+        expect(await page.locator('.combat-float[data-source="ability"]:not([hidden])').getAttribute('data-lethal')).toBe('true');
+    } finally {await page.close();}
+});

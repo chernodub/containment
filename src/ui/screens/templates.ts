@@ -109,7 +109,7 @@ export function controlsScreen(): string {
     ['MOVEMENT & WEAPONS',[['W A S D','Move'],['Mouse','Aim / fire'],['Space','Aim-assisted fire'],['1–5','Equip weapon'],['R','Reload'],['G','Throw grenade'],['E','Use medkit']]],
     ['COMBAT RIG & SYSTEMS',[['Shift','Dash'],['Q','Tactical ability'],['F','Power ability'],['V','Overdrive'],['Esc','Pause / resume'],['Tab','Navigate menu controls'],['Enter / Space','Activate focused control']]],
   ] as const;
-  return `<div class="controls-reference">${groups.map(([name,entries])=>`<section>${tag(name)}<dl>${entries.map(([key,label])=>`<div><dt><kbd>${key}</kbd></dt><dd>${label}</dd></div>`).join('')}</dl></section>`).join('')}</div><p class="screen-footnote">Weapon reserves replenish during combat and refill between rooms. Overdrive charge persists between rooms.</p>`;
+  return `<div class="controls-reference">${groups.map(([name,entries])=>`<section>${tag(name)}<dl>${entries.map(([key,label])=>`<div><dt><kbd>${key}</kbd></dt><dd>${label}</dd></div>`).join('')}</dl></section>`).join('')}</div><p class="screen-footnote">Letter and number shortcuts use physical US keyboard positions on every layout. Weapon reserves replenish during combat and refill between rooms. Overdrive charge persists between rooms.</p>`;
 }
 
 export type PauseTab = 'resume'|'loadout'|'settings'|'controls';

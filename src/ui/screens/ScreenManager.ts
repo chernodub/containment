@@ -196,6 +196,8 @@ export function createScreens(context: ScreenContext) {
       return;
     }
     if(target?.matches('input, select, textarea, [contenteditable="true"]')) return;
+    // Match gameplay's physical letter/digit bindings across keyboard layouts.
+    const shortcut=event.code ? /^Digit[1-9]$/.test(event.code) ? event.code.slice(-1) : event.code==='KeyR' ? 'r' : '' : event.key.toLowerCase();
     if(target?.getAttribute('role')==='tab'&&['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) {
       event.preventDefault();
       const tabs: PauseTab[]=['resume','loadout','settings','controls'];
@@ -207,21 +209,21 @@ export function createScreens(context: ScreenContext) {
       if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
         event.preventDefault(); const delta=event.key==='ArrowLeft'||event.key==='ArrowUp'?3:1;
         inspectRig(RIG_IDS[(RIG_IDS.indexOf(selectedRig)+delta)%4],true);
-      } else if(/^[1-4]$/.test(event.key)) {
-        event.preventDefault(); inspectRig(RIG_IDS[Number(event.key)-1],true);
+      } else if(/^[1-4]$/.test(shortcut)) {
+        event.preventDefault(); inspectRig(RIG_IDS[Number(shortcut)-1],true);
       } else if(event.key==='Enter'&&!target?.closest('#equip-rig')) {
         event.preventDefault(); el('equip-rig')?.click();
       }
       return;
     }
-    if(status==='reward'&&/^[1-3]$/.test(event.key)) {
-      const choice=root.querySelectorAll<HTMLButtonElement>('[data-mutation]')[Number(event.key)-1];
+    if(status==='reward'&&/^[1-3]$/.test(shortcut)) {
+      const choice=root.querySelectorAll<HTMLButtonElement>('[data-mutation]')[Number(shortcut)-1];
       if(choice) {event.preventDefault();choice.click();}
-    } else if(status==='reward'&&event.key.toLowerCase()==='r') {
+    } else if(status==='reward'&&shortcut==='r') {
       const reroll=root.querySelector<HTMLButtonElement>('#reroll:not(:disabled)');
       if(reroll) {event.preventDefault();reroll.click();}
-    } else if(status==='route'&&/^[1-9]$/.test(event.key)) {
-      const route=root.querySelectorAll<HTMLButtonElement>('[data-route]')[Number(event.key)-1];
+    } else if(status==='route'&&/^[1-9]$/.test(shortcut)) {
+      const route=root.querySelectorAll<HTMLButtonElement>('[data-route]')[Number(shortcut)-1];
       if(route) {event.preventDefault();route.click();}
     }
   }

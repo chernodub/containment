@@ -78,6 +78,7 @@ function validCheckpoint(value: unknown): value is RunCheckpoint {
   }
   // Initial choices cannot contain an already installed boon or completed room.
   if (['rig-select','starting-boon'].includes(value.run.phase) && (value.build.mutations.length !== 0 || value.run.completedNodeIds.length !== 0)) return false;
+  if (value.stats !== undefined && !isValidRunStatsSnapshot(value.stats,value.run)) return false;
   return true;
 }
 

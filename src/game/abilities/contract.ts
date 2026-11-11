@@ -193,6 +193,11 @@ export type AbilityEventPhase =
   | 'overdrive-ready';
 
 export type AbilityEvent = Readonly<{
+  /** Authoritative chain hop distance and target cap, including augments. */
+  /** Applied ability damage aggregated for this bounded targetIds receipt. */
+  totalDamage?: number;
+  hopRange?: number;
+  maxTargets?: number;
   phase: AbilityEventPhase;
   ability: AbilityId;
   slot: AbilitySlot;

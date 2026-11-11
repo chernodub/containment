@@ -356,3 +356,24 @@ test.each([[1280,720],[1920,1080],[2560,1440]])('screen content stays inside a s
     }
   } finally {await page.close();}
 });
+
+test('menu shortcuts follow physical positions and retain native modifier shortcuts',async()=>{
+  const page=await mount();
+  try {
+    await page.evaluate(()=>{const ui=(window as any).ui;ui.api.setUiFixture(ui.game,{phase:'rig-select'});ui.screens.syncScreen();});
+    await page.evaluate(()=>document.body.dispatchEvent(new KeyboardEvent('keydown',{key:'@',code:'Digit2',shiftKey:true,bubbles:true,cancelable:true})));
+    expect(await page.locator('[data-rig="cryo"]').getAttribute('aria-pressed')).toBe('true');
+    await phase(page,'reward');
+    const id=await page.locator('[data-mutation]').nth(1).getAttribute('data-mutation');
+    const prevented=await page.evaluate(()=>{
+      const keys=[{key:'к',code:'KeyR',ctrlKey:true},{key:'r',code:'KeyX'},{key:'2',code:'Numpad2'},{key:'к',code:'KeyR'},{key:'@',code:'Digit2',shiftKey:true}];
+      return keys.map(key=>{const event=new KeyboardEvent('keydown',{...key,bubbles:true,cancelable:true});document.body.dispatchEvent(event);return event.defaultPrevented;});
+    });
+    expect(prevented).toEqual([false,false,false,true,true]);
+    expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual(['reroll','boon:'+id]);
+    await phase(page,'route',1);
+    const route=await page.locator('[data-route]').first().getAttribute('data-route');
+    await page.evaluate(()=>document.body.dispatchEvent(new KeyboardEvent('keydown',{key:'!',code:'Digit1',shiftKey:true,bubbles:true,cancelable:true})));
+    expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual(['reroll','boon:'+id,'route:'+route]);
+  } finally {await page.close();}
+});
