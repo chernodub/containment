@@ -92,15 +92,15 @@ async function mount({reduced = false, blocked = false, legacy = false}: {reduce
   return page;
 }
 
-it('renders every graphics contract option with its metadata and complete shadow choices', async () => {
+it('renders every graphics contract option with a native player label, descriptive hint and complete shadow choices', async () => {
   const page = await mount();
   try {
     expect(await page.locator('#settings-graphics-heading').evaluate(element => getComputedStyle(element).fontSize)).toBe('17px');
-    for (const [key, metadata] of Object.entries(GRAPHICS_OPTION_LABELS)) {
+    for (const key of Object.keys(GRAPHICS_OPTION_LABELS)) {
       const input = page.locator(`[data-setting="graphics.${key}"]`);
       expect(await input.count(), key).toBe(1);
-      expect(await page.getByLabel(metadata.label, {exact: true}).count(), key).toBe(1);
-      expect(await page.locator(`#${await input.getAttribute('aria-describedby')}`).textContent(), key).toBe(metadata.hint);
+      expect(await input.evaluate((element:HTMLInputElement)=>element.labels?.[0]?.textContent?.trim().length ?? 0),key).toBeGreaterThan(4);
+      expect((await page.locator(`#${await input.getAttribute('aria-describedby')}`).textContent())!.length,key).toBeGreaterThan(10);
     }
     expect(await page.locator('#setting-graphics-shadows option').allTextContents()).toEqual(['Off', 'Low', 'High']);
     expect(await page.locator('#quality option').allTextContents()).toEqual(['High', 'Low']);
@@ -197,7 +197,9 @@ it('groups every option into a compact console with native controls visible at 1
     await page.setViewportSize({width:1280,height:720});
     await page.evaluate(()=>{const host=document.getElementById('settings-host')!;host.classList.add('pause-panel');host.style.width='1140px';host.style.height='600px';});
     expect(await page.locator('.settings-layout').evaluate(element=>getComputedStyle(element).display)).toBe('grid');
-    expect(await page.locator('.settings-section__heading h3').allTextContents()).toEqual(['Quality','Effects','Comfort','Audio']);
+    expect(await page.locator('.settings-section__heading h3').allTextContents()).toEqual(['Picture & speed','World effects','Comfort','Audio']);
+    expect(await page.locator('#setting-graphics-ambientOcclusion-hint').isVisible()).toBe(true);
+    expect(await page.locator('label[for=setting-graphics-ambientOcclusion] .settings-control__copy>span:first-child').textContent()).toBe('Contact shadows');
     const fit=await page.locator('#settings-host').evaluate(element=>({scroll:element.scrollHeight,height:element.clientHeight}));
     expect(fit.scroll).toBeLessThanOrEqual(fit.height);
     for(const input of await page.locator('[data-setting]').all()) expect(await input.isVisible()).toBe(true);

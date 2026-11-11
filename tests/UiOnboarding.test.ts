@@ -66,17 +66,39 @@ it('teaches resource actions from successful transitions and never marks denied 
   } finally {await page.close();}
 });
 
-it('persists across restarts, hides outside the first room, and offers Overdrive on its first full meter', async () => {
+it('persists across restarts and leaves the single Overdrive-ready announcement to the HUD', async () => {
   const page=await mount();
   try {
     await page.evaluate(()=>{const state=(window as any).__onboarding;state.onboarding.mark('move');state.onboarding.dispose();state.onboarding=new state.ContextualOnboarding(document.getElementById('action-bar'),state.storage);state.game.node.depth=4;state.onboarding.update(state.game,state.abilities);});
     expect(await page.locator('#contextual-onboarding').isHidden()).toBe(true);
     await page.evaluate(()=>{const {game,abilities,onboarding}=(window as any).__onboarding;abilities.overdrive.ready=true;onboarding.update(game,abilities);});
-    expect(await page.locator('#contextual-onboarding').getAttribute('data-action')).toBe('overdrive');
+    expect(await page.locator('#contextual-onboarding').isHidden()).toBe(true);
     await page.evaluate(()=>{const {game,abilities,onboarding}=(window as any).__onboarding;onboarding.effect({type:'ability',x:0,y:0,ability:{slot:'overdrive',phase:'cast'}});onboarding.update(game,abilities);});
     expect(await page.locator('#contextual-onboarding').isHidden()).toBe(true);
     const seen=await page.evaluate(key=>JSON.parse((window as any).__onboarding.saved[key]).seen,ONBOARDING_STORAGE_KEY);
     expect(seen).toEqual({move:true,overdrive:true});
+  } finally {await page.close();}
+});
+
+it('teaches the equipped rig names and anchors urgent medkit advice beside the stock readout', async () => {
+  const page=await mount();
+  try {
+    await page.evaluate(()=>{
+      const {game,abilities,onboarding}=(window as any).__onboarding;
+      for(const action of ['move','aim','fire','dash'])onboarding.mark(action);
+      onboarding.update(game,abilities);onboarding.tick(0,{left:600,right:680,top:280,bottom:420});
+    });
+    expect(await page.locator('#contextual-onboarding b').textContent()).toBe('Cryo Nova');
+    expect(await page.locator('#contextual-onboarding > span').textContent()).toContain('freezes');
+    await page.evaluate(()=>{
+      const {game,abilities,onboarding}=(window as any).__onboarding;
+      game.combat.snapshot.health=20;onboarding.update(game,abilities);onboarding.tick(0,{left:600,right:680,top:280,bottom:420});
+    });
+    expect(await page.locator('#contextual-onboarding').getAttribute('data-action')).toBe('medkit');
+    const stock=(await page.locator('#desktop-stock').boundingBox())!,tip=(await page.locator('#contextual-onboarding').boundingBox())!;
+    expect(tip.y).toBeGreaterThanOrEqual(stock.y+stock.height);
+    expect(tip.y-(stock.y+stock.height)).toBeLessThan(40);
+    expect(tip.x).toBeLessThan(stock.x+stock.width);
   } finally {await page.close();}
 });
 

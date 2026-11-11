@@ -61,3 +61,7 @@
  #overlay .pause-panel .settings-section+.settings-section {margin-top:12px;}
  #overlay .pause-panel .system-settings .settings-credits {min-height:24px;margin-top:6px;}
 }
+/* Keep the reason for each option beside its native control. */
+.effects-controls .settings-control__copy>:last-child:not(:first-child),.comfort-toggles .settings-control__copy>:last-child:not(:first-child) {display:block;font-size:10px;line-height:1.25;}
+.effects-controls .settings-control {min-height:58px;}
+@container(min-width:650px) {.effects-controls .settings-control {min-height:58px;}}
