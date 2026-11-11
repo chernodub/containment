@@ -6,6 +6,27 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import gardenTrees from './garden-trees.json';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 
+/** Smoothed, overlapping foliage lobes with serrated leaf edges, fitted to the donor crown. */
+function gardenCanopy(source:T.BufferGeometry,seed:number):T.BufferGeometry {
+ source.computeBoundingBox();const target=source.boundingBox!,size=target.getSize(new T.Vector3()),center=target.getCenter(new T.Vector3()),parts:T.BufferGeometry[]=[];
+ for(let i=0;i<9;i++){
+  const angle=i*2.399963+seed*.37,ring=i===0?0:i<7?.27:.14;
+  const g=new T.SphereGeometry(1,10,7);g.scale(size.x*(i===0?.33:.23),size.y*(i===0?.40:.26),size.z*(i===0?.33:.23));
+  g.translate(center.x+Math.cos(angle)*size.x*ring,center.y+Math.sin(angle*1.7)*size.y*.16,center.z+Math.sin(angle)*size.z*ring);g.deleteAttribute('uv');parts.push(g.toNonIndexed());g.dispose();
+ }
+ const vertices:number[]=[];
+ for(let leaf=0;leaf<28;leaf++){
+  const angle=leaf*2.399963+seed*.71,r=.31+.12*Math.sin(leaf*4.1),y=center.y+Math.sin(leaf*2.3)*size.y*.31;
+  const x=center.x+Math.cos(angle)*size.x*r,z=center.z+Math.sin(angle)*size.z*r,span=Math.min(size.x,size.z)*(.09+.035*(leaf%3));
+  const dx=Math.cos(angle)*span,dz=Math.sin(angle)*span,px=-Math.sin(angle)*span*.35,pz=Math.cos(angle)*span*.35;
+  vertices.push(x-dx,y-.035,z-dz,x+px,y+.045,z+pz,x+dx,y,z+dz,x-dx,y-.035,z-dz,x+dx,y,z+dz,x-px,y+.045,z-pz);
+ }
+ const cards=new T.BufferGeometry();cards.setAttribute('position',new T.Float32BufferAttribute(vertices,3));cards.computeVertexNormals();parts.push(cards);
+ const g=mergeGeometries(parts,false)!;parts.forEach(part=>part.dispose());g.computeBoundingBox();
+ const actual=g.boundingBox!,a=actual.getSize(new T.Vector3()),c=actual.getCenter(new T.Vector3());
+ g.translate(-c.x,-c.y,-c.z);g.scale(size.x/a.x,size.y/a.y,size.z/a.z);g.translate(center.x,center.y,center.z);return g;
+}
+
 /** Split garden court: fit each authored bed independently in loaded and fallback modes. */
 export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT, garden?:T.Group):T.Group{
  const root=new T.Group();root.name='communal-atrium-rough';
@@ -17,6 +38,15 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
  const bark=finish('irrigation',MAT.copper,0x625344,.3,.83),seat=finish('upholstery',MAT.red,0x765747,0,.93);
  const signal=finish('welcome',MAT.amber,0xa88b59,.1,.7),water=finish('water',MAT.shellDark,0x354e4c,.25,.28);
  signal.emissive.setHex(0x9b6b32);signal.emissiveIntensity=.22;leaf.side=T.DoubleSide;
+ leaf.onBeforeCompile=shader=>{
+  shader.vertexShader='varying vec3 canopyPosition;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ncanopyPosition=position;');
+  shader.fragmentShader='varying vec3 canopyPosition;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+   float leafVein=.5+.5*sin(canopyPosition.x*43.0+sin(canopyPosition.z*32.0));
+   float canopyTone=.5+.5*sin(dot(canopyPosition,vec3(3.3,4.7,2.8)));
+   diffuseColor.rgb*=mix(.72,1.22,canopyTone)*(1.0-leafVein*.06);`)
+   .replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+   totalEmissiveRadiance+=vec3(.018,.035,.009)*(1.0-abs(normal.y));`);
+ };leaf.customProgramCacheKey=()=> 'g2-garden-canopy-v1';
  const allocated=new Set<T.BufferGeometry>(),retained=new Set<T.BufferGeometry>();let complete=false;
  const own=(g:T.BufferGeometry)=>{allocated.add(g);return g;};
  try{
@@ -68,9 +98,9 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
    const roles:Record<string,T.Material>={ca_support:support,ca_ceramic:ceramic,ca_soil:soil,ca_leaf:leaf,ca_irrigation:bark};
    garden.updateWorldMatrix(true,true);let triangles=0;
    garden.traverse(o=>{if(o instanceof T.Mesh){
-    const g=own(o.geometry.clone());g.applyMatrix4(o.matrixWorld);g.translate(cx/32,0,cz/32);
+    const donor=own(o.geometry.clone());donor.applyMatrix4(o.matrixWorld);const isLeaf=(o.material as T.Material).name==='ca_leaf';const g=isLeaf?own(gardenCanopy(donor,Number(o.name.match(/tree(\d+)/)?.[1]??0))):donor;g.translate(cx/32,0,cz/32);
     const mesh=new T.Mesh(g,roles[(o.material as T.Material).name]);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);
-    triangles+=(g.index?.count??g.attributes.position.count)/3;
+    triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;
    }});root.userData.authoredGardenTriangles=triangles;
   }else if(f.kind==='garden'){
    const inner=footprint.map(p=>({x:p.x+(p.x<cx?5:-5),y:p.y+(p.y<cz?5:-5)}));
@@ -80,8 +110,8 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
     const g=own(new T.BufferGeometry());
     g.setAttribute('position',new T.Float32BufferAttribute(tree.positions,3));
     g.setAttribute('normal',new T.Float32BufferAttribute(tree.normals,3));g.setIndex(tree.indices);
-    g.translate(cx/32,0,cz/32);
-    const crown=new T.Mesh(g,tree.role==='ca_leaf'?leaf:bark);
+    const upgraded=tree.role==='ca_leaf'?own(gardenCanopy(g,Number(tree.name.match(/tree(\d+)/)?.[1]??0))):g;upgraded.translate(cx/32,0,cz/32);
+    const crown=new T.Mesh(upgraded,tree.role==='ca_leaf'?leaf:bark);
     crown.castShadow=crown.receiveShadow=true;root.add(crown);
    }
   }else if(f.kind==='table'){

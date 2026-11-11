@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {ARMORY_COUNTER,ARMORY_CAROUSEL} from '../game/world/armoryCarouselLayout';
 import type {Point} from '../game/roguelike/types';
 import {createStoredArmoryRifle} from './ArmoryBlockout';
@@ -6,7 +7,14 @@ import {createStoredArmoryRifle} from './ArmoryBlockout';
 /** Stationary secured inventory, with all raised parts inside the two solids. */
 export function armoryCarousel():T.Group{
  const root=new T.Group();root.name='armory-carousel-and-issue-bay';
- const material=(name:string,color:number,metalness:number)=>{const m=new T.MeshStandardMaterial({color,metalness,roughness:.58});m.name=name;m.userData.actorMaterial=true;return m;};
+ const material=(name:string,color:number,metalness:number)=>{const m=new T.MeshStandardMaterial({color,metalness,roughness:.58});m.name=name;m.userData.actorMaterial=true;
+  m.onBeforeCompile=shader=>{
+   shader.vertexShader='varying vec3 armorySurface;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\narmorySurface=position;');
+   shader.fragmentShader='varying vec3 armorySurface;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+    float machining=.5+.5*sin(armorySurface.y*190.0+armorySurface.x*63.0);
+    float brushing=.5+.5*sin(armorySurface.z*211.0+sin(armorySurface.x*23.0));
+    diffuseColor.rgb*=.90+machining*.065+brushing*.035;`);
+  };m.customProgramCacheKey=()=> 'g2-armory-machined-v1';return m;};
  const graphite=material('armory-graphite',0x28383d,.72),edge=material('armory-brass',0x88724c,.68),pale=material('armory-serial-enamel',0xb7bcae,.35),rubber=material('armory-dark-rubber',0x10191c,.05);
  const add=(name:string,g:T.BufferGeometry,m:T.Material,parent:T.Object3D=root)=>{g.userData.environmentUV=true;const mesh=new T.Mesh(g,m);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;};
  const slab=(name:string,points:readonly Point[],bottom:number,height:number,m:T.Material,holes:readonly (readonly Point[])[]=[])=>{
@@ -14,7 +22,7 @@ export function armoryCarousel():T.Group{
   for(const hole of holes)shape.holes.push(new T.Path(hole.map(p=>new T.Vector2(p.x/32,-p.y/32))));
   const g=new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false,steps:1});g.rotateX(-Math.PI/2);g.translate(0,bottom,0);return add(name,g,m);
  };
- const box=(parent:T.Object3D,name:string,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const p=add(name,new T.BoxGeometry(w,h,d),m,parent);p.position.set(x,y,z);return p;};
+ const box=(parent:T.Object3D,name:string,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const p=add(name,new RoundedBoxGeometry(w,h,d,1,Math.min(.025,w*.12,h*.12,d*.12)),m,parent);p.position.set(x,y,z);return p;};
  const cylinder=(name:string,radius:number,height:number,y:number,m:T.Material)=>{const p=add(name,new T.CylinderGeometry(radius,radius,height,48),m);p.position.set(600/32,y,450/32);return p;};
  slab('horseshoe-solid',ARMORY_COUNTER,0,1.04,graphite);
  const a=240*Math.PI/180,b=Math.PI/2-a;
@@ -22,6 +30,9 @@ export function armoryCarousel():T.Group{
  slab('horseshoe-worktop',ARMORY_COUNTER,1.04,.10,graphite,[viseRecess]);
  slab('carousel-solid-geared-foot',ARMORY_CAROUSEL,0,1.02,graphite);
  cylinder('carousel-bearing',2.23,.12,1.08,edge);
+ // Two slim machined races break the broad flat base without concealing its teeth.
+ for(const [radius,y] of [[1.92,1.235],[2.05,1.238]] as const){const g=new T.TorusGeometry(radius,.018,6,64);g.rotateX(Math.PI/2);const race=add('carousel-bearing-race',g,pale);race.position.set(600/32,y,450/32);}
+
  cylinder('carousel-deck',2.12,.09,1.185,graphite);
  cylinder('carousel-spindle',.24,2.25,2.35,pale);
  cylinder('carousel-spindle-cap',.38,.14,3.545,edge);
@@ -43,6 +54,9 @@ export function armoryCarousel():T.Group{
   const tray=box(g,'tray-bed',0,.10,0,1.25,.12,1.45,rubber);tray.rotation.x=.16;
   for(const x of [-.65,.65])box(g,'tray-retaining-edge',x,.17,0,.07,.24,1.5,edge);
   box(g,'serial-plate',0,.28,-.66,.52,.025,.14,pale);
+  for(let tick=0;tick<7;tick++)box(g,'serial-engraving',-.2+tick*.065,.294,-.66,.018,.003,tick%3===0?.09:.055,graphite);
+  for(const x of [-.5,.5])for(const z of [-.51,.51]){const bolt=add('tray-fastener',new T.CylinderGeometry(.027,.027,.018,10),pale,g);bolt.position.set(x,.19,z);}
+
  }
  const vise=station(240,'maintenance-vise');vise.position.y=1.04;
  box(vise,'recessed-vise-well',0,.015,0,1.4,.025,1.35,rubber);
