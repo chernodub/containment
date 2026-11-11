@@ -48,10 +48,10 @@ describe('full ability-kit resource budgets', () => {
       meshes.push(node); geometries.add(node.geometry);
       for (const material of Array.isArray(node.material) ? node.material : [node.material]) materials.add(material);
     });
-    // The full kit has a fixed inventory; no ability may create combat-time meshes.
-    expect(meshes.length).toBeLessThanOrEqual(110);
-    expect(geometries.size).toBeLessThanOrEqual(16);
-    expect(materials.size).toBeLessThanOrEqual(22);
+    // V3 adds exactly one retained torus batch; no ability creates combat-time resources.
+    expect(meshes.length).toBeLessThanOrEqual(111);
+    expect(geometries.size).toBeLessThanOrEqual(17);
+    expect(materials.size).toBeLessThanOrEqual(23);
     const buffers = meshes.filter((mesh): mesh is T.InstancedMesh => mesh instanceof T.InstancedMesh)
       .map(mesh => ({ mesh, matrix: mesh.instanceMatrix.array, color: mesh.instanceColor?.array }));
     const rigs: RigId[] = ['breacher', 'cryo', 'pyro', 'arc'];
@@ -72,7 +72,7 @@ describe('full ability-kit resource budgets', () => {
         expect(counts.peakInstances).toBeLessThanOrEqual(ABILITY_VFX_LIMITS.instances);
         expect(lights.lights.filter(light => light.intensity > 0).length).toBeLessThanOrEqual(9);
         let draws = 0; scene.traverseVisible(node => { if (node instanceof T.Mesh && (!(node instanceof T.InstancedMesh) || node.count > 0)) draws++; });
-        expect(draws).toBeLessThanOrEqual(84);
+        expect(draws).toBeLessThanOrEqual(85); // Single shared pressure-front draw, not one per volume.
         for (const { mesh, matrix, color } of buffers) {
           expect(mesh.instanceMatrix.array).toBe(matrix); expect(mesh.instanceColor?.array).toBe(color);
         }

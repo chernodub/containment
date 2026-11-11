@@ -1,0 +1,56 @@
+import * as T from 'three';
+import { describe, expect, it, vi } from 'vitest';
+import { ElementKit, ABILITY_VFX_LIMITS } from './ElementKit';
+import { GRAPHICS_PRESETS } from '../graphicsOptions';
+
+describe('V3 shared spectacle', () => {
+  it('bounds the volume to the real radius and reduces height without shrinking Low footprints', () => {
+    const k = new ElementKit(new T.Scene()), m = new T.Matrix4(), p = new T.Vector3(), q = new T.Quaternion(), s = new T.Vector3();
+    for (const tier of ['high', 'low'] as const) {
+      k.setOptions(GRAPHICS_PRESETS[tier], tier, false); k.begin(0);
+      k.front(3, 4, 7, 1.2, 0xffb454, 1.5);
+      k.end(); k.batches.front.mesh.getMatrixAt(0, m); m.decompose(p, q, s);
+      expect(s.x).toBeCloseTo(7); expect(s.z).toBeCloseTo(7);
+      expect(p.y - s.y * .12).toBeCloseTo(.025);
+      expect(s.y * .24).toBeCloseTo(tier === 'low' ? .9 : 1.5);
+      const bounds = k.batches.front.mesh.geometry; bounds.computeBoundingBox();
+      expect(bounds.boundingBox!.max.x).toBeCloseTo(1);
+    }
+    k.dispose();
+  });
+
+  it('keeps full-length scars for eight seconds, pauses and retires them at expiry', () => {
+    const k = new ElementKit(new T.Scene()), m = new T.Matrix4();
+    k.scar('trench', 10, 4, 14, 0x201711, 9, Math.PI / 2, .55);
+    k.begin(8); k.end(); expect(k.batches.decal.mesh.count).toBe(1);
+    k.batches.decal.mesh.getMatrixAt(0, m);
+    const bounds = new T.Box3().setFromBufferAttribute(k.batches.decal.mesh.geometry.getAttribute('position')).applyMatrix4(m);
+    expect(bounds.max.z - bounds.min.z).toBeCloseTo(28);
+    expect(bounds.max.x - bounds.min.x).toBeCloseTo(1.1);
+    const before = m.elements.slice(); k.begin(0); k.end(); k.batches.decal.mesh.getMatrixAt(0, m);
+    expect(m.elements).toEqual(before); k.begin(1); k.end(); expect(k.batches.decal.mesh.count).toBe(0); k.dispose();
+  });
+
+  it('shares fixed pools for debris, liquid, ice and afterimages under repeated use', () => {
+    const scene = new T.Scene(), k = new ElementKit(scene), inventory = scene.children.slice();
+    for (let i = 0; i < 100; i++) k.debris(0, 0, 6, 'kinetic', 28);
+    k.begin(.03); k.liquidFire(0, 0, 4); k.iceColumn(1, 2, .8, .7, 2, .4); k.iceShell(1, 1, .5, 1.6); k.afterImage(2, 2, .3, 0xb79cff, .4); k.end();
+    expect(k.counts.particles).toBe(ABILITY_VFX_LIMITS.particles);
+    expect(scene.children).toEqual(inventory);
+    k.setOptions(GRAPHICS_PRESETS.low, 'low', false); k.begin(.02); k.debris(0, 0, 4, 'cryo', 64); k.end();
+    expect(k.counts.particles).toBeLessThanOrEqual(160); k.dispose();
+  });
+
+  it('uses one prepared composite input and suppresses exposure impulses at zero flash or reduced motion', () => {
+    const k = new ElementKit(new T.Scene()), setAbilityPresentation = vi.fn();
+    k.bind({ lights: {} as never, distortion: {} as never, camera: {} as never, presentation: { setAbilityPresentation } });
+    k.begin(0); k.exposureFlash(.8); k.grade(.4, .7); k.end();
+    expect(setAbilityPresentation).toHaveBeenLastCalledWith(.8, .4, .7);
+    k.begin(0); k.end(); expect(setAbilityPresentation).toHaveBeenLastCalledWith(0, 0, 0);
+    for (const reduced of [false, true]) {
+      k.setOptions({ ...GRAPHICS_PRESETS.high, flashIntensity: reduced ? 1 : 0 }, 'high', reduced);
+      k.begin(.016); k.exposureFlash(1); k.end(); expect(setAbilityPresentation.mock.lastCall![0]).toBe(0);
+    }
+    k.clear(); expect(setAbilityPresentation).toHaveBeenLastCalledWith(0, 0, 0); k.dispose();
+  });
+});

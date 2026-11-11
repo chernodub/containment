@@ -95,6 +95,7 @@ uniform float menuPresentation;
 uniform float atmosphereEnabled;
 uniform float useAgX;
 uniform float saturation;
+uniform vec3 abilityPresentation;
 uniform float contrast;
 uniform vec3 lift;
 uniform vec3 gain;
@@ -160,10 +161,18 @@ void main() {
     }
   }
   color = max((color + lift) * gain, 0.0);
+  color *= 1.0 + abilityPresentation.x * 2.4;
   color*=1.0-menuPresentation*(1.0-smoothstep(.30,.59,vUv.x))*.78;
   color = useAgX > 0.5 ? AgXToneMapping(color) : ACESFilmicToneMapping(color);
   float luminance = dot(color, vec3(0.2126, 0.7152, 0.0722));
   color = mix(vec3(luminance), color, saturation);
+  // Preserve hot hostile red/orange hues while cooling the time-dilated world.
+  float hostileHue = smoothstep(.08,.23,color.r-max(color.g,color.b));
+  float coolState = abilityPresentation.z * (1.0-hostileHue);
+  color = mix(color,vec3(luminance)*vec3(.88,.97,1.08),coolState*.32);
+  color *= vec3(1.0+abilityPresentation.y*.065,1.0,1.0-abilityPresentation.y*.045);
+  float abilityEdge = smoothstep(.28,.74,length((vUv-.5)*vec2(1.,.85)));
+  color += vec3(.035,.008,.07)*coolState*abilityEdge;
   // A toe-preserving contrast curve retains information in industrial shadows.
   color = pow(max(color, vec3(0.0)), vec3(contrast));
   color += (shadowTint - 0.5) * (1.0 - smoothstep(0.0, 0.35, luminance)) * 0.018;
