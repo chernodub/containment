@@ -46,6 +46,7 @@ describe('presentation pacing preserves fixed-step simulation', () => {
   });
   it('uses 420 ms of .3× finale pacing once per room, and resets across rooms', () => {
     const feel = new GameFeel(), final = {...normal, remaining: 0};
+    feel.advance(.001, normal, () => {});
     feel.effect({type: 'corpse', x: 0, y: 0}, final);
     expect(feel.renderScale).toBe(.3);
     let simulated = 0;
@@ -54,7 +55,7 @@ describe('presentation pacing preserves fixed-step simulation', () => {
     expect(feel.renderScale).toBe(1);
     feel.effect({type: 'corpse', x: 0, y: 0}, final);
     expect(feel.renderScale).toBe(1);
-    feel.reset(); feel.effect({type: 'corpse', x: 0, y: 0}, final);
+    feel.reset(); feel.advance(.001, normal, () => {}); feel.effect({type: 'corpse', x: 0, y: 0}, final);
     expect(feel.renderScale).toBe(.3);
   });
   it('disables effects without changing fixed simulation delta or accepting invalid time', () => {
