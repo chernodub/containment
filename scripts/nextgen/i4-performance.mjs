@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
-const [beforeLabel='integration-4-before',afterLabel='integration-4-after']=process.argv.slice(2);
+const [beforeLabel='integration-4-before-final',afterLabel='integration-4-after']=process.argv.slice(2);
 const root=resolve('artifacts/nextgen'),out=resolve(root,'integration-4');await mkdir(out,{recursive:true});
 const before=JSON.parse(await readFile(resolve(root,beforeLabel,'benchmark.json'))),after=JSON.parse(await readFile(resolve(root,afterLabel,'benchmark.json')));
 // The first interval straddles setup; recompute frame stats consistently for older manifests too.
