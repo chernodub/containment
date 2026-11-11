@@ -99,7 +99,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         else if (overdrive)
             value = snapshot.overdrive.ready ? 'READY' : `${Math.floor(clamp(snapshot.overdrive.charge) * 100)}%`;
         else if (!s.ready)
-            value = seconds(s.cooldownRemainingMs);
+            value = s.cooldownRemainingMs > 0 ? seconds(s.cooldownRemainingMs) : s.charges > 0 ? 'BLOCKED' : 'NO CHARGE';
         if (entry.value.textContent !== value)
             entry.value.textContent = value;
         entry.node.dataset.charges = String(s.charges);

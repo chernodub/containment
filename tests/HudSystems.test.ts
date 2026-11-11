@@ -326,3 +326,18 @@ it('dismisses the ready announcement immediately when real Overdrive starts', as
         expect(await page.locator('[data-ability="overdrive"]').getAttribute('data-state')).toBe('active');
     } finally {await page.close();}
 });
+
+it('labels a stored but illegal placement as blocked instead of a zero-second cooldown', async () => {
+    const page=await mountHud(1920,1080);
+    try {
+        await liveHud(page);
+        await page.evaluate(()=>{
+            const {game,hud,adapter,fixtures}=(window as any).__live;
+            const s=fixtures.abilityFixture('cryo','ready');
+            adapter.setUiFixture(game,{abilities:{...s,slots:{...s.slots,power:{...s.slots.power,ready:false,charges:1,cooldownRemainingMs:0}}}});
+            hud();
+        });
+        expect(await page.locator('[data-ability="power"] .ability-value').textContent()).toBe('BLOCKED');
+        expect(await page.locator('[data-ability="power"]').getAttribute('data-charges')).toBe('1');
+    } finally {await page.close();}
+});
