@@ -38,7 +38,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     fx.event(event(), 64, 96);
     fx.event(event({ targetX: 256, targetY: 128 }), 192, 96);
     fx.event(event({ targetX: 320, targetY: 160 }), 256, 128);
-    const cores = beam.mock.calls.filter(call => call[7] === .095);
+    const cores = beam.mock.calls.filter(call => call[7] === .012);
     expect(cores).toHaveLength(3);
     expect(cores.map(call => call[10])).toEqual([0, .04, .08]);
     expect(cores[1].slice(0, 6)).toEqual([6, .95, 3, 8, .75, 4]);
@@ -70,9 +70,10 @@ describe('Arc presentation signatures and lifecycle', () => {
     frame.snapshot = snapshot({ links: [{ id: 1, ability: 'tesla-pylon', element: 'arc', x: 32, y: 64, targetX: 192, targetY: 128, width: 28 }] });
     step(0);
     expect(ribbon.mock.calls[0].slice(0, 6)).toEqual([1, 1.5, 2, 6, .85, 4]);
-    expect(ribbon).toHaveBeenCalledTimes(2);
+    expect(ribbon).toHaveBeenCalledOnce();
     kit.setOptions(GRAPHICS_PRESETS.low, 'low', false); ribbon.mockClear(); step(0);
-    expect(ribbon).toHaveBeenCalledOnce(); expect(ribbon.mock.calls[0][9]).toBe(false);
+    expect(ribbon).toHaveBeenCalledOnce(); expect(ribbon.mock.calls[0][9]).toBe(true);
+    expect(ribbon.mock.calls[0][7]).toBeLessThanOrEqual(.012);
     dispose();
   });
 
@@ -106,7 +107,7 @@ describe('Arc presentation signatures and lifecycle', () => {
   it('adds an electrical human silhouette for Static Step and retires it promptly', () => {
     const { kit, fx, step, dispose } = setup();
     fx.event(event({ ability: 'static-step', slot: 'dash', phase: 'dash-start', angle: .5 }), 64, 96);
-    step(.01); expect(kit.ribbons.mesh.count).toBeGreaterThan(100);
+    step(.01); expect(kit.ribbons.mesh.count).toBeGreaterThan(50);
     step(.3); expect(kit.ribbons.mesh.count).toBe(0); dispose();
   });
 

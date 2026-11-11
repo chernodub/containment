@@ -4,8 +4,8 @@ import { FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
 export type Primitive = 'shard' | 'spark' | 'smoke' | 'flame' | 'solid' | 'ghost' | 'decal' | 'front';
 const vertex = `
 attribute float abilityAlpha;attribute float abilityPhase;
-varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;
-void main(){alpha=abilityAlpha;phase=abilityPhase;ink=instanceColor;uvLocal=uv;
+varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;
+void main(){alpha=abilityAlpha;phase=abilityPhase;ink=instanceColor;uvLocal=uv;facetNormal=normalize(normalMatrix*mat3(instanceMatrix)*normal);
 gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.);screenPosition=gl_Position;}`;
 
 /** Fixed GPU inventory. Flame/smoke share the game's licensed flipbook assets. */
@@ -49,7 +49,7 @@ export class InstanceBatch {
 
     const fragment = `
 uniform float abilityTime;uniform sampler2D map;uniform float flash;
-varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;
+varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;
 void main(){
  vec2 p=uvLocal*2.-1.;float a=alpha;vec3 c=ink;
 ${atlas ? `
@@ -93,7 +93,7 @@ ${kind === 'front' ? `
  float dusty=(1.-smoothstep(.1,.3,max(ink.r-ink.g,ink.b-ink.r)))*(1.-smoothstep(.35,.7,max(ink.r,max(ink.g,ink.b))));
  a*=vapor*mix(.2+ridge*.65,.6,dusty);c*=mix(1.2+ridge*4.*flash,.65+roll*.4,dusty);
  ` : ''}
-${kind === 'shard' || kind === 'solid' ? 'c*=.7+gl_FragCoord.y*.00008;' : ''}
+${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetNormal),normalize(vec3(-.3,.7,.6))));' : ''}
  vec2 screen=screenPosition.xy/max(.001,screenPosition.w)*.5+.5;
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  a*=1.-actionBar*.94;
@@ -108,7 +108,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.7+gl_FragCoord.y*.00008;' : ''}
       transparent: true,
       depthWrite: false,
       side: T.DoubleSide,
-      blending: kind === 'smoke' || kind === 'decal' || kind === 'solid' || kind === 'ghost' || kind === 'front'
+      blending: kind === 'shard' || kind === 'smoke' || kind === 'decal' || kind === 'solid' || kind === 'ghost' || kind === 'front'
         ? T.NormalBlending : T.AdditiveBlending,
     });
     this.mesh = new T.InstancedMesh(geometry, material, capacity);

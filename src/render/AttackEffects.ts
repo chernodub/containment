@@ -82,7 +82,7 @@ export class AttackEffects {
   this.smokeMesh=pool(scene,new T.PlaneGeometry(1,1),EFFECT_LIMITS.smoke,1,false,texture('WispySmoke02'),8);
   this.debrisMesh=pool(scene,new T.BoxGeometry(1,1,1),EFFECT_LIMITS.debris,2);
   this.decalMesh=pool(scene,new T.PlaneGeometry(1,1),EFFECT_LIMITS.decals,5);this.decalMesh.name='contact-decals';
-  this.pulseMesh=pool(scene,new T.RingGeometry(.955,1,48),EFFECT_LIMITS.pulses,2,true);
+  this.pulseMesh=pool(scene,new T.RingGeometry(.955,1,48),EFFECT_LIMITS.pulses,2,true);this.pulseMesh.renderOrder=20;
   this.slashMesh=pool(scene,new T.RingGeometry(.72,1,16,1,-.65,1.3),EFFECT_LIMITS.pulses,2,true);
   this.beamMesh=pool(scene,new T.CylinderGeometry(.16,1,1,5),EFFECT_LIMITS.beams,2,true);this.beamMesh.name='weapon-tracers';
   // Keep the existing pool order stable for renderer diagnostics.
