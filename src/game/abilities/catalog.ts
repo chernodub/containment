@@ -19,9 +19,7 @@ export const DASH_RECHARGE_MS = 2_600;
 export const DASH_DISTANCE = 150;
 export const DASH_DURATION_MS = 140;
 export const DASH_INVULNERABLE_MS = 220;
-export const PYRO_DASH_DISTANCE = 180;
-export const PYRO_DASH_RECHARGE_MS = 2_500;
-export const PYRO_DASH_INVULNERABLE_MS = 500;
+export const PYRO_DASH_DISTANCE = 220;
 
 const dash = (
   id: AbilityId,
@@ -38,12 +36,11 @@ const dash = (
     targeting: 'direction',
     shape: { kind: 'dash', distance: rig==='pyro'?PYRO_DASH_DISTANCE:DASH_DISTANCE, width: 44 },
     castMs: 0,
-    cooldownMs: rig==='pyro'?PYRO_DASH_RECHARGE_MS:DASH_RECHARGE_MS,
-    ...(rig==='pyro'?{invulnerableMs:PYRO_DASH_INVULNERABLE_MS}:{}),
+    cooldownMs: DASH_RECHARGE_MS,
     charges: DASH_CHARGES,
     durationMs,
     range: 0,
-    stats: [{ label: 'Charges', value: String(DASH_CHARGES) }, { label: 'Recharge', value: seconds(rig==='pyro'?PYRO_DASH_RECHARGE_MS:DASH_RECHARGE_MS) }, ...extra],
+    stats: [{ label: 'Charges', value: String(DASH_CHARGES) }, { label: 'Recharge', value: seconds(DASH_RECHARGE_MS) }, ...extra],
   });
 
 export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = Object.freeze({
@@ -110,20 +107,20 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   // ── PYRO ────────────────────────────────────────────────────────────────────
   afterburn: dash('afterburn', 'pyro', 'pyro', 'Afterburn',
     'Dash and leave a line of fire.',
-    'Dash 180 units in your movement direction with 0.5 seconds of invulnerability. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    'Dash 220 units in your movement direction with 0.22 seconds of invulnerability. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     2_500, [{ label: 'Fire', value: seconds(2_500) }]),
   flashfire: ability({
     id: 'flashfire', rig: 'pyro', slot: 'tactical', element: 'pyro', name: 'Flashfire',
     summary: 'A wide cone of flame.',
-    description: 'Dump the tank in a wide cone along your aim: 35 damage and every enemy hit is ignited. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    description: 'Dump the tank in a wide cone along your aim: 25 damage and every enemy hit is ignited. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     targeting: 'direction', shape: { kind: 'cone', range: 300, arcRadians: 1.22 },
     castMs: 0, cooldownMs: 6_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '35' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(6_000) }],
+    stats: [{ label: 'Damage', value: '25' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(6_000) }],
   }),
   'napalm-charge': ability({
     id: 'napalm-charge', rig: 'pyro', slot: 'power', element: 'pyro', name: 'Napalm Charge',
     summary: 'Lob a canister. The pool keeps burning.',
-    description: 'Lob a canister to the cursor. It bursts into a burning pool for 6 seconds, dealing 6 damage every 0.25 seconds and igniting everything standing in it. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    description: 'Lob a canister to the cursor. It bursts into a burning pool for 6 seconds, dealing 6.5 damage every 0.25 seconds and igniting everything standing in it. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     targeting: 'point', shape: { kind: 'circle', radius: 120 },
     castMs: 150, cooldownMs: 12_000, charges: 1, durationMs: 6_000, range: 480,
     stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Radius', value: '120' }, { label: 'Cooldown', value: seconds(12_000) }],

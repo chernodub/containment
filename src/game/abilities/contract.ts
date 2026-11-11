@@ -49,8 +49,6 @@ export type AbilityDefinition = Readonly<{
   castMs: number;
   /** Cooldown per charge. Overdrive abilities use 0 and are gated by the Overdrive meter instead. */
   cooldownMs: number;
-  /** Dash-only immunity override; absent retains the universal default. */
-  invulnerableMs?: number;
   /** Stored uses. 1 for most abilities, 2 for the dash. */
   charges: number;
   /** Lifetime of the lingering effect (zone, deployable, self-buff). 0 = none. */

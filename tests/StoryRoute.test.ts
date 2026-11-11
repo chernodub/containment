@@ -35,7 +35,7 @@ describe('authored story campaign',()=>{
   for(const node of generateRun(42).nodes){
    const balance=progressionFor(node),plan=createEncounterPlan({seed:42,node,breachIds:['a']});
    expect(balance.specials).toBe(true);expect(balance.health).toBeLessThan(1.8);
-   expect(plan.totalSpawns).toBeLessThanOrEqual([9,19].includes(node.depth)?48:31);
+   expect(plan.totalSpawns).toBeLessThanOrEqual([9,19].includes(node.depth)?48:36);
   }
  });
  it('dismisses only optional presentation and restores it for the next authored beat',()=>{

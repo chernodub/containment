@@ -251,7 +251,7 @@ export class AbilitySystem {
     if (d.slot === 'dash') {
       const distance = d.shape.kind==='dash'?d.shape.distance:150;
       this.dash = { x: Math.cos(cast.angle) * distance, y: Math.sin(cast.angle) * distance, angle: cast.angle, remaining: DASH_DURATION_MS, hit: new Set(), start: { x: cast.x, y: cast.y } };
-      this.immune = d.invulnerableMs ?? DASH_INVULNERABLE_MS;
+      this.immune = DASH_INVULNERABLE_MS;
       if (this.host.has('slide-loader' as MutationId)) this.host.reload();
       this.event(cast.id, 'dash-start', cast, { angle: cast.angle, targetX: cast.x + this.dash.x, targetY: cast.y + this.dash.y, durationMs: DASH_DURATION_MS });
     } else switch (cast.id) {
@@ -265,7 +265,7 @@ export class AbilitySystem {
         this.event(cast.id, 'impact', cast, { radius, targetIds: ids }); return;
       }
       case 'flashfire': {
-        for (const t of this.nearby(cast, 300)) { const a = Math.atan2(t.y - cast.y, t.x - cast.x) - cast.angle; if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) <= 1.22 / 2) { this.hit(t, 35, 'burn'); ids.push(t.id); } }
+        for (const t of this.nearby(cast, 300)) { const a = Math.atan2(t.y - cast.y, t.x - cast.x) - cast.angle; if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) <= 1.22 / 2) { this.hit(t, 25, 'burn'); ids.push(t.id); } }
         if (cast.ground) {
           this.addZone(cast.id, cast.ground, 120, 2500, 4);
           this.event(cast.id, 'impact', cast, { targetX: cast.ground.x, targetY: cast.ground.y, radius: 120, length: undefined, arcRadians: undefined, durationMs: 2500 });
@@ -282,7 +282,7 @@ export class AbilitySystem {
       }
       case 'napalm-charge': {
         for (const p of cast.placements ?? this.planPlacements(cast)) {
-          this.addZone(cast.id, p, p.radius ?? 120, 6000, 6);
+          this.addZone(cast.id, p, p.radius ?? 120, 6000, 6.5);
           this.event(cast.id, 'impact', cast, { targetX: p.x, targetY: p.y, radius: p.radius ?? 120, durationMs: d.durationMs });
         }
         return;

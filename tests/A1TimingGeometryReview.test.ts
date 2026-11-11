@@ -44,8 +44,8 @@ describe('A1 review: exact ability event-time boundaries',()=>{
     });
     expect(results[0].status).toBeGreaterThan(0);expect(results[1]).toEqual(results[0]);expect(results[2]).toEqual(results[0]);
   });
-  it('Napalm first pulse occurs exactly 600ms after press for every partition',()=>{
-    for(const step of partitions){const w=world();w.system.use('power');advance(w.system,600,step);expect(w.hits).toHaveLength(1);expect(w.system.snapshot.zones[0].remainingMs).toBeCloseTo(5750,6);}
+  it('Napalm first pulse occurs exactly 400ms after press for every partition',()=>{
+    for(const step of partitions){const w=world();w.system.use('power');advance(w.system,399,step);expect(w.hits).toHaveLength(0);advance(w.system,1,step);expect(w.hits).toHaveLength(1);expect(w.system.snapshot.zones[0].remainingMs).toBeCloseTo(5750,6);}
   });
   it.each(['cryo','pyro'] as const)('%s final Overdrive pulse retains kill payoffs before ending',rig=>{
     const {game,effects}=arena(rig);vi.spyOn(game.enemies,'update').mockReturnValue([]);

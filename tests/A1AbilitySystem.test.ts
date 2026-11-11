@@ -257,7 +257,7 @@ describe('all four rig dashes', () => {
       w.use('dash');
       w.advance(140);
       const zone = w.system.snapshot.zones[0];
-      expect(zone).toMatchObject({ ability: id, shape: 'strip', x: 0, y: 0, x2: rig==='pyro'?180:150, y2: 0, width: 44, durationMs: 2500 });
+      expect(zone).toMatchObject({ ability: id, shape: 'strip', x: 0, y: 0, x2: rig==='pyro'?220:150, y2: 0, width: 44, durationMs: 2500 });
       w.add(60, 22);
       w.add(60, 22.01);
       const hidden = w.add(70, 0);
@@ -270,19 +270,19 @@ describe('all four rig dashes', () => {
       expect(phases(w, id)).toContain('end');
     });
   }
-  it('Afterburn travels 180 units, protects for 500ms and independently recharges after 2500ms', () => {
+  it('Afterburn travels 220 units, protects for 220ms and independently recharges after 2600ms', () => {
     const w=world('pyro');
     w.use('dash');
     expect(w.system.snapshot.slots!.dash.charges).toBe(1);
     w.advance(140);
-    expect(w.player.x).toBeCloseTo(180);
+    expect(w.player.x).toBeCloseTo(220);
     expect(w.system.dashing).toBe(false);
     expect(w.system.invulnerable).toBe(true);
-    w.advance(359);
+    w.advance(79);
     expect(w.system.invulnerable).toBe(true);
     w.advance(1);
     expect(w.system.invulnerable).toBe(false);
-    w.advance(1999);
+    w.advance(2379);
     expect(w.system.snapshot.slots!.dash.charges).toBe(1);
     w.advance(1);
     expect(w.system.snapshot.slots!.dash.charges).toBe(2);
@@ -340,7 +340,7 @@ describe('tactical ability shape, line of sight and wind-up', () => {
     expect(w.hits).toEqual([]);
     expect(w.system.use('tactical')).toBe(true);
     expect(w.hits.map(h => h.id).sort()).toEqual([1, 3]);
-    expect(w.hits.every(h => h.amount === 35)).toBe(true);
+    expect(w.hits.every(h => h.amount === 25)).toBe(true);
     w.advance(80);
     expect(w.hits.map(h => h.id).sort()).toEqual([1, 3]);
     expect(w.controls.every(c => c.kind === 'burn')).toBe(true);
@@ -450,7 +450,7 @@ describe('power placement, deployable collision and lifetimes', () => {
     w.advance(249);
     expect(w.hits).toEqual([]);
     w.advance(1);
-    expect(w.hits).toEqual([{ id: 1, amount: 6 }]);
+    expect(w.hits).toEqual([{ id: 1, amount: 6.5 }]);
     w.advance(5750);
     expect(w.hits).toHaveLength(24);
     expect(w.controls.every(c => c.kind === 'burn')).toBe(true);
