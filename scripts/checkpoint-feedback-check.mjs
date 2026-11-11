@@ -30,7 +30,8 @@ export async function checkCheckpointFeedback(page) {
   await reloadSettledRoom();
   // Same-tab invalidation does not emit storage: the failed native action must
   // refresh the menu and announce why it could not continue.
-  await page.evaluate(key=>localStorage.removeItem(key),key);
+  await page.locator('#continue').waitFor({state:'visible'});
+  await page.locator('#continue').evaluate((button,key)=>button.addEventListener('click',()=>localStorage.removeItem(key),{capture:true,once:true}),key);
   await page.locator('#continue').click();
   assert.equal(await page.locator('#continue').count(),0);
   assert.match(await page.locator('#application-notice').innerText(),/Checkpoint unavailable/);

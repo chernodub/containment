@@ -80,7 +80,8 @@ export function createScreens(context: ScreenContext) {
     if (context.graphicsLost() || context.recovering()) return;
     recoveryPending=false;syncScreen(true);
     // Combat always returns to pause; only the player's Resume releases it.
-    if (recoveryFocus) el(recoveryFocus)?.focus();
+    const restored=recoveryFocus?el('overlay').querySelector<HTMLElement>(`[id="${recoveryFocus}"]`):null;
+    if(restored)restored.focus();else {const panel=el('overlay').firstElementChild as HTMLElement|null;if(panel){panel.tabIndex=-1;panel.focus();}}
   }
 
   function updateSound(): void {
@@ -282,7 +283,7 @@ export function createScreens(context: ScreenContext) {
     }
     if(event.key==='Escape') {
       if(status==='menu'&&(settingsOpen||creditsOpen||controlsOpen)) {event.preventDefault();closeDrawer();}
-      else if(status==='paused') {event.preventDefault();if(pauseTab!=='resume')setPauseTab('resume',true);else pause();}
+      else if(status==='paused') {event.preventDefault();pause();}
       // Mandatory draft/route decisions stay pending. Escape returns focus to
       // the screen heading instead of committing or destroying run progress.
       else if(status!=='menu') {event.preventDefault();const panel=root.firstElementChild as HTMLElement|null;if(panel){panel.tabIndex=-1;panel.focus();}}
@@ -355,7 +356,7 @@ export function createScreens(context: ScreenContext) {
       syncScreen(true);el('start')?.focus();
     },
     get graphicsBlocked() {return context.graphicsLost()||recoveryPending;},
-    resetSettings() {settingsOpen=false;creditsOpen=false;controlsOpen=false;pauseTab='resume';context.settings?.reset?.();},
+    resetSettings() {const notice=el('application-notice');if(notice)notice.hidden=true;settingsOpen=false;creditsOpen=false;controlsOpen=false;pauseTab='resume';context.settings?.reset?.();},
     get quality() {return context.settings?.quality??legacyQuality;},
     dispose() {window.removeEventListener('storage',onStorage);el('overlay').removeEventListener('click',onAction,true);window.removeEventListener('resize',onResize);document.removeEventListener('keydown',onKeyDown);document.removeEventListener('pointermove',onPointerMove);},
   };

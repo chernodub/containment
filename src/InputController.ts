@@ -30,12 +30,13 @@ export class InputController {
  constructor(private game:DepthGame,private view:DepthRenderer,private onPause:(toggle?:boolean)=>void,private gameplayReady:()=>boolean=()=>true){
   const canvas=view.canvas;canvas.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')this.mouse={x:e.clientX,y:e.clientY,active:true};});canvas.addEventListener('pointerdown',e=>{if(!this.gameplayReady()||e.pointerType!=='mouse'||e.button!==0||game.status!=='playing')return;canvas.focus?.({preventScroll:true});this.shooting=true;this.mouse={x:e.clientX,y:e.clientY,active:true};canvas.setPointerCapture(e.pointerId);});['pointerup','pointercancel','lostpointercapture'].forEach(t=>canvas.addEventListener(t,()=>{this.shooting=false;}));
   document.addEventListener('keydown',e=>{
+   if(e.defaultPrevented)return;
    if(shortcutModifier(e)){this.keys.clear();return;}
    const code=gameplayCode(e),target=e.target as HTMLElement|null;
    if(code!=='Escape'&&uiOwnsKeys(target)){this.reset();return;}
    if(!code)return;
    if(game.status==='playing'&&['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(code))e.preventDefault();
-   if(code==='Escape'){if(!e.repeat&&game.status==='playing'){e.preventDefault();this.onPause(true);}return;}
+   if(code==='Escape'){if(!e.repeat){if(game.status==='playing'||game.status==='paused')e.preventDefault();this.onPause(true);}return;}
    if(!this.gameplayReady()||game.status!=='playing')return;
    if(e.repeat||this.keys.has(code))return;
    this.keys.add(code);
