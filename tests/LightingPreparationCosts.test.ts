@@ -98,7 +98,7 @@ describe('bounded lighting preparation costs', () => {
     const generators: T.PMREMGenerator[] = [];
     const targets: T.WebGLRenderTarget[] = [];
     const update = vi.spyOn(T.CubeCamera.prototype, 'update').mockImplementation(() => {});
-    const fromCubemap = vi.spyOn(T.PMREMGenerator.prototype, 'fromCubemap').mockImplementation(function () {
+    const fromCubemap = vi.spyOn(T.PMREMGenerator.prototype, 'fromCubemap').mockImplementation(function (this: T.PMREMGenerator) {
       generators.push(this);
       const target = new T.WebGLRenderTarget(64, 64);
       targets.push(target);
