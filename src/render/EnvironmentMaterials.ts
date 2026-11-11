@@ -22,7 +22,7 @@ export class EnvironmentMaterials {
    const size=128,data=new Uint8Array(size*size*4);
    for(let y=0;y<size;y++)for(let x=0;x<size;x++){
     const i=(y*size+x)*4,h=((Math.imul(x+17,374761393)^Math.imul(y+31,668265263))>>>0)%7-3;
-    if(kind==='albedo'){data[i]=data[i+1]=data[i+2]=88+h;}
+    if(kind==='albedo'){data[i]=data[i+1]=data[i+2]=73+h;}
     else if(kind==='normal'){data[i]=128+h%2;data[i+1]=128;data[i+2]=255;}
     else{data[i]=255;data[i+1]=238+h;data[i+2]=255;}
     data[i+3]=255;
