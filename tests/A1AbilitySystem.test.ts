@@ -339,7 +339,7 @@ describe('tactical ability shape, line of sight and wind-up', () => {
     w.status.set(3, { chilled: true, frozen: false });
     w.use('tactical');
     expect(w.hits).toEqual([{ id: 3, amount: 30 }, { id: 1, amount: 30 }]);
-    expect(w.controls.filter(c => c.kind === 'freeze')).toEqual([{ id: 3, kind: 'freeze', amount: 1800 }]);
+    expect(w.controls.filter(c => c.kind === 'freeze')).toEqual([{ id: 3, kind: 'freeze', amount: 1500 }]);
     expect(w.order.indexOf('chill:1')).toBeLessThan(w.order.indexOf('damage:1'));
     expect(w.events.find(e => e.phase === 'impact')).toMatchObject({ radius: 210, targetIds: [3, 1] });
   });

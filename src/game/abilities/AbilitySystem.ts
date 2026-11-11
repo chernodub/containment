@@ -261,7 +261,7 @@ export class AbilitySystem {
         break;
       case 'cryo-nova': {
         const radius = cast.radius ?? 210;
-        for (const t of this.nearby(cast, radius)) { const chilled = this.host.statuses(t.id).chilled; this.host.status(t, 'chill', 2); if (chilled) this.host.status(t, 'freeze', 1800); this.hit(t, 30); ids.push(t.id); }
+        for (const t of this.nearby(cast, radius)) { const chilled = this.host.statuses(t.id).chilled; this.host.status(t, 'chill', 2); if (chilled) this.host.status(t, 'freeze', 1500); this.hit(t, 30); ids.push(t.id); }
         this.event(cast.id, 'impact', cast, { radius, targetIds: ids }); return;
       }
       case 'flashfire': {

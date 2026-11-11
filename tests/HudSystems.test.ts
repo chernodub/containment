@@ -381,7 +381,7 @@ it('offers full ability rules on passive hover and native focus, including a liv
         await tactical.focus();
         const tooltip=page.locator('#ability-rules-tactical');
         expect(await tooltip.isVisible()).toBe(true);
-        expect(await tooltip.textContent()).toContain('frozen solid for 1.8 seconds');
+        expect(await tooltip.textContent()).toContain('frozen solid for 1.5 seconds');
         expect(await tooltip.evaluate(node=>getComputedStyle(node).pointerEvents)).toBe('none');
         await page.locator('#pause').focus();
         expect(await tooltip.isHidden()).toBe(true);

@@ -82,10 +82,10 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   'cryo-nova': ability({
     id: 'cryo-nova', rig: 'cryo', slot: 'tactical', element: 'cryo', name: 'Cryo Nova',
     summary: 'Ring of cold. Chills hard; freezes the already chilled.',
-    description: 'Vent coolant in a ring around you: 30 damage and heavy chill. Enemies that were already chilled are frozen solid for 1.8 seconds.',
+    description: 'Vent coolant in a ring around you: 30 damage and heavy chill. Enemies that were already chilled are frozen solid for 1.5 seconds.',
     targeting: 'self', shape: { kind: 'circle', radius: 210 },
     castMs: 0, cooldownMs: 9_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '30' }, { label: 'Freeze', value: seconds(1_800) }, { label: 'Cooldown', value: seconds(9_000) }],
+    stats: [{ label: 'Damage', value: '30' }, { label: 'Freeze', value: seconds(1_500) }, { label: 'Cooldown', value: seconds(9_000) }],
   }),
   glacier: ability({
     id: 'glacier', rig: 'cryo', slot: 'power', element: 'cryo', name: 'Glacier',
