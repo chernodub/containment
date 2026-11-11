@@ -12,7 +12,9 @@ for key,shots in groups.items():
  for i,s in enumerate(shots):
   x=(i%cols)*thumbw;y=(i//cols)*(thumbh+30)
   im=Image.open(root/s['file']);im.thumbnail((thumbw,thumbh));sheet.paste(im,(x,y))
-  d.text((x+8,y+thumbh+6),f"{key} | frame {s['frame']} | simulation {s['simulationMs']}ms",fill='white')
+  phases=['press / cast','anticipation','impact +30ms','impact +150ms','impact +600ms','lingering','expiry']
+  phase=phases[min(i,6)] if key.startswith('v2-') and not any(v in key for v in ['full-','kit-','before-']) else f'frame {s["frame"]}'
+  d.text((x+8,y+thumbh+6),f"{key} | {phase} | simulation {s['simulationMs']}ms",fill='white')
  sheet.save(out/(key.replace(':','-')+'.png'))
 # Every first impact frame in one contact sheet to compare the visual vocabulary.
 keys=list(groups);overview=Image.new('RGB',(4*480,((len(keys)+3)//4)*290),'#081219');d=ImageDraw.Draw(overview)

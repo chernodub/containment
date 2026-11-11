@@ -77,7 +77,8 @@ async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,
  if(!g.useAbility(slot))throw Error('V2 ability denied '+id);
  const cast=g.abilities.snapshot.slots[slot].castRemainingMs;
  const duration=g.abilities.snapshot.slots[slot].activeMs||({bulwark:6000,glacier:5000,'tesla-pylon':9000,'frost-trail':2500,afterburn:2500,whiteout:8000,meltdown:8000,overclock:6000}[id]??0);
- const samples=[0,Math.max(16,cast*.5),Math.max(35,cast+30),Math.max(170,cast+150),cast+600,cast+Math.max(1200,duration*.5),cast+Math.max(1800,duration+300)];
+ const resolution=slot==='dash'?140:cast;
+ const samples=[0,Math.max(16,resolution*.5),resolution+30,resolution+150,resolution+600,resolution+Math.max(1200,duration*.5),resolution+Math.max(1800,duration+300)];
  const original=d.step;let sample=0,elapsed=0;
  // The runner samples at fixed 150ms; map those sampling requests to explicit art-review phases.
  d.step=ms=>{if(ms!==150)return original(ms);sample++;const t=samples[Math.min(sample,samples.length-1)];original(Math.max(0,t-elapsed));elapsed=t;d.v2Proof.sampleMs=t;d.v2Proof.programs=programs;d.shaderCompilations=programs;if(programs)throw Error('V2 timeline shader compiles '+programs);};
