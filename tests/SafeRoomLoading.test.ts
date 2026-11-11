@@ -2,6 +2,7 @@ import {uiSource} from './uiSource';
 import {it,expect,vi} from 'vitest';
 import {readFileSync} from 'node:fs';
 import ts from 'typescript';
+import {GameFeel} from '../src/ui/feel';
 import {DepthGame} from '../src/DepthGame';
 import {expeditionRewardOffers} from '../src/game/roguelike/expedition';
 
@@ -14,8 +15,8 @@ function harness(){
  const source=uiSource;
  const body=source.slice(source.indexOf('function frame('),source.indexOf('\n    lastRoom = game.roomRevision;'));
  const presentation=vi.fn();
- const factory=new Function('game','renderer','input','el','audio','advancePresentation',`const presentationFrozen=false;let lastRoom=-1,lastStatus='',graphicsLost=false,roomRecovering=true,hudTime=0,hudLastMs=0,hudTotalMs=0,hudSamples=0;const positionHud=()=>{},requestAnimationFrame=()=>{},document={hidden:false},pacer={sample:()=>.05,reset:()=>{}},confirmation={update:()=>{}},performance={now:()=>0},syncScreen=()=>{},hud=()=>{},syncHud=()=>{},diagnostics={record:()=>{}};${ts.transpile(body)};return frame;`);
- return {game,renderer,input,node,audio,presentation,frame:factory(game,renderer,input,()=>node,audio,presentation)};
+ const factory=new Function('game','renderer','input','el','audio','advancePresentation','GameFeel',`const presentationFrozen=false,presentationEnabled=true,motion={matches:false},beats=null,feel=new GameFeel(),feelContext=()=>({dashing:false,critical:false,remaining:game.encounterRemaining}),hasAudioDirector=()=>false,syncAudioDirector=()=>{};let controlsForStep;const stepSimulation=ms=>game.update(ms,controlsForStep);let lastRoom=-1,lastStatus='',graphicsLost=false,roomRecovering=true,hudTime=0,hudLastMs=0,hudTotalMs=0,hudSamples=0;const positionHud=()=>{},requestAnimationFrame=()=>{},document={hidden:false},pacer={sample:()=>.05,reset:()=>{}},confirmation={update:()=>{}},performance={now:()=>0},syncScreen=()=>{},hud=()=>{},syncHud=()=>{},diagnostics={record:()=>{}};${ts.transpile(body)};return frame;`);
+ return {game,renderer,input,node,audio,presentation,frame:factory(game,renderer,input,()=>node,audio,presentation,GameFeel)};
 }
 const snapshot=(g:DepthGame)=>JSON.stringify({player:g.player,combat:g.combat.snapshot,enemies:g.enemies.snapshot,bullets:g.bullets,pools:g.pools,elapsed:g.elapsed,remaining:g.encounterRemaining,expedition:g.expedition,story:g.storyPresentation});
 it('actual RAF freezes all combat/progression while pending and discards held movement/fire',()=>{

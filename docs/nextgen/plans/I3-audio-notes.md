@@ -1,0 +1,28 @@
+# I3 UI audio integration
+
+Implementation stays uncommitted in `t3/integrate-ui-audio-overhaul`. No audio engine/synthesis, camera/projection, gameplay, persistence or accessibility assertions were changed by the audio child.
+
+## Files and behavior
+
+- `src/ui/application.ts`: exclusive existing `forwardAudioEffect` dispatch retained; lifecycle state reaches the director before simulation/loading and every HUD tick. `syncCombat` remains the sole reload/switch/death snapshot bridge. Opening pause admits one interface cue before all-stop; resume cues follow resume. Visibility and graphics recovery retain full transport gates. Director-owned lifecycle accents do not depend on visual beats being enabled.
+- `src/ui/gameAdapter.ts` (audio only): real `combat.mutationResources().maxHealth`, authoritative ability snapshot, optional Queen phase, explicit `setEnvironment(null)` on room revision/exit, including adjacent identical environments. Menu/reward/rig/results have live UI transport, zero combat intensity, cleared environments and stopped music. Actual pause/loading/hidden/graphics interruption pass `paused:true`. Boss introduction waits for readiness and does not repeat on resume. Death/clear/victory cues are emitted once before terminal screens can stop anything; beats suppress duplicate lifecycle, boss-intro and Overdrive-ready calls. First interface gesture unlocks audio; later cues stay synchronous.
+- `src/ui/screens/ScreenManager.ts` (audio only): director screens do not blanket-pause UI cues. Navigation, draft, rig, reroll and denial cues retain native actions; returning from pause to title clears the environment and restores UI transport. Legacy fallback keeps its previous lifecycle.
+- `src/ui/settings.ts`: native ranges use `slider`, checkboxes/mute use `toggle`, selects use `select`; volume is applied before the cue, so muted/paused controls schedule no voices.
+- `scripts/sound-controls-check.mjs`: `observeAudio` now records actual source `start`/`stop` calls and source-to-destination graph paths. Seven bus identities are checked against the live category/reverb topology, not inferred from production diagnostics. Paused settings retain all prior persistence/focus/resize assertions and additionally assert zero new scheduling.
+- `scripts/audio-wiring-check.mjs` + invocation in `scripts/smoke.mjs`: isolated production browser proof uses real Start/rig/draft, native Space/Q/pause, positive named bus routes, one opening-pause cue, stopped loop sources, zero paused/muted scheduling with working native gameplay, and supported `?debug=1` staging of real clear/checkpoint/lethal-damage transitions. Clear/death stingers must remain unstopped in their blocking screens. No production audio global is added.
+- `tests/UiAudioIntegration.test.ts`: nine integration regressions combine the real simulation, adapter, director and observable audio clock, including real Whiteout loop lifecycle, same-environment revisions, terminal stinger duration, cue deduplication, boss readiness/pause edges, optional Queen phase, checkpoint, max-health normalization, authoritative reload/switch and paused/muted silence.
+
+## Validation
+
+- `npx vitest run tests/UiAudioIntegration.test.ts tests/UiAdapter.test.ts tests/UiSettings.test.ts tests/UiBeats.test.ts tests/SafeRoomLoading.test.ts`: 5 files / 40 tests passed before the additive eighth Whiteout test.
+- `npx vitest run tests/UiAudioIntegration.test.ts tests/AudioDirector.test.ts tests/AudioPreferences.test.ts tests/AudioMixer.test.ts`: 4 files / 53 tests passed before the additive eighth Whiteout test.
+- Final five-file UI suite before the additive ninth boss-edge test: 5 files / 41 tests passed. Final adapter/loading/audio suite after it: 3 files / 24 tests passed. Final `npx tsc --noEmit`: passed.
+- `node --check scripts/audio-wiring-check.mjs`, `node --check scripts/sound-controls-check.mjs`, scoped `git diff --check`: passed.
+- `npm run verify`: Vitest reached 183 passed / 1 skipped / 1 failed files; 2351 passed / 1 skipped / 1 failed tests. Sole failure was the concurrent cinematic title work's visibility/layout assertion at `UiScreens.test.ts:482`; reported to the main agent, assertion left intact. Verify therefore did not reach Python/build/smoke. Log: `/private/tmp/containment-i3-audio-verify.log`.
+- Production build/final smoke are coordinated by the main agent. Audio child did not run builds or captures. Two isolated proof attempts against existing `dist` timed out before the initial menu appeared: page remained in “Establishing connection / Synchronizing ship systems,” with zero page/console errors. Neither attempt reached an audio assertion. Failure diagnostics now include UI state, loading progress and pending/failed requests. Log: `/private/tmp/containment-i3-audio-proof.log`. Main must run the proof through final smoke against the coordinated stable build.
+
+## Engine semantics / gaps
+
+`setCombatState({paused:true})` calls `pauseAll`, including the UI bus; `playUi` intentionally never schedules paused sounds. Therefore passive UI screens use unpaused UI transport plus `pauseMusic` and `setEnvironment(null)`, while actual gameplay pause/loading/visibility/graphics loss use whole-engine pause. This uses the public S2 API without engine changes. `syncCombat` itself stops dead loops and never emits a death stinger; the UI lifecycle owns that stinger once.
+
+The test spy intentionally pins the public mixer bus creation order plus verifies its actual connection topology. A future mixer graph redesign must update that proof explicitly. No assertion was removed or weakened. Human headphone/speaker audition remains outside automated graph/scheduling proof.

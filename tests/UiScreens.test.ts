@@ -20,6 +20,7 @@ beforeAll(async()=>{
       load(id) {
         if(id!==entry) return;
         return `import {createScreens} from ${JSON.stringify(root+'src/ui/screens/ScreenManager.ts')};
+          import {createSettings} from ${JSON.stringify(root+'src/ui/settings.ts')};
           import {setUiFixture} from ${JSON.stringify(root+'src/ui/gameAdapter.ts')};
           import {generateRun} from ${JSON.stringify(root+'src/game/roguelike/run.ts')};
           import {RunStats} from ${JSON.stringify(root+'src/game/abilities/RunStats.ts')};
@@ -27,7 +28,7 @@ beforeAll(async()=>{
           import {AUGMENT_BOONS} from ${JSON.stringify(root+'src/game/abilities/augmentCatalog.ts')};
           import {draftScreen} from ${JSON.stringify(root+'src/ui/screens/templates.ts')};
           import {createExpedition} from ${JSON.stringify(root+'src/game/roguelike/expedition.ts')};
-          window.screenTestApi={createScreens,setUiFixture,generateRun,createExpedition,RunStats,abilityFixture,AUGMENT_BOONS,draftScreen};`;
+          window.screenTestApi={createSettings,createScreens,setUiFixture,generateRun,createExpedition,RunStats,abilityFixture,AUGMENT_BOONS,draftScreen};`;
       },
     }],
     build:{write:false,minify:false,rollupOptions:{input:entry,output:{format:'iife'}},target:'es2022'},
@@ -62,11 +63,12 @@ async function mount(width=1280,height=720): Promise<Page> {
       authorizeDestruction() {actions.push('destroy');return true;},
       menu() {game.status='menu';},
     };
-    const audio={pauseAll(){},resumeAll(){},playUI(){},setMasterVolume(){},unlock:()=>Promise.resolve()};
+    const audio={pauseAll(){},resumeAll(){},playUI(){},setMasterVolume(){},setMusicVolume(){},setEffectsVolume(){},unlock:()=>Promise.resolve()};
     const renderer={qualityTier:'high',setQuality(){}};
     let lost=false;
-    const screens=api.createScreens({game,renderer,input:{reset(){}},audio,confirmation:{clear(){}},storage:null,pause:()=>actions.push('resume'),start:()=>actions.push('start'),graphicsLost:()=>lost,recovering:()=>false});
-    (window as any).ui={api,game,screens,actions,setLost(value:boolean){lost=value;},phase(status:string,depth=0,version=3){
+    const settings=api.createSettings({renderer,audio,storage:null});
+    const screens=api.createScreens({game,renderer,settings,input:{reset(){}},audio,confirmation:{clear(){}},storage:null,pause:()=>actions.push('resume'),start:()=>actions.push('start'),graphicsLost:()=>lost,recovering:()=>false});
+    (window as any).ui={api,game,renderer,screens,actions,setLost(value:boolean){lost=value;},phase(status:string,depth=0,version=3){
       const graph=api.generateRun(1729,version);
       const node=graph.nodes.find((value:any)=>value.depth===depth);
       const completed=graph.nodes.filter((value:any)=>value.depth<depth).map((value:any)=>value.id);
@@ -188,7 +190,7 @@ test('all pause tabs preserve Resume, use accessible arrow navigation, and hold 
   } finally {await page.close();}
 });
 
-test.each([[1280,720],[960,540]])('long loadouts scroll inside pause while Resume stays visible at %i × %i',async(width,height)=>{
+test.each([[1280,720],[1920,1080]])('long loadouts fit the pause console while Resume stays visible at %i × %i',async(width,height)=>{
   const page=await mount(width,height);
   try {
     await page.evaluate(()=>{
@@ -198,8 +200,10 @@ test.each([[1280,720],[960,540]])('long loadouts scroll inside pause while Resum
     await phase(page,'paused');
     await page.locator('[data-pause-tab=loadout]').click();
     const content=await page.locator('#pause-tabpanel').evaluate(element=>({scroll:element.scrollHeight,height:element.clientHeight,overflow:getComputedStyle(element).overflowY}));
-    expect(content.scroll).toBeGreaterThan(content.height);
-    expect(content.overflow).toBe('auto');
+    expect(content.scroll).toBeLessThanOrEqual(content.height+1);
+    expect(content.overflow).not.toBe('auto');
+    await page.locator('.owned-boon').first().focus();
+    expect(await page.locator('.owned-boon').first().locator('.boon-tooltip').isVisible()).toBe(true);
     const resume=await page.locator('#resume').boundingBox();
     expect(resume!.y).toBeGreaterThanOrEqual(0);
     expect(resume!.y+resume!.height).toBeLessThanOrEqual(height);
@@ -249,7 +253,8 @@ test('deck map includes the actual full generated branching graph and rewards',a
     expect(ids).toEqual(expected);
     expect(await page.locator('[data-map-state="current"]').count()).toBe(1);
     expect(await page.locator('[data-map-state="available"]').count()).toBe(2);
-    expect(await page.locator('[data-route]').count()).toBe(2);
+    expect(await page.locator('.deck-node[data-inspect-route]').count()).toBe(2);
+    expect(await page.locator('[data-route]').count()).toBe(1);
     expect(await page.locator('.deck-connections path').count()).toBeGreaterThan(12);
   } finally {await page.close();}
 });
@@ -268,7 +273,10 @@ test('debrief renders nested authoritative counters, source totals and accuracy,
       ui.game.stats=stats.snapshot;
     });
     await phase(page,'dead');
-    expect(await page.locator('.result-stats>div').count()).toBe(16);
+    expect(await page.locator('.hero-stats>div').count()).toBe(4);
+    expect(await page.locator('[data-stat]').count()).toBe(16);
+    expect(await page.locator('.damage-source-bar i').count()).toBe(4);
+    expect(await page.locator('.debrief-build').isVisible()).toBe(true);
     expect(await page.locator('[data-stat=kills] b').innerText()).toBe('2');
     expect(await page.locator('[data-stat=weapon] b').innerText()).toBe('1,234');
     expect(await page.locator('[data-stat=ability] b').innerText()).toBe('345');
@@ -301,8 +309,8 @@ test('live loadout lists all catalog augments with dedicated glyphs and the four
     expect(await page.locator('.owned-boon[data-augment=true]').count()).toBe(12);
     const icons=await page.locator('.owned-boon').evaluateAll(nodes=>nodes.map(node=>({id:node.getAttribute('data-boon'),icon:node.querySelector('svg')?.getAttribute('data-icon')})));
     for(const entry of icons) expect(entry.icon).toBe(entry.id);
-    expect(await page.locator('.owned-boon[data-boon=twin-glacier]').innerText()).toContain('Cryo augment');
-    expect(await page.locator('.owned-boon[data-boon=reserve-thruster]').innerText()).toContain('Universal augment');
+    expect(await page.locator('.owned-boon[data-boon=twin-glacier]').getAttribute('aria-label')).toContain('Cryo augment');
+    expect(await page.locator('.owned-boon[data-boon=reserve-thruster]').getAttribute('aria-label')).toContain('Universal augment');
   } finally {await page.close();}
 });
 
@@ -339,7 +347,7 @@ test('draft augments retain dedicated glyphs, rarity, matching rig identity and 
   } finally {await page.close();}
 });
 
-test.each([[1280,720],[1920,1080],[2560,1440]])('screen content stays inside a scrollable desktop viewport at %i × %i',async(width,height)=>{
+test.each([[1280,720],[1920,1080],[2560,1440]])('primary screen content fits the desktop viewport without an inner scroller at %i × %i',async(width,height)=>{
   const page=await mount(width,height);
   try {
     for(const [status,depth] of [['menu',0],['reward',0],['reward',3],['route',0],['paused',0],['dead',0]] as const) {
@@ -352,7 +360,87 @@ test.each([[1280,720],[1920,1080],[2560,1440]])('screen content stays inside a s
       expect(layout.right).toBeLessThanOrEqual(width+1);
       expect(layout.bottom).toBeLessThanOrEqual(height+1);
       expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth+1);
-      if(layout.scrollHeight>layout.clientHeight) expect(['auto','scroll']).toContain(layout.overflow);
+      expect(layout.scrollHeight).toBeLessThanOrEqual(layout.clientHeight+1);
+    }
+  } finally {await page.close();}
+});
+
+// The map previews choices without dispatching a route until a deliberate native action.
+test('descent map arrow preview, numbered paths and Enter preserve actual route actions',async()=>{
+  const page=await mount();
+  try {
+    await phase(page,'route',0,2);
+    const choices=await page.evaluate(()=>(window as any).ui.game.node.next);
+    await page.keyboard.press('ArrowRight');
+    expect(await page.locator('[data-route]').getAttribute('data-route')).toBe(choices[1]);
+    expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual([]);
+    await page.keyboard.press('Enter');
+    expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual(['route:'+choices[1]]);
+    await phase(page,'route',0,2);
+    await page.keyboard.press('1');
+    expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual(['route:'+choices[1],'route:'+choices[0]]);
+    await phase(page,'route',0,3);
+    expect(await page.locator('[data-node-id]').count()).toBe(20);
+    const map=await page.locator('.deck-map').evaluate(node=>({width:node.clientWidth,scroll:node.scrollWidth,height:node.clientHeight,scrollHeight:node.scrollHeight}));
+    expect(map.scroll).toBe(map.width);expect(map.scrollHeight).toBe(map.height);
+  } finally {await page.close();}
+});
+
+test('rig previews expose every catalog shape and full keyboard-readable rules without scrolling',async()=>{
+  const page=await mount();
+  try {
+    await page.evaluate(()=>{const ui=(window as any).ui;ui.api.setUiFixture(ui.game,{phase:'rig-select'});ui.screens.syncScreen();});
+    for(const rig of ['breacher','cryo','pyro','arc']) {
+      await page.locator(`[data-rig="${rig}"]`).click();
+      expect(await page.locator('.ability-shape[data-shape]').count()).toBe(4);
+      await page.locator('.ability-detail').first().focus();
+      expect(await page.locator('.ability-detail').first().locator('.ability-rules').isVisible()).toBe(true);
+      expect(await page.locator('.ability-detail').first().getAttribute('aria-label')).toContain('Dash');
+      if(rig==='arc') expect(await page.locator('.ability-detail').last().locator('.ability-shape').getAttribute('aria-label')).toBe('SELF effect');
+    }
+  } finally {await page.close();}
+});
+
+test.each([[1280,720],[1920,1080]])('settings and controls fit title and pause consoles at %i × %i',async(width,height)=>{
+  const page=await mount(width,height);
+  try {
+    const fit=async(selector:string)=>{
+      const layout=await page.locator(selector).evaluate(node=>{const r=node.getBoundingClientRect();return{top:r.top,bottom:r.bottom,width:node.clientWidth,scrollWidth:node.scrollWidth,height:node.clientHeight,scrollHeight:node.scrollHeight};});
+      expect(layout.top).toBeGreaterThanOrEqual(0);expect(layout.bottom).toBeLessThanOrEqual(height+1);
+      expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width+1);expect(layout.scrollHeight).toBeLessThanOrEqual(layout.height+1);
+    };
+    await page.locator('#settings').click();await fit('.configuration-drawer');
+    expect(await page.locator('[data-setting]').count()).toBe(16);
+    await page.locator('#close-drawer').click();await page.locator('#controls').click();await fit('.controls-drawer');
+    expect(await page.locator('.drawn-key').count()).toBe(14);
+    await phase(page,'paused');await page.locator('[data-tab=settings]').click();await fit('.pause-panel');await fit('#pause-tabpanel');
+    await page.locator('[data-tab=controls]').click();await fit('.pause-panel');await fit('#pause-tabpanel');
+  } finally {await page.close();}
+});
+
+test('legacy duplicate room names remain distinct by room kind and reward before selection',async()=>{
+  const page=await mount();
+  try {
+    await phase(page,'route',1,2);
+    const labels=await page.locator('.destination-choices button').evaluateAll(nodes=>nodes.map(node=>({name:node.querySelector('b')?.textContent,detail:node.querySelector('small')?.textContent,aria:node.getAttribute('aria-label')})));
+    expect(labels).toHaveLength(2);
+    expect(labels[0].name).toBe(labels[1].name);
+    expect(labels[0].detail).not.toBe(labels[1].detail);
+    expect(labels[0].aria).not.toBe(labels[1].aria);
+    expect(labels.map(label=>label.detail).join(' ')).toContain('ARMORY');
+    expect(labels.map(label=>label.detail).join(' ')).toContain('MEDICAL');
+    expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual([]);
+  } finally {await page.close();}
+});
+
+test('visible build rules stay inside the viewport when focused near the right edge',async()=>{
+  const page=await mount();
+  try {
+    await page.evaluate(()=>{const ui=(window as any).ui;ui.game.expedition={...ui.game.expedition,build:{mutations:['incendiary','breacher','cryogenic','permafrost','arc-filament','pressure-point','heavy-pellets','absolute-zero']}};});
+    await phase(page,'dead');
+    for(const card of await page.locator('.owned-boon').all()) {
+      await card.focus();const tooltip=(await card.locator('.boon-tooltip').boundingBox())!;
+      expect(tooltip.x).toBeGreaterThanOrEqual(8);expect(tooltip.x+tooltip.width).toBeLessThanOrEqual(1272);
     }
   } finally {await page.close();}
 });
@@ -375,5 +463,25 @@ test('menu shortcuts follow physical positions and retain native modifier shortc
     const route=await page.locator('[data-route]').first().getAttribute('data-route');
     await page.evaluate(()=>document.body.dispatchEvent(new KeyboardEvent('keydown',{key:'!',code:'Digit1',shiftKey:true,bubbles:true,cancelable:true})));
     expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual(['reroll','boon:'+id,'route:'+route]);
+  } finally {await page.close();}
+});
+
+test.each([[1280,720],[1920,1080]])('cinematic menu yields vector art while keeping the front door in the left 45 percent at %i × %i',async(width,height)=>{
+  const page=await mount(width,height);
+  try {
+    expect(await page.locator('.title-hull').count()).toBe(1);
+    await page.evaluate(()=>{
+      const ui=(window as any).ui;
+      ui.renderer.menuPresentation='cinematic';ui.screens.syncScreen(true);
+    });
+    expect(await page.locator('.title-hull').count()).toBe(0);
+    expect(await page.locator('.title-screen').getAttribute('data-menu-presentation')).toBe('cinematic');
+    const box=(await page.locator('.title-copy').boundingBox())!;
+    expect(box.x+box.width).toBeLessThanOrEqual(width*.45+1);
+    expect(await page.locator('#start').isVisible()).toBe(true);
+    const extent=await page.locator('.title-copy').evaluate(node=>({scroll:node.scrollWidth,width:node.clientWidth}));
+    expect(extent.scroll).toBeLessThanOrEqual(extent.width+1);
+    await page.locator('#start').click();
+    expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual(['start']);
   } finally {await page.close();}
 });

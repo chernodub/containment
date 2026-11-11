@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {checkCheckpointFeedback} from './checkpoint-feedback-check.mjs';
 import {checkCombatRig} from './combat-rig-check.mjs';
 import {observeAudio,checkMenuSound,checkPausedSound} from './sound-controls-check.mjs';
+import {checkAudioWiring} from './audio-wiring-check.mjs';
 import {createServer} from 'node:http';
 import {readFile, mkdir} from 'node:fs/promises';
 import {resolve, extname} from 'node:path';
@@ -157,6 +158,8 @@ try {
     timing.start('combat-rig');
     await checkCombatRig(page);
     assert.deepEqual(errors,[]);
+    timing.start('audio-wiring');
+    await checkAudioWiring(browser, origin + prefix);
     timing.start('context-close');
     await context.close();
     timing.finish('passed');

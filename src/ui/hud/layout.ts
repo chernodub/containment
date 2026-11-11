@@ -26,6 +26,18 @@ export function hudObstructs(left: number, top: number, right: number, bottom: n
     }
     return false;
 }
+const presentationObstacles = new Map<string, ScreenBox>();
+/** Passive prompt/beat rectangles are already measured by their owners. */
+export function setPresentationObstacle(id: string, box: ScreenBox | null): void {
+    if (box) presentationObstacles.set(id, box);
+    else presentationObstacles.delete(id);
+}
+/** Combat decoration yields to passive instructional copy as well as opaque chrome. */
+export function presentationObstructs(left: number, top: number, right: number, bottom: number, except?: string): boolean {
+    for (const [id, box] of presentationObstacles)
+        if (id !== except && left < box.right + 6 && right > box.left - 6 && top < box.bottom + 6 && bottom > box.top - 6) return true;
+    return false;
+}
 const distance = (a: ScreenBox, b: ScreenBox) => Math.abs(a.left - b.left) + Math.abs(a.top - b.top);
 /** Edge anchored chrome yields to the actual renderer-projected marine bounds.
  * Read all boxes before writing; offsets are never accumulated across resize. */

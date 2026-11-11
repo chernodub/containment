@@ -20,7 +20,10 @@ Use `--name=value` for valued flags.
 | `--label` | `baseline` | Output directory under `artifacts/nextgen/` |
 | `--scenarios` | `all` | Comma-separated scenario names; room scenarios also accept `name:templateId` |
 | `--rooms` | Ten rooms below | Overrides rooms expanded by `all` or an unqualified combat scenario |
-| `--burst` | `4` | Frames per combat-heavy, status-vfx and boss burst; 150 ms simulation spacing |
+| `--burst` | `4` | Frames per burst scenario; every burst also produces a sprite-sheet PNG |
+| `--step-ms` | `150` | Fixed simulation milliseconds between burst frames (1–1000) |
+| `--sprite-width` | `960` | Maximum sprite-sheet cell width; full-resolution individual frames are retained |
+| `--compare` | Off | Two existing labels, comma separated; produces standalone side-by-side HTML without launching a browser |
 | `--width`, `--height` | `1920`, `1080` | Desktop viewport in CSS pixels |
 | `--dpr` | `1` | Browser device scale factor; the game's existing High-quality DPR cap still applies to its canvas |
 | `--timestamp` | Current ISO time | Timestamp written to the manifest/contact sheet; does not drive simulation |
@@ -44,7 +47,7 @@ The runner launches **full Chromium** (`channel: 'chromium'`), first with ANGLE 
 - `boss`: legacy v2 Queen encounter in `reactor-vault`, boss and boss HUD required. The current story campaign does not contain the Queen, so this intentionally uses the supported legacy run graph.
 - `reward`, `route`, `pause`, `dead`, `shop`: the real game panels. Shop uses the Communal Atrium's Infirmary reward with purchasable services.
 
-Outputs are PNGs named `<scenario>[-<room>][-<frame>].png`, `manifest.json`, `pngs.txt` (absolute PNG paths), and `index.html`. The contact sheet embeds all PNG data and works as a single standalone HTML file; click a shot for its full-size image. The manifest contains commit, timestamp, viewport, renderer, launch options, font fallbacks, per-shot performance snapshot (`frameMs.average`, draws, triangles), simulation state, visible enemy count, status evidence, screenshot pixel samples, and console/page errors. Timings include capture overhead and should not be read as gameplay benchmarks.
+Outputs are PNGs named `<scenario>[-<room>][-<frame>].png`, burst sheets named `<scenario>[-<room>]-sprite.png`, `manifest.json`, `pngs.txt` (absolute PNG paths), and `index.html`. The contact sheet embeds all PNG data and works as a single standalone HTML file; click a shot for its full-size image. The manifest contains commit, timestamp, viewport, renderer, launch options, font fallbacks, per-shot performance snapshot (`frameMs.average`, draws, triangles), simulation state, visible enemy count, status evidence, screenshot pixel samples, and console/page errors. Timings include capture overhead and should not be read as gameplay benchmarks.
 
 Scenarios fail on the wrong state/room, page or console errors, absent WebGL pixels, blank screenshot samples, missing gameplay HUD/player, blocking overlays, or insufficient heavy combat. Failures produce diagnostic PNGs and manifest entries. A failed run returns non-zero even with `--keep-going`. Run labels replace matching filenames and regenerate the gallery; unrelated older PNGs in a reused label are not included in its manifest.
 
@@ -93,7 +96,7 @@ Exact IDs may include a colon (for example `ability:cryo`); select them with `--
 `ability:<id>` is registered for every one of the sixteen catalog abilities. `node scripts/nextgen/ability-driver.mjs --label=A1-abilities` captures two frames of each plus a native Shift/Q/F/V fixture and validates actual rig selection, accepted slot use, zones/deployables and hostile time scale. These fixtures use a legal Awakening Bay lane, normal public game actions and no boons; snapshots and run statistics are included in each manifest shot. All four live HUD slots are checked against the authoritative catalog IDs and current cast/active/cooldown readiness on every captured frame. Ability world VFX remain the renderer stream’s responsibility.
 ## U1 presentation fixtures
 
-`ability-ready`, `ability-cryo`, `ability-pyro`, `ability-arc`, `ability-cooling`, `ability-casting`, `ability-denied` and `ability-overdrive` inject the frozen shared contract through `debug.uiFixture()` / `debug.abilityFixture()`. They do not install fake simulation actions. `combat-kiting` uses legal, spaced enemy placement, real movement/fire and a debug-only 1.75× camera zoom to stress close-camera readability. Its optional damage/status callouts are explicit presentation events. The original `combat-heavy` remains unchanged. `pause-loadout`, `pause-settings`, `pause-controls`, `destroy-confirm` and `results-fixture` cover the complete screen set and optional stats.
+`ability-ready`, `ability-cryo`, `ability-pyro`, `ability-arc`, `ability-cooling`, `ability-casting`, `ability-denied` and `ability-overdrive` inject the frozen shared contract through `debug.uiFixture()` / `debug.abilityFixture()`. They do not install fake simulation actions. `combat-kiting-fixture` retains the original legal, spaced enemy placement, real movement/fire and debug-only 1.75× camera zoom to stress close-camera readability. Its optional damage/status callouts are explicit presentation events. The original `combat-heavy` remains unchanged. `pause-loadout`, `pause-settings`, `pause-controls`, `destroy-confirm` and `results-fixture` cover the complete screen set and optional stats.
 
 Additional debug methods: `uiFixture(fixture|null)` overrides phase/snapshots/preferences only; `abilityFixture(rig,state,preferences?)` supplies ready/cooling/casting/active/denied/overdrive states; `uiEvent(event)` feeds only pooled UI effects; `cameraZoom(1..3)` changes only the staged camera. Reload clears all UI fixtures, while validated player preferences remain persisted normally.
 
@@ -112,3 +115,46 @@ npm run capture -- --label=integration-1a --width=1920 --height=1080 --scenarios
 `debug.realtime(true|false)` is opt-in capture instrumentation: it lets the production RAF call original update/render with the existing debug controls, aging pooled UI on the same clock. Default debug captures remain fixed-step. Capture metadata retains both UI/ability receipts and G1 lighting/preparation diagnostics.
 
 The default room list now covers all ten distinct environments (including maintenance at Service Shaft Landing). Passenger Vault remains selectable explicitly, as do all twenty authored rooms.
+
+
+## U2 motion and comparison review
+
+The canonical `combat-kiting` now expands over **all ten default rooms**. It uses the native camera, a live Cryo rig,
+legal spread targets, actual rifle fire and movement, Cryo Nova / Frost Trail before the first frame, Glacier on frame two,
+and Whiteout on frame three. The fixture rejects an illegal movement lane, fewer than twelve visible live enemies,
+missing accepted ability receipts, absent actual firing feedback, or a stationary marine. It marks invulnerability and the
+script in each shot's staging evidence; these are repeatable presentation fixtures, not encounter-balance evidence.
+The old close-camera presentation stress case remains as `combat-kiting-fixture`; `combat-heavy` stays unchanged.
+
+```sh
+npm run capture -- --label=u2-motion --scenarios=combat-kiting --burst=8 --step-ms=150
+npm run capture -- --label=u2-motion-720 --scenarios=combat-kiting --burst=8 --width=1280 --height=720
+npm run capture -- --label=u2-compare --compare=u2-before,u2-final
+```
+
+Every burst writes a row-major sprite sheet (left to right, then top to bottom). The manifest's `sprites` list records
+columns, rows, cell dimensions, fixed spacing and each frame's actual simulation timestamp. The sheet uses at most
+960 px wide cells by default; use `--sprite-width=1920` for larger sheets. Full-resolution individual PNGs stay alongside.
+There is no wall-clock video timing or GIF encoder dependency.
+
+`--compare=<labelA>,<labelB>` reads existing manifests and emits `compare.html` and `index.html` under `--label` (or a
+derived comparison label). It embeds both galleries' image bytes and aligns actual scenario / room / frame identities.
+Views missing in either gallery say so explicitly. Each side retains its viewport and simulation timestamp. Comparison
+runs do not build, bind localhost or launch Chromium.
+
+`beat-room-enter-fixture`, `beat-room-clear-fixture`, `beat-boss-intro-fixture`, `beat-boss-defeated-fixture`,
+`beat-overdrive-ready-fixture` and `beat-death-fixture` opt into the presentation clock and inject explicitly named UI beat
+fixtures. These do not claim simulated room-clear/death receipts. Ordinary capture/debug stepping bypasses hit-stop and
+slow motion; `debug.presentation(true)` explicitly enables that timing layer, and `debug.presentationEvent(record)`
+feeds the presentation director. `debug.presentation(false)` restores the ordinary fixed-step path.
+
+
+`onboarding` clears only the onboarding seen-record and reloads before a real rig / first-boon selection; the observer
+rereads actual empty preferences. `route-legacy-branch` captures a validated version-two twelve-sector graph with branches.
+Results/completion fixtures use a real Cryo build plus explicitly injected summary statistics.
+
+`feel-impact-fixture` injects a presentation-only wall-slam and uses **25 ms** burst spacing. Its manifest records
+both `presentationMs` and real simulation timestamps: early frames remain frozen, then the fixed-step simulation resumes.
+The runner asserts that hold/resume behavior. Other scenarios use `--step-ms` (150 ms by default).
+Primary screen captures record layout extents and reject panels, title drawers, pause content, rig previews and deck maps
+that scroll or leave the desktop viewport; absolutely positioned rules tooltips do not count as primary content overflow.

@@ -1,0 +1,1 @@
+No findings: scoped I1b/I2 functional changes and relevant test guarantees survive the current U2 merge; transient audio work and the known pending application camera integration are excluded from this read-only audit.

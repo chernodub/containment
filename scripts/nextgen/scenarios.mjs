@@ -23,7 +23,7 @@ function benchmarkSetup(tier,algorithm='gtao',status=false,nativeRoom=false){
  })();`);
 }
 
-export async function stageKiting(room, options={}){
+export async function stageGraphicsKiting(room, options={}){
   const d=window.__containmentDebug,g=d.game;await d.gotoRoom(room,options.live?{rig:'arc'}:{});if(options.tier){d.renderer.setQuality(options.tier);await d.prepare();}d.invulnerable(true);d.measureLuminance=true;g.enemies.reset();
   const bounds=g.geometry.bounds,candidates=[];
   for(let y=150;y<bounds.height-150;y+=70)for(let x=150;x<bounds.width-150;x+=70)for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]){
@@ -46,7 +46,7 @@ export async function stageKiting(room, options={}){
 function integrationKitingSetup(tier){
  return new Function('room',`return (async()=>{
   const d=window.__containmentDebug,g=d.game;
-  await (${stageKiting.toString()})(room,{tier:${JSON.stringify(tier)},live:true});
+  await (${stageGraphicsKiting.toString()})(room,{tier:${JSON.stringify(tier)},live:true});
   const gl=d.renderer.renderer.getContext(),createProgram=gl.createProgram,oldPrograms=new Set(d.renderer.renderer.info.programs);let compiled=0;gl.createProgram=function(){compiled++;return createProgram.call(gl);};
   try{
   d.uiFixture({preferences:{radar:true,combatText:true}});
@@ -91,7 +91,7 @@ export const SCENARIOS=[
  {id:'ability-casting',state:'playing',room:'armory',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.abilityFixture('breacher','casting');}},
  {id:'ability-denied',state:'playing',room:'armory',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.abilityFixture('pyro','denied');}},
  {id:'ability-overdrive',state:'playing',room:'armory',required:['#ability-bar'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.abilityFixture('arc','overdrive');}},
- {id:'combat-kiting',state:'playing',room:'breached-loading-bay',burst:true,setup:async()=>{
+ {id:'combat-kiting-fixture',state:'playing',room:'breached-loading-bay',burst:true,setup:async()=>{
    const d=window.__containmentDebug,g=d.game;await d.gotoRoom('breached-loading-bay');d.invulnerable(true);g.enemies.reset();
    const candidates=[];for(let y=100;y<g.geometry.bounds.height-100;y+=90)for(let x=100;x<g.geometry.bounds.width-100;x+=90)if(d.canStand(x,y,28))candidates.push({x,y});
    const center=candidates.reduce((best,p)=>Math.hypot(p.x-g.geometry.bounds.width*.5,p.y-g.geometry.bounds.height*.5)<Math.hypot(best.x-g.geometry.bounds.width*.5,best.y-g.geometry.bounds.height*.5)?p:best,candidates[0]);
@@ -107,6 +107,13 @@ export const SCENARIOS=[
    for(const [i,p] of visible.slice(0,5).entries())d.uiEvent({type:'hit',x:p.x,y:p.y,id:p.id,damage:24+i*17,critical:i===2,lethal:i===3,source:i%2?'ice':'fire'});
    d.uiEvent({type:'boon',boon:'shatter',x:center.x+100,y:center.y});d.refresh();
  }},
+ {id:'combat-kiting',rooms:true,state:'playing',kiting:true,burst:true,required:['#ability-bar','#radar-hud'],setup:async room=>{await window.__containmentDebug.gotoRoom(room,{rig:'cryo'});}},
+ {id:'onboarding',state:'playing',room:'awakening-bay',resetPreferences:['containment.onboarding.v1'],required:['#contextual-onboarding[data-action]'],setup:async()=>{
+   const d=window.__containmentDebug;await d.startRun(1729,{rigSelect:true});
+   if(!d.game.chooseRig('cryo'))throw Error('Onboarding rig selection failed');d.refresh();
+   const first=document.querySelector('[data-mutation]');if(!first)throw Error('Onboarding starter missing');
+   first.click();await d.prepare();d.game.skipStory();d.step(100);d.refresh();
+ }},
  {id:'low-ammo',state:'playing',room:'armory',required:['.weapon-hud[data-ammo=low]'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.invulnerable(true);d.game.switchWeapon('rifle');d.setInput({fire:true,angle:0,autoAim:false});for(let i=0;i<400&&d.game.combat.snapshot.magazine>Math.ceil(d.game.combat.snapshot.magazineCapacity*.2);i++)d.step(1000/60);d.setInput({fire:false});d.abilityFixture('breacher','ready');d.refresh();}},
  {id:'reload-fixture',state:'playing',room:'armory',required:['#reload-label'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.invulnerable(true);d.game.switchWeapon('rifle');d.setInput({fire:true,angle:0,autoAim:false});d.step(500);d.setInput({fire:false});d.game.reload();d.step(d.game.combat.snapshot.reloadDurationMs*.4);d.abilityFixture('arc','ready');d.refresh();}},
  {id:'combat-calm',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.invulnerable(true);d.refresh();}},
@@ -115,7 +122,8 @@ export const SCENARIOS=[
  {id:'boss',auditGraphics:true,state:'playing',burst:true,room:'reactor-vault',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.invulnerable(true);const q=d.game.boss.snapshot;const candidates=[];for(let y=q.y+120;y<=q.y+330;y+=30)for(let x=q.x-200;x<=q.x+200;x+=30)if(d.canStand(x,y))candidates.push({x,y});if(!q.active||!candidates.length)throw Error('Queen encounter unavailable');Object.assign(d.game.player,candidates[Math.floor(candidates.length/2)]);d.setInput({fire:true,angle:Math.atan2(q.y-d.game.player.y,q.x-d.game.player.x),autoAim:false});d.game.switchWeapon('plasma');d.step(1600);}},
  {id:'boss-radar',state:'playing',room:'reactor-vault',required:['#radar-hud','.radar-objective'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.uiFixture({preferences:{radar:true,combatText:true}});}},
  {id:'reward',state:'reward',phase:'reward',required:['.choice-grid'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'reward'});}},
- {id:'route',state:'route',required:['.route-grid','[data-route]'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'route'});}},
+ {id:'route',state:'route',map:true,required:['.deck-map','.route-destination','[data-route]'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'route'});}},
+ {id:'route-legacy-branch',state:'route',map:true,legacyBranch:true,required:['.deck-map','.route-destination','[data-route]','[data-inspect-route]'],setup:async()=>{const d=window.__containmentDebug;for(const room of ['receiving','forklift-loop','freight-crossing','rail-depot']){await d.gotoRoom(room,{version:2,phase:'route'});if(d.game.node.next.length>1)return;}throw Error('Legacy branch route unavailable');}},
  {id:'pause',state:'paused',required:['.pause-panel','#resume'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();}},
  {id:'pause-loadout',state:'paused',required:['.owned-boons','.ability-preview'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','spreading-nova','twin-glacier','reserve-thruster']);d.game.pause();d.refresh();document.querySelector('[data-pause-tab=loadout]').click();}},
  {id:'pause-loadout-augments',state:'paused',required:['[data-boon=spreading-nova]','[data-boon=twin-glacier]','[data-boon=reserve-thruster]'],setup:async()=>{
@@ -124,7 +132,7 @@ export const SCENARIOS=[
    const panel=document.querySelector('#pause-tabpanel');panel.scrollTop=panel.scrollHeight;
  }},
  {id:'pause-settings',state:'paused',required:['[data-ui-settings]','#quality'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();document.querySelector('[data-pause-tab=settings]').click();document.querySelector('.settings-advanced')?.setAttribute('open','');}},
- {id:'graphics-options',state:'paused',required:['[data-setting=\"graphics.bloom\"]'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();document.querySelector('[data-pause-tab=settings]').click();document.querySelector('.settings-advanced').open=true;}},
+ {id:'graphics-options',state:'paused',required:['[data-setting=\"graphics.bloom\"]'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();document.querySelector('[data-pause-tab=settings]').click();const advanced=document.querySelector('.settings-advanced');if(advanced)advanced.open=true;}},
  {id:'pause-controls',state:'paused',required:['.controls-reference'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();document.querySelector('[data-pause-tab=controls]').click();}},
  {id:'destroy-confirm',state:'route',required:['#destroy-ship'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('manual-control-chamber',{phase:'route'});}},
  {id:'results',state:'dead',required:['.result-stats','.result-panel','#start'],setup:async()=>{
@@ -139,10 +147,19 @@ export const SCENARIOS=[
    if(!g.useAbility('overdrive'))throw Error('Live results Overdrive denied');d.step(5000);d.setInput({fire:false});
    d.invulnerable(false);g.hurt(100000);d.refresh();
  }},
- {id:'results-fixture',state:'dead',required:['.result-stats'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('breached-loading-bay');d.game.hurt(100000);d.uiFixture({stats:{...d.game.stats,kills:{total:284,byFamily:{crawler:184,brute:40,spitter:30,stalker:20,carrier:10,queen:0}},damageDealt:{weapon:12000,ability:2000,status:582,boon:100},shotsFired:812,shotsHit:620,abilityUses:{dash:18,tactical:12,power:5,overdrive:1},overdrivesUsed:1,highestMultiKill:6,roomTimeMs:{...d.game.stats.roomTimeMs,'fixture':487000}}});}},
- {id:'complete-fixture',state:'complete',required:['.result-panel'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('overload-floor');d.game.status='complete';d.uiFixture({stats:{...d.game.stats,kills:{total:652,byFamily:{crawler:450,brute:80,spitter:50,stalker:40,carrier:31,queen:1}},damageDealt:{weapon:30000,ability:8000,status:2082,boon:1000},roomTimeMs:{...d.game.stats.roomTimeMs,'fixture':1227000}}});}},
+ {id:'results-fixture',state:'dead',required:['.result-stats'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('breached-loading-bay',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','spreading-nova','twin-glacier','reserve-thruster','drive-dynamo']);d.game.hurt(100000);d.uiFixture({stats:{...d.game.stats,kills:{total:284,byFamily:{crawler:184,brute:40,spitter:30,stalker:20,carrier:10,queen:0}},damageDealt:{weapon:12000,ability:2000,status:582,boon:100},shotsFired:812,shotsHit:620,abilityUses:{dash:18,tactical:12,power:5,overdrive:1},overdrivesUsed:1,highestMultiKill:6,roomTimeMs:{...d.game.stats.roomTimeMs,'fixture':487000}}});}},
+ {id:'complete-fixture',state:'complete',required:['.result-panel'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('overload-floor',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','spreading-nova','twin-glacier','reserve-thruster','drive-dynamo']);d.game.status='complete';d.uiFixture({stats:{...d.game.stats,kills:{total:652,byFamily:{crawler:450,brute:80,spitter:50,stalker:40,carrier:31,queen:1}},damageDealt:{weapon:30000,ability:8000,status:2082,boon:1000},roomTimeMs:{...d.game.stats.roomTimeMs,'fixture':1227000}}});}},
  {id:'critical-health',state:'playing',room:'awakening-bay',required:['#hud.low-health'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('awakening-bay');d.invulnerable(false);d.game.hurt(130);d.abilityFixture('breacher','cooling');d.refresh();}},
  {id:'dead',state:'dead',required:['.result-panel','#start'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('breached-loading-bay');d.invulnerable(false);d.game.hurt(100000);d.refresh();}},
+ {id:'feel-impact-fixture',state:'playing',room:'awakening-bay',burst:true,stepMs:25,feelImpact:true,setup:async()=>{
+   const d=window.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'cryo'});d.invulnerable(true);
+   d.setInput({x:1,y:0,fire:false,angle:0,autoAim:false});d.presentation(true);
+   d.presentationEvent({type:'wall-slam',x:d.game.player.x,y:d.game.player.y,targetId:999});d.refresh();
+ }},
+ ...['room-enter','room-clear','boss-intro','boss-defeated','overdrive-ready','death'].map(kind=>({
+   id:`beat-${kind}-fixture`,state:'playing',room:'awakening-bay',burst:true,required:['#presentation-beat'],
+   setupArgument:kind,setup:async kind=>{const d=window.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'cryo'});d.presentation(true);d.presentationEvent({type:'beat',kind});d.refresh();},
+ })),
  {id:'shop',state:'reward',phase:'reward',required:['.service-shop','#claim'],setup:async()=>{await window.__containmentDebug.gotoRoom('communal-atrium',{phase:'reward'});}},
  {id:'g1-benchmark-high',rooms:true,state:'playing',setup:benchmarkSetup('high')},
  {id:'g1-native-room-shaders',rooms:true,state:'playing',setup:benchmarkSetup('high','gtao',false,true)},
@@ -170,7 +187,7 @@ export const SCENARIOS=[
  {id:'g1-aces',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setToneMapping('aces');d.refresh();}},
  {id:'g1-agx',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setToneMapping('agx');d.refresh();}},
  {id:'g1-contact-ao',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setAmbientOcclusionAlgorithm('contact');d.refresh();}},
- {id:'g1-kiting',rooms:true,state:'playing',burst:true,setup:stageKiting},
+ {id:'g1-kiting',rooms:true,state:'playing',burst:true,setup:stageGraphicsKiting},
  {id:'i2-kiting-high',rooms:true,state:'playing',burst:true,liveKiting:true,setup:integrationKitingSetup('high')},
  {id:'i2-kiting-low',rooms:true,state:'playing',burst:true,liveKiting:true,setup:integrationKitingSetup('low')},
  {id:'i2-low-calm',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setQuality('low');await d.prepare();d.invulnerable(true);d.refresh();}},
@@ -223,6 +240,109 @@ export function stageCombat({status=false}){
  return {staged:staged.length,player:{x:g.player.x,y:g.player.y}};
 }
 
+/** A repeatable moving firefight on the native camera, with real Combat Rig receipts. */
+export function stageKiting(){
+ const d=window.__containmentDebug,g=d.game;
+ d.invulnerable(true);g.enemies.reset();
+ const bounds=g.geometry.bounds,candidates=[];
+ for(let y=bounds.y+100;y<bounds.y+bounds.height-100;y+=70)for(let x=bounds.x+100;x<bounds.x+bounds.width-100;x+=70){
+  if(!d.canStand(x,y,28))continue;
+  let score=0;
+  for(let i=0;i<24;i++){const angle=i*Math.PI/12;for(const radius of [160,230,310])if(d.canStand(x+Math.cos(angle)*radius,y+Math.sin(angle)*radius,28)&&d.clearShot(x+Math.cos(angle)*radius,y+Math.sin(angle)*radius,{x,y}))score++;}
+  candidates.push({x,y,score:score-Math.hypot(x-bounds.x-bounds.width/2,y-bounds.y-bounds.height/2)/10000});
+ }
+ candidates.sort((a,b)=>b.score-a.score);
+ let center,heading=0;
+ for(const candidate of candidates){
+  for(let i=0;i<16;i++){
+   const angle=i*Math.PI/8;let legal=true;
+   for(let distance=-150;distance<=80;distance+=10)if(!d.canStand(candidate.x+Math.cos(angle)*distance,candidate.y+Math.sin(angle)*distance,20)){legal=false;break;}
+   if(legal){center=candidate;heading=angle;break;}
+  }
+  if(center)break;
+ }
+ if(!center)throw Error('No legal kiting movement lane');
+ // Dash INTO the scored open space, before enemies are staged. Placing the
+ // swarm before the dash could leave the marine inside a brute's shot radius.
+ const start={x:center.x-Math.cos(heading)*150,y:center.y-Math.sin(heading)*150};
+ Object.assign(g.player,{...start,angle:heading,vx:0,vy:0});
+ d.setInput({x:0,y:0,fire:false,angle:heading,autoAim:false});d.step(600);
+ if(!g.useAbility('dash'))throw Error('Kiting Frost Trail denied');
+ d.step(160);g.enemies.reset();d.refresh();
+ const origin={x:g.player.x,y:g.player.y};
+ // Choose the reserved firing lane against the real rendered footprint. The old
+ // first-legal angle could reserve the only visible floor around the reactor core.
+ const positions=[];
+ const collect=p=>{
+  const distance=Math.hypot(p.x-origin.x,p.y-origin.y);
+  if(distance<135||distance>650||!d.canStand(p.x,p.y,28)||!d.clearShot(p.x,p.y)||!d.renderer.visible(p.x,p.y))return;
+  positions.push(p);
+ };
+ for(const radius of [155,225,300,375,460])for(let i=0;i<48;i++){
+  const angle=i*Math.PI/24+radius*.01;collect({x:origin.x+Math.cos(angle)*radius,y:origin.y+Math.sin(angle)*radius});
+ }
+ let shotAngle=null,best=[];
+ const chooseLane=()=>{for(let i=0;i<48;i++){
+  const angle=heading+Math.PI+i*Math.PI/24;
+  if(![60,120,180,240].every(radius=>d.canStand(origin.x+Math.cos(angle)*radius,origin.y+Math.sin(angle)*radius,16))||!d.clearShot(origin.x+Math.cos(angle)*260,origin.y+Math.sin(angle)*260))continue;
+  const forward={x:Math.cos(angle),y:Math.sin(angle)},packing=[];
+  for(const p of positions){
+   const dx=p.x-origin.x,dy=p.y-origin.y,along=dx*forward.x+dy*forward.y,across=Math.abs(dx*forward.y-dy*forward.x);
+   if(along>0&&along<320&&across<75||packing.some(e=>Math.hypot(e.x-p.x,e.y-p.y)<65))continue;
+   packing.push(p);if(packing.length===26)break;
+  }
+  if(packing.length>best.length){best=packing;shotAngle=angle;}
+  if(best.length===26)break;
+ }};
+ chooseLane();
+ if(best.length<26){
+  for(let y=bounds.y+70;y<bounds.y+bounds.height-70;y+=35)for(let x=bounds.x+70;x<bounds.x+bounds.width-70;x+=35)collect({x,y});
+  chooseLane();
+ }
+ if(shotAngle===null)throw Error('No clear kiting firing lane');
+ const placed=[];
+ for(const p of best){
+  const type=placed.length%5===0?'spitter':'brute',id=d.spawn(type,p.x,p.y,placed.length%3===0);
+  if(id)placed.push({...p,id});
+ }
+ if(placed.length<18)throw Error(`Only ${placed.length} legal kiting targets`);
+ g.switchWeapon('rifle');
+ if(!g.useAbility('tactical'))throw Error('Kiting Cryo Nova denied');
+ // Acquire the first actual travelling round without drifting out of its verified lane.
+ d.setInput({x:0,y:0,fire:true,angle:shotAngle,autoAim:false});d.step(1000/60);
+ if(!(d.renderer.muzzle.intensity>0&&g.bullets.some(bullet=>bullet.kind==='player')))throw Error(`No travelling rifle round in verified kiting lane: ${JSON.stringify({player:origin,shotAngle,weapon:g.combat.snapshot.weaponId,magazine:g.combat.snapshot.magazine,shots:g.stats.shotsFired,bullets:g.bullets.length,state:g.status})}`);
+ d.uiFixture({preferences:{radar:true,combatText:true}});
+ return {staged:placed.length,player:origin,dashStart:start,heading,shotAngle,reservedFiringLane:{length:320,halfWidth:75},liveRig:'cryo',script:'Frost Trail into open center; Nova + rifle; Glacier at frame 2; Whiteout at frame 3',invulnerable:true};
+}
+
+/** Deterministic motion and public ability actions are keyed to burst frame index. */
+export function advanceKiting({frame,stepMs}){
+ const d=window.__containmentDebug,g=d.game;
+ if(frame===1){
+  // Probe legal cursor placements through the public action's own wall validation.
+  let accepted=false;
+  for(const radius of [220,160,300])for(let i=0;i<16&&!accepted;i++){
+   const angle=i*Math.PI/8,target={x:g.player.x+Math.cos(angle)*radius,y:g.player.y+Math.sin(angle)*radius};
+   if(!d.canStand(target.x,target.y,28)||!d.clearShot(target.x,target.y))continue;
+   g.setAimPoint(target);accepted=g.useAbility('power');
+  }
+  if(!accepted)throw Error('No legal Glacier placement in kiting fixture');
+ }
+ if(frame===2){d.fillOverdrive();if(!g.useAbility('overdrive'))throw Error('Kiting Whiteout denied');}
+ if(frame){
+  // Favor a clear short lane, with enough lookahead to prevent wall-hugging screenshots.
+  const base=(frame%8)*Math.PI/4;let direction=null;
+  for(let i=0;i<16;i++){
+   const angle=base+i*Math.PI/8;
+   if([24,48,72].every(radius=>d.canStand(g.player.x+Math.cos(angle)*radius,g.player.y+Math.sin(angle)*radius,20))){direction={x:Math.cos(angle),y:Math.sin(angle)};break;}
+  }
+  if(!direction)throw Error('Kiting fixture lost its movement lane');
+  d.setInput({...direction,fire:true,angle:null,autoAim:true});d.step(stepMs);
+  if(!d.canStand(g.player.x,g.player.y))throw Error('Kiting marine left navigable floor');
+ }
+ d.refresh();
+}
+
 export function inspectFrame(){
  const d=window.__containmentDebug,g=d.game,r=d.renderer;d.refresh();
  const gl=r.renderer.getContext();
@@ -245,5 +365,13 @@ export function inspectFrame(){
    const sample=[Math.round(px*canvas.clientWidth),Math.round(py*canvas.clientHeight)];if(px>.15&&px<.85&&py>.2&&py<.8)playfieldSamples.push(sample);if(px>0&&px<1&&py>0&&py<1&&Math.hypot(x-g.player.x,y-g.player.y)<=96)marineLocalSamples.push(sample);
   }
  }
- return {interimMeshes:r.scene.getObjectByName('interim-ability-visuals')?.children.filter(o=>o.visible&&o.isMesh&&(o.count===undefined||o.count>0)).length??0,drawErrors:d.drawErrors??[],settingsProof:d.settingsProof??null,marineBounds,hudOverlaps,kitingProof:d.kitingProof??null,shaderCompilations:d.shaderCompilations??null,recoveryProof:d.recoveryProof??null,lighting:r.lighting?.fixtures?.map(l=>({x:l.position.x,y:l.position.y,z:l.position.z,energy:l.intensity,color:l.color.getHex(),visible:l.visible})),poolLights:r.lighting?.pool?.lights?.filter(l=>l.visible).length,playfieldSamples,marineLocalSamples,playfieldProjection,abilities:g.abilities.snapshot,stats:g.stats,recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden,ui:{toasts:[...document.querySelectorAll('.hud-toast:not([hidden])')].map(n=>n.textContent),abilitySlots:[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,title:n.querySelector('.ability-title')?.textContent,value:n.querySelector('.ability-value')?.textContent,icon:!!n.querySelector('svg')})),damageNumbers:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>n.textContent),threats:document.querySelectorAll('.threat-marker:not([hidden])').length}};
+ const layout=[...document.querySelectorAll('.panel, .title-screen, .title-drawer, #pause-tabpanel, .rig-panel > .ability-preview, .deck-map')].filter(node=>node.getClientRects().length).map(node=>{
+  const rect=node.getBoundingClientRect(),style=getComputedStyle(node);
+  const normal=[...node.children].filter(child=>{const s=getComputedStyle(child);return !child.hidden&&s.position!=='absolute'&&s.position!=='fixed';});
+  const contentBottom=normal.reduce((bottom,child)=>Math.max(bottom,child.getBoundingClientRect().bottom),rect.top);
+  const contentRight=normal.reduce((right,child)=>Math.max(right,child.getBoundingClientRect().right),rect.left);
+  return {selector:node.id?`#${node.id}`:'.'+[...node.classList].join('.'),width:node.clientWidth,height:node.clientHeight,scrollWidth:node.scrollWidth,scrollHeight:node.scrollHeight,overflowX:node.scrollWidth>node.clientWidth+2&&contentRight>rect.right+2,overflowY:node.scrollHeight>node.clientHeight+2&&contentBottom>rect.bottom+2,outsideViewport:rect.left < -2||rect.top < -2||rect.right > innerWidth+2||rect.bottom > innerHeight+2,overflow:style.overflow};
+ });
+ const map={nodes:document.querySelectorAll('[data-node-id]').length,edges:document.querySelectorAll('[data-edge]').length,current:document.querySelectorAll('[data-map-state=current]').length,choices:document.querySelectorAll('[data-inspect-route]').length,confirmation:document.querySelector('[data-route]')?.getAttribute('data-route')??null,expectedNodes:g.expedition.run.version===3?20:g.expedition.run.version===2?18:9};
+ return {interimMeshes:r.scene.getObjectByName('interim-ability-visuals')?.children.filter(o=>o.visible&&o.isMesh&&(o.count===undefined||o.count>0)).length??0,drawErrors:d.drawErrors??[],settingsProof:d.settingsProof??null,marineBounds,hudOverlaps,kitingProof:d.kitingProof??null,shaderCompilations:d.shaderCompilations??null,recoveryProof:d.recoveryProof??null,lighting:r.lighting?.fixtures?.map(l=>({x:l.position.x,y:l.position.y,z:l.position.z,energy:l.intensity,color:l.color.getHex(),visible:l.visible})),poolLights:r.lighting?.pool?.lights?.filter(l=>l.visible).length,playfieldSamples,marineLocalSamples,playfieldProjection,abilities:g.abilities.snapshot,stats:g.stats,recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden,ui:{layout,map,presentation:document.querySelector('#presentation-beat')?.textContent??'',toasts:[...document.querySelectorAll('.hud-toast:not([hidden])')].map(n=>n.textContent),abilitySlots:[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,title:n.querySelector('.ability-title')?.textContent,value:n.querySelector('.ability-value')?.textContent,icon:!!n.querySelector('svg')})),damageNumbers:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>n.textContent),threats:document.querySelectorAll('.threat-marker:not([hidden])').length}};
 }

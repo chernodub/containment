@@ -3,7 +3,7 @@ import type {GraphicsTier} from '../render/FrameBudget';
 import type {AudioSystem} from '../game/audio/AudioSystem';
 import {loadAudioPreferences, saveAudioPreferences} from '../game/audio/preferences';
 import {GRAPHICS_PRESETS, type GraphicsOptions} from '../render/graphicsOptions';
-import {getGraphicsOptions, setGraphicsOptions, setGraphicsTier} from './gameAdapter';
+import {getGraphicsOptions, playUiCue, setGraphicsOptions, setGraphicsTier} from './gameAdapter';
 import {renderSettings} from './settingsView';
 
 export const UI_STORAGE_KEY = 'containment.ui.v1';
@@ -146,6 +146,7 @@ export function createSettings({renderer, audio, storage}: {renderer: DepthRende
           applyGraphics(); persist();
         }
         sync();
+        playUiCue(audio, input instanceof HTMLInputElement && input.type === 'range' ? 'slider' : input instanceof HTMLInputElement && input.type === 'checkbox' ? 'toggle' : 'select');
       };
       const onClick = (event: MouseEvent) => {
         const target = event.target;
@@ -153,6 +154,7 @@ export function createSettings({renderer, audio, storage}: {renderer: DepthRende
         if (target.closest('#sound')) {
           sound = {...sound, muted: !sound.muted}; applyAudio(); saveAudioPreferences(storage, sound); sync();
           void audio.unlock();
+          playUiCue(audio, 'toggle');
         }
       };
       nextRoot.addEventListener('input', onInput);

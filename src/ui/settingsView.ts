@@ -23,32 +23,14 @@ function graphicsControl(key: string, value: unknown): string {
   return `<div class="settings-control"><div class="settings-control__copy"><label for="${id}">${escape(label)}</label><span id="${id}-hint">${escape(hint)}</span></div><select id="${id}" data-setting="graphics.${key}" aria-describedby="${id}-hint">${graphicsChoices(key).map(choice => `<option value="${escape(choice)}"${choice === value ? ' selected' : ''}>${escape(choice.charAt(0).toUpperCase() + choice.slice(1))}</option>`).join('')}</select></div>`;
 }
 
-/** Every renderer contract field gets a native, labelled control and its metadata. */
+/** Every graphics contract field remains a native labelled control in a compact two-column console. */
 export function renderSettings({state, sound, reducedMotion}: {state: UiPreferences; sound: AudioPreferences; reducedMotion: boolean}): string {
   const graphics = Object.entries(state.graphics);
-  return `<div class="system-settings" data-ui-settings>
-    <div class="settings-scroll-hint" aria-hidden="true">Scroll for accessibility <span>↓</span></div>
-    <div class="settings-layout"><div class="settings-primary">
-    <section class="settings-section" aria-labelledby="settings-graphics-heading">
-      <div class="settings-section__heading"><h3 id="settings-graphics-heading">Graphics</h3><span>Display systems</span></div>
-      <div class="settings-control"><div class="settings-control__copy"><label for="quality">Quality preset</label><span id="quality-hint">Changing preset resets rendering options.</span></div><select id="quality" data-setting="tier" aria-describedby="quality-hint"><option value="high"${state.tier === 'high' ? ' selected' : ''}>High</option><option value="low"${state.tier === 'low' ? ' selected' : ''}>Low</option></select></div>
-      <details class="settings-advanced"><summary>Rendering options<span aria-hidden="true">+</span></summary><div class="settings-advanced__body">${graphics.filter(([key]) => key !== 'screenShake' && key !== 'flashIntensity').map(([key, value]) => graphicsControl(key, value)).join('')}</div></details>
-    </section>
-    <section class="settings-section settings-section--audio" aria-labelledby="settings-audio-heading">
-      <div class="settings-section__heading"><h3 id="settings-audio-heading">Audio</h3><span>Shipboard mix</span></div>
-      <div class="settings-master">${range('master', 'Master volume', 'Overall sound level. Mute preserves this value.', sound.master, 0, 'master-volume')}<button id="sound" type="button" class="settings-mute" aria-label="Mute sound" aria-pressed="${sound.muted}">${sound.muted ? 'Unmute' : 'Mute'}</button></div>
-      ${range('music', 'Music', 'Ambient score and combat tension.', state.music)}
-      ${range('effects', 'Sound effects', 'Weapons, abilities and ship systems.', state.effects)}
-    </section>
-    </div>
-    <section class="settings-section" aria-labelledby="settings-accessibility-heading">
-      <div class="settings-section__heading"><h3 id="settings-accessibility-heading">Accessibility</h3><span>Combat readability</span></div>
-      <p class="settings-motion-note" data-reduced-motion${reducedMotion ? '' : ' hidden'}>Reduced motion is active. Camera motion and flashes are disabled; your preferred values are preserved.</p>
-      ${graphics.filter(([key]) => key === 'screenShake' || key === 'flashIntensity').map(([key, value]) => graphicsControl(key, value)).join('')}
-      ${toggle('combatText', 'Combat text', 'Show damage numbers and status callouts.', state.combatText)}
-      ${toggle('radar', 'Threat radar', 'Show nearby threats on a compact tactical display.', state.radar)}
-    </section>
-    </div>
-    <a class="settings-credits" href="${import.meta.env.BASE_URL}audio-credits.html" target="_blank" rel="noopener">Audio Credits <span aria-hidden="true">↗</span></a>
-  </div>`;
+  const quality = new Set(['shadows','resolutionScale']);
+  const comfort = new Set(['screenShake','flashIntensity']);
+  return `<div class="system-settings" data-ui-settings><div class="settings-layout"><div class="settings-primary">
+    <section class="settings-section" aria-labelledby="settings-graphics-heading"><div class="settings-section__heading"><h3 id="settings-graphics-heading">Quality</h3><span>Display systems</span></div><div class="quality-controls"><div class="settings-control"><div class="settings-control__copy"><label for="quality">Quality preset</label><span id="quality-hint">Changing preset resets rendering options.</span></div><select id="quality" data-setting="tier" aria-describedby="quality-hint"><option value="high"${state.tier === 'high' ? ' selected' : ''}>High</option><option value="low"${state.tier === 'low' ? ' selected' : ''}>Low</option></select></div>${graphics.filter(([key])=>quality.has(key)).map(([key,value])=>graphicsControl(key,value)).join('')}</div></section>
+    <section class="settings-section" aria-labelledby="settings-effects-heading"><div class="settings-section__heading"><h3 id="settings-effects-heading">Effects</h3><span>Rendering layers</span></div><div class="effects-controls">${graphics.filter(([key])=>!quality.has(key)&&!comfort.has(key)).map(([key,value])=>graphicsControl(key,value)).join('')}</div></section>
+    </div><div class="settings-secondary"><section class="settings-section" aria-labelledby="settings-accessibility-heading"><div class="settings-section__heading"><h3 id="settings-accessibility-heading">Comfort</h3><span>Combat readability</span></div><p class="settings-motion-note" data-reduced-motion${reducedMotion ? '' : ' hidden'}>Reduced motion is active. Camera motion and flashes are disabled; your preferred values are preserved.</p>${graphics.filter(([key])=>comfort.has(key)).map(([key,value])=>graphicsControl(key,value)).join('')}<div class="comfort-toggles">${toggle('combatText','Combat text','Damage numbers and status callouts.',state.combatText)}${toggle('radar','Threat radar','Compact tactical room display.',state.radar)}</div></section>
+    <section class="settings-section settings-section--audio" aria-labelledby="settings-audio-heading"><div class="settings-section__heading"><h3 id="settings-audio-heading">Audio</h3><span>Shipboard mix</span></div><div class="settings-master">${range('master','Master volume','Overall sound level.',sound.master,0,'master-volume')}<button id="sound" type="button" class="settings-mute" aria-label="Mute sound" aria-pressed="${sound.muted}">${sound.muted?'Unmute':'Mute'}</button></div><div class="audio-channels">${range('music','Music','Ambient score and combat tension.',state.music)}${range('effects','Sound effects','Weapons, abilities and ship systems.',state.effects)}</div></section></div></div><a class="settings-credits" href="${import.meta.env.BASE_URL}audio-credits.html" target="_blank" rel="noopener">Audio Credits <span aria-hidden="true">↗</span></a></div>`;
 }

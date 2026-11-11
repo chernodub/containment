@@ -1,4 +1,4 @@
-import { hudObstructs } from './layout';
+import { hudObstructs, presentationObstructs } from './layout';
 import type { DepthRenderer } from '../../render/DepthRenderer';
 import type { EnemySnapshot } from '../../game/enemies/EnemySystem';
 import { projectWorld, type ScreenPoint } from '../gameAdapter';
@@ -295,7 +295,7 @@ export class ThreatIndicators {
                     continue;
                 if (px + radius > bounds.left - 12 && px - radius < bounds.right + 12 && py + radius > bounds.top - 12 && py - radius < bounds.bottom + 12)
                     continue;
-                if (hudObstructs(px - radius, py - radius, px + radius, py + radius))
+                if (hudObstructs(px - radius, py - radius, px + radius, py + radius) || presentationObstructs(px - radius, py - radius, px + radius, py + radius))
                     continue;
                 let occupied = false;
                 for (let i = 0; i < order; i++) {

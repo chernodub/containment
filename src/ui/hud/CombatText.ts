@@ -1,10 +1,14 @@
 import type { DepthRenderer } from '../../render/DepthRenderer';
 import { projectWorld, type ScreenPoint } from '../gameAdapter';
 import type { HudEffect } from './effects';
-import {hudObstructs} from './layout';
+import {hudObstructs, presentationObstructs} from './layout';
+import {icon} from '../icons';
 export const COMBAT_TEXT_CAPACITY = 28;
 type Float = {
     node: HTMLDivElement;
+    glyph: HTMLSpanElement;
+    label: HTMLSpanElement;
+    glyphs: SVGSVGElement[];
     life: number;
     age: number;
     x: number;
@@ -19,9 +23,18 @@ type Float = {
     width: number;
     height: number;
     point: ScreenPoint;
+    floor: ScreenPoint;
+    placedX: number;
+    placedY: number;
+    placed: boolean;
+    baseWidth: number;
+    baseHeight: number;
+    fontSize: number;
+    scale: number;
 };
 const sourceLanes: Record<string, number> = {weapon: 0, ability: 1, status: 2, boon: 3};
 const statusLabels: Record<string, string> = { ice: 'CHILLED', freeze: 'FROZEN', frost: 'CHILLED', shatter: 'SHATTER', fire: 'BURNING', burn: 'BURNING', poison: 'ACID', acid: 'ACID', shock: 'SHOCK', arc: 'SHOCK', overload: 'OVERLOAD' };
+const statusGlyphs: Record<string, string> = {ice:'chill',frost:'chill',freeze:'freeze',shatter:'freeze',fire:'burn',burn:'burn',poison:'acid',acid:'acid',shock:'shock',arc:'shock',overload:'shock'};
 /** A bounded DOM pool; same-target pellets merge instead of covering the encounter. */
 export class CombatText {
     private readonly pool: Float[] = [];
@@ -37,8 +50,14 @@ export class CombatText {
             const node = document.createElement('div');
             node.className = 'combat-float';
             node.hidden = true;
+            const glyph = document.createElement('span'), label = document.createElement('span');
+            glyph.className = 'status-chip-icon'; glyph.hidden = true;
+            glyph.innerHTML = ['chill','freeze','burn','acid','shock'].map(name => icon(name)).join('');
+            const glyphs = Array.from(glyph.querySelectorAll('svg'));
+            for (const glyph of glyphs) glyph.setAttribute('hidden','');
+            node.append(glyph, label);
             fragment.append(node);
-            this.pool.push({ node, life: 0, age: 0, x: 0, y: 0, target: undefined, amount: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, point: { x: 0, y: 0, visible: false } });
+            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, amount: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
         }
         host.append(fragment);
     }
@@ -89,13 +108,18 @@ export class CombatText {
         entry.source = source;
         entry.node.dataset.source = source;
         entry.node.hidden = false;
-        entry.node.textContent = kind === 'damage' ? `${Math.round(entry.amount)}${entry.lethal ? ' ×' : ''}` : statusLabels[status];
+        const label = kind === 'damage' ? `${Math.round(entry.amount)}${entry.lethal ? ' ×' : ''}` : statusLabels[status];
+        entry.label.textContent = label;
+        entry.glyph.hidden = kind !== 'status';
+        if (kind === 'status') for (const glyph of entry.glyphs) glyph.toggleAttribute('hidden', glyph.dataset.icon !== statusGlyphs[status]);
         entry.node.dataset.kind = kind;
         entry.node.dataset.element = color;
         entry.node.dataset.critical = String(entry.critical);
         const fontSize = kind === 'status' ? 12 : entry.lethal ? 42 : entry.critical ? 40 : 34;
-        entry.width = Math.max(28, Math.ceil(entry.node.textContent!.length * fontSize * .7) + 6);
-        entry.height = kind === 'status' ? 18 : fontSize + 5;
+        entry.fontSize = fontSize;
+        entry.baseWidth = Math.max(28, Math.ceil(label.length * fontSize * .7) + (kind === 'status' ? 30 : 6));
+        entry.baseHeight = kind === 'status' ? 26 : fontSize + 5;
+        entry.width = entry.baseWidth; entry.height = entry.baseHeight;
         entry.node.dataset.lethal = String(entry.lethal);
     }
     tick(dt: number, player: {
@@ -105,6 +129,7 @@ export class CombatText {
         bottom: number;
     }): void {
         const w = this.renderer.canvas.clientWidth, h = this.renderer.canvas.clientHeight;
+        for (const p of this.pool) p.placed = false;
         for (const p of this.pool) {
             if (p.life <= 0)
                 continue;
@@ -120,6 +145,14 @@ export class CombatText {
                 continue;
             }
             p.node.hidden = false;
+            // G1 projects world height through its follow camera. Legacy facades
+            // that do not project height keep the authored one-to-one font sizes.
+            projectWorld(this.renderer, p.x, p.y, p.floor, 0);
+            const projectedHeight = Math.abs(point.y - p.floor.y);
+            p.scale = projectedHeight > 1 ? Math.max(.9, Math.min(1.25, projectedHeight / 44)) : 1;
+            p.width = Math.ceil(p.baseWidth * p.scale); p.height = Math.ceil(p.baseHeight * p.scale);
+            p.node.style.fontSize = `${p.fontSize * p.scale}px`;
+            p.node.style.setProperty('--actor-scale', String(p.scale));
             const rise = this.reducedMotion ? 0 : 26 * (1 - Math.exp(-p.age * 6));
             let x = Math.max(8, Math.min(w - p.width - 8, point.x - p.width / 2));
             let lane = 0;
@@ -139,7 +172,28 @@ export class CombatText {
                 y = Math.max(8, y);
             }
             // Enemy feedback yields to opaque furniture rather than covering vital copy.
-            if(hudObstructs(x,y,x+p.width,y+p.height)) {p.node.hidden=true;continue;}
+            if(hudObstructs(x,y,x+p.width,y+p.height) || presentationObstructs(x,y,x+p.width,y+p.height)) {p.node.hidden=true;continue;}
+            // Nearby enemies have independent receipts; deterministic fan-out
+            // preserves each total while preventing cross-target text piles.
+            const originX = x, originY = y;
+            let placed = false;
+            for (let attempt = 0; attempt < 33; attempt++) {
+                const row = Math.floor((attempt + 1) / 3);
+                const side = attempt % 3;
+                x = Math.max(8, Math.min(w - p.width - 8, originX + (side === 1 ? -1 : side === 2 ? 1 : 0) * (p.width + 8)));
+                y = Math.max(8, Math.min(h - p.height - 8, originY - row * (p.height + 6)));
+                if (x < player.right + 8 && x + p.width > player.left - 8 && y < player.bottom + 8 && y + p.height > player.top - 8) continue;
+                if (hudObstructs(x,y,x+p.width,y+p.height)) continue;
+                let occupied = false;
+                for (const other of this.pool) {
+                    if (!other.placed) continue;
+                    if (x < other.placedX + other.width + 4 && x + p.width + 4 > other.placedX && y < other.placedY + other.height + 4 && y + p.height + 4 > other.placedY) {occupied = true;break;}
+                }
+                if (occupied) continue;
+                placed = true; break;
+            }
+            if (!placed) {p.node.hidden=true;continue;}
+            p.placed = true; p.placedX = x; p.placedY = y;
             p.node.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;
             p.node.style.opacity = String(Math.min(1, p.life / .2));
         }

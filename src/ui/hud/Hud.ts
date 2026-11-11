@@ -16,6 +16,8 @@ import { ThreatIndicators } from './ThreatIndicators';
 import { HudToasts } from './Toasts';
 import { Radar } from './Radar';
 import type { HudEffect } from './effects';
+import { ContextualOnboarding } from '../onboarding';
+import { AbilityHints } from './AbilityHints';
 export type HudPreferences = Readonly<{
     combatText?: boolean;
     radar?: boolean;
@@ -31,7 +33,7 @@ const familyColors: Record<string, string> = { Kinetic: '#ffb454', Cryo: '#7fd6f
 const abilityColors: Record<string, string> = { kinetic: '#ffb454', cryo: '#7fd6ff', pyro: '#ff7a2e', arc: '#b79cff' };
 const familyIcons: Record<string, string> = { Kinetic: 'kinetic', Cryo: 'cryo', Reactor: 'arc', Recovery: 'health' };
 /** Cached DOM snapshots; events and frame ticks feed bounded presentation pools. */
-export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud: () => void, preferences: () => HudPreferences = () => ({ combatText: true, radar: false })): HudController {
+export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud: () => void, preferences: () => HudPreferences = () => ({ combatText: true, radar: false }), storage: Pick<Storage,'getItem'|'setItem'> | null = null): HudController {
     const ids = ['hud', 'story-hud', 'story-status', 'room-objective', 'story-presentation', 'story-line', 'health', 'armor', 'hp-bar', 'hp-lag', 'armor-bar', 'armor-lag', 'weapon-name', 'current-weapon-icon', 'magazine', 'reserve', 'reload-label', 'reload-bar', 'depth-label', 'room-name', 'boss-hud', 'boss-phase', 'boss-bar', 'build-strip', 'credits', 'medkit-count', 'grenade-count', 'encounter-count', 'vital-state', 'ability-bar'] as const;
     let layoutDirty = true;
     const nodes = Object.fromEntries(ids.map(id => [id, el(id)])) as Record<typeof ids[number], HTMLElement>;
@@ -64,8 +66,26 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     const threats = new ThreatIndicators(el('threat-indicators'), el('damage-directions'), renderer);
     const toasts = new HudToasts(el('hud-toasts'));
     const radar = new Radar(el('radar-hud'), el('radar-map') as unknown as SVGSVGElement, renderer);
+    const onboarding = new ContextualOnboarding(el('action-bar'), storage);
+    const abilityHints = new AbilityHints(slots);
+    const encounterTrack = document.createElement('div');
+    encounterTrack.className = 'encounter-progress'; encounterTrack.hidden = true;
+    encounterTrack.setAttribute('role','progressbar'); encounterTrack.setAttribute('aria-label','Room enemies defeated');
+    const encounterFill = document.createElement('i'); encounterTrack.append(encounterFill); el('run-stock').after(encounterTrack);
+    const overdriveEntry = slots.find(entry => entry.slot === 'overdrive')!;
+    const activeDial = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    activeDial.setAttribute('viewBox','0 0 48 48'); activeDial.setAttribute('class','overdrive-duration'); activeDial.setAttribute('aria-hidden','true');
+    activeDial.innerHTML = '<circle cx="24" cy="24" r="21"/>';
+    overdriveEntry.node.querySelector('.overdrive-body')!.append(activeDial);
+    const activeRing = activeDial.firstElementChild as SVGCircleElement;
+    const dashActiveDial = activeDial.cloneNode(true) as SVGSVGElement;
+    dashActiveDial.setAttribute('class','dash-duration');
+    slots.find(entry => entry.slot === 'dash')!.node.append(dashActiveDial);
+    const dashActiveRing = dashActiveDial.firstElementChild as SVGCircleElement;
     let health = 100, armor = 50, maxArmor = 50, hpGhost = 100, armorGhost = 50, hpDelay = 0, armorDelay = 0;
     let lastWeapon = '', lastBuild = '__unbound__', buildSeen = false, lastCheckpoint = '', revision = game.roomRevision, disposed = false, wasPlaying = false;
+    let roomPeak = 0, streak = 0, streakWindow = 0, streakCooldown = 0, killCursor = 0;
+    const recentKills = new Int32Array(16).fill(-1);
     const owned = new Set<string>();
     const bounds = { left: 0, right: 0, top: 0, bottom: 0 };
     const protect = () => Object.assign(bounds, renderer.playerScreenBounds(game.player.radius));
@@ -78,6 +98,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             entry.node.title = `${definition.name} · ${definition.summary}`;
             entry.node.setAttribute('aria-label', `${definition.name}: ${definition.summary}`);
             entry.ability = s.id;
+            abilityHints.update(entry.slot, s.id);
             entry.node.style.setProperty('--ability-color', abilityColors[definition.element]);
             entry.node.dataset.element = definition.element;
         }
@@ -114,6 +135,14 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         }
         if (entry.meter)
             entry.meter.style.width = `${clamp(snapshot.overdrive.charge) * 100}%`;
+        if (overdrive) {
+            activeDial.style.display = s.activeRemainingMs > 0 ? '' : 'none';
+            activeRing.style.strokeDashoffset = String(132 * (1 - clamp(s.activeRemainingMs / Math.max(1, s.activeMs))));
+        }
+        if (entry.slot === 'dash') {
+            dashActiveDial.style.display = s.activeRemainingMs > 0 ? '' : 'none';
+            dashActiveRing.style.strokeDashoffset = String(132 * (1 - clamp(s.activeRemainingMs / Math.max(1, s.activeMs))));
+        }
         for (let i = 0; i < entry.pips.length; i++) {
             entry.pips[i].hidden = i >= s.maxCharges;
             entry.pips[i].dataset.empty = String(i >= s.charges);
@@ -131,6 +160,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             combatText.clear();
             threats.clear();
             toasts.clear();
+            roomPeak = 0; streak = 0; streakWindow = 0; streakCooldown = 0; recentKills.fill(-1);
             for (const entry of slots) {
                 entry.denied = 0;
                 entry.flash = 0;
@@ -229,6 +259,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 group.insertBefore(stack, group.querySelector('.boon-set'));
                 nodes['build-strip'].append(group);
             }
+            // A new expedition drops the previous build. Forget removed ownership so
+            // the same boon can announce its successful acquisition on a later run.
+            for (const id of owned) if (!build.mutations.some(mutation => mutation === id)) owned.delete(id);
             for (const id of build.mutations) {
                 if (buildSeen && !owned.has(id))
                     toasts.show(`${MUTATION_CATALOG[id].name} acquired`, MUTATION_CATALOG[id].abilityOnly ? id : familyIcons[MUTATION_CATALOG[id].family], 'reward', `boon:${id}`);
@@ -240,11 +273,18 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         text('medkit-count', String(s.medkits));
         text('grenade-count', String(s.grenades));
         text('encounter-count', playing && game.node.kind !== 'boss' ? `${game.encounterRemaining} remaining` : '');
+        roomPeak = Math.max(roomPeak, game.encounterRemaining);
+        encounterTrack.hidden = !playing || game.node.kind === 'boss' || roomPeak === 0;
+        const defeated = Math.max(0, roomPeak - game.encounterRemaining);
+        encounterFill.style.width = `${roomPeak ? defeated / roomPeak * 100 : 0}%`;
+        encounterTrack.setAttribute('aria-valuemin','0'); encounterTrack.setAttribute('aria-valuemax',String(roomPeak)); encounterTrack.setAttribute('aria-valuenow',String(defeated));
+        encounterTrack.setAttribute('aria-valuetext',`${game.encounterRemaining} enemies remaining`);
         const abilities = getAbilities(game);
         hidden('ability-bar', !abilities?.rig || !abilities.slots);
         if (abilities?.slots)
             for (const entry of slots)
                 updateAbility(entry, abilities.slots[entry.slot], abilities);
+        onboarding.update(game, abilities);
         const pref = preferences();
         combatText.setEnabled(pref.combatText !== false);
         radar.update(game, pref.radar === true && playing);
@@ -279,6 +319,17 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         combatText.setEnabled(preferences().combatText !== false);
         combatText.effect(event);
         threats.effect(event, game.player);
+        onboarding.effect(event);
+        if (event.lethal && (event.type === 'hit' || event.type === 'acid' || event.contact)) {
+            const id = event.targetId ?? event.id;
+            if (id !== undefined && !recentKills.includes(id)) {
+                recentKills[killCursor++ % recentKills.length] = id;
+                streak = streakWindow > 0 ? streak + 1 : 1; streakWindow = 1;
+                if (streak >= 3 && streakCooldown <= 0) {
+                    toasts.show(`SWARM BROKEN · ${streak} down`, 'combat', 'combat', 'multikill'); streakCooldown = 2;
+                }
+            }
+        }
         if (event.type === 'pickup')
             toasts.show('Supplies collected', 'credits', 'reward', 'pickup');
         if (event.type === 'ability' && event.ability) {
@@ -309,6 +360,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (disposed)
             return;
         const elapsed = Number.isFinite(dt) ? Math.max(0, Math.min(dt, .1)) : 0;
+        streakWindow = Math.max(0, streakWindow - elapsed); streakCooldown = Math.max(0, streakCooldown - elapsed);
         for (const entry of slots) {
             entry.denied = Math.max(0, entry.denied - elapsed);
             entry.flash = Math.max(0, entry.flash - elapsed);
@@ -318,6 +370,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (game.status !== 'playing') {
             combatText.clear();
             threats.clear();
+            abilityHints.tick(bounds, false);
             return;
         }
         hpDelay = Math.max(0, hpDelay - elapsed);
@@ -329,6 +382,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         width('hp-lag', hpGhost / 100);
         width('armor-lag', armorGhost / Math.max(1, maxArmor));
         protect();
+        onboarding.tick(elapsed, bounds);
+        abilityHints.tick(bounds, true);
         combatText.tick(elapsed, bounds);
         threats.tick(elapsed);
         toasts.tick(elapsed);
@@ -341,6 +396,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         threats.dispose();
         toasts.dispose();
         radar.dispose();
+        onboarding.dispose(); abilityHints.dispose(); encounterTrack.remove(); activeDial.remove(); dashActiveDial.remove();
     };
     return hud;
 }

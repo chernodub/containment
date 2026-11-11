@@ -1,0 +1,147 @@
+import type {DepthGame, GameEffect} from '../../../DepthGame';
+import type {UiCue} from '../../../game/audio/contract';
+import {ROOM_TEMPLATES} from '../../../game/roguelike/roomTemplates';
+import {runLength} from '../../../game/roguelike/run';
+import {getAbilities} from '../../gameAdapter';
+import {icon} from '../../icons';
+import {hudObstructs, presentationObstructs, setPresentationObstacle} from '../layout';
+import '../../styles/beats.css';
+
+export type BeatKind = 'room-enter' | 'room-clear' | 'boss-intro' | 'boss-defeated' | 'death' | 'victory' | 'overdrive-ready';
+const durations: Record<BeatKind, number> = {'room-enter': 1.6, 'room-clear': 1.1, 'boss-intro': 2.2, 'boss-defeated': 1.5, death: .85, victory: 1.2, 'overdrive-ready': 1.8};
+
+/** A single passive presentation plane. Authored story text and checkpoint timing remain untouched. */
+export class PresentationBeats {
+  private readonly node = document.createElement('aside');
+  private readonly edge = document.createElement('div');
+  private readonly glyph = document.createElement('span');
+  private readonly eyebrow = document.createElement('span');
+  private readonly headline = document.createElement('strong');
+  private readonly detail = document.createElement('p');
+  private remaining = 0;
+  private hold = 0;
+  private revision = -1;
+  private previousStatus = '';
+  private bossSeen = false;
+  private bossAlive = false;
+  private ready = false;
+  private low = false;
+  private enabled = true;
+  private roomKills = 0;
+  private layoutDirty = true;
+  private viewportWidth = 0;
+  private viewportHeight = 0;
+  private cardWidth = 0;
+  private cardHeight = 0;
+  private preferredTop = 0;
+  private readonly bounds = {left:0,right:0,top:0,bottom:0};
+  private kind: BeatKind | '' = '';
+  private media = matchMedia('(prefers-reduced-motion: reduce)');
+  private skip = (event: KeyboardEvent) => {
+    if (event.repeat || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === 'Escape' || event.key === 'Enter') this.dismiss();
+  };
+  constructor(private game: DepthGame, host: HTMLElement, private cue: (cue: UiCue) => void) {
+    this.node.id = 'presentation-beat'; this.node.hidden = true;
+    this.node.setAttribute('role', 'status'); this.node.setAttribute('aria-live', 'polite');
+    this.glyph.className = 'beat-glyph'; this.eyebrow.className = 'beat-eyebrow';
+    this.node.append(this.glyph, this.eyebrow, this.headline, this.detail);
+    this.edge.id = 'critical-edge'; this.edge.hidden = true; this.edge.setAttribute('aria-hidden', 'true');
+    host.append(this.edge, this.node); document.addEventListener('keydown', this.skip);
+  }
+  get blocking(): boolean { return this.enabled && this.hold > 0; }
+  setEnabled(value: boolean): void { if (this.enabled !== value) {this.dismiss(); this.revision = -1; this.previousStatus = this.game.status;} this.enabled = value; if (!value) this.edge.hidden = true; }
+  reset(): void {this.dismiss(); this.revision = -1; this.bossSeen = this.bossAlive = this.ready = this.low = false; this.previousStatus = this.game.status;}
+  dismiss(): void {this.remaining = this.hold = 0; this.node.hidden = true; this.kind = ''; setPresentationObstacle('beat', null);}
+  show(kind: BeatKind): void {
+    if (!this.enabled) return;
+    const game = this.game;
+    this.layoutDirty = true; this.node.style.left = this.node.style.top = this.node.style.visibility = "";
+    this.kind = kind; this.remaining = durations[kind];
+    this.hold = ['room-clear', 'death', 'victory', 'boss-defeated'].includes(kind) ? this.media.matches ? .15 : .55 : 0;
+    const room = ROOM_TEMPLATES[game.node.templateId];
+    const data: Record<BeatKind, [string, string, string, string]> = {
+      'room-enter': [game.node.kind, `SECTOR ${String(game.node.depth + 1).padStart(2, '0')} / ${runLength(game.expedition.run.version)} · ${game.storyRoom?.environment.toUpperCase() ?? 'COLONY VESSEL'}`, room.name.toUpperCase(), game.storyRoom?.objective ?? 'Clear the sector. Reach the next deck.'],
+      'room-clear': ['check', 'THREAT SIGNAL / ZERO', 'SECTOR CLEAR', `${Math.max(0, game.stats.kills.total - this.roomKills)} HOSTILES ELIMINATED · ${((game.stats.roomTimeMs[game.node.id] ?? 0) / 1000).toFixed(1)} s`],
+      'boss-intro': ['boss', 'PRIORITY THREAT', 'THE QUEEN', 'ARMORED → EXPOSED → NESTS · Strike when the core opens.'],
+      'boss-defeated': ['boss', 'PRIORITY THREAT / SILENCED', 'QUEEN NEUTRALIZED', 'The deck is yours.'],
+      death: ['warning', 'SUIT TELEMETRY / SIGNAL LOST', 'MARINE DOWN', 'Expedition record secured.'],
+      victory: ['check', 'EXPEDITION / FINAL TRANSMISSION', 'PROTOCOL COMPLETE', 'Archiving expedition record.'],
+      'overdrive-ready': [getAbilities(game)?.slots?.overdrive.id ?? 'arc', 'COMBAT SYSTEMS / FULL CHARGE', 'OVERDRIVE READY', 'V · Release the rig.'],
+    };
+    const [glyph, eyebrow, headline, detail] = data[kind];
+    this.glyph.innerHTML = icon(glyph); this.eyebrow.textContent = eyebrow; this.headline.textContent = headline; this.detail.textContent = detail;
+    this.node.dataset.beat = kind; this.node.dataset.reducedMotion = String(this.media.matches); this.node.hidden = false;
+    const cue: UiCue = kind === 'boss-defeated' ? 'room-clear' : kind;
+    this.cue(cue);
+  }
+  effect(event: GameEffect): void {
+    if (!this.enabled) return;
+    if (this.kind === 'room-enter' && (event.type === 'shot' || event.type === 'ability' && event.ability?.phase === 'cast')) this.remaining = Math.min(this.remaining, .22);
+    if (event.type === 'ability' && event.ability?.phase === 'overdrive-ready' && !this.ready) {
+      this.ready = true;
+      // The HUD owns the near-slot ready callout; audio answers the same event.
+      this.cue('overdrive-ready');
+    }
+    if (event.type === 'ability' && event.ability?.slot === 'overdrive' && ['cast', 'impact'].includes(event.ability.phase)) this.ready = false;
+  }
+  sync(): void {
+    const game = this.game;
+    if (!this.enabled) {this.previousStatus = game.status; return;}
+    if (game.status === 'playing' && this.revision !== game.roomRevision) {
+      this.revision = game.roomRevision; this.roomKills = game.stats.kills.total;
+      this.bossSeen = this.bossAlive = false; this.show('room-enter');
+    }
+    if (game.status !== this.previousStatus) {
+      if (this.previousStatus === 'playing' && game.status === 'reward') this.show(this.bossAlive ? 'boss-defeated' : 'room-clear');
+      else if (this.previousStatus === 'playing' && game.status === 'dead') this.show('death');
+      else if (this.previousStatus === 'playing' && game.status === 'complete') this.show(this.bossAlive ? 'boss-defeated' : 'victory');
+      else if (['menu', 'rig-select', 'paused'].includes(game.status)) this.dismiss();
+      this.previousStatus = game.status;
+    }
+    if (game.status === 'playing' && game.boss.snapshot.active && !this.bossSeen) {
+      this.bossSeen = this.bossAlive = true; this.show('boss-intro');
+    }
+    const low = game.status === 'playing' && game.combat.snapshot.health > 0 && game.combat.snapshot.health <= 25;
+    this.edge.hidden = !low;
+    if (low && !this.low) this.cue('low-health');
+    this.low = low;
+  }
+  tick(dt: number): void {
+    if (!this.enabled) return;
+    const elapsed = Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0;
+    this.hold = Math.max(0, this.hold - elapsed); this.remaining = Math.max(0, this.remaining - elapsed);
+    this.node.dataset.leaving = String(this.remaining > 0 && this.remaining < .2);
+    if (!this.remaining) this.node.hidden = true;
+    // Never carry the tail of a transition card over a newly focused blocking menu.
+    if (!this.hold && this.game.status !== 'playing' && this.kind) this.dismiss();
+  }
+  /** Cache size on content/resize, then yield to actual perspective marine and HUD bounds. */
+  position(player: Readonly<{left:number;right:number;top:number;bottom:number}>): void {
+    if (this.node.hidden) {setPresentationObstacle('beat', null); return;}
+    if (this.layoutDirty || this.viewportWidth !== innerWidth || this.viewportHeight !== innerHeight) {
+      this.node.style.left = this.node.style.top = '';
+      const rect = this.node.getBoundingClientRect();
+      this.cardWidth = rect.width; this.cardHeight = rect.height; this.preferredTop = rect.top;
+      this.viewportWidth = innerWidth; this.viewportHeight = innerHeight; this.layoutDirty = false;
+    }
+    const w = this.cardWidth, h = this.cardHeight, preferred = (innerWidth-w)/2;
+    let left = preferred, top = this.preferredTop, found = false;
+    const clear = (x:number,y:number) => x >= 8 && y >= 8 && x+w <= innerWidth-8 && y+h <= innerHeight-8
+      && !(x < player.right+12 && x+w > player.left-12 && y < player.bottom+12 && y+h > player.top-12)
+      && !hudObstructs(x,y,x+w,y+h) && !presentationObstructs(x,y,x+w,y+h,'beat');
+    for (let row=0;row<5&&!found;row++) {
+      const y = row===0?this.preferredTop:row===1?8:row===2?player.top-h-12:row===3?player.bottom+12:innerHeight-h-8;
+      for (let lane=0;lane<15;lane++) {
+        const x = lane===13?8:lane===14?innerWidth-w-8:preferred+Math.ceil(lane/2)*24*(lane%2?1:-1);
+        if (clear(x,y)) {left=x;top=y;found=true;break;}
+      }
+    }
+    this.node.style.visibility = found ? '' : 'hidden';
+    if (!found) {setPresentationObstacle('beat', null);return;}
+    this.node.style.left = `${left+w/2}px`; this.node.style.top = `${top}px`;
+    this.bounds.left=left;this.bounds.right=left+w;this.bounds.top=top;this.bounds.bottom=top+h;
+    setPresentationObstacle('beat',this.bounds);
+  }
+  dispose(): void {document.removeEventListener('keydown', this.skip); setPresentationObstacle('beat', null); this.node.remove(); this.edge.remove();}
+}

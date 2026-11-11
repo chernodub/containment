@@ -155,3 +155,141 @@ export function projectWorld(renderer: DepthRenderer, x: number, y: number, out:
   out.visible = inFrustum && Number.isFinite(out.x) && Number.isFinite(out.y) && out.x > 32 && out.y > 32 && out.x < renderer.canvas.clientWidth - 32 && out.y < renderer.canvas.clientHeight - 32;
   return out;
 }
+
+// Optional G1/S2 implementations remain structurally detected at the boundary.
+import type {GameEffect} from '../DepthGame';
+import type {GameAudioDirector, UiCue} from '../game/audio/contract';
+
+type LegacyAudio = {
+  playUI(): void;
+  playConfirmedHit(armor: boolean): void;
+  playPistol(): void; playRifle(): void; playShotgun(): void; playPlasma(): void; playRocket(): void;
+  playBodyImpact(): void; playExplosion(): void; playPickup(): void;
+  playElemental(kind: 'shatter' | 'reactor'): void;
+  setMusicIntensity(value: number): void;
+};
+
+const DIRECTOR_METHODS = ['handleEffect', 'playUi', 'setEnvironment', 'setCombatState'] as const;
+const WEAPON_AUDIO_METHODS = {pistol: 'playPistol', rifle: 'playRifle', shotgun: 'playShotgun', plasma: 'playPlasma', rocket: 'playRocket'} as const;
+
+/** A complete director owns all simulation sound; a partial landing keeps today's fallback. */
+export function hasAudioDirector(audio: object): audio is GameAudioDirector {
+  const candidate = audio as Partial<GameAudioDirector>;
+  return DIRECTOR_METHODS.every(key => typeof candidate[key] === 'function');
+}
+
+/** Never double-play the director and the legacy synthesis path. */
+export function forwardAudioEffect(audio: LegacyAudio, effect: GameEffect, listener: {x: number; y: number}): void {
+  if (hasAudioDirector(audio)) { audio.handleEffect(effect, listener); return; }
+  if (effect.contact) audio.playConfirmedHit(effect.contact !== 'damage');
+  if (effect.type === 'shot') {
+    audio[WEAPON_AUDIO_METHODS[effect.weapon ?? 'pistol']]();
+  } else if (effect.type === 'corpse' || effect.type === 'wall-slam') audio.playBodyImpact();
+  else if (effect.type === 'explosion') audio.playExplosion();
+  else if (effect.type === 'pickup') audio.playPickup();
+  else if (effect.type === 'boon' && effect.boon === 'shatter') audio.playElemental('shatter');
+  else if (effect.type === 'boon' && effect.boon === 'overload') audio.playElemental('reactor');
+}
+
+const audioGestures = new WeakSet<object>();
+type UiAudio = Pick<LegacyAudio, 'playUI'> & {unlock?: () => Promise<boolean>};
+
+/** Unlock on the first real interface gesture, then keep subsequent cues synchronous. */
+export function playUiCue(audio: UiAudio, cue: UiCue): void {
+  if (hasAudioDirector(audio)) {
+    if (audio.unlock && !audioGestures.has(audio)) {
+      audioGestures.add(audio);
+      void audio.unlock().then(ok => {if (ok) audio.playUi(cue);});
+    } else audio.playUi(cue);
+  } else if (!['hover', 'room-enter', 'low-health', 'ability-ready'].includes(cue)) audio.playUI?.();
+}
+
+/** The director owns runtime/lifecycle accents even when visual beats are disabled. */
+export function playPresentationCue(audio: UiAudio, cue: UiCue): void {
+  if (hasAudioDirector(audio) && ['room-enter', 'room-clear', 'death', 'victory', 'boss-intro', 'overdrive-ready'].includes(cue)) return;
+  playUiCue(audio, cue);
+}
+
+type AudioLifecycle = {
+  game: DepthGame; revision: number; inRoom: boolean; status: string; checkpoint: string; boss: boolean;
+};
+const audioLifecycles = new WeakMap<object, AudioLifecycle>();
+type AudioLifecycleOptions = Readonly<{paused?: boolean; loading?: boolean}>;
+
+/** Publish actual transport state; passive menus keep UI live while their music is stopped. */
+export function syncAudioDirector(audio: LegacyAudio, game: DepthGame, options: AudioLifecycleOptions = {}): void {
+  const playing = game.status === 'playing';
+  const boss = game.boss.snapshot;
+  const intensity = playing ? Math.min(1, game.enemies.activeCount / 12 + (boss.active ? .3 : 0)) : 0;
+  if (!hasAudioDirector(audio)) { audio.setMusicIntensity(intensity); return; }
+  let lifecycle = audioLifecycles.get(audio);
+  if (!lifecycle || lifecycle.game !== game) {
+    lifecycle = {game, revision: -1, inRoom: false, status: '', checkpoint: '', boss: false};
+    audioLifecycles.set(audio, lifecycle);
+  }
+  const transport = audio as GameAudioDirector & {
+    pauseMusic?: () => void; resumeMusic?: () => void;
+    setBossPhase?: (phase: typeof boss.phase) => void;
+  };
+  const paused = options.paused ?? !playing;
+  // Preserve an already announced boss through user pause; defer its first edge until audible.
+  const bossPresent = paused
+    ? lifecycle.revision === game.roomRevision && lifecycle.boss && (playing || game.status === 'paused') && boss.active
+    : playing && boss.active;
+  const abilities = game.abilities.snapshot;
+  const maximum = game.combat.mutationResources().maxHealth;
+  audio.setCombatState({intensity, boss: bossPresent, overdrive: playing && abilities.overdrive.active,
+    danger: playing ? Math.max(0, Math.min(1, 1 - game.combat.snapshot.health / Math.max(1, maximum))) : 0,
+    hostileTimeScale: playing ? abilities.hostileTimeScale : 1, paused});
+  // Terminal stingers clear their own loops and must precede any whole-engine stop.
+  if (lifecycle.status !== game.status && !paused) {
+    if (game.status === 'dead') audio.playUi('death');
+    else if (game.status === 'complete') audio.playUi('victory');
+    else if (game.status === 'reward' && lifecycle.status === 'playing') audio.playUi('room-clear');
+  }
+  const inRoom = (playing || game.status === 'paused') && !options.loading;
+  if (lifecycle.revision !== game.roomRevision || lifecycle.inRoom && !inRoom) {
+    // An explicit exit invalidates entity loops even for adjacent rooms of the same environment.
+    audio.setEnvironment(null);
+    lifecycle.inRoom = false;
+    lifecycle.revision = game.roomRevision;
+  }
+  if (inRoom && !lifecycle.inRoom) {
+    audio.setEnvironment(game.storyRoom?.environment ?? null);
+    lifecycle.inRoom = true;
+    if (playing && !paused) audio.playUi('room-enter');
+  }
+  if (playing && !paused) transport.resumeMusic?.();
+  else transport.pauseMusic?.();
+  if (playing && !paused && boss.active) transport.setBossPhase?.(boss.phase);
+  lifecycle.boss = bossPresent;
+  const checkpoint = `${game.roomRevision}:${game.expedition.run.phase}:${game.checkpointStatus}`;
+  if (checkpoint !== lifecycle.checkpoint && !paused && game.status !== 'menu') {
+    if (game.checkpointStatus === 'saved') audio.playUi('checkpoint');
+    else if (game.checkpointWarning) audio.playUi('denied');
+  }
+  // A checkpoint/terminal transition that happens during loading remains pending until audible.
+  if (!paused || game.status === 'menu') lifecycle.checkpoint = checkpoint;
+  if (!paused || game.status === 'paused') lifecycle.status = game.status;
+}
+
+type CameraFeel = {addTrauma?(amount: number): void; kick?(angle: number, amount: number): void; punch?(amount: number, ms?: number): void};
+
+/** Optional camera hooks; absent methods remain safe on the current renderer. */
+export function cameraEffect(renderer: DepthRenderer, event: GameEffect, strength: number): void {
+  if (strength <= 0) return;
+  const next = renderer as unknown as {cameraRig?: CameraFeel; rig?: CameraFeel; handlesCameraEffects?: boolean};
+  if (next.handlesCameraEffects) return;
+  const rig = next.cameraRig ?? next.rig;
+  if (!rig) return;
+  if (event.type === 'shot') {
+    const angle = event.angle ?? 0;
+    const recoil = event.weapon === 'rocket' ? .18 : event.weapon === 'shotgun' ? .1 : .035;
+    rig.kick?.(angle + Math.PI, recoil * strength);
+  } else if (event.type === 'explosion') {
+    rig.addTrauma?.(.32 * strength); rig.punch?.(.08 * strength, 180);
+  } else if (event.type === 'hurt') rig.addTrauma?.(.2 * strength);
+  else if (event.type === 'wall-slam' || event.type === 'ability' && (event.ability?.phase === 'impact' || event.ability?.phase === 'burst')) {
+    rig.addTrauma?.(.14 * strength); rig.punch?.(.035 * strength, 120);
+  }
+}

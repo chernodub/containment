@@ -5,16 +5,68 @@ import {mkdir} from 'node:fs/promises';
 export async function observeAudio(page) {
   await page.addInitScript(() => {
     const Audio = window.AudioContext;
-    window.__soundQA = {contexts: [], sources: 0};
+    window.__soundQA = {contexts: [], sources: 0, starts: []};
     window.AudioContext = class extends Audio {
       constructor(...args) {
         super(...args);
-        const entry = {context: this, gains: []};
+        const entry = {context: this, gains: [], edges: new Map(), nodes: [], createdSources: 0};
         window.__soundQA.contexts.push(entry);
-        const createGain = this.createGain.bind(this);
-        this.createGain = () => {const node = createGain(); entry.gains.push(node); return node;};
-        const createSource = this.createBufferSource.bind(this);
-        this.createBufferSource = () => {entry.firstSourceGain ??= entry.gains[0].gain.value; window.__soundQA.sources++; return createSource();};
+        const buses = ['music','ambience','weapons','abilities','enemies','impacts','ui'];
+        const track = node => {
+          entry.nodes.push(node);
+          const connect = node.connect.bind(node), disconnect = node.disconnect.bind(node);
+          node.connect = (...args) => {
+            const result = connect(...args);
+            let edges = entry.edges.get(node);
+            if (!edges) entry.edges.set(node, edges = new Set());
+            edges.add(args[0]); return result;
+          };
+          node.disconnect = (...args) => {
+            const result = disconnect(...args);
+            if (!args.length) entry.edges.delete(node);
+            else entry.edges.get(node)?.delete(args[0]);
+            return result;
+          };
+          return node;
+        };
+        // MixEngine creates master/effects/music, duck/focus, reverb input and
+        // two reverb-return gains, then its seven named buses in AUDIO_BUSES order.
+        // Starts retain the actual graph path, rather than inferring a bus from a sound count.
+        for (const method of ['createGain','createStereoPanner','createBiquadFilter','createDynamicsCompressor','createWaveShaper','createConvolver','createBufferSource']) {
+          const create = this[method].bind(this);
+          this[method] = (...args) => {
+            const node = track(create(...args));
+            if (method === 'createGain') entry.gains.push(node);
+            if (method !== 'createBufferSource') return node;
+            entry.createdSources++;
+            const start = node.start.bind(node), stop = node.stop.bind(node);
+            let record;
+            node.start = (...args) => {
+              const queue = [[node]], seen = new Set(); let path;
+              while (queue.length) {
+                const candidate = queue.shift(), tail = candidate.at(-1);
+                if (seen.has(tail)) continue;
+                seen.add(tail);
+                if (tail === this.destination) {path = candidate; break;}
+                for (const next of entry.edges.get(tail) ?? []) queue.push([...candidate,next]);
+              }
+              const busIndex = path?.findIndex(value => entry.gains.indexOf(value) >= 9 && entry.gains.indexOf(value) < 16);
+              const busNode = busIndex >= 0 ? path[busIndex] : null;
+              record = {bus: busNode ? buses[entry.gains.indexOf(busNode)-9] : null,
+                path: path?.map(value => entry.nodes.indexOf(value)) ?? [],
+                busGain: busNode?.gain.value, master: entry.gains[0]?.gain.value,
+                effects: entry.gains[1]?.gain.value, loop: node.loop,
+                at: this.currentTime, scheduledAt: args[0] ?? this.currentTime,
+                duration: args[2] ?? node.buffer?.duration, stops: []};
+              const result = start(...args);
+              entry.firstSourceGain ??= entry.gains[0]?.gain.value;
+              window.__soundQA.sources++; window.__soundQA.starts.push(record);
+              return result;
+            };
+            node.stop = (...args) => {record?.stops.push(args[0] ?? this.currentTime); return stop(...args);};
+            return node;
+          };
+        }
       }
     };
   });
@@ -97,6 +149,7 @@ export async function checkMenuSound(page) {
 export async function checkPausedSound(page, selected) {
   const quality = await page.locator('#quality').inputValue();
   await page.locator('#quality').selectOption('low');
+  const before = await page.evaluate(() => window.__soundQA.sources);
   assert.equal(Number(await slider(page).inputValue()) / 100, selected);
   await mute(page).click(); await gainIs(page, 0);
   await slider(page).focus(); await page.keyboard.press('End');
@@ -118,5 +171,6 @@ export async function checkPausedSound(page, selected) {
   await page.locator('[data-pause-tab=settings]').click();
   assert.equal(await slider(page).inputValue(), '0');
   await page.locator('#quality').selectOption(quality);
+  assert.equal(await page.evaluate(() => window.__soundQA.sources), before, 'Paused controls and resuming/pausing at zero master schedule no voices');
   console.log(`Sound pause passed: desktop, retains choice, muted adjustment stays silent, unmute restores choice, live zero gain.`);
 }
