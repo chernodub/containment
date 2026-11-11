@@ -78,7 +78,7 @@ Browser gates are desktop-only. Smoke tests production assets and credits under 
 
 - `npm run capture -- --label=review --scenarios=all`: generate a production screenshot gallery, manifests and burst sheets under `artifacts/nextgen/`.
 - `npm run bench`: run the sequential realtime production benchmark; results describe the recorded machine and scenarios.
-- `npm run playtest` / `npm run playtest:smoke`: not available in this checkout’s `package.json`; no playtest runner ships here yet.
+- `npm run playtest -- --rig=<id> --seed=<n>`: automated bot campaign through the real production build with a JSON/HTML report; `npm run playtest:smoke` plays the first three rooms as a quick gate; `npm run playtest:sim` runs fast deterministic simulation-only campaigns for balance work.
 - `?debug=1`: opt into `window.__containmentDebug` for deterministic staged scenarios and explicit simulation stepping.
 
 See [tooling instructions](scripts/nextgen/README.md) and the [overhaul documentation index](docs/nextgen/README.md). Staged captures are not full-playthrough or performance certification.
