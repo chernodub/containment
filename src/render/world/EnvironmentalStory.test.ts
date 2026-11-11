@@ -4,6 +4,7 @@ import {addBroodCell} from './OrganicGrowth';
 import {addEnvironmentalStory,setEnvironmentalStoryOptions} from './EnvironmentalStory';
 import {environmentObstacle} from '../ShipEnvironments';
 import {addRoomPracticals} from '../lighting/RoomPracticals';
+import {addInteriorPracticals} from '../lighting/InteriorPracticals';
 import {environmentClock,updateHotFixtureSurfaces} from '../lighting/HotFixtureSurface';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
 import {disposeModel,geometries} from '../meshParts';
@@ -15,6 +16,8 @@ describe('X2 environmental story rendering',()=>{
     const a=new T.Group(),b=new T.Group(),c=new T.Group();
     addBroodCell(a,1729,3);addBroodCell(b,1729,3);addBroodCell(c,1730,3);
     expect(transforms(a)).toEqual(transforms(b));expect(transforms(a)).not.toEqual(transforms(c));
+    // The cell fit must be governed by the brood anatomy, not an oversized base pad.
+    const rawSize=new T.Box3().setFromObject(a).getSize(new T.Vector3());expect(rawSize.z).toBeLessThan(3);expect(rawSize.x).toBeLessThan(2.7);
     const footprint={x:3,y:4,width:5,height:7},fitted=environmentObstacle('infested',footprint,3,'swarm-junction',1729);
     const bounds=new T.Box3().setFromObject(fitted);
     expect(bounds.min.x).toBeGreaterThanOrEqual(footprint.x);expect(bounds.max.x).toBeLessThanOrEqual(footprint.x+footprint.width);
@@ -34,6 +37,14 @@ describe('X2 environmental story rendering',()=>{
     make(1);const count=geometries.size;
     for(let seed=2;seed<14;seed++)make(seed);
     expect(geometries.size).toBe(count);
+  });
+  it('nests organic interior light inside a substantial tissue lobe rather than a flat equipment disc',()=>{
+    const world=new T.Group(),platform=new T.Mesh(new T.BoxGeometry(3,1,3),new T.MeshStandardMaterial());platform.position.set(2,.5,2);world.add(platform);
+    addInteriorPracticals(world,{obstacles:[{x:16,y:16,width:96,height:96}]},'infested');
+    const housing=world.getObjectByName('interior-practical-housings') as T.InstancedMesh,emitter=world.getObjectByName('interior-practical-emitters') as T.InstancedMesh,matrix=new T.Matrix4();
+    housing.getMatrixAt(0,matrix);const size=new T.Vector3().setFromMatrixScale(matrix);expect(size.x).toBeLessThan(.2);expect(size.y/size.x).toBeGreaterThan(.5);expect(size.z).toBeLessThan(.25);
+    emitter.getMatrixAt(0,matrix);const fissure=new T.Vector3().setFromMatrixScale(matrix);expect(fissure.z/fissure.x).toBeGreaterThan(4);expect(fissure.x).toBeLessThan(.04);
+    expect(world.children.filter(child=>child instanceof T.InstancedMesh)).toHaveLength(2);disposeModel(world);(platform.material as T.Material).dispose();
   });
   it('uses irregular wall nodules instead of a repeated fixture row without increasing batches',()=>{
     const world=new T.Group();addRoomPracticals(world,30,24,'infested');

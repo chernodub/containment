@@ -16,12 +16,12 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
       Object.assign(shader.uniforms, { actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle });
       shader.vertexShader = 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;').replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
-transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.16*plateTop;
-transformed.y+=actorPlateOpening*actorPlateBounds.y*.08*plateTop;`);
+transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
+transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
       shader.fragmentShader = `uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
         .replace('#include <color_fragment>', `#include <color_fragment>
 float plateHeight=(actorPosition.y-actorPlateBounds.x)/actorPlateBounds.y;
-if(actorPlateOpening>.05&&plateHeight>.60&&abs(actorPosition.z-actorPlateBounds.z)<actorPlateBounds.w*.14*actorPlateOpening)discard;
+if(actorPlateOpening>.05&&plateHeight>.60&&abs(actorPosition.z-actorPlateBounds.z)<actorPlateBounds.w*.08*actorPlateOpening)discard;
 float ash=fract(sin(dot(floor(actorPosition*65.0),vec3(12.9898,78.233,37.719)))*43758.5453);
 if(ash<actorDissolve)discard;
 float deathFracture=smoothstep(.965,.995,fract(sin(dot(floor(actorPosition*18.0),vec3(31.1,17.7,48.3)))*18643.31));

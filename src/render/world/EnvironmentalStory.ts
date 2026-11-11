@@ -19,13 +19,22 @@ export function addEnvironmentalStory(world:T.Group,template:RoomTemplate,enviro
       const a=polygon[i],b=polygon[j];if((a.y>z*32)!==(b.y>z*32)&&x*32<(b.x-a.x)*(z*32-a.y)/(b.y-a.y)+a.x)hit=!hit;
     }return hit;};
     const onDeck=(p:T.Vector3)=>p.x>=.1&&p.z>=.1&&p.x<template.width/32-.1&&p.z<template.height/32-.1&&(!template.boundary||inside(p.x,p.z,template.boundary))&&!template.voids?.some(h=>inside(p.x,p.z,h));
+    const segment=(from:T.Vector3,to:T.Vector3,width:number,material:T.Material)=>{
+      const delta=to.clone().sub(from),normal=point(-delta.z,0,delta.x).normalize().multiplyScalar(width/2);
+      if(![from.clone().add(normal),from.clone().sub(normal),to.clone().add(normal),to.clone().sub(normal)].every(onDeck))return;
+      const mesh=new T.Mesh(geometry('x2-flush-root',()=>new T.BoxGeometry(1,1,1)),material);mesh.position.set((from.x+to.x)/2,.012,(from.z+to.z)/2);mesh.scale.set(delta.length()+.025,.018,width);mesh.rotation.y=-Math.atan2(delta.z,delta.x);mesh.castShadow=false;root.add(mesh);
+    };
     for(let i=0;i<template.obstacles.length-1;i++){
       const a=template.obstacles[i],b=template.obstacles[i+1],from=point((a.x+a.width*.5)/32,.015,(a.y+a.height*.5)/32),to=point((b.x+b.width*.5)/32,.015,(b.y+b.height*.5)/32);
       const span=from.distanceTo(to),segments=Math.ceil(span/.45);let previous=from;
       for(let j=1;j<=segments;j++){
         const t=j/segments,p=from.clone().lerp(to,t);p.x+=Math.sin(t*8+seed*.013+i)*.19*Math.sin(t*Math.PI);p.z+=Math.sin(t*11+i)*.12*Math.sin(t*Math.PI);
         if(onDeck(previous)&&onDeck(p)){
-          const delta=p.clone().sub(previous),mesh=new T.Mesh(geometry('x2-flush-root',()=>new T.BoxGeometry(1,1,1)),i%3?GROWTH_MAT.tissue:GROWTH_MAT.carapace);mesh.position.set((p.x+previous.x)/2,.012,(p.z+previous.z)/2);mesh.scale.set(delta.length()+.025,.018,.12+(i%3)*.055);mesh.rotation.y=-Math.atan2(delta.z,delta.x);mesh.castShadow=false;root.add(mesh);
+          segment(previous,p,.24+(i%3)*.08,i%3?GROWTH_MAT.tissue:GROWTH_MAT.carapace);
+          if(j%5===0){
+            const delta=p.clone().sub(previous),side=point(-delta.z,0,delta.x).normalize().multiplyScalar((j%2?1:-1)*(.65+Math.sin(j+i)*.22)),elbow=p.clone().addScaledVector(side,.55),end=p.clone().add(side).addScaledVector(delta,.45);
+            segment(p,elbow,.14,GROWTH_MAT.tissue);segment(elbow,end,.075,GROWTH_MAT.tissue);
+          }
         }
         previous=p;
       }

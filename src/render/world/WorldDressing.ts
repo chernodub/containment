@@ -73,7 +73,7 @@ function insideSolid(x:number,z:number,polygon:readonly {x:number;y:number}[]):b
 /** Authored solids are polygons. Only fully-contained roof tiles may carry raised detail. */
 function equipmentReservations(template:RoomTemplate,templateId:string):Array<{x:number;y:number;width:number;height:number}> {
   const reservations=[...template.obstacles];
-  if(templateId==='passenger-vault')return reservations;
+  if(templateId==='passenger-vault'||templateId==='awakening-bay')return reservations;
   const polygons=templateId==='communal-atrium'?COMMUNAL_ATRIUM_BLOCKOUT.filter(f=>f.kind==='table').map(f=>f.footprint):template.voids??[];
   for(const polygon of polygons){
     const left=Math.min(...polygon.map(p=>p.x)),right=Math.max(...polygon.map(p=>p.x));

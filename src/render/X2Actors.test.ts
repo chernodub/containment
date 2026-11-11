@@ -100,6 +100,25 @@ it('retracts each Queen plate as a rigid side without stretching triangles acros
    plates++;expect(Math.abs(side.getX(i))).toBe(1);expect(side.getX(i+1)).toBe(side.getX(i));expect(side.getX(i+2)).toBe(side.getX(i));
   }
   expect(plates).toBeGreaterThan(100);
-  expect(identity.material.vertexShader).toContain('p.x+=identitySide*identityOpening');
+  expect(identity.material.vertexShader).toContain('vec3 hinge=identityAnchor');
+  const anchor=identity.geometry.getAttribute('identityAnchor');
+  for(let i=0;i<role.count;i+=3)if(role.getX(i)===5)for(let axis=0;axis<3;axis++){expect(anchor.getComponent(i+1,axis)).toBe(anchor.getComponent(i,axis));expect(anchor.getComponent(i+2,axis)).toBe(anchor.getComponent(i,axis));}
+ }finally{disposeModel(model.root);}
+});
+
+
+it('embeds the Queen vulnerable organ and hinge roots within the original dorsal height',()=>{
+ const model=alien('queen'),identity=model.root.getObjectByName('queen-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
+ const role=identity.geometry.getAttribute('identityRole'),position=identity.geometry.getAttribute('position');
+ const core=new T.Box3(),plates=new T.Box3(),point=new T.Vector3();
+ try{
+  for(let i=0;i<role.count;i++){
+   if(role.getX(i)===3)core.expandByPoint(point.fromBufferAttribute(position,i));
+   if(role.getX(i)===5)plates.expandByPoint(point.fromBufferAttribute(position,i));
+  }
+  expect(core.max.y).toBeLessThan(model.height*.92);expect(core.min.y).toBeLessThan(model.height*.75);
+  expect(core.getSize(point).x).toBeLessThan(6.5*.20);
+  expect(plates.max.y).toBeLessThan(model.height*.91);
+  expect(plates.min.y).toBeLessThan(model.height*.80);
  }finally{disposeModel(model.root);}
 });

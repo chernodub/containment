@@ -1,17 +1,15 @@
 import * as T from 'three';
 import {box,rod,batch,disposeModel} from '../meshParts';
+import {sleepingPassenger} from './EquipmentDetail';
 
 /** Original occupied berth display: faint human form behind frost, with individual life telemetry. */
 function occupiedGlass():T.DataTexture {
   const width=128,height=256,pixels=new Uint8Array(width*height*4);
   for(let y=0;y<height;y++)for(let x=0;x<width;x++) {
     const u=x/width,v=y/height,dx=u-.5;
-    const head=dx*dx*160+(v-.70)*(v-.70)*260<1;
-    const torso=Math.abs(dx)<.16*(1-Math.max(0,.61-v)*.7)&&v>.24&&v<.64;
-    const legs=v>.09&&v<.27&&(Math.abs(dx-.075)<.045||Math.abs(dx+.075)<.045);
     const frost=Math.max(0,(Math.abs(dx)-.28)*2.3)+Math.max(0,.10-v)*3;
     const noise=((Math.imul(x+17,374761393)^Math.imul(y+43,668265263))>>>0)%29/29;
-    const figure=head||torso||legs;
+    const figure=sleepingPassenger(u,1-v);
     let r=figure?8:18,g=figure?23:41,b=figure?29:52;
     r+=frost*42+noise*3;g+=frost*52+noise*4;b+=frost*56+noise*5;
     if(v>.79&&v<.93&&u>.12&&u<.88){r=4;g=14;b=19;

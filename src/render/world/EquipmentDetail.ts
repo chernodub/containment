@@ -85,16 +85,27 @@ export function serviceHousingGeometry(width:number,height:number,depth:number):
   geometry.rotateX(-Math.PI/2);geometry.translate(0,-height*.5,0);return geometry;
 }
 
+/** A resting human form with sloping shoulders and bent arms, rather than a signage pictogram. */
+export function sleepingPassenger(u:number,v:number):boolean {
+  const x=u-.5;
+  const oval=(cx:number,cy:number,rx:number,ry:number)=>((x-cx)/rx)**2+((v-cy)/ry)**2<1;
+  const capsule=(ax:number,ay:number,bx:number,by:number,radius:number)=>{
+    const dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((x-ax)*dx+(v-ay)*dy)/(dx*dx+dy*dy)));
+    return Math.hypot(x-ax-dx*t,v-ay-dy*t)<radius;
+  };
+  return oval(0,.23,.091,.073)||oval(0,.305,.038,.055)||oval(0,.43,.135,.13)||oval(0,.565,.10,.12)||oval(0,.65,.105,.065)
+    ||capsule(-.12,.35,-.16,.54,.032)||capsule(-.16,.54,-.12,.65,.026)
+    ||capsule(.12,.35,.16,.54,.032)||capsule(.16,.54,.12,.65,.026)
+    ||capsule(-.052,.66,-.066,.84,.038)||capsule(.052,.66,.066,.84,.038)
+    ||oval(-.072,.863,.047,.024)||oval(.072,.863,.047,.024);
+}
+
 /** Frosted observation glazing with an original, restrained sleeping human silhouette. */
 export function passengerObservationTexture():T.DataTexture {
   const width=128,height=256,pixels=new Uint8Array(width*height*4);
   for(let y=0;y<height;y++)for(let x=0;x<width;x++){
     const u=(x+.5)/width,v=(y+.5)/height,dx=u-.5;
-    const head=(dx/.115)**2+((v-.23)/.074)**2<1;
-    const torso=Math.abs(dx)<.14-(v-.32)*.035&&v>.305&&v<.65;
-    const legs=v>=.65&&v<.87&&(Math.abs(dx-.065)<.046||Math.abs(dx+.065)<.046);
-    const arms=v>.35&&v<.67&&Math.abs(dx)>.14&&Math.abs(dx)<.19;
-    const person=head||torso||legs||arms;
+    const person=sleepingPassenger(u,v);
     const edge=Math.pow(Math.max(Math.abs(dx)*2,Math.abs(v-.5)*2),6);
     const grain=((Math.imul(x+17,374761393)^Math.imul(y+31,668265263))>>>5)%23/23;
     const frost=edge*(.35+grain*.65),streak=Math.sin(x*.59+y*.032)> .97?.08:0;

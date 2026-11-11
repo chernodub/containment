@@ -223,7 +223,7 @@ export const SCENARIOS=[
 
 // X2 extends the existing public fixtures for matched tier/phase evidence.
 // Every setup is self-contained because capture serializes it into the page.
-for(const [id,sourceId]of [['x2-pickups-low','g2-pickups'],['x2-queen-exposed-low','g2-queen-exposed'],['x2-kiting-full-low','combat-kiting']]){
+for(const [id,sourceId]of [['x2-status-low','status-vfx'],['x2-pickups-low','g2-pickups'],['x2-queen-exposed-low','g2-queen-exposed'],['x2-kiting-full-low','combat-kiting']]){
  const source=SCENARIOS.find(s=>s.id===sourceId);
  SCENARIOS.push({...source,id,setup:new Function('room',`return (async()=>{await (${source.setup.toString()})(room);const d=window.__containmentDebug;d.renderer.setQuality('low');await d.prepare();d.refresh();})();`)});
 }

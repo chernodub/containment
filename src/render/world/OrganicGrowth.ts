@@ -66,7 +66,10 @@ export function addBroodCell(cell:T.Group,seed:number,index:number):void {
   box(cell,-.44,.65,-.55,.63,.8,.66,MAT.black,.04);
   const face=box(cell,-.44,1.06,-.55,.52,.035,.5,MAT.edge,.015);face.rotation.x=.23;
   for(let wire=0;wire<3;wire++)rod(cell,v(-.6+wire*.1,.96,-.28),v(-.7+wire*.11,.36,.14),.026,.02,MAT.copper);
-  lobe(cell,bias,.48,.05,.83,.3,2.2,GROWTH_MAT.tissue);
+  // Sphere dimensions are radii: three overlapping low lobes fit the original 2.2m cell.
+  lobe(cell,bias-.12,.35,-.4,.62,.16,.58,GROWTH_MAT.tissue);
+  lobe(cell,bias+.18,.38,.15,.52,.19,.72,GROWTH_MAT.tissue);
+  lobe(cell,bias-.14,.35,.69,.45,.15,.4,GROWTH_MAT.tissue);
   const sacs=3+Math.floor(random()*3);
   for(let n=0;n<sacs;n++){
     const x=(random()-.5)*.98,z=(random()-.5)*1.6;
@@ -74,8 +77,8 @@ export function addBroodCell(cell:T.Group,seed:number,index:number):void {
     const cy=.61+height*.42,hy=height*.72;
     const sac=lobe(cell,x,cy,z,size,hy,size*.72,GROWTH_MAT.carapace);sac.rotation.y=turn;
     for(let rib=0;rib<7;rib++){
-      const angle=turn+rib*Math.PI*2/7,path:T.Vector3[]=[];
-      for(let row=0;row<7;row++){const t=-.65+row/6*1.57,rad=Math.sqrt(Math.max(0,1-t*t))*1.04;path.push(v(x+Math.cos(angle)*size*rad,cy+t*hy,z+Math.sin(angle)*size*.72*rad));}
+      const angle=rib*Math.PI*2/7,path:T.Vector3[]=[];
+      for(let row=0;row<7;row++){const t=-.65+row/6*1.57,rad=Math.sqrt(Math.max(0,1-t*t))*1.04;const px=Math.cos(angle)*size*rad,pz=Math.sin(angle)*size*.72*rad;path.push(v(x+px*Math.cos(turn)+pz*Math.sin(turn),cy+t*hy,z-px*Math.sin(turn)+pz*Math.cos(turn)));}
       web(cell,path,.035,GROWTH_MAT.tissue);
       if(rib===1||rib===4){const crack=path.map(p=>p.clone().add(v(.015,.012,.015)));web(cell,crack,.016,GROWTH_MAT.fissure);}
     }
