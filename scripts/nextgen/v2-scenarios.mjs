@@ -4,9 +4,9 @@ const rigs = {
  pyro:['afterburn','flashfire','napalm-charge','meltdown'],arc:['static-step','overload','tesla-pylon','overclock'],
 };
 const slots=['dash','tactical','power','overdrive'];
-async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,showcase=false}) {
+async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,showcase=false,boons=[]}) {
  const d=window.__containmentDebug,g=d.game;
- await d.gotoRoom(room,{rig});d.renderer.setQuality(tier);await d.prepare();d.invulnerable(true);g.enemies.reset();
+ await d.gotoRoom(room,{rig});d.renderer.setQuality(tier);await d.prepare();if(boons.length)d.grantBoons(boons);d.invulnerable(true);g.enemies.reset();
  const bounds=g.geometry.bounds,candidates=[];
  for(let y=170;y<bounds.height-170;y+=50)for(let x=170;x<bounds.width-170;x+=50)for(const angle of [-Math.PI/2,0,Math.PI/2,Math.PI]){
   if(!d.canStand(x,y,28)||!d.canStand(x+Math.cos(angle)*150,y+Math.sin(angle)*150,28))continue;
@@ -76,7 +76,7 @@ async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,
  if(slot==='overdrive')d.fillOverdrive();
  if(!g.useAbility(slot))throw Error('V2 ability denied '+id);
  const cast=g.abilities.snapshot.slots[slot].castRemainingMs;
- const duration=g.abilities.snapshot.slots[slot].activeMs||({bulwark:6000,glacier:5000,'tesla-pylon':9000,'frost-trail':2500,afterburn:2500,whiteout:8000,meltdown:8000,overclock:6000}[id]??0);
+ const duration=g.abilities.snapshot.slots[slot].activeMs||({bulwark:6000,glacier:5000,'tesla-pylon':9000,'frost-trail':2500,afterburn:2500,whiteout:8000,meltdown:8000,overclock:6000}[id]??(boons.includes('scorched-fan')?2500:0));
  const resolution=slot==='dash'?140:cast;
  const samples=[0,Math.max(16,resolution*.5),resolution+30,resolution+150,resolution+600,resolution+Math.max(1200,duration*.5),resolution+Math.max(1800,duration+300)];
  const original=d.step;let sample=0,elapsed=0;
@@ -109,7 +109,11 @@ V2_SCENARIOS.push({id:'v2-recovery',room:'armory',state:'playing',setup:async()=
  await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error('V2 recovery timeout')),30000);r.canvas.addEventListener('webglcontextrestored',()=>{clearTimeout(timeout);resolve();},{once:true});ext.loseContext();setTimeout(()=>ext.restoreContext(),250);});
  for(let i=0;i<900&&r.roomLoading;i++)await new Promise(requestAnimationFrame);if(r.roomLoading)throw Error('V2 preparation did not recover');
  g.resume();d.refresh();await d.gotoRoom('infested-workshop',{rig:'cryo'});await d.gotoRoom('armory',{rig:'pyro'});d.refresh();
- d.recoveryProof={roomCycles:cycles,afterRestore:{...r.renderer.info.memory},programs:r.renderer.info.programs.length,contextLost:gl.isContextLost(),abilityInstances:r.interimAbilities.kit.counts};
+ const postRestoreCycles=[];for(let i=0;i<2;i++){await d.gotoRoom('infested-workshop',{rig:'cryo'});await d.gotoRoom('armory',{rig:'pyro'});d.refresh();postRestoreCycles.push({...r.renderer.info.memory});}
+ if(JSON.stringify(postRestoreCycles[0])!==JSON.stringify(postRestoreCycles[1]))throw Error('V2 post-restore resources grew '+JSON.stringify(postRestoreCycles));
+ d.recoveryProof={roomCycles:cycles,postRestoreCycles,afterRestore:{...r.renderer.info.memory},programs:r.renderer.info.programs.length,contextLost:gl.isContextLost(),abilityInstances:r.interimAbilities.kit.counts};
 }});
 
 for(const rig of Object.keys(rigs))V2_SCENARIOS.push({id:`v2-full-${rig}-low-armory`,room:'armory',state:'playing',burst:true,setupArgument:{rig,room:'armory',tier:'low',heavy:true,showcase:true},setup:stageV2});
+
+V2_SCENARIOS.push({id:'v2-scorched-fan',room:'overload-floor',state:'playing',burst:true,setupArgument:{rig:'pyro',id:'flashfire',slot:'tactical',room:'overload-floor',boons:['scorched-fan']},setup:stageV2});
