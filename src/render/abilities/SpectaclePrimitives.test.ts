@@ -41,6 +41,20 @@ describe('V3 shared spectacle', () => {
     expect(k.counts.particles).toBeLessThanOrEqual(160); k.dispose();
   });
 
+  it('streams exact cone bounds without adding a material and cools trench glow before its scar expires', () => {
+    const k = new ElementKit(new T.Scene()), m = new T.Matrix4(), scale = new T.Vector3();
+    const material = k.batches.decal.mesh.material, phase = k.batches.decal.mesh.geometry.getAttribute('abilityPhase');
+    k.scar('trench', 8, 4, 6, 0x201711, 12, .3, .6);
+    k.begin(0); k.end(); expect(phase.getX(0)).toBeCloseTo(2.1);
+    k.begin(1.1); k.fireFan(2, 3, 9, .7, 1.4, .8); k.end();
+    expect(phase.getX(0)).toBe(2); expect(k.batches.decal.mesh.count).toBe(2);
+    k.batches.decal.mesh.getMatrixAt(1, m); scale.setFromMatrixScale(m);
+    expect(scale.x).toBeCloseTo(9); expect(scale.y).toBeCloseTo(9);
+    expect((phase.getX(1) - 7) * Math.PI * 4).toBeCloseTo(1.4, 4);
+    expect(k.batches.decal.mesh.material).toBe(material);
+    k.begin(0); k.end(); expect(k.batches.decal.mesh.count).toBe(1); k.dispose();
+  });
+
   it('uses one prepared composite input and suppresses exposure impulses at zero flash or reduced motion', () => {
     const k = new ElementKit(new T.Scene()), setAbilityPresentation = vi.fn();
     k.bind({ lights: {} as never, distortion: {} as never, camera: {} as never, presentation: { setAbilityPresentation } });

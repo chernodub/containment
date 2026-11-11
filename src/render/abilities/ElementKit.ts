@@ -249,11 +249,19 @@ export class ElementKit {
         b.draw(x, .038, z, radius, radius, 1, 0xff7a2e, opacity, 0, 0, 6);
         this.instanceCount += b.mesh.count - before;
     }
+    /** Exact transient flame-cone body, submitted with the existing deck batch. */
+    fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1): void {
+        const b = this.batches.decal;
+        if (this.instanceCount >= ABILITY_VFX_LIMITS.instances) return;
+        const before = b.mesh.count;
+        b.draw(x, .045, z, radius, radius, 1, 0xff7a2e, opacity, 0, -angle, 7 + arc / (Math.PI * 4));
+        this.instanceCount += b.mesh.count - before;
+    }
     /** Solid-looking faceted translucent column, with a narrow luminous internal vein. */
     iceColumn(x: number, z: number, width: number, depth: number, height: number, angle: number, opacity = 1): void {
-        this.draw('solid', x, height * .42, z, depth * .94, height * .84, width * .94, 0x39779b, opacity * .46, -angle);
-        this.draw('shard', x, height * .5, z, depth * .49, height * .5, width * .49, 0x9be7ff, opacity * .65, -angle, .07);
-        if (!this.low) this.draw('shard', x, height * .57, z, depth * .14, height * .41, width * .13, 0xe8fbff, opacity * .48, -angle);
+        this.draw('solid', x, height * .43, z, depth * .94, height * .86, width * .94, 0x4c9abc, opacity * .72, -angle);
+        this.draw('shard', x, height * .5, z, depth * .49, height * .5, width * .49, 0x9be7ff, opacity * .39, -angle, .07);
+        if (!this.low) this.draw('shard', x, height * .57, z, depth * .14, height * .41, width * .13, 0xe8fbff, opacity * .36, -angle);
     }
     /** Full faceted shell preserves a translucent view of the frozen actor. */
     iceShell(x: number, z: number, radius: number, height: number, opacity = .35): void {
@@ -407,7 +415,7 @@ export class ElementKit {
             }
             if (this.instanceCount >= ABILITY_VFX_LIMITS.instances) continue;
             const b = this.batches.decal, before = b.mesh.count;
-            b.draw(p.x, .027, p.z, p.radius, p.width, 1, p.color, Math.min(1, (p.life - p.age) / Math.min(3, p.life * .4)) * .8, 0, p.angle, p.kind);
+            b.draw(p.x, .027, p.z, p.radius, p.width, 1, p.color, Math.min(1, (p.life - p.age) / Math.min(3, p.life * .4)) * .8, 0, p.angle, p.kind === 2 ? 2 + .1 * Math.max(0, 1 - p.age) : p.kind);
             this.instanceCount += b.mesh.count - before;
         }
     }
