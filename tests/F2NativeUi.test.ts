@@ -50,9 +50,17 @@ async function mount(width=1280,height=720):Promise<Page>{
   });return page;
 }
 const screens=['menu','rig-select','starting-boon','draft','shop','route','destroy','dead','complete','paused'] as const;
-it.each(screens)('graphics loss blocks %s, preserves choices and requires deliberate restoration',async screen=>{
+const blockingScreens=[...screens,'settings','controls','credits','pause-loadout','pause-settings','pause-controls'] as const;
+async function show(page:Page,screen:string):Promise<void>{
+  const drawer=['settings','controls','credits'].includes(screen),tab=screen.startsWith('pause-')?screen.slice(6):'';
+  await page.evaluate(s=>(window as any).ui.phase(s),drawer?'menu':tab?'paused':screen);
+  if(drawer)await page.locator('#overlay #'+screen).click();
+  if(tab)await page.locator(`[data-pause-tab="${tab}"]`).click();
+}
+
+it.each(blockingScreens)('graphics loss blocks %s, preserves choices and requires deliberate restoration',async screen=>{
   const p=await mount();try{
-    await p.evaluate(s=>(window as any).ui.phase(s),screen);
+    await show(p,screen);
     const before=await p.evaluate(()=>JSON.stringify((window as any).ui.game.expedition));
     await p.evaluate(()=>(window as any).ui.setLost(true));
     expect(await p.locator('#recover').isVisible()).toBe(true);expect(await p.locator('#graphics-continue').isDisabled()).toBe(true);
@@ -77,9 +85,9 @@ it('restoration from combat never resumes until the native Resume action',async(
     await p.locator('#resume').click();expect(await p.evaluate(()=>(window as any).ui.game.status)).toBe('playing');
   }finally{await p.close();}
 });
-it.each(screens)('held Tab and Shift+Tab remain inside the %s blocking screen',async screen=>{
+it.each(blockingScreens)('held Tab and Shift+Tab remain inside the %s blocking screen',async screen=>{
   const p=await mount();try{
-    await p.evaluate(s=>(window as any).ui.phase(s),screen);
+    await show(p,screen);
     for(const shift of [false,true]){
       if(shift)await p.keyboard.down('Shift');
       for(let i=0;i<30;i++){
@@ -92,7 +100,7 @@ it.each(screens)('held Tab and Shift+Tab remain inside the %s blocking screen',a
 });
 it.each(['settings','controls','credits'])('Escape closes title %s and restores launcher focus',async id=>{
   const p=await mount();try{
-    await p.locator('#overlay #'+id).click();await p.keyboard.press('Escape');
+    await p.locator('#overlay #'+id).click();expect(await p.locator('.title-drawer').isVisible()).toBe(true);await p.keyboard.press('Escape');
     expect(await p.locator('.title-drawer').count()).toBe(0);expect(await p.locator('#overlay #'+id).evaluate(e=>e===document.activeElement)).toBe(true);
   }finally{await p.close();}
 });
@@ -110,10 +118,9 @@ it('native focused HUD Space pauses, Shift+Tab does not dash, and canvas reclaim
 });
 it.each([[640,360],[960,540],[1280,720],[1920,1080],[2560,1440],[3440,1440]])('all screen actions are mouse/keyboard reachable at %i × %i CSS pixels',async(width,height)=>{
   const p=await mount(width,height);try{
-    for(const screen of [...screens,'settings','controls','credits']){
+    for(const screen of blockingScreens){
       const drawer=['settings','controls','credits'].includes(screen);
-      await p.evaluate(s=>(window as any).ui.phase(s),drawer?'menu':screen);
-      if(drawer)await p.locator('#overlay #'+screen).click();
+      await show(p,screen);
       await p.evaluate(()=>Promise.all(document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).map(a=>a.finished)));
       const scope=drawer?'.title-drawer':'#overlay';
       const actions=p.locator(`${scope} button:not(:disabled),${scope} select,${scope} input,${scope} a[href]`);

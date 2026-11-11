@@ -126,7 +126,7 @@ export const SCENARIOS=[
  {id:'reward',state:'reward',phase:'reward',required:['.choice-grid'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'reward'});}},
  {id:'route',state:'route',map:true,required:['.deck-map','.route-destination','[data-route]'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'route'});}},
  {id:'route-legacy-branch',state:'route',map:true,legacyBranch:true,required:['.deck-map','.route-destination','[data-route]','[data-inspect-route]'],setup:async()=>{const d=window.__containmentDebug;for(const room of ['receiving','forklift-loop','freight-crossing','rail-depot']){await d.gotoRoom(room,{version:2,phase:'route'});if(d.game.node.next.length>1)return;}throw Error('Legacy branch route unavailable');}},
- {id:'f2-fallback-corpse',state:'playing',setup:async()=>{
+ {id:'f2-fallback-corpse',state:'playing',burst:true,setup:async()=>{
   const d=window.__containmentDebug;await d.gotoRoom('awakening-bay');d.invulnerable(true);d.renderer.ragdolls.dispose();
   let id=false;for(let i=0;i<16&&!id;i++){const a=i*Math.PI/8;id=d.spawn('crawler',d.game.player.x+Math.cos(a)*150,d.game.player.y+Math.sin(a)*150);}
   if(!id)throw Error('No legal fallback corpse fixture');d.game.damage(id,100000,{x:120,y:-30});d.step(200);
