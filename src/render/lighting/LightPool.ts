@@ -7,15 +7,17 @@ export type LightRequest = Readonly<{
 }>;
 type Slot = { light: T.PointLight; age: number; duration: number; energy: number; priority: number; attachment: string | number | null; serial: number };
 
-/** All live light-count variants are prepared before combat; resources remain fixed. */
-export const LIGHT_POOL_PREWARM_COUNTS = Object.freeze([0, 2, 4, 6, 8, 9] as const);
+/** One High shader topology; zero-energy slots are rejected before local shading. */
+export const LIGHT_POOL_PREWARM_COUNTS = Object.freeze([9] as const);
+const LOW_PREWARM_COUNTS = Object.freeze([2] as const);
+const DISABLED_PREWARM_COUNTS = Object.freeze([0] as const);
 
-/** Fixed resources with prewarmed visibility buckets to avoid shading nine idle lights. */
+/** Fixed resources and light counts keep combat from selecting new shader programs. */
 export class LightPool {
   readonly root = new T.Group();
   readonly lights: readonly T.PointLight[];
   private readonly slots: Slot[];
-  readonly prewarmCounts = LIGHT_POOL_PREWARM_COUNTS;
+  private readonly highPrewarmCounts: readonly number[];
   private budget = 9;
   private prewarmCount: number | null = null;
   private serial = 0;
@@ -23,12 +25,13 @@ export class LightPool {
   private disposed = false;
   constructor(tier: GraphicsTier = 'high', private readonly highBudget = 9) {
     this.root.name = 'dynamic-light-pool';
+    this.highPrewarmCounts = highBudget === 9 ? LIGHT_POOL_PREWARM_COUNTS : Object.freeze([this.allowedBudget(highBudget)]);
     this.slots = Array.from({ length: 10 }, () => ({ light: new T.PointLight(0xffffff, 0, 5, 2), age: 0, duration: 0, energy: 0, priority: -Infinity, attachment: null, serial: 0 }));
     this.lights = this.slots.map(slot => slot.light);
     this.root.add(...this.lights);
     this.setQuality(tier);
   }
-  /** Quality selects the admission budget; only prewarmed count buckets become visible. */
+  /** Quality selects the fixed visible count and the admission budget together. */
   setQuality(tier: GraphicsTier, enabled = true) {
     this.budget = enabled ? tier === 'high' ? this.allowedBudget(this.highBudget) : 2 : 0;
     for (let i = 0; i < this.slots.length; i++) {
@@ -37,7 +40,8 @@ export class LightPool {
     this.refreshVisibility();
   }
   get capacity() { return this.budget; }
-  /** Temporarily expose first-N slots for renderer prewarming; null restores the live bucket. */
+  get prewarmCounts(): readonly number[] { return this.budget === 0 ? DISABLED_PREWARM_COUNTS : this.budget === 2 ? LOW_PREWARM_COUNTS : this.highPrewarmCounts; }
+  /** Temporarily expose first-N slots for renderer prewarming; null restores the tier count. */
   setPrewarmCount(count: number | null) {
     this.prewarmCount = count === null ? null : Math.min(this.budget, this.allowedBudget(count));
     this.refreshVisibility();
@@ -49,7 +53,6 @@ export class LightPool {
       const fade = slot.duration > 0 ? Math.max(0, 1 - slot.age / slot.duration) : 0;
       slot.light.intensity = slot.energy * fade * fade * this.intensityScale;
     }
-    this.refreshVisibility();
   }
   /** Lowest priority/oldest light is replaced; a weak flash never steals a stronger event. */
   flash(request: LightRequest, intensityIsScaled = false): T.PointLight | null {
@@ -57,7 +60,6 @@ export class LightPool {
     if (!slot) return null;
     this.configure(slot, request, intensityIsScaled);
     slot.attachment = null;
-    this.refreshVisibility();
     return slot.light;
   }
   /** Refresh an attached source each frame, or call release to leave a fading tail. */
@@ -68,14 +70,12 @@ export class LightPool {
     if (!slot) return null;
     this.configure(slot, request);
     slot.attachment = id;
-    this.refreshVisibility();
     return slot.light;
   }
   release(id: string | number, fade = .15) {
     for (const slot of this.slots) if (slot.attachment === id) {
       slot.attachment = null; slot.duration = Math.max(.001, fade); slot.age = 0; slot.energy = this.intensityScale > 0 ? slot.light.intensity / this.intensityScale : 0;
     }
-    this.refreshVisibility();
   }
   update(dt: number) {
     const delta = Number.isFinite(dt) ? Math.max(0, dt) : 0;
@@ -87,37 +87,18 @@ export class LightPool {
       const fade = 1 - slot.age / slot.duration;
       slot.light.intensity = slot.energy * fade * fade * this.intensityScale;
     }
-    this.refreshVisibility();
   }
-  reset() { for (const slot of this.slots) this.clear(slot); this.refreshVisibility(); }
+  reset() { for (const slot of this.slots) this.clear(slot); }
   dispose() {
     if (this.disposed) return;
     this.disposed = true; this.reset(); this.root.removeFromParent(); this.root.clear();
   }
   private allowedBudget(value: number): number {
-    let allowed = 0;
-    for (let i = 0; i < this.prewarmCounts.length; i++) if (this.prewarmCounts[i] <= value) allowed = this.prewarmCounts[i];
-    return allowed;
+    return value >= 9 ? 9 : Number.isFinite(value) ? Math.max(0, Math.floor(value / 2) * 2) : 0;
   }
   private refreshVisibility() {
-    if (this.prewarmCount !== null) {
-      for (let i = 0; i < this.slots.length; i++) this.slots[i].light.visible = i < this.prewarmCount && i < this.budget;
-      return;
-    }
-    let active = 0;
-    for (let i = 0; i < this.budget; i++) if (this.slots[i].light.intensity > 0) active++;
-    let target = 0;
-    for (let i = 0; i < this.prewarmCounts.length; i++) {
-      const count = this.prewarmCounts[i];
-      if (count >= active) { target = Math.min(this.budget, count); break; }
-    }
-    let padding = target - active;
-    for (let i = 0; i < this.slots.length; i++) {
-      const light = this.slots[i].light;
-      if (i >= this.budget) light.visible = false;
-      else if (light.intensity > 0) light.visible = true;
-      else { light.visible = padding > 0; if (padding > 0) padding--; }
-    }
+    const count = this.prewarmCount === null ? this.budget : Math.min(this.budget, this.prewarmCount);
+    for (let i = 0; i < this.slots.length; i++) this.slots[i].light.visible = i < count;
   }
   private acquire(priority: number): Slot | null {
     if (this.disposed) return null;
