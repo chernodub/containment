@@ -9,6 +9,7 @@ import {execFileSync} from 'node:child_process';
 import {chromium} from 'playwright';
 import {RIGS, chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, quantiles, distance, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
 import {sampleWorldPng} from './visuals.mjs';
+import {BOT_NAVIGATION_VERSION} from './bot-navigation-version.mjs';
 import {loadEarnedBoundary} from './resume.mjs';
 import {newEventReceipts} from './evidence.mjs';
 import {detectSnapshotDefects} from './diagnostics.mjs';
@@ -45,12 +46,13 @@ await mkdir(out, {recursive:true});
 await writeFile(resolve(out,'trace.ndjson'),'');
 await mkdir(resolve(out,'source'),{recursive:true});
 const harnessHashes={};
-for(const file of ['runner.mjs','policy.mjs','lifecycle.mjs','diagnostics.mjs','evidence.mjs','resume.mjs','visuals.mjs']){const content=await readFile(resolve('scripts/nextgen/playtest',file));harnessHashes[file]=createHash('sha256').update(content).digest('hex');await writeFile(resolve(out,'source',file),content);}
+for(const file of ['runner.mjs','policy.mjs','lifecycle.mjs','diagnostics.mjs','evidence.mjs','resume.mjs','visuals.mjs','bot-navigation.ts','bot-navigation-version.mjs']){const content=await readFile(resolve('scripts/nextgen/playtest',file));harnessHashes[file]=createHash('sha256').update(content).digest('hex');await writeFile(resolve(out,'source',file),content);}
 const report = {
   label, rig, seed, distributionDirectory:distRoot, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
   legacy: resumed?.parent.legacy??!!options.legacy, fastRendering:!!options.fast, lifecycleOnly:!!options['death-probe'], presentation:true, roomLimit, harnessHashes, head: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
   branch: execFileSync('git',['branch','--show-current'],{encoding:'utf8'}).trim(), started: new Date().toISOString(),
-  policy: 'Native WASD and mouse; spitter/champion focus; obstacle-probed kiting; rig-path/augment boon heuristic; safer route, medical if health<75; heal<40%; Q/F opportunity; V at 6+ or boss/champion.',
+  policyVersion:BOT_NAVIGATION_VERSION,
+  policy: 'Native WASD and mouse; spitter/champion focus; obstacle-probed kiting with marine-only fallback navigation for unusable waypoints; rig-path/augment boon heuristic; safer route, medical if health<75; heal<40%; Q/F opportunity; V at 6+ or boss/champion.',
   clock: options.realtime ? 'native production RAF, passive observation; no audio/effect/core wrappers' : options.fast ? 'native fixed 60Hz; 250ms policy decisions; scene/camera every tick, GPU draw at batch end' : 'native fixed 60Hz; 250ms policy decisions; render every fixed tick',
   rooms: resumed?resumed.parent.rooms.filter(r=>['clear','complete'].includes(r.result)&&resumed.checkpoint.run.completedNodeIds.includes(r.nodeId)):[], errors: resumed?[...resumed.parent.errors]:[], defects: resumed?[...resumed.parent.defects]:[], checkpoints: [], screenshots: [], inputs: [], outcome: 'running',
   limitations: ['Incoming damage source is inferred from nearby threats, not authoritative attribution.', 'Accelerated CPU samples include rendering submission, not GPU completion; RAF diagnostics are separately retained.', 'A deterministic seed does not guarantee identical outcomes across policy/render timing; input trace is retained.', 'Audio spy tracks source lifecycle, not perceived sound quality.'],
@@ -74,11 +76,12 @@ function listen(p) {
   p.on('response', r => {if(r.status()>=400) report.errors.push({type:'http',message:`${r.status()} ${r.url()}`});});
 }
 async function enableNative() {
-  await page.evaluate(({scale,realtime,fast}) => {
+  await page.evaluate(({scale,realtime,fast,navigationVersion}) => {
     const d=window.__containmentDebug;
+    if(!d.botWaypoint||d.botNavigationVersion!==navigationVersion)throw Error(`Rebuild dist for ${navigationVersion}; loaded ${d.botNavigationVersion??'unversioned navigation'}`);
     if(realtime&&d.liveObservation!==true)throw Error('Rebuild dist for passive live observation');
     d.nativeInput(true);if(fast){if(!d.fastNativeRendering)throw Error('Rebuild dist for native fast rendering');d.fastNativeRendering(true);}d.presentation(true);if(scale<1)d.incomingDamageScale(scale);d.realtime(realtime);
-  }, {scale:report.incomingDamageScale,realtime:!!options.realtime,fast:!!options.fast});
+  }, {scale:report.incomingDamageScale,realtime:!!options.realtime,fast:!!options.fast,navigationVersion:BOT_NAVIGATION_VERSION});
 }
 /** Reads geometry/navigation and camera matrices; never writes simulation state. */
 async function advance(milliseconds) {
@@ -95,7 +98,7 @@ async function snapshot() {
     const enemies=g.enemies.snapshot.enemies.filter(e=>e.health>0).map(e=>({...e,clear:d.clearShot(e.x,e.y),visible:r.visible(e.x,e.y),screen:project(e.x,e.y)}));
     for(const t of g.targets().filter(t=>t.id<0&&t.health>0)) enemies.push({...t,type:'queen',clear:d.clearShot(t.x,t.y),visible:r.visible(t.x,t.y),screen:project(t.x,t.y),vulnerable:t.id!==-1||g.boss.snapshot.vulnerable});
     const nearest=[...enemies].sort((a,b)=>Math.hypot(a.x-g.player.x,a.y-g.player.y)-Math.hypot(b.x-g.player.x,b.y-g.player.y))[0];
-    const waypoint=nearest ? g.navigation.waypoint({...g.player,radius:16},nearest,1)??nearest : null;
+    const waypoint=nearest ? d.botWaypoint(nearest)??nearest : null;
     const candidates=[];
     for(const [dx,dy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
       const length=Math.hypot(dx,dy)||1,x=g.player.x+dx/length*90,y=g.player.y+dy/length*90;

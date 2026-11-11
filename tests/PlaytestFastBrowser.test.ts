@@ -1,6 +1,8 @@
 import {afterEach, expect, it, vi} from 'vitest';
 import {installDebug} from '../scripts/nextgen/debug';
-import type {DepthGame, GameInput} from '../src/DepthGame';
+import {DepthGame, type GameInput} from '../src/DepthGame';
+import {BOT_NAVIGATION_VERSION} from '../scripts/nextgen/playtest/bot-navigation-version.mjs';
+import {expeditionRewardOffers} from '../src/game/roguelike/expedition';
 import type {DepthRenderer} from '../src/render/DepthRenderer';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -116,4 +118,36 @@ it('preserves synthetic fixtures and rejects unavailable or passive-live render 
   expect(() => absent.debug.fastNativeRendering(true)).toThrow('WebGL renderer');
   const live = harness({live: true});
   expect(() => live.debug.fastNativeRendering(true)).toThrow('live observation');
+});
+
+
+it('exposes marine path observations without changing game navigation, resources, controls or presentation', () => {
+  const target: Record<string, any> = {};
+  vi.stubGlobal('window', target);
+  vi.stubGlobal('location', {search: '?debug=1'});
+  const game = new DepthGame();
+  game.newRun(1729);
+  game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
+  const render = vi.fn(), sync = vi.fn(), effects = vi.fn(), ui = vi.fn();
+  installDebug(game, {render, effect: effects, roomLoading: false} as unknown as DepthRenderer,
+    sync, vi.fn(), vi.fn(), ui);
+  expect(target.__containmentDebug.botNavigationVersion).toBe(BOT_NAVIGATION_VERSION);
+  expect(Object.getOwnPropertyDescriptor(target.__containmentDebug,'botNavigationVersion')?.set).toBeUndefined();
+  const navigation = game.navigation;
+  const snapshot = () => JSON.stringify({
+    player: game.player, status: game.status, elapsed: game.elapsed,
+    combat: game.combat.snapshot, resources: game.combat.getRunResources(),
+    stats: game.stats, expedition: game.expedition, abilities: game.abilities.snapshot,
+  });
+  const before = snapshot();
+  for (const point of [{x: game.player.x + 100, y: game.player.y}, game.geometry.breaches[0]]) {
+    const waypoint = target.__containmentDebug.botWaypoint(point);
+    expect(waypoint === null || Number.isFinite(waypoint.x + waypoint.y)).toBe(true);
+  }
+  expect(game.navigation).toBe(navigation);
+  expect(snapshot()).toBe(before);
+  expect(render).not.toHaveBeenCalled();
+  expect(sync).not.toHaveBeenCalled();
+  expect(effects).not.toHaveBeenCalled();
+  expect(ui).not.toHaveBeenCalled();
 });

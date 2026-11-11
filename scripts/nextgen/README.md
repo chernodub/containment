@@ -262,3 +262,29 @@ build directory instead of `dist`; the resolved directory is retained in the
 report. Native UI/assets and the same `/containment/` path-traversal guard apply.
 Use separate build directories when comparing candidates while another campaign
 is still serving its original build.
+
+## I5 policy version: marine navigation observer v3
+
+New browser and simulation cohorts record `policyVersion:"i5-navigation-observer-v3"`. The movement scorer, target priority, native input,
+weapon/ability decisions and progression choices are unchanged. When approaching
+an occluded or off-screen target, the bot first reads the game's existing navigation waypoint.
+If that waypoint stays within 45 units of the marine, the shared read-only
+`bot-navigation.ts` observer uses a separate marine-clearance path query. The
+observer never replaces `game.navigation`, moves actors, edits resources, changes
+collisions or alters enemy decisions; the browser still traverses the result via
+ordinary held native keys and the existing legal-candidate checks.
+
+This is a narrow **bot policy correction**, not an encounter fix. It addresses
+navigation censors caused by querying the enemy-clearance grid for a marine who
+can stand in narrower legal lanes. Old policy outcomes remain retained; use fresh
+matched before/after cohorts with this same version for balance comparisons.
+The browser report's source hashes include `bot-navigation.ts`. Default diagnostic
+fixtures and native controls are unchanged.
+
+The v3 observer also recovers short waypoints when an enemy has clear line of
+fire but is outside the visible camera area. It preserves useful ordinary
+waypoints; existing scoring still selects among the same legal movement
+candidates. A single `BOT_NAVIGATION_VERSION` constant identifies the helper,
+built debug API and runner. The runner rejects a stale build before gathering
+cohort evidence, and hashes both the helper and version module. Earlier v2
+cohorts remain historical; never combine them with v3 balance outcomes.

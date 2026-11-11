@@ -138,7 +138,7 @@ it('native UI seed selection is diagnostic-only and accepts only unsigned intege
   expect(parse('?debug=1&seed=4294967295')).toBe(4294967295);
   for (const search of ['', '?seed=7', '?debug=0&seed=7', '?debug=1', '?debug=1&seed=', '?debug=1&seed=-1', '?debug=1&seed=1.5', '?debug=1&seed=4294967296', '?debug=1&seed=NaN']) expect(parse(search)).toBeUndefined();
   expect(source).toContain('game.newRun(debugRunSeed(location.search), {rigSelect: true})');
-  expect(source).toContain('}, () => input.read(), () => !graphicsLost && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading, liveObservation);');
+  expect(source).toContain('}, () => input.read(), () => !graphicsLost && !screens.graphicsBlocked && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading, liveObservation);');
 });
 
 it('opts into the normal application RAF pipeline only for explicit passive debug observation', () => {
@@ -270,4 +270,17 @@ it('does not enable the feel clock implicitly for ordinary native realtime bench
   expect(update).toHaveBeenCalledExactlyOnceWith(20, intent);
   expect(presentation.step).not.toHaveBeenCalled();
   expect(advanceUi).toHaveBeenCalledExactlyOnceWith(.02);
+});
+
+
+it('the application native readiness callback holds restored graphics until the recovery screen is dismissed', () => {
+  const source=readFileSync(new URL('../src/ui/application.ts',import.meta.url),'utf8');
+  const expression=source.match(/}, \(\) => input\.read\(\), \(\) => (.*), liveObservation\);/)![1];
+  const ready=new Function('graphicsLost','screens','roomRecovering','lastRoom','game','renderer',`return ${expression};`);
+  expect(ready(false,{graphicsBlocked:false},false,7,{roomRevision:7},{roomLoading:false})).toBe(true);
+  expect(ready(false,{graphicsBlocked:true},false,7,{roomRevision:7},{roomLoading:false})).toBe(false);
+  expect(ready(true,{graphicsBlocked:false},false,7,{roomRevision:7},{roomLoading:false})).toBe(false);
+  expect(ready(false,{graphicsBlocked:false},true,7,{roomRevision:7},{roomLoading:false})).toBe(false);
+  expect(ready(false,{graphicsBlocked:false},false,6,{roomRevision:7},{roomLoading:false})).toBe(false);
+  expect(ready(false,{graphicsBlocked:false},false,7,{roomRevision:7},{roomLoading:true})).toBe(false);
 });

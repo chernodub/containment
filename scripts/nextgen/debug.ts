@@ -12,6 +12,7 @@ import {canOccupyExpedition,hasClearExpeditionShot} from '../../src/game/world/e
 import {ENEMIES} from '../../src/game/enemies/catalog';
 import type {StandardEnemyId} from '../../src/game/enemies/types';
 import type {MutationId} from '../../src/game/roguelike/types';
+import {BOT_NAVIGATION_VERSION,botWaypoint as observeBotWaypoint} from './playtest/bot-navigation';
 
 export type PresentationDebug = {
  setEnabled(value:boolean):void;
@@ -86,6 +87,10 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   spawn(type:StandardEnemyId,x:number,y:number,elite=false){const radius=ENEMIES[type]?.radius;if(!radius||!canOccupyExpedition(game.geometry,{x,y},radius)||Math.hypot(x-game.player.x,y-game.player.y)<radius+game.player.radius+12)return false;const result=game.enemies.spawn(type,x,y,elite);return result.spawned?result.enemy.id:false;},
   canStand(x:number,y:number,radius=16){return canOccupyExpedition(game.geometry,{x,y},radius);},
   clearShot(x:number,y:number,from:{x:number;y:number}=game.player){return hasClearExpeditionShot(game.geometry,from,{x,y});},
+  /** The runner verifies this build's shared policy before collecting a cohort. */
+  get botNavigationVersion(){return BOT_NAVIGATION_VERSION;},
+  /** Read-only marine path observer; never replaces the simulation's enemy navigation. */
+  botWaypoint(target:{x:number;y:number}){return observeBotWaypoint(game,target);},
   setInput(value:Partial<GameInput>){controls={...controls,...value};},
   step(ms:number){
    if(liveObservation)throw Error('Fixed stepping unavailable in live observation mode');

@@ -302,6 +302,6 @@ export async function bootstrap() {
             reset() {feel.reset(); beats?.reset();},
             effect(event) {if (event.type === 'beat') beats?.show(event.kind as import('./hud/beats/PresentationBeats').BeatKind); else {feel.effect(event as GameEffect, feelContext()); beats?.effect(event as GameEffect); uiEffect(event as GameEffect);}},
             step(ms, controls, update) {feel.advance(ms, feelContext(), dt => update(dt, controls)); beats?.sync();},
-        }, () => input.read(), () => !graphicsLost && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading, liveObservation);
+        }, () => input.read(), () => !graphicsLost && !screens.graphicsBlocked && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading, liveObservation);
     }
 }

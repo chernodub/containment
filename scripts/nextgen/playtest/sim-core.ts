@@ -14,6 +14,7 @@ import { expeditionRewardOffers } from '../../../src/game/roguelike/expedition';
 import { generateRun } from '../../../src/game/roguelike/run';
 import type { RigId } from '../../../src/game/abilities/contract';
 import { chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, distance } from './policy.mjs';
+import {botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
 const TICK = 1000 / 60;
 const WIDTH = 1920, HEIGHT = 1080, VIEW = 13;
 const WEAPONS = ['pistol', 'rifle', 'shotgun', 'plasma', 'rocket'] as const;
@@ -167,7 +168,7 @@ export function runSimulation(options: SimOptions) {
         const hurt = game.hurt.bind(game);
         game.hurt = (n, origin) => hurt(n * .15, origin);
     }
-    const report = { mode: 'sim-policy-v2', rig: options.rig, seed: options.seed, assisted: !!options.assisted, legacy: !!options.legacy,
+    const report = { mode: 'sim-policy-v4', policyVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, assisted: !!options.assisted, legacy: !!options.legacy,
         policy: 'Shared policy.mjs; 250ms decisions, 60Hz GameFeel, real DepthGame actions; analytic camera observer.',
         limitations: ['No GPU, audio or DOM. Uses shared camera follow/framing/ability-event hooks, exact actor metrics and held-screen ray/torso selection; resource preparation and RAF synchronization are omitted. Matched browser validation remains required before using campaign outcomes as native-policy predictions.'],
         rooms: [] as any[], outcome: 'running', deathRoom: null as number | null, stats: null as any, final: null as any, wallSeconds: 0, trace: options.trace ? [] as any[] : undefined };
@@ -184,7 +185,7 @@ export function runSimulation(options: SimOptions) {
         for (const t of game.targets().filter(t => t.id < 0 && t.health > 0))
             enemies.push({ ...t, type: 'queen', clear: clear(t.x, t.y), visible: camera.visible(t.x, t.y), vulnerable: t.id !== -1 || game.boss.snapshot.vulnerable });
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
-        const waypoint = nearest ? game.navigation.waypoint({ ...game.player, radius: 16 }, nearest, 1) ?? nearest : null;
+        const waypoint = nearest ? botWaypoint(game, nearest) ?? nearest : null;
         const candidates = [];
         for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
             const len = Math.hypot(dx, dy) || 1, x = game.player.x + dx / len * 90, y = game.player.y + dy / len * 90;
