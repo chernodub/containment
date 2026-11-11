@@ -103,3 +103,31 @@ it('stops ordinary coaching after the first minute while remembering successful 
     expect(seen).toEqual({power:true});
   } finally {await page.close();}
 });
+
+it('keeps coaching inside the viewport when the action bar relocates to either vertical edge and the desktop resizes', async () => {
+  const page=await mount();
+  try {
+    for (const [width,height] of [[1280,720],[1920,1080],[960,540],[640,360]]) {
+      await page.setViewportSize({width,height});
+      for (const edge of ['top','bottom']) {
+        const result=await page.evaluate(edge=>{
+          const {onboarding}=(window as any).__onboarding;
+          const bar=document.getElementById('action-bar')!;
+          bar.style.translate='0px 0px';
+          const preferred=bar.getBoundingClientRect();
+          bar.style.translate=`0px ${edge==='top'?8-preferred.top:innerHeight-8-preferred.bottom}px`;
+          const marine={left:innerWidth-100,right:innerWidth-20,top:innerHeight*.45,bottom:innerHeight*.45+60};
+          onboarding.tick(0,marine);
+          const prompt=document.getElementById('contextual-onboarding')!;
+          const bounds=prompt.getBoundingClientRect();
+          return {left:bounds.left,right:bounds.right,top:bounds.top,bottom:bounds.bottom,visible:getComputedStyle(prompt).visibility,overlap:bounds.left<marine.right&&bounds.right>marine.left&&bounds.top<marine.bottom&&bounds.bottom>marine.top,pointer:getComputedStyle(prompt).pointerEvents,hit:document.elementFromPoint((bounds.left+bounds.right)/2,(bounds.top+bounds.bottom)/2)?.id};
+        },edge);
+        expect(result.top,`${width}x${height} ${edge}`).toBeGreaterThanOrEqual(0);
+        expect(result.bottom,`${width}x${height} ${edge}`).toBeLessThanOrEqual(height);
+        expect(result.left).toBeGreaterThanOrEqual(0);expect(result.right).toBeLessThanOrEqual(width);
+        expect(result.visible).toBe('visible');expect(result.overlap).toBe(false);
+        expect(result.pointer).toBe('none');expect(result.hit).toBe('world');
+      }
+    }
+  } finally {await page.close();}
+});

@@ -151,8 +151,16 @@ export class ContextualOnboarding {
       const bar = this.host.getBoundingClientRect();
       const anchor = this.active && ['dash', 'tactical', 'power', 'overdrive'].includes(this.active) ? this.host.querySelector<HTMLElement>(`[data-ability="${this.active}"]`) : this.host.querySelector<HTMLElement>('.weapon-bank');
       const target = anchor?.getBoundingClientRect();
-      const center = Math.max(173, Math.min(innerWidth - 173, target ? (target.left + target.right) / 2 : (bar.left + bar.right) / 2));
-      this.node.style.left = `${center - bar.left}px`;
+      const size = this.node.getBoundingClientRect();
+      const center = Math.max(size.width / 2 + 8, Math.min(innerWidth - size.width / 2 - 8, target ? (target.left + target.right) / 2 : (bar.left + bar.right) / 2));
+      let top = bar.top - size.height - 14;
+      // A relocated action bar can sit at the top edge. Flip the prompt below
+      // it when there is space, then clamp without changing its input behavior.
+      if (top < 8 && bar.bottom + 14 + size.height <= innerHeight - 8) top = bar.bottom + 14;
+      top = Math.max(8, Math.min(innerHeight - size.height - 8, top));
+      this.node.style.left = `${center - bar.left - this.host.clientLeft}px`;
+      this.node.style.bottom = 'auto';
+      this.node.style.top = `${top - bar.top - this.host.clientTop}px`;
       const rect = this.node.getBoundingClientRect();
       this.bounds.left = rect.left; this.bounds.right = rect.right; this.bounds.top = rect.top; this.bounds.bottom = rect.bottom;
     }
