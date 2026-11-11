@@ -1,5 +1,6 @@
 import {I4_SCENARIOS} from './i4-scenarios.mjs';
 import {V2_SCENARIOS} from './v2-scenarios.mjs';
+import {V3_SCENARIOS} from './v3-scenarios.mjs';
 import {INTEGRATION_SETTINGS_SCENARIO} from './integration-settings.mjs';
 import {ABILITY_SCENARIOS,DESKTOP_ABILITY_SCENARIO} from './ability-scenarios.mjs';
 export const DEFAULT_ROOMS=['awakening-bay','communal-atrium','armory','breached-loading-bay','relay-racks','safety-interlock-station','service-shaft-landing','infested-workshop','containment-annulus','overload-floor'];
@@ -69,7 +70,7 @@ function integrationKitingSetup(tier){
 }
 
 export const SCENARIOS=[
- ...I4_SCENARIOS,...V2_SCENARIOS,
+ ...I4_SCENARIOS,...V2_SCENARIOS,...V3_SCENARIOS,
  ...ABILITY_SCENARIOS,DESKTOP_ABILITY_SCENARIO,INTEGRATION_SETTINGS_SCENARIO,
  {id:'title',state:'menu',required:['.title-screen','#start'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();}},
  {id:'title-settings',state:'menu',required:['[data-ui-settings]','#quality'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();document.querySelector('#settings').click();}},

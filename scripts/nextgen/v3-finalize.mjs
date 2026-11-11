@@ -27,9 +27,12 @@ const before = resolve(root, 'v3-before'), bm = JSON.parse(await readFile(resolv
 assert.deepEqual(bm.failures, []); assert.deepEqual(bm.errors, []);
 await cp(resolve(before, 'manifest.json'), resolve(out, 'sources/v3-before.json'));
 await cp(resolve(before, 'review'), resolve(out, 'before-thumbnails'), { recursive: true });
+const beforeIndex = resolve(out, 'before-thumbnails/index.html');
+await writeFile(beforeIndex, (await readFile(beforeIndex, 'utf8')).replaceAll('href="../', 'href="../before-sheets/'));
 await mkdir(resolve(out, 'before-sheets'), { recursive: true });
 for (const sprite of bm.sprites) await cp(resolve(before, sprite.file), resolve(out, 'before-sheets', sprite.file));
 await mkdir(resolve(out, 'comparisons'), { recursive: true });
+await mkdir(resolve(out, 'thumbnails'), { recursive: true });
 const groups = new Map();
 for (const s of bm.shots) {
   if (!groups.has(s.scenario)) groups.set(s.scenario, []);
@@ -48,7 +51,11 @@ for (const [scenario, shots] of groups) {
   }
   const file = scenario.replaceAll(':', '-') + '.png';
   await writeFile(resolve(out, 'comparisons', file), encode(sheet));
+  // Identical impact+30ms phase for every before/after pair; complete timelines remain primary evidence.
+  const stem = scenario.replaceAll(':', '-');
+  await cp(resolve(out, 'before-thumbnails', shots[2].file), resolve(out, 'thumbnails', stem + '-before.png'));
+  await cp(resolve(out, 'review', after[2].file), resolve(out, 'thumbnails', stem + '-after.png'));
   cards.push(`<figure><h2>${scenario}</h2><a href="comparisons/${file}"><img src="comparisons/${file}"></a></figure>`);
 }
-await writeFile(resolve(out, 'index.html'), `<!doctype html><meta charset="utf-8"><title>Containment V3 final</title><style>body{background:#101821;color:#e3edf2;font:15px system-ui;margin:20px}a{color:#a9e5ff}img{width:100%;height:auto}figure{margin:24px 0}h2{font-size:18px}</style><h1>Containment / V3 ability spectacle</h1><p>Each cell is exactly 480×270. Before above, V3 below. Click to inspect all seven phases. Original PNGs and manifests are retained.</p><p><a href="review/index.html">All final timelines, bright/dark kits and Low</a> · <a href="bench.html">Sustained before/after benchmark</a></p>${cards.join('')}`);
+await writeFile(resolve(out, 'index.html'), `<!doctype html><meta charset="utf-8"><title>Containment V3 final</title><style>body{background:#101821;color:#e3edf2;font:15px system-ui;margin:20px}a{color:#a9e5ff}img{width:100%;height:auto}figure{margin:24px 0}h2{font-size:18px}</style><h1>Containment / V3 ability spectacle</h1><p>Each cell is exactly 480×270. Before above, V3 below. Click to inspect all seven phases. Original PNGs and manifests are retained.</p><p><a href="review/index.html">All final timelines, bright/dark kits and Low</a> · <a href="bench.html">Sustained before/after benchmark</a> · <a href="recheck.md">Alternating matched CPU rechecks</a></p>${cards.join('')}`);
 console.log(`${merged.shots.length} final frames, ${groups.size} matched comparisons: ${out}`);
