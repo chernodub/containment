@@ -56,15 +56,15 @@ function localMood(environment: ShipEnvironment, keyColor: number, accent: numbe
 
 /** All ten ship environments have a distinct, authored lighting and grading palette. */
 export const ENVIRONMENT_MOODS: Readonly<Record<ShipEnvironment, EnvironmentMood>> = Object.freeze({
-  cryogenics: localMood('cryogenics',0xd9efff,0x86dcff,'steady',0x8397a2,.86,.14,1.65,.30,.28,100,8,10,0x839db6),
+  cryogenics: localMood('cryogenics',0xd9efff,0x86dcff,'steady',0x8397a2,.86,.10,1.25,.24,.28,100,8,10,0x839db6),
   habitation: localMood('habitation',0xffe0bc,0xffb968,'flicker',0x8b8580,.91,.12,1.6,.29,.28,115,8.8,9,0x7b8fa8),
-  security: localMood('security',0xf1f4ff,0xff513d,'alarm',0x6c7888,.82,.10,1.8,.30,.25,110,7.2,12,0x7c91a9),
-  cargo: localMood('cargo',0xffd398,0xffa54d,'steady',0x8b8375,.94,.12,1.65,.30,.28,130,9.6,8,0x8293a7),
-  communications: localMood('communications',0xbddfe9,0x58e4bc,'flicker',0x687b87,.86,.12,1.5,.28,.30,90,6.8,10,0x769ba8),
-  engineering: localMood('engineering',0xffe2a9,0xffbb47,'flicker',0x8b8374,.88,.12,1.7,.31,.28,120,8.8,9,0x85949f),
-  maintenance: localMood('maintenance',0xc0e0d6,0x73d7af,'flicker',0x6f8981,.28,.14,1.5,.28,.30,95,8,9,0x789d99),
-  infested: artMood(localMood('infested',0xb7d7b0,0xa8ff72,'pulse',0x768579,.9,.10,1.4,.26,.35,85,8.4,8,0x718a86),{rim:Object.freeze({color:0xe26acf,intensity:.35,offset:[6,6,-9] as RGB})}),
-  containment: localMood('containment',0xe4ebff,0xb99bff,'pulse',0x818594,.82,.16,1.65,.30,.32,105,7.6,11,0x8a94b1),
+  security: localMood('security',0xf1f4ff,0xff513d,'alarm',0x6c7888,.82,.12,1.8,.34,.25,240,7.2,12,0x7c91a9),
+  cargo: localMood('cargo',0xffd398,0xffa54d,'steady',0x8b8375,.94,.08,1.65,.28,.28,250,9.6,8,0x8293a7),
+  communications: localMood('communications',0xbddfe9,0x58e4bc,'flicker',0x687b87,.86,.14,1.5,.32,.30,240,8,10,0x769ba8),
+  engineering: localMood('engineering',0xffe2a9,0xffbb47,'flicker',0x8b8374,.88,.08,1.7,.29,.28,260,8.8,9,0x85949f),
+  maintenance: localMood('maintenance',0xc0e0d6,0x73d7af,'flicker',0x6f8981,.28,.14,1.5,.28,.30,220,8,9,0x789d99),
+  infested: artMood(localMood('infested',0xb7d7b0,0xa8ff72,'pulse',0x768579,.9,.10,1.4,.26,.35,210,8.4,8,0x718a86),{rim:Object.freeze({color:0xe26acf,intensity:.35,offset:[6,6,-9] as RGB})}),
+  containment: localMood('containment',0xe4ebff,0xb99bff,'pulse',0x818594,.82,.16,1.65,.30,.32,230,8.4,11,0x8a94b1),
   reactor: artMood(mood('reactor', 0xffe0bc, 0xff8a39, 'reactor', 0x596675, 1.06, .97, .85, .24, 18), {
     ambient: Object.freeze({ sky: 0x8294aa, ground: 0x303c4c, intensity: .08 }),
     key: Object.freeze({ color: 0xffa14b, intensity: 1.7, offset: [0, 3.2, 0] as RGB }),

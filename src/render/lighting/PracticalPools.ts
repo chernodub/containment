@@ -28,7 +28,7 @@ export class PracticalPools {
       const reactor=!!fixture.userData.reactorMood;
       const radius=reactor?Math.min(5.2,Math.max(2.8,fixture.distance*.48)):Math.min(4.8,Math.max(3.3,fixture.distance*.5));
       this.dummy.position.set(fixture.position.x,.035,fixture.position.z);this.dummy.scale.set(radius,1,radius);this.dummy.updateMatrix();this.root.setMatrixAt(count,this.dummy.matrix);
-      this.color.copy(fixture.color);this.color.multiplyScalar(Math.min(1.5,.6+fixture.intensity/32));this.root.setColorAt(count,this.color);(this.root.geometry.getAttribute('reactorPoolAmount') as T.InstancedBufferAttribute).setX(count,1);count++;
+      this.color.copy(fixture.color);this.color.multiplyScalar(reactor?Math.min(1.5,.6+fixture.intensity/32):Math.min(2.2,.6+fixture.intensity/160));this.root.setColorAt(count,this.color);(this.root.geometry.getAttribute('reactorPoolAmount') as T.InstancedBufferAttribute).setX(count,1);count++;
     }
     this.root.count=count;this.root.geometry.getAttribute('reactorPoolAmount').needsUpdate=true;this.root.instanceMatrix.needsUpdate=true;if(this.root.instanceColor)this.root.instanceColor.needsUpdate=true;
   }

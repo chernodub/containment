@@ -7,6 +7,7 @@ import { RoomReflectionCapture } from '../src/render/lighting/RoomReflectionCapt
 import { applyRoomMood } from '../src/render/lighting/applyRoomMood';
 import { applyFloorVariation } from '../src/render/lighting/FloorVariation';
 import { applyHotFixtureSurface, updateHotFixtureSurfaces } from '../src/render/lighting/HotFixtureSurface';
+import { addInteriorPracticals } from '../src/render/lighting/InteriorPracticals';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -298,7 +299,51 @@ it('lights real fixture locations with palette energy and preserves colored pool
    expect(room.userData.lightFixtures.some((fixture:{x:number;y:number;z:number})=>light.position.equals(new T.Vector3(fixture.x,fixture.y,fixture.z)))).toBe(true);
    expect(light.intensity).toBe(getEnvironmentMood(environment).practical.intensity);
   }
-  if(environment!=='reactor'){expect(rig.mood.practical.intensity).toBeGreaterThanOrEqual(80);expect(rig.mood.practical.intensity).toBeLessThanOrEqual(140);}
+  if(environment!=='reactor'){expect(rig.mood.practical.intensity).toBeGreaterThanOrEqual(80);expect(rig.mood.practical.intensity).toBeLessThanOrEqual(300);}
  }
  rig.dispose();
+});
+
+it('selects the nearest fixture then spaced interior coverage instead of four lights on one nearby wall',()=>{
+ const rig=new SceneLighting(),room=new T.Group();
+ room.userData.lightFixtures=[...Array.from({length:6},(_,i)=>({x:.3,y:1.5,z:i*3,color:0xa1ef72})),{x:9,y:2,z:3,color:0xdc68ca},{x:11,y:2,z:10,color:0xa1ef72},{x:36,y:2,z:8,color:0xa1ef72}];
+ rig.loadRoom(room,40,20,'infested');rig.setPlayer(3,4,0);
+ expect(rig.fixtures[0].position.toArray()).toEqual([.3,1.5,3]);
+ expect(rig.fixtures.some(light=>light.position.x>=9)).toBe(true);
+ expect(rig.fixtures.every(light=>Math.hypot(light.position.x-3,light.position.z-4)<=15)).toBe(true);
+ expect(rig.fixtures).toHaveLength(4);rig.dispose();
+});
+
+it('mounts at most eight interior practicals on existing equipment with two reusable draws',()=>{
+ const room=new T.Group(),geometry=new T.BoxGeometry(2,2,2),material=new T.MeshStandardMaterial();
+ const obstacles=Array.from({length:10},(_,i)=>({x:(i*4+1)*32,y:64,width:64,height:64}));
+ for(const rect of obstacles){const mesh=new T.Mesh(geometry,material);mesh.position.set(rect.x/32+1,1,3);room.add(mesh);}
+ addInteriorPracticals(room,{obstacles},'communications');
+ expect(room.userData.lightFixtures).toHaveLength(8);
+ const emitters=room.getObjectByName('interior-practical-emitters') as T.InstancedMesh;
+ const housings=room.getObjectByName('interior-practical-housings') as T.InstancedMesh;
+ expect(emitters.count).toBe(8);expect(housings.count).toBe(8);
+ for(const fixture of room.userData.lightFixtures){
+  expect(obstacles.some(rect=>fixture.x>=rect.x/32&&fixture.x<=(rect.x+rect.width)/32&&fixture.z>=rect.y/32&&fixture.z<=(rect.y+rect.height)/32)).toBe(true);
+  expect(fixture.y).toBeCloseTo(2.135);expect(fixture.nativeColor).toBe(true);
+ }
+ expect(new Set(room.userData.lightFixtures.map((fixture:{color:number})=>fixture.color)).size).toBe(2);
+ addInteriorPracticals(room,{obstacles},'communications');expect(room.userData.lightFixtures).toHaveLength(8);
+ const disposeEmitters=vi.spyOn(emitters,'dispose'),disposeHousings=vi.spyOn(housings,'dispose');
+ emitters.geometry.dispose();housings.geometry.dispose();expect(disposeEmitters).toHaveBeenCalledOnce();expect(disposeHousings).toHaveBeenCalledOnce();
+ (emitters.material as T.Material).dispose();(housings.material as T.Material).dispose();geometry.dispose();material.dispose();
+});
+
+it('leaves calibrated reactor, cryogenics and separately authored habitation sources untouched',()=>{
+ for(const environment of ['reactor','cryogenics','habitation'] as const){const room=new T.Group();addInteriorPracticals(room,{obstacles:[{x:0,y:0,width:64,height:64}]},environment);expect(room.children).toHaveLength(0);expect(room.userData.lightFixtures).toBeUndefined();}
+});
+
+it('mounts interior emitters inside polygonal void islands and keeps housings inset from circulation',()=>{
+ const room=new T.Group(),material=new T.MeshStandardMaterial(),geometry=new T.BoxGeometry(4,2,4),mesh=new T.Mesh(geometry,material);mesh.position.set(8,1,8);room.add(mesh);
+ addInteriorPracticals(room,{obstacles:[],voids:[[{x:192,y:192},{x:320,y:192},{x:320,y:320},{x:192,y:320}]]},'containment');
+ expect(room.userData.lightFixtures).toHaveLength(1);
+ const fixture=room.userData.lightFixtures[0];expect(fixture.x).toBeGreaterThanOrEqual(6.35);expect(fixture.x).toBeLessThanOrEqual(9.65);expect(fixture.z).toBeGreaterThanOrEqual(6.35);expect(fixture.z).toBeLessThanOrEqual(9.65);
+ const emitter=room.getObjectByName('interior-practical-emitters') as T.InstancedMesh,housing=room.getObjectByName('interior-practical-housings') as T.InstancedMesh;
+ for(const object of [emitter,housing]){object.geometry.dispose();(object.material as T.Material).dispose();}geometry.dispose();material.dispose();
+ const empty=new T.Group();addInteriorPracticals(empty,{obstacles:[],voids:[[{x:192,y:192},{x:320,y:192},{x:320,y:320},{x:192,y:320}]]},'communications');expect(empty.children).toHaveLength(0);
 });

@@ -64,7 +64,7 @@ describe('accepted south32 CPU rendering and ownership',()=>{
   expect(materials.size).toBe(8);expect(all.length).toBeLessThanOrEqual(32);
   const triangles=all.reduce((n,m)=>n+(m.geometry.index?.count??m.geometry.getAttribute('position').count)/3,0);expect(triangles).toBeLessThan(45000);
   console.info('south32 CPU budget',JSON.stringify({worldMeshes:all.length,equipmentMaterials:materials.size,triangles}));
-  for(const m of materials){expect(Object.values(MAT)).not.toContain(m);expect(m.userData.actorMaterial).toBe(true);expect(m.emissiveIntensity).toBeLessThan(.5);}
+  for(const m of materials){expect(Object.values(MAT)).not.toContain(m);expect(m.userData.actorMaterial).toBe(true);if(m.name==='ca_welcome')expect(m.emissiveIntensity).toBeGreaterThan(2);else expect(m.emissiveIntensity).toBeLessThan(.5);}
   expect(materialState()).toEqual(before);expect(r.roomLoading).toBe(false);
   const shared=[...Object.values(MAT),...geometries.values()].map(m=>vi.spyOn(m,'dispose'));
   const owned=[...materials,...meshes(equipment).map(m=>m.geometry)].map(m=>vi.spyOn(m,'dispose'));

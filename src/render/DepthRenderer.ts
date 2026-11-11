@@ -1,6 +1,7 @@
 import {MaterialWarmup} from './MaterialWarmup';
 import {ContextResources} from './ContextResources';
 import {addRoomPracticals} from './lighting/RoomPracticals';
+import {addInteriorPracticals} from './lighting/InteriorPracticals';
 import {updateHotFixtureSurfaces} from './lighting/HotFixtureSurface';
 import {PracticalPools} from './lighting/PracticalPools';
 import {optimizeLocalLights} from './lighting/LocalLightShading';
@@ -349,7 +350,7 @@ export class DepthRenderer {
   for(const side of [-1,1]){box(this.exit,0,.7,side*.7,.12,1.4,.18,MAT.steel);box(this.exit,.08,.7,side*.7,.04,1.05,.05,MAT.cyan,.01);}
   box(this.exit,0,1.5,0,.2,.2,1.6,MAT.dark);box(this.exit,0,.035,0,1.7,.02,1.55,MAT.dark);
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
-  this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment);
+  this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment);addInteriorPracticals(this.world,t,this.roomEnvironment);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment);
   const mood=getEnvironmentMood(environment);this.scene.fog=new T.FogExp2(mood.fog.color,mood.fog.density*.25);this.scene.background=new T.Color(mood.fog.color).multiplyScalar(.24);this.scene.environmentIntensity=mood.reflectionIntensity;this.post?.setMood(mood);this.atmosphere?.loadRoom(environment,w,h,this.lighting.fixtures);this.backdrop?.loadRoom(this.world,w,h,environment);this.arena?.loadRoom(node.templateId,w,h);this.post?.distortion.clear();this.heatClock=0;
   const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm))this.queueRoomWarmup();
  }

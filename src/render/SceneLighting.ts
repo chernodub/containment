@@ -90,10 +90,26 @@ export class SceneLighting {
   this.playerX=x;this.playerZ=z;
   const selected=this.nearbyFixtures;selected.length=0;
   if(this.staging)selected.push({x:this.staging.coreX,y:this.staging.coreY,z:this.staging.coreZ,color:this.staging.coreColor});
-  this.authoredFixtures.sort((a,b)=>(a.x-x)**2+(a.z-z)**2-((b.x-x)**2+(b.z-z)**2));
-  for(const fixture of this.authoredFixtures){
-   let separate=true;for(const other of selected)if(Math.hypot(fixture.x-other.x,fixture.z-other.z)<2){separate=false;break;}
-   if(separate)selected.push(fixture);if(selected.length===4)break;
+  if(this.mood.environment==='reactor'){
+   this.authoredFixtures.sort((a,b)=>(a.x-x)**2+(a.z-z)**2-((b.x-x)**2+(b.z-z)**2));
+   for(const fixture of this.authoredFixtures){
+    let separate=true;for(const other of selected)if(Math.hypot(fixture.x-other.x,fixture.z-other.z)<2){separate=false;break;}
+    if(separate)selected.push(fixture);if(selected.length===4)break;
+   }
+  }else{
+   let nearest:Fixture|undefined,nearestDistance=Infinity;
+   for(const fixture of this.authoredFixtures){const d=(fixture.x-x)**2+(fixture.z-z)**2;if(d<nearestDistance){nearest=fixture;nearestDistance=d;}}
+   if(nearest)selected.push(nearest);
+   while(selected.length<4){
+    let best:Fixture|undefined,bestScore=-1;
+    for(const fixture of this.authoredFixtures){
+     const distance=(fixture.x-x)**2+(fixture.z-z)**2;if(distance>225)continue;
+     let spacing=Infinity;for(const other of selected){const d=(fixture.x-other.x)**2+(fixture.z-other.z)**2;if(d<spacing)spacing=d;}
+     if(spacing<4)continue;
+     const score=spacing/(1+distance/50);if(score>bestScore){best=fixture;bestScore=score;}
+    }
+    if(!best)break;selected.push(best);
+   }
   }
   this.fixtureCount=selected.length;
   for(let i=0;i<4;i++){
