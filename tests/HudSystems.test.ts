@@ -388,3 +388,30 @@ it('shows remaining-enemy progress and deduplicates a short multi-kill beat with
         expect(await page.locator('.hud-toast[data-kind=combat]').evaluate(node=>getComputedStyle(node).animationName)).toBe('none');
     } finally {await page.close();}
 });
+
+
+it('announces a reacquired boon after a fresh expedition clears the previous build', async () => {
+    const page = await mountHud(1280, 900);
+    try {
+        await liveHud(page);
+        const receipts = await page.evaluate(() => {
+            const {game, hud} = (window as any).__live;
+            const install = () => {
+                game.expedition = {...game.expedition, build: {...game.expedition.build, mutations: ['reserve-thruster']}};
+                hud();
+                return [...document.querySelectorAll('.hud-toast:not([hidden])')].some(node => node.textContent?.includes('Reserve Thruster acquired'));
+            };
+            const first = install();
+            for (let i = 0; i < 50; i++) hud.tick(.1);
+            game.newRun(1729, {rigSelect:true}); hud();
+            game.chooseRig('cryo'); hud();
+            // The public start flow synchronously refreshes this empty rig-select build.
+            game.status = 'playing';
+            const second = install();
+            hud();
+            const count = [...document.querySelectorAll('.hud-toast:not([hidden])')].filter(node => node.textContent?.includes('Reserve Thruster acquired')).length;
+            return {first, second, count};
+        });
+        expect(receipts).toEqual({first:true, second:true, count:1});
+    } finally {await page.close();}
+});

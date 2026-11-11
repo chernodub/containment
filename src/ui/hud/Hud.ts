@@ -259,6 +259,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 group.insertBefore(stack, group.querySelector('.boon-set'));
                 nodes['build-strip'].append(group);
             }
+            // A new expedition drops the previous build. Forget removed ownership so
+            // the same boon can announce its successful acquisition on a later run.
+            for (const id of owned) if (!build.mutations.some(mutation => mutation === id)) owned.delete(id);
             for (const id of build.mutations) {
                 if (buildSeen && !owned.has(id))
                     toasts.show(`${MUTATION_CATALOG[id].name} acquired`, MUTATION_CATALOG[id].abilityOnly ? id : familyIcons[MUTATION_CATALOG[id].family], 'reward', `boon:${id}`);
