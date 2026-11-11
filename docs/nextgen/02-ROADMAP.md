@@ -39,9 +39,10 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | Stream | State | Branch / notes |
 |---|---|---|
 | W0 capture harness | done, merged (2026-11-11) | baseline: 66 shots, Metal GPU, ~170 s for `all` |
-| A1 abilities | running (2026-11-11) | worktree branch (see report) |
+| A1 abilities | done; merged into I1a (2026-11-11) | `t3/combat-rig-ability-simulation` / `b5617a2` |
 | G1 render | running (2026-11-11) | worktree branch (see report) |
-| U1 interface | running (2026-11-11) | worktree branch (see report) |
+| U1 interface | done; merged into I1a (2026-11-11) | `t3/nextgen-ui-overhaul` / `5af5da8` |
+| I1a simulation/UI integration | done; gates and capture passed (2026-11-11) | `t3/integrate-combat-rig-ui`; live rigs, initial-choice saves, HUD, augments and debrief; G1 remains separate |
 
 ## Decisions log
 
