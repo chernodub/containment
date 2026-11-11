@@ -81,11 +81,22 @@ export class DepthGame {
  private save(){const result=saveCheckpoint(this.storage,{version:1,savedAt:Math.round(this.elapsed*1000),...this.expedition,abilities:{overdriveCharge:this.abilities.snapshot.overdrive.charge},stats:this.stats});if(result.status==='saved'){this.suppressSave=false;this.checkpointState='saved';}else if(result.status==='unavailable'||result.status==='invalid'){if(this.checkpointState!=='clear-failed')this.checkpointState=this.storage?'save-failed':'unavailable';}}
  chooseMutation(id:MutationId){if(this.status!=='reward'||this.expedition.run.phase==='rig-select')return;this.expedition=claimExpeditionMutation(this.expedition,id);this.combat.setBuild(this.expedition.build);if(this.expedition.run.phase==='combat'){this.enterRoom();return;}this.status='route';this.save();}
  reroll(){if(this.status!=='reward')return false;try{this.expedition=rerollExpedition(this.expedition);this.combat.setCredits(this.expedition.resources.credits);this.save();return true;}catch{return false;}}
+ private applyHealingAllocation(combat:CombatSystem){const act=progressionFor(this.node).act;combat.restoreHealth(35+act*5);combat.restoreArmor(15+act*5);}
+ /** A paid service must add value beyond the standard allocation; preview on detached resources. */
+ canPurchaseService(purchase:'heal'|'armor'|'ammo'){
+  if(this.status!=='reward'||this.expedition.run.phase!=='reward'||!['healing','supplies'].includes(this.node.reward)||this.combat.snapshot.dead)return false;
+  const costs={heal:100,armor:90,ammo:100};if(this.combat.snapshot.credits<costs[purchase])return false;
+  if(purchase==='ammo')return true;
+  const preview=new CombatSystem();preview.setBuild(this.expedition.build);if(!preview.restoreRunResources(this.combat.getRunResources()))return false;
+  if(this.node.reward==='healing')this.applyHealingAllocation(preview);
+  const before=preview.mutationResources();if(purchase==='heal')preview.restoreHealth(30);else preview.restoreArmor(25);
+  const after=preview.mutationResources();return after.health>before.health||after.armor>before.armor;
+ }
  claimResources(purchase:'heal'|'armor'|'ammo'|null=null){
-  if(this.status!=='reward'||!['healing','supplies'].includes(this.node.reward))return;
+  if(this.status!=='reward'||this.expedition.run.phase!=='reward'||!['healing','supplies'].includes(this.node.reward))return;
   const costs={heal:100,armor:90,ammo:100},act=progressionFor(this.node).act;
-  if(purchase&&this.combat.snapshot.credits<costs[purchase])return;
-  if(this.node.reward==='healing'){this.combat.restoreHealth(35+act*5);this.combat.restoreArmor(15+act*5);}
+  if(purchase&&!this.canPurchaseService(purchase))return;
+  if(this.node.reward==='healing')this.applyHealingAllocation(this.combat);
   const pack=(boost=false)=>{const r=this.combat.getRunResources(),ammo={...r.ammo};for(const [id,amount]of Object.entries({rifle:60+act*15,shotgun:18+act*6,plasma:24+act*6,rocket:2})){const key=id as WeaponId;ammo[key]={...ammo[key],reserve:Math.min(100000,ammo[key].reserve+Math.max(1,Math.round(amount*(boost?.65:1)/3)))};}this.combat.restoreRunResources({...r,ammo,grenades:Math.min(6,r.grenades+(boost?0:1))});};
   if(this.node.reward==='supplies')pack();
   if(purchase){this.combat.setCredits(this.combat.snapshot.credits-costs[purchase]);if(purchase==='heal')this.combat.restoreHealth(30);else if(purchase==='armor')this.combat.restoreArmor(25);else pack(true);}
