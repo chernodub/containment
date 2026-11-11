@@ -2,6 +2,7 @@ import {describe,it,expect,vi} from 'vitest';
 import {advance,arena,world} from './A1ReviewFixtures';
 import {ABILITY_CATALOG,RIG_IDS} from '../src/game/abilities/catalog';
 import type {AbilitySlot,RigId} from '../src/game/abilities/contract';
+import {AUGMENT_BOONS} from '../src/game/abilities/augmentCatalog';
 import type {MutationId} from '../src/game/roguelike/types';
 
 const partitions=[50,16.67,4.1675];
@@ -17,6 +18,19 @@ describe('A1 review: exact ability event-time boundaries',()=>{
         const total=definition.castMs+(definition.slot==='dash'?140:0)+(definition.durationMs||250);
         advance(w.system,total,step);
         return {damage:w.hits.reduce((n,h)=>n+h.damage,0),dead:target.health<=0,zones:w.system.snapshot.zones.length,deployables:w.system.snapshot.deployables.length};
+      });
+      expect(results[1]).toEqual(results[0]);expect(results[2]).toEqual(results[0]);
+    });
+  }
+  for(const d of Object.values(ABILITY_CATALOG).filter(d=>d.castMs||d.durationMs&&d.id!=='overclock')) {
+    it(`real ${d.id} preserves applied damage and deaths across all three frame partitions`,()=>{
+      const results=partitions.map(step=>{
+        const {game}=arena(d.rig);vi.spyOn(game.enemies,'update').mockReturnValue([]);
+        const spawn=game.enemies.spawn('brute',d.slot==='dash'?475:500,440);if(!spawn.spawned)throw Error('spawn');
+        game.setAimPoint({x:500,y:440});if(d.slot==='overdrive')game.abilities.addCharge(6000);
+        game.useAbility(d.slot);
+        advance(game,d.castMs+(d.slot==='dash'?140:0)+(d.durationMs||250)+1500,step);
+        return {damage:game.stats.damageDealt,kills:game.stats.kills.total};
       });
       expect(results[1]).toEqual(results[0]);expect(results[2]).toEqual(results[0]);
     });
@@ -76,7 +90,7 @@ describe('A1 review: authoritative telegraphs and cached placement',()=>{
 
 describe('A1 review: dash invulnerability budget',()=>{
   it.each(RIG_IDS)('%s never exceeds35%% even with every relevant augment and cooldown refund kills',rig=>{
-    const all:MutationId[]=['reserve-thruster','tactical-salvage','drive-dynamo','slide-loader','afterquake','reinforced-bulwark','spreading-nova','twin-glacier','scorched-fan','napalm-triplet','forked-overload','twin-pylon'];
+    const all=Object.keys(AUGMENT_BOONS) as MutationId[];
     const w=world(rig,all);let immune=0;const total=60_000,step=5;
     for(let t=0;t<total;t+=step){if(w.system.snapshot.slots!.dash.ready)w.system.use('dash');if(w.system.invulnerable)immune+=step;w.system.onKill(w.targets[0],false);w.system.update(step);}
     expect(immune/total).toBeLessThanOrEqual(.35);expect(immune/total).toBeGreaterThan(.15);

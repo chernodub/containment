@@ -89,6 +89,8 @@ describe('launch body sweeps', () => {
     advance(game, 650, step);
     expect(game.stats.damageDealt.boon).toBe(24);
     expect(game.enemies.getSnapshot(b.enemy.id)!.health).toBe(b.enemy.health - 24);
+    advance(game,125,step); // Receipt latency is bounded by the250ms presentation window.
+    expect(game.stats.damageDealt.boon).toBe(24);
     const contacts = effects.filter(e => e.source === 'boon' && e.damage);
     expect(contacts.map(e => e.targetId)).toEqual([b.enemy.id]);
     expect(effects.some(e => e.type === 'sync-corpse' && e.id === a.enemy.id)).toBe(true);
