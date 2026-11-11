@@ -306,12 +306,12 @@ export class AbilitySystem {
     const ids: number[] = []; let origin: AbilityPoint = cast, target = targets[0];
     while (target && ids.length < cap) {
       const n = damage * .85 ** ids.length;
-      this.event(cast.id, 'link', origin, { targetX: target.x, targetY: target.y, targetIds: [target.id] });
       const before = this.host.statuses(target.id);
       ids.push(target.id);
       const next = this.nearby(target, 200).find(t => !ids.includes(t.id));
       if (next && ids.length < cap) this.host.arc(target, [next]);
       this.hit(target, n, 'shock', before.chilled ? 550 : 350);
+      this.event(cast.id, 'link', origin, { targetX: target.x, targetY: target.y, targetIds: [target.id] });
       origin = target; target = next!;
     }
     return ids;
@@ -332,7 +332,7 @@ export class AbilitySystem {
       this.dash = null;
       if (id === 'frost-trail' || id === 'afterburn') this.addZone(id, dash.start, 0, 2500, 0, false, p, 44);
       if (id === 'static-step') { const targets = this.nearby(p, 160).slice(0, 3); this.host.arc({ id: 0, x: p.x, y: p.y, radius: 0, health: 1 }, targets); for (const t of targets) { this.hit(t, 22, 'shock', 250); this.event(id, 'link', p, { targetX: t.x, targetY: t.y, targetIds: [t.id] }); }}
-      this.event(id, 'dash-end', dash.start, { targetX: p.x, targetY: p.y, angle: dash.angle });
+      this.event(id, 'dash-end', dash.start, { targetX: p.x, targetY: p.y, angle: dash.angle, targetIds: [...dash.hit] });
     }
   }
   private stepZones(ms: number, existingThrough: number): void {

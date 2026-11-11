@@ -115,6 +115,8 @@ describe('Combat Rig review regressions in the real game host', () => {
     expect(ballCharges(effects)[0]).toMatchObject({x: 700, y: 440, durationMs: 500});
     expect(effects.some(e => e.source === 'boon' && e.damage === 22)).toBe(false);
     advance(game, 500);
+    expect(game.stats.damageDealt.boon).toBe(22);
+    advance(game, 250); // Bounded presentation receipts arrive within one window.
     expect(effects.some(e => e.targetId === enemy.id && e.source === 'boon' && e.damage === 22)).toBe(true);
   });
 
@@ -136,6 +138,8 @@ describe('Combat Rig review regressions in the real game host', () => {
     expect(ballCharges(effects)[0].x).toBeCloseTo(550);
     expect(ballCharges(effects)[0].y).toBe(440);
     advance(game, 500);
+    expect(game.stats.damageDealt.boon).toBe(22);
+    advance(game, 250); // Bounded presentation receipts arrive within one window.
     expect(effects.some(e => e.targetId === enemy.id && e.source === 'boon' && e.damage === 22)).toBe(true);
   });
 
