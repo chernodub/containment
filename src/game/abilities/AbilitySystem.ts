@@ -13,6 +13,8 @@ export type AbilityPoint = Readonly<{ x: number; y: number }>;
 /** Simulation adapters: world collision and all damage/status reactions remain authoritative in the host. */
 export interface AbilityHost {
   enabled?: () => boolean;
+  /** Accepted Overdrives allowed between room resets; omitted hosts remain unlimited. */
+  overdriveRoomLimit?: () => number;
   /** Immutable world-geometry identity/revision for placement-cache invalidation. */
   placementRevision?: () => unknown;
   /** Advance shared friendly status/launch clocks to the next ability event boundary. */
@@ -52,6 +54,7 @@ export class AbilitySystem {
   private rig: RigId | null = null;
   private states = Object.fromEntries(ABILITY_SLOTS.map(s => [s, { cooldowns: [], cast: 0, active: 0 }])) as unknown as Record<AbilitySlot, SlotState>;
   private charge = 0;
+  private overdriveUses = 0;
   private immune = 0;
   private dash: { x: number; y: number; angle: number; remaining: number; hit: Set<number>; start: AbilityPoint } | null = null;
   private casts: Cast[] = [];
@@ -83,6 +86,7 @@ export class AbilitySystem {
   resetRoom(): void {
     this.casts.length = this.zones.length = this.deployables.length = this.afterquakes.length = 0;
     this.dash = null; this.immune = 0; this.aimPoint = null; this.movement.x = this.movement.y = 0;
+    this.overdriveUses = 0;
     this.previousTargets.clear(); this.currentTargetIds.clear(); this.hasPreviousMarine = false; this.placementCache = null;
     for (const state of Object.values(this.states)) { state.cooldowns.length = 0; state.cast = state.active = 0; }
     this.cached = null;
@@ -97,10 +101,11 @@ export class AbilitySystem {
   get hostileTimeScale(): number { return this.active('overclock') ? .3 : 1; }
   /** Hostile simulation time for the next friendly step, including a partial Overclock expiry. */
   hostileDelta(ms: number): number { return Number.isFinite(ms) && ms > 0 ? ms - (this.overclocked ? Math.min(ms, this.states.overdrive.active) * .7 : 0) : 0; }
-  get moveSpeedMultiplier(): number { return this.active('meltdown') ? 1.25 : 1; }
+  get moveSpeedMultiplier(): number { return this.active('meltdown') ? 1.4 : 1; }
   get overclocked(): boolean { return this.active('overclock'); }
   get ignitingShots(): boolean { return this.active('meltdown'); }
   private active(id: AbilityId): boolean { return !!this.rig && RIG_CATALOG[this.rig].abilities.overdrive === id && this.states.overdrive.active > 0; }
+  private get overdriveRoomLimited(): boolean { return this.overdriveUses >= (this.host.overdriveRoomLimit?.() ?? Infinity); }
   private definition(slot: AbilitySlot) { return ABILITY_CATALOG[RIG_CATALOG[this.rig!].abilities[slot]]; }
   private maxCharges(slot: AbilitySlot): number { return this.definition(slot).charges + (slot === 'dash' && this.host.has('reserve-thruster' as MutationId) ? 1 : 0); }
   private event(id: AbilityId, phase: AbilityEvent['phase'], p: AbilityPoint, extra: Partial<AbilityEvent> = {}): void {
@@ -116,7 +121,7 @@ export class AbilitySystem {
     if (!this.rig) { this.event(RIG_CATALOG.breacher.abilities[slot], 'denied', this.host.player(), { denial: 'no-rig' }); return false; }
     const d = this.definition(slot), p = this.host.player(), state = this.states[slot];
     enabled = enabled && this.host.enabled?.() !== false;
-    const denial = !enabled || !Number.isFinite(p.x) || !Number.isFinite(p.y) || !Number.isFinite(p.angle) ? 'blocked' : this.casts.length || this.dash ? 'casting' : slot === 'overdrive' ? this.charge < 1 || state.active > 0 ? 'no-charge' : null : state.cooldowns.length >= this.maxCharges(slot) ? 'cooldown' : null;
+    const denial = !enabled || (slot === 'overdrive' && this.overdriveRoomLimited) || !Number.isFinite(p.x) || !Number.isFinite(p.y) || !Number.isFinite(p.angle) ? 'blocked' : this.casts.length || this.dash ? 'casting' : slot === 'overdrive' ? this.charge < 1 || state.active > 0 ? 'no-charge' : null : state.cooldowns.length >= this.maxCharges(slot) ? 'cooldown' : null;
     if (denial) { this.event(d.id, 'denied', p, { denial }); return false; }
     let angle = p.angle;
     if (slot === 'dash') { const m = this.movement; if (m.x || m.y) angle = Math.atan2(m.y, m.x); }
@@ -132,7 +137,7 @@ export class AbilitySystem {
       cast.placements = this.planPlacements(cast);
       if (!cast.placements.length) { this.event(d.id, 'denied', p, { denial: 'blocked' }); return false; }
     }
-    if (slot === 'overdrive') this.charge = 0; else state.cooldowns.push(d.cooldownMs);
+    if (slot === 'overdrive') { this.charge = 0; this.overdriveUses++; } else state.cooldowns.push(d.cooldownMs);
     this.cached = null;
     if (d.castMs) { state.cast = d.castMs; this.casts.push(cast); }
     for (const preview of cast.placements ?? [target]) this.event(d.id, 'cast', p, {
@@ -149,10 +154,10 @@ export class AbilitySystem {
   addCharge(damage: number, kills = 0): void {
     if (!this.rig || !Number.isFinite(damage) || !Number.isFinite(kills) || damage < 0 || kills < 0) return;
     const before = this.charge;
-    const next = this.charge + (damage / 6000 + kills * .025) * (this.host.has('drive-dynamo' as MutationId) ? 1.3 : 1);
+    const next = this.charge + (damage / 12000 + kills * .0125) * (this.host.has('drive-dynamo' as MutationId) ? 1.3 : 1);
     this.charge = next >= 1 - TIMER_EPSILON ? 1 : next;
     if (before !== this.charge) this.cached = null;
-    if (before < 1 && this.charge === 1) this.event(this.definition('overdrive').id, 'overdrive-ready', this.host.player());
+    if (before < 1 && this.charge === 1 && !this.overdriveRoomLimited) this.event(this.definition('overdrive').id, 'overdrive-ready', this.host.player());
   }
 
   private nearby(point: AbilityPoint, radius: number): MutationTarget[] {
@@ -244,7 +249,8 @@ export class AbilitySystem {
     const d = ABILITY_CATALOG[cast.id];
     let ids: number[] = [];
     if (d.slot === 'dash') {
-      this.dash = { x: Math.cos(cast.angle) * 150, y: Math.sin(cast.angle) * 150, angle: cast.angle, remaining: DASH_DURATION_MS, hit: new Set(), start: { x: cast.x, y: cast.y } };
+      const distance = d.shape.kind==='dash'?d.shape.distance:150;
+      this.dash = { x: Math.cos(cast.angle) * distance, y: Math.sin(cast.angle) * distance, angle: cast.angle, remaining: DASH_DURATION_MS, hit: new Set(), start: { x: cast.x, y: cast.y } };
       this.immune = DASH_INVULNERABLE_MS;
       if (this.host.has('slide-loader' as MutationId)) this.host.reload();
       this.event(cast.id, 'dash-start', cast, { angle: cast.angle, targetX: cast.x + this.dash.x, targetY: cast.y + this.dash.y, durationMs: DASH_DURATION_MS });
@@ -259,7 +265,7 @@ export class AbilitySystem {
         this.event(cast.id, 'impact', cast, { radius, targetIds: ids }); return;
       }
       case 'flashfire': {
-        for (const t of this.nearby(cast, 300)) { const a = Math.atan2(t.y - cast.y, t.x - cast.x) - cast.angle; if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) <= 1.22 / 2) { this.hit(t, 40, 'burn'); ids.push(t.id); } }
+        for (const t of this.nearby(cast, 300)) { const a = Math.atan2(t.y - cast.y, t.x - cast.x) - cast.angle; if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) <= 1.22 / 2) { this.hit(t, 25, 'burn'); ids.push(t.id); } }
         if (cast.ground) {
           this.addZone(cast.id, cast.ground, 120, 2500, 4);
           this.event(cast.id, 'impact', cast, { targetX: cast.ground.x, targetY: cast.ground.y, radius: 120, length: undefined, arcRadians: undefined, durationMs: 2500 });
@@ -276,7 +282,7 @@ export class AbilitySystem {
       }
       case 'napalm-charge': {
         for (const p of cast.placements ?? this.planPlacements(cast)) {
-          this.addZone(cast.id, p, p.radius ?? 120, 6000, 4.5);
+          this.addZone(cast.id, p, p.radius ?? 120, 6000, 6.5);
           this.event(cast.id, 'impact', cast, { targetX: p.x, targetY: p.y, radius: p.radius ?? 120, durationMs: d.durationMs });
         }
         return;
@@ -546,15 +552,16 @@ export class AbilitySystem {
   get snapshot(): AbilitiesSnapshot {
     const p = this.host.player();
     const enabled = this.host.enabled?.() !== false && Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.angle);
+    const roomLimited = this.overdriveRoomLimited;
     const powerReady = !!this.rig && enabled && !this.casts.length && !this.dash && this.states.power.cooldowns.length < this.maxCharges('power') && this.powerPlacementAvailable();
-    if (this.cached && this.cachedEnabled === enabled && (!this.hasPylon() || (this.cachedLinkX === p.x && this.cachedLinkY === p.y)) && (!this.rig || (this.cached.slots?.dash.maxCharges === this.maxCharges('dash') && this.cached.slots?.power.ready === powerReady))) return this.cached;
+    if (this.cached && this.cachedEnabled === enabled && !!this.cached.overdrive.roomLimited === roomLimited && (!this.hasPylon() || (this.cachedLinkX === p.x && this.cachedLinkY === p.y)) && (!this.rig || (this.cached.slots?.dash.maxCharges === this.maxCharges('dash') && this.cached.slots?.power.ready === powerReady))) return this.cached;
     this.cachedEnabled = enabled;
     this.cachedLinkX = p.x; this.cachedLinkY = p.y;
     const slots = this.rig ? Object.fromEntries(ABILITY_SLOTS.map(slot => {
       const d = this.definition(slot), state = this.states[slot], charges = slot === 'overdrive' ? +(this.charge >= 1) : Math.max(0, this.maxCharges(slot) - state.cooldowns.length);
-      return [slot, Object.freeze({ slot, id: d.id, ready: enabled && !this.casts.length && !this.dash && charges > 0 && (slot !== 'overdrive' || !state.active) && (slot !== 'power' || powerReady), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs)) })];
+      return [slot, Object.freeze({ slot, id: d.id, ready: enabled && !this.casts.length && !this.dash && charges > 0 && (slot !== 'overdrive' || (!state.active && !roomLimited)) && (slot !== 'power' || powerReady), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs)) })];
     })) as AbilitiesSnapshot['slots'] : null;
-    return this.cached = Object.freeze({ rig: this.rig, slots: slots && Object.freeze(slots), overdrive: Object.freeze({ charge: this.charge, ready: this.charge >= 1, active: this.states.overdrive.active > 0, activeRemainingMs: this.states.overdrive.active }), invulnerable: this.invulnerable, dashing: this.dashing, hostileTimeScale: this.hostileTimeScale,
+    return this.cached = Object.freeze({ rig: this.rig, slots: slots && Object.freeze(slots), overdrive: Object.freeze({ charge: this.charge, ready: this.charge >= 1 && !roomLimited, active: this.states.overdrive.active > 0, activeRemainingMs: this.states.overdrive.active, ...(roomLimited ? {roomLimited: true} : {}) }), invulnerable: this.invulnerable, dashing: this.dashing, hostileTimeScale: this.hostileTimeScale,
       deployables: Object.freeze(this.deployables.map(d => { const { tick, assault, linkCooldowns, ...entity } = d; return Object.freeze(entity); })),
       zones: Object.freeze(this.zones.map(z => { const { tick, pulses, damage, ...zone } = z; return Object.freeze(zone); })),
       links: Object.freeze(this.deployables.filter(d => this.linkActive(d, p)).map(d => Object.freeze({ id: d.id, ability: 'tesla-pylon' as const, element: 'arc' as const, x: d.x, y: d.y, targetX: p.x, targetY: p.y, width: 28 }))) });

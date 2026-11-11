@@ -46,7 +46,7 @@ export type CollisionSteeringContext = Readonly<{
 }>;
 
 export type EnemySystemOptions = Readonly<{
-  balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean};
+  balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean;chargeWindupMs?:number;chargeCooldownMs?:number;chargeInitialCooldownMs?:number;championHealth?:number;championDamage?:number};
   canAttack?: (from:EnemyPlayerState & {type:StandardEnemyId},to:EnemyPlayerState)=>boolean;
   route?: (enemy: EnemyPlayerState & {radius:number}, player:EnemyPlayerState) => EnemyPlayerState|null;
   canMove?: (context: CollisionSteeringContext) => boolean;
@@ -323,7 +323,7 @@ export class EnemySystem {
       maxArmor,
       radius: definition.radius,
       speed: definition.speed*this.#balance.speed,baseSpeed:definition.speed*this.#balance.speed,
-      windupMs:0,pendingAttack:null,lockX:0,lockY:0,specialCooldownMs:1500,chargeMs:0,
+      windupMs:0,pendingAttack:null,lockX:0,lockY:0,specialCooldownMs:type==='brute'&&elite===true?(this.#balance.chargeInitialCooldownMs??1500):1500,chargeMs:0,
       contactDamage: definition.contactDamage * (elite?this.#balance.eliteDamage:1)*this.#balance.damage,
       creditReward: Math.round(definition.creditReward * multiplier),
       dropChance: definition.dropChance,
@@ -353,7 +353,10 @@ export class EnemySystem {
 
   promote(id:number,kind:'warden'|'matron'){
     this.#cachedSnapshot=null;
-   const e=this.#enemies.get(id);if(!e)return;e.champion=kind;e.health=e.maxHealth=kind==='warden'?760:1150;e.armor=e.maxArmor=kind==='warden'?120:0;e.speed=e.baseSpeed=kind==='warden'?88:76;e.contactDamage=kind==='warden'?28:24;e.creditReward=kind==='warden'?100:150;
+   const e=this.#enemies.get(id);if(!e)return;
+   // Promotion keeps the authored Warden opening after an ordinary elite received a longer initial delay.
+   if(kind==='warden'&&e.type==='brute'&&e.elite&&this.#balance.chargeInitialCooldownMs!==undefined)e.specialCooldownMs=1500;
+   e.champion=kind;e.health=e.maxHealth=(kind==='warden'?760:1150)*(this.#balance.championHealth??1);e.armor=e.maxArmor=kind==='warden'?120:0;e.speed=e.baseSpeed=kind==='warden'?88:76;e.contactDamage=(kind==='warden'?28:24)*(this.#balance.championDamage??1);e.creditReward=kind==='warden'?100:150;
   }
 
   update(deltaMs: number, player: EnemyPlayerState): readonly EnemyEvent[] {
@@ -760,7 +763,8 @@ export class EnemySystem {
     const playerRadius = player.radius ?? DEFAULT_PLAYER_RADIUS;
     if(this.#balance.specials&&enemy.windupMs>0)return;
     if(this.#balance.specials&&(enemy.type==='brute'&&enemy.elite||enemy.champion==='warden')&&enemy.specialCooldownMs===0&&distance>110&&distance<420&&this.#canAttack?.(enemy,player)!==false){
-     enemy.windupMs=850;enemy.pendingAttack='charge';enemy.lockX=player.x-enemy.x;enemy.lockY=player.y-enemy.y;enemy.specialCooldownMs=4600;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:player.x,targetY:player.y,durationMs:850}));return;
+     const windup=enemy.champion==='warden'?850:this.#balance.chargeWindupMs??850,cooldown=enemy.champion==='warden'?4600:this.#balance.chargeCooldownMs??4600;
+     enemy.windupMs=windup;enemy.pendingAttack='charge';enemy.lockX=player.x-enemy.x;enemy.lockY=player.y-enemy.y;enemy.specialCooldownMs=cooldown;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:player.x,targetY:player.y,durationMs:windup}));return;
     }
     if (
       distance <= enemy.radius + playerRadius &&

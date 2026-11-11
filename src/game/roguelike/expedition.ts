@@ -7,6 +7,7 @@ import type {BuildState,MutationId,RunCheckpoint,RunResources,RunState} from './
 
 export type Expedition = Readonly<{run:RunState;build:BuildState;resources:RunResources;abilities?:RunCheckpoint['abilities'];stats?:RunCheckpoint['stats']}>;
 export type ExpeditionRuntimeState = Pick<RunCheckpoint,'abilities'|'stats'>;
+export type ExpeditionStartOptions = {rigSelect?:boolean;version?:1|2|3;rig?:RigId};
 const resourcesCopy=(resources:RunResources):RunResources=>Object.freeze({...resources,ammo:Object.freeze(Object.fromEntries(Object.entries(resources.ammo).map(([key,ammo])=>[key,Object.freeze({...ammo})])) as RunResources['ammo'])});
 function assertExpedition(expedition:Expedition):void {
   if(!expedition||!isValidRunState(expedition.run)||!isValidBuildState(expedition.build)||!isValidRunResources(expedition.resources)||!isValidCheckpointExtensions(expedition))throw new Error('Invalid expedition');
@@ -30,11 +31,15 @@ const offerSeed=(expedition:Expedition):number=>{
   for(const char of expedition.run.currentNodeId)hash=Math.imul(hash^char.charCodeAt(0),16777619)>>>0;
   return hash;
 };
-export function createExpedition(seed:number,resources:RunResources,options:{rigSelect?:boolean}={}):Expedition {
+export function createExpedition(seed:number,resources:RunResources,options:ExpeditionStartOptions={}):Expedition {
   if(!isValidRunResources(resources)||resources.health<=0)throw new Error('A run must start alive');
-  return snapshot({...createRun(seed),phase:options.rigSelect?'rig-select':'starting-boon'},{...createBuild(),rig:'breacher'},resources);
+  const version=options.version??3,rig=options.rig??'breacher';
+  if(version!==1&&version!==2&&version!==3)throw new Error('Unsupported run version');
+  if(!Object.hasOwn(RIG_CATALOG,rig))throw new Error('Unknown starting rig');
+  const run:RunState=version===3?{...createRun(seed),phase:options.rigSelect?'rig-select':'starting-boon'}:{version,seed,currentNodeId:generateRun(seed,version).startId,completedNodeIds:[],phase:'combat',...(version===2?{draftRoll:0}:{})};
+  return snapshot(run,{...createBuild(),rig},resources);
 }
-/** Choose once before the starting boon. Legacy starts skip this phase with Breacher. */
+/** Choose once before the starting boon. Legacy starts choose their kit in the factory. */
 export function chooseExpeditionRig(expedition:Expedition,id:RigId):Expedition {
   assertExpedition(expedition);
   if(expedition.run.phase!=='rig-select'||!Object.hasOwn(RIG_CATALOG,id))throw new Error('Rig selection unavailable');

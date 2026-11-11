@@ -184,7 +184,7 @@ describe('review: altered shapes have exact telegraphs and hit boundaries',()=>{
     const impacts=w.events.filter(e=>e.phase==='impact');
     expect(impacts.map(e=>({x:e.targetX,y:e.targetY,radius:e.radius}))).toEqual([-100,0,100].map(y=>({x:300,y,radius:80})));
     w.advance(250);
-    expect(w.hits).toEqual([{id:inside.id,amount:4.5}]);
+    expect(w.hits).toEqual([{id:inside.id,amount:6.5}]);
     expect(w.hits.some(h=>h.id===outside.id)).toBe(false);
   });
 

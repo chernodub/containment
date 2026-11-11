@@ -88,7 +88,29 @@ export async function checkCombatRig(page) {
   assert.equal(await page.evaluate(() => window.__containmentDebug.game.stats.overdrivesUsed), 1);
   await page.evaluate(() => { const d = window.__containmentDebug; d.step(20000); d.fillOverdrive(); });
   assert.equal(await page.evaluate(() => window.__containmentDebug.game.abilities.snapshot.slots.tactical.ready), true);
-  assert.equal(await page.evaluate(() => window.__containmentDebug.game.abilities.snapshot.overdrive.ready), true);
+  const heldDrive=await page.evaluate(() => window.__containmentDebug.game.abilities.snapshot.overdrive);
+  assert.equal(heldDrive.ready,false);assert.equal(heldDrive.roomLimited,true);assert.equal(heldDrive.charge,1);
+  assert.equal(await page.locator('[data-ability="overdrive"] .ability-value').textContent(),'NEXT ROOM');
+  const beforeLimitedPress=await uses();await page.keyboard.press('v');
+  assert.deepEqual(await uses(),beforeLimitedPress,'A full ordinary-room meter must not permit a second Overdrive');
+  // Preserve non-vacuous pause/typing checks with every slot available in the real holdout exception.
+  await page.evaluate(async()=>{const d=window.__containmentDebug;await d.gotoRoom('transmission-chamber',{rig:'arc'});d.fillOverdrive();});
+  await settleRoom();
+  const holdoutAim=await page.evaluate(()=>{
+    const d=window.__containmentDebug,g=d.game;
+    for(let y=180;y<innerHeight-160;y+=20)for(let x=180;x<innerWidth-180;x+=20){
+      const p=d.renderer.pointer(x,y);if(!p)continue;
+      const range=Math.hypot(p.x-g.player.x,p.y-g.player.y);
+      if(range<180||range>260||!d.clearShot(p.x,p.y))continue;
+      if([.2,.4,.6,.8,1].every(t=>d.canStand(g.player.x+(p.x-g.player.x)*t,g.player.y+(p.y-g.player.y)*t,20)))return {x,y};
+    }
+    throw Error('No legal holdout power lane for native pause/typing checks');
+  });
+  await page.mouse.move(holdoutAim.x,holdoutAim.y);
+  await page.evaluate(()=>window.__containmentDebug.nativeInput(true));
+  await page.waitForFunction(()=>window.__containmentDebug.canStepNative);
+  await page.evaluate(()=>window.__containmentDebug.step(1000/60));
+  assert.equal(await page.evaluate(()=>Object.values(window.__containmentDebug.game.abilities.snapshot.slots).every(s=>s.ready)),true,'All four abilities must be usable before pause/typing checks');
   await page.locator('#pause').click();
   const beforePause = await uses();
   for (const key of ['Shift', 'q', 'f', 'v']) await page.keyboard.press(key);

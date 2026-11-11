@@ -70,7 +70,7 @@ describe('Combat Rig review regressions in the real game host', () => {
     const resources = game.combat.getRunResources();
     expect(game.combat.restoreRunResources({...resources, health: 50,
       ammo: {...resources.ammo, rifle: {magazine: 0, reserve: 60}}})).toBe(true);
-    game.abilities.addCharge(6000);
+    game.abilities.addCharge(12000);
     expect(game.useAbility('overdrive')).toBe(true);
     expect(game.combat.snapshot.health).toBe(50);
     game.switchWeapon('rifle');
@@ -91,7 +91,7 @@ describe('Combat Rig review regressions in the real game host', () => {
     for (const target of game.targets()) game['mutations'].applyAbilityStatus(target, 'shock', 2000);
     expect(game.boonStatuses(victim.id).burning).toBe(false);
     expect(game.boonStatuses(neighbor.id).burning).toBe(false);
-    game.abilities.addCharge(6000);
+    game.abilities.addCharge(12000);
     expect(game.useAbility('overdrive')).toBe(true);
     game.switchWeapon('pistol');
     game.update(50, {...idle, fire: true});
