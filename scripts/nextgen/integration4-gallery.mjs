@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
+import {stitchPngFrames} from './sprites.mjs';
 const labels=process.argv.slice(2);
 assert(labels.length,'Pass successful capture labels');
 assert(labels.every(l=>/^[\w.-]+$/.test(l)));
@@ -22,6 +23,16 @@ for(const label of labels){
   const file=`${label}-${shot.file}`;assert(!names.has(file));names.add(file);
   await copyFile(resolve(source,shot.file),resolve(out,file));manifest[key].push({...shot,file,sourceCapture:label,sourceSHA:m.gitSHA});
  }
+}
+// Calm plus motion makes each story-room composition reviewable in one sheet.
+const rooms=[...new Set(manifest.shots.filter(s=>s.scenario==='g2-calm-high').map(s=>s.room))];
+for(const room of rooms){
+ const calm=manifest.shots.find(s=>s.room===room&&s.scenario==='g2-calm-high');
+ const motion=manifest.shots.filter(s=>s.room===room&&s.scenario==='g2-kiting-high');
+ if(!motion.length)continue;
+ const sources=[calm,...motion],sheet=stitchPngFrames(await Promise.all(sources.map(s=>readFile(resolve(out,s.file))))),file=`room-${room}-calm-kiting.png`;
+ await writeFile(resolve(out,file),sheet.png);const {png,...dimensions}=sheet;
+ manifest.sprites.push({scenario:'room-calm-kiting',room,file,...dimensions,sourceFiles:sources.map(s=>s.file),simulationMs:sources.map(s=>s.simulationMs)});
 }
 await writeFile(resolve(out,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
 await writeFile(resolve(out,'pngs.txt'),[...manifest.shots,...manifest.sprites].map(s=>resolve(out,s.file)).join('\n')+'\n');

@@ -48,7 +48,8 @@ try{
    const counts=await page.evaluate(heavy=>{
     const d=window.__containmentDebug,g=d.game,r=d.renderer;
     if(!heavy){d.refresh();return {...r.renderer.info.render};}
-    let calls=0,triangles=0;const render=r.renderer.render;
+    let calls=0,triangles=0,programs=0;const render=r.renderer.render,gl=r.renderer.getContext(),createProgram=gl.createProgram;
+    gl.createProgram=function(){programs++;return createProgram.call(gl);};
     r.renderer.render=function(...args){const result=render.apply(this,args);calls=Math.max(calls,this.info.render.calls);triangles=Math.max(triangles,this.info.render.triangles);return result;};
     try{
      const slots=['power','dash','tactical','overdrive'];g.switchWeapon('rifle');
@@ -59,8 +60,9 @@ try{
       if(!accepted)throw Error('Ranking ability denied '+slot);d.step(Math.max(150,g.abilities.snapshot.slots[slot].castRemainingMs+30));
      }
      d.setInput({fire:true,autoAim:true,angle:null});d.step(1000);
-    }finally{r.renderer.render=render;}
-    return {calls,triangles,initialEnemies:25,remainingEnemies:g.enemies.activeCount,fixture:'25 legal actors + native full Arc kit, fixed-step draw inventory'};
+    }finally{r.renderer.render=render;gl.createProgram=createProgram;}
+    if(programs)throw Error('Heavy inventory compiled '+programs+' combat programs');
+    return {calls,triangles,programs,initialEnemies:25,remainingEnemies:g.enemies.activeCount,fixture:'25 legal actors + native full Arc kit, fixed-step draw inventory'};
    },heavyScan);
    report.scan.push({room,...counts,host:host()});console.log(`scan ${room}: ${counts.calls} draws`);
   }
