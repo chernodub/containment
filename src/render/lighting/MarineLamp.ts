@@ -4,6 +4,7 @@ import * as T from 'three';
 export class MarineLamp {
   readonly root = new T.Group();
   readonly light = new T.SpotLight(0xccefff, 12, 11, Math.PI / 7, .65, 2);
+  readonly suitFill = new T.PointLight(0xabc7df, 0, 4.8, 2);
   readonly cone: T.Mesh<T.CylinderGeometry, T.ShaderMaterial>;
   private readonly direction = new T.Vector3();
   private readonly down = new T.Vector3(0, -1, 0);
@@ -20,16 +21,18 @@ export class MarineLamp {
     });
     this.cone = new T.Mesh(geometry, material);
     this.root.name = 'marine-lamp'; this.cone.name = 'marine-lamp-scattering'; this.cone.renderOrder = 2;
-    this.root.add(this.light, this.light.target, this.cone);
+    this.root.add(this.light, this.light.target, this.suitFill, this.cone);this.suitFill.visible=false;
   }
   update(x: number, z: number, angle: number) {
     const dx = Math.cos(angle), dz = Math.sin(angle);
     this.light.position.set(x, 1.45, z);
+    this.suitFill.position.set(x, .85, z);
     this.light.target.position.set(x + dx * 8, .15, z + dz * 8);
     this.cone.position.copy(this.light.position);
     this.direction.subVectors(this.light.target.position, this.light.position).normalize();
     this.cone.quaternion.setFromUnitVectors(this.down, this.direction);
   }
+  setReactor(reactor: boolean) { this.suitFill.visible=reactor;this.suitFill.intensity=reactor?24:0; }
   setQuality(high: boolean, atmosphere = true) { this.cone.visible = high && atmosphere; }
   dispose() { this.cone.geometry.dispose(); this.cone.material.dispose(); this.root.removeFromParent(); }
 }

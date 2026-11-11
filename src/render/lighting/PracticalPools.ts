@@ -8,11 +8,11 @@ export class PracticalPools {
   private readonly color = new T.Color();
   private readonly fillColor = new T.Color(0xdbe4e8);
   constructor(scene:T.Scene) {
-    const geometry=new T.PlaneGeometry(2,2);geometry.rotateX(-Math.PI/2);
+    const geometry=new T.PlaneGeometry(2,2);geometry.rotateX(-Math.PI/2);geometry.setAttribute('reactorPoolAmount',new T.InstancedBufferAttribute(new Float32Array(4),1));
     const material=new T.ShaderMaterial({
       transparent:true,depthWrite:false,blending:T.AdditiveBlending,
-      vertexShader:`varying vec2 poolUv;varying vec3 poolColor;void main(){poolUv=uv;poolColor=instanceColor;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`,
-      fragmentShader:`varying vec2 poolUv;varying vec3 poolColor;void main(){vec2 q=poolUv*2.0-1.0;float r=length(q);float pool=pow(max(0.0,1.0-r*r),2.0);gl_FragColor=vec4(poolColor,pool*.22);
+      vertexShader:`attribute float reactorPoolAmount;varying vec2 poolUv;varying vec3 poolColor;varying float reactorPool;void main(){poolUv=uv;poolColor=instanceColor;reactorPool=reactorPoolAmount;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`,
+      fragmentShader:`varying vec2 poolUv;varying vec3 poolColor;varying float reactorPool;void main(){vec2 q=poolUv*2.0-1.0;float r=length(q);float pool=pow(max(0.0,1.0-r*r),mix(2.0,3.0,reactorPool));gl_FragColor=vec4(poolColor,pool*.22);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`,
@@ -26,11 +26,12 @@ export class PracticalPools {
     let count=0;
     for(const fixture of fixtures){
       if(!fixture.visible||fixture.intensity<=0||count>=(high?4:2))continue;
-      const radius=Math.min(6.5,Math.max(3,fixture.distance*.72));
+      const reactor=!!fixture.userData.reactorMood;
+      const radius=reactor?Math.min(5.2,Math.max(2.8,fixture.distance*.48)):Math.min(6.5,Math.max(3,fixture.distance*.72));
       this.dummy.position.set(fixture.position.x,.035,fixture.position.z);this.dummy.scale.set(radius,1,radius);this.dummy.updateMatrix();this.root.setMatrixAt(count,this.dummy.matrix);
-      this.color.copy(fixture.color).lerp(this.fillColor,.48).multiplyScalar(Math.min(1.5,.6+fixture.intensity/32));this.root.setColorAt(count++,this.color);
+      this.color.copy(fixture.color);if(!reactor)this.color.lerp(this.fillColor,.48);this.color.multiplyScalar(Math.min(1.5,.6+fixture.intensity/32));this.root.setColorAt(count,this.color);(this.root.geometry.getAttribute('reactorPoolAmount') as T.InstancedBufferAttribute).setX(count,reactor?1:0);count++;
     }
-    this.root.count=count;this.root.instanceMatrix.needsUpdate=true;if(this.root.instanceColor)this.root.instanceColor.needsUpdate=true;
+    this.root.count=count;this.root.geometry.getAttribute('reactorPoolAmount').needsUpdate=true;this.root.instanceMatrix.needsUpdate=true;if(this.root.instanceColor)this.root.instanceColor.needsUpdate=true;
   }
   dispose(){if(this.disposed)return;this.disposed=true;this.root.geometry.dispose();this.root.material.dispose();this.root.removeFromParent();}
 }

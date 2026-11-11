@@ -50,7 +50,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
     material.customProgramCacheKey = () => 'room-floor-macro-v2';
     material.needsUpdate = true;
   }
-  uniforms.albedoGain.value = ({cryogenics:4.8,habitation:6.4,security:6.8,cargo:4.8,communications:4.8,engineering:7.2,maintenance:9,infested:7.4,containment:8,reactor:4.8} as const)[environment];
+  uniforms.albedoGain.value = ({cryogenics:4.8,habitation:6.4,security:6.8,cargo:4.8,communications:4.8,engineering:7.2,maintenance:9,infested:7.4,containment:8,reactor:3.2} as const)[environment];
   uniforms.wetness.value = environment === 'maintenance' ? 1 : environment === 'infested' ? .28 : environment === 'cryogenics' ? .18 : 0;
-  uniforms.grime.value = environment === 'cargo' || environment === 'engineering' ? .32 : environment === 'infested' ? .32 : environment === 'containment' ? .1 : .2;
+  uniforms.grime.value = environment === 'reactor' ? .3 : environment === 'cargo' || environment === 'engineering' ? .32 : environment === 'infested' ? .32 : environment === 'containment' ? .1 : .2;
 }

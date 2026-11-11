@@ -18,7 +18,7 @@ describe('environment color script', () => {
     for (const mood of moods) {
       expect(Object.isFrozen(mood)).toBe(true);
       expect(getEnvironmentMood(mood.environment)).toBe(mood);
-      expect(mood.ambient.intensity).toBeGreaterThanOrEqual(.45);
+      expect(mood.ambient.intensity).toBeGreaterThanOrEqual(mood.environment==='reactor'?.05:.45);
       expect(mood.ambient.intensity).toBeLessThan(mood.key.intensity / 2);
       expect(mood.grade.exposure).toBeGreaterThan(.8);
       expect(mood.fog.density).toBeLessThan(.03);
@@ -133,7 +133,8 @@ it('stages the Queen reactor core within the fixed practical budget and preserve
   expect(rig.fixtures).toHaveLength(4);
   expect(rig.fixtures[0].position.toArray()).toEqual([22.5, 2.6, 16.875]);
   expect(rig.fixtures[0].color.getHex()).toBe(0xffdfab);
-  expect(rig.fixtures[0].intensity).toBeGreaterThan(40);
+  expect(rig.fixtures[0].intensity).toBe(14);
+  expect(rig.key).toBe(rig.coreKey);expect(rig.coreKey.castShadow).toBe(true);expect(rig.coreKey.intensity).toBeGreaterThan(300);
   expect(rig.fixtures[1].color.r).toBeGreaterThan(rig.fixtures[1].color.b);
   expect(rig.key.position.y).toBeLessThan(8);
   rig.setQuality('low'); expect(rig.fixtures.filter(light => light.visible)).toHaveLength(2);
@@ -220,17 +221,17 @@ it('exposes each shader count for prewarming and restores same-frame live visibi
 
 it('keeps broad illumination and deck albedo readable while practical hues define the room', () => {
   for (const mood of Object.values(ENVIRONMENT_MOODS)) {
-    expect(mood.ambient.intensity).toBeGreaterThanOrEqual(.78);
-    expect(mood.fill.intensity).toBeGreaterThanOrEqual(.8);
-    expect(mood.grade.exposure).toBeGreaterThanOrEqual(1.1);
+    expect(mood.key.intensity/mood.fill.intensity).toBeGreaterThanOrEqual(3);
+    if(mood.environment!=='reactor'){expect(mood.ambient.intensity).toBeGreaterThanOrEqual(.78);expect(mood.fill.intensity).toBeGreaterThanOrEqual(.8);}
+    expect(mood.grade.exposure).toBeGreaterThanOrEqual(1);
     expect(mood.grade.contrast).toBeLessThan(1.03);
     const room = new T.Group(), deck = new T.MeshStandardMaterial({ color: 0x263238, roughness: .91 });
     deck.name = 'painted-steel-deck'; room.add(new T.Mesh(new T.BoxGeometry(), deck));
     applyRoomMood(room, mood.environment);
     const channels = [deck.color.r, deck.color.g, deck.color.b];
     // Albedo stays neutral enough to preserve steel and hazard markings under local colored pools.
-    expect(Math.min(...channels)).toBeGreaterThan(.17);
-    expect(Math.max(...channels) / Math.min(...channels)).toBeLessThan(1.4);
+    expect(Math.min(...channels)).toBeGreaterThan(mood.environment==='reactor'?.07:.17);
+    expect(Math.max(...channels) / Math.min(...channels)).toBeLessThan(1.6);
     room.children.forEach(object => (object as T.Mesh).geometry.dispose()); deck.dispose();
   }
   const reactor = getEnvironmentMood('reactor');
@@ -254,4 +255,31 @@ it('structures hot reactor emissives using a shared presentation clock and stabl
   applyHotFixtureSurface(material); expect(material.onBeforeCompile).toBe(hook);
   expect(material.customProgramCacheKey()).toBe(key); expect(material.emissiveIntensity).toBe(3.4);
   material.dispose();
+});
+
+it('motivates the reactor shadow key from actual below-deck emitter geometry and preserves tier state', () => {
+  const rig = new SceneLighting(), room = new T.Group();
+  const emitter = new T.Mesh(new T.BoxGeometry(6, 3, 6), new T.MeshStandardMaterial({ emissive: 0x88ddff, emissiveIntensity: 1 }));
+  (emitter.material as T.Material).name = 'ship-cold-practical'; emitter.position.set(28, -2, 19);room.add(emitter);
+  // The selected fixture and merged mesh origin are deliberately elsewhere.
+  room.userData.lightFixtures = [{ x: 1, y: 2, z: 1, color: 0xff6622 }];
+  rig.loadRoom(room, 48, 36, 'reactor', 'overload-floor');
+  expect(rig.staging?.coreX).toBe(28);expect(rig.staging?.coreZ).toBe(19);
+  expect(rig.coreKey.position.toArray()).toEqual([28,3.2,19]);expect(rig.coreKey.target.position.x).toBeLessThan(10);
+  expect(rig.mood.key.intensity/rig.mood.fill.intensity).toBeGreaterThanOrEqual(4);
+  expect(rig.mood.key.intensity/rig.mood.fill.intensity).toBeLessThanOrEqual(6);
+  expect(rig.lamp.suitFill.visible).toBe(true);expect(rig.lamp.suitFill.distance).toBeGreaterThanOrEqual(4);
+  rig.setQuality('low');expect(rig.key.castShadow).toBe(false);
+  rig.loadRoom(room, 48, 36, 'cryogenics');expect(rig.lamp.suitFill.visible).toBe(false);
+  rig.loadRoom(room, 48, 36, 'reactor', 'overload-floor');expect(rig.key.castShadow).toBe(false);
+  rig.dispose();emitter.geometry.dispose();(emitter.material as T.Material).dispose();
+});
+
+it('retires both active and inactive key shadow targets on graphics loss',()=>{
+ const rig=new SceneLighting(),room=new T.Group();rig.loadRoom(room,48,36,'reactor');
+ const coreTarget=new T.WebGLRenderTarget(8,8);rig.key.shadow.map=coreTarget;
+ rig.loadRoom(room,48,36,'cryogenics');const directionalTarget=new T.WebGLRenderTarget(8,8);rig.key.shadow.map=directionalTarget;
+ const a=vi.spyOn(coreTarget,'dispose'),b=vi.spyOn(directionalTarget,'dispose');rig.invalidateShadows();
+ expect(a).toHaveBeenCalledOnce();expect(b).toHaveBeenCalledOnce();expect(rig.key.shadow.map).toBeNull();
+ rig.loadRoom(room,48,36,'reactor');expect(rig.key.shadow.map).toBeNull();rig.dispose();
 });

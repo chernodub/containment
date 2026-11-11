@@ -12,7 +12,9 @@ export type ReactorStaging=Readonly<{coreX:number;coreY:number;coreZ:number;core
 export class SceneLighting {
  readonly root=new T.Group();
  readonly ambient=new T.HemisphereLight();
- readonly key=new T.DirectionalLight();
+ private readonly directionalKey=new T.DirectionalLight();
+ readonly coreKey=new T.SpotLight(0xffdfad,352,60,Math.PI*.4,.65,2);
+ get key():T.DirectionalLight|T.SpotLight{return this.mood.environment==='reactor'?this.coreKey:this.directionalKey;}
  readonly fill=new T.DirectionalLight();
  readonly rim=new T.DirectionalLight();
  readonly fixtures=Array.from({length:4},()=>new T.PointLight(0x9edcec,0,5.8,2));
@@ -22,19 +24,20 @@ export class SceneLighting {
  mood:EnvironmentMood=getEnvironmentMood();
  staging:ReactorStaging|null=null;
  private authoredFixtures:Fixture[]=[];private nearbyFixtures:Fixture[]=[];private playerX=NaN;private playerZ=NaN;private fixtureTint=new T.Color();
- private blastLife=0;private time=0;private tier:GraphicsTier='high';private fixtureCount=0;private dynamicLights=true;private flashIntensity=1;private disposed=false;
+ private blastLife=0;private time=0;private tier:GraphicsTier='high';private fixtureCount=0;private dynamicLights=true;private flashIntensity=1;private disposed=false;private shadowQuality:ShadowQuality='high';
  constructor(){
-  this.key.castShadow=true;
-  const shadow=this.key.shadow;shadow.mapSize.set(1024,1024);
+  this.directionalKey.castShadow=true;this.coreKey.visible=false;this.coreKey.castShadow=true;
+  this.coreKey.shadow.mapSize.set(1024,1024);this.coreKey.shadow.camera.near=.3;this.coreKey.shadow.camera.far=75;this.coreKey.shadow.normalBias=.025;this.coreKey.shadow.bias=-.0002;this.coreKey.shadow.radius=2;
+  const shadow=this.directionalKey.shadow;shadow.mapSize.set(1024,1024);
   Object.assign(shadow.camera,{left:-24,right:24,top:24,bottom:-24,near:.5,far:70});
   shadow.normalBias=.015;shadow.bias=-.0002;shadow.radius=2;
   this.root.name='scene-lighting';
-  this.root.add(this.ambient,this.key,this.key.target,this.fill,this.fill.target,this.rim,this.rim.target,...this.fixtures,this.blast,this.pool.root,this.lamp.root);
+  this.root.add(this.ambient,this.directionalKey,this.directionalKey.target,this.coreKey,this.coreKey.target,this.fill,this.fill.target,this.rim,this.rim.target,...this.fixtures,this.blast,this.pool.root,this.lamp.root);
   this.applyMood(0,0);
  }
  /** Settings changes may alter shader topology; updates and combat effects never do. */
  setQuality(tier:GraphicsTier,dynamicLights=true,atmosphere=true,flashIntensity=1,shadows:ShadowQuality='high'){
-  this.tier=tier;this.dynamicLights=dynamicLights;this.flashIntensity=Math.max(0,Math.min(1,flashIntensity));
+  this.tier=tier;this.shadowQuality=shadows;this.dynamicLights=dynamicLights;this.flashIntensity=Math.max(0,Math.min(1,flashIntensity));
   this.pool.setIntensityScale(this.flashIntensity);
   this.key.castShadow=tier==='high'&&shadows!=='off';const size=shadows==='low'?512:1024;if(this.key.shadow.mapSize.x!==size){this.key.shadow.map?.dispose();this.key.shadow.map=null;this.key.shadow.mapSize.set(size,size);this.key.shadow.needsUpdate=true;}this.pool.setQuality(tier,tier==='high'&&dynamicLights);
   this.blast.visible=dynamicLights;this.lamp.setQuality(tier==='high',atmosphere);
@@ -45,6 +48,8 @@ export class SceneLighting {
   this.blastLife=0;this.blast.intensity=0;this.pool.reset();this.time=0;
   this.mood=getEnvironmentMood(environment??(templateId==='reactor-vault'?'reactor':undefined));
   this.staging=templateId==='reactor-vault'?{coreX:width/2,coreY:2.6,coreZ:height/2,coreColor:0xffdfab,coreRadius:4.9}:null;
+  world.updateWorldMatrix(true,true);
+  if(templateId==='overload-floor')this.staging=this.authoredCore(world,width,height);
   this.applyMood(width,height);
   world.updateWorldMatrix(true,true);const candidates:Fixture[]=[],position=new T.Vector3();
   world.traverse(object=>{
@@ -68,14 +73,14 @@ export class SceneLighting {
   this.fixtureCount=selected.length;
   this.fixtures.forEach((light,i)=>{
    const fixture=selected[i],core=!!this.staging&&i===0;
-   light.userData.reactorCore=core;light.intensity=fixture&&light.visible?(core?46:this.mood.practical.intensity):0;
+   light.userData.reactorCore=core;light.userData.reactorMood=this.mood.environment==='reactor';light.intensity=fixture&&light.visible?(core?14:this.mood.practical.intensity):0;
    if(fixture){
     light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);
     if(!core&&!fixture.nativeColor){
      const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.practical.color;
      light.color.lerp(new T.Color(accent),this.mood.environment==='reactor'||this.mood.environment==='infested'?.92:.32);
     }
-    light.distance=core?15:this.mood.environment==='reactor'?7.5:this.mood.practical.distance;
+    light.distance=core?10:this.mood.environment==='reactor'?7.5:this.mood.practical.distance;
    }
   });
  }
@@ -93,12 +98,12 @@ export class SceneLighting {
   this.fixtureCount=selected.length;
   for(let i=0;i<4;i++){
    const light=this.fixtures[i],fixture=selected[i],core=!!this.staging&&i===0;
-   light.userData.reactorCore=core;
+   light.userData.reactorCore=core;light.userData.reactorMood=this.mood.environment==='reactor';
    if(!fixture){light.intensity=0;continue;}
    light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);
    if(!core&&!fixture.nativeColor){const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.environment==='security'&&i%2?0xf1f4ff:this.mood.practical.color;this.fixtureTint.setHex(accent);light.color.lerp(this.fixtureTint,this.mood.environment==='reactor'||this.mood.environment==='infested'||this.mood.environment==='security'?.92:.5);}
-   light.distance=core?15:this.mood.environment==='reactor'?7.5:this.mood.practical.distance;
-   light.intensity=light.visible?(core?46:this.mood.practical.intensity):0;
+   light.distance=core?10:this.mood.environment==='reactor'?7.5:this.mood.practical.distance;
+   light.intensity=light.visible?(core?14:this.mood.practical.intensity):0;
   }
   return true;
  }
@@ -111,15 +116,34 @@ export class SceneLighting {
    const light=this.fixtures[i];if(!light.visible)continue;
    const phase=this.time+i*1.73;
    const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.72+.28*Math.sin(phase*1.4):behavior==='reactor'?.78+.22*Math.sin(this.time*2.1+i*.65):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
-   light.intensity=(light.userData.reactorCore?46:this.mood.practical.intensity)*(1+(animated-1)*this.flashIntensity);
+   light.intensity=(light.userData.reactorCore?14:this.mood.practical.intensity)*(1+(animated-1)*this.flashIntensity);
   }
  }
- dispose(){if(this.disposed)return;this.disposed=true;this.key.shadow.dispose();this.pool.dispose();this.lamp.dispose();this.root.removeFromParent();}
+ invalidateShadows(){for(const light of [this.directionalKey,this.coreKey]){light.shadow.map?.dispose();light.shadow.map=null;light.shadow.mapPass?.dispose();light.shadow.mapPass=null;light.shadow.needsUpdate=true;}}
+ dispose(){if(this.disposed)return;this.disposed=true;this.directionalKey.shadow.dispose();this.coreKey.shadow.dispose();this.pool.dispose();this.lamp.dispose();this.root.removeFromParent();}
+ /** Baked cold-emitter vertices below the deck identify the real authored well, never a merged mesh center. */
+ private authoredCore(world:T.Group,width:number,height:number):ReactorStaging {
+  const bounds=new T.Box3(),point=new T.Vector3();
+  world.traverse(object=>{
+   if(!(object instanceof T.Mesh)||Array.isArray(object.material)||object.material.name!=='ship-cold-practical')return;
+   const vertices=object.geometry.getAttribute('position');if(!vertices)return;
+   for(let i=0;i<vertices.count;i++){
+    point.fromBufferAttribute(vertices,i);if(point.y>-.75)continue;
+    point.applyMatrix4(object.matrixWorld);bounds.expandByPoint(point);
+   }
+  });
+  if(bounds.isEmpty())return{coreX:width/2,coreY:3.2,coreZ:height/2,coreColor:0xffdfad,coreRadius:4.9};
+  return{coreX:(bounds.min.x+bounds.max.x)/2,coreY:3.2,coreZ:(bounds.min.z+bounds.max.z)/2,coreColor:0xffdfad,coreRadius:Math.max(bounds.max.x-bounds.min.x,bounds.max.z-bounds.min.z)/2};
+ }
  private applyMood(width:number,height:number){
-  const mood=this.mood;this.ambient.color.setHex(mood.ambient.sky);this.ambient.groundColor.setHex(mood.ambient.ground);this.ambient.intensity=mood.ambient.intensity;
+  const mood=this.mood;const reactor=mood.environment==='reactor';this.key.castShadow=this.tier==='high'&&this.shadowQuality!=='off';this.directionalKey.visible=!reactor;this.coreKey.visible=reactor;this.lamp.setReactor(reactor);this.ambient.color.setHex(mood.ambient.sky);this.ambient.groundColor.setHex(mood.ambient.ground);this.ambient.intensity=mood.ambient.intensity;
   this.lamp.light.intensity=mood.environment==='infested'?8:12;
   for(const [light,data] of [[this.key,mood.key],[this.fill,mood.fill],[this.rim,mood.rim]] as const){light.color.setHex(data.color);light.intensity=data.intensity;light.target.position.set(width/2,0,height/2);light.position.set(width/2+data.offset[0],data.offset[1],height/2+data.offset[2]);}
-  if(this.staging){this.key.position.set(width/2-18,7,height/2-12);this.rim.intensity=1.8;}
+  if(reactor){
+   const shadowSize=this.shadowQuality==='low'?512:1024;this.coreKey.shadow.mapSize.set(shadowSize,shadowSize);
+   const core=this.staging;this.coreKey.position.set(core?.coreX??width/2,core?.coreY??3.2,core?.coreZ??height/2);
+   this.coreKey.target.position.set(width*.12,0,core?.coreZ??height/2);this.coreKey.intensity=mood.key.intensity*980;this.coreKey.distance=Math.max(30,Math.hypot(width,height)*1.1);
+  }
  }
 }
 
@@ -131,7 +155,7 @@ export class ContactShadows {
   const geometry=new T.PlaneGeometry(2,2);geometry.rotateX(-Math.PI/2);
   const material=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{},
    vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}',
-   fragmentShader:'varying vec2 vUv; void main(){float d=length(vUv*2.0-1.0);float a=(1.0-smoothstep(0.1,1.0,d))*0.24;gl_FragColor=vec4(0.025,0.035,0.045,a);}',
+   fragmentShader:'varying vec2 vUv; void main(){float d=length(vUv*2.0-1.0);float a=(1.0-smoothstep(0.1,1.0,d))*0.4;gl_FragColor=vec4(0.025,0.035,0.045,a);}',
   });
   this.mesh=new T.InstancedMesh(geometry,material,64);this.mesh.name='actor-contact-shadows';this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.mesh.frustumCulled=false;this.mesh.count=0;
  }
