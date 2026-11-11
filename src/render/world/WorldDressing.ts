@@ -2,6 +2,7 @@ import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import type {ShipEnvironment} from '../ShipEnvironments';
+import {passengerObservationTexture,serviceCartridge,serviceHousingGeometry} from './EquipmentDetail';
 
 const UNIT=32;
 const ROOM_IDEAS:Readonly<Record<string,string>>={
@@ -59,6 +60,35 @@ function randomSource(seed:number,text:string){
   return()=>{seed=(seed+0x6d2b79f5)>>>0;let t=Math.imul(seed^(seed>>>15),1|seed);t^=t+Math.imul(t^(t>>>7),61|t);return((t^(t>>>14))>>>0)/4294967296;};
 }
 
+function insideSolid(x:number,z:number,polygon:readonly {x:number;y:number}[]):boolean {
+  let inside=false;
+  for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
+    const a=polygon[i],b=polygon[j];
+    if((a.y>z)!==(b.y>z)&&x<(b.x-a.x)*(z-a.y)/(b.y-a.y)+a.x)inside=!inside;
+  }
+  return inside;
+}
+
+/** Authored solids are polygons. Only fully-contained roof tiles may carry raised detail. */
+function equipmentReservations(template:RoomTemplate,templateId:string):Array<{x:number;y:number;width:number;height:number}> {
+  const reservations=[...template.obstacles];
+  if(templateId==='passenger-vault')return reservations;
+  for(const polygon of template.voids??[]){
+    const left=Math.min(...polygon.map(p=>p.x)),right=Math.max(...polygon.map(p=>p.x));
+    const near=Math.min(...polygon.map(p=>p.y)),far=Math.max(...polygon.map(p=>p.y));
+    const width=Math.min(48,(right-left)*.65),height=Math.min(42,(far-near)*.65);
+    if(Math.min(width,height)<26)continue;
+    let count=0;
+    for(const fz of [.26,.74,.5])for(const fx of [.26,.74,.5]){
+      if(count===2)break;
+      const x=left+(right-left)*fx,y=near+(far-near)*fz;
+      if(![-1,1].every(sx=>[-1,1].every(sz=>insideSolid(x+sx*width*.5,y+sz*height*.5,polygon))))continue;
+      reservations.push({x:x-width*.5,y:y-height*.5,width,height});count++;
+    }
+  }
+  return reservations;
+}
+
 /** Deterministic, material-merged fittings. Raised detail is supported by existing solids. */
 export function addWorldDressing(world:T.Group,template:RoomTemplate,environment:ShipEnvironment,templateId:string,seed=1729):T.Group {
   const root=new T.Group();root.name='g2-world-dressing';
@@ -72,6 +102,11 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   const vein=make('vein',0x547b3a,.08,.48,environment==='infested'?0x9dff5a:0x6b9a52,environment==='infested'?.62:.18);
   const display=make('display',0xd8e5df,.05,.52,MOOD_ACCENT[environment],.65),text=DISPLAY_TEXT[templateId];
   if(text){const texture=instrumentTexture(text);display.map=display.emissiveMap=texture;display.addEventListener('dispose',()=>texture.dispose());root.userData.displayText=[...text];}
+  if(templateId==='passenger-vault'){
+    const texture=passengerObservationTexture();display.map=display.emissiveMap=texture;
+    display.color.setHex(0xc0e2ec);display.emissiveIntensity=.04;display.metalness=.45;display.roughness=.23;
+    display.addEventListener('dispose',()=>texture.dispose());root.userData.occupiedWindows=16;
+  }
   const materials=[steel,dark,paint,resin,signal,vein,display],buckets=new Map<T.Material,T.BufferGeometry[]>();
   const random=randomSource(seed,templateId),matrix=new T.Matrix4(),quat=new T.Quaternion(),axis=new T.Vector3(0,1,0);
   const add=(geometry:T.BufferGeometry,m:T.Material,x:number,y:number,z:number,sx=1,sy=1,sz=1,rotation=0)=>{
@@ -86,8 +121,10 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   const point=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
   // Query the actual renderer's roof so fittings cannot float over lower kit pieces.
   world.updateWorldMatrix(true,true);const ray=new T.Raycaster(),down=new T.Vector3(0,-1,0);
-  let fittings=0;const signatureIndex=template.obstacles.reduce((best,r,index)=>r.y<template.obstacles[best].y?index:best,0);
-  for(const [index,r] of template.obstacles.entries()){
+  let fittings=0;const leakPositions:Array<{x:number;z:number}>=[],leakOrigins:Array<{x:number;y:number;z:number}>=[];
+  const reservations=equipmentReservations(template,templateId);
+  const signatureIndex=reservations.reduce((best,r,index)=>r.y<reservations[best].y?index:best,0);
+  for(const [index,r] of reservations.entries()){
     if(index>=12)break;
     const left=r.x/UNIT,right=(r.x+r.width)/UNIT,near=r.y/UNIT,far=(r.y+r.height)/UNIT,w=right-left,d=far-near;
     if(Math.min(w,d)<.8)continue;
@@ -97,7 +134,12 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
       ray.set(point(x,20,z),down);const hit=ray.intersectObject(world,true).find(h=>h.point.y>.15);if(!hit)continue;
       const y=hit.point.y+.015,angle=random()*Math.PI,span=Math.min(.34,w*.12,d*.12);
       if(environment==='habitation'){
-        box(paint,x,y+.07,z,span*1.5,.14,span,angle);box(dark,x,y+.146,z,span*1.35,.012,span*.84,angle); // packed arrival belongings
+        // Luggage, a folded blanket and a worn personal data slate form a lived-in cluster.
+        box(paint,x,y+.07,z,span*1.5,.14,span,angle);box(dark,x,y+.146,z,span*1.35,.012,span*.84,angle);
+        for(const side of [-1,1])box(steel,x+side*span*.37,y+.156,z,span*.055,.015,span*.82,angle);
+        box(resin,x+span*.27,y+.182,z+span*.1,span*.63,.055,span*.62,angle+.12);
+        box(dark,x-span*.16,y+.177,z-span*.1,span*.36,.025,span*.49,angle-.18);
+        box(signal,x-span*.16,y+.192,z-span*.1,span*.23,.005,span*.32,angle-.18);
       }else if(environment==='security'){
         for(let c=0;c<4;c++)pipe(steel,point(x-span/2+c*.09,y+.035,z),point(x-span/2+c*.09,y+.035,z+.13),.025);
         box(paint,x,y+.02,z-.12,span*1.4,.04,.18,angle);
@@ -105,11 +147,19 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
         for(let egg=0;egg<3;egg++)sphere(egg===1?vein:resin,x+(egg-1)*span*.45,y+.17,z+(egg%2)*span*.35,span*.48,.2,span*.45);
         pipe(resin,point(x-span,y,z),point(x+span,y+.02,z),.06);
       }else{
-        box(dark,x,y+.028,z,span*1.7,.055,span*1.3,angle);
-        box(paint,x,y+.075,z,span*1.45,.045,span,angle);
-        for(let bolt=0;bolt<3;bolt++)box(steel,x-span*.5+bolt*span*.5,y+.104,z,span*.08,.018,span*.35,angle);
+        serviceCartridge({box,pipe,housing:(m,x,y,z,w,h,d,angle)=>add(serviceHousingGeometry(w,h,d),m,x,y,z,1,1,1,angle)},{steel,dark,paint,signal},x,y,z,span,angle,n+index);
       }
       fittings++;
+    }
+    if(environment==='maintenance'&&leakPositions.length<3){
+      // A cut union and residue explain each wet patch. Drips stay inside the solid's reservation.
+      const x=left+.15,z=near+d*.58;ray.set(point(x,20,z),down);
+      const hit=ray.intersectObject(world,true).find(h=>h.point.y>.2);
+      if(hit){const y=hit.point.y;
+        pipe(steel,point(x+.24,y+.08,z),point(x,y+.08,z),.055);
+        pipe(resin,point(x,y+.02,z),point(x,.035,z),.018);
+        box(vein,x,.022,z,.12,.015,.34);leakPositions.push({x:left-.16,z});leakOrigins.push({x,y:y+.02,z});
+      }
     }
     // Fine trim, label pads and cable looms belong to equipment roofs, not routes.
     ray.set(point(cx,20,cz),down);let centerHit=ray.intersectObject(world,true).find(h=>h.point.y>.2),highest=centerHit?.point.y??0;
@@ -148,6 +198,22 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
       }
     }
   }
+  if(templateId==='passenger-vault'){
+    // Dark glazing lies below a narrow metal frame on the existing domed lids.
+    // The passenger is behind frosted glass; the reservations and lids remain sealed.
+    for(const [rowX,rowZ,angle]of [[420,300,0],[780,300,0],[420,580,Math.PI],[780,580,Math.PI]])for(let slot=0;slot<4;slot++){
+      const dx=(slot-1.5)*1.5625,localZ=.25-.22,c=Math.cos(angle),s=Math.sin(angle);
+      const x=rowX/UNIT+c*dx+s*localZ,z=rowZ/UNIT-s*dx+c*localZ;
+      box(dark,x,1.205,z,.64,.022,1.31,angle);
+      box(display,x,1.219,z,.52,.009,1.17,angle);
+      for(const side of [-1,1]){
+        box(steel,x+side*.292,1.227,z,.025,.025,1.27,angle);
+        box(steel,x,1.227,z+side*.625,.59,.025,.025,angle);
+      }
+      // Individual life-sign index lights complement the retained embossed ECG displays.
+      for(let tick=0;tick<slot+1;tick++)box(signal,x+(tick-slot*.5)*.055,1.233,z+.54,.023,.009,.028,angle);
+    }
+  }
   // Vent portals are flush gratings: enemies emerge here, but the deck stays traversable.
   const onDeck=(x:number,z:number)=>{
     const px=x*UNIT,pz=z*UNIT;
@@ -183,6 +249,8 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     root.userData.breachCount=index+1;
   }
   root.userData.fittings=fittings;root.userData.growthIntensity=vein.emissiveIntensity;
+  root.userData.leakPositions=leakPositions;
+  root.userData.leakOrigins=leakOrigins;
   root.userData.pulseMaterial=vein;
   for(const [material,list] of buckets){
     // Every primitive contributes the same position/normal/uv layout.

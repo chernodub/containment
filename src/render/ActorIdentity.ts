@@ -3,12 +3,12 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {geometry} from './meshParts';
 
 export const FAMILY_IDENTITY = Object.freeze({
-  crawler: 0xff7652,
-  brute: 0x86a9bb,
+  crawler: 0xb46549,
+  brute: 0xe1d6b5,
   spitter: 0xa5ef65,
-  stalker: 0xb8b6db,
-  carrier: 0xd3c67e,
-  queen: 0x7db99b,
+  stalker: 0x887bb0,
+  carrier: 0xb982c5,
+  queen: 0xd899bc,
 });
 export const RIG_ACCENTS = Object.freeze({breacher:0xffb454,cryo:0x7fd6ff,pyro:0xff7a2e,arc:0xb79cff});
 
@@ -17,6 +17,7 @@ type Part = {
   scale:[number,number,number];
   role:number;
   shape:'eye'|'seam'|'spine'|'sac';
+  fitted?:boolean;
 };
 type SurfacePoint = {position:T.Vector3;normal:T.Vector3};
 
@@ -52,7 +53,7 @@ function identityGeometry(key:string,parts:readonly Part[],root:T.Group) {
       const g=(part.shape==='seam'?new T.BoxGeometry(2,2,2):part.shape==='spine'?new T.ConeGeometry(1,2,4):new T.SphereGeometry(1,8,5)).toNonIndexed();
       g.scale(...part.scale);
       // Tiny positive relief embeds seams in the actual rest carapace instead of floating above it.
-      if(nearest){
+      if(nearest&&part.fitted!==false){
         rotation.setFromUnitVectors(up,nearest.normal);
         g.applyQuaternion(rotation);
         target.copy(nearest.position).addScaledVector(nearest.normal,part.shape==='spine'?part.scale[1]*.65:part.scale[1]*.18);
@@ -68,63 +69,116 @@ function identityGeometry(key:string,parts:readonly Part[],root:T.Group) {
 /** Small anatomical emitters follow the existing chest rig; one additional draw per actor. */
 export function alienIdentity(root:T.Group,kind:string,span:number,height:number,elite:boolean) {
   const parts:Part[]=[],s=span,h=height;
-  const detail=(shape:Part['shape'],x:number,y:number,z:number,sx:number,sy:number,sz:number,role=0)=>parts.push({position:[x,y,z],scale:[sx,sy,sz],role,shape});
+  const detail=(shape:Part['shape'],x:number,y:number,z:number,sx:number,sy:number,sz:number,role=0,fitted=true)=>parts.push({position:[x,y,z],scale:[sx,sy,sz],role,shape,fitted});
   // Eyes use a compact cluster; broad white nodules hide the original anatomy at hero scale.
   const front=kind==='carrier'?.22:kind==='spitter'?.24:.30;
   for(const side of [-1,1])detail('eye',side*s*.075,h*.69,s*front,s*.009,h*.007,s*.012);
   if(kind==='crawler') {
-    for(const side of [-1,1])detail('eye',side*s*.115,h*.57,s*.33,s*.006,h*.006,s*.009);
-    for(let i=0;i<3;i++)detail('seam',0,h*(.69+i*.035),s*(.02-i*.09),s*.006,h*.003,s*.035);
+    // The smallest family stays plain: a warm russet body and four tiny eyes.
+    for(const side of [-1,1])detail('eye',side*s*.115,h*.57,s*.33,s*.01,h*.01,s*.016);
   } else if(kind==='spitter') {
-    for(const side of [-1,1])for(let i=0;i<2;i++)detail('sac',side*s*(.12+i*.025),h*(.59+i*.09),-s*.035,s*.027,h*.012,s*.034);
-    detail('seam',0,h*.57,s*.32,s*.023,h*.003,s*.009);
-  } else if(kind==='brute'||kind==='queen') {
-    for(let i=0;i<5;i++)for(const side of [-1,1])detail('seam',side*s*(.08+i*.023),h*(.86-i*.035),s*(.15-i*.085),s*.004,h*.0025,s*.034);
-    if(kind==='queen')for(let i=0;i<5;i++)detail('spine',(i-2)*s*.06,h*(.83+(.12-Math.abs(i-2)*.035)),s*.08,s*.009,h*.042,s*.014,2);
+    for(const side of [-1,1])detail('sac',side*s*.12,h*.77,s*.16,s*.075,h*.10,s*.12);
+    detail('sac',0,h*.67,s*.30,s*.10,h*.075,s*.08);
+  } else if(kind==='brute') {
+    // Broad pale shoulder armor survives overhead framing and frost treatments.
+    for(const side of [-1,1])for(let i=0;i<3;i++)detail('seam',side*s*(.13+i*.035),h*(.86-i*.04),s*(.13-i*.09),s*.065,h*.024,s*.095,4);
+  } else if(kind==='queen') {
+    // The vulnerable organ sits underneath a split, articulated crown. All
+    // states live in this one geometry; opening changes uniforms only.
+    detail('sac',0,h*.94,0,s*.17,h*.16,s*.25,3,false);
+    for(const side of [-1,1])for(let i=0;i<4;i++)detail('seam',side*s*.11,h*(1.01-i*.018),s*(.23-i*.15),s*.14,h*.035,s*.085,5,false);
+    for(let i=0;i<5;i++)detail('spine',(i-2)*s*.06,h*(1.07+(.12-Math.abs(i-2)*.035)),s*.08,s*.018,h*.065,s*.025,2,false);
   } else if(kind==='stalker') {
-    for(const side of [-1,1])for(let i=0;i<4;i++)detail('seam',side*s*(.14-i*.018),h*(.7+i*.035),s*(.12-i*.065),s*.003,h*.002,s*.025);
+    for(const side of [-1,1])for(let i=0;i<4;i++)detail('seam',side*s*(.14-i*.018),h*(.7+i*.035),s*(.12-i*.065),s*.008,h*.004,s*.055);
   } else {
-    for(const side of [-1,1])for(let i=0;i<3;i++)detail('sac',side*s*.115,h*(.67-i*.025),-s*(.02+i*.075),s*.019,h*.014,s*.024);
+    // A swollen segmented brood abdomen distinguishes the carrier by shape.
+    for(let i=0;i<4;i++)detail('sac',0,h*(.76-i*.018),-s*(.02+i*.09),s*(.12-i*.012),h*.085,s*.065);
+    for(const side of [-1,1])for(let i=0;i<4;i++)detail('seam',side*s*.105,h*.78,-s*(.02+i*.09),s*.014,h*.012,s*.062,4);
   }
-  // Angular chitin crests follow the carapace normal and retain a separate silhouette for elites.
-  for(const side of [-1,1])for(let i=0;i<3;i++)detail('spine',side*s*(.12+i*.028),h*(.91-i*.045),-s*.06,s*.008,h*.035,s*.013,1);
-  const mesh=new T.Mesh(identityGeometry(`g2-identity-seams:${kind}:${elite}`,parts,root),new T.ShaderMaterial({
-    uniforms:{identityColor:{value:new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler)},identityPulse:{value:1},identityElite:{value:elite||kind==='queen'?1:0},identityChampion:{value:0},identityExposed:{value:0},identityAlpha:{value:1},identityDeath:{value:0}},
-    vertexShader:'attribute float identityRole;varying vec3 identityNormal;varying vec3 identityView;varying float role;void main(){role=identityRole;identityNormal=normalMatrix*normal;vec4 p=modelViewMatrix*vec4(position,1.0);identityView=-p.xyz;gl_Position=projectionMatrix*p;}',
-    fragmentShader:'uniform vec3 identityColor;uniform float identityPulse;uniform float identityElite;uniform float identityChampion;uniform float identityExposed;uniform float identityAlpha;uniform float identityDeath;varying vec3 identityNormal;varying vec3 identityView;varying float role;void main(){if(role>.5&&role<1.5&&identityElite<.5)discard;if(identityDeath>=1.0)discard;float facing=abs(dot(normalize(identityNormal),normalize(identityView)));vec3 color=role>.5&&role<1.5?mix(vec3(1.0,.54,.18),identityChampion>1.5?vec3(.8,1.0,.4):vec3(.8,.94,1.0),step(.5,identityChampion)):identityColor;float light=.10+pow(facing,1.8)*.52;light*=identityPulse*(.65+identityAlpha*.35)*(1.0-identityDeath);if(role>1.5)light*=.6+identityExposed*2.0;gl_FragColor=vec4(color*light,1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>}',
+  for(const side of [-1,1])for(let i=0;i<3;i++)detail('spine',side*s*(.12+i*.028),h*(.96-i*.035),-s*.06,s*.018,h*.065,s*.024,1);
+  // Champion overhead crest is built and prewarmed even on ordinary actors.
+  for(const side of [-1,1])detail('seam',side*s*.08,h*1.16,0,s*.07,h*.02,s*.025,6,false);
+  detail('spine',0,h*1.24,0,s*.038,h*.085,s*.038,6,false);
+  const mesh=new T.Mesh(identityGeometry(`x2-identity-anatomy:${kind}:${elite}`,parts,root),new T.ShaderMaterial({
+    uniforms:{identityColor:{value:new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler)},identityPulse:{value:1},identityTime:{value:0},identityShimmer:{value:kind==='stalker'?1:0},identityElite:{value:elite||kind==='queen'?1:0},identityChampion:{value:0},identityExposed:{value:0},identityOpening:{value:0},identitySpan:{value:span},identityHeight:{value:height},identityAlpha:{value:1},identityDeath:{value:0}},
+    vertexShader:`
+      attribute float identityRole;
+      uniform float identityOpening;uniform float identitySpan;uniform float identityHeight;
+      varying vec3 identityNormal;varying vec3 identityView;varying float role;
+      void main(){
+        role=identityRole;vec3 p=position;
+        if(role>4.5&&role<5.5){
+          float side=sign(p.x);
+          p.x+=side*identityOpening*identitySpan*.22;
+          p.y+=identityOpening*identityHeight*.18;
+        }
+        identityNormal=normalMatrix*normal;vec4 view=modelViewMatrix*vec4(p,1.0);
+        identityView=-view.xyz;gl_Position=projectionMatrix*view;
+      }`,
+    fragmentShader:`
+      uniform vec3 identityColor;uniform float identityPulse;uniform float identityTime;uniform float identityShimmer;uniform float identityElite;
+      uniform float identityChampion;uniform float identityExposed;uniform float identityOpening;
+      uniform float identityAlpha;uniform float identityDeath;
+      varying vec3 identityNormal;varying vec3 identityView;varying float role;
+      void main(){
+        if(role>.5&&role<1.5&&identityElite<.5)discard;
+        if(role>5.5&&identityChampion<.5)discard;
+        if(identityDeath>=1.0)discard;
+        float facing=abs(dot(normalize(identityNormal),normalize(identityView)));
+        vec3 color=identityColor;
+        float light=.32+pow(facing,1.5)*.85;
+        if(role>.5&&role<1.5){color=vec3(1.0,.36,.12);light=1.15;}
+        if(role>1.5&&role<2.5){color=vec3(.8,.4,.54);light=.6+identityOpening;}
+        if(role>2.5&&role<3.5){
+          if(identityOpening<.08)discard;
+          color=mix(vec3(1.0,.035,.32),vec3(1.0,.8,.95),pow(facing,6.0));
+          light=(2.0+identityPulse*.7)*identityOpening;
+        }
+        if(role>3.5&&role<4.5){color=vec3(.86,.83,.72);light=.32+facing*.62;}
+        if(role>4.5&&role<5.5){color=vec3(.075,.09,.12);light=.5+facing*.7;}
+        if(role>5.5){color=identityChampion>1.5?vec3(1.0,.26,.64):vec3(1.0,.70,.23);light=1.8;}
+        if(role<.5)light*=identityPulse*(1.0+identityShimmer*.3*sin(identityTime*5.0+identityView.y*8.0));
+        light*=.75+identityAlpha*.25;
+        gl_FragColor=vec4(color*light,1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
   }));
   mesh.name=`${kind}-identity`;mesh.material.userData.actorMaterial=true;mesh.castShadow=false;mesh.receiveShadow=false;
   root.add(mesh);
   // Preserve root-space authored proportions while attaching to the animated torso.
   const chest=root.getObjectByName(kind==='carrier'?'body':'chest')??root.getObjectByName('torso');
   if(chest){root.updateMatrixWorld(true);chest.attach(mesh);}
+  let previous:number|undefined,opening=0;
   return {
     mesh,
     update(time:number,windup:number,champion:string|undefined,exposed:boolean,alpha:number,dead:boolean){
       // Death already discards every fragment; skip the empty draw entirely.
       mesh.visible=!dead;
       const u=mesh.material.uniforms;
-      u.identityPulse.value=dead?.18:1+Math.sin(time*2.7)*.06+Math.max(0,Math.min(1,windup))*1.2;
+      u.identityTime.value=time;u.identityPulse.value=dead?.18:1+Math.sin(time*2.7)*.06+Math.max(0,Math.min(1,windup))*1.2;
       u.identityChampion.value=champion==='warden'?1:champion==='matron'?2:0;
       u.identityElite.value=elite||kind==='queen'||champion?1:0;
-      u.identityExposed.value=exposed?1:0;u.identityAlpha.value=alpha;u.identityDeath.value=dead?1:0;
+      const dt=previous===undefined?0:Math.max(0,Math.min(.05,time-previous));previous=time;
+      opening=T.MathUtils.damp(opening,exposed?1:0,12,dt);
+      u.identityOpening.value=opening;u.identityExposed.value=exposed?1:0;u.identityAlpha.value=alpha;u.identityDeath.value=dead?1:0;
     },
-    reset(){mesh.visible=true;const u=mesh.material.uniforms;u.identityPulse.value=1;u.identityElite.value=elite||kind==='queen'?1:0;u.identityChampion.value=0;u.identityExposed.value=0;u.identityAlpha.value=1;u.identityDeath.value=0;},
+    reset(){previous=undefined;opening=0;mesh.visible=true;const u=mesh.material.uniforms;u.identityOpening.value=0;u.identityPulse.value=1;u.identityElite.value=elite||kind==='queen'?1:0;u.identityChampion.value=0;u.identityExposed.value=0;u.identityAlpha.value=1;u.identityDeath.value=0;},
   };
 }
 
 /** Rig lamps mount on the torso and shoulders, leaving the original marine/weapon silhouette intact. */
 export function marineIdentity(root:T.Group) {
   const parts:Part[]=[
-    {position:[-.29,1.52,.005],scale:[.075,.006,.025],role:0,shape:'seam'},
-    {position:[.29,1.52,.005],scale:[.075,.006,.025],role:0,shape:'seam'},
-    {position:[-.115,1.21,.17],scale:[.009,.005,.065],role:0,shape:'seam'},
-    {position:[.115,1.21,.17],scale:[.009,.005,.065],role:0,shape:'seam'},
-    {position:[0,1.78,.12],scale:[.08,.004,.015],role:0,shape:'seam'},
+    {position:[-.29,1.52,.005],scale:[.12,.014,.045],role:0,shape:'seam'},
+    {position:[.29,1.52,.005],scale:[.12,.014,.045],role:0,shape:'seam'},
+    {position:[-.115,1.21,.17],scale:[.015,.009,.085],role:1,shape:'seam'},
+    {position:[.115,1.21,.17],scale:[.015,.009,.085],role:1,shape:'seam'},
+    {position:[0,1.78,.12],scale:[.12,.012,.035],role:0,shape:'seam'},
   ];
-  const material=new T.ShaderMaterial({uniforms:{rigColor:{value:new T.Color(RIG_ACCENTS.breacher)}},vertexShader:'varying vec3 n;void main(){n=normalMatrix*normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'uniform vec3 rigColor;varying vec3 n;void main(){gl_FragColor=vec4(rigColor*(.45+.4*abs(normalize(n).z)),1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>}'});
+  const material=new T.ShaderMaterial({uniforms:{rigColor:{value:new T.Color(RIG_ACCENTS.breacher)}},vertexShader:'attribute float identityRole;varying vec3 n;varying float role;void main(){role=identityRole;n=normalMatrix*normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'uniform vec3 rigColor;varying vec3 n;varying float role;void main(){vec3 color=role<.5?vec3(.65,.93,1.0):rigColor;gl_FragColor=vec4(color*(1.25+.6*abs(normalize(n).z)),1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>}'});
   material.userData.actorMaterial=true;
-  const mesh=new T.Mesh(identityGeometry('g2-marine-rig-strips',parts,root),material);mesh.name='marine-rig-accents';root.add(mesh);
+  const mesh=new T.Mesh(identityGeometry('x2-marine-friendly-strips',parts,root),material);mesh.name='marine-rig-accents';root.add(mesh);
   const ribs=root.getObjectByName('ribs');if(ribs){root.updateMatrixWorld(true);ribs.attach(mesh);}
   let current='';
   return {setRig(rig:string){if(rig===current)return;current=rig;material.uniforms.rigColor.value.setHex(RIG_ACCENTS[rig as keyof typeof RIG_ACCENTS]??RIG_ACCENTS.breacher);}};

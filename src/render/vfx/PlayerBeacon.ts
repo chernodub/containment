@@ -40,17 +40,18 @@ varying vec3 vBeaconView;
 uniform float strength;
 void main(){
   float rim=pow(max(0.0,1.0-abs(dot(normalize(vBeaconNormal),normalize(vBeaconView)))),2.5);
-  if(rim<.28)discard;
-  gl_FragColor=vec4(.45,.86,1.0,rim*strength);
+  float fill=.16*strength;
+  float edge=smoothstep(.14,.58,rim);
+  gl_FragColor=vec4(.55,.89,1.0,max(fill,edge*strength));
   #include <colorspace_fragment>
 }`;
 
 /** A quiet suit locator and borrowed-skin silhouette keep the marine findable in a crowd. */
 export class PlayerBeacon {
   readonly root = new T.Group();
-  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.06}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.AdditiveBlending});
+  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.28}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
   private readonly groups: SkinGroup[] = [];
-  private readonly ring = new T.Mesh(new T.RingGeometry(.52,.545,48),new T.MeshBasicMaterial({color:0x9fe8ff,transparent:true,opacity:.28,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide}));
+  private readonly ring = new T.Mesh(new T.RingGeometry(.50,.66,48),new T.ShaderMaterial({vertexShader:'varying vec2 ringUV;void main(){ringUV=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'varying vec2 ringUV;void main(){float r=length(ringUV-.5)*2.0;float band=1.0-smoothstep(.025,.07,abs(r-.86));float soft=1.0-smoothstep(.77,1.0,r);vec3 c=mix(vec3(.015,.045,.06),vec3(.65,.93,1.0),band);gl_FragColor=vec4(c,max(band*.83,soft*.38));\n#include <colorspace_fragment>}',transparent:true,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide}));
   private readonly direction = new T.Mesh(new T.ConeGeometry(.10,.23,3),new T.MeshBasicMaterial({color:0xe8fbff,transparent:true,opacity:.75,depthTest:false,depthWrite:false,toneMapped:false}));
   private disposed = false;
 
@@ -88,7 +89,7 @@ export class PlayerBeacon {
   /** Animation remains authoritative; merged buffers only combine identical skin spaces. */
   update(player:T.Object3D,angle:number,hidden=false,crowding=0){
     this.root.visible=!hidden&&!this.disposed;if(!this.root.visible)return;
-    this.material.uniforms.strength.value=.06+.30*Math.min(1,Math.max(0,crowding));
+    this.material.uniforms.strength.value=.28+.56*Math.min(1,Math.max(0,crowding));
     player.updateWorldMatrix(true,true);
     for(const group of this.groups){
       const first=group.skins[0].source;let merged=!!group.merged;

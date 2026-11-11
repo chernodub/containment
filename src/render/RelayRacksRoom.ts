@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RELAY_RACKS_FOOTPRINTS} from '../game/roguelike/relayRacksLayout';
+import {serviceCartridge,serviceHousingGeometry} from './world/EquipmentDetail';
 
 /** Room-local shell and major forms. Dimensions are game units.
  * Raised forms remain inside the five production solids. Cross-aisle cables
@@ -15,12 +16,12 @@ export function relayRacksRoom():T.Group{
  normals.wrapS=normals.wrapT=T.RepeatWrapping;normals.repeat.set(150,110);normals.needsUpdate=true;
  deck.normalMap=normals;deck.normalScale.set(.3,.3);deck.roughness=.92;deck.addEventListener('dispose',()=>normals.dispose());
  const contact=new T.MeshBasicMaterial({color:0x111c23,transparent:true,opacity:.3,depthWrite:false});contact.name='environment-contact';contact.userData.actorMaterial=true;
- cyan.emissive.setHex(0x24464b);cyan.emissiveIntensity=.25;
+ cyan.emissive.setHex(0x57977d);cyan.emissiveIntensity=.28;
  const groups=new Map<T.Group,Map<T.Material,{parts:T.BufferGeometry[];name:string}>>();
  const group=(name:string)=>{const g=new T.Group();g.name=name;root.add(g);groups.set(g,new Map());return g;};
  const add=(g:T.Group,geo:T.BufferGeometry,m:T.Material,name='')=>{
   const flat=geo.index?geo.toNonIndexed():geo.clone();geo.dispose();
-  const batch=groups.get(g)!;if(!batch.has(m))batch.set(m,{parts:[],name});batch.get(m)!.parts.push(flat);
+  const batch=groups.get(g)!;if(!batch.has(m))batch.set(m,{parts:[],name});const bucket=batch.get(m)!;if(name&&!bucket.name)bucket.name=name;bucket.parts.push(flat);
  };
  const box=(g:T.Group,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material,name='')=>add(g,new T.BoxGeometry(w/32,h/32,d/32).translate(x/32,y/32,z/32),m,name);
  const pipe=(g:T.Group,a:number[],b:number[],radius:number,m:T.Material,name='')=>{
@@ -71,15 +72,29 @@ export function relayRacksRoom():T.Group{
     box(g,x,13,bz,84,10,42,dark);
     const trayHeight=broken&&bay===0?25:40;
     box(g,x,trayHeight,bz,78,5,38,rail);
+    serviceCartridge({
+     box:(m,px,py,pz,w,h,d)=>box(g,px*32,py*32,pz*32,w*32,h*32,d*32,m),
+     pipe:(m,a,b,r)=>pipe(g,a.toArray().map(n=>n*32),b.toArray().map(n=>n*32),r*32,m),
+     housing:(m,px,py,pz,w,h,d,angle)=>add(g,serviceHousingGeometry(w,h,d).rotateY(angle).translate(px,py,pz),m),
+    },{steel:rail,dark,paint:rail,signal:cyan},x/32,(trayHeight+2.6)/32,(bz-1)/32,.78,0,bay+i);
     // Ceramic is confined to the patch field and removable tray handles.
     for(const dx of [-28,28])box(g,x+dx,trayHeight+4,bz+12,12,4,6,pale);
     for(const dx of [-18,-6,6,18])box(g,x+dx,trayHeight+3,bz+6,4,1,13,dark);
     // Top-facing patch blocks and broad loops stay legible at game zoom.
     if(!(broken&&bay===0)){
      box(g,x,51,bz-12,62,9,12,dark);
-     for(const dx of [-20,0,20])box(g,x+dx,57,bz-12,8,4,9,pale);
+     for(let port=0;port<8;port++){
+      const px=x-25+port*7;
+      box(g,px,56,bz-12,5,2,8,dark);
+      box(g,px,57.2,bz-12,2,.5,3,(port+i+bay)%5===0?damage:cyan);
+     }
      const curve=new T.CatmullRomCurve3([[x-23,57,bz-10],[x-25,broken?60:78,bz+5],[x+25,broken?60:78,bz+5],[x+23,57,bz-10]].map(p=>new T.Vector3(p[0]/32,p[1]/32,p[2]/32)));
      add(g,new T.TubeGeometry(curve,12,2.2/32,5,false),broken?damage:cyan,'relay-fiber-loops');
+     // Jacketed multi-fiber looms replace the single tidy hose silhouette.
+     for(let cable=0;cable<3;cable++){
+      const curve=new T.CatmullRomCurve3([[x-25,58,bz-13+cable*3],[x-30-cable,63+cable*3,bz+7],[x+19,68+cable*2,bz+10],[x+25,58,bz-13+cable*3]].map(p=>new T.Vector3(p[0]/32,p[1]/32,p[2]/32)));
+      add(g,new T.TubeGeometry(curve,8,1.15/32,5,false),cable===1?cyan:dark,'relay-cable-bundles');
+     }
     }else{
      // Missing tray and short fallen rail are contained inside the damaged bay.
      pipe(g,[x-33,17,bz-15],[x+29,28,bz+14],4,damage);
@@ -142,5 +157,6 @@ export function relayRacksRoom():T.Group{
   const geo=mergeGeometries(parts,false)!;for(const p of parts)p.dispose();
   const mesh=new T.Mesh(geo,m);mesh.name=name;mesh.castShadow=g!==channels&&g!==shell;mesh.receiveShadow=true;mesh.userData.bakedEnvironment=true;(g===shell?root:g).add(mesh);
  }
+ root.userData.localizedStatusIndicators=4*3*3;
  return root;
 }
