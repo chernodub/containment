@@ -21,20 +21,31 @@ function fixture(){
 const clear=(game:DepthGame)=>game['clearRoom']();
 
 describe('checkpoint failure feedback',()=>{
- it('does not promise a checkpoint before the first room is cleared',()=>{
+ it('truthfully promises the saved initial choice before the first room is cleared',()=>{
   const {game}=fixture();
-  expect(game.checkpointStatus).toBe('none');
-  expect(game.checkpointNote).toContain('No checkpoint saved yet');
+  expect(game.checkpointStatus).toBe('saved');
+  expect(game.checkpointNote).toContain('last saved choice or room boundary');
+  expect(game.canContinue).toBe(true);
  });
  it('warns about failed writes, keeps gameplay usable, and recovers after a later successful boundary',()=>{
   const {game,failures,storage}=fixture();failures.write=true;clear(game);
   expect(game.status).toBe('reward');expect(game.checkpointStatus).toBe('save-failed');
-  expect(game.checkpointWarning).toContain('could not be saved');expect(game.canContinue).toBe(false);
+  expect(game.checkpointWarning).toContain('could not be saved');expect(game.canContinue).toBe(true);
+  const previous=new DepthGame(()=>{},storage);expect(previous.continueRun()).toBe(true);
+  expect(previous.expedition.run.phase).toBe('starting-boon');
   failures.write=false;game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
   expect(game.status).toBe('route');expect(game.checkpointStatus).toBe('saved');
   expect(game.checkpointWarning).toBe('');expect(game.canContinue).toBe(true);
   const restored=new DepthGame(()=>{},storage);expect(restored.continueRun()).toBe(true);
   expect(restored.checkpointStatus).toBe('saved');
+ });
+ it('reports an initial write failure without advertising a nonexistent save',()=>{
+  const {game,failures,values}=fixture();failures.write=true;game.newRun(42,{rigSelect:true});
+  expect(game.checkpointStatus).toBe('save-failed');expect(game.canContinue).toBe(false);
+  expect(values.has(CHECKPOINT_STORAGE_KEY)).toBe(false);
+  expect(game.chooseRig('arc')).toBe(true);expect(game.canContinue).toBe(false);
+  failures.write=false;game.newRun(42,{rigSelect:true});
+  expect(game.checkpointStatus).toBe('saved');expect(game.canContinue).toBe(true);
  });
  it('distinguishes an older checkpoint from the latest failed save',()=>{
   const {game,failures,values}=fixture();clear(game);const saved=values.get(CHECKPOINT_STORAGE_KEY);

@@ -70,12 +70,14 @@ function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (!exactRecord(value, ['version', 'savedAt', 'run', 'build', 'resources', ...optional]) || !isValidCheckpointExtensions(value) ||
     value.version !== 1 || !boundedNumber(value.savedAt, 0, Number.MAX_SAFE_INTEGER, true) ||
     !validRun(value.run) ||
-    (value.run.phase !== 'reward' && value.run.phase !== 'route') ||
+    !['rig-select','starting-boon','reward','route'].includes(value.run.phase) ||
     !(exactRecord(value.build, ['mutations']) || exactRecord(value.build,['mutations','rig'])) || !Array.isArray(value.build.mutations) ||
     value.build.mutations.length > MUTATION_IDS.length || !isValidBuildState(value.build) ||
     !isValidRunResources(value.resources) || value.resources.health <= 0) {
     return false;
   }
+  // Initial choices cannot contain an already installed boon or completed room.
+  if (['rig-select','starting-boon'].includes(value.run.phase) && (value.build.mutations.length !== 0 || value.run.completedNodeIds.length !== 0)) return false;
   return true;
 }
 
@@ -112,7 +114,7 @@ export function isValidRunResources(value: unknown): value is RunResources {
 
 /**
  * Serialize a complete version-1 checkpoint supplied with its savedAt timestamp.
- * Only reward/route boundaries with a living player are resumable. The caller must
+ * Initial choices and reward/route boundaries with a living player are resumable. The caller must
  * encode infinite pistol reserve as -1; Infinity is rejected, never JSON-coerced.
  * Invalid input, cyclic objects and throwing getters return null without throwing.
  */

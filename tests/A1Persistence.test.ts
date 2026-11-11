@@ -69,9 +69,15 @@ describe('Combat Rig checkpoint extensions', () => {
     for (const stats of corrupt) expect(serializeCheckpoint({...saved, stats})).toBeNull();
   });
 
-  it('keeps checkpoints restricted to cleared reward/route boundaries', () => {
+  it('accepts initial choices while keeping combat and terminal phases non-resumable', () => {
     const saved = oldCheckpoint();
-    for (const phase of ['rig-select', 'starting-boon', 'combat', 'dead', 'complete']) expect(decode({...saved, run: {...createRun(42), phase}})).toBeNull();
+    for (const phase of ['combat', 'dead', 'complete']) expect(decode({...saved, run: {...createRun(42), phase}})).toBeNull();
+    for (const phase of ['rig-select', 'starting-boon'] as const) {
+      const initial = {...saved, run: {...createRun(42), phase}};
+      expect(decode(initial)).toEqual(initial);
+      expect(decode({...initial, build: {mutations:['breacher']}})).toBeNull();
+      expect(decode({...saved, run: {...saved.run, phase}})).toBeNull();
+    }
   });
 });
 
