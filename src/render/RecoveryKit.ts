@@ -2,6 +2,7 @@ import * as T from 'three';
 import {roomModelCache,retireRoomModels} from './RoomModelCache';
 import {AWAKENING_FUNCTIONAL_ENVELOPES} from '../game/roguelike/authoredRoomTopologies';
 import {disposeModel} from './meshParts';
+import {batchOwnedStaticAsset} from './OwnedStaticAssetBatching';
 
 export const RECOVERY_KIT_URL=import.meta.env.BASE_URL+'assets/awakening/recovery-kit/room-kit.glb';
 /** Room-owned copies retire independently from the three session templates. */
@@ -31,7 +32,7 @@ export function attachRecoveryKit(room:T.Group,onChanged:()=>void,load:(signal:A
  owner.ready=Promise.race([pending,timeout,cancelled]).then(s=>{
   if(!active){retire(s);return;}source=s;
   if(!fallback||fallback.parent!==room)throw Error('stale recovery kit target');
-  validate(s);s.name='recovery-kit';s.position.set(204/32,0,700/32);s.traverse(o=>{if(o instanceof T.Mesh)o.castShadow=o.receiveShadow=true;});
+  validate(s);batchOwnedStaticAsset(s);s.name='recovery-kit';s.position.set(204/32,0,700/32);s.traverse(o=>{if(o instanceof T.Mesh)o.castShadow=o.receiveShadow=true;});
   const oldSigns=new Set(fallback.userData.localSigns??[]);
   room.add(s);room.userData.localSigns=(room.userData.localSigns??[]).filter((sign:unknown)=>!oldSigns.has(sign));disposeModel(fallback);owner.state='ready';
  }).catch(()=>{if(source){retire(source);source=undefined;}if(active){active=false;controller.abort();owner.state='fallback';}}).then(()=>{
