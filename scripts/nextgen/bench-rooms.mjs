@@ -17,6 +17,7 @@ const label = option('label', 'p1-rooms');
 assert(/^[\w.-]+$/.test(label));
 const out = resolve('artifacts/nextgen', label), dist = resolve(option('dist', 'dist'));
 const baseline = args.includes('--baseline');
+const modes=option('modes','fresh,sequential').split(',');assert(modes.every(mode=>['fresh','sequential','ahead'].includes(mode)),'Unknown audit mode');
 const host = () => ({at: new Date().toISOString(), load: loadavg(), cores: cpus().length});
 const report = {sha: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(), dist, baseline, host: host(), rows: [], errors: [], failures: [], notes: ['Fresh page per room; sequential rows retain the same renderer through all rooms, using validated checkpoint routes. Sequential staging is accumulation coverage, not an organic twenty-room campaign.', 'Phases are inclusive and may overlap; total is the complete public gotoRoom readiness hold. Instrumentation exists only in this audit.']};
 await mkdir(out, {recursive: true});
@@ -60,10 +61,22 @@ try {
       }
     });
   }
-  for (const mode of ['fresh','sequential']) {
-    if (mode==='sequential') await reset();
+  for (const mode of modes) {
+    if (mode!=='fresh') await reset();
     for (const room of rooms) {
       if (mode==='fresh') await reset();
+      let aheadWork=null;
+      if(mode==='ahead'&&allRooms.indexOf(room)>0&&room!=='reactor-vault'){
+        aheadWork=await page.evaluate(async previous=>{
+          const d=window.__containmentDebug;await d.gotoRoom(previous,{phase:'reward'});
+          const r=d.renderer,start=performance.now(),inventory=r.renderer.info.programs.length;
+          for(let i=0;i<1800;i++){
+            await new Promise(requestAnimationFrame);
+            if(!r.aheadRooms.pending.size&&r.renderer.info.programs.every(p=>!p.program||!p.isReady||p.isReady()))return {previous,ms:performance.now()-start,programsLinked:r.renderer.info.programs.length-inventory};
+          }
+          throw Error('Background route preparation did not settle');
+        },allRooms[allRooms.indexOf(room)-1]);
+      }
       const before = host();
       const row = await page.evaluate(async ({room,mode}) => {
         const d=window.__containmentDebug,r=d.renderer,a=window.__roomAudit;
@@ -78,7 +91,7 @@ try {
         finally {gl.createProgram=create;}
         return {room,mode,total,phases,calls,inventoryBefore:inventory,programs:r.renderer.info.programs.length,newPrograms:r.renderer.info.programs.length-inventory,combatCompiles:compiles,postReadyCompiles,postReadyPrograms:postReadyCompiles?r.renderer.info.programs.slice(-postReadyCompiles).map(p=>({name:p.name,key:p.cacheKey})):[],preparation:r.preparationDiagnostics??null,resources:{...r.renderer.info.memory},gpu:a.gpu};
       },{room,mode});
-      row.before=before;row.after=host();report.rows.push(row);
+      row.before=before;row.after=host();row.aheadWork=aheadWork;report.rows.push(row);
       assert(!/swiftshader|software|llvmpipe/i.test(row.gpu),'Hardware renderer required');
       if(!baseline && row.postReadyCompiles)report.failures.push({room,mode,metric:'postReadyCompiles',value:row.postReadyCompiles,limit:0});
       if(row.combatCompiles)report.failures.push({room,mode,metric:'combatCompiles',value:row.combatCompiles,limit:0});
