@@ -233,7 +233,7 @@ it('groups owned boon glyphs by family with full accessible rules, capped stacks
         await page.close();
     }
 });
-it('makes ready rigs elemental, fills Overdrive energy, marks low ammunition and keeps the hint in the lower lip', async () => {
+it('makes ready rigs elemental, fills Overdrive energy, marks low ammunition and replaces the permanent hint with optional contextual coaching', async () => {
     const page = await mountHud(1920, 1080);
     try {
         await liveHud(page);
@@ -258,8 +258,8 @@ it('makes ready rigs elemental, fills Overdrive energy, marks low ammunition and
         const ammo = await page.locator('#magazine').evaluate(el => ({ progress: parseFloat(getComputedStyle(el).getPropertyValue('--reload-progress')), stripe: parseFloat(getComputedStyle(el, '::after').width) }));
         expect(ammo.progress).toBeGreaterThan(0);
         expect(ammo.stripe).toBeGreaterThan(0);
-        const hint = await page.evaluate(() => { const hint = document.querySelector('.desktop-hint')!.getBoundingClientRect(), bar = document.getElementById('action-bar')!.getBoundingClientRect(); return { inside: hint.left >= bar.left && hint.right <= bar.right && hint.top >= bar.top && hint.bottom <= bar.bottom }; });
-        expect(hint.inside).toBe(true);
+        expect(await page.locator('.desktop-hint').count()).toBe(0);
+        expect(await page.locator('#contextual-onboarding').count()).toBe(1);
         await page.emulateMedia({ reducedMotion: 'reduce' });
         expect(await page.locator('[data-ability=overdrive]').evaluate(el => getComputedStyle(el, '::after').animationName)).toBe('none');
     }
@@ -339,5 +339,52 @@ it('labels a stored but illegal placement as blocked instead of a zero-second co
         });
         expect(await page.locator('[data-ability="power"] .ability-value').textContent()).toBe('BLOCKED');
         expect(await page.locator('[data-ability="power"]').getAttribute('data-charges')).toBe('1');
+    } finally {await page.close();}
+});
+
+it('offers full ability rules on passive hover and native focus, including a live Overdrive duration ring', async () => {
+    const page=await mountHud(1920,1080);
+    try {
+        await liveHud(page);
+        await page.evaluate(()=>{const {game,hud,adapter,fixtures}=(window as any).__live;adapter.setUiFixture(game,{abilities:fixtures.abilityFixture('cryo','active')});hud();hud.tick(.01);});
+        const tactical=page.locator('[data-ability=tactical]');
+        expect(await tactical.getAttribute('tabindex')).toBe('0');
+        await tactical.focus();
+        const tooltip=page.locator('#ability-rules-tactical');
+        expect(await tooltip.isVisible()).toBe(true);
+        expect(await tooltip.textContent()).toContain('frozen solid for 1.8 seconds');
+        expect(await tooltip.evaluate(node=>getComputedStyle(node).pointerEvents)).toBe('none');
+        await page.locator('#pause').focus();
+        expect(await tooltip.isHidden()).toBe(true);
+        const box=(await tactical.boundingBox())!;
+        await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+        expect(await tooltip.isVisible()).toBe(true);
+        const hit=await page.evaluate(({x,y})=>document.elementFromPoint(x,y)?.id,{x:box.x+box.width/2,y:box.y+box.height/2});
+        expect(hit).toBe('world');
+        const ring=page.locator('.overdrive-duration circle');
+        const offset=Number(await ring.evaluate(node=>(node as SVGCircleElement).style.strokeDashoffset));
+        expect(offset).toBeGreaterThan(0);expect(offset).toBeLessThan(132);
+        const dashOffset=Number(await page.locator('.dash-duration circle').evaluate(node=>(node as SVGCircleElement).style.strokeDashoffset));
+        expect(dashOffset).toBeGreaterThan(0);expect(dashOffset).toBeLessThan(132);
+        await page.evaluate(()=>(window as any).__live.hud.dispose());
+        expect(await page.locator('.ability-tooltip,.overdrive-duration,.dash-duration,#contextual-onboarding').count()).toBe(0);
+    } finally {await page.close();}
+});
+
+it('shows remaining-enemy progress and deduplicates a short multi-kill beat with a cooldown', async () => {
+    const page=await mountHud(1920,1080);
+    try {
+        await liveHud(page);
+        await page.evaluate(()=>{
+            const {game,hud}=(window as any).__live;
+            let remaining=20;Object.defineProperty(game,'encounterRemaining',{get:()=>remaining});hud();remaining=10;hud();
+            for(let id=1;id<=4;id++){hud.effect({type:'hit',x:0,y:0,targetId:id,damage:40,lethal:true});hud.effect({type:'hit',x:0,y:0,targetId:id,damage:40,lethal:true});}
+        });
+        const progress=page.locator('.encounter-progress');
+        expect(await progress.getAttribute('aria-valuetext')).toBe('10 enemies remaining');
+        expect(Number(await progress.getAttribute('aria-valuenow'))).toBeGreaterThan(0);
+        expect(await page.locator('.hud-toast[data-kind=combat]:not([hidden])').allTextContents()).toEqual(['SWARM BROKEN · 3 down']);
+        await page.emulateMedia({reducedMotion:'reduce'});
+        expect(await page.locator('.hud-toast[data-kind=combat]').evaluate(node=>getComputedStyle(node).animationName)).toBe('none');
     } finally {await page.close();}
 });

@@ -263,3 +263,57 @@ it('coalesces sustained zone pulses and spatial status labels until a quiet gap'
     expect(await page.locator('.combat-float:not([hidden])').count()).toBe(0);
   } finally {await page.close();}
 });
+
+it('fans clustered target receipts into separate readable boxes and gives statuses an icon chip', async () => {
+  const page = await mount();
+  try {
+    await page.evaluate(() => {
+      const {combat,player}=(window as any).combatTest;
+      for(let id=0;id<8;id++) combat.effect({type:'hit',x:350+id*3,y:500+id*2,targetId:id,damage:30+id,source:'weapon'});
+      combat.effect({type:'boon',x:350,y:500,boon:'ice'});
+      combat.tick(.01,player);
+    });
+    const receipts=page.locator('.combat-float:not([hidden])');
+    expect(await receipts.count()).toBe(9);
+    const boxes=await receipts.evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom};}));
+    for(let a=0;a<boxes.length;a++) for(let b=a+1;b<boxes.length;b++) {
+      const x=boxes[a],y=boxes[b];
+      expect(x.left<y.right&&x.right>y.left&&x.top<y.bottom&&x.bottom>y.top).toBe(false);
+    }
+    const status=page.locator('.combat-float[data-kind=status]:not([hidden])');
+    expect(await status.locator('svg:not([hidden])').count()).toBe(1);
+    expect(await status.locator(':scope > span:last-child').textContent()).toBe('CHILLED');
+    expect(await status.evaluate(node=>getComputedStyle(node).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
+    expect(await status.evaluate(node=>getComputedStyle(node).pointerEvents)).toBe('none');
+  } finally {await page.close();}
+});
+
+it('uses optional projected actor height to scale feedback while preserving the same bounded pool', async () => {
+  const page=await mount();
+  try {
+    await page.evaluate(()=>{
+      const {combat,player}=(window as any).combatTest;
+      combat.renderer.worldToScreen=(x:number,y:number,height=0)=>({x,y:y-height*60});
+      combat.effect({type:'hit',x:350,y:450,targetId:1,damage:28});combat.tick(.01,player);
+    });
+    const receipt=page.locator('.combat-float:not([hidden])');
+    expect(await receipt.evaluate(node=>parseFloat(getComputedStyle(node).fontSize))).toBe(42.5);
+    expect(await receipt.evaluate(node=>(node as HTMLElement).style.getPropertyValue('--actor-scale'))).toBe('1.25');
+    expect(await page.locator('.combat-float').count()).toBe(28);
+  } finally {await page.close();}
+});
+
+it('reuses preallocated status icon children throughout repeated elemental pulses', async () => {
+  const page=await mount();
+  try {
+    const result=await page.evaluate(()=>{
+      const {combat,player}=(window as any).combatTest;
+      combat.effect({type:'boon',x:350,y:450,boon:'ice'});combat.tick(.01,player);
+      const glyph=document.querySelector('.combat-float[data-kind=status] svg:not([hidden])');
+      const count=document.querySelectorAll('#combat-text *').length;
+      for(let i=0;i<20;i++){combat.effect({type:'boon',x:350,y:450,boon:'ice'});combat.tick(.1,player);}
+      return {reused:glyph===document.querySelector('.combat-float[data-kind=status] svg:not([hidden])'),before:count,after:document.querySelectorAll('#combat-text *').length};
+    });
+    expect(result.reused).toBe(true);expect(result.after).toBe(result.before);
+  } finally {await page.close();}
+});

@@ -25,7 +25,6 @@ export function renderShell(): string {
    ${(['tactical', 'power'] as const).map((slot, i) => `<div class="ability-slot" data-ability="${slot}"><div class="cooldown-dial"><span class="ability-icon"></span><svg viewBox="0 0 48 48" aria-hidden="true"><circle class="dial-track" cx="24" cy="24" r="21"/><circle class="dial-progress" cx="24" cy="24" r="21"/></svg><b class="ability-value">READY</b></div><div class="ability-caption">${key(i === 0 ? 'Q' : 'F')}<span class="ability-title"></span><span class="ability-charges"></span></div></div>`).join('')}
    <div class="overdrive-slot" data-ability="overdrive"><div class="overdrive-top">${key('V')}<span>OVERDRIVE</span><b class="ability-value">0%</b></div><div class="overdrive-body"><span class="ability-icon"></span><span class="ability-title"></span></div><div class="overdrive-meter"><i></i></div></div>
   </div>
-  <div class="desktop-hint">WASD <span>MOVE</span> · MOUSE <span>AIM / FIRE</span> · SPACE <span>AIM ASSIST</span></div>
  </div>
  <div id="combat-text" aria-hidden="true"></div><div id="threat-indicators" aria-hidden="true"></div><div id="damage-directions" aria-hidden="true"></div><div id="hud-toasts" role="status" aria-live="polite" aria-atomic="true"></div>
  <aside id="radar-hud" aria-label="Room radar" hidden><div class="radar-label">${icon('combat')}<span>LOCAL SCAN</span></div><svg id="radar-map" viewBox="0 0 144 100" aria-hidden="true"></svg></aside>

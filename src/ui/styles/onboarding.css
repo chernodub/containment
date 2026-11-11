@@ -1,0 +1,20 @@
+#hud .contextual-onboarding {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 14px);
+  transform: translateX(-50%);
+  width: 330px;
+  padding: 12px 16px;
+  border: 1px solid #9fe8ff70;
+  border-left: 3px solid #9fe8ff;
+  background: #07131af5;
+  box-shadow: 0 8px 30px #0007;
+  pointer-events: none;
+  color: #e8fbff;
+  text-align: left;
+}
+#hud .contextual-onboarding kbd { float: right; font-size: 11px; margin: 0 0 6px 10px; }
+#hud .contextual-onboarding b { display: block; font: 600 19px/1.15 var(--font-display); margin-bottom: 5px; }
+#hud .contextual-onboarding > span { display: block; color: #bcd1dc; font-size: 12px; line-height: 1.4; }
+#hud .contextual-onboarding[data-action=overdrive] { border-color: #ffd27a; }
+@media (prefers-reduced-motion: reduce) { #hud .contextual-onboarding { animation: none; transition: none; } }
