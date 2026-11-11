@@ -76,6 +76,7 @@ function validCheckpoint(value: unknown): value is RunCheckpoint {
     !isValidRunResources(value.resources) || value.resources.health <= 0) {
     return false;
   }
+  if (value.stats !== undefined && !isValidRunStatsSnapshot(value.stats,value.run)) return false;
   return true;
 }
 

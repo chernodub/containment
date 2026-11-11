@@ -1,5 +1,7 @@
 import type { AbilitySlot } from './contract';
 import type { EnemyId } from '../enemies/types';
+import {generateRun} from '../roguelike/run';
+import type {RunState} from '../roguelike/types';
 
 export type DamageSource = 'weapon' | 'ability' | 'status' | 'boon';
 export type RunStatsSnapshot = Readonly<{
@@ -27,14 +29,23 @@ const bounded = (value: unknown, max: number = RUN_STATS_LIMITS.counter, integer
 const roomId = (value: string): boolean => value.length <= 128 && /^\d{1,10}:(?:v3-r(?:[0-9]|1[0-9])|v2-r(?:[0-9]|1[01])-(?:combat|elite|medical|armory|boss)|r[0-5]-(?:start|medical|armory|combat|safe|elite|boss))$/.test(value);
 const counts = (value: unknown, keys: readonly string[], integer: boolean): value is Record<string, number> => exact(value, keys) && keys.every(key => bounded(value[key], RUN_STATS_LIMITS.counter, integer));
 
-/** Strict exact-schema validation; a checkpoint may omit stats for old saves. */
-export function isValidRunStatsSnapshot(value: unknown): value is RunStatsSnapshot {
+/** Strict exact-schema validation; optional run context also checks timer membership and resume capacity. */
+export function isValidRunStatsSnapshot(value: unknown, run?: RunState): value is RunStatsSnapshot {
   try {
     if (!exact(value, KEYS) || !exact(value.kills, ['total', 'byFamily']) || !bounded(value.kills.total, RUN_STATS_LIMITS.counter, true) || !counts(value.kills.byFamily, FAMILIES, true) || Object.values(value.kills.byFamily).reduce((sum, n) => sum + n, 0) !== value.kills.total || !counts(value.damageDealt, SOURCES, false) || !counts(value.abilityUses, SLOTS, true)) return false;
     if (!['damageTaken', 'shotsFired', 'shotsHit', 'overdrivesUsed', 'creditsEarned'].every(key => bounded(value[key], RUN_STATS_LIMITS.counter, key !== 'damageTaken'))) return false;
     if (Number(value.shotsHit) > Number(value.shotsFired) || (value.kills.total > 0 && Number(value.highestMultiKill) < 1)) return false;
     if (Number(value.overdrivesUsed) !== value.abilityUses.overdrive || !bounded(value.highestMultiKill, RUN_STATS_LIMITS.multiKill, true) || Number(value.highestMultiKill) > value.kills.total) return false;
-    return plain(value.roomTimeMs) && Reflect.ownKeys(value.roomTimeMs).length <= RUN_STATS_LIMITS.rooms && Reflect.ownKeys(value.roomTimeMs).every(key => typeof key === 'string' && roomId(key) && bounded(value.roomTimeMs && (value.roomTimeMs as Record<string, unknown>)[key], RUN_STATS_LIMITS.timeMs));
+    if (!plain(value.roomTimeMs)) return false;
+    const rooms = Reflect.ownKeys(value.roomTimeMs);
+    if (rooms.length > RUN_STATS_LIMITS.rooms || !rooms.every(key => typeof key === 'string' && roomId(key) && bounded((value.roomTimeMs as Record<string, unknown>)[key], RUN_STATS_LIMITS.timeMs))) return false;
+    if (run) {
+      const graph = generateRun(run.seed, run.version);
+      if (!graph.nodes.some(node => node.id === run.currentNodeId) || !rooms.every(id => graph.nodes.some(node => node.id === id))) return false;
+      // Continue always enters the current node; a full map must already contain its timer.
+      if (!Object.hasOwn(value.roomTimeMs, run.currentNodeId) && rooms.length === RUN_STATS_LIMITS.rooms) return false;
+    }
+    return true;
   } catch { return false; }
 }
 
