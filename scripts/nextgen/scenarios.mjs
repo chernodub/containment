@@ -241,14 +241,14 @@ export function stageCombat({status=false}){
 }
 
 /** A repeatable moving firefight on the native camera, with real Combat Rig receipts. */
-export function stageKiting(attempt=0){
+export async function stageKiting(attempt=0){
  const d=window.__containmentDebug,g=d.game;
- d.invulnerable(true);g.enemies.reset();
  if(attempt){
-  // Try another legal lane using normal recharge and camera follow, never a
-  // wider capture camera, fabricated charge or weaker visible-target threshold.
-  d.setInput({x:0,y:0,fire:false,angle:null,autoAim:false});d.step(3000);g.enemies.reset();
+  // Start a fresh real attempt through the validated route helper. Advancing
+  // an emptied prior encounter just to recharge could legitimately clear it.
+  await d.gotoRoom(g.node.templateId,{version:g.expedition.run.version,rig:'cryo'});
  }
+ d.invulnerable(true);g.enemies.reset();
  const bounds=g.geometry.bounds,candidates=[];
  for(let y=bounds.y+100;y<bounds.y+bounds.height-100;y+=70)for(let x=bounds.x+100;x<bounds.x+bounds.width-100;x+=70){
   if(!d.canStand(x,y,28))continue;
@@ -272,7 +272,7 @@ export function stageKiting(attempt=0){
  const start={x:center.x-Math.cos(heading)*150,y:center.y-Math.sin(heading)*150};
  Object.assign(g.player,{...start,angle:heading,vx:0,vy:0});
  d.setInput({x:0,y:0,fire:false,angle:heading,autoAim:false});d.step(600);
- if(!g.useAbility('dash'))throw Error('Kiting Frost Trail denied');
+ if(!g.useAbility('dash'))throw Error('Kiting Frost Trail denied '+JSON.stringify({attempt,status:g.status,dash:g.abilities.snapshot.slots.dash}));
  d.step(160);d.step(600);g.enemies.reset();d.refresh();
  // Settle the native follow spring after the dash before evaluating visible packing.
  const origin={x:g.player.x,y:g.player.y};

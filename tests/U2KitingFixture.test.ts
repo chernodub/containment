@@ -22,7 +22,7 @@ it.each([...(DEFAULT_ROOMS as string[]), 'communal-atrium:retry', 'containment-a
   const game = new DepthGame(effect => rendererStub.effect(effect));
   installDebug(game, rendererStub as unknown as DepthRenderer, () => {}, () => {});
   await target.__containmentDebug.gotoRoom(room, {rig: 'cryo'});
-  const staged = stageKiting(mode === 'retry' ? 1 : 0);
+  const staged = await stageKiting(mode === 'retry' ? 1 : 0);
   expect(staged.laneAttempt).toBe(mode === 'retry' ? 1 : 0);
   expect(staged.staged).toBeGreaterThanOrEqual(18);
   expect(target.__containmentDebug.canStand(game.player.x, game.player.y)).toBe(true);
