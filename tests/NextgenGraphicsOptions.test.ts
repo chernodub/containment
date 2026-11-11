@@ -17,3 +17,12 @@ it('resets per-option overrides when a tier is selected and keeps Low cheap',()=
  expect(instance.qualityTier).toBe('low');expect(instance.renderer.shadowMap.enabled).toBe(false);
  instance.setQuality('high');expect(instance.graphicsOptions).toEqual(GRAPHICS_PRESETS.high);
 });
+
+it('holds preparation again when a graphics change selects a different shader configuration',()=>{
+ const queueRoomWarmup=vi.fn(),instance=Object.assign(Object.create(DepthRenderer.prototype),{options:GRAPHICS_PRESETS.high,tier:'high',materialWarmup:{},applyQuality:vi.fn(),queueRoomWarmup,corpses:[]}) as DepthRenderer;
+ instance.setGraphicsOptions({bloom:false});expect(queueRoomWarmup).not.toHaveBeenCalled();
+ instance.setGraphicsOptions({dynamicLights:false});expect(queueRoomWarmup).toHaveBeenCalledTimes(1);
+ instance.setQuality('high');expect(queueRoomWarmup).toHaveBeenCalledTimes(2);
+ instance.setQuality('low');expect(queueRoomWarmup).toHaveBeenCalledTimes(3);
+ instance.setQuality('high');expect(queueRoomWarmup).toHaveBeenCalledTimes(4);
+});

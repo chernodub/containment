@@ -43,7 +43,7 @@ describe('model template loading ownership', () => {
     scene.add(new T.Mesh(geometry, material));
     registerAsset('marine', {scene, animations:[]} as unknown as GLTF);
     const first = instantiateAsset('marine'), second = instantiateAsset('marine');
-    const mesh = (root:T.Group) => root.children[0] as T.Mesh<T.BufferGeometry, T.MeshStandardMaterial>;
+    const mesh = (root:T.Object3D) => root.children[0] as T.Mesh<T.BufferGeometry, T.MeshStandardMaterial>;
     const firstMesh = mesh(first.root), secondMesh = mesh(second.root);
     expect(firstMesh.material).not.toBe(material);
     expect(firstMesh.material).not.toBe(secondMesh.material);

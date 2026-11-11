@@ -52,6 +52,16 @@ it('resolves lazy uniform and attribute introspection before releasing combat in
  });
  await probe.compilePrepared(new T.Scene(),new T.PerspectiveCamera());
  expect(getUniforms).toHaveBeenCalledOnce();expect(getAttributes).toHaveBeenCalledOnce();
+ await probe.compilePrepared(new T.Scene(),new T.PerspectiveCamera());
+ expect(getUniforms).toHaveBeenCalledOnce();expect(getAttributes).toHaveBeenCalledOnce();
+});
+
+it('coalesces owner arrivals while the queued prepare is still awaiting assets',async()=>{
+ const{probe,images,shaders}=fixture();probe.queueRoomWarmup();const work=probe.roomWarmWork;
+ probe.queueRoomWarmup();probe.queueRoomWarmup();images.resolve();
+ await vi.waitFor(()=>expect(probe.prepareScene).toHaveBeenCalledOnce());
+ shaders.resolve();await work;
+ expect(probe.prepareScene).toHaveBeenCalledOnce();expect(probe.roomWarmPending).toBe(false);
 });
 
 it('retains authored static transforms without composing their local matrices every frame',()=>{

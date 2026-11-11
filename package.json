@@ -14,7 +14,8 @@
     "test:vfx": "node tests/render-afflictions.mjs",
     "verify": "npm test && npm run test:room-evidence && npm run build && npm run test:smoke && npm run test:authored-smoke:all",
     "test:authored-smoke:all": "npm run test:authored-smoke -- --viewport=desktop --out=artifacts/authored-smoke/desktop",
-    "bench": "node scripts/nextgen/bench.mjs"
+    "bench": "node scripts/nextgen/bench.mjs",
+    "bench:rooms": "node scripts/nextgen/bench-rooms.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.20.0",

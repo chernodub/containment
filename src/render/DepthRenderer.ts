@@ -1,3 +1,7 @@
+import {freezeStaticRoom} from './StaticRoomTransforms';
+import {RoomPreparationCache} from './RoomPreparationCache';
+import {generateRun} from '../game/roguelike/run';
+import {batchStaticRoom} from './StaticRoomBatching';
 import {MaterialWarmup} from './MaterialWarmup';
 import {configureCinematicLayers,CINEMATIC_LAYER} from './CinematicLayers';
 import {ContextResources} from './ContextResources';
@@ -54,6 +58,7 @@ import type {DepthGame,GameEffect} from '../DepthGame';
 import type {RunNode} from '../game/roguelike/types';
 const UNIT=32;
 const PREPARATION_CANCELLED=Symbol('graphics-generation-replaced');
+export type RoomPreparationTiming={room:string;started:number;total:number;phases:Record<string,number>;compilePasses:number;textureUploads:number;programsBefore:number;programsAfter:number};
 type Corpse={model:ActorModel;x:number;y:number;vx:number;vy:number;height:number;lift:number;spin:number;age:number;id:number};
 export class DepthRenderer {
  readonly menuPresentation='cinematic' as const;
@@ -63,11 +68,16 @@ export class DepthRenderer {
  private ragdolls=new DeathRagdolls();private staticDirty=false;private corpseIds=new Set<number>();
  private staticLoaded(owner:T.Group){return()=>{if(this.world!==owner)return;const newProfiles=this.materialWarmup?.register(owner)??0;this.contextResources?.track(owner);this.reflection?.invalidate();this.shadowsDirty=true;this.staticDirty=true;if(this.materialWarmup&&newProfiles)this.queueRoomWarmup();};}
  private actorPool=new ActorPool();private player=marine();private playerBeacon=new PlayerBeacon(this.player.root,this.hudScene);private corpses:Corpse[]=[];private effects:AttackEffects;
- private preparationTargets=new Set<T.WebGLRenderTarget>();private graphicsGeneration=0;private roomWarmPending=false;private roomWarmWork:Promise<void>=Promise.resolve();private forceRoomWarm=false;private warmAgain=false;private deferredRoom:{node:RunNode;environment?:ShipEnvironment}|null=null;
+ private initializedTextures=new WeakMap<T.Texture,number>();private introspectedPrograms=new WeakSet<object>();
+ private preparationHistory:RoomPreparationTiming[]=[];private preparationTiming:RoomPreparationTiming|null=null;
+ /** Bounded room-load evidence; read only by capture/benchmark tooling. */
+ get preparationDiagnostics(){return this.preparationHistory.map(row=>({...row,phases:{...row.phases}}));}
+ private preparationTargets=new Set<T.WebGLRenderTarget>();private graphicsGeneration=0;private roomWarmPending=false;private roomWarmWork:Promise<void>=Promise.resolve();private roomWarmCompiling=false;private forceRoomWarm=false;private warmAgain=false;private deferredRoom:{node:RunNode;environment?:ShipEnvironment}|null=null;
+ private aheadKey='';private aheadRooms=new RoomPreparationCache(node=>this.buildAhead(node),root=>disposeModel(root),2);
  private materialWarmup:MaterialWarmup;private surfaces:EnvironmentMaterials;private floorMaterial:T.MeshStandardMaterial;
  private practicalPools=new PracticalPools(this.scene);private arena=new ArenaStaging(this.scene);private backdrop=new ShipBackdrop(this.scene);private atmosphere=new Atmosphere(this.scene);private heatClock=0;private lighting=new SceneLighting();private contacts=new ContactShadows();private muzzle:T.PointLight;private muzzleLife=0;
  private pendingShots:GameEffect[]=[];private shotSocket=new T.Vector3();
- private reflection:RoomReflectionCapture;private roomWidth=0;private roomHeight=0;private roomEnvironment:ShipEnvironment='cryogenics';private recoveringGraphics=false;private loseGraphics=()=>{this.graphicsGeneration++;for(const target of this.preparationTargets)target.dispose();this.preparationTargets.clear();this.recoveringGraphics=true;this.contextResources.track(this.scene);this.contextResources.track(this.hudScene);this.contextResources.invalidate();this.reflection.invalidate();this.post.invalidate();this.lighting.invalidateShadows();};private restoreGraphics=()=>{this.shadowsDirty=true;this.recoveringGraphics=true;this.queueRoomWarmup();void this.roomWarmWork.finally(()=>{this.recoveringGraphics=false;}).catch(()=>{});};
+ private reflection:RoomReflectionCapture;private roomWidth=0;private roomHeight=0;private roomEnvironment:ShipEnvironment='cryogenics';private recoveringGraphics=false;private loseGraphics=()=>{this.graphicsGeneration++;this.initializedTextures=new WeakMap();this.introspectedPrograms=new WeakSet();for(const target of this.preparationTargets)target.dispose();this.preparationTargets.clear();this.recoveringGraphics=true;this.contextResources.track(this.scene);this.contextResources.track(this.hudScene);this.contextResources.invalidate();this.reflection.invalidate(true);this.post.invalidate();this.lighting.invalidateShadows();};private restoreGraphics=()=>{this.shadowsDirty=true;this.recoveringGraphics=true;this.queueRoomWarmup();void this.roomWarmWork.finally(()=>{this.recoveringGraphics=false;}).catch(()=>{});};
  private focus=new T.Vector3(18,0,14);private raycaster=new T.Raycaster();private ground=new T.Plane(new T.Vector3(0,1,0),0);
  private post:PostPipeline;private tier:GraphicsTier='high';private shadowTime=0;private shadowsDirty=true;private pixelRatio=1;
  private options:GraphicsOptions=GRAPHICS_PRESETS.high;
@@ -121,10 +131,10 @@ export class DepthRenderer {
  get graphicsOptions(){return this.options;}
  /** Apply presentation settings without changing deterministic game state. */
  setGraphicsOptions(partial:Partial<GraphicsOptions>){
-  this.options=resolveGraphicsOptions(this.options??GRAPHICS_PRESETS.high,partial);this.applyQuality();
+  const previous=this.options;this.options=resolveGraphicsOptions(this.options??GRAPHICS_PRESETS.high,partial);this.applyQuality();if(this.materialWarmup&&(previous.dynamicLights!==this.options.dynamicLights||previous.shadows!==this.options.shadows||previous.atmosphere!==this.options.atmosphere))this.queueRoomWarmup();
  }
  setQuality(value:'high'|'low'='high'){
-  const wasLow=this.tier==='low';this.tier=value==='low'?'low':'high';this.options=GRAPHICS_PRESETS[this.tier];this.ragdolls?.setQuality(this.tier);while(this.corpses.length>(this.tier==='low'?6:12)){const c=this.corpses.shift()!;this.ragdolls.remove(c.id);this.actorPool.release(c.model);}this.applyQuality();if(wasLow&&this.tier==='high'&&this.materialWarmup)this.queueRoomWarmup();
+  const previous=this.options,wasLow=this.tier==='low';this.tier=value==='low'?'low':'high';this.options=GRAPHICS_PRESETS[this.tier];this.ragdolls?.setQuality(this.tier);while(this.corpses.length>(this.tier==='low'?6:12)){const c=this.corpses.shift()!;this.ragdolls.remove(c.id);this.actorPool.release(c.model);}this.applyQuality();if(this.materialWarmup&&(wasLow!==(this.tier==='low')||previous?.dynamicLights!==this.options.dynamicLights||previous?.shadows!==this.options.shadows||previous?.atmosphere!==this.options.atmosphere))this.queueRoomWarmup();
  }
  private applyQuality(){this.renderer.shadowMap.enabled=this.tier!=='low'&&this.options.shadows!=='off';this.shadowsDirty=true;if(this.muzzle)this.muzzle.visible=this.options.dynamicLights;this.lighting?.setQuality(this.tier,this.options.dynamicLights,this.options.atmosphere,this.options.flashIntensity*(this.motionQuery?.matches?.5:1),this.options.shadows);this.post?.setOptions(this.motionQuery?.matches?{...this.options,distortion:false,lensEffects:false}:this.options,this.tier);this.effects?.setOptions({...this.options,tier:this.tier,reducedMotion:!!this.motionQuery?.matches});this.interimAbilities?.setOptions?.(this.options,this.tier,!!this.motionQuery?.matches);this.afflictions?.setOptions({...this.options,tier:this.tier,reducedMotion:!!this.motionQuery?.matches});this.atmosphere?.setOptions(this.options,this.tier,!!this.motionQuery?.matches);this.backdrop?.setQuality(this.tier);this.player?.setFlashIntensity?.(this.options.flashIntensity);for(const actor of this.actors?.values()??[])actor.setFlashIntensity?.(this.options.flashIntensity);this.queen?.setFlashIntensity?.(this.options.flashIntensity);for(const corpse of this.corpses??[])corpse.model.setFlashIntensity?.(this.options.flashIntensity);this.resize();}
  resize(){
@@ -148,6 +158,26 @@ export class DepthRenderer {
  addTrauma(amount:number){this.cameraRig.addTrauma(amount);}
  kick(angle:number,amount:number){this.cameraRig.kick(angle,amount);}
  punch(amount:number,ms:number){this.cameraRig.punch(amount,ms);}
+ /** Speculate at most two known route nodes while rewards/routes leave the GPU idle. */
+ prepareAhead(nodes:readonly RunNode[]){if(!this.disposed)this.aheadRooms.prepareAhead(nodes);}
+ private buildAhead(node:RunNode):T.Group|null{
+  const t=ROOM_TEMPLATES[node.templateId],environment=shipEnvironment(node.templateId)??(node.templateId==='reactor-vault'?'reactor':'cryogenics');
+  const root=node.templateId==='service-shaft-landing'?serviceShaftLanding(t):authoredRoom(node.templateId,t);
+  if(root){batchStaticRoom(root);applyRoomMood(root,environment,node.templateId);this.materialWarmup.register(root);}
+  // Link the retained shared shaders against the future light topology without
+  // replacing the active room, capturing reflections, or holding route input.
+  if(this.renderer.extensions.has('KHR_parallel_shader_compile')&&!this.roomWarmPending&&!this.recoveringGraphics){
+   const lighting=new SceneLighting(),scene=new T.Scene(),target=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType});
+   lighting.loadRoom(root??new T.Group(),t.width/UNIT,t.height/UNIT,environment,node.templateId);lighting.setQuality(this.tier,this.options.dynamicLights,this.options.atmosphere,this.options.flashIntensity,this.options.shadows);
+   scene.add(lighting.root,new T.PointLight());scene.environment=this.scene.environment;scene.fog=this.scene.fog;
+   const originalTarget=this.renderer.getRenderTarget(),mapping=this.renderer.toneMapping;
+   let work:Promise<void>;
+   try{this.renderer.setRenderTarget(this.tier==='high'?target:null);this.renderer.toneMapping=this.tier==='high'?T.NoToneMapping:T.AgXToneMapping;work=this.compilePrepared(this.materialWarmup.root,this.camera,scene);}
+   finally{this.renderer.setRenderTarget(originalTarget);this.renderer.toneMapping=mapping;}
+   void work.catch(error=>{if(error!==PREPARATION_CANCELLED)console.error('Route shader preparation failed',error);}).finally(()=>{lighting.dispose();target.dispose();});
+  }
+  return root;
+ }
  /** Load shaders, textures, GPU buffers and common animation actions before combat. */
  async prepare(node:RunNode){
   if(this.materialWarmup){while(this.roomWarmPending)await this.roomWarmWork;this.forceRoomWarm=true;try{this.loadRoom(node);}finally{this.forceRoomWarm=false;}await this.roomWarmWork;while(this.roomWarmPending)await this.roomWarmWork;return;}
@@ -159,28 +189,31 @@ export class DepthRenderer {
  }
  /** Serialize room preparation, keeping input blocked until every actual material is ready. */
  private queueRoomWarmup(){
-  if(this.roomWarmPending){this.warmAgain=true;return;}
-  this.roomWarmPending=true;const world=this.world,generation=this.graphicsGeneration;
+  if(this.roomWarmPending){if(this.roomWarmCompiling)this.warmAgain=true;return;}
+  this.roomWarmPending=true;this.roomWarmCompiling=false;const world=this.world,generation=this.graphicsGeneration,timing=this.preparationTiming,waitStarted=performance.now();
   const ready=[this.surfaces.ready,this.passengerVault?.ready,this.residentialGalleryEquipment?.ready,this.communalGarden?.ready,this.sealedBank?.ready,this.releasedBerth?.ready,this.recoveryKit?.ready];
-  this.roomWarmWork=Promise.all(ready).then(async()=>{if(this.disposed||this.world!==world||generation!==this.graphicsGeneration||this.renderer.getContext().isContextLost())return;this.captureRoomReflections();await this.prepareScene();}).catch(error=>{if(error!==PREPARATION_CANCELLED&&generation===this.graphicsGeneration&&!this.renderer.getContext().isContextLost())throw error;}).finally(()=>{
-   this.roomWarmPending=false;const next=this.deferredRoom;this.deferredRoom=null;
+  this.roomWarmWork=Promise.all(ready).then(async()=>{if(this.disposed||this.world!==world||generation!==this.graphicsGeneration||this.renderer.getContext().isContextLost())return;this.roomWarmCompiling=true;if(timing)timing.phases.assets=(timing.phases.assets??0)+performance.now()-waitStarted;const captureStarted=performance.now();this.captureRoomReflections();if(timing)timing.phases.reflection=(timing.phases.reflection??0)+performance.now()-captureStarted;const warmStarted=performance.now();await this.prepareScene();if(timing){timing.phases.warm=(timing.phases.warm??0)+performance.now()-warmStarted;timing.total=performance.now()-timing.started;timing.programsAfter=this.renderer.info.programs?.length??0;}}).catch(error=>{if(error!==PREPARATION_CANCELLED&&generation===this.graphicsGeneration&&!this.renderer.getContext().isContextLost())throw error;}).finally(()=>{
+   this.roomWarmPending=false;this.roomWarmCompiling=false;const next=this.deferredRoom;this.deferredRoom=null;
    if(next)this.loadRoom(next.node,next.environment);
    if(this.warmAgain){this.warmAgain=false;this.queueRoomWarmup();}
   });
   void this.roomWarmWork.catch(error=>console.error('Room graphics preparation failed',error));
  }
  /** Generation-aware polling avoids Three's uncancellable async callbacks on a lost context. */
- private async compilePrepared(scene:T.Scene,camera:T.Camera){
-  const generation=this.graphicsGeneration;this.checkGraphicsGeneration(generation);this.renderer.compile(scene,camera);
+ private async compilePrepared(scene:T.Scene|T.Group,camera:T.Camera,targetScene?:T.Scene){
+  const generation=this.graphicsGeneration;this.checkGraphicsGeneration(generation);if(this.preparationTiming)this.preparationTiming.compilePasses++;this.renderer.compile(scene,camera,targetScene);
   const programs=(this.renderer.info.programs??[]).slice() as unknown as {program?:unknown;isReady?:()=>boolean;getUniforms?:()=>unknown;getAttributes?:()=>unknown}[];
-  for(;;){this.checkGraphicsGeneration(generation);if(programs.every(program=>('program' in program&&program.program===undefined)||!program.isReady||program.isReady())){for(const program of programs)if(!('program' in program)||program.program!==undefined){program.getUniforms?.();program.getAttributes?.();}return;}await new Promise<void>(resolve=>setTimeout(resolve,10));}
+  for(;;){this.checkGraphicsGeneration(generation);if(programs.every(program=>('program' in program&&program.program===undefined)||!program.isReady||program.isReady())){for(const program of programs)if(!('program' in program)||program.program!==undefined){const ready=this.introspectedPrograms??=new WeakSet<object>();if(!ready.has(program)){program.getUniforms?.();program.getAttributes?.();ready.add(program);}}return;}await new Promise<void>(resolve=>setTimeout(resolve,10));}
  }
  private checkGraphicsGeneration(generation:number){if(this.disposed||generation!==this.graphicsGeneration||this.renderer.getContext().isContextLost())throw PREPARATION_CANCELLED;}
- private freezeRoomTransforms(){this.world.updateMatrixWorld(true);this.world.traverse(object=>{object.matrixAutoUpdate=false;});}
+ private freezeRoomTransforms(){freezeStaticRoom(this.world);}
  private async prepareScene(){
   const generation=this.graphicsGeneration;this.freezeRoomTransforms();
   const warm:T.Group=new T.Group(),models:ActorModel[]=[];this.scene.add(warm);
-  const yieldTask=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
+  let sliceStarted=performance.now();
+  // Yield by CPU work rather than per texture: timer clamping used to add hundreds
+  // of milliseconds of idle delay to every already-cached room entry.
+  const yieldTask=async()=>{if(performance.now()-sliceStarted<8)return;await new Promise<void>(resolve=>setTimeout(resolve,0));sliceStarted=performance.now();};
   const shadowEnabled=this.renderer.shadowMap.enabled,mapping=this.renderer.toneMapping,originalTarget=this.renderer.getRenderTarget(),warmTarget=new T.WebGLRenderTarget(64,64,{type:T.HalfFloatType}),restoreMaterials=this.materialWarmup.prepare(),restoreAtmosphere=this.atmosphere.prepare(),restoreBackdrop=this.backdrop.prepare(),restoreArena=this.arena.prepare();
   this.preparationTargets.add(warmTarget);
   try{
@@ -191,31 +224,16 @@ export class DepthRenderer {
    this.scene.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial&&!material.userData.retainedRoomWarmup)optimizeLocalLights(material);});
    this.contextResources?.track(this.scene);this.contextResources?.track(this.hudScene);
    const textures=new Set<T.Texture>();this.scene.traverse(o=>{if(o instanceof T.Mesh)for(const material of Array.isArray(o.material)?o.material:[o.material])for(const value of Object.values(material))if(value instanceof T.Texture)textures.add(value);});
-   for(const texture of textures){this.checkGraphicsGeneration(generation);this.renderer.initTexture(texture);await yieldTask();}
+   for(const texture of textures){this.checkGraphicsGeneration(generation);const initialized=this.initializedTextures??=new WeakMap<T.Texture,number>();if(initialized.get(texture)!==texture.version){this.renderer.initTexture(texture);initialized.set(texture,texture.version);if(this.preparationTiming)this.preparationTiming.textureUploads++;}await yieldTask();}
    this.camera.position.copy(this.focus).add(new T.Vector3(0,26,19));this.camera.lookAt(this.focus);this.scene.updateMatrixWorld(true);
-   // Point counts change only among these prepared buckets. Warm the actual HDR
-   // target/tone-mapping variants, with both shadow settings, before combat.
-   this.lighting.setQuality('high',true,true,this.options.flashIntensity,'high');this.muzzle.visible=true;
-   this.renderer.setRenderTarget(warmTarget);this.renderer.toneMapping=T.NoToneMapping;
+   // Prepare the selected configuration. Graphics-setting changes hold readiness
+   // and come through this same queue; warming six unused configurations here
+   // multiplied the retained library again at the reactor's different key type.
+   this.applyQuality();
+   this.renderer.setRenderTarget(this.tier==='high'?warmTarget:null);this.renderer.toneMapping=this.tier==='high'?T.NoToneMapping:T.AgXToneMapping;
    this.renderer.setViewport(0,0,64,64);this.renderer.setScissor(0,0,64,64);this.renderer.setScissorTest(true);
-   for(const shadows of [true,false]){
-    this.renderer.shadowMap.enabled=shadows;
-    for(const count of this.lighting.pool.prewarmCounts){this.lighting.pool.setPrewarmCount(count);await this.compilePrepared(this.scene,this.camera);if(shadows){this.renderer.shadowMap.needsUpdate=true;this.renderer.render(this.scene,this.camera);}await yieldTask();}
-   }
-   // Dynamic-light toggles have a distinct fixed-light count as well.
-   this.lighting.setQuality('high',false,true,this.options.flashIntensity,'high');this.muzzle.visible=false;
-   for(const shadows of [true,false]){this.renderer.shadowMap.enabled=shadows;await this.compilePrepared(this.scene,this.camera);if(shadows){this.renderer.shadowMap.needsUpdate=true;this.renderer.render(this.scene,this.camera);}}
-   this.lighting.setQuality('high',true,true,this.options.flashIntensity,'high');this.muzzle.visible=true;
-   this.lighting.pool.setPrewarmCount(null);this.renderer.shadowMap.enabled=shadowEnabled;
+   await this.compilePrepared(this.scene,this.camera);
    this.renderer.shadowMap.needsUpdate=true;this.renderer.render(this.scene,this.camera);
-   // Low can opt into its two dedicated flashes without enabling the pool.
-   this.renderer.setRenderTarget(null);this.renderer.toneMapping=T.AgXToneMapping;this.renderer.shadowMap.enabled=false;
-   for(const dynamic of [false,true]){this.lighting.setQuality('low',dynamic,false,this.options.flashIntensity,'off');this.muzzle.visible=dynamic;await this.compilePrepared(this.scene,this.camera);}
-   this.renderer.render(this.scene,this.camera);
-   this.applyQuality();this.renderer.toneMapping=mapping;this.renderer.setScissorTest(false);
-   // Applying a saved Low-shadow override retires the High warmup map.
-   // The post warm frame must redraw that replacement before sampling its comparison texture.
-   this.renderer.shadowMap.needsUpdate=true;
    await this.compilePrepared(this.hudScene,this.camera);await this.post.prepare((scene,camera)=>this.compilePrepared(scene,camera));
   }finally{this.lighting.pool.setPrewarmCount(null);this.applyQuality();this.preparationTargets.delete(warmTarget);warmTarget.dispose();restoreMaterials();restoreArena();restoreBackdrop();restoreAtmosphere();this.renderer.setRenderTarget(originalTarget);this.renderer.toneMapping=mapping;this.renderer.shadowMap.enabled=shadowEnabled;this.renderer.setScissorTest(false);this.resize();for(const m of models)this.actorPool.release(m);disposeModel(warm);this.shadowsDirty=true;}
  }
@@ -269,6 +287,7 @@ export class DepthRenderer {
  private releasedBerth:ReturnType<typeof attachReleasedBerth>|undefined;
  loadRoom(node:RunNode,environment:ShipEnvironment|undefined=shipEnvironment(node.templateId)??(node.templateId==='reactor-vault'?'reactor':undefined)){
   if(this.roomWarmPending){this.deferredRoom={node,environment};return;}
+  const timing:RoomPreparationTiming={room:node.templateId,started:performance.now(),total:0,phases:{},compilePasses:0,textureUploads:0,programsBefore:this.renderer?.info?.programs?.length??0,programsAfter:0};this.preparationTiming=timing;(this.preparationHistory??=[]).push(timing);if(this.preparationHistory.length>24)this.preparationHistory.shift();
   const keyChanged=(this.roomEnvironment==='reactor')!==(environment==='reactor');
   this.communalGarden?.dispose();this.communalGarden=undefined;
   this.passengerVault?.dispose();this.passengerVault=undefined;
@@ -284,7 +303,7 @@ export class DepthRenderer {
   const atrium=node.templateId==='communal-atrium';
   this.corpseIds?.clear();this.staticDirty=false;const staticLoaded=this.staticLoaded(this.world);
   this.muzzle.intensity=0;this.contacts.begin();this.contacts.end();
-  const bespoke=node.templateId==='service-shaft-landing'?serviceShaftLanding(t):authoredRoom(node.templateId,t);
+  this.aheadRooms?.clearPending();const cached=this.aheadRooms?.take(node);const bespoke=cached!==undefined?cached:node.templateId==='service-shaft-landing'?serviceShaftLanding(t):authoredRoom(node.templateId,t);
   const act=Math.min(2,Math.floor(node.depth/4));this.surfaces.theme(act);if(environment)this.surfaces.shipTheme(environment);
   // Room-local habitation finish; theme() resets it on every subsequent room.
   if(node.templateId==='residential-gallery'){this.surfaces.floor.color.setHex(0x747976);this.surfaces.wall.color.setHex(0x788687);}
@@ -387,9 +406,9 @@ export class DepthRenderer {
   // Flat markings and obstacle-supported dressing are registered before room preparation.
   addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
-  this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId);
+  this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.world.userData.staticBatching=batchStaticRoom(this.world);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId);
   const mood=getEnvironmentMood(environment);this.scene.fog=new T.FogExp2(mood.fog.color,mood.fog.density*.25);this.scene.background=new T.Color(mood.fog.color).multiplyScalar(.24);this.scene.environmentIntensity=mood.reflectionIntensity;this.post?.setMood(mood);this.atmosphere?.loadRoom(environment,w,h,this.lighting.fixtures);this.backdrop?.loadRoom(this.world,w,h,environment);this.arena?.loadRoom(node.templateId,w,h);this.post?.distortion.clear();this.heatClock=0;
-  const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged))this.queueRoomWarmup();
+  const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged))this.queueRoomWarmup();
  }
  private roomSeed(id:string){let seed=2166136261;for(let i=0;i<id.length;i++)seed=Math.imul(seed^id.charCodeAt(i),16777619);return seed>>>0;}
  private wallPanel(x:number,z:number,height:number,length:number,rotation:number){
@@ -418,6 +437,7 @@ export class DepthRenderer {
  syncCorpse(id:number,x:number,y:number){const corpse=this.corpses.find(c=>c.id===id);if(corpse){corpse.x=x/UNIT;corpse.y=y/UNIT;corpse.vx=corpse.vy=0;if(this.ragdolls.has(id))this.ragdolls.sync(id,x/UNIT,y/UNIT);else{corpse.model.root.position.x=x/UNIT;corpse.model.root.position.z=y/UNIT;}}}
  get roomLoading(){return this.roomWarmPending||this.recoveringGraphics||this.communalGarden?.state==='loading'||this.residentialGalleryEquipment?.state==='loading'||this.passengerVault?.state==='loading'||this.recoveryKit?.state==='loading'||this.sealedBank?.state==='loading'||this.releasedBerth?.state==='loading';}
  render(game:DepthGame,delta:number,menu=false){
+  if((game.status==='reward'||game.status==='route')&&this.aheadKey!==game.node.id){this.aheadKey=game.node.id;const nodes=generateRun(game.expedition.run.seed,game.expedition.run.version).nodes;this.prepareAhead(nodes.filter(node=>game.node.next.includes(node.id)));}
   if(this.roomKey!==game.node.id)this.loadRoom(game.node);
   // ImageBitmap completion shares browser/GPU scheduling with WebGL. Do not
   // queue expensive fallback frames ahead of the room's bounded optional decode.
@@ -459,7 +479,7 @@ export class DepthRenderer {
   if(this.queen){this.queen.setExposed?.(q.vulnerable);this.queen.setAffliction?.(q.defeated?{chilled:false,burning:false,poisoned:false,frozen:false}:game.boonStatuses(-1));this.queen.root.position.set(q.x/UNIT,0,q.y/UNIT);this.queen.animate(this.time,.4,q.rotation);if(q.defeated){this.queen.root.rotation.z=1.25;this.queen.root.position.y=-.35;}}
   const nestIds=this.activeNestIds;nestIds.clear();for(const n of q.nests){nestIds.add(n.id);let model=this.nests.get(n.id);if(!model){model=nest();this.nests.set(n.id,model);this.scene.add(model);this.contextResources?.track(model);}model.position.set(n.x/UNIT,0,n.y/UNIT);model.scale.y=1+Math.sin(this.time*3+n.id)*.035;}
   for(const[id,model]of this.nests)if(!nestIds.has(id)){disposeModel(model);this.nests.delete(id);}
-  if(this.staticDirty){this.ragdolls.refreshStatic(this.world);this.staticDirty=false;}
+  if(this.staticDirty){this.freezeRoomTransforms();this.ragdolls.refreshStatic(this.world);this.staticDirty=false;}
   this.ragdolls.update(dt);
   for(const c of this.corpses){if(this.ragdolls.has(c.id))c.age+=dt;c.model.dissolve?.(Math.max(0,(c.age-18)/2));if(this.ragdolls.has(c.id)){const position=this.ragdolls.position(c.id)!;c.x=position.x;c.y=position.z;continue;}if(dt<=0)continue;if(c.age>2&&Math.abs(c.vx)+Math.abs(c.vy)<.02&&c.height<=.08){c.age+=dt;continue;}c.age+=dt;const moved=game.moveCorpse({x:c.x*UNIT,y:c.y*UNIT,radius:14},c.vx*dt*UNIT,c.vy*dt*UNIT);c.x=moved.x/UNIT;c.y=moved.y/UNIT;if(moved.blocked){c.vx*=-.22;c.vy*=-.22;}c.vx*=Math.exp(-3.8*dt);c.vy*=Math.exp(-3.8*dt);c.lift-=9.8*dt;c.height=Math.max(.08,c.height+c.lift*dt);if(c.height<=.08)c.lift=0;
    c.model.root.position.set(c.x,c.height,c.y);c.model.body.rotation.z=Math.min(Math.PI*.78,c.age*5);c.model.root.rotation.y+=c.spin*dt*Math.exp(-c.age*3);
@@ -559,5 +579,5 @@ export class DepthRenderer {
   for(const[id,mesh]of this.poolMeshes)if(!poolIds.has(id)){mesh.geometry.dispose();mesh.material.dispose();mesh.removeFromParent();this.poolMeshes.delete(id);}
  }
  private clearPools(){for(const mesh of this.poolMeshes.values()){mesh.geometry.dispose();mesh.material.dispose();mesh.removeFromParent();}this.poolMeshes.clear();}
- dispose(){if(this.disposed)return;this.disposed=true;this.ragdolls.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.corpseIds?.clear();for(const model of this.actors.values())this.actorPool.release(model);this.actors.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;this.communalGarden?.dispose();this.communalGarden=undefined;this.residentialGalleryEquipment?.dispose();this.residentialGalleryEquipment=undefined;this.passengerVault?.dispose();this.clearPools();this.recoveryKit?.dispose();this.sealedBank?.dispose();this.releasedBerth?.dispose();disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.practicalPools?.dispose();this.arena?.dispose();this.title?.dispose();this.backdrop?.dispose();this.atmosphere.dispose();this.lighting.dispose();this.contacts.dispose();this.afflictions.dispose();this.actorPool.dispose();this.healthBars.dispose();this.pickupInstances?.dispose();this.playerBeacon?.dispose();this.effects.dispose();this.interimAbilities.dispose();for(const model of [this.player,this.menuMarine,this.menuAlien])if(model){model.stop?.();disposeModel(model.root);}if(this.bulletMesh.geometry){this.bulletMesh.geometry.dispose();(this.bulletMesh.material as T.Material).dispose();}for(const object of this.warning.children)if(object instanceof T.Mesh){object.geometry.dispose();(object.material as T.Material).dispose();}this.canvas.removeEventListener('webglcontextlost',this.loseGraphics);this.canvas.removeEventListener('webglcontextrestored',this.restoreGraphics);this.motionQuery?.removeEventListener('change',this.motionChanged);this.reflection.dispose();this.post.dispose();this.materialWarmup?.dispose();this.contextResources?.invalidate();this.renderer.dispose();this.surfaces.dispose();}
+ dispose(){if(this.disposed)return;this.disposed=true;this.aheadRooms?.dispose();this.ragdolls.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.corpseIds?.clear();for(const model of this.actors.values())this.actorPool.release(model);this.actors.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;this.communalGarden?.dispose();this.communalGarden=undefined;this.residentialGalleryEquipment?.dispose();this.residentialGalleryEquipment=undefined;this.passengerVault?.dispose();this.clearPools();this.recoveryKit?.dispose();this.sealedBank?.dispose();this.releasedBerth?.dispose();disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.practicalPools?.dispose();this.arena?.dispose();this.title?.dispose();this.backdrop?.dispose();this.atmosphere.dispose();this.lighting.dispose();this.contacts.dispose();this.afflictions.dispose();this.actorPool.dispose();this.healthBars.dispose();this.pickupInstances?.dispose();this.playerBeacon?.dispose();this.effects.dispose();this.interimAbilities.dispose();for(const model of [this.player,this.menuMarine,this.menuAlien])if(model){model.stop?.();disposeModel(model.root);}if(this.bulletMesh.geometry){this.bulletMesh.geometry.dispose();(this.bulletMesh.material as T.Material).dispose();}for(const object of this.warning.children)if(object instanceof T.Mesh){object.geometry.dispose();(object.material as T.Material).dispose();}this.canvas.removeEventListener('webglcontextlost',this.loseGraphics);this.canvas.removeEventListener('webglcontextrestored',this.restoreGraphics);this.motionQuery?.removeEventListener('change',this.motionChanged);this.reflection.dispose();this.post.dispose();this.materialWarmup?.dispose();this.contextResources?.invalidate();this.renderer.dispose();this.surfaces.dispose();}
 }
