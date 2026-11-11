@@ -485,3 +485,37 @@
 /* Keep the left-hand front door readable over either the world or a cinematic menu shot. */
 #overlay .title-screen::after {content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,#02080ef2 0%,#02080ed9 30%,#02080e70 45%,transparent 65%);}
 #overlay .title-screen[data-menu-presentation="cinematic"] .title-hull-clip {display:none;}
+
+/* Desktop zoom keeps the authored composition, with native scrolling when the
+   CSS viewport is shorter than the content. Close stays above drawer contents. */
+#overlay .panel {overflow:auto;overscroll-behavior:contain;}
+#overlay .title-drawer {overflow:auto;overscroll-behavior:contain;}
+#overlay .drawer-heading {position:sticky;top:-1px;z-index:3;background:#0b1c26;}
+#overlay #close-drawer {position:sticky;top:0;z-index:4;}
+#application-notice {position:fixed;bottom:18px;left:18px;max-width:min(440px,calc(100vw - 36px));z-index:30;}
+#overlay .recovery-panel {width:min(700px,100%);}
+#overlay .recovery-panel button {margin:8px 12px 0 0;}
+@media(max-height:600px), (max-width:800px) {
+ #overlay.modal-overlay {padding:12px;align-items:flex-start;overflow:auto;}
+ #overlay .panel {max-height:calc(100dvh - 24px);padding:20px;}
+ #overlay .title-screen {overflow:auto;align-items:flex-start;padding:24px;}
+ #overlay .title-copy {width:min(420px,100%);flex-shrink:0;}
+ #overlay .title-drawer {position:fixed;inset:12px 12px auto auto;width:min(580px,calc(100vw - 24px));max-height:calc(100dvh - 24px);transform:none;z-index:5;}
+ #overlay .title-screen .edition {margin-bottom:16px;}
+ #overlay .title-word {font-size:60px;}
+ #overlay .title-depth {font-size:150px;}
+ #overlay .rig-layout {grid-template-columns:1fr;}
+ #overlay .choice-grid {grid-template-columns:1fr;}
+ #overlay .choice-panel .choice-card {min-height:0;padding:12px 16px 0;}
+ #overlay .boon-card-top {margin-bottom:8px;}
+ #overlay .boon-emblem {width:28px;height:28px;}
+ #overlay .choice-card h3 {font-size:26px;margin:6px 0;}
+ #overlay .choice-card p {margin-bottom:8px;}
+ #overlay .boon-condition {margin-bottom:8px;}
+ #overlay .boon-hint {margin:8px 0;}
+ #overlay .boon-select {margin:0 -16px;padding:10px 16px;}
+ #overlay .choice-card:is(:hover,:focus-visible) {transform:none;}
+}
+
+#overlay :is(.panel,.title-screen,.title-drawer) {scroll-padding:8px;}
+#overlay :is(button,a,input,select,[tabindex]) {scroll-margin:8px;}

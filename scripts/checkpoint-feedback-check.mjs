@@ -28,6 +28,27 @@ export async function checkCheckpointFeedback(page) {
   } finally { await ssr.close(); }
   await page.evaluate(({key,value})=>localStorage.setItem(key,value), {key,value});
   await reloadSettledRoom();
+  // Same-tab invalidation does not emit storage: the failed native action must
+  // refresh the menu and announce why it could not continue.
+  await page.evaluate(key=>localStorage.removeItem(key),key);
+  await page.locator('#continue').click();
+  assert.equal(await page.locator('#continue').count(),0);
+  assert.match(await page.locator('#application-notice').innerText(),/Checkpoint unavailable/);
+  assert.equal(await page.locator('#application-notice').getAttribute('aria-live'),'polite');
+  assert.equal(await page.locator('#application-notice').getAttribute('class'),'ui-toast');
+  assert.equal(await page.evaluate(()=>document.activeElement?.id),'start');
+  // A real storage event from another same-origin tab refreshes availability
+  // without a reload or a user action on the stale title.
+  const sibling=await page.context().newPage();
+  try {
+    await sibling.goto(new URL('audio-credits.html',page.url()).href);
+    await sibling.evaluate(({key,value})=>localStorage.setItem(key,value),{key,value});
+    await page.locator('#continue').waitFor({state:'visible'});
+    await sibling.evaluate(key=>localStorage.removeItem(key),key);
+    await page.locator('#continue').waitFor({state:'detached'});
+    await sibling.evaluate(({key,value})=>localStorage.setItem(key,value),{key,value});
+    await page.locator('#continue').waitFor({state:'visible'});
+  } finally {await sibling.close();}
   await page.locator('#continue').click();
   await page.evaluate(key=>{
     const original = Storage.prototype.setItem;
@@ -66,5 +87,5 @@ export async function checkCheckpointFeedback(page) {
   await page.evaluate(()=>{window.__failCheckpointClear=false;});
   await page.locator('#start').click();
   assert.equal(await page.locator('.save-note').count(), 0);
-  console.log('Checkpoint feedback passed: failed write, same-screen recovery, failed removal, pause/title warning, stale Continue suppression, recovery.');
+  console.log('Checkpoint feedback passed: vanished Continue announcement, real cross-tab storage refresh, failed write, same-screen recovery, failed removal, pause/title warning, stale Continue suppression, recovery.');
 }

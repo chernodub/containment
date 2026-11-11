@@ -3,7 +3,7 @@ export const app = document.getElementById('app')!;
 const key = (label: string) => `<kbd>${label}</kbd>`;
 /** Persistent game chrome. Keeping markup a function makes DOM contracts testable. */
 export function renderShell(): string {
-    return `<canvas id="world" aria-label="Containment 3D game world"></canvas><div id="shade"></div><div id="hurt-flash"></div>
+    return `<canvas tabindex="-1" id="world" aria-label="Containment 3D game world"></canvas><div id="shade"></div><div id="hurt-flash"></div>
 <div id="hud" hidden>
  <div class="hud-top"><div class="vitals" aria-label="Suit vitals">
   <div class="vital-caption"><span>SUIT INTEGRITY</span><span id="vital-state">NOMINAL</span></div>
@@ -29,7 +29,7 @@ export function renderShell(): string {
  <div id="combat-text" aria-hidden="true"></div><div id="threat-indicators" aria-hidden="true"></div><div id="damage-directions" aria-hidden="true"></div><div id="hud-toasts" role="status" aria-live="polite" aria-atomic="true"></div>
  <aside id="radar-hud" aria-label="Room radar" hidden><div class="radar-label">${icon('combat')}<span>LOCAL SCAN</span></div><svg id="radar-map" viewBox="0 0 144 100" aria-hidden="true"></svg></aside>
 </div>
-<div id="room-loading" role="status" aria-live="polite" hidden><b>Preparing room…</b><span>Combat is on hold.</span></div><div id="overlay"></div><div id="signature">CONTAINMENT <span>/</span> DEPTH</div>`;
+<div id="application-notice" role="status" aria-live="polite" aria-atomic="true" hidden></div><div id="room-loading" role="status" aria-live="polite" hidden><b>Preparing room…</b><span>Combat is on hold.</span></div><div id="overlay"></div><div id="signature">CONTAINMENT <span>/</span> DEPTH</div>`;
 }
 export function mountShell(): void { app.innerHTML = renderShell(); }
 export const el = (id: string) => document.getElementById(id)!;
