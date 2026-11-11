@@ -13,6 +13,10 @@ export type AbilityPoint = Readonly<{ x: number; y: number }>;
 /** Simulation adapters: world collision and all damage/status reactions remain authoritative in the host. */
 export interface AbilityHost {
   enabled?: () => boolean;
+  /** Immutable world-geometry identity/revision for placement-cache invalidation. */
+  placementRevision?: () => unknown;
+  /** Advance shared friendly status/launch clocks to the next ability event boundary. */
+  advance?: (ms: number) => void;
   player: () => AbilityPoint & { angle: number; radius: number; vx: number; vy: number };
   targets: () => readonly MutationTarget[];
   visible: (from: AbilityPoint, to: AbilityPoint) => boolean;
@@ -29,7 +33,7 @@ export interface AbilityHost {
 }
 type SlotState = { cooldowns: number[]; cast: number; active: number };
 type Placement = AbilityPoint & { radius?: number };
-type Cast = { id: AbilityId; x: number; y: number; angle: number; target: AbilityPoint; remaining: number; placements?: readonly Placement[] };
+type Cast = { id: AbilityId; x: number; y: number; angle: number; target: AbilityPoint; remaining: number; placements?: readonly Placement[]; radius?: number; ground?: AbilityPoint };
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 type Zone = Mutable<AbilityZoneSnapshot> & { tick: number; pulses: number; damage: number };
 type Deployable = Mutable<DeployableSnapshot> & { tick: number; assault: number; linkCooldowns: Map<number, number> };
@@ -66,6 +70,7 @@ export class AbilitySystem {
   private hasPreviousMarine = false;
   private cachedLinkX = 0;
   private cachedLinkY = 0;
+  private placementCache: { rig: RigId; x: number; y: number; angle: number; aimX: number | undefined; aimY: number | undefined; augments: number; revision: unknown; result: boolean } | null = null;
   constructor(private host: AbilityHost) {}
 
   /** Select a rig and reset transient state. Charge is explicitly restored by the run host. */
@@ -78,7 +83,7 @@ export class AbilitySystem {
   resetRoom(): void {
     this.casts.length = this.zones.length = this.deployables.length = this.afterquakes.length = 0;
     this.dash = null; this.immune = 0; this.aimPoint = null; this.movement.x = this.movement.y = 0;
-    this.previousTargets.clear(); this.currentTargetIds.clear(); this.hasPreviousMarine = false;
+    this.previousTargets.clear(); this.currentTargetIds.clear(); this.hasPreviousMarine = false; this.placementCache = null;
     for (const state of Object.values(this.states)) { state.cooldowns.length = 0; state.cast = state.active = 0; }
     this.cached = null;
   }
@@ -103,7 +108,7 @@ export class AbilitySystem {
     if (phase !== 'denied') this.cached = null;
     const d = ABILITY_CATALOG[id], s = d.shape;
     this.host.emit({ ability: id, slot: d.slot, rig: d.rig, element: d.element, phase,
-      ...(s.kind === 'circle' ? { radius: s.radius } : s.kind === 'cone' ? { length: s.range, arcRadians: s.arcRadians } : s.kind === 'line' || s.kind === 'wall' ? { length: s.length, width: s.kind === 'wall' ? s.thickness : s.width } : s.kind === 'dash' ? { length: s.distance, width: s.width } : {}), ...extra }, p.x, p.y);
+      ...(s.kind === 'circle' ? { radius: s.radius } : s.kind === 'cone' ? { length: s.range, arcRadians: s.arcRadians } : s.kind === 'line' || s.kind === 'wall' ? { length: s.length, width: s.kind === 'wall' ? s.thickness : s.width } : s.kind === 'dash' ? { length: s.distance, width: s.width } : s.kind === 'chain' ? { length: s.range, hopRange: s.hopRange, maxTargets: s.maxTargets + (this.host.has('forked-overload') ? 2 : 0) } : {}), ...extra }, p.x, p.y);
   }
 
   /** Attempt an ability; rejected presses emit a denial without consuming a charge. */
@@ -117,7 +122,13 @@ export class AbilitySystem {
     if (slot === 'dash') { const m = this.movement; if (m.x || m.y) angle = Math.atan2(m.y, m.x); }
     const target = this.targetFor(d, p, angle);
     const cast: Cast = { id: d.id, x: p.x, y: p.y, angle, target, remaining: d.castMs };
+    if (d.id === 'cryo-nova') cast.radius = 210 + (this.host.has('spreading-nova') ? Math.min(100, this.nearby(cast, 210).filter(t => this.host.statuses(t.id).chilled).length * 20) : 0);
+    if (d.id === 'flashfire' && this.host.has('scorched-fan')) {
+      const point = { x: cast.x + Math.cos(angle) * 180, y: cast.y + Math.sin(angle) * 180 };
+      if (this.host.visible(cast, point)) cast.ground = point;
+    }
     if (slot === 'power') {
+      this.placementCache = null;
       cast.placements = this.planPlacements(cast);
       if (!cast.placements.length) { this.event(d.id, 'denied', p, { denial: 'blocked' }); return false; }
     }
@@ -126,8 +137,10 @@ export class AbilitySystem {
     if (d.castMs) { state.cast = d.castMs; this.casts.push(cast); }
     for (const preview of cast.placements ?? [target]) this.event(d.id, 'cast', p, {
       angle, targetX: preview.x, targetY: preview.y, durationMs: d.castMs,
+      ...(cast.radius === undefined ? {} : { radius: cast.radius }),
       ...('radius' in preview ? { radius: preview.radius } : {}),
     });
+    if (cast.ground) this.event(cast.id, 'cast', p, { targetX: cast.ground.x, targetY: cast.ground.y, radius: 120, length: undefined, arcRadians: undefined, durationMs: d.castMs });
     if (!d.castMs) this.resolve(cast);
     return true;
   }
@@ -165,22 +178,29 @@ export class AbilitySystem {
     const zone: Zone = { id: ++this.serial, ability: id, element: d.element, shape: end ? 'strip' : 'circle', x: p.x, y: p.y, x2: end?.x ?? p.x, y2: end?.y ?? p.y, width, radius, attached, remainingMs: duration, durationMs: duration, tick: 250, pulses: 0, damage };
     this.zones.push(zone);
     this.states[d.slot].active = Math.max(this.states[d.slot].active, duration);
-    this.event(id, 'tick', p, { entityId: zone.id, radius, targetX: zone.x2, targetY: zone.y2, width, durationMs: duration });
+    this.event(id, 'tick', p, { entityId: zone.id, radius, targetX: zone.x2, targetY: zone.y2, width, durationMs: duration, ...(end ? { length: Math.hypot(end.x - p.x, end.y - p.y) } : id === 'flashfire' ? { length: undefined, arcRadians: undefined } : {}) });
   }
   private wallFits(p: AbilityPoint, angle: number, length: number, thickness: number): boolean {
     const dx = -Math.sin(angle) * length / 2, dy = Math.cos(angle) * length / 2;
     return this.host.traverse({ x: p.x - dx, y: p.y - dy }, { x: p.x + dx, y: p.y + dy }, thickness / 2);
   }
   private targetFor(d: AbilityDefinition, p: AbilityPoint, angle: number): AbilityPoint {
-    const desired = this.aimPoint ?? { x: p.x + Math.cos(angle) * d.range, y: p.y + Math.sin(angle) * d.range };
+    const range = d.shape.kind === 'dash' ? d.shape.distance : d.range;
+    const desired = this.aimPoint ?? { x: p.x + Math.cos(angle) * range, y: p.y + Math.sin(angle) * range };
     const distance = Math.hypot(desired.x - p.x, desired.y - p.y), scale = Math.min(1, d.range / (distance || 1));
     return d.targeting === 'point' ? { x: p.x + (desired.x - p.x) * scale, y: p.y + (desired.y - p.y) * scale }
-      : { x: p.x + Math.cos(angle) * d.range, y: p.y + Math.sin(angle) * d.range };
+      : { x: p.x + Math.cos(angle) * range, y: p.y + Math.sin(angle) * range };
   }
   private powerPlacementAvailable(): boolean {
-    const d = this.definition('power'), p = this.host.player();
-    return this.planPlacements({ id: d.id, x: p.x, y: p.y, angle: p.angle,
+    const p = this.host.player(), rig = this.rig!;
+    const augments = +this.host.has('twin-glacier') + 2 * +this.host.has('twin-pylon') + 4 * +this.host.has('napalm-triplet');
+    const revision = this.host.placementRevision?.(), cached = this.placementCache;
+    if (cached && cached.rig === rig && cached.x === p.x && cached.y === p.y && cached.angle === p.angle && cached.aimX === this.aimPoint?.x && cached.aimY === this.aimPoint?.y && cached.augments === augments && cached.revision === revision) return cached.result;
+    const d = this.definition('power');
+    const result = this.planPlacements({ id: d.id, x: p.x, y: p.y, angle: p.angle,
       target: this.targetFor(d, p, p.angle), remaining: d.castMs }).length > 0;
+    this.placementCache = { rig, x: p.x, y: p.y, angle: p.angle, aimX: this.aimPoint?.x, aimY: this.aimPoint?.y, augments, revision, result };
+    return result;
   }
   private planPlacements(cast: Cast): Placement[] {
     const d = ABILITY_CATALOG[cast.id];
@@ -234,23 +254,32 @@ export class AbilitySystem {
         if (this.host.has('afterquake' as MutationId) && this.afterquakes.length < 4) { this.afterquakes.push({ ...cast, delay: 450 }); this.event(cast.id, 'cast', cast, { durationMs: 450 }); }
         break;
       case 'cryo-nova': {
-        const extra = this.host.has('spreading-nova' as MutationId) ? Math.min(100, this.nearby(cast, 210).filter(t => this.host.statuses(t.id).chilled).length * 20) : 0;
-        for (const t of this.nearby(cast, 210 + extra)) { const chilled = this.host.statuses(t.id).chilled; this.host.status(t, 'chill', 2); if (chilled) this.host.status(t, 'freeze', 1800); this.hit(t, 30); ids.push(t.id); }
-        this.event(cast.id, 'impact', cast, { radius: 210 + extra, targetIds: ids }); return;
+        const radius = cast.radius ?? 210;
+        for (const t of this.nearby(cast, radius)) { const chilled = this.host.statuses(t.id).chilled; this.host.status(t, 'chill', 2); if (chilled) this.host.status(t, 'freeze', 1800); this.hit(t, 30); ids.push(t.id); }
+        this.event(cast.id, 'impact', cast, { radius, targetIds: ids }); return;
       }
       case 'flashfire': {
         for (const t of this.nearby(cast, 300)) { const a = Math.atan2(t.y - cast.y, t.x - cast.x) - cast.angle; if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) <= 1.22 / 2) { this.hit(t, 55, 'burn'); ids.push(t.id); } }
-        if (this.host.has('scorched-fan' as MutationId)) { const point = { x: cast.x + Math.cos(cast.angle) * 180, y: cast.y + Math.sin(cast.angle) * 180 }; if (this.host.visible(cast, point)) this.addZone(cast.id, point, 120, 2500, 4); }
+        if (cast.ground) {
+          this.addZone(cast.id, cast.ground, 120, 2500, 4);
+          this.event(cast.id, 'impact', cast, { targetX: cast.ground.x, targetY: cast.ground.y, radius: 120, length: undefined, arcRadians: undefined, durationMs: 2500 });
+        }
         break;
       }
       case 'overload': ids = this.chain(cast, 60, this.host.has('forked-overload' as MutationId) ? 8 : 6); break;
       case 'bulwark': case 'glacier': case 'tesla-pylon': {
-        for (const p of cast.placements ?? this.planPlacements(cast)) this.deploy(cast, p);
-        break;
+        for (const p of cast.placements ?? this.planPlacements(cast)) {
+          this.deploy(cast, p);
+          this.event(cast.id, 'impact', cast, { angle: cast.angle, targetX: p.x, targetY: p.y, ...(p.radius === undefined ? {} : { radius: p.radius }), durationMs: d.durationMs });
+        }
+        return;
       }
       case 'napalm-charge': {
-        for (const p of cast.placements ?? this.planPlacements(cast)) this.addZone(cast.id, p, p.radius ?? 120, 6000, 4.5);
-        break;
+        for (const p of cast.placements ?? this.planPlacements(cast)) {
+          this.addZone(cast.id, p, p.radius ?? 120, 6000, 4.5);
+          this.event(cast.id, 'impact', cast, { targetX: p.x, targetY: p.y, radius: p.radius ?? 120, durationMs: d.durationMs });
+        }
+        return;
       }
       case 'railbreaker': {
         const end = { x: cast.x + Math.cos(cast.angle) * 900, y: cast.y + Math.sin(cast.angle) * 900 };
@@ -325,7 +354,7 @@ export class AbilitySystem {
           if (zone.damage) this.host.damage(t, zone.damage);
           ids.push(t.id);
         }
-        this.event(zone.ability, 'tick', zone, { entityId: zone.id, radius: zone.radius, targetIds: ids, targetX: zone.x2, targetY: zone.y2, width: zone.width });
+        this.event(zone.ability, 'tick', zone, { entityId: zone.id, radius: zone.radius, targetIds: ids, targetX: zone.x2, targetY: zone.y2, width: zone.width, ...(zone.shape === 'strip' ? { length: Math.hypot(zone.x2-zone.x,zone.y2-zone.y) } : zone.ability === 'flashfire' ? { length: undefined, arcRadians: undefined } : {}) });
       }
       if (zone.remainingMs <= 0) { this.zones.splice(i, 1); this.event(zone.ability, 'end', zone, { entityId: zone.id }); }
     }
@@ -339,7 +368,8 @@ export class AbilitySystem {
     const targets = this.host.targets(), p = this.host.player();
     this.currentTargetIds.clear();
     for (let i = 0; i < Math.min(targets.length, ABILITY_LIMITS.targets); i++) if (targets[i].health > 0) this.currentTargetIds.add(targets[i].id);
-    for (const d of this.deployables.slice()) {
+    for (let entityIndex = this.deployables.length - 1; entityIndex >= 0; entityIndex--) {
+      const d = this.deployables[entityIndex];
       const live = Math.min(ms, d.remainingMs); d.remainingMs = countdown(d.remainingMs, ms); d.tick -= live; d.assault -= live * hostileScale;
       if (d.assault <= TIMER_EPSILON) {
         d.assault += 250;
@@ -374,12 +404,13 @@ export class AbilitySystem {
       if (d.health <= 0 || d.remainingMs <= 0) this.removeDeployable(d);
     }
   }
+  private hasPylon(): boolean { for (const d of this.deployables) if (d.kind === 'pylon') return true; return false; }
   private linkActive(d: Deployable, p: AbilityPoint): boolean {
     return d.kind === 'pylon' && d.health > 0 && Math.hypot(p.x - d.x, p.y - d.y) <= 280 && this.host.visible(p, d);
   }
   /** Reuse bounded motion records; no target object or internal cooldown map escapes in snapshots. */
   private rememberLinkMotion(): void {
-    if (!this.deployables.some(d => d.kind === 'pylon')) {
+    if (!this.hasPylon()) {
       this.previousTargets.clear(); this.hasPreviousMarine = false; return;
     }
     const targets = this.host.targets();
@@ -454,9 +485,26 @@ export class AbilitySystem {
   /** Advance all friendly timers at normal speed. */
   update(ms: number): void {
     if (!Number.isFinite(ms) || ms <= 0 || !this.rig) return;
-    ms = Math.min(ms, 100);
+    let remaining = Math.min(ms, 100);
+    // Resolve wind-ups and dash arrivals at their exact simulation boundary, then
+    // carry the rest of this call into newly created entities and delayed effects.
+    while (remaining > TIMER_EPSILON) {
+      let step = remaining;
+      for (const cast of this.casts) if (cast.remaining > TIMER_EPSILON) step = Math.min(step, cast.remaining);
+      for (const quake of this.afterquakes) if (quake.delay > TIMER_EPSILON) step = Math.min(step, quake.delay);
+      if (this.dash) step = Math.min(step, this.dash.remaining);
+      if (this.overclocked) step = Math.min(step, this.states.overdrive.active);
+      for (const zone of this.zones) step = Math.min(step, zone.tick, zone.remainingMs);
+      for (const entity of this.deployables) step = Math.min(step, entity.remainingMs, entity.assault / this.hostileTimeScale, entity.kind === 'pylon' ? entity.tick : remaining);
+      this.advanceStep(step);
+      remaining = countdown(remaining, step);
+    }
+  }
+  private advanceStep(ms: number): void {
+    this.host.advance?.(ms);
     if (!this.immune && !this.dash && !this.casts.length && !this.zones.length && !this.deployables.length && !this.afterquakes.length && ABILITY_SLOTS.every(slot => !this.states[slot].cooldowns.length && !this.states[slot].active)) return;
     const hostileScale = this.hostileDelta(ms) / ms;
+    this.placementCache = null;
     this.cached = null;
     this.immune = countdown(this.immune, ms);
     for (const slot of ABILITY_SLOTS) {
@@ -466,14 +514,17 @@ export class AbilitySystem {
         if (state.cooldowns[i] <= 0) { state.cooldowns.splice(i, 1); this.event(this.definition(slot).id, 'ready', this.host.player()); }
       }
       state.cast = countdown(state.cast, ms);
-      const wasActive = state.active > 0;
-      state.active = countdown(state.active, ms);
-      if (wasActive && !state.active && this.definition(slot).id === 'overclock') this.event('overclock', 'end', this.host.player());
     }
     const existingThrough = this.serial;
     this.stepDash(ms);
     this.stepZones(ms, existingThrough);
     this.stepDeployables(ms, hostileScale);
+    // Final zone pulses (and synchronous kill reactions) still belong to the buff.
+    for (const slot of ABILITY_SLOTS) {
+      const state = this.states[slot], wasActive = state.active > 0;
+      state.active = countdown(state.active, ms);
+      if (wasActive && !state.active && this.definition(slot).id === 'overclock') this.event('overclock', 'end', this.host.player());
+    }
     for (let i = this.afterquakes.length - 1; i >= 0; i--) { const cast = this.afterquakes[i]; cast.delay = countdown(cast.delay, ms); if (cast.delay <= 0) { this.afterquakes.splice(i, 1); const ids = this.radial(cast, 190, 35, undefined, 350); this.event(cast.id, 'impact', cast, { targetIds: ids }); } }
     for (let i = this.casts.length - 1; i >= 0; i--) {
       const cast = this.casts[i]; cast.remaining = countdown(cast.remaining, ms);
@@ -496,7 +547,7 @@ export class AbilitySystem {
     const p = this.host.player();
     const enabled = this.host.enabled?.() !== false && Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.angle);
     const powerReady = !!this.rig && enabled && !this.casts.length && !this.dash && this.states.power.cooldowns.length < this.maxCharges('power') && this.powerPlacementAvailable();
-    if (this.cached && this.cachedEnabled === enabled && (!this.deployables.some(d => d.kind === 'pylon') || (this.cachedLinkX === p.x && this.cachedLinkY === p.y)) && (!this.rig || (this.cached.slots?.dash.maxCharges === this.maxCharges('dash') && this.cached.slots?.power.ready === powerReady))) return this.cached;
+    if (this.cached && this.cachedEnabled === enabled && (!this.hasPylon() || (this.cachedLinkX === p.x && this.cachedLinkY === p.y)) && (!this.rig || (this.cached.slots?.dash.maxCharges === this.maxCharges('dash') && this.cached.slots?.power.ready === powerReady))) return this.cached;
     this.cachedEnabled = enabled;
     this.cachedLinkX = p.x; this.cachedLinkY = p.y;
     const slots = this.rig ? Object.fromEntries(ABILITY_SLOTS.map(slot => {

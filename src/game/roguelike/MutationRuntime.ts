@@ -158,7 +158,7 @@ export class MutationRuntime {
     for(const [id,burn]of this.#burns){
       const target=this.#host.targets().find(t=>t.id===id&&t.health>0);
       if(!target){this.#burns.delete(id);continue;}
-      let ticks=0;while(burn.nextTick<=this.#time&&burn.nextTick<=burn.expiresAt&&ticks++<4){if(!this.#host.targets().some(t=>t.id===id&&t.health>0))break;const tickId=this.#combat.nextMutationEventId('burn-tick'),cause={chainId:tickId,depth:burn.command.cause.depth};try{this.#damage(target,4,{...burn.command,id:tickId,cause},'status');}finally{this.secondaryBudget.delete(tickId);}burn.nextTick+=250;}
+      let ticks=0;while(burn.nextTick<=this.#time+1e-7&&burn.nextTick<=burn.expiresAt+1e-7&&ticks++<4){if(!this.#host.targets().some(t=>t.id===id&&t.health>0))break;const tickId=this.#combat.nextMutationEventId('burn-tick'),cause={chainId:tickId,depth:burn.command.cause.depth};try{this.#damage(target,4,{...burn.command,id:tickId,cause},'status');}finally{this.secondaryBudget.delete(tickId);}burn.nextTick+=250;}
       if(this.#time>=burn.expiresAt)this.#burns.delete(id);
     }
     this.#elements.update(deltaMs);
