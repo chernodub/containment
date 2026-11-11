@@ -61,7 +61,7 @@ void main(){vec2 p=localUV*2.0-1.0;float edge=.72+.12*sin(p.y*9.0+p.x*5.0);float
  }
  /** Low tier reduces sprites while preserving every status cue and frozen/chill distinction. */
  setOptions(options:AttackEffectOptions){this.options={...this.options,...options};(this.fire.material as T.ShaderMaterial).uniforms.flashScale.value=.35+.65*T.MathUtils.clamp(this.options.flashIntensity??1,0,1);}
- private batch(g:T.BufferGeometry,m:T.Material,n:number){const mesh=new T.InstancedMesh(g,m,n);mesh.count=0;mesh.frustumCulled=false;mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.root.add(mesh);this.meshes.push(mesh);return mesh;}
+ private batch(g:T.BufferGeometry,m:T.Material,n:number){const mesh=new T.InstancedMesh(g,m,n);mesh.count=0;mesh.setColorAt(0,new T.Color(0xffffff));mesh.frustumCulled=false;mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.root.add(mesh);this.meshes.push(mesh);return mesh;}
  private put(mesh:T.InstancedMesh,x:number,y:number,z:number,sx:number,sy:number,sz:number,camera?:T.Camera,angle=0){
   const d=this.dummy;d.position.set(x,y,z);d.scale.set(sx,sy,sz);if(camera)d.quaternion.copy(camera.quaternion);else d.rotation.set(angle*.3,angle,angle*.2);d.updateMatrix();mesh.setMatrixAt(mesh.count++,d.matrix);
  }

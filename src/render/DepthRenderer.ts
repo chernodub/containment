@@ -1,6 +1,7 @@
+import {MaterialWarmup} from './MaterialWarmup';
 import {ContextResources} from './ContextResources';
 import {addRoomPracticals} from './lighting/RoomPracticals';
-import {applyHotFixtureSurface,updateHotFixtureSurfaces} from './lighting/HotFixtureSurface';
+import {updateHotFixtureSurfaces} from './lighting/HotFixtureSurface';
 import {PracticalPools} from './lighting/PracticalPools';
 import {optimizeLocalLights} from './lighting/LocalLightShading';
 import {roomFocus} from './roomFraming';
@@ -49,7 +50,7 @@ export class DepthRenderer {
  private ragdolls=new DeathRagdolls();private staticDirty=false;private corpseIds=new Set<number>();
  private staticLoaded(owner:T.Group){return()=>{if(this.world!==owner)return;this.contextResources?.track(owner);this.shadowsDirty=true;this.staticDirty=true;};}
  private actorPool=new ActorPool();private player=marine();private playerBeacon=new PlayerBeacon(this.player.root,this.hudScene);private corpses:Corpse[]=[];private effects:AttackEffects;
- private surfaces:EnvironmentMaterials;private floorMaterial:T.MeshStandardMaterial;
+ private materialWarmup:MaterialWarmup;private surfaces:EnvironmentMaterials;private floorMaterial:T.MeshStandardMaterial;
  private practicalPools=new PracticalPools(this.scene);private arena=new ArenaStaging(this.scene);private backdrop=new ShipBackdrop(this.scene);private atmosphere=new Atmosphere(this.scene);private heatClock=0;private lighting=new SceneLighting();private contacts=new ContactShadows();private muzzle:T.PointLight;private muzzleLife=0;
  private pendingShots:GameEffect[]=[];private shotSocket=new T.Vector3();
  private reflection:RoomReflectionCapture;private roomWidth=0;private roomHeight=0;private roomEnvironment:ShipEnvironment='cryogenics';private recoveringGraphics=false;private loseGraphics=()=>{this.recoveringGraphics=true;this.contextResources.track(this.scene);this.contextResources.track(this.hudScene);this.contextResources.invalidate();this.reflection.invalidate();this.post.invalidate();this.lighting.key.shadow.map?.dispose();this.lighting.key.shadow.map=null;this.lighting.key.shadow.needsUpdate=true;};private restoreGraphics=()=>{this.shadowsDirty=true;this.recoveringGraphics=true;void Promise.resolve().then(async()=>{if(this.disposed)return;this.captureRoomReflections();await this.prepareScene();}).catch(error=>console.error('Graphics preparation failed',error)).finally(()=>{this.recoveringGraphics=false;});};
@@ -72,14 +73,14 @@ export class DepthRenderer {
   this.scene.background=new T.Color(0x081014);this.scene.fog=new T.FogExp2(0x102027,.014);
   this.reflection=new RoomReflectionCapture(this.renderer,this.scene);this.canvas.addEventListener('webglcontextlost',this.loseGraphics);this.canvas.addEventListener('webglcontextrestored',this.restoreGraphics);this.motionQuery?.addEventListener('change',this.motionChanged);
   this.scene.add(this.lighting.root,this.contacts.mesh);
-  this.surfaces=new EnvironmentMaterials(this.renderer.capabilities.getMaxAnisotropy());this.floorMaterial=this.surfaces.floor;
+  this.surfaces=new EnvironmentMaterials(this.renderer.capabilities.getMaxAnisotropy());this.floorMaterial=this.surfaces.floor;this.materialWarmup=new MaterialWarmup(this.surfaces);this.scene.add(this.materialWarmup.root);
   this.scene.add(this.world,this.player.root);
   this.muzzle=new T.PointLight(0xffc679,0,3,2);this.scene.add(this.muzzle);
   this.effects=new AttackEffects(this.scene,undefined,this.world);
   this.effects.setFeedback({flash:event=>this.lighting.pool.flash({x:event.position.x,y:event.position.y,z:event.position.z,color:event.color,intensity:event.intensity,distance:event.radius,duration:event.duration,priority:event.priority},true),shockwave:event=>this.post.distortion.shockwave(event.position.x,event.position.z,event.radius,event.strength*.012,event.duration)});
 
 
-  this.bulletMesh=new T.InstancedMesh(new T.SphereGeometry(1,6,4),new T.MeshBasicMaterial({color:0xffffff}),320);this.bulletMesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.bulletMesh.frustumCulled=false;this.scene.add(this.bulletMesh);
+  this.bulletMesh=new T.InstancedMesh(new T.SphereGeometry(1,6,4),new T.MeshBasicMaterial({color:0xffffff}),320);this.bulletMesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.bulletMesh.setColorAt(0,this.bulletColor);this.bulletMesh.frustumCulled=false;this.scene.add(this.bulletMesh);
   this.post=new PostPipeline(this.renderer,this.scene,this.camera);this.post.setOptions(this.options,this.tier);
   const ringMat=new T.MeshBasicMaterial({color:0xff7850,transparent:true,opacity:.9,depthWrite:false,side:T.DoubleSide});
   const outer=new T.Mesh(new T.RingGeometry(.965,1,64),ringMat);outer.rotation.x=-Math.PI/2;this.warning.add(outer);
@@ -128,12 +129,8 @@ export class DepthRenderer {
  private async prepareScene(){
   const warm:T.Group=new T.Group(),models:ActorModel[]=[];this.scene.add(warm);
   const yieldTask=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
-  const shadowEnabled=this.renderer.shadowMap.enabled,mapping=this.renderer.toneMapping,originalTarget=this.renderer.getRenderTarget(),warmTarget=new T.WebGLRenderTarget(64,64,{type:T.HalfFloatType}),restoreAtmosphere=this.atmosphere.prepare(),restoreBackdrop=this.backdrop.prepare(),restoreArena=this.arena.prepare();
+  const shadowEnabled=this.renderer.shadowMap.enabled,mapping=this.renderer.toneMapping,originalTarget=this.renderer.getRenderTarget(),warmTarget=new T.WebGLRenderTarget(64,64,{type:T.HalfFloatType}),restoreMaterials=this.materialWarmup.prepare(),restoreAtmosphere=this.atmosphere.prepare(),restoreBackdrop=this.backdrop.prepare(),restoreArena=this.arena.prepare();
   try{
-   // Future rooms share these material families; warm them before the first run.
-   for(const material of [this.surfaces.floor,this.surfaces.wall,this.surfaces.cover])warm.add(new T.Mesh(new T.PlaneGeometry(1,1),material));
-   addRoomPracticals(warm,2,2,'infested');
-   const hot=new T.MeshStandardMaterial({emissive:0xffd69a,emissiveIntensity:3.4});hot.userData.actorMaterial=true;applyHotFixtureSurface(hot);warm.add(new T.Mesh(new T.BoxGeometry(1,1,1),hot));
    for(const kind of ['crawler','brute','spitter','stalker','carrier','queen'])for(let i=0;i<(kind==='queen'?1:3);i++){
     const m=this.actorPool.take(kind,i===2);m.prepare?.();m.animate(0,1,0);m.root.position.copy(this.focus);warm.add(m.root);models.push(m);await yieldTask();
    }
@@ -150,17 +147,21 @@ export class DepthRenderer {
    this.renderer.setViewport(0,0,64,64);this.renderer.setScissor(0,0,64,64);this.renderer.setScissorTest(true);
    for(const shadows of [true,false]){
     this.renderer.shadowMap.enabled=shadows;
-    for(const count of this.lighting.pool.prewarmCounts){this.lighting.pool.setPrewarmCount(count);await this.renderer.compileAsync(this.scene,this.camera);await yieldTask();}
+    for(const count of this.lighting.pool.prewarmCounts){this.lighting.pool.setPrewarmCount(count);await this.renderer.compileAsync(this.scene,this.camera);if(shadows){this.renderer.shadowMap.needsUpdate=true;this.renderer.render(this.scene,this.camera);}await yieldTask();}
    }
+   // Dynamic-light toggles have a distinct fixed-light count as well.
+   this.lighting.setQuality('high',false,true,this.options.flashIntensity,'high');this.muzzle.visible=false;
+   for(const shadows of [true,false]){this.renderer.shadowMap.enabled=shadows;await this.renderer.compileAsync(this.scene,this.camera);if(shadows){this.renderer.shadowMap.needsUpdate=true;this.renderer.render(this.scene,this.camera);}}
+   this.lighting.setQuality('high',true,true,this.options.flashIntensity,'high');this.muzzle.visible=true;
    this.lighting.pool.setPrewarmCount(null);this.renderer.shadowMap.enabled=shadowEnabled;
    this.renderer.shadowMap.needsUpdate=true;this.renderer.render(this.scene,this.camera);
-   // Low has two practicals and no dynamic pool; prepare its forward variant too.
-   this.lighting.setQuality('low',false,false,this.options.flashIntensity,'off');this.muzzle.visible=false;
+   // Low can opt into its two dedicated flashes without enabling the pool.
    this.renderer.setRenderTarget(null);this.renderer.toneMapping=T.AgXToneMapping;this.renderer.shadowMap.enabled=false;
-   await this.renderer.compileAsync(this.scene,this.camera);this.renderer.render(this.scene,this.camera);
+   for(const dynamic of [false,true]){this.lighting.setQuality('low',dynamic,false,this.options.flashIntensity,'off');this.muzzle.visible=dynamic;await this.renderer.compileAsync(this.scene,this.camera);}
+   this.renderer.render(this.scene,this.camera);
    this.applyQuality();this.renderer.toneMapping=mapping;this.renderer.setScissorTest(false);
    await this.renderer.compileAsync(this.hudScene,this.camera);await this.post.prepare();
-  }finally{this.lighting.pool.setPrewarmCount(null);this.applyQuality();warmTarget.dispose();restoreArena();restoreBackdrop();restoreAtmosphere();this.renderer.setRenderTarget(originalTarget);this.renderer.toneMapping=mapping;this.renderer.shadowMap.enabled=shadowEnabled;this.renderer.setScissorTest(false);this.resize();for(const m of models)this.actorPool.release(m);disposeModel(warm);this.shadowsDirty=true;}
+  }finally{this.lighting.pool.setPrewarmCount(null);this.applyQuality();warmTarget.dispose();restoreMaterials();restoreArena();restoreBackdrop();restoreAtmosphere();this.renderer.setRenderTarget(originalTarget);this.renderer.toneMapping=mapping;this.renderer.shadowMap.enabled=shadowEnabled;this.renderer.setScissorTest(false);this.resize();for(const m of models)this.actorPool.release(m);disposeModel(warm);this.shadowsDirty=true;}
  }
  pointer(clientX:number,clientY:number,targets:readonly {id:number;x:number;y:number;radius:number}[]=[]){
   const rect=this.canvas.getBoundingClientRect();
@@ -457,5 +458,5 @@ export class DepthRenderer {
   for(const[id,mesh]of this.poolMeshes)if(!poolIds.has(id)){mesh.geometry.dispose();mesh.material.dispose();mesh.removeFromParent();this.poolMeshes.delete(id);}
  }
  private clearPools(){for(const mesh of this.poolMeshes.values()){mesh.geometry.dispose();mesh.material.dispose();mesh.removeFromParent();}this.poolMeshes.clear();}
- dispose(){if(this.disposed)return;this.disposed=true;this.ragdolls.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.corpseIds?.clear();for(const model of this.actors.values())this.actorPool.release(model);this.actors.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;this.communalGarden?.dispose();this.communalGarden=undefined;this.residentialGalleryEquipment?.dispose();this.residentialGalleryEquipment=undefined;this.passengerVault?.dispose();this.clearPools();this.recoveryKit?.dispose();this.sealedBank?.dispose();this.releasedBerth?.dispose();disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.practicalPools?.dispose();this.arena?.dispose();this.backdrop?.dispose();this.atmosphere.dispose();this.lighting.dispose();this.contacts.dispose();this.afflictions.dispose();this.actorPool.dispose();this.healthBars.dispose();this.playerBeacon?.dispose();this.effects.dispose();for(const model of [this.player,this.menuMarine,this.menuAlien])if(model){model.stop?.();disposeModel(model.root);}if(this.bulletMesh.geometry){this.bulletMesh.geometry.dispose();(this.bulletMesh.material as T.Material).dispose();}for(const object of this.warning.children)if(object instanceof T.Mesh){object.geometry.dispose();(object.material as T.Material).dispose();}this.canvas.removeEventListener('webglcontextlost',this.loseGraphics);this.canvas.removeEventListener('webglcontextrestored',this.restoreGraphics);this.motionQuery?.removeEventListener('change',this.motionChanged);this.reflection.dispose();this.post.dispose();this.contextResources?.invalidate();this.renderer.dispose();this.surfaces.dispose();}
+ dispose(){if(this.disposed)return;this.disposed=true;this.ragdolls.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.corpseIds?.clear();for(const model of this.actors.values())this.actorPool.release(model);this.actors.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;this.communalGarden?.dispose();this.communalGarden=undefined;this.residentialGalleryEquipment?.dispose();this.residentialGalleryEquipment=undefined;this.passengerVault?.dispose();this.clearPools();this.recoveryKit?.dispose();this.sealedBank?.dispose();this.releasedBerth?.dispose();disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.practicalPools?.dispose();this.arena?.dispose();this.backdrop?.dispose();this.atmosphere.dispose();this.lighting.dispose();this.contacts.dispose();this.afflictions.dispose();this.actorPool.dispose();this.healthBars.dispose();this.playerBeacon?.dispose();this.effects.dispose();for(const model of [this.player,this.menuMarine,this.menuAlien])if(model){model.stop?.();disposeModel(model.root);}if(this.bulletMesh.geometry){this.bulletMesh.geometry.dispose();(this.bulletMesh.material as T.Material).dispose();}for(const object of this.warning.children)if(object instanceof T.Mesh){object.geometry.dispose();(object.material as T.Material).dispose();}this.canvas.removeEventListener('webglcontextlost',this.loseGraphics);this.canvas.removeEventListener('webglcontextrestored',this.restoreGraphics);this.motionQuery?.removeEventListener('change',this.motionChanged);this.reflection.dispose();this.post.dispose();this.materialWarmup?.dispose();this.contextResources?.invalidate();this.renderer.dispose();this.surfaces.dispose();}
 }
