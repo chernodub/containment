@@ -15,3 +15,10 @@ an older policy epoch; they have not been evaluated under this frozen aiming
 policy. Use all 20 seeds/rig for final completion/spread distributions rather than
 selecting only successful primary or supplementary attempts. Report each cohort
 and the combined result; do not silently pool different backends or sources.
+
+Policy correction before acceptance: v1/v2 evidence is provisional because native
+fixed-range directional deployments differ from cursor distance, and empty
+cone/beam tips behind walls must not veto visible targets before the wall.
+Regression tests reproduce both defects. Freeze v3 before rerunning both full
+20-seed cohorts; keep all numerical parameters unchanged until both complete.
+The interrupted v1 native queue and partial v2 batches do not count as final proof.

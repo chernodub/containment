@@ -277,3 +277,19 @@ it('does not move the fixed Bulwark plane to an actor selected by native pointer
   // Every cursor resolves to angle0: the actual wall is x70, so neither enemy is inside it.
   expect(plan).toBeNull();
 });
+
+it('scores Flashfire targets before a wall without requiring the empty cone tip to have line of sight', () => {
+  const enemies=[{id:1,x:150*Math.cos(-.2),y:150*Math.sin(-.2),health:100,clear:true,visible:true},{id:2,x:150*Math.cos(.2),y:150*Math.sin(.2),health:100,clear:true,visible:true}];
+  const plan=chooseAbilityAim(ABILITY_CATALOG.flashfire,{x:0,y:0},enemies,{
+    visible:(_from,to)=>!(to.x>220&&Math.abs(to.y)<130),traverse:()=>true,
+  });
+  expect(plan?.targets).toEqual([1,2]);
+});
+
+it('scores a piercing lance before a wall without requiring line of sight to its empty endpoint', () => {
+  const enemies=[{id:1,x:150,y:0,health:100,clear:true,visible:true},{id:2,x:250,y:0,health:100,clear:true,visible:true}];
+  const plan=chooseAbilityAim(ABILITY_CATALOG.railbreaker,{x:0,y:0},enemies,{
+    visible:(_from,to)=>!(to.x>400&&Math.abs(to.y)<200),traverse:()=>true,
+  });
+  expect(plan?.targets).toEqual([1,2]);
+});

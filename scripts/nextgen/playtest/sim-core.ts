@@ -170,7 +170,7 @@ export function runSimulation(options: SimOptions) {
         const hurt = game.hurt.bind(game);
         game.hurt = (n, origin) => hurt(n * .15, origin);
     }
-    const report = { mode: 'sim-policy-v6', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, assisted: !!options.assisted, legacy: !!options.legacy,
+    const report = { mode: 'sim-policy-v7', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, assisted: !!options.assisted, legacy: !!options.legacy,
         policy: 'Shared policy.mjs; 250ms decisions, 60Hz GameFeel, real DepthGame actions; analytic camera observer.',
         limitations: ['No GPU, audio or DOM. Uses shared camera follow/framing/ability-event hooks, exact actor metrics and held-screen ray/torso selection; resource preparation and RAF synchronization are omitted. Matched browser validation remains required before using campaign outcomes as native-policy predictions.'],
         rooms: [] as any[], outcome: 'running', deathRoom: null as number | null, stats: null as any, final: null as any, wallSeconds: 0, trace: options.trace ? [] as any[] : undefined };

@@ -93,7 +93,7 @@ export function chooseAbilityAim(definition: AbilityDefinition, player: Point, o
     let point = queries.resolveAim ? queries.resolveAim(cursor) : cursor;
     if (!point) continue;
     if (definition.targeting === 'point' && distance(player, point) > range) point = pointAt(player, angleTo(player,point),range);
-    if (definition.targeting === 'point' && distance(player, point) > range + epsilon || !queries.visible(player, point)) continue;
+    if (definition.targeting === 'point' && distance(player, point) > range + epsilon) continue;
     const angle = angleTo(player, point);
     let placements = [point];
     if (definition.slot === 'power') {

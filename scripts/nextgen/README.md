@@ -367,7 +367,7 @@ budgets are hardware acceptance criteria, not flaky wall-clock unit tests. Do no
 
 ## I5 corrected ability-aim epoch
 
-`i5-catalog-ability-aim-v1` retains marine-navigation v3 and the existing weapon,
+`i5-catalog-ability-aim-v3` retains marine-navigation v3 and the existing weapon,
 movement, boon, healing and opportunity heuristics. Shared `ability-aim.ts`
 searches current visible, vulnerable targets using catalog cone/line/chain/
 point-circle/wall shapes, native LOS and legal placement; it also accounts for
