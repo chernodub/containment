@@ -19,6 +19,41 @@ const ROOM_IDEAS:Readonly<Record<string,string>>={
 };
 const MOOD_ACCENT:Record<ShipEnvironment,number>={cryogenics:0x9fe8ff,habitation:0xe5ad70,security:0xff7354,cargo:0xddad61,communications:0x71dac4,engineering:0xffc260,maintenance:0x7fcdb9,infested:0x9dff5a,containment:0xb79cff,reactor:0xffad61};
 
+const DISPLAY_TEXT:Readonly<Record<string,readonly string[]>>={
+ 'diagnostic-gallery':['INDEPENDENT DIAGNOSTIC','OCCUPIED CRYO DECKS','PURGE IS FATAL'],
+ 'safety-interlock-station':['LOCAL SAFETY RECORD','RESCUE IMPOSSIBLE','RECORD LOCKED'],
+ 'manual-control-chamber':['MANUAL AUTHORIZATION','PASSENGERS ALIVE','PURGE IS FATAL'],
+ 'service-shaft-landing':['LOCAL ACCESS ONLY','UPLINK LOST','LOWER DECK SERVICE'],
+};
+
+/** Original 5x7 instrument lettering; no font, DOM canvas or external image dependency. */
+function instrumentTexture(lines:readonly string[]):T.DataTexture {
+ const glyphs:Record<string,string>={
+  A:'01110/10001/10001/11111/10001/10001/10001',B:'11110/10001/10001/11110/10001/10001/11110',C:'01111/10000/10000/10000/10000/10000/01111',
+  D:'11110/10001/10001/10001/10001/10001/11110',E:'11111/10000/10000/11110/10000/10000/11111',F:'11111/10000/10000/11110/10000/10000/10000',
+  G:'01111/10000/10000/10111/10001/10001/01110',H:'10001/10001/10001/11111/10001/10001/10001',I:'11111/00100/00100/00100/00100/00100/11111',
+  J:'00111/00010/00010/00010/10010/10010/01100',K:'10001/10010/10100/11000/10100/10010/10001',L:'10000/10000/10000/10000/10000/10000/11111',
+  M:'10001/11011/10101/10101/10001/10001/10001',N:'10001/11001/10101/10011/10001/10001/10001',O:'01110/10001/10001/10001/10001/10001/01110',
+  P:'11110/10001/10001/11110/10000/10000/10000',Q:'01110/10001/10001/10001/10101/10010/01101',R:'11110/10001/10001/11110/10100/10010/10001',
+  S:'01111/10000/10000/01110/00001/00001/11110',T:'11111/00100/00100/00100/00100/00100/00100',U:'10001/10001/10001/10001/10001/10001/01110',
+  V:'10001/10001/10001/10001/10001/01010/00100',W:'10001/10001/10001/10101/10101/10101/01010',X:'10001/10001/01010/00100/01010/10001/10001',
+  Y:'10001/10001/01010/00100/00100/00100/00100',Z:'11111/00001/00010/00100/01000/10000/11111',
+ };
+ const width=512,height=128,pixels=new Uint8Array(width*height*4);
+ const pixel=(x:number,y:number,r:number,g:number,b:number)=>{const i=((height-1-y)*width+x)*4;pixels[i]=r;pixels[i+1]=g;pixels[i+2]=b;pixels[i+3]=255;};
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++)pixel(x,y,16+(y%8===0?3:0),23,27);
+ for(let line=0;line<lines.length;line++){
+  const text=lines[line],scale=3,startX=24,startY=12+line*37;
+  for(let char=0;char<text.length;char++){
+   const rows=glyphs[text[char]]?.split('/');if(!rows)continue;
+   for(let y=0;y<7;y++)for(let x=0;x<5;x++)if(rows[y][x]==='1')for(let sy=0;sy<scale;sy++)for(let sx=0;sx<scale;sx++){
+    const px=startX+char*6*scale+x*scale+sx,py=startY+y*scale+sy;if(px<width&&py<height)pixel(px,py,line===2?255:202,line===2?178:228,line===2?105:229);
+   }
+  }
+ }
+ const texture=new T.DataTexture(pixels,width,height);texture.colorSpace=T.SRGBColorSpace;texture.minFilter=T.LinearMipmapLinearFilter;texture.magFilter=T.LinearFilter;texture.generateMipmaps=true;texture.needsUpdate=true;return texture;
+}
+
 function randomSource(seed:number,text:string){
   for(let i=0;i<text.length;i++)seed=Math.imul(seed^text.charCodeAt(i),16777619);
   return()=>{seed=(seed+0x6d2b79f5)>>>0;let t=Math.imul(seed^(seed>>>15),1|seed);t^=t+Math.imul(t^(t>>>7),61|t);return((t^(t>>>14))>>>0)/4294967296;};
@@ -35,7 +70,9 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   const steel=make('steel',0x596771,.68,.43),dark=make('graphite',0x15212a,.5,.65),paint=make('enamel',environment==='habitation'?0xa18c70:0x8d9e9d,.15,.78);
   const resin=make('resin',0x364334,.05,.82),signal=make('signal',MOOD_ACCENT[environment],.12,.36,MOOD_ACCENT[environment],.65);
   const vein=make('vein',0x547b3a,.08,.48,environment==='infested'?0x9dff5a:0x6b9a52,environment==='infested'?.62:.18);
-  const materials=[steel,dark,paint,resin,signal,vein],buckets=new Map<T.Material,T.BufferGeometry[]>();
+  const display=make('display',0xd8e5df,.05,.52,MOOD_ACCENT[environment],.65),text=DISPLAY_TEXT[templateId];
+  if(text){const texture=instrumentTexture(text);display.map=display.emissiveMap=texture;display.addEventListener('dispose',()=>texture.dispose());root.userData.displayText=[...text];}
+  const materials=[steel,dark,paint,resin,signal,vein,display],buckets=new Map<T.Material,T.BufferGeometry[]>();
   const random=randomSource(seed,templateId),matrix=new T.Matrix4(),quat=new T.Quaternion(),axis=new T.Vector3(0,1,0);
   const add=(geometry:T.BufferGeometry,m:T.Material,x:number,y:number,z:number,sx=1,sy=1,sz=1,rotation=0)=>{
     matrix.compose(new T.Vector3(x,y,z),quat.setFromAxisAngle(axis,rotation),new T.Vector3(sx,sy,sz));
@@ -87,12 +124,8 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
       if(index===0&&(templateId==='diagnostic-gallery'||templateId==='safety-interlock-station'||templateId==='manual-control-chamber'||templateId==='service-shaft-landing')){
         const width=Math.min(w*.72,3.3),depth=Math.min(d*.65,1.25);
         box(dark,cx,top+.08,cz,width,.16,depth);
-        box(signal,cx,top+.166,cz,width*.88,.012,depth*.79);
-        const rows=templateId==='diagnostic-gallery'?5:3;
-        for(let row=0;row<rows;row++){
-          const offset=(row-(rows-1)/2)*depth*.13;
-          box(dark,cx-width*.08,top+.176,cz+offset,width*(row===0?.63:.38+row*.045),.006,depth*.035);
-        }
+        box(display,cx,top+.166,cz,width*.88,.012,depth*.79);
+        for(const side of [-1,1])box(steel,cx+side*width*.46,top+.18,cz,.025,.02,depth*.85);
         // The manual authorization retains one concentrated console light.
         root.userData.lightFixtures=[{x:cx,y:top+.28,z:cz,color:MOOD_ACCENT[environment],nativeColor:true}];
       }

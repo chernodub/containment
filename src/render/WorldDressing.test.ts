@@ -15,7 +15,7 @@ function arrays(root:T.Object3D){const all:number[][]=[];root.traverse(o=>{if(o 
 describe('G2 deterministic world dressing',()=>{
  it.each(ROOM_STORY_ROUTE.map(room=>[room.templateId,room.environment] as const))('%s retains its topology and bounds the material/triangle inventory', (id,environment)=>{
   const template=ROOM_TEMPLATES[id],before=JSON.stringify(template),world=platformWorld(template),root=addWorldDressing(world,template,environment,id,1729);
-  expect(JSON.stringify(template)).toBe(before);expect(root.userData.visualIdea).toBeTruthy();expect(root.children.length).toBeLessThanOrEqual(6);
+  expect(JSON.stringify(template)).toBe(before);expect(root.userData.visualIdea).toBeTruthy();expect(root.children.length).toBeLessThanOrEqual(7);
   let triangles=0;root.traverse(o=>{if(o instanceof T.Mesh){triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;expect((o.material as T.Material).userData.actorMaterial).toBe(true);expect(Array.from(o.geometry.attributes.position.array).every(Number.isFinite)).toBe(true);}});
   expect(triangles).toBeLessThan(12000);
   // All raised fitting vertices remain over original collision rectangles.
@@ -30,6 +30,13 @@ describe('G2 deterministic world dressing',()=>{
    }
   });
   disposeModel(root);for(const child of world.children)if(child instanceof T.Mesh){child.geometry.dispose();(child.material as T.Material).dispose();}
+ });
+ it('owns one generated diagnostic display and retires its image with the room',()=>{
+  const template=ROOM_TEMPLATES['diagnostic-gallery'],world=platformWorld(template),root=addWorldDressing(world,template,'engineering',template.id,1729);
+  expect(root.userData.displayText).toEqual(['INDEPENDENT DIAGNOSTIC','OCCUPIED CRYO DECKS','PURGE IS FATAL']);
+  const mesh=root.getObjectByName('g2-dressing-display') as T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>,texture=mesh.material.map!;
+  expect(texture).toBeInstanceOf(T.DataTexture);expect(mesh.material.emissiveMap).toBe(texture);expect(texture.image.width*texture.image.height).toBeLessThanOrEqual(65536);
+  const retired=vi.spyOn(texture,'dispose');disposeModel(root);expect(retired).toHaveBeenCalledTimes(1);
  });
  it('same room seed reproduces every fitting while a new seed changes clutter',()=>{
   const t=ROOM_TEMPLATES['infested-workshop'],a=platformWorld(t),b=platformWorld(t),c=platformWorld(t);
