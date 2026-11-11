@@ -2,15 +2,9 @@ import type {DepthGame} from '../DepthGame';
 import type {DepthRenderer} from '../render/DepthRenderer';
 import type {AbilitiesSnapshot, AbilitySlot, RigId} from '../game/abilities/contract';
 import {GRAPHICS_PRESETS, type GraphicsOptions} from '../render/graphicsOptions';
+import type {RunStatsSnapshot} from '../game/abilities/RunStats';
 import type {GraphicsTier} from '../render/FrameBudget';
 
-/** Optional next-generation surfaces. No presentation fallback changes simulation. */
-type NextGame = DepthGame & {
-  abilities?: {snapshot: AbilitiesSnapshot};
-  chooseRig?: (id: RigId) => void;
-  useAbility?: (slot: AbilitySlot) => void;
-  stats?: Readonly<Record<string, unknown>>;
-};
 type NextRenderer = DepthRenderer & {
   graphicsOptions?: GraphicsOptions;
   setGraphicsOptions?: (options: Partial<GraphicsOptions>) => void;
@@ -20,7 +14,7 @@ type NextRenderer = DepthRenderer & {
 export type UiFixture = Readonly<{
   phase?: string;
   abilities?: AbilitiesSnapshot | null;
-  stats?: Readonly<Record<string, unknown>>;
+  stats?: RunStatsSnapshot;
   preferences?: Readonly<{combatText?: boolean; radar?: boolean}>;
 }>;
 const fixtures = new WeakMap<DepthGame, UiFixture>();
@@ -37,32 +31,26 @@ export function getUiPhase(game: DepthGame): string {
   return fixtures.get(game)?.phase ?? (game.status === 'menu' ? 'menu' : String(game.expedition.run.phase));
 }
 
-/** No rig means no ability slots; legacy runs retain their normal actions. */
+/** Read the authoritative runtime, with explicit debug-only snapshot injection. */
 export function getAbilities(game: DepthGame): AbilitiesSnapshot | null {
   const fixture = fixtures.get(game);
   if (fixture && 'abilities' in fixture) return fixture.abilities ?? null;
-  return (game as NextGame).abilities?.snapshot ?? null;
+  return game.abilities.snapshot;
 }
 
 /** Dispatch through the same public action surface as desktop input. */
 export function chooseRig(game: DepthGame, id: RigId): boolean {
-  const next = game as NextGame;
-  if (typeof next.chooseRig !== 'function') return false;
-  next.chooseRig(id);
-  return true;
+  return game.chooseRig(id);
 }
 
-/** Missing live abilities are safely inert, never simulated by UI. */
+/** Dispatch only public simulation actions. */
 export function useAbility(game: DepthGame, slot: AbilitySlot): boolean {
-  const next = game as NextGame;
-  if (typeof next.useAbility !== 'function') return false;
-  next.useAbility(slot);
-  return true;
+  return game.useAbility(slot);
 }
 
-/** Only real statistics are shown; unsupported counters are omitted. */
-export function getRunStats(game: DepthGame): Readonly<Record<string, unknown>> {
-  return fixtures.get(game)?.stats ?? (game as NextGame).stats ?? {};
+/** Nested, immutable simulation statistics drive the debrief. */
+export function getRunStats(game: DepthGame): RunStatsSnapshot {
+  return fixtures.get(game)?.stats ?? game.stats;
 }
 
 /** Presentation fixture overrides stay separate from persisted player preferences. */

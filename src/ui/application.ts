@@ -125,8 +125,9 @@ export async function bootstrap() {
         void audio.unlock(); audio.resumeAll(); input.reset(); screens.resetSettings();
         if (resume) {
             if (!game.continueRun()) return;
-        } else game.newRun();
+        } else game.newRun(undefined, {rigSelect: true});
         syncScreen(true);
+        syncHud();
     };
     captureWeaponPointer(el('pause') as HTMLButtonElement);
     captureWeaponPointer(el('skip-story') as HTMLButtonElement);

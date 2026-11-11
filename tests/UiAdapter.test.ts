@@ -7,34 +7,28 @@ import {abilityFixture} from '../src/ui/fixtures';
 import {chooseRig, getAbilities, getCameraFootprint, getGraphicsOptions, getRunStats, getUiPhase, setGraphicsOptions, setGraphicsTier, setUiFixture, useAbility} from '../src/ui/gameAdapter';
 
 describe('version-tolerant presentation adapter', () => {
-  it('keeps a legacy game inert without abilities or invented run statistics', () => {
+  it('reads the live runtime and preserves action acceptance', () => {
     const game = new DepthGame();
-    expect(getAbilities(game)).toBeNull();
-    expect(getRunStats(game)).toEqual({});
+    expect(getAbilities(game)).toBe(game.abilities.snapshot);
+    expect(getRunStats(game)).toBe(game.stats);
     expect(chooseRig(game, 'arc')).toBe(false);
     expect(useAbility(game, 'power')).toBe(false);
-  });
-  it('reads live snapshots and invokes only public actions when A1 exists', () => {
-    const game = new DepthGame();
-    const snapshot = abilityFixture('cryo', 'cooling');
-    const next = Object.assign(game, {abilities: {snapshot}, chooseRig: vi.fn(), useAbility: vi.fn(), stats: {kills: 17}});
-    expect(getAbilities(game)).toBe(snapshot);
-    expect(getRunStats(game)).toEqual({kills: 17});
-    expect(chooseRig(game, 'pyro')).toBe(true);
-    expect(useAbility(game, 'tactical')).toBe(true);
-    expect(next.chooseRig).toHaveBeenCalledWith('pyro');
-    expect(next.useAbility).toHaveBeenCalledWith('tactical');
+    game.newRun(1729, {rigSelect: true});
+    expect(chooseRig(game, 'cryo')).toBe(true);
+    expect(getAbilities(game)?.rig).toBe('cryo');
+    expect(chooseRig(game, 'arc')).toBe(false);
+    expect(useAbility(game, 'power')).toBe(false);
   });
   it('isolates explicit visual fixtures from simulation and removes them cleanly', () => {
     const game = new DepthGame(), other = new DepthGame();
     const before = JSON.stringify(game.expedition);
-    setUiFixture(game, {phase: 'rig-select', abilities: abilityFixture('arc', 'overdrive'), stats: {damage: 6200}});
+    setUiFixture(game, {phase: 'rig-select', abilities: abilityFixture('arc', 'overdrive'), stats: game.stats});
     expect(getUiPhase(game)).toBe('rig-select');
     expect(getAbilities(game)?.overdrive.ready).toBe(true);
-    expect(getAbilities(other)).toBeNull();
+    expect(getAbilities(other)).toBe(other.abilities.snapshot);
     expect(JSON.stringify(game.expedition)).toBe(before);
     setUiFixture(game, null);
-    expect(getAbilities(game)).toBeNull();
+    expect(getAbilities(game)).toBe(game.abilities.snapshot);
     expect(getUiPhase(game)).toBe('menu');
   });
   it('applies tier presets and per-option overrides through the optional G1 surface', () => {
