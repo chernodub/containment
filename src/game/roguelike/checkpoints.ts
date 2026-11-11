@@ -131,8 +131,9 @@ export function serializeCheckpoint(checkpoint: unknown): string | null {
 }
 
 /**
- * Parse a bounded exact-schema save. No migrations, repairs, defaults, or phase
- * advancement: unresolved reward and route choices survive exactly as recorded.
+ * Parse a bounded exact-schema save. Historical statistics may omit incoming
+ * damage provenance; RunStats supplies empty defaults when restoring them.
+ * Unresolved reward and route choices survive exactly as recorded.
  * Run validation checks the graph regenerated from the recorded seed.
  */
 export function parseCheckpoint(serialized: unknown): RunCheckpoint | null {

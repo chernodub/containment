@@ -4,6 +4,10 @@ import {generateRun} from '../roguelike/run';
 import type {RunState} from '../roguelike/types';
 
 export type DamageSource = 'weapon' | 'ability' | 'status' | 'boon';
+export type IncomingDamageSource = 'enemy-contact' | 'enemy-projectile' | 'acid-pool' | 'boss-attack' | 'unknown';
+export type IncomingDamageOrigin = Readonly<{source: IncomingDamageSource; enemyFamily?: EnemyId}>;
+/** Actual armor/health lost, with the authoritative simulation clock and run-node id. */
+export type IncomingDamageReceipt = IncomingDamageOrigin & Readonly<{amount: number; room: string; atMs: number}>;
 export type RunStatsSnapshot = Readonly<{
   kills: Readonly<{ total: number; byFamily: Readonly<Record<EnemyId, number>> }>;
   damageDealt: Readonly<Record<DamageSource, number>>;
@@ -15,11 +19,17 @@ export type RunStatsSnapshot = Readonly<{
   highestMultiKill: number;
   roomTimeMs: Readonly<Record<string, number>>;
   creditsEarned: number;
+  /** Absent only in historical saves/fixtures; runtime snapshots always supply these defaults. */
+  lastDamage?: IncomingDamageReceipt | null;
+  recentDamage?: readonly IncomingDamageReceipt[];
 }>;
 
 /** Persistence limits bound counters, room maps, and the rolling kill queue. */
 export const RUN_STATS_LIMITS = Object.freeze({ counter: 1_000_000_000, timeMs: 1_000_000_000_000, rooms: 20, multiKill: 4096 });
+export const INCOMING_DAMAGE_WINDOW_MS = 5000;
+export const INCOMING_DAMAGE_CAPACITY = 32;
 const FAMILIES = ['crawler', 'brute', 'spitter', 'stalker', 'carrier', 'queen'] as const;
+const INCOMING_SOURCES: readonly IncomingDamageSource[] = ['enemy-contact', 'enemy-projectile', 'acid-pool', 'boss-attack', 'unknown'];
 const SOURCES = ['weapon', 'ability', 'status', 'boon'] as const;
 const SLOTS = ['dash', 'tactical', 'power', 'overdrive'] as const;
 const KEYS = ['kills', 'damageDealt', 'damageTaken', 'shotsFired', 'shotsHit', 'abilityUses', 'overdrivesUsed', 'highestMultiKill', 'roomTimeMs', 'creditsEarned'];
@@ -29,16 +39,39 @@ const bounded = (value: unknown, max: number = RUN_STATS_LIMITS.counter, integer
 const roomId = (value: string): boolean => value.length <= 128 && /^\d{1,10}:(?:v3-r(?:[0-9]|1[0-9])|v2-r(?:[0-9]|1[01])-(?:combat|elite|medical|armory|boss)|r[0-5]-(?:start|medical|armory|combat|safe|elite|boss))$/.test(value);
 const counts = (value: unknown, keys: readonly string[], integer: boolean): value is Record<string, number> => exact(value, keys) && keys.every(key => bounded(value[key], RUN_STATS_LIMITS.counter, integer));
 
+function validIncoming(value: unknown): value is IncomingDamageReceipt {
+  if (!plain(value)) return false;
+  const keys = ['source', 'amount', 'room', 'atMs', ...(Object.hasOwn(value, 'enemyFamily') ? ['enemyFamily'] : [])];
+  return exact(value, keys) && INCOMING_SOURCES.includes(value.source as IncomingDamageSource) &&
+    bounded(value.amount) && value.amount > 0 && typeof value.room === 'string' && roomId(value.room) &&
+    bounded(value.atMs, RUN_STATS_LIMITS.timeMs * RUN_STATS_LIMITS.rooms) &&
+    (!Object.hasOwn(value, 'enemyFamily') || FAMILIES.includes(value.enemyFamily as EnemyId));
+}
+
 /** Strict exact-schema validation; optional run context also checks timer membership and resume capacity. */
 export function isValidRunStatsSnapshot(value: unknown, run?: RunState): value is RunStatsSnapshot {
   try {
-    if (!exact(value, KEYS) || !exact(value.kills, ['total', 'byFamily']) || !bounded(value.kills.total, RUN_STATS_LIMITS.counter, true) || !counts(value.kills.byFamily, FAMILIES, true) || Object.values(value.kills.byFamily).reduce((sum, n) => sum + n, 0) !== value.kills.total || !counts(value.damageDealt, SOURCES, false) || !counts(value.abilityUses, SLOTS, true)) return false;
+    if (!(exact(value, KEYS) || exact(value, [...KEYS, 'lastDamage', 'recentDamage'])) || !exact(value.kills, ['total', 'byFamily']) || !bounded(value.kills.total, RUN_STATS_LIMITS.counter, true) || !counts(value.kills.byFamily, FAMILIES, true) || Object.values(value.kills.byFamily).reduce((sum, n) => sum + n, 0) !== value.kills.total || !counts(value.damageDealt, SOURCES, false) || !counts(value.abilityUses, SLOTS, true)) return false;
     if (!['damageTaken', 'shotsFired', 'shotsHit', 'overdrivesUsed', 'creditsEarned'].every(key => bounded(value[key], RUN_STATS_LIMITS.counter, key !== 'damageTaken'))) return false;
     if (Number(value.shotsHit) > Number(value.shotsFired) || (value.kills.total > 0 && Number(value.highestMultiKill) < 1)) return false;
     if (Number(value.overdrivesUsed) !== value.abilityUses.overdrive || !bounded(value.highestMultiKill, RUN_STATS_LIMITS.multiKill, true) || Number(value.highestMultiKill) > value.kills.total) return false;
     if (!plain(value.roomTimeMs)) return false;
     const rooms = Reflect.ownKeys(value.roomTimeMs);
     if (rooms.length > RUN_STATS_LIMITS.rooms || !rooms.every(key => typeof key === 'string' && roomId(key) && bounded((value.roomTimeMs as Record<string, unknown>)[key], RUN_STATS_LIMITS.timeMs))) return false;
+    if (Object.hasOwn(value, 'lastDamage')) {
+      if (value.lastDamage !== null && !validIncoming(value.lastDamage)) return false;
+      if (!Array.isArray(value.recentDamage) || value.recentDamage.length > INCOMING_DAMAGE_CAPACITY || !value.recentDamage.every(validIncoming)) return false;
+      const recent = value.recentDamage as IncomingDamageReceipt[];
+      const last = value.lastDamage as IncomingDamageReceipt | null;
+      const elapsed = Object.values(value.roomTimeMs as Record<string, number>).reduce((sum, n) => sum + n, 0);
+      const receipts = last ? [...recent, last] : recent;
+      if ((!last && recent.length) || receipts.some(receipt => !rooms.includes(receipt.room) || receipt.atMs > elapsed || receipt.amount > Number(value.damageTaken))) return false;
+      if (recent.some((receipt, index) => receipt.atMs < elapsed - INCOMING_DAMAGE_WINDOW_MS || index > 0 && receipt.atMs < recent[index - 1].atMs)) return false;
+      if (last && recent.length) {
+        const newest = recent[recent.length - 1];
+        if (newest.source !== last.source || newest.enemyFamily !== last.enemyFamily || newest.room !== last.room || newest.amount !== last.amount || newest.atMs !== last.atMs) return false;
+      }
+    }
     if (run) {
       const graph = generateRun(run.seed, run.version);
       if (!graph.nodes.some(node => node.id === run.currentNodeId) || !rooms.every(id => graph.nodes.some(node => node.id === id))) return false;
@@ -61,9 +94,11 @@ type MutableStats = {
   highestMultiKill: number;
   roomTimeMs: Record<string, number>;
   creditsEarned: number;
+  lastDamage: IncomingDamageReceipt | null;
+  recentDamage: IncomingDamageReceipt[];
 };
-const empty = (): MutableStats => ({ kills: { total: 0, byFamily: zeroRecord(FAMILIES) }, damageDealt: zeroRecord(SOURCES), damageTaken: 0, shotsFired: 0, shotsHit: 0, abilityUses: zeroRecord(SLOTS), overdrivesUsed: 0, highestMultiKill: 0, roomTimeMs: {}, creditsEarned: 0 });
-const clone = (s: RunStatsSnapshot): RunStatsSnapshot => Object.freeze({ ...s, kills: Object.freeze({ ...s.kills, byFamily: Object.freeze({ ...s.kills.byFamily }) }), damageDealt: Object.freeze({ ...s.damageDealt }), abilityUses: Object.freeze({ ...s.abilityUses }), roomTimeMs: Object.freeze({ ...s.roomTimeMs }) });
+const empty = (): MutableStats => ({ kills: { total: 0, byFamily: zeroRecord(FAMILIES) }, damageDealt: zeroRecord(SOURCES), damageTaken: 0, shotsFired: 0, shotsHit: 0, abilityUses: zeroRecord(SLOTS), overdrivesUsed: 0, highestMultiKill: 0, roomTimeMs: {}, creditsEarned: 0, lastDamage: null, recentDamage: [] });
+const clone = (s: RunStatsSnapshot): RunStatsSnapshot => Object.freeze({ ...s, kills: Object.freeze({ ...s.kills, byFamily: Object.freeze({ ...s.kills.byFamily }) }), damageDealt: Object.freeze({ ...s.damageDealt }), abilityUses: Object.freeze({ ...s.abilityUses }), roomTimeMs: Object.freeze({ ...s.roomTimeMs }), lastDamage: s.lastDamage ? Object.freeze({...s.lastDamage}) : null, recentDamage: Object.freeze((s.recentDamage ?? []).map(receipt => Object.freeze({...receipt}))) });
 const increment = (current: number, amount: number, limit: number = RUN_STATS_LIMITS.counter): number => Math.min(limit, current + amount);
 
 /** Authoritative receipts accumulate using simulation time only. Snapshots stay stable until a receipt changes state. */
@@ -81,9 +116,9 @@ export class RunStats {
   /** Restore a boundary snapshot (or start a run); transient multi-kill windows never cross rooms. */
   reset(snapshot?: RunStatsSnapshot): void {
     if (snapshot && !isValidRunStatsSnapshot(snapshot)) throw new Error('Invalid run statistics');
-    this.value = snapshot ? { ...snapshot, kills: { ...snapshot.kills, byFamily: { ...snapshot.kills.byFamily } }, damageDealt: { ...snapshot.damageDealt }, abilityUses: { ...snapshot.abilityUses }, roomTimeMs: { ...snapshot.roomTimeMs } } : empty();
+    this.value = snapshot ? { ...snapshot, kills: { ...snapshot.kills, byFamily: { ...snapshot.kills.byFamily } }, damageDealt: { ...snapshot.damageDealt }, abilityUses: { ...snapshot.abilityUses }, roomTimeMs: { ...snapshot.roomTimeMs }, lastDamage: snapshot.lastDamage ? {...snapshot.lastDamage} : null, recentDamage: (snapshot.recentDamage ?? []).map(receipt => ({...receipt})) } : empty();
     this.cached = null;
-    this.time = 0;
+    this.time = Object.values(this.value.roomTimeMs).reduce((sum, n) => sum + n, 0);
     this.room = null;
     this.killHead = this.killCount = 0;
   }
@@ -109,6 +144,7 @@ export class RunStats {
     if (id !== undefined) this.enterRoom(id);
     this.time += Math.min(ms, RUN_STATS_LIMITS.timeMs);
     this.prune();
+    this.pruneIncoming();
     if (this.room) {
       const elapsed = increment(this.value.roomTimeMs[this.room], ms, RUN_STATS_LIMITS.timeMs);
       if (elapsed !== this.value.roomTimeMs[this.room]) {
@@ -122,6 +158,15 @@ export class RunStats {
     while (this.killCount && this.kills[this.killHead] < this.time - 1000) {
       this.killHead = (this.killHead + 1) % RUN_STATS_LIMITS.multiKill;
       this.killCount--;
+    }
+  }
+
+  private pruneIncoming(): void {
+    let expired = 0;
+    while (expired < this.value.recentDamage.length && this.value.recentDamage[expired].atMs < this.time - INCOMING_DAMAGE_WINDOW_MS) expired++;
+    if (expired) {
+      this.value.recentDamage.splice(0, expired);
+      this.cached = null;
     }
   }
 
@@ -150,7 +195,21 @@ export class RunStats {
     }
   }
 
-  recordDamageTaken(amount: number): void { this.add('damageTaken', amount); }
+  recordDamageTaken(amount: number, origin: IncomingDamageOrigin = {source: 'unknown'}): void {
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    this.add('damageTaken', amount);
+    if (!this.room) return;
+    this.pruneIncoming();
+    const receipt: IncomingDamageReceipt = {
+      source: INCOMING_SOURCES.includes(origin.source) ? origin.source : 'unknown',
+      ...(origin.enemyFamily && FAMILIES.includes(origin.enemyFamily) ? {enemyFamily: origin.enemyFamily} : {}),
+      amount: Math.min(amount, RUN_STATS_LIMITS.counter), room: this.room, atMs: this.time,
+    };
+    this.value.lastDamage = receipt;
+    if (this.value.recentDamage.length === INCOMING_DAMAGE_CAPACITY) this.value.recentDamage.shift();
+    this.value.recentDamage.push(receipt);
+    this.cached = null;
+  }
   /** Count a fired shot (not pellets); hit receipts may arrive later through recordShotHit. */
   recordShot(hit = false): void { this.add('shotsFired', 1); if (hit) this.recordShotHit(); }
   /** Host deduplicates pellet and piercing hits per fired shot. */
