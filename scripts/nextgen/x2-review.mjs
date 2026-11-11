@@ -33,4 +33,5 @@ for(const [key,list]of groups)for(let start=0;start<list.length;start+=6){
   const name=`${key}-${start/6+1}.png`;await writeFile(resolve(out,name),encode(sheet));sheets.push(name);
 }
 await writeFile(resolve(out,'index.html'),`<!doctype html><meta charset="utf-8"><title>X2 review</title><body style="background:#101820;color:#d8eef2;font:16px sans-serif">${sheets.map(f=>`<h2>${f}</h2><img style="max-width:100%" src="${f}">`).join('')}</body>`);
+await writeFile(resolve(root,'x2-gallery.html'),`<!doctype html><meta charset="utf-8"><title>X2 native gallery</title><body style="background:#101820;color:#d8eef2;font:16px sans-serif"><a style="color:#b5edff" href="review480/index.html">Exact 480×270 review</a><main style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${files.map(f=>`<figure style="margin:0"><a href="${encodeURIComponent(f)}"><img loading="lazy" style="width:100%" src="${encodeURIComponent(f)}"></a><figcaption>${f}</figcaption></figure>`).join('')}</main></body>`);
 console.log(`${files.length} exact480x270 frames; ${sheets.length} review sheets: ${out}`);

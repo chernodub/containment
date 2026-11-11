@@ -42,7 +42,10 @@ void main(){
   float rim=pow(max(0.0,1.0-abs(dot(normalize(vBeaconNormal),normalize(vBeaconView)))),2.5);
   float fill=.16*strength;
   float edge=smoothstep(.14,.58,rim);
-  gl_FragColor=vec4(.55,.89,1.0,max(fill,edge*strength));
+  // A dark outer keyline preserves the cyan silhouette against white frost,
+  // muzzle flashes and friendly particle cores, without another skin draw.
+  vec3 color=mix(vec3(.55,.89,1.0),vec3(.012,.035,.048),smoothstep(.72,.95,rim));
+  gl_FragColor=vec4(color,max(fill,edge*strength));
   #include <colorspace_fragment>
 }`;
 
