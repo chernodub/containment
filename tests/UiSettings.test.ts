@@ -95,7 +95,6 @@ async function mount({reduced = false, blocked = false, legacy = false}: {reduce
 it('renders every graphics contract option with its metadata and complete shadow choices', async () => {
   const page = await mount();
   try {
-    await page.locator('.settings-advanced summary').click();
     expect(await page.locator('#settings-graphics-heading').evaluate(element => getComputedStyle(element).fontSize)).toBe('17px');
     for (const [key, metadata] of Object.entries(GRAPHICS_OPTION_LABELS)) {
       const input = page.locator(`[data-setting="graphics.${key}"]`);
@@ -139,7 +138,6 @@ it('applies and persists tier, every graphics option and gameplay/channel contro
   const page = await mount();
   try {
     await page.locator('#quality').selectOption('low');
-    await page.locator('.settings-advanced summary').click();
     for (const [key, value] of Object.entries(GRAPHICS_PRESETS.low)) {
       const control = page.locator(`[data-setting="graphics.${key}"]`);
       if (typeof value === 'boolean') await control.check();
@@ -193,35 +191,27 @@ it('survives denied storage, repeated binds and the legacy renderer without dupl
 });
 
 
-it('keeps the title scroll cue and gives roomy pause settings two columns without changing native controls', async () => {
+it('groups every option into a compact console with native controls visible at 1280 × 720', async () => {
   const page = await mount();
   try {
-    await page.evaluate(() => document.getElementById('settings-host')!.classList.add('title-drawer'));
-    expect(await page.locator('.settings-scroll-hint').isVisible()).toBe(true);
-    const titlePositions = await page.locator('.settings-layout').evaluate(element => getComputedStyle(element).display);
-    expect(titlePositions).toBe('block');
-    await page.setViewportSize({width: 1280, height: 720});
-    await page.evaluate(() => {
-      const host = document.getElementById('settings-host')!;
-      host.classList.replace('title-drawer', 'pause-panel');
-      host.style.width = '1040px';
-    });
-    expect(await page.locator('.settings-scroll-hint').isVisible()).toBe(false);
-    expect(await page.locator('.settings-layout').evaluate(element => getComputedStyle(element).display)).toBe('grid');
-    const graphics = (await page.locator('#settings-graphics-heading').boundingBox())!;
-    const accessibility = (await page.locator('#settings-accessibility-heading').boundingBox())!;
-    expect(accessibility.y).toBe(graphics.y);
-    expect(accessibility.x).toBeGreaterThan(graphics.x + graphics.width);
-    const music = (await page.locator('[data-setting="music"]').boundingBox())!;
-    const effects = (await page.locator('[data-setting="effects"]').boundingBox())!;
-    expect(effects.y).toBe(music.y);
-    expect(effects.x).toBeGreaterThan(music.x + music.width);
-    await page.setViewportSize({width: 960, height: 540});
-    await page.evaluate(() => {document.getElementById('settings-host')!.style.width = '520px';});
-    expect(await page.locator('.settings-layout').evaluate(element => getComputedStyle(element).display)).toBe('block');
-    const slider = page.locator('#master-volume');
-    await slider.focus(); await page.keyboard.press('ArrowRight');
+    await page.setViewportSize({width:1280,height:720});
+    await page.evaluate(()=>{const host=document.getElementById('settings-host')!;host.classList.add('pause-panel');host.style.width='1140px';host.style.height='600px';});
+    expect(await page.locator('.settings-layout').evaluate(element=>getComputedStyle(element).display)).toBe('grid');
+    expect(await page.locator('.settings-section__heading h3').allTextContents()).toEqual(['Quality','Effects','Comfort','Audio']);
+    const fit=await page.locator('#settings-host').evaluate(element=>({scroll:element.scrollHeight,height:element.clientHeight}));
+    expect(fit.scroll).toBeLessThanOrEqual(fit.height);
+    for(const input of await page.locator('[data-setting]').all()) expect(await input.isVisible()).toBe(true);
+    const graphics=(await page.locator('#settings-graphics-heading').boundingBox())!;
+    const comfort=(await page.locator('#settings-accessibility-heading').boundingBox())!;
+    expect(comfort.y).toBe(graphics.y);expect(comfort.x).toBeGreaterThan(graphics.x+graphics.width);
+    const music=(await page.locator('[data-setting="music"]').boundingBox())!;
+    const effects=(await page.locator('[data-setting="effects"]').boundingBox())!;
+    expect(effects.y).toBe(music.y);expect(effects.x).toBeGreaterThan(music.x+music.width);
+    await page.setViewportSize({width:960,height:540});
+    await page.evaluate(()=>{document.getElementById('settings-host')!.style.width='520px';});
+    expect(await page.locator('.settings-layout').evaluate(element=>getComputedStyle(element).display)).toBe('block');
+    const slider=page.locator('#master-volume');await slider.focus();await page.keyboard.press('ArrowRight');
     expect(await slider.inputValue()).toBe('31');
-    expect(await slider.evaluate(element => element === document.activeElement)).toBe(true);
+    expect(await slider.evaluate(element=>element===document.activeElement)).toBe(true);
   } finally {await page.close();}
 });

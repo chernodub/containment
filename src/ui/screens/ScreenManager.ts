@@ -5,10 +5,12 @@ import type {AudioSystem} from '../../game/audio/AudioSystem';
 import {loadAudioPreferences, saveAudioPreferences} from '../../game/audio/preferences';
 import {expeditionRewardOffers} from '../../game/roguelike/expedition';
 import type {MutationId} from '../../game/roguelike/types';
-import {RIG_IDS} from '../../game/abilities/catalog';
+import {RIG_CATALOG, RIG_IDS} from '../../game/abilities/catalog';
+import {loadCheckpoint} from '../../game/roguelike/checkpoints';
+import {generateRun, runLength} from '../../game/roguelike/run';
 import type {RigId} from '../../game/abilities/contract';
 import type {HitConfirmation} from '../hud/HitConfirmation';
-import {chooseRig, getAbilities, getRunStats, getUiPhase} from '../gameAdapter';
+import {chooseRig, getAbilities, getRunStats, getUiPhase, playUiCue} from '../gameAdapter';
 import {el} from '../shell';
 import {controlsScreen, destroyScreen, draftScreen, escapeHtml, pauseScreen, resultsScreen, rigScreen, routeScreen, shopScreen, titleScreen, type PauseTab} from './templates';
 import '../styles/screens.css';
@@ -38,6 +40,10 @@ export function createScreens(context: ScreenContext) {
   const {game, renderer, input, audio, confirmation, storage, pause, start} = context;
   let settingsOpen = false;
   let creditsOpen = false;
+  let controlsOpen = false;
+  let selectedRoute = '';
+  let routeNode = '';
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let screenKey = '';
   let previousStatus = '';
   let selectedRig: RigId = 'breacher';
@@ -66,42 +72,50 @@ export function createScreens(context: ScreenContext) {
 
   function inspectRig(id: RigId, focusCard = false): void {
     selectedRig = id;
+    playUiCue(audio,'select');
     syncScreen(true);
     if (focusCard) el('overlay').querySelector<HTMLButtonElement>(`[data-rig="${id}"]`)?.focus();
   }
 
   function setPauseTab(tab: PauseTab, focusTab = false): void {
     pauseTab = tab;
+    playUiCue(audio,'tab');
     syncScreen(true);
     if (focusTab) el(`tab-${tab}`).focus();
   }
 
   function bindActions(root: HTMLElement): void {
     listen('destroy-ship',()=>{
-      if(game.authorizeDestruction()) { input.reset(); audio.playUI(); syncScreen(); }
+      if(game.authorizeDestruction()) { input.reset(); playUiCue(audio,'confirm'); syncScreen(); }
     });
     listen('recover',()=>location.reload());
-    listen('start',()=>start());
-    listen('continue',()=>start(true));
-    listen('settings',()=>{settingsOpen=!settingsOpen; creditsOpen=false; syncScreen(true);});
-    listen('credits',()=>{creditsOpen=!creditsOpen; settingsOpen=false; syncScreen(true);});
+    listen('start',()=>{playUiCue(audio,'confirm');start();});
+    listen('continue',()=>{playUiCue(audio,'confirm');start(true);});
+    listen('settings',()=>{settingsOpen=!settingsOpen; creditsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);});
+    listen('credits',()=>{creditsOpen=!creditsOpen; settingsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);});
+    listen('controls',()=>{controlsOpen=!controlsOpen;settingsOpen=false;creditsOpen=false;playUiCue(audio,'tab');syncScreen(true);});
+    listen('close-drawer',()=>{const focus=settingsOpen?'settings':controlsOpen?'controls':'credits';settingsOpen=false;controlsOpen=false;creditsOpen=false;playUiCue(audio,'back');syncScreen(true);el(focus)?.focus();});
     listen('close-credits',()=>{creditsOpen=false; syncScreen(true); el('credits')?.focus();});
     listen('resume',pause);
     listen('menu',()=>{
-      game.menu(); settingsOpen=false; creditsOpen=false; pauseTab='resume';
+      game.menu(); settingsOpen=false; creditsOpen=false; controlsOpen=false; pauseTab='resume';
+      playUiCue(audio,'back');
       audio.pauseAll(); syncScreen(true);
     });
-    listen('reroll',()=>{if(game.reroll()) {audio.playUI(); syncScreen(true);}});
-    listen('claim',()=>{game.claimResources(); syncScreen();});
-    listen('equip-rig',()=>{if(chooseRig(game,selectedRig)) {audio.playUI(); syncScreen(true);}});
+    listen('reroll',()=>{if(game.reroll()) {playUiCue(audio,'reroll'); syncScreen(true);}});
+    listen('claim',()=>{game.claimResources();playUiCue(audio,'purchase'); syncScreen();});
+    listen('equip-rig',()=>{if(chooseRig(game,selectedRig)) {playUiCue(audio,'rig-equip'); syncScreen(true);}});
     root.querySelectorAll<HTMLButtonElement>('[data-purchase]').forEach(button=>button.addEventListener('click',()=>{
-      game.claimResources(button.dataset.purchase as 'heal'|'armor'|'ammo'); syncScreen();
+      game.claimResources(button.dataset.purchase as 'heal'|'armor'|'ammo');playUiCue(audio,'purchase'); syncScreen();
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-mutation]').forEach(button=>button.addEventListener('click',()=>{
-      game.chooseMutation(button.dataset.mutation as MutationId); audio.playUI(); syncScreen();
+      game.chooseMutation(button.dataset.mutation as MutationId); playUiCue(audio,'boon-acquired'); syncScreen();
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-route]').forEach(button=>button.addEventListener('click',()=>{
-      game.route(button.dataset.route!); audio.playUI(); syncScreen();
+      game.route(button.dataset.route!); playUiCue(audio,'confirm'); syncScreen();
+    }));
+    root.querySelectorAll<HTMLButtonElement>('[data-inspect-route]').forEach(button=>button.addEventListener('click',()=>{
+      selectedRoute=button.dataset.inspectRoute!;playUiCue(audio,'select');syncScreen(true);
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-rig]').forEach(button=>{
       const id=button.dataset.rig as RigId;
@@ -131,8 +145,12 @@ export function createScreens(context: ScreenContext) {
     const status=phase==='rig-select'||String(game.status)==='rig-select'?'rig-select':game.status;
     const run=game.expedition.run;
     const blocked=status!=='playing';
+    if(routeNode!==game.node.id) {routeNode=game.node.id;selectedRoute=game.node.next[0]??'';}
+    const saved=status==='menu'&&game.canContinue?loadCheckpoint(storage):null;
+    const savedNode=saved?generateRun(saved.run.seed,saved.run.version).nodes.find(node=>node.id===saved.run.currentNodeId):null;
+    const continuation=saved&&savedNode?{rig:saved.run.phase==='rig-select'?'Rig selection':saved.build.rig?RIG_CATALOG[saved.build.rig].name:'Marine',sector:savedNode.depth+1,total:runLength(saved.run.version),boons:saved.build.mutations.length,phase:saved.run.phase}:null;
     // Snapshot values appear in the key only on their relevant screen, never at combat frequency.
-    const key=JSON.stringify([status,phase,game.node.id,settingsOpen,creditsOpen,pauseTab,selectedRig,
+    const key=JSON.stringify([status,phase,game.node.id,settingsOpen,creditsOpen,controlsOpen,pauseTab,selectedRig,selectedRoute,continuation,
       game.checkpointStatus,game.checkpointWarning,game.checkpointNote,context.graphicsLost(),
       blocked?game.storyStatus:null,status==='menu'?game.canContinue:null,
       blocked?game.combat.snapshot.credits:0,blocked?run.draftRoll:0,
@@ -153,11 +171,11 @@ export function createScreens(context: ScreenContext) {
     if(!isMenu) audio.pauseAll();
     const settings = () => context.settings?.render()??legacySettings();
     let html: string;
-    if(isMenu) html=titleScreen(game,settingsOpen?settings():'',settingsOpen,creditsOpen);
+    if(isMenu) html=titleScreen(game,settingsOpen?settings():'',settingsOpen,creditsOpen,controlsOpen,continuation);
     else if(status==='rig-select') html=rigScreen(selectedRig);
     else if(status==='paused') html=pauseScreen(game,pauseTab,pauseTab==='settings'?settings():'',context.graphicsLost());
     else if(status==='reward') html=expeditionRewardOffers(game.expedition).length?draftScreen(game):shopScreen(game);
-    else if(status==='route') html=game.node.templateId==='manual-control-chamber'?destroyScreen():routeScreen(game);
+    else if(status==='route') html=game.node.templateId==='manual-control-chamber'?destroyScreen():routeScreen(game,selectedRoute);
     else html=resultsScreen(game);
     if(game.checkpointWarning&&status!=='paused') html=html.replace(/<\/(main|section)>$/,`<p class="save-note" role="status">${escapeHtml(game.checkpointWarning)}</p></$1>`);
     const active=document.activeElement as HTMLElement|null;
@@ -176,10 +194,8 @@ export function createScreens(context: ScreenContext) {
         root.querySelector<HTMLElement>('button:not(:disabled), a[href], [tabindex="0"]')?.focus({preventScroll:true});
       }
     }
+    if(status!==previousStatus&&status==='reward') playUiCue(audio,'draft-reveal');
     previousStatus=status;
-    const current=root.querySelector<HTMLElement>('.deck-node.current');
-    const map=root.querySelector<HTMLElement>('.deck-map-scroll');
-    if(current&&map) map.scrollLeft=Math.max(0,current.offsetLeft-80);
   }
 
   function onKeyDown(event: KeyboardEvent): void {
@@ -220,16 +236,34 @@ export function createScreens(context: ScreenContext) {
     } else if(status==='reward'&&event.key.toLowerCase()==='r') {
       const reroll=root.querySelector<HTMLButtonElement>('#reroll:not(:disabled)');
       if(reroll) {event.preventDefault();reroll.click();}
-    } else if(status==='route'&&/^[1-9]$/.test(event.key)) {
-      const route=root.querySelectorAll<HTMLButtonElement>('[data-route]')[Number(event.key)-1];
-      if(route) {event.preventDefault();route.click();}
+    } else if(status==='route'&&root.querySelector('[data-route]')) {
+      if(/^[1-9]$/.test(event.key)) {
+        const id=game.node.next[Number(event.key)-1];
+        if(id) {event.preventDefault();game.route(id);playUiCue(audio,'confirm');syncScreen();}
+      } else if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
+        event.preventDefault();
+        const index=game.node.next.indexOf(selectedRoute),delta=event.key==='ArrowLeft'||event.key==='ArrowUp'?-1:1;
+        selectedRoute=game.node.next[(index+delta+game.node.next.length)%game.node.next.length];
+        playUiCue(audio,'select');syncScreen(true);
+        root.querySelector<HTMLButtonElement>(`.deck-node[data-inspect-route="${selectedRoute}"]`)?.focus();
+      } else if(event.key==='Enter'&&target?.closest('[data-inspect-route]')) {
+        event.preventDefault();root.querySelector<HTMLButtonElement>('[data-route]')?.click();
+      }
+
     }
   }
+  const onPointerMove=(event:PointerEvent)=>{
+    if(document.body.dataset.state!=='menu'||motion.matches||settingsOpen||creditsOpen||controlsOpen) return;
+    const title=el('overlay').querySelector<HTMLElement>('.title-screen');
+    title?.style.setProperty('--parallax-x',`${(event.clientX/innerWidth-.5)*10}px`);
+    title?.style.setProperty('--parallax-y',`${(event.clientY/innerHeight-.5)*7}px`);
+  };
   document.addEventListener('keydown',onKeyDown);
+  document.addEventListener('pointermove',onPointerMove);
   return {
     syncScreen,
-    resetSettings() {settingsOpen=false;creditsOpen=false;pauseTab='resume';context.settings?.reset?.();},
+    resetSettings() {settingsOpen=false;creditsOpen=false;controlsOpen=false;pauseTab='resume';context.settings?.reset?.();},
     get quality() {return context.settings?.quality??legacyQuality;},
-    dispose() {document.removeEventListener('keydown',onKeyDown);},
+    dispose() {document.removeEventListener('keydown',onKeyDown);document.removeEventListener('pointermove',onPointerMove);},
   };
 }
