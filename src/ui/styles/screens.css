@@ -556,3 +556,6 @@
 #overlay .owned-set-badge {font-size:7px;line-height:1.2;color:#b9ced8;border-top:1px solid color-mix(in srgb,var(--family-color) 50%,transparent);padding-top:3px;white-space:nowrap;}
 /* Set membership stays secondary, but readable in the 720p build recap. */
 #overlay .owned-set-badge {font-size:8px;color:#d3e4ec;}
+/* The augment path and MODIFIES row already explain identity; omit the
+   repeated rig/family sentence beneath its set badge. */
+#overlay .choice-card[data-augment=true] .boon-hint {display:none;}
