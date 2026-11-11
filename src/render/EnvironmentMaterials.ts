@@ -16,7 +16,23 @@ export class EnvironmentMaterials {
    const map=load('diff',true),normalMap=load('nor_gl'),arm=load('arm');
    return new T.MeshStandardMaterial({map,normalMap,roughnessMap:arm,metalnessMap:arm,metalness,roughness:1,normalScale:new T.Vector2(.3,.3)});
   };
-  this.floor=surface('metal_plate_02',.28);this.floor.name='environment-floor';applyFloorVariation(this.floor,'cryogenics');this.wall=surface('concrete',0);this.cover=surface('metal_plate',.35);
+  // Original neutral microfinish. The old photographed plate carried a conspicuous
+  // brick motif; structural plate seams and wear now live in world space.
+  const finish=(kind:'albedo'|'normal'|'arm')=>{
+   const size=128,data=new Uint8Array(size*size*4);
+   for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const i=(y*size+x)*4,h=((Math.imul(x+17,374761393)^Math.imul(y+31,668265263))>>>0)%7-3;
+    if(kind==='albedo'){data[i]=data[i+1]=data[i+2]=88+h;}
+    else if(kind==='normal'){data[i]=128+h%2;data[i+1]=128;data[i+2]=255;}
+    else{data[i]=255;data[i+1]=238+h;data[i+2]=255;}
+    data[i+3]=255;
+   }
+   const texture=new T.DataTexture(data,size,size);texture.name=`original-deck-${kind}`;
+   texture.wrapS=texture.wrapT=T.RepeatWrapping;texture.magFilter=T.LinearFilter;texture.minFilter=T.LinearMipmapLinearFilter;texture.generateMipmaps=true;
+   texture.anisotropy=Math.min(8,anisotropy);if(kind==='albedo')texture.colorSpace=T.SRGBColorSpace;
+   texture.needsUpdate=true;this.textures.push(texture);return texture;
+  };
+  const arm=finish('arm');this.floor=new T.MeshStandardMaterial({map:finish('albedo'),normalMap:finish('normal'),roughnessMap:arm,metalnessMap:arm,metalness:.28,roughness:1,normalScale:new T.Vector2(.2,.2)});this.floor.name='environment-floor';applyFloorVariation(this.floor,'cryogenics');this.wall=surface('concrete',0);this.cover=surface('metal_plate',.35);
  }
  theme(act:number){this.floor.roughness=1;this.floor.color.setHex([0xe0e9eb,0xd8eced,0xe5e5de][act]);this.wall.color.setHex([0xc9d1d5,0xc6dee0,0xc6cebe][act]);this.cover.color.setHex([0xd6cbb8,0xc4d9de,0xd0c9b7][act]);}
  shipTheme(environment:ShipEnvironment){
