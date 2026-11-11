@@ -43,7 +43,7 @@ describe('I2 live camera / UI projection seam', () => {
     const heightRead = vi.spyOn(renderer.canvas, 'clientHeight', 'get');
     const boundsRead = vi.spyOn(renderer.canvas, 'getBoundingClientRect');
     const output = point();
-    for (const [width, height] of [[1280, 720], [1920, 1080], [800, 1000]]) {
+    for (const [width, height] of [[640, 360], [960, 540], [1280, 720], [1920, 1080], [2560, 1440], [3440, 1440], [800, 1000]]) {
       viewport.innerWidth = rect.width = width;
       viewport.innerHeight = rect.height = height;
       renderer.resize();

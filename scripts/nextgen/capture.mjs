@@ -87,9 +87,11 @@ try{
  for(const scenario of scenarios){
   const name=scenario.id.replaceAll(':','-')+(scenario.room?`-${scenario.room}`:'');console.log(`Capturing ${name}…`);const errorStart=manifest.errors.length;
   try{
+   // Leave combat before navigation: blur would otherwise start a lazy pause
+   // chunk during unload. Settle pending modules without ignoring failed requests.
    // Reload isolates renderer animation time, effect pools, caches, and random state.
    if(scenario.resetPreferences)await page.evaluate(keys=>{for(const key of keys)localStorage.removeItem(key);},scenario.resetPreferences);
-   if(scenarioIndex++||scenario.resetPreferences){await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);}
+   if(scenarioIndex++||scenario.resetPreferences){await page.evaluate(()=>{const d=window.__containmentDebug;d.game.menu();d.refresh();});await page.waitForLoadState('networkidle');await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);}
    if(scenario.auditGraphics)await page.evaluate(installDrawAudit);
    await page.evaluate(seed=>{window.__captureSeed(seed);},seed);await page.evaluate(scenario.setup,scenario.setupArgument??scenario.room);
    if(scenario.reloadAfterSetup){await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);if(scenario.auditGraphics)await page.evaluate(installDrawAudit);await page.evaluate(scenario.afterReload);}
