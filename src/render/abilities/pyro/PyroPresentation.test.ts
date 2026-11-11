@@ -52,7 +52,7 @@ describe('Pyro presentation lifecycle and readability', () => {
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i);
       expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThanOrEqual(80 / 32 + .001);
-      // V3's tall licking rim stays below the 1.8m marine head; the liquid lives on the floor.
+      // Rising fuel tongues leave enemy heads readable and retain gaps between sources.
       const matrix = new T.Matrix4(); flames.getMatrixAt(i, matrix);
       const scale = new T.Vector3().setFromMatrixScale(matrix);
       expect(p.y + scale.y).toBeLessThan(1.8);
@@ -62,13 +62,13 @@ describe('Pyro presentation lifecycle and readability', () => {
     dispose();
   });
 
-  it('fills every radial band of the real cone through 350ms and leaves an exact sector scar', () => {
+  it('spans the real cone with upright varied flames through 350ms and leaves only a sector scar', () => {
     const { kit, fx, step, dispose } = setup(), scar = vi.spyOn(kit, 'scar'), fan = vi.spyOn(kit, 'fireFan');
     fx.event(event({ length: 320, arcRadians: 1.4, angle: .2 }), 64, 96);
     expect(scar).toHaveBeenCalledWith('fan', 2, 3, 10, 0x101619, 8, .2, 10, 1.4);
     step(.15);
     expect(fan).toHaveBeenLastCalledWith(2, 3, 10, .2, 1.4, .85);
-    const flames = kit.batches.flame.mesh, bands = new Set<number>();
+    const flames = kit.batches.flame.mesh, bands = new Set<number>(), heights = new Set<number>();
     expect(flames.count).toBeGreaterThanOrEqual(40);
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i), dx = p.x - 2, dz = p.z - 3;
@@ -76,8 +76,16 @@ describe('Pyro presentation lifecycle and readability', () => {
       expect(radius).toBeLessThanOrEqual(10);
       expect(Math.abs(angle)).toBeLessThanOrEqual(.7);
       bands.add(Math.floor(radius / 2));
+      const matrix = new T.Matrix4(); flames.getMatrixAt(i, matrix);
+      expect(matrix.elements[5]).toBeGreaterThan(0); // Every fire card rises vertically.
+      expect(matrix.elements[6]).toBeCloseTo(0);
+      expect(p.y + matrix.elements[5]).toBeLessThan(1.8);
+      heights.add(Math.round(matrix.elements[5] * 100));
     }
-    expect(bands.size).toBe(5);
+    expect(bands.size).toBe(5); expect(heights.size).toBeGreaterThan(12);
+    // The only ground instance is the dark aftermath, never a second luminous cone plane.
+    expect(kit.batches.decal.mesh.count).toBe(1);
+    expect(Math.floor(kit.batches.decal.mesh.geometry.getAttribute('abilityPhase').getX(0))).toBe(3);
     step(.18); expect(flames.count).toBeGreaterThanOrEqual(40);
     step(.5); expect(flames.count).toBe(0); dispose();
   });
@@ -96,12 +104,15 @@ describe('Pyro presentation lifecycle and readability', () => {
         expect(Math.abs(p.z - 3)).toBeLessThan(44 / 32 / 2);
         if (scale.y * 2 >= .8) { tall++; lowX = Math.min(lowX, p.x); highX = Math.max(highX, p.x); }
       }
-      expect(tall).toBeGreaterThanOrEqual(8); expect(lowX).toBeCloseTo(2); expect(highX).toBeCloseTo(8);
+      expect(tall).toBeGreaterThanOrEqual(8);
+      // Decorative tips stay inset while spanning both ends; the shared boundary owns exact endpoints.
+      expect(lowX).toBeLessThan(2.25); expect(highX).toBeGreaterThan(7.75);
+      expect(kit.batches.decal.mesh.count).toBe(0);
       dispose();
     }
   });
 
-  it('layers liquid fire in the exact pool and leaves bounded burning footsteps while Meltdown moves', () => {
+  it('layers rising fire in the exact pool and leaves bounded burning footsteps while Meltdown moves', () => {
     const { kit, frame, step, dispose } = setup(), liquid = vi.spyOn(kit, 'liquidFire'), grade = vi.spyOn(kit, 'grade');
     frame.snapshot = snapshot([zone()]); step(.016);
     expect(liquid).toHaveBeenCalledWith(4, 5, 120 / 32, .55);
