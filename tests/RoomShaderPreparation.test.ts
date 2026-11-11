@@ -37,3 +37,11 @@ it('stops polling old GPU programs when their graphics generation is replaced',a
  const work=probe.compilePrepared(new T.Scene(),new T.PerspectiveCamera()).catch((error:unknown)=>error);
  probe.graphicsGeneration++;expect(typeof await work).toBe('symbol');expect(isReady).toHaveBeenCalledOnce();
 });
+
+it('does not reblock an already prepared room when an asset repeats a known shader topology',()=>{
+ const owner=new T.Group(),probe:any=Object.assign(Object.create(DepthRenderer.prototype),{
+  world:owner,materialWarmup:{register:vi.fn(()=>0)},contextResources:{track:vi.fn()},reflection:{invalidate:vi.fn()},queueRoomWarmup:vi.fn(),
+ });
+ probe.staticLoaded(owner)();expect(probe.queueRoomWarmup).not.toHaveBeenCalled();
+ probe.materialWarmup.register.mockReturnValue(1);probe.staticLoaded(owner)();expect(probe.queueRoomWarmup).toHaveBeenCalledOnce();
+});
