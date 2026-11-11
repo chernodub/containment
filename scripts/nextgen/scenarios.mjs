@@ -56,7 +56,8 @@ function integrationKitingSetup(tier){
   if(!g.abilities.snapshot.deployables.length||!g.abilities.snapshot.overdrive.active)throw Error('Heavy ability fixture is not live');
   d.kitingProof={tier:${JSON.stringify(tier)},startEnemies:g.enemies.activeCount,startPosition:{x:g.player.x,y:g.player.y}};
   // Run normal RAF updates with fixed native-equivalent controls, so diagnostics include real simulation work.
-  d.realtime(true);try{for(let i=0;i<180;i++){if(i%30===0){const sign=Math.floor(i/30)%2?1:-1;d.setInput({x:Math.cos(angle)*.4*sign,y:Math.sin(angle)*.4*sign});}await new Promise(requestAnimationFrame);}}finally{d.realtime(false);}
+  const sampledFrom=g.elapsed;d.realtime(true);try{for(let i=0;i<900&&g.elapsed-sampledFrom<3;i++){const sign=Math.floor((g.elapsed-sampledFrom)*2)%2?1:-1;d.setInput({x:Math.cos(angle)*.4*sign,y:Math.sin(angle)*.4*sign});await new Promise(requestAnimationFrame);}}finally{d.realtime(false);}
+  d.kitingProof.liveSeconds=g.elapsed-sampledFrom;if(d.kitingProof.liveSeconds<3)throw Error('Live benchmark clock did not advance');
   d.kitingProof.endVisible=g.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y)).length;d.kitingProof.endEnemies=g.enemies.activeCount;d.kitingProof.endPosition={x:g.player.x,y:g.player.y};
   d.kitingProof.performance=window.__containmentPerformance;
   if(g.enemies.activeCount<8||d.kitingProof.endVisible<6)throw Error('Heavy ability benchmark lost visible encounter '+JSON.stringify(d.kitingProof));d.refresh();
