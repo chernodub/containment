@@ -1,0 +1,6 @@
+
+> containment-depth@2.0.0 capture
+> node scripts/nextgen/capture.mjs --label=integration-3-compare --compare=integration-3-round1,integration-3
+
+153 aligned views (missing counterparts labelled)
+/Users/chernodub/.t3/worktrees/containment-game/t3-0f49d5c5/artifacts/nextgen/integration-3-compare/compare.html

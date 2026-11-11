@@ -1,0 +1,28 @@
+{
+  "applicationDiff": "",
+  "segments": [
+    {
+      "label": "integration-3",
+      "directory": "integration-3-attempt1",
+      "gitSHA": "8dccfd3b426cb341da8b34023d352788002aa2f1",
+      "retainedFrames": 113,
+      "retainedSprites": 23,
+      "runtimeSeconds": 807.76
+    },
+    {
+      "label": "integration-3-kiting-final",
+      "directory": "integration-3-kiting-final",
+      "gitSHA": "21b7d8ee5f9ab6801ff488c95024c20bbe2585a3",
+      "retainedFrames": 40,
+      "retainedSprites": 10,
+      "runtimeSeconds": 152.55
+    }
+  ],
+  "priorAttempts": [
+    "integration-3-attempt1",
+    "integration-3-kiting",
+    "integration-3-lanes",
+    "integration-3-kiting-attempt3"
+  ],
+  "assertions": "Identical app source/assets; zero source page errors; only known superseded fixture failures; final ten rooms × four frames, >=18 legal threats and >=12 visible per frame; native movement/fire/ability checks already passed the runner."
+}
