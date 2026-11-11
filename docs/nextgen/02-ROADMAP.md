@@ -36,28 +36,19 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 
 ## Status
 
-| Stream | State | Branch / notes |
+| Stream | State | Notes |
 |---|---|---|
-| W0 capture harness | merged | baseline gallery `artifacts/nextgen/baseline/` |
-| A1 abilities (+ R1 review, A1-fix) | merged (I1a, I1b) | `t3/combat-rig-ability-simulation` @ fd0f565 |
-| U1 interface | merged (I1a) | `t3/nextgen-ui-overhaul` @ 5af5da8 |
-| G1 render | merged (I2) | `t3/nextgen-graphics-overhaul` @ 1152940 |
-| S2 audio | merged | `t3/audio-overhaul-synthesis` @ dbb2c00 |
-| U2 experience pass | merged (I3, audio director wired) | `t3/nextgen-ui-overhaul-1` @ c9dac35 |
-| V2 ability VFX | merged 2026-11-11 | `t3/ability-vfx-overhaul` @ ea0c3ec — nextgen 2248e22: 2404 tests + smoke green |
-| G2 world pass | reported; merging in I4 | `t3/world-art-overhaul` @ 62e0a04 |
-| R2 review of UI/loop/adapters | done: 5 MAJOR + 5 MINOR confirmed | fixes in F2 |
-| F2 UI/a11y fixes + bundle split | running | worktree branch |
-| R4 bot playtest, full runs × 4 rigs | running | worktree branch |
-| I4 merge G2 + performance to budget | running | worktree branch |
+| W0 · A1 (+R1, fixes) · U1 · G1 · S2 · U2 · V2 · G2 | merged | integrations I1a, I1b, I2, I3, I4, I6a |
+| R2 review → F2 UI/a11y/bundle fixes | merged | initial JS 4.61 MB → 1.74 MB (gzip 1.55 MB → 467 KB) |
+| V3 ability spectacle pass | merged | `t3/ability-vfx-spectacle` @ d6662b9 |
+| P1 render performance / room preparation | merged | late-run room prep 12.5 s → 0.49 s; programs 2541 → 203; draw peak 368 → 312 |
+| D1 README / AGENTS / credits | merged | playtest line to update once I5 lands |
+| R4 bot playtest | reported | 12 campaigns, 10 endings, all four rigs reach the ending; merging via I5 |
+| I5 merge R4 + balance (Overdrive cadence, Transmission pacing, difficulty) | running | bot aiming bug fixed by lead decision; targets: 40–60% bot completion, 1.2–1.7 rooms/Overdrive |
+| R5 fresh-eyes art/UX critique | done | 25 defects; verdict "not consistently premium yet" → final fix wave |
+| X1 ability VFX fixes · X2 world/actor fixes · X3 UI/UX fixes | running | from R5's list, disjoint ownership |
 
-Next (lead): merge I4 → F2 → R4; polish punch list (below); fresh-eyes visual review; README/AGENTS/credits; final gallery.
-
-Polish punch list (lead's eye, to dispatch after I4):
-- Railbreaker reads as a thin amber line; it must be the most violent visual in the game (thick white-hot core, shock rings along the line, scorch, screen flash).
-- Meltdown aura still sparse; Seismic Slam/Bulwark verify against the new floors.
-- Props remain faceted in places (atrium trees, containers); enemies in groups still merge at the bottom of the frame.
-- Title: logotype over the cinematic shot; remove scan-circle ornament.
+Next (lead): merge I5, X1, X2, X3; full gates on a quiet host; final gallery vs baseline; second fresh-eyes verdict; update README.
 
 ## Decisions log
 
