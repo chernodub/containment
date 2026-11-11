@@ -5,7 +5,7 @@ export type RoomComposition=Readonly<{
 const composition=(idea:string,keyOffset:readonly [number,number,number],keyGain=1,fillGain=1,practicalGain=1):RoomComposition=>Object.freeze({idea,keyOffset,keyGain,fillGain,practicalGain});
 export const ROOM_COMPOSITIONS:Readonly<Record<string,RoomComposition>>=Object.freeze({
   'awakening-bay':composition('An open berth in a sea of sleeping passengers',[-16,10,10]),
-  'passenger-vault':composition('Cold ranks of occupied cryopods',[-12,11,12],.62,.82,.8),
+  'passenger-vault':composition('Cold ranks of occupied cryopods',[-12,11,12],.48,.82,.72),
   'residential-gallery':composition('Warm thresholds against abandoned cold corridors',[-13,9,11],1.45,1.25,1.7),
   'communal-atrium':composition('A last artificial garden under amber task lights',[-16,9,10]),
   'crew-checkpoint':composition('The last defensive line cut by hard white light',[-14,12,9],1.03,1),

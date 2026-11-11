@@ -406,7 +406,7 @@ export class DepthRenderer {
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
   const dt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds;
-  const lead=this.motionQuery?.matches||menu?0:.6,bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated?.43:0,baseZoom=menu?1.23:bossWeight?.92:1;
+  const lead=this.motionQuery?.matches||menu?0:.6,bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated?.48:0,baseZoom=menu?1.23:bossWeight?.88:1;
   const targetX=p.x/UNIT*(1-bossWeight)+bossFrame.x/UNIT*bossWeight+Math.cos(p.angle)*lead,targetZ=p.y/UNIT*(1-bossWeight)+bossFrame.y/UNIT*bossWeight+Math.sin(p.angle)*lead;
   const framed=roomFocus(targetX,targetZ,bounds.width/UNIT,bounds.height/UNIT,this.viewWidth/baseZoom,this.viewHeight/baseZoom,game.node.templateId,this.frameFocus);
   this.desiredFocus.set(framed.x,0,framed.z);if(menu){this.desiredFocus.set(22,0,14);if(!this.lastMenu)this.cameraRig.reset(22,14);}
