@@ -1,0 +1,10 @@
+> containment-depth@2.0.0 test:authored-smoke:all
+> npm run test:authored-smoke -- --viewport=desktop --out=artifacts/authored-smoke/desktop
+
+
+> containment-depth@2.0.0 test:authored-smoke
+> node scripts/authored-room-smoke.mjs --viewport=desktop --out=artifacts/authored-smoke/desktop
+
+{"id":"passenger-vault","file":"passenger-vault-desktop-hud.png","viewport":{"width":1280,"height":900},"quality":"low","state":"playing","room":"Passenger vault","input":"real keyboard move/fire","explicitFatalAuthorization":false,"errors":[],"sha256":"6ec3f30c199df6ca677d51f7735de05d19959376ac88c934714642b64898f663"}
+{"id":"breached-loading-bay","file":"breached-loading-bay-desktop-hud.png","viewport":{"width":1280,"height":900},"quality":"low","state":"playing","room":"Breached loading bay","input":"real keyboard move/fire","explicitFatalAuthorization":false,"errors":[],"sha256":"b4fb6a84084b0ee02b92b4c68f0b26e0d98f1e2b111d87d62d6f214f1ac63c43"}
+{"id":"overload-floor","file":"overload-floor-desktop-hud.png","viewport":{"width":1280,"height":900},"quality":"low","state":"playing","room":"Overload floor","input":"real keyboard move/fire","explicitFatalAuthorization":true,"errors":[],"sha256":"aa85d6aaf030525b814f8da0e6e2355786bc93e5850ce6d365c4d45115c91adc"}

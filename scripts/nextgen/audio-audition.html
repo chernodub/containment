@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Containment • S2 audio audition</title>
+<style>
+  :root { color-scheme: dark; font: 15px/1.45 system-ui,sans-serif; background:#101720; color:#e6f0f6; }
+  body { max-width:1280px; margin:32px auto; padding:0 24px 64px; }
+  h1,h2 { letter-spacing:.04em; } h1 { margin-bottom:4px; }
+  p { color:#afc5d4; max-width:90ch; }
+  button,select,input { font:inherit; accent-color:#83d5ef; }
+  button,select { border:1px solid #496578; background:#1c2b38; color:#edf9ff; padding:10px 14px; border-radius:4px; }
+  button { cursor:pointer; } button:hover { background:#294559; } :focus-visible { outline:3px solid #a6e8ff; outline-offset:3px; }
+  label { display:inline-flex; align-items:center; gap:8px; margin:6px 16px 6px 0; }
+  fieldset { border:1px solid #3d5567; margin:20px 0; padding:16px; }
+  legend { color:#b9e6f3; padding:0 8px; } .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  #status { padding:12px; background:#192a35; border-left:3px solid #91d8ee; white-space:pre-wrap; min-height:46px; }
+  #recipes { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:7px; }
+  #recipes button { text-align:left; font:13px ui-monospace,monospace; overflow-wrap:anywhere; }
+  #recipes small { display:block; color:#b9cbd6; margin-top:3px; }
+  output { min-width:3ch; } .note { font-size:13px; }
+</style>
+<h1>CONTAINMENT / AUDIO LAB</h1>
+<p>S2 director audition • original deterministic synthesis and the existing licensed local samples. Enable audio with a gesture. Recipe buttons audition the authored PCM through the production mixer; director controls include sample layering, event lifecycles and reactive treatment.</p>
+<div class="row"><button id="unlock">Enable audio</button><button id="pause">Pause</button><button id="resume">Resume</button><button id="stop">Stop all / reset</button></div>
+<fieldset><legend>Mix</legend><div id="volumes"></div><div id="buses"></div></fieldset>
+<fieldset><legend>Director</legend>
+  <div class="row"><label>Ability <select id="ability"></select></label><label>Phase <select id="phase"></select></label><button id="ability-play">Send ability event</button></div>
+  <div class="row"><label>Interface <select id="ui"></select></label><button id="ui-play">Play UI cue</button><label>Room <select id="environment"><option value="">Silence</option></select></label><button id="environment-play">Crossfade room</button></div>
+  <div class="row"><label>Weapon <select id="weapon"><option>pistol</option><option>rifle</option><option>shotgun</option><option>plasma</option><option>rocket</option></select></label><button id="weapon-play">Fire sample + synthesis</button><button id="explosion">Large explosion</button></div>
+  <div class="row"><span>Legacy elemental</span><button id="freeze">Freeze</button><button id="shatter">Shatter</button><button id="reactor">Reactor surge</button></div>
+  <div class="row"><label>Combat <input id="intensity" type="range" min="0" max="1" step=".01" value=".7"></label><label>Danger <input id="danger" type="range" min="0" max="1" step=".01" value="0"></label><label><input id="boss" type="checkbox">Boss</label><label><input id="overdrive" type="checkbox">Overdrive</label><label><input id="slow" type="checkbox">Overclock time</label></div>
+</fieldset>
+<div id="status" role="status" aria-live="polite">Audio locked. No sound is scheduled until enabled.</div>
+<h2>Complete recipe inventory</h2>
+<label>Filter <input id="filter" type="search" placeholder="ability, weapon, enemy, ui…"></label>
+<p class="note">Loops audition continuously until Stop. A loop started by a director ability event follows its entity/end event and catalog lifetime. Pause drops ability loops; new events restart them. Keep the master level comfortable before auditioning heavy cues.</p>
+<div id="recipes"></div>
+<script type="module" src="./audio-audition.ts"></script>
+</html>

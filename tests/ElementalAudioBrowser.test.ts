@@ -21,20 +21,20 @@ test('real Web Audio elemental voices obey mute, pause, rate limits, release and
  const muted=await page.evaluate(()=>{
   const a=(window as any).__audioQA.audio;a.pauseMusic();
   for(const k of ['freeze','shatter','reactor']){a.playElemental(k);a.playElemental(k);}
-  return {master:a.masterGain.gain.value,voices:a.voices.size,buffers:a.elementalBuffers.size,
+  return {master:a.mixer.master.gain.value,voices:a.diagnostics.voices,buffers:a.elementalBuffers.size,
    peaks:[...a.elementalBuffers.values()].map((b:any)=>Math.max(...b.getChannelData(0).map(Math.abs)))};
  });
- expect(muted.master).toBe(0);expect(muted.voices).toBe(3);expect(muted.buffers).toBe(3);expect(muted.peaks.every((p:number)=>p>0&&p<.7)).toBe(true);
+ expect(muted.master).toBe(0);expect(muted.voices).toBe(0);expect(muted.buffers).toBe(0);expect(muted.peaks.every((p:number)=>p>0&&p<.7)).toBe(true);
  await page.evaluate(()=>{const a=(window as any).__audioQA.audio;a.pauseAll();for(const k of ['freeze','shatter','reactor'])a.playElemental(k);});
- expect(await page.evaluate(()=>(window as any).__audioQA.audio.voices.size)).toBe(0);
+ expect(await page.evaluate(()=>(window as any).__audioQA.audio.diagnostics.voices)).toBe(0);
  await page.waitForTimeout(260);
  await page.evaluate(()=>{const a=(window as any).__audioQA.audio;a.setMasterVolume(.5);a.resumeAll();a.pauseMusic();a.playElemental('reactor');});
- await page.waitForFunction(()=>{const a=(window as any).__audioQA.audio;return a.masterGain.gain.value>.4;});
- expect(await page.evaluate(()=>(window as any).__audioQA.audio.voices.size)).toBe(1);
- await page.waitForFunction(()=>(window as any).__audioQA.audio.voices.size===0);
+ await page.waitForFunction(()=>{const a=(window as any).__audioQA.audio;return a.mixer.master.gain.value>.4;});
+ expect(await page.evaluate(()=>(window as any).__audioQA.audio.diagnostics.voices)).toBe(1);
+ await page.waitForFunction(()=>(window as any).__audioQA.audio.diagnostics.voices===0);
  const destroyed=await page.evaluate(()=>{
   const a=(window as any).__audioQA.audio;a.playElemental('freeze');const context=a.context;a.destroy();a.playElemental('shatter');
-  return {voices:a.voices.size,buffers:a.elementalBuffers.size,contextCleared:a.context===null,closing:context.state};
+  return {voices:a.diagnostics.voices,buffers:a.elementalBuffers.size,contextCleared:a.context===null,closing:context.state};
  });
  expect(destroyed).toMatchObject({voices:0,buffers:0,contextCleared:true});expect(errors).toEqual([]);await page.close();
 },30000);

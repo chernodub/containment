@@ -1,0 +1,40 @@
+> containment-depth@2.0.0 test:room-evidence
+> node --test scripts/room-evidence-check.mjs scripts/room-evidence-network-check.mjs scripts/room-demo-check.mjs scripts/vfx-audit-demo-check.mjs && node scripts/ragdoll-demo.mjs --self-test
+
+✔ reusable room recorder exists (0.515833ms)
+✔ combat requires repeated live shots, damage and legal movement (0.930041ms)
+✔ final capture requires exact SHA and 6–10 seconds (6.184333ms)
+✔ probe rejects wrong codec, duration and actual decoded count (0.38975ms)
+✔ motion validation rejects still or truncated decoded actor crops (11.406375ms)
+✔ selection, viewport and expected modes are explicit and reject mistakes (4.136459ms)
+✔ three rooms: production update traverses spawn to exit and fires into live enemies legally (884.747125ms)
+✔ accepts the exact completed Vite JSON import (1.197292ms)
+✔ retains JS and TS module extensions (0.173042ms)
+✔ requires exact completed URL without query or port normalization (0.081584ms)
+✔ does not accept plain JSON or binary assets even when completed (0.7335ms)
+✔ rejects malformed URLs (0.085584ms)
+✔ capture keeps HTTP and non-abort failures fatal before duplicate classification (9.225666ms)
+✔ catalog keeps each effect in a separate clip (0.842666ms)
+✔ options enforce exact arguments, SHA, quality and final length (5.157042ms)
+✔ event validators accept appropriate runtime-shaped records (0.332459ms)
+✔ targeted weapon acid is never hazard evidence (0.264916ms)
+✔ impact requires spitter output, hazard projectile and real damage (0.226834ms)
+✔ pool requires queen output, radius, pool lifetime and damage (0.253542ms)
+✔ player firing and camera changes invalidate evidence (0.124792ms)
+✔ links require real shots, secondary damage and chilled lance targets (0.2905ms)
+✔ radial demos reject links, missing kills and missing delayed discharges (0.313583ms)
+✔ final Ball Lightning evidence rejects an end-of-clip discharge (0.152833ms)
+✔ reload evidence rejects a damaging cascade, missing reload completion or player damage (0.215958ms)
+✔ Toxic Bloom requires poisoned death, spread, no area hazard and expired vapor (0.249417ms)
+✔ staging waits for current room assets before accepting gameplay camera (0.441125ms)
+✔ recording requires recovered production loading UI, not only camera readiness (0.124208ms)
+✔ recorder bytes retain numeric RNG and contain no redaction tokens (0.093083ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1079.711625
+{"passed":true,"cpuOnly":true,"checks":33}

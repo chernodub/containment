@@ -1,5 +1,7 @@
 import {afterEach, expect, it, vi} from 'vitest';
 import {AudioSystem} from '../src/game/audio/AudioSystem';
+import {FakeAudioContext} from './audioFake';
+import type {MixEngine} from '../src/game/audio/MixEngine';
 import {AUDIO_STORAGE_KEY, loadAudioPreferences, saveAudioPreferences} from '../src/game/audio/preferences';
 
 const store = (value: string | null) => ({getItem: vi.fn(() => value), setItem: vi.fn()});
@@ -30,29 +32,21 @@ it('keeps controls usable when storage is blocked or full', () => {
   expect(() => saveAudioPreferences(storage, {master: .7, muted: false})).not.toThrow();
   expect(() => saveAudioPreferences(null, {master: .7, muted: false})).not.toThrow();
 });
-it('applies 30% by default and changes the live master gain without changing channel levels', async () => {
-  const gains: {gain: {value: number; setTargetAtTime: ReturnType<typeof vi.fn>}; connect: ReturnType<typeof vi.fn>}[] = [];
-  const param = () => ({value: 1, setTargetAtTime: vi.fn()});
-  class Context {
-    state = 'running'; currentTime = 0; destination = {};
-    createGain() {const node = {gain: param(), connect: vi.fn().mockReturnThis()}; gains.push(node); return node;}
-    createDynamicsCompressor() {return {threshold: param(), knee: param(), ratio: param(), attack: param(), release: param(), connect: vi.fn().mockReturnThis()};}
-  }
-  vi.stubGlobal('window', {AudioContext: Context});
-  vi.stubGlobal('fetch', vi.fn(async () => ({ok: false})));
-  const audio = new AudioSystem({music: .38, effects: .8});
+it('applies 30% by default and ramps master independently from real music/effects gains', async () => {
+  const clock = new FakeAudioContext();
+  const audio = new AudioSystem({music: .38, effects: .8}, {context: clock.asContext(), loadSamples: false, prewarm: false});
   expect(await audio.unlock()).toBe(true);
-  expect(gains[0].gain.value).toBe(.3 * .85);
-  expect(gains[1].gain.value).toBe(.8);
-  expect(gains[2].gain.value).toBe(.38);
-  const silent = new AudioSystem({master: 0});
-  expect(await silent.unlock()).toBe(true);
-  expect(gains[4].gain.value).toBe(0);
-  expect(gains[0].gain.setTargetAtTime).toHaveBeenLastCalledWith(.3 * .85, 0, .025);
-  audio.setMasterVolume(0);
-  expect(gains[0].gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 0, .025);
-  audio.setMasterVolume(.73);
-  expect(gains[0].gain.setTargetAtTime).toHaveBeenLastCalledWith(.73 * .85, 0, .025);
-  expect(gains[1].gain.setTargetAtTime).toHaveBeenLastCalledWith(.8, 0, .025);
-  expect(gains[2].gain.setTargetAtTime).toHaveBeenLastCalledWith(.38, 0, .15);
+  const mixer = (audio as unknown as {mixer: MixEngine}).mixer;
+  expect(mixer.master.gain.value).toBeCloseTo(.3 * .85);
+  expect(mixer.effects.gain.value).toBe(.8); expect(mixer.music.gain.value).toBe(.38);
+  audio.setMasterVolume(0); clock.advance(.5); expect(mixer.master.gain.value).toBeCloseTo(0);
+  audio.setMasterVolume(.73); clock.advance(.5); expect(mixer.master.gain.value).toBeCloseTo(.73 * .85);
+  expect(mixer.effects.gain.value).toBe(.8); expect(mixer.music.gain.value).toBe(.38);
+  audio.setMusicVolume(0); audio.setEffectsVolume(.2); clock.advance(2);
+  expect(mixer.music.gain.value).toBeCloseTo(0); expect(mixer.effects.gain.value).toBeCloseTo(.2);
+  audio.destroy();
+  const silentClock = new FakeAudioContext();
+  const silent = new AudioSystem({master: 0}, {context: silentClock.asContext(), loadSamples: false, prewarm: false});
+  expect(await silent.unlock()).toBe(true); silent.playPistol(); silent.playUi('confirm');
+  expect(silentClock.sources).toHaveLength(0); silent.destroy();
 });

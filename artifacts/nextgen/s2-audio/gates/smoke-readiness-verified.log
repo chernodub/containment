@@ -1,0 +1,31 @@
+{"smokePhase":{"viewport":"setup","phase":"browser-and-subpath","status":"started"}}
+{"smokePhase":{"viewport":"setup","phase":"browser-and-subpath","status":"passed","elapsedMs":1544}}
+{"smokePhase":{"viewport":"desktop","phase":"context-and-menu","status":"started"}}
+{"smokePhase":{"viewport":"desktop","phase":"context-and-menu","status":"passed","elapsedMs":2396}}
+{"smokePhase":{"viewport":"desktop","phase":"graphics","status":"started"}}
+Graphics High/Low defaults and selection passed: desktop
+{"smokePhase":{"viewport":"desktop","phase":"graphics","status":"passed","elapsedMs":2796}}
+{"smokePhase":{"viewport":"desktop","phase":"menu-audio","status":"started"}}
+Sound menu passed: desktop, default 30%, native keyboard/mouse, real gain, muted reload, zero reload, channel playback.
+{"smokePhase":{"viewport":"desktop","phase":"menu-audio","status":"passed","elapsedMs":9026}}
+{"smokePhase":{"viewport":"desktop","phase":"starting-boon","status":"started"}}
+{"smokePhase":{"viewport":"desktop","phase":"starting-boon","status":"passed","elapsedMs":3222}}
+{"smokePhase":{"viewport":"desktop","phase":"gameplay-input","status":"started"}}
+{"smokePhase":{"viewport":"desktop","phase":"gameplay-input","status":"passed","elapsedMs":491}}
+{"smokePhase":{"viewport":"desktop","phase":"paused-audio","status":"started"}}
+Sound pause passed: desktop, retains choice, muted adjustment stays silent, unmute restores choice, live zero gain.
+{"smokePhase":{"viewport":"desktop","phase":"paused-audio","status":"passed","elapsedMs":1872}}
+{"smokePhase":{"viewport":"desktop","phase":"credits-and-assets","status":"started"}}
+{"smokePhase":{"viewport":"desktop","phase":"credits-and-assets","status":"passed","elapsedMs":413}}
+{"smokePhase":{"viewport":"desktop","phase":"restart","status":"started"}}
+{"viewport":"desktop 1280x720","startingBoon":"Breacher","restart":"fresh boon selected","state":"playing","assets":48,"errors":[],"performance":{"samples":120,"stallsOver50ms":10,"frameMs":{"average":22.28861129283905,"p95":25},"updateMs":{"average":4.517500101526578,"p95":0.10000002384185791},"renderSubmissionMs":{"average":5.031666751702627,"p95":1.8000000715255737},"quality":"high","drawCalls":103,"triangles":292874,"geometries":112,"textures":103,"graphicsLost":false,"hudMs":{"last":0.09999990463256836,"average":0.441573026474942,"samples":89}}}
+{"smokePhase":{"viewport":"desktop","phase":"restart","status":"passed","elapsedMs":3500}}
+{"smokePhase":{"viewport":"desktop","phase":"checkpoint-feedback","status":"started"}}
+Checkpoint feedback passed: failed write, same-screen recovery, failed removal, pause/title warning, stale Continue suppression, recovery.
+{"smokePhase":{"viewport":"desktop","phase":"checkpoint-feedback","status":"passed","elapsedMs":8840}}
+{"smokePhase":{"viewport":"desktop","phase":"combat-rig","status":"started"}}
+Combat Rig smoke passed: live Arc selection, Shift/Q/F/V receipts and HUD, Overdrive fill/active, menu/pause/typing gates, Continue rig-select/starting-boon/legacy.
+{"smokePhase":{"viewport":"desktop","phase":"combat-rig","status":"passed","elapsedMs":37419}}
+{"smokePhase":{"viewport":"desktop","phase":"context-close","status":"started"}}
+{"smokePhase":{"viewport":"desktop","phase":"context-close","status":"passed","elapsedMs":17}}
+Browser smoke passed: desktop, production Pages subpath, assets, fire, weapon switch, pause/resume, credits.
