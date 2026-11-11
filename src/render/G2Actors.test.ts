@@ -78,3 +78,17 @@ it('keeps a four-pixel health fill and six-pixel backing at hero scale',()=>{
   background.getMatrixAt(0,matrix);expect(matrix.elements[5]).toBeCloseTo(6*20/1000);
   fill.getMatrixAt(0,matrix);expect(matrix.elements[5]).toBeCloseTo(4*20/1000);bars.dispose();
 });
+
+it('fits identity details to the rest skin once per family and never scans skin during animation or pool construction',()=>{
+  const vertices=vi.spyOn(T.SkinnedMesh.prototype,'getVertexPosition');
+  let first:ReturnType<typeof alien>|undefined,second:ReturnType<typeof alien>|undefined;
+  try{
+    first=alien('stalker',true);expect(vertices.mock.calls.length).toBeGreaterThan(0);
+    const identity=first.root.getObjectByName('stalker-identity') as T.Mesh;
+    vertices.mockClear();
+    for(let i=0;i<20;i++)first.animate(i/60,1,.4);
+    second=alien('stalker',true);
+    expect((second.root.getObjectByName('stalker-identity') as T.Mesh).geometry).toBe(identity.geometry);
+    expect(vertices).not.toHaveBeenCalled();
+  }finally{vertices.mockRestore();if(first)disposeModel(first.root);if(second)disposeModel(second.root);}
+});
