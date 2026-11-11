@@ -109,7 +109,21 @@ export class DepthGame {
  private collectLoot(sweep=false){for(const p of this.pickups.snapshot){const c=this.pickups.collect(p.id,sweep?p:this.player);if(!c.collected)continue;const r=c.reward;if(r.kind==='health')this.combat.restoreHealth(r.amount);else if(r.kind==='armor')this.combat.restoreArmor(r.amount);else if(r.kind==='ammo')this.combat.collectAmmoPack();else if(r.kind==='grenade')this.combat.addGrenades(r.amount);else{this.combat.setCredits(this.combat.snapshot.credits+r.amount);this.runStats.recordCredits(r.amount);}this.emit({type:'pickup',x:p.x,y:p.y});}}
 
  route(id:string){if(this.status!=='route'||this.node.templateId==='manual-control-chamber')return;this.expedition=chooseExpeditionRoute(this.expedition,id);this.enterRoom();}
- moveCorpse(p:{x:number;y:number;radius:number},dx:number,dy:number){const solids=p===this.player?this.targets().filter(t=>t.immovable):[];const canMove=(x:number,y:number)=>canOccupyExpedition(this.geometry,{x,y},p.radius)&&(p!==this.player||this.abilities?.dashing||solids.every(t=>Math.hypot(x-t.x,y-t.y)>=p.radius+t.radius));let x=p.x,y=p.y,blocked=false;const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/6));for(let i=0;i<steps;i++){if(canMove(x+dx/steps,y))x+=dx/steps;else blocked=true;if(canMove(x,y+dy/steps))y+=dy/steps;else blocked=true;}return{x,y,blocked};}
+ moveCorpse(p:{x:number;y:number;radius:number},dx:number,dy:number){
+  const solids=p===this.player?this.targets().filter(t=>t.immovable&&t.health>0):[];
+  // An embedded marine may increase clearance, even before clearing the full radius.
+  // Dash passes through ordinary enemies but never enters Queen/nest solids.
+  const canMove=(nextX:number,nextY:number,fromX:number,fromY:number)=>canOccupyExpedition(this.geometry,{x:nextX,y:nextY},p.radius)&&solids.every(t=>{
+   const radius=p.radius+t.radius,before=Math.hypot(fromX-t.x,fromY-t.y),after=Math.hypot(nextX-t.x,nextY-t.y);
+   return after>=radius-1e-7||before<radius&&after>before+1e-9;
+  });
+  let x=p.x,y=p.y,blocked=false;const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/6));
+  for(let i=0;i<steps;i++){
+   if(dx){if(canMove(x+dx/steps,y,x,y))x+=dx/steps;else blocked=true;}
+   if(dy){if(canMove(x,y+dy/steps,x,y))y+=dy/steps;else blocked=true;}
+  }
+  return{x,y,blocked};
+ }
  private targetCache:MutationTarget[]|null=null;private targetSnapshot:unknown;
  targets():MutationTarget[]{const snapshot=this.enemies.snapshot;if(!this.boss.snapshot.active&&this.targetCache&&this.targetSnapshot===snapshot)return this.targetCache;this.targetSnapshot=snapshot;const a:MutationTarget[]=snapshot.enemies.map(e=>({id:e.id,x:e.x,y:e.y,radius:e.radius,health:e.health,maxHealth:e.maxHealth,resistant:e.elite||!!e.champion}));const q=this.boss.snapshot;if(q.active){a.push({id:-1,x:q.x,y:q.y,radius:92,health:q.health,maxHealth:q.maxHealth,immovable:true});for(const n of q.nests)a.push({id:-100-n.id,x:n.x,y:n.y,radius:28,health:n.health,maxHealth:n.maxHealth,immovable:true});}this.targetCache=a;return a;}
  private spawn(type:StandardEnemyId,x:number,y:number,elite=false,guardian=false){const radius=ENEMIES[type].radius;for(let i=0;i<25;i++){const angle=i*2.399,dist=i?20+Math.sqrt(i)*18:0,p={x:x+Math.cos(angle)*dist,y:y+Math.sin(angle)*dist};if(Math.hypot(p.x-this.player.x,p.y-this.player.y)>radius+this.player.radius+80&&canOccupyExpedition(this.geometry,p,radius)){const result=this.enemies.spawn(type,p.x,p.y,elite);if(result.spawned&&guardian)this.enemies.promote(result.enemy.id,this.node.depth===(this.storyRoom?5:3)?'warden':'matron');return result.spawned;}}return false;}
