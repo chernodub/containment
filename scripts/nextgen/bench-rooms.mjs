@@ -19,7 +19,7 @@ const out = resolve('artifacts/nextgen', label), dist = resolve(option('dist', '
 const baseline = args.includes('--baseline');
 const modes=option('modes','fresh,sequential').split(',');assert(modes.every(mode=>['fresh','sequential','ahead'].includes(mode)),'Unknown audit mode');
 const host = () => ({at: new Date().toISOString(), load: loadavg(), cores: cpus().length});
-const report = {sha: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(), dist, baseline, host: host(), rows: [], errors: [], failures: [], notes: ['Fresh page per room; sequential rows retain the same renderer through all rooms, using validated checkpoint routes. Sequential staging is accumulation coverage, not an organic twenty-room campaign.', 'Phases are inclusive and may overlap; total is the complete public gotoRoom readiness hold. Instrumentation exists only in this audit.']};
+const report = {distSourceSHA:option('dist-source-sha','unrecorded'),sha: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(), dist, baseline, host: host(), rows: [], errors: [], failures: [], notes: ['Fresh page per room; sequential rows retain the same renderer through all rooms, using validated checkpoint routes. Sequential staging is accumulation coverage, not an organic twenty-room campaign.', 'Phases are inclusive and may overlap; total is the complete public gotoRoom readiness hold. Instrumentation exists only in this audit.']};
 await mkdir(out, {recursive: true});
 if (!args.includes('--no-build')) execFileSync('npm',['run','build'],{stdio:'inherit'});
 const mime = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.glb':'model/gltf-binary','.png':'image/png','.jpg':'image/jpeg','.woff2':'font/woff2'};
