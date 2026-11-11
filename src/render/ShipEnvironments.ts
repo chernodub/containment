@@ -124,7 +124,19 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
     b(0,.12,0,1.8,.24,2.5,MAT.steel);
     for(const z of [-.64,.64]){
      b(0,1.05,z,1.66,1.95,1.03,MAT.black);
-     cabinetFace(detailWriter,detailFinishes,0,1.08,z+.525,1.45,1.65);
+     // Cells rotate to fit their room reservation. Detail every vertical face so
+     // the camera never sees an untouched cabinet side after that rotation.
+     for(const side of [-1,1])for(const axis of ['x','z'] as const){
+      const surface=axis==='x'?.837:.525;
+      const project=(p:T.Vector3)=>axis==='x'?new T.Vector3(side*(surface+p.z),p.y,z+p.x):new T.Vector3(p.x,p.y,z+side*(surface+p.z));
+      const faceWriter={
+       box:(m:T.Material,x:number,y:number,depth:number,w:number,h:number,d:number)=>{
+        const p=project(v(x,y,depth));b(p.x,p.y,p.z,axis==='x'?d:w,h,axis==='x'?w:d,m,0);
+       },
+       pipe:(m:T.Material,a:T.Vector3,c:T.Vector3,r:number)=>{const cable=rod(cell,project(a),project(c),r,r,m);cable.receiveShadow=true;},
+      };
+      cabinetFace(faceWriter,detailFinishes,0,1.08,0,axis==='x'?.86:1.45,1.65);
+     }
      b(0,2.04,z,1.3,.06,.7,MAT.steel);
      serviceCartridge(detailWriter,detailFinishes,0,2.073,z,.45,0,i);
      for(const x of [-.6,.6])pipe(v(x,1.7,z+.57),v(x,2.1,z+.22),.025,MAT.black);
@@ -243,7 +255,7 @@ export function environmentArchitecture(parent:T.Group,env:ShipEnvironment,w:num
    grate((left+w-.5)/2,z,w-.5-left,1.9,MAT.black);
   }
  }else if(env==='infested'){
-  for(let n=0;n<12;n++){const x=1+(w-2)*(Math.sin(n*13.7)*.5+.5),z=1+(h-2)*(Math.cos(n*5.1)*.5+.5);const stain=ball(parent,x,-.012,z,1.5,.018,.85,GROWTH_MAT.carapace);stain.castShadow=false;}
+  // Connected, flush roots come from EnvironmentalStory, without isolated ellipse pads.
  }
  for(let x=2;x<w;x+=4){
   const height=env==='cargo'?3.4:env==='containment'?3:2.65;

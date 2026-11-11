@@ -85,34 +85,42 @@ export function serviceHousingGeometry(width:number,height:number,depth:number):
   geometry.rotateX(-Math.PI/2);geometry.translate(0,-height*.5,0);return geometry;
 }
 
-/** A resting human form with sloping shoulders and bent arms, rather than a signage pictogram. */
-export function sleepingPassenger(u:number,v:number):boolean {
-  const x=u-.5;
-  const oval=(cx:number,cy:number,rx:number,ry:number)=>((x-cx)/rx)**2+((v-cy)/ry)**2<1;
-  const capsule=(ax:number,ay:number,bx:number,by:number,radius:number)=>{
+const passengerOvals=[[-.027,.226,.087,.071,-.26],[0,.306,.039,.052,0],[.008,.435,.132,.132,.06],[.02,.567,.096,.12,.08],[.016,.648,.103,.064,0],[-.025,.881,.045,.025,-.15],[.128,.875,.045,.025,.15]].map(([cx,cy,rx,ry,angle])=>({cx,cy,rx,ry,c:Math.cos(angle),s:Math.sin(angle),scale:Math.min(rx,ry)}));
+const passengerLimbs:readonly (readonly number[])[]=[[-.11,.35,-.184,.498,.032],[-.184,.498,-.053,.548,.029],[.12,.353,.157,.526,.031],[.157,.526,.091,.632,.027],[-.045,.655,-.085,.779,.039],[-.085,.779,-.045,.859,.035],[.061,.655,.13,.757,.039],[.13,.757,.11,.852,.035]];
+
+function passengerDistance(u:number,v:number):number {
+  const x=u-.5;let distance=1;
+  for(const {cx,cy,rx,ry,c,s,scale}of passengerOvals){
+    const dx=x-cx,dy=v-cy,px=dx*c-dy*s,py=dx*s+dy*c;
+    distance=Math.min(distance,(Math.hypot(px/rx,py/ry)-1)*scale);
+  }
+  for(const [ax,ay,bx,by,radius]of passengerLimbs){
     const dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((x-ax)*dx+(v-ay)*dy)/(dx*dx+dy*dy)));
-    return Math.hypot(x-ax-dx*t,v-ay-dy*t)<radius;
-  };
-  return oval(0,.23,.091,.073)||oval(0,.305,.038,.055)||oval(0,.43,.135,.13)||oval(0,.565,.10,.12)||oval(0,.65,.105,.065)
-    ||capsule(-.12,.35,-.16,.54,.032)||capsule(-.16,.54,-.12,.65,.026)
-    ||capsule(.12,.35,.16,.54,.032)||capsule(.16,.54,.12,.65,.026)
-    ||capsule(-.052,.66,-.066,.84,.038)||capsule(.052,.66,.066,.84,.038)
-    ||oval(-.072,.863,.047,.024)||oval(.072,.863,.047,.024);
+    distance=Math.min(distance,Math.hypot(x-ax-dx*t,v-ay-dy*t)-radius);
+  }
+  return distance;
 }
+
+/** A tilted head, arm resting across the abdomen and one bent knee give the sleeper a natural pose. */
+export function sleepingPassenger(u:number,v:number):boolean {return passengerDistance(u,v)<0;}
 
 /** Frosted observation glazing with an original, restrained sleeping human silhouette. */
 export function passengerObservationTexture():T.DataTexture {
   const width=128,height=256,pixels=new Uint8Array(width*height*4);
   for(let y=0;y<height;y++)for(let x=0;x<width;x++){
     const u=(x+.5)/width,v=(y+.5)/height,dx=u-.5;
-    const person=sleepingPassenger(u,v);
+    const distance=passengerDistance(u,v),person=T.MathUtils.clamp(.5-distance/.024,0,1);
     const edge=Math.pow(Math.max(Math.abs(dx)*2,Math.abs(v-.5)*2),6);
     const grain=((Math.imul(x+17,374761393)^Math.imul(y+31,668265263))>>>5)%23/23;
     const frost=edge*(.35+grain*.65),streak=Math.sin(x*.59+y*.032)> .97?.08:0;
-    const i=(y*width+x)*4;
-    pixels[i]=Math.round((person?20:65)+frost*30+streak*100);
-    pixels[i+1]=Math.round((person?42:110)+frost*30+streak*100);
-    pixels[i+2]=Math.round((person?53:125)+frost*30+streak*100);
+    const volume=Math.exp(-(((u-.478)/.12)**2)-((v-.43)/.27)**2),head=Math.exp(-(((u-.458)/.055)**2)-((v-.213)/.055)**2);
+    const pillow=Math.exp(-(((u-.5)/.28)**4)-((v-.235)/.102)**4)*8;
+    const reflection=Math.exp(-(((u-.29-v*.045)/.065)**2))*6;
+    const i=(y*width+x)*4,bodyLight=volume*12+head*12;
+    // Rounded, softly diffused tissue sits beneath condensation and glass glare.
+    pixels[i]=Math.round(T.MathUtils.lerp(65+pillow,29+bodyLight,person)+frost*30+streak*100+reflection);
+    pixels[i+1]=Math.round(T.MathUtils.lerp(110+pillow,54+bodyLight,person)+frost*30+streak*100+reflection);
+    pixels[i+2]=Math.round(T.MathUtils.lerp(125+pillow,67+bodyLight,person)+frost*30+streak*100+reflection);
     pixels[i+3]=255;
   }
   const texture=new T.DataTexture(pixels,width,height);texture.colorSpace=T.SRGBColorSpace;
