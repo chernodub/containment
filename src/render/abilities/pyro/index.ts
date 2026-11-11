@@ -324,14 +324,14 @@ class PyroPresentation implements AbilityPresentation {
       const edge = meltdown || i % 3 !== 0;
       const r = radius * growth * (edge ? .77 + variation * .16 : .18 + variation * .46);
       const wobble = kit.reducedMotion ? .5 : .5 + .5 * Math.sin(kit.time * 8 + i * 2.4);
-      const h = (meltdown ? .58 + variation * .5 + wobble * .2 : .85 + variation * .55 + wobble * .22) * fade;
+      const h = (meltdown ? .4 + variation * .34 + wobble * .12 : .85 + variation * .55 + wobble * .22) * fade;
       const width = meltdown ? .24 + variation * .2 : .21 + variation * .18;
       kit.draw('flame', x + Math.cos(a) * r, .04 + h * .5, z + Math.sin(a) * r,
-        width, h * .5, 1, i % 6 === 0 ? HOT : FIRE, (.63 + variation * .16) * fade);
+        width, h * .5, 1, i % 6 === 0 ? HOT : FIRE, (meltdown ? .42 + variation * .12 : .63 + variation * .16) * fade);
       if (!kit.low && edge && i % 5 === 0) {
         // Broad low folds stitch neighboring tongues together without filling the damage area.
         kit.draw('flame', x + Math.cos(a + .08) * r, .16, z + Math.sin(a + .08) * r,
-          .33, .25, 1, HOT, .5 * fade);
+          .33, .25, 1, HOT, (meltdown ? .3 : .5) * fade);
       }
     }
     if (meltdown) {
@@ -349,7 +349,7 @@ class PyroPresentation implements AbilityPresentation {
       for (let side = -1; side <= 1; side += 2) {
         const px = x - Math.cos(angle) * .3 - Math.sin(angle) * side * .25;
         const pz = z - Math.sin(angle) * .3 + Math.cos(angle) * side * .25;
-        kit.draw('flame', px, 1.05, pz, .29, .48, 1, CORE, .9 * fade);
+        kit.draw('flame', px, 1.12, pz, .31, .51, 1, CORE, .98 * fade);
       }
       kit.draw('spark', x - Math.cos(angle) * .12, .95, z - Math.sin(angle) * .12, .42, .65, 1, CORE, .5 * fade);
       kit.grade(.7 * fade);

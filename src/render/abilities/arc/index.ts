@@ -269,15 +269,15 @@ class ArcPresentation implements AbilityPresentation {
     }
     const glow = (pulse + (state?.flash ?? 0) * .4) * expiry;
     // Low retains the same tripod/stem/coil silhouette with fewer winding segments.
-    k.draw('solid', x, .1, z, radius * 1.35, .18, radius * 1.35, STEEL, .9 * fade, -.2);
+    k.draw('solid', x, .1, z, radius * 1.35, .18, radius * 1.35, 0x18232c, fade, -.2);
     for (let i = 0; i < 3; i++) {
       const angle = i * TAU / 3 + p.angle;
       k.draw('solid', x + Math.cos(angle) * radius * .5, .13, z + Math.sin(angle) * radius * .5,
-        radius * .9, .13, .13, 0x5f6875, fade, -angle);
+        radius * .9, .13, .13, STEEL, fade, -angle);
       k.draw('solid', x + Math.cos(angle) * radius * .89, .16, z + Math.sin(angle) * radius * .89,
         .11, .15, .18, VIOLET, .6 * fade, -angle);
     }
-    k.draw('solid', x, .66 * rise, z, .19, 1.17 * rise, .19, 0x697283, fade, -.3);
+    k.draw('solid', x, .66 * rise, z, .26, 1.17 * rise, .26, 0x263440, fade, -.3);
     k.draw('solid', x, .7 * rise, z, .065, 1.15 * rise, .065, WHITE, .75 * fade, -.3);
     const windings = k.low ? 2 : 3, segments = k.low ? 6 : 12;
     for (let row = 0; row < windings; row++) {
