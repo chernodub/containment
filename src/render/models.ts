@@ -43,17 +43,18 @@ function rig(name:AssetName,span:number,human=false){
 }
 export function alien(kind:string,elite=false):ActorModel{
  const def=species[kind]??species.crawler,r=rig(def.asset,def.span*(elite?1.12:1));r.root.name=`alien-${kind}`;
- const color=kind==='queen'?new T.Color(0xffd3bb):new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler).lerp(new T.Color(0xffffff),.58);if(elite)color.lerp(new T.Color(0xffe2b5),.18);for(const m of r.materials)m.color.multiply(color);
- const surface=actorSurface(r.materials,false,elite||kind==='queen');
+ const color=new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler).lerp(new T.Color(0xffffff),kind==='brute'?.72:.25);const value=kind==='brute'?1.9:kind==='carrier'?1.35:kind==='spitter'?1.3:kind==='stalker'?.48:kind==='queen'?.46:.9;for(const m of r.materials)m.color.multiply(color).multiplyScalar(value);
+ const surface=actorSurface(r.materials,false,elite||kind==='queen');surface.identity(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,elite);
  const identity=alienIdentity(r.root,kind,def.span*(elite?1.12:1),r.height,elite);
+ if(kind==='queen'){const bounds=new T.Box3();r.assetRoot.traverse(o=>{if(o instanceof T.SkinnedMesh){o.geometry.computeBoundingBox();bounds.union(o.geometry.boundingBox!);}});surface.plateBounds(bounds.min.y,bounds.max.y-bounds.min.y,(bounds.min.z+bounds.max.z)/2,bounds.max.z-bounds.min.z);}
  let flash=0,previous:number|undefined,exposed=false,dead=false,status:AfflictionStatus=NO_AFFLICTION,windup=0,champion:string|undefined,alpha=1,flinch=0,windupDuration=500,emergence=0,emissiveHex=-1;
  const restBodyY=r.body.position.y,emergenceDuration=.22,emergenceDepth=Math.min(.28,r.height*.14);
  const effects=afflictionEffects(r.root,def.span*(elite?1.12:1),r.height);
- return{root:r.root,body:r.body,limbs:[],height:r.height,dissolve:surface.dissolve,setFlashIntensity:surface.setFlashIntensity,attack(){if(!dead&&!status.frozen)r.attack();},freeze(){surface.death(status.frozen?'frost':status.burning?'burn':status.poisoned?'acid':'none');dead=true;emergence=emergenceDuration;r.body.position.y=restBodyY;r.body.rotation.x=0;status=NO_AFFLICTION;effects?.reset();surface.hit(0);identity.update(0,0,champion,false,1,true);r.freeze();},stop:r.stop,prepare(){r.action('run');r.action('attack');},reset(){r.reset();surface.reset();identity.reset();identity.mesh.castShadow=identity.mesh.receiveShadow=false;windup=0;champion=undefined;alpha=1;flinch=0;emergence=0;r.body.position.y=restBodyY;flash=0;previous=undefined;exposed=dead=false;status=NO_AFFLICTION;effects?.reset();for(const m of r.materials)m.emissiveIntensity=0;},hit(strength=1){flash=Math.max(0,Math.min(1,strength));flinch=flash;},setThreat(ms,attack,rank,camouflage=1){windup=attack?Math.max(0,ms):0;windupDuration=attack==='charge'?850:500;champion=rank;alpha=camouflage;surface.camouflage(kind==='stalker'?alpha:1);},setExposed(v){exposed=v;},setAffliction(v){
+ return{root:r.root,body:r.body,limbs:[],height:r.height,dissolve:surface.dissolve,setFlashIntensity:surface.setFlashIntensity,attack(){if(!dead&&!status.frozen)r.attack();},freeze(){surface.death(status.frozen?'frost':status.burning?'burn':status.poisoned?'acid':'none');dead=true;emergence=emergenceDuration;r.body.position.y=restBodyY;r.body.rotation.x=0;status=NO_AFFLICTION;effects?.reset();surface.hit(0);identity.update(0,0,champion,false,1,true);r.freeze();},stop:r.stop,prepare(){r.action('run');r.action('attack');},reset(){r.reset();surface.reset();surface.identity(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,elite);identity.reset();identity.mesh.castShadow=identity.mesh.receiveShadow=false;windup=0;champion=undefined;alpha=1;flinch=0;emergence=0;r.body.position.y=restBodyY;flash=0;previous=undefined;exposed=dead=false;status=NO_AFFLICTION;effects?.reset();for(const m of r.materials)m.emissiveIntensity=0;},hit(strength=1){flash=Math.max(0,Math.min(1,strength));flinch=flash;},setThreat(ms,attack,rank,camouflage=1){windup=attack?Math.max(0,ms):0;windupDuration=attack==='charge'?850:500;if(champion!==rank)surface.identity(rank==='matron'?0xff70b8:rank==='warden'?0xffbd65:FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler,!!rank||elite);champion=rank;alpha=camouflage;surface.camouflage(kind==='stalker'?alpha:1);},setExposed(v){exposed=v;},setAffliction(v){
   if(dead)return;status=v;
   effects?.set(v);r.mixer.timeScale=v.frozen?0:1;if(v.frozen){emergence=emergenceDuration;r.body.position.y=restBodyY;r.body.rotation.x=0;}
  },
- animate(time,moving,aim){const dt=previous===undefined?0:Math.max(0,Math.min(.05,time-previous));previous=time;flash=Math.max(0,flash-dt*9);surface.hit(flash);r.root.rotation.y=Math.PI/2-aim;r.step(time,windup>0?0:moving);if(!dead&&!status.frozen){emergence=Math.min(emergenceDuration,emergence+dt);const rise=1-Math.pow(1-emergence/emergenceDuration,3);flinch=Math.max(0,flinch-dt*8);r.body.rotation.x=-flinch*.075+(windup>0?Math.min(1,windup/350)*.055:0)-(1-rise)*.045;r.body.position.y=restBodyY-emergenceDepth*(1-rise)-flinch*.035;}identity.update(time,windup>0?1-Math.min(1,windup/windupDuration):0,champion,exposed,kind==='stalker'?alpha:1,dead);effects?.animate(time);const hex=status.frozen?0x79ddff:exposed?0x42602b:0xffdfb0,intensity=flash*.1+(status.frozen?.12:exposed?.22:0);for(const m of r.materials){if(hex!==emissiveHex)m.emissive.setHex(hex);m.emissiveIntensity=intensity;}emissiveHex=hex;}};
+ animate(time,moving,aim){const dt=previous===undefined?0:Math.max(0,Math.min(.05,time-previous));previous=time;flash=Math.max(0,flash-dt*9);surface.hit(flash);r.root.rotation.y=Math.PI/2-aim;r.step(time,windup>0?0:moving);if(!dead&&!status.frozen){emergence=Math.min(emergenceDuration,emergence+dt);const rise=1-Math.pow(1-emergence/emergenceDuration,3);flinch=Math.max(0,flinch-dt*8);r.body.rotation.x=-flinch*.075+(windup>0?Math.min(1,windup/350)*.055:0)-(1-rise)*.045;r.body.position.y=restBodyY-emergenceDepth*(1-rise)-flinch*.035;}if(kind==='queen')surface.expose(identity.mesh.material.uniforms.identityOpening.value);identity.update(time,windup>0?1-Math.min(1,windup/windupDuration):0,champion,exposed,kind==='stalker'?alpha:1,dead);effects?.animate(time);const hex=status.frozen?0x79ddff:exposed?0xff4aa5:0xffdfb0,intensity=flash*.1+(status.frozen?.12:exposed?.10:0);for(const m of r.materials){if(hex!==emissiveHex)m.emissive.setHex(hex);m.emissiveIntensity=intensity;}emissiveHex=hex;}};
 }
 export function marine():ActorModel{
  const r=rig('marine',2.05,true),weapon=new T.Group();r.root.name='marine';r.root.add(weapon);
@@ -77,52 +78,10 @@ export function marine():ActorModel{
   syncWeaponPose();
  }};
 }
-export function nest():T.Group{
- const g=new T.Group();g.name='queen-nest';shell(g,0,.23,0,.8,.25,1.7,MAT.flesh);shell(g,0,.65,0,.54,.61,1.14,MAT.acid);
- for(let i=0;i<8;i++){const a=i*Math.PI/4,x=Math.cos(a),z=Math.sin(a);rod(g,vec(x*.95,.04,z*.95),vec(x*.45,.38,z*.45),.11,.055,MAT.flesh);rod(g,vec(x*.45,.38,z*.45),vec(x*.24,1.18,z*.24),.015,.11,MAT.shellDark);}
- for(let i=0;i<3;i++)shell(g,0,1.06+i*.08,0,.27-i*.055,.1,.55-i*.1,MAT.flesh);for(const side of [-1,1])for(let i=0;i<3;i++)shell(g,side*.35,.62+i*.12,(i-1)*.22,.09,.12,.16,MAT.acid);batch(g);return g;
-}
+export {nest,updateNest} from './NestPresentation';
 
 
-/** Physical supply silhouettes with semantic symbols; uses only prewarmed shared finishes. */
-export function pickupModel(kind:string):T.Group{
- const g=new T.Group();g.name=`pickup-${kind}`;
- if(kind==='credits'){
-  box(g,0,-.06,0,.48,.07,.36,MAT.dark,.02);
-  for(let stack=0;stack<3;stack++)for(let coin=0;coin<stack+2;coin++){
-   const x=(stack-1)*.125,z=stack%2?.045:-.03,y=coin*.034;
-   rod(g,vec(x,y,z),vec(x,y+.026,z),.09,.09,MAT.trim);
-  }
-  box(g,0,.1,.045,.055,.009,.07,MAT.amber,.003);
- }else if(kind==='armor'){
-  const shape=new T.Shape();shape.moveTo(-.22,.18);shape.lineTo(.22,.18);shape.lineTo(.22,-.05);shape.lineTo(0,-.28);shape.lineTo(-.22,-.05);shape.closePath();
-  const geometry=new T.ExtrudeGeometry(shape,{depth:.065,bevelEnabled:true,bevelSegments:1,steps:1,bevelSize:.012,bevelThickness:.012});geometry.rotateX(-Math.PI/2);
-  g.add(new T.Mesh(geometry,MAT.dark));
-  for(let i=0;i<3;i++){
-   const width=.34-i*.07,z=-.105+i*.112;
-   box(g,0,.082,z,width,.04,.085,MAT.armor,.012);
-   box(g,0,.108,z,.025,.008,.059,MAT.cyan,.003);
-  }
- }else if(kind==='grenade'){
-  rod(g,vec(0,-.12,0),vec(0,.2,0),.13,.15,MAT.shellDark);
-  rod(g,vec(0,.025,0),vec(0,.065,0),.151,.151,MAT.amber);
-  rod(g,vec(0,.2,0),vec(0,.265,0),.105,.105,MAT.steel);
-  box(g,.125,.15,0,.035,.31,.075,MAT.steel,.008);
-  ring(g,.045,.3,.015,.062,.012,MAT.steel);
- }else{
-  shell(g,0,0,0,.25,.16,.42,MAT.dark);
-  if(kind==='health'){
-   for(const side of [-1,1])rod(g,vec(side*.19,-.08,-.16),vec(side*.19,-.08,.16),.035,.035,MAT.steel);
-   shell(g,0,.14,0,.16,.035,.3,MAT.acid);
-   rod(g,vec(-.105,.19,0),vec(.105,.19,0),.025,.025,MAT.armor);
-   rod(g,vec(0,.19,-.105),vec(0,.19,.105),.025,.025,MAT.armor);
-  }else{
-   for(let i=-1;i<=1;i++){rod(g,vec(i*.11,-.05,-.13),vec(i*.11,.15,.13),.035,.035,MAT.trim);shell(g,i*.11,.16,.13,.035,.055,.06,MAT.cyan);}
-  }
- }
- batch(g);return g;
-}
-
+export {pickupModel} from './PickupModels';
 
 /** Retain GPU skinning and freeze the existing pose; no per-death vertex cloning or normal rebuild. */
 export function freezeCorpse(model:ActorModel){model.freeze?.();model.root.updateMatrixWorld(true);model.root.traverse(o=>{if(o instanceof T.Mesh){o.castShadow=false;o.receiveShadow=false;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof T.MeshStandardMaterial)m.emissiveIntensity=0;}if(o instanceof T.Bone)o.matrixAutoUpdate=false;});}

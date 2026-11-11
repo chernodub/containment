@@ -1,6 +1,29 @@
 import * as T from 'three';
 import {box,rod,batch,disposeModel} from '../meshParts';
 
+/** Original occupied berth display: faint human form behind frost, with individual life telemetry. */
+function occupiedGlass():T.DataTexture {
+  const width=128,height=256,pixels=new Uint8Array(width*height*4);
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++) {
+    const u=x/width,v=y/height,dx=u-.5;
+    const head=dx*dx*160+(v-.70)*(v-.70)*260<1;
+    const torso=Math.abs(dx)<.16*(1-Math.max(0,.61-v)*.7)&&v>.24&&v<.64;
+    const legs=v>.09&&v<.27&&(Math.abs(dx-.075)<.045||Math.abs(dx+.075)<.045);
+    const frost=Math.max(0,(Math.abs(dx)-.28)*2.3)+Math.max(0,.10-v)*3;
+    const noise=((Math.imul(x+17,374761393)^Math.imul(y+43,668265263))>>>0)%29/29;
+    const figure=head||torso||legs;
+    let r=figure?8:18,g=figure?23:41,b=figure?29:52;
+    r+=frost*42+noise*3;g+=frost*52+noise*4;b+=frost*56+noise*5;
+    if(v>.79&&v<.93&&u>.12&&u<.88){r=4;g=14;b=19;
+      const phase=(u*5)%1,wave=.855+(phase>.34&&phase<.43?-.035:phase>.43&&phase<.51?.045:Math.sin(u*17)*.003);
+      if(Math.abs(v-wave)<.004){r=159;g=232;b=255;}
+    }
+    const i=(y*width+x)*4;pixels[i]=r;pixels[i+1]=g;pixels[i+2]=b;pixels[i+3]=255;
+  }
+  const texture=new T.DataTexture(pixels,width,height);texture.colorSpace=T.SRGBColorSpace;
+  texture.magFilter=T.LinearFilter;texture.minFilter=T.LinearMipmapLinearFilter;texture.generateMipmaps=true;texture.needsUpdate=true;return texture;
+}
+
 /** A separate, original cryobay set: the left half is negative space for the title UI. */
 export class TitlePresentation {
   readonly root = new T.Group();
@@ -15,6 +38,8 @@ export class TitlePresentation {
     const steel=material('title-bulkhead',0x192a33,.72,.42),paint=material('title-ceramic',0x60777c,.45,.52),
       black=material('title-gaskets',0x070e13,.15,.85),glass=material('title-pod-glass',0x14303b,.82,.15),
       cold=material('title-cold-strip',0x8ac5db,.5,.3,0x9fe8ff,2.2),warm=material('title-emergency',0x865c3c,.5,.4,0xff9362,1.5);
+    const occupants=occupiedGlass();glass.map=glass.emissiveMap=occupants;glass.color.setHex(0xc5e0e5);glass.emissive.setHex(0x9fe8ff);glass.emissiveIntensity=.7;glass.metalness=.25;glass.roughness=.34;
+    glass.addEventListener('dispose',()=>occupants.dispose());
     box(this.root,23,-.18,12,32,.3,30,steel,0);
     // The visible broken berth behind the hero establishes the awakening beat.
     for(const x of [24.5,28.4,32.3]) {

@@ -34,6 +34,8 @@ import {batch} from './meshParts';
 import type {GraphicsTier} from './FrameBudget';
 import {GRAPHICS_PRESETS,resolveGraphicsOptions,type GraphicsOptions} from './graphicsOptions';
 import {EnvironmentMaterials} from './EnvironmentMaterials';
+import {setFloorLeaks} from './lighting/FloorVariation';
+import {addEnvironmentalStory} from './world/EnvironmentalStory';
 import {shipEnvironment,environmentObstacle,environmentArchitecture,appendEnvironment,type ShipEnvironment} from './ShipEnvironments';
 import {serviceShaftLanding} from './ServiceShaftLanding';
 import * as T from 'three';
@@ -51,7 +53,7 @@ import {applyRoomMood} from './lighting/applyRoomMood';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {attachPassengerVault} from './PassengerVault';
 import {attachResidentialGalleryEquipment} from './ResidentialGalleryEquipment';
-import {MAT,box,ball,rod,marine,alien,nest,disposeModel,freezeCorpse,type ActorModel} from './models';
+import {MAT,box,ball,rod,marine,alien,nest,updateNest,disposeModel,freezeCorpse,type ActorModel} from './models';
 const {DeathRagdolls}=await import('../ui/loading/DeferredRagdolls');
 import {ROOM_TEMPLATES} from '../game/roguelike/roomTemplates';
 import type {DepthGame,GameEffect} from '../DepthGame';
@@ -375,8 +377,8 @@ export class DepthRenderer {
   if(atrium)this.world.add(communalAtrium(t));
   for(const [obstacleIndex,r] of (atrium?[]:t.obstacles).entries()){
    const x=(r.x+r.width/2)/UNIT,z=(r.y+r.height/2)/UNIT,rw=r.width/UNIT,rh=r.height/UNIT;
-   if(residentialFallback){residentialFallback.add(environmentObstacle('habitation',{x:r.x/UNIT,y:r.y/UNIT,width:rw,height:rh},obstacleIndex,node.templateId));continue;}
-   if(environment){appendEnvironment(this.world,environmentObstacle(environment,{x:r.x/UNIT,y:r.y/UNIT,width:rw,height:rh},obstacleIndex,node.templateId));continue;}
+   if(residentialFallback){residentialFallback.add(environmentObstacle('habitation',{x:r.x/UNIT,y:r.y/UNIT,width:rw,height:rh},obstacleIndex,node.templateId,this.roomSeed(node.id)));continue;}
+   if(environment){appendEnvironment(this.world,environmentObstacle(environment,{x:r.x/UNIT,y:r.y/UNIT,width:rw,height:rh},obstacleIndex,node.templateId,this.roomSeed(node.id)));continue;}
    const tall=act===1;const height=tall?1.45:1.05;
    this.surfaces.uv(box(this.world,x,height/2,z,rw,height,rh,this.surfaces.cover,.055),2);this.surfaces.uv(box(this.world,x,height-.08,z,rw-.07,.16,rh-.07,this.surfaces.cover),2);
    for(let a=-rw/2+.25;a<rw/2;a+=.8){box(this.world,x+a,height+.02,z,.045,.02,rh-.25,MAT.edge,.01);}
@@ -395,12 +397,12 @@ export class DepthRenderer {
    }
   }
   for(let z=2;!atrium&&z<h-1;z+=3.2)box(this.world,w/2,.001,z,w-1,.012,.022,MAT.black,0);
-  for(const x of [1.35,w-1.35])for(let z=2;!atrium&&z<h-2;z+=1.2)box(this.world,x,.012,z,.075,.015,.6,act===1?MAT.cyan:MAT.trim,0);
+  for(const x of [1.35,w-1.35])for(let z=2;!atrium&&z<h-2;z+=1.2)box(this.world,x,.012,z,.075,.015,.6,MAT.industrialPaint,0);
   // Overhead utility pipes along the back edge, independently lit panels and vents.
   for(const z of [.42,.72]){rod(this.world,new T.Vector3(.4,2.65,z),new T.Vector3(w-.4,2.65,z),.09,.09,MAT.edge);}
   for(let x=3;x<w;x+=6){box(this.world,x,2.65,.58,.12,.28,.8,MAT.dark);}
   for(const b of t.breaches){const x=b.x/UNIT,z=b.y/UNIT;box(this.world,x,.04,z,1.25,.06,1.1,MAT.black);for(let i=-4;i<=4;i++)box(this.world,x+i*.12,.085,z,.05,.04,.9,MAT.edge,.01);}
-  if(environment&&!atrium)environmentArchitecture(this.world,environment,w,h,node.templateId);
+  if(environment&&!atrium)environmentArchitecture(this.world,environment,w,h,node.templateId,this.roomSeed(node.id));
   if(node.templateId==='reactor-vault'){const hot=MAT.cyan.clone();hot.name='ship-cold-practical';hot.userData.actorMaterial=true;this.world.traverse(object=>{if(object instanceof T.Mesh&&object.material===MAT.cyan)object.material=hot;});}
   this.bakeWorld();
   }
@@ -412,9 +414,10 @@ export class DepthRenderer {
   // Rigid exit parts share finishes and transforms; retain three merged draws.
   batch(this.exit,true);
   // Flat markings and obstacle-supported dressing are registered before room preparation.
-  addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));
+  addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));addEnvironmentalStory(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
   this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.world.userData.staticBatching=batchStaticRoom(this.world);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId);
+  const leaks=this.world.getObjectByName('g2-world-dressing')?.userData.leakPositions??[];this.world.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial)setFloorLeaks(material,leaks);});
   const mood=getEnvironmentMood(environment);this.scene.fog=new T.FogExp2(mood.fog.color,mood.fog.density*.25);this.scene.background=new T.Color(mood.fog.color).multiplyScalar(.24);this.scene.environmentIntensity=mood.reflectionIntensity;this.post?.setMood(mood);this.atmosphere?.loadRoom(environment,w,h,this.lighting.fixtures);this.backdrop?.loadRoom(this.world,w,h,environment);this.arena?.loadRoom(node.templateId,w,h);this.post?.distortion.clear();this.heatClock=0;
   const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged))this.queueRoomWarmup();
  }
@@ -470,14 +473,14 @@ export class DepthRenderer {
   const combat=game.combat.snapshot;this.player.equip?.(combat.weaponId);
   this.player.setRig?.(game.abilities?.snapshot.rig??'breacher');this.menuMarine?.setRig?.(game.abilities?.snapshot.rig??'breacher');
   this.playerVelocity.x=p.vx;this.playerVelocity.y=p.vy;this.player.animate(this.time,p.moving?1:0,p.angle,this.recoil,combat.reloading?Math.max(.001,1-combat.reloadRemainingMs/combat.reloadDurationMs):0,this.playerVelocity);this.recoil=Math.max(0,this.recoil-dt*14);
-  this.lighting.setMenu?.(menu);if(this.lighting.setPlayer(menu?23:p.x/UNIT,menu?13:p.y/UNIT,menu?.42:p.angle,this.camera))this.atmosphere?.syncFixtures(this.lighting.fixtures);
+  this.lighting.setMenu?.(menu);if(this.lighting.setPlayer(menu?23:p.x/UNIT,menu?13:p.y/UNIT,menu?-.62:p.angle,this.camera))this.atmosphere?.syncFixtures(this.lighting.fixtures);
   const active=this.activeActorIds;active.clear();let crowding=0;const enemies=game.enemies.snapshot.enemies;
   for(const e of enemies){if(Math.hypot(e.x-p.x,e.y-p.y)<80)crowding+=.25;active.add(e.id);let model=this.actors.get(e.id);if(!model){model=this.actorPool.take(e.type,e.elite);model.setFlashIntensity?.(this.options.flashIntensity);this.shadowsDirty=true;this.actors.set(e.id,model);this.scene.add(model.root);this.contextResources?.track(model.root);}model.root.position.set(e.x/UNIT,0,e.y/UNIT);const status=game.boonStatuses(e.id);model.setAffliction?.(status);model.root.userData.visualStatus=status;model.setThreat?.(e.windupMs,e.pendingAttack,e.champion,e.alpha);model.animate(this.time+e.id,Math.hypot(e.velocityX,e.velocityY)>2?1:.12,Math.atan2((e.type==='spitter'?game.player.y:e.targetY)-e.y,(e.type==='spitter'?game.player.x:e.targetX)-e.x));}
   for(const [id,model]of this.actors)if(!active.has(id)){this.actorPool.release(model);this.actors.delete(id);this.shadowsDirty=true;}
   let healthCount=0;for(const e of enemies){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=e.x/UNIT;bar.z=e.y/UNIT;bar.height=this.actors.get(e.id)?.height??1;bar.health=e.health;bar.maxHealth=e.maxHealth;bar.elite=e.elite||!!e.champion;bar.armor=e.armor;bar.status=this.actors.get(e.id)?.root.userData.visualStatus;}for(const n of game.boss.snapshot.nests){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=n.x/UNIT;bar.z=n.y/UNIT;bar.height=1.35;bar.health=n.health;bar.maxHealth=n.maxHealth;bar.elite=false;bar.armor=0;bar.status=undefined;}for(let i=healthCount;i<128;i++)this.healthEntries[i].health=0;
   this.healthBars.update(this.healthEntries,this.camera,this.viewportHeight,menu);
   this.menuActors.visible=menu;
-  if(menu){this.menuMarine.root.position.set(23,0,13);this.menuAlien.root.position.set(27.2,0,10);this.menuMarine.animate(this.time,0,.42);this.menuAlien.animate(this.time,.12,Math.PI+.5);}
+  if(menu){this.menuMarine.root.position.set(23,0,13);this.menuAlien.root.position.set(27.2,0,10);this.menuMarine.animate(this.time,0,-.62);this.menuAlien.animate(this.time,.12,2.52);}
   this.lastMenu=menu;
   const q=game.boss.snapshot;this.lighting.setBossState?.(q.x/UNIT,q.y/UNIT,q.vulnerable,q.defeated);
   this.warning.visible=!!q.pendingTelegraph&&!menu;
@@ -486,8 +489,8 @@ export class DepthRenderer {
 
   if(q.active&&!this.queen){this.queen=this.actorPool.take('queen');this.queen.setFlashIntensity?.(this.options.flashIntensity);this.scene.add(this.queen.root);this.contextResources?.track(this.queen.root);}
   if(this.queen){this.queen.setExposed?.(q.vulnerable);this.queen.setAffliction?.(q.defeated?{chilled:false,burning:false,poisoned:false,frozen:false}:game.boonStatuses(-1));this.queen.root.position.set(q.x/UNIT,0,q.y/UNIT);this.queen.animate(this.time,.4,q.rotation);if(q.defeated){this.queen.root.rotation.z=1.25;this.queen.root.position.y=-.35;}}
-  const nestIds=this.activeNestIds;nestIds.clear();for(const n of q.nests){nestIds.add(n.id);let model=this.nests.get(n.id);if(!model){model=nest();this.nests.set(n.id,model);this.scene.add(model);this.contextResources?.track(model);}model.position.set(n.x/UNIT,0,n.y/UNIT);model.scale.y=1+Math.sin(this.time*3+n.id)*.035;}
-  for(const[id,model]of this.nests)if(!nestIds.has(id)){disposeModel(model);this.nests.delete(id);}
+  const nestIds=this.activeNestIds;nestIds.clear();for(const n of q.nests){nestIds.add(n.id);let model=this.nests.get(n.id);if(!model){model=nest();this.nests.set(n.id,model);this.scene.add(model);this.contextResources?.track(model);}model.position.set(n.x/UNIT,0,n.y/UNIT);updateNest(model,this.time+n.id);}
+  for(const[id,model]of this.nests)if(!nestIds.has(id)){updateNest(model,this.time,true);if(this.nests.size>10){disposeModel(model);this.nests.delete(id);}}
   if(this.staticDirty){this.freezeRoomTransforms();this.ragdolls.refreshStatic(this.world);this.staticDirty=false;}
   this.ragdolls.update(dt);
   for(const c of this.corpses){if(this.ragdolls.has(c.id))c.age+=dt;c.model.dissolve?.(Math.max(0,(c.age-18)/2));if(this.ragdolls.has(c.id)){const position=this.ragdolls.position(c.id)!;c.x=position.x;c.y=position.z;continue;}if(dt<=0)continue;if(c.age>2&&Math.abs(c.vx)+Math.abs(c.vy)<.02&&c.height<=.08){c.age+=dt;continue;}c.age+=dt;const moved=game.moveCorpse({x:c.x*UNIT,y:c.y*UNIT,radius:14},c.vx*dt*UNIT,c.vy*dt*UNIT);c.x=moved.x/UNIT;c.y=moved.y/UNIT;if(moved.blocked){c.vx*=-.22;c.vy*=-.22;}c.vx*=Math.exp(-3.8*dt);c.vy*=Math.exp(-3.8*dt);c.lift-=9.8*dt;c.height=Math.max(.08,c.height+c.lift*dt);if(c.height<=.08)c.lift=0;
