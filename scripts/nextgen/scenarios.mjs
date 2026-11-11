@@ -1,5 +1,6 @@
+import {INTEGRATION_SETTINGS_SCENARIO} from './integration-settings.mjs';
 import {ABILITY_SCENARIOS,DESKTOP_ABILITY_SCENARIO} from './ability-scenarios.mjs';
-export const DEFAULT_ROOMS=['awakening-bay','passenger-vault','communal-atrium','armory','breached-loading-bay','relay-racks','safety-interlock-station','infested-workshop','containment-annulus','overload-floor'];
+export const DEFAULT_ROOMS=['awakening-bay','communal-atrium','armory','breached-loading-bay','relay-racks','safety-interlock-station','service-shaft-landing','infested-workshop','containment-annulus','overload-floor'];
 
 // Declarative entries are expanded by capture.mjs. setup runs in the real page;
 // use only browser globals and the debug hook inside these small functions.
@@ -22,8 +23,50 @@ function benchmarkSetup(tier,algorithm='gtao',status=false,nativeRoom=false){
  })();`);
 }
 
+export async function stageKiting(room, options={}){
+  const d=window.__containmentDebug,g=d.game;await d.gotoRoom(room,options.live?{rig:'arc'}:{});if(options.tier){d.renderer.setQuality(options.tier);await d.prepare();}d.invulnerable(true);d.measureLuminance=true;g.enemies.reset();
+  const bounds=g.geometry.bounds,candidates=[];
+  for(let y=150;y<bounds.height-150;y+=70)for(let x=150;x<bounds.width-150;x+=70)for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]){
+   if(!d.canStand(x,y,28)||!d.canStand(x-Math.cos(angle)*100,y-Math.sin(angle)*100,28))continue;
+   let score=0;for(const range of [170,230,290,350])for(let i=0;i<7;i++){const a=angle+(i-3)*.24,p={x:x+Math.cos(a)*range,y:y+Math.sin(a)*range};if(d.canStand(p.x,p.y,28)&&d.clearShot(p.x,p.y,{x,y}))score++;}
+   candidates.push({x,y,angle,score});
+  }
+  candidates.sort((a,b)=>b.score-a.score);if(!candidates.length)throw Error('No legal kiting lane');
+  const lane=candidates[0];Object.assign(g.player,{x:lane.x,y:lane.y,angle:lane.angle});d.setInput({x:0,y:0,fire:false,angle:lane.angle,autoAim:false});d.step(600);
+  const enemies=[];for(const range of (options.live?[140,190,240,290]:[170,230,290,350]))for(let i=0;i<7&&enemies.length<12;i++){
+   const angle=lane.angle+(i-3)*.24,p={x:lane.x+Math.cos(angle)*range,y:lane.y+Math.sin(angle)*range};
+   if(!d.canStand(p.x,p.y,28)||!d.clearShot(p.x,p.y)||enemies.some(e=>Math.hypot(e.x-p.x,e.y-p.y )<(options.live?45:55)))continue;
+   const id=d.spawn(['brute','crawler','spitter','stalker','crawler','carrier'][enemies.length%6],p.x,p.y,enemies.length%5===0);if(id)enemies.push({...p,id});
+  }
+  if(enemies.length<10)throw Error('Kiting fixture requires ten spread threats; got '+enemies.length+' at '+JSON.stringify(lane));
+  g.switchWeapon('rifle');d.setInput({x:-Math.cos(lane.angle)*.55,y:-Math.sin(lane.angle)*.55,fire:true,angle:lane.angle,autoAim:false});g.grenade();d.step(300);
+}
+
+// Self-contained page function, sharing the exact G1 lane algorithm and real A1 actions.
+function integrationKitingSetup(tier){
+ return new Function('room',`return (async()=>{
+  const d=window.__containmentDebug,g=d.game;
+  await (${stageKiting.toString()})(room,{tier:${JSON.stringify(tier)},live:true});
+  const gl=d.renderer.renderer.getContext(),createProgram=gl.createProgram,oldPrograms=new Set(d.renderer.renderer.info.programs);let compiled=0;gl.createProgram=function(){compiled++;return createProgram.call(gl);};
+  try{
+  d.uiFixture({preferences:{radar:true,combatText:true}});
+  const angle=g.player.angle;g.setAimPoint({x:g.player.x+Math.cos(angle)*120,y:g.player.y+Math.sin(angle)*120});
+  if(!g.useAbility('power'))throw Error('Kiting pylon placement denied');d.step(g.abilities.snapshot.slots.power.castRemainingMs+30);
+  d.fillOverdrive();if(!g.useAbility('overdrive'))throw Error('Kiting Overclock denied');d.step(30);
+  if(!g.abilities.snapshot.deployables.length||!g.abilities.snapshot.overdrive.active)throw Error('Heavy ability fixture is not live');
+  d.kitingProof={tier:${JSON.stringify(tier)},startEnemies:g.enemies.activeCount,startPosition:{x:g.player.x,y:g.player.y}};
+  // Run normal RAF updates with fixed native-equivalent controls, so diagnostics include real simulation work.
+  d.realtime(true);try{for(let i=0;i<180;i++){if(i%30===0){const sign=Math.floor(i/30)%2?1:-1;d.setInput({x:Math.cos(angle)*.4*sign,y:Math.sin(angle)*.4*sign});}await new Promise(requestAnimationFrame);}}finally{d.realtime(false);}
+  d.kitingProof.endVisible=g.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y)).length;d.kitingProof.endEnemies=g.enemies.activeCount;d.kitingProof.endPosition={x:g.player.x,y:g.player.y};
+  d.kitingProof.performance=window.__containmentPerformance;
+  if(g.enemies.activeCount<8||d.kitingProof.endVisible<6)throw Error('Heavy ability benchmark lost visible encounter '+JSON.stringify(d.kitingProof));d.refresh();
+  }finally{gl.createProgram=createProgram;d.shaderCompilations=compiled;}
+  if(compiled)throw Error('Live ability combat compiled '+compiled+' unprepared programs '+JSON.stringify(d.renderer.renderer.info.programs.filter(p=>!oldPrograms.has(p)).map(p=>{const f=gl.getShaderSource(p.fragmentShader);return {name:p.name,points:f.match(/uniform PointLight pointLights\\[ ?([0-9]+)/)?.[1],flags:f.match(/#define USE_[A-Z_]+/g),actor:f.includes('actorRimStrength'),floor:f.includes('roomFloorGrime'),custom:f.includes('ribbonAlpha')||f.includes('varying vec4 ink'),key:p.cacheKey.slice(-150)};})));
+ })();`);
+}
+
 export const SCENARIOS=[
- ...ABILITY_SCENARIOS,DESKTOP_ABILITY_SCENARIO,
+ ...ABILITY_SCENARIOS,DESKTOP_ABILITY_SCENARIO,INTEGRATION_SETTINGS_SCENARIO,
  {id:'title',state:'menu',required:['.title-screen','#start'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();}},
  {id:'title-settings',state:'menu',required:['[data-ui-settings]','#quality'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();document.querySelector('#settings').click();}},
  {id:'starting-boon',state:'reward',phase:'starting-boon',required:['.choice-grid'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});if(!d.game.chooseRig('cryo'))throw Error('Starting boon rig selection failed');d.refresh();}},
@@ -68,7 +111,7 @@ export const SCENARIOS=[
  {id:'combat-calm',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.invulnerable(true);d.refresh();}},
  {id:'combat-heavy',rooms:true,state:'playing',combat:true,burst:true,setup:async room=>{await window.__containmentDebug.gotoRoom(room);}},
  {id:'status-vfx',state:'playing',combat:true,status:true,burst:true,room:'communal-atrium',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('communal-atrium',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','absolute-zero','incendiary','caustic-rounds','arc-filament','conductive-shell','cryo-conductor']);}},
- {id:'boss',state:'playing',burst:true,room:'reactor-vault',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.invulnerable(true);const q=d.game.boss.snapshot;const candidates=[];for(let y=q.y+120;y<=q.y+330;y+=30)for(let x=q.x-200;x<=q.x+200;x+=30)if(d.canStand(x,y))candidates.push({x,y});if(!q.active||!candidates.length)throw Error('Queen encounter unavailable');Object.assign(d.game.player,candidates[Math.floor(candidates.length/2)]);d.setInput({fire:true,angle:Math.atan2(q.y-d.game.player.y,q.x-d.game.player.x),autoAim:false});d.game.switchWeapon('plasma');d.step(1600);}},
+ {id:'boss',auditGraphics:true,state:'playing',burst:true,room:'reactor-vault',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.invulnerable(true);const q=d.game.boss.snapshot;const candidates=[];for(let y=q.y+120;y<=q.y+330;y+=30)for(let x=q.x-200;x<=q.x+200;x+=30)if(d.canStand(x,y))candidates.push({x,y});if(!q.active||!candidates.length)throw Error('Queen encounter unavailable');Object.assign(d.game.player,candidates[Math.floor(candidates.length/2)]);d.setInput({fire:true,angle:Math.atan2(q.y-d.game.player.y,q.x-d.game.player.x),autoAim:false});d.game.switchWeapon('plasma');d.step(1600);}},
  {id:'boss-radar',state:'playing',room:'reactor-vault',required:['#radar-hud','.radar-objective'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.uiFixture({preferences:{radar:true,combatText:true}});}},
  {id:'reward',state:'reward',phase:'reward',required:['.choice-grid'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'reward'});}},
  {id:'route',state:'route',required:['.route-grid','[data-route]'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'route'});}},
@@ -126,24 +169,10 @@ export const SCENARIOS=[
  {id:'g1-aces',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setToneMapping('aces');d.refresh();}},
  {id:'g1-agx',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setToneMapping('agx');d.refresh();}},
  {id:'g1-contact-ao',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setAmbientOcclusionAlgorithm('contact');d.refresh();}},
- {id:'g1-kiting',rooms:true,state:'playing',burst:true,setup:async room=>{
-  const d=window.__containmentDebug,g=d.game;await d.gotoRoom(room);d.invulnerable(true);d.measureLuminance=true;g.enemies.reset();
-  const bounds=g.geometry.bounds,candidates=[];
-  for(let y=150;y<bounds.height-150;y+=70)for(let x=150;x<bounds.width-150;x+=70)for(const angle of [0,Math.PI/2,Math.PI,-Math.PI/2]){
-   if(!d.canStand(x,y,28)||!d.canStand(x-Math.cos(angle)*100,y-Math.sin(angle)*100,28))continue;
-   let score=0;for(const range of [170,230,290,350])for(let i=0;i<7;i++){const a=angle+(i-3)*.24,p={x:x+Math.cos(a)*range,y:y+Math.sin(a)*range};if(d.canStand(p.x,p.y,28)&&d.clearShot(p.x,p.y,{x,y}))score++;}
-   candidates.push({x,y,angle,score});
-  }
-  candidates.sort((a,b)=>b.score-a.score);if(!candidates.length)throw Error('No legal kiting lane');
-  const lane=candidates[0];Object.assign(g.player,{x:lane.x,y:lane.y,angle:lane.angle});d.setInput({x:0,y:0,fire:false,angle:lane.angle,autoAim:false});d.step(600);
-  const enemies=[];for(const range of [170,230,290,350])for(let i=0;i<7&&enemies.length<12;i++){
-   const angle=lane.angle+(i-3)*.24,p={x:lane.x+Math.cos(angle)*range,y:lane.y+Math.sin(angle)*range};
-   if(!d.canStand(p.x,p.y,28)||!d.clearShot(p.x,p.y)||enemies.some(e=>Math.hypot(e.x-p.x,e.y-p.y )<55))continue;
-   const id=d.spawn(['brute','crawler','spitter','stalker','crawler','carrier'][enemies.length%6],p.x,p.y,enemies.length%5===0);if(id)enemies.push({...p,id});
-  }
-  if(enemies.length<10)throw Error('Kiting fixture requires ten spread threats; got '+enemies.length+' at '+JSON.stringify(lane));
-  g.switchWeapon('rifle');d.setInput({x:-Math.cos(lane.angle)*.55,y:-Math.sin(lane.angle)*.55,fire:true,angle:lane.angle,autoAim:false});g.grenade();d.step(300);
- }},
+ {id:'g1-kiting',rooms:true,state:'playing',burst:true,setup:stageKiting},
+ {id:'i2-kiting-high',rooms:true,state:'playing',burst:true,liveKiting:true,setup:integrationKitingSetup('high')},
+ {id:'i2-kiting-low',rooms:true,state:'playing',burst:true,liveKiting:true,setup:integrationKitingSetup('low')},
+ {id:'i2-low-calm',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setQuality('low');await d.prepare();d.invulnerable(true);d.refresh();}},
 
 ];
 
@@ -199,6 +228,11 @@ export function inspectFrame(){
  // Read the just-rendered default framebuffer before the browser clears it.
  const xs=[];for(let y=0;y<18;y++)for(let x=0;x<32;x++){const p=new Uint8Array(4);gl.readPixels(Math.floor((x+.5)*gl.drawingBufferWidth/32),Math.floor((y+.5)*gl.drawingBufferHeight/18),1,1,gl.RGBA,gl.UNSIGNED_BYTE,p);xs.push(`${p[0]>>3},${p[1]>>3},${p[2]>>3}`);}
  const enemies=g.enemies.snapshot.enemies.filter(e=>e.health>0),visible=enemies.filter(e=>r.visible(e.x,e.y));
+ const marineBounds=r.playerScreenBounds(g.player.radius),hudOverlaps=[];
+ for(const selector of ['#status-hud','#action-bar','.vitals','#boss-hud','#radar-hud','#hud-toasts']){
+  const element=document.querySelector(selector);if(!element||element.hidden||!element.getClientRects().length)continue;
+  const box=element.getBoundingClientRect();if(box.width>0&&box.height>0&&box.left<marineBounds.right&&box.right>marineBounds.left&&box.top<marineBounds.bottom&&box.bottom>marineBounds.top)hudOverlaps.push(selector);
+ }
  const playfieldSamples=[],marineLocalSamples=[];
  const playfieldProjection=d.measureLuminance?{inverseProjection:r.camera.projectionMatrixInverse.toArray(),world:r.camera.matrixWorld.toArray(),boundary:g.geometry.boundary??[{x:0,y:0},{x:g.geometry.bounds.width,y:0},{x:g.geometry.bounds.width,y:g.geometry.bounds.height},{x:0,y:g.geometry.bounds.height}]}:null;
  if(d.measureLuminance){
@@ -210,5 +244,5 @@ export function inspectFrame(){
    const sample=[Math.round(px*canvas.clientWidth),Math.round(py*canvas.clientHeight)];if(px>.15&&px<.85&&py>.2&&py<.8)playfieldSamples.push(sample);if(px>0&&px<1&&py>0&&py<1&&Math.hypot(x-g.player.x,y-g.player.y)<=96)marineLocalSamples.push(sample);
   }
  }
- return {shaderCompilations:d.shaderCompilations??null,recoveryProof:d.recoveryProof??null,lighting:r.lighting?.fixtures?.map(l=>({x:l.position.x,y:l.position.y,z:l.position.z,energy:l.intensity,color:l.color.getHex(),visible:l.visible})),poolLights:r.lighting?.pool?.lights?.filter(l=>l.visible).length,playfieldSamples,marineLocalSamples,playfieldProjection,abilities:g.abilities.snapshot,stats:g.stats,recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden,ui:{toasts:[...document.querySelectorAll('.hud-toast:not([hidden])')].map(n=>n.textContent),abilitySlots:[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,title:n.querySelector('.ability-title')?.textContent,value:n.querySelector('.ability-value')?.textContent,icon:!!n.querySelector('svg')})),damageNumbers:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>n.textContent),threats:document.querySelectorAll('.threat-marker:not([hidden])').length}};
+ return {interimMeshes:r.scene.getObjectByName('interim-ability-visuals')?.children.filter(o=>o.visible&&o.isMesh&&(o.count===undefined||o.count>0)).length??0,drawErrors:d.drawErrors??[],settingsProof:d.settingsProof??null,marineBounds,hudOverlaps,kitingProof:d.kitingProof??null,shaderCompilations:d.shaderCompilations??null,recoveryProof:d.recoveryProof??null,lighting:r.lighting?.fixtures?.map(l=>({x:l.position.x,y:l.position.y,z:l.position.z,energy:l.intensity,color:l.color.getHex(),visible:l.visible})),poolLights:r.lighting?.pool?.lights?.filter(l=>l.visible).length,playfieldSamples,marineLocalSamples,playfieldProjection,abilities:g.abilities.snapshot,stats:g.stats,recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden,ui:{toasts:[...document.querySelectorAll('.hud-toast:not([hidden])')].map(n=>n.textContent),abilitySlots:[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,title:n.querySelector('.ability-title')?.textContent,value:n.querySelector('.ability-value')?.textContent,icon:!!n.querySelector('svg')})),damageNumbers:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>n.textContent),threats:document.querySelectorAll('.threat-marker:not([hidden])').length}};
 }

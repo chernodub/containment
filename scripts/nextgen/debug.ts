@@ -16,13 +16,16 @@ import type {MutationId} from '../../src/game/roguelike/types';
 export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{},advanceUi:(dt:number)=>void=()=>{}){
  const update=game.update.bind(game),render=renderer.render.bind(renderer),hurt=game.hurt.bind(game),effect=renderer.effect.bind(renderer);
  const events:Array<{type:string;boon?:string;at:number}>=[];renderer.effect=e=>{events.push({type:e.type,boon:e.boon,at:game.elapsed});if(events.length>300)events.shift();effect(e);};
+ let realtime=false;
  let controls:GameInput={x:0,y:0,fire:false,angle:null,autoAim:true},immune=false,seed=Number(new URLSearchParams(location.search).get('seed')??1729);
  // RAF still owns resource recovery and diagnostics; only explicit steps advance time.
- game.update=()=>{};renderer.render=(g,_dt,menu)=>render(g,0,menu);
+ game.update=dt=>{if(realtime)update(dt,controls);};renderer.render=(g,dt,menu)=>{render(g,realtime?dt:0,menu);if(realtime)advanceUi(dt);};
  game.hurt=n=>{if(!immune)hurt(n);};
  const refresh=()=>{render(game,0,game.status==='menu');sync();advanceUi(0);};
  const ready=async()=>{beforePrepare();await renderer.prepare(game.node);refresh();};
  const api={game,renderer,events,prepare:ready,
+  /** Opt-in live RAF benchmark; the normal game loop measures actual simulation/render work. */
+  realtime(value:boolean){realtime=value;},
   async startRun(value=seed,options:{rigSelect?:boolean}={}){seed=value;controls={x:0,y:0,fire:false,angle:null,autoAim:true};setUiFixture(game,null);game.newRun(seed,options);events.length=0;await ready();},
   async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId}={}){
    const version=options.version??3,nodes=generateRun(seed,version).nodes,index=nodes.findIndex(n=>n.templateId===templateId);

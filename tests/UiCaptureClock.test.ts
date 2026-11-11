@@ -35,3 +35,27 @@ it('advances simulation, renderer and pooled UI on the same explicit capture clo
   rendererStub.roomLoading = true;
   expect(() => debug.step(16)).toThrow('Room is still loading');
 });
+
+it('opts into measured RAF simulation with the same controls and can return to fixed-step capture', () => {
+  const target: Record<string, any> = {};
+  vi.stubGlobal('window', target);
+  vi.stubGlobal('location', {search: '?debug=1'});
+  const update = vi.fn(), render = vi.fn(), advanceUi = vi.fn();
+  const game = {update, hurt: vi.fn(), status: 'playing', elapsed: 0} as unknown as DepthGame;
+  const renderer = {render, effect: vi.fn(), roomLoading: false} as unknown as DepthRenderer;
+  installDebug(game, renderer, vi.fn(), vi.fn(), vi.fn(), advanceUi);
+  const debug = target.__containmentDebug;
+  debug.setInput({x: -.55, y: 0, fire: true, angle: 0, autoAim: false});
+  debug.realtime(true);
+  game.update(16, {x: 1, y: 0, fire: false, angle: null, autoAim: true});
+  renderer.render(game, .016, false);
+  expect(update).toHaveBeenLastCalledWith(16, {x: -.55, y: 0, fire: true, angle: 0, autoAim: false});
+  expect(render).toHaveBeenLastCalledWith(game, .016, false);
+  expect(advanceUi).toHaveBeenLastCalledWith(.016);
+  debug.realtime(false);
+  game.update(16, {x: 1, y: 0, fire: false, angle: null, autoAim: true});
+  renderer.render(game, .016, false);
+  expect(update).toHaveBeenCalledTimes(1);
+  expect(render).toHaveBeenLastCalledWith(game, 0, false);
+  expect(advanceUi).toHaveBeenCalledTimes(1);
+});
