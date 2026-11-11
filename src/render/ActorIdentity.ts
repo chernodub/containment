@@ -155,7 +155,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
           light=(2.0+identityPulse*.7)*identityOpening;
         }
         if(role>3.5&&role<4.5){color=vec3(.62,.61,.52);light=.22+max(0.0,dot(normalize(identityNormal),normalize(vec3(.25,.65,.72))))*.58;}
-        if(role>4.5&&role<5.5){color=vec3(.075,.09,.12);light=.5+facing*.7;}
+        if(role>4.5&&role<5.5){color=vec3(.018,.04,.034);light=.5+facing*.7;}
         if(role>5.5){color=identityChampion>1.5?vec3(1.0,.26,.64):vec3(1.0,.70,.23);light=.9+facing*.7;}
         if(role<.5)light*=identityPulse*(1.0+identityShimmer*.3*sin(identityTime*5.0+identityView.y*8.0));
         light*=.75+identityAlpha*.25;

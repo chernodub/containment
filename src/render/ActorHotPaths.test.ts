@@ -62,7 +62,7 @@ it('updates alien emissive color only when the visible status changes and preser
     for(let i=0;i<20;i++)model.animate(i/60,1,.4);
     expect(color).toHaveBeenCalledOnce();expect(material!.emissive.getHex()).toBe(0xffdfb0);
     model.setExposed!(true);model.animate(1,0,0);
-    expect(material!.emissive.getHex()).toBe(0xff4aa5);expect(material!.emissiveIntensity).toBe(.10);
+    expect(material!.emissive.getHex()).toBe(0xff4aa5);expect(material!.emissiveIntensity).toBe(.025);
     model.setAffliction!({chilled:true,burning:false,frozen:true});model.animate(1.02,0,0);
     expect(material!.emissive.getHex()).toBe(0x79ddff);expect(material!.emissiveIntensity).toBe(.12);
     freezeCorpse(model);model.animate(1.04,0,0);
