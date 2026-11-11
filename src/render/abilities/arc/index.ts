@@ -11,17 +11,26 @@ const NO_DEPLOYABLES: readonly DeployableSnapshot[] = [];
 type Discharge = { live: boolean; x: number; z: number; age: number; delay: number; life: number; fired: boolean; seed: number };
 type PylonState = { id: number; health: number; flash: number; seen: boolean };
 type Blink = { live: boolean; x: number; z: number; angle: number; age: number };
+type Bolt = { live: boolean; x: number; z: number; tx: number; tz: number; age: number };
+type Front = { live: boolean; x: number; z: number; radius: number; age: number; life: number; reverse: boolean; time: boolean };
 
-/** Mechanical violet-white tech with sparse, sharp lightning and open space around targets. */
+/** Heavy violet-white discharges, grounded machinery and cool time-dilation language. */
 class ArcPresentation implements AbilityPresentation {
   private discharges: Discharge[] = Array.from({ length: 48 }, () => ({ live: false, x: 0, z: 0, age: 0, delay: 0, life: .55, fired: false, seed: 0 }));
   private pylons: PylonState[] = Array.from({ length: 8 }, () => ({ id: -1, health: 0, flash: 0, seen: false }));
   private blinks: Blink[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
+  private bolts: Bolt[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, tx: 0, tz: 0, age: 0 }));
+  private fronts: Front[] = Array.from({ length: 12 }, () => ({ live: false, x: 0, z: 0, radius: 1, age: 0, life: 1, reverse: false, time: false }));
   private nextDischarge = 0;
   private nextBlink = 0;
   private chainAt = -100;
   private chainHop = 0;
   private emissionAge = 0;
+  private nextBolt = 0;
+  private nextFront = 0;
+  private dashLive = false;
+  private dashX = 0;
+  private dashZ = 0;
   private disposed = false;
 
   constructor(private readonly kit: ElementKit) {}
@@ -32,15 +41,24 @@ class ArcPresentation implements AbilityPresentation {
     if (event.phase === 'denied' || event.phase === 'ready' || event.phase === 'overdrive-ready') return;
     if (event.ability === 'static-step') {
       if (event.phase === 'dash-start') {
+        this.dashX = px; this.dashZ = pz; this.dashLive = true;
         this.blink(px, pz, event.angle ?? 0);
         k.burst(px, .9, pz, 'arc', 12, 1.6, .3);
-        k.flash(px, pz, VIOLET, 4, 3.5, 3, .1);
+        k.flash(px, pz, WHITE, 8, 4.5, 3, .1);
       } else if (event.phase === 'dash-end') {
         const tx=(event.targetX??x)/UNIT,tz=(event.targetY??y)/UNIT;
+        if (this.dashLive) {
+          const bolt = this.bolts[this.nextBolt++ % this.bolts.length];
+          bolt.live = true; bolt.x = this.dashX; bolt.z = this.dashZ; bolt.tx = tx; bolt.tz = tz; bolt.age = 0;
+        }
+        this.dashLive = false;
         this.blink(tx, tz, event.angle ?? 0);
         k.ring(tx, tz, .9, VIOLET, .3);
+        this.front(tx, tz, 1.15, .4);
+        k.scar('star', tx, tz, 1.2, 0x181421, 7, event.angle ?? 0);
+        k.flash(tx, tz, WHITE, 11, 4.2, 4, .1);
         k.distort(tx, tz, 1.3, .0025, .28);
-        k.burst(tx, .2, tz, 'arc', 18, 2.4, .45);
+        k.burst(tx, .2, tz, 'arc', 24, 3, .55);
       } else if (event.phase === 'link') this.strike(event, px, pz, .012);
       return;
     }
@@ -51,8 +69,8 @@ class ArcPresentation implements AbilityPresentation {
         this.chainAt = k.time;
         this.strike(event, px, pz, Math.min(7, this.chainHop++) * .04);
       } else if (event.phase === 'impact') {
-        k.flash(px, pz, WHITE, 5.5, 4, 3, .12);
-        k.camera(.16);
+        k.flash(px, pz, WHITE, 10, 5, 4, .12);
+        k.camera(.24);
       }
       return;
     }
@@ -60,10 +78,17 @@ class ArcPresentation implements AbilityPresentation {
       if (event.phase === 'impact') {
         const tx = (event.targetX ?? x) / UNIT, tz = (event.targetY ?? y) / UNIT;
         k.ring(tx, tz, 1.25, VIOLET, .45);
-        k.burst(tx, .08, tz, 'arc', 16, 2.1, .45);
-        k.decal(tx, tz, .7, 0x26313d, 6);
-        k.flash(tx, tz, VIOLET, 5, 4, 3, .18);
-        k.camera(.17);
+        this.front(tx, tz, 1.65, .55);
+        k.burst(tx, .08, tz, 'arc', 26, 3.2, .6);
+        k.scar('star', tx, tz, 1.2, 0x1e182b, 8);
+        k.flash(tx, tz, WHITE, 14, 5.5, 4, .1);
+        k.camera(.25);
+        const chunks = k.low ? 4 : 12;
+        for (let i = 0; i < chunks; i++) {
+          const a = i * 2.39996323;
+          k.mote('solid', tx, .12, tz, Math.cos(a) * (1.5 + i % 3), 1.5 + i % 4 * .5,
+            Math.sin(a) * (1.5 + i % 3), .06 + i % 3 * .025, .8, STEEL);
+        }
       } else if (event.phase === 'link') {
         // width identifies the persistent marine link; its authoritative snapshot draws that cable.
         if (event.width === undefined) this.strike(event, px, pz, 0, true);
@@ -83,12 +108,14 @@ class ArcPresentation implements AbilityPresentation {
       if (event.phase === 'impact') {
         k.ring(px, pz, 5.5, VIOLET, .7);
         k.ring(px, pz, 3.2, WHITE, .45);
+        this.front(px, pz, 6, .85, false, true);
         k.distort(px, pz, 6, .0045, .7);
-        k.flash(px, pz, VIOLET, 7, 6, 5, .28);
+        k.flash(px, pz, WHITE, 13, 7, 5, .16);
         k.burst(px, .65, pz, 'arc', 24, 3.2, .6);
         k.camera(.27);
       } else if (event.phase === 'end') {
         k.ring(px, pz, 5.5, VIOLET, .65, true);
+        this.front(px, pz, 6, .65, true, true);
         k.distort(px, pz, 5.5, -.0025, .65);
         k.burst(px, .2, pz, 'arc', 12, 1.5, .4);
       }
@@ -100,19 +127,24 @@ class ArcPresentation implements AbilityPresentation {
     b.live = true; b.x = x; b.z = z; b.angle = angle; b.age = 0;
   }
 
+  private front(x: number, z: number, radius: number, life: number, reverse = false, time = false): void {
+    const f = this.fronts[this.nextFront++ % this.fronts.length];
+    f.live = true; f.x = x; f.z = z; f.radius = radius; f.life = life; f.age = 0; f.reverse = reverse; f.time = time;
+  }
+
   private strike(event: AbilityEvent, x: number, z: number, delay: number, pylon = false): void {
     if (!Number.isFinite(event.targetX) || !Number.isFinite(event.targetY)) return;
     const k = this.kit, tx = event.targetX! / UNIT, tz = event.targetY! / UNIT;
-    k.beam(x, pylon ? 1.5 : .95, z, tx, .75, tz, VIOLET, k.low ? .024 : .043, .19, true, delay);
+    k.heavyBeam(x, pylon ? 1.5 : .95, z, tx, .75, tz, VIOLET, k.low ? .06 : .095, .52, true, delay);
     if (!k.low) {
-      // A distinct white core and short fork create a readable electrical silhouette.
-      k.beam(x, pylon ? 1.5 : .95, z, tx, .75, tz, WHITE, .013, .115, true, delay);
+      // Separated branches share the real hop's destination neighborhood, never another damage lane.
       const dx = tx - x, dz = tz - z, length = Math.hypot(dx, dz) || 1;
-      k.beam(x + dx * .56, 1.03, z + dz * .56,
-        tx - dz / length * .32, .47, tz + dx / length * .32, VIOLET, .015, .14, true, delay + .018);
+      for (let side = -1; side <= 1; side += 2) k.beam(x + dx * .43, 1.1, z + dz * .43,
+        tx - dz / length * .45 * side, .45 + (side + 1) * .14, tz + dx / length * .45 * side,
+        side === 1 ? WHITE : VIOLET, .033, .28, true, delay + .018);
     }
     const d = this.discharges[this.nextDischarge++ % this.discharges.length];
-    d.live = true; d.x = tx; d.z = tz; d.age = 0; d.delay = delay; d.life = .58; d.fired = false; d.seed = this.nextDischarge;
+    d.live = true; d.x = tx; d.z = tz; d.age = 0; d.delay = delay; d.life = .68; d.fired = false; d.seed = this.nextDischarge;
   }
 
   update(frame: AbilityFrame): void {
@@ -121,15 +153,29 @@ class ArcPresentation implements AbilityPresentation {
     this.emissionAge += dt;
     const emit = dt > 0 && this.emissionAge > .085;
     if (emit) this.emissionAge %= .085;
+    for (const f of this.fronts) {
+      if (!f.live) continue;
+      f.age += dt;
+      if (f.age >= f.life) { f.live = false; continue; }
+      const t = f.age / f.life, progress = f.reverse ? 1 - t : Math.min(1, .08 + f.age / .22);
+      k.front(f.x, f.z, f.radius, progress, f.time ? VIOLET : WHITE, f.time ? .55 : .65, (1 - t) * .65);
+    }
+    if (this.dashLive && frame.game) this.bolt(this.dashX, this.dashZ, frame.game.player.x / UNIT, frame.game.player.y / UNIT, .85);
+    for (const b of this.bolts) {
+      if (!b.live) continue;
+      b.age += dt;
+      if (b.age >= .27) { b.live = false; continue; }
+      this.bolt(b.x, b.z, b.tx, b.tz, (1 - b.age / .27) * .85);
+    }
     for (const d of this.discharges) {
       if (!d.live) continue;
       d.age += dt;
       if (d.age >= d.delay + d.life) { d.live = false; continue; }
       if (d.age < d.delay) continue;
-      if (!d.fired) {
+      if (!d.fired && dt > 0) {
         d.fired = true;
-        k.flash(d.x, d.z, VIOLET, 3, 2.7, 2, .11);
-        k.burst(d.x, .7, d.z, 'arc', 6, 1.3, .35);
+        k.flash(d.x, d.z, WHITE, 8, 4, 3, .12);
+        k.burst(d.x, .7, d.z, 'arc', 9, 1.8, .45);
       }
       const fade = 1 - (d.age - d.delay) / d.life;
       const count = k.low ? 2 : 5;
@@ -137,7 +183,8 @@ class ArcPresentation implements AbilityPresentation {
         const a = d.seed + i * TAU / count + (k.reducedMotion ? 0 : k.time * 5);
         const radius = .22 + i % 2 * .18;
         k.draw('spark', d.x + Math.cos(a) * radius, .5 + i % 3 * .22, d.z + Math.sin(a) * radius,
-          .022, .065, 1, i % 2 ? VIOLET : WHITE, fade * .65, -a, .7);
+          .045, .13, 1, i % 2 ? VIOLET : WHITE, fade * .8, -a, .7);
+        if (!k.low && i % 2 === 0) k.ribbon(d.x, .55, d.z, d.x + Math.cos(a) * radius, .9, d.z + Math.sin(a) * radius, VIOLET, .025, fade * .55, true);
       }
     }
     for (const b of this.blinks) {
@@ -153,8 +200,8 @@ class ArcPresentation implements AbilityPresentation {
     for (const state of this.pylons) if (!state.seen) state.id = -1;
     for (const link of frame.snapshot?.links ?? NO_LINKS) {
       const x = link.x / UNIT, z = link.y / UNIT, tx = link.targetX / UNIT, tz = link.targetY / UNIT;
-      k.ribbon(x, 1.5, z, tx, .85, tz, VIOLET, k.low ? .016 : .023, .45, !k.low);
-      if (!k.low) k.ribbon(x, 1.5, z, tx, .85, tz, WHITE, .006, .45, true);
+      k.ribbon(x, 1.5, z, tx, .85, tz, VIOLET, k.low ? .035 : .055, .65, !k.low);
+      if (!k.low) k.ribbon(x, 1.5, z, tx, .85, tz, WHITE, .018, .8, true);
       if (emit && !k.low) {
         const t = (Math.sin(k.time * 1.3) + 1) * .5;
         k.mote('spark', x + (tx - x) * t, 1.5 - t * .65, z + (tz - z) * t, 0, .2, 0, .045, .22, VIOLET);
@@ -163,9 +210,23 @@ class ArcPresentation implements AbilityPresentation {
     if (frame.snapshot?.hostileTimeScale !== undefined && frame.snapshot.hostileTimeScale < 1) this.overclock(frame, emit);
   }
 
+  private bolt(x: number, z: number, tx: number, tz: number, fade: number): void {
+    const k = this.kit, dx = tx - x, dz = tz - z, length = Math.hypot(dx, dz);
+    if (length < .015) return;
+    const sx = -dz / length, sz = dx / length, count = k.low ? 5 : 9;
+    let px = x, pz = z;
+    for (let i = 1; i <= count; i++) {
+      const t = i / count, shift = i === count ? 0 : Math.sin(i * 13.7) * .3 * Math.sin(t * Math.PI);
+      const nx = x + dx * t + sx * shift, nz = z + dz * t + sz * shift;
+      k.ribbon(px, .85, pz, nx, .85, nz, VIOLET, .12, fade * .6, false);
+      k.ribbon(px, .85, pz, nx, .85, nz, WHITE, .045, fade, false);
+      px = nx; pz = nz;
+    }
+  }
+
   private lightningBody(x: number, z: number, angle: number, fade: number): void {
     const k = this.kit, sx = -Math.sin(angle), sz = Math.cos(angle);
-    k.ribbon(x, 1.65, z, x, .7, z, WHITE, .021, fade, true);
+    k.ribbon(x, 1.65, z, x, .7, z, WHITE, .055, fade, true);
     k.ribbon(x, 1.3, z, x + sx * .42, .9, z + sz * .42, VIOLET, .019, fade, true);
     k.ribbon(x, 1.3, z, x - sx * .42, .9, z - sz * .42, VIOLET, .019, fade, true);
     k.ribbon(x, .7, z, x + sx * .22, .05, z + sz * .22, VIOLET, .023, fade, true);
@@ -209,7 +270,7 @@ class ArcPresentation implements AbilityPresentation {
       }
     }
     k.draw('shard', x, 1.63 * rise, z, .12, .14, .12, WHITE, fade * .75, p.angle);
-    k.lightAt(p.id, x, z, VIOLET, 1.45 * glow * fade, 3.8);
+    k.lightAt(p.id, x, z, VIOLET, 2.8 * glow * fade, 4.8);
   }
 
   private overclock(frame: AbilityFrame, emit: boolean): void {
@@ -218,31 +279,34 @@ class ArcPresentation implements AbilityPresentation {
     const x = g.player.x / UNIT, z = g.player.y / UNIT;
     const remaining = frame.snapshot?.overdrive.activeRemainingMs ?? 0;
     const fade = Math.min(1, remaining / 450);
-    // Sparse dial ticks give the state a unique silhouette without tinting hostile warnings.
-    const count = k.low ? 8 : 12, rotation = k.reducedMotion ? 0 : k.time * .19;
+    k.grade(0, fade * .9);
+    k.front(x, z, 1.35, 1, VIOLET, .13, fade * .22);
+    // Segmented dial and thick hands remain readable on the forward Low path too.
+    const count = k.low ? 8 : 16, rotation = k.reducedMotion ? 0 : k.time * .19;
     for (let i = 0; i < count; i++) {
-      const a = i * TAU / count + rotation, r = 1.05;
-      k.draw('shard', x + Math.cos(a) * r, .06, z + Math.sin(a) * r, .025, .045, i % 3 ? .08 : .16,
-        i % 3 ? VIOLET : WHITE, fade * .5, -a);
+      const a = i * TAU / count + rotation, r = 1.5;
+      k.draw('shard', x + Math.cos(a) * r, .07, z + Math.sin(a) * r, .045, .055, i % 4 ? .12 : .25,
+        i % 4 ? VIOLET : WHITE, fade * .7, -a);
     }
     k.lightAt(9000, x, z, VIOLET, 1.1 * fade, 4);
-    if (!k.low) {
+    {
       let n = 0;
       for (const e of g.enemies.snapshot.enemies) {
-        if (n++ >= 25) break;
+        if (n++ >= (k.low ? 12 : 25)) break;
         const speed = Math.hypot(e.velocityX, e.velocityY);
         if (speed < 10) continue;
-        const tx = e.x / UNIT - e.velocityX / UNIT * .09, tz = e.y / UNIT - e.velocityY / UNIT * .09;
-        k.ribbon(e.x / UNIT, .25, e.y / UNIT, tx, .25, tz, VIOLET, .016, fade * .16, false);
+        const tx = e.x / UNIT - e.velocityX / UNIT * .24, tz = e.y / UNIT - e.velocityY / UNIT * .24;
+        k.ribbon(e.x / UNIT, .35, e.y / UNIT, tx, .35, tz, VIOLET, .045, fade * .32, false);
+        if (!k.low) k.ribbon(e.x / UNIT, .7, e.y / UNIT, tx, .7, tz, WHITE, .02, fade * .14, false);
       }
       n = 0;
       for (const bullet of g.bullets) {
-        if (n++ >= 80) break;
-        const length = bullet.kind === 'player' ? .8 : .45;
+        if (n++ >= (k.low ? 24 : 80)) break;
+        const length = bullet.kind === 'player' ? 2.1 : 1.2;
         k.ribbon(bullet.x / UNIT, bullet.visualMuzzle?.y ?? .9, bullet.y / UNIT,
           bullet.x / UNIT - Math.cos(bullet.request.angle) * length, bullet.visualMuzzle?.y ?? .9,
           bullet.y / UNIT - Math.sin(bullet.request.angle) * length, bullet.kind === 'player' ? WHITE : VIOLET,
-          .012, fade * (bullet.kind === 'player' ? .35 : .12), false);
+          k.low ? .018 : .028, fade * (bullet.kind === 'player' ? .65 : .28), false);
       }
       if (emit && Math.hypot(g.player.vx, g.player.vy) > 25) {
         const vx = g.player.vx / UNIT, vz = g.player.vy / UNIT;
@@ -255,7 +319,9 @@ class ArcPresentation implements AbilityPresentation {
     for (const d of this.discharges) d.live = false;
     for (const b of this.blinks) b.live = false;
     for (const p of this.pylons) p.id = -1;
-    this.chainAt = -100; this.chainHop = 0; this.emissionAge = 0;
+    for (const b of this.bolts) b.live = false;
+    for (const f of this.fronts) f.live = false;
+    this.chainAt = -100; this.chainHop = 0; this.emissionAge = 0; this.dashLive = false;
   }
   dispose(): void { if (this.disposed) return; this.disposed = true; this.clear(); }
 }
