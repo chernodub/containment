@@ -2,6 +2,8 @@ import { MeshStandardMaterial, ShaderChunk } from 'three';
 
 const installed = new WeakSet<MeshStandardMaterial>();
 const environmentGains = new WeakMap<MeshStandardMaterial, {value:number}>();
+const practicalShadowFills = new WeakMap<MeshStandardMaterial, {value:number}>();
+const shadowReadability = new WeakMap<MeshStandardMaterial, {value:number}>();
 const reflectionLighting = ShaderChunk.lights_fragment_maps
   .replace('iblIrradiance += getIBLIrradiance( geometryNormal );', 'iblIrradiance += roomDiffuseEnvironmentGain * getIBLIrradiance( geometryNormal );')
   .replace('radiance += getIBLRadiance( geometryViewDir, geometryNormal, material.roughness );', 'radiance += getIBLRadiance( geometryViewDir, geometryNormal, material.roughness ) * mix(1.0,mix(1.0,.02,smoothstep(.15,.5,material.roughness)),1.0-roomDiffuseEnvironmentGain);');
@@ -20,8 +22,13 @@ float roomKeyOcclusion = 1.0;
 #endif
 `;
 const practicalOcclusion = /* glsl */ `
+  // Practical fixtures represent broad diffusers, not mathematical pin lights.
+  // Bound near-field irradiance so nearby machine roofs retain their finish.
+  #if UNROLLED_LOOP_INDEX < 4
+    directLight.color *= min( 1.0, dot( pointLight.position - geometryPosition, pointLight.position - geometryPosition ) / roomPracticalNearField );
+  #endif
   #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0 && UNROLLED_LOOP_INDEX < 4
-    directLight.color *= mix( 0.025, 1.0, roomKeyOcclusion );
+    directLight.color *= mix( roomPracticalShadowFill, 1.0, roomKeyOcclusion );
   #endif
 `;
 const directionalShadowExpression = 'directLight.color *= ( directLight.visible && receiveShadow ) ? getShadow( directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowIntensity, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, vDirectionalShadowCoord[ i ] ) : 1.0;';
@@ -51,19 +58,24 @@ const localLights = ShaderChunk.lights_fragment_begin
  * Optional probe gain keeps rough room surfaces from becoming a second ambient
  * light, while sharp reflections remain available on polished and wet surfaces.
  */
-export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvironmentGain?:number): void {
+export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvironmentGain?:number, practicalShadowFill?:number, readableBounce?:number): void {
   let environmentGain=environmentGains.get(material);
   if(!environmentGain){environmentGain={value:diffuseEnvironmentGain??1};environmentGains.set(material,environmentGain);}
   if(diffuseEnvironmentGain!==undefined)environmentGain.value=Math.max(0,Math.min(1,diffuseEnvironmentGain));
+  let shadowFill=practicalShadowFills.get(material);if(!shadowFill){shadowFill={value:practicalShadowFill??.025};practicalShadowFills.set(material,shadowFill);}if(practicalShadowFill!==undefined)shadowFill.value=Math.max(.025,Math.min(.25,practicalShadowFill));
+  let bounce=shadowReadability.get(material);if(!bounce){bounce={value:readableBounce??0};shadowReadability.set(material,bounce);}if(readableBounce!==undefined)bounce.value=Math.max(0,Math.min(.01,readableBounce));
   if (installed.has(material)) return;
   installed.add(material);
   const previous = material.onBeforeCompile;
   const key = material.customProgramCacheKey();
+  const nearField={value:['environment-floor','painted-steel-deck','annulus-deck','shaft-deck'].includes(material.name)?3.24:9};
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);
-    shader.uniforms??={};shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;
-    shader.fragmentShader = 'uniform float roomDiffuseEnvironmentGain;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', localLights).replace('#include <lights_fragment_maps>',reflectionLighting);
+    shader.uniforms??={};shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;shader.uniforms.roomPracticalShadowFill=shadowFill!;shader.uniforms.roomPracticalNearField=nearField;shader.uniforms.roomShadowReadability=bounce!;
+    shader.fragmentShader = 'uniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
+      float roomShadowLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));
+      reflectedLight.indirectDiffuse+=vec3(.68,.82,1.0)*roomShadowReadability*(1.0-smoothstep(.008,.04,roomShadowLuma));`);
   };
-  material.customProgramCacheKey = () => `${key}:local-light-rejection-v3`;
+  material.customProgramCacheKey = () => `${key}:local-light-rejection-v5`;
   material.needsUpdate = true;
 }

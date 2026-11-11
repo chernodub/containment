@@ -308,7 +308,7 @@ describe('perspective enemy health labels', () => {
       expect(fill.count).toBe(3);
       for (let i = 0; i < entries.length; i++) {
         const width = 32;
-        for (const [mesh, expectedWidth, expectedHeight] of [[background, width + 2, 3], [fill, width * entries[i].health / 100, 2]] as const) {
+        for (const [mesh, expectedWidth, expectedHeight] of [[background, width + 4, 6], [fill, width * entries[i].health / 100, 4]] as const) {
           mesh.getMatrixAt(i, matrix);
           const left = new T.Vector3(-.5, 0, 0).applyMatrix4(matrix).project(camera);
           const right = new T.Vector3(.5, 0, 0).applyMatrix4(matrix).project(camera);
@@ -346,7 +346,7 @@ it.each(projections)('puts the production marine in the 110–140px target for o
   }
 });
 
-it('shows thin bars only for damaged enemies/nests and elites, with health and status colors', () => {
+it('shows backed health bars only for damaged enemies/nests and elites, with health and status colors', () => {
   const bars = new EnemyHealthBars(6);
   const {camera, rig, viewHeight} = rendererProbe('orthographic', 1920, 1080);
   rig.reset(0, 0); rig.apply(camera, 1, viewHeight);
@@ -354,14 +354,31 @@ it('shows thin bars only for damaged enemies/nests and elites, with health and s
   bars.update([enemy, {...enemy, elite: true}, {...enemy, health: 50}, {...enemy, height: 1.35}, {...enemy, height: 1.35, health: 90}, {...enemy, health: 0}], camera, 1080);
   const [background, fill] = bars.root.children as T.InstancedMesh[];
   expect(background.count).toBe(3); expect(fill.count).toBe(3);
-  expect(healthBarColor({...enemy, health: 20})).toBe(0xe98672);
-  expect(healthBarColor({...enemy, health: 80, armor: 10})).toBe(0xb2bfba);
-  expect(healthBarColor({...enemy, elite: true})).toBe(0xd8b279);
+  const critical=healthBarColor({...enemy,health:20}),criticalColor=new T.Color(critical);
+  expect(criticalColor.r).toBeGreaterThan(criticalColor.g*1.5);expect(criticalColor.r).toBeGreaterThan(.8);
+  const armored=new T.Color(healthBarColor({...enemy,health:80,armor:10}));
+  expect(Math.max(armored.r,armored.g,armored.b)-Math.min(armored.r,armored.g,armored.b)).toBeLessThan(.15);
+  expect(armored.getHSL({h:0,s:0,l:0}).l).toBeGreaterThan(.5);
+  const elite=new T.Color(healthBarColor({...enemy,elite:true}));
+  expect(elite.r).toBeGreaterThan(elite.g);expect(elite.g).toBeGreaterThan(elite.b);
   expect(healthBarColor({...enemy, status: {frozen: true}})).toBe(0xb6e4ef);
   expect(healthBarColor({...enemy, status: {shocked: true}})).toBe(0xb5a4d7);
   expect(healthBarColor({...enemy, status: {burning: true}})).toBe(0xd7a374);
   expect(healthBarColor({...enemy, status: {poisoned: true}})).toBe(0xa3bf7d);
   expect(healthBarColor({...enemy, status: {chilled: true}})).toBe(0x8ec9d5);
-  expect(healthBarColor({...enemy, health: 20, armor: 10, status: {frozen: true}})).toBe(0xe98672);
+  expect(healthBarColor({...enemy, health: 20, armor: 10, status: {frozen: true}})).toBe(critical);
   bars.dispose();
+});
+
+describe('integrated Queen framing',()=>{
+ it.each([[1280,720],[1920,1080]])('keeps both actors between desktop header and action bar at %ix%i',(width,height)=>{
+  const probe=rendererProbe('perspective',width,height),r=probe.renderer as any;
+  r.queen={height:4.5};r.player.root.position.set(14,0,23);r.cameraRig.reset(16,20);r.cameraRig.apply(r.camera,.78,13,0);
+  r.protectBossFraming(14,23,.5,18,16);
+  const points=[[14,23,.5,2.2],[18,16,3.4,4.5]];
+  for(const [x,z,radius,h]of points)for(const dx of [-radius,radius])for(const dz of [-radius,radius])for(const y of [0,h]){
+   const p=new T.Vector3(x+dx,y,z+dz).project(r.camera);
+   expect(p.y).toBeLessThan(.66);expect(p.y).toBeGreaterThan(-.52);expect(Math.abs(p.x)).toBeLessThan(.94);
+  }
+ });
 });

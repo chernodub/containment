@@ -10,8 +10,13 @@ gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.);sc
 /** Fixed GPU inventory. Flame/smoke share the game's licensed flipbook assets. */
 export class InstanceBatch {
   readonly mesh: T.InstancedMesh;
-  private readonly dummy = new T.Object3D();
   private readonly color = new T.Color();
+  private readonly colorKeys = new Float64Array(64).fill(NaN);
+  private readonly colorValues = new Float64Array(64 * 3);
+  private readonly matrixRange = { start: 0, count: 0 };
+  private readonly colorRange = { start: 0, count: 0 };
+  private readonly alphaRange = { start: 0, count: 0 };
+  private readonly phaseRange = { start: 0, count: 0 };
   private readonly alpha: T.InstancedBufferAttribute;
   private readonly phase: T.InstancedBufferAttribute;
   private readonly texture?: T.Texture;
@@ -109,13 +114,39 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.7+gl_FragCoord.y*.00008;' : ''}
       // Flame tongues rise vertically; tumbling the card creates paper-like shards.
       if (this.kind === 'flame' || this.kind === 'smoke') rotationZ = 0;
     }
-    this.dummy.position.set(x, y, z);
-    this.dummy.rotation.set(this.kind === 'decal' ? -Math.PI / 2 : 0, rotationY, rotationZ);
-    this.dummy.scale.set(sx, sy, sz);
-    this.dummy.updateMatrix();
-    this.mesh.setMatrixAt(i, this.dummy.matrix);
-    this.color.setHex(color);
-    this.mesh.setColorAt(i, this.color);
+    // These primitives only use XYZ Euler rotations with X = 0 (or -PI/2
+    // for deck decals). Write the same transform without Object3D's quaternion
+    // callbacks and an intermediate Matrix4 copy for every particle.
+    const c = Math.cos(rotationY), s = Math.sin(rotationY), a = Math.cos(rotationZ), b = Math.sin(rotationZ);
+    const matrix = this.mesh.instanceMatrix.array, offset = i * 16;
+    matrix[offset] = c * a * sx;
+    matrix[offset + 4] = -c * b * sy;
+    matrix[offset + 8] = s * sz;
+    if (this.kind === 'decal') {
+      matrix[offset + 1] = -s * a * sx;
+      matrix[offset + 2] = -b * sx;
+      matrix[offset + 5] = s * b * sy;
+      matrix[offset + 6] = -a * sy;
+      matrix[offset + 9] = c * sz;
+      matrix[offset + 10] = 0;
+    } else {
+      matrix[offset + 1] = b * sx;
+      matrix[offset + 2] = -s * a * sx;
+      matrix[offset + 5] = a * sy;
+      matrix[offset + 6] = s * b * sy;
+      matrix[offset + 9] = 0;
+      matrix[offset + 10] = c * sz;
+    }
+    matrix[offset + 3] = matrix[offset + 7] = matrix[offset + 11] = 0;
+    matrix[offset + 12] = x; matrix[offset + 13] = y; matrix[offset + 14] = z; matrix[offset + 15] = 1;
+    // A fixed cache keeps repeated element colors from repeating sRGB conversion.
+    const key = (color ^ (color >>> 8) ^ (color >>> 16)) & 63, rgb = key * 3;
+    if (this.colorKeys[key] !== color) {
+      this.color.setHex(color);
+      this.colorKeys[key] = color;
+      this.colorValues[rgb] = this.color.r; this.colorValues[rgb + 1] = this.color.g; this.colorValues[rgb + 2] = this.color.b;
+    }
+    this.mesh.instanceColor!.setXYZ(i, this.colorValues[rgb], this.colorValues[rgb + 1], this.colorValues[rgb + 2]);
     this.alpha.setX(i, opacity);
     this.phase.setX(i, Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
@@ -123,9 +154,20 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.7+gl_FragCoord.y*.00008;' : ''}
 
   end(): void {
     this.mesh.visible = this.mesh.count > 0;
-    this.mesh.instanceMatrix.needsUpdate = true;
-    this.mesh.instanceColor!.needsUpdate = true;
-    this.alpha.needsUpdate = this.phase.needsUpdate = true;
+    if (!this.mesh.count) return;
+    this.upload(this.mesh.instanceMatrix, this.matrixRange, this.mesh.count * 16);
+    this.upload(this.mesh.instanceColor!, this.colorRange, this.mesh.count * 3);
+    this.upload(this.alpha, this.alphaRange, this.mesh.count);
+    this.upload(this.phase, this.phaseRange, this.mesh.count);
+  }
+
+  private upload(attribute: T.InstancedBufferAttribute, range: { start: number; count: number }, count: number): void {
+    // Three clears updateRanges after upload; reuse the records when reattaching
+    // them next frame, and transfer only the live prefix of each fixed pool.
+    range.count = count;
+    attribute.updateRanges[0] = range;
+    attribute.updateRanges.length = 1;
+    attribute.needsUpdate = true;
   }
 
   dispose(): void {

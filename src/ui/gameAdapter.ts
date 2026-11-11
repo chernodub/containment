@@ -124,9 +124,14 @@ export function getCameraFootprint(renderer: DepthRenderer, out: {x: number; y: 
   return true;
 }
 
+/** Read prepared CSS dimensions; legacy facades retain their live canvas contract. */
+export function getViewportWidth(renderer: DepthRenderer): number {return renderer.viewportWidth ?? renderer.canvas.clientWidth;}
+export function getViewportHeight(renderer: DepthRenderer): number {return renderer.viewportHeight ?? renderer.canvas.clientHeight;}
+
 /** Project using the public camera matrices; accepts an output object for pooled UI. */
 export function projectWorld(renderer: DepthRenderer, x: number, y: number, out: ScreenPoint, height = .8): ScreenPoint {
   const next = renderer as NextRenderer;
+  const width = getViewportWidth(renderer), viewportHeight = getViewportHeight(renderer);
   const v = renderer.camera?.matrixWorldInverse?.elements;
   const p = renderer.camera?.projectionMatrix?.elements;
   let inFrustum = true;
@@ -149,10 +154,10 @@ export function projectWorld(renderer: DepthRenderer, x: number, y: number, out:
     const divisor = Math.max(Math.abs(cw), 1e-6);
     const nx = (p[0] * vx + p[4] * vy + p[8] * vz + p[12] * vw) / divisor;
     const ny = (p[1] * vx + p[5] * vy + p[9] * vz + p[13] * vw) / divisor;
-    out.x = (nx + 1) * renderer.canvas.clientWidth / 2;
-    out.y = (1 - ny) * renderer.canvas.clientHeight / 2;
+    out.x = (nx + 1) * width / 2;
+    out.y = (1 - ny) * viewportHeight / 2;
   }
-  out.visible = inFrustum && Number.isFinite(out.x) && Number.isFinite(out.y) && out.x > 32 && out.y > 32 && out.x < renderer.canvas.clientWidth - 32 && out.y < renderer.canvas.clientHeight - 32;
+  out.visible = inFrustum && Number.isFinite(out.x) && Number.isFinite(out.y) && out.x > 32 && out.y > 32 && out.x < width - 32 && out.y < viewportHeight - 32;
   return out;
 }
 

@@ -1,0 +1,60 @@
+import * as T from 'three';
+import { describe, expect, it, vi } from 'vitest';
+import { InstanceBatch, type Primitive } from './InstanceBatch';
+
+const kinds: Primitive[] = ['shard', 'spark', 'smoke', 'flame', 'solid', 'ghost', 'decal'];
+
+describe('ability instance streaming', () => {
+  it.each(kinds)('preserves %s transforms, colors and billboard orientation', kind => {
+    const batch = new InstanceBatch(new T.Group(), kind, 8);
+    const camera = new T.PerspectiveCamera(); camera.position.set(-5, 9, 8);
+    batch.setView(camera); batch.begin();
+    const expected = new T.Object3D(), matrix = new T.Matrix4(), color = new T.Color(0xff7a2e);
+    for (let i = 0; i < 8; i++) {
+      const x = i * .3, y = i * .1, z = -i * .2, yaw = i * .71, tilt = i * -.37;
+      batch.draw(x, y, z, .2, .7, .4, 0xff7a2e, .6, yaw, tilt);
+      const billboard = kind === 'spark' || kind === 'smoke' || kind === 'flame';
+      expected.position.set(x, y, z);
+      expected.scale.set(.2, .7, .4);
+      expected.rotation.set(kind === 'decal' ? -Math.PI / 2 : 0,
+        billboard ? Math.atan2(camera.position.x - x, camera.position.z - z) : yaw,
+        kind === 'smoke' || kind === 'flame' ? 0 : tilt);
+      expected.updateMatrix(); batch.mesh.getMatrixAt(i, matrix);
+      for (let j = 0; j < 16; j++) expect(matrix.elements[j]).toBeCloseTo(expected.matrix.elements[j], 6);
+      expect(batch.mesh.instanceColor!.getX(i)).toBeCloseTo(color.r, 6);
+      expect(batch.mesh.instanceColor!.getY(i)).toBeCloseTo(color.g, 6);
+      expect(batch.mesh.instanceColor!.getZ(i)).toBeCloseTo(color.b, 6);
+    }
+    batch.end(); expect(batch.mesh.count).toBe(8); batch.dispose();
+  });
+
+  it('reuses storage and upload records, transfers the live prefix and skips empty uploads', () => {
+    const batch = new InstanceBatch(new T.Group(), 'solid', 512);
+    const attributes = [batch.mesh.instanceMatrix, batch.mesh.instanceColor!,
+      batch.mesh.geometry.getAttribute('abilityAlpha'), batch.mesh.geometry.getAttribute('abilityPhase')] as T.BufferAttribute[];
+    const arrays = attributes.map(attribute => attribute.array);
+    const compose = vi.spyOn(T.Matrix4.prototype, 'compose');
+    const convert = vi.spyOn(T.Color.prototype, 'setHex');
+    batch.begin(); batch.draw(1, 2, 3, .1, .2, .3, 0x7fd6ff); batch.end();
+    const ranges = attributes.map(attribute => attribute.updateRanges[0]);
+    expect(ranges.map(range => range.count)).toEqual([16, 3, 1, 1]);
+    for (let frame = 0; frame < 60; frame++) {
+      attributes.forEach(attribute => attribute.clearUpdateRanges());
+      batch.begin();
+      for (let i = 0; i < 3; i++) batch.draw(i, 2, 3, .1, .2, .3, i % 2 ? 0x7fd6ff : 0xff7a2e);
+      batch.end();
+      attributes.forEach((attribute, i) => {
+        expect(attribute.array).toBe(arrays[i]);
+        expect(attribute.updateRanges[0]).toBe(ranges[i]);
+      });
+    }
+    expect(compose).not.toHaveBeenCalled(); compose.mockRestore();
+    expect(convert).toHaveBeenCalledTimes(2); convert.mockRestore();
+    expect(ranges.map(range => range.count)).toEqual([48, 9, 3, 3]);
+    const versions = attributes.map(attribute => attribute.version);
+    batch.begin(); batch.end();
+    expect(batch.mesh.visible).toBe(false);
+    expect(attributes.map(attribute => attribute.version)).toEqual(versions);
+    batch.dispose();
+  });
+});

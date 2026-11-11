@@ -519,3 +519,5 @@
 
 #overlay :is(.panel,.title-screen,.title-drawer) {scroll-padding:8px;}
 #overlay :is(button,a,input,select,[tabindex]) {scroll-margin:8px;}
+/* The cinematic renderer already supplies the right-hand scene and left exposure falloff. */
+#overlay.menu-overlay:has(.title-screen[data-menu-presentation="cinematic"]) {background:transparent;}

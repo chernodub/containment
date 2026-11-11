@@ -27,10 +27,15 @@ export function rod(parent:T.Object3D,a:T.Vector3,b:T.Vector3,r1:number,r2:numbe
  mesh.position.copy(a).add(b).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),b.clone().sub(a).normalize());mesh.castShadow=true;parent.add(mesh);return mesh;
 }
 /** Bake rigid armor into one mesh per material; joints remain independently animated. */
-export function batch(group:T.Group){
- group.updateMatrixWorld(true);const buckets=new Map<T.Material,T.BufferGeometry[]>();
- for(const child of [...group.children])if(child instanceof T.Mesh){const g=(child.geometry.index?child.geometry.toNonIndexed():child.geometry.clone()).applyMatrix4(child.matrix);const m=child.material as T.Material;const list=buckets.get(m)??[];list.push(g);buckets.set(m,list);group.remove(child);}
- for(const [m,list]of buckets){const geometry=mergeGeometries(list,false);list.forEach(g=>g.dispose());if(geometry){const mesh=new T.Mesh(geometry,m);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);}}
+export function batch(group:T.Group,preserveLightFixtures=false){
+ group.updateMatrixWorld(true);const fixtures=preserveLightFixtures?(group.userData.lightFixtures??=[]):undefined;const buckets=new Map<T.Material,T.BufferGeometry[]>();
+ for(const child of [...group.children])if(child instanceof T.Mesh){
+  const finish=child.material;
+  if(fixtures&&!child.userData.bakedEnvironment&&finish instanceof T.MeshStandardMaterial&&finish.emissiveIntensity>=.5&&finish.emissive.getHex()!==0&&child.matrixWorld.elements[13]>=.65){
+   const matrix=child.matrix.elements;fixtures.push({x:matrix[12],y:matrix[13],z:matrix[14],color:finish.emissive.getHex()});
+  }
+  const g=(child.geometry.index?child.geometry.toNonIndexed():child.geometry.clone()).applyMatrix4(child.matrix);const m=child.material as T.Material;const list=buckets.get(m)??[];list.push(g);buckets.set(m,list);group.remove(child);}
+ for(const [m,list]of buckets){const geometry=mergeGeometries(list,false);list.forEach(g=>g.dispose());if(geometry){const mesh=new T.Mesh(geometry,m);mesh.castShadow=true;mesh.receiveShadow=true;if(preserveLightFixtures)mesh.userData.bakedEnvironment=true;group.add(mesh);}}
 }
 /** A tapered chitin shell, rather than a stack of intersecting spheres. */
 export function shell(parent:T.Object3D,x:number,y:number,z:number,w:number,h:number,d:number,mat:T.Material){

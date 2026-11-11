@@ -1,15 +1,18 @@
 import * as T from 'three';
 import {ENEMY_SPAN} from '../game/combat/enemyContact';
-import {MAT,shell,rod,batch,disposeModel} from './meshParts';
+import {MAT,shell,rod,box,ring,batch,disposeModel} from './meshParts';
 import {instantiateAsset,type AssetName} from './assets';
 import {afflictionEffects,NO_AFFLICTION,type AfflictionStatus} from './afflictions';
 import {weaponModel,WEAPON_FIT,WEAPON_APPEARANCE,type GunModel} from './weapons';
 import type {WeaponId} from '../game/combat/types';
 import {actorSurface} from './vfx/ActorSurface';
+import {alienIdentity,marineIdentity,FAMILY_IDENTITY} from './ActorIdentity';
 export {MAT,box,ball,rod,disposeModel} from './meshParts';
 export type ActorModel={root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
  animate:(time:number,moving:number,aim:number,recoil?:number,reload?:number,velocity?:{x:number;y:number})=>void;
- equip?:(id:WeaponId)=>void;muzzleWorld?:(target:T.Vector3)=>T.Vector3;
+ /** Refresh attached weapon after presentation changes the body pose, before sampling the muzzle. */
+ syncWeaponPose?:()=>void;
+ setRig?:(rig:string)=>void;setThreat?:(windupMs:number,pendingAttack:'spit'|'charge'|null,champion?:string,alpha?:number)=>void;equip?:(id:WeaponId)=>void;muzzleWorld?:(target:T.Vector3)=>T.Vector3;
  reset?:()=>void;prepare?:()=>void;setAffliction?:(status:AfflictionStatus)=>void;freeze?:()=>void;attack?:()=>void;hit?:(strength?:number)=>void;setExposed?:(exposed:boolean)=>void;stop?:()=>void;
  dissolve?:(progress:number)=>void;setFlashIntensity?:(value:number)=>void;};
 const vec=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
@@ -40,41 +43,84 @@ function rig(name:AssetName,span:number,human=false){
 }
 export function alien(kind:string,elite=false):ActorModel{
  const def=species[kind]??species.crawler,r=rig(def.asset,def.span*(elite?1.12:1));r.root.name=`alien-${kind}`;
- const color=new T.Color(kind==='queen'?0xffd3bb:elite?0xffe2b5:0xffffff);for(const m of r.materials)m.color.multiply(color);
+ const color=kind==='queen'?new T.Color(0xffd3bb):new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler).lerp(new T.Color(0xffffff),.58);if(elite)color.lerp(new T.Color(0xffe2b5),.18);for(const m of r.materials)m.color.multiply(color);
  const surface=actorSurface(r.materials,false,elite||kind==='queen');
- let flash=0,previous:number|undefined,exposed=false,dead=false,status:AfflictionStatus=NO_AFFLICTION;
+ const identity=alienIdentity(r.root,kind,def.span*(elite?1.12:1),r.height,elite);
+ let flash=0,previous:number|undefined,exposed=false,dead=false,status:AfflictionStatus=NO_AFFLICTION,windup=0,champion:string|undefined,alpha=1,flinch=0,windupDuration=500,emergence=0,emissiveHex=-1;
+ const restBodyY=r.body.position.y,emergenceDuration=.22,emergenceDepth=Math.min(.28,r.height*.14);
  const effects=afflictionEffects(r.root,def.span*(elite?1.12:1),r.height);
- return{root:r.root,body:r.body,limbs:[],height:r.height,dissolve:surface.dissolve,setFlashIntensity:surface.setFlashIntensity,attack(){if(!dead&&!status.frozen)r.attack();},freeze(){dead=true;status=NO_AFFLICTION;effects?.reset();surface.hit(0);r.freeze();},stop:r.stop,prepare(){r.action('run');r.action('attack');},reset(){r.reset();surface.reset();flash=0;previous=undefined;exposed=dead=false;status=NO_AFFLICTION;effects?.reset();for(const m of r.materials)m.emissiveIntensity=0;},hit(strength=1){flash=Math.max(0,Math.min(1,strength));},setExposed(v){exposed=v;},setAffliction(v){
+ return{root:r.root,body:r.body,limbs:[],height:r.height,dissolve:surface.dissolve,setFlashIntensity:surface.setFlashIntensity,attack(){if(!dead&&!status.frozen)r.attack();},freeze(){surface.death(status.frozen?'frost':status.burning?'burn':status.poisoned?'acid':'none');dead=true;emergence=emergenceDuration;r.body.position.y=restBodyY;r.body.rotation.x=0;status=NO_AFFLICTION;effects?.reset();surface.hit(0);identity.update(0,0,champion,false,1,true);r.freeze();},stop:r.stop,prepare(){r.action('run');r.action('attack');},reset(){r.reset();surface.reset();identity.reset();identity.mesh.castShadow=identity.mesh.receiveShadow=false;windup=0;champion=undefined;alpha=1;flinch=0;emergence=0;r.body.position.y=restBodyY;flash=0;previous=undefined;exposed=dead=false;status=NO_AFFLICTION;effects?.reset();for(const m of r.materials)m.emissiveIntensity=0;},hit(strength=1){flash=Math.max(0,Math.min(1,strength));flinch=flash;},setThreat(ms,attack,rank,camouflage=1){windup=attack?Math.max(0,ms):0;windupDuration=attack==='charge'?850:500;champion=rank;alpha=camouflage;surface.camouflage(kind==='stalker'?alpha:1);},setExposed(v){exposed=v;},setAffliction(v){
   if(dead)return;status=v;
-  effects?.set(v);r.mixer.timeScale=v.frozen?0:1;
+  effects?.set(v);r.mixer.timeScale=v.frozen?0:1;if(v.frozen){emergence=emergenceDuration;r.body.position.y=restBodyY;r.body.rotation.x=0;}
  },
- animate(time,moving,aim){const dt=previous===undefined?0:Math.max(0,Math.min(.05,time-previous));previous=time;flash=Math.max(0,flash-dt*9);surface.hit(flash);r.root.rotation.y=Math.PI/2-aim;r.step(time,moving);effects?.animate(time);for(const m of r.materials){m.emissive.setHex(status.frozen?0x79ddff:exposed?0x42602b:0xffdfb0);m.emissiveIntensity=flash*.1+(status.frozen?.12:exposed?.22:0);}}};
+ animate(time,moving,aim){const dt=previous===undefined?0:Math.max(0,Math.min(.05,time-previous));previous=time;flash=Math.max(0,flash-dt*9);surface.hit(flash);r.root.rotation.y=Math.PI/2-aim;r.step(time,windup>0?0:moving);if(!dead&&!status.frozen){emergence=Math.min(emergenceDuration,emergence+dt);const rise=1-Math.pow(1-emergence/emergenceDuration,3);flinch=Math.max(0,flinch-dt*8);r.body.rotation.x=-flinch*.075+(windup>0?Math.min(1,windup/350)*.055:0)-(1-rise)*.045;r.body.position.y=restBodyY-emergenceDepth*(1-rise)-flinch*.035;}identity.update(time,windup>0?1-Math.min(1,windup/windupDuration):0,champion,exposed,kind==='stalker'?alpha:1,dead);effects?.animate(time);const hex=status.frozen?0x79ddff:exposed?0x42602b:0xffdfb0,intensity=flash*.1+(status.frozen?.12:exposed?.22:0);for(const m of r.materials){if(hex!==emissiveHex)m.emissive.setHex(hex);m.emissiveIntensity=intensity;}emissiveHex=hex;}};
 }
 export function marine():ActorModel{
  const r=rig('marine',2.05,true),weapon=new T.Group();r.root.name='marine';r.root.add(weapon);
- const surface=actorSurface(r.materials,true);
+ const surface=actorSurface(r.materials,true),identity=marineIdentity(r.root);
  const guns=new Map<WeaponId,GunModel>();let current:GunModel;const socket=r.assetRoot.getObjectByName('tag_weapon')!;let pose=r.action('shotgun_delta');
  const equip=(id:WeaponId)=>{if(current?.id===id)return;let gun=guns.get(id);if(!gun){gun=weaponModel(id);guns.set(id,gun);weapon.add(gun.root);}for(const g of guns.values())g.root.visible=g===gun;current=gun;pose?.stop();pose=r.action(`${({pistol:'blaster',plasma:'prifle',rocket:'lcannon'} as Partial<Record<WeaponId,string>>)[id]??id}_delta`);if(pose){pose.play();pose.paused=true;}};equip('shotgun');
  const inverse=new T.Matrix4(),socketMatrix=new T.Matrix4(),scale=new T.Vector3();
- const spine=r.assetRoot.getObjectByName('spine')!,parentQ=new T.Quaternion(),compensation=new T.Quaternion(),up=new T.Vector3(0,1,0),baseSpine=spine.quaternion.clone(),ribs=r.assetRoot.getObjectByName('ribs')!,baseRibs=ribs.quaternion.clone(),armAxis=new T.Vector3();let gaitYaw=0,backwards=false,previous:number|undefined;
- return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,setFlashIntensity:surface.setFlashIntensity,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
+ const syncWeaponPose=()=>{socket.updateWorldMatrix(true,false);inverse.copy(r.root.matrixWorld).invert();socketMatrix.multiplyMatrices(inverse,socket.matrixWorld);socketMatrix.decompose(weapon.position,weapon.quaternion,scale);weapon.scale.setScalar(1);};
+ const spine=r.assetRoot.getObjectByName('spine')!,parentQ=new T.Quaternion(),compensation=new T.Quaternion(),rotation=new T.Quaternion(),up=new T.Vector3(0,1,0),baseSpine=spine.quaternion.clone(),ribs=r.assetRoot.getObjectByName('ribs')!,baseRibs=ribs.quaternion.clone(),armAxis=new T.Vector3();let gaitYaw=0,backwards=false,previous:number|undefined;
+ return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,syncWeaponPose,setRig:identity.setRig,setFlashIntensity:surface.setFlashIntensity,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
  animate(time,moving,aim,recoil=0,reload=0,velocity){r.root.rotation.y=Math.PI/2-aim;
   const dt=previous===undefined?1/60:Math.max(0,Math.min(.05,time-previous));previous=time;
-  const v=velocity??{x:Math.cos(aim)*moving*220,y:Math.sin(aim)*moving*220},travel=Math.hypot(v.x,v.y),direction=Math.atan2(v.y,v.x),forward=Math.cos(direction-aim);if(travel>3){if(forward<-.22)backwards=true;else if(forward>.02)backwards=false;}
+  const vx=velocity?.x??Math.cos(aim)*moving*220,vy=velocity?.y??Math.sin(aim)*moving*220,travel=Math.hypot(vx,vy),direction=Math.atan2(vy,vx),forward=Math.cos(direction-aim);if(travel>3){if(forward<-.22)backwards=true;else if(forward>.02)backwards=false;}
   const desired=travel>3?Math.atan2(Math.sin(aim-direction-(backwards?Math.PI:0)),Math.cos(aim-direction-(backwards?Math.PI:0))):0;
   gaitYaw+=Math.atan2(Math.sin(desired-gaitYaw),Math.cos(desired-gaitYaw))*(1-Math.exp(-dt*16));
   spine.quaternion.copy(baseSpine);ribs.quaternion.copy(baseRibs);r.assetRoot.rotation.y=-Math.PI/2+gaitYaw;r.step(time,moving,backwards,T.MathUtils.clamp(travel/220,.35,1.5));
-  baseSpine.copy(spine.quaternion);spine.parent!.getWorldQuaternion(parentQ);compensation.copy(parentQ).invert().multiply(new T.Quaternion().setFromAxisAngle(up,-gaitYaw-T.MathUtils.degToRad(WEAPON_FIT[current.id].aimYaw))).multiply(parentQ);spine.quaternion.premultiply(compensation);
+  baseSpine.copy(spine.quaternion);spine.parent!.getWorldQuaternion(parentQ);compensation.copy(parentQ).invert().multiply(rotation.setFromAxisAngle(up,-gaitYaw-T.MathUtils.degToRad(WEAPON_FIT[current.id].aimYaw))).multiply(parentQ);spine.quaternion.premultiply(compensation);
 
   const pose=reload>0?Math.sin(Math.PI*reload):0;
-  baseRibs.copy(ribs.quaternion);ribs.parent!.getWorldQuaternion(parentQ);armAxis.set(-Math.sin(aim),0,Math.cos(aim));compensation.copy(parentQ).invert().multiply(new T.Quaternion().setFromAxisAngle(armAxis,pose*.18-recoil*.035)).multiply(parentQ);ribs.quaternion.premultiply(compensation);
-  socket.updateWorldMatrix(true,false);inverse.copy(r.root.matrixWorld).invert();socketMatrix.multiplyMatrices(inverse,socket.matrixWorld);socketMatrix.decompose(weapon.position,weapon.quaternion,scale);weapon.scale.setScalar(1);
+  baseRibs.copy(ribs.quaternion);ribs.parent!.getWorldQuaternion(parentQ);armAxis.set(-Math.sin(aim),0,Math.cos(aim));compensation.copy(parentQ).invert().multiply(rotation.setFromAxisAngle(armAxis,pose*.18-recoil*.035)).multiply(parentQ);ribs.quaternion.premultiply(compensation);
+  syncWeaponPose();
  }};
 }
 export function nest():T.Group{
  const g=new T.Group();g.name='queen-nest';shell(g,0,.23,0,.8,.25,1.7,MAT.flesh);shell(g,0,.65,0,.54,.61,1.14,MAT.acid);
  for(let i=0;i<8;i++){const a=i*Math.PI/4,x=Math.cos(a),z=Math.sin(a);rod(g,vec(x*.95,.04,z*.95),vec(x*.45,.38,z*.45),.11,.055,MAT.flesh);rod(g,vec(x*.45,.38,z*.45),vec(x*.24,1.18,z*.24),.015,.11,MAT.shellDark);}
- for(let i=0;i<3;i++)shell(g,0,1.06+i*.08,0,.27-i*.055,.1,.55-i*.1,MAT.flesh);batch(g);return g;
+ for(let i=0;i<3;i++)shell(g,0,1.06+i*.08,0,.27-i*.055,.1,.55-i*.1,MAT.flesh);for(const side of [-1,1])for(let i=0;i<3;i++)shell(g,side*.35,.62+i*.12,(i-1)*.22,.09,.12,.16,MAT.acid);batch(g);return g;
+}
+
+
+/** Physical supply silhouettes with semantic symbols; uses only prewarmed shared finishes. */
+export function pickupModel(kind:string):T.Group{
+ const g=new T.Group();g.name=`pickup-${kind}`;
+ if(kind==='credits'){
+  box(g,0,-.06,0,.48,.07,.36,MAT.dark,.02);
+  for(let stack=0;stack<3;stack++)for(let coin=0;coin<stack+2;coin++){
+   const x=(stack-1)*.125,z=stack%2?.045:-.03,y=coin*.034;
+   rod(g,vec(x,y,z),vec(x,y+.026,z),.09,.09,MAT.trim);
+  }
+  box(g,0,.1,.045,.055,.009,.07,MAT.amber,.003);
+ }else if(kind==='armor'){
+  const shape=new T.Shape();shape.moveTo(-.22,.18);shape.lineTo(.22,.18);shape.lineTo(.22,-.05);shape.lineTo(0,-.28);shape.lineTo(-.22,-.05);shape.closePath();
+  const geometry=new T.ExtrudeGeometry(shape,{depth:.065,bevelEnabled:true,bevelSegments:1,steps:1,bevelSize:.012,bevelThickness:.012});geometry.rotateX(-Math.PI/2);
+  g.add(new T.Mesh(geometry,MAT.dark));
+  for(let i=0;i<3;i++){
+   const width=.34-i*.07,z=-.105+i*.112;
+   box(g,0,.082,z,width,.04,.085,MAT.armor,.012);
+   box(g,0,.108,z,.025,.008,.059,MAT.cyan,.003);
+  }
+ }else if(kind==='grenade'){
+  rod(g,vec(0,-.12,0),vec(0,.2,0),.13,.15,MAT.shellDark);
+  rod(g,vec(0,.025,0),vec(0,.065,0),.151,.151,MAT.amber);
+  rod(g,vec(0,.2,0),vec(0,.265,0),.105,.105,MAT.steel);
+  box(g,.125,.15,0,.035,.31,.075,MAT.steel,.008);
+  ring(g,.045,.3,.015,.062,.012,MAT.steel);
+ }else{
+  shell(g,0,0,0,.25,.16,.42,MAT.dark);
+  if(kind==='health'){
+   for(const side of [-1,1])rod(g,vec(side*.19,-.08,-.16),vec(side*.19,-.08,.16),.035,.035,MAT.steel);
+   shell(g,0,.14,0,.16,.035,.3,MAT.acid);
+   rod(g,vec(-.105,.19,0),vec(.105,.19,0),.025,.025,MAT.armor);
+   rod(g,vec(0,.19,-.105),vec(0,.19,.105),.025,.025,MAT.armor);
+  }else{
+   for(let i=-1;i<=1;i++){rod(g,vec(i*.11,-.05,-.13),vec(i*.11,.15,.13),.035,.035,MAT.trim);shell(g,i*.11,.16,.13,.035,.055,.06,MAT.cyan);}
+  }
+ }
+ batch(g);return g;
 }
 
 

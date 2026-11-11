@@ -1,5 +1,5 @@
 import type { DepthRenderer } from '../../render/DepthRenderer';
-import { projectWorld, type ScreenPoint } from '../gameAdapter';
+import { projectWorld, getViewportWidth, getViewportHeight, type ScreenPoint } from '../gameAdapter';
 import type { HudEffect } from './effects';
 import {hudObstructs, presentationObstructs} from './layout';
 import {icon} from '../icons';
@@ -128,7 +128,7 @@ export class CombatText {
         top: number;
         bottom: number;
     }): void {
-        const w = this.renderer.canvas.clientWidth, h = this.renderer.canvas.clientHeight;
+        const w = getViewportWidth(this.renderer), h = getViewportHeight(this.renderer);
         for (const p of this.pool) p.placed = false;
         for (const p of this.pool) {
             if (p.life <= 0)

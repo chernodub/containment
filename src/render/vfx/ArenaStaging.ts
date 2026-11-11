@@ -24,9 +24,9 @@ export class ArenaStaging {
     steel.customProgramCacheKey = () => 'queen-reactor-dais-v1';
     this.deck = new T.Mesh(new T.CylinderGeometry(1, 1, .16, 64), steel);
     this.deck.receiveShadow = true;
-    this.rim = new T.Mesh(new T.TorusGeometry(1, .021, 8, 96), new T.MeshStandardMaterial({color: 0x8c704d, emissive: 0xff9a46, emissiveIntensity: 2.7, roughness: .32, metalness: .6}));
+    this.rim = new T.Mesh(new T.TorusGeometry(1, .014, 8, 96), new T.MeshStandardMaterial({color: 0x8c704d, emissive: 0xff9a46, emissiveIntensity: 1.4, roughness: .32, metalness: .6}));
     this.rim.rotation.x = -Math.PI / 2;
-    this.vents = new T.InstancedMesh(new T.BoxGeometry(1, 1, 1), new T.MeshBasicMaterial({color: new T.Color(0xffd49a).multiplyScalar(2.5)}), 32);
+    this.vents = new T.InstancedMesh(new T.BoxGeometry(1, 1, 1), new T.MeshBasicMaterial({color: new T.Color(0xffd49a).multiplyScalar(1.6)}), 32);
     this.vents.count = 32;
     this.vents.frustumCulled = false;
     this.root.name = 'queen-reactor-staging';
@@ -60,7 +60,7 @@ export class ArenaStaging {
   update(dt: number, flashIntensity: number, reducedMotion: boolean) {
     if (!this.root.visible || this.disposed) return;
     if (!reducedMotion) this.time += Math.max(0, Math.min(.05, dt));
-    this.rim.material.emissiveIntensity = 2.7 * (1 + Math.sin(this.time * 1.7) * .08 * flashIntensity);
+    this.rim.material.emissiveIntensity = 1.4 * (1 + Math.sin(this.time * 1.7) * .06 * flashIntensity);
   }
 
   /** Include the otherwise hidden boss shaders in every initial preparation. */
