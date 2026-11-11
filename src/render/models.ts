@@ -6,7 +6,7 @@ import {afflictionEffects,NO_AFFLICTION,type AfflictionStatus} from './afflictio
 import {weaponModel,WEAPON_FIT,WEAPON_APPEARANCE,type GunModel} from './weapons';
 import type {WeaponId} from '../game/combat/types';
 import {actorSurface} from './vfx/ActorSurface';
-import {alienIdentity,marineIdentity} from './ActorIdentity';
+import {alienIdentity,marineIdentity,FAMILY_IDENTITY} from './ActorIdentity';
 export {MAT,box,ball,rod,disposeModel} from './meshParts';
 export type ActorModel={root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
  animate:(time:number,moving:number,aim:number,recoil?:number,reload?:number,velocity?:{x:number;y:number})=>void;
@@ -41,7 +41,7 @@ function rig(name:AssetName,span:number,human=false){
 }
 export function alien(kind:string,elite=false):ActorModel{
  const def=species[kind]??species.crawler,r=rig(def.asset,def.span*(elite?1.12:1));r.root.name=`alien-${kind}`;
- const color=new T.Color(kind==='queen'?0xffd3bb:elite?0xffe2b5:0xffffff);for(const m of r.materials)m.color.multiply(color);
+ const color=kind==='queen'?new T.Color(0xffd3bb):new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler).lerp(new T.Color(0xffffff),.58);if(elite)color.lerp(new T.Color(0xffe2b5),.18);for(const m of r.materials)m.color.multiply(color);
  const surface=actorSurface(r.materials,false,elite||kind==='queen');
  const identity=alienIdentity(r.root,kind,def.span*(elite?1.12:1),r.height,elite);
  let flash=0,previous:number|undefined,exposed=false,dead=false,status:AfflictionStatus=NO_AFFLICTION,windup=0,champion:string|undefined,alpha=1,flinch=0,windupDuration=500,emergence=0;

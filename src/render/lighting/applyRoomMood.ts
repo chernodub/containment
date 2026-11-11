@@ -16,7 +16,7 @@ const readableSteel = new T.Color(0x657481);
 const reactorSteel = new T.Color(0x626b73);
 
 /** Tune room-owned surfaces and hot fixtures without changing warning, enemy or navigation colors. */
-export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 'cryogenics') {
+export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 'cryogenics', templateId?:string) {
   const mood = getEnvironmentMood(environment), seen = new Set<T.MeshStandardMaterial>();
   const tint = new T.Color(deckTint[environment]);
   world.traverse(object => {
@@ -47,7 +47,7 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
       if (!(environment === 'reactor' && material.name === 'ship-cold-practical') && !material.userData.motivatedEmitter && original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {
         material.emissiveIntensity = Math.max(2.6, original.emissiveIntensity * 1.75);
       }
-      optimizeLocalLights(material,environment==='reactor'?1:.02,environment==='cargo'||environment==='communications'?.16:.025);
+      optimizeLocalLights(material,environment==='reactor'?1:.02,environment==='cargo'||environment==='communications'?.16:.025,environment==='cargo'?.006:environment==='communications'?.009:templateId==='manual-control-chamber'?.008:0);
     }
   });
 }

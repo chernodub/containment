@@ -22,7 +22,7 @@ float deathFracture=smoothstep(.965,.995,fract(sin(dot(floor(actorPosition*18.0)
 if(actorDeathStyle>.5&&actorDeathStyle<1.5)diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.28,.46,.54),.4);
 if(actorDeathStyle>1.5&&actorDeathStyle<2.5)diffuseColor.rgb*=.38;
 if(actorDeathStyle>2.5)diffuseColor.rgb=mix(diffuseColor.rgb*.6,vec3(.10,.16,.055),.35);
-${friendly ? '' : 'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(dot(diffuseColor.rgb,vec3(.2126,.7152,.0722))),.32)*1.12+vec3(.006,.009,.012);diffuseColor.rgb*=mix(.55,1.0,actorCamouflage);'}
+${friendly ? '' : 'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(dot(diffuseColor.rgb,vec3(.2126,.7152,.0722))),.12)*1.12+vec3(.006,.009,.012);diffuseColor.rgb*=mix(.55,1.0,actorCamouflage);'}
 diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.9,.98,1.0),actorFlash*actorFlashIntensity*.62);`)
         .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
 ${friendly ? '' : 'float actorLitLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));reflectedLight.indirectDiffuse+=vec3(.009,.014,.019)*(1.0-smoothstep(.005,.04,actorLitLuma));'}`)
@@ -33,7 +33,7 @@ vec3 deathColor=actorDeathStyle>.5&&actorDeathStyle<1.5?vec3(.14,.34,.43):actorD
 float deathContact=actorDeathStyle>.5?deathFracture*.26*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=actorRimColor*actorRim*actorRimStrength*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity+deathColor*deathContact;`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:actor-surface-v4:${friendly ? 'marine' : 'alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:actor-surface-v5:${friendly ? 'marine' : 'alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
   }

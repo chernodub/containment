@@ -49,7 +49,7 @@ describe('shared key occlusion for fixed practicals', () => {
     expect(shared).toContain('roomKeyShadow.shadowBias');
     expect(shared).toContain('roomKeyShadow.shadowRadius');
     expect(shared).toContain('vDirectionalShadowCoord[ 0 ]');
-    expect(material.customProgramCacheKey()).toBe('authored-physical:local-light-rejection-v4');
+    expect(material.customProgramCacheKey()).toBe('authored-physical:local-light-rejection-v5');
     material.dispose();
   });
 
@@ -113,4 +113,15 @@ it('keeps machine near-field irradiance bounded while preserving deck pools and 
   expect(shader.uniforms.roomPracticalNearField.value).toBe(radius);expect(shader.uniforms.roomPracticalShadowFill.value).toBe(.16);
   optimizeLocalLights(material,.02,.025);expect(shader.uniforms.roomPracticalShadowFill.value).toBe(.025);material.dispose();
  }
+});
+
+it('bounds dark-surface bounce without changing pooled material shader topology',()=>{
+ const material=new T.MeshStandardMaterial();optimizeLocalLights(material,.02,.16,.006);const key=material.customProgramCacheKey();
+ const shader={uniforms:{} as Record<string,{value:number}>,fragmentShader:'#include <lights_fragment_end>'};
+ material.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);
+ expect(shader.uniforms.roomShadowReadability.value).toBe(.006);
+ expect(shader.fragmentShader.match(/float roomShadowLuma=/g)).toHaveLength(1);
+ optimizeLocalLights(material,.02,.16,100);expect(shader.uniforms.roomShadowReadability.value).toBe(.01);
+ optimizeLocalLights(material,.02,.16,0);expect(shader.uniforms.roomShadowReadability.value).toBe(0);
+ expect(material.customProgramCacheKey()).toBe(key);material.dispose();
 });

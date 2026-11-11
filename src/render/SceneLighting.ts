@@ -24,7 +24,7 @@ export class SceneLighting {
  readonly lamp=new MarineLamp();
  mood:EnvironmentMood=getEnvironmentMood();
  staging:ReactorStaging|null=null;
- private composition:RoomComposition=roomComposition();private width=0;private height=0;private bossArena=false;private menuPresentation=false;
+ private composition:RoomComposition=roomComposition();private width=0;private height=0;private bossArena=false;private manualConsole=false;private menuPresentation=false;
  private coveragePoint=new T.Vector3();private authoredFixtures:Fixture[]=[];private nearbyFixtures:Fixture[]=[];private playerX=NaN;private playerZ=NaN;private fixtureTint=new T.Color();
  private blastLife=0;private time=0;private tier:GraphicsTier='high';private fixtureCount=0;private dynamicLights=true;private flashIntensity=1;private disposed=false;private shadowQuality:ShadowQuality='high';
  constructor(){
@@ -47,7 +47,7 @@ export class SceneLighting {
   for(let i=0;i<this.fixtures.length;i++){this.fixtures[i].visible=tier==='high'||i<2;if(!this.fixtures[i].visible)this.fixtures[i].intensity=0;}
  }
  loadRoom(world:T.Group,width:number,height:number,environment?:ShipEnvironment,templateId?:string){
-  this.width=width;this.height=height;this.bossArena=templateId==='reactor-vault';this.composition=roomComposition(templateId);this.menuPresentation=false;
+  this.width=width;this.height=height;this.bossArena=templateId==='reactor-vault';this.manualConsole=templateId==='manual-control-chamber';this.composition=roomComposition(templateId);this.menuPresentation=false;
   this.blastLife=0;this.blast.intensity=0;this.pool.reset();this.time=0;
   this.mood=getEnvironmentMood(environment??(templateId==='reactor-vault'?'reactor':undefined));
   this.staging=templateId==='reactor-vault'?{coreX:width/2,coreY:2.6,coreZ:height/2,coreColor:0xffdfab,coreRadius:4.9}:null;
@@ -197,7 +197,7 @@ export class SceneLighting {
   return{coreX:(bounds.min.x+bounds.max.x)/2,coreY:3.2,coreZ:(bounds.min.z+bounds.max.z)/2,coreColor:0xffdfad,coreRadius:Math.max(bounds.max.x-bounds.min.x,bounds.max.z-bounds.min.z)/2};
  }
  private applyMood(width:number,height:number){
-  const mood=this.mood;const reactor=mood.environment==='reactor';this.key.castShadow=this.tier==='high'&&this.shadowQuality!=='off';this.directionalKey.visible=!reactor;this.coreKey.visible=reactor;this.lamp.setRoom(mood.environment==='cargo'?40:24);this.ambient.color.setHex(mood.ambient.sky);this.ambient.groundColor.setHex(mood.ambient.ground);this.ambient.intensity=mood.ambient.intensity;
+  const mood=this.mood;const reactor=mood.environment==='reactor';this.key.castShadow=this.tier==='high'&&this.shadowQuality!=='off';this.directionalKey.visible=!reactor;this.coreKey.visible=reactor;this.lamp.setRoom(mood.environment==='cargo'?40:this.manualConsole?26:24);this.ambient.color.setHex(mood.ambient.sky);this.ambient.groundColor.setHex(mood.ambient.ground);this.ambient.intensity=mood.ambient.intensity;
   this.lamp.light.intensity=mood.environment==='infested'?8:12;
   for(const [light,data] of [[this.key,mood.key],[this.fill,mood.fill],[this.rim,mood.rim]] as const){light.color.setHex(data.color);light.intensity=data.intensity*(data.irradianceScale??1);light.target.position.set(width/2,0,height/2);light.position.set(width/2+data.offset[0],data.offset[1],height/2+data.offset[2]);}
   if(!reactor){const offset=this.composition===roomComposition()?mood.key.offset:this.composition.keyOffset;this.key.position.set(width/2+offset[0],offset[1],height/2+offset[2]);this.key.intensity*=this.composition.keyGain;this.fill.intensity*=this.composition.fillGain;}
@@ -205,6 +205,7 @@ export class SceneLighting {
    this.coreKey.angle=this.bossArena?.58:Math.PI*.4;this.coreKey.penumbra=.72;const shadowSize=this.shadowQuality==='low'?512:1024;this.coreKey.shadow.mapSize.set(shadowSize,shadowSize);
    const core=this.staging;this.coreKey.position.set(core?.coreX??width/2,core?.coreY??3.2,core?.coreZ??height/2);
    this.coreKey.target.position.set(width*.12,0,core?.coreZ??height/2);this.coreKey.intensity=mood.key.intensity*980*this.composition.keyGain;this.coreKey.distance=Math.max(30,Math.hypot(width,height)*1.1);this.fill.intensity*=this.composition.fillGain;
+   if(this.manualConsole&&this.staging){this.coreKey.position.set(this.staging.coreX,this.staging.coreY+2.2,this.staging.coreZ+4);this.coreKey.target.position.set(this.staging.coreX,1,this.staging.coreZ);}
    if(this.bossArena){this.coreKey.position.set(width/2,9,height/2+7);this.coreKey.target.position.set(width/2,1.2,height/2);this.coreKey.intensity=720;this.coreKey.color.setHex(0xffe6c6);this.fill.intensity=.58;this.rim.color.setHex(0x9ecfe6);this.rim.intensity=.65;this.ambient.intensity=.09;}
   }
  }
