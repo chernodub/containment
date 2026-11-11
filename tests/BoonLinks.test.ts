@@ -8,7 +8,9 @@ for(const boon of ['impact','frost'] as const)it(`${boon} draws a straight endpo
  beam.getMatrixAt(0,m);m.decompose(p,q,s);beam.getColorAt(0,color);
  expect(p.x).toBeCloseTo(3);expect(p.y).toBeCloseTo(.8);expect(p.z).toBeCloseTo(2);
  expect(s.y).toBeCloseTo(4);expect(new T.Vector3(0,1,0).applyQuaternion(q).x).toBeCloseTo(1);
- expect(color.getHex()).toBe(boon==='impact'?0xf5dab0:0x8cdeed);
+ const reference=new T.Color(boon==='impact'?0xf5dab0:0x8cdeed),hdr=color.r/reference.r;
+ expect(hdr).toBeGreaterThan(1);expect(color.g).toBeCloseTo(reference.g*hdr,5);expect(color.b).toBeCloseTo(reference.b*hdr,5);
+ expect(Math.max(color.r,color.g,color.b)).toBeGreaterThan(1);
  expect(fx.counts.pulses).toBe(0);expect(fx.counts.fire).toBe(0);
  fx.update(.5,camera,[]);expect(beam.count).toBe(0);fx.dispose();
 });

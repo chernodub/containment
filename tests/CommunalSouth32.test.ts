@@ -13,7 +13,7 @@ const node=generateRun(3,3).nodes.find(n=>n.templateId==='communal-atrium')!;
 // CPU-only loadRoom contract: no WebGL context, browser, camera or lighting override in production.
 function renderer(){
  const surfaces=Object.assign(Object.create(EnvironmentMaterials.prototype),{floor:new T.MeshStandardMaterial(),wall:new T.MeshStandardMaterial(),cover:new T.MeshStandardMaterial()});
- return Object.assign(Object.create(DepthRenderer.prototype),{scene:new T.Scene(),world:new T.Group(),effects:{clear(){},setWorld(){}},temporaryMaterials:[],actors:new Map(),nests:new Map(),queen:null,corpses:[],pickupMeshes:new Map(),poolMeshes:new Map(),pendingShots:[],afflictions:{clear(){}},muzzle:{intensity:0},contacts:{begin(){},end(){}},surfaces,floorMaterial:surfaces.floor,camera:new T.OrthographicCamera(-20,20,15,-15),focus:new T.Vector3(),lighting:{loadRoom(){}}});
+ return Object.assign(Object.create(DepthRenderer.prototype),{scene:new T.Scene(),world:new T.Group(),interimAbilities:{clear(){}},effects:{clear(){},setWorld(){}},temporaryMaterials:[],actors:new Map(),nests:new Map(),queen:null,corpses:[],pickupMeshes:new Map(),poolMeshes:new Map(),pendingShots:[],afflictions:{clear(){}},muzzle:{intensity:0},contacts:{begin(){},end(){}},surfaces,floorMaterial:surfaces.floor,camera:new T.OrthographicCamera(-20,20,15,-15),focus:new T.Vector3(),lighting:{loadRoom(){}}});
 }
 function meshes(root:T.Object3D){const all:T.Mesh[]=[];root.traverse(o=>{if(o instanceof T.Mesh)all.push(o);});return all;}
 function hit(root:T.Object3D,x:number,y:number){root.updateMatrixWorld(true);return new T.Raycaster(new T.Vector3(x/32,6,y/32),new T.Vector3(0,-1,0)).intersectObject(root,true)[0];}
@@ -64,7 +64,7 @@ describe('accepted south32 CPU rendering and ownership',()=>{
   expect(materials.size).toBe(8);expect(all.length).toBeLessThanOrEqual(32);
   const triangles=all.reduce((n,m)=>n+(m.geometry.index?.count??m.geometry.getAttribute('position').count)/3,0);expect(triangles).toBeLessThan(45000);
   console.info('south32 CPU budget',JSON.stringify({worldMeshes:all.length,equipmentMaterials:materials.size,triangles}));
-  for(const m of materials){expect(Object.values(MAT)).not.toContain(m);expect(m.userData.actorMaterial).toBe(true);expect(m.emissiveIntensity).toBeLessThan(.5);}
+  for(const m of materials){expect(Object.values(MAT)).not.toContain(m);expect(m.userData.actorMaterial).toBe(true);if(m.name==='ca_welcome')expect(m.emissiveIntensity).toBeGreaterThan(2);else expect(m.emissiveIntensity).toBeLessThan(.5);}
   expect(materialState()).toEqual(before);expect(r.roomLoading).toBe(false);
   const shared=[...Object.values(MAT),...geometries.values()].map(m=>vi.spyOn(m,'dispose'));
   const owned=[...materials,...meshes(equipment).map(m=>m.geometry)].map(m=>vi.spyOn(m,'dispose'));

@@ -1,0 +1,31 @@
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -45,7 +45,7 @@
+ game.aimVisible=(x,y)=>renderer.visible(x,y);
+ try{await renderer.prepare(game.node);}catch(error){el('overlay').innerHTML='<div class="unsupported"><h1>Graphics interrupted</h1><button onclick="location.reload()">Try again</button></div>';throw error;}
+ const input=new InputController(game,renderer,(toggle)=>{if(game.status==='playing'||toggle&&game.status==='paused')pause();},()=>!graphicsLost&&!roomRecovering&&lastRoom===game.roomRevision&&!renderer.roomLoading);let roomRecovering=true;let graphicsLost=false;let lastStatus='',lastRoom=-1,screenKey='',settingsOpen=false;let quality:'high'|'low'='high';
+-const start=(resume=false)=>{void audio.unlock();audio.resumeAll();input.reset();settingsOpen=false;if(resume){if(!game.continueRun())return;}else game.newRun();syncScreen(true);};
++const start=(resume=false)=>{void audio.unlock();audio.resumeAll();input.reset();settingsOpen=false;if(resume){if(!game.continueRun())return;}else game.newRun();syncScreen(true);hud();};
+ captureWeaponPointer(el('pause') as HTMLButtonElement);captureWeaponPointer(el('skip-story') as HTMLButtonElement);
+ el('pause').addEventListener('click',pause);document.querySelectorAll<HTMLButtonElement>('[data-weapon]').forEach(b=>{captureWeaponPointer(b);b.addEventListener('click',()=>{if(!roomRecovering&&lastRoom===game.roomRevision&&!renderer.roomLoading&&!graphicsLost)game.switchWeapon(b.dataset.weapon as WeaponId);b.blur();});});
+ el('skip-story').addEventListener('click',()=>{game.skipStory();hud();});
+--- a/scripts/authored-room-smoke.mjs
++++ b/scripts/authored-room-smoke.mjs
+@@ -46,6 +46,7 @@
+    await page.waitForFunction(name=>document.body.dataset.state==='playing'&&document.querySelector('#room-name')?.textContent===name,ROOM_TEMPLATES[id].name);
+    await page.locator('#pause').click();await page.waitForFunction(()=>document.body.dataset.state==='paused');await page.locator('#quality').selectOption('low');await page.locator('#resume').click();
+    if(await page.locator('#skip-story').isVisible())await page.locator('#skip-story').click();
++   await page.waitForFunction(()=>document.body.dataset.state==='playing'&&document.querySelector('#world')?.getAttribute('aria-busy')==='false'&&document.querySelector('#room-loading')?.hidden);
+    const ammo=await page.locator('#magazine').textContent();
+    {await page.keyboard.down('d');await page.keyboard.down('Space');await page.waitForFunction(before=>document.querySelector('#magazine').textContent!==before,ammo);await page.keyboard.up('Space');await page.keyboard.up('d');}
+    await page.waitForFunction(()=>window.__containmentPerformance.drawCalls>0&&!window.__containmentPerformance.graphicsLost);
+--- a/scripts/smoke.mjs
++++ b/scripts/smoke.mjs
+@@ -97,6 +97,7 @@
+       assert.equal(await page.locator('.build-details summary').textContent(),'Boons · 1');
+       assert.equal(await page.locator('.build-details b').textContent(),name);
+       await page.locator('#resume').click();
++      await page.waitForFunction(()=>document.querySelector('#world')?.getAttribute('aria-busy')==='false'&&document.querySelector('#room-loading')?.hidden);
+       return name;
+     };
+     timing.start('starting-boon');

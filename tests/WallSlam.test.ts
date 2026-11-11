@@ -19,7 +19,8 @@ describe('body wall-slam presentation',()=>{
  it('keeps ordinary pellet richness despite PR47 metadata, with no wall-slam reinterpretation',()=>{
   const fx=new AttackEffects(new T.Scene());
   fx.event({type:'hit',weapon:'shotgun',x:100,y:100,angle:0,wall:{x:-1,y:0},shotId:'s'});
-  expect(fx.counts).toEqual({glow:10,smoke:1,debris:3,decals:0,fire:0,pulses:0});
+  expect(fx.counts).toEqual({glow:10,smoke:1,debris:3,decals:1,fire:0,pulses:0});
+  const mark=(fx as unknown as {decals:{variant:number;size:number}[]}).decals[0];expect(mark.variant).toBe(0);expect(mark.size).toBeLessThan(.25);
  });
  it('emits no blast rings or fire, and fans fragments away from contact',()=>{
   const scene=new T.Scene(),fx=new AttackEffects(scene);

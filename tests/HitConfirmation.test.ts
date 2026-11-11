@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { HitConfirmation } from '../src/render/HitConfirmation';
+import { HitConfirmation } from '../src/ui/hud/HitConfirmation';
 it('confirms only briefly at the pointer, distinguishes blocks and clears on pause', () => {
     const element = { style: { left: '', top: '', opacity: '' }, dataset: { contact: '' }, hidden: true };
     const marker = new HitConfirmation(element);

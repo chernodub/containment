@@ -147,6 +147,18 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
    for(const child of root.children.slice(firstGardenChild)){child.updateMatrix();child.matrix.premultiply(transform);child.matrixAutoUpdate=false;}
   }
  }
+ // Warm task lamps belong to the actual occupied court, rather than the
+ // rectangular camera envelope outside its stepped hull boundary.
+ const litFixtures=fixtures.filter(f=>(f.kind==='garden'&&f.id!=='corridor-garden')||f.kind==='water'||f.kind==='welcome');
+ if(litFixtures.length){
+  const practical=signal;practical.color.setHex(0xffd598);practical.emissive.setHex(0xffb65f);practical.emissiveIntensity=3.2;practical.userData.motivatedEmitter=true;
+  const origins=root.userData.lightFixtures??=[];
+  for(const f of litFixtures)for(const fraction of f.kind==='garden'?[.22,.78]:[.5]){
+   const x=f.x+f.w*fraction,z=f.y+f.h*.85;
+   b(x,39,z,2.4,78,2.4,support);b(x,79,z,38,5,10,support);b(x,75.8,z,32,1.6,7,practical);
+   origins.push({x:x/32,y:2.3,z:z/32,color:0xffb65f,nativeColor:true});
+  }
+ }
  // The enclosure and passage-facing seats define circulation without detached
  // floor strokes implying equivalent outer loops.
  // Room4 rear panels occupy the first horizontal, northernmost boundary edge.

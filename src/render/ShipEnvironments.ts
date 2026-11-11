@@ -249,7 +249,7 @@ export function environmentArchitecture(parent:T.Group,env:ShipEnvironment,w:num
   }
  }
  if(env==='reactor'||env==='containment'){
-  for(const radius of [.22,.33,.44]){const r=ring(parent,w/2,.005,h/2,Math.min(w,h)*radius,.018,accent);r.rotation.x=-Math.PI/2;r.scale.z=.1;r.castShadow=false;}
+  if(templateId!=='reactor-vault')for(const radius of [.22,.33,.44]){const r=ring(parent,w/2,.005,h/2,Math.min(w,h)*radius,.018,accent);r.rotation.x=-Math.PI/2;r.scale.z=.1;r.castShadow=false;}
  }else if(env==='maintenance'){
   for(let z=1;z<h-1;z+=.35)for(const x of [1,w-1])box(parent,x,-.005,z,1.2,.018,.06,MAT.black,0);
  }else{

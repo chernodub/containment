@@ -2,18 +2,32 @@ import * as T from 'three';
 import type {WeaponId} from '../game/combat/types';
 import type {Bullet,GameEffect} from '../DepthGame';
 import {WEAPON_APPEARANCE} from './weapons';
-import {electricArc} from './electricArc';
-import {ballLightning} from './ballLightning';
 import {wallSurface} from './wallSurface';
+import type {GraphicsOptions} from './graphicsOptions';
+import type {GraphicsTier} from './FrameBudget';
 const UP=new T.Vector3(0,1,0),WHITE=new T.Color(0xffffff);
-type Particle={liquid?:boolean;wall?:T.Vector3;growth?:number;aspect?:number;p:T.Vector3;v:T.Vector3;color:T.Color;age:number;life:number;size:number;stretch:number;spin:number;rotation:number;gravity:number;ground:boolean};
+export type AttackEffectOptions=Partial<GraphicsOptions>&{reducedMotion?:boolean;tier?:GraphicsTier};
+export type AttackFeedback={
+ flash?:(event:{position:T.Vector3;color:number;intensity:number;radius:number;duration:number;priority:number})=>void;
+ shockwave?:(event:{position:T.Vector3;radius:number;strength:number;duration:number})=>void;
+};
+type Particle={variant?:number;liquid?:boolean;wall?:T.Vector3;growth?:number;aspect?:number;p:T.Vector3;v:T.Vector3;color:T.Color;age:number;life:number;size:number;stretch:number;spin:number;rotation:number;gravity:number;ground:boolean};
 type Pulse={p:T.Vector3;color:T.Color;age:number;life:number;radius:number;angle:number;slash:boolean;stable:boolean};
 export const EFFECT_LIMITS={glow:360,smoke:80,debris:80,pulses:24,decals:64,beams:320,fire:16} as const;
 const vertex=`attribute float effectFrame; varying float vFrame;attribute float effectAlpha;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
 void main(){vFrame=effectFrame;vUv=uv;vColor=instanceColor;vAlpha=effectAlpha;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`;
-const fragment=`uniform sampler2D map;uniform float inset;uniform float grid;uniform float textured;varying float vFrame;uniform float style;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
+const fragment=`uniform sampler2D map;uniform float inset;uniform float grid;uniform float textured;uniform float flashScale;varying float vFrame;uniform float style;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
 void main(){vec2 p=vUv*2.0-1.0;float d=length(p);float alpha=vAlpha;vec3 color=vColor;
-if(style>3.5){
+if(style>4.5){
+ float grain=fract(sin(dot(floor(p*80.0),vec2(12.9898,78.233)))*43758.5453);
+ float edge=1.0-smoothstep(.70+grain*.18,1.0,d);
+ if(vFrame<.5){float hole=1.0-smoothstep(.08,.38,d);float rim=(1.0-smoothstep(.34,.53,d))*.28;color=mix(color,vec3(.012,.017,.019),hole);alpha*=max(hole,rim)*edge;}
+ else if(vFrame<1.5){alpha*=edge*(.3+grain*.35)*(1.0-smoothstep(.25,.95,d));}
+ else if(vFrame<2.5){float pools=sin(p.x*11.0+p.y*4.0)*sin(p.y*13.0-p.x*3.0);alpha*=edge*(.18+smoothstep(-.3,.4,pools)*.5);}
+ else if(vFrame<3.5){float crystal=pow(1.0-abs(sin(atan(p.y,p.x)*6.0+d*12.0)),12.0);alpha*=edge*(.08+crystal*.6);}
+ else{float drops=sin(p.x*17.0)*sin(p.y*21.0);alpha*=edge*(.18+smoothstep(-.1,.4,drops)*.6);}
+}
+else if(style>3.5){
  // Dry, disconnected frost deposits, not a liquid disk. The plane and hard
  // outer clip retain the real radius; a quiet broken fringe indicates its reach.
  vec2 q=p*2.8+vec2(sin(p.y*7.0),sin(p.x*5.0))*.18;
@@ -37,6 +51,7 @@ else if(vFrame<0.0){float drop=length(vec2(p.x/(.76-.18*p.y),p.y));alpha*=1.0-sm
 else if(style<0.5){alpha*=pow(max(0.0,1.0-d),1.8);color*=1.0+2.0*pow(max(0.0,1.0-d),5.0);}
 else if(style<1.5){float n=.86+.09*sin(p.x*13.0+p.y*7.0)+.05*sin(p.y*19.0-p.x*4.0);alpha*=(1.0-smoothstep(.15,1.0,d/n))*.48;}
 if(textured>.5&&vFrame>=0.0){float frame=floor(vFrame);vec2 cell=vec2(mod(frame,grid),grid-1.0-floor(frame/grid));vec4 tex=texture2D(map,(cell+clamp(vUv,inset,1.0-inset))/grid);alpha=vAlpha*tex.a*(style>2.5?.9*smoothstep(.0,.12,vUv.y):.42);color=style>2.5?tex.rgb:vColor*(.6+tex.r*.8);}
+if(style<.5||style>2.5&&style<3.5)alpha*=flashScale;
 if(alpha<.003)discard;gl_FragColor=vec4(color,alpha);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
@@ -44,7 +59,7 @@ if(alpha<.003)discard;gl_FragColor=vec4(color,alpha);
 function pool(scene:T.Scene,geometry:T.BufferGeometry,count:number,style:number,additive=false,texture?:T.Texture,grid=1){
  geometry.setAttribute('effectFrame',new T.InstancedBufferAttribute(new Float32Array(count),1));
  const alpha=new T.InstancedBufferAttribute(new Float32Array(count),1);alpha.setUsage(T.DynamicDrawUsage);geometry.setAttribute('effectAlpha',alpha);
- const material=new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{style:{value:style},map:{value:texture??null},grid:{value:grid},inset:{value:grid===5?.5/256:.5/128},textured:{value:texture?1:0}},transparent:true,depthWrite:false,side:T.DoubleSide,blending:additive?T.AdditiveBlending:T.NormalBlending});
+ const material=new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{style:{value:style},flashScale:{value:1},map:{value:texture??null},grid:{value:grid},inset:{value:grid===5?.5/256:.5/128},textured:{value:texture?1:0}},transparent:true,depthWrite:false,side:T.DoubleSide,blending:additive?T.AdditiveBlending:T.NormalBlending});
  const mesh=new T.InstancedMesh(geometry,material,count);mesh.count=0;mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);mesh.setColorAt(0,WHITE);mesh.frustumCulled=false;scene.add(mesh);return mesh;
 }
 /** Bounded GPU instance pools: no lights or draw call per pellet / particle. */
@@ -56,28 +71,53 @@ export class AttackEffects {
  private glow:Particle[]=[];private smoke:Particle[]=[];private debris:Particle[]=[];private decals:Particle[]=[];private pulses:Pulse[]=[];
  private glowMesh:T.InstancedMesh;private smokeMesh:T.InstancedMesh;private debrisMesh:T.InstancedMesh;private decalMesh:T.InstancedMesh;private pulseMesh:T.InstancedMesh;private slashMesh:T.InstancedMesh;private beamMesh:T.InstancedMesh;
  private dummy=new T.Object3D();private forward=new T.Vector3();private previous=new WeakMap<Bullet,T.Vector3>();private trailClock=0;private boonBursts=0;private arcBursts=0;
+ private options:AttackEffectOptions={flashIntensity:1,reducedMotion:false,tier:'high',dynamicLights:true,distortion:true};
+ private feedback:AttackFeedback={};private particleFree=new Map<Particle[],Particle[]>();private disposed=false;
+ private bulletPosition=new T.Vector3();private bulletPrevious=new T.Vector3();private axis=new T.Vector3(0,0,1);private beamColor=new T.Color();
+ private arcAxis=new T.Vector3();private arcSide=new T.Vector3();private arcStart=new T.Vector3();private arcEnd=new T.Vector3();private forkStart=new T.Vector3();private forkEnd=new T.Vector3();
  constructor(scene:T.Scene,loader:T.TextureLoader|undefined=typeof document==='undefined'?undefined:new T.TextureLoader(),private world?:T.Object3D){
   const texture=(name:string,srgb=false)=>{const t=loader?.load(`${import.meta.env.BASE_URL}assets/vfx/${name}.png`)??new T.Texture();t.minFilter=t.magFilter=T.LinearFilter;t.generateMipmaps=false;t.colorSpace=srgb?T.SRGBColorSpace:T.NoColorSpace;this.textures.push(t);return t;};
   this.fireMesh=pool(scene,new T.PlaneGeometry(1,1),EFFECT_LIMITS.fire,3,false,texture('Explosion01',true),5);this.fireMesh.name='explosion-fire';
   this.glowMesh=pool(scene,new T.PlaneGeometry(1,1),EFFECT_LIMITS.glow,0,true);
   this.smokeMesh=pool(scene,new T.PlaneGeometry(1,1),EFFECT_LIMITS.smoke,1,false,texture('WispySmoke02'),8);
   this.debrisMesh=pool(scene,new T.BoxGeometry(1,1,1),EFFECT_LIMITS.debris,2);
-  this.decalMesh=pool(scene,new T.PlaneGeometry(1,1),EFFECT_LIMITS.decals,1);
+  this.decalMesh=pool(scene,new T.PlaneGeometry(1,1),EFFECT_LIMITS.decals,5);this.decalMesh.name='contact-decals';
   this.pulseMesh=pool(scene,new T.RingGeometry(.955,1,48),EFFECT_LIMITS.pulses,2,true);
   this.slashMesh=pool(scene,new T.RingGeometry(.72,1,16,1,-.65,1.3),EFFECT_LIMITS.pulses,2,true);
-  this.beamMesh=pool(scene,new T.CylinderGeometry(1,1,1,5),EFFECT_LIMITS.beams,2,true);
+  this.beamMesh=pool(scene,new T.CylinderGeometry(.16,1,1,5),EFFECT_LIMITS.beams,2,true);this.beamMesh.name='weapon-tracers';
   // Keep the existing pool order stable for renderer diagnostics.
   scene.remove(this.fireMesh);scene.add(this.fireMesh);
   this.fieldMesh=pool(scene,new T.PlaneGeometry(1,1),4,4);this.fieldMesh.name='frost-fields';
+  for(const [list,limit]of [[this.fire,EFFECT_LIMITS.fire],[this.glow,EFFECT_LIMITS.glow],[this.smoke,EFFECT_LIMITS.smoke],[this.debris,EFFECT_LIMITS.debris],[this.decals,EFFECT_LIMITS.decals]] as const){
+   const free:Particle[]=[];for(let i=0;i<limit;i++)free.push({p:new T.Vector3(),v:new T.Vector3(),color:new T.Color(),age:0,life:0,size:0,stretch:1,spin:0,rotation:0,gravity:0,ground:false});this.particleFree.set(list,free);
+  }
+ }
+ /** Additive preferences; safe to change during combat or tier switches. */
+ setOptions(options:AttackEffectOptions){
+  this.options={...this.options,...options,flashIntensity:T.MathUtils.clamp(options.flashIntensity??this.options.flashIntensity??1,0,1)};
+  for(const mesh of this.meshes())(mesh.material as T.ShaderMaterial).uniforms.flashScale.value=(this.options.flashIntensity??1)*(this.options.reducedMotion?.55:1);
+  if(this.options.tier==='low')for(const [list,free]of this.particleFree){const limit=list===this.fire?EFFECT_LIMITS.fire:list===this.glow?EFFECT_LIMITS.glow:list===this.smoke?EFFECT_LIMITS.smoke:list===this.debris?EFFECT_LIMITS.debris:EFFECT_LIMITS.decals;const cap=Math.max(4,Math.floor(limit*.45));while(list.length>cap)free.push(list.pop()!);}
+ }
+ /** Event-local vectors may be reused; copy the position if a callback retains it. */
+ setFeedback(feedback:AttackFeedback){this.feedback=feedback;}
+ private flash(position:T.Vector3,color:number,intensity:number,radius:number,duration:number,priority:number){
+  if(this.options.dynamicLights===false||!(this.options.flashIntensity??1))return;
+  this.feedback.flash?.({position,color,intensity:intensity*(this.options.flashIntensity??1)*(this.options.reducedMotion?.5:1),radius,duration,priority});
  }
  /** Room loads replace the rendered geometry group. Never retain its disposed predecessor. */
  setWorld(world:T.Object3D){this.world=world;}
- private particle(list:Particle[],limit:number,p:T.Vector3,color:number,size:number,life:number,v=new T.Vector3(),gravity=0,stretch=1){
-  if(list.length>=limit)list.shift();list.push({p:p.clone(),v,color:new T.Color(color),age:0,life,size,stretch,spin:(Math.random()-.5)*(list===this.smoke?.9:12),rotation:Math.random()*6.28,gravity,ground:false});
+ private particle(list:Particle[],limit:number,p:T.Vector3,color:number,size:number,life:number,v?:T.Vector3,gravity=0,stretch=1){
+  const cap=this.options.tier==='low'?Math.max(4,Math.floor(limit*.45)):limit;
+  const item=list.length>=cap?list.shift()!:this.particleFree.get(list)!.pop()!;
+  item.p.copy(p);if(v)item.v.copy(v);else item.v.set(0,0,0);item.color.setHex(color);item.age=0;item.life=life;item.size=size;item.stretch=stretch;
+  item.spin=list===this.decals?0:(Math.random()-.5)*(list===this.smoke?.9:12)*(this.options.reducedMotion?.2:1);item.rotation=Math.random()*6.28;item.gravity=gravity;item.ground=list===this.decals;
+  item.liquid=false;item.wall=undefined;item.growth=undefined;item.aspect=undefined;item.variant=list===this.decals?1:undefined;list.push(item);
  }
  private pulse(p:T.Vector3,color:number,radius:number,life:number,angle=0,slash=false,stable=false){if(this.pulses.length>=EFFECT_LIMITS.pulses)this.pulses.shift();this.pulses.push({p:p.clone(),color:new T.Color(color),radius,life,age:0,angle,slash,stable});}
  shot(p:T.Vector3,angle:number,id:WeaponId){
+  if(this.disposed)return;
   const cfg=WEAPON_APPEARANCE[id],forward=new T.Vector3(Math.cos(angle),0,Math.sin(angle)),right=new T.Vector3(-forward.z,0,forward.x);
+  this.flash(p,cfg.color,id==='rocket'?4:id==='shotgun'?3:1.6,id==='rocket'?6:3.5,.09,2);
   const count=id==='shotgun'?6:id==='plasma'?4:id==='rocket'?7:3;
   // A hot core and directional lobes extend from the actual barrel socket.
   for(let i=0;i<count;i++){
@@ -99,11 +139,13 @@ export class AttackEffects {
   }
  }
  event(e:GameEffect){
+  if(this.disposed)return;
   const p=new T.Vector3(e.x/32,(e.type==='explosion'||e.radius!==undefined)? .10:.8,e.y/32);
   if(e.type==='wall-slam'&&e.wall){p.y=.8;this.wallSlam(e,p);return;}
   const angle=e.angle??0,forward=new T.Vector3(Math.cos(angle),0,Math.sin(angle));
   if(e.contact){
    const blocked=e.contact!=='damage',color=blocked?0x90baca:0xffe6b7;
+   this.flash(p,color,.65,1.7,.07,1);
    this.particle(this.glow,EFFECT_LIMITS.glow,p,color,blocked?.16:.24,.065);
    for(let i=0;i<3;i++){const a=angle+Math.PI+(i-1)*.8,v=new T.Vector3(Math.cos(a)*2,.5+i*.3,Math.sin(a)*2);this.particle(this.glow,EFFECT_LIMITS.glow,p,blocked?0x8cafbf:0xb7ba72,.045,.14,v,4);}
    return;
@@ -112,13 +154,15 @@ export class AttackEffects {
   if(e.type==='acid'&&e.targetId===undefined){this.acidSplash(e,p);return;}
   if(e.type==='enemy-warning'){
    p.y=.035;const life=(e.durationMs??650)/1000;
-   this.pulse(p,0xe9a564,(e.radius??38)/32,life);
-   if(e.targetX!==undefined&&e.targetY!==undefined){const target=new T.Vector3(e.targetX/32,.04,e.targetY/32);this.pulse(target,0xe9a564,.8,life);const direction=target.clone().sub(p);for(let i=0;i<12;i++)this.particle(this.glow,EFFECT_LIMITS.glow,p.clone().addScaledVector(direction,i/12),0xd98d54,.07,life);}
+   // A warning always shows its complete hit radius, never an expanding approximation.
+   this.pulse(p,0xff5a36,(e.radius??38)/32,life,0,false,true);
+   if(e.targetX!==undefined&&e.targetY!==undefined){const target=new T.Vector3(e.targetX/32,.04,e.targetY/32);this.pulse(target,0xff5a36,.8,life,0,false,true);const direction=target.clone().sub(p);for(let i=0;i<12;i++)this.particle(this.glow,EFFECT_LIMITS.glow,p.clone().addScaledVector(direction,i/12),0xd98d54,.07,life);}
    return;
   }
   if(e.type==='boon'){
    if(this.boonBursts++>=8)return;
    const colors={frost:0x8cdeed,arc:0xb3bbff,burn:0xf89847,impact:0xf5dab0,leech:0xbb7385,shield:0x86c9ce,overload:0xf4b96b,poison:0x5dd8b6,charge:0xd6b9f3,blast:0xcbd8dc,combustion:0xffba71,shatter:0xa3eaf3,field:0x75bdcf},color=colors[e.boon??'impact'];
+   if(e.boon==='arc'||e.boon==='burn'||e.boon==='frost'||e.boon==='shatter')this.flash(p,color,e.boon==='arc'?2.5:1.6,3,.16,2);
    if(e.targetX!==undefined&&e.targetY!==undefined){
     if(e.boon==='impact'||e.boon==='frost'){
      const end=new T.Vector3(e.targetX/32,.8,e.targetY/32),frost=e.boon==='frost';
@@ -203,6 +247,8 @@ export class AttackEffects {
   const impactColor=acid||death?0x9ebc5e:e.weapon==='plasma'?0x69ddff:0xffc68b;
   if(explosion||(acid&&e.radius)){
    const r=(e.radius??100)/32,fiery=e.elements?.includes('fire')??false,icy=e.elements?.includes('ice')??false,toxic=e.elements?.includes('poison')??false,color=acid||toxic?0x8dd45a:fiery?0xffb64e:icy?0xb9efff:0xcbd8dc;
+   this.flash(p,color,acid?2:8,Math.min(12,r*3),.38,4);
+   if(!acid&&this.options.distortion!==false&&!this.options.reducedMotion)this.feedback.shockwave?.({position:p,radius:r,strength:.6*(this.options.flashIntensity??1),duration:.42});
    // Mixed statuses compose local cues; no global-build tint or hidden priority.
    if(icy)this.event({type:'boon',boon:'shatter',x:e.x,y:e.y,radius:e.radius});
    if(toxic)for(let i=0;i<8;i++){const a=i*Math.PI/4;this.particle(this.debris,EFFECT_LIMITS.debris,p,0x76d958,.08,.55,new T.Vector3(Math.cos(a)*2,1.5,Math.sin(a)*2),6,0);}
@@ -212,9 +258,17 @@ export class AttackEffects {
     for(let i=0;i<9;i++){const a=i*2.399,s=1.5+Math.random()*r;this.particle(this.debris,EFFECT_LIMITS.debris,p,i%2?0x746c59:0x343a38,.055+Math.random()*.07,3.5,new T.Vector3(Math.cos(a)*s,2+Math.random()*3,Math.sin(a)*s),9.8,1.8);}}
    for(let i=0;i<16;i++){const a=Math.random()*6.28,s=1+Math.random()*r*2,v=new T.Vector3(Math.cos(a)*s,Math.random()*4+.5,Math.sin(a)*s);this.particle(this.glow,EFFECT_LIMITS.glow,p,color,.10+Math.random()*.08,.25+Math.random()*.4,v,6);}
    if(!acid&&!fiery&&!icy)for(let i=0;i<7;i++){const a=i*2.399;this.particle(this.debris,EFFECT_LIMITS.debris,p,0x9aabad,.06,1.2,new T.Vector3(Math.cos(a)*2,2,Math.sin(a)*2),9.8,1.8);}
-   if(!icy)for(let i=0;i<5;i++)this.particle(this.smoke,EFFECT_LIMITS.smoke,p,acid?0x758b50:0xb0bec0,.65+Math.random()*.5,acid||fiery?.85+Math.random()*.4:.4+Math.random()*.15,new T.Vector3((Math.random()-.5)*r,1+Math.random(),(Math.random()-.5)*r));
-   if(acid||fiery)this.particle(this.decals,EFFECT_LIMITS.decals,new T.Vector3(p.x,.008,p.z),acid?0x283f20:0x111719,r*1.4,14);
+   if(!icy)for(let i=0;i<5;i++){this.particle(this.smoke,EFFECT_LIMITS.smoke,p,acid?0x758b50:0x667174,.65+Math.random()*.5,acid||fiery?.85+Math.random()*.4:.4+Math.random()*.15,new T.Vector3((Math.random()-.5)*r,1+Math.random(),(Math.random()-.5)*r));if(fiery)this.smoke[this.smoke.length-1].age=-.09;}
+   if(acid||fiery||icy){this.particle(this.decals,EFFECT_LIMITS.decals,new T.Vector3(p.x,.008,p.z),acid?0x283f20:icy?0x72a3ae:0x111719,r*1.4,14);this.decals[this.decals.length-1].variant=acid?2:icy?3:1;}
   }else{
+   if(!acid&&!death){
+    this.flash(p,impactColor,.7,1.8,.08,1);
+    if(e.targetId===undefined){
+     const surface=this.world&&wallSurface(this.world,p,forward.clone().negate(),.3);
+     this.particle(this.decals,EFFECT_LIMITS.decals,surface?.supported?surface.point:new T.Vector3(p.x,.012,p.z),0x1a2224,e.weapon==='plasma'?.34:.2,18);
+     const mark=this.decals[this.decals.length-1];mark.variant=e.weapon==='plasma'?1:0;mark.ground=true;mark.spin=0;if(surface?.supported)mark.wall=surface.normal;
+    }
+   }
    if(!acid&&!death)for(let i=0;i<(e.targetId!==undefined?4:3);i++){const a=angle+Math.PI+(Math.random()-.5)*1.1,s=1+Math.random()*2,target=e.targetId!==undefined;this.particle(this.debris,EFFECT_LIMITS.debris,p,0x898477,target?.022+Math.random()*.012:.045,target?.35+Math.random()*.3:3.5,new T.Vector3(Math.cos(a)*s,1+Math.random()*1.5,Math.sin(a)*s),9.8,1.8);}
    for(let i=0;i<(death?16:acid?7:9);i++){
     const a=acid||death?Math.random()*6.28:angle+Math.PI+(Math.random()-.5)*1.3,s=.8+Math.random()*3,v=new T.Vector3(Math.cos(a)*s,Math.random()*2.8,Math.sin(a)*s).addScaledVector(forward,acid?1.5:-1.5);
@@ -224,6 +278,7 @@ export class AttackEffects {
    if(!acid&&!death)this.particle(this.smoke,EFFECT_LIMITS.smoke,p,0x8b9185,.35,.45,new T.Vector3(0,.3,0));
    if(acid||death){
     this.particle(this.decals,EFFECT_LIMITS.decals,new T.Vector3(p.x,.009,p.z),0x263524,death?1.25:.5,16);
+    this.decals[this.decals.length-1].variant=death?4:2;
     const target=e.targetId!==undefined,small=death||target;
     for(let i=0;i<(death?10:target?4:2);i++)this.particle(this.debris,EFFECT_LIMITS.debris,p,i%2?0x4c5541:0x9a9872,small?.025+Math.random()*.025:.075+Math.random()*.08,death?.55+Math.random()*.45:target?.35+Math.random()*.3:6,new T.Vector3((Math.random()-.5)*3,1+Math.random()*3,(Math.random()-.5)*3),9.8,1.7);
    }
@@ -273,7 +328,7 @@ export class AttackEffects {
  private drawParticles(list:Particle[],mesh:T.InstancedMesh,dt:number,camera:T.Camera,mode:'glow'|'smoke'|'debris'|'decal'|'fire'){
   const alpha=mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute;let index=0;
   for(const s of list){
-   s.age+=dt;if(s.age>=s.life)continue;const t=s.age/s.life;
+   s.age+=dt;if(s.age>=s.life||s.age<0)continue;const t=s.age/s.life;
    if(!s.ground){s.v.y-=s.gravity*dt;s.p.addScaledVector(s.v,dt);s.rotation+=s.spin*dt;if(mode==='debris'&&s.p.y<.035){s.p.y=.035;s.v.y=Math.abs(s.v.y)*.23;s.v.x*=.65;s.v.z*=.65;s.spin*=.55;if(s.v.y<.35&&Math.hypot(s.v.x,s.v.z)<.3){s.ground=true;s.v.set(0,0,0);s.spin=0;}}}
    if(s.liquid&&s.p.y<=.012){s.p.y=.012;s.ground=true;s.v.set(0,0,0);}
    this.dummy.position.copy(s.p);this.dummy.quaternion.copy(camera.quaternion);
@@ -283,34 +338,44 @@ export class AttackEffects {
     const size=s.size*(s.ground?1.8:1);this.dummy.scale.set(size,size*(s.ground?.8:1.6),1);this.dummy.updateMatrix();
     mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,s.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,-1);alpha.setX(index,.9*Math.min(1,(1-t)*4));index++;continue;
    }
-   if(mode==='decal'||mode==='smoke'&&s.wall){if(s.wall){this.dummy.quaternion.setFromUnitVectors(new T.Vector3(0,0,1),s.wall);this.dummy.rotateZ(s.rotation);}else this.dummy.rotation.set(-Math.PI/2,0,s.rotation);}
+   if(mode==='decal'||mode==='smoke'&&s.wall){if(s.wall){this.dummy.quaternion.setFromUnitVectors(this.axis,s.wall);this.dummy.rotateZ(s.rotation);}else this.dummy.rotation.set(-Math.PI/2,0,s.rotation);}
    else if(mode==='debris')this.dummy.rotation.set(s.rotation,s.rotation*.7,s.rotation*.4);
    else this.dummy.rotateZ(s.rotation);
    const size=s.size*(mode==='smoke'?1+t*(s.growth??2.5):mode==='glow'?1-t*.4:mode==='fire'?1+t*.25:1);
-   (mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,Math.min(mode==='fire'?24:63,Math.floor(t*(mode==='fire'?25:64))));
+   (mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,mode==='decal'?(s.variant??1):Math.min(mode==='fire'?24:63,Math.floor(t*(mode==='fire'?25:64))));
    this.dummy.scale.set(size,mode==='debris'?size*.5:size*(s.aspect??1),size*s.stretch);this.dummy.updateMatrix();mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,s.color);alpha.setX(index,mode==='decal'?.75*(1-t*t):mode==='debris'?Math.min(1,(1-t)*4):mode==='fire'?Math.min(1,(1-t)*4):(1-t)*(mode==='smoke'?Math.min(1,t*10):1));index++;
   }
-  for(let i=list.length-1;i>=0;i--)if(list[i].age>=list[i].life)list.splice(i,1);
+  let write=0;const free=this.particleFree.get(list)!;
+  for(let i=0;i<list.length;i++){const item=list[i];if(item.age>=item.life)free.push(item);else list[write++]=item;}list.length=write;
   this.finish(mesh,index);
  }
  private finish(mesh:T.InstancedMesh,count:number){mesh.count=count;(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).needsUpdate=true;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).needsUpdate=true;}
+ private arcBeam(start:T.Vector3,end:T.Vector3,width:number,color:number,alpha:number,index:number){
+  this.forward.subVectors(end,start);const length=this.forward.length();if(length<.001)return index;
+  this.dummy.position.copy(start).add(end).multiplyScalar(.5);this.dummy.quaternion.setFromUnitVectors(UP,this.forward.multiplyScalar(1/length));this.dummy.scale.set(width,length,width);this.dummy.updateMatrix();
+  this.beamMesh.setMatrixAt(index,this.dummy.matrix);this.beamMesh.setColorAt(index,this.beamColor.setHex(color).multiplyScalar(width<.05?3:1.4));(this.beamMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,alpha);return index+1;
+ }
  update(dt:number,camera:T.Camera,bullets:readonly Bullet[]){
-  if(dt<=0)return;
+  if(dt<=0||this.disposed)return;
   this.boonBursts=this.arcBursts=0;this.trailClock+=dt;const trail=this.trailClock>.04;if(trail)this.trailClock=0;
-  let beam=0;const alpha=this.beamMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute;
+  let beam=0;const beamLimit=this.options.tier==='low'?120:EFFECT_LIMITS.beams,alpha=this.beamMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute;
   for(const b of bullets){
    if(b.kind==='player'&&(2-b.life)*b.request.speed<(b.visualMuzzle?.distance??0))continue;
    const id=b.request.weaponId,grenade=b.kind==='grenade',hazard=b.kind==='hazard';
-   const p=new T.Vector3(b.x/32,grenade?1+Math.sin((1-b.life/1.1)*Math.PI)*1.4:b.visualMuzzle?.y??.99,b.y/32);
-   const old=this.previous.get(b)??(b.visualMuzzle?new T.Vector3(b.visualMuzzle.x,b.visualMuzzle.y,b.visualMuzzle.z):p.clone().addScaledVector(new T.Vector3(Math.cos(b.request.angle),0,Math.sin(b.request.angle)),-b.request.speed/32*dt));
-   if(!grenade&&beam<EFFECT_LIMITS.beams){
+   const p=this.bulletPosition.set(b.x/32,grenade?1+Math.sin((1-b.life/1.1)*Math.PI)*1.4:b.visualMuzzle?.y??.99,b.y/32);
+   let old=this.previous.get(b);
+   if(!old){old=this.bulletPrevious;if(b.visualMuzzle)old.set(b.visualMuzzle.x,b.visualMuzzle.y,b.visualMuzzle.z);else old.copy(p).addScaledVector(this.forward.set(Math.cos(b.request.angle),0,Math.sin(b.request.angle)),-b.request.speed/32*dt);}
+   if(!grenade&&beam<beamLimit){
     this.forward.copy(p).sub(old);const distance=this.forward.length();
-    if(distance>.002){this.dummy.position.copy(p).add(old).multiplyScalar(.5);this.dummy.quaternion.setFromUnitVectors(UP,this.forward.normalize());this.dummy.scale.set(hazard?.04:id==='plasma'?.035:.012,distance,hazard?.04:id==='plasma'?.035:.012);this.dummy.updateMatrix();this.beamMesh.setMatrixAt(beam,this.dummy.matrix);this.beamMesh.setColorAt(beam,new T.Color(hazard?0xb2d968:WEAPON_APPEARANCE[id].color));alpha.setX(beam,.85);beam++;}
+    if(distance>.002){
+     const width=hazard?.045:id==='plasma'?.065:id==='rocket'?.032:id==='shotgun'?.019:id==='rifle'?.016:.021;
+     this.dummy.position.copy(p).add(old).multiplyScalar(.5);this.dummy.quaternion.setFromUnitVectors(UP,this.forward.normalize());this.dummy.scale.set(width,distance,width);this.dummy.updateMatrix();this.beamMesh.setMatrixAt(beam,this.dummy.matrix);this.beamMesh.setColorAt(beam,this.beamColor.setHex(hazard?0xb2d968:WEAPON_APPEARANCE[id].color).multiplyScalar(id==='plasma'?3.5:2.4));alpha.setX(beam,.85);beam++;
+    }
    }
-   this.previous.set(b,p);
+   if(old===this.bulletPrevious)this.previous.set(b,p.clone());else old.copy(p);
    if(trail&&(id==='plasma'||id==='rocket'||hazard)&&!grenade){
     this.particle(this.glow,EFFECT_LIMITS.glow,p,hazard?0x9cdb66:WEAPON_APPEARANCE[id].color,hazard?.2:id==='rocket'?.22:.19,.16);
-    if(id==='rocket')this.particle(this.smoke,EFFECT_LIMITS.smoke,p,0x77817d,.25,.6,new T.Vector3(0,.2,0));
+    if(id==='rocket')this.particle(this.smoke,EFFECT_LIMITS.smoke,p,0x77817d,.25,.6,this.forward.set(0,.2,0));
    }
   }
   // Straight kinetic tracer or layered cyan lance. Only arc events branch/restrike.
@@ -318,31 +383,41 @@ export class AttackEffects {
    link.age+=dt;const life=link.frost?.24:.12;if(link.age>=life)continue;
    this.forward.copy(link.end).sub(link.start);const length=this.forward.length();if(length<.002)continue;
    const fade=1-link.age/life;
-   for(let layer=0;layer<(link.frost?2:1)&&beam<EFFECT_LIMITS.beams;layer++){
+   for(let layer=0;layer<(link.frost?2:1)&&beam<beamLimit;layer++){
     this.dummy.position.copy(link.start).add(link.end).multiplyScalar(.5);this.dummy.quaternion.setFromUnitVectors(UP,this.forward.normalize());
     const width=link.frost?(layer?.018:.065):.018;this.dummy.scale.set(width,length,width);this.dummy.updateMatrix();
-    this.beamMesh.setMatrixAt(beam,this.dummy.matrix);this.beamMesh.setColorAt(beam,new T.Color(link.frost?(layer?0xe4fbff:0x8cdeed):0xf5dab0));alpha.setX(beam++,fade*(layer||!link.frost?.85:.35));
+    this.beamMesh.setMatrixAt(beam,this.dummy.matrix);this.beamMesh.setColorAt(beam,this.beamColor.setHex(link.frost?(layer?0xe4fbff:0x8cdeed):0xf5dab0).multiplyScalar(layer?2.8:1.5));alpha.setX(beam++,fade*(layer||!link.frost?.85:.35));
    }
   }
-  this.links=this.links.filter(link=>link.age<(link.frost?.24:.12));
+  let write=0;for(const link of this.links)if(link.age<(link.frost?.24:.12))this.links[write++]=link;this.links.length=write;
   // Reuse the bounded beam pool: broad violet corona plus thin blue-white core.
   for(const arc of this.arcs){
    arc.age+=dt;const life=arc.ball?.36:.26;if(arc.age>=life)continue;
-   const strike=Math.floor(arc.age/(arc.ball?.06:.045)),fade=Math.pow(1-arc.age/life,.6)*(strike%2?.65:1);
-   const segments=arc.ball?ballLightning(arc.start,arc.end,arc.seed+strike):electricArc(arc.start,arc.end,arc.seed+strike);
-   for(const segment of segments)for(let layer=0;layer<2;layer++){
-    if(beam>=EFFECT_LIMITS.beams)break;
-    this.forward.copy(segment.end).sub(segment.start);const length=this.forward.length();
-    this.dummy.position.copy(segment.start).add(segment.end).multiplyScalar(.5);this.dummy.quaternion.setFromUnitVectors(UP,this.forward.normalize());
-    const width=arc.ball?(layer?.042:.075)*('width' in segment?segment.width as number:1):(layer?.012:.045)*(segment.branch?.55:1);
-    this.dummy.scale.set(width,length,width);this.dummy.updateMatrix();this.beamMesh.setMatrixAt(beam,this.dummy.matrix);
-    this.beamMesh.setColorAt(beam,new T.Color(layer?0xc4eaff:0x666dff));alpha.setX(beam++,fade*(layer?.95:.22));
+   const strike=this.options.reducedMotion?0:Math.floor(arc.age/(arc.ball?.06:.045)),fade=Math.pow(1-arc.age/life,.6)*(strike%2?.65:1);
+   this.arcAxis.subVectors(arc.end,arc.start);const distance=this.arcAxis.length(),count=arc.ball?11:12;
+   this.arcSide.set(-this.arcAxis.z,0,this.arcAxis.x).normalize();this.arcStart.copy(arc.start);
+   for(let i=1;i<=count&&beam+1<beamLimit;i++){
+    const t=i/count,noise=Math.sin((arc.seed+strike)*7.13+i*127.1);
+    this.arcEnd.copy(arc.start).addScaledVector(this.arcAxis,t);
+    if(i<count){this.arcEnd.addScaledVector(this.arcSide,noise*Math.sin(t*Math.PI)*Math.min(arc.ball?.85:.5,distance*.2));this.arcEnd.y+=Math.cos(i*37.7+strike)*.14;}
+    const width=arc.ball?(1-t*.65)*(.8+Math.abs(noise)*.6):1;
+    beam=this.arcBeam(this.arcStart,this.arcEnd,(arc.ball?.075:.045)*width,0x666dff,fade*.22,beam);
+    beam=this.arcBeam(this.arcStart,this.arcEnd,(arc.ball?.042:.012)*width,0xc4eaff,fade*.95,beam);
+    // Coherent small forks share the same pool; never allocate a segment list per frame.
+    if(i%3===0&&i<count&&beam+3<beamLimit){
+     this.forkStart.copy(this.arcEnd);const sign=noise<0?-1:1;
+     for(let j=0;j<2;j++){
+      this.forkEnd.copy(this.forkStart).addScaledVector(this.arcSide,sign*(.16+Math.abs(noise)*.24)).addScaledVector(this.arcAxis,.025);this.forkEnd.y+=.08;
+      beam=this.arcBeam(this.forkStart,this.forkEnd,.024,0x666dff,fade*.18,beam);beam=this.arcBeam(this.forkStart,this.forkEnd,.008,0xc4eaff,fade*.7,beam);this.forkStart.copy(this.forkEnd);
+     }
+    }
+    this.arcStart.copy(this.arcEnd);
    }
   }
-  this.arcs=this.arcs.filter(a=>a.age<(a.ball?.36:.26));
+  write=0;for(const arc of this.arcs)if(arc.age<(arc.ball?.36:.26))this.arcs[write++]=arc;this.arcs.length=write;
   // Short velocity-aligned spark streaks share the existing bounded beam draw.
   for(const spark of this.glow){
-   if(beam>=EFFECT_LIMITS.beams)break;
+   if(beam>=beamLimit)break;
    const speed=spark.v.length();if(speed<2||spark.age+dt>=spark.life)continue;
    const length=Math.min(.28,speed*.035);
    this.forward.copy(spark.v).normalize();this.dummy.position.copy(spark.p).addScaledVector(this.forward,-length*.5);
@@ -356,14 +431,14 @@ export class AttackEffects {
    this.dummy.position.copy(f.p);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.setScalar(f.radius*2);this.dummy.updateMatrix();
    this.fieldMesh.setMatrixAt(field,this.dummy.matrix);this.fieldMesh.setColorAt(field,f.color);
    (this.fieldMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(field++,Math.min(1,f.age/.12,(f.life-f.age)/.25));
-  }this.fields=this.fields.filter(f=>f.age<f.life);this.finish(this.fieldMesh,field);
+  }write=0;for(const f of this.fields)if(f.age<f.life)this.fields[write++]=f;this.fields.length=write;this.finish(this.fieldMesh,field);
   let ring=0,slash=0;for(const pulse of this.pulses){pulse.age+=dt;if(pulse.age>=pulse.life)continue;const t=pulse.age/pulse.life,mesh=pulse.slash?this.slashMesh:this.pulseMesh,index=pulse.slash?slash++:ring++;
-   this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);const size=pulse.radius*(pulse.stable?1:pulse.slash?.65+t*.35:.15+t*.85);this.dummy.scale.setScalar(size);this.dummy.updateMatrix();mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,(1-t)*.8);
+   this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);const size=pulse.radius*(pulse.stable?1:pulse.slash?.65+t*.35:.15+t*.85);this.dummy.scale.setScalar(size);this.dummy.updateMatrix();mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,pulse.stable?.4+.5*t:(1-t)*.8);
   }
-  this.pulses=this.pulses.filter(p=>p.age<p.life);this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);
+  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);
  }
- clear(){this.fields=[];this.fire=[];this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links=[];this.arcs=[];this.glow=[];this.smoke=[];this.debris=[];this.decals=[];this.pulses=[];this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
+ clear(){this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
  get counts(){return{fire:this.fire.length,glow:this.glow.length,smoke:this.smoke.length,debris:this.debris.length,pulses:this.pulses.length,decals:this.decals.length};}
  private meshes(){return[this.fireMesh,this.glowMesh,this.smokeMesh,this.debrisMesh,this.decalMesh,this.pulseMesh,this.slashMesh,this.beamMesh,this.fieldMesh];}
- dispose(){for(const t of this.textures)t.dispose();for(const m of this.meshes()){m.geometry.dispose();(m.material as T.Material).dispose();m.removeFromParent();}}
+ dispose(){if(this.disposed)return;this.clear();this.disposed=true;this.feedback={};for(const t of this.textures)t.dispose();for(const m of this.meshes()){m.geometry.dispose();(m.material as T.Material).dispose();m.removeFromParent();}this.particleFree.clear();}
 }

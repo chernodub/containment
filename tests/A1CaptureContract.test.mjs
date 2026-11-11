@@ -19,7 +19,7 @@ it('registers one self-contained production capture fixture for every catalog ab
 it('keeps both stream scenario sets and checks the integrated live HUD', async () => {
   const { SCENARIOS } = await import('../scripts/nextgen/scenarios.mjs');
   expect(new Set(SCENARIOS.map(s => s.id)).size).toBe(SCENARIOS.length);
-  for (const id of ['ability:desktop-input', 'ability-ready', 'ability-denied', 'combat-kiting', 'pause-loadout', 'pause-loadout-augments', 'augment-draft', 'results-fixture', 'complete-fixture', 'results']) {
+  for (const id of ['ability:desktop-input', 'ability-ready', 'ability-denied', 'combat-kiting', 'pause-loadout', 'pause-loadout-augments', 'augment-draft', 'results-fixture', 'complete-fixture', 'results', 'g1-recovery', 'g1-kiting', 'g1-benchmark-high', 'g1-benchmark-low', 'i2-kiting-high', 'i2-kiting-low', 'i2-low-calm']) {
     expect(SCENARIOS.some(s => s.id === id)).toBe(true);
   }
   const { ABILITY_SCENARIOS } = await import('../scripts/nextgen/ability-scenarios.mjs');
@@ -42,4 +42,11 @@ it('opens every rig preview through live rig-select rather than a UI phase fixtu
     if (originalWindow === undefined) delete globalThis.window; else globalThis.window = originalWindow;
     if (originalDocument === undefined) delete globalThis.document; else globalThis.document = originalDocument;
   }
+});
+
+it('covers every lighting environment in the ten default rooms', async () => {
+  const {DEFAULT_ROOMS} = await import('../scripts/nextgen/scenarios.mjs');
+  const {SHIP_ENVIRONMENTS, shipEnvironment} = await import('../src/render/ShipEnvironments');
+  expect(DEFAULT_ROOMS).toHaveLength(10);
+  expect(new Set(DEFAULT_ROOMS.map(shipEnvironment))).toEqual(new Set(SHIP_ENVIRONMENTS));
 });
