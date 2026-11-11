@@ -54,9 +54,10 @@ const vertexShader = /* glsl */ `
     float t = time;
     vFade = 1.0;
     if (vStory > .5) {
-      float cycle=fract(variation.y+t*(vStory<1.5?.9:vStory<2.5?.23:1.1));
+      float cycle=fract(variation.y+t*(vStory>3.5?.4:vStory<1.5?.9:vStory<2.5?.23:1.1));
       float size=.04;
-      if(vStory<1.5){p+=vec3((variation.z-.5)*cycle*.6,-cycle*cycle*.75+cycle*.22,(variation.y-.5)*cycle*.6);size=.022;vFade=pow(1.-cycle,2.);}
+      if(vStory>3.5){p+=vec3(sin(variation.y*12.+t)*cycle*.3,cycle*1.35,cos(variation.z*12.+t*.7)*cycle*.3);size=.026;vFade=sin(cycle*3.14159)*.8;}
+      else if(vStory<1.5){p+=vec3((variation.z-.5)*cycle*.6,-cycle*cycle*.75+cycle*.22,(variation.y-.5)*cycle*.6);size=.022;vFade=pow(1.-cycle,2.);}
       else if(vStory<2.5){p+=vec3(sin(variation.z*12.+t*.4)*cycle*.14,cycle*.9,cos(variation.y*14.)*cycle*.12);size=.15+cycle*.32;vFade=sin(cycle*3.14159)*.13;}
       else{p.y-=cycle*.7;size=.019;vFade=sin(cycle*3.14159)*.5;}
       vec4 view=modelViewMatrix*vec4(p,1.);view.xy+=position.xy*vec2(size,vStory>2.5?size*3.:size);gl_Position=projectionMatrix*view;
@@ -103,7 +104,7 @@ const fragmentShader = /* glsl */ `
   void main() {
     vec2 p = vUv * 2.0 - 1.0;
     float r = dot(p, p);
-    if(vStory>.5){float alpha=pow(max(0.,1.-sqrt(r)),2.)*vFade;vec3 color=vStory<1.5?vec3(3.,1.1,.15):vStory<2.5?vec3(.7,.77,.8):vec3(.3,.5,.43);gl_FragColor=vec4(color,alpha);
+    if(vStory>.5){float alpha=pow(max(0.,1.-sqrt(r)),2.)*vFade;vec3 color=(vStory<1.5||vStory>3.5)?vec3(3.,1.1,.15):vStory<2.5?vec3(.7,.77,.8):vec3(.3,.5,.43);gl_FragColor=vec4(color,alpha);
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
       return;

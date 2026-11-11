@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {MAT,box,rod,batch} from '../meshParts';
+import {MAT,box,rod,batch,geometry} from '../meshParts';
 import type {ShipEnvironment} from '../ShipEnvironments';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import {environmentClock} from '../lighting/HotFixtureSurface';
@@ -7,6 +7,7 @@ import {createAnchoredStoryParticles} from '../atmosphere/Atmosphere';
 
 type Origin={x:number;y:number;z:number;kind:number};
 const point=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
+const roomParticles=new WeakMap<T.Group,T.Mesh>();
 
 /** Bounded story effects originate on physical equipment; only flush roots cross routes. */
 export function addEnvironmentalStory(world:T.Group,template:RoomTemplate,environment:ShipEnvironment,templateId:string,seed=1729):T.Group {
@@ -23,7 +24,7 @@ export function addEnvironmentalStory(world:T.Group,template:RoomTemplate,enviro
       for(let j=1;j<=segments;j++){
         const t=j/segments,p=from.clone().lerp(to,t);p.x+=Math.sin(t*8+seed*.013+i)*.19*Math.sin(t*Math.PI);p.z+=Math.sin(t*11+i)*.12*Math.sin(t*Math.PI);
         if(onDeck(previous)&&onDeck(p)){
-          const delta=p.clone().sub(previous),mesh=box(root,(p.x+previous.x)/2,.012,(p.z+previous.z)/2,delta.length()+.025,.018,.055+(i%3)*.025,i%3?MAT.flesh:MAT.shellDark,0);mesh.rotation.y=-Math.atan2(delta.z,delta.x);mesh.castShadow=false;
+          const delta=p.clone().sub(previous),mesh=new T.Mesh(geometry('x2-flush-root',()=>new T.BoxGeometry(1,1,1)),i%3?MAT.flesh:MAT.shellDark);mesh.position.set((p.x+previous.x)/2,.012,(p.z+previous.z)/2);mesh.scale.set(delta.length()+.025,.018,.055+(i%3)*.025);mesh.rotation.y=-Math.atan2(delta.z,delta.x);mesh.castShadow=false;root.add(mesh);
         }
         previous=p;
       }
@@ -41,12 +42,21 @@ export function addEnvironmentalStory(world:T.Group,template:RoomTemplate,enviro
       origins.push({x,y:y+.1,z,kind:1},{x:x-.1,y:y+.16,z:z-.05,kind:0});
     }
   }
+  if(environment==='reactor'&&templateId==='overload-floor'&&template.voids?.length){
+    const hole=template.voids[0],x=hole.reduce((sum,p)=>sum+p.x,0)/hole.length/32,z=hole.reduce((sum,p)=>sum+p.y,0)/hole.length/32;
+    origins.push({x,y:.85,z,kind:3});
+  }
   if(environment==='maintenance'){
     const leaks=world.getObjectByName('g2-world-dressing')?.userData.leakOrigins as Array<{x:number;y:number;z:number}>|undefined;
     for(const leak of leaks??[])origins.push({...leak,kind:2});
   }
   batch(root);
-  if(origins.length)root.add(createAnchoredStoryParticles(origins,environmentClock));
+  if(origins.length){const mesh=createAnchoredStoryParticles(origins,environmentClock);root.add(mesh);roomParticles.set(world,mesh);}else roomParticles.delete(world);
   root.userData.sourceCount=origins.length;root.userData.templateId=templateId;
   world.add(root);return root;
+}
+
+/** Respect the existing atmosphere option without traversing static room hierarchies. */
+export function setEnvironmentalStoryOptions(world:T.Group,enabled:boolean):void {
+  const mesh=roomParticles.get(world);if(mesh)mesh.visible=enabled;
 }

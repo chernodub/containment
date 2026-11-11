@@ -221,6 +221,27 @@ export const SCENARIOS=[
 
 ];
 
+// X2 extends the existing public fixtures for matched tier/phase evidence.
+// Every setup is self-contained because capture serializes it into the page.
+for(const [id,sourceId]of [['x2-pickups-low','g2-pickups'],['x2-queen-exposed-low','g2-queen-exposed'],['x2-kiting-full-low','combat-kiting']]){
+ const source=SCENARIOS.find(s=>s.id===sourceId);
+ SCENARIOS.push({...source,id,setup:new Function('room',`return (async()=>{await (${source.setup.toString()})(room);const d=window.__containmentDebug;d.renderer.setQuality('low');await d.prepare();d.refresh();})();`)});
+}
+for(const tier of ['high','low']){
+ const exposed=SCENARIOS.find(s=>s.id==='g2-queen-exposed');
+ SCENARIOS.push({...exposed,id:`x2-nest-husk-${tier}`,setup:new Function(`return (async()=>{
+  await (${exposed.setup.toString()})();const d=window.__containmentDebug;
+  d.renderer.setQuality('${tier}');await d.prepare();
+  const nest=d.game.boss.snapshot.nests[0];if(!nest)throw Error('No living nest');
+  d.refresh();const hit=d.game.boss.applyDamage({type:'nest',id:nest.id},nest.maxHealth*2);
+  if(!hit.applied)throw Error('Real nest destruction rejected');d.step(100);d.refresh();
+  if(![...d.renderer.nests.values()].some(n=>n.userData.destroyed))throw Error('Ruptured husk absent');
+ })();`)});
+}
+SCENARIOS.push({...SCENARIOS.find(s=>s.id==='title'),id:'x2-title-motion',burst:true});
+SCENARIOS.push({...SCENARIOS.find(s=>s.id==='g2-calm-high'),id:'x2-calm-motion-high',burst:true});
+SCENARIOS.push({...SCENARIOS.find(s=>s.id==='g2-calm-low'),id:'x2-calm-motion-low',burst:true});
+
 // Local combat staging uses legal occupancy and clear shots, real enemy systems,
 // real weapons, real mutation triggers, and the unchanged gameplay camera.
 export function stageCombat({status=false}){

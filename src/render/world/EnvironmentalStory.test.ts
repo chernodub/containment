@@ -1,12 +1,12 @@
 import {describe,expect,it,vi} from 'vitest';
 import * as T from 'three';
 import {addBroodCell} from './OrganicGrowth';
-import {addEnvironmentalStory} from './EnvironmentalStory';
+import {addEnvironmentalStory,setEnvironmentalStoryOptions} from './EnvironmentalStory';
 import {environmentObstacle} from '../ShipEnvironments';
 import {addRoomPracticals} from '../lighting/RoomPracticals';
 import {environmentClock,updateHotFixtureSurfaces} from '../lighting/HotFixtureSurface';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
-import {disposeModel} from '../meshParts';
+import {disposeModel,geometries} from '../meshParts';
 
 function transforms(root:T.Object3D){const values:number[][]=[];root.updateWorldMatrix(true,true);root.traverse(object=>{if(object instanceof T.Mesh)values.push(object.matrixWorld.toArray());});return values;}
 
@@ -28,6 +28,13 @@ describe('X2 environmental story rendering',()=>{
     root.traverse(object=>{if(object instanceof T.Mesh){const p=object.geometry.getAttribute('position');for(let i=0;i<p.count;i++)expect(p.getY(i)).toBeLessThan(.03);}});
     disposeModel(root);
   });
+  it('keeps the shared primitive inventory bounded across new room seeds',()=>{
+    const template=ROOM_TEMPLATES['swarm-junction'];
+    const make=(seed:number)=>{const world=new T.Group();addBroodCell(world,seed,2);addEnvironmentalStory(world,template,'infested',template.id,seed);disposeModel(world);};
+    make(1);const count=geometries.size;
+    for(let seed=2;seed<14;seed++)make(seed);
+    expect(geometries.size).toBe(count);
+  });
   it('uses irregular wall nodules instead of a repeated fixture row without increasing batches',()=>{
     const world=new T.Group();addRoomPracticals(world,30,24,'infested');
     expect(world.children).toHaveLength(2);
@@ -42,6 +49,7 @@ describe('X2 environmental story rendering',()=>{
     const root=addEnvironmentalStory(world,template,'maintenance',template.id),mesh=root.getObjectByName('source-anchored-story-particles') as T.Mesh<T.InstancedBufferGeometry,T.ShaderMaterial>;
     expect(root.userData.sourceCount).toBe(1);expect(mesh.geometry.instanceCount).toBe(12);expect(mesh.material.uniforms.time).toBe(environmentClock);
     const origin=mesh.geometry.getAttribute('origin');expect([origin.getX(0),origin.getY(0),origin.getZ(0)]).toEqual([2,expect.closeTo(.8),3]);
+    setEnvironmentalStoryOptions(world,false);expect(mesh.visible).toBe(false);setEnvironmentalStoryOptions(world,true);expect(mesh.visible).toBe(true);
     const geometry=mesh.geometry,material=mesh.material,goneGeometry=vi.spyOn(geometry,'dispose'),goneMaterial=vi.spyOn(material,'dispose');
     updateHotFixtureSurfaces(2);expect(material.uniforms.time.value).toBe(2);expect(mesh.geometry).toBe(geometry);expect(mesh.material).toBe(material);
     updateHotFixtureSurfaces(0);expect(material.uniforms.time.value).toBe(0);
