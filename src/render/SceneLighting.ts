@@ -168,12 +168,12 @@ export class SceneLighting {
  setMenu(enabled:boolean){
   if(this.menuPresentation===enabled)return;this.menuPresentation=enabled;
   if(!enabled){this.applyMood(this.width,this.height);this.playerX=this.playerZ=NaN;return;}
-  this.ambient.intensity=.055;this.ambient.color.setHex(0x8098b0);
-  this.key.position.set(29,6,19);this.key.target.position.set(24,1.6,13);this.key.color.setHex(0xd5e9ff);this.key.intensity=this.key instanceof T.SpotLight?1000:4.2;
-  this.fill.position.set(28,4,7);this.fill.target.position.set(24,1,13);this.fill.color.setHex(0x749bab);this.fill.intensity=.9;
-  this.rim.position.set(29,6,9);this.rim.target.position.set(24,1,13);this.rim.color.setHex(0xa3dfee);this.rim.intensity=2.4;
-  for(let i=0;i<4;i++){const light=this.fixtures[i];light.position.set(i?28:23,3.5,i?8.5:12);light.color.setHex(i?0xff9d64:0x9fe8ff);light.intensity=i<2?85:0;light.distance=9;}
-  this.lamp.setRoom(0);this.lamp.light.intensity=2;
+  this.ambient.intensity=.025;this.ambient.color.setHex(0x8098b0);
+  this.key.position.set(29,6,19);this.key.target.position.set(24,1.6,13);this.key.color.setHex(0xd5e9ff);this.key.intensity=this.key instanceof T.SpotLight?1000:1.65;
+  this.fill.position.set(28,4,7);this.fill.target.position.set(24,1,13);this.fill.color.setHex(0x749bab);this.fill.intensity=.12;
+  this.rim.position.set(29,6,9);this.rim.target.position.set(24,1,13);this.rim.color.setHex(0xa3dfee);this.rim.intensity=.8;
+  for(let i=0;i<4;i++){const light=this.fixtures[i];light.position.set(i?28:23,3.5,i?8.5:12);light.color.setHex(i?0xff9d64:0x9fe8ff);light.intensity=i===0?95:i===1?10:0;light.distance=i===0?4.5:3;}
+  this.lamp.setRoom(0);this.lamp.light.intensity=24;
  }
  /** The Queen's face remains keyed in armored, exposed and defeated states. */
  setBossState(x:number,z:number,vulnerable:boolean,defeated:boolean){

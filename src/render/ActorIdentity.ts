@@ -118,7 +118,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   for(const side of [-1,1])detail('spine',side*s*.055,h*1.16,0,s*.018,h*.045,s*.018,6,false);
   detail('spine',0,h*1.23,0,s*.025,h*.065,s*.025,6,false);
   const mesh=new T.Mesh(identityGeometry(`x2-identity-dorsal-armor:${kind}:${elite}`,parts,root),new T.ShaderMaterial({
-    uniforms:{identityColor:{value:new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler)},identityPulse:{value:1},identityTime:{value:0},identityShimmer:{value:kind==='stalker'?1:0},identityElite:{value:elite||kind==='queen'?1:0},identityChampion:{value:0},identityExposed:{value:0},identityOpening:{value:0},identitySpan:{value:span},identityHeight:{value:height},identityAlpha:{value:1},identityDeath:{value:0}},
+    uniforms:{identityColor:{value:new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler)},identityStageLight:{value:1},identityPulse:{value:1},identityTime:{value:0},identityShimmer:{value:kind==='stalker'?1:0},identityElite:{value:elite||kind==='queen'?1:0},identityChampion:{value:0},identityExposed:{value:0},identityOpening:{value:0},identitySpan:{value:span},identityHeight:{value:height},identityAlpha:{value:1},identityDeath:{value:0}},
     vertexShader:`
       attribute float identityRole;attribute float identitySide;attribute vec3 identityAnchor;
       uniform float identityOpening;uniform float identitySpan;uniform float identityHeight;
@@ -136,7 +136,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
         identityView=-view.xyz;gl_Position=projectionMatrix*view;
       }`,
     fragmentShader:`
-      uniform vec3 identityColor;uniform float identityPulse;uniform float identityTime;uniform float identityShimmer;uniform float identityElite;
+      uniform float identityStageLight;uniform vec3 identityColor;uniform float identityPulse;uniform float identityTime;uniform float identityShimmer;uniform float identityElite;
       uniform float identityChampion;uniform float identityExposed;uniform float identityOpening;
       uniform float identityAlpha;uniform float identityDeath;
       varying vec3 identityNormal;varying vec3 identityView;varying float role;
@@ -159,7 +159,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
         if(role>5.5){color=identityChampion>1.5?vec3(1.0,.26,.64):vec3(1.0,.70,.23);light=.9+facing*.7;}
         if(role<.5)light*=identityPulse*(1.0+identityShimmer*.3*sin(identityTime*5.0+identityView.y*8.0));
         light*=.75+identityAlpha*.25;
-        gl_FragColor=vec4(color*light,1.0);
+        gl_FragColor=vec4(color*light*identityStageLight,1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,
@@ -183,7 +183,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
       opening=T.MathUtils.damp(opening,exposed?1:0,12,dt);
       u.identityOpening.value=opening;u.identityExposed.value=exposed?1:0;u.identityAlpha.value=alpha;u.identityDeath.value=dead?1:0;
     },
-    reset(){previous=undefined;opening=0;mesh.visible=true;const u=mesh.material.uniforms;u.identityOpening.value=0;u.identityPulse.value=1;u.identityElite.value=elite||kind==='queen'?1:0;u.identityChampion.value=0;u.identityExposed.value=0;u.identityAlpha.value=1;u.identityDeath.value=0;},
+    reset(){previous=undefined;opening=0;mesh.visible=true;const u=mesh.material.uniforms;u.identityOpening.value=0;u.identityStageLight.value=1;u.identityPulse.value=1;u.identityElite.value=elite||kind==='queen'?1:0;u.identityChampion.value=0;u.identityExposed.value=0;u.identityAlpha.value=1;u.identityDeath.value=0;},
   };
 }
 

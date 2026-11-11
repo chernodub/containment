@@ -95,7 +95,7 @@ export class DepthRenderer {
  private disposed=false;private time=0;private recoil=0;private roomKey='';private temporaryMaterials:T.Material[]=[];
  private bulletMesh:T.InstancedMesh;private dummy=new T.Object3D();
  private pickupInstances=new PickupInstances();private exit:T.Group|null=null;
- private warning=new T.Group();private poolMeshes=new Map<number,T.Mesh<T.CircleGeometry,AcidPoolMaterial>>();private menuActors=new T.Group();private menuMarine=marine();private menuAlien=alien('brute',true);private lastMenu=false;
+ private warning=new T.Group();private poolMeshes=new Map<number,T.Mesh<T.CircleGeometry,AcidPoolMaterial>>();private menuActors=new T.Group();private menuMarine=marine();private menuAlien=alien('brute');private lastMenu=false;private menuThreatClock=0;
  private title=new TitlePresentation(this.scene);
  constructor(readonly canvas:HTMLCanvasElement){
   this.renderer=new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
@@ -124,7 +124,7 @@ export class DepthRenderer {
   const ringMat=new T.MeshBasicMaterial({color:0xff7850,transparent:true,opacity:.9,depthWrite:false,side:T.DoubleSide});
   const outer=new T.Mesh(new T.RingGeometry(.965,1,64),ringMat);outer.rotation.x=-Math.PI/2;this.warning.add(outer);
   const disk=new T.Mesh(new T.CircleGeometry(.95,64),new T.MeshBasicMaterial({color:0xf86839,transparent:true,opacity:.12,depthWrite:false,side:T.DoubleSide}));disk.rotation.x=-Math.PI/2;this.warning.add(disk);this.scene.add(this.warning);this.warning.visible=false;
-  this.menuActors.add(this.menuMarine.root,this.menuAlien.root);this.menuMarine.root.scale.setScalar(1.8);this.menuAlien.root.scale.multiplyScalar(.95);this.menuAlien.root.traverse(o=>{if(o instanceof T.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof T.MeshStandardMaterial)m.color.multiplyScalar(.4);});this.scene.add(this.menuActors);
+  this.menuActors.add(this.menuMarine.root,this.menuAlien.root);this.menuMarine.root.scale.setScalar(1.65);this.menuAlien.root.scale.multiplyScalar(1.1);this.menuAlien.root.traverse(o=>{if(o instanceof T.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof T.MeshStandardMaterial)m.color.multiplyScalar(.4);});const menuIdentity=this.menuAlien.root.getObjectByName('brute-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;menuIdentity.material.uniforms.identityStageLight.value=.24;this.scene.add(this.menuActors);
   configureCinematicLayers(this.title.root,this.menuActors,this.lighting,this.contacts.mesh);
   this.contextResources.track(this.scene);this.contextResources.track(this.hudScene);this.resize();
  }
@@ -480,7 +480,7 @@ export class DepthRenderer {
   let healthCount=0;for(const e of enemies){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=e.x/UNIT;bar.z=e.y/UNIT;bar.height=this.actors.get(e.id)?.height??1;bar.health=e.health;bar.maxHealth=e.maxHealth;bar.elite=e.elite||!!e.champion;bar.armor=e.armor;bar.status=this.actors.get(e.id)?.root.userData.visualStatus;}for(const n of game.boss.snapshot.nests){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=n.x/UNIT;bar.z=n.y/UNIT;bar.height=1.35;bar.health=n.health;bar.maxHealth=n.maxHealth;bar.elite=false;bar.armor=0;bar.status=undefined;}for(let i=healthCount;i<128;i++)this.healthEntries[i].health=0;
   this.healthBars.update(this.healthEntries,this.camera,this.viewportHeight,menu);
   this.menuActors.visible=menu;
-  if(menu){this.menuMarine.root.position.set(23,0,13);this.menuAlien.root.position.set(27.2,0,10);this.menuMarine.animate(this.time,0,-.62);this.menuAlien.animate(this.time,.12,2.52);}
+  if(menu){this.menuMarine.root.position.set(23,0,13);this.menuAlien.root.position.set(27.2,0,10);this.menuMarine.animate(this.time,0,-.62);this.menuThreatClock=this.motionQuery?.matches?0:this.menuThreatClock+dt;if(this.menuThreatClock>5.5){this.menuAlien.attack?.();this.menuThreatClock=0;}this.menuAlien.animate(this.time,.12,2.52);}else this.menuThreatClock=0;
   this.lastMenu=menu;
   const q=game.boss.snapshot;this.lighting.setBossState?.(q.x/UNIT,q.y/UNIT,q.vulnerable,q.defeated);
   this.warning.visible=!!q.pendingTelegraph&&!menu;
@@ -499,7 +499,7 @@ export class DepthRenderer {
 
   updateHotFixtureSurfaces(this.motionQuery?.matches?0:this.time);this.lighting.update(dt);this.practicalPools?.update(this.lighting.fixtures,this.tier==='high');
   this.contacts.begin();
-  if(menu){this.contacts.add(23,13,.75);this.contacts.add(27.2,10,1.1);}else{
+  if(menu){this.contacts.add(23,13,.75);this.contacts.add(27.2,10,1.2);}else{
    this.contacts.add(p.x/UNIT,p.y/UNIT,.45);
    if(this.queen)this.contacts.add(q.x/UNIT,q.y/UNIT,1.3);
    for(const n of q.nests)this.contacts.add(n.x/UNIT,n.y/UNIT,.7);
@@ -537,6 +537,7 @@ export class DepthRenderer {
   if(!this.reflection||this.reflection.texture)return;
   const excluded=this.scene.children.filter(object=>object!==this.world&&object!==this.lighting.root&&object!==this.arena?.root);
   excluded.push(this.lighting.lamp.root,this.lighting.pool.root,this.lighting.blast);
+  const storyParticles=this.world.getObjectByName('source-anchored-story-particles');if(storyParticles)excluded.push(storyParticles);
   this.reflection.capture(this.roomWidth/2,2,this.roomHeight/2,excluded);
  }
 
