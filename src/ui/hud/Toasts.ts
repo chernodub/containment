@@ -37,6 +37,16 @@ export class HudToasts {
         toast.node.dataset.kind = kind;
         toast.node.hidden = false;
     }
+    /** Remove a keyed announcement when its live condition is consumed. */
+    dismiss(key: string): void {
+        for (const toast of this.pool) {
+            if (toast.life <= 0 || toast.key !== key) continue;
+            toast.life = 0;
+            toast.node.hidden = true;
+            toast.key = '';
+            invalidateHudLayout();
+        }
+    }
     tick(dt: number): void { for (const t of this.pool) {
         if (!t.life)
             continue;

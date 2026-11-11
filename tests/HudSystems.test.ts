@@ -48,6 +48,7 @@ it('renders all rig ability states and protects the centered follow marine throu
         }
         await page.evaluate(() => { const { hud } = (window as any).__live; hud.effect({ type: 'ability', x: 0, y: 0, ability: { phase: 'denied', slot: 'tactical', ability: 'seismic-slam', rig: 'breacher', element: 'kinetic', denial: 'blocked' } }); });
         expect(await page.locator('[data-ability="tactical"]').getAttribute('data-state')).toBe('denied');
+        expect(await page.locator('[data-ability="tactical"]').getAttribute('data-flash')).toBe('false');
         expect(await page.locator('[data-ability="tactical"] .ability-value').textContent()).toBe('BLOCKED');
         await page.evaluate(() => (window as any).__live.hud());
         expect(await page.locator('[data-ability="tactical"] .ability-value').textContent()).toBe('BLOCKED');
@@ -309,4 +310,19 @@ it('reads live dash recharge and cast/cooldown receipts, then flashes on recharg
         expect(await page.locator('[data-ability="dash"]').getAttribute('data-charges')).toBe('2');
         expect(await page.locator('[data-ability="tactical"]').getAttribute('data-flash')).toBe('true');
     } finally { await page.close(); }
+});
+
+it('dismisses the ready announcement immediately when real Overdrive starts', async () => {
+    const page = await mountHud(1920, 1080);
+    try {
+        await liveHud(page);
+        await page.evaluate(() => {
+            const {game,hud}= (window as any).__live;
+            game.abilities.setRig('arc'); game.abilities.addCharge(6000); hud();
+        });
+        expect(await page.locator('.hud-toast:not([hidden])').allTextContents()).toContain('Overdrive ready · V');
+        await page.evaluate(() => {const {game,hud}=(window as any).__live;game.useAbility('overdrive');hud();});
+        expect(await page.locator('.hud-toast:not([hidden])').allTextContents()).not.toContain('Overdrive ready · V');
+        expect(await page.locator('[data-ability="overdrive"]').getAttribute('data-state')).toBe('active');
+    } finally {await page.close();}
 });

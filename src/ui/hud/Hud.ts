@@ -287,6 +287,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 return;
             if (event.ability.phase === 'denied') {
                 entry.denied = .32;
+                entry.flash = 0;
+                entry.node.dataset.flash = 'false';
                 entry.node.dataset.state = 'denied';
                 entry.denial = ({blocked: 'BLOCKED', cooldown: 'COOLDOWN', casting: 'CASTING', 'no-charge': 'NO CHARGE', 'no-rig': 'NO RIG'} as const)[event.ability.denial ?? 'no-charge'];
                 entry.value.textContent = entry.denial;
@@ -297,6 +299,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             }
             if (event.ability.phase === 'overdrive-ready')
                 toasts.show('Overdrive ready · V', event.ability.ability, 'reward', 'overdrive');
+            else if (entry.slot === 'overdrive' && (event.ability.phase === 'cast' || event.ability.phase === 'impact'))
+                toasts.dismiss('overdrive');
             const abilities = getAbilities(game);
             if (abilities?.slots) updateAbility(entry, abilities.slots[entry.slot], abilities);
         }
