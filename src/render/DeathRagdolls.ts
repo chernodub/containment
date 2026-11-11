@@ -1,3 +1,4 @@
+import {getStaticColliderParts} from './StaticColliderParts';
 import RAPIER from '@dimforge/rapier3d-compat';
 import * as T from 'three';
 import type {ActorModel} from './models';
@@ -85,13 +86,13 @@ export class DeathRagdolls {
  refreshStatic(world:T.Object3D){
   if(!this.world)return;
   for(const c of this.statics)this.world.removeCollider(c,false);this.statics=[];
-  this.fallLimit=-32;world.updateWorldMatrix(true,true);
+  this.fallLimit=-32;world.updateWorldMatrix(true,true);const partMatrix=new T.Matrix4();
   world.traverseVisible(o=>{
    if(!(o instanceof T.Mesh)||o instanceof T.SkinnedMesh||o.userData.ragdollCollision===false)return;
    const materials=Array.isArray(o.material)?o.material:[o.material];
    if(materials.every(m=>!m.visible||(m.transparent&&m.opacity<.5)))return;
-   const add=(matrix:T.Matrix4)=>{
-    let g=o.geometry.clone().applyMatrix4(matrix);g.computeBoundingBox();
+   const add=(geometry:T.BufferGeometry,matrix:T.Matrix4)=>{
+    let g=geometry.clone().applyMatrix4(matrix);g.computeBoundingBox();
     this.fallLimit=Math.min(this.fallLimit,g.boundingBox!.min.y-32);
     const size=g.boundingBox!.getSize(new T.Vector3());
     // Dense standalone equipment gets a fitted finite-height proxy. Broad deck
@@ -106,7 +107,9 @@ export class DeathRagdolls {
     this.statics.push(this.world!.createCollider(RAPIER.ColliderDesc.trimesh(vertices,index).setCollisionGroups(STATIC_GROUPS).setFriction(.8)));
     g.dispose();
    };
-   if(o instanceof T.InstancedMesh){const matrix=new T.Matrix4();for(let i=0;i<o.count;i++){o.getMatrixAt(i,matrix);add(matrix.premultiply(o.matrixWorld));}}else add(o.matrixWorld);
+   const parts=getStaticColliderParts(o);
+   if(parts){for(const part of parts)add(part.geometry,partMatrix.multiplyMatrices(o.matrixWorld,part.matrix));}
+   else if(o instanceof T.InstancedMesh){for(let i=0;i<o.count;i++){o.getMatrixAt(i,partMatrix);add(o.geometry,partMatrix.premultiply(o.matrixWorld));}}else add(o.geometry,o.matrixWorld);
   });
   // Rapier 0.20 scene queries share the simulation broad phase. Publish changed
   // statics with a zero-duration step, without advancing existing bodies.

@@ -3,22 +3,25 @@ import * as T from 'three';
 /** Owns one room-local PMREM, captured only after all asynchronous room preparation settles. */
 export class RoomReflectionCapture {
   private target: T.WebGLRenderTarget | null = null;
+  private generator: T.PMREMGenerator | null = null;
   private captured = false;
   constructor(private readonly renderer: T.WebGLRenderer, private readonly scene: T.Scene) {}
-  /** Drop the old room's GPU texture; call on every room load and context restore. */
-  invalidate() {
+  /** Drop the old room texture; reset the retained filter on graphics context loss. */
+  invalidate(resetGenerator = false) {
     if (this.target) {
       if (this.scene.environment === this.target.texture) this.scene.environment = null;
       this.target.dispose(); this.target = null;
     }
     this.captured = false;
+    if (resetGenerator) { this.generator?.dispose(); this.generator = null; }
   }
   /** Returns false after the first successful capture. Exclude actors/VFX/atmosphere roots. */
   capture(x: number, y: number, z: number, excluded: readonly T.Object3D[] = []): boolean {
     if (this.captured) return false;
     const cube = new T.WebGLCubeRenderTarget(64, { type: T.HalfFloatType, generateMipmaps: false });
     const camera = new T.CubeCamera(.1, 100, cube);
-    const pmrem = new T.PMREMGenerator(this.renderer);
+    // Retain the filter's shader programs and scratch buffers across room loads.
+    const pmrem = this.generator ??= new T.PMREMGenerator(this.renderer);
     const environment = this.scene.environment;
     // A room capture precedes the first shadow draw. Sampling an unallocated
     // comparison shadow texture is invalid on WebGL2; the blurred reflection
@@ -38,9 +41,9 @@ export class RoomReflectionCapture {
       if (!this.captured) this.scene.environment = environment;
       if (this.renderer.shadowMap) this.renderer.shadowMap.enabled = shadowEnabled!;
       for (let i = 0; i < excluded.length; i++) excluded[i].visible = visibility[i];
-      pmrem.dispose(); cube.dispose();
+      cube.dispose();
     }
   }
   get texture() { return this.target?.texture ?? null; }
-  dispose() { this.invalidate(); }
+  dispose() { this.invalidate(true); }
 }

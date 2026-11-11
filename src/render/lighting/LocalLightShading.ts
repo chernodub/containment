@@ -37,7 +37,13 @@ const directionalShadowExpression = 'directLight.color *= ( directLight.visible 
 const localLights = ShaderChunk.lights_fragment_begin
   .replace('IncidentLight directLight;', `IncidentLight directLight;\n${sharedKeyOcclusion}`)
   .replace('getPointLightInfo( pointLight, geometryPosition, directLight );',
-    `getPointLightInfo( pointLight, geometryPosition, directLight );\n${practicalOcclusion}`)
+    `// Fixed pool slots with zero source energy need neither attenuation nor BRDF work.
+    if ( pointLight.color == vec3( 0.0 ) ) {
+      directLight.color = vec3( 0.0 );
+      directLight.visible = false;
+    } else {
+      getPointLightInfo( pointLight, geometryPosition, directLight );\n${practicalOcclusion}
+    }`)
   .replace(directionalShadowExpression, `
     #if UNROLLED_LOOP_INDEX == 0
       directLight.color *= ( directLight.visible && receiveShadow ) ? roomKeyOcclusion : 1.0;
@@ -76,6 +82,6 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
       float roomShadowLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));
       reflectedLight.indirectDiffuse+=vec3(.68,.82,1.0)*roomShadowReadability*(1.0-smoothstep(.008,.04,roomShadowLuma));`);
   };
-  material.customProgramCacheKey = () => `${key}:local-light-rejection-v5`;
+  material.customProgramCacheKey = () => `${key}:local-light-rejection-v6`;
   material.needsUpdate = true;
 }

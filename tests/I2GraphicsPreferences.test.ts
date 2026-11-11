@@ -163,16 +163,39 @@ it.each(['high', 'low'] as const)('keeps persisted %s overrides through a contex
 });
 
 
-it('redraws replacement low-resolution shadows before the post warm frame samples them', async () => {
+it('draws the selected low-resolution shadows before the post warm frame samples them', async () => {
   const {renderer, resources, recovery} = recoveryProbe();
   renderer.setGraphicsOptions({shadows: 'low'});
-  resources.renderer.render.mockImplementation(() => {resources.renderer.shadowMap.needsUpdate = false;});
-  resources.post.prepare = vi.fn(async () => {
+  let shadowReady = false;
+  resources.renderer.render.mockImplementation(() => {
     expect(renderer.graphicsOptions.shadows).toBe('low');
     expect(resources.renderer.shadowMap.enabled).toBe(true);
     expect(resources.renderer.shadowMap.needsUpdate).toBe(true);
+    resources.renderer.shadowMap.needsUpdate = false;
+    shadowReady = true;
+  });
+  resources.post.prepare = vi.fn(async () => {
+    expect(renderer.graphicsOptions.shadows).toBe('low');
+    expect(resources.renderer.shadowMap.enabled).toBe(true);
+    expect(shadowReady).toBe(true);
+    expect(resources.renderer.shadowMap.needsUpdate).toBe(false);
   });
   recovery.queueRoomWarmup();
   await recovery.roomWarmWork;
   expect(resources.post.prepare).toHaveBeenCalledOnce();
+});
+
+it.each(['high','low'] as const)('prepares %s HUD shaders for their actual screen target before releasing input',async tier=>{
+  const {renderer,resources,recovery}=recoveryProbe();
+  let target:T.WebGLRenderTarget|null=null,hudReady=false;
+  resources.renderer.setRenderTarget.mockImplementation(value=>{target=value;});
+  resources.renderer.compile.mockImplementation(scene=>{
+    if(scene!==resources.hudScene)return;
+    expect(target).toBeNull();
+    expect(resources.renderer.toneMapping).toBe(T.AgXToneMapping);
+    hudReady=true;
+  });
+  resources.post.prepare=vi.fn(async()=>{expect(hudReady).toBe(true);});
+  renderer.setQuality(tier);recovery.queueRoomWarmup();await recovery.roomWarmWork;
+  expect(hudReady).toBe(true);expect(recovery.roomWarmPending).toBe(false);
 });

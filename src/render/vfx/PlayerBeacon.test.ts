@@ -39,7 +39,7 @@ it('merges the real marine into one exact skin through gait, aiming, brace, dash
   const game={player:{x:128,y:128,angle:.4},combat:{snapshot:{dead:false}},enemies:{snapshot:{enemies:[]}},boonStatuses:()=>NO_AFFLICTION} as unknown as DepthGame;
   try{
     model.root.position.set(4,.2,7);model.animate(0,1,.4);beacon.update(model.root,.4);beacon.root.updateMatrixWorld(true);
-    expect(sources).toHaveLength(22);expect(visibleSkins(beacon)).toHaveLength(1);
+    expect(sources).toHaveLength(4);expect(visibleSkins(beacon)).toHaveLength(1);
     const merged=visibleSkins(beacon)[0];expect(merged.skeleton).toBe(sources[0].skeleton);
     let vertexOffset=0,indexOffset=0,attributeError=0;
     for(const source of sources){

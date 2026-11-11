@@ -163,6 +163,9 @@ export class MaterialWarmup {
   /** Hidden during ordinary rendering; visible only while compileAsync enumerates variants. */
   prepare(){this.root.visible=!this.disposed;return()=>{this.root.visible=false;};}
 
+  /** Number of retained shader-input families, independent of room mesh counts. */
+  get profileCount(){return this.topologies.size;}
+
   /** Retain one minimal proxy per actual room shader topology; returns new variants. */
   register(root: T.Object3D): number {
     if (this.disposed || root === this.root) return 0;

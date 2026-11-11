@@ -189,42 +189,42 @@ it('applies flash gain once to already-scaled VFX requests and once to raw attac
  const attached=pool.attach('burn',{x:1,z:1,color:0xff7a2e,intensity:8})!;expect(attached.intensity).toBe(4);pool.dispose();
 });
 
-it('uses only prepared visibility buckets while retaining every active light and resource identity', () => {
+it('keeps one prepared light count through attachments, fades, flash scaling and resets', () => {
   const pool = new LightPool(), lights = [...pool.lights], children = [...pool.root.children];
   const visible = () => pool.lights.filter(light => light.visible).length;
-  expect(pool.capacity).toBe(9); expect(pool.lights).toHaveLength(10); expect(visible()).toBe(0);
-  const expected = [2, 2, 4, 4, 6, 6, 8, 8, 9];
+  expect(pool.capacity).toBe(9); expect(pool.lights).toHaveLength(10); expect(visible()).toBe(9);
   for (let i = 0; i < 9; i++) {
     const light = pool.attach(i, { x: i, z: 0, color: 0xffffff, duration: 1 })!;
-    expect(light.visible).toBe(true); expect(visible()).toBe(expected[i]);
+    expect(light.visible).toBe(true); expect(visible()).toBe(9);
     expect(pool.lights.filter(candidate => candidate.intensity > 0).every(candidate => candidate.visible)).toBe(true);
   }
-  // Release/fade an early slot; a source at the end must still be visible in a smaller bucket.
+  // Expiring early sources must leave the final active source and shader count intact.
   for (let i = 0; i < 8; i++) pool.release(i, .01);
-  pool.update(.02); expect(visible()).toBe(2); expect(pool.lights[8].visible).toBe(true);
-  expect(pool.lights.filter(light => light.visible && light.intensity === 0)).toHaveLength(1);
-  pool.setIntensityScale(0); expect(visible()).toBe(0);
-  pool.setIntensityScale(.5); expect(visible()).toBe(2);
-  pool.reset(); expect(visible()).toBe(0);
+  pool.update(.02); expect(visible()).toBe(9); expect(pool.lights[8].visible).toBe(true);
+  expect(pool.lights.filter(light => light.visible && light.intensity === 0)).toHaveLength(8);
+  pool.setIntensityScale(0); expect(visible()).toBe(9); expect(pool.lights.every(light => light.intensity === 0)).toBe(true);
+  pool.setIntensityScale(.5); expect(visible()).toBe(9); expect(pool.lights[8].intensity).toBeGreaterThan(0);
+  pool.reset(); expect(visible()).toBe(9); expect(pool.lights.every(light => light.intensity === 0)).toBe(true);
   expect(pool.lights).toEqual(lights); expect(pool.root.children).toEqual(children);
   pool.dispose();
 });
 
-it('exposes each shader count for prewarming and restores same-frame live visibility', () => {
+it('exposes one shader count per tier and restores the same live topology after preparation', () => {
   const pool = new LightPool(), visible = () => pool.lights.filter(light => light.visible).length;
-  expect(pool.prewarmCounts).toEqual([0, 2, 4, 6, 8, 9]);
+  expect(pool.prewarmCounts).toEqual([9]);
   for (const count of pool.prewarmCounts) {
     pool.setPrewarmCount(count); expect(visible()).toBe(count);
     expect(pool.lights.every((light, i) => light.visible === (i < count))).toBe(true);
   }
-  pool.setPrewarmCount(null); expect(visible()).toBe(0);
+  pool.setPrewarmCount(null); expect(visible()).toBe(9);
   const light = pool.flash({ x: 0, z: 0, color: 0xffffff, duration: .1 })!;
-  expect(light.visible).toBe(true); expect(visible()).toBe(2);
-  pool.update(.2); expect(visible()).toBe(0);
+  expect(light.visible).toBe(true); expect(visible()).toBe(9);
+  pool.update(.2); expect(visible()).toBe(9); expect(light.intensity).toBe(0);
   pool.setQuality('low'); pool.setPrewarmCount(9); expect(visible()).toBe(2);
-  pool.setPrewarmCount(null); expect(visible()).toBe(0);
+  expect(pool.prewarmCounts).toEqual([2]);
+  pool.setPrewarmCount(null); expect(visible()).toBe(2);
   pool.attach('late-projectile', { x: 1, z: 2, color: 0xffffff });
-  expect(visible()).toBe(2); pool.dispose();
+  expect(visible()).toBe(2);pool.setQuality('high',false);expect(pool.prewarmCounts).toEqual([0]);expect(visible()).toBe(0);pool.dispose();
 });
 
 it('preserves directional contrast, neutral steel and a stable local readability helper', () => {
