@@ -9,13 +9,14 @@ async function liveHud(page: Page) {
         const { DepthGame } = await load('/src/DepthGame.ts');
         const { createHud } = await load('/src/ui/hud/Hud.ts');
         const adapter = await load('/src/ui/gameAdapter.ts'), fixtures = await load('/src/ui/fixtures.ts');
-        const game = new DepthGame();
+        let hud: any;
+        const game = new DepthGame((event: unknown) => hud?.effect(event));
         game.expedition = { ...game.expedition, build: { mutations: ['breacher'] } };
         game.status = 'playing';
         const canvas = document.getElementById('world')!;
         const renderer = { canvas, playerScreenBounds: () => ({ left: innerWidth / 2 - 27, right: innerWidth / 2 + 27, top: innerHeight / 2 - 70, bottom: innerHeight / 2 + 70 }), worldToScreen: (x: number, y: number) => ({ x: x / 4 + innerWidth / 2, y: y / 4 + innerHeight / 2 }) };
         (window as any).__hudPrefs = { combatText: true, radar: false };
-        const hud = createHud(game, renderer, () => { (window as any).__place(renderer.playerScreenBounds(), innerWidth, innerHeight); }, () => (window as any).__hudPrefs);
+        hud = createHud(game, renderer, () => { (window as any).__place(renderer.playerScreenBounds(), innerWidth, innerHeight); }, () => (window as any).__hudPrefs);
         (window as any).__live = { game, hud, adapter, fixtures, renderer };
         hud();
     });
@@ -47,6 +48,8 @@ it('renders all rig ability states and protects the centered follow marine throu
         }
         await page.evaluate(() => { const { hud } = (window as any).__live; hud.effect({ type: 'ability', x: 0, y: 0, ability: { phase: 'denied', slot: 'tactical', ability: 'seismic-slam', rig: 'breacher', element: 'kinetic', denial: 'blocked' } }); });
         expect(await page.locator('[data-ability="tactical"]').getAttribute('data-state')).toBe('denied');
+        expect(await page.locator('[data-ability="tactical"] .ability-value').textContent()).toBe('BLOCKED');
+        await page.evaluate(() => (window as any).__live.hud());
         expect(await page.locator('[data-ability="tactical"] .ability-value').textContent()).toBe('BLOCKED');
         await page.evaluate(() => { const { hud, game, adapter } = (window as any).__live; adapter.setUiFixture(game, { abilities: null }); hud(); });
         expect(await page.locator('#ability-bar').isHidden()).toBe(true);
@@ -262,4 +265,48 @@ it('makes ready rigs elemental, fills Overdrive energy, marks low ammunition and
     finally {
         await page.close();
     }
+});
+
+it('reads live dash recharge and cast/cooldown receipts, then flashes on recharge', async () => {
+    const page = await mountHud(1920, 1080);
+    try {
+        await liveHud(page);
+        await page.evaluate(async () => {
+            const {game, hud, adapter} = (window as any).__live;
+            const load = new Function('path', 'return import(path)');
+            const {expeditionRewardOffers} = await load('/src/game/roguelike/expedition.ts');
+            adapter.setUiFixture(game, null);
+            game.newRun(1729, {rigSelect: true});
+            adapter.chooseRig(game, 'cryo');
+            game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
+            hud();
+            adapter.useAbility(game, 'dash');
+            for (let i = 0; i < 10; i++) game.update(50, {x:0,y:0,fire:false,angle:null,autoAim:false});
+            hud();
+        });
+        expect(await page.locator('[data-ability="dash"]').getAttribute('data-charges')).toBe('1');
+        const progress = await page.locator('.dash-pips i[data-empty=true]:not([hidden])').evaluate(node => parseFloat((node as HTMLElement).style.getPropertyValue('--pip-charge')));
+        expect(progress).toBeGreaterThan(0);
+        expect(progress).toBeLessThan(100);
+        await page.evaluate(() => {
+            const {game, hud, adapter} = (window as any).__live;
+            adapter.useAbility(game, 'tactical'); hud();
+        });
+        expect(await page.locator('[data-ability="tactical"]').getAttribute('data-state')).toBe('cooling');
+        await page.evaluate(() => {
+            const {game, hud, adapter} = (window as any).__live;
+            adapter.useAbility(game, 'tactical'); hud();
+        });
+        expect(await page.locator('[data-ability="tactical"] .ability-value').textContent()).toBe('COOLDOWN');
+        await page.evaluate(() => {
+            const {game, hud} = (window as any).__live;
+            hud.tick(.1); hud.tick(.1); hud.tick(.1); hud.tick(.1);
+            const remaining = game.abilities.snapshot.slots.tactical.cooldownRemainingMs;
+            for (let ms = 0; ms < remaining + 50; ms += 50) game.abilities.update(50);
+            hud();
+        });
+        expect(await page.locator('[data-ability="tactical"]').getAttribute('data-state')).toBe('ready');
+        expect(await page.locator('[data-ability="dash"]').getAttribute('data-charges')).toBe('2');
+        expect(await page.locator('[data-ability="tactical"]').getAttribute('data-flash')).toBe('true');
+    } finally { await page.close(); }
 });

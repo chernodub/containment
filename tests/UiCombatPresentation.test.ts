@@ -223,3 +223,25 @@ it('keeps damage feedback from painting over opaque ship furniture', async () =>
     expect(await page.locator('.combat-float:not([hidden])').allTextContents()).toEqual(['78']);
   } finally {await page.close();}
 });
+
+it('styles confirmed damage by source, merges receipts per target/source, and preserves kill emphasis', async () => {
+  const page = await mount();
+  try {
+    await page.evaluate(() => {
+      const {combat, player} = (window as any).combatTest;
+      for (const [index, source] of ['weapon', 'ability', 'status', 'boon'].entries()) {
+        for (let receipt = 0; receipt < 20; receipt++) combat.effect({type:'acid',contact:'damage',x:200+index*200,y:260,targetId:index,damage:2,source,lethal:source==='boon'&&receipt===19});
+      }
+      combat.tick(.01,player);
+    });
+    expect(await page.locator('.combat-float[data-kind=damage]:not([hidden])').count()).toBe(4);
+    for (const source of ['weapon','ability','status','boon']) {
+      const node = page.locator(`.combat-float[data-source=${source}]:not([hidden])`);
+      expect(await node.textContent()).toBe(source==='boon'?'40 ×':'40');
+      expect(await node.getAttribute('data-element')).toBe('');
+    }
+    expect(await page.locator('[data-source=ability]:not([hidden])').evaluate(node=>getComputedStyle(node).textDecorationLine)).toBe('underline');
+    expect(await page.locator('[data-source=status]:not([hidden])').evaluate(node=>getComputedStyle(node).fontStyle)).toBe('italic');
+    expect(await page.locator('[data-source=boon]:not([hidden])').evaluate(node=>getComputedStyle(node).fontSize)).toBe('42px');
+  } finally {await page.close();}
+});

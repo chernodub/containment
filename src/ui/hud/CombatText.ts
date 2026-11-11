@@ -13,6 +13,7 @@ type Float = {
     amount: number;
     kind: string;
     status: string;
+    source: string;
     lethal: boolean;
     critical: boolean;
     width: number;
@@ -36,7 +37,7 @@ export class CombatText {
             node.className = 'combat-float';
             node.hidden = true;
             fragment.append(node);
-            this.pool.push({ node, life: 0, age: 0, x: 0, y: 0, target: undefined, amount: 0, kind: 'damage', status: '', lethal: false, critical: false, width: 75, height: 40, point: { x: 0, y: 0, visible: false } });
+            this.pool.push({ node, life: 0, age: 0, x: 0, y: 0, target: undefined, amount: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, point: { x: 0, y: 0, visible: false } });
         }
         host.append(fragment);
     }
@@ -46,9 +47,9 @@ export class CombatText {
         if (!this.enabled || this.disposed)
             return;
         const target = e.targetId ?? e.id;
-        const element = e.elements?.find(value => !!statusLabels[value]) ?? (typeof e.source === 'string' && statusLabels[e.source] ? e.source : e.type === 'acid' ? 'acid' : '');
+        const element = e.elements?.find(value => !!statusLabels[value]) ?? (typeof e.source === 'string' && statusLabels[e.source] ? e.source : e.type === 'acid' && !e.source ? 'acid' : '');
         if ((e.type === 'hit' || e.type === 'acid' || e.contact) && typeof e.damage === 'number' && e.damage > 0 && Number.isFinite(e.damage))
-            this.add(e.x, e.y, target, e.damage, 'damage', element, !!e.lethal, !!e.critical);
+            this.add(e.x, e.y, target, e.damage, 'damage', element, !!e.lethal, !!e.critical, typeof e.source === 'string' && ['weapon', 'ability', 'status', 'boon'].includes(e.source) ? e.source : '');
         // Never invent damage totals for old events. Element labels acknowledge real status events.
         if (e.type === 'hit' && e.elements)
             for (const element of e.elements) {
@@ -59,9 +60,9 @@ export class CombatText {
         if (e.type === 'boon' && e.boon && statusLabels[e.boon])
             this.add(e.x, e.y, target, 0, 'status', e.boon, false);
     }
-    private add(x: number, y: number, target: number | undefined, amount: number, kind: string, status: string, lethal: boolean, critical = false): void {
+    private add(x: number, y: number, target: number | undefined, amount: number, kind: string, status: string, lethal: boolean, critical = false, source = ''): void {
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-        let entry = this.pool.find(p => p.life > 0 && p.age < .18 && p.kind === kind && (kind === 'damage' || p.status === status) && (target !== undefined ? p.target === target : Math.hypot(p.x - x, p.y - y) < 25));
+        let entry = this.pool.find(p => p.life > 0 && p.age < .18 && p.kind === kind && p.source === source && (kind === 'damage' || p.status === status) && (target !== undefined ? p.target === target : Math.hypot(p.x - x, p.y - y) < 25));
         if (!entry)
             entry = this.pool.find(p => p.life <= 0);
         if (!entry) {
@@ -70,7 +71,7 @@ export class CombatText {
                 if (p.life < entry.life)
                     entry = p;
         }
-        const merge = entry.life > 0 && entry.age < .18 && entry.kind === kind && (kind === 'damage' || entry.status === status) && (target !== undefined ? entry.target === target : Math.hypot(entry.x - x, entry.y - y) < 25);
+        const merge = entry.life > 0 && entry.age < .18 && entry.kind === kind && entry.source === source && (kind === 'damage' || entry.status === status) && (target !== undefined ? entry.target === target : Math.hypot(entry.x - x, entry.y - y) < 25);
         entry.amount = (merge ? entry.amount : 0) + amount;
         entry.lethal = lethal || merge && entry.lethal;
         entry.critical = critical || merge && entry.critical;
@@ -82,6 +83,8 @@ export class CombatText {
         entry.life = .75;
         entry.kind = kind;
         entry.status = color;
+        entry.source = source;
+        entry.node.dataset.source = source;
         entry.node.hidden = false;
         entry.node.textContent = kind === 'damage' ? `${Math.round(entry.amount)}${entry.lethal ? ' ×' : ''}` : statusLabels[status];
         entry.node.dataset.kind = kind;

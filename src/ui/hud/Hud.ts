@@ -58,7 +58,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     const phases = Array.from(document.querySelectorAll<HTMLElement>('[data-boss-phase]'));
     const slots = (['dash', 'tactical', 'power', 'overdrive'] as const).map(slot => {
         const node = document.querySelector<HTMLElement>(`[data-ability="${slot}"]`)!;
-        return { slot, node, icon: node.querySelector<HTMLElement>('.ability-icon')!, title: node.querySelector<HTMLElement>('.ability-title')!, value: node.querySelector<HTMLElement>('.ability-value')!, charges: node.querySelector<HTMLElement>('.ability-charges'), progress: node.querySelector<SVGCircleElement>('.dial-progress'), meter: node.querySelector<HTMLElement>('.overdrive-meter i'), pips: Array.from(node.querySelectorAll<HTMLElement>('.dash-pips i')), ability: '', denied: 0, flash: 0 };
+        return { slot, node, icon: node.querySelector<HTMLElement>('.ability-icon')!, title: node.querySelector<HTMLElement>('.ability-title')!, value: node.querySelector<HTMLElement>('.ability-value')!, charges: node.querySelector<HTMLElement>('.ability-charges'), progress: node.querySelector<SVGCircleElement>('.dial-progress'), meter: node.querySelector<HTMLElement>('.overdrive-meter i'), pips: Array.from(node.querySelectorAll<HTMLElement>('.dash-pips i')), ability: '', denied: 0, denial: 'DENIED', flash: 0 };
     });
     const combatText = new CombatText(el('combat-text'), renderer);
     const threats = new ThreatIndicators(el('threat-indicators'), el('damage-directions'), renderer);
@@ -91,7 +91,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         entry.node.dataset.flash = String(entry.flash > 0);
         let value = 'READY';
         if (state === 'denied')
-            value = 'DENIED';
+            value = entry.denial;
         else if (s.castRemainingMs > 0)
             value = `CAST ${seconds(s.castRemainingMs)}`;
         else if (s.activeRemainingMs > 0)
@@ -102,6 +102,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             value = seconds(s.cooldownRemainingMs);
         if (entry.value.textContent !== value)
             entry.value.textContent = value;
+        entry.node.dataset.charges = String(s.charges);
+        entry.node.dataset.cooldown = String(Math.ceil(s.cooldownRemainingMs));
         entry.node.setAttribute('aria-label', `${definition.name}, ${value}${s.maxCharges > 1 ? `, ${s.charges} of ${s.maxCharges} charges` : ''}`);
         if (entry.charges)
             entry.charges.textContent = s.maxCharges > 1 ? String(s.charges) : '';
@@ -115,6 +117,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         for (let i = 0; i < entry.pips.length; i++) {
             entry.pips[i].hidden = i >= s.maxCharges;
             entry.pips[i].dataset.empty = String(i >= s.charges);
+            // The snapshot exposes the next independent recharge; subsequent pips remain empty.
+            const recharge = i < s.charges ? 1 : i === s.charges ? 1 - s.cooldownRemainingMs / Math.max(1, s.cooldownMs) : 0;
+            entry.pips[i].style.setProperty('--pip-charge', `${clamp(recharge) * 100}%`);
         }
     };
     const hud = (() => {
@@ -211,7 +216,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                     glyph.dataset.rarity = boon.rarity;
                     glyph.title = `${boon.name} · ${boon.description}`;
                     glyph.setAttribute('aria-label', glyph.title);
-                    glyph.innerHTML = icon(familyIcons[family]);
+                    glyph.innerHTML = icon(boon.abilityOnly ? boon.id : familyIcons[family]);
                     stack.append(glyph);
                 }
                 if (familyBoons.length > 3) {
@@ -226,7 +231,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             }
             for (const id of build.mutations) {
                 if (buildSeen && !owned.has(id))
-                    toasts.show(`${MUTATION_CATALOG[id].name} acquired`, familyIcons[MUTATION_CATALOG[id].family], 'reward', `boon:${id}`);
+                    toasts.show(`${MUTATION_CATALOG[id].name} acquired`, MUTATION_CATALOG[id].abilityOnly ? id : familyIcons[MUTATION_CATALOG[id].family], 'reward', `boon:${id}`);
                 owned.add(id);
             }
         }
@@ -283,7 +288,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             if (event.ability.phase === 'denied') {
                 entry.denied = .32;
                 entry.node.dataset.state = 'denied';
-                entry.value.textContent = event.ability.denial === 'blocked' ? 'BLOCKED' : 'DENIED';
+                entry.denial = ({blocked: 'BLOCKED', cooldown: 'COOLDOWN', casting: 'CASTING', 'no-charge': 'NO CHARGE', 'no-rig': 'NO RIG'} as const)[event.ability.denial ?? 'no-charge'];
+                entry.value.textContent = entry.denial;
             }
             if (event.ability.phase === 'ready' || event.ability.phase === 'overdrive-ready') {
                 entry.flash = .22;
@@ -291,6 +297,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             }
             if (event.ability.phase === 'overdrive-ready')
                 toasts.show('Overdrive ready · V', event.ability.ability, 'reward', 'overdrive');
+            const abilities = getAbilities(game);
+            if (abilities?.slots) updateAbility(entry, abilities.slots[entry.slot], abilities);
         }
     };
     hud.tick = (dt: number) => {

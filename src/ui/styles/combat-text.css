@@ -17,6 +17,10 @@
   will-change: transform, opacity;
 }
 #combat-text .combat-float[data-kind=status] { font: 600 12px/1.2 var(--font-body, sans-serif); letter-spacing: .08em; }
+/* Source receipts use both color and a quiet typographic mark. Elements retain their hue. */
+#combat-text .combat-float[data-source=ability] { color: #9fe8ff; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+#combat-text .combat-float[data-source=status] { color: #b6ff84; font-style: italic; }
+#combat-text .combat-float[data-source=boon] { color: #ffd27a; text-decoration: overline; text-decoration-thickness: 1px; }
 #combat-text .combat-float[data-element=fire], #combat-text .combat-float[data-element=burn] { color: #ffb580; }
 #combat-text .combat-float[data-element=ice], #combat-text .combat-float[data-element=frost], #combat-text .combat-float[data-element=freeze], #combat-text .combat-float[data-element=shatter] { color: #9fdfff; }
 #combat-text .combat-float[data-element=poison], #combat-text .combat-float[data-element=acid] { color: #b6ff84; }
