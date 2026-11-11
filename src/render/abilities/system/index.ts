@@ -8,7 +8,7 @@ import { ELEMENT_COLORS, UNIT, type AbilityFrame, type AbilityPresentation } fro
 
 const FRIENDLY = 0x9fe8ff;
 const WHITE = 0xe8fbff;
-const GHOST_LIMIT = 8;
+const GHOST_LIMIT = 3;
 const RECEIPT_LIMIT = 64;
 const EMPTY_ENEMIES: readonly EnemySnapshot[] = [];
 const RIG_ELEMENTS = { breacher: 'kinetic', cryo: 'cryo', pyro: 'pyro', arc: 'arc' } as const;
@@ -162,8 +162,8 @@ class SystemPresentation implements AbilityPresentation {
 
   private pose(frame: AbilityFrame, dashing: boolean): void {
     const marine = frame.marine;
-    if (!marine?.children[0]) return;
-    const body = marine.children[0];
+    const body = frame.marineBody ?? marine?.children[0];
+    if (!body) return;
     if (this.rest?.body !== body) {
       this.restorePose();
       this.rest = { body, y: body.position.y, rx: body.rotation.x, rz: body.rotation.z, sy: body.scale.y };

@@ -36,7 +36,7 @@ export class AbilityVisuals extends AbilityGeometry {
     if(this.dead||!Number.isFinite(x)||!Number.isFinite(y))return;
     if(event.phase==='cast')super.event(event,x,y);this.registry.get(event.rig)?.event(event,x,y);this.system?.event(event,x,y);
   }
-  override update(snapshot:AbilitiesSnapshot|undefined,dt:number,visible=true,game?:DepthGame,marine?:T.Object3D,camera?:T.Camera):void {
+  override update(snapshot:AbilitiesSnapshot|undefined,dt:number,visible=true,game?:DepthGame,marine?:T.Object3D,camera?:T.Camera,marineBody?:T.Object3D):void {
     if(this.dead)return;
     if(camera)this.kit.setView(camera);
     if(game&&(game.status==='dead'||game.status==='complete'||game.status==='menu'))visible=false;
@@ -44,7 +44,7 @@ export class AbilityVisuals extends AbilityGeometry {
     this.wasVisible=visible;
     dt=visible&&Number.isFinite(dt)?Math.max(0,dt):0;
     super.update(visible?snapshot:undefined,dt,visible);this.kit.begin(dt);
-    const f=this.frame;f.snapshot=snapshot;f.dt=dt;f.visible=visible;f.game=game;f.marine=marine;
+    const f=this.frame;f.snapshot=snapshot;f.dt=dt;f.visible=visible;f.game=game;f.marine=marine;f.marineBody=marineBody;
     if(visible&&snapshot?.rig)this.registry.get(snapshot.rig)?.update(f);
     this.system?.update(f);
     this.kit.end();

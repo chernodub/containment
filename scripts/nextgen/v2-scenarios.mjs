@@ -4,7 +4,7 @@ const rigs = {
  pyro:['afterburn','flashfire','napalm-charge','meltdown'],arc:['static-step','overload','tesla-pylon','overclock'],
 };
 const slots=['dash','tactical','power','overdrive'];
-async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false}) {
+async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,showcase=false}) {
  const d=window.__containmentDebug,g=d.game;
  await d.gotoRoom(room,{rig});d.renderer.setQuality(tier);await d.prepare();d.invulnerable(true);g.enemies.reset();
  const bounds=g.geometry.bounds,candidates=[];
@@ -19,31 +19,44 @@ async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false}
  }
  candidates.sort((a,b)=>b.score-a.score);if(!candidates.length)throw Error('No V2 legal lane');
  const p=candidates[0];Object.assign(g.player,{x:p.x,y:p.y,angle:p.angle,vx:0,vy:0});d.setInput({x:0,y:0,fire:false,angle:p.angle,autoAim:false});d.step(3800);g.enemies.reset();d.refresh();
+ const population=heavy?(showcase&&room!=='armory'?12:25):5;
  const placed=[];
  for(const r of (heavy?[170,230,290,350,410,470]:slot==='power'?[300,380]:[170,230,290]))for(const k of (heavy?[-5,-4,-3,-2,-1,0,1,2,3,4,5]:[0,-2,2,-1,1])){
-  if(placed.length>=(heavy?25:5))break;
+  if(placed.length>=population)break;
   const a=p.angle+k*.22,x=p.x+Math.cos(a)*r,y=p.y+Math.sin(a)*r;
   if(!d.canStand(x,y,26)||!d.clearShot(x,y)||placed.some(e=>Math.hypot(e.x-x,e.y-y)<43))continue;
   const eid=d.spawn(heavy?['brute','spitter','crawler','stalker','carrier'][placed.length%5]:slot==='power'?'spitter':'brute',x,y,heavy&&placed.length%6===0);
   if(eid)placed.push({x,y,id:eid});
  }
  // Larger rooms can place remaining stress actors around the rear half of the lane.
- if(heavy)for(let r=180;r<=420&&placed.length<25;r+=60)for(let k=0;k<24&&placed.length<25;k++){
+ if(heavy)for(let r=180;r<=420&&placed.length<population;r+=60)for(let k=0;k<24&&placed.length<population;k++){
   const a=k*Math.PI/12,x=p.x+Math.cos(a)*r,y=p.y+Math.sin(a)*r;
   if(!d.canStand(x,y,26)||placed.some(e=>Math.hypot(e.x-x,e.y-y)<43))continue;
   const eid=d.spawn('brute',x,y);if(eid)placed.push({x,y,id:eid});
  }
- if(placed.length<(heavy?25:3))throw Error('V2 encounter population '+placed.length);
+ if(placed.length<(heavy?population:3))throw Error('V2 encounter population '+placed.length);
  g.setAimPoint({x:p.x+Math.cos(p.angle)*150,y:p.y+Math.sin(p.angle)*150});
  d.v2Proof={rig,tier,room,stagedEnemies:placed.length,baseline};d.kitingProof=d.v2Proof;
  if(baseline){g.switchWeapon('rifle');d.setInput({fire:true,x:-Math.cos(p.angle)*.2,y:-Math.sin(p.angle)*.2});g.grenade();d.step(300);return;}
  const gl=d.renderer.renderer.getContext(),create=gl.createProgram;let programs=0;
  gl.createProgram=function(){programs++;return create.call(gl);};
  d.v2Proof.before=window.__containmentPerformance;
+ if(showcase){
+  g.switchWeapon('rifle');d.setInput({fire:true,x:-Math.cos(p.angle)*.12,y:-Math.sin(p.angle)*.12});
+  if(!g.useAbility('power'))throw Error('Full kit power denied');d.step(g.abilities.snapshot.slots.power.castRemainingMs+150);
+  if(!g.useAbility('dash'))throw Error('Full kit dash denied');d.step(150);
+  if(!g.useAbility('tactical'))throw Error('Full kit tactical denied');d.step(g.abilities.snapshot.slots.tactical.castRemainingMs+30);
+  d.fillOverdrive();if(!g.useAbility('overdrive'))throw Error('Full kit Overdrive denied');
+  const cast=g.abilities.snapshot.slots.overdrive.castRemainingMs;
+  const samples=[0,Math.max(16,cast*.5),cast+30,cast+150,cast+600,cast+1800,cast+3200];
+  const step=d.step;let sample=0,elapsed=0;
+  d.step=ms=>{if(ms!==150)return step(ms);const t=samples[Math.min(++sample,samples.length-1)];step(t-elapsed);elapsed=t;d.v2Proof.sampleMs=t;d.shaderCompilations=programs;if(programs)throw Error('Full kit shader compiles '+programs);};
+  d.v2Proof.instances=d.renderer.interimAbilities?.kit?.counts??null;d.refresh();return;
+ }
  if(heavy){
   const visuals=d.renderer.interimAbilities,updateVisuals=visuals.update;let peakInstances=0,peakLights=0,instances=0;
   function visit(object){if(!object.visible)return;if(object.isMesh)instances+=object.isInstancedMesh?object.count:1;for(const child of object.children)visit(child);}
-  visuals.update=function(snapshot,dt,visible,game,marine,camera){updateVisuals.call(this,snapshot,dt,visible,game,marine,camera);instances=0;visit(this.root);peakInstances=Math.max(peakInstances,instances);let lights=0;for(const light of d.renderer.lighting.pool.lights)if(light.intensity>0)lights++;peakLights=Math.max(peakLights,lights);};
+  visuals.update=function(snapshot,dt,visible,game,marine,camera,body){updateVisuals.call(this,snapshot,dt,visible,game,marine,camera,body);instances=0;visit(this.root);peakInstances=Math.max(peakInstances,instances);let lights=0;for(const light of d.renderer.lighting.pool.lights)if(light.intensity>0)lights++;peakLights=Math.max(peakLights,lights);};
   g.switchWeapon('rifle');
   if(!g.useAbility('power'))throw Error('V2 power denied');d.step(g.abilities.snapshot.slots.power.castRemainingMs+40);
   if(!g.useAbility('dash'))throw Error('V2 initial dash denied');d.step(150);if(!g.useAbility('tactical'))throw Error('V2 tactical denied');d.step(g.abilities.snapshot.slots.tactical.castRemainingMs+30);
@@ -66,7 +79,7 @@ async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false}
  const samples=[0,Math.max(16,cast*.5),Math.max(35,cast+30),Math.max(170,cast+150),cast+600,cast+Math.max(1200,duration*.5),cast+Math.max(1800,duration+300)];
  const original=d.step;let sample=0,elapsed=0;
  // The runner samples at fixed 150ms; map those sampling requests to explicit art-review phases.
- d.step=ms=>{if(ms!==150)return original(ms);sample++;const t=samples[Math.min(sample,samples.length-1)];original(Math.max(0,t-elapsed));elapsed=t;d.v2Proof.sampleMs=t;d.v2Proof.programs=programs;};
+ d.step=ms=>{if(ms!==150)return original(ms);sample++;const t=samples[Math.min(sample,samples.length-1)];original(Math.max(0,t-elapsed));elapsed=t;d.v2Proof.sampleMs=t;d.v2Proof.programs=programs;d.shaderCompilations=programs;if(programs)throw Error('V2 timeline shader compiles '+programs);};
  d.refresh();
 }
 export const V2_SCENARIOS=[];
@@ -75,8 +88,9 @@ for(const [rig,ids]of Object.entries(rigs)){
   id:`v2-${ids[i]}`,rooms:false,room,state:'playing',burst:true,setupArgument:{rig,id:ids[i],slot:slots[i],room},setup:stageV2,
  });
  // Unique room-qualified IDs allow choosing three lighting moods independently.
- for(const tier of ['high','low'])for(const room of ['armory','containment-annulus','infested-workshop'])V2_SCENARIOS.push({id:`v2-kit-${rig}-${tier}-${room}`,room,state:'playing',burst:true,setupArgument:{rig,room,tier,heavy:true},setup:stageV2});
+ for(const tier of ['high','low'])for(const room of ['awakening-bay','communal-atrium','armory','breached-loading-bay','relay-racks','safety-interlock-station','service-shaft-landing','infested-workshop','containment-annulus','overload-floor'])V2_SCENARIOS.push({id:`v2-kit-${rig}-${tier}-${room}`,room,state:'playing',burst:true,setupArgument:{rig,room,tier,heavy:true},setup:stageV2});
+ for(const room of ['awakening-bay','communal-atrium','armory','breached-loading-bay','relay-racks','safety-interlock-station','service-shaft-landing','infested-workshop','containment-annulus','overload-floor'])V2_SCENARIOS.push({id:`v2-full-${rig}-${room}`,room,state:'playing',burst:true,setupArgument:{rig,room,heavy:true,showcase:true},setup:stageV2});
  V2_SCENARIOS.push({id:`v2-before-${rig}`,room:'armory',state:'playing',burst:true,setupArgument:{rig,room:'armory',heavy:true,baseline:true},setup:stageV2});
 }
 // Each room variant needs a unique selector; retain the compact default for Cryogenics.
-for(const s of V2_SCENARIOS)if(s.id.startsWith('v2-')&&!s.id.startsWith('v2-kit-')&&!s.id.startsWith('v2-before-')&&s.room!=='awakening-bay')s.id+=`-${s.room}`;
+for(const s of V2_SCENARIOS)if(s.id.startsWith('v2-')&&!s.id.startsWith('v2-kit-')&&!s.id.startsWith('v2-before-')&&!s.id.startsWith('v2-full-')&&s.room!=='awakening-bay')s.id+=`-${s.room}`;

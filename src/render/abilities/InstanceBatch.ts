@@ -14,24 +14,30 @@ export class InstanceBatch {
     const geometry = kind === 'shard' ? new T.OctahedronGeometry(1, 0) : kind === 'solid' || kind === 'ghost' ? new T.BoxGeometry(1, 1, 1) : new T.PlaneGeometry(2, 2);
     this.alpha = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
     geometry.setAttribute('abilityAlpha', this.alpha);
-    const soft = kind === 'smoke' || kind === 'flame' || kind === 'spark';
-    const fragment = `varying float alpha;varying vec3 ink;varying vec2 p;
+    const soft = kind === 'smoke' || kind === 'spark';
+    const fragment = `uniform float abilityTime;varying float alpha;varying vec3 ink;varying vec2 p;
 void main(){float a=alpha;vec3 c=ink;
 ${soft ? 'float d=dot(p,p);if(d>1.)discard;a*=pow(1.-d,1.6);' : ''}
-${kind === 'flame' ? 'a*=smoothstep(1.,-.8,p.y);c=mix(c,vec3(2.4,1.3,.28),pow(max(0.,1.-length(p+vec2(0.,.3))),3.)*.55);' : ''}
+${kind === 'flame' ? `float sway=sin(p.y*4.+abilityTime*9.)*.09*(p.y+.9);
+float width=mix(.87,.1,clamp((p.y+1.)*.5,0.,1.));float q=p.x+sway;
+float edge=1.-smoothstep(width*.45,width,abs(q));
+float rag=.78+.22*sin(p.y*13.+abilityTime*17.+p.x*7.);
+a*=edge*(1.-smoothstep(.58,1.,p.y))*smoothstep(-1.,-.75,p.y)*rag;
+float core=pow(max(0.,1.-abs(q)/width),3.)*(1.-smoothstep(-.65,.85,p.y));
+c=mix(c,vec3(2.4,1.3,.22),core*.65);` : ''}
 ${kind === 'decal' ? 'float d=length(p);if(d>1.)discard;float a0=atan(p.y,p.x);float n=fract(sin(dot(floor(p*31.),vec2(127.1,311.7)))*43758.5);float cracks=pow(1.-abs(sin(a0*11.+floor(d*9.)*.14)),56.)*step(.24,n)*(1.-smoothstep(.7,1.,d));a*=max(cracks*.48,(1.-smoothstep(.65,1.,d))*(.05+n*.08));' : ''}
 ${kind === 'shard' || kind === 'solid' ? 'c*=.7+gl_FragCoord.y*.00008;' : ''}
 if(a<.003)discard;gl_FragColor=vec4(c,a);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`;
-    const material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,transparent:true,depthWrite:false,side:T.DoubleSide,
+    const material = new T.ShaderMaterial({uniforms:{abilityTime:{value:0}},vertexShader:vertex,fragmentShader:fragment,transparent:true,depthWrite:false,side:T.DoubleSide,
       blending:kind==='smoke'||kind==='decal'||kind==='solid'||kind==='ghost'?T.NormalBlending:T.AdditiveBlending});
     this.mesh = new T.InstancedMesh(geometry,material,capacity);
     this.mesh.name = `ability-${kind}-batch`;this.mesh.frustumCulled=false;this.mesh.setColorAt(0,new T.Color());
     this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.mesh.count=0;root.add(this.mesh);
   }
-  begin():void {this.mesh.count=0;}
+  begin(time=0):void {this.mesh.count=0;(this.mesh.material as T.ShaderMaterial).uniforms.abilityTime.value=time;}
   draw(x:number,y:number,z:number,sx:number,sy:number,sz:number,color:number,opacity=1,rotationY=0,rotationZ=0):void {
     const i=this.mesh.count;if(i>=this.capacity||opacity<=0)return;
     if(this.view&&(this.kind==='smoke'||this.kind==='spark'||this.kind==='flame'))rotationY=Math.atan2(this.view.x-x,this.view.z-z);

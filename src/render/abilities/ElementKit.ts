@@ -117,7 +117,7 @@ export class ElementKit {
     if(angle!==undefined)this.services?.camera.kick(angle,weight*.1);
   }
   begin(dt:number):void {
-    this.time+=dt;this.instanceCount=0;this.rings.clear();this.ribbons.begin();for(const kind in this.batches)this.batches[kind as Primitive].begin();
+    this.time+=dt;this.instanceCount=0;this.rings.clear();this.ribbons.begin();for(const kind in this.batches)this.batches[kind as Primitive].begin(this.reducedMotion?0:this.time);
     let live=0;
     for(const p of this.particles){if(!p.live)continue;p.age+=dt;if(p.age>=p.life){p.live=false;continue;}live++;
       const motion=this.reducedMotion?.2:1;p.x+=p.vx*dt*motion;p.y+=p.vy*dt*motion;p.z+=p.vz*dt*motion;

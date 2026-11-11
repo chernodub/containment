@@ -112,3 +112,27 @@ npm run capture -- --label=integration-1a --width=1920 --height=1080 --scenarios
 `debug.realtime(true|false)` is opt-in capture instrumentation: it lets the production RAF call original update/render with the existing debug controls, aging pooled UI on the same clock. Default debug captures remain fixed-step. Capture metadata retains both UI/ability receipts and G1 lighting/preparation diagnostics.
 
 The default room list now covers all ten distinct environments (including maintenance at Service Shaft Landing). Passenger Vault remains selectable explicitly, as do all twenty authored rooms.
+
+## V2 ability presentation review
+
+`v2-<ability-id>` captures seven explicit simulation phases: press, half-cast,
+impact +30ms, +150ms, +600ms, lingering midpoint and expiry. Choose `--burst=7`.
+Point powers use ranged targets to expose growth and expiry; the separate stress
+fixture uses25 legal actors. Suffix `-containment-annulus` or `-infested-workshop`
+for individual bright/dark ability review.
+
+`v2-full-<rig>-<room>` captures native power → dash → tactical → Overdrive overlap
+through a seven-frame burst (25 staged enemies in Armory,12 elsewhere). All ten
+moods are selectable. `v2-kit-<rig>-<high|low>-armory` runs three real RAF seconds
+with25 staged enemies, all four accepted slots, both dash charges cooling at the
+snapshot, and zero combat GPU-program creation. `evidence.kitingProof` stores
+120-sample diagnostics, observed peak instance/light counts and accepted cooldowns.
+These are staged encounters; deaths are retained and survivors are reported.
+
+`v2-sheets.py <gallery>` assembles per-ability and per-rig PNG timelines with
+simulation timestamps (Pillow in an external temporary Python environment).
+`v2-before-stress.py` temporarily reproduces the original interim renderer only
+inside this worktree and restores source bytes in `finally`; run it only when no
+other V2 build/capture is active. `v2-performance.py` compares matched manifests
+and creates a JSON table and PNG CPU chart. Render timing is CPU submission, not
+GPU time. Concurrent machine load and P95 must be retained in the report.

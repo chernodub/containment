@@ -12,6 +12,7 @@ export interface AbilityFrame {
   snapshot: AbilitiesSnapshot | undefined;
   game?: DepthGame;
   marine?: T.Object3D;
+  marineBody?: T.Object3D;
   dt: number;
   visible: boolean;
 }
