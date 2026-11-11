@@ -19,7 +19,7 @@ it('registers one self-contained production capture fixture for every catalog ab
 it('keeps both stream scenario sets and checks the integrated live HUD', async () => {
   const { SCENARIOS } = await import('../scripts/nextgen/scenarios.mjs');
   expect(new Set(SCENARIOS.map(s => s.id)).size).toBe(SCENARIOS.length);
-  for (const id of ['ability:desktop-input', 'ability-ready', 'ability-denied', 'combat-kiting', 'pause-loadout', 'results-fixture', 'complete-fixture', 'results']) {
+  for (const id of ['ability:desktop-input', 'ability-ready', 'ability-denied', 'combat-kiting', 'pause-loadout', 'pause-loadout-augments', 'augment-draft', 'results-fixture', 'complete-fixture', 'results']) {
     expect(SCENARIOS.some(s => s.id === id)).toBe(true);
   }
   const { ABILITY_SCENARIOS } = await import('../scripts/nextgen/ability-scenarios.mjs');

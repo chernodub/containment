@@ -93,6 +93,7 @@ try{
     if(scenario.ability){assert.equal(evidence.abilities.rig,scenario.ability.rig);assert.equal(evidence.abilities.slots[scenario.ability.slot].id,scenario.ability.id);assert.equal(evidence.stats.abilityUses[scenario.ability.slot],1);assert(evidence.abilities.zones.length<=24&&evidence.abilities.deployables.length<=8,'Ability counts unbounded');}
     if(scenario.ability||scenario.nativeInput){
      assert.equal(evidence.ui.abilitySlots.length,4,`${name}: live ability HUD incomplete`);
+     assert(!evidence.ui.toasts.some(text=>text.includes('acquired')),`${name}: stale draft acquisition toast in ability-only fixture`);
      for(const hud of evidence.ui.abilitySlots){
       const slot=evidence.abilities.slots[hud.slot];
       assert(hud.title&&hud.value&&hud.icon,`${name}: ${hud.slot} HUD content missing`);

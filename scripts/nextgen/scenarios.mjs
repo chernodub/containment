@@ -8,13 +8,13 @@ export const SCENARIOS=[
  {id:'title',state:'menu',required:['.title-screen','#start'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();}},
  {id:'title-settings',state:'menu',required:['[data-ui-settings]','#quality'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();document.querySelector('#settings').click();}},
  {id:'starting-boon',state:'reward',phase:'starting-boon',required:['.choice-grid'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});if(!d.game.chooseRig('cryo'))throw Error('Starting boon rig selection failed');d.refresh();}},
- {id:'augment-draft',state:'reward',phase:'starting-boon',required:['.choice-grid','[data-mutation=spreading-nova], [data-mutation=twin-glacier]'],setup:async()=>{
-   const d=window.__containmentDebug;await d.startRun(1729,{rigSelect:true});
-   for(let seed=1729;seed<1929;seed++){
-     d.game.newRun(seed,{rigSelect:true});if(!d.game.chooseRig('cryo'))throw Error('Augment draft rig selection failed');d.refresh();
-     if(document.querySelector('[data-mutation=spreading-nova], [data-mutation=twin-glacier]')){await d.prepare();return;}
+ {id:'augment-draft',state:'reward',phase:'reward',required:['.choice-grid','[data-mutation=spreading-nova], [data-mutation=twin-glacier]'],setup:async()=>{
+   const d=window.__containmentDebug;
+   for(let seed=1729;seed<1769;seed++){
+     await d.startRun(seed);await d.gotoRoom('awakening-bay',{phase:'reward',rig:'cryo'});d.grantBoons(['cryogenic']);
+     if(document.querySelector('[data-mutation=spreading-nova], [data-mutation=twin-glacier]'))return;
    }
-   throw Error('No seeded live Cryo augment draft found');
+   throw Error('No seeded live Cryo augment reward draft found');
  }},
  {id:'rig-select',state:'reward',phase:'rig-select',uiState:'rig-select',required:['.rig-panel','[data-rig]','.rig-footnote'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});}},
  {id:'rig-select-cryo',state:'reward',uiState:'rig-select',required:['.rig-panel [data-element=cryo]'],setup:async()=>{const d=window.__containmentDebug;await d.startRun(undefined,{rigSelect:true});document.querySelector('[data-rig=cryo]').click();}},
@@ -55,6 +55,11 @@ export const SCENARIOS=[
  {id:'route',state:'route',required:['.route-grid','[data-route]'],setup:async()=>{await window.__containmentDebug.gotoRoom('awakening-bay',{phase:'route'});}},
  {id:'pause',state:'paused',required:['.pause-panel','#resume'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();}},
  {id:'pause-loadout',state:'paused',required:['.owned-boons','.ability-preview'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','spreading-nova','twin-glacier','reserve-thruster']);d.game.pause();d.refresh();document.querySelector('[data-pause-tab=loadout]').click();}},
+ {id:'pause-loadout-augments',state:'paused',required:['[data-boon=spreading-nova]','[data-boon=twin-glacier]','[data-boon=reserve-thruster]'],setup:async()=>{
+   const d=window.__containmentDebug;await d.gotoRoom('armory',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','spreading-nova','twin-glacier','reserve-thruster']);
+   d.game.pause();d.refresh();document.querySelector('[data-pause-tab=loadout]').click();
+   const panel=document.querySelector('#pause-tabpanel');panel.scrollTop=panel.scrollHeight;
+ }},
  {id:'pause-settings',state:'paused',required:['[data-ui-settings]','#quality'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();document.querySelector('[data-pause-tab=settings]').click();document.querySelector('.settings-advanced')?.setAttribute('open','');}},
  {id:'graphics-options',state:'paused',required:['[data-setting=\"graphics.bloom\"]'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();document.querySelector('[data-pause-tab=settings]').click();document.querySelector('.settings-advanced').open=true;}},
  {id:'pause-controls',state:'paused',required:['.controls-reference'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();document.querySelector('[data-pause-tab=controls]').click();}},
@@ -114,5 +119,5 @@ export function inspectFrame(){
  // Read the just-rendered default framebuffer before the browser clears it.
  const xs=[];for(let y=0;y<18;y++)for(let x=0;x<32;x++){const p=new Uint8Array(4);gl.readPixels(Math.floor((x+.5)*gl.drawingBufferWidth/32),Math.floor((y+.5)*gl.drawingBufferHeight/18),1,1,gl.RGBA,gl.UNSIGNED_BYTE,p);xs.push(`${p[0]>>3},${p[1]>>3},${p[2]>>3}`);}
  const enemies=g.enemies.snapshot.enemies.filter(e=>e.health>0),visible=enemies.filter(e=>r.visible(e.x,e.y));
- return {abilities:g.abilities.snapshot,stats:g.stats,recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden,ui:{abilitySlots:[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,title:n.querySelector('.ability-title')?.textContent,value:n.querySelector('.ability-value')?.textContent,icon:!!n.querySelector('svg')})),damageNumbers:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>n.textContent),threats:document.querySelectorAll('.threat-marker:not([hidden])').length}};
+ return {abilities:g.abilities.snapshot,stats:g.stats,recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden,ui:{toasts:[...document.querySelectorAll('.hud-toast:not([hidden])')].map(n=>n.textContent),abilitySlots:[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,title:n.querySelector('.ability-title')?.textContent,value:n.querySelector('.ability-value')?.textContent,icon:!!n.querySelector('svg')})),damageNumbers:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>n.textContent),threats:document.querySelectorAll('.threat-marker:not([hidden])').length}};
 }
