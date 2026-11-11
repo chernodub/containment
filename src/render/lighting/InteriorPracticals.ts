@@ -104,7 +104,7 @@ export function addInteriorPracticals(world: T.Group, template: InteriorPlan, en
   const dummy = new T.Object3D(), color = new T.Color(), fixtures = world.userData.lightFixtures ??= [];
   for (let i = 0; i < anchors.length; i++) {
     const {point:anchor,tiny} = anchors[i];
-    const tint = organic ? i % 3 === 1 ? 0xdc68ca : 0xa1ef72 : environment === 'communications' ? i % 2 ? 0x58e4bc : 0x69d9ef : environment === 'security' ? i % 2 ? 0xff6650 : 0xe8f1ff : environment === 'containment' && i % 2 ? 0xe5eaff : getEnvironmentMood(environment).practical.color;
+    const tint = organic ? i % 3 === 1 ? 0xdc68ca : 0xa1ef72 : environment === 'communications' ? i % 2 ? 0x58e4bc : 0x69d9ef : environment === 'security' ? 0xe8f1ff : environment === 'containment' && i % 2 ? 0xe5eaff : getEnvironmentMood(environment).practical.color;
     dummy.position.copy(anchor); dummy.position.y += .045; dummy.scale.set(tiny?.12:.65, .09, tiny?.12:.42); dummy.updateMatrix(); housings.setMatrixAt(i, dummy.matrix);
     dummy.position.y += organic ? tiny?.085:.19 : .09; dummy.scale.set(tiny?organic?.045:.09:organic?.24:.5, organic?tiny?.075:.23:.08, tiny?organic?.045:.09:organic?.24:.25); dummy.updateMatrix(); emitters.setMatrixAt(i, dummy.matrix); emitters.setColorAt(i, color.setHex(tint));
     fixtures.push({ x: dummy.position.x, y: dummy.position.y, z: dummy.position.z, color: tint, nativeColor: true });

@@ -56,7 +56,7 @@ function localMood(environment: ShipEnvironment, keyColor: number, accent: numbe
 }
 
 function shadowToe(base:EnvironmentMood):EnvironmentMood {
-  return artMood(base,{grade:Object.freeze({...base.grade,lift:[.002,.0022,.0024] as RGB})});
+  return artMood(base,{grade:Object.freeze({...base.grade,lift:[.0035,.004,.0045] as RGB})});
 }
 
 /** All ten ship environments have a distinct, authored lighting and grading palette. */
@@ -64,12 +64,12 @@ export const ENVIRONMENT_MOODS: Readonly<Record<ShipEnvironment, EnvironmentMood
   cryogenics: artMood(localMood('cryogenics',0xd9efff,0x86dcff,'steady',0x8397a2,.86,.06,.82,.155,.20,120,6,10,0x839db6),{fog:Object.freeze({color:0x8397a2,density:.011,height:1.1})}),
   habitation: localMood('habitation',0xa9bfd8,0xffb968,'flicker',0x8b8580,.91,.12,1.35,.25,.28,160,4.8,9,0x7b8fa8),
   security: shadowToe(localMood('security',0xf1f4ff,0xff513d,'alarm',0x6c7888,.82,.14,1.8,.34,.25,580,6.2,12,0x7c91a9)),
-  cargo: localMood('cargo',0xffd398,0xffa54d,'steady',0x8b8375,.94,.07,1.15,.22,.25,380,6.8,8,0x8293a7),
-  communications: localMood('communications',0xbddfe9,0x58e4bc,'flicker',0x687b87,.86,.09,1.25,.245,.25,440,5.4,10,0x769ba8),
-  engineering: localMood('engineering',0xffe2a9,0xffbb47,'flicker',0x8b8374,.88,.07,1.85,.32,.25,280,6.2,5,0x85949f),
-  maintenance: localMood('maintenance',0xc0e0d6,0x73d7af,'flicker',0x6f8981,.28,.10,1.2,.22,.30,545,6.4,9,0x789d99),
+  cargo: localMood('cargo',0xffd398,0xffa54d,'steady',0x8b8375,.94,.07,1.15,.22,.25,380,5.8,8,0x8293a7),
+  communications: localMood('communications',0xbddfe9,0x58e4bc,'flicker',0x687b87,.86,.09,1.25,.245,.25,440,5.2,10,0x769ba8),
+  engineering: localMood('engineering',0xffe2a9,0xffbb47,'flicker',0x8b8374,.88,.07,1.85,.32,.25,500,6.2,5,0x85949f),
+  maintenance: localMood('maintenance',0xc0e0d6,0x73d7af,'flicker',0x6f8981,.28,.10,1.2,.22,.30,620,5.2,9,0x789d99),
   infested: artMood(localMood('infested',0xb7d7b0,0xa8ff72,'pulse',0x768579,.9,.10,2.0,.35,.35,640,6.4,8,0x718a86),{rim:Object.freeze({color:0xe26acf,intensity:.35,offset:[6,6,-9] as RGB})}),
-  containment: localMood('containment',0xe4ebff,0xb99bff,'pulse',0x818594,.82,.16,1.65,.30,.32,400,6.4,11,0x8a94b1),
+  containment: shadowToe(localMood('containment',0xe4ebff,0xb99bff,'pulse',0x818594,.82,.16,1.65,.30,.32,400,5,11,0x8a94b1)),
   reactor: artMood(mood('reactor', 0xffe0bc, 0xff8a39, 'reactor', 0x596675, 1.06, .97, .85, .24, 18), {
     ambient: Object.freeze({ sky: 0x8294aa, ground: 0x303c4c, intensity: .08 }),
     key: Object.freeze({ color: 0xffa14b, intensity: 1.7, offset: [0, 3.2, 0] as RGB }),

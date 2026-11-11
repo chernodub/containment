@@ -19,12 +19,14 @@ float ash=fract(sin(dot(floor(actorPosition*65.0),vec3(12.9898,78.233,37.719)))*
 if(ash<actorDissolve)discard;
 ${friendly ? '' : 'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(dot(diffuseColor.rgb,vec3(.2126,.7152,.0722))),.24)*.82;'}
 diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.9,.98,1.0),actorFlash*actorFlashIntensity*.62);`)
+        .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+${friendly ? '' : 'float actorLitLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));reflectedLight.indirectDiffuse+=vec3(.005,.007,.01)*(1.0-smoothstep(.005,.04,actorLitLuma));'}`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),4.0);
 float ashEdge=actorDissolve>0.0?1.0-smoothstep(actorDissolve,actorDissolve+.045,ash):0.0;
 totalEmissiveRadiance+=actorRimColor*actorRim*actorRimStrength+vec3(1.8,.48,.08)*ashEdge*actorFlashIntensity;`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:actor-surface-v1`;
+    material.customProgramCacheKey = () => `${previousKey}:actor-surface-v2:${friendly ? 'marine' : 'alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
   }

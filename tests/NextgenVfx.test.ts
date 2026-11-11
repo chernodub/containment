@@ -121,3 +121,12 @@ describe('next generation combat presentation', () => {
     expect(batch.counts.fire).toBe(6); batch.dispose();
   });
 });
+
+it('keeps marine and alien shader families distinct and adds only a restrained shadow fill to aliens',()=>{
+ const friendly=new T.MeshStandardMaterial(),enemy=new T.MeshStandardMaterial();
+ actorSurface([friendly],true);actorSurface([enemy],false);
+ expect(friendly.customProgramCacheKey()).not.toBe(enemy.customProgramCacheKey());
+ const compile=(material:T.Material)=>{const shader={uniforms:{},vertexShader:T.ShaderLib.standard.vertexShader,fragmentShader:T.ShaderLib.standard.fragmentShader};material.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);return shader.fragmentShader;};
+ expect(compile(enemy)).toContain('actorLitLuma');expect(compile(friendly)).not.toContain('actorLitLuma');
+ friendly.dispose();enemy.dispose();
+});
