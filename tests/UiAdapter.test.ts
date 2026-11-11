@@ -73,3 +73,37 @@ describe('ability visual states', () => {
     expect(abilityFixture(rig, 'overdrive').overdrive.charge).toBe(1);
   });
 });
+
+describe('S2 audio and G1 camera boundaries', () => {
+  it('dispatches every effect exclusively to a complete audio director', async () => {
+    const {forwardAudioEffect, playUiCue, syncAudioDirector} = await import('../src/ui/gameAdapter');
+    const legacy = {playUI: vi.fn(), playConfirmedHit: vi.fn(), playPistol: vi.fn(), playRifle: vi.fn(), playShotgun: vi.fn(), playPlasma: vi.fn(), playRocket: vi.fn(), playBodyImpact: vi.fn(), playExplosion: vi.fn(), playPickup: vi.fn(), playElemental: vi.fn(), setMusicIntensity: vi.fn()};
+    forwardAudioEffect(legacy, {type:'shot', x:0, y:0, weapon:'rifle'}, {x:0, y:0});
+    expect(legacy.playRifle).toHaveBeenCalledOnce();
+    const audio = {...legacy, handleEffect: vi.fn(), playUi: vi.fn(), setEnvironment: vi.fn(), setCombatState: vi.fn()};
+    forwardAudioEffect(audio, {type:'shot', x:0, y:0, weapon:'rifle'}, {x:0, y:0});
+    forwardAudioEffect(audio, {type:'hit', x:0, y:0, contact:'armor'}, {x:0, y:0});
+    playUiCue(audio, 'room-enter'); syncAudioDirector(audio, new DepthGame());
+    expect(audio.handleEffect).toHaveBeenCalledTimes(2);
+    expect(legacy.playRifle).toHaveBeenCalledOnce(); expect(legacy.playConfirmedHit).not.toHaveBeenCalled();
+    expect(audio.playUi).toHaveBeenCalledWith('room-enter'); expect(legacy.playUI).not.toHaveBeenCalled();
+    expect(audio.setEnvironment).toHaveBeenCalled(); expect(audio.setCombatState).toHaveBeenCalledWith(expect.objectContaining({paused:true, hostileTimeScale:1}));
+  });
+  it('falls back safely for a partially landed director', async () => {
+    const {playUiCue} = await import('../src/ui/gameAdapter');
+    const audio = {playUI:vi.fn(), playUi:vi.fn()}; playUiCue(audio, 'confirm');
+    expect(audio.playUI).toHaveBeenCalledOnce(); expect(audio.playUi).not.toHaveBeenCalled();
+  });
+  it('uses angle/amount camera hooks, scales comfort, and respects renderer-owned feedback', async () => {
+    const {cameraEffect} = await import('../src/ui/gameAdapter');
+    const cameraRig = {kick:vi.fn(), addTrauma:vi.fn(), punch:vi.fn()};
+    const renderer = {cameraRig} as unknown as DepthRenderer;
+    cameraEffect(renderer, {type:'shot', x:0, y:0, weapon:'shotgun', angle:0}, .5);
+    expect(cameraRig.kick).toHaveBeenCalledWith(Math.PI,.05);
+    cameraEffect(renderer, {type:'explosion', x:0, y:0}, 0);
+    expect(cameraRig.addTrauma).not.toHaveBeenCalled();
+    cameraEffect({cameraRig, handlesCameraEffects:true} as unknown as DepthRenderer, {type:'explosion',x:0,y:0},1);
+    expect(cameraRig.punch).not.toHaveBeenCalled();
+    expect(() => cameraEffect({} as DepthRenderer,{type:'hurt',x:0,y:0},1)).not.toThrow();
+  });
+});
