@@ -1,6 +1,6 @@
 import * as T from 'three';
 
-export type Primitive = 'shard' | 'spark' | 'smoke' | 'flame' | 'solid' | 'ghost' | 'decal';
+export type Primitive = 'shard' | 'spark' | 'smoke' | 'flame' | 'solid' | 'ghost' | 'decal' | 'front';
 const vertex = `
 attribute float abilityAlpha;attribute float abilityPhase;
 varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;
@@ -27,7 +27,8 @@ export class InstanceBatch {
   }
 
   constructor(root: T.Object3D, readonly kind: Primitive, readonly capacity: number) {
-    const geometry = kind === 'shard' ? new T.OctahedronGeometry(1, 0)
+    const geometry = kind === 'front' ? new T.TorusGeometry(.88, .12, 6, 64).rotateX(-Math.PI / 2)
+      : kind === 'shard' ? new T.OctahedronGeometry(1, 0)
       : kind === 'solid' || kind === 'ghost' ? new T.BoxGeometry(1, 1, 1)
         : new T.PlaneGeometry(2, 2);
     this.alpha = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
@@ -61,17 +62,32 @@ ${atlas ? `
  ${kind === 'flame' ? `
  float heat=clamp(dot(s.rgb,vec3(.32,.52,.16)),0.,1.);
  // HDR hot core, orange body and deep-red feather: no opaque pale triangles.
- c=mix(vec3(.9,.025,.001),vec3(3.6,.53,.018),smoothstep(.03,.38,heat));
+ c=mix(vec3(1.05,.065,.003),vec3(4.,.7,.025),smoothstep(.008,.28,heat));
  c=mix(c,vec3(10.,5.2,.95),pow(smoothstep(.48,.94,heat),2.6));
+ float hotBias=clamp((ink.g-.19)*2.,0.,1.);c=mix(c,vec3(10.,6.,1.2),hotBias*heat*heat*.35);
  a*=.78*(.35+.65*flash);
- ` : `float vapor=step(ink.r*1.12,ink.b)*smoothstep(.18,.5,ink.b);c=mix(vec3(.007,.009,.012),ink*.38,vapor);a*=mix(.65,.2,vapor);`}
+ ` : `float vapor=step(ink.r*1.12,ink.b)*smoothstep(.18,.5,ink.b);float dust=step(.08,ink.r+ink.g+ink.b)*(1.-vapor);c=mix(vec3(.007,.009,.012),ink*.65,dust);c=mix(c,ink*.85,vapor);a*=mix(.65,.52,vapor);`}
  ` : ''}
 ${kind === 'spark' ? 'float d=dot(p,p);if(d>1.)discard;a*=pow(1.-d,2.);c*=3.5;' : ''}
 ${kind === 'decal' ? `
- float d=length(p);if(d>1.)discard;float a0=atan(p.y,p.x);
+ float d=length(p);float a0=atan(p.y,p.x);float variant=floor(phase+.01);
  float n=fract(sin(dot(floor(p*31.),vec2(127.1,311.7)))*43758.5);
- float cracks=pow(1.-abs(sin(a0*11.+floor(d*9.)*.14)),56.)*step(.24,n)*(1.-smoothstep(.7,1.,d));
- a*=max(cracks*.48,(1.-smoothstep(.65,1.,d))*(.05+n*.08));` : ''}
+ float brokenAngle=a0*11.+sin(d*26.+floor(a0*3.)*6.)*.7+sin(d*73.+a0*7.)*.2;
+ float cracks=pow(1.-abs(sin(brokenAngle)),24.)*step(.14,n)*(1.-smoothstep(.8,1.,d));
+ if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,(1.-smoothstep(.65,1.,d))*(.08+n*.1));}
+ else if(variant<1.5){if(d>1.)discard;vec2 cell=floor(p*17.);vec2 f=fract(p*17.)-.5;float seed=fract(sin(dot(cell,vec2(43.1,87.7)))*9781.7);float frost=pow(max(0.,1.-abs(sin(atan(f.y,f.x)*3.+seed*6.283))),18.)*(1.-smoothstep(.1,.65,length(f)));vec2 g=fract(p*31.);g=g*g*(3.-2.*g);vec2 b=floor(p*31.);float n10=fract(sin(dot(b+vec2(1.,0.),vec2(127.1,311.7)))*43758.5);float n01=fract(sin(dot(b+vec2(0.,1.),vec2(127.1,311.7)))*43758.5);float n11=fract(sin(dot(b+vec2(1.),vec2(127.1,311.7)))*43758.5);float powder=mix(mix(n,n10,g.x),mix(n01,n11,g.x),g.y);a*=(.07+powder*.09+frost*.22)*(1.-smoothstep(.82,1.,d));c*=1.4;}
+ else if(variant<2.5){float edge=abs(p.y);float slag=pow(max(0.,1.-abs(p.y+sin(p.x*31.)*.12)*4.),3.)*(.4+n*.6);a*=(1.-smoothstep(.7,1.,abs(p.x)))*(1.-smoothstep(.5,1.,edge))*(.5+n*.4);c=mix(ink,vec3(2.8,.5,.015),slag*fract(phase)*10.*flash);}
+ else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.83,1.,d))*(.3+n*.4+cracks*.3);}
+ else if(variant<4.5){if(d>1.)discard;float star=pow(1.-abs(sin(a0*5.+floor(d*11.)*.18)),22.);a*=(star*.85+(.2+n*.2)*(1.-smoothstep(.1,.5,d)))*(1.-smoothstep(.8,1.,d));}
+ else if(variant<5.5){if(d>1.)discard;a*=(.22+n*.4)*(1.-smoothstep(.65,1.,d));}
+ else {if(d>1.)discard;if(variant>6.5&&abs(a0)>fract(phase)*6.283185)discard;float flow=sin(p.x*13.+sin(p.y*17.-abilityTime*2.5)*2.+abilityTime*1.7);a*=(.12+pow(.5+.5*flow,4.)*.4)*(1.-smoothstep(.86,1.,d));c=mix(vec3(.7,.055,.002),vec3(5.,1.3,.035),.5+.5*flow);}
+ ` : ''}
+${kind === 'front' ? `
+ float roll=(.5+.5*sin(uvLocal.x*127.+sin(uvLocal.y*19.+abilityTime*5.)*2.))*(.55+.45*sin(uvLocal.x*43.-uvLocal.y*11.+abilityTime*3.));
+ float vapor=smoothstep(.08,.55,roll);float ridge=pow(.5+.5*cos(uvLocal.y*6.283),9.);
+ float dusty=(1.-smoothstep(.1,.3,max(ink.r-ink.g,ink.b-ink.r)))*(1.-smoothstep(.35,.7,max(ink.r,max(ink.g,ink.b))));
+ a*=vapor*mix(.2+ridge*.65,.6,dusty);c*=mix(1.2+ridge*4.*flash,.65+roll*.4,dusty);
+ ` : ''}
 ${kind === 'shard' || kind === 'solid' ? 'c*=.7+gl_FragCoord.y*.00008;' : ''}
  vec2 screen=screenPosition.xy/max(.001,screenPosition.w)*.5+.5;
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
@@ -87,7 +103,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.7+gl_FragCoord.y*.00008;' : ''}
       transparent: true,
       depthWrite: false,
       side: T.DoubleSide,
-      blending: kind === 'smoke' || kind === 'decal' || kind === 'solid' || kind === 'ghost'
+      blending: kind === 'smoke' || kind === 'decal' || kind === 'solid' || kind === 'ghost' || kind === 'front'
         ? T.NormalBlending : T.AdditiveBlending,
     });
     this.mesh = new T.InstancedMesh(geometry, material, capacity);
@@ -106,7 +122,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.7+gl_FragCoord.y*.00008;' : ''}
   }
 
   draw(x: number, y: number, z: number, sx: number, sy: number, sz: number,
-    color: number, opacity = 1, rotationY = 0, rotationZ = 0): void {
+    color: number, opacity = 1, rotationY = 0, rotationZ = 0, variant = 0): void {
     const i = this.mesh.count;
     if (i >= this.capacity || opacity <= 0) return;
     if (this.view && (this.kind === 'smoke' || this.kind === 'spark' || this.kind === 'flame')) {
@@ -148,7 +164,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.7+gl_FragCoord.y*.00008;' : ''}
     }
     this.mesh.instanceColor!.setXYZ(i, this.colorValues[rgb], this.colorValues[rgb + 1], this.colorValues[rgb + 2]);
     this.alpha.setX(i, opacity);
-    this.phase.setX(i, Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
+    this.phase.setX(i, this.kind === 'decal' ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
   }
 

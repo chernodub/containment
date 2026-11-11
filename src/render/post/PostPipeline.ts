@@ -52,6 +52,12 @@ export class PostPipeline {
   private readonly savedClearColor = new Color();
   private focusDistance = 26;
   private menuPresentation = false;
+  private readonly abilityPresentation = new Vector3();
+
+  /** V3's bounded presentation inputs reuse the prepared composite; Low keeps its forward path. */
+  setAbilityPresentation(exposure: number, warm: number, cool: number): void {
+    this.abilityPresentation.set(exposure, warm, cool).clampScalar(0, 1);
+  }
 
   constructor(
     private readonly renderer: WebGLRenderer,
@@ -258,6 +264,7 @@ export class PostPipeline {
       lensEnabled: { value: 0 }, atmosphereEnabled: { value: 0 }, useAgX: { value: 0 },
       focusDistance: { value: 26 }, menuPresentation: { value: 0 },
       toneMappingExposure: { value: 1 }, saturation: { value: 1 }, contrast: { value: 1 },
+      abilityPresentation: { value: this.abilityPresentation },
       lift: { value: new Vector3() }, gain: { value: new Vector3(1, 1, 1) },
       shadowTint: { value: new Color() }, highlightTint: { value: new Color() },
       fogColor: { value: new Color() }, fogDensity: { value: 0 }, fogHeight: { value: 1 },

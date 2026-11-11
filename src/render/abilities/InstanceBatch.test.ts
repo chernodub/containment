@@ -2,7 +2,7 @@ import * as T from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { InstanceBatch, type Primitive } from './InstanceBatch';
 
-const kinds: Primitive[] = ['shard', 'spark', 'smoke', 'flame', 'solid', 'ghost', 'decal'];
+const kinds: Primitive[] = ['shard', 'spark', 'smoke', 'flame', 'solid', 'ghost', 'decal', 'front'];
 
 describe('ability instance streaming', () => {
   it.each(kinds)('preserves %s transforms, colors and billboard orientation', kind => {

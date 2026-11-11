@@ -31,16 +31,16 @@ void main(){
   vec2 flow=p*5.+vec2(t*.28,-t*.75);float n=low>.5?hash(floor(p*13.)):noise(flow+vec2(noise(flow*1.8-t*.3),noise(flow*1.4+t*.2)));
   float vein=pow(max(0.,1.-abs(n-.51)*7.),5.);
   float hot=pow(smoothstep(.56,.82,n),3.);float edge=smoothstep(.65,.93,d);
-  energy=vein*(.14+edge*.8)+hot*.15;
-  alpha=(energy*.3+rim*.18)*fade;
+  energy=vein*(.25+edge*.65)+hot*.22;
+  alpha=(.045+energy*.42+rim*.24)*fade;
   color=mix(vec3(.55,.035,.003),vec3(4.5,.95,.025),vein);
   color=mix(color,vec3(8.,4.5,.7),hot*.8);
  }else if(kind<1.5){
   float grain=low>.5?hash(floor(p*24.)):noise(p*24.+vec2(t*.025,0.));
   float crystal=pow(max(0.,1.-abs(sin(atan(p.y,p.x)*9.+d*37.))),30.)*step(.56,grain);
   float fringe=smoothstep(.68,.95,d);
-  alpha=(rim*.11+crystal*(.004+fringe*.045))*fade;
-  color=vec3(.24,.68,1.15);
+  alpha=(.035+grain*.035+rim*.18+crystal*(.035+fringe*.08))*fade;
+  color=vec3(.32,.8,1.5);
  }else{
   float wire=pow(max(0.,1.-abs(sin(p.x*15.+sin(p.y*21.+t*3.)))),35.);
   alpha=(wire*.018*smoothstep(.7,.96,d)+rim*.12)*fade;color=vec3(.65,.36,1.6);

@@ -202,6 +202,18 @@ GPU time. Concurrent machine load and P95 must be retained in the report.
 
 `g2-overlay.mjs <final-dir> <focused-correction-dir>` assembles a final gallery after an isolated correction. It requires a clean overlay capture and exact existing fixture keys, preserves the original round manifest/PNGs, records the overlay renderer SHA per replaced shot, and regenerates the standalone gallery. It does not change captured evidence or hide failed scenarios. Rerun g2-review and g2-comparison afterward.
 
+## V3 finishing evidence
+
+`v3-capture.mjs --label=<label> --dist=<immutable-build> --dist-source-sha=<renderer-sha>` serializes one rig per browser batch, then consolidates all sixteen seven-phase abilities and four Armory kits. Add `--mode=environments` for every rig's bright Containment Annulus, dark Infested Workshop and Low Armory kit. Native PNGs/manifests are retained. The bounded file-linked gallery avoids the embedded-HTML size limit for large galleries.
+
+`v3-gallery.mjs <capture-directory>` creates area-reduced exact 480×270 frames, phase sheets and an overview. `v3-finalize.mjs <core-label> <environment-label> <recovery-label>` assembles validated final sources, matched seven-phase before/after comparisons and single-phase impact+30ms thumbnail pairs. It preserves baseline evidence and fails on missing fixture phases, duplicate keys or capture errors.
+
+`v3-recovery` is additive to the original V2 recovery scenario: it retains the same resource-cycle proof and acknowledges the restored-graphics and pause controls after preparation/lazy controls settle. Capture it with `npm run capture -- --label=<recovery-label> --dist=<immutable-build> --dist-source-sha=<renderer-sha> --scenarios=v3-recovery`.
+
+After matched sustained `npm run bench` runs, `v3-metrics.mjs <before-label> <after-label>` writes `v3-final/bench.md`, JSON and an HTML comparison chart. CPU is best p95 of N repeats; counts are worst peaks of all repeats. Host load is shown beside timings. Raw trials and absolute budget misses stay visible.
+
+`v3-recheck.mjs` reads that comparison and runs three alternating preserved-before/preserved-after pairs for every original delta miss. It writes separate `recheck.md` / JSON receipts and leaves the original matrix unchanged. It does not establish quiet-hardware certification.
+
 ## I4 sequential realtime benchmark
 
 `npm run bench` builds production code, scans all twenty story rooms with 25 legal actors and a native full Arc kit by peak High draw calls,

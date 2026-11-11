@@ -9,6 +9,7 @@ function kitMock(low = false) {
     time: .2, low, reducedMotion: false, flashIntensity: 1,
     draw: vi.fn(), ribbon: vi.fn(), mote: vi.fn(), burst: vi.fn(), flash: vi.fn(), ring: vi.fn(),
     distort: vi.fn(), camera: vi.fn(), decal: vi.fn(), beam: vi.fn(), outline: vi.fn(), lightAt: vi.fn(),
+    front: vi.fn(), debris: vi.fn(), scar: vi.fn(), heavyBeam: vi.fn(), anticipate: vi.fn(), exposureFlash: vi.fn(),
   };
 }
 const barrier = (extra: Partial<DeployableSnapshot> = {}): DeployableSnapshot => ({
@@ -31,18 +32,20 @@ describe('Breacher presentation', () => {
   it('assembles a perpendicular seven-panel barrier from authoritative dimensions', () => {
     const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
     fx.update(frame([barrier()]));
-    const panels = kit.draw.mock.calls.filter(c => c[0] === 'solid' && c[5] === 1.5);
+    const panels = kit.draw.mock.calls.filter(c => c[0] === 'solid' && c[5] === 2.4);
     expect(panels).toHaveLength(BREACHER_LIMITS.panels);
     for (let i = 0; i < panels.length; i++) {
       const call = panels[i];
       expect(call[1]).toBeCloseTo(2 - ((i + .5) - 3.5));
       expect(call[3]).toBeCloseTo(3);
-      expect(call[4]).toBeCloseTo(.5 * .45);
-      expect(call[6]).toBeCloseTo(.92);
+      expect(call[4]).toBeCloseTo(.5 * .82);
+      expect(call[6]).toBeCloseTo(.96);
       expect(call[9]).toBeCloseTo(-Math.PI / 2);
-      expect(call[8]).toBeLessThan(.1); // Transparent cover never conceals actors.
+      expect(call[8]).toBeGreaterThan(.15); // Solid enough to read as cover at thumbnail scale.
+      expect(call[8]).toBeLessThan(.25); // Keep opposing silhouettes visible through cover.
+      expect(Math.abs(call[1] - 2) + call[6] / 2).toBeLessThanOrEqual(224 / 32 / 2);
     }
-    expect(kit.ribbon.mock.calls.length).toBe(7 * 14);
+    expect(kit.ribbon.mock.calls.length).toBe(7 * 20);
     fx.dispose();
   });
 
@@ -61,7 +64,7 @@ describe('Breacher presentation', () => {
     const low = kitMock(true), lowFx = new BreacherPresentation(low as unknown as ElementKit);
     lowFx.update(frame([barrier()], 0));
     expect(low.ribbon.mock.calls.length).toBeLessThan(highCount / 5);
-    expect(low.draw.mock.calls.filter(c => c[5] === 1.5)).toHaveLength(3);
+    expect(low.draw.mock.calls.filter(c => c[5] === 2.4)).toHaveLength(3);
     fx.dispose(); lowFx.dispose();
   });
 
@@ -74,7 +77,7 @@ describe('Breacher presentation', () => {
     expect(kit.burst).toHaveBeenCalledTimes(1);
     fx.update(frame());
     const shards = kit.mote.mock.calls.length;
-    expect(shards).toBe(18);
+    expect(shards).toBe(21);
     fx.update(frame()); expect(kit.mote.mock.calls).toHaveLength(shards);
     fx.dispose();
   });
@@ -83,7 +86,7 @@ describe('Breacher presentation', () => {
     const kit = kitMock(true), fx = new BreacherPresentation(kit as unknown as ElementKit);
     fx.update(frame(Array.from({ length: 20 }, (_, id) => barrier({ id }))));
     expect(kit.lightAt).toHaveBeenCalledTimes(BREACHER_LIMITS.barriers);
-    expect(kit.draw.mock.calls.filter(c => c[5] === 1.5)).toHaveLength(8 * 3);
+    expect(kit.draw.mock.calls.filter(c => c[5] === 2.4)).toHaveLength(8 * 3);
     fx.dispose();
   });
 
@@ -92,24 +95,104 @@ describe('Breacher presentation', () => {
     fx.event(event({ radius: 310 }), 64, 96);
     expect(kit.ring).toHaveBeenCalledWith(2, 3, 310 / 32, 0xffb454, .55);
     expect(kit.distort).toHaveBeenCalledWith(2, 3, 310 / 32, .007, .55);
-    expect(kit.decal).toHaveBeenCalled();
-    expect(kit.mote.mock.calls.some(c => c[0] === 'solid' && c[5] > 0)).toBe(true);
+    expect(kit.scar).toHaveBeenCalledWith('crack', 2, 3, 310 / 32, 0x211a13, 10);
+    expect(kit.debris).toHaveBeenCalledWith(2, 3, 310 / 32, 'kinetic', 32);
     expect(kit.camera).toHaveBeenCalledTimes(1);
+    expect(kit.anticipate).toHaveBeenCalledWith(34, .045);
+    fx.update(frame([], .15));
+    expect(kit.front).toHaveBeenCalledWith(2, 3, 310 / 32, 1, 0xffb454, .18, expect.any(Number));
+    expect(kit.front).toHaveBeenCalledWith(2, 3, 310 / 32, .96, 0x968673, 1.5, expect.any(Number));
+    for (const call of kit.front.mock.calls) expect(call[3]).toBeLessThanOrEqual(1);
     fx.dispose();
   });
 
   it('fires Railbreaker once on impact with a short white core and persistent heat/scorch', () => {
     const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
     fx.event(event({ ability: 'railbreaker', slot: 'overdrive', phase: 'link', angle: 0, targetX: 964, targetY: 96 }), 64, 96);
-    expect(kit.beam).not.toHaveBeenCalled();
+    expect(kit.heavyBeam).not.toHaveBeenCalled();
     fx.event(event({ ability: 'railbreaker', slot: 'overdrive', radius: undefined, length: 900, width: 44, angle: 0 }), 64, 96);
-    expect(kit.beam).toHaveBeenCalledTimes(3);
-    const core = kit.beam.mock.calls[0];
+    expect(kit.heavyBeam).toHaveBeenCalledTimes(1);
+    const core = kit.heavyBeam.mock.calls[0];
     expect(core.slice(0, 6)).toEqual([2, .85, 3, 2 + 900 / 32, .85, 3]);
-    expect(core[8]).toBeLessThan(.06);
-    expect(kit.camera).toHaveBeenCalledWith(.48, 0);
+    expect(core[7] * 2).toBeGreaterThanOrEqual(.7);
+    expect(core[8]).toBeGreaterThanOrEqual(.5);
+    expect(kit.scar).toHaveBeenCalledWith('trench', 2 + 900 / 32 / 2, 3, 900 / 32 / 2, 0x1b1510, 12, 0, .62);
+    expect(kit.camera).toHaveBeenCalledWith(.92, 0);
+    expect(kit.exposureFlash).toHaveBeenCalledWith(.95);
+    fx.update(frame([], .03));
+    const rings = kit.draw.mock.calls.filter(c => c[0] === 'front');
+    expect(rings).toHaveLength(6);
+    for (const ring of rings) { expect(ring[9]).toBeCloseTo(0); expect(ring[10]).toBe(Math.PI / 2); }
     kit.draw.mockClear(); fx.update(frame([], 1));
     expect(kit.draw.mock.calls.some(c => c[0] === 'solid' && c[4] === 900 / 32 && c[5] === .012)).toBe(true);
+    fx.dispose();
+  });
+
+  it('carries a shield-like pressure wedge on the actual marine during Ram', () => {
+    const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
+    fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-start', angle: Math.PI / 2 }), 64, 96);
+    fx.update({ ...frame([], .07), game: { player: { x: 320, y: 224 } } as never });
+    const shield = kit.draw.mock.calls.filter(c => c[0] === 'shard');
+    expect(shield).toHaveLength(4);
+    for (const face of shield) {
+      expect(face[1]).toBeCloseTo(10); expect(face[3]).toBeGreaterThan(7);
+      expect(face[5] * 2).toBeGreaterThanOrEqual(1.2);
+    }
+    expect(kit.draw.mock.calls.filter(c => c[0] === 'smoke')).toHaveLength(2);
+    fx.dispose();
+  });
+
+  it('keeps Ram arrival mass directional at the actual endpoint without inventing a circular hit area', () => {
+    for (const low of [false, true]) {
+      const kit = kitMock(low), fx = new BreacherPresentation(kit as unknown as ElementKit);
+      fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-end', angle: 0, targetX: 320, targetY: 224 }), 64, 96);
+      fx.update(frame([], .03));
+      const caps = kit.draw.mock.calls.filter(c => c[0] === 'shard');
+      expect(caps.length).toBe(low ? 1 : 2);
+      expect(caps[0][1]).toBeGreaterThan(10); expect(caps[0][3]).toBeCloseTo(7);
+      expect(caps[0][8]).toBeGreaterThan(.35);
+      expect(kit.draw.mock.calls.filter(c => c[0] === 'smoke')).toHaveLength(2);
+      expect(kit.ring).not.toHaveBeenCalled(); expect(kit.front).not.toHaveBeenCalled(); expect(kit.outline).not.toHaveBeenCalled();
+      kit.draw.mockClear(); fx.update(frame([], 0)); const paused = kit.draw.mock.calls.map(c => [...c]);
+      kit.draw.mockClear(); fx.update(frame([], 0)); expect(kit.draw.mock.calls).toEqual(paused);
+      fx.clear(); kit.draw.mockClear(); fx.update(frame([], .03)); expect(kit.draw).not.toHaveBeenCalled(); fx.dispose();
+    }
+  });
+
+  it('places two short Ram skids only between observed dash endpoints, with no speculative future mark', () => {
+    for (const low of [false, true]) {
+      const kit = kitMock(low), fx = new BreacherPresentation(kit as unknown as ElementKit);
+      fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-start', angle: 0, targetX: 960, targetY: 96 }), 64, 96);
+      expect(kit.scar).not.toHaveBeenCalled(); expect(kit.beam).not.toHaveBeenCalled();
+      fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-end', angle: 0, targetX: 192, targetY: 96 }), 64, 96);
+      expect(kit.scar).toHaveBeenCalledTimes(2); expect(kit.beam).toHaveBeenCalledTimes(2);
+      for (const scar of kit.scar.mock.calls) {
+        expect(scar[0]).toBe('trench'); expect(scar[1]).toBe(4); expect(scar[3]).toBe(2);
+        expect(Math.abs(scar[2] - 3)).toBeCloseTo(.38); expect(scar[5]).toBe(2.4);
+      }
+      for (const heat of kit.beam.mock.calls) {
+        expect(heat[0]).toBe(2); expect(heat[3]).toBe(6); expect(heat[1]).toBe(.055);
+        expect(heat[8]).toBeLessThan(1); expect(heat[9]).toBe(false);
+      }
+      fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-end', targetX: 224, targetY: 96 }), 64, 96);
+      expect(kit.scar).toHaveBeenCalledTimes(2); // A duplicate arrival cannot reuse an old start.
+      fx.clear(); kit.scar.mockClear();
+      fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-start' }), 64, 96); fx.clear();
+      fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-end', targetX: 224, targetY: 96 }), 64, 96);
+      expect(kit.scar).not.toHaveBeenCalled(); fx.dispose();
+    }
+  });
+
+  it('locates Rail slag at the first authored wall, once, and emits nothing on paused refresh', () => {
+    const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
+    const game = { geometry: { bounds: { x: 0, y: 0, width: 960, height: 640 }, blockers: [{ x: 320, y: 64, width: 20, height: 80 }] } } as never;
+    fx.event(event({ ability: 'railbreaker', slot: 'overdrive', radius: undefined, length: 900, angle: 0 }), 64, 96);
+    const f = { ...frame([], 0), game };
+    fx.update(f); expect(kit.burst.mock.calls.filter(c => c[0] === 10)).toHaveLength(0);
+    fx.update({ ...f, dt: .03 });
+    expect(kit.burst.mock.calls.filter(c => c[0] === 10 && c[1] === .85 && c[2] === 3)).toHaveLength(1);
+    fx.update({ ...f, dt: .03 });
+    expect(kit.burst.mock.calls.filter(c => c[0] === 10)).toHaveLength(1);
     fx.dispose();
   });
 

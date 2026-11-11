@@ -38,7 +38,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     fx.event(event(), 64, 96);
     fx.event(event({ targetX: 256, targetY: 128 }), 192, 96);
     fx.event(event({ targetX: 320, targetY: 160 }), 256, 128);
-    const cores = beam.mock.calls.filter(call => call[7] === .043);
+    const cores = beam.mock.calls.filter(call => call[7] === .095);
     expect(cores).toHaveLength(3);
     expect(cores.map(call => call[10])).toEqual([0, .04, .08]);
     expect(cores[1].slice(0, 6)).toEqual([6, .95, 3, 8, .75, 4]);
@@ -118,5 +118,84 @@ describe('Arc presentation signatures and lifecycle', () => {
     step(.1); step(.1); expect(camera).toHaveBeenCalledOnce();
     fx.event(event({ ability: 'overclock', slot: 'overdrive', phase: 'end' }), 64, 96);
     expect(ring.mock.calls[2][5]).toBe(true); dispose();
+  });
+
+  it('connects Static Step to the observed marine and actual arrival, leaving a ground scorch star', () => {
+    const { kit, fx, frame, step, dispose } = setup();
+    const ribbon = vi.spyOn(kit, 'ribbon'), scar = vi.spyOn(kit, 'scar');
+    frame.game = { player: { x: 144, y: 96 } } as never;
+    fx.event(event({ ability: 'static-step', slot: 'dash', phase: 'dash-start', targetX: 400, targetY: 96 }), 64, 96);
+    step(.07);
+    // Predicted target 400 is never used as a travelled endpoint.
+    expect(ribbon.mock.calls.some(call => call[3] === 144 / 32 && call[5] === 3)).toBe(true);
+    expect(ribbon.mock.calls.some(call => call[3] === 400 / 32)).toBe(false);
+    ribbon.mockClear();
+    fx.event(event({ ability: 'static-step', slot: 'dash', phase: 'dash-end', targetX: 192, targetY: 96 }), 64, 96);
+    step(.03);
+    expect(scar).toHaveBeenCalledWith('star', 6, 3, 1.2, 0x181421, 7, 0);
+    expect(ribbon.mock.calls.some(call => call[3] === 6 && call[5] === 3)).toBe(true);
+    step(.4); expect(kit.batches.front.mesh.count).toBe(0); dispose();
+  });
+
+  it('throws landing volume and floor aftermath at the authoritative pylon placement', () => {
+    const { kit, fx, step, dispose } = setup();
+    const front = vi.spyOn(kit, 'front'), scar = vi.spyOn(kit, 'scar');
+    fx.event(event({ ability: 'tesla-pylon', slot: 'power', phase: 'impact', targetX: 320, targetY: 224 }), 64, 96);
+    step(.08);
+    expect(front.mock.calls[0].slice(0, 3)).toEqual([10, 7, 1.65]);
+    expect(scar).toHaveBeenCalledWith('star', 10, 7, 1.2, 0x1e182b, 8);
+    expect(kit.batches.solid.mesh.count).toBeGreaterThan(0);
+    fx.clear(); kit.clear(); step(0); expect(kit.batches.front.mesh.count).toBe(0); dispose();
+  });
+
+  it.each(['high', 'low'] as const)('makes sustained Overclock visible on %s without changing hostile endpoints', tier => {
+    const { kit, frame, step, dispose } = setup();
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    const grade = vi.spyOn(kit, 'grade'), ribbon = vi.spyOn(kit, 'ribbon');
+    frame.game = { player: { x: 128, y: 128, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [
+      { x: 256, y: 160, velocityX: 120, velocityY: 0 },
+    ] } }, bullets: [{ kind: 'player', x: 160, y: 128, request: { angle: 0 } }] } as never;
+    frame.snapshot = snapshot({ hostileTimeScale: .3, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
+    step(.016);
+    expect(grade).toHaveBeenLastCalledWith(0, .9);
+    expect(ribbon.mock.calls.some(call => call[0] === 8 && call[2] === 5 && call[3] < 8)).toBe(true);
+    expect(ribbon.mock.calls.some(call => call[0] === 5 && call[3] <= 3)).toBe(true);
+    expect(kit.batches.front.mesh.count).toBe(1);
+    expect(kit.batches.shard.mesh.count).toBeGreaterThanOrEqual(8);
+    const calls = grade.mock.calls.length; frame.snapshot = snapshot(); step(.016);
+    expect(grade.mock.calls).toHaveLength(calls); expect(kit.batches.front.mesh.count).toBe(0); dispose();
+  });
+
+  it('separates time-ripple slices from vapor volume and retains a reverse expiry echo', () => {
+    const { kit, fx, step, dispose } = setup();
+    const volume = vi.spyOn(kit, 'front'), ribbon = vi.spyOn(kit, 'ribbon');
+    fx.event(event({ ability: 'overclock', slot: 'overdrive', phase: 'impact' }), 64, 96);
+    step(.15); expect(volume).not.toHaveBeenCalled(); expect(ribbon.mock.calls.length).toBeGreaterThan(20);
+    for (const call of ribbon.mock.calls) {
+      expect(Math.hypot(call[0] - 2, call[2] - 3)).toBeLessThanOrEqual(6.001);
+      expect(Math.hypot(call[3] - 2, call[5] - 3)).toBeLessThanOrEqual(6.001);
+    }
+    step(1); ribbon.mockClear();
+    fx.event(event({ ability: 'overclock', slot: 'overdrive', phase: 'end' }), 64, 96);
+    step(.1); expect(ribbon.mock.calls.length).toBeGreaterThan(20); expect(volume).not.toHaveBeenCalled();
+    step(1); expect(kit.ribbons.mesh.count).toBe(0); dispose();
+  });
+
+  it.each(['high', 'low'] as const)('keeps slowed-moving hostile echoes visible and bounded on %s, excluding stationary actors', tier => {
+    const { kit, frame, step, dispose } = setup();
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    const ribbon = vi.spyOn(kit, 'ribbon');
+    frame.game = { player: { x: 128, y: 128, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [
+      { x: 256, y: 160, velocityX: 3, velocityY: 4 },
+      { x: 320, y: 160, velocityX: 0, velocityY: 0 },
+      { x: 384, y: 160, velocityX: 500, velocityY: 0 },
+    ] } }, bullets: [] } as never;
+    frame.snapshot = snapshot({ hostileTimeScale: .2, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 3000 } });
+    step(.016);
+    const trails = ribbon.mock.calls.filter(call => call[0] === 8 || call[0] === 12);
+    expect(trails).toHaveLength(tier === 'low' ? 2 : 4);
+    for (const call of trails) expect(Math.hypot(call[3] - call[0], call[5] - call[2])).toBeGreaterThanOrEqual(.45);
+    for (const call of trails) expect(Math.hypot(call[3] - call[0], call[5] - call[2])).toBeLessThanOrEqual(1.501);
+    expect(ribbon.mock.calls.some(call => call[0] === 10)).toBe(false); dispose();
   });
 });
