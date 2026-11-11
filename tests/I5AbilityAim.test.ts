@@ -268,3 +268,12 @@ describe('I5 observed catalog aiming', () => {
     expect(observeAbilityAims(game, [e])).toEqual(plans);
   });
 });
+
+it('does not move the fixed Bulwark plane to an actor selected by native pointer picking', () => {
+  const enemies=[{id:1,x:120,y:0,health:100,clear:true,visible:true},{id:2,x:120,y:20,health:100,clear:true,visible:true}];
+  const plan=chooseAbilityAim(ABILITY_CATALOG.bulwark,{x:0,y:0},enemies,{
+    visible:()=>true,traverse:()=>true,resolveAim:()=>({x:120,y:0}),
+  });
+  // Every cursor resolves to angle0: the actual wall is x70, so neither enemy is inside it.
+  expect(plan).toBeNull();
+});

@@ -97,10 +97,12 @@ export function chooseAbilityAim(definition: AbilityDefinition, player: Point, o
     const angle = angleTo(player, point);
     let placements = [point];
     if (definition.slot === 'power') {
+      // Directional deployment uses the catalog offset, even when pointer picking snaps to an actor.
+      const center=definition.targeting==='direction'?pointAt(player,angle,definition.range):point;
       const glacier = definition.id === 'glacier', pylon = definition.id === 'tesla-pylon';
       const triplet = definition.id === 'napalm-charge' && queries.has?.('napalm-triplet');
       const offsets = glacier && queries.has?.('twin-glacier') ? [-40, 40] : pylon && queries.has?.('twin-pylon') ? [-50, 50] : triplet ? [-100, 0, 100] : [0];
-      placements = offsets.map(offset => ({x: point.x + (glacier ? Math.cos(angle) : -Math.sin(angle)) * offset, y: point.y + (glacier ? Math.sin(angle) : Math.cos(angle)) * offset})).filter(p => {
+      placements = offsets.map(offset => ({x: center.x + (glacier ? Math.cos(angle) : -Math.sin(angle)) * offset, y: center.y + (glacier ? Math.sin(angle) : Math.cos(angle)) * offset})).filter(p => {
         if (!queries.traverse(player, p, pylon ? 18 : 4)) return false;
         if (shape.kind !== 'wall') return true;
         const start = {x: p.x + Math.sin(angle) * shape.length / 2, y: p.y - Math.cos(angle) * shape.length / 2};
