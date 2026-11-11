@@ -60,6 +60,11 @@ describe('audio director', () => {
     expect(audio.diagnostics.loops).toBe(1);
     emit(audio, event('whiteout', 'end', 8)); expect(audio.diagnostics.loops).toBe(0); audio.destroy();
   });
+  it('treats an explicit null environment as room exit even before an ambience was selected', async () => {
+    const { audio } = await setup(); emit(audio, event('bulwark', 'tick', 3));
+    expect(audio.diagnostics.loops).toBe(1); audio.setEnvironment(null);
+    expect(audio.diagnostics.loops).toBe(0); audio.setEnvironment(null); audio.destroy();
+  });
   it.each(['pause', 'room', 'death', 'context', 'mute', 'effects-zero', 'destroy'] as const)('force-stops loops on %s', async lifecycle => {
     const { audio, clock } = await setup();
     emit(audio, event('whiteout', 'tick', 1)); expect(audio.diagnostics.loops).toBe(1);

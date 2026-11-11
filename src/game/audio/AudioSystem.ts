@@ -170,7 +170,7 @@ export class AudioSystem implements GameAudioDirector {
     if (this.previousCombat?.reloading) this.playReload(this.previousCombat.reloadRemainingMs, true);
   }
   setEnvironment(environment: AudioEnvironment | null): void {
-    if (environment === this.environment) return;
+    if (environment !== null && environment === this.environment) return;
     this.stopLoops(); this.stopAmbience(.8); this.stopHeartbeat(); this.cancelReload(); this.frozenIds.clear();
     this.environment = environment;
     if (environment) { this.startAmbience(); this.updateHeartbeat(); }
