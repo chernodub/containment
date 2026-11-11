@@ -13,7 +13,7 @@ const NO_DEPLOYABLES: readonly DeployableSnapshot[] = [];
 export const BREACHER_LIMITS = Object.freeze({ casts: 8, impacts: 12, barriers: 8, panels: 7 });
 
 type Cast = { live: boolean; rail: boolean; x: number; z: number; angle: number; radius: number; length: number; age: number; life: number };
-type Impact = { live: boolean; kind: 'slam' | 'rail' | 'ram'; x: number; z: number; angle: number; size: number; age: number; life: number; wallDone: boolean };
+type Impact = { live: boolean; kind: 'slam' | 'rail' | 'ram' | 'ram-arrival'; x: number; z: number; angle: number; size: number; age: number; life: number; wallDone: boolean };
 type Barrier = { id: number; seen: boolean; x: number; z: number; angle: number; length: number; health: number; pulse: number };
 
 /** Hard industrial kinetic language, composed entirely through the shared fixed pools. */
@@ -53,8 +53,14 @@ export class BreacherPresentation implements AbilityPresentation {
     }
     if (event.ability === 'ram' && event.phase === 'dash-end') {
       const tx=(event.targetX??worldX)/UNIT,tz=(event.targetY??worldY)/UNIT;
+      this.impact('ram-arrival', tx, tz, angle, .68, .3);
       this.kit.burst(tx, .25, tz, 'kinetic', 20, 3.3, .55);
-      this.dust(tx, tz, 1.4, this.kit.low ? 4 : 12);
+      const nx = Math.cos(angle), nz = Math.sin(angle), dust = this.kit.low ? 4 : 10;
+      for (let i = 0; i < dust; i++) {
+        const side = (i / Math.max(1, dust - 1) - .5) * 1.25;
+        this.kit.mote('smoke', tx + nx * .25 - nz * side, .22, tz + nz * .25 + nx * side,
+          nx * 2.8 - nz * side, .35 + i % 3 * .18, nz * 2.8 + nx * side, .5 + i % 3 * .1, .7, DUST);
+      }
       this.kit.flash(tx, tz, AMBER, 7, 3.5, 3, .1);
       return;
     }
@@ -73,6 +79,12 @@ export class BreacherPresentation implements AbilityPresentation {
       this.kit.burst(x, .15, z, 'kinetic', 38, 6, .65);
       this.dust(x, z, radius, this.kit.low ? 8 : 28);
       this.kit.debris(x, z, radius, 'kinetic', 32);
+      // A few heavier plate fragments emerge across the deck, between the smaller pooled chunks.
+      for (let i = 0; i < (this.kit.low ? 3 : 8); i++) {
+        const a = i * 2.399963, r = radius * (.2 + i % 4 * .055), speed = 2 + i % 3;
+        this.kit.mote('solid', x + Math.cos(a) * r, .08, z + Math.sin(a) * r,
+          Math.cos(a) * speed, 1.8 + i % 3 * .6, Math.sin(a) * speed, .18 + i % 4 * .04, 1.15, i % 3 ? STEEL : 0x51463b);
+      }
     } else if (event.ability === 'railbreaker') {
       const shape = ABILITY_CATALOG.railbreaker.shape;
       const length = (event.length ?? (shape.kind === 'line' ? shape.length : 900)) / UNIT;
@@ -137,6 +149,7 @@ export class BreacherPresentation implements AbilityPresentation {
       p.age += dt;
       if (p.age >= p.life) { p.live = false; continue; }
       if (p.kind === 'ram') this.drawRam(p, frame, emit);
+      else if (p.kind === 'ram-arrival') this.drawRamArrival(p);
       else if (p.kind === 'slam') this.drawSlam(p);
       else this.drawRailTail(p, frame);
     }
@@ -181,7 +194,7 @@ export class BreacherPresentation implements AbilityPresentation {
     this.kit.draw('spark', c.x + nx * .7, .85, c.z + nz * .7, .15 + t * .3, .15 + t * .3, .1, CORE, .2 + t * .8, -c.angle);
     if (emit && !this.kit.low) {
       for (let i = 0; i < 6; i++) {
-        const a = this.kit.time * 11 + i * TAU / 3, r = 1.2 * (1 - t * .4);
+        const a = this.kit.time * 11 + i * TAU / 6, r = 1.2 * (1 - t * .4);
         this.kit.mote('spark', c.x + Math.cos(a) * r + nx * .7, .85 + Math.sin(a) * .3, c.z + Math.sin(a) * r + nz * .7,
           -Math.cos(a) * 4, 0, -Math.sin(a) * 4, .055, .2, AMBER);
       }
@@ -210,19 +223,37 @@ export class BreacherPresentation implements AbilityPresentation {
     }
   }
 
+  private drawRamArrival(p: Impact): void {
+    const t = p.age / p.life, fade = 1 - t, nx = Math.cos(p.angle), nz = Math.sin(p.angle);
+    const lead = .3 + t * .6, x = p.x + nx * lead, z = p.z + nz * lead;
+    // An upright forward cap and two dust shoulders retain a directional shove, never a new ground disc.
+    this.kit.draw('shard', x, .82, z, p.size, .7 * (1 - t * .25), .26, AMBER, fade * .46, Math.PI / 2 - p.angle);
+    if (!this.kit.low) this.kit.draw('shard', x - nx * .12, .76, z - nz * .12,
+      p.size * .85, .55, .16, CORE, fade * .23, Math.PI / 2 - p.angle);
+    for (let side = -1; side <= 1; side += 2) {
+      const offset = side * p.size * .8;
+      this.kit.draw('smoke', x - nz * offset, .4 + t * .25, z + nx * offset,
+        .62 + t * .25, .48, .3, DUST, fade * .52);
+      this.kit.ribbon(p.x - nz * offset, .12, p.z + nx * offset,
+        x + nx * .25 - nz * offset, .16, z + nz * .25 + nx * offset, AMBER, .05, fade * .65, false);
+    }
+  }
+
   private drawSlam(p: Impact): void {
     const t = p.age / p.life, progress = Math.min(1, .2 + p.age / .18), radius = p.size * progress, count = this.kit.low ? 8 : 24;
     const frontFade = Math.max(0, 1 - p.age / .65);
-    this.kit.front(p.x, p.z, p.size, progress, AMBER, .32, frontFade * .9);
-    this.kit.front(p.x, p.z, p.size, progress * .96, DUST, 1.5 * Math.min(1, .5 + p.age * 5), frontFade * .65);
+    this.kit.front(p.x, p.z, p.size, progress, AMBER, .18, Math.max(0, 1 - p.age / .3) * .8);
+    const dustHeight = 1.5 * Math.min(1, .5 + p.age * 5) * Math.max(.2, 1 - Math.max(0, p.age - .2) * 1.8);
+    this.kit.front(p.x, p.z, p.size, progress * .96, DUST, dustHeight, frontFade * .7);
     for (let i = 0; i < count; i++) {
-      const a = i * TAU / count, r = radius * (.95 + Math.sin(i * 7.1) * .04);
-      // Broken deck strips lift and settle along the pressure front, never a solid wall.
-      const lift = Math.sin(Math.min(1, p.age / .4) * Math.PI) * .24;
+      const seed = Math.sin(i * 7.1) ** 2, a = i * TAU / count + Math.sin(i * 3.73) * .035, r = radius * (.78 + seed * .18);
+      // Uneven dark plate chunks lift and settle behind the front instead of forming an energy lattice.
+      const lift = Math.sin(Math.min(1, p.age / .45) * Math.PI) * (.18 + seed * .3);
       this.kit.draw('solid', p.x + Math.cos(a) * r, .055 + lift, p.z + Math.sin(a) * r,
-        .48, .065, .21, i % 3 === 0 ? AMBER : STEEL, (1 - t) * (i % 3 === 0 ? .65 : .85), -a);
+        .24 + seed * .25, .08 + seed * .06, .18 + seed * .1, i % 7 === 0 && p.age < .12 ? AMBER : STEEL,
+        (1 - t) * .85, -a + seed, Math.sin(i * 2.3) * .18);
       if (!this.kit.low) this.kit.draw('smoke', p.x + Math.cos(a) * r, .15, p.z + Math.sin(a) * r,
-        .5 + t * .3, .24 + t * .25, .2, DUST, (1 - t) * .3, -a);
+        .5 + seed * .28 + t * .3, .24 + seed * .18 + t * .25, .2, DUST, (1 - t) * .35, -a);
     }
   }
 

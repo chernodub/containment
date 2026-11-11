@@ -100,7 +100,7 @@ describe('Breacher presentation', () => {
     expect(kit.camera).toHaveBeenCalledTimes(1);
     expect(kit.anticipate).toHaveBeenCalledWith(34, .045);
     fx.update(frame([], .15));
-    expect(kit.front).toHaveBeenCalledWith(2, 3, 310 / 32, 1, 0xffb454, .32, expect.any(Number));
+    expect(kit.front).toHaveBeenCalledWith(2, 3, 310 / 32, 1, 0xffb454, .18, expect.any(Number));
     expect(kit.front).toHaveBeenCalledWith(2, 3, 310 / 32, .96, 0x968673, 1.5, expect.any(Number));
     for (const call of kit.front.mock.calls) expect(call[3]).toBeLessThanOrEqual(1);
     fx.dispose();
@@ -140,6 +140,23 @@ describe('Breacher presentation', () => {
     }
     expect(kit.draw.mock.calls.filter(c => c[0] === 'smoke')).toHaveLength(2);
     fx.dispose();
+  });
+
+  it('keeps Ram arrival mass directional at the actual endpoint without inventing a circular hit area', () => {
+    for (const low of [false, true]) {
+      const kit = kitMock(low), fx = new BreacherPresentation(kit as unknown as ElementKit);
+      fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-end', angle: 0, targetX: 320, targetY: 224 }), 64, 96);
+      fx.update(frame([], .03));
+      const caps = kit.draw.mock.calls.filter(c => c[0] === 'shard');
+      expect(caps.length).toBe(low ? 1 : 2);
+      expect(caps[0][1]).toBeGreaterThan(10); expect(caps[0][3]).toBeCloseTo(7);
+      expect(caps[0][8]).toBeGreaterThan(.35);
+      expect(kit.draw.mock.calls.filter(c => c[0] === 'smoke')).toHaveLength(2);
+      expect(kit.ring).not.toHaveBeenCalled(); expect(kit.front).not.toHaveBeenCalled(); expect(kit.outline).not.toHaveBeenCalled();
+      kit.draw.mockClear(); fx.update(frame([], 0)); const paused = kit.draw.mock.calls.map(c => [...c]);
+      kit.draw.mockClear(); fx.update(frame([], 0)); expect(kit.draw.mock.calls).toEqual(paused);
+      fx.clear(); kit.draw.mockClear(); fx.update(frame([], .03)); expect(kit.draw).not.toHaveBeenCalled(); fx.dispose();
+    }
   });
 
   it('locates Rail slag at the first authored wall, once, and emits nothing on paused refresh', () => {
