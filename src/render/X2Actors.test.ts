@@ -143,3 +143,16 @@ it('isolates title anatomy shading and restores ordinary actor identification on
   staged.reset!();expect(a.material.uniforms.identityStageLight.value).toBe(1);expect(shader.uniforms.actorStageLight.value).toBe(1);
  }finally{disposeModel(staged.root);disposeModel(live.root);}
 });
+
+
+it('pitches cinematic arms and the bound weapon toward a lower target without altering ordinary aim',()=>{
+ const staged=marine(),live=marine();
+ const angle=(model:ReturnType<typeof marine>)=>{model.root.updateMatrixWorld(true);const origin=model.weapon!.getWorldPosition(new T.Vector3()),muzzle=model.muzzleWorld!(new T.Vector3()).sub(origin);return Math.atan2(muzzle.y,Math.hypot(muzzle.x,muzzle.z));};
+ try{
+  staged.animate(0,0,-.62);live.animate(0,0,-.62);const ordinary=angle(live);
+  staged.setAimPitch!(-.26);staged.animate(.02,0,-.62);live.animate(.02,0,-.62);
+  expect(angle(staged)).toBeLessThan(ordinary-.16);expect(angle(live)).toBeCloseTo(ordinary,2);
+  for(let i=2;i<20;i++){staged.animate(i*.02,0,-.62);live.animate(i*.02,0,-.62);}expect(angle(staged)).toBeLessThan(ordinary-.16);
+  staged.setAimPitch!(0);staged.animate(.4,0,-.62);live.animate(.4,0,-.62);expect(angle(staged)).toBeCloseTo(angle(live),2);
+ }finally{disposeModel(staged.root);disposeModel(live.root);}
+});
