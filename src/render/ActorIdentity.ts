@@ -50,9 +50,9 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   // Crown segments are present from preparation, including ordinary rigs that may become champions.
   for(const side of [-1,1])for(let i=0;i<3;i++)oval(side*s*(.12+i*.028),h*(.91-i*.045),-s*.06,s*.014,h*.05,s*.022,1);
   const mesh=new T.Mesh(identityGeometry(`g2-identity:${kind}:${elite}`,parts),new T.ShaderMaterial({
-    uniforms:{identityColor:{value:new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler)},identityPulse:{value:1},identityElite:{value:elite||kind==='queen'?1:0},identityExposed:{value:0},identityAlpha:{value:1},identityDeath:{value:0}},
+    uniforms:{identityColor:{value:new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler)},identityPulse:{value:1},identityElite:{value:elite||kind==='queen'?1:0},identityChampion:{value:0},identityExposed:{value:0},identityAlpha:{value:1},identityDeath:{value:0}},
     vertexShader:'attribute float identityRole;varying vec3 identityNormal;varying vec3 identityView;varying float role;void main(){role=identityRole;identityNormal=normalMatrix*normal;vec4 p=modelViewMatrix*vec4(position,1.0);identityView=-p.xyz;gl_Position=projectionMatrix*p;}',
-    fragmentShader:'uniform vec3 identityColor;uniform float identityPulse;uniform float identityElite;uniform float identityExposed;uniform float identityAlpha;uniform float identityDeath;varying vec3 identityNormal;varying vec3 identityView;varying float role;void main(){if(role>.5&&role<1.5&&identityElite<.5)discard;if(identityDeath>=1.0)discard;float facing=abs(dot(normalize(identityNormal),normalize(identityView)));vec3 color=role>.5&&role<1.5?vec3(1.0,.54,.18):identityColor;float light=.13+pow(facing,1.8)*.8;light*=identityPulse*(.65+identityAlpha*.35)*(1.0-identityDeath);if(role>1.5)light*=.6+identityExposed*2.0;gl_FragColor=vec4(color*light,1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>}',
+    fragmentShader:'uniform vec3 identityColor;uniform float identityPulse;uniform float identityElite;uniform float identityChampion;uniform float identityExposed;uniform float identityAlpha;uniform float identityDeath;varying vec3 identityNormal;varying vec3 identityView;varying float role;void main(){if(role>.5&&role<1.5&&identityElite<.5)discard;if(identityDeath>=1.0)discard;float facing=abs(dot(normalize(identityNormal),normalize(identityView)));vec3 color=role>.5&&role<1.5?mix(vec3(1.0,.54,.18),identityChampion>1.5?vec3(.8,1.0,.4):vec3(.8,.94,1.0),step(.5,identityChampion)):identityColor;float light=.13+pow(facing,1.8)*.8;light*=identityPulse*(.65+identityAlpha*.35)*(1.0-identityDeath);if(role>1.5)light*=.6+identityExposed*2.0;gl_FragColor=vec4(color*light,1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>}',
   }));
   mesh.name=`${kind}-identity`;mesh.material.userData.actorMaterial=true;mesh.castShadow=false;mesh.receiveShadow=false;
   root.add(mesh);
@@ -63,11 +63,12 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
     mesh,
     update(time:number,windup:number,champion:string|undefined,exposed:boolean,alpha:number,dead:boolean){
       const u=mesh.material.uniforms;
-      u.identityPulse.value=dead?.18:1+Math.sin(time*2.7)*.06+Math.min(1,windup/350)*1.2;
+      u.identityPulse.value=dead?.18:1+Math.sin(time*2.7)*.06+Math.max(0,Math.min(1,windup))*1.2;
+      u.identityChampion.value=champion==='warden'?1:champion==='matron'?2:0;
       u.identityElite.value=elite||kind==='queen'||champion?1:0;
       u.identityExposed.value=exposed?1:0;u.identityAlpha.value=alpha;u.identityDeath.value=dead?1:0;
     },
-    reset(){const u=mesh.material.uniforms;u.identityPulse.value=1;u.identityElite.value=elite||kind==='queen'?1:0;u.identityExposed.value=0;u.identityAlpha.value=1;u.identityDeath.value=0;},
+    reset(){const u=mesh.material.uniforms;u.identityPulse.value=1;u.identityElite.value=elite||kind==='queen'?1:0;u.identityChampion.value=0;u.identityExposed.value=0;u.identityAlpha.value=1;u.identityDeath.value=0;},
   };
 }
 

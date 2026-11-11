@@ -24,8 +24,11 @@ it('gives all six families one bounded anatomical identity draw without addition
 it('drives spit anticipation, champion crown and camouflage from snapshot values without adding geometry',()=>{
   const model=alien('spitter'),identity=model.root.getObjectByName('spitter-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
   const geometry=identity.geometry,children=model.root.children.length;
-  model.setThreat!(300,'spit','matron');model.animate(1,1,0);
-  expect(identity.material.uniforms.identityPulse.value).toBeGreaterThan(1.7);
+  model.setThreat!(500,'spit','matron');model.animate(1,1,0);
+  const startPulse=identity.material.uniforms.identityPulse.value;
+  model.setThreat!(100,'spit','matron');model.animate(1.02,1,0);
+  expect(identity.material.uniforms.identityPulse.value).toBeGreaterThan(startPulse+.7);
+  expect(identity.material.uniforms.identityChampion.value).toBe(2);
   expect(identity.material.uniforms.identityElite.value).toBe(1);
   model.setThreat!(0,null,undefined);model.animate(1.05,1,0);
   expect(identity.material.uniforms.identityPulse.value).toBeLessThan(1.1);
