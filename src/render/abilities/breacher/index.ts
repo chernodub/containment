@@ -41,7 +41,7 @@ export class BreacherPresentation implements AbilityPresentation {
       const cast = this.casts[this.nextCast++ % this.casts.length];
       cast.live = true; cast.rail = event.ability === 'railbreaker'; cast.x = x; cast.z = z; cast.angle = angle;
       cast.radius = (event.radius ?? 230) / UNIT; cast.age = 0; cast.life = Math.max(.02, (event.durationMs ?? 220) / 1000);
-      if (cast.rail) this.kit.flash(x, z, AMBER, 1.5, 2, 2, .4);
+      if (cast.rail) {this.kit.flash(x, z, AMBER, 1.5, 2, 2, .4);this.kit.anticipate?.(cast.life*1000);}
       return;
     }
     if (event.ability === 'ram' && event.phase === 'dash-start') {

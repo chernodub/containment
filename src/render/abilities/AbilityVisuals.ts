@@ -36,8 +36,9 @@ export class AbilityVisuals extends AbilityGeometry {
     if(this.dead||!Number.isFinite(x)||!Number.isFinite(y))return;
     if(event.phase==='cast')super.event(event,x,y);this.registry.get(event.rig)?.event(event,x,y);this.system?.event(event,x,y);
   }
-  override update(snapshot:AbilitiesSnapshot|undefined,dt:number,visible=true,game?:DepthGame,marine?:T.Object3D):void {
+  override update(snapshot:AbilitiesSnapshot|undefined,dt:number,visible=true,game?:DepthGame,marine?:T.Object3D,camera?:T.Camera):void {
     if(this.dead)return;
+    if(camera)this.kit.setView(camera);
     if(game&&(game.status==='dead'||game.status==='complete'||game.status==='menu'))visible=false;
     if(!visible&&this.wasVisible)this.clear();
     this.wasVisible=visible;

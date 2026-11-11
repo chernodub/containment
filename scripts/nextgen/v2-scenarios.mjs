@@ -41,15 +41,20 @@ async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false}
  gl.createProgram=function(){programs++;return create.call(gl);};
  d.v2Proof.before=window.__containmentPerformance;
  if(heavy){
+  const visuals=d.renderer.interimAbilities,updateVisuals=visuals.update;let peakInstances=0,peakLights=0,instances=0;
+  function visit(object){if(!object.visible)return;if(object.isMesh)instances+=object.isInstancedMesh?object.count:1;for(const child of object.children)visit(child);}
+  visuals.update=function(snapshot,dt,visible,game,marine,camera){updateVisuals.call(this,snapshot,dt,visible,game,marine,camera);instances=0;visit(this.root);peakInstances=Math.max(peakInstances,instances);let lights=0;for(const light of d.renderer.lighting.pool.lights)if(light.intensity>0)lights++;peakLights=Math.max(peakLights,lights);};
   g.switchWeapon('rifle');
   if(!g.useAbility('power'))throw Error('V2 power denied');d.step(g.abilities.snapshot.slots.power.castRemainingMs+40);
-  g.useAbility('dash');d.step(150);g.useAbility('tactical');d.step(g.abilities.snapshot.slots.tactical.castRemainingMs+30);
+  if(!g.useAbility('dash'))throw Error('V2 initial dash denied');d.step(150);if(!g.useAbility('tactical'))throw Error('V2 tactical denied');d.step(g.abilities.snapshot.slots.tactical.castRemainingMs+30);
   d.fillOverdrive();if(!g.useAbility('overdrive'))throw Error('V2 ultimate denied');d.step(g.abilities.snapshot.slots.overdrive.castRemainingMs+30);
   d.setInput({fire:true,x:-Math.cos(p.angle)*.08,y:-Math.sin(p.angle)*.08});
-  const from=g.elapsed;d.realtime(true);try{for(let i=0;i<1000&&g.elapsed-from<3;i++)await new Promise(requestAnimationFrame);}finally{d.realtime(false);}
+  const from=g.elapsed;let redash=0;d.realtime(true);try{for(let i=0;i<1000&&g.elapsed-from<3;i++){if(g.elapsed-from>2.6+redash*.18&&redash<2){if(!g.useAbility('dash'))throw Error('V2 cooldown dash denied');redash++;}await new Promise(requestAnimationFrame);}}finally{d.realtime(false);}
   d.v2Proof.liveSeconds=g.elapsed-from;d.v2Proof.performance=window.__containmentPerformance;
+  if(g.abilities.snapshot.slots.dash.charges!==0)throw Error('V2 dash cooldown fixture failed');
   d.v2Proof.remainingEnemies=g.enemies.activeCount;d.v2Proof.cooldowns=g.abilities.snapshot.slots;
   d.v2Proof.instances=d.renderer.interimAbilities?.kit?.counts??null;
+  d.v2Proof.peakObservedInstances=peakInstances;d.v2Proof.peakObservedLights=peakLights;visuals.update=updateVisuals;
   d.v2Proof.lights=d.renderer.lighting.pool.lights.filter(l=>l.intensity>0).length;
   d.v2Proof.programs=programs;gl.createProgram=create;d.shaderCompilations=programs;
   if(programs)throw Error('V2 combat shader compiles '+programs);d.refresh();return;

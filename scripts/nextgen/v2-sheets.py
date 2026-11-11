@@ -20,3 +20,15 @@ for i,key in enumerate(keys):
  shots=groups[key];s=shots[min(2,len(shots)-1)];im=Image.open(root/s['file']);im.thumbnail((480,270));x=i%4*480;y=i//4*290;overview.paste(im,(x,y));d.text((x+8,y+273),key,fill='white')
 overview.save(out/'overview.png')
 print(f'{len(groups)} sheets: {out.resolve()}')
+rigs={'breacher':['ram','seismic-slam','bulwark','railbreaker'],'cryo':['frost-trail','cryo-nova','glacier','whiteout'],'pyro':['afterburn','flashfire','napalm-charge','meltdown'],'arc':['static-step','overload','tesla-pylon','overclock']}
+for rig,ids in rigs.items():
+ selected=[]
+ for id in ids:
+  hit=next((v for k,v in groups.items() if k in [f'v2-{id}-awakening-bay',f'ability:{id}-awakening-bay']),None)
+  if hit:selected.append((id,hit))
+ if not selected:continue
+ sheet=Image.new('RGB',(7*320,len(selected)*205),'#081219');d=ImageDraw.Draw(sheet)
+ for row,(id,shots) in enumerate(selected):
+  for col,s in enumerate(shots[:7]):
+   im=Image.open(root/s['file']);im.thumbnail((320,180));sheet.paste(im,(col*320,row*205));d.text((col*320+5,row*205+184),f'{id} | {s["simulationMs"]}ms',fill='white')
+ sheet.save(out/f'{rig}-timeline.png')

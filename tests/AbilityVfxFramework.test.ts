@@ -44,6 +44,25 @@ describe('V2 shared framework',()=>{
   expect(flash).not.toHaveBeenCalled();expect(attach).not.toHaveBeenCalled();expect(shockwave).not.toHaveBeenCalled();expect(addTrauma).not.toHaveBeenCalled();
   k.setOptions(GRAPHICS_PRESETS.high,'high',false);k.flash(0,0,0xffffff);k.distort(0,0,3);k.camera(.3,0);expect(flash).toHaveBeenCalledOnce();expect(shockwave).toHaveBeenCalledOnce();expect(addTrauma).toHaveBeenCalledOnce();k.dispose();
  });
+ it('places all dash arrival feedback at actual endpoint coordinates',()=>{
+  const v=new AbilityVisuals(new T.Scene()),burst=vi.spyOn(v.kit,'burst');
+  for(const [ability,rig,element] of [['ram','breacher','kinetic'],['frost-trail','cryo','cryo'],['afterburn','pyro','pyro'],['static-step','arc','arc']] as const){
+   burst.mockClear();v.event({ability,rig,element,slot:'dash',phase:'dash-end',targetX:320,targetY:224},64,96);
+   expect(burst.mock.calls.some(c=>c[0]===10&&c[2]===7)).toBe(true);
+  }v.dispose();
+ });
+ it('clears world loops at death/menu and retains cheap pause-stable state',()=>{
+  const v=new AbilityVisuals(new T.Scene());v.kit.mote('spark',0,0,0,1,1,1,.1,2,0xffb454);
+  v.update(undefined,0);expect(v.kit.counts.particles).toBe(1);
+  v.update(undefined,.05,true,{status:'dead'} as never);expect(v.root.visible).toBe(false);expect(v.kit.counts.particles).toBe(0);
+  v.update(undefined,0,true);expect(v.root.visible).toBe(true);v.dispose();
+ });
+ it('keeps soft particles camera-facing for every aim direction',()=>{
+  const k=new ElementKit(new T.Scene()),camera=new T.PerspectiveCamera();camera.position.set(0,8,10);k.setView(camera);k.begin(0);
+  k.draw('flame',0,0,0,1,1,1,0xff7a2e,1,Math.PI/2);const m=new T.Matrix4();k.batches.flame.mesh.getMatrixAt(0,m);
+  const q=new T.Quaternion(),p=new T.Vector3(),scale=new T.Vector3();m.decompose(p,q,scale);
+  expect(new T.Vector3(0,0,1).applyQuaternion(q).z).toBeCloseTo(1);k.dispose();
+ });
  it('retains all instance/material topologies for preparation, and disposes each resource once',()=>{
   const scene=new T.Scene(),v=new AbilityVisuals(scene),surface=new T.MeshStandardMaterial(),warm=new MaterialWarmup({floor:surface,wall:surface,cover:surface});
   expect(warm.register(v.root)).toBeGreaterThan(7);v.kit.burst(0,0,0,'cryo');v.kit.begin(.1);v.kit.end();expect(warm.register(v.root)).toBe(0);

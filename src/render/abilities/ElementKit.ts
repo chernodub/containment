@@ -48,6 +48,7 @@ export class ElementKit {
     root.add(this.root);this.root.name='ability-element-kit';
     this.batches={shard:new InstanceBatch(this.root,'shard',512),spark:new InstanceBatch(this.root,'spark',512),smoke:new InstanceBatch(this.root,'smoke',192),flame:new InstanceBatch(this.root,'flame',384),solid:new InstanceBatch(this.root,'solid',512),ghost:new InstanceBatch(this.root,'ghost',128),decal:new InstanceBatch(this.root,'decal',32)};
   }
+  setView(camera:T.Camera):void {for(const k in this.batches)this.batches[k as Primitive].setView(camera);}
   bind(services:AbilityServices):void {this.services=services;}
   setOptions(options:GraphicsOptions,tier:GraphicsTier,reducedMotion:boolean):void {
     if(tier==='low'&&!this.low)for(let i=160;i<this.particles.length;i++)this.particles[i].live=false;
@@ -109,6 +110,7 @@ export class ElementKit {
     if(this.low||this.reducedMotion||!this.distortion)return;
     if(heat)this.services?.distortion.heat(x,z,radius,strength,life);else this.services?.distortion.shockwave(x,z,radius,strength,life);
   }
+  anticipate(ms:number,amount=.012):void {if(!this.reducedMotion)this.services?.camera.punch(amount,ms);}
   camera(weight=.12,angle?:number):void {
     if(this.reducedMotion)return;
     this.services?.camera.addTrauma(weight);if(weight>.2)this.services?.camera.punch(Math.min(.035,weight*.06),220);
