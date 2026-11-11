@@ -110,3 +110,5 @@ V2_SCENARIOS.push({id:'v2-recovery',room:'armory',state:'playing',setup:async()=
  g.resume();d.refresh();await d.gotoRoom('infested-workshop',{rig:'cryo'});await d.gotoRoom('armory',{rig:'pyro'});d.refresh();
  d.recoveryProof={roomCycles:cycles,afterRestore:{...r.renderer.info.memory},programs:r.renderer.info.programs.length,contextLost:gl.isContextLost(),abilityInstances:r.interimAbilities.kit.counts};
 }});
+
+for(const rig of Object.keys(rigs))V2_SCENARIOS.push({id:`v2-full-${rig}-low-armory`,room:'armory',state:'playing',burst:true,setupArgument:{rig,room:'armory',tier:'low',heavy:true,showcase:true},setup:stageV2});

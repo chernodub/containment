@@ -192,7 +192,7 @@ describe('authoritative ability geometry bridge', () => {
     fx.update(snapshot({ zones: [zone({ element: 'pyro' }), zone({ element: 'arc' })], deployables: [deployable({ kind: 'barrier' }), deployable({ kind: 'pylon' })] }), 0);
     expect(warmup.register(fx.root)).toBe(0);
     const inventory = fx.root.getObjectByName('interim-ability-material-library')!;
-    expect(inventory.visible).toBe(false); expect(inventory.children).toHaveLength(9);
+    expect(inventory.visible).toBe(false); expect(inventory.children).toHaveLength(10);
     const hiddenMaterials = inventory.children.map(mesh => (mesh as T.Mesh).material as T.Material);
     const retired = hiddenMaterials.map(material => vi.spyOn(material, 'dispose'));
     const resources = new ContextResources(); resources.track(fx.root); resources.invalidate(); resources.track(fx.root);
