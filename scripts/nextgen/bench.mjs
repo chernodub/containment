@@ -111,13 +111,17 @@ try{
    const allocated=heap.profile.samples.reduce((n,s)=>n+s.size,0);profiling={sampledAllocationBytes:allocated,sampledAllocationBytesPerSecond:allocated/data.wallSeconds,gcPausesMs:gc};await writeFile(resolve(out,name+'.cpuprofile'),JSON.stringify(cpu.profile));await writeFile(resolve(out,name+'.heapprofile'),JSON.stringify(heap.profile));}
   await cdp.detach();
   const stats=values=>{if(!values.length)return null;const s=[...values].sort((a,b)=>a-b);return {p50:s[Math.floor((s.length-1)*.5)],p95:s[Math.ceil(s.length*.95)-1],max:s.at(-1),average:s.reduce((a,b)=>a+b,0)/s.length};};
-  const summary=Object.fromEntries(Object.entries(data.samples).map(([k,v])=>[k,stats(v)]));
+  const summary=Object.fromEntries(Object.entries(data.samples).map(([k,v])=>[k,stats(k==='frame'?v.slice(1):v)]));
+  // The first RAF interval begins before the measurement window; retain it raw, exclude it only from frame statistics.
   summary.cpu=stats(data.samples.update.map((v,i)=>v+data.samples.render[i]));
   const run={name,room,rig,tier,repeat,before,after:host(),profile,profiling,summary,...data,cdp:{initial:initial.metrics,final:final.metrics}};
   report.runs.push(run);await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));
   console.log(`${name}: frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
   assert.equal(data.programs,0,'Mid-combat shader compile');
  }
- console.table(report.runs.map(r=>({scenario:r.name,load:r.before.load[0].toFixed(1),frameP50:r.summary.frame.p50.toFixed(2),frameP95:r.summary.frame.p95.toFixed(2),cpuP50:r.summary.cpu.p50.toFixed(2),cpuP95:r.summary.cpu.p95.toFixed(2),draws:r.summary.draws.max,compiles:r.programs})));
+ const triple=s=>s?`${s.p50.toFixed(2)}/${s.p95.toFixed(2)}/${s.max.toFixed(2)}`:'unavailable';
+ console.log('Timing columns are p50 / p95 / max milliseconds');
+ console.table(report.runs.map(r=>({scenario:r.name,load:r.before.load[0].toFixed(1),frame:triple(r.summary.frame),update:triple(r.summary.update),render:triple(r.summary.render),hud:triple(r.summary.hud),audioSync:triple(r.summary.audio),cpu:triple(r.summary.cpu),gpu:triple(r.summary.gpu)})));
+ console.table(report.runs.map(r=>({scenario:r.name,draws:r.summary.draws.max,triangles:r.summary.triangles.max,lights:r.summary.lights.max,instances:r.summary.instances.max,programs:r.programInventory,compiles:r.programs,allocationBytesPerSecond:r.profiling?.sampledAllocationBytesPerSecond??'not sampled',gcMaxMs:r.profiling?Math.max(0,...r.profiling.gcPausesMs):'not traced'})));
  assert.equal(report.errors.length,0,report.errors.join('\n'));
 }finally{await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));await browser?.close();await new Promise(ok=>server.close(ok));}

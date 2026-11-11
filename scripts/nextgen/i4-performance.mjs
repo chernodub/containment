@@ -6,6 +6,8 @@ import {resolve} from 'node:path';
 const [beforeLabel='integration-4-before',afterLabel='integration-4-after']=process.argv.slice(2);
 const root=resolve('artifacts/nextgen'),out=resolve(root,'integration-4');await mkdir(out,{recursive:true});
 const before=JSON.parse(await readFile(resolve(root,beforeLabel,'benchmark.json'))),after=JSON.parse(await readFile(resolve(root,afterLabel,'benchmark.json')));
+// The first interval straddles setup; recompute frame stats consistently for older manifests too.
+for(const report of [before,after])for(const run of report.runs){const values=run.samples.frame.slice(1).sort((a,b)=>a-b);run.summary.frame={p50:values[Math.floor((values.length-1)*.5)],p95:values[Math.ceil(values.length*.95)-1],max:values.at(-1),average:values.reduce((a,b)=>a+b,0)/values.length};}
 const key=r=>`${r.room} / ${r.rig} / ${r.tier}`;
 const best=report=>{const map=new Map();for(const run of report.runs){const k=key(run);if(!map.has(k)||run.summary.cpu.p95<map.get(k).summary.cpu.p95)map.set(k,run);}return map;};
 const a=best(before),b=best(after);assert.deepEqual([...a.keys()],[...b.keys()],'Scenario matrices differ');
