@@ -19,16 +19,17 @@ export type PresentationDebug = {
  effect(event:Record<string,unknown>):void;
  step(ms:number,input:GameInput,update:(ms:number,input:GameInput)=>void):void;
 };
-export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{},advanceUi:(dt:number)=>void=()=>{},presentation?:PresentationDebug,nativeRead?:()=>GameInput){
+export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void,beforePrepare:()=>void, uiEvent:(event:Record<string,unknown>)=>void=()=>{},advanceUi:(dt:number)=>void=()=>{},presentation?:PresentationDebug,nativeRead?:()=>GameInput,nativeReady?:()=>boolean){
  let presentationEnabled=false;
  const update=game.update.bind(game),render=renderer.render.bind(renderer),hurt=game.hurt.bind(game),effect=renderer.effect.bind(renderer);
  const events:Array<GameEffect & {at:number}>=[];renderer.effect=e=>{events.push({...e,at:game.elapsed});if(events.length>300)events.shift();effect(e);};
  let realtime=false,nativeInput=false,incomingDamageScale=1;
  const stepCosts:number[]=[];let stepCount=0,stepTotal=0,stepMaximum=0;
  let controls:GameInput={x:0,y:0,fire:false,angle:null,autoAim:true},immune=false,seed=Number(new URLSearchParams(location.search).get('seed')??1729);
+ const canStepNative=()=>!renderer.roomLoading&&(!nativeInput||!nativeReady||nativeReady());
  // RAF still owns resource recovery and diagnostics; only explicit steps advance time.
- game.update=(dt,input)=>{if(realtime)update(dt,nativeInput?input:controls);};renderer.render=(g,dt,menu)=>{render(g,realtime?dt:0,menu);if(realtime)advanceUi(dt);};
- game.hurt=n=>{if(!immune)hurt(n*incomingDamageScale);};
+ game.update=(dt,input)=>{if(realtime&&(!nativeInput||canStepNative()))update(dt,nativeInput?input:controls);};renderer.render=(g,dt,menu)=>{render(g,realtime?dt:0,menu);if(realtime)advanceUi(dt);};
+ game.hurt=n=>{if(!immune)hurt(Number.isFinite(n)?n*incomingDamageScale:n);};
  const refresh=()=>{render(game,0,game.status==='menu');sync();advanceUi(0);};
  const ready=async()=>{beforePrepare();await renderer.prepare(game.node);refresh();};
  const api={game,renderer,events,prepare:ready,
@@ -36,6 +37,8 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   realtime(value:boolean){realtime=value;},
   /** Read the real InputController each fixed tick; never inject bot controls. */
   nativeInput(value:boolean){if(value&&!nativeRead)throw Error('Native input provider unavailable');nativeInput=value;},
+  /** Atomically query the same loading/recovery gate used by native gameplay. */
+  get canStepNative(){return canStepNative();},
   /** Explicit assisted-playtest setting; ordinary runs retain the exact hurt path. */
   incomingDamageScale(value:number){if(!Number.isFinite(value)||value<=0||value>1)throw Error('incomingDamageScale expects 0 < scale <= 1');incomingDamageScale=value;},
   /** Bounded accelerated-step timings; these are diagnostic CPU costs, not real-time FPS. */
@@ -67,7 +70,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   canStand(x:number,y:number,radius=16){return canOccupyExpedition(game.geometry,{x,y},radius);},
   clearShot(x:number,y:number,from:{x:number;y:number}=game.player){return hasClearExpeditionShot(game.geometry,from,{x,y});},
   setInput(value:Partial<GameInput>){controls={...controls,...value};},
-  step(ms:number){if(!Number.isFinite(ms)||ms<0||ms>60000)throw Error('step expects 0..60000 ms');if(renderer.roomLoading)throw Error('Room is still loading');for(let remaining=ms;remaining>1e-7;){const dt=Math.min(1000/60,remaining),input=nativeInput?nativeRead!():controls,started=performance.now();if(presentationEnabled&&presentation)presentation.step(dt,input,update);else update(dt,input);render(game,dt/1000,game.status==='menu');const cost=performance.now()-started;stepCount++;stepTotal+=cost;stepMaximum=Math.max(stepMaximum,cost);if(stepCosts.length===2048)stepCosts.shift();stepCosts.push(cost);advanceUi(dt/1000);remaining-=dt;}refresh();},
+  step(ms:number){if(!Number.isFinite(ms)||ms<0||ms>60000)throw Error('step expects 0..60000 ms');if(renderer.roomLoading)throw Error('Room is still loading');if(!canStepNative())throw Error('Native gameplay is not ready');for(let remaining=ms;remaining>1e-7;){if(!canStepNative())break;const dt=Math.min(1000/60,remaining),started=performance.now(),input=nativeInput?nativeRead!():controls;if(presentationEnabled&&presentation)presentation.step(dt,input,update);else update(dt,input);render(game,dt/1000,game.status==='menu');const cost=performance.now()-started;stepCount++;stepTotal+=cost;stepMaximum=Math.max(stepMaximum,cost);if(stepCosts.length===2048)stepCosts.shift();stepCosts.push(cost);advanceUi(dt/1000);remaining-=dt;}refresh();},
   invulnerable(value:boolean){immune=value;},
   /** Fill the real runtime meter without injecting a presentation snapshot. */
   fillOverdrive(){game.abilities.addCharge(6000);refresh();},

@@ -9,6 +9,7 @@ import {configureIntegratedRenderer, presentationCameraBeat} from './integration
 import {PresentationBeats} from './hud/beats/PresentationBeats';
 import { loadAudioPreferences } from '../game/audio/preferences';
 import { FramePacer, FrameDiagnostics } from '../render/FrameBudget';
+import {NativeFrameSamples} from './performance';
 import { HitConfirmation } from './hud/HitConfirmation';
 import { captureWeaponPointer } from '../WeaponHud';
 import { positionHudPanels } from '../HudLayout';
@@ -198,7 +199,7 @@ export async function bootstrap() {
         hud.tick?.(dt);
         confirmation.update(dt, game.status === 'playing' && !graphicsLost && !renderer.roomLoading && !roomRecovering);
     };
-    const pacer = new FramePacer(), diagnostics = new FrameDiagnostics();
+    const pacer = new FramePacer(), diagnostics = new FrameDiagnostics(), nativeFrameSamples = new NativeFrameSamples();
     document.addEventListener('visibilitychange', () => {pacer.reset(); syncAudio();});
     Object.defineProperty(window, '__containmentPerformance', { get: () => ({
         ...diagnostics.snapshot, quality: renderer.qualityTier,
@@ -207,6 +208,7 @@ export async function bootstrap() {
         geometries: renderer.renderer.info.memory.geometries,
         textures: renderer.renderer.info.memory.textures, graphicsLost,
         debugFixedStep: (window as Window & {__containmentDebug?: {stepPerformance?: unknown}}).__containmentDebug?.stepPerformance,
+        nativeUpdateRenderMs: nativeFrameSamples.snapshot,
         hudMs: {last: hudLastMs, average: hudSamples ? hudTotalMs / hudSamples : 0, samples: hudSamples},
     }) });
     let controlsForStep: GameInput = {x: 0, y: 0, fire: false, angle: null, autoAim: false};
@@ -270,6 +272,7 @@ export async function bootstrap() {
             hudSamples++;
         }
         diagnostics.record(elapsed * 1000, updated - started, rendered - updated);
+        nativeFrameSamples.record(rendered - started);
     }
     lastRoom = game.roomRevision;
     syncScreen(true);
@@ -283,6 +286,6 @@ export async function bootstrap() {
             reset() {feel.reset(); beats?.reset();},
             effect(event) {if (event.type === 'beat') beats?.show(event.kind as import('./hud/beats/PresentationBeats').BeatKind); else {feel.effect(event as GameEffect, feelContext()); beats?.effect(event as GameEffect); uiEffect(event as GameEffect);}},
             step(ms, controls, update) {feel.advance(ms, feelContext(), dt => update(dt, controls)); beats?.sync();},
-        }, () => input.read());
+        }, () => input.read(), () => !graphicsLost && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading);
     }
 }

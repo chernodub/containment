@@ -22,15 +22,17 @@ function harness() {
   game.newRun(1729);
   game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
   game.skipStory();
-  const rendererStub = {canvas: new Canvas(), pointer: () => null, render: vi.fn(), effect: vi.fn(), roomLoading: false};
+  const renderSpy = vi.fn();
+  const rendererStub = {canvas: new Canvas(), pointer: () => null, render: renderSpy, effect: vi.fn(), roomLoading: false};
   const renderer = rendererStub as unknown as DepthRenderer;
   const input = new InputController(game, renderer, () => {});
-  installDebug(game, renderer, vi.fn(), vi.fn(), vi.fn(), vi.fn(), undefined, () => input.read());
+  const readiness = {ready: true};
+  installDebug(game, renderer, vi.fn(), vi.fn(), vi.fn(), vi.fn(), undefined, () => input.read(), () => readiness.ready);
   const key = (type: 'keydown' | 'keyup', code: string) => {
     const event = Object.assign(new Event(type), {code, key: code, repeat: false});
     documentTarget.dispatchEvent(event);
   };
-  return {game, rendererStub, debug: windowTarget.__containmentDebug, input, key};
+  return {game, rendererStub, debug: windowTarget.__containmentDebug, input, key, readiness, renderSpy};
 }
 
 it('moves and fires from held native WASD/Space rather than a debug override', () => {
@@ -68,6 +70,48 @@ it('retains native input in realtime and freezes explicit stepping during loadin
   expect(update).toHaveBeenCalledTimes(1);
 });
 
+it('rejects native stepping before any simulation while loading or recovering and retains fixture defaults', () => {
+  const h = harness();
+  h.debug.nativeInput(true);
+  h.key('keydown', 'KeyD'); h.key('keydown', 'Space');
+  const elapsed = h.game.elapsed, player = {...h.game.player}, stats = h.game.stats;
+  h.readiness.ready = false;
+  expect(h.debug.canStepNative).toBe(false);
+  expect(() => h.debug.step(100)).toThrow('Native gameplay is not ready');
+  h.debug.realtime(true); h.game.update(100, h.input.read());
+  expect(h.game.elapsed).toBe(elapsed);
+  expect(h.game.player).toEqual(player);
+  expect(h.game.stats).toEqual(stats);
+  expect(h.renderSpy).not.toHaveBeenCalled();
+  h.debug.realtime(false); h.debug.nativeInput(false);
+  expect(h.debug.canStepNative).toBe(true);
+  h.debug.step(100);
+  expect(h.game.elapsed - elapsed).toBeCloseTo(.1);
+  h.rendererStub.roomLoading = true;
+  expect(h.debug.canStepNative).toBe(false);
+  expect(() => h.debug.step(100)).toThrow('Room is still loading');
+});
+
+it.each(['loading', 'recovery'] as const)('stops a native batch as soon as rendering begins %s without consuming the remainder', transition => {
+  const h = harness();
+  h.debug.nativeInput(true);
+  h.key('keydown', 'KeyD'); h.key('keydown', 'Space');
+  h.renderSpy.mockImplementation(() => {
+    if (transition === 'loading') h.rendererStub.roomLoading = true;
+    else h.readiness.ready = false;
+  });
+  const elapsed = h.game.elapsed;
+  h.debug.step(100);
+  expect(h.game.elapsed - elapsed).toBeCloseTo(1 / 60);
+  expect(h.debug.stepPerformance.samples).toBe(1);
+  expect(h.debug.canStepNative).toBe(false);
+  h.rendererStub.roomLoading = false; h.readiness.ready = true;
+  h.renderSpy.mockReset();
+  h.debug.step(1000 / 60);
+  expect(h.game.elapsed - elapsed).toBeCloseTo(2 / 60);
+  expect(h.debug.stepPerformance.samples).toBe(2);
+});
+
 it('rejects missing native providers and invalid assistance; ordinary hurt remains exact', () => {
   const target: Record<string, any> = {};
   vi.stubGlobal('window', target);
@@ -77,6 +121,7 @@ it('rejects missing native providers and invalid assistance; ordinary hurt remai
   const d = target.__containmentDebug;
   expect(() => d.nativeInput(true)).toThrow('Native input provider unavailable');
   game.hurt(27); expect(hurt).toHaveBeenLastCalledWith(27);
+  (game.hurt as unknown as (value:unknown)=>void)('20'); expect(hurt).toHaveBeenLastCalledWith('20');
   for (const value of [0, -1, 1.1, NaN, Infinity]) expect(() => d.incomingDamageScale(value)).toThrow('incomingDamageScale');
   d.incomingDamageScale(.25); game.hurt(20); expect(hurt).toHaveBeenLastCalledWith(5);
   d.incomingDamageScale(1); game.hurt(20); expect(hurt).toHaveBeenLastCalledWith(20);
@@ -92,6 +137,7 @@ it('native UI seed selection is diagnostic-only and accepts only unsigned intege
   expect(parse('?debug=1&seed=4294967295')).toBe(4294967295);
   for (const search of ['', '?seed=7', '?debug=0&seed=7', '?debug=1', '?debug=1&seed=', '?debug=1&seed=-1', '?debug=1&seed=1.5', '?debug=1&seed=4294967296', '?debug=1&seed=NaN']) expect(parse(search)).toBeUndefined();
   expect(source).toContain('game.newRun(debugRunSeed(location.search), {rigSelect: true})');
+  expect(source).toContain('}, () => input.read(), () => !graphicsLost && !roomRecovering && lastRoom === game.roomRevision && !renderer.roomLoading);');
 });
 
 it('reports fixed-step update plus render percentiles separately from realtime frame timing', () => {
