@@ -5,7 +5,15 @@ import {createServer} from 'vite';
 export async function checkCombatRig(page) {
   const url = new URL(page.url());
   url.searchParams.set('debug', '1');
-  await page.waitForLoadState('networkidle');
+  const settleRoom = async () => {
+    await page.evaluate(async () => {
+      if (window.__containmentDebug) await window.__containmentDebug.prepare();
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    });
+    await page.waitForFunction(() => document.querySelector('#world').getAttribute('aria-busy') === 'false');
+    await page.waitForLoadState('networkidle');
+  };
+  await settleRoom();
   await page.goto(url.href);
   await page.waitForFunction(() => document.body.dataset.state === 'menu' && !!window.__containmentDebug);
   await page.locator('#start').click();
@@ -96,6 +104,7 @@ export async function checkCombatRig(page) {
   // Resume checkpoints created by the actual Start / equip actions, including each initial phase.
   const checkpointKey = 'containment-depth:run:v1';
   for (const phase of ['rig-select', 'starting-boon']) {
+    await settleRoom();
     await page.reload();
     await page.waitForFunction(() => document.body.dataset.state === 'menu' && !!window.__containmentDebug);
     await page.locator('#start').click();
@@ -107,6 +116,7 @@ export async function checkCombatRig(page) {
     await page.evaluate(() => window.__containmentDebug.prepare());
     const saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), checkpointKey);
     assert.equal(saved?.run.phase, phase, `The actual ${phase} action must save its phase`);
+    await settleRoom();
     await page.reload();
     await page.waitForFunction(() => document.body.dataset.state === 'menu' && !!window.__containmentDebug);
     await page.locator('#continue').click();
@@ -135,6 +145,7 @@ export async function checkCombatRig(page) {
     const value = serializeCheckpoint({version:1,savedAt:0,run:game.expedition.run,build:{mutations:game.expedition.build.mutations},resources:game.combat.getRunResources()});
     assert.ok(value, 'Valid legacy cleared-room checkpoint');
     await page.evaluate(({key,value}) => localStorage.setItem(key,value), {key:CHECKPOINT_STORAGE_KEY,value});
+    await settleRoom();
     await page.reload();
     await page.waitForFunction(() => document.body.dataset.state === 'menu' && !!window.__containmentDebug);
     await page.locator('#continue').click();
