@@ -47,6 +47,8 @@ try{
    await page.waitForFunction(name=>document.body.dataset.state==='playing'&&document.querySelector('#room-name')?.textContent===name,ROOM_TEMPLATES[id].name);
    await page.locator('#pause').click();await page.waitForFunction(()=>document.body.dataset.state==='paused');await page.locator('[data-pause-tab=settings]').click();await page.locator('#quality').selectOption('low');await page.locator('#resume').click();
    if(await page.locator('#skip-story').isVisible())await page.locator('#skip-story').click();
+   // New room shader preparation blocks input until the production loading indicators settle.
+   await page.waitForFunction(()=>document.body.dataset.state==='playing'&&document.querySelector('#world')?.getAttribute('aria-busy')==='false'&&document.querySelector('#room-loading')?.hidden);
    const ammo=await page.locator('#magazine').textContent();
    {await page.keyboard.down('d');await page.keyboard.down('Space');await page.waitForFunction(before=>document.querySelector('#magazine').textContent!==before,ammo);await page.keyboard.up('Space');await page.keyboard.up('d');}
    await page.waitForFunction(()=>window.__containmentPerformance.drawCalls>0&&!window.__containmentPerformance.graphicsLost);

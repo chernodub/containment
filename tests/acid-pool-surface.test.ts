@@ -6,7 +6,7 @@ import {DepthRenderer} from '../src/render/DepthRenderer';
 type Pool={id:number;x:number;y:number;radius:number;life:number};
 type PoolRenderer={scene:T.Scene;poolMeshes:Map<number,T.Mesh<T.CircleGeometry,T.MeshBasicMaterial>>;time:number;syncPools(pools:readonly Pool[]):void;clearPools():void};
 function fixture(){
- const renderer=Object.assign(Object.create(DepthRenderer.prototype),{scene:new T.Scene(),poolMeshes:new Map(),time:3}) as PoolRenderer;
+ const renderer=Object.assign(Object.create(DepthRenderer.prototype),{scene:new T.Scene(),activePoolIds:new Set<number>(),poolMeshes:new Map(),time:3}) as PoolRenderer;
  expect(renderer.syncPools,'production renderer owns procedural pool synchronization').toBeTypeOf('function');
  return renderer;
 }

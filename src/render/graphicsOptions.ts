@@ -43,6 +43,20 @@ export const GRAPHICS_PRESETS: Readonly<Record<GraphicsTier, GraphicsOptions>> =
   }),
 });
 
+/** Validate persisted or UI overrides and return a fresh immutable options value. */
+export function resolveGraphicsOptions(base:GraphicsOptions,partial:Partial<GraphicsOptions>):GraphicsOptions {
+  const next={...base};
+  for(const key of ['bloom','ambientOcclusion','lensEffects','distortion','atmosphere','dynamicLights'] as const){
+    if(typeof partial[key]==='boolean')next[key]=partial[key];
+  }
+  if(partial.shadows==='off'||partial.shadows==='low'||partial.shadows==='high')next.shadows=partial.shadows;
+  for(const key of ['resolutionScale','screenShake','flashIntensity'] as const){
+    const value=partial[key];
+    if(typeof value==='number'&&Number.isFinite(value))next[key]=Math.max(key==='resolutionScale'?.5:0,Math.min(1,value));
+  }
+  return Object.freeze(next);
+}
+
 /** Metadata so the settings UI can label options without hard-coding copy next to the renderer. */
 export const GRAPHICS_OPTION_LABELS: Readonly<Record<keyof GraphicsOptions, Readonly<{ label: string; hint: string }>>> = Object.freeze({
   bloom: { label: 'Bloom', hint: 'Glow on bright lights and energy effects.' },

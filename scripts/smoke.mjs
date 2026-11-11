@@ -103,6 +103,8 @@ try {
       assert.equal(await page.locator('.owned-boon').count(),1);
       assert.equal(await page.locator('.owned-boon h4').textContent(),name);
       await page.locator('#resume').click();
+      // Shader preparation owns readiness; native input must wait for the live loading signals.
+      await page.waitForFunction(()=>document.querySelector('#world')?.getAttribute('aria-busy')==='false'&&document.querySelector('#room-loading')?.hidden);
       return name;
     };
     timing.start('starting-boon');

@@ -5,11 +5,13 @@ import {instantiateAsset,type AssetName} from './assets';
 import {afflictionEffects,NO_AFFLICTION,type AfflictionStatus} from './afflictions';
 import {weaponModel,WEAPON_FIT,WEAPON_APPEARANCE,type GunModel} from './weapons';
 import type {WeaponId} from '../game/combat/types';
+import {actorSurface} from './vfx/ActorSurface';
 export {MAT,box,ball,rod,disposeModel} from './meshParts';
 export type ActorModel={root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
  animate:(time:number,moving:number,aim:number,recoil?:number,reload?:number,velocity?:{x:number;y:number})=>void;
  equip?:(id:WeaponId)=>void;muzzleWorld?:(target:T.Vector3)=>T.Vector3;
- reset?:()=>void;prepare?:()=>void;setAffliction?:(status:AfflictionStatus)=>void;freeze?:()=>void;attack?:()=>void;hit?:(strength?:number)=>void;setExposed?:(exposed:boolean)=>void;stop?:()=>void;};
+ reset?:()=>void;prepare?:()=>void;setAffliction?:(status:AfflictionStatus)=>void;freeze?:()=>void;attack?:()=>void;hit?:(strength?:number)=>void;setExposed?:(exposed:boolean)=>void;stop?:()=>void;
+ dissolve?:(progress:number)=>void;setFlashIntensity?:(value:number)=>void;};
 const vec=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
 const species:Record<string,{asset:AssetName;span:number;height?:number}>={
  crawler:{asset:'dretch',span:ENEMY_SPAN.crawler},stalker:{asset:'basilisk',span:ENEMY_SPAN.stalker},spitter:{asset:'marauder',span:ENEMY_SPAN.spitter},
@@ -39,22 +41,23 @@ function rig(name:AssetName,span:number,human=false){
 export function alien(kind:string,elite=false):ActorModel{
  const def=species[kind]??species.crawler,r=rig(def.asset,def.span*(elite?1.12:1));r.root.name=`alien-${kind}`;
  const color=new T.Color(kind==='queen'?0xffd3bb:elite?0xffe2b5:0xffffff);for(const m of r.materials)m.color.multiply(color);
+ const surface=actorSurface(r.materials,false,elite||kind==='queen');
  let flash=0,previous:number|undefined,exposed=false,dead=false,status:AfflictionStatus=NO_AFFLICTION;
- let effects:ReturnType<typeof afflictionEffects>|undefined;
- return{root:r.root,body:r.body,limbs:[],height:r.height,attack(){if(!dead&&!status.frozen)r.attack();},freeze(){dead=true;status=NO_AFFLICTION;effects?.reset();r.freeze();},stop:r.stop,prepare(){r.action('run');r.action('attack');},reset(){r.reset();flash=0;previous=undefined;exposed=dead=false;status=NO_AFFLICTION;effects?.reset();for(const m of r.materials)m.emissiveIntensity=0;},hit(strength=1){flash=Math.max(0,Math.min(1,strength));},setExposed(v){exposed=v;},setAffliction(v){
+ const effects=afflictionEffects(r.root,def.span*(elite?1.12:1),r.height);
+ return{root:r.root,body:r.body,limbs:[],height:r.height,dissolve:surface.dissolve,setFlashIntensity:surface.setFlashIntensity,attack(){if(!dead&&!status.frozen)r.attack();},freeze(){dead=true;status=NO_AFFLICTION;effects?.reset();surface.hit(0);r.freeze();},stop:r.stop,prepare(){r.action('run');r.action('attack');},reset(){r.reset();surface.reset();flash=0;previous=undefined;exposed=dead=false;status=NO_AFFLICTION;effects?.reset();for(const m of r.materials)m.emissiveIntensity=0;},hit(strength=1){flash=Math.max(0,Math.min(1,strength));},setExposed(v){exposed=v;},setAffliction(v){
   if(dead)return;status=v;
-  if(!effects&&(v.chilled||v.burning||v.poisoned||v.frozen))effects=afflictionEffects(r.root,def.span*(elite?1.12:1),r.height);
   effects?.set(v);r.mixer.timeScale=v.frozen?0:1;
  },
- animate(time,moving,aim){const dt=previous===undefined?0:Math.max(0,Math.min(.05,time-previous));previous=time;flash=Math.max(0,flash-dt*9);r.root.rotation.y=Math.PI/2-aim;r.step(time,moving);effects?.animate(time);for(const m of r.materials){m.emissive.setHex(status.frozen?0x79ddff:exposed?0x42602b:0xffdfb0);m.emissiveIntensity=flash*.1+(status.frozen?.12:exposed?.22:0);}}};
+ animate(time,moving,aim){const dt=previous===undefined?0:Math.max(0,Math.min(.05,time-previous));previous=time;flash=Math.max(0,flash-dt*9);surface.hit(flash);r.root.rotation.y=Math.PI/2-aim;r.step(time,moving);effects?.animate(time);for(const m of r.materials){m.emissive.setHex(status.frozen?0x79ddff:exposed?0x42602b:0xffdfb0);m.emissiveIntensity=flash*.1+(status.frozen?.12:exposed?.22:0);}}};
 }
 export function marine():ActorModel{
  const r=rig('marine',2.05,true),weapon=new T.Group();r.root.name='marine';r.root.add(weapon);
+ const surface=actorSurface(r.materials,true);
  const guns=new Map<WeaponId,GunModel>();let current:GunModel;const socket=r.assetRoot.getObjectByName('tag_weapon')!;let pose=r.action('shotgun_delta');
  const equip=(id:WeaponId)=>{if(current?.id===id)return;let gun=guns.get(id);if(!gun){gun=weaponModel(id);guns.set(id,gun);weapon.add(gun.root);}for(const g of guns.values())g.root.visible=g===gun;current=gun;pose?.stop();pose=r.action(`${({pistol:'blaster',plasma:'prifle',rocket:'lcannon'} as Partial<Record<WeaponId,string>>)[id]??id}_delta`);if(pose){pose.play();pose.paused=true;}};equip('shotgun');
  const inverse=new T.Matrix4(),socketMatrix=new T.Matrix4(),scale=new T.Vector3();
  const spine=r.assetRoot.getObjectByName('spine')!,parentQ=new T.Quaternion(),compensation=new T.Quaternion(),up=new T.Vector3(0,1,0),baseSpine=spine.quaternion.clone(),ribs=r.assetRoot.getObjectByName('ribs')!,baseRibs=ribs.quaternion.clone(),armAxis=new T.Vector3();let gaitYaw=0,backwards=false,previous:number|undefined;
- return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
+ return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,setFlashIntensity:surface.setFlashIntensity,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
  animate(time,moving,aim,recoil=0,reload=0,velocity){r.root.rotation.y=Math.PI/2-aim;
   const dt=previous===undefined?1/60:Math.max(0,Math.min(.05,time-previous));previous=time;
   const v=velocity??{x:Math.cos(aim)*moving*220,y:Math.sin(aim)*moving*220},travel=Math.hypot(v.x,v.y),direction=Math.atan2(v.y,v.x),forward=Math.cos(direction-aim);if(travel>3){if(forward<-.22)backwards=true;else if(forward>.02)backwards=false;}

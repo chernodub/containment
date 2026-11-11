@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 
 it('wires lighting and contact patches into the production renderer and reset lifecycle',()=>{
  const source=readFileSync('src/render/DepthRenderer.ts','utf8');
- expect(source).toContain('this.lighting.loadRoom(this.world,w,h)');
+ expect(source).toContain('this.lighting.loadRoom(this.world,w,h,environment,node.templateId)');
  expect(source).toContain('this.lighting.update(dt)');
  expect(source).toContain('this.contacts.end()');
  expect(source).toContain('this.lighting.dispose()');
@@ -43,7 +43,8 @@ it('retains unmerged fixture positions through the real legacy renderer bake',()
 it.each([
  {y:1.2,offset:1,included:true},
  {y:.1,offset:1,included:true},
- {y:1.2,offset:-1,included:false},
+ {y:1.2,offset:-1,included:true},
+ {y:1.2,offset:-2,included:false},
 ])('bakes flattened legacy fixture matrix origins with y=$y and offset=$offset',({y,offset,included})=>{
  const renderer=Object.create(DepthRenderer.prototype) as {world:T.Group;floorMaterial:T.Material;bakeWorld():void};
  renderer.world=new T.Group();renderer.floorMaterial=new T.MeshStandardMaterial();
@@ -64,13 +65,13 @@ it.each([
  expect(records).toHaveLength(included?1:0);
  if(included){
   const record=records[0];
-  expect(new T.Vector3(record.x,record.y,record.z).distanceTo(localOrigin)).toBeLessThan(1e-6);
+  expect(new T.Vector3(record.x,record.y,record.z).distanceTo(new T.Vector3(localOrigin.x,Math.max(.32,localOrigin.y),localOrigin.z))).toBeLessThan(1e-6);
   expect(record.color).toBe(0x66cddd);
  }
  const rig=new SceneLighting();rig.loadRoom(renderer.world,24,16);
  const lights=rig.fixtures.filter(light=>light.intensity>0);
  expect(lights).toHaveLength(included?1:0);
- if(included)expect(lights[0].position.distanceTo(worldOrigin)).toBeLessThan(1e-6);
+ if(included)expect(lights[0].position.distanceTo(new T.Vector3(localOrigin.x,Math.max(.32,localOrigin.y),localOrigin.z).applyMatrix4(renderer.world.matrixWorld))).toBeLessThan(1e-6);
  rig.dispose();disposeModel(renderer.world);geometry.dispose();material.dispose();renderer.floorMaterial.dispose();
 });
 
@@ -90,11 +91,12 @@ describe('bounded presentation lighting',()=>{
   for(const light of rig.fixtures)expect(room.userData.lightFixtures.some((f:{x:number;y:number;z:number})=>light.position.equals(new T.Vector3(f.x+40,f.y+2,f.z+20)))).toBe(true);
   rig.dispose();disposeModel(room);
  });
- it('uses a cool directional key and a readable, subordinate ambient fill',()=>{
+ it('uses a cool shadow key, subordinate fill and a bounded local readability light',()=>{
   const rig=new SceneLighting();
   expect(rig.key.color.b).toBeGreaterThan(rig.key.color.r);
-  expect(rig.ambient.intensity).toBeGreaterThanOrEqual(.6);
-  expect(rig.ambient.intensity).toBeLessThanOrEqual(.85);
+  expect(rig.key.intensity/rig.fill.intensity).toBeGreaterThanOrEqual(4);
+  expect(rig.key.intensity/rig.fill.intensity).toBeLessThanOrEqual(6);
+  expect(rig.lamp.suitFill.intensity).toBe(24);expect(rig.lamp.suitFill.distance).toBe(4.8);
   const offset=rig.key.position.clone().sub(rig.key.target.position);
   expect(Math.hypot(offset.x,offset.z)).toBeGreaterThan(offset.y);
   expect(rig.ambient.intensity).toBeLessThan(rig.key.intensity/2);
@@ -106,7 +108,7 @@ describe('bounded presentation lighting',()=>{
   for(let i=0;i<40;i++){const mesh=new T.Mesh(new T.BoxGeometry(.8,.08,.1),new T.MeshStandardMaterial({emissive:0x66cddd,emissiveIntensity:1}));mesh.position.set(i*2,1.2,0);room.add(mesh);}
   rig.loadRoom(room,40,20);
   expect(rig.fixtures).toHaveLength(4);
-  expect(rig.fixtures.every(l=>!l.castShadow&&l.distance<=6&&l.intensity>0)).toBe(true);
+  expect(rig.fixtures.every(l=>!l.castShadow&&l.distance<=10&&l.intensity>0)).toBe(true);
   expect(new Set(rig.fixtures.map(l=>l.position.x)).size).toBe(4);
   const objects=[...rig.root.children];rig.loadRoom(new T.Group(),10,10);
   expect(rig.root.children).toEqual(objects);
