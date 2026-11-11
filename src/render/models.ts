@@ -10,6 +10,8 @@ import {alienIdentity,marineIdentity,FAMILY_IDENTITY} from './ActorIdentity';
 export {MAT,box,ball,rod,disposeModel} from './meshParts';
 export type ActorModel={root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
  animate:(time:number,moving:number,aim:number,recoil?:number,reload?:number,velocity?:{x:number;y:number})=>void;
+ /** Refresh attached weapon after presentation changes the body pose, before sampling the muzzle. */
+ syncWeaponPose?:()=>void;
  setRig?:(rig:string)=>void;setThreat?:(windupMs:number,pendingAttack:'spit'|'charge'|null,champion?:string,alpha?:number)=>void;equip?:(id:WeaponId)=>void;muzzleWorld?:(target:T.Vector3)=>T.Vector3;
  reset?:()=>void;prepare?:()=>void;setAffliction?:(status:AfflictionStatus)=>void;freeze?:()=>void;attack?:()=>void;hit?:(strength?:number)=>void;setExposed?:(exposed:boolean)=>void;stop?:()=>void;
  dissolve?:(progress:number)=>void;setFlashIntensity?:(value:number)=>void;};
@@ -59,8 +61,9 @@ export function marine():ActorModel{
  const guns=new Map<WeaponId,GunModel>();let current:GunModel;const socket=r.assetRoot.getObjectByName('tag_weapon')!;let pose=r.action('shotgun_delta');
  const equip=(id:WeaponId)=>{if(current?.id===id)return;let gun=guns.get(id);if(!gun){gun=weaponModel(id);guns.set(id,gun);weapon.add(gun.root);}for(const g of guns.values())g.root.visible=g===gun;current=gun;pose?.stop();pose=r.action(`${({pistol:'blaster',plasma:'prifle',rocket:'lcannon'} as Partial<Record<WeaponId,string>>)[id]??id}_delta`);if(pose){pose.play();pose.paused=true;}};equip('shotgun');
  const inverse=new T.Matrix4(),socketMatrix=new T.Matrix4(),scale=new T.Vector3();
+ const syncWeaponPose=()=>{socket.updateWorldMatrix(true,false);inverse.copy(r.root.matrixWorld).invert();socketMatrix.multiplyMatrices(inverse,socket.matrixWorld);socketMatrix.decompose(weapon.position,weapon.quaternion,scale);weapon.scale.setScalar(1);};
  const spine=r.assetRoot.getObjectByName('spine')!,parentQ=new T.Quaternion(),compensation=new T.Quaternion(),rotation=new T.Quaternion(),up=new T.Vector3(0,1,0),baseSpine=spine.quaternion.clone(),ribs=r.assetRoot.getObjectByName('ribs')!,baseRibs=ribs.quaternion.clone(),armAxis=new T.Vector3();let gaitYaw=0,backwards=false,previous:number|undefined;
- return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,setRig:identity.setRig,setFlashIntensity:surface.setFlashIntensity,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
+ return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,syncWeaponPose,setRig:identity.setRig,setFlashIntensity:surface.setFlashIntensity,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
  animate(time,moving,aim,recoil=0,reload=0,velocity){r.root.rotation.y=Math.PI/2-aim;
   const dt=previous===undefined?1/60:Math.max(0,Math.min(.05,time-previous));previous=time;
   const vx=velocity?.x??Math.cos(aim)*moving*220,vy=velocity?.y??Math.sin(aim)*moving*220,travel=Math.hypot(vx,vy),direction=Math.atan2(vy,vx),forward=Math.cos(direction-aim);if(travel>3){if(forward<-.22)backwards=true;else if(forward>.02)backwards=false;}
@@ -71,7 +74,7 @@ export function marine():ActorModel{
 
   const pose=reload>0?Math.sin(Math.PI*reload):0;
   baseRibs.copy(ribs.quaternion);ribs.parent!.getWorldQuaternion(parentQ);armAxis.set(-Math.sin(aim),0,Math.cos(aim));compensation.copy(parentQ).invert().multiply(rotation.setFromAxisAngle(armAxis,pose*.18-recoil*.035)).multiply(parentQ);ribs.quaternion.premultiply(compensation);
-  socket.updateWorldMatrix(true,false);inverse.copy(r.root.matrixWorld).invert();socketMatrix.multiplyMatrices(inverse,socket.matrixWorld);socketMatrix.decompose(weapon.position,weapon.quaternion,scale);weapon.scale.setScalar(1);
+  syncWeaponPose();
  }};
 }
 export function nest():T.Group{

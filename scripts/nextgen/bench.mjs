@@ -74,14 +74,18 @@ try{
   const name=`${room}-${rig}-${tier}-${repeat}`, before=host();console.log(`bench ${name}, load ${before.load.map(x=>x.toFixed(2)).join('/')}`);
   const profile=args.includes('--profile'),cdp=await page.context().newCDPSession(page);
   const audioContexts=new Map(),audioSamples=[];let audioError=null;
-  if(profile){
+  {
    cdp.on('WebAudio.contextCreated',e=>audioContexts.set(e.context.contextId,e.context));
    cdp.on('WebAudio.contextChanged',e=>audioContexts.set(e.context.contextId,e.context));
    cdp.on('WebAudio.contextWillBeDestroyed',e=>audioContexts.delete(e.contextId));
-   try{await cdp.send('WebAudio.enable');}catch(error){audioError=String(error);}
   }
-  await reset();await page.evaluate(stageV2,{rig,room,tier,heavy:true,setupOnly:true});
-  await page.mouse.click(1910,10); // trusted audio unlock, outside HUD actions
+  try{await cdp.send('WebAudio.enable');}catch(error){audioError=String(error);}
+  await reset();
+  // The actual Start handler owns audio.unlock(). A canvas click cannot unlock it.
+  await page.locator('#start').click();
+  await page.waitForTimeout(500);
+  await page.evaluate(stageV2,{rig,room,tier,heavy:true,setupOnly:true});
+  assert([...audioContexts.values()].some(c=>c.contextType==='realtime'&&c.contextState==='running'),'Native audio context was not unlocked by Start');
   await cdp.send('Performance.enable');
   const traceEvents=[];if(profile)cdp.on('Tracing.dataCollected',event=>traceEvents.push(...event.value));
   if(profile){await cdp.send('Tracing.start',{categories:'v8,disabled-by-default-v8.gc',transferMode:'ReportEvents'});await cdp.send('Profiler.enable');await cdp.send('Profiler.start');await cdp.send('HeapProfiler.startSampling',{samplingInterval:32768,includeObjectsCollectedByMajorGC:true,includeObjectsCollectedByMinorGC:true});}
@@ -140,7 +144,7 @@ try{
    }finally{d.realtime(false);d.observePerformance(undefined);gl.createProgram=create;r.render=original;}
    const gpu=[];for(const q of pending){if(gl.getQueryParameter(q,gl.QUERY_RESULT_AVAILABLE)&&!gl.getParameter(ext.GPU_DISJOINT_EXT))gpu.push(gl.getQueryParameter(q,gl.QUERY_RESULT)/1e6);gl.deleteQuery(q);}
    for(const key of Object.keys(samples))samples[key]=Array.from(values[key].subarray(0,count));samples.gpu=gpu;
-   return {glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
+   return {build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
   },seconds);
   if(audioPoll){clearInterval(audioPoll);timers.delete(audioPoll);}await audioPollWork;
   const final=await cdp.send('Performance.getMetrics');
@@ -159,7 +163,7 @@ try{
   if(profile){summary.audioGraphCapacityPercent=stats(audioSamples.map(s=>s.renderCapacity));summary.audioCallbackIntervalMean=stats(audioSamples.map(s=>s.callbackIntervalMean));}
   summary.cpu=stats(data.samples.update.map((v,i)=>v+data.samples.render[i]));
   const budget={cpuP95:summary.cpu.p95<=8,frameP95:summary.frame.p95<=16.6,draws:summary.draws.max<=350,programs:data.programs===0};
-  const run={name,room,rig,tier,repeat,before,after:host(),profile,profiling,summary,budget,...data,cdp:{initial:initial.metrics,final:final.metrics}};
+  const run={name,room,rig,tier,repeat,nativeAudioContexts:[...audioContexts.values()],before,after:host(),profile,profiling,summary,budget,...data,cdp:{initial:initial.metrics,final:final.metrics}};
   report.runs.push(run);await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));
   console.log(`${name}: frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
   assert.equal(data.programs,0,'Mid-combat shader compile');

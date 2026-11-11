@@ -3,8 +3,40 @@ import * as T from 'three';
 import {loadModels} from '../../tests/loadModels';
 import {alien,marine,disposeModel,freezeCorpse} from './models';
 import {AfflictionBatches,NO_AFFLICTION,afflictionEffects} from './afflictions';
+import type {DepthGame} from '../DepthGame';
+import type {AbilitiesSnapshot,AbilitySlotSnapshot} from '../game/abilities/contract';
+import {ElementKit} from './abilities/ElementKit';
+import {createSystemPresentation} from './abilities/system';
 
 beforeAll(loadModels);
+
+it('resynchronizes a real marine weapon and muzzle after V2 brace, dash and restored body poses',()=>{
+  const model=marine(),kit=new ElementKit(new T.Group()),presentation=createSystemPresentation(kit);
+  const game={player:{x:128,y:128,angle:.4},combat:{snapshot:{dead:false}},enemies:{snapshot:{enemies:[]}},boonStatuses:()=>NO_AFFLICTION} as unknown as DepthGame;
+  const baseline:AbilitiesSnapshot={rig:'breacher',slots:null,overdrive:{active:false,ready:false,charge:0,activeRemainingMs:0},invulnerable:false,dashing:false,hostileTimeScale:1,zones:[],deployables:[]};
+  const cast:AbilitySlotSnapshot={id:'seismic-slam',slot:'tactical',ready:false,charges:0,maxCharges:1,cooldownMs:6000,cooldownRemainingMs:6000,castRemainingMs:100,activeRemainingMs:0,activeMs:0};
+  const bracing={...baseline,slots:{tactical:cast,power:{...cast,castRemainingMs:0},overdrive:{...cast,castRemainingMs:0},dash:{...cast,castRemainingMs:0}}};
+  const socket=model.root.getObjectByName('tag_weapon')!,matrix=new T.Matrix4(),expectedPosition=new T.Vector3(),expectedRotation=new T.Quaternion(),scale=new T.Vector3(),muzzle=new T.Vector3();
+  const apply=(snapshot:AbilitiesSnapshot)=>{kit.begin(0);presentation.update({snapshot,dt:0,visible:true,game,marine:model.root,marineBody:model.body});kit.end();};
+  const checkAttached=()=>{
+    socket.updateWorldMatrix(true,false);matrix.copy(model.root.matrixWorld).invert().multiply(socket.matrixWorld).decompose(expectedPosition,expectedRotation,scale);
+    expect(model.weapon!.position.distanceTo(expectedPosition)).toBeLessThan(1e-10);
+    model.weapon!.quaternion.toArray().forEach((value,i)=>expect(value).toBeCloseTo(expectedRotation.toArray()[i],12));
+    expect(model.weapon!.scale.toArray()).toEqual([1,1,1]);
+    expect(model.muzzleWorld!(muzzle).toArray().every(Number.isFinite)).toBe(true);
+  };
+  try{
+    model.root.position.set(4,.2,7);model.animate(0,0,.4);const restY=model.body.position.y;
+    for(const snapshot of [bracing,{...baseline,dashing:true},baseline]){
+      model.animate(1,0,.4);const before=model.muzzleWorld!(new T.Vector3()).clone();
+      apply(snapshot);model.syncWeaponPose!();checkAttached();
+      expect(model.muzzleWorld!(muzzle).distanceTo(before)).toBeGreaterThan(1e-4);
+      const stable=muzzle.clone();apply(snapshot);model.syncWeaponPose!();checkAttached();
+      expect(model.muzzleWorld!(muzzle).distanceTo(stable)).toBeLessThan(1e-10);
+    }
+    expect(model.body.position.y).toBe(restY);
+  }finally{presentation.dispose();kit.dispose();disposeModel(model.root);}
+});
 
 it('reuses marine rotation scratch while preserving explicit and inferred travel poses',()=>{
   const inferred=marine(),explicit=marine(),rotations=new Set<T.Quaternion>();
