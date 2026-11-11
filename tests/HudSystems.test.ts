@@ -318,7 +318,7 @@ it('dismisses the ready announcement immediately when real Overdrive starts', as
         await liveHud(page);
         await page.evaluate(() => {
             const {game,hud}= (window as any).__live;
-            game.abilities.setRig('arc'); game.abilities.addCharge(6000); hud();
+            game.abilities.setRig('arc'); game.abilities.addCharge(12000); hud();
         });
         expect(await page.locator('.hud-toast:not([hidden])').allTextContents()).toContain('Overdrive ready · V');
         await page.evaluate(() => {const {game,hud}=(window as any).__live;game.useAbility('overdrive');hud();});
@@ -381,7 +381,7 @@ it('offers full ability rules on passive hover and native focus, including a liv
         await tactical.focus();
         const tooltip=page.locator('#ability-rules-tactical');
         expect(await tooltip.isVisible()).toBe(true);
-        expect(await tooltip.textContent()).toContain('frozen solid for 1.8 seconds');
+        expect(await tooltip.textContent()).toContain('frozen solid for 1.5 seconds');
         expect(await tooltip.evaluate(node=>getComputedStyle(node).pointerEvents)).toBe('none');
         await page.locator('#pause').focus();
         expect(await tooltip.isHidden()).toBe(true);
@@ -443,4 +443,28 @@ it('announces a reacquired boon after a fresh expedition clears the previous bui
         });
         expect(receipts).toEqual({first:true, second:true, count:1});
     } finally {await page.close();}
+});
+
+it('labels a held full Overdrive for the next room and preserves its visible meter and accessible status', async () => {
+    const page = await mountHud(1280, 720);
+    try {
+        await liveHud(page);
+        await page.evaluate(() => {
+            const {game,hud,adapter,fixtures}=(window as any).__live;
+            const base=fixtures.abilityFixture('breacher','overdrive');
+            adapter.setUiFixture(game,{abilities:{...base,slots:{...base.slots,overdrive:{...base.slots.overdrive,ready:false}},overdrive:{...base.overdrive,ready:false,roomLimited:true,charge:1}}});
+            hud();
+        });
+        const slot=page.locator('[data-ability="overdrive"]');
+        expect(await slot.getAttribute('data-state')).toBe('cooling');
+        expect(await slot.locator('.ability-value').textContent()).toBe('NEXT ROOM');
+        expect(await slot.getAttribute('aria-label')).toContain('NEXT ROOM');
+        expect(await slot.locator('.overdrive-meter i').evaluate((el:HTMLElement)=>el.style.width)).toBe('100%');
+        const result=await inspectHud(page,640,360,140);
+        expect(result.frames[0].success).toBe(true);
+        expect(result.frames[0].invalid).toEqual([]);
+        await page.evaluate(()=>{const {game,hud,adapter,fixtures}=(window as any).__live;adapter.setUiFixture(game,{abilities:fixtures.abilityFixture('breacher','overdrive')});hud();});
+        expect(await slot.getAttribute('data-state')).toBe('ready');
+        expect(await slot.locator('.ability-value').textContent()).toBe('READY');
+    } finally { await page.close(); }
 });

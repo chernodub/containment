@@ -4,7 +4,7 @@ import {checkCombatRig} from './combat-rig-check.mjs';
 import {observeAudio,checkMenuSound,checkPausedSound} from './sound-controls-check.mjs';
 import {checkAudioWiring} from './audio-wiring-check.mjs';
 import {createServer} from 'node:http';
-import {readFile, mkdir} from 'node:fs/promises';
+import {readFile, mkdir, writeFile} from 'node:fs/promises';
 import {resolve, extname} from 'node:path';
 import {chromium} from 'playwright';
 import {selectSmokeViewports, createSmokePhaseTimer} from './smoke-options.mjs';
@@ -22,7 +22,7 @@ const server = createServer(async (req, res) => {
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-let browser;
+let browser, activePage, activeErrors;
 let timing = createSmokePhaseTimer('setup');
 try {
   timing.start('browser-and-subpath');
@@ -33,10 +33,10 @@ try {
     timing = createSmokePhaseTimer(viewport);
     timing.start('context-and-menu');
     const context = await browser.newContext({viewport:{width:1280,height:720},deviceScaleFactor:1});
-    const page = await context.newPage();
+    const page = await context.newPage();activePage=page;
     await observeAudio(page);
     page.setDefaultTimeout(60000);
-    const errors = [], assets = new Set();
+    const errors = [], assets = new Set();activeErrors=errors;
     page.on('pageerror', error => errors.push(error.message));
     page.on('console', message => {if(message.type()==='error') errors.push(`${message.text()} (${message.location().url||'browser'})`);});
     page.on('response', response => {
@@ -166,6 +166,13 @@ try {
   }
   console.log(`Browser smoke passed: ${viewports.join(' and ')}, production Pages subpath, assets, fire, weapon switch, pause/resume, credits.`);
 } catch (error) {
+  if(activePage&&!activePage.isClosed()){
+    const out=resolve('artifacts/nextgen/playtest/gates/smoke-failure');
+    await mkdir(out,{recursive:true});
+    await activePage.screenshot({path:resolve(out,'failure.png')}).catch(()=>{});
+    const state=await activePage.evaluate(()=>({state:document.body.dataset.state,loading:document.querySelector('#world')?.getAttribute('aria-busy'),hud:document.querySelector('#hud')?.textContent,performance:window.__containmentPerformance,checkpoint:localStorage.getItem('containment-depth:run:v1')})).catch(()=>null);
+    await writeFile(resolve(out,'state.json'),JSON.stringify({error:String(error),errors:activeErrors,state},null,2));
+  }
   timing.finish('failed');
   throw error;
 } finally {

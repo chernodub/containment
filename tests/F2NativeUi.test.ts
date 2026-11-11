@@ -50,9 +50,9 @@ async function mount(width=1280,height=720):Promise<Page>{
   });return page;
 }
 const screens=['menu','rig-select','starting-boon','draft','shop','route','destroy','dead','complete','paused'] as const;
-const blockingScreens=[...screens,'settings','controls','credits','pause-loadout','pause-settings','pause-controls'] as const;
+const blockingScreens=[...screens,'settings','controls','menu-credits','pause-loadout','pause-settings','pause-controls'] as const;
 async function show(page:Page,screen:string):Promise<void>{
-  const drawer=['settings','controls','credits'].includes(screen),tab=screen.startsWith('pause-')?screen.slice(6):'';
+  const drawer=['settings','controls','menu-credits'].includes(screen),tab=screen.startsWith('pause-')?screen.slice(6):'';
   await page.evaluate(s=>(window as any).ui.phase(s),drawer?'menu':tab?'paused':screen);
   if(drawer)await page.locator('#overlay #'+screen).click();
   if(tab)await page.locator(`[data-pause-tab="${tab}"]`).click();
@@ -98,7 +98,7 @@ it.each(blockingScreens)('held Tab and Shift+Tab remain inside the %s blocking s
     }
   }finally{await p.close();}
 });
-it.each(['settings','controls','credits'])('Escape closes title %s and restores launcher focus',async id=>{
+it.each(['settings','controls','menu-credits'])('Escape closes title %s and restores launcher focus',async id=>{
   const p=await mount();try{
     await p.locator('#overlay #'+id).click();expect(await p.locator('.title-drawer').isVisible()).toBe(true);await p.keyboard.press('Escape');
     expect(await p.locator('.title-drawer').count()).toBe(0);expect(await p.locator('#overlay #'+id).evaluate(e=>e===document.activeElement)).toBe(true);
@@ -119,7 +119,7 @@ it('native focused HUD Space pauses, Shift+Tab does not dash, and canvas reclaim
 it.each([[640,360],[960,540],[1280,720],[1920,1080],[2560,1440],[3440,1440]])('all screen actions are mouse/keyboard reachable at %i × %i CSS pixels',async(width,height)=>{
   const p=await mount(width,height);try{
     for(const screen of blockingScreens){
-      const drawer=['settings','controls','credits'].includes(screen);
+      const drawer=['settings','controls','menu-credits'].includes(screen);
       await show(p,screen);
       await p.evaluate(()=>Promise.all(document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).map(a=>a.finished)));
       const scope=drawer?'.title-drawer':'#overlay';

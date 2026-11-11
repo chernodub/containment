@@ -192,6 +192,139 @@ inside this worktree and restores source bytes in `finally`; run it only when no
 other V2 build/capture is active. `v2-performance.py` compares matched manifests
 and creates a JSON table and PNG CPU chart. Render timing is CPU submission, not
 GPU time. Concurrent machine load and P95 must be retained in the report.
+
+## R4 organic player (desktop production gate)
+
+```sh
+npm ci
+npm run build
+npm run playtest -- --rig=cryo --seed=1729
+npm run playtest -- --rig=arc --seed=2718 --assisted
+npm run playtest -- --rig=breacher --seed=31415 --rooms=6 --headed
+npm run playtest -- --rig=arc --seed=1729 --legacy --assisted --checkpoints
+npm run playtest:smoke
+```
+
+The player serves **dist**, clicks Start → rig inspection → Equip → starting boon, then uses Playwright keyboard and mouse actions through the actual InputController. `--rig` accepts `breacher`, `cryo`, `pyro`, `arc`. `--seed` is an unsigned integer; diagnostic native Start honors `?debug=1&seed=…` while ordinary production Start retains its normal sequence. Rebuild after application changes. `--label` selects a safe output directory name, `--rooms=1..20` stops after that many real clears, and `--max-room-seconds=240` bounds a fight. Explicit room-limited runs fail if the marine dies before their target; full campaign deaths are valid recorded outcomes.
+
+Policy: focus visible spitters/champions, kite along collision-probed lanes, use the navigation helper to approach occluded threats, aim through the native world-pointer projection, switch between shotgun/rifle/plasma/pistol as range/ammo warrants, reload in breathing space, heal below 40%, dash away from close threats/telegraphs/acid, use Q/F at useful ranges, and spend V at six enemies or a champion/boss. Drafts prefer the chosen rig's path/augments, then universal ability support/survival. Routes prefer ordinary encounters over elites, medical below 75 health, then supplies. Healing is purchased below 70 health when available. These are heuristics, not balance certification or perfect play.
+
+Debug access reads game state, collision/navigation, camera matrices and diagnostics. The main-run clock controls are `nativeInput(true)`, the existing `presentation(true)` clock, and the existing fixed 60 Hz `step()` accelerator, which now reads **real held native input on every tick**. It neither calls `setInput` nor grants health/charge/boons, spawns enemies, skips rooms or overrides damage. Every fixed tick renders. `--realtime` uses `?debug=1&playtest-live=1`: passive observation preserves the actual update/render/effect/hurt function identities and normal presentation pipeline, disables the audio spy, and forbids reduced-damage assistance; do not compare accelerated wall time with a human run. Full `GameEffect` receipts are retained in the bounded debug event feed. `__containmentPerformance.debugFixedStep` reports CPU update+render submission average/p50/p95/max, with a latest-2048-tick percentile window and mean/max since the last diagnostic reset (the player resets at room entry); ordinary RAF diagnostics remain separately present. Neither measures GPU completion.
+
+`--assisted` is explicitly separate: **15% incoming damage**, with all other progression/combat rules intact, to reach late content. Never combine assisted outcomes with organic clear rates. `--legacy` performs native Start and rig selection, then invokes the guarded **initial** v2 campaign factory because the title has no legacy-campaign entry. This is an explicit initialization exception to the main story runs' read-only debug policy: canonical first node, zero completed rooms/boons, and ordinary first-room resources. It fights every encounter normally, including the Queen. Legacy has no initial boon draft and cannot save until its first earned boundary. Checkpoint validators remain unchanged; the factory never stages late content.
+
+`--checkpoints` closes/recreates the actual page at rig selection, starting boon, first combat, reward, route and terminal states, then clicks Continue. The comparison is against the last persisted boundary: rollback during combat is intentional. Probe evidence includes before/after screenshots and JSON. A replacement page has native input/assistance reapplied; no save contents are changed by probes. Run probes separately from campaign balance measurements because interruption restarts a fight.
+
+Reports live under `artifacts/nextgen/playtest/<label>/`: `report.json`, `index.html`, `trace.ndjson` (read snapshots + native action receipts), per-room start/mid/clear screenshots and state dumps, terminal/stall evidence, and `hardest-sprite.png`. The hardest sheet is four consecutive samples separated by 66.7 simulated ms while normal held input continues. Audio instrumentation observes real Web Audio starts/stops/ended/context clocks, including live loops; it never modifies scheduling or gain. Damage-dealt sources/use counters come from authoritative run stats; incoming source labels are explicitly **inferred** from nearby contacts/hazards. Heap and renderer geometry/texture counts are sampled per room; asset caches and GC must be considered before alleging a leak.
+
+`playtest:smoke` requires Arc seed 1729 to clear the first three rooms, with no recorded errors/defects, targeting under four minutes on this desktop. `node scripts/nextgen/playtest/campaign.mjs` runs the twelve R4 campaigns (three seeds × four rigs) with **at most two browsers**. Do not overlap it with browser gates. Aggregate only explicit labels so old development reports never enter results:
+
+```sh
+node scripts/nextgen/playtest/aggregate.mjs --labels=r4-arc-1729,r4-cryo-1729 --out=artifacts/nextgen/playtest/campaign-summary
+```
+
+The pure policy, lifecycle comparison, diagnostics and aggregation tests run in Vitest. Native clock regression tests prove held movement/firing, default fixture compatibility, loading freeze, diagnostic seed validation, assistance validation and truthful timing receipts. The bot cannot judge feel, sound quality, visual beauty, or human onboarding comprehension.
+
+Interrupted organic campaigns can continue from a **proven earned boundary**, preserving their real resources/boons/stats/charge:
+
+```sh
+npm run playtest -- --resume-boundary=artifacts/nextgen/playtest/r4-breacher-1729/r18-containment-annulus-clear.json --label=r4-breacher-1729-continued --checkpoints
+```
+
+The resume helper requires a reward/route state dump registered in its sibling report, matching seed/rig, and a clear receipt plus recorded room time for every completed node. It creates the same validated checkpoint payload as that earned boundary, reloads, and clicks Continue. It cannot advance unfought rooms. The continuation report keeps parent rooms/defects and links its provenance; select the continuation label **instead of** its parent in campaign aggregation. Checkpoint probes may deliberately replay the last earned boundary. `--rooms` remains an absolute campaign clear target when resuming. R4 pilot reports without `presentation:true` used the original diagnostic presentation-off clock; subsequent campaigns enable the production presentation/feel clock explicitly.
+
+The readiness query `debug.canStepNative` uses the application's actual loading/recovery/revision gate. The player checks it and advances time in one browser JavaScript turn; fixed batches stop if preparation starts between ticks. `--checkpoint-screens=menu,menu-settings,menu-controls,menu-credits,rig-select,starting-boon,combat,pause,pause-loadout,pause-settings,pause-controls,reward,route,shop,destroy-confirm,dead,complete` selects a subset of `--checkpoints`. The separate `--death-probe --checkpoints --checkpoint-screens=dead` fixture intentionally idles in the opening fight to verify natural death/reload without injecting damage; its report is `lifecycleOnly` and must not enter balance cohorts.
+
+`__containmentPerformance.nativeUpdateRenderMs` samples actual visible RAF CPU update/render submission with a 240-frame ring. Window percentiles and lifetime mean/max are labeled. `--realtime` with native input and presentation uses the production feel clock, unscaled UI wall time, and the normal RAF. The R4 serial late-content sample records rolling windows after four seconds of live combat with no competing browser. Neither CPU diagnostic measures GPU completion. Black-world sampling excludes actual HUD and passive overlay bounds; loading snapshots are excluded from live HUD-overlap assertions.
+
+Reviewed collector false positives can be annotated in a sibling `triage.json` (`defects:[{evidence,status:"dismissed",reason,source}]`). Aggregation matches exact evidence names, retains dismissed receipts/reasons and all raw reports, and never suppresses console/page errors. The twelve-job queue must be drained before `supplement.mjs`; its default workflow uses two browsers maximum, while `--recovery-only --serial` allows one earned continuation at a time alongside a separately managed legacy run. Do not run a third browser or browser gate concurrently.
+
+The title Credits control is `#menu-credits`; `#credits` remains the stable HUD currency value. Route policy reads both map-inspection destinations and the selected departure, inspects the chosen destination with a native click, then departs. The first legacy coverage run predates this correction and took the initially inspected branch; it is content coverage, not a controlled balance sample.
+
+## I5 native browser fast mode
+
+Render-free seeded sweeps use the installed game and shared player policy:
+
+```sh
+npm run playtest:sim -- --label=my-cohort --workers=2
+npm run playtest:sim -- --label=my-baseline --game-revision=<commit> --workers=2
+npm run playtest:sim -- --game-revision=b85ac3e --tuning --label=my-historical-tuning --workers=2
+node scripts/nextgen/playtest/balance-summary.mjs artifacts/nextgen/playtest/my-cohort --out=artifacts/nextgen/my-summary.json
+node scripts/nextgen/playtest/native-batch.mjs --label=my-native --seeds=1729,2718 --workers=2 --fast --dist-dir=artifacts/nextgen/my-dist
+```
+
+The simulation defaults to ten fixed seeds for each of the four rigs. Use a new
+label for every batch; existing simulation directories are never overwritten. It records
+immutable bundles, policy/source hashes, deaths, censors and per-room results;
+`--seeds` and `--rigs` select an explicit cohort. It is approximate native-policy
+evidence, so validate the selected numbers in browser campaigns. See
+[`I5-SIM.md`](../../docs/nextgen/I5-SIM.md) for calibration and limitations.
+Native batch workers are limited to one or two; do not overlap browser gates.
+Batch exit zero accepts natural deaths: use each report's `outcome`, not its
+process status, when calculating completion.
+
+The I5 story encounter profile is enabled by
+`src/game/roguelike/i5Tuning.ts`. Current production uses that profile; legacy
+encounter parameters remain unchanged. `--game-revision=c3bd53b` reproduces the
+corrected-policy production baseline before encounter tuning. `--tuning` remains
+available to explicitly enable the profile in a historical source snapshot; it
+changes only the copied bundle, never the working tree, and hashes actual source.
+Historical revisions without the flag reject the switch. See
+[`I5-REPORT.md`](../../docs/nextgen/I5-REPORT.md) for the selected profile and
+current acceptance status. The linked v3 cohort archives retain rejected
+iterations and raw source identities; `I5-AIM-EXPERIMENTS.md` is historical v1
+evidence whose selection was withdrawn.
+
+Reports retain `tuningEnabled` as a build-time provenance field, not an acceptance
+claim. Enabled/disabled and mixed-profile continuations remain separated. Valid
+old checkpoints are unaffected. Both aggregation commands retain these flags;
+only explicitly selected frozen cohorts may support balance acceptance.
+
+`npm run playtest -- --rig=arc --seed=1729 --fast --label=i5-fast-arc-1729`
+keeps native keyboard/mouse actions, the presentation clock, 60 Hz simulation,
+and the real scene/camera/actor update on every tick. It omits only intermediate
+WebGL draw submissions inside each explicit decision batch. The last tick,
+refresh/evidence frames, run boundaries and room-preparation draws remain fully
+rendered. `debug.fastNativeRendering(true)` requires native input; passive
+`--realtime` observation cannot use it. Default playtests, captures and
+`playtest:smoke` continue drawing every tick.
+
+Reports mark `fastRendering:true` and describe the altered draw schedule. Use this
+mode for native policy/campaign validation, never for production CPU/GPU timing,
+draw-call budgets or intermediate visual inspection. Loading holds, browser
+errors and final-frame checks are still recorded without filtering.
+
+`--dist-dir=artifacts/nextgen/i5/candidate-dist` serves an explicit immutable
+build directory instead of `dist`; the resolved directory is retained in the
+report. Native UI/assets and the same `/containment/` path-traversal guard apply.
+Use separate build directories when comparing candidates while another campaign
+is still serving its original build.
+
+## I5 policy version: marine navigation observer v3
+
+New browser and simulation cohorts record `policyVersion:"i5-navigation-observer-v3"`. The movement scorer, target priority, native input,
+weapon/ability decisions and progression choices are unchanged. When approaching
+an occluded or off-screen target, the bot first reads the game's existing navigation waypoint.
+If that waypoint stays within 45 units of the marine, the shared read-only
+`bot-navigation.ts` observer uses a separate marine-clearance path query. The
+observer never replaces `game.navigation`, moves actors, edits resources, changes
+collisions or alters enemy decisions; the browser still traverses the result via
+ordinary held native keys and the existing legal-candidate checks.
+
+This is a narrow **bot policy correction**, not an encounter fix. It addresses
+navigation censors caused by querying the enemy-clearance grid for a marine who
+can stand in narrower legal lanes. Old policy outcomes remain retained; use fresh
+matched before/after cohorts with this same version for balance comparisons.
+The browser report's source hashes include `bot-navigation.ts`. Default diagnostic
+fixtures and native controls are unchanged.
+
+The v3 observer also recovers short waypoints when an enemy has clear line of
+fire but is outside the visible camera area. It preserves useful ordinary
+waypoints; existing scoring still selects among the same legal movement
+candidates. A single `BOT_NAVIGATION_VERSION` constant identifies the helper,
+built debug API and runner. The runner rejects a stale build before gathering
+cohort evidence, and hashes both the helper and version module. Earlier v2
+cohorts remain historical; never combine them with v3 balance outcomes.
 ## G2 world review
 
 `g2-calm-high`, `g2-calm-low`, `g2-kiting-high`, `g2-kiting-low` expand over `--rooms` (supply all20storyIDs). Kiting uses the same legal short G1 backpedal/grenade fixture on both tiers. `g2-title-low` and `g2-boss-low` complement title/boss. `g2-champions`, `g2-pickups` and `g2-queen-exposed` exercise actual promotion, pickup and boss-phase APIs. `g2-legacy-high/low` use legal version2checkpoint paths with recorded deterministic seeds.
@@ -273,3 +406,24 @@ npm run bench:rooms -- --label=p1-rooms-before --dist=artifacts/nextgen/p1/befor
 The production manifest now includes preparation phases, texture uploads, shader-family counts and compile passes. The audit guards room holds at 3 seconds, retained programs at 400, material families at 160 and compile passes at 12; timing misses remain visible on noisy hosts. Existing zero-combat-compilation assertions remain. The combat benchmark additionally records and enforces the P1 330-draw headroom target alongside its original 350-draw budget.
 
 `node scripts/nextgen/restart-stress.mjs --label=p1-restarts --cycles=20` uses native Start/title/Continue actions under CDP CPU/network throttling. It records blob lifetimes, actual decode errors and bitmap closure; it rejects console/page errors, missing room owners and closed images still referenced by live materials.
+
+## I5 corrected ability-aim epoch
+
+`i5-catalog-ability-aim-v3` retains marine-navigation v3 and the existing weapon,
+movement, boon, healing and opportunity heuristics. Shared `ability-aim.ts`
+searches current visible, vulnerable targets using catalog cone/line/chain/
+point-circle/wall shapes, native LOS and legal placement; it also accounts for
+Scorched Fan and the native multi-placement/fanout augments. It scores actual
+pointer picking before choosing each Q/F/V cursor and suppresses targeted casts
+with no eligible target. It restores weapon aim between presses. Evasive dash
+remains governed by movement intent; self-targeted opportunities are unchanged.
+The search is finite and deterministic; it does not predict enemy AI or promise
+perfect future damage. Source hashes include the helper. Browser readiness
+rejects stale policy builds. Never pool this epoch with earlier cohorts.
+
+Native reports record start/latest host load averages and logical core count.
+Fresh room metadata distinguishes node kind, holdouts and planned champions.
+Balance summaries reject mixed known source/backend identities within one named
+cohort; multiple explicit input directories become separate named cohorts.
+Strict ordinary-room cap evidence includes death attempts; unknown historical
+classifications cannot certify it. Broad non-holdout pacing is reported apart.

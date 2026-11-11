@@ -71,7 +71,7 @@ export function createScreens(context: ScreenContext) {
   }
 
   function closeDrawer(): void {
-    const focus=settingsOpen?'settings':controlsOpen?'controls':'credits';
+    const focus=settingsOpen?'settings':controlsOpen?'controls':'menu-credits';
     settingsOpen=false;controlsOpen=false;creditsOpen=false;
     playUiCue(audio,'back');syncScreen(true);el('overlay').querySelector<HTMLElement>(`[id="${focus}"]`)?.focus();
   }
@@ -123,11 +123,11 @@ export function createScreens(context: ScreenContext) {
     listen('start',()=>{playUiCue(audio,'confirm');start();});
     listen('continue',()=>{playUiCue(audio,'confirm');start(true);});
     listen('settings',()=>{settingsOpen=!settingsOpen; creditsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);if(settingsOpen)el('close-drawer')?.focus();});
-    listen('credits',()=>{creditsOpen=!creditsOpen; settingsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);if(creditsOpen)el('close-drawer')?.focus();});
+    listen('menu-credits',()=>{creditsOpen=!creditsOpen; settingsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);if(creditsOpen)el('close-drawer')?.focus();});
     listen('controls',()=>{controlsOpen=!controlsOpen;settingsOpen=false;creditsOpen=false;playUiCue(audio,'tab');syncScreen(true);if(controlsOpen)el('close-drawer')?.focus();});
     listen('close-drawer',closeDrawer);
     listen('graphics-continue',continueGraphics);
-    listen('close-credits',()=>{creditsOpen=false; playUiCue(audio,'back'); syncScreen(true); el('overlay').querySelector<HTMLElement>('button#credits')?.focus();});
+    listen('close-credits',()=>{creditsOpen=false; playUiCue(audio,'back'); syncScreen(true); el('overlay').querySelector<HTMLElement>('button#menu-credits')?.focus();});
     listen('resume',pause);
     listen('menu',()=>{
       game.menu(); settingsOpen=false; creditsOpen=false; controlsOpen=false; pauseTab='resume';

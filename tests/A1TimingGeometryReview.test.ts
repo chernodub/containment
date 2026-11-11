@@ -27,7 +27,7 @@ describe('A1 review: exact ability event-time boundaries',()=>{
       const results=partitions.map(step=>{
         const {game}=arena(d.rig);vi.spyOn(game.enemies,'update').mockReturnValue([]);
         const spawn=game.enemies.spawn('brute',d.slot==='dash'?475:500,440);if(!spawn.spawned)throw Error('spawn');
-        game.setAimPoint({x:500,y:440});if(d.slot==='overdrive')game.abilities.addCharge(6000);
+        game.setAimPoint({x:500,y:440});if(d.slot==='overdrive')game.abilities.addCharge(12000);
         game.useAbility(d.slot);
         advance(game,d.castMs+(d.slot==='dash'?140:0)+(d.durationMs||250)+1500,step);
         return {damage:game.stats.damageDealt,kills:game.stats.kills.total};
@@ -44,8 +44,8 @@ describe('A1 review: exact ability event-time boundaries',()=>{
     });
     expect(results[0].status).toBeGreaterThan(0);expect(results[1]).toEqual(results[0]);expect(results[2]).toEqual(results[0]);
   });
-  it('Napalm first pulse occurs exactly 600ms after press for every partition',()=>{
-    for(const step of partitions){const w=world();w.system.use('power');advance(w.system,600,step);expect(w.hits).toHaveLength(1);expect(w.system.snapshot.zones[0].remainingMs).toBeCloseTo(5750,6);}
+  it('Napalm first pulse occurs exactly 400ms after press for every partition',()=>{
+    for(const step of partitions){const w=world();w.system.use('power');advance(w.system,399,step);expect(w.hits).toHaveLength(0);advance(w.system,1,step);expect(w.hits).toHaveLength(1);expect(w.system.snapshot.zones[0].remainingMs).toBeCloseTo(5750,6);}
   });
   it.each(['cryo','pyro'] as const)('%s final Overdrive pulse retains kill payoffs before ending',rig=>{
     const {game,effects}=arena(rig);vi.spyOn(game.enemies,'update').mockReturnValue([]);
@@ -53,7 +53,7 @@ describe('A1 review: exact ability event-time boundaries',()=>{
     // Pyro native burn is isolated here: aura damage alone kills exactly on the last pulse.
     if(rig==='pyro')vi.spyOn(game['mutations'],'applyAbilityStatus').mockImplementation(()=>{});
     game.damage(spawn.enemy.id,spawn.enemy.health+spawn.enemy.armor-128);
-    game.abilities.addCharge(6000);game.useAbility('overdrive');advance(game,8000);
+    game.abilities.addCharge(12000);game.useAbility('overdrive');advance(game,8000);
     expect(game.stats.kills.total).toBe(1);
     const bursts=effects.filter(e=>e.ability?.phase==='burst'&&e.ability.ability===(rig==='cryo'?'whiteout':'meltdown'));
     expect(bursts).toHaveLength(1);

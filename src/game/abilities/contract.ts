@@ -97,6 +97,8 @@ export type OverdriveSnapshot = Readonly<{
   ready: boolean;
   active: boolean;
   activeRemainingMs: number;
+  /** The room's accepted-use allowance is exhausted; earned charge carries forward. */
+  roomLimited?: boolean;
 }>;
 
 /** A world object created by an ability that persists and can be drawn: barricade, ice wall, pylon. */

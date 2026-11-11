@@ -118,7 +118,7 @@ describe('UI subscription to the production audio director', () => {
   it('plays one real Overdrive-ready cue and one terminal stinger, without shortening either', async () => {
     const {audio,clock,game,sync,events} = await integrated();
     const ready = vi.spyOn(audio,'playUi');
-    game.abilities.addCharge(6000);
+    game.abilities.addCharge(12000);
     game.update(16);
     expect(events.some(event => event.ability?.phase === 'overdrive-ready')).toBe(true);
     expect(ready.mock.calls.filter(([cue]) => cue === 'overdrive-ready')).toHaveLength(1);
@@ -164,7 +164,7 @@ describe('UI subscription to the production audio director', () => {
 
   it('clears a real Whiteout loop on same-environment revision and on menu exit', async () => {
     const {audio,clock,game,sync} = await integrated();
-    game.abilities.addCharge(6000);
+    game.abilities.addCharge(12000);
     expect(game.useAbility('overdrive')).toBe(true);
     game.update(50); sync();
     expect(audio.diagnostics.loops).toBeGreaterThan(0);

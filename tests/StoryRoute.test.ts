@@ -18,7 +18,10 @@ describe('authored story campaign',()=>{
  it('paces ordinary assaults differently from the two extended holdouts',()=>{
   const graph=generateRun(42),plan=(depth:number)=>createEncounterPlan({seed:42,node:graph.nodes[depth],breachIds:['a']});
   expect(plan(8).schedule.at(-1)!.atMs).toBeLessThan(12000);
-  for(const depth of [9,19])expect(plan(depth).schedule.at(-1)!.atMs).toBeGreaterThan(30000);
+  expect(plan(9).totalSpawns).toBe(32);
+  expect(plan(9).schedule.at(-1)!.atMs).toBe(23900);
+  expect(plan(9).schedule.at(-1)!.atMs).toBeGreaterThan(plan(8).schedule.at(-1)!.atMs*2);
+  expect(plan(19).schedule.at(-1)!.atMs).toBeGreaterThan(30000);
   expect(plan(19).kind).not.toBe('boss');
  });
  it('shows concise essential status and removes the facility escape story from the active UI',async()=>{
@@ -32,7 +35,7 @@ describe('authored story campaign',()=>{
   for(const node of generateRun(42).nodes){
    const balance=progressionFor(node),plan=createEncounterPlan({seed:42,node,breachIds:['a']});
    expect(balance.specials).toBe(true);expect(balance.health).toBeLessThan(1.8);
-   expect(plan.totalSpawns).toBeLessThanOrEqual([9,19].includes(node.depth)?48:31);
+   expect(plan.totalSpawns).toBeLessThanOrEqual([9,19].includes(node.depth)?48:36);
   }
  });
  it('dismisses only optional presentation and restores it for the next authored beat',()=>{

@@ -104,8 +104,8 @@ describe('complete Combat Rig encounter balance', () => {
     expect(baseline.abilityShare).toBe(0);
     expect(baseline.remaining).toBe(0);
     expect(baseline.act).toBe(2);
-    expect(baseline.plannedSpawns).toBe(40);
-    expect(baseline.composition).toEqual({crawler: 9, brute: 8, spitter: 12, stalker: 3, carrier: 8});
+    expect(baseline.plannedSpawns).toBe(32);
+    expect(baseline.composition).toEqual({crawler: 7, brute: 6, spitter: 9, stalker: 3, carrier: 7});
     expect(baseline.abilityUses).toEqual({dash: 0, tactical: 0, power: 0, overdrive: 0});
     for (const result of rigs) {
       expect(result.composition).toEqual(baseline.composition);

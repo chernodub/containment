@@ -29,8 +29,8 @@ async function stageAbility({ rig, slot, id, nativeInput = false }) {
     if (!d.canStand(x, y, 28) || !d.clearShot(x, y) || !d.spawn('brute', x, y)) throw Error(`Illegal ability target ${x},${y}`);
   }
   g.setAimPoint({ x: 320, y: 220 });
-  if (nativeInput) { g.abilities.addCharge(6000); d.refresh(); return; }
-  if (slot === 'overdrive') g.abilities.addCharge(6000);
+  if (nativeInput) { d.fillOverdrive(); d.refresh(); return; }
+  if (slot === 'overdrive') d.fillOverdrive();
   if (!g.useAbility(slot)) throw Error(`Ability denied: ${id}`);
   const windup = g.abilities.snapshot.slots[slot].castRemainingMs;
   const aftermath = id === 'whiteout' ? 2100 : slot === 'dash' ? 440 : id === 'meltdown' ? 1000 : id === 'tesla-pylon' ? 520 : 30;
