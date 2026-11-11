@@ -12,7 +12,7 @@ const deckTint: Readonly<Record<ShipEnvironment, number>> = {
   communications: 0xeff6f9, engineering: 0xf9f6ee, maintenance: 0xeff7f3,
   infested: 0xf1f6f0, containment: 0xf4f3fa, reactor: 0xf9f4ed,
 };
-const readableSteel = new T.Color(0x8d9498);
+const readableSteel = new T.Color(0x657481);
 const reactorSteel = new T.Color(0x626b73);
 
 /** Tune room-owned surfaces and hot fixtures without changing warning, enemy or navigation colors. */
@@ -38,7 +38,7 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
           // Original near-black paint multiplied by colored light hid traversable floor below sRGB 30.
           material.color.copy(original.color).lerp(environment==='reactor'?reactorSteel:readableSteel, .85).multiply(tint);
         } else {
-          material.color.copy(material.userData.roomBaseColor ?? original.color).lerp(new T.Color(environment==='reactor'?0x747e88:0xb0b8bd),.8).multiply(tint);
+          material.color.copy(material.userData.roomBaseColor ?? original.color).lerp(new T.Color(environment==='reactor'?0x747e88:0x8896a1),.8).multiply(tint);
         }
         applyFloorVariation(material, environment);
       }

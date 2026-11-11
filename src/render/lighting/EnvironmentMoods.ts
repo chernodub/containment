@@ -38,26 +38,33 @@ function artMood(base: EnvironmentMood, overrides: Partial<EnvironmentMood>): En
   return Object.freeze({ ...base, ...overrides });
 }
 
+
+/** Low broad illumination leaves room for motivated colored practicals and stable cast shadows. */
+function localMood(environment: ShipEnvironment, keyColor: number, accent: number, behavior: PracticalBehavior,
+  fog: number, roughness: number, ambient: number, key: number, fill: number, rim: number,
+  practical: number, distance: number, keyHeight: number, sky: number, fillColor = 0x92b2d3): EnvironmentMood {
+  return artMood(mood(environment,keyColor,accent,behavior,fog,1.06,.97,roughness,ambient,practical), {
+    ambient: Object.freeze({ sky, ground: 0x303c4c, intensity: ambient }),
+    key: Object.freeze({ color: keyColor, intensity: key, offset: [-16,keyHeight,10] as RGB }),
+    fill: Object.freeze({ color: fillColor, intensity: fill, offset: [8,10,-12] as RGB }),
+    rim: Object.freeze({ color: accent, intensity: rim, offset: [5,6,-9] as RGB }),
+    practical: Object.freeze({ color: accent, intensity: practical, distance, behavior }),
+    grade: Object.freeze({ exposure: 1.06, saturation: .97, contrast: 1.025,
+      lift: [.0002,.00035,.0005] as RGB, gain: [1,1,1] as RGB, shadowTint: 0x8e9eb2, highlightTint: 0xe9e7e3 }),
+  });
+}
+
 /** All ten ship environments have a distinct, authored lighting and grading palette. */
 export const ENVIRONMENT_MOODS: Readonly<Record<ShipEnvironment, EnvironmentMood>> = Object.freeze({
-  cryogenics: mood('cryogenics', 0xe4f0f8, 0x86dcff, 'steady', 0x8397a2, 1.14, .96, .86, .8, 12),
-  habitation: artMood(mood('habitation', 0xffecdb, 0xffb968, 'flicker', 0x8b8580, 1.14, .97, .91, .8, 18), {
-    fill: Object.freeze({ color: 0xc1cbd5, intensity: .9, offset: [8, 10, -12] as RGB }),
-  }),
-  security: artMood(mood('security', 0xf1f4ff, 0xff513d, 'alarm', 0x6c7888, 1.12, .95, .82, .8, 18), {
-    key: Object.freeze({ color: 0xf1f4ff, intensity: 3.5, offset: [-16, 14, 10] as RGB }),
-  }),
-  cargo: mood('cargo', 0xffe6c7, 0xffa54d, 'steady', 0x8b8375, 1.16, .96, .94, .82, 16),
-  communications: mood('communications', 0xd6e7ee, 0x58e4bc, 'flicker', 0x687b87, 1.17, .96, .86, .82, 12),
-  engineering: mood('engineering', 0xffebcd, 0xffbb47, 'flicker', 0x8b8374, 1.15, .97, .88, .8, 15),
-  maintenance: mood('maintenance', 0xdcebe5, 0x73d7af, 'flicker', 0x6f8981, 1.16, .95, .28, .82, 12),
-  infested: artMood(mood('infested', 0xc9ded0, 0xa8ff72, 'pulse', 0x768579, 1.18, .97, .9, .82, 13), {
-    // Neutral moonlight keeps yellow safety paint and enemy silhouettes readable between organic pools.
-    key: Object.freeze({ color: 0xc9ded0, intensity: 3.2, offset: [-14, 10, 9] as RGB }),
-    fill: Object.freeze({ color: 0xc1cbdc, intensity: 1, offset: [8, 7, -12] as RGB }),
-    rim: Object.freeze({ color: 0xe26acf, intensity: 1.6, offset: [6, 6, -9] as RGB }),
-  }),
-  containment: mood('containment', 0xebf1ff, 0xb99bff, 'pulse', 0x818594, 1.13, .95, .82, .8, 13),
+  cryogenics: localMood('cryogenics',0xd9efff,0x86dcff,'steady',0x8397a2,.86,.14,1.65,.30,.28,100,8,10,0x839db6),
+  habitation: localMood('habitation',0xffe0bc,0xffb968,'flicker',0x8b8580,.91,.12,1.6,.29,.28,115,8.8,9,0x7b8fa8),
+  security: localMood('security',0xf1f4ff,0xff513d,'alarm',0x6c7888,.82,.10,1.8,.30,.25,110,7.2,12,0x7c91a9),
+  cargo: localMood('cargo',0xffd398,0xffa54d,'steady',0x8b8375,.94,.12,1.65,.30,.28,130,9.6,8,0x8293a7),
+  communications: localMood('communications',0xbddfe9,0x58e4bc,'flicker',0x687b87,.86,.12,1.5,.28,.30,90,6.8,10,0x769ba8),
+  engineering: localMood('engineering',0xffe2a9,0xffbb47,'flicker',0x8b8374,.88,.12,1.7,.31,.28,120,8.8,9,0x85949f),
+  maintenance: localMood('maintenance',0xc0e0d6,0x73d7af,'flicker',0x6f8981,.28,.14,1.5,.28,.30,95,8,9,0x789d99),
+  infested: artMood(localMood('infested',0xb7d7b0,0xa8ff72,'pulse',0x768579,.9,.10,1.4,.26,.35,85,8.4,8,0x718a86),{rim:Object.freeze({color:0xe26acf,intensity:.35,offset:[6,6,-9] as RGB})}),
+  containment: localMood('containment',0xe4ebff,0xb99bff,'pulse',0x818594,.82,.16,1.65,.30,.32,105,7.6,11,0x8a94b1),
   reactor: artMood(mood('reactor', 0xffe0bc, 0xff8a39, 'reactor', 0x596675, 1.06, .97, .85, .24, 18), {
     ambient: Object.freeze({ sky: 0x8294aa, ground: 0x303c4c, intensity: .08 }),
     key: Object.freeze({ color: 0xffa14b, intensity: 1.7, offset: [0, 3.2, 0] as RGB }),

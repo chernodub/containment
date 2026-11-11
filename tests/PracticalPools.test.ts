@@ -35,7 +35,7 @@ it('keeps physical practical origins and retires per-room instance buffers and m
  disposeModel(room);for(const spy of [...geometries,...materials,...buffers])expect(spy).toHaveBeenCalledOnce();
 });
 
-it('keeps reactor bounce hue and darker gaps while leaving other environment pools unchanged',()=>{
+it('keeps actual bounce hue and defined gaps in every environment while preserving the reactor footprint',()=>{
  const scene=new T.Scene(),pools=new PracticalPools(scene),light=new T.PointLight(0xff6a28,18,7.5);
  light.position.set(3,2,5);light.userData.reactorMood=true;pools.update([light],true);
  const color=new T.Color(),matrix=new T.Matrix4();pools.root.getColorAt(0,color);pools.root.getMatrixAt(0,matrix);
@@ -43,7 +43,8 @@ it('keeps reactor bounce hue and darker gaps while leaving other environment poo
  expect(new T.Vector3().setFromMatrixScale(matrix).x).toBeCloseTo(3.6);
  expect(pools.root.geometry.getAttribute('reactorPoolAmount').getX(0)).toBe(1);
  light.userData.reactorMood=false;pools.update([light],true);pools.root.getColorAt(0,color);
- expect(color.g/color.r).toBeGreaterThan(light.color.g/light.color.r);
- expect(pools.root.geometry.getAttribute('reactorPoolAmount').getX(0)).toBe(0);
+ expect(color.g/color.r).toBeCloseTo(light.color.g/light.color.r);
+ pools.root.getMatrixAt(0,matrix);expect(new T.Vector3().setFromMatrixScale(matrix).x).toBeCloseTo(3.75);
+ expect(pools.root.geometry.getAttribute('reactorPoolAmount').getX(0)).toBe(1);
  pools.dispose();
 });

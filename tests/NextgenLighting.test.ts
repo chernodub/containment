@@ -18,7 +18,9 @@ describe('environment color script', () => {
     for (const mood of moods) {
       expect(Object.isFrozen(mood)).toBe(true);
       expect(getEnvironmentMood(mood.environment)).toBe(mood);
-      expect(mood.ambient.intensity).toBeGreaterThanOrEqual(mood.environment==='reactor'?.05:.45);
+      expect(mood.ambient.intensity).toBeGreaterThanOrEqual(.05);
+      expect(mood.key.intensity/mood.fill.intensity).toBeGreaterThanOrEqual(4);
+      expect(mood.key.intensity/mood.fill.intensity).toBeLessThanOrEqual(6);
       expect(mood.ambient.intensity).toBeLessThan(mood.key.intensity / 2);
       expect(mood.grade.exposure).toBeGreaterThan(.8);
       expect(mood.fog.density).toBeLessThan(.03);
@@ -219,10 +221,13 @@ it('exposes each shader count for prewarming and restores same-frame live visibi
   expect(visible()).toBe(2); pool.dispose();
 });
 
-it('keeps broad illumination and deck albedo readable while practical hues define the room', () => {
+it('preserves directional contrast, neutral steel and a stable local readability helper', () => {
   for (const mood of Object.values(ENVIRONMENT_MOODS)) {
-    expect(mood.key.intensity/mood.fill.intensity).toBeGreaterThanOrEqual(3);
-    if(mood.environment!=='reactor'){expect(mood.ambient.intensity).toBeGreaterThanOrEqual(.78);expect(mood.fill.intensity).toBeGreaterThanOrEqual(.8);}
+    expect(mood.key.intensity/mood.fill.intensity).toBeGreaterThanOrEqual(4);
+    expect(mood.key.intensity/mood.fill.intensity).toBeLessThanOrEqual(6);
+    const rig=new SceneLighting();rig.loadRoom(new T.Group(),24,18,mood.environment);
+    expect(rig.key.castShadow).toBe(true);expect(rig.lamp.suitFill.visible).toBe(true);
+    expect(rig.lamp.suitFill.intensity).toBe(24);expect(rig.lamp.suitFill.distance).toBe(4.8);rig.dispose();
     expect(mood.grade.exposure).toBeGreaterThanOrEqual(1);
     expect(mood.grade.contrast).toBeLessThan(1.03);
     const room = new T.Group(), deck = new T.MeshStandardMaterial({ color: 0x263238, roughness: .91 });
@@ -230,8 +235,8 @@ it('keeps broad illumination and deck albedo readable while practical hues defin
     applyRoomMood(room, mood.environment);
     const channels = [deck.color.r, deck.color.g, deck.color.b];
     // Albedo stays neutral enough to preserve steel and hazard markings under local colored pools.
-    expect(Math.min(...channels)).toBeGreaterThan(mood.environment==='reactor'?.07:.17);
-    expect(Math.max(...channels) / Math.min(...channels)).toBeLessThan(1.6);
+    expect(Math.min(...channels)).toBeGreaterThan(.05);
+    expect(Math.max(...channels) / Math.min(...channels)).toBeLessThan(2.2);
     room.children.forEach(object => (object as T.Mesh).geometry.dispose()); deck.dispose();
   }
   const reactor = getEnvironmentMood('reactor');
@@ -270,7 +275,7 @@ it('motivates the reactor shadow key from actual below-deck emitter geometry and
   expect(rig.mood.key.intensity/rig.mood.fill.intensity).toBeLessThanOrEqual(6);
   expect(rig.lamp.suitFill.visible).toBe(true);expect(rig.lamp.suitFill.distance).toBeGreaterThanOrEqual(4);
   rig.setQuality('low');expect(rig.key.castShadow).toBe(false);
-  rig.loadRoom(room, 48, 36, 'cryogenics');expect(rig.lamp.suitFill.visible).toBe(false);
+  rig.loadRoom(room, 48, 36, 'cryogenics');expect(rig.lamp.suitFill.visible).toBe(true);
   rig.loadRoom(room, 48, 36, 'reactor', 'overload-floor');expect(rig.key.castShadow).toBe(false);
   rig.dispose();emitter.geometry.dispose();(emitter.material as T.Material).dispose();
 });
@@ -282,4 +287,18 @@ it('retires both active and inactive key shadow targets on graphics loss',()=>{
  const a=vi.spyOn(coreTarget,'dispose'),b=vi.spyOn(directionalTarget,'dispose');rig.invalidateShadows();
  expect(a).toHaveBeenCalledOnce();expect(b).toHaveBeenCalledOnce();expect(rig.key.shadow.map).toBeNull();
  rig.loadRoom(room,48,36,'reactor');expect(rig.key.shadow.map).toBeNull();rig.dispose();
+});
+
+it('lights real fixture locations with palette energy and preserves colored pools across movement',()=>{
+ const rig=new SceneLighting(),room=new T.Group();room.userData.lightFixtures=Array.from({length:8},(_,i)=>({x:i*3,y:2,z:4,color:0x55bbdd}));
+ for(const environment of Object.keys(ENVIRONMENT_MOODS) as (keyof typeof ENVIRONMENT_MOODS)[]){
+  rig.loadRoom(room,28,18,environment);rig.setPlayer(8,6,0);
+  expect(rig.fixtures.filter(light=>light.intensity>0)).toHaveLength(4);
+  for(const light of rig.fixtures){
+   expect(room.userData.lightFixtures.some((fixture:{x:number;y:number;z:number})=>light.position.equals(new T.Vector3(fixture.x,fixture.y,fixture.z)))).toBe(true);
+   expect(light.intensity).toBe(getEnvironmentMood(environment).practical.intensity);
+  }
+  if(environment!=='reactor'){expect(rig.mood.practical.intensity).toBeGreaterThanOrEqual(80);expect(rig.mood.practical.intensity).toBeLessThanOrEqual(140);}
+ }
+ rig.dispose();
 });

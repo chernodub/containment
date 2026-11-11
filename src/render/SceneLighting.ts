@@ -77,8 +77,8 @@ export class SceneLighting {
    if(fixture){
     light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);
     if(!core&&!fixture.nativeColor){
-     const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.practical.color;
-     light.color.lerp(new T.Color(accent),this.mood.environment==='reactor'||this.mood.environment==='infested'?.92:.32);
+     const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.environment==='security'&&i%2?0xf1f4ff:this.mood.practical.color;
+     light.color.lerp(new T.Color(accent),this.mood.environment==='reactor'?.92:.9);
     }
     light.distance=core?10:this.mood.environment==='reactor'?7.5:this.mood.practical.distance;
    }
@@ -101,7 +101,7 @@ export class SceneLighting {
    light.userData.reactorCore=core;light.userData.reactorMood=this.mood.environment==='reactor';
    if(!fixture){light.intensity=0;continue;}
    light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);
-   if(!core&&!fixture.nativeColor){const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.environment==='security'&&i%2?0xf1f4ff:this.mood.practical.color;this.fixtureTint.setHex(accent);light.color.lerp(this.fixtureTint,this.mood.environment==='reactor'||this.mood.environment==='infested'||this.mood.environment==='security'?.92:.5);}
+   if(!core&&!fixture.nativeColor){const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.environment==='security'&&i%2?0xf1f4ff:this.mood.practical.color;this.fixtureTint.setHex(accent);light.color.lerp(this.fixtureTint,this.mood.environment==='reactor'?.92:.9);}
    light.distance=core?10:this.mood.environment==='reactor'?7.5:this.mood.practical.distance;
    light.intensity=light.visible?(core?14:this.mood.practical.intensity):0;
   }
@@ -136,7 +136,7 @@ export class SceneLighting {
   return{coreX:(bounds.min.x+bounds.max.x)/2,coreY:3.2,coreZ:(bounds.min.z+bounds.max.z)/2,coreColor:0xffdfad,coreRadius:Math.max(bounds.max.x-bounds.min.x,bounds.max.z-bounds.min.z)/2};
  }
  private applyMood(width:number,height:number){
-  const mood=this.mood;const reactor=mood.environment==='reactor';this.key.castShadow=this.tier==='high'&&this.shadowQuality!=='off';this.directionalKey.visible=!reactor;this.coreKey.visible=reactor;this.lamp.setReactor(reactor);this.ambient.color.setHex(mood.ambient.sky);this.ambient.groundColor.setHex(mood.ambient.ground);this.ambient.intensity=mood.ambient.intensity;
+  const mood=this.mood;const reactor=mood.environment==='reactor';this.key.castShadow=this.tier==='high'&&this.shadowQuality!=='off';this.directionalKey.visible=!reactor;this.coreKey.visible=reactor;this.lamp.setRoom();this.ambient.color.setHex(mood.ambient.sky);this.ambient.groundColor.setHex(mood.ambient.ground);this.ambient.intensity=mood.ambient.intensity;
   this.lamp.light.intensity=mood.environment==='infested'?8:12;
   for(const [light,data] of [[this.key,mood.key],[this.fill,mood.fill],[this.rim,mood.rim]] as const){light.color.setHex(data.color);light.intensity=data.intensity;light.target.position.set(width/2,0,height/2);light.position.set(width/2+data.offset[0],data.offset[1],height/2+data.offset[2]);}
   if(reactor){

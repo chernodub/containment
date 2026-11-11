@@ -6,7 +6,6 @@ export class PracticalPools {
   readonly root: T.InstancedMesh<T.PlaneGeometry,T.ShaderMaterial>;
   private readonly dummy = new T.Object3D();
   private readonly color = new T.Color();
-  private readonly fillColor = new T.Color(0xdbe4e8);
   constructor(scene:T.Scene) {
     const geometry=new T.PlaneGeometry(2,2);geometry.rotateX(-Math.PI/2);geometry.setAttribute('reactorPoolAmount',new T.InstancedBufferAttribute(new Float32Array(4),1));
     const material=new T.ShaderMaterial({
@@ -27,9 +26,9 @@ export class PracticalPools {
     for(const fixture of fixtures){
       if(!fixture.visible||fixture.intensity<=0||count>=(high?4:2))continue;
       const reactor=!!fixture.userData.reactorMood;
-      const radius=reactor?Math.min(5.2,Math.max(2.8,fixture.distance*.48)):Math.min(6.5,Math.max(3,fixture.distance*.72));
+      const radius=reactor?Math.min(5.2,Math.max(2.8,fixture.distance*.48)):Math.min(4.8,Math.max(3.3,fixture.distance*.5));
       this.dummy.position.set(fixture.position.x,.035,fixture.position.z);this.dummy.scale.set(radius,1,radius);this.dummy.updateMatrix();this.root.setMatrixAt(count,this.dummy.matrix);
-      this.color.copy(fixture.color);if(!reactor)this.color.lerp(this.fillColor,.48);this.color.multiplyScalar(Math.min(1.5,.6+fixture.intensity/32));this.root.setColorAt(count,this.color);(this.root.geometry.getAttribute('reactorPoolAmount') as T.InstancedBufferAttribute).setX(count,reactor?1:0);count++;
+      this.color.copy(fixture.color);this.color.multiplyScalar(Math.min(1.5,.6+fixture.intensity/32));this.root.setColorAt(count,this.color);(this.root.geometry.getAttribute('reactorPoolAmount') as T.InstancedBufferAttribute).setX(count,1);count++;
     }
     this.root.count=count;this.root.geometry.getAttribute('reactorPoolAmount').needsUpdate=true;this.root.instanceMatrix.needsUpdate=true;if(this.root.instanceColor)this.root.instanceColor.needsUpdate=true;
   }
