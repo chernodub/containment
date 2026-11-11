@@ -60,55 +60,67 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         float roomFloorScuff=roomFloorNoise(roomFloorP*vec2(0.11,2.8));
         float roomFloorWet=smoothstep(0.46,0.72,roomFloorMacro)*roomFloorWetness;
         diffuseColor.rgb*=1.0-roomFloorGrime*(roomFloorStain*0.5+roomFloorScuff*0.15)-roomFloorWet*0.08;
-        // Large un-staggered ship plates replace the small brick image. Individual
-        // plates vary by their world position; scratches cross their boundaries.
-        vec2 deckCell=floor(roomFloorP/roomFloorPattern.xy);
-        vec2 deckUV=fract(roomFloorP/roomFloorPattern.xy);
-        vec2 deckEdge=min(deckUV,1.0-deckUV)*roomFloorPattern.xy;
+        // Large replacement plates have irregular service cuts rather than a
+        // second perfectly regular grid. Wear crosses those structural joints.
+        float deckRow=floor(roomFloorP.y/roomFloorPattern.y);
+        float deckSpan=roomFloorPattern.x*(.88+roomFloorHash(vec2(deckRow,17.0))*.24);
+        float deckOffset=roomFloorHash(vec2(deckRow,73.0))*deckSpan*.7;
+        vec2 deckSize=vec2(deckSpan,roomFloorPattern.y);
+        vec2 deckChart=vec2(roomFloorP.x+deckOffset,roomFloorP.y)/deckSize;
+        vec2 deckCell=floor(deckChart);
+        vec2 deckUV=fract(deckChart);
+        vec2 deckEdge=min(deckUV,1.0-deckUV)*deckSize;
         float deckJoint=roomFloorLine(min(deckEdge.x,deckEdge.y),.013);
         float deckWear=roomFloorLine(min(deckEdge.x,deckEdge.y),.032)-deckJoint;
         float deckIdentity=roomFloorPattern.z;
         float deckGrain=roomFloorNoise(roomFloorP*vec2(2.3,37.0))-.5;
-        float deckScrape=smoothstep(.71,.87,roomFloorNoise(roomFloorP*vec2(.14,6.7)))*roomFloorNoise(roomFloorP*.57);
+        float deckRub=roomFloorNoise(roomFloorP*vec2(.14,6.7));
+        float deckCloud=roomFloorNoise(roomFloorP*.57);
+        float deckScrape=smoothstep(.58,.78,deckRub)*deckCloud;
+        float deckSilt=smoothstep(.42,.78,roomFloorStain+roomFloorScuff*.2);
+        float deckScratch=smoothstep(.76,.9,roomFloorNoise(roomFloorP*vec2(.23,31.0)))*smoothstep(.22,.72,deckCloud);
         float deckPanel=roomFloorHash(deckCell+vec2(7.0,29.0));
         ${genericDeck ? `diffuseColor.rgb*=.96+deckPanel*.08;
-        diffuseColor.rgb*=1.0-deckJoint*.35;
+        diffuseColor.rgb*=1.0-deckJoint*.19;
         diffuseColor.rgb+=vec3(.006,.008,.009)*deckWear;` : ''}
-        diffuseColor.rgb*=1.0+deckGrain*roomFloorPattern.w+deckScrape*.045;
+        // Centered masks retain the calibrated average reflectance while worn
+        // islands and wheel scrapes become visible under broad practical light.
+        diffuseColor.rgb*=1.0+(deckCloud-.5)*.26+(deckScrape-.12)*.16-(deckSilt-.58)*.095+deckGrain*roomFloorPattern.w;
+        diffuseColor.rgb+=vec3(.006,.007,.007)*deckScratch;
         if(deckIdentity<.5){
           float frost=smoothstep(.58,.83,roomFloorNoise(roomFloorP*.45)+deckWear*.18);
-          diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.08,1.13,1.16),frost*.35);
+          diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.08,1.13,1.16),frost*.5);
         }else if(deckIdentity<1.5){
-          diffuseColor.rgb*=1.0+sin(roomFloorP.x*15.0+roomFloorNoise(roomFloorP*.4))*.008;
+          diffuseColor.rgb*=1.0+sin(roomFloorP.x*15.0+roomFloorNoise(roomFloorP*.4))*.014;
         }else if(deckIdentity<2.5){
           float tread=roomFloorLine(abs(fract((roomFloorP.x+roomFloorP.y)*7.5)-.5),.025);
           diffuseColor.rgb*=1.0-tread*.045;
         }else if(deckIdentity<3.5){
-          diffuseColor.rgb*=1.0-deckScrape*.11;
+          diffuseColor.rgb*=1.0-(deckScrape-.12)*.18;
         }else if(deckIdentity<4.5){
           float access=roomFloorLine(abs(fract(roomFloorP.x/2.2)-.5),.006)*roomFloorLine(abs(fract(roomFloorP.y/2.2)-.5),.035);
           diffuseColor.rgb*=1.0-access*.2;
         }else if(deckIdentity<5.5){
           vec2 grateUV=fract(roomFloorP*vec2(1.35,8.0));
           float grate=smoothstep(.18,.23,grateUV.x)*(1.0-smoothstep(.77,.82,grateUV.x))*smoothstep(.2,.28,grateUV.y)*(1.0-smoothstep(.64,.72,grateUV.y));
-          diffuseColor.rgb*=1.0-grate*.11;
+          diffuseColor.rgb*=1.0-(grate-.13)*.19;
         }else if(deckIdentity<6.5){
           diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.91,1.015,1.035),roomFloorWet*.16);
         }else if(deckIdentity<7.5){
           float tissue=roomFloorNoise(roomFloorP*.34+vec2(roomFloorNoise(roomFloorP*.7)*1.8));
           float vein=1.0-smoothstep(.018,.055,abs(tissue-.54));
-          diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.72,.94,.78),vein*.22+smoothstep(.6,.82,tissue)*.14);
+          diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.72,.94,.78),vein*.34+smoothstep(.6,.82,tissue)*.2);
         }else if(deckIdentity<8.5){
           diffuseColor.rgb*=1.0-deckGrain*.012;
         }else{
           float heat=smoothstep(.42,.8,roomFloorNoise(roomFloorP*.22)+deckScrape*.18);
-          diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.09,.94,.89),heat*.35);
+          diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.09,.94,.89),heat*.5);
         }`);
       shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
         float roomFloorPolish=smoothstep(0.28,0.82,roomFloorMacro)*(1.0-roomFloorStain*0.25);
-        roughnessFactor=clamp(roughnessFactor-roomFloorPolish*0.34-roomFloorScuff*0.08+roomFloorStain*0.06-roomFloorWet*0.19+deckGrain*.035,mix(0.38,0.14,roomFloorWetness),1.0);`);
+        roughnessFactor=clamp(roughnessFactor-roomFloorPolish*0.38-roomFloorScuff*0.08+roomFloorStain*0.12-roomFloorWet*0.19-(deckScrape-.12)*.24+(deckSilt-.58)*.14+deckGrain*.045,mix(0.38,0.14,roomFloorWetness),1.0);`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v3:${genericDeck ? 'plates' : 'authored'}`;
+    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v4:${genericDeck ? 'plates' : 'authored'}`;
     material.needsUpdate = true;
   }
   uniforms.pattern.value.fromArray(patterns[environment]);

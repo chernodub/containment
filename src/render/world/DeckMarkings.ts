@@ -81,9 +81,16 @@ export function addDeckMarkings(world: T.Object3D, template: RoomTemplate, envir
     for(let j=0;j<text.length;j++){
       const glyph=glyphs[text[j]];if(!glyph)continue;
       for(let row=0;row<5;row++)for(let col=0;col<3;col++)if(glyph[row][col]==='1'){
-        const px=x+(j*4+col)*pixel,pz=z+row*pixel;
-        // Gaps between bars make this a deck stencil instead of floating type.
-        quad(px,pz,pixel*.80,pixel*.86,color);
+        const start=col;while(col+1<3&&glyph[row][col+1]==='1')col++;
+        const length=(col-start+1)*pixel,steps=Math.max(1,Math.ceil(length/.075));
+        // Continuous bars and a single mid-glyph bridge read as a real stencil.
+        // Sparse chipped paint interrupts the edge instead of a square LED grid.
+        for(let k=0;k<steps;k++){
+          const px=x+(j*4+start-.5)*pixel+(k+.5)*length/steps,pz=z+row*pixel;
+          const age=hash(px+17.3,pz-9.1);if(age<.025&&steps>2)continue;
+          const bridge=row===2?.94:1.015;
+          quad(px,pz,length/steps*.995,pixel*bridge*(.94+age*.06),color);
+        }
       }
     }
   };
