@@ -27,7 +27,7 @@ describe('A1 review: exact ability event-time boundaries',()=>{
       const results=partitions.map(step=>{
         const {game}=arena(d.rig);vi.spyOn(game.enemies,'update').mockReturnValue([]);
         const spawn=game.enemies.spawn('brute',d.slot==='dash'?475:500,440);if(!spawn.spawned)throw Error('spawn');
-        game.setAimPoint({x:500,y:440});if(d.slot==='overdrive')game.abilities.addCharge(6000);
+        game.setAimPoint({x:500,y:440});if(d.slot==='overdrive')game.abilities.addCharge(12000);
         game.useAbility(d.slot);
         advance(game,d.castMs+(d.slot==='dash'?140:0)+(d.durationMs||250)+1500,step);
         return {damage:game.stats.damageDealt,kills:game.stats.kills.total};
@@ -53,7 +53,7 @@ describe('A1 review: exact ability event-time boundaries',()=>{
     // Pyro native burn is isolated here: aura damage alone kills exactly on the last pulse.
     if(rig==='pyro')vi.spyOn(game['mutations'],'applyAbilityStatus').mockImplementation(()=>{});
     game.damage(spawn.enemy.id,spawn.enemy.health+spawn.enemy.armor-128);
-    game.abilities.addCharge(6000);game.useAbility('overdrive');advance(game,8000);
+    game.abilities.addCharge(12000);game.useAbility('overdrive');advance(game,8000);
     expect(game.stats.kills.total).toBe(1);
     const bursts=effects.filter(e=>e.ability?.phase==='burst'&&e.ability.ability===(rig==='cryo'?'whiteout':'meltdown'));
     expect(bursts).toHaveLength(1);

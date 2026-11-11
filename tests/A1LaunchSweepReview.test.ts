@@ -84,7 +84,7 @@ describe('launch body sweeps', () => {
     const b = game.enemies.spawn('crawler', 600, 500);
     if (!a.spawned || !b.spawned) throw new Error('Expected both enemies');
     game.damage(a.enemy.id, a.enemy.health + a.enemy.armor - 1);
-    game.abilities.addCharge(6000);
+    game.abilities.addCharge(12000);
     expect(game.useAbility('overdrive')).toBe(true);
     advance(game, 650, step);
     expect(game.stats.damageDealt.boon).toBe(24);

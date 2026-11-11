@@ -1,6 +1,7 @@
 import type { StandardEnemyId } from '../enemies/types';
 import type { RunNode } from '../roguelike/types';
 import { generateRun } from '../roguelike/run';
+import {progressionFor} from '../roguelike/progression';
 
 export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
@@ -33,8 +34,9 @@ export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
   const combat = node.kind === 'combat' || node.kind === 'elite';
   if (combat && breachIds.length === 0) throw new Error('Combat encounters need at least one breach.');
   const story=node.id.includes(':v3-'),holdout=story&&(node.depth===9||node.depth===19);
-  const totalSpawns = combat ? story ? holdout ? (node.depth===9?40:48) : 12+Math.round(node.depth*.7)+(node.kind==='elite'?5:0) : Math.round((12 + node.depth * 3 + (node.kind === 'elite' ? 5 : 0))*(node.id.includes(':v2-')?1.25:1)) : 0;
-  const concurrentCap = combat ? Math.min(18, 7 + Math.floor(node.depth * .8) + (node.kind === 'elite' ? 2 : 0)) : 0;
+  const totalSpawns = combat ? story ? holdout ? (node.depth===9?32:48) : 12+Math.round(node.depth*.7)+(node.kind==='elite'?5:0) : Math.round((12 + node.depth * 3 + (node.kind === 'elite' ? 5 : 0))*(node.id.includes(':v2-')?1.25:1)) : 0;
+  const pressureAct=story?Math.floor(node.depth/5):0;
+  const concurrentCap = combat ? Math.min(story?20:18, 7 + Math.floor(node.depth * .8) + (node.kind === 'elite' ? 2 : 0)+(story&&!holdout?Math.min(2,pressureAct):0)) : 0;
   let randomState = (options.seed ^ Math.imul(node.depth + 1, 0x9e3779b9) ^ (node.kind === 'elite' ? 0xabc123 : 0)) >>> 0;
   const random = (): number => {
     randomState = (randomState + 0x6d2b79f5) >>> 0;
@@ -42,15 +44,19 @@ export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
     value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
     return ((value ^ (value >>> 14)) >>> 0) / 0x100000000;
   };
-  const pool: readonly StandardEnemyId[] = node.depth === 0 ? ['crawler', 'crawler', 'crawler', 'brute']
+  const pool: readonly StandardEnemyId[] = story&&node.depth>=5&&!holdout ? node.depth<10
+    ? ['crawler','crawler','spitter','spitter','stalker','carrier']
+    : ['crawler','crawler','brute','spitter','spitter','stalker','stalker','carrier']
+    : node.depth === 0 ? ['crawler', 'crawler', 'crawler', 'brute']
     : node.depth < 4 ? ['crawler', 'crawler', 'brute', 'spitter']
     : node.depth < 8 ? ['crawler','crawler','spitter','stalker','carrier']
     : ['crawler', 'crawler', 'brute', 'spitter', 'spitter', 'stalker', 'carrier'];
   const interval = Math.max(430,1050-node.depth*48-(node.kind==='elite'?120:0));
+  const guardian=progressionFor(node).guardianKind;
   const schedule = Array.from({ length: totalSpawns }, (_, index): EncounterSpawn => Object.freeze({
-    type: 'spawn-request', spawnId: `${node.id}:spawn-${index}`, atMs: story ? 650+(holdout?index*900:Math.floor(index/6)*1100+(index%6)*100) : 650 + index * interval + Math.floor(index/8)*1800, wave: node.depth + 1,
-    enemyId: node.kind === 'elite' && index === 0 ? (story?node.depth===15:node.id.includes(':v2-')&&node.depth===7)?'carrier':'brute' : pool[Math.floor(random() * pool.length)],
-    elite: node.kind === 'elite' && (index === 0 || random() < 0.10+node.depth*.008),
+    type: 'spawn-request', spawnId: `${node.id}:spawn-${index}`, atMs: story ? 650+(holdout?index*(node.depth===9?750:900):pressureAct===0?Math.floor(index/6)*1100+(index%6)*100:Math.floor(index/6)*(1050-pressureAct*100)+(index%6)*90) : 650 + index * interval + Math.floor(index/8)*1800, wave: node.depth + 1,
+    enemyId: index===0&&guardian ? guardian==='matron'?'carrier':'brute' : node.kind==='elite'&&index===0?'brute':pool[Math.floor(random()*pool.length)],
+    elite: node.kind==='elite' ? index===0||random()<.10+node.depth*.008 : story&&node.depth>=5&&!holdout&&(random()<.06+(node.depth-5)*.008||index===0&&!!guardian),
     breachId: breachIds[Math.floor(random() * breachIds.length)],
   }));
   return Object.freeze({ nodeId: node.id, kind: node.kind, wave: node.depth + 1, totalSpawns, concurrentCap,

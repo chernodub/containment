@@ -18,7 +18,10 @@ describe('authored story campaign',()=>{
  it('paces ordinary assaults differently from the two extended holdouts',()=>{
   const graph=generateRun(42),plan=(depth:number)=>createEncounterPlan({seed:42,node:graph.nodes[depth],breachIds:['a']});
   expect(plan(8).schedule.at(-1)!.atMs).toBeLessThan(12000);
-  for(const depth of [9,19])expect(plan(depth).schedule.at(-1)!.atMs).toBeGreaterThan(30000);
+  expect(plan(9).totalSpawns).toBe(32);
+  expect(plan(9).schedule.at(-1)!.atMs).toBe(23900);
+  expect(plan(9).schedule.at(-1)!.atMs).toBeGreaterThan(plan(8).schedule.at(-1)!.atMs*2);
+  expect(plan(19).schedule.at(-1)!.atMs).toBeGreaterThan(30000);
   expect(plan(19).kind).not.toBe('boss');
  });
  it('shows concise essential status and removes the facility escape story from the active UI',async()=>{

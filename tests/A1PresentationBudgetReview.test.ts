@@ -131,7 +131,7 @@ function crowdedFight(rig: RigId, record = true) {
     const spawn = game.enemies.spawn('brute', 450 + id % 5 * 10, 420 + Math.floor(id / 5) * 10);
     expect(spawn.spawned).toBe(true);
   }
-  game.abilities.addCharge(6000);
+  game.abilities.addCharge(12000);
   events.length = 0;
   expect(game.useAbility('overdrive')).toBe(true);
   for (time = 50; time <= 8000; time += 50) game.update(50);

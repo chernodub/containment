@@ -149,7 +149,7 @@ export class AbilitySystem {
   addCharge(damage: number, kills = 0): void {
     if (!this.rig || !Number.isFinite(damage) || !Number.isFinite(kills) || damage < 0 || kills < 0) return;
     const before = this.charge;
-    const next = this.charge + (damage / 6000 + kills * .025) * (this.host.has('drive-dynamo' as MutationId) ? 1.3 : 1);
+    const next = this.charge + (damage / 12000 + kills * .0125) * (this.host.has('drive-dynamo' as MutationId) ? 1.3 : 1);
     this.charge = next >= 1 - TIMER_EPSILON ? 1 : next;
     if (before !== this.charge) this.cached = null;
     if (before < 1 && this.charge === 1) this.event(this.definition('overdrive').id, 'overdrive-ready', this.host.player());

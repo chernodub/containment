@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AbilitySystem, ABILITY_LIMITS, segmentDistance, type AbilityHost, type AbilityPoint } from '../src/game/abilities/AbilitySystem';
-import { ABILITY_CATALOG, RIG_CATALOG } from '../src/game/abilities/catalog';
+import { ABILITY_CATALOG, RIG_CATALOG, RIG_IDS } from '../src/game/abilities/catalog';
 import type { AbilityEvent, AbilityId, AbilitySlot, RigId } from '../src/game/abilities/contract';
 import type { MutationId } from '../src/game/roguelike/types';
 type Target = {
@@ -154,7 +154,7 @@ describe('Combat Rig deterministic state and controls', () => {
     w.use('dash');
     expect(w.system.snapshot.zones.length).toBeGreaterThan(0);
     w.system.resetRoom();
-    expect(w.system.snapshot).toMatchObject({ zones: [], deployables: [], dashing: false, invulnerable: false, overdrive: { charge: .25 } });
+    expect(w.system.snapshot).toMatchObject({ zones: [], deployables: [], dashing: false, invulnerable: false, overdrive: { charge: .125 } });
     expect(w.system.snapshot.slots!.dash.charges).toBe(2);
     expect(w.system.snapshot.slots!.power.ready).toBe(true);
   });
@@ -165,7 +165,7 @@ describe('Combat Rig deterministic state and controls', () => {
     w.system.addCharge(0, -1);
     expect(w.system.snapshot.overdrive.charge).toBe(0);
     w.system.addCharge(3000, 10);
-    expect(w.system.snapshot.overdrive.charge).toBe(.75);
+    expect(w.system.snapshot.overdrive.charge).toBe(.375);
     w.system.addCharge(3000, 10);
     w.system.addCharge(6000, 40);
     expect(phases(w, 'overclock').filter(p => p === 'overdrive-ready')).toHaveLength(1);
@@ -173,10 +173,32 @@ describe('Combat Rig deterministic state and controls', () => {
     expect(w.system.snapshot.overdrive.charge).toBe(0);
     expect(w.system.use('overdrive')).toBe(false);
     w.advance(6000);
-    w.system.addCharge(6000);
+    w.system.addCharge(12000);
     expect(phases(w, 'overclock').filter(p => p === 'overdrive-ready')).toHaveLength(2);
   });
 });
+describe('Overdrive cadence receipts', () => {
+  it.each(RIG_IDS)('keeps %s meter earned, persistent and slower than an ordinary-room rotation', rig => {
+    const w = world(rig);
+    // Six groups of 600 damage / four kill receipts total .6 meter.
+    // The receipt budget is explicit; campaign cadence is measured separately by the bot.
+    for (let group = 0; group < 6; group++) w.system.addCharge(600, 4);
+    expect(w.system.snapshot.overdrive.charge).toBeCloseTo(.6);
+    expect(w.system.snapshot.overdrive.ready).toBe(false);
+    w.system.resetRoom();
+    expect(w.system.snapshot.overdrive.charge).toBeCloseTo(.6);
+    for (let group = 0; group < 4; group++) w.system.addCharge(600, 4);
+    expect(w.system.snapshot.overdrive.ready).toBe(true);
+    const ultimate = RIG_CATALOG[rig].abilities.overdrive;
+    expect(phases(w, ultimate).filter(phase => phase === 'overdrive-ready')).toHaveLength(1);
+    w.use('overdrive');
+    expect(w.system.snapshot.overdrive.charge).toBe(0);
+    w.system.addCharge(1200, 8);
+    expect(w.system.snapshot.overdrive.charge).toBeCloseTo(.2);
+    expect(w.system.use('overdrive')).toBe(false);
+  });
+});
+
 describe('all four rig dashes', () => {
   it('uses movement direction before aim, recharges independently and preserves exactly 220ms of invulnerability', () => {
     const w = world();
@@ -596,7 +618,7 @@ describe('all twelve augment runtime effects', () => {
   it('Drive Dynamo multiplies damage and kill charge by 1.3 and caps at a full meter', () => {
     const w = world('arc', ['drive-dynamo']);
     w.system.addCharge(600, 2);
-    expect(w.system.snapshot.overdrive.charge).toBeCloseTo(.195);
+    expect(w.system.snapshot.overdrive.charge).toBeCloseTo(.0975);
     w.system.addCharge(6000, 40);
     expect(w.system.snapshot.overdrive.charge).toBe(1);
   });

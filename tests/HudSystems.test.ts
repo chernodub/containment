@@ -318,7 +318,7 @@ it('dismisses the ready announcement immediately when real Overdrive starts', as
         await liveHud(page);
         await page.evaluate(() => {
             const {game,hud}= (window as any).__live;
-            game.abilities.setRig('arc'); game.abilities.addCharge(6000); hud();
+            game.abilities.setRig('arc'); game.abilities.addCharge(12000); hud();
         });
         expect(await page.locator('.hud-toast:not([hidden])').allTextContents()).toContain('Overdrive ready · V');
         await page.evaluate(() => {const {game,hud}=(window as any).__live;game.useAbility('overdrive');hud();});

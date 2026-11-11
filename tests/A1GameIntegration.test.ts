@@ -269,7 +269,7 @@ describe('desktop simulation collision and hostile time isolation', () => {
 
   it('carries a lethal Railbreaker body into an actual wall from the middle of a room', () => {
     const {game,effects}=arena('breacher');game.combat.setBuild({rig:'breacher',mutations:['breacher']});
-    const target=spawn(game,'brute',600,440);game.damage(target.id,target.health+target.armor-1);game.abilities.addCharge(6000);
+    const target=spawn(game,'brute',600,440);game.damage(target.id,target.health+target.armor-1);game.abilities.addCharge(12000);
     expect(game.useAbility('overdrive')).toBe(true);advance(game,850);
     expect(effects.some(e=>e.type==='wall-slam')).toBe(true);
     expect(effects.some(e=>e.type==='sync-corpse')).toBe(true);
@@ -320,7 +320,7 @@ describe('desktop simulation collision and hostile time isolation', () => {
 
   it('integrates the full six-second Overclock window and a partial final step exactly', () => {
     const {game} = arena('arc');
-    game.abilities.addCharge(6000); game.useAbility('overdrive');
+    game.abilities.addCharge(12000); game.useAbility('overdrive');
     advance(game, 5990);
     const hostile = projectile('hazard', 700, 600); game.bullets.push(hostile);
     game.pools.push({id: 1, x: 900, y: 700, radius: 20, life: 2, warning: 0, damage: 6, tick: .5});
@@ -346,7 +346,7 @@ describe('desktop simulation collision and hostile time isolation', () => {
     game.bullets.push(hostile, friendly);
     game.pools.push({id: 1, x: 900, y: 700, radius: 20, life: 2, warning: 0, damage: 6, tick: .5});
     game.pickups.spawn('credits', 10, 100, 100);
-    game.abilities.addCharge(6000);
+    game.abilities.addCharge(12000);
     expect(game.useAbility('overdrive')).toBe(true);
     expect(game.useAbility('power')).toBe(true);
     const magazine = game.combat.snapshot.magazine;
@@ -376,7 +376,7 @@ describe('desktop simulation collision and hostile time isolation', () => {
     const before = game.enemies.getSnapshot(enemy.id)!;
     expect(before.pendingAttack).toBe('spit');
     expect(before.windupMs).toBe(500);
-    game.abilities.addCharge(6000);
+    game.abilities.addCharge(12000);
     game.useAbility('overdrive');
     game.update(50, {...idle, y: 1});
     const slowed = game.enemies.getSnapshot(enemy.id)!;
@@ -389,7 +389,7 @@ describe('desktop simulation collision and hostile time isolation', () => {
 
   it('pauses ability timers, statistics, movement, damage and charge without accumulating wall time', () => {
     const {game, effects} = arena('arc');
-    game.abilities.addCharge(6000);
+    game.abilities.addCharge(12000);
     game.useAbility('overdrive');
     game.useAbility('dash');
     game.pause();
@@ -409,7 +409,7 @@ describe('ability replay and long-running host state', () => {
       const {game, effects} = arena(rig);
       for (let i = 0; i < 6; i++) spawn(game, 'brute', 550 + (i % 3) * 100, 340 + Math.floor(i / 3) * 180);
       game.setAimPoint({x: 600, y: 440});
-      game.abilities.addCharge(6000);
+      game.abilities.addCharge(12000);
       const hashes: string[] = [];
       for (let frame = 0; frame < 260; frame++) {
         if (frame === 0) game.useAbility('power');
@@ -431,7 +431,7 @@ describe('ability replay and long-running host state', () => {
     // Two simulated minutes of repeated real host casts and damage/status/death receipts.
     for (let frame = 0; frame < 2400; frame++) {
       if (frame % 80 === 0 && game.enemies.activeCount < 8) spawn(game, 'brute', 600 + (frame % 3) * 70, 300 + (frame % 4) * 90);
-      if (frame % 120 === 0) game.abilities.addCharge(6000);
+      if (frame % 120 === 0) game.abilities.addCharge(12000);
       game.setAimPoint({x: 650, y: 440});
       for (const slot of ['dash', 'tactical', 'power', 'overdrive'] as const) game.useAbility(slot);
       game.update(50, {...idle, fire: true, autoAim: true, angle: null});
