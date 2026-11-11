@@ -184,3 +184,18 @@ it('draws the selected low-resolution shadows before the post warm frame samples
   await recovery.roomWarmWork;
   expect(resources.post.prepare).toHaveBeenCalledOnce();
 });
+
+it.each(['high','low'] as const)('prepares %s HUD shaders for their actual screen target before releasing input',async tier=>{
+  const {renderer,resources,recovery}=recoveryProbe();
+  let target:T.WebGLRenderTarget|null=null,hudReady=false;
+  resources.renderer.setRenderTarget.mockImplementation(value=>{target=value;});
+  resources.renderer.compile.mockImplementation(scene=>{
+    if(scene!==resources.hudScene)return;
+    expect(target).toBeNull();
+    expect(resources.renderer.toneMapping).toBe(T.AgXToneMapping);
+    hudReady=true;
+  });
+  resources.post.prepare=vi.fn(async()=>{expect(hudReady).toBe(true);});
+  renderer.setQuality(tier);recovery.queueRoomWarmup();await recovery.roomWarmWork;
+  expect(hudReady).toBe(true);expect(recovery.roomWarmPending).toBe(false);
+});

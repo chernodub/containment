@@ -169,7 +169,7 @@ export class DepthRenderer {
   if(this.renderer.extensions.has('KHR_parallel_shader_compile')&&!this.roomWarmPending&&!this.recoveringGraphics){
    const lighting=new SceneLighting(),scene=new T.Scene(),target=new T.WebGLRenderTarget(1,1,{type:T.HalfFloatType});
    lighting.loadRoom(root??new T.Group(),t.width/UNIT,t.height/UNIT,environment,node.templateId);lighting.setQuality(this.tier,this.options.dynamicLights,this.options.atmosphere,this.options.flashIntensity,this.options.shadows);
-   scene.add(lighting.root,new T.PointLight());scene.environment=this.scene.environment;scene.fog=this.scene.fog;
+   const muzzle=new T.PointLight();muzzle.visible=this.options.dynamicLights;scene.add(lighting.root,muzzle);scene.environment=this.scene.environment;scene.fog=this.scene.fog;
    const originalTarget=this.renderer.getRenderTarget(),mapping=this.renderer.toneMapping;
    let work:Promise<void>;
    try{this.renderer.setRenderTarget(this.tier==='high'?target:null);this.renderer.toneMapping=this.tier==='high'?T.NoToneMapping:T.AgXToneMapping;work=this.compilePrepared(this.materialWarmup.root,this.camera,scene);}
@@ -237,7 +237,12 @@ export class DepthRenderer {
    this.renderer.setViewport(0,0,64,64);this.renderer.setScissor(0,0,64,64);this.renderer.setScissorTest(true);
    await this.compilePrepared(this.scene,this.camera);
    this.renderer.shadowMap.needsUpdate=true;this.renderer.render(this.scene,this.camera);
-   await this.compilePrepared(this.hudScene,this.camera);await this.post.prepare((scene,camera)=>this.compilePrepared(scene,camera));
+   // HUD skins and bars draw to the screen after HDR compositing, so they
+   // require the screen color-space/tone-mapping program, not the HDR variant.
+   this.renderer.setRenderTarget(null);this.renderer.toneMapping=mapping;
+   await this.compilePrepared(this.hudScene,this.camera);
+   this.renderer.setRenderTarget(this.tier==='high'?warmTarget:null);this.renderer.toneMapping=this.tier==='high'?T.NoToneMapping:T.AgXToneMapping;
+   await this.post.prepare((scene,camera)=>this.compilePrepared(scene,camera));
   }finally{this.lighting.pool.setPrewarmCount(null);this.applyQuality();this.preparationTargets.delete(warmTarget);warmTarget.dispose();restoreMaterials();restoreArena();restoreBackdrop();restoreAtmosphere();this.renderer.setRenderTarget(originalTarget);this.renderer.toneMapping=mapping;this.renderer.shadowMap.enabled=shadowEnabled;this.renderer.setScissorTest(false);this.resize();for(const m of models)this.actorPool.release(m);disposeModel(warm);this.shadowsDirty=true;}
  }
  pointer(clientX:number,clientY:number,targets:readonly {id:number;x:number;y:number;radius:number}[]=[]){

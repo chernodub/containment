@@ -45,6 +45,10 @@ try {
       const r = window.__containmentDebug.renderer;
       const gl = r.renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info');
       window.__roomAudit = {gpu:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER), phases:{}, calls:{}};
+      const prepare=r.prepare;
+      r.prepare=async function(...args){window.__roomAudit.ready=false;const value=await prepare.apply(this,args);window.__roomAudit.ready=true;return value;};
+      const create=gl.createProgram;
+      gl.createProgram=function(){if(window.__roomAudit.ready)window.__roomAudit.postReadyCompiles=(window.__roomAudit.postReadyCompiles??0)+1;return create.call(gl);};
       for (const key of ['loadRoom','prepareScene','captureRoomReflections','compilePrepared','freezeRoomTransforms']) {
         const original = r[key]; if (typeof original !== 'function') continue;
         r[key] = function(...args) {
@@ -63,19 +67,20 @@ try {
       const before = host();
       const row = await page.evaluate(async ({room,mode}) => {
         const d=window.__containmentDebug,r=d.renderer,a=window.__roomAudit;
-        a.phases={};a.calls={};const inventory=r.renderer.info.programs.length;
+        a.phases={};a.calls={};a.postReadyCompiles=0;a.ready=false;const inventory=r.renderer.info.programs.length;
         const started=performance.now();await d.gotoRoom(room,room==='reactor-vault'?{version:2}:{});
         const total=performance.now()-started;
         if(r.roomLoading)throw Error('Input released before readiness');
-        const phases={...a.phases},calls={...a.calls};
+        const phases={...a.phases},calls={...a.calls},postReadyCompiles=a.postReadyCompiles??0;
         const gl=r.renderer.getContext(),create=gl.createProgram;let compiles=0;
         gl.createProgram=function(){compiles++;return create.call(gl);};
         try {d.invulnerable(true);d.setInput({fire:true,autoAim:true,angle:null});d.step(300);}
         finally {gl.createProgram=create;}
-        return {room,mode,total,phases,calls,inventoryBefore:inventory,programs:r.renderer.info.programs.length,newPrograms:r.renderer.info.programs.length-inventory,combatCompiles:compiles,preparation:r.preparationDiagnostics??null,resources:{...r.renderer.info.memory},gpu:a.gpu};
+        return {room,mode,total,phases,calls,inventoryBefore:inventory,programs:r.renderer.info.programs.length,newPrograms:r.renderer.info.programs.length-inventory,combatCompiles:compiles,postReadyCompiles,postReadyPrograms:postReadyCompiles?r.renderer.info.programs.slice(-postReadyCompiles).map(p=>({name:p.name,key:p.cacheKey})):[],preparation:r.preparationDiagnostics??null,resources:{...r.renderer.info.memory},gpu:a.gpu};
       },{room,mode});
       row.before=before;row.after=host();report.rows.push(row);
       assert(!/swiftshader|software|llvmpipe/i.test(row.gpu),'Hardware renderer required');
+      if(!baseline && row.postReadyCompiles)report.failures.push({room,mode,metric:'postReadyCompiles',value:row.postReadyCompiles,limit:0});
       if(row.combatCompiles)report.failures.push({room,mode,metric:'combatCompiles',value:row.combatCompiles,limit:0});
       if(!baseline && row.programs>Number(option('max-programs',400)))report.failures.push({room,mode,metric:'programs',value:row.programs,limit:Number(option('max-programs',400))});
       if(!baseline && row.total>Number(option('max-ms',3000)))report.failures.push({room,mode,metric:'preparationMs',value:row.total,limit:Number(option('max-ms',3000))});
