@@ -15,9 +15,10 @@ function fixture() {
   body.position.y = .23; body.rotation.z = .02; body.scale.y = .97; marine.add(body);
   const states = new Map<number, { frozen: boolean; burning: boolean; shocked: boolean; chilled: boolean }>();
   const enemies: EnemySnapshot[] = [];
-  const g = { player: { x: 128, y: 128, angle: 0 }, combat: { snapshot: { dead: false } }, enemies: { snapshot: { enemies } }, boonStatuses: (id: number) => states.get(id) ?? { frozen: false, burning: false, shocked: false, chilled: false } } as unknown as DepthGame;
+  const queen = { active: false, defeated: false, x: 256, y: 192, health: 1000 };
+  const g = { player: { x: 128, y: 128, angle: 0 }, combat: { snapshot: { dead: false } }, enemies: { snapshot: { enemies } }, boss: { snapshot: queen }, boonStatuses: (id: number) => states.get(id) ?? { frozen: false, burning: false, shocked: false, chilled: false } } as unknown as DepthGame;
   const update = (s = snapshot(), dt = .016) => { kit.begin(dt); fx.update({ snapshot: s, dt, visible: true, game: g, marine }); kit.end(); };
-  return { root, kit, fx, marine, body, states, enemies, g, update };
+  return { root, kit, fx, marine, body, states, enemies, queen, g, update };
 }
 
 describe('V2 common marine and struck feedback', () => {
@@ -65,6 +66,60 @@ describe('V2 common marine and struck feedback', () => {
     expect(kit.batches.shard.mesh.count).toBe(7); expect(kit.batches.flame.mesh.count).toBe(3); expect(kit.batches.spark.mesh.count).toBeGreaterThanOrEqual(5); expect(kit.ribbons.mesh.count).toBeGreaterThanOrEqual(12);
     states.clear(); enemies.length = 0; update(snapshot(), .5);
     expect(kit.batches.shard.mesh.count).toBe(0); expect(kit.batches.flame.mesh.count).toBe(0);
+    fx.dispose(); kit.dispose();
+  });
+
+  it('renders and expires Queen strike receipts at her position, and retains separate status feedback', () => {
+    const { kit, fx, queen, states, update } = fixture();
+    const burst = vi.spyOn(kit, 'burst').mockImplementation(() => {});
+    const draw = vi.spyOn(kit, 'draw');
+    fx.event(event({ phase: 'impact', ability: 'cryo-nova', rig: 'cryo', element: 'cryo', targetIds: [-1] }), 128, 128);
+    update(snapshot(), 0); expect(kit.batches.shard.mesh.count).toBe(0);
+    queen.active = true; update(snapshot(), 0);
+    expect(kit.batches.shard.mesh.count).toBe(7); expect(burst).not.toHaveBeenCalled();
+    for (const call of draw.mock.calls) {
+      expect(Math.hypot(call[1] - queen.x / 32, call[3] - queen.y / 32)).toBeLessThanOrEqual(92 / 32);
+    }
+    update(); update();
+    expect(burst).toHaveBeenCalledOnce();
+    expect(burst).toHaveBeenCalledWith(8, 4.5 * .45, 6, 'cryo', 7, 1.2, .3);
+    update(snapshot(), .3); expect(kit.batches.shard.mesh.count).toBe(0);
+    states.set(-1, { frozen: true, burning: true, shocked: true, chilled: true }); update();
+    expect(kit.batches.shard.mesh.count).toBe(7); expect(kit.batches.flame.mesh.count).toBe(3);
+    expect(kit.batches.spark.mesh.count).toBe(4);
+    queen.defeated = true; update();
+    expect(kit.batches.shard.mesh.count).toBe(0); expect(kit.batches.flame.mesh.count).toBe(0);
+    expect(kit.batches.spark.mesh.count).toBe(0); expect(burst).toHaveBeenCalledOnce();
+    fx.dispose(); kit.dispose();
+  });
+
+  it('gives the immovable Queen kinetic impact accents without launch trails or stale receipts', () => {
+    const { kit, fx, queen, update } = fixture(); queen.active = true;
+    const burst = vi.spyOn(kit, 'burst').mockImplementation(() => {});
+    fx.event(event({ phase: 'impact', targetIds: [-1] }), 128, 128); update();
+    expect(burst).toHaveBeenCalledOnce(); expect(kit.batches.spark.mesh.count).toBe(1);
+    expect(kit.ribbons.mesh.count).toBe(0);
+    fx.clear(); update();
+    expect(kit.batches.spark.mesh.count).toBe(0); expect(burst).toHaveBeenCalledOnce();
+    fx.dispose(); kit.dispose();
+  });
+
+  it.each(['high', 'low'] as const)('includes Queen feedback within the existing %s target cap', tier => {
+    const { kit, fx, queen, enemies, states, update } = fixture(); queen.active = true;
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    const frozen = { frozen: true, burning: false, shocked: false, chilled: true };
+    states.set(-1, frozen);
+    for (let id = 1; id <= 44; id++) { enemies.push(enemy({ id })); states.set(id, frozen); }
+    const geometry = kit.batches.shard.mesh.geometry, buffer = kit.batches.shard.mesh.instanceMatrix.array;
+    update(snapshot(), 0);
+    const targets = tier === 'low' ? 24 : 40, shards = tier === 'low' ? 3 : 7;
+    expect(kit.batches.shard.mesh.count).toBe(targets * shards);
+    // First shard belongs to the Queen; the crowd uses the remaining budget.
+    const position = new T.Vector3(), matrix = new T.Matrix4(); kit.batches.shard.mesh.getMatrixAt(0, matrix); position.setFromMatrixPosition(matrix);
+    expect(Math.hypot(position.x - queen.x / 32, position.z - queen.y / 32)).toBeCloseTo(92 / 32 * .76, 5);
+    queen.active = false; update(snapshot(), 0);
+    expect(kit.batches.shard.mesh.count).toBe(targets * shards);
+    expect(kit.batches.shard.mesh.geometry).toBe(geometry); expect(kit.batches.shard.mesh.instanceMatrix.array).toBe(buffer);
     fx.dispose(); kit.dispose();
   });
 
