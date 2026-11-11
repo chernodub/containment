@@ -34,3 +34,14 @@ for rig,ids in rigs.items():
   for col,s in enumerate(shots[:7]):
    im=Image.open(root/s['file']);im.thumbnail((320,180));sheet.paste(im,(col*320,row*205));d.text((col*320+5,row*205+184),f'{id} | {s["simulationMs"]}ms',fill='white')
  sheet.save(out/f'{rig}-timeline.png')
+# A focused, self-contained index makes the sixteen requested sheets easy to review.
+import base64,html,io
+cards=[]
+for rig,ids in rigs.items():
+ for id in ids:
+  path=out/f'v2-{id}-awakening-bay.png'
+  if not path.exists():continue
+  im=Image.open(path).convert('RGB');im.thumbnail((640,390));buffer=io.BytesIO();im.save(buffer,format='JPEG',quality=84)
+  data=base64.b64encode(buffer.getvalue()).decode()
+  cards.append(f'<figure><h2>{html.escape(id)}</h2><a href="{html.escape(path.name)}"><img src="data:image/jpeg;base64,{data}" alt="{html.escape(id)} seven-phase sheet"></a></figure>')
+(out/'index.html').write_text('<!doctype html><html lang="en"><meta charset="utf-8"><title>Containment ability sheets</title><style>body{background:#081219;color:#dceaf0;font:16px system-ui;margin:24px}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));gap:20px}figure{margin:0}h2{font-size:18px}img{width:100%;height:auto}a{color:#9fe8ff}</style><h1>Sixteen ability timelines</h1><p>Press/cast → anticipation → impact → +150ms → +600ms → lingering → expiry. Click a sheet for its full PNG.</p><main>'+''.join(cards)+'</main></html>')
