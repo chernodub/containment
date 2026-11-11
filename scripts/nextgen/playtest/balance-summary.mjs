@@ -14,8 +14,9 @@ const distribution = values => {
 
 /** Compare complete campaign attempts; keep deaths, censoring and assistance visible. */
 export function balanceSummary(reports) {
-  const groups = [...new Set(reports.map(r => `${r.assisted ? 'assisted' : 'organic'}:${r.legacy ? 'v2' : 'v3'}:${r.rig}`))].sort().map(key => {
-    const runs = reports.filter(r => `${r.assisted ? 'assisted' : 'organic'}:${r.legacy ? 'v2' : 'v3'}:${r.rig}` === key);
+  const groupKey = r => `${r.assisted ? 'assisted' : 'organic'}:${r.legacy ? 'v2' : 'v3'}:${r.rig}${r.profileTransition ? ':mixed-profile' : typeof r.tuningEnabled === 'boolean' ? r.tuningEnabled ? ':tuning' : ':production' : ''}`;
+  const groups = [...new Set(reports.map(groupKey))].sort().map(key => {
+    const runs = reports.filter(r => groupKey(r) === key);
     const rooms = runs.flatMap(r => r.rooms ?? []);
     const stats = runs.map(r => r.final?.stats ?? r.stats);
     const deaths = {}, outcomes = {};
@@ -58,6 +59,7 @@ export function balanceSummary(reports) {
   });
   return {selectedRuns: reports.length, groups,
     caveats: ['Simulation and native-browser cohorts stay explicitly labeled; only matching policy/source snapshots are comparable.',
+      'Production, explicit tuning and mixed-profile continuations are separate groups; historical reports retain their original keys.',
       'Times pool cleared-room observations; damage includes death-room attempts. Completion uses all selected attempts, with censored outcomes visible.',
       'Rooms/Overdrive is a per-run distribution of cleared rooms divided by accepted uses; pooled cadence is also supplied.',
       'Campaign direct ability/status/boon sources do not isolate all control and Overclock value. The deterministic full-kit harness retains the 30–45% invariant.']};

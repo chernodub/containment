@@ -107,6 +107,7 @@ export function summarizeRun(report, reportPath = null) {
     label: report.label, reportPath, rig: report.rig, seed: report.seed,
     assisted: report.assisted === true, incomingDamageScale: report.incomingDamageScale ?? 1,
     legacy: report.legacy === true, roomLimit: report.roomLimit,
+    tuningEnabled: report.tuningEnabled, profileTransition: report.profileTransition ?? null,
     branch: report.branch, head: report.head, outcome: report.outcome,
     fullClear: report.outcome === 'complete', deepestRoom,
     roomsCleared: Math.max(completedRooms.length, report.final?.run?.completedNodeIds?.length ?? 0),
@@ -148,12 +149,13 @@ export function summarizeRun(report, reportPath = null) {
   };
 }
 
-/** Group only explicitly selected runs, separating assistance and legacy campaign graphs. */
+/** Group only explicitly selected runs, separating assistance, graphs and recorded profiles. */
 export function aggregateReports(reports) {
   const runs = reports.map(({report, path, triage}) => summarizeRun(applyTriage(report, triage), path));
-  const keys = [...new Set(runs.map(run => `${run.assisted ? 'assisted' : 'unassisted'}:${run.legacy ? 'legacy-v2' : 'story-v3'}:${run.rig}`))].sort();
+  const groupKey = run => `${run.assisted ? 'assisted' : 'unassisted'}:${run.legacy ? 'legacy-v2' : 'story-v3'}:${run.rig}${run.profileTransition ? ':mixed-profile' : typeof run.tuningEnabled === 'boolean' ? run.tuningEnabled ? ':tuning' : ':production' : ''}`;
+  const keys = [...new Set(runs.map(groupKey))].sort();
   const groups = keys.map(key => {
-    const selected = runs.filter(run => `${run.assisted ? 'assisted' : 'unassisted'}:${run.legacy ? 'legacy-v2' : 'story-v3'}:${run.rig}` === key);
+    const selected = runs.filter(run => groupKey(run) === key);
     const deathsByRoom = {}, outcomes = {};
     for (const run of selected) {
       outcomes[run.outcome] = (outcomes[run.outcome] ?? 0) + 1;

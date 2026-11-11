@@ -248,11 +248,13 @@ Render-free seeded sweeps use the installed game and shared player policy:
 ```sh
 npm run playtest:sim -- --label=my-cohort --workers=2
 npm run playtest:sim -- --label=my-baseline --game-revision=<commit> --workers=2
+npm run playtest:sim -- --tuning --label=my-unaccepted-tuning --workers=2
 node scripts/nextgen/playtest/balance-summary.mjs artifacts/nextgen/playtest/my-cohort --out=artifacts/nextgen/my-summary.json
 node scripts/nextgen/playtest/native-batch.mjs --label=my-native --seeds=1729,2718 --workers=2 --fast --dist-dir=artifacts/nextgen/my-dist
 ```
 
-The simulation defaults to ten fixed seeds for each of the four rigs. It records
+The simulation defaults to ten fixed seeds for each of the four rigs. Use a new
+label for every batch; existing simulation directories are never overwritten. It records
 immutable bundles, policy/source hashes, deaths, censors and per-room results;
 `--seeds` and `--rigs` select an explicit cohort. It is approximate native-policy
 evidence, so validate the selected numbers in browser campaigns. See
@@ -260,6 +262,23 @@ evidence, so validate the selected numbers in browser campaigns. See
 Native batch workers are limited to one or two; do not overlap browser gates.
 Batch exit zero accepts natural deaths: use each report's `outcome`, not its
 process status, when calculating completion.
+
+The unaccepted difficulty profile is disabled by
+`src/game/roguelike/i5Tuning.ts`. Default runs measure production: half-rate
+Overdrive charge and the 32-request Transmission holdout remain active, while
+the experimental encounter parameters do not. `--tuning` enables only that
+build-time constant inside the simulation's copied bundle, leaves the working
+tree unchanged, and hashes the actual enabled source. Historical revisions
+without the flag reject `--tuning`. For a native experimental build, enable the
+constant explicitly, build to a separate immutable `--outDir`, then restore the
+default-off source before committing; the native runner records the loaded
+build's flag through a read-only debug getter.
+
+Reports with known flag state are separated into production/tuning groups.
+Earned continuations that change or cannot establish their parent's profile are
+marked mixed-profile, without blocking valid old checkpoints. Historical reports
+keep their old keys. Both aggregate commands preserve those distinctions; never
+present the default-off checkpoint as an accepted difficulty overhaul.
 
 `npm run playtest -- --rig=arc --seed=1729 --fast --label=i5-fast-arc-1729`
 keeps native keyboard/mouse actions, the presentation clock, 60 Hz simulation,

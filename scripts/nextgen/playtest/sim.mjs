@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { actorMetrics } from './sim-metrics.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 process.chdir(root);
-const allowed = new Set(['label', 'rig', 'rigs', 'seed', 'seeds', 'rooms', 'assisted', 'legacy', 'trace', 'max-room-seconds', 'workers', 'game-ref', 'game-revision']);
+const allowed = new Set(['label', 'rig', 'rigs', 'seed', 'seeds', 'rooms', 'assisted', 'legacy', 'trace', 'max-room-seconds', 'workers', 'game-ref', 'game-revision', 'tuning']);
 const args = Object.fromEntries(process.argv.slice(2).map(arg => { const [key, ...value] = arg.replace(/^--/, '').split('='); return [key, value.length ? value.join('=') : true]; }));
 for (const key of Object.keys(args))
     if (!allowed.has(key))
@@ -17,12 +17,25 @@ for (const key of Object.keys(args))
 if (args.label && !/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(String(args.label)))
     throw Error('Unsafe label');
 const out = resolve('artifacts/nextgen/playtest', args.label ?? 'sim');
-await mkdir(out, { recursive: true });
+await mkdir(dirname(out), { recursive: true });
+try { await mkdir(out); }
+catch (error) {
+    if (error.code === 'EEXIST') throw Error('Simulation label already exists; use a new label to preserve its source snapshot and reports.');
+    throw error;
+}
 const gameRef = args['game-revision'] ?? args['game-ref'];
+if (args.tuning !== undefined && args.tuning !== true) throw Error('--tuning is a switch without a value');
+const tuningFile = resolve('src/game/roguelike/i5Tuning.ts');
 const sourceCache = new Map();
 const plugins = [{ name: 'simulation-snapshot', load(id) { if (id === root + '/src/DepthGame.ts' || id.startsWith(root + '/src/game/')) {
-            if (!sourceCache.has(id))
-                sourceCache.set(id, gameRef ? execFileSync('git', ['show', `${gameRef}:${id.slice(root.length + 1)}`], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 }) : readFileSync(id, 'utf8'));
+            if (!sourceCache.has(id)) {
+                let content = gameRef ? execFileSync('git', ['show', `${gameRef}:${id.slice(root.length + 1)}`], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 }) : readFileSync(id, 'utf8');
+                if (args.tuning && id === tuningFile) {
+                    content = content.replace(/(I5_ENCOUNTER_TUNING_ENABLED\s*=\s*)false\b/, '$1true');
+                    if (!/I5_ENCOUNTER_TUNING_ENABLED\s*=\s*true\b/.test(content)) throw Error('Unrecognized I5 tuning flag declaration');
+                }
+                sourceCache.set(id, content);
+            }
             return sourceCache.get(id);
         } } }];
 const source = resolve(out, 'source');
@@ -30,6 +43,8 @@ await mkdir(source, { recursive: true });
 for (const file of ['sim-core.ts', 'sim.mjs', 'sim-metrics.mjs', 'sim-worker.mjs', 'policy.mjs', 'bot-navigation.ts', 'bot-navigation-version.mjs'])
     await writeFile(resolve(source, file), await readFile(resolve('scripts/nextgen/playtest', file)));
 await build({ configFile: false, publicDir: false, plugins, logLevel: 'error', build: { ssr: resolve('scripts/nextgen/playtest/sim-core.ts'), outDir: source, emptyOutDir: false, rollupOptions: { output: { entryFileNames: 'sim-core.mjs' } } } });
+if (args.tuning && !sourceCache.has(tuningFile)) throw Error('--tuning requires a game revision with the I5 encounter flag');
+const tuningEnabled = sourceCache.has(tuningFile) ? /I5_ENCOUNTER_TUNING_ENABLED\s*=\s*true\b/.test(sourceCache.get(tuningFile)) : undefined;
 const { runSimulation, summarizeSimulations } = await import(pathToFileURL(resolve(source, 'sim-core.mjs')).href + '?' + Date.now());
 const seeds = String(args.seeds ?? args.seed ?? '1729,2718,31415,42,137,8675309,2026,9001,65537,123456').split(',').map(Number);
 const rigs = String(args.rigs ?? args.rig ?? 'breacher,cryo,pyro,arc').split(',');
@@ -42,7 +57,7 @@ if (args.rooms && (!Number.isInteger(Number(args.rooms)) || Number(args.rooms) <
 const reports = [], metrics = await actorMetrics();
 const policyHash = createHash('sha256').update(await readFile(resolve('scripts/nextgen/playtest/policy.mjs'))).update(await readFile(resolve('scripts/nextgen/playtest/bot-navigation.ts'))).update(await readFile(resolve('scripts/nextgen/playtest/bot-navigation-version.mjs'))).digest('hex');
 const gameHash = createHash('sha256').update([...sourceCache].sort(([a], [b]) => a.localeCompare(b)).map(([path, content]) => path.slice(root.length + 1) + '\n' + content).join('\n')).digest('hex');
-for (const path of ['src/DepthGame.ts', 'src/game/abilities/AbilitySystem.ts', 'src/game/roguelike/progression.ts', 'src/game/waves/EncounterDirector.ts'])
+for (const path of ['src/DepthGame.ts', 'src/game/abilities/AbilitySystem.ts', 'src/game/roguelike/progression.ts', 'src/game/waves/EncounterDirector.ts', 'src/game/enemies/EnemySystem.ts', 'src/game/roguelike/i5Tuning.ts'])
     if (sourceCache.has(resolve(path))) {
         const destination = resolve(source, path);
         await mkdir(dirname(destination), { recursive: true });
@@ -75,13 +90,14 @@ async function worker() {
         });
         report.head = head;
         report.gameRef = gameRef ?? 'working-tree';
+        if (tuningEnabled !== undefined) report.tuningEnabled = tuningEnabled;
         report.bundleHash = bundleHash;
         report.policyHash = policyHash;
         report.gameHash = gameHash;
         reports.push(report);
         await writeFile(resolve(out, `${rig}-${seed}.json`), JSON.stringify(report, null, 2));
         console.log(`${rig} ${seed}: ${report.outcome}, ${report.rooms.filter(r => ['clear', 'complete'].includes(r.result)).length} clears, ${report.stats.overdrivesUsed} OD, ${report.wallSeconds.toFixed(2)}s wall`);
-        await writeFile(resolve(out, 'summary.json'), JSON.stringify({ head, gameRef: gameRef ?? 'working-tree', bundleHash, policyHash, gameHash, workers, ...summarizeSimulations(reports) }, null, 2));
+        await writeFile(resolve(out, 'summary.json'), JSON.stringify({ head, gameRef: gameRef ?? 'working-tree', tuningEnabled, bundleHash, policyHash, gameHash, workers, ...summarizeSimulations(reports) }, null, 2));
     }
 }
 await Promise.all(Array.from({ length: workers }, worker));

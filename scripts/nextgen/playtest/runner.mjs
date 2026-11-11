@@ -67,7 +67,7 @@ async function save() {
   report.wallSeconds = (performance.now()-wallStart)/1000;report.totalWallSeconds=report.wallSeconds+(resumed?.parent.totalWallSeconds??resumed?.parent.wallSeconds??0);
   await writeFile(resolve(out,'report.json'), JSON.stringify(report,null,2));
   const images = report.screenshots.map(f => `<figure><a href="${escape(f)}"><img loading="lazy" src="${escape(f)}"></a><figcaption>${escape(f)}</figcaption></figure>`).join('');
-  await writeFile(resolve(out,'index.html'), `<!doctype html><meta charset="utf-8"><title>${escape(label)}</title><style>body{background:#111820;color:#dde9ef;font:15px system-ui;margin:24px}table{border-collapse:collapse}td,th{padding:9px;border:1px solid #526170}section{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}figure{margin:0}img{width:100%}pre{white-space:pre-wrap}</style><h1>${escape(label)}</h1><p>${escape(report.outcome)} · ${report.assisted?'ASSISTED 15% incoming damage':'UNASSISTED'} · seed ${seed} · ${escape(report.clock)}</p><p>${escape(report.policy)}</p><a href="report.json">Full JSON</a> · <a href="trace.ndjson">Read state + native input trace</a><table><tr><th>Room</th><th>Result</th><th>Sim seconds</th><th>Damage taken</th><th>Ability damage</th><th>Heap MB</th><th>GPU geometry/texture</th></tr>${report.rooms.map(r=>`<tr><td>${escape(r.id)}</td><td>${escape(r.result)}</td><td>${r.seconds?.toFixed(1)}</td><td>${r.damageTaken?.toFixed(1)}</td><td>${r.damageDealt?.ability?.toFixed(1)}</td><td>${(r.memory?.heap/1e6)?.toFixed(1)}</td><td>${r.memory?.geometries}/${r.memory?.textures}</td></tr>`).join('')}</table><pre>${escape(JSON.stringify(report.defects,null,2))}</pre><section>${images}</section>`);
+  await writeFile(resolve(out,'index.html'), `<!doctype html><meta charset="utf-8"><title>${escape(label)}</title><style>body{background:#111820;color:#dde9ef;font:15px system-ui;margin:24px}table{border-collapse:collapse}td,th{padding:9px;border:1px solid #526170}section{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}figure{margin:0}img{width:100%}pre{white-space:pre-wrap}</style><h1>${escape(label)}</h1><p>${escape(report.outcome)} · ${report.assisted?'ASSISTED 15% incoming damage':'UNASSISTED'} · seed ${seed} · ${escape(report.clock)}</p><p>${escape(report.policy)}</p><p>Encounter profile: ${report.profileTransition?'MIXED / UNKNOWN CONTINUATION':report.tuningEnabled===true?'UNACCEPTED I5 TUNING':report.tuningEnabled===false?'PRODUCTION':'HISTORICAL'}</p><a href="report.json">Full JSON</a> · <a href="trace.ndjson">Read state + native input trace</a><table><tr><th>Room</th><th>Result</th><th>Sim seconds</th><th>Damage taken</th><th>Ability damage</th><th>Heap MB</th><th>GPU geometry/texture</th></tr>${report.rooms.map(r=>`<tr><td>${escape(r.id)}</td><td>${escape(r.result)}</td><td>${r.seconds?.toFixed(1)}</td><td>${r.damageTaken?.toFixed(1)}</td><td>${r.damageDealt?.ability?.toFixed(1)}</td><td>${(r.memory?.heap/1e6)?.toFixed(1)}</td><td>${r.memory?.geometries}/${r.memory?.textures}</td></tr>`).join('')}</table><pre>${escape(JSON.stringify(report.defects,null,2))}</pre><section>${images}</section>`);
 }
 function listen(p) {
   p.setDefaultTimeout(20000);
@@ -76,12 +76,20 @@ function listen(p) {
   p.on('response', r => {if(r.status()>=400) report.errors.push({type:'http',message:`${r.status()} ${r.url()}`});});
 }
 async function enableNative() {
-  await page.evaluate(({scale,realtime,fast,navigationVersion}) => {
+  const tuningEnabled = await page.evaluate(({scale,realtime,fast,navigationVersion}) => {
     const d=window.__containmentDebug;
     if(!d.botWaypoint||d.botNavigationVersion!==navigationVersion)throw Error(`Rebuild dist for ${navigationVersion}; loaded ${d.botNavigationVersion??'unversioned navigation'}`);
     if(realtime&&d.liveObservation!==true)throw Error('Rebuild dist for passive live observation');
     d.nativeInput(true);if(fast){if(!d.fastNativeRendering)throw Error('Rebuild dist for native fast rendering');d.fastNativeRendering(true);}d.presentation(true);if(scale<1)d.incomingDamageScale(scale);d.realtime(realtime);
+    return typeof d.encounterTuningEnabled === 'boolean' ? d.encounterTuningEnabled : null;
   }, {scale:report.incomingDamageScale,realtime:!!options.realtime,fast:!!options.fast,navigationVersion:BOT_NAVIGATION_VERSION});
+  if (typeof tuningEnabled === 'boolean') {
+    report.tuningEnabled = tuningEnabled;
+    if (resumed && resumed.parent.tuningEnabled !== tuningEnabled) {
+      report.profileTransition = {from:resumed.parent.tuningEnabled ?? 'historical',to:tuningEnabled};
+      report.limitations.push('This earned continuation changes or cannot establish the parent encounter profile; do not pool it with a single-profile balance cohort.');
+    }
+  }
 }
 /** Reads geometry/navigation and camera matrices; never writes simulation state. */
 async function advance(milliseconds) {

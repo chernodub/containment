@@ -18,6 +18,18 @@ function report(label, changes = {}) {
 }
 
 describe('campaign aggregation', () => {
+  it('separates recorded production, tuning and mixed-profile continuations from historical cohorts', () => {
+    const summary = aggregateReports([
+      {report:report('historical')},
+      {report:report('production',{tuningEnabled:false})},
+      {report:report('tuning',{tuningEnabled:true})},
+      {report:report('continued',{tuningEnabled:false,profileTransition:{from:true,to:false}})},
+    ]);
+    expect(summary.groups.map(group=>group.key)).toEqual(['unassisted:story-v3:arc','unassisted:story-v3:arc:mixed-profile','unassisted:story-v3:arc:production','unassisted:story-v3:arc:tuning']);
+    expect(summary.groups.every(group=>group.runs===1)).toBe(true);
+    expect(summary.runs.find(run=>run.label==='continued').profileTransition).toEqual({from:true,to:false});
+    expect(renderSummary(summary)).toContain('arc:mixed-profile');
+  });
   it('separates assisted and legacy runs and counts only endings as clears', () => {
     const summary = aggregateReports([
       {report: report('dead')}, {report: report('win', {outcome: 'complete'})},

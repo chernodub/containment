@@ -27,3 +27,10 @@ it('supports native reports with final.stats and preserves their source seed/hea
   expect(group.transmissionSeconds.median).toBe(70);
   expect(group.byAct[1].damageTaken.median).toBe(30);
 });
+it('keeps default-off production, explicit tuning and historical cohorts separate', () => {
+  const reports = [run(1,'complete'), {...run(2,'dead'),tuningEnabled:false}, {...run(3,'complete'),tuningEnabled:true}, {...run(4,'complete'),tuningEnabled:false,profileTransition:{from:true,to:false}}];
+  const groups = balanceSummary(reports).groups;
+  expect(groups.map(g => g.key)).toEqual(['organic:v3:arc','organic:v3:arc:mixed-profile','organic:v3:arc:production','organic:v3:arc:tuning']);
+  expect(groups.map(g => g.seeds)).toEqual([[1],[4],[2],[3]]);
+  expect(groups.map(g => g.completion)).toEqual([1,1,0,1]);
+});
