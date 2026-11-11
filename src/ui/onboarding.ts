@@ -1,6 +1,7 @@
 import type { DepthGame } from '../DepthGame';
 import type { AbilitiesSnapshot } from '../game/abilities/contract';
 import type { HudEffect } from './hud/effects';
+import { ABILITY_CATALOG } from '../game/abilities/catalog';
 import { hudObstructs, setPresentationObstacle } from './hud/layout';
 import './styles/onboarding.css';
 
@@ -120,7 +121,8 @@ export class ContextualOnboarding {
     if (!playing || (!firstRoom || this.firstRoomSeconds >= 60) && (!abilities?.overdrive.ready || this.seen.overdrive)) { this.node.hidden = true; this.active = null; setPresentationObstacle('onboarding', null); return; }
     const eligible = (action: OnboardingAction): boolean => {
       if (this.seen[action]) return false;
-      if (action === 'overdrive') return !!abilities?.overdrive.ready;
+      // The HUD owns the single temporary ready callout and persistent V slot.
+      if (action === 'overdrive') return false;
       if (!firstRoom || this.firstRoomSeconds >= 60) return false;
       if (action === 'medkit') return combat.health <= 65 && combat.medkits > 0;
       if (action === 'reload') return combat.magazine < combat.magazineCapacity * .6 && combat.reserve > 0;
@@ -128,7 +130,7 @@ export class ContextualOnboarding {
       if (action === 'dash' || action === 'tactical' || action === 'power') return !!abilities?.slots?.[action].ready;
       return true;
     };
-    if (this.active && eligible(this.active) && this.activeTime < 6) { this.node.hidden = false; return; }
+    if (this.active && eligible(this.active) && this.activeTime < 6 && (this.active === 'medkit' || !eligible('medkit'))) { this.node.hidden = false; return; }
     this.active = null;
     // Urgent contextual prompts can interrupt the teaching sequence.
     if (eligible('medkit')) this.active = 'medkit';
@@ -144,6 +146,11 @@ export class ContextualOnboarding {
     this.activeTime = 0;
     const [key, heading, copy] = prompts[this.active];
     this.key.textContent = key; this.heading.textContent = heading; this.copy.textContent = copy;
+    if (this.active === 'dash' || this.active === 'tactical' || this.active === 'power') {
+      const ability = abilities?.slots?.[this.active];
+      const definition = ability && ABILITY_CATALOG[ability.id];
+      if (definition) { this.heading.textContent = definition.name; this.copy.textContent = definition.summary; }
+    }
     this.node.dataset.action = this.active;
     this.node.hidden = false;
     this.layoutDirty = true;
@@ -160,11 +167,11 @@ export class ContextualOnboarding {
       this.layoutDirty = false; this.translation = this.host.style.translate;
       this.viewportWidth = innerWidth; this.viewportHeight = innerHeight;
       const bar = this.host.getBoundingClientRect();
-      const anchor = this.active && ['dash', 'tactical', 'power', 'overdrive'].includes(this.active) ? this.host.querySelector<HTMLElement>(`[data-ability="${this.active}"]`) : this.host.querySelector<HTMLElement>('.weapon-bank');
+      const anchor = this.active === 'medkit' ? document.getElementById('medkit-count')?.parentElement : this.active === 'grenade' ? document.getElementById('grenade-count')?.parentElement : this.active && ['dash', 'tactical', 'power', 'overdrive'].includes(this.active) ? this.host.querySelector<HTMLElement>(`[data-ability="${this.active}"]`) : this.host.querySelector<HTMLElement>('.weapon-bank');
       const target = anchor?.getBoundingClientRect();
       const size = this.node.getBoundingClientRect();
       const center = Math.max(size.width / 2 + 8, Math.min(innerWidth - size.width / 2 - 8, target ? (target.left + target.right) / 2 : (bar.left + bar.right) / 2));
-      let top = bar.top - size.height - 14;
+      let top = (this.active === 'medkit' || this.active === 'grenade') && target ? target.bottom + 24 : bar.top - size.height - 14;
       // A relocated action bar can sit at the top edge. Flip the prompt below
       // it when there is space, then clamp without changing its input behavior.
       if (top < 8 && bar.bottom + 14 + size.height <= innerHeight - 8) top = bar.bottom + 14;

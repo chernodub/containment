@@ -24,7 +24,8 @@ it('keeps both stream scenario sets and checks the integrated live HUD', async (
   }
   const { ABILITY_SCENARIOS } = await import('../scripts/nextgen/ability-scenarios.mjs');
   for (const scenario of ABILITY_SCENARIOS) expect(scenario.required).toContain('#ability-bar');
-  expect(SCENARIOS.find(s => s.id === 'results')).toMatchObject({state: 'dead', required: ['.result-stats', '.result-panel', '#start']});
+  expect(SCENARIOS.find(s => s.id === 'results')).toMatchObject({state: 'dead', required: ['.result-details', '.result-panel', '#start']});
+  expect(SCENARIOS.find(s => s.id === 'x3-failure-analysis').required).toContain('.incoming-breakdown');
 });
 
 it('opens every rig preview through live rig-select rather than a UI phase fixture', async () => {

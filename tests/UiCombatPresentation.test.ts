@@ -48,12 +48,14 @@ async function mount(reduced = false): Promise<Page> {
   return page;
 }
 
-it('uses four keyed spread arcs and a fixed luminous core, with reload progress independent of confirmation', async () => {
+it('uses a closed keyed silhouette and independent continuous spread ring with a fixed luminous core, with reload progress independent of confirmation', async () => {
   const page = await mount();
   try {
     const marker = page.locator('#hit-confirmation');
-    expect(await marker.locator('.reticle-arc').count()).toBe(4);
-    expect(await marker.locator('.reticle-spread .reticle-outline').count()).toBe(4);
+    expect(await marker.locator('.reticle-core circle.reticle-arc').count()).toBe(1);
+    expect(await marker.locator('.reticle-spread circle.reticle-spread-ring').count()).toBe(1);
+    expect(await marker.locator('.reticle-core .reticle-outline').count()).toBe(1);
+    expect(await marker.locator('.reticle-spread .reticle-outline').count()).toBe(1);
     const styles = await marker.evaluate(element => ({
       border: getComputedStyle(element).borderTopWidth,
       pointer: getComputedStyle(element).pointerEvents,
@@ -67,7 +69,9 @@ it('uses four keyed spread arcs and a fixed luminous core, with reload progress 
     const initialCore = (await marker.locator('.reticle-dot').boundingBox())!;
     const nodes = await marker.locator('*').count();
     await page.evaluate(() => {(window as any).combatTest.marker.snapshot({spreadRadians: .24, bloomRadians: .04, reloading: true, reloadProgress: .5});});
-    expect((await marker.boundingBox())!.width).toBe(56);
+    expect((await marker.boundingBox())!.width).toBe(40);
+    expect((await marker.locator('.reticle-spread').boundingBox())!.width).toBe(62);
+    expect(await marker.evaluate(el=>Number(getComputedStyle(el).zIndex))).toBeGreaterThan(100);
     expect((await marker.locator('.reticle-dot').boundingBox())!.width).toBe(initialCore.width);
     expect(await marker.locator('.reticle-reload-progress').evaluate(element => (element as SVGElement).style.strokeDashoffset)).toBe('50');
     await page.evaluate(() => {(window as any).combatTest.marker.confirm('damage', true);});
@@ -243,6 +247,24 @@ it('styles confirmed damage by source, merges receipts per target/source, and pr
     expect(await page.locator('[data-source=ability]:not([hidden])').evaluate(node=>getComputedStyle(node).textDecorationLine)).toBe('underline');
     expect(await page.locator('[data-source=status]:not([hidden])').evaluate(node=>getComputedStyle(node).fontStyle)).toBe('italic');
     expect(await page.locator('[data-source=boon]:not([hidden])').evaluate(node=>getComputedStyle(node).fontSize)).toBe('42px');
+  } finally {await page.close();}
+});
+
+it('keeps one most-relevant compact status chip per target while preserving independent damage receipts', async () => {
+  const page=await mount();
+  try {
+    await page.evaluate(()=>{
+      const {combat,player}=(window as any).combatTest;
+      for(const elements of [['ice'],['fire'],['freeze'],['poison']])combat.effect({type:'hit',x:380,y:300,targetId:1,damage:12,elements});
+      combat.effect({type:'hit',x:800,y:300,targetId:2,damage:18,elements:['fire']});
+      combat.tick(.01,player);
+    });
+    const chips=page.locator('.combat-float[data-kind=status]:not([hidden])');
+    expect(await chips.allTextContents()).toEqual(['FROZEN','BURNING']);
+    expect(await chips.first().getAttribute('aria-label')).toBe('FROZEN');
+    expect((await chips.first().boundingBox())!.width).toBeLessThanOrEqual(28);
+    expect(await chips.locator('svg:not([hidden])').count()).toBe(2);
+    expect(await page.locator('.combat-float[data-kind=damage]:not([hidden])').allTextContents()).toEqual(['48','18']);
   } finally {await page.close();}
 });
 

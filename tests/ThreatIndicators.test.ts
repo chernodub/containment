@@ -19,11 +19,13 @@ async function rig(page: Page, scale = 4) {
 async function markers(page: Page) {
     return page.locator('.threat-marker:not([hidden])').evaluateAll(nodes => nodes.map(node => { const r = node.getBoundingClientRect(), el = node as HTMLElement; return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2, width: r.width, kind: el.dataset.kind, bearing: Number(el.dataset.bearing), distance: Number(el.dataset.distance), count: Number(el.dataset.count), attacking: el.dataset.attacking, inFlight: el.dataset.inFlight, text: el.textContent, opacity: Number(getComputedStyle(el).opacity), path: el.querySelector('.threat-type path')!.getAttribute('d') }; }));
 }
-it('projects a marine ray to the inset ellipse without changing its bearing', () => {
+it('projects a marine ray to a consistently inset screen edge without changing its bearing', () => {
     const point = { x: 0, y: 0 }, ox = 710, oy = 410, angle = -.7;
     threatEdgePoint(ox, oy, angle, 1280, 900, point);
     expect(Math.atan2(point.y - oy, point.x - ox)).toBeCloseTo(angle, 8);
-    expect(((point.x - 640) / 598) ** 2 + ((point.y - 450) / 408) ** 2).toBeCloseTo(1, 8);
+    expect(point.x).toBeGreaterThanOrEqual(42);expect(point.x).toBeLessThanOrEqual(1238);
+    expect(point.y).toBeGreaterThanOrEqual(42);expect(point.y).toBeLessThanOrEqual(858);
+    expect(Math.min(Math.abs(point.x-42),Math.abs(point.x-1238),Math.abs(point.y-42),Math.abs(point.y-858))).toBeLessThan(1e-8);
     expect(projectileThreatens({ x: -100, y: 0, kind: 'hazard', request: { angle: 0, speed: 260 } }, { x: 0, y: 0 })).toBe(true);
     expect(projectileThreatens({ x: -100, y: 0, kind: 'hazard', request: { angle: Math.PI, speed: 260 } }, { x: 0, y: 0 })).toBe(false);
     expect(projectileThreatens({ x: -100, y: 130, kind: 'hazard', request: { angle: 0, speed: 260 } }, { x: 0, y: 0 })).toBe(false);
@@ -87,7 +89,7 @@ it('makes nearby threats bigger and brighter, and highlights real approaching sp
         await page.close();
     }
 });
-it('slides along the ellipse around measured chrome while retaining the enemy bearing and marine clearance', async () => {
+it('slides along the inset edge around measured chrome while retaining the enemy bearing and marine clearance', async () => {
     const page = await mountHud(1280, 900);
     try {
         await rig(page);

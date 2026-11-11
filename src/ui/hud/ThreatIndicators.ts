@@ -3,6 +3,7 @@ import type { DepthRenderer } from '../../render/DepthRenderer';
 import type { EnemySnapshot } from '../../game/enemies/EnemySystem';
 import { projectWorld, getViewportWidth, getViewportHeight, type ScreenPoint } from '../gameAdapter';
 import type { HudEffect } from './effects';
+import { formatDistance } from '../units';
 export const THREAT_CAPACITY = 8;
 export type ThreatKind = 'standard' | 'ranged' | 'elite' | 'champion' | 'boss';
 export type ThreatBullet = Readonly<{
@@ -69,17 +70,16 @@ const shapePaths: Record<ThreatKind, string> = {
 const rank: Record<ThreatKind, number> = { standard: 0, ranged: 1, elite: 2, champion: 3, boss: 4 };
 const angularDistance = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
-/** Ray from the projected marine to an inset screen ellipse. Mutates pooled output. */
+/** Bearing-preserving intersection with one consistent inset desktop edge. */
 export function threatEdgePoint(ox: number, oy: number, angle: number, width: number, height: number, out: Point): Point {
-    const cx = width / 2, cy = height / 2, rx = Math.max(50, cx - 42), ry = Math.max(40, cy - 42);
-    const dx = Math.cos(angle), dy = Math.sin(angle), px = ox - cx, py = oy - cy;
-    const a = dx * dx / (rx * rx) + dy * dy / (ry * ry), b = 2 * (px * dx / (rx * rx) + py * dy / (ry * ry));
-    const c = px * px / (rx * rx) + py * py / (ry * ry) - 1;
-    const root = Math.sqrt(Math.max(0, b * b - 4 * a * c));
-    const near = (-b - root) / (2 * a), far = (-b + root) / (2 * a);
-    const t = near >= 0 ? near : Math.max(0, far);
-    out.x = ox + dx * t;
-    out.y = oy + dy * t;
+    const inset = 42, dx = Math.cos(angle), dy = Math.sin(angle);
+    const x = Math.max(inset, Math.min(width - inset, ox));
+    const y = Math.max(inset, Math.min(height - inset, oy));
+    const tx = Math.abs(dx) < 1e-8 ? Infinity : ((dx > 0 ? width - inset : inset) - x) / dx;
+    const ty = Math.abs(dy) < 1e-8 ? Infinity : ((dy > 0 ? height - inset : inset) - y) / dy;
+    const distance = Math.max(0, Math.min(tx, ty));
+    out.x = x + dx * distance;
+    out.y = y + dy * distance;
     return out;
 }
 /** A hostile projectile threatens the marine only while its real trajectory approaches. */
@@ -114,7 +114,11 @@ export class ThreatIndicators {
             chevron.setAttribute('viewBox', '0 0 32 32');
             chevron.setAttribute('class', 'threat-chevron');
             const arrow = document.createElementNS(NS, 'path');
-            arrow.setAttribute('d', 'M9 5l13 11L9 27');
+            arrow.setAttribute('d', 'M6 5l20 11L6 27l6-11z');
+            const backing = document.createElementNS(NS, 'path');
+            backing.setAttribute('d', 'M6 5l20 11L6 27l6-11z');
+            backing.setAttribute('class','threat-chevron-backing');
+            chevron.append(backing);
             chevron.append(arrow);
             const type = document.createElementNS(NS, 'svg');
             type.setAttribute('viewBox', '0 0 32 32');
@@ -244,7 +248,7 @@ export class ThreatIndicators {
         candidate.angle = angle;
         candidate.point.x = this.edge.x;
         candidate.point.y = this.edge.y;
-        candidate.edgeAngle = Math.atan2((this.edge.y - this.height / 2) / Math.max(40, this.height / 2 - 42), (this.edge.x - this.width / 2) / Math.max(50, this.width / 2 - 42));
+        candidate.edgeAngle = Math.atan2(this.edge.y - this.height / 2, this.edge.x - this.width / 2);
     }
     update(enemies: readonly EnemySnapshot[], player: Point, bounds: {
         left: number;
@@ -283,11 +287,12 @@ export class ThreatIndicators {
                 break;
             const candidate = this.candidates[index], marker = this.markers[order];
             candidate.count = -candidate.count;
-            const near = clamp(1 - candidate.distance / 1000), scale = .76 + near * .55, radius = 19 * scale;
+            const near = clamp(1 - candidate.distance / 1000), scale = 1 + near * .18, radius = 25 * scale;
             let x = candidate.point.x, y = candidate.point.y, found = false;
             for (let attempt = 0; attempt < 41; attempt++) {
                 const offset = attempt === 0 ? 0 : Math.ceil(attempt / 2) * .055 * (attempt % 2 ? 1 : -1), theta = candidate.edgeAngle + offset;
-                const px = this.width / 2 + (this.width / 2 - 42) * Math.cos(theta), py = this.height / 2 + (this.height / 2 - 42) * Math.sin(theta);
+                threatEdgePoint(this.width / 2, this.height / 2, theta, this.width, this.height, this.edge);
+                const px = this.edge.x, py = this.edge.y;
                 if (px - radius < 8 || py - radius < 8 || px + radius > this.width - 8 || py + radius > this.height - 8)
                     continue;
                 if (px + radius > bounds.left - 12 && px - radius < bounds.right + 12 && py + radius > bounds.top - 12 && py - radius < bounds.bottom + 12)
@@ -318,7 +323,7 @@ export class ThreatIndicators {
             marker.node.hidden = false;
             marker.node.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%) scale(${scale})`;
             marker.node.style.setProperty('--bearing', `${candidate.angle}rad`);
-            marker.node.style.setProperty('--threat-opacity', String(.56 + near * .44));
+            marker.node.style.setProperty('--threat-opacity', String(.88 + near * .12));
             marker.node.dataset.kind = candidate.kind;
             marker.node.dataset.elite = String(rank[candidate.kind] >= 2);
             marker.node.dataset.attacking = String(candidate.attacking);
@@ -332,7 +337,7 @@ export class ThreatIndicators {
             marker.count.hidden = count <= 1;
             marker.count.textContent = count > 1 ? String(count) : '';
             marker.node.dataset.count = String(count);
-            marker.node.setAttribute('aria-label', `${count > 1 ? `${count} threats, ` : ''}${candidate.kind}, ${Math.round(candidate.distance / 32)} metres${candidate.attacking ? ', attacking' : ''}`);
+            marker.node.setAttribute('aria-label', `${count > 1 ? `${count} threats, ` : ''}${candidate.kind}, ${formatDistance(candidate.distance)}${candidate.attacking ? ', attacking' : ''}`);
         }
     }
     tick(dt: number): void {

@@ -1,8 +1,10 @@
-/* Four open spread arcs keep aim precise; every luminous stroke has a dark keyline. */
+/* A closed white aim ring with a dark keyline stays legible through bright floors and combat. */
 #hit-confirmation {
   position: fixed;
   pointer-events: none;
-  z-index: 5;
+  z-index: 1000;
+  min-width: 40px;
+  min-height: 40px;
   border: 0;
   border-radius: 0;
   background: none;
@@ -11,7 +13,7 @@
   transform: translate(-50%, -50%);
 }
 #hit-confirmation::before, #hit-confirmation::after { content: none; }
-#hit-confirmation .reticle-spread, #hit-confirmation .reticle-contact, #hit-confirmation .reticle-reload {
+#hit-confirmation .reticle-core, #hit-confirmation .reticle-spread, #hit-confirmation .reticle-contact, #hit-confirmation .reticle-reload {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -21,8 +23,8 @@
   stroke-linecap: square;
   pointer-events: none;
 }
-#hit-confirmation .reticle-outline { stroke: #031018; stroke-width: 4.5px; }
-#hit-confirmation .reticle-arc { stroke: #dff8ff; stroke-width: 1.8px; }
+#hit-confirmation .reticle-outline { stroke: #031018; stroke-width: 6px; }
+#hit-confirmation .reticle-arc { stroke: #dff8ff; stroke-width: 2.8px; }
 #hit-confirmation .reticle-dot {
   position: absolute;
   left: 50%;
@@ -49,3 +51,9 @@
   #hit-confirmation, #hit-confirmation * { animation: none !important; transition: none !important; }
   #hit-confirmation[data-kill=true] .reticle-contact { transform: none; }
 }
+
+#hit-confirmation .reticle-spread {inset:auto;left:50%;top:50%;width:var(--spread-size,40px);height:var(--spread-size,40px);transform:translate(-50%,-50%);}
+#hit-confirmation .reticle-spread .reticle-outline {stroke-width:3.8px;}
+#hit-confirmation .reticle-spread-ring {stroke:#dff8ff;stroke-width:1.3px;}
+.reticle-denial {position:fixed;z-index:1001;pointer-events:none;transform:translate(-50%,32px);padding:5px 9px;border:1px solid #ffb49f88;border-left:3px solid #ff7654;background:#071117f5;box-shadow:0 2px 7px #000a;color:#fff0e8;font:600 13px/1.2 var(--font-body,Arial,sans-serif);white-space:nowrap;}
+.reticle-denial[hidden],body:not([data-state=playing]) .reticle-denial {display:none!important;}

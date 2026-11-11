@@ -16,8 +16,9 @@
   pointer-events: none;
   will-change: transform, opacity;
 }
-#combat-text .combat-float[data-kind=status] { display:flex;align-items:center;gap:5px;padding:3px 7px 3px 4px;background:#07131af2;border:1px solid currentColor;font:600 12px/1.2 var(--font-body,sans-serif);letter-spacing:.01em;-webkit-text-stroke:0;text-shadow:none;box-shadow:0 2px 8px #0008; }
+#combat-text .combat-float[data-kind=status] { display:flex;align-items:center;justify-content:center;width:26px;height:26px;padding:3px;background:#07131af2;border:1px solid currentColor;font:600 12px/1.2 var(--font-body,sans-serif);letter-spacing:.01em;-webkit-text-stroke:0;text-shadow:none;box-shadow:0 2px 8px #0008; }
 #combat-text .combat-float[data-kind=status] .ui-icon {width:16px;height:16px;padding:1px;background:#9fe8ff12;}
+#combat-text .combat-float[data-kind=status]>span:last-child {position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 /* Source receipts use both color and a quiet typographic mark. Elements retain their hue. */
 #combat-text .combat-float[data-source=ability] { color: #9fe8ff; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 #combat-text .combat-float[data-source=status] { color: #b6ff84; font-style: italic; }

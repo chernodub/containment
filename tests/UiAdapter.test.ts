@@ -4,9 +4,20 @@ import {DepthGame} from '../src/DepthGame';
 import type {DepthRenderer} from '../src/render/DepthRenderer';
 import {GRAPHICS_PRESETS} from '../src/render/graphicsOptions';
 import {abilityFixture} from '../src/ui/fixtures';
-import {chooseRig, getAbilities, getCameraFootprint, getGraphicsOptions, getRunStats, getUiPhase, setGraphicsOptions, setGraphicsTier, setUiFixture, useAbility} from '../src/ui/gameAdapter';
+import {chooseRig, getAbilities, getCameraFootprint, getGraphicsOptions, getRunStats, getUiPhase, setGraphicsOptions, setGraphicsTier, setUiFixture, showInvalidAbilityPlacement, useAbility} from '../src/ui/gameAdapter';
 
 describe('version-tolerant presentation adapter', () => {
+  it('feature-detects invalid-placement previews and never passes nonfinite world positions', () => {
+    expect(()=>showInvalidAbilityPlacement({} as DepthRenderer,'glacier',4,5)).not.toThrow();
+    const preview=vi.fn(),renderer={setInvalidAbilityPlacement:preview} as unknown as DepthRenderer;
+    showInvalidAbilityPlacement(renderer,'glacier',NaN,5);
+    showInvalidAbilityPlacement(renderer,'glacier');
+    expect(preview).not.toHaveBeenCalled();
+    showInvalidAbilityPlacement(renderer,'glacier',4,5);
+    expect(preview).toHaveBeenLastCalledWith('glacier',4,5);
+    showInvalidAbilityPlacement(renderer,null);
+    expect(preview).toHaveBeenLastCalledWith(null,undefined,undefined);
+  });
   it('reads the live runtime and preserves action acceptance', () => {
     const game = new DepthGame();
     expect(getAbilities(game)).toBe(game.abilities.snapshot);

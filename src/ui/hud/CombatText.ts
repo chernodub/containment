@@ -35,6 +35,7 @@ type Float = {
 const sourceLanes: Record<string, number> = {weapon: 0, ability: 1, status: 2, boon: 3};
 const statusLabels: Record<string, string> = { ice: 'CHILLED', freeze: 'FROZEN', frost: 'CHILLED', shatter: 'SHATTER', fire: 'BURNING', burn: 'BURNING', poison: 'ACID', acid: 'ACID', shock: 'SHOCK', arc: 'SHOCK', overload: 'OVERLOAD' };
 const statusGlyphs: Record<string, string> = {ice:'chill',frost:'chill',freeze:'freeze',shatter:'freeze',fire:'burn',burn:'burn',poison:'acid',acid:'acid',shock:'shock',arc:'shock',overload:'shock'};
+const statusPriority: Record<string, number> = {freeze:6,shatter:6,shock:5,arc:5,overload:5,poison:4,acid:4,fire:3,burn:3,ice:2,frost:2};
 /** A bounded DOM pool; same-target pellets merge instead of covering the encounter. */
 export class CombatText {
     private readonly pool: Float[] = [];
@@ -82,9 +83,13 @@ export class CombatText {
     }
     private add(x: number, y: number, target: number | undefined, amount: number, kind: string, status: string, lethal: boolean, critical = false, source = ''): void {
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+        // One status chip per target. Hard control wins over damage-over-time
+        // and slows, so sustained mixed-element pulses cannot cover the actor.
+        const currentStatus = kind === 'status' ? this.pool.find(p => p.life > 0 && p.kind === 'status' && (target !== undefined ? p.target === target : Math.hypot(p.x-x,p.y-y)<72)) : undefined;
+        if (currentStatus && (statusPriority[currentStatus.status] ?? 0) > (statusPriority[status] ?? 0)) return;
         // Reuse a visible receipt until there is a quiet gap. Repeated zone/status ticks
         // cannot stack new labels faster than old ones expire.
-        let entry = this.pool.find(p => p.life > 0 && p.kind === kind && p.source === source && (kind === 'damage' || p.status === status) && (target !== undefined ? p.target === target : Math.hypot(p.x - x, p.y - y) < (kind === 'status' ? 72 : 25)));
+        let entry = currentStatus ?? this.pool.find(p => p.life > 0 && p.kind === kind && p.source === source && (kind === 'damage' || p.status === status) && (target !== undefined ? p.target === target : Math.hypot(p.x - x, p.y - y) < (kind === 'status' ? 72 : 25)));
         if (!entry)
             entry = this.pool.find(p => p.life <= 0);
         if (!entry) {
@@ -110,6 +115,8 @@ export class CombatText {
         entry.node.hidden = false;
         const label = kind === 'damage' ? `${Math.round(entry.amount)}${entry.lethal ? ' ×' : ''}` : statusLabels[status];
         entry.label.textContent = label;
+        if (kind === 'status') {entry.node.title = label; entry.node.setAttribute('aria-label', label);}
+        else {entry.node.removeAttribute('title'); entry.node.removeAttribute('aria-label');}
         entry.glyph.hidden = kind !== 'status';
         if (kind === 'status') for (const glyph of entry.glyphs) glyph.toggleAttribute('hidden', glyph.dataset.icon !== statusGlyphs[status]);
         entry.node.dataset.kind = kind;
@@ -117,7 +124,7 @@ export class CombatText {
         entry.node.dataset.critical = String(entry.critical);
         const fontSize = kind === 'status' ? 12 : entry.lethal ? 42 : entry.critical ? 40 : 34;
         entry.fontSize = fontSize;
-        entry.baseWidth = Math.max(28, Math.ceil(label.length * fontSize * .7) + (kind === 'status' ? 30 : 6));
+        entry.baseWidth = kind === 'status' ? 26 : Math.max(28, Math.ceil(label.length * fontSize * .7) + 6);
         entry.baseHeight = kind === 'status' ? 26 : fontSize + 5;
         entry.width = entry.baseWidth; entry.height = entry.baseHeight;
         entry.node.dataset.lethal = String(entry.lethal);

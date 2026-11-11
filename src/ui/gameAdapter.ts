@@ -48,6 +48,14 @@ export function useAbility(game: DepthGame, slot: AbilitySlot): boolean {
   return game.useAbility(slot);
 }
 
+/** Optional renderer preview: presentation only, never a placement or hit decision. */
+export function showInvalidAbilityPlacement(renderer: DepthRenderer, abilityId: string | null, x?: number, y?: number): void {
+  const hook = (renderer as DepthRenderer & {setInvalidAbilityPlacement?: (id: string | null, x?: number, y?: number) => void}).setInvalidAbilityPlacement;
+  if (typeof hook !== 'function') return;
+  if (abilityId !== null && (!Number.isFinite(x) || !Number.isFinite(y))) return;
+  hook.call(renderer, abilityId, x, y);
+}
+
 /** Nested, immutable simulation statistics drive the debrief. */
 export function getRunStats(game: DepthGame): RunStatsSnapshot {
   return fixtures.get(game)?.stats ?? game.stats;

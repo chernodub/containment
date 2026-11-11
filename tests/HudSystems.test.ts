@@ -49,9 +49,9 @@ it('renders all rig ability states and protects the centered follow marine throu
         await page.evaluate(() => { const { hud } = (window as any).__live; hud.effect({ type: 'ability', x: 0, y: 0, ability: { phase: 'denied', slot: 'tactical', ability: 'seismic-slam', rig: 'breacher', element: 'kinetic', denial: 'blocked' } }); });
         expect(await page.locator('[data-ability="tactical"]').getAttribute('data-state')).toBe('denied');
         expect(await page.locator('[data-ability="tactical"]').getAttribute('data-flash')).toBe('false');
-        expect(await page.locator('[data-ability="tactical"] .ability-value').textContent()).toBe('BLOCKED');
+        expect(await page.locator('[data-ability="tactical"] .ability-value').textContent()).toBe('Unavailable');
         await page.evaluate(() => (window as any).__live.hud());
-        expect(await page.locator('[data-ability="tactical"] .ability-value').textContent()).toBe('BLOCKED');
+        expect(await page.locator('[data-ability="tactical"] .ability-value').textContent()).toBe('Unavailable');
         await page.evaluate(() => { const { hud, game, adapter } = (window as any).__live; adapter.setUiFixture(game, { abilities: null }); hud(); });
         expect(await page.locator('#ability-bar').isHidden()).toBe(true);
     }
@@ -250,7 +250,7 @@ it('makes ready rigs elemental, fills Overdrive energy, marks low ammunition and
         const full = await page.locator('[data-ability=overdrive]').evaluate(el => ({ background: getComputedStyle(el).backgroundImage, key: getComputedStyle(el.querySelector('kbd')!).backgroundColor, edge: getComputedStyle(el, '::after').animationName }));
         expect(full.background).not.toBe('none');
         expect(full.key).toBe('rgb(183, 156, 255)');
-        expect(full.edge).toBe('overdrive-energy');
+        expect(full.edge).toBe('none');
         await page.evaluate(() => { const { game, hud } = (window as any).__live; const resources = game.combat.getRunResources(); resources.ammo.pistol.magazine = 1; game.combat.restoreRunResources(resources); hud(); game.combat.startReload(); game.combat.update(300); hud(); });
         expect(await page.locator('.weapon-hud').getAttribute('data-ammo')).toBe('low');
         expect(await page.locator('.weapon-hud').getAttribute('data-reloading')).toBe('true');
@@ -298,7 +298,7 @@ it('reads live dash recharge and cast/cooldown receipts, then flashes on recharg
             const {game, hud, adapter} = (window as any).__live;
             adapter.useAbility(game, 'tactical'); hud();
         });
-        expect(await page.locator('[data-ability="tactical"] .ability-value').textContent()).toBe('COOLDOWN');
+        expect(await page.locator('[data-ability="tactical"] .ability-value').textContent()).toBe('Recharging');
         await page.evaluate(() => {
             const {game, hud} = (window as any).__live;
             hud.tick(.1); hud.tick(.1); hud.tick(.1); hud.tick(.1);
@@ -327,7 +327,7 @@ it('dismisses the ready announcement immediately when real Overdrive starts', as
     } finally {await page.close();}
 });
 
-it('labels a stored but illegal placement as blocked instead of a zero-second cooldown', async () => {
+it('explains that a stored charge needs clear ground instead of showing a zero-second cooldown', async () => {
     const page=await mountHud(1920,1080);
     try {
         await liveHud(page);
@@ -337,7 +337,7 @@ it('labels a stored but illegal placement as blocked instead of a zero-second co
             adapter.setUiFixture(game,{abilities:{...s,slots:{...s.slots,power:{...s.slots.power,ready:false,charges:1,cooldownRemainingMs:0}}}});
             hud();
         });
-        expect(await page.locator('[data-ability="power"] .ability-value').textContent()).toBe('BLOCKED');
+        expect(await page.locator('[data-ability="power"] .ability-value').textContent()).toBe('Need clear ground');
         expect(await page.locator('[data-ability="power"]').getAttribute('data-charges')).toBe('1');
     } finally {await page.close();}
 });
@@ -467,4 +467,55 @@ it('labels a held full Overdrive for the next room and preserves its visible met
         expect(await slot.getAttribute('data-state')).toBe('ready');
         expect(await slot.locator('.ability-value').textContent()).toBe('READY');
     } finally { await page.close(); }
+});
+
+it('compacts combat choices after inspection and restores objective details on held Tab and mouse hover without changing gameplay', async () => {
+    const page=await mountHud(1280,720);
+    try {
+        await liveHud(page);
+        await page.evaluate(()=>{const {game,hud,adapter,fixtures}=(window as any).__live;adapter.setUiFixture(game,{abilities:fixtures.abilityFixture('cryo','cooling')});hud();for(let i=0;i<45;i++)hud.tick(.1);hud();});
+        const before=await page.evaluate(()=>{const {game}=(window as any).__live;return {health:game.combat.snapshot.health,charges:game.abilities.snapshot.slots,x:game.player.x,y:game.player.y};});
+        expect(await page.locator('.weapon-bank').getAttribute('data-expanded')).toBe('false');
+        expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('false');
+        const compact=await page.locator('#action-bar').boundingBox();
+        expect(compact!.width).toBeLessThan(750);expect(compact!.height).toBeLessThan(130);
+        expect(await page.locator('[data-ability=tactical] .ability-value').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(20);
+        expect(await page.locator('[data-ability=tactical] kbd').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(12);
+        expect(await page.locator('[data-ability=tactical]').getAttribute('data-reason')).toBe('Recharging');
+        await page.keyboard.down('Tab');await page.evaluate(()=>(window as any).__live.hud());
+        expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('true');
+        await page.keyboard.up('Tab');await page.evaluate(()=>(window as any).__live.hud());
+        expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('false');
+        await page.keyboard.press('Digit3');await page.evaluate(()=>(window as any).__live.hud());
+        expect(await page.locator('.weapon-bank').getAttribute('data-expanded')).toBe('true');
+        await page.evaluate(()=>{const {hud}=(window as any).__live;for(let i=0;i<16;i++)hud.tick(.1);hud();});
+        expect(await page.locator('.weapon-bank').getAttribute('data-expanded')).toBe('false');
+        const room=await page.locator('#status-hud').boundingBox();
+        await page.mouse.move(room!.x+room!.width/2,room!.y+room!.height/2);await page.evaluate(()=>(window as any).__live.hud());
+        expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('true');
+        const after=await page.evaluate(()=>{const {game}=(window as any).__live;return {health:game.combat.snapshot.health,charges:game.abilities.snapshot.slots,x:game.player.x,y:game.player.y};});
+        expect(after).toEqual(before);
+        expect(await page.locator('[data-weapon]').count()).toBe(5);
+    } finally {await page.close();}
+});
+
+it('explains each denied press by the pointer, clears optional placement feedback, and keeps fire decoration passive',async()=>{
+    const page=await mountHud(1280,720);
+    try{
+        await liveHud(page);
+        await page.evaluate(()=>{const {renderer}=(window as any).__live;(window as any).__placement=[];renderer.setInvalidAbilityPlacement=(...args:unknown[])=>(window as any).__placement.push(args);});
+        await page.mouse.move(820,320);
+        for(const [reason,expected] of [['casting','Casting'],['cooldown','Recharging'],['no-charge','No charge'],['blocked','Need clear ground'],['no-target','No target']]){
+            await page.evaluate(reason=>{(window as any).__live.hud.effect({type:'ability',x:0,y:0,ability:{phase:'denied',slot:'power',ability:'glacier',rig:'cryo',element:'cryo',denial:reason,targetX:180,targetY:220}});},reason);
+            const label=page.locator('#ability-denial');expect(await label.textContent()).toBe(expected);expect(await label.isVisible()).toBe(true);
+            expect(await label.evaluate(el=>getComputedStyle(el).pointerEvents)).toBe('none');
+            const box=await label.boundingBox();expect(box!.x).toBeGreaterThan(600);expect(box!.y).toBeGreaterThan(320);expect(box!.y).toBeLessThan(390);
+        }
+        await page.evaluate(()=>{const {hud}=(window as any).__live;for(let i=0;i<10;i++)hud.tick(.1);});
+        expect(await page.locator('#ability-denial').isHidden()).toBe(true);
+        expect((await page.evaluate(()=>(window as any).__placement)).length).toBeGreaterThan(1);
+        await page.evaluate(()=>{const {hud}= (window as any).__live;hud.effect({type:'ability',x:0,y:0,ability:{phase:'denied',slot:'power',ability:'glacier',rig:'cryo',element:'cryo',denial:'blocked'}});(window as any).__live.game.status='paused';hud.tick(.1);});
+        expect(await page.locator('#ability-denial').isHidden()).toBe(true);
+        await page.evaluate(()=>(window as any).__live.hud.dispose());expect(await page.locator('#ability-denial').count()).toBe(0);
+    }finally{await page.close();}
 });

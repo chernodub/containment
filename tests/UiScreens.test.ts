@@ -297,6 +297,9 @@ test('debrief renders nested authoritative counters, source totals and accuracy,
       ui.game.stats=stats.snapshot;
     });
     await phase(page,'dead');
+    expect(await page.locator('.result-details').getAttribute('open')).toBeNull();
+    expect(await page.locator('.incoming-report').isVisible()).toBe(true);
+    await page.locator('.result-details>summary').click();
     expect(await page.locator('.hero-stats>div').count()).toBe(4);
     expect(await page.locator('[data-stat]').count()).toBe(16);
     expect(await page.locator('.damage-source-bar i').count()).toBe(4);
@@ -329,7 +332,8 @@ test('live loadout lists all catalog augments with dedicated glyphs and the four
     });
     await phase(page,'paused');
     await page.locator('[data-pause-tab=loadout]').click();
-    expect(await page.locator('.ability-detail h3').allTextContents()).toEqual(['Frost Trail','Cryo Nova','Glacier','Whiteout']);
+    expect(await page.locator('.ability-detail h3').evaluateAll(nodes=>nodes.map(node=>node.firstChild?.textContent))).toEqual(['Frost Trail','Cryo Nova','Glacier','Whiteout']);
+    expect(await page.locator('.ability-augment-badge').count()).toBe(4);
     expect(await page.locator('.owned-boon[data-augment=true]').count()).toBe(12);
     const icons=await page.locator('.owned-boon').evaluateAll(nodes=>nodes.map(node=>({id:node.getAttribute('data-boon'),icon:node.querySelector('svg')?.getAttribute('data-icon')})));
     for(const entry of icons) expect(entry.icon).toBe(entry.id);
@@ -420,7 +424,7 @@ test('rig previews expose every catalog shape and full keyboard-readable rules w
       await page.locator('.ability-detail').first().focus();
       expect(await page.locator('.ability-detail').first().locator('.ability-rules').isVisible()).toBe(true);
       expect(await page.locator('.ability-detail').first().getAttribute('aria-label')).toContain('Dash');
-      if(rig==='arc') expect(await page.locator('.ability-detail').last().locator('.ability-shape').getAttribute('aria-label')).toBe('SELF effect');
+      if(rig==='arc') expect(await page.locator('.ability-detail').last().locator('.ability-shape').getAttribute('aria-label')).toContain('Time dilation');
     }
   } finally {await page.close();}
 });
@@ -462,6 +466,7 @@ test('visible build rules stay inside the viewport when focused near the right e
   try {
     await page.evaluate(()=>{const ui=(window as any).ui;ui.game.expedition={...ui.game.expedition,build:{mutations:['incendiary','breacher','cryogenic','permafrost','arc-filament','pressure-point','heavy-pellets','absolute-zero']}};});
     await phase(page,'dead');
+    await page.locator('.result-details>summary').click();
     for(const card of await page.locator('.owned-boon').all()) {
       await card.focus();const tooltip=(await card.locator('.boon-tooltip').boundingBox())!;
       expect(tooltip.x).toBeGreaterThanOrEqual(8);expect(tooltip.x+tooltip.width).toBeLessThanOrEqual(1272);
@@ -507,5 +512,75 @@ test.each([[1280,720],[1920,1080]])('cinematic menu yields vector art while keep
     expect(extent.scroll).toBeLessThanOrEqual(extent.width+1);
     await page.locator('#start').click();
     expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual(['start']);
+  } finally {await page.close();}
+});
+
+test.each([[1280,720],[1920,1080]])('Containment is the dominant title and Depth stays a subtitle at %i × %i',async(width,height)=>{
+  const page=await mount(width,height);
+  try {
+    const sizes=await page.evaluate(()=>({word:parseFloat(getComputedStyle(document.querySelector('.title-word')!).fontSize),depth:parseFloat(getComputedStyle(document.querySelector('.title-depth')!).fontSize)}));
+    expect(sizes.word).toBeGreaterThan(sizes.depth*3);
+    expect(await page.locator('#start').isVisible()).toBe(true);
+    expect(await page.locator('#continue').isVisible()).toBe(true);
+  } finally {await page.close();}
+});
+
+test('boon element accents remain separate from family membership throughout draft and recap',async()=>{
+  const page=await mount();
+  try {
+    await phase(page,'reward');
+    const fire=page.locator('[data-mutation=incendiary]');
+    expect(await fire.getAttribute('data-element')).toBe('pyro');
+    expect(await fire.getAttribute('data-family')).toBe('Reactor');
+    expect(await fire.locator('.boon-emblem').getAttribute('data-icon')).toBe('pyro');
+    expect(await fire.locator('.family-progress').innerText()).toContain('Counts toward Reactor set');
+    expect(await fire.locator('.boon-condition>span').innerText()).toBe('LIMIT');
+    await page.evaluate(()=>{const ui=(window as any).ui;ui.game.expedition={...ui.game.expedition,build:{rig:'pyro',mutations:['incendiary','caustic-rounds','field-medic']}};});
+    await phase(page,'dead');
+    await page.locator('.result-details>summary').click();
+    expect(await page.locator('[data-boon=incendiary]').getAttribute('data-element')).toBe('pyro');
+    expect(await page.locator('[data-boon=caustic-rounds]').getAttribute('data-element')).toBe('acid');
+    expect(await page.locator('[data-boon=field-medic]').getAttribute('data-element')).toBe('recovery');
+    await phase(page,'route',0);
+    expect(await page.locator('.route-reward').innerText()).not.toMatch(/mutation/i);
+  } finally {await page.close();}
+});
+
+test('unaffordable service rows explain the missing credits without fading their text',async()=>{
+  const page=await mount();
+  try {
+    await page.evaluate(()=>{(window as any).ui.game.combat.snapshot.credits=20;});
+    await phase(page,'reward',3);
+    expect(await page.locator('#service-heal-reason').innerText()).toBe('Need 80 credits');
+    expect(await page.locator('[data-purchase=heal]').isDisabled()).toBe(true);
+    expect(await page.locator('[data-purchase=heal]').evaluate(node=>getComputedStyle(node).opacity)).toBe('1');
+  } finally {await page.close();}
+});
+
+test('loadout marks modified ability slots and presents their changed values',async()=>{
+  const page=await mount();
+  try {
+    await page.evaluate(()=>{const ui=(window as any).ui;ui.game.abilities.snapshot=ui.api.abilityFixture('cryo','ready');ui.game.expedition={...ui.game.expedition,build:{rig:'cryo',mutations:['spreading-nova','twin-glacier','reserve-thruster']}};});
+    await phase(page,'paused');
+    await page.locator('[data-pause-tab=loadout]').click();
+    expect(await page.locator('.ability-augment-badge').count()).toBe(3);
+    expect(await page.locator('.ability-changed-value').allTextContents()).toEqual(['2 → 3 dash charges','+0.63 m radius per chilled enemy · max +3.13 m','1 → 2 ice walls']);
+    expect(await page.locator('.ability-detail').first().locator('dl dd').first().innerText()).toBe('3');
+    expect(await page.locator('.ability-preview').innerText()).not.toContain('Radius 300');
+  } finally {await page.close();}
+});
+
+test('ending leads completion while every original statistic remains available through native disclosure',async()=>{
+  const page=await mount();
+  try {
+    await phase(page,'complete',19);
+    expect(await page.locator('.completion-ending').isVisible()).toBe(true);
+    expect(await page.locator('.ending-exact').innerText()).toBe('Containment restored.');
+    expect(await page.locator('.result-details').getAttribute('open')).toBeNull();
+    expect(await page.locator('[data-stat=kills]').isVisible()).toBe(false);
+    await page.locator('.result-details>summary').focus();
+    await page.keyboard.press('Enter');
+    expect(await page.locator('[data-stat=kills]').isVisible()).toBe(true);
+    expect(await page.locator('[data-stat]').count()).toBe(16);
   } finally {await page.close();}
 });

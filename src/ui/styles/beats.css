@@ -8,6 +8,22 @@
 #presentation-beat[data-beat='death'] .beat-glyph {color:#ff7956}
 #presentation-beat[data-beat='room-clear'],#presentation-beat[data-beat='victory'] {border-color:#ffd27a}
 #presentation-beat[data-beat='boss-intro'] {border-color:#ff7956}
+/* Entry is a quiet location slate; clearance is a compact earned receipt;
+   priority threats interrupt with a hazard-framed warning. */
+#presentation-beat[data-beat='room-enter'] {width:min(500px,52vw);padding:14px 20px 14px 60px;border-left-width:1px;border-top:1px solid #9fe8ff70;background:linear-gradient(90deg,#07131af2,#07131ac9);}
+#presentation-beat[data-beat='room-enter'] .beat-glyph {left:18px;top:22px;}
+#presentation-beat[data-beat='room-enter'] .beat-glyph svg {width:26px;height:26px;}
+#presentation-beat[data-beat='room-enter'] strong {font-size:clamp(26px,2.2vw,38px);letter-spacing:.08em;}
+#presentation-beat[data-beat='room-enter'] p {font-size:12px;}
+#presentation-beat[data-beat='room-clear'] {width:min(440px,46vw);padding:16px 22px 16px 66px;border:1px solid #ffd27a99;border-left:4px solid #ffd27a;background:#101a1bf2;}
+#presentation-beat[data-beat='room-clear'] .beat-glyph {color:#ffd27a;left:20px;top:30px;}
+#presentation-beat[data-beat='room-clear'] .beat-glyph svg {width:28px;height:28px;}
+#presentation-beat[data-beat='room-clear'] strong {font-size:clamp(30px,2.4vw,42px);}
+#presentation-beat[data-beat='room-clear'] .beat-eyebrow {color:#ffd27a;}
+#presentation-beat[data-beat='boss-intro'] {border:1px solid #ff7956;border-top:5px solid #ff7956;border-bottom:5px solid #ff7956;background:repeating-linear-gradient(135deg,#ff795616 0 9px,transparent 9px 18px),#1e1114f5;padding-top:24px;padding-bottom:24px;}
+#presentation-beat[data-beat='boss-intro'] :is(.beat-glyph,.beat-eyebrow) {color:#ff9b78;}
+#presentation-beat[data-beat='boss-defeated'] {border:1px solid #ffd27a;border-left:5px solid #ffd27a;background:#101a1bf2;}
+#presentation-beat[data-beat='boss-defeated'] .beat-glyph {color:#ffd27a;}
 #presentation-beat[data-leaving='true'] {opacity:0;transition:opacity .18s ease-out}
 #critical-edge {position:fixed;inset:0;z-index:3;pointer-events:none;border:2px solid #ff5a3677;box-shadow:inset 0 0 80px #b92d2430;background:linear-gradient(90deg,#e4472515,transparent 8%,transparent 92%,#e4472515)}
 @keyframes beat-arrive {from {opacity:0;translate:-12px 0}to {opacity:1;translate:0 0}}

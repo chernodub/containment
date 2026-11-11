@@ -21,7 +21,7 @@ function snapshot(run:RunState,build:BuildState,resources:RunResources,runtime:E
     ...(runtime.stats?{stats:copyStats(runtime.stats)}:{}),
   });assertExpedition(result);return result;
 }
-const copyStats=(stats:NonNullable<RunCheckpoint['stats']>):NonNullable<RunCheckpoint['stats']>=>Object.freeze({...stats,kills:Object.freeze({...stats.kills,byFamily:Object.freeze({...stats.kills.byFamily})}),damageDealt:Object.freeze({...stats.damageDealt}),abilityUses:Object.freeze({...stats.abilityUses}),roomTimeMs:Object.freeze({...stats.roomTimeMs})});
+const copyStats=(stats:NonNullable<RunCheckpoint['stats']>):NonNullable<RunCheckpoint['stats']>=>Object.freeze({...stats,kills:Object.freeze({...stats.kills,byFamily:Object.freeze({...stats.kills.byFamily})}),damageDealt:Object.freeze({...stats.damageDealt}),abilityUses:Object.freeze({...stats.abilityUses}),roomTimeMs:Object.freeze({...stats.roomTimeMs}),...(Object.hasOwn(stats,'lastDamage')?{lastDamage:stats.lastDamage?Object.freeze({...stats.lastDamage}):null,recentDamage:Object.freeze((stats.recentDamage??[]).map(receipt=>Object.freeze({...receipt})))}:{})});
 function currentNode(expedition:Expedition){
   assertExpedition(expedition);
   return generateRun(expedition.run.seed,expedition.run.version).nodes.find(node=>node.id===expedition.run.currentNodeId)!;
