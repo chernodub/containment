@@ -241,9 +241,14 @@ export function stageCombat({status=false}){
 }
 
 /** A repeatable moving firefight on the native camera, with real Combat Rig receipts. */
-export function stageKiting(){
+export function stageKiting(attempt=0){
  const d=window.__containmentDebug,g=d.game;
  d.invulnerable(true);g.enemies.reset();
+ if(attempt){
+  // Try another legal lane using normal recharge and camera follow, never a
+  // wider capture camera, fabricated charge or weaker visible-target threshold.
+  d.setInput({x:0,y:0,fire:false,angle:null,autoAim:false});d.step(3000);g.enemies.reset();
+ }
  const bounds=g.geometry.bounds,candidates=[];
  for(let y=bounds.y+100;y<bounds.y+bounds.height-100;y+=70)for(let x=bounds.x+100;x<bounds.x+bounds.width-100;x+=70){
   if(!d.canStand(x,y,28))continue;
@@ -252,12 +257,12 @@ export function stageKiting(){
   candidates.push({x,y,score:score-Math.hypot(x-bounds.x-bounds.width/2,y-bounds.y-bounds.height/2)/10000});
  }
  candidates.sort((a,b)=>b.score-a.score);
- let center,heading=0;
+ let center,heading=0,legalIndex=0;
  for(const candidate of candidates){
   for(let i=0;i<16;i++){
    const angle=i*Math.PI/8;let legal=true;
    for(let distance=-150;distance<=80;distance+=10)if(!d.canStand(candidate.x+Math.cos(angle)*distance,candidate.y+Math.sin(angle)*distance,20)){legal=false;break;}
-   if(legal){center=candidate;heading=angle;break;}
+   if(legal){if(legalIndex++===attempt){center=candidate;heading=angle;}break;}
   }
   if(center)break;
  }
@@ -268,7 +273,8 @@ export function stageKiting(){
  Object.assign(g.player,{...start,angle:heading,vx:0,vy:0});
  d.setInput({x:0,y:0,fire:false,angle:heading,autoAim:false});d.step(600);
  if(!g.useAbility('dash'))throw Error('Kiting Frost Trail denied');
- d.step(160);g.enemies.reset();d.refresh();
+ d.step(160);d.step(600);g.enemies.reset();d.refresh();
+ // Settle the native follow spring after the dash before evaluating visible packing.
  const origin={x:g.player.x,y:g.player.y};
  // Choose the reserved firing lane against the real rendered footprint. The old
  // first-legal angle could reserve the only visible floor around the reactor core.
@@ -299,6 +305,7 @@ export function stageKiting(){
   for(let y=bounds.y+70;y<bounds.y+bounds.height-70;y+=35)for(let x=bounds.x+70;x<bounds.x+bounds.width-70;x+=35)collect({x,y});
   chooseLane();
  }
+ if(best.length<18&&attempt<23)return stageKiting(attempt+1);
  if(shotAngle===null)throw Error('No clear kiting firing lane');
  const placed=[];
  for(const p of best){
@@ -312,7 +319,7 @@ export function stageKiting(){
  d.setInput({x:0,y:0,fire:true,angle:shotAngle,autoAim:false});d.step(1000/60);
  if(!(d.renderer.muzzle.intensity>0&&g.bullets.some(bullet=>bullet.kind==='player')))throw Error(`No travelling rifle round in verified kiting lane: ${JSON.stringify({player:origin,shotAngle,weapon:g.combat.snapshot.weaponId,magazine:g.combat.snapshot.magazine,shots:g.stats.shotsFired,bullets:g.bullets.length,state:g.status})}`);
  d.uiFixture({preferences:{radar:true,combatText:true}});
- return {staged:placed.length,player:origin,dashStart:start,heading,shotAngle,reservedFiringLane:{length:320,halfWidth:75},liveRig:'cryo',script:'Frost Trail into open center; Nova + rifle; Glacier at frame 2; Whiteout at frame 3',invulnerable:true};
+ return {staged:placed.length,laneAttempt:attempt,player:origin,dashStart:start,heading,shotAngle,reservedFiringLane:{length:320,halfWidth:75},liveRig:'cryo',script:'Frost Trail into open center; Nova + rifle; Glacier at frame 2; Whiteout at frame 3',invulnerable:true};
 }
 
 /** Deterministic motion and public ability actions are keyed to burst frame index. */

@@ -158,3 +158,8 @@ both `presentationMs` and real simulation timestamps: early frames remain frozen
 The runner asserts that hold/resume behavior. Other scenarios use `--step-ms` (150 ms by default).
 Primary screen captures record layout extents and reject panels, title drawers, pause content, rig previews and deck maps
 that scroll or leave the desktop viewport; absolutely positioned rules tooltips do not count as primary content overflow.
+
+I3 keeps the canonical kiting thresholds unchanged with the native closer camera. It settles the follow spring after
+the real dash, chooses a reserved firing lane from actual visible legal floor, and tries bounded alternate legal
+starting lanes if the footprint cannot fit eighteen spread targets. Retries wait through normal simulation recharge;
+no zoom, cooldown, target-health or collision override is applied. `staging.laneAttempt` records the selected attempt.

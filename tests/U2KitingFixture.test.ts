@@ -9,7 +9,8 @@ import {DEFAULT_ROOMS, stageKiting, advanceKiting} from '../scripts/nextgen/scen
 
 afterEach(() => vi.unstubAllGlobals());
 
-it.each(DEFAULT_ROOMS as string[])('stages legal real kiting actions and a travelling rifle round in %s', async room => {
+it.each([...(DEFAULT_ROOMS as string[]), 'communal-atrium:retry', 'containment-annulus:retry'])('stages legal real kiting actions and a travelling rifle round in %s', async scenario => {
+  const [room, mode] = scenario.split(':');
   const target: Record<string, any> = {};
   vi.stubGlobal('window', target);
   vi.stubGlobal('location', {search: '?debug=1&seed=1729'});
@@ -21,7 +22,8 @@ it.each(DEFAULT_ROOMS as string[])('stages legal real kiting actions and a trave
   const game = new DepthGame(effect => rendererStub.effect(effect));
   installDebug(game, rendererStub as unknown as DepthRenderer, () => {}, () => {});
   await target.__containmentDebug.gotoRoom(room, {rig: 'cryo'});
-  const staged = stageKiting();
+  const staged = stageKiting(mode === 'retry' ? 1 : 0);
+  expect(staged.laneAttempt).toBe(mode === 'retry' ? 1 : 0);
   expect(staged.staged).toBeGreaterThanOrEqual(18);
   expect(target.__containmentDebug.canStand(game.player.x, game.player.y)).toBe(true);
   expect(game.bullets.some(bullet => bullet.kind === 'player')).toBe(true);
