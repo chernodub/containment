@@ -35,6 +35,17 @@ export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline
   if(!d.canStand(x,y,26)||placed.some(e=>Math.hypot(e.x-x,e.y-y)<43))continue;
   const eid=d.spawn('brute',x,y);if(eid)placed.push({x,y,id:eid});
  }
+ // Benchmark-only completion keeps the 25-actor gate in irregular rooms. The
+ // original visible lane and all production spawn/collision checks remain intact.
+ if(heavy&&setupOnly&&placed.length<population){
+  const fallback=[];
+  for(let y=(bounds.y??0)+70;y<bounds.height-70;y+=45)for(let x=(bounds.x??0)+70;x<bounds.width-70;x+=45){
+   if(Math.hypot(x-p.x,y-p.y)<140||!d.canStand(x,y,28)||placed.some(e=>Math.hypot(e.x-x,e.y-y)<43))continue;
+   fallback.push({x,y,distance:Math.hypot(x-p.x,y-p.y)});
+  }
+  fallback.sort((a,b)=>a.distance-b.distance);
+  for(const point of fallback){if(placed.length>=population)break;if(placed.some(e=>Math.hypot(e.x-point.x,e.y-point.y)<43))continue;const eid=d.spawn('brute',point.x,point.y);if(eid)placed.push({...point,id:eid});}
+ }
  if(placed.length<(heavy?population:3))throw Error('V2 encounter population '+placed.length);
  g.setAimPoint({x:p.x+Math.cos(p.angle)*150,y:p.y+Math.sin(p.angle)*150});
  d.v2Proof={rig,tier,room,stagedEnemies:placed.length,baseline};d.kitingProof=d.v2Proof;

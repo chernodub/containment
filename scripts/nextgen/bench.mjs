@@ -10,7 +10,7 @@ import {chromium} from 'playwright';
 import {stageV2} from './v2-scenarios.mjs';
 import {SCENARIOS} from './scenarios.mjs';
 
-const args=process.argv.slice(2);
+const args=process.argv.slice(2),heavyScan=!args.includes('--scan-calm');
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const label=option('label','integration-4-bench');
 assert(/^[\w.-]+$/.test(label));
@@ -40,17 +40,35 @@ try{
  report.gpu=await page.evaluate(()=>{const gl=window.__containmentDebug.renderer.renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);});
  assert(!/swiftshader|software|llvmpipe/i.test(report.gpu),'Hardware renderer required');
  let rooms=option('rooms','').split(',').filter(Boolean);
- if(args.includes('--scan')||!rooms.length){
+ if(args.includes('--scan')||args.includes('--scan-heavy')||!rooms.length){
   for(const room of storyRooms){
-   await reset();await page.evaluate(SCENARIOS.find(s=>s.id==='g2-calm-high').setup,room);
-   const counts=await page.evaluate(()=>{const d=window.__containmentDebug;d.refresh();return {...d.renderer.renderer.info.render};});
+   await reset();
+   if(heavyScan)await page.evaluate(stageV2,{rig:'arc',room,tier:'high',heavy:true,setupOnly:true});
+   else await page.evaluate(SCENARIOS.find(s=>s.id==='g2-calm-high').setup,room);
+   const counts=await page.evaluate(heavy=>{
+    const d=window.__containmentDebug,g=d.game,r=d.renderer;
+    if(!heavy){d.refresh();return {...r.renderer.info.render};}
+    let calls=0,triangles=0;const render=r.renderer.render;
+    r.renderer.render=function(...args){const result=render.apply(this,args);calls=Math.max(calls,this.info.render.calls);triangles=Math.max(triangles,this.info.render.triangles);return result;};
+    try{
+     const slots=['power','dash','tactical','overdrive'];g.switchWeapon('rifle');
+     for(const slot of slots){
+      if(slot==='overdrive')d.fillOverdrive();let accepted=false;
+      if(slot==='power'){for(const radius of [80,120,220])for(let k=0;k<16&&!accepted;k++){const angle=g.player.angle+k*Math.PI/8,x=g.player.x+Math.cos(angle)*radius,y=g.player.y+Math.sin(angle)*radius;if(!d.canStand(x,y,28)||!d.clearShot(x,y))continue;g.setAimPoint({x,y});accepted=g.useAbility(slot);}}
+      else accepted=g.useAbility(slot);
+      if(!accepted)throw Error('Ranking ability denied '+slot);d.step(Math.max(150,g.abilities.snapshot.slots[slot].castRemainingMs+30));
+     }
+     d.setInput({fire:true,autoAim:true,angle:null});d.step(1000);
+    }finally{r.renderer.render=render;}
+    return {calls,triangles,initialEnemies:25,remainingEnemies:g.enemies.activeCount,fixture:'25 legal actors + native full Arc kit, fixed-step draw inventory'};
+   },heavyScan);
    report.scan.push({room,...counts,host:host()});console.log(`scan ${room}: ${counts.calls} draws`);
   }
   const ranked=[...report.scan].sort((a,b)=>b.calls-a.calls);rooms=[ranked[0].room,ranked[Math.floor(ranked.length/2)].room];
   await writeFile(resolve(out,'room-ranking.json'),JSON.stringify(report.scan,null,2));
  }
  report.rooms=rooms;
- for(const room of rooms)for(const rig of rigs)for(const tier of tiers)for(let repeat=0;repeat<repeats;repeat++){
+ for(const room of (args.includes('--scan-only')?[]:rooms))for(const rig of rigs)for(const tier of tiers)for(let repeat=0;repeat<repeats;repeat++){
   const name=`${room}-${rig}-${tier}-${repeat}`, before=host();console.log(`bench ${name}, load ${before.load.map(x=>x.toFixed(2)).join('/')}`);
   await reset();await page.evaluate(stageV2,{rig,room,tier,heavy:true,setupOnly:true});
   await page.mouse.click(1910,10); // trusted audio unlock, outside HUD actions

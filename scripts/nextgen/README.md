@@ -204,7 +204,7 @@ GPU time. Concurrent machine load and P95 must be retained in the report.
 
 ## I4 sequential realtime benchmark
 
-`npm run bench` builds production code, scans all twenty story rooms by native High draw calls,
+`npm run bench` builds production code, scans all twenty story rooms with 25 legal actors and a native full Arc kit by peak High draw calls,
 then runs each rig on High and Low in the highest-draw room and the median room. Each trial starts
 with 25 legally placed enemies, retains deaths, kites with normal collision, fires the rifle and
 attempts native abilities whenever ready. Only the initial Overdrive charge and marine invulnerability
@@ -219,7 +219,7 @@ npm run bench -- --label=integration-4-repeat --rooms=relay-racks,diagnostic-gal
 Use the selected `rooms` in `benchmark.json` for matched reruns; the examples are not a replacement
 for the current room ranking. `--dist=<preserved-production-dist> --no-build` serves a before build
 without modifying source. `--seconds`, `--repeat`, `--rigs`, and `--tiers` narrow diagnostic runs.
-Every trial records start/end host load averages and core count, per-frame frame/update/render-JS/HUD/
+`--scan-only` records inventories without running timing trials; `--scan-calm` keeps a quick world-only diagnostic scan. Every trial records start/end host load averages and core count, per-frame frame/update/render-JS/HUD/
 audio-sync p50/p95/max, draw/triangle/light/ability-instance counts, program inventory, actual new
 program creation, survivors, accepted slot counts, CDP metrics and optional GPU timer queries.
 `--profile` additionally saves Chrome CPU profiles, sampled allocations (including collected objects),

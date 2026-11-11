@@ -228,7 +228,7 @@ export class DepthRenderer {
  }
  visible(x:number,y:number){const p=this.visiblePoint.set(x/UNIT,.6,y/UNIT).project(this.camera);return p.z>=-1&&p.z<=1&&Math.abs(p.x)<.9&&Math.abs(p.y)<.8;}
  playerScreenBounds(radius:number){
-  const rect=this.canvasRect??this.canvas.getBoundingClientRect(),position=this.player.root.position,point=this.screenPoint;
+  const rect=this.canvasRect??this.canvas.getBoundingClientRect(),position=this.player.root.position,point=this.screenPoint??=new T.Vector3();
   const result=this.projectedPlayer??={left:0,top:0,right:0,bottom:0};
   result.left=result.top=Infinity;result.right=result.bottom=-Infinity;
   for(let ix=-1;ix<=1;ix+=2)for(let iz=-1;iz<=1;iz+=2)for(let iy=0;iy<2;iy++){
