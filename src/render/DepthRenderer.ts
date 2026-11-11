@@ -376,7 +376,7 @@ export class DepthRenderer {
   for(const side of [-1,1]){box(this.exit,0,.7,side*.7,.12,1.4,.18,MAT.steel);box(this.exit,.08,.7,side*.7,.04,1.05,.05,MAT.cyan,.01);}
   box(this.exit,0,1.5,0,.2,.2,1.6,MAT.dark);box(this.exit,0,.035,0,1.7,.02,1.55,MAT.dark);
   // Rigid exit parts share finishes and transforms; retain three merged draws.
-  batch(this.exit);
+  batch(this.exit,true);
   // Flat markings and obstacle-supported dressing are registered before room preparation.
   addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
