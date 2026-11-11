@@ -1,11 +1,17 @@
 import {describe, expect, it} from 'vitest';
 import {formatDistance, playerFacingStat, playerFacingText, WORLD_UNITS_PER_METRE} from '../src/ui/units';
-import {boonElement, boonIcon, boonPath} from '../src/ui/boonPresentation';
+import {boonElement, boonIcon, boonPath, boonRuleLabel} from '../src/ui/boonPresentation';
 import {MUTATION_CATALOG} from '../src/game/roguelike/mutationCatalog';
 import {ABILITY_CATALOG} from '../src/game/abilities/catalog';
 import {abilityVignette} from '../src/ui/screens/abilityVignettes';
 
 describe('player-facing units and elemental identity', () => {
+  it('separates advice, limitations, prerequisites and actual trade-offs', () => {
+    expect(boonRuleLabel(MUTATION_CATALOG.breacher)).toBe('TACTIC');
+    expect(boonRuleLabel(MUTATION_CATALOG.cryogenic)).toBe('LIMIT');
+    expect(boonRuleLabel(MUTATION_CATALOG.shattershot)).toBe('CONDITION');
+    expect(boonRuleLabel(MUTATION_CATALOG['blood-price'])).toBe('TRADE-OFF');
+  });
   it('uses the same metre as world projection and retains small augment distances', () => {
     expect(WORLD_UNITS_PER_METRE).toBe(32);
     expect(formatDistance(32)).toBe('1 m');

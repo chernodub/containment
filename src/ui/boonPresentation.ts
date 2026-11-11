@@ -30,3 +30,12 @@ export function boonPath(boon: MutationDefinition): string {
   return boon.abilityOnly ? `${boon.rig ? RIG_CATALOG[boon.rig].name : 'Universal'} augment`
     : pathFor(boon.id)?.name ?? ({pyro: 'Fire', cryo: 'Cryo control', arc: 'Arc & cycling', kinetic: 'Kinetic impact', recovery: 'Recovery', acid: 'Acid & poison'}[boonElement(boon)]);
 }
+
+/** Distinguish tactical advice, restrictions and actual costs without a combined label. */
+export function boonRuleLabel(boon: MutationDefinition): string {
+  if (boon.risk) return 'TRADE-OFF';
+  if (boon.requires?.length || boon.requiresAny?.length) return 'CONDITION';
+  if (/^Use\b/i.test(boon.tradeoff)) return 'TACTIC';
+  if (/\bonly\b|\bno effect\b|\bcannot\b|\bcapped\b|\bresist\b|\bdoes not\b|\bdoesn.t\b/i.test(boon.tradeoff)) return 'LIMIT';
+  return 'RULE';
+}
