@@ -163,6 +163,8 @@ export const SCENARIOS=[
   r.renderer.render=originalRender;if(drawErrors.length)throw Error('Recovery draw errors '+JSON.stringify(drawErrors));
   d.recoveryProof={before,roomCycles,afterRooms,afterRestore:{...r.renderer.info.memory},programs:r.renderer.info.programs.length,contextLost:gl.isContextLost()};
  }},
+ {id:'g2-legacy-high',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug,seeds={'cold-aisle':1,'power-conduits':2,'waste-processing':3,'turbine-hall':6};await d.gotoRoom(room,{version:2,seed:seeds[room]??0});d.invulnerable(true);d.measureLuminance=true;d.refresh();}},
+ {id:'g2-legacy-low',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug,seeds={'cold-aisle':1,'power-conduits':2,'waste-processing':3,'turbine-hall':6};await d.gotoRoom(room,{version:2,seed:seeds[room]??0});d.renderer.setQuality('low');await d.prepare();d.invulnerable(true);d.measureLuminance=true;d.refresh();}},
  {id:'g2-calm-high',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.invulnerable(true);d.measureLuminance=true;d.refresh();}},
  {id:'g2-calm-low',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setQuality('low');await d.prepare();d.invulnerable(true);d.measureLuminance=true;d.refresh();}},
  {id:'g2-kiting-high',rooms:true,state:'playing',burst:true,setup:new Function('room',`return (${stageKiting.toString()})(room,{tier:'high'});`)},

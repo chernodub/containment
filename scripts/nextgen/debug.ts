@@ -27,7 +27,8 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   /** Opt-in live RAF benchmark; the normal game loop measures actual simulation/render work. */
   realtime(value:boolean){realtime=value;},
   async startRun(value=seed,options:{rigSelect?:boolean}={}){seed=value;controls={x:0,y:0,fire:false,angle:null,autoAim:true};setUiFixture(game,null);game.newRun(seed,options);events.length=0;await ready();},
-  async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId}={}){
+  async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId;seed?:number}={}){
+   if(options.seed!==undefined)seed=options.seed;
    const version=options.version??3,nodes=generateRun(seed,version).nodes,index=nodes.findIndex(n=>n.templateId===templateId);
    if(index<0)throw Error(`Room ${templateId} is not in run v${version}`);
    setUiFixture(game,null);game.newRun(seed,{rigSelect:!!options.rig});if(options.rig&&!game.chooseRig(options.rig))throw Error('Debug rig selection failed');events.length=0;controls={x:0,y:0,fire:false,angle:null,autoAim:true};

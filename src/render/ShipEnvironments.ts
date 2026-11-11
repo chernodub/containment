@@ -15,7 +15,13 @@ export const SHIP_ENVIRONMENTS=['cryogenics','habitation','security','cargo','co
 export type ShipEnvironment=typeof SHIP_ENVIRONMENTS[number];
 const roomPairs=[['awakening-bay','passenger-vault'],['residential-gallery','communal-atrium'],['crew-checkpoint','armory'],['freight-hold','breached-loading-bay'],['relay-racks','transmission-chamber'],['diagnostic-gallery','safety-interlock-station'],['coolant-plant','service-shaft-landing'],['infested-workshop','swarm-junction'],['shielding-gate','containment-annulus'],['manual-control-chamber','overload-floor']];
 /** Stable integration contract: domain keeps its own route; renderer accepts these IDs or an explicit environment. */
-export function shipEnvironment(templateId:string):ShipEnvironment|undefined{return SHIP_ENVIRONMENTS[roomPairs.findIndex(pair=>pair.includes(templateId))];}
+const legacyMoods:Readonly<Record<string,ShipEnvironment>>=Object.freeze({
+ 'receiving':'cargo','forklift-loop':'cargo','cold-aisle':'cryogenics','freight-crossing':'cargo',
+ 'pump-ring':'maintenance','specimen-bay':'containment','security-lock':'security','reactor-vault':'reactor',
+ 'rail-depot':'cargo','quarantine-cross':'containment','cryo-gallery':'cryogenics','filtration':'maintenance',
+ 'turbine-hall':'engineering','waste-processing':'infested','power-conduits':'engineering','hive-approach':'infested',
+});
+export function shipEnvironment(templateId:string):ShipEnvironment|undefined{return SHIP_ENVIRONMENTS[roomPairs.findIndex(pair=>pair.includes(templateId))]??legacyMoods[templateId];}
 export type Footprint={x:number;y:number;width:number;height:number};
 const v=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
 

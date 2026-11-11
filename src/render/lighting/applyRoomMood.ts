@@ -47,7 +47,7 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
       if (!(environment === 'reactor' && material.name === 'ship-cold-practical') && !material.userData.motivatedEmitter && original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {
         material.emissiveIntensity = Math.max(2.6, original.emissiveIntensity * 1.75);
       }
-      optimizeLocalLights(material,environment==='reactor'?1:.02);
+      optimizeLocalLights(material,environment==='reactor'?1:.02,environment==='cargo'||environment==='communications'?.16:.025);
     }
   });
 }

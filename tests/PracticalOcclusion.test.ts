@@ -56,9 +56,9 @@ describe('shared key occlusion for fixed practicals', () => {
   it('attenuates only the first four point slots and reuses visibility in directional slot zero', () => {
     const { material, shader } = fixture();
     const point = shader.slice(shader.indexOf('getPointLightInfo'), shader.indexOf('#if ( NUM_SPOT_LIGHTS'));
-    expect(point).not.toContain('float roomPracticalDistance');expect(point).toContain('dot( pointLight.position - geometryPosition, pointLight.position - geometryPosition ) / 3.24');
+    expect(point).not.toContain('float roomPracticalDistance');expect(point).toContain('dot( pointLight.position - geometryPosition, pointLight.position - geometryPosition ) / roomPracticalNearField');
     expect(point).toContain('#if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0 && UNROLLED_LOOP_INDEX < 4');
-    expect(point.match(/mix\( 0\.025, 1\.0, roomKeyOcclusion \)/g)).toHaveLength(1);
+    expect(point.match(/mix\( roomPracticalShadowFill, 1\.0, roomKeyOcclusion \)/g)).toHaveLength(1);
     const directional = shader.slice(shader.indexOf('getDirectionalLightInfo'), shader.indexOf('#if ( NUM_RECT_AREA_LIGHTS'));
     expect(directional).toContain('#if UNROLLED_LOOP_INDEX == 0');
     expect(directional).toContain('? roomKeyOcclusion : 1.0');
@@ -103,4 +103,14 @@ it('adjusts rough probe fill through retained uniforms while preserving sharp re
  expect(shader.fragmentShader).toContain('smoothstep(.15,.5,material.roughness)');
  optimizeLocalLights(material,1);expect(shader.uniforms.roomDiffuseEnvironmentGain.value).toBe(1);
  expect(material.customProgramCacheKey()).toBe(key);material.dispose();
+});
+
+it('keeps machine near-field irradiance bounded while preserving deck pools and uniform shadow tuning',()=>{
+ for(const [name,radius] of [['environment-floor',3.24],['g2-dressing-steel',9]] as const){
+  const material=new T.MeshStandardMaterial({name});optimizeLocalLights(material,.02,.16);
+  const shader={uniforms:{} as Record<string,{value:unknown}>,fragmentShader:'#include <lights_fragment_begin>\n#include <lights_fragment_maps>'};
+  material.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);
+  expect(shader.uniforms.roomPracticalNearField.value).toBe(radius);expect(shader.uniforms.roomPracticalShadowFill.value).toBe(.16);
+  optimizeLocalLights(material,.02,.025);expect(shader.uniforms.roomPracticalShadowFill.value).toBe(.025);material.dispose();
+ }
 });

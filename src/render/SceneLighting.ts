@@ -53,6 +53,10 @@ export class SceneLighting {
   this.staging=templateId==='reactor-vault'?{coreX:width/2,coreY:2.6,coreZ:height/2,coreColor:0xffdfab,coreRadius:4.9}:null;
   world.updateWorldMatrix(true,true);
   if(templateId==='overload-floor')this.staging=this.authoredCore(world,width,height);
+  if(templateId==='manual-control-chamber'){
+   const consoleFixture=world.getObjectByName('g2-world-dressing')?.userData.lightFixtures?.[0] as Fixture|undefined;
+   if(consoleFixture)this.staging={coreX:consoleFixture.x,coreY:consoleFixture.y+1.6,coreZ:consoleFixture.z,coreColor:0xffdfad,coreRadius:3};
+  }
   this.applyMood(width,height);
   world.updateWorldMatrix(true,true);const candidates:Fixture[]=[],position=new T.Vector3();
   world.traverse(object=>{
@@ -154,7 +158,7 @@ export class SceneLighting {
    const light=this.fixtures[i];if(!light.visible)continue;
    const phase=this.time+i*1.73;
    const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.72+.28*Math.sin(phase*1.4):behavior==='reactor'?.78+.22*Math.sin(this.time*2.1+i*.65):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
-   light.intensity=(light.userData.reactorCore?this.bossArena?90:14:this.mood.practical.intensity*this.composition.practicalGain)*(1+(animated-1)*this.flashIntensity);
+   light.intensity=(light.userData.reactorCore?this.bossArena?25:14:this.mood.practical.intensity*this.composition.practicalGain)*(1+(animated-1)*this.flashIntensity);
   }
  }
  /** Reuses the prepared fixed lights; menu transitions create no shader topology. */
@@ -162,7 +166,7 @@ export class SceneLighting {
   if(this.menuPresentation===enabled)return;this.menuPresentation=enabled;
   if(!enabled){this.applyMood(this.width,this.height);this.playerX=this.playerZ=NaN;return;}
   this.ambient.intensity=.055;this.ambient.color.setHex(0x8098b0);
-  this.key.position.set(21,7,21);this.key.target.position.set(24,1.6,13);this.key.color.setHex(0xd5e9ff);this.key.intensity=this.key instanceof T.SpotLight?1000:4.2;
+  this.key.position.set(29,6,19);this.key.target.position.set(24,1.6,13);this.key.color.setHex(0xd5e9ff);this.key.intensity=this.key instanceof T.SpotLight?1000:4.2;
   this.fill.position.set(28,4,7);this.fill.target.position.set(24,1,13);this.fill.color.setHex(0x749bab);this.fill.intensity=.9;
   this.rim.position.set(29,6,9);this.rim.target.position.set(24,1,13);this.rim.color.setHex(0xa3dfee);this.rim.intensity=2.4;
   for(let i=0;i<4;i++){const light=this.fixtures[i];light.position.set(i?28:23,3.5,i?8.5:12);light.color.setHex(i?0xff9d64:0x9fe8ff);light.intensity=i<2?85:0;light.distance=9;}
