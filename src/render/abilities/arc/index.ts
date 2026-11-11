@@ -158,7 +158,8 @@ class ArcPresentation implements AbilityPresentation {
       f.age += dt;
       if (f.age >= f.life) { f.live = false; continue; }
       const t = f.age / f.life, progress = f.reverse ? 1 - t : Math.min(1, .08 + f.age / .22);
-      k.front(f.x, f.z, f.radius, progress, f.time ? VIOLET : WHITE, f.time ? .55 : .65, (1 - t) * .65);
+      if (f.time) this.timeFront(f, progress, 1 - t);
+      else k.front(f.x, f.z, f.radius, progress, WHITE, .65, (1 - t) * .65);
     }
     if (this.dashLive && frame.game) this.bolt(this.dashX, this.dashZ, frame.game.player.x / UNIT, frame.game.player.y / UNIT, .85);
     for (const b of this.bolts) {
@@ -208,6 +209,24 @@ class ArcPresentation implements AbilityPresentation {
       }
     }
     if (frame.snapshot?.hostileTimeScale !== undefined && frame.snapshot.hostileTimeScale < 1) this.overclock(frame, emit);
+  }
+
+  private timeFront(f: Front, progress: number, fade: number): void {
+    const k = this.kit, count = k.low ? 8 : 12, r = f.radius * Math.max(.02, progress);
+    // Discrete time slices, with a counter-moving echo: electrical timing, not a cold vapor wall.
+    const echo = f.radius * (f.reverse ? .2 + progress * .55 : 1 - progress * .7);
+    for (let i = 0; i < count; i++) {
+      const a = i * TAU / count, end = a + .22;
+      k.ribbon(f.x + Math.cos(a) * r, .085, f.z + Math.sin(a) * r,
+        f.x + Math.cos(end) * r, .085, f.z + Math.sin(end) * r, VIOLET, .055, fade * .65, false);
+      const inner = Math.max(0, r - (i % 3 ? .22 : .42));
+      k.ribbon(f.x + Math.cos(a) * inner, .09, f.z + Math.sin(a) * inner,
+        f.x + Math.cos(a) * r, .09, f.z + Math.sin(a) * r, WHITE, .035, fade * .72, false);
+      if (!k.low && i % 2 === 0) {
+        k.ribbon(f.x + Math.cos(a + .3) * echo, .065, f.z + Math.sin(a + .3) * echo,
+          f.x + Math.cos(a + .48) * echo, .065, f.z + Math.sin(a + .48) * echo, VIOLET, .025, fade * .32, false);
+      }
+    }
   }
 
   private bolt(x: number, z: number, tx: number, tz: number, fade: number): void {
@@ -294,8 +313,11 @@ class ArcPresentation implements AbilityPresentation {
       for (const e of g.enemies.snapshot.enemies) {
         if (n++ >= (k.low ? 12 : 25)) break;
         const speed = Math.hypot(e.velocityX, e.velocityY);
-        if (speed < 10) continue;
-        const tx = e.x / UNIT - e.velocityX / UNIT * .24, tz = e.y / UNIT - e.velocityY / UNIT * .24;
+        if (speed < 1) continue;
+        // Slowed simulation velocity can be only a few units/s: preserve its direction while
+        // giving the presentation-only time echo enough length to survive 480px reduction.
+        const length = Math.min(1.5, Math.max(.55, speed / UNIT * .4));
+        const tx = e.x / UNIT - e.velocityX / speed * length, tz = e.y / UNIT - e.velocityY / speed * length;
         k.ribbon(e.x / UNIT, .35, e.y / UNIT, tx, .35, tz, VIOLET, .045, fade * .32, false);
         if (!k.low) k.ribbon(e.x / UNIT, .7, e.y / UNIT, tx, .7, tz, WHITE, .02, fade * .14, false);
       }

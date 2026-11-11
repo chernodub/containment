@@ -165,4 +165,37 @@ describe('Arc presentation signatures and lifecycle', () => {
     const calls = grade.mock.calls.length; frame.snapshot = snapshot(); step(.016);
     expect(grade.mock.calls).toHaveLength(calls); expect(kit.batches.front.mesh.count).toBe(0); dispose();
   });
+
+  it('separates time-ripple slices from vapor volume and retains a reverse expiry echo', () => {
+    const { kit, fx, step, dispose } = setup();
+    const volume = vi.spyOn(kit, 'front'), ribbon = vi.spyOn(kit, 'ribbon');
+    fx.event(event({ ability: 'overclock', slot: 'overdrive', phase: 'impact' }), 64, 96);
+    step(.15); expect(volume).not.toHaveBeenCalled(); expect(ribbon.mock.calls.length).toBeGreaterThan(20);
+    for (const call of ribbon.mock.calls) {
+      expect(Math.hypot(call[0] - 2, call[2] - 3)).toBeLessThanOrEqual(6.001);
+      expect(Math.hypot(call[3] - 2, call[5] - 3)).toBeLessThanOrEqual(6.001);
+    }
+    step(1); ribbon.mockClear();
+    fx.event(event({ ability: 'overclock', slot: 'overdrive', phase: 'end' }), 64, 96);
+    step(.1); expect(ribbon.mock.calls.length).toBeGreaterThan(20); expect(volume).not.toHaveBeenCalled();
+    step(1); expect(kit.ribbons.mesh.count).toBe(0); dispose();
+  });
+
+  it.each(['high', 'low'] as const)('keeps slowed-moving hostile echoes visible and bounded on %s, excluding stationary actors', tier => {
+    const { kit, frame, step, dispose } = setup();
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    const ribbon = vi.spyOn(kit, 'ribbon');
+    frame.game = { player: { x: 128, y: 128, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [
+      { x: 256, y: 160, velocityX: 3, velocityY: 4 },
+      { x: 320, y: 160, velocityX: 0, velocityY: 0 },
+      { x: 384, y: 160, velocityX: 500, velocityY: 0 },
+    ] } }, bullets: [] } as never;
+    frame.snapshot = snapshot({ hostileTimeScale: .2, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 3000 } });
+    step(.016);
+    const trails = ribbon.mock.calls.filter(call => call[0] === 8 || call[0] === 12);
+    expect(trails).toHaveLength(tier === 'low' ? 2 : 4);
+    for (const call of trails) expect(Math.hypot(call[3] - call[0], call[5] - call[2])).toBeGreaterThanOrEqual(.45);
+    for (const call of trails) expect(Math.hypot(call[3] - call[0], call[5] - call[2])).toBeLessThanOrEqual(1.501);
+    expect(ribbon.mock.calls.some(call => call[0] === 10)).toBe(false); dispose();
+  });
 });
