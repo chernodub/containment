@@ -238,7 +238,15 @@ for(const tier of ['high','low']){
   if(![...d.renderer.nests.values()].some(n=>n.userData.destroyed))throw Error('Ruptured husk absent');
  })();`)});
 }
-SCENARIOS.push({...SCENARIOS.find(s=>s.id==='title'),id:'x2-title-motion',burst:true});
+for(const tier of ['high','low'])for(const [phase,at]of [['opening',2950],['closing',6950]]){
+ SCENARIOS.push({id:`x2-queen-${phase}-${tier}`,state:'playing',room:'reactor-vault',burst:true,stepMs:100,auditGraphics:true,setup:new Function(`return (async()=>{
+  const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.invulnerable(true);
+  d.renderer.setQuality('${tier}');await d.prepare();const q=d.game.boss.snapshot;
+  let placed=false;for(let y=q.y+160;y<q.y+300&&!placed;y+=30)for(let x=q.x-100;x<q.x+100;x+=30)if(d.canStand(x,y)){Object.assign(d.game.player,{x,y});placed=true;break;}
+  d.setInput({x:0,y:0,fire:false,angle:Math.atan2(q.y-d.game.player.y,q.x-d.game.player.x),autoAim:false});d.step(${at});d.refresh();
+ })();`)});
+}
+SCENARIOS.push({...SCENARIOS.find(s=>s.id==='title'),id:'x2-title-motion',burst:true,stepMs:1000});
 SCENARIOS.push({...SCENARIOS.find(s=>s.id==='g2-calm-high'),id:'x2-calm-motion-high',burst:true});
 SCENARIOS.push({...SCENARIOS.find(s=>s.id==='g2-calm-low'),id:'x2-calm-motion-low',burst:true});
 

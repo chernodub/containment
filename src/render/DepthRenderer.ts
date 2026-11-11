@@ -499,7 +499,7 @@ export class DepthRenderer {
 
   updateHotFixtureSurfaces(this.motionQuery?.matches?0:this.time);this.lighting.update(dt);this.practicalPools?.update(this.lighting.fixtures,this.tier==='high');
   this.contacts.begin();
-  if(menu){this.contacts.add(23,13,.75);this.contacts.add(28,15,1.1);}else{
+  if(menu){this.contacts.add(23,13,.75);this.contacts.add(27.2,10,1.1);}else{
    this.contacts.add(p.x/UNIT,p.y/UNIT,.45);
    if(this.queen)this.contacts.add(q.x/UNIT,q.y/UNIT,1.3);
    for(const n of q.nests)this.contacts.add(n.x/UNIT,n.y/UNIT,.7);
