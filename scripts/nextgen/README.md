@@ -248,7 +248,7 @@ Render-free seeded sweeps use the installed game and shared player policy:
 ```sh
 npm run playtest:sim -- --label=my-cohort --workers=2
 npm run playtest:sim -- --label=my-baseline --game-revision=<commit> --workers=2
-npm run playtest:sim -- --tuning --label=my-unaccepted-tuning --workers=2
+npm run playtest:sim -- --game-revision=b85ac3e --tuning --label=my-historical-tuning --workers=2
 node scripts/nextgen/playtest/balance-summary.mjs artifacts/nextgen/playtest/my-cohort --out=artifacts/nextgen/my-summary.json
 node scripts/nextgen/playtest/native-batch.mjs --label=my-native --seeds=1729,2718 --workers=2 --fast --dist-dir=artifacts/nextgen/my-dist
 ```
@@ -270,8 +270,10 @@ corrected-policy production baseline before encounter tuning. `--tuning` remains
 available to explicitly enable the profile in a historical source snapshot; it
 changes only the copied bundle, never the working tree, and hashes actual source.
 Historical revisions without the flag reject the switch. See
-[`I5-AIM-EXPERIMENTS.md`](../../docs/nextgen/I5-AIM-EXPERIMENTS.md) for the selected
-profile, rejected iterations, raw source identities and acceptance status.
+[`I5-REPORT.md`](../../docs/nextgen/I5-REPORT.md) for the selected profile and
+current acceptance status. The linked v3 cohort archives retain rejected
+iterations and raw source identities; `I5-AIM-EXPERIMENTS.md` is historical v1
+evidence whose selection was withdrawn.
 
 Reports retain `tuningEnabled` as a build-time provenance field, not an acceptance
 claim. Enabled/disabled and mixed-profile continuations remain separated. Valid

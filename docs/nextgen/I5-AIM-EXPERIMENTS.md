@@ -1,6 +1,8 @@
 # I5 — corrected targeted-aim policy experiments
 
-These are complete forty-run simulation cohorts under **`i5-catalog-ability-aim-v1` / `sim-policy-v5`**, with navigation observer v3 retained. They are separate from historical navigation-only policy experiments. The corrected production baseline completes **33/40 (82.5%)**; V22 completes **23/40 (57.5%)**, but fails cross-rig and ordinary-time acceptance. Neither is final balance acceptance. V23–V26 are archived below; V26 is selected with final native evidence pending.
+**Policy-v1/v2 withdrawal:** all v1 simulation/native evidence and v2 partials below are historical/provisional. The prior v1 N80 selection is withdrawn after confirmed Bulwark-center and cursor-tip LOS policy defects. Fresh v3 baseline80/candidate80 cohorts are required before acceptance. Historical measurements and hashes remain unchanged.
+
+These are complete forty-run simulation cohorts under **`i5-catalog-ability-aim-v1` / `sim-policy-v5`**, with navigation observer v3 retained. They are separate from historical navigation-only policy experiments. The corrected production baseline completes **33/40 (82.5%)**; V22 completes **23/40 (57.5%)**, but fails cross-rig and ordinary-time acceptance. Neither is final balance acceptance. V23–V26 are archived below; V26 selection was withdrawn after the existing full-unit invulnerability budget failed. No final profile is accepted.
 
 ## Selection and provenance
 
@@ -11,7 +13,11 @@ Each cohort uses ten unassisted attempts per rig, seeds **1729, 2718, 31415, 42,
 - [V23 candidate](evidence/I5/I5-AIM-V23.json)
 - [V24 candidate](evidence/I5/I5-AIM-V24.json)
 - [V25 candidate](evidence/I5/I5-AIM-V25.json)
-- [V26 selected profile, native pending](evidence/I5/I5-AIM-V26.json)
+- [V26 rejected at full unit gate](evidence/I5/I5-AIM-V26.json)
+- [V27 rejected unit-only probe](evidence/I5/I5-AIM-V27-UNIT.json)
+- [V27b unit-valid, primary-cohort-rejected result](evidence/I5/I5-AIM-V27B.json)
+- [V28 legal-guard, primary-cohort-rejected result](evidence/I5/I5-AIM-V28.json)
+- [Historical/provisional v1 paired80-run evaluation](evidence/I5/I5-AIM-FINAL-80.json)
 
 Both record HEAD **`c3bd53b4f0f2c12735a1abb562f11eadb07c5a83`**. The actual shared **policy SHA-256 is `7f82bedcd4f771a96d5d0eec8cca06857a04561362d592967d1c925d3ddbd166`**; the HEAD abbreviation c3bd53b is not a policy hash. Frozen policy, ability-aim, navigation and version bytes were concatenated in runner order and hashed independently. Every raw report, copied source and immutable bundle was verified.
 
@@ -332,7 +338,7 @@ Recorded HEAD **`c3bd53b4f0f2c12735a1abb562f11eadb07c5a83`**, game hash **`b61c6
 | Charges /width /cast /trail | 2 /44 /0 ms /2,500 ms unchanged |
 | Other rigs | Original dash distance150, immunity220 ms and recharge2,600 ms unchanged |
 
-The runtime now reads catalog dash distance and optional immunity, falling back to the original shared immunity value when absent. This varies the existing escape parameters; movement still goes through actual collision authority. The full **stats and room arrays are deeply identical for all30 non-Pyro attempts** versus V24, not just selected seeds. Each control comparison retains its V24 raw report SHA.
+The runtime now reads catalog dash distance and optional immunity, falling back to the original shared immunity value when absent. This varies the existing escape parameters; movement still goes through actual collision authority. The full **stats and room arrays are deeply identical for all 30 non-Pyro attempts** versus V24, not just selected seeds. Each control comparison retains its V24 raw report SHA.
 
 | Rig | Completed | Mean deviation(points) | Rooms/OD [p10–p90] | Strict ordinary seconds | Broad non-holdout seconds | Transmission seconds |
 |---|---:|---:|---:|---:|---:|---:|
@@ -397,12 +403,12 @@ Outgoing shares retain the actual-damage bucket definitions and their attributio
 | Pyro | 43.57 | 23.96 | 17.91 | 14.55 | 56.43 |
 | Arc | 58.42 | 28.33 | 6.39 | 6.86 | 41.58 |
 
-V26 varies only the same Pyro dash immunity **320→500 ms**, retaining distance180 and recharge2,500 ms; it is pending and no V26 results are read or accepted here.
+The following V26 trial varied only Pyro dash immunity **320→500 ms**, retaining distance180 and recharge2,500 ms; its complete campaign and later full-unit rejection are recorded below.
 
 
-## V26 — selected profile, final native evidence pending
+## V26 — rejected at the full unit gate; prior selection withdrawn
 
-V26 completes **20/40 (50%)**, B/C/P/A **60/50/40/50%**, under the frozen corrected-aim policy. All four rig rates lie within ten points of the mean. The lead selected this profile for **two final native campaigns per rig**, still pending final gates and that native evidence. Selection is not a claim that all individual pacing measures or browser acceptance have passed. [I5-AIM-V26.json](evidence/I5/I5-AIM-V26.json) retains all forty reports’ hashes, outcomes, source identities and depth distributions.
+V26 completes **20/40 (50%)**, B/C/P/A **60/50/40/50%**, under the frozen corrected-aim policy. All four rig rates lie within ten points of the mean. The lead initially selected it for final native evaluation, then **withdrew selection when the unchanged invulnerability-budget test failed**. Its campaign metrics remain valid measurements of the frozen rejected configuration, not final acceptance. [I5-AIM-V26.json](evidence/I5/I5-AIM-V26.json) retains all forty reports’ hashes, outcomes, source identities and depth distributions.
 
 Recorded HEAD **`c3bd53b4f0f2c12735a1abb562f11eadb07c5a83`**, game hash **`66b9cb6c60c5c40c7d16d43216d286a78a2e4dbfaceb0be6239eb8273db7edb1`**, immutable bundle hash **`437b8c4416019e47802e52ba63ec0f00eb42f312dff1cac1114f648c32157acb`**, policy SHA **`7f82bedcd4f771a96d5d0eec8cca06857a04561362d592967d1c925d3ddbd166`**. All six copied principal gameplay files are byte-identical to V25. The compiled catalog changes only **Pyro dash invulnerability320→500 ms** and the matching description **0.32→0.5 seconds**; distance180, recharge2,500, charges2, width44 and all other ability numbers remain unchanged. The exact two catalog substitutions reproduce V26 byte-for-byte from V25’s compiled section; raw hashes remain separate.
 
@@ -557,3 +563,332 @@ The existing 15% baseline limit and exact basic-HP checks remain. New per-act mi
 | rifle | 444.901–444.901 | 444.901–561.430 | 561.430–678.561 | 678.561–678.561 |
 
 Scheduled elite-vs-ordinary freeze behavior, actual CC resistance, the 48-request density ramp and queued-pressure/no-early-clear assertions, all historical checkpoint loading/resource/charge preservation and playable-next-room assertions remain intact. The original full-kit share30–45% /clear-time spread≤1.25× tests were not edited. Source activation and deterministic pins do not declare campaign/native acceptance.
+
+
+## Full-unit rejection of V26 and unit-only V27
+
+**V26 is rejected and its selected status is withdrawn.** The existing `A1TimingGeometryReview` dash budget requires augmented invulnerability uptime **>24% /≤35%**, and native uptime strictly **>16% /<19%**. The V26 full gate measured **60% augmented Pyro uptime**, so it failed the35% maximum. The native assertions were not reached after that throw; no native uptime measurement is invented. These bounds are unchanged and must not be weakened to accept the trial. The prior31/31 encounter-test result and passing isolated full-kit share/spread probe did not establish a passing full unit suite.
+
+The frozen V25/V26 campaign rows and raw hashes remain intact, including their320/500ms immunity values. V25 was already rejected for rig spread; the lead additionally reports that its320ms native configuration would fail the same existing native-uptime budget. That latter V25 statement is recorded as a lead-reported budget limitation, without claiming a frozen executed V25 timing receipt.
+
+### Preserved failed gate receipts
+
+The complete failed-log text and SHA-256 receipts are embedded in `I5-AIM-V26.json`, including the original failures rather than later fixed expectations. The full-unit summary is **3 files failed /234 passed /1 skipped;4 tests failed /2815 passed /1 skipped**.
+
+| Gate | Original failure | Disposition |
+|---|---|---|
+| Dash timing budget | Pyro augmented `.60 > .35` | Reject V26; retain all augmented/native bounds |
+| Napalm first-pulse boundary | Old600ms pin vs new150ms cast+250ms tick=400ms; remaining5550 vs5750 | Lead owns exact numeric pin update; retain partition/timing assertion |
+| Napalm Triplet edge fixture | Expected4.5, observed6 damage | Lead owns approved damage-number update; preserve exact impact/radius/outside-edge assertions |
+| StoryRoute bounded count | Expected≤31, observed36 | Lead owns authorized count pin31→36; retain bounded encounter check |
+| Initial desktop smoke | Eight GLTF texture-blob console errors | Preserve zero-error failure; graphics issue remains separately owned |
+| Desktop smoke retry | `false !== true` at combat-rig pause/typing ability readiness | Lead will stage a valid holdout exception after checking ordinary cap behavior; key/pause/typing assertions must remain |
+
+The full-unit log SHA is `d8007dc8441b1bb62d49f37c7809e461f484b556b6edbf5624bfa08ba340f3af`; initial smoke `f73745d8c1d883b0e132a57d342d5acb2f602b3965d258cff2c676193c08447b`; retry `29f81cc44b180d77f504adaf63d13735c17f3915811614446b0830a4291a874a`. No failing gate is reported as a pass, and this archival update does not rerun or modify any gate.
+
+### V27: unit-only configuration rejected before campaigns
+
+The reverted configuration restores **220ms immunity /2,600ms recharge for every rig**, removes optional `invulnerableMs`, and varies only Pyro dash travel to220 units. The V27 damage probe uses **Flashfire30 /Napalm7**. The unchanged full-kit harness records Pyro **47.1%** ability share (exact0.471099305, maximum45%), with fastest **72150ms** and slowest **95150ms**; clear-time spread **1.318780×**, exceeding **1.25×**. Both soft assertions fail in the same test: **1 test failed /225 passed across5 files**.
+
+[I5-AIM-V27-UNIT.json](evidence/I5/I5-AIM-V27-UNIT.json) preserves all five full-kit metric rows, exact failed assertions/log text and log SHA `70fd7c63c0710210ff24cef50c57d4f0b0dd2ed94341ce4235458f7ab6854bf2`. It explicitly records **zero campaign attempts**: no40-run completion cohort was started for this rejected unit configuration. The parameter description comes from the lead; no absent immutable source/game hash is fabricated.
+
+V27b’s stated unit-only proposal is **Flashfire25 /Napalm6.5**, with the reverted immunity/recharge and220-unit Pyro travel. Its completed unit/cohort results are archived separately below. The shared V24 encounter parameters remain unchanged, so the two encounter suites’ independent numeric pins stay applicable; that does not certify the separate rig timing/damage budgets or final acceptance.
+
+
+## V27b — unit-valid configuration, rejected campaign rig spread
+
+V27b completes **19/40 (47.5%)**, with B/C/P/A **60/50/30/50%**. The unchanged full-kit and dash-uptime guards pass, but Pyro is **17.5 points below** the 47.5% mean, outside the strict 15-point allowance. The candidate remains **rejected**, and [I5-AIM-V27B.json](evidence/I5/I5-AIM-V27B.json) retains the complete cohort plus the unit-probe evidence.
+
+Recorded HEAD **`7dd620a8242edf73584725bf11d175bdbd101fc9`**, game hash **`97a2ce2a621c058cd7f7fb7cf3f701d1cb6027b19c071a1b48f336c625bf4a83`**, immutable bundle hash **`de287bcc1bc0eb40ea421ebb2ab8476646dd5c0e2b380a143e76f92394c1ee30`**, policy SHA **`7f82bedcd4f771a96d5d0eec8cca06857a04561362d592967d1c925d3ddbd166`**. All forty report hashes, fourteen copied source files, bundle and compiled catalog section were verified. The V24 encounter/progression parameters remain unchanged. All 30 non-Pyro stats/room arrays are deeply identical to V26, with paired prior report SHAs retained.
+
+| Parameter | V26 → V27b |
+|---|---|
+| Universal immunity | Restore 220ms for all rigs |
+| Recharge | Restore 2,600ms for all rigs |
+| Pyro travel | 180→220 units; other rigs150 unchanged |
+| Optional immunity API | Remove `invulnerableMs`; runtime uses original universal immunity constant |
+| Pyro Flashfire | 35→25 damage; instant cast,6,000ms cooldown retained |
+| Pyro Napalm | 6→6.5 damage/250ms;150ms cast,12,000ms cooldown retained |
+| Other settings | Existing V24 encounters, ordinary cap, .0125 charge, Pyro Meltdown1.4× speed and other rig cooldowns unchanged |
+
+### Matching unit probe and preserved gate receipts
+
+The full-kit probe’s `entry.ts`, immutable `probe.mjs` and exact `results.json` are each identified by SHA-256 in the archive. Its compiled catalog differs from the campaign only by an unused `RIG_IDS` variable binding retained by the probe; removing that binding makes all remaining catalog bytes identical. Both raw section hashes remain separate. This checks the catalog configuration without pretending that different bundles or policies are byte-identical. The original30–45% share and≤1.25× clear-spread assertions remain unchanged.
+
+| Rig | Full-kit ability share | Clear time(seconds) |
+|---|---:|---:|
+| Breacher | 32.064054% | 91.50 |
+| Cryo | 30.458050% | 95.15 |
+| Pyro | 43.868387% | 77.75 |
+| Arc | 31.765811% | 90.80 |
+
+The exact clear-time spread is **1.223794212×** (95.15/77.75), inside1.25×. The focused guard receipt reports **5 files /226 tests passed**, including the unchanged augmented>24%/≤35% and native>16%/<19% invulnerability bounds. It does not print per-rig uptime fractions, so none are invented. The archive also preserves the smoke-fixture log’s **GLTF texture-blob zero-error failure**; passing focused simulation guards is not reported as a passing browser smoke or full release gate. The lead owns the approved400ms Napalm boundary/6.5-damage numeric pins and cap-aware nonvacuous keyboard fixture; no assertion is weakened here.
+
+### Campaign distributions
+
+| Rig | Completed | Mean deviation(points) | Rooms/OD [p10–p90] | Strict ordinary seconds | Broad non-holdout seconds | Transmission seconds |
+|---|---:|---:|---:|---:|---:|---:|
+| Breacher | 6/10 (60%) | +12.5 | 1.464286 [1.176–1.833] | 33.23 | 35.67 | 75.41 |
+| Cryo | 5/10 (50%) | +2.5 | 1.406593 [1.250–1.462] | 36.90 | 38.27 | 73.40 |
+| Pyro | 3/10 (30%) | -17.5 | 1.464286 [1.176–1.667] | 28.65 | 30.32 | 59.14 |
+| Arc | 5/10 (50%) | +2.5 | 1.357143 [1.250–1.583] | 29.13 | 31.95 | 62.42 |
+
+V27b has **19 completes /21 deaths /0 censors**. Pooled strict ordinary time **31.97s**, broad non-holdout **33.72s**, Transmission **66.74s**, median rooms/Overdrive **1.428571**. Strict cap violations **0** across **495** classified attempts; unknown categories **0**. First-five clears **200/200**.
+
+| Rig | Act1 time/damage | Act2 time/damage | Act3 time/damage | Act4 time/damage |
+|---|---:|---:|---:|---:|
+| Breacher | 27.90 / 0.00 | 38.97 / 13.57 | 39.40 / 47.64 | 45.67 / 75.60 |
+| Cryo | 32.17 / 0.00 | 40.92 / 22.70 | 41.31 / 59.83 | 44.20 / 69.34 |
+| Pyro | 25.51 / 0.00 | 32.62 / 13.43 | 32.48 / 40.02 | 38.10 / 57.42 |
+| Arc | 26.30 / 0.00 | 35.10 / 11.07 | 33.37 / 31.94 | 39.68 / 49.49 |
+| Pooled | 27.72 / 0.00 | 36.60 / 13.57 | 35.87 / 43.34 | 41.63 / 62.93 |
+
+| Room | Clears/attempts | Median clear seconds | Median incoming damage |
+|---|---:|---:|---:|
+| 1 | 40/40 | 18.15 | 0.00 |
+| 2 | 40/40 | 29.66 | 10.08 |
+| 3 | 40/40 | 31.61 | 0.00 |
+| 4 | 40/40 | 26.13 | 16.39 |
+| 5 | 40/40 | 33.98 | 0.00 |
+| 6 | 40/40 | 40.77 | 11.85 |
+| 7 | 40/40 | 33.13 | 12.89 |
+| 8 | 40/40 | 25.23 | 13.57 |
+| 9 | 40/40 | 36.28 | 23.63 |
+| 10 | 40/40 | 66.74 | 24.37 |
+| 11 | 40/40 | 35.25 | 29.29 |
+| 12 | 39/40 | 34.83 | 31.94 |
+| 13 | 39/39 | 35.92 | 47.18 |
+| 14 | 37/39 | 36.95 | 50.22 |
+| 15 | 35/37 | 35.88 | 66.80 |
+| 16 | 30/35 | 49.64 | 62.93 |
+| 17 | 29/30 | 31.67 | 35.97 |
+| 18 | 29/29 | 33.90 | 75.60 |
+| 19 | 27/29 | 41.42 | 57.67 |
+| 20 | 19/27 | 58.97 | 100.52 |
+
+| Rig | Natural death room histogram |
+|---|---|
+| Breacher | 12×1, 14×1, 15×1, 16×1 |
+| Cryo | 16×1, 19×1, 20×3 |
+| Pyro | 15×1, 16×3, 17×1, 19×1, 20×1 |
+| Arc | 14×1, 20×4 |
+| **Pooled** | **12×1, 14×2, 15×2, 16×5, 17×1, 19×2, 20×8** |
+
+Outgoing shares remain actual-damage percentages, with the preceding campaign attribution limits.
+
+| Rig | Weapon | Direct ability | Status | Boon | Ability+status+boon |
+|---|---:|---:|---:|---:|---:|
+| Breacher | 62.25 | 22.68 | 4.84 | 10.23 | 37.75 |
+| Cryo | 50.28 | 19.45 | 7.50 | 22.77 | 49.72 |
+| Pyro | 44.26 | 22.82 | 18.18 | 14.75 | 55.74 |
+| Arc | 58.42 | 28.33 | 6.39 | 6.86 | 41.58 |
+
+V28’s stated trial changes only Pyro recharge **2,600→2,500ms**, leaving universal immunity220ms and other rigs’2,600ms recharge intact. V28 is assessed separately below. Shared encounter pins remain unchanged; no final native acceptance is claimed.
+
+
+## V28 — legal dash timing, rejected primary campaign spread
+
+V28 completes **18/40 (45%)**, B/C/P/A **60/50/20/50%**. The **117 focused guard checks pass**, unlike the invulnerability-invalid V26 trial, but Pyro is **25 points below** its 45% cohort mean. This primary result is **rejected for rig spread**. [I5-AIM-V28.json](evidence/I5/I5-AIM-V28.json) preserves all forty raw report hashes, frozen source/bundle identities, distributions and the original guard receipt.
+
+Recorded HEAD **`7dd620a8242edf73584725bf11d175bdbd101fc9`**, game hash **`1c4d1e77b1a37441f78b7f323d3bd5c722b58229eeb8cda5ff1269650d225473`**, immutable bundle hash **`83b040b2cacb7a06149696d02eef585e2abd4fbafe2334ff8d998a848e1b1d92`**, policy SHA **`7f82bedcd4f771a96d5d0eec8cca06857a04561362d592967d1c925d3ddbd166`**. All six principal source snapshots match V27b byte-for-byte; the compiled catalog changes only Pyro recharge **2,600→2,500ms** and its displayed recharge. Pyro travel220, immunity220ms, damage25/6.5 and other rigs’2,600ms recharge remain unchanged. Optional `invulnerableMs` stays removed.
+
+All 30 non-Pyro stats/room arrays are deeply identical to V27b, with paired prior raw-report hashes retained. The existing share30–45%, spread≤1.25× and invulnerability bounds are preserved; the focused log reports **3 files /117 tests passed**. No unprinted uptime measurements or final browser pass is inferred from those aggregate lines.
+
+| Rig | Completed | Mean deviation(points) | Rooms/OD [p10–p90] | Strict ordinary seconds | Broad non-holdout seconds | Transmission seconds |
+|---|---:|---:|---:|---:|---:|---:|
+| Breacher | 6/10 (60%) | +15.0 | 1.464286 [1.176–1.833] | 33.23 | 35.67 | 75.41 |
+| Cryo | 5/10 (50%) | +5.0 | 1.406593 [1.250–1.462] | 36.90 | 38.27 | 73.40 |
+| Pyro | 2/10 (20%) | -25.0 | 1.428571 [1.188–1.667] | 28.12 | 30.47 | 61.29 |
+| Arc | 5/10 (50%) | +5.0 | 1.357143 [1.250–1.583] | 29.13 | 31.95 | 62.42 |
+
+V28 has **18 completes /22 deaths /0 censors**. Pooled strict ordinary time **32.03s**, broad non-holdout **34.01s**, Transmission **67.66s**, median rooms/Overdrive **1.428571**. Strict cap violations **0** across **493** classified attempts; unknown categories **0**. First-five clears **200/200**.
+
+| Rig | Act1 time/damage | Act2 time/damage | Act3 time/damage | Act4 time/damage |
+|---|---:|---:|---:|---:|
+| Breacher | 27.90 / 0.00 | 38.97 / 13.57 | 39.40 / 47.64 | 45.67 / 75.60 |
+| Cryo | 32.17 / 0.00 | 40.92 / 22.70 | 41.31 / 59.83 | 44.20 / 69.34 |
+| Pyro | 23.70 / 0.00 | 32.09 / 19.62 | 34.56 / 46.21 | 37.13 / 63.71 |
+| Arc | 26.30 / 0.00 | 35.10 / 11.07 | 33.37 / 31.94 | 39.68 / 49.49 |
+| Pooled | 27.72 / 0.00 | 37.14 / 13.57 | 36.22 / 46.21 | 42.07 / 64.79 |
+
+| Room | Clears/attempts | Median clear seconds | Median incoming damage |
+|---|---:|---:|---:|
+| 1 | 40/40 | 18.15 | 0.00 |
+| 2 | 40/40 | 29.19 | 10.08 |
+| 3 | 40/40 | 31.61 | 0.00 |
+| 4 | 40/40 | 25.98 | 16.39 |
+| 5 | 40/40 | 33.98 | 0.00 |
+| 6 | 40/40 | 40.70 | 12.64 |
+| 7 | 40/40 | 32.80 | 12.89 |
+| 8 | 40/40 | 25.91 | 13.57 |
+| 9 | 40/40 | 35.91 | 20.75 |
+| 10 | 40/40 | 67.66 | 24.37 |
+| 11 | 39/40 | 35.28 | 29.46 |
+| 12 | 38/39 | 35.18 | 36.85 |
+| 13 | 38/38 | 37.06 | 41.46 |
+| 14 | 36/38 | 36.79 | 49.67 |
+| 15 | 34/36 | 37.67 | 64.32 |
+| 16 | 31/34 | 49.38 | 65.26 |
+| 17 | 29/31 | 33.20 | 40.32 |
+| 18 | 29/29 | 33.90 | 75.60 |
+| 19 | 28/29 | 40.88 | 57.67 |
+| 20 | 18/28 | 58.99 | 106.62 |
+
+| Rig | Natural death room histogram |
+|---|---|
+| Breacher | 12×1, 14×1, 15×1, 16×1 |
+| Cryo | 16×1, 19×1, 20×3 |
+| Pyro | 11×1, 15×1, 16×1, 17×2, 20×3 |
+| Arc | 14×1, 20×4 |
+| **Pooled** | **11×1, 12×1, 14×2, 15×2, 16×3, 17×2, 19×1, 20×10** |
+
+Outgoing shares remain percentages of actual pooled damage, with earlier attribution caveats.
+
+| Rig | Weapon | Direct ability | Status | Boon | Ability+status+boon |
+|---|---:|---:|---:|---:|---:|
+| Breacher | 62.25 | 22.68 | 4.84 | 10.23 | 37.75 |
+| Cryo | 50.28 | 19.45 | 7.50 | 22.77 | 49.72 |
+| Pyro | 45.40 | 22.75 | 18.00 | 13.85 | 54.60 |
+| Arc | 58.42 | 28.33 | 6.39 | 6.86 | 41.58 |
+
+### Pending predeclared20-seed evaluation
+
+The lead restored only Pyro recharge to **2,600ms**, returning to the unit-valid V27b configuration. Its **primary** cohort remains rejected:19/40 overall and Pyro 17.5 points below that mean. That result is kept separate from an additional predeclared evaluation; it is not relabeled accepted while waiting.
+
+The additional seeds **1000–1009 for every rig** were declared for **both** the corrected-aim baseline and V27b **before reading their outcomes**. The pending labels are `i5-aim-v1-baseline-supp-40` and `i5-aim-v1-v27b-supp-40`. Final comparisons will retain **all 20 seeds per rig /80 attempts per profile**, including every primary and supplemental death or completion. There is no selective dropping or replacement of earlier seeds.
+
+The lead verified the V27b primary/supplement immutable bundle SHA as **`de287bcc1bc0eb40ea421ebb2ab8476646dd5c0e2b380a143e76f92394c1ee30`**; this archive records that as a lead-provided identity until the completed supplement is independently checked. At that interim update no partial supplement outcomes were read; the completed, independently checked evaluation is appended below. Eight final native campaigns remain pending; current functional smoke work is not substituted for those campaign confirmations.
+
+
+## Historical v1 paired80-run evaluation — selection withdrawn
+
+Both predeclared supplemental cohorts are complete. [I5-AIM-FINAL-80.json](evidence/I5/I5-AIM-FINAL-80.json) retains **all80 corrected-baseline attempts and all80 V27b attempts**, twenty identical seeds per rig in each profile. Independent recomputation from the160 raw campaigns gives baseline **68/80(85%)** and candidate **43/80(53.75%)**. The candidate was previously selected; that final-acceptance selection is now withdrawn because the policy audit found confirmed action/LOS defects. These source-frozen measurements remain historical/provisional.
+
+### No selective seed replacement
+
+The primary ten seeds are retained exactly: **1729,2718,31415,42,137,8675309,2026,9001,65537,123456**. The supplemental **1000–1009** were declared for **both profiles before their outcomes were read**. Every primary completion/death and every supplement completion/death remains in the denominator. V27b’s **primary** rejection(17.5-pointPyro gap) remains unchanged in its original archive; the combined20-seed-per-rig evaluation is a separate result.
+
+| Rig | Baseline primary | Baseline supplement | Baseline combined | V27b primary | V27b supplement | V27b combined | Candidate deviation(points) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Breacher | 10/10(100%) | 9/10(90%) | 19/20(95%) | 6/10(60%) | 3/10(30%) | 9/20(45%) | -8.75 |
+| Cryo | 10/10(100%) | 10/10(100%) | 20/20(100%) | 5/10(50%) | 8/10(80%) | 13/20(65%) | +11.25 |
+| Pyro | 5/10(50%) | 6/10(60%) | 11/20(55%) | 3/10(30%) | 6/10(60%) | 9/20(45%) | -8.75 |
+| Arc | 8/10(80%) | 10/10(100%) | 18/20(90%) | 5/10(50%) | 7/10(70%) | 12/20(60%) | +6.25 |
+
+### Independently checked source identity
+
+Before combining, primary/supplement bundle **bytes** were compared directly and found identical within each profile, and every run’s game/policy/bundle hash matched. The six principal gameplay sources and four shared policy source files also match byte-for-byte within each pair; both complete copied-source hash sets remain in the archive. Historical HEAD labels may differ while those source/runtime identities match. The summary API accepted each explicitly unified source cohort and independently reproduced the lead’s generated80-run summaries.
+
+| Profile | Game source hash | Runtime bundle SHA256 | Policy SHA256 |
+|---|---|---|---|
+| baseline | `f7cb49329e57843eec613886391b9572e995572b6a5a63d0f74de8cc811c4a6c` | `ea1d9af17634bbf78ff852d41fd9e1bd76a63ba4a3a80634863848dfe589976d` | `7f82bedcd4f771a96d5d0eec8cca06857a04561362d592967d1c925d3ddbd166` |
+| candidate | `97a2ce2a621c058cd7f7fb7cf3f701d1cb6027b19c071a1b48f336c625bf4a83` | `de287bcc1bc0eb40ea421ebb2ab8476646dd5c0e2b380a143e76f92394c1ee30` | `7f82bedcd4f771a96d5d0eec8cca06857a04561362d592967d1c925d3ddbd166` |
+
+The historical v1 implementation commit **`78c7a10c6f3c07471fbd5ae630d5a6a79d6dfed6`** is independently mapped to these exact archived game, runtime-bundle and policy hashes by the one-room source proof `i5-final-source-78c7a10/summary.json` (SHA256 `510ff2c6f2155ae134dfad4de11ea3683eb03800def0fc1971e52d018ebdbbb1`). This source proof is excluded from the80 campaign attempts; original campaign HEAD metadata remains unchanged.
+
+The archived v1 candidate configuration is **V27b:220ms universal immunity,2,600ms recharge for every rig, Pyro travel220, Flashfire25/instant/6s, Napalm6.5per250ms/150ms cast/12s**. It is **not V28’s2,500ms Pyro recharge**. Optional `invulnerableMs` was removed. V26’s original35%-maximum augmented and16–19% native invulnerability guard remained unchanged; its failed logs are preserved in the rejected V26 archive.
+
+### Before/after completion, charge and pacing
+
+| Rig | Baseline→candidate completion | Candidate mean deviation(points) | Rooms/OD baseline→candidate | Strict ordinary seconds baseline→candidate | Broad non-holdout seconds baseline→candidate | Transmission seconds baseline→candidate |
+|---|---:|---:|---:|---:|---:|---:|
+| Breacher | 95%→45% | -8.75 | 1.348485→1.436508 | 33.50→33.07 | 35.15→35.22 | 68.00→71.44 |
+| Cryo | 100%→65% | +11.25 | 1.333333→1.406593 | 37.28→36.96 | 38.24→38.96 | 68.55→73.43 |
+| Pyro | 55%→45% | -8.75 | 1.428571→1.428571 | 30.25→28.42 | 31.80→30.60 | 59.66→57.02 |
+| Arc | 90%→60% | +6.25 | 1.333333→1.428571 | 31.78→29.98 | 32.91→32.26 | 58.74→60.48 |
+
+Pooled baseline→candidate: completion **85.00%→53.75%**; strict ordinary **33.23→32.03s**; broad non-holdout **34.40→34.07s**; Transmission **63.23→64.09s**; median rooms/Overdrive **1.333333→1.428571**. Baseline strict cap violations **18**; candidate **0** across **1001** classified ordinary attempts. Censors **0/0**. First-five clear totals **400/400** and **400/400**.
+
+All four candidate broad non-holdout medians fit30–45s, pooled strict ordinary exceeds30s, and pooled Transmission fits60–75s. Strict ordinary Pyro/Arc medians below30s remain separately visible; they are not silently relabeled as passes. The JSON retains per-run cadence, p10/p90/ranges, every rig/depth row and all paired seed outcomes.
+
+### All80-attempt act distributions
+
+Cells remain **median cleared-room seconds / median incoming damage per attempted room**, with holdouts retained in act time and full survivor denominators in the JSON.
+
+| Profile | Rig | Act1 | Act2 | Act3 | Act4 |
+|---|---|---:|---:|---:|---:|
+| Baseline | Breacher | 27.45 / 0.00 | 40.06 / 13.15 | 37.90 / 13.44 | 45.20 / 41.99 |
+| Baseline | Cryo | 29.98 / 0.00 | 42.98 / 12.53 | 38.67 / 13.54 | 47.63 / 41.85 |
+| Baseline | Pyro | 23.72 / 0.00 | 35.02 / 10.74 | 34.43 / 13.54 | 42.68 / 43.33 |
+| Baseline | Arc | 25.22 / 0.00 | 36.76 / 0.00 | 35.73 / 0.00 | 43.51 / 12.16 |
+| Baseline | Pooled | 26.25 / 0.00 | 38.35 / 10.92 | 36.77 / 13.39 | 45.20 / 33.82 |
+| Candidate | Breacher | 29.22 / 0.00 | 38.89 / 13.83 | 36.92 / 41.46 | 44.73 / 53.87 |
+| Candidate | Cryo | 33.30 / 0.00 | 41.46 / 20.35 | 40.20 / 48.26 | 45.98 / 80.79 |
+| Candidate | Pyro | 25.53 / 0.00 | 32.22 / 11.29 | 32.53 / 39.71 | 39.38 / 60.12 |
+| Candidate | Arc | 27.36 / 0.00 | 35.06 / 11.19 | 33.47 / 25.19 | 39.68 / 37.29 |
+| Candidate | Pooled | 28.30 / 0.00 | 36.64 / 13.30 | 35.28 / 38.76 | 42.38 / 57.47 |
+
+### Pooled depth time/damage and retained attempts
+
+Each cell is **clears/attempts; median clear seconds; median incoming damage**.
+
+| Room | Baseline80 | Candidate80 |
+|---|---|---|
+| 1 | 80/80;18.79;0.00 | 80/80;19.11;0.00 |
+| 2 | 80/80;29.77;0.00 | 80/80;30.27;5.04 |
+| 3 | 80/80;29.20;0.00 | 80/80;32.70;0.00 |
+| 4 | 80/80;24.30;0.00 | 80/80;26.65;10.24 |
+| 5 | 80/80;30.85;0.00 | 80/80;33.33;0.00 |
+| 6 | 80/80;40.02;12.49 | 80/80;38.30;12.64 |
+| 7 | 80/80;31.66;0.00 | 80/80;32.23;5.37 |
+| 8 | 80/80;29.03;0.00 | 80/80;26.63;11.59 |
+| 9 | 80/80;39.00;13.20 | 80/80;36.45;22.71 |
+| 10 | 80/80;63.23;33.24 | 80/80;64.09;23.05 |
+| 11 | 79/80;37.05;12.28 | 80/80;35.04;29.29 |
+| 12 | 79/79;36.08;0.00 | 79/80;34.08;34.74 |
+| 13 | 79/79;36.70;13.59 | 79/79;35.75;41.46 |
+| 14 | 79/79;36.77;13.68 | 76/79;35.46;44.03 |
+| 15 | 79/79;37.97;21.30 | 71/76;36.77;54.78 |
+| 16 | 74/79;55.80;40.51 | 65/71;49.90;57.47 |
+| 17 | 73/74;37.93;26.39 | 61/65;36.10;43.28 |
+| 18 | 70/73;35.08;21.98 | 58/61;33.72;61.72 |
+| 19 | 70/70;40.98;14.59 | 54/58;40.32;63.29 |
+| 20 | 68/70;67.03;67.56 | 43/54;56.30;95.18 |
+
+### Complete death histograms and outgoing shares
+
+| Profile | Rig | Natural death rooms |
+|---|---|---|
+| Baseline | Breacher | 16×1 |
+| Baseline | Cryo | None |
+| Baseline | Pyro | 11×1, 16×3, 17×1, 18×2, 20×2 |
+| Baseline | Arc | 16×1, 18×1 |
+| Baseline | **Pooled(12deaths)** | **11×1, 16×5, 17×1, 18×3, 20×2** |
+| Candidate | Breacher | 12×1, 14×2, 15×2, 16×1, 17×2, 18×1, 19×1, 20×1 |
+| Candidate | Cryo | 16×1, 19×2, 20×4 |
+| Candidate | Pyro | 15×2, 16×4, 17×1, 18×1, 19×1, 20×2 |
+| Candidate | Arc | 14×1, 15×1, 17×1, 18×1, 20×4 |
+| Candidate | **Pooled(37deaths)** | **12×1, 14×3, 15×5, 16×6, 17×4, 18×3, 19×4, 20×11** |
+
+Outgoing shares are actual pooled-damage percentages. As before, campaign status/boon attribution does not replace isolated full-kit share/control measurements.
+
+| Profile | Rig | Weapon | Direct ability | Status | Boon | Ability+status+boon |
+|---|---|---:|---:|---:|---:|---:|
+| Baseline | Breacher | 58.62 | 20.25 | 4.71 | 16.43 | 41.38 |
+| Baseline | Cryo | 48.49 | 20.37 | 6.32 | 24.82 | 51.51 |
+| Baseline | Pyro | 46.80 | 18.95 | 18.19 | 16.05 | 53.20 |
+| Baseline | Arc | 59.42 | 27.78 | 4.36 | 8.43 | 40.58 |
+| Candidate | Breacher | 63.12 | 22.19 | 4.01 | 10.68 | 36.88 |
+| Candidate | Cryo | 49.44 | 19.35 | 7.32 | 23.88 | 50.56 |
+| Candidate | Pyro | 44.52 | 22.19 | 19.21 | 14.08 | 55.48 |
+| Candidate | Arc | 60.02 | 28.12 | 4.57 | 7.30 | 39.98 |
+
+### Gate status and remaining acceptance
+
+The full Vitest receipt now reports **237 files passed /1 skipped;2819 tests passed /1 skipped;314.56s**, SHA256 **`9ddfa515ce09203250e07a27410e2a351b22572f1bf5b487f9f6d7d0424b5b58`**, preserved verbatim in the final80 archive. This follows the rejected V26 run: the original invulnerability bounds were preserved, optional immunity override removed, and authorized cast/damage/body-count pins updated without removing timing, geometry, CC or keyboard assertions. Full-kit guards remain30–45% and≤1.25×.
+
+Eight final native campaigns and the remaining standalone gates are still required. Functional smoke checks are not campaign completions, and analytic/native outcomes can diverge. No final native acceptance, graphics-preparation fix or performance certificate is inferred from these80-run simulation samples.
+
+
+## Policy-v1/v2 acceptance withdrawn; fresh v3 evidence required
+
+The lead confirmed two policy defects: **directional Bulwark** used the resolved cursor/actor location as the predicted wall center, while native execution centers it at the marine plus aim direction times its fixed70-unit range; and a **global cursor-tip LOS prefilter** rejected otherwise valid cone/beam targets before a wall when the cursor tip extended beyond it. These are policy/action-observation defects, so passing historical balance metrics or byte-identical source snapshots do not establish corrected-policy acceptance.
+
+All **v1 paired80 results, v1 native results and v2 partials are historical/provisional**. The v1 counts68/80 and43/80, all20 seeds per rig, complete distributions/hashes and the78c7a10 source mapping remain intact. They are not renamed v3 or combined with future v3 runs. The lead is freezing v3 and will rerun baseline80/candidate80 before fresh acceptance claims. No v3 result is read or inferred here.
+
+The final80 evidence now includes SHA-identified interruption receipts: v1 native queue interruption (`provisional-v1-interruption-78c7a10/interruption.json`) and v2 policy interruption (`aim-v2-interruption.json`). Completed natural native outcomes retain their original classification; interrupted cases are **not counted as gameplay deaths** or as completed final confirmations. The v2 receipt records the LOS defect and contains no job details, so no partial-cohort completion counts are inferred from it.
+
+- `artifacts/nextgen/i5-continuation/provisional-v1-interruption-78c7a10/interruption.json`: SHA256 `9975dcbbf9f6ec344627887f8c73f0d73ab665af4587369ce75a072d4fe9dda5`; PROVISIONAL_V1_INTERRUPTED.
+- `artifacts/nextgen/i5-continuation/aim-v2-interruption.json`: SHA256 `268b1ae09e814162a1cc66d250718207cd19ff5875cf6471f55d50562b9b8d25`; v2-interrupted.
+
+This update changes only evidence status/reasons and receipt references. Historical cohort data, gameplay/test/policy code and all recorded source/report hashes are preserved. The earlier full-unit pass remains a valid receipt for that source snapshot, not proof that its bot policy matched native ability semantics.

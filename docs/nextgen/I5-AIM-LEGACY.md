@@ -1,3 +1,5 @@
+> Historical policy-v1 evidence. Targeted aiming was subsequently corrected and frozen as policy v3 at `e97cf06107c6e23f9f7b96ac94f8b95ba3e7163d`. These receipts retain their original source identities and do not replace final v3 campaign/gate evidence.
+
 # I5 candidate — assisted native legacy completion
 
 The frozen candidate's **legacy v2 Arc seed 1729 completed 12/12 rooms**, including a real Queen defeat in **163.950 simulated seconds**. Runner exit code was **0**, with literal `errors: []` and `defects: []`. The campaign browser closed after completion. This assisted result remains separate from organic story balance cohorts.

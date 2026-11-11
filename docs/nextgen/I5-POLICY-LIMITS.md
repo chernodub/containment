@@ -1,3 +1,5 @@
+> Historical checkpoint analysis. The lead authorized correcting targeted ability aim. Policy v3 (`e97cf06107c6e23f9f7b96ac94f8b95ba3e7163d`) resolves the cone failure below, fixes fixed-range directional deployment centers and checks LOS at actual targets rather than empty directional endpoints. Original receipts remain historical; fresh matched cohorts are required and run separately.
+
 # I5 shared combat-policy limitation
 
 The user requested difficulty targets for **“THIS bot policy.”** The target, weapon, ability-opportunity and combat-spacing helpers remain unchanged; navigation-observer v3 is separately versioned in the experiment reports. No cone-aim correction has been made. The scope question is whether to correct directional cone aiming and rerun matched baselines, or preserve the existing combat decisions exactly. Difficulty acceptance remains unfinished; the unaccepted encounter profile is default-off.

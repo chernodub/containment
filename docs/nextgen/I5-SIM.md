@@ -1,3 +1,7 @@
+> Node-emulation v8 supersedes v7 acceptance evidence after fixing immediate grenade/ability-facing semantics, retained warning events/sync-corpse filtering, legacy pressure targets and native pre-burst censor order. Shared policy v3 remains frozen at e97cf06. See [I5-EMULATION-V8.md](I5-EMULATION-V8.md); matched corrected cohorts are pending.
+
+> Historical development record. Current policy is catalog aiming v3, frozen at `e97cf06107c6e23f9f7b96ac94f8b95ba3e7163d`; simulation mode `sim-policy-v7`, navigation observer v3. The current encounter profile is enabled. The default-off and unchanged-aim statements below describe earlier checkpoints only. Native and Node observations can diverge; final cohorts are identified in I5-REPORT.md and must never be pooled across policy/source epochs.
+
 # I5 render-free campaign player
 
 ## Implementation and controls

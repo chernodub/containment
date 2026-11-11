@@ -1,3 +1,5 @@
+> Historical policy-v1 evidence. Targeted aiming was subsequently corrected and frozen as policy v3 at `e97cf06107c6e23f9f7b96ac94f8b95ba3e7163d`. These receipts retain their original source identities and do not replace final v3 campaign/gate evidence.
+
 # I5 fixed-aim production baseline — native confirmation
 
 Both requested organic native campaigns completed **20/20 rooms**, with `errors: []`, `defects: []` and runner exit code **0**. Pyro 1729 ran first, then Arc 1729; only one campaign browser was open at a time. A separate read-only title capture ran after Arc closed, then its browser and local server closed too. No assistance, resource grants, room skipping, code changes, commits or full gates were used for this task.
