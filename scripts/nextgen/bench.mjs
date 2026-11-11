@@ -95,7 +95,7 @@ try{
   if(audioPoll)timers.add(audioPoll);
   const data=await page.evaluate(async ({seconds,audit})=>{
    const d=window.__containmentDebug,g=d.game,r=d.renderer,gl=r.renderer.getContext();
-   const capacity=Math.ceil(seconds*240), samples={frame:[],update:[],render:[],hud:[],audio:[],draws:[],triangles:[],lights:[],instances:[],gpu:[],driver:[],enemies:[]};
+   const capacity=Math.ceil(seconds*240), samples={frame:[],update:[],render:[],hud:[],audio:[],draws:[],triangles:[],lights:[],instances:[],gpu:[],driver:[],enemies:[],sceneInstances:[],sceneLights:[]};
    const values={};for(const key of Object.keys(samples))values[key]=new Float64Array(capacity);
    let count=0,programs=0,peakInstances=0,driverMs=0;const create=gl.createProgram;
    gl.createProgram=function(){programs++;return create.call(gl);};
@@ -111,6 +111,10 @@ try{
     if(query){gl.endQuery(ext.TIME_ELAPSED_EXT);pending.push(query);}
     return result;
    };
+   const allInstanceMeshes=[],allSceneLights=[];
+   r.scene.traverse(o=>{if(o.isInstancedMesh)allInstanceMeshes.push(o);if(o.isLight)allSceneLights.push(o);});
+   r.hudScene.traverse(o=>{if(o.isInstancedMesh)allInstanceMeshes.push(o);});
+   const shown=o=>{if(!o.layers.test(r.camera.layers))return false;for(let node=o;node;node=node.parent)if(!node.visible)return false;return true;};
    d.observePerformance(sample=>{
     if(count>=capacity)return;
     for(const key of ['frame','update','render','hud','audio'])values[key][count]=sample[key];
@@ -119,9 +123,13 @@ try{
     let lights=0;for(const l of r.lighting.pool.lights)if(l.intensity>0)lights++;
     values.lights[count]=lights;
     let instances=0;const visit=o=>{if(!o.visible)return;if(o.isInstancedMesh)instances+=o.count;for(const c of o.children)visit(c);};visit(r.interimAbilities.root);values.instances[count]=instances;peakInstances=Math.max(peakInstances,instances);
+    let sceneInstances=0,sceneLights=0;
+    for(const mesh of allInstanceMeshes)if(shown(mesh))sceneInstances+=mesh.count;
+    for(const light of allSceneLights)if(light.intensity>0&&shown(light))sceneLights++;
+    values.sceneInstances[count]=sceneInstances;values.sceneLights[count]=sceneLights;
     count++;
    });
-   let sceneLightInventory=0;r.scene.traverse(o=>{if(o.isLight)sceneLightInventory++;});
+   const sceneLightInventory=allSceneLights.length,instanceMeshInventory=allInstanceMeshes.length;
    const lane=d.benchmarkLane,refillPoints=[];
    for(let radius=180;radius<=480;radius+=60)for(let i=0;i<32;i++){const a=i*Math.PI/16,x=lane.x+Math.cos(a)*radius,y=lane.y+Math.sin(a)*radius;if(d.canStand(x,y,40))refillPoints.push({x,y});}
    const refillTypes=['brute','spitter','crawler','stalker','carrier'];
@@ -165,7 +173,9 @@ try{
    }finally{d.realtime(false);d.observePerformance(undefined);gl.createProgram=create;r.render=original;r.renderer.renderBufferDirect=direct;}
    const gpu=[];for(const q of pending){if(gl.getQueryParameter(q,gl.QUERY_RESULT_AVAILABLE)&&!gl.getParameter(ext.GPU_DISJOINT_EXT))gpu.push(gl.getQueryParameter(q,gl.QUERY_RESULT)/1e6);gl.deleteQuery(q);}
    for(const key of Object.keys(samples))samples[key]=Array.from(values[key].subarray(0,count));samples.gpu=gpu;
-   return {peakDrawReport,replenished,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
+   let finalLightInventory=0,finalInstanceMeshInventory=0;
+   r.scene.traverse(o=>{if(o.isLight)finalLightInventory++;if(o.isInstancedMesh)finalInstanceMeshInventory++;});r.hudScene.traverse(o=>{if(o.isInstancedMesh)finalInstanceMeshInventory++;});
+   return {instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
   },{seconds,audit:args.includes('--audit-draws')});
   if(audioPoll){clearInterval(audioPoll);timers.delete(audioPoll);}await audioPollWork;
   const final=await cdp.send('Performance.getMetrics');
@@ -189,6 +199,7 @@ try{
   console.log(`${name}: frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
   assert.equal(data.programs,0,'Mid-combat shader compile');
   assert(!data.glError&&!data.contextLost,'WebGL error or lost context during combat');
+  assert.equal(data.finalLightInventory,data.sceneLightInventory,'Combat allocated new scene lights');assert.equal(data.finalInstanceMeshInventory,data.instanceMeshInventory,'Combat allocated new instance meshes');
   if(!baseline&&!budget.draws)report.budgetFailures.push({scenario:name,metric:'draws',observed:summary.draws.max,limit:350});
   assert(summary.lights.max<=(tier==='high'?9:2),'Shared light budget exceeded');
   assert(summary.instances.max<=4096,'Fixed ability instance inventory exceeded');

@@ -220,7 +220,7 @@ Use the selected `rooms` in `benchmark.json` for matched reruns; the examples ar
 for the current room ranking. `--dist=<preserved-production-dist> --no-build` serves a before build
 without modifying source. `--baseline` records a known over-budget before build without treating its draw miss as a final regression; all final runs enforce350. A resource miss is retained, the complete matrix still prints, and the command exits2; page/GL/receipt errors still abort immediately. `--seconds`, `--repeat`, `--rigs`, and `--tiers` narrow diagnostic runs.
 `--scan-only` records inventories without running timing trials; `--scan-calm` keeps a quick world-only diagnostic scan. Every trial records start/end host load averages and core count, per-frame frame/update/render-JS/HUD/
-audio-sync p50/p95/max, draw/triangle/light/ability-instance counts, program inventory, actual new
+audio-sync p50/p95/max, draw/triangle/shared-pool light/ability-instance counts, total visible scene+HUD instances and active scene lights, prepared light/instance-mesh inventories (checked unchanged after combat), program inventory, actual new
 program creation, live enemy min/average/percentiles, replenishments, survivors, accepted slot counts, CDP metrics and optional GPU timer queries.
 `--profile` additionally saves Chrome CPU profiles, sampled allocations (including collected objects),
 V8 GC traces, and native WebAudio graph-capacity/callback-interval telemetry. These are profiling runs and must be identified separately from timing trials.
