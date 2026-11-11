@@ -42,7 +42,7 @@ afterAll(async()=>{await browser?.close();});
 
 async function mount(width=1280,height=720): Promise<Page> {
   const page=await browser.newPage({viewport:{width,height}});
-  await page.setContent(`<style>${css}</style><div id="app"><div id="hud"></div><div id="room-loading"></div><div id="signature"></div><div id="shade"></div><div id="overlay"></div></div>`);
+  await page.setContent(`<style>${css}</style><div id="app"><div id="hud"><span id="credits">785 CR</span></div><div id="room-loading"></div><div id="signature"></div><div id="shade"></div><div id="overlay"></div></div>`);
   await page.evaluate(()=>document.fonts.ready);
   await page.addScriptTag({content:controller});
   await page.evaluate(()=>{
@@ -98,8 +98,30 @@ test('title uses native actions and settings input never triggers menu shortcuts
     await page.locator('#master-volume').focus();
     await page.keyboard.press('r');
     expect(await page.evaluate(()=>(window as any).ui.actions)).toEqual(['start']);
-    await page.locator('#credits').click();
+    await page.locator('#menu-credits').click();
     expect(await page.locator('.credits-drawer').count()).toBe(1);
+  } finally {await page.close();}
+});
+
+test('title Credits opens independently of the real HUD credit counter and both close actions return focus',async()=>{
+  // mount includes the production HUD #credits before the title controller binds native actions.
+  const page=await mount();
+  try {
+    expect(await page.locator('#credits').count()).toBe(1);
+    expect(await page.locator('#hud #credits').textContent()).toBe('785 CR');
+    await page.locator('#menu-credits').click();
+    expect(await page.locator('.credits-drawer').isVisible()).toBe(true);
+    expect(await page.locator('#credits').count()).toBe(1);
+    expect(await page.locator('#hud #credits').textContent()).toBe('785 CR');
+    await page.locator('#close-drawer').click();
+    expect(await page.locator('.credits-drawer').count()).toBe(0);
+    expect(await page.evaluate(()=>document.activeElement?.id)).toBe('menu-credits');
+    await page.locator('#menu-credits').click();
+    expect(await page.locator('.credits-drawer').isVisible()).toBe(true);
+    await page.locator('#close-credits').click();
+    expect(await page.locator('.credits-drawer').count()).toBe(0);
+    expect(await page.evaluate(()=>document.activeElement?.id)).toBe('menu-credits');
+    expect(await page.locator('#hud #credits').textContent()).toBe('785 CR');
   } finally {await page.close();}
 });
 

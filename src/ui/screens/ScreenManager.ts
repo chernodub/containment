@@ -100,10 +100,10 @@ export function createScreens(context: ScreenContext) {
     listen('start',()=>{playUiCue(audio,'confirm');start();});
     listen('continue',()=>{playUiCue(audio,'confirm');start(true);});
     listen('settings',()=>{settingsOpen=!settingsOpen; creditsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);});
-    listen('credits',()=>{creditsOpen=!creditsOpen; settingsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);});
+    listen('menu-credits',()=>{creditsOpen=!creditsOpen; settingsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);});
     listen('controls',()=>{controlsOpen=!controlsOpen;settingsOpen=false;creditsOpen=false;playUiCue(audio,'tab');syncScreen(true);});
-    listen('close-drawer',()=>{const focus=settingsOpen?'settings':controlsOpen?'controls':'credits';settingsOpen=false;controlsOpen=false;creditsOpen=false;playUiCue(audio,'back');syncScreen(true);el(focus)?.focus();});
-    listen('close-credits',()=>{creditsOpen=false; playUiCue(audio,'back'); syncScreen(true); el('credits')?.focus();});
+    listen('close-drawer',()=>{const focus=settingsOpen?'settings':controlsOpen?'controls':'menu-credits';settingsOpen=false;controlsOpen=false;creditsOpen=false;playUiCue(audio,'back');syncScreen(true);el(focus)?.focus();});
+    listen('close-credits',()=>{creditsOpen=false; playUiCue(audio,'back'); syncScreen(true); el('menu-credits')?.focus();});
     listen('resume',pause);
     listen('menu',()=>{
       game.menu(); settingsOpen=false; creditsOpen=false; controlsOpen=false; pauseTab='resume';
