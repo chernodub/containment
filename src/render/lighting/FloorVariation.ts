@@ -78,7 +78,8 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         float deckCloud=roomFloorNoise(roomFloorP*.57);
         float deckScrape=smoothstep(.58,.78,deckRub)*deckCloud;
         float deckSilt=smoothstep(.42,.78,roomFloorStain+roomFloorScuff*.2);
-        float deckScratch=smoothstep(.76,.9,roomFloorNoise(roomFloorP*vec2(.23,31.0)))*smoothstep(.22,.72,deckCloud);
+        float deckScratchPatch=smoothstep(.52,.76,roomFloorNoise(roomFloorP*vec2(2.7,.19)+vec2(17.0,9.0)));
+        float deckScratch=smoothstep(.76,.9,roomFloorNoise(roomFloorP*vec2(.23,31.0)))*deckScratchPatch*smoothstep(.22,.72,deckCloud);
         float deckPanel=roomFloorHash(deckCell+vec2(7.0,29.0));
         ${genericDeck ? `diffuseColor.rgb*=.96+deckPanel*.08;
         diffuseColor.rgb*=1.0-deckJoint*.19;
@@ -86,7 +87,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         // Centered masks retain the calibrated average reflectance while worn
         // islands and wheel scrapes become visible under broad practical light.
         diffuseColor.rgb*=1.0+(deckCloud-.5)*.26+(deckScrape-.12)*.16-(deckSilt-.58)*.095+deckGrain*roomFloorPattern.w;
-        diffuseColor.rgb+=vec3(.006,.007,.007)*deckScratch;
+        diffuseColor.rgb+=vec3(.002,.0023,.0023)*deckScratch;
         if(deckIdentity<.5){
           float frost=smoothstep(.58,.83,roomFloorNoise(roomFloorP*.45)+deckWear*.18);
           diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.08,1.13,1.16),frost*.5);
@@ -120,7 +121,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         float roomFloorPolish=smoothstep(0.28,0.82,roomFloorMacro)*(1.0-roomFloorStain*0.25);
         roughnessFactor=clamp(roughnessFactor-roomFloorPolish*0.38-roomFloorScuff*0.08+roomFloorStain*0.12-roomFloorWet*0.19-(deckScrape-.12)*.24+(deckSilt-.58)*.14+deckGrain*.045,mix(0.38,0.14,roomFloorWetness),1.0);`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v4:${genericDeck ? 'plates' : 'authored'}`;
+    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v5:${genericDeck ? 'plates' : 'authored'}`;
     material.needsUpdate = true;
   }
   uniforms.pattern.value.fromArray(patterns[environment]);
