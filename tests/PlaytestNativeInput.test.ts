@@ -171,3 +171,56 @@ it('keeps bounded real effect receipts with damage attribution and denial detail
   expect(target.__containmentDebug.events).toHaveLength(300);
   expect(target.__containmentDebug.events[0].id).toBe(0);
 });
+
+it('uses the production feel clock for native realtime while advancing UI by unscaled wall time once', () => {
+  const target: Record<string, any> = {};
+  vi.stubGlobal('window', target); vi.stubGlobal('location', {search: '?debug=1'});
+  const update = vi.fn(), render = vi.fn(), advanceUi = vi.fn();
+  const game = {update, hurt: vi.fn(), status: 'playing'} as unknown as DepthGame;
+  const renderer = {render, effect: vi.fn(), roomLoading: false} as unknown as DepthRenderer;
+  const intent: GameInput = {x: 1, y: 0, fire: true, angle: .5, autoAim: false};
+  const presentation = {
+    setEnabled: vi.fn(), reset: vi.fn(), effect: vi.fn(),
+    step: vi.fn((ms: number, input: GameInput, original: (ms: number, input: GameInput) => void) => original(ms * .25, input)),
+  };
+  let ready = true;
+  installDebug(game, renderer, vi.fn(), vi.fn(), vi.fn(), advanceUi, presentation, () => intent, () => ready);
+  const d = target.__containmentDebug;
+  d.nativeInput(true); d.presentation(true); d.realtime(true);
+  advanceUi.mockClear(); render.mockClear();
+  game.update(40, intent);
+  expect(presentation.step).toHaveBeenCalledExactlyOnceWith(40, intent, expect.any(Function));
+  expect(update).toHaveBeenCalledExactlyOnceWith(10, intent);
+  renderer.render(game, .01, false);
+  expect(render).toHaveBeenLastCalledWith(game, .01, false);
+  expect(advanceUi).toHaveBeenLastCalledWith(.04);
+  renderer.render(game, .01, false);
+  expect(advanceUi.mock.calls).toEqual([[.04], [0]]);
+
+  // A real hit-stop can scale renderer time to zero while the current UI wall clock still advances.
+  game.update(40, intent); renderer.render(game, 0, false);
+  expect(advanceUi).toHaveBeenLastCalledWith(.04);
+  // Loading/recovery renders consume no wall time and cannot leave it pending for a later frame.
+  game.update(40, intent); ready = false; renderer.render(game, 0, false);
+  ready = true; renderer.render(game, .01, false);
+  expect(advanceUi.mock.calls.slice(-2)).toEqual([[0], [0]]);
+  game.update(20, intent); renderer.render(game, .005, false);
+  expect(advanceUi).toHaveBeenLastCalledWith(.02);
+});
+
+it('does not enable the feel clock implicitly for ordinary native realtime benchmarks', () => {
+  const target: Record<string, any> = {};
+  vi.stubGlobal('window', target); vi.stubGlobal('location', {search: '?debug=1'});
+  const update = vi.fn(), advanceUi = vi.fn();
+  const game = {update, hurt: vi.fn(), status: 'playing'} as unknown as DepthGame;
+  const renderer = {render: vi.fn(), effect: vi.fn(), roomLoading: false} as unknown as DepthRenderer;
+  const intent: GameInput = {x: 0, y: 1, fire: true, angle: null, autoAim: true};
+  const presentation = {setEnabled: vi.fn(), reset: vi.fn(), effect: vi.fn(), step: vi.fn()};
+  installDebug(game, renderer, vi.fn(), vi.fn(), vi.fn(), advanceUi, presentation, () => intent);
+  const d = target.__containmentDebug;
+  d.nativeInput(true); d.realtime(true);
+  game.update(20, intent); renderer.render(game, .02, false);
+  expect(update).toHaveBeenCalledExactlyOnceWith(20, intent);
+  expect(presentation.step).not.toHaveBeenCalled();
+  expect(advanceUi).toHaveBeenCalledExactlyOnceWith(.02);
+});

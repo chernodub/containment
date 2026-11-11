@@ -23,20 +23,21 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
  let presentationEnabled=false;
  const update=game.update.bind(game),render=renderer.render.bind(renderer),hurt=game.hurt.bind(game),effect=renderer.effect.bind(renderer);
  const events:Array<GameEffect & {at:number}>=[];renderer.effect=e=>{events.push({...e,at:game.elapsed});if(events.length>300)events.shift();effect(e);};
- let realtime=false,nativeInput=false,incomingDamageScale=1;
+ let realtime=false,nativeInput=false,incomingDamageScale=1,nativeRealtimeUiDt:number|null=null;
  const stepCosts:number[]=[];let stepCount=0,stepTotal=0,stepMaximum=0;
  let controls:GameInput={x:0,y:0,fire:false,angle:null,autoAim:true},immune=false,seed=Number(new URLSearchParams(location.search).get('seed')??1729);
  const canStepNative=()=>!renderer.roomLoading&&(!nativeInput||!nativeReady||nativeReady());
  // RAF still owns resource recovery and diagnostics; only explicit steps advance time.
- game.update=(dt,input)=>{if(realtime&&(!nativeInput||canStepNative()))update(dt,nativeInput?input:controls);};renderer.render=(g,dt,menu)=>{render(g,realtime?dt:0,menu);if(realtime)advanceUi(dt);};
+ game.update=(dt,input)=>{nativeRealtimeUiDt=null;if(!realtime||nativeInput&&!canStepNative())return;if(nativeInput){const intent=input??nativeRead!();nativeRealtimeUiDt=dt/1000;if(presentationEnabled&&presentation)presentation.step(dt,intent,update);else update(dt,intent);}else update(dt,controls);};
+ renderer.render=(g,dt,menu)=>{render(g,realtime?dt:0,menu);if(realtime){const uiDt=nativeInput?(canStepNative()?nativeRealtimeUiDt??0:0):dt;nativeRealtimeUiDt=null;advanceUi(uiDt);}};
  game.hurt=n=>{if(!immune)hurt(Number.isFinite(n)?n*incomingDamageScale:n);};
  const refresh=()=>{render(game,0,game.status==='menu');sync();advanceUi(0);};
  const ready=async()=>{beforePrepare();await renderer.prepare(game.node);refresh();};
  const api={game,renderer,events,prepare:ready,
   /** Opt-in live RAF benchmark; the normal game loop measures actual simulation/render work. */
-  realtime(value:boolean){realtime=value;},
+  realtime(value:boolean){realtime=value;nativeRealtimeUiDt=null;},
   /** Read the real InputController each fixed tick; never inject bot controls. */
-  nativeInput(value:boolean){if(value&&!nativeRead)throw Error('Native input provider unavailable');nativeInput=value;},
+  nativeInput(value:boolean){if(value&&!nativeRead)throw Error('Native input provider unavailable');nativeInput=value;nativeRealtimeUiDt=null;},
   /** Atomically query the same loading/recovery gate used by native gameplay. */
   get canStepNative(){return canStepNative();},
   /** Explicit assisted-playtest setting; ordinary runs retain the exact hurt path. */
@@ -45,6 +46,12 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   resetStepPerformance(){stepCosts.length=0;stepCount=stepTotal=stepMaximum=0;},
   get stepPerformance(){const sorted=[...stepCosts].sort((a,b)=>a-b),percentile=(fraction:number)=>sorted[Math.max(0,Math.ceil(sorted.length*fraction)-1)]??0;return {samples:stepCount,retained:sorted.length,updateRenderMs:{average:stepCount?stepTotal/stepCount:0,p50:percentile(.5),p95:percentile(.95),max:stepMaximum}};},
   async startRun(value=seed,options:{rigSelect?:boolean}={}){seed=value;controls={x:0,y:0,fire:false,angle:null,autoAim:true};setUiFixture(game,null);presentationEnabled=false;presentation?.setEnabled(false);presentation?.reset();game.newRun(seed,options);events.length=0;await ready();},
+  /** Bootstrap the first legacy encounter only after native rig selection; no rooms or rewards are skipped. */
+  async startLegacyRun(value:number,rig:RigId){
+   const run=game.expedition.run,build=game.expedition.build;
+   if(game.status!=='reward'||run.version!==3||run.phase!=='starting-boon'||run.seed!==value||run.completedNodeIds.length||build.mutations.length||build.rig!==rig||game.abilities.snapshot.rig!==rig)throw Error('Legacy start requires an untouched native rig choice for the same seed');
+   seed=value;setUiFixture(game,null);nativeRealtimeUiDt=null;presentation?.reset();game.newRun(seed,{version:2,rig});events.length=0;await ready();
+  },
   async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId}={}){
    const version=options.version??3,nodes=generateRun(seed,version).nodes,index=nodes.findIndex(n=>n.templateId===templateId);
    if(index<0)throw Error(`Room ${templateId} is not in run v${version}`);
