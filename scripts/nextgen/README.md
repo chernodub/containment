@@ -240,3 +240,25 @@ The readiness query `debug.canStepNative` uses the application's actual loading/
 Reviewed collector false positives can be annotated in a sibling `triage.json` (`defects:[{evidence,status:"dismissed",reason,source}]`). Aggregation matches exact evidence names, retains dismissed receipts/reasons and all raw reports, and never suppresses console/page errors. The twelve-job queue must be drained before `supplement.mjs`; its default workflow uses two browsers maximum, while `--recovery-only --serial` allows one earned continuation at a time alongside a separately managed legacy run. Do not run a third browser or browser gate concurrently.
 
 The title Credits control is `#menu-credits`; `#credits` remains the stable HUD currency value. Route policy reads both map-inspection destinations and the selected departure, inspects the chosen destination with a native click, then departs. The first legacy coverage run predates this correction and took the initially inspected branch; it is content coverage, not a controlled balance sample.
+
+## I5 native browser fast mode
+
+`npm run playtest -- --rig=arc --seed=1729 --fast --label=i5-fast-arc-1729`
+keeps native keyboard/mouse actions, the presentation clock, 60 Hz simulation,
+and the real scene/camera/actor update on every tick. It omits only intermediate
+WebGL draw submissions inside each explicit decision batch. The last tick,
+refresh/evidence frames, run boundaries and room-preparation draws remain fully
+rendered. `debug.fastNativeRendering(true)` requires native input; passive
+`--realtime` observation cannot use it. Default playtests, captures and
+`playtest:smoke` continue drawing every tick.
+
+Reports mark `fastRendering:true` and describe the altered draw schedule. Use this
+mode for native policy/campaign validation, never for production CPU/GPU timing,
+draw-call budgets or intermediate visual inspection. Loading holds, browser
+errors and final-frame checks are still recorded without filtering.
+
+`--dist-dir=artifacts/nextgen/i5/candidate-dist` serves an explicit immutable
+build directory instead of `dist`; the resolved directory is retained in the
+report. Native UI/assets and the same `/containment/` path-traversal guard apply.
+Use separate build directories when comparing candidates while another campaign
+is still serving its original build.

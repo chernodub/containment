@@ -22,15 +22,17 @@ const args = process.argv.slice(2);
 const options = Object.fromEntries(args.map(arg => {
   assert(/^--[a-z-]+(?:=.*)?$/.test(arg), `Invalid argument ${arg}`);
   const [key, ...value] = arg.slice(2).split('=');
-  assert(['rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens'].includes(key), `Unknown option ${key}`);
+  assert(['rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir'].includes(key), `Unknown option ${key}`);
   return [key, value.length ? value.join('=') : true];
 }));
+const distRoot=resolve(String(options['dist-dir']??'dist'));
 const checkpointScreens=options['checkpoint-screens']?new Set(String(options['checkpoint-screens']).split(',')):null;
 if(checkpointScreens){options.checkpoints=true;for(const kind of checkpointScreens)assert(['menu','menu-settings','menu-controls','menu-credits','rig-select','starting-boon','combat','pause','pause-loadout','pause-settings','pause-controls','reward','route','shop','destroy-confirm','dead','complete'].includes(kind),`Unknown checkpoint screen ${kind}`);}
 const shouldProbe=kind=>!!options.checkpoints&&(!checkpointScreens||checkpointScreens.has(kind));
 const resumed=options['resume-boundary']?await loadEarnedBoundary(resolve(options['resume-boundary'])):null;
 const rig = options.rig ?? resumed?.parent.rig ?? 'arc', seed = Number(options.seed ?? resumed?.checkpoint.run.seed ?? 1729), roomLimit = Number(options.rooms ?? 20);
 if(resumed){assert.equal(rig,resumed.parent.rig,'Cannot change rig while resuming');assert.equal(seed,resumed.checkpoint.run.seed,'Cannot change seed while resuming');assert.equal(!!options.assisted,resumed.parent.assisted,'Cannot change assistance while resuming');}
+assert(!(options.fast&&options.realtime),'Fast draw decimation cannot be combined with passive realtime observation');
 assert(!(options.realtime&&options.assisted),'Passive live observation cannot reduce incoming damage; use fixed stepping for assisted coverage');
 assert(RIGS.includes(rig), 'Rig must be breacher/cryo/pyro/arc');
 assert(Number.isInteger(seed) && seed >= 0 && seed <= 0xffffffff, 'Invalid uint32 seed');
@@ -45,14 +47,15 @@ await mkdir(resolve(out,'source'),{recursive:true});
 const harnessHashes={};
 for(const file of ['runner.mjs','policy.mjs','lifecycle.mjs','diagnostics.mjs','evidence.mjs','resume.mjs','visuals.mjs']){const content=await readFile(resolve('scripts/nextgen/playtest',file));harnessHashes[file]=createHash('sha256').update(content).digest('hex');await writeFile(resolve(out,'source',file),content);}
 const report = {
-  label, rig, seed, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
-  legacy: resumed?.parent.legacy??!!options.legacy, lifecycleOnly:!!options['death-probe'], presentation:true, roomLimit, harnessHashes, head: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
+  label, rig, seed, distributionDirectory:distRoot, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
+  legacy: resumed?.parent.legacy??!!options.legacy, fastRendering:!!options.fast, lifecycleOnly:!!options['death-probe'], presentation:true, roomLimit, harnessHashes, head: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
   branch: execFileSync('git',['branch','--show-current'],{encoding:'utf8'}).trim(), started: new Date().toISOString(),
   policy: 'Native WASD and mouse; spitter/champion focus; obstacle-probed kiting; rig-path/augment boon heuristic; safer route, medical if health<75; heal<40%; Q/F opportunity; V at 6+ or boss/champion.',
-  clock: options.realtime ? 'native production RAF, passive observation; no audio/effect/core wrappers' : 'native fixed 60Hz; 250ms policy decisions; render every fixed tick',
+  clock: options.realtime ? 'native production RAF, passive observation; no audio/effect/core wrappers' : options.fast ? 'native fixed 60Hz; 250ms policy decisions; scene/camera every tick, GPU draw at batch end' : 'native fixed 60Hz; 250ms policy decisions; render every fixed tick',
   rooms: resumed?resumed.parent.rooms.filter(r=>['clear','complete'].includes(r.result)&&resumed.checkpoint.run.completedNodeIds.includes(r.nodeId)):[], errors: resumed?[...resumed.parent.errors]:[], defects: resumed?[...resumed.parent.defects]:[], checkpoints: [], screenshots: [], inputs: [], outcome: 'running',
   limitations: ['Incoming damage source is inferred from nearby threats, not authoritative attribution.', 'Accelerated CPU samples include rendering submission, not GPU completion; RAF diagnostics are separately retained.', 'A deterministic seed does not guarantee identical outcomes across policy/render timing; input trace is retained.', 'Audio spy tracks source lifecycle, not perceived sound quality.'],
 };
+if(options.fast)report.limitations.push('Fast rendering omits intermediate GPU submissions only; timings/draw counts are not a production performance certificate. Preparation and evidence frames are fully drawn.');
 if(options['death-probe'])report.policy='Separate lifecycle-only natural death fixture: native UI start, intentionally idle in the first fight; no damage/state injection. Excluded from campaign balance cohorts.';
 if(resumed)report.continuation={source:resumed.source,parentLabel:resumed.parent.label,parentHead:resumed.parent.head,parentWallSeconds:resumed.parent.wallSeconds,provenRooms:resumed.checkpoint.run.completedNodeIds,explanation:'Continues a recorded earned boundary through real Continue; no unfought rooms are advanced.'};
 const escape = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -71,11 +74,11 @@ function listen(p) {
   p.on('response', r => {if(r.status()>=400) report.errors.push({type:'http',message:`${r.status()} ${r.url()}`});});
 }
 async function enableNative() {
-  await page.evaluate(({scale,realtime}) => {
+  await page.evaluate(({scale,realtime,fast}) => {
     const d=window.__containmentDebug;
     if(realtime&&d.liveObservation!==true)throw Error('Rebuild dist for passive live observation');
-    d.nativeInput(true);d.presentation(true);if(scale<1)d.incomingDamageScale(scale);d.realtime(realtime);
-  }, {scale:report.incomingDamageScale,realtime:!!options.realtime});
+    d.nativeInput(true);if(fast){if(!d.fastNativeRendering)throw Error('Rebuild dist for native fast rendering');d.fastNativeRendering(true);}d.presentation(true);if(scale<1)d.incomingDamageScale(scale);d.realtime(realtime);
+  }, {scale:report.incomingDamageScale,realtime:!!options.realtime,fast:!!options.fast});
 }
 /** Reads geometry/navigation and camera matrices; never writes simulation state. */
 async function advance(milliseconds) {
@@ -160,11 +163,11 @@ async function finishRoom(s,result) {
   await save();
 }
 try {
-  await stat(resolve('dist/index.html'));
+  await stat(resolve(distRoot,'index.html'));
   const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.glb':'model/gltf-binary','.woff2':'font/woff2','.png':'image/png','.jpg':'image/jpeg','.ogg':'audio/ogg','.mp3':'audio/mpeg','.wav':'audio/wav'};
   server=createServer(async(req,res)=>{
-    const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname),file=resolve('dist',pathname.slice('/containment/'.length)||'index.html');
-    if(!pathname.startsWith('/containment/')||!file.startsWith(resolve('dist')+'/'))return res.writeHead(404).end();
+    const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname),file=resolve(distRoot,pathname.slice('/containment/'.length)||'index.html');
+    if(!pathname.startsWith('/containment/')||!file.startsWith(distRoot+'/'))return res.writeHead(404).end();
     try{res.writeHead(200,{'Content-Type':mime[extname(file)]??'application/octet-stream'}).end(await readFile(file));}catch{res.writeHead(404).end();}
   });
   await new Promise((ok,fail)=>{server.once('error',fail);server.listen(0,'127.0.0.1',ok);});
