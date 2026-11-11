@@ -40,10 +40,11 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 |---|---|---|
 | W0 capture harness | done, merged (2026-11-11) | baseline: 66 shots, Metal GPU, ~170 s for `all` |
 | A1 abilities | reported 2026-11-11 | `t3/combat-rig-ability-simulation` @ b5617a2 — 1766 tests green; smoke needs UI-side HUD refresh; under independent review (R1) |
-| G1 render | running (2026-11-11) | `t3/nextgen-graphics-overhaul`; steered twice (closer camera; exposure/value structure) |
+| G1 render | reported; merged into I2 worktree (2026-11-11) | `t3/nextgen-graphics-overhaul` @ 1152940; full renderer retained, browser integration resolved by I2 |
 | U1 interface | reported 2026-11-11 | `t3/nextgen-ui-overhaul` @ 5af5da8 — all gates green; adapter seams for A1/G1 |
 | R1 review of A1 | done | 4 MAJOR + 6 MINOR confirmed; fixes in progress on the A1 branch (A1-fix) |
 | I1a integrate A1+U1, live rig HUD | merged into `nextgen` 2026-11-11 | `t3/integrate-combat-rig-ui` @ 4fa6f6e — 1855 tests, smoke + authored smoke green |
+| I2 graphics integration | reported; awaiting lead merge (2026-11-11) | `t3/integrate-graphics-overhaul` @ e699b49 implementation — 2207 tests, all six gates green; 143-shot integration-2 gallery + 12 live performance captures; report `I2-REPORT.md` |
 
 ## Decisions log
 
