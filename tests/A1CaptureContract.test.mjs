@@ -15,3 +15,31 @@ it('registers one self-contained production capture fixture for every catalog ab
   expect(driver).not.toContain('createServer');
   expect(driver).not.toContain('/src/');
 });
+
+it('keeps both stream scenario sets and checks the integrated live HUD', async () => {
+  const { SCENARIOS } = await import('../scripts/nextgen/scenarios.mjs');
+  expect(new Set(SCENARIOS.map(s => s.id)).size).toBe(SCENARIOS.length);
+  for (const id of ['ability:desktop-input', 'ability-ready', 'ability-denied', 'combat-kiting', 'pause-loadout', 'results-fixture', 'complete-fixture', 'results']) {
+    expect(SCENARIOS.some(s => s.id === id)).toBe(true);
+  }
+  const { ABILITY_SCENARIOS } = await import('../scripts/nextgen/ability-scenarios.mjs');
+  for (const scenario of ABILITY_SCENARIOS) expect(scenario.required).toContain('#ability-bar');
+  expect(SCENARIOS.find(s => s.id === 'results')).toMatchObject({state: 'dead', required: ['.result-stats', '.result-panel', '#start']});
+});
+
+it('opens every rig preview through live rig-select rather than a UI phase fixture', async () => {
+  const { SCENARIOS } = await import('../scripts/nextgen/scenarios.mjs');
+  const originalWindow = globalThis.window;
+  const originalDocument = globalThis.document;
+  const starts = [], inspected = [];
+  globalThis.window = {__containmentDebug: {startRun: async (...args) => {starts.push(args);}}};
+  globalThis.document = {querySelector: selector => ({click: () => inspected.push(selector)})};
+  try {
+    for (const id of ['rig-select', 'rig-select-cryo', 'rig-select-pyro', 'rig-select-arc']) await SCENARIOS.find(s => s.id === id).setup();
+    expect(starts).toEqual(Array.from({length: 4}, () => [undefined, {rigSelect: true}]));
+    expect(inspected).toEqual(['[data-rig=cryo]', '[data-rig=pyro]', '[data-rig=arc]']);
+  } finally {
+    if (originalWindow === undefined) delete globalThis.window; else globalThis.window = originalWindow;
+    if (originalDocument === undefined) delete globalThis.document; else globalThis.document = originalDocument;
+  }
+});

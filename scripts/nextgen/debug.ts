@@ -24,14 +24,14 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
  const ready=async()=>{beforePrepare();await renderer.prepare(game.node);refresh();};
  const api={game,renderer,events,prepare:ready,
   async startRun(value=seed,options:{rigSelect?:boolean}={}){seed=value;controls={x:0,y:0,fire:false,angle:null,autoAim:true};setUiFixture(game,null);game.newRun(seed,options);events.length=0;await ready();},
-  async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route'}={}){
+  async gotoRoom(templateId:string,options:{version?:1|2|3;phase?:'combat'|'reward'|'route';rig?:RigId}={}){
    const version=options.version??3,nodes=generateRun(seed,version).nodes,index=nodes.findIndex(n=>n.templateId===templateId);
    if(index<0)throw Error(`Room ${templateId} is not in run v${version}`);
-   setUiFixture(game,null);game.newRun(seed);events.length=0;controls={x:0,y:0,fire:false,angle:null,autoAim:true};
+   setUiFixture(game,null);game.newRun(seed,{rigSelect:!!options.rig});if(options.rig&&!game.chooseRig(options.rig))throw Error('Debug rig selection failed');events.length=0;controls={x:0,y:0,fire:false,angle:null,autoAim:true};
    if(index===0)game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
    else{
     const target=nodes[index],path:typeof nodes[number][]=[];let cursor=target;while(cursor.depth>0){cursor=nodes.find(n=>n.depth===cursor.depth-1&&n.next.includes(cursor.id))!;if(!cursor)throw Error('No route to target');path.unshift(cursor);}
-    const previous=path.at(-1)!,serialized=serializeCheckpoint({version:1,savedAt:0,run:{version,seed,currentNodeId:previous.id,completedNodeIds:path.map(n=>n.id),phase:'route'},build:{mutations:[]},resources:game.combat.getRunResources()});
+    const previous=path.at(-1)!,serialized=serializeCheckpoint({version:1,savedAt:0,run:{version,seed,currentNodeId:previous.id,completedNodeIds:path.map(n=>n.id),phase:'route'},build:{mutations:[],...(options.rig?{rig:options.rig}:{})},resources:game.combat.getRunResources()});
     if(!serialized)throw Error(`Invalid checkpoint before ${templateId}`);
     game.expedition=restoreExpedition(parseCheckpoint(serialized)!);game.node=previous;game.status='route';
     if(previous.templateId==='manual-control-chamber')game.authorizeDestruction();else game.route(nodes[index].id);
@@ -51,6 +51,8 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   setInput(value:Partial<GameInput>){controls={...controls,...value};},
   step(ms:number){if(!Number.isFinite(ms)||ms<0||ms>60000)throw Error('step expects 0..60000 ms');if(renderer.roomLoading)throw Error('Room is still loading');for(let remaining=ms;remaining>1e-7;){const dt=Math.min(1000/60,remaining);update(dt,controls);render(game,dt/1000,game.status==='menu');advanceUi(dt/1000);remaining-=dt;}refresh();},
   invulnerable(value:boolean){immune=value;},
+  /** Fill the real runtime meter without injecting a presentation snapshot. */
+  fillOverdrive(){game.abilities.addCharge(6000);refresh();},
   /** A presentation-only close-camera stress case; never changes native gameplay defaults. */
   cameraZoom(value:number){if(!Number.isFinite(value)||value<1||value>3)throw Error('cameraZoom expects 1..3');renderer.camera.zoom=value;renderer.camera.updateProjectionMatrix();refresh();},
   /** Presentation-only fixtures: never install simulation APIs or alter hit results. */

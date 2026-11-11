@@ -91,6 +91,16 @@ try{
     if(scenario.phase)assert.equal(evidence.phase,scenario.phase,`${name}: wrong run phase`);
     if(scenario.nativeInput){assert.equal(evidence.abilities.rig,'breacher');for(const slot of ['dash','tactical','power','overdrive'])assert.equal(evidence.stats.abilityUses[slot],1,`Native ${slot} input failed`);assert.equal(evidence.stats.overdrivesUsed,1);}
     if(scenario.ability){assert.equal(evidence.abilities.rig,scenario.ability.rig);assert.equal(evidence.abilities.slots[scenario.ability.slot].id,scenario.ability.id);assert.equal(evidence.stats.abilityUses[scenario.ability.slot],1);assert(evidence.abilities.zones.length<=24&&evidence.abilities.deployables.length<=8,'Ability counts unbounded');}
+    if(scenario.ability||scenario.nativeInput){
+     assert.equal(evidence.ui.abilitySlots.length,4,`${name}: live ability HUD incomplete`);
+     for(const hud of evidence.ui.abilitySlots){
+      const slot=evidence.abilities.slots[hud.slot];
+      assert(hud.title&&hud.value&&hud.icon,`${name}: ${hud.slot} HUD content missing`);
+      assert.equal(hud.title.toLowerCase().replace(/[^a-z]/g,''),slot.id.replaceAll('-',''),`${name}: HUD shows a different rig ability`);
+      if(hud.state!=='denied')assert.equal(hud.state,slot.castRemainingMs>0?'casting':slot.activeRemainingMs>0?'active':(hud.slot==='overdrive'?evidence.abilities.overdrive.ready:slot.ready)?'ready':'cooling',`${name}: ${hud.slot} HUD state differs from live snapshot`);
+     }
+    }
+    if(scenario.id==='results'){assert(evidence.stats.kills.total>0&&evidence.stats.damageDealt.ability>0&&evidence.stats.abilityUses.tactical===1&&evidence.stats.overdrivesUsed===1,'Results lack genuine combat receipts');}
     if(scenario.uiState)assert.equal(evidence.uiState,scenario.uiState,`${name}: wrong fixture UI phase`);
     if(scenario.id==='combat-calm')assert.equal(evidence.enemies,0,`${name}: calm room contains enemies`);
     assert.equal(evidence.state,scenario.state,`${name}: wrong game state`);assert(evidence.canvas.colors>8&&!evidence.canvas.contextLost&&!evidence.canvas.error,`${name}: missing/invalid canvas pixels ${JSON.stringify(evidence.canvas)}`);
