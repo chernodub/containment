@@ -4,6 +4,9 @@ import type { DepthGame } from '../../DepthGame';
 import type { GraphicsOptions } from '../graphicsOptions';
 import type { GraphicsTier } from '../FrameBudget';
 import { AbilityGeometry } from './AbilityGeometry';
+import { createBreacherPresentation } from './breacher';
+import { createCryoPresentation } from './cryo';
+import { createPyroPresentation } from './pyro';
 import { ElementKit, type AbilityServices } from './ElementKit';
 import type { AbilityFrame, AbilityPresentation, PresentationFactory } from './types';
 
@@ -14,12 +17,19 @@ export class AbilityVisuals extends AbilityGeometry {
   private system?:AbilityPresentation;
   private frame:AbilityFrame={snapshot:undefined,dt:0,visible:true};
   private dead=false;
+  constructor(scene:T.Object3D){
+    super(scene);
+    this.register('breacher',createBreacherPresentation);
+    this.register('cryo',createCryoPresentation);
+    this.register('pyro',createPyroPresentation);
+  }
   register(rig:RigId,factory:PresentationFactory):void {this.registry.get(rig)?.dispose();this.registry.set(rig,factory(this.kit));}
   registerSystem(factory:PresentationFactory):void {this.system?.dispose();this.system=factory(this.kit);}
   bind(services:AbilityServices):void {this.kit.bind(services);}
   setOptions(options:GraphicsOptions,tier:GraphicsTier,reducedMotion:boolean):void {this.kit.setOptions(options,tier,reducedMotion);this.setReducedMotion(reducedMotion);}
   override event(event:AbilityEvent,x:number,y:number):void {
-    if(this.dead)return;super.event(event,x,y);this.registry.get(event.rig)?.event(event,x,y);this.system?.event(event,x,y);
+    if(this.dead||!Number.isFinite(x)||!Number.isFinite(y))return;
+    if(event.phase==='cast')super.event(event,x,y);this.registry.get(event.rig)?.event(event,x,y);this.system?.event(event,x,y);
   }
   override update(snapshot:AbilitiesSnapshot|undefined,dt:number,visible=true,game?:DepthGame,marine?:T.Object3D):void {
     if(this.dead)return;
