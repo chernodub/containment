@@ -10,6 +10,7 @@ import {chromium} from 'playwright';
 const args = process.argv.slice(2);
 const option = (name, fallback) => args.find(value => value.startsWith(`--${name}=`))?.slice(name.length + 3) ?? fallback;
 const cycles = Number(option('cycles', '20'));
+const allowRepeatDecodes = args.includes('--baseline') || args.includes('--allow-repeat-decodes');
 const cpuRate = Number(option('cpu-rate', '2'));
 const latency = Number(option('latency', '100'));
 const throughput = Number(option('throughput', String(8 * 1024 * 1024)));
@@ -19,7 +20,7 @@ const dist = resolve(option('dist', 'dist'));
 const out = resolve('artifacts/nextgen', option('label', 'restart-stress'));
 const prefix = '/containment/';
 await mkdir(out, {recursive:true});
-const report = {sha:execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim(), startedAt:new Date().toISOString(), cycles, throttle:{cpuRate, latency, throughput}, runs:[], errors:[], requests:[]};
+const report = {sha:execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim(), startedAt:new Date().toISOString(), cycles, allowRepeatDecodes, throttle:{cpuRate, latency, throughput}, runs:[], errors:[], requests:[]};
 const server = createServer(async (request, response) => {
   const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
   const file = resolve(dist, pathname.slice(prefix.length) || 'index.html');
@@ -37,6 +38,10 @@ try {
   // Observe the unmodified loader, including blob ownership and actual decode errors.
   await context.addInitScript(() => {
     const state = {urls:[], decodes:[], failures:[]};
+    const scope = () => {
+      const progress = document.querySelector('#asset-track');
+      return progress && Number(progress.getAttribute('aria-valuenow')) < 100 ? 'actor' : 'room';
+    };
     Object.defineProperty(window, '__textureLifecycle', {value:state});
     const urls = new Map(), bitmaps = new WeakMap(), create = URL.createObjectURL, revoke = URL.revokeObjectURL;
     if (typeof ImageBitmap !== 'undefined') {
@@ -47,7 +52,7 @@ try {
       };
     }
     URL.createObjectURL = function(blob) {
-      const url = create.call(this, blob), entry = {url, size:blob.size, type:blob.type, created:performance.now(), revoked:null};
+      const url = create.call(this, blob), entry = {url, scope:scope(), size:blob.size, type:blob.type, created:performance.now(), revoked:null};
       state.urls.push(entry); urls.set(url, entry); return url;
     };
     URL.revokeObjectURL = function(url) {
@@ -65,7 +70,7 @@ try {
     };
     const bitmap = window.createImageBitmap;
     if (bitmap) window.createImageBitmap = async function(...parameters) {
-      const input = parameters[0], entry = {size:input instanceof Blob ? input.size : null, type:input instanceof Blob ? input.type : null, started:performance.now(), ended:null, error:null, width:null, height:null, closes:[]};
+      const input = parameters[0], entry = {scope:scope(), size:input instanceof Blob ? input.size : null, type:input instanceof Blob ? input.type : null, started:performance.now(), ended:null, error:null, width:null, height:null, closes:[]};
       state.decodes.push(entry);
       try {
         const image = await bitmap.apply(this, parameters);
@@ -104,6 +109,9 @@ try {
     await page.locator('#menu').click();
     await page.waitForFunction(() => document.body.dataset.state === 'menu');
   };
+  await settled();
+  report.initialWarm = await page.evaluate(() => ({blobUrls:window.__textureLifecycle.urls.length, bitmapDecodes:window.__textureLifecycle.decodes.length, roomBitmapDecodes:window.__textureLifecycle.decodes.filter(entry => entry.scope === 'room').length}));
+  assert.equal(report.initialWarm.roomBitmapDecodes, 26, 'Initial Awakening warm must decode its 26 embedded images');
   for (cycle = 0; cycle < cycles; cycle++) {
     const started = Date.now();
     await page.locator('#start').click();
@@ -132,6 +140,10 @@ try {
       return {closedMaps, state:document.body.dataset.state, room:d.game.node.templateId, owners, memory:{...r.renderer.info.memory}, programs:r.renderer.info.programs.length, glError:gl.getError(), contextLost:gl.isContextLost(), blobUrls:window.__textureLifecycle.urls.length, bitmapDecodes:window.__textureLifecycle.decodes.length};
     });
     report.runs.push({cycle, durationMs:Date.now() - started, ...evidence});
+    if (!allowRepeatDecodes) {
+      assert.equal(evidence.blobUrls, report.initialWarm.blobUrls, 'Restart created a new embedded image blob URL');
+      assert.equal(evidence.bitmapDecodes, report.initialWarm.bitmapDecodes, 'Restart decoded an image again');
+    }
     assert.equal(evidence.room, 'awakening-bay');
     assert.equal(evidence.state, 'playing');
     assert.deepEqual(evidence.closedMaps, [], 'A live scene retained a closed ImageBitmap');

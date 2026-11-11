@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {roomModelCache,retireRoomModels} from './RoomModelCache';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {AWAKENING_BLOCKOUT} from '../game/roguelike/authoredRoomTopologies';
 import {createAwakeningRacks} from './AuthoredRooms';
@@ -11,12 +11,8 @@ const slots=AWAKENING_BLOCKOUT.slice(1,3).flatMap(b=>{
  const xs=b.footprint.map(p=>p.x),zs=b.footprint.map(p=>p.y);
  return Array.from({length:4},(_,j)=>({x:Math.min(...xs)+50+j*100,z:(Math.min(...zs)+Math.max(...zs))/2}));
 });
-/** Ownership is room-local. Embedded textures and instance buffers retire once. */
-function retire(...roots:T.Object3D[]){
- const resources=new Set<{dispose():void}>(),images=new Set<ImageBitmap>();
- for(const root of roots){root.traverse(o=>{if(o instanceof T.Mesh){resources.add(o.geometry);if(o instanceof T.InstancedMesh)resources.add(o);for(const m of Array.isArray(o.material)?o.material:[o.material]){resources.add(m);for(const t of Object.values(m))if(t instanceof T.Texture){resources.add(t);if(typeof ImageBitmap!=='undefined'&&t.image instanceof ImageBitmap)images.add(t.image);}}}});root.removeFromParent();}
- resources.forEach(r=>r.dispose());images.forEach(i=>i.close());
-}
+/** Room-owned copies retire independently from the three session templates. */
+const retire=retireRoomModels;
 /** Eight copies share the untouched indexed UV/normal/PBR source, not 8 GLTF loads.
  * Instance matrices retain every exported node transform. No room/world flattening. */
 export function buildSealedBank(source:T.Group){
@@ -52,14 +48,10 @@ export function buildSealedBank(source:T.Group){
  return root;
  }catch(error){allocated.forEach(resource=>resource.dispose());root.clear();throw error;}
 }
-async function loadSource(signal:AbortSignal){
- const response=await fetch(SEALED_CHAMBER_URL,{signal});if(!response.ok)throw Error(`chamber HTTP ${response.status}`);
- const bytes=await response.arrayBuffer();if(bytes.byteLength>1100000)throw Error('chamber byte budget exceeded');
- return (await new GLTFLoader().parseAsync(bytes,SEALED_CHAMBER_URL.slice(0,SEALED_CHAMBER_URL.lastIndexOf('/')+1))).scene;
-}
+async function loadSource(signal:AbortSignal){return roomModelCache.acquire(SEALED_CHAMBER_URL,signal);}
 export function attachSealedBank(room:T.Group,onChanged:()=>void,load:(signal:AbortSignal)=>Promise<T.Group>=loadSource,timeoutMs=8000){
  const controller=new AbortController();let active=true,bank:T.Group|undefined,source:T.Group|undefined;
- const owner={state:'loading',notificationError:undefined as unknown,ready:Promise.resolve(),dispose(){if(!active&&owner.state==='disposed')return;active=false;controller.abort();clearTimeout(timer);if(bank)retire(bank,...source?[source]:[]);owner.state='disposed';}};
+ const owner={state:'loading',notificationError:undefined as unknown,ready:Promise.resolve(),dispose(){if(!active&&owner.state==='disposed')return;active=false;controller.abort();clearTimeout(timer);if(bank||source)retire(...bank?[bank]:[],...source?[source]:[]);bank=undefined;source=undefined;owner.state='disposed';}};
  let timer:ReturnType<typeof setTimeout>;
  const timeout=new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(Error('chamber timeout')),timeoutMs);});
  const pending=(async()=>load(controller.signal))().then(s=>{if(!active){retire(s);throw Error('stale chamber');}return s;});
