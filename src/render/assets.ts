@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {initDeathPhysics} from './DeathRagdolls';
+const initDeathPhysics=()=>import('./DeathRagdolls').then(module=>module.initDeathPhysics());
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 export const ASSET_NAMES=['marine','dretch','basilisk','marauder','dragoon','tyrant','pistol','rifle','shotgun','plasma','rocket'] as const;

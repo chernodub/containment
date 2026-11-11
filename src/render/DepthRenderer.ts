@@ -41,7 +41,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {attachPassengerVault} from './PassengerVault';
 import {attachResidentialGalleryEquipment} from './ResidentialGalleryEquipment';
 import {MAT,box,ball,rod,marine,alien,nest,disposeModel,freezeCorpse,type ActorModel} from './models';
-import {DeathRagdolls} from './DeathRagdolls';
+const {DeathRagdolls}=await import('../ui/loading/DeferredRagdolls');
 import {ROOM_TEMPLATES} from '../game/roguelike/roomTemplates';
 import type {DepthGame,GameEffect} from '../DepthGame';
 import type {RunNode} from '../game/roguelike/types';
