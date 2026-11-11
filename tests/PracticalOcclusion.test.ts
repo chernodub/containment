@@ -56,6 +56,7 @@ describe('shared key occlusion for fixed practicals', () => {
   it('attenuates only the first four point slots and reuses visibility in directional slot zero', () => {
     const { material, shader } = fixture();
     const point = shader.slice(shader.indexOf('getPointLightInfo'), shader.indexOf('#if ( NUM_SPOT_LIGHTS'));
+    expect(point).not.toContain('float roomPracticalDistance');expect(point).toContain('dot( pointLight.position - geometryPosition, pointLight.position - geometryPosition ) / 3.24');
     expect(point).toContain('#if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0 && UNROLLED_LOOP_INDEX < 4');
     expect(point.match(/mix\( 0\.025, 1\.0, roomKeyOcclusion \)/g)).toHaveLength(1);
     const directional = shader.slice(shader.indexOf('getDirectionalLightInfo'), shader.indexOf('#if ( NUM_RECT_AREA_LIGHTS'));

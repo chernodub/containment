@@ -23,8 +23,7 @@ const practicalOcclusion = /* glsl */ `
   // Practical fixtures represent broad diffusers, not mathematical pin lights.
   // Bound near-field irradiance so nearby machine roofs retain their finish.
   #if UNROLLED_LOOP_INDEX < 4
-    float roomPracticalDistance = length( pointLight.position - geometryPosition );
-    directLight.color *= min( 1.0, roomPracticalDistance * roomPracticalDistance / 3.24 );
+    directLight.color *= min( 1.0, dot( pointLight.position - geometryPosition, pointLight.position - geometryPosition ) / 3.24 );
   #endif
   #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0 && UNROLLED_LOOP_INDEX < 4
     directLight.color *= mix( 0.025, 1.0, roomKeyOcclusion );
