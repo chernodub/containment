@@ -2,7 +2,7 @@ import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { lowAntialiasFragment } from '../src/render/post/LowAntialias';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  ACESFilmicToneMapping, AgXToneMapping, Camera, Color, DataUtils, HalfFloatType, NearestFilter, SRGBColorSpace, NoToneMapping, OrthographicCamera,
+  ACESFilmicToneMapping, AgXToneMapping, Camera, Color, DataUtils, HalfFloatType, RGBFormat, UnsignedInt101111Type, NearestFilter, SRGBColorSpace, NoToneMapping, OrthographicCamera,
   PerspectiveCamera, Scene, ShaderMaterial, UnsignedByteType, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { GRAPHICS_PRESETS } from '../src/render/graphicsOptions';
@@ -123,7 +123,7 @@ describe('HDR post lifecycle without a WebGL context', () => {
     const {pipeline}=fixture();pipeline.setOptions(GRAPHICS_PRESETS.high,'high');pipeline.render(0);
     const old=resources(pipeline)!,dispose=vi.spyOn(old.scene,'dispose');pipeline.distortion.shockwave(0,0);
     pipeline.invalidate();expect(resources(pipeline)).toBeUndefined();expect(dispose).toHaveBeenCalledOnce();expect(pipeline.distortion.activeCount).toBe(0);
-    pipeline.render(0);expect(resources(pipeline)!.scene).not.toBe(old.scene);expect(resources(pipeline)!.scene.texture.type).toBe(HalfFloatType);pipeline.dispose();
+    pipeline.render(0);expect(resources(pipeline)!.scene).not.toBe(old.scene);expect(resources(pipeline)!.scene.texture.type).toBe(UnsignedInt101111Type);pipeline.dispose();
   });
 
   it('allocates HDR color and compact geometry plus depth without MSAA and applies DPR/render scale once', () => {
@@ -133,7 +133,10 @@ describe('HDR post lifecycle without a WebGL context', () => {
     expect(resources(pipeline)).toBeUndefined();
     pipeline.render(1 / 60);
     const r = resources(pipeline)!;
-    expect(r.scene.texture.type).toBe(HalfFloatType);
+    expect(r.scene.texture.type).toBe(UnsignedInt101111Type);
+    expect(r.scene.texture.format).toBe(RGBFormat);
+    expect(r.ao.texture.type).toBe(HalfFloatType);
+    expect(r.aoDenoised.texture.type).toBe(HalfFloatType);
     expect(r.scene.samples).toBe(0);
     expect(r.scene.textures).toHaveLength(2);
     expect(r.scene.textures[1].type).toBe(UnsignedByteType);

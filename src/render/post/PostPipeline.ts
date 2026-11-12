@@ -7,7 +7,7 @@ import { setGraphicStrength, type GraphicStrength, setGraphicShadingEnabled } fr
 import {
   ACESFilmicToneMapping, AgXToneMapping, BufferGeometry, Camera, Color, DepthTexture,
   Float32BufferAttribute, HalfFloatType, LinearFilter, NearestFilter, Matrix4, Mesh, NoBlending,
-  NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, SRGBColorSpace, UnsignedIntType, UnsignedByteType, UniformsUtils,
+  NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, SRGBColorSpace, RGBFormat, UnsignedInt101111Type, UnsignedIntType, UnsignedByteType, UniformsUtils,
   Vector2, Vector3, Vector4, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { setRenderDiagnostics, type GraphicsTier } from '../FrameBudget';
@@ -336,7 +336,9 @@ export class PostPipeline {
       depthBuffer: depth, stencilBuffer: false, count: depth ? 2 : 1,
     });
     target.texture.name = depth ? 'Containment HDR scene' : 'Containment post';
-    if (depth) { target.textures[1].name = 'Containment geometry normal + identity'; target.textures[1].type=UnsignedByteType; target.textures[1].minFilter = target.textures[1].magFilter = NearestFilter; }
+    // Scene alpha is never sampled; RGB11/11/10 preserves positive HDR while
+    // halving main color storage/bandwidth. AO remains full RGBA16F.
+    if (depth) { target.texture.type=UnsignedInt101111Type;target.texture.format=RGBFormat;target.textures[1].name = 'Containment geometry normal + identity'; target.textures[1].type=UnsignedByteType; target.textures[1].minFilter = target.textures[1].magFilter = NearestFilter; }
     if (depth) {
       target.depthTexture = new DepthTexture(width, height, UnsignedIntType);
       target.samples = 0; // Post AA avoids HDR multisample color/depth resolves.
