@@ -1,3 +1,4 @@
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { AdaptiveResolution } from './AdaptiveResolution';
 import { GpuFrameTimer } from './GpuProfiler';
 import { INK_STRENGTHS } from './Ink';
@@ -5,7 +6,7 @@ import { setGraphicStrength, type GraphicStrength, setGraphicShadingEnabled } fr
 import {
   ACESFilmicToneMapping, AgXToneMapping, BufferGeometry, Camera, Color, DepthTexture,
   Float32BufferAttribute, HalfFloatType, LinearFilter, NearestFilter, Matrix4, Mesh, NoBlending,
-  NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, UnsignedIntType, UnsignedByteType,
+  NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, SRGBColorSpace, UnsignedIntType, UnsignedByteType, UniformsUtils,
   Vector2, Vector3, Vector4, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { setRenderDiagnostics, type GraphicsTier } from '../FrameBudget';
@@ -22,6 +23,8 @@ export type AmbientOcclusionAlgorithm = 'contact' | 'gtao';
 
 type PostResources = {
   scene: WebGLRenderTarget;
+  present: WebGLRenderTarget;
+  antialias: ShaderMaterial;
   ao: WebGLRenderTarget;
   aoDenoised: WebGLRenderTarget;
   gtao: DepthGTAO;
@@ -155,9 +158,10 @@ export class PostPipeline {
       // Compile the actual screen color-space variants before the offscreen draw.
       this.renderer.setRenderTarget(null);
       this.renderer.toneMapping = NoToneMapping;
-      const materials=this.tier==='low'?[resources.composite]:[resources.occlusion,resources.gtao.material,resources.gtao.denoiseMaterial,resources.extract,resources.blur,resources.distort,resources.composite];
+      const materials=this.tier==='low'?[resources.composite,resources.antialias]:[resources.occlusion,resources.gtao.material,resources.gtao.denoiseMaterial,resources.extract,resources.blur,resources.distort,resources.composite,resources.antialias];
       for (const material of materials) {
         if (this.disposed || this.resources !== resources) return;
+        this.renderer.setRenderTarget(material===resources.composite?resources.present:null);
         resources.triangle.material = material;
         await compile(resources.screenScene, resources.screenCamera);
       }
@@ -253,7 +257,8 @@ export class PostPipeline {
       u.menuPresentation.value = this.menuPresentation ? 1 : 0;
       u.atmosphereEnabled.value = this.tier==='high'&&this.options.atmosphere ? 1 : 0;
       u.useAgX.value = this.agx ? 1 : 0;
-      this.draw(r.composite, output);
+      this.draw(r.composite, r.present);
+      this.draw(r.antialias, output);
     } finally {
       renderer.toneMapping = originalMapping;
       renderer.toneMappingExposure = originalExposure;
@@ -273,6 +278,9 @@ export class PostPipeline {
   private ensureResources(): PostResources {
     if (this.resources) return this.resources;
     const scene = this.target(1, 1, true);
+    const present=this.target(1,1);present.texture.type=UnsignedByteType;present.texture.colorSpace=SRGBColorSpace;present.texture.name='Containment graded ink';
+    const antialias=this.material(FXAAShader.fragmentShader.replace('gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );','gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );\n#include <colorspace_fragment>'),UniformsUtils.clone(FXAAShader.uniforms));
+    antialias.name='Containment final FXAA';antialias.uniforms.tDiffuse.value=present.texture;
     const ao = this.target(1, 1);
     const aoDenoised = this.target(1, 1);
     const gtao = new DepthGTAO(scene.depthTexture!, this.camera, ao.texture, scene.textures[1]);
@@ -313,7 +321,7 @@ export class PostPipeline {
     const screenScene = new Scene();
     screenScene.add(triangle);
     this.resources = {
-      scene, ao, aoDenoised, gtao, bloomA, bloomB, distortion, occlusion, extract, blur, distort, composite,
+      scene, present, antialias, ao, aoDenoised, gtao, bloomA, bloomB, distortion, occlusion, extract, blur, distort, composite,
       geometry, triangle, screenScene, screenCamera: new OrthographicCamera(-1, 1, 1, -1, 0, 1),
     };
     this.applyMood(composite);
@@ -349,6 +357,7 @@ export class PostPipeline {
     const width = Math.max(1, Math.round(this.width * this.pixelRatio * scale));
     const height = Math.max(1, Math.round(this.height * this.pixelRatio * scale));
     r.scene.setSize(width, height);
+    r.present.setSize(width,height);r.antialias.uniforms.resolution.value.set(1/width,1/height);
     r.ao.setSize(this.tier==='low'?1:Math.max(1, Math.ceil(width / 2)),this.tier==='low'?1:Math.max(1, Math.ceil(height / 2)));
     r.aoDenoised.setSize(r.ao.width, r.ao.height);
     r.gtao.setSize(r.ao.width, r.ao.height);
@@ -380,9 +389,9 @@ export class PostPipeline {
   private releaseResources(): void {
     const r = this.resources;
     if (!r) return;
-    for (const target of [r.scene, r.ao, r.aoDenoised, r.bloomA, r.bloomB, r.distortion]) target.dispose();
+    for (const target of [r.scene, r.present, r.ao, r.aoDenoised, r.bloomA, r.bloomB, r.distortion]) target.dispose();
     r.gtao.dispose();
-    for (const material of [r.occlusion, r.extract, r.blur, r.distort, r.composite]) material.dispose();
+    for (const material of [r.occlusion, r.extract, r.blur, r.distort, r.composite, r.antialias]) material.dispose();
     r.geometry.dispose();
     r.screenScene.clear();
     this.resources = undefined;
