@@ -587,3 +587,9 @@ SCENARIOS.push({id:'g3-geometry-coverage',room:'awakening-bay',state:'playing',a
 
 import {registerI8Scenarios} from './i8-scenarios.mjs';
 registerI8Scenarios(SCENARIOS);
+
+// U5 recovery receipts stage resources only; purchases still use native actions.
+SCENARIOS.push({...SCENARIOS.find(s=>s.id==='shop'),id:'u5-shop-recovery',setup:async()=>{
+ const d=window.__containmentDebug;await d.gotoRoom('communal-atrium',{phase:'reward'});
+ const r=d.game.combat.getRunResources();d.game.combat.restoreRunResources({...r,health:62,armor:60,credits:180});d.refresh();
+}});

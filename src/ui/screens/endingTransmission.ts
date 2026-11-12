@@ -1,7 +1,7 @@
 /** Original ink illustration: the reactor breaks the ship; the last signal escapes. */
 export function endingTransmission(): string {
   return `<figure class="ending-transmission" aria-label="The colony ship breaks apart in a reactor flash. Cryo pods drift away. Its warning signal reaches New Earth.">
-    <svg class="ending-space" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+    <svg class="ending-space" viewBox="0 -100 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
       <defs>
         <radialGradient id="ending-flash"><stop stop-color="#fff9dc"/><stop offset=".13" stop-color="#ffdfae"/><stop offset=".38" stop-color="#f9814b" stop-opacity=".75"/><stop offset="1" stop-color="#ff5436" stop-opacity="0"/></radialGradient>
         <linearGradient id="ending-steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9aadb0"/><stop offset=".25" stop-color="#4b626d"/><stop offset=".26" stop-color="#263c48"/><stop offset=".8" stop-color="#11202d"/><stop offset="1" stop-color="#040c16"/></linearGradient>

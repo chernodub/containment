@@ -549,8 +549,8 @@
 
 /* Recovery is a receipt: show actual current, free, and paid outcomes together. */
 #overlay .shop-panel {width:min(1200px,100%);gap:30px;}
-#overlay .shop-panel .supply-emblem {width:48px;height:48px;margin-bottom:12px;}
-#overlay .allocation-ledger {margin:18px 0;display:grid;gap:7px;}
+#overlay .shop-panel .supply-emblem {width:48px;height:48px;padding:8px;margin-bottom:12px;}
+#overlay .allocation-ledger {width:100%;margin:18px 0;display:grid;gap:7px;}
 #overlay .allocation-ledger>div {display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #9fe8ff1c;padding-bottom:6px;}
 #overlay .allocation-ledger dt {color:#c3d8e1;font-size:13px;}
 #overlay .allocation-ledger dd {margin:0;font:500 16px var(--font-display);white-space:nowrap;color:#e8fbff;}
@@ -568,7 +568,7 @@
 @media (max-height:800px) {
  #overlay .shop-panel {gap:24px;padding:22px;}
  #overlay .shop-panel h2 {font-size:40px;margin:8px 0;}
- #overlay .shop-panel .supply-emblem {width:32px;height:32px;margin-bottom:7px;}
+ #overlay .shop-panel .supply-emblem {width:32px;height:32px;padding:5px;margin-bottom:7px;}
  #overlay .allocation-ledger {margin:12px 0;gap:5px;}
  #overlay .service-shop {padding-left:22px;gap:9px;}
  #overlay .shop-heading h3 {font-size:27px;margin:6px 0;}
