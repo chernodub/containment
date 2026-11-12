@@ -40,14 +40,15 @@ export class SpatialHash<T extends SpatialItem> {
     const existing = this.#entries.get(item.id);
     const cellKey = this.#cellKey(item.x, item.y);
     if (existing) {
-      this.#removeFromCell(item.id, existing.cellKey);
+      if(existing.cellKey!==cellKey)this.#removeFromCell(item.id, existing.cellKey);
       if (existing.item !== item) this.#identityIds.delete(existing.item);
       existing.item = item;
+      const changedCell=existing.cellKey!==cellKey;
       existing.cellKey = cellKey;
       existing.x = item.x;
       existing.y = item.y;
       this.#identityIds.set(item, item.id);
-      this.#addToCell(item.id, cellKey);
+      if(changedCell)this.#addToCell(item.id, cellKey);
       return;
     }
 
@@ -117,6 +118,19 @@ export class SpatialHash<T extends SpatialItem> {
       })
       .sort((left, right) => left.order - right.order)
       .map(({ item }) => item);
+  }
+
+  /** Reusable local query in deterministic cell/insertion order, without sorting. */
+  queryRadiusInto(x:number,y:number,radius:number,out:T[]):T[] {
+    out.length=0;
+    const rr=radius*radius;
+    for(let cx=Math.floor((x-radius)/this.#cellSize);cx<=Math.floor((x+radius)/this.#cellSize);cx++){
+      for(let cy=Math.floor((y-radius)/this.#cellSize);cy<=Math.floor((y+radius)/this.#cellSize);cy++){
+        const cell=this.#cells.get(`${cx},${cy}`);if(!cell)continue;
+        for(const id of cell){const entry=this.#entries.get(id)!;if((entry.x-x)**2+(entry.y-y)**2<=rr)out.push(entry.item);}
+      }
+    }
+    return out;
   }
 
   clear(): void {
