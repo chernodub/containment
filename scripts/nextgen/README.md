@@ -534,3 +534,65 @@ snapshot. Per-pass profiling suspends the total GPU probe and uses frame-driven
 adaptive fallback to avoid nested queries. The raw ANGLE Metal scopes in this
 shared-host run did not establish reliable additive pass attribution; consult
 `docs/nextgen/G3-GPU-NOTES.md` before quoting them as shader costs.
+
+## Opt-in amplified post throughput diagnostic
+
+`--gpu-micro` runs a separate synthetic diagnostic **after** each normal live
+trial's samples, wrapper disposal and unchanged kit/population/resource assertions.
+The ordinary20-second observations and their draw budgets remain separate and
+retain their existing timing-eligibility flags. Synthetic rows live under
+`run.gpuMicro` and always have `timingAcceptanceEligible:false`.
+
+```sh
+npm run bench -- --label=g3-packed-micro --dist=artifacts/nextgen/g3/packed-hdr-dist --dist-source-sha=4939853 --no-build --rooms=manual-control-chamber --rigs=arc --tiers=high,low --repeat=1 --seconds=20 --gpu-micro --gpu-micro-samples=2
+```
+
+Default micro scopes are `gtao,aoDenoise,bloomExtract,bloomBlurHorizontal,
+bloomBlurVertical,composite,finalAA`. `--gpu-micro-stages=composite,finalAA`
+narrows them; `--gpu-micro-samples=2..4` selects raw attempts per repeat count.
+Scene, shadows and HUD are explicitly unsupported micro scopes. Stages absent
+or disabled in the selected prepared tier are recorded as unsupported, not
+compiled or silently substituted. Existing prepared High/Low programs are used;
+no materials, textures or targets are allocated for this diagnostic.
+
+The harness pauses through the existing game API, temporarily suppresses the
+ordinary renderer update and suspends the runtime GPU timer. Every sampled RAF
+executes the existing post pipeline with `dt0`, fixed simulation/camera/inputs,
+and normal pass order. Only the selected draw repeats **1,8,32** times inside one
+elapsed query. Alternate sample sequences reverse the count order to reduce
+simple time-drift bias. Depth/color clears, uniforms, target sizes and the other
+post passes retain their regular order. Shadow updates are held at their cached
+state; scene geometry is not an amplified measured scope. Query availability is
+polled asynchronously on RAFs; there is no `readPixels`, `finish`, fence wait or
+busy loop. At most4 queries are pending, each retires after120 frames or3000ms,
+and the whole micro stops at600 RAFs or30s. Context loss/disjoint observations
+are rejected. Renderer state, wrappers, ordinary draw counters, public pause
+state and timer enablement restore in `finally`; the original frozen normal
+frame restores HUD/output. Suspended GPU feedback retires and resumes fresh.
+
+Every raw repeat count, CPU submission time, elapsed GPU value/status, timestamp,
+target size and query lifecycle count is retained, with host load before/after
+the micro interval. The fit selects the **minimum valid GPU sample at each
+count**, retaining its paired CPU observation. It requires at least2 valid
+samples/count, positive slope, R²≥.98, within-count relative spread≤.50,
+an amplified delta above both.2ms and2% of the count1 reading, a plausible
+intercept, and GPU slope separated from CPU submission slope. Flat/coarse equal,
+negative, nonlinear, noisy, insufficient or submission-dominated observations
+produce `supported:false` with reasons and no estimate. Thresholds and rejected
+raw values remain in JSON.
+
+Even a supported slope is an **amplified same-target throughput estimate**, not
+isolated normal-pass latency, ordinary frame cost or FPS. Reusing the same
+render target and resident inputs changes caching/submission behavior; scene and
+shadow timing scopes can overlap outside this post-only experiment. Never add
+these slopes or stage percentiles into a claimed game frame time. Micro program
+creation remains a fatal zero-program guard; its synthetic draws never enter
+the already captured normal draw/resource budget.
+
+GPU-free fit/lifecycle coverage is in `gpu-micro.test.mjs`. Run it only when the
+serialized browser timing lease is free:
+
+```sh
+VITEST_MAX_WORKERS=2 npx vitest run scripts/nextgen/gpu-micro.test.mjs scripts/nextgen/gpu-pass-audit.test.mjs
+node scripts/nextgen/bench.mjs --self-test
+```

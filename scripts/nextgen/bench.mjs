@@ -10,6 +10,8 @@ import {chromium} from 'playwright';
 import {stageV2} from './v2-scenarios.mjs';
 import {SCENARIOS} from './scenarios.mjs';
 import {installGpuPassAudit} from './gpu-pass-audit.mjs';
+import {runGpuMicro} from './gpu-micro.mjs';
+import {fitGpuMicro} from './gpu-micro-fit.mjs';
 
 /** Opt-in browser probe; all wrappers and retained counters are removed after each trial. */
 function installCostAudit(r = globalThis.__containmentDebug.renderer) {
@@ -140,7 +142,13 @@ const storyRooms=['awakening-bay','passenger-vault','residential-gallery','commu
 await mkdir(out,{recursive:true});
 if(!args.includes('--no-build'))execFileSync('npm',['run','build'],{stdio:'inherit'});
 const host=()=>({at:new Date().toISOString(),load:loadavg(),cores:cpus().length});
-const report={distSnapshot:{path:dist,sourceSHA:option('dist-source-sha','unrecorded')},baseline,auditCosts:args.includes('--audit-costs'),gpuPasses:args.includes('--gpu-passes'),gpuFlush:args.includes('--gpu-flush'),sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
+const report={distSnapshot:{path:dist,sourceSHA:option('dist-source-sha','unrecorded')},baseline,auditCosts:args.includes('--audit-costs'),gpuPasses:args.includes('--gpu-passes'),gpuFlush:args.includes('--gpu-flush'),gpuMicro:args.includes('--gpu-micro'),sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
+const microStages=option('gpu-micro-stages','gtao,aoDenoise,bloomExtract,bloomBlurHorizontal,bloomBlurVertical,composite,finalAA').split(',');
+const microSamples=Number(option('gpu-micro-samples',2));
+assert(!report.gpuMicro||(Number.isInteger(microSamples)&&microSamples>=2&&microSamples<=4),'--gpu-micro-samples must be2–4');
+assert(!report.gpuMicro||(microStages.length<=10&&new Set(microStages).size===microStages.length),'--gpu-micro-stages must contain at most10 unique scopes');
+assert(!report.gpuMicro||microStages.every(stage=>['gtao','aoDenoise','bloomExtract','bloomBlurHorizontal','bloomBlurVertical','composite','finalAA','sceneColor','shadows','hud'].includes(stage)),'Unknown --gpu-micro-stages value');
+if(report.gpuMicro)report.notes.push('POST-TRIAL SYNTHETIC MICRO PROFILE: after normal fight samples, wrapper disposal and unchanged guards, freeze simulation/presentation and repeat one selected prepared post draw1/8/32 times inside one elapsed query per RAF. Minimum of2–4 raw samples/count feeds a strict linear fit. Micro observations are ineligible for FPS acceptance; any supported slope estimates same-target throughput, not ordinary isolated pass latency. Normal trial timings/counts stay separate. No new materials or targets, no readPixels/finish/completion wait.');
 assert(!report.gpuFlush||report.gpuPasses,'--gpu-flush requires --gpu-passes');
 if(report.gpuFlush)report.notes.push('INTRUSIVE GPU PASS PROFILE: gl.flush before beginQuery and after endQuery requests separate ANGLE command-buffer submissions. This never waits for completion, but changes submission scheduling. Frame/CPU timings from this run are ineligible for production FPS acceptance; use a separate non-flush run.');
 if(report.gpuPasses)report.notes.push('Per-pass GPU queries rotate one selected stage every third rendered frame and resolve asynchronously; sceneColor includes shadow-map updates and HDR resolve. GPU queries include shared-device scheduling contention. Total-frame queries and runtime adaptive GPU queries are disabled to prevent nesting; frame-driven adaptive fallback remains active. Unresolved/disjoint queries are reported, never forced with readPixels or finish.');
@@ -347,6 +355,22 @@ try{
   assert(Object.values(data.uses).every(n=>n>0),'Full kit lacks accepted native slot receipts');
   assert(data.initialEnemies===25&&data.simulationSeconds>0,'Benchmark did not run the live encounter');
   assert(summary.enemies.average>=22&&summary.enemies.p50>=24,'Combat population fell below sustained stress threshold');
+  if(report.gpuMicro){
+   const microBefore=host();
+   console.log(`micro ${name}: synthetic repeated post throughput; excluded from normal frame/draw budgets`);
+   const micro=await page.evaluate(runGpuMicro,{stages:microStages,samples:microSamples});
+   for(const stage of micro.stages){
+    stage.throughput=fitGpuMicro(stage.samples,{minimumSamples:microSamples});
+    if(micro.programCreations||micro.error||micro.restoreError||micro.glError||micro.contextLost||micro.simulation?.unchanged===false){stage.throughput.supported=false;stage.throughput.estimateMsPerRepeat=null;stage.throughput.reasons.push('micro-safety-guard-failed');}
+   }
+   run.gpuMicro={...micro,host:{before:microBefore,after:host()}};
+   await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));
+   assert.equal(micro.programCreations,0,'Synthetic micro profile compiled an unprepared program');
+   assert(!micro.glError&&!micro.contextLost,'WebGL error or lost context during synthetic micro profile');
+   assert(!micro.error&&!micro.restoreError,micro.error??micro.restoreError??'Micro profile failed');
+   if(micro.simulation)assert(micro.simulation.unchanged,'Synthetic micro profile advanced simulation');
+   console.table(micro.stages.map(stage=>({scenario:name,stage:stage.name,supported:stage.throughput.supported,throughputMsPerRepeat:stage.throughput.estimateMsPerRepeat??'unsupported',rSquared:stage.throughput.gpuFit?.rSquared??'unavailable',reasons:stage.unsupportedReason??stage.throughput.reasons.join(',')})));
+  }
  }
  if(report.auditCosts){
   console.log('Cost audit columns are per-frame p50 / p95 / max counts; timings include probe overhead.');
