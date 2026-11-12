@@ -43,9 +43,9 @@ describe('ability instance streaming', () => {
 
   it('billboards rounded fuel lobes while keeping ground fuel flat in the same retained batch', () => {
     const b=new InstanceBatch(new T.Group(),'decal',4),c=new T.PerspectiveCamera();c.position.set(0,8,8);b.setView(c);b.begin();
-    b.draw(0,1,0,.2,.3,1,0x963914,.8,0,.2,11);b.draw(0,.04,0,2,2,1,0xff7a2e,.8,0,0,8);b.end();
+    b.draw(0,1,0,.2,.3,1,0x963914,.8,0,.2,11);b.draw(0,.04,0,2,2,1,0xff7a2e,.8,0,0,8);b.draw(0,.04,0,3,.6,1,0x9bdcf0,.7,0,0,14.16);b.end();
     const m=new T.Matrix4();b.mesh.getMatrixAt(0,m);expect(m.elements[5]).toBeGreaterThan(.2);
-    b.mesh.getMatrixAt(1,m);expect(m.elements[5]).toBe(0);expect(b.mesh.count).toBe(2);b.dispose();
+    b.mesh.getMatrixAt(1,m);expect(m.elements[5]).toBe(0);b.mesh.getMatrixAt(2,m);expect(m.elements[5]).toBe(0);expect(b.mesh.count).toBe(3);b.dispose();
   });
 
   it('reuses storage and upload records, transfers the live prefix and skips empty uploads', () => {

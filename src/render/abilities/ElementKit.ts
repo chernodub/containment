@@ -338,6 +338,13 @@ export class ElementKit {
         this.draw('decal', x, y, z, halfWidth, halfHeight, 1, 0x963914, opacity, 0, tilt,
             11 + (Math.sin(seed * 7.13) * .5 + .5) * .2);
     }
+    /** Irregular ground frost within the exact rounded strip, including both end caps. */
+    frostFilm(x: number, z: number, length: number, halfWidth: number, angle: number, opacity = .7): void {
+        if (halfWidth <= 0) return;
+        const halfLength = Math.max(0, length) * .5 + halfWidth;
+        this.draw('decal', x, .043, z, halfLength, halfWidth, 1, 0x9bdcf0, opacity, 0, -angle,
+            14 + halfWidth / halfLength * .8);
+    }
     /** Curved ground-mist brush stroke; length/width are complete world bounds. */
     gust(x: number, z: number, length: number, width: number, angle: number, seed: number, opacity = .4, color = 0x9bdcf0): void {
         this.draw('decal', x, .055, z, length * .5, width * .5, 1, color, opacity, 0, -angle,

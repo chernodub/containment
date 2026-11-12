@@ -119,6 +119,16 @@ ${kind === 'decal' ? `
  else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.72+sin(a0*23.)*.05,.96,d))*(.14+cracks*.12);}
  else if(variant<4.5){if(d>1.)discard;float star=pow(1.-abs(sin(a0*5.+floor(d*11.)*.18)),22.);a*=(star*.85+(.2+n*.2)*(1.-smoothstep(.1,.5,d)))*(1.-smoothstep(.8,1.,d));}
  else if(variant<5.5){if(d>1.)discard;a*=(.14+n*.16)*(1.-smoothstep(.65,1.,d));}
+ else if(variant>13.5){
+  float ratio=max(.001,fract(phase)/.8);
+  float cap=max(0.,(abs(p.x)-1.+ratio)/ratio);
+  float distance=length(vec2(cap,p.y));
+  float edge=.91+sin(p.x*17.+p.y*5.)*.035+sin(p.x*31.-p.y*11.)*.025;
+  float film=1.-smoothstep(edge-.09,edge,distance);
+  float fern=pow(max(0.,1.-abs(sin(p.x*29.+p.y*17.))),10.)*smoothstep(.25,.7,abs(p.y));
+  c=ink*.85+vec3(.05);
+  a*=film*(.2+fern*.24+smoothstep(.25,.85,abs(p.y))*.12);
+ }
  else if(variant>10.5){
   float drop=length(vec2(p.x/max(.1,.66-p.y*.22),p.y));
   if(drop>1.)discard;
@@ -135,8 +145,13 @@ ${kind === 'decal' ? `
   float stroke=abs(p.y-curve)/max(.04,mix(.38,.64,cold)*taper);
   float coverage=(1.-smoothstep(mix(.32,.08,cold),1.,stroke))*taper;
   c=mix(ink*.55,ink*1.45+vec3(.1),smoothstep(.45,.95,coverage));
-  c=mix(c,ink*.95+vec3(.13)*coverage,cold);
-  a*=coverage*mix(.85,.62,cold);
+  if(cold>.5){
+   vec2 cloud=vec2(p.x*.86,(p.y-curve)*1.08);
+   float edge=.86+sin(p.x*4.2+seed)*.065+sin(p.y*6.3-seed)*.045;
+   coverage=(1.-smoothstep(.2,edge,length(cloud)))*smoothstep(-1.,-.65,p.x)*(1.-smoothstep(.65,1.,p.x));
+   c=ink*.8+vec3(.1)*coverage;
+  }
+  a*=coverage*mix(.85,.58,cold);
  }
  else if(variant>7.5){
   float liquid=variant<8.5?d:length(vec2(p.x*.18,p.y));
@@ -154,8 +169,8 @@ ${kind === 'decal' ? `
 ${kind === 'front' ? `
  if(phase>1.5){
   float roll=.5+.5*cos(uvLocal.y*6.283185);
-  float curl=.5+.5*sin(uvLocal.x*43.9823-abilityTime*2.+sin(uvLocal.y*6.283185)*1.3);
-  a*=(.22+pow(roll,3.)*.5)*(.68+curl*.32);
+  float curl=.5+.5*sin(uvLocal.x*31.4159+sin(uvLocal.x*18.8496)*1.7-abilityTime*1.3+sin(uvLocal.y*6.283185)*1.3);
+  a*=(.18+pow(roll,2.)*.55)*(.06+smoothstep(.15,.8,curl)*.94);
   c=mix(vec3(.24,.6,.85),vec3(1.4,2.4,2.8),pow(roll,10.)*.6);
  }else if(phase>.5){
   float crossSection=cos(uvLocal.y*6.283185);
@@ -181,7 +196,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
 }`;
     const material = new T.ShaderMaterial({
       uniforms: { abilityTime: { value: 0 }, map: { value: this.texture ?? null }, flash: { value: 1 } },
-      vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){posedPosition.y=position.y>.5?1.:-1.;if(position.y>.5)posedPosition.xz+=vec2(.23,-.16);}' : kind === 'front' ? 'if(abilityPhase>1.5){float a=atan(position.z,position.x);posedPosition.xz*=.96+.035*sin(a*7.);posedPosition.y*=.74+.24*sin(a*5.+.7);}' : ''),
+      vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){posedPosition.y=position.y>.5?1.:-1.;if(position.y>.5)posedPosition.xz+=vec2(.23,-.16);}' : kind === 'front' ? 'if(abilityPhase>1.5){float a=atan(position.z,position.x);posedPosition.xz*=.88+.07*sin(a*7.)+.035*sin(a*3.+.4);posedPosition.y*=.74+.24*sin(a*5.+.7);}' : ''),
       fragmentShader: fragment,
       transparent: true,
       depthWrite: false,
@@ -211,7 +226,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
     color: number, opacity = 1, rotationY = 0, rotationZ = 0, variant = 0): void {
     const i = this.mesh.count;
     if (i >= this.capacity || opacity <= 0) return;
-    const billboardFuel = this.kind === 'decal' && variant >= 11;
+    const billboardFuel = this.kind === 'decal' && variant >= 11 && variant < 12;
     if (this.view && (billboardFuel || this.kind === 'smoke' || this.kind === 'spark' || this.kind === 'flame')) {
       rotationY = Math.atan2(this.view.x - x, this.view.z - z);
       // Flame tongues rise vertically; tumbling the card creates paper-like shards.
