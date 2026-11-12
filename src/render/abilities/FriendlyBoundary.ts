@@ -2,7 +2,7 @@ import * as T from 'three';
 import { TelegraphBatch, type Telegraph } from '../vfx/TelegraphBatch';
 
 /** Ground decoration is submitted before hostile timing fills, regardless of camera depth. */
-export const FRIENDLY_GROUND_ORDER = 2;
+export const FRIENDLY_GROUND_ORDER = -2;
 export const FRIENDLY_BOUNDARY_ORDER = 3;
 
 /** Exact hit shapes with open interiors, rotating dashes and cyan-white ownership ticks. */

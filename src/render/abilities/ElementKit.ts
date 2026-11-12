@@ -106,6 +106,11 @@ export class ElementKit {
     private shape: Telegraph = { shape: 'shockwave', x: 0, z: 0 };
     private line: EnergyRibbon = { start: new T.Vector3(), end: new T.Vector3() };
     private light = { x: 0, y: 1, z: 0, color: 0, intensity: 0, distance: 1, duration: .15, priority: 2 };
+    private readonly viewPosition = new T.Vector3(0, 8, 8);
+    private readonly flowAxis = new T.Vector3();
+    private readonly flowView = new T.Vector3();
+    private readonly flowSide = new T.Vector3();
+    private readonly flowNormal = new T.Vector3();
     private viewRightX = 1;
     private viewRightZ = 0;
     private disposed = false;
@@ -125,7 +130,7 @@ export class ElementKit {
         this.root.name = 'ability-element-kit';
         this.batches = { shard: new InstanceBatch(this.root, 'shard', 512), spark: new InstanceBatch(this.root, 'spark', 512), smoke: new InstanceBatch(this.root, 'smoke', 192), flame: new InstanceBatch(this.root, 'flame', 384), solid: new InstanceBatch(this.root, 'solid', 512), ghost: new InstanceBatch(this.root, 'ghost', 128), decal: new InstanceBatch(this.root, 'decal', 64), front: new InstanceBatch(this.root, 'front', 64) };
     }
-    setView(camera: T.Camera): void { this.viewRightX = camera.matrixWorld.elements[0]; this.viewRightZ = camera.matrixWorld.elements[2]; for (const k in this.batches)
+    setView(camera: T.Camera): void { this.viewPosition.copy(camera.position); this.viewRightX = camera.matrixWorld.elements[0]; this.viewRightZ = camera.matrixWorld.elements[2]; for (const k in this.batches)
         this.batches[k as Primitive].setView(camera); }
     bind(services: AbilityServices): void { this.services = services; }
     setOptions(options: GraphicsOptions, tier: GraphicsTier, reducedMotion: boolean): void {
@@ -280,7 +285,15 @@ export class ElementKit {
     }
     /** Directional jet: source-hot stretched tongues, accelerating and curling outwards. */
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1): void {
-        const count = this.low ? 16 : 42;
+        const streams = this.low ? 2 : 3;
+        for (let i = 0; i < streams; i++) {
+            const a = angle + (i - (streams - 1) * .5) * arc * .22;
+            const reach = radius * (.78 + Math.sin(i * 7.13) ** 2 * .08);
+            this.flowFlame(x + Math.cos(angle) * .35, .95, z + Math.sin(angle) * .35,
+                x + Math.cos(a) * reach, .9 + i * .13, z + Math.sin(a) * reach,
+                radius * (.2 + i * .025), i * 3.73, opacity * .72, i === 1);
+        }
+        const count = this.low ? 12 : 24;
         for (let i = 0; i < count; i++) {
             const seed = i * 2.39996323, f = .5 + .5 * Math.sin(seed * 4.73);
             const travel = this.reducedMotion ? (i + .5) / count : (i * .618033989 + this.time * (1.7 + f * .45)) % 1;
@@ -293,6 +306,24 @@ export class ElementKit {
                 opacity * (.85 - travel * .25), 0, this.flameTilt(a, 1.4 + travel * 1.3), 1);
         }
     }
+    /** Camera-facing flame ribbon whose long axis follows a real three-dimensional flow. */
+    flowFlame(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, core = false): void {
+        const axis = this.flowAxis.set(tx - x, ty - y, tz - z), length = axis.length();
+        if (length < .01) return;
+        axis.multiplyScalar(1 / length);
+        const mx = (x + tx) * .5, my = (y + ty) * .5, mz = (z + tz) * .5;
+        this.flowView.set(this.viewPosition.x - mx, this.viewPosition.y - my, this.viewPosition.z - mz);
+        this.flowSide.crossVectors(axis, this.flowView);
+        if (this.flowSide.lengthSq() < .0001) this.flowSide.set(1, 0, 0); else this.flowSide.normalize();
+        this.flowNormal.crossVectors(this.flowSide, axis).normalize();
+        const batch = this.batches.flame, before = batch.mesh.count;
+        this.draw('flame', mx, my, mz, width, length * .5, 1, core ? 0xffedb5 : 0xff7a2e, opacity, 0, 0, 100 + Math.abs(seed) % 64);
+        if (batch.mesh.count === before) return;
+        const matrix = batch.mesh.instanceMatrix.array, o = before * 16;
+        matrix[o] = this.flowSide.x * width; matrix[o + 1] = this.flowSide.y * width; matrix[o + 2] = this.flowSide.z * width;
+        matrix[o + 4] = axis.x * length * .5; matrix[o + 5] = axis.y * length * .5; matrix[o + 6] = axis.z * length * .5;
+        matrix[o + 8] = this.flowNormal.x; matrix[o + 9] = this.flowNormal.y; matrix[o + 10] = this.flowNormal.z;
+    }
     private flameTilt(angle: number, lean: number): number {
         return -Math.atan((Math.cos(angle) * this.viewRightX + Math.sin(angle) * this.viewRightZ) * lean);
     }
@@ -301,6 +332,16 @@ export class ElementKit {
         const cycle = this.reducedMotion ? .4 : (this.time * (1.6 + Math.sin(seed) * .25) + seed * .6180339) % 1;
         this.draw('flame', x, y + height * .5, z, width, height * (.38 + Math.sin(cycle * Math.PI) * .12), 1,
             core ? 0xffedb5 : 0xff7a2e, opacity, 0, this.flameTilt(angle, lean), 1);
+    }
+    /** Glossy ballistic fuel lobe, sharing the retained decal plane and material. */
+    fuelDroplet(x: number, y: number, z: number, halfWidth: number, halfHeight: number, tilt: number, seed: number, opacity = 1): void {
+        this.draw('decal', x, y, z, halfWidth, halfHeight, 1, 0x963914, opacity, 0, tilt,
+            11 + (Math.sin(seed * 7.13) * .5 + .5) * .2);
+    }
+    /** Curved ground-mist brush stroke; length/width are complete world bounds. */
+    gust(x: number, z: number, length: number, width: number, angle: number, seed: number, opacity = .4): void {
+        this.draw('decal', x, .055, z, length * .5, width * .5, 1, 0x9bdcf0, opacity, 0, -angle,
+            10 + (Math.sin(seed * 7.13) * .5 + .5) * .4);
     }
     /** Solid-looking faceted translucent column, with a narrow luminous internal vein. */
     iceColumn(x: number, z: number, width: number, depth: number, height: number, angle: number, opacity = 1): void {

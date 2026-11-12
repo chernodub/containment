@@ -9,7 +9,7 @@ void main(){alpha=abilityAlpha;phase=abilityPhase;ink=instanceColor;uvLocal=uv;f
 vec3 posedPosition=position;/* ability shape */
 gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(posedPosition,1.);screenPosition=gl_Position;}`;
 
-/** Fixed GPU inventory. Flame/smoke share the game's licensed flipbook assets. */
+/** Fixed GPU inventory: analytic flames and the retained licensed smoke atlas. */
 export class InstanceBatch {
   readonly mesh: T.InstancedMesh;
   private readonly color = new T.Color();
@@ -71,13 +71,13 @@ ${atlas ? `
  float vapor=step(ink.r*1.12,ink.b)*smoothstep(.18,.5,ink.b);float dust=step(.08,ink.r+ink.g+ink.b)*(1.-vapor);c=mix(vec3(.007,.009,.012),ink*.65,dust);c=mix(c,ink*.85,vapor);a*=mix(.65,.52,vapor);
  ` : ''}
 ${kind === 'flame' ? `
- float t=uvLocal.y;float clock=abilityTime*(1.4+fract(phase)*.6);
- float bend=sin(t*4.8-clock*3.+phase)*(.06+t*.2)+sin(t*9.+phase*2.-clock*2.)*.035*t;
- float taper=pow(max(.001,1.-t),.68);
- float width=(.42+.11*sin(t*7.+phase))*taper;
+ float t=uvLocal.y;float plume=step(100.,phase);float flamePhase=phase-plume*100.;float clock=abilityTime*(1.4+fract(flamePhase)*.6);
+ float bend=sin(t*4.8-clock*3.+flamePhase)*(.06+t*.2)+sin(t*9.+flamePhase*2.-clock*2.)*.035*t;
+ float taper=mix(pow(max(.001,1.-t),.68),.25+t*.85,plume);
+ float width=(.42+.11*sin(t*7.+flamePhase))*taper;
  float axis=p.x-bend;float distance=abs(axis)/max(.015,width);
  float tongue=(1.-smoothstep(.72,1.,distance))*smoothstep(0.,.09,t)*(1.-smoothstep(.84,1.,t));
- float fork=abs(p.x+sin(t*5.+phase)*.28)/max(.015,taper*.18);
+ float fork=abs(p.x+sin(t*5.+flamePhase)*.28)/max(.015,taper*.18);
  tongue=max(tongue,(1.-smoothstep(.65,1.,fork))*smoothstep(.32,.45,t)*(1.-smoothstep(.65,.9,t))*.55);
  float core=(1.-smoothstep(.08,.52,distance))*(1.-smoothstep(.15,.72,t));
  c=mix(vec3(1.6,.085,.006),vec3(3.8,.52,.015),smoothstep(.03,.2,tongue));
@@ -118,6 +118,23 @@ ${kind === 'decal' ? `
  else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.72+sin(a0*23.)*.05,.96,d))*(.14+cracks*.12);}
  else if(variant<4.5){if(d>1.)discard;float star=pow(1.-abs(sin(a0*5.+floor(d*11.)*.18)),22.);a*=(star*.85+(.2+n*.2)*(1.-smoothstep(.1,.5,d)))*(1.-smoothstep(.8,1.,d));}
  else if(variant<5.5){if(d>1.)discard;a*=(.14+n*.16)*(1.-smoothstep(.65,1.,d));}
+ else if(variant>10.5){
+  float drop=length(vec2(p.x/max(.1,.66-p.y*.22),p.y));
+  if(drop>1.)discard;
+  float body=1.-smoothstep(.15,1.,drop);
+  float gloss=pow(max(0.,1.-length(p-vec2(-.19,.14))/.3),3.);
+  c=mix(vec3(.1,.022,.004),vec3(.65,.18,.035),body)+vec3(.5,.25,.06)*gloss;
+  a*=1.-smoothstep(.82,1.,drop);
+ }
+ else if(variant>9.5){
+  float seed=fract(phase)*15.7;
+  float curve=p.x*p.x*(.18+sin(seed)*.07)+sin(p.x*3.+seed+abilityTime*.3)*.055;
+  float taper=pow(max(0.,1.-p.x*p.x),.6);
+  float stroke=abs(p.y-curve)/max(.04,.38*taper);
+  float coverage=(1.-smoothstep(.32,1.,stroke))*taper;
+  c=mix(vec3(.2,.43,.58),vec3(.78,1.14,1.35),smoothstep(.45,.95,coverage));
+  a*=coverage*.85;
+ }
  else if(variant>7.5){
   float liquid=variant<8.5?d:length(vec2(p.x*.18,p.y));
   float edge=.9+sin(a0*5.+.7)*.035+sin(a0*9.-.4)*.025;
@@ -132,7 +149,12 @@ ${kind === 'decal' ? `
  else {if(d>1.)discard;if(variant>6.5&&abs(a0)>fract(phase)*6.283185)discard;a*=.035*(1.-smoothstep(.6,1.,d));c=vec3(.014,.009,.006);}
  ` : ''}
 ${kind === 'front' ? `
- if(phase>.5){
+ if(phase>1.5){
+  float roll=.5+.5*cos(uvLocal.y*6.283185);
+  float curl=.5+.5*sin(uvLocal.x*43.9823-abilityTime*2.+sin(uvLocal.y*6.283185)*1.3);
+  a*=(.22+pow(roll,3.)*.5)*(.68+curl*.32);
+  c=mix(vec3(.24,.6,.85),vec3(1.4,2.4,2.8),pow(roll,10.)*.6);
+ }else if(phase>.5){
   float crossSection=cos(uvLocal.y*6.283185);
   if(crossSection<-.4)discard;
   float leading=smoothstep(.3,.98,crossSection);
@@ -156,7 +178,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
 }`;
     const material = new T.ShaderMaterial({
       uniforms: { abilityTime: { value: 0 }, map: { value: this.texture ?? null }, flash: { value: 1 } },
-      vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){posedPosition.y=position.y>.5?1.:-1.;if(position.y>.5)posedPosition.xz+=vec2(.23,-.16);}' : ''),
+      vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){posedPosition.y=position.y>.5?1.:-1.;if(position.y>.5)posedPosition.xz+=vec2(.23,-.16);}' : kind === 'front' ? 'if(abilityPhase>1.5){float a=atan(position.z,position.x);posedPosition.xz*=.96+.035*sin(a*7.);posedPosition.y*=.74+.24*sin(a*5.+.7);}' : ''),
       fragmentShader: fragment,
       transparent: true,
       depthWrite: false,
@@ -186,7 +208,8 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
     color: number, opacity = 1, rotationY = 0, rotationZ = 0, variant = 0): void {
     const i = this.mesh.count;
     if (i >= this.capacity || opacity <= 0) return;
-    if (this.view && (this.kind === 'smoke' || this.kind === 'spark' || this.kind === 'flame')) {
+    const billboardFuel = this.kind === 'decal' && variant >= 11;
+    if (this.view && (billboardFuel || this.kind === 'smoke' || this.kind === 'spark' || this.kind === 'flame')) {
       rotationY = Math.atan2(this.view.x - x, this.view.z - z);
       // Flame tongues rise vertically; tumbling the card creates paper-like shards.
       if (this.kind === 'smoke') rotationZ = 0;
@@ -199,7 +222,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
     matrix[offset] = c * a * sx;
     matrix[offset + 4] = -c * b * sy;
     matrix[offset + 8] = s * sz;
-    if (this.kind === 'decal') {
+    if (this.kind === 'decal' && !billboardFuel) {
       matrix[offset + 1] = -s * a * sx;
       matrix[offset + 2] = -b * sx;
       matrix[offset + 5] = s * b * sy;
@@ -226,7 +249,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
     this.mesh.instanceColor!.setXYZ(i, this.colorValues[rgb], this.colorValues[rgb + 1], this.colorValues[rgb + 2]);
     this.alpha.setX(i, opacity);
     this.priority.setX(i, this.priorityWeight);
-    this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' || this.kind === 'front' ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
+    this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' || this.kind === 'front' || this.kind === 'flame' && variant >= 100 ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
   }
 

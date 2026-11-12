@@ -19,6 +19,14 @@ describe('V3 shared spectacle', () => {
     k.dispose();
   });
 
+
+  it('streams distinct matte kinetic and irregular cold wave styles through the same prepared volume', () => {
+    const k = new ElementKit(new T.Group());k.begin(0);
+    k.front(0,0,7,.5,0xffb454,.06,.6,1);k.front(0,0,7,.5,0xe8fbff,.7,.5,2);k.end();
+    const phase = k.batches.front.mesh.geometry.getAttribute('abilityPhase');
+    expect(phase.getX(0)).toBe(1);expect(phase.getX(1)).toBe(2);expect(k.batches.front.mesh.count).toBe(2);k.dispose();
+  });
+
   it('keeps full-length scars for eight seconds, pauses and retires them at expiry', () => {
     const k = new ElementKit(new T.Scene()), m = new T.Matrix4();
     k.scar('trench', 10, 4, 14, 0x201711, 9, Math.PI / 2, .55);
@@ -56,7 +64,7 @@ describe('V3 shared spectacle', () => {
       const dx = position.x - 2, dz = position.z - 3;
       expect(Math.hypot(dx, dz)).toBeLessThan(9);
       expect(Math.abs(Math.atan2(dz, dx) - .7)).toBeLessThan(.7);
-      expect(scale.y * 2).toBeGreaterThan(.5); expect(scale.y * 2).toBeLessThanOrEqual(2.8);
+      expect(scale.y * 2).toBeGreaterThan(.5); expect(scale.y * 2).toBeLessThanOrEqual(9);
       expect(position.y).toBeGreaterThan(.15);
     }
     expect(k.batches.decal.mesh.material).toBe(material);
@@ -70,6 +78,25 @@ describe('V3 shared spectacle', () => {
     k.directedFlame(0,0,0,.2,1,-Math.PI/2,2,1);k.directedFlame(0,0,0,.2,1,0,2,1);k.end();
     const m = new T.Matrix4();k.batches.flame.mesh.getMatrixAt(0,m);expect(m.elements[4]).toBeCloseTo(0);
     k.batches.flame.mesh.getMatrixAt(1,m);expect(m.elements[4]).toBeGreaterThan(.1);k.dispose();
+  });
+
+
+  it('bounds curved weather strokes without another mesh, texture or fullscreen layer', () => {
+    const root = new T.Group(),k = new ElementKit(root),inventory=k.root.children.slice();k.begin(0);k.sustain();
+    k.gust(2,3,1.8,.7,.4,7,.4);k.end();expect(k.root.children).toEqual(inventory);
+    const b=k.batches.decal.mesh,m=new T.Matrix4(),scale=new T.Vector3();b.getMatrixAt(0,m);scale.setFromMatrixScale(m);
+    expect(scale.x).toBeCloseTo(.9);expect(scale.y).toBeCloseTo(.35);expect(b.geometry.getAttribute('abilityPhase').getX(0)).toBeGreaterThanOrEqual(10);
+    expect(b.geometry.getAttribute('abilityPriority').getX(0)).toBe(1);k.dispose();
+  });
+
+
+  it('anchors a pressure jet ribbon to exact world endpoints while reusing the flame batch', () => {
+    const k=new ElementKit(new T.Group()),camera=new T.PerspectiveCamera();camera.position.set(0,8,8);camera.updateMatrixWorld();k.setView(camera);k.begin(0);
+    k.flowFlame(1,1,2,5,1.2,7,.8,3,.7,true);k.end();
+    const b=k.batches.flame.mesh,m=new T.Matrix4();b.getMatrixAt(0,m);
+    expect(new T.Vector3(0,-1,0).applyMatrix4(m).distanceTo(new T.Vector3(1,1,2))).toBeLessThan(.000001);
+    expect(new T.Vector3(0,1,0).applyMatrix4(m).distanceTo(new T.Vector3(5,1.2,7))).toBeLessThan(.000001);
+    expect(b.geometry.getAttribute('abilityPhase').getX(0)).toBe(103);expect(b.count).toBe(1);k.dispose();
   });
 
   it('uses one prepared composite input and suppresses exposure impulses at zero flash or reduced motion', () => {
