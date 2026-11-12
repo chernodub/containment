@@ -504,3 +504,169 @@ capture directory. The latter assembles the exact 480×270 PNGs into labeled
 critique pages. Keep native PNGs and burst sheets for full-size review. Serialize
 capture, desktop browser gates and benchmarks; no second capture browser should
 run during a timing trial.
+## G3 per-pass GPU audit
+
+`npm run bench -- --gpu-passes` records asynchronous
+`EXT_disjoint_timer_query_webgl2` timings for scene color (including shadow
+updates and HDR resolve), enabled dirty shadow updates separately, contact/GTAO,
+denoise, bloom extraction and both blur
+directions, distortion, composite, final AA and HUD. It rotates one selected stage every third frame, avoiding multiple timer
+queries within the same ANGLE Metal command buffer, and retains raw milliseconds and actual target dimensions, discards pending queries
+on a GPU disjoint interval and retires unresolved queries without blocking.
+No `readPixels`, `finish` or query-result busy wait is used. Unsupported timers
+are reported explicitly. The total-frame timer and runtime adaptive GPU timer
+are suspended while per-pass queries own the query target; frame-driven
+adaptive fallback remains available. These opt-in timings include shared-GPU
+scheduling contention.
+
+```sh
+npm run bench -- --label=g3-gpu --rooms=manual-control-chamber --rigs=arc --tiers=high,low --repeat=3 --gpu-passes
+VITEST_MAX_WORKERS=2 npx vitest run scripts/nextgen/gpu-pass-audit.test.mjs
+```
+
+The same option supports `--dist=<preserved-build> --no-build` before/after
+comparisons. Every trial retains host load and per-frame adaptive scale.
+`gpuBestOfN` selects the trial with the lowest scene-color GPU p50 and reports
+that same trial's frame distribution, scale and load; every raw trial remains
+in `benchmark.json`. This is distinct from choosing the best CPU trial. Stage
+percentiles cannot be added to claim a frame percentile. Query lifecycle
+counters make discarded, busy-skipped and unresolved observations visible.
+
+The original 350-draw limit, P1 330-draw headroom, zero combat programs and
+population/native-kit assertions remain. The combat audit additionally enforces
+the existing 400-program inventory budget and adaptive scale range 0.7–1.0.
+High frame p50 ≤16.7 ms / p95 ≤20 ms and Low p50 ≤16.7 ms are recorded as
+hardware acceptance flags alongside the historical strict frame-p95 flag;
+shared-host timing flags remain observations, not wall-clock unit assertions.
+
+`--gpu-passes --gpu-flush` additionally calls `gl.flush()` before each selected
+query and after its end, requesting command-buffer submission boundaries for
+ANGLE Metal stage attribution. This is an **intrusive pass-profile mode**:
+frame/CPU values are retained but marked `timingAcceptanceEligible:false` and
+must not certify production FPS. It never uses `finish`, `readPixels` or a
+completion wait. Compare ordinary non-flush trials separately. If isolated
+scopes still report queue-scale durations for tiny stages, retain them as
+unsupported stage attribution rather than adding their timings.
+
+The separate `shadows` scope runs only when shadow rendering is enabled and
+`autoUpdate || needsUpdate`. Its dimensions come from actual bindings to a
+light-owned shadow map during the measured update; no screen-sized proxy or
+unallocated expected shadow size is reported. `sceneColor` still includes its
+shadow work, so those two distributions overlap and must never be added.
+
+If the zero-combat-program guard fails, `combatProgramKeys` retains the names
+and complete Three cache keys of newly created programs still in the renderer
+inventory. The guard remains fatal; the diagnostic identifies the missed
+preparation topology without accepting a compile hitch.
+
+G3's final AA scope (`finalAA`) samples the graded ink presentation target and
+renders to the screen before the HUD. Cost and GPU probes recognize it only
+when present; preserved pre-AA builds keep their original stage list. Default
+Low now draws scene → compact composite → final AA while keeping AO/bloom/
+distortion targets at1×1 and skipping those passes. Explicit Low ink-off retains
+the original single forward render. The original draw/program guards remain.
+High retains the bounded Three FXAA implementation; Low final AA uses five fixed
+color taps, no edge-search loop and at most .32 neighborhood blend. Main scene
+color is positive packed HDR RGB11/11/10 (32 bits); its alpha was unused by the
+composite. Geometry remains RGBA8 and AO remains RGBA16F. Packed precision and
+the .70 adaptive endpoint have separate native A/B receipts in the G3 report;
+the latter is visibly softer and must not be described as a free quality win.
+
+### G3 strength review and integration
+
+`npm run capture -- --label=<new-label> --graphics='{"inkOutlines":"full","stylizedShading":true,"adaptiveResolution":false}' --style=bold --scenarios=<list>`
+records the validated graphics overrides and uniform-only style strength. Strength
+is `subtle`, `medium` or `bold`; shipping defaults to bold. For OFF use
+`{"inkOutlines":"off","stylizedShading":false,"adaptiveResolution":false}`.
+Use the same immutable `--dist` and `--dist-source-sha`, seed, scenarios and clocks
+for every column. Do not compare a live rebuilding dist against preserved PNGs.
+
+`node scripts/nextgen/g3-strength-gallery.mjs <OFF-label> <subtle-label> <medium-label> <bold-label> <new-gallery>`
+builds the four-strength review without launching a browser. It rejects mismatched
+provenance/clocks/assets, missing required bursts and failed capture manifests.
+The output links native PNGs, 480×270 area reductions, exact 600×400 native crops
+and four-frame sheets. It refuses to overwrite an existing gallery. The accepted wave-4 review is
+`artifacts/nextgen/g3-final-bold-ab/index.html`.
+
+The opaque HDR draw carries an RGBA8 oct-normal/identity/class attachment shared
+by AO and ink. Standard surfaces are registered before material warmup. Physical
+marine/alien identity shaders have a narrowly recognized adapter; other custom
+shaders and transparent/effect layers remain excluded. Keep actor submeshes under
+their registered root, never use per-actor shader defines, and preserve color-only
+effect writes. The actual Low HDR target must be prepared before readiness;
+Low ink-off/on transitions hold room preparation. `g3-ink-switches` exercises
+those transitions and rejects any post-prepare combat program creation.
+`g3-geometry-coverage` checks actual floor/architecture/actor bytes in the shared
+attachment. `g3-void-contours` checks contour darkening against empty geometry,
+retaining non-geometric light pools and the normal canvas-diversity assertion.
+Both use one-shot fixture readbacks, never application-frame readbacks. Cleared
+geometry is class0; excluded/priority overlays use class255. Preserve the
+target-scoped clear hook and its disposal when instrumenting the renderer.
+
+Adaptive scale and GPU lifecycle appear under the existing performance pipeline
+snapshot. Per-pass profiling suspends the total GPU probe and uses frame-driven
+adaptive fallback to avoid nested queries. The raw ANGLE Metal scopes in this
+shared-host run did not establish reliable additive pass attribution; consult
+`docs/nextgen/G3-GPU-NOTES.md` before quoting them as shader costs.
+
+## Opt-in amplified post throughput diagnostic
+
+`--gpu-micro` runs a separate synthetic diagnostic **after** each normal live
+trial's samples, wrapper disposal and unchanged kit/population/resource assertions.
+The ordinary20-second observations and their draw budgets remain separate and
+retain their existing timing-eligibility flags. Synthetic rows live under
+`run.gpuMicro` and always have `timingAcceptanceEligible:false`.
+
+```sh
+npm run bench -- --label=g3-packed-micro --dist=artifacts/nextgen/g3/packed-hdr-dist --dist-source-sha=4939853 --no-build --rooms=manual-control-chamber --rigs=arc --tiers=high,low --repeat=1 --seconds=20 --gpu-micro --gpu-micro-samples=2
+```
+
+Default micro scopes are `gtao,aoDenoise,bloomExtract,bloomBlurHorizontal,
+bloomBlurVertical,composite,finalAA`. `--gpu-micro-stages=composite,finalAA`
+narrows them; `--gpu-micro-samples=2..4` selects raw attempts per repeat count.
+Scene, shadows and HUD are explicitly unsupported micro scopes. Stages absent
+or disabled in the selected prepared tier are recorded as unsupported, not
+compiled or silently substituted. Existing prepared High/Low programs are used;
+no materials, textures or targets are allocated for this diagnostic.
+
+The harness pauses through the existing game API, temporarily suppresses the
+ordinary renderer update and suspends the runtime GPU timer. Every sampled RAF
+executes the existing post pipeline with `dt0`, fixed simulation/camera/inputs,
+and normal pass order. Only the selected draw repeats **1,8,32** times inside one
+elapsed query. Alternate sample sequences reverse the count order to reduce
+simple time-drift bias. Depth/color clears, uniforms, target sizes and the other
+post passes retain their regular order. Shadow updates are held at their cached
+state; scene geometry is not an amplified measured scope. Query availability is
+polled asynchronously on RAFs; there is no `readPixels`, `finish`, fence wait or
+busy loop. At most4 queries are pending, each retires after120 frames or3000ms,
+and the whole micro stops at600 RAFs or30s. Context loss/disjoint observations
+are rejected. Renderer state, wrappers, ordinary draw counters, public pause
+state and timer enablement restore in `finally`; the original frozen normal
+frame restores HUD/output. Suspended GPU feedback retires and resumes fresh.
+
+Every raw repeat count, CPU submission time, elapsed GPU value/status, timestamp,
+target size and query lifecycle count is retained, with host load before/after
+the micro interval. The fit selects the **minimum valid GPU sample at each
+count**, retaining its paired CPU observation. It requires at least2 valid
+samples/count, positive slope, R²≥.98, within-count relative spread≤.50,
+an amplified delta above both.2ms and2% of the count1 reading, a plausible
+intercept, and GPU slope separated from CPU submission slope. Flat/coarse equal,
+negative, nonlinear, noisy, insufficient or submission-dominated observations
+produce `supported:false` with reasons and no estimate. Thresholds and rejected
+raw values remain in JSON.
+
+Even a supported slope is an **amplified same-target throughput estimate**, not
+isolated normal-pass latency, ordinary frame cost or FPS. Reusing the same
+render target and resident inputs changes caching/submission behavior; scene and
+shadow timing scopes can overlap outside this post-only experiment. Never add
+these slopes or stage percentiles into a claimed game frame time. Micro program
+creation remains a fatal zero-program guard; its synthetic draws never enter
+the already captured normal draw/resource budget.
+
+GPU-free fit/lifecycle coverage is in `gpu-micro.test.mjs`. Run it only when the
+serialized browser timing lease is free:
+
+```sh
+VITEST_MAX_WORKERS=2 npx vitest run scripts/nextgen/gpu-micro.test.mjs scripts/nextgen/gpu-pass-audit.test.mjs
+node scripts/nextgen/bench.mjs --self-test
+```

@@ -1,3 +1,4 @@
+import { inkDeclarations, inkComposite } from './Ink';
 /** One full-screen triangle is shared by all pipeline stages. */
 export const screenVertex = /* glsl */ `
 varying vec2 vUv;
@@ -106,6 +107,7 @@ uniform float fogDensity;
 uniform float fogHeight;
 ${reconstruct}
 ${finiteOcclusionGLSL}
+${inkDeclarations}
 float noise(vec2 p) {
   return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
 }
@@ -160,6 +162,7 @@ void main() {
       color = mix(color, fogColor * 0.36, haze);
     }
   }
+${inkComposite}
   color = max((color + lift) * gain, 0.0);
   color *= 1.0 + abilityPresentation.x * 2.4;
   color*=1.0-menuPresentation*(1.0-smoothstep(.30,.59,vUv.x))*.78;

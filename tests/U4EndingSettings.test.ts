@@ -44,10 +44,13 @@ describe('additive graphics settings', () => {
   });
 
   it('renders new boolean, numeric and union fields as native labelled controls', () => {
-    const state = {version: 1, tier: 'high', graphics: {...GRAPHICS_PRESETS.high, inkOutlines: true, adaptiveResolution: false, edgeConfidence: .65, outlineMode: 'actors-only'}, combatText: true, radar: false, music: .38, effects: .8} as UiPreferences;
+    const state = {version: 1, tier: 'high', graphics: {...GRAPHICS_PRESETS.high, inkOutlines: 'full', adaptiveResolution: false, edgeConfidence: .65, outlineMode: 'actors-only'}, combatText: true, radar: false, music: .38, effects: .8} as UiPreferences;
     const html = renderSettings({state, sound: {master: .8, muted: false}, reducedMotion: false});
-    expect(html).toContain('aria-label="Ink outlines" checked');
-    expect(html).toContain('aria-label="Adaptive sharpness"');
+    expect(html).toContain('data-setting="graphics.inkOutlines"');
+    expect(html).toContain('<option value="off">Off</option>');
+    expect(html).toContain('<option value="silhouette">Silhouettes</option>');
+    expect(html).toContain('<option value="full" selected>Full</option>');
+    expect(html).toContain('aria-label="Adaptive resolution"');
     expect(html).toContain('data-setting="graphics.edgeConfidence" type="range" min="0" max="100" step="1" value="65"');
     expect(html).toContain('data-setting="graphics.outlineMode" aria-describedby="setting-graphics-outlineMode-hint"><option value="actors-only" selected>Actors only</option>');
     expect(html).toContain('Contours help separate actors and ship surfaces.');

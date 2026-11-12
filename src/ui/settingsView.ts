@@ -17,8 +17,9 @@ const playerOptions: Record<string, {label:string;hint:string}> = {
   resolutionScale:{label:'Image sharpness',hint:'Lower values improve speed at reduced detail.'},
   screenShake:{label:'Camera movement',hint:'Shake, recoil and brief camera zooms.'},
   flashIntensity:{label:'Combat flashes',hint:'Brightness of damage and explosion flashes.'},
+  stylizedShading:{label:'Stylized shading',hint:'Broad value bands and restrained surface detail.'},
   inkOutlines:{label:'Ink outlines',hint:'Contours help separate actors and ship surfaces.'},
-  adaptiveResolution:{label:'Adaptive sharpness',hint:'Adjusts image resolution to keep combat responsive.'},
+  adaptiveResolution:{label:'Adaptive resolution',hint:'Adjusts image resolution to keep combat responsive.'},
 };
 type OptionCopy = Readonly<{label?: string; hint?: string}>;
 /** Additive renderer metadata is optional; every new key still has readable copy. */
@@ -43,7 +44,7 @@ function graphicsControl(key: string, value: unknown): string {
   if (typeof value === 'number') return range(`graphics.${key}`, label, hint, value, key === 'resolutionScale' ? 50 : 0);
   const id = `setting-graphics-${key}`;
   const choices = [...new Set([...graphicsChoices(key), ...(typeof value === 'string' ? [value] : [])])];
-  return `<div class="settings-control"><div class="settings-control__copy"><label for="${id}">${escape(label)}</label><span id="${id}-hint">${escape(hint)}</span></div><select id="${id}" data-setting="graphics.${key}" aria-describedby="${id}-hint">${choices.map(choice => `<option value="${escape(choice)}"${choice === value ? ' selected' : ''}>${escape(choice.replace(/[_-]/g, ' ').replace(/^./, character => character.toUpperCase()))}</option>`).join('')}</select></div>`;
+  return `<div class="settings-control"><div class="settings-control__copy"><label for="${id}">${escape(label)}</label><span id="${id}-hint">${escape(hint)}</span></div><select id="${id}" data-setting="graphics.${key}" aria-describedby="${id}-hint">${choices.map(choice => `<option value="${escape(choice)}"${choice === value ? ' selected' : ''}>${escape(key === 'inkOutlines' && choice === 'silhouette' ? 'Silhouettes' : choice.replace(/[_-]/g, ' ').replace(/^./, character => character.toUpperCase()))}</option>`).join('')}</select></div>`;
 }
 
 /** Every graphics contract field remains a native labelled control in a compact two-column console. */

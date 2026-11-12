@@ -2,7 +2,7 @@ import type {DepthRenderer} from '../render/DepthRenderer';
 import type {GraphicsTier} from '../render/FrameBudget';
 import type {AudioSystem} from '../game/audio/AudioSystem';
 import {loadAudioPreferences, saveAudioPreferences} from '../game/audio/preferences';
-import {GRAPHICS_PRESETS, type GraphicsOptions} from '../render/graphicsOptions';
+import {GRAPHICS_PRESETS, GRAPHICS_OPTION_CHOICES, type GraphicsOptions} from '../render/graphicsOptions';
 import {getGraphicsOptions, playUiCue, setGraphicsOptions, setGraphicsTier} from './gameAdapter';
 import {renderSettings} from './settingsView';
 
@@ -23,7 +23,7 @@ const unit = (value: unknown, fallback: number, minimum = 0): number => typeof v
 
 /** Derive union choices from both presets, with every supported shadow level. */
 export function graphicsChoices(key: string): string[] {
-  if (key === 'shadows') return ['off', 'low', 'high'];
+  if (key in GRAPHICS_OPTION_CHOICES) return [...GRAPHICS_OPTION_CHOICES[key as keyof typeof GRAPHICS_OPTION_CHOICES]];
   return [...new Set(Object.values(GRAPHICS_PRESETS).map(preset => (preset as unknown as Record<string, unknown>)[key]).filter((value): value is string => typeof value === 'string'))];
 }
 

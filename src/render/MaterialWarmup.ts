@@ -1,3 +1,4 @@
+import { registerGeometry } from './post/GeometryBuffer';
 import * as T from 'three';
 import type {EnvironmentMaterials} from './EnvironmentMaterials';
 import {applyFloorVariation} from './lighting/FloorVariation';
@@ -169,6 +170,7 @@ export class MaterialWarmup {
   /** Retain one minimal proxy per actual room shader topology; returns new variants. */
   register(root: T.Object3D): number {
     if (this.disposed || root === this.root) return 0;
+    registerGeometry(root);
     let added = 0;
     root.traverse(object => {
       if (!(object instanceof T.Mesh) || object.userData.retainedRoomWarmup) return;
