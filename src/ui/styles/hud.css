@@ -428,4 +428,14 @@ body[data-state=playing] #world{cursor:none}
  #hud #action-bar .dash-slot,#hud #action-bar .overdrive-slot {height:62px;min-height:62px;}
  #hud #action-bar .overdrive-body .icon {height:25px;width:25px;}
 }
+@media(min-width:1001px) and (max-height:800px) {
+ #hud #action-bar .weapon-bank {width:164px;}
+ #hud #action-bar .dash-slot {width:88px;}
+ #hud #action-bar .ability-slot {min-width:76px;max-width:80px;}
+ #hud #action-bar .overdrive-slot {width:120px;}
+}
+@media(max-width:700px) {
+ #hud #action-bar {gap:8px;}
+ #hud #action-bar #ability-bar {gap:6px;padding-left:8px;}
+}
 @media(prefers-reduced-motion:reduce) {#hud :is(.vitals,#status-hud,#action-bar,#radar-hud) {transition:none;}}
