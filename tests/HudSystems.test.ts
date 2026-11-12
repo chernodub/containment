@@ -67,7 +67,7 @@ it('merges real damage per target, pools burst events, honors combat text prefer
             const { hud } = (window as any).__live;
             for (let i = 0; i < 5; i++)
                 hud.effect({ type: i < 2 ? 'acid' : 'hit', contact: 'damage', x: 80, y: 0, id: 1, damage: 12 });
-            hud.tick(.01);
+            hud.tick(.1); hud.tick(.03);
         });
         expect(await page.locator('.combat-float:not([hidden])').count()).toBe(2);
         expect(await page.locator('.combat-float[data-damage-token=acid]:not([hidden])').textContent()).toBe('24');
@@ -78,8 +78,8 @@ it('merges real damage per target, pools burst events, honors combat text prefer
                 hud.effect({ type: 'hit', x: i * 10, y: 40, id: i, damage: 3, lethal: i === 99 });
             hud.tick(.01);
         });
-        expect(await page.locator('.combat-float').count()).toBe(28);
-        expect(await page.locator('.combat-float:not([hidden])').count()).toBeLessThanOrEqual(28);
+        expect(await page.locator('.combat-float').count()).toBe(12);
+        expect(await page.locator('.combat-float:not([hidden])').count()).toBeLessThanOrEqual(12);
         await page.evaluate(() => { (window as any).__hudPrefs.combatText = false; (window as any).__live.hud(); });
         expect(await page.locator('.combat-float:not([hidden])').count()).toBe(0);
         await page.evaluate(() => { const { hud } = (window as any).__live; hud.effect({ type: 'hit', x: 0, y: 0, id: 3, damage: 40 }); hud.effect({ type: 'pickup', x: 0, y: 0 }); });

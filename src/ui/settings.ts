@@ -13,11 +13,12 @@ export type UiPreferences = Readonly<{
   tier: GraphicsTier;
   graphics: GraphicsOptions;
   combatText: boolean;
+  combatTextDensity?: 'full' | 'reduced';
   radar: boolean;
   music: number;
   effects: number;
 }>;
-export type GameplayPreferences = Readonly<{combatText: boolean; radar: boolean}>;
+export type GameplayPreferences = Readonly<{combatText: boolean; combatTextDensity?: 'full' | 'reduced'; radar: boolean}>;
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const unit = (value: unknown, fallback: number, minimum = 0): number => typeof value === 'number' && Number.isFinite(value) && value >= minimum && value <= 1 ? value : fallback;
 
@@ -47,6 +48,7 @@ export function loadUiPreferences(storage: PreferenceStorage, defaultTier: Graph
   return {
     version: 1, tier, graphics: graphics as unknown as GraphicsOptions,
     combatText: typeof saved.combatText === 'boolean' ? saved.combatText : true,
+    combatTextDensity: saved.combatTextDensity === 'reduced' ? 'reduced' : 'full',
     radar: typeof saved.radar === 'boolean' ? saved.radar : false,
     music: unit(saved.music, .38), effects: unit(saved.effects, .8),
   };
@@ -62,7 +64,7 @@ export function saveUiPreferences(storage: PreferenceStorage, preferences: UiPre
 export function createSettings({renderer, audio, storage}: {renderer: DepthRenderer; audio: AudioSystem; storage: Storage | null}) {
   let state = loadUiPreferences(storage, renderer.qualityTier === 'low' ? 'low' : 'high');
   let sound = loadAudioPreferences(storage);
-  let preferences: GameplayPreferences = Object.freeze({combatText: state.combatText, radar: state.radar});
+  let preferences: GameplayPreferences = Object.freeze({combatText: state.combatText, combatTextDensity: state.combatTextDensity, radar: state.radar});
   let root: HTMLElement | null = null;
   let media: MediaQueryList | null = null;
   let unbind = () => {};
@@ -132,9 +134,13 @@ export function createSettings({renderer, audio, storage}: {renderer: DepthRende
           const value = Number(input.value) / 100;
           if (!Number.isFinite(value) || value < 0 || value > 1) return;
           state = {...state, [key]: value}; applyAudio(); persist();
+        } else if (key === 'combatTextDensity') {
+          if (input.value !== 'full' && input.value !== 'reduced') return;
+          state = {...state, combatTextDensity: input.value};
+          preferences = Object.freeze({combatText: state.combatText, combatTextDensity: state.combatTextDensity, radar: state.radar}); persist();
         } else if (key === 'combatText' || key === 'radar') {
           state = {...state, [key]: (input as HTMLInputElement).checked};
-          preferences = Object.freeze({combatText: state.combatText, radar: state.radar}); persist();
+          preferences = Object.freeze({combatText: state.combatText, combatTextDensity: state.combatTextDensity, radar: state.radar}); persist();
         } else if (key.startsWith('graphics.')) {
           const option = key.slice(9);
           const previous = (state.graphics as unknown as Record<string, unknown>)[option];

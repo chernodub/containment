@@ -15,7 +15,7 @@ function storage(initial: Record<string, string> = {}) {
 it('defaults old saves safely without migrating or changing legacy audio preferences', () => {
   const store = storage({[AUDIO_STORAGE_KEY]: '{"master":0.73,"muted":true}'});
   const audioBefore = store.getItem(AUDIO_STORAGE_KEY);
-  expect(loadUiPreferences(store)).toEqual({version: 1, tier: 'high', graphics: GRAPHICS_PRESETS.high, combatText: true, radar: false, music: .38, effects: .8});
+  expect(loadUiPreferences(store)).toEqual({version: 1, tier: 'high', graphics: GRAPHICS_PRESETS.high, combatText: true, combatTextDensity: 'full', radar: false, music: .38, effects: .8});
   expect(loadAudioPreferences(store)).toEqual({master: .73, muted: true});
   saveUiPreferences(store, loadUiPreferences(store));
   expect(store.getItem(AUDIO_STORAGE_KEY)).toBe(audioBefore);
@@ -28,7 +28,7 @@ it.each(['invalid', 'null', '[]', 'true', '"settings"', '{"version":99,"tier":"l
 
 it('validates fields independently, rejects nonfinite/out-of-range values and ignores unknown fields', () => {
   const store = storage({[UI_STORAGE_KEY]: '{"version":1,"tier":"low","combatText":false,"radar":"true","music":-1,"effects":0.5,"unknown":true,"graphics":{"bloom":true,"ambientOcclusion":"true","resolutionScale":0.3,"screenShake":1e999,"flashIntensity":0.35,"shadows":"medium","unknown":true}}'});
-  expect(loadUiPreferences(store)).toEqual({version: 1, tier: 'low', combatText: false, radar: false, music: .38, effects: .5, graphics: {...GRAPHICS_PRESETS.low, bloom: true, flashIntensity: .35}});
+  expect(loadUiPreferences(store)).toEqual({version: 1, tier: 'low', combatText: false, combatTextDensity: 'full', radar: false, music: .38, effects: .5, graphics: {...GRAPHICS_PRESETS.low, bloom: true, flashIntensity: .35}});
   expect(graphicsChoices('shadows')).toEqual(['off', 'low', 'high']);
 });
 
@@ -145,14 +145,15 @@ it('applies and persists tier, every graphics option and gameplay/channel contro
       else {await control.focus(); await page.keyboard.press('Home'); if (key === 'resolutionScale') await page.keyboard.press('ArrowRight');}
     }
     await page.locator('[data-setting="combatText"]').uncheck();
+    await page.locator('[data-setting="combatTextDensity"]').selectOption('reduced');
     await page.locator('[data-setting="radar"]').check();
     for (const channel of ['music', 'effects']) {await page.locator(`[data-setting="${channel}"]`).focus(); await page.keyboard.press('End');}
     const saved = await page.evaluate(() => JSON.parse((window as any).settingsTest.values.get('containment.ui.v1')));
-    expect(saved).toEqual({version: 1, tier: 'low', graphics: {bloom: true, ambientOcclusion: true, lensEffects: true, distortion: true, atmosphere: true, dynamicLights: true, inkOutlines:'full',adaptiveResolution:true,stylizedShading:true, shadows: 'low', resolutionScale: .51, screenShake: 0, flashIntensity: 0}, combatText: false, radar: true, music: 1, effects: 1});
+    expect(saved).toEqual({version: 1, tier: 'low', graphics: {bloom: true, ambientOcclusion: true, lensEffects: true, distortion: true, atmosphere: true, dynamicLights: true, inkOutlines:'full',adaptiveResolution:true,stylizedShading:true, shadows: 'low', resolutionScale: .51, screenShake: 0, flashIntensity: 0}, combatText: false, combatTextDensity: 'reduced', radar: true, music: 1, effects: 1});
     await page.evaluate(() => (window as any).settingsTest.reload());
     expect(await page.locator('#quality').inputValue()).toBe('low');
     expect(await page.evaluate(() => (window as any).settingsTest.renderer.graphicsOptions)).toEqual(saved.graphics);
-    expect(await page.evaluate(() => (window as any).settingsTest.settings.preferences)).toEqual({combatText: false, radar: true});
+    expect(await page.evaluate(() => (window as any).settingsTest.settings.preferences)).toEqual({combatText: false, combatTextDensity: 'reduced', radar: true});
     for (const ink of ['off','silhouette','full']) {
       await page.locator('[data-setting="graphics.inkOutlines"]').selectOption(ink);
       await page.evaluate(() => (window as any).settingsTest.reload());
@@ -222,4 +223,15 @@ it('groups every option into a compact console with native controls visible at 1
     expect(await slider.inputValue()).toBe('31');
     expect(await slider.evaluate(element=>element===document.activeElement)).toBe(true);
   } finally {await page.close();}
+});
+
+it('U5 validates and round-trips reduced combat text independently of the existing off preference', () => {
+  const reduced = storage({[UI_STORAGE_KEY]: JSON.stringify({version:1,combatText:false,combatTextDensity:'reduced'})});
+  expect(loadUiPreferences(reduced)).toMatchObject({combatText:false,combatTextDensity:'reduced'});
+  saveUiPreferences(reduced,loadUiPreferences(reduced));
+  expect(loadUiPreferences(reduced)).toMatchObject({combatText:false,combatTextDensity:'reduced'});
+  for(const combatTextDensity of ['invalid',null,7,true]) {
+    const preferences=loadUiPreferences(storage({[UI_STORAGE_KEY]:JSON.stringify({combatText:true,combatTextDensity})}));
+    expect(preferences).toMatchObject({combatText:true,combatTextDensity:'full'});
+  }
 });

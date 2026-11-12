@@ -139,7 +139,7 @@ it('preserves same-element merges and separates acid from neutral totals, with b
     await page.evaluate(() => {
       const {combat, player} = (window as any).combatTest;
       for (let i = 0; i < 5; i++) combat.effect({type: i < 2 ? 'acid' : 'hit', contact: 'damage', x: 640, y: 360, id: 1, damage: 12});
-      combat.tick(.01, player);
+      combat.tick(.13, player);
     });
     const visible = page.locator('.combat-float:not([hidden])');
     expect(await visible.count()).toBe(2);
@@ -161,8 +161,8 @@ it('preserves same-element merges and separates acid from neutral totals, with b
       for (let i = 0; i < 100; i++) combat.effect({type: 'hit', x: 100 + i * 5, y: 500, id: i + 10, damage: 5});
       combat.tick(.01, player);
     });
-    expect(await page.locator('.combat-float').count()).toBe(28);
-    expect(await visible.count()).toBeLessThanOrEqual(28);
+    expect(await page.locator('.combat-float').count()).toBe(12);
+    expect(await visible.count()).toBeLessThanOrEqual(12);
     await page.evaluate(() => {(window as any).combatTest.combat.setEnabled(false);});
     expect(await visible.count()).toBe(0);
     await page.evaluate(() => {(window as any).combatTest.combat.dispose();});
@@ -238,7 +238,7 @@ it('styles confirmed damage by source, merges receipts per target/source, and pr
       for (const [index, source] of ['weapon', 'ability', 'status', 'boon'].entries()) {
         for (let receipt = 0; receipt < 20; receipt++) combat.effect({type:'acid',contact:'damage',x:200+index*200,y:260,targetId:index,damage:2,source,lethal:source==='boon'&&receipt===19});
       }
-      combat.tick(.01,player);
+      combat.tick(.13,player);
     });
     expect(await page.locator('.combat-float[data-kind=damage]:not([hidden])').count()).toBe(4);
     for (const source of ['weapon','ability','status','boon']) {
@@ -266,7 +266,7 @@ it('keeps one most-relevant compact status chip per target while preserving inde
     const chips=page.locator('.combat-float[data-kind=status]:not([hidden])');
     expect(await chips.allTextContents()).toEqual(['FROZEN','BURNING']);
     expect(await chips.first().getAttribute('aria-label')).toBe('FROZEN');
-    expect((await chips.first().boundingBox())!.width).toBeLessThanOrEqual(28);
+    expect((await chips.first().boundingBox())!.width).toBeLessThanOrEqual(12);
     expect(await chips.locator('svg:not([hidden])').count()).toBe(2);
     expect(await page.locator('.combat-float[data-kind=damage]:not([hidden])').allTextContents()).toEqual(['12','12','12','12','18']);
   } finally {await page.close();}
@@ -325,7 +325,7 @@ it('uses optional projected actor height to scale feedback while preserving the 
     const receipt=page.locator('.combat-float:not([hidden])');
     expect(await receipt.evaluate(node=>parseFloat(getComputedStyle(node).fontSize))).toBe(42.5);
     expect(await receipt.evaluate(node=>(node as HTMLElement).style.getPropertyValue('--actor-scale'))).toBe('1.25');
-    expect(await page.locator('.combat-float').count()).toBe(28);
+    expect(await page.locator('.combat-float').count()).toBe(12);
   } finally {await page.close();}
 });
 
@@ -374,5 +374,75 @@ it('uses actual elemental tokens for damage and chips while weapon hits stay whi
       const chip = page.locator(`.combat-float[data-kind=status][data-element="${element}"]:not([hidden])`);
       for (const actual of await chip.evaluateAll(nodes=>nodes.map(node=>getComputedStyle(node).color))) expect(actual).toBe(color);
     }
+  } finally {await page.close();}
+});
+
+it('U5 counts a single running total through a 600 ms window, then emphasizes and replaces the resolved receipt', async () => {
+  const page = await mount();
+  try {
+    const values = await page.evaluate(() => {
+      const {combat, player} = (window as any).combatTest;
+      combat.effect({type:'hit',x:350,y:350,targetId:7,damage:10,source:'ability',damageElement:'cryo'});
+      combat.tick(.2,player);
+      combat.effect({type:'hit',x:350,y:350,targetId:7,damage:20,source:'ability',damageElement:'cryo'});
+      combat.tick(.03,player);
+      const node = document.querySelector('.combat-float[data-kind=damage]:not([hidden])') as HTMLElement;
+      const during = {text:Number(node.textContent), total:node.dataset.total, settled:node.dataset.settled};
+      combat.tick(.1,player);
+      const counted = node.textContent;
+      combat.tick(.5,player);
+      const resolved = {text:node.textContent, settled:node.dataset.settled};
+      combat.effect({type:'hit',x:350,y:350,targetId:7,damage:4,source:'ability',damageElement:'cryo'});
+      combat.tick(.01,player);
+      return {during,counted,resolved,replaced:node.textContent,count:document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])').length};
+    });
+    expect(values.during.total).toBe('30');
+    expect(values.during.text).toBeGreaterThan(10); expect(values.during.text).toBeLessThan(30);
+    expect(values.during.settled).toBe('false'); expect(values.counted).toBe('30');
+    expect(values.resolved).toEqual({text:'30',settled:'true'});
+    expect(values.replaced).toBe('4'); expect(values.count).toBe(1);
+  } finally {await page.close();}
+});
+
+it('U5 prioritizes kills and large hits over ticks and keeps only one terminal mark per target', async () => {
+  const page = await mount();
+  try {
+    const state = await page.evaluate(() => {
+      const {combat,player} = (window as any).combatTest;
+      for(let id=0;id<12;id++) combat.effect({type:'hit',x:160+id*75,y:420,targetId:id,damage:2,source:'status'});
+      combat.effect({type:'hit',x:350,y:350,targetId:40,damage:70,source:'ability'});
+      combat.effect({type:'hit',x:500,y:350,targetId:41,damage:3,source:'status',elements:['ice']});
+      combat.effect({type:'hit',x:500,y:350,targetId:41,damage:5,source:'ability',lethal:true,damageElement:'cryo'});
+      for(let id=60;id<90;id++) combat.effect({type:'hit',x:150,y:400,targetId:id,damage:1,source:'status'});
+      combat.effect({type:'hit',x:500,y:350,targetId:41,damage:1,source:'status'});
+      combat.tick(.13,player);
+      const alive = Array.from(document.querySelectorAll('.combat-float')).filter(node=>!(node as HTMLElement).hidden) as HTMLElement[];
+      return {pool:document.querySelectorAll('.combat-float').length,big:alive.some(n=>n.dataset.target==='40'),kill:alive.filter(n=>n.dataset.target==='41').map(n=>({text:n.textContent,lethal:n.dataset.lethal}))};
+    });
+    expect(state.pool).toBe(12); expect(state.big).toBe(true);
+    expect(state.kill).toEqual([{text:'5 ×',lethal:'true'}]);
+  } finally {await page.close();}
+});
+
+it('U5 reduced feedback suppresses chips and small status ticks, preserves totals and kills, and off clears everything', async () => {
+  const page = await mount(true);
+  try {
+    await page.evaluate(() => {
+      const {combat,player} = (window as any).combatTest;
+      combat.setReduced(true);
+      combat.effect({type:'hit',x:350,y:350,targetId:1,damage:4,source:'status',elements:['ice']});
+      combat.effect({type:'hit',x:500,y:350,targetId:2,damage:4,source:'weapon'});
+      combat.effect({type:'hit',x:850,y:350,targetId:3,damage:2,source:'status',lethal:true});
+      combat.tick(.01,player);
+    });
+    expect(await page.locator('.combat-float[data-kind=status]:not([hidden])').count()).toBe(0);
+    expect(await page.locator('.combat-float:not([hidden])').allTextContents()).toEqual(['4','2 ×']);
+    await page.evaluate(() => {
+      const {combat,player} = (window as any).combatTest;
+      combat.effect({type:'hit',x:350,y:350,targetId:1,damage:30,source:'status'});combat.tick(.01,player);
+    });
+    expect(await page.locator('.combat-float[data-target="1"]:not([hidden])').textContent()).toBe('34');
+    await page.evaluate(() => (window as any).combatTest.combat.setEnabled(false));
+    expect(await page.locator('.combat-float:not([hidden])').count()).toBe(0);
   } finally {await page.close();}
 });
