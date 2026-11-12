@@ -111,3 +111,16 @@ it('keeps reusable warnings backed and gives acid a dark perimeter through one s
     expect(shader.fragmentShader).toContain('acidRim*min(1.0,diffuseColor.a*3.2)');
   } finally { batch.dispose(); acid.dispose(); }
 });
+
+it('exposes the rendered enemy and Queen footprints to sustained friendly yield',()=>{
+ const fx=new AttackEffects(new T.Scene()),camera=new T.Camera();
+ const shapes:Array<{shape:string;x:number;z:number;radius:number}>=[];
+ const read=()=>{shapes.length=0;fx.forEachHostilePriority(shape=>shapes.push({...shape}));};
+ try{
+  fx.event({type:'enemy-warning',x:64,y:96,radius:96,durationMs:1000});
+  fx.setBossWarning(5,7,4,.5);fx.update(.1,camera,[]);read();
+  expect(shapes).toEqual([{shape:'circle',x:2,z:3,radius:3},{shape:'circle',x:5,z:7,radius:4}]);
+  fx.setBossWarning(5,7,4,1,false);fx.update(1,camera,[]);read();expect(shapes).toEqual([]);
+  fx.setBossWarning(5,7,4,.5);fx.clear();read();expect(shapes).toEqual([]);
+ }finally{fx.dispose();}
+});

@@ -141,7 +141,7 @@ it('applies and persists tier, every graphics option and gameplay/channel contro
     for (const [key, value] of Object.entries(GRAPHICS_PRESETS.low)) {
       const control = page.locator(`[data-setting="graphics.${key}"]`);
       if (typeof value === 'boolean') await control.check();
-      else if (typeof value === 'string') await control.selectOption(graphicsChoices(key).includes('low')?'low':graphicsChoices(key).find(choice=>choice!==value)??value);
+      else if (typeof value === 'string') await control.selectOption(key==='inkOutlines'?'full':graphicsChoices(key).includes('low')?'low':graphicsChoices(key).find(choice=>choice!==value)??value);
       else {await control.focus(); await page.keyboard.press('Home'); if (key === 'resolutionScale') await page.keyboard.press('ArrowRight');}
     }
     await page.locator('[data-setting="combatText"]').uncheck();
