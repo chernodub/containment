@@ -42,6 +42,11 @@ describe('MRT draw-buffer isolation',()=>{
   const release=installGeometryClearPolicy(renderer as never),second=installGeometryClearPolicy(renderer as never);
   renderer.clear();surface.onBeforeRender(renderer as never,{} as never,{} as never,geometry,root as never,{} as never);effect.onBeforeRender(renderer as never,{} as never,{} as never,geometry,root as never,{} as never);
   expect(events).toEqual([[0x8ce0,0],'color-depth-clear',[0x8ce0,0x8ce1],{index:1,value:[0,0,0,0]},[0x8ce0,0]]);
+  // Nested reflection/other-scene renders can advance Three's frame counter.
+  // They must not erase geometry already emitted into this uncleared target.
+  events.length=0;renderer.info.render.frame++;
+  surface.onBeforeRender(renderer as never,{} as never,{} as never,geometry,root as never,{} as never);
+  expect(events).toEqual([[0x8ce0,0x8ce1]]);
   events.length=0;current=null;renderer.clear();expect(events).toEqual(['color-depth-clear']);
   release();release();expect(renderer.clear).not.toBe(clear);second();expect(renderer.clear).toBe(clear);
   geometry.dispose();surface.dispose();effect.dispose();

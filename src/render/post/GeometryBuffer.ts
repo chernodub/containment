@@ -25,7 +25,7 @@ const drawBufferHooks=new WeakSet<Material>();
 const drawStates=new WeakMap<WebGLRenderer,{target:unknown;frame:number;write:boolean}>();
 const allBuffers=[0x8ce0,0x8ce1],colorOnly=[0x8ce0,0];
 const geometryClear=new Float32Array(4);
-const clearHooks=new WeakMap<WebGLRenderer,{original:WebGLRenderer['clear'];hook:WebGLRenderer['clear'];users:number}>();
+const clearHooks=new WeakMap<WebGLRenderer,{original:WebGLRenderer['clear'];hook:WebGLRenderer['clear'];users:number;generation:number}>();
 /** Clear scene color/depth normally, and clear geometry to its reserved zero ID
  * once before the first mesh. This also survives Three's shadow-target restores. */
 export function installGeometryClearPolicy(renderer:WebGLRenderer):()=>void {
@@ -36,11 +36,12 @@ export function installGeometryClearPolicy(renderer:WebGLRenderer):()=>void {
   const hook:WebGLRenderer['clear']=function(this:WebGLRenderer,color,depth,stencil) {
    if(color!==false&&renderer.getRenderTarget()?.textures[1]?.name==='Containment geometry normal + identity') {
     (renderer.getContext() as WebGL2RenderingContext).drawBuffers(colorOnly);
+    const clear=clearHooks.get(renderer);if(clear)clear.generation++;
     const state=drawStates.get(renderer);if(state)state.frame=-1;
    }
    original.call(this,color,depth,stencil);
   };
-  entry={original,hook,users:0};clearHooks.set(renderer,entry);renderer.clear=hook;
+  entry={original,hook,users:0,generation:0};clearHooks.set(renderer,entry);renderer.clear=hook;
  }
  entry.users++;const owned=entry;let released=false;
  return ()=>{if(released)return;released=true;if(--owned.users===0){if(renderer.clear===owned.hook)renderer.clear=owned.original;clearHooks.delete(renderer);}};
@@ -52,7 +53,7 @@ function installDrawBufferPolicy(material:Material):void {
   previous.call(this,renderer,...args);
   const target=renderer.getRenderTarget();
   if(target?.textures[1]?.name!=='Containment geometry normal + identity')return;
-  const write=!material.transparent||material.userData.containmentInkBlock===true,frame=renderer.info.render.frame,state=drawStates.get(renderer);
+  const write=!material.transparent||material.userData.containmentInkBlock===true,frame=clearHooks.get(renderer)?.generation??renderer.info.render.frame,state=drawStates.get(renderer);
   const first=!state||state.target!==target||state.frame!==frame;
   if(first||state.write!==write) {
    const gl=renderer.getContext() as WebGL2RenderingContext;
