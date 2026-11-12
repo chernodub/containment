@@ -123,7 +123,13 @@ export class SpatialHash<T extends SpatialItem> {
   /** Reusable local query in deterministic cell/insertion order, without sorting. */
   queryRadiusInto(x:number,y:number,radius:number,out:T[]):T[] {
     out.length=0;
+    if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(radius)||radius<0)return out;
     const rr=radius*radius;
+    const cells=(Math.floor((x+radius)/this.#cellSize)-Math.floor((x-radius)/this.#cellSize)+1)*(Math.floor((y+radius)/this.#cellSize)-Math.floor((y-radius)/this.#cellSize)+1);
+    if(!Number.isSafeInteger(cells)||cells>this.#cells.size*4+16){
+      for(const entry of this.#entries.values())if((entry.x-x)**2+(entry.y-y)**2<=rr)out.push(entry.item);
+      return out;
+    }
     for(let cx=Math.floor((x-radius)/this.#cellSize);cx<=Math.floor((x+radius)/this.#cellSize);cx++){
       for(let cy=Math.floor((y-radius)/this.#cellSize);cy<=Math.floor((y+radius)/this.#cellSize);cy++){
         const cell=this.#cells.get(`${cx},${cy}`);if(!cell)continue;
