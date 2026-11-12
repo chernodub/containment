@@ -17,7 +17,7 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
  if(center.w==3.0||center.w>4.5)width*=1.18;
  vec3 p=viewPosition(uv,depth);
  float edge=0.0,crease=0.0;
- vec3 normal=inkNormal(center.xy);
+ vec3 normal=vec3(0.0,0.0,1.0);if(inkMode>1.5&&!actor)normal=inkNormal(center.xy);
  for(int i=0;i<8;i++) {
   float a=float(i)*.7853981634;
   vec2 offset=vec2(cos(a),sin(a))*inkPixel*width;

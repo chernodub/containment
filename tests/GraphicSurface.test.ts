@@ -38,7 +38,7 @@ describe('graphic material response', () => {
     setGraphicShadingEnabled(false);
     expect(shader.uniforms.graphicEnabled.value).toBe(0);
     setGraphicSurfaceTuning({ rampStrength: .4, actorMipBias: 2, specularGain: .6 });
-    expect((shader.uniforms.graphicResponse.value as T.Vector4).toArray()).toEqual([.4, .6, 2, .45]);
+    expect((shader.uniforms.graphicResponse.value as T.Vector4).toArray()).toEqual([.4, .6, 2, DEFAULT_GRAPHIC_SURFACE_TUNING.actorDetail]);
     expect(material.version).toBe(version);
     expect(material.customProgramCacheKey()).toBe(key);
     material.dispose();
@@ -80,7 +80,7 @@ describe('graphic material response', () => {
     expect(b.fragmentShader.match(/float graphicDiffuseRamp\(/g)).toHaveLength(1);
     expect(a.uniforms.graphicResponse).toBe(b.uniforms.graphicResponse);
     setGraphicSurfaceTuning({ actorMipBias: Infinity, actorDetail: NaN, floorNormalGain: -1, actorNormalGain: 10 });
-    expect((a.uniforms.graphicResponse.value as T.Vector4).toArray()).toEqual([.72, .76, 1.65, .45]);
+    expect((a.uniforms.graphicResponse.value as T.Vector4).toArray()).toEqual([DEFAULT_GRAPHIC_SURFACE_TUNING.rampStrength, DEFAULT_GRAPHIC_SURFACE_TUNING.specularGain, DEFAULT_GRAPHIC_SURFACE_TUNING.actorMipBias, DEFAULT_GRAPHIC_SURFACE_TUNING.actorDetail]);
     expect((a.uniforms.graphicNormalGain.value as T.Vector2).toArray()).toEqual([1, 0]);
     material.dispose(); proxy.dispose();
   });
