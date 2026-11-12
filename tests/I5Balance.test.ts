@@ -63,7 +63,7 @@ function plan(seed: number, node: RunNode) {
 function pressure(seed: number, nodes: readonly RunNode[]) {
   const plans = nodes.map(node => ({node, encounter: plan(seed, node), balance: progressionFor(node)}));
   const entries = plans.flatMap(({node, encounter, balance}) => encounter.schedule.map(spawn => ({spawn, node, balance})));
-  // Match the actual ordinary-room Overdrive eligibility, including named guardians.
+  // Strict ordinary-room classification stays distinct from the broader A3 non-holdout Overdrive cap.
   const ordinaryRoom = ({node, balance}: {node: RunNode; balance: ReturnType<typeof progressionFor>}) =>
     node.id.includes(':v3-') && node.kind === 'combat' && !balance.guardian && ![9, 19].includes(node.depth);
   const ordinaryPlans = plans.filter(ordinaryRoom);
@@ -205,6 +205,7 @@ describe('I5 encounter balance guardrails', () => {
 
   it('holds per-act threat, specialist, elite and tempo budgets over the ten-seed campaign cohort', () => {
     const acts = pressureByAct();
+    console.info(`[A3 encounter budgets] ${JSON.stringify(acts)}`);
     // EHP/contact budgets cover scheduled parents with actual armor and champion promotion.
     // Child reservations are counted separately; runtime Matron broods are not assumed.
     // Contact DPS assumes every attack connects: it is a threat diagnostic, not expected damage.
