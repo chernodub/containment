@@ -16,12 +16,12 @@ export class ArenaStaging {
       shader.vertexShader = 'varying vec3 daisPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ndaisPosition=position;');
       shader.fragmentShader = 'varying vec3 daisPosition;\n' + shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
         float r=length(daisPosition.xz);
-        float groove=smoothstep(.94,.99,abs(sin(r*74.0)));
-        float wedge=smoothstep(.985,1.0,abs(sin(atan(daisPosition.z,daisPosition.x)*12.0)));
-        diffuseColor.rgb*=1.0-groove*.23-wedge*.25;
+        float groove=smoothstep(.985,1.0,abs(sin(r*12.0)));
+        float wedge=smoothstep(.995,1.0,abs(sin(atan(daisPosition.z,daisPosition.x)*4.0)));
+        diffuseColor.rgb*=.74-groove*.08-wedge*.10;
       `);
     };
-    steel.customProgramCacheKey = () => 'queen-reactor-dais-v1';
+    steel.customProgramCacheKey = () => 'queen-reactor-dais-v2-damaged-sectors';
     this.deck = new T.Mesh(new T.CylinderGeometry(1, 1, .16, 64), steel);
     this.deck.receiveShadow = true;
     this.rim = new T.Mesh(new T.TorusGeometry(1, .014, 8, 96), new T.MeshStandardMaterial({color: 0x8c704d, emissive: 0xff9a46, emissiveIntensity: 1.4, roughness: .32, metalness: .6}));
@@ -45,15 +45,19 @@ export class ArenaStaging {
     this.deck.scale.set(radius, 1, radius);
     this.rim.position.y = .045;
     this.rim.scale.setScalar(radius);
+    const hot=new T.Color(0xffd49a),scar=new T.Color(0x261b25);
     for (let i = 0; i < 32; i++) {
       const angle = i * Math.PI / 16;
-      this.dummy.position.set(Math.cos(angle) * (radius + .24), .025, Math.sin(angle) * (radius + .24));
-      this.dummy.rotation.set(0, -angle, 0);
-      this.dummy.scale.set(.18, .035, .56);
+      const consumed=i>7&&i<21,offset=consumed?Math.sin(i*2.7)*.16:0;
+      this.dummy.position.set(Math.cos(angle) * (radius + .24 + offset), .025, Math.sin(angle) * (radius + .24 + offset));
+      this.dummy.rotation.set(0, -angle+(consumed?Math.sin(i)*.38:0), 0);
+      this.dummy.scale.set(consumed?.27:.18, .035, consumed?.82:.56);
       this.dummy.updateMatrix();
       this.vents.setMatrixAt(i, this.dummy.matrix);
+      this.vents.setColorAt(i,consumed?scar:hot);
     }
     this.vents.instanceMatrix.needsUpdate = true;
+    if(this.vents.instanceColor)this.vents.instanceColor.needsUpdate=true;
   }
 
   /** Gentle motivated power fluctuation, held still for reduced motion. */

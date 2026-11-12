@@ -8,6 +8,8 @@ let ready=false,initializing:Promise<void>|undefined;
 export function initDeathPhysics(){return initializing??=RAPIER.init().then(()=>{ready=true;});}
 const GROUPS=0x00020001,STATIC_GROUPS=0x00010002,STEP=1/120;
 export const RAGDOLL_BUDGET={high:6,low:3} as const;
+/** Presentation bounds include solver-generated energy as well as the initial shot impulse. */
+export const RAGDOLL_MAX_SPEED=8,RAGDOLL_MAX_SPIN=12;
 // Authored deformation bones only. IK controls, fingers, antennae and small face
 // bones remain attached to their nearest simulated ancestor. At most 19 bodies.
 const CORE:Record<string,string[]>={crawler:['chest'],stalker:['torso','chest','neck_lo','head'],spitter:['bum','spine2','head'],carrier:['body','body001','body002','head'],brute:['chest','tail','neck','head']};
@@ -26,7 +28,7 @@ function selected(name:string,family:string){
  * Bounds are measured once in the captured bone orientation, in world units.
  */
 function fitSkin(root:T.Object3D,bones:T.Bone[]){
- const fits=new Map(bones.map(b=>[b,{bounds:new T.Box3(),origin:b.getWorldPosition(new T.Vector3()),inverseRotation:b.getWorldQuaternion(new T.Quaternion()).invert()}]));
+ const fits=new Map(bones.map(b=>[b,{bounds:new T.Box3(),origin:b.getWorldPosition(new T.Vector3()),inverseRotation:b.getWorldQuaternion(new T.Quaternion()).normalize().invert()}]));
  root.traverse(o=>{
   if(!(o instanceof T.SkinnedMesh))return;
   const positions=o.geometry.getAttribute('position'),indices=o.geometry.getAttribute('skinIndex'),weights=o.geometry.getAttribute('skinWeight');
@@ -43,7 +45,7 @@ function fitSkin(root:T.Object3D,bones:T.Bone[]){
  return fits;
 }
 type BonePose={bone:T.Bone;position:T.Vector3;rotation:T.Quaternion;scale:T.Vector3;auto:boolean};
-type Part={bone:T.Bone;body:RAPIER.RigidBody;bindRotation:T.Quaternion};
+type Part={bone:T.Bone;body:RAPIER.RigidBody;bindLinear:T.Matrix4};
 type PoseNode={node:T.Object3D;part:Part|undefined};
 type RagdollRecord={model:ActorModel;parts:Part[];hierarchy:PoseNode[];joints:RAPIER.ImpulseJoint[];poses:BonePose[];age:number;settled:boolean;falling:boolean;fallSpeed:number;support:T.Vector3;supportLift:number;rootPosition:T.Vector3;anchor:T.Vector3};
 type Room=Pick<RoomTemplate,'width'|'height'|'obstacles'|'boundary'|'voids'>;
@@ -53,8 +55,9 @@ export class DeathRagdolls {
  private world:RAPIER.World|undefined;
  private records=new Map<number,RagdollRecord>();
  private tier:'high'|'low'='high';private accumulator=0;
- private v=new T.Vector3();private q=new T.Quaternion();private scale=new T.Vector3();private inverse=new T.Matrix4();
+ private q=new T.Quaternion();private inverse=new T.Matrix4();private rigidWorld=new T.Matrix4();
  private elapsedMs=0;private steps=0;private overflow=0;
+ private physicsVelocity={x:0,y:0,z:0};
  setQuality(tier:'high'|'low'){
   this.tier=tier;
   const active=[...this.records.values()].filter(r=>!r.settled);
@@ -130,7 +133,8 @@ export class DeathRagdolls {
   // and family weight while bounding even extreme presentation-only impulses.
   const speed=Math.hypot(velocity.x,velocity.z),scale=Math.min(.25,8/Math.max(speed,.001))/mass,fits=fitSkin(model.root,bones);
   for(const bone of bones){
-   bone.matrixAutoUpdate=true;const position=bone.getWorldPosition(new T.Vector3()),rotation=bone.getWorldQuaternion(new T.Quaternion());
+   const position=bone.getWorldPosition(new T.Vector3()),rotation=bone.getWorldQuaternion(new T.Quaternion()).normalize();
+   const bindLinear=bone.matrixWorld.clone().setPosition(0,0,0);bone.matrixAutoUpdate=false;
    const body=this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(position.x,position.y,position.z).setRotation({x:0,y:0,z:0,w:1}).setAdditionalSolverIterations(16).setCanSleep(true).setCcdEnabled(true).setLinearDamping(.6).setAngularDamping(1.8));
    const bounds=fits.get(bone)!.bounds;
    // Bone-only fixtures and unweighted controls still need finite inertia.
@@ -142,7 +146,7 @@ export class DeathRagdolls {
    // Off-center shot torque tips the body. Limbs subsequently respond to joints,
    // gravity and contacts rather than a canned rotation or independent animation.
    body.setAngvel({x:velocity.z*scale*.1,y:0,z:-velocity.x*scale*.1},true);
-   parts.push({bone,body,bindRotation:rotation});
+   parts.push({bone,body,bindLinear});
   }
   for(const part of parts.slice(1)){
    let parent=part.bone.parent;while(parent&&!parts.some(p=>p.bone===parent))parent=parent.parent;
@@ -166,6 +170,14 @@ export class DeathRagdolls {
   if(active){this.accumulator+=delta;while(this.accumulator+1e-9>=STEP){this.world.timestep=STEP;this.world.step();
    // Contacts and anchors are solved together. Postsolve translations can push
    // otherwise valid skin proxies through the deck without contact resolution.
+   // Narrow fitted limbs can amplify joint-limit impulses into extreme energy.
+   // Bound velocity only; retain every solved contact position and joint anchor.
+   for(const r of this.records.values())for(const p of r.parts){
+    const linear=p.body.linvel(this.physicsVelocity),speed=Math.hypot(linear.x,linear.y,linear.z);
+    if(speed>RAGDOLL_MAX_SPEED){const scale=RAGDOLL_MAX_SPEED/speed;linear.x*=scale;linear.y*=scale;linear.z*=scale;p.body.setLinvel(linear,false);}
+    const angular=p.body.angvel(this.physicsVelocity),spin=Math.hypot(angular.x,angular.y,angular.z);
+    if(spin>RAGDOLL_MAX_SPIN){const scale=RAGDOLL_MAX_SPIN/spin;angular.x*=scale;angular.y*=scale;angular.z*=scale;p.body.setAngvel(angular,false);}
+   }
    this.accumulator-=STEP;this.steps++;}}
   for(const r of this.records.values()){
    if(r.falling){this.fall(r,delta);continue;}if(r.settled)continue;r.age+=delta;this.apply(r);
@@ -198,9 +210,13 @@ export class DeathRagdolls {
    if(p){
     const position=p.body.translation(),rotation=p.body.rotation(),parent=node.parent!;
     this.inverse.copy(parent.matrixWorld).invert();
-    node.position.copy(this.v.set(position.x,position.y,position.z).applyMatrix4(this.inverse));
-    parent.matrixWorld.decompose(this.v,this.q,this.scale);this.q.invert();
-    node.quaternion.set(rotation.x,rotation.y,rotation.z,rotation.w).multiply(p.bindRotation).premultiply(this.q);
+    // Nonuniform fitted skins introduce shear below rotated parents. A TRS
+    // decomposition loses that shear and lets rendered skin escape its fitted
+    // physics proxies. Retain the exact captured linear map under rigid motion.
+    this.rigidWorld.makeRotationFromQuaternion(this.q.set(rotation.x,rotation.y,rotation.z,rotation.w));
+    this.rigidWorld.setPosition(position.x,position.y,position.z);
+    node.matrix.multiplyMatrices(this.inverse,this.rigidWorld).multiply(p.bindLinear);
+    node.matrix.decompose(node.position,node.quaternion,node.scale);
    }
    // Frozen unsimulated bones have matrixAutoUpdate=false, so force their world
    // matrix to follow the already updated parent while retaining their locals.

@@ -4,7 +4,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {registerAsset,type AssetName} from './assets';
 import {alien,freezeCorpse} from './models';
-import {DeathRagdolls,initDeathPhysics} from './DeathRagdolls';
+import {DeathRagdolls,initDeathPhysics,RAGDOLL_MAX_SPEED,RAGDOLL_MAX_SPIN} from './DeathRagdolls';
 beforeAll(async()=>{
  await initDeathPhysics();
  for(const name of ['dretch','basilisk','marauder','dragoon','tyrant'] as AssetName[]){
@@ -46,5 +46,48 @@ for(const family of ['crawler','stalker','spitter','carrier','brute'])for(const 
    if(p.snapshot().active>0)expect(m.root.position.distanceTo(root)).toBeLessThan(1e-8);
   }
   expect(m.root.position.x).toBe(root.x);expect(m.root.position.z).toBe(root.z);
+ }finally{p.dispose();floor.geometry.dispose();}
+});
+
+it('preserves every captured skin vertex under nonuniform fitted/root transforms before physics advances',()=>{
+ const p=new DeathRagdolls();p.setRoom({width:640,height:640,obstacles:[]});
+ const m=alien('carrier');m.root.position.set(5,1,5);m.root.rotation.y=.73;m.root.scale.set(1.3,.85,.7);
+ m.animate(1,1,.4);freezeCorpse(m);m.root.updateMatrixWorld(true);
+ const point=new T.Vector3(),skins:Array<{mesh:T.SkinnedMesh;vertices:Float64Array}>=[];
+ m.root.traverse(o=>{
+  if(!(o instanceof T.SkinnedMesh))return;
+  const vertices=new Float64Array(o.geometry.getAttribute('position').count*3);
+  for(let i=0;i<vertices.length/3;i++){o.getVertexPosition(i,point).applyMatrix4(o.matrixWorld);point.toArray(vertices,i*3);}
+  skins.push({mesh:o,vertices});
+ });
+ try{
+  expect(p.add(1,m,'carrier',{x:0,z:0})).toBe(true);p.update(1e-9);m.root.updateMatrixWorld(true);
+  expect(p.snapshot().steps).toBe(0);
+  let error=0;
+  for(const {mesh,vertices}of skins)for(let i=0;i<vertices.length/3;i++){
+   mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);
+   error=Math.max(error,Math.hypot(point.x-vertices[i*3],point.y-vertices[i*3+1],point.z-vertices[i*3+2]));
+  }
+  expect(error).toBeLessThan(1e-5);
+ }finally{p.dispose();}
+});
+
+it('bounds solver-generated fitted-limb energy without changing contacts or joint anchors',()=>{
+ const p=new DeathRagdolls(),world=new T.Group(),floor=new T.Mesh(new T.BoxGeometry(20,.32,20));
+ floor.position.set(10,-.18,10);world.add(floor);p.setRoom({width:640,height:640,obstacles:[]},world);
+ const m=alien('carrier');m.root.position.set(5,0,5);m.animate(1,1,.4);freezeCorpse(m);
+ expect(p.add(1,m,'carrier',{x:8,z:2})).toBe(true);
+ const root=m.root.position.clone();
+ try{
+  for(let frame=0;frame<180;frame++){
+   p.update(1/60);expect(p.maxJointError(1)).toBeLessThan(.2);
+   const record=(p as unknown as {records:Map<number,{parts:Array<{body:{linvel():{x:number;y:number;z:number};angvel():{x:number;y:number;z:number}}}>}>}).records.get(1)!;
+   for(const {body}of record.parts){
+    const linear=body.linvel(),angular=body.angvel();
+    expect(Math.hypot(linear.x,linear.y,linear.z)).toBeLessThanOrEqual(RAGDOLL_MAX_SPEED+1e-5);
+    expect(Math.hypot(angular.x,angular.y,angular.z)).toBeLessThanOrEqual(RAGDOLL_MAX_SPIN+1e-5);
+   }
+   if(p.snapshot().active>0)expect(m.root.position.distanceTo(root)).toBeLessThan(1e-8);
+  }
  }finally{p.dispose();floor.geometry.dispose();}
 });

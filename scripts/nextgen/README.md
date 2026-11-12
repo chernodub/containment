@@ -481,3 +481,26 @@ snapshots/sample times across builds before comparing total and ability draw
 peaks. It retains per-frame samples and source SHAs. Its instrumented fixed-step
 work is not native CPU/GPU timing and does not replace the strict `npm run bench`
 comparison or hide a failed native result. Run it alone after captures/bench.
+## G4 world, footprint and danger review
+
+`g4-forms-high` / `g4-forms-low` use legal settled inspection marks and clear
+actors/effects after settling; they complement the ordinary `g2-calm-*` entry
+views. `g4-habitation-vignette-high` / `-low` inspect the interrupted meal in the
+actual Communal Atrium assembly. These are staged visual inspections, not play.
+
+`g4-footprints-{brute,carrier,spitter,stalker,crawler}` and their `-low` variants
+place normal/elite pairs just beyond touching collider discs. Brute/Carrier also
+show Warden/Matron. `g4-queen-footprint` uses the Queen's actual radius. The opt-in
+renderer `setColliderDebug` draws presentation rings; it does not change collision.
+Pose/weighted-torso tests provide the broader animation coverage.
+
+`g4-danger-{whiteout,meltdown,napalm-charge}` and their `-low` variants stage
+native friendly casts, incoming Spitter warnings and real hostile projectiles in
+bright Containment. They establish visibility and timing receipts, not organic
+survival or damage balance. Low uses the established renderer quality API.
+
+After capture completes, run `x3-review.mjs` then `g4-review.mjs` with the same
+capture directory. The latter assembles the exact 480×270 PNGs into labeled
+critique pages. Keep native PNGs and burst sheets for full-size review. Serialize
+capture, desktop browser gates and benchmarks; no second capture browser should
+run during a timing trial.

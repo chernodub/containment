@@ -25,13 +25,19 @@ const fragment = `varying vec2 local;varying vec4 data;varying vec4 ink;
 void main(){vec2 p=local;float d=length(p);float edge;float filled;
 if(data.x<1.5){if(d>1.0)discard;
 if(data.x>.5&&abs(atan(p.y,p.x))>data.z*.5)discard;
-edge=1.0-smoothstep(.018,.035,abs(d-.975));
+edge=1.0-smoothstep(.025,.075,abs(d-.94));
 if(data.x>.5){float a=abs(atan(p.y,p.x));edge=max(edge,(1.0-smoothstep(.014,.035,abs(a-data.z*.5)))*smoothstep(.12,.25,d));}
 filled=1.0-smoothstep(data.y-.018,data.y+.018,d);
 }else if(data.x<2.5){edge=1.0-smoothstep(.92,.99,max(abs(p.x),abs(p.y)));edge=1.0-edge;filled=1.0-smoothstep(data.y*2.0-1.02,data.y*2.0-.98,p.x);}
 else{float r=.02+data.y*.955;float wave=abs(d-r);if(d>1.0)discard;edge=1.0-smoothstep(.012,.055,wave);filled=0.0;}
-float a=(edge*.72+filled*.14)*data.w;if(a<.005)discard;
-gl_FragColor=vec4(ink.rgb,a*ink.a);
+float hatch=step(.58,fract((p.x+p.y)*10.0-data.y*2.0));
+float timing=1.0-smoothstep(.012,.035,abs(d-data.y*.88));
+float danger=max(edge,max(timing*.8,hatch*(.14+filled*.14)));
+// Dark opaque backing is part of the same draw, so friendly additive effects
+// cannot turn the warning into pale orange on clinical or frozen floors.
+vec3 warning=mix(vec3(.012,.008,.010),ink.rgb*(1.15+edge*.35),danger);
+float a=(.92+edge*.08)*data.w;if(a<.005)discard;
+gl_FragColor=vec4(warning,a*ink.a);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`;
@@ -54,10 +60,11 @@ export class TelegraphBatch {
     geometry.setAttribute('telegraph', this.shapes);
     geometry.setAttribute('appearance', this.inks);
     const material = new T.ShaderMaterial({ vertexShader: vertex, fragmentShader: fragment,
-      transparent: true, depthWrite: false, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
+      transparent: true, depthWrite: false, depthTest:false, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
     this.mesh = new T.InstancedMesh(geometry, material, capacity);
     this.mesh.name = 'ground-telegraphs';
-    // Hostile timing fills must remain above all friendly ground decoration.
+    // Keep the public world-batch order above friendly ground boundaries (18).
+    // Active combat warnings use AttackEffects in the post-HDR priority scene.
     this.mesh.renderOrder = 20;
     this.mesh.frustumCulled = false;
     this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);

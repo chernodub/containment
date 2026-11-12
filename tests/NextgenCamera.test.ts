@@ -1,6 +1,7 @@
 import {beforeAll, describe, expect, it, vi} from 'vitest';
 import * as T from 'three';
 import {CameraRig, CAMERA_OFFSET_Y, CAMERA_OFFSET_Z} from '../src/render/camera/CameraRig';
+import {COMBAT_VIEW_HEIGHT} from '../src/render/camera/CombatFraming';
 import {DepthRenderer} from '../src/render/DepthRenderer';
 import {EnemyHealthBars, healthBarColor} from '../src/render/EnemyHealthBars';
 import {roomFocus} from '../src/render/roomFraming';
@@ -23,7 +24,7 @@ const projections: Projection[] = ['orthographic', 'perspective'];
 
 /** Real renderer projection methods, without creating a WebGL context. */
 function rendererProbe(projection: Projection, width: number, height: number) {
-  const viewHeight = height > width ? 18 : 13;
+  const viewHeight = height > width ? 18 : COMBAT_VIEW_HEIGHT;
   const viewWidth = viewHeight * width / height;
   const camera = projection === 'perspective'
     ? new T.PerspectiveCamera(28, width / height, .1, 160)
@@ -265,7 +266,7 @@ it('uses actual renderer resize and projection switching across all authored-roo
       for (const [width, height] of desktopSizes) {
         viewport.innerWidth = probe.rect.width = width;
         viewport.innerHeight = probe.rect.height = height;
-        const viewHeight = height > width ? 18 : 13;
+        const viewHeight = height > width ? 18 : COMBAT_VIEW_HEIGHT;
         for (const projection of projections) {
           probe.renderer.setCameraProjection(projection);
           probe.renderer.resize();
@@ -326,7 +327,7 @@ describe('perspective enemy health labels', () => {
   });
 });
 
-it.each(projections)('puts the production marine in the 110–140px target for ordinary aiming poses with %s', projection => {
+it.each(projections)('puts the production marine in the 105–125px target for ordinary aiming poses with %s', projection => {
   const model = marine();
   const {camera, rig, viewHeight} = rendererProbe(projection, 1920, 1080);
   expect(model.height).toBeCloseTo(2.05, 5);
@@ -338,8 +339,8 @@ it.each(projections)('puts the production marine in the 110–140px target for o
     for (const angle of [0, Math.PI / 2]) {
       model.animate(0, 0, angle);
       const height = marineSilhouetteHeight(model, camera, 1080);
-      expect(height).toBeGreaterThanOrEqual(110);
-      expect(height).toBeLessThanOrEqual(140);
+      expect(height).toBeGreaterThanOrEqual(105);
+      expect(height).toBeLessThanOrEqual(125);
     }
   } finally {
     model.stop?.(); disposeModel(model.root);

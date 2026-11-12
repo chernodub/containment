@@ -24,11 +24,13 @@ it('retains the exact 40-segment hazard footprint, ground transform and single d
  expect(mesh.material.transparent).toBe(true);expect(mesh.material.depthWrite).toBe(false);expect(mesh.material.side).toBe(T.FrontSide);
  expect(mesh.material.map).toBeNull();expect(mesh.castShadow).toBe(false);
 });
-it('adds procedural mottling and bounded ripple detail to RGB only, retaining standard output',()=>{
+it('adds bounded wet detail and a lifetime-faded dark rim without altering hazard geometry',()=>{
  const r=fixture();r.syncPools([pool]);const mesh=r.poolMeshes.get(pool.id)!,shader=shaderFor(mesh);
  expect(shader.fragmentShader).toContain('acidNoise');expect(shader.fragmentShader).toContain('acidRipple');
  expect(shader.fragmentShader).toContain('diffuseColor.rgb *=');
- expect(shader.fragmentShader).not.toMatch(/discard|diffuseColor\.a\s*[*=]/);
+ expect(shader.fragmentShader).not.toContain('discard');
+ expect(shader.fragmentShader).toContain('acidRim*min(1.0,diffuseColor.a*3.2)');
+ for(const opacity of [0,.03,.15,.3]){const rimAlpha=Math.max(opacity,Math.min(1,opacity*3.2));expect(rimAlpha).toBeGreaterThanOrEqual(opacity);expect(rimAlpha).toBeLessThanOrEqual(1);if(opacity===0)expect(rimAlpha).toBe(0);}
  expect(shader.vertexShader).toContain('#include <begin_vertex>');expect(shader.vertexShader).not.toMatch(/transformed\s*[+*=]/);
  for(const chunk of ['fog_fragment','tonemapping_fragment','colorspace_fragment','opaque_fragment'])expect(shader.fragmentShader).toContain(`#include <${chunk}>`);
  expect(mesh.material.customProgramCacheKey()).not.toBe(new T.MeshBasicMaterial().customProgramCacheKey());

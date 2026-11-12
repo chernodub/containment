@@ -4,7 +4,7 @@ import * as T from 'three';
 export class AcidPoolMaterial extends T.MeshBasicMaterial {
  readonly surfaceTime={value:0};
  constructor(id:number){
-  super({color:0x99cf56,transparent:true,opacity:.3,depthWrite:false});
+  super({color:0x99cf56,transparent:true,opacity:.72,depthWrite:false});
   this.name='acid-pool-surface';
   const seed={value:(id%997)*.137};
   this.onBeforeCompile=shader=>{
@@ -40,8 +40,11 @@ export class AcidPoolMaterial extends T.MeshBasicMaterial {
     float acidInterior=1.0-smoothstep(0.82,0.98,length(acidP));
     float acidWet=mix(1.0,clamp(0.38+acidMottle*0.85+acidFilm*0.25+acidDetail,0.38,1.60),acidInterior);
     diffuseColor.rgb *= acidWet;
+    float acidRim=smoothstep(.82,.94,length(acidP));
+    diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.018,.027,.012),acidRim);
+    diffuseColor.a=max(diffuseColor.a,acidRim*min(1.0,diffuseColor.a*3.2));
    `);
   };
  }
- override customProgramCacheKey(){return 'acid-pool-surface-v2';}
+ override customProgramCacheKey(){return 'acid-pool-surface-v3-dark-rim';}
 }

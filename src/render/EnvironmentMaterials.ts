@@ -24,7 +24,7 @@ export class EnvironmentMaterials {
    texture.flipY=false;texture.anisotropy=Math.min(8,anisotropy);if(kind==='albedo')texture.colorSpace=T.SRGBColorSpace;
    this.textures.push(texture);return texture;
   };
-  const arm=finish('arm');this.floor=new T.MeshStandardMaterial({map:finish('albedo'),normalMap:finish('normal'),roughnessMap:arm,metalnessMap:arm,metalness:.28,roughness:1,normalScale:new T.Vector2(.055,.055)});this.floor.name='environment-floor';applyFloorVariation(this.floor,'cryogenics');this.wall=surface('concrete',0);this.cover=surface('metal_plate',.35);
+  const arm=finish('arm');this.floor=new T.MeshStandardMaterial({map:finish('albedo'),normalMap:finish('normal'),roughnessMap:arm,metalnessMap:arm,metalness:.28,roughness:1,normalScale:new T.Vector2(.035,.035)});this.floor.name='environment-floor';applyFloorVariation(this.floor,'cryogenics');this.wall=surface('concrete',0);this.cover=surface('metal_plate',.35);
  }
  theme(act:number){this.floor.roughness=1;this.floor.color.setHex([0xe0e9eb,0xd8eced,0xe5e5de][act]);this.wall.color.setHex([0xc9d1d5,0xc6dee0,0xc6cebe][act]);this.cover.color.setHex([0xd6cbb8,0xc4d9de,0xd0c9b7][act]);}
  shipTheme(environment:ShipEnvironment){
@@ -33,7 +33,7 @@ export class EnvironmentMaterials {
    security:[0x646d70,0x697b82,0x7e8b8d],cargo:[0x7a7e77,0x879397,0xa49c85],
    communications:[0x526b75,0x627b8b,0x77929a],engineering:[0x7d817a,0x9c9a87,0xa7a591],
    maintenance:[0x697b79,0x77918b,0x9b9d88],infested:[0x626e66,0x718478,0x8d8b77],
-   containment:[0x75858b,0xa0afb0,0xa9b7b5],reactor:[0x4e6771,0x7a929b,0xa6b3b1],
+   containment:[0x606c73,0xa0afb0,0xa9b7b5],reactor:[0x4e6771,0x7a929b,0xa6b3b1],
   };
   this.floor.roughness=getEnvironmentMood(environment).floorRoughness;applyFloorVariation(this.floor,environment);
   const [floor,wall,cover]=palette[environment];this.floor.color.setHex(floor);this.wall.color.setHex(wall);this.cover.color.setHex(cover);

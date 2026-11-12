@@ -2,8 +2,9 @@ import * as T from 'three';
 import {box,MAT} from './meshParts';
 import {applyOwnedEquipmentPalette,RESIDENTIAL_FINISHES} from './RoomEquipmentPalette';
 import type {Footprint} from './ShipEnvironments';
+import {industrialBevel} from './world/IndustrialFormKit';
 
-/** Room3 layout experiment. Low cutaway masses, not finished cabin equipment.
+/** Room3 cutaway cabin and abandoned packing equipment.
  * Heights in renderer metres: cabin 1.35, bunk/storage 1.10, packing 1.20.
  * The filled storage bases explain collision without inviting entry into a recess.
  */
@@ -19,7 +20,7 @@ export function residentialGalleryBlockout(f:Footprint,index:number):T.Group{
  };
  // Normalized plan coordinates keep every part inside the existing reservation.
  const b=(name:string,x:number,z:number,width:number,depth:number,bottom:number,height:number,material:T.Material)=>{
-  const mesh=box(parts,x*w,bottom+height/2,z*d,width*w,height,depth*d,owned(material),0);mesh.name=name;return mesh;
+  const mesh=box(parts,x*w,bottom+height/2,z*d,width*w,height,depth*d,owned(material),industrialBevel(width*w,height,depth*d));mesh.name=name;return mesh;
  };
  if(index===0||index===2){
   // Backed, roofless cutaway cabin fronts: solid depth, end cheeks and closed south-facing doors.
@@ -30,6 +31,8 @@ export function residentialGalleryBlockout(f:Footprint,index:number):T.Group{
    b('door-recess',x,.999,.012,.002,.1,1.04,MAT.rubber);
    b('threshold',x,.969,.31,.058,0,.12,MAT.edge);
    b('cutaway-lintel',x,.96,.33,.076,1.24,.11,MAT.edge);
+   b('door-inset-panel',x,.999,.19,.002,.29,.68,MAT.steel);
+   b('door-latch',x+.079,.999,.016,.002,.56,.21,MAT.edge);
   }
   for(const x of [.018,.982])b('cabin-end',x,.5,.032,.996,0,1.35,MAT.armor);
  }else if(index===1){
@@ -37,6 +40,8 @@ export function residentialGalleryBlockout(f:Footprint,index:number):T.Group{
   // One human-sized empty mattress near the north opening, storage fills the deep rear.
   b('empty-mattress',.35,.205,.30,.35,.56,.16,MAT.armor);
   b('pillow',.35,.345,.25,.055,.72,.09,MAT.edge);
+  b('abandoned-folded-cover',.35,.15,.26,.12,.72,.04,MAT.rubber);
+  b('cover-fold',.35,.17,.26,.015,.76,.012,MAT.edge);
   b('bedside-storage',.79,.205,.414,.406,.56,.3,MAT.edge);
   for(let n=0;n<3;n++)b('rear-locker', (n+.5)/3,.705,.326,.586,.56,.44,MAT.armor);
   for(const x of [.025,.975])b('alcove-cheek',x,.5,.046,.996,.56,.54,MAT.steel);
@@ -46,6 +51,7 @@ export function residentialGalleryBlockout(f:Footprint,index:number):T.Group{
   b('packing-storage-base',.5,.5,.996,.996,0,.4,MAT.steel);
   for(let x=1;x<3;x++)for(let z=0;z<2;z++){
    b('packed-trunk',.17+x*.33,.15+z*.29,.28,.276,.4,.42+(x+z)%2*.14,MAT.armor);
+   for(const side of [-1,1])b('trunk-integral-rib',.17+x*.33+side*.095,.15+z*.29,.018,.27,.4,.42+(x+z)%2*.14,MAT.edge);
   }
   // Loaded trolley on the north-west packing base; wheels, deck and broad end handle.
   for(const x of [.10,.34])for(const z of [.10,.40])b('trolley-wheel',x,z,.035,.055,.4,.12,MAT.rubber);

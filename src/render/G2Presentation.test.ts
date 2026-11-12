@@ -1,6 +1,6 @@
 import {describe,it,expect,vi} from 'vitest';
 import * as T from 'three';
-import {TitlePresentation} from './world/TitlePresentation';
+import {TitlePresentation,TITLE_STAGE} from './world/TitlePresentation';
 import {addExitSignal,updateExitSignal} from './world/ExitSignal';
 import {SceneLighting} from './SceneLighting';
 import {ROOM_COMPOSITIONS} from './lighting/RoomCompositions';
@@ -20,6 +20,19 @@ describe('G2 cinematic and room presentation',()=>{
   title.apply(camera,0,true);const matrix=camera.matrixWorld.clone();title.apply(camera,900,true);expect(camera.matrixWorld.equals(matrix)).toBe(true);
   const disposals:Array<ReturnType<typeof vi.fn>>=[];title.root.traverse(o=>{if(o instanceof T.Mesh){const f=vi.fn();o.geometry.addEventListener('dispose',f);disposals.push(f);}});
   expect(disposals.length).toBeLessThanOrEqual(6);title.dispose();title.dispose();for(const dispose of disposals)expect(dispose).toHaveBeenCalledOnce();
+ });
+ it('layers a foreground marine against a creature partially hidden between real pod casings',()=>{
+  const title=new TitlePresentation(),camera=new T.PerspectiveCamera(28,16/9,.1,160);title.apply(camera,0,true);title.root.visible=true;title.root.updateWorldMatrix(true,true);
+  const m=TITLE_STAGE.marine,c=TITLE_STAGE.creature;
+  expect(m.z-c.z).toBeGreaterThan(5);expect(m.angle).toBeLessThan(-.9);
+  const hero=new T.Vector3(m.x,1.8,m.z).project(camera);expect(hero.x).toBeGreaterThan(.15);expect(hero.x).toBeLessThan(.95);
+  const ray=new T.Raycaster();let revealed=0,hidden=0;
+  for(const dx of [-1,-.5,0,.5,1])for(const y of [.6,1.4,2.2]){
+   const target=new T.Vector3(c.x+dx,y,c.z),distance=camera.position.distanceTo(target);ray.set(camera.position,target.sub(camera.position).normalize());ray.far=distance-.02;
+   if(ray.intersectObject(title.root,true).length)hidden++;else revealed++;
+  }
+  expect(hidden).toBeGreaterThan(0);expect(revealed).toBeGreaterThan(0);expect(hidden).toBeGreaterThan(revealed);
+  title.dispose();
  });
  it('authors a finite distinct composition for every story beat',()=>{
   const ideas=new Set<string>();for(const room of ROOM_STORY_ROUTE){const c=ROOM_COMPOSITIONS[room.templateId];expect(c).toBeDefined();expect(c.keyOffset.every(Number.isFinite)).toBe(true);expect(c.keyGain).toBeGreaterThan(.4);expect(c.keyGain).toBeLessThan(2.5);ideas.add(c.idea);}expect(ideas.size).toBe(20);

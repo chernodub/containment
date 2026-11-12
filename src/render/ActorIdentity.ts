@@ -113,8 +113,12 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
     // The vulnerable organ sits underneath a split, articulated crown. All
     // states live in this one geometry; opening changes uniforms only.
     detail('core',0,h*.80,0,s*.10,h*.09,s*.18,3,false);
-    for(const side of [-1,1])for(let i=0;i<4;i++)detail('plate',side*s*.105,h*(.84-i*.014),s*(.18-i*.12),s*.095,h*.09,s*.084,5,false);
-    for(let i=0;i<5;i++)detail('spine',(i-2)*s*.045,h*(.88+(.07-Math.abs(i-2)*.02)),s*.06,s*.012,h*.04,s*.018,2,false);
+    for(const side of [-1,1])for(let i=0;i<4;i++)detail('plate',side*s*.15,h*(.815-i*.022),s*(.20-i*.15),s*.145,h*.12,s*.12,5,false);
+    // A swept, five-point diadem and low egg abdomen change the outline even
+    // while the original Tyrant skin remains in complete shadow.
+    for(let i=0;i<5;i++)detail('spine',(i-2)*s*.058,h*(1.02+(.17-Math.abs(i-2)*.055)),s*.18,s*.023,h*(.13-Math.abs(i-2)*.02),s*.045,2,false);
+    detail('sac',0,h*.51,-s*.29,s*.24,h*.25,s*.23,7,false);
+    for(const side of [-1,1])for(let i=0;i<3;i++)detail('plate',side*s*.18,h*.60,-s*(.17+i*.10),s*.07,h*.09,s*.085,2,false);
     // Low vascular tendons keep the hinged carapace rooted into the torso.
     for(const side of [-1,1])for(let i=0;i<3;i++)detail('plate',side*s*.135,h*.70,s*(.12-i*.12),s*.035,h*.12,s*.055,2,false);
   } else if(kind==='stalker') {
@@ -128,7 +132,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   // Champion overhead crest is built and prewarmed even on ordinary actors.
   for(const side of [-1,1])detail('spine',side*s*.055,h*1.16,0,s*.018,h*.045,s*.018,6,false);
   detail('spine',0,h*1.23,0,s*.025,h*.065,s*.025,6,false);
-  const mesh=new T.Mesh(identityGeometry(`i7-identity-hinged-chitin:${kind}:${elite}`,parts,root),new T.ShaderMaterial({
+  const mesh=new T.Mesh(identityGeometry(`g4-identity-mantle-brood:${kind}:${elite}`,parts,root),new T.ShaderMaterial({
     uniforms:{identityColor:{value:new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler)},identityStageLight:{value:1},identityPulse:{value:1},identityTime:{value:0},identityShimmer:{value:kind==='stalker'?1:0},identityElite:{value:elite||kind==='queen'?1:0},identityChampion:{value:0},identityExposed:{value:0},identityOpening:{value:0},identitySpan:{value:span},identityHeight:{value:height},identityAlpha:{value:1},identityDeath:{value:0}},
     vertexShader:`
       attribute float identityRole;attribute float identitySide;attribute vec3 identityAnchor;
@@ -154,7 +158,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
       varying vec3 identityNormal;varying vec3 identityView;varying vec3 identityLocal;varying float role;
       void main(){
         if(role>.5&&role<1.5&&identityElite<.5)discard;
-        if(role>5.5&&identityChampion<.5)discard;
+        if(role>5.5&&role<6.5&&identityChampion<.5)discard;
         if(identityDeath>=1.0)discard;
         float facing=abs(dot(normalize(identityNormal),normalize(identityView)));
         vec3 color=identityColor;
@@ -176,7 +180,8 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
           color+=vec3(.10,.13,.18)*ridge*.36;
           color+=vec3(.65,.025,.20)*edge*identityOpening*.36;
         }
-        if(role>5.5){color=identityChampion>1.5?vec3(1.0,.26,.64):vec3(1.0,.70,.23);light=.9+facing*.7;}
+        if(role>5.5&&role<6.5){color=identityChampion>1.5?vec3(1.0,.26,.64):vec3(1.0,.70,.23);light=.9+facing*.7;}
+        if(role>6.5){color=mix(vec3(.12,.065,.10),vec3(.30,.16,.23),facing);light=.55+facing*.65+identityOpening*.20;}
         if(role<.5)light*=identityPulse*(1.0+identityShimmer*.3*sin(identityTime*5.0+identityView.y*8.0));
         light*=.75+identityAlpha*.25;
         gl_FragColor=vec4(color*light*identityStageLight,1.0);
@@ -185,6 +190,12 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
       }`,
   }));
   mesh.name=`${kind}-identity`;mesh.material.userData.actorMaterial=true;mesh.castShadow=false;mesh.receiveShadow=false;
+  // Box3's precise path includes invisible meshes. A dead attachment must not
+  // become a hidden support point when the skin is fitted to its ragdoll.
+  // Keep the mesh/material root-owned for exact disposal; borrow an empty
+  // session geometry until the same pooled rig is restored.
+  const liveGeometry=mesh.geometry;
+  const retiredGeometry=geometry('g4-retired-identity-empty',()=>new T.BufferGeometry().setAttribute('position',new T.Float32BufferAttribute([],3)));
   root.add(mesh);
   // Preserve root-space authored proportions while attaching to the animated torso.
   const chest=root.getObjectByName(kind==='carrier'?'body':'chest')??root.getObjectByName('torso');
@@ -194,7 +205,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
     mesh,
     update(time:number,windup:number,champion:string|undefined,exposed:boolean,alpha:number,dead:boolean){
       // Death already discards every fragment; skip the empty draw entirely.
-      mesh.visible=!dead;
+      mesh.visible=!dead;mesh.geometry=dead?retiredGeometry:liveGeometry;
       const u=mesh.material.uniforms;
       u.identityTime.value=time;u.identityPulse.value=dead?.18:1+Math.sin(time*2.7)*.06+Math.max(0,Math.min(1,windup))*1.2;
       u.identityChampion.value=champion==='warden'?1:champion==='matron'?2:0;
@@ -203,7 +214,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
       opening=T.MathUtils.damp(opening,exposed?1:0,12,dt);
       u.identityOpening.value=opening;u.identityExposed.value=exposed?1:0;u.identityAlpha.value=alpha;u.identityDeath.value=dead?1:0;
     },
-    reset(){previous=undefined;opening=0;mesh.visible=true;const u=mesh.material.uniforms;u.identityOpening.value=0;u.identityStageLight.value=1;u.identityPulse.value=1;u.identityElite.value=elite||kind==='queen'?1:0;u.identityChampion.value=0;u.identityExposed.value=0;u.identityAlpha.value=1;u.identityDeath.value=0;},
+    reset(){previous=undefined;opening=0;mesh.visible=true;mesh.geometry=liveGeometry;const u=mesh.material.uniforms;u.identityOpening.value=0;u.identityStageLight.value=1;u.identityPulse.value=1;u.identityElite.value=elite||kind==='queen'?1:0;u.identityChampion.value=0;u.identityExposed.value=0;u.identityAlpha.value=1;u.identityDeath.value=0;},
   };
 }
 
