@@ -179,6 +179,7 @@ export class ElementKit {
         s.color = color;
         s.opacity = opacity;
         s.progress = progress;
+        this.rings.priorityWeight = this.priorityWeight;
         this.rings.add(s);
     }
     beam(x: number, y: number, z: number, tx: number, ty: number, tz: number, color: number, width = .035, life = .22, lightning = true, delay = 0): void {
@@ -420,6 +421,7 @@ export class ElementKit {
             s.color = p.color;
             s.progress = p.reverse ? 1 - p.age / p.life : p.age / p.life;
             s.opacity = (1 - p.age / p.life) * .65 * this.flashIntensity;
+            this.rings.priorityWeight = Math.max(0, Math.min(1, (p.age - .25) / .12));
             this.rings.add(s);
         }
         for (const p of this.beams) {

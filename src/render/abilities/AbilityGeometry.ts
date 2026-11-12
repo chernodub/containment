@@ -66,6 +66,8 @@ export class AbilityGeometry {
     private readonly footprint: Telegraph = { shape: 'circle', x: 0, z: 0, progress: 1 };
     private readonly link: EnergyRibbon = { start: new T.Vector3(), end: new T.Vector3(), lightning: false };
     protected ownsLinkPresentation = true;
+    /** Rich rig modules can own surfaces while this layer retains exact boundaries. */
+    protected ownsZonePresentation = false;
     private nextEvent = 0;
     private time = 0;
     private reducedMotion = false;
@@ -73,6 +75,7 @@ export class AbilityGeometry {
     constructor(scene: T.Object3D) {
         // Retained debug inventory name keeps the existing capture evidence contract working.
         this.root.name = 'interim-ability-visuals';
+        this.telegraphs.priorityWeight = 0;
         // Interim footprints mark boundaries while preserving the authored deck and hostile silhouettes.
         for (const material of Object.values(this.zoneMaterials))
             material.uniforms.strength.value = 1;
@@ -225,6 +228,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
                 this.circleFootprint(ex, ez, radius, COLORS[zone.element]);
             }
         }
+        if (this.ownsZonePresentation) for (const slot of this.zones) slot.body.visible = slot.start.visible = slot.end.visible = false;
         for (let i = 0; i < this.deployables.length; i++) {
             const slot = this.deployables[i], entity = snapshot?.deployables[i];
             slot.wall.visible = slot.pylon.visible = false;

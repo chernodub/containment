@@ -28,6 +28,7 @@ export class AbilityVisuals extends AbilityGeometry {
         super(scene);
         // Arc owns elevated energy links; standalone geometry retains its snapshot contract.
         this.ownsLinkPresentation = false;
+        this.ownsZonePresentation = true;
         this.register('breacher', createBreacherPresentation);
         this.register('cryo', createCryoPresentation);
         this.register('pyro', createPyroPresentation);

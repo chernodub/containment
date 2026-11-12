@@ -33,6 +33,16 @@ describe('friendly ability readability contracts', () => {
     attacks.dispose(); hostile.dispose(); visuals.dispose();
   });
 
+
+  it('keeps exact sustained boundaries without duplicate large ground quads beneath rig surfaces', () => {
+    const visuals = new AbilityVisuals(new T.Group());
+    visuals.update({rig:'pyro', slots:null, zones:[{id:1,ability:'napalm-charge',element:'pyro',shape:'circle',x:96,y:128,radius:120,x2:0,y2:0,width:0,durationMs:6000,remainingMs:4000,attached:false}], deployables:[],overdrive:{active:false,ready:false,charge:0,activeRemainingMs:0},invulnerable:false,dashing:false,hostileTimeScale:1},0);
+    let boundaries=0, groundSurfaces=0;
+    visuals.root.traverseVisible(n=>{if(!(n instanceof T.Mesh))return;const m=n.material as T.ShaderMaterial;if(m.userData.friendlyBoundary&&n instanceof T.InstancedMesh)boundaries+=n.count;if(m.uniforms?.kind)groundSurfaces++;});
+    expect(boundaries).toBeGreaterThan(0);expect(groundSurfaces).toBe(0);
+    expect(visuals.kit.batches.decal.mesh.count).toBe(1);visuals.dispose();
+  });
+
   it('freezes friendly dash rotation for reduced motion and preserves exact shapes', () => {
     const b = new FriendlyBoundaryBatch(new T.Group(), 4);
     b.setTime(4, false); expect((b.mesh.material as T.ShaderMaterial).uniforms.boundaryTime.value).toBe(4);

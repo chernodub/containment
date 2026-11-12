@@ -495,3 +495,7 @@ for(const rig of ['breacher','cryo','arc']){
   if(placed!==5)throw Error('I7 pickup overlap placement incomplete');d.refresh();
  })();`)});
 }
+
+// V4 adds matched friendly-yield overlaps without changing any existing scenario.
+import { registerV4Scenarios } from './v4-scenarios.mjs';
+registerV4Scenarios(SCENARIOS);

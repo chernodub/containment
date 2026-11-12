@@ -1,5 +1,5 @@
 import * as T from 'three';
-import { TelegraphBatch } from '../vfx/TelegraphBatch';
+import { TelegraphBatch, type Telegraph } from '../vfx/TelegraphBatch';
 
 /** Ground decoration is submitted before hostile timing fills, regardless of camera depth. */
 export const FRIENDLY_GROUND_ORDER = 2;
@@ -7,8 +7,12 @@ export const FRIENDLY_BOUNDARY_ORDER = 3;
 
 /** Exact hit shapes with open interiors, rotating dashes and cyan-white ownership ticks. */
 export class FriendlyBoundaryBatch extends TelegraphBatch {
+  priorityWeight = 1;
+  private readonly priority: T.InstancedBufferAttribute;
   constructor(root: T.Object3D, capacity: number) {
     super(root, capacity);
+    this.priority = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
+    this.mesh.geometry.setAttribute('abilityPriority', this.priority);
     const material = this.mesh.material as T.ShaderMaterial;
     material.name = 'friendly-ability-boundary';
     material.userData.friendlyBoundary = true;
@@ -35,6 +39,13 @@ void main(){
 }`;
     this.mesh.renderOrder = FRIENDLY_BOUNDARY_ORDER;
     this.mesh.userData.friendlyBoundary = true;
+  }
+
+  override set(slot: number, effect: Telegraph): void {
+    super.set(slot, effect);
+    if (slot < 0 || slot >= this.capacity) return;
+    this.priority.setX(slot, this.priorityWeight);
+    this.priority.needsUpdate = true;
   }
 
   setTime(time: number, reducedMotion: boolean): void {
