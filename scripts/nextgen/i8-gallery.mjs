@@ -9,7 +9,9 @@ const read=async path=>JSON.parse(await readFile(path,'utf8'));
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function png(path){return decode(await readFile(path));}
 if(mode==='review'){
- const manifest=await read(resolve(root,'manifest.json'));await mkdir(resolve(root,'review-sheets'),{recursive:true});
+ const manifest=await read(resolve(root,'manifest.json'));
+ const indexPath=resolve(root,'index.html'),index=await readFile(indexPath,'utf8');await writeFile(indexPath,index.replace('href="compare-baseline.html"',`href="${basename(root)==='final2-720'?'../final2/compare.html':'compare.html'}"`));
+ await mkdir(resolve(root,'review-sheets'),{recursive:true});
  for(let start=0;start<manifest.shots.length;start+=40){
   const shots=manifest.shots.slice(start,start+40),sheet=canvas(480*4,294*Math.ceil(shots.length/4));
   for(const [i,s]of shots.entries()){
@@ -24,20 +26,20 @@ if(mode==='review'){
  const originals=resolve('/Users/chernodub/.t3/projects/containment-game/artifacts/nextgen/baseline');
  const previous=resolve('/Users/chernodub/.t3/projects/containment-game/artifacts/nextgen/final');
  const rooms=['awakening-bay','communal-atrium','armory','relay-racks','infested-workshop','containment-annulus','overload-floor'];
- const views=['title','starting-boon','route','results',...rooms.flatMap(r=>[`combat-calm-${r}`,`combat-heavy-${r}-02`]),'boss-reactor-vault-02'];
+ const views=['title','starting-boon','route','results',...rooms.flatMap(r=>[`combat-calm-${r}`,`combat-heavy-${r}-02`]),'combat-calm-reactor-vault','boss-reactor-vault-02'];
  const sources=[{name:'Original baseline',path:originals},{name:'Previous final',path:previous},{name:'I8 final2',path:root}];
  const sheet=canvas(480*3,300*(views.length+1));sources.forEach((s,i)=>drawText(sheet,s.name,i*480+8,10,[216,233,238],2));
  const records=[],rows=[];await mkdir(resolve(root,'comparison-sources'),{recursive:true});
  for(const [row,v]of views.entries()){
   const cells=[];
   for(const [column,s]of sources.entries()){
-   const file=v+'.png',actualFile=v==='results'&&column===0?'dead.png':file,source=resolve(s.path,actualFile),relative=`comparison-sources/${column}-${file}`;let bytes;
+   const file=v+'.png',actualFile=v==='results'&&column===0?'dead.png':v==='combat-calm-reactor-vault'&&column<2?'boss-reactor-vault-01.png':file,note=actualFile===file?null:v==='results'?'Original gallery has no results capture; its original death screen is shown.':'This historical gallery has no calm boss capture; its original boss arrival frame is shown.',source=resolve(s.path,actualFile),relative=`comparison-sources/${column}-${file}`;let bytes;
    try{bytes=await readFile(source);}catch(error){throw Error(`Required comparison counterpart absent: ${source}`,{cause:error});}
    await writeFile(resolve(root,relative),bytes);
-   drawText(sheet,actualFile!==file?v+' (ORIGINAL DEATH VIEW)':v,column*480+4,(row+1)*300+4,[216,233,238],1);
+   drawText(sheet,actualFile!==file?v+' (HISTORICAL SUBSTITUTE)':v,column*480+4,(row+1)*300+4,[216,233,238],1);
    drawImage(sheet,decode(bytes),column*480,(row+1)*300+24,480,270);
-   records.push({view:v,generation:s.name,source,requestedView:v,actualFile,substitution:actualFile!==file?'Original gallery has no results screen; its native death screen is shown explicitly.':null,file:relative,sha256:createHash('sha256').update(bytes).digest('hex')});
-   cells.push(`${actualFile!==file?'<p>Original death screen (results view was not captured)</p>':''}<a href="${relative}"><img loading="lazy" src="${relative}" alt="${escape(s.name+' '+v)}"></a>`);
+   records.push({view:v,generation:s.name,source,requestedView:v,actualFile,substitution:note,file:relative,sha256:createHash('sha256').update(bytes).digest('hex')});
+   cells.push(`${note?'<p>'+escape(note)+'</p>':''}<a href="${relative}"><img loading="lazy" src="${relative}" alt="${escape(s.name+' '+v)}"></a>`);
   }
   rows.push(`<section><h2>${escape(v)}</h2><div>${cells.join('')}</div></section>`);
  }
