@@ -38,18 +38,16 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 
 | Stream | State | Notes |
 |---|---|---|
-| Waves 0–3 (W0, A1, U1, G1, S2, U2, V2, G2, V3, P1, F2, D1, R1/R2/R4/R5 reviews, X1–X3 fixes, I1a…I7 integrations) | merged | `nextgen` @ d8f9d45: 2984 tests, smokes, 20/20 authored rooms, bot campaigns for all four rigs; final gallery `artifacts/nextgen/final/` |
-| R6 second independent verdict | done | 6/7/4/5/5/5 — "advanced prototype visually, polished-indie UI"; see `reviews/R6-verdict.md` |
-| Lead benchmark on final build (2026-11-12) | done | High: frame p50 33 ms / p95 42 ms (GPU-bound, render JS p50 7 ms); Low: p50 16.7 ms; draws ≤ 336 |
-| **Wave 4** — direction in `streams/W4-direction.md` | running | |
-| G3 inked graphic look + GPU cost + adaptive resolution | reported; merging in I8 | `t3/inked-render-pipeline` @ 74f56d7 — bold ink chosen after lead rejected the subtle version; 60 fps not certifiable on the loaded host |
-| G4 world forms, enemy footprint, hatched hostile telegraphs, camera, title, Queen | reported; merging in I8 | `t3/world-actor-camera-overhaul` @ cff2dcc |
-| V4 ability constructions + priority mask | reported; merging in I8 | `t3/ability-vfx-construction` @ d7f601c |
-| A3 enemy separation + attack slots, re-balanced | merged | max 3 engaged melee, escape lane; cohort spread 14.4 pp |
-| U4 UI fixes | merged | compact objective/radar, element-true damage colors, benefit headlines, authored ending |
-| I8 wave-4 integration + 60 fps acceptance + final2 gallery | running | sole agent on the host |
+| Waves 0–3 | merged | abilities, UI, renderer, audio, world pass, VFX, perf, balance, playtest bot, reviews R1–R5, fix waves |
+| Wave 4 (G3 ink + GPU, G4 world/camera, V4 abilities, A3 crowds, U4 UI, I8 integration) | merged | `nextgen` @ 534bdf6: 3262 tests, smokes, 20/20 authored rooms, bot campaigns ×4; **High holds 60 fps** (frame p50 16.7 ms, p95 ≈ 18 ms on M1 Pro), room prep ≤ 2.4 s; gallery `artifacts/nextgen/final2/` |
+| R6 → R7 independent verdicts | done | combat readability 4 → 6, cohesion 5 → 6; still "advanced prototype, polished-indie UI" — see `reviews/R7-verdict.md` |
+| **Wave 5** — "one approved standard, then propagate" | running | |
+| G5 actor standard (structural ink, marine signature, family silhouettes, Queen) | running | |
+| G6 environment authorship, fixture-shaped light, combat-viewport camera | running | |
+| V5 effect craft: one inked VFX language, weak abilities rebuilt | running | |
+| U5 UI: combat viewport/HUD fade, damage consolidation, rig portraits, shop, ending | running | |
 
-Next (lead): merge A3 → U4 → V4 → G4 → G3 (integration task), gates, bench on a quiet host, final gallery, third independent verdict.
+Next (lead): integrate wave 5 (I9), gates + bench on a quiet host, gallery `final3`, fourth independent verdict.
 
 ## Decisions log
 
