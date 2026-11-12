@@ -71,6 +71,9 @@ export class MutationRuntime {
     this.#refreshSlow(target);
   }
 
+  /** Crowd constraints yield to the existing swept launch/body-chain solver. */
+  isLaunched(id:number):boolean { return this.#launches.has(id); }
+
   /** Launch abilities use the ordinary wall/body collision reaction path. */
   launchAbility(target:MutationTarget,x:number,y:number):void {
     if(!Number.isFinite(x)||!Number.isFinite(y)||!Math.hypot(x,y)||!this.#host.targets().some(t=>t.id===target.id&&t.health>0))return;

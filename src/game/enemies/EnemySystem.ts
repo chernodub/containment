@@ -5,6 +5,7 @@ import {
 } from '../constants';
 import { ENEMIES, STANDARD_ENEMY_IDS } from './catalog';
 import { SpatialHash } from './SpatialHash';
+import {Engagement, type AttackSlot, type EngagementState} from './Engagement';
 import type { StandardEnemyId } from './types';
 
 const ELITE_MULTIPLIER = 2;
@@ -17,7 +18,9 @@ const FAR_DECISION_INTERVAL_MS = 250;
 const FAR_DECISION_DISTANCE = 800;
 const MAX_MOVEMENT_DELTA_MS = 250;
 const MAX_TIMER_DELTA_MS = 2_000;
-const SEPARATION_WEIGHT = 0.7;
+const SEPARATION_ITERATIONS = 6;
+const SEPARATION_SKIN = .5;
+const SEPARATION_SLOP = .05;
 const SPITTER_MIN_RANGE = 240;
 const SPITTER_MAX_RANGE = 360;
 const SPITTER_ATTACK_MIN_RANGE = 180;
@@ -27,12 +30,13 @@ const STALKER_CAMOUFLAGED_MS = 2_000;
 const STALKER_REVEALED_MS = 1_000;
 const CAMOUFLAGED_ALPHA = 0.35;
 const MAX_KNOCKBACK = 120;
-const SEPARATION_QUERY_RADIUS = 64;
+
 
 export type EnemyPlayerState = {
   readonly x: number;
   readonly y: number;
   readonly radius?: number;
+  readonly angle?: number;
 };
 
 export type CollisionSteeringContext = Readonly<{
@@ -47,6 +51,9 @@ export type CollisionSteeringContext = Readonly<{
 
 export type EnemySystemOptions = Readonly<{
   balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean;chargeWindupMs?:number;chargeCooldownMs?:number;chargeInitialCooldownMs?:number;championHealth?:number;championDamage?:number};
+  canSeePlayer?: (from:EnemyPlayerState,to:EnemyPlayerState)=>boolean;
+  launched?: (id:number)=>boolean;
+  immovables?: ()=>readonly {x:number;y:number;radius:number;health:number}[];
   canAttack?: (from:EnemyPlayerState & {type:StandardEnemyId},to:EnemyPlayerState)=>boolean;
   route?: (enemy: EnemyPlayerState & {radius:number}, player:EnemyPlayerState) => EnemyPlayerState|null;
   canMove?: (context: CollisionSteeringContext) => boolean;
@@ -129,6 +136,8 @@ export type EnemySnapshot = Readonly<{
   camouflageRemainingMs: number;
   alpha: number;
   reservedChildren: number;
+  attackSlot?: AttackSlot;
+  engagement?: EngagementState;
   firingGoal?: {x:number;y:number;playerX:number;playerY:number};
   firingSearch?: {decision:number;playerX:number;playerY:number};
   baseSpeed:number;champion?:'warden'|'matron';
@@ -158,6 +167,8 @@ export type DamageResult = Readonly<{
 }>;
 
 type EnemyState = {
+  blockedMs?: number; yieldMs?: number; yieldX?: number; yieldY?: number;
+  stepStartX?: number; stepStartY?: number;
   id: number;
   type: StandardEnemyId;
   elite: boolean;
@@ -185,6 +196,8 @@ type EnemyState = {
   camouflageRemainingMs: number;
   alpha: number;
   reservedChildren: number;
+  attackSlot?: AttackSlot;
+  engagement?: EngagementState;
   firingGoal?: {x:number;y:number;playerX:number;playerY:number};
   firingSearch?: {decision:number;playerX:number;playerY:number};
   baseSpeed:number;champion?:'warden'|'matron';
@@ -198,6 +211,7 @@ type SpatialEnemy = {
   x: number;
   y: number;
   enemy: EnemyState;
+  correctionX: number; correctionY: number; contacts: number;
 };
 
 const freezeEvent = <T extends EnemyEvent>(event: T): T => Object.freeze(event);
@@ -225,11 +239,18 @@ export class EnemySystem {
   readonly #canMove?: (context: CollisionSteeringContext) => boolean;
   readonly #route?: EnemySystemOptions['route'];
   readonly #balance:NonNullable<EnemySystemOptions['balance']>;readonly #canAttack?:EnemySystemOptions['canAttack'];
+  readonly #engagement = new Engagement();
+  readonly #nearby: SpatialEnemy[] = [];
+  readonly #canSeePlayer?: EnemySystemOptions['canSeePlayer'];
+  readonly #launched?: EnemySystemOptions['launched'];
+  readonly #immovables?: EnemySystemOptions['immovables'];
   #nextId = 1;
   #reservedCount = 0;
+  #solids:readonly {x:number;y:number;radius:number;health:number}[]=[];
 
   constructor(options: EnemySystemOptions = {}) {
     this.#canMove = options.canMove;
+    this.#canSeePlayer=options.canSeePlayer;this.#launched=options.launched;this.#immovables=options.immovables;
     this.#route = options.route;this.#canAttack=options.canAttack;this.#balance=options.balance??{health:1,damage:1,speed:1,eliteHealth:2,eliteDamage:2,specials:false};
   }
 
@@ -343,7 +364,7 @@ export class EnemySystem {
       id: String(state.id),
       x: state.x,
       y: state.y,
-      enemy: state,
+      enemy: state,correctionX:0,correctionY:0,contacts:0,
     };
     this.#spatialEnemies.set(state.id, spatialEnemy);
     this.#spatialHash.insert(spatialEnemy);
@@ -369,7 +390,8 @@ export class EnemySystem {
     const movementDelta = Math.min(deltaMs, MAX_MOVEMENT_DELTA_MS);
     const events: EnemyEvent[] = [];
 
-    this.#rebuildSpatialHash();
+    this.#solids=this.#immovables?.()??[];
+    this.#engagement.update(this.#enemies.values(),player,(e,x,y)=>this.#movementAllowed({...e,x,y},x,y),(x,y)=>{const first=this.#enemies.values().next().value;return !first||this.#movementAllowed({...first,x:player.x,y:player.y,radius:player.radius??16},x,y);});
 
     for (const enemy of this.#enemies.values()) {
       if(enemy.speed===0)continue; // Shared freeze/shock suspends hostile wind-ups as well as movement.
@@ -400,10 +422,16 @@ export class EnemySystem {
       }
     }
 
+    this.#rebuildSpatialHash();
     for (const enemy of this.#enemies.values()) {
       if(enemy.speed===0)continue;
-      this.#integrate(enemy, movementDelta);
-      this.#collectAttacks(enemy, player, events);
+      enemy.stepStartX=enemy.x;enemy.stepStartY=enemy.y;
+      enemy.yieldMs=Math.max(0,(enemy.yieldMs??0)-movementDelta);
+      if(!this.#launched?.(enemy.id))this.#integrate(enemy, movementDelta);
+    }
+    if(movementDelta>0){this.#resolveCrowd();this.#clearCongestion(movementDelta);}
+    for(const enemy of this.#enemies.values()){
+      if(enemy.speed>0)this.#collectAttacks(enemy, player, events);
     }
 
     const frozen = freezeEvents(events);
@@ -481,6 +509,7 @@ export class EnemySystem {
   }
 
   remove(id: number): boolean {
+    this.#cachedSnapshot=null;
     if (!Number.isSafeInteger(id)) return false;
     const enemy = this.#enemies.get(id);
     if (!enemy) return false;
@@ -498,7 +527,7 @@ export class EnemySystem {
     this.#spatialHash.clear();
     this.#spatialEnemies.clear();
     this.#reservedCount = 0;
-    this.#nextId = 1;
+    this.#nextId = 1;this.#engagement.reset();
   }
 
   subscribe(listener: (event: EnemyEvent) => void): () => void {
@@ -541,6 +570,7 @@ export class EnemySystem {
       camouflageRemainingMs: enemy.camouflageRemainingMs,
       alpha: enemy.alpha,
       reservedChildren: enemy.reservedChildren,
+      attackSlot:enemy.attackSlot,engagement:enemy.engagement,
     });
   }
 
@@ -611,44 +641,54 @@ export class EnemySystem {
       direction = normalized(targetX - enemy.x, targetY - enemy.y);
     }
 
+    const engagementGoal=enemy.type==='carrier'&&(this.#canSeePlayer?this.#canSeePlayer(enemy,player):this.#canAttack?.(enemy,player))===false?undefined:this.#engagement.goal(enemy,player);
+    if(engagementGoal){targetX=engagementGoal.x;targetY=engagementGoal.y;direction=normalized(targetX-enemy.x,targetY-enemy.y);}
+
     const goalLegal=enemy.type!=='spitter'||this.#firingPositionLegal(enemy,{x:targetX,y:targetY});
     const keepFiringGoal=enemy.type==='spitter'&&enemy.firingGoal&&(distanceToPlayer<SPITTER_MIN_RANGE||distanceToPlayer>SPITTER_MAX_RANGE||this.#canAttack?.(enemy,player)===false);
-    let route=goalLegal&&!keepFiringGoal?this.#route?.(enemy,{x:targetX,y:targetY}):enemy;
+    // Berths use the real body sweep. The navigation grid's extra two units
+    // of clearance can otherwise strand a legal berth just beyond its last cell.
+    let route=engagementGoal&&this.#movementAllowed(enemy,targetX,targetY)?null:goalLegal&&!keepFiringGoal?this.#route?.(enemy,{x:targetX,y:targetY}):enemy;
     if(enemy.type==='spitter'&&(keepFiringGoal||!goalLegal||(route?.x===enemy.x&&route.y===enemy.y&&(targetX!==enemy.x||targetY!==enemy.y)))){
       const alternative=this.#alternateFiringPosition(enemy,player);
       if(alternative){targetX=alternative.goal.x;targetY=alternative.goal.y;direction=normalized(targetX-enemy.x,targetY-enemy.y);route=alternative.route;}
       else route=enemy;
     }
+    // A carrier cannot occupy every marine-sized recess. Seek a reachable
+    // visible holding point instead of pinning the route to that narrow goal.
+    if(enemy.type==='carrier'&&(this.#canSeePlayer?this.#canSeePlayer(enemy,player):this.#canAttack?.(enemy,player))===false){
+      const alternative=this.#alternateFiringPosition(enemy,player);
+      if(alternative){targetX=alternative.goal.x;targetY=alternative.goal.y;direction=normalized(targetX-enemy.x,targetY-enemy.y);route=alternative.route;}
+    }
     // Navigation returns the current position when the flank has no route.
     // The flank is optional; retry the real player goal rather than stand still.
-    if(enemy.type==='stalker' && route?.x===enemy.x && route.y===enemy.y){
+    if((enemy.type==='stalker'||engagementGoal) && route && Math.hypot(route.x-enemy.x,route.y-enemy.y)<1){
       targetX=player.x;targetY=player.y;
       direction=normalized(targetX-enemy.x,targetY-enemy.y);
       route=this.#route?.(enemy,player);
     }
     if(route){targetX=route.x;targetY=route.y;direction=normalized(targetX-enemy.x,targetY-enemy.y);}
 
-    const separation = this.#separation(enemy);
-    const combined = normalized(
-      direction.x + separation.x * SEPARATION_WEIGHT,
-      direction.y + separation.y * SEPARATION_WEIGHT,
-    );
     enemy.targetX = clamp(targetX, 0, WORLD_WIDTH);
     enemy.targetY = clamp(targetY, 0, WORLD_HEIGHT);
-    enemy.velocityX = combined.x * enemy.speed;
-    enemy.velocityY = combined.y * enemy.speed;
+    const distance=Math.hypot(targetX-enemy.x,targetY-enemy.y);
+    const speed=engagementGoal&&distance<(enemy.attackSlot?.01:1)?0:enemy.speed;
+    enemy.velocityX = direction.x * speed;
+    enemy.velocityY = direction.y * speed;
   }
 
   #firingPositionLegal(enemy:EnemyState,goal:EnemyPlayerState):boolean {
     if(goal.x<enemy.radius||goal.y<enemy.radius||goal.x>WORLD_WIDTH-enemy.radius||goal.y>WORLD_HEIGHT-enemy.radius)return false;
-    // A zero-length move checks occupancy without rejecting a navigable indirect route.
     return this.#movementAllowed({...enemy,x:goal.x,y:goal.y},goal.x,goal.y);
   }
 
   #alternateFiringPosition(enemy:EnemyState,player:EnemyPlayerState){
+    const carrier=enemy.type==='carrier',minimum=carrier?140:SPITTER_MIN_RANGE,maximum=carrier?260:SPITTER_MAX_RANGE;
     const usable=(goal:EnemyPlayerState)=>{
       const range=Math.hypot(goal.x-player.x,goal.y-player.y);
-      if(range<SPITTER_MIN_RANGE||range>SPITTER_MAX_RANGE||!this.#firingPositionLegal(enemy,goal)||this.#canAttack?.({...goal,type:'spitter'},player)===false)return null;
+      if(range<minimum||range>maximum||!this.#firingPositionLegal(enemy,goal))return null;
+      const visible=carrier?(this.#canSeePlayer?this.#canSeePlayer(goal,player):this.#canAttack?.({...goal,type:'carrier'},player)):this.#canAttack?.({...goal,type:'spitter'},player);
+      if(visible===false)return null;
       const route=this.#route?.(enemy,goal);
       if(route?.x===enemy.x&&route.y===enemy.y)return null;
       return {goal,route};
@@ -659,41 +699,89 @@ export class EnemySystem {
     const failed=enemy.firingSearch;
     if(failed&&enemy.decisionVersion-failed.decision<5&&Math.hypot(failed.playerX-player.x,failed.playerY-player.y)<32)return null;
     const candidates:EnemyPlayerState[]=[];
-    for(const radius of [280,340])for(let i=0;i<16;i++){const angle=i*Math.PI/8;candidates.push({x:player.x+Math.cos(angle)*radius,y:player.y+Math.sin(angle)*radius});}
+    for(const radius of (carrier?[170,220]:[280,340]))for(let i=0;i<16;i++){const angle=i*Math.PI/8;candidates.push({x:player.x+Math.cos(angle)*radius,y:player.y+Math.sin(angle)*radius});}
     candidates.sort((a,b)=>Math.hypot(a.x-enemy.x,a.y-enemy.y)-Math.hypot(b.x-enemy.x,b.y-enemy.y));
     for(const goal of candidates){const result=usable(goal);if(result){enemy.firingGoal={...goal,playerX:player.x,playerY:player.y};enemy.firingSearch=undefined;return result;}}
     enemy.firingSearch={decision:enemy.decisionVersion,playerX:player.x,playerY:player.y};
     return null;
   }
 
-  #separation(enemy: EnemyState): Vector {
-    let separationX = 0;
-    let separationY = 0;
-    for (const nearby of this.#spatialHash.queryRadius(
-      enemy.x,
-      enemy.y,
-      enemy.radius + SEPARATION_QUERY_RADIUS,
-    )) {
-      const other = nearby.enemy;
-      if (other.id === enemy.id) continue;
-      const offsetX = enemy.x - other.x;
-      const offsetY = enemy.y - other.y;
-      const distance = Math.hypot(offsetX, offsetY);
-      const separationRadius = enemy.radius + other.radius;
-      if (distance >= separationRadius) continue;
-      if (distance === 0) {
-        separationY += enemy.id < other.id ? -1 : 1;
-      } else {
-        const strength = 1 - distance / separationRadius;
-        separationX += (offsetX / distance) * strength;
-        separationY += (offsetY / distance) * strength;
+  /** Jacobi projections: all pair corrections read the same positions, then
+   * apply together. Frozen bodies are anchors; launches retain swept contacts.
+   * A small skin and dead band prevent contact/steering chatter. */
+  #resolveCrowd(): void {
+    const solids=this.#solids;
+    for(let iteration=0;iteration<SEPARATION_ITERATIONS;iteration++){
+      this.#rebuildSpatialHash();
+      let corrections=0;
+      for(const entry of this.#spatialEnemies.values()){entry.correctionX=entry.correctionY=entry.contacts=0;}
+      for(const a of this.#spatialEnemies.values()){
+        const enemy=a.enemy;
+        if(this.#launched?.(enemy.id))continue;
+        this.#spatialHash.queryRadiusInto(enemy.x,enemy.y,enemy.radius+29,this.#nearby);
+        for(const b of this.#nearby){
+          const other=b.enemy;
+          if(enemy.id>=other.id||this.#launched?.(other.id))continue;
+          const dx=enemy.x-other.x,dy=enemy.y-other.y,d=Math.hypot(dx,dy);
+          const overlap=enemy.radius+other.radius+SEPARATION_SKIN-d;
+          if(overlap<=SEPARATION_SLOP)continue;
+          const movableA=enemy.speed>0,movableB=other.speed>0;
+          if(!movableA&&!movableB)continue;
+          // ID-derived axis resolves exact coincident spawns without randomness.
+          const angle=((enemy.id*73+other.id*37)%360)*Math.PI/180;
+          const nx=d>1e-9?dx/d:Math.cos(angle),ny=d>1e-9?dy/d:Math.sin(angle);
+          const correction=(overlap-SEPARATION_SLOP)*(movableA && movableB ? .5 : 1);
+          if(movableA){a.correctionX+=nx*correction;a.correctionY+=ny*correction;a.contacts++;}
+          if(movableB){b.correctionX-=nx*correction;b.correctionY-=ny*correction;b.contacts++;}
+        }
+        if(enemy.speed===0)continue;
+        for(const solid of solids){
+          if(solid.health<=0)continue;
+          const dx=enemy.x-solid.x,dy=enemy.y-solid.y,d=Math.hypot(dx,dy),overlap=enemy.radius+solid.radius+SEPARATION_SKIN-d;
+          if(overlap<=SEPARATION_SLOP)continue;
+          const angle=enemy.id*2.399963229728653;
+          a.correctionX+=(d>1e-9?dx/d:Math.cos(angle))*(overlap-SEPARATION_SLOP);
+          a.correctionY+=(d>1e-9?dy/d:Math.sin(angle))*(overlap-SEPARATION_SLOP);a.contacts++;
+        }
+      }
+      for(const entry of this.#spatialEnemies.values()){
+        if(!entry.contacts)continue;
+        const enemy=entry.enemy,length=Math.hypot(entry.correctionX,entry.correctionY);
+        if(length<.01)continue;
+        const scale=Math.min(.9,8/length),dx=entry.correctionX*scale,dy=entry.correctionY*scale;
+        if(this.#project(enemy,dx,dy)||this.#project(enemy,dx,0)||this.#project(enemy,0,dy))corrections++;
+      }
+      if(corrections===0)break;
+    }
+  }
+
+  /** Only a stalled follower yields at a shared choke point. Stable numeric
+   * priority breaks symmetric two-body jams without constant crowd jitter. */
+  #clearCongestion(deltaMs:number):void {
+    for(const enemy of this.#enemies.values()){
+      if(enemy.speed===0||this.#launched?.(enemy.id)||(enemy.yieldMs??0)>0)continue;
+      const stopped=Math.hypot(enemy.x-enemy.stepStartX!,enemy.y-enemy.stepStartY!)<.5;
+      const trying=Math.hypot(enemy.velocityX,enemy.velocityY)>3&&Math.hypot(enemy.targetX-enemy.x,enemy.targetY-enemy.y)>8;
+      enemy.blockedMs=stopped&&trying?(enemy.blockedMs??0)+deltaMs:0;
+      if(enemy.blockedMs<600)continue;
+      this.#spatialHash.queryRadiusInto(enemy.x,enemy.y,enemy.radius+40,this.#nearby);
+      for(const entry of this.#nearby){const other=entry.enemy;
+        if(other.id>=enemy.id||other.speed===0||Math.hypot(other.velocityX,other.velocityY)<3||Math.hypot(enemy.targetX-other.targetX,enemy.targetY-other.targetY)>64)continue;
+        const distance=Math.hypot(enemy.x-other.x,enemy.y-other.y);
+        if(distance>enemy.radius+other.radius+12||distance<1e-8)continue;
+        enemy.yieldMs=800;enemy.yieldX=(enemy.x-other.x)/distance;enemy.yieldY=(enemy.y-other.y)/distance;enemy.blockedMs=0;break;
       }
     }
-    return normalized(separationX, separationY);
+  }
+
+  #project(enemy:EnemyState,dx:number,dy:number):boolean {
+    if(dx===0&&dy===0)return false;
+    const x=enemy.x+dx,y=enemy.y+dy;
+    if(x<enemy.radius||y<enemy.radius||x>WORLD_WIDTH-enemy.radius||y>WORLD_HEIGHT-enemy.radius||!this.#movementAllowed(enemy,x,y))return false;
+    enemy.x=x;enemy.y=y;return true;
   }
 
   #rebuildSpatialHash(): void {
-    this.#spatialHash.clear();
     for (const enemy of this.#enemies.values()) {
       let spatialEnemy = this.#spatialEnemies.get(enemy.id);
       if (!spatialEnemy) {
@@ -701,7 +789,7 @@ export class EnemySystem {
           id: String(enemy.id),
           x: enemy.x,
           y: enemy.y,
-          enemy,
+          enemy,correctionX:0,correctionY:0,contacts:0,
         };
         this.#spatialEnemies.set(enemy.id, spatialEnemy);
       } else {
@@ -714,9 +802,12 @@ export class EnemySystem {
 
   #integrate(enemy: EnemyState, deltaMs: number): void {
     if (deltaMs === 0) return;
-    const scale = deltaMs / 1_000;
-    const movementX = enemy.velocityX * scale;
-    const movementY = enemy.velocityY * scale;
+    const distance=Math.hypot(enemy.targetX-enemy.x,enemy.targetY-enemy.y);
+    const velocity=Math.hypot(enemy.velocityX,enemy.velocityY);
+    const scale = Math.min(deltaMs / 1_000,enemy.chargeMs>0?Infinity:distance/(velocity||1));
+    const yielding=(enemy.yieldMs??0)>0&&enemy.chargeMs===0;
+    const movementX = yielding?enemy.yieldX!*enemy.speed*deltaMs/1000:enemy.velocityX * scale;
+    const movementY = yielding?enemy.yieldY!*enemy.speed*deltaMs/1000:enemy.velocityY * scale;
     if (movementX === 0 && movementY === 0) return;
 
     const candidates = [
@@ -737,6 +828,14 @@ export class EnemySystem {
   }
 
   #movementAllowed(enemy: EnemyState, toX: number, toY: number): boolean {
+    if(!this.#launched?.(enemy.id))for(const solid of this.#solids){
+      if(solid.health<=0)continue;
+      const radius=enemy.radius+solid.radius,before=Math.hypot(enemy.x-solid.x,enemy.y-solid.y),after=Math.hypot(toX-solid.x,toY-solid.y);
+      if(before<radius){if(after<=before+1e-9)return false;continue;}
+      const dx=toX-enemy.x,dy=toY-enemy.y,den=dx*dx+dy*dy;
+      const t=den?clamp(((solid.x-enemy.x)*dx+(solid.y-enemy.y)*dy)/den,0,1):0;
+      if(Math.hypot(enemy.x+dx*t-solid.x,enemy.y+dy*t-solid.y)<radius-1e-7)return false;
+    }
     if (!this.#canMove) return true;
     const context: CollisionSteeringContext = Object.freeze({
       enemyId: enemy.id,
@@ -767,7 +866,8 @@ export class EnemySystem {
      enemy.windupMs=windup;enemy.pendingAttack='charge';enemy.lockX=player.x-enemy.x;enemy.lockY=player.y-enemy.y;enemy.specialCooldownMs=cooldown;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:player.x,targetY:player.y,durationMs:windup}));return;
     }
     if (
-      distance <= enemy.radius + playerRadius &&
+      distance <= enemy.radius + playerRadius + .5 &&
+      (enemy.engagement!=='waiting'||enemy.chargeMs>0) &&
       enemy.contactCooldownRemainingMs === 0
     ) {
       events.push(

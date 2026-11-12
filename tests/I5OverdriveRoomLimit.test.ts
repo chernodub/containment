@@ -197,7 +197,7 @@ describe('I5 ordinary-room Overdrive allowance', () => {
     }
   });
 
-  it('keeps every authored elite, planned guardian and holdout/finale room unlimited', () => {
+  it('caps authored elites and guardians while retaining unlimited holdout/finale activations', () => {
     const {game} = start();
     const special = generateRun(1729, 3).nodes.filter(node => node.kind !== 'combat'
       || progressionFor(node).guardian || node.depth === 9 || node.depth === 19);
@@ -207,8 +207,20 @@ describe('I5 ordinary-room Overdrive allowance', () => {
     expect(special.map(node => node.depth)).toContain(19);
     for (const node of special) {
       enter(game, node.depth);
-      twice(game);
-      expect(game.abilities.snapshot.overdrive.roomLimited).toBeUndefined();
+      if(node.depth===9||node.depth===19){
+        twice(game);
+        expect(game.abilities.snapshot.overdrive.roomLimited).toBeUndefined();
+      }else{
+        game.abilities.addCharge(12000);
+        expect(game.useAbility('overdrive')).toBe(true);
+        advance(game.abilities);
+        game.abilities.addCharge(12000);
+        expect(game.abilities.snapshot.overdrive).toMatchObject({charge:1,ready:false,roomLimited:true});
+        expect(game.useAbility('overdrive')).toBe(false);
+        enter(game,node.depth+1);
+        expect(game.abilities.snapshot.overdrive.charge).toBe(1);
+        expect(game.useAbility('overdrive')).toBe(true);
+      }
     }
   });
 
@@ -273,8 +285,7 @@ describe('I5 ordinary-room Overdrive allowance', () => {
     expect(resumed.useAbility('overdrive')).toBe(true);
     advance(resumed.abilities);
     resumed.abilities.addCharge(12000);
-    const ordinary = version === 3 && resumed.node.kind === 'combat'
-      && !progressionFor(resumed.node).guardian && resumed.node.depth !== 9 && resumed.node.depth !== 19;
+    const ordinary = version === 3 && resumed.node.depth !== 9 && resumed.node.depth !== 19;
     expect(resumed.useAbility('overdrive')).toBe(!ordinary);
   });
 });

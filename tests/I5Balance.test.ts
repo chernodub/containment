@@ -63,7 +63,7 @@ function plan(seed: number, node: RunNode) {
 function pressure(seed: number, nodes: readonly RunNode[]) {
   const plans = nodes.map(node => ({node, encounter: plan(seed, node), balance: progressionFor(node)}));
   const entries = plans.flatMap(({node, encounter, balance}) => encounter.schedule.map(spawn => ({spawn, node, balance})));
-  // Match the actual ordinary-room Overdrive eligibility, including named guardians.
+  // Strict ordinary-room classification stays distinct from the broader A3 non-holdout Overdrive cap.
   const ordinaryRoom = ({node, balance}: {node: RunNode; balance: ReturnType<typeof progressionFor>}) =>
     node.id.includes(':v3-') && node.kind === 'combat' && !balance.guardian && ![9, 19].includes(node.depth);
   const ordinaryPlans = plans.filter(ordinaryRoom);
@@ -205,6 +205,7 @@ describe('I5 encounter balance guardrails', () => {
 
   it('holds per-act threat, specialist, elite and tempo budgets over the ten-seed campaign cohort', () => {
     const acts = pressureByAct();
+    console.info(`[A3 encounter budgets] ${JSON.stringify(acts)}`);
     // EHP/contact budgets cover scheduled parents with actual armor and champion promotion.
     // Child reservations are counted separately; runtime Matron broods are not assumed.
     // Contact DPS assumes every attack connects: it is a threat diagnostic, not expected damage.
@@ -226,12 +227,12 @@ describe('I5 encounter balance guardrails', () => {
       {
         spawns: [142, 142], threat: [279, 309], elite: [.60, .67], ordinaryElite: [.60, .66],
         specialist: [.55, .61], cap: [15, 15], tail: [4200, 4550], broadTail: [4200, 4550], damage: [.780, .800], speed: [1.02, 1.035],
-        ehp: [26150, 28950], contactDps: [2275, 2520], bodies: [142, 142],
+        ehp: [26150, 28950], contactDps: [2160, 2395], bodies: [142, 142],
       },
       {
         spawns: [180, 180], threat: [467, 518], elite: [.65, .72], ordinaryElite: [.67, .73],
         specialist: [.56, .62], cap: [15, 15], tail: [4250, 4650], broadTail: [4400, 4750], damage: [.887, .910], speed: [1.035, 1.055],
-        ehp: [37150, 41150], contactDps: [3515, 3890], bodies: [183, 183],
+        ehp: [37150, 41150], contactDps: [3320, 3675], bodies: [183, 183],
       },
     ] as const;
     acts.forEach((act, index) => {
@@ -250,9 +251,9 @@ describe('I5 encounter balance guardrails', () => {
       within(act.damageRatio, expected.damage, `${label} damage increase`);
       within(act.speedRatio, expected.speed, `${label} pursuit increase`);
       if (index >= 2) {
-        within(act.ordinaryStalkerShare, [.13, .20], `${label} stalker mix`);
+        within(act.ordinaryStalkerShare, [.08, .15], `${label} stalker mix`);
         within(act.ordinaryCrawlerShare, [.28, .36], `${label} crawler mix`);
-        within(act.ordinarySpitterShare, [.36, .45], `${label} spitter mix`);
+        within(act.ordinarySpitterShare, [.41, .50], `${label} spitter mix`);
         within(act.ordinaryBruteShare, [.05, .15], `${label} brute mix`);
       }
     });

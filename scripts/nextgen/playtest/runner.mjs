@@ -15,6 +15,7 @@ import {loadEarnedBoundary} from './resume.mjs';
 import {newEventReceipts} from './evidence.mjs';
 import {detectSnapshotDefects} from './diagnostics.mjs';
 import {installAudioSpy, readAudioSpy, checkpointProbe} from './lifecycle.mjs';
+import {screenStateKey, screenProgressTimedOut} from './screen-progress.mjs';
 import {stitchPngFrames} from '../sprites.mjs';
 import {samplePng} from '../png.mjs';
 
@@ -47,12 +48,13 @@ await mkdir(out, {recursive:true});
 await writeFile(resolve(out,'trace.ndjson'),'');
 await mkdir(resolve(out,'source'),{recursive:true});
 const harnessHashes={};
-for(const file of ['runner.mjs','policy.mjs','ability-aim.ts','lifecycle.mjs','diagnostics.mjs','evidence.mjs','resume.mjs','visuals.mjs','bot-navigation.ts','bot-navigation-version.mjs']){const content=await readFile(resolve('scripts/nextgen/playtest',file));harnessHashes[file]=createHash('sha256').update(content).digest('hex');await writeFile(resolve(out,'source',file),content);}
+for(const file of ['runner.mjs','policy.mjs','ability-aim.ts','lifecycle.mjs','screen-progress.mjs','diagnostics.mjs','evidence.mjs','resume.mjs','visuals.mjs','bot-navigation.ts','bot-navigation-version.mjs']){const content=await readFile(resolve('scripts/nextgen/playtest',file));harnessHashes[file]=createHash('sha256').update(content).digest('hex');await writeFile(resolve(out,'source',file),content);}
 const report = {
   label, rig, seed, hostLoad:{start:loadavg(),logicalCores:cpus().length}, distributionDirectory:distRoot, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
   legacy: resumed?.parent.legacy??!!options.legacy, fastRendering:!!options.fast, lifecycleOnly:!!options['death-probe'], presentation:true, roomLimit, harnessHashes, head: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
   branch: execFileSync('git',['branch','--show-current'],{encoding:'utf8'}).trim(), started: new Date().toISOString(),
   policyVersion:BOT_POLICY_VERSION, navigationVersion:BOT_NAVIGATION_VERSION,
+  screenProgressGuard:'post-action-observation-v1',
   policy: 'Native WASD and mouse; spitter/champion focus; obstacle-probed kiting with marine-only fallback navigation for unusable waypoints; rig-path/augment boon heuristic; safer route, medical if health<75; heal<40%; Q/F opportunity; V at 6+ or boss/champion.',
   clock: options.realtime ? 'native production RAF, passive observation; no audio/effect/core wrappers' : options.fast ? 'native fixed 60Hz; 250ms policy decisions; scene/camera every tick, GPU draw at batch end' : 'native fixed 60Hz; 250ms policy decisions; render every fixed tick',
   rooms: resumed?resumed.parent.rooms.filter(r=>['clear','complete'].includes(r.result)&&resumed.checkpoint.run.completedNodeIds.includes(r.nodeId)):[], errors: resumed?[...resumed.parent.errors]:[], defects: resumed?[...resumed.parent.defects]:[], checkpoints: [], screenshots: [], inputs: [], outcome: 'running',
@@ -227,7 +229,7 @@ try {
     }
     if(loadingSince!==null){report.loadingHolds??=[];report.loadingHolds.push({room:s.node.templateId,wallMs:performance.now()-loadingSince});await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));s=await snapshot();last=s;}
     loadingSince=null;loadingRecorded=false;
-    const key=`${s.node.id}:${s.status}:${s.phase}`;
+    const key=screenStateKey(s);
     if(key!==screenKey){screenSince=performance.now();screenKey=key;}
     const checkpointKind=s.phase==='reward'&&s.actions.some(a=>a.id==='claim')?'shop':s.status==='route'&&s.actions.some(a=>a.id==='destroy-ship')?'destroy-confirm':s.phase;
     if(shouldProbe(checkpointKind)&&!probed.has(checkpointKind)&&['rig-select','starting-boon','reward','route','shop','destroy-confirm'].includes(checkpointKind)) {
@@ -260,7 +262,17 @@ try {
           if(route){if(s.actions.some(a=>a.inspect===route.id))await page.locator(`[data-inspect-route="${route.id}"]`).last().click();await page.locator(`[data-route="${route.id}"]`).click();}
         }
       } else if(s.status==='paused') await page.keyboard.press('Escape');
-      if(performance.now()-screenSince>10000){report.defects.push({kind:'screen-without-progress',state:s.status,phase:s.phase,actions:s.actions});await shot('screen-stuck',s);report.outcome='screen-stuck';break;}
+      if(performance.now()-screenSince>10000){
+        // A slow click/capture may already have entered the next screen or room.
+        // Never report the stale pre-click snapshot as a live no-progress state.
+        const current=await snapshot();last=current;
+        if(screenProgressTimedOut(s,current,performance.now()-screenSince)){
+          report.defects.push({kind:'screen-without-progress',state:current.status,phase:current.phase,actions:current.actions});await shot('screen-stuck',current);report.outcome='screen-stuck';break;
+        }
+        const currentKey=screenStateKey(current);
+        if(currentKey!==key){screenKey=currentKey;screenSince=performance.now();}
+        continue;
+      }
       if(!s.actions.length&&!options.realtime)await advance(250);
       await page.waitForTimeout(30);continue;
     }

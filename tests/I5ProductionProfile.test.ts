@@ -22,10 +22,10 @@ const BASELINE = {
   },
 } as const;
 
-// Independently generated from the immutable V25 bundle over all 200 story nodes.
-// Encounter/progression parameters are identical to V24; later Pyro dash trials do not change these hashes.
+// A3 retains the V25 progression fingerprint. The late pool changes only the
+// final 5% type draws from stalker to spitter; all 200 schedules retain other fields.
 const STORY_PROFILE = {
-  plans: '361a22737451637dc770c1992e1603c52893f0fadca9789258a3a30c88ce11ce',
+  plans: '5e75648612329a47605d2b4c7c979b4e629aa08639d684fd67a4e01a999b0333',
   progression: '99d09e9484dd593c34320ded447f0b4ee8d6503368c8c838c432d6a38b56acf0',
 } as const;
 
