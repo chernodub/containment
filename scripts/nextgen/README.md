@@ -435,3 +435,37 @@ classifications cannot certify it. Broad non-holdout pacing is reported apart.
 `x3-hud-compact` advances the actual first room and UI clock by4.5s to show the compact combat dock/objective. `x3-denial-reticle` and `x3-status-priority` are explicitly presentation-only event fixtures. `x3-failure-analysis` stages three real `hurt` calls with explicit provenance to verify the actual incoming-damage ledger and fatal room; it is not an organic death. The debug hurt proxy preserves optional source metadata. `x3-results-statistics` and `x3-completion-statistics` open the native result disclosure while retaining the original counters/build and screen-fit assertions.
 
 `node scripts/nextgen/x3-review.mjs artifacts/nextgen/<label>` area-reduces every accepted capture to exact480×270 PNGs in `review480/`, without opening another browser or altering the capture manifest. Source PNGs, failed attempts and their metadata remain intact.
+
+## G3 per-pass GPU audit
+
+`npm run bench -- --gpu-passes` records asynchronous
+`EXT_disjoint_timer_query_webgl2` timings for scene color (including shadow
+updates and HDR resolve), contact/GTAO, denoise, bloom extraction and both blur
+directions, distortion, composite and HUD. It samples one frame in fifteen,
+retains raw milliseconds and actual target dimensions, discards pending queries
+on a GPU disjoint interval and retires unresolved queries without blocking.
+No `readPixels`, `finish` or query-result busy wait is used. Unsupported timers
+are reported explicitly. The total-frame timer and runtime adaptive GPU timer
+are suspended while per-pass queries own the query target; frame-driven
+adaptive fallback remains available. These opt-in timings include shared-GPU
+scheduling contention.
+
+```sh
+npm run bench -- --label=g3-gpu --rooms=manual-control-chamber --rigs=arc --tiers=high,low --repeat=3 --gpu-passes
+VITEST_MAX_WORKERS=2 npx vitest run scripts/nextgen/gpu-pass-audit.test.mjs
+```
+
+The same option supports `--dist=<preserved-build> --no-build` before/after
+comparisons. Every trial retains host load and per-frame adaptive scale.
+`gpuBestOfN` selects the trial with the lowest sum of stage GPU p50 and reports
+that same trial's frame distribution, scale and load; every raw trial remains
+in `benchmark.json`. This is distinct from choosing the best CPU trial. Stage
+percentiles cannot be added to claim a frame percentile. Query lifecycle
+counters make discarded, busy-skipped and unresolved observations visible.
+
+The original 350-draw limit, P1 330-draw headroom, zero combat programs and
+population/native-kit assertions remain. The combat audit additionally enforces
+the existing 400-program inventory budget and adaptive scale range 0.7–1.0.
+High frame p50 ≤16.7 ms / p95 ≤20 ms and Low p50 ≤16.7 ms are recorded as
+hardware acceptance flags alongside the historical strict frame-p95 flag;
+shared-host timing flags remain observations, not wall-clock unit assertions.

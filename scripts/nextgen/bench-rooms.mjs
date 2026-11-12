@@ -89,7 +89,7 @@ try {
         gl.createProgram=function(){compiles++;return create.call(gl);};
         try {d.invulnerable(true);d.setInput({fire:true,autoAim:true,angle:null});d.step(300);}
         finally {gl.createProgram=create;}
-        return {room,mode,total,phases,calls,inventoryBefore:inventory,programs:r.renderer.info.programs.length,newPrograms:r.renderer.info.programs.length-inventory,combatCompiles:compiles,postReadyCompiles,postReadyPrograms:postReadyCompiles?r.renderer.info.programs.slice(-postReadyCompiles).map(p=>({name:p.name,key:p.cacheKey})):[],preparation:r.preparationDiagnostics??null,resources:{...r.renderer.info.memory},gpu:a.gpu};
+        return {room,mode,total,phases,calls,inventoryBefore:inventory,programs:r.renderer.info.programs.length,newPrograms:r.renderer.info.programs.length-inventory,combatCompiles:compiles,postReadyCompiles,postReadyPrograms:postReadyCompiles?r.renderer.info.programs.slice(-postReadyCompiles).map(p=>({name:p.name,key:p.cacheKey})):[],preparation:r.preparationDiagnostics??null,post:r.post.diagnostics??r.post.performanceDiagnostics??null,resources:{...r.renderer.info.memory},gpu:a.gpu};
       },{room,mode});
       row.before=before;row.after=host();row.aheadWork=aheadWork;report.rows.push(row);
       assert(!/swiftshader|software|llvmpipe/i.test(row.gpu),'Hardware renderer required');
