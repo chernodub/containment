@@ -1,5 +1,5 @@
 import { optimizeLocalLights } from '../lighting/LocalLightShading';
-import { patchGraphicSurface } from '../lighting/GraphicSurface';
+import { patchGraphicSurface, setGraphicActorBase } from '../lighting/GraphicSurface';
 import { Material, Mesh, MeshStandardMaterial, Object3D, Vector2, WebGLRenderer } from 'three';
 
 export const GEOMETRY_CLASSES = Object.freeze({ floor: 1, architecture: 2, marine: 3, enemy: 4, elite: 5, boss: 6 });
@@ -30,7 +30,7 @@ function installDrawBufferPolicy(material:Material):void {
   previous.call(this,renderer,...args);
   const target=renderer.getRenderTarget();
   if(target?.textures[1]?.name!=='Containment geometry normal + identity')return;
-  const write=!material.transparent,frame=renderer.info.render.frame,state=drawStates.get(renderer);
+  const write=!material.transparent||material.userData.containmentInkBlock===true,frame=renderer.info.render.frame,state=drawStates.get(renderer);
   if(!state||state.target!==target||state.frame!==frame||state.write!==write) {
    (renderer.getContext() as WebGL2RenderingContext).drawBuffers(write?allBuffers:colorOnly);
    if(state){state.target=target;state.frame=frame;state.write=write;}else drawStates.set(renderer,{target,frame,write});
@@ -86,7 +86,7 @@ function patchExcludedMaterial(material: Material): void {
     const start = source.indexOf('{', source.indexOf('void main'));
     let depth = 1, end = start + 1;
     while (end < source.length && depth) { if (source[end] === '{') depth++; if (source[end] === '}') depth--; end++; }
-    shader.fragmentShader = 'layout(location = 1) out highp vec4 containmentGeometry;\n' + source.slice(0, end - 1) + '\ncontainmentGeometry=vec4(0.0,0.0,0.0,clamp(gl_FragColor.a,0.0,1.0));\n' + source.slice(end - 1);
+    shader.fragmentShader = 'layout(location = 1) out highp vec4 containmentGeometry;\n' + source.slice(0, end - 1) + '\ncontainmentGeometry=vec4(0.0,0.0,0.0,1.0);\n' + source.slice(end - 1);
   };
   material.customProgramCacheKey = () => key.includes(':geometry-excluded-v1')?key:`${key}:geometry-excluded-v1`;
   material.needsUpdate = true;
@@ -100,9 +100,15 @@ export function registerGeometry(root: Object3D, kind?: GeometryClass): void {
   const effectsOnly=root.name==='shared-affliction-batches';
   root.traverse(object => {
     if (!(object instanceof Mesh)) return;
-    let effect=effectsOnly;for(let owner: Object3D|null=object;owner&&!effect;owner=owner.parent)effect=owner.name==='shared-affliction-batches';
+    let effect=effectsOnly,inkBlock=false;for(let owner: Object3D|null=object;owner;owner=owner.parent){effect ||= owner.name==='shared-affliction-batches';inkBlock ||= owner.renderOrder>=20;}
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+      if(inkBlock)material.userData.containmentInkBlock=true;
       if (effect || !(material instanceof MeshStandardMaterial) || material.transparent) { patchExcludedMaterial(material); continue; }
+      if(kind) {
+        const family=root.name.replace('alien-','');
+        const palette:Record<string,number>={marine:0x8b9eae,crawler:0x657481,brute:0x716b78,spitter:0x6b8050,stalker:0x566f87,carrier:0x697c63,queen:0x716078};
+        setGraphicActorBase(material,palette[family]??(kind===GEOMETRY_CLASSES.marine?0x8b9eae:0x657481));
+      }
       patchGeometryMaterial(material);
       const identity = identities.get(material)!;
       if(!kind&&identity.value.y>=GEOMETRY_CLASSES.marine)continue;

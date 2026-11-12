@@ -12,14 +12,14 @@ const CROP_SIZE = Object.freeze({ width: 600, height: 400 });
 export const DEFAULT_CROPS = Object.freeze({
   'combat-kiting|awakening-bay': { x: 650, y: 120, ...CROP_SIZE, subject: 'overlapping upper enemy group' },
   'combat-heavy|armory': { x: 580, y: 350, ...CROP_SIZE, subject: 'dense enemy overlap and marine' },
-  'x2-calm-motion-high|communal-atrium': { x: 1020, y: 220, ...CROP_SIZE, subject: 'planter panels, foliage and benches during camera motion' },
+  'g3-prop-motion|communal-atrium': { x: 1020, y: 220, ...CROP_SIZE, subject: 'planter panels, foliage and benches during camera motion' },
   'combat-calm|communal-atrium': { x: 1020, y: 220, ...CROP_SIZE, subject: 'planter panels, foliage and benches at rest' },
 });
 const REQUIRED = [
   ['combat-calm', 'communal-atrium', 1], ['combat-calm', 'armory', 1],
   ['combat-calm', 'awakening-bay', 1], ['combat-calm', 'overload-floor', 1],
   ['combat-kiting', 'awakening-bay', 4], ['combat-heavy', 'armory', 4],
-  ['boss', 'reactor-vault', 4], ['x2-calm-motion-high', 'communal-atrium', 4],
+  ['boss', 'reactor-vault', 4], ['g3-prop-motion', 'communal-atrium', 4],
 ];
 const shotKey = shot => [shot.scenario, shot.room ?? '', shot.frame ?? 0].join('|');
 const groupKey = shot => [shot.scenario, shot.room ?? ''].join('|');
@@ -140,7 +140,7 @@ export async function buildStrengthGallery(labels, outputLabel = 'g3-bold-ab', c
       resolve(base, 'g3-round3-on/combat-kiting-awakening-bay-02.png'),
       resolve(base, 'g3-round3-on/combat-heavy-armory-02.png'),
       resolve(base, 'g3-round3-on/combat-calm-communal-atrium.png'),
-      '/Users/chernodub/.t3/projects/containment-game/artifacts/nextgen/final/x2-calm-motion-high-communal-atrium-02.png',
+      '/Users/chernodub/.t3/projects/containment-game/artifacts/nextgen/final/g3-prop-motion-communal-atrium-02.png',
     ],
     sources: sources.map(({ strength, label, directory, manifestFile, manifestSHA256, rendererSHA, manifest }) => ({
       strength, label, directory, manifestFile, manifestSHA256, rendererSHA, seed: manifest.seed, viewport: manifest.viewport,

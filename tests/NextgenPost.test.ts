@@ -27,6 +27,7 @@ function fixture() {
   let target: WebGLRenderTarget | null = null;
   const clearColor = new Color(0x123456);
   let clearAlpha = 0.7;
+  const compiles:{target:WebGLRenderTarget|null;mapping:number}[]=[];
   const frames: { scene: object; target: WebGLRenderTarget | null; mapping: number; camera: Camera }[] = [];
   const gpu = {
     capabilities: { maxSamples: 4 }, toneMapping: ACESFilmicToneMapping,
@@ -39,17 +40,23 @@ function fixture() {
     }),
     getRenderTarget: vi.fn(() => target),
     setRenderTarget: vi.fn((next: WebGLRenderTarget | null) => { target = next; }),
-    compileAsync: vi.fn(async () => {}),
+    compileAsync: vi.fn(async () => {compiles.push({target,mapping:gpu.toneMapping});}),
     render: vi.fn((scene: object, camera: Camera) => { frames.push({ scene, camera, target, mapping: gpu.toneMapping }); }),
   };
   const scene = new Scene();
   const camera = new OrthographicCamera(-12, 12, 8, -8, 0.1, 200);
   camera.position.set(0, 30, 20); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
   const pipeline = new PostPipeline(gpu as unknown as WebGLRenderer, scene, camera);
-  return { gpu, scene, camera, pipeline, frames };
+  return { gpu, scene, camera, pipeline, frames, compiles };
 }
 
 describe('HDR post lifecycle without a WebGL context', () => {
+  it('prepares Low ink actor programs against the actual HDR target before any warm draw',async()=>{
+    const {pipeline,compiles}=fixture();pipeline.setOptions(GRAPHICS_PRESETS.low,'low');await pipeline.prepare();
+    expect(compiles[0]).toMatchObject({target:resources(pipeline)!.scene,mapping:NoToneMapping});
+    expect(compiles[1]).toMatchObject({target:null,mapping:NoToneMapping});pipeline.dispose();
+  });
+
   it('keeps explicit ink-off Low to a single forward render with no post resources, even after prepare', async () => {
     const { pipeline, gpu, scene, frames } = fixture();
     pipeline.setSize(1920, 1080, 2);
@@ -399,7 +406,7 @@ describe('post shader work and packed normal precision', () => {
     expect(enabled).toContain('float grain =');
     const ink = compositeFragment.slice(compositeFragment.indexOf('float inkCoverage('), compositeFragment.indexOf('vec3 sceneAA('));
     expect(ink).toContain('for(int i=0;i<8;i++)');
-    expect(ink).toContain('if(inkMode<.5||center.z<.5||center.w<1.5');expect(ink).toContain('center.w>6.5');
+    expect(ink).toContain('if(inkMode<.5||center.z<.5||center.w<.5');expect(ink).toContain('if(floorSurface&&(inkMode<1.5||inkStrength<.5))return 0.0');expect(ink).toContain('center.w>6.5');
     expect(ink).toContain('if(!actor&&inkMode>1.5');
     expect(ink).not.toContain('texture2D(tScene,'); // no luminance edge detection
   });

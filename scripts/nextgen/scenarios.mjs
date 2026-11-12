@@ -495,3 +495,5 @@ for(const rig of ['breacher','cryo','arc']){
   if(placed!==5)throw Error('I7 pickup overlap placement incomplete');d.refresh();
  })();`)});
 }
+
+SCENARIOS.push({id:'g3-prop-motion',rooms:true,state:'playing',burst:true,setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.invulnerable(true);d.measureLuminance=true;d.game.enemies.reset();d.setInput({x:.35,y:0,fire:false,angle:0,autoAim:false});d.refresh();}});

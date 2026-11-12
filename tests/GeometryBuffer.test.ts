@@ -29,7 +29,7 @@ describe('shared MRT geometry contract',()=>{
  it('writes exclusion for effect programs instead of assigning actor or world contour IDs',()=>{
   const material=new ShaderMaterial({vertexShader:'void main(){gl_Position=vec4(position,1.);}',fragmentShader:'void main(){if(true){gl_FragColor=vec4(1.);}}'}),geometry=new BoxGeometry(),root=new Group();root.add(new Mesh(geometry,material));registerGeometry(root);
   const shader={vertexShader:material.vertexShader,fragmentShader:material.fragmentShader,uniforms:{}};material.onBeforeCompile(shader as never,{} as never);
-  expect(shader.fragmentShader).toContain('containmentGeometry=vec4(0.0,0.0,0.0,clamp(gl_FragColor.a,0.0,1.0))');expect(shader.fragmentShader).not.toContain('containmentIdentity');geometry.dispose();material.dispose();
+  expect(shader.fragmentShader).toContain('containmentGeometry=vec4(0.0,0.0,0.0,1.0)');expect(shader.fragmentShader).not.toContain('containmentIdentity');geometry.dispose();material.dispose();
  });
 });
 
@@ -46,6 +46,6 @@ describe('MRT draw-buffer isolation',()=>{
  });
  it('excludes opaque affliction droplets from actor and world classification',()=>{
   const root=new Group();root.name='shared-affliction-batches';const material=new MeshStandardMaterial(),geometry=new BoxGeometry();root.add(new Mesh(geometry,material));registerGeometry(root);
-  const shader=compiled(material);expect(shader.fragmentShader).not.toContain('containmentIdentity');expect(shader.fragmentShader).toContain('containmentGeometry=vec4(0.0,0.0,0.0,clamp');geometry.dispose();material.dispose();
+  const shader=compiled(material);expect(shader.fragmentShader).not.toContain('containmentIdentity');expect(shader.fragmentShader).toContain('containmentGeometry=vec4(0.0,0.0,0.0,1.0)');geometry.dispose();material.dispose();
  });
 });

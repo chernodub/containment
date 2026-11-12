@@ -1,6 +1,7 @@
 import { AdaptiveResolution } from './AdaptiveResolution';
 import { GpuFrameTimer } from './GpuProfiler';
-import { setGraphicShadingEnabled } from '../lighting/GraphicSurface';
+import { INK_STRENGTHS } from './Ink';
+import { setGraphicStrength, type GraphicStrength, setGraphicShadingEnabled } from '../lighting/GraphicSurface';
 import {
   ACESFilmicToneMapping, AgXToneMapping, BufferGeometry, Camera, Color, DepthTexture,
   Float32BufferAttribute, HalfFloatType, LinearFilter, NearestFilter, Matrix4, Mesh, NoBlending,
@@ -44,6 +45,12 @@ export class PostPipeline {
   readonly adaptive = new AdaptiveResolution();
   gpuTimer?: GpuFrameTimer;
   get diagnostics() { return { adaptiveScale:this.adaptive.scale, adaptive:this.adaptive.snapshot, gpu:this.gpuTimer?.snapshot }; }
+  private styleStrength:GraphicStrength='bold';
+  /** Debug art review strengths share the shipping shader programs. */
+  setStyleStrength(value:GraphicStrength):void {
+    this.styleStrength=value;setGraphicStrength(value);
+    if(this.resources){this.resources.composite.uniforms.inkStyle.value.fromArray(INK_STRENGTHS[value]);this.resources.composite.uniforms.inkStrength.value=value==='bold'?1:value==='medium'?.5:0;}
+  }
   private options: GraphicsOptions = GRAPHICS_PRESETS.low;
   private tier: GraphicsTier = 'low';
   private mood: PostMood = DEFAULT_POST_MOOD;
@@ -136,13 +143,15 @@ export class PostPipeline {
   /** Compiles every post shader and draws a complete offscreen warm frame. */
   async prepare(compile:(scene:Scene,camera:Camera)=>Promise<unknown>=(scene,camera)=>this.renderer.compileAsync(scene,camera)): Promise<void> {
     if (this.disposed) return;
-    await compile(this.scene, this.camera);
-    if (this.disposed || (this.tier === 'low' && this.options.inkOutlines === 'off')) return;
+    if (this.disposed || (this.tier === 'low' && this.options.inkOutlines === 'off')) { await compile(this.scene,this.camera);return; }
     const resources = this.ensureResources();
     const originalTarget = this.renderer.getRenderTarget();
     const originalMapping = this.renderer.toneMapping;
     const warmTarget = this.target(1, 1);
     try {
+      this.renderer.setRenderTarget(resources.scene);this.renderer.toneMapping=NoToneMapping;
+      await compile(this.scene,this.camera);
+      if(this.disposed||this.resources!==resources)return;
       // Compile the actual screen color-space variants before the offscreen draw.
       this.renderer.setRenderTarget(null);
       this.renderer.toneMapping = NoToneMapping;
@@ -282,7 +291,7 @@ export class PostPipeline {
       waves: { value: this.distortion.waves }, shapes: { value: this.distortion.shapes }, time: { value: 0 },
     });
     const composite = this.material(compositeFragment, {
-      tGeometry:{value:scene.textures[1]},inkPixel:{value:new Vector2()},inkMode:{value:0},inkStyle:{value:new Vector4(1.85,.85,.72,.26)},
+      tGeometry:{value:scene.textures[1]},inkPixel:{value:new Vector2()},inkMode:{value:0},inkStrength:{value:this.styleStrength==='bold'?1:this.styleStrength==='medium'?.5:0},inkStyle:{value:new Vector4().fromArray(INK_STRENGTHS[this.styleStrength])},
       tScene: { value: scene.texture }, tDepth: { value: scene.depthTexture },
       tAO: { value: ao.texture }, tBloom: { value: bloomA.texture }, tDistortion: { value: distortion.texture },
       projectionInverse: { value: new Matrix4() }, cameraWorld: { value: new Matrix4() },
