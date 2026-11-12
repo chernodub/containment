@@ -237,4 +237,50 @@ All shipping repeats remain visible below. In particular the GPU-based selector 
 
 Shipping selected High is24.1/49.4ms, which misses both requested High targets despite scale p50.70. Shipping selected Low is31.7/250.0ms, worse than the original selected16.7/18.2ms at scale1. Across all shipping repeats High p50 is24.1–24.9ms and Low p50 is25.4–33.1ms; no trial passes its relevant requested timing flags. **The measured Low slowdown is unresolved and must not be presented as a preserved16.7ms Low path.** The added MRT/composite/AA work is a real configured cost; scheduling, device contention and query effects may also contribute, but their shares are not established by these non-interleaved trials. The raw Low scene/composite/AA/HUD query medians41.41/24.55/22.35/29.19ms still cannot isolate those causes.
 
-The lead has separately requested a production run without the per-pass probe and a current-host preserved-original Low recheck to investigate this discrepancy. Neither pending run is read or summarized here. Quiet-device60fps acceptance, reliable GPU pass attribution and Low performance preservation remain unproven by the completed evidence.
+The subsequently completed production-feedback and current-host original-Low rechecks are recorded in the next section; no then-pending result was used in the matched table above. Quiet-device60fps acceptance, reliable GPU pass attribution and Low performance preservation remain unproven by the completed evidence.
+
+## Completed Low and production-feedback supplements
+
+Three later completed receipts investigate the unresolved Low cost; no pending packed-HDR capture or timing result is included:
+
+- [`g3-production-feedback`](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-production-feedback/benchmark.json): original full-matrix shipping checkpoint `d70f811`, Manual-control / Arc,1 trial per tier,2 completed trials, per-pass profiler off and no flush. The default sparse total-render GPU query remains, so this is not entirely uninstrumented.
+- [`g3-baseline-low-recheck`](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-baseline-low-recheck/benchmark.json): preserved original `ab71db8`, same room/rig,3 Low trials with per-pass queries and no flush, checking the original Low path on the later shared host.
+- [`g3-low-aa-bench`](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-low-aa-bench/benchmark.json): five-tap Low-AA candidate `7e098b2`, same room/rig,3 Low trials with per-pass queries and no flush. It includes the equivalent actor-silhouette work skip `a63c0f4`; High retains the previous FXAA. These receipts predate the later packed-HDR experiment and are not evidence for that format.
+
+All8 supplement trials completed with `errors:[]`, `budgetFailures:[]` and **zero combat compiles**. No gameplay, population, native-slot or resource assertion was relaxed. The frame/load/scale values below come directly from each trial; the N=1 production-feedback rows are not labeled best-of-three.
+
+| Receipt / tier / repeat | Frames | Frame p50 / p95 ms | Render JS p50 / p95 ms | CPU p50 / p95 ms | Scale min / p50 / max | Load1m start→end | Draw peak / programs / combat compiles |
+|---|---:|---:|---:|---:|---:|---:|---:|
+|g3-production-feedback /high /0|296|41.9 /150.9|5.2 /9.1|6.2 /11.9|0.7 /0.775 /0.95|152.0→150.7|202 /179 /0|
+|g3-production-feedback /low /0|297|33.2 /174.6|5.3 /9.2|6.2 /12.0|1 /1 /1|150.7→216.7|128 /294 /0|
+|g3-baseline-low-recheck /low /0|576|17.2 /84.4|4.7 /7.5|5.4 /9.1|1 /1 /1|191.9→174.5|127 /227 /0|
+|g3-baseline-low-recheck /low /1|711|16.8 /66.0|4.2 /6.7|4.9 /9.1|1 /1 /1|174.5→168.5|127 /229 /0|
+|g3-baseline-low-recheck /low /2|396|17.4 /183.4|4.4 /6.5|5.1 /8.7|1 /1 /1|168.5→162.3|125 /229 /0|
+|g3-low-aa-bench /low /0|480|32.6 /75.0|5.4 /8.5|6.4 /10.9|1 /1 /1|144.2→117.3|133 /294 /0|
+|g3-low-aa-bench /low /1|246|41.5 /266.1|5.5 /10.2|6.7 /12.1|1 /1 /1|117.3→102.7|127 /294 /0|
+|g3-low-aa-bench /low /2|468|25.1 /83.0|4.7 /8.6|5.5 /10.8|1 /1 /1|102.7→124.3|133 /294 /0|
+
+Disabling the per-pass profiler did **not** restore the old checkpoint to its target in this run: High41.9/150.9ms and Low33.2/174.6ms. The total-render elapsed query recorded High55.52/92.88ms and Low53.37/92.65ms p50/p95, again not a validated decomposition of frame cost. That earlier harness did not retain `renderPipeline` feedback diagnostics; its scale history is available, but the JSON alone cannot establish the runtime timer's enabled state or feedback freshness throughout the run. The later harness now retains those diagnostics. In all three five-tap Low trials it records adaptive disabled, scale1 and GPU timer disabled, as required for Low; the historical completed-sample counters are not evidence of an active Low timer.
+
+The current-host original Low recheck returns frame p50 **17.2/16.8/17.4ms** with bad p95 tails **84.4/66.0/183.4ms**. The five-tap candidate returns p50 **32.6/41.5/25.1ms**, p95 **75.0/266.1/83.0ms**, at scale1. Neither set certifies the16.7ms target. However, the preserved original returning near17ms while the owned Low path remains materially slower makes **owned presentation cost a credible unresolved contributor**. The outcome cannot be hand-waved as shared-host load: the candidate's load1m is lower (102.7–144.2 versus the original recheck162.3–191.9), although load average still does not control GPU scheduling. The runs are sequential and not a randomized, device-isolated causal experiment; they do not quantify how much of the slowdown belongs to rendering versus contention.
+
+### Same-rule selected Low scopes
+
+Existing `gpuBestOfN` selects original-recheck Low1 (711 frames,16.8/66.0ms) and candidate Low2 (468 frames,25.1/83.0ms). These are the only trials supplying the following raw per-pass values; each cell is p50/p95 ms **[resolved query N]**. The same-stage values remain unvalidated isolated attribution and must not be summed or subtracted as measured savings. Original lacks the compact composite/final-AA stages, so dashes are absent scopes, not measured zeros.
+
+| Scope | Current-host original Low1 | Five-tap candidate Low2 |
+|---|---:|---:|
+|Scene|26.33 /76.44 [118]|49.02 /125.52 [39]|
+|Compact composite|—|56.46 /139.84 [39]|
+|Final AA|—|46.63 /123.89 [39]|
+|HUD|23.29 /74.16 [118]|44.39 /136.49 [38]|
+
+The candidate's final-AA raw median46.63ms despite a five-read fullscreen shader is another reason not to interpret these scopes as direct isolated shader cost. Both labels keep original resource guards: current-host original max127 draws/229 programs; candidate max133 draws/294 programs; all combat compile counts0.
+
+### Five-tap work bound, not a measured frame win
+
+`7e098b2` replaces **Low only** with five fixed presentation samples, no edge-search loop and a convex blend retaining at least68% of the center pixel. The lead reports acceptance of13 native matched Low quality pairs; this note does not substitute timing for that visual decision. High keeps the bounded Three FXAA described above. The configured Low final-AA ceiling becomes **5×2,073,600 =10,368,000 texture lookups** for a1920×1080 fullscreen draw, before compiler/cache behavior. The previous FXAA source declared9 neighborhood reads plus bounded edge searches; reducing that source-work envelope is deterministic, but the receipts above do **not** show a measured frame-time win or restore Low acceptance. Low still has scene→composite→AA and its extra targets; the five-read filter does not remove those submissions.
+
+`a63c0f4` also skips eight unused neighbor-depth reads and view-position reconstructions for valid actor ID silhouettes; its actor contour branch uses the same identity boundary result and leaves major actor crease processing separate. That bound is per covered actor pixel, not eight reads saved across every screen pixel. It changes shader work rather than hit/gameplay decisions and adds no geometry pass or program variant. Its timing contribution is not isolated by these combined candidate runs.
+
+The completed supplement evidence therefore narrows the issue without closing it: per-pass-query overhead is not the sole explanation for the old checkpoint's miss, the current-host original remains faster than the owned Low candidate, and five-tap AA only proves a smaller deterministic work bound. High60fps, Low preservation and reliable GPU stage attribution remain unaccepted. No later packed-HDR result is inferred here.
