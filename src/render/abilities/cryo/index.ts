@@ -237,15 +237,21 @@ class CryoPresentation implements AbilityPresentation {
       for (let i = 0; i < steps; i++) {
         const t = i / (steps - 1), seed = i * 2.73 + arm * 4.13;
         const variation = Math.sin(seed * 1.71) ** 2;
-        const a = arm * TAU / 3 + t * 2.45 + time * .24;
-        const band = radius - clearRadius, margin = band * .2;
-        const r = clearRadius + margin + (band - margin * 2) * t;
-        const radialSpace = Math.min(r - clearRadius, radius - r);
-        // Complete rectangular brush support, including the curved ends, stays in the annulus.
-        const halfLength = Math.min(.85 + t * .55 + variation * .25, radialSpace * .78);
-        const halfWidth = Math.min(.18 + t * .12 + variation * .08, radialSpace * .24);
+        const sweep = 1.5, a = arm * TAU / 3 + t * sweep + time * .24;
+        const band = radius - clearRadius, margin = band * .2, span = band - margin * 2;
+        const r = clearRadius + margin + span * t;
+        const heading = Math.atan2(r * sweep, span), angle = a + heading;
+        const radial = Math.cos(heading), tangent = Math.sin(heading);
+        const halfWidth = Math.min(.34 + t * .18 + variation * .09, margin * .36);
+        // Adjacent brushes overlap along the spiral tangent, including the cheaper three-stroke arms.
+        const spacing = Math.hypot(span, r * sweep) / (steps - 1);
+        const outerLimit = Math.sqrt(Math.max(0, radius * radius - (r * tangent + halfWidth) ** 2)) - r * radial;
+        const nearSide = Math.max(0, r * tangent - halfWidth);
+        const innerLimit = nearSide >= clearRadius ? Infinity
+          : r * radial - Math.sqrt(Math.max(0, clearRadius * clearRadius - nearSide * nearSide));
+        const halfLength = Math.max(.01, Math.min(spacing * ((k.low ? .74 : .66) + variation * .06), outerLimit * .97, innerLimit * .97));
         k.gust(x + Math.cos(a) * r, z + Math.sin(a) * r, halfLength * 2, halfWidth * 2,
-          a + Math.PI / 2 - .28, seed, fade * (.4 + variation * .12));
+          angle, seed, fade * (.4 + variation * .08));
       }
     }
     k.lightAt(zone.id, x, z, ICE, .85 * fade, 4.5);

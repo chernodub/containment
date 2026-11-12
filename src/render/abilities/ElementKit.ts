@@ -287,11 +287,11 @@ export class ElementKit {
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1): void {
         const streams = this.low ? 2 : 3;
         for (let i = 0; i < streams; i++) {
-            const a = angle + (i - (streams - 1) * .5) * arc * .22;
-            const reach = radius * (.78 + Math.sin(i * 7.13) ** 2 * .08);
+            const a = angle + (i === 0 ? 0 : i === 1 ? -.28 : .36) * arc;
+            const reach = radius * (i === 0 ? .87 : i === 1 ? .62 : .73);
             this.flowFlame(x + Math.cos(angle) * .35, .95, z + Math.sin(angle) * .35,
-                x + Math.cos(a) * reach, .9 + i * .13, z + Math.sin(a) * reach,
-                radius * (.2 + i * .025), i * 3.73, opacity * .72, i === 1);
+                x + Math.cos(a) * reach, .92 + i * .11, z + Math.sin(a) * reach,
+                radius * (i === 0 ? .145 : i === 1 ? .095 : .11), i * 3.73, opacity * (i === 0 ? .82 : .55), i === 0);
         }
         const count = this.low ? 12 : 24;
         for (let i = 0; i < count; i++) {

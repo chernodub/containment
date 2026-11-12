@@ -181,7 +181,13 @@ describe('Pyro presentation lifecycle and readability', () => {
     }
     const shoulderVents = exhaust.mock.calls.filter(call => call[3] >= .25);
     expect(shoulderVents).toHaveLength(2);
-    for (const call of shoulderVents) { expect(call[1]).toBeLessThan(1); expect(call[4]).toBeGreaterThan(.9); }
+    for (const call of shoulderVents) {
+      expect(call[1]).toBeGreaterThanOrEqual(1.08); expect(call[4]).toBeGreaterThan(.6);
+      expect(call[1] + call[4]).toBeLessThan(1.9);
+    }
+    const backpackVents = exhaust.mock.calls.filter(call => call[3] < .25);
+    expect(backpackVents).toHaveLength(2);
+    for (const call of backpackVents) { expect(call[1]).toBeCloseTo(.9); expect(call[1] + call[4]).toBeLessThan(1.9); }
     expect(shoulderVents[0][4]).not.toBe(shoulderVents[1][4]);
     expect(kit.counts.rings).toBe(0); expect(kit.batches.decal.mesh.count).toBe(0);
     dispose();

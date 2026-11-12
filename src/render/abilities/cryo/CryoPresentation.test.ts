@@ -184,11 +184,24 @@ describe('Cryo signatures', () => {
     const radii = gusts.map(c => Math.hypot(c[0] - 10, c[1] - 10));
     expect(Math.max(...radii) - Math.min(...radii)).toBeGreaterThan(4);
     expect(new Set(gusts.map(c => c[2].toFixed(2))).size).toBeGreaterThan(8);
+    let supportArea = 0;
     for (const c of gusts) {
-      const distance = Math.hypot(c[0] - 10, c[1] - 10), support = Math.hypot(c[2] / 2, c[3] / 2);
-      expect(distance - support).toBeGreaterThan(2.25);
-      expect(distance + support).toBeLessThan(300 / 32);
-      expect(c[6]).toBeLessThanOrEqual(.52);
+      const dx = c[0] - 10, dz = c[1] - 10, cosine = Math.cos(c[4]), sine = Math.sin(c[4]);
+      const localX = dx * cosine + dz * sine, localZ = -dx * sine + dz * cosine;
+      const nearest = Math.hypot(Math.max(0, Math.abs(localX) - c[2] / 2), Math.max(0, Math.abs(localZ) - c[3] / 2));
+      expect(nearest).toBeGreaterThan(2.25);
+      for (const side of [-1, 1]) for (const end of [-1, 1]) {
+        expect(Math.hypot(dx + cosine * end * c[2] / 2 - sine * side * c[3] / 2,
+          dz + sine * end * c[2] / 2 + cosine * side * c[3] / 2)).toBeLessThan(300 / 32);
+      }
+      expect(c[6]).toBeLessThanOrEqual(.48);
+      supportArea += c[2] * c[3];
+    }
+    expect(supportArea).toBeLessThan(Math.PI * (300 / 32) ** 2 * .24);
+    for (let arm = 0; arm < 3; arm++) for (let i = 0; i < 4; i++) {
+      const first = gusts[arm * 5 + i], second = gusts[arm * 5 + i + 1];
+      const separation = Math.hypot(first[0] - second[0], first[1] - second[1]);
+      expect((first[2] + second[2]) / 2).toBeGreaterThan(separation);
     }
     // All spiral markers were replaced; only short authored-prop frost seams remain.
     for (const c of kit.ribbon.mock.calls) expect(Math.hypot(c[3] - c[0], c[5] - c[2])).toBeLessThanOrEqual(.350001);
@@ -237,6 +250,25 @@ describe('Cryo signatures', () => {
     fx.update(frame({ zones: [zone({ remainingMs: 6500 })] }, 0));
     expect(kit.draw.mock.calls).toEqual(still);
     expect(kit.gust.mock.calls).toEqual(stillGusts);
+  });
+
+  it('keeps Low mist connected and its complete rectangular support in the annulus', () => {
+    const kit = recordingKit(); kit.low = true;
+    createCryoPresentation(kit as unknown as ElementKit).update(frame({ zones: [zone()] }, 0));
+    const gusts = kit.gust.mock.calls;
+    for (const c of gusts) {
+      const dx = c[0] - 10, dz = c[1] - 10, cosine = Math.cos(c[4]), sine = Math.sin(c[4]);
+      const localX = dx * cosine + dz * sine, localZ = -dx * sine + dz * cosine;
+      expect(Math.hypot(Math.max(0, Math.abs(localX) - c[2] / 2), Math.max(0, Math.abs(localZ) - c[3] / 2))).toBeGreaterThan(2.25);
+      for (const side of [-1, 1]) for (const end of [-1, 1]) {
+        expect(Math.hypot(dx + cosine * end * c[2] / 2 - sine * side * c[3] / 2,
+          dz + sine * end * c[2] / 2 + cosine * side * c[3] / 2)).toBeLessThan(300 / 32);
+      }
+    }
+    for (let arm = 0; arm < 3; arm++) for (let i = 0; i < 2; i++) {
+      const first = gusts[arm * 3 + i], second = gusts[arm * 3 + i + 1];
+      expect((first[2] + second[2]) / 2).toBeGreaterThan(Math.hypot(first[0] - second[0], first[1] - second[1]));
+    }
   });
 
   it('renders no denied/ready world feedback and clears all transient state', () => {

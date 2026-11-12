@@ -73,7 +73,7 @@ ${atlas ? `
 ${kind === 'flame' ? `
  float t=uvLocal.y;float plume=step(100.,phase);float flamePhase=phase-plume*100.;float clock=abilityTime*(1.4+fract(flamePhase)*.6);
  float bend=sin(t*4.8-clock*3.+flamePhase)*(.06+t*.2)+sin(t*9.+flamePhase*2.-clock*2.)*.035*t;
- float taper=mix(pow(max(.001,1.-t),.68),.25+t*.85,plume);
+ float taper=mix(pow(max(.001,1.-t),.68),.28+sin(t*3.141593)*.82,plume);
  float width=(.42+.11*sin(t*7.+flamePhase))*taper;
  float axis=p.x-bend;float distance=abs(axis)/max(.015,width);
  float tongue=(1.-smoothstep(.72,1.,distance))*smoothstep(0.,.09,t)*(1.-smoothstep(.84,1.,t));
@@ -99,7 +99,8 @@ ${kind === 'decal' ? `
   float bend=sin(seed*3.7)*max(0.,along-.18)*.38-sin(seed*3.7)*max(0.,along-.36)*.68+sin(seed*7.1)*max(0.,along-.62)*.55;
   float reach=.63+.32*fract(sin(seed*37.1)*437.13);
   float splitCoverage=smoothstep(.06,.15,along)*(1.-smoothstep(reach-.07,reach,along));
-  float groove=1.-smoothstep(.006,.018,abs(across-bend));
+  float width=(.007+.008*fract(seed*1.7))*(1.-along*.65);
+  float groove=1.-smoothstep(width*.4,width,abs(across-bend));
   float branch=1.-smoothstep(.004,.012,abs(across-bend-(along-.4)*(.35+sin(seed)*.15)));
   float breaks=1.-smoothstep(.018,.036,abs(along-(.3+fract(seed)*.2)));
   float intact=1.-breaks*.8;
@@ -107,7 +108,7 @@ ${kind === 'decal' ? `
   lip=max(lip,(1.-smoothstep(.003,.009,abs(across-bend-.016)))*splitCoverage);
  }
  }
- if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,lip*.35);c=mix(vec3(.009,.012,.014),vec3(.2,.13,.055),lip*.5);}
+ if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,lip*.35);c=mix(vec3(.006,.009,.012),vec3(.095,.085,.062),lip*.55);}
  else if(variant<1.5){
   if(d>1.)discard;
   float powder=abilityNoise(p*31.);
@@ -129,11 +130,13 @@ ${kind === 'decal' ? `
  else if(variant>9.5){
   float seed=fract(phase)*15.7;
   float curve=p.x*p.x*(.18+sin(seed)*.07)+sin(p.x*3.+seed+abilityTime*.3)*.055;
-  float taper=pow(max(0.,1.-p.x*p.x),.6);
-  float stroke=abs(p.y-curve)/max(.04,.38*taper);
-  float coverage=(1.-smoothstep(.32,1.,stroke))*taper;
+  float cold=step(ink.r*1.1,ink.g);
+  float taper=pow(max(0.,1.-p.x*p.x),mix(.6,.42,cold));
+  float stroke=abs(p.y-curve)/max(.04,mix(.38,.64,cold)*taper);
+  float coverage=(1.-smoothstep(mix(.32,.08,cold),1.,stroke))*taper;
   c=mix(ink*.55,ink*1.45+vec3(.1),smoothstep(.45,.95,coverage));
-  a*=coverage*.85;
+  c=mix(c,ink*.95+vec3(.13)*coverage,cold);
+  a*=coverage*mix(.85,.62,cold);
  }
  else if(variant>7.5){
   float liquid=variant<8.5?d:length(vec2(p.x*.18,p.y));
