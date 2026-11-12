@@ -11,6 +11,7 @@ export function boonElement(boon: MutationDefinition): BoonElement {
   if (['caustic-rounds', 'toxic-bloom'].includes(boon.id)) return 'acid';
   if (['arc-filament', 'conductive-shell', 'ball-lightning', 'cryo-conductor'].includes(boon.id)) return 'arc';
   if (boon.family === 'Cryo' || boon.id === 'shock-absorber') return 'cryo';
+  if (['blood-price', 'blood-capacitor', 'reactive-barrier'].includes(boon.id)) return 'kinetic';
   if (boon.family === 'Recovery') return 'recovery';
   if (boon.family === 'Kinetic' || ['volatile-remains', 'last-shell', 'aftershock'].includes(boon.id)) return 'kinetic';
   return 'arc';
