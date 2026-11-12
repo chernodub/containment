@@ -63,6 +63,15 @@ describe('V3 shared spectacle', () => {
     k.begin(0); k.end(); expect(k.batches.flame.mesh.count).toBe(0); k.dispose();
   });
 
+
+  it('projects directional combustion along the actual camera right axis instead of a fixed screen diagonal', () => {
+    const k = new ElementKit(new T.Group()), camera = new T.PerspectiveCamera();
+    camera.position.set(0,8,8);camera.lookAt(0,0,0);camera.updateMatrixWorld();k.setView(camera);k.begin(0);
+    k.directedFlame(0,0,0,.2,1,-Math.PI/2,2,1);k.directedFlame(0,0,0,.2,1,0,2,1);k.end();
+    const m = new T.Matrix4();k.batches.flame.mesh.getMatrixAt(0,m);expect(m.elements[4]).toBeCloseTo(0);
+    k.batches.flame.mesh.getMatrixAt(1,m);expect(m.elements[4]).toBeGreaterThan(.1);k.dispose();
+  });
+
   it('uses one prepared composite input and suppresses exposure impulses at zero flash or reduced motion', () => {
     const k = new ElementKit(new T.Scene()), setAbilityPresentation = vi.fn();
     k.bind({ lights: {} as never, distortion: {} as never, camera: {} as never, presentation: { setAbilityPresentation } });

@@ -106,6 +106,8 @@ export class ElementKit {
     private shape: Telegraph = { shape: 'shockwave', x: 0, z: 0 };
     private line: EnergyRibbon = { start: new T.Vector3(), end: new T.Vector3() };
     private light = { x: 0, y: 1, z: 0, color: 0, intensity: 0, distance: 1, duration: .15, priority: 2 };
+    private viewRightX = 1;
+    private viewRightZ = 0;
     private disposed = false;
     private instanceCount = 0;
     private exposure = 0;
@@ -123,7 +125,7 @@ export class ElementKit {
         this.root.name = 'ability-element-kit';
         this.batches = { shard: new InstanceBatch(this.root, 'shard', 512), spark: new InstanceBatch(this.root, 'spark', 512), smoke: new InstanceBatch(this.root, 'smoke', 192), flame: new InstanceBatch(this.root, 'flame', 384), solid: new InstanceBatch(this.root, 'solid', 512), ghost: new InstanceBatch(this.root, 'ghost', 128), decal: new InstanceBatch(this.root, 'decal', 64), front: new InstanceBatch(this.root, 'front', 64) };
     }
-    setView(camera: T.Camera): void { for (const k in this.batches)
+    setView(camera: T.Camera): void { this.viewRightX = camera.matrixWorld.elements[0]; this.viewRightZ = camera.matrixWorld.elements[2]; for (const k in this.batches)
         this.batches[k as Primitive].setView(camera); }
     bind(services: AbilityServices): void { this.services = services; }
     setOptions(options: GraphicsOptions, tier: GraphicsTier, reducedMotion: boolean): void {
@@ -288,14 +290,17 @@ export class ElementKit {
             const h = (.8 + travel * 1.15) * (.65 + f * .5);
             this.draw('flame', x + Math.cos(a) * r, .45 + travel * .5, z + Math.sin(a) * r,
                 width, h * .5, 1, travel < .26 ? 0xffedb5 : 0xff7a2e,
-                opacity * (.85 - travel * .25), 0, Math.sin(a - .7) * (.5 + travel * .5), 1);
+                opacity * (.85 - travel * .25), 0, this.flameTilt(a, 1.4 + travel * 1.3), 1);
         }
+    }
+    private flameTilt(angle: number, lean: number): number {
+        return -Math.atan((Math.cos(angle) * this.viewRightX + Math.sin(angle) * this.viewRightZ) * lean);
     }
     /** Analytic tongue leaning along a world direction; shares the prepared flame draw. */
     directedFlame(x: number, y: number, z: number, width: number, height: number, angle: number, lean: number, seed: number, opacity = 1, core = false): void {
         const cycle = this.reducedMotion ? .4 : (this.time * (1.6 + Math.sin(seed) * .25) + seed * .6180339) % 1;
         this.draw('flame', x, y + height * .5, z, width, height * (.38 + Math.sin(cycle * Math.PI) * .12), 1,
-            core ? 0xffedb5 : 0xff7a2e, opacity, 0, Math.sin(angle - .7) * lean, 1);
+            core ? 0xffedb5 : 0xff7a2e, opacity, 0, this.flameTilt(angle, lean), 1);
     }
     /** Solid-looking faceted translucent column, with a narrow luminous internal vein. */
     iceColumn(x: number, z: number, width: number, depth: number, height: number, angle: number, opacity = 1): void {
