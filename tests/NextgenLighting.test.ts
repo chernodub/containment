@@ -147,7 +147,10 @@ it('stages the Queen reactor core within the fixed practical budget and preserve
   expect(rig.key.position.y).toBeGreaterThan(7);expect(rig.key.position.z).toBeGreaterThan(rig.staging!.coreZ);expect(rig.key.target.position.y).toBeGreaterThan(0);
   rig.setQuality('low'); expect(rig.fixtures.filter(light => light.visible)).toHaveLength(2);
   rig.loadRoom(room, 45, 33.75, 'infested');
-  expect(rig.staging).toBeNull(); expect(rig.key.color.g).toBeGreaterThan(rig.key.color.r);
+  expect(rig.staging).toBeNull();
+  expect(Math.max(...rig.key.color.toArray())-Math.min(...rig.key.color.toArray())).toBeLessThan(.15);
+  const innerGlow=new T.Color(rig.mood.practical.color);expect(innerGlow.g).toBeGreaterThan(innerGlow.r);
+  expect(rig.mood.practical.distance).toBeLessThan(3);
   expect(rig.fill.color.b).toBeGreaterThan(rig.fill.color.r);
   expect(rig.rim.color.b).toBeGreaterThan(rig.rim.color.g);
   expect(rig.fixtures.every(light => !light.userData.reactorCore)).toBe(true);
@@ -256,14 +259,16 @@ it('preserves directional contrast, neutral steel and a stable local readability
 
 it('structures hot reactor emissives using a shared presentation clock and stable shader hook', () => {
   const material = new T.MeshStandardMaterial({ emissive: 0xffd69a, emissiveIntensity: 3.4 });
-  applyHotFixtureSurface(material);
+  applyHotFixtureSurface(material,{x:12,z:8,radius:3});
   const hook = material.onBeforeCompile, key = material.customProgramCacheKey();
   const shader = {
     uniforms: {} as Record<string, { value: unknown }>,
-    vertexShader: '#include <common>\n#include <uv_vertex>',
+    vertexShader: '#include <common>\n#include <uv_vertex>\n#include <worldpos_vertex>',
     fragmentShader: '#include <common>\n#include <emissivemap_fragment>',
   };
   hook(shader as Parameters<T.Material['onBeforeCompile']>[0], {} as T.WebGLRenderer);
+  expect((shader.uniforms.hotFixtureCore.value as T.Vector3).toArray()).toEqual([12,8,3]);
+  expect(shader.vertexShader).toContain('vHotFixturePosition=(modelMatrix*vec4(transformed,1.0)).xyz');
   expect(shader.fragmentShader).toContain('hotFixturePearl');
   expect(shader.fragmentShader).toContain('hotFixtureSeam');
   expect(shader.fragmentShader).toContain('totalEmissiveRadiance*=');

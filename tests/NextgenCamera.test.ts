@@ -307,8 +307,8 @@ describe('perspective enemy health labels', () => {
       const matrix = new T.Matrix4();
       expect(fill.count).toBe(3);
       for (let i = 0; i < entries.length; i++) {
-        const width = 32;
-        for (const [mesh, expectedWidth, expectedHeight] of [[background, width + 4, 6], [fill, width * entries[i].health / 100, 4]] as const) {
+        const width = entries[i].elite ? 42 : 34;
+        for (const [mesh, expectedWidth, expectedHeight] of [[background, width + 6, 9], [fill, width * entries[i].health / 100, 5]] as const) {
           mesh.getMatrixAt(i, matrix);
           const left = new T.Vector3(-.5, 0, 0).applyMatrix4(matrix).project(camera);
           const right = new T.Vector3(.5, 0, 0).applyMatrix4(matrix).project(camera);

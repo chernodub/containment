@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {groundIndicatorMaterial} from './vfx/GroundIndicatorMaterial';
 import type {ShipEnvironment} from './ShipEnvironments';
 import type {GraphicsTier} from './FrameBudget';
 import type {ShadowQuality} from './graphicsOptions';
@@ -157,28 +158,33 @@ export class SceneLighting {
   for(let i=0;i<this.fixtureCount;i++){
    const light=this.fixtures[i];if(!light.visible)continue;
    const phase=this.time+i*1.73;
-   const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.72+.28*Math.sin(phase*1.4):behavior==='reactor'?.78+.22*Math.sin(this.time*2.1+i*.65):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
-   light.intensity=(light.userData.reactorCore?this.bossArena?25:14:this.mood.practical.intensity*this.composition.practicalGain)*(1+(animated-1)*this.flashIntensity);
+   const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.72+.28*Math.sin(phase*1.4):behavior==='reactor'?(light.userData.reactorCore?.9+.1*Math.sin(this.time*2.1):.65+.35*Math.pow(Math.max(0,Math.cos(this.time*1.2-i*Math.PI/2)),4)):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
+   const overload=this.mood.environment==='reactor'&&!!this.staging&&!this.bossArena&&!this.manualConsole;if(overload&&i>0){light.color.setHex(0xff5a23);light.distance=4.2;}
+   const failed=this.mood.environment==='habitation'&&i===1?.35+.65*Math.pow(Math.min(1,Math.max(0,Math.sin(this.time*5.3)+.35*Math.sin(this.time*17.1))),2):1;
+   light.intensity=(light.userData.reactorCore?this.bossArena?25:14:overload?65:this.mood.practical.intensity*this.composition.practicalGain)*(1+(animated*failed-1)*this.flashIntensity);
   }
  }
  /** Reuses the prepared fixed lights; menu transitions create no shader topology. */
  setMenu(enabled:boolean){
   if(this.menuPresentation===enabled)return;this.menuPresentation=enabled;
   if(!enabled){this.applyMood(this.width,this.height);this.playerX=this.playerZ=NaN;return;}
-  this.ambient.intensity=.055;this.ambient.color.setHex(0x8098b0);
-  this.key.position.set(29,6,19);this.key.target.position.set(24,1.6,13);this.key.color.setHex(0xd5e9ff);this.key.intensity=this.key instanceof T.SpotLight?1000:4.2;
-  this.fill.position.set(28,4,7);this.fill.target.position.set(24,1,13);this.fill.color.setHex(0x749bab);this.fill.intensity=.9;
-  this.rim.position.set(29,6,9);this.rim.target.position.set(24,1,13);this.rim.color.setHex(0xa3dfee);this.rim.intensity=2.4;
-  for(let i=0;i<4;i++){const light=this.fixtures[i];light.position.set(i?28:23,3.5,i?8.5:12);light.color.setHex(i?0xff9d64:0x9fe8ff);light.intensity=i<2?85:0;light.distance=9;}
-  this.lamp.setRoom(0);this.lamp.light.intensity=2;
+  this.suppressCombatFeedback();
+  this.ambient.intensity=.025;this.ambient.color.setHex(0x8098b0);
+  this.key.position.set(29,6,19);this.key.target.position.set(24,1.6,13);this.key.color.setHex(0xd5e9ff);this.key.intensity=this.key instanceof T.SpotLight?1000:.55;
+  this.fill.position.set(28,4,7);this.fill.target.position.set(24,1,13);this.fill.color.setHex(0x749bab);this.fill.intensity=.12;
+  this.rim.position.set(29,6,9);this.rim.target.position.set(24,1,13);this.rim.color.setHex(0xa3dfee);this.rim.intensity=.35;
+  for(let i=0;i<4;i++){const light=this.fixtures[i];light.position.set(i?28:23,3.5,i?8.5:12);light.color.setHex(i?0xff9d64:0x9fe8ff);light.intensity=i===0?95:i===1?10:0;light.distance=i===0?4.5:3;}
+  this.lamp.setRoom(0);this.lamp.light.intensity=24;
  }
+ /** Keep fixed slots visible for shader reuse, with no combat radiance in the title. */
+ suppressCombatFeedback(muzzle?:T.PointLight){this.pool.reset();this.blastLife=0;this.blast.intensity=0;if(muzzle)muzzle.intensity=0;}
  /** The Queen's face remains keyed in armored, exposed and defeated states. */
  setBossState(x:number,z:number,vulnerable:boolean,defeated:boolean){
   if(!this.bossArena||this.menuPresentation)return;
   this.coreKey.position.set(x,9,z+7);this.coreKey.target.position.set(x,1.2,z);
-  this.coreKey.color.setHex(vulnerable?0xe5ffd4:0xffe6c6);this.coreKey.intensity=defeated?480:720;
+  this.coreKey.color.setHex(vulnerable?0xffd9f4:0xffe6c6);this.coreKey.intensity=defeated?480:720;
   this.fill.intensity=defeated?.45:.58;this.rim.intensity=.55;
-  this.fixtures[0].position.set(x,4.5,z+1.8);this.fixtures[0].color.setHex(vulnerable?0xb6ff85:0xc0dcff);this.fixtures[0].distance=14;
+  this.fixtures[0].position.set(x,4.5,z+1.8);this.fixtures[0].color.setHex(vulnerable?0xff83ce:0xc0dcff);this.fixtures[0].distance=14;
  }
  invalidateShadows(){for(const light of [this.directionalKey,this.coreKey]){light.shadow.map?.dispose();light.shadow.map=null;light.shadow.mapPass?.dispose();light.shadow.mapPass=null;light.shadow.needsUpdate=true;}}
  dispose(){if(this.disposed)return;this.disposed=true;this.directionalKey.shadow.dispose();this.coreKey.shadow.dispose();this.pool.dispose();this.lamp.dispose();this.root.removeFromParent();}
@@ -217,10 +223,7 @@ export class ContactShadows {
  private dummy=new T.Object3D();private count=0;
  constructor(){
   const geometry=new T.PlaneGeometry(2,2);geometry.rotateX(-Math.PI/2);
-  const material=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{},
-   vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}',
-   fragmentShader:'varying vec2 vUv; void main(){float d=length(vUv*2.0-1.0);float a=(1.0-smoothstep(0.1,1.0,d))*0.4;gl_FragColor=vec4(0.025,0.035,0.045,a);}',
-  });
+  const material=groundIndicatorMaterial('contact',new T.Color(.025,.035,.045));
   this.mesh=new T.InstancedMesh(geometry,material,64);this.mesh.name='actor-contact-shadows';this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.mesh.frustumCulled=false;this.mesh.count=0;
  }
  begin(){this.count=0;}

@@ -132,12 +132,24 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
    padded(cx,22,cz,f.w,4,f.h,.8,ceramic);
    b(cx,19,cz,f.w-3,2,f.h-3,support);
    for(const dx of [-f.w/2+6,f.w/2-6])for(const dz of [-f.h/2+6,f.h/2-6])b(cx+dx,9,cz+dz,8,18,8,support);
+   // Personal items are stowed beneath the reviewed tabletop height.
+   b(cx-f.w/2+6,12,cz+f.h/2-1.98,7,10,.25,seat);
+   b(cx-f.w/2+6,12,cz+f.h/2-1.82,5,7,.05,ceramic);
+   padded(cx+9,13,cz+8,14,10,17,.8,support);
+   for(const dx of [5,13])b(cx+dx,18.5,cz+8,1,2,15,ceramic);
   }else if(f.kind.startsWith('seat-')){
    // A padded insert above a full-width metal seat pan. Keep the old envelope,
    // support contacts and outward-facing backs; no fixture moves.
    const alongX=f.w>f.h;
    b(cx,9.4,cz,f.w,2,f.h,support);
    padded(cx,12.4,cz,f.w-2,4,f.h-2,1,seat);
+   // A split upholstery seam and dropped personal bag stay on the seat's existing solid.
+   b(cx-3,14.46,cz,Math.min(f.w-6,9),.12,1.8,support);
+   for(let thread=0;thread<4;thread++)b(cx-6.5+thread*2.3,14.55,cz,.35,.08,2.4,ceramic);
+   if(index%2===0){
+    padded(cx,17.2,cz+1,Math.min(f.w-6,13),5.2,Math.min(f.h-6,10),.6,support);
+    for(const dx of [-3.4,3.4])b(cx+dx,20,cz+1,.8,.4,Math.min(f.h-7,9),ceramic);
+   }
    if(alongX){
     for(const dx of [-Math.min(f.w*.38,f.w/2-4),0,Math.min(f.w*.38,f.w/2-4)])b(cx+dx,4.2,cz,8,8.4,f.h-6,support);
     const backZ=f.kind==='seat-north'?f.y+3:f.y+f.h-3,front=f.kind==='seat-north'?1:-1;
@@ -182,6 +194,18 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
 
   }
   if(isGarden){
+   // An exposed irrigation chain, root collars and soil probes explain how this last garden survives.
+   const feedZ=f.y+f.h-10;
+   pipe(v(f.x+8,20.4,feedZ),v(f.x+f.w-8,20.4,feedZ),1.05,bark);
+   for(const dx of [-48,-8,36]){
+    pipe(v(cx+dx,20.4,feedZ),v(cx+dx,20.4,cz+4),.65,bark);
+    b(cx+dx,20.6,cz+4,4,1.3,5,support);b(cx+dx,21.35,cz+4,2.5,.2,3,ceramic);
+   }
+   for(const tree of gardenTrees.filter(tree=>tree.role==='ca_irrigation'&&tree.name.endsWith('_trunk'))){
+    const minimum=Math.min(...tree.positions.filter((_,i)=>i%3===1));let x=0,z=0,count=0;
+    for(let i=0;i<tree.positions.length;i+=3)if(tree.positions[i+1]<=minimum+.03){x+=tree.positions[i];z+=tree.positions[i+2];count++;}
+    if(count){const g=own(new T.TorusGeometry(2.5/32,.6/32,5,16));g.rotateX(-Math.PI/2);g.translate(cx/32+x/count,minimum+.025,cz/32+z/count);g.deleteAttribute('uv');const collar=new T.Mesh(g,bark);collar.castShadow=collar.receiveShadow=true;root.add(collar);}
+   }
    const transform=new T.Matrix4().makeTranslation((inputFixture.x+inputFixture.w/2)/32,0,(inputFixture.y+inputFixture.h/2)/32)
     .multiply(new T.Matrix4().makeRotationY(longitudinal?-Math.PI/2:0))
     .multiply(new T.Matrix4().makeScale((longitudinal?inputFixture.h:inputFixture.w)/144,1,(longitudinal?inputFixture.w:inputFixture.h)/64))

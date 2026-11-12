@@ -10,6 +10,8 @@ import {shieldingGateBlockout} from './ShieldingGateBlockout';
 import {infestedWorkshop} from './InfestedWorkshop';
 import {infestedWorkshopArchitecture} from './InfestedWorkshopArchitecture';
 import {crewCheckpointBlockout} from './CrewCheckpointBlockout';
+import {cabinetFace,pressureCylinderDetail,serviceCartridge} from './world/EquipmentDetail';
+import {addBroodCell,addWallRoots,GROWTH_MAT} from './world/OrganicGrowth';
 
 export const SHIP_ENVIRONMENTS=['cryogenics','habitation','security','cargo','communications','engineering','maintenance','infested','containment','reactor'] as const;
 export type ShipEnvironment=typeof SHIP_ENVIRONMENTS[number];
@@ -24,9 +26,11 @@ const legacyMoods:Readonly<Record<string,ShipEnvironment>>=Object.freeze({
 export function shipEnvironment(templateId:string):ShipEnvironment|undefined{return SHIP_ENVIRONMENTS[roomPairs.findIndex(pair=>pair.includes(templateId))]??(Object.hasOwn(legacyMoods,templateId)?legacyMoods[templateId]:undefined);}
 export type Footprint={x:number;y:number;width:number;height:number};
 const v=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
+/** Session-owned field finish, shared by every containment room and emitter. */
+export const fieldMaterial=new T.MeshStandardMaterial({color:0x84719f,emissive:0x9870df,emissiveIntensity:.65,roughness:.8,metalness:.1});fieldMaterial.userData.motivatedEmitter=true;
 
 /** All models are authored in a local cell, then fitted inside the authoritative collision rectangle. */
-export function environmentObstacle(environment:ShipEnvironment,footprint:Footprint,index=0,templateId=''):T.Group{
+export function environmentObstacle(environment:ShipEnvironment,footprint:Footprint,index=0,templateId='',seed=1729):T.Group{
  if(environment==='engineering'&&templateId==='safety-interlock-station')return safetyInterlockBlockout(footprint,index);
  if(environment==='security'&&templateId==='armory')return armoryBlockout(footprint,index);
  if(environment==='reactor'&&templateId==='manual-control-chamber')return manualControlBlockout(footprint,index);
@@ -46,6 +50,8 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
    const length=a.distanceTo(c),g=geometry(`g2-machined-pipe:${r}/${length.toFixed(3)}`,()=>new T.CylinderGeometry(r,r,length,18));
    const mesh=new T.Mesh(g,m);mesh.position.copy(a).add(c).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),c.clone().sub(a).normalize());mesh.castShadow=mesh.receiveShadow=true;cell.add(mesh);return mesh;
   };
+  const detailWriter={box:(m:T.Material,x:number,y:number,z:number,w:number,h:number,d:number)=>{b(x,y,z,w,h,d,m,0);},pipe:(m:T.Material,a:T.Vector3,c:T.Vector3,r:number)=>{pipe(a,c,r,m);}};
+  const detailFinishes={steel:MAT.edge,dark:MAT.black,paint:MAT.bone,signal:MAT.cyan};
   switch(environment){
    case 'cryogenics':{
     b(0,.14,0,1.7,.28,2.5,MAT.steel,.12);
@@ -73,7 +79,13 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
     b(0,.54,.64,1.36,.12,.66,MAT.bone,.12);b(0,.25,.64,.48,.5,.38,MAT.steel);
     b(-.38,.64,.64,.3,.06,.36,MAT.purple);
     rod(cell,v(.37,.61,.62),v(.37,.8,.62),.08,.07,MAT.armor);
-    b(.63,.15,1.1,.48,.3,.24,MAT.orange);break;
+    b(.63,.15,1.1,.48,.3,.24,MAT.orange);
+    for(const x of [.48,.78])b(x,.306,1.1,.025,.012,.22,MAT.steel,0);
+    pipe(v(.56,.31,1.1),v(.56,.38,1.1),.018,MAT.steel);pipe(v(.56,.38,1.1),v(.7,.38,1.1),.018,MAT.steel);pipe(v(.7,.38,1.1),v(.7,.31,1.1),.018,MAT.steel);
+    b(-.43,.704,-.34,.34,.008,.09,MAT.steel,0);
+    for(let stitch=0;stitch<4;stitch++)b(-.55+stitch*.08,.711,-.34,.015,.006,.11,MAT.bone,0);
+    b(.04,.614,.64,.28,.018,.24,MAT.purple,.012);b(.04,.625,.64,.20,.004,.16,MAT.bone,0);
+    break;
    }
    case 'security':{
     b(0,.15,0,1.9,.3,2.5,MAT.black);
@@ -99,19 +111,35 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
      b(-.48,.65+level*.88,z+1.13,.38,.19,.025,MAT.bone,.015);
      for(let serial=0;serial<6;serial++)b(-.62+serial*.052,.65+level*.88,z+1.146,.018,.13-.04*(serial%2),.006,MAT.black,0);
      for(const x of [-.34,.34])b(x,.5+level*.88,z+1.14,.04,.7,.04,MAT.edge,0);
+     // Fitted service hatches and paired cam locks replace loose roof ornaments.
+     b(.26,.95+level*.88,z-.52,.66,.035,.40,MAT.black,.025);
+     b(.26,.974+level*.88,z-.52,.54,.012,.28,MAT.edge,.012);
+     for(const x of [.04,.48])b(x,.987+level*.88,z-.52,.025,.014,.18,MAT.black,0);
+     b(.34,.53+level*.88,z+1.148,.58,.36,.018,MAT.black,.015);
+     for(const x of [.12,.56])b(x,.53+level*.88,z+1.163,.07,.25,.025,MAT.trim,.01);
+     for(let serial=0;serial<4;serial++)b(.21+serial*.08,.57+level*.88,z+1.16,.045,.04,.008,MAT.bone,0);
     }break;
    }
    case 'communications':{
     b(0,.12,0,1.8,.24,2.5,MAT.steel);
     for(const z of [-.64,.64]){
      b(0,1.05,z,1.66,1.95,1.03,MAT.black);
-     for(let shelf=0;shelf<5;shelf++){
-      b(0,.38+shelf*.32,z+.49,1.43,.24,.1,MAT.edge);
-      for(let led=0;led<3;led++)b(-.53+led*.18,.4+shelf*.32,z+.555,.07,.04,.025,led===2?MAT.cyan:MAT.acid,0);
-      b(.35,.4+shelf*.32,z+.555,.37,.035,.025,MAT.black,0);
+     // Cells rotate to fit their room reservation. Detail every vertical face so
+     // the camera never sees an untouched cabinet side after that rotation.
+     for(const side of [-1,1])for(const axis of ['x','z'] as const){
+      const surface=axis==='x'?.837:.525;
+      const project=(p:T.Vector3)=>axis==='x'?new T.Vector3(side*(surface+p.z),p.y,z+p.x):new T.Vector3(p.x,p.y,z+side*(surface+p.z));
+      const faceWriter={
+       box:(m:T.Material,x:number,y:number,depth:number,w:number,h:number,d:number)=>{
+        const p=project(v(x,y,depth));b(p.x,p.y,p.z,axis==='x'?d:w,h,axis==='x'?w:d,m,0);
+       },
+       pipe:(m:T.Material,a:T.Vector3,c:T.Vector3,r:number)=>{const cable=rod(cell,project(a),project(c),r,r,m);cable.receiveShadow=true;},
+      };
+      cabinetFace(faceWriter,detailFinishes,0,1.08,0,axis==='x'?.86:1.45,1.65);
      }
      b(0,2.04,z,1.3,.06,.7,MAT.steel);
-     for(const x of [-.5,.5]){const antenna=ring(cell,x,2.15,z,.18,.04,MAT.copper);antenna.rotation.y=Math.PI/2;}
+     serviceCartridge(detailWriter,detailFinishes,0,2.073,z,.45,0,i);
+     for(const x of [-.6,.6])pipe(v(x,1.7,z+.57),v(x,2.1,z+.22),.025,MAT.black);
     }break;
    }
    case 'engineering':{
@@ -129,6 +157,7 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
     b(0,.12,0,1.9,.24,2.5,MAT.steel);
     for(const x of [-.48,.48]){
      pipe(v(x,.72,-.98),v(x,.72,.98),.3,MAT.copper);
+     pressureCylinderDetail(detailWriter,{steel:MAT.edge,dark:MAT.black,paint:MAT.copper,signal:MAT.steel},x,.72,0,.3,1.96);
      for(const z of [-.78,.78]){const flange=ring(cell,x,.72,z,.35,.085,MAT.edge);flange.geometry=geometry('g2-coolant-flange',()=>new T.TorusGeometry(.35,.085,10,32));}
      b(x,.29,0,.72,.35,.7,MAT.black);
     }
@@ -138,15 +167,7 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
     break;
    }
    case 'infested':{
-    b(0,.3,0,1.66,.6,2.2,MAT.steel);
-    shell(cell,0,.65,0,.89,.48,2.4,MAT.flesh);
-    for(let n=0;n<5;n++){
-     const z=-.94+n*.46,x=Math.sin(n*2.3+index)*.35;
-     shell(cell,x,.9+n%2*.3,z,.43,.65,.76,MAT.shellDark);
-     ball(cell,x+.12,1.22+n%2*.3,z,.14,.16,.18,MAT.acid);
-     rod(cell,v(-.79,.15,z),v(x,1.38,z-.1),.035,.14,MAT.bone);
-     rod(cell,v(.79,.15,z),v(x,1.38,z-.1),.035,.12,MAT.flesh);
-    }break;
+    addBroodCell(cell,seed,index*count+i);break;
    }
    case 'containment':{
     b(0,.16,0,1.9,.32,2.5,MAT.black);
@@ -190,13 +211,13 @@ export function appendEnvironment(parent:T.Group,model:T.Group){
 }
 
 /** Flush deck inlays and outboard rear architecture never occupy a walkable tile. */
-export function environmentArchitecture(parent:T.Group,env:ShipEnvironment,w:number,h:number,templateId=''){
+export function environmentArchitecture(parent:T.Group,env:ShipEnvironment,w:number,h:number,templateId='',seed=1729){
  if(env==='security'&&templateId==='armory'){appendEnvironment(parent,armoryCarousel());return;}
  if(env==='engineering'&&templateId==='safety-interlock-station'){const shell=new T.Group();safetyInterlockArchitecture(shell,w,h);appendEnvironment(parent,shell);return;}
  if(env==='reactor'&&templateId==='manual-control-chamber'){manualControlArchitecture(parent,w);return;}
  if(env==='infested'&&templateId==='infested-workshop')return infestedWorkshopArchitecture(parent,w,h);
  const residential=env==='habitation'&&templateId==='residential-gallery';
- const accent=env==='habitation'?MAT.bone:env==='infested'?MAT.acid:['security','engineering','containment','maintenance'].includes(env)?MAT.amber:MAT.cyan;
+ const accent=env==='habitation'?MAT.bone:env==='infested'?MAT.acid:env==='containment'?fieldMaterial:['security','engineering','maintenance'].includes(env)?MAT.amber:MAT.cyan;
  const inlay=(x:number,z:number,width:number,depth:number,mat:T.Material)=>{const m=box(parent,x,-.007,z,width,.018,depth,mat,0);m.castShadow=false;return m;};
  // Deck language stays readable even when the nearest prop is off camera.
  if(env==='cryogenics'){
@@ -234,7 +255,7 @@ export function environmentArchitecture(parent:T.Group,env:ShipEnvironment,w:num
    grate((left+w-.5)/2,z,w-.5-left,1.9,MAT.black);
   }
  }else if(env==='infested'){
-  for(let n=0;n<12;n++){const x=1+(w-2)*(Math.sin(n*13.7)*.5+.5),z=1+(h-2)*(Math.cos(n*5.1)*.5+.5);const stain=ball(parent,x,-.012,z,1.5,.018,.85,MAT.shellDark);stain.castShadow=false;}
+  // Connected, flush roots come from EnvironmentalStory, without isolated ellipse pads.
  }
  for(let x=2;x<w;x+=4){
   const height=env==='cargo'?3.4:env==='containment'?3:2.65;
@@ -255,17 +276,26 @@ export function environmentArchitecture(parent:T.Group,env:ShipEnvironment,w:num
   }else if(residential){
    // Retain the rear envelope without a competing row of false cabin doors.
   }else if(env==='infested'){
-   shell(parent,x,1.4,-.45,.7,1.3,.6,MAT.flesh);
+   addWallRoots(parent,x,seed,Math.round(x));
   }else{
    box(parent,x,2.1,-.04,env==='communications'?1.8:1,.12,.06,accent);
    if(env==='engineering')box(parent,x,1.3,-.035,2,1.1,.05,MAT.black);
   }
  }
  if(env==='reactor'||env==='containment'){
-  if(templateId!=='reactor-vault')for(const radius of [.22,.33,.44]){const r=ring(parent,w/2,.005,h/2,Math.min(w,h)*radius,.018,accent);r.rotation.x=-Math.PI/2;r.scale.z=.1;r.castShadow=false;}
+  if(templateId!=='reactor-vault')for(const radius of [.22,.33,.44]){const r=ring(parent,w/2,.012,h/2,Math.min(w,h)*radius,.026,accent);r.rotation.x=-Math.PI/2;r.scale.z=.1;r.castShadow=false;}
+  if(env==='containment')for(let i=0;i<6;i++){const a=i*Math.PI/3,r=Math.min(w,h)*.33,x=w/2+Math.cos(a)*r,z=h/2+Math.sin(a)*r;box(parent,x,.027,z,.28,.05,.28,MAT.steel,.025);box(parent,x,.056,z,.12,.008,.12,fieldMaterial,.01);}
  }else if(env==='maintenance'){
   for(let z=1;z<h-1;z+=.35)for(const x of [1,w-1])box(parent,x,-.005,z,1.2,.018,.06,MAT.black,0);
  }else{
-  for(const x of [1,w-1])for(let z=1;z<h;z+=env==='cargo'?.7:2){const stripe=box(parent,x,-.003,z,env==='cargo'?.42:.07,.02,.35,accent,0);if(env==='cargo')stripe.rotation.y=.6;stripe.castShadow=false;}
+  for(const x of [1,w-1])for(let z=1;z<h;z+=env==='cargo'?.7:2){
+   if(env==='cargo'){
+    // Thin, chipped industrial paint lies 3mm above the actual generic deck.
+    const stripe=new T.Mesh(geometry('x2-worn-hazard-plane',()=>new T.PlaneGeometry(1,1)),MAT.industrialPaint);
+    stripe.name='flush-worn-cargo-paint';stripe.position.set(x,-.017,z);stripe.rotation.set(-Math.PI/2,0,-.6);
+    stripe.scale.set(.31,.22,1);stripe.receiveShadow=true;parent.add(stripe);
+    if(Math.round(z*10)%3!==0){const chip=stripe.clone();chip.position.z+=.16;chip.scale.set(.11,.065,1);parent.add(chip);}
+   }else{const stripe=box(parent,x,-.003,z,.07,.02,.35,accent,0);stripe.castShadow=false;}
+  }
  }
 }

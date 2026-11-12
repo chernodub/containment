@@ -4,6 +4,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 const material=(color:number,metalness=.3,roughness=.55,emissive=0,intensity=0)=>new T.MeshStandardMaterial({color,metalness,roughness,emissive,emissiveIntensity:intensity});
 export const MAT={
+ industrialPaint:material(0x8b805e,.02,.95),supplyWhite:material(0xe8fbff,.18,.6,0x9fe8ff,1.1),reward:material(0xffd27a,.5,.5,0xffbd51,.75),
  armor:material(0xb7c1b4,.58,.39),dark:material(0x152327,.7,.42),joint:material(0x080d11,.25,.72),
  trim:material(0xc29b59,.74,.3),visor:material(0x4bf6eb,.55,.15,0x27dccd,2.5),
  shell:material(0x35453b,.38,.3),shellDark:material(0x182b29,.42,.45),flesh:material(0x765047,.1,.65),

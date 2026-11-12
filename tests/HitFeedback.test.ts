@@ -24,10 +24,10 @@ it('caps repeated actor hits without washing out material or exposed colors',()=
  expect(Math.max(...materials(a).map(m=>m.emissiveIntensity))).toBeLessThanOrEqual(.1);
  expect(materials(a).map(m=>m.color.getHex())).toEqual(base);
  a.setExposed!(true);a.animate(0,0,0);
- expect(materials(a).every(m=>m.emissive.getHex()===0x42602b)).toBe(true);
- expect(Math.max(...materials(a).map(m=>m.emissiveIntensity))).toBeLessThanOrEqual(.32);
+ expect(materials(a).every(m=>m.emissive.getHex()===0xff4aa5)).toBe(true);
+ expect(Math.max(...materials(a).map(m=>m.emissiveIntensity))).toBeLessThanOrEqual(.125);
  for(let i=1;i<5;i++)a.animate(i*.05,0,0);
- expect(Math.max(...materials(a).map(m=>m.emissiveIntensity))).toBeCloseTo(.22);
+ expect(Math.max(...materials(a).map(m=>m.emissiveIntensity))).toBeCloseTo(.025);
  a.reset!();a.animate(0,0,0);expect(materials(a).every(m=>m.emissiveIntensity===0)).toBe(true);
  a.stop!();
 });

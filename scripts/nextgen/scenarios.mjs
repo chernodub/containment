@@ -228,6 +228,35 @@ export const SCENARIOS=[
 
 ];
 
+// X2 extends the existing public fixtures for matched tier/phase evidence.
+// Every setup is self-contained because capture serializes it into the page.
+for(const [id,sourceId]of [['x2-status-low','status-vfx'],['x2-pickups-low','g2-pickups'],['x2-queen-exposed-low','g2-queen-exposed'],['x2-kiting-full-low','combat-kiting']]){
+ const source=SCENARIOS.find(s=>s.id===sourceId);
+ SCENARIOS.push({...source,id,setup:new Function('room',`return (async()=>{await (${source.setup.toString()})(room);const d=window.__containmentDebug;d.renderer.setQuality('low');await d.prepare();d.refresh();})();`)});
+}
+for(const tier of ['high','low']){
+ const exposed=SCENARIOS.find(s=>s.id==='g2-queen-exposed');
+ SCENARIOS.push({...exposed,id:`x2-nest-husk-${tier}`,setup:new Function(`return (async()=>{
+  await (${exposed.setup.toString()})();const d=window.__containmentDebug;
+  d.renderer.setQuality('${tier}');await d.prepare();
+  const nest=d.game.boss.snapshot.nests[0];if(!nest)throw Error('No living nest');
+  d.refresh();const hit=d.game.boss.applyDamage({type:'nest',id:nest.id},nest.maxHealth*2);
+  if(!hit.applied)throw Error('Real nest destruction rejected');d.step(100);d.refresh();
+  if(![...d.renderer.nests.values()].some(n=>n.userData.destroyed))throw Error('Ruptured husk absent');
+ })();`)});
+}
+for(const tier of ['high','low'])for(const [phase,at]of [['opening',2950],['closing',6950]]){
+ SCENARIOS.push({id:`x2-queen-${phase}-${tier}`,state:'playing',room:'reactor-vault',burst:true,stepMs:100,auditGraphics:true,setup:new Function(`return (async()=>{
+  const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.invulnerable(true);
+  d.renderer.setQuality('${tier}');await d.prepare();const q=d.game.boss.snapshot;
+  let placed=false;for(let y=q.y+160;y<q.y+300&&!placed;y+=30)for(let x=q.x-100;x<q.x+100;x+=30)if(d.canStand(x,y)){Object.assign(d.game.player,{x,y});placed=true;break;}
+  d.setInput({x:0,y:0,fire:false,angle:Math.atan2(q.y-d.game.player.y,q.x-d.game.player.x),autoAim:false});d.step(${at});d.refresh();
+ })();`)});
+}
+SCENARIOS.push({...SCENARIOS.find(s=>s.id==='title'),id:'x2-title-motion',burst:true,stepMs:1000});
+SCENARIOS.push({...SCENARIOS.find(s=>s.id==='g2-calm-high'),id:'x2-calm-motion-high',burst:true});
+SCENARIOS.push({...SCENARIOS.find(s=>s.id==='g2-calm-low'),id:'x2-calm-motion-low',burst:true});
+
 // Local combat staging uses legal occupancy and clear shots, real enemy systems,
 // real weapons, real mutation triggers, and the unchanged gameplay camera.
 export function stageCombat({status=false}){

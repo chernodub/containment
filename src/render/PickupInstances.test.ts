@@ -8,6 +8,39 @@ import {ContextResources} from './ContextResources';
 
 const item = (kind: PickupKind, id: number): PickupSnapshot => ({id, kind, x: id * 17 + 96, y: id * 11 + 64, value: 1, ageMs: 0, lifetimeMs: 30000, alpha: .5});
 
+it('keeps distinct shallow supply silhouettes and a soft locator within four prepared draws',()=>{
+  const signatures=new Set<string>();
+  for(const kind of PICKUP_KINDS){
+    const model=pickupModel(kind),solids=new T.Group();let beams=0;
+    try{
+      expect(model.children.length).toBeLessThanOrEqual(4);
+      for(const child of model.children as T.Mesh[]){
+        expect(child.geometry.getAttribute('position').array.every(Number.isFinite)).toBe(true);
+        if(child.material instanceof T.ShaderMaterial){
+          beams++;expect(child.material.transparent).toBe(true);expect(child.material.depthWrite).toBe(false);
+          expect(child.castShadow).toBe(false);expect(child.geometry.getAttribute('color')).toBeUndefined();
+          expect(child.material.uniforms.indicatorMode.value).toBe(1);
+          expect((child.material.uniforms.indicatorColor.value as T.Color).getHex()).toBe(kind==='credits'?0xffd27a:kind==='grenade'?0xffb454:0xb5edff);
+        }else{
+          expect(child.material).toBeInstanceOf(T.MeshStandardMaterial);
+          solids.add(child.clone());
+        }
+      }
+      expect(beams).toBe(1);
+      const size=new T.Box3().setFromObject(solids,true).getSize(new T.Vector3());
+      signatures.add(size.toArray().map(n=>Math.round(n*100)).join('/'));
+      if(kind==='armor')expect(size.y).toBeLessThan(size.z*.3);
+      if(kind==='grenade')expect(size.y).toBeGreaterThan(size.x);
+      if(kind==='credits')expect((model.children as T.Mesh[]).some(m=>m.material===MAT.reward)).toBe(true);
+      if(kind==='health'){
+        expect((model.children as T.Mesh[]).some(m=>m.material===MAT.acid)).toBe(false);
+        expect((model.children as T.Mesh[]).some(m=>m.material===MAT.supplyWhite)).toBe(true);
+      }
+    }finally{disposeModel(model);}
+  }
+  expect(signatures.size).toBe(5);
+});
+
 it('matches all five ordinary pickup geometries, finishes, UVs, shadows and transformed vertices', () => {
   const batches = new PickupInstances(), snapshot = PICKUP_KINDS.flatMap((kind, i) => [item(kind, i * 2 + 1), item(kind, i * 2 + 2)]);
   const actual = new T.Matrix4(), expected = new T.Matrix4(), point = new T.Vector3(), reference = new T.Vector3();

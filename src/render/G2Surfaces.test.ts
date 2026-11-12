@@ -2,11 +2,29 @@ import { describe, expect, it } from 'vitest';
 import * as T from 'three';
 import { ROOM_TEMPLATES } from '../game/roguelike/roomTemplates';
 import { ROOM_STORY_ROUTE } from '../game/roguelike/storyRooms';
-import { applyFloorVariation } from './lighting/FloorVariation';
+import { applyFloorVariation,setFloorLeaks } from './lighting/FloorVariation';
 import { addDeckMarkings, deckMarkingSupported } from './world/DeckMarkings';
 import { disposeModel } from './meshParts';
+import { environmentArchitecture } from './ShipEnvironments';
 
 describe('G2 physical deck identities', () => {
+  it('keeps cargo hazard paint flush, matte and nonemissive',()=>{
+    const world=new T.Group();environmentArchitecture(world,'cargo',24,20,'freight-hold');let count=0;
+    world.traverse(object=>{if(!(object instanceof T.Mesh)||object.name!=='flush-worn-cargo-paint')return;count++;
+      const material=object.material as T.MeshStandardMaterial;expect(material.emissive.getHex()).toBe(0);expect(material.roughness).toBeGreaterThan(.9);
+      expect(object.position.y).toBeCloseTo(-.017);expect(object.castShadow).toBe(false);expect(object.geometry.getAttribute('position').count).toBe(4);
+    });expect(count).toBeGreaterThan(20);disposeModel(world);
+  });
+  it('retains fixed leak uniforms and clears departed-room puddles without recompiling',()=>{
+    const material=new T.MeshStandardMaterial();material.name='environment-floor';applyFloorVariation(material,'maintenance');
+    const key=material.customProgramCacheKey(),shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:T.ShaderLib.standard.vertexShader,fragmentShader:T.ShaderLib.standard.fragmentShader};
+    material.onBeforeCompile(shader as Parameters<T.Material['onBeforeCompile']>[0],{} as T.WebGLRenderer);
+    const slots=shader.uniforms.roomFloorLeaks.value as T.Vector4[],first=slots[0];
+    setFloorLeaks(material,[{x:4,z:8},{x:12,z:7}]);
+    expect(slots).toHaveLength(4);expect(slots[0].toArray()).toEqual([4,8,0,1]);expect(slots[1].w).toBe(1);expect(slots[2].w).toBe(0);
+    setFloorLeaks(material,[]);expect(slots[0]).toBe(first);expect(slots.every(v=>v.w===0)).toBe(true);
+    expect(material.customProgramCacheKey()).toBe(key);material.dispose();
+  });
   it('switches all ten identities through uniform values without shader topology changes', () => {
     const material = new T.MeshStandardMaterial();material.name='environment-floor';
     applyFloorVariation(material,'cryogenics');const key=material.customProgramCacheKey(),hook=material.onBeforeCompile;

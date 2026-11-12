@@ -40,18 +40,46 @@ varying vec3 vBeaconView;
 uniform float strength;
 void main(){
   float rim=pow(max(0.0,1.0-abs(dot(normalize(vBeaconNormal),normalize(vBeaconView)))),2.5);
-  if(rim<.28)discard;
-  gl_FragColor=vec4(.45,.86,1.0,rim*strength);
+  float fill=.16*strength;
+  float edge=smoothstep(.14,.58,rim);
+  // A dark outer keyline preserves the cyan silhouette against white frost,
+  // muzzle flashes and friendly particle cores, without another skin draw.
+  vec3 color=mix(vec3(.55,.89,1.0),vec3(.012,.035,.048),smoothstep(.72,.95,rim));
+  gl_FragColor=vec4(color,max(fill,edge*strength));
   #include <colorspace_fragment>
 }`;
+
+const LOCATOR_SIZE=64;
+const DIRECTION_TEXEL={x:59,y:32};
+
+/** One tiny authored radial map serves both the soft ring and the solid facing marker. */
+function locatorTexture():T.DataTexture {
+  const pixels=new Uint8Array(LOCATOR_SIZE*LOCATOR_SIZE*4);
+  for(let y=0;y<LOCATOR_SIZE;y++)for(let x=0;x<LOCATOR_SIZE;x++){
+    const radius=Math.hypot((x+.5)/LOCATOR_SIZE-.5,(y+.5)/LOCATOR_SIZE-.5)*2;
+    const band=1-T.MathUtils.smoothstep(Math.abs(radius-.86),.025,.07);
+    const soft=1-T.MathUtils.smoothstep(radius,.77,1);
+    const i=(y*LOCATOR_SIZE+x)*4;
+    pixels[i]=Math.round(T.MathUtils.lerp(4,212,band));
+    pixels[i+1]=Math.round(T.MathUtils.lerp(12,247,band));
+    pixels[i+2]=Math.round(T.MathUtils.lerp(15,255,band));
+    pixels[i+3]=Math.round(Math.max(band*.86,soft*.38)*255);
+  }
+  const texture=new T.DataTexture(pixels,LOCATOR_SIZE,LOCATOR_SIZE);
+  texture.name='marine-locator-radial';texture.colorSpace=T.SRGBColorSpace;
+  texture.magFilter=T.LinearFilter;texture.minFilter=T.LinearMipmapLinearFilter;
+  texture.generateMipmaps=true;texture.needsUpdate=true;return texture;
+}
 
 /** A quiet suit locator and borrowed-skin silhouette keep the marine findable in a crowd. */
 export class PlayerBeacon {
   readonly root = new T.Group();
-  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.06}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.AdditiveBlending});
+  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.28}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
   private readonly groups: SkinGroup[] = [];
-  private readonly ring = new T.Mesh(new T.RingGeometry(.52,.545,48),new T.MeshBasicMaterial({color:0x9fe8ff,transparent:true,opacity:.28,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide}));
-  private readonly direction = new T.Mesh(new T.ConeGeometry(.10,.23,3),new T.MeshBasicMaterial({color:0xe8fbff,transparent:true,opacity:.75,depthTest:false,depthWrite:false,toneMapped:false}));
+  private readonly locatorMap=locatorTexture();
+  private readonly locatorMaterial=new T.MeshBasicMaterial({map:this.locatorMap,transparent:true,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide,forceSinglePass:true});
+  private readonly ring = new T.Mesh(new T.RingGeometry(.50,.66,48),this.locatorMaterial);
+  private readonly direction = new T.Mesh(new T.ConeGeometry(.10,.23,3),this.locatorMaterial);
   private disposed = false;
 
   constructor(player:T.Object3D,scene?:T.Scene){
@@ -71,6 +99,9 @@ export class PlayerBeacon {
     }
     this.ring.rotation.x=-Math.PI/2;this.ring.renderOrder=1199;
     this.direction.renderOrder=1201;
+    const directionUV=this.direction.geometry.getAttribute('uv');
+    for(let i=0;i<directionUV.count;i++)directionUV.setXY(i,(DIRECTION_TEXEL.x+.5)/LOCATOR_SIZE,(DIRECTION_TEXEL.y+.5)/LOCATOR_SIZE);
+    directionUV.needsUpdate=true;
     this.root.add(this.ring,this.direction);scene?.add(this.root);
   }
 
@@ -88,7 +119,7 @@ export class PlayerBeacon {
   /** Animation remains authoritative; merged buffers only combine identical skin spaces. */
   update(player:T.Object3D,angle:number,hidden=false,crowding=0){
     this.root.visible=!hidden&&!this.disposed;if(!this.root.visible)return;
-    this.material.uniforms.strength.value=.06+.30*Math.min(1,Math.max(0,crowding));
+    this.material.uniforms.strength.value=.28+.56*Math.min(1,Math.max(0,crowding));
     player.updateWorldMatrix(true,true);
     for(const group of this.groups){
       const first=group.skins[0].source;let merged=!!group.merged;
@@ -112,7 +143,7 @@ export class PlayerBeacon {
     if(this.disposed)return;this.disposed=true;
     // Only merged buffers are owned here. The pool owns source geometry/skeletons.
     for(const group of this.groups)group.merged?.geometry.dispose();
-    this.material.dispose();this.ring.geometry.dispose();this.ring.material.dispose();this.direction.geometry.dispose();this.direction.material.dispose();
+    this.material.dispose();this.ring.geometry.dispose();this.direction.geometry.dispose();this.locatorMaterial.dispose();this.locatorMap.dispose();
     this.root.clear();this.root.removeFromParent();this.groups.length=0;
   }
 }

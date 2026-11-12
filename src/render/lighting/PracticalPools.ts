@@ -28,7 +28,7 @@ export class PracticalPools {
     for(const fixture of fixtures){
       if(!fixture.visible||fixture.intensity<=0||count>=(high?4:2))continue;
       const reactor=!!fixture.userData.reactorMood;
-      const radius=reactor?Math.min(5.2,Math.max(2.8,fixture.distance*.48)):Math.min(3.6,Math.max(2.3,fixture.distance*.5));
+      const radius=reactor?Math.min(3.5,Math.max(2,fixture.distance*.34)):Math.min(3.6,Math.max(2.3,fixture.distance*.5));
       this.dummy.position.set(fixture.position.x,.035,fixture.position.z);
       if(!reactor&&fixture.position.y<1.8){const dx=(fixture.userData.poolCenterX??fixture.position.x)-fixture.position.x,dz=(fixture.userData.poolCenterZ??fixture.position.z)-fixture.position.z,distance=Math.hypot(dx,dz);if(distance>.01){const offset=Math.min(1.6,distance*.25);this.dummy.position.x+=dx/distance*offset;this.dummy.position.z+=dz/distance*offset;}}
       const offset=count*3;
@@ -42,7 +42,7 @@ export class PracticalPools {
       }
       count++;
     }
-    this.root.material.uniforms.poolIntensity.value=fixtures[0]?.userData.reactorMood ? .22 : .45;this.root.count=count;if(matricesChanged)this.root.instanceMatrix.needsUpdate=true;if(colorsChanged)this.root.instanceColor!.needsUpdate=true;
+    this.root.material.uniforms.poolIntensity.value=fixtures[0]?.userData.reactorMood ? .16 : .45;this.root.count=count;if(matricesChanged)this.root.instanceMatrix.needsUpdate=true;if(colorsChanged)this.root.instanceColor!.needsUpdate=true;
   }
   dispose(){if(this.disposed)return;this.disposed=true;this.root.dispose();this.root.geometry.dispose();this.root.material.dispose();this.root.removeFromParent();}
 }

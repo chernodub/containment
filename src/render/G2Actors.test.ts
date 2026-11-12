@@ -1,7 +1,7 @@
 import {beforeAll,expect,it,vi} from 'vitest';
 import * as T from 'three';
 import {loadModels} from '../../tests/loadModels';
-import {alien,marine,pickupModel,disposeModel,freezeCorpse,MAT} from './models';
+import {alien,marine,disposeModel,freezeCorpse,MAT} from './models';
 import {FAMILY_IDENTITY,RIG_ACCENTS} from './ActorIdentity';
 import {MarineLamp} from './lighting/MarineLamp';
 import {EnemyHealthBars} from './EnemyHealthBars';
@@ -56,26 +56,6 @@ it('changes rig colors through uniforms while keeping torso attachment and shade
   disposeModel(model.root);
 });
 
-it('gives every pickup a distinct physical silhouette using at most four existing standard finishes',()=>{
-  const signatures=new Set<string>(),models=['health','ammo','credits','armor','grenade'].map(pickupModel);
-  for(const model of models){
-    let triangles=0,draws=0;const materials=new Set<T.Material>();
-    model.traverse(o=>{if(o instanceof T.Mesh){
-      draws++;expect(o.material).toBeInstanceOf(T.MeshStandardMaterial);
-      const material=o.material as T.MeshStandardMaterial;materials.add(material);
-      expect(Object.values(material).some(value=>value instanceof T.Texture)).toBe(false);
-      triangles+=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3;
-    }});
-    expect(draws).toBeLessThanOrEqual(4);expect(materials.size).toBeLessThanOrEqual(4);
-    const size=new T.Box3().setFromObject(model,true).getSize(new T.Vector3());
-    signatures.add(JSON.stringify([triangles,...size.toArray().map(n=>Math.round(n*100))]));
-    if(model.name==='pickup-grenade')expect(size.y).toBeGreaterThan(size.x);
-    if(model.name==='pickup-armor')expect(size.y).toBeLessThan(size.z);
-    if(model.name==='pickup-credits')expect([...materials]).toContain(MAT.trim);
-  }
-  expect(signatures.size).toBe(5);models.forEach(disposeModel);
-});
-
 it('raises the broad suit fill to avoid a clipped foot hotspot while retaining a soft forward lamp',()=>{
   const lamp=new MarineLamp();lamp.setRoom(24);lamp.update(3,4,0);
   expect(lamp.suitFill.position.y).toBeGreaterThan(2.5);
@@ -85,11 +65,11 @@ it('raises the broad suit fill to avoid a clipped foot hotspot while retaining a
   const dispose=vi.spyOn(lamp.cone.geometry,'dispose');lamp.dispose();expect(dispose).toHaveBeenCalledOnce();
 });
 
-it('keeps a four-pixel health fill and six-pixel backing at hero scale',()=>{
+it('keeps a five-pixel health fill and nine-pixel backing at hero scale',()=>{
   const bars=new EnemyHealthBars(),camera=new T.OrthographicCamera(-10,10,10,-10);bars.update([{x:0,z:0,height:1,health:50,maxHealth:100}],camera,1000);
   const [background,fill]=bars.root.children as T.InstancedMesh[],matrix=new T.Matrix4();
-  background.getMatrixAt(0,matrix);expect(matrix.elements[5]).toBeCloseTo(6*20/1000);
-  fill.getMatrixAt(0,matrix);expect(matrix.elements[5]).toBeCloseTo(4*20/1000);bars.dispose();
+  background.getMatrixAt(0,matrix);expect(matrix.elements[5]).toBeCloseTo(9*20/1000);
+  fill.getMatrixAt(0,matrix);expect(matrix.elements[5]).toBeCloseTo(5*20/1000);bars.dispose();
 });
 
 it('fits identity details to the rest skin once per family and never scans skin during animation or pool construction',()=>{
