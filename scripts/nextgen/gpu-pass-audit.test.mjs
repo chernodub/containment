@@ -28,7 +28,7 @@ test('GPU pass audit resolves asynchronously, keeps stage pixels and restores ho
   const f = fixture(), original = { render: f.r.render, scene: f.r.renderer.render, draw: f.r.post.draw };
   installGpuPassAudit(f.r);
   const audit = f.r.__benchGpuPassAudit;
-  f.r.render();
+  for (let i = 0; i < 10; i++) f.r.render();
   assert.equal(f.queries.length, 3);
   assert.equal(audit.snapshot().passes[0].samplesMs.length, 0);
   f.setAvailable(true);
@@ -44,18 +44,33 @@ test('GPU pass audit resolves asynchronously, keeps stage pixels and restores ho
 
 test('disjoint invalidates pending queries, busy contexts never nest, disposal retires pending', () => {
   const f = fixture(); installGpuPassAudit(f.r); const audit = f.r.__benchGpuPassAudit;
-  f.r.render(); f.setDisjoint(true); audit.poll();
+  for (let i = 0; i < 10; i++) f.r.render(); f.setDisjoint(true); audit.poll();
   assert.equal(f.deleted.length, 3); assert.equal(audit.snapshot().passes.every(p => p.samplesMs.length === 0), true);
   f.setDisjoint(false); f.setCurrent({ foreign: true });
-  for (let i = 0; i < 15; i++) f.r.render();
+  for (let i = 0; i < 9; i++) f.r.render();
   assert.equal(f.queries.length, 3); assert.equal(audit.diagnostics.skippedBusy, 3);
-  f.setCurrent(null); for (let i = 0; i < 15; i++) f.r.render();
+  f.setCurrent(null); for (let i = 0; i < 9; i++) f.r.render();
   assert.equal(f.queries.length, 6);
   audit.dispose(); assert.equal(f.deleted.length, 6); assert.equal(audit.diagnostics.abandonedQueries, 3);
 });
 
 test('lost context abandons pending query handles safely', () => {
   const f = fixture(); installGpuPassAudit(f.r); const audit = f.r.__benchGpuPassAudit;
-  f.r.render(); f.setLost(true); audit.poll(); audit.dispose();
+  for (let i = 0; i < 10; i++) f.r.render(); f.setLost(true); audit.poll(); audit.dispose();
   assert.equal(f.deleted.length, 0); assert.equal(audit.diagnostics.abandonedQueries, 3);
+});
+
+test('one selected stage per frame prevents Metal command-buffer query overlap and restores runtime timer', () => {
+  const f = fixture(), changes = [];
+  f.r.post.gpuTimer = { enabled: true, setEnabled(value) { this.enabled = value; changes.push(value); } };
+  installGpuPassAudit(f.r);
+  assert.equal(f.r.post.gpuTimer.enabled, false);
+  for (let frame = 0; frame < 90; frame++) {
+    const previous = f.queries.length;
+    f.r.render();
+    assert(f.queries.length - previous <= 1, 'only one GPU stage may be queried in a frame');
+  }
+  assert.equal(f.queries.length, 29);
+  f.r.__benchGpuPassAudit.dispose();
+  assert.deepEqual(changes, [false, true]);
 });

@@ -13,7 +13,8 @@ export function installGpuPassAudit(r = globalThis.__containmentDebug.renderer) 
   runtimeTimer?.setEnabled(false);
   const diagnostics = { sampledFrames: 0, disjointEvents: 0, skippedBusy: 0, skippedCapacity: 0, abandonedQueries: 0 };
   let frame = 0, sampling = false, active = false, disposed = false;
-  const cadence = 15, capacity = 512;
+  let selectedStage, rotation = 0, queriedFrame = false;
+  const stages = [], cadence = 3, capacity = 512;
 
   function wrap(object, name, factory) {
     if (!object || typeof object[name] !== 'function') return;
@@ -49,7 +50,8 @@ export function installGpuPassAudit(r = globalThis.__containmentDebug.renderer) 
   }
 
   function measure(name, target, body) {
-    if (!extension || !sampling || disposed) return body();
+    if (!stages.includes(name)) stages.push(name);
+    if (!extension || !sampling || name !== selectedStage || queriedFrame || disposed) return body();
     if (active || gl.getQuery(extension.TIME_ELAPSED_EXT, gl.CURRENT_QUERY)) {
       diagnostics.skippedBusy++;
       return body();
@@ -65,6 +67,7 @@ export function installGpuPassAudit(r = globalThis.__containmentDebug.renderer) 
     const width = target?.width ?? gl.drawingBufferWidth, height = target?.height ?? gl.drawingBufferHeight;
     if (!pass.resolutions.some(size => size.width === width && size.height === height)) pass.resolutions.push({ width, height, pixels: width * height });
     active = true;
+    queriedFrame = true;
     gl.beginQuery(extension.TIME_ELAPSED_EXT, query);
     try { return body(); }
     finally {
@@ -76,7 +79,9 @@ export function installGpuPassAudit(r = globalThis.__containmentDebug.renderer) 
 
   wrap(r, 'render', original => function (...parameters) {
     poll();
-    sampling = frame++ % cadence === 0;
+    sampling = frame++ % cadence === 0 && stages.length > 0;
+    selectedStage = sampling ? stages[rotation++ % stages.length] : undefined;
+    queriedFrame = false;
     if (sampling) diagnostics.sampledFrames++;
     try { return original.apply(this, parameters); }
     finally { sampling = false; }
@@ -100,10 +105,10 @@ export function installGpuPassAudit(r = globalThis.__containmentDebug.renderer) 
   });
 
   const api = {
-    supported: !!extension, cadence, capacity, diagnostics, poll,
+    supported: !!extension, cadence, capacity, mode: 'one rotating stage per sampled frame', diagnostics, poll,
     snapshot() {
       poll();
-      return { supported: !!extension, cadence, capacity, diagnostics: { ...diagnostics, pendingQueries: pending.length }, passes: [...passes.values()].map(pass => ({ ...pass, samplesMs: [...pass.samplesMs], resolutions: pass.resolutions.map(size => ({ ...size })) })) };
+      return { supported: !!extension, cadence, capacity, mode: 'one rotating stage per sampled frame', stageOrder: [...stages], diagnostics: { ...diagnostics, pendingQueries: pending.length }, passes: [...passes.values()].map(pass => ({ ...pass, samplesMs: [...pass.samplesMs], resolutions: pass.resolutions.map(size => ({ ...size })) })) };
     },
     dispose() {
       if (disposed) return;
@@ -117,5 +122,5 @@ export function installGpuPassAudit(r = globalThis.__containmentDebug.renderer) 
     },
   };
   r.__benchGpuPassAudit = api;
-  return { supported: api.supported, cadence, capacity };
+  return { supported: api.supported, cadence, capacity, mode: api.mode };
 }

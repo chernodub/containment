@@ -441,8 +441,8 @@ classifications cannot certify it. Broad non-holdout pacing is reported apart.
 `npm run bench -- --gpu-passes` records asynchronous
 `EXT_disjoint_timer_query_webgl2` timings for scene color (including shadow
 updates and HDR resolve), contact/GTAO, denoise, bloom extraction and both blur
-directions, distortion, composite and HUD. It samples one frame in fifteen,
-retains raw milliseconds and actual target dimensions, discards pending queries
+directions, distortion, composite and HUD. It rotates one selected stage every third frame, avoiding multiple timer
+queries within the same ANGLE Metal command buffer, and retains raw milliseconds and actual target dimensions, discards pending queries
 on a GPU disjoint interval and retires unresolved queries without blocking.
 No `readPixels`, `finish` or query-result busy wait is used. Unsupported timers
 are reported explicitly. The total-frame timer and runtime adaptive GPU timer
@@ -457,7 +457,7 @@ VITEST_MAX_WORKERS=2 npx vitest run scripts/nextgen/gpu-pass-audit.test.mjs
 
 The same option supports `--dist=<preserved-build> --no-build` before/after
 comparisons. Every trial retains host load and per-frame adaptive scale.
-`gpuBestOfN` selects the trial with the lowest sum of stage GPU p50 and reports
+`gpuBestOfN` selects the trial with the lowest scene-color GPU p50 and reports
 that same trial's frame distribution, scale and load; every raw trial remains
 in `benchmark.json`. This is distinct from choosing the best CPU trial. Stage
 percentiles cannot be added to claim a frame percentile. Query lifecycle
