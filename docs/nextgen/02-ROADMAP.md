@@ -38,17 +38,17 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 
 | Stream | State | Notes |
 |---|---|---|
-| W0 · A1 (+R1, fixes) · U1 · G1 · S2 · U2 · V2 · G2 | merged | integrations I1a, I1b, I2, I3, I4, I6a |
-| R2 review → F2 UI/a11y/bundle fixes | merged | initial JS 4.61 MB → 1.74 MB (gzip 1.55 MB → 467 KB) |
-| V3 ability spectacle pass | merged | `t3/ability-vfx-spectacle` @ d6662b9 |
-| P1 render performance / room preparation | merged | late-run room prep 12.5 s → 0.49 s; programs 2541 → 203; draw peak 368 → 312 |
-| D1 README / AGENTS / credits | merged | playtest line to update once I5 lands |
-| R4 bot playtest | reported | 12 campaigns, 10 endings, all four rigs reach the ending; merging via I5 |
-| I5 merge R4 + balance (Overdrive cadence, Transmission pacing, difficulty) | running | bot aiming bug fixed by lead decision; targets: 40–60% bot completion, 1.2–1.7 rooms/Overdrive |
-| R5 fresh-eyes art/UX critique | done | 25 defects; verdict "not consistently premium yet" → final fix wave |
-| X1 ability VFX fixes · X2 world/actor fixes · X3 UI/UX fixes | running | from R5's list, disjoint ownership |
+| Waves 0–3 (W0, A1, U1, G1, S2, U2, V2, G2, V3, P1, F2, D1, R1/R2/R4/R5 reviews, X1–X3 fixes, I1a…I7 integrations) | merged | `nextgen` @ d8f9d45: 2984 tests, smokes, 20/20 authored rooms, bot campaigns for all four rigs; final gallery `artifacts/nextgen/final/` |
+| R6 second independent verdict | done | 6/7/4/5/5/5 — "advanced prototype visually, polished-indie UI"; see `reviews/R6-verdict.md` |
+| Lead benchmark on final build (2026-11-12) | done | High: frame p50 33 ms / p95 42 ms (GPU-bound, render JS p50 7 ms); Low: p50 16.7 ms; draws ≤ 336 |
+| **Wave 4** — direction in `streams/W4-direction.md` | running | |
+| G3 inked graphic look + GPU frame time to 60 fps | running | post pipeline, prepass, adaptive resolution |
+| G4 world forms kit, enemy footprint, danger priority, camera framing, title, Queen | running | |
+| V4 abilities: distinct constructions, friendly effects yield | running | |
+| A3 enemy separation + encirclement, re-balance | running | |
+| U4 UI: overlays out of combat, element-true feedback, card copy, ending | running | |
 
-Next (lead): merge I5, X1, X2, X3; full gates on a quiet host; final gallery vs baseline; second fresh-eyes verdict; update README.
+Next (lead): merge A3 → U4 → V4 → G4 → G3 (integration task), gates, bench on a quiet host, final gallery, third independent verdict.
 
 ## Decisions log
 
@@ -59,3 +59,4 @@ Next (lead): merge I5, X1, X2, X3; full gates on a quiet host; final gallery vs 
 - 2026-11-11 After reviewing the baseline gallery: closer follow camera (marine 110–140 px at 1080p), designed out-of-bounds, off-screen threat indicators + room radar; climax rooms (reactor, boss arena) get the most dramatic lighting. Sent as addenda to G1 and U1.
 - 2026-11-11 Baseline `combat-heavy` scenario stacks enemies on a stationary marine; streams add a kiting scenario for readability judgments (harness v2 at Integration 1).
 - 2026-11-11 Integration 1 complete: abilities + UI + graphics live together on `nextgen` (2e228be). Lead review: generational jump achieved in lighting/camera/HUD; weakest links now are enemy readability, prop/surface quality, boss staging, title, ability VFX (interim), audio.
+- 2026-11-12 After R6: commit to a graphic inked look (stylize to unify actors and procedural props) and a strict combat visual priority (danger > marine/cursor > enemies > friendly effects > world > HUD). High tier must hold 60 fps on an M1 Pro.
