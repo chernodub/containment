@@ -3,7 +3,7 @@
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {decode,encode,canvas,drawText,drawImage} from './g2-png.mjs';
 const base='artifacts/nextgen/',out=base+'i8/native-crops';await mkdir(out,{recursive:true});
-const rows=[['armory-before','pre-lead-final2-rooms/combat-kiting-armory-02.png',1170,150],['armory-after','i8-lead-final/combat-kiting-armory-02.png',1170,150],['workshop-before','pre-lead-final2-rooms/combat-kiting-infested-workshop-03.png',930,230],['workshop-after','i8-lead-final/combat-kiting-infested-workshop-03.png',930,230],['title-before','pre-lead-final2-ui/title.png',1220,280],['title-after','i8-lead-final/title.png',1220,280],['gameplay-marine','i8-lead-final/combat-calm-armory.png',620,300]];
+const rows=[['armory-before','pre-lead-final2-rooms/combat-kiting-armory-02.png',1170,150],['armory-after','final2/combat-kiting-armory-02.png',1170,150],['workshop-before','pre-lead-final2-rooms/combat-kiting-infested-workshop-03.png',930,230],['workshop-after','final2/combat-kiting-infested-workshop-03.png',930,230],['title-before','pre-lead-final2-ui/title.png',1220,280],['title-after','final2/title.png',1220,280],['gameplay-marine','final2/combat-calm-armory.png',310,294]];
 const records=[],sheet=canvas(1200,440*Math.ceil(rows.length/2));
 for(const [i,[name,path,x,y]]of rows.entries()){
  const image=decode(await readFile(base+path)),crop=canvas(600,400);

@@ -34,7 +34,7 @@ if(mode==='review'){
    const file=v+'.png',actualFile=v==='results'&&column===0?'dead.png':file,source=resolve(s.path,actualFile),relative=`comparison-sources/${column}-${file}`;let bytes;
    try{bytes=await readFile(source);}catch(error){throw Error(`Required comparison counterpart absent: ${source}`,{cause:error});}
    await writeFile(resolve(root,relative),bytes);
-   drawText(sheet,v,column*480+4,(row+1)*300+4,[216,233,238],1);
+   drawText(sheet,actualFile!==file?v+' (ORIGINAL DEATH VIEW)':v,column*480+4,(row+1)*300+4,[216,233,238],1);
    drawImage(sheet,decode(bytes),column*480,(row+1)*300+24,480,270);
    records.push({view:v,generation:s.name,source,requestedView:v,actualFile,substitution:actualFile!==file?'Original gallery has no results screen; its native death screen is shown explicitly.':null,file:relative,sha256:createHash('sha256').update(bytes).digest('hex')});
    cells.push(`${actualFile!==file?'<p>Original death screen (results view was not captured)</p>':''}<a href="${relative}"><img loading="lazy" src="${relative}" alt="${escape(s.name+' '+v)}"></a>`);
@@ -48,7 +48,7 @@ if(mode==='review'){
 }else if(mode==='organic'){
  const organic=resolve(root,'organic');await mkdir(organic,{recursive:true});const records=[];
  for(const rig of ['breacher','cryo','pyro','arc']){
-  const source=resolve(`artifacts/nextgen/playtest/i8-final-${rig}-1729`),report=await read(resolve(source,'report.json'));
+  const source=resolve(`artifacts/nextgen/playtest/${process.argv[4]??'i8-reviewed-final'}-${rig}-1729`),report=await read(resolve(source,'report.json'));
   for(const file of report.screenshots.filter(f=>/mid\.png$/.test(f))){const target=`${rig}-${basename(file)}`;await copyFile(resolve(source,file),resolve(organic,target));records.push({rig,source:resolve(source,file),file:target,head:report.head});}
  }
  await writeFile(resolve(organic,'manifest.json'),JSON.stringify({records},null,2));
