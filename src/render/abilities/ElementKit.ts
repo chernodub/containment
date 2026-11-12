@@ -9,6 +9,7 @@ import type { DistortionField } from '../post/DistortionField';
 import type { AbilityElement } from '../../game/abilities/contract';
 import { ELEMENT_COLORS } from './types';
 import { InstanceBatch, type Primitive } from './InstanceBatch';
+import { authoredVariation } from './GraphicLanguage';
 export const ABILITY_VFX_LIMITS = Object.freeze({ particles: 768, rings: 64, beams: 64, decals: 32, instances: 2048 });
 export type ScarKind = 'crack' | 'frost' | 'trench' | 'fan' | 'star' | 'soot';
 const SCAR_KIND = { crack: 0, frost: 1, trench: 2, fan: 3, star: 4, soot: 5 } as const;
@@ -287,27 +288,20 @@ export class ElementKit {
     }
     /** Directional jet: source-hot stretched tongues, accelerating and curling outwards. */
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1): void {
-        const streams = this.low ? 2 : 3;
-        for (let i = 0; i < streams; i++) {
-            const a = angle + (i === 0 ? 0 : i === 1 ? -.28 : .36) * arc;
-            const reach = radius * (i === 0 ? .87 : i === 1 ? .62 : .73);
-            this.flowFlame(x + Math.cos(angle) * .35, .95, z + Math.sin(angle) * .35,
-                x + Math.cos(a) * reach, .92 + i * .11, z + Math.sin(a) * reach,
-                radius * (i === 0 ? .145 : i === 1 ? .095 : .11), i * 3.73, opacity * (i === 0 ? .82 : .55), i === 0);
-        }
-        const count = this.low ? 12 : 24;
+        const count = this.low ? 3 : 5;
         for (let i = 0; i < count; i++) {
-            const seed = i * 2.39996323, f = .5 + .5 * Math.sin(seed * 4.73);
-            const travel = this.reducedMotion ? (i + .5) / count : (i * .618033989 + this.time * (1.7 + f * .45)) % 1;
-            const r = radius * (.07 + travel * .85);
-            const a = angle + Math.sin(seed * 3.17) * arc * .43 * Math.sqrt(travel);
-            const width = (.13 + travel * .32) * (.7 + f * .5);
-            const h = (.8 + travel * 1.15) * (.65 + f * .5);
-            this.draw('flame', x + Math.cos(a) * r, .45 + travel * .5, z + Math.sin(a) * r,
-                width, h * .5, 1, travel < .26 ? 0xffedb5 : 0xff7a2e,
-                opacity * (.85 - travel * .25), 0, this.flameTilt(a, 1.4 + travel * 1.3), 1);
+            const seed = i * 3.731 + .71, v = authoredVariation(seed);
+            const spread = i === 0 ? 0 : (i % 2 ? -1 : 1) * (.17 + v * .2);
+            const a = angle + spread * arc;
+            const start = i === 0 ? .035 : .24 + v * .18;
+            const end = i === 0 ? .94 : .68 + v * .23;
+            const throat = radius * (i === 0 ? .115 : .08 + v * .055);
+            this.flowFlame(x + Math.cos(a) * radius * start, .82 + i * .035, z + Math.sin(a) * radius * start,
+                x + Math.cos(a) * radius * end, .9 + v * .45, z + Math.sin(a) * radius * end,
+                throat, seed, opacity * (i === 0 ? 1 : .94), i === 0);
         }
     }
+
     /** Camera-facing flame ribbon whose long axis follows a real three-dimensional flow. */
     flowFlame(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, core = false): void {
         const axis = this.flowAxis.set(tx - x, ty - y, tz - z), length = axis.length();
@@ -358,21 +352,16 @@ export class ElementKit {
         this.draw('shard', x, height * .5, z, depth * .49, height * .5, width * .49, 0x9be7ff, opacity * .39, -angle, .07);
         if (!this.low) this.draw('shard', x, height * .57, z, depth * .14, height * .41, width * .13, 0xe8fbff, opacity * .36, -angle);
     }
-    /** Full faceted shell preserves a translucent view of the frozen actor. */
+    /** One restrained shell; the frozen actor remains the dominant interior shape. */
     iceShell(x: number, z: number, radius: number, height: number, opacity = .35): void {
-        this.draw('shard', x, height * .5, z, radius * 1.05, height * .62, radius * 1.05, 0x7fd6ff, opacity);
-        if (!this.low) this.draw('shard', x, height * .57, z, radius * .94, height * .58, radius * .94, 0xe8fbff, opacity * .3, .6);
+        this.draw('shard', x, height * .5, z, radius * 1.05, height * .5, radius * 1.05, 0x7fd6ff, opacity, 0, 0, 7.3);
     }
-    /** Bright articulated marine afterimage, using only the existing ghost batch. */
+    /** One clean authored echo silhouette; weapon and split stride share one instance. */
     afterImage(x: number, z: number, angle: number, color: number, opacity: number, lean = 0): void {
-        const c = Math.cos(angle), s = Math.sin(angle);
-        this.draw('ghost', x + c * lean, 1.74, z + s * lean, .29, .32, .32, color, opacity, -angle);
-        this.draw('ghost', x + c * lean * .6, 1.23, z + s * lean * .6, .34, .63, .58, color, opacity, -angle);
-        for (let side = -1; side <= 1; side += 2) {
-            this.draw('ghost', x - s * side * .19, .48, z + c * side * .19, .24, .72, .21, color, opacity * .7, -angle, side * .08);
-            if (!this.low) this.draw('ghost', x + c * .25 - s * side * .34, 1.26, z + s * .25 + c * side * .34, .43, .22, .2, color, opacity * .8, -angle);
-        }
-        this.draw('ghost', x + c * .55 - s * .13, 1.28, z + s * .55 + c * .13, .72, .12, .12, 0xe8fbff, opacity, -angle);
+        const facing = Math.atan2(this.viewPosition.x - x, this.viewPosition.z - z);
+        const direction = Math.cos(angle) * this.viewRightX + Math.sin(angle) * this.viewRightZ >= 0 ? 1 : -1;
+        this.draw('ghost', x, .98, z, .98 * direction, 1.96, .35, color, opacity, facing,
+            -Math.cos(angle) * Math.min(.16, Math.abs(lean)));
     }
     /** One-frame exposure impulse, suppressed by photosensitivity/reduced motion options. */
     exposureFlash(amount = .75): void { if (!this.reducedMotion) this.exposure = Math.max(this.exposure, Math.min(1, amount) * this.flashIntensity); }

@@ -1,5 +1,6 @@
 import * as T from 'three';
 import { FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
+import { createArmorSection, createFractureMass, createMarineEcho, GRAPHIC_FLAME_FRAGMENT, GRAPHIC_SOLID_FRAGMENT } from './GraphicLanguage';
 
 export type Primitive = 'shard' | 'spark' | 'smoke' | 'flame' | 'solid' | 'ghost' | 'decal' | 'front';
 const vertex = `
@@ -33,8 +34,8 @@ export class InstanceBatch {
 
   constructor(root: T.Object3D, readonly kind: Primitive, readonly capacity: number) {
     const geometry = kind === 'front' ? new T.TorusGeometry(.88, .12, 6, 64).rotateX(-Math.PI / 2)
-      : kind === 'shard' ? new T.OctahedronGeometry(1, 0)
-      : kind === 'solid' || kind === 'ghost' ? new T.BoxGeometry(1, 1, 1)
+      : kind === 'shard' ? createFractureMass()
+      : kind === 'ghost' ? createMarineEcho() : kind === 'solid' ? createArmorSection()
         : new T.PlaneGeometry(2, 2);
     this.alpha = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
     this.phase = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
@@ -70,20 +71,7 @@ ${atlas ? `
  a*=s.a*edge;
  float vapor=step(ink.r*1.12,ink.b)*smoothstep(.18,.5,ink.b);float dust=step(.08,ink.r+ink.g+ink.b)*(1.-vapor);c=mix(vec3(.007,.009,.012),ink*.65,dust);c=mix(c,ink*.85,vapor);a*=mix(.65,.52,vapor);
  ` : ''}
-${kind === 'flame' ? `
- float t=uvLocal.y;float plume=step(100.,phase);float flamePhase=phase-plume*100.;float clock=abilityTime*(1.4+fract(flamePhase)*.6);
- float bend=sin(t*4.8-clock*3.+flamePhase)*(.06+t*.2)+sin(t*9.+flamePhase*2.-clock*2.)*.035*t;
- float taper=mix(pow(max(.001,1.-t),.68),.28+sin(t*3.141593)*.82,plume);
- float width=(.42+.11*sin(t*7.+flamePhase))*taper;
- float axis=p.x-bend;float distance=abs(axis)/max(.015,width);
- float tongue=(1.-smoothstep(.72,1.,distance))*smoothstep(0.,.09,t)*(1.-smoothstep(.84,1.,t));
- float fork=abs(p.x+sin(t*5.+flamePhase)*.28)/max(.015,taper*.18);
- tongue=max(tongue,(1.-smoothstep(.65,1.,fork))*smoothstep(.32,.45,t)*(1.-smoothstep(.65,.9,t))*.55);
- float core=(1.-smoothstep(.08,.52,distance))*(1.-smoothstep(.15,.72,t));
- c=mix(vec3(1.6,.085,.006),vec3(3.8,.52,.015),smoothstep(.03,.2,tongue));
- c=mix(c,vec3(8.,4.2,.65),core*clamp(.45+ink.g*1.8,.45,1.));
- a*=tongue*.85*(.35+.65*flash);
- ` : ''}
+${kind === 'flame' ? GRAPHIC_FLAME_FRAGMENT : ''}
 ${kind === 'spark' ? 'float d=dot(p,p);if(d>1.)discard;a*=pow(1.-d,2.);c*=3.5;' : ''}
 ${kind === 'decal' ? `
  float d=length(p);float a0=atan(p.y,p.x);float variant=floor(phase+.01);
@@ -173,7 +161,14 @@ ${kind === 'decal' ? `
  else {if(d>1.)discard;if(variant>6.5&&abs(a0)>fract(phase)*6.283185)discard;a*=.035*(1.-smoothstep(.6,1.,d));c=vec3(.014,.009,.006);}
  ` : ''}
 ${kind === 'front' ? `
- if(phase>1.5){
+ if(phase>2.5){
+  float roll=.5+.5*cos(uvLocal.y*6.283185);
+  float curl=.5+.5*sin(uvLocal.x*43.9823+sin(uvLocal.x*18.8496)*1.4-abilityTime*.9);
+  float wind=step(.24,curl)*smoothstep(.14,.58,roll);
+  c=mix(vec3(.16,.31,.40),vec3(.48,.83,1.05),step(.6,roll));
+  c=mix(c,vec3(1.2,1.65,1.8),step(.92,roll)*step(.82,curl));
+  a*=wind*(.15+roll*.65);
+ }else if(phase>1.5){
   float roll=.5+.5*cos(uvLocal.y*6.283185);
   float curl=.5+.5*sin(uvLocal.x*31.4159+sin(uvLocal.x*18.8496)*1.7-abilityTime*1.3+sin(uvLocal.y*6.283185)*1.3);
   // Keep the leading vapor rim; the torus interior must reveal the deck.
@@ -193,7 +188,8 @@ ${kind === 'front' ? `
  a*=vapor*mix(.2+ridge*.65,.6,dusty);c*=mix(1.2+ridge*4.*flash,.65+roll*.4,dusty);
  }
  ` : ''}
-${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetNormal),normalize(vec3(-.3,.7,.6))));' : ''}
+${kind === 'shard' || kind === 'solid' ? GRAPHIC_SOLID_FRAGMENT : ''}
+${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
  vec2 screen=screenPosition.xy/max(.001,screenPosition.w)*.5+.5;
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  a*=1.-actionBar*.94;
@@ -203,12 +199,12 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
 }`;
     const material = new T.ShaderMaterial({
       uniforms: { abilityTime: { value: 0 }, map: { value: this.texture ?? null }, flash: { value: 1 } },
-      vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){posedPosition.y=position.y>.5?1.:-1.;if(position.y>.5)posedPosition.xz+=vec2(.23,-.16);}' : kind === 'front' ? 'if(abilityPhase>1.5){float a=atan(position.z,position.x);posedPosition.xz*=.88+.07*sin(a*7.)+.035*sin(a*3.+.4);posedPosition.y*=.74+.24*sin(a*5.+.7);}' : ''),
+      vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){float seed=abilityPhase;posedPosition.xz*=.91+.08*sin(seed*3.7+position.y*2.1);posedPosition.xz+=max(0.,position.y)*vec2(sin(seed)*.12,cos(seed*1.7)*.1);posedPosition.xz=clamp(posedPosition.xz,vec2(-1.),vec2(1.));}' : kind === 'front' ? 'if(abilityPhase>1.5){float a=atan(position.z,position.x);posedPosition.xz*=.88+.07*sin(a*7.)+.035*sin(a*3.+.4);posedPosition.y*=.74+.24*sin(a*5.+.7);}' : ''),
       fragmentShader: fragment,
       transparent: true,
       depthWrite: false,
       side: T.DoubleSide,
-      blending: kind === 'shard' || kind === 'smoke' || kind === 'decal' || kind === 'solid' || kind === 'ghost' || kind === 'front'
+      blending: kind === 'flame' || kind === 'shard' || kind === 'smoke' || kind === 'decal' || kind === 'solid' || kind === 'ghost' || kind === 'front'
         ? T.NormalBlending : T.AdditiveBlending,
     });
     this.mesh = new T.InstancedMesh(geometry, material, capacity);
