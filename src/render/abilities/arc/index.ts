@@ -23,7 +23,7 @@ class ArcPresentation implements AbilityPresentation {
   private blinks: Blink[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
   private bolts: Bolt[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, tx: 0, tz: 0, age: 0 }));
   private fronts: Front[] = Array.from({ length: 12 }, () => ({ live: false, x: 0, z: 0, radius: 1, age: 0, life: 1, reverse: false, time: false }));
-  private echoes: Echo[] = Array.from({ length: 4 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
+  private echoes: Echo[] = Array.from({ length: 2 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
   private nextEcho = 0;
   private echoAge = 0;
   private overclockAge = 0;
@@ -64,7 +64,7 @@ class ArcPresentation implements AbilityPresentation {
         this.dashLive = false;
         this.blink(tx, tz, event.angle ?? 0);
         k.ring(tx, tz, .9, VIOLET, .3);
-        this.front(tx, tz, 1.15, .4);
+        this.front(tx, tz, .75, .28);
         k.scar('star', tx, tz, 1.2, 0x181421, 7, event.angle ?? 0);
         k.flash(tx, tz, WHITE, 11, 4.2, 4, .1);
         k.distort(tx, tz, 1.3, .0025, .28);
@@ -88,7 +88,7 @@ class ArcPresentation implements AbilityPresentation {
       if (event.phase === 'impact') {
         const tx = (event.targetX ?? x) / UNIT, tz = (event.targetY ?? y) / UNIT;
         k.ring(tx, tz, 1.25, VIOLET, .45);
-        this.front(tx, tz, 1.65, .55);
+        this.front(tx, tz, .72, .32);
         k.burst(tx, .08, tz, 'arc', 26, 3.2, .6);
         k.scar('star', tx, tz, 1.2, 0x1e182b, 8);
         k.flash(tx, tz, WHITE, 14, 5.5, 4, .1);
@@ -166,7 +166,11 @@ class ArcPresentation implements AbilityPresentation {
       const t = f.age / f.life, progress = f.reverse ? 1 - t : Math.min(1, .08 + f.age / .22);
       k.sustain(f.age);
       if (f.time) this.timeFront(f, progress, 1 - t);
-      else k.front(f.x, f.z, f.radius, progress, WHITE, .65, (1 - t) * .65);
+      else {
+        // A local forked electrical contact, not a shiny expanding volume. One retained instance.
+        const radius = f.radius * (.65 + progress * .35);
+        k.draw('decal', f.x, .06, f.z, radius, radius, 1, VIOLET, (1 - t) * .8, 0, f.age * 1.4, 4);
+      }
     }
     k.impact();
     if (this.dashLive && frame.game) {
@@ -232,20 +236,17 @@ class ArcPresentation implements AbilityPresentation {
   }
 
   private timeFront(f: Front, progress: number, fade: number): void {
-    const k = this.kit, count = k.low ? 8 : 12, r = f.radius * Math.max(.02, progress);
-    // Broken concentric wavefronts stay on the deck; no floating brackets or clock hands.
-    const echo = f.radius * (f.reverse ? .2 + progress * .55 : 1 - progress * .7);
+    this.timeRipple(f.x, f.z, f.radius * Math.max(.02, progress), fade * .26, f.reverse ? -.4 : .2);
+  }
+
+  private timeRipple(x: number, z: number, radius: number, opacity: number, phase: number): void {
+    const k = this.kit, count = k.low ? 3 : 4;
+    // Broad curved brushes have tapered, unequal ends. Every brush's full rectangular bounds
+    // remain inside the ripple radius; sparse air disturbance never becomes floating clock ticks.
     for (let i = 0; i < count; i++) {
-      const a = i * TAU / count, end = a + .22;
-      k.ribbon(f.x + Math.cos(a) * r, .085, f.z + Math.sin(a) * r,
-        f.x + Math.cos(end) * r, .085, f.z + Math.sin(end) * r, VIOLET, .055, fade * .65, false);
-      const middle = a + .11;
-      k.ribbon(f.x + Math.cos(middle) * r, .085, f.z + Math.sin(middle) * r,
-        f.x + Math.cos(end) * r, .085, f.z + Math.sin(end) * r, WHITE, .026, fade * .36, false);
-      if (!k.low && i % 2 === 0) {
-        k.ribbon(f.x + Math.cos(a + .3) * echo, .065, f.z + Math.sin(a + .3) * echo,
-          f.x + Math.cos(a + .48) * echo, .065, f.z + Math.sin(a + .48) * echo, VIOLET, .025, fade * .32, false);
-      }
+      const a = i * 2.39996323 + phase, r = radius * (.9 + i % 3 * .04);
+      k.gust(x + Math.cos(a) * r * .55, z + Math.sin(a) * r * .55,
+        r * 1.1, r * .5, a + Math.PI / 2, i * 3.17 + phase, opacity * (.7 + i % 2 * .2), VIOLET);
     }
   }
 
@@ -343,6 +344,7 @@ class ArcPresentation implements AbilityPresentation {
     const remaining = frame.snapshot?.overdrive.activeRemainingMs ?? 0;
     const fade = Math.min(1, remaining / 450);
     k.grade(0, fade * .9);
+    const starting = this.overclockAge === 0;
     this.overclockAge += frame.dt;
     this.echoAge += frame.dt;
     const angle = g.player.angle ?? 0;
@@ -351,46 +353,47 @@ class ArcPresentation implements AbilityPresentation {
     // These signals are attached to the marine rather than orbiting symbols.
     frame.marine?.updateWorldMatrix(true, false);
     for (let side = -1; side <= 1; side += 2) {
-      this.seam(frame, side * .24, 1.52, -.04, side * .36, 1.46, .13, .023, fade * .9);
-      this.seam(frame, side * .16, 1.36, .22, side * .14, 1.06, .22, .018, fade * .8);
-      this.seam(frame, side * .17, .65, .11, side * .19, .2, .12, .018, fade * .65);
+      this.seam(frame, side * .24, 1.52, -.04, side * .36, 1.46, .13, .055, fade);
+      this.seam(frame, side * .16, 1.36, .22, side * .14, 1.06, .22, .045, fade);
+      this.seam(frame, side * .17, .65, .11, side * .19, .2, .12, .035, fade * .85);
     }
-    this.seam(frame, -.12, 1.77, .13, .12, 1.77, .13, .018, fade * .75);
+    this.seam(frame, -.12, 1.77, .13, .12, 1.77, .13, .04, fade);
     // Prefer the visible weapon's authored socket, including animation and weapon switching.
     if (!this.muzzle || !this.visibleSocket(this.muzzle, frame.marine)) this.muzzle = frame.marine ? this.findMuzzle(frame.marine) : undefined;
     if (this.muzzle) this.muzzle.getWorldPosition(this.end);
     else this.end.set(x + Math.cos(angle) * .85, 1.25, z + Math.sin(angle) * .85);
     const mx = this.end.x, my = this.end.y, mz = this.end.z;
     k.ribbon(mx - Math.cos(angle) * .48, my, mz - Math.sin(angle) * .48, mx, my, mz,
-      VIOLET, .021, fade * .85, false);
+      WHITE, .045, fade, false);
     const crackles = k.low ? 1 : 3;
     for (let i = 0; i < crackles; i++) {
       const a = angle + i * TAU / crackles + (k.reducedMotion ? 0 : Math.floor(k.time * 18) * 1.7);
       k.ribbon(mx, my, mz, mx + Math.cos(a) * .17, my + .08 + i * .035, mz + Math.sin(a) * .17,
-        VIOLET, .018, fade * .7, true);
+        VIOLET, .03, fade * .9, true);
     }
-    if (frame.dt > 0 && this.echoAge >= .12 && Math.hypot(g.player.vx, g.player.vy) > 25) {
-      this.echoAge %= .12;
-      const echo = this.echoes[this.nextEcho++ % this.echoes.length];
-      echo.live = true; echo.age = -frame.dt; echo.x = x; echo.z = z; echo.angle = angle;
+    if (starting || frame.dt > 0 && this.echoAge >= .14) {
+      this.echoAge %= .14;
+      // Two restrained marine poses make the charged suit readable even while holding aim.
+      const speed = Math.hypot(g.player.vx, g.player.vy);
+      const dx = speed > 25 ? g.player.vx / speed : Math.cos(angle);
+      const dz = speed > 25 ? g.player.vy / speed : Math.sin(angle);
+      const count = starting ? 2 : 1;
+      for (let i = 0; i < count; i++) {
+        const echo = this.echoes[this.nextEcho++ % this.echoes.length], offset = .25 + i * .24;
+        echo.live = true; echo.age = -frame.dt; echo.x = x - dx * offset; echo.z = z - dz * offset; echo.angle = angle;
+      }
     }
     for (const echo of this.echoes) {
       if (!echo.live) continue;
       echo.age += frame.dt;
-      if (echo.age >= .3) { echo.live = false; continue; }
+      if (echo.age >= .35) { echo.live = false; continue; }
       k.sustain(echo.age);
-      k.afterImage(echo.x, echo.z, echo.angle, VIOLET, fade * (1 - echo.age / .3) * .18);
+      k.afterImage(echo.x, echo.z, echo.angle, VIOLET, fade * (1 - echo.age / .35) * .27);
     }
-    // Low coverage moving world ripple gives the time field scale while keeping actors clear.
     k.sustain(this.overclockAge);
     const progress = k.reducedMotion ? .7 : (this.overclockAge * .65) % 1;
-    const radius = 1.7 + progress * 3.2, slices = k.low ? 6 : 10;
-    for (let i = 0; i < slices; i++) {
-      const a = i * TAU / slices;
-      k.ribbon(x + Math.cos(a) * radius, .055, z + Math.sin(a) * radius,
-        x + Math.cos(a + .28) * radius, .055, z + Math.sin(a + .28) * radius,
-        VIOLET, .025, fade * Math.sin(progress * Math.PI) * .18, false);
-    }
+    this.timeRipple(x, z, 1.7 + progress * 3.2, fade * Math.sin(progress * Math.PI) * .14,
+      k.reducedMotion ? 0 : this.overclockAge * .08);
     k.lightAt(9000, x, z, VIOLET, 1.1 * fade, 4);
     {
       k.sustain(this.overclockAge);

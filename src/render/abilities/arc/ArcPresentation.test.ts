@@ -142,12 +142,17 @@ describe('Arc presentation signatures and lifecycle', () => {
     step(.4); expect(kit.batches.front.mesh.count).toBe(0); dispose();
   });
 
-  it('throws landing volume and floor aftermath at the authoritative pylon placement', () => {
+  it('grounds a small electrical landing corona and aftermath at the authoritative pylon placement', () => {
     const { kit, fx, step, dispose } = setup();
-    const front = vi.spyOn(kit, 'front'), scar = vi.spyOn(kit, 'scar');
+    const front = vi.spyOn(kit, 'front'), draw = vi.spyOn(kit, 'draw'), scar = vi.spyOn(kit, 'scar');
     fx.event(event({ ability: 'tesla-pylon', slot: 'power', phase: 'impact', targetX: 320, targetY: 224 }), 64, 96);
     step(.08);
-    expect(front.mock.calls[0].slice(0, 3)).toEqual([10, 7, 1.65]);
+    expect(front).not.toHaveBeenCalled();
+    const corona = draw.mock.calls.filter(call => call[0] === 'decal' && call[11] === 4);
+    expect(corona).toHaveLength(1);
+    expect(corona[0].slice(1, 4)).toEqual([10, .06, 7]);
+    expect(corona[0][4]).toBeLessThanOrEqual(.72);
+    expect(corona[0][5]).toBeLessThanOrEqual(.72);
     expect(scar).toHaveBeenCalledWith('star', 10, 7, 1.2, 0x1e182b, 8);
     expect(kit.batches.solid.mesh.count).toBeGreaterThan(0);
     fx.clear(); kit.clear(); step(0); expect(kit.batches.front.mesh.count).toBe(0); dispose();
@@ -156,7 +161,7 @@ describe('Arc presentation signatures and lifecycle', () => {
   it.each(['high', 'low'] as const)('makes sustained Overclock visible on %s without changing hostile endpoints', tier => {
     const { kit, frame, step, dispose } = setup();
     kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
-    const grade = vi.spyOn(kit, 'grade'), ribbon = vi.spyOn(kit, 'ribbon');
+    const grade = vi.spyOn(kit, 'grade'), ribbon = vi.spyOn(kit, 'ribbon'), gust = vi.spyOn(kit, 'gust');
     frame.game = { player: { x: 128, y: 128, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [
       { x: 256, y: 160, velocityX: 120, velocityY: 0 },
     ] } }, bullets: [{ kind: 'player', x: 160, y: 128, request: { angle: 0 } }] } as never;
@@ -169,24 +174,33 @@ describe('Arc presentation signatures and lifecycle', () => {
     expect(kit.batches.front.mesh.count).toBe(0);
     expect(kit.batches.shard.mesh.count).toBe(0);
     expect(ribbon.mock.calls.filter(call => Math.hypot(call[0] - 4, call[2] - 4) < .5 && call[1] > .1).length).toBeGreaterThanOrEqual(7);
-    expect(ribbon.mock.calls.some(call => call[1] === .055 && call[4] === .055)).toBe(true);
+    expect(gust).toHaveBeenCalledTimes(tier === 'low' ? 3 : 4);
+    expect(gust.mock.calls.every(call => call[7] === 0xb79cff)).toBe(true);
+    expect(ribbon.mock.calls.some(call => call[1] === 1.52 && (call[7] ?? 0) >= .05)).toBe(true);
+    expect(kit.batches.ghost.mesh.count).toBe(tier === 'low' ? 10 : 14);
     const calls = grade.mock.calls.length; frame.snapshot = snapshot(); step(.016);
     expect(grade.mock.calls).toHaveLength(calls); expect(kit.batches.front.mesh.count).toBe(0); dispose();
   });
 
-  it('separates time-ripple slices from vapor volume and retains a reverse expiry echo', () => {
+  it('keeps curved activation and reverse expiry ripples inside their true radius without floating bars', () => {
     const { kit, fx, step, dispose } = setup();
-    const volume = vi.spyOn(kit, 'front'), ribbon = vi.spyOn(kit, 'ribbon');
+    const volume = vi.spyOn(kit, 'front'), ribbon = vi.spyOn(kit, 'ribbon'), gust = vi.spyOn(kit, 'gust');
     fx.event(event({ ability: 'overclock', slot: 'overdrive', phase: 'impact' }), 64, 96);
-    step(.15); expect(volume).not.toHaveBeenCalled(); expect(ribbon.mock.calls.length).toBeGreaterThan(20);
-    for (const call of ribbon.mock.calls) {
-      expect(Math.hypot(call[0] - 2, call[2] - 3)).toBeLessThanOrEqual(6.001);
-      expect(Math.hypot(call[3] - 2, call[5] - 3)).toBeLessThanOrEqual(6.001);
+    step(.15); expect(volume).not.toHaveBeenCalled(); expect(ribbon).not.toHaveBeenCalled();
+    expect(gust).toHaveBeenCalledTimes(4);
+    for (const call of gust.mock.calls) {
+      const [x, z, length, width, angle] = call;
+      expect(call[7]).toBe(0xb79cff);
+      for (const side of [-1, 1]) for (const end of [-1, 1]) {
+        const px = x + Math.cos(angle) * length * .5 * end - Math.sin(angle) * width * .5 * side;
+        const pz = z + Math.sin(angle) * length * .5 * end + Math.cos(angle) * width * .5 * side;
+        expect(Math.hypot(px - 2, pz - 3)).toBeLessThanOrEqual(6.001);
+      }
     }
-    step(1); ribbon.mockClear();
+    step(1); gust.mockClear();
     fx.event(event({ ability: 'overclock', slot: 'overdrive', phase: 'end' }), 64, 96);
-    step(.1); expect(ribbon.mock.calls.length).toBeGreaterThan(20); expect(volume).not.toHaveBeenCalled();
-    step(1); expect(kit.ribbons.mesh.count).toBe(0); dispose();
+    step(.1); expect(gust).toHaveBeenCalledTimes(4); expect(volume).not.toHaveBeenCalled();
+    step(1); expect(kit.ribbons.mesh.count).toBe(0); expect(kit.batches.decal.mesh.count).toBe(0); dispose();
   });
 
   it.each(['high', 'low'] as const)('keeps slowed-moving hostile echoes visible and bounded on %s, excluding stationary actors', tier => {
@@ -227,13 +241,16 @@ describe('Arc presentation signatures and lifecycle', () => {
   it('masks sustained cables/world echoes while preserving attached suit and contact signals', () => {
     const { kit, frame, fx, step, dispose } = setup();
     const samples: { y: number; weight: number; lightning: boolean }[] = [];
+    const worldWeights: number[] = [];
+    const gust = kit.gust.bind(kit);
+    vi.spyOn(kit, 'gust').mockImplementation((...args) => { worldWeights.push(kit.priorityWeight); gust(...args); });
     const ribbon = kit.ribbon.bind(kit);
     vi.spyOn(kit, 'ribbon').mockImplementation((...args) => { samples.push({ y: args[1], weight: kit.priorityWeight, lightning: args[9] ?? true }); ribbon(...args); });
     frame.game = { player: { x: 128, y: 128, angle: 0, vx: 100, vy: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [] } as never;
     frame.snapshot = snapshot({ hostileTimeScale: .3, links: [{ id: 1, ability: 'tesla-pylon', element: 'arc', x: 32, y: 64, targetX: 192, targetY: 128, width: 28 }], overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
     step(.4);
     expect(samples.some(sample => sample.y === 1.5 && sample.weight === 1 && sample.lightning)).toBe(true);
-    expect(samples.some(sample => sample.y === .055 && sample.weight === 1)).toBe(true);
+    expect(worldWeights).toHaveLength(4); expect(worldWeights.every(weight => weight === 1)).toBe(true);
     expect(samples.some(sample => sample.y === 1.52 && sample.weight === 0)).toBe(true);
     expect(kit.batches.ghost.mesh.count).toBeGreaterThan(0);
     expect(kit.priorityWeight).toBe(0);

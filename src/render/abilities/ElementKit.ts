@@ -339,8 +339,8 @@ export class ElementKit {
             11 + (Math.sin(seed * 7.13) * .5 + .5) * .2);
     }
     /** Curved ground-mist brush stroke; length/width are complete world bounds. */
-    gust(x: number, z: number, length: number, width: number, angle: number, seed: number, opacity = .4): void {
-        this.draw('decal', x, .055, z, length * .5, width * .5, 1, 0x9bdcf0, opacity, 0, -angle,
+    gust(x: number, z: number, length: number, width: number, angle: number, seed: number, opacity = .4, color = 0x9bdcf0): void {
+        this.draw('decal', x, .055, z, length * .5, width * .5, 1, color, opacity, 0, -angle,
             10 + (Math.sin(seed * 7.13) * .5 + .5) * .4);
     }
     /** Solid-looking faceted translucent column, with a narrow luminous internal vein. */

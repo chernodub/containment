@@ -132,7 +132,7 @@ ${kind === 'decal' ? `
   float taper=pow(max(0.,1.-p.x*p.x),.6);
   float stroke=abs(p.y-curve)/max(.04,.38*taper);
   float coverage=(1.-smoothstep(.32,1.,stroke))*taper;
-  c=mix(vec3(.2,.43,.58),vec3(.78,1.14,1.35),smoothstep(.45,.95,coverage));
+  c=mix(ink*.55,ink*1.45+vec3(.1),smoothstep(.45,.95,coverage));
   a*=coverage*.85;
  }
  else if(variant>7.5){
