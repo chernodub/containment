@@ -37,17 +37,17 @@ function titleMarineArmor(root:T.Group,rig:{value:T.Color}|undefined):void {
     if(bucket===2){const roles=new Float32Array(g.getAttribute('position').count);roles.fill(role);g.setAttribute('titlePanelRole',new T.BufferAttribute(roles,1));}
     pieces[bucket].push(g);
   };
-  for(const side of [-1,1])for(const shoulder of [false,true]){
-    const desired=new T.Vector3(side*(shoulder?.28:.12),shoulder?1.49:1.38,shoulder?-.05:-.18);
+  for(const side of [-1,1]){
+    const desired=new T.Vector3(side*.12,1.38,-.18);
     // Fit from outside the assembled suit: nearest vertices can select the
     // hidden undersuit and bury the panel beneath the outer armor shell.
-    normal.set(shoulder?side*.68:side*.12,shoulder?.25:.08,-1).normalize();
+    normal.set(side*.12,.08,-1).normalize();
     origin.copy(desired).add(normal).applyMatrix4(root.matrixWorld);
     direction.copy(normal).negate().transformDirection(root.matrixWorld);ray.set(origin,direction);
     const hit=ray.intersectObjects(skins,false)[0];
     if(!hit)continue;
     rotation.setFromUnitVectors(new T.Vector3(0,0,1),normal);target.copy(hit.point).applyMatrix4(inverse).addScaledVector(normal,.012);
-    const w=shoulder?.12:.14,h=shoulder?.11:.20;
+    const w=.14,h=.20;
     piece(1,0,0,0,w+.012,h+.012,.024,.010);
     piece(0,0,0,.012,w,h,.022,.010);
     // Recessed center cut and a thin upper lip describe a plate, not painted noise.

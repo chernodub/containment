@@ -51,7 +51,7 @@ if(mode==='review'){
  const organic=resolve(root,'organic');await mkdir(organic,{recursive:true});const records=[];
  for(const rig of ['breacher','cryo','pyro','arc']){
   const source=resolve(`artifacts/nextgen/playtest/${process.argv[4]??'i8-reviewed-final'}-${rig}-1729`),report=await read(resolve(source,'report.json'));
-  for(const file of report.screenshots.filter(f=>/mid\.png$/.test(f))){const target=`${rig}-${basename(file)}`;await copyFile(resolve(source,file),resolve(organic,target));records.push({rig,source:resolve(source,file),file:target,head:report.head});}
+  for(const file of report.screenshots.filter(f=>/mid\.png$/.test(f))){const target=`${rig}-${basename(file)}`;await copyFile(resolve(source,file),resolve(organic,target));records.push({rig,source:resolve(source,file),file:target,head:report.head,applicationSourceSHA:(await readFile(resolve(report.distributionDirectory,'SOURCE_SHA'),'utf8')).trim()});}
  }
  await writeFile(resolve(organic,'manifest.json'),JSON.stringify({records},null,2));
  await writeFile(resolve(organic,'index.html'),`<!doctype html><meta charset="utf-8"><style>body{background:#111820;color:#dce9f0;font:14px system-ui}main{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}img{width:100%}</style><h1>Organic campaign mid-fight captures</h1><main>${records.map(s=>`<figure><a href="${s.file}"><img loading="lazy" src="${s.file}"></a><figcaption>${escape(s.rig+' '+s.file)}</figcaption></figure>`).join('')}</main>`);

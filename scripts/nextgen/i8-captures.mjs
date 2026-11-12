@@ -3,8 +3,8 @@
 import {spawn,execFileSync} from 'node:child_process';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {loadavg} from 'node:os';
-const source=(await readFile('artifacts/nextgen/i8/budgeted-dist/SOURCE_SHA','utf8')).trim();
-const dist='artifacts/nextgen/i8/budgeted-dist',logs='artifacts/nextgen/i8/logs';
+const source=(await readFile('artifacts/nextgen/i8/mounted-dist/SOURCE_SHA','utf8')).trim();
+const dist='artifacts/nextgen/i8/mounted-dist',logs='artifacts/nextgen/i8/logs';
 const rooms=['awakening-bay','passenger-vault','residential-gallery','communal-atrium','crew-checkpoint','armory','freight-hold','breached-loading-bay','relay-racks','transmission-chamber','diagnostic-gallery','safety-interlock-station','coolant-plant','service-shaft-landing','infested-workshop','swarm-junction','shielding-gate','containment-annulus','manual-control-chamber','overload-floor'];
 const rigs=['breacher','cryo','pyro','arc'];
 const abilities=['ram','seismic-slam','bulwark','railbreaker','frost-trail','cryo-nova','glacier','whiteout','afterburn','flashfire','napalm-charge','meltdown','static-step','overload','tesla-pylon','overclock'];

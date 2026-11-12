@@ -44,18 +44,19 @@ export async function stageCorpseBudget() {
   await d.gotoRoom('relay-racks',{rig:'pyro'});d.invulnerable(true);g.enemies.reset();
   d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});d.step(600);
   const b=g.geometry.bounds,points=[],probe=r.player.root.position.clone();
-  marks: for(let y=b.y+40;y<b.y+b.height-40;y+=40)for(let x=b.x+40;x<b.x+b.width-40;x+=40){
-    if(!d.canStand(x,y,20)||Math.hypot(x-g.player.x,y-g.player.y)>320)continue;
+  for(let y=b.y+40;y<b.y+b.height-40;y+=40)for(let x=b.x+40;x<b.x+b.width-40;x+=40){
+    if(!d.canStand(x,y,32)||Math.hypot(x-g.player.x,y-g.player.y)>420)continue;
     probe.set(x/32,.8,y/32).project(r.camera);
     if(Math.abs(probe.x)>.7||probe.y<-.4||probe.y>.5)continue;
-    if(points.some(p=>Math.hypot(p.x-x,p.y-y)<62))continue;points.push({x,y});
-    if(points.length===13)break marks;
+    if(points.some(p=>Math.hypot(p.x-x,p.y-y)<76))continue;points.push({x,y});
   }
   if(points.length<13)throw Error('Not enough legal corpse comparison marks');
-  for(const [i,p]of points.slice(0,13).entries()){
-    const id=d.spawn(['crawler','spitter','brute','carrier','stalker'][i%5],p.x,p.y,false);
-    if(!id)throw Error('Native corpse spawn denied');d.refresh();g.damage(id,100000);
+  let killed=0;
+  for(const p of points){
+    const id=d.spawn(['crawler','spitter','brute','carrier','stalker'][killed%5],p.x,p.y,false);
+    if(!id)continue;d.refresh();g.damage(id,100000);if(++killed===13)break;
   }
+  if(killed!==13)throw Error('Expected thirteen legal native deaths; got '+killed);
   d.step(600);d.refresh();
   d.i8CorpseProof={nativeDeaths:13,retained:r.corpses.length,ids:r.corpses.map(c=>c.id)};
 }
