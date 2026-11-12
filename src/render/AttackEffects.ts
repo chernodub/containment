@@ -14,11 +14,40 @@ export type AttackFeedback={
 type Particle={variant?:number;liquid?:boolean;wall?:T.Vector3;growth?:number;aspect?:number;p:T.Vector3;v:T.Vector3;color:T.Color;age:number;life:number;size:number;stretch:number;spin:number;rotation:number;gravity:number;ground:boolean};
 type Pulse={p:T.Vector3;color:T.Color;age:number;life:number;radius:number;angle:number;slash:boolean;stable:boolean};
 export const EFFECT_LIMITS={glow:360,smoke:80,debris:80,pulses:24,decals:64,beams:320,fire:16} as const;
+export const PRIORITY_ACTOR_LIMIT=130;
 const vertex=`attribute float effectFrame; varying float vFrame;attribute float effectAlpha;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
 void main(){vFrame=effectFrame;vUv=uv;vColor=instanceColor;vAlpha=effectAlpha;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`;
 const fragment=`uniform sampler2D map;uniform float inset;uniform float grid;uniform float textured;uniform float flashScale;varying float vFrame;uniform float style;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
+uniform vec4 priorityActors[130];uniform int priorityActorCount;uniform vec2 priorityViewport;
 void main(){vec2 p=vUv*2.0-1.0;float d=length(p);float alpha=vAlpha;vec3 color=vColor;
-if(style>4.5){
+if(style>6.5){
+ if(d>1.0)discard;
+ if(vFrame<-.5){color=vec3(.006,.008,.009);alpha*=.88*(1.0-smoothstep(.75,1.0,d));}
+ else{float edge=1.0-smoothstep(.74,.91,d),core=1.0-smoothstep(.20,.36,d);color=mix(vec3(.008,.006,.009),vec3(1.8,.16,.035),edge);color=mix(color,vec3(.055,.008,.006),core);alpha*=1.0-smoothstep(.92,1.0,d);}
+}
+else if(style>5.5){
+ if(d>1.0)discard;
+ // A bounded projected torso mask keeps bodies visible through the after-post
+ // warning overlay. Its unchanged ground footprint remains visible elsewhere.
+ vec2 screen=gl_FragCoord.xy/max(priorityViewport,vec2(1.0))*2.0-1.0;
+ for(int i=0;i<130;i++){
+  if(i>=priorityActorCount)break;
+  vec4 actor=priorityActors[i];vec2 q=(screen-actor.xy)/max(actor.zw,vec2(.00001));
+  if(dot(q,q)<1.0)discard;
+ }
+ float edge=1.0-smoothstep(.020,.055,abs(d-.90));
+ if(vFrame<.5){color*=1.2;alpha*=edge;}
+ else{
+  float progress=clamp(vFrame-1.0,0.0,1.0),filled=1.0-smoothstep(progress-.02,progress+.02,d);
+  float hatch=step(.58,fract((p.x+p.y)*10.0-progress*2.0));
+  float timing=1.0-smoothstep(.012,.035,abs(d-progress*.88));
+  float danger=max(edge,max(timing*.80,hatch*(.14+filled*.30)));
+  color=mix(vec3(.012,.008,.010),vec3(1.8,.13,.035)*(1.0+edge*.2),danger);
+  color=mix(color,vec3(.004,.005,.007),smoothstep(.95,.975,d));
+  alpha=min(1.0,.92+edge*.08+filled*.04)*min(1.0,vAlpha*2.5);
+ }
+}
+else if(style>4.5){
  float grain=fract(sin(dot(floor(p*80.0),vec2(12.9898,78.233)))*43758.5453);
  float edge=1.0-smoothstep(.70+grain*.18,1.0,d);
  if(vFrame<.5){float hole=1.0-smoothstep(.08,.38,d);float rim=(1.0-smoothstep(.34,.53,d))*.28;color=mix(color,vec3(.012,.017,.019),hole);alpha*=max(hole,rim)*edge;}
@@ -70,6 +99,10 @@ export class AttackEffects {
  private arcs:{start:T.Vector3;end:T.Vector3;age:number;seed:number;ball?:boolean}[]=[];
  private glow:Particle[]=[];private smoke:Particle[]=[];private debris:Particle[]=[];private decals:Particle[]=[];private pulses:Pulse[]=[];
  private glowMesh:T.InstancedMesh;private smokeMesh:T.InstancedMesh;private debrisMesh:T.InstancedMesh;private decalMesh:T.InstancedMesh;private pulseMesh:T.InstancedMesh;private slashMesh:T.InstancedMesh;private beamMesh:T.InstancedMesh;
+ private hostileMesh:T.InstancedMesh;private hostileWarningMesh:T.InstancedMesh;private bossWarning:{x:number;z:number;radius:number;progress:number}|null=null;
+ private readonly priorityActors=Array.from({length:PRIORITY_ACTOR_LIMIT},()=>new T.Vector4());
+ private readonly priorityCount={value:0};private readonly priorityViewport=new T.Vector2(1,1);
+ private priorityCamera:T.Camera|undefined;private readonly priorityPoint=new T.Vector3();private readonly prioritySide=new T.Vector3();private readonly priorityUpper=new T.Vector3();private readonly priorityLower=new T.Vector3();
  private dummy=new T.Object3D();private forward=new T.Vector3();private previous=new WeakMap<Bullet,T.Vector3>();private trailClock=0;private boonBursts=0;private arcBursts=0;
  private options:AttackEffectOptions={flashIntensity:1,reducedMotion:false,tier:'high',dynamicLights:true,distortion:true};
  private feedback:AttackFeedback={};private particleFree=new Map<Particle[],Particle[]>();private disposed=false;
@@ -88,6 +121,9 @@ export class AttackEffects {
   // Keep the existing pool order stable for renderer diagnostics.
   scene.remove(this.fireMesh);scene.add(this.fireMesh);
   this.fieldMesh=pool(scene,new T.PlaneGeometry(1,1),4,4);this.fieldMesh.name='frost-fields';
+  this.hostileMesh=pool(scene,new T.PlaneGeometry(2,2),320,7);this.hostileMesh.name='hostile-projectiles';this.hostileMesh.renderOrder=40;(this.hostileMesh.material as T.Material).depthTest=false;
+  this.hostileWarningMesh=pool(scene,new T.PlaneGeometry(2,2),EFFECT_LIMITS.pulses+1,6);this.hostileWarningMesh.name='hostile-warning-fills';this.hostileWarningMesh.renderOrder=30;(this.hostileWarningMesh.material as T.Material).depthTest=false;
+  Object.assign((this.hostileWarningMesh.material as T.ShaderMaterial).uniforms,{priorityActors:{value:this.priorityActors},priorityActorCount:this.priorityCount,priorityViewport:{value:this.priorityViewport}});
   for(const [list,limit]of [[this.fire,EFFECT_LIMITS.fire],[this.glow,EFFECT_LIMITS.glow],[this.smoke,EFFECT_LIMITS.smoke],[this.debris,EFFECT_LIMITS.debris],[this.decals,EFFECT_LIMITS.decals]] as const){
    const free:Particle[]=[];for(let i=0;i<limit;i++)free.push({p:new T.Vector3(),v:new T.Vector3(),color:new T.Color(),age:0,life:0,size:0,stretch:1,spin:0,rotation:0,gravity:0,ground:false});this.particleFree.set(list,free);
   }
@@ -100,6 +136,30 @@ export class AttackEffects {
  }
  /** Event-local vectors may be reused; copy the position if a callback retains it. */
  setFeedback(feedback:AttackFeedback){this.feedback=feedback;}
+ /** Composite only incoming danger after friendly HDR/post effects. The caller
+  * prepares this scene for its real screen target before releasing gameplay. */
+ setPriorityScene(scene:T.Object3D){scene.add(this.hostileWarningMesh,this.hostileMesh);}
+ /** Actual screen framebuffer pixels, matching gl_FragCoord after HDR/post. */
+ setPriorityViewport(width:number,height:number){this.priorityViewport.set(Math.max(1,width),Math.max(1,height));}
+ /** Reset the bounded torso list after the current camera matrices settle. */
+ beginPriorityActors(camera:T.Camera){this.priorityCamera=camera;this.priorityCount.value=0;}
+ /** Add a visual torso, in world metres. Limbs and the ground warning remain
+  * outside this conservative ellipse; projectiles never consult these masks. */
+ addPriorityActor(x:number,z:number,radius:number,height:number){
+  if(!this.priorityCamera||this.priorityCount.value>=PRIORITY_ACTOR_LIMIT||radius<=0||height<=0)return;
+  const camera=this.priorityCamera,center=this.priorityPoint.set(x,height*.58,z).project(camera);
+  if(center.z< -1||center.z>1)return;
+  const side=this.prioritySide.set(x+radius*.95,height*.58,z).project(camera);
+  const upper=this.priorityUpper.set(x,height*.98,z-radius*.25).project(camera),lower=this.priorityLower.set(x,height*.02,z+radius*.5).project(camera);
+  const rx=Math.max(1/this.priorityViewport.x,Math.abs(side.x-center.x)),ry=Math.max(1/this.priorityViewport.y,Math.abs(upper.y-center.y),Math.abs(lower.y-center.y));
+  if(center.x+rx< -1||center.x-rx>1||center.y+ry< -1||center.y-ry>1)return;
+  this.priorityActors[this.priorityCount.value++].set(center.x,center.y,rx,ry);
+ }
+ /** Snapshot coordinates in world units; one reserved prewarmed warning slot. */
+ setBossWarning(x:number,z:number,radius:number,progress:number,visible=true){
+  if(!visible){this.bossWarning=null;return;}
+  const w=this.bossWarning??(this.bossWarning={x:0,z:0,radius:0,progress:0});w.x=x;w.z=z;w.radius=radius;w.progress=T.MathUtils.clamp(progress,0,1);
+ }
  private flash(position:T.Vector3,color:number,intensity:number,radius:number,duration:number,priority:number){
   if(this.options.dynamicLights===false||!(this.options.flashIntensity??1))return;
   this.feedback.flash?.({position,color,intensity:intensity*(this.options.flashIntensity??1)*(this.options.reducedMotion?.5:1),radius,duration,priority});
@@ -113,7 +173,14 @@ export class AttackEffects {
   item.spin=list===this.decals?0:(Math.random()-.5)*(list===this.smoke?.9:12)*(this.options.reducedMotion?.2:1);item.rotation=Math.random()*6.28;item.gravity=gravity;item.ground=list===this.decals;
   item.liquid=false;item.wall=undefined;item.growth=undefined;item.aspect=undefined;item.variant=list===this.decals?1:undefined;list.push(item);
  }
- private pulse(p:T.Vector3,color:number,radius:number,life:number,angle=0,slash=false,stable=false){if(this.pulses.length>=EFFECT_LIMITS.pulses)this.pulses.shift();this.pulses.push({p:p.clone(),color:new T.Color(color),radius,life,age:0,angle,slash,stable});}
+ private pulse(p:T.Vector3,color:number,radius:number,life:number,angle=0,slash=false,stable=false){
+  if(this.pulses.length>=EFFECT_LIMITS.pulses){
+   const friendly=this.pulses.findIndex(item=>!item.stable);
+   if(friendly>=0)this.pulses.splice(friendly,1);
+   else if(stable)this.pulses.shift();else return;
+  }
+  this.pulses.push({p:p.clone(),color:new T.Color(color),radius,life,age:0,angle,slash,stable});
+ }
  shot(p:T.Vector3,angle:number,id:WeaponId){
   if(this.disposed)return;
   const cfg=WEAPON_APPEARANCE[id],forward=new T.Vector3(Math.cos(angle),0,Math.sin(angle)),right=new T.Vector3(-forward.z,0,forward.x);
@@ -358,23 +425,29 @@ export class AttackEffects {
  update(dt:number,camera:T.Camera,bullets:readonly Bullet[]){
   if(dt<=0||this.disposed)return;
   this.boonBursts=this.arcBursts=0;this.trailClock+=dt;const trail=this.trailClock>.04;if(trail)this.trailClock=0;
-  let beam=0;const beamLimit=this.options.tier==='low'?120:EFFECT_LIMITS.beams,alpha=this.beamMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute;
+  let beam=0,hostile=0;const beamLimit=this.options.tier==='low'?120:EFFECT_LIMITS.beams,alpha=this.beamMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute;
   for(const b of bullets){
    if(b.kind==='player'&&(2-b.life)*b.request.speed<(b.visualMuzzle?.distance??0))continue;
    const id=b.request.weaponId,grenade=b.kind==='grenade',hazard=b.kind==='hazard';
    const p=this.bulletPosition.set(b.x/32,grenade?1+Math.sin((1-b.life/1.1)*Math.PI)*1.4:b.visualMuzzle?.y??.99,b.y/32);
+   if(hazard&&hostile<318){
+    // One normal-blended batch contains a broad dark silhouette, saturated ring
+    // and dark core. A second instance is its floor contact/shadow dot.
+    this.dummy.position.copy(p);this.dummy.quaternion.copy(camera.quaternion);this.dummy.scale.set(.18,.18,.18);this.dummy.updateMatrix();this.hostileMesh.setMatrixAt(hostile,this.dummy.matrix);this.hostileMesh.setColorAt(hostile,WHITE);(this.hostileMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(hostile,0);(this.hostileMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(hostile++,1);
+    this.dummy.position.set(p.x,.035,p.z);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.set(.16,.16,.16);this.dummy.updateMatrix();this.hostileMesh.setMatrixAt(hostile,this.dummy.matrix);this.hostileMesh.setColorAt(hostile,WHITE);(this.hostileMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(hostile,-1);(this.hostileMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(hostile++,1);
+   }
    let old=this.previous.get(b);
    if(!old){old=this.bulletPrevious;if(b.visualMuzzle)old.set(b.visualMuzzle.x,b.visualMuzzle.y,b.visualMuzzle.z);else old.copy(p).addScaledVector(this.forward.set(Math.cos(b.request.angle),0,Math.sin(b.request.angle)),-b.request.speed/32*dt);}
    if(!grenade&&beam<beamLimit){
     this.forward.copy(p).sub(old);const distance=this.forward.length();
     if(distance>.002){
-     const width=hazard?.045:id==='plasma'?.065:id==='rocket'?.032:id==='shotgun'?.019:id==='rifle'?.016:.021;
-     this.dummy.position.copy(p).add(old).multiplyScalar(.5);this.dummy.quaternion.setFromUnitVectors(UP,this.forward.normalize());this.dummy.scale.set(width,distance,width);this.dummy.updateMatrix();this.beamMesh.setMatrixAt(beam,this.dummy.matrix);this.beamMesh.setColorAt(beam,this.beamColor.setHex(hazard?0xb2d968:WEAPON_APPEARANCE[id].color).multiplyScalar(id==='plasma'?3.5:2.4));alpha.setX(beam,.85);beam++;
+     const width=hazard?.065:id==='plasma'?.065:id==='rocket'?.032:id==='shotgun'?.019:id==='rifle'?.016:.021;
+     this.dummy.position.copy(p).add(old).multiplyScalar(.5);this.dummy.quaternion.setFromUnitVectors(UP,this.forward.normalize());this.dummy.scale.set(width,distance,width);this.dummy.updateMatrix();this.beamMesh.setMatrixAt(beam,this.dummy.matrix);this.beamMesh.setColorAt(beam,this.beamColor.setHex(hazard?0xff5a36:WEAPON_APPEARANCE[id].color).multiplyScalar(id==='plasma'?3.5:2.4));alpha.setX(beam,.85);beam++;
     }
    }
    if(old===this.bulletPrevious)this.previous.set(b,p.clone());else old.copy(p);
    if(trail&&(id==='plasma'||id==='rocket'||hazard)&&!grenade){
-    this.particle(this.glow,EFFECT_LIMITS.glow,p,hazard?0x9cdb66:WEAPON_APPEARANCE[id].color,hazard?.2:id==='rocket'?.22:.19,.16);
+    this.particle(this.glow,EFFECT_LIMITS.glow,p,hazard?0xff5a36:WEAPON_APPEARANCE[id].color,hazard?.2:id==='rocket'?.22:.19,.16);
     if(id==='rocket')this.particle(this.smoke,EFFECT_LIMITS.smoke,p,0x77817d,.25,.6,this.forward.set(0,.2,0));
    }
   }
@@ -424,7 +497,7 @@ export class AttackEffects {
    this.dummy.quaternion.setFromUnitVectors(UP,this.forward);this.dummy.scale.set(.009,length,.009);this.dummy.updateMatrix();
    this.beamMesh.setMatrixAt(beam,this.dummy.matrix);this.beamMesh.setColorAt(beam,spark.color);alpha.setX(beam++,(1-spark.age/spark.life)*.55);
   }
-  this.finish(this.beamMesh,beam);
+  this.finish(this.beamMesh,beam);this.finish(this.hostileMesh,hostile);
   this.drawParticles(this.fire,this.fireMesh,dt,camera,'fire');
   this.drawParticles(this.glow,this.glowMesh,dt,camera,'glow');this.drawParticles(this.smoke,this.smokeMesh,dt,camera,'smoke');this.drawParticles(this.debris,this.debrisMesh,dt,camera,'debris');this.drawParticles(this.decals,this.decalMesh,dt,camera,'decal');
   let field=0;for(const f of this.fields){f.age+=dt;if(f.age>=f.life)continue;
@@ -432,13 +505,14 @@ export class AttackEffects {
    this.fieldMesh.setMatrixAt(field,this.dummy.matrix);this.fieldMesh.setColorAt(field,f.color);
    (this.fieldMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(field++,Math.min(1,f.age/.12,(f.life-f.age)/.25));
   }write=0;for(const f of this.fields)if(f.age<f.life)this.fields[write++]=f;this.fields.length=write;this.finish(this.fieldMesh,field);
-  let ring=0,slash=0;for(const pulse of this.pulses){pulse.age+=dt;if(pulse.age>=pulse.life)continue;const t=pulse.age/pulse.life,mesh=pulse.slash?this.slashMesh:this.pulseMesh,index=pulse.slash?slash++:ring++;
-   this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);const size=pulse.radius*(pulse.stable?1:pulse.slash?.65+t*.35:.15+t*.85);this.dummy.scale.setScalar(size);this.dummy.updateMatrix();mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,pulse.stable?.4+.5*t:(1-t)*.8);
+  let ring=0,slash=0,warning=0;for(const pulse of this.pulses){pulse.age+=dt;if(pulse.age>=pulse.life)continue;const t=pulse.age/pulse.life,mesh=pulse.stable?this.hostileWarningMesh:pulse.slash?this.slashMesh:this.pulseMesh,index=pulse.stable?warning++:pulse.slash?slash++:ring++;
+   this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);const size=pulse.radius*(pulse.stable?1:pulse.slash?.65+t*.35:.15+t*.85);this.dummy.scale.setScalar(size);this.dummy.updateMatrix();mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,pulse.stable?1+t:0);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,pulse.stable?.4+.5*t:(1-t)*.8);
   }
-  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);
+  if(this.bossWarning){const w=this.bossWarning;this.dummy.position.set(w.x,.045,w.z);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.setScalar(w.radius);this.dummy.updateMatrix();this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);(this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress);(this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,1);}
+  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,warning);
  }
- clear(){this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
+ clear(){this.priorityCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
  get counts(){return{fire:this.fire.length,glow:this.glow.length,smoke:this.smoke.length,debris:this.debris.length,pulses:this.pulses.length,decals:this.decals.length};}
- private meshes(){return[this.fireMesh,this.glowMesh,this.smokeMesh,this.debrisMesh,this.decalMesh,this.pulseMesh,this.slashMesh,this.beamMesh,this.fieldMesh];}
+ private meshes(){return[this.fireMesh,this.glowMesh,this.smokeMesh,this.debrisMesh,this.decalMesh,this.pulseMesh,this.slashMesh,this.beamMesh,this.fieldMesh,this.hostileMesh,this.hostileWarningMesh];}
  dispose(){if(this.disposed)return;this.clear();this.disposed=true;this.feedback={};for(const t of this.textures)t.dispose();for(const m of this.meshes()){m.geometry.dispose();(m.material as T.Material).dispose();m.removeFromParent();}this.particleFree.clear();}
 }
