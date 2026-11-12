@@ -512,3 +512,25 @@ SCENARIOS.push({...u4Fire,id:'u4-burn-ticks',burst:false,required:['.combat-floa
  await (${u4Fire.setup.toString()})(${JSON.stringify(u4Fire.setupArgument)});
  window.__containmentDebug.step(600);window.__containmentDebug.refresh();
 })();`)});
+
+// Native camera projection proof: place one legal contact beneath the actual radar.
+SCENARIOS.push({id:'u4-radar-fade',state:'playing',required:['#radar-hud[data-obscures-threat=true]'],setup:async()=>{
+ const d=window.__containmentDebug;
+ for(const room of ['awakening-bay','armory','containment-annulus']){
+  await d.gotoRoom(room,{rig:'arc'});d.invulnerable(true);d.game.enemies.reset();
+  d.uiFixture({preferences:{combatText:true,radar:true}});d.refresh();
+  const box=document.getElementById('radar-hud').getBoundingClientRect();
+  const point=d.renderer.camera.position.clone();
+  for(let y=box.top+16;y<box.bottom-8;y+=12)for(let x=box.left+16;x<box.right-8;x+=12){
+   const floor=d.renderer.pointer(x,y+32);if(!floor||!d.canStand(floor.x,floor.y,28))continue;
+   point.set(floor.x/32,.8,floor.y/32).project(d.renderer.camera);
+   const sx=(point.x+1)*innerWidth/2,sy=(1-point.y)*innerHeight/2;
+   if(sx<box.left+8||sx>box.right-8||sy<box.top+8||sy>box.bottom-8)continue;
+   if(!d.spawn('brute',floor.x,floor.y))continue;
+   d.step(300);d.refresh();
+   if(document.getElementById('radar-hud').dataset.obscuresThreat==='true')return;
+   d.game.enemies.reset();
+  }
+ }
+ throw Error('No legal native contact beneath radar');
+}});

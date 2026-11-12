@@ -451,3 +451,7 @@ status builds without authoritative damage-element provenance remain neutral.
 These remain staged presentation fixtures. Use the unchanged native playtest
 runner for organic combat and death-source evidence. `x3-review.mjs <gallery>`
 continues to generate exact480×270 review images from the resulting PNGs.
+
+`u4-radar-fade` finds a legal floor point under the actual radar using the native
+camera, spawns one real contact and requires the live fade state. It is a staged
+projection/visibility proof; the chosen real room is retained in frame evidence.
