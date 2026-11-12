@@ -237,8 +237,8 @@ export class ElementKit {
         count = this.low ? Math.min(8, count) : Math.min(64, count);
         for (let i = 0; i < count; i++) {
             const a = i * 2.39996323, speed = radius * (.65 + i % 7 * .09);
-            this.mote(element === 'cryo' ? 'shard' : 'solid', x + Math.cos(a) * .25, .12, z + Math.sin(a) * .25,
-                Math.cos(a) * speed, 2 + i % 5 * .55, Math.sin(a) * speed, .09 + i % 4 * .035, 1.2 + i % 3 * .15,
+            this.mote('shard', x + Math.cos(a) * .25, .12, z + Math.sin(a) * .25,
+                Math.cos(a) * speed, 2 + i % 5 * .55, Math.sin(a) * speed, .12 + Math.sin(i * 7.13) ** 2 * .17, 1.2 + i % 3 * .15,
                 element === 'cryo' ? (i % 3 ? 0x7fd6ff : 0xe8fbff) : (i % 5 ? 0x4b4540 : 0xffb454));
         }
     }
@@ -257,13 +257,9 @@ export class ElementKit {
             .04 + h * .5 + cycle * .13, z + Math.cos(seed * 3.7 + cycle * 6) * width * .12,
             width * (.65 + life * .35), h * .5, 1, core ? 0xffedb5 : 0xff7a2e, opacity * (.3 + life * .55));
     }
-    /** Sparse rising fuel tongues replace the luminous planar liquid surface. */
+    /** Low glossy fuel surface, leaving flame placement to the owning ability. */
     liquidFire(x: number, z: number, radius: number, opacity = 1): void {
-        const count = this.low ? 5 : 12;
-        for (let i = 0; i < count; i++) {
-            const a = i * 2.39996323, r = radius * (.2 + .65 * Math.sin(i * 7.13) ** 2);
-            this.flameTongue(x + Math.cos(a) * r, z + Math.sin(a) * r, .18 + i % 3 * .055, .55 + i % 4 * .22, i * 1.73, opacity);
-        }
+        this.draw('decal', x, .045, z, radius, radius, 1, 0xff7a2e, opacity, 0, 0, 8);
     }
     /** Directional jet: source-hot stretched tongues, accelerating and curling outwards. */
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1): void {
@@ -377,6 +373,7 @@ export class ElementKit {
         this.rings.setTime(this.time, this.reducedMotion);
         this.rings.clear();
         this.ribbons.begin();
+        this.ribbons.priorityWeight = 0;
         for (const kind in this.batches)
             this.batches[kind as Primitive].begin(this.reducedMotion ? 0 : this.time);
         let live = 0;

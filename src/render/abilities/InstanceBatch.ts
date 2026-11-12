@@ -90,13 +90,21 @@ ${kind === 'spark' ? 'float d=dot(p,p);if(d>1.)discard;a*=pow(1.-d,2.);c*=3.5;' 
 ${kind === 'decal' ? `
  float d=length(p);float a0=atan(p.y,p.x);float variant=floor(phase+.01);
  float n=abilityNoise(p*19.);
- float spoke=floor((a0+3.141593)/6.283185*13.);
- float jag=sin(d*39.+spoke*17.)*.025+sin(d*93.+spoke*3.)*.009;
- float ray=abs(sin(a0*6.5+jag/max(.08,d)))*d;
- float fork=abs(sin(a0*6.5+(d-.4)*1.3+jag/max(.08,d)))*d;
- float seam=step(.025,abs(fract((p.x+p.y*.13)*4.)-.5));
- float cracks=max(1.-smoothstep(.002,.006,ray),(1.-smoothstep(.0015,.0045,fork))*smoothstep(.32,.5,d)*.6)*seam*(1.-smoothstep(.82,1.,d));
- if(variant<.5){if(d>1.)discard;a*=cracks*.62;c=mix(vec3(.012,.009,.006),ink,.14);}
+ float cracks=0.;float lip=0.;
+ // Seven unequal structural splits, each with a bent primary and one shorter branch.
+ for(int split=0;split<7;split++){
+  float seed=float(split)*2.39996323+.37;
+  vec2 axis=vec2(cos(seed),sin(seed));vec2 crossAxis=vec2(-axis.y,axis.x);
+  float along=dot(p,axis);float across=dot(p,crossAxis);
+  float bend=sin(seed*3.7)*max(0.,along-.21)*.2+sin(seed*7.1)*max(0.,along-.58)*.42;
+  float reach=.63+.32*fract(sin(seed*37.1)*437.13);
+  float active=smoothstep(.06,.15,along)*(1.-smoothstep(reach-.07,reach,along));
+  float groove=1.-smoothstep(.006,.018,abs(across-bend));
+  float branch=1.-smoothstep(.004,.012,abs(across-bend-(along-.4)*(.35+sin(seed)*.15)));
+  cracks=max(cracks,max(groove,branch*smoothstep(.38,.46,along)*.65)*active);
+  lip=max(lip,(1.-smoothstep(.003,.009,abs(across-bend-.016)))*active);
+ }
+ if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,lip*.35);c=mix(vec3(.009,.012,.014),vec3(.2,.13,.055),lip*.5);}
  else if(variant<1.5){
   if(d>1.)discard;
   float powder=abilityNoise(p*31.);
@@ -107,6 +115,17 @@ ${kind === 'decal' ? `
  else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.72+sin(a0*23.)*.05,.96,d))*(.14+cracks*.12);}
  else if(variant<4.5){if(d>1.)discard;float star=pow(1.-abs(sin(a0*5.+floor(d*11.)*.18)),22.);a*=(star*.85+(.2+n*.2)*(1.-smoothstep(.1,.5,d)))*(1.-smoothstep(.8,1.,d));}
  else if(variant<5.5){if(d>1.)discard;a*=(.14+n*.16)*(1.-smoothstep(.65,1.,d));}
+ else if(variant>7.5){
+  float liquid=variant<8.5?d:length(vec2(p.x*.18,p.y));
+  float edge=.9+sin(a0*5.+.7)*.035+sin(a0*9.-.4)*.025;
+  if(liquid>edge||abs(p.x)>.995)discard;
+  float flow=abilityNoise(p*3.+vec2(abilityTime*.12,-abilityTime*.08));
+  float glossy=pow(max(0.,1.-abs(p.y+p.x*.22+sin(p.x*5.+abilityTime*.4)*.08)*7.),5.);
+  float meniscus=1.-smoothstep(.015,.045,abs(liquid-edge+.025));
+  c=mix(vec3(.075,.013,.002),vec3(.32,.055,.004),flow*.65);
+  c+=vec3(.46,.16,.025)*glossy*.48+vec3(.35,.075,.005)*meniscus*.45;
+  a*=.72*(1.-smoothstep(edge-.045,edge,liquid))*(1.-smoothstep(.96,1.,abs(p.x)));
+ }
  else {if(d>1.)discard;if(variant>6.5&&abs(a0)>fract(phase)*6.283185)discard;a*=.035*(1.-smoothstep(.6,1.,d));c=vec3(.014,.009,.006);}
  ` : ''}
 ${kind === 'front' ? `

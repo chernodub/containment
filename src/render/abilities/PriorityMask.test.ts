@@ -42,3 +42,15 @@ describe('friendly priority mask', () => {
     k.dispose(); mask.dispose();
   });
 });
+
+describe('hostile presentation accessor', () => {
+  it('exposes the actual stable warning circles without changing warning construction', async () => {
+    const { AttackEffects } = await import('../AttackEffects');
+    const a = new AttackEffects(new T.Scene(), undefined);
+    a.event({ type: 'enemy-warning', x: 64, y: 96, targetX: 160, targetY: 192, radius: 48, durationMs: 600 });
+    const seen: { x: number; z: number; radius?: number }[] = [];
+    a.forEachHostilePriority(s => seen.push({ ...s }));
+    expect(seen).toEqual([{ shape: 'circle', x: 2, z: 3, radius: 1.5 }, { shape: 'circle', x: 5, z: 6, radius: .8 }]);
+    a.clear(); const visit = vi.fn(); a.forEachHostilePriority(visit); expect(visit).not.toHaveBeenCalled(); a.dispose();
+  });
+});

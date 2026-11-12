@@ -80,7 +80,7 @@ export class AbilityVisuals extends AbilityGeometry {
         this.system?.update(f);
         this.kit.end();
     }
-    override clear(): void { super.clear(); this.kit?.clear(); if (this.registry)
+    override clear(): void { super.clear(); this.priorityMask?.clear(); this.kit?.clear(); if (this.registry)
         for (const p of this.registry.values())
             p.clear(); this.system?.clear(); }
     override dispose(): void { if (this.dead)

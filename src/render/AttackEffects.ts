@@ -64,6 +64,9 @@ function pool(scene:T.Scene,geometry:T.BufferGeometry,count:number,style:number,
 }
 /** Bounded GPU instance pools: no lights or draw call per pellet / particle. */
 export class AttackEffects {
+ private readonly priorityShape={shape:'circle' as const,x:0,z:0,radius:0};
+ /** Read-only live hostile warning footprints for friendly-effect priority. No copies or rendering changes. */
+ forEachHostilePriority(visit:(shape:Readonly<{shape:'circle';x:number;z:number;radius:number}>)=>void):void{for(const p of this.pulses){if(!p.stable||p.age>=p.life)continue;const s=this.priorityShape;s.x=p.p.x;s.z=p.p.z;s.radius=p.radius;visit(s);}}
  private fields:Pulse[]=[];private fieldMesh:T.InstancedMesh;
  private fire:Particle[]=[];private fireMesh:T.InstancedMesh;private textures:T.Texture[]=[];
  private links:{start:T.Vector3;end:T.Vector3;age:number;frost:boolean}[]=[];

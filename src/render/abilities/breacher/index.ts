@@ -75,7 +75,7 @@ export class BreacherPresentation implements AbilityPresentation {
     if (event.ability === 'seismic-slam') {
       const radius = (event.radius ?? 230) / UNIT;
       this.impact('slam', x, z, angle, radius, 1.05);
-      this.kit.ring(x, z, radius, AMBER, .18);
+      this.kit.ring(x, z, radius, AMBER, .3);
       this.kit.distort(x, z, radius, .007, .55);
       this.kit.flash(x, z, CORE, 28, radius + 1, 5, .035);
       this.kit.flash(x, z, AMBER, 13, radius, 4, .18);
@@ -157,6 +157,7 @@ export class BreacherPresentation implements AbilityPresentation {
     this.emissionClock += dt;
     const emit = dt > 0 && this.emissionClock >= (this.kit.low ? .1 : .035);
     if (emit) this.emissionClock = 0;
+    this.kit.impact();
     for (const c of this.casts) {
       if (!c.live) continue;
       c.age += dt;
@@ -169,11 +170,13 @@ export class BreacherPresentation implements AbilityPresentation {
       if (!p.live) continue;
       p.age += dt;
       if (p.age >= p.life) { p.live = false; continue; }
+      this.kit.sustain(p.age);
       if (p.kind === 'ram') this.drawRam(p, frame, emit);
       else if (p.kind === 'ram-arrival') this.drawRamArrival(p);
       else if (p.kind === 'slam') this.drawSlam(p);
       else this.drawRailTail(p, frame);
     }
+    this.kit.impact();
     for (const b of this.barriers) b.seen = false;
     for (const entity of frame.snapshot?.deployables ?? NO_DEPLOYABLES) {
       if (entity.ability !== 'bulwark' || entity.health <= 0 || entity.remainingMs <= 0) continue;
@@ -184,6 +187,7 @@ export class BreacherPresentation implements AbilityPresentation {
       this.collapseBarrier(b);
       b.id = -1;
     }
+    this.kit.impact();
   }
 
   private drawSlamCharge(c: Cast, t: number, emit: boolean): void {
@@ -227,15 +231,15 @@ export class BreacherPresentation implements AbilityPresentation {
     const x = player ? player.x / UNIT : p.x + Math.cos(p.angle) * p.size * t;
     const z = player ? player.y / UNIT : p.z + Math.sin(p.angle) * p.size * t;
     const fade = Math.max(0, 1 - p.age / p.life), nx = Math.cos(p.angle), nz = Math.sin(p.angle), sx = -nz, sz = nx;
-    const count = this.kit.low ? 2 : 4;
-    for (let i = 0; i < count; i++) {
-      const r = .7 + i * .17, tipX = x + nx * r, tipZ = z + nz * r, width = .65 + i * .12;
-      this.kit.draw('shard', x + nx * (.38 + i * .17), .83, z + nz * (.38 + i * .17),
-        width, .65, .16, i === 0 ? CORE : AMBER, fade * .22, Math.PI / 2 - p.angle);
-      for (let side = -1; side <= 1; side += 2) this.kit.ribbon(
-        x + sx * side * width + nx * .1, .35 + i * .18, z + sz * side * width + nz * .1,
-        tipX, .35 + i * .18, tipZ, i === 0 ? CORE : AMBER, .065, fade * .8, false);
+    // One pressure prow carried by the marine, with an asymmetric hot leading keel.
+    this.kit.draw('shard', x + nx * .65, .83, z + nz * .65,
+      .8, .68, .24, AMBER, fade * .3, Math.PI / 2 - p.angle, .06);
+    for (let side = -1; side <= 1; side += 2) {
+      this.kit.ribbon(x + sx * side * .75 + nx * .05, .38, z + sz * side * .75 + nz * .05,
+        x + nx * 1.05, 1.05, z + nz * 1.05, side < 0 ? CORE : AMBER, .045, fade * .85, false);
     }
+    this.kit.ribbon(x + nx * .93, .48, z + nz * .93,
+      x + nx * 1.08, 1.27, z + nz * 1.08, CORE, .035, fade * .7, false);
     for (let side = -1; side <= 1; side += 2) {
       this.kit.draw('smoke', x - nx * .4 + sx * side * .38, .28, z - nz * .4 + sz * side * .38,
         .6, .35, .3, DUST, fade * .35);
@@ -261,21 +265,27 @@ export class BreacherPresentation implements AbilityPresentation {
   }
 
   private drawSlam(p: Impact): void {
-    const t = p.age / p.life, progress = Math.min(1, .12 + p.age / .14), radius = p.size * progress;
-    const count = this.kit.low ? 7 : 18, frontFade = Math.max(0, 1 - p.age / .36);
-    // The thin expanding boundary owns the pressure front; only broken dust follows it.
+    const k = this.kit, t = p.age / p.life;
+    const progress = Math.min(1, .06 + p.age / .19), radius = p.size * progress;
+    const frontFade = Math.max(0, 1 - p.age / .42);
+    // A low, broad impact edge rolls out first; dust has distinct radial momentum.
+    if (frontFade > 0) k.front(p.x, p.z, p.size, progress, p.age < .075 ? CORE : AMBER, .32, frontFade * .42);
+    const count = k.low ? 5 : 11;
     for (let i = 0; i < count; i++) {
-      const seed = Math.sin(i * 7.1) ** 2, a = i * TAU / count + Math.sin(i * 3.73) * .08;
-      const r = radius * (.71 + seed * .24);
-      const lift = Math.sin(Math.min(1, p.age / .36) * Math.PI) * (.08 + seed * .16);
-      // Fine angular chips replace the regular, broad square deck plates.
-      this.kit.draw('shard', p.x + Math.cos(a) * r, .035 + lift, p.z + Math.sin(a) * r,
-        .045 + seed * .08, .025 + seed * .035, .03 + seed * .055, i % 7 === 0 && p.age < .08 ? AMBER : STEEL,
-        (1 - t) * .72, -a + seed, Math.sin(i * 2.3) * .65);
-      if (i % (this.kit.low ? 3 : 2) === 0) {
-        const wake = radius * (.93 + seed * .04);
-        this.kit.draw('smoke', p.x + Math.cos(a) * wake, .12 + p.age * .2, p.z + Math.sin(a) * wake,
-          .3 + seed * .16 + t * .12, .14 + seed * .12 + t * .12, .2, DUST, frontFade * .2, -a);
+      const seed = i * 2.39996323, f = Math.sin(seed * 3.17 + .4) ** 2;
+      const a = seed + Math.sin(seed * 2.73) * .24;
+      const c = Math.cos(a), s = Math.sin(a);
+      const r = Math.min(p.size - .28, p.size * (.1 + f * .12) + p.age * p.size * (.45 + f * .35));
+      const hop = Math.max(0, Math.sin(Math.min(1, p.age / (.45 + f * .2)) * Math.PI));
+      // Larger chisel-like fragments originate near the launch zone, tumble and settle.
+      k.draw('shard', p.x + c * r, .065 + hop * (.18 + f * .38), p.z + s * r,
+        .16 + f * .24, .055 + f * .06, .07 + (1 - f) * .12,
+        i % 5 === 0 && p.age < .09 ? AMBER : STEEL, (1 - t) * .85,
+        -a + p.age * (f - .5) * 3, hop * (f - .4));
+      if (i % 2 === 0 && frontFade > 0) {
+        const wake = radius * (.88 + f * .05);
+        k.draw('smoke', p.x + c * wake, .18 + p.age * .28, p.z + s * wake,
+          .42 + f * .52, .21 + f * .18, .2, DUST, frontFade * (.28 + f * .15), -a, .16 * Math.sin(a));
       }
     }
   }
@@ -290,20 +300,20 @@ export class BreacherPresentation implements AbilityPresentation {
       p.size, .012, .28, 0x252420, fade * .55, -p.angle);
     if (p.age > .85) return;
     if (p.age < .36) {
-      const rings = this.kit.low ? 3 : 6, shock = 1 - p.age / .36;
+      const rings = this.kit.low ? 2 : 3, shock = 1 - p.age / .36;
       for (let i = 0; i < rings; i++) {
-        const distance = (i + .5) / rings * p.size, r = .5 + p.age * 2 + i % 2 * .1;
+        const distance = (.13 + i * .27 + Math.sin(i * 2.73) * .04) * p.size, r = (.38 + i * .17) + p.age * (1.7 + i * .3);
         this.kit.draw('front', p.x + nx * distance, .85, p.z + nz * distance,
-          r, .7, r, p.age < .065 ? CORE : AMBER, shock * .7, -p.angle, Math.PI / 2);
+          r, .4 + i * .18, r * (.85 + i * .12), p.age < .065 ? CORE : AMBER, shock * .7, -p.angle, Math.PI / 2);
       }
     }
-    const heat = (1 - p.age / .85) * .65, sideX = -nz, sideZ = nx, count = this.kit.low ? 5 : 12;
+    const heat = (1 - p.age / .85) * .65, sideX = -nz, sideZ = nx, count = this.kit.low ? 2 : 4;
     for (let i = 0; i < count; i++) {
-      const along = (i + .5) / count * p.size, px = p.x + nx * along, pz = p.z + nz * along;
+      const along = (.12 + i * .21 + Math.sin(i * 3.73) * .04) * p.size, px = p.x + nx * along, pz = p.z + nz * along;
       this.kit.ribbon(px - sideX * .12, .045, pz - sideZ * .12,
-        px + nx * .55, .045, pz + nz * .55, AMBER, .025, heat, false);
+        px + nx * (1.3 + i * .21), .045, pz + nz * (1.3 + i * .21), AMBER, .025, heat, false);
       this.kit.ribbon(px + sideX * .12, .045, pz + sideZ * .12,
-        px + nx * .55, .045, pz + nz * .55, AMBER, .025, heat, false);
+        px + nx * (1.3 + i * .21), .045, pz + nz * (1.3 + i * .21), AMBER, .025, heat, false);
     }
   }
 
@@ -369,6 +379,7 @@ export class BreacherPresentation implements AbilityPresentation {
     slot.pulse = Math.max(0, slot.pulse - dt);
     const nx = Math.cos(e.angle), nz = Math.sin(e.angle), ux = -nz, uz = nx;
     const age = Math.max(0, (e.durationMs - e.remainingMs) / 1000);
+    this.kit.sustain(age);
     const growth = this.kit.reducedMotion ? 1 : Math.min(1, age / .14), h = 2.4 * growth;
     const fade = Math.min(1, e.remainingMs / 180), nodes = this.kit.low ? 3 : 5;
     const flicker = e.remainingMs < 1000 && !this.kit.reducedMotion && !this.kit.low
@@ -406,8 +417,8 @@ export class BreacherPresentation implements AbilityPresentation {
       // Sparse hex cells share the continuous field. Only cells near the loaded node brighten.
       for (let column = 0; column < columns; column++) for (let row = 0; row < rows; row++) {
         const along = Math.max(-length * .5 + cellWidth, Math.min(length * .5 - cellWidth, ((column + .5 + (row % 2) * .15) / columns - .5) * length));
-        const local = slot.pulse * Math.max(0, 1 - Math.abs(along - slot.contact) / Math.max(.4, length * .24));
-        if (this.kit.low && local <= .04) continue;
+        const local = slot.pulse * Math.max(0, 1 - Math.abs(along - slot.contact) / Math.max(.4, length * .16));
+        if (local <= .04) continue;
         const centerY = h * (this.kit.low ? .5 : .3 + row * .4) + .06;
         const px = x + ux * along + nx * thickness * .37, pz = z + uz * along + nz * thickness * .37;
         for (let edge = 0; edge < 6; edge++) {

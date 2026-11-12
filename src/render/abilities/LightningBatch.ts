@@ -67,8 +67,8 @@ void main(){float cap=smoothstep(0.0,.08,local.y)*smoothstep(0.0,.12,1.0-local.y
         const noise = Math.sin(i * 127.1 + seed * 311.7 + strike * 73.9);
         this.endpoint.addScaledVector(this.side, noise * Math.sin(t * Math.PI) * Math.min(.4, distance * .12));
       }
-      const width = ribbon.lightning ? Math.min(.012, ribbon.width ?? .012) * (1 - t * .45) : ribbon.width ?? .045;
-      this.segment(this.start, this.endpoint, width * (ribbon.lightning ? 2.8 : 3), ribbon.color ?? 0xb79cff, (ribbon.opacity ?? 1) * (ribbon.lightning ? .07 : .14), 1.2);
+      const width = ribbon.lightning ? Math.max(.008, Math.min(.06, ribbon.width ?? .035)) * (1 - t * .45) : ribbon.width ?? .045;
+      this.segment(this.start, this.endpoint, width * (ribbon.lightning ? 2.4 : 3), ribbon.color ?? 0xb79cff, (ribbon.opacity ?? 1) * (ribbon.lightning ? .11 : .14), 1.2);
       this.segment(this.start, this.endpoint, width, ribbon.lightning ? 0xf2ecff : ribbon.color ?? 0xb79cff, ribbon.opacity ?? 1, ribbon.lightning ? 4 : 3);
       if (ribbon.lightning && !this.low && i % 3 === 0 && i < segments) {
         this.branch.copy(this.endpoint).addScaledVector(this.side, Math.sin(seed + i * 7.1 + strike) * .42);

@@ -42,7 +42,7 @@ describe('friendly ability readability contracts', () => {
     expect(scale.x).toBeCloseTo(7); expect(scale.y).toBeCloseTo(7); b.dispose();
   });
 
-  it.each([false, true])('streams tapered centimetre lightning with 40ms rerolls, exact contacts and no new buffers (Low %s)', low => {
+  it.each([false, true])('streams tapered caller-width lightning with 40ms rerolls, exact contacts and no new buffers (Low %s)', low => {
     const b = new AbilityLightningBatch(new T.Group(), 256); b.low = low;
     const r = { start: new T.Vector3(1, .9, 2), end: new T.Vector3(6, .7, 4), lightning: true, width: .2, seed: 7 };
     const matrices = b.mesh.instanceMatrix.array;
@@ -51,7 +51,8 @@ describe('friendly ability readability contracts', () => {
     expect(count).toBeLessThanOrEqual(low ? 12 : 23);
     for (let i = 0; i < count; i++) {
       b.mesh.getMatrixAt(i, m); scale.setFromMatrixScale(m);
-      expect(scale.x).toBeLessThanOrEqual(.034); expect(scale.z).toBeLessThanOrEqual(.034);
+      expect(scale.x).toBeLessThanOrEqual(.144); expect(scale.z).toBeLessThanOrEqual(.144);
+      if (i < 2) expect(scale.x).toBeGreaterThan(.045);
     }
     b.begin(); b.append(r, .035); b.end(); expect(matrices).toEqual(first);
     b.begin(); b.append(r, .045); b.end(); expect(matrices).not.toEqual(first);
