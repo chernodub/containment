@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  ACESFilmicToneMapping, AgXToneMapping, Camera, Color, DataUtils, HalfFloatType, NoToneMapping, OrthographicCamera,
+  ACESFilmicToneMapping, AgXToneMapping, Camera, Color, DataUtils, HalfFloatType, NearestFilter, NoToneMapping, OrthographicCamera,
   PerspectiveCamera, Scene, ShaderMaterial, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { GRAPHICS_PRESETS } from '../src/render/graphicsOptions';
@@ -50,10 +50,10 @@ function fixture() {
 }
 
 describe('HDR post lifecycle without a WebGL context', () => {
-  it('keeps Low to a single forward render with no post resources, even after prepare', async () => {
+  it('keeps explicit ink-off Low to a single forward render with no post resources, even after prepare', async () => {
     const { pipeline, gpu, scene, frames } = fixture();
     pipeline.setSize(1920, 1080, 2);
-    pipeline.setOptions({ ...GRAPHICS_PRESETS.high }, 'low');
+    pipeline.setOptions({ ...GRAPHICS_PRESETS.high, inkOutlines: 'off' }, 'low');
     pipeline.distortion.shockwave(0, 0);
     await pipeline.prepare();
     pipeline.render(1 / 60);
@@ -66,6 +66,48 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.dispose();
   });
 
+  it('keeps default Low silhouette to scene plus compact composite with one-pixel optional targets', async () => {
+    const { pipeline, gpu, scene, frames } = fixture();
+    pipeline.setSize(1920, 1080);
+    pipeline.setOptions(GRAPHICS_PRESETS.low, 'low');
+    pipeline.distortion.shockwave(0, 0);
+    await pipeline.prepare();
+    expect(gpu.compileAsync).toHaveBeenCalledTimes(2); // scene + selected composite
+    frames.length = 0;
+    pipeline.render(1 / 60);
+    const r = resources(pipeline)!;
+    expect(frames).toHaveLength(2);
+    expect(frames[0]).toMatchObject({ scene, target: r.scene, mapping: NoToneMapping });
+    expect(frames[1]).toMatchObject({ target: null, mapping: NoToneMapping });
+    expect(r.composite.uniforms.inkMode.value).toBe(1);
+    expect(r.scene.textures).toHaveLength(2);
+    for (const target of [r.ao, r.aoDenoised, r.bloomA, r.bloomB, r.distortion]) {
+      expect([target.width, target.height]).toEqual([1, 1]);
+    }
+    for (const option of ['aoEnabled', 'bloomEnabled', 'distortionEnabled', 'lensEnabled', 'atmosphereEnabled']) {
+      expect(r.composite.uniforms[option].value).toBe(0);
+    }
+    expect(pipeline.distortion.activeCount).toBe(0);
+    pipeline.dispose();
+  });
+
+  it('releases High targets when switching to default Low and lazily recreates the compact target set', () => {
+    const { pipeline } = fixture();
+    pipeline.setSize(1280, 720);
+    pipeline.setOptions(GRAPHICS_PRESETS.high, 'high');
+    pipeline.render(0);
+    const high = resources(pipeline)!, disposed = vi.spyOn(high.scene, 'dispose');
+    pipeline.setOptions(GRAPHICS_PRESETS.low, 'low');
+    expect(disposed).toHaveBeenCalledOnce();
+    expect(resources(pipeline)).toBeUndefined();
+    pipeline.render(0);
+    const low = resources(pipeline)!;
+    expect(low.scene).not.toBe(high.scene);
+    expect([low.scene.width, low.scene.height]).toEqual([1280, 720]);
+    expect([low.ao.width, low.ao.height, low.bloomA.width, low.bloomA.height]).toEqual([1, 1, 1, 1]);
+    pipeline.dispose();
+  });
+
   it('retires context-owned attachments and recreates the same High pipeline after restore', () => {
     const {pipeline}=fixture();pipeline.setOptions(GRAPHICS_PRESETS.high,'high');pipeline.render(0);
     const old=resources(pipeline)!,dispose=vi.spyOn(old.scene,'dispose');pipeline.distortion.shockwave(0,0);
@@ -73,7 +115,7 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.render(0);expect(resources(pipeline)!.scene).not.toBe(old.scene);expect(resources(pipeline)!.scene.texture.type).toBe(HalfFloatType);pipeline.dispose();
   });
 
-  it('allocates half-float MSAA+depth lazily and applies DPR/render scale once', () => {
+  it('allocates shared half-float color/geometry plus depth without MSAA and applies DPR/render scale once', () => {
     const { pipeline, frames } = fixture();
     pipeline.setOptions({ ...GRAPHICS_PRESETS.high, resolutionScale: 0.75 }, 'high');
     pipeline.setSize(800, 600, 2);
@@ -81,7 +123,12 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.render(1 / 60);
     const r = resources(pipeline)!;
     expect(r.scene.texture.type).toBe(HalfFloatType);
-    expect(r.scene.samples).toBe(2);
+    expect(r.scene.samples).toBe(0);
+    expect(r.scene.textures).toHaveLength(2);
+    expect(r.scene.textures[1].type).toBe(HalfFloatType);
+    expect(r.scene.textures[1].minFilter).toBe(NearestFilter);
+    expect(r.scene.textures[1].magFilter).toBe(NearestFilter);
+    expect(r.composite.uniforms.tGeometry.value).toBe(r.scene.textures[1]);
     expect(r.scene.depthTexture).toBeTruthy();
     expect([r.scene.width, r.scene.height]).toEqual([1200, 900]);
     expect([r.ao.width, r.ao.height]).toEqual([600, 450]);
@@ -117,8 +164,8 @@ describe('HDR post lifecycle without a WebGL context', () => {
       r.occlusion, r.gtao.material, r.gtao.denoiseMaterial, r.gtao.noise, r.gtao.denoiseNoise,
       r.extract, r.blur, r.distort, r.composite, r.geometry];
     const disposals = owned.map(value => vi.spyOn(value, 'dispose'));
-    pipeline.setOptions(GRAPHICS_PRESETS.low, 'low');
-    pipeline.setOptions(GRAPHICS_PRESETS.low, 'low');
+    pipeline.setOptions({ ...GRAPHICS_PRESETS.low, inkOutlines: 'off' }, 'low');
+    pipeline.setOptions({ ...GRAPHICS_PRESETS.low, inkOutlines: 'off' }, 'low');
     expect(resources(pipeline)).toBeUndefined();
     for (const dispose of disposals) expect(dispose).toHaveBeenCalledTimes(1);
     pipeline.setOptions(GRAPHICS_PRESETS.high, 'high');
@@ -154,7 +201,7 @@ describe('HDR post lifecycle without a WebGL context', () => {
     gpu.compileAsync.mockImplementationOnce(() => new Promise<void>(resolve => { done = resolve; }));
     pipeline.setOptions(GRAPHICS_PRESETS.high, 'high');
     const prepared = pipeline.prepare();
-    pipeline.setOptions(GRAPHICS_PRESETS.low, 'low');
+    pipeline.setOptions({ ...GRAPHICS_PRESETS.low, inkOutlines: 'off' }, 'low');
     done();
     await prepared;
     expect(resources(pipeline)).toBeUndefined();
@@ -193,7 +240,9 @@ describe('HDR post lifecycle without a WebGL context', () => {
     const r = resources(pipeline)!;
     expect(r.gtao.material.fragmentShader).toContain('cosHorizons');
     expect(r.gtao.denoiseMaterial.fragmentShader).toContain('denoiseSample');
-    expect(r.gtao.material.defines).toMatchObject({ NORMAL_VECTOR_TYPE: 0, SAMPLES: 12, PERSPECTIVE_CAMERA: 0 });
+    expect(r.gtao.material.defines).toMatchObject({ NORMAL_VECTOR_TYPE: 1, SAMPLES: 12, PERSPECTIVE_CAMERA: 0 });
+    expect(r.gtao.material.uniforms.tNormal.value).toBe(r.scene.textures[1]);
+    expect(r.gtao.material.fragmentShader).toContain('if(geometry.z<.5)return computeNormalFromDepth(uv)');
     expect(r.gtao.denoiseMaterial.defines).toMatchObject({ NORMAL_VECTOR_TYPE: 1, SAMPLES: 8, SAMPLE_LUMINANCE: 'a.r' });
     expect(r.gtao.material.defines.FRAGMENT_OUTPUT).toBe('vec4(ao, packNormalToRGB(viewNormal))');
     expect(r.gtao.denoiseMaterial.uniforms.tNormal.value).toBe(r.ao.texture);
@@ -297,7 +346,7 @@ describe('post shader work and packed normal precision', () => {
   // Specialize only uniform-coherent branches, leaving per-pixel branches
   // untouched. This checks the actual shader's texture work, not a second shader.
   function specialize(source: string, enabled: boolean): string {
-    const branch = /if \((?:ao|bloom|distortion|lens|atmosphere)Enabled > 0\.5\)\s*/g;
+    const branch = /if\s*\((?:(?:ao|bloom|distortion|lens|atmosphere)Enabled > 0\.5|inkMode>\.5)\)\s*/g;
     let result = '';
     let cursor = 0;
     for (;;) {
@@ -319,24 +368,40 @@ describe('post shader work and packed normal precision', () => {
     }
   }
 
-  it('leaves only one scene texture sample when optional composite effects are disabled', () => {
-    const disabled = specialize(compositeFragment, false);
-    expect(disabled.match(/texture2D\(tScene,/g)).toHaveLength(1);
-    for (const sampler of ['tDistortion', 'tAO', 'tBloom', 'tDepth']) {
+  it('bounds post AA and geometry ink work while optional composite effects remain skippable', () => {
+    // Separate called helper bodies from main: a disabled ink branch must not
+    // make its unused function declaration look like executed texture work.
+    const main = compositeFragment.slice(compositeFragment.indexOf('void main() {'));
+    const aa = compositeFragment.slice(compositeFragment.indexOf('vec3 sceneAA('), compositeFragment.indexOf('float noise('));
+    expect(aa.match(/texture2D\(tScene,/g)).toHaveLength(7);
+    expect(aa).not.toContain('for(');
+    expect(aa).toContain('if(hi-lo<'); // coherent regions keep their exact center
+    const disabled = specialize(main, false);
+    expect(disabled).toContain('vec3 color = sceneAA(uv)');
+    expect(disabled).not.toContain('texture2D(tScene,');
+    for (const sampler of ['tDistortion', 'tAO', 'tBloom', 'tDepth', 'tGeometry']) {
       expect(disabled).not.toContain(`texture2D(${sampler},`);
     }
+    expect(disabled).not.toContain('inkCoverage(');
     expect(disabled).not.toContain('float haze =');
     expect(disabled).not.toContain('float grain =');
     expect(disabled).toContain('AgXToneMapping(color)');
     expect(disabled).toContain('float dither =');
-    const enabled = specialize(compositeFragment, true);
-    // Six bounded, depth-rejected far-field lens taps share the existing composite.
-    expect(enabled.match(/texture2D\(tScene,/g)).toHaveLength(8);expect(enabled).toContain('for(int i=0;i<6;i++)');expect(enabled).toContain('sampleDepth-focalDepth');
-    for (const sampler of ['tDistortion', 'tAO', 'tBloom', 'tDepth']) {
+    const enabled = specialize(main, true);
+    // Six bounded, depth-rejected far-field lens taps share the composite.
+    expect(enabled.match(/texture2D\(tScene,/g)).toHaveLength(7);
+    expect(enabled).toContain('for(int i=0;i<6;i++)');
+    expect(enabled).toContain('sampleDepth-focalDepth');
+    for (const sampler of ['tDistortion', 'tAO', 'tBloom', 'tDepth', 'tGeometry']) {
       expect(enabled).toContain(`texture2D(${sampler},`);
     }
     expect(enabled).toContain('float haze =');
     expect(enabled).toContain('float grain =');
+    const ink = compositeFragment.slice(compositeFragment.indexOf('float inkCoverage('), compositeFragment.indexOf('vec3 sceneAA('));
+    expect(ink).toContain('for(int i=0;i<8;i++)');
+    expect(ink).toContain('if(inkMode<.5||center.z<.5||center.w<1.5)return 0.0');
+    expect(ink).toContain('if(!actor&&inkMode>1.5');
+    expect(ink).not.toContain('texture2D(tScene,'); // no luminance edge detection
   });
 
   it('retains AO and unit normal accuracy in the existing half-float RGBA target', () => {
