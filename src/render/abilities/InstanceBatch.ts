@@ -87,6 +87,9 @@ ${kind === 'flame' ? `
 ${kind === 'spark' ? 'float d=dot(p,p);if(d>1.)discard;a*=pow(1.-d,2.);c*=3.5;' : ''}
 ${kind === 'decal' ? `
  float d=length(p);float a0=atan(p.y,p.x);float variant=floor(phase+.01);
+ // Soot fans and fracture discs reject empty coverage before the expensive paths.
+ if(variant<.5&&d>1.)discard;
+ if(variant>2.5&&variant<3.5&&(d>1.||abs(a0)>fract(phase)*6.283185))discard;
  float n=abilityNoise(p*19.);
  float cracks=0.;float lip=0.;
  // Fuel, frost and wind never pay for the fracture paths. Instance-coherent branch.
@@ -141,15 +144,17 @@ ${kind === 'decal' ? `
   float seed=fract(phase)*15.7;
   float curve=p.x*p.x*(.18+sin(seed)*.07)+sin(p.x*3.+seed+abilityTime*.3)*.055;
   float cold=step(ink.r*1.1,ink.g);
-  float taper=pow(max(0.,1.-p.x*p.x),mix(.6,.42,cold));
-  float stroke=abs(p.y-curve)/max(.04,mix(.38,.64,cold)*taper);
-  float coverage=(1.-smoothstep(mix(.32,.08,cold),1.,stroke))*taper;
-  c=mix(ink*.55,ink*1.45+vec3(.1),smoothstep(.45,.95,coverage));
+  float coverage;
   if(cold>.5){
    vec2 cloud=vec2(p.x*.86,(p.y-curve)*1.08);
    float edge=.86+sin(p.x*4.2+seed)*.065+sin(p.y*6.3-seed)*.045;
    coverage=(1.-smoothstep(.2,edge,length(cloud)))*smoothstep(-1.,-.65,p.x)*(1.-smoothstep(.65,1.,p.x));
    c=ink*.8+vec3(.1)*coverage;
+  }else{
+   float taper=pow(max(0.,1.-p.x*p.x),.6);
+   float stroke=abs(p.y-curve)/max(.04,.38*taper);
+   coverage=(1.-smoothstep(.32,1.,stroke))*taper;
+   c=mix(ink*.55,ink*1.45+vec3(.1),smoothstep(.45,.95,coverage));
   }
   a*=coverage*mix(.85,.58,cold);
  }

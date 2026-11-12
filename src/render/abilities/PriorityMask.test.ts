@@ -11,6 +11,30 @@ const camera = () => {
 const game = () => ({ player: { x: -160, y: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [] }) as unknown as DepthGame;
 
 describe('friendly priority mask', () => {
+  it('preserves every byte of max-composited coverage when stamps overlap or clip offscreen', () => {
+    const mask = new AbilityPriorityMask(), reference = new Uint8Array(mask.pixels.length);
+    const stamp = (mask as unknown as { ellipse(cx: number, cy: number, rx: number, ry: number, strength: number): void }).ellipse.bind(mask);
+    const cases = [[-100, 36, 2, 8, 1], [64, -80, 3, 4, .95], [128, 72, 20, 10, .95], [0, 0, 4, 4, 1]];
+    for (let i = 0; i < 300; i++) cases.push([
+      64 + Math.sin(i * 2.399963) * 90, 36 + Math.cos(i * 1.71) * 50,
+      1.1 + i % 19, 1.5 + i % 13, [1, .95, .5, .1][i % 4],
+    ]);
+    for (const [cx, cy, rx, ry, strength] of cases) {
+      stamp(cx, cy, rx, ry, strength);
+      const x0 = Math.max(0, Math.floor(cx - rx)), x1 = Math.min(mask.width - 1, Math.ceil(cx + rx));
+      const y0 = Math.max(0, Math.floor(cy - ry)), y1 = Math.min(mask.height - 1, Math.ceil(cy + ry));
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+        const d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2;
+        if (d >= 1) continue;
+        const value = Math.min(255, Math.round(strength * 255 * Math.min(1, (1 - d) * 3)));
+        const index = y * mask.width + x;
+        if (value > reference[index]) reference[index] = value;
+      }
+      expect(mask.pixels).toEqual(reference);
+    }
+    mask.dispose();
+  });
+
   it('retains one bounded texture and rasterizes marine silhouettes, hostile projectiles and optional renderer warnings', () => {
     const mask = new AbilityPriorityMask(), c = camera(), g = game();
     const pixels = mask.pixels, texture = mask.texture;

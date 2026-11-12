@@ -101,6 +101,10 @@ export class AbilityPriorityMask {
     const r = Math.max(1.1, Math.abs((this.point.x * .5 + .5) * this.width - px));
     this.point.set(tx, ty, tz).project(this.camera!);
     const ex = (this.point.x * .5 + .5) * this.width, ey = (this.point.y * .5 + .5) * this.height;
+    // An entirely clipped capsule cannot affect a pixel; reject before disc stamping.
+    const extent = r + .75;
+    if (Math.max(px, ex) + extent < 0 || Math.min(px, ex) - extent > this.width - 1 ||
+        Math.max(py, ey) + extent < 0 || Math.min(py, ey) - extent > this.height - 1) return;
     const steps = Math.min(96, Math.max(1, Math.ceil(Math.hypot(ex - px, ey - py) / Math.max(1, r))));
     for (let i = 0; i <= steps; i++) this.ellipse(px + (ex - px) * i / steps, py + (ey - py) * i / steps, r + .75, r + .75, strength);
   }
@@ -117,12 +121,19 @@ export class AbilityPriorityMask {
     if (!Number.isFinite(cx) || !Number.isFinite(cy) || !Number.isFinite(rx) || !Number.isFinite(ry)) return;
     const x0 = Math.max(0, Math.floor(cx - rx)), x1 = Math.min(this.width - 1, Math.ceil(cx + rx));
     const y0 = Math.max(0, Math.floor(cy - ry)), y1 = Math.min(this.height - 1, Math.ceil(cy + ry));
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-      const d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2;
-      if (d >= 1) continue;
-      const value = Math.min(255, Math.round(strength * 255 * Math.min(1, (1 - d) * 3)));
-      const i = y * this.width + x;
-      if (value > this.pixels[i]) this.pixels[i] = value;
+    if (x0 > x1 || y0 > y1) return;
+    const peak = strength * 255, ceiling = Math.min(255, Math.round(peak));
+    for (let y = y0; y <= y1; y++) {
+      const dy2 = ((y - cy) / ry) ** 2, row = y * this.width;
+      for (let x = x0; x <= x1; x++) {
+        const i = row + x;
+        // Max compositing cannot raise a pixel already at this stamp's ceiling.
+        if (this.pixels[i] >= ceiling) continue;
+        const d = ((x - cx) / rx) ** 2 + dy2;
+        if (d >= 1) continue;
+        const value = Math.min(255, Math.round(peak * Math.min(1, (1 - d) * 3)));
+        if (value > this.pixels[i]) this.pixels[i] = value;
+      }
     }
   }
 
