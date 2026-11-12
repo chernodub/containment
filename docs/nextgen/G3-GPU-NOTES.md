@@ -191,4 +191,50 @@ The serialized driver also completed the following unchanged desktop gates:
 
 The closed room audit records42/42 entries, `errors:[]`, `failures:[]`, maximum complete readiness2078.4ms (<3000),197 prepared programs (<400),66 material families (<160),11 compile passes (<12), and zero first-frame or combat compiles. These are preparation/resource checks, not organic-campaign or quiet-frame certification. Other build/unit/asset gate results belong to the lead report.
 
-This completed full-matrix section supersedes its earlier pending placeholder. A separately requested matched Manual-control comparison is intentionally absent here; the lead will append it only after its own completion receipt. The configured storage/lookup reductions above are deterministic; reliable per-pass GPU attribution and the High60fps acceptance remain open.
+This completed full-matrix section supersedes its earlier pending placeholder. The separately completed matched Manual-control comparison is recorded below without mixing its selection or counts into this full-matrix receipt. The configured storage/lookup reductions above are deterministic; reliable per-pass GPU attribution and the High60fps acceptance remain open.
+
+## Matched room/rig shipping recheck — N=3 per tier
+
+The completed [Manual-control Chamber / Arc shipping receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-shipping-matched/benchmark.json) uses the same room/rig,1920×1080,25-enemy native full-kit fixture and three20-second repeats per tier as the [original isolated baseline](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-gpu-before-isolated/benchmark.json). Shipping source is `d70f811`; original is `ab71db8`. All6 shipping trials completed, exit0, with `errors:[]`, `budgetFailures:[]`, **zero combat compiles**, maximum215 draws and294 programs. They retain2888 performance samples. The all-trial shipping load1m endpoint range is160.8–184.7. Both labels use rotating per-pass queries without flush; the runtime adaptive GPU timer is suspended for the same query-ownership reason described above.
+
+This is **matched content, not matched host conditions or internal resolution**. Original High is scale1 and shipping High spends much of the trial at.70; the original selected load is433.0→431.4 versus shipping164.6→171.1. The original and shipping Low both stay scale1, but their host/device contention was not controlled or interleaved. Lower load average alone does not measure GPU availability. These receipts do not establish a causal speedup or explain away a possible Low regression.
+
+The before/after table selects each label's existing `gpuBestOfN.selectedRun`, not the lowest CPU or frame trial. The selected run supplies all timing/load/scale fields. Draw/program peaks cover that label's three repeats for the tier.
+
+| Build / tier | Selected repeat / frames | Frame p50 / p95 ms | Render JS p50 / p95 ms | CPU p50 / p95 ms | Scale min / p50 / max | Same-run load1m start→end | Peak draws / programs, all3 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+|Original /high|0 /143|84.8 /117.0|9.1 /12.3|10.5 /15.4|1 /1 /1|433.0→431.4|201 /178|
+|Original /low|1 /1124|16.7 /18.2|4.6 /6.2|5.3 /7.6|1 /1 /1|426.7→432.2|132 /229|
+|Shipping /high|0 /699|24.1 /49.4|5.4 /8.2|6.1 /10.4|0.7 /0.7 /1|164.6→171.1|215 /179|
+|Shipping /low|0 /262|31.7 /250.0|5.5 /9.1|6.5 /11.2|1 /1 /1|181.3→184.7|130 /294|
+
+All shipping repeats remain visible below. In particular the GPU-based selector chooses Low0 (31.7/250.0ms), while Low2 has the lowest frame p50/p95 (25.4/108.3ms); substituting Low2 into the selected table would change the declared selection rule.
+
+| Shipping tier / repeat | Frames | Frame p50 / p95 ms | Load1m start→end | Combat compiles |
+|---|---:|---:|---:|---:|
+|high /0|699|24.1 /49.4|164.6→171.1|0|
+|high /1|573|24.9 /58.5|171.1→183.1|0|
+|high /2|606|24.7 /58.3|183.1→181.3|0|
+|low /0|262|31.7 /250.0|181.3→184.7|0|
+|low /1|308|33.1 /158.0|184.7→169.7|0|
+|low /2|440|25.4 /108.3|169.7→160.8|0|
+
+**Raw elapsed-query readings remain unsupported as isolated pass costs.** Each cell is p50/p95 ms **[resolved query N]** from the same selected trial above. No values are summed or subtracted as causal stage savings. A dash means the scope was absent, disabled or not separately measured; it is not a measured zero. Original High has no separately isolated shadow row in that older profiler receipt; shipping scene/shadow scopes overlap. Original Low has no composite/final-AA stage, while shipping Low pays for both.
+
+| Scope | Original High | Shipping High | Original Low | Shipping Low |
+|---|---:|---:|---:|---:|
+|Scene incl. any shadow|168.38 /194.37 [6]|34.41 /80.76 [21]|9.51 /21.43 [188]|41.41 /100.17 [22]|
+|GTAO|144.06 /174.54 [6]|30.02 /52.81 [21]|—|—|
+|AO denoise|171.01 /191.89 [5]|31.56 /58.01 [20]|—|—|
+|Bloom extract|138.07 /196.19 [5]|37.49 /78.12 [20]|—|—|
+|Bloom horizontal|149.36 /201.13 [5]|27.23 /55.88 [20]|—|—|
+|Bloom vertical|147.51 /191.33 [5]|28.49 /61.77 [20]|—|—|
+|Distortion|163.67 /226.63 [5]|34.55 /65.61 [20]|—|—|
+|Composite|163.63 /205.85 [5]|33.10 /54.80 [20]|—|24.55 /59.80 [22]|
+|Final AA|—|32.68 /55.66 [20]|—|22.35 /61.64 [22]|
+|HUD|169.82 /199.75 [5]|33.15 /77.67 [20]|9.35 /24.45 [187]|29.19 /98.01 [21]|
+|Shadow update only|—|21.32 /40.99 [17]|—|—|
+
+Shipping selected High is24.1/49.4ms, which misses both requested High targets despite scale p50.70. Shipping selected Low is31.7/250.0ms, worse than the original selected16.7/18.2ms at scale1. Across all shipping repeats High p50 is24.1–24.9ms and Low p50 is25.4–33.1ms; no trial passes its relevant requested timing flags. **The measured Low slowdown is unresolved and must not be presented as a preserved16.7ms Low path.** The added MRT/composite/AA work is a real configured cost; scheduling, device contention and query effects may also contribute, but their shares are not established by these non-interleaved trials. The raw Low scene/composite/AA/HUD query medians41.41/24.55/22.35/29.19ms still cannot isolate those causes.
+
+The lead has separately requested a production run without the per-pass probe and a current-host preserved-original Low recheck to investigate this discrepancy. Neither pending run is read or summarized here. Quiet-device60fps acceptance, reliable GPU pass attribution and Low performance preservation remain unproven by the completed evidence.
