@@ -29,7 +29,7 @@ export type GraphicsOptions = Readonly<{
   inkOutlines: InkOutlines;
   /** Broad surface value bands and reduced photographic material detail. */
   stylizedShading: boolean;
-  /** Slowly adjust internal resolution between 70–100% of the selected render scale. */
+  /** Slowly adjust internal resolution between 80–100% of the selected render scale. */
   adaptiveResolution: boolean;
   /** Internal resolution multiplier, 0.5–1. */
   resolutionScale: number;

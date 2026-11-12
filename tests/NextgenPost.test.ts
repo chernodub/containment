@@ -416,9 +416,12 @@ describe('post shader work and packed normal precision', () => {
     expect(enabled).toContain('float grain =');
     const ink = compositeFragment.slice(compositeFragment.indexOf('float inkCoverage('), compositeFragment.indexOf('float noise('));
     expect(ink).toContain('for(int i=0;i<8;i++)');
-    expect(ink).toContain('if(inkMode<.5||center.z<.5||center.w<.5');expect(ink).toContain('if(floorSurface&&(inkMode<1.5||inkStrength<.5))return 0.0');expect(ink).toContain('center.w>6.5');
+    expect(ink).toContain('if(inkMode<.5||center.z<.5||center.w<.5');expect(ink).toContain('if(floorSurface)return 0.0');expect(ink).toContain('center.w>6.5');
     expect(ink).toContain('if(!actor&&inkMode>1.5');
-    expect(ink).not.toContain('texture2D(tScene,'); // no luminance edge detection
+    expect(ink.match(/texture2D\(tScene,/g)).toHaveLength(1); // radiance chooses line color only after an identity boundary
+    expect(ink).toContain('if(different*surface>.5)inkBackdropLuma=');
+    expect(ink).toContain('return max(edge,crease*inkStyle.w)*haze*inkStyle.z;');
+    expect(ink).toContain('edge=max(edge,different*surface);');
   });
 
   it('filters graded ink in one bounded FXAA stage before the final screen color conversion', () => {

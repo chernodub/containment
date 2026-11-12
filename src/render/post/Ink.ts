@@ -16,11 +16,13 @@ vec3 inkNormal(vec2 e) {
  if(n.z<0.0)n.xy=(1.0-abs(n.yx))*sign(n.xy);
  return normalize(n);
 }
+float inkBackdropLuma=1.0;
 float inkCoverage(vec2 uv, float depth, vec4 center) {
+ inkBackdropLuma=1.0;
  if(inkMode<.5||center.z<.5||center.w<.5||center.w>6.5||abs(center.z-floor(center.z+.5))>.01||abs(center.w-floor(center.w+.5))>.01)return 0.0;
  bool actor=center.w>2.5;
  bool floorSurface=center.w<1.5;
- if(floorSurface&&(inkMode<1.5||inkStrength<.5))return 0.0;
+ if(floorSurface)return 0.0;
  // Low's silhouette path performs no normal comparisons.
  float width=actor?inkStyle.x:inkStyle.y;
  if(center.w==3.0||center.w>4.5)width*=mix(1.18,1.06,inkStrength);
@@ -42,7 +44,13 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
   surface=max(surface,1.0-step(.5,neighbor.w));
   // Actor silhouettes depend only on identity. Avoid eight unused depth reads
   // and position reconstructions; major actor creases have their own kernel.
-  if(actor) { edge=max(edge,different*surface);continue; }
+  if(actor) {
+   edge=max(edge,different*surface);
+   // Only contour fragments inspect adjacent scene radiance. A quiet light line
+   // separates dark chitin from dark local scenery without lighting the floor.
+   if(different*surface>.5)inkBackdropLuma=min(inkBackdropLuma,dot(texture2D(tScene,q).rgb,vec3(.2126,.7152,.0722)));
+   continue;
+  }
   float d=texture2D(tDepth,q).x;
   if(inkMode<1.5) {
    float dz=abs(viewPosition(q,d).z-p.z);
@@ -65,7 +73,8 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
  if(inkMode>1.5&&inkStrength>.01) {
   float innerWidth=actor?1.5:1.0;
   for(int i=0;i<8;i++) {
-   float a=float(i)*.7853981634;vec2 q=clamp(uv+vec2(cos(a),sin(a))*inkPixel*innerWidth,inkPixel,1.0-inkPixel);
+   if(!actor&&i>=4)break;
+   float a=float(i)*(actor?.7853981634:1.5707963268);vec2 q=clamp(uv+vec2(cos(a),sin(a))*inkPixel*innerWidth,inkPixel,1.0-inkPixel);
    vec4 neighbor=texture2D(tGeometry,q);neighbor.zw*=255.0;
    if(abs(neighbor.z-center.z)<.5&&abs(neighbor.w-center.w)<.5) {
     vec3 delta=viewPosition(q,texture2D(tDepth,q).x)-p;
@@ -91,6 +100,9 @@ export const inkComposite = /* glsl */ `
   line*=mix(hotYield,1.0,inkStrength*step(2.5,geometry.w));
   vec3 neutralInk=min(color*.18,vec3(.006,.008,.011)+min(color,vec3(.5))*.04);
   vec3 boldInk=min(color*.20,vec3(.010,.011,.012)+shadowTint*.0015+min(color,vec3(.5))*.006);
-  color=mix(color,mix(neutralInk,boldInk,inkStrength),line);
+  vec3 contour=mix(neutralInk,boldInk,inkStrength);
+  float darkBackdrop=(1.0-smoothstep(.008,.027,inkBackdropLuma))*step(3.5,geometry.w)*step(geometry.w,6.5);
+  contour=mix(contour,vec3(.045,.058,.068),darkBackdrop*.82);
+  color=mix(color,contour,line);
  }
 `;

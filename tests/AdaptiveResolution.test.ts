@@ -25,8 +25,8 @@ describe('adaptive resolution', () => {
       expect(previous - scale).toBeLessThanOrEqual(.02501);
       previous = scale;
     }
-    expect(resolution.scale).toBe(.7);
-    expect(changes).toBe(12);
+    expect(resolution.scale).toBe(.8);
+    expect(changes).toBe(8);
     expect(resolution.snapshot.source).toBe('gpu');
   });
 
@@ -36,12 +36,12 @@ describe('adaptive resolution', () => {
     for (let index = 0; index < 1200; index++) resolution.update(1000 / 60, index % 2 ? 17 : 12);
     expect(resolution.scale).toBe(1);
     run(resolution, 10, 1000 / 30, 24);
-    expect(resolution.scale).toBe(.7);
+    expect(resolution.scale).toBe(.8);
     run(resolution, 2, 1000 / 60, 8);
-    expect(resolution.scale).toBe(.7);
+    expect(resolution.scale).toBe(.8);
     run(resolution, 7, 1000 / 60, 8);
-    expect(resolution.scale).toBeGreaterThan(.7);
-    expect(resolution.scale).toBeLessThan(.8);
+    expect(resolution.scale).toBeGreaterThan(.8);
+    expect(resolution.scale).toBeLessThan(.9);
     run(resolution, 100, 1000 / 60, 8);
     expect(resolution.scale).toBe(1);
   });

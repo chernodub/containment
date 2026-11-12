@@ -33,6 +33,6 @@ export const RENDER_BUDGET = Object.freeze({
  materialFamilies: 160,
  compilePasses: 12,
  preparationMs: 3000,
- adaptiveMinScale: .7,
+ adaptiveMinScale: .8,
  adaptiveMaxScale: 1,
 });
