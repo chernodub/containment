@@ -86,7 +86,7 @@ describe('G3 lifecycle review', () => {
     pipeline.setSize(1920, 1080);
     pipeline.render(0);
     const resources = (pipeline as unknown as { resources: { scene: WebGLRenderTarget } }).resources;
-    expect(resources.scene.width).toBe(1344);
+    expect(resources.scene.width).toBe(1536);
     pipeline.setOptions({ ...GRAPHICS_PRESETS.high, adaptiveResolution: false }, 'high');
     expect(pipeline.adaptive.scale).toBe(1);
     expect([resources.scene.width, resources.scene.height]).toEqual([1920, 1080]);

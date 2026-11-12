@@ -153,6 +153,12 @@ it('applies and persists tier, every graphics option and gameplay/channel contro
     expect(await page.locator('#quality').inputValue()).toBe('low');
     expect(await page.evaluate(() => (window as any).settingsTest.renderer.graphicsOptions)).toEqual(saved.graphics);
     expect(await page.evaluate(() => (window as any).settingsTest.settings.preferences)).toEqual({combatText: false, radar: true});
+    for (const ink of ['off','silhouette','full']) {
+      await page.locator('[data-setting="graphics.inkOutlines"]').selectOption(ink);
+      await page.evaluate(() => (window as any).settingsTest.reload());
+      expect(await page.locator('[data-setting="graphics.inkOutlines"]').inputValue()).toBe(ink);
+      expect(await page.evaluate(() => (window as any).settingsTest.renderer.graphicsOptions)).toEqual({...saved.graphics,inkOutlines:ink});
+    }
     await page.locator('#quality').selectOption('high');
     expect(await page.evaluate(() => (window as any).settingsTest.renderer.graphicsOptions)).toEqual(GRAPHICS_PRESETS.high);
     expect(await page.evaluate(() => JSON.parse((window as any).settingsTest.values.get('containment.ui.v1')).graphics)).toEqual(GRAPHICS_PRESETS.high);

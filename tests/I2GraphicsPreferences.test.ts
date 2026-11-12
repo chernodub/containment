@@ -109,7 +109,7 @@ function recoveryProbe() {
     atmosphere: {prepare: restore, setOptions: vi.fn()},
     backdrop: {prepare: restore, setQuality: vi.fn()},
     arena: {prepare: restore},
-    actorPool: {take: () => ({root: new T.Group(), animate: vi.fn()}), release: vi.fn()},
+    actorPool: {take: () => ({root: new T.Group(), animate: vi.fn()}), release: vi.fn((model:{root:T.Group})=>model.root.removeFromParent())},
     player: {root:new T.Group(),equip: vi.fn(), animate: vi.fn()},
     menuMarine:{root:new T.Group()},menuAlien:{root:new T.Group()},actors:new Map(),
     lighting: {
@@ -130,9 +130,9 @@ function recoveryProbe() {
   return {renderer, resources, recovery: renderer as unknown as RecoveryProbe, context};
 }
 
-it.each(['high', 'low'] as const)('keeps persisted %s overrides through a context-invalidated warmup and recovery retry', async tier => {
+it.each((['high','low'] as const).flatMap(tier=>(['off','silhouette','full'] as const).map(inkOutlines=>({tier,inkOutlines}))))('keeps persisted $tier/$inkOutlines overrides through a context-invalidated warmup and recovery retry', async ({tier,inkOutlines}) => {
   const {renderer, resources, recovery, context} = recoveryProbe();
-  const graphics = {...GRAPHICS_PRESETS[tier], resolutionScale: .75, screenShake: .2, flashIntensity: .3, dynamicLights: false};
+  const graphics = {...GRAPHICS_PRESETS[tier], inkOutlines, adaptiveResolution:!GRAPHICS_PRESETS[tier].adaptiveResolution, stylizedShading:false, resolutionScale: .75, screenShake: .2, flashIntensity: .3, dynamicLights: false};
   const storage = preferencesStorage({version: 1, tier, graphics});
   const settings = createSettings({renderer, audio: audio(), storage});
   try {

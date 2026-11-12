@@ -9,8 +9,11 @@ export class FramePacer {
   if(this.previous===null){this.previous=now;return 1/60;}
   const elapsed=Math.max(0,(now-this.previous)/1000);this.previous=now;
   this.credit+=elapsed;this.sinceRender+=elapsed;
-  if(this.credit<1/60-.0001)return null;
-  const dt=this.sinceRender;this.sinceRender=0;this.credit=elapsed>.1?0:Math.max(0,this.credit-1/60)%(1/60);return dt;
+  // RAF timestamps on high-refresh desktops jitter around the 60 Hz boundary.
+  // Permit at most2ms of early presentation and carry that debt; clamping it
+  // away produces repeated25ms/8ms pairs despite a healthy60fps average.
+  if(this.credit<1/60-.002)return null;
+  const dt=this.sinceRender;this.sinceRender=0;this.credit=elapsed>.1?0:(this.credit-1/60)%(1/60);return dt;
  }
 }
 export type GraphicsTier='high'|'low';

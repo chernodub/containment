@@ -41,6 +41,19 @@ describe('frame pacing',()=>{
  it('renders approximately 60 times per second on 60, 120 and 144 Hz displays without losing elapsed time',()=>{
   for(const hz of [60,120,144]){const p=new FramePacer();let frames=0,time=0;for(let i=0;i<hz*10;i++){const dt=p.sample(i*1000/hz);if(dt!==null){frames++;time+=dt;}}expect(frames).toBeGreaterThanOrEqual(599);expect(frames).toBeLessThanOrEqual(601);expect(time).toBeCloseTo(10,1);p.reset();expect(p.sample(50000)).toBe(1/60);}
  });
+ it('absorbs high-refresh timestamp jitter without late/early pairs or elapsed-time loss',()=>{
+  const pacer=new FramePacer(),intervals:number[]=[];
+  const jitter=[0,.4,-.8,.8,-.4,.6,-.6,.2];
+  let elapsed=0;
+  for(let i=0;i<1200;i++){
+   const dt=pacer.sample(i*1000/120+jitter[i%jitter.length]);
+   if(dt!==null){intervals.push(dt*1000);elapsed+=dt;}
+  }
+  const sorted=[...intervals].sort((a,b)=>a-b);
+  expect(intervals.length).toBeGreaterThanOrEqual(599);expect(intervals.length).toBeLessThanOrEqual(601);
+  expect(sorted[Math.ceil(sorted.length*.95)-1]).toBeLessThan(20);
+  expect(sorted[0]).toBeGreaterThan(14);expect(elapsed).toBeCloseTo(10,1);
+ });
  it('paces after stalls and bounds diagnostic storage',()=>{
   const pacer=new FramePacer();pacer.sample(0);pacer.sample(50);expect(pacer.sample(58)).toBeNull();
   const d=new FrameDiagnostics();for(let i=0;i<200;i++)d.record(i===199?100:16.7,2,4);expect(d.snapshot.samples).toBe(120);expect(d.snapshot.stallsOver50ms).toBe(1);
