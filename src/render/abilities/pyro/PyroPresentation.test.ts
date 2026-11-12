@@ -37,8 +37,48 @@ describe('Pyro presentation lifecycle and readability', () => {
     fx.event(event(), 64, 96); step(.15);
     expect(kit.batches.flame.mesh.count).toBeGreaterThan(12);
     if (tier === 'low') expect(kit.batches.smoke.mesh.count).toBe(0);
-    else expect(kit.batches.smoke.mesh.count).toBeGreaterThan(0);
+    else {
+      const smoke = kit.batches.smoke.mesh;
+      expect(smoke.count).toBeGreaterThan(0);
+      expect(smoke.renderOrder).toBeGreaterThan(kit.batches.flame.mesh.renderOrder);
+      expect(position(smoke, 0).y).toBeGreaterThanOrEqual(1.6);
+    }
     expect(kit.batches.decal.mesh.count).toBe(1); dispose();
+  });
+
+  it.each(['high', 'low'] as const)('overlaps broad folds in every cone band through the hot dump, then thins (%s)', tier => {
+    const { kit, fx, step, dispose } = setup(), light = vi.spyOn(kit, 'lightAt');
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    fx.event(event({ length: 320, arcRadians: 1.4 }), 64, 96);
+    const flames = kit.batches.flame.mesh, matrix = new T.Matrix4();
+    let hotAlpha = 0;
+    for (const dt of [.03, .12, .18]) {
+      step(dt);
+      const bands = new Set<string>();
+      let wide = 0;
+      for (let i = 0; i < flames.count; i++) {
+        flames.getMatrixAt(i, matrix);
+        const p = new T.Vector3().setFromMatrixPosition(matrix), scale = new T.Vector3().setFromMatrixScale(matrix);
+        const dx = p.x - 2, dz = p.z - 3, radius = Math.hypot(dx, dz);
+        if (radius < 2 || radius > 9.8) continue;
+        const a = Math.atan2(dz, dx);
+        bands.add(`${Math.min(3, Math.floor(radius / 2.5))}:${Math.min(4, Math.max(0, Math.floor((a + .7) / 1.4 * 5)))}`);
+        if (scale.x * 2 > .85) wide++;
+      }
+      expect(flames.count).toBeGreaterThanOrEqual(tier === 'high' ? 96 : 35);
+      expect(bands.size).toBeGreaterThanOrEqual(tier === 'high' ? 17 : 14);
+      expect(wide).toBeGreaterThan(tier === 'high' ? 60 : 20);
+      expect(light).toHaveBeenLastCalledWith(expect.any(Number), expect.any(Number), expect.any(Number), 0xff7a2e, 28, 11);
+      hotAlpha = 0;
+      const alpha = flames.geometry.getAttribute('abilityAlpha');
+      for (let i = 0; i < flames.count; i++) hotAlpha += alpha.getX(i);
+    }
+    step(.32);
+    let aftermathAlpha = 0;
+    const alpha = flames.geometry.getAttribute('abilityAlpha');
+    for (let i = 0; i < flames.count; i++) aftermathAlpha += alpha.getX(i);
+    expect(aftermathAlpha).toBeLessThan(hotAlpha * .25);
+    step(.1); expect(flames.count).toBe(0); dispose();
   });
 
   it('keeps a lobbed canister on the captured trajectory and retires it on authoritative impact', () => {
@@ -89,7 +129,8 @@ describe('Pyro presentation lifecycle and readability', () => {
       const matrix = new T.Matrix4(); flames.getMatrixAt(i, matrix);
       expect(matrix.elements[5]).toBeGreaterThan(0); // Every fire card rises vertically.
       expect(matrix.elements[6]).toBeCloseTo(0);
-      expect(p.y + matrix.elements[5]).toBeLessThan(1.8);
+      // A brief rolling flame volume can crest above enemies; the marine overlay remains separate.
+      expect(p.y + matrix.elements[5]).toBeLessThan(3.1);
       heights.add(Math.round(matrix.elements[5] * 100));
     }
     expect(bands.size).toBe(5); expect(heights.size).toBeGreaterThan(12);

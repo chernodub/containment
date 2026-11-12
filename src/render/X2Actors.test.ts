@@ -4,6 +4,7 @@ import {loadModels} from '../../tests/loadModels';
 import {alien,marine,nest,updateNest,disposeModel} from './models';
 import {PlayerBeacon} from './vfx/PlayerBeacon';
 import {EnemyHealthBars} from './EnemyHealthBars';
+import {FAMILY_IDENTITY} from './ActorIdentity';
 
 beforeAll(loadModels);
 
@@ -155,4 +156,32 @@ it('pitches cinematic arms and the bound weapon toward a lower target without al
   for(let i=2;i<20;i++){staged.animate(i*.02,0,-.62);live.animate(i*.02,0,-.62);}expect(angle(staged)).toBeLessThan(ordinary-.16);
   staged.setAimPitch!(0);staged.animate(.4,0,-.62);live.animate(.4,0,-.62);expect(angle(staged)).toBeCloseTo(angle(live),2);
  }finally{disposeModel(staged.root);disposeModel(live.root);}
+});
+
+
+it('keeps Queen chitin neutral and shades moving plate normals with an exposure-only magenta edge',()=>{
+ const model=alien('queen'),identity=model.root.getObjectByName('queen-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
+ try{
+  const shell=new T.Color(FAMILY_IDENTITY.queen);
+  // The hard shell is a dark neutral violet; green is reserved for acid/alien emitters.
+  expect(shell.g).toBeLessThan(shell.r);expect(shell.g).toBeLessThan(shell.b);
+  expect(Math.max(shell.r,shell.g,shell.b)-Math.min(shell.r,shell.g,shell.b)).toBeLessThan(.08);
+  expect(identity.material.vertexShader).toContain('plateNormal.xy=mat2(');
+  expect(identity.material.vertexShader).toContain('identityNormal=normalMatrix*plateNormal');
+  expect(identity.material.fragmentShader).toContain('edge*identityOpening');
+  const material=identity.material,geometry=identity.geometry;
+  let body:T.MeshStandardMaterial|undefined;
+  model.root.traverse(object=>{if(object instanceof T.SkinnedMesh&&!body)body=object.material as T.MeshStandardMaterial;});
+  const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:T.ShaderLib.standard.vertexShader,fragmentShader:T.ShaderLib.standard.fragmentShader};
+  body!.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);
+  expect(shader.uniforms.actorRimStrength.value as number).toBeLessThanOrEqual(.22);
+  model.animate(0,0,0);model.setExposed!(true);
+  for(let i=1;i<=40;i++)model.animate(i/60,0,0);
+  const opened=material.uniforms.identityOpening.value;
+  expect(opened).toBeGreaterThan(.99);
+  model.setExposed!(false);for(let i=41;i<=80;i++)model.animate(i/60,0,0);
+  expect(material.uniforms.identityOpening.value).toBeLessThan(.01);
+  expect(identity.material).toBe(material);expect(identity.geometry).toBe(geometry);
+  model.reset!();expect(shader.uniforms.actorRimStrength.value as number).toBeLessThanOrEqual(.22);
+ }finally{disposeModel(model.root);}
 });

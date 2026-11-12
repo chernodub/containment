@@ -464,3 +464,34 @@ for (const [baseId,id] of [['results-fixture','x3-results-statistics'],['complet
  const base=SCENARIOS.find(scenario=>scenario.id===baseId);
  SCENARIOS.push({...base,id,required:['.result-stats','.debrief-build'],setup:new Function(`return (async()=>{await (${base.setup.toString()})();for(let frame=0;frame<900&&!document.querySelector('.result-details');frame++)await new Promise(requestAnimationFrame);const details=document.querySelector('.result-details');if(!details)throw Error('Results disclosure missing');details.open=true;window.__containmentDebug.refresh();})();`)});
 }
+
+// I7 integration: actual boss deployables, champion statuses and pickup/zone overlap.
+for(const rig of ['breacher','cryo','arc']){
+ const exposed=SCENARIOS.find(s=>s.id==='g2-queen-exposed');
+ const setup=exposed.setup.toString().replace("{version:2}",`{version:2,rig:'${rig}'}`);
+ SCENARIOS.push({...exposed,id:`i7-boss-${rig}`,setup:new Function(`return (async()=>{
+  await (${setup})();const d=window.__containmentDebug,g=d.game,p=g.player;
+  let accepted=false;placement:for(const range of [100,140,180])for(const turn of [0,.4,-.4,.8,-.8]){
+   const angle=p.angle+turn,x=p.x+Math.cos(angle)*range,y=p.y+Math.sin(angle)*range;
+   if(!d.canStand(x,y,24))continue;g.setAimPoint({x,y});if(g.useAbility('power')){accepted=true;break placement;}
+  }
+  if(!accepted)throw Error('I7 boss power placement denied');d.step(g.abilities.snapshot.slots.power.castRemainingMs+30);
+  if(!g.abilities.snapshot.deployables.length)throw Error('I7 boss deployable missing');d.refresh();
+ })();`)});
+}
+{
+ const champions=SCENARIOS.find(s=>s.id==='g2-champions');
+ SCENARIOS.push({...champions,id:'i7-champions-effects',setup:new Function(`return (async()=>{
+  await (${champions.setup.toString()})();const d=window.__containmentDebug,g=d.game;
+  d.grantBoons(['incendiary','caustic-rounds','arc-filament']);d.setInput({fire:true});
+  if(!g.useAbility('tactical'))throw Error('Champion ability effect denied');d.step(g.abilities.snapshot.slots.tactical.castRemainingMs+30);d.refresh();
+ })();`)});
+ const kit=SCENARIOS.find(s=>s.id==='v2-full-pyro-awakening-bay');
+ SCENARIOS.push({...kit,id:'i7-pickups-zones',setup:new Function(`return (async()=>{
+  await (${kit.setup.toString()})(${JSON.stringify(kit.setupArgument)});const d=window.__containmentDebug,g=d.game,p=g.player;
+  let placed=0;for(const [i,kind]of ['credits','health','armor','ammo','grenade'].entries())for(const side of [1,-1]){
+   const x=p.x+65+i*22,y=p.y+side*65;if(d.canStand(x,y)&&g.pickups.spawn(kind,20,x,y).spawned){placed++;break;}
+  }
+  if(placed!==5)throw Error('I7 pickup overlap placement incomplete');d.refresh();
+ })();`)});
+}

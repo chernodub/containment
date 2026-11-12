@@ -261,12 +261,19 @@ export class ElementKit {
     }
     /** Turbulent volume inside the exact cone; its outline is rendered separately. */
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1): void {
-        const count = this.low ? 16 : 48;
-        for (let i = 0; i < count; i++) {
-            const seed = i * 2.39996323, r = radius * (.12 + .79 * Math.sqrt((i + .5) / count));
-            const a = angle + Math.sin(seed * 3.17) * arc * .43;
-            this.flameTongue(x + Math.cos(a) * r, z + Math.sin(a) * r, .2 + Math.sin(seed) ** 2 * .18,
-                .5 + Math.sin(seed * 7.13) ** 2, seed, opacity, r < radius * .28);
+        // Stratified broad folds overlap across every range band. Random isolated
+        // match-sized tongues leave the impact looking like burning targets.
+        const rows = this.low ? 5 : 8, columns = this.low ? 7 : 12;
+        for (let row = 0; row < rows; row++) for (let column = 0; column < columns; column++) {
+            const seed = (row * columns + column) * 2.39996323;
+            const band = (row + .5) / rows;
+            const r = radius * (.08 + band * .85 + Math.sin(seed * 4.73) * .027);
+            const a = angle + ((column + .5) / columns - .5) * arc * .84
+                + Math.sin(seed * 3.17) * arc * .018;
+            const width = Math.max(.34, radius * (.048 + band * .034)) * (this.low ? 1.28 : 1);
+            this.flameTongue(x + Math.cos(a) * r, z + Math.sin(a) * r, width,
+                1.85 + Math.sin(seed * 7.13) ** 2 * .95, seed,
+                opacity * (.72 + Math.sin(seed) ** 2 * .2), band < .26);
         }
     }
     /** Solid-looking faceted translucent column, with a narrow luminous internal vein. */

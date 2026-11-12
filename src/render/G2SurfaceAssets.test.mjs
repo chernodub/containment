@@ -9,7 +9,8 @@ describe('original G2 deck texture pack', () => {
   for (const kind of ['albedo', 'normal', 'arm']) it(`${kind} is the bounded, reproducible shipping finish`, () => {
     const bytes = readFileSync(new URL(`../../public/assets/environment/g2_deck_${kind}.png`, import.meta.url));
     const source = deckFinish(kind), image = decode(bytes);
-    expect(bytes.equals(encode(source))).toBe(true);
+    // Compression bytes vary with Node/zlib; shipping pixel identity is the art contract.
+    expect(decode(encode(source)).pixels).toEqual(image.pixels);
     expect(image.width).toBe(128); expect(image.height).toBe(128);
     expect(bytes.length).toBeLessThan(12 * 1024);
     expect(image.pixels).toEqual(source.pixels);

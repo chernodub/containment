@@ -44,12 +44,12 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         }
         applyFloorVariation(material, environment);
       }
-      if(environment==='reactor'&&material.name==='ship-cold-practical'){material.color.setHex(0xfff4e8);material.emissive.setHex(0xffe6d5);material.emissiveIntensity=7.5;applyHotFixtureSurface(material,hotCore);}
+      if(environment==='reactor'&&material.name==='ship-cold-practical'){material.color.setHex(0xfff4e8);material.emissive.setHex(0xfffaf0);material.emissiveIntensity=10;applyHotFixtureSurface(material,hotCore);}
       // Keep the authored hue: red warning strips and green safe routes retain their meaning.
       if (!(environment === 'reactor' && material.name === 'ship-cold-practical') && !material.userData.motivatedEmitter && original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {
         material.emissiveIntensity = Math.max(2.6, original.emissiveIntensity * 1.75);
       }
-      optimizeLocalLights(material,environment==='reactor'?1:.02,environment==='cargo'||environment==='communications'?.16:.025,environment==='cargo'?.006:environment==='communications'?.009:templateId==='manual-control-chamber'?.008:legacyBounce);
+      optimizeLocalLights(material,environment==='reactor'?(templateId==='overload-floor'||templateId==='manual-control-chamber'?.12:1):.02,environment==='cargo'||environment==='communications'?.16:.025,environment==='cargo'?.006:environment==='communications'?.009:templateId==='manual-control-chamber'?.008:legacyBounce);
     }
   });
 }

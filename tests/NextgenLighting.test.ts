@@ -271,6 +271,8 @@ it('structures hot reactor emissives using a shared presentation clock and stabl
   expect(shader.vertexShader).toContain('vHotFixturePosition=(modelMatrix*vec4(transformed,1.0)).xyz');
   expect(shader.fragmentShader).toContain('hotFixturePearl');
   expect(shader.fragmentShader).toContain('hotFixtureSeam');
+  expect(shader.fragmentShader).toContain('hotFixtureAzimuth');
+  expect(shader.fragmentShader).toContain('smoothstep(.86,1.12,vHotFixturePosition.y)');
   expect(shader.fragmentShader).toContain('totalEmissiveRadiance*=');
   updateHotFixtureSurfaces(2.5); expect(shader.uniforms.hotFixtureTime.value).toBe(2.5);
   applyHotFixtureSurface(material); expect(material.onBeforeCompile).toBe(hook);
@@ -361,4 +363,73 @@ it('mounts interior emitters inside polygonal void islands and keeps housings in
  const emitter=room.getObjectByName('interior-practical-emitters') as T.InstancedMesh,housing=room.getObjectByName('interior-practical-housings') as T.InstancedMesh;
  for(const object of [emitter,housing]){object.geometry.dispose();(object.material as T.Material).dispose();}geometry.dispose();material.dispose();
  const empty=new T.Group();addInteriorPracticals(empty,{obstacles:[],voids:[[{x:192,y:192},{x:320,y:192},{x:320,y:320},{x:192,y:320}]]},'communications');expect(empty.children).toHaveLength(0);
+});
+
+
+it('keeps the story reactor key incandescent and low at its source with cool subordinate fill on both tiers', () => {
+  for (const tier of ['high', 'low'] as const) {
+    for (const id of ['overload-floor', 'manual-control-chamber']) {
+      const room = new T.Group(), dressing = new T.Group();
+      dressing.name = 'g2-world-dressing';
+      dressing.userData.lightFixtures = [{ x: 28, y: 1.6, z: 19, color: 0xffad61, nativeColor: true }];
+      room.add(dressing);
+      room.userData.lightFixtures = [{ x: 2, y: 1.5, z: 3, color: 0xff4936 }];
+      const rig = new SceneLighting();
+      rig.setQuality(tier);
+      const children = [...rig.root.children];
+      rig.loadRoom(room, 48, 36, 'reactor', id);
+      const core = rig.staging!;
+      expect(rig.key.position.x).toBe(core.coreX);
+      expect(rig.key.position.y).toBe(core.coreY);
+      expect(rig.key.position.z).toBe(core.coreZ);
+      expect(rig.key.color.r).toBeGreaterThan(rig.key.color.b * 3);
+      expect(rig.key.color.g).toBeGreaterThan(rig.key.color.b * 2);
+      expect(rig.key.intensity).toBeGreaterThan(1500);
+      if (id === 'manual-control-chamber') expect(rig.coreKey.angle).toBeLessThan(1);
+      else expect(rig.coreKey.angle).toBeGreaterThan(1.2);
+      expect(rig.key.target.position.x).toBeLessThan(core.coreX);
+      expect(rig.key.position.y).toBeLessThan(4);
+      expect(rig.fill.color.b).toBeGreaterThan(rig.fill.color.r);
+      expect(rig.fill.intensity).toBeLessThan(.3);
+      expect(rig.lamp.suitFill.visible).toBe(true);
+      rig.update(.6);
+      expect(rig.fixtures[1].color.r).toBeGreaterThan(rig.fixtures[1].color.g * 4);
+      expect(rig.key.castShadow).toBe(tier === 'high');
+      expect(rig.root.children).toEqual(children);
+      rig.dispose();
+    }
+  }
+});
+
+it('subordinates rough reactor probe light without muting the real core emitter or changing the Queen arena', () => {
+  const gain = (templateId: string) => {
+    const room = new T.Group(), material = new T.MeshStandardMaterial();
+    const mesh = new T.Mesh(new T.BoxGeometry(), material);room.add(mesh);
+    applyRoomMood(room, 'reactor', templateId);
+    const shader = { uniforms: {} as Record<string, { value: unknown }>, fragmentShader: '#include <lights_fragment_maps>' };
+    material.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms, {} as T.WebGLRenderer);
+    const value = shader.uniforms.roomDiffuseEnvironmentGain.value;
+    mesh.geometry.dispose();material.dispose();return value;
+  };
+  expect(gain('overload-floor')).toBe(.12);
+  expect(gain('manual-control-chamber')).toBe(.12);
+  expect(gain('reactor-vault')).toBe(1);
+});
+
+
+it('raises only Overload local suit-fill energy without changing Manual, Queen or other rooms', () => {
+  const rig = new SceneLighting(), room = new T.Group();
+  const children = [...rig.root.children];
+  for (const [id, environment, intensity] of [
+    ['overload-floor', 'reactor', 48],
+    ['manual-control-chamber', 'reactor', 36],
+    ['reactor-vault', 'reactor', 24],
+    ['awakening-bay', 'cryogenics', 24],
+  ] as const) {
+    rig.loadRoom(room, 48, 36, environment, id);
+    expect(rig.lamp.suitFill.intensity).toBeCloseTo(intensity * 1.55);
+    expect(rig.lamp.suitFill.distance).toBe(6.4);
+    expect(rig.root.children).toEqual(children);
+  }
+  rig.dispose();
 });

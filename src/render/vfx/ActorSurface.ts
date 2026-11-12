@@ -22,7 +22,7 @@ transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
       shader.fragmentShader = `uniform float actorStageLight;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
         .replace('#include <color_fragment>', `#include <color_fragment>
 float plateHeight=(actorPosition.y-actorPlateBounds.x)/actorPlateBounds.y;
-if(actorPlateOpening>.05&&plateHeight>.60&&abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y&&abs(actorPosition.z-actorPlateBounds.z)<actorPlateBounds.w*.08*actorPlateOpening)discard;
+if(actorPlateOpening>.05&&plateHeight>.72&&abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y&&abs(actorPosition.z-actorPlateBounds.z)<actorPlateBounds.w*.15*actorPlateOpening)discard;
 float ash=fract(sin(dot(floor(actorPosition*65.0),vec3(12.9898,78.233,37.719)))*43758.5453);
 if(ash<actorDissolve)discard;
 float deathFracture=smoothstep(.965,.995,fract(sin(dot(floor(actorPosition*18.0),vec3(31.1,17.7,48.3)))*18643.31));
@@ -48,7 +48,7 @@ totalEmissiveRadiance+=actorRimColor*actorRim*actorRimStrength*actorStageLight*m
     stage(value:number) { stageLight.value=T.MathUtils.clamp(value,0,1); },
     plateBounds(minY:number,height:number,centerZ:number,spanZ:number,centerX=0,torsoHalfWidth=1) { plateBounds.value.set(minY,height,centerZ,spanZ);plateTorso.value.set(centerX,torsoHalfWidth); },
     expose(value:number) { plateOpening.value=T.MathUtils.clamp(value,0,1); },
-    identity(color:number,champion=false) { rimColor.value.setHex(color);rimStrength.value=champion?.66:elite?.46:.26; },
+    identity(color:number,champion=false,strength?:number) { rimColor.value.setHex(color);rimStrength.value=strength??(champion?.66:elite?.46:.26); },
     hit(value: number) { flash.value = T.MathUtils.clamp(value, 0, 1); },
     dissolve(value: number) { dissolve.value = T.MathUtils.clamp(value, 0, 1); },
     setFlashIntensity(value: number) { flashIntensity.value = T.MathUtils.clamp(value, 0, 1); },

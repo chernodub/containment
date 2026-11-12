@@ -8,7 +8,7 @@ export const FAMILY_IDENTITY = Object.freeze({
   spitter: 0xa5ef65,
   stalker: 0x887bb0,
   carrier: 0xb982c5,
-  queen: 0xd899bc,
+  queen: 0x756b7d,
 });
 export const RIG_ACCENTS = Object.freeze({breacher:0xffb454,cryo:0x7fd6ff,pyro:0xff7a2e,arc:0xb79cff});
 
@@ -51,6 +51,17 @@ function carapacePlate():T.BufferGeometry {
   geometry.computeVertexNormals();return geometry;
 }
 
+/** Queen armor has a keel and hard, overlapping lamellae rather than smooth sacs. */
+function queenCarapacePlate():T.BufferGeometry {
+  const plate=new T.SphereGeometry(1,10,6),position=plate.getAttribute('position');
+  for(let i=0;i<position.count;i++){
+    const x=position.getX(i),y=position.getY(i),z=position.getZ(i);
+    const taper=1-.30*(z+1)*.5,keel=Math.pow(Math.max(0,1-Math.abs(x)),2);
+    position.setXYZ(i,x*taper,y>=0?y*.44+keel*.31-.08*Math.abs(z):y*.12,z);
+  }
+  plate.computeVertexNormals();return plate;
+}
+
 function identityGeometry(key:string,parts:readonly Part[],root:T.Group) {
   return geometry(key,()=>{
     const surface=restSurface(root),target=new T.Vector3(),up=new T.Vector3(0,1,0),rotation=new T.Quaternion();
@@ -61,7 +72,7 @@ function identityGeometry(key:string,parts:readonly Part[],root:T.Group) {
         const distance=point.position.distanceToSquared(target);
         if(distance<best){best=distance;nearest=point;}
       }
-      const g=(part.shape==='core'?new T.SphereGeometry(1,16,10):part.shape==='plate'?carapacePlate():part.shape==='seam'?new T.BoxGeometry(2,2,2):part.shape==='spine'?new T.ConeGeometry(1,2,4):new T.SphereGeometry(1,8,5)).toNonIndexed();
+      const g=(part.shape==='core'?new T.SphereGeometry(1,16,10):part.shape==='plate'?(part.role===5?queenCarapacePlate():carapacePlate()):part.shape==='seam'?new T.BoxGeometry(2,2,2):part.shape==='spine'?new T.ConeGeometry(1,2,4):new T.SphereGeometry(1,8,5)).toNonIndexed();
       g.scale(...part.scale);
       // Tiny positive relief embeds seams in the actual rest carapace instead of floating above it.
       if(nearest&&part.fitted!==false){
@@ -101,8 +112,8 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   } else if(kind==='queen') {
     // The vulnerable organ sits underneath a split, articulated crown. All
     // states live in this one geometry; opening changes uniforms only.
-    detail('core',0,h*.80,0,s*.09,h*.10,s*.15,3,false);
-    for(const side of [-1,1])for(let i=0;i<4;i++)detail('plate',side*s*.11,h*(.83-i*.014),s*(.18-i*.12),s*.09,h*.06,s*.075,5,false);
+    detail('core',0,h*.80,0,s*.10,h*.09,s*.18,3,false);
+    for(const side of [-1,1])for(let i=0;i<4;i++)detail('plate',side*s*.105,h*(.84-i*.014),s*(.18-i*.12),s*.095,h*.09,s*.084,5,false);
     for(let i=0;i<5;i++)detail('spine',(i-2)*s*.045,h*(.88+(.07-Math.abs(i-2)*.02)),s*.06,s*.012,h*.04,s*.018,2,false);
     // Low vascular tendons keep the hinged carapace rooted into the torso.
     for(const side of [-1,1])for(let i=0;i<3;i++)detail('plate',side*s*.135,h*.70,s*(.12-i*.12),s*.035,h*.12,s*.055,2,false);
@@ -117,29 +128,30 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   // Champion overhead crest is built and prewarmed even on ordinary actors.
   for(const side of [-1,1])detail('spine',side*s*.055,h*1.16,0,s*.018,h*.045,s*.018,6,false);
   detail('spine',0,h*1.23,0,s*.025,h*.065,s*.025,6,false);
-  const mesh=new T.Mesh(identityGeometry(`x2-identity-dorsal-armor:${kind}:${elite}`,parts,root),new T.ShaderMaterial({
+  const mesh=new T.Mesh(identityGeometry(`i7-identity-hinged-chitin:${kind}:${elite}`,parts,root),new T.ShaderMaterial({
     uniforms:{identityColor:{value:new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler)},identityStageLight:{value:1},identityPulse:{value:1},identityTime:{value:0},identityShimmer:{value:kind==='stalker'?1:0},identityElite:{value:elite||kind==='queen'?1:0},identityChampion:{value:0},identityExposed:{value:0},identityOpening:{value:0},identitySpan:{value:span},identityHeight:{value:height},identityAlpha:{value:1},identityDeath:{value:0}},
     vertexShader:`
       attribute float identityRole;attribute float identitySide;attribute vec3 identityAnchor;
       uniform float identityOpening;uniform float identitySpan;uniform float identityHeight;
-      varying vec3 identityNormal;varying vec3 identityView;varying float role;
+      varying vec3 identityNormal;varying vec3 identityView;varying vec3 identityLocal;varying float role;
       void main(){
-        role=identityRole;vec3 p=position;
+        role=identityRole;vec3 p=position;vec3 plateNormal=normal;identityLocal=position-identityAnchor;
         if(role>4.5&&role<5.5){
           vec3 hinge=identityAnchor+vec3(identitySide*identitySpan*.075,0.0,0.0);
           vec3 delta=p-hinge;
-          float angle=-identitySide*identityOpening*.28;
-          p.x=hinge.x+cos(angle)*delta.x-sin(angle)*delta.y+identitySide*identityOpening*identitySpan*.025;
-          p.y=hinge.y+sin(angle)*delta.x+cos(angle)*delta.y+identityOpening*identityHeight*.025;
+          float angle=-identitySide*identityOpening*1.22;
+          p.x=hinge.x+cos(angle)*delta.x-sin(angle)*delta.y+identitySide*identityOpening*identitySpan*.035;
+          p.y=hinge.y+sin(angle)*delta.x+cos(angle)*delta.y+identityOpening*identityHeight*.035;
+          plateNormal.xy=mat2(cos(angle),sin(angle),-sin(angle),cos(angle))*plateNormal.xy;
         }
-        identityNormal=normalMatrix*normal;vec4 view=modelViewMatrix*vec4(p,1.0);
+        identityNormal=normalMatrix*plateNormal;vec4 view=modelViewMatrix*vec4(p,1.0);
         identityView=-view.xyz;gl_Position=projectionMatrix*view;
       }`,
     fragmentShader:`
       uniform float identityStageLight;uniform vec3 identityColor;uniform float identityPulse;uniform float identityTime;uniform float identityShimmer;uniform float identityElite;
       uniform float identityChampion;uniform float identityExposed;uniform float identityOpening;
-      uniform float identityAlpha;uniform float identityDeath;
-      varying vec3 identityNormal;varying vec3 identityView;varying float role;
+      uniform float identityAlpha;uniform float identityDeath;uniform float identitySpan;
+      varying vec3 identityNormal;varying vec3 identityView;varying vec3 identityLocal;varying float role;
       void main(){
         if(role>.5&&role<1.5&&identityElite<.5)discard;
         if(role>5.5&&identityChampion<.5)discard;
@@ -151,11 +163,19 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
         if(role>1.5&&role<2.5){color=vec3(.24,.10,.16);light=.45+facing*.45;}
         if(role>2.5&&role<3.5){
           if(identityOpening<.08)discard;
-          color=mix(vec3(1.0,.035,.32),vec3(1.0,.8,.95),pow(facing,6.0));
-          light=(2.0+identityPulse*.7)*identityOpening;
+          color=mix(vec3(1.0,.035,.32),vec3(1.0,.8,.95),pow(facing,3.0));
+          light=(3.4+identityPulse*.9)*identityOpening;
         }
         if(role>3.5&&role<4.5){color=vec3(.62,.61,.52);light=.22+max(0.0,dot(normalize(identityNormal),normalize(vec3(.25,.65,.72))))*.58;}
-        if(role>4.5&&role<5.5){color=vec3(.018,.04,.034);light=.5+facing*.7;}
+        if(role>4.5&&role<5.5){
+          vec3 n=normalize(identityNormal);
+          float ridge=pow(max(0.0,dot(n,normalize(vec3(-.25,.55,.8)))),9.0);
+          float lamella=.82+.18*smoothstep(.25,.75,sin(identityLocal.z*32.0+identityLocal.x*8.0)*.5+.5);
+          color=vec3(.026,.023,.032)*lamella;light=.65+facing*.55+ridge*1.2;
+          float edge=smoothstep(.82,1.02,length(vec2(identityLocal.x/(identitySpan*.095),identityLocal.z/(identitySpan*.084))));
+          color+=vec3(.10,.13,.18)*ridge*.36;
+          color+=vec3(.65,.025,.20)*edge*identityOpening*.36;
+        }
         if(role>5.5){color=identityChampion>1.5?vec3(1.0,.26,.64):vec3(1.0,.70,.23);light=.9+facing*.7;}
         if(role<.5)light*=identityPulse*(1.0+identityShimmer*.3*sin(identityTime*5.0+identityView.y*8.0));
         light*=.75+identityAlpha*.25;

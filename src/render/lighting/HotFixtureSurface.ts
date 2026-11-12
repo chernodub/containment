@@ -19,14 +19,16 @@ export function applyHotFixtureSurface(material: T.MeshStandardMaterial,core?:{x
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vHotFixtureUv;\nvarying vec3 vHotFixturePosition;\nuniform vec3 hotFixtureCore;\nuniform float hotFixtureTime;');
     shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
       float hotFixtureRadius=length(vHotFixturePosition.xz-hotFixtureCore.xy)/max(.1,hotFixtureCore.z);
-      float hotFixturePearl=1.0-smoothstep(0.05,0.25,hotFixtureRadius);
-      float hotFixtureBand=0.5+0.5*sin(hotFixtureRadius*15.0-hotFixtureTime*2.8+sin(atan(vHotFixtureUv.y-.5,vHotFixtureUv.x-.5)*3.0+hotFixtureTime)*1.3);
+      // The central heart stays white; raised energy cages retain orange structure.
+      float hotFixturePearl=(1.0-smoothstep(0.14,0.36,hotFixtureRadius))*(1.0-smoothstep(.86,1.12,vHotFixturePosition.y));
+      float hotFixtureAzimuth=atan(vHotFixturePosition.z-hotFixtureCore.y,vHotFixturePosition.x-hotFixtureCore.x+.00001);
+      float hotFixtureBand=0.5+0.5*sin(hotFixtureRadius*15.0+vHotFixturePosition.y*9.0-hotFixtureTime*2.8+sin(hotFixtureAzimuth*3.0+hotFixtureTime)*1.3);
       float hotFixtureSeam=1.0-smoothstep(0.025,0.09,abs(fract(hotFixtureRadius*2.0-hotFixtureTime*.07)-0.5));
-      vec3 hotFixtureTint=mix(vec3(1.0,0.12,0.012),vec3(1.0,0.99,0.96),hotFixturePearl);
-      float hotFixtureEnergy=mix(0.22,2.4,hotFixturePearl)*(0.72+hotFixtureBand*0.28)*(1.0-hotFixtureSeam*0.36);
+      vec3 hotFixtureTint=mix(vec3(1.0,0.055,0.002),vec3(1.0,0.995,0.98),hotFixturePearl);
+      float hotFixtureEnergy=mix(0.28,3.0,hotFixturePearl)*(0.32+hotFixtureBand*0.68)*(1.0-hotFixtureSeam*0.48);
       totalEmissiveRadiance*=hotFixtureTint*hotFixtureEnergy;`);
   };
-  material.customProgramCacheKey = () => `${key}:hot-fixture-bands-v3`;
+  material.customProgramCacheKey = () => `${key}:hot-fixture-bands-v4`;
   material.needsUpdate = true;
 }
 

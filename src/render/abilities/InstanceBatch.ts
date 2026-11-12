@@ -67,8 +67,9 @@ ${atlas ? `
  float heat=clamp(dot(s.rgb,vec3(.32,.52,.16)),0.,1.);
  // HDR hot core, orange body and deep-red feather: no opaque pale triangles.
  c=mix(vec3(1.05,.065,.003),vec3(4.,.7,.025),smoothstep(.008,.28,heat));
- c=mix(c,vec3(10.,5.2,.95),pow(smoothstep(.48,.94,heat),2.6));
- float hotBias=clamp((ink.g-.19)*2.,0.,1.);c=mix(c,vec3(10.,6.,1.2),hotBias*heat*heat*.35);
+ // Temperature belongs to the source: orange fuel folds, pearl-yellow muzzle.
+ float hotBias=clamp((ink.g-.19)*2.,0.,1.);
+ c=mix(c,vec3(10.,6.,1.2),pow(smoothstep(.48,.94,heat),2.6)*mix(.08,1.,hotBias));
  a*=.78*(.35+.65*flash);
  ` : `float vapor=step(ink.r*1.12,ink.b)*smoothstep(.18,.5,ink.b);float dust=step(.08,ink.r+ink.g+ink.b)*(1.-vapor);c=mix(vec3(.007,.009,.012),ink*.65,dust);c=mix(c,ink*.85,vapor);a*=mix(.65,.52,vapor);`}
  ` : ''}
@@ -122,6 +123,8 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
     this.mesh = new T.InstancedMesh(geometry, material, capacity);
     this.mesh.name = `ability-${kind}-batch`;
     if (kind === 'decal') this.mesh.renderOrder = FRIENDLY_GROUND_ORDER;
+    // Soot silhouettes the hot volume, below friendly boundaries and hostile timing fills.
+    if (kind === 'smoke') this.mesh.renderOrder = 1;
     this.mesh.frustumCulled = false;
     this.mesh.setColorAt(0, new T.Color());
     this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);

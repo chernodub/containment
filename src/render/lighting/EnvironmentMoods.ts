@@ -72,7 +72,7 @@ export const ENVIRONMENT_MOODS: Readonly<Record<ShipEnvironment, EnvironmentMood
   containment: shadowToe(localMood('containment',0xe4ebff,0xb99bff,'pulse',0x818594,.82,.16,1.65,.30,.32,400,5,11,0x8a94b1)),
   reactor: artMood(mood('reactor', 0xffe0bc, 0xff8a39, 'reactor', 0x596675, 1.06, .97, .85, .24, 18), {
     ambient: Object.freeze({ sky: 0x8294aa, ground: 0x303c4c, intensity: .08 }),
-    key: Object.freeze({ color: 0xe1e9f1, intensity: 1.5, offset: [0, 3.2, 0] as RGB }),
+    key: Object.freeze({ color: 0xff8131, intensity: 1.5, offset: [0, 3.2, 0] as RGB }),
     fill: Object.freeze({ color: 0x92b2d3, intensity: .29, offset: [8, 10, -12] as RGB }),
     rim: Object.freeze({ color: 0xff4936, intensity: .18, offset: [5, 5, -9] as RGB }),
     grade: Object.freeze({ exposure: 1.06, saturation: .97, contrast: 1.025, lift: [.0002, .00035, .0005] as RGB, gain: [1, 1, 1] as RGB, shadowTint: 0x8e9eb2, highlightTint: 0xe9e7e3 }),
