@@ -497,6 +497,12 @@ when present; preserved pre-AA builds keep their original stage list. Default
 Low now draws scene → compact composite → final AA while keeping AO/bloom/
 distortion targets at1×1 and skipping those passes. Explicit Low ink-off retains
 the original single forward render. The original draw/program guards remain.
+High retains the bounded Three FXAA implementation; Low final AA uses five fixed
+color taps, no edge-search loop and at most .32 neighborhood blend. Main scene
+color is positive packed HDR RGB11/11/10 (32 bits); its alpha was unused by the
+composite. Geometry remains RGBA8 and AO remains RGBA16F. Packed precision and
+the .70 adaptive endpoint have separate native A/B receipts in the G3 report;
+the latter is visibly softer and must not be described as a free quality win.
 
 ### G3 strength review and integration
 

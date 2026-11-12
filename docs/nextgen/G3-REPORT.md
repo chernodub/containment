@@ -2,12 +2,12 @@
 
 ## 1. What shipped
 
-Branch: `t3/inked-render-pipeline`. Application/capture source: `d70f811`; subsequent Low ink-toggle readiness fix: `27da81a`. The final documentation commit is reported in the handoff. No push or PR.
+Branch: `t3/inked-render-pipeline`. Application candidate: `4939853` (includes Low readiness `27da81a`, equivalent silhouette work reduction `a63c0f4`, compact Low AA `7e098b2` and packed HDR). The completed first full benchmark uses preserved source `d70f811`; later candidate receipts are identified separately below. The final documentation commit is reported in the handoff. No push or PR.
 
 - Shared opaque MRT output supplies view normals, class and a stable actor identity to AO and ink, with **zero additional geometry draws**. Skin meshes and physical marine/alien identity accents share their owner's ID; overlapping enemies retain separate boundaries. Pooled/reborrowed actors retain bounded, collision-free ownership.
 - **Bold is the default.** Actors have approximately 3 px silhouettes at native 1080p, 1.5 px major-form creases, slightly heavier marine/elite/boss contours; props have approximately 1.85 px silhouettes and 1 px creases. Lines use geometry/depth/identity rather than image contrast, fade in haze and darken toward a neutral local shadow tint. Low keeps silhouettes. Excluded transparent/effect draws preserve geometry data; hostile priority overlays explicitly block ink.
 - A central, uniform-driven material patch gives three broad diffuse values, soft 12% transitions, cooler shadows, a thin geometric bevel/rim response, family-colored actor posterization and strong texture low-pass, actor normal strength .30 and floor normal strength .10. Bold skips fine floor grain/scratch masks. Authored light pools, cast shadows and saturated physical family accents remain.
-- HDR MSAA is removed. Final FXAA operates **after ink**, through an sRGB RGBA8 presentation target, before the HUD. GTAO shares packed geometric normals; minor pooled point lights retain diffuse lighting while avoiding specular BRDF work. Existing half-resolution AO and quarter-resolution bloom/distortion remain.
+- HDR MSAA is removed. High's final FXAA operates **after ink**, through an sRGB RGBA8 presentation target, before the HUD; Low uses five fixed AA taps with a bounded blend and no edge search. Main scene color uses positive HDR RGB11/11/10 (32 bits), dropping unused alpha; AO retains RGBA16F. GTAO shares packed geometric normals; minor pooled point lights retain diffuse lighting while avoiding specular BRDF work. Existing half-resolution AO and quarter-resolution bloom/distortion remain. Actor outer contours skip eight depth samples/reconstructions that never contributed to their ID-only silhouette; major creases retain their own depth kernel.
 - High enables slow, hysteretic adaptive internal resolution in [.70, 1.00]; Low remains 1.00 by default. Existing performance snapshots expose scale, GPU lifecycle and pipeline stages. Opt-in asynchronous per-pass queries, actual pass dimensions, shadow scope and host load are recorded by the bench. No frame readback or blocking query completion was added.
 - New programs are prepared against the actual HDR/MRT target before readiness. Switching Low between ink-off forward rendering and ink-on post rendering also holds readiness. Existing program/draw/preparation limits remain fatal.
 
@@ -43,36 +43,42 @@ Prop crop: `g3-final-bold-ab/native-crops/combat-calm-communal-atrium-strengths-
 
 **Quality trades:** bold deliberately flattens photographic albedo and small normal/specular variation; this is visible in the enemy crops and is the intended art standard. Major diffuse light direction, practical pools and cast shadows survive. Strong ink can make the deepest pile look busy; it separates visible pieces, but cannot reveal completely occluded bodies or fix content stacking. FXAA removes most stair-stepping at the cost of slight softness on fine bevels (before/after: `artifacts/nextgen/g3-aa-check/ink-aa-crop.png`). Thin subpixel geometry can still change coverage during motion; the four-frame review is evidence, not proof of temporally perfect edges. No temporal jitter or history ghosting is introduced. Existing geometry determines prop panel lines; this stream does not invent missing chamfers/seams or reauthor props. Friendly effects still need their owning stream's priority work; the ink pipeline preserves hostile overlays but cannot alone establish all of Decision 2.
 
+Later pipeline trade checks: `g3-low-aa-ab/index.html` has 13 matched Low AA pairs with native crops/bursts; the five-tap filter is slightly sharper and keeps silhouettes/prop edges readable, but its timing run does **not** establish a speedup. `g3-packed-low-ab/index.html` compares the same Low filter in RGBA16F versus packed HDR; `g3-packed-high-ab/index.html` retains eight native crowd/boss pairs with unchanged High FXAA. `g3-packed-check` has 24 clean captures including bright Overload, dark Atrium, both tiers and all four Low off/on preparation transitions (readiness held, zero combat compiles). Packed HDR reduces color precision and its positive maximum slightly; no new banding or readability loss is apparent in these native comparisons. This is a measured image review, not a claim of numerically identical color.
+
+`/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-resolution-ab/index.html` contains ten matched final-build native-versus-.70 pairs. The safety-net endpoint is visibly softer on fine prop/body detail at native size; HUD stays native and body divisions remain readable. This is a real quality trade, not a free or invisible performance win. The controller's long recovery/hysteresis limits pumping, but these fixed endpoint pairs do not establish temporal invisibility under every load change.
+
 ## 3. Measurements and gate results
 
 See [G3-GPU-NOTES.md](G3-GPU-NOTES.md) for raw query tables, host loads, immutable build identity and deterministic pixel/tap/target arithmetic. **Quiet-host High 60 fps is not certified.** This shared 10-core machine has hundreds of runnable tasks. Even isolated rotating timer scopes report implausibly similar durations for tiny quarter-resolution bloom and the scene/HUD. An additional explicit flush diagnostic did not establish additive pass attribution. Raw numbers remain available; they are not relabeled as trustworthy isolated shader costs or summed into a GPU frame estimate.
 
-The compared main logical target footprint changes from 74.65 MB (requested 2× HDR/depth MSAA plus resolve) to 41.47 MB (single-sample HDR/depth/geometry plus sRGB presentation), or 20.32 MB at .70 internal scale. These are configured storage calculations, not measured VRAM or GPU milliseconds. High adds final AA; default Low now has three submissions instead of one, an explicit cost for contours/AA. Low ink-off retains the old one-pass path. AO/bloom had already been reduced in P1; no duplicate savings are claimed.
+The compared main logical target footprint changes from 74.65 MB (requested 2× HDR/depth MSAA plus resolve) to 41.47 MB in the first RGBA16F candidate, then **33.18 MB** with packed scene color (4 B HDR + 4 B geometry + 4 B depth + 4 B presentation per pixel), or **16.26 MB** at .70 internal scale. These are configured storage calculations, not measured VRAM or GPU milliseconds. High adds final AA; default Low now has three submissions instead of one, an explicit cost for contours/AA. Low ink-off retains the old one-pass path. AO/bloom had already been reduced in P1; no duplicate savings are claimed.
 
-Final native benchmark receipt: **PENDING serialized driver completion**. Frozen defaults use `d70f811`; the later `27da81a` readiness-only toggle change does not affect fixed-tier measured fights and has separate targeted coverage.
+Final native benchmark receipt: **48/48 trials passed the resource/error gates**, two selected rooms (Relay Racks and Diagnostic Gallery), four full-kit rigs, both tiers, three repeats. Zero combat program creations; peak 322 draws and 225 prepared programs; `errors:[]`, `budgetFailures:[]`. High/Low timing flags are observational and fail acceptance; exit 0 does not mean 60 fps. Host load1m changed 724.0→162.8 on 10 cores during the 1524 s matrix. Frozen defaults use `d70f811`; the later `27da81a` readiness-only toggle change does not affect fixed-tier measured fights and has separate targeted coverage. A matched Manual-control Chamber / Arc before/after receipt follows separately; different selected rooms are not silently compared as the same fixture.
 
 Completed gate summary lines:
 
 ```text
 npm ci: passed (61 packages; no runtime dependency changes)
 npm run build: passed (TypeScript + Vite; existing large-chunk advisory)
-Vitest: 1 failed | 259 passed | 1 skipped (261 files)
-Tests: 1 failed | 3020 passed | 1 skipped (3022 tests)
+Final Vitest: 1 failed | 261 passed | 1 skipped (263 files)
+Final Tests: 1 failed | 3029 passed | 1 skipped (3031 tests)
 node --test scripts/cryo-model-preview.test.mjs: 2 passed
 npm run test:room-evidence: 28 passed; ragdoll evidence 33 checks passed
 npm run test:smoke: passed
 npm run test:authored-smoke:all: 20/20 passed
 npm run bench:rooms: 42/42 passed; zero first-frame/combat compiles
-npm run bench: pending
+npm run bench: 48/48 resource/error gates passed; zero combat compiles; timing target NOT met
 ```
 
-The one remaining full-unit failure is real: `UiScreens` settings content is 744 px high inside the 660 px 1280×720 drawer. Its fit assertion is intact. `npm run verify` was attempted and stopped at units (that overflow plus a host-timeout in unchanged I5 cadence on that attempt). The later full unit run has only the settings failure. Isolated Python asset stages pass their first three checks, then require unavailable `blender` (`FileNotFoundError`); no asset or assertion was changed to bypass it. Focused physical actor/geometry tests: 44 passed; final Low ink readiness/post tests: 32 passed. Exact logs remain in `/tmp/g3-*` and native gate receipts under `artifacts/nextgen/g3/gates/`.
+The one remaining full-unit failure is real: `UiScreens` settings content is 744 px high inside the 660 px 1280×720 drawer. Its fit assertion is intact. `npm run verify` was attempted and stopped at units (that overflow plus a host-timeout in unchanged I5 cadence on that attempt). The final packed-build full unit run has only the settings failure: 166.91 s, source `4939853`, load110.6→116.4, logs under `artifacts/nextgen/g3/packed-gates/`. Isolated Python asset stages pass their first three checks, then require unavailable `blender` (`FileNotFoundError`); no asset or assertion was changed to bypass it. Focused physical actor/geometry tests: 44 passed; Low readiness/post tests: 32 passed; packed-format/post tests: 28 passed. Earlier exact logs remain in `/tmp/g3-*` and native gate receipts under `artifacts/nextgen/g3/gates/`.
+
+Room entries peak at 2078.4 ms, 197 programs, 66 material profiles and 11 compile passes, with zero first-frame/combat compiles. The retained preparation history also records a **3249.3 ms cold initial title/room preparation** under load around 640; the subsequent guarded entry is 533.1 ms. The passing entry matrix does not erase that cold-start outlier. Seven final build/unit/asset logs are copied into the native gate evidence directory for a durable local receipt.
 
 No gameplay, determinism, persistence, native-input, accessibility, context-recovery or authored-room assertion was removed or weakened.
 
 ## 4. Presentation pins rewritten
 
-- `NextgenPost`: default Low now expects scene/composite/final-AA and compact MRT resources; explicit Low ink-off retains the original one-pass/no-resource guarantee. High expects final AA, packed normals/identity, single-sample HDR and complete disposal/preparation.
+- `NextgenPost`: default Low now expects scene/composite/final-AA and compact MRT resources; explicit Low ink-off retains the original one-pass/no-resource guarantee. High expects final AA, packed normals/identity, single-sample packed positive HDR (AO stays half-float) and complete disposal/preparation. Low's bounded five-tap filter is separate from the retained High FXAA source.
 - `UiScreens`: the exact 16-control count now derives from complete graphics metadata plus six non-graphics controls. The 720p fit assertion remains and exposes the outstanding layout defect.
 - `UiSettings`: string overrides select a valid non-default value instead of assuming every enum accepts `low`; the full saved object includes additive ink/adaptive/style options. Persistence behavior remains checked.
 - `I2GraphicsPreferences`: private renderer fakes include the real player/menu/actor roots needed by geometry registration; shadow/recovery/native UI expectations remain.
@@ -84,7 +90,7 @@ UI owner: [G3-ui-integration.md](plans/G3-ui-integration.md) identifies two requ
 
 Other render streams:
 
-- Keep new opaque physical actor meshes beneath their registered actor root. Standard materials are patched centrally; current authored marine/alien identity shaders have a narrowly recognized physical adapter. A new custom shader must provide explicit physical normals/identity coverage or remain excluded until integrated. Do not copy a compiled patch twice or introduce per-instance defines/cache keys.
+- Keep new opaque physical actor meshes beneath their registered actor root and preserve ActorPool's per-owner material clones: identity is a uniform, so distinct live owners must not share the same mutable material. Standard materials are patched centrally; current authored marine/alien identity shaders have a narrowly recognized physical adapter. A new custom shader must provide explicit physical normals/identity coverage or remain excluded until integrated. Do not copy a compiled patch twice or introduce per-instance defines/cache keys.
 - Transparent particles, ability effects, decals and light-pool draws must write color only; hostile priority materials use the existing high render-order ancestry/ink-block policy. Never use an actor ID for a telegraph or HUD scene.
 - Register topology before the material warmup profile is captured, and prepare the actual active target before releasing readiness. Preserve zero combat compiles, 330-draw headroom/350 hard guard, 400 programs, 160 material families, 12 preparation passes and 3 s entry budget.
 - Existing performance provider integration is module-level; keep `window.__containmentPerformance` intact. Sparse GPU timer and opt-in per-pass profiler must not own elapsed-query targets simultaneously. No synchronous GPU completion/readback belongs in a frame.
