@@ -1,6 +1,6 @@
 import {
   ACESFilmicToneMapping, AgXToneMapping, BufferGeometry, Camera, Color, DepthTexture,
-  Float32BufferAttribute, HalfFloatType, LinearFilter, Matrix4, Mesh, NoBlending,
+  Float32BufferAttribute, HalfFloatType, LinearFilter, NearestFilter, Matrix4, Mesh, NoBlending,
   NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, UnsignedIntType,
   Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
@@ -240,7 +240,7 @@ export class PostPipeline {
     const scene = this.target(1, 1, true);
     const ao = this.target(1, 1);
     const aoDenoised = this.target(1, 1);
-    const gtao = new DepthGTAO(scene.depthTexture!, this.camera, ao.texture);
+    const gtao = new DepthGTAO(scene.depthTexture!, this.camera, ao.texture, scene.textures[1]);
     const bloomA = this.target(1, 1);
     const bloomB = this.target(1, 1);
     const distortion = this.target(1, 1);
@@ -288,9 +288,10 @@ export class PostPipeline {
   private target(width: number, height: number, depth = false): WebGLRenderTarget {
     const target = new WebGLRenderTarget(width, height, {
       type: HalfFloatType, minFilter: LinearFilter, magFilter: LinearFilter,
-      depthBuffer: depth, stencilBuffer: false,
+      depthBuffer: depth, stencilBuffer: false, count: depth ? 2 : 1,
     });
     target.texture.name = depth ? 'Containment HDR scene' : 'Containment post';
+    if (depth) { target.textures[1].name = 'Containment geometry normal + identity'; target.textures[1].minFilter = target.textures[1].magFilter = NearestFilter; }
     if (depth) {
       target.depthTexture = new DepthTexture(width, height, UnsignedIntType);
       target.samples = Math.min(2, this.renderer.capabilities.maxSamples);

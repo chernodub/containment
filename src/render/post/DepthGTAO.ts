@@ -31,12 +31,12 @@ export class DepthGTAO {
   readonly material: ShaderMaterial;
   readonly denoiseMaterial: ShaderMaterial;
 
-  constructor(depth: DepthTexture, camera: Camera, packedAO: Texture) {
+  constructor(depth: DepthTexture, camera: Camera, packedAO: Texture, geometry?: Texture) {
     this.material = new ShaderMaterial({
       name: 'Containment depth GTAO', vertexShader: screenVertex,
-      fragmentShader: GTAOShader.fragmentShader,
+      fragmentShader: GTAOShader.fragmentShader.replace('return unpackRGBToNormal(textureLod(tNormal, uv, 0.).rgb);', `vec2 e=textureLod(tNormal,uv,0.).rg*2.0-1.0; vec3 n=vec3(e,1.0-abs(e.x)-abs(e.y)); if(n.z<0.0)n.xy=(1.0-abs(n.yx))*sign(n.xy); return normalize(n);`),
       defines: {
-        ...GTAOShader.defines, NORMAL_VECTOR_TYPE: 0, SAMPLES: 12,
+        ...GTAOShader.defines, NORMAL_VECTOR_TYPE: geometry ? 1 : 0, SAMPLES: 12,
         FRAGMENT_OUTPUT: 'vec4(ao, packNormalToRGB(viewNormal))',
       },
       uniforms: UniformsUtils.clone(GTAOShader.uniforms),
@@ -44,6 +44,7 @@ export class DepthGTAO {
     });
     const u = this.material.uniforms;
     u.tDepth.value = depth;
+    u.tNormal.value = geometry ?? null;
     u.tNoise.value = this.noise;
     // @types/three predates this runtime uniform in Three 0.185.
     u.cameraWorldMatrix ??= { value: new Matrix4() };
