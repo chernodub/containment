@@ -19,14 +19,25 @@ async function filesUnder(dir, prefix = '') {
 }
 if (mode === 'witness') {
   const records = [];
-  for (const name of ['before-dist', 'round1-dist', 'final-dist']) {
+  const builds=(await readdir(out,{withFileTypes:true})).filter(e=>e.isDirectory()&&e.name.endsWith('-dist')).map(e=>e.name).sort();
+  for (const name of builds) {
     const dir = resolve(out, name, 'assets');
     let files; try { files = await filesUnder(dir); } catch { continue; }
     const hashes = {};
     for (const file of files.sort()) hashes[file] = createHash('sha256').update(await readFile(resolve(dir, file))).digest('hex');
-    records.push({ build: name, actualRendererSHA: name === 'before-dist' ? 'ab71db8a35d99c3311582a7779136fe9a9742021' : process.argv[3], assets: hashes });
+    const actualRendererSHA=(await readFile(resolve(out,name,'SOURCE_SHA'),'utf8')).trim();
+    assert(/^[a-f0-9]{40}$/.test(actualRendererSHA),`Missing full source identity for ${name}`);
+    records.push({ build: name, actualRendererSHA, assets: hashes });
   }
-  await writeFile(resolve(out, 'runtime-witness.json'), JSON.stringify({ note: 'Before core manifest records the correct initial SHA. The queued before environment wrapper reads a later harness HEAD; it still serves these identical immutable before assets. Original manifests remain unchanged.', records }, null, 2));
+  const core=JSON.parse(await readFile(resolve(root,'v4-before/sources/v4-before-breacher.json')));
+  const baseline=records.find(r=>r.build==='before-dist');
+  for(const [file,hash]of Object.entries(core.appAssets))assert.equal(baseline.assets[file],hash);
+  const environmentProof=[];
+  try{for(const file of await readdir(resolve(root,'v4-before-env/sources'))){
+    const m=JSON.parse(await readFile(resolve(root,'v4-before-env/sources',file)));assert.deepEqual(m.appAssets,core.appAssets);
+    environmentProof.push({file,recordedHarnessSHA:m.gitSHA,servedPath:m.distSnapshot.path,actualRendererSHA:baseline.actualRendererSHA,appAssetHashesMatch:true});
+  }}catch(error){if(error.code!=='ENOENT')throw error;}
+  await writeFile(resolve(out, 'runtime-witness.json'), JSON.stringify({ note: 'Before core manifest records the correct initial SHA. The queued before environment wrapper reads a later harness HEAD; it still serves these identical immutable before assets. Original manifests remain unchanged.', records,environmentProof }, null, 2));
 } else if (mode === 'compare') {
   const beforeLabels = (process.argv[3] ?? 'v4-before,v4-before-env').split(',');
   const afterLabels = (process.argv[4] ?? 'v4-final,v4-final-env').split(',');
