@@ -1,6 +1,6 @@
 # G3 GPU evidence and deterministic work notes
 
-Shipping candidate: `d70f811`, preserved by the lead under `artifacts/nextgen/g3/shipping-dist`. This note separates configured work reductions from measurements on the shared Apple M1 Pro. **The completed intermediate runs do not establish quiet-host 60 fps, and their elapsed-query values do not support isolated additive pass costs.** Final shipping results remain pending the lead's serialized gate/benchmark receipt; no running benchmark was polled to write this note.
+Shipping candidate: `d70f811`, preserved by the lead under `artifacts/nextgen/g3/shipping-dist`. This note separates configured work reductions from measurements on the shared Apple M1 Pro. **The completed intermediate runs do not establish quiet-host 60 fps, and their elapsed-query values do not support isolated additive pass costs.** The completed shipping full-matrix and serialized driver receipts are recorded in the final section; no running benchmark or pending matched-run values were polled to write this note.
 
 ## Evidence identity and scope
 
@@ -97,10 +97,98 @@ The compared main footprint falls44.44% at native internal scale. At adaptive.70
 
 The additive options expose full/silhouette/off ink and an independent adaptive-resolution switch. High defaults to full ink plus adaptive.70–1; Low to silhouette and scale1. Manual resolution selection remains separate. Runtime feedback, scale and profiler lifecycle are exposed through the existing performance snapshot/debug renderer rather than new gameplay globals. Deterministic guards remain330 draw headroom (original350 guard also retained),400 programs,160 material families,12 compile passes and zero combat compiles. Changing the look does not authorize relaxing them.
 
-## Final shipping receipt — pending
+## Final shipping receipt — completed full matrix
 
-| Shipping source | Matrix | Result |
-|---|---|---|
-| `d70f811` |Lead's serialized full default benchmark: two selected rooms × four rigs × two tiers × three20-second repeats, with per-pass queries|Pending final driver receipt; no values copied from the subtle or pre-AA checkpoints|
+Application source **`d70f811`**, frozen in `g3/shipping-dist`. The [full benchmark JSON](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-shipping-bench/benchmark.json), [same-selection summary](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3/shipping-gpu-summary.json) and [completed serialized driver receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3/gates/final-gates.json) are retained. The default heavy-room scan selected **Relay Racks and Diagnostic Gallery**;48 trials cover both rooms × four rigs × two tiers × three20-second repeats. There are **37,230 retained performance samples**, `errors:[]`, `budgetFailures:[]`, **zero combat compiles in all48 trials**, maximum **322 draws** and maximum **225 prepared programs**. The330/350-draw and400-program guards pass unchanged.
 
-The lead will add final shipping frame/load/scale/program summaries and the complete gate results after the frozen run closes. Until then, this note supports the deterministic restructuring and documents the measurement limits; it does not claim the High60fps target or quiet-device signoff has been achieved.
+The command used `--gpu-passes` without `--gpu-flush`. Submission was ordinary, with opt-in asynchronous query instrumentation. As documented above, pass profiling suspends the runtime total-frame GPU timer; adaptive resolution uses the controller's frame-time fallback in this matrix. Raw per-pass attribution remains unvalidated. Trial endpoint load1m ranges **162.8–464.7** on10 cores. The complete benchmark command, including its room scan, took1524.06s at load724.0→162.8. This is not a quiet-device run.
+
+Each row below uses the existing `gpuBestOfN.selectedRun`: lowest scene-color elapsed-query p50 among that case's three repeats. **The selected trial supplies every frame/CPU/load/scale and pass value in that row; no best-CPU substitution or independently selected pass minimum is used.** This reproducible selector does not validate its GPU attribution. The selected run name is `<room>-<rig>-<tier>-<repeat>`. Draw/program peaks in the last column cover all three repeats.
+
+| Room / rig / tier | Selected repeat / frames | Frame p50 / p95 ms | Render JS p50 / p95 ms | CPU p50 / p95 ms | Scale min / p50 / max | Same-run load1m start→end | Peak draws / programs, all3 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+|relay-racks /breacher /high|0 /905|16.9 /41.1|7.3 /14.3|8.0 /15.8|0.7 /0.8 /0.95|434.7→434.5|311 /106|
+|relay-racks /breacher /low|2 /1095|16.7 /18.0|5.8 /8.4|6.5 /9.5|1 /1 /1|390.0→363.1|173 /221|
+|relay-racks /cryo /high|1 /870|16.8 /41.5|6.9 /13.3|7.6 /14.9|0.7 /0.7 /0.95|353.9→417.2|314 /106|
+|relay-racks /cryo /low|0 /1087|16.7 /25.3|4.8 /7.3|5.5 /8.6|1 /1 /1|444.3→464.7|185 /221|
+|relay-racks /pyro /high|1 /612|18.2 /59.6|7.9 /12.9|8.7 /14.7|0.7 /0.7 /0.925|399.5→367.8|322 /106|
+|relay-racks /pyro /low|0 /627|16.8 /83.6|5.4 /9.8|6.2 /11.6|1 /1 /1|341.4→325.9|192 /221|
+|relay-racks /arc /high|2 /566|23.7 /66.7|6.6 /12.8|7.5 /14.4|0.7 /0.7 /0.925|274.6→297.7|295 /106|
+|relay-racks /arc /low|1 /1093|16.7 /18.1|5.0 /6.5|5.7 /7.6|1 /1 /1|347.8→371.6|167 /221|
+|diagnostic-gallery /breacher /high|0 /579|25.1 /58.5|12.8 /23.5|14.1 /27.6|0.7 /0.7 /0.95|428.0→423.9|249 /108|
+|diagnostic-gallery /breacher /low|2 /960|16.7 /33.8|5.7 /8.3|6.4 /11.5|1 /1 /1|369.8→342.0|142 /225|
+|diagnostic-gallery /cryo /high|1 /717|23.7 /50.7|6.0 /13.4|7.1 /15.6|0.7 /0.7 /0.925|325.4→307.2|241 /108|
+|diagnostic-gallery /cryo /low|0 /1156|16.7 /25.1|5.8 /10.8|6.6 /12.2|1 /1 /1|322.1→313.1|156 /225|
+|diagnostic-gallery /pyro /high|1 /610|25.3 /56.7|9.5 /17.2|10.7 /20.1|0.7 /0.7 /0.925|293.3→253.9|266 /108|
+|diagnostic-gallery /pyro /low|0 /758|17.3 /49.7|6.2 /9.5|7.1 /12.8|1 /1 /1|231.2→218.5|160 /225|
+|diagnostic-gallery /arc /high|1 /721|23.7 /49.8|6.9 /10.6|7.6 /13.1|0.7 /0.7 /0.925|206.3→207.8|225 /108|
+|diagnostic-gallery /arc /low|2 /763|16.9 /48.8|4.8 /7.6|5.5 /10.0|1 /1 /1|166.4→162.8|132 /225|
+
+**Raw elapsed-query readings, not accepted isolated GPU costs.** Every cell below is p50/p95 milliseconds **[resolved query N]** from the same selected trial as the frame table. Target dimensions and all raw samples remain in JSON. The final AA and HUD target the1920×1080 screen; selected shadow scopes bind actual1024² maps. High scene/composite and half/quarter targets change with the reported adaptive scale. Scene includes shadows; the separate shadow row overlaps it. No stage percentiles are added, and no original→shipping subtraction is presented as a causal pass saving.
+
+### relay-racks / high: raw per-pass readings
+
+| Scope |breacher|cryo|pyro|arc|
+|---|---:|---:|---:|---:|
+|Scene incl. shadow|24.32 /48.65 [25]|27.43 /38.84 [24]|25.30 /50.19 [18]|28.76 /70.05 [16]|
+|GTAO|25.55 /41.93 [25]|24.37 /48.60 [24]|22.59 /60.85 [18]|20.30 /47.42 [16]|
+|AO denoise|26.88 /57.58 [25]|24.81 /56.86 [23]|24.38 /78.95 [17]|37.44 /71.97 [16]|
+|Bloom extract|27.30 /54.57 [25]|27.23 /40.26 [23]|30.54 /78.07 [17]|27.36 /68.70 [16]|
+|Bloom horizontal|30.54 /47.88 [25]|25.77 /46.30 [23]|39.64 /89.52 [17]|35.19 /66.47 [15]|
+|Bloom vertical|24.87 /64.66 [25]|27.15 /56.07 [23]|31.96 /60.49 [17]|26.64 /92.28 [15]|
+|Distortion|28.44 /49.29 [5]|32.89 /39.26 [2]|25.89 /54.00 [14]|27.95 /58.18 [4]|
+|Composite|27.04 /50.57 [25]|29.99 /43.61 [23]|29.69 /88.75 [17]|32.58 /64.60 [15]|
+|Final AA|25.54 /73.43 [24]|33.31 /80.31 [23]|33.22 /73.87 [17]|29.84 /59.20 [15]|
+|HUD|32.26 /63.90 [24]|33.31 /54.74 [23]|36.09 /61.74 [17]|34.45 /252.00 [15]|
+|Shadow update only|18.19 /49.68 [15]|21.48 /37.42 [16]|17.43 /51.43 [13]|17.13 /51.26 [13]|
+
+### relay-racks / low: raw per-pass readings
+
+| Scope |breacher|cryo|pyro|arc|
+|---|---:|---:|---:|---:|
+|Scene incl. shadow|11.26 /29.17 [92]|13.66 /45.38 [91]|24.04 /59.00 [53]|13.84 /44.75 [91]|
+|Composite|9.08 /33.70 [91]|11.25 /45.08 [91]|21.01 /41.60 [52]|13.27 /40.43 [91]|
+|Final AA|10.57 /33.92 [91]|11.78 /36.85 [90]|21.58 /52.94 [52]|14.93 /45.05 [91]|
+|HUD|11.51 /27.92 [91]|13.40 /40.48 [90]|19.77 /51.07 [52]|15.91 /35.05 [91]|
+
+### diagnostic-gallery / high: raw per-pass readings
+
+| Scope |breacher|cryo|pyro|arc|
+|---|---:|---:|---:|---:|
+|Scene incl. shadow|40.62 /72.89 [17]|30.69 /39.79 [21]|45.60 /83.85 [18]|32.07 /72.33 [21]|
+|GTAO|37.11 /65.26 [17]|34.51 /90.98 [21]|37.56 /117.61 [18]|29.83 /64.20 [21]|
+|AO denoise|46.10 /65.88 [17]|34.89 /64.14 [21]|38.42 /93.19 [18]|38.21 /64.52 [21]|
+|Bloom extract|51.00 /63.64 [17]|28.52 /72.63 [21]|41.01 /75.71 [17]|39.93 /65.26 [21]|
+|Bloom horizontal|34.97 /78.17 [17]|35.19 /54.71 [21]|35.62 /86.24 [17]|33.35 /49.15 [21]|
+|Bloom vertical|34.76 /52.15 [17]|33.19 /57.88 [21]|43.83 /82.31 [17]|38.15 /63.77 [21]|
+|Distortion|40.82 /75.02 [17]|36.27 /72.99 [21]|40.40 /68.59 [17]|37.59 /55.35 [21]|
+|Composite|40.25 /96.02 [17]|33.34 /77.62 [20]|50.75 /69.90 [17]|36.81 /57.66 [21]|
+|Final AA|41.94 /97.71 [17]|41.80 /67.57 [20]|53.59 /83.57 [17]|39.04 /71.65 [21]|
+|HUD|44.72 /81.72 [17]|33.32 /82.50 [20]|47.95 /70.92 [17]|33.09 /49.67 [21]|
+|Shadow update only|21.21 /65.59 [17]|20.22 /80.24 [17]|24.18 /51.45 [13]|15.71 /45.97 [18]|
+
+### diagnostic-gallery / low: raw per-pass readings
+
+| Scope |breacher|cryo|pyro|arc|
+|---|---:|---:|---:|---:|
+|Scene incl. shadow|24.43 /65.27 [81]|6.91 /25.67 [97]|33.00 /65.37 [63]|29.29 /53.57 [64]|
+|Composite|25.22 /50.82 [80]|7.96 /27.06 [96]|33.64 /66.86 [63]|31.43 /67.91 [64]|
+|Final AA|27.70 /56.79 [80]|7.61 /24.70 [96]|31.74 /56.30 [63]|36.25 /81.61 [63]|
+|HUD|26.17 /58.72 [80]|7.66 /28.32 [96]|33.88 /64.33 [63]|30.77 /61.78 [63]|
+
+The shipping readings continue to show similarly large elapsed values for scene, tiny bloom stages and HUD. For example Relay/Breacher High selected scene24.32ms, quarter-resolution bloom-horizontal30.54ms and HUD32.26ms medians cannot establish independent additive pass costs. This remains a measurement limitation, not proof of a particular driver defect. The complete data does not cure the attribution issue seen in the earlier isolated/flush experiments.
+
+The requested timing acceptance is **not achieved in this matrix**. All24 High trials fail both recorded High p50≤16.7ms and p95≤20ms flags. Five of24 Low trials pass the recorded Low p50≤16.7ms flag; none of48 passes the historical frame-p95≤16.6ms flag, and one of48 passes CPU-p95≤8ms. Flags use unrounded values, so a displayed16.7 can still miss the exact flag. The selected High rows span frame p50 **16.8–25.3ms** and p95 **41.1–66.7ms**; Low also has substantial tails. Neither adaptive scale reductions nor the contested-host explanation supplies quiet-hardware signoff. Different rooms/load/scales prevent treating this matrix and the earlier Manual-control baseline as a matched before/after performance estimate.
+
+The serialized driver also completed the following unchanged desktop gates:
+
+| Gate | Exit | Wall seconds | Load1m start→end | Receipt |
+|---|---:|---:|---:|---|
+|Desktop smoke|0|128.01|335.9→409.3|`artifacts/nextgen/g3/gates/smoke.log`|
+|All20 authored desktop rooms|0|162.33|409.3→625.4|`artifacts/nextgen/g3/gates/authored.log`|
+|All42 fresh/retained room entries|0|120.59|625.4→724.0|`artifacts/nextgen/g3/gates/rooms.log`|
+|Full48-trial benchmark|0|1524.06|724.0→162.8|`artifacts/nextgen/g3/gates/bench.log`|
+
+The closed room audit records42/42 entries, `errors:[]`, `failures:[]`, maximum complete readiness2078.4ms (<3000),197 prepared programs (<400),66 material families (<160),11 compile passes (<12), and zero first-frame or combat compiles. These are preparation/resource checks, not organic-campaign or quiet-frame certification. Other build/unit/asset gate results belong to the lead report.
+
+This completed full-matrix section supersedes its earlier pending placeholder. A separately requested matched Manual-control comparison is intentionally absent here; the lead will append it only after its own completion receipt. The configured storage/lookup reductions above are deterministic; reliable per-pass GPU attribution and the High60fps acceptance remain open.
