@@ -283,4 +283,52 @@ The candidate's final-AA raw median46.63ms despite a five-read fullscreen shader
 
 `a63c0f4` also skips eight unused neighbor-depth reads and view-position reconstructions for valid actor ID silhouettes; its actor contour branch uses the same identity boundary result and leaves major actor crease processing separate. That bound is per covered actor pixel, not eight reads saved across every screen pixel. It changes shader work rather than hit/gameplay decisions and adds no geometry pass or program variant. Its timing contribution is not isolated by these combined candidate runs.
 
-The completed supplement evidence therefore narrows the issue without closing it: per-pass-query overhead is not the sole explanation for the old checkpoint's miss, the current-host original remains faster than the owned Low candidate, and five-tap AA only proves a smaller deterministic work bound. High60fps, Low preservation and reliable GPU stage attribution remain unaccepted. No later packed-HDR result is inferred here.
+The completed supplement evidence therefore narrows the issue without closing it: per-pass-query overhead is not the sole explanation for the old checkpoint's miss, the current-host original remains faster than the owned Low candidate, and five-tap AA only proves a smaller deterministic work bound. High60fps, Low preservation and reliable GPU stage attribution remain unaccepted. The subsequently completed packed-HDR matched candidate is recorded in the next section; no then-pending result was used to interpret these five-tap receipts.
+
+## Completed packed-HDR matched candidate — `4939853`
+
+The completed [`g3-packed-bench` receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-packed-bench/benchmark.json) uses frozen `4939853` from `g3/packed-hdr-dist`: Manual-control / Arc,1920×1080,three20-second trials per tier, rotating per-pass queries without flush. All6 trials completed with `errors:[]`, `budgetFailures:[]`, **zero combat compiles**,3766 performance samples, maximum208 draws and294 prepared programs. This is a completed matched-content candidate receipt; the later full packed-build gate driver is separate and is not read or summarized here.
+
+| Tier / repeat | Frames | Frame p50 / p95 ms | Render JS p50 / p95 ms | CPU p50 / p95 ms | Scale min / p50 / max | Load1m start→end | Draw peak / programs / combat compiles |
+|---|---:|---:|---:|---:|---:|---:|---:|
+|high /0|475|32.8 /76.4|6.4 /10.7|7.6 /14.0|0.7 /0.7 /0.925|90.0→89.9|208 /179 /0|
+|high /1|301|41.7 /140.5|5.4 /7.9|6.6 /9.8|0.7 /0.775 /0.95|89.9→91.7|201 /179 /0|
+|high /2|636|25.0 /50.4|5.1 /7.5|5.8 /9.8|0.7 /0.7 /0.95|91.7→83.1|207 /179 /0|
+|low /0|879|16.8 /42.0|4.8 /7.3|5.5 /9.4|1 /1 /1|83.1→79.5|130 /294 /0|
+|low /1|706|16.8 /49.7|4.6 /7.2|5.3 /9.0|1 /1 /1|79.5→74.9|130 /294 /0|
+|low /2|769|16.9 /49.9|4.5 /6.8|5.2 /9.1|1 /1 /1|74.9→74.2|130 /292 /0|
+
+Existing `gpuBestOfN` selects **High2** (636 frames,25.0/50.4ms,scale p50.70,load91.7→83.1) and **Low0** (879 frames,16.8/42.0ms,scale1,load83.1→79.5). Their raw elapsed-query p50/p95 values and resolved N follow; no best-CPU or independently selected stage minimum is substituted. Attribution remains unsupported: quarter-resolution and screen-stage query values are still too coarse/overlapping to support additive causal pass costs.
+
+| Scope | Packed High2: p50 / p95 ms [N] | Packed Low0: p50 / p95 ms [N] |
+|---|---:|---:|
+|Scene incl. any shadow|37.67 /59.74 [19]|29.18 /79.97 [74]|
+|GTAO|33.05 /80.17 [19]|—|
+|AO denoise|36.31 /57.39 [19]|—|
+|Bloom extract|34.88 /89.01 [19]|—|
+|Bloom horizontal|37.89 /102.27 [18]|—|
+|Bloom vertical|42.49 /92.93 [18]|—|
+|Distortion|43.90 /73.48 [18]|—|
+|Composite|35.08 /100.97 [18]|31.95 /69.95 [73]|
+|Final AA|38.54 /64.61 [18]|31.62 /83.78 [73]|
+|HUD|37.49 /94.39 [18]|31.56 /77.34 [73]|
+|Shadow update only|29.73 /49.89 [16]|—|
+
+The High end-of-trial `renderPipeline` snapshots show adaptive enabled, final scale.70 and last estimate source `frame`; GPU timer enabled after profiler cleanup. Because the per-pass profiler suspends that timer during its query ownership, the restored end-state is not proof of concurrent runtime GPU feedback throughout the trial. Low snapshots correctly show adaptive/GPU timer disabled and scale1. Raw snapshots remain in the receipt.
+
+### Storage change and quality evidence
+
+Only the main scene-color attachment changes from64-bit RGBA16F to positive32-bit **R11F_G11F_B10F**. Geometry staysRGBA8, sampled depth stays4B/px logical, AO/denoise remain half-float at half resolution, and the graded-ink presentation remains8-bit sRGB. The audited main-color consumers read RGB; source-alpha blending remains in the fragment output, and no destination-alpha blend dependency uses this attachment. This is not a conversion of all HDR intermediates or actor textures. Packed HDR removes stored alpha and reduces floating-point precision; it is not bitwise equivalent to RGBA16F.
+
+The lead accepted the completed24 native captures under `g3-packed-check` across both tiers and bright/dark/crowd scenes, plus8 High and14 Low packing-comparison pairs under `g3-packed-high-ab` / `g3-packed-low-ab`. These visual receipts support the reviewed precision trade; they do not measure GPU time or guarantee every future lighting situation.
+
+| Compared main-target storage | Original High | Pre-packed G3 | Packed candidate |
+|---|---:|---:|---:|
+| Logical bytes per internal pixel |36|20|16|
+| Native1920×1080 MB |74.6496|41.4720|33.1776|
+| At.70 internal scale MB |not the measured original setting|20.32128|16.257024|
+| Reduction versus original High logical footprint |—|44.44%|55.56%|
+
+Packed G3 is20% smaller than pre-packed G3 in this compared footprint. The16B calculation is sceneRGB4 + geometry4 + depth4 + presentation4; the original36B includes its configured2× HDR/depth multisample storage and resolved attachments. These remain logical format/sample calculations excluding alignment, driver tiling/compression, other targets and full-size output. Original Low had a direct forward path without these post targets, so the36B High comparison must not be reused to claim a memory saving against original Low. There is no extra geometry pass or change to the half/quarter-resolution AO/bloom schedule from packing. No measured GPU-ms saving is inferred from the byte ratio.
+
+Packed Low now records p50 **16.8/16.8/16.9ms** and p95 **42.0/49.7/49.9ms**, a materially better observed distribution than the preceding five-tap candidate25.1–41.5ms p50. However the packed Low host load is74.2–83.1 versus102.7–144.2 for that prior candidate; the trials are not interleaved or device-isolated. This does not prove packing caused the recovery, nor does it dismiss the earlier owned Low slowdown. All packed Low p50 values still exceed the strict16.7ms target and retain long tails. High p50 **32.8/41.7/25.0ms** likewise misses60fps, with p95 **76.4/140.5/50.4ms**, despite adaptive scaling. **Timing acceptance remains open for both tiers.** Only the later completed full-build gates and separate production-feedback receipt may extend acceptance evidence; no pending result is used here.
