@@ -497,3 +497,34 @@ when present; preserved pre-AA builds keep their original stage list. Default
 Low now draws scene → compact composite → final AA while keeping AO/bloom/
 distortion targets at1×1 and skipping those passes. Explicit Low ink-off retains
 the original single forward render. The original draw/program guards remain.
+
+### G3 strength review and integration
+
+`npm run capture -- --label=<new-label> --graphics='{"inkOutlines":"full","stylizedShading":true,"adaptiveResolution":false}' --style=bold --scenarios=<list>`
+records the validated graphics overrides and uniform-only style strength. Strength
+is `subtle`, `medium` or `bold`; shipping defaults to bold. For OFF use
+`{"inkOutlines":"off","stylizedShading":false,"adaptiveResolution":false}`.
+Use the same immutable `--dist` and `--dist-source-sha`, seed, scenarios and clocks
+for every column. Do not compare a live rebuilding dist against preserved PNGs.
+
+`node scripts/nextgen/g3-strength-gallery.mjs <OFF-label> <subtle-label> <medium-label> <bold-label> <new-gallery>`
+builds the four-strength review without launching a browser. It rejects mismatched
+provenance/clocks/assets, missing required bursts and failed capture manifests.
+The output links native PNGs, 480×270 area reductions, exact 600×400 native crops
+and four-frame sheets. It refuses to overwrite an existing gallery. The accepted wave-4 review is
+`artifacts/nextgen/g3-final-bold-ab/index.html`.
+
+The opaque HDR draw carries an RGBA8 oct-normal/identity/class attachment shared
+by AO and ink. Standard surfaces are registered before material warmup. Physical
+marine/alien identity shaders have a narrowly recognized adapter; other custom
+shaders and transparent/effect layers remain excluded. Keep actor submeshes under
+their registered root, never use per-actor shader defines, and preserve color-only
+effect writes. The actual Low HDR target must be prepared before readiness;
+Low ink-off/on transitions hold room preparation. `g3-ink-switches` exercises
+those transitions and rejects any post-prepare combat program creation.
+
+Adaptive scale and GPU lifecycle appear under the existing performance pipeline
+snapshot. Per-pass profiling suspends the total GPU probe and uses frame-driven
+adaptive fallback to avoid nested queries. The raw ANGLE Metal scopes in this
+shared-host run did not establish reliable additive pass attribution; consult
+`docs/nextgen/G3-GPU-NOTES.md` before quoting them as shader costs.
