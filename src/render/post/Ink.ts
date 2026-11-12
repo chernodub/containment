@@ -32,13 +32,21 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
   vec2 offset=vec2(cos(a),sin(a))*inkPixel*width;
   vec2 q=clamp(uv+offset,inkPixel,1.0-inkPixel);
   vec4 neighbor=texture2D(tGeometry,q);neighbor.zw*=255.0;
-  float d=texture2D(tDepth,q).x;
-  vec3 delta=viewPosition(q,d)-p;
   // Identity compares exact normalized-byte integers, never color/luminance edges.
   float different=step(.5,abs(center.z-neighbor.z));
   float surface=step(.5,neighbor.z)*step(1.0,neighbor.w)*step(neighbor.w,6.5);
   surface*=1.0-step(.01,abs(neighbor.z-floor(neighbor.z+.5)));
   surface*=1.0-step(.01,abs(neighbor.w-floor(neighbor.w+.5)));
+  // Actor silhouettes depend only on identity. Avoid eight unused depth reads
+  // and position reconstructions; major actor creases have their own kernel.
+  if(actor) { edge=max(edge,different*surface);continue; }
+  float d=texture2D(tDepth,q).x;
+  if(inkMode<1.5) {
+   float dz=abs(viewPosition(q,d).z-p.z);
+   edge=max(edge,mix(smoothstep(.10,.25,dz),smoothstep(.05,.15,dz),inkStrength)*surface);
+   continue;
+  }
+  vec3 delta=viewPosition(q,d)-p;
   float depthEdge=smoothstep(.10,.25,abs(delta.z));
   float graphicDepth=inkMode>1.5?smoothstep(.02,.065,abs(delta.z))*smoothstep(.006,.018,abs(dot(delta,normal))):smoothstep(.05,.15,abs(delta.z));
   depthEdge=mix(depthEdge,graphicDepth,inkStrength);
