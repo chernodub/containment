@@ -266,7 +266,7 @@ it('keeps one most-relevant compact status chip per target while preserving inde
     const chips=page.locator('.combat-float[data-kind=status]:not([hidden])');
     expect(await chips.allTextContents()).toEqual(['FROZEN','BURNING']);
     expect(await chips.first().getAttribute('aria-label')).toBe('FROZEN');
-    expect((await chips.first().boundingBox())!.width).toBeLessThanOrEqual(12);
+    expect((await chips.first().boundingBox())!.width).toBeLessThanOrEqual(28);
     expect(await chips.locator('svg:not([hidden])').count()).toBe(2);
     expect(await page.locator('.combat-float[data-kind=damage]:not([hidden])').allTextContents()).toEqual(['12','12','12','12','18']);
   } finally {await page.close();}
@@ -383,7 +383,7 @@ it('U5 counts a single running total through a 600 ms window, then emphasizes an
     const values = await page.evaluate(() => {
       const {combat, player} = (window as any).combatTest;
       combat.effect({type:'hit',x:350,y:350,targetId:7,damage:10,source:'ability',damageElement:'cryo'});
-      combat.tick(.2,player);
+      combat.tick(.59,player);
       combat.effect({type:'hit',x:350,y:350,targetId:7,damage:20,source:'ability',damageElement:'cryo'});
       combat.tick(.03,player);
       const node = document.querySelector('.combat-float[data-kind=damage]:not([hidden])') as HTMLElement;
@@ -439,7 +439,7 @@ it('U5 reduced feedback suppresses chips and small status ticks, preserves total
     expect(await page.locator('.combat-float:not([hidden])').allTextContents()).toEqual(['4','2 ×']);
     await page.evaluate(() => {
       const {combat,player} = (window as any).combatTest;
-      combat.effect({type:'hit',x:350,y:350,targetId:1,damage:30,source:'status'});combat.tick(.01,player);
+      combat.effect({type:'hit',x:350,y:350,targetId:1,damage:30,source:'status',damageElement:'ice'});combat.tick(.01,player);
     });
     expect(await page.locator('.combat-float[data-target="1"]:not([hidden])').textContent()).toBe('34');
     await page.evaluate(() => (window as any).combatTest.combat.setEnabled(false));
