@@ -98,11 +98,11 @@ ${kind === 'decal' ? `
   float along=dot(p,axis);float across=dot(p,crossAxis);
   float bend=sin(seed*3.7)*max(0.,along-.21)*.2+sin(seed*7.1)*max(0.,along-.58)*.42;
   float reach=.63+.32*fract(sin(seed*37.1)*437.13);
-  float active=smoothstep(.06,.15,along)*(1.-smoothstep(reach-.07,reach,along));
+  float splitCoverage=smoothstep(.06,.15,along)*(1.-smoothstep(reach-.07,reach,along));
   float groove=1.-smoothstep(.006,.018,abs(across-bend));
   float branch=1.-smoothstep(.004,.012,abs(across-bend-(along-.4)*(.35+sin(seed)*.15)));
-  cracks=max(cracks,max(groove,branch*smoothstep(.38,.46,along)*.65)*active);
-  lip=max(lip,(1.-smoothstep(.003,.009,abs(across-bend-.016)))*active);
+  cracks=max(cracks,max(groove,branch*smoothstep(.38,.46,along)*.65)*splitCoverage);
+  lip=max(lip,(1.-smoothstep(.003,.009,abs(across-bend-.016)))*splitCoverage);
  }
  }
  if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,lip*.35);c=mix(vec3(.009,.012,.014),vec3(.2,.13,.055),lip*.5);}
