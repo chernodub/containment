@@ -167,28 +167,35 @@ describe('Pyro presentation lifecycle and readability', () => {
     expect(flames.count).toBe(0); expect(kit.batches.smoke.mesh.count).toBe(0); dispose();
   });
 
-  it('charges Meltdown armor and local exhaust while leaving the aura open instead of building a fire ring', () => {
+  it.each(['high', 'low'] as const)('charges Meltdown armor and local exhaust while leaving the aura open instead of building a fire ring (%s)', tier => {
     const { kit, frame, step, dispose } = setup(), grade = vi.spyOn(kit, 'grade'), exhaust = vi.spyOn(kit, 'directedFlame');
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
     frame.snapshot = snapshot([zone({ ability: 'meltdown', radius: 130, attached: true })]);
     frame.game = { player: { x: 128, y: 160, vx: 0, vy: 0, angle: .1 }, bullets: [] } as never;
     step(.016);
     const flames = kit.batches.flame.mesh;
-    expect(flames.count).toBe(4); expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
+    expect(flames.count).toBe(tier === 'low' ? 2 : 4); expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i);
-      expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThan(.6);
+      expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThan(.65);
       expect(flames.geometry.getAttribute('abilityPriority').getX(i)).toBe(0);
     }
-    const shoulderVents = exhaust.mock.calls.filter(call => call[3] >= .25);
+    const shoulderVents = exhaust.mock.calls.filter(call => call[3] >= .3);
     expect(shoulderVents).toHaveLength(2);
     for (const call of shoulderVents) {
-      expect(call[1]).toBeGreaterThanOrEqual(1.08); expect(call[4]).toBeGreaterThan(.6);
-      expect(call[1] + call[4]).toBeLessThan(1.9);
+      expect(call[1]).toBeGreaterThanOrEqual(1.3); expect(call[4]).toBeGreaterThan(.45);
+      expect(call[1] + call[4]).toBeLessThanOrEqual(2);
+      // Exhaust is outboard of the helmet axis and behind the facing direction.
+      const dx = call[0] - 4, dz = call[2] - 5;
+      expect(dx * Math.cos(.1) + dz * Math.sin(.1)).toBeLessThan(-.25);
+      expect(Math.abs(-dx * Math.sin(.1) + dz * Math.cos(.1))).toBeGreaterThanOrEqual(.39);
     }
-    const backpackVents = exhaust.mock.calls.filter(call => call[3] < .25);
-    expect(backpackVents).toHaveLength(2);
-    for (const call of backpackVents) { expect(call[1]).toBeCloseTo(.9); expect(call[1] + call[4]).toBeLessThan(1.9); }
+    const backpackVents = exhaust.mock.calls.filter(call => call[3] < .3);
+    expect(backpackVents).toHaveLength(tier === 'low' ? 0 : 2);
+    for (const call of backpackVents) { expect(call[1]).toBeGreaterThanOrEqual(1); expect(call[1] + call[4]).toBeLessThan(1.9); }
     expect(shoulderVents[0][4]).not.toBe(shoulderVents[1][4]);
+    expect(scale(kit.batches.solid.mesh, 0).x).toBeGreaterThanOrEqual(.1);
+    expect(scale(kit.batches.solid.mesh, 2).y).toBeGreaterThanOrEqual(.1);
     expect(kit.counts.rings).toBe(0); expect(kit.batches.decal.mesh.count).toBe(0);
     dispose();
   });

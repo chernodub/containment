@@ -351,16 +351,16 @@ class PyroPresentation implements AbilityPresentation {
     // Charged seams and shoulder vents belong to the marine, so retain their silhouette priority.
     kit.impact();
     for (let side = -1; side <= 1; side += 2) {
-      const bx = x - c * .3 - s * side * .34, bz = z - s * .3 + c * side * .34;
-      kit.draw('solid', bx, .83, bz, .075, .68, .075, CORE, (.86 + pulse * .14) * fade);
-      kit.draw('spark', bx, 1.12, bz, .12, .17, 1, CORE, .9 * fade);
-      const height = side < 0 ? .72 : .64, base = side < 0 ? 1.15 : 1.08;
-      kit.directedFlame(bx, base, bz, side < 0 ? .28 : .25, height * (.95 + pulse * .05),
+      const bx = x - c * .3 - s * side * .4, bz = z - s * .3 + c * side * .4;
+      kit.draw('solid', bx, 1.1, bz, .11, .8, .11, CORE, (.9 + pulse * .1) * fade);
+      kit.draw('spark', bx, side < 0 ? 1.4 : 1.3, bz, .15, .17, 1, CORE, .96 * fade);
+      const height = side < 0 ? .55 : .5, base = side < 0 ? 1.4 : 1.3;
+      kit.directedFlame(bx, base, bz, side < 0 ? .32 : .3, height * (.95 + pulse * .05),
         exhaustAngle, moving ? 1.7 : 1.05, side + zone.id, .9 * fade, true);
-      if (!kit.low) kit.directedFlame(bx - c * .18, .9, bz - s * .18, .23, .55,
+      if (!kit.low) kit.directedFlame(bx - c * .18, 1.08, bz - s * .18, .27, .55,
         exhaustAngle, 1.45, side * 2.7, .78 * fade);
     }
-    kit.draw('solid', x - c * .3, 1.02, z - s * .3, .08, .1, .64, CORE, .95 * fade, -angle);
+    kit.draw('solid', x - c * .3, 1.34, z - s * .3, .12, .12, .8, CORE, .98 * fade, -angle);
     kit.grade(.65 * fade);
     kit.lightAt(zone.id, x, z, FIRE, 5 * fade, 6);
     if (emit) {
