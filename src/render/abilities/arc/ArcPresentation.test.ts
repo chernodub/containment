@@ -167,7 +167,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     ] } }, bullets: [{ kind: 'player', x: 160, y: 128, request: { angle: 0 } }] } as never;
     frame.snapshot = snapshot({ hostileTimeScale: .3, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
     step(.016);
-    expect(grade).toHaveBeenLastCalledWith(0, .9);
+    expect(grade).toHaveBeenLastCalledWith(0, .22);
     expect(ribbon.mock.calls.some(call => call[0] === 8 && call[2] === 5 && call[3] < 8)).toBe(true);
     expect(ribbon.mock.calls.some(call => call[0] === 5 && call[3] <= 3)).toBe(true);
     // Overclock is attached suit/weapon energy and a deck ripple, replacing the old dial shards.
@@ -176,8 +176,8 @@ describe('Arc presentation signatures and lifecycle', () => {
     expect(ribbon.mock.calls.filter(call => Math.hypot(call[0] - 4, call[2] - 4) < .5 && call[1] > .1).length).toBeGreaterThanOrEqual(7);
     expect(gust).toHaveBeenCalledTimes(tier === 'low' ? 3 : 4);
     expect(gust.mock.calls.every(call => call[7] === 0xb79cff)).toBe(true);
-    expect(ribbon.mock.calls.some(call => call[1] === 1.52 && (call[7] ?? 0) >= .09)).toBe(true);
-    expect(kit.batches.ghost.mesh.count).toBe(tier === 'low' ? 10 : 14);
+    expect(ribbon.mock.calls.some(call => call[1] === 1.52 && (call[7] ?? 0) >= .022 && (call[7] ?? 0) <= .032)).toBe(true);
+    expect(kit.batches.ghost.mesh.count).toBe(2);
     const calls = grade.mock.calls.length; frame.snapshot = snapshot(); step(.016);
     expect(grade.mock.calls).toHaveLength(calls); expect(kit.batches.front.mesh.count).toBe(0); dispose();
   });
@@ -293,7 +293,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     dispose();
   });
 
-  it.each(['high', 'low'] as const)('keeps two separated marine echoes and broad attached seams readable on %s', tier => {
+  it.each(['high', 'low'] as const)('keeps two separated marine echoes and localized electric armor edges readable on %s', tier => {
     const { kit, frame, step, dispose } = setup();
     kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
     const afterImage = vi.spyOn(kit, 'afterImage'), ribbon = vi.spyOn(kit, 'ribbon'), gust = vi.spyOn(kit, 'gust');
@@ -311,7 +311,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     const seams = ribbon.mock.calls.filter(call => call[9] === false && call[1] > .1);
     expect(seams).toHaveLength(8);
     for (const call of seams) {
-      expect(call[7]).toBeGreaterThanOrEqual(.09); expect(call[7]).toBeLessThanOrEqual(.12);
+      expect(call[7]).toBeGreaterThanOrEqual(.022); expect(call[7]).toBeLessThanOrEqual(.032);
       expect(Math.hypot(call[0] - 4, call[2] - 4)).toBeLessThan(1);
     }
     afterImage.mockClear(); step(.14);
@@ -331,7 +331,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     frame.snapshot = active;
     step(.2); step(.2); // Refresh a new ghost while the sustained ultimate is already .4s old.
     const ghosts = kit.batches.ghost.mesh, priority = ghosts.geometry.getAttribute('abilityPriority');
-    expect(ghosts.count).toBe(tier === 'low' ? 10 : 14);
+    expect(ghosts.count).toBe(2);
     for (let i = 0; i < ghosts.count; i++) expect(priority.getX(i)).toBe(1);
     const pose = ghosts.instanceMatrix.array.slice();
     step(0);

@@ -232,8 +232,8 @@ export class BreacherPresentation implements AbilityPresentation {
     const z = player ? player.y / UNIT : p.z + Math.sin(p.angle) * p.size * t;
     const fade = Math.max(0, 1 - p.age / p.life), nx = Math.cos(p.angle), nz = Math.sin(p.angle), sx = -nz, sz = nx;
     // One pressure prow carried by the marine, with an asymmetric hot leading keel.
-    this.kit.draw('shard', x + nx * .65, .83, z + nz * .65,
-      .8, .68, .24, AMBER, fade * .3, Math.PI / 2 - p.angle, .06);
+    this.kit.draw('solid', x + nx * .65, .83, z + nz * .65,
+      1.6, 1.36, .48, STEEL, fade * .7, Math.PI / 2 - p.angle, .06);
     for (let side = -1; side <= 1; side += 2) {
       this.kit.ribbon(x + sx * side * .75 + nx * .05, .38, z + sz * side * .75 + nz * .05,
         x + nx * 1.05, 1.05, z + nz * 1.05, side < 0 ? CORE : AMBER, .045, fade * .85, false);
@@ -252,9 +252,9 @@ export class BreacherPresentation implements AbilityPresentation {
     const t = p.age / p.life, fade = 1 - t, nx = Math.cos(p.angle), nz = Math.sin(p.angle);
     const lead = .3 + t * .6, x = p.x + nx * lead, z = p.z + nz * lead;
     // An upright forward cap and two dust shoulders retain a directional shove, never a new ground disc.
-    this.kit.draw('shard', x, .82, z, p.size, .7 * (1 - t * .25), .26, AMBER, fade * .46, Math.PI / 2 - p.angle);
-    if (!this.kit.low) this.kit.draw('shard', x - nx * .12, .76, z - nz * .12,
-      p.size * .85, .55, .16, CORE, fade * .23, Math.PI / 2 - p.angle);
+    this.kit.draw('solid', x, .82, z, p.size * 2, 1.4 * (1 - t * .25), .52, STEEL, fade * .6, Math.PI / 2 - p.angle);
+    if (!this.kit.low) this.kit.draw('solid', x - nx * .12, .76, z - nz * .12,
+      p.size * 1.7, 1.1, .32, AMBER, fade * .23, Math.PI / 2 - p.angle);
     for (let side = -1; side <= 1; side += 2) {
       const offset = side * p.size * .8;
       this.kit.draw('smoke', x - nz * offset, .4 + t * .25, z + nx * offset,
@@ -296,8 +296,6 @@ export class BreacherPresentation implements AbilityPresentation {
       p.wallDone = true;
       this.railWallImpact(p, frame);
     }
-    this.kit.draw('solid', p.x + nx * p.size / 2, .025, p.z + nz * p.size / 2,
-      p.size, .012, .28, 0x252420, fade * .55, -p.angle);
     if (p.age > .85) return;
     if (p.age < .36) {
       const rings = this.kit.low ? 2 : 3, shock = 1 - p.age / .36;
@@ -381,51 +379,39 @@ export class BreacherPresentation implements AbilityPresentation {
     const age = Math.max(0, (e.durationMs - e.remainingMs) / 1000);
     this.kit.sustain(age);
     const growth = this.kit.reducedMotion ? 1 : Math.min(1, age / .14), h = 2.4 * growth;
-    const fade = Math.min(1, e.remainingMs / 180), nodes = this.kit.low ? 3 : 5;
+    const fade = Math.min(1, e.remainingMs / 180);
     const flicker = e.remainingMs < 1000 && !this.kit.reducedMotion && !this.kit.low
-      ? .82 + Math.sin(this.kit.time * 19 + e.id) * .08 : 1;
-    const health = e.health / Math.max(1, e.maxHealth);
-    // One continuous field and projector bed; no independently repeated translucent panels.
+      ? .86 + Math.sin(this.kit.time * 19 + e.id) * .05 : 1;
     this.kit.draw('solid', x, .055, z, thickness * .92, .1, length, STEEL, .96 * fade, -e.angle);
-    if (growth > 0) {
-      this.kit.draw('solid', x, h / 2 + .06, z, thickness * .72, h, length, EDGE, .22 * fade * flicker, -e.angle);
-      for (let side = -1; side <= 1; side += 2) {
-        const px = x + nx * thickness * .36 * side, pz = z + nz * thickness * .36 * side;
-        this.kit.ribbon(px - ux * length * .5, h + .06, pz - uz * length * .5,
-          px + ux * length * .5, h + .06, pz + uz * length * .5, EDGE, .022, .82 * fade * flicker, false);
-      }
-      for (let end = -1; end <= 1; end += 2) {
-        const px = x + ux * length * .5 * end, pz = z + uz * length * .5 * end;
-        this.kit.ribbon(px - nx * thickness * .36, h + .06, pz - nz * thickness * .36,
-          px + nx * thickness * .36, h + .06, pz + nz * thickness * .36, EDGE, .022, .82 * fade, false);
-      }
-    }
-    for (let i = 0; i < nodes; i++) {
-      const along = (i / (nodes - 1) - .5) * Math.max(0, length - thickness * .5);
-      const px = x + ux * along, pz = z + uz * along;
-      this.kit.draw('solid', px, .115, pz, thickness, .22, thickness * .5, STEEL, fade, -e.angle);
-      this.kit.draw('solid', px + nx * thickness * .08, .245, pz + nz * thickness * .08,
-        thickness * .64, .045, thickness * .33, EDGE, .8 * fade, -e.angle);
-      if (growth <= 0) continue;
-      const load = slot.pulse * Math.max(0, 1 - Math.abs(along - slot.contact) / Math.max(.4, length * .27));
-      this.kit.ribbon(px, .26, pz, px, h + .055, pz, AMBER, .008,
-        (.16 + load * 1.8) * fade * flicker, false);
+    // Two armored end assemblies hold the articulated projected cover; no repeated support railing.
+    for (let side = -1; side <= 1; side += 2) {
+      const along = side * (length * .5 - thickness * .35), px = x + ux * along, pz = z + uz * along;
+      this.kit.draw('solid', px, h * .43 + .08, pz, thickness * .95, h * .86, thickness * .66,
+        0x293e4b, fade, -e.angle);
+      this.kit.draw('solid', px + nx * thickness * .08, h * .83 + .09, pz + nz * thickness * .08,
+        thickness * .78, h * .11, thickness * .67, EDGE, fade * .94, -e.angle);
+      if (growth > 0) this.kit.ribbon(px + nx * thickness * .39, .25, pz + nz * thickness * .39,
+        px + nx * thickness * .39, h * .77, pz + nz * thickness * .39, EDGE, .025, fade * .8, false);
     }
     if (growth > 0) {
-      const columns = this.kit.low ? 3 : 6, cellWidth = length / columns * .43;
-      const rows = this.kit.low ? 1 : 2, cellHeight = Math.min(.31, h * .17);
-      // Sparse hex cells share the continuous field. Only cells near the loaded node brighten.
-      for (let column = 0; column < columns; column++) for (let row = 0; row < rows; row++) {
-        const along = Math.max(-length * .5 + cellWidth, Math.min(length * .5 - cellWidth, ((column + .5 + (row % 2) * .15) / columns - .5) * length));
-        const local = slot.pulse * Math.max(0, 1 - Math.abs(along - slot.contact) / Math.max(.4, length * .16));
-        if (local <= .04) continue;
-        const centerY = h * (this.kit.low ? .5 : .3 + row * .4) + .06;
-        const px = x + ux * along + nx * thickness * .37, pz = z + uz * along + nz * thickness * .37;
-        for (let edge = 0; edge < 6; edge++) {
-          const a = edge * Math.PI / 3, b = (edge + 1) * Math.PI / 3;
-          this.kit.ribbon(px + ux * Math.cos(a) * cellWidth, centerY + Math.sin(a) * cellHeight, pz + uz * Math.cos(a) * cellWidth,
-            px + ux * Math.cos(b) * cellWidth, centerY + Math.sin(b) * cellHeight, pz + uz * Math.cos(b) * cellWidth,
-            local > .04 ? CORE : EDGE, .006 + local * .02, (.12 + health * .06 + local * 2.5) * fade * flicker, false);
+      const panels = this.kit.low ? 2 : 3, usable = Math.max(.01, length - thickness * .7), panel = usable / panels;
+      for (let i = 0; i < panels; i++) {
+        const along = (i + .5) * panel - usable * .5;
+        const offset = (i % 2 ? -.07 : .07) * thickness;
+        const px = x + ux * along + nx * offset, pz = z + uz * along + nz * offset;
+        const top = h * (i === 1 ? .95 : 1) + .06;
+        // Broad value body, solid luminous top edge, lower armored skirt: cover reads at thumbnail scale.
+        this.kit.draw('solid', px, top * .54, pz, thickness * .5, top * .83, panel * .99,
+          0x487d91, .5 * fade * flicker, -e.angle);
+        this.kit.draw('solid', px, top, pz, thickness * .65, .105 * growth, panel,
+          0xc3eff8, .95 * fade * flicker, -e.angle);
+        this.kit.draw('solid', px, .22 * growth, pz, thickness * .58, .27 * growth, panel * .99,
+          0x2d505d, .88 * fade, -e.angle);
+        const load = slot.pulse * Math.max(0, 1 - Math.abs(along - slot.contact) / Math.max(.4, length * .4));
+        if (load > .04) {
+          const fx = px + nx * thickness * .28, fz = pz + nz * thickness * .28;
+          this.kit.ribbon(fx - ux * panel * .25, top * .68, fz - uz * panel * .25,
+            fx + ux * panel * .18, top * .43, fz + uz * panel * .18, CORE, .025, load * 3 * fade, false);
         }
       }
     }
