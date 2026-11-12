@@ -303,6 +303,8 @@ test('debrief renders nested authoritative counters, source totals and accuracy,
     expect(await page.locator('.hero-stats>div').count()).toBe(4);
     expect(await page.locator('[data-stat]').count()).toBe(16);
     expect(await page.locator('.damage-source-bar i').count()).toBe(4);
+    expect(await page.locator('.result-panel').evaluate(node=>node.scrollHeight<=node.clientHeight+1)).toBe(true);
+    expect(await page.locator('.result-actions').evaluate(node=>node.getBoundingClientRect().bottom<=innerHeight)).toBe(true);
     expect(await page.locator('.damage-source-legend [data-stat] b').evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).color==='rgb(240, 251, 255)'))).toBe(true);
     expect(await page.locator('.debrief-build').isVisible()).toBe(true);
     expect(await page.locator('[data-stat=kills] b').innerText()).toBe('2');

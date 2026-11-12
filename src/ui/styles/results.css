@@ -108,3 +108,13 @@
 #overlay .damage-source-legend [data-stat='ability']::before { background: repeating-linear-gradient(90deg,#c7d7df 0 8px,#8d9fa9 8px 10px); }
 #overlay .damage-source-legend [data-stat='status']::before { background: repeating-linear-gradient(135deg,#c7d7df 0 3px,#647985 3px 6px); }
 #overlay .damage-source-legend [data-stat='boon']::before { background: repeating-linear-gradient(0deg,#aabcc6 0 2px,#415967 2px 5px); }
+
+/* Expanded telemetry keeps every counter and native action visible at 720p. */
+@media (max-height:800px) {
+  #overlay .debrief-panel:has(.result-details[open]) .debrief-heading h2 {font-size:42px;margin:8px 0 0;}
+  #overlay .debrief-panel:has(.result-details[open]) .result-details>summary {padding:8px 4px;margin-bottom:8px;}
+  #overlay .debrief-panel:has(.result-details[open]) .hero-stats {margin:12px 0;padding:10px 0;}
+  #overlay .debrief-panel:has(.result-details[open]) .secondary-stat-groups {margin-top:12px;gap:16px;}
+  #overlay .debrief-panel:has(.result-details[open]) .result-actions {margin-top:12px;padding-top:10px;}
+  #overlay .debrief-panel .damage-source-note {margin:4px 0 8px;font-size:12px;line-height:1.4;}
+}
