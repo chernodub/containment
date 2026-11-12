@@ -70,6 +70,14 @@ export interface AbilityServices {
     /** Existing HDR composite; no extra fullscreen pass or dynamic material. */
     presentation?: { setAbilityPresentation(exposure: number, warm: number, cool: number): void };
 }
+/** Frame epochs avoid clearing/repopulating a Set backing table in combat. */
+class StatusOwnership {
+    private readonly frames = new WeakMap<T.Object3D, number>();
+    private epoch = 0;
+    clear(): void { this.epoch++; }
+    add(root: T.Object3D): void { this.frames.set(root, this.epoch); }
+    has(root: T.Object3D): boolean { return this.frames.get(root) === this.epoch; }
+}
 /** Shared element language. Coordinates are render metres (simulation / 32), times seconds. */
 export class ElementKit {
     readonly root = new T.Group();
@@ -77,7 +85,7 @@ export class ElementKit {
     readonly rings = new FriendlyBoundaryBatch(this.root, 160);
     readonly ribbons = new AbilityLightningBatch(this.root, 2048);
     /** Claimed only for targets drawn this frame; legacy status batches cover overflow. */
-    readonly statusOwners = new Set<T.Object3D>();
+    readonly statusOwners = new StatusOwnership();
     statusActor(id: number): StatusActor | undefined { return this.services?.statusActor?.(id); }
     time = 0;
     low = false;

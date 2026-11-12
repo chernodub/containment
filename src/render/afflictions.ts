@@ -76,7 +76,7 @@ void main(){vec2 p=localUV*2.0-1.0;float edge=.72+.12*sin(p.y*9.0+p.x*5.0);float
   const ix=.5/(image?.width??2048),iy=.5/(image?.height??1024);
   a.setXYZW(mesh.count,(frame%cols)/cols+ix,1-(Math.floor(frame/cols)+1)/rows+iy,1/cols-2*ix,1/rows-2*iy);mesh.geometry.getAttribute('particleAlpha').setX(mesh.count,alpha);this.put(mesh,x,y,z,w,h,1,camera);
  }
- update(roots:Iterable<T.Object3D>,camera:T.Camera,time:number,abilityOwners?:ReadonlySet<T.Object3D>){
+ update(roots:Iterable<T.Object3D>,camera:T.Camera,time:number,abilityOwners?:{has(root:T.Object3D):boolean}){
   if(this.options.reducedMotion)time=0;const low=this.options.tier==='low',fireCount=low?3:6,poisonCount=low?2:4,emberCount=low?2:6,dropCount=low?2:4;
   for(const mesh of this.meshes)mesh.count=0;let actors=0;
   for(const root of roots){const d=root.userData.affliction as Attachment|undefined;if(!d||!root.visible)continue;const s=d.status;if(!(s.burning||s.poisoned||s.chilled||s.frozen))continue;if(actors++>=this.capacity)break;
