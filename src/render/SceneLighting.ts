@@ -8,7 +8,8 @@ import {LightPool} from './lighting/LightPool';
 import {MarineLamp} from './lighting/MarineLamp';
 import {roomComposition,type RoomComposition} from './lighting/RoomCompositions';
 
-type Fixture={x:number;y:number;z:number;color:number;nativeColor?:boolean;poolAngle?:number};
+type Fixture={x:number;y:number;z:number;color:number;nativeColor?:boolean;poolAngle?:number;poolStyle?:number;gain?:number};
+const APERTURE_STYLE:Readonly<Record<ShipEnvironment,number>>={cryogenics:0,habitation:1,security:1,cargo:2,communications:2,engineering:2,maintenance:0,infested:3,containment:1,reactor:4};
 export type ReactorStaging=Readonly<{coreX:number;coreY:number;coreZ:number;coreColor:number;coreRadius:number}>;
 /** Stable room lights, motivated practicals and a bounded combat-light pool. */
 export class SceneLighting {
@@ -46,7 +47,7 @@ export class SceneLighting {
   this.key.castShadow=tier==='high'&&shadows!=='off';const size=shadows==='low'?512:1024;if(this.key.shadow.mapSize.x!==size){this.key.shadow.map?.dispose();this.key.shadow.map=null;this.key.shadow.mapSize.set(size,size);this.key.shadow.needsUpdate=true;}this.pool.setQuality(tier,tier==='high'&&dynamicLights);
   this.blast.visible=dynamicLights;this.lamp.setQuality(tier==='high',atmosphere);
   if(!dynamicLights){this.blastLife=0;this.blast.intensity=0;}
-  for(let i=0;i<this.fixtures.length;i++){this.fixtures[i].visible=tier==='high'||i<2;if(!this.fixtures[i].visible)this.fixtures[i].intensity=0;}
+  for(let i=0;i<this.fixtures.length;i++){this.fixtures[i].visible=tier==='high'||i<2;if(!this.fixtures[i].visible){this.fixtures[i].intensity=0;this.practicalShapes[i].z=0;}}this.playerX=NaN;
  }
  loadRoom(world:T.Group,width:number,height:number,environment?:ShipEnvironment,templateId?:string){
   this.width=width;this.height=height;this.bossArena=templateId==='reactor-vault';this.manualConsole=templateId==='manual-control-chamber';this.overloadFloor=templateId==='overload-floor';this.composition=roomComposition(templateId);this.menuPresentation=false;
@@ -111,9 +112,9 @@ export class SceneLighting {
  private setFixtureShape(light:T.PointLight,fixture:Fixture,index:number){
   const angle=fixture.poolAngle??Math.atan2(this.width/2-fixture.x,this.height/2-fixture.z);
   light.userData.poolAngle=angle;
-  const style={cryogenics:0,habitation:1,security:1,cargo:2,communications:2,engineering:2,maintenance:0,infested:3,containment:1,reactor:4}[this.mood.environment];light.userData.poolStyle=style;
+  const style=fixture.poolStyle??APERTURE_STYLE[this.mood.environment];light.userData.poolStyle=style;light.userData.fixtureGain=fixture.gain??1;
   // Long axis follows the visible emitter toward the room; cross-axis stays narrow.
-  this.practicalShapes[index].set(Math.sin(angle),Math.cos(angle),style===1?1.15:style===3?.72:.82,style===3?2.7:3.4);
+  this.practicalShapes[index].set(Math.sin(angle),Math.cos(angle),light.visible?(style===1?1.15:style===3?.72:.82):0,style===3?2.7:3.4);
  }
  setPlayer(x:number,z:number,aimRadians:number,camera?:T.Camera){
   this.lamp.update(x,z,aimRadians);
@@ -169,7 +170,7 @@ export class SceneLighting {
    const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.72+.28*Math.sin(phase*1.4):behavior==='reactor'?(light.userData.reactorCore?.9+.1*Math.sin(this.time*2.1):.65+.35*Math.pow(Math.max(0,Math.cos(this.time*1.2-i*Math.PI/2)),4)):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
    const climax=this.mood.environment==='reactor'&&!!this.staging&&!this.bossArena;if(climax&&i>0){light.color.setHex(0xff3018);light.distance=4.2;}
    const failed=this.mood.environment==='habitation'&&i===1?.35+.65*Math.pow(Math.min(1,Math.max(0,Math.sin(this.time*5.3)+.35*Math.sin(this.time*17.1))),2):1;
-   light.intensity=(light.userData.reactorCore?this.bossArena?25:14:climax?65:this.mood.practical.intensity*this.composition.practicalGain)*(1+(animated*failed-1)*this.flashIntensity);
+   light.intensity=(light.userData.reactorCore?this.bossArena?25:14:climax?65:this.mood.practical.intensity*this.composition.practicalGain)*(light.userData.fixtureGain??1)*(1+(animated*failed-1)*this.flashIntensity);
   }
  }
  /** Reuses the prepared fixed lights; menu transitions create no shader topology. */

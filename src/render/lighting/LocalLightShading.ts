@@ -80,10 +80,12 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
  vec3 floorDeltaView=pointLight.position-geometryPosition;
  vec2 floorDelta=vec2(dot(floorDeltaView,viewMatrix[0].xyz),dot(floorDeltaView,viewMatrix[2].xyz));
  vec4 aperture=roomFloorPracticalShapes[UNROLLED_LOOP_INDEX];
+ if(aperture.z>0.0){
  vec2 chart=vec2(dot(floorDelta,vec2(aperture.y,-aperture.x)),dot(floorDelta,aperture.xy));
  float across=abs(chart.x+chart.y*.10);
  float slit=(1.0-smoothstep(aperture.z*.50,aperture.z*1.35,across))*(1.0-smoothstep(aperture.w*.40,aperture.w,abs(chart.y)));
  directLight.color*=.12+slit*.40;
+ }
 #endif
 `;
   const nearField={value:['environment-floor','painted-steel-deck','annulus-deck','shaft-deck'].includes(material.name)?3.24:9};

@@ -94,6 +94,7 @@ export function addInteriorPracticals(world: T.Group, template: InteriorPlan, en
   }
   if (!anchors.length) return;
   world.userData.interiorPracticals = true;
+  const breached=world.getObjectByName('g2-world-dressing')?.userData.signature==='breached-loading-bay';
   const organic = environment === 'infested';
   const geometry = organic ? organicFissureGeometry().clone() : new T.BoxGeometry(1, 1, 1);
   const material = new T.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: organic ? .48 : 1.5, roughness: .45, metalness: .15 });
@@ -110,8 +111,8 @@ export function addInteriorPracticals(world: T.Group, template: InteriorPlan, en
     const {point:anchor,tiny} = anchors[i];
     const tint = organic ? i % 3 === 1 ? 0xdc68ca : 0xa1ef72 : environment === 'communications' ? i % 2 ? 0x58e4bc : 0x69d9ef : environment === 'security' ? 0xe8f1ff : environment === 'containment' && i % 2 ? 0xe5eaff : getEnvironmentMood(environment).practical.color;
     dummy.rotation.set(0,0,0);dummy.position.copy(anchor); dummy.position.y += .045; dummy.scale.set(organic?tiny?.05:.17:tiny?.12:.65,organic?tiny?.065:.14:.09,organic?tiny?.05:.2:tiny?.12:.42); dummy.updateMatrix(); housings.setMatrixAt(i, dummy.matrix);
-    dummy.position.y += organic ? tiny?.045:.12 : .09;if(organic)dummy.rotation.z=Math.PI/2;dummy.scale.set(tiny?organic?.05:.09:organic?.1:environment==='communications'?.12:.5, organic?tiny?.06:.19:.08, tiny?organic?.05:.09:organic?.17:environment==='communications'?.1:.25); dummy.updateMatrix(); emitters.setMatrixAt(i, dummy.matrix); emitters.setColorAt(i, color.setHex(tint));
-    fixtures.push({ x: dummy.position.x, y: dummy.position.y, z: dummy.position.z, color: tint, nativeColor: true });
+    dummy.position.y += organic ? tiny?.045:.12 : .09;if(organic)dummy.rotation.z=Math.PI/2;dummy.scale.set(tiny?organic?.05:.09:organic?.1:environment==='communications'?.12:.5, organic?tiny?.06:.19:.08, tiny?organic?.05:.09:organic?.17:environment==='communications'?.1:.25); dummy.updateMatrix(); emitters.setMatrixAt(i, dummy.matrix); emitters.setColorAt(i, color.setHex(tint).multiplyScalar(breached?(i%2?.32:.68):1));
+    fixtures.push({ x: dummy.position.x, y: dummy.position.y, z: dummy.position.z, color: tint, nativeColor: true, poolAngle:Math.PI/2, poolStyle:organic?3:environment==='habitation'?1:2, gain:breached?(i%2?.32:.68):1 });
   }
   for (const mesh of [housings, emitters]) { mesh.frustumCulled = false; mesh.instanceMatrix.needsUpdate = true; mesh.geometry.addEventListener('dispose', () => mesh.dispose()); }
   world.add(housings, emitters);
