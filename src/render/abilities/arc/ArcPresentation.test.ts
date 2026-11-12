@@ -38,7 +38,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     fx.event(event(), 64, 96);
     fx.event(event({ targetX: 256, targetY: 128 }), 192, 96);
     fx.event(event({ targetX: 320, targetY: 160 }), 256, 128);
-    const cores = beam.mock.calls.filter(call => call[7] === .012);
+    const cores = beam.mock.calls.filter(call => call[7] === .045);
     expect(cores).toHaveLength(3);
     expect(cores.map(call => call[10])).toEqual([0, .04, .08]);
     expect(cores[1].slice(0, 6)).toEqual([6, .95, 3, 8, .75, 4]);
@@ -64,7 +64,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     dispose();
   });
 
-  it('uses exact live marine-link endpoints and dims decorative corona on Low', () => {
+  it('uses exact live marine-link endpoints and retains readable cable width on Low', () => {
     const { kit, frame, step, dispose } = setup();
     const ribbon = vi.spyOn(kit, 'ribbon');
     frame.snapshot = snapshot({ links: [{ id: 1, ability: 'tesla-pylon', element: 'arc', x: 32, y: 64, targetX: 192, targetY: 128, width: 28 }] });
@@ -73,7 +73,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     expect(ribbon).toHaveBeenCalledOnce();
     kit.setOptions(GRAPHICS_PRESETS.low, 'low', false); ribbon.mockClear(); step(0);
     expect(ribbon).toHaveBeenCalledOnce(); expect(ribbon.mock.calls[0][9]).toBe(true);
-    expect(ribbon.mock.calls[0][7]).toBeLessThanOrEqual(.012);
+    expect(ribbon.mock.calls[0][7]).toBe(.025);
     dispose();
   });
 
@@ -161,8 +161,11 @@ describe('Arc presentation signatures and lifecycle', () => {
     expect(grade).toHaveBeenLastCalledWith(0, .9);
     expect(ribbon.mock.calls.some(call => call[0] === 8 && call[2] === 5 && call[3] < 8)).toBe(true);
     expect(ribbon.mock.calls.some(call => call[0] === 5 && call[3] <= 3)).toBe(true);
-    expect(kit.batches.front.mesh.count).toBe(1);
-    expect(kit.batches.shard.mesh.count).toBeGreaterThanOrEqual(8);
+    // Overclock is attached suit/weapon energy and a deck ripple, replacing the old dial shards.
+    expect(kit.batches.front.mesh.count).toBe(0);
+    expect(kit.batches.shard.mesh.count).toBe(0);
+    expect(ribbon.mock.calls.filter(call => Math.hypot(call[0] - 4, call[2] - 4) < .5 && call[1] > .1).length).toBeGreaterThanOrEqual(7);
+    expect(ribbon.mock.calls.some(call => call[1] === .055 && call[4] === .055)).toBe(true);
     const calls = grade.mock.calls.length; frame.snapshot = snapshot(); step(.016);
     expect(grade.mock.calls).toHaveLength(calls); expect(kit.batches.front.mesh.count).toBe(0); dispose();
   });
@@ -199,4 +202,74 @@ describe('Arc presentation signatures and lifecycle', () => {
     for (const call of trails) expect(Math.hypot(call[3] - call[0], call[5] - call[2])).toBeLessThanOrEqual(1.501);
     expect(ribbon.mock.calls.some(call => call[0] === 10)).toBe(false); dispose();
   });
+
+  it('attaches Overclock gun energy to the visible animated muzzle and follows weapon switches', () => {
+    const { kit, frame, step, dispose } = setup();
+    const marine = new T.Group(), weaponA = new T.Group(), weaponB = new T.Group();
+    const muzzleA = new T.Object3D(), muzzleB = new T.Object3D();
+    muzzleA.name = muzzleB.name = 'muzzle'; muzzleA.position.set(1.2, 1.4, .1); muzzleB.position.set(.9, 1.1, .2);
+    weaponA.add(muzzleA); weaponB.add(muzzleB); marine.add(weaponA, weaponB); marine.position.set(4, 0, 4); weaponB.visible = false;
+    frame.marine = marine;
+    frame.game = { player: { x: 128, y: 128, angle: 0, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [] } as never;
+    frame.snapshot = snapshot({ hostileTimeScale: .3, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
+    const ribbon = vi.spyOn(kit, 'ribbon'); step(.016);
+    expect(ribbon.mock.calls.some(call => call[3] === 5.2 && call[4] === 1.4 && call[5] === 4.1)).toBe(true);
+    weaponA.visible = false; weaponB.visible = true; ribbon.mockClear(); step(.016);
+    expect(ribbon.mock.calls.some(call => call[3] === 4.9 && call[4] === 1.1 && call[5] === 4.2)).toBe(true);
+    expect(ribbon.mock.calls.some(call => call[3] === 5.2 && call[4] === 1.4)).toBe(false);
+    dispose();
+  });
+
+  it('masks sustained cables/world echoes while preserving attached suit and contact signals', () => {
+    const { kit, frame, fx, step, dispose } = setup();
+    const samples: { y: number; weight: number; lightning: boolean }[] = [];
+    const ribbon = kit.ribbon.bind(kit);
+    vi.spyOn(kit, 'ribbon').mockImplementation((...args) => { samples.push({ y: args[1], weight: kit.priorityWeight, lightning: args[9] ?? true }); ribbon(...args); });
+    frame.game = { player: { x: 128, y: 128, angle: 0, vx: 100, vy: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [] } as never;
+    frame.snapshot = snapshot({ hostileTimeScale: .3, links: [{ id: 1, ability: 'tesla-pylon', element: 'arc', x: 32, y: 64, targetX: 192, targetY: 128, width: 28 }], overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
+    step(.4);
+    expect(samples.some(sample => sample.y === 1.5 && sample.weight === 1 && sample.lightning)).toBe(true);
+    expect(samples.some(sample => sample.y === .055 && sample.weight === 1)).toBe(true);
+    expect(samples.some(sample => sample.y === 1.52 && sample.weight === 0)).toBe(true);
+    expect(kit.batches.ghost.mesh.count).toBeGreaterThan(0);
+    expect(kit.priorityWeight).toBe(0);
+    samples.length = 0;
+    fx.event(event({ targetX: 320, targetY: 128 }), 192, 128); step(.016);
+    expect(samples.some(sample => sample.y === .55 && sample.weight === 0)).toBe(true);
+    dispose();
+  });
+
+  it('leaves hostile projectiles to their danger presentation during time dilation', () => {
+    const { kit, frame, step, dispose } = setup();
+    const ribbon = vi.spyOn(kit, 'ribbon');
+    frame.game = { player: { x: 128, y: 128, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [
+      { kind: 'hazard', x: 320, y: 224, request: { angle: 0 } },
+    ] } as never;
+    frame.snapshot = snapshot({ hostileTimeScale: .3, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
+    step(.016);
+    expect(ribbon.mock.calls.some(call => call[0] === 10 && call[2] === 7)).toBe(false);
+    dispose();
+  });
+
+  it.each(['high', 'low'] as const)('freezes Overclock suit, muzzle and pooled marine echoes at zero delta on %s', tier => {
+    const { scene, kit, frame, step, dispose } = setup();
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    const inventory = new Set<unknown>();
+    scene.traverse(node => { if (node instanceof T.Mesh) { inventory.add(node.geometry); inventory.add(node.material); } });
+    frame.game = { player: { x: 128, y: 128, angle: .6, vx: 100, vy: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [] } as never;
+    frame.snapshot = snapshot({ hostileTimeScale: .3, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
+    step(.12);
+    expect(kit.batches.ghost.mesh.count).toBeGreaterThan(0);
+    const ribbons = kit.ribbons.mesh.instanceMatrix.array.slice(), ghosts = kit.batches.ghost.mesh.instanceMatrix.array.slice();
+    step(0);
+    expect(kit.ribbons.mesh.instanceMatrix.array).toEqual(ribbons);
+    expect(kit.batches.ghost.mesh.instanceMatrix.array).toEqual(ghosts);
+    const after = new Set<unknown>();
+    scene.traverse(node => { if (node instanceof T.Mesh) { after.add(node.geometry); after.add(node.material); } });
+    expect(after).toEqual(inventory);
+    frame.snapshot = snapshot(); step(.01);
+    expect(kit.ribbons.mesh.count).toBe(0); expect(kit.batches.ghost.mesh.count).toBe(0);
+    dispose();
+  });
+
 });
