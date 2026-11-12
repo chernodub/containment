@@ -4,18 +4,38 @@ import type {AbilitiesSnapshot, AbilitySlot, RigId} from '../game/abilities/cont
 import {GRAPHICS_PRESETS, resolveGraphicsOptions, type GraphicsOptions} from '../render/graphicsOptions';
 import type {RunStatsSnapshot} from '../game/abilities/RunStats';
 import type {GraphicsTier} from '../render/FrameBudget';
+export {getShopProjection} from './shopProjection';
 
 type NextRenderer = DepthRenderer & {
   graphicsOptions?: GraphicsOptions;
   setGraphicsOptions?: (options: Partial<GraphicsOptions>) => void;
   worldToScreen?: (x: number, y: number, height?: number) => {x: number; y: number};
+  setHudInsets?: (insets: HudInsets) => void;
 };
+
+export type HudInsets = Readonly<{top: number; right: number; bottom: number; left: number}>;
+const hudInsets = new WeakMap<DepthRenderer, HudInsets>();
+
+/** CSS-pixel edge occupancy, independent of DPR/render scale. Legacy renderers safely ignore it. */
+export function setHudInsets(renderer: DepthRenderer, value: HudInsets): void {
+  const hook = (renderer as NextRenderer).setHudInsets;
+  if (typeof hook !== 'function') return;
+  const top = Number.isFinite(value.top) ? Math.max(0, value.top) : 0;
+  const right = Number.isFinite(value.right) ? Math.max(0, value.right) : 0;
+  const bottom = Number.isFinite(value.bottom) ? Math.max(0, value.bottom) : 0;
+  const left = Number.isFinite(value.left) ? Math.max(0, value.left) : 0;
+  const previous = hudInsets.get(renderer);
+  if (previous?.top === top && previous.right === right && previous.bottom === bottom && previous.left === left) return;
+  const next = {top, right, bottom, left};
+  hudInsets.set(renderer, next);
+  hook.call(renderer, next);
+}
 
 export type UiFixture = Readonly<{
   phase?: string;
   abilities?: AbilitiesSnapshot | null;
   stats?: RunStatsSnapshot;
-  preferences?: Readonly<{combatText?: boolean; radar?: boolean}>;
+  preferences?: Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean}>;
 }>;
 const fixtures = new WeakMap<DepthGame, UiFixture>();
 const graphics = new WeakMap<DepthRenderer, GraphicsOptions>();
@@ -62,7 +82,7 @@ export function getRunStats(game: DepthGame): RunStatsSnapshot {
 }
 
 /** Presentation fixture overrides stay separate from persisted player preferences. */
-export function getUiPreferences<T extends Readonly<{combatText?: boolean; radar?: boolean}>>(game: DepthGame, defaults: T): Readonly<{combatText?: boolean; radar?: boolean}> {
+export function getUiPreferences<T extends Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean}>>(game: DepthGame, defaults: T): Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean}> {
   return fixtures.get(game)?.preferences ?? defaults;
 }
 

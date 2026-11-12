@@ -1,5 +1,5 @@
 import {getCombatDamageElement} from '../gameAdapter';
-import { invalidateHudLayout } from './layout';
+import { invalidateHudLayout, getHudInsets, beginHudOcclusion, markHudOcclusion, finishHudOcclusion, clearHudOcclusion } from './layout';
 import type { DepthGame } from '../../DepthGame';
 import type { DepthRenderer } from '../../render/DepthRenderer';
 import { familyCount } from '../../game/roguelike/builds';
@@ -11,7 +11,7 @@ import { ABILITY_CATALOG } from '../../game/abilities/catalog';
 import type { AbilitySlotSnapshot, AbilitiesSnapshot } from '../../game/abilities/contract';
 import { boonElement, boonIcon } from '../boonPresentation';
 import { playerFacingText } from '../units';
-import { getAbilities, showInvalidAbilityPlacement } from '../gameAdapter';
+import { getAbilities, showInvalidAbilityPlacement, setHudInsets, projectWorld } from '../gameAdapter';
 import { icon } from '../icons';
 import { el } from '../shell';
 import { CombatText } from './CombatText';
@@ -23,6 +23,7 @@ import { ContextualOnboarding } from '../onboarding';
 import { AbilityHints } from './AbilityHints';
 export type HudPreferences = Readonly<{
     combatText?: boolean;
+    combatTextDensity?: 'full' | 'reduced';
     radar?: boolean;
 }>;
 export type HudController = (() => void) & {
@@ -143,6 +144,33 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     const recentKills = new Int32Array(16).fill(-1);
     const owned = new Set<string>();
     const bounds = { left: 0, right: 0, top: 0, bottom: 0 };
+    const projected = {x: 0, y: 0, visible: false};
+    const projectedRadius = {x: 0, y: 0, visible: false};
+    const warnings = Array.from({length:32}, () => ({x:0,y:0,targetX:0,targetY:0,radius:0,life:0}));
+    const obscureWorld = (x: number, y: number, radius = 0, height = .8) => {
+        projectWorld(renderer, x, y, projected, height);
+        if (!Number.isFinite(projected.x) || !Number.isFinite(projected.y)) return;
+        let size = 24;
+        if (radius > 0) {
+            projectWorld(renderer, x + radius, y, projectedRadius, height);
+            size = Math.max(size, Math.hypot(projectedRadius.x - projected.x, projectedRadius.y - projected.y));
+        }
+        markHudOcclusion(projected.x - size, projected.y - size, projected.x + size, projected.y + size);
+    };
+    const protectPanels = () => {
+        beginHudOcclusion();
+        markHudOcclusion(bounds.left, bounds.top, bounds.right, bounds.bottom);
+        for (const enemy of game.enemies.snapshot.enemies) if (enemy.health > 0 && enemy.alpha >= .2) obscureWorld(enemy.x, enemy.y, enemy.radius);
+        const boss = game.boss.snapshot;
+        if (boss.active) obscureWorld(boss.x, boss.y, 92);
+        for (const warning of warnings) if (warning.life > 0) {
+            obscureWorld(warning.x, warning.y, warning.radius, .05);
+            for (let step = 1; step <= 4; step++) obscureWorld(warning.x + (warning.targetX - warning.x) * step / 4, warning.y + (warning.targetY - warning.y) * step / 4, warning.radius, .05);
+        }
+        for (const pool of game.pools) if (pool.life > 0) obscureWorld(pool.x, pool.y, pool.radius, .05);
+        for (const bullet of game.bullets) if (bullet.kind === 'hazard') obscureWorld(bullet.x, bullet.y, bullet.request.radius, .15);
+        finishHudOcclusion();
+    };
     const protect = () => Object.assign(bounds, renderer.playerScreenBounds(game.player.radius));
     const updateAbility = (entry: typeof slots[number], s: AbilitySlotSnapshot, snapshot: AbilitiesSnapshot) => {
         const definition = ABILITY_CATALOG[s.id];
@@ -215,6 +243,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const s = game.combat.snapshot, playing = game.status === 'playing';
         if (revision !== game.roomRevision) {
             revision = game.roomRevision;
+            for (const warning of warnings) warning.life = 0;
             roomIntro=4;denialLife=0;denial.hidden=true;showInvalidAbilityPlacement(renderer,null);
             combatText.clear();
             threats.clear();
@@ -361,6 +390,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         onboarding.update(game, abilities, inspectObjective && !abilityHints.visible);
         const pref = preferences();
         combatText.setEnabled(pref.combatText !== false);
+        combatText.setReduced(pref.combatTextDensity === 'reduced');
         radar.update(game, pref.radar === true && playing);
         const checkpoint = `${game.checkpointStatus}:${game.roomRevision}`;
         if (checkpoint !== lastCheckpoint) {
@@ -380,9 +410,13 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (playing) {
             protect();
             positionHud();
+            setHudInsets(renderer, getHudInsets());
+            protectPanels();
             threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q);
         }
         else if (wasPlaying) {
+            for (const warning of warnings) warning.life = 0;
+            clearHudOcclusion(); setHudInsets(renderer, getHudInsets());
             combatText.clear();
             threats.clear();
         }
@@ -392,6 +426,15 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (disposed || game.status !== 'playing')
             return;
         combatText.setEnabled(preferences().combatText !== false);
+        combatText.setReduced(preferences().combatTextDensity === 'reduced');
+        if (event.type === 'enemy-warning') {
+            let warning = warnings.find(entry => entry.life <= 0);
+            if (!warning) warning = warnings.reduce((a,b) => a.life < b.life ? a : b);
+            const area = event as HudEffect & {radius?: number; targetX?: number; targetY?: number};
+            warning.x = event.x; warning.y = event.y;
+            warning.targetX = area.targetX ?? event.x; warning.targetY = area.targetY ?? event.y;
+            warning.radius = area.radius ?? 32; warning.life = Math.max(.05, (event.durationMs ?? 650) / 1000);
+        }
         combatText.effect({...event, damageElement: getCombatDamageElement(game, event)});
         threats.effect(event, game.player);
         onboarding.effect(event);
@@ -439,6 +482,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (disposed)
             return;
         const elapsed = Number.isFinite(dt) ? Math.max(0, Math.min(dt, .1)) : 0;
+        for (const warning of warnings) warning.life = Math.max(0, warning.life - elapsed);
         weaponInspect=Math.max(0,weaponInspect-elapsed);roomIntro=Math.max(0,roomIntro-elapsed);
         denialLife=Math.max(0,denialLife-elapsed);
         if(!denialLife&&!denial.hidden){denial.hidden=true;showInvalidAbilityPlacement(renderer,null);}
@@ -482,6 +526,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         threats.dispose();
         toasts.dispose();
         radar.dispose();
+        clearHudOcclusion(); setHudInsets(renderer, getHudInsets());
         onboarding.dispose(); abilityHints.dispose(); encounterTrack.remove(); activeDial.remove(); dashActiveDial.remove();
     };
     return hud;

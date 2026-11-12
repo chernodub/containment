@@ -29,3 +29,8 @@
 @keyframes beat-arrive {from {opacity:0;translate:-12px 0}to {opacity:1;translate:0 0}}
 @media(max-height:820px){#presentation-beat{top:17%;padding:14px 22px 14px 66px;width:min(580px,65vw)}#presentation-beat .beat-glyph{left:18px;top:24px}#presentation-beat .beat-glyph svg{width:28px;height:28px}#presentation-beat p{font-size:12px;margin-top:6px}}
 @media(prefers-reduced-motion:reduce){#presentation-beat{animation:none;transition:none}#critical-edge{box-shadow:inset 0 0 30px #b92d241a}}
+/* During live combat an entry/threat beat identifies the event. Reading the
+   room objective and combat rules remains a deliberate HUD/loadout action. */
+body[data-state=playing] #presentation-beat:is([data-beat=room-enter],[data-beat=boss-intro]) p {display:none;}
+body[data-state=playing] #presentation-beat[data-beat=boss-intro] {width:min(500px,52vw);padding:14px 22px 14px 66px;border-top-width:2px;border-bottom-width:2px;background:linear-gradient(90deg,#261419cc,#11131c99);}
+body[data-state=playing] #presentation-beat[data-beat=boss-intro] strong {font-size:clamp(28px,2.3vw,42px);}

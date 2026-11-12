@@ -387,3 +387,45 @@ body[data-state=playing] #world{cursor:none}
 @media(max-width:650px) {#hud #status-hud {width:244px;}}
 
 #hud .contextual-onboarding {z-index:20;}
+
+/* Combat dock: one shallow glass strip, with meaning carried by keys and glyphs.
+   Exact mechanics stay in deliberate inspection and the pause loadout. */
+#hud #action-bar {height:90px;padding:7px 12px;gap:14px;background:linear-gradient(110deg,#07131a9c,#0b202c80);border-color:#b8edff55;box-shadow:0 3px 15px #0003;}
+#hud #action-bar .weapon-hud {height:36px;background:transparent;}
+#hud #action-bar .weapon-info {height:32px;gap:6px;}
+#hud #action-bar #weapon-name {display:none;}
+#hud #action-bar .reload-key {margin-left:0;}
+#hud #action-bar .ammo-line {position:absolute;right:0;top:0;margin:0;height:32px;min-height:32px;gap:4px;}
+#hud #action-bar .weapon-hud b {font-size:34px;}
+#hud #action-bar .weapon-hud #reserve {font-size:13px;color:#d1e7ef;}
+#hud #action-bar #reload-label {position:absolute;right:0;top:-10px;font-size:8px;white-space:nowrap;max-width:none;}
+#hud #action-bar .reload-line {position:absolute;bottom:0;}
+#hud #action-bar #weapon-picker {margin-top:5px;}
+#hud #action-bar .weapon-bank[data-expanded=true] #weapon-picker button {height:26px;min-height:26px;}
+#hud #action-bar .weapon-bank[data-expanded=true] #weapon-picker .icon {width:20px;height:17px;}
+#hud #action-bar #ability-bar {gap:12px;padding-left:12px;align-items:center;}
+#hud #action-bar .dash-slot {min-height:66px;}
+#hud #action-bar .dash-slot .ability-title,#hud #action-bar .ability-caption .ability-title,#hud #action-bar .ability-charges,#hud #action-bar .overdrive-body .ability-title,#hud #action-bar .overdrive-top>span {display:none;}
+#hud #action-bar .ability-slot {gap:2px;}
+#hud #action-bar .cooldown-dial,#hud #action-bar .cooldown-dial>svg {width:44px;height:44px;}
+#hud #action-bar .ability-caption {min-height:25px;}
+#hud #action-bar .ability-slot[data-state-label]::before {content:none;}
+#hud #action-bar .dash-slot>kbd {bottom:0;}
+#hud #action-bar .overdrive-slot {height:66px;min-height:0;justify-content:space-between;}
+#hud #action-bar .overdrive-body {position:absolute;left:13px;bottom:7px;margin:0;}
+#hud #action-bar .overdrive-meter {margin-left:38px;}
+#hud #action-bar .desktop-hint {display:none;}
+#hud #action-bar :is(.ability-value,#magazine,kbd) {text-shadow:0 1px 2px #000,0 0 4px #000;}
+#hud :is(.vitals,#status-hud,#action-bar,#radar-hud) {transition:opacity 120ms ease-out;}
+#hud :is(.vitals,#status-hud,#action-bar)[data-obscures-threat=true] {opacity:.3;}
+#hud .hud-panel-threat {position:fixed;z-index:12;width:22px;height:12px;margin:-6px -11px;background:#ff5a36;clip-path:polygon(0 35%,65% 35%,65% 0,100% 50%,65% 100%,65% 65%,0 65%);transform:rotate(var(--hud-threat-angle));filter:drop-shadow(0 0 2px #000);pointer-events:none;}
+#hud .hud-panel-threat[hidden] {display:none;}
+@media(max-height:800px) {
+ #hud #action-bar {height:78px;padding:5px 10px;}
+ #hud #action-bar .cooldown-dial,#hud #action-bar .cooldown-dial>svg {width:38px;height:38px;}
+ #hud #action-bar .ability-caption {min-height:23px;}
+ #hud #action-bar .ability-caption kbd {height:23px;min-width:23px;font-size:12px;}
+ #hud #action-bar .dash-slot,#hud #action-bar .overdrive-slot {height:62px;min-height:62px;}
+ #hud #action-bar .overdrive-body .icon {height:25px;width:25px;}
+}
+@media(prefers-reduced-motion:reduce) {#hud :is(.vitals,#status-hud,#action-bar,#radar-hud) {transition:none;}}
