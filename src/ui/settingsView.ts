@@ -17,7 +17,19 @@ const playerOptions: Record<string, {label:string;hint:string}> = {
   resolutionScale:{label:'Image sharpness',hint:'Lower values improve speed at reduced detail.'},
   screenShake:{label:'Camera movement',hint:'Shake, recoil and brief camera zooms.'},
   flashIntensity:{label:'Combat flashes',hint:'Brightness of damage and explosion flashes.'},
+  inkOutlines:{label:'Ink outlines',hint:'Contours help separate actors and ship surfaces.'},
+  adaptiveResolution:{label:'Adaptive sharpness',hint:'Adjusts image resolution to keep combat responsive.'},
 };
+type OptionCopy = Readonly<{label?: string; hint?: string}>;
+/** Additive renderer metadata is optional; every new key still has readable copy. */
+export function graphicsOptionCopy(key: string, metadata?: OptionCopy): {label: string; hint: string} {
+  const copy = playerOptions[key] ?? metadata ?? (GRAPHICS_OPTION_LABELS as unknown as Record<string, OptionCopy>)[key];
+  const words = key.replace(/[_-]+/g, ' ').replace(/([a-z\d])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
+  return {
+    label: typeof copy?.label === 'string' && copy.label.trim() ? copy.label : words.replace(/^./, character => character.toUpperCase()),
+    hint: typeof copy?.hint === 'string' && copy.hint.trim() ? copy.hint : 'Adjust this rendering effect.',
+  };
+}
 function range(key: string, label: string, hint: string, value: number, minimum = 0, id = `setting-${key.replace('.', '-')}`): string {
   return `<div class="settings-control settings-control--range"><div class="settings-control__copy"><label for="${id}">${escape(label)}</label><span id="${id}-hint">${escape(hint)}</span></div><div class="settings-range"><input id="${id}" data-setting="${key}" type="range" min="${minimum}" max="100" step="1" value="${Math.round(value * 100)}" aria-label="${escape(label)}" aria-describedby="${id}-hint"><output ${key === 'master' ? 'id="volume-value" ' : ''}for="${id}">${percent(value)}</output></div></div>`;
 }
@@ -26,19 +38,18 @@ function toggle(key: string, label: string, hint: string, value: boolean): strin
   return `<label class="settings-control settings-control--toggle" for="${id}"><span class="settings-control__copy"><span>${escape(label)}</span><span id="${id}-hint">${escape(hint)}</span></span><span class="settings-toggle"><input id="${id}" data-setting="${key}" type="checkbox" aria-label="${escape(label)}"${value ? ' checked' : ''} aria-describedby="${id}-hint"><span class="settings-toggle__track" aria-hidden="true"></span></span></label>`;
 }
 function graphicsControl(key: string, value: unknown): string {
-  const metadata = playerOptions[key] ?? (GRAPHICS_OPTION_LABELS as unknown as Record<string, {label: string; hint: string}>)[key];
-  const label = metadata?.label ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, character => character.toUpperCase());
-  const hint = metadata?.hint ?? 'Adjust this rendering effect.';
+  const {label, hint} = graphicsOptionCopy(key);
   if (typeof value === 'boolean') return toggle(`graphics.${key}`, label, hint, value);
   if (typeof value === 'number') return range(`graphics.${key}`, label, hint, value, key === 'resolutionScale' ? 50 : 0);
   const id = `setting-graphics-${key}`;
-  return `<div class="settings-control"><div class="settings-control__copy"><label for="${id}">${escape(label)}</label><span id="${id}-hint">${escape(hint)}</span></div><select id="${id}" data-setting="graphics.${key}" aria-describedby="${id}-hint">${graphicsChoices(key).map(choice => `<option value="${escape(choice)}"${choice === value ? ' selected' : ''}>${escape(choice.charAt(0).toUpperCase() + choice.slice(1))}</option>`).join('')}</select></div>`;
+  const choices = [...new Set([...graphicsChoices(key), ...(typeof value === 'string' ? [value] : [])])];
+  return `<div class="settings-control"><div class="settings-control__copy"><label for="${id}">${escape(label)}</label><span id="${id}-hint">${escape(hint)}</span></div><select id="${id}" data-setting="graphics.${key}" aria-describedby="${id}-hint">${choices.map(choice => `<option value="${escape(choice)}"${choice === value ? ' selected' : ''}>${escape(choice.replace(/[_-]/g, ' ').replace(/^./, character => character.toUpperCase()))}</option>`).join('')}</select></div>`;
 }
 
 /** Every graphics contract field remains a native labelled control in a compact two-column console. */
 export function renderSettings({state, sound, reducedMotion}: {state: UiPreferences; sound: AudioPreferences; reducedMotion: boolean}): string {
   const graphics = Object.entries(state.graphics);
-  const quality = new Set(['shadows','resolutionScale']);
+  const quality = new Set(['shadows','resolutionScale','adaptiveResolution']);
   const comfort = new Set(['screenShake','flashIntensity']);
   return `<div class="system-settings" data-ui-settings><div class="settings-layout"><div class="settings-primary">
     <section class="settings-section" aria-labelledby="settings-graphics-heading"><div class="settings-section__heading"><h3 id="settings-graphics-heading">Picture & speed</h3><span>Detail and performance</span></div><div class="quality-controls"><div class="settings-control"><div class="settings-control__copy"><label for="quality">Quality preset</label><span id="quality-hint">High adds visual detail. Low favors speed. Resets picture options.</span></div><select id="quality" data-setting="tier" aria-describedby="quality-hint"><option value="high"${state.tier === 'high' ? ' selected' : ''}>High</option><option value="low"${state.tier === 'low' ? ' selected' : ''}>Low</option></select></div>${graphics.filter(([key])=>quality.has(key)).map(([key,value])=>graphicsControl(key,value)).join('')}</div></section>
