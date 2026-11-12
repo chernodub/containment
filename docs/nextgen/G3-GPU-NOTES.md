@@ -1,6 +1,6 @@
 # G3 GPU evidence and deterministic work notes
 
-Shipping candidate: `d70f811`, preserved by the lead under `artifacts/nextgen/g3/shipping-dist`. This note separates configured work reductions from measurements on the shared Apple M1 Pro. **The completed intermediate runs do not establish quiet-host 60 fps, and their elapsed-query values do not support isolated additive pass costs.** The completed shipping full-matrix and serialized driver receipts are recorded in the final section; no running benchmark or pending matched-run values were polled to write this note.
+Current correctness candidate: **`34b3c30`**. Frozen timing checkpoints below are explicitly source-labeled `d70f811` or `4939853`; neither is exact-final-HEAD performance evidence. A lead negative-control check on `4939853` prompted the later geometry-buffer fix: reserve/clear background ID0 once per frame and preserve overlay sentinel255, with no extra geometry or post draw. No pending `34b3c30` capture, regression or smoke-retry values are included here. This note separates configured work reductions from completed shared-host measurements. **Reliable additive GPU pass attribution and quiet-host High60fps acceptance are not established.**
 
 ## Evidence identity and scope
 
@@ -97,7 +97,7 @@ The compared main footprint falls44.44% at native internal scale. At adaptive.70
 
 The additive options expose full/silhouette/off ink and an independent adaptive-resolution switch. High defaults to full ink plus adaptive.70–1; Low to silhouette and scale1. Manual resolution selection remains separate. Runtime feedback, scale and profiler lifecycle are exposed through the existing performance snapshot/debug renderer rather than new gameplay globals. Deterministic guards remain330 draw headroom (original350 guard also retained),400 programs,160 material families,12 compile passes and zero combat compiles. Changing the look does not authorize relaxing them.
 
-## Final shipping receipt — completed full matrix
+## Earlier RGBA16F candidate — completed full matrix
 
 Application source **`d70f811`**, frozen in `g3/shipping-dist`. The [full benchmark JSON](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-shipping-bench/benchmark.json), [same-selection summary](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3/shipping-gpu-summary.json) and [completed serialized driver receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3/gates/final-gates.json) are retained. The default heavy-room scan selected **Relay Racks and Diagnostic Gallery**;48 trials cover both rooms × four rigs × two tiers × three20-second repeats. There are **37,230 retained performance samples**, `errors:[]`, `budgetFailures:[]`, **zero combat compiles in all48 trials**, maximum **322 draws** and maximum **225 prepared programs**. The330/350-draw and400-program guards pass unchanged.
 
@@ -287,7 +287,7 @@ The completed supplement evidence therefore narrows the issue without closing it
 
 ## Completed packed-HDR matched candidate — `4939853`
 
-The completed [`g3-packed-bench` receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-packed-bench/benchmark.json) uses frozen `4939853` from `g3/packed-hdr-dist`: Manual-control / Arc,1920×1080,three20-second trials per tier, rotating per-pass queries without flush. All6 trials completed with `errors:[]`, `budgetFailures:[]`, **zero combat compiles**,3766 performance samples, maximum208 draws and294 prepared programs. This is a completed matched-content candidate receipt; the later full packed-build gate driver is separate and is not read or summarized here.
+The completed [`g3-packed-bench` receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-packed-bench/benchmark.json) uses frozen `4939853` from `g3/packed-hdr-dist`: Manual-control / Arc,1920×1080,three20-second trials per tier, rotating per-pass queries without flush. All6 trials completed with `errors:[]`, `budgetFailures:[]`, **zero combat compiles**,3766 performance samples, maximum208 draws and294 prepared programs. This matched-content receipt remains separate from the subsequently completed full packed-build matrix and driver recorded below.
 
 | Tier / repeat | Frames | Frame p50 / p95 ms | Render JS p50 / p95 ms | CPU p50 / p95 ms | Scale min / p50 / max | Load1m start→end | Draw peak / programs / combat compiles |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -332,3 +332,119 @@ The lead accepted the completed24 native captures under `g3-packed-check` across
 Packed G3 is20% smaller than pre-packed G3 in this compared footprint. The16B calculation is sceneRGB4 + geometry4 + depth4 + presentation4; the original36B includes its configured2× HDR/depth multisample storage and resolved attachments. These remain logical format/sample calculations excluding alignment, driver tiling/compression, other targets and full-size output. Original Low had a direct forward path without these post targets, so the36B High comparison must not be reused to claim a memory saving against original Low. There is no extra geometry pass or change to the half/quarter-resolution AO/bloom schedule from packing. No measured GPU-ms saving is inferred from the byte ratio.
 
 Packed Low now records p50 **16.8/16.8/16.9ms** and p95 **42.0/49.7/49.9ms**, a materially better observed distribution than the preceding five-tap candidate25.1–41.5ms p50. However the packed Low host load is74.2–83.1 versus102.7–144.2 for that prior candidate; the trials are not interleaved or device-isolated. This does not prove packing caused the recovery, nor does it dismiss the earlier owned Low slowdown. All packed Low p50 values still exceed the strict16.7ms target and retain long tails. High p50 **32.8/41.7/25.0ms** likewise misses60fps, with p95 **76.4/140.5/50.4ms**, despite adaptive scaling. **Timing acceptance remains open for both tiers.** Only the later completed full-build gates and separate production-feedback receipt may extend acceptance evidence; no pending result is used here.
+
+## Completed `4939853` full matrix — before the background-clear correction
+
+The [packed full benchmark](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-packed-full-bench/benchmark.json), [same-selection summary](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3/packed-full-gpu-summary.json) and [closed packed driver receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3/packed-gates/final-gates.json) describe frozen **`4939853`** from `g3/packed-hdr-dist`. These timings precede `34b3c30`'s reserved-background-ID correction; they are not relabeled as exact final-HEAD results. The default scan again selects Relay Racks and Diagnostic Gallery. All48 ordinary20-second trials (two rooms × four rigs × two tiers × three repeats) completed with `errors:[]`, `budgetFailures:[]`, **zero combat compiles**, maximum **326 draws**, maximum **225 programs**, and45,404 retained performance samples. The330/350-draw and400-program guards remain unchanged.
+
+Trial endpoint load1m ranges66.5–254.7 on10 cores. The whole benchmark command including scan took1471.67s at load138.8→170.0. It uses per-pass queries without flush; normal timing rows retain their ordinary-submission eligibility while the adaptive controller uses its frame fallback during query ownership. These remain heavily contested observations, not a quiet-hardware signoff.
+
+The existing GPU-based selector supplies the same trial's frame/CPU/load/scale and pass values below. It is not replaced by a best-CPU selection. The last column is the worst draw/program inventory across the case's three repeats; all corresponding combat compile counts are0.
+
+| Room / rig / tier | Selected repeat / frames | Frame p50 / p95 ms | Render JS p50 / p95 ms | CPU p50 / p95 ms | Scale min / p50 / max | Same-run load1m start→end | Peak draws / programs, all3 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+|relay-racks /breacher /high|2 /698|23.6 /50.1|7.4 /11.8|8.2 /13.9|0.7 /0.7 /0.925|118.8→130.9|293 /106|
+|relay-racks /breacher /low|0 /1037|16.7 /25.8|5.8 /10.5|6.5 /11.8|1 /1 /1|130.9→130.6|174 /221|
+|relay-racks /cryo /high|0 /1007|16.8 /33.3|6.0 /10.2|6.7 /11.6|0.7 /0.7 /0.95|167.7→168.3|311 /106|
+|relay-racks /cryo /low|0 /1048|16.7 /25.9|5.7 /8.6|6.4 /10.1|1 /1 /1|174.4→210.3|187 /221|
+|relay-racks /pyro /high|2 /776|17.2 /50.0|7.3 /13.7|8.3 /15.9|0.7 /0.7 /0.95|179.1→216.6|326 /106|
+|relay-racks /pyro /low|0 /1121|16.7 /25.0|5.4 /7.5|6.1 /8.7|1 /1 /1|216.6→229.9|194 /221|
+|relay-racks /arc /high|0 /1020|16.8 /33.4|5.8 /8.8|6.5 /9.9|0.7 /0.7 /0.95|248.9→241.1|306 /106|
+|relay-racks /arc /low|0 /1100|16.7 /25.0|4.8 /7.0|5.4 /8.0|1 /1 /1|199.8→208.2|170 /221|
+|diagnostic-gallery /breacher /high|1 /803|17.7 /42.2|8.7 /16.2|9.6 /19.5|0.7 /0.7 /0.95|196.2→209.8|243 /108|
+|diagnostic-gallery /breacher /low|2 /1083|16.7 /18.1|5.5 /7.3|6.3 /10.8|1 /1 /1|226.4→230.0|148 /225|
+|diagnostic-gallery /cryo /high|1 /978|16.8 /32.8|6.2 /11.1|7.0 /12.8|0.7 /0.75 /0.95|212.2→199.3|245 /108|
+|diagnostic-gallery /cryo /low|2 /1130|16.7 /25.1|5.2 /7.1|5.9 /9.6|1 /1 /1|179.7→176.0|147 /225|
+|diagnostic-gallery /pyro /high|0 /966|16.8 /33.1|7.7 /12.0|8.6 /14.8|0.7 /0.7 /0.95|176.0→166.6|248 /108|
+|diagnostic-gallery /pyro /low|0 /1086|16.7 /24.0|5.6 /7.6|6.4 /11.7|1 /1 /1|137.7→139.8|153 /225|
+|diagnostic-gallery /arc /high|1 /1063|16.7 /25.8|6.2 /8.9|6.9 /11.2|0.825 /0.825 /0.95|150.1→155.2|227 /108|
+|diagnostic-gallery /arc /low|1 /826|16.7 /50.3|5.2 /7.9|5.9 /9.9|1 /1 /1|192.4→187.6|134 /225|
+
+Every raw stage cell below is p50/p95 elapsed-query ms **[resolved N]**, from exactly the selected row above. It is **unvalidated isolated attribution**, not a sum-able pass budget. Actual target dimensions and all samples remain in JSON; final AA/HUD use1920×1080, shadow updates bind1024² maps, and scene/composite/AO/bloom dimensions follow the same trial's adaptive scale. Scene includes shadows, so the separate shadow row overlaps it.
+
+### Packed relay-racks / high: raw per-pass readings
+
+| Scope |breacher|cryo|pyro|arc|
+|---|---:|---:|---:|---:|
+|Scene incl. any shadow|31.20 /108.12 [19]|24.68 /51.16 [27]|28.08 /69.92 [22]|23.47 /47.63 [28]|
+|GTAO|27.99 /59.24 [19]|28.90 /53.97 [27]|28.49 /53.44 [22]|21.81 /55.55 [28]|
+|AO denoise|35.97 /75.17 [19]|27.00 /44.38 [27]|26.04 /93.78 [22]|18.24 /54.41 [28]|
+|Bloom extract|37.07 /81.44 [19]|24.47 /47.74 [27]|24.34 /62.56 [22]|25.51 /54.72 [28]|
+|Bloom horizontal|30.26 /69.53 [19]|27.81 /50.52 [27]|29.41 /49.79 [22]|26.27 /49.66 [28]|
+|Bloom vertical|34.63 /77.41 [19]|21.75 /41.41 [27]|23.70 /64.55 [22]|28.32 /53.51 [28]|
+|Distortion|17.22 /45.05 [3]|24.85 /28.76 [3]|33.87 /75.03 [17]|24.77 /29.39 [8]|
+|Composite|36.38 /66.76 [19]|27.15 /52.85 [27]|32.00 /62.08 [22]|27.17 /41.07 [27]|
+|Final AA|31.12 /95.94 [18]|31.47 /47.17 [26]|33.82 /84.36 [22]|26.32 /44.63 [27]|
+|HUD|32.69 /81.69 [18]|26.38 /52.10 [26]|32.20 /71.13 [22]|27.29 /52.15 [27]|
+|Shadow update only|13.11 /42.88 [14]|15.02 /43.74 [17]|18.80 /69.42 [12]|14.73 /37.46 [14]|
+
+### Packed relay-racks / low: raw per-pass readings
+
+| Scope |breacher|cryo|pyro|arc|
+|---|---:|---:|---:|---:|
+|Scene incl. any shadow|21.63 /48.49 [87]|19.48 /53.14 [88]|9.94 /25.02 [94]|7.47 /27.67 [92]|
+|Composite|21.73 /47.85 [86]|16.13 /52.90 [87]|8.13 /23.02 [94]|7.82 /23.77 [92]|
+|Final AA|19.14 /42.63 [86]|17.38 /51.80 [87]|8.03 /28.10 [93]|9.16 /31.95 [92]|
+|HUD|22.22 /48.49 [86]|16.42 /45.56 [87]|9.92 /29.68 [93]|8.68 /28.95 [91]|
+
+### Packed diagnostic-gallery / high: raw per-pass readings
+
+| Scope |breacher|cryo|pyro|arc|
+|---|---:|---:|---:|---:|
+|Scene incl. any shadow|24.87 /55.40 [23]|21.02 /48.96 [29]|21.03 /45.81 [28]|8.85 /37.44 [31]|
+|GTAO|35.74 /56.99 [23]|24.06 /46.48 [29]|22.36 /49.54 [28]|8.77 /34.37 [31]|
+|AO denoise|28.20 /69.33 [23]|25.46 /38.13 [29]|26.16 /58.38 [28]|6.66 /34.85 [30]|
+|Bloom extract|32.79 /58.34 [23]|24.35 /46.34 [28]|19.31 /46.47 [28]|8.44 /45.20 [30]|
+|Bloom horizontal|36.62 /56.73 [23]|21.08 /41.93 [28]|20.66 /39.21 [28]|8.79 /40.08 [30]|
+|Bloom vertical|33.81 /72.38 [23]|25.10 /42.70 [28]|24.35 /41.01 [28]|7.94 /34.20 [30]|
+|Distortion|33.71 /66.19 [23]|25.33 /48.08 [28]|24.86 /73.59 [28]|5.61 /29.12 [30]|
+|Composite|37.59 /63.64 [23]|28.60 /39.96 [28]|19.81 /46.09 [28]|9.99 /35.05 [30]|
+|Final AA|35.02 /59.50 [23]|22.90 /44.74 [28]|24.65 /40.56 [28]|9.66 /33.84 [30]|
+|HUD|39.70 /68.12 [23]|26.39 /44.20 [28]|23.06 /57.49 [27]|10.20 /39.38 [30]|
+|Shadow update only|22.41 /54.80 [19]|13.11 /34.87 [19]|18.03 /54.74 [16]|0.49 /30.32 [15]|
+
+### Packed diagnostic-gallery / low: raw per-pass readings
+
+| Scope |breacher|cryo|pyro|arc|
+|---|---:|---:|---:|---:|
+|Scene incl. any shadow|14.72 /39.35 [90]|12.19 /27.43 [95]|15.55 /31.90 [91]|21.05 /54.30 [69]|
+|Composite|16.33 /41.48 [90]|9.33 /26.18 [94]|13.18 /31.26 [91]|18.93 /53.13 [69]|
+|Final AA|17.28 /36.76 [90]|10.49 /29.68 [94]|13.58 /31.57 [90]|22.97 /57.42 [69]|
+|HUD|14.81 /35.96 [90]|12.10 /28.38 [94]|15.52 /37.22 [90]|21.29 /47.11 [69]|
+
+The completed packed matrix still misses timing acceptance: **0/24 High p50 flags,0/24 High p95≤20ms flags,8/24 Low p50 flags,0/48 historical p95≤16.6ms flags and2/48 CPU-p95≤8ms flags pass**. Unrounded flags are retained; displayed16.7 may differ from the exact flag by measurement rounding. Some selected cases approach a16.7ms median, but their tails remain above target, and most High cases spend substantial time at.70 scale. Even the relatively low Diagnostic/Arc High query medians (scene8.85ms, GTAO8.77ms, bloom8.44ms, finalAA9.66ms) are similarly sized across very different scopes; they do not validate isolated costs. No timing gains are attributed solely to packed storage or used to accept High60fps.
+
+### Packed production-feedback checkpoint: N=1 per tier
+
+The separately completed [`g3-packed-production`](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-packed-production/benchmark.json) is also exact source `4939853`: Manual-control / Arc, one20-second ordinary trial per tier, per-pass profiler off, default sparse total-render queries retained, no flush. Both trials pass their native/population/resource/error guards, with `errors:[]`, `budgetFailures:[]`,0 combat compiles and1290 performance samples. There is no best-of-three selection for this N=1 supplement.
+
+| Tier | Frames | Frame p50 / p95 ms | Render JS p50 / p95 ms | CPU p50 / p95 ms | Scale min / p50 / max | Load1m start→end | Draw peak / programs / combat compiles |
+|---|---:|---:|---:|---:|---:|---:|---:|
+|high|627|23.8 /58.4|5.2 /8.8|6.1 /10.8|0.7 /0.7 /0.925|168.9→155.0|214 /179 /0|
+|low|663|16.9 /74.3|4.3 /6.8|5.0 /9.1|1 /1 /1|155.0→136.4|130 /294 /0|
+
+The High end snapshot now verifies the runtime feedback plumbing: adaptive enabled, scale.70, estimate source `gpu`, smoothed estimate47.23ms, GPU timer enabled with44 completed samples, latest56.30ms and age12 frames,0 disjoint samples. Unlike the earlier missing-metadata production run, this proves recent GPU feedback was being consumed at this snapshot; it does not prove accurate isolated timer granularity or a60fps frame budget. Low correctly records both adaptive and runtime GPU timer disabled at scale1. Whole-render raw elapsed p50/p95 is41.41/79.56ms on High and35.15/63.67ms on Low; these are not pass decompositions. The observed production-feedback frames23.8/58.4ms High and16.9/74.3ms Low still fail requested timing acceptance.
+
+### Closed `4939853` driver and unresolved gate failures
+
+The driver finished, but **not every subcommand passed**. This table retains each recorded exit instead of calling the whole set green:
+
+| Closed driver step | Exit | Wall seconds | Load1m start→end | Receipt |
+|---|---:|---:|---:|---|
+|resolution-070|0|42.26|62.2→80.6|`artifacts/nextgen/g3/packed-gates/resolution-070.log`|
+|allrooms|0|89.43|80.6→110.6|`artifacts/nextgen/g3/packed-gates/allrooms.log`|
+|unit|1|167.89|110.6→116.4|`artifacts/nextgen/g3/packed-gates/unit.log`|
+|model|0|1.10|116.4→116.4|`artifacts/nextgen/g3/packed-gates/model.log`|
+|room-evidence|0|1.15|116.4→116.4|`artifacts/nextgen/g3/packed-gates/room-evidence.log`|
+|build|0|6.91|116.4→112.9|`artifacts/nextgen/g3/packed-gates/build.log`|
+|smoke|1|103.64|112.9→127.3|`artifacts/nextgen/g3/packed-gates/smoke.log`|
+|authored|0|114.98|127.3→110.9|`artifacts/nextgen/g3/packed-gates/authored.log`|
+|rooms|0|89.98|110.9→138.8|`artifacts/nextgen/g3/packed-gates/rooms.log`|
+|bench|0|1471.67|138.8→170.0|`artifacts/nextgen/g3/packed-gates/bench.log`|
+|production-feedback|0|58.01|170.0→136.4|`artifacts/nextgen/g3/packed-gates/production-feedback.log`|
+
+Unit result is **261 files passed,1 failed,1 skipped;3029 tests passed,1 failed,1 skipped**. The retained failure is the unchanged desktop `UiScreens.test.ts` settings/controls fit at1280×720: measured744 exceeds allowed661. Production smoke exits1 on the retained `equipment.glb: net::ERR_ABORTED` asset-request error after its native graphics/input/audio/persistence phases; the error assertion is not filtered or weakened. These failures are not relabeled as passes or assigned an unproven root cause. A later smoke retry is outside this closed receipt.
+
+All20 authored desktop rooms pass. The42-entry fresh/retained room audit has `errors:[]`, `failures:[]`, maximum complete readiness2649.5ms (<3000),197 programs,66 material families,11 compile passes and0 first-frame/0 combat compiles. Build, model preview, room evidence and the completed captures have exit0 as recorded. The lead also ran the new GPU-free micro/lifecycle tests:24 passed plus the existing benchmark self-test; no native micro throughput result is included here.
+
+`34b3c30` is a later correctness candidate, not a claim that these4939853 timing and gate results automatically cover the corrected background-ID behavior. Its pending targeted capture,8-case rig/tier regression, smoke retry and20-room gallery are intentionally absent. The lead will append those only when complete. Quiet timing acceptance remains open, and the UI/asset failures above remain visible until independently resolved or rechecked.
