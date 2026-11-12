@@ -12,7 +12,19 @@ const ui=['title','title-settings','rig-select','rig-select-cryo','rig-select-py
 const details=['v3-recovery','boss','g2-queen-exposed','x2-queen-opening-high','x2-queen-closing-high','x2-nest-husk-high','g2-champions','status-vfx','g2-pickups','i7-boss-breacher','i7-boss-cryo','i7-boss-arc','i7-champions-effects','i7-pickups-zones'];
 const extra=['combat-calm:reactor-vault','i8-corpse-budget','u4-critical-objective','u4-ability-inspect','u4-boon-inspect','u4-ending-reduced-motion','u4-burn-ticks','u4-radar-fade','g3-geometry-coverage','g3-void-contours','g3-ink-switches',...['containment-annulus','infested-workshop','overload-floor'].map(r=>'i8-families:'+r),...['armory','relay-racks','diagnostic-gallery','safety-interlock-station','freight-hold'].map(r=>'g4-forms-high:'+r),...['whiteout','meltdown','napalm-charge'].map(a=>'g4-danger-'+a),...rigs.flatMap(rig=>['containment-annulus','infested-workshop'].map(r=>`v4-yield-${rig}-masked-${r}`))];
 const receipt={sourceSHA:source,harnessSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),jobs:[]};await mkdir(logs,{recursive:true});
-async function run(name,command,args){const started=Date.now(),before=loadavg();console.log('START',name);const fs=await import('node:fs'),log=fs.createWriteStream(`${logs}/${name}.log`);const p=spawn(command,args,{stdio:['ignore','pipe','pipe']});p.stdout.pipe(log);p.stderr.pipe(log);const code=await new Promise((ok,fail)=>{p.on('error',fail);p.on('close',ok);});log.end();receipt.jobs.push({name,command,args,code,seconds:(Date.now()-started)/1000,loadStart:before,loadEnd:loadavg()});await writeFile(`${logs}/capture-jobs.json`,JSON.stringify(receipt,null,2));console.log('DONE',name,code);if(code)throw Error(`Capture ${name} failed; original receipt retained`);}
+if(process.argv.includes('--resume')){
+ const previous=JSON.parse(await readFile(`${logs}/capture-jobs.json`,'utf8'));
+ if(previous.sourceSHA!==source)throw Error('Resume source mismatch');receipt.jobs=previous.jobs;
+}
+async function run(name,command,args){
+ if(process.argv.includes('--resume')&&receipt.jobs.some(j=>j.name===name&&j.code===0&&j.command===command&&JSON.stringify(j.args)===JSON.stringify(args))){
+  if(command==='npm'&&args[1]==='capture'){
+   const m=JSON.parse(await readFile(`artifacts/nextgen/${name}/manifest.json`,'utf8'));
+   if(m.distSnapshot?.sourceSHA!==source||m.errors.length||m.failures.length)throw Error('Unclean resume batch '+name);
+  }
+  console.log('RETAIN',name);return;
+ }
+ const started=Date.now(),before=loadavg();console.log('START',name);const fs=await import('node:fs'),log=fs.createWriteStream(`${logs}/${name}.log`);const p=spawn(command,args,{stdio:['ignore','pipe','pipe']});p.stdout.pipe(log);p.stderr.pipe(log);const code=await new Promise((ok,fail)=>{p.on('error',fail);p.on('close',ok);});log.end();receipt.jobs.push({name,command,args,code,seconds:(Date.now()-started)/1000,loadStart:before,loadEnd:loadavg()});await writeFile(`${logs}/capture-jobs.json`,JSON.stringify(receipt,null,2));console.log('DONE',name,code);if(code)throw Error(`Capture ${name} failed; original receipt retained`);}
 for(const [label,size] of [['final2',[]],['final2-720',['--width=1280','--height=720']]]){
  const batches=[];
  async function capture(suffix,scenarios,burst=4,selectedRooms=rooms){const batch=label+'-'+suffix;batches.push(batch);await run(batch,'npm',['run','capture','--','--label='+batch,'--dist='+dist,'--dist-source-sha='+source,'--scenarios='+scenarios.join(','),'--rooms='+selectedRooms.join(','),'--burst='+burst,'--keep-going',...size]);}
