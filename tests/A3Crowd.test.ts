@@ -57,7 +57,7 @@ describe('A3 crowd constraints', () => {
         step(system, 600);
         const engaged = system.snapshot.enemies.filter(e => e.engagement === 'engaged');
         expect(engaged.length).toBeGreaterThan(0);
-        expect(engaged.length).toBeLessThanOrEqual(4);
+        expect(engaged.length).toBeLessThanOrEqual(3);
         expect(system.snapshot.enemies.filter(e => e.engagement === 'ranged')).toHaveLength(2);
         expect(system.snapshot.enemies.some(e => e.engagement === 'waiting')).toBe(true);
         const slots = engaged.map(e => e.attackSlot);
