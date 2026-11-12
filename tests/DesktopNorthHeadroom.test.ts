@@ -22,12 +22,11 @@ describe.each(Object.values(ROOM_TEMPLATES))('$id desktop actor framing',(templa
    expect(bounds.right).toBeLessThanOrEqual(width);expect(bounds.bottom).toBeLessThanOrEqual(height);expect(camera.zoom).toBe(1);
   }
  });
- it('retains the original center and south camera limits',()=>{
-  for(const [width,height] of [[1280,900],[960,540],[800,1000]]){
-   const view=height>width?31:22,vw=view*width/height,w=room.width/32,d=room.height/32;
-   const halfX=Math.min(w/2,Math.max(0,vw/2-.7)),halfZ=Math.min(d/2,Math.max(0,view/2*Math.hypot(26,19)/26-.7));
-   for(const z of [d/2,d-.5])expect(roomFocus(w/2,z,w,d,vw,view,room.id)).toEqual({x:Math.max(halfX,Math.min(w-halfX,w/2)),z:Math.max(halfZ,Math.min(d-halfZ,z))});
-  }
+ it('follows the actor at center and south without pushing it toward HUD edges',()=>{
+  const center=roomFocus(room.width/64,room.height/64,room.width/32,room.height/32,22*1280/900,22,room.id);
+  expect(center).toEqual({x:room.width/64,z:room.height/64});
+  const south=roomFocus(room.width/64,room.height/32-.5,room.width/32,room.height/32,22*1280/900,22,room.id);
+  expect(south.x).toBe(room.width/64);expect(south.z).toBeLessThan(room.height/32-.5);
  });
  it.each([1/60,.05,.1])('retains body visibility during native camera following at dt%s',dt=>{
   let z=room.height/64,focusZ=z,previous=focusZ;

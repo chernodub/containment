@@ -116,6 +116,24 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
    padded(cx,22,cz,f.w,4,f.h,.8,ceramic);
    b(cx,19,cz,f.w-3,2,f.h-3,support);
    for(const dx of [-f.w/2+6,f.w/2-6])for(const dz of [-f.h/2+6,f.h/2-6])b(cx+dx,9,cz+dz,8,18,8,support);
+   // One interrupted meal, rather than a repeated scatter: a folded blanket,
+   // open field journal and untouched cup remain on the existing solid table.
+   if(!root.userData.abandonedTable){
+    root.userData.abandonedTable=true;
+    const clothW=Math.min(f.w*.58,20),clothD=Math.min(f.h*.45,12),clothX=cx-f.w*.12;
+    padded(clothX,25.1,cz,clothW,2.2,clothD,.5,seat);
+    for(const fold of [-.22,.22])b(clothX+clothW*fold,26.22,cz,.55,.10,clothD*.90,bark);
+    const journalW=Math.min(clothW*.58,10),journalD=Math.min(clothD*.72,8);
+    padded(clothX,26.8,cz,journalW,1.1,journalD,.25,support);
+    b(clothX,27.38,cz,journalW*.90,.08,journalD*.89,ceramic);
+    b(clothX,27.45,cz,.35,.07,journalD*.91,support);
+    const cupX=cx+f.w*.27,cupZ=cz-f.h*.14;
+    pipe(v(cupX,24.05,cupZ),v(cupX,29.2,cupZ),1.8,ceramic);
+    pipe(v(cupX,29.24,cupZ),v(cupX,29.35,cupZ),1.3,support);
+    pipe(v(cupX+1.6,25.3,cupZ),v(cupX+2.9,25.3,cupZ),.45,ceramic);
+    pipe(v(cupX+2.9,25.3,cupZ),v(cupX+2.9,28.0,cupZ),.45,ceramic);
+    pipe(v(cupX+2.9,28.0,cupZ),v(cupX+1.6,28.0,cupZ),.45,ceramic);
+   }
    // Personal items are stowed beneath the reviewed tabletop height.
    b(cx-f.w/2+6,12,cz+f.h/2-1.98,7,10,.25,seat);
    b(cx-f.w/2+6,12,cz+f.h/2-1.82,5,7,.05,ceramic);
