@@ -442,11 +442,14 @@ classifications cannot certify it. Broad non-holdout pacing is reported apart.
 bright/dark full-kit overlaps for each rig. They retain native ability actions and
 explicitly stage presentation-only `enemy-warning` receipts through AttackEffects.
 The reference disables only the new priority texture; no gameplay or hostile
-warning is changed. These are readability comparisons, never timing cohorts.
+warning is changed. Each fixture holds650ms after the ultimate cast before staging
+the overlap. These are readability comparisons, never timing cohorts.
 
-`node scripts/nextgen/v4-evidence.mjs witness <renderer-sha>` hashes preserved build
-assets. `compare [before-labels] [after-labels]` writes matched seven-phase PNGs from
-native captures and exact 480×270 reductions. `bench <before-label> <after-label>`
+`node scripts/nextgen/v4-evidence.mjs witness` hashes preserved build assets and
+reads each build's full source identity from its `SOURCE_SHA` file. `compare [before-labels] [after-labels]` writes matched seven-phase PNGs from
+native captures and exact 480×270 reductions. `native [labels]` retains every
+original1920×1080 pixel in separate seven-phase sheets. `yield [label]` makes
+matched480×270 priority pairs with the staging receipts. `bench <before-label> <after-label>`
 retains all source trials, draws the CPU/draw comparison PNG, and applies the V4
 **zero-increase** rule to CPU p95 and peak draw calls. Host load and absolute budget
 misses remain visible; no tolerance or historical V3 allowance replaces zero.
