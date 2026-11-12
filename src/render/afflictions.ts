@@ -76,14 +76,14 @@ void main(){vec2 p=localUV*2.0-1.0;float edge=.72+.12*sin(p.y*9.0+p.x*5.0);float
   const ix=.5/(image?.width??2048),iy=.5/(image?.height??1024);
   a.setXYZW(mesh.count,(frame%cols)/cols+ix,1-(Math.floor(frame/cols)+1)/rows+iy,1/cols-2*ix,1/rows-2*iy);mesh.geometry.getAttribute('particleAlpha').setX(mesh.count,alpha);this.put(mesh,x,y,z,w,h,1,camera);
  }
- update(roots:Iterable<T.Object3D>,camera:T.Camera,time:number){
+ update(roots:Iterable<T.Object3D>,camera:T.Camera,time:number,abilityOwners?:{has(root:T.Object3D):boolean}){
   if(this.options.reducedMotion)time=0;const low=this.options.tier==='low',fireCount=low?3:6,poisonCount=low?2:4,emberCount=low?2:6,dropCount=low?2:4;
   for(const mesh of this.meshes)mesh.count=0;let actors=0;
   for(const root of roots){const d=root.userData.affliction as Attachment|undefined;if(!d||!root.visible)continue;const s=d.status;if(!(s.burning||s.poisoned||s.chilled||s.frozen))continue;if(actors++>=this.capacity)break;
    root.getWorldPosition(this.pos);const {x,y,z}=this.pos,r=d.span*.29,h=d.height,t=time+d.phase;
    // Stagger short buoyant tongues and slower vapor wisps. Fade before wrapping the
    // presentation-clock cycle, so replenishment never pops a full rectangular card.
-   if(s.burning){for(let i=0;i<fireCount;i++){const p=(t/(.75+(i%3)*.1)+i/fireCount)%1,a=i*2.399+d.phase,variation=.85+(i%3)*.075;
+   if(s.burning&&!abilityOwners?.has(root)){for(let i=0;i<fireCount;i++){const p=(t/(.75+(i%3)*.1)+i/fireCount)%1,a=i*2.399+d.phase,variation=.85+(i%3)*.075;
     this.card(this.fire,x+Math.cos(a+p*.35)*r*.65,y+h*(.4+p*.45),z+Math.sin(a)*r*.55,d.span*.19*variation,Math.max(h*.65,.45)*variation,t+i*.51,camera,Math.sin(p*Math.PI));
    }for(let i=0;i<emberCount;i++){const p=(t/(.55+(i%3)*.08)+i/emberCount)%1,a=i*2.4+d.phase,size=.018+(i%3)*.006;
     this.embers.geometry.getAttribute('particleAlpha').setX(this.embers.count,Math.sin(p*Math.PI)*(1-p));
@@ -92,7 +92,7 @@ void main(){vec2 p=localUV*2.0-1.0;float edge=.72+.12*sin(p.y*9.0+p.x*5.0);float
    if(s.poisoned){for(let i=0;i<poisonCount;i++){const p=(t/(1.4+i*.15)+i/poisonCount)%1,a=i*2.399+d.phase,spread=.45+p*.25;
     this.card(this.poison,x+Math.cos(a)*r*spread,y+h*(.3+p*.4),z+Math.sin(a)*r*spread,d.span*(.22+p*.06),h*(.5+p*.2),t*.7+i*.7,camera,Math.sin(p*Math.PI));
    }for(let i=0;i<dropCount;i++){const p=(t*.45+i/dropCount)%1,a=i*2.4;this.put(this.drops,x+Math.cos(a)*r*.8,y+h*(1-p)*.8+.05,z+Math.sin(a)*r*.8,.045,.075,.045);}}
-   if(s.frozen||s.chilled){const n=s.frozen?(low?6:10):Math.min(3,Math.max(1,s.chillStacks??1))*(low?1:2);for(let i=0;i<n;i++){const a=i*2.399+d.phase,large=s.frozen?1:.82+Math.sin(t*3.2+i*.8)*.08;this.put(this.ice,x+Math.cos(a)*r,y+.08+(i%3)*h*(s.frozen?.18:.24),z+Math.sin(a)*r,.11*large,.3*large*(1+(i%3)*.35),.15*large,undefined,a);this.color.setHex(i%3?0x9cd5e5:0xe5fbff);this.ice.setColorAt(this.ice.count-1,this.color);}}
+   if((s.frozen||s.chilled)&&!abilityOwners?.has(root)){const n=s.frozen?(low?6:10):Math.min(3,Math.max(1,s.chillStacks??1))*(low?1:2);for(let i=0;i<n;i++){const a=i*2.399+d.phase,large=s.frozen?1:.82+Math.sin(t*3.2+i*.8)*.08;this.put(this.ice,x+Math.cos(a)*r,y+.08+(i%3)*h*(s.frozen?.18:.24),z+Math.sin(a)*r,.11*large,.3*large*(1+(i%3)*.35),.15*large,undefined,a);this.color.setHex(i%3?0x9cd5e5:0xe5fbff);this.ice.setColorAt(this.ice.count-1,this.color);}}
   }
   // Only the live prefix was written. Reuse range records because Three clears the list
   // after uploading, and addUpdateRange would allocate a new object for every buffer/frame.

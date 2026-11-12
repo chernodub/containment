@@ -1,4 +1,5 @@
-import type * as T from 'three';
+import * as T from 'three';
+import { AbilityPriorityMask, bindPriorityMask, type HostilePrioritySource } from './PriorityMask';
 import type { AbilitiesSnapshot, AbilityEvent, RigId } from '../../game/abilities/contract';
 import type { DepthGame } from '../../DepthGame';
 import type { GraphicsOptions } from '../graphicsOptions';
@@ -14,6 +15,11 @@ import type { AbilityFrame, AbilityPresentation, PresentationFactory } from './t
 /** One owner for ability routing, quality, fixed pools and the immutable snapshot clock. */
 export class AbilityVisuals extends AbilityGeometry {
     readonly kit = new ElementKit(this.root);
+    readonly priorityMask = new AbilityPriorityMask();
+    private readonly priorityActor = (id: number) => this.kit.statusActor(id);
+    private prioritySource?: HostilePrioritySource;
+    /** Optional world-renderer accessor; old renderers keep snapshot/projectile fallback. */
+    setHostilePrioritySource(source: unknown): void { this.prioritySource = source as HostilePrioritySource; }
     private registry = new Map<RigId, AbilityPresentation>();
     private system?: AbilityPresentation;
     private frame: AbilityFrame = { snapshot: undefined, dt: 0, visible: true };
@@ -23,11 +29,21 @@ export class AbilityVisuals extends AbilityGeometry {
         super(scene);
         // Arc owns elevated energy links; standalone geometry retains its snapshot contract.
         this.ownsLinkPresentation = false;
+        this.ownsZonePresentation = true;
+        this.shareBoundaries(this.kit.rings);
         this.register('breacher', createBreacherPresentation);
         this.register('cryo', createCryoPresentation);
         this.register('pyro', createPyroPresentation);
         this.register('arc', createArcPresentation);
         this.registerSystem(createSystemPresentation);
+        this.root.traverse(node => {
+            if (!(node instanceof T.Mesh)) return;
+            const m = node.material as T.ShaderMaterial;
+            if (!m.isShaderMaterial) return;
+            const g = node.geometry;
+            bindPriorityMask(m, this.priorityMask.texture,
+                g.getAttribute('abilityPriority') ? 'abilityPriority' : g.getAttribute('ribbonPriority') ? 'ribbonPriority' : undefined);
+        });
     }
     register(rig: RigId, factory: PresentationFactory): void { this.registry.get(rig)?.dispose(); this.registry.set(rig, factory(this.kit)); }
     registerSystem(factory: PresentationFactory): void { this.system?.dispose(); this.system = factory(this.kit); }
@@ -52,8 +68,9 @@ export class AbilityVisuals extends AbilityGeometry {
             this.clear();
         this.wasVisible = visible;
         dt = visible && Number.isFinite(dt) ? Math.max(0, dt) : 0;
-        super.update(visible ? snapshot : undefined, dt, visible);
+        this.priorityMask.update(visible ? game : undefined, camera, this.prioritySource, this.priorityActor);
         this.kit.begin(dt);
+        super.update(visible ? snapshot : undefined, dt, visible);
         const f = this.frame;
         f.snapshot = snapshot;
         f.dt = dt;
@@ -66,10 +83,10 @@ export class AbilityVisuals extends AbilityGeometry {
         this.system?.update(f);
         this.kit.end();
     }
-    override clear(): void { super.clear(); this.kit?.clear(); if (this.registry)
+    override clear(): void { super.clear(); this.priorityMask?.clear(); this.kit?.clear(); if (this.registry)
         for (const p of this.registry.values())
             p.clear(); this.system?.clear(); }
     override dispose(): void { if (this.dead)
         return; this.dead = true; for (const p of this.registry.values())
-        p.dispose(); this.system?.dispose(); this.kit.dispose(); super.dispose(); }
+        p.dispose(); this.system?.dispose(); this.kit.dispose(); this.priorityMask.dispose(); super.dispose(); }
 }

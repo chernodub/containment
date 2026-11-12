@@ -25,12 +25,35 @@ describe('friendly ability readability contracts', () => {
         expect((node.material as T.Material).depthWrite).toBe(false);
       }
     });
-    expect(boundaries).toBe(3);
+    expect(boundaries).toBe(1);
+    expect(visuals.kit.rings.capacity).toBe(112 + 32 + 160);
     expect((hostile.mesh.material as T.ShaderMaterial).fragmentShader).toContain('filled*.14');
     const attacks = new AttackEffects(scene, undefined);
     const hostilePulse = scene.children.find(node => node instanceof T.InstancedMesh && node.geometry instanceof T.RingGeometry && node.geometry.parameters.innerRadius === .955);
     expect(hostilePulse?.renderOrder).toBe(hostile.mesh.renderOrder);
     attacks.dispose(); hostile.dispose(); visuals.dispose();
+  });
+
+
+  it('keeps exact sustained boundaries without duplicate large ground quads beneath rig surfaces', () => {
+    const visuals = new AbilityVisuals(new T.Group());
+    visuals.update({rig:'pyro', slots:null, zones:[{id:1,ability:'napalm-charge',element:'pyro',shape:'circle',x:96,y:128,radius:120,x2:0,y2:0,width:0,durationMs:6000,remainingMs:4000,attached:false}], deployables:[],overdrive:{active:false,ready:false,charge:0,activeRemainingMs:0},invulnerable:false,dashing:false,hostileTimeScale:1},0);
+    let boundaries=0, groundSurfaces=0;
+    visuals.root.traverseVisible(n=>{if(!(n instanceof T.Mesh))return;const m=n.material as T.ShaderMaterial;if(m.userData.friendlyBoundary&&n instanceof T.InstancedMesh)boundaries+=n.count;if(m.uniforms?.kind)groundSurfaces++;});
+    expect(boundaries).toBeGreaterThan(0);expect(groundSurfaces).toBe(0);
+    expect(visuals.kit.batches.decal.mesh.count).toBe(1);visuals.dispose();
+  });
+
+
+  it('retains impact waves, casts and authoritative footprints together in the shared boundary draw', () => {
+    const v = new AbilityVisuals(new T.Group());
+    v.kit.ring(1, 2, 5, 0xffb454, .6);
+    v.event({ability:'seismic-slam',rig:'breacher',slot:'tactical',element:'kinetic',phase:'cast',durationMs:220,radius:230},32,64);
+    v.update({rig:'breacher',slots:null,zones:[{id:1,ability:'napalm-charge',element:'pyro',shape:'circle',x:32,y:64,radius:96,x2:0,y2:0,width:0,durationMs:6000,remainingMs:4000,attached:false}],deployables:[],overdrive:{active:false,ready:false,charge:0,activeRemainingMs:0},invulnerable:false,dashing:false,hostileTimeScale:1},.05);
+    const b = v.kit.rings.mesh, kinds = b.geometry.getAttribute('telegraph'), weights = b.geometry.getAttribute('abilityPriority');
+    expect(b.count).toBe(3);expect(kinds.getX(0)).toBe(3);expect(kinds.getX(1)).toBe(0);expect(kinds.getX(2)).toBe(0);
+    expect([weights.getX(0),weights.getX(1),weights.getX(2)]).toEqual([0,1,0]);
+    v.clear();expect(b.count).toBe(0);v.dispose();
   });
 
   it('freezes friendly dash rotation for reduced motion and preserves exact shapes', () => {
@@ -42,7 +65,16 @@ describe('friendly ability readability contracts', () => {
     expect(scale.x).toBeCloseTo(7); expect(scale.y).toBeCloseTo(7); b.dispose();
   });
 
-  it.each([false, true])('streams tapered centimetre lightning with 40ms rerolls, exact contacts and no new buffers (Low %s)', low => {
+
+  it.each([false,true])('spends only two segments on local suit crackles without changing long target bolts (Low %s)', low => {
+    const b = new AbilityLightningBatch(new T.Group(),256);b.low=low;
+    const r = {start:new T.Vector3(0,1,0),end:new T.Vector3(.2,1.1,0),lightning:true,width:.018};
+    b.begin();b.append(r,.1);b.end();expect(b.mesh.count).toBe(4);
+    r.end.set(6,1,0);b.begin();b.append(r,.1);b.end();expect(b.mesh.count).toBeGreaterThanOrEqual(12);expect(b.mesh.count).toBeLessThanOrEqual(23);
+    b.dispose();
+  });
+
+  it.each([false, true])('streams tapered caller-width lightning with 40ms rerolls, exact contacts and no new buffers (Low %s)', low => {
     const b = new AbilityLightningBatch(new T.Group(), 256); b.low = low;
     const r = { start: new T.Vector3(1, .9, 2), end: new T.Vector3(6, .7, 4), lightning: true, width: .2, seed: 7 };
     const matrices = b.mesh.instanceMatrix.array;
@@ -51,7 +83,8 @@ describe('friendly ability readability contracts', () => {
     expect(count).toBeLessThanOrEqual(low ? 12 : 23);
     for (let i = 0; i < count; i++) {
       b.mesh.getMatrixAt(i, m); scale.setFromMatrixScale(m);
-      expect(scale.x).toBeLessThanOrEqual(.034); expect(scale.z).toBeLessThanOrEqual(.034);
+      expect(scale.x).toBeLessThanOrEqual(.144); expect(scale.z).toBeLessThanOrEqual(.144);
+      if (i < 2) expect(scale.x).toBeGreaterThan(.045);
     }
     b.begin(); b.append(r, .035); b.end(); expect(matrices).toEqual(first);
     b.begin(); b.append(r, .045); b.end(); expect(matrices).not.toEqual(first);

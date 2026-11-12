@@ -19,7 +19,13 @@ it.each(furniture)('$id keeps its physical reservation, floor bearing and author
   const bounds=new T.Box3().setFromPoints(points);
   expect(bounds.min.x).toBeCloseTo(f.x,3);expect(bounds.max.x).toBeCloseTo(f.x+f.w,3);
   expect(bounds.min.z).toBeCloseTo(f.y,3);expect(bounds.max.z).toBeCloseTo(f.y+f.h,3);
-  expect(bounds.min.y).toBeCloseTo(0,3);expect(bounds.max.y).toBeCloseTo(f.kind==='table'?24:34.4,3);
+  expect(bounds.min.y).toBeCloseTo(0,3);
+  if(f.kind==='table'){
+   // The unchanged24-unit tabletop supports a bounded interrupted-meal vignette.
+   expect(bounds.max.y).toBeGreaterThan(29);expect(bounds.max.y).toBeLessThanOrEqual(30);expect(root.userData.abandonedTable).toBe(true);
+   const ray=new T.Raycaster(new T.Vector3((f.x+f.w/2)/32,3,(f.y+f.h/2)/32),new T.Vector3(0,-1,0));
+   expect(ray.intersectObject(root,true)[0].point.y*32).toBeCloseTo(24,3);
+  }else expect(bounds.max.y).toBeCloseTo(34.4,3);
   const normals=new Set<string>();root.traverse(o=>{if(o instanceof T.Mesh){const p=o.geometry.getAttribute('position'),n=o.geometry.getAttribute('normal');for(let i=0;i<p.count;i++)if(p.getZ(i)*32>=f.y&&p.getZ(i)*32<=f.y+f.h)normals.add([n.getX(i),n.getY(i),n.getZ(i)].map(v=>v.toFixed(2)).join(','));}});
   expect(normals.size).toBeGreaterThan(6);
  }finally{disposeModel(root);}

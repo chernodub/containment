@@ -6,6 +6,7 @@ import type { EnemySnapshot } from '../../../game/enemies/EnemySystem';
 import { ElementKit } from '../ElementKit';
 import { GRAPHICS_PRESETS } from '../../graphicsOptions';
 import { createSystemPresentation } from './index';
+import { AfflictionBatches, afflictionEffects } from '../../afflictions';
 
 const event = (extra: Partial<AbilityEvent> = {}): AbilityEvent => ({ ability: 'ram', rig: 'breacher', slot: 'dash', element: 'kinetic', phase: 'dash-start', angle: 0, ...extra });
 const snapshot = (extra: Partial<AbilitiesSnapshot> = {}): AbilitiesSnapshot => ({ rig: 'breacher', slots: null, overdrive: { active: false, ready: false, charge: 0, activeRemainingMs: 0 }, invulnerable: false, dashing: false, hostileTimeScale: 1, zones: [], deployables: [], ...extra });
@@ -13,7 +14,7 @@ const enemy = (extra: Partial<EnemySnapshot> = {}): EnemySnapshot => ({ id: 1, x
 function fixture() {
   const root = new T.Group(), kit = new ElementKit(root), fx = createSystemPresentation(kit), marine = new T.Group(), body = new T.Group();
   body.position.y = .23; body.rotation.z = .02; body.scale.y = .97; marine.add(body);
-  const states = new Map<number, { frozen: boolean; burning: boolean; shocked: boolean; chilled: boolean }>();
+  const states = new Map<number, { frozen: boolean; burning: boolean; shocked: boolean; chilled: boolean; chillStacks?: number }>();
   const enemies: EnemySnapshot[] = [];
   const queen = { active: false, defeated: false, x: 256, y: 192, health: 1000 };
   const g = { player: { x: 128, y: 128, angle: 0 }, combat: { snapshot: { dead: false } }, enemies: { snapshot: { enemies } }, boss: { snapshot: queen }, boonStatuses: (id: number) => states.get(id) ?? { frozen: false, burning: false, shocked: false, chilled: false } } as unknown as DepthGame;
@@ -134,6 +135,39 @@ describe('V2 common marine and struck feedback', () => {
     expect(kit.batches.shard.mesh.count).toBe(targets * shards);
     expect(kit.batches.shard.mesh.geometry).toBe(geometry); expect(kit.batches.shard.mesh.instanceMatrix.array).toBe(buffer);
     fx.dispose(); kit.dispose();
+  });
+
+
+  it('progressively accretes chilled frost without an enclosing shell and keeps element signals off the central silhouette', () => {
+    const { kit, fx, update, states, enemies } = fixture(); enemies.push(enemy());
+    states.set(1, { frozen: false, burning: false, shocked: false, chilled: true, chillStacks: 1 });
+    update(snapshot(), 0); const first = kit.batches.shard.mesh.instanceMatrix.array.slice(0, 4 * 16);
+    expect(kit.batches.shard.mesh.count).toBe(4); expect(kit.batches.flame.mesh.count).toBe(0);
+    states.set(1, { frozen: false, burning: false, shocked: false, chilled: true, chillStacks: 5 });
+    update(snapshot(), 0); expect(kit.batches.shard.mesh.instanceMatrix.array.slice(0, 4 * 16)).not.toEqual(first);
+    const m = new T.Matrix4(), p = new T.Vector3();
+    for (let i = 0; i < 4; i++) { kit.batches.shard.mesh.getMatrixAt(i, m); p.setFromMatrixPosition(m);
+      expect(Math.hypot(p.x - 5, p.z - 4)).toBeGreaterThan(.5); }
+    expect(Array.from(kit.batches.shard.mesh.geometry.getAttribute('abilityPriority').array).slice(0, 4)).toEqual([0, 0, 0, 0]);
+    states.clear(); update(snapshot(), 0); expect(kit.batches.shard.mesh.count).toBe(0); fx.dispose(); kit.dispose();
+  });
+
+
+  it('hands drawn statuses to the shared kit while legacy batches retain overflow and poison', () => {
+    const f = fixture(), first = new T.Group(), overflow = new T.Group(), camera = new T.PerspectiveCamera();
+    const status = { frozen: false, burning: true, shocked: false, chilled: true, poisoned: true, chillStacks: 1 };
+    afflictionEffects(first, 2, 1.5).set(status); afflictionEffects(overflow, 2, 1.5).set(status);
+    const legacy = new AfflictionBatches(undefined, 8), fire = legacy.root.children[0] as T.InstancedMesh;
+    const poison = legacy.root.children[1] as T.InstancedMesh, ice = legacy.root.children[2] as T.InstancedMesh;
+    legacy.update([first, overflow], camera, .2); const fireCount = fire.count, iceCount = ice.count, poisonCount = poison.count;
+    f.kit.bind({ lights: {} as never, distortion: {} as never, camera: {} as never, statusActor: id => id === 1 ? { root: first, height: 1.5 } : undefined });
+    f.enemies.push(enemy()); f.states.set(1, status); f.update(snapshot(), 0);
+    expect(f.kit.statusOwners.has(first)).toBe(true); expect(f.kit.statusOwners.has(overflow)).toBe(false);
+    legacy.update([first, overflow], camera, .2, f.kit.statusOwners);
+    expect(fire.count).toBe(fireCount / 2); expect(ice.count).toBe(iceCount / 2); expect(poison.count).toBe(poisonCount);
+    f.kit.begin(0); legacy.update([first, overflow], camera, .2, f.kit.statusOwners);
+    expect(fire.count).toBe(fireCount); expect(ice.count).toBe(iceCount);
+    legacy.dispose(); f.fx.dispose(); f.kit.dispose();
   });
 
   it('has a genuinely simpler Low path, preserves resources on saturation, and clears on death', () => {

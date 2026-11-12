@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {industrialBoxGeometry,industrialCylinderGeometry,industrialStencil} from './world/IndustrialFormKit';
 import {ARMORY_COUNTER,ARMORY_CAROUSEL} from '../game/world/armoryCarouselLayout';
 import type {Point} from '../game/roguelike/types';
 import {createStoredArmoryRifle} from './ArmoryBlockout';
@@ -8,26 +8,34 @@ import {createStoredArmoryRifle} from './ArmoryBlockout';
 export function armoryCarousel():T.Group{
  const root=new T.Group();root.name='armory-carousel-and-issue-bay';
  const material=(name:string,color:number,metalness:number)=>{const m=new T.MeshStandardMaterial({color,metalness,roughness:.58});m.name=name;m.userData.actorMaterial=true;
-  m.onBeforeCompile=shader=>{
-   shader.vertexShader='varying vec3 armorySurface;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\narmorySurface=position;');
-   shader.fragmentShader='varying vec3 armorySurface;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-    float machining=.5+.5*sin(armorySurface.y*190.0+armorySurface.x*63.0);
-    float brushing=.5+.5*sin(armorySurface.z*211.0+sin(armorySurface.x*23.0));
-    diffuseColor.rgb*=.90+machining*.065+brushing*.035;`);
-  };m.customProgramCacheKey=()=> 'g2-armory-machined-v1';return m;};
- const graphite=material('armory-graphite',0x28383d,.72),edge=material('armory-brass',0x88724c,.68),pale=material('armory-serial-enamel',0xb7bcae,.35),rubber=material('armory-dark-rubber',0x10191c,.05);
+  return m;};
+ const graphite=material('armory-graphite',0x28383d,.72),edge=material('armory-brass',0x88724c,.68),pale=material('armory-serial-enamel',0xb7bcae,.35),rubber=material('armory-dark-rubber',0x10191c,.05),worktop=material('armory-matte-worktop',0x798c91,.14);
+ worktop.roughness=.88;
  const add=(name:string,g:T.BufferGeometry,m:T.Material,parent:T.Object3D=root)=>{g.userData.environmentUV=true;const mesh=new T.Mesh(g,m);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;};
  const slab=(name:string,points:readonly Point[],bottom:number,height:number,m:T.Material,holes:readonly (readonly Point[])[]=[])=>{
   const shape=new T.Shape(points.map(p=>new T.Vector2(p.x/32,-p.y/32)));
   for(const hole of holes)shape.holes.push(new T.Path(hole.map(p=>new T.Vector2(p.x/32,-p.y/32))));
-  const g=new T.ExtrudeGeometry(shape,{depth:height,bevelEnabled:false,steps:1});g.rotateX(-Math.PI/2);g.translate(0,bottom,0);return add(name,g,m);
+  const bevel=Math.min(.055,height*.22);
+  const g=new T.ExtrudeGeometry(shape,{depth:height-2*bevel,bevelEnabled:true,bevelOffset:-bevel,bevelSize:bevel,bevelThickness:bevel,bevelSegments:1,steps:1});g.rotateX(-Math.PI/2);g.translate(0,bottom+bevel,0);return add(name,g,m);
  };
- const box=(parent:T.Object3D,name:string,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const beveled=name==='tray-bed'||name==='vise-jaw'||name==='secured-clamp';const p=add(name,beveled?new RoundedBoxGeometry(w,h,d,1,Math.min(.025,w*.12,h*.12,d*.12)):new T.BoxGeometry(w,h,d),m,parent);p.position.set(x,y,z);return p;};
- const cylinder=(name:string,radius:number,height:number,y:number,m:T.Material)=>{const p=add(name,new T.CylinderGeometry(radius,radius,height,48),m);p.position.set(600/32,y,450/32);return p;};
- slab('horseshoe-solid',ARMORY_COUNTER,0,1.04,graphite);
+ const box=(parent:T.Object3D,name:string,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const p=add(name,industrialBoxGeometry(w,h,d,Math.min(w,h,d)>.045&&Math.max(w,h,d)>.18?Math.min(.065,Math.min(w,h,d)*.16):0),m,parent);p.position.set(x,y,z);return p;};
+ const cylinder=(name:string,radius:number,height:number,y:number,m:T.Material)=>{const p=add(name,industrialCylinderGeometry(radius,height,.035,32),m);p.position.set(600/32,y,450/32);return p;};
+ slab('horseshoe-solid',ARMORY_COUNTER,0,.14,graphite);
+ const shellOutline=ARMORY_COUNTER.map(p=>{const dx=p.x-600,dz=p.y-450,r=Math.hypot(dx,dz),inset=r>255?-11:3;return{x:600+dx*(r+inset)/r,y:450+dz*(r+inset)/r};});
+ slab('horseshoe-recessed-housing',shellOutline,.14,.90,graphite);
  const a=240*Math.PI/180,b=Math.PI/2-a;
  const viseRecess=[[-.72,-.70],[.72,-.70],[.72,.70],[-.72,.70]].map(([x,z])=>({x:600+255*Math.cos(a)+32*(Math.cos(b)*x+Math.sin(b)*z),y:450+255*Math.sin(a)+32*(-Math.sin(b)*x+Math.cos(b)*z)}));
- slab('horseshoe-worktop',ARMORY_COUNTER,1.04,.10,graphite,[viseRecess]);
+ slab('horseshoe-worktop',ARMORY_COUNTER,1.04,.10,worktop,[viseRecess]);
+ // Broad armored cassettes and a recessed service plinth break the long curved facade.
+ // All tangent panels remain within the original counter's radial reservation.
+ for(let degrees=160;degrees<=380;degrees+=20){
+  const angle=degrees*Math.PI/180,g=new T.Group();g.name='counter-inset-service-cassette';g.position.set((600+295*Math.cos(angle))/32,.53,(450+295*Math.sin(angle))/32);g.rotation.y=Math.PI/2-angle;root.add(g);
+  box(g,'counter-panel-shadow',0,0,0,1.82,.70,.055,rubber);
+  box(g,'counter-panel-enamel',0,.025,.035,1.66,.53,.035,graphite);
+  for(const side of [-1,1])box(g,'counter-frame',side*.88,0,.045,.065,.66,.055,pale);
+  box(g,'counter-pull',.52,.04,.07,.065,.22,.06,edge);
+  box(g,'counter-toe',0,-.39,-.06,1.85,.12,.20,rubber);
+ }
  // Inset brushed-metal safety edges stay strictly inside the segmented solid.
  for(const [inner,outer] of [[216,219],[290,294]] as const){
   const strip=[...Array.from({length:25},(_,i)=>{const angle=(150+i*10)*Math.PI/180;return{x:600+outer*Math.cos(angle),y:450+outer*Math.sin(angle)};}),...Array.from({length:25},(_,i)=>{const angle=(390-i*10)*Math.PI/180;return{x:600+inner*Math.cos(angle),y:450+inner*Math.sin(angle)};})];
@@ -42,7 +50,7 @@ export function armoryCarousel():T.Group{
  // Two slim machined races break the broad flat base without concealing its teeth.
  for(const [radius,y] of [[1.92,1.235],[2.05,1.238]] as const){const g=new T.TorusGeometry(radius,.018,6,64);g.rotateX(Math.PI/2);const race=add('carousel-bearing-race',g,pale);race.position.set(600/32,y,450/32);}
 
- cylinder('carousel-deck',2.12,.09,1.185,graphite);
+ cylinder('carousel-deck',2.12,.09,1.185,worktop);
  cylinder('carousel-spindle',.24,2.25,2.35,pale);
  cylinder('carousel-spindle-cap',.38,.14,3.545,edge);
  for(const y of [1.47,2.07,3.31])cylinder('spindle-machined-collar',.27,.065,y,graphite);
@@ -75,6 +83,23 @@ export function armoryCarousel():T.Group{
   for(let tick=0;tick<7;tick++)box(g,'serial-engraving',-.2+tick*.065,.294,-.66,.018,.003,tick%3===0?.09:.055,graphite);
   for(const x of [-.5,.5])for(const z of [-.51,.51]){const bolt=add('tray-fastener',new T.CylinderGeometry(.027,.027,.018,10),pale,g);bolt.position.set(x,.19,z);}
 
+ }
+ // Wide dark splice lines and short ochre safety bars read as manufactured
+ // top panels, not another continuous black slab. They share existing batches.
+ for(let degrees=170;degrees<=370;degrees+=40){
+  const g=station(degrees,'counter-worktop-panel-joint');
+  box(g,'worktop-inset-joint',0,.009,0,.038,.014,2.13,rubber);
+  for(const side of [-1,1])box(g,'worktop-service-band',side*.16,.012,-.75,.16,.016,.51,edge);
+ }
+ for(const degrees of [180,360]){
+  const g=station(degrees,'counter-issue-stencil');
+  industrialStencil({box:(m,x,y,z,w,h,d)=>{box(g,'counter-stencil',x,y,z,w,h,d,m);},pipe:()=>{}},rubber,'06',0,.014,.18,.83,.96);
+ }
+ // Inset sector seams expose the secured deck's radial construction.
+ for(const degrees of [30,90,150,210,270,330]){
+  const g=new T.Group();g.position.set(600/32,1.238,450/32);g.rotation.y=-degrees*Math.PI/180;root.add(g);
+  box(g,'carousel-sector-joint',1.35,0,0,1.28,.012,.035,rubber);
+  box(g,'carousel-hazard-tab',1.84,.009,.09,.30,.014,.12,edge);
  }
  const vise=station(240,'maintenance-vise');vise.position.y=1.04;
  box(vise,'recessed-vise-well',0,.015,0,1.4,.025,1.35,rubber);

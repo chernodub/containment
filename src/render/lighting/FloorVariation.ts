@@ -96,7 +96,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         diffuseColor.rgb+=vec3(.006,.008,.009)*deckWear;` : ''}
         // Centered masks retain the calibrated average reflectance while worn
         // islands and wheel scrapes become visible under broad practical light.
-        diffuseColor.rgb*=1.0+(deckCloud-.5)*.26+(deckScrape-.12)*.16-(deckSilt-.58)*.095+deckGrain*roomFloorPattern.w;
+        diffuseColor.rgb*=1.0+(deckCloud-.5)*.10+(deckScrape-.12)*.08-(deckSilt-.58)*.095+deckGrain*roomFloorPattern.w;
         diffuseColor.rgb+=vec3(.002,.0023,.0023)*deckScratch;
         if(deckIdentity<.5){
           float frost=smoothstep(.58,.83,roomFloorNoise(roomFloorP*.45)+deckWear*.18);
@@ -114,7 +114,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         }else if(deckIdentity<5.5){
           vec2 grateUV=fract(roomFloorP*vec2(1.35,8.0));
           float grate=smoothstep(.18,.23,grateUV.x)*(1.0-smoothstep(.77,.82,grateUV.x))*smoothstep(.2,.28,grateUV.y)*(1.0-smoothstep(.64,.72,grateUV.y));
-          diffuseColor.rgb*=1.0-(grate-.13)*.19;
+          diffuseColor.rgb*=1.0-(grate-.13)*.06;
         }else if(deckIdentity<6.5){
           diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.91,1.015,1.035),roomFloorWet*.16);
         }else if(deckIdentity<7.5){
@@ -125,7 +125,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
           diffuseColor.rgb*=1.0-deckGrain*.012;
         }else{
           float heat=smoothstep(.42,.8,roomFloorNoise(roomFloorP*.22)+deckScrape*.18);
-          diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.09,.94,.89),heat*.5);
+          diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.09,.94,.89),heat*.15);
         }`);
       shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
         float roomFloorPolish=smoothstep(0.28,0.82,roomFloorMacro)*(1.0-roomFloorStain*0.25);

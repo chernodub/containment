@@ -23,6 +23,18 @@ describe('stationary Armory carousel model',()=>{
   check();(DepthRenderer.prototype as unknown as {bakeWorld:()=>void}).bakeWorld.call({world});check();
   expect(meshes(world).length).toBeLessThanOrEqual(12);disposeModel(world);
  });
+ it('separates the broad worktop value from graphite sides with matte panels and bounded graphic inlays',()=>{
+  const root=armoryCarousel();
+  const top=(root.getObjectByName('horseshoe-worktop') as T.Mesh).material as T.MeshStandardMaterial;
+  const sides=(root.getObjectByName('horseshoe-recessed-housing') as T.Mesh).material as T.MeshStandardMaterial;
+  const luma=(m:T.MeshStandardMaterial)=>m.color.r*.2126+m.color.g*.7152+m.color.b*.0722;
+  expect(luma(top)).toBeGreaterThan(luma(sides)*3);
+  expect(top.roughness).toBeGreaterThan(.8);expect(top.emissive.getHex()).toBe(0);
+  expect(root.children.filter(o=>o.name==='counter-worktop-panel-joint')).toHaveLength(6);
+  expect(root.children.filter(o=>o.name==='counter-issue-stencil')).toHaveLength(2);
+  expect(meshes(root).filter(m=>m.name==='carousel-sector-joint')).toHaveLength(6);
+  disposeModel(root);
+ });
  it('retires owned source and baked resources while retaining shared rifle materials and cached boxes',()=>{
   const world=new T.Group();appendEnvironment(world,armoryCarousel());
   const profiles=meshes(world).filter(m=>['stock','receiver','handguard','magazine','grip'].includes(m.name));

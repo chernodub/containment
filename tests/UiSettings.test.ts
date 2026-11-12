@@ -141,18 +141,24 @@ it('applies and persists tier, every graphics option and gameplay/channel contro
     for (const [key, value] of Object.entries(GRAPHICS_PRESETS.low)) {
       const control = page.locator(`[data-setting="graphics.${key}"]`);
       if (typeof value === 'boolean') await control.check();
-      else if (typeof value === 'string') await control.selectOption('low');
+      else if (typeof value === 'string') await control.selectOption(key==='inkOutlines'?'full':graphicsChoices(key).includes('low')?'low':graphicsChoices(key).find(choice=>choice!==value)??value);
       else {await control.focus(); await page.keyboard.press('Home'); if (key === 'resolutionScale') await page.keyboard.press('ArrowRight');}
     }
     await page.locator('[data-setting="combatText"]').uncheck();
     await page.locator('[data-setting="radar"]').check();
     for (const channel of ['music', 'effects']) {await page.locator(`[data-setting="${channel}"]`).focus(); await page.keyboard.press('End');}
     const saved = await page.evaluate(() => JSON.parse((window as any).settingsTest.values.get('containment.ui.v1')));
-    expect(saved).toEqual({version: 1, tier: 'low', graphics: {bloom: true, ambientOcclusion: true, lensEffects: true, distortion: true, atmosphere: true, dynamicLights: true, shadows: 'low', resolutionScale: .51, screenShake: 0, flashIntensity: 0}, combatText: false, radar: true, music: 1, effects: 1});
+    expect(saved).toEqual({version: 1, tier: 'low', graphics: {bloom: true, ambientOcclusion: true, lensEffects: true, distortion: true, atmosphere: true, dynamicLights: true, inkOutlines:'full',adaptiveResolution:true,stylizedShading:true, shadows: 'low', resolutionScale: .51, screenShake: 0, flashIntensity: 0}, combatText: false, radar: true, music: 1, effects: 1});
     await page.evaluate(() => (window as any).settingsTest.reload());
     expect(await page.locator('#quality').inputValue()).toBe('low');
     expect(await page.evaluate(() => (window as any).settingsTest.renderer.graphicsOptions)).toEqual(saved.graphics);
     expect(await page.evaluate(() => (window as any).settingsTest.settings.preferences)).toEqual({combatText: false, radar: true});
+    for (const ink of ['off','silhouette','full']) {
+      await page.locator('[data-setting="graphics.inkOutlines"]').selectOption(ink);
+      await page.evaluate(() => (window as any).settingsTest.reload());
+      expect(await page.locator('[data-setting="graphics.inkOutlines"]').inputValue()).toBe(ink);
+      expect(await page.evaluate(() => (window as any).settingsTest.renderer.graphicsOptions)).toEqual({...saved.graphics,inkOutlines:ink});
+    }
     await page.locator('#quality').selectOption('high');
     expect(await page.evaluate(() => (window as any).settingsTest.renderer.graphicsOptions)).toEqual(GRAPHICS_PRESETS.high);
     expect(await page.evaluate(() => JSON.parse((window as any).settingsTest.values.get('containment.ui.v1')).graphics)).toEqual(GRAPHICS_PRESETS.high);

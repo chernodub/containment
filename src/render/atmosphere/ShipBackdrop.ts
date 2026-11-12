@@ -32,7 +32,7 @@ const fragmentShader = /* glsl */ `
   void main() {
     vec2 outside = max(max(footprint.xy - vWorld.xz, vWorld.xz - footprint.zw), vec2(0.0));
     float distance = length(outside);
-    float fade = 1.0 - smoothstep(4.0, 15.0, distance);
+    float fade = 1.0 - smoothstep(8.0, 22.0, distance);
     float edge = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
     float bevel = smoothstep(.0, .026, edge);
     float seam = 1.0 - smoothstep(.026, .034, edge);
@@ -42,7 +42,7 @@ const fragmentShader = /* glsl */ `
     vec3 steel = vTint * illumination * (.62 + bevel * .38) * (1.0 - grooves * .12 * detail);
     // A dim utility-color seam gives distant structure a room-specific hue without becoming a route cue.
     steel += accent * seam * .0036 * detail;
-    steel *= 1.0 - smoothstep(2.5, 13.0, distance) * .84;
+    steel *= 1.0 - smoothstep(4.0, 20.0, distance) * .84;
     gl_FragColor = vec4(steel, fade);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -111,13 +111,13 @@ export class ShipBackdrop {
       mesh.material.uniforms.footprint.value.set(minX, minZ, maxX, maxZ);
       mesh.material.uniforms.accent.value.setHex(mood.practical.color);
     }
-    const tileWidth = (deckWidth + 36) / 12, tileHeight = (deckHeight + 36) / 12;
+    const tileWidth = (deckWidth + 48) / 12, tileHeight = (deckHeight + 48) / 12;
     this.plates.count = 0;
     for (let z = 0; z < 12; z++) for (let x = 0; x < 12; x++) {
       const index = z * 12 + x;
       const variation = .5 + .5 * Math.sin(index * 7.13);
-      this.place(this.plates, minX - 18 + (x + .5) * tileWidth, -1.55 - variation * .45,
-        minZ - 18 + (z + .5) * tileHeight, tileWidth - .055, .22 + variation * .16, tileHeight - .055,
+      this.place(this.plates, minX - 24 + (x + .5) * tileWidth, -1.55 - variation * .45,
+        minZ - 24 + (z + .5) * tileHeight, tileWidth - .055, .22 + variation * .16, tileHeight - .055,
         0, .84 + variation * .32);
     }
     this.struts.count = 0;
@@ -125,7 +125,7 @@ export class ShipBackdrop {
     for (let side = 0; side < 4; side++) {
       const vertical = side < 2;
       const along = vertical ? deckHeight : deckWidth;
-      for (let lane = 0; lane < 2; lane++) {
+      for (let lane = 0; lane < 4; lane++) {
         const out = 1.15 + lane * 2.3;
         const x = vertical ? (side === 0 ? minX - out : maxX + out) : (minX + maxX) / 2;
         const z = vertical ? (minZ + maxZ) / 2 : (side === 2 ? minZ - out : maxZ + out);
@@ -191,7 +191,7 @@ export class ShipBackdrop {
     this.dummy.updateMatrix();
     mesh.setMatrixAt(mesh.count, this.dummy.matrix);
     // Linear values give a subdued but visible blue/teal steel beneath the lit walkable deck.
-    this.tint.setRGB(.012 * brightness, .018 * brightness, .021 * brightness);
+    this.tint.setRGB(.012 * brightness * .65, .018 * brightness * .65, .021 * brightness * .65);
     mesh.setColorAt(mesh.count++, this.tint);
   }
 }

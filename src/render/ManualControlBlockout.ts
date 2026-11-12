@@ -1,6 +1,13 @@
 import * as T from 'three';
-import {box,rod,geometry,MAT as SHARED} from './meshParts';
+import {rod,geometry,MAT as SHARED} from './meshParts';
 import type {Footprint} from './ShipEnvironments';
+import {industrialBoxGeometry} from './world/IndustrialFormKit';
+
+/** Shared bounded chamfers retain the existing room batching/geometry lifetime. */
+function box(parent:T.Object3D,x:number,y:number,z:number,w:number,h:number,d:number,material:T.Material,_legacyRadius=0){
+ const shape=geometry(`g4-control-shell:${w}/${h}/${d}`,()=>industrialBoxGeometry(w,h,d,h<=.02?0:undefined));
+ const mesh=new T.Mesh(shape,material);mesh.position.set(x,y,z);mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);return mesh;
+}
 
 /** Per-assembly finishes use the existing owned-material disposal contract. */
 function controlFinishes(){
@@ -41,10 +48,10 @@ export function manualControlBlockout(f:Footprint,index:number):T.Group{
    b('cabinet-front-handle',x,.85,.989,.14,.04,.008,MAT.bone);
   }
  }else{
-  const wedge=geometry('room19-rough-desk-wedge',()=>{
-   const g=new T.BoxGeometry(1,1,1),p=g.getAttribute('position');
-   for(let i=0;i<p.count;i++)p.setY(i,p.getY(i)>0?1.32-p.getZ(i)*.44:0);
-   p.needsUpdate=true;g.computeVertexNormals();return g;
+  const wedge=geometry('g4-room19-chamfered-desk-wedge',()=>{
+   const r=.03,shape=new T.Shape([new T.Vector2(.5,0),new T.Vector2(-.5,0),new T.Vector2(-.5,1.10),new T.Vector2(.5,1.54)]);
+   const g=new T.ExtrudeGeometry(shape,{depth:1-2*r,bevelEnabled:true,bevelSize:r,bevelThickness:r,bevelOffset:-r,bevelSegments:1,steps:1});
+   g.translate(0,0,-.5+r);g.rotateY(Math.PI/2);return g;
   });
   const desk=new T.Mesh(wedge,MAT.bone);desk.name='sloped-authorization-desk';desk.position.set(.30*w,.24,.50*d);desk.scale.set(.55*w,1,.84*d);desk.castShadow=desk.receiveShadow=true;parts.add(desk);
   // Controls follow the inclined deck. Closed nested guards are inert presentation.

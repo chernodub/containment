@@ -1,3 +1,5 @@
+import {G4_FORM_SCENARIOS} from './g4-forms.mjs';
+import {G4_SCENARIOS} from './g4-scenarios.mjs';
 import {I4_SCENARIOS} from './i4-scenarios.mjs';
 import {V2_SCENARIOS} from './v2-scenarios.mjs';
 import {V3_SCENARIOS} from './v3-scenarios.mjs';
@@ -70,6 +72,7 @@ function integrationKitingSetup(tier){
 }
 
 export const SCENARIOS=[
+ ...G4_SCENARIOS,...G4_FORM_SCENARIOS,
  ...I4_SCENARIOS,...V2_SCENARIOS,...V3_SCENARIOS,
  ...ABILITY_SCENARIOS,DESKTOP_ABILITY_SCENARIO,INTEGRATION_SETTINGS_SCENARIO,
  {id:'title',state:'menu',required:['.title-screen','#start'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();}},
@@ -122,7 +125,7 @@ export const SCENARIOS=[
  }},
  {id:'low-ammo',state:'playing',room:'armory',required:['.weapon-hud[data-ammo=low]'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.invulnerable(true);d.game.switchWeapon('rifle');d.setInput({fire:true,angle:0,autoAim:false});for(let i=0;i<400&&d.game.combat.snapshot.magazine>Math.ceil(d.game.combat.snapshot.magazineCapacity*.2);i++)d.step(1000/60);d.setInput({fire:false});d.abilityFixture('breacher','ready');d.refresh();}},
  {id:'reload-fixture',state:'playing',room:'armory',required:['#reload-label'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory');d.invulnerable(true);d.game.switchWeapon('rifle');d.setInput({fire:true,angle:0,autoAim:false});d.step(500);d.setInput({fire:false});d.game.reload();d.step(d.game.combat.snapshot.reloadDurationMs*.4);d.abilityFixture('arc','ready');d.refresh();}},
- {id:'combat-calm',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.invulnerable(true);d.refresh();}},
+ {id:'combat-calm',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room,room==='reactor-vault'?{version:2}:{});d.invulnerable(true);d.refresh();}},
  {id:'combat-heavy',rooms:true,state:'playing',combat:true,burst:true,setup:async room=>{await window.__containmentDebug.gotoRoom(room);}},
  {id:'status-vfx',state:'playing',combat:true,status:true,burst:true,room:'communal-atrium',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('communal-atrium',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','absolute-zero','incendiary','caustic-rounds','arc-filament','conductive-shell','cryo-conductor']);}},
  {id:'boss',auditGraphics:true,state:'playing',burst:true,room:'reactor-vault',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.invulnerable(true);const q=d.game.boss.snapshot;const candidates=[];for(let y=q.y+120;y<=q.y+330;y+=30)for(let x=q.x-200;x<=q.x+200;x+=30)if(d.canStand(x,y))candidates.push({x,y});if(!q.active||!candidates.length)throw Error('Queen encounter unavailable');Object.assign(d.game.player,candidates[Math.floor(candidates.length/2)]);d.setInput({fire:true,angle:Math.atan2(q.y-d.game.player.y,q.x-d.game.player.x),autoAim:false});d.game.switchWeapon('plasma');d.step(1600);}},
@@ -215,7 +218,7 @@ export const SCENARIOS=[
  {id:'g2-title-low',state:'menu',required:['.title-screen','#start'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.renderer.setQuality('low');await d.prepare();d.game.menu();d.refresh();}},
  {id:'g2-boss-low',auditGraphics:true,state:'playing',burst:true,room:'reactor-vault',setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('reactor-vault',{version:2});d.renderer.setQuality('low');await d.prepare();d.invulnerable(true);const q=d.game.boss.snapshot;for(let y=q.y+180;y<=q.y+300;y+=30)for(let x=q.x-160;x<q.x+160;x+=30)if(d.canStand(x,y)){Object.assign(d.game.player,{x,y});break;}d.setInput({fire:true,angle:Math.atan2(q.y-d.game.player.y,q.x-d.game.player.x),autoAim:false});d.game.switchWeapon('plasma');d.measureLuminance=true;d.step(1600);}},
  {id:'g1-exposure-calm',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.invulnerable(true);d.measureLuminance=true;d.refresh();}},
- {id:'g1-low',rooms:true,state:'playing',combat:true,burst:true,setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setQuality('low');d.refresh();}},
+ {id:'g1-low',rooms:true,state:'playing',combat:true,burst:true,setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setQuality('low');await d.prepare();d.refresh();}},
  {id:'g1-perspective',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setCameraProjection('perspective');d.refresh();}},
  {id:'g1-orthographic',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setCameraProjection('orthographic');d.refresh();}},
  {id:'g1-aces',rooms:true,state:'playing',setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.renderer.setToneMapping('aces');d.refresh();}},
@@ -455,7 +458,7 @@ export function inspectFrame(){
   return {selector:node.id?`#${node.id}`:'.'+[...node.classList].join('.'),width:node.clientWidth,height:node.clientHeight,scrollWidth:node.scrollWidth,scrollHeight:node.scrollHeight,overflowX:node.scrollWidth>node.clientWidth+2&&contentRight>rect.right+2,overflowY:node.scrollHeight>node.clientHeight+2&&contentBottom>rect.bottom+2,outsideViewport:rect.left < -2||rect.top < -2||rect.right > innerWidth+2||rect.bottom > innerHeight+2,overflow:style.overflow};
  });
  const map={nodes:document.querySelectorAll('[data-node-id]').length,edges:document.querySelectorAll('[data-edge]').length,current:document.querySelectorAll('[data-map-state=current]').length,choices:document.querySelectorAll('[data-inspect-route]').length,confirmation:document.querySelector('[data-route]')?.getAttribute('data-route')??null,expectedNodes:g.expedition.run.version===3?20:g.expedition.run.version===2?18:9};
- return {preparation:r.preparationDiagnostics??null,staticBatching:r.world?.userData.staticBatching??null,i4Proof:d.i4Proof?{...d.i4Proof,pending:g.pending.length,active:g.enemies.activeCount}:null,championProof:d.championProof??null,pickupProof:d.pickupProof??null,queenPhase:g.boss.snapshot.phase,interimMeshes:r.scene.getObjectByName('interim-ability-visuals')?.children.filter(o=>o.visible&&o.isMesh&&(o.count===undefined||o.count>0)).length??0,drawErrors:d.drawErrors??[],settingsProof:d.settingsProof??null,marineBounds,hudOverlaps,kitingProof:d.kitingProof??null,shaderCompilations:d.shaderCompilations??null,recoveryProof:d.recoveryProof??null,lighting:r.lighting?.fixtures?.map(l=>({x:l.position.x,y:l.position.y,z:l.position.z,energy:l.intensity,color:l.color.getHex(),visible:l.visible})),poolLights:r.lighting?.pool?.lights?.filter(l=>l.visible).length,playfieldSamples,marineLocalSamples,playfieldProjection,abilities:g.abilities.snapshot,stats:g.stats,recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden,ui:{layout,map,damageReceipts:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>({text:n.textContent,source:n.dataset.source,element:n.dataset.element,token:n.dataset.damageToken,color:getComputedStyle(n).color})),rightColumnArea:['#status-hud','#radar-hud'].reduce((area,selector)=>{const n=document.querySelector(selector);if(!n||n.hidden)return area;const box=n.getBoundingClientRect();return area+box.width*box.height;},0),radarOpacity:getComputedStyle(document.querySelector('#radar-hud')).opacity,presentation:document.querySelector('#presentation-beat')?.textContent??'',toasts:[...document.querySelectorAll('.hud-toast:not([hidden])')].map(n=>n.textContent),abilitySlots:[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,title:n.querySelector('.ability-title')?.textContent,value:n.querySelector('.ability-value')?.textContent,icon:!!n.querySelector('svg')})),damageNumbers:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>n.textContent),threats:document.querySelectorAll('.threat-marker:not([hidden])').length}};
+ return {i8FamilyProof:d.i8FamilyProof??null,i8CorpseProof:d.i8CorpseProof??null,geometryCoverageProof:d.geometryCoverageProof??null,voidContourProof:d.voidContourProof??null,inkPreparationProof:d.inkPreparationProof??null,g4FootprintProof:d.g4FootprintProof??null,g4DangerProof:d.g4DangerProof??null,preparation:r.preparationDiagnostics??null,staticBatching:r.world?.userData.staticBatching??null,i4Proof:d.i4Proof?{...d.i4Proof,pending:g.pending.length,active:g.enemies.activeCount}:null,championProof:d.championProof??null,pickupProof:d.pickupProof??null,queenPhase:g.boss.snapshot.phase,interimMeshes:r.scene.getObjectByName('interim-ability-visuals')?.children.filter(o=>o.visible&&o.isMesh&&(o.count===undefined||o.count>0)).length??0,drawErrors:d.drawErrors??[],settingsProof:d.settingsProof??null,marineBounds,hudOverlaps,kitingProof:d.kitingProof??null,shaderCompilations:d.shaderCompilations??null,recoveryProof:d.recoveryProof??null,lighting:r.lighting?.fixtures?.map(l=>({x:l.position.x,y:l.position.y,z:l.position.z,energy:l.intensity,color:l.color.getHex(),visible:l.visible})),poolLights:r.lighting?.pool?.lights?.filter(l=>l.visible).length,playfieldSamples,marineLocalSamples,playfieldProjection,abilities:g.abilities.snapshot,stats:g.stats,recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden,ui:{layout,map,damageReceipts:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>({text:n.textContent,source:n.dataset.source,element:n.dataset.element,token:n.dataset.damageToken,color:getComputedStyle(n).color})),rightColumnArea:['#status-hud','#radar-hud'].reduce((area,selector)=>{const n=document.querySelector(selector);if(!n||n.hidden)return area;const box=n.getBoundingClientRect();return area+box.width*box.height;},0),radarOpacity:getComputedStyle(document.querySelector('#radar-hud')).opacity,presentation:document.querySelector('#presentation-beat')?.textContent??'',toasts:[...document.querySelectorAll('.hud-toast:not([hidden])')].map(n=>n.textContent),abilitySlots:[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,title:n.querySelector('.ability-title')?.textContent,value:n.querySelector('.ability-value')?.textContent,icon:!!n.querySelector('svg')})),damageNumbers:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>n.textContent),threats:document.querySelectorAll('.threat-marker:not([hidden])').length}};
 
 }
 
@@ -502,7 +505,12 @@ SCENARIOS.push({id:'u4-critical-objective',state:'playing',room:'containment-ann
  const d=window.__containmentDebug;await d.gotoRoom('containment-annulus',{rig:'arc'});d.invulnerable(true);d.uiFixture({preferences:{combatText:true,radar:true}});d.step(4500);d.refresh();
 }});
 SCENARIOS.push({id:'u4-ability-inspect',state:'playing',room:'awakening-bay',nativeFocus:'[data-ability=tactical]',nativeHold:['Alt'],required:['#ability-rules-tactical'],setup:async()=>{
- const d=window.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'arc'});d.invulnerable(true);d.step(4500);d.refresh();
+ const d=window.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'arc'});d.invulnerable(true);d.step(4500);
+ // A legal settled inspection mark leaves the deliberate tooltip clear of the marine at720p.
+ const g=d.game,b=g.geometry.bounds,points=[];
+ for(let y=b.y+40;y<b.y+220;y+=16)for(let x=b.x+60;x<b.x+b.width-60;x+=24)if(d.canStand(x,y,g.player.radius))points.push({x,y,distance:Math.abs(x-g.player.x)});
+ points.sort((a,b)=>a.y-b.y||a.distance-b.distance);if(!points.length)throw Error('No legal desktop inspection mark');
+ Object.assign(g.player,{x:points[0].x,y:points[0].y,vx:0,vy:0});d.step(900);d.refresh();
 }});
 const u4Draft=SCENARIOS.find(s=>s.id==='augment-draft');
 SCENARIOS.push({...u4Draft,id:'u4-boon-inspect',nativeFocus:'[data-mutation=spreading-nova], [data-mutation=twin-glacier]',nativeHold:['Alt'],required:['.boon-inspect-detail:visible']});
@@ -534,3 +542,48 @@ SCENARIOS.push({id:'u4-radar-fade',state:'playing',required:['#radar-hud[data-ob
  }
  throw Error('No legal native contact beneath radar');
 }});
+// V4 adds matched friendly-yield overlaps without changing any existing scenario.
+import { registerV4Scenarios } from './v4-scenarios.mjs';
+registerV4Scenarios(SCENARIOS);
+SCENARIOS.push({id:'g3-prop-motion',rooms:true,state:'playing',burst:true,setup:async room=>{const d=window.__containmentDebug;await d.gotoRoom(room);d.invulnerable(true);d.measureLuminance=true;d.game.enemies.reset();d.setInput({x:.35,y:0,fire:false,angle:0,autoAim:false});d.refresh();}});
+
+SCENARIOS.push({id:'g3-ink-switches',room:'awakening-bay',state:'playing',auditGraphics:true,setup:async()=>{
+ const d=window.__containmentDebug,r=d.renderer;await d.gotoRoom('awakening-bay');d.invulnerable(true);r.setQuality('low');await d.prepare();
+ const gl=r.renderer.getContext(),original=gl.createProgram;d.inkPreparationProof=[];
+ for(const inkOutlines of ['off','silhouette','off','full']){
+  r.setGraphicsOptions({inkOutlines});const held=r.roomLoading;if(!held)throw Error('Low ink topology transition did not hold readiness');await d.prepare();
+  let compiled=0;gl.createProgram=function(){compiled++;return original.call(gl);};try{d.step(100);}finally{gl.createProgram=original;}
+  if(compiled)throw Error('Prepared Low ink transition compiled '+compiled+' combat programs');
+  d.inkPreparationProof.push({inkOutlines,held,compiled,postResources:!!r.post.resources});
+ }
+ r.setGraphicsOptions({inkOutlines:'silhouette'});await d.prepare();d.refresh();
+}});
+
+// One-shot capture proof; readbacks are test-only, outside the application frame.
+SCENARIOS.push({id:'g3-void-contours',room:'awakening-bay',state:'playing',auditGraphics:true,setup:async()=>{
+ const d=window.__containmentDebug,r=d.renderer;await d.gotoRoom('awakening-bay');d.invulnerable(true);d.game.enemies.reset();
+ r.setGraphicsOptions({inkOutlines:'off',adaptiveResolution:false,bloom:false,ambientOcclusion:false,lensEffects:false,distortion:false,atmosphere:false});await d.prepare();
+ const previous=r.scene.onBeforeRender;r.scene.onBeforeRender=function(...args){previous.apply(this,args);this.traverse(o=>{if(!o.isMesh)return;let marine=false;for(let p=o;p;p=p.parent)if(p===r.player.root)marine=true;if(!marine&&o.name!=='motivated-practical-bounce')o.visible=false;});};d.refresh();
+ const gl=r.renderer.getContext(),w=gl.drawingBufferWidth,h=gl.drawingBufferHeight,before=new Uint8Array(w*h*4),after=new Uint8Array(w*h*4),ids=new Uint8Array(w*h*4),create=gl.createProgram;
+ let compiled=0;gl.createProgram=function(){compiled++;return create.call(gl);};
+ try{
+  d.refresh();gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,before);
+  r.setGraphicsOptions({inkOutlines:'silhouette'});d.refresh();gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,after);
+  r.renderer.readRenderTargetPixels(r.post.resources.scene,0,0,w,h,ids,undefined,1);
+ }finally{gl.createProgram=create;}
+ let actorPixels=0,darkenedActorPixels=0,backgroundPixels=0;for(let i=0;i<ids.length;i+=4){if(ids[i+3]>=3&&ids[i+3]<=6){actorPixels++;if(before[i]+before[i+1]+before[i+2]-after[i]-after[i+1]-after[i+2]>15)darkenedActorPixels++;}else if(ids[i+2]===0&&ids[i+3]===0)backgroundPixels++;}
+ d.voidContourProof={actorPixels,darkenedActorPixels,backgroundPixels,compiled};
+ if(compiled||actorPixels<100||darkenedActorPixels<30||backgroundPixels<w*h*.5)throw Error('Void contour proof failed '+JSON.stringify(d.voidContourProof));
+ if(gl.getError()!==gl.NO_ERROR)throw Error('Void contour proof WebGL readback error');
+}});
+
+SCENARIOS.push({id:'g3-geometry-coverage',room:'awakening-bay',state:'playing',auditGraphics:true,setup:async()=>{
+ const d=window.__containmentDebug,r=d.renderer;await d.gotoRoom('awakening-bay');r.setGraphicsOptions({adaptiveResolution:false});await d.prepare();d.refresh();
+ const target=r.post.resources.scene,data=new Uint8Array(target.width*target.height*4);r.renderer.readRenderTargetPixels(target,0,0,target.width,target.height,data,undefined,1);
+ const counts={};for(let i=0;i<data.length;i+=4)counts[data[i+3]]=(counts[data[i+3]]??0)+1;
+ d.geometryCoverageProof={pixels:target.width*target.height,classes:counts};
+ if((counts[1]??0)<target.width*target.height*.1||(counts[2]??0)<1000||(counts[3]??0)<100)throw Error('Geometry coverage proof failed '+JSON.stringify(d.geometryCoverageProof));
+}});
+
+import {registerI8Scenarios} from './i8-scenarios.mjs';
+registerI8Scenarios(SCENARIOS);

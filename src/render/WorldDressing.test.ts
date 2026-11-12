@@ -4,6 +4,13 @@ import {addWorldDressing,updateWorldDressing} from './world/WorldDressing';
 import {ROOM_TEMPLATES} from '../game/roguelike/roomTemplates';
 import {ROOM_STORY_ROUTE} from '../game/roguelike/storyRooms';
 import {disposeModel} from './meshParts';
+import {environmentArchitecture,environmentObstacle,appendEnvironment} from './ShipEnvironments';
+import {CameraRig} from './camera/CameraRig';
+import {roomFocus} from './roomFraming';
+import {addEnvironmentalStory} from './world/EnvironmentalStory';
+import {addInteriorPracticals} from './lighting/InteriorPracticals';
+import {addRoomPracticals} from './lighting/RoomPracticals';
+import {COMBAT_VIEW_HEIGHT,combatFocusTarget,protectPlayerFrame} from './camera/CombatFraming';
 
 function platformWorld(template:typeof ROOM_TEMPLATES['armory']){
  const root=new T.Group();
@@ -57,11 +64,50 @@ describe('G2 deterministic world dressing',()=>{
   expect(texture).toBeInstanceOf(T.DataTexture);expect(mesh.material.emissiveMap).toBe(texture);const image=texture.image as {width:number;height:number};expect(image.width*image.height).toBeLessThanOrEqual(65536);
   const retired=vi.spyOn(texture,'dispose');disposeModel(root);expect(retired).toHaveBeenCalledTimes(1);
  });
+ it.each(['diagnostic-gallery','safety-interlock-station'] as const)('%s projects the full story quad in front of all foreground hardware',id=>{
+  const t=ROOM_TEMPLATES[id],world=new T.Group();
+  for(const [index,r] of t.obstacles.entries())appendEnvironment(world,environmentObstacle('engineering',{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},index,id));
+  environmentArchitecture(world,'engineering',t.width/32,t.height/32,id);
+  const root=addWorldDressing(world,t,'engineering',id),display=root.userData.storyDisplay as {center:number[];corners:number[][];normal:number[]};
+  addEnvironmentalStory(world,t,'engineering',id);
+  addRoomPracticals(world,t.width/32,t.height/32,'engineering');addInteriorPracticals(world,t,'engineering');
+  expect(display.corners).toHaveLength(4);
+  const camera=new T.PerspectiveCamera(28,16/9,.1,160),rig=new CameraRig();world.updateWorldMatrix(true,true);
+  const desired=new T.Vector3(),scratch=new T.Vector3(),target=new T.Vector3();
+  for(const [px,pz] of [[t.spawn.x/32,t.spawn.y/32],[(id==='diagnostic-gallery'?550:560)/32,440/32]]){
+  combatFocusTarget(px,pz,0,0,0,false,false,desired);
+  const focus=roomFocus(desired.x,desired.z,t.width/32,t.height/32,COMBAT_VIEW_HEIGHT*16/9,COMBAT_VIEW_HEIGHT,id);
+  rig.reset(focus.x,focus.z);rig.apply(camera,1,COMBAT_VIEW_HEIGHT,0);protectPlayerFrame(camera,rig.focus,px,pz,.5,2.2,scratch,target);
+  const center=new T.Vector3().fromArray(display.center),normal=new T.Vector3().fromArray(display.normal);
+  expect(normal.dot(camera.position.clone().sub(center).normalize())).toBeGreaterThan(.5);
+  const projected=display.corners.map(v=>new T.Vector3().fromArray(v).project(camera));
+  let area=0;for(let i=0;i<4;i++){const a=projected[i],b=projected[(i+1)%4];area+=a.x*b.y-a.y*b.x;expect([a.x,a.y,a.z].every(Number.isFinite)).toBe(true);expect(a.z).toBeLessThan(1);}
+  expect(Math.abs(area)).toBeGreaterThan(.004);
+  const ray=new T.Raycaster();
+  // Dense coverage catches small lamps mounted over individual first-line
+  // letters. Include the complete practical/overhead scene, as captured.
+  const corners=display.corners.map(v=>new T.Vector3().fromArray(v));
+  for(let column=0;column<17;column++)for(let row=0;row<7;row++){
+   const u=.005+column*.99/16,v=.005+row*.99/6;
+   const target=corners[0].clone().lerp(corners[1],u).lerp(corners[3].clone().lerp(corners[2],u),v);
+   ray.set(camera.position,target.sub(camera.position).normalize());
+   const first=ray.intersectObject(world,true)[0];expect(first,`${id} display ${u}/${v}`).toBeDefined();
+   expect((first.object as T.Mesh<T.BufferGeometry,T.Material>).material.name,`${id} ${u}/${v}: ${first.object.parent?.name}/${first.object.name}/${(first.object as T.Mesh<T.BufferGeometry,T.Material>).material.type} @ ${first.point.toArray()}`).toBe('g2-dressing-display');
+  }
+  }
+  disposeModel(world);
+ });
  it('same room seed reproduces every fitting while a new seed changes clutter',()=>{
   const t=ROOM_TEMPLATES['infested-workshop'],a=platformWorld(t),b=platformWorld(t),c=platformWorld(t);
   const first=addWorldDressing(a,t,'infested',t.id,1729),same=addWorldDressing(b,t,'infested',t.id,1729),different=addWorldDressing(c,t,'infested',t.id,1730);
   expect(arrays(first)).toEqual(arrays(same));expect(arrays(first)).not.toEqual(arrays(different));
   for(const root of [a,b,c])disposeModel(root);
+ });
+ it('consumes the four Queen machinery islands asymmetrically inside their existing reservations',()=>{
+  const t=ROOM_TEMPLATES['reactor-vault'],world=platformWorld(t),root=addWorldDressing(world,t,'reactor',t.id,1729);
+  expect(root.userData.consumedArchitecture).toBe(4);expect(root.children.length).toBeLessThanOrEqual(7);
+  root.traverse(object=>{if(object instanceof T.Mesh){const p=object.geometry.getAttribute('position');for(let i=0;i<p.count;i++)if(p.getY(i)>.08){const x=p.getX(i)*32,z=p.getZ(i)*32;expect(t.obstacles.some(r=>x>=r.x-.01&&x<=r.x+r.width+.01&&z>=r.y-.01&&z<=r.y+r.height+.01)).toBe(true);}}});
+  disposeModel(world);
  });
  it('pulses retained material only, freezes reduced motion, and retires every room allocation once',()=>{
   const t=ROOM_TEMPLATES['infested-workshop'],world=platformWorld(t),root=addWorldDressing(world,t,'infested',t.id,3),material=root.userData.pulseMaterial as T.MeshStandardMaterial;

@@ -65,3 +65,17 @@
 .effects-controls .settings-control__copy>:last-child:not(:first-child),.comfort-toggles .settings-control__copy>:last-child:not(:first-child) {display:block;font-size:10px;line-height:1.25;}
 .effects-controls .settings-control {min-height:58px;}
 @container(min-width:650px) {.effects-controls .settings-control {min-height:58px;}}
+
+/* Desktop short consoles retain every hint and native control without overflow. */
+@media(max-height:820px) {
+ #overlay .system-settings .settings-control {min-height:44px;padding:0;}
+ #overlay .system-settings .settings-section+.settings-section {margin-top:12px;}
+ #overlay .system-settings .quality-controls {display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
+ #overlay .system-settings .quality-controls .settings-control--range {display:block;}
+ #overlay .system-settings .quality-controls .settings-control--range>:is(.settings-control__copy,.settings-range) {width:100%;}
+}
+@media(max-height:820px) {
+ #overlay .pause-panel .quality-controls .settings-control--range {display:flex;}
+ #overlay .pause-panel .quality-controls .settings-control--range>.settings-control__copy {width:50%;}
+ #overlay .pause-panel .quality-controls .settings-control--range>.settings-range {width:48%;}
+}

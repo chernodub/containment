@@ -1,3 +1,4 @@
+import {ENEMY_ATTACK_SHAPES} from './attackShapes';
 import {
   MAX_ACTIVE_ENEMIES,
   WORLD_HEIGHT,
@@ -410,7 +411,7 @@ export class EnemySystem {
       enemy.specialCooldownMs=Math.max(0,enemy.specialCooldownMs-timerDelta);enemy.chargeMs=Math.max(0,enemy.chargeMs-timerDelta);
       if(enemy.windupMs>0){enemy.windupMs=Math.max(0,enemy.windupMs-timerDelta);if(enemy.windupMs===0){
        if(enemy.pendingAttack==='spit')events.push(freezeEvent({type:'hazard-attack',enemyId:enemy.id,enemyType:'spitter',damage:enemy.contactDamage,sourceX:enemy.x,sourceY:enemy.y,targetX:enemy.lockX,targetY:enemy.lockY}));
-       if(enemy.pendingAttack==='charge')enemy.chargeMs=650;enemy.pendingAttack=null;enemy.decisionCooldownRemainingMs=0;
+       if(enemy.pendingAttack==='charge')enemy.chargeMs=ENEMY_ATTACK_SHAPES.chargeDurationMs;enemy.pendingAttack=null;enemy.decisionCooldownRemainingMs=0;
       }}
       this.#advanceCamouflage(enemy, timerDelta);
     }
@@ -609,7 +610,7 @@ export class EnemySystem {
 
   #decide(enemy: EnemyState, player: EnemyPlayerState): void {
     if(enemy.speed===0||enemy.windupMs>0){enemy.velocityX=enemy.velocityY=0;return;}
-    if(enemy.chargeMs>0){const d=normalized(enemy.lockX,enemy.lockY);enemy.velocityX=d.x*330;enemy.velocityY=d.y*330;return;}
+    if(enemy.chargeMs>0){const d=normalized(enemy.lockX,enemy.lockY);enemy.velocityX=d.x*ENEMY_ATTACK_SHAPES.chargeSpeed;enemy.velocityY=d.y*ENEMY_ATTACK_SHAPES.chargeSpeed;return;}
     const distanceToPlayer = Math.hypot(player.x - enemy.x, player.y - enemy.y);
     enemy.decisionIntervalMs =
       distanceToPlayer > FAR_DECISION_DISTANCE

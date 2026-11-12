@@ -169,12 +169,14 @@ export class SceneLighting {
   if(this.menuPresentation===enabled)return;this.menuPresentation=enabled;
   if(!enabled){this.applyMood(this.width,this.height);this.playerX=this.playerZ=NaN;return;}
   this.suppressCombatFeedback();
-  this.ambient.intensity=.025;this.ambient.color.setHex(0x8098b0);
-  this.key.position.set(29,6,19);this.key.target.position.set(24,1.6,13);this.key.color.setHex(0xd5e9ff);this.key.intensity=this.key instanceof T.SpotLight?1000:.55;
-  this.fill.position.set(28,4,7);this.fill.target.position.set(24,1,13);this.fill.color.setHex(0x749bab);this.fill.intensity=.12;
-  this.rim.position.set(29,6,9);this.rim.target.position.set(24,1,13);this.rim.color.setHex(0xa3dfee);this.rim.intensity=.35;
-  for(let i=0;i<4;i++){const light=this.fixtures[i];light.position.set(i?28:23,3.5,i?8.5:12);light.color.setHex(i?0xff9d64:0x9fe8ff);light.intensity=i===0?95:i===1?10:0;light.distance=i===0?4.5:3;}
-  this.lamp.setRoom(0);this.lamp.light.intensity=24;
+  this.ambient.intensity=.078;this.ambient.color.setHex(0x8098b0);
+  this.key.position.set(25.9,4.55,11.2);this.key.target.position.set(23.4,2,14.7);this.key.color.setHex(0xc9eafa);this.key.intensity=this.key instanceof T.SpotLight?1320:2.16;
+  this.fill.position.set(28,4,19);this.fill.target.position.set(24,1,13);this.fill.color.setHex(0x98b5c4);this.fill.intensity=1.35;
+  this.rim.position.set(26.2,4.9,11.7);this.rim.target.position.set(23.4,1.8,14.7);this.rim.color.setHex(0xc5f2ff);this.rim.intensity=2.4;
+  // Existing practical slots light only the cast's half of the set. The fixture
+  // keeps its warm source, with a restrained cool return from the occupied berth.
+  for(let i=0;i<4;i++){const light=this.fixtures[i];light.position.set(i===1?24.5:25.9,i===1?2.8:4.55,i===1?10.5:11.2);light.color.setHex(i===1?0x9fe8ff:0xff9a70);light.intensity=i===0?110:i===1?38:0;light.distance=i===1?5.5:7;}
+  this.lamp.setRoom(0);this.lamp.light.intensity=12;
  }
  /** Keep fixed slots visible for shader reuse, with no combat radiance in the title. */
  suppressCombatFeedback(muzzle?:T.PointLight){this.pool.reset();this.blastLife=0;this.blast.intensity=0;if(muzzle)muzzle.intensity=0;}

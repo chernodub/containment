@@ -8,6 +8,7 @@ import { createPyroPresentation } from '../../../src/render/abilities/pyro';
 import { createArcPresentation } from '../../../src/render/abilities/arc';
 import { createSystemPresentation } from '../../../src/render/abilities/system';
 import { CameraRig } from '../../../src/render/camera/CameraRig';
+import {COMBAT_VIEW_HEIGHT,combatFocusTarget,protectPlayerFrame} from '../../../src/render/camera/CombatFraming';
 import { roomFocus } from '../../../src/render/roomFraming';
 import { canOccupyExpedition, hasClearExpeditionShot } from '../../../src/game/world/expeditionGeometry';
 import { expeditionRewardOffers } from '../../../src/game/roguelike/expedition';
@@ -19,51 +20,58 @@ import { BOT_POLICY_VERSION, chooseBoon, chooseRoute, chooseTarget, chooseMoveme
 import {botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
 import {applyNativeImmediateKey, recordNativeObservedEvent, nativeWarningHazards, nativeDiagnosticBurst} from './sim-native-emulation';
 const TICK = 1000 / 60;
-const WIDTH = 1920, HEIGHT = 1080, VIEW = 13;
+const WIDTH = 1920, HEIGHT = 1080, VIEW = COMBAT_VIEW_HEIGHT;
 const WEAPONS = ['pistol', 'rifle', 'shotgun', 'plasma', 'rocket'] as const;
 /** CPU-only observer using the same framing, perspective projection and follow spring. */
-class CameraObserver {
+export class CameraObserver {
     readonly camera = new T.PerspectiveCamera(28, WIDTH / HEIGHT, .1, 160);
     readonly rig = new CameraRig();
     private revision = -1;
     private raycaster = new T.Raycaster();
     private point = new T.Vector3();
+    private target = new T.Vector3();
+    private desired = new T.Vector3();
+    private framed = {x:0,z:0};
+    private queenReady = false;
+    constructor(private readonly queenHeight = 4.5) {}
     update(game: DepthGame, dt: number) {
         const bounds = game.geometry.bounds;
         if (this.revision !== game.roomRevision) {
             this.revision = game.roomRevision;
+            this.queenReady = false;
             const f = roomFocus(game.geometry.playerSpawn.x / 32, game.geometry.playerSpawn.y / 32, bounds.width / 32, bounds.height / 32, VIEW * WIDTH / HEIGHT, VIEW, game.node.templateId);
             this.rig.reset(f.x, f.z);
         }
-        const b = game.boss.snapshot, weight = b.active && !b.defeated ? .43 : 0, zoom = weight ? .92 : 1;
+        const b = game.boss.snapshot, bossActive = b.active && !b.defeated, zoom = bossActive ? .78 : 1;
         const p = game.player;
-        const f = roomFocus(p.x / 32 * (1 - weight) + b.x / 32 * weight + Math.cos(p.angle) * .6, p.y / 32 * (1 - weight) + b.y / 32 * weight + Math.sin(p.angle) * .6, bounds.width / 32, bounds.height / 32, VIEW * WIDTH / HEIGHT / zoom, VIEW / zoom, game.node.templateId);
-        this.rig.update(dt, f.x, f.z, 1, false);
+        combatFocusTarget(p.x/32,p.y/32,p.angle,b.x/32,b.y/32,bossActive,false,this.desired);
+        const f = roomFocus(this.desired.x,this.desired.z,bounds.width/32,bounds.height/32,VIEW*WIDTH/HEIGHT/zoom,VIEW/zoom,game.node.templateId,this.framed);
+        const delta = game.status === 'paused' || game.status === 'reward' || game.status === 'route' ? 0 : Math.min(dt,.05);
+        this.rig.update(delta, f.x, f.z, 1, false);
         this.rig.apply(this.camera, zoom, VIEW, 1);
-        // Same projected marine headroom correction as the production renderer.
-        let left = 1, right = -1, top = -1, bottom = 1;
-        for (const dx of [-p.radius / 32, p.radius / 32])
-            for (const dz of [-p.radius / 32, p.radius / 32])
-                for (const height of [0, 2.05]) {
-                    const v = this.point.set(p.x / 32 + dx, height, p.y / 32 + dz).project(this.camera);
-                    left = Math.min(left, v.x);
-                    right = Math.max(right, v.x);
-                    top = Math.max(top, v.y);
-                    bottom = Math.min(bottom, v.y);
+        if(bossActive)this.protectBoss(p.x/32,p.y/32,p.radius/32,b.x/32,b.y/32);
+        protectPlayerFrame(this.camera,this.rig.focus,p.x/32,p.y/32,p.radius/32,2.05,this.point,this.target);
+        if(b.active)this.queenReady=true;
+    }
+    /** Same two-silhouette envelope/order as DepthRenderer; parity-tested against its real method. */
+    private protectBoss(px:number,pz:number,playerRadius:number,qx:number,qz:number) {
+        const queenHeight=this.queenReady?this.queenHeight:4.5;
+        for(let pass=0;pass<3;pass++){
+            let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
+            for(let actor=0;actor<2;actor++){
+                const x=actor?qx:px,z=actor?qz:pz,radius=actor?3.4:playerRadius,height=actor?queenHeight:2.05;
+                for(let ix=-1;ix<=1;ix+=2)for(let iz=-1;iz<=1;iz+=2)for(let iy=0;iy<2;iy++){
+                    this.point.set(x+ix*radius,iy*height,z+iz*radius).project(this.camera);
+                    left=Math.min(left,this.point.x);right=Math.max(right,this.point.x);top=Math.max(top,this.point.y);bottom=Math.min(bottom,this.point.y);
                 }
-        const cx = left < -.94 ? left + .94 : right > .94 ? right - .94 : 0, cy = top > .88 ? top - .88 : bottom < -.92 ? bottom + .92 : 0;
-        if (cx || cy) {
-            const from = new T.Vector3(p.x / 32, 1, p.y / 32).project(this.camera), to = from.clone();
-            to.x -= cx;
-            to.y -= cy;
-            from.unproject(this.camera);
-            to.unproject(this.camera);
-            from.sub(to);
-            from.z -= from.y * this.camera.matrixWorld.elements[10] / this.camera.matrixWorld.elements[9];
-            from.y = 0;
-            this.camera.position.add(from);
-            this.rig.focus.add(from);
-            this.camera.updateMatrixWorld();
+            }
+            const scale=Math.min(1,1.8/(right-left),1.12/(top-bottom));
+            if(scale<1){this.camera.zoom*=scale*.98;this.camera.updateProjectionMatrix();continue;}
+            const dx=(left+right)*.5,dy=(top+bottom)*.5-.08;
+            this.point.set((px+qx)*.5,0,(pz+qz)*.5).project(this.camera);this.target.copy(this.point);this.target.x-=dx;this.target.y-=dy;
+            this.point.unproject(this.camera);this.target.unproject(this.camera);this.point.sub(this.target);
+            this.point.z-=this.point.y*this.camera.matrixWorld.elements[10]/this.camera.matrixWorld.elements[9];this.point.y=0;
+            this.camera.position.add(this.point);this.camera.updateMatrixWorld();
         }
     }
     project(x: number, y: number, height = .65) { const p = this.point.set(x / 32, height, y / 32).project(this.camera); return { x: (p.x + 1) * WIDTH / 2, y: (1 - p.y) * HEIGHT / 2 }; }
@@ -123,7 +131,7 @@ export type SimOptions = {
 export type SimReport = ReturnType<typeof runSimulation>;
 /** Fight a complete earned campaign with the browser player's pure decision helpers. */
 export function runSimulation(options: SimOptions) {
-    const started = performance.now(), feel = new GameFeel(), camera = new CameraObserver();
+    const started = performance.now(), feel = new GameFeel(), camera = new CameraObserver(options.metrics?.queen?.height??4.5);
     let game: DepthGame;
     const events: Array<GameEffect & {
         at: number;

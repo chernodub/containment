@@ -64,7 +64,7 @@ describe('next generation combat presentation', () => {
   it('shows the full enemy warning radius throughout anticipation and increases urgency', () => {
     const scene = new T.Scene(), fx = new AttackEffects(scene), camera = new T.Camera();
     fx.event({ type: 'enemy-warning', x: 32, y: 64, radius: 96, durationMs: 1000 });
-    const ring = scene.children[4] as T.InstancedMesh, matrix = new T.Matrix4();
+    const ring = scene.getObjectByName('hostile-warning-fills') as T.InstancedMesh, matrix = new T.Matrix4();
     fx.update(.01, camera, []); ring.getMatrixAt(0, matrix);
     expect(new T.Vector3().setFromMatrixScale(matrix).x).toBeCloseTo(3);
     const alpha = ring.geometry.getAttribute('effectAlpha').getX(0);

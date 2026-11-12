@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RELAY_RACKS_FOOTPRINTS} from '../game/roguelike/relayRacksLayout';
+import {industrialBoxGeometry,industrialCylinderGeometry} from './world/IndustrialFormKit';
 import {serviceCartridge,serviceHousingGeometry} from './world/EquipmentDetail';
 
 /** Room-local shell and major forms. Dimensions are game units.
@@ -23,7 +24,7 @@ export function relayRacksRoom():T.Group{
   const flat=geo.index?geo.toNonIndexed():geo.clone();geo.dispose();
   const batch=groups.get(g)!;if(!batch.has(m))batch.set(m,{parts:[],name});const bucket=batch.get(m)!;if(name&&!bucket.name)bucket.name=name;bucket.parts.push(flat);
  };
- const box=(g:T.Group,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material,name='')=>add(g,new T.BoxGeometry(w/32,h/32,d/32).translate(x/32,y/32,z/32),m,name);
+ const box=(g:T.Group,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material,name='')=>add(g,industrialBoxGeometry(w/32,h/32,d/32,Math.min(w,h,d)>=24&&Math.max(w,h,d)<=170?Math.min(.045,Math.min(w,h,d)/160):0).translate(x/32,y/32,z/32),m,name);
  const pipe=(g:T.Group,a:number[],b:number[],radius:number,m:T.Material,name='')=>{
   const p=new T.Vector3(...a.map(n=>n/32)),q=new T.Vector3(...b.map(n=>n/32));
   const geo=new T.CylinderGeometry(radius/32,radius/32,p.distanceTo(q),8);
@@ -65,7 +66,8 @@ export function relayRacksRoom():T.Group{
    for(const dx of [-40,40])for(const dz of [-60,-40,-20,0,20,40,60])box(plenum,x+dx,20,z+dz,6,6,9,rail);
    // Three repeated blade bays share an open frame, not a stretched cabinet.
    for(const dx of [-43,43])for(const dz of [-77,77])box(g,x+dx,height/2,z+dz,6,height,6,rail,'relay-open-rails');
-   for(const dz of [-77,77])box(g,x,height-3,z+dz,92,6,6,rail);
+   for(const dz of [-77,77]){box(g,x,height-3,z+dz,92,6,6,rail);box(g,x,height+.3,z+dz,78,.6,4,pale);}
+   box(g,x-34,height+.4,z-77,13,.8,4,amber);
    for(const dx of [-40,40])box(g,x+dx,broken?24:39,z,6,8,154,rail);
    for(const bay of [-1,0,1]){
     const bz=z+bay*50;
@@ -76,7 +78,7 @@ export function relayRacksRoom():T.Group{
      box:(m,px,py,pz,w,h,d)=>box(g,px*32,py*32,pz*32,w*32,h*32,d*32,m),
      pipe:(m,a,b,r)=>pipe(g,a.toArray().map(n=>n*32),b.toArray().map(n=>n*32),r*32,m),
      housing:(m,px,py,pz,w,h,d,angle)=>add(g,serviceHousingGeometry(w,h,d).rotateY(angle).translate(px,py,pz),m),
-    },{steel:rail,dark,paint:rail,signal:cyan},x/32,(trayHeight+2.6)/32,(bz-1)/32,.78,0,bay+i);
+    },{steel:rail,dark,paint:pale,signal:cyan},x/32,(trayHeight+2.6)/32,(bz-1)/32,.78,0,bay+i);
     // Ceramic is confined to the patch field and removable tray handles.
     for(const dx of [-28,28])box(g,x+dx,trayHeight+4,bz+12,12,4,6,pale);
     for(const dx of [-18,-6,6,18])box(g,x+dx,trayHeight+3,bz+6,4,1,13,dark);
@@ -103,9 +105,9 @@ export function relayRacksRoom():T.Group{
   }else{
    // Exposed reel, circular retaining flanges and a split strain-relief crown.
    // The former square lid hid the drum at the shipping camera angle.
-   add(g,new T.CylinderGeometry(33/32,33/32,40/32,16).translate(x/32,32/32,(z-26)/32),amber,'relay-distribution-drum');
+   add(g,industrialCylinderGeometry(33/32,40/32,.05,16).translate(x/32,32/32,(z-26)/32),amber,'relay-distribution-drum');
    const flanges=group('relay-drum-flanges');g.add(flanges);
-   for(const y of [12,54])add(flanges,new T.CylinderGeometry(42/32,42/32,8/32,20).translate(x/32,y/32,(z-26)/32),rail);
+   for(const y of [12,54])add(flanges,industrialCylinderGeometry(42/32,8/32,.035,16).translate(x/32,y/32,(z-26)/32),rail);
    // Concentric machined seating and radial fasteners break up the exposed flange cap.
    add(flanges,new T.RingGeometry(17/32,31/32,24).rotateX(-Math.PI/2).translate(x/32,58.2/32,(z-26)/32),dark);
    add(flanges,new T.RingGeometry(29/32,31/32,24).rotateX(-Math.PI/2).translate(x/32,58.4/32,(z-26)/32),pale);

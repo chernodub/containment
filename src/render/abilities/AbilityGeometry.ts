@@ -39,8 +39,8 @@ const NO_LINKS: NonNullable<AbilitiesSnapshot['links']> = [];
  */
 export class AbilityGeometry {
     readonly root = new T.Group();
-    private readonly footprints = new FriendlyBoundaryBatch(this.root, 112);
-    private readonly telegraphs = new FriendlyBoundaryBatch(this.root, ABILITY_GEOMETRY_LIMITS.events);
+    private footprints = new FriendlyBoundaryBatch(this.root, 112);
+    private telegraphs = new FriendlyBoundaryBatch(this.root, ABILITY_GEOMETRY_LIMITS.events);
     private readonly ribbons = new AbilityLightningBatch(this.root, 80);
     private readonly circle = new T.PlaneGeometry(2, 2);
     private readonly strip = new T.PlaneGeometry(2, 2);
@@ -65,7 +65,15 @@ export class AbilityGeometry {
     private readonly eventShape: Telegraph = { shape: 'circle', x: 0, z: 0 };
     private readonly footprint: Telegraph = { shape: 'circle', x: 0, z: 0, progress: 1 };
     private readonly link: EnergyRibbon = { start: new T.Vector3(), end: new T.Vector3(), lightning: false };
+    private ownsBoundaryBatches = true;
+    /** Rich presentations pool casts, exact footprints and aftermath in one draw. */
+    protected shareBoundaries(batch: FriendlyBoundaryBatch): void {
+        this.footprints.dispose(); this.telegraphs.dispose();
+        this.footprints = this.telegraphs = batch; this.ownsBoundaryBatches = false;
+    }
     protected ownsLinkPresentation = true;
+    /** Rich rig modules can own surfaces while this layer retains exact boundaries. */
+    protected ownsZonePresentation = false;
     private nextEvent = 0;
     private time = 0;
     private reducedMotion = false;
@@ -73,6 +81,7 @@ export class AbilityGeometry {
     constructor(scene: T.Object3D) {
         // Retained debug inventory name keeps the existing capture evidence contract working.
         this.root.name = 'interim-ability-visuals';
+        this.telegraphs.priorityWeight = 0;
         // Interim footprints mark boundaries while preserving the authored deck and hostile silhouettes.
         for (const material of Object.values(this.zoneMaterials))
             material.uniforms.strength.value = 1;
@@ -192,8 +201,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
             material.uniforms.time.value = this.time;
         this.footprints.setTime(this.time, this.reducedMotion);
         this.telegraphs.setTime(this.time, this.reducedMotion);
-        this.footprints.clear();
-        this.telegraphs.clear();
+        if (this.ownsBoundaryBatches) { this.footprints.clear(); this.telegraphs.clear(); }
         this.ribbons.begin();
         for (let i = 0; i < this.zones.length; i++) {
             const slot = this.zones[i], zone = snapshot?.zones[i];
@@ -225,6 +233,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
                 this.circleFootprint(ex, ez, radius, COLORS[zone.element]);
             }
         }
+        if (this.ownsZonePresentation) for (const slot of this.zones) slot.body.visible = slot.start.visible = slot.end.visible = false;
         for (let i = 0; i < this.deployables.length; i++) {
             const slot = this.deployables[i], entity = snapshot?.deployables[i];
             slot.wall.visible = slot.pylon.visible = false;
@@ -274,6 +283,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
                 this.ribbons.append(slot.ribbon, this.time, this.reducedMotion);
             else {
                 slot.shape.progress = slot.cast ? slot.age / slot.life : 1;
+                this.telegraphs.priorityWeight = 0;
                 this.telegraphs.add(slot.shape);
             }
         }
@@ -290,6 +300,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
         shape.radius = radius;
         shape.color = color;
         shape.opacity = .22;
+        this.footprints.priorityWeight = 1;
         this.footprints.add(shape);
     }
     private lineFootprint(x: number, z: number, length: number, width: number, angle: number, color: number): void {
@@ -302,6 +313,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
         shape.angle = angle;
         shape.color = color;
         shape.opacity = .22;
+        this.footprints.priorityWeight = 1;
         this.footprints.add(shape);
     }
     /** Keep resources allocated across rooms, retiring only room-local state. */
@@ -323,8 +335,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
             return;
         this.disposed = true;
         this.clear();
-        this.footprints.dispose();
-        this.telegraphs.dispose();
+        if (this.ownsBoundaryBatches) { this.footprints.dispose(); this.telegraphs.dispose(); }
         this.ribbons.dispose();
         this.circle.dispose();
         this.strip.dispose();

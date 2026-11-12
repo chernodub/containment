@@ -26,6 +26,7 @@ type Particle = {
     age: number;
     color: number;
     seed: number;
+    priority: number;
 };
 type Wave = {
     live: boolean;
@@ -56,7 +57,10 @@ type Decal = {
     width: number;
     kind: number;
 };
+export interface StatusActor { readonly root: T.Object3D; readonly height: number }
 export interface AbilityServices {
+    /** Read-only actor lookup for exact presentation bounds and status ownership. */
+    statusActor?: (id: number) => StatusActor | undefined;
     lights: LightPool;
     distortion: DistortionField;
     camera: {
@@ -67,12 +71,23 @@ export interface AbilityServices {
     /** Existing HDR composite; no extra fullscreen pass or dynamic material. */
     presentation?: { setAbilityPresentation(exposure: number, warm: number, cool: number): void };
 }
+/** Frame epochs avoid clearing/repopulating a Set backing table in combat. */
+class StatusOwnership {
+    private readonly frames = new WeakMap<T.Object3D, number>();
+    private epoch = 0;
+    clear(): void { this.epoch++; }
+    add(root: T.Object3D): void { this.frames.set(root, this.epoch); }
+    has(root: T.Object3D): boolean { return this.frames.get(root) === this.epoch; }
+}
 /** Shared element language. Coordinates are render metres (simulation / 32), times seconds. */
 export class ElementKit {
     readonly root = new T.Group();
     readonly batches: Record<Primitive, InstanceBatch>;
-    readonly rings = new FriendlyBoundaryBatch(this.root, 160);
+    readonly rings = new FriendlyBoundaryBatch(this.root, 304);
     readonly ribbons = new AbilityLightningBatch(this.root, 2048);
+    /** Claimed only for targets drawn this frame; legacy status batches cover overflow. */
+    readonly statusOwners = new StatusOwnership();
+    statusActor(id: number): StatusActor | undefined { return this.services?.statusActor?.(id); }
     time = 0;
     low = false;
     reducedMotion = false;
@@ -80,7 +95,7 @@ export class ElementKit {
     private dynamicLights = true;
     private distortion = true;
     private services?: AbilityServices;
-    private particles: Particle[] = Array.from({ length: ABILITY_VFX_LIMITS.particles }, () => ({ live: false, kind: 'spark', x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, size: 0, life: 1, age: 0, color: 0, seed: 0 }));
+    private particles: Particle[] = Array.from({ length: ABILITY_VFX_LIMITS.particles }, () => ({ live: false, kind: 'spark', x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, size: 0, life: 1, age: 0, color: 0, seed: 0, priority: 0 }));
     private waves: Wave[] = Array.from({ length: ABILITY_VFX_LIMITS.rings }, () => ({ live: false, x: 0, z: 0, radius: 1, life: 1, age: 0, color: 0, reverse: false }));
     private beams: Beam[] = Array.from({ length: ABILITY_VFX_LIMITS.beams }, () => ({ live: false, age: 0, life: 1, delay: 0, ribbon: { start: new T.Vector3(), end: new T.Vector3() } }));
     private decals: Decal[] = Array.from({ length: ABILITY_VFX_LIMITS.decals }, () => ({ live: false, x: 0, z: 0, radius: 1, color: 0, age: 0, life: 1, angle: 0, width: 1, kind: 0 }));
@@ -92,11 +107,22 @@ export class ElementKit {
     private shape: Telegraph = { shape: 'shockwave', x: 0, z: 0 };
     private line: EnergyRibbon = { start: new T.Vector3(), end: new T.Vector3() };
     private light = { x: 0, y: 1, z: 0, color: 0, intensity: 0, distance: 1, duration: .15, priority: 2 };
+    private readonly viewPosition = new T.Vector3(0, 8, 8);
+    private readonly flowAxis = new T.Vector3();
+    private readonly flowView = new T.Vector3();
+    private readonly flowSide = new T.Vector3();
+    private readonly flowNormal = new T.Vector3();
+    private viewRightX = 1;
+    private viewRightZ = 0;
     private disposed = false;
     private instanceCount = 0;
     private exposure = 0;
     private warm = 0;
     private cool = 0;
+    /** 0 for impact/attached signals, 1 for sustained friendly coverage. */
+    priorityWeight = 0;
+    sustain(age = 1): void { this.priorityWeight = Math.max(0, Math.min(1, (age - .25) / .12)); }
+    impact(): void { this.priorityWeight = 0; }
     peakLights = 0;
     peakParticles = 0;
     peakInstances = 0;
@@ -105,7 +131,7 @@ export class ElementKit {
         this.root.name = 'ability-element-kit';
         this.batches = { shard: new InstanceBatch(this.root, 'shard', 512), spark: new InstanceBatch(this.root, 'spark', 512), smoke: new InstanceBatch(this.root, 'smoke', 192), flame: new InstanceBatch(this.root, 'flame', 384), solid: new InstanceBatch(this.root, 'solid', 512), ghost: new InstanceBatch(this.root, 'ghost', 128), decal: new InstanceBatch(this.root, 'decal', 64), front: new InstanceBatch(this.root, 'front', 64) };
     }
-    setView(camera: T.Camera): void { for (const k in this.batches)
+    setView(camera: T.Camera): void { this.viewPosition.copy(camera.position); this.viewRightX = camera.matrixWorld.elements[0]; this.viewRightZ = camera.matrixWorld.elements[2]; for (const k in this.batches)
         this.batches[k as Primitive].setView(camera); }
     bind(services: AbilityServices): void { this.services = services; }
     setOptions(options: GraphicsOptions, tier: GraphicsTier, reducedMotion: boolean): void {
@@ -126,6 +152,7 @@ export class ElementKit {
         if (this.instanceCount >= ABILITY_VFX_LIMITS.instances)
             return;
         const batch = this.batches[kind], before = batch.mesh.count;
+        batch.priorityWeight = this.priorityWeight;
         batch.draw(x, y, z, sx, sy, sz, color, opacity * (kind === 'spark' || kind === 'flame' ? .35 + .65 * this.flashIntensity : 1), angle, tilt, variant);
         this.instanceCount += batch.mesh.count - before;
     }
@@ -144,6 +171,7 @@ export class ElementKit {
         p.age = 0;
         p.color = color;
         p.seed = ++this.serial;
+        p.priority = this.priorityWeight;
     }
     burst(x: number, y: number, z: number, element: AbilityElement, count = 24, speed = 3, life = .7): void {
         count = this.low ? Math.min(6, count) : count;
@@ -174,6 +202,7 @@ export class ElementKit {
         s.color = color;
         s.opacity = opacity;
         s.progress = progress;
+        this.rings.priorityWeight = this.priorityWeight;
         this.rings.add(s);
     }
     beam(x: number, y: number, z: number, tx: number, ty: number, tz: number, color: number, width = .035, life = .22, lightning = true, delay = 0): void {
@@ -199,6 +228,7 @@ export class ElementKit {
         r.opacity = opacity * this.flashIntensity;
         r.lightning = lightning;
         r.seed = 7;
+        this.ribbons.priorityWeight = this.priorityWeight;
         this.ribbons.append(r, this.time, this.reducedMotion);
     }
     decal(x: number, z: number, radius: number, color: number, life = 5, angle = 0): void {
@@ -221,18 +251,18 @@ export class ElementKit {
         p.width = width; p.kind = SCAR_KIND[kind] + (kind === 'fan' ? arc / (Math.PI * 4) : 0);
     }
     /** One instanced volume, its outer radius never exceeds the authoritative radius. */
-    front(x: number, z: number, radius: number, progress: number, color: number, height = 1.5, opacity = .65): void {
+    front(x: number, z: number, radius: number, progress: number, color: number, height = 1.5, opacity = .65, style = 0): void {
         const r = radius * Math.max(.015, Math.min(1, progress));
         const h = height * (this.low ? .6 : 1);
-        this.draw('front', x, h * .5 + .025, z, r, h / .24, r, color, opacity * (.35 + .65 * this.flashIntensity));
+        this.draw('front', x, h * .5 + .025, z, r, h / .24, r, color, opacity * (.35 + .65 * this.flashIntensity), 0, 0, style);
     }
     /** Ballistic chunks have visible mass and one damped deck bounce, within the particle pool. */
     debris(x: number, z: number, radius: number, element: 'kinetic' | 'cryo', count = 28): void {
         count = this.low ? Math.min(8, count) : Math.min(64, count);
         for (let i = 0; i < count; i++) {
             const a = i * 2.39996323, speed = radius * (.65 + i % 7 * .09);
-            this.mote(element === 'cryo' ? 'shard' : 'solid', x + Math.cos(a) * .25, .12, z + Math.sin(a) * .25,
-                Math.cos(a) * speed, 2 + i % 5 * .55, Math.sin(a) * speed, .09 + i % 4 * .035, 1.2 + i % 3 * .15,
+            this.mote('shard', x + Math.cos(a) * .25, .12, z + Math.sin(a) * .25,
+                Math.cos(a) * speed, 2 + i % 5 * .55, Math.sin(a) * speed, .12 + Math.sin(i * 7.13) ** 2 * .17, 1.2 + i % 3 * .15,
                 element === 'cryo' ? (i % 3 ? 0x7fd6ff : 0xe8fbff) : (i % 5 ? 0x4b4540 : 0xffb454));
         }
     }
@@ -251,30 +281,76 @@ export class ElementKit {
             .04 + h * .5 + cycle * .13, z + Math.cos(seed * 3.7 + cycle * 6) * width * .12,
             width * (.65 + life * .35), h * .5, 1, core ? 0xffedb5 : 0xff7a2e, opacity * (.3 + life * .55));
     }
-    /** Sparse rising fuel tongues replace the luminous planar liquid surface. */
+    /** Low glossy fuel surface, leaving flame placement to the owning ability. */
     liquidFire(x: number, z: number, radius: number, opacity = 1): void {
-        const count = this.low ? 5 : 12;
+        this.draw('decal', x, .045, z, radius, radius, 1, 0xff7a2e, opacity, 0, 0, 8);
+    }
+    /** Directional jet: source-hot stretched tongues, accelerating and curling outwards. */
+    fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1): void {
+        const streams = this.low ? 2 : 3;
+        for (let i = 0; i < streams; i++) {
+            const a = angle + (i === 0 ? 0 : i === 1 ? -.28 : .36) * arc;
+            const reach = radius * (i === 0 ? .87 : i === 1 ? .62 : .73);
+            this.flowFlame(x + Math.cos(angle) * .35, .95, z + Math.sin(angle) * .35,
+                x + Math.cos(a) * reach, .92 + i * .11, z + Math.sin(a) * reach,
+                radius * (i === 0 ? .145 : i === 1 ? .095 : .11), i * 3.73, opacity * (i === 0 ? .82 : .55), i === 0);
+        }
+        const count = this.low ? 12 : 24;
         for (let i = 0; i < count; i++) {
-            const a = i * 2.39996323, r = radius * (.2 + .65 * Math.sin(i * 7.13) ** 2);
-            this.flameTongue(x + Math.cos(a) * r, z + Math.sin(a) * r, .18 + i % 3 * .055, .55 + i % 4 * .22, i * 1.73, opacity);
+            const seed = i * 2.39996323, f = .5 + .5 * Math.sin(seed * 4.73);
+            const travel = this.reducedMotion ? (i + .5) / count : (i * .618033989 + this.time * (1.7 + f * .45)) % 1;
+            const r = radius * (.07 + travel * .85);
+            const a = angle + Math.sin(seed * 3.17) * arc * .43 * Math.sqrt(travel);
+            const width = (.13 + travel * .32) * (.7 + f * .5);
+            const h = (.8 + travel * 1.15) * (.65 + f * .5);
+            this.draw('flame', x + Math.cos(a) * r, .45 + travel * .5, z + Math.sin(a) * r,
+                width, h * .5, 1, travel < .26 ? 0xffedb5 : 0xff7a2e,
+                opacity * (.85 - travel * .25), 0, this.flameTilt(a, 1.4 + travel * 1.3), 1);
         }
     }
-    /** Turbulent volume inside the exact cone; its outline is rendered separately. */
-    fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1): void {
-        // Stratified broad folds overlap across every range band. Random isolated
-        // match-sized tongues leave the impact looking like burning targets.
-        const rows = this.low ? 5 : 8, columns = this.low ? 7 : 12;
-        for (let row = 0; row < rows; row++) for (let column = 0; column < columns; column++) {
-            const seed = (row * columns + column) * 2.39996323;
-            const band = (row + .5) / rows;
-            const r = radius * (.08 + band * .85 + Math.sin(seed * 4.73) * .027);
-            const a = angle + ((column + .5) / columns - .5) * arc * .84
-                + Math.sin(seed * 3.17) * arc * .018;
-            const width = Math.max(.34, radius * (.048 + band * .034)) * (this.low ? 1.28 : 1);
-            this.flameTongue(x + Math.cos(a) * r, z + Math.sin(a) * r, width,
-                1.85 + Math.sin(seed * 7.13) ** 2 * .95, seed,
-                opacity * (.72 + Math.sin(seed) ** 2 * .2), band < .26);
-        }
+    /** Camera-facing flame ribbon whose long axis follows a real three-dimensional flow. */
+    flowFlame(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, core = false): void {
+        const axis = this.flowAxis.set(tx - x, ty - y, tz - z), length = axis.length();
+        if (length < .01) return;
+        axis.multiplyScalar(1 / length);
+        const mx = (x + tx) * .5, my = (y + ty) * .5, mz = (z + tz) * .5;
+        this.flowView.set(this.viewPosition.x - mx, this.viewPosition.y - my, this.viewPosition.z - mz);
+        this.flowSide.crossVectors(axis, this.flowView);
+        if (this.flowSide.lengthSq() < .0001) this.flowSide.set(1, 0, 0); else this.flowSide.normalize();
+        this.flowNormal.crossVectors(this.flowSide, axis).normalize();
+        const batch = this.batches.flame, before = batch.mesh.count;
+        this.draw('flame', mx, my, mz, width, length * .5, 1, core ? 0xffedb5 : 0xff7a2e, opacity, 0, 0, 100 + Math.abs(seed) % 64);
+        if (batch.mesh.count === before) return;
+        const matrix = batch.mesh.instanceMatrix.array, o = before * 16;
+        matrix[o] = this.flowSide.x * width; matrix[o + 1] = this.flowSide.y * width; matrix[o + 2] = this.flowSide.z * width;
+        matrix[o + 4] = axis.x * length * .5; matrix[o + 5] = axis.y * length * .5; matrix[o + 6] = axis.z * length * .5;
+        matrix[o + 8] = this.flowNormal.x; matrix[o + 9] = this.flowNormal.y; matrix[o + 10] = this.flowNormal.z;
+    }
+    private flameTilt(angle: number, lean: number): number {
+        return -Math.atan((Math.cos(angle) * this.viewRightX + Math.sin(angle) * this.viewRightZ) * lean);
+    }
+    /** Analytic tongue leaning along a world direction; shares the prepared flame draw. */
+    directedFlame(x: number, y: number, z: number, width: number, height: number, angle: number, lean: number, seed: number, opacity = 1, core = false): void {
+        const cycle = this.reducedMotion ? .4 : (this.time * (1.6 + Math.sin(seed) * .25) + seed * .6180339) % 1;
+        this.draw('flame', x, y + height * .5, z, width, height * (.38 + Math.sin(cycle * Math.PI) * .12), 1,
+            core ? 0xffedb5 : 0xff7a2e, opacity, 0, this.flameTilt(angle, lean), 1);
+    }
+    /** Glossy ballistic fuel lobe, sharing the retained decal plane and material. */
+    fuelDroplet(x: number, y: number, z: number, halfWidth: number, halfHeight: number, tilt: number, seed: number, opacity = 1): void {
+        this.draw('decal', x, y, z, halfWidth, halfHeight, 1, 0x963914, opacity, 0, tilt,
+            11 + (Math.sin(seed * 7.13) * .5 + .5) * .2);
+    }
+    /** Irregular ground frost within the exact rounded strip, including both end caps. */
+    frostFilm(x: number, z: number, length: number, halfWidth: number, angle: number, opacity = .7): void {
+        if (halfWidth <= 0) return;
+        const halfLength = Math.max(0, length) * .5 + halfWidth;
+        this.draw('decal', x, .043, z, halfLength, halfWidth, 1, 0x9bdcf0, opacity, 0, -angle,
+            14 + halfWidth / halfLength * .8);
+    }
+    /** Curved ground-mist brush stroke; length/width are complete world bounds. */
+    gust(x: number, z: number, length: number, width: number, angle: number, seed: number, opacity = .4, color = 0x9bdcf0): void {
+        this.draw('decal', x, .055, z, length * .5, width * .5, 1, color, opacity, 0, -angle,
+            10 + (Math.sin(seed * 7.13) * .5 + .5) * .4);
     }
     /** Solid-looking faceted translucent column, with a narrow luminous internal vein. */
     iceColumn(x: number, z: number, width: number, depth: number, height: number, angle: number, opacity = 1): void {
@@ -360,12 +436,15 @@ export class ElementKit {
             this.services?.camera.kick(angle, weight * .1);
     }
     begin(dt: number): void {
+        this.statusOwners.clear();
         this.time += dt;
+        this.impact();
         this.warm = this.cool = 0;
         this.instanceCount = 0;
         this.rings.setTime(this.time, this.reducedMotion);
         this.rings.clear();
         this.ribbons.begin();
+        this.ribbons.priorityWeight = 0;
         for (const kind in this.batches)
             this.batches[kind as Primitive].begin(this.reducedMotion ? 0 : this.time);
         let live = 0;
@@ -391,8 +470,11 @@ export class ElementKit {
             }
             p.y = Math.max(.04, p.y);
             const fade = 1 - p.age / p.life, s = p.size * (p.kind === 'smoke' ? 1 + p.age * 2 : 1);
+            this.sustain(p.age);
+            this.priorityWeight = Math.max(this.priorityWeight, p.priority);
             this.draw(p.kind, p.x, p.y, p.z, s, p.kind === 'spark' ? s * 2 : s, s, p.color, fade * (p.kind === 'smoke' ? .22 : .7), p.seed * .8, p.seed + p.age);
         }
+        this.impact();
         this.peakParticles = Math.max(this.peakParticles, live);
         for (const p of this.waves) {
             if (!p.live)
@@ -410,6 +492,7 @@ export class ElementKit {
             s.color = p.color;
             s.progress = p.reverse ? 1 - p.age / p.life : p.age / p.life;
             s.opacity = (1 - p.age / p.life) * .65 * this.flashIntensity;
+            this.rings.priorityWeight = Math.max(0, Math.min(1, (p.age - .25) / .12));
             this.rings.add(s);
         }
         for (const p of this.beams) {
@@ -423,6 +506,7 @@ export class ElementKit {
             if (p.age < p.delay)
                 continue;
             p.ribbon.opacity = (1 - (p.age - p.delay) / p.life) * this.flashIntensity;
+            this.ribbons.priorityWeight = Math.max(0, Math.min(1, (p.age - p.delay - .25) / .12));
             this.ribbons.append(p.ribbon, this.time, this.reducedMotion);
         }
         for (const p of this.decals) {
@@ -435,6 +519,7 @@ export class ElementKit {
             }
             if (this.instanceCount >= ABILITY_VFX_LIMITS.instances) continue;
             const b = this.batches.decal, before = b.mesh.count;
+            b.priorityWeight = Math.max(0, Math.min(1, (p.age - .25) / .12));
             b.draw(p.x, .027, p.z, p.radius, p.width, 1, p.color, Math.min(1, (p.life - p.age) / Math.min(3, p.life * .4)) * .8, 0, p.angle, p.kind === 2 ? 2 + .1 * Math.max(0, 1 - p.age) : p.kind);
             this.instanceCount += b.mesh.count - before;
         }
@@ -451,7 +536,7 @@ export class ElementKit {
             rings++; for (const p of this.beams)
         if (p.live)
             beams++; return { particles, rings, beams, peakParticles: this.peakParticles, peakInstances: this.peakInstances, peakLights: this.peakLights }; }
-    clear(): void { for (const p of this.particles)
+    clear(): void { this.statusOwners.clear(); for (const p of this.particles)
         p.live = false; for (const p of this.waves)
         p.live = false; for (const p of this.beams)
         p.live = false; for (const p of this.decals)

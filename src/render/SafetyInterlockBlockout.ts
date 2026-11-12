@@ -1,6 +1,7 @@
 import * as T from 'three';
-import {box,rod,ring} from './meshParts';
+import {rod,ring} from './meshParts';
 import type {Footprint} from './ShipEnvironments';
+import {industrialBoxGeometry,industrialCylinderGeometry} from './world/IndustrialFormKit';
 
 // Floor entries share the actual base fit used below. Kept inside the retained reservations.
 export const safetyInterlockEntries=[
@@ -21,7 +22,7 @@ export function safetyInterlockBlockout(footprint:Footprint,index:number):T.Grou
   const m=new T.MeshStandardMaterial({color,metalness,roughness,emissive,emissiveIntensity:emissive?.35:0});m.name=`room12-${name}`;m.userData.actorMaterial=true;return m;
  };
  const ivory=palette('ivory',0xc9c0a3,.12,.72),copper=palette('dark-copper',0x654432,.65,.49),orange=palette('muted-orange',0x986346,.25,.7),dark=palette('socket',0x172326,.15,.85),steel=palette('housing',0x465354,.55,.64),lamp=palette('local-light',0xd2ba7e,.1,.6,0xc8a361);
- const b=(name:string,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const mesh=box(cell,x,y,z,w,h,d,m,.035);mesh.name=name;return mesh;};
+ const b=(name:string,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const mesh=owned(name,industrialBoxGeometry(w,h,d),m);mesh.position.set(x,y,z);return mesh;};
  const v=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
  // Custom surfaces are room-owned. The existing world batcher releases these
  // inputs after copying them; shared meshParts geometry remains untouched.
@@ -31,11 +32,12 @@ export function safetyInterlockBlockout(footprint:Footprint,index:number):T.Grou
  };
  const outline=(points:number[][])=>new T.Shape(points.map(([x,z])=>new T.Vector2(x,-z)));
  const plate=(name:string,shape:T.Shape,y:number,depth:number,material:T.Material,parent:T.Object3D=cell)=>{
-  const mesh=owned(name,new T.ExtrudeGeometry(shape,{depth,bevelEnabled:false,curveSegments:24,steps:1}),material,parent);
-  mesh.rotation.x=-Math.PI/2;mesh.position.y=y;return mesh;
+  const r=depth>=.08?Math.min(.05,depth*.16):0;
+  const mesh=owned(name,new T.ExtrudeGeometry(shape,{depth:depth-2*r,bevelEnabled:r>0,bevelSize:r,bevelThickness:r,bevelOffset:-r,bevelSegments:1,curveSegments:24,steps:1}),material,parent);
+  mesh.rotation.x=-Math.PI/2;mesh.position.y=y+r;return mesh;
  };
  const cylinder=(name:string,x:number,y:number,z:number,radius:number,height:number,material:T.Material,parent:T.Object3D=cell)=>{
-  const mesh=owned(name,new T.CylinderGeometry(radius,radius,height,24),material,parent);mesh.position.set(x,y,z);return mesh;
+  const mesh=owned(name,industrialCylinderGeometry(radius,height),material,parent);mesh.position.set(x,y,z);return mesh;
  };
  const cable=(name:string,points:number[][],radius:number,material:T.Material)=>owned(name,new T.TubeGeometry(new T.CatmullRomCurve3(points.map(([x,y,z])=>v(x,y,z))),32,radius,8,false),material);
  const role=index%3;

@@ -7,11 +7,21 @@ import {addRoomPracticals} from '../lighting/RoomPracticals';
 import {addInteriorPracticals} from '../lighting/InteriorPracticals';
 import {environmentClock,updateHotFixtureSurfaces} from '../lighting/HotFixtureSurface';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
-import {disposeModel,geometries} from '../meshParts';
+import {disposeModel,geometries,MAT} from '../meshParts';
+import {authoredRoom} from '../AuthoredRooms';
 
 function transforms(root:T.Object3D){const values:number[][]=[];root.updateWorldMatrix(true,true);root.traverse(object=>{if(object instanceof T.Mesh)values.push(object.matrixWorld.toArray());});return values;}
 
 describe('X2 environmental story rendering',()=>{
+  it('layers torn cargo plating, ribs and cable looms outboard without adding material draws',()=>{
+    const t=ROOM_TEMPLATES['breached-loading-bay'],world=new T.Group(),room=authoredRoom(t.id,t)!;world.add(room);
+    const before=new Map<T.Mesh,number>();world.traverse(o=>{if(o instanceof T.Mesh)before.set(o,o.geometry.getAttribute('position').count);});
+    const root=addEnvironmentalStory(world,t,'cargo',t.id);expect(root.userData.layeredHull).toBe(true);expect(root.children).toHaveLength(0);
+    let changed=0,meshes=0;
+    const inside=(x:number,z:number)=>{let value=false;for(let i=0,j=t.boundary!.length-1;i<t.boundary!.length;j=i++){const a=t.boundary![i],b=t.boundary![j];if((a.y>z)!==(b.y>z)&&x<(b.x-a.x)*(z-a.y)/(b.y-a.y)+a.x)value=!value;}return value;};
+    world.traverse(o=>{if(o instanceof T.Mesh){meshes++;const p=o.geometry.getAttribute('position'),old=before.get(o)!;if(p.count>old){changed++;for(let i=old;i<p.count;i++)expect(inside(p.getX(i)*32,p.getZ(i)*32)).toBe(false);}}});
+    expect(meshes).toBe(before.size);expect(changed).toBe(2);disposeModel(world);
+  });
   it('reproduces irregular brood lobes from a room seed and stays inside fitted collision rectangles',()=>{
     const a=new T.Group(),b=new T.Group(),c=new T.Group();
     addBroodCell(a,1729,3);addBroodCell(b,1729,3);addBroodCell(c,1730,3);
@@ -75,5 +85,13 @@ describe('X2 environmental story rendering',()=>{
     updateHotFixtureSurfaces(2);expect(material.uniforms.time.value).toBe(2);expect(mesh.geometry).toBe(geometry);expect(mesh.material).toBe(material);
     updateHotFixtureSurfaces(0);expect(material.uniforms.time.value).toBe(0);
     disposeModel(root);expect(goneGeometry).toHaveBeenCalledTimes(1);expect(goneMaterial).toHaveBeenCalledTimes(1);
+  });
+  it('casts recognizable overhead plant shadows entirely on existing engineering reservations',()=>{
+    const template=ROOM_TEMPLATES['diagnostic-gallery'],world=new T.Group();
+    for(const r of template.obstacles){const mesh=new T.Mesh(new T.BoxGeometry(r.width/32,1,r.height/32),MAT.steel);mesh.position.set((r.x+r.width/2)/32,.5,(r.y+r.height/2)/32);world.add(mesh);}
+    const root=addEnvironmentalStory(world,template,'engineering',template.id);expect(root.userData.overheadMachines).toBe(2);
+    let raised=0;root.traverse(o=>{if(o instanceof T.Mesh&&o.name!=='source-anchored-story-particles'){
+      expect(o.castShadow).toBe(true);const p=o.geometry.getAttribute('position');for(let i=0;i<p.count;i++)if(p.getY(i)>1.3){raised++;const x=p.getX(i)*32,z=p.getZ(i)*32;expect(template.obstacles.some(r=>x>=r.x&&x<=r.x+r.width&&z>=r.y&&z<=r.y+r.height)).toBe(true);}
+    }});expect(raised).toBeGreaterThan(100);disposeModel(world);
   });
 });
