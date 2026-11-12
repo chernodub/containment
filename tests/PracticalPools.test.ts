@@ -35,17 +35,19 @@ it('keeps physical practical origins and retires per-room instance buffers and m
  disposeModel(room);for(const spy of [...geometries,...materials,...buffers])expect(spy).toHaveBeenCalledOnce();
 });
 
-it('keeps bounce hue and physical origins while containing reactor falloff inside the ordinary pool footprint',()=>{
+it('keeps fixture hue and origins while shaping interrupted elongated apertures with a smaller reactor footprint',()=>{
  const scene=new T.Scene(),pools=new PracticalPools(scene),light=new T.PointLight(0xff6a28,18,7.5);
- light.position.set(3,2,5);light.userData.reactorMood=true;pools.update([light],true);
+ light.position.set(3,2,5);light.userData.reactorMood=true;light.userData.poolAngle=.41;pools.update([light],true);
  const color=new T.Color(),matrix=new T.Matrix4();pools.root.getColorAt(0,color);pools.root.getMatrixAt(0,matrix);
  expect(color.g/color.r).toBeCloseTo(light.color.g/light.color.r);
- const reactorRadius=new T.Vector3().setFromMatrixScale(matrix).x;expect(reactorRadius).toBeGreaterThanOrEqual(2);expect(reactorRadius).toBeLessThan(3.6);
+ const reactor=new T.Vector3().setFromMatrixScale(matrix);expect(reactor.z/reactor.x).toBeGreaterThan(3);
  expect(new T.Vector3().setFromMatrixPosition(matrix).toArray()).toEqual([3,expect.closeTo(.035),5]);expect(pools.root.material.uniforms.poolIntensity.value).toBeLessThan(.22);
- expect(pools.root.geometry.getAttribute('reactorPoolAmount').getX(0)).toBe(1);
  light.userData.reactorMood=false;pools.update([light],true);pools.root.getColorAt(0,color);
  expect(color.g/color.r).toBeCloseTo(light.color.g/light.color.r);
- pools.root.getMatrixAt(0,matrix);expect(new T.Vector3().setFromMatrixScale(matrix).x).toBeCloseTo(3.6);expect(new T.Vector3().setFromMatrixScale(matrix).x).toBeGreaterThan(reactorRadius);
+ pools.root.getMatrixAt(0,matrix);const ordinary=new T.Vector3().setFromMatrixScale(matrix);
+ expect(ordinary.z/ordinary.x).toBeGreaterThan(3);expect(ordinary.x*ordinary.z).toBeGreaterThan(reactor.x*reactor.z);
+ expect(pools.root.material.fragmentShader).not.toContain('length(q)');
+ expect(pools.root.material.fragmentShader).toContain('grille');
  expect(pools.root.geometry.getAttribute('reactorPoolAmount').getX(0)).toBe(1);
  pools.dispose();
 });

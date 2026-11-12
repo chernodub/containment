@@ -8,7 +8,7 @@ import {LightPool} from './lighting/LightPool';
 import {MarineLamp} from './lighting/MarineLamp';
 import {roomComposition,type RoomComposition} from './lighting/RoomCompositions';
 
-type Fixture={x:number;y:number;z:number;color:number;nativeColor?:boolean};
+type Fixture={x:number;y:number;z:number;color:number;nativeColor?:boolean;poolAngle?:number};
 export type ReactorStaging=Readonly<{coreX:number;coreY:number;coreZ:number;coreColor:number;coreRadius:number}>;
 /** Stable room lights, motivated practicals and a bounded combat-light pool. */
 export class SceneLighting {
@@ -19,6 +19,7 @@ export class SceneLighting {
  get key():T.DirectionalLight|T.SpotLight{return this.mood.environment==='reactor'?this.coreKey:this.directionalKey;}
  readonly fill=new T.DirectionalLight();
  readonly rim=new T.DirectionalLight();
+ readonly practicalShapes=Array.from({length:4},()=>new T.Vector4(1,0,1,3));
  readonly fixtures=Array.from({length:4},()=>new T.PointLight(0x9edcec,0,5.8,2));
  readonly blast=new T.PointLight(0xffc18a,0,7,2);
  readonly pool=new LightPool('high',9);
@@ -98,7 +99,7 @@ export class SceneLighting {
    const fixture=selected[i],core=!!this.staging&&i===0;
    light.userData.reactorCore=core;light.userData.reactorMood=this.mood.environment==='reactor';light.userData.poolCenterX=width/2;light.userData.poolCenterZ=height/2;light.intensity=fixture&&light.visible?(core?14:this.mood.practical.intensity):0;
    if(fixture){
-    light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);
+    light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);this.setFixtureShape(light,fixture,i);
     if(!core&&!fixture.nativeColor){
      const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.environment==='security'&&i%2?0xf1f4ff:this.mood.practical.color;
      light.color.lerp(new T.Color(accent),this.mood.environment==='reactor'?.92:.9);
@@ -106,6 +107,13 @@ export class SceneLighting {
     light.distance=core?10:this.mood.environment==='reactor'?7.5:this.mood.practical.distance;
    }
   });
+ }
+ private setFixtureShape(light:T.PointLight,fixture:Fixture,index:number){
+  const angle=fixture.poolAngle??Math.atan2(this.width/2-fixture.x,this.height/2-fixture.z);
+  light.userData.poolAngle=angle;
+  const style={cryogenics:0,habitation:1,security:1,cargo:2,communications:2,engineering:2,maintenance:0,infested:3,containment:1,reactor:4}[this.mood.environment];light.userData.poolStyle=style;
+  // Long axis follows the visible emitter toward the room; cross-axis stays narrow.
+  this.practicalShapes[index].set(Math.sin(angle),Math.cos(angle),style===1?1.15:style===3?.72:.82,style===3?2.7:3.4);
  }
  setPlayer(x:number,z:number,aimRadians:number,camera?:T.Camera){
   this.lamp.update(x,z,aimRadians);
@@ -142,7 +150,7 @@ export class SceneLighting {
    const light=this.fixtures[i],fixture=selected[i],core=!!this.staging&&i===0;
    light.userData.reactorCore=core;light.userData.reactorMood=this.mood.environment==='reactor';
    if(!fixture){light.intensity=0;continue;}
-   light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);
+   light.position.set(fixture.x,fixture.y,fixture.z);light.color.setHex(fixture.color);this.setFixtureShape(light,fixture,i);
    if(!core&&!fixture.nativeColor){const accent=this.mood.environment==='infested'&&i%3===2?0xdc5bcb:this.mood.environment==='security'&&i%2?0xf1f4ff:this.mood.practical.color;this.fixtureTint.setHex(accent);light.color.lerp(this.fixtureTint,this.mood.environment==='reactor'?.92:.9);}
    light.distance=core?10:this.mood.environment==='reactor'?7.5:this.mood.practical.distance;
    light.intensity=light.visible?(core?14:this.mood.practical.intensity):0;

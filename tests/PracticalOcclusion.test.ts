@@ -49,7 +49,7 @@ describe('shared key occlusion for fixed practicals', () => {
     expect(shared).toContain('roomKeyShadow.shadowBias');
     expect(shared).toContain('roomKeyShadow.shadowRadius');
     expect(shared).toContain('vDirectionalShadowCoord[ 0 ]');
-    expect(material.customProgramCacheKey()).toBe('authored-physical:local-light-rejection-v6');
+    expect(material.customProgramCacheKey()).toBe('authored-physical:local-light-rejection-v7');
     material.dispose();
   });
 

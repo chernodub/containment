@@ -7,6 +7,7 @@ type FloorUniforms = {
   albedoGain: { value: number };
   pattern: { value: T.Vector4 };
   leaks: { value: T.Vector4[] };
+  practicals: { value:T.Vector4[] };
 };
 const surfaces = new WeakMap<T.MeshStandardMaterial, FloorUniforms>();
 const patterns: Readonly<Record<ShipEnvironment, readonly [number, number, number, number]>> = {
@@ -18,10 +19,10 @@ const patterns: Readonly<Record<ShipEnvironment, readonly [number, number, numbe
 };
 
 /** World-space plate, wear and environment identity; no repeating image motif or extra draw. */
-export function applyFloorVariation(material: T.MeshStandardMaterial, environment: ShipEnvironment) {
+export function applyFloorVariation(material: T.MeshStandardMaterial, environment: ShipEnvironment, practicalShapes?:T.Vector4[]) {
   let uniforms = surfaces.get(material);
   if (!uniforms) {
-    uniforms = { wetness: { value: 0 }, grime: { value: .15 }, albedoGain: { value: 4.8 }, pattern: { value: new T.Vector4() }, leaks:{value:Array.from({length:4},()=>new T.Vector4())} };
+    uniforms = { wetness: { value: 0 }, grime: { value: .15 }, albedoGain: { value: 4.8 }, pattern: { value: new T.Vector4() }, leaks:{value:Array.from({length:4},()=>new T.Vector4())},practicals:{value:Array.from({length:4},()=>new T.Vector4(1,0,.82,3.4))} };
     surfaces.set(material, uniforms);
     const previous = material.onBeforeCompile;
     const previousKey = material.customProgramCacheKey();
@@ -30,6 +31,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
       shader.uniforms.roomFloorWetness = params.wetness;
+      shader.uniforms.roomFloorPracticalShapes=params.practicals;
       shader.uniforms.roomFloorGrime = params.grime;
       shader.uniforms.roomFloorAlbedoGain = params.albedoGain;
       shader.uniforms.roomFloorPattern = params.pattern;
@@ -47,6 +49,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         uniform float roomFloorGrime;
         uniform float roomFloorAlbedoGain;
         uniform vec4 roomFloorPattern;
+        uniform vec4 roomFloorPracticalShapes[4];
         uniform vec4 roomFloorLeaks[4];
         float roomFloorHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
         float roomFloorNoise(vec2 p){
@@ -81,6 +84,25 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         vec2 deckUV=fract(deckChart);
         vec2 deckEdge=min(deckUV,1.0-deckUV)*deckSize;
         float deckJoint=roomFloorLine(min(deckEdge.x,deckEdge.y),.013);
+        // Distinct fabrication visible in grayscale, including authored deck finishes.
+        float construction=roomFloorPattern.z;
+        if(construction>0.5&&construction<1.5){
+          float course=floor(roomFloorP.y/.52);
+          vec2 q=fract(vec2(roomFloorP.x/3.9+mod(course,3.0)*.31,roomFloorP.y/.52));
+          deckJoint=roomFloorLine(min(min(q.x,1.0-q.x)*3.9,min(q.y,1.0-q.y)*.52),.012);
+          diffuseColor.rgb*=.83+roomFloorHash(vec2(floor(roomFloorP.x/3.9+mod(course,3.0)*.31),course))*.12;
+        }else if(construction>3.5&&construction<4.5){
+          vec2 access=fract(roomFloorP/vec2(1.45,2.9));
+          vec2 edge=min(access,1.0-access)*vec2(1.45,2.9);
+          deckJoint=roomFloorLine(min(edge.x,edge.y),.022);
+          float socket=roomFloorLine(abs(edge.x-.14),.036)*roomFloorLine(abs(edge.y-.21),.09);
+          diffuseColor.rgb*=1.0-socket*.42;
+        }else if(construction>6.5&&construction<7.5){
+          float eaten=smoothstep(.36,.68,roomFloorNoise(roomFloorP*.20+vec2(12.0,4.0)));
+          diffuseColor.rgb*=1.0-eaten*.36;
+          deckJoint*=1.0-eaten*.85;
+        }
+        diffuseColor.rgb*=1.0-deckJoint*.19;
         float deckWear=roomFloorLine(min(deckEdge.x,deckEdge.y),.032)-deckJoint;
         float deckIdentity=roomFloorPattern.z;
         float deckGrain=(roomFloorNoise(roomFloorP*vec2(2.3,3.7))-.5)/(1.0+length(fwidth(roomFloorP))*18.0);
@@ -92,7 +114,6 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         float deckScratch=smoothstep(.76,.9,roomFloorNoise(roomFloorP*vec2(.63,3.1)))*deckScratchPatch*smoothstep(.22,.72,deckCloud);
         float deckPanel=roomFloorHash(deckCell+vec2(7.0,29.0));
         ${genericDeck ? `diffuseColor.rgb*=.96+deckPanel*.08;
-        diffuseColor.rgb*=1.0-deckJoint*.19;
         diffuseColor.rgb+=vec3(.006,.008,.009)*deckWear;` : ''}
         // Centered masks retain the calibrated average reflectance while worn
         // islands and wheel scrapes become visible under broad practical light.
@@ -131,9 +152,10 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         float roomFloorPolish=smoothstep(0.28,0.82,roomFloorMacro)*(1.0-roomFloorStain*0.25);
         roughnessFactor=clamp(roughnessFactor-roomFloorPolish*0.12-roomFloorScuff*0.025+roomFloorStain*0.06-roomFloorWet*0.27-(deckScrape-.12)*.06+(deckSilt-.58)*.06+deckGrain*.008,mix(0.64,0.28,roomFloorWet),1.0);`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v6:${genericDeck ? 'plates' : 'authored'}`;
+    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v7:${genericDeck ? 'plates' : 'authored'}`;
     material.needsUpdate = true;
   }
+  if(practicalShapes)uniforms.practicals.value=practicalShapes;
   uniforms.pattern.value.fromArray(patterns[environment]);
   uniforms.albedoGain.value = ({cryogenics:4.8,habitation:6.4,security:6.8,cargo:4.8,communications:4.8,engineering:7.2,maintenance:9,infested:7.4,containment:8,reactor:3.2} as const)[environment];
   uniforms.wetness.value = environment === 'maintenance' ? 1 : environment === 'infested' ? .28 : environment === 'cryogenics' ? .18 : 0;
