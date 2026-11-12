@@ -9,6 +9,7 @@
 import type { GraphicsTier } from './FrameBudget';
 
 export type ShadowQuality = 'off' | 'low' | 'high';
+export type InkOutlines = 'off' | 'silhouette' | 'full';
 
 export type GraphicsOptions = Readonly<{
   /** HDR bloom on hot emissives. */
@@ -24,6 +25,12 @@ export type GraphicsOptions = Readonly<{
   /** Pooled dynamic lights from muzzle flashes, explosions, projectiles and status effects. */
   dynamicLights: boolean;
   shadows: ShadowQuality;
+  /** Geometry contours; full additionally includes architecture creases. */
+  inkOutlines: InkOutlines;
+  /** Broad surface value bands and reduced photographic material detail. */
+  stylizedShading: boolean;
+  /** Slowly adjust internal resolution between 70–100% of the selected render scale. */
+  adaptiveResolution: boolean;
   /** Internal resolution multiplier, 0.5–1. */
   resolutionScale: number;
   /** Camera shake / kick / zoom-punch strength, 0–1. 0 disables camera motion effects entirely. */
@@ -35,20 +42,21 @@ export type GraphicsOptions = Readonly<{
 export const GRAPHICS_PRESETS: Readonly<Record<GraphicsTier, GraphicsOptions>> = Object.freeze({
   high: Object.freeze({
     bloom: true, ambientOcclusion: true, lensEffects: true, distortion: true, atmosphere: true, dynamicLights: true,
-    shadows: 'high', resolutionScale: 1, screenShake: 1, flashIntensity: 1,
+    shadows: 'high', inkOutlines: 'full', stylizedShading: true, adaptiveResolution: true, resolutionScale: 1, screenShake: 1, flashIntensity: 1,
   }),
   low: Object.freeze({
     bloom: false, ambientOcclusion: false, lensEffects: false, distortion: false, atmosphere: false, dynamicLights: false,
-    shadows: 'off', resolutionScale: 1, screenShake: 1, flashIntensity: 1,
+    shadows: 'off', inkOutlines: 'silhouette', stylizedShading: true, adaptiveResolution: false, resolutionScale: 1, screenShake: 1, flashIntensity: 1,
   }),
 });
 
 /** Validate persisted or UI overrides and return a fresh immutable options value. */
 export function resolveGraphicsOptions(base:GraphicsOptions,partial:Partial<GraphicsOptions>):GraphicsOptions {
   const next={...base};
-  for(const key of ['bloom','ambientOcclusion','lensEffects','distortion','atmosphere','dynamicLights'] as const){
+  for(const key of ['bloom','ambientOcclusion','lensEffects','distortion','atmosphere','dynamicLights','stylizedShading','adaptiveResolution'] as const){
     if(typeof partial[key]==='boolean')next[key]=partial[key];
   }
+  if(partial.inkOutlines==='off'||partial.inkOutlines==='silhouette'||partial.inkOutlines==='full')next.inkOutlines=partial.inkOutlines;
   if(partial.shadows==='off'||partial.shadows==='low'||partial.shadows==='high')next.shadows=partial.shadows;
   for(const key of ['resolutionScale','screenShake','flashIntensity'] as const){
     const value=partial[key];
@@ -65,6 +73,9 @@ export const GRAPHICS_OPTION_LABELS: Readonly<Record<keyof GraphicsOptions, Read
   distortion: { label: 'Shockwave distortion', hint: 'Heat haze and blast refraction.' },
   atmosphere: { label: 'Atmosphere', hint: 'Dust, mist, embers and light shafts.' },
   dynamicLights: { label: 'Dynamic lights', hint: 'Weapons and effects light the room.' },
+  inkOutlines: { label: 'Ink contours', hint: 'Actor silhouettes, or full geometry contours and panel creases.' },
+  stylizedShading: { label: 'Graphic surfaces', hint: 'Soft value bands and restrained surface detail.' },
+  adaptiveResolution: { label: 'Adaptive resolution', hint: 'Slowly adjust render resolution to keep combat smooth.' },
   shadows: { label: 'Shadows', hint: 'Shadow quality.' },
   resolutionScale: { label: 'Render scale', hint: 'Lower values trade sharpness for speed.' },
   screenShake: { label: 'Screen shake', hint: 'Camera shake, recoil and zoom punch.' },

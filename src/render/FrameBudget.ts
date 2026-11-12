@@ -18,3 +18,18 @@ export class FrameDiagnostics {
  record(frameMs:number,updateMs:number,renderMs:number){const i=this.cursor++%120;this.frame[i]=frameMs;this.update[i]=updateMs;this.render[i]=renderMs;this.count=Math.min(120,this.count+1);if(frameMs>50)this.stalls++;}
  get snapshot(){const stats=(a:Float32Array)=>{const values=Array.from(a.subarray(0,this.count)).sort((a,b)=>a-b);return{average:values.reduce((n,x)=>n+x,0)/(values.length||1),p95:values[Math.max(0,Math.ceil(values.length*.95)-1)]??0};};return{samples:this.count,stallsOver50ms:this.stalls,frameMs:stats(this.frame),updateMs:stats(this.update),renderSubmissionMs:stats(this.render)};}
 }
+
+/** Deterministic resource guards and measured desktop timing acceptance targets. */
+export const RENDER_BUDGET = Object.freeze({
+ highFrameP50Ms: 16.7,
+ highFrameP95Ms: 20,
+ lowFrameP50Ms: 16.7,
+ gpuTargetMs: 14.5,
+ drawCalls: 330,
+ programs: 400,
+ materialFamilies: 160,
+ compilePasses: 12,
+ preparationMs: 3000,
+ adaptiveMinScale: .7,
+ adaptiveMaxScale: 1,
+});
