@@ -11,7 +11,7 @@ import { ABILITY_CATALOG } from '../../game/abilities/catalog';
 import type { AbilitySlotSnapshot, AbilitiesSnapshot } from '../../game/abilities/contract';
 import { boonElement, boonIcon } from '../boonPresentation';
 import { playerFacingText } from '../units';
-import { getAbilities, showInvalidAbilityPlacement, setHudInsets, projectWorld } from '../gameAdapter';
+import { getAbilities, showInvalidAbilityPlacement, setHudInsets, projectWorld, visitHostileWarnings } from '../gameAdapter';
 import { icon } from '../icons';
 import { el } from '../shell';
 import { CombatText } from './CombatText';
@@ -154,8 +154,14 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (radius > 0) {
             projectWorld(renderer, x + radius, y, projectedRadius, height);
             size = Math.max(size, Math.hypot(projectedRadius.x - projected.x, projectedRadius.y - projected.y));
+            projectWorld(renderer, x, y + radius, projectedRadius, height);
+            size = Math.max(size, Math.hypot(projectedRadius.x - projected.x, projectedRadius.y - projected.y));
         }
         markHudOcclusion(projected.x - size, projected.y - size, projected.x + size, projected.y + size);
+    };
+    const obscureWarning = (x: number, y: number, radius: number, endX: number, endY: number) => {
+        obscureWorld(x, y, radius, .05);
+        if (x !== endX || y !== endY) for (let step = 1; step <= 8; step++) obscureWorld(x + (endX - x) * step / 8, y + (endY - y) * step / 8, radius, .05);
     };
     const protectPanels = () => {
         beginHudOcclusion();
@@ -163,9 +169,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         for (const enemy of game.enemies.snapshot.enemies) if (enemy.health > 0 && enemy.alpha >= .2) obscureWorld(enemy.x, enemy.y, enemy.radius);
         const boss = game.boss.snapshot;
         if (boss.active) obscureWorld(boss.x, boss.y, 92);
+        visitHostileWarnings(game, obscureWarning);
         for (const warning of warnings) if (warning.life > 0) {
-            obscureWorld(warning.x, warning.y, warning.radius, .05);
-            for (let step = 1; step <= 4; step++) obscureWorld(warning.x + (warning.targetX - warning.x) * step / 4, warning.y + (warning.targetY - warning.y) * step / 4, warning.radius, .05);
+            obscureWarning(warning.x, warning.y, warning.radius, warning.targetX, warning.targetY);
         }
         for (const pool of game.pools) if (pool.life > 0) obscureWorld(pool.x, pool.y, pool.radius, .05);
         for (const bullet of game.bullets) if (bullet.kind === 'hazard') obscureWorld(bullet.x, bullet.y, bullet.request.radius, .15);
@@ -427,7 +433,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             return;
         combatText.setEnabled(preferences().combatText !== false);
         combatText.setReduced(preferences().combatTextDensity === 'reduced');
-        if (event.type === 'enemy-warning') {
+        // Identified attacks are read from native snapshots, so death/cancel and
+        // Overclock cannot leave a stale timer. Unidentified spawn warnings retain their receipt.
+        if (event.type === 'enemy-warning' && event.id === undefined) {
             let warning = warnings.find(entry => entry.life <= 0);
             if (!warning) warning = warnings.reduce((a,b) => a.life < b.life ? a : b);
             const area = event as HudEffect & {radius?: number; targetX?: number; targetY?: number};

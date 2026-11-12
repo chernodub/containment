@@ -9,6 +9,7 @@ type Group = {
     obscured?: boolean;
     threatX?: number;
     threatY?: number;
+    threatDistance?: number;
     edge?: HTMLElement;
 };
 const applied = new WeakMap<HTMLElement, {
@@ -64,7 +65,7 @@ function updateInsets(width: number, height: number): void {
     }
 }
 /** Begin one projection pass; reused panel records avoid DOM measurements. */
-export function beginHudOcclusion(): void { for (const group of cached) group.obscured = false; }
+export function beginHudOcclusion(): void { for (const group of cached) {group.obscured = false; group.threatDistance = Infinity;} }
 /** Threat footprints include bodies, hostile warning areas and the marine. */
 export function markHudOcclusion(left: number, top: number, right: number, bottom: number): void {
     if (!Number.isFinite(left) || !Number.isFinite(top) || !Number.isFinite(right) || !Number.isFinite(bottom)) return;
@@ -73,7 +74,9 @@ export function markHudOcclusion(left: number, top: number, right: number, botto
         if (id !== 'action-bar' && id !== 'status-hud' && id !== 'radar-hud' && !group.element.classList.contains('vitals')) continue;
         const box = group.previous!;
         if (left >= box.right || right <= box.left || top >= box.bottom || bottom <= box.top) continue;
-        if (!group.obscured) {group.threatX = (left + right) / 2; group.threatY = (top + bottom) / 2; group.obscured = true;}
+        const x = (left + right) / 2, y = (top + bottom) / 2;
+        const dx = x - (box.left + box.right) / 2, dy = y - (box.top + box.bottom) / 2, distance = dx * dx + dy * dy;
+        if (!group.obscured || distance < group.threatDistance!) {group.threatX = x; group.threatY = y; group.threatDistance = distance; group.obscured = true;}
     }
 }
 /** A separate passive edge marker keeps full danger contrast while panel chrome fades. */

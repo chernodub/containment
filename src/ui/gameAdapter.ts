@@ -4,6 +4,8 @@ import type {AbilitiesSnapshot, AbilitySlot, RigId} from '../game/abilities/cont
 import {GRAPHICS_PRESETS, resolveGraphicsOptions, type GraphicsOptions} from '../render/graphicsOptions';
 import type {RunStatsSnapshot} from '../game/abilities/RunStats';
 import type {GraphicsTier} from '../render/FrameBudget';
+import {ENEMY_ATTACK_SHAPES} from '../game/enemies/attackShapes';
+import {canTraverseExpedition} from '../game/world/expeditionGeometry';
 export {getShopProjection} from './shopProjection';
 
 type NextRenderer = DepthRenderer & {
@@ -29,6 +31,39 @@ export function setHudInsets(renderer: DepthRenderer, value: HudInsets): void {
   const next = {top, right, bottom, left};
   hudInsets.set(renderer, next);
   hook.call(renderer, next);
+}
+
+type HostileWarningVisitor = (x: number, y: number, radius: number, endX: number, endY: number) => void;
+const warningFrom = {x:0,y:0}, warningTo = {x:0,y:0};
+/** Read native pending attacks every frame: slow time, cancellation and death stay authoritative. */
+export function visitHostileWarnings(game: DepthGame, visit: HostileWarningVisitor): void {
+  for (const enemy of game.enemies.snapshot.enemies) {
+    if (enemy.health <= 0 || enemy.windupMs <= 0 || !enemy.pendingAttack) continue;
+    if (enemy.pendingAttack === 'spit') {
+      visit(enemy.lockX, enemy.lockY, ENEMY_ATTACK_SHAPES.spitterProjectileRadius, enemy.lockX, enemy.lockY);
+      continue;
+    }
+    const angle = Math.atan2(enemy.lockY, enemy.lockX), dx = Math.cos(angle), dy = Math.sin(angle);
+    const maximum = ENEMY_ATTACK_SHAPES.chargeSpeed * ENEMY_ATTACK_SHAPES.chargeDurationMs / 1000;
+    warningFrom.x = enemy.x; warningFrom.y = enemy.y;
+    let legal = 0, blocked = maximum;
+    // Match the native warning's wall-clipped extent; this only reads legal geometry.
+    for (let distance = 16; distance <= maximum + 16; distance += 16) {
+      const probe = Math.min(distance, maximum);
+      warningTo.x = enemy.x + dx * probe; warningTo.y = enemy.y + dy * probe;
+      if (!canTraverseExpedition(game.geometry, warningFrom, warningTo, enemy.radius)) {blocked = probe; break;}
+      legal = probe; if (probe === maximum) break;
+    }
+    if (legal < maximum) for (let step = 0; step < 6; step++) {
+      const probe = (legal + blocked) / 2;
+      warningTo.x = enemy.x + dx * probe; warningTo.y = enemy.y + dy * probe;
+      if (canTraverseExpedition(game.geometry, warningFrom, warningTo, enemy.radius)) legal = probe;
+      else blocked = probe;
+    }
+    visit(enemy.x, enemy.y, enemy.radius, enemy.x + dx * legal, enemy.y + dy * legal);
+  }
+  const boss = game.boss.snapshot, warning = boss.pendingTelegraph;
+  if (boss.active && warning && warning.delayRemainingMs > 0) visit(warning.targetX, warning.targetY, warning.radius, warning.targetX, warning.targetY);
 }
 
 export type UiFixture = Readonly<{
