@@ -16,6 +16,7 @@ import type { AbilityFrame, AbilityPresentation, PresentationFactory } from './t
 export class AbilityVisuals extends AbilityGeometry {
     readonly kit = new ElementKit(this.root);
     readonly priorityMask = new AbilityPriorityMask();
+    private readonly priorityActor = (id: number) => this.kit.statusActor(id);
     private prioritySource?: HostilePrioritySource;
     /** Optional world-renderer accessor; old renderers keep snapshot/projectile fallback. */
     setHostilePrioritySource(source: unknown): void { this.prioritySource = source as HostilePrioritySource; }
@@ -67,7 +68,7 @@ export class AbilityVisuals extends AbilityGeometry {
         this.wasVisible = visible;
         dt = visible && Number.isFinite(dt) ? Math.max(0, dt) : 0;
         super.update(visible ? snapshot : undefined, dt, visible);
-        this.priorityMask.update(visible ? game : undefined, camera, this.prioritySource);
+        this.priorityMask.update(visible ? game : undefined, camera, this.prioritySource, this.priorityActor);
         this.kit.begin(dt);
         const f = this.frame;
         f.snapshot = snapshot;

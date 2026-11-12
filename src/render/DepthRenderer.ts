@@ -121,7 +121,7 @@ export class DepthRenderer {
   this.post=new PostPipeline(this.renderer,this.scene,this.camera);this.post.setOptions(this.options,this.tier);
   // V2: public pooled feedback services, constructed before shader preparation.
   this.interimAbilities.setHostilePrioritySource(this.effects);
-  this.interimAbilities.bind({lights:this.lighting.pool,distortion:this.post.distortion,camera:this.cameraRig,presentation:this.post});
+  this.interimAbilities.bind({statusActor:id=>id===-1?this.queen??undefined:this.actors.get(id),lights:this.lighting.pool,distortion:this.post.distortion,camera:this.cameraRig,presentation:this.post});
   const ringMat=new T.MeshBasicMaterial({color:0xff7850,transparent:true,opacity:.9,depthWrite:false,side:T.DoubleSide});
   const outer=new T.Mesh(new T.RingGeometry(.965,1,64),ringMat);outer.rotation.x=-Math.PI/2;this.warning.add(outer);
   const disk=new T.Mesh(new T.CircleGeometry(.95,64),new T.MeshBasicMaterial({color:0xf86839,transparent:true,opacity:.12,depthWrite:false,side:T.DoubleSide}));disk.rotation.x=-Math.PI/2;this.warning.add(disk);this.warning.renderOrder=20;this.scene.add(this.warning);this.warning.visible=false;
@@ -526,7 +526,7 @@ export class DepthRenderer {
   if(this.pickupInstances)this.pickupInstances.root.visible=!menu;
   this.shadowTime+=dt;this.renderer.shadowMap.needsUpdate=this.shadowsDirty||this.shadowTime>=1/30;
   if(this.renderer.shadowMap.needsUpdate){this.shadowTime=0;this.shadowsDirty=false;}
-  this.afflictions.update(this.scene.children,this.camera,this.time);this.renderer.info.reset();
+  this.afflictions.update(this.scene.children,this.camera,this.time,this.interimAbilities.kit?.statusOwners);this.renderer.info.reset();
   this.screenPoint.set(menu?23:p.x/UNIT,1.4,menu?13:p.y/UNIT).applyMatrix4(this.camera.matrixWorldInverse);this.post.setFocus?.(-this.screenPoint.z,menu);
   // Keep preparation/picking on the normal layer, including after interrupted frames.
   if(menu)this.lighting.suppressCombatFeedback?.(this.muzzle);

@@ -6,6 +6,7 @@ import type { EnemySnapshot } from '../../../game/enemies/EnemySystem';
 import { ElementKit } from '../ElementKit';
 import { GRAPHICS_PRESETS } from '../../graphicsOptions';
 import { createSystemPresentation } from './index';
+import { AfflictionBatches, afflictionEffects } from '../../afflictions';
 
 const event = (extra: Partial<AbilityEvent> = {}): AbilityEvent => ({ ability: 'ram', rig: 'breacher', slot: 'dash', element: 'kinetic', phase: 'dash-start', angle: 0, ...extra });
 const snapshot = (extra: Partial<AbilitiesSnapshot> = {}): AbilitiesSnapshot => ({ rig: 'breacher', slots: null, overdrive: { active: false, ready: false, charge: 0, activeRemainingMs: 0 }, invulnerable: false, dashing: false, hostileTimeScale: 1, zones: [], deployables: [], ...extra });
@@ -149,6 +150,24 @@ describe('V2 common marine and struck feedback', () => {
       expect(Math.hypot(p.x - 5, p.z - 4)).toBeGreaterThan(.5); }
     expect(Array.from(kit.batches.shard.mesh.geometry.getAttribute('abilityPriority').array).slice(0, 4)).toEqual([0, 0, 0, 0]);
     states.clear(); update(snapshot(), 0); expect(kit.batches.shard.mesh.count).toBe(0); fx.dispose(); kit.dispose();
+  });
+
+
+  it('hands drawn statuses to the shared kit while legacy batches retain overflow and poison', () => {
+    const f = fixture(), first = new T.Group(), overflow = new T.Group(), camera = new T.PerspectiveCamera();
+    const status = { frozen: false, burning: true, shocked: false, chilled: true, poisoned: true, chillStacks: 1 };
+    afflictionEffects(first, 2, 1.5).set(status); afflictionEffects(overflow, 2, 1.5).set(status);
+    const legacy = new AfflictionBatches(undefined, 8), fire = legacy.root.children[0] as T.InstancedMesh;
+    const poison = legacy.root.children[1] as T.InstancedMesh, ice = legacy.root.children[2] as T.InstancedMesh;
+    legacy.update([first, overflow], camera, .2); const fireCount = fire.count, iceCount = ice.count, poisonCount = poison.count;
+    f.kit.bind({ lights: {} as never, distortion: {} as never, camera: {} as never, statusActor: id => id === 1 ? { root: first, height: 1.5 } : undefined });
+    f.enemies.push(enemy()); f.states.set(1, status); f.update(snapshot(), 0);
+    expect(f.kit.statusOwners.has(first)).toBe(true); expect(f.kit.statusOwners.has(overflow)).toBe(false);
+    legacy.update([first, overflow], camera, .2, f.kit.statusOwners);
+    expect(fire.count).toBe(fireCount / 2); expect(ice.count).toBe(iceCount / 2); expect(poison.count).toBe(poisonCount);
+    f.kit.begin(0); legacy.update([first, overflow], camera, .2, f.kit.statusOwners);
+    expect(fire.count).toBe(fireCount); expect(ice.count).toBe(iceCount);
+    legacy.dispose(); f.fx.dispose(); f.kit.dispose();
   });
 
   it('has a genuinely simpler Low path, preserves resources on saturation, and clears on death', () => {

@@ -1,5 +1,6 @@
 import * as T from 'three';
 import type { DepthGame } from '../../DepthGame';
+import type { StatusActor } from './ElementKit';
 import type { Telegraph } from '../vfx/TelegraphBatch';
 
 /** Optional presentation accessor. Coordinates are renderer metres, never simulation units. */
@@ -41,7 +42,7 @@ export class AbilityPriorityMask {
     this.texture.needsUpdate = true;
   }
 
-  update(game: DepthGame | undefined, camera: T.Camera | undefined, source?: HostilePrioritySource): void {
+  update(game: DepthGame | undefined, camera: T.Camera | undefined, source?: HostilePrioritySource, actorFor?: (id: number) => StatusActor | undefined): void {
     this.pixels.fill(0);
     this.camera = camera;
     if (game && camera) {
@@ -49,8 +50,8 @@ export class AbilityPriorityMask {
       this.actor(p.x / 32, p.y / 32, .62, 2.05, 1);
       for (const e of game.enemies.snapshot.enemies) {
         if (e.health <= 0) continue;
-        this.actor(e.x / 32, e.y / 32, e.radius / 32 + .13,
-          e.type === 'crawler' ? .65 : e.type === 'brute' || e.type === 'carrier' ? 1.65 : 1.15, .95);
+        const actor = actorFor?.(e.id), span = actor?.root.userData.affliction?.span ?? 0;
+        this.actor(e.x / 32, e.y / 32, Math.max(e.radius / 32 + .13, span * .46), actor?.height ?? (e.type === 'crawler' ? .65 : e.type === 'brute' || e.type === 'carrier' ? 1.65 : 1.15), .95);
         // Snapshot fallback also works while the world renderer evolves its warning accessor.
         if (e.windupMs > 0 && e.pendingAttack) {
           const tx = e.pendingAttack === 'charge' ? e.x + e.lockX : e.lockX;
@@ -59,7 +60,10 @@ export class AbilityPriorityMask {
         }
       }
       const q = game.boss?.snapshot;
-      if (q?.active && !q.defeated) this.actor(q.x / 32, q.y / 32, 2.6, 4.5, 1);
+      if (q?.active && !q.defeated) {
+        const actor = actorFor?.(-1);
+        this.actor(q.x / 32, q.y / 32, 2.8, actor?.height ?? 4.5, 1);
+      }
       if (q?.pendingTelegraph) {
         const t = q.pendingTelegraph;
         this.ground(t.targetX / 32, t.targetY / 32, t.radius / 32 + .18);

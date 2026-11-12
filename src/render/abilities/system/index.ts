@@ -138,9 +138,14 @@ class SystemPresentation implements AbilityPresentation {
     let receipt: Receipt | undefined;
     for (const item of this.receipts) if (item.live && item.id === enemy.id) { receipt = item; break; }
     if (!receipt && !status?.frozen && !status?.burning && !status?.shocked && !status?.chilled) return false;
+    const actor = k.statusActor(enemy.id);
+    if (actor) {
+      height = actor.height;
+      if (status?.burning || status?.chilled || status?.frozen || status?.shocked) k.statusOwners.add(actor.root);
+    }
     const x = enemy.x / UNIT, z = enemy.y / UNIT, radius = Math.max(.3, enemy.radius / UNIT);
     if (status?.frozen) this.frozenShell(x, z, radius, height, enemy.id, receipt?.element === 'cryo' ? 1 - receipt.age / receipt.life : 0);
-    else if (status?.chilled) this.chilling(x, z, radius, height, enemy.id, Math.min(1, (status.chillStacks ?? 1) / 5));
+    else if (status?.chilled) this.chilling(x, z, radius, height, enemy.id, Math.min(1, (status.chillStacks ?? 1) / 3));
     if (status?.burning) this.burning(x, z, radius, height, enemy.id);
     if (status?.shocked) this.stunned(x, z, radius, height, enemy.id);
     if (receipt) {

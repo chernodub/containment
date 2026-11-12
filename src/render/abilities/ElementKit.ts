@@ -56,7 +56,10 @@ type Decal = {
     width: number;
     kind: number;
 };
+export interface StatusActor { readonly root: T.Object3D; readonly height: number }
 export interface AbilityServices {
+    /** Read-only actor lookup for exact presentation bounds and status ownership. */
+    statusActor?: (id: number) => StatusActor | undefined;
     lights: LightPool;
     distortion: DistortionField;
     camera: {
@@ -73,6 +76,9 @@ export class ElementKit {
     readonly batches: Record<Primitive, InstanceBatch>;
     readonly rings = new FriendlyBoundaryBatch(this.root, 160);
     readonly ribbons = new AbilityLightningBatch(this.root, 2048);
+    /** Claimed only for targets drawn this frame; legacy status batches cover overflow. */
+    readonly statusOwners = new Set<T.Object3D>();
+    statusActor(id: number): StatusActor | undefined { return this.services?.statusActor?.(id); }
     time = 0;
     low = false;
     reducedMotion = false;
@@ -367,6 +373,7 @@ export class ElementKit {
             this.services?.camera.kick(angle, weight * .1);
     }
     begin(dt: number): void {
+        this.statusOwners.clear();
         this.time += dt;
         this.impact();
         this.warm = this.cool = 0;
@@ -465,7 +472,7 @@ export class ElementKit {
             rings++; for (const p of this.beams)
         if (p.live)
             beams++; return { particles, rings, beams, peakParticles: this.peakParticles, peakInstances: this.peakInstances, peakLights: this.peakLights }; }
-    clear(): void { for (const p of this.particles)
+    clear(): void { this.statusOwners.clear(); for (const p of this.particles)
         p.live = false; for (const p of this.waves)
         p.live = false; for (const p of this.beams)
         p.live = false; for (const p of this.decals)
