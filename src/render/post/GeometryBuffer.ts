@@ -1,6 +1,7 @@
+import { setActorGeometryIdentity } from './ActorGeometryMaterial';
 import { optimizeLocalLights } from '../lighting/LocalLightShading';
 import { patchGraphicSurface, setGraphicActorBase } from '../lighting/GraphicSurface';
-import { Material, Mesh, MeshStandardMaterial, Object3D, Vector2, WebGLRenderer } from 'three';
+import { Material, Mesh, MeshStandardMaterial, Object3D, ShaderMaterial, Vector2, WebGLRenderer } from 'three';
 
 export const GEOMETRY_CLASSES = Object.freeze({ floor: 1, architecture: 2, marine: 3, enemy: 4, elite: 5, boss: 6 });
 export type GeometryClass = typeof GEOMETRY_CLASSES[keyof typeof GEOMETRY_CLASSES];
@@ -103,7 +104,11 @@ export function registerGeometry(root: Object3D, kind?: GeometryClass): void {
     let effect=effectsOnly,inkBlock=false;for(let owner: Object3D|null=object;owner;owner=owner.parent){effect ||= owner.name==='shared-affliction-batches';inkBlock ||= owner.renderOrder>=20;}
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
       if(inkBlock)material.userData.containmentInkBlock=true;
-      if (effect || !(material instanceof MeshStandardMaterial) || material.transparent) { patchExcludedMaterial(material); continue; }
+      if (effect || !(material instanceof MeshStandardMaterial) || material.transparent) {
+        patchExcludedMaterial(material);
+        if(kind&&!effect&&material instanceof ShaderMaterial)setActorGeometryIdentity(material,id!,kind);
+        continue;
+      }
       if(kind) {
         const family=root.name.replace('alien-','');
         const palette:Record<string,number>={marine:0x8b9eae,crawler:0x657481,brute:0x716b78,spitter:0x6b8050,stalker:0x566f87,carrier:0x697c63,queen:0x716078};
