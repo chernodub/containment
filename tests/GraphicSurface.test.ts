@@ -74,7 +74,10 @@ describe('graphic material response', () => {
   it('shares tuning with copied preparation hooks and ignores invalid values', () => {
     const material = new T.MeshStandardMaterial(); patchGraphicSurface(material);
     const proxy = material.clone(); proxy.onBeforeCompile = material.onBeforeCompile;
+    proxy.customProgramCacheKey = material.customProgramCacheKey;
+    patchGraphicSurface(proxy);
     const a = compile(material), b = compile(proxy);
+    expect(b.fragmentShader.match(/float graphicDiffuseRamp\(/g)).toHaveLength(1);
     expect(a.uniforms.graphicResponse).toBe(b.uniforms.graphicResponse);
     setGraphicSurfaceTuning({ actorMipBias: Infinity, actorDetail: NaN, floorNormalGain: -1, actorNormalGain: 10 });
     expect((a.uniforms.graphicResponse.value as T.Vector4).toArray()).toEqual([.72, .76, 1.65, .45]);

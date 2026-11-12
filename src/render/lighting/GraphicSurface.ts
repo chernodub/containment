@@ -92,9 +92,11 @@ const normals = ShaderChunk.normal_fragment_maps.replace(
  */
 export function patchGraphicSurface(material: MeshStandardMaterial): void {
   if (installed.has(material) || material.transparent) return;
+  const key = material.customProgramCacheKey();
+  // Retained preparation proxies copy an already-patched hook and cache key.
+  if (key.includes(':graphic-surface-v1')) return;
   installed.add(material);
   const previous = material.onBeforeCompile;
-  const key = material.customProgramCacheKey();
   // actorMaterial is an ownership marker also used by room props; use the
   // explicit actor shader family instead of flattening every owned material.
   const kind = { value: new Vector2(key.includes(':actor-surface-') ? 1 : 0,
