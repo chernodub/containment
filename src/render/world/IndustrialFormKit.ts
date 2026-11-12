@@ -1,15 +1,43 @@
 import * as T from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 /** One bevel scale for ship machinery; never inflate the authored envelope. */
 export function industrialBevel(width: number, height: number, depth: number): number {
   return Math.min(.065, Math.min(width, height, depth) * .16);
 }
 
-/** Real rounded edges with analytic face/bevel normals, ready for material merging. */
+/** A 44-triangle milled shell. Planar faces and chamfers have separate normal groups. */
 export function industrialBoxGeometry(width: number, height: number, depth: number, radius = industrialBevel(width, height, depth)): T.BufferGeometry {
   const r = Math.min(Math.max(0, radius), Math.min(width, height, depth) * .49);
-  return r > 0 ? new RoundedBoxGeometry(width, height, depth, 1, r) : new T.BoxGeometry(width, height, depth);
+  if (r === 0) return new T.BoxGeometry(width, height, depth);
+  const half = [width / 2, height / 2, depth / 2], inset = half.map(value => value - r);
+  const positions: number[] = [], normals: number[] = [], uvs: number[] = [];
+  const face = (points: number[][]) => {
+    const a = new T.Vector3(...points[0]), b = new T.Vector3(...points[1]), c = new T.Vector3(...points[2]);
+    const normal = b.sub(a).cross(c.sub(a)).normalize();
+    const center = points.reduce((sum, p) => sum.add(new T.Vector3(...p)), new T.Vector3());
+    if (normal.dot(center) < 0) { points.reverse(); normal.negate(); }
+    for (let i = 1; i < points.length - 1; i++) for (const p of [points[0], points[i], points[i + 1]]) {
+      positions.push(...p); normals.push(normal.x, normal.y, normal.z); uvs.push(p[0] / width + .5, (p[1] + p[2]) / (height + depth) + .5);
+    }
+  };
+  for (let axis = 0; axis < 3; axis++) for (const sign of [-1, 1]) {
+    const other = [0, 1, 2].filter(value => value !== axis);
+    face([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => {
+      const p = [0, 0, 0]; p[axis] = half[axis] * sign; p[other[0]] = inset[other[0]] * u; p[other[1]] = inset[other[1]] * v; return p;
+    }));
+  }
+  for (let a = 0; a < 3; a++) for (let b = a + 1; b < 3; b++) for (const sa of [-1, 1]) for (const sb of [-1, 1]) {
+    const c = 3 - a - b;
+    face([[0, -1], [1, -1], [1, 1], [0, 1]].map(([edge, end]) => {
+      const p = [0, 0, 0]; p[a] = (edge ? inset[a] : half[a]) * sa; p[b] = (edge ? half[b] : inset[b]) * sb; p[c] = inset[c] * end; return p;
+    }));
+  }
+  for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) face([0, 1, 2].map(axis => half.map((value, i) => (i === axis ? value : inset[i]) * [sx, sy, sz][i])));
+  const geometry = new T.BufferGeometry();
+  geometry.setAttribute('position', new T.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new T.Float32BufferAttribute(normals, 3));
+  geometry.setAttribute('uv', new T.Float32BufferAttribute(uvs, 2));
+  return geometry;
 }
 
 /** Rounded pressure vessel with separate flat cap normals and smooth radial normals. */
@@ -22,7 +50,15 @@ export function industrialCylinderGeometry(radius: number, height: number, bevel
     new T.Vector2(radius - b + b * .7071, height / 2 - b * .2929),
     new T.Vector2(radius - b, height / 2), new T.Vector2(0, height / 2),
   ];
-  return new T.LatheGeometry(profile, segments);
+  const geometry = new T.LatheGeometry(profile, segments);
+  const normals = geometry.getAttribute('normal');
+  const radial = [0, 0, Math.SQRT1_2, 1, 1, Math.SQRT1_2, 0, 0];
+  const vertical = [-1, -1, -Math.SQRT1_2, 0, 0, Math.SQRT1_2, 1, 1];
+  for (let col = 0; col <= segments; col++) {
+    const angle = col / segments * Math.PI * 2;
+    for (let row = 0; row < profile.length; row++) normals.setXYZ(col * profile.length + row, Math.sin(angle) * radial[row], vertical[row], Math.cos(angle) * radial[row]);
+  }
+  return geometry;
 }
 
 export type FormWriter = {

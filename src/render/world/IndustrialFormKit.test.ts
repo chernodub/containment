@@ -13,4 +13,21 @@ describe('industrial forms', () => {
       g.dispose();
     }
   });
+  it('bounds milled housings at 44 triangles and keeps flat faces free of smoothing dents', () => {
+    const g = industrialBoxGeometry(2, 1, 3);
+    expect(g.getAttribute('position').count / 3).toBe(44);
+    const n = g.getAttribute('normal'), p = g.getAttribute('position');
+    let flatFaces = 0;
+    for (let i = 0; i < p.count; i += 3) {
+      const nx = n.getX(i), ny = n.getY(i), nz = n.getZ(i);
+      if (Math.max(Math.abs(nx), Math.abs(ny), Math.abs(nz)) > .99999) flatFaces++;
+      for (let j = 1; j < 3; j++) expect([n.getX(i + j), n.getY(i + j), n.getZ(i + j)]).toEqual([nx, ny, nz]);
+      const cx = (p.getX(i) + p.getX(i + 1) + p.getX(i + 2)) / 3;
+      const cy = (p.getY(i) + p.getY(i + 1) + p.getY(i + 2)) / 3;
+      const cz = (p.getZ(i) + p.getZ(i + 1) + p.getZ(i + 2)) / 3;
+      expect(cx * nx + cy * ny + cz * nz).toBeGreaterThan(0);
+    }
+    expect(flatFaces).toBe(12);
+    g.dispose();
+  });
 });

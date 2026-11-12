@@ -50,8 +50,12 @@ it('builds a continuous contrasting circulation finish with flush service seams'
   expect((hit.object as T.Mesh<T.BufferGeometry,T.Material>).material.name).toBe('annulus-circulation');
   expect(hit.point.y*32).toBeGreaterThan(0);expect(hit.point.y*32).toBeLessThanOrEqual(1);
  }
- // All walkable space remains a floor, not new non-colliding equipment.
- for(let x=80;x<=1120;x+=20)for(let z=80;z<=800;z+=20){
+ disposeModel(model);
+});
+// Keep every original sample, split into bounded cases on the shared host.
+it.each([[80,340],[360,620],[640,900],[920,1120]])('keeps all walkable floor flush from x%s to x%s',(first,last)=>{
+ const model=authoredRoom(t.id,t)!;
+ for(let x=first;x<=last;x+=20)for(let z=80;z<=800;z+=20){
   const insideCore=x>=350&&x<=850&&z>=230&&z<=650;
   if(!insideCore)expect(surface(model,x,z).point.y*32).toBeLessThanOrEqual(1.01);
  }
@@ -86,10 +90,10 @@ it('raises load-bearing shoes above the solid plinth and recesses displays insid
  expect(surface(model,600,634).point.y*32).toBeGreaterThan(surface(model,600,622).point.y*32);
  disposeModel(model);
 });
-it('keeps raised construction inside the exact canonical solid footprint',()=>{
+it.each([[330,460],[465,595],[600,730],[735,870]])('keeps raised construction inside the exact canonical solid footprint from x%s to x%s',(first,last)=>{
  const model=authoredRoom(t.id,t)!;
  const g=createExpeditionGeometry({id:'room18-model-test',templateId:t.id,depth:17,kind:'combat',reward:'upgrade',next:[]});
- for(let x=330;x<=870;x+=5)for(let z=215;z<=665;z+=5){
+ for(let x=first;x<=last;x+=5)for(let z=215;z<=665;z+=5){
   if(canOccupyExpedition(g,{x,y:z},0))expect(surface(model,x,z).point.y*32,`${x},${z}`).toBeLessThanOrEqual(1.01);
  }
  disposeModel(model);

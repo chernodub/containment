@@ -1,7 +1,7 @@
 import * as T from 'three';
-import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {Point,RoomTemplate} from '../game/roguelike/types';
+import {industrialBoxGeometry,industrialCylinderGeometry} from './world/IndustrialFormKit';
 
 type Plan=Pick<RoomTemplate,'width'|'height'|'boundary'|'voids'|'obstacles'>;
 /** Room18 ceramic shielding and flush annular circulation finishes.
@@ -13,7 +13,7 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
  root.userData.assemblies=['sealed-core','segmented-jacket','radial-feet','inspection-plugs','passenger-vitals','authorization-state'];
  const finish=(name:string,color:number,roughness=.78,metalness=.2)=>{const m=new T.MeshStandardMaterial({color,roughness,metalness});m.name=name;m.userData.actorMaterial=true;return m;};
  const deck=finish('annulus-deck',0x3d4b51),ceramic=finish('annulus-ceramic',0xb8bab0,.9,.03),metal=finish('annulus-bands',0x66777b,.43,.65),dark=finish('annulus-sealed',0x273237),amber=finish('annulus-unarmed-service',0xb49852),vitals=finish('annulus-living-vitals',0x80aca0);
- const circulation=finish('annulus-circulation',0x69777a,.88,.12),ceramicShade=finish('annulus-ceramic-shadow',0x909b98,.92,.03);
+ const circulation=finish('annulus-circulation',0x354247,.92,.06),ceramicShade=finish('annulus-ceramic-shadow',0x909b98,.92,.03);
  // Ceramic glazes retain dry diffuse response; tiny manufacturing variation
  // distinguishes them from unshaded blockout clay without adding a texture.
  for(const m of [ceramic,ceramicShade,metal]){
@@ -30,18 +30,21 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
   g.rotateY(angle);g.translate(x,y,z);const flat=g.index?g.toNonIndexed():g;if(flat!==g)g.dispose();
   const list=parts.get(m)??[];list.push(flat);parts.set(m,list);
  };
- const box=(m:T.Material,x:number,z:number,w:number,d:number,bottom:number,height:number,angle=0)=>{const bevel=m===metal&&((bottom===11&&height===6)||(bottom===39&&height===3));add(bevel?new RoundedBoxGeometry(w/32,height/32,d/32,1,.65/32):new T.BoxGeometry(w/32,height/32,d/32),m,x/32,(bottom+height/2)/32,z/32,angle);};
+ const box=(m:T.Material,x:number,z:number,w:number,d:number,bottom:number,height:number,angle=0)=>add(industrialBoxGeometry(w/32,height/32,d/32,height<1?0:undefined),m,x/32,(bottom+height/2)/32,z/32,angle);
  const path=(p:readonly Point[])=>p.map(q=>new T.Vector2(q.x/32,-q.y/32));
  const slab=(outline:readonly Point[],bottom:number,height:number,m:T.Material,holes:readonly (readonly Point[])[]=[])=>{
   const shape=new T.Shape(path(outline));for(const h of holes)shape.holes.push(new T.Path(path(h)));
-  const beveled=(m===ceramic||m===ceramicShade)&&bottom>=11;const g=new T.ExtrudeGeometry(shape,{depth:height/32,bevelEnabled:beveled,bevelSize:.45/32,bevelThickness:.25/32,bevelSegments:1,steps:1});g.rotateX(-Math.PI/2);add(g,m,0,bottom/32,0);
+  // Broad ceramic housings carry the bevel. Thin seal courses and recessed
+  // graphite backing stay planar rather than multiplying invisible edge work.
+  const r=(m===ceramic||m===ceramicShade)&&bottom>=11?Math.min(.05,height/32*.16):0;
+  const g=new T.ExtrudeGeometry(shape,{depth:height/32-2*r,bevelEnabled:r>0,bevelSize:r,bevelThickness:r,bevelOffset:-r,bevelSegments:1,steps:1});g.rotateX(-Math.PI/2);add(g,m,0,bottom/32+r,0);
  };
  const boundary=t.boundary!,core=t.voids![0];
  slab(boundary,-14,14,deck,t.voids);slab(core,-14,25,dark);
  // The walkable ring is a broad, flush finish, not a raised catwalk.
  const expandedCore=(amount:number)=>core.map(p=>({x:p.x+Math.sign(p.x-600)*amount,y:p.y+Math.sign(p.y-440)*amount}));
  slab(expandedCore(24),0,.2,dark,[core]);
- slab(expandedCore(124),0,.25,metal,[expandedCore(24)]);
+ slab(expandedCore(124),0,.25,dark,[expandedCore(24)]);
  slab(expandedCore(120),.25,.2,circulation,[expandedCore(28)]);
  // Sparse expansion joints cross the finish; no arrows or hazard countdown ring.
  for(const x of [470,730])for(const z of [268-74,612+74])box(deck,x,z,2,90,.45,.12);
@@ -53,7 +56,7 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
   for(let j=8;j>=0;j--){const a=start+(end-start)*j/8;points.push({x:600+Math.cos(a)*inner,y:440+Math.sin(a)*inner*157/170});}
   return points;
  };
- const lid=new T.CylinderGeometry(1,1,1,64);lid.scale(160/32,18/32,148/32);add(lid,dark,600/32,20/32,440/32);
+ const lid=industrialCylinderGeometry(160/32,18/32);lid.scale(1,1,148/160);add(lid,dark,600/32,20/32,440/32);
  // Broad closed roof tiles replace the featureless blockout disk. Dark joints
  // reveal the sealed backing, never an emissive core or a hole through the lid.
  for(let i=0;i<16;i++){
@@ -67,8 +70,8 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
    const bolt=new T.CylinderGeometry(1.3/32,1.3/32,.8/32,10);add(bolt,metal,(600+Math.cos(a)*radius)/32,(top+.5)/32,(440+Math.sin(a)*radius*157/170)/32);
   }
  }
- const hatch=new T.CylinderGeometry(56/32,60/32,7/32,48);add(hatch,metal,600/32,31.5/32,440/32);
- const hatchFace=new T.CylinderGeometry(49/32,49/32,2/32,48);add(hatchFace,ceramicShade,600/32,36/32,440/32);
+ const hatch=industrialCylinderGeometry(60/32,7/32);add(hatch,metal,600/32,31.5/32,440/32);
+ const hatchFace=industrialCylinderGeometry(49/32,2/32);add(hatchFace,ceramicShade,600/32,36/32,440/32);
  for(const x of [579,621])box(dark,x,440,6,46,37,1);
  for(let i=0;i<16;i++){
   const a=i*Math.PI/8,start=a-Math.PI/16,end=a+Math.PI/16,near=Math.sin(a)>0;
@@ -86,8 +89,8 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
   box(metal,x,z,44,30,11,6,-a);
   for(const offset of [-8,8]){
    const shape=new T.Shape([new T.Vector2(-22/32,17/32),new T.Vector2(19/32,17/32),new T.Vector2(9/32,24/32),new T.Vector2(-22/32,(near?38:48)/32)]);
-   const web=new T.ExtrudeGeometry(shape,{depth:5/32,bevelEnabled:false,steps:1});
-   web.translate(0,0,(offset-2.5)/32);add(web,metal,x/32,0,z/32,-a);
+   const r=.018,web=new T.ExtrudeGeometry(shape,{depth:5/32-2*r,bevelEnabled:true,bevelSize:r,bevelThickness:r,bevelOffset:-r,bevelSegments:1,steps:1});
+   web.translate(0,0,(offset-2.5)/32+r);add(web,metal,x/32,0,z/32,-a);
   }
   box(ceramicShade,x+Math.cos(a)*12,z+Math.sin(a)*12,12,26,17,5,-a);
  }
@@ -141,6 +144,6 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
    box(metal,px,pz,len/count-10,12,height-3,3,angle);
   }
  }
- for(const [material,list] of parts){const g=mergeGeometries(list,false)!;list.forEach(p=>p.dispose());const mesh=new T.Mesh(g,material);mesh.userData.bakedEnvironment=true;mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);}
+ for(const [material,list] of parts){const g=mergeGeometries(list,false)!;list.forEach(p=>p.dispose());g.computeBoundingBox();g.computeBoundingSphere();const mesh=new T.Mesh(g,material);mesh.userData.bakedEnvironment=true;mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);}
  return root;
 }

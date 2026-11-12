@@ -18,22 +18,14 @@ function smoothGardenTrunk(geometry:T.BufferGeometry):void {
  }
 }
 
-/** Smoothed, overlapping foliage lobes with serrated leaf edges, fitted to the donor crown. */
+/** Three broad overlapping crown tiers; no leaf cards or noisy serrated edge. */
 function gardenCanopy(source:T.BufferGeometry,seed:number):T.BufferGeometry {
  source.computeBoundingBox();const target=source.boundingBox!,size=target.getSize(new T.Vector3()),center=target.getCenter(new T.Vector3()),parts:T.BufferGeometry[]=[];
- for(let i=0;i<9;i++){
-  const angle=i*2.399963+seed*.37,ring=i===0?0:i<7?.27:.14;
-  const g=new T.SphereGeometry(1,10,7);g.scale(size.x*(i===0?.33:.23),size.y*(i===0?.40:.26),size.z*(i===0?.33:.23));
-  g.translate(center.x+Math.cos(angle)*size.x*ring,center.y+Math.sin(angle*1.7)*size.y*.16,center.z+Math.sin(angle)*size.z*ring);g.deleteAttribute('uv');parts.push(g.toNonIndexed());g.dispose();
+ for(let i=0;i<4;i++){
+  const angle=i*2.399963+seed*.71,ring=i===0?0:.17;
+  const g=new T.SphereGeometry(1,16,10);g.scale(size.x*(i===0?.38:.31),size.y*(i===0?.44:.32),size.z*(i===0?.38:.31));
+  g.translate(center.x+Math.cos(angle)*size.x*ring,center.y+(i===0?.14:-.12)*size.y,center.z+Math.sin(angle)*size.z*ring);g.deleteAttribute('uv');parts.push(g.toNonIndexed());g.dispose();
  }
- const vertices:number[]=[];
- for(let leaf=0;leaf<28;leaf++){
-  const angle=leaf*2.399963+seed*.71,r=.31+.12*Math.sin(leaf*4.1),y=center.y+Math.sin(leaf*2.3)*size.y*.31;
-  const x=center.x+Math.cos(angle)*size.x*r,z=center.z+Math.sin(angle)*size.z*r,span=Math.min(size.x,size.z)*(.09+.035*(leaf%3));
-  const dx=Math.cos(angle)*span,dz=Math.sin(angle)*span,px=-Math.sin(angle)*span*.35,pz=Math.cos(angle)*span*.35;
-  vertices.push(x-dx,y-.035,z-dz,x+px,y+.045,z+pz,x+dx,y,z+dz,x-dx,y-.035,z-dz,x+dx,y,z+dz,x-px,y+.045,z-pz);
- }
- const cards=new T.BufferGeometry();cards.setAttribute('position',new T.Float32BufferAttribute(vertices,3));cards.computeVertexNormals();parts.push(cards);
  const g=mergeGeometries(parts,false)!;parts.forEach(part=>part.dispose());g.computeBoundingBox();
  const actual=g.boundingBox!,a=actual.getSize(new T.Vector3()),c=actual.getCenter(new T.Vector3());
  g.translate(-c.x,-c.y,-c.z);g.scale(size.x/a.x,size.y/a.y,size.z/a.z);g.translate(center.x,center.y,center.z);return g;
@@ -50,19 +42,10 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
  const bark=finish('irrigation',MAT.copper,0x625344,.3,.83),seat=finish('upholstery',MAT.red,0x765747,0,.93);
  const signal=finish('welcome',MAT.amber,0xa88b59,.1,.7),water=finish('water',MAT.shellDark,0x354e4c,.25,.28);
  signal.emissive.setHex(0x9b6b32);signal.emissiveIntensity=.22;leaf.side=T.DoubleSide;
- leaf.onBeforeCompile=shader=>{
-  shader.vertexShader='varying vec3 canopyPosition;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ncanopyPosition=position;');
-  shader.fragmentShader='varying vec3 canopyPosition;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-   float leafVein=.5+.5*sin(canopyPosition.x*43.0+sin(canopyPosition.z*32.0));
-   float canopyTone=.5+.5*sin(dot(canopyPosition,vec3(3.3,4.7,2.8)));
-   diffuseColor.rgb*=mix(.72,1.22,canopyTone)*(1.0-leafVein*.06);`)
-   .replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
-   totalEmissiveRadiance+=vec3(.018,.035,.009)*(1.0-abs(normal.y));`);
- };leaf.customProgramCacheKey=()=> 'g2-garden-canopy-v1';
  const allocated=new Set<T.BufferGeometry>(),retained=new Set<T.BufferGeometry>();let complete=false;
  const own=(g:T.BufferGeometry)=>{allocated.add(g);return g;};
  try{
- const b=(x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>box(root,x/32,y/32,z/32,w/32,h/32,d/32,m,0);
+ const b=(x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>box(root,x/32,y/32,z/32,w/32,h/32,d/32,m,Math.min(.035,w/320,h/320,d/320));
  const padded=(x:number,y:number,z:number,w:number,h:number,d:number,r:number,m:T.Material)=>{
   const g=own(new RoundedBoxGeometry(w/32,h/32,d/32,1,r/32));
   g.translate(x/32,y/32,z/32);const mesh=new T.Mesh(g,m);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);
@@ -72,7 +55,8 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
  const solid=(points:readonly Point[],bottom:number,top:number,m:T.Material,hole?:readonly Point[])=>{
   const shape=new T.Shape(points.map(p=>new T.Vector2(p.x/32,-p.y/32)));
   if(hole)shape.holes.push(new T.Path(hole.map(p=>new T.Vector2(p.x/32,-p.y/32))));
-  const g=own(new T.ExtrudeGeometry(shape,{depth:(top-bottom)/32,bevelEnabled:false,steps:1,curveSegments:1}));g.rotateX(-Math.PI/2);g.translate(0,bottom/32,0);
+  const bevel=Math.min(.035,(top-bottom)/128);
+  const g=own(new T.ExtrudeGeometry(shape,{depth:(top-bottom)/32-2*bevel,bevelEnabled:true,bevelOffset:-bevel,bevelSize:bevel,bevelThickness:bevel,bevelSegments:1,steps:1,curveSegments:1}));g.rotateX(-Math.PI/2);g.translate(0,bottom/32+bevel,0);
   const mesh=new T.Mesh(g,m);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);
  };
  for(const [index,inputFixture] of fixtures.entries()){
