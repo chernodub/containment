@@ -98,5 +98,21 @@
   ],
   "retainAllAttempts": true,
   "finalAcceptance": "All forty existing I5 seeds per rig; no new seed extension, policy changes, dropped censors or pooled source mismatches. Pooled completion40-60%, each rig within15pp; pooled ordinary30-45s andTransmission60-75s; median campaign cadence1.2-1.7. Separate unchanged full-kit and dash guards plus native validation.",
-  "reason": "N10 pilots retained; baseline N10 itself has Pyro20% and20pp mean distance. Use the complete previously established I5 seed set instead of further tuning to a noisy pilot."
+  "reason": "N10 pilots retained; baseline N10 itself has Pyro20% and20pp mean distance. Use the complete previously established I5 seed set instead of further tuning to a noisy pilot.",
+  "revalidations": [
+    {
+      "gameRef": "4a5f8e9f163590a6bc4e4f5094a098eee92ec2ae",
+      "seeds": "same complete forty-seed set above, all four rigs",
+      "reason": "8dc98b3 completed50.625% but failed spread(B32.5%,Arc75%) and retained onePyro926231573 room8 censor. Fix carrier visible-hold liveness and shift only final5% late draws from stalker to spitter. All prior raw reports retained; policy/backend unchanged.",
+      "baselineInputs": [
+        "a3-before",
+        "a3-before-rest40"
+      ],
+      "rejectedCandidateInputs": [
+        "a3-final-v7",
+        "a3-after-rest40"
+      ],
+      "profileAudit": "artifacts/nextgen/a3/plan-audit/audit.json"
+    }
+  ]
 }
