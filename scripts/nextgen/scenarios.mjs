@@ -587,3 +587,6 @@ SCENARIOS.push({id:'g3-geometry-coverage',room:'awakening-bay',state:'playing',a
 
 import {registerI8Scenarios} from './i8-scenarios.mjs';
 registerI8Scenarios(SCENARIOS);
+
+import {registerV5Scenarios} from './v5-scenarios.mjs';
+registerV5Scenarios(SCENARIOS);

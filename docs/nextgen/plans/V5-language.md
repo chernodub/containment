@@ -23,4 +23,9 @@ Normal-blended combustion must preserve hot cores without peach additive wash. S
 
 ## Critique ledger
 
-Pending capture rounds.
+### Round 1 — 77d96b0 / `v5-round1`
+
+Inspected native Flashfire, Meltdown, Glacier, Bulwark, Overclock and full Cryo in bright Containment as soon as their complete seven-frame bursts landed. Before:40 sheets/280 frames, errors[]/failures[]. First shared-kit gate:11 files/124 tests passed. Findings: graphic combustion has useful red separation but its core is still too wide and cream-colored; Flashfire’s longest lobe still tapers like a leaf. The initial storm shader exposes hard cut segments like tape. Glacier is a clean broken wall instead of repeated pyramids; Bulwark’s two ends/top now say cover, but native fixture is edge-on. Overclock has two recognizable human echoes, preserving enemy bodies, although the generic contour remains simple.
+
+Fix: narrow hot core and its reach, saturate orange body, change jet envelope from leaf to pressure mass; soften/lower Whiteout perimeter alpha and remove hard wind cuts. Add an oblique native construct inspection for the second round. No simulation/actor/world/UI edits.
+

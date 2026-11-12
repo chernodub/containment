@@ -76,7 +76,7 @@ export const GRAPHIC_FLAME_FRAGMENT = `
  float t=uvLocal.y;float jet=step(100.,phase);float seed=phase-jet*100.;
  float clock=abilityTime*2.4;
  float bend=sin(t*5.4+seed-clock)*(.035+t*.12)+sin(t*12.7-seed+clock*.7)*.045*t;
- float envelope=mix(pow(max(.001,1.-t),.65),(.14+sin(t*3.141593)*.86)*pow(max(.001,1.-t),.25),jet);
+ float envelope=mix(pow(max(.001,1.-t),.65),(.13+smoothstep(.02,.30,t)*.87)*pow(max(.001,1.-t),.32),jet);
  float lobes=.79+.16*sin(t*15.-seed+clock)+.09*sin(t*29.+seed*.7-clock*.6);
  float width=max(.012,envelope*lobes*.77);
  float side=p.x-bend;
@@ -89,9 +89,9 @@ export const GRAPHIC_FLAME_FRAGMENT = `
  float coverage=(1.-smoothstep(1.-aa,1.+aa,contour))*smoothstep(0.,.035,t)*(1.-smoothstep(.94,1.,t));
  if(coverage<.01)discard;
  float body=1.-smoothstep(.70,.74,contour);
- float hot=(1.-smoothstep(.28,.33,distance))*(1.-smoothstep(.28,.70,t));
- c=mix(vec3(.24,.012,.002),vec3(1.65,.25,.008),body);
- c=mix(c,vec3(3.3,2.1,.48),hot*clamp(.55+ink.g,.55,1.));
+ float hot=(1.-smoothstep(.15,.22,distance))*(1.-smoothstep(.20,.53,t));
+ c=mix(vec3(.17,.007,.001),vec3(1.05,.105,.003),body);
+ c=mix(c,vec3(2.8,1.9,.34),hot*clamp(.55+ink.g,.55,1.));
  a*=coverage*(.90+.10*body)*(.35+.65*flash);
 `;
 

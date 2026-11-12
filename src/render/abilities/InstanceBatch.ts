@@ -164,10 +164,10 @@ ${kind === 'front' ? `
  if(phase>2.5){
   float roll=.5+.5*cos(uvLocal.y*6.283185);
   float curl=.5+.5*sin(uvLocal.x*43.9823+sin(uvLocal.x*18.8496)*1.4-abilityTime*.9);
-  float wind=step(.24,curl)*smoothstep(.14,.58,roll);
-  c=mix(vec3(.16,.31,.40),vec3(.48,.83,1.05),step(.6,roll));
-  c=mix(c,vec3(1.2,1.65,1.8),step(.92,roll)*step(.82,curl));
-  a*=wind*(.15+roll*.65);
+  float wind=smoothstep(.12,.62,curl)*pow(roll,1.5);
+  c=mix(vec3(.14,.29,.37),vec3(.42,.68,.78),smoothstep(.55,.72,roll));
+  c=mix(c,vec3(.7,1.,1.1),step(.97,roll)*step(.84,curl));
+  a*=wind*.45;
  }else if(phase>1.5){
   float roll=.5+.5*cos(uvLocal.y*6.283185);
   float curl=.5+.5*sin(uvLocal.x*31.4159+sin(uvLocal.x*18.8496)*1.7-abilityTime*1.3+sin(uvLocal.y*6.283185)*1.3);

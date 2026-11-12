@@ -236,7 +236,7 @@ class CryoPresentation implements AbilityPresentation {
     const groundYield = 1 - .65 * Math.min(1, Math.max(0, (age - 250) / 120));
     const time = k.reducedMotion ? 0 : age / 1000;
     const clearRadius = radius * .76, count = k.low ? 10 : 24;
-    k.front(x, z, radius, 1, ICE, .85, fade * .24, 3);
+    k.front(x, z, radius, 1, ICE, .65, fade * .18, 3);
     // Snow follows the same circulation as the low mist, rather than a field of unrelated flecks.
     for (let i = 0; i < count; i++) {
       const seed = i * 2.39996323 + zone.id * .7;

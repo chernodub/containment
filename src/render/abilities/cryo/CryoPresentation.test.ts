@@ -258,7 +258,7 @@ describe('Cryo signatures', () => {
       supportArea += c[2] * c[3];
     }
     expect(supportArea).toBeLessThan(Math.PI * (300 / 32) ** 2 * .24);
-    expect(kit.front).toHaveBeenCalledWith(10, 10, 300 / 32, 1, 0x7fd6ff, .85, .24, 3);
+    expect(kit.front).toHaveBeenCalledWith(10, 10, 300 / 32, 1, 0x7fd6ff, .65, .18, 3);
     // All spiral markers were replaced; only short authored-prop frost seams remain.
     for (const c of kit.ribbon.mock.calls) expect(Math.hypot(c[3] - c[0], c[5] - c[2])).toBeLessThanOrEqual(.350001);
     const positions = shards.map(c => [c[1], c[3], c[9]]), gustAngle = gusts[0][4];
@@ -275,7 +275,7 @@ describe('Cryo signatures', () => {
     for (const phase of ['impact', 'burst', 'end'] as const) fx.event(receipt({ ability: 'whiteout', phase, radius: 300 }), 320, 320);
     fx.update(frame({ zones: [zone({ remainingMs: 5990 })] }, .1));
     fx.update(frame({}, .1));
-    expect(kit.front).toHaveBeenCalledExactlyOnceWith(10, 10, 300 / 32, 1, 0x7fd6ff, .85, .24, 3);
+    expect(kit.front).toHaveBeenCalledExactlyOnceWith(10, 10, 300 / 32, 1, 0x7fd6ff, .65, .18, 3);
     expect(kit.ring).toHaveBeenCalledTimes(4);
     fx.event(receipt({ radius: 210 }), 320, 320); fx.update(frame({}, .1));
     expect(kit.front).toHaveBeenCalled();
@@ -322,7 +322,7 @@ describe('Cryo signatures', () => {
       }
     }
     expect(gusts).toHaveLength(3);
-    expect(kit.front).toHaveBeenCalledExactlyOnceWith(10, 10, 300 / 32, 1, 0x7fd6ff, .85, .24, 3);
+    expect(kit.front).toHaveBeenCalledExactlyOnceWith(10, 10, 300 / 32, 1, 0x7fd6ff, .65, .18, 3);
 
   });
 
