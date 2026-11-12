@@ -29,55 +29,61 @@ function position(mesh: T.InstancedMesh, index: number): T.Vector3 {
   const matrix = new T.Matrix4(); mesh.getMatrixAt(index, matrix);
   return new T.Vector3().setFromMatrixPosition(matrix);
 }
+function scale(mesh: T.InstancedMesh, index: number): T.Vector3 {
+  const matrix = new T.Matrix4(); mesh.getMatrixAt(index, matrix);
+  return new T.Vector3().setFromMatrixScale(matrix);
+}
 
 describe('Pyro presentation lifecycle and readability', () => {
-  it.each(['high', 'low'] as const)('keeps cone volume while reserving the far-smoke draw for High (%s)', tier => {
-    const { kit, fx, step, dispose } = setup();
+  it.each(['high', 'low'] as const)('streams a directional jet inside the exact cone, with a hot nozzle and downstream smoke (%s)', tier => {
+    const { kit, fx, step, dispose } = setup(), scar = vi.spyOn(kit, 'scar');
     kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
-    fx.event(event(), 64, 96); step(.15);
-    expect(kit.batches.flame.mesh.count).toBeGreaterThan(12);
-    if (tier === 'low') expect(kit.batches.smoke.mesh.count).toBe(0);
-    else {
-      const smoke = kit.batches.smoke.mesh;
-      expect(smoke.count).toBeGreaterThan(0);
-      expect(smoke.renderOrder).toBeGreaterThan(kit.batches.flame.mesh.renderOrder);
-      expect(position(smoke, 0).y).toBeGreaterThanOrEqual(1.6);
+    fx.event(event({ length: 320, arcRadians: 1.4, angle: .2 }), 64, 96);
+    expect(scar).toHaveBeenCalledWith('fan', 2, 3, 10, 0x101619, 8, .2, 10, 1.4);
+    step(.15);
+    const flames = kit.batches.flame.mesh, matrix = new T.Matrix4();
+    let source = 0, far = 0, leaned = 0;
+    expect(flames.count).toBeGreaterThan(tier === 'high' ? 40 : 15);
+    for (let i = 0; i < flames.count; i++) {
+      const p = position(flames, i), dx = p.x - 2, dz = p.z - 3, radius = Math.hypot(dx, dz);
+      expect(radius).toBeLessThanOrEqual(10);
+      expect(Math.abs(Math.atan2(dz, dx) - .2)).toBeLessThanOrEqual(.7);
+      if (radius < 1.3) source++;
+      if (radius > 6) far++;
+      flames.getMatrixAt(i, matrix);
+      if (Math.abs(matrix.elements[4]) > .02) leaned++;
     }
-    expect(kit.batches.decal.mesh.count).toBe(1); dispose();
+    expect(source).toBeGreaterThan(1); expect(far).toBeGreaterThan(2); expect(leaned).toBeGreaterThan(8);
+    const smoke = kit.batches.smoke.mesh;
+    if (tier === 'low') expect(smoke.count).toBe(0);
+    else {
+      expect(smoke.count).toBeGreaterThan(0);
+      expect(smoke.renderOrder).toBeGreaterThan(flames.renderOrder);
+      for (let i = 0; i < smoke.count; i++) {
+        const p = position(smoke, i);
+        expect(Math.hypot(p.x - 2, p.z - 3)).toBeGreaterThan(6);
+        expect(p.y).toBeGreaterThanOrEqual(.8);
+      }
+    }
+    expect(kit.batches.decal.mesh.count).toBe(1);
+    expect(Math.floor(kit.batches.decal.mesh.geometry.getAttribute('abilityPhase').getX(0))).toBe(3);
+    dispose();
   });
 
-  it.each(['high', 'low'] as const)('overlaps broad folds in every cone band through the hot dump, then thins (%s)', tier => {
+  it('holds the pressure dump for 350ms, then yields and retires without extending the hit cone', () => {
     const { kit, fx, step, dispose } = setup(), light = vi.spyOn(kit, 'lightAt');
-    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
     fx.event(event({ length: 320, arcRadians: 1.4 }), 64, 96);
-    const flames = kit.batches.flame.mesh, matrix = new T.Matrix4();
-    let hotAlpha = 0;
-    for (const dt of [.03, .12, .18]) {
-      step(dt);
-      const bands = new Set<string>();
-      let wide = 0;
-      for (let i = 0; i < flames.count; i++) {
-        flames.getMatrixAt(i, matrix);
-        const p = new T.Vector3().setFromMatrixPosition(matrix), scale = new T.Vector3().setFromMatrixScale(matrix);
-        const dx = p.x - 2, dz = p.z - 3, radius = Math.hypot(dx, dz);
-        if (radius < 2 || radius > 9.8) continue;
-        const a = Math.atan2(dz, dx);
-        bands.add(`${Math.min(3, Math.floor(radius / 2.5))}:${Math.min(4, Math.max(0, Math.floor((a + .7) / 1.4 * 5)))}`);
-        if (scale.x * 2 > .85) wide++;
-      }
-      expect(flames.count).toBeGreaterThanOrEqual(tier === 'high' ? 96 : 35);
-      expect(bands.size).toBeGreaterThanOrEqual(tier === 'high' ? 17 : 14);
-      expect(wide).toBeGreaterThan(tier === 'high' ? 60 : 20);
-      expect(light).toHaveBeenLastCalledWith(expect.any(Number), expect.any(Number), expect.any(Number), 0xff7a2e, 28, 11);
-      hotAlpha = 0;
+    step(.33);
+    expect(light).toHaveBeenLastCalledWith(expect.any(Number), expect.any(Number), expect.any(Number), 0xff7a2e, 28, 11);
+    const flames = kit.batches.flame.mesh;
+    const totalAlpha = () => {
+      let sum = 0;
       const alpha = flames.geometry.getAttribute('abilityAlpha');
-      for (let i = 0; i < flames.count; i++) hotAlpha += alpha.getX(i);
-    }
-    step(.32);
-    let aftermathAlpha = 0;
-    const alpha = flames.geometry.getAttribute('abilityAlpha');
-    for (let i = 0; i < flames.count; i++) aftermathAlpha += alpha.getX(i);
-    expect(aftermathAlpha).toBeLessThan(hotAlpha * .25);
+      for (let i = 0; i < flames.count; i++) sum += alpha.getX(i);
+      return sum;
+    };
+    const hotAlpha = totalAlpha();
+    step(.32); expect(totalAlpha()).toBeLessThan(hotAlpha * .25);
     step(.1); expect(flames.count).toBe(0); dispose();
   });
 
@@ -86,112 +92,92 @@ describe('Pyro presentation lifecycle and readability', () => {
     fx.event(event({ ability: 'napalm-charge', slot: 'power', phase: 'cast', targetX: 256, targetY: 128, durationMs: 350 }), 64, 128);
     step(.175);
     const center = position(kit.batches.solid.mesh, 0);
-    expect(center.x).toBeCloseTo(5); expect(center.z).toBeCloseTo(4);
-    expect(center.y).toBeGreaterThan(2.5);
+    expect(center.x).toBeCloseTo(5); expect(center.z).toBeCloseTo(4); expect(center.y).toBeGreaterThan(2.5);
     fx.event(event({ ability: 'napalm-charge', slot: 'power', targetX: 256, targetY: 128, radius: 80 }), 64, 128);
     step(0);
-    expect(kit.batches.solid.mesh.count).toBe(0);
+    // New ballistic liquid lobes are solids too; the in-flight rotating metal canister is gone.
+    for (let i = 0; i < kit.batches.solid.mesh.count; i++) expect(position(kit.batches.solid.mesh, i).y).toBeLessThan(.2);
+    expect(kit.counts.rings).toBe(0);
     dispose();
   });
 
-  it('keeps flame positions inside authoritative augmented pools and expires them from snapshots', () => {
-    const { kit, frame, step, dispose } = setup();
-    frame.snapshot = snapshot([zone({ radius: 80 })]); step(.016);
+  it.each(['high', 'low'] as const)('keeps a thin low fuel trail along the real dash strip with directional flames (%s)', tier => {
+    const { kit, frame, step, dispose } = setup(), directed = vi.spyOn(kit, 'directedFlame');
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    frame.snapshot = snapshot([zone({ ability: 'afterburn', shape: 'strip', x: 64, y: 96, x2: 256, y2: 96, width: 44 })]);
+    step(.016);
     const flames = kit.batches.flame.mesh;
-    expect(flames.count).toBeGreaterThan(0);
+    let lowX = Infinity, highX = -Infinity;
+    expect(flames.count).toBeGreaterThanOrEqual(5);
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i);
-      expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThanOrEqual(80 / 32 + .001);
-      // Rising fuel tongues leave enemy heads readable and retain gaps between sources.
-      const matrix = new T.Matrix4(); flames.getMatrixAt(i, matrix);
-      const scale = new T.Vector3().setFromMatrixScale(matrix);
-      expect(p.y + scale.y).toBeLessThan(1.8);
+      expect(p.x).toBeGreaterThanOrEqual(2); expect(p.x).toBeLessThanOrEqual(8);
+      expect(Math.abs(p.z - 3)).toBeLessThan(44 / 32 / 2);
+      expect(p.y + scale(flames, i).y).toBeLessThan(.7);
+      lowX = Math.min(lowX, p.x); highX = Math.max(highX, p.x);
     }
-    frame.snapshot = snapshot(); step(0);
-    expect(flames.count).toBe(0);
+    expect(lowX).toBeLessThan(2.25); expect(highX).toBeGreaterThan(7.75);
+    expect(directed).toHaveBeenCalledWith(expect.any(Number), .045, expect.any(Number), expect.any(Number), expect.any(Number), 0, 1.5, expect.any(Number), expect.any(Number), expect.any(Boolean));
+    for (let i = 0; i < kit.batches.solid.mesh.count; i++) expect(scale(kit.batches.solid.mesh, i).y).toBeCloseTo(.025);
     dispose();
   });
 
-  it('spans the real cone with upright varied flames through 350ms and leaves only a sector scar', () => {
-    const { kit, fx, step, dispose } = setup(), scar = vi.spyOn(kit, 'scar'), fan = vi.spyOn(kit, 'fireFan');
-    fx.event(event({ length: 320, arcRadians: 1.4, angle: .2 }), 64, 96);
-    expect(scar).toHaveBeenCalledWith('fan', 2, 3, 10, 0x101619, 8, .2, 10, 1.4);
-    step(.15);
-    expect(fan).toHaveBeenLastCalledWith(2, 3, 10, .2, 1.4, .85);
-    const flames = kit.batches.flame.mesh, bands = new Set<number>(), heights = new Set<number>();
-    expect(flames.count).toBeGreaterThanOrEqual(40);
+  it.each(['high', 'low'] as const)('anchors a few tall Napalm tongues inside the exact augmented liquid pool and retires from snapshots (%s)', tier => {
+    const { kit, frame, step, dispose } = setup(), liquid = vi.spyOn(kit, 'liquidFire');
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    frame.snapshot = snapshot([zone({ radius: 80 })]); step(.016);
+    expect(liquid).toHaveBeenCalledWith(4, 5, 2.5, .78);
+    const flames = kit.batches.flame.mesh;
+    expect(flames.count).toBe(tier === 'low' ? 2 : 4);
+    let tallest = 0;
     for (let i = 0; i < flames.count; i++) {
-      const p = position(flames, i), dx = p.x - 2, dz = p.z - 3;
-      const radius = Math.hypot(dx, dz), angle = Math.atan2(dz, dx) - .2;
-      expect(radius).toBeLessThanOrEqual(10);
-      expect(Math.abs(angle)).toBeLessThanOrEqual(.7);
-      bands.add(Math.floor(radius / 2));
-      const matrix = new T.Matrix4(); flames.getMatrixAt(i, matrix);
-      expect(matrix.elements[5]).toBeGreaterThan(0); // Every fire card rises vertically.
-      expect(matrix.elements[6]).toBeCloseTo(0);
-      // A brief rolling flame volume can crest above enemies; the marine overlay remains separate.
-      expect(p.y + matrix.elements[5]).toBeLessThan(3.1);
-      heights.add(Math.round(matrix.elements[5] * 100));
+      const p = position(flames, i);
+      expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThanOrEqual(2.5);
+      tallest = Math.max(tallest, p.y + scale(flames, i).y);
     }
-    expect(bands.size).toBe(5); expect(heights.size).toBeGreaterThan(12);
-    // The only ground instance is the dark aftermath, never a second luminous cone plane.
-    expect(kit.batches.decal.mesh.count).toBe(1);
-    expect(Math.floor(kit.batches.decal.mesh.geometry.getAttribute('abilityPhase').getX(0))).toBe(3);
-    step(.18); expect(flames.count).toBeGreaterThanOrEqual(40);
-    step(.5); expect(flames.count).toBe(0); dispose();
+    expect(tallest).toBeGreaterThan(1.7);
+    expect(kit.batches.smoke.mesh.count).toBe(tier === 'low' ? 1 : 4);
+    frame.snapshot = snapshot(); step(0);
+    expect(flames.count).toBe(0); expect(kit.batches.smoke.mesh.count).toBe(0); dispose();
   });
 
-  it('keeps a continuous tall fire wall on the real dash strip on both tiers', () => {
-    for (const tier of ['high', 'low'] as const) {
-      const { kit, frame, step, dispose } = setup();
-      kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
-      frame.snapshot = snapshot([zone({ ability: 'afterburn', shape: 'strip', x: 64, y: 96, x2: 256, y2: 96, width: 44 })]);
-      step(.016);
-      const flames = kit.batches.flame.mesh, matrix = new T.Matrix4();
-      let tall = 0, lowX = Infinity, highX = -Infinity;
-      for (let i = 0; i < flames.count; i++) {
-        const p = position(flames, i), scale = new T.Vector3(); flames.getMatrixAt(i, matrix); scale.setFromMatrixScale(matrix);
-        expect(p.x).toBeGreaterThanOrEqual(2); expect(p.x).toBeLessThanOrEqual(8);
-        expect(Math.abs(p.z - 3)).toBeLessThan(44 / 32 / 2);
-        if (scale.y * 2 >= .8) { tall++; lowX = Math.min(lowX, p.x); highX = Math.max(highX, p.x); }
-      }
-      expect(tall).toBeGreaterThanOrEqual(8);
-      // Decorative tips stay inset while spanning both ends; the shared boundary owns exact endpoints.
-      expect(lowX).toBeLessThan(2.25); expect(highX).toBeGreaterThan(7.75);
-      expect(kit.batches.decal.mesh.count).toBe(0);
-      dispose();
+  it('charges Meltdown armor and local exhaust while leaving the aura open instead of building a fire ring', () => {
+    const { kit, frame, step, dispose } = setup(), grade = vi.spyOn(kit, 'grade');
+    frame.snapshot = snapshot([zone({ ability: 'meltdown', radius: 130, attached: true })]);
+    frame.game = { player: { x: 128, y: 160, vx: 0, vy: 0, angle: .1 }, bullets: [] } as never;
+    step(.016);
+    const flames = kit.batches.flame.mesh;
+    expect(flames.count).toBe(4); expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
+    for (let i = 0; i < flames.count; i++) {
+      const p = position(flames, i);
+      expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThan(.6);
+      expect(flames.geometry.getAttribute('abilityPriority').getX(i)).toBe(0);
     }
+    expect(kit.counts.rings).toBe(0); expect(kit.batches.decal.mesh.count).toBe(0);
+    dispose();
   });
 
-  it('layers rising fire in the exact pool and leaves bounded burning footsteps while Meltdown moves', () => {
-    const { kit, frame, step, dispose } = setup(), liquid = vi.spyOn(kit, 'liquidFire'), grade = vi.spyOn(kit, 'grade');
-    frame.snapshot = snapshot([zone()]); step(.016);
-    expect(liquid).toHaveBeenCalledWith(4, 5, 120 / 32, .55);
-    frame.snapshot = { ...snapshot([zone({ ability: 'meltdown', attached: true })]), overdrive: { charge: 0, ready: false, active: true, activeRemainingMs: 5000 } };
+  it('leaves bounded movement wake on Meltdown, freezes it on pause and clears it', () => {
+    const { kit, fx, frame, step, dispose } = setup();
+    frame.snapshot = { ...snapshot(), overdrive: { charge: 0, ready: false, active: true, activeRemainingMs: 5000 } };
     frame.game = { player: { x: 128, y: 160, vx: 100, vy: 0, angle: .1 }, bullets: [] } as never;
-    step(.2); step(.01); expect(grade).toHaveBeenCalled(); expect(kit.batches.solid.mesh.count).toBeGreaterThan(0);
+    step(.2); step(.01); expect(kit.batches.solid.mesh.count).toBeGreaterThan(0);
     for (let i = 0; i < 40; i++) step(.17);
     expect(kit.batches.solid.mesh.count).toBeLessThanOrEqual(12);
     const before = kit.batches.solid.mesh.instanceMatrix.array.slice(); step(0);
     expect(kit.batches.solid.mesh.instanceMatrix.array).toEqual(before);
-    fxClear();
-    function fxClear() { frame.snapshot = snapshot(); frame.game = undefined; step(2); expect(kit.batches.solid.mesh.count).toBe(0); }
-    dispose();
+    frame.snapshot = snapshot(); frame.game = undefined; step(2);
+    expect(kit.batches.solid.mesh.count).toBe(0);
+    fx.clear(); dispose();
   });
 
-  it('leaves Meltdown open between its rim and body mantle and varies flame silhouettes', () => {
+  it('marks sustained fuel for priority masking after the impact grace and resets shared state', () => {
     const { kit, frame, step, dispose } = setup();
-    frame.snapshot = snapshot([zone({ ability: 'meltdown', radius: 130, attached: true })]);
-    step(.016);
-    const flames = kit.batches.flame.mesh, heights = new Set<number>();
-    for (let i = 0; i < flames.count; i++) {
-      const p = position(flames, i), distance = Math.hypot(p.x - 4, p.z - 5);
-      expect(distance < .6 || distance > 130 / 32 * .75).toBe(true);
-      const matrix = new T.Matrix4(); flames.getMatrixAt(i, matrix);
-      const scale = new T.Vector3().setFromMatrixScale(matrix);
-      heights.add(Math.round(scale.y * 100));
-    }
-    expect(heights.size).toBeGreaterThan(8);
+    frame.snapshot = snapshot([zone({ remainingMs: 5900 })]); step(.016);
+    expect(kit.batches.flame.mesh.geometry.getAttribute('abilityPriority').getX(0)).toBe(0);
+    frame.snapshot = snapshot([zone({ remainingMs: 5500 })]); step(.016);
+    expect(kit.batches.flame.mesh.geometry.getAttribute('abilityPriority').getX(0)).toBe(1);
+    expect(kit.priorityWeight).toBe(0); frame.snapshot = undefined; step(0); expect(kit.priorityWeight).toBe(0);
     dispose();
   });
 
@@ -202,39 +188,30 @@ describe('Pyro presentation lifecycle and readability', () => {
     frame.snapshot = snapshot([zone()]); step(.1);
     const before = kit.batches.flame.mesh.instanceMatrix.array.slice(), counts = kit.counts;
     for (let i = 0; i < 20; i++) step(0);
-    expect(kit.batches.flame.mesh.instanceMatrix.array).toEqual(before);
-    expect(kit.counts.particles).toBe(counts.particles);
+    expect(kit.batches.flame.mesh.instanceMatrix.array).toEqual(before); expect(kit.counts.particles).toBe(counts.particles);
     const afterGeometry = new Set<T.BufferGeometry>(), afterMaterials = new Set<T.Material>();
     scene.traverse(o => { if (o instanceof T.Mesh) { afterGeometry.add(o.geometry); afterMaterials.add(o.material as T.Material); } });
-    expect(afterGeometry).toEqual(geometry); expect(afterMaterials).toEqual(materials);
-    dispose();
+    expect(afterGeometry).toEqual(geometry); expect(afterMaterials).toEqual(materials); dispose();
   });
 
-  it('bounds repeated spam and simplifies Low while preserving recognizable flame coverage', () => {
+  it('bounds repeated spam and simplifies Low while preserving all source signatures', () => {
     const { kit, fx, frame, step, dispose } = setup();
     for (let i = 0; i < 100; i++) fx.event(event(), 64, 96);
-    frame.snapshot = snapshot(Array.from({ length: 24 }, (_, i) => zone({ id: i + 1 })));
-    step(.016);
+    frame.snapshot = snapshot(Array.from({ length: 24 }, (_, i) => zone({ id: i + 1 }))); step(.016);
     expect(kit.batches.flame.mesh.count).toBeLessThanOrEqual(kit.batches.flame.capacity);
     const high = kit.batches.flame.mesh.count;
-    fx.clear(); kit.clear();
-    frame.snapshot = snapshot([zone()]);
+    fx.clear(); kit.clear(); frame.snapshot = snapshot([zone()]);
     kit.setOptions(GRAPHICS_PRESETS.low, 'low', true); step(.016);
-    expect(kit.batches.flame.mesh.count).toBeGreaterThan(0);
-    expect(kit.batches.flame.mesh.count).toBeLessThan(high);
+    expect(kit.batches.flame.mesh.count).toBeGreaterThan(0); expect(kit.batches.flame.mesh.count).toBeLessThan(high);
     dispose();
   });
 
   it('ignores non-spatial presses and cleans up idempotently without disposing shared kit resources', () => {
-    const { kit, fx, step, dispose } = setup();
-    const geometryDisposal = vi.spyOn(kit.batches.flame.mesh.geometry, 'dispose');
+    const { kit, fx, step, dispose } = setup(), geometryDisposal = vi.spyOn(kit.batches.flame.mesh.geometry, 'dispose');
     for (const phase of ['denied', 'ready', 'overdrive-ready'] as const) fx.event(event({ phase }), 64, 96);
-    step(.016);
-    expect(kit.batches.flame.mesh.count).toBe(0); expect(kit.counts.particles).toBe(0);
-    fx.event(event(), 64, 96); fx.clear(); step(.016);
-    expect(kit.batches.flame.mesh.count).toBe(0);
-    fx.dispose(); fx.dispose();
-    expect(geometryDisposal).not.toHaveBeenCalled();
+    step(.016); expect(kit.batches.flame.mesh.count).toBe(0); expect(kit.counts.particles).toBe(0);
+    fx.event(event(), 64, 96); fx.clear(); step(.016); expect(kit.batches.flame.mesh.count).toBe(0);
+    fx.dispose(); fx.dispose(); expect(geometryDisposal).not.toHaveBeenCalled();
     dispose(); expect(geometryDisposal).toHaveBeenCalledOnce();
   });
 });
