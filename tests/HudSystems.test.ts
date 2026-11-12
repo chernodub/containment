@@ -573,3 +573,21 @@ it('bounds the 720p right column, fades radar contacts, and preserves critical o
         const overlaps=await page.evaluate(()=>['#status-hud','#radar-hud'].filter(selector=>{const r=document.querySelector(selector)!.getBoundingClientRect();return r.left<667&&r.right>613&&r.top<430&&r.bottom>290;}));expect(overlaps).toEqual([]);
     }finally{await page.close();}
 });
+
+it('keeps the entry reminder and complete build inside the 720p right-column budget',async()=>{
+    const page=await mountHud(1280,720);
+    try{
+        await liveHud(page);
+        const area=await page.evaluate(async()=>{
+            const load=new Function('path','return import(path)');
+            const {MUTATION_IDS}=await load('/src/game/roguelike/mutationCatalog.ts');
+            const {game,hud}=(window as any).__live;
+            game.expedition={...game.expedition,build:{mutations:MUTATION_IDS}};
+            Object.defineProperty(game,'storyStatus',{value:'New Earth warned · Passengers alive · Purge kills everyone · AI knew before awakening'});
+            Object.defineProperty(game,'storyPresentation',{value:'LOCAL RECORD, BEFORE AWAKENING: Rescue impossible. AI acknowledged. Survival promise issued afterward.'});
+            (window as any).__hudPrefs.radar=true;hud();
+            return ['#status-hud','#radar-hud'].reduce((sum,selector)=>{const r=document.querySelector(selector)!.getBoundingClientRect();return sum+r.width*r.height;},0)/(1280*720);
+        });
+        expect(area).toBeLessThan(.14);
+    }finally{await page.close();}
+});

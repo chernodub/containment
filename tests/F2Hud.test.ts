@@ -30,11 +30,14 @@ it('pointer movement never measures ability anchors or tooltip layout',async()=>
       const box=entries[0].node.getBoundingClientRect();let reads=0;
       const original=Element.prototype.getBoundingClientRect;
       Element.prototype.getBoundingClientRect=function(){reads++;return original.call(this);};
-      try{for(let i=0;i<100;i++)document.dispatchEvent(new PointerEvent('pointermove',{pointerType:'mouse',clientX:box.left+1,clientY:box.top+1}));}
-      finally{Element.prototype.getBoundingClientRect=original;}
+      let passiveVisible=false;
+      try{for(let i=0;i<100;i++)document.dispatchEvent(new PointerEvent('pointermove',{pointerType:'mouse',clientX:box.left+1,clientY:box.top+1}));
+        passiveVisible=entries[0].node.querySelector('.ability-tooltip')?.hasAttribute('hidden')===false;
+        document.dispatchEvent(new KeyboardEvent('keydown',{code:'AltLeft',key:'Alt'}));
+      }finally{Element.prototype.getBoundingClientRect=original;}
       const visible=entries[0].node.querySelector('.ability-tooltip')?.hasAttribute('hidden')===false;
-      hints.dispose();return {reads,visible};
+      hints.dispose();return {reads,visible,passiveVisible};
     });
-    expect(result).toEqual({reads:0,visible:true});
+    expect(result).toEqual({reads:0,passiveVisible:false,visible:true});
   }finally{await page.close();}
 });

@@ -44,6 +44,7 @@ describe('U4 benefit-first boon presentation', () => {
     expect(boonNumbers(MUTATION_CATALOG['spreading-nova'])).toBe('≈+0.5 m / chilled · ≈+3 m max');
     expect(boonNumbers(MUTATION_CATALOG['tactical-salvage'])).toBe('≈−0.5 s cooldown per kill');
     expect(MUTATION_CATALOG['tactical-salvage'].description).toContain('0.35 seconds');
+    expect(boonNumbers(MUTATION_CATALOG['ice-lance'])).toBe('2 targets in sequence · 1 s between lances');
     expect(boonNumbers(MUTATION_CATALOG['blood-price'])).toBe('+35% weapon damage · +20% damage taken');
     const changed = {...MUTATION_CATALOG['tactical-salvage'], description: 'Every kill refunds 1.25 seconds of your tactical ability cooldown.'};
     expect(boonNumbers(changed)).toBe('≈−1.5 s cooldown per kill');

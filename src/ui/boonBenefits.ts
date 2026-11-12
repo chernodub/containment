@@ -41,7 +41,7 @@ export const BOON_BENEFITS: Readonly<Record<MutationId, Benefit>> = {
   crossfire: benefit('Switch weapons to punish the same target', [metric('damage', /deals (\d+) extra/, 'number', '+'), metric('cooldown', /(\d+(?:\.\d+)?)-second cooldown/, 'seconds')]),
   fragmentation: benefit('Direct kills scatter damaging fragments', [metric('fragment damage', /for (\d+) damage/), metric('targets', /to (three) nearby/)]),
   'absolute-zero': benefit('Stacked chill freezes enemies solid', [metric('chill stacks', /Reaching (three) chill/), metric('damage', /deals (\d+) damage/)]),
-  'ice-lance': benefit('Chilled hits lance into a second enemy', [metric('extra target', /a (second) nearby/), metric('between lances', /Once per (second)/, 'seconds')]),
+  'ice-lance': benefit('Chilled hits lance into a second enemy', [metric('targets in sequence', /a (second) nearby/), metric('between lances', /Once per (second)/, 'seconds')]),
   frostbite: benefit('Fully chilled enemies keep taking damage', [metric('damage per tick', /take (\d+) damage/), metric('between ticks', /every (half)-second/, 'seconds')]),
   'thermal-shock': benefit('Burning and chilled enemies erupt', [metric('blast damage', /a (\d+)-damage/)]),
   'glacial-wake': benefit('Chilled kills leave slowing frost', [metric('max frost patches', /(Four) patches maximum/)]),
@@ -79,7 +79,7 @@ export function boonMetrics(boon: MutationDefinition): readonly {value: number; 
   return BOON_BENEFITS[boon.id].metrics.map(metric => {
     const token = metric.source.exec(`${boon.description} ${boon.tradeoff}`)?.[1];
     if (!token) throw new Error(`Missing catalog metric for ${boon.id}: ${metric.source}`);
-    const value = wordNumbers[token.toLowerCase()] ?? Number(token);
+    const value = token.toLowerCase() === 'second' && metric.kind === 'number' ? 2 : wordNumbers[token.toLowerCase()] ?? Number(token);
     const displayValue = metric.kind === 'distance' ? value / WORLD_UNITS_PER_METRE : value;
     const step = metric.kind === 'percent' ? 5 : metric.kind === 'distance' || metric.kind === 'seconds' ? .5 : 1;
     const shown = Math.max(displayValue > 0 ? step : 0, Math.round(displayValue / step) * step);

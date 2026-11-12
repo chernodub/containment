@@ -38,7 +38,10 @@ describe('short non-blocking story HUD', () => {
         expect(story.conciseStoryStatus(g.storyStatus)).toBe('Passengers alive · AI promises survival');
         expect(g.storyRoom?.objective).toBe('Restore communications.');
         expect(g.storyPresentation).toBe('AI: Purge the infestation.');
-        expect(main).toMatch(/text\(\s*['"]story-status['"]\s*,\s*conciseStoryStatus\(game.storyStatus\)\s*\)/);
+        expect(main).toContain('const storyStatus = conciseStoryStatus(game.storyStatus)');
+        expect(main).toMatch(/text\(\s*['"]story-status['"]\s*,\s*storyStatus\s*\)/);
+        expect(main).toContain('combatObjective(game.storyRoom?.templateId');
+        expect(main).toContain("escapeHtml(game.storyRoom?.objective??'')");
         const status = story.conciseStoryStatus(g.storyStatus), objective = g.storyRoom?.objective;
         g.skipStory();
         expect(g.storyPresentation).toBeUndefined();
