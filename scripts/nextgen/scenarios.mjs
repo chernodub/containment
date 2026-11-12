@@ -113,7 +113,7 @@ export const SCENARIOS=[
    d.uiEvent({type:'boon',boon:'shatter',x:center.x+100,y:center.y});d.refresh();
  }},
  {id:'combat-kiting',rooms:true,state:'playing',kiting:true,burst:true,required:['#ability-bar','#radar-hud'],setup:async room=>{await window.__containmentDebug.gotoRoom(room,{rig:'cryo'});}},
- {id:'onboarding',state:'playing',room:'awakening-bay',resetPreferences:['containment.onboarding.v1'],required:['#contextual-onboarding[data-action]'],setup:async()=>{
+ {id:'onboarding',state:'playing',room:'awakening-bay',nativeHold:['Alt'],resetPreferences:['containment.onboarding.v1'],required:['#contextual-onboarding[data-action]'],setup:async()=>{
    const d=window.__containmentDebug;await d.startRun(1729,{rigSelect:true});
    if(!d.game.chooseRig('cryo'))throw Error('Onboarding rig selection failed');d.refresh();
    for(let frame=0;frame<900&&!document.querySelector('[data-mutation]');frame++)await new Promise(requestAnimationFrame);

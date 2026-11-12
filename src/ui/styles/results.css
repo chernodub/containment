@@ -103,7 +103,7 @@
 #overlay .damage-source-bar [data-damage-source='ability'] { background: repeating-linear-gradient(90deg,#c7d7df 0 8px,#8d9fa9 8px 10px); }
 #overlay .damage-source-bar [data-damage-source='status'] { background: repeating-linear-gradient(135deg,#c7d7df 0 3px,#647985 3px 6px); }
 #overlay .damage-source-bar [data-damage-source='boon'] { background: repeating-linear-gradient(0deg,#aabcc6 0 2px,#415967 2px 5px); }
-#overlay .damage-source-legend [data-stat] b { color: var(--damage-neutral, #f0fbff); }
+#overlay .debrief-panel .damage-source-legend [data-stat] b { color: var(--damage-neutral, #f0fbff); }
 #overlay .damage-source-legend [data-stat]::before { content:''; display:block; width:18px; height:5px; margin-bottom:5px; background:var(--damage-neutral, #f0fbff); }
 #overlay .damage-source-legend [data-stat='ability']::before { background: repeating-linear-gradient(90deg,#c7d7df 0 8px,#8d9fa9 8px 10px); }
 #overlay .damage-source-legend [data-stat='status']::before { background: repeating-linear-gradient(135deg,#c7d7df 0 3px,#647985 3px 6px); }
