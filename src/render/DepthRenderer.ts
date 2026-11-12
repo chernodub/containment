@@ -474,7 +474,7 @@ export class DepthRenderer {
   if(this.title)this.title.root.visible=menu;this.world.visible=!menu;if(this.backdrop)this.backdrop.root.visible=!menu;
   if(bossWeight)this.protectBossFraming(p.x/UNIT,p.y/UNIT,p.radius/UNIT,bossFrame.x/UNIT,bossFrame.y/UNIT);
   if(!menu)this.protectPlayerFraming(p.x/UNIT,p.y/UNIT,p.radius/UNIT);
-  this.effects.beginPriorityActors(this.camera);if(!menu)this.effects.addPriorityActor(p.x/UNIT,p.y/UNIT,p.radius/UNIT,this.player.height);
+  this.effects.beginPriorityActors(this.camera);if(!menu)this.effects.addPriorityActor(p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,.78),this.player.height);
   // The shadow projection remains anchored to the room, avoiding subpixel shimmer.
   this.player.setColliderDebug?.(this.colliderDebug,p.radius/UNIT);this.player.root.position.set(p.x/UNIT,0,p.y/UNIT);this.player.root.visible=!menu;this.player.root.rotation.z=game.combat.snapshot.dead?1.4:0;
   const combat=game.combat.snapshot;this.player.equip?.(combat.weaponId);

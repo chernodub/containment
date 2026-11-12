@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {patchActorRegions} from '../ActorRegions';
 import {optimizeLocalLights} from '../lighting/LocalLightShading';
 
 /** Shared uniforms per actor, never per mesh or frame; adds no draws or resources. */
@@ -43,6 +44,7 @@ totalEmissiveRadiance+=actorRimColor*actorRim*actorRimStrength*actorStageLight*m
     material.customProgramCacheKey = () => `${previousKey}:actor-surface-v5:${friendly ? 'marine' : 'alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
+    patchActorRegions(material,friendly);
   }
   return {
     stage(value:number) { stageLight.value=T.MathUtils.clamp(value,0,1); },

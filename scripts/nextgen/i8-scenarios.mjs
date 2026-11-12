@@ -1,5 +1,5 @@
 /** I8 family/line review: legal native actors, no statuses or combat overrides. */
-async function stageFamilies(room) {
+export async function stageFamilies(room) {
   const d=window.__containmentDebug,g=d.game,r=d.renderer;
   await d.gotoRoom(room,{rig:'breacher'});d.invulnerable(true);g.enemies.reset();
   const b=g.geometry.bounds,probe=r.player.root.position.clone(),centers=[];

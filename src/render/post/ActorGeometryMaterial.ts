@@ -47,7 +47,7 @@ export function setActorGeometryIdentity(material: ShaderMaterial, id: number, k
     if (shader.fragmentShader.includes('vec2 actorGeometryOctNormal')) return;
     if (!exclusion.test(shader.fragmentShader)) return;
     shader.fragmentShader = declarations + shader.fragmentShader.replace(exclusion,
-      `containmentGeometry=vec4(actorGeometryOctNormal(${normal})*.5+.5,containmentActorGeometryIdentity/255.0);`);
+      `containmentGeometry=vec4(actorGeometryOctNormal(${normal})*.5+.5,vec2(containmentActorGeometryIdentity.x,containmentActorGeometryIdentity.y+8.0*(9.0+floor(role+.5)))/255.0);`);
   };
   material.customProgramCacheKey = () => key.includes(cacheTag) ? key : `${key}${cacheTag}`;
   material.needsUpdate = true;
