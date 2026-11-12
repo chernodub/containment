@@ -4,7 +4,7 @@ import {spawn,execFileSync} from 'node:child_process';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {createWriteStream} from 'node:fs';
 import {loadavg,cpus} from 'node:os';
-const root=process.cwd(),logs=root+'/artifacts/nextgen/i8/logs',dist='artifacts/nextgen/i8/accepted-dist';
+const root=process.cwd(),logs=root+'/artifacts/nextgen/i8/logs',dist='artifacts/nextgen/i8/reviewed-dist';
 const source=(await readFile(dist+'/SOURCE_SHA','utf8')).trim();await mkdir(logs,{recursive:true});
 const rooms=['awakening-bay','passenger-vault','residential-gallery','communal-atrium','crew-checkpoint','armory','freight-hold','breached-loading-bay','relay-racks','transmission-chamber','diagnostic-gallery','safety-interlock-station','coolant-plant','service-shaft-landing','infested-workshop','swarm-junction','shielding-gate','containment-annulus','manual-control-chamber','overload-floor'];
 const receipt={sourceSHA:source,harnessSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),started:new Date().toISOString(),cores:cpus().length,steps:[]};

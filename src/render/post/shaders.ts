@@ -166,6 +166,8 @@ ${inkComposite}
   color = max((color + lift) * gain, 0.0);
   color *= 1.0 + abilityPresentation.x * 2.4;
   color*=1.0-menuPresentation*(1.0-smoothstep(.30,.59,vUv.x))*.78;
+  // Title exposure is localized to the cast; the left45% remains calm.
+  color*=1.0+menuPresentation*smoothstep(.45,.60,vUv.x)*.65;
   color = useAgX > 0.5 ? AgXToneMapping(color) : ACESFilmicToneMapping(color);
   float luminance = dot(color, vec3(0.2126, 0.7152, 0.0722));
   color = mix(vec3(luminance), color, saturation);
