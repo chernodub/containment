@@ -52,10 +52,11 @@ void main(){float cap=smoothstep(0.0,.08,local.y)*smoothstep(0.0,.12,1.0-local.y
   /** Call begin, append all ribbons, then end. No transient segment arrays or vectors. */
   begin(): void { this.mesh.count = 0; }
   append(ribbon: EnergyRibbon, time = 0, reducedMotion = false): void {
-    const segments = ribbon.lightning ? (this.low ? 6 : 10) : 1;
     this.direction.subVectors(ribbon.end, ribbon.start);
     const distance = this.direction.length();
     if (distance < .001) return;
+    // Centimetre suit crackles need two bends, not a room-length bolt's ten.
+    const segments = ribbon.lightning ? Math.max(2, Math.min(this.low ? 6 : 10, Math.ceil(distance * 2.2))) : 1;
     this.side.set(-this.direction.z, 0, this.direction.x).normalize();
     const seed = ribbon.seed ?? 1;
     const strike = reducedMotion ? 0 : Math.floor(time * 25);
@@ -70,7 +71,7 @@ void main(){float cap=smoothstep(0.0,.08,local.y)*smoothstep(0.0,.12,1.0-local.y
       const width = ribbon.lightning ? Math.max(.008, Math.min(.06, ribbon.width ?? .035)) * (1 - t * .45) : ribbon.width ?? .045;
       this.segment(this.start, this.endpoint, width * (ribbon.lightning ? 2.4 : 3), ribbon.color ?? 0xb79cff, (ribbon.opacity ?? 1) * (ribbon.lightning ? .11 : .14), 1.2);
       this.segment(this.start, this.endpoint, width, ribbon.lightning ? 0xf2ecff : ribbon.color ?? 0xb79cff, ribbon.opacity ?? 1, ribbon.lightning ? 4 : 3);
-      if (ribbon.lightning && !this.low && i % 3 === 0 && i < segments) {
+      if (ribbon.lightning && distance > 1 && !this.low && i % 3 === 0 && i < segments) {
         this.branch.copy(this.endpoint).addScaledVector(this.side, Math.sin(seed + i * 7.1 + strike) * .42);
         this.branch.y += .12 + Math.sin(i + strike) * .18;
         this.segment(this.endpoint, this.branch, width * .45, 0xd9cbff, (ribbon.opacity ?? 1) * .65, 2);

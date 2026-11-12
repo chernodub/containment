@@ -105,9 +105,13 @@ describe('Arc presentation signatures and lifecycle', () => {
   });
 
   it('adds an electrical human silhouette for Static Step and retires it promptly', () => {
-    const { kit, fx, step, dispose } = setup();
+    const { kit, fx, step, dispose } = setup(), ribbon = vi.spyOn(kit, 'ribbon');
     fx.event(event({ ability: 'static-step', slot: 'dash', phase: 'dash-start', angle: .5 }), 64, 96);
-    step(.01); expect(kit.ribbons.mesh.count).toBeGreaterThan(50);
+    step(.01); expect(ribbon).toHaveBeenCalledTimes(5);
+    const heights = ribbon.mock.calls.flatMap(c => [c[1], c[4]]);
+    expect(Math.min(...heights)).toBe(.05); expect(Math.max(...heights)).toBe(1.65);
+    for (const c of ribbon.mock.calls) expect(Math.hypot(c[3] - 2, c[5] - 3)).toBeLessThanOrEqual(.421);
+    expect(kit.ribbons.mesh.count).toBeGreaterThan(0); expect(kit.ribbons.mesh.count).toBeLessThanOrEqual(30);
     step(.3); expect(kit.ribbons.mesh.count).toBe(0); dispose();
   });
 

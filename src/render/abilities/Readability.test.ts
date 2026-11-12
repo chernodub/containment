@@ -65,6 +65,15 @@ describe('friendly ability readability contracts', () => {
     expect(scale.x).toBeCloseTo(7); expect(scale.y).toBeCloseTo(7); b.dispose();
   });
 
+
+  it.each([false,true])('spends only two segments on local suit crackles without changing long target bolts (Low %s)', low => {
+    const b = new AbilityLightningBatch(new T.Group(),256);b.low=low;
+    const r = {start:new T.Vector3(0,1,0),end:new T.Vector3(.2,1.1,0),lightning:true,width:.018};
+    b.begin();b.append(r,.1);b.end();expect(b.mesh.count).toBe(4);
+    r.end.set(6,1,0);b.begin();b.append(r,.1);b.end();expect(b.mesh.count).toBeGreaterThanOrEqual(12);expect(b.mesh.count).toBeLessThanOrEqual(23);
+    b.dispose();
+  });
+
   it.each([false, true])('streams tapered caller-width lightning with 40ms rerolls, exact contacts and no new buffers (Low %s)', low => {
     const b = new AbilityLightningBatch(new T.Group(), 256); b.low = low;
     const r = { start: new T.Vector3(1, .9, 2), end: new T.Vector3(6, .7, 4), lightning: true, width: .2, seed: 7 };
