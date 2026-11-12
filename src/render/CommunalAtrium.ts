@@ -120,7 +120,7 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
    // open field journal and untouched cup remain on the existing solid table.
    if(!root.userData.abandonedTable){
     root.userData.abandonedTable=true;
-    const clothW=Math.min(f.w*.58,20),clothD=Math.min(f.h*.45,12),clothX=cx-f.w*.12;
+    const clothW=Math.min(f.w*.58,20),clothD=Math.min(f.h*.45,12),clothX=cx-(f.w-clothW)*.45;
     padded(clothX,25.1,cz,clothW,2.2,clothD,.5,seat);
     for(const fold of [-.22,.22])b(clothX+clothW*fold,26.22,cz,.55,.10,clothD*.90,bark);
     const journalW=Math.min(clothW*.58,10),journalD=Math.min(clothD*.72,8);

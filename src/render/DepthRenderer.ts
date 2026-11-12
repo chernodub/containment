@@ -578,7 +578,7 @@ export class DepthRenderer {
   const poolIds=this.activePoolIds;poolIds.clear();
   for(const p of pools){
    poolIds.add(p.id);let mesh=this.poolMeshes.get(p.id);
-   if(!mesh){mesh=new T.Mesh(new T.CircleGeometry(1,40),new AcidPoolMaterial(p.id));mesh.rotation.x=-Math.PI/2;this.scene.add(mesh);this.contextResources?.track(mesh);this.poolMeshes.set(p.id,mesh);}
+   if(!mesh){mesh=new T.Mesh(new T.CircleGeometry(1,40),new AcidPoolMaterial(p.id));mesh.renderOrder=29;mesh.rotation.x=-Math.PI/2;this.scene.add(mesh);this.contextResources?.track(mesh);this.poolMeshes.set(p.id,mesh);}
    mesh.position.set(p.x/UNIT,.03,p.y/UNIT);mesh.scale.setScalar(p.radius/UNIT);
    if(this.tier==='high'&&this.options.dynamicLights){const light=this.attachedLight;light.x=p.x/UNIT;light.y=.18;light.z=p.y/UNIT;light.color=0x9dff5a;light.intensity=1.8;light.distance=Math.min(5,2+p.radius/UNIT);light.priority=1;this.lighting.pool.attach(2000000+p.id,light);light.y=1;light.distance=3;}
    mesh.material.opacity=Math.min(.3,p.life*.3);mesh.material.surfaceTime.value=this.time;
