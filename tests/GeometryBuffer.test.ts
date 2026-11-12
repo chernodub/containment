@@ -24,7 +24,7 @@ describe('shared MRT geometry contract',()=>{
   const copy=material.clone();copy.onBeforeCompile=material.onBeforeCompile;copy.customProgramCacheKey=material.customProgramCacheKey;
   const proxy=new Group();proxy.add(new Mesh(geometry,copy));registerGeometry(proxy);
   const shader=compiled(copy);expect(shader.fragmentShader.match(/out highp vec4 containmentGeometry/g)).toHaveLength(1);expect(shader.fragmentShader).toContain('if(diffuseColor.r<.01)discard;');
-  expect(shader.fragmentShader).toContain('normalize(vNormal)');geometry.dispose();material.dispose();copy.dispose();
+  expect(shader.fragmentShader).toContain('normalize(vNormal)');expect(shader.fragmentShader).toContain('graphicMinorDot');geometry.dispose();material.dispose();copy.dispose();
  });
  it('writes exclusion for effect programs instead of assigning actor or world contour IDs',()=>{
   const material=new ShaderMaterial({vertexShader:'void main(){gl_Position=vec4(position,1.);}',fragmentShader:'void main(){if(true){gl_FragColor=vec4(1.);}}'}),geometry=new BoxGeometry(),root=new Group();root.add(new Mesh(geometry,material));registerGeometry(root);

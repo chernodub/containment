@@ -1,3 +1,4 @@
+import { optimizeLocalLights } from '../lighting/LocalLightShading';
 import { patchGraphicSurface } from '../lighting/GraphicSurface';
 import { Material, Mesh, MeshStandardMaterial, Object3D, Vector2, WebGLRenderer } from 'three';
 
@@ -41,6 +42,7 @@ function installDrawBufferPolicy(material:Material):void {
 export function patchGeometryMaterial(material: MeshStandardMaterial): void {
   installDrawBufferPolicy(material);
   if (identities.has(material) || material.transparent) return;
+  optimizeLocalLights(material);
   patchGraphicSurface(material);
   const identity = { value: new Vector2(2, GEOMETRY_CLASSES.architecture) };
   identities.set(material, identity);
