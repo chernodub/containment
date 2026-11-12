@@ -1,6 +1,6 @@
 # G3 GPU evidence and deterministic work notes
 
-Current correctness candidate: **`34b3c30`**. Frozen timing checkpoints below are explicitly source-labeled `d70f811` or `4939853`; neither is exact-final-HEAD performance evidence. A lead negative-control check on `4939853` prompted the later geometry-buffer fix: reserve/clear background ID0 once per frame and preserve overlay sentinel255, with no extra geometry or post draw. No pending `34b3c30` capture, regression or smoke-retry values are included here. This note separates configured work reductions from completed shared-host measurements. **Reliable additive GPU pass attribution and quiet-host High60fps acceptance are not established.**
+Current app source: **`f2c85d7`**, frozen in `g3/final-background-dist`. Its completed eight-trial four-rig regression and geometry/ink contract proofs are recorded at the end. Earlier full48-trial matrices remain exact source `d70f811` or `4939853`; they are not relabeled as full-matrix performance coverage of this later correctness fix. The final clear policy reserves background ID0 and overlay sentinel255, clears geometry with actual MRT clears without double-clearing, and adds no geometry or post draw. **Quiet-host High60fps acceptance and reliable additive GPU pass attribution remain unestablished.** Pending final gallery, smoke retry, authored/room/verify and native micro results are not included.
 
 ## Evidence identity and scope
 
@@ -447,4 +447,61 @@ Unit result is **261 files passed,1 failed,1 skipped;3029 tests passed,1 failed,
 
 All20 authored desktop rooms pass. The42-entry fresh/retained room audit has `errors:[]`, `failures:[]`, maximum complete readiness2649.5ms (<3000),197 programs,66 material families,11 compile passes and0 first-frame/0 combat compiles. Build, model preview, room evidence and the completed captures have exit0 as recorded. The lead also ran the new GPU-free micro/lifecycle tests:24 passed plus the existing benchmark self-test; no native micro throughput result is included here.
 
-`34b3c30` is a later correctness candidate, not a claim that these4939853 timing and gate results automatically cover the corrected background-ID behavior. Its pending targeted capture,8-case rig/tier regression, smoke retry and20-room gallery are intentionally absent. The lead will append those only when complete. Quiet timing acceptance remains open, and the UI/asset failures above remain visible until independently resolved or rechecked.
+These4939853 receipts predate the later `34b3c30` / `f2c85d7` background-ID corrections. The completed exact-f2c85d7 proof and eight-case regression are recorded next; pending full current-source gates are not inferred from the older matrix. Quiet timing acceptance remains open, and the4939853 UI/asset failures above stay visible until independently resolved or rechecked.
+
+## Completed current-code regression and ink proofs — `f2c85d7`
+
+The [current eight-trial receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-final-rig-regression/benchmark.json) is exact source **`f2c85d7`** from `g3/final-background-dist`: Manual-control Chamber, all four rigs, High and Low, **one20-second trial per case (N=1)**,1920×1080, the unchanged25-enemy full-kit/native population guards, rotating per-pass queries and no flush. All8 cases complete with `errors:[]`, `budgetFailures:[]`, **zero combat compiles**,8756 retained performance samples, maximum249 draws and294 prepared programs. This is a current-code regression check, not a best-of-three result and not a replacement for a full current-code48-trial matrix. No independent CPU/frame/pass minimum is selected.
+
+| Rig / tier | Frames | Frame p50 / p95 ms | Render JS p50 / p95 ms | CPU p50 / p95 ms | Scale min / p50 / max | Load1m start→end | Draw peak / programs / combat compiles |
+|---|---:|---:|---:|---:|---:|---:|---:|
+|breacher /high|1027|16.7 /32.2|5.4 /8.6|6.2 /10.3|0.725 /0.775 /0.95|43.0→37.3|218 /179 /0|
+|breacher /low|1119|16.7 /25.4|4.9 /6.9|5.6 /8.8|1 /1 /1|37.3→37.9|142 /294 /0|
+|cryo /high|1026|16.7 /25.8|5.7 /11.1|6.5 /12.3|0.725 /0.75 /0.925|37.9→46.4|249 /179 /0|
+|cryo /low|1010|16.7 /24.8|4.6 /6.8|5.4 /8.5|1 /1 /1|46.4→55.0|146 /294 /0|
+|pyro /high|1130|16.7 /25.3|6.0 /9.7|6.7 /11.7|0.95 /0.95 /1|55.0→67.5|244 /179 /0|
+|pyro /low|1161|16.7 /25.1|4.9 /6.9|5.6 /8.8|1 /1 /1|67.5→77.2|159 /294 /0|
+|arc /high|1133|16.7 /25.3|5.2 /8.0|5.9 /9.2|0.9 /0.925 /0.95|77.2→89.3|218 /179 /0|
+|arc /low|1150|16.7 /25.3|4.2 /6.1|4.8 /7.2|1 /1 /1|89.3→104.4|137 /292 /0|
+
+All eight frame medians display16.7ms, with High adaptive median scales.75–.95 and Low at1. High p95 remains **25.3–32.2ms**, above the20ms request; Low p95 is **24.8–25.4ms**. Trial endpoint load1m ranges37.3–104.4 on10 cores. The lower medians are useful current-code observations but neither a quiet-device certification nor proof that the clear fix caused a frame-rate gain. The previous4939853 full matrix used other rooms, more repeats and different load/scale conditions. Its broader resource/program coverage cannot be presented as timing of this later exact source.
+
+### Representative current-code Arc scopes: N=1 trial per tier
+
+Each cell is the actual Arc trial's raw elapsed-query p50/p95 ms **[resolved query N]**. There is no best-of-N claim. These remain unvalidated isolated attribution: scene includes shadow work, the shadow-only row overlaps it, and similarly sized AO/bloom/AA readings cannot be summed into a frame budget. The JSON retains every other rig's scopes and target dimensions.
+
+| Scope | Arc High | Arc Low |
+|---|---:|---:|
+|Scene incl. any shadow|7.29 /30.10 [33]|5.66 /12.55 [96]|
+|GTAO|6.33 /21.36 [33]|—|
+|AO denoise|7.42 /32.10 [32]|—|
+|Bloom extract|9.34 /37.53 [32]|—|
+|Bloom horizontal|6.95 /30.45 [32]|—|
+|Bloom vertical|7.86 /29.54 [32]|—|
+|Distortion|6.14 /29.16 [32]|—|
+|Composite|10.05 /24.11 [32]|6.26 /10.15 [96]|
+|Final AA|9.83 /28.89 [32]|6.78 /13.17 [96]|
+|HUD|9.88 /39.72 [32]|7.04 /13.18 [95]|
+|Shadow update only|0.53 /30.38 [15]|—|
+
+High's end snapshots restore the runtime GPU timer enabled after pass-profiler cleanup, while the recorded adaptive estimate source during these trials is `frame`. Low snapshots show adaptive/GPU timer disabled. This preserves the earlier distinction between the per-pass diagnostic and an ordinary production-feedback run. No native amplified-micro estimate is included yet.
+
+### Current-code classification and contour correctness
+
+The closed [`g3-final-contracts` manifest](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-final-contracts/manifest.json) and [gallery](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-final-contracts/index.html) also identify exact source `f2c85d7`, with3 accepted PNGs, `errors:[]` and `failures:[]`. These opt-in classification/pixel proofs establish behavior, not hardware timing.
+
+| World coverage class | Pixels |
+|---|---:|
+| Reserved background0 |149044|
+| Floor1 |1369656|
+| Architecture2 |549449|
+| Marine3 |5451|
+| Total |2073600|
+
+The void-contour fixture records **5457 actor pixels,1715 darkened actor pixels,2068143 background pixels and0 program compiles**. The lead's retained old4939853 negative control had5457 actor pixels but only1 darkened actor pixel and0 classified background pixels, with0 compiles; it failed the new correctness criterion as intended. The current proof therefore cannot be replaced by a visually plausible world-only screenshot or the older4939853 timing pass.
+
+Four Low option transitions **off→silhouette→off→full** each report preparation `held:true` and subsequent `compiled:0`. Off releases post resources; silhouette/full retain them. The existing holds and zero-combat-compile requirements are preserved rather than bypassed to switch the look.
+
+The final policy clears the geometry attachment to reserved background0 with each actual MRT clear, including scene-background clears, and skips a redundant geometry clear when the primary clear already owns it. Excluded priority content retains sentinel255. Nested scene/render-info counters no longer erase previously written geometry IDs. The owned target-clear hook is reference-counted and restores its prior ownership on disposal. This is a presentation-data correctness/lifecycle change; it adds **no extra geometry draw or fullscreen post pass**, and no gameplay decision depends on those pixels. It still needs its own current-source evidence, which is why all earlier4939853 full-matrix and gate results remain separately labeled.
+
+The GPU-free micro fit/lifecycle set has24 passing tests plus the existing benchmark self-test according to the lead's completed run. Final20-room×2-tier capture, smoke retry, authored/room/aggregate verification and native micro calibration are later serialized work; no partial or pending value is read into this section. The completed current-code evidence supports contour/classification behavior and exercised preparation/resource invariants. It does **not** close the High60fps/p95 requirement or establish additive pass timings.
