@@ -63,6 +63,8 @@ export function addInteriorPracticals(world: T.Group, template: InteriorPlan, en
     let bestY = .35, bestDistance = Infinity, anchor: T.Vector3 | null = null;
     world.traverse(object => {
       if (!(object instanceof T.Mesh) || (object.material as T.Material).name === 'environment-contact') return;
+      // Raised story screens are optical surfaces, not equipment lamp mounts.
+      for(let owner:T.Object3D|null=object;owner&&owner!==world;owner=owner.parent)if(owner.name==='g2-world-dressing')return;
       const vertices = object.geometry.getAttribute('position'); if (!vertices) return;
       objectRelative.multiplyMatrices(inverse, object.matrixWorld);
       const count=object instanceof T.InstancedMesh?object.count:1;

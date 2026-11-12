@@ -15,11 +15,11 @@ export function cabinetFace(writer:EquipmentDetailWriter,m:EquipmentFinishes,x:n
     box(m.steel,x+side*width*.48,y,z+.025,width*.035,height,.045);
     box(m.steel,x,y+side*height*.48,z+.025,width,.035,.045);
   }
-  for(let row=0;row<5;row++){
-    const ry=y+(row-2)*height*.18;
+  for(let row=0;row<4;row++){
+    const ry=y+(row-1.5)*height*.22;
     box(m.steel,x,ry,z+.025,width*.86,height*.13,.045);
     box(m.dark,x-width*.12,ry,z+.051,width*.55,height*.095,.012);
-    for(let slot=0;slot<5;slot++)box(m.paint,x-width*.33+slot*width*.095,ry,z+.06,width*.027,height*.058,.009);
+    for(let slot=0;slot<4;slot++)box(m.paint,x-width*.32+slot*width*.13,ry,z+.06,width*.040,height*.070,.009);
     box(m.signal,x+width*.29,ry+.025,z+.055,width*.03,height*.018,.016);
     box(m.paint,x+width*.37,ry,z+.06,width*.055,height*.07,.021);
   }
@@ -67,7 +67,7 @@ export function serviceCartridge(writer:EquipmentDetailWriter,materials:Equipmen
     part(steel,side*span*.69,.108,side*span*.5,span*.065,.014,span*.065);
   }
   // Deep grille slots, broad enough to survive mip reduction at a gameplay camera distance.
-  for(let vent=0;vent<6;vent++)part(dark,(vent-2.5)*span*.2,.081,-span*.26,span*.085,.011,span*.46);
+  for(let vent=0;vent<4;vent++)part(dark,(vent-1.5)*span*.3,.081,-span*.26,span*.12,.011,span*.46);
   part(dark,-span*.28,.06,span*.36,span*.66,.035,span*.27);
   for(let led=0;led<3;led++)part(led===(variant%3)?signal:steel,(-.49+led*.2)*span,.082,span*.37,span*.07,.012,span*.09);
   part(steel,span*.38,.083,span*.24,span*.4,.025,span*.17);

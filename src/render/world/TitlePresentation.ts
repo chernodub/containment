@@ -3,6 +3,13 @@ import {box,rod,batch,disposeModel} from '../meshParts';
 import {sleepingPassenger} from './EquipmentDetail';
 import {optimizeLocalLights} from '../lighting/LocalLightShading';
 
+/** Shared authored stage marks, consumed by the renderer's two presentation actors. */
+export const TITLE_STAGE = Object.freeze({
+  marine: Object.freeze({x:23.35,z:14.5,angle:-1.10,aimPitch:-.22}),
+  creature: Object.freeze({x:26.3,z:8.85,angle:2.02}),
+  emergency: Object.freeze({x:25.9,y:4.55,z:11.2}),
+});
+
 /** Original occupied berth display: faint human form behind frost, with individual life telemetry. */
 function occupiedGlass():T.DataTexture {
   const width=128,height=256,pixels=new Uint8Array(width*height*4);
@@ -36,8 +43,8 @@ export class TitlePresentation {
     };
     const steel=material('title-bulkhead',0x192a33,.72,.42),paint=material('title-ceramic',0x60777c,.45,.52),
       black=material('title-gaskets',0x070e13,.15,.85),glass=material('title-pod-glass',0x14303b,.82,.15),
-      cold=material('title-cold-strip',0x8ac5db,.5,.3,0x9fe8ff,2.2),warm=material('title-emergency',0x865c3c,.5,.4,0xff9362,1.5);
-    const occupants=occupiedGlass();glass.map=glass.emissiveMap=occupants;glass.color.setHex(0xc5e0e5);glass.emissive.setHex(0x9fe8ff);glass.emissiveIntensity=.7;glass.metalness=.25;glass.roughness=.34;
+      cold=material('title-cold-strip',0x657d85,.5,.3,0x9fe8ff,.42),warm=material('title-emergency',0x9a5940,.5,.4,0xff693c,3.4);
+    const occupants=occupiedGlass();glass.map=glass.emissiveMap=occupants;glass.color.setHex(0x829b9f);glass.emissive.setHex(0x9fe8ff);glass.emissiveIntensity=.18;glass.metalness=.25;glass.roughness=.34;
     // The occupied displays use the same mapped/emissive room material program.
     optimizeLocalLights(glass);
     glass.addEventListener('dispose',()=>occupants.dispose());
@@ -50,15 +57,28 @@ export class TitlePresentation {
       for(const side of [-1,1])box(this.root,x+side*1.35,2,9.34,.075,2.95,.08,cold,.025);
       box(this.root,x,3.6,9.27,1.25,.08,.12,cold,.025);
       box(this.root,x,.45,9.4,2.8,.24,1.3,steel,.08);
-      for(let n=0;n<5;n++)box(this.root,x-.8+n*.4,.82,9.5,.12,.04,.16,n===1?warm:cold,.015);
+      for(let n=0;n<3;n++)box(this.root,x-.6+n*.6,.82,9.5,.12,.04,.16,cold,.015);
     }
     for(let i=0;i<6;i++) {
       const x=18+i*3.5;
       box(this.root,x,3.2,7.6,3.42,6.4,.5,steel,.06);
       box(this.root,x-1.65,3.3,8,.16,6.6,.5,paint,.04);
       for(const y of [4.3,5.6])rod(this.root,new T.Vector3(x-1.7,y,8.05),new T.Vector3(x+1.7,y,8.05),.065,.065,black);
-      box(this.root,x,5.3,8.05,2.2,.06,.1,i%3===0?warm:cold,.02);
+      if(i>2)box(this.root,x,5.3,8.05,2.2,.06,.1,cold,.02);
     }
+    // A damaged pod jamb hides most of the creature; the gap reveals its eyes
+    // and hooked limbs. Foreground casing makes this a place, not a model stage.
+    box(this.root,27.55,2.15,10.0,.48,4.3,1.45,steel,.12);
+    box(this.root,27.28,2.15,10.58,.12,3.92,.24,paint,.045);
+    box(this.root,29.4,1.85,17.1,2.7,3.7,1.9,black,.17);
+    box(this.root,28.11,1.9,17.1,.18,3.4,1.8,steel,.06);
+    box(this.root,29.4,3.58,17.1,2.7,.16,1.9,steel,.06);
+    // One motivated emergency source, with broad protective hood and dark bail.
+    const e=TITLE_STAGE.emergency;
+    box(this.root,e.x,e.y+.1,e.z,.92,.28,.58,black,.07);
+    box(this.root,e.x,e.y-.055,e.z+.06,.67,.07,.34,warm,.025);
+    for(const side of [-1,1])box(this.root,e.x+side*.41,e.y-.16,e.z,.065,.36,.56,steel,.02);
+    rod(this.root,new T.Vector3(e.x,5.9,8.1),new T.Vector3(e.x,e.y+.2,e.z),.055,.055,black);
     // Deck seams and a single rescue stripe carry the eye toward the marine.
     for(let z=9;z<22;z+=2.8)box(this.root,25,-.015,z,22,.012,.018,black,0);
     for(let z=11;z<23;z+=.7)box(this.root,25.8,.002,z,.08,.012,.34,paint,0);
@@ -67,7 +87,7 @@ export class TitlePresentation {
   /** Native gameplay camera is re-applied by CameraRig before every menu call. */
   apply(camera:T.OrthographicCamera|T.PerspectiveCamera,time:number,reducedMotion:boolean) {
     const drift=reducedMotion?0:Math.sin(time*.12)*.12;
-    camera.position.set(20.3+drift,4.8,28.8);
+    camera.position.set(20.3+drift,4.8,29.6);
     this.target.set(20.7+drift*.35,1.6,12.8);camera.lookAt(this.target);
     camera.zoom=1;camera.updateProjectionMatrix();camera.updateMatrixWorld();
   }

@@ -4,6 +4,8 @@ import type {RoomTemplate} from '../../game/roguelike/types';
 import type {ShipEnvironment} from '../ShipEnvironments';
 import {COMMUNAL_ATRIUM_BLOCKOUT} from '../../game/roguelike/authoredRoomTopologies';
 import {passengerObservationTexture,serviceCartridge,serviceHousingGeometry} from './EquipmentDetail';
+import {industrialBoxGeometry} from './IndustrialFormKit';
+import {membraneGeometry} from './OrganicGrowth';
 
 const UNIT=32;
 const ROOM_IDEAS:Readonly<Record<string,string>>={
@@ -102,6 +104,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   const steel=make('steel',0x596771,.68,.43),dark=make('graphite',0x15212a,.5,.65),paint=make('enamel',environment==='habitation'?0xa18c70:0x8d9e9d,.15,.78);
   const resin=make('resin',0x364334,.05,.82),signal=make('signal',MOOD_ACCENT[environment],.12,.36,MOOD_ACCENT[environment],.65);
   const vein=make('vein',0x547b3a,.08,.48,environment==='infested'?0x9dff5a:0x6b9a52,environment==='infested'?.62:.18);
+  if(templateId==='reactor-vault'){resin.color.setHex(0x49323f);vein.color.setHex(0x70536c);vein.emissive.setHex(0x70536c);vein.emissiveIntensity=.12;}
   const display=make('display',0xd8e5df,.05,.52,MOOD_ACCENT[environment],.65),text=DISPLAY_TEXT[templateId];
   if(text){const texture=instrumentTexture(text);display.map=display.emissiveMap=texture;display.addEventListener('dispose',()=>texture.dispose());root.userData.displayText=[...text];}
   if(templateId==='passenger-vault'){
@@ -115,7 +118,8 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     matrix.compose(new T.Vector3(x,y,z),quat.setFromAxisAngle(axis,rotation),new T.Vector3(sx,sy,sz));
     geometry.applyMatrix4(matrix);const list=buckets.get(m)??[];list.push(geometry.index?geometry.toNonIndexed():geometry);if(geometry.index)geometry.dispose();buckets.set(m,list);
   };
-  const box=(m:T.Material,x:number,y:number,z:number,w:number,h:number,d:number,rotation=0)=>add(new T.BoxGeometry(w,h,d),m,x,y,z,1,1,1,rotation);
+  // Tiny inlays stay planar; the silhouette-bearing housings share real bevels.
+  const box=(m:T.Material,x:number,y:number,z:number,w:number,h:number,d:number,rotation=0)=>add(Math.min(w,h,d)>.045?industrialBoxGeometry(w,h,d):new T.BoxGeometry(w,h,d),m,x,y,z,1,1,1,rotation);
   const sphere=(m:T.Material,x:number,y:number,z:number,w:number,h:number,d:number)=>add(new T.SphereGeometry(1,12,8),m,x,y,z,w,h,d);
   const pipe=(m:T.Material,a:T.Vector3,b:T.Vector3,r:number)=>{
     const g=new T.CylinderGeometry(r,r,a.distanceTo(b),10,1);g.applyMatrix4(new T.Matrix4().makeRotationFromQuaternion(new T.Quaternion().setFromUnitVectors(axis,b.clone().sub(a).normalize())));g.translate((a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2);const list=buckets.get(m)??[];list.push(g.toNonIndexed());g.dispose();buckets.set(m,list);
@@ -172,6 +176,20 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
         if(hit){highest=Math.max(highest,hit.point.y);if(!centerHit)centerHit=hit;}
       }
     }
+    if(templateId==='reactor-vault'&&centerHit){
+      // Nesting consumes the existing load-bearing machinery. Four distinct
+      // infestations retain the same collision footprints and material bins.
+      const direction=index%2?1:-1,top=highest+.015,bulge=.32+(index%3)*.14;
+      const px=cx+direction*w*.13,pz=cz+(index<2?-.12:.15)*d;
+      sphere(resin,px,top+bulge*.63,pz,Math.min(.95,w*.25),bulge,Math.min(.7,d*.26));
+      if(index!==1)sphere(resin,cx-direction*w*.22,top+.17,cz+d*.13,Math.min(.48,w*.13),.24,Math.min(.44,d*.17));
+      for(let branch=0;branch<2+(index%2);branch++){
+        const dz=(branch-1)*d*.18,endX=cx+direction*w*.44;
+        const path=[point(px,top+.12,pz),point(cx+direction*w*.28,top+.09,cz+dz),point(endX,top-.05,cz+dz),point(endX,.12,cz+dz+d*.08)];
+        add(membraneGeometry(path,.11+branch*.025,.045,undefined,14),branch===0?vein:resin,0,0,0);
+      }
+      root.userData.consumedArchitecture=(root.userData.consumedArchitecture??0)+1;
+    }
     if(environment!=='infested'&&centerHit&&(index<4||index===signatureIndex)){
       const top=centerHit.point.y+.018,sw=Math.min(w*.46,1.6),sd=Math.min(d*.22,.48);
       box(dark,cx,top+.025,cz,sw,.05,sd);
@@ -181,16 +199,26 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
         box(signal,cx,top+.09,cz,radius*1.5,.015,radius*1.5);box(dark,cx,top+.13,cz,.026,.01,radius*1.3,.8);
       }
       if(index===signatureIndex&&(templateId==='diagnostic-gallery'||templateId==='safety-interlock-station'||templateId==='manual-control-chamber'||templateId==='service-shaft-landing')){
-        const width=Math.min(w*.72,3.3),depth=Math.min(d*.65,1.25),displayY=highest+.25;
+        const width=Math.min(w*.72,3.6),panelHeight=Math.min(width/4,d*.62),displayY=highest+.72;
+        const tilt=-Math.atan2(26,19),c=Math.cos(tilt),s=Math.sin(tilt);
+        // Bring the entire reading surface forward of overhead service runs;
+        // reserve its projected shell depth so no part leaves the solid roof.
+        const displayZ=Math.min(near+d*.90,far-panelHeight*.5*Math.abs(s)-.12*Math.abs(c)-.03);
+        const panelPoint=(x:number,y:number,z:number)=>point(cx+x,displayY+c*y-s*z,displayZ+s*y+c*z);
         for(const side of [-1,1]){
-          const px=cx+side*width*.38;ray.set(point(px,20,cz),down);const support=ray.intersectObject(world,true).find(h=>h.point.y>0)?.point.y??.02;
-          pipe(steel,point(px,support,cz),point(px,displayY+.04,cz),.045);
+          const px=cx+side*width*.38;ray.set(point(px,20,displayZ),down);const support=ray.intersectObject(world,true).find(h=>h.point.y>0)?.point.y??.02;
+          pipe(steel,point(px,support,displayZ-.12),point(px,displayY-.08,displayZ-.12),.045);
         }
-        box(dark,cx,displayY+.08,cz,width,.16,depth);
-        box(display,cx,displayY+.166,cz,width*.88,.012,depth*.79);
-        for(const side of [-1,1])box(steel,cx+side*width*.46,displayY+.18,cz,.025,.02,depth*.85);
+        add(industrialBoxGeometry(width,panelHeight,.12).rotateX(tilt),dark,cx,displayY,displayZ);
+        const screen=panelPoint(0,0,.067);
+        add(new T.PlaneGeometry(width*.9,panelHeight*.80).rotateX(tilt),display,screen.x,screen.y,screen.z);
+        for(const side of [-1,1]){
+          const edge=panelPoint(side*width*.474,0,.055);
+          add(industrialBoxGeometry(width*.025,panelHeight*.92,.035).rotateX(tilt),steel,edge.x,edge.y,edge.z);
+        }
+        root.userData.storyDisplay={center:screen.toArray(),corners:[[-.45,-.4],[.45,-.4],[.45,.4],[-.45,.4]].map(([x,y])=>panelPoint(x*width,y*panelHeight,.067).toArray()),normal:[0,-s,c]};
         // The manual authorization retains one concentrated console light.
-        root.userData.lightFixtures=[{x:cx,y:displayY+.28,z:cz,color:MOOD_ACCENT[environment],nativeColor:true}];
+        root.userData.lightFixtures=[{x:cx,y:displayY+.28,z:displayZ,color:MOOD_ACCENT[environment],nativeColor:true}];
       }
       if(templateId==='transmission-chamber'&&index===signatureIndex){
         const dishY=highest+.08,radius=Math.min(1.6,Math.min(w,d)*.3),profile=[new T.Vector2(0,0),new T.Vector2(radius*.3,.05),new T.Vector2(radius*.65,.18),new T.Vector2(radius,.44)];
