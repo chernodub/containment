@@ -1,3 +1,7 @@
+import {ENEMY_ATTACK_SHAPES} from '../game/enemies/attackShapes';
+import {canTraverseExpedition} from '../game/world/expeditionGeometry';
+import type {Telegraph} from './vfx/TelegraphBatch';
+import type {DepthGame} from '../DepthGame';
 import * as T from 'three';
 import type {WeaponId} from '../game/combat/types';
 import type {Bullet,GameEffect} from '../DepthGame';
@@ -15,9 +19,9 @@ type Particle={variant?:number;liquid?:boolean;wall?:T.Vector3;growth?:number;as
 type Pulse={p:T.Vector3;color:T.Color;age:number;life:number;radius:number;angle:number;slash:boolean;stable:boolean};
 export const EFFECT_LIMITS={glow:360,smoke:80,debris:80,pulses:24,decals:64,beams:320,fire:16} as const;
 export const PRIORITY_ACTOR_LIMIT=130;
-const vertex=`attribute float effectFrame; varying float vFrame;attribute float effectAlpha;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
-void main(){vFrame=effectFrame;vUv=uv;vColor=instanceColor;vAlpha=effectAlpha;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`;
-const fragment=`uniform sampler2D map;uniform float inset;uniform float grid;uniform float textured;uniform float flashScale;varying float vFrame;uniform float style;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
+const vertex=`attribute float effectFrame; varying float vFrame;attribute vec4 effectShape;varying vec4 vShape;attribute float effectAlpha;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
+void main(){vShape=effectShape;vFrame=effectFrame;vUv=uv;vColor=instanceColor;vAlpha=effectAlpha;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`;
+const fragment=`uniform sampler2D map;uniform float inset;uniform float grid;uniform float textured;uniform float flashScale;varying float vFrame;uniform float style;varying vec4 vShape;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
 uniform vec4 priorityActors[130];uniform int priorityActorCount;uniform vec2 priorityViewport;
 void main(){vec2 p=vUv*2.0-1.0;float d=length(p);float alpha=vAlpha;vec3 color=vColor;
 if(style>6.5){
@@ -26,6 +30,8 @@ if(style>6.5){
  else{float edge=1.0-smoothstep(.74,.91,d),core=1.0-smoothstep(.20,.36,d);color=mix(vec3(.008,.006,.009),vec3(1.8,.16,.035),edge);color=mix(color,vec3(.055,.008,.006),core);alpha*=1.0-smoothstep(.92,1.0,d);}
 }
 else if(style>5.5){
+ bool path=vShape.x>.5;
+ if(path){vec2 capsule=vec2(max(abs(p.x)*(vShape.y+1.0)-vShape.y,0.0),p.y);d=length(capsule);}
  if(d>1.0)discard;
  // A bounded projected torso mask keeps bodies visible through the after-post
  // warning overlay. Its unchanged ground footprint remains visible elsewhere.
@@ -38,9 +44,9 @@ else if(style>5.5){
  float edge=1.0-smoothstep(.020,.055,abs(d-.90));
  if(vFrame<.5){color*=1.2;alpha*=edge;}
  else{
-  float progress=clamp(vFrame-1.0,0.0,1.0),filled=1.0-smoothstep(progress-.02,progress+.02,d);
-  float hatch=step(.58,fract((p.x+p.y)*10.0-progress*2.0));
-  float timing=1.0-smoothstep(.012,.035,abs(d-progress*.88));
+  float progress=clamp(vFrame-1.0,0.0,1.0),phase=path?vUv.x:d,filled=1.0-smoothstep(progress-.02,progress+.02,phase);
+  float hatch=step(.58,fract((p.x*(path?vShape.y+1.0:1.0)+p.y)*10.0-progress*2.0));
+  float timing=1.0-smoothstep(.012,.035,abs(phase-progress*.88));
   float danger=max(edge,max(timing*.80,hatch*(.14+filled*.30)));
   color=mix(vec3(.012,.008,.010),vec3(1.8,.13,.035)*(1.0+edge*.2),danger);
   color=mix(color,vec3(.004,.005,.007),smoothstep(.95,.975,d));
@@ -86,6 +92,7 @@ if(alpha<.003)discard;gl_FragColor=vec4(color,alpha);
 #include <colorspace_fragment>
 }`;
 function pool(scene:T.Scene,geometry:T.BufferGeometry,count:number,style:number,additive=false,texture?:T.Texture,grid=1){
+ geometry.setAttribute('effectShape',new T.InstancedBufferAttribute(new Float32Array(count*4),4).setUsage(T.DynamicDrawUsage));
  geometry.setAttribute('effectFrame',new T.InstancedBufferAttribute(new Float32Array(count),1));
  const alpha=new T.InstancedBufferAttribute(new Float32Array(count),1);alpha.setUsage(T.DynamicDrawUsage);geometry.setAttribute('effectAlpha',alpha);
  const material=new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{style:{value:style},flashScale:{value:1},map:{value:texture??null},grid:{value:grid},inset:{value:grid===5?.5/256:.5/128},textured:{value:texture?1:0}},transparent:true,depthWrite:false,side:T.DoubleSide,blending:additive?T.AdditiveBlending:T.NormalBlending});
@@ -93,9 +100,11 @@ function pool(scene:T.Scene,geometry:T.BufferGeometry,count:number,style:number,
 }
 /** Bounded GPU instance pools: no lights or draw call per pellet / particle. */
 export class AttackEffects {
+ private readonly nativeWarnings=Array.from({length:32},()=>({active:false,id:0,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
+ private readonly warningFrom={x:0,y:0};private readonly warningTo={x:0,y:0};
  private readonly priorityShape={shape:'circle' as const,x:0,z:0,radius:0};
  /** Read-only live hostile warning footprints for friendly-effect priority. No copies or rendering changes. */
- forEachHostilePriority(visit:(shape:Readonly<{shape:'circle';x:number;z:number;radius:number}>)=>void):void{for(const p of this.pulses){if(!p.stable||p.age>=p.life)continue;const s=this.priorityShape;s.x=p.p.x;s.z=p.p.z;s.radius=p.radius;visit(s);}if(this.bossWarning){const s=this.priorityShape,w=this.bossWarning;s.x=w.x;s.z=w.z;s.radius=w.radius;visit(s);}}
+ forEachHostilePriority(visit:(shape:Readonly<Telegraph>)=>void):void{for(const warning of this.nativeWarnings)if(warning.active)visit(warning.shape);for(const p of this.pulses){if(!p.stable||p.age>=p.life)continue;const s=this.priorityShape;s.x=p.p.x;s.z=p.p.z;s.radius=p.radius;visit(s);}if(this.bossWarning){const s=this.priorityShape,w=this.bossWarning;s.x=w.x;s.z=w.z;s.radius=w.radius;visit(s);}}
  private fields:Pulse[]=[];private fieldMesh:T.InstancedMesh;
  private fire:Particle[]=[];private fireMesh:T.InstancedMesh;private textures:T.Texture[]=[];
  private links:{start:T.Vector3;end:T.Vector3;age:number;frost:boolean}[]=[];
@@ -125,7 +134,7 @@ export class AttackEffects {
   scene.remove(this.fireMesh);scene.add(this.fireMesh);
   this.fieldMesh=pool(scene,new T.PlaneGeometry(1,1),4,4);this.fieldMesh.name='frost-fields';
   this.hostileMesh=pool(scene,new T.PlaneGeometry(2,2),320,7);this.hostileMesh.name='hostile-projectiles';this.hostileMesh.renderOrder=40;(this.hostileMesh.material as T.Material).depthTest=false;
-  this.hostileWarningMesh=pool(scene,new T.PlaneGeometry(2,2),EFFECT_LIMITS.pulses+1,6);this.hostileWarningMesh.name='hostile-warning-fills';this.hostileWarningMesh.renderOrder=30;(this.hostileWarningMesh.material as T.Material).depthTest=false;
+  this.hostileWarningMesh=pool(scene,new T.PlaneGeometry(2,2),EFFECT_LIMITS.pulses+33,6);this.hostileWarningMesh.name='hostile-warning-fills';this.hostileWarningMesh.renderOrder=30;(this.hostileWarningMesh.material as T.Material).depthTest=false;
   Object.assign((this.hostileWarningMesh.material as T.ShaderMaterial).uniforms,{priorityActors:{value:this.priorityActors},priorityActorCount:this.priorityCount,priorityViewport:{value:this.priorityViewport}});
   for(const [list,limit]of [[this.fire,EFFECT_LIMITS.fire],[this.glow,EFFECT_LIMITS.glow],[this.smoke,EFFECT_LIMITS.smoke],[this.debris,EFFECT_LIMITS.debris],[this.decals,EFFECT_LIMITS.decals]] as const){
    const free:Particle[]=[];for(let i=0;i<limit;i++)free.push({p:new T.Vector3(),v:new T.Vector3(),color:new T.Color(),age:0,life:0,size:0,stretch:1,spin:0,rotation:0,gravity:0,ground:false});this.particleFree.set(list,free);
@@ -158,6 +167,31 @@ export class AttackEffects {
   if(center.x+rx< -1||center.x-rx>1||center.y+ry< -1||center.y-ry>1)return;
   this.priorityActors[this.priorityCount.value++].set(center.x,center.y,rx,ry);
  }
+ /** Synchronize attack presentation to native shape and remaining wind-up; never drives a hit. */
+ syncEnemyWarnings(enemies:DepthGame['enemies']['snapshot']['enemies'],geometry:DepthGame['geometry']):void {
+  for(const warning of this.nativeWarnings){
+   if(!warning.active)continue;
+   let enemy:typeof enemies[number]|undefined;
+   for(const candidate of enemies)if(candidate.id===warning.id){enemy=candidate;break;}
+   if(!enemy||enemy.health<=0||enemy.windupMs<=0||!enemy.pendingAttack){warning.active=false;continue;}
+   const shape=warning.shape,charge=enemy.pendingAttack==='charge';
+   const angle=charge?Math.atan2(enemy.lockY,enemy.lockX):Math.atan2(enemy.lockY-enemy.y,enemy.lockX-enemy.x);
+   const radius=charge?enemy.radius:ENEMY_ATTACK_SHAPES.spitterProjectileRadius;
+   if(!charge){shape.shape='circle';shape.x=enemy.lockX/32;shape.z=enemy.lockY/32;shape.radius=radius/32;shape.width=radius*2/32;shape.length=0;shape.angle=angle;warning.remainingMs=enemy.windupMs;shape.progress=1-enemy.windupMs/warning.durationMs;continue;}
+   shape.shape='line';
+   if(shape.length!<0||Math.hypot(shape.x-enemy.x/32,shape.z-enemy.y/32)>.03){
+    const maximum=charge?ENEMY_ATTACK_SHAPES.chargeSpeed*ENEMY_ATTACK_SHAPES.chargeDurationMs/1000:ENEMY_ATTACK_SHAPES.spitterProjectileSpeed*ENEMY_ATTACK_SHAPES.spitterProjectileLife;
+    this.warningFrom.x=enemy.x;this.warningFrom.y=enemy.y;
+    let legal=0,blocked=maximum;
+    for(let distance=16;distance<=maximum+16;distance+=16){const probe=Math.min(distance,maximum);this.warningTo.x=enemy.x+Math.cos(angle)*probe;this.warningTo.y=enemy.y+Math.sin(angle)*probe;if(!canTraverseExpedition(geometry,this.warningFrom,this.warningTo,radius)){blocked=probe;break;}legal=probe;if(probe===maximum)break;}
+    if(legal<maximum)for(let step=0;step<6;step++){const probe=(legal+blocked)/2;this.warningTo.x=enemy.x+Math.cos(angle)*probe;this.warningTo.y=enemy.y+Math.sin(angle)*probe;if(canTraverseExpedition(geometry,this.warningFrom,this.warningTo,radius))legal=probe;else blocked=probe;}
+    shape.length=legal/32;
+   }
+   shape.x=enemy.x/32;shape.z=enemy.y/32;shape.angle=angle;shape.width=radius*2/32;
+   warning.remainingMs=enemy.windupMs;shape.progress=1-enemy.windupMs/warning.durationMs;
+  }
+ }
+
  /** Snapshot coordinates in world units; one reserved prewarmed warning slot. */
  setBossWarning(x:number,z:number,radius:number,progress:number,visible=true){
   if(!visible){this.bossWarning=null;return;}
@@ -223,6 +257,12 @@ export class AttackEffects {
   // Successful bullet damage also uses "acid"; only untargeted hazards spray liquid.
   if(e.type==='acid'&&e.targetId===undefined){this.acidSplash(e,p);return;}
   if(e.type==='enemy-warning'){
+   if(e.id!==undefined&&e.family){
+    let warning=this.nativeWarnings.find(w=>w.active&&w.id===e.id);
+    warning??=this.nativeWarnings.find(w=>!w.active);
+    if(warning){warning.active=true;warning.id=e.id;warning.durationMs=e.durationMs??650;warning.remainingMs=warning.durationMs;warning.shape.length=-1;}
+    return;
+   }
    p.y=.035;const life=(e.durationMs??650)/1000;
    // A warning always shows its complete hit radius, never an expanding approximation.
    this.pulse(p,0xff5a36,(e.radius??38)/32,life,0,false,true);
@@ -306,6 +346,7 @@ export class AttackEffects {
    return;
   }
   if(e.type==='enemy-attack'){
+   for(const warning of this.nativeWarnings)if(warning.active&&warning.id===e.id)warning.active=false;
    if(e.id===-1)return;
    if(e.family==='spitter'){
     p.y=.8;for(let i=0;i<7;i++)this.particle(this.glow,EFFECT_LIMITS.glow,p,0x9bd25e,.1,.3,forward.clone().multiplyScalar(1+Math.random()*2).add(new T.Vector3(0,Math.random(),0)),2);
@@ -419,7 +460,7 @@ export class AttackEffects {
   for(let i=0;i<list.length;i++){const item=list[i];if(item.age>=item.life)free.push(item);else list[write++]=item;}list.length=write;
   this.finish(mesh,index);
  }
- private finish(mesh:T.InstancedMesh,count:number){mesh.count=count;(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).needsUpdate=true;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).needsUpdate=true;}
+ private finish(mesh:T.InstancedMesh,count:number){mesh.count=count;(mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).needsUpdate=true;(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).needsUpdate=true;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).needsUpdate=true;}
  private arcBeam(start:T.Vector3,end:T.Vector3,width:number,color:number,alpha:number,index:number){
   this.forward.subVectors(end,start);const length=this.forward.length();if(length<.001)return index;
   this.dummy.position.copy(start).add(end).multiplyScalar(.5);this.dummy.quaternion.setFromUnitVectors(UP,this.forward.multiplyScalar(1/length));this.dummy.scale.set(width,length,width);this.dummy.updateMatrix();
@@ -509,12 +550,19 @@ export class AttackEffects {
    (this.fieldMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(field++,Math.min(1,f.age/.12,(f.life-f.age)/.25));
   }write=0;for(const f of this.fields)if(f.age<f.life)this.fields[write++]=f;this.fields.length=write;this.finish(this.fieldMesh,field);
   let ring=0,slash=0,warning=0;for(const pulse of this.pulses){pulse.age+=dt;if(pulse.age>=pulse.life)continue;const t=pulse.age/pulse.life,mesh=pulse.stable?this.hostileWarningMesh:pulse.slash?this.slashMesh:this.pulseMesh,index=pulse.stable?warning++:pulse.slash?slash++:ring++;
-   this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);const size=pulse.radius*(pulse.stable?1:pulse.slash?.65+t*.35:.15+t*.85);this.dummy.scale.setScalar(size);this.dummy.updateMatrix();mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,pulse.stable?1+t:0);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,pulse.stable?.4+.5*t:(1-t)*.8);
+   this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);const size=pulse.radius*(pulse.stable?1:pulse.slash?.65+t*.35:.15+t*.85);this.dummy.scale.setScalar(size);this.dummy.updateMatrix();(mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(index,0,0,0,0);mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,pulse.stable?1+t:0);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,pulse.stable?.4+.5*t:(1-t)*.8);
   }
-  if(this.bossWarning){const w=this.bossWarning;this.dummy.position.set(w.x,.045,w.z);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.setScalar(w.radius);this.dummy.updateMatrix();this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);(this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress);(this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,1);}
+  for(const native of this.nativeWarnings){if(!native.active)continue;const w=native.shape,radius=w.width!*.5,length=w.length!,angle=w.angle!;
+   this.dummy.position.set(w.x+Math.cos(angle)*length*.5,.04,w.z+Math.sin(angle)*length*.5);this.dummy.rotation.set(-Math.PI/2,0,-angle);this.dummy.scale.set(length*.5+radius,radius,1);this.dummy.updateMatrix();
+   this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);
+   (this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,w.shape==='line'?1:0,length/(2*radius),0,0);
+   (this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress!);
+   (this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,1);
+  }
+  if(this.bossWarning){const w=this.bossWarning;this.dummy.position.set(w.x,.045,w.z);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.setScalar(w.radius);this.dummy.updateMatrix();(this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,0,0,0,0);this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);(this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress);(this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,1);}
   write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,warning);
  }
- clear(){this.priorityCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
+ clear(){for(const warning of this.nativeWarnings)warning.active=false;this.priorityCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
  get counts(){return{fire:this.fire.length,glow:this.glow.length,smoke:this.smoke.length,debris:this.debris.length,pulses:this.pulses.length,decals:this.decals.length};}
  private meshes(){return[this.fireMesh,this.glowMesh,this.smokeMesh,this.debrisMesh,this.decalMesh,this.pulseMesh,this.slashMesh,this.beamMesh,this.fieldMesh,this.hostileMesh,this.hostileWarningMesh];}
  dispose(){if(this.disposed)return;this.clear();this.disposed=true;this.feedback={};for(const t of this.textures)t.dispose();for(const m of this.meshes()){m.geometry.dispose();(m.material as T.Material).dispose();m.removeFromParent();}this.particleFree.clear();}

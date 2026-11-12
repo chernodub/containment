@@ -104,7 +104,11 @@ class CryoPresentation implements AbilityPresentation {
       const fade = (1 - progress) * (.45 + .55 * k.flashIntensity);
       if (wave.age < wave.life && wave.aftermath) {
         // Nova alone owns the single rolling front. Arrival/shatter pulses stay thin.
-        k.front(wave.x, wave.z, wave.radius, travel, CORE, .7, fade * .48, 2);
+        // Retain the impact's rolling wall for 100ms, then collapse its broad
+        // curtain into the same wavy physical edge before it can veil a fight.
+        const curtainYield = Math.min(1, Math.max(0, (wave.age - .10) / .08));
+        k.front(wave.x, wave.z, wave.radius, travel, CORE, .7 - curtainYield * .43,
+          fade * .48 * (1 - curtainYield * .55), 2);
       }
       const count = k.low ? 12 : 36;
       for (let i = 0; i < count && wave.age < wave.life; i++) {
@@ -151,8 +155,10 @@ class CryoPresentation implements AbilityPresentation {
     if (half <= 0) return;
     const fade = Math.min(1, zone.remainingMs / 450), age = (zone.durationMs - zone.remainingMs) / 1000;
     k.sustain(age);
-    // One native capsule film connects the edge growth without rectangular paving.
-    k.frostFilm(x + dx * .5, z + dz * .5, length, half, direction, fade * .62);
+    // New contact retains its brief frost hit; settled coverage yields even on
+    // unoccupied deck, with the exact capsule and its crystal edges unchanged.
+    const groundYield = 1 - .68 * Math.min(1, Math.max(0, (age - .25) / .12));
+    k.frostFilm(x + dx * .5, z + dz * .5, length, half, direction, fade * .62 * groundYield);
     // Broken fern seams describe the real capsule, with a dark open centre instead of a filled sheet.
     const count = k.low ? 6 : 13, perimeter = 2 * length + TAU * half;
     for (let i = 0; i < count; i++) {
@@ -194,7 +200,7 @@ class CryoPresentation implements AbilityPresentation {
         const t = length > 0 ? Math.max(0, Math.min(length, along)) : 0;
         const drift = k.reducedMotion ? 0 : Math.sin(age * 1.8 + seed) * half * .13;
         k.draw('smoke', x + cx * t - sz * drift, .12, z + sz * t + cx * drift,
-          half * .52, .13 + variation * .075, .1, 0xa9d3e4, fade * .34);
+          half * .52, .13 + variation * .075, .1, 0xa9d3e4, fade * .34 * groundYield);
       }
     }
     k.lightAt(zone.id, x + dx * .5, z + dz * .5, ICE, 1.1 * fade, 3);
@@ -219,6 +225,7 @@ class CryoPresentation implements AbilityPresentation {
       }
     }
     k.sustain(age / 1000);
+    const groundYield = 1 - .65 * Math.min(1, Math.max(0, (age - 250) / 120));
     const time = k.reducedMotion ? 0 : age / 1000;
     const clearRadius = Math.min(radius * .62, 2.25), count = k.low ? 16 : 48;
     // Snow follows the same circulation as the low mist, rather than a field of unrelated flecks.
@@ -254,7 +261,7 @@ class CryoPresentation implements AbilityPresentation {
           : r * radial - Math.sqrt(Math.max(0, clearRadius * clearRadius - nearSide * nearSide));
         const halfLength = Math.max(.01, Math.min(spacing * ((k.low ? .74 : .66) + variation * .06), outerLimit * .97, innerLimit * .97));
         k.gust(x + Math.cos(a) * r, z + Math.sin(a) * r, halfLength * 2, halfWidth * 2,
-          angle, seed, fade * (.4 + variation * .08));
+          angle, seed, fade * (.4 + variation * .08) * groundYield);
       }
     }
     k.lightAt(zone.id, x, z, ICE, .85 * fade, 4.5);

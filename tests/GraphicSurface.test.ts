@@ -44,13 +44,15 @@ describe('graphic material response', () => {
     material.dispose();
   });
 
-  it('reduces actor map/normal detail while keeping the dissolve and HDR light hooks', () => {
+  it('samples sharp actor maps and reduces normal noise while keeping dissolve and HDR light hooks', () => {
     const material = new T.MeshStandardMaterial();
     actorSurface([material]); patchGraphicSurface(material);
     const shader = compile(material);
     expect((shader.uniforms.graphicSurfaceKind.value as T.Vector2).toArray()).toEqual([1, 0]);
     expect(shader.fragmentShader).toContain('if(ash<actorDissolve)discard;');
-    expect(shader.fragmentShader).toContain('texture2D( map, vMapUv, graphicEnabled * (graphicSurfaceKind.x * graphicResponse.z + graphicSurfaceKind.y * graphicStrength * 2.5) )');
+    expect(shader.fragmentShader).toContain('texture2D( map, vMapUv, graphicEnabled * graphicSurfaceKind.y * graphicStrength * 2.5 )');
+    expect(shader.fragmentShader).not.toContain('graphicSurfaceKind.x * graphicResponse.z');
+    expect(DEFAULT_GRAPHIC_SURFACE_TUNING.actorMipBias).toBe(0);
     expect(shader.fragmentShader).toContain('mapN.xy *= normalScale * mix(1.0, graphicNormal, graphicEnabled)');
     expect(shader.fragmentShader).toContain('graphicDiffuseRamp(dotNL) * directLight.color * graphicDiffuseTint(dotNL)');
     expect(shader.fragmentShader).toContain('roomKeyOcclusion');
@@ -116,11 +118,11 @@ describe('graphic material response', () => {
     material.dispose();
   });
 
-  it('provides three directions through the same shader, retaining the exact subtle response', () => {
+  it('provides three directions through one shader while every actor direction keeps native texture sampling', () => {
     const material = new T.MeshStandardMaterial(); actorSurface([material]); patchGraphicSurface(material);
     const shader = compile(material), version = material.version, key = material.customProgramCacheKey();
     expect(GRAPHIC_SURFACE_STRENGTHS.subtle).toEqual({ rampStrength: .62, specularGain: .76,
-      actorMipBias: 1.9, actorDetail: .55, actorNormalGain: .34, floorNormalGain: .38 });
+      actorMipBias: 0, actorDetail: .55, actorNormalGain: .34, floorNormalGain: .38 });
     for (const [name, amount] of [['subtle', 0], ['medium', .5], ['bold', 1]] as const) {
       setGraphicStrength(name);
       expect(shader.uniforms.graphicStrength.value).toBe(amount);
@@ -130,10 +132,11 @@ describe('graphic material response', () => {
     const base = shader.uniforms.graphicActorBase.value as T.Color;
     setGraphicActorBase(material, 0x38795b);
     expect(base.getHex()).toBe(0x38795b); expect(material.version).toBe(version);
-    expect(shader.fragmentShader).toContain('smoothstep(.24, .36, value)');
-    expect(shader.fragmentShader).toContain('smoothstep(.62, .74, value)');
+    expect(shader.fragmentShader).toContain('smoothstep(.285, .315, value)');
+    expect(shader.fragmentShader).toContain('smoothstep(.665, .695, value)');
     expect(shader.fragmentShader).toContain('graphicFamilyTone');
     expect(shader.fragmentShader).toContain('(1.0 - graphicSac)');
+    expect(shader.fragmentShader).toContain('sampledDiffuseColor.g - max(sampledDiffuseColor.r, sampledDiffuseColor.b)');
     expect(shader.fragmentShader).toContain('graphicShadowBand');
     expect(shader.fragmentShader).toContain('graphicBevel');
     material.dispose();

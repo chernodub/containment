@@ -2,6 +2,8 @@ import * as T from 'three';
 import {box,rod,batch,disposeModel} from '../meshParts';
 import {sleepingPassenger} from './EquipmentDetail';
 import {optimizeLocalLights} from '../lighting/LocalLightShading';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 /** Shared authored stage marks, consumed by the renderer's two presentation actors. */
 export const TITLE_STAGE = Object.freeze({
@@ -10,11 +12,60 @@ export const TITLE_STAGE = Object.freeze({
   emergency: Object.freeze({x:25.9,y:4.55,z:11.2}),
 });
 
-/** Title-only material direction; shared gameplay skins and light slots stay untouched. */
+/** Real, bounded title armor follows the torso; accent colors never paint the skin. */
+function titleMarineArmor(root:T.Group,rig:{value:T.Color}|undefined):void {
+  if(root.getObjectByName('title-marine-armor'))return;
+  const torso=root.getObjectByName('ribs');if(!torso)return;
+  root.updateMatrixWorld(true);
+  const inverse=root.matrixWorld.clone().invert(),skins:T.SkinnedMesh[]=[];
+  root.traverse(object=>{if(object instanceof T.SkinnedMesh){object.skeleton.update();skins.push(object);}});
+  if(!skins.length)return;
+  const ray=new T.Raycaster(),origin=new T.Vector3(),direction=new T.Vector3();
+  const armor=new T.Group();armor.name='title-marine-armor';root.add(armor);
+  const graphite=new T.MeshStandardMaterial({color:0x333b42,metalness:.52,roughness:.63,emissive:0x3b4d5c,emissiveIntensity:.5});
+  const gasket=new T.MeshStandardMaterial({color:0x080d12,metalness:.08,roughness:.85});
+  const accents=new T.ShaderMaterial({
+    uniforms:{rigColor:rig??{value:new T.Color(0xffb454)}},
+    vertexShader:'attribute float titlePanelRole;varying float role;varying vec3 n;void main(){role=titlePanelRole;n=normalMatrix*normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:'uniform vec3 rigColor;varying float role;varying vec3 n;void main(){vec3 color=role<.5?vec3(.34,.55,.64):rigColor*.72;float shade=.62+.38*abs(normalize(n).z);gl_FragColor=vec4(color*shade,1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>}',
+  });
+  graphite.name='title-graphite-plates';gasket.name='title-armor-insets';accents.name='title-rig-panel-details';
+  for(const material of [graphite,gasket,accents])material.userData.actorMaterial=true;
+  const pieces:T.BufferGeometry[][]=[[],[],[]],rotation=new T.Quaternion(),normal=new T.Vector3(),target=new T.Vector3();
+  const piece=(bucket:number,x:number,y:number,z:number,w:number,h:number,d:number,radius:number,role=0)=>{
+    const g=new RoundedBoxGeometry(w,h,d,1,radius);g.translate(x,y,z);g.applyQuaternion(rotation);g.translate(target.x,target.y,target.z);
+    if(bucket===2){const roles=new Float32Array(g.getAttribute('position').count);roles.fill(role);g.setAttribute('titlePanelRole',new T.BufferAttribute(roles,1));}
+    pieces[bucket].push(g);
+  };
+  for(const side of [-1,1])for(const shoulder of [false,true]){
+    const desired=new T.Vector3(side*(shoulder?.28:.12),shoulder?1.49:1.38,shoulder?-.05:-.18);
+    // Fit from outside the assembled suit: nearest vertices can select the
+    // hidden undersuit and bury the panel beneath the outer armor shell.
+    normal.set(shoulder?side*.68:side*.12,shoulder?.25:.08,-1).normalize();
+    origin.copy(desired).add(normal).applyMatrix4(root.matrixWorld);
+    direction.copy(normal).negate().transformDirection(root.matrixWorld);ray.set(origin,direction);
+    const hit=ray.intersectObjects(skins,false)[0];
+    if(!hit)continue;
+    rotation.setFromUnitVectors(new T.Vector3(0,0,1),normal);target.copy(hit.point).applyMatrix4(inverse).addScaledVector(normal,.012);
+    const w=shoulder?.12:.14,h=shoulder?.11:.20;
+    piece(1,0,0,0,w+.012,h+.012,.024,.010);
+    piece(0,0,0,.012,w,h,.022,.010);
+    // Recessed center cut and a thin upper lip describe a plate, not painted noise.
+    piece(1,0,-h*.12,.026,w*.73,.012,.008,.003);
+    piece(2,0,h*.36,.026,w*.66,.009,.009,.003);
+    piece(2,side*w*.27,h*.09,.028,w*.15,h*.27,.010,.003,1);
+  }
+  for(let i=0;i<pieces.length;i++){
+    const geometry=mergeGeometries(pieces[i],false)!;pieces[i].forEach(piece=>piece.dispose());
+    const mesh=new T.Mesh(geometry,[graphite,gasket,accents][i]);mesh.name=['title-armor-plates','title-armor-cuts','title-armor-rig-bands'][i];mesh.castShadow=i<2;mesh.receiveShadow=i<2;armor.add(mesh);
+  }
+  root.updateMatrixWorld(true);torso.attach(armor);
+}
+
+/** Title exposure preserves gameplay surface forms and the hidden creature's dark values. */
 export function styleTitleActor(root:T.Group,friendly:boolean):void {
-  root.userData.graphicActorBase=friendly?0x303c45:0x34233b;
+  root.userData.graphicActorBase=friendly?0x30363b:0x34233b;
   const rig=(root.getObjectByName('marine-rig-accents') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>|undefined)?.material.uniforms.rigColor;
-  const body={value:new T.Color(friendly?0x303c45:0x34233b)};
   root.traverse(object=>{
     if(!(object instanceof T.Mesh))return;
     for(const material of Array.isArray(object.material)?object.material:[object.material]){
@@ -22,22 +73,23 @@ export function styleTitleActor(root:T.Group,friendly:boolean):void {
         const previous=material.onBeforeCompile,key=material.customProgramCacheKey();
         material.onBeforeCompile=(shader,renderer)=>{
           previous.call(material,shader,renderer);
-          Object.assign(shader.uniforms,{titleBodyColor:body,titleRigColor:rig??{value:new T.Color(0xffb454)}});
           if(shader.uniforms.actorRimColor)shader.uniforms.actorRimColor.value.setHex(friendly?0xb6edff:0x825a90);
-          if(shader.uniforms.actorRimStrength)shader.uniforms.actorRimStrength.value=friendly?.55:.08;
-          shader.vertexShader='varying vec3 titleWorldPosition;\n'+shader.vertexShader.replace('#include <project_vertex>','titleWorldPosition=(modelMatrix*vec4(transformed,1.0)).xyz;\n#include <project_vertex>');
-          shader.fragmentShader='uniform vec3 titleBodyColor;uniform vec3 titleRigColor;varying vec3 titleWorldPosition;\n'+shader.fragmentShader
-            .replace('#include <opaque_fragment>',`// Title cast deliberately owns the final two-to-three body values.
-// This runs after shared HDR lights, room fill, actor rims and graphic bevels.
-vec3 titleNormal=normalize(normal);
-float titleTone=.74+.34*smoothstep(.20,.44,abs(titleNormal.x))+.34*smoothstep(.44,.70,max(titleNormal.y,0.0));
-float titleLocalX=(-.89120736*(titleWorldPosition.x-23.4)-.45359612*(titleWorldPosition.z-14.7))/1.9;
-float titlePanel=${friendly?'smoothstep(2.35,2.5,titleWorldPosition.y)*(1.0-smoothstep(3.10,3.25,titleWorldPosition.y))*smoothstep(.10,.14,abs(titleLocalX))*(1.0-smoothstep(.31,.38,abs(titleLocalX)))*smoothstep(.25,.65,abs(titleNormal.z))':'0.0'};
-float titleInnerRim=pow(1.0-clamp(dot(titleNormal,normalize(vViewPosition)),0.0,1.0),5.0);
-outgoingLight=mix(titleBodyColor*titleTone,titleRigColor*.12,titlePanel*.85)+${friendly?'vec3(.50,.80,1.0)*titleInnerRim*.065':'vec3(.14,.07,.20)*titleInnerRim*.04'};
+          if(shader.uniforms.actorRimStrength)shader.uniforms.actorRimStrength.value=friendly?.075:.08;
+          if(friendly){
+            shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',`// Exposure preserves the shared three-tone armor and directional lighting.
+float titleMarineRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),6.0);
+outgoingLight=outgoingLight*1.6+vec3(.04,.095,.125)*titleMarineRim;
 #include <opaque_fragment>`);
+          }else{
+            Object.assign(shader.uniforms,{titleBodyColor:{value:new T.Color(0x34233b)}});
+            shader.fragmentShader='uniform vec3 titleBodyColor;\n'+shader.fragmentShader.replace('#include <opaque_fragment>',`vec3 titleNormal=normalize(normal);
+float titleTone=.54+.28*smoothstep(.22,.28,abs(titleNormal.x))+.32*smoothstep(.60,.66,max(titleNormal.y,0.0));
+float titleInnerRim=pow(1.0-clamp(dot(titleNormal,normalize(vViewPosition)),0.0,1.0),5.0);
+outgoingLight=titleBodyColor*titleTone*1.2+vec3(.14,.07,.20)*titleInnerRim*.04;
+#include <opaque_fragment>`);
+          }
         };
-        material.customProgramCacheKey=()=>key+':title-graphic-v1';material.needsUpdate=true;
+        material.customProgramCacheKey=()=>key+':title-graphic-v2';material.needsUpdate=true;
       }else if(!friendly&&material instanceof T.ShaderMaterial&&material.uniforms.identityColor){
         material.uniforms.identityColor.value.setHex(0xff7146);
         material.fragmentShader=material.fragmentShader
@@ -47,6 +99,7 @@ outgoingLight=mix(titleBodyColor*titleTone,titleRigColor*.12,titlePanel*.85)+${f
       }
     }
   });
+  if(friendly)titleMarineArmor(root,rig);
 }
 
 /** Original occupied berth display: faint human form behind frost, with individual life telemetry. */

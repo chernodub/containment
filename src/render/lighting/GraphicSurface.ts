@@ -2,6 +2,7 @@ import { Color, type ColorRepresentation, MeshStandardMaterial, ShaderChunk, Vec
 
 export type GraphicSurfaceTuning = Readonly<{
   rampStrength: number;
+  /** Retained art-review metadata; actor sampling itself always uses the native mip. */
   actorMipBias: number;
   actorDetail: number;
   specularGain: number;
@@ -12,9 +13,9 @@ export type GraphicSurfaceTuning = Readonly<{
 export type GraphicStrength = 'subtle' | 'medium' | 'bold';
 
 export const GRAPHIC_SURFACE_STRENGTHS: Readonly<Record<GraphicStrength, GraphicSurfaceTuning>> = Object.freeze({
-  subtle: Object.freeze({ rampStrength: .62, actorMipBias: 1.9, actorDetail: .55, specularGain: .76, actorNormalGain: .34, floorNormalGain: .38 }),
-  medium: Object.freeze({ rampStrength: .82, actorMipBias: 2.45, actorDetail: .78, specularGain: .50, actorNormalGain: .32, floorNormalGain: .22 }),
-  bold: Object.freeze({ rampStrength: 1, actorMipBias: 3, actorDetail: .96, specularGain: .25, actorNormalGain: .30, floorNormalGain: .10 }),
+  subtle: Object.freeze({ rampStrength: .62, actorMipBias: 0, actorDetail: .55, specularGain: .76, actorNormalGain: .34, floorNormalGain: .38 }),
+  medium: Object.freeze({ rampStrength: .82, actorMipBias: 0, actorDetail: .78, specularGain: .50, actorNormalGain: .32, floorNormalGain: .22 }),
+  bold: Object.freeze({ rampStrength: 1, actorMipBias: 0, actorDetail: 1, specularGain: .25, actorNormalGain: .30, floorNormalGain: .10 }),
 });
 export const DEFAULT_GRAPHIC_SURFACE_TUNING = GRAPHIC_SURFACE_STRENGTHS.bold;
 
@@ -23,7 +24,7 @@ const actorBases = new WeakMap<MeshStandardMaterial, { value: Color }>();
 const enabled = { value: 1 };
 const strength = { value: 1 };
 // Shared references also work on MaterialWarmup's retained hook copies.
-const response = { value: new Vector4(1, .25, 3, .96) };
+const response = { value: new Vector4(1, .25, 0, 1) };
 const normalGain = { value: new Vector2(.30, .10) };
 
 /** Select an art direction using uniforms; subtle reproduces the first review. */
@@ -72,16 +73,16 @@ float graphicDiffuseRamp(float value) {
   float band = .12 + .27 * smoothstep(.12, .27, value)
     + .31 * smoothstep(.42, .57, value) + .30 * smoothstep(.73, .89, value);
   float subtle = band * smoothstep(0.0, .09, value);
-  // Three clear values, with 12% transition zones between their plateaus.
-  float bold = (.16 + .35 * smoothstep(.24, .36, value)
-    + .49 * smoothstep(.62, .74, value)) * smoothstep(0.0, .07, value);
+  // Three clear values with narrow, stable transitions between plateaus.
+  float bold = (.16 + .35 * smoothstep(.285, .315, value)
+    + .49 * smoothstep(.665, .695, value)) * smoothstep(0.0, .07, value);
   return mix(subtle, bold, graphicStrength);
 }
 vec3 graphicDiffuseTint(float value) {
   return mix(vec3(1.0), mix(vec3(.64, .81, 1.12), vec3(1.0), smoothstep(.23, .45, value)), graphicStrength);
 }
 float graphicActorTone(float value) {
-  return .46 + .53 * smoothstep(.12, .17, value) + .55 * smoothstep(.34, .39, value);
+  return .38 + .48 * smoothstep(.18, .195, value) + .40 * smoothstep(.42, .44, value);
 }
 float graphicSoftValue(float value) {
   float scaled = value * 7.0;
@@ -116,16 +117,16 @@ const minorPointResponse = /* glsl */ `
 `;
 const mapResponse = ShaderChunk.map_fragment
   .replace('texture2D( map, vMapUv )',
-    'texture2D( map, vMapUv, graphicEnabled * (graphicSurfaceKind.x * graphicResponse.z + graphicSurfaceKind.y * graphicStrength * 2.5) )')
+    'texture2D( map, vMapUv, graphicEnabled * graphicSurfaceKind.y * graphicStrength * 2.5 )')
   .replace('diffuseColor *= sampledDiffuseColor;', `
   float graphicMapLuma = dot(sampledDiffuseColor.rgb, vec3(.2126, .7152, .0722));
   float graphicMapValue = graphicSoftValue(graphicMapLuma);
   sampledDiffuseColor.rgb *= mix(1.0, graphicMapValue / max(graphicMapLuma, .0001),
     graphicEnabled * graphicSurfaceKind.x * graphicResponse.w);
-  // Preserve yellow/green organic sacs; family plate color replaces photographic
-  // chitin while the independent identity accents retain their authored hues.
-  float graphicSac = smoothstep(.12, .35, min(sampledDiffuseColor.r, sampledDiffuseColor.g) - sampledDiffuseColor.b)
-    * smoothstep(.65, 1.0, sampledDiffuseColor.g / max(sampledDiffuseColor.r, .001));
+  // Preserve only genuinely green sacs. The former yellow/green test also
+  // exempted beige chitin, erasing family colors across most large enemies.
+  float graphicSac = smoothstep(.055, .16, sampledDiffuseColor.g - max(sampledDiffuseColor.r, sampledDiffuseColor.b))
+    * smoothstep(.12, .30, sampledDiffuseColor.g);
   vec3 graphicFamilyTone = graphicActorBase * graphicActorTone(graphicMapLuma);
   diffuseColor *= sampledDiffuseColor;
   // Family values replace the inherited photographic/material tint together;
@@ -195,8 +196,8 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
         vec3 graphicActorDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
         float graphicActorAlbedo = max(.008, dot(diffuseColor.rgb, vec3(.2126,.7152,.0722)));
         float graphicActorIncident = dot(graphicActorDiffuse, vec3(.2126,.7152,.0722)) / graphicActorAlbedo;
-        float graphicActorLight = .42 + .54 * smoothstep(.30,.56,graphicActorIncident)
-          + .72 * smoothstep(1.00,1.30,graphicActorIncident);
+        float graphicActorLight = .40 + .55 * smoothstep(.40,.44,graphicActorIncident)
+          + .60 * smoothstep(1.12,1.17,graphicActorIncident);
         vec3 graphicActorHue = clamp(graphicActorDiffuse / max(.008,dot(graphicActorDiffuse,vec3(.2126,.7152,.0722))),vec3(.55),vec3(1.4));
         vec3 graphicActorBands = diffuseColor.rgb * graphicActorLight * graphicActorHue;
         reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, graphicActorBands,

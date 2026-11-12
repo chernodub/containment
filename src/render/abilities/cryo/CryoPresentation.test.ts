@@ -44,10 +44,56 @@ describe('Cryo signatures', () => {
     for (const draw of shards) expect(Math.hypot(draw[1] - 2, draw[3] - 3)).toBeLessThanOrEqual(310 / 32);
     expect(kit.front.mock.calls[0][2]).toBe(310 / 32);
     expect(kit.front.mock.calls[0][3]).toBeGreaterThan(.95);
-    expect(kit.front.mock.calls[0][5]).toBeGreaterThanOrEqual(.5);
-    expect(kit.front.mock.calls[0][5]).toBeLessThanOrEqual(.75);
+    expect(kit.front.mock.calls[0][5]).toBeGreaterThanOrEqual(.27);
+    expect(kit.front.mock.calls[0][5]).toBeLessThan(.5); // At150ms the impact curtain is already thinning.
     expect(kit.front.mock.calls[0][7]).toBe(2); // Matte rolling cold vapor uses the existing front batch.
     expect(kit.front).toHaveBeenCalledOnce();
+  });
+
+  it('retains the Nova impact wall then thins the same wavy edge before sustained combat', () => {
+    const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
+    fx.event(receipt({ radius: 230 }), 64, 96);
+    fx.update(frame({}, .09));
+    const impact = kit.front.mock.calls.at(-1)!;
+    expect(impact[5]).toBe(.7); expect(impact[6]).toBeGreaterThan(.4);
+    kit.front.mockClear(); fx.update(frame({}, .077));
+    const settled = kit.front.mock.calls.at(-1)!;
+    expect(settled[2]).toBe(impact[2]); expect(settled[3]).toBeGreaterThan(impact[3]);
+    expect(settled[5]).toBeGreaterThanOrEqual(.27); expect(settled[5]).toBeLessThan(.35);
+    expect(settled[6]).toBeLessThan(impact[6] * .5); expect(settled[7]).toBe(2);
+    // The authored flash, camera response and impact particles keep their original receipt.
+    expect(kit.flash).toHaveBeenCalledWith(2, 3, 0xe8fbff, 15, expect.any(Number), 4, .14);
+    expect(kit.burst).toHaveBeenCalledWith(2, .18, 3, 'cryo', 32, 5.2, .95);
+  });
+
+  it('lowers settled ground fill while retaining Frost Trail crystals and Whiteout snow/currents', () => {
+    const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
+    const trail = zone({ ability: 'frost-trail', shape: 'strip', width: 44, x2: 480,
+      attached: false, durationMs: 2500, remainingMs: 2350 });
+    fx.update(frame({ zones: [trail] }, 0));
+    const freshFilm = kit.frostFilm.mock.calls.at(-1)!, freshMist = kit.draw.mock.calls.filter(c => c[0] === 'smoke');
+    kit.frostFilm.mockClear(); kit.draw.mockClear();
+    fx.update(frame({ zones: [{ ...trail, remainingMs: 2000 }] }, 0));
+    const settledFilm = kit.frostFilm.mock.calls.at(-1)!;
+    expect(settledFilm.slice(0, 5)).toEqual(freshFilm.slice(0, 5));
+    expect(settledFilm[5]).toBeLessThan(freshFilm[5] * .33);
+    const settledMist = kit.draw.mock.calls.filter(c => c[0] === 'smoke');
+    expect(settledMist).toHaveLength(freshMist.length);
+    for (let i = 0; i < settledMist.length; i++) expect(settledMist[i][8]).toBeCloseTo(freshMist[i][8] * .32);
+    expect(kit.draw.mock.calls.filter(c => c[0] === 'shard').some(c => c[8] > .7)).toBe(true);
+    kit.draw.mockClear(); kit.gust.mockClear();
+    fx.update(frame({ zones: [zone({ remainingMs: 7850 })] }, 0));
+    const freshGusts = kit.gust.mock.calls.map(c => [...c]);
+    const freshSnow = kit.draw.mock.calls.filter(c => c[0] === 'shard').map(c => c[8]);
+    kit.draw.mockClear(); kit.gust.mockClear();
+    fx.update(frame({ zones: [zone({ remainingMs: 7000 })] }, 0));
+    expect(kit.gust.mock.calls).toHaveLength(freshGusts.length);
+    for (let i = 0; i < freshGusts.length; i++) {
+      expect(kit.gust.mock.calls[i].slice(2, 4)).toEqual(freshGusts[i].slice(2, 4));
+      expect(kit.gust.mock.calls[i][6]).toBeLessThan(freshGusts[i][6] * .36);
+    }
+    expect(kit.draw.mock.calls.filter(c => c[0] === 'shard').map(c => c[8])).toEqual(freshSnow);
+    expect(kit.front).not.toHaveBeenCalled();
   });
 
   it('builds irregular overlapping Glacier facets with no backing slab inside the blocking strip', () => {

@@ -53,7 +53,7 @@ export class AbilityPriorityMask {
         const actor = actorFor?.(e.id), span = actor?.root.userData.affliction?.span ?? 0;
         this.actor(e.x / 32, e.y / 32, Math.max(e.radius / 32 + .13, span * .46), actor?.height ?? (e.type === 'crawler' ? .65 : e.type === 'brute' || e.type === 'carrier' ? 1.65 : 1.15), .95);
         // Snapshot fallback also works while the world renderer evolves its warning accessor.
-        if (e.windupMs > 0 && e.pendingAttack) {
+        if (!source?.forEachHostilePriority && e.windupMs > 0 && e.pendingAttack) {
           const tx = e.pendingAttack === 'charge' ? e.x + e.lockX : e.lockX;
           const tz = e.pendingAttack === 'charge' ? e.y + e.lockY : e.lockY;
           this.segment(e.x / 32, .07, e.y / 32, tx / 32, .07, tz / 32, e.pendingAttack === 'charge' ? .8 : .32);

@@ -52,10 +52,10 @@ describe('MRT draw-buffer isolation',()=>{
   geometry.dispose();surface.dispose();effect.dispose();
  });
  it('blocks priority standard overlays and restores classification when priority is removed',()=>{
-  const root=new Group(),geometry=new BoxGeometry(),material=new MeshStandardMaterial();root.add(new Mesh(geometry,material));root.renderOrder=20;registerGeometry(root);
+  const root=new Group(),geometry=new BoxGeometry(),material=new MeshStandardMaterial();root.add(new Mesh(geometry,material));root.renderOrder=20;root.userData.containmentHostilePriority=true;registerGeometry(root);
   const shader=compiled(material),identity=(shader.uniforms as Record<string,{value:Vector2}>).containmentIdentity.value;
   expect(identity.toArray()).toEqual([0,255]);expect(material.userData.containmentInkBlock).toBe(true);
-  const version=material.version;root.renderOrder=0;registerGeometry(root);expect(identity.toArray()).toEqual([2,GEOMETRY_CLASSES.architecture]);expect(material.version).toBe(version);expect(material.userData.containmentInkBlock).toBe(false);
+  const version=material.version;root.renderOrder=0;root.userData.containmentHostilePriority=false;registerGeometry(root);expect(identity.toArray()).toEqual([2,GEOMETRY_CLASSES.architecture]);expect(material.version).toBe(version);expect(material.userData.containmentInkBlock).toBe(false);
   geometry.dispose();material.dispose();
  });
  it('preserves normals/IDs behind transparent effects and restores writes for the next solid draw',()=>{
@@ -73,4 +73,16 @@ describe('MRT draw-buffer isolation',()=>{
   const root=new Group();root.name='shared-affliction-batches';const material=new MeshStandardMaterial(),geometry=new BoxGeometry();root.add(new Mesh(geometry,material));registerGeometry(root);
   const shader=compiled(material);expect(shader.fragmentShader).not.toContain('containmentIdentity');expect(shader.fragmentShader).toContain('containmentGeometry=vec4(0.0,0.0,0.0,1.0)');geometry.dispose();material.dispose();
  });
+});
+
+it('keeps actor IDs beneath high-order friendly effects and opaque status droplets',()=>{
+ const actor=new MeshStandardMaterial(),friendly=new ShaderMaterial({transparent:true}),droplet=new MeshStandardMaterial(),geometry=new BoxGeometry();
+ const root=new Group(),effects=new Group();effects.name='shared-affliction-batches';effects.add(new Mesh(geometry,droplet));
+ const overlay=new Mesh(geometry,friendly);overlay.renderOrder=100;root.add(new Mesh(geometry,actor),overlay,effects);registerGeometry(root);
+ const calls:number[][]=[],target={textures:[{}, {name:'Containment geometry normal + identity'}]},renderer={getRenderTarget:()=>target,getContext:()=>({COLOR:0x1800,clearBufferfv:()=>{},drawBuffers:(values:number[])=>calls.push([...values])}),info:{render:{frame:1}}};
+ const draw=(m:MeshStandardMaterial|ShaderMaterial)=>m.onBeforeRender(renderer as never,{} as never,{} as never,geometry,root as never,{} as never);
+ draw(actor);draw(friendly);draw(droplet);draw(actor);
+ expect(calls).toEqual([[0x8ce0,0x8ce1],[0x8ce0,0],[0x8ce0,0x8ce1]]);
+ expect(friendly.userData.containmentInkBlock).toBe(false);expect(droplet.userData.containmentPreserveGeometry).toBe(true);
+ geometry.dispose();actor.dispose();friendly.dispose();droplet.dispose();
 });

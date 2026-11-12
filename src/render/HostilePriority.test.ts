@@ -114,7 +114,7 @@ it('keeps reusable warnings backed and gives acid a dark perimeter through one s
 
 it('exposes the rendered enemy and Queen footprints to sustained friendly yield',()=>{
  const fx=new AttackEffects(new T.Scene()),camera=new T.Camera();
- const shapes:Array<{shape:string;x:number;z:number;radius:number}>=[];
+ const shapes:Array<{shape:string;x:number;z:number;radius?:number}>=[];
  const read=()=>{shapes.length=0;fx.forEachHostilePriority(shape=>shapes.push({...shape}));};
  try{
   fx.event({type:'enemy-warning',x:64,y:96,radius:96,durationMs:1000});

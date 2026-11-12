@@ -505,7 +505,12 @@ SCENARIOS.push({id:'u4-critical-objective',state:'playing',room:'containment-ann
  const d=window.__containmentDebug;await d.gotoRoom('containment-annulus',{rig:'arc'});d.invulnerable(true);d.uiFixture({preferences:{combatText:true,radar:true}});d.step(4500);d.refresh();
 }});
 SCENARIOS.push({id:'u4-ability-inspect',state:'playing',room:'awakening-bay',nativeFocus:'[data-ability=tactical]',nativeHold:['Alt'],required:['#ability-rules-tactical'],setup:async()=>{
- const d=window.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'arc'});d.invulnerable(true);d.step(4500);d.refresh();
+ const d=window.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'arc'});d.invulnerable(true);d.step(4500);
+ // A legal settled inspection mark leaves the deliberate tooltip clear of the marine at720p.
+ const g=d.game,b=g.geometry.bounds,points=[];
+ for(let y=b.y+40;y<b.y+220;y+=16)for(let x=b.x+60;x<b.x+b.width-60;x+=24)if(d.canStand(x,y,g.player.radius))points.push({x,y,distance:Math.abs(x-g.player.x)});
+ points.sort((a,b)=>a.y-b.y||a.distance-b.distance);if(!points.length)throw Error('No legal desktop inspection mark');
+ Object.assign(g.player,{x:points[0].x,y:points[0].y,vx:0,vy:0});d.step(900);d.refresh();
 }});
 const u4Draft=SCENARIOS.find(s=>s.id==='augment-draft');
 SCENARIOS.push({...u4Draft,id:'u4-boon-inspect',nativeFocus:'[data-mutation=spreading-nova], [data-mutation=twin-glacier]',nativeHold:['Alt'],required:['.boon-inspect-detail:visible']});

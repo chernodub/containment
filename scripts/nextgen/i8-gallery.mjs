@@ -31,13 +31,13 @@ if(mode==='review'){
  for(const [row,v]of views.entries()){
   const cells=[];
   for(const [column,s]of sources.entries()){
-   const file=v+'.png',source=resolve(s.path,file),relative=`comparison-sources/${column}-${file}`;let bytes;
+   const file=v+'.png',actualFile=v==='results'&&column===0?'dead.png':file,source=resolve(s.path,actualFile),relative=`comparison-sources/${column}-${file}`;let bytes;
    try{bytes=await readFile(source);}catch(error){throw Error(`Required comparison counterpart absent: ${source}`,{cause:error});}
    await writeFile(resolve(root,relative),bytes);
    drawText(sheet,v,column*480+4,(row+1)*300+4,[216,233,238],1);
    drawImage(sheet,decode(bytes),column*480,(row+1)*300+24,480,270);
-   records.push({view:v,generation:s.name,source,file:relative,sha256:createHash('sha256').update(bytes).digest('hex')});
-   cells.push(`<a href="${relative}"><img loading="lazy" src="${relative}" alt="${escape(s.name+' '+v)}"></a>`);
+   records.push({view:v,generation:s.name,source,requestedView:v,actualFile,substitution:actualFile!==file?'Original gallery has no results screen; its native death screen is shown explicitly.':null,file:relative,sha256:createHash('sha256').update(bytes).digest('hex')});
+   cells.push(`${actualFile!==file?'<p>Original death screen (results view was not captured)</p>':''}<a href="${relative}"><img loading="lazy" src="${relative}" alt="${escape(s.name+' '+v)}"></a>`);
   }
   rows.push(`<section><h2>${escape(v)}</h2><div>${cells.join('')}</div></section>`);
  }

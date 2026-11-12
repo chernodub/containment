@@ -1,0 +1,18 @@
+#!/usr/bin/env node
+/** Report every matched trial; never select independent best percentiles. */
+import assert from 'node:assert/strict';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {canvas,drawText,encode} from './g2-png.mjs';
+const labels=process.argv.length>2?process.argv.slice(2):['i8-accepted-bench','i8-accepted-extra'],out='artifacts/nextgen/i8';await mkdir(out,{recursive:true});
+const cohorts=await Promise.all(labels.map(async label=>({label,...JSON.parse(await readFile(`artifacts/nextgen/${label}/benchmark.json`,'utf8'))})));
+const runs=cohorts.flatMap(c=>c.runs.map(r=>({...r,sourceLabel:c.label}))),groups=new Map();
+for(const r of runs){const key=[r.room,r.rig,r.tier].join('/');const group=groups.get(key)??[];group.push(r);groups.set(key,group);}
+assert.equal(runs.length,80);assert.equal(groups.size,16);for(const group of groups.values())assert.equal(group.length,5);
+const f=n=>Number(n.toFixed(2)),range=a=>`${f(Math.min(...a))}–${f(Math.max(...a))}`;
+const rows=[];let text='# I8 paced acceptance: five native trials per case\n\nAll80 source trials retained; no best-of-N selection. Frame values below are reported to0.1ms browser timestamp precision; raw double values remain in JSON. Host load is1m system load, not utilization.\n\n| Room / rig / tier | Frame p50 (all5), ms | Frame p95 (all5), ms | CPU p95 range, ms | Scale median range | Load1m range | Peak draws | Combat compiles |\n|---|---|---|---|---|---|---:|---:|\n';
+for(const [key,g]of groups){const row={key,trials:g.map(r=>({sourceLabel:r.sourceLabel,name:r.name,frame:r.summary.frame,cpu:r.summary.cpu,scale:r.summary.adaptiveScale,loadStart:r.before.load,loadEnd:r.after.load,draws:r.summary.draws.max,compiles:r.programs})),frameP50:g.map(r=>f(r.summary.frame.p50)),frameP95:g.map(r=>f(r.summary.frame.p95)),cpuP95:g.map(r=>r.summary.cpu.p95),scaleMedians:g.map(r=>r.summary.adaptiveScale.p50),load:g.flatMap(r=>[r.before.load[0],r.after.load[0]]),draws:Math.max(...g.map(r=>r.summary.draws.max)),compiles:g.reduce((s,r)=>s+r.programs,0)};rows.push(row);text+=`| ${key} | ${row.frameP50.join(' / ')} | ${row.frameP95.join(' / ')} | ${range(row.cpuP95)} | ${range(row.scaleMedians)} | ${range(row.load)} | ${row.draws} | ${row.compiles} |\n`;}
+const summary={runs:runs.length,sourceSHA:cohorts[0].distSnapshot.sourceSHA,rooms:cohorts[0].rooms,hostLoadRange:range(rows.flatMap(r=>r.load)),maxDraws:Math.max(...rows.map(r=>r.draws)),combatCompiles:runs.reduce((s,r)=>s+r.programs,0),highFrameP95Range:range(rows.filter(r=>r.key.endsWith('/high')).flatMap(r=>r.frameP95)),allFrameP50Range:range(rows.flatMap(r=>r.frameP50)),highScaleMedianRange:range(rows.filter(r=>r.key.endsWith('/high')).flatMap(r=>r.scaleMedians)),errors:cohorts.flatMap(c=>c.errors),budgetFailures:cohorts.flatMap(c=>c.budgetFailures)};
+text+='\n'+JSON.stringify(summary,null,2)+'\n';await writeFile(out+'/performance.json',JSON.stringify({summary,rows},null,2));await writeFile(out+'/performance.md',text);
+const chart=canvas(1400,100+rows.length*62);drawText(chart,'FRAME P95: ALL FIVE TRIALS / TARGET20MS',16,16,[225,237,242],2);
+for(let i=0;i<rows.length;i++){const y=75+i*62;drawText(chart,rows[i].key,12,y,[210,225,235],1);for(let j=0;j<5;j++){const x0=440,w=Math.round(rows[i].frameP95[j]*36),top=y+j*8;for(let y2=top;y2<top+6;y2++)for(let x=x0;x<x0+w;x++){const p=(y2*chart.width+x)*3;chart.pixels[p]=j===0?80:110;chart.pixels[p+1]=170+j*12;chart.pixels[p+2]=220;}}const x=440+20*36;for(let y2=y;y2<y+45;y2++){const p=(y2*chart.width+x)*3;chart.pixels[p]=255;chart.pixels[p+1]=110;chart.pixels[p+2]=70;}}
+await writeFile(out+'/performance.png',encode(chart));console.log(summary);

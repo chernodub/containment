@@ -55,15 +55,20 @@ describe('G2 cinematic and room presentation',()=>{
    actorSurface([material],friendly);actorSurface([gameplay],friendly);
    const geometry=new T.BoxGeometry(),mesh=new T.Mesh(geometry,material);root.add(mesh);
    const originalGameplay=gameplay.customProgramCacheKey();styleTitleActor(root,friendly);
-   expect(root.userData.graphicActorBase).toBe(friendly?0x303c45:0x34233b);
-   expect(material.customProgramCacheKey()).toContain(':title-graphic-v1');expect(gameplay.customProgramCacheKey()).toBe(originalGameplay);
+   expect(root.userData.graphicActorBase).toBe(friendly?0x30363b:0x34233b);
+   expect(material.customProgramCacheKey()).toContain(':title-graphic-v2');expect(gameplay.customProgramCacheKey()).toBe(originalGameplay);
    const shader={uniforms:{},vertexShader:T.ShaderLib.standard.vertexShader,fragmentShader:T.ShaderLib.standard.fragmentShader};
    material.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);
-   expect(shader.fragmentShader).toContain('uniform vec3 titleBodyColor;');
-   expect(shader.fragmentShader).toContain('outgoingLight=mix(titleBodyColor*titleTone,titleRigColor*.12,titlePanel*.85)');
-   expect(shader.fragmentShader.indexOf('outgoingLight=mix(titleBodyColor')).toBeGreaterThan(shader.fragmentShader.indexOf('vec3 outgoingLight ='));
-   expect(shader.vertexShader).toContain('titleWorldPosition=(modelMatrix*vec4(transformed,1.0)).xyz;');
-   expect(shader.uniforms).toHaveProperty('actorRimStrength.value',friendly?.55:.08);
+   if(friendly){
+    expect(shader.fragmentShader).not.toContain('titleBodyColor');
+    expect(shader.fragmentShader).not.toContain('titlePanel');
+    expect(shader.fragmentShader).toContain('outgoingLight=outgoingLight*1.6');
+    expect(shader.fragmentShader).toContain('vec3(.04,.095,.125)*titleMarineRim');
+   }else{
+    expect(shader.fragmentShader).toContain('uniform vec3 titleBodyColor;');
+    expect(shader.fragmentShader).toContain('outgoingLight=titleBodyColor*titleTone');
+   }
+   expect(shader.uniforms).toHaveProperty('actorRimStrength.value',friendly?.075:.08);
    geometry.dispose();material.dispose();gameplay.dispose();
   }
  });

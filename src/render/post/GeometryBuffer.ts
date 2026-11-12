@@ -53,7 +53,7 @@ function installDrawBufferPolicy(material:Material):void {
   previous.call(this,renderer,...args);
   const target=renderer.getRenderTarget();
   if(target?.textures[1]?.name!=='Containment geometry normal + identity')return;
-  const write=!material.transparent||material.userData.containmentInkBlock===true,frame=clearHooks.get(renderer)?.generation??renderer.info.render.frame,state=drawStates.get(renderer);
+  const write=material.userData.containmentInkBlock===true||(!material.transparent&&material.userData.containmentPreserveGeometry!==true),frame=clearHooks.get(renderer)?.generation??renderer.info.render.frame,state=drawStates.get(renderer);
   const first=!state||state.target!==target||state.frame!==frame;
   if(first||state.write!==write) {
    const gl=renderer.getContext() as WebGL2RenderingContext;
@@ -126,17 +126,18 @@ export function registerGeometry(root: Object3D, kind?: GeometryClass): void {
   const effectsOnly=root.name==='shared-affliction-batches';
   root.traverse(object => {
     if (!(object instanceof Mesh)) return;
-    let effect=effectsOnly,inkBlock=false;for(let owner: Object3D|null=object;owner;owner=owner.parent){effect ||= owner.name==='shared-affliction-batches';inkBlock ||= owner.renderOrder>=20;}
+    let effect=effectsOnly,inkBlock=false;for(let owner: Object3D|null=object;owner;owner=owner.parent){effect ||= owner.name==='shared-affliction-batches';inkBlock ||= owner.userData.containmentHostilePriority===true||owner.name==='hostile-warning-fills'||owner.name==='hostile-projectiles';}
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
       material.userData.containmentInkBlock=inkBlock;
+      material.userData.containmentPreserveGeometry=!inkBlock&&(effect||!(material instanceof MeshStandardMaterial)||material.transparent);
       if (effect || !(material instanceof MeshStandardMaterial) || material.transparent) {
         patchExcludedMaterial(material);
-        if(kind&&!effect&&material instanceof ShaderMaterial)setActorGeometryIdentity(material,inkBlock?0:id!,inkBlock?255:kind);
+        if(kind&&!effect&&material instanceof ShaderMaterial&&setActorGeometryIdentity(material,inkBlock?0:id!,inkBlock?255:kind)&&!material.transparent)material.userData.containmentPreserveGeometry=false;
         continue;
       }
       if(kind) {
         const family=root.name.replace('alien-','');
-        const palette:Record<string,number>={marine:0x3d4348,crawler:0xa05235,brute:0xa69b82,spitter:0x456b3c,stalker:0x3b4263,carrier:0x895575,queen:0x716078};
+        const palette:Record<string,number>={marine:0x3d4348,crawler:0xa05235,brute:0x424b50,spitter:0x315c2e,stalker:0x1d304b,carrier:0x713f69,queen:0x716078};
         setGraphicActorBase(material,root.userData.graphicActorBase??palette[family]??(kind===GEOMETRY_CLASSES.marine?0x3d4348:0xa05235));
       }
       patchGeometryMaterial(material);

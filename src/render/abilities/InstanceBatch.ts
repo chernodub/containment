@@ -130,7 +130,8 @@ ${kind === 'decal' ? `
   float film=1.-smoothstep(edge-.09,edge,distance);
   float fern=pow(max(0.,1.-abs(sin(p.x*29.+p.y*17.))),10.)*smoothstep(.25,.7,abs(p.y));
   c=ink*.85+vec3(.05);
-  a*=film*(.2+fern*.24+smoothstep(.25,.85,abs(p.y))*.12);
+  // Frost is a broken edge deposit, not a continuous pale capsule fill.
+  a*=film*(.025+fern*.24+smoothstep(.55,.85,abs(p.y))*.14);
  }
  else if(variant>10.5){
   float drop=length(vec2(p.x/max(.1,.66-p.y*.22),p.y));
@@ -175,7 +176,8 @@ ${kind === 'front' ? `
  if(phase>1.5){
   float roll=.5+.5*cos(uvLocal.y*6.283185);
   float curl=.5+.5*sin(uvLocal.x*31.4159+sin(uvLocal.x*18.8496)*1.7-abilityTime*1.3+sin(uvLocal.y*6.283185)*1.3);
-  a*=(.18+pow(roll,2.)*.55)*(.06+smoothstep(.15,.8,curl)*.94);
+  // Keep the leading vapor rim; the torus interior must reveal the deck.
+  a*=(.035+pow(roll,3.)*.65)*(.06+smoothstep(.15,.8,curl)*.94);
   c=mix(vec3(.24,.6,.85),vec3(1.4,2.4,2.8),pow(roll,10.)*.6);
  }else if(phase>.5){
   float crossSection=cos(uvLocal.y*6.283185);

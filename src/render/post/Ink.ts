@@ -1,7 +1,7 @@
 import type { GraphicStrength } from '../lighting/GraphicSurface';
 
 export const INK_STRENGTHS: Readonly<Record<GraphicStrength, readonly [number,number,number,number]>> = Object.freeze({
- subtle:[1.85,.85,.72,.26],medium:[2.45,1.4,.92,.50],bold:[3,1.85,1,.72],
+ subtle:[1.85,.85,.72,.26],medium:[2.45,1.4,.92,.50],bold:[3,1.85,1,.88],
 });
 
 /** Pixel-space, geometry-only ink shared by both tiers; merged into the grade pass. */
@@ -79,14 +79,14 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
    if(abs(neighbor.z-center.z)<.5&&abs(neighbor.w-center.w)<.5) {
     vec3 delta=viewPosition(q,texture2D(tDepth,q).x)-p;
     float bend=1.0-dot(normal,inkNormal(neighbor.xy));
-    float major=smoothstep(actor?.22:.16,actor?.48:.40,bend)*smoothstep(actor?.005:.0015,actor?.02:.009,abs(dot(delta,normal)));
-    crease=max(crease,major*mix(.58,1.0,float(!actor))*inkStrength);
+    float major=smoothstep(actor?.30:.16,actor?.55:.40,bend)*smoothstep(actor?.006:.0015,actor?.025:.009,abs(dot(delta,normal)));
+    crease=max(crease,major*mix(.86,1.0,float(!actor))*inkStrength);
    }
   }
  }
  // Pixel-space geometry edges fade only into actual depth haze.
  float haze=1.0-smoothstep(35.0,80.0,-p.z)*.65;
- edge*=1.0-.18*inkStrength*clamp(fwidth(edge),0.0,1.0);
+ if(!actor)edge*=1.0-.18*inkStrength*clamp(fwidth(edge),0.0,1.0);
  return max(edge,crease*inkStyle.w)*haze*inkStyle.z;
 }
 `;
