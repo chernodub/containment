@@ -5,13 +5,25 @@ import type { AbilityId, AbilitySlot } from '../../game/abilities/contract';
 type Bounds = { left: number; right: number; top: number; bottom: number };
 type Hint = { slot: AbilitySlot; anchor: HTMLElement; node: HTMLElement; bounds: Bounds; anchorBounds: Bounds; available: boolean; ability: string };
 
-/** Native focus and passive pointer inspection; combat clicks still reach the canvas. */
+/** Deliberate held-key inspection; combat clicks still reach the canvas. */
 export class AbilityHints {
   private readonly hints: Hint[] = [];
   private hovered: Hint | null = null;
   private dirty = true;
   private layoutRevision = -1;
-  private playing = false;
+  private playing = true;
+  private inspecting = false;
+  private readonly inspectKeys = new Set<string>();
+  private readonly onKey = (event: KeyboardEvent) => {
+    if (!['Tab','AltLeft','AltRight'].includes(event.code)) return;
+    if (event.type === 'keydown') this.inspectKeys.add(event.code);
+    else this.inspectKeys.delete(event.code);
+    this.inspecting = this.inspectKeys.size > 0;
+    this.refresh();
+  };
+  private readonly onBlur = () => {
+    this.inspectKeys.clear();this.inspecting=false;this.hovered=null;this.focused=null;this.refresh();
+  };
   private readonly invalidate = () => {this.dirty = true;};
   private readonly observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(this.invalidate);
   private focused: Hint | null = null;
@@ -47,6 +59,7 @@ export class AbilityHints {
     document.addEventListener('pointermove', this.onPointer, {passive:true});
     document.addEventListener('focusin', this.onFocus);
     document.addEventListener('focusout', this.onFocus);
+    document.addEventListener('keydown',this.onKey);document.addEventListener('keyup',this.onKey);window.addEventListener('blur',this.onBlur);
   }
 
   update(slot: AbilitySlot, id: AbilityId): void {
@@ -63,7 +76,7 @@ export class AbilityHints {
 
   private refresh(): void {
     for (const hint of this.hints) {
-      const visible = hint === this.focused || hint === this.hovered;
+      const visible = (!this.playing || this.inspecting) && (hint === this.focused || hint === this.hovered);
       if(hint.node.hidden===visible) {hint.node.hidden=!visible;this.dirty=true;}
     }
   }
@@ -73,11 +86,11 @@ export class AbilityHints {
     // All measurements occur once in the presentation frame after HUD placement,
     // never in a pointer event. Steady mouse movement only reads cached bounds.
     const revision=hudLayoutRevision();
-    if(revision!==this.layoutRevision||playing!==this.playing) {this.layoutRevision=revision;this.playing=playing;this.dirty=true;}
+    if(revision!==this.layoutRevision||playing!==this.playing) {this.layoutRevision=revision;this.playing=playing;this.dirty=true;this.refresh();}
     if(this.dirty) {
       this.dirty=false;
       for(const hint of this.hints) {
-        hint.available=playing&&!hint.anchor.closest('[hidden]');
+        hint.available=!hint.anchor.closest('[hidden]');
         if(hint.available) this.copyBounds(hint.anchorBounds,hint.anchor);
         if(!hint.node.hidden) this.copyBounds(hint.bounds,hint.node);
       }
@@ -85,7 +98,7 @@ export class AbilityHints {
     for (const hint of this.hints) {
       if (hint.node.hidden) continue;
       const box = hint.bounds;
-      hint.node.style.visibility = !playing || box.left < player.right + 10 && box.right > player.left - 10 && box.top < player.bottom + 10 && box.bottom > player.top - 10 ? 'hidden' : '';
+      hint.node.style.visibility = playing && box.left < player.right + 10 && box.right > player.left - 10 && box.top < player.bottom + 10 && box.bottom > player.top - 10 ? 'hidden' : '';
     }
   }
 
@@ -100,6 +113,7 @@ export class AbilityHints {
     document.removeEventListener('pointermove', this.onPointer);
     document.removeEventListener('focusin', this.onFocus);
     document.removeEventListener('focusout', this.onFocus);
+    document.removeEventListener('keydown',this.onKey);document.removeEventListener('keyup',this.onKey);window.removeEventListener('blur',this.onBlur);
     for (const hint of this.hints) { hint.node.remove(); hint.anchor.removeAttribute('aria-describedby'); hint.anchor.removeAttribute('tabindex'); hint.anchor.removeAttribute('role'); }
     this.hints.length = 0;
   }

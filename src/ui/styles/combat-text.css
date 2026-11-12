@@ -19,16 +19,20 @@
 #combat-text .combat-float[data-kind=status] { display:flex;align-items:center;justify-content:center;width:26px;height:26px;padding:3px;background:#07131af2;border:1px solid currentColor;font:600 12px/1.2 var(--font-body,sans-serif);letter-spacing:.01em;-webkit-text-stroke:0;text-shadow:none;box-shadow:0 2px 8px #0008; }
 #combat-text .combat-float[data-kind=status] .ui-icon {width:16px;height:16px;padding:1px;background:#9fe8ff12;}
 #combat-text .combat-float[data-kind=status]>span:last-child {position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
-/* Source receipts use both color and a quiet typographic mark. Elements retain their hue. */
-#combat-text .combat-float[data-source=ability] { color: #9fe8ff; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
-#combat-text .combat-float[data-source=status] { color: #b6ff84; font-style: italic; }
-#combat-text .combat-float[data-source=boon] { color: #ffd27a; text-decoration: overline; text-decoration-thickness: 1px; }
-#combat-text .combat-float[data-element=fire], #combat-text .combat-float[data-element=burn] { color: #ffb580; }
-#combat-text .combat-float[data-element=ice], #combat-text .combat-float[data-element=frost], #combat-text .combat-float[data-element=freeze], #combat-text .combat-float[data-element=shatter] { color: #9fdfff; }
-#combat-text .combat-float[data-element=poison], #combat-text .combat-float[data-element=acid] { color: #b6ff84; }
-#combat-text .combat-float[data-element=arc], #combat-text .combat-float[data-element=shock], #combat-text .combat-float[data-element=overload] { color: #d4c5ff; }
+/* Accounting source is a typographic mark. Hue always follows the element. */
+#combat-text .combat-float[data-source=ability] { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+#combat-text .combat-float[data-source=status] { font-style: italic; }
+#combat-text .combat-float[data-source=boon] { text-decoration: overline; text-decoration-thickness: 1px; }
+#combat-text .combat-float[data-damage-token=neutral] { color: var(--damage-neutral, #f0fbff); }
+#combat-text .combat-float[data-damage-token=kinetic] { color: var(--kinetic, #ffb454); }
+#combat-text .combat-float[data-damage-token=pyro] { color: var(--pyro, #ff7a2e); }
+#combat-text .combat-float[data-damage-token=cryo] { color: var(--cryo, #7fd6ff); }
+#combat-text .combat-float[data-damage-token=acid] { color: var(--acid, #9dff5a); }
+#combat-text .combat-float[data-damage-token=arc] { color: var(--arc, #b79cff); }
+#combat-text .combat-float[data-damage-token=healing] { color: var(--healing, #8ce6c3); }
 #combat-text .combat-float[data-critical=true] { font-size: 40px; }
-#combat-text .combat-float[data-lethal=true] { color: #ffd27a; font-size: 42px; }
+/* A kill keeps its element; size, weight and the × mark emphasize the outcome. */
+#combat-text .combat-float[data-lethal=true] { font-size: 42px; font-weight: 800; text-shadow: -1px 0 #061018, 1px 0 #061018, 0 -1px #061018, 0 2px 1px #020609, 0 0 7px currentColor; }
 #combat-text .combat-float[hidden] { display: none; }
 @media (prefers-reduced-motion: reduce) {
   #combat-text .combat-float { animation: none; transition: none; will-change: auto; }

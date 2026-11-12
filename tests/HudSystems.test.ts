@@ -69,8 +69,9 @@ it('merges real damage per target, pools burst events, honors combat text prefer
                 hud.effect({ type: i < 2 ? 'acid' : 'hit', contact: 'damage', x: 80, y: 0, id: 1, damage: 12 });
             hud.tick(.01);
         });
-        expect(await page.locator('.combat-float:not([hidden])').count()).toBe(1);
-        expect(await page.locator('.combat-float:not([hidden])').textContent()).toBe('60');
+        expect(await page.locator('.combat-float:not([hidden])').count()).toBe(2);
+        expect(await page.locator('.combat-float[data-damage-token=acid]:not([hidden])').textContent()).toBe('24');
+        expect(await page.locator('.combat-float[data-damage-token=neutral]:not([hidden])').textContent()).toBe('36');
         await page.evaluate(() => {
             const { hud } = (window as any).__live;
             for (let i = 2; i < 100; i++)
@@ -363,7 +364,7 @@ it('displays budgeted target receipts once without treating aggregate ability ti
         expect(await page.locator('.combat-float[data-kind="status"]:not([hidden])').allTextContents()).toEqual(['CHILLED']);
         await page.evaluate(() => {
             const {hud} = (window as any).__live;
-            (window as any).__receiptBudget.push({type:'hit',x:640,y:0,targetId:7,source:'ability',damage:3,lethal:true});
+            (window as any).__receiptBudget.push({type:'hit',x:640,y:0,targetId:7,source:'ability',damage:3,lethal:true,elements:['ice']});
             hud.tick(.01);
         });
         expect(await page.locator('.combat-float[data-source="ability"]:not([hidden])').textContent()).toBe('11 ×');
@@ -371,7 +372,7 @@ it('displays budgeted target receipts once without treating aggregate ability ti
     } finally {await page.close();}
 });
 
-it('offers full ability rules on passive hover and native focus, including a live Overdrive duration ring', async () => {
+it('offers full ability rules only during deliberate combat inspection, including a live Overdrive duration ring', async () => {
     const page=await mountHud(1920,1080);
     try {
         await liveHud(page);
@@ -379,6 +380,7 @@ it('offers full ability rules on passive hover and native focus, including a liv
         const tactical=page.locator('[data-ability=tactical]');
         expect(await tactical.getAttribute('tabindex')).toBe('0');
         await tactical.focus();
+        await page.keyboard.down('Alt');
         const tooltip=page.locator('#ability-rules-tactical');
         expect(await tooltip.isVisible()).toBe(true);
         expect(await tooltip.textContent()).toContain('frozen solid for 1.5 seconds');
@@ -388,6 +390,8 @@ it('offers full ability rules on passive hover and native focus, including a liv
         const box=(await tactical.boundingBox())!;
         await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
         expect(await tooltip.isVisible()).toBe(true);
+        await page.keyboard.up('Alt');
+        expect(await tooltip.isHidden()).toBe(true);
         const hit=await page.evaluate(({x,y})=>document.elementFromPoint(x,y)?.id,{x:box.x+box.width/2,y:box.y+box.height/2});
         expect(hit).toBe('world');
         const ring=page.locator('.overdrive-duration circle');
@@ -469,7 +473,7 @@ it('labels a held full Overdrive for the next room and preserves its visible met
     } finally { await page.close(); }
 });
 
-it('compacts combat choices after inspection and restores objective details on held Tab and mouse hover without changing gameplay', async () => {
+it('compacts combat choices after inspection and restores objective details only on held Tab or Alt without changing gameplay', async () => {
     const page=await mountHud(1280,720);
     try {
         await liveHud(page);
@@ -492,7 +496,10 @@ it('compacts combat choices after inspection and restores objective details on h
         expect(await page.locator('.weapon-bank').getAttribute('data-expanded')).toBe('false');
         const room=await page.locator('#status-hud').boundingBox();
         await page.mouse.move(room!.x+room!.width/2,room!.y+room!.height/2);await page.evaluate(()=>(window as any).__live.hud());
+        expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('false');
+        await page.keyboard.down('Alt');
         expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('true');
+        await page.keyboard.up('Alt');
         const after=await page.evaluate(()=>{const {game}=(window as any).__live;return {health:game.combat.snapshot.health,charges:game.abilities.snapshot.slots,x:game.player.x,y:game.player.y};});
         expect(after).toEqual(before);
         expect(await page.locator('[data-weapon]').count()).toBe(5);
@@ -517,5 +524,49 @@ it('explains each denied press by the pointer, clears optional placement feedbac
         await page.evaluate(()=>{const {hud}= (window as any).__live;hud.effect({type:'ability',x:0,y:0,ability:{phase:'denied',slot:'power',ability:'glacier',rig:'cryo',element:'cryo',denial:'blocked'}});(window as any).__live.game.status='paused';hud.tick(.1);});
         expect(await page.locator('#ability-denial').isHidden()).toBe(true);
         await page.evaluate(()=>(window as any).__live.hud.dispose());expect(await page.locator('#ability-denial').count()).toBe(0);
+    }finally{await page.close();}
+});
+
+
+it('keeps every world label layer below every panel, tooltip, toast and beat',async()=>{
+    const page=await mountHud(1280,720);
+    try {
+        await liveHud(page);
+        const layers=await page.evaluate(()=>{
+            const selectors=['#combat-text','#threat-indicators','#damage-directions','.vitals','#status-hud','#boss-hud','#radar-hud','#action-bar','.ability-tooltip','#hud-toasts'];
+            return Object.fromEntries(selectors.map(selector=>[selector,Number(getComputedStyle(document.querySelector(selector)!).zIndex)]));
+        });
+        const world=['#combat-text','#threat-indicators','#damage-directions'];
+        const panels=['.vitals','#status-hud','#boss-hud','#radar-hud','#action-bar','.ability-tooltip','#hud-toasts'];
+        for(const label of world) for(const panel of panels) expect(layers[label],`${label} < ${panel}`).toBeLessThan(layers[panel]);
+        expect(layers['#action-bar']).toBeGreaterThan(layers['#combat-text']);
+        // Root overlays/beats also outrank the entire HUD stacking context.
+        const outer=await page.evaluate(async()=>{
+            const css=await (await fetch('/src/ui/styles/beats.css')).text();
+            return {hud:Number(getComputedStyle(document.getElementById('hud')!).zIndex),overlay:Number(getComputedStyle(document.getElementById('overlay')!).zIndex),beat:Number(css.match(/#presentation-beat[^}]*z-index:\s*(\d+)/)?.[1])};
+        });
+        expect(outer.beat).toBeGreaterThan(outer.hud);expect(outer.overlay).toBeGreaterThan(outer.hud);
+    }finally{await page.close();}
+});
+
+it('bounds the 720p right column, fades radar contacts, and preserves critical objectives',async()=>{
+    const page=await mountHud(1280,720);
+    try{
+        await liveHud(page);
+        const result=await page.evaluate(()=>{
+            const {game,hud,renderer}=(window as any).__live;
+            Object.defineProperty(game,'storyRoom',{value:{templateId:'containment-annulus',objective:'Circle the shielding. Reach manual controls. Overload is NOT armed.'}});
+            (window as any).__hudPrefs.radar=true;hud();for(let i=0;i<45;i++)hud.tick(.1);hud();
+            // Public projection facade places one legal live contact beneath the map.
+            const radar=document.getElementById('radar-hud')!.getBoundingClientRect();
+            renderer.worldToScreen=()=>({x:radar.x+radar.width/2,y:radar.y+radar.height/2});
+            game.enemies.spawn('crawler',game.player.x+200,game.player.y);hud();
+            const objective=document.getElementById('status-hud')!.getBoundingClientRect();
+            return {width:objective.width,area:objective.width*objective.height+radar.width*radar.height,opacity:getComputedStyle(document.getElementById('radar-hud')!).opacity,faded:document.getElementById('radar-hud')!.dataset.obscuresThreat,critical:document.getElementById('objective-critical')!.textContent};
+        });
+        expect(result.width).toBeLessThanOrEqual(260);expect(result.area/(1280*720)).toBeLessThan(.14);
+        expect(result.critical).toBe('Overload is NOT armed.');expect(result.faded).toBe('true');
+        await page.waitForTimeout(180);expect(Number(await page.locator('#radar-hud').evaluate(node=>getComputedStyle(node).opacity))).toBeCloseTo(.35,1);
+        const overlaps=await page.evaluate(()=>['#status-hud','#radar-hud'].filter(selector=>{const r=document.querySelector(selector)!.getBoundingClientRect();return r.left<667&&r.right>613&&r.top<430&&r.bottom>290;}));expect(overlaps).toEqual([]);
     }finally{await page.close();}
 });

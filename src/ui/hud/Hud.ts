@@ -1,4 +1,5 @@
-import { invalidateHudLayout, hudLayoutRevision } from './layout';
+import {getCombatDamageElement} from '../gameAdapter';
+import { invalidateHudLayout } from './layout';
 import type { DepthGame } from '../../DepthGame';
 import type { DepthRenderer } from '../../render/DepthRenderer';
 import { familyCount } from '../../game/roguelike/builds';
@@ -34,6 +35,22 @@ const seconds = (ms: number) => ms >= 10000 ? `${Math.ceil(ms / 1000)}s` : `${(M
 const familyColors: Record<string, string> = { Kinetic: '#ffb454', Cryo: '#7fd6ff', Reactor: '#b79cff', Recovery: '#9fe8ff' };
 const abilityColors: Record<string, string> = { kinetic: '#ffb454', cryo: '#7fd6ff', pyro: '#ff7a2e', arc: '#b79cff', recovery: '#d7ffdb', acid: '#9dff5a' };
 const familyIcons: Record<string, string> = { Kinetic: 'kinetic', Cryo: 'cryo', Reactor: 'arc', Recovery: 'health' };
+/** Short action copy; full authored objectives remain available in Pause. */
+export function combatObjective(id: string | undefined, fallback: string): string {
+    const actions: Record<string, string> = {
+        'awakening-bay':'Restore communications.', 'passenger-vault':'Clear the occupied pod rows.',
+        'residential-gallery':'Fight through the doorways.', 'communal-atrium':'Clear a path to security.',
+        'crew-checkpoint':'Break the fortified checkpoint.', 'armory':'Defeat the armory elite.',
+        'freight-hold':'Clear the colony supplies.', 'breached-loading-bay':'Fight around the sealed breach.',
+        'relay-racks':'Clear aisles. Restore the relay.', 'transmission-chamber':'Defend the warning uplink.',
+        'diagnostic-gallery':'Clear threats. Read service display.', 'safety-interlock-station':'Clear threats. Review local record.',
+        'coolant-plant':'Descend through the coolant pumps.', 'service-shaft-landing':'Reach the lower decks.',
+        'infested-workshop':'Clear the converted workshop.', 'swarm-junction':'Break the reactor guard swarm.',
+        'shielding-gate':'Clear the last defensive line.', 'containment-annulus':'Reach the manual controls.',
+        'manual-control-chamber':'Clear threats. Choose at controls.', 'overload-floor':'Defend the overload sequence.',
+    };
+    return actions[id ?? ''] ?? fallback;
+}
 /** Cached DOM snapshots; events and frame ticks feed bounded presentation pools. */
 export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud: () => void, preferences: () => HudPreferences = () => ({ combatText: true, radar: false }), storage: Pick<Storage,'getItem'|'setItem'> | null = null): HudController {
     const ids = ['hud', 'story-hud', 'story-status', 'room-objective', 'story-presentation', 'story-line', 'health', 'armor', 'hp-bar', 'hp-lag', 'armor-bar', 'armor-lag', 'weapon-name', 'current-weapon-icon', 'magazine', 'reserve', 'reload-label', 'reload-bar', 'depth-label', 'room-name', 'boss-hud', 'boss-phase', 'boss-bar', 'build-strip', 'credits', 'medkit-count', 'grenade-count', 'encounter-count', 'vital-state', 'ability-bar'] as const;
@@ -70,33 +87,29 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     denial.id = 'ability-denial'; denial.className = 'reticle-denial'; denial.hidden = true;
     denial.setAttribute('role','status'); denial.setAttribute('aria-live','polite');
     (document.getElementById('app') ?? nodes.hud).append(denial);
-    let weaponInspect = 0, roomIntro = 4, inspectObjective = false, objectiveHover = false, weaponHover = false, denialLife = 0;
-    let pointerX = innerWidth * .64, pointerY = innerHeight * .48, inspectionRevision=-1;
-    let weaponBounds={left:0,right:0,top:0,bottom:0}, objectiveBounds={left:0,right:0,top:0,bottom:0};
+    let weaponInspect = 0, roomIntro = 4, inspectObjective = false, denialLife = 0;
+    const inspectionKeys = new Set<string>();
+    let pointerX = innerWidth * .64, pointerY = innerHeight * .48;
     const refreshInspection = () => {
-        const expanded = weaponInspect > 0 || weaponHover;
-        const narrative = roomIntro > 0 || inspectObjective || objectiveHover;
+        const expanded = weaponInspect > 0 || inspectObjective;
+        const narrative = roomIntro > 0 || inspectObjective;
         if (weaponBank.dataset.expanded !== String(expanded)) {weaponBank.dataset.expanded=String(expanded);layoutDirty=true;}
         if (statusPanel.dataset.expanded !== String(narrative)) {statusPanel.dataset.expanded=String(narrative);layoutDirty=true;}
     };
     const onKey = (event: KeyboardEvent) => {
         const target=event.target as HTMLElement | null;
+        if (event.type === 'keyup') inspectionKeys.delete(event.code);
         if (game.status!=='playing' || target?.matches('input,textarea,select,[contenteditable=true]')) return;
-        if (event.code==='Tab') {inspectObjective=event.type==='keydown';refreshInspection();}
+        if (['Tab','AltLeft','AltRight'].includes(event.code)) {
+            if(event.type==='keydown') inspectionKeys.add(event.code);
+            inspectObjective=inspectionKeys.size>0;refreshInspection();
+        }
         if (event.type==='keydown' && /^Digit[1-5]$/.test(event.code)) {weaponInspect=1.5;refreshInspection();}
     };
-    const onBlur = () => {inspectObjective=false;weaponHover=false;objectiveHover=false;refreshInspection();};
+    const onBlur = () => {inspectionKeys.clear();inspectObjective=false;refreshInspection();};
     const onPointer = (event: PointerEvent) => {
         if(event.pointerType!=='mouse')return;pointerX=event.clientX;pointerY=event.clientY;
-        const inside=(box:typeof weaponBounds)=>pointerX>=box.left&&pointerX<=box.right&&pointerY>=box.top&&pointerY<=box.bottom;
-        weaponHover=inside(weaponBounds);objectiveHover=inside(objectiveBounds);refreshInspection();
     };
-    const enterWeapon = () => {weaponHover=true;refreshInspection();};
-    const leaveWeapon = () => {weaponHover=false;weaponInspect=1.5;refreshInspection();};
-    const enterObjective = () => {objectiveHover=true;refreshInspection();};
-    const leaveObjective = () => {objectiveHover=false;refreshInspection();};
-    weaponBank.addEventListener('pointerenter',enterWeapon);weaponBank.addEventListener('pointerleave',leaveWeapon);
-    statusPanel.addEventListener('pointerenter',enterObjective);statusPanel.addEventListener('pointerleave',leaveObjective);
     document.addEventListener('keydown',onKey);document.addEventListener('keyup',onKey);
     document.addEventListener('pointermove',onPointer,{passive:true});window.addEventListener('blur',onBlur);
     const showDenial = (reason:string) => {
@@ -137,7 +150,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             layoutDirty = true;
             entry.icon.innerHTML = icon(s.id);
             entry.title.textContent = definition.name;
-            entry.node.title = `${definition.name} · ${playerFacingText(definition.summary)}`;
+            entry.node.removeAttribute('title');
             entry.node.setAttribute('aria-label', `${definition.name}: ${playerFacingText(definition.summary)}`);
             entry.ability = s.id;
             abilityHints.update(entry.slot, s.id);
@@ -214,8 +227,14 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         }
         hidden('story-hud', !game.storyRoom || !playing);
         // Story text remains authored verbatim; the optional line alone is skippable.
-        text('story-status', conciseStoryStatus(game.storyStatus));
-        text('room-objective', game.storyRoom?.objective ?? '');
+        const storyStatus = conciseStoryStatus(game.storyStatus);
+        if (nodes['story-status'].textContent !== storyStatus) roomIntro = 4;
+        text('story-status', storyStatus);
+        text('room-objective', combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
+        const critical = game.storyRoom?.objective.match(/Overload is NOT armed\.|PASSENGERS ALIVE\..*|No escape\..*/)?.[0] ?? '';
+        let criticalNode = document.getElementById('objective-critical');
+        if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';nodes['story-hud'].append(criticalNode);}
+        criticalNode.textContent=critical;criticalNode.hidden=!critical;
         hidden('story-presentation', !game.storyPresentation);
         text('story-line', game.storyPresentation ?? '');
         if (s.health < health)
@@ -271,6 +290,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             node.dataset.active = String(node.dataset.bossPhase === phase);
         const build = game.expedition.build, buildKey = build.mutations.join('|');
         if (buildKey !== lastBuild) {
+            if (buildSeen) roomIntro = 4;
             lastBuild = buildKey;
             layoutDirty = true;
             nodes['build-strip'].replaceChildren();
@@ -360,11 +380,6 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (playing) {
             protect();
             positionHud();
-            if(inspectionRevision!==hudLayoutRevision()){
-                inspectionRevision=hudLayoutRevision();
-                const copy=(node:HTMLElement)=>{const r=node.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom};};
-                weaponBounds=copy(weaponBank);objectiveBounds=copy(statusPanel);
-            }
             threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q);
         }
         else if (wasPlaying) {
@@ -377,7 +392,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (disposed || game.status !== 'playing')
             return;
         combatText.setEnabled(preferences().combatText !== false);
-        combatText.effect(event);
+        combatText.effect({...event, damageElement: getCombatDamageElement(game, event)});
         threats.effect(event, game.player);
         onboarding.effect(event);
         if (event.lethal && (event.type === 'hit' || event.type === 'acid' || event.contact)) {
@@ -462,8 +477,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             return;
         disposed = true;
         document.removeEventListener('keydown',onKey);document.removeEventListener('keyup',onKey);document.removeEventListener('pointermove',onPointer);window.removeEventListener('blur',onBlur);
-        weaponBank.removeEventListener('pointerenter',enterWeapon);weaponBank.removeEventListener('pointerleave',leaveWeapon);
-        statusPanel.removeEventListener('pointerenter',enterObjective);statusPanel.removeEventListener('pointerleave',leaveObjective);denial.remove();showInvalidAbilityPlacement(renderer,null);
+        denial.remove();showInvalidAbilityPlacement(renderer,null);
         combatText.dispose();
         threats.dispose();
         toasts.dispose();

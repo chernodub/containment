@@ -3,6 +3,7 @@ import { projectWorld, getViewportWidth, getViewportHeight, type ScreenPoint } f
 import type { HudEffect } from './effects';
 import {hudObstructs, presentationObstructs} from './layout';
 import {icon} from '../icons';
+import {damageToken} from '../damageTokens';
 export const COMBAT_TEXT_CAPACITY = 28;
 type Float = {
     node: HTMLDivElement;
@@ -68,7 +69,7 @@ export class CombatText {
         if (!this.enabled || this.disposed)
             return;
         const target = e.targetId ?? e.id;
-        const element = e.elements?.find(value => !!statusLabels[value]) ?? (typeof e.source === 'string' && statusLabels[e.source] ? e.source : e.type === 'acid' && !e.source ? 'acid' : '');
+        const element = e.source === 'weapon' ? 'weapon' : e.damageElement ?? e.element ?? (e.elements?.length === 1 ? e.elements[0] : undefined) ?? (typeof e.source === 'string' && statusLabels[e.source] ? e.source : e.type === 'acid' && !e.source ? 'acid' : '');
         if ((e.type === 'hit' || e.type === 'acid' || e.contact) && typeof e.damage === 'number' && e.damage > 0 && Number.isFinite(e.damage))
             this.add(e.x, e.y, target, e.damage, 'damage', element, !!e.lethal, !!e.critical, typeof e.source === 'string' && Object.hasOwn(sourceLanes, e.source) ? e.source : '');
         // Never invent damage totals for old events. Element labels acknowledge real status events.
@@ -89,7 +90,7 @@ export class CombatText {
         if (currentStatus && (statusPriority[currentStatus.status] ?? 0) > (statusPriority[status] ?? 0)) return;
         // Reuse a visible receipt until there is a quiet gap. Repeated zone/status ticks
         // cannot stack new labels faster than old ones expire.
-        let entry = currentStatus ?? this.pool.find(p => p.life > 0 && p.kind === kind && p.source === source && (kind === 'damage' || p.status === status) && (target !== undefined ? p.target === target : Math.hypot(p.x - x, p.y - y) < (kind === 'status' ? 72 : 25)));
+        let entry = currentStatus ?? this.pool.find(p => p.life > 0 && p.kind === kind && p.source === source && p.status === status && (target !== undefined ? p.target === target : Math.hypot(p.x - x, p.y - y) < (kind === 'status' ? 72 : 25)));
         if (!entry)
             entry = this.pool.find(p => p.life <= 0);
         if (!entry) {
@@ -98,7 +99,7 @@ export class CombatText {
                 if (p.life < entry.life)
                     entry = p;
         }
-        const merge = entry.life > 0 && entry.kind === kind && entry.source === source && (kind === 'damage' || entry.status === status) && (target !== undefined ? entry.target === target : Math.hypot(entry.x - x, entry.y - y) < (kind === 'status' ? 72 : 25));
+        const merge = entry.life > 0 && entry.kind === kind && entry.source === source && entry.status === status && (target !== undefined ? entry.target === target : Math.hypot(entry.x - x, entry.y - y) < (kind === 'status' ? 72 : 25));
         entry.amount = (merge ? entry.amount : 0) + amount;
         entry.lethal = lethal || merge && entry.lethal;
         entry.critical = critical || merge && entry.critical;
@@ -121,6 +122,7 @@ export class CombatText {
         if (kind === 'status') for (const glyph of entry.glyphs) glyph.toggleAttribute('hidden', glyph.dataset.icon !== statusGlyphs[status]);
         entry.node.dataset.kind = kind;
         entry.node.dataset.element = color;
+        entry.node.dataset.damageToken = damageToken(color);
         entry.node.dataset.critical = String(entry.critical);
         const fontSize = kind === 'status' ? 12 : entry.lethal ? 42 : entry.critical ? 40 : 34;
         entry.fontSize = fontSize;

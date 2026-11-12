@@ -124,7 +124,7 @@ it('renders element damage as outlined condensed numerals and makes critical/let
     expect(await critical.textContent()).toBe('48');
     expect(await lethal.textContent()).toBe('96 ×');
     const normalStyle = await normal.evaluate(element => {const style = getComputedStyle(element); return {size: style.fontSize, color: style.color, background: style.backgroundColor, shadow: style.textShadow, font: style.fontFamily, pointer: style.pointerEvents};});
-    expect(normalStyle).toMatchObject({size: '34px', color: 'rgb(159, 223, 255)', background: 'rgba(0, 0, 0, 0)', pointer: 'none'});
+    expect(normalStyle).toMatchObject({size: '34px', color: 'rgb(127, 214, 255)', background: 'rgba(0, 0, 0, 0)', pointer: 'none'});
     expect(normalStyle.font).toContain('Barlow Condensed');
     expect(normalStyle.shadow).not.toBe('none');
     expect(await critical.evaluate(element => getComputedStyle(element).fontSize)).toBe('40px');
@@ -133,7 +133,7 @@ it('renders element damage as outlined condensed numerals and makes critical/let
   } finally {await page.close();}
 });
 
-it('preserves same-target acid/contact merges, bounded pooling, projection culling and player clearance', async () => {
+it('preserves same-element merges and separates acid from neutral totals, with bounded pooling, projection culling and player clearance', async () => {
   const page = await mount();
   try {
     await page.evaluate(() => {
@@ -142,10 +142,12 @@ it('preserves same-target acid/contact merges, bounded pooling, projection culli
       combat.tick(.01, player);
     });
     const visible = page.locator('.combat-float:not([hidden])');
-    expect(await visible.count()).toBe(1);
-    expect(await visible.textContent()).toBe('60');
-    const number = (await visible.boundingBox())!;
-    expect(number.y + number.height).toBeLessThan(300);
+    expect(await visible.count()).toBe(2);
+    expect(await visible.allTextContents()).toEqual(['24', '36']);
+    for (const entry of await visible.all()) {
+      const number = (await entry.boundingBox())!;
+      expect(number.y + number.height).toBeLessThan(300);
+    }
     await page.evaluate(() => {
       const {combat, player} = (window as any).combatTest;
       combat.clear();
@@ -242,7 +244,9 @@ it('styles confirmed damage by source, merges receipts per target/source, and pr
     for (const source of ['weapon','ability','status','boon']) {
       const node = page.locator(`.combat-float[data-source=${source}]:not([hidden])`);
       expect(await node.textContent()).toBe(source==='boon'?'40 ×':'40');
-      expect(await node.getAttribute('data-element')).toBe('');
+      expect(await node.getAttribute('data-element')).toBe(source === 'weapon' ? 'weapon' : '');
+      expect(await node.getAttribute('data-damage-token')).toBe('neutral');
+      expect(await node.evaluate(element => getComputedStyle(element).color)).toBe('rgb(240, 251, 255)');
     }
     expect(await page.locator('[data-source=ability]:not([hidden])').evaluate(node=>getComputedStyle(node).textDecorationLine)).toBe('underline');
     expect(await page.locator('[data-source=status]:not([hidden])').evaluate(node=>getComputedStyle(node).fontStyle)).toBe('italic');
@@ -264,7 +268,7 @@ it('keeps one most-relevant compact status chip per target while preserving inde
     expect(await chips.first().getAttribute('aria-label')).toBe('FROZEN');
     expect((await chips.first().boundingBox())!.width).toBeLessThanOrEqual(28);
     expect(await chips.locator('svg:not([hidden])').count()).toBe(2);
-    expect(await page.locator('.combat-float[data-kind=damage]:not([hidden])').allTextContents()).toEqual(['48','18']);
+    expect(await page.locator('.combat-float[data-kind=damage]:not([hidden])').allTextContents()).toEqual(['12','12','12','12','18']);
   } finally {await page.close();}
 });
 
@@ -337,5 +341,38 @@ it('reuses preallocated status icon children throughout repeated elemental pulse
       return {reused:glyph===document.querySelector('.combat-float[data-kind=status] svg:not([hidden])'),before:count,after:document.querySelectorAll('#combat-text *').length};
     });
     expect(result.reused).toBe(true);expect(result.after).toBe(result.before);
+  } finally {await page.close();}
+});
+
+
+it('uses actual elemental tokens for damage and chips while weapon hits stay white and kills keep their element', async () => {
+  const page = await mount();
+  try {
+    const receipts = [
+      {element:'burn', color:'rgb(255, 122, 46)', token:'pyro'},
+      {element:'shatter', color:'rgb(127, 214, 255)', token:'cryo'},
+      {element:'arc', color:'rgb(183, 156, 255)', token:'arc'},
+      {element:'kinetic', color:'rgb(255, 180, 84)', token:'kinetic'},
+      {element:'poison', color:'rgb(157, 255, 90)', token:'acid'},
+      {element:'heal', color:'rgb(140, 230, 195)', token:'healing'},
+    ];
+    for (const {element,color,token} of receipts) {
+      await page.evaluate(element => {
+        const {combat,player} = (window as any).combatTest;
+        combat.clear();
+        combat.effect({type:'hit', x:320, y:280, targetId:1, damage:12, source:'status', damageElement:element, lethal:true});
+        combat.effect({type:'hit', x:840, y:280, targetId:2, damage:12, source:'weapon', elements:[element]});
+        if (['burn','shatter','arc','poison'].includes(element)) combat.effect({type:'boon',x:320,y:280,boon:element});
+        combat.tick(.01,player);
+      }, element);
+      const elemental = page.locator('.combat-float[data-kind=damage][data-source=status]:not([hidden])');
+      expect(await elemental.getAttribute('data-damage-token')).toBe(token);
+      expect(await elemental.evaluate(node=>getComputedStyle(node).color)).toBe(color);
+      expect(await elemental.textContent()).toBe('12 ×');
+      expect(await elemental.evaluate(node=>getComputedStyle(node).fontWeight)).toBe('800');
+      expect(await page.locator('.combat-float[data-kind=damage][data-source=weapon]:not([hidden])').evaluate(node=>getComputedStyle(node).color)).toBe('rgb(240, 251, 255)');
+      const chip = page.locator('.combat-float[data-kind=status]:not([hidden])');
+      if (await chip.count()) expect(await chip.evaluate(node=>getComputedStyle(node).color)).toBe(color);
+    }
   } finally {await page.close();}
 });
