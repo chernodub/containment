@@ -32,7 +32,7 @@ class CryoPresentation implements AbilityPresentation {
       if (event.phase === 'dash-start') {
         k.burst(px, .12, pz, 'cryo', 10, 1.4, .45);
         if (Number.isFinite(event.targetX) && Number.isFinite(event.targetY)) {
-          k.beam(px, .075, pz, event.targetX! / UNIT, .075, event.targetY! / UNIT, CORE, .11, .24, false);
+          k.beam(px, .075, pz, event.targetX! / UNIT, .075, event.targetY! / UNIT, CORE, .055, .18, false);
         }
       } else if (event.phase === 'dash-end') {
         const tx=(event.targetX??x)/UNIT,tz=(event.targetY??y)/UNIT;
@@ -104,7 +104,7 @@ class CryoPresentation implements AbilityPresentation {
       const fade = (1 - progress) * (.45 + .55 * k.flashIntensity);
       if (wave.age < wave.life && wave.aftermath) {
         // Nova alone owns the single rolling front. Arrival/shatter pulses stay thin.
-        k.front(wave.x, wave.z, wave.radius, travel, CORE, .7, fade * .48);
+        k.front(wave.x, wave.z, wave.radius, travel, CORE, .7, fade * .48, 2);
       }
       const count = k.low ? 12 : 36;
       for (let i = 0; i < count && wave.age < wave.life; i++) {
@@ -156,7 +156,8 @@ class CryoPresentation implements AbilityPresentation {
     for (let i = 0; i < count; i++) {
       const seed = i * 2.731 + zone.id * .83, variation = Math.sin(seed * 2.1) ** 2;
       const path = perimeter * (i + .23 + Math.sin(seed) * .19) / count;
-      const inset = half * (.68 + variation * .11);
+      const cluster = i % (k.low ? 2 : 4) === 1;
+      const inset = half * (cluster ? .46 + variation * .06 : .63 + variation * .1);
       let along: number, lateral: number, tangent: number;
       if (path < length) { along = path; lateral = inset; tangent = 0; }
       else if (path < length + Math.PI * half) {
@@ -169,20 +170,29 @@ class CryoPresentation implements AbilityPresentation {
         along = -Math.sin(a) * inset; lateral = -Math.cos(a) * inset; tangent = Math.PI - a;
       }
       const px = x + cx * along - sz * lateral, pz = z + sz * along + cx * lateral;
-      const size = Math.min(half * .1, .035 + variation * .055);
+      const size = Math.min(half * (cluster ? .22 : .13), (cluster ? .12 : .055) + variation * .075);
       const growth = k.reducedMotion ? 1 : Math.min(1, Math.max(.02, age * 10 - i * .035));
-      const height = Math.min(half * .65, .1 + variation * .25) * growth;
+      const height = Math.min(half * (cluster ? .95 : .65), (cluster ? .4 : .14) + variation * .3) * growth;
       // Needles lean along the dash, never a repeated diamond paving pattern.
       k.draw('shard', px, height * .76 + .025, pz, size, height, size * .62,
-        i % 5 ? ICE : CORE, fade * (.34 + variation * .28), -direction + Math.sin(seed) * .7, .12);
-      const seamLength = Math.min(half * .15, .1 + variation * .09), yaw = direction + tangent;
+        i % 5 ? ICE : CORE, fade * (.55 + variation * .25), -direction + Math.sin(seed) * .7, .12);
+      if (cluster) {
+        const shift = half * .12;
+        k.draw('shard', px + Math.cos(direction) * shift, height * .42 + .025, pz + Math.sin(direction) * shift,
+          size * .62, height * .52, size * .5, CORE, fade * .62, -direction - .38, -.08);
+      }
+      const seamLength = half * (cluster ? .36 : .23), yaw = direction + tangent;
       k.ribbon(px, .035, pz, px + Math.cos(yaw) * seamLength, .035, pz + Math.sin(yaw) * seamLength,
-        ICE, Math.min(half * .02, .011 + variation * .009), fade * .36, false);
+        ICE, Math.min(half * .045, .026 + variation * .014), fade * .58, false);
+      if (cluster) {
+        const bx = px + sz * lateral * .36, bz = pz - cx * lateral * .36;
+        k.ribbon(px, .032, pz, bx + cx * half * .16, .032, bz + sz * half * .16, ICE, half * .035, fade * .52, false);
+      }
       if (i % (k.low ? 3 : 2) === 0) {
         const t = length > 0 ? Math.max(0, Math.min(length, along)) : 0;
         const drift = k.reducedMotion ? 0 : Math.sin(age * 1.8 + seed) * half * .13;
         k.draw('smoke', x + cx * t - sz * drift, .12, z + sz * t + cx * drift,
-          half * .42, .11 + variation * .06, .1, 0x91b9cc, fade * .2);
+          half * .52, .13 + variation * .075, .1, 0xa9d3e4, fade * .34);
       }
     }
     k.lightAt(zone.id, x + dx * .5, z + dz * .5, ICE, 1.1 * fade, 3);
@@ -208,7 +218,7 @@ class CryoPresentation implements AbilityPresentation {
     }
     k.sustain(age / 1000);
     const time = k.reducedMotion ? 0 : age / 1000;
-    const clearRadius = Math.min(radius * .62, 2.25), count = k.low ? 16 : 42;
+    const clearRadius = Math.min(radius * .62, 2.25), count = k.low ? 10 : 24;
     // Snow follows the same circulation as the low mist, rather than a field of unrelated flecks.
     for (let i = 0; i < count; i++) {
       const seed = i * 2.39996323 + zone.id * .7;
@@ -221,23 +231,21 @@ class CryoPresentation implements AbilityPresentation {
       k.draw('shard', px, height, pz, .012, .018, size,
         i % 4 ? ICE : CORE, fade * (.25 + Math.sin(seed) ** 2 * .14), -angle, .3);
     }
-    // Three interrupted spiral arms read as one weather system; the marine's eye stays empty.
-    const steps = k.low ? 4 : 7;
+    // Curved matte gusts form three connected currents without straight floating markers.
+    const steps = k.low ? 3 : 5;
     for (let arm = 0; arm < 3; arm++) {
       for (let i = 0; i < steps; i++) {
         const t = i / (steps - 1), seed = i * 2.73 + arm * 4.13;
+        const variation = Math.sin(seed * 1.71) ** 2;
         const a = arm * TAU / 3 + t * 2.45 + time * .24;
-        const margin = Math.min(.6, (radius - clearRadius) * .18);
-        const r = clearRadius + margin + (radius - clearRadius - margin * 2) * t;
-        const next = a + .16 + t * .04, rr = Math.min(radius - .05, r + .12);
-        const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
-        k.ribbon(px, .08, pz, x + Math.cos(next) * rr, .085, z + Math.sin(next) * rr,
-          ICE, .014 + t * .017, fade * (.14 + t * .11), false);
-        if (i % 2 === 0) {
-          const width = Math.min(.28 + t * .25, r - clearRadius - .1, radius - r - .1);
-          k.draw('smoke', px, .13 + Math.sin(seed) ** 2 * .09, pz,
-            Math.max(.03, width), .12 + t * .11, .1, 0x8db3c7, fade * (.2 + t * .08));
-        }
+        const band = radius - clearRadius, margin = band * .2;
+        const r = clearRadius + margin + (band - margin * 2) * t;
+        const radialSpace = Math.min(r - clearRadius, radius - r);
+        // Complete rectangular brush support, including the curved ends, stays in the annulus.
+        const halfLength = Math.min(.85 + t * .55 + variation * .25, radialSpace * .78);
+        const halfWidth = Math.min(.18 + t * .12 + variation * .08, radialSpace * .24);
+        k.gust(x + Math.cos(a) * r, z + Math.sin(a) * r, halfLength * 2, halfWidth * 2,
+          a + Math.PI / 2 - .28, seed, fade * (.4 + variation * .12));
       }
     }
     k.lightAt(zone.id, x, z, ICE, .85 * fade, 4.5);
