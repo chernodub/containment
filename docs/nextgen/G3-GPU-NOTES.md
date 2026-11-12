@@ -1,6 +1,6 @@
 # G3 GPU evidence and deterministic work notes
 
-Current app source: **`f2c85d7`**, frozen in `g3/final-background-dist`. Its completed eight-trial four-rig regression and geometry/ink contract proofs are recorded at the end. Earlier full48-trial matrices remain exact source `d70f811` or `4939853`; they are not relabeled as full-matrix performance coverage of this later correctness fix. The final clear policy reserves background ID0 and overlay sentinel255, clears geometry with actual MRT clears without double-clearing, and adds no geometry or post draw. **Quiet-host High60fps acceptance and reliable additive GPU pass attribution remain unestablished.** Pending final gallery, smoke retry, authored/room/verify and native micro results are not included.
+Current app source: **`f2c85d7`**, frozen in `g3/final-background-dist`. Its completed eight-trial four-rig regression and geometry/ink contract proofs are recorded at the end. Earlier full48-trial matrices remain exact source `d70f811` or `4939853`; they are not relabeled as full-matrix performance coverage of this later correctness fix. The final clear policy reserves background ID0 and overlay sentinel255, clears geometry with actual MRT clears without double-clearing, and adds no geometry or post draw. **Quiet-host High60fps acceptance and reliable additive GPU pass attribution remain unestablished.** Completed current-source40-image room capture, smoke retry, authored/room/verify and native micro receipts are appended below. The separate strength/off-versus-bold full-size gallery is not included or claimed complete here.
 
 ## Evidence identity and scope
 
@@ -504,4 +504,53 @@ Four Low option transitions **off→silhouette→off→full** each report prepar
 
 The final policy clears the geometry attachment to reserved background0 with each actual MRT clear, including scene-background clears, and skips a redundant geometry clear when the primary clear already owns it. Excluded priority content retains sentinel255. Nested scene/render-info counters no longer erase previously written geometry IDs. The owned target-clear hook is reference-counted and restores its prior ownership on disposal. This is a presentation-data correctness/lifecycle change; it adds **no extra geometry draw or fullscreen post pass**, and no gameplay decision depends on those pixels. It still needs its own current-source evidence, which is why all earlier4939853 full-matrix and gate results remain separately labeled.
 
-The GPU-free micro fit/lifecycle set has24 passing tests plus the existing benchmark self-test according to the lead's completed run. Final20-room×2-tier capture, smoke retry, authored/room/aggregate verification and native micro calibration are later serialized work; no partial or pending value is read into this section. The completed current-code evidence supports contour/classification behavior and exercised preparation/resource invariants. It does **not** close the High60fps/p95 requirement or establish additive pass timings.
+The GPU-free micro fit/lifecycle set has24 passing tests plus the existing benchmark self-test according to the lead's completed run. The subsequent completed20-room×2-tier capture, smoke retry, authored/room/aggregate verification and native micro calibration are recorded next. The completed current-code evidence supports contour/classification behavior and exercised preparation/resource invariants. It does **not** close the High60fps/p95 requirement or establish additive pass timings.
+
+
+## Closed current-source post-checks and native calibration — `f2c85d7`
+
+The [closed serialized driver receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3/post-gates/final-gates.json) records the following completed commands. Its overall exit1 retains the aggregate verification failure; it is not an all-green receipt. Frozen capture/room/micro artifacts explicitly identify `g3/final-background-dist` source **`f2c85d7`**. Benchmark top-level `sha` also records the checkout's intervening documentation commit, while `distSnapshot.sourceSHA` identifies the actual app being measured.
+
+| Closed driver step | Exit | Wall seconds | Load1m start→end | Log |
+|---|---:|---:|---:|---|
+|allrooms-full|0|148.09|47.7→52.0|`artifacts/nextgen/g3/post-gates/allrooms-full.log`|
+|smoke-retry|0|82.43|52.0→65.6|`artifacts/nextgen/g3/post-gates/smoke-retry.log`|
+|authored-final|0|95.11|65.6→60.6|`artifacts/nextgen/g3/post-gates/authored-final.log`|
+|rooms-final|0|70.04|60.6→135.4|`artifacts/nextgen/g3/post-gates/rooms-final.log`|
+|verify-final|1|158.65|135.4→132.8|`artifacts/nextgen/g3/post-gates/verify-final.log`|
+|gpu-micro|0|55.70|132.8→127.5|`artifacts/nextgen/g3/post-gates/gpu-micro.log`|
+
+The [final all-room manifest](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-final-allrooms-full/manifest.json) contains **40 accepted PNGs: all20 authored rooms in High and Low**, bold strength, adaptive resolution explicitly disabled, `errors:[]` and `failures:[]`. The lead reviewed four contact sheets. These captures establish current-source coverage of the selected calm scenes; they do not imply completion of the separate strength/off-versus-bold full-size comparison or hardware performance acceptance.
+
+The **unmodified desktop smoke retry passes**. The earlier4939853 `equipment.glb: net::ERR_ABORTED` failure remains retained above; the retry does not erase that observation or establish its cause. All20 authored-room smoke cases pass. The [current-source42-entry room receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-final-rooms/rooms.json) has `errors:[]`, `failures:[]`, maximum measured entry676.4ms and maximum recorded cold preparation2067.4ms, both within the3000ms preparation bound. It records at most197 programs,66 material families,11 compile passes, **0 first-frame compiles and0 combat compiles**. Entry timing and the separately recorded cold-preparation timing are distinct quantities.
+
+`npm run verify` remains **failed**: **262 files passed,1 failed,1 skipped (264);3048 tests passed,1 failed,1 skipped (3050)**. The preserved failure is `tests/UiScreens.test.ts > settings and controls fit title and pause consoles at1280×720`, measured744 versus allowed661. No assertion was weakened or filtered. Because verification stops at this Vitest failure, the subsequent model/Python asset, room-evidence, build and browser commands in that particular chain did not run; independent completed receipts remain separately identified. This is an outstanding desktop-layout gate, not a full verification pass.
+
+### Native micro: ordinary fight observations stay separate
+
+The [complete native micro receipt](/Users/chernodub/.t3/worktrees/containment-game/t3-5762f7c1/artifacts/nextgen/g3-final-micro/benchmark.json) includes **two ordinary20-second Manual-control / Arc trials, N=1 per tier**, with per-pass audit off and no flush, followed by separate frozen-simulation calibrations. Both ordinary trials retain their normal timing eligibility and pass population/resource/error guards, `errors:[]`, `budgetFailures:[]` and0 combat program creations. Synthetic repeats are excluded from their captured normal draw statistics. The ordinary observations are:
+
+| Tier | Frames | Frame p50 / p95 ms | Render JS p50 / p95 ms | CPU p50 / p95 ms | Scale min / p50 / max | Load1m start→end | Ordinary draw peak / combat compiles |
+|---|---:|---:|---:|---:|---:|---:|---:|
+|high|1096|16.7 /25.6|5.1 /7.6|5.8 /9.0|0.7 /0.75 /1|134.5→138.8|218 /0|
+|low|1121|16.7 /18.3|4.3 /5.8|4.9 /7.0|1 /1 /1|138.8→127.5|134 /0|
+
+These are single-trial observations under substantial shared-host load, not best-of-three or quiet60fps acceptance. High still misses20ms p95. The raw Low frame maximum1265.7ms remains in the JSON. High's end snapshot shows adaptive feedback source `gpu`, enabled runtime timer with75 completed samples, latest25.11ms and age6 frames; Low's adaptive/runtime timer is disabled. Ordinary raw whole-render GPU elapsed p50/p95 is25.08/58.13ms High and12.09/35.28ms Low. Those totals are not isolated stage costs.
+
+### Amplified same-target throughput: one supported scope
+
+Only the separate `gpuMicro` observations have `timingAcceptanceEligible:false`. The diagnostic freezes simulation/camera inputs, disables the runtime query timer, runs normal post order with `dt=0`, and repeats one selected post draw1,8 or32 times inside one elapsed query per sampled frame. Two samples per count are retained, then the minimum GPU observation at each count and its **paired** CPU submission time are fitted. CPU minima are not selected independently. Repeating a target changes cache/reuse and scheduling behavior; even a supported slope is **same-target throughput, not ordinary isolated pass latency or a game-FPS prediction**. No micro slope is added to the earlier raw stage values or used to allocate a frame budget. Scene, shadows and HUD remain explicitly unsupported by this post-only diagnostic.
+
+**Low composite is the only supported fit**, at1920×1080 (2073600 pixels), with the following selected observations. All six raw observations remain in the receipt. Calibration host load1m is127.5→127.5 on10 cores.
+
+| Repetitions | Resolved samples | Selected GPU elapsed ms | Paired CPU submission ms | Selected sample | Within-count relative spread |
+|---|---:|---:|---:|---:|---:|
+|1|2|11.102500|0.100000|1|0.447729|
+|8|2|19.072291|0.100000|0|0.097286|
+|32|2|43.576583|0.100000|0|0.049914|
+
+Its fitted slope is **1.0407239ms per repeat**, intercept10.3605646ms, **R²0.9995709**, with32.474083ms amplification from1 to32 repeats. The intercept itself reinforces why a single raw timer reading is not accepted as the pass latency. The supported fit passed the configured ≥2 samples/count, R²≥.98, positive/amplified response, ≤.5 within-count relative spread and GPU-versus-CPU slope checks. With only two observations per count and count1 spread≈44.8%, this is limited diagnostic evidence, not a precise production GPU cost.
+
+Every High scope is rejected: GTAO for within-count noise; AO denoise and both bloom blurs for nonlinear response and noise; bloom extract for flat/negative response, insufficient amplification, nonlinearity, noise and lack of CPU separation; composite for nonlinearity; final AA for nonlinearity and noise. High used672×378 AO,336×189 bloom,1344×756 composite and1920×1080 final AA after the scale settled at.70; calibration host load1m is138.8→138.8. High GTAO's numerically high R² does not override its noise rejection, so no High slope is published as supported. Low final AA is also rejected for within-count noise; Low AO/bloom are absent on the prepared Low path and explicitly unsupported. Thus the experiment does **not** validate a complete per-pass GPU decomposition or a measured optimization gain.
+
+Lifecycle evidence is complete: **42/42 High and12/12 Low queries resolve**, peak pending4, with0 disjoint/stale/abandoned/busy/capacity events. Query resources are retired; both runs restore `playing→playing` with simulation elapsed exactly unchanged (23.0351s High,22.5760667s Low),0 micro program creations,0 GL error, no context loss and no recorded restoration errors. Calibration wall duration is1204.4ms High and344.3ms Low. The previously completed24 pure fit/lifecycle tests and benchmark self-test remain the deterministic instrumentation checks. Native completion strengthens lifecycle evidence but leaves quiet-host High60fps and reliable ordinary additive pass attribution open.
