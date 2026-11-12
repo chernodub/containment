@@ -14,6 +14,8 @@ const UP = new T.Vector3(0, 1, 0);
 /** Fixed ability-only pool: centimetre cores, faint halos and 40ms branching strikes. */
 export class AbilityLightningBatch {
   low = false;
+  priorityWeight = 0;
+  private readonly priority: T.InstancedBufferAttribute;
   private readonly branch = new T.Vector3();
   readonly mesh: T.InstancedMesh;
   private readonly dummy = new T.Object3D();
@@ -27,6 +29,8 @@ export class AbilityLightningBatch {
   constructor(scene: T.Object3D, readonly capacity = 256) {
     const geometry = new T.CylinderGeometry(1, 1, 1, 5, 1, true);
     this.alpha = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
+    this.priority = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
+    geometry.setAttribute('ribbonPriority', this.priority);
     geometry.setAttribute('ribbonAlpha', this.alpha);
     const material = new T.ShaderMaterial({ transparent: true, depthWrite: false, blending: T.AdditiveBlending,
       vertexShader: `attribute float ribbonAlpha;varying float alpha;varying vec3 color;varying vec2 local;
@@ -86,9 +90,10 @@ void main(){float cap=smoothstep(0.0,.08,local.y)*smoothstep(0.0,.12,1.0-local.y
     this.mesh.setMatrixAt(this.mesh.count, this.dummy.matrix);
     this.color.set(color).multiplyScalar(hdr);
     this.mesh.setColorAt(this.mesh.count, this.color);
+    this.priority.setX(this.mesh.count, this.priorityWeight);
     this.alpha.setX(this.mesh.count++, opacity);
   }
-  end(): void { this.mesh.instanceMatrix.needsUpdate = true; this.mesh.instanceColor!.needsUpdate = true; this.alpha.needsUpdate = true; }
+  end(): void { this.mesh.instanceMatrix.needsUpdate = true; this.mesh.instanceColor!.needsUpdate = true; this.alpha.needsUpdate = this.priority.needsUpdate = true; }
   clear(): void { this.mesh.count = 0; }
   dispose(): void { this.clear(); this.mesh.geometry.dispose(); (this.mesh.material as T.Material).dispose(); this.mesh.removeFromParent(); }
 }

@@ -3,9 +3,9 @@ import { FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
 
 export type Primitive = 'shard' | 'spark' | 'smoke' | 'flame' | 'solid' | 'ghost' | 'decal' | 'front';
 const vertex = `
-attribute float abilityAlpha;attribute float abilityPhase;
+attribute float abilityAlpha;attribute float abilityPhase;attribute float abilityStyle;varying float style;
 varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;
-void main(){alpha=abilityAlpha;phase=abilityPhase;ink=instanceColor;uvLocal=uv;facetNormal=normalize(normalMatrix*mat3(instanceMatrix)*normal);
+void main(){style=abilityStyle;alpha=abilityAlpha;phase=abilityPhase;ink=instanceColor;uvLocal=uv;facetNormal=normalize(normalMatrix*mat3(instanceMatrix)*normal);
 vec3 posedPosition=position;/* ability shape */
 gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(posedPosition,1.);screenPosition=gl_Position;}`;
 
@@ -22,6 +22,9 @@ export class InstanceBatch {
   private readonly alpha: T.InstancedBufferAttribute;
   private readonly phase: T.InstancedBufferAttribute;
   private readonly texture?: T.Texture;
+  private readonly priority: T.InstancedBufferAttribute;
+  private readonly style: T.InstancedBufferAttribute;
+  priorityWeight = 0;
   private view?: T.Vector3;
 
   setView(camera: T.Camera): void {
@@ -35,43 +38,53 @@ export class InstanceBatch {
         : new T.PlaneGeometry(2, 2);
     this.alpha = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
     this.phase = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
+    this.priority = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
+    this.style = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
+    geometry.setAttribute('abilityPriority', this.priority);
+    geometry.setAttribute('abilityStyle', this.style);
     geometry.setAttribute('abilityAlpha', this.alpha);
     geometry.setAttribute('abilityPhase', this.phase);
 
-    const atlas = kind === 'flame' || kind === 'smoke';
+    const atlas = kind === 'smoke';
     if (atlas) {
       this.texture = typeof document === 'undefined'
         ? new T.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1)
-        : new T.TextureLoader().load(`${import.meta.env.BASE_URL}assets/vfx/${kind === 'flame' ? 'Flame02' : 'WispySmoke02'}.png`);
-      this.texture.colorSpace = kind === 'flame' ? T.SRGBColorSpace : T.NoColorSpace;
+        : new T.TextureLoader().load(`${import.meta.env.BASE_URL}assets/vfx/WispySmoke02.png`);
+      this.texture.colorSpace = T.NoColorSpace;
       this.texture.minFilter = this.texture.magFilter = T.LinearFilter;
       this.texture.generateMipmaps = false;
     }
 
     const fragment = `
-uniform float abilityTime;uniform sampler2D map;uniform float flash;
+uniform float abilityTime;uniform sampler2D map;uniform float flash;varying float style;
 varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;
 float abilityHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
 float abilityNoise(vec2 p){vec2 b=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(abilityHash(b),abilityHash(b+vec2(1.,0.)),f.x),mix(abilityHash(b+vec2(0.,1.)),abilityHash(b+vec2(1.)),f.x),f.y);}
 void main(){
  vec2 p=uvLocal*2.-1.;float a=alpha;vec3 c=ink;
 ${atlas ? `
- float frame=mod(floor(abilityTime*${kind === 'flame' ? '30.' : '18.'}+phase),64.);
- vec2 grid=vec2(${kind === 'flame' ? '16.,4.' : '8.,8.'});
+ float frame=mod(floor(abilityTime*18.+phase),64.);
+ vec2 grid=vec2(8.,8.);
  vec2 cell=vec2(mod(frame,grid.x),grid.y-1.-floor(frame/grid.x));
  vec2 inset=vec2(.006,.008);vec2 at=(cell+clamp(uvLocal,inset,1.-inset))/grid;
  vec4 s=texture2D(map,at);
  float edge=smoothstep(0.,.07,uvLocal.x)*smoothstep(0.,.07,1.-uvLocal.x)*smoothstep(0.,.07,uvLocal.y)*smoothstep(0.,.07,1.-uvLocal.y);
  a*=s.a*edge;
- ${kind === 'flame' ? `
- float heat=clamp(dot(s.rgb,vec3(.32,.52,.16)),0.,1.);
- // HDR hot core, orange body and deep-red feather: no opaque pale triangles.
- c=mix(vec3(1.05,.065,.003),vec3(4.,.7,.025),smoothstep(.008,.28,heat));
- // Temperature belongs to the source: orange fuel folds, pearl-yellow muzzle.
- float hotBias=clamp((ink.g-.19)*2.,0.,1.);
- c=mix(c,vec3(10.,6.,1.2),pow(smoothstep(.48,.94,heat),2.6)*mix(.08,1.,hotBias));
- a*=.78*(.35+.65*flash);
- ` : `float vapor=step(ink.r*1.12,ink.b)*smoothstep(.18,.5,ink.b);float dust=step(.08,ink.r+ink.g+ink.b)*(1.-vapor);c=mix(vec3(.007,.009,.012),ink*.65,dust);c=mix(c,ink*.85,vapor);a*=mix(.65,.52,vapor);`}
+ float vapor=step(ink.r*1.12,ink.b)*smoothstep(.18,.5,ink.b);float dust=step(.08,ink.r+ink.g+ink.b)*(1.-vapor);c=mix(vec3(.007,.009,.012),ink*.65,dust);c=mix(c,ink*.85,vapor);a*=mix(.65,.52,vapor);
+ ` : ''}
+${kind === 'flame' ? `
+ float t=uvLocal.y;float clock=abilityTime*(1.4+fract(phase)*.6);
+ float bend=sin(t*4.8-clock*3.+phase)*(.06+t*.2)+sin(t*9.+phase*2.-clock*2.)*.035*t;
+ float taper=pow(max(.001,1.-t),.68);
+ float width=(.42+.11*sin(t*7.+phase))*taper;
+ float axis=p.x-bend;float distance=abs(axis)/max(.015,width);
+ float tongue=(1.-smoothstep(.72,1.,distance))*smoothstep(0.,.09,t)*(1.-smoothstep(.84,1.,t));
+ float fork=abs(p.x+sin(t*5.+phase)*.28)/max(.015,taper*.18);
+ tongue=max(tongue,(1.-smoothstep(.65,1.,fork))*smoothstep(.32,.45,t)*(1.-smoothstep(.65,.9,t))*.55);
+ float core=(1.-smoothstep(.08,.52,distance))*(1.-smoothstep(.15,.72,t));
+ c=mix(vec3(1.6,.085,.006),vec3(3.8,.52,.015),smoothstep(.03,.2,tongue));
+ c=mix(c,vec3(8.,4.2,.65),core*clamp(.45+ink.g*1.8,.45,1.));
+ a*=tongue*.85*(.35+.65*flash);
  ` : ''}
 ${kind === 'spark' ? 'float d=dot(p,p);if(d>1.)discard;a*=pow(1.-d,2.);c*=3.5;' : ''}
 ${kind === 'decal' ? `
@@ -145,7 +158,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
     if (this.view && (this.kind === 'smoke' || this.kind === 'spark' || this.kind === 'flame')) {
       rotationY = Math.atan2(this.view.x - x, this.view.z - z);
       // Flame tongues rise vertically; tumbling the card creates paper-like shards.
-      if (this.kind === 'flame' || this.kind === 'smoke') rotationZ = 0;
+      if (this.kind === 'smoke') rotationZ = 0;
     }
     // These primitives only use XYZ Euler rotations with X = 0 (or -PI/2
     // for deck decals). Write the same transform without Object3D's quaternion
@@ -181,6 +194,8 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
     }
     this.mesh.instanceColor!.setXYZ(i, this.colorValues[rgb], this.colorValues[rgb + 1], this.colorValues[rgb + 2]);
     this.alpha.setX(i, opacity);
+    this.priority.setX(i, this.priorityWeight);
+    this.style.setX(i, variant);
     this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
   }
@@ -192,6 +207,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
     this.upload(this.mesh.instanceColor!, this.colorRange, this.mesh.count * 3);
     this.upload(this.alpha, this.alphaRange, this.mesh.count);
     this.upload(this.phase, this.phaseRange, this.mesh.count);
+    this.priority.needsUpdate = this.style.needsUpdate = true;
   }
 
   private upload(attribute: T.InstancedBufferAttribute, range: { start: number; count: number }, count: number): void {

@@ -18,7 +18,7 @@ describe('ability instance streaming', () => {
       expected.scale.set(.2, .7, .4);
       expected.rotation.set(kind === 'decal' ? -Math.PI / 2 : 0,
         billboard ? Math.atan2(camera.position.x - x, camera.position.z - z) : yaw,
-        kind === 'smoke' || kind === 'flame' ? 0 : tilt);
+        kind === 'smoke' ? 0 : tilt);
       expected.updateMatrix(); batch.mesh.getMatrixAt(i, matrix);
       for (let j = 0; j < 16; j++) expect(matrix.elements[j]).toBeCloseTo(expected.matrix.elements[j], 6);
       expect(batch.mesh.instanceColor!.getX(i)).toBeCloseTo(color.r, 6);

@@ -97,6 +97,10 @@ export class ElementKit {
     private exposure = 0;
     private warm = 0;
     private cool = 0;
+    /** 0 for impact/attached signals, 1 for sustained friendly coverage. */
+    priorityWeight = 0;
+    sustain(age = 1): void { this.priorityWeight = Math.max(0, Math.min(1, (age - .25) / .12)); }
+    impact(): void { this.priorityWeight = 0; }
     peakLights = 0;
     peakParticles = 0;
     peakInstances = 0;
@@ -126,6 +130,7 @@ export class ElementKit {
         if (this.instanceCount >= ABILITY_VFX_LIMITS.instances)
             return;
         const batch = this.batches[kind], before = batch.mesh.count;
+        batch.priorityWeight = this.priorityWeight;
         batch.draw(x, y, z, sx, sy, sz, color, opacity * (kind === 'spark' || kind === 'flame' ? .35 + .65 * this.flashIntensity : 1), angle, tilt, variant);
         this.instanceCount += batch.mesh.count - before;
     }
@@ -199,6 +204,7 @@ export class ElementKit {
         r.opacity = opacity * this.flashIntensity;
         r.lightning = lightning;
         r.seed = 7;
+        this.ribbons.priorityWeight = this.priorityWeight;
         this.ribbons.append(r, this.time, this.reducedMotion);
     }
     decal(x: number, z: number, radius: number, color: number, life = 5, angle = 0): void {
@@ -259,22 +265,26 @@ export class ElementKit {
             this.flameTongue(x + Math.cos(a) * r, z + Math.sin(a) * r, .18 + i % 3 * .055, .55 + i % 4 * .22, i * 1.73, opacity);
         }
     }
-    /** Turbulent volume inside the exact cone; its outline is rendered separately. */
+    /** Directional jet: source-hot stretched tongues, accelerating and curling outwards. */
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1): void {
-        // Stratified broad folds overlap across every range band. Random isolated
-        // match-sized tongues leave the impact looking like burning targets.
-        const rows = this.low ? 5 : 8, columns = this.low ? 7 : 12;
-        for (let row = 0; row < rows; row++) for (let column = 0; column < columns; column++) {
-            const seed = (row * columns + column) * 2.39996323;
-            const band = (row + .5) / rows;
-            const r = radius * (.08 + band * .85 + Math.sin(seed * 4.73) * .027);
-            const a = angle + ((column + .5) / columns - .5) * arc * .84
-                + Math.sin(seed * 3.17) * arc * .018;
-            const width = Math.max(.34, radius * (.048 + band * .034)) * (this.low ? 1.28 : 1);
-            this.flameTongue(x + Math.cos(a) * r, z + Math.sin(a) * r, width,
-                1.85 + Math.sin(seed * 7.13) ** 2 * .95, seed,
-                opacity * (.72 + Math.sin(seed) ** 2 * .2), band < .26);
+        const count = this.low ? 16 : 42;
+        for (let i = 0; i < count; i++) {
+            const seed = i * 2.39996323, f = .5 + .5 * Math.sin(seed * 4.73);
+            const travel = this.reducedMotion ? (i + .5) / count : (i * .618033989 + this.time * (1.7 + f * .45)) % 1;
+            const r = radius * (.07 + travel * .85);
+            const a = angle + Math.sin(seed * 3.17) * arc * .43 * Math.sqrt(travel);
+            const width = (.13 + travel * .32) * (.7 + f * .5);
+            const h = (.8 + travel * 1.15) * (.65 + f * .5);
+            this.draw('flame', x + Math.cos(a) * r, .45 + travel * .5, z + Math.sin(a) * r,
+                width, h * .5, 1, travel < .26 ? 0xffedb5 : 0xff7a2e,
+                opacity * (.85 - travel * .25), 0, Math.sin(a - .7) * (.5 + travel * .5), 1);
         }
+    }
+    /** Analytic tongue leaning along a world direction; shares the prepared flame draw. */
+    directedFlame(x: number, y: number, z: number, width: number, height: number, angle: number, lean: number, seed: number, opacity = 1, core = false): void {
+        const cycle = this.reducedMotion ? .4 : (this.time * (1.6 + Math.sin(seed) * .25) + seed * .6180339) % 1;
+        this.draw('flame', x, y + height * .5, z, width, height * (.38 + Math.sin(cycle * Math.PI) * .12), 1,
+            core ? 0xffedb5 : 0xff7a2e, opacity, 0, Math.sin(angle - .7) * lean, 1);
     }
     /** Solid-looking faceted translucent column, with a narrow luminous internal vein. */
     iceColumn(x: number, z: number, width: number, depth: number, height: number, angle: number, opacity = 1): void {
@@ -361,6 +371,7 @@ export class ElementKit {
     }
     begin(dt: number): void {
         this.time += dt;
+        this.impact();
         this.warm = this.cool = 0;
         this.instanceCount = 0;
         this.rings.setTime(this.time, this.reducedMotion);
@@ -391,8 +402,10 @@ export class ElementKit {
             }
             p.y = Math.max(.04, p.y);
             const fade = 1 - p.age / p.life, s = p.size * (p.kind === 'smoke' ? 1 + p.age * 2 : 1);
+            this.sustain(p.age);
             this.draw(p.kind, p.x, p.y, p.z, s, p.kind === 'spark' ? s * 2 : s, s, p.color, fade * (p.kind === 'smoke' ? .22 : .7), p.seed * .8, p.seed + p.age);
         }
+        this.impact();
         this.peakParticles = Math.max(this.peakParticles, live);
         for (const p of this.waves) {
             if (!p.live)
@@ -423,6 +436,7 @@ export class ElementKit {
             if (p.age < p.delay)
                 continue;
             p.ribbon.opacity = (1 - (p.age - p.delay) / p.life) * this.flashIntensity;
+            this.ribbons.priorityWeight = Math.max(0, Math.min(1, (p.age - p.delay - .25) / .12));
             this.ribbons.append(p.ribbon, this.time, this.reducedMotion);
         }
         for (const p of this.decals) {
@@ -435,6 +449,7 @@ export class ElementKit {
             }
             if (this.instanceCount >= ABILITY_VFX_LIMITS.instances) continue;
             const b = this.batches.decal, before = b.mesh.count;
+            b.priorityWeight = Math.max(0, Math.min(1, (p.age - .25) / .12));
             b.draw(p.x, .027, p.z, p.radius, p.width, 1, p.color, Math.min(1, (p.life - p.age) / Math.min(3, p.life * .4)) * .8, 0, p.angle, p.kind === 2 ? 2 + .1 * Math.max(0, 1 - p.age) : p.kind);
             this.instanceCount += b.mesh.count - before;
         }
