@@ -36,14 +36,14 @@ function scale(mesh: T.InstancedMesh, index: number): T.Vector3 {
 
 describe('Pyro presentation lifecycle and readability', () => {
   it.each(['high', 'low'] as const)('streams a directional jet inside the exact cone, with a hot nozzle and downstream smoke (%s)', tier => {
-    const { kit, fx, step, dispose } = setup(), scar = vi.spyOn(kit, 'scar');
+    const { kit, fx, step, dispose } = setup(), scar = vi.spyOn(kit, 'scar'), flow = vi.spyOn(kit, 'flowFlame');
     kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
     fx.event(event({ length: 320, arcRadians: 1.4, angle: .2 }), 64, 96);
     expect(scar).toHaveBeenCalledWith('fan', 2, 3, 10, 0x101619, 8, .2, 10, 1.4);
     step(.15);
     const flames = kit.batches.flame.mesh, matrix = new T.Matrix4();
     let source = 0, far = 0, leaned = 0;
-    expect(flames.count).toBeGreaterThan(tier === 'high' ? 40 : 15);
+    expect(flames.count).toBeGreaterThan(tier === 'high' ? 24 : 12);
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i), dx = p.x - 2, dz = p.z - 3, radius = Math.hypot(dx, dz);
       expect(radius).toBeLessThanOrEqual(10);
@@ -53,7 +53,9 @@ describe('Pyro presentation lifecycle and readability', () => {
       flames.getMatrixAt(i, matrix);
       if (Math.abs(matrix.elements[4]) > .02) leaned++;
     }
-    expect(source).toBeGreaterThan(1); expect(far).toBeGreaterThan(2); expect(leaned).toBeGreaterThan(8);
+    expect(source).toBeGreaterThan(0); expect(far).toBeGreaterThan(2); expect(leaned).toBeGreaterThan(8);
+    expect(flow).toHaveBeenLastCalledWith(2 + Math.cos(.2) * .3, .95, 3 + Math.sin(.2) * .3,
+      2 + Math.cos(.2) * 1.8, .95, 3 + Math.sin(.2) * 1.8, .2, 7, .94, true);
     const smoke = kit.batches.smoke.mesh;
     if (tier === 'low') expect(smoke.count).toBe(0);
     else {
@@ -95,9 +97,27 @@ describe('Pyro presentation lifecycle and readability', () => {
     expect(center.x).toBeCloseTo(5); expect(center.z).toBeCloseTo(4); expect(center.y).toBeGreaterThan(2.5);
     fx.event(event({ ability: 'napalm-charge', slot: 'power', targetX: 256, targetY: 128, radius: 80 }), 64, 128);
     step(0);
-    // New ballistic liquid lobes are solids too; the in-flight rotating metal canister is gone.
-    for (let i = 0; i < kit.batches.solid.mesh.count; i++) expect(position(kit.batches.solid.mesh, i).y).toBeLessThan(.2);
+    // Ballistic liquid uses retained glossy droplets; no metal canister remains after impact.
+    expect(kit.batches.solid.mesh.count).toBe(0);
     expect(kit.counts.rings).toBe(0);
+    dispose();
+  });
+
+  it('throws varied glossy fuel droplets on bounded ballistic impact paths instead of cube splashes', () => {
+    const { kit, fx, step, dispose } = setup(), droplets = vi.spyOn(kit, 'fuelDroplet');
+    fx.event(event({ ability: 'napalm-charge', slot: 'power', targetX: 256, targetY: 128, radius: 80 }), 64, 128);
+    step(.1625);
+    expect(droplets).toHaveBeenCalledTimes(9); expect(kit.batches.solid.mesh.count).toBe(0);
+    const widths = new Set<number>(), tilts = new Set<number>();
+    for (const call of droplets.mock.calls) {
+      expect(Math.hypot(call[0] - 8, call[2] - 4)).toBeLessThanOrEqual(2.5);
+      expect(call[1]).toBeGreaterThan(.45);
+      widths.add(call[3]); tilts.add(call[5]);
+    }
+    expect(widths.size).toBeGreaterThan(2); expect(tilts.size).toBe(9);
+    const firstHeight = droplets.mock.calls[0][1]; droplets.mockClear(); step(.325);
+    expect(droplets.mock.calls[0][1]).toBeCloseTo(firstHeight);
+    droplets.mockClear(); step(.2); expect(droplets).not.toHaveBeenCalled();
     dispose();
   });
 
@@ -118,7 +138,13 @@ describe('Pyro presentation lifecycle and readability', () => {
     }
     expect(lowX).toBeLessThan(2.25); expect(highX).toBeGreaterThan(7.75);
     expect(directed).toHaveBeenCalledWith(expect.any(Number), .045, expect.any(Number), expect.any(Number), expect.any(Number), 0, 1.5, expect.any(Number), expect.any(Number), expect.any(Boolean));
-    for (let i = 0; i < kit.batches.solid.mesh.count; i++) expect(scale(kit.batches.solid.mesh, i).y).toBeCloseTo(.025);
+    expect(kit.batches.solid.mesh.count).toBe(0);
+    const fuel = kit.batches.decal.mesh;
+    expect(fuel.count).toBe(1); expect(position(fuel, 0).x).toBeCloseTo(5);
+    expect(position(fuel, 0).z).toBeCloseTo(3);
+    expect(scale(fuel, 0).x).toBeCloseTo(3);
+    expect(scale(fuel, 0).y).toBeLessThan(44 / 32 / 2);
+    expect(fuel.geometry.getAttribute('abilityPhase').getX(0)).toBe(9);
     dispose();
   });
 
@@ -142,7 +168,7 @@ describe('Pyro presentation lifecycle and readability', () => {
   });
 
   it('charges Meltdown armor and local exhaust while leaving the aura open instead of building a fire ring', () => {
-    const { kit, frame, step, dispose } = setup(), grade = vi.spyOn(kit, 'grade');
+    const { kit, frame, step, dispose } = setup(), grade = vi.spyOn(kit, 'grade'), exhaust = vi.spyOn(kit, 'directedFlame');
     frame.snapshot = snapshot([zone({ ability: 'meltdown', radius: 130, attached: true })]);
     frame.game = { player: { x: 128, y: 160, vx: 0, vy: 0, angle: .1 }, bullets: [] } as never;
     step(.016);
@@ -153,7 +179,21 @@ describe('Pyro presentation lifecycle and readability', () => {
       expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThan(.6);
       expect(flames.geometry.getAttribute('abilityPriority').getX(i)).toBe(0);
     }
+    const shoulderVents = exhaust.mock.calls.filter(call => call[3] >= .25);
+    expect(shoulderVents).toHaveLength(2);
+    for (const call of shoulderVents) { expect(call[1]).toBeLessThan(1); expect(call[4]).toBeGreaterThan(.9); }
+    expect(shoulderVents[0][4]).not.toBe(shoulderVents[1][4]);
     expect(kit.counts.rings).toBe(0); expect(kit.batches.decal.mesh.count).toBe(0);
+    dispose();
+  });
+
+  it('puts Meltdown shimmer in a small moving exhaust wake instead of the full aura', () => {
+    const { kit, frame, step, dispose } = setup(), distort = vi.spyOn(kit, 'distort');
+    frame.snapshot = snapshot([zone({ ability: 'meltdown', radius: 130, attached: true })]);
+    frame.game = { player: { x: 128, y: 160, vx: 0, vy: 100, angle: 0 }, bullets: [] } as never;
+    step(.7);
+    expect(distort).toHaveBeenCalledExactlyOnceWith(4, 5 - .65, .7, .0022, .55, true);
+    step(0); expect(distort).toHaveBeenCalledTimes(1);
     dispose();
   });
 

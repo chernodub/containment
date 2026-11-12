@@ -206,11 +206,8 @@ class PyroPresentation implements AbilityPresentation {
     // Hot nozzle is attached to the discharge point, with a thin velocity-stretched core.
     kit.impact();
     const c = Math.cos(p.angle), s = Math.sin(p.angle);
-    for (let i = 0; i < (kit.low ? 2 : 4); i++) {
-      const r = .4 + i * .27;
-      kit.directedFlame(p.x + c * r, .55, p.z + s * r,
-        .14 + i * .025, .82 - i * .07, p.angle, 2.2, i * 1.9, fade * .94, true);
-    }
+    kit.flowFlame(p.x + c * .3, .95, p.z + s * .3,
+      p.x + c * 1.8, .95, p.z + s * 1.8, .2, 7, fade * .94, true);
     if (emit && !kit.low) {
       const a = p.angle + Math.sin(p.age * 43) * p.arc * .3, r = p.range * grow * .82;
       kit.mote('smoke', p.x + Math.cos(a) * r, .8, p.z + Math.sin(a) * r,
@@ -272,8 +269,9 @@ class PyroPresentation implements AbilityPresentation {
       for (let i = 0; i < (kit.low ? 4 : 9); i++) {
         const a = i * 2.399963, r = p.radius * t * (.55 + i % 3 * .12);
         const h = .08 + Math.sin(t * Math.PI) * (.6 + i % 4 * .18);
-        kit.draw('solid', p.x + Math.cos(a) * r, h, p.z + Math.sin(a) * r,
-          .16 + fade * .12, .08, .24 + fade * .2, 0x963914, fade * .9, -a, -t);
+        kit.fuelDroplet(p.x + Math.cos(a) * r, h, p.z + Math.sin(a) * r,
+          .09 + i % 3 * .025 + fade * .045, .14 + i % 4 * .035 + fade * .1,
+          -a + t * .35, i * 1.73, fade * .9);
         if (!kit.low) kit.directedFlame(p.x + Math.cos(a) * r, h, p.z + Math.sin(a) * r,
           .14, .38 * fade, a, 1.5, i, fade * .6);
       }
@@ -292,13 +290,12 @@ class PyroPresentation implements AbilityPresentation {
     const c = Math.cos(angle), s = Math.sin(angle), length = Math.hypot(ex - x, ez - z);
     const fade = Math.min(1, zone.remainingMs / 350), points = Math.min(kit.low ? 8 : 14, Math.max(4, Math.ceil(length / .55)));
     kit.sustain((zone.durationMs - zone.remainingMs) / 1000);
+    kit.draw('decal', (x + ex) * .5, .045, (z + ez) * .5, length * .5, radius * .42, 1, FIRE, .68 * fade, 0, -angle, 9);
     for (let i = 0; i <= points; i++) {
       const variation = .5 + .5 * Math.sin(i * 13.7 + zone.id * 2.1), t = .025 + .95 * i / points;
       const lateral = Math.sin(i * 2.67 + zone.id) * radius * .25;
       const px = x + (ex - x) * t - s * lateral, pz = z + (ez - z) * t + c * lateral;
-      // Thin dark fuel stitch on the deck, with short flames swept by dash momentum.
-      kit.draw('solid', px, .035, pz, Math.min(.65, length / points, length * t * 2, length * (1 - t) * 2), .025, radius * .62,
-        i % 3 ? 0x59260e : 0x8b3e14, .78 * fade, -angle);
+      // Short flames are swept by dash momentum over one continuous glossy fuel stroke.
       kit.directedFlame(px, .045, pz, .16 + variation * .08,
         (.32 + variation * .26) * fade, angle, 1.5, i * 1.73 + zone.id, (.6 + variation * .14) * fade, i % 7 === 0);
     }
@@ -317,6 +314,12 @@ class PyroPresentation implements AbilityPresentation {
     const growth = Math.min(1, .25 + elapsed / .25), fade = Math.min(1, zone.remainingMs / 600);
     if (zone.ability === 'meltdown') {
       this.meltdown(zone, x, z, fade, frame, emit);
+      if (shimmer) {
+        const player = frame.game?.player;
+        const angle = player && Math.hypot(player.vx, player.vy) > 18
+          ? Math.atan2(player.vy, player.vx) : player?.angle ?? 0;
+        kit.distort(x - Math.cos(angle) * .65, z - Math.sin(angle) * .65, .7, .0022 * fade, .55, true);
+      }
       return;
     }
     kit.sustain(elapsed);
@@ -349,14 +352,15 @@ class PyroPresentation implements AbilityPresentation {
     kit.impact();
     for (let side = -1; side <= 1; side += 2) {
       const bx = x - c * .22 - s * side * .25, bz = z - s * .22 + c * side * .25;
-      kit.draw('solid', bx, .85, bz, .055, .6, .055, HOT, pulse * fade);
-      kit.draw('spark', bx, 1.18, bz, .085, .12, 1, CORE, .7 * fade);
-      kit.directedFlame(bx, 1.05, bz, .18, .7 * pulse, exhaustAngle, moving ? 1.6 : .65,
-        side + zone.id, .72 * fade, true);
-      if (!kit.low) kit.directedFlame(bx - c * .18, .58, bz - s * .18, .15, .5,
-        exhaustAngle, 1.2, side * 2.7, .62 * fade);
+      kit.draw('solid', bx, .83, bz, .075, .68, .075, CORE, (.86 + pulse * .14) * fade);
+      kit.draw('spark', bx, 1.12, bz, .12, .17, 1, CORE, .9 * fade);
+      const height = side < 0 ? 1.05 : .92, base = side < 0 ? .72 : .64;
+      kit.directedFlame(bx, base, bz, side < 0 ? .28 : .25, height * (.95 + pulse * .05),
+        exhaustAngle, moving ? 1.7 : 1.05, side + zone.id, .9 * fade, true);
+      if (!kit.low) kit.directedFlame(bx - c * .18, .46, bz - s * .18, .23, .68,
+        exhaustAngle, 1.45, side * 2.7, .78 * fade);
     }
-    kit.draw('solid', x - c * .3, 1.05, z - s * .3, .06, .07, .56, CORE, .78 * fade, -angle);
+    kit.draw('solid', x - c * .3, 1.02, z - s * .3, .08, .1, .64, CORE, .95 * fade, -angle);
     kit.grade(.65 * fade);
     kit.lightAt(zone.id, x, z, FIRE, 5 * fade, 6);
     if (emit) {
