@@ -30,6 +30,7 @@ export class AbilityVisuals extends AbilityGeometry {
         // Arc owns elevated energy links; standalone geometry retains its snapshot contract.
         this.ownsLinkPresentation = false;
         this.ownsZonePresentation = true;
+        this.shareBoundaries(this.kit.rings);
         this.register('breacher', createBreacherPresentation);
         this.register('cryo', createCryoPresentation);
         this.register('pyro', createPyroPresentation);
@@ -67,9 +68,9 @@ export class AbilityVisuals extends AbilityGeometry {
             this.clear();
         this.wasVisible = visible;
         dt = visible && Number.isFinite(dt) ? Math.max(0, dt) : 0;
-        super.update(visible ? snapshot : undefined, dt, visible);
         this.priorityMask.update(visible ? game : undefined, camera, this.prioritySource, this.priorityActor);
         this.kit.begin(dt);
+        super.update(visible ? snapshot : undefined, dt, visible);
         const f = this.frame;
         f.snapshot = snapshot;
         f.dt = dt;

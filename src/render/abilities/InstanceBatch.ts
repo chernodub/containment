@@ -89,6 +89,8 @@ ${kind === 'decal' ? `
  float d=length(p);float a0=atan(p.y,p.x);float variant=floor(phase+.01);
  float n=abilityNoise(p*19.);
  float cracks=0.;float lip=0.;
+ // Fuel, frost and wind never pay for the fracture paths. Instance-coherent branch.
+ if(variant<.5||(variant>2.5&&variant<3.5)){
  // Seven unequal structural splits, each with a bent primary and one shorter branch.
  for(int split=0;split<7;split++){
   float seed=float(split)*2.39996323+.37;
@@ -101,6 +103,7 @@ ${kind === 'decal' ? `
   float branch=1.-smoothstep(.004,.012,abs(across-bend-(along-.4)*(.35+sin(seed)*.15)));
   cracks=max(cracks,max(groove,branch*smoothstep(.38,.46,along)*.65)*active);
   lip=max(lip,(1.-smoothstep(.003,.009,abs(across-bend-.016)))*active);
+ }
  }
  if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,lip*.35);c=mix(vec3(.009,.012,.014),vec3(.2,.13,.055),lip*.5);}
  else if(variant<1.5){

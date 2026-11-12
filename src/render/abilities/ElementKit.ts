@@ -82,7 +82,7 @@ class StatusOwnership {
 export class ElementKit {
     readonly root = new T.Group();
     readonly batches: Record<Primitive, InstanceBatch>;
-    readonly rings = new FriendlyBoundaryBatch(this.root, 160);
+    readonly rings = new FriendlyBoundaryBatch(this.root, 304);
     readonly ribbons = new AbilityLightningBatch(this.root, 2048);
     /** Claimed only for targets drawn this frame; legacy status batches cover overflow. */
     readonly statusOwners = new StatusOwnership();
