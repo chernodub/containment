@@ -57,6 +57,10 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     const ids = ['hud', 'story-hud', 'story-status', 'room-objective', 'story-presentation', 'story-line', 'health', 'armor', 'hp-bar', 'hp-lag', 'armor-bar', 'armor-lag', 'weapon-name', 'current-weapon-icon', 'magazine', 'reserve', 'reload-label', 'reload-bar', 'depth-label', 'room-name', 'boss-hud', 'boss-phase', 'boss-bar', 'build-strip', 'credits', 'medkit-count', 'grenade-count', 'encounter-count', 'vital-state', 'ability-bar'] as const;
     let layoutDirty = true;
     const nodes = Object.fromEntries(ids.map(id => [id, el(id)])) as Record<typeof ids[number], HTMLElement>;
+    // Font/content/CSS changes can resize a panel without resizing the canvas.
+    // Observe those edges once; ordinary projection frames keep the cached fast path.
+    const panelResize = typeof ResizeObserver === 'function' ? new ResizeObserver(() => {layoutDirty = true;}) : null;
+    for (const panel of document.querySelectorAll('#action-bar,.vitals,#status-hud,#radar-hud,#boss-hud')) panelResize?.observe(panel);
     const text = (id: typeof ids[number], value: string) => {
         if (nodes[id].textContent !== value) {
             if (nodes[id].textContent?.length !== value.length)
@@ -534,6 +538,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         threats.dispose();
         toasts.dispose();
         radar.dispose();
+        panelResize?.disconnect();
         clearHudOcclusion(); setHudInsets(renderer, getHudInsets());
         onboarding.dispose(); abilityHints.dispose(); encounterTrack.remove(); activeDial.remove(); dashActiveDial.remove();
     };

@@ -48,6 +48,15 @@ it('reserves measured desktop HUD edges and keeps a shallow translucent dock thr
       expect(result.stable).toBe(true);
       expect(result.box.top).toBeGreaterThan(result.marine.bottom);
     }
+    const resized = await page.evaluate(async () => {
+      const {hud,receipts} = (window as any).__u5;
+      await new Promise(requestAnimationFrame); hud();
+      const before=receipts.at(-1).bottom;
+      document.getElementById('action-bar')!.style.height='70px';
+      await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame); hud();
+      return {before,after:receipts.at(-1).bottom};
+    });
+    expect(resized.after).toBeLessThan(resized.before);
     await page.evaluate(() => {const {game,hud}=(window as any).__u5;game.status='paused';hud();});
     expect(await page.evaluate(() => (window as any).__u5.receipts.at(-1))).toEqual({top:0,right:0,bottom:0,left:0});
   } finally {await page.close();}
