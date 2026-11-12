@@ -49,7 +49,7 @@ export class FacilityNavigation {
     }
     this.prepare(player,wave);
     if(this.clear(enemy,player,enemy.radius+2))return null;
-    let current=this.closest(enemy,true,this.clearance>30?enemy.radius+2:12);if(current<0)return enemy;
+    let current=this.closest(enemy,true,this.clearance>30?enemy.radius+2:enemy.radius);if(current<0)return enemy;
     let target=point(current);
     for(let n=0;n<7;n++){
       let next:number|undefined,best=this.distance[current];for(const candidate of neighbors(current)){const d=this.distance[candidate];if(d>=0&&d<best){next=candidate;best=d;}}

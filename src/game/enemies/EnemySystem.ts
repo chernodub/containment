@@ -51,6 +51,7 @@ export type CollisionSteeringContext = Readonly<{
 
 export type EnemySystemOptions = Readonly<{
   balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean;chargeWindupMs?:number;chargeCooldownMs?:number;chargeInitialCooldownMs?:number;championHealth?:number;championDamage?:number};
+  canSeePlayer?: (from:EnemyPlayerState,to:EnemyPlayerState)=>boolean;
   launched?: (id:number)=>boolean;
   immovables?: ()=>readonly {x:number;y:number;radius:number;health:number}[];
   canAttack?: (from:EnemyPlayerState & {type:StandardEnemyId},to:EnemyPlayerState)=>boolean;
@@ -166,6 +167,8 @@ export type DamageResult = Readonly<{
 }>;
 
 type EnemyState = {
+  blockedMs?: number; yieldMs?: number; yieldX?: number; yieldY?: number;
+  stepStartX?: number; stepStartY?: number;
   id: number;
   type: StandardEnemyId;
   elite: boolean;
@@ -238,6 +241,7 @@ export class EnemySystem {
   readonly #balance:NonNullable<EnemySystemOptions['balance']>;readonly #canAttack?:EnemySystemOptions['canAttack'];
   readonly #engagement = new Engagement();
   readonly #nearby: SpatialEnemy[] = [];
+  readonly #canSeePlayer?: EnemySystemOptions['canSeePlayer'];
   readonly #launched?: EnemySystemOptions['launched'];
   readonly #immovables?: EnemySystemOptions['immovables'];
   #nextId = 1;
@@ -246,7 +250,7 @@ export class EnemySystem {
 
   constructor(options: EnemySystemOptions = {}) {
     this.#canMove = options.canMove;
-    this.#launched=options.launched;this.#immovables=options.immovables;
+    this.#canSeePlayer=options.canSeePlayer;this.#launched=options.launched;this.#immovables=options.immovables;
     this.#route = options.route;this.#canAttack=options.canAttack;this.#balance=options.balance??{health:1,damage:1,speed:1,eliteHealth:2,eliteDamage:2,specials:false};
   }
 
@@ -418,11 +422,14 @@ export class EnemySystem {
       }
     }
 
+    this.#rebuildSpatialHash();
     for (const enemy of this.#enemies.values()) {
       if(enemy.speed===0)continue;
+      enemy.stepStartX=enemy.x;enemy.stepStartY=enemy.y;
+      enemy.yieldMs=Math.max(0,(enemy.yieldMs??0)-movementDelta);
       if(!this.#launched?.(enemy.id))this.#integrate(enemy, movementDelta);
     }
-    if(movementDelta>0)this.#resolveCrowd();
+    if(movementDelta>0){this.#resolveCrowd();this.#clearCongestion(movementDelta);}
     for(const enemy of this.#enemies.values()){
       if(enemy.speed>0)this.#collectAttacks(enemy, player, events);
     }
@@ -634,7 +641,7 @@ export class EnemySystem {
       direction = normalized(targetX - enemy.x, targetY - enemy.y);
     }
 
-    const engagementGoal=this.#engagement.goal(enemy,player);
+    const engagementGoal=enemy.type==='carrier'&&(this.#canSeePlayer?this.#canSeePlayer(enemy,player):this.#canAttack?.(enemy,player))===false?undefined:this.#engagement.goal(enemy,player);
     if(engagementGoal){targetX=engagementGoal.x;targetY=engagementGoal.y;direction=normalized(targetX-enemy.x,targetY-enemy.y);}
 
     const goalLegal=enemy.type!=='spitter'||this.#firingPositionLegal(enemy,{x:targetX,y:targetY});
@@ -739,6 +746,25 @@ export class EnemySystem {
     }
   }
 
+  /** Only a stalled follower yields at a shared choke point. Stable numeric
+   * priority breaks symmetric two-body jams without constant crowd jitter. */
+  #clearCongestion(deltaMs:number):void {
+    for(const enemy of this.#enemies.values()){
+      if(enemy.speed===0||this.#launched?.(enemy.id)||(enemy.yieldMs??0)>0)continue;
+      const stopped=Math.hypot(enemy.x-enemy.stepStartX!,enemy.y-enemy.stepStartY!)<.5;
+      const trying=Math.hypot(enemy.velocityX,enemy.velocityY)>3&&Math.hypot(enemy.targetX-enemy.x,enemy.targetY-enemy.y)>8;
+      enemy.blockedMs=stopped&&trying?(enemy.blockedMs??0)+deltaMs:0;
+      if(enemy.blockedMs<600)continue;
+      this.#spatialHash.queryRadiusInto(enemy.x,enemy.y,enemy.radius+40,this.#nearby);
+      for(const entry of this.#nearby){const other=entry.enemy;
+        if(other.id>=enemy.id||other.speed===0||Math.hypot(other.velocityX,other.velocityY)<3||Math.hypot(enemy.targetX-other.targetX,enemy.targetY-other.targetY)>64)continue;
+        const distance=Math.hypot(enemy.x-other.x,enemy.y-other.y);
+        if(distance>enemy.radius+other.radius+12||distance<1e-8)continue;
+        enemy.yieldMs=800;enemy.yieldX=(enemy.x-other.x)/distance;enemy.yieldY=(enemy.y-other.y)/distance;enemy.blockedMs=0;break;
+      }
+    }
+  }
+
   #project(enemy:EnemyState,dx:number,dy:number):boolean {
     if(dx===0&&dy===0)return false;
     const x=enemy.x+dx,y=enemy.y+dy;
@@ -770,8 +796,9 @@ export class EnemySystem {
     const distance=Math.hypot(enemy.targetX-enemy.x,enemy.targetY-enemy.y);
     const velocity=Math.hypot(enemy.velocityX,enemy.velocityY);
     const scale = Math.min(deltaMs / 1_000,enemy.chargeMs>0?Infinity:distance/(velocity||1));
-    const movementX = enemy.velocityX * scale;
-    const movementY = enemy.velocityY * scale;
+    const yielding=(enemy.yieldMs??0)>0&&enemy.chargeMs===0;
+    const movementX = yielding?enemy.yieldX!*enemy.speed*deltaMs/1000:enemy.velocityX * scale;
+    const movementY = yielding?enemy.yieldY!*enemy.speed*deltaMs/1000:enemy.velocityY * scale;
     if (movementX === 0 && movementY === 0) return;
 
     const candidates = [

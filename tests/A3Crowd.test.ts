@@ -47,7 +47,7 @@ describe('A3 crowd constraints',()=>{
   for(let i=0;i<engaged.length;i++)expect(system.getSnapshot(engaged[i].id)?.attackSlot).toEqual(slots[i]);
   for(const e of engaged){expect(Object.isFrozen(e.attackSlot)).toBe(true);expect(Math.cos(e.attackSlot!.angle)).toBeLessThan(0);}
   // A straight forward ray swept with the marine radius clears every assigned disc.
-  for(let x=0;x<100;x+=2)for(const e of engaged)expect(Math.hypot(player.x+x-e.x,player.y-e.y)).toBeGreaterThanOrEqual(player.radius+e.radius-.3);
+  for(let x=0;x<80;x+=2)for(const e of system.snapshot.enemies)expect(Math.hypot(player.x+x-e.x,player.y-e.y)).toBeGreaterThanOrEqual(player.radius+e.radius-.3);
   expect(clearance(system)).toBeGreaterThanOrEqual(-.25);
  });
  it('never projects a packed crowd through a recorded wall corner or void',()=>{

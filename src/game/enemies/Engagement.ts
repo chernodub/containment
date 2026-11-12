@@ -12,6 +12,7 @@ export class Engagement {
   #anchorX = Infinity;
   #anchorY = Infinity;
   readonly #bodies: EngagementBody[] = [];
+  readonly #legalSamples = new Map<number, Uint8Array>();
   readonly #occupied: EngagementBody[] = [];
   readonly #candidates: EngagementBody[] = [];
 
@@ -32,12 +33,19 @@ export class Engagement {
       }
     }
     this.#occupied.length=0;this.#candidates.length=0;
-    const fits = (body: T, angle: number, radius: number) => {
+    for(const samples of this.#legalSamples.values())samples.fill(0);
+    const fits = (body: T, angle: number, radius: number, sample?: number) => {
       // Tangent enemies on the other half-plane leave >= one marine diameter
       // between the two bordering discs, including mixed crawler/brute radii.
       if(angleDistance(angle,this.#escape)<Math.PI/2+.025)return false;
       const x=player.x+Math.cos(angle)*radius,y=player.y+Math.sin(angle)*radius;
-      if(!legal(body,x,y))return false;
+      if(sample===undefined){if(!legal(body,x,y))return false;}
+      else {
+        let samples=this.#legalSamples.get(body.radius);
+        if(!samples){samples=new Uint8Array(48);this.#legalSamples.set(body.radius,samples);}
+        if(samples[sample]===0)samples[sample]=legal(body,x,y)?1:2;
+        if(samples[sample]===2)return false;
+      }
       for(const other of this.#occupied){const slot=other.attackSlot!;
         if(Math.hypot(Math.cos(angle)*radius-Math.cos(slot.angle)*slot.radius,Math.sin(angle)*radius-Math.sin(slot.angle)*slot.radius)<body.radius+other.radius+2)return false;
       }
@@ -49,7 +57,7 @@ export class Engagement {
       if(Math.hypot(body.x-player.x,body.y-player.y)>240){body.attackSlot=undefined;body.engagement='waiting';continue;}
       const slot=body.attackSlot,radius=pr+body.radius+.25;
       if(slot&&fits(body as T,slot.angle,radius)){
-        body.attackSlot=Object.freeze({angle:slot.angle,radius});body.engagement='engaged';this.#occupied.push(body);
+        if(slot.radius!==radius)body.attackSlot=Object.freeze({angle:slot.angle,radius});body.engagement='engaged';this.#occupied.push(body);
       }else {body.attackSlot=undefined;body.engagement='waiting';this.#candidates.push(body);}
     }
     // Nearest first, numeric ID breaks exact ties; existing owners are retained.
@@ -59,7 +67,7 @@ export class Engagement {
       let best=Infinity,angle:number|undefined;
       for(let i=0;i<48;i++){
         const a=this.#escape+Math.PI/2+.025+i*(Math.PI-.05)/47;
-        if(!fits(body as T,a,radius))continue;
+        if(!fits(body as T,a,radius,i))continue;
         const distance=Math.hypot(player.x+Math.cos(a)*radius-body.x,player.y+Math.sin(a)*radius-body.y);
         const rear=body.type==='stalker'?angleDistance(a,(player.angle??0)+Math.PI)*12:0;
         if(distance+rear<best){best=distance+rear;angle=a;}
