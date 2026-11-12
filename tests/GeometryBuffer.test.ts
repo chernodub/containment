@@ -32,3 +32,20 @@ describe('shared MRT geometry contract',()=>{
   expect(shader.fragmentShader).toContain('containmentGeometry=vec4(0.0,0.0,0.0,clamp(gl_FragColor.a,0.0,1.0))');expect(shader.fragmentShader).not.toContain('containmentIdentity');geometry.dispose();material.dispose();
  });
 });
+
+describe('MRT draw-buffer isolation',()=>{
+ it('preserves normals/IDs behind transparent effects and restores writes for the next solid draw',()=>{
+  const surface=new MeshStandardMaterial(),effect=new ShaderMaterial({transparent:true});
+  const root=new Group(),geometry=new BoxGeometry();root.add(new Mesh(geometry,surface),new Mesh(geometry,effect));registerGeometry(root);
+  const calls:number[][]=[],target={textures:[{}, {name:'Containment geometry normal + identity'}]},renderer={getRenderTarget:()=>target,getContext:()=>({drawBuffers:(values:number[])=>calls.push([...values])}),info:{render:{frame:1}}};
+  const draw=(material:MeshStandardMaterial|ShaderMaterial)=>material.onBeforeRender(renderer as never,{} as never,{} as never,geometry,root as never,{} as never);
+  draw(surface);draw(surface);draw(effect);draw(effect);draw(surface);
+  expect(calls).toEqual([[0x8ce0,0x8ce1],[0x8ce0,0],[0x8ce0,0x8ce1]]);
+  renderer.info.render.frame++;draw(surface);expect(calls).toHaveLength(4);
+  geometry.dispose();surface.dispose();effect.dispose();
+ });
+ it('excludes opaque affliction droplets from actor and world classification',()=>{
+  const root=new Group();root.name='shared-affliction-batches';const material=new MeshStandardMaterial(),geometry=new BoxGeometry();root.add(new Mesh(geometry,material));registerGeometry(root);
+  const shader=compiled(material);expect(shader.fragmentShader).not.toContain('containmentIdentity');expect(shader.fragmentShader).toContain('containmentGeometry=vec4(0.0,0.0,0.0,clamp');geometry.dispose();material.dispose();
+ });
+});

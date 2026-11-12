@@ -1,10 +1,13 @@
+import { AdaptiveResolution } from './AdaptiveResolution';
+import { GpuFrameTimer } from './GpuProfiler';
+import { setGraphicShadingEnabled } from '../lighting/GraphicSurface';
 import {
   ACESFilmicToneMapping, AgXToneMapping, BufferGeometry, Camera, Color, DepthTexture,
   Float32BufferAttribute, HalfFloatType, LinearFilter, NearestFilter, Matrix4, Mesh, NoBlending,
-  NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, UnsignedIntType,
-  Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
+  NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, UnsignedIntType, UnsignedByteType,
+  Vector2, Vector3, Vector4, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
-import type { GraphicsTier } from '../FrameBudget';
+import { setRenderDiagnostics, type GraphicsTier } from '../FrameBudget';
 import { GRAPHICS_PRESETS, type GraphicsOptions } from '../graphicsOptions';
 import { DistortionField, distortionFragment } from './DistortionField';
 import { DepthGTAO } from './DepthGTAO';
@@ -38,6 +41,9 @@ type PostResources = {
 /** HDR post on High; Low owns no post textures and uses one forward render. */
 export class PostPipeline {
   readonly distortion = new DistortionField();
+  readonly adaptive = new AdaptiveResolution();
+  gpuTimer?: GpuFrameTimer;
+  get diagnostics() { return { adaptiveScale:this.adaptive.scale, adaptive:this.adaptive.snapshot, gpu:this.gpuTimer?.snapshot }; }
   private options: GraphicsOptions = GRAPHICS_PRESETS.low;
   private tier: GraphicsTier = 'low';
   private mood: PostMood = DEFAULT_POST_MOOD;
@@ -63,16 +69,22 @@ export class PostPipeline {
     private readonly renderer: WebGLRenderer,
     private readonly scene: Scene,
     private camera: Camera,
-  ) { this.distortion.setEnabled(false); }
+  ) { setRenderDiagnostics(()=>this.diagnostics);this.distortion.setEnabled(false); if(renderer.getContext)this.gpuTimer=new GpuFrameTimer(renderer.getContext() as WebGL2RenderingContext); }
 
   /** Target allocation stays lazy until render/prepare after selecting High. */
   setOptions(options: GraphicsOptions, tier: GraphicsTier): void {
     if (this.disposed) return;
-    const resized = this.options.resolutionScale !== options.resolutionScale;
+    const previousScale=this.adaptive.scale;
+    let resized = this.options.resolutionScale !== options.resolutionScale;
+    if(this.tier!==tier)this.releaseResources();
     this.options = { ...options };
     this.tier = tier;
+    this.adaptive.setEnabled(tier==='high'&&options.adaptiveResolution);
+    resized ||= previousScale!==this.adaptive.scale;
+    this.gpuTimer?.setEnabled(tier==='high'&&options.adaptiveResolution);
+    setGraphicShadingEnabled(options.stylizedShading);
     this.distortion.setEnabled(tier === 'high' && options.distortion);
-    if (tier === 'low') this.releaseResources();
+    if (tier === 'low' && options.inkOutlines === 'off') this.releaseResources();
     else if (resized && this.resources) this.resizeResources();
   }
 
@@ -114,14 +126,18 @@ export class PostPipeline {
   render(dt: number): void {
     if (this.disposed) return;
     const target = this.renderer.getRenderTarget();
-    this.renderTo(dt, target, false);
+    this.ensureGpuTimer();
+    this.gpuTimer?.poll();
+    if(dt>0) { const previous=this.adaptive.scale;this.adaptive.update(dt*1000,this.gpuTimer?.latestMs);if(previous!==this.adaptive.scale)this.resizeResources(); }
+    this.gpuTimer?.beginFrame();
+    try { this.renderTo(dt, target, false); } finally { this.gpuTimer?.endFrame(); }
   }
 
   /** Compiles every post shader and draws a complete offscreen warm frame. */
   async prepare(compile:(scene:Scene,camera:Camera)=>Promise<unknown>=(scene,camera)=>this.renderer.compileAsync(scene,camera)): Promise<void> {
     if (this.disposed) return;
     await compile(this.scene, this.camera);
-    if (this.disposed || this.tier === 'low') return;
+    if (this.disposed || (this.tier === 'low' && this.options.inkOutlines === 'off')) return;
     const resources = this.ensureResources();
     const originalTarget = this.renderer.getRenderTarget();
     const originalMapping = this.renderer.toneMapping;
@@ -130,13 +146,13 @@ export class PostPipeline {
       // Compile the actual screen color-space variants before the offscreen draw.
       this.renderer.setRenderTarget(null);
       this.renderer.toneMapping = NoToneMapping;
-      for (const material of [resources.occlusion, resources.gtao.material, resources.gtao.denoiseMaterial,
-        resources.extract, resources.blur, resources.distort, resources.composite]) {
+      const materials=this.tier==='low'?[resources.composite]:[resources.occlusion,resources.gtao.material,resources.gtao.denoiseMaterial,resources.extract,resources.blur,resources.distort,resources.composite];
+      for (const material of materials) {
         if (this.disposed || this.resources !== resources) return;
         resources.triangle.material = material;
         await compile(resources.screenScene, resources.screenCamera);
       }
-      if (!this.disposed && this.tier === 'high') this.renderTo(0, warmTarget, true);
+      if (!this.disposed) this.renderTo(0, warmTarget, true);
     } finally {
       warmTarget.dispose();
       this.renderer.toneMapping = originalMapping;
@@ -145,14 +161,23 @@ export class PostPipeline {
   }
 
   /** Recreate offscreen attachments after a WebGL context replacement. */
-  invalidate(): void { this.releaseResources(); this.distortion.clear(); }
+  invalidate(): void { this.releaseResources(); this.distortion.clear(); this.gpuTimer?.dispose();this.gpuTimer=undefined;this.adaptive.reset(); }
 
   /** Releases all GPU resources; safe to repeat during context recovery. */
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    setRenderDiagnostics(undefined);
     this.releaseResources();
     this.distortion.dispose();
+    this.gpuTimer?.dispose();
+  }
+
+  private ensureGpuTimer():void {
+    if(this.gpuTimer||!this.renderer.getContext)return;
+    const gl=this.renderer.getContext() as WebGL2RenderingContext;
+    if(gl.isContextLost())return;
+    this.gpuTimer=new GpuFrameTimer(gl);this.gpuTimer.setEnabled(this.tier==='high'&&this.options.adaptiveResolution);
   }
 
   private renderTo(dt: number, output: WebGLRenderTarget | null, warm: boolean): void {
@@ -165,7 +190,7 @@ export class PostPipeline {
     const originalClearAlpha = renderer.getClearAlpha();
     try {
       renderer.autoClear = true;
-      if (this.tier === 'low') {
+      if (this.tier === 'low' && this.options.inkOutlines === 'off') {
         renderer.toneMapping = this.agx ? AgXToneMapping : ACESFilmicToneMapping;
         renderer.toneMappingExposure = this.mood.grade.exposure;
         renderer.setRenderTarget(output);
@@ -180,7 +205,7 @@ export class PostPipeline {
       renderer.render(this.scene, this.camera);
       r.occlusion.uniforms.projectionInverse.value.copy(this.camera.projectionMatrixInverse);
       r.occlusion.uniforms.projection.value.copy(this.camera.projectionMatrix);
-      if (this.options.ambientOcclusion || warm) {
+      if (this.tier==='high'&&(this.options.ambientOcclusion || warm)) {
         // GTAO discards background pixels; white clear preserves unoccluded sky.
         renderer.setClearColor(0xffffff, 1);
         if (warm) this.draw(r.occlusion, r.ao);
@@ -192,7 +217,7 @@ export class PostPipeline {
         } else this.draw(r.occlusion, r.ao);
         renderer.setClearColor(this.savedClearColor, originalClearAlpha);
       }
-      if (this.options.bloom || warm) {
+      if (this.tier==='high'&&(this.options.bloom || warm)) {
         this.draw(r.extract, r.bloomA);
         r.blur.uniforms.tInput.value = r.bloomA.texture;
         r.blur.uniforms.direction.value.set(1 / r.bloomA.width, 0);
@@ -204,19 +229,20 @@ export class PostPipeline {
       this.distortion.update(dt, this.camera);
       const hasDistortion = this.options.distortion && this.distortion.activeCount > 0;
       r.distort.uniforms.time.value = this.time;
-      if (hasDistortion || warm) this.draw(r.distort, r.distortion);
+      if (this.tier==='high'&&(hasDistortion || warm)) this.draw(r.distort, r.distortion);
       const u = r.composite.uniforms;
       u.tAO.value = this.occlusionAlgorithm === 'gtao' ? r.aoDenoised.texture : r.ao.texture;
       u.projectionInverse.value.copy(this.camera.projectionMatrixInverse);
       u.cameraWorld.value.copy(this.camera.matrixWorld);
       u.time.value = this.time;
-      u.aoEnabled.value = this.options.ambientOcclusion ? 1 : 0;
-      u.bloomEnabled.value = this.options.bloom ? 1 : 0;
+      u.inkMode.value=this.options.inkOutlines==='off'?0:this.options.inkOutlines==='silhouette'?1:2;
+      u.aoEnabled.value = this.tier==='high'&&this.options.ambientOcclusion ? 1 : 0;
+      u.bloomEnabled.value = this.tier==='high'&&this.options.bloom ? 1 : 0;
       u.distortionEnabled.value = hasDistortion ? 1 : 0;
-      u.lensEnabled.value = this.options.lensEffects ? 1 : 0;
+      u.lensEnabled.value = this.tier==='high'&&this.options.lensEffects ? 1 : 0;
       u.focusDistance.value = this.focusDistance;
       u.menuPresentation.value = this.menuPresentation ? 1 : 0;
-      u.atmosphereEnabled.value = this.options.atmosphere ? 1 : 0;
+      u.atmosphereEnabled.value = this.tier==='high'&&this.options.atmosphere ? 1 : 0;
       u.useAgX.value = this.agx ? 1 : 0;
       this.draw(r.composite, output);
     } finally {
@@ -256,6 +282,7 @@ export class PostPipeline {
       waves: { value: this.distortion.waves }, shapes: { value: this.distortion.shapes }, time: { value: 0 },
     });
     const composite = this.material(compositeFragment, {
+      tGeometry:{value:scene.textures[1]},inkPixel:{value:new Vector2()},inkMode:{value:0},inkStyle:{value:new Vector4(1.85,.85,.72,.26)},
       tScene: { value: scene.texture }, tDepth: { value: scene.depthTexture },
       tAO: { value: ao.texture }, tBloom: { value: bloomA.texture }, tDistortion: { value: distortion.texture },
       projectionInverse: { value: new Matrix4() }, cameraWorld: { value: new Matrix4() },
@@ -291,10 +318,10 @@ export class PostPipeline {
       depthBuffer: depth, stencilBuffer: false, count: depth ? 2 : 1,
     });
     target.texture.name = depth ? 'Containment HDR scene' : 'Containment post';
-    if (depth) { target.textures[1].name = 'Containment geometry normal + identity'; target.textures[1].minFilter = target.textures[1].magFilter = NearestFilter; }
+    if (depth) { target.textures[1].name = 'Containment geometry normal + identity'; target.textures[1].type=UnsignedByteType; target.textures[1].minFilter = target.textures[1].magFilter = NearestFilter; }
     if (depth) {
       target.depthTexture = new DepthTexture(width, height, UnsignedIntType);
-      target.samples = Math.min(2, this.renderer.capabilities.maxSamples);
+      target.samples = 0; // Post AA avoids HDR multisample color/depth resolves.
     }
     return target;
   }
@@ -309,20 +336,21 @@ export class PostPipeline {
   private resizeResources(): void {
     const r = this.resources;
     if (!r) return;
-    const scale = Math.max(0.5, Math.min(1, this.options.resolutionScale));
+    const scale = Math.max(0.5, Math.min(1, this.options.resolutionScale*this.adaptive.scale));
     const width = Math.max(1, Math.round(this.width * this.pixelRatio * scale));
     const height = Math.max(1, Math.round(this.height * this.pixelRatio * scale));
     r.scene.setSize(width, height);
-    r.ao.setSize(Math.max(1, Math.ceil(width / 2)), Math.max(1, Math.ceil(height / 2)));
+    r.ao.setSize(this.tier==='low'?1:Math.max(1, Math.ceil(width / 2)),this.tier==='low'?1:Math.max(1, Math.ceil(height / 2)));
     r.aoDenoised.setSize(r.ao.width, r.ao.height);
     r.gtao.setSize(r.ao.width, r.ao.height);
-    const quarterWidth = Math.max(1, Math.ceil(width / 4));
-    const quarterHeight = Math.max(1, Math.ceil(height / 4));
+    const quarterWidth = this.tier==='low'?1:Math.max(1, Math.ceil(width / 4));
+    const quarterHeight = this.tier==='low'?1:Math.max(1, Math.ceil(height / 4));
     r.bloomA.setSize(quarterWidth, quarterHeight);
     r.bloomB.setSize(quarterWidth, quarterHeight);
     r.distortion.setSize(quarterWidth, quarterHeight);
     r.occlusion.uniforms.invSize.value.set(1 / width, 1 / height);
     r.composite.uniforms.invSize.value.set(1 / width, 1 / height);
+    r.composite.uniforms.inkPixel.value.set(1/(this.width*this.pixelRatio),1/(this.height*this.pixelRatio));
   }
 
   private applyMood(material: ShaderMaterial): void {

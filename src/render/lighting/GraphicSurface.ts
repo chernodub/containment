@@ -10,9 +10,9 @@ export type GraphicSurfaceTuning = Readonly<{
 }>;
 
 export const DEFAULT_GRAPHIC_SURFACE_TUNING: GraphicSurfaceTuning = Object.freeze({
-  rampStrength: .72,
-  actorMipBias: 1.65,
-  actorDetail: .45,
+  rampStrength: .62,
+  actorMipBias: 1.9,
+  actorDetail: .55,
   specularGain: .76,
   actorNormalGain: .34,
   floorNormalGain: .38,
@@ -21,7 +21,7 @@ export const DEFAULT_GRAPHIC_SURFACE_TUNING: GraphicSurfaceTuning = Object.freez
 const installed = new WeakSet<MeshStandardMaterial>();
 const enabled = { value: 1 };
 // Shared references also work on MaterialWarmup's retained hook copies.
-const response = { value: new Vector4(.72, .76, 1.65, .45) };
+const response = { value: new Vector4(.62, .76, 1.9, .55) };
 const normalGain = { value: new Vector2(.34, .38) };
 
 /** Toggle the complete surface treatment without recompilation or material churn. */

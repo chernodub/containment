@@ -1,3 +1,4 @@
+import { inkDeclarations, inkComposite } from './Ink';
 /** One full-screen triangle is shared by all pipeline stages. */
 export const screenVertex = /* glsl */ `
 varying vec2 vUv;
@@ -106,6 +107,22 @@ uniform float fogDensity;
 uniform float fogHeight;
 ${reconstruct}
 ${finiteOcclusionGLSL}
+${inkDeclarations}
+// Compact edge AA in HDR; the geometry-derived ink is composited afterward.
+vec3 sceneAA(vec2 uv) {
+ vec3 c=texture2D(tScene,uv).rgb;
+ vec3 n=texture2D(tScene,uv+vec2(0.,invSize.y)).rgb;
+ vec3 s=texture2D(tScene,uv-vec2(0.,invSize.y)).rgb;
+ vec3 e=texture2D(tScene,uv+vec2(invSize.x,0.)).rgb;
+ vec3 w=texture2D(tScene,uv-vec2(invSize.x,0.)).rgb;
+ vec3 luma=vec3(.299,.587,.114);
+ float lc=dot(c,luma),ln=dot(n,luma),ls=dot(s,luma),le=dot(e,luma),lw=dot(w,luma);
+ float lo=min(lc,min(min(ln,ls),min(le,lw))),hi=max(lc,max(max(ln,ls),max(le,lw)));
+ if(hi-lo<max(.025,hi*.15))return c;
+ vec2 direction=abs(ln+ls-2.*lc)>abs(le+lw-2.*lc)?vec2(invSize.x,0.):vec2(0.,invSize.y);
+ vec3 filtered=(texture2D(tScene,uv-direction*.5).rgb+texture2D(tScene,uv+direction*.5).rgb)*.5;
+ return mix(c,filtered,.65);
+}
 float noise(vec2 p) {
   return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
 }
@@ -113,7 +130,7 @@ void main() {
   vec2 uv = vUv;
   if (distortionEnabled > 0.5) uv += texture2D(tDistortion, vUv).rg;
   uv = clamp(uv, invSize, 1.0 - invSize);
-  vec3 color = texture2D(tScene, uv).rgb;
+  vec3 color = sceneAA(uv);
   vec3 sharpColor=color;
   if (lensEnabled > 0.5) {
     // Far-field-only gameplay defocus never softens actors inside the marine's
@@ -160,6 +177,7 @@ void main() {
       color = mix(color, fogColor * 0.36, haze);
     }
   }
+${inkComposite}
   color = max((color + lift) * gain, 0.0);
   color *= 1.0 + abilityPresentation.x * 2.4;
   color*=1.0-menuPresentation*(1.0-smoothstep(.30,.59,vUv.x))*.78;

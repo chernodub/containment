@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   ACESFilmicToneMapping, AgXToneMapping, Camera, Color, DataUtils, HalfFloatType, NearestFilter, NoToneMapping, OrthographicCamera,
-  PerspectiveCamera, Scene, ShaderMaterial, WebGLRenderer, WebGLRenderTarget,
+  PerspectiveCamera, Scene, ShaderMaterial, UnsignedByteType, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { GRAPHICS_PRESETS } from '../src/render/graphicsOptions';
 import { DISTORTION_CAPACITY, DistortionField } from '../src/render/post/DistortionField';
@@ -115,7 +115,7 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.render(0);expect(resources(pipeline)!.scene).not.toBe(old.scene);expect(resources(pipeline)!.scene.texture.type).toBe(HalfFloatType);pipeline.dispose();
   });
 
-  it('allocates shared half-float color/geometry plus depth without MSAA and applies DPR/render scale once', () => {
+  it('allocates HDR color and compact geometry plus depth without MSAA and applies DPR/render scale once', () => {
     const { pipeline, frames } = fixture();
     pipeline.setOptions({ ...GRAPHICS_PRESETS.high, resolutionScale: 0.75 }, 'high');
     pipeline.setSize(800, 600, 2);
@@ -125,7 +125,7 @@ describe('HDR post lifecycle without a WebGL context', () => {
     expect(r.scene.texture.type).toBe(HalfFloatType);
     expect(r.scene.samples).toBe(0);
     expect(r.scene.textures).toHaveLength(2);
-    expect(r.scene.textures[1].type).toBe(HalfFloatType);
+    expect(r.scene.textures[1].type).toBe(UnsignedByteType);
     expect(r.scene.textures[1].minFilter).toBe(NearestFilter);
     expect(r.scene.textures[1].magFilter).toBe(NearestFilter);
     expect(r.composite.uniforms.tGeometry.value).toBe(r.scene.textures[1]);
@@ -242,7 +242,7 @@ describe('HDR post lifecycle without a WebGL context', () => {
     expect(r.gtao.denoiseMaterial.fragmentShader).toContain('denoiseSample');
     expect(r.gtao.material.defines).toMatchObject({ NORMAL_VECTOR_TYPE: 1, SAMPLES: 12, PERSPECTIVE_CAMERA: 0 });
     expect(r.gtao.material.uniforms.tNormal.value).toBe(r.scene.textures[1]);
-    expect(r.gtao.material.fragmentShader).toContain('if(geometry.z<.5)return computeNormalFromDepth(uv)');
+    expect(r.gtao.material.fragmentShader).toContain('geometry.zw*=255.0');expect(r.gtao.material.fragmentShader).toContain('return computeNormalFromDepth(uv)');
     expect(r.gtao.denoiseMaterial.defines).toMatchObject({ NORMAL_VECTOR_TYPE: 1, SAMPLES: 8, SAMPLE_LUMINANCE: 'a.r' });
     expect(r.gtao.material.defines.FRAGMENT_OUTPUT).toBe('vec4(ao, packNormalToRGB(viewNormal))');
     expect(r.gtao.denoiseMaterial.uniforms.tNormal.value).toBe(r.ao.texture);
@@ -399,7 +399,7 @@ describe('post shader work and packed normal precision', () => {
     expect(enabled).toContain('float grain =');
     const ink = compositeFragment.slice(compositeFragment.indexOf('float inkCoverage('), compositeFragment.indexOf('vec3 sceneAA('));
     expect(ink).toContain('for(int i=0;i<8;i++)');
-    expect(ink).toContain('if(inkMode<.5||center.z<.5||center.w<1.5)return 0.0');
+    expect(ink).toContain('if(inkMode<.5||center.z<.5||center.w<1.5');expect(ink).toContain('center.w>6.5');
     expect(ink).toContain('if(!actor&&inkMode>1.5');
     expect(ink).not.toContain('texture2D(tScene,'); // no luminance edge detection
   });
