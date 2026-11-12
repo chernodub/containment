@@ -85,6 +85,36 @@ describe('graphic material response', () => {
     material.dispose(); proxy.dispose();
   });
 
+  it('skips minor point-light specular work while retaining practical, spot and directional BRDFs', () => {
+    const material = new T.MeshStandardMaterial();
+    optimizeLocalLights(material); patchGraphicSurface(material);
+    const shader = compile(material), source = shader.fragmentShader;
+    const pointStart = source.indexOf('for ( int i = 0; i < NUM_POINT_LIGHTS; i ++ )');
+    const spotStart = source.indexOf('#if ( NUM_SPOT_LIGHTS');
+    const directionalStart = source.indexOf('#if ( NUM_DIR_LIGHTS');
+    const rectStart = source.indexOf('#if ( NUM_RECT_AREA_LIGHTS');
+    const points = source.slice(pointStart, spotStart);
+    const spots = source.slice(spotStart, directionalStart);
+    const directional = source.slice(directionalStart, rectStart);
+    expect(points).toContain('#if UNROLLED_LOOP_INDEX >= 4');
+    expect(points).toContain('if (graphicEnabled > .5)');
+    expect(points).toContain('graphicMinorDiffuse * directLight.color * BRDF_Lambert(material.diffuseContribution)');
+    expect(points).toContain('RE_Direct( directLight');
+    expect(spots).not.toContain('graphicMinor');
+    expect(directional).not.toContain('graphicMinor');
+    expect(spots).toContain('if ( directLight.visible ) { RE_Direct(');
+    expect(directional).toContain('if ( directLight.visible ) { RE_Direct(');
+    expect(source.match(/float graphicMinorDot/g)).toHaveLength(1);
+    const key = material.customProgramCacheKey(), version = material.version;
+    setGraphicShadingEnabled(false);
+    expect(shader.uniforms.graphicEnabled.value).toBe(0);
+    setGraphicShadingEnabled(true);
+    expect(shader.uniforms.graphicEnabled.value).toBe(1);
+    expect(material.version).toBe(version);
+    expect(material.customProgramCacheKey()).toBe(key);
+    material.dispose();
+  });
+
   it('does not patch transparent effects or add GPU resources', () => {
     const material = new T.MeshStandardMaterial({ transparent: true });
     const hook = material.onBeforeCompile, key = material.customProgramCacheKey();

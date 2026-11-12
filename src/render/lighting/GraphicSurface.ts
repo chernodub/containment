@@ -69,6 +69,24 @@ const directResponse = ShaderChunk.lights_physical_pars_fragment.replace(
     graphicEnabled * graphicResponse.x);
   reflectedLight.directDiffuse += graphicIrradiance * BRDF_Lambert( material.diffuseContribution );`,
 );
+const directCall = 'if ( directLight.visible ) { RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight ); }';
+const minorPointResponse = /* glsl */ `
+// The first four point slots are authored practicals. Minor pooled flashes and
+// status lights retain colored diffuse energy but skip GGX/DFG texture work.
+#if UNROLLED_LOOP_INDEX >= 4
+ if ( directLight.visible ) {
+  if (graphicEnabled > .5) {
+   float graphicMinorDot = saturate(dot(geometryNormal, directLight.direction));
+   float graphicMinorDiffuse = mix(graphicMinorDot, graphicDiffuseRamp(graphicMinorDot), graphicResponse.x);
+   reflectedLight.directDiffuse += graphicMinorDiffuse * directLight.color * BRDF_Lambert(material.diffuseContribution);
+  } else {
+   RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+  }
+ }
+#else
+ ${directCall}
+#endif
+`;
 const mapResponse = ShaderChunk.map_fragment
   .replace('texture2D( map, vMapUv )',
     'texture2D( map, vMapUv, graphicEnabled * graphicSurfaceKind.x * graphicResponse.z )')
@@ -111,6 +129,9 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
       .replace('#include <map_fragment>', mapResponse)
       .replace('#include <normal_fragment_maps>', normals)
       .replace('#include <lights_physical_pars_fragment>', directResponse)
+      // LocalLightShading expands point → spot → directional loops first. Only
+      // its first direct call belongs to point lights; later calls stay intact.
+      .replace(directCall, minorPointResponse)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
         float graphicRoughnessFloor = mix(.38, .28, graphicSurfaceKind.y);
         graphicRoughnessFloor = mix(graphicRoughnessFloor, .56, graphicSurfaceKind.x);
