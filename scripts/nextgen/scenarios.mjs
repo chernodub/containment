@@ -514,7 +514,7 @@ SCENARIOS.push({id:'g3-ink-switches',room:'awakening-bay',state:'playing',auditG
 SCENARIOS.push({id:'g3-void-contours',room:'awakening-bay',state:'playing',auditGraphics:true,setup:async()=>{
  const d=window.__containmentDebug,r=d.renderer;await d.gotoRoom('awakening-bay');d.invulnerable(true);d.game.enemies.reset();
  r.setGraphicsOptions({inkOutlines:'off',adaptiveResolution:false,bloom:false,ambientOcclusion:false,lensEffects:false,distortion:false,atmosphere:false});await d.prepare();
- const previous=r.scene.onBeforeRender;r.scene.onBeforeRender=function(...args){previous.apply(this,args);this.traverse(o=>{if(!o.isMesh)return;let marine=false;for(let p=o;p;p=p.parent)if(p===r.player.root)marine=true;if(!marine)o.visible=false;});};d.refresh();
+ const previous=r.scene.onBeforeRender;r.scene.onBeforeRender=function(...args){previous.apply(this,args);this.traverse(o=>{if(!o.isMesh)return;let marine=false;for(let p=o;p;p=p.parent)if(p===r.player.root)marine=true;if(!marine&&o.name!=='motivated-practical-bounce')o.visible=false;});};d.refresh();
  const gl=r.renderer.getContext(),w=gl.drawingBufferWidth,h=gl.drawingBufferHeight,before=new Uint8Array(w*h*4),after=new Uint8Array(w*h*4),ids=new Uint8Array(w*h*4),create=gl.createProgram;
  let compiled=0;gl.createProgram=function(){compiled++;return create.call(gl);};
  try{
