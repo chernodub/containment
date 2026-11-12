@@ -9,7 +9,7 @@ const actors = new Map<number, WeakRef<Object3D>>();
 function actorIdentity(root:Object3D):number {
  const existing=root.userData.containmentGeometryId as number|undefined;
  if(existing&&actors.get(existing)?.deref()===root)return existing;
- // Half floats represent every integer through 255 exactly. Reclaim detached
+ // RGBA8 stores each actor ID exactly. Reclaim detached
  // pool owners; re-registration gives a borrowed owner a fresh identity.
  for(let attempt=0;attempt<239;attempt++) {
   const id=nextActorId++;if(nextActorId>254)nextActorId=16;

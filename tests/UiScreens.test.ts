@@ -1,3 +1,4 @@
+import { GRAPHICS_OPTION_LABELS } from '../src/render/graphicsOptions';
 import {uiCss} from './uiSource';
 import {afterAll, beforeAll, expect, test} from 'vitest';
 import {readFileSync} from 'node:fs';
@@ -438,7 +439,7 @@ test.each([[1280,720],[1920,1080]])('settings and controls fit title and pause c
       expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width+1);expect(layout.scrollHeight).toBeLessThanOrEqual(layout.height+1);
     };
     await page.locator('#settings').click();await fit('.configuration-drawer');
-    expect(await page.locator('[data-setting]').count()).toBe(16);
+    expect(await page.locator('[data-setting]').count()).toBe(Object.keys(GRAPHICS_OPTION_LABELS).length+6);
     await page.locator('#close-drawer').click();await page.locator('#controls').click();await fit('.controls-drawer');
     expect(await page.locator('.drawn-key').count()).toBe(14);
     await phase(page,'paused');await page.locator('[data-tab=settings]').click();await fit('.pause-panel');await fit('#pause-tabpanel');

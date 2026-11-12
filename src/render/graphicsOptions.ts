@@ -81,3 +81,9 @@ export const GRAPHICS_OPTION_LABELS: Readonly<Record<keyof GraphicsOptions, Read
   screenShake: { label: 'Screen shake', hint: 'Camera shake, recoil and zoom punch.' },
   flashIntensity: { label: 'Flash intensity', hint: 'Brightness of hit and explosion flashes.' },
 });
+
+/** Complete string-union choices for generic settings consumers, including values absent from presets. */
+export const GRAPHICS_OPTION_CHOICES = Object.freeze({
+  shadows: Object.freeze(['off', 'low', 'high'] as const),
+  inkOutlines: Object.freeze(['off', 'silhouette', 'full'] as const),
+});

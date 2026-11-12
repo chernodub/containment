@@ -110,7 +110,8 @@ function recoveryProbe() {
     backdrop: {prepare: restore, setQuality: vi.fn()},
     arena: {prepare: restore},
     actorPool: {take: () => ({root: new T.Group(), animate: vi.fn()}), release: vi.fn()},
-    player: {equip: vi.fn(), animate: vi.fn()},
+    player: {root:new T.Group(),equip: vi.fn(), animate: vi.fn()},
+    menuMarine:{root:new T.Group()},menuAlien:{root:new T.Group()},actors:new Map(),
     lighting: {
       setQuality: vi.fn(),
       pool: {prewarmCounts: [0, 2], setPrewarmCount: vi.fn()},
