@@ -97,6 +97,7 @@ try{
    // Reload isolates renderer animation time, effect pools, caches, and random state.
    if(scenario.resetPreferences)await page.evaluate(keys=>{for(const key of keys)localStorage.removeItem(key);},scenario.resetPreferences);
    if(scenarioIndex++||scenario.resetPreferences){await page.evaluate(()=>{const d=window.__containmentDebug;d.game.menu();d.refresh();});await page.waitForLoadState('networkidle');await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);}
+   await page.emulateMedia({reducedMotion:scenario.reducedMotion?'reduce':'no-preference'});
    if(scenario.auditGraphics)await page.evaluate(installDrawAudit);
    await page.evaluate(seed=>{window.__captureSeed(seed);},seed);await page.evaluate(scenario.setup,scenario.setupArgument??scenario.room);
    if(scenario.reloadAfterSetup){await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);if(scenario.auditGraphics)await page.evaluate(installDrawAudit);await page.evaluate(scenario.afterReload);}
@@ -108,6 +109,9 @@ try{
    if(scenario.kiting)staging=await page.evaluate(stageKiting);
    await page.waitForFunction(()=>!window.__containmentDebug.renderer.roomLoading&&document.querySelector('#world').getAttribute('aria-busy')!=='true');
    if(scenario.state==='playing')await page.mouse.move(Math.round(viewport.width*.64),Math.round(viewport.height*.48));else await page.mouse.move(4,4);
+   if(scenario.nativeFocus)await page.locator(scenario.nativeFocus).first().focus();
+   for(const key of scenario.nativeHold??[])await page.keyboard.down(key);
+   if(scenario.nativeHold?.length)await page.evaluate(()=>window.__containmentDebug.refresh());
    const count=scenario.burst?burst:1,frameStepMs=scenario.stepMs??stepMs;let projectiles=false,muzzle=false,explosion=false;const observed=new Set(),burstFrames=[];let kitingStart=null,feelStart=null;
    for(let frame=0;frame<count;frame++){
     if(scenario.kiting)await page.evaluate(advanceKiting,{frame,stepMs:frameStepMs});
@@ -172,6 +176,7 @@ try{
    if(scenario.status)assert(['burning','chilled','frozen','poisoned'].every(s=>observed.has(s)),`Missing elemental statuses: ${[...observed]}`);
    console.log(`  ${count} PNGs verified`);
   }catch(error){const failure={scenario:scenario.id,room:scenario.room,error:String(error),errors:manifest.errors.slice(errorStart)};manifest.failures.push(failure);console.error(`FAILED ${name}: ${error}`);await page.screenshot({path:resolve(out,name+'-failure.png'),timeout:10000}).catch(()=>{});if(!keepGoing)throw error;}
+  for(const key of scenario.nativeHold??[])await page.keyboard.up(key);
   // The final contact sheet is self-contained; avoid rewriting its large image payload per shot.
   await writeFile(resolve(out,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
  }

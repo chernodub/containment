@@ -358,7 +358,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (abilities?.slots)
             for (const entry of slots)
                 updateAbility(entry, abilities.slots[entry.slot], abilities);
-        onboarding.update(game, abilities);
+        onboarding.update(game, abilities, inspectObjective && !abilityHints.visible);
         const pref = preferences();
         combatText.setEnabled(pref.combatText !== false);
         radar.update(game, pref.radar === true && playing);

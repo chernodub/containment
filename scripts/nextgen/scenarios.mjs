@@ -495,3 +495,15 @@ for(const rig of ['breacher','cryo','arc']){
   if(placed!==5)throw Error('I7 pickup overlap placement incomplete');d.refresh();
  })();`)});
 }
+
+
+// U4 intentional inspection and critical-objective proof use real native input.
+SCENARIOS.push({id:'u4-critical-objective',state:'playing',room:'containment-annulus',required:['#objective-critical','#radar-hud'],setup:async()=>{
+ const d=window.__containmentDebug;await d.gotoRoom('containment-annulus',{rig:'arc'});d.invulnerable(true);d.uiFixture({preferences:{combatText:true,radar:true}});d.step(4500);d.refresh();
+}});
+SCENARIOS.push({id:'u4-ability-inspect',state:'playing',room:'awakening-bay',nativeFocus:'[data-ability=tactical]',nativeHold:['Alt'],required:['#ability-rules-tactical'],setup:async()=>{
+ const d=window.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'arc'});d.invulnerable(true);d.step(4500);d.refresh();
+}});
+const u4Draft=SCENARIOS.find(s=>s.id==='augment-draft');
+SCENARIOS.push({...u4Draft,id:'u4-boon-inspect',nativeFocus:'[data-mutation=spreading-nova], [data-mutation=twin-glacier]',nativeHold:['Alt'],required:['.boon-inspect-detail:visible']});
+SCENARIOS.push({...SCENARIOS.find(s=>s.id==='complete-fixture'),id:'u4-ending-reduced-motion',reducedMotion:true});

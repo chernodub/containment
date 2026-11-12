@@ -385,3 +385,5 @@ body[data-state=playing] #world{cursor:none}
 @media(max-height:450px) {#hud #status-hud {width:244px;}}
 
 @media(max-width:650px) {#hud #status-hud {width:244px;}}
+
+#hud .contextual-onboarding {z-index:20;}

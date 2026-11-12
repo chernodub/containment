@@ -19,6 +19,6 @@ export function endingTransmission(): string {
       <g class="ending-destination"><circle class="ending-earth-halo" cx="1017" cy="171" r="123" fill="url(#ending-earth-light)"/><circle class="ending-earth" cx="1017" cy="171" r="55"/><path class="ending-land" d="m992 124 13 10 5 16-13 11 4 19-13 10-18-10m70-57-10 19 8 15-10 16 14 12-7 20 8 11m-48-2 16-9 14 8-4 15"/><path class="ending-arrival" d="M948 111a91 91 0 0 1 135 117M962 122a74 74 0 0 1 108 94"/></g>
       <path class="ending-leader ending-leader--loss" d="M249 221v42h-55"/><path class="ending-leader ending-leader--success" d="M1017 236v27h55"/>
     </svg>
-    <figcaption class="ending-outcomes"><div class="ending-loss"><span class="eyebrow">COLONY SHIP / SIGNAL LOST</span><strong>Passengers · Marine</strong></div><div class="ending-success"><span class="eyebrow">NEW EARTH / SIGNAL RECEIVED</span><strong>The warning made it.</strong></div></figcaption>
+    <figcaption class="ending-outcomes"><div class="ending-loss"><span class="eyebrow">COLONY SHIP / SIGNAL LOST</span><strong>Passengers and marine lost.</strong></div><div class="ending-success"><span class="eyebrow">NEW EARTH / SIGNAL RECEIVED</span><strong>The warning made it.</strong></div></figcaption>
   </figure>`;
 }

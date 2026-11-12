@@ -31,7 +31,7 @@ it('renders all rig ability states and protects the centered follow marine throu
                 await page.evaluate(state => { const { game, hud, adapter, fixtures } = (window as any).__live; adapter.setUiFixture(game, { abilities: fixtures.abilityFixture('breacher', state) }); hud(); }, state);
                 expect(await page.locator('#ability-bar').isVisible()).toBe(true);
                 const result = await inspectHud(page, width / 2, height / 2, 140);
-                expect(result.frames[0].success, `${width}x${height} ${state}`).toBe(true);
+                expect(result.frames[0].success, `${width}x${height} ${state} ${JSON.stringify(result.frames[0])}`).toBe(true);
                 expect(result.frames[0].actorHits).toEqual([]);
                 expect(result.frames[0].invalid).toEqual([]);
                 for (const slot of ['dash', 'tactical', 'power', 'overdrive'])
@@ -381,6 +381,8 @@ it('offers full ability rules only during deliberate combat inspection, includin
         expect(await tactical.getAttribute('tabindex')).toBe('0');
         await tactical.focus();
         await page.keyboard.down('Alt');
+        await page.evaluate(()=>(window as any).__live.hud());
+        expect(await page.locator('#contextual-onboarding').isHidden()).toBe(true);
         const tooltip=page.locator('#ability-rules-tactical');
         expect(await tooltip.isVisible()).toBe(true);
         expect(await tooltip.textContent()).toContain('frozen solid for 1.5 seconds');
@@ -481,6 +483,7 @@ it('compacts combat choices after inspection and restores objective details only
         const before=await page.evaluate(()=>{const {game}=(window as any).__live;return {health:game.combat.snapshot.health,charges:game.abilities.snapshot.slots,x:game.player.x,y:game.player.y};});
         expect(await page.locator('.weapon-bank').getAttribute('data-expanded')).toBe('false');
         expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('false');
+        expect(await page.locator('#contextual-onboarding').isHidden()).toBe(true);
         const compact=await page.locator('#action-bar').boundingBox();
         expect(compact!.width).toBeLessThan(750);expect(compact!.height).toBeLessThan(130);
         expect(await page.locator('[data-ability=tactical] .ability-value').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(20);
@@ -533,11 +536,11 @@ it('keeps every world label layer below every panel, tooltip, toast and beat',as
     try {
         await liveHud(page);
         const layers=await page.evaluate(()=>{
-            const selectors=['#combat-text','#threat-indicators','#damage-directions','.vitals','#status-hud','#boss-hud','#radar-hud','#action-bar','.ability-tooltip','#hud-toasts'];
+            const selectors=['#combat-text','#threat-indicators','#damage-directions','.vitals','#status-hud','#boss-hud','#radar-hud','#action-bar','.ability-tooltip','#contextual-onboarding','#hud-toasts'];
             return Object.fromEntries(selectors.map(selector=>[selector,Number(getComputedStyle(document.querySelector(selector)!).zIndex)]));
         });
         const world=['#combat-text','#threat-indicators','#damage-directions'];
-        const panels=['.vitals','#status-hud','#boss-hud','#radar-hud','#action-bar','.ability-tooltip','#hud-toasts'];
+        const panels=['.vitals','#status-hud','#boss-hud','#radar-hud','#action-bar','.ability-tooltip','#contextual-onboarding','#hud-toasts'];
         for(const label of world) for(const panel of panels) expect(layers[label],`${label} < ${panel}`).toBeLessThan(layers[panel]);
         expect(layers['#action-bar']).toBeGreaterThan(layers['#combat-text']);
         // Root overlays/beats also outrank the entire HUD stacking context.

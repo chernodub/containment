@@ -74,6 +74,9 @@ export class AbilityHints {
     this.dirty=true;
   }
 
+  /** A single explanation owns the inspect space above the dock. */
+  get visible(): boolean { return this.hints.some(hint => !hint.node.hidden); }
+
   private refresh(): void {
     for (const hint of this.hints) {
       const visible = (!this.playing || this.inspecting) && (hint === this.focused || hint === this.hovered);

@@ -371,8 +371,8 @@ it('uses actual elemental tokens for damage and chips while weapon hits stay whi
       expect(await elemental.textContent()).toBe('12 ×');
       expect(await elemental.evaluate(node=>getComputedStyle(node).fontWeight)).toBe('800');
       expect(await page.locator('.combat-float[data-kind=damage][data-source=weapon]:not([hidden])').evaluate(node=>getComputedStyle(node).color)).toBe('rgb(240, 251, 255)');
-      const chip = page.locator('.combat-float[data-kind=status]:not([hidden])');
-      if (await chip.count()) expect(await chip.evaluate(node=>getComputedStyle(node).color)).toBe(color);
+      const chip = page.locator(`.combat-float[data-kind=status][data-element="${element}"]:not([hidden])`);
+      for (const actual of await chip.evaluateAll(nodes=>nodes.map(node=>getComputedStyle(node).color))) expect(actual).toBe(color);
     }
   } finally {await page.close();}
 });

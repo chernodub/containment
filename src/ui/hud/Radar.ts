@@ -116,9 +116,9 @@ export class Radar {
     }
     for (; index < ENEMY_CAPACITY; index++) this.enemies[index].setAttribute('visibility', 'hidden');
 
-    this.host.dataset.obscuresThreat=String(obscuresThreat);
     const boss = game.boss?.snapshot;
-    if (boss?.active) objective = boss;
+    if (boss?.active) {objective = boss;if (underRadar(boss.x,boss.y)) obscuresThreat=true;}
+    this.host.dataset.obscuresThreat=String(obscuresThreat);
     this.objective.setAttribute('visibility', objective ? 'visible' : 'hidden');
     if (objective) {
       this.objective.setAttribute('transform', `translate(${this.x(objective.x)} ${this.y(objective.y)})`);

@@ -13,7 +13,7 @@ describe('authored final transmission', () => {
     const html = completionEnding({storyRoom: {}} as DepthGame);
     expect(html).toContain(`<h2 class="ending-exact">${SACRIFICE_ENDING}</h2>`);
     expect(html).toContain('FINAL TRANSMISSION');
-    expect(html).toContain('Passengers · Marine');
+    expect(html).toContain('Passengers and marine lost.');
     expect(html).toContain('NEW EARTH / SIGNAL RECEIVED');
     expect(html).toContain('class="ending-ship-aft"');
     expect(html).toContain('class="ending-ship-bow"');
