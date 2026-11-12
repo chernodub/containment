@@ -5,23 +5,24 @@ import { installGpuPassAudit } from './gpu-pass-audit.mjs';
 function fixture() {
   const extension = { TIME_ELAPSED_EXT: 1, GPU_DISJOINT_EXT: 2 };
   let current = null, serial = 0, available = false, disjoint = false, lost = false;
-  const deleted = [], queries = [];
+  const deleted = [], queries = [], events = [];
   const gl = {
     CURRENT_QUERY: 3, QUERY_RESULT_AVAILABLE: 4, QUERY_RESULT: 5,
     drawingBufferWidth: 1920, drawingBufferHeight: 1080,
     getExtension: () => extension, isContextLost: () => lost,
     getParameter: () => disjoint, getQuery: () => current,
     createQuery() { const query = { serial: ++serial }; queries.push(query); return query; },
-    beginQuery(target, query) { assert.equal(current, null, 'queries must never nest'); current = query; },
-    endQuery() { assert(current); current = null; },
+    beginQuery(target, query) { assert.equal(current, null, 'queries must never nest'); current = query; events.push('begin'); },
+    endQuery() { assert(current); current = null; events.push('end'); },
+    flush() { events.push('flush'); },
     getQueryParameter(query, name) { return name === 4 ? available : query.serial * 1e6; },
     deleteQuery(query) { deleted.push(query); },
   };
   const scene = {}, hudScene = {}, composite = {}, bloomA = { width: 480, height: 270 };
-  const renderer = { getContext: () => gl, getRenderTarget: () => null, render() {} };
+  const renderer = { getContext: () => gl, getRenderTarget: () => null, render() { events.push('render'); } };
   const post = { resources: { composite }, draw(material, target) { renderer.render({}); }, render() { renderer.render(scene); post.draw(composite, bloomA); } };
   const r = { renderer, scene, hudScene, post, render() { post.render(); renderer.render(hudScene); } };
-  return { r, gl, queries, deleted, setAvailable: value => available = value, setDisjoint: value => disjoint = value, setLost: value => lost = value, setCurrent: value => current = value };
+  return { r, gl, queries, deleted, events, setAvailable: value => available = value, setDisjoint: value => disjoint = value, setLost: value => lost = value, setCurrent: value => current = value };
 }
 
 test('GPU pass audit resolves asynchronously, keeps stage pixels and restores hooks', () => {
@@ -73,4 +74,17 @@ test('one selected stage per frame prevents Metal command-buffer query overlap a
   assert.equal(f.queries.length, 29);
   f.r.__benchGpuPassAudit.dispose();
   assert.deepEqual(changes, [false, true]);
+});
+
+test('explicit flush profile requests submission boundaries without waiting and labels the snapshot', () => {
+  const f = fixture();
+  installGpuPassAudit({ rendererRoot: f.r, flush: true });
+  for (let i = 0; i < 4; i++) f.r.render();
+  const first = f.events.indexOf('flush');
+  assert.deepEqual(f.events.slice(first, first + 5), ['flush', 'begin', 'render', 'end', 'flush']);
+  const snapshot = f.r.__benchGpuPassAudit.snapshot();
+  assert.equal(snapshot.flush, true);
+  assert.equal(snapshot.diagnostics.flushCalls, 2);
+  assert.equal(f.queries.length, 1);
+  f.r.__benchGpuPassAudit.dispose();
 });

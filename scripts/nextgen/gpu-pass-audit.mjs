@@ -2,7 +2,10 @@
  * Opt-in asynchronous GPU stage timings. This function is serialized into the
  * production page so it deliberately has no module-scope dependencies.
  */
-export function installGpuPassAudit(r = globalThis.__containmentDebug.renderer) {
+export function installGpuPassAudit(configuration = {}) {
+  // Direct renderer-root input is retained for deterministic harness tests.
+  const r = configuration.rendererRoot ?? (configuration.renderer ? configuration : globalThis.__containmentDebug.renderer);
+  const flush = configuration.flush === true;
   if (r.__benchGpuPassAudit) throw Error('GPU pass audit already installed');
   const renderer = r.renderer, gl = renderer.getContext();
   const extension = gl.getExtension('EXT_disjoint_timer_query_webgl2');
@@ -11,7 +14,7 @@ export function installGpuPassAudit(r = globalThis.__containmentDebug.renderer) 
   // same WebGL query target for this opt-in trial and restore it afterwards.
   const runtimeTimer = r.post?.gpuTimer, runtimeEnabled = runtimeTimer?.enabled;
   runtimeTimer?.setEnabled(false);
-  const diagnostics = { sampledFrames: 0, disjointEvents: 0, skippedBusy: 0, skippedCapacity: 0, abandonedQueries: 0 };
+  const diagnostics = { sampledFrames: 0, disjointEvents: 0, skippedBusy: 0, skippedCapacity: 0, abandonedQueries: 0, flushCalls: 0 };
   let frame = 0, sampling = false, active = false, disposed = false;
   let selectedStage, rotation = 0, queriedFrame = false;
   const stages = [], cadence = 3, capacity = 512;
@@ -66,12 +69,14 @@ export function installGpuPassAudit(r = globalThis.__containmentDebug.renderer) 
     }
     const width = target?.width ?? gl.drawingBufferWidth, height = target?.height ?? gl.drawingBufferHeight;
     if (!pass.resolutions.some(size => size.width === width && size.height === height)) pass.resolutions.push({ width, height, pixels: width * height });
+    if (flush) { gl.flush(); diagnostics.flushCalls++; }
     active = true;
     queriedFrame = true;
     gl.beginQuery(extension.TIME_ELAPSED_EXT, query);
     try { return body(); }
     finally {
       gl.endQuery(extension.TIME_ELAPSED_EXT);
+      if (flush) { gl.flush(); diagnostics.flushCalls++; }
       active = false;
       pending.push({ query, pass });
     }
@@ -105,10 +110,10 @@ export function installGpuPassAudit(r = globalThis.__containmentDebug.renderer) 
   });
 
   const api = {
-    supported: !!extension, cadence, capacity, mode: 'one rotating stage per sampled frame', diagnostics, poll,
+    supported: !!extension, cadence, capacity, flush, mode: 'one rotating stage per sampled frame', diagnostics, poll,
     snapshot() {
       poll();
-      return { supported: !!extension, cadence, capacity, mode: 'one rotating stage per sampled frame', stageOrder: [...stages], diagnostics: { ...diagnostics, pendingQueries: pending.length }, passes: [...passes.values()].map(pass => ({ ...pass, samplesMs: [...pass.samplesMs], resolutions: pass.resolutions.map(size => ({ ...size })) })) };
+      return { supported: !!extension, cadence, capacity, flush, mode: 'one rotating stage per sampled frame', stageOrder: [...stages], diagnostics: { ...diagnostics, pendingQueries: pending.length }, passes: [...passes.values()].map(pass => ({ ...pass, samplesMs: [...pass.samplesMs], resolutions: pass.resolutions.map(size => ({ ...size })) })) };
     },
     dispose() {
       if (disposed) return;
@@ -122,5 +127,5 @@ export function installGpuPassAudit(r = globalThis.__containmentDebug.renderer) 
     },
   };
   r.__benchGpuPassAudit = api;
-  return { supported: api.supported, cadence, capacity, mode: api.mode };
+  return { supported: api.supported, cadence, capacity, flush, mode: api.mode };
 }

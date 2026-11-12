@@ -469,3 +469,12 @@ the existing 400-program inventory budget and adaptive scale range 0.7–1.0.
 High frame p50 ≤16.7 ms / p95 ≤20 ms and Low p50 ≤16.7 ms are recorded as
 hardware acceptance flags alongside the historical strict frame-p95 flag;
 shared-host timing flags remain observations, not wall-clock unit assertions.
+
+`--gpu-passes --gpu-flush` additionally calls `gl.flush()` before each selected
+query and after its end, requesting command-buffer submission boundaries for
+ANGLE Metal stage attribution. This is an **intrusive pass-profile mode**:
+frame/CPU values are retained but marked `timingAcceptanceEligible:false` and
+must not certify production FPS. It never uses `finish`, `readPixels` or a
+completion wait. Compare ordinary non-flush trials separately. If isolated
+scopes still report queue-scale durations for tiny stages, retain them as
+unsupported stage attribution rather than adding their timings.
