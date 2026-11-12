@@ -5,6 +5,7 @@ import {mapSurfaceUV} from '../src/render/EnvironmentMaterials';
 import {marine,alien,freezeCorpse,disposeModel} from '../src/render/models';
 import {WEAPON_FIT,weaponModel} from '../src/render/weapons';
 import {loadModels} from './loadModels';
+import {geometries as sharedGeometries} from '../src/render/meshParts';
 import {CombatSystem} from '../src/game/combat/CombatSystem';
 import {MutationRuntime,type MutationTarget} from '../src/game/roguelike/MutationRuntime';
 import {MUTATION_IDS} from '../src/game/roguelike/mutationCatalog';
@@ -62,7 +63,22 @@ describe('map geometry and actor frame-time fixes',()=>{
   for(const [w,h,d]of [[2,2.6,.32],[5,1.05,3]]){const mesh=new T.Mesh(new RoundedBoxGeometry(w,h,d,1,.045));mapSurfaceUV(mesh);const uv=mesh.geometry.getAttribute('uv');for(let i=0;i<uv.count;i+=3){const area=(uv.getX(i+1)-uv.getX(i))*(uv.getY(i+2)-uv.getY(i))-(uv.getY(i+1)-uv.getY(i))*(uv.getX(i+2)-uv.getX(i));expect(Math.abs(area)).toBeGreaterThan(1e-9);}mesh.geometry.dispose();}
  });
  it('freezes the original skinned corpse without cloning/skinning/rebuilding geometry on death',()=>{
-  const model=alien('carrier');model.animate(0,1,.4);model.animate(.05,1,.4);const meshes:T.Mesh[]=[];model.root.traverse(o=>{if(o instanceof T.Mesh)meshes.push(o);});const geometries=meshes.map(m=>m.geometry);const spies=meshes.filter((m):m is T.SkinnedMesh=>m instanceof T.SkinnedMesh).map(m=>vi.spyOn(m,'applyBoneTransform'));freezeCorpse(model);expect(meshes.map(m=>m.geometry)).toEqual(geometries);for(const spy of spies){expect(spy).not.toHaveBeenCalled();spy.mockRestore();}disposeModel(model.root);
+  const model=alien('carrier');model.animate(0,1,.4);model.animate(.05,1,.4);
+  const meshes:T.Mesh[]=[];model.root.traverse(o=>{if(o instanceof T.Mesh)meshes.push(o);});
+  const original=meshes.map(m=>m.geometry),prepared=new Set(sharedGeometries.values());
+  const clone=vi.spyOn(T.BufferGeometry.prototype,'clone'),attributes=vi.spyOn(T.BufferGeometry.prototype,'setAttribute');
+  const spies=meshes.filter((m):m is T.SkinnedMesh=>m instanceof T.SkinnedMesh).map(m=>vi.spyOn(m,'applyBoneTransform'));
+  try{
+   freezeCorpse(model);
+   for(const [i,mesh]of meshes.entries()){
+    if(mesh.geometry!==original[i]){expect(mesh.visible).toBe(false);expect(prepared.has(mesh.geometry)).toBe(true);expect(mesh.geometry.getAttribute('position').count).toBe(0);}
+    else expect(mesh.geometry).toBe(original[i]);
+    if(mesh instanceof T.SkinnedMesh)expect(mesh.geometry).toBe(original[i]);
+   }
+   expect(clone).not.toHaveBeenCalled();expect(attributes).not.toHaveBeenCalled();
+   expect(new Set(sharedGeometries.values())).toEqual(prepared);
+   for(const spy of spies)expect(spy).not.toHaveBeenCalled();
+  }finally{clone.mockRestore();attributes.mockRestore();for(const spy of spies)spy.mockRestore();disposeModel(model.root);}
  });
  it('keeps every gun attached to the authored hand socket during reload, recoil and directional gait',()=>{
   for(const id of Object.keys(WEAPON_FIT) as WeaponId[]){const m=marine();m.equip!(id);m.animate(0,0,0);m.root.updateMatrixWorld(true);const forward=new T.Vector3(0,0,1).applyQuaternion(m.weapon!.getWorldQuaternion(new T.Quaternion()));expect(Math.abs(Math.atan2(forward.z,forward.x)),id).toBeLessThan(.01);for(let i=0;i<30;i++){m.animate(i/60,1,.4,.8,.5,{x:0,y:220});m.root.updateMatrixWorld(true);const socket=m.root.getObjectByName('tag_weapon')!;expect(socket.getWorldPosition(new T.Vector3()).distanceTo(m.weapon!.getWorldPosition(new T.Vector3()))).toBeLessThan(1e-5);expect(socket.getWorldQuaternion(new T.Quaternion()).angleTo(m.weapon!.getWorldQuaternion(new T.Quaternion()))).toBeLessThan(.001);}disposeModel(m.root);
