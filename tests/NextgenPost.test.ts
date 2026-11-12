@@ -1,3 +1,5 @@
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+import { lowAntialiasFragment } from '../src/render/post/LowAntialias';
 import { describe, expect, it, vi } from 'vitest';
 import {
   ACESFilmicToneMapping, AgXToneMapping, Camera, Color, DataUtils, HalfFloatType, NearestFilter, SRGBColorSpace, NoToneMapping, OrthographicCamera,
@@ -438,6 +440,63 @@ describe('post shader work and packed normal precision', () => {
     expect(neighborhood.match(/= SampleLuminance\(/g)).toHaveLength(9);
     expect(aa.indexOf('#include <colorspace_fragment>')).toBeGreaterThan(aa.lastIndexOf('gl_FragColor = ApplyFXAA('));
     pipeline.dispose();
+  });
+
+  it('limits default Low final AA to five fixed taps while preserving the prepared presentation targets', async () => {
+    const { pipeline, gpu, frames } = fixture();
+    pipeline.setOptions(GRAPHICS_PRESETS.low, 'low');
+    pipeline.setSize(1920, 1080);
+    const selected: { target: WebGLRenderTarget | null; material?: ShaderMaterial }[] = [];
+    await pipeline.prepare(async scene => {
+      const triangle = scene.children[0] as { material?: ShaderMaterial } | undefined;
+      selected.push({ target: gpu.getRenderTarget(), material: triangle?.material });
+    });
+    const r = resources(pipeline)!;
+    expect(selected).toHaveLength(3);
+    expect(selected[0].target).toBe(r.scene);
+    expect(selected[1]).toEqual({ target: r.present, material: r.composite });
+    expect(selected[2]).toEqual({ target: null, material: r.antialias });
+    expect(r.antialias.name).toBe('Containment final compact AA');
+    expect(r.antialias.fragmentShader).toBe(lowAntialiasFragment);
+    expect(lowAntialiasFragment.match(/texture2D\(tDiffuse,/g)).toHaveLength(5);
+    expect(lowAntialiasFragment).not.toMatch(/\b(?:for|while)\s*\(/);
+    expect(lowAntialiasFragment).not.toContain('EDGE_STEP_COUNT');
+    expect(lowAntialiasFragment).toContain('float blend = .32 *');
+    expect(lowAntialiasFragment).toContain('gradient.yx');
+    expect(lowAntialiasFragment.match(/#include <colorspace_fragment>/g)).toHaveLength(1);
+    expect(lowAntialiasFragment.indexOf('#include <colorspace_fragment>')).toBeGreaterThan(lowAntialiasFragment.indexOf('gl_FragColor ='));
+    expect(r.antialias.uniforms.tDiffuse.value).toBe(r.present.texture);
+    expect(r.antialias.uniforms.resolution.value.toArray()).toEqual([1 / 1920, 1 / 1080]);
+    expect(r.present.texture.colorSpace).toBe(SRGBColorSpace);
+    expect(r.present.texture.type).toBe(UnsignedByteType);
+    expect(r.composite.uniforms.inkPixel.value.toArray()).toEqual([1 / 1920, 1 / 1080]);
+    frames.length = 0;
+    pipeline.render(0);
+    expect(frames.map(frame => frame.target)).toEqual([r.scene, r.present, null]);
+    pipeline.dispose();
+  });
+
+  it('retires Low final AA on tier changes and retains the unchanged High FXAA source', () => {
+    const { pipeline } = fixture();
+    pipeline.setOptions(GRAPHICS_PRESETS.low, 'low'); pipeline.render(0);
+    const low = resources(pipeline)!, retired = vi.spyOn(low.antialias, 'dispose');
+    pipeline.setOptions(GRAPHICS_PRESETS.high, 'high');
+    expect(retired).toHaveBeenCalledOnce();
+    expect(resources(pipeline)).toBeUndefined();
+    pipeline.render(0);
+    const high = resources(pipeline)!;
+    expect(high.antialias.fragmentShader).toBe(FXAAShader.fragmentShader.replace(
+      'gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );',
+      'gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );\n#include <colorspace_fragment>',
+    ));
+    expect(high.antialias.name).toBe('Containment final FXAA');
+    const retiredHigh = vi.spyOn(high.antialias, 'dispose');
+    pipeline.setOptions(GRAPHICS_PRESETS.low, 'low'); pipeline.render(0);
+    expect(retiredHigh).toHaveBeenCalledOnce();
+    expect(resources(pipeline)!.antialias).not.toBe(low.antialias);
+    expect(resources(pipeline)!.antialias.fragmentShader).toBe(lowAntialiasFragment);
+    pipeline.dispose(); pipeline.dispose();
+    expect(retired).toHaveBeenCalledOnce(); expect(retiredHigh).toHaveBeenCalledOnce();
   });
 
   it('retains AO and unit normal accuracy in the existing half-float RGBA target', () => {

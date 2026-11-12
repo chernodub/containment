@@ -1,3 +1,4 @@
+import { lowAntialiasFragment } from './LowAntialias';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { AdaptiveResolution } from './AdaptiveResolution';
 import { GpuFrameTimer } from './GpuProfiler';
@@ -279,8 +280,8 @@ export class PostPipeline {
     if (this.resources) return this.resources;
     const scene = this.target(1, 1, true);
     const present=this.target(1,1);present.texture.type=UnsignedByteType;present.texture.colorSpace=SRGBColorSpace;present.texture.name='Containment graded ink';
-    const antialias=this.material(FXAAShader.fragmentShader.replace('gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );','gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );\n#include <colorspace_fragment>'),UniformsUtils.clone(FXAAShader.uniforms));
-    antialias.name='Containment final FXAA';antialias.uniforms.tDiffuse.value=present.texture;
+    const antialias=this.material(this.tier==='low'?lowAntialiasFragment:FXAAShader.fragmentShader.replace('gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );','gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );\n#include <colorspace_fragment>'),UniformsUtils.clone(FXAAShader.uniforms));
+    antialias.name=this.tier==='low'?'Containment final compact AA':'Containment final FXAA';antialias.uniforms.tDiffuse.value=present.texture;
     const ao = this.target(1, 1);
     const aoDenoised = this.target(1, 1);
     const gtao = new DepthGTAO(scene.depthTexture!, this.camera, ao.texture, scene.textures[1]);
