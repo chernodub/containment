@@ -4,7 +4,6 @@ import { ELEMENT_COLORS, UNIT, type AbilityFrame, type AbilityPresentation } fro
 
 const ICE = ELEMENT_COLORS.cryo;
 const CORE = 0xe8fbff;
-const DEEP = 0x4e8baf;
 const TAU = Math.PI * 2;
 const EMPTY_ZONES: readonly AbilityZoneSnapshot[] = [];
 const EMPTY_DEPLOYABLES: readonly DeployableSnapshot[] = [];
@@ -28,11 +27,12 @@ class CryoPresentation implements AbilityPresentation {
   event(event: AbilityEvent, x: number, y: number): void {
     if (this.disposed || !Number.isFinite(x) || !Number.isFinite(y)) return;
     const k = this.kit, px = x / UNIT, pz = y / UNIT;
+    k.impact();
     if (event.ability === 'frost-trail') {
       if (event.phase === 'dash-start') {
         k.burst(px, .12, pz, 'cryo', 10, 1.4, .45);
         if (Number.isFinite(event.targetX) && Number.isFinite(event.targetY)) {
-          k.beam(px, .075, pz, event.targetX! / UNIT, .075, event.targetY! / UNIT, CORE, .11, .24, false);
+          k.beam(px, .075, pz, event.targetX! / UNIT, .075, event.targetY! / UNIT, CORE, .055, .18, false);
         }
       } else if (event.phase === 'dash-end') {
         const tx=(event.targetX??x)/UNIT,tz=(event.targetY??y)/UNIT;
@@ -97,29 +97,31 @@ class CryoPresentation implements AbilityPresentation {
       if (!wave.live) continue;
       wave.age += dt;
       if (wave.age >= wave.life + (wave.aftermath ? 2.2 : 0)) { wave.live = false; continue; }
+      k.sustain(wave.age);
       const progress = Math.min(1, wave.age / wave.life);
       const travel = .12 + .88 * (1 - (1 - Math.min(1, wave.age / .24)) ** 3);
       const radius = wave.radius * travel;
       const fade = (1 - progress) * (.45 + .55 * k.flashIntensity);
       if (wave.age < wave.life && wave.aftermath) {
         // Nova alone owns the single rolling front. Arrival/shatter pulses stay thin.
-        k.front(wave.x, wave.z, wave.radius, travel, CORE, .7, fade * .48);
+        k.front(wave.x, wave.z, wave.radius, travel, CORE, .7, fade * .48, 2);
       }
       const count = k.low ? 12 : 36;
       for (let i = 0; i < count && wave.age < wave.life; i++) {
-        const angle = i * TAU / count, c = Math.cos(angle), s = Math.sin(angle);
-        const size = .07 + (i % 4) * .018;
-        k.draw('shard', wave.x + c * (radius - size), .15 + Math.sin(i * 1.7) ** 2 * .18, wave.z + s * (radius - size),
-          size, size * (wave.shatter ? 3.6 : 2.7), size * .8, i % 3 ? ICE : CORE, fade * .85, angle, .2);
+        const seed = i * 1.873, angle = (i + Math.sin(seed) * .32) * TAU / count;
+        const c = Math.cos(angle), s = Math.sin(angle);
+        const size = .045 + Math.sin(seed * 3.1) ** 2 * .1;
+        k.draw('shard', wave.x + c * Math.max(0, radius - size * 1.65), .15 + Math.sin(i * 1.7) ** 2 * .18, wave.z + s * Math.max(0, radius - size * 1.65),
+          size, size * (wave.shatter ? 3.6 : 2.7), size * .8, i % 3 ? ICE : CORE, fade * .85, angle + Math.sin(seed * 2.3) * .55, .1 + Math.sin(seed) * .12);
         if (!k.low && i % 3 === 0) {
           k.draw('smoke', wave.x + c * radius * .89, .3, wave.z + s * radius * .89,
             .65 + progress * .45, .33 + progress * .2, .1, 0xb2dce8, fade * .38, angle);
         }
       }
       if (wave.aftermath) {
-        const needles = k.low ? 8 : 24, lingering = Math.min(1, (wave.life + 2.2 - wave.age) / 1.1);
+        const needles = k.low ? 6 : 18, lingering = Math.min(1, (wave.life + 2.2 - wave.age) / 1.1);
         for (let i = 0; i < needles; i++) {
-          const a = i * 2.39996323, r = wave.radius * (.32 + (i % 7) * .09);
+          const a = i * 2.39996323, r = wave.radius * (.66 + Math.sin(i * 1.71) ** 2 * .22);
           const growth = Math.min(1, Math.max(0, (wave.age - r / wave.radius * .22) * 8));
           k.draw('shard', wave.x + Math.cos(a) * r, .1, wave.z + Math.sin(a) * r,
             .045 + i % 3 * .02, (.14 + i % 4 * .05) * growth, .055, i % 3 ? ICE : CORE, lingering * .55, -a, .15);
@@ -136,45 +138,67 @@ class CryoPresentation implements AbilityPresentation {
     for (const wall of frame.snapshot?.deployables ?? EMPTY_DEPLOYABLES) {
       if (wall.kind === 'ice-wall' && wall.health > 0 && wall.remainingMs > 0) this.glacier(wall, dt);
     }
+    k.impact();
     for (const clock of this.zones) if (!clock.seen) clock.id = -1;
     for (const state of this.walls) if (!state.seen) state.id = -1;
   }
 
   private frostStrip(zone: AbilityZoneSnapshot): void {
-    const k = this.kit, x = zone.x / UNIT, z = zone.y / UNIT, dx = (zone.x2 - zone.x) / UNIT, dz = (zone.y2 - zone.y) / UNIT;
-    const length = Math.hypot(dx, dz), direction = Math.atan2(dz, dx), cx = Math.cos(direction), sz = Math.sin(direction);
-    const half = zone.width / UNIT / 2, fade = Math.min(1, zone.remainingMs / 450);
-    const count = k.low ? 6 : 15;
-    const age = (zone.durationMs - zone.remainingMs) / 1000;
-    // Continuous, ankle-low mass stays inside the authoritative capsule rectangle.
-    k.draw('solid', x + dx * .5, .055, z + dz * .5, length, .095, half * 1.88, DEEP, fade * .62, -direction);
-    const plates = k.low ? 5 : 9;
-    for (let i = 0; i < plates; i++) {
-      const seed = i * 2.731 + zone.id * .83, variation = Math.sin(seed) ** 2;
-      const t = (i + .5 + Math.sin(seed * 3) * .21) / plates, r = half * (.35 + .2 * variation);
-      const lateral = Math.sin(seed * 1.7) * half * .17;
-      k.draw('shard', x + dx * t - sz * lateral, .07 + variation * .025, z + dz * t + cx * lateral,
-        Math.min(length / plates * (.36 + variation * .42), half * .85), .045 + variation * .035, r,
-        i % 5 ? ICE : CORE, fade * (.24 + variation * .3), -direction + Math.sin(seed * .7) * .24, 0);
-    }
-    // Faceted caps fill the rounded ends without extending beyond the real capsule.
-    k.draw('shard', x, .055, z, half * .94, .08, half * .94, ICE, fade * .58, -direction);
-    k.draw('shard', x + dx, .055, z + dz, half * .94, .08, half * .94, ICE, fade * .58, -direction);
-    for (let i = 0; i <= count; i++) {
-      const seed = i * 1.873 + zone.id;
-      for (let side = -1; side <= 1; side += 2) {
-        const along = length * Math.min(1, Math.max(0, (i + Math.sin(seed + side * 1.3) * .25) / count));
-        const inset = half * (.64 + Math.sin(seed) ** 2 * .14);
-        const px = x + cx * along - sz * inset * side, pz = z + sz * along + cx * inset * side;
-        const growth = Math.min(1, Math.max(0, age * 12 - i * .05));
-        k.draw('shard', px, .1, pz, Math.min(.09, half * .12), (.23 + Math.sin(seed * 2) ** 2 * .18) * growth, Math.min(.1, half * .15),
-          i % 7 ? ICE : CORE, fade * (.4 + Math.sin(seed * 2.9 + side) ** 2 * .35), -direction + Math.sin(seed + side) * .18, side * .2);
-        if (!k.low && this.emitMist && i % 5 === 0) {
-          k.mote('smoke', px, .12, pz, -sz * .22, .08, cx * .22, .4, .8, 0xb5d9e5);
-        }
+    const k = this.kit, x = zone.x / UNIT, z = zone.y / UNIT;
+    const dx = (zone.x2 - zone.x) / UNIT, dz = (zone.y2 - zone.y) / UNIT;
+    const length = Math.hypot(dx, dz), direction = Math.atan2(dz, dx);
+    const cx = Math.cos(direction), sz = Math.sin(direction), half = zone.width / UNIT / 2;
+    if (half <= 0) return;
+    const fade = Math.min(1, zone.remainingMs / 450), age = (zone.durationMs - zone.remainingMs) / 1000;
+    k.sustain(age);
+    // One native capsule film connects the edge growth without rectangular paving.
+    k.frostFilm(x + dx * .5, z + dz * .5, length, half, direction, fade * .62);
+    // Broken fern seams describe the real capsule, with a dark open centre instead of a filled sheet.
+    const count = k.low ? 6 : 13, perimeter = 2 * length + TAU * half;
+    for (let i = 0; i < count; i++) {
+      const seed = i * 2.731 + zone.id * .83, variation = Math.sin(seed * 2.1) ** 2;
+      const path = perimeter * (i + .23 + Math.sin(seed) * .19) / count;
+      const cluster = i % (k.low ? 2 : 4) === 1;
+      const inset = half * (cluster ? .46 + variation * .06 : .63 + variation * .1);
+      let along: number, lateral: number, tangent: number;
+      if (path < length) { along = path; lateral = inset; tangent = 0; }
+      else if (path < length + Math.PI * half) {
+        const a = (path - length) / half;
+        along = length + Math.sin(a) * inset; lateral = Math.cos(a) * inset; tangent = -a;
+      } else if (path < 2 * length + Math.PI * half) {
+        along = length - (path - length - Math.PI * half); lateral = -inset; tangent = Math.PI;
+      } else {
+        const a = (path - 2 * length - Math.PI * half) / half;
+        along = -Math.sin(a) * inset; lateral = -Math.cos(a) * inset; tangent = Math.PI - a;
+      }
+      const px = x + cx * along - sz * lateral, pz = z + sz * along + cx * lateral;
+      const size = Math.min(half * (cluster ? .22 : .13), (cluster ? .12 : .055) + variation * .075);
+      const growth = k.reducedMotion ? 1 : Math.min(1, Math.max(.02, age * 10 - i * .035));
+      const height = Math.min(half * (cluster ? .95 : .65), (cluster ? .4 : .14) + variation * .3) * growth;
+      // Needles lean along the dash, never a repeated diamond paving pattern.
+      k.draw('shard', px, height * .76 + .025, pz, size, height, size * .62,
+        i % 5 ? ICE : CORE, fade * (.55 + variation * .25), -direction + Math.sin(seed) * .7, .12);
+      if (cluster) {
+        const shift = half * .12;
+        k.draw('shard', px + Math.cos(direction) * shift, height * .42 + .025, pz + Math.sin(direction) * shift,
+          size * .62, height * .52, size * .5, CORE, fade * .62, -direction - .38, -.08);
+      }
+      const seamLength = half * (cluster ? .36 : .23), yaw = direction + tangent;
+      k.ribbon(px, .035, pz, px + Math.cos(yaw) * seamLength, .035, pz + Math.sin(yaw) * seamLength,
+        ICE, Math.min(half * .045, .026 + variation * .014), fade * .58, false);
+      if (cluster) {
+        const bx = px + sz * lateral * .36, bz = pz - cx * lateral * .36;
+        k.ribbon(px, .032, pz, bx + cx * half * .16, .032, bz + sz * half * .16, ICE, half * .035, fade * .52, false);
+      }
+      if (i % (k.low ? 3 : 2) === 0) {
+        const t = length > 0 ? Math.max(0, Math.min(length, along)) : 0;
+        const drift = k.reducedMotion ? 0 : Math.sin(age * 1.8 + seed) * half * .13;
+        k.draw('smoke', x + cx * t - sz * drift, .12, z + sz * t + cx * drift,
+          half * .52, .13 + variation * .075, .1, 0xa9d3e4, fade * .34);
       }
     }
-    k.lightAt(zone.id, x + dx * .5, z + dz * .5, ICE, 1.7 * fade, 3);
+    k.lightAt(zone.id, x + dx * .5, z + dz * .5, ICE, 1.1 * fade, 3);
+    k.impact();
   }
 
   private blizzard(zone: AbilityZoneSnapshot, dt: number, frame: AbilityFrame): void {
@@ -194,47 +218,48 @@ class CryoPresentation implements AbilityPresentation {
         k.flash(x, z, ICE, 1.1, 4, 3, .1);
       }
     }
-    const time = k.reducedMotion ? 0 : k.time;
-    const wind = .65 + Math.sin(time * .3) * .18;
-    const clearRadius = Math.min(radius * .62, 2.25);
-    const count = k.low ? 14 : 48;
+    k.sustain(age / 1000);
+    const time = k.reducedMotion ? 0 : age / 1000;
+    const clearRadius = Math.min(radius * .62, 2.25), count = k.low ? 16 : 48;
+    // Snow follows the same circulation as the low mist, rather than a field of unrelated flecks.
     for (let i = 0; i < count; i++) {
       const seed = i * 2.39996323 + zone.id * .7;
-      const angle = seed + time * (.17 + i % 3 * .025);
-      // Most snow is driven around the wall; only one in six flakes crosses the open interior.
-      const interior = i % 6 === 0;
-      const r = interior
-        ? clearRadius + (radius * .82 - clearRadius) * (.2 + Math.sin(seed * 7.1) ** 2 * .8)
-        : radius * (.91 + Math.sin(seed * 3.7) ** 2 * .065);
+      const phase = (i / count + time * .065) % 1;
+      const r = clearRadius + (radius - clearRadius) * (.45 + Math.sin(seed * 3.7) ** 2 * .5);
+      const angle = seed + time * .42 + phase * 1.3;
       const px = x + Math.cos(angle) * r, pz = z + Math.sin(angle) * r;
-      const height = .14 + Math.sin(seed * 3) ** 2 * .7;
-      k.draw('shard', px, height, pz, .008, .012, interior ? .065 : .13,
-        i % 4 ? ICE : CORE, fade * (interior ? .22 : .37), Math.PI / 2 - wind + Math.sin(seed) * .13, .35);
-      if (!k.low && !interior && i % 3 === 0) {
-        // Short tangential driven streaks stay inside the authoritative perimeter.
-        const tail = angle - .026, tr = Math.min(radius - .055, r);
-        k.ribbon(px, height, pz, x + Math.cos(tail) * tr, height + .025, z + Math.sin(tail) * tr,
-          ICE, .004, fade * .22, false);
-      }
+      const height = .18 + Math.sin(seed * 3) ** 2 * 1.05;
+      const variation = Math.sin(seed * 1.7) ** 2;
+      const size = Math.min(.12 + variation * .18, (radius - r) * .7);
+      k.draw('shard', px, height, pz, .028 + variation * .012, .035, size,
+        i % 3 ? ICE : CORE, fade * (.4 + Math.sin(seed) ** 2 * .18), -angle, .3);
     }
-    // A narrow slowly rotating wall of interrupted wind filaments, never a translucent dome.
-    const edgeCount = k.low ? 12 : 24, r = Math.max(0, radius - .045);
-    for (let i = 0; i < edgeCount; i++) {
-      const a = i * TAU / edgeCount + time * .065, b = a + TAU / edgeCount * .58;
-      const height = .18 + Math.sin(i * 2.73) ** 2 * .56;
-      k.ribbon(x + Math.cos(a) * r, height, z + Math.sin(a) * r,
-        x + Math.cos(b) * r, height + Math.sin(i * 1.7) * .055, z + Math.sin(b) * r,
-        ICE, k.low ? .009 : .012, fade * .22, false);
-      if (!k.low && i % 2 === 0) {
-        // Narrow vapor wisps roll along the actual outer wall, never through the marine.
-        const middle = a + (b - a) * .5, inner = Math.max(0, radius - .5);
-        k.draw('smoke', x + Math.cos(middle) * inner, .34 + Math.sin(i * 4.1) ** 2 * .18,
-          z + Math.sin(middle) * inner, .32 + Math.sin(i * 2.7) ** 2 * .14, .3, .1,
-          0x779eae, fade * .14);
+    // Curved matte gusts form three connected currents without straight floating markers.
+    const steps = k.low ? 3 : 5;
+    for (let arm = 0; arm < 3; arm++) {
+      for (let i = 0; i < steps; i++) {
+        const t = i / (steps - 1), seed = i * 2.73 + arm * 4.13;
+        const variation = Math.sin(seed * 1.71) ** 2;
+        const sweep = 1.5, a = arm * TAU / 3 + t * sweep + time * .24 + Math.sin(seed * 2.17) * .027;
+        const band = radius - clearRadius, margin = band * .2, span = band - margin * 2;
+        const r = clearRadius + margin + span * t + Math.sin(seed * 1.37) * band * .009;
+        const heading = Math.atan2(r * sweep, span) + Math.sin(seed * 2.31) * .035, angle = a + heading;
+        const radial = Math.abs(Math.cos(heading)), tangent = Math.abs(Math.sin(heading));
+        const halfWidth = Math.min((.34 + t * .18 + variation * .09) * (.82 + Math.sin(seed * 1.93) ** 2 * .36), margin * .36);
+        // Adjacent brushes overlap along the spiral tangent, including the cheaper three-stroke arms.
+        const spacing = Math.hypot(span, r * sweep) / (steps - 1);
+        const outerLimit = Math.sqrt(Math.max(0, radius * radius - (r * tangent + halfWidth) ** 2)) - r * radial;
+        const nearSide = Math.max(0, r * tangent - halfWidth);
+        const innerLimit = nearSide >= clearRadius ? Infinity
+          : r * radial - Math.sqrt(Math.max(0, clearRadius * clearRadius - nearSide * nearSide));
+        const halfLength = Math.max(.01, Math.min(spacing * ((k.low ? .74 : .66) + variation * .06), outerLimit * .97, innerLimit * .97));
+        k.gust(x + Math.cos(a) * r, z + Math.sin(a) * r, halfLength * 2, halfWidth * 2,
+          angle, seed, fade * (.4 + variation * .08));
       }
     }
     k.lightAt(zone.id, x, z, ICE, .85 * fade, 4.5);
     if (!k.low) this.frostRims(zone, frame, fade * .45);
+    k.impact();
   }
 
   private frostRims(zone: AbilityZoneSnapshot, frame: AbilityFrame, fade: number): void {
@@ -247,7 +272,7 @@ class CryoPresentation implements AbilityPresentation {
       for (let corner = 0; corner < 4; corner++) {
         const x = rect.x + (corner % 2) * rect.width, z = rect.y + Math.floor(corner / 2) * rect.height;
         const distanceSquared = (x - zone.x) ** 2 + (z - zone.y) ** 2;
-        if (distanceSquared > radiusSquared || distanceSquared < Math.min(zone.radius * .62, 2.25 * UNIT) ** 2) continue;
+        if (distanceSquared > radiusSquared || Math.sqrt(distanceSquared) + .4 * UNIT >= zone.radius || distanceSquared < (Math.min(zone.radius * .62, 2.25 * UNIT) + .1 * UNIT) ** 2) continue;
         k.draw('shard', x / UNIT, .16, z / UNIT, .07, .23, .07, CORE, fade * .48, corner * Math.PI / 2);
         const alongX = corner < 2 ? .35 : 0, alongZ = corner < 2 ? 0 : .35;
         k.ribbon(x / UNIT, .13, z / UNIT, x / UNIT + alongX, .13, z / UNIT + alongZ, ICE, .024, fade * .3, false);
@@ -279,6 +304,7 @@ class CryoPresentation implements AbilityPresentation {
       }
       state.health = wall.health;
     }
+    k.sustain(age);
     const count = k.low ? 5 : 9, column = length / count;
     for (let i = 0; i < count; i++) {
       const seed = i * 1.731 + wall.id, variation = Math.sin(seed * 2.37) ** 2;
@@ -294,14 +320,14 @@ class CryoPresentation implements AbilityPresentation {
       k.draw('shard', px - faceX * thickness * .08, height * .46, pz - faceZ * thickness * .08,
         depth, height * .46, width, 0x27536d, fade * .91, yaw, 0, 1);
       const shoulder = width * Math.sin(seed * 2.9) * .32, shoulderHeight = height * (.23 + variation * .11);
-      k.draw('shard', px + alongX * shoulder, shoulderHeight, pz + alongZ * shoulder,
+      if (i % 3 !== 1) k.draw('shard', px + alongX * shoulder, shoulderHeight, pz + alongZ * shoulder,
         depth * .64, shoulderHeight, width * .52, i % 3 ? 0x6bb6d3 : 0x99d9ed,
         fade * .67, -wall.angle + Math.sin(seed * 3.9) * .32, 0, 1);
       // Broken ankle-high frost clusters stay irregular without a continuous rectangular skirt.
       k.draw('shard', px, .09 + variation * .09, pz, thickness * .39,
         (.12 + variation * .15) * rise, Math.min(width * 1.12, length / 2 - Math.abs(offset)), 0x4e8baf, fade * .55, -wall.angle);
       if (!k.low) {
-        k.draw('shard', px + faceX * depth * .1 - alongX * width * .16, height * .55,
+        if (i % 3 !== 0) k.draw('shard', px + faceX * depth * .1 - alongX * width * .16, height * .55,
           pz + faceZ * depth * .1 - alongZ * width * .16,
           depth * .13, height * .36, width * .15, CORE, fade * (.17 + (state?.flash ?? 0) * .15), yaw, 0, 1);
         const crack = Math.max(damage, expiry);
@@ -314,6 +340,7 @@ class CryoPresentation implements AbilityPresentation {
       }
     }
     k.lightAt(wall.id, x, z, ICE, 2.6 * fade, 4.8);
+    k.impact();
   }
 
   clear(): void {

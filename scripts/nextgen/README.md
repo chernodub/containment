@@ -455,3 +455,29 @@ continues to generate exact480×270 review images from the resulting PNGs.
 `u4-radar-fade` finds a legal floor point under the actual radar using the native
 camera, spawns one real contact and requires the live fade state. It is a staged
 projection/visibility proof; the chosen real room is retained in frame evidence.
+## V4 construction and priority review
+
+`v4-yield-<rig>-masked-<room>` and `v4-yield-<rig>-reference-<room>` add matched
+bright/dark full-kit overlaps for each rig. They retain native ability actions and
+explicitly stage presentation-only `enemy-warning` receipts through AttackEffects.
+The reference disables only the new priority texture; no gameplay or hostile
+warning is changed. Each fixture holds 650 ms after the ultimate cast before staging
+the overlap. These are readability comparisons, never timing cohorts.
+
+`node scripts/nextgen/v4-evidence.mjs witness` hashes preserved build assets and
+reads each build's full source identity from its `SOURCE_SHA` file. `compare [before-labels] [after-labels]` writes matched seven-phase PNGs from
+native captures and exact 480×270 reductions. `native [labels]` retains every
+original 1920×1080 pixel in separate seven-phase sheets. `yield [label]` makes
+matched 480×270 priority pairs with the staging receipts. `bench <before-label> <after-label>`
+retains all source trials, draws the CPU/draw comparison PNG, and applies the V4
+**zero-increase** rule to CPU p95 and peak draw calls. Host load and absolute budget
+misses remain visible; no tolerance or historical V3 allowance replaces zero.
+
+
+`node scripts/nextgen/v4-draw-inventory.mjs` is a separate V4 diagnosis against
+`v4/before-dist` and `v4/final-perf-dist`. It casts each native full kit into the
+same 25-actor fixture, advances exact simulation steps and asserts identical game
+snapshots/sample times across builds before comparing total and ability draw
+peaks. It retains per-frame samples and source SHAs. Its instrumented fixed-step
+work is not native CPU/GPU timing and does not replace the strict `npm run bench`
+comparison or hide a failed native result. Run it alone after captures/bench.

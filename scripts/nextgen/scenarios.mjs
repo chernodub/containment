@@ -534,3 +534,6 @@ SCENARIOS.push({id:'u4-radar-fade',state:'playing',required:['#radar-hud[data-ob
  }
  throw Error('No legal native contact beneath radar');
 }});
+// V4 adds matched friendly-yield overlaps without changing any existing scenario.
+import { registerV4Scenarios } from './v4-scenarios.mjs';
+registerV4Scenarios(SCENARIOS);

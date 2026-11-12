@@ -14,6 +14,8 @@ const UP = new T.Vector3(0, 1, 0);
 /** Fixed ability-only pool: centimetre cores, faint halos and 40ms branching strikes. */
 export class AbilityLightningBatch {
   low = false;
+  priorityWeight = 0;
+  private readonly priority: T.InstancedBufferAttribute;
   private readonly branch = new T.Vector3();
   readonly mesh: T.InstancedMesh;
   private readonly dummy = new T.Object3D();
@@ -27,6 +29,8 @@ export class AbilityLightningBatch {
   constructor(scene: T.Object3D, readonly capacity = 256) {
     const geometry = new T.CylinderGeometry(1, 1, 1, 5, 1, true);
     this.alpha = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
+    this.priority = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
+    geometry.setAttribute('ribbonPriority', this.priority);
     geometry.setAttribute('ribbonAlpha', this.alpha);
     const material = new T.ShaderMaterial({ transparent: true, depthWrite: false, blending: T.AdditiveBlending,
       vertexShader: `attribute float ribbonAlpha;varying float alpha;varying vec3 color;varying vec2 local;
@@ -48,10 +52,11 @@ void main(){float cap=smoothstep(0.0,.08,local.y)*smoothstep(0.0,.12,1.0-local.y
   /** Call begin, append all ribbons, then end. No transient segment arrays or vectors. */
   begin(): void { this.mesh.count = 0; }
   append(ribbon: EnergyRibbon, time = 0, reducedMotion = false): void {
-    const segments = ribbon.lightning ? (this.low ? 6 : 10) : 1;
     this.direction.subVectors(ribbon.end, ribbon.start);
     const distance = this.direction.length();
     if (distance < .001) return;
+    // Centimetre suit crackles need two bends, not a room-length bolt's ten.
+    const segments = ribbon.lightning ? Math.max(2, Math.min(this.low ? 6 : 10, Math.ceil(distance * 2.2))) : 1;
     this.side.set(-this.direction.z, 0, this.direction.x).normalize();
     const seed = ribbon.seed ?? 1;
     const strike = reducedMotion ? 0 : Math.floor(time * 25);
@@ -63,10 +68,10 @@ void main(){float cap=smoothstep(0.0,.08,local.y)*smoothstep(0.0,.12,1.0-local.y
         const noise = Math.sin(i * 127.1 + seed * 311.7 + strike * 73.9);
         this.endpoint.addScaledVector(this.side, noise * Math.sin(t * Math.PI) * Math.min(.4, distance * .12));
       }
-      const width = ribbon.lightning ? Math.min(.012, ribbon.width ?? .012) * (1 - t * .45) : ribbon.width ?? .045;
-      this.segment(this.start, this.endpoint, width * (ribbon.lightning ? 2.8 : 3), ribbon.color ?? 0xb79cff, (ribbon.opacity ?? 1) * (ribbon.lightning ? .07 : .14), 1.2);
+      const width = ribbon.lightning ? Math.max(.008, Math.min(.06, ribbon.width ?? .035)) * (1 - t * .45) : ribbon.width ?? .045;
+      this.segment(this.start, this.endpoint, width * (ribbon.lightning ? 2.4 : 3), ribbon.color ?? 0xb79cff, (ribbon.opacity ?? 1) * (ribbon.lightning ? .11 : .14), 1.2);
       this.segment(this.start, this.endpoint, width, ribbon.lightning ? 0xf2ecff : ribbon.color ?? 0xb79cff, ribbon.opacity ?? 1, ribbon.lightning ? 4 : 3);
-      if (ribbon.lightning && !this.low && i % 3 === 0 && i < segments) {
+      if (ribbon.lightning && distance > 1 && !this.low && i % 3 === 0 && i < segments) {
         this.branch.copy(this.endpoint).addScaledVector(this.side, Math.sin(seed + i * 7.1 + strike) * .42);
         this.branch.y += .12 + Math.sin(i + strike) * .18;
         this.segment(this.endpoint, this.branch, width * .45, 0xd9cbff, (ribbon.opacity ?? 1) * .65, 2);
@@ -86,9 +91,10 @@ void main(){float cap=smoothstep(0.0,.08,local.y)*smoothstep(0.0,.12,1.0-local.y
     this.mesh.setMatrixAt(this.mesh.count, this.dummy.matrix);
     this.color.set(color).multiplyScalar(hdr);
     this.mesh.setColorAt(this.mesh.count, this.color);
+    this.priority.setX(this.mesh.count, this.priorityWeight);
     this.alpha.setX(this.mesh.count++, opacity);
   }
-  end(): void { this.mesh.instanceMatrix.needsUpdate = true; this.mesh.instanceColor!.needsUpdate = true; this.alpha.needsUpdate = true; }
+  end(): void { this.mesh.instanceMatrix.needsUpdate = true; this.mesh.instanceColor!.needsUpdate = true; this.alpha.needsUpdate = this.priority.needsUpdate = true; }
   clear(): void { this.mesh.count = 0; }
   dispose(): void { this.clear(); this.mesh.geometry.dispose(); (this.mesh.material as T.Material).dispose(); this.mesh.removeFromParent(); }
 }

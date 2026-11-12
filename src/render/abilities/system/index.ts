@@ -17,7 +17,7 @@ type Ghost = { live: boolean; x: number; z: number; angle: number; age: number; 
 type Receipt = { live: boolean; id: number; element: AbilityElement; age: number; life: number; emitted: boolean };
 type StruckTarget = Pick<EnemySnapshot, 'id' | 'x' | 'y' | 'radius' | 'velocityX' | 'velocityY' | 'baseSpeed'>;
 type MarineRest = { body: T.Object3D; y: number; rx: number; rz: number; sy: number };
-type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: boolean };
+type Status = { frozen: boolean; burning: boolean; shocked?: boolean; chilled: boolean; chillStacks?: number };
 
 /** Common body language and restrained, element-specific target feedback, using shared fixed pools. */
 class SystemPresentation implements AbilityPresentation {
@@ -78,6 +78,7 @@ class SystemPresentation implements AbilityPresentation {
     if (this.disposed) return;
     this.restorePose();
     const k = this.kit, dt = frame.dt;
+    k.impact();
     if (!frame.visible) return;
     const g = frame.game;
     if (g && this.game !== g) { this.game = g; this.statusFor = g.boonStatuses; }
@@ -136,9 +137,15 @@ class SystemPresentation implements AbilityPresentation {
     const k = this.kit, status = this.statusFor?.(enemy.id);
     let receipt: Receipt | undefined;
     for (const item of this.receipts) if (item.live && item.id === enemy.id) { receipt = item; break; }
-    if (!receipt && !status?.frozen && !status?.burning && !status?.shocked) return false;
+    if (!receipt && !status?.frozen && !status?.burning && !status?.shocked && !status?.chilled) return false;
+    const actor = k.statusActor(enemy.id);
+    if (actor) {
+      height = actor.height;
+      if (status?.burning || status?.chilled || status?.frozen || status?.shocked) k.statusOwners.add(actor.root);
+    }
     const x = enemy.x / UNIT, z = enemy.y / UNIT, radius = Math.max(.3, enemy.radius / UNIT);
     if (status?.frozen) this.frozenShell(x, z, radius, height, enemy.id, receipt?.element === 'cryo' ? 1 - receipt.age / receipt.life : 0);
+    else if (status?.chilled) this.chilling(x, z, radius, height, enemy.id, Math.min(1, (status.chillStacks ?? 1) / 3));
     if (status?.burning) this.burning(x, z, radius, height, enemy.id);
     if (status?.shocked) this.stunned(x, z, radius, height, enemy.id);
     if (receipt) {
@@ -215,7 +222,7 @@ class SystemPresentation implements AbilityPresentation {
 
   private frozenShell(x: number, z: number, radius: number, height: number, seed: number, flash: number): void {
     const k = this.kit, count = k.low ? 2 : 5;
-    k.iceShell(x, z, radius, height, .22 + flash * .2);
+    k.iceShell(x, z, radius, height, .1 + flash * .16);
     for (let i = 0; i < count; i++) {
       const a = i * Math.PI * 2 / count + seed * .73;
       k.draw('shard', x + Math.cos(a) * radius * .76, height * (.38 + i % 3 * .16), z + Math.sin(a) * radius * .76,
@@ -223,22 +230,41 @@ class SystemPresentation implements AbilityPresentation {
     }
   }
 
-  private burning(x: number, z: number, radius: number, height: number, seed: number): void {
-    const k = this.kit, count = k.low ? 2 : 3, time = k.reducedMotion ? 0 : k.time;
+  /** Frost accretes from the feet to the shoulders as authoritative chill stacks rise. */
+  private chilling(x: number, z: number, radius: number, height: number, seed: number, progress: number): void {
+    const k = this.kit, count = k.low ? 2 : 4;
     for (let i = 0; i < count; i++) {
-      const angle = i * 2.399963 + seed * .64, f = .7 + Math.sin(time * 8 + seed + i * 2.7) * .15;
-      k.draw('flame', x + Math.cos(angle) * radius * .66, height * .38, z + Math.sin(angle) * radius * .66,
-        radius * .18, height * .36 * f, .1, ELEMENT_COLORS.pyro, .24, angle);
+      const a = seed * .73 + i * 2.39996323, r = radius * (.72 + i % 2 * .11);
+      const h = height * (.13 + progress * (.2 + i * .12));
+      k.draw('shard', x + Math.cos(a) * r, h, z + Math.sin(a) * r,
+        radius * (.13 + progress * .09), h * (.4 + progress * .3), radius * .13,
+        i % 2 ? WHITE : ELEMENT_COLORS.cryo, .3 + progress * .35, a, .2 + progress * .15);
+    }
+  }
+
+  private burning(x: number, z: number, radius: number, height: number, seed: number): void {
+    const k = this.kit, count = k.low ? 2 : 3;
+    for (let i = 0; i < count; i++) {
+      const angle = i * 2.399963 + seed * .64, f = .5 + Math.sin(seed * 3.71 + i * 2.7) ** 2 * .5;
+      // Two flank flames and a low hot root leave face and central body unobscured.
+      k.directedFlame(x + Math.cos(angle) * radius * .78, height * .08,
+        z + Math.sin(angle) * radius * .78, radius * (.26 + f * .12), height * (.55 + f * .3),
+        angle, .25, seed + i * 2.73, .55 + f * .18, i === 0);
     }
   }
 
   private stunned(x: number, z: number, radius: number, height: number, seed: number): void {
-    const k = this.kit, count = k.low ? 2 : 4, time = k.reducedMotion ? 0 : k.time;
+    const k = this.kit, count = k.low ? 2 : 4, strike = k.reducedMotion ? 0 : Math.floor(k.time * 12);
     for (let i = 0; i < count; i++) {
-      const a = i * Math.PI * 2 / count + time * 3 + seed, r = radius * .82;
-      const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r, h = height * .7 + Math.sin(a * 2) * .06;
-      k.draw('spark', px, h, pz, .032, .08, .03, i % 2 ? WHITE : ELEMENT_COLORS.arc, .48);
-      if (!k.low) k.ribbon(px, h, pz, x + Math.cos(a - .18) * r, h + .035, z + Math.sin(a - .18) * r, ELEMENT_COLORS.arc, .009, .25, false);
+      const a = seed * .73 + i * 2.39996323, r = radius * .86;
+      const px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r, h = height * (.3 + i % 3 * .22);
+      k.draw('spark', px, h, pz, .045, .08 + Math.sin(seed + strike) ** 2 * .035, .03,
+        i % 2 ? WHITE : ELEMENT_COLORS.arc, .7);
+      if (!k.low) {
+        const b = a + .6 + Math.sin(seed + strike + i) * .12;
+        k.ribbon(px, h, pz, x + Math.cos(b) * r, h + height * .24, z + Math.sin(b) * r,
+          ELEMENT_COLORS.arc, .016, .6, true);
+      }
     }
   }
 
