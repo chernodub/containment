@@ -654,6 +654,12 @@ export class EnemySystem {
       if(alternative){targetX=alternative.goal.x;targetY=alternative.goal.y;direction=normalized(targetX-enemy.x,targetY-enemy.y);route=alternative.route;}
       else route=enemy;
     }
+    // A carrier cannot occupy every marine-sized recess. Seek a reachable
+    // visible holding point instead of pinning the route to that narrow goal.
+    if(enemy.type==='carrier'&&(this.#canSeePlayer?this.#canSeePlayer(enemy,player):this.#canAttack?.(enemy,player))===false){
+      const alternative=this.#alternateFiringPosition(enemy,player);
+      if(alternative){targetX=alternative.goal.x;targetY=alternative.goal.y;direction=normalized(targetX-enemy.x,targetY-enemy.y);route=alternative.route;}
+    }
     // Navigation returns the current position when the flank has no route.
     // The flank is optional; retry the real player goal rather than stand still.
     if((enemy.type==='stalker'||engagementGoal) && route && Math.hypot(route.x-enemy.x,route.y-enemy.y)<1){
@@ -677,9 +683,12 @@ export class EnemySystem {
   }
 
   #alternateFiringPosition(enemy:EnemyState,player:EnemyPlayerState){
+    const carrier=enemy.type==='carrier',minimum=carrier?140:SPITTER_MIN_RANGE,maximum=carrier?260:SPITTER_MAX_RANGE;
     const usable=(goal:EnemyPlayerState)=>{
       const range=Math.hypot(goal.x-player.x,goal.y-player.y);
-      if(range<SPITTER_MIN_RANGE||range>SPITTER_MAX_RANGE||!this.#firingPositionLegal(enemy,goal)||this.#canAttack?.({...goal,type:'spitter'},player)===false)return null;
+      if(range<minimum||range>maximum||!this.#firingPositionLegal(enemy,goal))return null;
+      const visible=carrier?(this.#canSeePlayer?this.#canSeePlayer(goal,player):this.#canAttack?.({...goal,type:'carrier'},player)):this.#canAttack?.({...goal,type:'spitter'},player);
+      if(visible===false)return null;
       const route=this.#route?.(enemy,goal);
       if(route?.x===enemy.x&&route.y===enemy.y)return null;
       return {goal,route};
@@ -690,7 +699,7 @@ export class EnemySystem {
     const failed=enemy.firingSearch;
     if(failed&&enemy.decisionVersion-failed.decision<5&&Math.hypot(failed.playerX-player.x,failed.playerY-player.y)<32)return null;
     const candidates:EnemyPlayerState[]=[];
-    for(const radius of [280,340])for(let i=0;i<16;i++){const angle=i*Math.PI/8;candidates.push({x:player.x+Math.cos(angle)*radius,y:player.y+Math.sin(angle)*radius});}
+    for(const radius of (carrier?[170,220]:[280,340]))for(let i=0;i<16;i++){const angle=i*Math.PI/8;candidates.push({x:player.x+Math.cos(angle)*radius,y:player.y+Math.sin(angle)*radius});}
     candidates.sort((a,b)=>Math.hypot(a.x-enemy.x,a.y-enemy.y)-Math.hypot(b.x-enemy.x,b.y-enemy.y));
     for(const goal of candidates){const result=usable(goal);if(result){enemy.firingGoal={...goal,playerX:player.x,playerY:player.y};enemy.firingSearch=undefined;return result;}}
     enemy.firingSearch={decision:enemy.decisionVersion,playerX:player.x,playerY:player.y};
