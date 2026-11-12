@@ -485,3 +485,8 @@ The separate `shadows` scope runs only when shadow rendering is enabled and
 light-owned shadow map during the measured update; no screen-sized proxy or
 unallocated expected shadow size is reported. `sceneColor` still includes its
 shadow work, so those two distributions overlap and must never be added.
+
+If the zero-combat-program guard fails, `combatProgramKeys` retains the names
+and complete Three cache keys of newly created programs still in the renderer
+inventory. The guard remains fatal; the diagnostic identifies the missed
+preparation topology without accepting a compile hitch.
