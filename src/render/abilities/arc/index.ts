@@ -236,7 +236,7 @@ class ArcPresentation implements AbilityPresentation {
   }
 
   private timeFront(f: Front, progress: number, fade: number): void {
-    this.timeRipple(f.x, f.z, f.radius * Math.max(.02, progress), fade * .26, f.reverse ? -.4 : .2);
+    this.timeRipple(f.x, f.z, f.radius * .7 * Math.max(.02, progress), fade * .1, f.reverse ? -.4 : .2);
   }
 
   private timeRipple(x: number, z: number, radius: number, opacity: number, phase: number): void {
@@ -353,18 +353,18 @@ class ArcPresentation implements AbilityPresentation {
     // These signals are attached to the marine rather than orbiting symbols.
     frame.marine?.updateWorldMatrix(true, false);
     for (let side = -1; side <= 1; side += 2) {
-      this.seam(frame, side * .24, 1.52, -.04, side * .36, 1.46, .13, .055, fade);
-      this.seam(frame, side * .16, 1.36, .22, side * .14, 1.06, .22, .045, fade);
-      this.seam(frame, side * .17, .65, .11, side * .19, .2, .12, .035, fade * .85);
+      this.seam(frame, side * .24, 1.52, -.04, side * .36, 1.46, .13, .11, fade);
+      this.seam(frame, side * .16, 1.36, .22, side * .14, 1.06, .22, .1, fade);
+      this.seam(frame, side * .17, .65, .11, side * .19, .2, .12, .09, fade * .9);
     }
-    this.seam(frame, -.12, 1.77, .13, .12, 1.77, .13, .04, fade);
+    this.seam(frame, -.12, 1.77, .13, .12, 1.77, .13, .09, fade);
     // Prefer the visible weapon's authored socket, including animation and weapon switching.
     if (!this.muzzle || !this.visibleSocket(this.muzzle, frame.marine)) this.muzzle = frame.marine ? this.findMuzzle(frame.marine) : undefined;
     if (this.muzzle) this.muzzle.getWorldPosition(this.end);
     else this.end.set(x + Math.cos(angle) * .85, 1.25, z + Math.sin(angle) * .85);
     const mx = this.end.x, my = this.end.y, mz = this.end.z;
     k.ribbon(mx - Math.cos(angle) * .48, my, mz - Math.sin(angle) * .48, mx, my, mz,
-      WHITE, .045, fade, false);
+      WHITE, .1, fade, false);
     const crackles = k.low ? 1 : 3;
     for (let i = 0; i < crackles; i++) {
       const a = angle + i * TAU / crackles + (k.reducedMotion ? 0 : Math.floor(k.time * 18) * 1.7);
@@ -373,14 +373,16 @@ class ArcPresentation implements AbilityPresentation {
     }
     if (starting || frame.dt > 0 && this.echoAge >= .14) {
       this.echoAge %= .14;
-      // Two restrained marine poses make the charged suit readable even while holding aim.
+      // Two separated articulated poses expose the suit silhouette even while holding aim.
       const speed = Math.hypot(g.player.vx, g.player.vy);
       const dx = speed > 25 ? g.player.vx / speed : Math.cos(angle);
       const dz = speed > 25 ? g.player.vy / speed : Math.sin(angle);
       const count = starting ? 2 : 1;
       for (let i = 0; i < count; i++) {
-        const echo = this.echoes[this.nextEcho++ % this.echoes.length], offset = .25 + i * .24;
-        echo.live = true; echo.age = -frame.dt; echo.x = x - dx * offset; echo.z = z - dz * offset; echo.angle = angle;
+        const index = this.nextEcho++ % this.echoes.length, echo = this.echoes[index];
+        const trail = index ? 1.25 : .85, side = index ? -.35 : .28;
+        echo.live = true; echo.age = -frame.dt;
+        echo.x = x - dx * trail - dz * side; echo.z = z - dz * trail + dx * side; echo.angle = angle;
       }
     }
     for (const echo of this.echoes) {
@@ -388,11 +390,11 @@ class ArcPresentation implements AbilityPresentation {
       echo.age += frame.dt;
       if (echo.age >= .35) { echo.live = false; continue; }
       k.sustain(echo.age);
-      k.afterImage(echo.x, echo.z, echo.angle, VIOLET, fade * (1 - echo.age / .35) * .27);
+      k.afterImage(echo.x, echo.z, echo.angle, VIOLET, fade * (1 - echo.age / .35) * .4);
     }
     k.sustain(this.overclockAge);
     const progress = k.reducedMotion ? .7 : (this.overclockAge * .65) % 1;
-    this.timeRipple(x, z, 1.7 + progress * 3.2, fade * Math.sin(progress * Math.PI) * .14,
+    this.timeRipple(x, z, 1.3 + progress * 2.2, fade * Math.sin(progress * Math.PI) * .06,
       k.reducedMotion ? 0 : this.overclockAge * .08);
     k.lightAt(9000, x, z, VIOLET, 1.1 * fade, 4);
     {

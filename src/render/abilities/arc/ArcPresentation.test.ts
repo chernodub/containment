@@ -176,7 +176,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     expect(ribbon.mock.calls.filter(call => Math.hypot(call[0] - 4, call[2] - 4) < .5 && call[1] > .1).length).toBeGreaterThanOrEqual(7);
     expect(gust).toHaveBeenCalledTimes(tier === 'low' ? 3 : 4);
     expect(gust.mock.calls.every(call => call[7] === 0xb79cff)).toBe(true);
-    expect(ribbon.mock.calls.some(call => call[1] === 1.52 && (call[7] ?? 0) >= .05)).toBe(true);
+    expect(ribbon.mock.calls.some(call => call[1] === 1.52 && (call[7] ?? 0) >= .09)).toBe(true);
     expect(kit.batches.ghost.mesh.count).toBe(tier === 'low' ? 10 : 14);
     const calls = grade.mock.calls.length; frame.snapshot = snapshot(); step(.016);
     expect(grade.mock.calls).toHaveLength(calls); expect(kit.batches.front.mesh.count).toBe(0); dispose();
@@ -290,6 +290,36 @@ describe('Arc presentation signatures and lifecycle', () => {
     expect(after).toEqual(inventory);
     frame.snapshot = snapshot(); step(.01);
     expect(kit.ribbons.mesh.count).toBe(0); expect(kit.batches.ghost.mesh.count).toBe(0);
+    dispose();
+  });
+
+  it.each(['high', 'low'] as const)('keeps two separated marine echoes and broad attached seams readable on %s', tier => {
+    const { kit, frame, step, dispose } = setup();
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    const afterImage = vi.spyOn(kit, 'afterImage'), ribbon = vi.spyOn(kit, 'ribbon'), gust = vi.spyOn(kit, 'gust');
+    frame.game = { player: { x: 128, y: 128, angle: 0, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [] } as never;
+    frame.snapshot = snapshot({ hostileTimeScale: .3, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
+    step(.016);
+    expect(afterImage).toHaveBeenCalledTimes(2);
+    const positions = afterImage.mock.calls.map(call => [call[0], call[1]]);
+    for (const call of afterImage.mock.calls) {
+      expect(Math.hypot(call[0] - 4, call[1] - 4)).toBeGreaterThanOrEqual(.85);
+      expect(Math.hypot(call[0] - 4, call[1] - 4)).toBeLessThanOrEqual(1.4);
+      expect(call[4]).toBe(.4);
+    }
+    expect((positions[0][1] - 4) * (positions[1][1] - 4)).toBeLessThan(0);
+    const seams = ribbon.mock.calls.filter(call => call[9] === false && call[1] > .1);
+    expect(seams).toHaveLength(8);
+    for (const call of seams) {
+      expect(call[7]).toBeGreaterThanOrEqual(.09); expect(call[7]).toBeLessThanOrEqual(.12);
+      expect(Math.hypot(call[0] - 4, call[2] - 4)).toBeLessThan(1);
+    }
+    afterImage.mockClear(); step(.14);
+    expect(afterImage).toHaveBeenCalledTimes(2);
+    expect(afterImage.mock.calls.map(call => [call[0], call[1]])).toEqual(positions);
+    for (const call of gust.mock.calls) {
+      expect(call[2]).toBeLessThan(3.8); expect(call[6]).toBeLessThanOrEqual(.06);
+    }
     dispose();
   });
 
