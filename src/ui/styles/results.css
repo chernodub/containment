@@ -58,9 +58,9 @@
 #overlay .ending-engines { fill: #182a35; stroke: #526675; }
 #overlay .ending-window { fill: none; stroke: #a4c9d2; stroke-width: 2; }
 #overlay .ending-fracture { fill: none; stroke: #ff9973; stroke-width: 1.2; }
-#overlay .ending-debris { fill: #263b44; stroke: #91a1a6; stroke-width: 1; animation: ending-debris-drift 2.4s ease-out both; transform-origin: 295px 167px; }
-#overlay .ending-ship-aft { animation: ending-aft-drift 2.4s ease-out both; transform-origin: 282px 168px; }
-#overlay .ending-ship-bow { animation: ending-bow-drift 2.4s ease-out both; transform-origin: 307px 167px; }
+#overlay .ending-debris { fill: #263b44; stroke: #91a1a6; stroke-width: 1; animation: ending-debris-drift .8s ease-out both; transform-origin: 295px 167px; }
+#overlay .ending-ship-aft { animation: ending-aft-drift .8s ease-out both; transform-origin: 282px 168px; }
+#overlay .ending-ship-bow { animation: ending-bow-drift .8s ease-out both; transform-origin: 307px 167px; }
 #overlay .ending-signal-track { fill: none; stroke: url(#ending-signal-light); stroke-width: 1; }
 #overlay .ending-signal { fill: none; stroke: #c0f2ff; stroke-width: 2; stroke-dasharray: 8 590; animation: ending-warning-travel 5s linear infinite; }
 #overlay .ending-earth { fill: #132b38; stroke: #a3d4e5; stroke-width: 1.5; }
