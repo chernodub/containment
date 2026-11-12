@@ -227,12 +227,12 @@ describe('I5 encounter balance guardrails', () => {
       {
         spawns: [142, 142], threat: [279, 309], elite: [.60, .67], ordinaryElite: [.60, .66],
         specialist: [.55, .61], cap: [15, 15], tail: [4200, 4550], broadTail: [4200, 4550], damage: [.780, .800], speed: [1.02, 1.035],
-        ehp: [26150, 28950], contactDps: [2275, 2520], bodies: [142, 142],
+        ehp: [26150, 28950], contactDps: [2160, 2395], bodies: [142, 142],
       },
       {
         spawns: [180, 180], threat: [467, 518], elite: [.65, .72], ordinaryElite: [.67, .73],
         specialist: [.56, .62], cap: [15, 15], tail: [4250, 4650], broadTail: [4400, 4750], damage: [.887, .910], speed: [1.035, 1.055],
-        ehp: [37150, 41150], contactDps: [3515, 3890], bodies: [183, 183],
+        ehp: [37150, 41150], contactDps: [3320, 3675], bodies: [183, 183],
       },
     ] as const;
     acts.forEach((act, index) => {
@@ -251,9 +251,9 @@ describe('I5 encounter balance guardrails', () => {
       within(act.damageRatio, expected.damage, `${label} damage increase`);
       within(act.speedRatio, expected.speed, `${label} pursuit increase`);
       if (index >= 2) {
-        within(act.ordinaryStalkerShare, [.13, .20], `${label} stalker mix`);
+        within(act.ordinaryStalkerShare, [.08, .15], `${label} stalker mix`);
         within(act.ordinaryCrawlerShare, [.28, .36], `${label} crawler mix`);
-        within(act.ordinarySpitterShare, [.36, .45], `${label} spitter mix`);
+        within(act.ordinarySpitterShare, [.41, .50], `${label} spitter mix`);
         within(act.ordinaryBruteShare, [.05, .15], `${label} brute mix`);
       }
     });

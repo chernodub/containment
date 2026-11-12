@@ -50,7 +50,7 @@ export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
   };
   const pool: readonly StandardEnemyId[] = tuning&&node.depth>=5&&node.depth!==9 ? node.depth<10
     ? ['crawler','crawler','spitter','spitter','stalker','carrier']
-    : ['crawler','crawler','crawler','brute','spitter','spitter','spitter','spitter','stalker','stalker']
+    : ['crawler','crawler','crawler','crawler','crawler','crawler','brute','brute','spitter','spitter','spitter','spitter','spitter','spitter','spitter','spitter','stalker','stalker','stalker','spitter']
     : node.depth === 0 ? ['crawler', 'crawler', 'crawler', 'brute']
     : node.depth < 4 ? ['crawler', 'crawler', 'brute', 'spitter']
     : node.depth < 8 ? ['crawler','crawler','spitter','stalker','carrier']
