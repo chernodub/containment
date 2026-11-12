@@ -323,4 +323,29 @@ describe('Arc presentation signatures and lifecycle', () => {
     dispose();
   });
 
+  it.each(['high', 'low'] as const)('keeps refreshed Overclock world ghosts masked after impact grace on %s, including pause and reset', tier => {
+    const { kit, frame, step, dispose } = setup();
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    frame.game = { player: { x: 128, y: 128, angle: 0, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [] } as never;
+    const active = snapshot({ hostileTimeScale: .3, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
+    frame.snapshot = active;
+    step(.2); step(.2); // Refresh a new ghost while the sustained ultimate is already .4s old.
+    const ghosts = kit.batches.ghost.mesh, priority = ghosts.geometry.getAttribute('abilityPriority');
+    expect(ghosts.count).toBe(tier === 'low' ? 10 : 14);
+    for (let i = 0; i < ghosts.count; i++) expect(priority.getX(i)).toBe(1);
+    const pose = ghosts.instanceMatrix.array.slice();
+    step(0);
+    expect(ghosts.instanceMatrix.array).toEqual(pose);
+    for (let i = 0; i < ghosts.count; i++) expect(priority.getX(i)).toBe(1);
+    const attached = kit.ribbons.mesh.geometry.getAttribute('ribbonPriority');
+    // The first ribbons are the attached suit rails; their mask exemption remains intact.
+    expect(attached.getX(0)).toBe(0); expect(kit.priorityWeight).toBe(0);
+    frame.snapshot = snapshot(); step(.016); expect(ghosts.count).toBe(0);
+    frame.snapshot = active; step(.016);
+    expect(ghosts.count).toBeGreaterThan(0);
+    for (let i = 0; i < ghosts.count; i++) expect(priority.getX(i)).toBe(0);
+    expect(kit.priorityWeight).toBe(0);
+    dispose();
+  });
+
 });

@@ -210,6 +210,22 @@ describe('Pyro presentation lifecycle and readability', () => {
     dispose();
   });
 
+  it('yields a newly emitted Meltdown wake immediately while attached suit signals retain impact priority', () => {
+    const { kit, frame, step, dispose } = setup();
+    frame.snapshot = { ...snapshot([zone({ ability: 'meltdown', attached: true })]), overdrive: { charge: 0, ready: false, active: true, activeRemainingMs: 5000 } };
+    frame.game = { player: { x: 128, y: 160, vx: 100, vy: 0, angle: .1 }, bullets: [] } as never;
+    step(.016);
+    const flames = kit.batches.flame.mesh, priority = flames.geometry.getAttribute('abilityPriority');
+    expect(priority.getX(0)).toBe(1); // First new wake has no renewed impact grace.
+    for (let i = 1; i < flames.count; i++) expect(priority.getX(i)).toBe(0);
+    expect(kit.batches.solid.mesh.geometry.getAttribute('abilityPriority').getX(0)).toBe(1);
+    const before = flames.instanceMatrix.array.slice(); step(0);
+    expect(flames.instanceMatrix.array).toEqual(before); expect(priority.getX(0)).toBe(1);
+    frame.snapshot = snapshot(); frame.game = undefined; step(2);
+    expect(flames.count).toBe(0); expect(kit.batches.solid.mesh.count).toBe(0);
+    dispose();
+  });
+
   it('leaves bounded movement wake on Meltdown, freezes it on pause and clears it', () => {
     const { kit, fx, frame, step, dispose } = setup();
     frame.snapshot = { ...snapshot(), overdrive: { charge: 0, ready: false, active: true, activeRemainingMs: 5000 } };

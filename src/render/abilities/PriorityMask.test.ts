@@ -27,6 +27,15 @@ describe('friendly priority mask', () => {
     const dispose = vi.spyOn(texture, 'dispose'); mask.dispose(); mask.dispose(); expect(dispose).toHaveBeenCalledOnce();
   });
 
+  it('keeps sustained emitter particles masked from birth while preserving actual impact grace', () => {
+    const k=new ElementKit(new T.Group());k.sustain();k.mote('smoke',0,1,0,0,0,0,.2,1,0x9bdcf0);
+    k.impact();k.mote('smoke',1,1,0,0,0,0,.2,1,0x9bdcf0);k.begin(.02);k.end();
+    const weights=k.batches.smoke.mesh.geometry.getAttribute('abilityPriority');
+    expect([weights.getX(0),weights.getX(1)]).toEqual([1,0]);
+    k.begin(.4);k.end();expect([weights.getX(0),weights.getX(1)]).toEqual([1,1]);
+    k.clear();k.begin(0);k.end();expect(k.batches.smoke.mesh.count).toBe(0);k.dispose();
+  });
+
   it('prepares shader sampling once and gives every streamed primitive a 250 ms impact exemption', () => {
     const k = new ElementKit(new T.Group()), mask = new AbilityPriorityMask();
     const m = k.batches.flame.mesh.material as T.ShaderMaterial;

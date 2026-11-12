@@ -389,7 +389,7 @@ class ArcPresentation implements AbilityPresentation {
       if (!echo.live) continue;
       echo.age += frame.dt;
       if (echo.age >= .35) { echo.live = false; continue; }
-      k.sustain(echo.age);
+      k.sustain(this.overclockAge);
       k.afterImage(echo.x, echo.z, echo.angle, VIOLET, fade * (1 - echo.age / .35) * .4);
     }
     k.sustain(this.overclockAge);

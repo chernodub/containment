@@ -163,7 +163,7 @@ class PyroPresentation implements AbilityPresentation {
       print.age += dt;
       if (print.age >= 1.5) { print.live = false; continue; }
       const fade = 1 - print.age / 1.5;
-      kit.sustain(print.age);
+      kit.sustain();
       kit.draw('solid', print.x, .035, print.z, .56, .018, .22, 0x57240d, fade * .65, -print.angle);
       kit.directedFlame(print.x, .04, print.z, .18, .32, print.angle + Math.PI, .8, print.angle + print.x, fade * .48);
     }

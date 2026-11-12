@@ -26,6 +26,7 @@ type Particle = {
     age: number;
     color: number;
     seed: number;
+    priority: number;
 };
 type Wave = {
     live: boolean;
@@ -94,7 +95,7 @@ export class ElementKit {
     private dynamicLights = true;
     private distortion = true;
     private services?: AbilityServices;
-    private particles: Particle[] = Array.from({ length: ABILITY_VFX_LIMITS.particles }, () => ({ live: false, kind: 'spark', x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, size: 0, life: 1, age: 0, color: 0, seed: 0 }));
+    private particles: Particle[] = Array.from({ length: ABILITY_VFX_LIMITS.particles }, () => ({ live: false, kind: 'spark', x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, size: 0, life: 1, age: 0, color: 0, seed: 0, priority: 0 }));
     private waves: Wave[] = Array.from({ length: ABILITY_VFX_LIMITS.rings }, () => ({ live: false, x: 0, z: 0, radius: 1, life: 1, age: 0, color: 0, reverse: false }));
     private beams: Beam[] = Array.from({ length: ABILITY_VFX_LIMITS.beams }, () => ({ live: false, age: 0, life: 1, delay: 0, ribbon: { start: new T.Vector3(), end: new T.Vector3() } }));
     private decals: Decal[] = Array.from({ length: ABILITY_VFX_LIMITS.decals }, () => ({ live: false, x: 0, z: 0, radius: 1, color: 0, age: 0, life: 1, angle: 0, width: 1, kind: 0 }));
@@ -170,6 +171,7 @@ export class ElementKit {
         p.age = 0;
         p.color = color;
         p.seed = ++this.serial;
+        p.priority = this.priorityWeight;
     }
     burst(x: number, y: number, z: number, element: AbilityElement, count = 24, speed = 3, life = .7): void {
         count = this.low ? Math.min(6, count) : count;
@@ -469,6 +471,7 @@ export class ElementKit {
             p.y = Math.max(.04, p.y);
             const fade = 1 - p.age / p.life, s = p.size * (p.kind === 'smoke' ? 1 + p.age * 2 : 1);
             this.sustain(p.age);
+            this.priorityWeight = Math.max(this.priorityWeight, p.priority);
             this.draw(p.kind, p.x, p.y, p.z, s, p.kind === 'spark' ? s * 2 : s, s, p.color, fade * (p.kind === 'smoke' ? .22 : .7), p.seed * .8, p.seed + p.age);
         }
         this.impact();
