@@ -5,10 +5,49 @@ import {optimizeLocalLights} from '../lighting/LocalLightShading';
 
 /** Shared authored stage marks, consumed by the renderer's two presentation actors. */
 export const TITLE_STAGE = Object.freeze({
-  marine: Object.freeze({x:23.35,z:14.5,angle:-1.10,aimPitch:-.22}),
-  creature: Object.freeze({x:26.3,z:8.85,angle:2.02}),
+  marine: Object.freeze({x:23.4,z:14.7,angle:-1.10,aimPitch:-.22}),
+  creature: Object.freeze({x:26.65,z:9.35,angle:2.02}),
   emergency: Object.freeze({x:25.9,y:4.55,z:11.2}),
 });
+
+/** Title-only material direction; shared gameplay skins and light slots stay untouched. */
+export function styleTitleActor(root:T.Group,friendly:boolean):void {
+  root.userData.graphicActorBase=friendly?0x303c45:0x34233b;
+  const rig=(root.getObjectByName('marine-rig-accents') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>|undefined)?.material.uniforms.rigColor;
+  const body={value:new T.Color(friendly?0x303c45:0x34233b)};
+  root.traverse(object=>{
+    if(!(object instanceof T.Mesh))return;
+    for(const material of Array.isArray(object.material)?object.material:[object.material]){
+      if(material instanceof T.MeshStandardMaterial&&material.customProgramCacheKey().includes(':actor-surface-')){
+        const previous=material.onBeforeCompile,key=material.customProgramCacheKey();
+        material.onBeforeCompile=(shader,renderer)=>{
+          previous.call(material,shader,renderer);
+          Object.assign(shader.uniforms,{titleBodyColor:body,titleRigColor:rig??{value:new T.Color(0xffb454)}});
+          if(shader.uniforms.actorRimColor)shader.uniforms.actorRimColor.value.setHex(friendly?0xb6edff:0x825a90);
+          if(shader.uniforms.actorRimStrength)shader.uniforms.actorRimStrength.value=friendly?.55:.08;
+          shader.vertexShader='varying vec3 titleWorldPosition;\n'+shader.vertexShader.replace('#include <project_vertex>','titleWorldPosition=(modelMatrix*vec4(transformed,1.0)).xyz;\n#include <project_vertex>');
+          shader.fragmentShader='uniform vec3 titleBodyColor;uniform vec3 titleRigColor;varying vec3 titleWorldPosition;\n'+shader.fragmentShader
+            .replace('#include <opaque_fragment>',`// Title cast deliberately owns the final two-to-three body values.
+// This runs after shared HDR lights, room fill, actor rims and graphic bevels.
+vec3 titleNormal=normalize(normal);
+float titleTone=.74+.34*smoothstep(.20,.44,abs(titleNormal.x))+.34*smoothstep(.44,.70,max(titleNormal.y,0.0));
+float titleLocalX=(-.89120736*(titleWorldPosition.x-23.4)-.45359612*(titleWorldPosition.z-14.7))/1.9;
+float titlePanel=${friendly?'smoothstep(2.35,2.5,titleWorldPosition.y)*(1.0-smoothstep(3.10,3.25,titleWorldPosition.y))*smoothstep(.10,.14,abs(titleLocalX))*(1.0-smoothstep(.31,.38,abs(titleLocalX)))*smoothstep(.25,.65,abs(titleNormal.z))':'0.0'};
+float titleInnerRim=pow(1.0-clamp(dot(titleNormal,normalize(vViewPosition)),0.0,1.0),5.0);
+outgoingLight=mix(titleBodyColor*titleTone,titleRigColor*.12,titlePanel*.85)+${friendly?'vec3(.50,.80,1.0)*titleInnerRim*.065':'vec3(.14,.07,.20)*titleInnerRim*.04'};
+#include <opaque_fragment>`);
+        };
+        material.customProgramCacheKey=()=>key+':title-graphic-v1';material.needsUpdate=true;
+      }else if(!friendly&&material instanceof T.ShaderMaterial&&material.uniforms.identityColor){
+        material.uniforms.identityColor.value.setHex(0xff7146);
+        material.fragmentShader=material.fragmentShader
+          .replace('gl_FragColor=vec4(color*light*identityStageLight,1.0);',
+            'vec3 titleOrnament=role<.5?vec3(1.0,.16,.035)*2.2:vec3(.024,.010,.031)*(.72+.55*smoothstep(.3,.6,facing));gl_FragColor=vec4(titleOrnament,1.0);');
+        material.needsUpdate=true;
+      }
+    }
+  });
+}
 
 /** Original occupied berth display: faint human form behind frost, with individual life telemetry. */
 function occupiedGlass():T.DataTexture {
@@ -34,6 +73,7 @@ function occupiedGlass():T.DataTexture {
 export class TitlePresentation {
   readonly root = new T.Group();
   private readonly target = new T.Vector3();
+  readonly shaft:T.Mesh<T.CylinderGeometry,T.ShaderMaterial>;
   private disposed = false;
   constructor(scene?: T.Scene) {
     this.root.name = 'cinematic-awakening-set';
@@ -44,11 +84,16 @@ export class TitlePresentation {
     const steel=material('title-bulkhead',0x192a33,.72,.42),paint=material('title-ceramic',0x60777c,.45,.52),
       black=material('title-gaskets',0x070e13,.15,.85),glass=material('title-pod-glass',0x14303b,.82,.15),
       cold=material('title-cold-strip',0x657d85,.5,.3,0x9fe8ff,.42),warm=material('title-emergency',0x9a5940,.5,.4,0xff693c,3.4);
+    // Near-horizontal black deck panels are matte, not a broad bevel rim.
+    // This local attenuation prevents the floor from outranking the title cast.
+    black.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',
+      'outgoingLight*=mix(1.0,.25,step(.95,dot(normalize(normal),normalize(viewMatrix[1].xyz))));\n#include <opaque_fragment>');};
+    black.customProgramCacheKey=()=>':title-matte-horizontal-v1';
     const occupants=occupiedGlass();glass.map=glass.emissiveMap=occupants;glass.color.setHex(0x829b9f);glass.emissive.setHex(0x9fe8ff);glass.emissiveIntensity=.18;glass.metalness=.25;glass.roughness=.34;
     // The occupied displays use the same mapped/emissive room material program.
     optimizeLocalLights(glass);
     glass.addEventListener('dispose',()=>occupants.dispose());
-    box(this.root,23,-.18,12,32,.3,30,steel,0);
+    box(this.root,23,-.18,12,32,.3,30,black,0);
     // The visible broken berth behind the hero establishes the awakening beat.
     for(const x of [24.5,28.4,32.3]) {
       box(this.root,x,1.9,8.8,3.2,3.8,.7,black,.16);
@@ -68,8 +113,8 @@ export class TitlePresentation {
     }
     // A damaged pod jamb hides most of the creature; the gap reveals its eyes
     // and hooked limbs. Foreground casing makes this a place, not a model stage.
-    box(this.root,27.55,2.15,10.0,.48,4.3,1.45,steel,.12);
-    box(this.root,27.28,2.15,10.58,.12,3.92,.24,paint,.045);
+    box(this.root,27.85,2.15,10.0,.48,4.3,1.45,steel,.12);
+    box(this.root,27.58,2.15,10.58,.12,3.92,.24,paint,.045);
     box(this.root,29.4,1.85,17.1,2.7,3.7,1.9,black,.17);
     box(this.root,28.11,1.9,17.1,.18,3.4,1.8,steel,.06);
     box(this.root,29.4,3.58,17.1,2.7,.16,1.9,steel,.06);
@@ -82,10 +127,26 @@ export class TitlePresentation {
     // Deck seams and a single rescue stripe carry the eye toward the marine.
     for(let z=9;z<22;z+=2.8)box(this.root,25,-.015,z,22,.012,.018,black,0);
     for(let z=11;z<23;z+=.7)box(this.root,25.8,.002,z,.08,.012,.34,paint,0);
-    batch(this.root);this.root.visible=false;scene?.add(this.root);
+    batch(this.root);
+    // One static motivated shaft, outside the opaque ink and shadow passes.
+    // Its prepared program exists on both tiers; visibility alone follows air quality.
+    const shaftGeometry=new T.CylinderGeometry(0,.32,1,12,1,true);shaftGeometry.translate(0,-.5,0);
+    const shaftMaterial=new T.ShaderMaterial({
+      transparent:true,depthWrite:false,depthTest:true,side:T.DoubleSide,blending:T.AdditiveBlending,
+      uniforms:{shaftColor:{value:new T.Color(0xffa06c)}},
+      vertexShader:'varying vec2 shaftUv;varying vec3 shaftNormal;varying vec3 shaftView;void main(){shaftUv=uv;shaftNormal=normalMatrix*normal;vec4 view=modelViewMatrix*vec4(position,1.0);shaftView=-view.xyz;gl_Position=projectionMatrix*view;}',
+      fragmentShader:'uniform vec3 shaftColor;varying vec2 shaftUv;varying vec3 shaftNormal;varying vec3 shaftView;void main(){float y=clamp(shaftUv.y,0.0,1.0);float facing=abs(dot(normalize(shaftNormal),normalize(shaftView)));float alpha=smoothstep(0.0,.16,y)*(1.0-smoothstep(.92,1.0,y))*pow(y,.55)*pow(facing,1.2)*.12;gl_FragColor=vec4(shaftColor,alpha);}',
+    });
+    shaftMaterial.userData.actorMaterial=true;
+    this.shaft=new T.Mesh(shaftGeometry,shaftMaterial);this.shaft.name='title-emergency-shaft';this.shaft.renderOrder=2;
+    const direction=new T.Vector3(25.1,.06,13.6).sub(new T.Vector3(e.x,e.y-.1,e.z));
+    this.shaft.position.set(e.x,e.y-.1,e.z);this.shaft.scale.y=direction.length();
+    this.shaft.quaternion.setFromUnitVectors(new T.Vector3(0,-1,0),direction.normalize());this.root.add(this.shaft);
+    this.root.visible=false;scene?.add(this.root);
   }
   /** Native gameplay camera is re-applied by CameraRig before every menu call. */
-  apply(camera:T.OrthographicCamera|T.PerspectiveCamera,time:number,reducedMotion:boolean) {
+  apply(camera:T.OrthographicCamera|T.PerspectiveCamera,time:number,reducedMotion:boolean,atmosphere=true) {
+    this.shaft.visible=atmosphere;
     const drift=reducedMotion?0:Math.sin(time*.12)*.12;
     camera.position.set(20.3+drift,4.8,29.6);
     this.target.set(20.7+drift*.35,1.6,12.8);camera.lookAt(this.target);

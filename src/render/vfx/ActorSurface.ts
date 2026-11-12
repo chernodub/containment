@@ -6,9 +6,9 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   const plateOpening={value:0},plateBounds={value:new T.Vector4(0,1,0,1)};
   const plateTorso={value:new T.Vector2(0,1)},stageLight={value:1};
   const flash = { value: 0 }, dissolve = { value: 0 }, flashIntensity = { value: 1 };
-  const rimColor = { value: new T.Color(friendly ? 0x9fe8ff : elite ? 0xc1d8e5 : 0x91b9d1) };
+  const rimColor = { value: new T.Color(friendly ? 0x78838c : elite ? 0xc1d8e5 : 0x91b9d1) };
   const camouflage = { value: 1 }, deathStyle = { value: 0 };
-  const rimStrength = { value: friendly ? .20 : elite ? .46 : .26 };
+  const rimStrength = { value: friendly ? .035 : elite ? .46 : .26 };
   for (const material of materials) {
     const previous = material.onBeforeCompile;
     const previousKey = material.customProgramCacheKey();

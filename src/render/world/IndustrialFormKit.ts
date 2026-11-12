@@ -71,6 +71,10 @@ export type FormRoles = { body: T.Material; trim: T.Material; accent: T.Material
 export function industrialCabinet(w: FormWriter, m: FormRoles, x: number, y: number, z: number, width: number, height: number, depth: number): void {
   w.box(m.body, x, y, z, width, height, depth);
   const front = z + depth * .5, edge = Math.min(.10, width * .07, height * .06);
+  // A lighter fitted lid and a dark central seam separate the broad top from
+  // vertical sides. The writer retains its existing material/draw ownership.
+  w.box(m.trim, x, y + height * .5 - .012, z, width * .92, .025, depth * .91);
+  w.box(m.accent, x, y + height * .5 + .002, z, width * .018, .008, depth * .80);
   w.box(m.accent, x, y, front + .006, width * .80, height * .76, .012);
   for (const side of [-1, 1]) {
     w.box(m.trim, x + side * (width * .5 - edge), y, front + .018, edge, height * .94, .045);
@@ -84,6 +88,8 @@ export function industrialCabinet(w: FormWriter, m: FormRoles, x: number, y: num
 /** Broad ribs and recessed corner castings describe a freight shell without micro-detail. */
 export function industrialCrate(w: FormWriter, m: FormRoles, x: number, y: number, z: number, width: number, height: number, depth: number): void {
   w.box(m.body, x, y, z, width * .96, height * .96, depth * .96);
+  w.box(m.trim, x, y + height * .472, z, width * .83, height * .025, depth * .79);
+  for (const side of [-1, 1]) w.box(m.accent, x + side * width * .17, y + height * .49, z, width * .045, height * .012, depth * .63);
   for (const side of [-1, 1]) {
     for (const end of [-1, 1]) {
       w.box(m.trim, x + side * width * .43, y, z + end * depth * .43, width * .14, height, depth * .14);
@@ -91,5 +97,31 @@ export function industrialCrate(w: FormWriter, m: FormRoles, x: number, y: numbe
     }
     for (const offset of [-.27, 0, .27]) w.box(m.trim, x + width * offset, y, z + side * depth * .477, width * .05, height * .84, depth * .045);
     w.box(m.trim, x, y + side * height * .43, z, width * .88, height * .14, depth * .99);
+  }
+}
+
+/** Large physical stencil digits, emitted into the caller's existing finish batch. */
+export function industrialStencil(w: FormWriter, material: T.Material, text: string, x: number, y: number, z: number, width: number, depth: number): void {
+  const digits: Readonly<Record<string, readonly string[]>> = {
+    '0': ['111', '101', '101', '101', '111'],
+    '1': ['010', '110', '010', '010', '111'],
+    '2': ['111', '001', '111', '100', '111'],
+    '3': ['111', '001', '111', '001', '111'],
+    '4': ['101', '101', '111', '001', '001'],
+    '5': ['111', '100', '111', '001', '111'],
+    '6': ['111', '100', '111', '101', '111'],
+    '7': ['111', '001', '010', '010', '010'],
+    '8': ['111', '101', '111', '101', '111'],
+    '9': ['111', '101', '111', '001', '111'],
+  };
+  const columns = Math.max(1, text.length * 4 - 1), cellX = width / columns, cellZ = depth / 5;
+  for (let digit = 0; digit < text.length; digit++) {
+    const rows = digits[text[digit]];
+    if (!rows) continue;
+    for (let row = 0; row < 5; row++) for (let column = 0; column < 3; column++) {
+      if (rows[row][column] !== '1') continue;
+      w.box(material, x - width * .5 + (digit * 4 + column + .5) * cellX, y,
+        z - depth * .5 + (row + .5) * cellZ, cellX * .82, .008, cellZ * .82);
+    }
   }
 }

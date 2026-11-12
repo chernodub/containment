@@ -44,7 +44,8 @@ it('retains friendly cyan-white identifiers independently of every rig and above
   expect(identity.material.fragmentShader).toContain('vec3(.65,.93,1.0)');
   model.animate(0,0,0);beacon.update(model.root,0,false,1);
   const skin=beacon.root.children.find(o=>o instanceof T.SkinnedMesh&&o.visible) as T.SkinnedMesh;
-  expect((skin.material as T.Material).depthTest).toBe(false);expect(skin.renderOrder).toBeGreaterThan(1001);
+  expect((skin.material as T.Material).depthTest).toBe(false);expect(beacon.root.renderOrder).toBe(0); // no group-order override of incoming danger
+  expect(skin.renderOrder).toBeGreaterThan(20);expect(skin.renderOrder).toBeLessThan(30);
   expect((skin.material as T.ShaderMaterial).uniforms.strength.value).toBeGreaterThan(.8);
  }finally{beacon.dispose();disposeModel(model.root);}
 });

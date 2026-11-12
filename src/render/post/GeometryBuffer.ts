@@ -136,8 +136,8 @@ export function registerGeometry(root: Object3D, kind?: GeometryClass): void {
       }
       if(kind) {
         const family=root.name.replace('alien-','');
-        const palette:Record<string,number>={marine:0x8b9eae,crawler:0x657481,brute:0x716b78,spitter:0x6b8050,stalker:0x566f87,carrier:0x697c63,queen:0x716078};
-        setGraphicActorBase(material,palette[family]??(kind===GEOMETRY_CLASSES.marine?0x8b9eae:0x657481));
+        const palette:Record<string,number>={marine:0x3d4348,crawler:0xa05235,brute:0xa69b82,spitter:0x456b3c,stalker:0x3b4263,carrier:0x895575,queen:0x716078};
+        setGraphicActorBase(material,root.userData.graphicActorBase??palette[family]??(kind===GEOMETRY_CLASSES.marine?0x3d4348:0xa05235));
       }
       patchGeometryMaterial(material);
       const identity = identities.get(material)!;

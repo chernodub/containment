@@ -20,7 +20,7 @@ import {Atmosphere} from './atmosphere/Atmosphere';
 import {ShipBackdrop} from './atmosphere/ShipBackdrop';
 import {ArenaStaging} from './vfx/ArenaStaging';
 import {addExitSignal,updateExitSignal} from './world/ExitSignal';
-import {TitlePresentation,TITLE_STAGE} from './world/TitlePresentation';
+import {TitlePresentation,TITLE_STAGE,styleTitleActor} from './world/TitlePresentation';
 import {addDeckMarkings} from './world/DeckMarkings';
 import {addWorldDressing,updateWorldDressing} from './world/WorldDressing';
 import {PlayerBeacon} from './vfx/PlayerBeacon';
@@ -129,7 +129,7 @@ export class DepthRenderer {
   this.interimAbilities.bind({statusActor:id=>id===-1?this.queen??undefined:this.actors.get(id),lights:this.lighting.pool,distortion:this.post.distortion,camera:this.cameraRig,presentation:this.post});
   // Boss telegraphs share the prepared hostile priority batch.
   this.scene.add(this.warning);this.warning.visible=false;
-  this.menuActors.add(this.menuMarine.root,this.menuAlien.root);this.menuMarine.root.scale.set(1.9,1.65,1.9);this.menuMarine.setAimPitch?.(TITLE_STAGE.marine.aimPitch);this.menuAlien.root.scale.set(1.8,1.1,1.8);this.menuAlien.root.traverse(o=>{if(o instanceof T.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof T.MeshStandardMaterial)m.color.multiplyScalar(.4);});this.menuAlien.setStageLight?.(.20);this.scene.add(this.menuActors);
+  this.menuActors.add(this.menuMarine.root,this.menuAlien.root);this.menuMarine.root.scale.setScalar(1.9);this.menuMarine.setAimPitch?.(TITLE_STAGE.marine.aimPitch);this.menuAlien.root.scale.set(1.95,1.22,1.95);this.menuAlien.root.traverse(o=>{if(o instanceof T.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof T.MeshStandardMaterial)m.color.multiplyScalar(.68);});this.menuAlien.setStageLight?.(.55);styleTitleActor(this.menuMarine.root,true);styleTitleActor(this.menuAlien.root,false);this.scene.add(this.menuActors);
   configureCinematicLayers(this.title.root,this.menuActors,this.lighting,this.contacts.mesh,this.muzzle);
   this.contextResources.track(this.scene);this.contextResources.track(this.hudScene);this.resize();
  }
@@ -470,7 +470,7 @@ export class DepthRenderer {
   const framed=roomFocus(this.desiredFocus.x,this.desiredFocus.z,bounds.width/UNIT,bounds.height/UNIT,this.viewWidth/baseZoom,this.viewHeight/baseZoom,game.node.templateId,this.frameFocus);
   this.desiredFocus.set(framed.x,0,framed.z);if(menu){this.desiredFocus.set(22,0,14);if(!this.lastMenu)this.cameraRig.reset(22,14);}
   this.cameraRig.update(dt,this.desiredFocus.x,this.desiredFocus.z,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig.apply(this.camera,baseZoom,this.viewHeight,this.options.screenShake);this.focus.copy(this.cameraRig.focus);
-  if(menu)this.title?.apply(this.camera,this.time,!!this.motionQuery?.matches);
+  if(menu)this.title?.apply(this.camera,this.time,!!this.motionQuery?.matches,this.tier==='high'&&this.options.atmosphere);
   if(this.title)this.title.root.visible=menu;this.world.visible=!menu;if(this.backdrop)this.backdrop.root.visible=!menu;
   if(bossWeight)this.protectBossFraming(p.x/UNIT,p.y/UNIT,p.radius/UNIT,bossFrame.x/UNIT,bossFrame.y/UNIT);
   if(!menu)this.protectPlayerFraming(p.x/UNIT,p.y/UNIT,p.radius/UNIT);
@@ -537,7 +537,7 @@ export class DepthRenderer {
   // Keep preparation/picking on the normal layer, including after interrupted frames.
   if(menu)this.lighting.suppressCombatFeedback?.(this.muzzle);
   const cameraLayerMask=this.camera.layers.mask,autoClear=this.renderer.autoClear;this.camera.layers.set(menu?CINEMATIC_LAYER:0);
-  try{this.post.render(dt);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding);this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
+  try{this.post.render(dt);this.playerBeacon?.setDepthSource(this.post.sceneDepthTexture,this.canvas.width,this.canvas.height);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding);this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
   finally{this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}
  }
 

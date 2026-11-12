@@ -13,18 +13,9 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
  root.userData.assemblies=['sealed-core','segmented-jacket','radial-feet','inspection-plugs','passenger-vitals','authorization-state'];
  const finish=(name:string,color:number,roughness=.78,metalness=.2)=>{const m=new T.MeshStandardMaterial({color,roughness,metalness});m.name=name;m.userData.actorMaterial=true;return m;};
  const deck=finish('annulus-deck',0x3d4b51),ceramic=finish('annulus-ceramic',0xb8bab0,.9,.03),metal=finish('annulus-bands',0x66777b,.43,.65),dark=finish('annulus-sealed',0x273237),amber=finish('annulus-unarmed-service',0xb49852),vitals=finish('annulus-living-vitals',0x80aca0);
- const circulation=finish('annulus-circulation',0x354247,.92,.06),ceramicShade=finish('annulus-ceramic-shadow',0x909b98,.92,.03);
- // Ceramic glazes retain dry diffuse response; tiny manufacturing variation
- // distinguishes them from unshaded blockout clay without adding a texture.
- for(const m of [ceramic,ceramicShade,metal]){
-  m.onBeforeCompile=shader=>{
-   shader.vertexShader='varying vec3 annulusFinish;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nannulusFinish=position;');
-   shader.fragmentShader='varying vec3 annulusFinish;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-    float glaze=.5+.5*sin(annulusFinish.x*133.0+sin(annulusFinish.z*171.0));
-    float brushed=.5+.5*sin(annulusFinish.y*173.0+annulusFinish.z*37.0);
-    diffuseColor.rgb*=.96+glaze*.024+brushed*.016;`);
-  };m.customProgramCacheKey=()=> 'g2-annulus-manufactured-v1';
- }
+ const circulation=finish('annulus-circulation',0x354247,.92,.06),ceramicShade=finish('annulus-ceramic-shadow',0x737f82,.92,.03);
+ // Broad ceramic courses stay flat and dry; no high-frequency glaze pattern
+ // competes with the ink contours as the camera moves.
  const parts=new Map<T.Material,T.BufferGeometry[]>();
  const add=(g:T.BufferGeometry,m:T.Material,x=0,y=0,z=0,angle=0)=>{
   g.rotateY(angle);g.translate(x,y,z);const flat=g.index?g.toNonIndexed():g;if(flat!==g)g.dispose();
@@ -62,6 +53,13 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
  for(let i=0;i<16;i++){
   const a=i*Math.PI/8;
   slab(sector(57,153,a+.012,a+Math.PI/8-.012),29,i%4===0?5:3,i%4===0?ceramicShade:ceramic);
+ }
+ // Four broad service panels divide the large closed roof without extra
+ // material families. Slots are physical dark inlays, not emissive floor marks.
+ for(const a of [Math.PI/4,Math.PI*3/4,Math.PI*5/4,Math.PI*7/4]){
+  const x=600+Math.cos(a)*108,z=440+Math.sin(a)*99;
+  for(const offset of [-10,0,10])box(dark,x-Math.sin(a)*offset,z+Math.cos(a)*offset,30,3,32.1,.3,-a);
+  box(amber,x+Math.cos(a)*23,z+Math.sin(a)*23,7,28,32.1,.3,-a);
  }
  // Paired roof fasteners and segmented seal traces stay on sealed ceramic.
  for(let i=0;i<16;i++){

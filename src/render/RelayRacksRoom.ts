@@ -66,7 +66,8 @@ export function relayRacksRoom():T.Group{
    for(const dx of [-40,40])for(const dz of [-60,-40,-20,0,20,40,60])box(plenum,x+dx,20,z+dz,6,6,9,rail);
    // Three repeated blade bays share an open frame, not a stretched cabinet.
    for(const dx of [-43,43])for(const dz of [-77,77])box(g,x+dx,height/2,z+dz,6,height,6,rail,'relay-open-rails');
-   for(const dz of [-77,77])box(g,x,height-3,z+dz,92,6,6,rail);
+   for(const dz of [-77,77]){box(g,x,height-3,z+dz,92,6,6,rail);box(g,x,height+.3,z+dz,78,.6,4,pale);}
+   box(g,x-34,height+.4,z-77,13,.8,4,amber);
    for(const dx of [-40,40])box(g,x+dx,broken?24:39,z,6,8,154,rail);
    for(const bay of [-1,0,1]){
     const bz=z+bay*50;
@@ -77,7 +78,7 @@ export function relayRacksRoom():T.Group{
      box:(m,px,py,pz,w,h,d)=>box(g,px*32,py*32,pz*32,w*32,h*32,d*32,m),
      pipe:(m,a,b,r)=>pipe(g,a.toArray().map(n=>n*32),b.toArray().map(n=>n*32),r*32,m),
      housing:(m,px,py,pz,w,h,d,angle)=>add(g,serviceHousingGeometry(w,h,d).rotateY(angle).translate(px,py,pz),m),
-    },{steel:rail,dark,paint:rail,signal:cyan},x/32,(trayHeight+2.6)/32,(bz-1)/32,.78,0,bay+i);
+    },{steel:rail,dark,paint:pale,signal:cyan},x/32,(trayHeight+2.6)/32,(bz-1)/32,.78,0,bay+i);
     // Ceramic is confined to the patch field and removable tray handles.
     for(const dx of [-28,28])box(g,x+dx,trayHeight+4,bz+12,12,4,6,pale);
     for(const dx of [-18,-6,6,18])box(g,x+dx,trayHeight+3,bz+6,4,1,13,dark);

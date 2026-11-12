@@ -13,3 +13,19 @@ it('borrows the marine skin and releases only its own GPU resources',()=>{
  expect(geometryDispose).not.toHaveBeenCalled();expect(skeletonDispose).not.toHaveBeenCalled();expect(hud.children).toHaveLength(0);
  skin.skeleton.dispose();geometry.dispose();material.dispose();
 });
+
+it('borrows adaptive scene depth so only actually occluded skin receives cyan',()=>{
+ const beacon=new PlayerBeacon(new T.Group()),depth=new T.DepthTexture(960,540),dispose=vi.spyOn(depth,'dispose');
+ try{
+  // A skinless fixture still exposes the retained material through the service.
+  beacon.setDepthSource(depth,1920,1080);
+  const material=(beacon as unknown as {material:T.ShaderMaterial}).material;
+  expect(material.uniforms.sceneDepth.value).toBe(depth);
+  expect(material.uniforms.inverseViewport.value.toArray()).toEqual([1/1920,1/1080]);
+  expect(material.uniforms.hasSceneDepth.value).toBe(1);expect(material.depthTest).toBe(false);
+  expect(material.fragmentShader).toContain('if(gl_FragCoord.z<=surface+.00008)discard;');
+  beacon.setDepthSource(null,1280,720);expect(material.uniforms.sceneDepth.value).toBeNull();
+  expect(material.depthTest).toBe(true);expect(material.depthFunc).toBe(T.GreaterDepth);
+  beacon.dispose();expect(dispose).not.toHaveBeenCalled();
+ }finally{beacon.dispose();depth.dispose();}
+});

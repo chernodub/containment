@@ -51,6 +51,8 @@ export class PostPipeline {
   readonly adaptive = new AdaptiveResolution();
   gpuTimer?: GpuFrameTimer;
   get diagnostics() { return { adaptiveScale:this.adaptive.scale, adaptive:this.adaptive.snapshot, gpu:this.gpuTimer?.snapshot }; }
+  /** Borrowed current scene depth for the native-resolution occlusion silhouette. */
+  get sceneDepthTexture(): DepthTexture | null { return this.resources?.scene.depthTexture ?? null; }
   private styleStrength:GraphicStrength='bold';
   /** Debug art review strengths share the shipping shader programs. */
   setStyleStrength(value:GraphicStrength):void {

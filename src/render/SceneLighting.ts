@@ -169,11 +169,11 @@ export class SceneLighting {
   if(this.menuPresentation===enabled)return;this.menuPresentation=enabled;
   if(!enabled){this.applyMood(this.width,this.height);this.playerX=this.playerZ=NaN;return;}
   this.suppressCombatFeedback();
-  this.ambient.intensity=.025;this.ambient.color.setHex(0x8098b0);
-  this.key.position.set(25.9,4.55,11.2);this.key.target.position.set(23.35,2,14.5);this.key.color.setHex(0xff9a70);this.key.intensity=this.key instanceof T.SpotLight?800:.55;
-  this.fill.position.set(28,4,7);this.fill.target.position.set(24,1,13);this.fill.color.setHex(0x749bab);this.fill.intensity=.045;
-  this.rim.position.set(29,6,9);this.rim.target.position.set(24,1,13);this.rim.color.setHex(0xa3dfee);this.rim.intensity=.18;
-  for(let i=0;i<4;i++){const light=this.fixtures[i];light.position.set(25.9,4.55,11.2);light.color.setHex(0xff9a70);light.intensity=i===0?80:0;light.distance=6;}
+  this.ambient.intensity=.035;this.ambient.color.setHex(0x8098b0);
+  this.key.position.set(25.9,4.55,11.2);this.key.target.position.set(23.4,2,14.7);this.key.color.setHex(0xff9a70);this.key.intensity=this.key instanceof T.SpotLight?950:.9;
+  this.fill.position.set(28,4,7);this.fill.target.position.set(24,1,13);this.fill.color.setHex(0x749bab);this.fill.intensity=.16;
+  this.rim.position.set(25.5,5,14.0);this.rim.target.position.set(23.4,1.8,14.7);this.rim.color.setHex(0xa3dfee);this.rim.intensity=1.0;
+  for(let i=0;i<4;i++){const light=this.fixtures[i];light.position.set(25.9,4.55,11.2);light.color.setHex(0xff9a70);light.intensity=i===0?118:0;light.distance=7;}
   this.lamp.setRoom(0);this.lamp.light.intensity=12;
  }
  /** Keep fixed slots visible for shader reuse, with no combat radiance in the title. */

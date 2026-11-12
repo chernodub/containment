@@ -223,13 +223,17 @@ export function marineIdentity(root:T.Group) {
   const parts:Part[]=[
     {position:[-.29,1.52,.005],scale:[.12,.014,.045],role:0,shape:'seam'},
     {position:[.29,1.52,.005],scale:[.12,.014,.045],role:0,shape:'seam'},
-    {position:[-.115,1.21,.17],scale:[.015,.009,.085],role:1,shape:'seam'},
-    {position:[.115,1.21,.17],scale:[.015,.009,.085],role:1,shape:'seam'},
+    {position:[-.115,1.21,.17],scale:[.065,.018,.105],role:1,shape:'plate'},
+    {position:[.115,1.21,.17],scale:[.065,.018,.105],role:1,shape:'plate'},
+    {position:[-.27,1.48,-.045],scale:[.09,.023,.095],role:1,shape:'plate'},
+    {position:[.27,1.48,-.045],scale:[.09,.023,.095],role:1,shape:'plate'},
+    {position:[-.12,1.32,-.18],scale:[.065,.018,.10],role:1,shape:'plate'},
+    {position:[.12,1.32,-.18],scale:[.065,.018,.10],role:1,shape:'plate'},
     {position:[0,1.78,.12],scale:[.12,.012,.035],role:0,shape:'seam'},
   ];
-  const material=new T.ShaderMaterial({uniforms:{rigColor:{value:new T.Color(RIG_ACCENTS.breacher)}},vertexShader:'attribute float identityRole;varying vec3 n;varying float role;void main(){role=identityRole;n=normalMatrix*normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'uniform vec3 rigColor;varying vec3 n;varying float role;void main(){vec3 color=role<.5?vec3(.65,.93,1.0):rigColor;gl_FragColor=vec4(color*(1.25+.6*abs(normalize(n).z)),1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>}'});
+  const material=new T.ShaderMaterial({uniforms:{rigColor:{value:new T.Color(RIG_ACCENTS.breacher)}},vertexShader:'attribute float identityRole;varying vec3 n;varying float role;void main(){role=identityRole;n=normalMatrix*normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'uniform vec3 rigColor;varying vec3 n;varying float role;void main(){vec3 color=role<.5?vec3(.65,.93,1.0):rigColor;float facing=abs(normalize(n).z);float light=role<.5?1.25:.38+.34*smoothstep(.35,.55,facing);gl_FragColor=vec4(color*light,1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>}'});
   material.userData.actorMaterial=true;
-  const mesh=new T.Mesh(identityGeometry('x2-marine-friendly-strips',parts,root),material);mesh.name='marine-rig-accents';root.add(mesh);
+  const mesh=new T.Mesh(identityGeometry('i8-marine-graphic-panels',parts,root),material);mesh.name='marine-rig-accents';root.add(mesh);
   const ribs=root.getObjectByName('ribs');if(ribs){root.updateMatrixWorld(true);ribs.attach(mesh);}
   let current='';
   return {setRig(rig:string){if(rig===current)return;current=rig;material.uniforms.rigColor.value.setHex(RIG_ACCENTS[rig as keyof typeof RIG_ACCENTS]??RIG_ACCENTS.breacher);}};

@@ -127,9 +127,11 @@ const mapResponse = ShaderChunk.map_fragment
   float graphicSac = smoothstep(.12, .35, min(sampledDiffuseColor.r, sampledDiffuseColor.g) - sampledDiffuseColor.b)
     * smoothstep(.65, 1.0, sampledDiffuseColor.g / max(sampledDiffuseColor.r, .001));
   vec3 graphicFamilyTone = graphicActorBase * graphicActorTone(graphicMapLuma);
-  sampledDiffuseColor.rgb = mix(sampledDiffuseColor.rgb, graphicFamilyTone,
-    graphicEnabled * graphicStrength * graphicSurfaceKind.x * graphicResponse.w * (1.0 - graphicSac));
-  diffuseColor *= sampledDiffuseColor;`);
+  diffuseColor *= sampledDiffuseColor;
+  // Family values replace the inherited photographic/material tint together;
+  // a pale source multiply must not bleach graphite armor or a russet crawler.
+  diffuseColor.rgb = mix(diffuseColor.rgb, graphicFamilyTone,
+    graphicEnabled * graphicStrength * graphicSurfaceKind.x * graphicResponse.w * (1.0 - graphicSac));`);
 const normals = ShaderChunk.normal_fragment_maps.replace(
   'mapN.xy *= normalScale;',
   `float graphicNormal = mix(1.0, graphicNormalGain.y, graphicSurfaceKind.y);
@@ -187,6 +189,19 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
           dot(reflectedLight.directDiffuse + reflectedLight.indirectDiffuse, vec3(.2126, .7152, .0722)));
         reflectedLight.indirectDiffuse *= mix(vec3(1.0), vec3(.64, .81, 1.12),
           graphicEnabled * graphicStrength * graphicShadowBand);
+        // Three broad actor lighting values retain the room's light hue while
+        // bounding the suit-fill response. Hit, status and dissolve emission is
+        // intentionally outside this diffuse-only treatment.
+        vec3 graphicActorDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
+        float graphicActorAlbedo = max(.008, dot(diffuseColor.rgb, vec3(.2126,.7152,.0722)));
+        float graphicActorIncident = dot(graphicActorDiffuse, vec3(.2126,.7152,.0722)) / graphicActorAlbedo;
+        float graphicActorLight = .42 + .54 * smoothstep(.30,.56,graphicActorIncident)
+          + .72 * smoothstep(1.00,1.30,graphicActorIncident);
+        vec3 graphicActorHue = clamp(graphicActorDiffuse / max(.008,dot(graphicActorDiffuse,vec3(.2126,.7152,.0722))),vec3(.55),vec3(1.4));
+        vec3 graphicActorBands = diffuseColor.rgb * graphicActorLight * graphicActorHue;
+        reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, graphicActorBands,
+          graphicEnabled * graphicStrength * graphicSurfaceKind.x);
+        reflectedLight.indirectDiffuse *= 1.0 - graphicEnabled * graphicStrength * graphicSurfaceKind.x;
         // A narrow highlight on upper-facing bevels, without normal-map noise.
         #ifdef FLAT_SHADED
           vec3 graphicBevelNormal = normalize(cross(dFdx(vViewPosition), dFdy(vViewPosition)));
@@ -195,7 +210,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
         #endif
         float graphicBevel = pow(1.0 - clamp(dot(graphicBevelNormal, normalize(vViewPosition)), 0.0, 1.0), 5.0)
           * smoothstep(.08, .50, dot(graphicBevelNormal, normalize(viewMatrix[1].xyz)));
-        totalEmissiveRadiance += vec3(.16, .21, .24) * graphicBevel * graphicEnabled * graphicStrength;`);
+        totalEmissiveRadiance += vec3(.16, .21, .24) * graphicBevel * graphicEnabled * graphicStrength * mix(1.0,.12,graphicSurfaceKind.x);`);
   };
   material.customProgramCacheKey = () => `${key}:graphic-surface-v1`;
   material.needsUpdate = true;
