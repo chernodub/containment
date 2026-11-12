@@ -17,7 +17,7 @@ export function armoryCarousel():T.Group{
   const bevel=Math.min(.055,height*.22);
   const g=new T.ExtrudeGeometry(shape,{depth:height-2*bevel,bevelEnabled:true,bevelOffset:-bevel,bevelSize:bevel,bevelThickness:bevel,bevelSegments:1,steps:1});g.rotateX(-Math.PI/2);g.translate(0,bottom+bevel,0);return add(name,g,m);
  };
- const box=(parent:T.Object3D,name:string,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const p=add(name,industrialBoxGeometry(w,h,d),m,parent);p.position.set(x,y,z);return p;};
+ const box=(parent:T.Object3D,name:string,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material)=>{const p=add(name,industrialBoxGeometry(w,h,d,Math.min(w,h,d)>.045&&Math.max(w,h,d)>.18?Math.min(.065,Math.min(w,h,d)*.16):0),m,parent);p.position.set(x,y,z);return p;};
  const cylinder=(name:string,radius:number,height:number,y:number,m:T.Material)=>{const p=add(name,industrialCylinderGeometry(radius,height,.035,32),m);p.position.set(600/32,y,450/32);return p;};
  slab('horseshoe-solid',ARMORY_COUNTER,0,.14,graphite);
  const shellOutline=ARMORY_COUNTER.map(p=>{const dx=p.x-600,dz=p.y-450,r=Math.hypot(dx,dz),inset=r>255?-11:3;return{x:600+dx*(r+inset)/r,y:450+dz*(r+inset)/r};});
