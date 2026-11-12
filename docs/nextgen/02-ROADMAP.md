@@ -42,11 +42,12 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | R6 second independent verdict | done | 6/7/4/5/5/5 — "advanced prototype visually, polished-indie UI"; see `reviews/R6-verdict.md` |
 | Lead benchmark on final build (2026-11-12) | done | High: frame p50 33 ms / p95 42 ms (GPU-bound, render JS p50 7 ms); Low: p50 16.7 ms; draws ≤ 336 |
 | **Wave 4** — direction in `streams/W4-direction.md` | running | |
-| G3 inked graphic look + GPU frame time to 60 fps | running | post pipeline, prepass, adaptive resolution |
-| G4 world forms kit, enemy footprint, danger priority, camera framing, title, Queen | running | |
-| V4 abilities: distinct constructions, friendly effects yield | running | |
-| A3 enemy separation + encirclement, re-balance | running | |
-| U4 UI: overlays out of combat, element-true feedback, card copy, ending | running | |
+| G3 inked graphic look + GPU cost + adaptive resolution | reported; merging in I8 | `t3/inked-render-pipeline` @ 74f56d7 — bold ink chosen after lead rejected the subtle version; 60 fps not certifiable on the loaded host |
+| G4 world forms, enemy footprint, hatched hostile telegraphs, camera, title, Queen | reported; merging in I8 | `t3/world-actor-camera-overhaul` @ cff2dcc |
+| V4 ability constructions + priority mask | reported; merging in I8 | `t3/ability-vfx-construction` @ d7f601c |
+| A3 enemy separation + attack slots, re-balanced | merged | max 3 engaged melee, escape lane; cohort spread 14.4 pp |
+| U4 UI fixes | merged | compact objective/radar, element-true damage colors, benefit headlines, authored ending |
+| I8 wave-4 integration + 60 fps acceptance + final2 gallery | running | sole agent on the host |
 
 Next (lead): merge A3 → U4 → V4 → G4 → G3 (integration task), gates, bench on a quiet host, final gallery, third independent verdict.
 
