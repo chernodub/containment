@@ -20,7 +20,7 @@ export const DASH_DISTANCE = 150;
 export const DASH_DURATION_MS = 140;
 export const DASH_INVULNERABLE_MS = 220;
 export const PYRO_DASH_DISTANCE = 240;
-export const PYRO_DASH_RECHARGE_MS = 2_300;
+export const PYRO_DASH_RECHARGE_MS = 2_500;
 
 const dash = (
   id: AbilityId,

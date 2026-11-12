@@ -270,7 +270,7 @@ describe('all four rig dashes', () => {
       expect(phases(w, id)).toContain('end');
     });
   }
-  it('Afterburn travels 240 units, protects for 220ms and independently recharges after 2300ms', () => {
+  it('Afterburn travels 240 units, protects for 220ms and independently recharges after 2500ms', () => {
     const w=world('pyro');
     w.use('dash');
     expect(w.system.snapshot.slots!.dash.charges).toBe(1);
@@ -282,7 +282,7 @@ describe('all four rig dashes', () => {
     expect(w.system.invulnerable).toBe(true);
     w.advance(1);
     expect(w.system.invulnerable).toBe(false);
-    w.advance(2079);
+    w.advance(2279);
     expect(w.system.snapshot.slots!.dash.charges).toBe(1);
     w.advance(1);
     expect(w.system.snapshot.slots!.dash.charges).toBe(2);
