@@ -88,3 +88,31 @@ test('explicit flush profile requests submission boundaries without waiting and 
   assert.equal(f.queries.length, 1);
   f.r.__benchGpuPassAudit.dispose();
 });
+
+test('shadow queries require an enabled dirty map and retain actual bound map dimensions', () => {
+  const f = fixture(), map = { width: 1024, height: 512 }, light = { shadow: { map } };
+  const renderer = f.r.renderer, original = renderer.render;
+  renderer.setRenderTarget = () => {};
+  renderer.shadowMap = { enabled: true, autoUpdate: false, needsUpdate: false, render(lights) {
+    if (!this.enabled || !(this.autoUpdate || this.needsUpdate)) return;
+    for (const entry of lights) renderer.setRenderTarget(entry.shadow.map);
+    renderer.setRenderTarget(null);
+  } };
+  renderer.render = function (scene, ...parameters) {
+    if (scene === f.r.scene) this.shadowMap.render([light]);
+    return original.call(this, scene, ...parameters);
+  };
+  installGpuPassAudit(f.r);
+  for (let i = 0; i < 15; i++) f.r.render();
+  assert.equal(f.r.__benchGpuPassAudit.snapshot().passes.some(pass => pass.name === 'shadows'), false);
+  renderer.shadowMap.needsUpdate = true;
+  for (let i = 0; i < 24; i++) f.r.render();
+  const shadow = f.r.__benchGpuPassAudit.snapshot().passes.find(pass => pass.name === 'shadows');
+  assert(shadow);
+  assert.deepEqual(shadow.resolutions, [{ width: 1024, height: 512, pixels: 524288 }]);
+  renderer.shadowMap.enabled = false;
+  const previous = f.queries.length;
+  for (let i = 0; i < 24; i++) f.r.render();
+  assert(f.queries.length > previous, 'other stage queries keep rotating when shadow updates are absent');
+  f.r.__benchGpuPassAudit.dispose();
+});

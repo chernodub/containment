@@ -16,7 +16,8 @@ export function installGpuPassAudit(configuration = {}) {
   runtimeTimer?.setEnabled(false);
   const diagnostics = { sampledFrames: 0, disjointEvents: 0, skippedBusy: 0, skippedCapacity: 0, abandonedQueries: 0, flushCalls: 0 };
   let frame = 0, sampling = false, active = false, disposed = false;
-  let selectedStage, rotation = 0, queriedFrame = false;
+  let selectedStage, rotation = 0, queriedFrame = false, missedSelections = 0;
+  let shadowLights = null;
   const stages = [], cadence = 3, capacity = 512;
 
   function wrap(object, name, factory) {
@@ -52,6 +53,10 @@ export function installGpuPassAudit(configuration = {}) {
     }
   }
 
+  function recordResolution(pass, width, height) {
+    if (pass && width > 0 && height > 0 && !pass.resolutions.some(size => size.width === width && size.height === height)) pass.resolutions.push({ width, height, pixels: width * height });
+  }
+
   function measure(name, target, body) {
     if (!stages.includes(name)) stages.push(name);
     if (!extension || !sampling || name !== selectedStage || queriedFrame || disposed) return body();
@@ -64,11 +69,10 @@ export function installGpuPassAudit(configuration = {}) {
     if (!query) return body();
     let pass = passes.get(name);
     if (!pass) {
-      pass = { name, samplesMs: [], resolutions: [], scope: name === 'sceneColor' ? 'Scene render including any shadow updates and HDR resolve' : 'One render submission' };
+      pass = { name, samplesMs: [], resolutions: [], scope: name === 'sceneColor' ? 'Scene render including any shadow updates and HDR resolve' : name === 'shadows' ? 'Shadow update only; dimensions are actual shadow-map target bindings during measured updates' : 'One render submission' };
       passes.set(name, pass);
     }
-    const width = target?.width ?? gl.drawingBufferWidth, height = target?.height ?? gl.drawingBufferHeight;
-    if (!pass.resolutions.some(size => size.width === width && size.height === height)) pass.resolutions.push({ width, height, pixels: width * height });
+    if (name !== 'shadows') recordResolution(pass, target?.width ?? gl.drawingBufferWidth, target?.height ?? gl.drawingBufferHeight);
     if (flush) { gl.flush(); diagnostics.flushCalls++; }
     active = true;
     queriedFrame = true;
@@ -85,11 +89,29 @@ export function installGpuPassAudit(configuration = {}) {
   wrap(r, 'render', original => function (...parameters) {
     poll();
     sampling = frame++ % cadence === 0 && stages.length > 0;
-    selectedStage = sampling ? stages[rotation++ % stages.length] : undefined;
+    selectedStage = sampling ? stages[rotation % stages.length] : undefined;
     queriedFrame = false;
     if (sampling) diagnostics.sampledFrames++;
     try { return original.apply(this, parameters); }
-    finally { sampling = false; }
+    finally {
+      // Give intermittent shadow updates a second sampled frame of opposite
+      // parity; absent transient passes cannot stall the stage rotation.
+      if (sampling && (queriedFrame || ++missedSelections >= 2)) { rotation++; missedSelections = 0; }
+      sampling = false;
+    }
+  });
+  wrap(renderer.shadowMap, 'render', original => function (lights, ...parameters) {
+    if (!this.enabled || !(this.autoUpdate || this.needsUpdate) || !lights.length) return original.call(this, lights, ...parameters);
+    const previous = shadowLights;
+    shadowLights = lights;
+    try { return measure('shadows', null, () => original.call(this, lights, ...parameters)); }
+    finally { shadowLights = previous; }
+  });
+  wrap(renderer, 'setRenderTarget', original => function (target, ...parameters) {
+    // Only actual bindings to a known light-owned map enter the shadow pixel
+    // metadata; the screen size or an unallocated expected map is never guessed.
+    if (active && selectedStage === 'shadows' && target && shadowLights?.some(light => light.shadow?.map === target)) recordResolution(passes.get('shadows'), target.width, target.height);
+    return original.call(this, target, ...parameters);
   });
   wrap(renderer, 'render', original => function (scene, ...parameters) {
     const name = scene === r.scene ? 'sceneColor' : scene === r.hudScene ? 'hud' : null;

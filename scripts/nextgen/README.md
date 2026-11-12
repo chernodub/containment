@@ -440,7 +440,8 @@ classifications cannot certify it. Broad non-holdout pacing is reported apart.
 
 `npm run bench -- --gpu-passes` records asynchronous
 `EXT_disjoint_timer_query_webgl2` timings for scene color (including shadow
-updates and HDR resolve), contact/GTAO, denoise, bloom extraction and both blur
+updates and HDR resolve), enabled dirty shadow updates separately, contact/GTAO,
+denoise, bloom extraction and both blur
 directions, distortion, composite and HUD. It rotates one selected stage every third frame, avoiding multiple timer
 queries within the same ANGLE Metal command buffer, and retains raw milliseconds and actual target dimensions, discards pending queries
 on a GPU disjoint interval and retires unresolved queries without blocking.
@@ -478,3 +479,9 @@ must not certify production FPS. It never uses `finish`, `readPixels` or a
 completion wait. Compare ordinary non-flush trials separately. If isolated
 scopes still report queue-scale durations for tiny stages, retain them as
 unsupported stage attribution rather than adding their timings.
+
+The separate `shadows` scope runs only when shadow rendering is enabled and
+`autoUpdate || needsUpdate`. Its dimensions come from actual bindings to a
+light-owned shadow map during the measured update; no screen-sized proxy or
+unallocated expected shadow size is reported. `sceneColor` still includes its
+shadow work, so those two distributions overlap and must never be added.
