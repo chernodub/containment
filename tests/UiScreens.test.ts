@@ -633,3 +633,24 @@ test('draft benefit cards expose exact rules only through deliberate native insp
     expect(actions.filter((action:string)=>action.startsWith('boon:'))).toEqual([]);
   } finally {await page.close();}
 });
+
+test.each([[1280,720],[1920,1080]])('reduced-motion aftermath fills the viewport and leaves the archive secondary at %i × %i',async(width,height)=>{
+  const page=await mount(width,height);
+  try {
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.evaluate(()=>{(window as any).ui.game.storyRoom={};});
+    await phase(page,'complete',19);
+    const geometry=await page.locator('.debrief-panel').evaluate(node=>{
+      const box=node.getBoundingClientRect(),art=document.querySelector('.ending-space')!,headline=document.querySelector('.ending-exact')!;
+      return {left:box.left,top:box.top,right:box.right,bottom:box.bottom,scroll:node.scrollHeight,height:node.clientHeight,art:art.getBoundingClientRect().height,motion:getComputedStyle(art).animationName,headlines:node.querySelectorAll('h2').length,text:headline.textContent};
+    });
+    expect(geometry).toMatchObject({left:0,top:0,right:width,bottom:height,motion:'none',headlines:1});
+    expect(geometry.scroll).toBeLessThanOrEqual(geometry.height+1);
+    expect(geometry.art).toBeGreaterThan(height*.65);
+    expect(geometry.text).toBe('SHIP DESTROYED / ALL ABOARD LOST / NEW EARTH WARNED');
+    expect(await page.locator('.result-details').getAttribute('open')).toBeNull();
+    await page.locator('.result-details>summary').focus();await page.keyboard.press('Enter');
+    expect(await page.locator('[data-stat]').count()).toBe(16);
+    expect(await page.locator('#start').isVisible()).toBe(true);
+  } finally {await page.close();}
+});

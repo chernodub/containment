@@ -146,7 +146,8 @@
 #overlay .ending-ship-aft {transform-origin:-90px 0;animation:aftermath-aft 1.6s ease-out both;}
 #overlay .ending-ship-bow {transform-origin:60px 0;animation:aftermath-bow 1.6s ease-out both;}
 #overlay .ending-pods {animation:aftermath-caption 1.6s .3s both;}
-#overlay .ending-signal {stroke-dasharray:20 560;animation:ending-warning-travel 5s linear infinite;}
+#overlay .ending-signal-track {stroke-width:3;opacity:.85;}
+#overlay .ending-signal {stroke-width:3;stroke-dasharray:20 560;animation:ending-warning-travel 5s linear infinite;}
 #overlay .debrief-panel[data-outcome='complete']>.result-details {margin:0 7vw;padding-top:2vh;animation:aftermath-caption 1s 1.2s both;}
 #overlay .debrief-panel[data-outcome='complete']>.result-actions {margin:0 7vw;padding:12px 0 26px;border-top:1px solid #9fe8ff20;animation:aftermath-caption 1s 1.35s both;}
 #overlay .debrief-panel[data-outcome='complete']>.result-actions>.primary {background:#d2edf01a;color:#d9f2f5;border:1px solid #a9dce077;box-shadow:none;min-width:180px;}
