@@ -3,9 +3,9 @@ import { FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
 
 export type Primitive = 'shard' | 'spark' | 'smoke' | 'flame' | 'solid' | 'ghost' | 'decal' | 'front';
 const vertex = `
-attribute float abilityAlpha;attribute float abilityPhase;attribute float abilityStyle;varying float style;
+attribute float abilityAlpha;attribute float abilityPhase;
 varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;
-void main(){style=abilityStyle;alpha=abilityAlpha;phase=abilityPhase;ink=instanceColor;uvLocal=uv;facetNormal=normalize(normalMatrix*mat3(instanceMatrix)*normal);
+void main(){alpha=abilityAlpha;phase=abilityPhase;ink=instanceColor;uvLocal=uv;facetNormal=normalize(normalMatrix*mat3(instanceMatrix)*normal);
 vec3 posedPosition=position;/* ability shape */
 gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(posedPosition,1.);screenPosition=gl_Position;}`;
 
@@ -23,7 +23,7 @@ export class InstanceBatch {
   private readonly phase: T.InstancedBufferAttribute;
   private readonly texture?: T.Texture;
   private readonly priority: T.InstancedBufferAttribute;
-  private readonly style: T.InstancedBufferAttribute;
+  private readonly priorityRange = { start: 0, count: 0 };
   priorityWeight = 0;
   private view?: T.Vector3;
 
@@ -39,9 +39,7 @@ export class InstanceBatch {
     this.alpha = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
     this.phase = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
     this.priority = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
-    this.style = new T.InstancedBufferAttribute(new Float32Array(capacity), 1).setUsage(T.DynamicDrawUsage);
     geometry.setAttribute('abilityPriority', this.priority);
-    geometry.setAttribute('abilityStyle', this.style);
     geometry.setAttribute('abilityAlpha', this.alpha);
     geometry.setAttribute('abilityPhase', this.phase);
 
@@ -56,7 +54,7 @@ export class InstanceBatch {
     }
 
     const fragment = `
-uniform float abilityTime;uniform sampler2D map;uniform float flash;varying float style;
+uniform float abilityTime;uniform sampler2D map;uniform float flash;
 varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;
 float abilityHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
 float abilityNoise(vec2 p){vec2 b=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(abilityHash(b),abilityHash(b+vec2(1.,0.)),f.x),mix(abilityHash(b+vec2(0.,1.)),abilityHash(b+vec2(1.)),f.x),f.y);}
@@ -214,7 +212,6 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
     this.mesh.instanceColor!.setXYZ(i, this.colorValues[rgb], this.colorValues[rgb + 1], this.colorValues[rgb + 2]);
     this.alpha.setX(i, opacity);
     this.priority.setX(i, this.priorityWeight);
-    this.style.setX(i, variant);
     this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
   }
@@ -226,7 +223,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
     this.upload(this.mesh.instanceColor!, this.colorRange, this.mesh.count * 3);
     this.upload(this.alpha, this.alphaRange, this.mesh.count);
     this.upload(this.phase, this.phaseRange, this.mesh.count);
-    this.priority.needsUpdate = this.style.needsUpdate = true;
+    this.upload(this.priority, this.priorityRange, this.mesh.count);
   }
 
   private upload(attribute: T.InstancedBufferAttribute, range: { start: number; count: number }, count: number): void {
