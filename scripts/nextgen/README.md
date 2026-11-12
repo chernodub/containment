@@ -442,7 +442,7 @@ classifications cannot certify it. Broad non-holdout pacing is reported apart.
 `EXT_disjoint_timer_query_webgl2` timings for scene color (including shadow
 updates and HDR resolve), enabled dirty shadow updates separately, contact/GTAO,
 denoise, bloom extraction and both blur
-directions, distortion, composite and HUD. It rotates one selected stage every third frame, avoiding multiple timer
+directions, distortion, composite, final AA and HUD. It rotates one selected stage every third frame, avoiding multiple timer
 queries within the same ANGLE Metal command buffer, and retains raw milliseconds and actual target dimensions, discards pending queries
 on a GPU disjoint interval and retires unresolved queries without blocking.
 No `readPixels`, `finish` or query-result busy wait is used. Unsupported timers
@@ -490,3 +490,10 @@ If the zero-combat-program guard fails, `combatProgramKeys` retains the names
 and complete Three cache keys of newly created programs still in the renderer
 inventory. The guard remains fatal; the diagnostic identifies the missed
 preparation topology without accepting a compile hitch.
+
+G3's final AA scope (`finalAA`) samples the graded ink presentation target and
+renders to the screen before the HUD. Cost and GPU probes recognize it only
+when present; preserved pre-AA builds keep their original stage list. Default
+Low now draws scene → compact composite → final AA while keeping AO/bloom/
+distortion targets at1×1 and skipping those passes. Explicit Low ink-off retains
+the original single forward render. The original draw/program guards remain.

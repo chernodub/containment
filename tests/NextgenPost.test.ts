@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  ACESFilmicToneMapping, AgXToneMapping, Camera, Color, DataUtils, HalfFloatType, NearestFilter, NoToneMapping, OrthographicCamera,
+  ACESFilmicToneMapping, AgXToneMapping, Camera, Color, DataUtils, HalfFloatType, NearestFilter, SRGBColorSpace, NoToneMapping, OrthographicCamera,
   PerspectiveCamera, Scene, ShaderMaterial, UnsignedByteType, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { GRAPHICS_PRESETS } from '../src/render/graphicsOptions';
@@ -11,7 +11,7 @@ import type { DepthGTAO } from '../src/render/post/DepthGTAO';
 import { compositeFragment, finiteOcclusionGLSL } from '../src/render/post/shaders';
 
 type Resources = {
-  scene: WebGLRenderTarget; ao: WebGLRenderTarget;
+  scene: WebGLRenderTarget; present: WebGLRenderTarget; antialias: ShaderMaterial; ao: WebGLRenderTarget;
   aoDenoised: WebGLRenderTarget; gtao: DepthGTAO;
   bloomA: WebGLRenderTarget; bloomB: WebGLRenderTarget; distortion: WebGLRenderTarget;
   composite: ShaderMaterial; occlusion: ShaderMaterial;
@@ -54,7 +54,8 @@ describe('HDR post lifecycle without a WebGL context', () => {
   it('prepares Low ink actor programs against the actual HDR target before any warm draw',async()=>{
     const {pipeline,compiles}=fixture();pipeline.setOptions(GRAPHICS_PRESETS.low,'low');await pipeline.prepare();
     expect(compiles[0]).toMatchObject({target:resources(pipeline)!.scene,mapping:NoToneMapping});
-    expect(compiles[1]).toMatchObject({target:null,mapping:NoToneMapping});pipeline.dispose();
+    expect(compiles[1]).toMatchObject({target:resources(pipeline)!.present,mapping:NoToneMapping});
+    expect(compiles[2]).toMatchObject({target:null,mapping:NoToneMapping});pipeline.dispose();
   });
 
   it('keeps explicit ink-off Low to a single forward render with no post resources, even after prepare', async () => {
@@ -73,19 +74,20 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.dispose();
   });
 
-  it('keeps default Low silhouette to scene plus compact composite with one-pixel optional targets', async () => {
+  it('keeps default Low silhouette to scene, compact composite and final AA with one-pixel optional targets', async () => {
     const { pipeline, gpu, scene, frames } = fixture();
     pipeline.setSize(1920, 1080);
     pipeline.setOptions(GRAPHICS_PRESETS.low, 'low');
     pipeline.distortion.shockwave(0, 0);
     await pipeline.prepare();
-    expect(gpu.compileAsync).toHaveBeenCalledTimes(2); // scene + selected composite
+    expect(gpu.compileAsync).toHaveBeenCalledTimes(3); // actual HDR scene + linear composite + screen AA
     frames.length = 0;
     pipeline.render(1 / 60);
     const r = resources(pipeline)!;
-    expect(frames).toHaveLength(2);
+    expect(frames).toHaveLength(3);
     expect(frames[0]).toMatchObject({ scene, target: r.scene, mapping: NoToneMapping });
-    expect(frames[1]).toMatchObject({ target: null, mapping: NoToneMapping });
+    expect(frames[1]).toMatchObject({ target: r.present, mapping: NoToneMapping });
+    expect(frames[2]).toMatchObject({ target: null, mapping: NoToneMapping });
     expect(r.composite.uniforms.inkMode.value).toBe(1);
     expect(r.scene.textures).toHaveLength(2);
     for (const target of [r.ao, r.aoDenoised, r.bloomA, r.bloomB, r.distortion]) {
@@ -138,13 +140,20 @@ describe('HDR post lifecycle without a WebGL context', () => {
     expect(r.composite.uniforms.tGeometry.value).toBe(r.scene.textures[1]);
     expect(r.scene.depthTexture).toBeTruthy();
     expect([r.scene.width, r.scene.height]).toEqual([1200, 900]);
+    expect([r.present.width,r.present.height]).toEqual([1200,900]);
+    expect(r.present.texture.type).toBe(UnsignedByteType);
+    expect(r.present.texture.colorSpace).toBe(SRGBColorSpace);
+    expect(r.antialias.uniforms.tDiffuse.value).toBe(r.present.texture);
+    expect(r.antialias.uniforms.resolution.value.toArray()).toEqual([1/1200,1/900]);
     expect([r.ao.width, r.ao.height]).toEqual([600, 450]);
     expect([r.bloomA.width, r.bloomA.height]).toEqual([300, 225]);
     expect([r.distortion.width, r.distortion.height]).toEqual([300, 225]);
-    expect(frames).toHaveLength(7); // scene + GTAO/denoise + extract + blur X/Y + composite
+    expect(frames).toHaveLength(8); // scene + GTAO/denoise + extract + blur X/Y + composite + final AA
     expect(frames.every(frame => frame.mapping === NoToneMapping)).toBe(true);
     pipeline.setSize(400, 300, 1);
     expect([r.scene.width, r.scene.height]).toEqual([300, 225]);
+    expect([r.present.width,r.present.height]).toEqual([300,225]);
+    expect(r.antialias.uniforms.resolution.value.toArray()).toEqual([1/300,1/225]);
     pipeline.dispose();
   });
 
@@ -153,7 +162,7 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.setOptions({ ...GRAPHICS_PRESETS.low }, 'high');
     pipeline.setMood({ ...DEFAULT_POST_MOOD, grade: { ...DEFAULT_POST_MOOD.grade, exposure: 0.91 } });
     pipeline.render(0.016);
-    expect(frames).toHaveLength(2);
+    expect(frames).toHaveLength(3);
     const uniforms = resources(pipeline)!.composite.uniforms;
     expect(uniforms.toneMappingExposure.value).toBe(0.91);
     for (const option of ['aoEnabled', 'bloomEnabled', 'distortionEnabled', 'lensEnabled', 'atmosphereEnabled']) {
@@ -167,7 +176,7 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.setOptions(GRAPHICS_PRESETS.high, 'high');
     pipeline.render(0);
     const r = resources(pipeline)!;
-    const owned = [r.scene, r.ao, r.aoDenoised, r.bloomA, r.bloomB, r.distortion,
+    const owned = [r.scene, r.present, r.antialias, r.ao, r.aoDenoised, r.bloomA, r.bloomB, r.distortion,
       r.occlusion, r.gtao.material, r.gtao.denoiseMaterial, r.gtao.noise, r.gtao.denoiseNoise,
       r.extract, r.blur, r.distort, r.composite, r.geometry];
     const disposals = owned.map(value => vi.spyOn(value, 'dispose'));
@@ -189,8 +198,8 @@ describe('HDR post lifecycle without a WebGL context', () => {
     const { pipeline, gpu, frames } = fixture();
     pipeline.setOptions(GRAPHICS_PRESETS.high, 'high');
     await pipeline.prepare();
-    expect(gpu.compileAsync).toHaveBeenCalledTimes(8);
-    expect(frames).toHaveLength(9);
+    expect(gpu.compileAsync).toHaveBeenCalledTimes(9);
+    expect(frames).toHaveLength(10);
     expect(frames.every(frame => frame.target !== null)).toBe(true);
     const warmTarget = frames.at(-1)!.target!;
     expect([warmTarget.width, warmTarget.height]).toEqual([1, 1]);
@@ -202,7 +211,7 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.dispose();
   });
 
-  it('does not allocate High targets when Low is selected while preparation waits', async () => {
+  it('releases High targets without warm draws when explicit ink-off Low is selected during preparation', async () => {
     const { pipeline, gpu } = fixture();
     let done!: () => void;
     gpu.compileAsync.mockImplementationOnce(() => new Promise<void>(resolve => { done = resolve; }));
@@ -280,13 +289,13 @@ describe('HDR post lifecycle without a WebGL context', () => {
     pipeline.setAmbientOcclusionAlgorithm('contact');
     pipeline.render(0);
     expect(resources(pipeline)).toBe(r);
-    expect(frames).toHaveLength(6);
+    expect(frames).toHaveLength(7);
     expect(frames.some(frame => frame.target === r.aoDenoised)).toBe(false);
     expect(r.composite.uniforms.tAO.value).toBe(r.ao.texture);
     pipeline.setAmbientOcclusionAlgorithm('gtao');
     frames.length = 0;
     pipeline.render(0);
-    expect(frames).toHaveLength(7);
+    expect(frames).toHaveLength(8);
     expect(r.composite.uniforms.tAO.value).toBe(r.aoDenoised.texture);
     pipeline.dispose();
   });
@@ -379,13 +388,9 @@ describe('post shader work and packed normal precision', () => {
     // Separate called helper bodies from main: a disabled ink branch must not
     // make its unused function declaration look like executed texture work.
     const main = compositeFragment.slice(compositeFragment.indexOf('void main() {'));
-    const aa = compositeFragment.slice(compositeFragment.indexOf('vec3 sceneAA('), compositeFragment.indexOf('float noise('));
-    expect(aa.match(/texture2D\(tScene,/g)).toHaveLength(7);
-    expect(aa).not.toContain('for(');
-    expect(aa).toContain('if(hi-lo<'); // coherent regions keep their exact center
     const disabled = specialize(main, false);
-    expect(disabled).toContain('vec3 color = sceneAA(uv)');
-    expect(disabled).not.toContain('texture2D(tScene,');
+    expect(disabled).toContain('vec3 color = texture2D(tScene, uv).rgb');
+    expect(disabled.match(/texture2D\(tScene,/g)).toHaveLength(1);
     for (const sampler of ['tDistortion', 'tAO', 'tBloom', 'tDepth', 'tGeometry']) {
       expect(disabled).not.toContain(`texture2D(${sampler},`);
     }
@@ -396,7 +401,7 @@ describe('post shader work and packed normal precision', () => {
     expect(disabled).toContain('float dither =');
     const enabled = specialize(main, true);
     // Six bounded, depth-rejected far-field lens taps share the composite.
-    expect(enabled.match(/texture2D\(tScene,/g)).toHaveLength(7);
+    expect(enabled.match(/texture2D\(tScene,/g)).toHaveLength(8);
     expect(enabled).toContain('for(int i=0;i<6;i++)');
     expect(enabled).toContain('sampleDepth-focalDepth');
     for (const sampler of ['tDistortion', 'tAO', 'tBloom', 'tDepth', 'tGeometry']) {
@@ -404,11 +409,35 @@ describe('post shader work and packed normal precision', () => {
     }
     expect(enabled).toContain('float haze =');
     expect(enabled).toContain('float grain =');
-    const ink = compositeFragment.slice(compositeFragment.indexOf('float inkCoverage('), compositeFragment.indexOf('vec3 sceneAA('));
+    const ink = compositeFragment.slice(compositeFragment.indexOf('float inkCoverage('), compositeFragment.indexOf('float noise('));
     expect(ink).toContain('for(int i=0;i<8;i++)');
     expect(ink).toContain('if(inkMode<.5||center.z<.5||center.w<.5');expect(ink).toContain('if(floorSurface&&(inkMode<1.5||inkStrength<.5))return 0.0');expect(ink).toContain('center.w>6.5');
     expect(ink).toContain('if(!actor&&inkMode>1.5');
     expect(ink).not.toContain('texture2D(tScene,'); // no luminance edge detection
+  });
+
+  it('filters graded ink in one bounded FXAA stage before the final screen color conversion', () => {
+    const { pipeline, frames } = fixture();
+    pipeline.setOptions(GRAPHICS_PRESETS.high, 'high');
+    pipeline.render(0);
+    const r = resources(pipeline)!;
+    expect(r.antialias.name).toBe('Containment final FXAA');
+    expect(r.antialias.uniforms.tDiffuse.value).toBe(r.present.texture);
+    expect(r.present.texture.type).toBe(UnsignedByteType);
+    expect(r.present.texture.colorSpace).toBe(SRGBColorSpace);
+    expect(frames.at(-2)!.target).toBe(r.present);
+    expect(frames.at(-1)!.target).toBeNull();
+    const aa = r.antialias.fragmentShader;
+    expect(aa).toContain('#define EDGE_STEP_COUNT 6');
+    expect(aa.match(/for \( int i = 1; i < EDGE_STEP_COUNT/g)).toHaveLength(2);
+    expect(aa).toContain('if ( ShouldSkipPixel( luminance ) )');
+    expect(aa).toContain('return Sample( tex2D, uv );');
+    const neighborhood = aa.slice(aa.indexOf('LuminanceData SampleLuminanceNeighborhood('),aa.indexOf('bool ShouldSkipPixel('));
+    // The retained Three implementation declares nine neighborhood samples;
+    // coherent pixels skip both bounded edge searches and keep the center.
+    expect(neighborhood.match(/= SampleLuminance\(/g)).toHaveLength(9);
+    expect(aa.indexOf('#include <colorspace_fragment>')).toBeGreaterThan(aa.lastIndexOf('gl_FragColor = ApplyFXAA('));
+    pipeline.dispose();
   });
 
   it('retains AO and unit normal accuracy in the existing half-float RGBA target', () => {

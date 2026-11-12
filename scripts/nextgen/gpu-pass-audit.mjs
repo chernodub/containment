@@ -128,6 +128,7 @@ export function installGpuPassAudit(configuration = {}) {
     else if (material === resources?.blur) name = target === resources.bloomB ? 'bloomBlurHorizontal' : 'bloomBlurVertical';
     else if (material === resources?.distort) name = 'distortion';
     else if (material === resources?.composite) name = 'composite';
+    else if (material === resources?.antialias) name = 'finalAA';
     return measure(name, target, () => original.call(this, material, target, ...parameters));
   });
 

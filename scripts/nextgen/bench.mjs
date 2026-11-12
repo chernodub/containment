@@ -16,7 +16,7 @@ function installCostAudit(r = globalThis.__containmentDebug.renderer) {
  if(r.__benchCostAudit)throw Error('Cost audit already installed');
  const renderer=r.renderer,gl=renderer.getContext(),undo=[];
  const keys=['glDriverCalls','glUseProgramCalls','glProgramSwitches','glStateCalls','glUniformUploads','matrixComposes','localMatrixComposes','worldMatrixRecomputes','shadowMapsRendered','shadowDraws','shadowPixels','postPasses','postPixels','attackParticlesAdvanced','abilityParticlesAdvanced','abilityParticleSlotsScanned','particlesAdvanced'];
- const postNames=['sceneColor','contactAO','gtao','aoDenoise','bloomExtract','bloomBlurHorizontal','bloomBlurVertical','distortion','composite','other'];
+ const postNames=['sceneColor','contactAO','gtao','aoDenoise','bloomExtract','bloomBlurHorizontal','bloomBlurVertical','distortion','composite','finalAA','other'];
  for(const name of postNames)keys.push('post_'+name);
  const counters=Object.fromEntries(keys.map(key=>[key,0]));
  const postPasses=postNames.map(name=>({name,resolutions:[]}));
@@ -76,6 +76,7 @@ function installCostAudit(r = globalThis.__containmentDebug.renderer) {
   else if(material===resources?.blur)name=target===resources.bloomB?'bloomBlurHorizontal':'bloomBlurVertical';
   else if(material===resources?.distort)name='distortion';
   else if(material===resources?.composite)name='composite';
+  else if(material===resources?.antialias)name='finalAA';
   postPass(name,target);return original.call(this,material,target,...parameters);
  });
  // AttackEffects visits these exact lists after spawning bullet trails during update.
@@ -98,7 +99,7 @@ async function costAuditSelfTest(){
  const originalGL={...gl},target={width:256,height:128},light={shadow:{map:target}};
  let currentTarget=null;
  const renderer={getContext:()=>gl,getRenderTarget:()=>currentTarget,setRenderTarget(value){currentTarget=value;},renderBufferDirect(){},render(){},shadowMap:{render(lights){for(const entry of lights){renderer.setRenderTarget(entry.shadow.map);renderer.renderBufferDirect();}renderer.setRenderTarget(null);}}};
- const material={},resources={extract:material},post={resources,draw(){},render(){renderer.render(scene);post.draw(material,target);}};
+ const material={},antialias={},resources={extract:material,antialias},post={resources,draw(){},render(){renderer.render(scene);post.draw(material,target);post.draw(antialias,null);}};
  const effects={drawParticles(){}},kit={particles:[{live:true},{live:false}],begin(){}};
  const originalCompose=T.Matrix4.prototype.compose,originalUpdate=T.Object3D.prototype.updateMatrixWorld;
  const originalHooks={target:renderer.setRenderTarget,direct:renderer.renderBufferDirect,shadow:renderer.shadowMap.render,render:renderer.render,postRender:post.render,postDraw:post.draw,particles:effects.drawParticles,begin:kit.begin};
@@ -112,7 +113,7 @@ async function costAuditSelfTest(){
   assert.equal(probe.counters.glDriverCalls,6);assert.equal(probe.counters.glUseProgramCalls,3);assert.equal(probe.counters.glProgramSwitches,2);assert.equal(probe.counters.glStateCalls,1);assert.equal(probe.counters.glUniformUploads,2);
   assert.equal(probe.counters.localMatrixComposes,3);assert.equal(probe.counters.worldMatrixRecomputes,2);
   assert.equal(probe.counters.shadowMapsRendered,1);assert.equal(probe.counters.shadowDraws,1);assert.equal(probe.counters.shadowPixels,256*128);
-  assert.equal(probe.counters.postPasses,2);assert.equal(probe.counters.post_sceneColor,1);assert.equal(probe.counters.post_bloomExtract,1);assert.equal(probe.counters.postPixels,1920*1080+256*128);
+  assert.equal(probe.counters.postPasses,3);assert.equal(probe.counters.post_sceneColor,1);assert.equal(probe.counters.post_bloomExtract,1);assert.equal(probe.counters.post_finalAA,1);assert.equal(probe.counters.postPixels,2*1920*1080+256*128);
   assert.equal(probe.counters.particlesAdvanced,4);assert.equal(probe.counters.abilityParticleSlotsScanned,2);
   const values=Object.fromEntries(probe.keys.map(key=>[key,new Float64Array(2)]));probe.sample(values,0);
   assert.equal(values.glUniformUploads[0],2);assert.equal(probe.counters.glUniformUploads,0);

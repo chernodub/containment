@@ -116,3 +116,15 @@ test('shadow queries require an enabled dirty map and retain actual bound map di
   assert(f.queries.length > previous, 'other stage queries keep rotating when shadow updates are absent');
   f.r.__benchGpuPassAudit.dispose();
 });
+
+test('final AA has its own GPU stage while preserved builds without it remain supported', () => {
+  const f = fixture(), original = f.r.post.render;
+  f.r.post.resources.antialias = {};
+  f.r.post.render = function () { original.call(this);this.draw(this.resources.antialias,null); };
+  installGpuPassAudit(f.r);
+  for (let i = 0; i < 18; i++) f.r.render();
+  const pass = f.r.__benchGpuPassAudit.snapshot().passes.find(entry => entry.name === 'finalAA');
+  assert(pass);
+  assert.deepEqual(pass.resolutions,[{width:1920,height:1080,pixels:2073600}]);
+  f.r.__benchGpuPassAudit.dispose();
+});
