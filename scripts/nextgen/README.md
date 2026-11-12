@@ -435,3 +435,27 @@ classifications cannot certify it. Broad non-holdout pacing is reported apart.
 `x3-hud-compact` advances the actual first room and UI clock by4.5s to show the compact combat dock/objective. `x3-denial-reticle` and `x3-status-priority` are explicitly presentation-only event fixtures. `x3-failure-analysis` stages three real `hurt` calls with explicit provenance to verify the actual incoming-damage ledger and fatal room; it is not an organic death. The debug hurt proxy preserves optional source metadata. `x3-results-statistics` and `x3-completion-statistics` open the native result disclosure while retaining the original counters/build and screen-fit assertions.
 
 `node scripts/nextgen/x3-review.mjs artifacts/nextgen/<label>` area-reduces every accepted capture to exact480×270 PNGs in `review480/`, without opening another browser or altering the capture manifest. Source PNGs, failed attempts and their metadata remain intact.
+
+## G4 world, footprint and danger review
+
+`g4-forms-high` / `g4-forms-low` use legal settled inspection marks and clear
+actors/effects after settling; they complement the ordinary `g2-calm-*` entry
+views. `g4-habitation-vignette-high` / `-low` inspect the interrupted meal in the
+actual Communal Atrium assembly. These are staged visual inspections, not play.
+
+`g4-footprints-{brute,carrier,spitter,stalker,crawler}` and their `-low` variants
+place normal/elite pairs just beyond touching collider discs. Brute/Carrier also
+show Warden/Matron. `g4-queen-footprint` uses the Queen's actual radius. The opt-in
+renderer `setColliderDebug` draws presentation rings; it does not change collision.
+Pose/weighted-torso tests provide the broader animation coverage.
+
+`g4-danger-{whiteout,meltdown,napalm-charge}` and their `-low` variants stage
+native friendly casts, incoming Spitter warnings and real hostile projectiles in
+bright Containment. They establish visibility and timing receipts, not organic
+survival or damage balance. Low uses the established renderer quality API.
+
+After capture completes, run `x3-review.mjs` then `g4-review.mjs` with the same
+capture directory. The latter assembles the exact 480×270 PNGs into labeled
+critique pages. Keep native PNGs and burst sheets for full-size review. Serialize
+capture, desktop browser gates and benchmarks; no second capture browser should
+run during a timing trial.
