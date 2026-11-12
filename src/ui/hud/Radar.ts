@@ -1,6 +1,7 @@
 import type { DepthGame } from '../../DepthGame';
 import type { DepthRenderer } from '../../render/DepthRenderer';
-import { getCameraFootprint } from '../gameAdapter';
+import { getCameraFootprint, projectWorld } from '../gameAdapter';
+import {hudLayoutRevision, invalidateHudLayout} from './layout';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAP_WIDTH = 144;
@@ -35,6 +36,9 @@ export class Radar {
   private readonly corners: Point[] = Array.from({ length: 4 }, () => ({ x: 0, y: 0 }));
   private readonly clipId = `radar-floor-${++nextRadarId}`;
   private disposed = false;
+  private readonly screenPoint = {x:0,y:0,visible:false};
+  private boundsRevision = -1;
+  private readonly screenBounds = {left:0,right:0,top:0,bottom:0};
 
   constructor(
     private readonly host: HTMLElement,
@@ -72,8 +76,9 @@ export class Radar {
   }
 
   update(game: DepthGame, enabled: boolean): void {
-    this.host.hidden = !enabled || this.disposed;
-    if (!enabled || this.disposed) return;
+    const hidden = !enabled || this.disposed;
+    if (this.host.hidden !== hidden) {this.host.hidden = hidden;invalidateHudLayout();}
+    if (hidden) return;
     if (this.revision !== game.roomRevision) this.rebuildGeometry(game);
 
     const x = this.x(game.player.x);
@@ -82,10 +87,24 @@ export class Radar {
     this.player.setAttribute('transform', `translate(${x} ${y}) rotate(${angle})`);
     this.player.setAttribute('data-angle', String(angle));
 
+    // Placement is cached by the HUD; this read occurs once after a layout change.
+    const layout = hudLayoutRevision();
+    if (layout !== this.boundsRevision) {
+      this.boundsRevision=layout;
+      const box=this.host.getBoundingClientRect();this.screenBounds.left=box.left;this.screenBounds.right=box.right;this.screenBounds.top=box.top;this.screenBounds.bottom=box.bottom;
+    }
+    const underRadar = (x:number,y:number) => {
+      if (!this.renderer) return false;
+      const point=projectWorld(this.renderer,x,y,this.screenPoint);
+      const b=this.screenBounds;
+      return point.visible && point.x>b.left-24 && point.x<b.right+24 && point.y>b.top-40 && point.y<b.bottom+24;
+    };
+    let obscuresThreat=false;
     let index = 0;
     let objective: Point | null = null;
     for (const enemy of game.enemies.snapshot.enemies) {
       if (enemy.health <= 0 || enemy.alpha < .2) continue;
+      if (underRadar(enemy.x,enemy.y)) obscuresThreat=true;
       if (enemy.champion && !objective) objective = enemy;
       if (index >= ENEMY_CAPACITY) continue;
       const dot = this.enemies[index++];
@@ -99,7 +118,8 @@ export class Radar {
     for (; index < ENEMY_CAPACITY; index++) this.enemies[index].setAttribute('visibility', 'hidden');
 
     const boss = game.boss?.snapshot;
-    if (boss?.active) objective = boss;
+    if (boss?.active) {objective = boss;if (underRadar(boss.x,boss.y)) obscuresThreat=true;}
+    this.host.dataset.obscuresThreat=String(obscuresThreat);
     this.objective.setAttribute('visibility', objective ? 'visible' : 'hidden');
     if (objective) {
       this.objective.setAttribute('transform', `translate(${this.x(objective.x)} ${this.y(objective.y)})`);

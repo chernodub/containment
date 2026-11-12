@@ -306,3 +306,26 @@ export function cameraEffect(renderer: DepthRenderer, event: GameEffect, strengt
     rig.addTrauma?.(.14 * strength); rig.punch?.(.035 * strength, 120);
   }
 }
+
+
+/** Resolve receipts only when their element is authoritative or uniquely possible.
+ * Legacy status receipts aggregate by target/source. Current target status alone
+ * cannot disambiguate a final poison tick whose status expired this frame, so
+ * builds with multiple damage-over-time producers stay neutral without metadata.
+ */
+export function getCombatDamageElement(game: DepthGame, event: import('./hud/effects').HudEffect): string | undefined {
+  if (event.source === 'weapon') return 'weapon';
+  if (event.damageElement) return event.damageElement;
+  if (event.element) return event.element;
+  if (event.ability?.element) return event.ability.element;
+  if (event.elements?.length === 1) return event.elements[0];
+  const rig = getAbilities(game)?.rig;
+  if (event.source === 'ability') return rig === 'breacher' ? 'kinetic' : rig ?? undefined;
+  if (event.source !== 'status') return undefined;
+  const mutations = game.expedition.build.mutations;
+  const burning = rig === 'pyro' || mutations.includes('incendiary');
+  const poisoned = mutations.includes('caustic-rounds');
+  const frostbite = mutations.includes('frostbite');
+  if (Number(burning) + Number(poisoned) + Number(frostbite) !== 1) return undefined;
+  return burning ? 'burn' : poisoned ? 'poison' : 'frost';
+}

@@ -111,6 +111,24 @@ export async function checkCombatRig(page) {
   await page.waitForFunction(()=>window.__containmentDebug.canStepNative);
   await page.evaluate(()=>window.__containmentDebug.step(1000/60));
   assert.equal(await page.evaluate(()=>Object.values(window.__containmentDebug.game.abilities.snapshot.slots).every(s=>s.ready)),true,'All four abilities must be usable before pause/typing checks');
+  // Native firing must never turn a passing pointer into combat explanation UI.
+  await page.evaluate(()=>window.__containmentDebug.step(4500));
+  const shotsBefore=await page.evaluate(()=>window.__containmentDebug.game.stats.shotsFired);
+  await page.mouse.move(holdoutAim.x,holdoutAim.y);await page.mouse.down();
+  try {
+    for(const selector of ['[data-weapon]','[data-ability]']) {
+      for(const slot of await page.locator(selector).all()) {
+        const box=await slot.boundingBox();assert.ok(box,'Action slot must be visible');
+        await page.mouse.move(box.x+box.width/2,box.y+box.height/2,{steps:3});
+        await page.evaluate(()=>window.__containmentDebug.step(200));
+        assert.equal(await page.locator('.ability-tooltip:visible').count(),0,'Firing hover must open no ability panels');
+        assert.equal(await page.locator('[data-weapon][title],[data-ability][title]').count(),0,'Combat slots must have no native hover tooltips');
+        assert.equal(await page.locator('#status-hud').getAttribute('data-expanded'),'false','Combat pointer must not expand objectives');
+      }
+    }
+  } finally {await page.mouse.up();}
+  assert.ok(await page.evaluate(()=>window.__containmentDebug.game.stats.shotsFired)>shotsBefore,'Hover sweep must include real native shots');
+  console.log('Combat inspection passed: native firing across every weapon and ability opens no panels.');
   await page.locator('#pause').click();
   const beforePause = await uses();
   for (const key of ['Shift', 'q', 'f', 'v']) await page.keyboard.press(key);

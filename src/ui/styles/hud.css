@@ -364,3 +364,26 @@ body[data-state=playing] #world{cursor:none}
  #hud .dash-slot>kbd {height:20px;min-width:40px;bottom:-3px;}
 }
 #hud .hud-toast>span:first-child[style*='color'] .icon {color:inherit;}
+
+/* World labels always yield to opaque ship-system chrome, including inspect panels. */
+#hud #combat-text {z-index:1;}
+#hud #threat-indicators {z-index:2;}
+#hud #damage-directions {z-index:3;}
+#hud .vitals,#hud #status-hud,#hud #boss-hud,#hud #radar-hud {z-index:10;}
+#hud #action-bar {z-index:11;}
+#hud .ability-tooltip {z-index:20;}
+#hud #hud-toasts {z-index:30;}
+#hud #objective-critical {margin:5px 0 0;color:#ffd0b8;font-size:12px;line-height:1.35;}
+/* Narrative and set reminders expire; the compact action and critical lines stay. */
+#hud #status-hud {width:260px;padding:10px 12px;}
+#hud #status-hud .room-label b {font-size:20px;}
+#hud #status-hud .room-label span {font-size:9px;letter-spacing:.09em;}
+#hud #status-hud #room-objective {font-size:12px;line-height:1.35;}
+#hud #status-hud[data-expanded=false] #room-objective {white-space:normal;overflow:visible;}
+#hud #status-hud #run-stock {margin-top:7px;padding-top:6px;font-size:11px;}
+#hud #status-hud #story-hud {margin-top:6px;padding-top:6px;}
+@media(max-height:450px) {#hud #status-hud {width:244px;}}
+
+@media(max-width:650px) {#hud #status-hud {width:244px;}}
+
+#hud .contextual-onboarding {z-index:20;}

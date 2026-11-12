@@ -303,6 +303,9 @@ test('debrief renders nested authoritative counters, source totals and accuracy,
     expect(await page.locator('.hero-stats>div').count()).toBe(4);
     expect(await page.locator('[data-stat]').count()).toBe(16);
     expect(await page.locator('.damage-source-bar i').count()).toBe(4);
+    expect(await page.locator('.result-panel').evaluate(node=>node.scrollHeight<=node.clientHeight+1)).toBe(true);
+    expect(await page.locator('.result-actions').evaluate(node=>node.getBoundingClientRect().bottom<=innerHeight)).toBe(true);
+    expect(await page.locator('.damage-source-legend [data-stat] b').evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).color==='rgb(240, 251, 255)'))).toBe(true);
     expect(await page.locator('.debrief-build').isVisible()).toBe(true);
     expect(await page.locator('[data-stat=kills] b').innerText()).toBe('2');
     expect(await page.locator('[data-stat=weapon] b').innerText()).toBe('1,234');
@@ -533,8 +536,13 @@ test('boon element accents remain separate from family membership throughout dra
     expect(await fire.getAttribute('data-element')).toBe('pyro');
     expect(await fire.getAttribute('data-family')).toBe('Reactor');
     expect(await fire.locator('.boon-emblem').getAttribute('data-icon')).toBe('pyro');
-    expect(await fire.locator('.family-progress').innerText()).toContain('Counts toward Reactor set');
+    expect(await fire.locator('.family-progress').innerText()).toContain('Reactor set');
+    expect(await fire.locator('.family-progress').getAttribute('aria-label')).toContain('Reactor family:');
+    expect(await fire.locator('.boon-condition').isVisible()).toBe(false);
+    await fire.focus();await page.keyboard.press('i');
     expect(await fire.locator('.boon-condition>span').innerText()).toBe('LIMIT');
+    expect(await fire.locator('.boon-inspect-detail').innerText()).toContain('Repeated hits refresh the burn; damage does not stack.');
+    await page.keyboard.press('i');
     await page.evaluate(()=>{const ui=(window as any).ui;ui.game.expedition={...ui.game.expedition,build:{rig:'pyro',mutations:['incendiary','caustic-rounds','field-medic']}};});
     await phase(page,'dead');
     await page.locator('.result-details>summary').click();
@@ -582,5 +590,37 @@ test('ending leads completion while every original statistic remains available t
     await page.keyboard.press('Enter');
     expect(await page.locator('[data-stat=kills]').isVisible()).toBe(true);
     expect(await page.locator('[data-stat]').count()).toBe(16);
+  } finally {await page.close();}
+});
+
+
+test('draft benefit cards expose exact rules only through deliberate native inspection',async()=>{
+  const page=await mount();
+  try {
+    await phase(page,'reward');
+    const card=page.locator('[data-mutation]').first();
+    const detail=card.locator('.boon-inspect-detail');
+    await card.hover();
+    expect(await detail.isVisible()).toBe(false);
+    expect((await card.locator('.boon-benefit').innerText()).length).toBeLessThanOrEqual(48);
+    expect(await card.locator('.boon-numbers').innerText()).not.toBe('');
+    await page.keyboard.down('Alt');
+    expect(await detail.isVisible()).toBe(true);
+    await page.keyboard.up('Alt');
+    expect(await detail.isVisible()).toBe(false);
+    await card.focus();
+    await page.keyboard.press('i');
+    expect(await detail.isVisible()).toBe(true);
+    await detail.click();
+    expect(await detail.isVisible()).toBe(true);
+    await page.keyboard.press('Escape');
+    expect(await detail.isVisible()).toBe(false);
+    expect(await card.evaluate(node=>node===document.activeElement)).toBe(true);
+    await page.keyboard.down('Tab');
+    expect(await page.locator('[data-mutation]:focus .boon-inspect-detail').isVisible()).toBe(true);
+    await page.keyboard.up('Tab');
+    expect(await page.locator('.boon-inspect-detail:visible').count()).toBe(0);
+    const actions=await page.evaluate(()=>(window as any).ui.actions);
+    expect(actions.filter((action:string)=>action.startsWith('boon:'))).toEqual([]);
   } finally {await page.close();}
 });

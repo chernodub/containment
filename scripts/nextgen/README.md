@@ -435,3 +435,23 @@ classifications cannot certify it. Broad non-holdout pacing is reported apart.
 `x3-hud-compact` advances the actual first room and UI clock by4.5s to show the compact combat dock/objective. `x3-denial-reticle` and `x3-status-priority` are explicitly presentation-only event fixtures. `x3-failure-analysis` stages three real `hurt` calls with explicit provenance to verify the actual incoming-damage ledger and fatal room; it is not an organic death. The debug hurt proxy preserves optional source metadata. `x3-results-statistics` and `x3-completion-statistics` open the native result disclosure while retaining the original counters/build and screen-fit assertions.
 
 `node scripts/nextgen/x3-review.mjs artifacts/nextgen/<label>` area-reduces every accepted capture to exact480×270 PNGs in `review480/`, without opening another browser or altering the capture manifest. Source PNGs, failed attempts and their metadata remain intact.
+
+## U4 deliberate inspection and final transmission
+
+`u4-critical-objective` advances the real Containment Annulus UI clock past the
+entry reminder and retains the unarmed warning with optional radar. `u4-ability-inspect`
+and `u4-boon-inspect` use native focus and held Alt; the runner releases held keys
+between scenarios. `u4-ending-reduced-motion` uses the browser's reduced-motion
+preference. `u4-burn-ticks` advances the real Pyro Flashfire encounter600ms and
+requires a native status-damage receipt using the fire token.
+
+Capture metadata includes per-receipt source, optional element, semantic token
+and computed color, plus visible objective/radar area and radar opacity. Mixed
+status builds without authoritative damage-element provenance remain neutral.
+These remain staged presentation fixtures. Use the unchanged native playtest
+runner for organic combat and death-source evidence. `x3-review.mjs <gallery>`
+continues to generate exact480×270 review images from the resulting PNGs.
+
+`u4-radar-fade` finds a legal floor point under the actual radar using the native
+camera, spawns one real contact and requires the live fade state. It is a staged
+projection/visibility proof; the chosen real room is retained in frame evidence.

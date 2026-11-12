@@ -16,6 +16,7 @@ import {hasCinematicMenu} from '../integrationPresentation';
 import {controlsScreen,escapeHtml,titleScreen,systemScreen} from './initialTemplates';
 import type {PauseTab} from './templates';
 import '../styles/screens.css';
+import {installBoonInspection} from './boonInspection';
 
 export type ScreenSettings = {
   render(): string;
@@ -40,6 +41,7 @@ export type ScreenContext = {
 /** Owns blocking screens and native actions; simulation remains behind public methods. */
 export function createScreens(context: ScreenContext) {
   const {game, renderer, input, audio, confirmation, storage, pause, start} = context;
+  const disposeBoonInspection = installBoonInspection(el('overlay'));
   let secondary:typeof import('./templates')|undefined;
   let secondaryLoad:Promise<void>|undefined;
   let settingsOpen = false;
@@ -360,6 +362,6 @@ export function createScreens(context: ScreenContext) {
     get graphicsBlocked() {return context.graphicsLost()||recoveryPending;},
     resetSettings() {const notice=el('application-notice');if(notice)notice.hidden=true;settingsOpen=false;creditsOpen=false;controlsOpen=false;pauseTab='resume';context.settings?.reset?.();},
     get quality() {return context.settings?.quality??legacyQuality;},
-    dispose() {window.removeEventListener('storage',onStorage);el('overlay').removeEventListener('click',onAction,true);window.removeEventListener('resize',onResize);document.removeEventListener('keydown',onKeyDown);document.removeEventListener('pointermove',onPointerMove);},
+    dispose() {disposeBoonInspection();window.removeEventListener('storage',onStorage);el('overlay').removeEventListener('click',onAction,true);window.removeEventListener('resize',onResize);document.removeEventListener('keydown',onKeyDown);document.removeEventListener('pointermove',onPointerMove);},
   };
 }

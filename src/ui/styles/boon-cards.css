@@ -1,0 +1,32 @@
+/* Benefit-first draft cards. Exact mechanics appear only after deliberate inspection. */
+#overlay .choice-panel .choice-card h3 {font-size:18px;line-height:1.2;margin:8px 0 12px;color:#d0dce2;}
+#overlay .choice-card .boon-benefit {font-family:var(--font-display);font-size:25px;line-height:1.15;font-weight:600;color:#f0f8fc;min-height:2.3em;margin:0 0 12px;text-wrap:balance;}
+#overlay .choice-card .boon-numbers {font-size:13px;line-height:1.45;color:var(--boon-color);font-variant-numeric:tabular-nums;min-height:2.9em;margin:0 0 20px;}
+#overlay .boon-card-footer {display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:12px;border-top:1px solid #9fe8ff24;}
+#overlay .boon-card-footer .augment-target {border:0;background:none;margin:0;padding:0;flex:1;min-width:0;font-size:9px;}
+#overlay .boon-card-footer .augment-target svg {width:23px;height:23px;flex-shrink:0;}
+#overlay .boon-card-footer .augment-target b {font-size:11px;}
+#overlay .boon-card-footer .family-progress {width:78px;flex-shrink:0;margin:0;padding:0;border:0;font-size:9px;}
+#overlay .boon-inspect-hint {display:block;font-size:10px;color:#a9beca;margin:14px 0 12px;}
+#overlay .boon-inspect-hint kbd {font-size:10px;min-width:0;padding:0 3px;}
+#overlay .boon-inspect-detail {display:none;position:absolute;inset:0 0 43px;z-index:5;padding:22px;background:#0b1b27;border:1px solid var(--boon-color);box-shadow:0 10px 24px #0008;pointer-events:auto;text-align:left;overflow:auto;}
+#overlay .boon-inspect-detail .eyebrow {display:block;line-height:1.5;margin-bottom:20px;color:var(--boon-color);}
+#overlay .choice-card .boon-inspect-detail p {font-size:15px;line-height:1.55;margin-bottom:20px;}
+#overlay .boon-inspect-detail small {display:block;font-size:10px;color:#b5cbd5;margin-top:15px;}
+body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-inspect-detail,
+#overlay .choice-card[data-inspect='true'] .boon-inspect-detail {display:block;}
+@media (max-height:760px) {
+ #overlay .choice-panel .choice-card h3 {font-size:16px;margin:7px 0 10px;}
+ #overlay .choice-card .boon-benefit {font-size:22px;min-height:2.3em;margin-bottom:10px;}
+ #overlay .choice-card .boon-numbers {font-size:13px;min-height:2.9em;margin-bottom:14px;}
+ #overlay .boon-card-footer {padding-top:10px;gap:6px;}
+ #overlay .boon-inspect-hint {font-size:9px;margin:10px 0;}
+ #overlay .boon-inspect-detail {padding:16px;bottom:38px;}
+ #overlay .boon-inspect-detail .eyebrow {margin-bottom:14px;}
+ #overlay .choice-card .boon-inspect-detail p {font-size:13px;margin-bottom:14px;}
+}
+@media (max-height:500px) {
+ #overlay .choice-card .boon-benefit {font-size:20px;min-height:0;}
+ #overlay .choice-card .boon-numbers {min-height:0;margin-bottom:10px;}
+ #overlay .boon-inspect-hint {margin:8px 0;}
+}

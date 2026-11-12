@@ -92,7 +92,7 @@ export class ContextualOnboarding {
   }
 
   /** Sync at HUD cadence. The single prompt follows its action bar even when it relocates. */
-  update(game: DepthGame, abilities: AbilitiesSnapshot | null): void {
+  update(game: DepthGame, abilities: AbilitiesSnapshot | null, inspect = true): void {
     if (this.disposed) return;
     // Slot visibility and labels may resize the bar during this HUD sync.
     // Refresh geometry once at HUD cadence, never on ordinary animation frames.
@@ -130,7 +130,7 @@ export class ContextualOnboarding {
       if (action === 'dash' || action === 'tactical' || action === 'power') return !!abilities?.slots?.[action].ready;
       return true;
     };
-    if (this.active && eligible(this.active) && this.activeTime < 6 && (this.active === 'medkit' || !eligible('medkit'))) { this.node.hidden = false; return; }
+    if (this.active && eligible(this.active) && this.activeTime < 6 && (this.active === 'medkit' || !eligible('medkit'))) { this.node.hidden = !inspect; return; }
     this.active = null;
     // Urgent contextual prompts can interrupt the teaching sequence.
     if (eligible('medkit')) this.active = 'medkit';
@@ -152,7 +152,7 @@ export class ContextualOnboarding {
       if (definition) { this.heading.textContent = definition.name; this.copy.textContent = definition.summary; }
     }
     this.node.dataset.action = this.active;
-    this.node.hidden = false;
+    this.node.hidden = !inspect;
     this.layoutDirty = true;
   }
 

@@ -7,6 +7,9 @@ export type HudEffect = Readonly<{
     id?: number;
     targetId?: number;
     damage?: number;
+    /** Optional authoritative (or unambiguous adapter-resolved) element. */
+    damageElement?: string;
+    element?: string;
     critical?: boolean;
     lethal?: boolean;
     source?: unknown;

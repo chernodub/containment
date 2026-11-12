@@ -113,7 +113,7 @@ export const SCENARIOS=[
    d.uiEvent({type:'boon',boon:'shatter',x:center.x+100,y:center.y});d.refresh();
  }},
  {id:'combat-kiting',rooms:true,state:'playing',kiting:true,burst:true,required:['#ability-bar','#radar-hud'],setup:async room=>{await window.__containmentDebug.gotoRoom(room,{rig:'cryo'});}},
- {id:'onboarding',state:'playing',room:'awakening-bay',resetPreferences:['containment.onboarding.v1'],required:['#contextual-onboarding[data-action]'],setup:async()=>{
+ {id:'onboarding',state:'playing',room:'awakening-bay',nativeHold:['Alt'],resetPreferences:['containment.onboarding.v1'],required:['#contextual-onboarding[data-action]'],setup:async()=>{
    const d=window.__containmentDebug;await d.startRun(1729,{rigSelect:true});
    if(!d.game.chooseRig('cryo'))throw Error('Onboarding rig selection failed');d.refresh();
    for(let frame=0;frame<900&&!document.querySelector('[data-mutation]');frame++)await new Promise(requestAnimationFrame);
@@ -455,7 +455,7 @@ export function inspectFrame(){
   return {selector:node.id?`#${node.id}`:'.'+[...node.classList].join('.'),width:node.clientWidth,height:node.clientHeight,scrollWidth:node.scrollWidth,scrollHeight:node.scrollHeight,overflowX:node.scrollWidth>node.clientWidth+2&&contentRight>rect.right+2,overflowY:node.scrollHeight>node.clientHeight+2&&contentBottom>rect.bottom+2,outsideViewport:rect.left < -2||rect.top < -2||rect.right > innerWidth+2||rect.bottom > innerHeight+2,overflow:style.overflow};
  });
  const map={nodes:document.querySelectorAll('[data-node-id]').length,edges:document.querySelectorAll('[data-edge]').length,current:document.querySelectorAll('[data-map-state=current]').length,choices:document.querySelectorAll('[data-inspect-route]').length,confirmation:document.querySelector('[data-route]')?.getAttribute('data-route')??null,expectedNodes:g.expedition.run.version===3?20:g.expedition.run.version===2?18:9};
- return {preparation:r.preparationDiagnostics??null,staticBatching:r.world?.userData.staticBatching??null,i4Proof:d.i4Proof?{...d.i4Proof,pending:g.pending.length,active:g.enemies.activeCount}:null,championProof:d.championProof??null,pickupProof:d.pickupProof??null,queenPhase:g.boss.snapshot.phase,interimMeshes:r.scene.getObjectByName('interim-ability-visuals')?.children.filter(o=>o.visible&&o.isMesh&&(o.count===undefined||o.count>0)).length??0,drawErrors:d.drawErrors??[],settingsProof:d.settingsProof??null,marineBounds,hudOverlaps,kitingProof:d.kitingProof??null,shaderCompilations:d.shaderCompilations??null,recoveryProof:d.recoveryProof??null,lighting:r.lighting?.fixtures?.map(l=>({x:l.position.x,y:l.position.y,z:l.position.z,energy:l.intensity,color:l.color.getHex(),visible:l.visible})),poolLights:r.lighting?.pool?.lights?.filter(l=>l.visible).length,playfieldSamples,marineLocalSamples,playfieldProjection,abilities:g.abilities.snapshot,stats:g.stats,recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden,ui:{layout,map,presentation:document.querySelector('#presentation-beat')?.textContent??'',toasts:[...document.querySelectorAll('.hud-toast:not([hidden])')].map(n=>n.textContent),abilitySlots:[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,title:n.querySelector('.ability-title')?.textContent,value:n.querySelector('.ability-value')?.textContent,icon:!!n.querySelector('svg')})),damageNumbers:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>n.textContent),threats:document.querySelectorAll('.threat-marker:not([hidden])').length}};
+ return {preparation:r.preparationDiagnostics??null,staticBatching:r.world?.userData.staticBatching??null,i4Proof:d.i4Proof?{...d.i4Proof,pending:g.pending.length,active:g.enemies.activeCount}:null,championProof:d.championProof??null,pickupProof:d.pickupProof??null,queenPhase:g.boss.snapshot.phase,interimMeshes:r.scene.getObjectByName('interim-ability-visuals')?.children.filter(o=>o.visible&&o.isMesh&&(o.count===undefined||o.count>0)).length??0,drawErrors:d.drawErrors??[],settingsProof:d.settingsProof??null,marineBounds,hudOverlaps,kitingProof:d.kitingProof??null,shaderCompilations:d.shaderCompilations??null,recoveryProof:d.recoveryProof??null,lighting:r.lighting?.fixtures?.map(l=>({x:l.position.x,y:l.position.y,z:l.position.z,energy:l.intensity,color:l.color.getHex(),visible:l.visible})),poolLights:r.lighting?.pool?.lights?.filter(l=>l.visible).length,playfieldSamples,marineLocalSamples,playfieldProjection,abilities:g.abilities.snapshot,stats:g.stats,recentEffects:d.events.filter(e=>g.elapsed-e.at<.25),state:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,templateId:g.node.templateId,elapsed:g.elapsed,player:{x:g.player.x,y:g.player.y,visible:r.visible(g.player.x,g.player.y)},enemies:enemies.length,visibleEnemies:visible.length,bullets:g.bullets.length,playerBullets:g.bullets.filter(b=>b.kind==='player').length,muzzle:r.muzzle?.intensity??0,boss:g.boss.snapshot.active,statuses:visible.map(e=>({id:e.id,...g.boonStatuses(e.id)})),performance:window.__containmentPerformance,canvas:{colors:new Set(xs).size,litSamples:xs.filter(c=>c!=='0,0,0').length,contextLost:gl.isContextLost(),error:gl.getError()},hud:!document.querySelector('#hud').hidden,overlay:document.querySelector('#overlay').textContent.trim(),bossHud:!document.querySelector('#boss-hud').hidden,ui:{layout,map,damageReceipts:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>({text:n.textContent,source:n.dataset.source,element:n.dataset.element,token:n.dataset.damageToken,color:getComputedStyle(n).color})),rightColumnArea:['#status-hud','#radar-hud'].reduce((area,selector)=>{const n=document.querySelector(selector);if(!n||n.hidden)return area;const box=n.getBoundingClientRect();return area+box.width*box.height;},0),radarOpacity:getComputedStyle(document.querySelector('#radar-hud')).opacity,presentation:document.querySelector('#presentation-beat')?.textContent??'',toasts:[...document.querySelectorAll('.hud-toast:not([hidden])')].map(n=>n.textContent),abilitySlots:[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,title:n.querySelector('.ability-title')?.textContent,value:n.querySelector('.ability-value')?.textContent,icon:!!n.querySelector('svg')})),damageNumbers:[...document.querySelectorAll('.combat-float[data-kind=damage]:not([hidden])')].map(n=>n.textContent),threats:document.querySelectorAll('.threat-marker:not([hidden])').length}};
 
 }
 
@@ -495,3 +495,42 @@ for(const rig of ['breacher','cryo','arc']){
   if(placed!==5)throw Error('I7 pickup overlap placement incomplete');d.refresh();
  })();`)});
 }
+
+
+// U4 intentional inspection and critical-objective proof use real native input.
+SCENARIOS.push({id:'u4-critical-objective',state:'playing',room:'containment-annulus',required:['#objective-critical','#radar-hud'],setup:async()=>{
+ const d=window.__containmentDebug;await d.gotoRoom('containment-annulus',{rig:'arc'});d.invulnerable(true);d.uiFixture({preferences:{combatText:true,radar:true}});d.step(4500);d.refresh();
+}});
+SCENARIOS.push({id:'u4-ability-inspect',state:'playing',room:'awakening-bay',nativeFocus:'[data-ability=tactical]',nativeHold:['Alt'],required:['#ability-rules-tactical'],setup:async()=>{
+ const d=window.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'arc'});d.invulnerable(true);d.step(4500);d.refresh();
+}});
+const u4Draft=SCENARIOS.find(s=>s.id==='augment-draft');
+SCENARIOS.push({...u4Draft,id:'u4-boon-inspect',nativeFocus:'[data-mutation=spreading-nova], [data-mutation=twin-glacier]',nativeHold:['Alt'],required:['.boon-inspect-detail:visible']});
+SCENARIOS.push({...SCENARIOS.find(s=>s.id==='complete-fixture'),id:'u4-ending-reduced-motion',reducedMotion:true});
+const u4Fire=SCENARIOS.find(s=>s.id==='v2-flashfire');
+SCENARIOS.push({...u4Fire,id:'u4-burn-ticks',burst:false,required:['.combat-float[data-source=status][data-damage-token=pyro]:not([hidden])'],setup:new Function(`return (async()=>{
+ await (${u4Fire.setup.toString()})(${JSON.stringify(u4Fire.setupArgument)});
+ window.__containmentDebug.step(600);window.__containmentDebug.refresh();
+})();`)});
+
+// Native camera projection proof: place one legal contact beneath the actual radar.
+SCENARIOS.push({id:'u4-radar-fade',state:'playing',required:['#radar-hud[data-obscures-threat=true]'],setup:async()=>{
+ const d=window.__containmentDebug;
+ for(const room of ['awakening-bay','armory','containment-annulus']){
+  await d.gotoRoom(room,{rig:'arc'});d.invulnerable(true);d.game.enemies.reset();
+  d.uiFixture({preferences:{combatText:true,radar:true}});d.refresh();
+  const box=document.getElementById('radar-hud').getBoundingClientRect();
+  const point=d.renderer.camera.position.clone();
+  for(let y=box.top+16;y<box.bottom-8;y+=12)for(let x=box.left+16;x<box.right-8;x+=12){
+   const floor=d.renderer.pointer(x,y+32);if(!floor||!d.canStand(floor.x,floor.y,28))continue;
+   point.set(floor.x/32,.8,floor.y/32).project(d.renderer.camera);
+   const sx=(point.x+1)*innerWidth/2,sy=(1-point.y)*innerHeight/2;
+   if(sx<box.left+8||sx>box.right-8||sy<box.top+8||sy>box.bottom-8)continue;
+   if(!d.spawn('brute',floor.x,floor.y))continue;
+   d.step(300);d.refresh();
+   if(document.getElementById('radar-hud').dataset.obscuresThreat==='true')return;
+   d.game.enemies.reset();
+  }
+ }
+ throw Error('No legal native contact beneath radar');
+}});
