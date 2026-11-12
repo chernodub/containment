@@ -3,6 +3,7 @@ import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { AdaptiveResolution } from './AdaptiveResolution';
 import { GpuFrameTimer } from './GpuProfiler';
 import { INK_STRENGTHS } from './Ink';
+import { installGeometryClearPolicy } from './GeometryBuffer';
 import { setGraphicStrength, type GraphicStrength, setGraphicShadingEnabled } from '../lighting/GraphicSurface';
 import {
   ACESFilmicToneMapping, AgXToneMapping, BufferGeometry, Camera, Color, DepthTexture,
@@ -45,6 +46,7 @@ type PostResources = {
 
 /** HDR post on High; Low owns no post textures and uses one forward render. */
 export class PostPipeline {
+  private readonly releaseGeometryClear:()=>void;
   readonly distortion = new DistortionField();
   readonly adaptive = new AdaptiveResolution();
   gpuTimer?: GpuFrameTimer;
@@ -80,7 +82,7 @@ export class PostPipeline {
     private readonly renderer: WebGLRenderer,
     private readonly scene: Scene,
     private camera: Camera,
-  ) { setRenderDiagnostics(()=>this.diagnostics);this.distortion.setEnabled(false); if(renderer.getContext)this.gpuTimer=new GpuFrameTimer(renderer.getContext() as WebGL2RenderingContext); }
+  ) { this.releaseGeometryClear=installGeometryClearPolicy(renderer);setRenderDiagnostics(()=>this.diagnostics);this.distortion.setEnabled(false); if(renderer.getContext)this.gpuTimer=new GpuFrameTimer(renderer.getContext() as WebGL2RenderingContext); }
 
   /** Target allocation stays lazy until render/prepare after selecting High. */
   setOptions(options: GraphicsOptions, tier: GraphicsTier): void {
@@ -181,6 +183,7 @@ export class PostPipeline {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.releaseGeometryClear();
     setRenderDiagnostics(undefined);
     this.releaseResources();
     this.distortion.dispose();

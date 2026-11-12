@@ -37,6 +37,9 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
   float surface=step(.5,neighbor.z)*step(1.0,neighbor.w)*step(neighbor.w,6.5);
   surface*=1.0-step(.01,abs(neighbor.z-floor(neighbor.z+.5)));
   surface*=1.0-step(.01,abs(neighbor.w-floor(neighbor.w+.5)));
+  // Cleared background is class 0. Excluded/priority overlays remain class 255,
+  // so silhouettes close against empty space without drawing over danger.
+  surface=max(surface,1.0-step(.5,neighbor.w));
   // Actor silhouettes depend only on identity. Avoid eight unused depth reads
   // and position reconstructions; major actor creases have their own kernel.
   if(actor) { edge=max(edge,different*surface);continue; }

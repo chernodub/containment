@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { Group, Mesh, MeshStandardMaterial, BoxGeometry, ShaderLib, ShaderMaterial, Vector2 } from 'three';
-import { GEOMETRY_CLASSES, registerGeometry } from '../src/render/post/GeometryBuffer';
+import { GEOMETRY_CLASSES, registerGeometry, installGeometryClearPolicy } from '../src/render/post/GeometryBuffer';
 
 function compiled(material: MeshStandardMaterial | ShaderMaterial) {
  const shader={vertexShader:ShaderLib.standard.vertexShader,fragmentShader:ShaderLib.standard.fragmentShader,uniforms:{}};
@@ -34,14 +34,34 @@ describe('shared MRT geometry contract',()=>{
 });
 
 describe('MRT draw-buffer isolation',()=>{
+ it('clears background IDs once, preserves overlay exclusion and releases the renderer hook',()=>{
+  const root=new Group(),geometry=new BoxGeometry(),surface=new MeshStandardMaterial(),effect=new ShaderMaterial({transparent:true});root.add(new Mesh(geometry,surface),new Mesh(geometry,effect));registerGeometry(root);
+  const events:unknown[]=[],target={textures:[{}, {name:'Containment geometry normal + identity'}]},clear=vi.fn(()=>events.push('color-depth-clear'));
+  let current:typeof target|null=target;
+  const renderer={clear,getRenderTarget:()=>current,getContext:()=>({COLOR:0x1800,drawBuffers:(v:number[])=>events.push([...v]),clearBufferfv:(_target:number,index:number,v:Float32Array)=>events.push({index,value:[...v]})}),info:{render:{frame:1}}};
+  const release=installGeometryClearPolicy(renderer as never),second=installGeometryClearPolicy(renderer as never);
+  renderer.clear();surface.onBeforeRender(renderer as never,{} as never,{} as never,geometry,root as never,{} as never);effect.onBeforeRender(renderer as never,{} as never,{} as never,geometry,root as never,{} as never);
+  expect(events).toEqual([[0x8ce0,0],'color-depth-clear',[0x8ce0,0x8ce1],{index:1,value:[0,0,0,0]},[0x8ce0,0]]);
+  events.length=0;current=null;renderer.clear();expect(events).toEqual(['color-depth-clear']);
+  release();release();expect(renderer.clear).not.toBe(clear);second();expect(renderer.clear).toBe(clear);
+  geometry.dispose();surface.dispose();effect.dispose();
+ });
+ it('blocks priority standard overlays and restores classification when priority is removed',()=>{
+  const root=new Group(),geometry=new BoxGeometry(),material=new MeshStandardMaterial();root.add(new Mesh(geometry,material));root.renderOrder=20;registerGeometry(root);
+  const shader=compiled(material),identity=(shader.uniforms as Record<string,{value:Vector2}>).containmentIdentity.value;
+  expect(identity.toArray()).toEqual([0,255]);expect(material.userData.containmentInkBlock).toBe(true);
+  const version=material.version;root.renderOrder=0;registerGeometry(root);expect(identity.toArray()).toEqual([2,GEOMETRY_CLASSES.architecture]);expect(material.version).toBe(version);expect(material.userData.containmentInkBlock).toBe(false);
+  geometry.dispose();material.dispose();
+ });
  it('preserves normals/IDs behind transparent effects and restores writes for the next solid draw',()=>{
   const surface=new MeshStandardMaterial(),effect=new ShaderMaterial({transparent:true});
   const root=new Group(),geometry=new BoxGeometry();root.add(new Mesh(geometry,surface),new Mesh(geometry,effect));registerGeometry(root);
-  const calls:number[][]=[],target={textures:[{}, {name:'Containment geometry normal + identity'}]},renderer={getRenderTarget:()=>target,getContext:()=>({drawBuffers:(values:number[])=>calls.push([...values])}),info:{render:{frame:1}}};
+  const clears=vi.fn(),calls:number[][]=[],target={textures:[{}, {name:'Containment geometry normal + identity'}]},renderer={getRenderTarget:()=>target,getContext:()=>({COLOR:0x1800,clearBufferfv:clears,drawBuffers:(values:number[])=>calls.push([...values])}),info:{render:{frame:1}}};
   const draw=(material:MeshStandardMaterial|ShaderMaterial)=>material.onBeforeRender(renderer as never,{} as never,{} as never,geometry,root as never,{} as never);
   draw(surface);draw(surface);draw(effect);draw(effect);draw(surface);
   expect(calls).toEqual([[0x8ce0,0x8ce1],[0x8ce0,0],[0x8ce0,0x8ce1]]);
-  renderer.info.render.frame++;draw(surface);expect(calls).toHaveLength(4);
+  expect(clears).toHaveBeenCalledTimes(1);expect(clears).toHaveBeenLastCalledWith(0x1800,1,new Float32Array(4));
+  renderer.info.render.frame++;draw(surface);expect(calls).toHaveLength(4);expect(clears).toHaveBeenCalledTimes(2);
   geometry.dispose();surface.dispose();effect.dispose();
  });
  it('excludes opaque affliction droplets from actor and world classification',()=>{

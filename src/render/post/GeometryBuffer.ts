@@ -24,6 +24,27 @@ function actorIdentity(root:Object3D):number {
 const drawBufferHooks=new WeakSet<Material>();
 const drawStates=new WeakMap<WebGLRenderer,{target:unknown;frame:number;write:boolean}>();
 const allBuffers=[0x8ce0,0x8ce1],colorOnly=[0x8ce0,0];
+const geometryClear=new Float32Array(4);
+const clearHooks=new WeakMap<WebGLRenderer,{original:WebGLRenderer['clear'];hook:WebGLRenderer['clear'];users:number}>();
+/** Clear scene color/depth normally, and clear geometry to its reserved zero ID
+ * once before the first mesh. This also survives Three's shadow-target restores. */
+export function installGeometryClearPolicy(renderer:WebGLRenderer):()=>void {
+ if(!renderer.clear||!renderer.getContext)return ()=>{};
+ let entry=clearHooks.get(renderer);
+ if(!entry) {
+  const original=renderer.clear;
+  const hook:WebGLRenderer['clear']=function(this:WebGLRenderer,color,depth,stencil) {
+   if(color!==false&&renderer.getRenderTarget()?.textures[1]?.name==='Containment geometry normal + identity') {
+    (renderer.getContext() as WebGL2RenderingContext).drawBuffers(colorOnly);
+    const state=drawStates.get(renderer);if(state)state.frame=-1;
+   }
+   original.call(this,color,depth,stencil);
+  };
+  entry={original,hook,users:0};clearHooks.set(renderer,entry);renderer.clear=hook;
+ }
+ entry.users++;const owned=entry;let released=false;
+ return ()=>{if(released)return;released=true;if(--owned.users===0){if(renderer.clear===owned.hook)renderer.clear=owned.original;clearHooks.delete(renderer);}};
+}
 function installDrawBufferPolicy(material:Material):void {
  if(drawBufferHooks.has(material))return;drawBufferHooks.add(material);
  const previous=material.onBeforeRender;
@@ -32,8 +53,11 @@ function installDrawBufferPolicy(material:Material):void {
   const target=renderer.getRenderTarget();
   if(target?.textures[1]?.name!=='Containment geometry normal + identity')return;
   const write=!material.transparent||material.userData.containmentInkBlock===true,frame=renderer.info.render.frame,state=drawStates.get(renderer);
-  if(!state||state.target!==target||state.frame!==frame||state.write!==write) {
-   (renderer.getContext() as WebGL2RenderingContext).drawBuffers(write?allBuffers:colorOnly);
+  const first=!state||state.target!==target||state.frame!==frame;
+  if(first||state.write!==write) {
+   const gl=renderer.getContext() as WebGL2RenderingContext;
+   if(first) { gl.drawBuffers(allBuffers);gl.clearBufferfv(gl.COLOR,1,geometryClear);if(!write)gl.drawBuffers(colorOnly); }
+   else gl.drawBuffers(write?allBuffers:colorOnly);
    if(state){state.target=target;state.frame=frame;state.write=write;}else drawStates.set(renderer,{target,frame,write});
   }
  };
@@ -103,10 +127,10 @@ export function registerGeometry(root: Object3D, kind?: GeometryClass): void {
     if (!(object instanceof Mesh)) return;
     let effect=effectsOnly,inkBlock=false;for(let owner: Object3D|null=object;owner;owner=owner.parent){effect ||= owner.name==='shared-affliction-batches';inkBlock ||= owner.renderOrder>=20;}
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
-      if(inkBlock)material.userData.containmentInkBlock=true;
+      material.userData.containmentInkBlock=inkBlock;
       if (effect || !(material instanceof MeshStandardMaterial) || material.transparent) {
         patchExcludedMaterial(material);
-        if(kind&&!effect&&material instanceof ShaderMaterial)setActorGeometryIdentity(material,id!,kind);
+        if(kind&&!effect&&material instanceof ShaderMaterial)setActorGeometryIdentity(material,inkBlock?0:id!,inkBlock?255:kind);
         continue;
       }
       if(kind) {
@@ -116,7 +140,8 @@ export function registerGeometry(root: Object3D, kind?: GeometryClass): void {
       }
       patchGeometryMaterial(material);
       const identity = identities.get(material)!;
-      if(!kind&&identity.value.y>=GEOMETRY_CLASSES.marine)continue;
+      if(inkBlock){identity.value.set(0,255);continue;}
+      if(!kind&&identity.value.y>=GEOMETRY_CLASSES.marine&&identity.value.y<=GEOMETRY_CLASSES.boss)continue;
       const floor = /floor|deck/.test(material.name);
       identity.value.set(id ?? (floor ? 1 : 2), kind ?? (floor ? GEOMETRY_CLASSES.floor : GEOMETRY_CLASSES.architecture));
     }
