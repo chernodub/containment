@@ -7,6 +7,8 @@ type TimerExtension = {
 export class GpuFrameTimer {
   private readonly extension: TimerExtension | null;
   private readonly pending: Array<WebGLQuery | null> = Array(8).fill(null);
+  private readonly pendingAge = new Uint16Array(8);
+  private latestAge = 0;
   private active: WebGLQuery | null = null;
   private frame = 0;
   private activeSlot = -1;
@@ -25,7 +27,7 @@ export class GpuFrameTimer {
   get enabled(): boolean { return this.enabledValue; }
   get latestMs(): number | undefined { return this.latest; }
   get snapshot() {
-    return { supported: this.supported, enabled: this.enabled, latestMs: this.latest, samples: this.completed, disjointSamples: this.disjoint };
+    return { supported: this.supported, enabled: this.enabled, latestMs: this.latest, samples: this.completed, disjointSamples: this.disjoint, sampleAgeFrames: this.latest === undefined ? undefined : this.latestAge };
   }
 
   /** Bench per-pass timing disables this timer to avoid nested elapsed queries. */
@@ -44,12 +46,22 @@ export class GpuFrameTimer {
       this.clear();
       return undefined;
     }
+    // A stalled driver must not hold one old overload estimate forever. At 60Hz,
+    // two seconds without a result falls back to the controller's frame estimate.
+    if (this.latest !== undefined && ++this.latestAge > 120) this.latest = undefined;
     let sample: number | undefined;
     // Slots are ordered from oldest to newest, so the last valid result wins.
     for (let offset = 0; offset < this.pending.length; offset++) {
       const index = (this.cursor + offset) % this.pending.length;
       const query = this.pending[index];
-      if (!query || !gl.getQueryParameter(query, gl.QUERY_RESULT_AVAILABLE)) continue;
+      if (!query) continue;
+      // Retire stuck query handles too, keeping new feedback retryable and bounded.
+      if (++this.pendingAge[index] > 240) {
+        gl.deleteQuery(query);
+        this.pending[index] = null;
+        continue;
+      }
+      if (!gl.getQueryParameter(query, gl.QUERY_RESULT_AVAILABLE)) continue;
       const milliseconds = gl.getQueryParameter(query, gl.QUERY_RESULT) / 1e6;
       gl.deleteQuery(query);
       this.pending[index] = null;
@@ -58,7 +70,7 @@ export class GpuFrameTimer {
         this.completed++;
       }
     }
-    if (sample !== undefined) this.latest = sample;
+    if (sample !== undefined) { this.latest = sample; this.latestAge = 0; }
     return sample;
   }
 
@@ -84,6 +96,7 @@ export class GpuFrameTimer {
     }
     this.gl.endQuery(this.extension.TIME_ELAPSED_EXT);
     this.pending[this.activeSlot] = this.active;
+    this.pendingAge[this.activeSlot] = 0;
     this.cursor = (this.activeSlot + 1) % this.pending.length;
     this.active = null;
     this.activeSlot = -1;
@@ -111,6 +124,8 @@ export class GpuFrameTimer {
       this.pending[index] = null;
     }
     this.cursor = 0;
+    this.pendingAge.fill(0);
+    this.latestAge = 0;
     this.latest = undefined;
   }
 }

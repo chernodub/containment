@@ -48,7 +48,7 @@ describe('asynchronous adaptive GPU timer', () => {
   it('keeps query inventory bounded, samples sparsely, and reads only available results', () => {
     const f = fixture(), timer = new GpuFrameTimer(f.gl);
     timer.setEnabled(true);
-    for (let frame = 0; frame < 320; frame++) { timer.beginFrame(); timer.endFrame(); timer.poll(); }
+    for (let frame = 0; frame < 128; frame++) { timer.beginFrame(); timer.endFrame(); timer.poll(); }
     expect(f.counts).toMatchObject({ created: 8, pending: 8 });
     expect(timer.latestMs).toBeUndefined();
     f.complete();
@@ -73,6 +73,25 @@ describe('asynchronous adaptive GPU timer', () => {
     const activeFixture = fixture(), activeTimer = new GpuFrameTimer(activeFixture.gl);
     activeTimer.setEnabled(true); activeTimer.beginFrame(); activeTimer.dispose(); activeTimer.endFrame();
     expect(activeFixture.counts).toMatchObject({ created: 1, deleted: 1, pending: 0 });
+  });
+
+  it('expires stale estimates and retries queries after a driver stops returning results', () => {
+    const f = fixture(), timer = new GpuFrameTimer(f.gl);
+    timer.setEnabled(true); timer.beginFrame(); timer.endFrame(); f.complete(); timer.poll();
+    expect(timer.latestMs).toBe(12.5);
+    for (let frame = 0; frame < 120; frame++) timer.poll();
+    expect(timer.latestMs).toBe(12.5);
+    timer.poll();
+    expect(timer.latestMs).toBeUndefined();
+    for (let frame = 0; frame < 400; frame++) { timer.beginFrame(); timer.endFrame(); timer.poll(); }
+    expect(f.counts.created).toBeGreaterThan(8);
+    expect(f.counts.deleted).toBeGreaterThan(1);
+    expect(f.counts.pending).toBeLessThanOrEqual(8);
+    f.complete();
+    expect(timer.poll()).toBe(12.5);
+    expect(timer.snapshot.sampleAgeFrames).toBe(0);
+    timer.dispose();
+    expect(f.counts.created).toBe(f.counts.deleted);
   });
 
   it('does not call driver cleanup against a lost context', () => {
