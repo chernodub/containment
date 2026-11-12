@@ -244,10 +244,10 @@ export class ElementKit {
         p.width = width; p.kind = SCAR_KIND[kind] + (kind === 'fan' ? arc / (Math.PI * 4) : 0);
     }
     /** One instanced volume, its outer radius never exceeds the authoritative radius. */
-    front(x: number, z: number, radius: number, progress: number, color: number, height = 1.5, opacity = .65): void {
+    front(x: number, z: number, radius: number, progress: number, color: number, height = 1.5, opacity = .65, style = 0): void {
         const r = radius * Math.max(.015, Math.min(1, progress));
         const h = height * (this.low ? .6 : 1);
-        this.draw('front', x, h * .5 + .025, z, r, h / .24, r, color, opacity * (.35 + .65 * this.flashIntensity));
+        this.draw('front', x, h * .5 + .025, z, r, h / .24, r, color, opacity * (.35 + .65 * this.flashIntensity), 0, 0, style);
     }
     /** Ballistic chunks have visible mass and one damped deck bounce, within the particle pool. */
     debris(x: number, z: number, radius: number, element: 'kinetic' | 'cryo', count = 28): void {

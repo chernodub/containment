@@ -269,7 +269,7 @@ export class BreacherPresentation implements AbilityPresentation {
     const progress = Math.min(1, .06 + p.age / .19), radius = p.size * progress;
     const frontFade = Math.max(0, 1 - p.age / .42);
     // A low, broad impact edge rolls out first; dust has distinct radial momentum.
-    if (frontFade > 0) k.front(p.x, p.z, p.size, progress, p.age < .075 ? CORE : AMBER, .32, frontFade * .42);
+    if (frontFade > 0) k.front(p.x, p.z, p.size, progress, p.age < .075 ? CORE : AMBER, .06, frontFade * .62, 1);
     const count = k.low ? 5 : 11;
     for (let i = 0; i < count; i++) {
       const seed = i * 2.39996323, f = Math.sin(seed * 3.17 + .4) ** 2;

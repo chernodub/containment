@@ -96,12 +96,14 @@ ${kind === 'decal' ? `
   float seed=float(split)*2.39996323+.37;
   vec2 axis=vec2(cos(seed),sin(seed));vec2 crossAxis=vec2(-axis.y,axis.x);
   float along=dot(p,axis);float across=dot(p,crossAxis);
-  float bend=sin(seed*3.7)*max(0.,along-.21)*.2+sin(seed*7.1)*max(0.,along-.58)*.42;
+  float bend=sin(seed*3.7)*max(0.,along-.18)*.38-sin(seed*3.7)*max(0.,along-.36)*.68+sin(seed*7.1)*max(0.,along-.62)*.55;
   float reach=.63+.32*fract(sin(seed*37.1)*437.13);
   float splitCoverage=smoothstep(.06,.15,along)*(1.-smoothstep(reach-.07,reach,along));
   float groove=1.-smoothstep(.006,.018,abs(across-bend));
   float branch=1.-smoothstep(.004,.012,abs(across-bend-(along-.4)*(.35+sin(seed)*.15)));
-  cracks=max(cracks,max(groove,branch*smoothstep(.38,.46,along)*.65)*splitCoverage);
+  float breaks=1.-smoothstep(.018,.036,abs(along-(.3+fract(seed)*.2)));
+  float intact=1.-breaks*.8;
+  cracks=max(cracks,max(groove*intact,branch*smoothstep(.38,.46,along)*.65)*splitCoverage);
   lip=max(lip,(1.-smoothstep(.003,.009,abs(across-bend-.016)))*splitCoverage);
  }
  }
@@ -130,10 +132,19 @@ ${kind === 'decal' ? `
  else {if(d>1.)discard;if(variant>6.5&&abs(a0)>fract(phase)*6.283185)discard;a*=.035*(1.-smoothstep(.6,1.,d));c=vec3(.014,.009,.006);}
  ` : ''}
 ${kind === 'front' ? `
+ if(phase>.5){
+  float crossSection=cos(uvLocal.y*6.283185);
+  if(crossSection<-.4)discard;
+  float leading=smoothstep(.3,.98,crossSection);
+  float torn=.7+.3*sin(uvLocal.x*81.+sin(uvLocal.x*23.)*2.);
+  a*= (.15+leading*.85)*torn;
+  c=mix(vec3(.24,.15,.065),ink*1.6+vec3(.3,.16,.025),leading);
+ }else{
  float roll=(.5+.5*sin(uvLocal.x*127.+sin(uvLocal.y*19.+abilityTime*5.)*2.))*(.55+.45*sin(uvLocal.x*43.-uvLocal.y*11.+abilityTime*3.));
  float vapor=smoothstep(.08,.55,roll);float ridge=pow(.5+.5*cos(uvLocal.y*6.283),9.);
  float dusty=(1.-smoothstep(.1,.3,max(ink.r-ink.g,ink.b-ink.r)))*(1.-smoothstep(.35,.7,max(ink.r,max(ink.g,ink.b))));
  a*=vapor*mix(.2+ridge*.65,.6,dusty);c*=mix(1.2+ridge*4.*flash,.65+roll*.4,dusty);
+ }
  ` : ''}
 ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetNormal),normalize(vec3(-.3,.7,.6))));' : ''}
  vec2 screen=screenPosition.xy/max(.001,screenPosition.w)*.5+.5;
@@ -215,7 +226,7 @@ ${kind === 'shard' || kind === 'solid' ? 'c*=.32+.68*max(0.,dot(normalize(facetN
     this.mesh.instanceColor!.setXYZ(i, this.colorValues[rgb], this.colorValues[rgb + 1], this.colorValues[rgb + 2]);
     this.alpha.setX(i, opacity);
     this.priority.setX(i, this.priorityWeight);
-    this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
+    this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' || this.kind === 'front' ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
   }
 

@@ -119,7 +119,7 @@ describe('Breacher presentation', () => {
     expect(kit.camera).toHaveBeenCalledTimes(1);
     expect(kit.anticipate).toHaveBeenCalledWith(34, .045);
     fx.update(frame([], .15));
-    expect(kit.front).toHaveBeenCalledWith(2, 3, 310 / 32, expect.any(Number), 0xffb454, .32, expect.any(Number));
+    expect(kit.front).toHaveBeenCalledWith(2, 3, 310 / 32, expect.any(Number), 0xffb454, .06, expect.any(Number), 1);
     expect(kit.ring).toHaveBeenCalledWith(2, 3, 310 / 32, 0xffb454, .3);
     expect(kit.scar).toHaveBeenCalledTimes(1);
     const chips = kit.draw.mock.calls.filter(c => c[0] === 'shard');
