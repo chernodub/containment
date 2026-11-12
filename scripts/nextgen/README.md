@@ -528,6 +528,12 @@ their registered root, never use per-actor shader defines, and preserve color-on
 effect writes. The actual Low HDR target must be prepared before readiness;
 Low ink-off/on transitions hold room preparation. `g3-ink-switches` exercises
 those transitions and rejects any post-prepare combat program creation.
+`g3-geometry-coverage` checks actual floor/architecture/actor bytes in the shared
+attachment. `g3-void-contours` checks contour darkening against empty geometry,
+retaining non-geometric light pools and the normal canvas-diversity assertion.
+Both use one-shot fixture readbacks, never application-frame readbacks. Cleared
+geometry is class0; excluded/priority overlays use class255. Preserve the
+target-scoped clear hook and its disposal when instrumenting the renderer.
 
 Adaptive scale and GPU lifecycle appear under the existing performance pipeline
 snapshot. Per-pass profiling suspends the total GPU probe and uses frame-driven
