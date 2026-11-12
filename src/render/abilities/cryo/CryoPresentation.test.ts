@@ -10,7 +10,7 @@ function recordingKit() {
     time: 1, low: false, reducedMotion: false, flashIntensity: 1,
     draw: vi.fn(), mote: vi.fn(), burst: vi.fn(), ring: vi.fn(), outline: vi.fn(), beam: vi.fn(),
     ribbon: vi.fn(), decal: vi.fn(), flash: vi.fn(), distort: vi.fn(), camera: vi.fn(), lightAt: vi.fn(),
-    sustain: vi.fn(), impact: vi.fn(), gust: vi.fn(), front: vi.fn(), scar: vi.fn(), debris: vi.fn(), iceColumn: vi.fn(),
+    sustain: vi.fn(), impact: vi.fn(), gust: vi.fn(), frostFilm: vi.fn(), front: vi.fn(), scar: vi.fn(), debris: vi.fn(), iceColumn: vi.fn(),
   };
 }
 const snapshot = (extra: Partial<AbilitiesSnapshot> = {}): AbilitiesSnapshot => ({
@@ -99,11 +99,19 @@ describe('Cryo signatures', () => {
   it('uses irregular edge growth and low mist inside the exact Frost Trail capsule at every orientation', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     for (const angle of [0, .67, Math.PI / 2]) for (const length of [0, 160]) {
-      kit.draw.mockClear(); kit.ribbon.mockClear();
+      kit.draw.mockClear(); kit.ribbon.mockClear(); kit.frostFilm.mockClear();
       const strip = zone({ ability: 'frost-trail', shape: 'strip', attached: false, radius: 0,
         x: 64, y: 96, x2: 64 + Math.cos(angle) * length, y2: 96 + Math.sin(angle) * length,
         width: 44, remainingMs: 2000, durationMs: 2500 });
       fx.update(frame({ zones: [strip] }, 0));
+      expect(kit.frostFilm).toHaveBeenCalledOnce();
+      const film = kit.frostFilm.mock.calls[0];
+      expect(film[0]).toBeCloseTo((strip.x + strip.x2) / 64);
+      expect(film[1]).toBeCloseTo((strip.y + strip.y2) / 64);
+      expect(film[2]).toBeCloseTo(length / 32);
+      expect(film[3]).toBe(44 / 32 / 2);
+      if (length > 0) expect(film[4]).toBeCloseTo(angle);
+      expect(film[5]).toBeLessThanOrEqual(.62);
       expect(kit.draw.mock.calls.some(c => c[0] === 'solid')).toBe(false);
       const shards = kit.draw.mock.calls.filter(c => c[0] === 'shard');
       expect(shards.length).toBeGreaterThan(8);
@@ -135,6 +143,8 @@ describe('Cryo signatures', () => {
       remainingMs: 2000, durationMs: 2500 });
     createCryoPresentation(high as unknown as ElementKit).update(frame({ zones: [strip] }, 0));
     createCryoPresentation(low as unknown as ElementKit).update(frame({ zones: [strip] }, 0));
+    expect(low.frostFilm).toHaveBeenCalledOnce();
+    expect(low.frostFilm.mock.calls).toEqual(high.frostFilm.mock.calls);
     expect(low.draw.mock.calls.length).toBeLessThan(high.draw.mock.calls.length * .6);
     expect(low.draw.mock.calls.some(c => c[0] === 'smoke')).toBe(true);
     expect(low.draw.mock.calls.some(c => c[0] === 'shard' && c[5] > .4)).toBe(true);
@@ -171,13 +181,16 @@ describe('Cryo signatures', () => {
     f.game = { geometry: { blockers: [{ x: 480, y: 300, width: 40, height: 40 }, { x: 900, y: 900, width: 40, height: 40 }] } } as never;
     fx.update(f);
     const shards = kit.draw.mock.calls.filter(c => c[0] === 'shard');
-    expect(shards.length).toBeGreaterThan(20); expect(shards.length).toBeLessThan(35);
+    expect(shards.length).toBeGreaterThanOrEqual(48); expect(shards.length).toBeLessThan(65);
+    const snow = shards.slice(0, 48);
+    expect(snow.filter(c => c[6] > .2).length).toBeGreaterThan(12);
+    expect(snow.every(c => c[4] >= .028 && c[8] >= .4)).toBe(true);
     for (const c of kit.draw.mock.calls) {
       const distance = Math.hypot(c[1] - 10, c[3] - 10);
       const support = Math.max(c[4], c[6]);
       expect(distance - support).toBeGreaterThan(2.25);
       expect(distance + support).toBeLessThan(300 / 32);
-      expect(c[8]).toBeLessThanOrEqual(.4);
+      expect(c[8]).toBeLessThanOrEqual(.58);
     }
     const gusts = kit.gust.mock.calls;
     expect(gusts).toHaveLength(15);
@@ -210,7 +223,7 @@ describe('Cryo signatures', () => {
     fx.update(frame({ zones: [zone({ remainingMs: 6500 })] }, 0));
     expect(kit.draw.mock.calls.filter(c => c[0] === 'shard').map(c => [c[1], c[3], c[9]])).not.toEqual(positions);
     expect(kit.gust.mock.calls[0][4] - gustAngle).toBeCloseTo(.12);
-    expect(kit.gust.mock.calls[5][4] - kit.gust.mock.calls[0][4]).toBeCloseTo(Math.PI * 2 / 3);
+    expect(Math.abs(kit.gust.mock.calls[5][4] - kit.gust.mock.calls[0][4] - Math.PI * 2 / 3)).toBeLessThan(.12);
     expect(kit.front).not.toHaveBeenCalled();
   });
 

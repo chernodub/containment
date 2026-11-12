@@ -151,6 +151,8 @@ class CryoPresentation implements AbilityPresentation {
     if (half <= 0) return;
     const fade = Math.min(1, zone.remainingMs / 450), age = (zone.durationMs - zone.remainingMs) / 1000;
     k.sustain(age);
+    // One native capsule film connects the edge growth without rectangular paving.
+    k.frostFilm(x + dx * .5, z + dz * .5, length, half, direction, fade * .62);
     // Broken fern seams describe the real capsule, with a dark open centre instead of a filled sheet.
     const count = k.low ? 6 : 13, perimeter = 2 * length + TAU * half;
     for (let i = 0; i < count; i++) {
@@ -218,7 +220,7 @@ class CryoPresentation implements AbilityPresentation {
     }
     k.sustain(age / 1000);
     const time = k.reducedMotion ? 0 : age / 1000;
-    const clearRadius = Math.min(radius * .62, 2.25), count = k.low ? 10 : 24;
+    const clearRadius = Math.min(radius * .62, 2.25), count = k.low ? 16 : 48;
     // Snow follows the same circulation as the low mist, rather than a field of unrelated flecks.
     for (let i = 0; i < count; i++) {
       const seed = i * 2.39996323 + zone.id * .7;
@@ -227,9 +229,10 @@ class CryoPresentation implements AbilityPresentation {
       const angle = seed + time * .42 + phase * 1.3;
       const px = x + Math.cos(angle) * r, pz = z + Math.sin(angle) * r;
       const height = .18 + Math.sin(seed * 3) ** 2 * 1.05;
-      const size = Math.min(.07 + Math.sin(seed * 1.7) ** 2 * .12, (radius - r) * .7);
-      k.draw('shard', px, height, pz, .012, .018, size,
-        i % 4 ? ICE : CORE, fade * (.25 + Math.sin(seed) ** 2 * .14), -angle, .3);
+      const variation = Math.sin(seed * 1.7) ** 2;
+      const size = Math.min(.12 + variation * .18, (radius - r) * .7);
+      k.draw('shard', px, height, pz, .028 + variation * .012, .035, size,
+        i % 3 ? ICE : CORE, fade * (.4 + Math.sin(seed) ** 2 * .18), -angle, .3);
     }
     // Curved matte gusts form three connected currents without straight floating markers.
     const steps = k.low ? 3 : 5;
@@ -237,12 +240,12 @@ class CryoPresentation implements AbilityPresentation {
       for (let i = 0; i < steps; i++) {
         const t = i / (steps - 1), seed = i * 2.73 + arm * 4.13;
         const variation = Math.sin(seed * 1.71) ** 2;
-        const sweep = 1.5, a = arm * TAU / 3 + t * sweep + time * .24;
+        const sweep = 1.5, a = arm * TAU / 3 + t * sweep + time * .24 + Math.sin(seed * 2.17) * .027;
         const band = radius - clearRadius, margin = band * .2, span = band - margin * 2;
-        const r = clearRadius + margin + span * t;
-        const heading = Math.atan2(r * sweep, span), angle = a + heading;
-        const radial = Math.cos(heading), tangent = Math.sin(heading);
-        const halfWidth = Math.min(.34 + t * .18 + variation * .09, margin * .36);
+        const r = clearRadius + margin + span * t + Math.sin(seed * 1.37) * band * .009;
+        const heading = Math.atan2(r * sweep, span) + Math.sin(seed * 2.31) * .035, angle = a + heading;
+        const radial = Math.abs(Math.cos(heading)), tangent = Math.abs(Math.sin(heading));
+        const halfWidth = Math.min((.34 + t * .18 + variation * .09) * (.82 + Math.sin(seed * 1.93) ** 2 * .36), margin * .36);
         // Adjacent brushes overlap along the spiral tangent, including the cheaper three-stroke arms.
         const spacing = Math.hypot(span, r * sweep) / (steps - 1);
         const outerLimit = Math.sqrt(Math.max(0, radius * radius - (r * tangent + halfWidth) ** 2)) - r * radial;
