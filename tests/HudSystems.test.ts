@@ -591,3 +591,21 @@ it('keeps the entry reminder and complete build inside the 720p right-column bud
         expect(area).toBeLessThan(.14);
     }finally{await page.close();}
 });
+
+
+it('registers a newly enabled radar with marine clearance immediately',async()=>{
+    const page=await mountHud(1280,720);
+    try{
+        await liveHud(page);
+        const overlaps=await page.evaluate(()=>{
+            const {hud,renderer}=(window as any).__live;
+            // Enabling the preference must invalidate the already cached layout.
+            const marine={left:1130,right:1184,top:285,bottom:425};
+            renderer.playerScreenBounds=()=>marine;
+            (window as any).__hudPrefs.radar=true;hud();
+            const box=document.getElementById('radar-hud')!.getBoundingClientRect();
+            return box.left<marine.right&&box.right>marine.left&&box.top<marine.bottom&&box.bottom>marine.top;
+        });
+        expect(overlaps).toBe(false);
+    }finally{await page.close();}
+});

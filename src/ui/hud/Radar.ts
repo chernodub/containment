@@ -1,7 +1,7 @@
 import type { DepthGame } from '../../DepthGame';
 import type { DepthRenderer } from '../../render/DepthRenderer';
 import { getCameraFootprint, projectWorld } from '../gameAdapter';
-import {hudLayoutRevision} from './layout';
+import {hudLayoutRevision, invalidateHudLayout} from './layout';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAP_WIDTH = 144;
@@ -76,8 +76,9 @@ export class Radar {
   }
 
   update(game: DepthGame, enabled: boolean): void {
-    this.host.hidden = !enabled || this.disposed;
-    if (!enabled || this.disposed) return;
+    const hidden = !enabled || this.disposed;
+    if (this.host.hidden !== hidden) {this.host.hidden = hidden;invalidateHudLayout();}
+    if (hidden) return;
     if (this.revision !== game.roomRevision) this.rebuildGeometry(game);
 
     const x = this.x(game.player.x);
