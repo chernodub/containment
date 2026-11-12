@@ -47,7 +47,7 @@ export class Engagement {
       const ranged=body.type==='spitter'||body.type==='carrier';
       if(ranged){body.attackSlot=undefined;body.engagement='ranged';continue;}
       if(Math.hypot(body.x-player.x,body.y-player.y)>240){body.attackSlot=undefined;body.engagement='waiting';continue;}
-      const slot=body.attackSlot,radius=pr+body.radius-.25;
+      const slot=body.attackSlot,radius=pr+body.radius+.25;
       if(slot&&fits(body as T,slot.angle,radius)){
         body.attackSlot=Object.freeze({angle:slot.angle,radius});body.engagement='engaged';this.#occupied.push(body);
       }else {body.attackSlot=undefined;body.engagement='waiting';this.#candidates.push(body);}
@@ -55,7 +55,7 @@ export class Engagement {
     // Nearest first, numeric ID breaks exact ties; existing owners are retained.
     this.#candidates.sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y)||a.id-b.id);
     for(const body of this.#candidates){
-      const radius=pr+body.radius-.25;
+      const radius=pr+body.radius+.25;
       let best=Infinity,angle:number|undefined;
       for(let i=0;i<48;i++){
         const a=this.#escape+Math.PI/2+.025+i*(Math.PI-.05)/47;

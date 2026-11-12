@@ -639,7 +639,9 @@ export class EnemySystem {
 
     const goalLegal=enemy.type!=='spitter'||this.#firingPositionLegal(enemy,{x:targetX,y:targetY});
     const keepFiringGoal=enemy.type==='spitter'&&enemy.firingGoal&&(distanceToPlayer<SPITTER_MIN_RANGE||distanceToPlayer>SPITTER_MAX_RANGE||this.#canAttack?.(enemy,player)===false);
-    let route=goalLegal&&!keepFiringGoal?this.#route?.(enemy,{x:targetX,y:targetY}):enemy;
+    // Berths use the real body sweep. The navigation grid's extra two units
+    // of clearance can otherwise strand a legal berth just beyond its last cell.
+    let route=engagementGoal&&this.#movementAllowed(enemy,targetX,targetY)?null:goalLegal&&!keepFiringGoal?this.#route?.(enemy,{x:targetX,y:targetY}):enemy;
     if(enemy.type==='spitter'&&(keepFiringGoal||!goalLegal||(route?.x===enemy.x&&route.y===enemy.y&&(targetX!==enemy.x||targetY!==enemy.y)))){
       const alternative=this.#alternateFiringPosition(enemy,player);
       if(alternative){targetX=alternative.goal.x;targetY=alternative.goal.y;direction=normalized(targetX-enemy.x,targetY-enemy.y);route=alternative.route;}
@@ -647,7 +649,7 @@ export class EnemySystem {
     }
     // Navigation returns the current position when the flank has no route.
     // The flank is optional; retry the real player goal rather than stand still.
-    if((enemy.type==='stalker'||engagementGoal) && route?.x===enemy.x && route.y===enemy.y){
+    if((enemy.type==='stalker'||engagementGoal) && route && Math.hypot(route.x-enemy.x,route.y-enemy.y)<1){
       targetX=player.x;targetY=player.y;
       direction=normalized(targetX-enemy.x,targetY-enemy.y);
       route=this.#route?.(enemy,player);
@@ -712,7 +714,7 @@ export class EnemySystem {
           // ID-derived axis resolves exact coincident spawns without randomness.
           const angle=((enemy.id*73+other.id*37)%360)*Math.PI/180;
           const nx=d>1e-9?dx/d:Math.cos(angle),ny=d>1e-9?dy/d:Math.sin(angle);
-          const correction=(overlap-SEPARATION_SLOP)*(movableA&&movableB?.5:1);
+          const correction=(overlap-SEPARATION_SLOP)*(movableA && movableB ? .5 : 1);
           if(movableA){a.correctionX+=nx*correction;a.correctionY+=ny*correction;a.contacts++;}
           if(movableB){b.correctionX-=nx*correction;b.correctionY-=ny*correction;b.contacts++;}
         }
@@ -731,13 +733,17 @@ export class EnemySystem {
         const enemy=entry.enemy,length=Math.hypot(entry.correctionX,entry.correctionY);
         if(length<.01)continue;
         const scale=Math.min(.9,8/length),dx=entry.correctionX*scale,dy=entry.correctionY*scale;
-        for(const [x,y] of [[enemy.x+dx,enemy.y+dy],[enemy.x+dx,enemy.y],[enemy.x,enemy.y+dy]]){
-          if(x<enemy.radius||y<enemy.radius||x>WORLD_WIDTH-enemy.radius||y>WORLD_HEIGHT-enemy.radius||!this.#movementAllowed(enemy,x,y))continue;
-          enemy.x=x;enemy.y=y;corrections++;break;
-        }
+        if(this.#project(enemy,dx,dy)||this.#project(enemy,dx,0)||this.#project(enemy,0,dy))corrections++;
       }
       if(corrections===0)break;
     }
+  }
+
+  #project(enemy:EnemyState,dx:number,dy:number):boolean {
+    if(dx===0&&dy===0)return false;
+    const x=enemy.x+dx,y=enemy.y+dy;
+    if(x<enemy.radius||y<enemy.radius||x>WORLD_WIDTH-enemy.radius||y>WORLD_HEIGHT-enemy.radius||!this.#movementAllowed(enemy,x,y))return false;
+    enemy.x=x;enemy.y=y;return true;
   }
 
   #rebuildSpatialHash(): void {
@@ -824,7 +830,7 @@ export class EnemySystem {
      enemy.windupMs=windup;enemy.pendingAttack='charge';enemy.lockX=player.x-enemy.x;enemy.lockY=player.y-enemy.y;enemy.specialCooldownMs=cooldown;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:enemy.type,x:enemy.x,y:enemy.y,targetX:player.x,targetY:player.y,durationMs:windup}));return;
     }
     if (
-      distance <= enemy.radius + playerRadius &&
+      distance <= enemy.radius + playerRadius + .5 &&
       (enemy.engagement!=='waiting'||enemy.chargeMs>0) &&
       enemy.contactCooldownRemainingMs === 0
     ) {
