@@ -6,6 +6,7 @@ import {COMMUNAL_ATRIUM_BLOCKOUT} from '../../game/roguelike/authoredRoomTopolog
 import {passengerObservationTexture,serviceCartridge,serviceHousingGeometry} from './EquipmentDetail';
 import {industrialBoxGeometry} from './IndustrialFormKit';
 import {membraneGeometry} from './OrganicGrowth';
+import {addConstructionLanguage} from './ConstructionLanguage';
 
 const UNIT=32;
 const ROOM_IDEAS:Readonly<Record<string,string>>={
@@ -104,6 +105,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   const steel=make('steel',0x596771,.68,.43),dark=make('graphite',0x15212a,.5,.65),paint=make('enamel',environment==='habitation'?0xa18c70:0x8d9e9d,.15,.78);
   const resin=make('resin',0x364334,.05,.82),signal=make('signal',MOOD_ACCENT[environment],.12,.36,MOOD_ACCENT[environment],.65);
   const vein=make('vein',0x547b3a,.08,.48,environment==='infested'?0x9dff5a:0x6b9a52,environment==='infested'?.62:.18);
+  if(environment==='infested'){resin.color.setHex(0x634454);vein.color.setHex(0x677158);vein.emissive.setHex(0x8fb86a);vein.emissiveIntensity=.16;}
   if(templateId==='reactor-vault'){resin.color.setHex(0x49323f);vein.color.setHex(0x70536c);vein.emissive.setHex(0x70536c);vein.emissiveIntensity=.12;}
   const display=make('display',0xd8e5df,.05,.52,MOOD_ACCENT[environment],.65),text=DISPLAY_TEXT[templateId];
   if(text){const texture=instrumentTexture(text);display.map=display.emissiveMap=texture;display.addEventListener('dispose',()=>texture.dispose());root.userData.displayText=[...text];}
@@ -279,6 +281,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     }
     root.userData.breachCount=index+1;
   }
+  addConstructionLanguage(world,root,template,environment,templateId,{box,add},{steel,dark,paint,resin,vein,signal});
   root.userData.fittings=fittings;root.userData.growthIntensity=vein.emissiveIntensity;
   root.userData.leakPositions=leakPositions;
   root.userData.leakOrigins=leakOrigins;

@@ -670,3 +670,19 @@ serialized browser timing lease is free:
 VITEST_MAX_WORKERS=2 npx vitest run scripts/nextgen/gpu-micro.test.mjs scripts/nextgen/gpu-pass-audit.test.mjs
 node scripts/nextgen/bench.mjs --self-test
 ```
+
+## G6 environment and usable-viewport review
+
+`g6-calm:<room>` and `g6-kiting:<room>` use the renderer's feature-detected
+`setHudInsets({top,right,bottom,left})` with CSS-pixel values 0/300/160/280 at
+1920×1080, scaled to the capture viewport. Kiting reuses the legal G2 spread
+and native rifle/grenade/movement actions, then advances 650ms before a burst.
+These are staged organic-style encounters, not organic campaign outcomes.
+`g6FramingProof` retains the requested insets, cached viewport, actual projected
+marine bounds and live contact visibility. No UI or simulation override is added.
+
+`node scripts/nextgen/g6-review.mjs <gallery>` creates native grayscale PNGs,
+exact 480×270 area reductions and grayscale room-identity sheets using only
+saved harness PNGs; it does not open another browser. The three standard rooms
+are Residential Gallery, Transmission Chamber and Swarm Junction. Original
+round manifests and failed captures remain separate.
