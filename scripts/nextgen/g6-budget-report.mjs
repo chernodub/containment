@@ -1,0 +1,15 @@
+/** Summarize unchanged native gates; all trials and host-load limitations stay in the source JSON. */
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {canvas,drawText,encode} from './g2-png.mjs';
+const beforeDir=resolve(process.argv[2]),afterDir=resolve(process.argv[3]),out=resolve(process.argv[4]??'artifacts/nextgen/g6-standard');
+const before=JSON.parse(await readFile(resolve(beforeDir,'benchmark.json'),'utf8')),after=JSON.parse(await readFile(resolve(afterDir,'benchmark.json'),'utf8'));
+const round=n=>Math.round(n*10)/10;
+const rows=before.runs.map(b=>{const a=after.runs.find(a=>a.room===b.room&&a.rig===b.rig&&a.tier===b.tier&&a.repeat===b.repeat);if(!a)throw Error(`Missing matched trial ${b.name}`);return {name:b.name,room:b.room,rig:b.rig,tier:b.tier,before:{frameP50:round(b.summary.frame.p50),frameP95:round(b.summary.frame.p95),cpuP95:round(b.summary.cpu.p95),draws:b.summary.draws.max,programs:b.programs,inventory:b.programInventory,load:b.before.load[0],budget:b.budget},after:{frameP50:round(a.summary.frame.p50),frameP95:round(a.summary.frame.p95),cpuP95:round(a.summary.cpu.p95),draws:a.summary.draws.max,programs:a.programs,inventory:a.programInventory,load:a.before.load[0],budget:a.budget}};});
+const summary={method:'One native20-second trial per room/rig/tier. Every matched trial retained; no best-of-N. Shared-host timings are observations, not causal speedup or quiet-hardware certification.',beforeSource:before.distSnapshot,afterSource:after.distSnapshot,beforeErrors:before.errors,afterErrors:after.errors,beforeBudgetFailures:before.budgetFailures,afterBudgetFailures:after.budgetFailures,rows};
+await mkdir(out,{recursive:true});await writeFile(resolve(out,'budget-comparison.json'),JSON.stringify(summary,null,2)+'\n');
+const png=canvas(1440,110+rows.length*38);const fill=(x,y,w,h,c)=>{for(let dy=0;dy<h;dy++)for(let dx=0;dx<w;dx++){const p=((y+dy)*png.width+x+dx)*3;for(let k=0;k<3;k++)png.pixels[p+k]=c[k];}};
+drawText(png,'G6 MATCHED NATIVE DRAW PEAKS',12,10,undefined,2);drawText(png,'BEFORE GRAY / AFTER CYAN / RED LIMIT330 - TIMINGS IN JSON RETAIN HOST LOAD',12,34,[165,190,200],1);
+for(const x of [0,100,200,330]){const px=390+Math.round(x*2);fill(px,62,1,png.height-64,x===330?[225,95,65]:[65,75,82]);drawText(png,String(x),px+4,49,undefined,1);}
+rows.forEach((r,i)=>{const y=76+i*38;drawText(png,`${r.room} ${r.rig} ${r.tier}`,8,y+2,undefined,1);fill(390,y,Math.round(r.before.draws*2),10,[120,133,140]);fill(390,y+12,Math.round(r.after.draws*2),10,r.after.draws>330?[235,95,65]:[105,204,220]);drawText(png,`${r.before.draws} / ${r.after.draws}`,1090,y+4,undefined,1);drawText(png,`LOAD ${round(r.before.load)} / ${round(r.after.load)}`,1190,y+4,[160,180,190],1);});
+await writeFile(resolve(out,'budget-comparison.png'),encode(png));console.log(JSON.stringify({trials:rows.length,peakBefore:Math.max(...rows.map(r=>r.before.draws)),peakAfter:Math.max(...rows.map(r=>r.after.draws)),beforeFailures:before.budgetFailures,afterFailures:after.budgetFailures,out}));
