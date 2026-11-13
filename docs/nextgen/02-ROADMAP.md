@@ -38,16 +38,16 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 
 | Stream | State | Notes |
 |---|---|---|
-| Waves 0–3 | merged | abilities, UI, renderer, audio, world pass, VFX, perf, balance, playtest bot, reviews R1–R5, fix waves |
-| Wave 4 (G3 ink + GPU, G4 world/camera, V4 abilities, A3 crowds, U4 UI, I8 integration) | merged | `nextgen` @ 534bdf6: 3262 tests, smokes, 20/20 authored rooms, bot campaigns ×4; **High holds 60 fps** (frame p50 16.7 ms, p95 ≈ 18 ms on M1 Pro), room prep ≤ 2.4 s; gallery `artifacts/nextgen/final2/` |
-| R6 → R7 independent verdicts | done | combat readability 4 → 6, cohesion 5 → 6; still "advanced prototype, polished-indie UI" — see `reviews/R7-verdict.md` |
-| **Wave 5** — "one approved standard, then propagate" | running | |
-| G5 actor standard (structural ink, marine signature, family silhouettes, Queen) | running | |
-| G6 environment authorship, fixture-shaped light, combat-viewport camera | running | |
-| V5 effect craft: one inked VFX language, weak abilities rebuilt | running | |
-| U5 UI: combat viewport/HUD fade, damage consolidation, rig portraits, shop, ending | running | |
+| Waves 0–4 | merged | see git history and reports under docs/nextgen/ |
+| Wave 5 (G5 actors, G6 environments/camera, V5 effect language, U5 UI, I9 integration, U6 illustrated title) | merged | `nextgen`: 3,415 tests, smokes, 20/20 rooms, bot campaigns ×4; High 60 fps (p95 ≤ 18.2 ms), prep ≤ 2.45 s; gallery `artifacts/nextgen/final3/` |
+| R8 independent verdict | done | 6 / 8 / 6.5 / 5.5 / 5 / 6 — shippable as a free browser game; visually still "advanced prototype" — `reviews/R8-verdict.md` |
+| **Wave 6** — change the class of work: artist-authored CC0 kits + effect textures through the ink pipeline | running | |
+| E6 environment kits and compositions, per-mood lighting | running | |
+| V6 texture-authored ability effects, Overdrive state changes, barriers | running | |
+| C6 camera hero scale/room framing, small enemies, frozen read, Queen organ | running | |
+| U7 key art redraw (title, ending), HUD numerals, shop | running | |
 
-Next (lead): integrate wave 5 (I9), gates + bench on a quiet host, gallery `final3`, fourth independent verdict.
+Next (lead): I10 integration + acceptance, gallery `final4`, fifth independent verdict.
 
 ## Decisions log
 
@@ -59,3 +59,4 @@ Next (lead): integrate wave 5 (I9), gates + bench on a quiet host, gallery `fina
 - 2026-11-11 Baseline `combat-heavy` scenario stacks enemies on a stationary marine; streams add a kiting scenario for readability judgments (harness v2 at Integration 1).
 - 2026-11-11 Integration 1 complete: abilities + UI + graphics live together on `nextgen` (2e228be). Lead review: generational jump achieved in lighting/camera/HUD; weakest links now are enemy readability, prop/surface quality, boss staging, title, ability VFX (interim), audio.
 - 2026-11-12 After R6: commit to a graphic inked look (stylize to unify actors and procedural props) and a strict combat visual priority (danger > marine/cursor > enemies > friendly effects > world > HUD). High tier must hold 60 fps on an M1 Pro.
+- 2026-11-13 After R8: code-authored art has plateaued. Allow artist-authored assets under CC0 only (Quaternius, Kenney, Poly Haven and similar; license text and source URL recorded per pack; no CC-BY-NC/unknown), restyled through the ink/banded pipeline.
