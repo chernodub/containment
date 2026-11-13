@@ -288,13 +288,33 @@ export function addConstructionLanguage(
     };
     // A connected skin is fitted affinely to a solid; no sphere, boulder or
     // independently scattered nodule is added by this construction layer.
-    const fitSkin=(g:T.BufferGeometry,r:Rect)=>{
+    type SkinFit={scale:number;cx:number;cz:number;tx:number;tz:number};
+    const fitSkin=(g:T.BufferGeometry,r:Rect,onFit?:(fit:SkinFit)=>void)=>{
       g.computeBoundingBox();const b=g.boundingBox!,rw=r.width/32-.06,rd=r.height/32-.06;
       const scale=Math.min(1,rw/(b.max.x-b.min.x),rd/(b.max.z-b.min.z)),cx=(b.min.x+b.max.x)/2,cz=(b.min.z+b.max.z)/2;
       const tx=Math.max(r.x/32+.03+(b.max.x-b.min.x)*scale/2,Math.min((r.x+r.width)/32-.03-(b.max.x-b.min.x)*scale/2,cx));
       const tz=Math.max(r.y/32+.03+(b.max.z-b.min.z)*scale/2,Math.min((r.y+r.height)/32-.03-(b.max.z-b.min.z)*scale/2,cz));
       const p=g.getAttribute('position');for(let i=0;i<p.count;i++)p.setXYZ(i,(p.getX(i)-cx)*scale+tx,p.getY(i),(p.getZ(i)-cz)*scale+tz);
-      g.computeVertexNormals();return g;
+      onFit?.({scale,cx,cz,tx,tz});g.computeVertexNormals();return g;
+    };
+    const tissueRibbon=(points:T.Vector3[],width:number,thickness:number,steps:number,phase:number,normalHint=new T.Vector3(0,1,0))=>{
+      const curve=new T.CatmullRomCurve3(points,false,'centripetal'),side=new T.Vector3(),normal=new T.Vector3(),tangent=new T.Vector3();
+      const positions:number[]=[],uvs:number[]=[],indices:number[]=[],sides=8;
+      const basis=(t:number)=>{curve.getTangent(t,tangent).normalize();side.crossVectors(normalHint,tangent);if(side.lengthSq()<.001)side.set(1,0,0);side.normalize();normal.crossVectors(tangent,side).normalize();};
+      const flare=(t:number)=>.20+.80*Math.pow(Math.sin(t*Math.PI),.64);
+      const crown=(t:number)=>thickness*flare(t)*(.82+.18*Math.sin(t*5.1+phase));
+      for(let row=0;row<=steps;row++){
+        const t=row/steps,center=curve.getPoint(t);basis(t);
+        const left=.94+.25*Math.sin(t*9.2+phase)+.12*Math.sin(t*18.1+.4);
+        const right=.80+.22*Math.sin(t*6.3+phase+1.7)+.13*Math.sin(t*13.2+1.2);
+        for(let col=0;col<sides;col++){
+          const angle=col/sides*Math.PI*2,c=Math.cos(angle),q=center.clone().addScaledVector(side,c*width*flare(t)*(c<0?left:right)).addScaledVector(normal,Math.sin(angle)*crown(t));
+          positions.push(q.x,q.y,q.z);uvs.push(col/sides,t);
+          if(row<steps){const a=row*sides+col,b=row*sides+(col+1)%sides;indices.push(a,a+sides,b,b,a+sides,b+sides);}
+        }
+      }
+      const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));geometry.setIndex(indices);geometry.computeVertexNormals();
+      return {geometry,crest:(t:number)=>{const p=curve.getPoint(t);basis(t);return p.addScaledVector(normal,crown(t)+.018);}};
     };
     const flatSkin=(points:T.Vector3[],width:number,material:T.Material)=>{
       const g=membraneGeometry(points,width,.002,undefined,6),p=g.getAttribute('position');
@@ -317,34 +337,43 @@ export function addConstructionLanguage(
       if(!roof)continue;
       const alongX=rw>=rd,long=alongX?rw:rd,short=alongX?rd:rw;
       const point=(along:number,across:number,y:number)=>new T.Vector3(x+(alongX?along:across),y,z+(alongX?across:along));
-      const main=[point(-long*.45,short*.10,.055),point(-long*.34,short*.10,roof*.62),point(-long*.14,short*.07,roof+.17),point(long*.16,-short*.04,roof+.12),point(long*.35,-short*.10,roof*.55),point(long*.45,-short*.12,.055)];
-      const before=acceptedParts;
-      add(fitSkin(membraneGeometry(main,short*.43,Math.min(.18,short*.09),undefined,16),r),m.resin,0,0,0);
-      // A broad return saddle folds over the same machinery and meets the main
-      // skin, visually binding separate retained supports into one consumed form.
-      const shoulder=[point(-long*.08,-short*.44,.06),point(-long*.12,-short*.31,roof*.72),point(-long*.10,0,roof+.23),point(long*.06,short*.32,roof*.70),point(long*.12,short*.44,.055)];
-      add(fitSkin(membraneGeometry(shoulder,Math.min(long*.24,short*.42),.10,undefined,12),r),m.resin,0,0,0);
+      const main=[point(-long*.44,short*.16,.055),point(-long*.29,-short*.08,roof*.82),point(-long*.11,-short*.14,roof+.15),point(long*.12,short*.13,roof+.22),point(long*.34,short*.20,roof*.60),point(long*.44,short*.30,.055)];
+      const before=acceptedParts,skin=tissueRibbon(main,short*.36,Math.min(.62,Math.max(.26,short*.15)),18,count*.91+.35);
+      let mainFit:SkinFit={scale:1,cx:x,cz:z,tx:x,tz:z};
+      add(fitSkin(skin.geometry,r,value=>mainFit=value),m.resin,0,0,0);
+      const mapPoint=(p:T.Vector3)=>p.set((p.x-mainFit.cx)*mainFit.scale+mainFit.tx,p.y,(p.z-mainFit.cz)*mainFit.scale+mainFit.tz);
+      // Two muscular roots bind the lobed body to different machine sides.
+      // They share its junction but descend asymmetrically into existing solids.
+      const ribs=[
+        [point(-long*.08,-short*.10,roof+.60),point(-long*.12,-short*.25,roof+.34),point(-long*.28,-short*.43,roof*.55),point(-long*.34,-short*.45,.06)],
+        [point(long*.14,short*.05,roof+.57),point(long*.28,short*.25,roof+.23),point(long*.42,short*.35,roof*.48),point(long*.44,short*.40,.055)],
+      ];
+      for(const [index,points]of ribs.entries())add(fitSkin(tissueRibbon(points.map(p=>mapPoint(p)),Math.min(.34,short*.15),.20,12,index*.8+.7).geometry,r),m.resin,0,0,0);
       if(count===0){
         // The surviving human strip is physically under the fold: one end
         // protrudes from the wide skin, with its old dark housing still visible.
-        const fragment=point(-long*.12,-short*.10,roof+.10);
+        const fragment=point(-long*.11,short*.13,roof+.10);
         box(m.dark,fragment.x,fragment.y-.035,fragment.z,alongX?.12:short*.77,.06,alongX?short*.77:.12);
         box(m.steel,fragment.x,fragment.y+.006,fragment.z,alongX?.065:short*.72,.035,alongX?short*.72:.065);
         root.userData.partlyBuriedHumanFixture={position:fragment.toArray(),axis:alongX?'z':'x',span:short*.72};
       }
-      const wound=[point(-long*.16,short*.045,roof+.245),point(-long*.05,short*.02,roof+.265),point(long*.12,-short*.04,roof+.23)];
-      add(fitSkin(membraneGeometry(wound,Math.min(.065,short*.05),.012,undefined,8),r),m.vein,0,0,0);
+      const wound=[.40,.49,.58].map(t=>mapPoint(skin.crest(t)));
+      add(fitSkin(membraneGeometry(wound,Math.min(.075,short*.05),.014,undefined,8),r),m.vein,0,0,0);
       if(acceptedParts===before)continue;
-      emit(x,roof+.28,z,count,'machine-saddle',r);count++;
-      let nearest={x:0,z:0,distance:Infinity,edge:0,t:0};
+      const source=mapPoint(skin.crest(.49));emit(source.x,source.y+.035,source.z,count,'machine-saddle',r);count++;
+      let nearest={x:0,z:0,distance:Infinity,edge:0,t:0},visibleSide:typeof nearest|undefined;
       for(let edge=0;edge<boundary.length;edge++){
-        const a=boundary[edge],b=boundary[(edge+1)%boundary.length],dx=(b.x-a.x)/32,dz=(b.y-a.y)/32;
+        const a=boundary[edge],b=boundary[(edge+1)%boundary.length],dx=(b.x-a.x)/32,dz=(b.y-a.y)/32,length=Math.hypot(dx,dz);
         const t=Math.max(0,Math.min(1,((x-a.x/32)*dx+(z-a.y/32)*dz)/(dx*dx+dz*dz||1))),px=a.x/32+dx*t,pz=a.y/32+dz*t,distance=Math.hypot(px-x,pz-z);
-        if(distance<nearest.distance)nearest={x:px,z:pz,distance,edge,t};
+        const candidate={x:px,z:pz,distance,edge,t};if(distance<nearest.distance)nearest=candidate;
+        if(length>5&&Math.abs(dz)>Math.abs(dx)*1.3&&(a.x+b.x)/64<w*.40&&(!visibleSide||distance<visibleSide.distance))visibleSide=candidate;
       }
+      // The entry camera sees the side hull; the nearest north/south segment
+      // can lie outside the actual frame even though a bridge exists in data.
+      if(!wallAuthored&&visibleSide)nearest=visibleSide;
       const dx=nearest.x-x,dz=nearest.z-z,distance=nearest.distance||1;
       const sample=(t:number)=>{const bend=Math.sin(t*Math.PI)*.42;return new T.Vector3(x+dx*t-dz/distance*bend,.026,z+dz*t+dx/distance*bend);};
-      const bridge=membraneGeometry([sample(0),sample(.28),sample(.64),sample(1)],.48,.002,undefined,Math.min(28,Math.max(8,Math.ceil(distance/.65))));
+      const bridge=tissueRibbon([sample(0),sample(.28),sample(.64),sample(1)],1.22,.002,Math.min(30,Math.max(10,Math.ceil(distance/.65))),count*.8+.9).geometry;
       const flatBridge=bridge.toNonIndexed();bridge.dispose();
       const p=flatBridge.getAttribute('position'),normal=flatBridge.getAttribute('normal'),uv=flatBridge.getAttribute('uv');
       const positions:number[]=[],normals:number[]=[],uvs:number[]=[];
@@ -366,8 +395,8 @@ export function addConstructionLanguage(
         const normal=new T.Vector3(nx,0,nz),wallBefore=acceptedParts;
         // Thick sheets climb and spread over the actual hull segment. Their
         // thickness remains entirely outboard of the unchanged navigation edge.
-        add(membraneGeometry([wallPoint(-span*.62,.05),wallPoint(-span*.25,.72),wallPoint(.05,1.42),wallPoint(span*.23,2.20)],Math.min(.92,span*.42),.13,normal,14),m.resin,0,0,0);
-        add(membraneGeometry([wallPoint(-span,.35),wallPoint(-span*.38,1.08),wallPoint(span*.22,.98),wallPoint(span,.43)],.46,.12,normal,12),m.resin,0,0,0);
+        add(tissueRibbon([wallPoint(-span*.62,.05),wallPoint(-span*.25,.72),wallPoint(.05,1.42),wallPoint(span*.23,2.20)],Math.min(1.06,span*.46),.17,16,.4,normal).geometry,m.resin,0,0,0);
+        add(tissueRibbon([wallPoint(-span,.35),wallPoint(-span*.38,1.08),wallPoint(span*.22,.98),wallPoint(span,.43)],.48,.16,12,1.7,normal).geometry,m.resin,0,0,0);
         add(membraneGeometry([wallPoint(-span*.16,.84,.205),wallPoint(0,1.25,.205),wallPoint(span*.15,1.65,.205)],.055,.012,normal,9),m.vein,0,0,0);
         if(acceptedParts>wallBefore){const source=wallPoint(0,1.30,.16);emit(source.x,source.y,source.z,2,'climbing-hull-web');wallAuthored=true;}
       }

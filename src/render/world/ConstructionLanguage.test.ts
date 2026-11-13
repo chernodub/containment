@@ -63,6 +63,7 @@ it.each(['swarm-junction','infested-workshop','breached-loading-bay','reactor-va
  const root=addWorldDressing(world,template,environment,id),forms=root.userData.consumptionForms as Array<{kind:string;source:number[]}>;
  expect(forms.filter(form=>form.kind==='machine-saddle')).toHaveLength(2);
  expect(forms.filter(form=>form.kind==='climbing-hull-web')).toHaveLength(1);
+ expect(forms.find(form=>form.kind==='climbing-hull-web')!.source[0]).toBeLessThan(template.width/32*.40);
  expect(root.userData.coveredBreach).not.toBeNull();
  expect(root.userData.partlyBuriedHumanFixture.span).toBeGreaterThan(.5);
  expect(root.userData.constructionNewFinishes).toEqual([]);
