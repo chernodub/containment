@@ -16,9 +16,10 @@ const deckTint: Readonly<Record<ShipEnvironment, number>> = {
 const deckBounce: Readonly<Record<ShipEnvironment,number>>={cryogenics:.006,habitation:.006,security:.001,cargo:.004,communications:.016,engineering:.004,maintenance:.006,infested:.003,containment:.002,reactor:.012};
 const readableSteel = new T.Color(0x657481);
 const reactorSteel = new T.Color(0x626b73);
+const roomDeckGain:Readonly<Record<string,number>>={'awakening-bay':1.06,'communal-atrium':1.08,'freight-hold':1.18,'transmission-chamber':1.10,'safety-interlock-station':1.32,'coolant-plant':1.18};
 const deckNames = new Set(['painted-steel-deck','annulus-deck','annulus-circulation','environment-floor','shaft-deck']);
 // A readable deck toe must not become an ambient wash across dark rack faces.
-const hardwareBounce:Partial<Record<ShipEnvironment,number>> = {communications:.001,security:.0002,containment:.0005,reactor:.007};
+const hardwareBounce:Partial<Record<ShipEnvironment,number>> = {communications:.006,security:.0002,containment:.0005,reactor:.007};
 
 /** Tune room-owned surfaces and hot fixtures without changing warning, enemy or navigation colors. */
 export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 'cryogenics', templateId?:string, practicalShapes?:T.Vector4[]) {
@@ -50,6 +51,7 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         }
         applyFloorVariation(material, environment, practicalShapes);
       }
+      if(deckNames.has(material.name))material.color.multiplyScalar(roomDeckGain[templateId??'']??1);
       if(environment==='reactor'&&material.name==='ship-cold-practical'){material.color.setHex(0xfff4e8);material.emissive.setHex(0xfffaf0);material.emissiveIntensity=10;applyHotFixtureSurface(material,hotCore);}
       // Keep the authored hue: red warning strips and green safe routes retain their meaning.
       if (!(environment === 'reactor' && material.name === 'ship-cold-practical') && !material.userData.motivatedEmitter && original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {
