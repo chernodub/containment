@@ -116,12 +116,13 @@ it('creates collider evidence only on explicit opt-in and reuses it through togg
   } finally { model.stop?.(); }
 });
 
-it('excludes dead identity vertices from corpse support while retaining pooled resource ownership',()=>{
+it('retains visible corpse anatomy without hidden-rank support or pooled resource churn',()=>{
   const model=alien('brute',true),identity=model.root.getObjectByName('brute-identity') as T.Mesh;
   const liveGeometry=identity.geometry,material=identity.material as T.Material,parent=identity.parent,dispose=vi.spyOn(material,'dispose');
   try{
     freezeCorpse(model);
-    expect(identity.visible).toBe(false);expect(identity.geometry.getAttribute('position').count).toBe(0);
+    expect(identity.visible).toBe(true);expect(identity.geometry).toBe(liveGeometry);
+    expect((identity.material as T.ShaderMaterial).uniforms.identityDeath.value).toBe(1);
     expect(identity.parent).toBe(parent);expect(identity.material).toBe(material);
     const bounds=new T.Box3().setFromObject(model.root,true);
     const visibleBounds=new T.Box3();model.root.updateMatrixWorld(true);

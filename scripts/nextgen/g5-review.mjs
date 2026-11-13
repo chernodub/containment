@@ -15,12 +15,19 @@ for(const shot of manifest.shots){
  const key=shot.file.replace(/-\d\d.png$/,'.png');if(!groups.has(key))groups.set(key,[]);groups.get(key).push({shot,image,proof});
 }
 for(const [key,frames]of groups){
- const sheet=canvas(320*frames.length,290*3);
- for(let f=0;f<frames.length;f++)for(let actor=0;actor<3;actor++){
+ const actorCount=frames[0].proof.projected.length;
+ const sheet=canvas(320*frames.length,290*Math.min(3,actorCount));
+ for(let f=0;f<frames.length;f++)for(let actor=0;actor<Math.min(3,actorCount);actor++){
   const {image,proof}=frames[f],p=proof.projected[actor],native=crop(image,Math.round(p.x)-160,Math.round(p.y)-135,320,260);
   drawImage(sheet,native,f*320,actor*290,320,260);drawText(sheet,p.name+' F'+(f+1),f*320+8,actor*290+268,undefined,1);
  }
  await writeFile(resolve(out,'native-'+key),encode(sheet));
+ for(let actor=0;actor<actorCount;actor++){
+  const strip=canvas(320*frames.length,290),label=frames[0].proof.projected[actor].name;
+  for(let f=0;f<frames.length;f++){const{image,proof}=frames[f],p=proof.projected[actor];drawImage(strip,crop(image,Math.round(p.x)-160,Math.round(p.y)-135,320,260),f*320,0,320,260);drawText(strip,label+' F'+(f+1),f*320+8,268,undefined,1);}
+  await writeFile(resolve(out,'native-'+key.replace('.png','')+'-'+label+'-'+actor+'.png'),encode(strip));
+ }
+
 }
 const thumbs=manifest.shots.filter(s=>/-04.png$/.test(s.file)||!/-\d\d.png$/.test(s.file));
 const board=canvas(480*3,300*Math.ceil(thumbs.length/3));for(let i=0;i<thumbs.length;i++){drawImage(board,decode(await readFile(resolve(out,'480-'+thumbs[i].file))),i%3*480,Math.floor(i/3)*300,480,270);drawText(board,thumbs[i].file.slice(0,64),i%3*480+5,Math.floor(i/3)*300+278,undefined,1);}await writeFile(resolve(out,'review-board.png'),encode(board));

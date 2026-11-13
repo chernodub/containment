@@ -27,7 +27,7 @@ describe('live event ledger',()=>{
 });
 describe('prepared render resources',()=>{
  it('shares skeletons and materials within a marine without sharing animation between actors',()=>{
-  const a=marine(),b=marine(),skeletons=new Set<T.Skeleton>(),materials=new Set<T.Material>();a.root.traverse(o=>{if(o instanceof T.SkinnedMesh){skeletons.add(o.skeleton);for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);}});expect(skeletons.size).toBe(1);expect(materials.size).toBe(4);
+  const a=marine(),b=marine(),skeletons=new Set<T.Skeleton>(),materials=new Set<T.Material>();a.root.traverse(o=>{if(o instanceof T.SkinnedMesh){skeletons.add(o.skeleton);for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);}});expect(skeletons.size).toBe(1);expect(materials.size).toBe(1);
   b.root.traverse(o=>{if(o instanceof T.SkinnedMesh){expect(skeletons.has(o.skeleton)).toBe(false);expect(skeletons.values().next().value!.bones[0]).not.toBe(o.skeleton.bones[0]);}});
   const skeleton=[...skeletons][0],dispose=vi.spyOn(skeleton,'dispose');disposeModel(a.root);expect(dispose).toHaveBeenCalledTimes(1);disposeModel(b.root);
  });

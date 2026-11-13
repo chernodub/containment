@@ -82,7 +82,7 @@ it('switches a rooted brood sac into its retained ruptured husk without allocati
  }finally{vi.restoreAllMocks();}
 });
 
-it('gives brute shoulder armor a closed curved volume rather than flat white cards',()=>{
+it('gives brute shoulder armor closed bevelled shield volumes with broad planes',()=>{
  const model=alien('brute'),identity=model.root.getObjectByName('brute-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
  const role=identity.geometry.getAttribute('identityRole'),normal=identity.geometry.getAttribute('normal'),position=identity.geometry.getAttribute('position');
  const directions=new Set<string>(),bounds=new T.Box3(),point=new T.Vector3();
@@ -91,7 +91,7 @@ it('gives brute shoulder armor a closed curved volume rather than flat white car
    directions.add([normal.getX(i),normal.getY(i),normal.getZ(i)].map(n=>n.toFixed(2)).join(','));
    bounds.expandByPoint(point.fromBufferAttribute(position,i));
   }
-  expect(directions.size).toBeGreaterThan(50);
+  expect(directions.size).toBeGreaterThanOrEqual(10);expect(directions.size).toBeLessThan(35);
   expect(bounds.getSize(point).y).toBeGreaterThan(.15);
   expect(identity.geometry.getAttribute('position').count/3).toBeLessThan(3000);
  }finally{disposeModel(model.root);}
@@ -113,7 +113,7 @@ it('retracts each Queen plate as a rigid side without stretching triangles acros
 });
 
 
-it('embeds the Queen vulnerable organ and hinge roots within the original dorsal height',()=>{
+it('nests the closed Queen organ into two bounded shell halves before exposure',()=>{
  const model=alien('queen'),identity=model.root.getObjectByName('queen-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
  const role=identity.geometry.getAttribute('identityRole'),position=identity.geometry.getAttribute('position');
  const core=new T.Box3(),plates=new T.Box3(),point=new T.Vector3();
@@ -122,10 +122,10 @@ it('embeds the Queen vulnerable organ and hinge roots within the original dorsal
    if(role.getX(i)===3)core.expandByPoint(point.fromBufferAttribute(position,i));
    if(role.getX(i)===5)plates.expandByPoint(point.fromBufferAttribute(position,i));
   }
-  expect(core.max.y).toBeLessThan(model.height*.92);expect(core.min.y).toBeLessThan(model.height*.75);
-  expect(core.getSize(point).x).toBeLessThan(6.5*.20);
-  expect(plates.max.y).toBeLessThan(model.height*.91);
-  expect(plates.min.y).toBeLessThan(model.height*.80);
+  const h=identity.material.uniforms.identityHeight.value as number,span=identity.material.uniforms.identitySpan.value as number;
+  expect(core.getCenter(point).y).toBeLessThan(plates.max.y);expect(core.min.y).toBeLessThan(plates.min.y);
+  expect(core.getSize(point).x).toBeLessThan(span*.33);
+  expect(plates.max.y).toBeLessThan(h*1.08);expect(plates.min.y).toBeLessThan(h*.90);
  }finally{disposeModel(model.root);}
 });
 
@@ -160,7 +160,7 @@ it('pitches cinematic arms and the bound weapon toward a lower target without al
 });
 
 
-it('keeps Queen chitin neutral and shades moving plate normals with an exposure-only magenta edge',()=>{
+it('keeps Queen chitin neutral and shades moving plates around an exposure-only weak point',()=>{
  const model=alien('queen'),identity=model.root.getObjectByName('queen-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
  try{
   const shell=new T.Color(FAMILY_IDENTITY.queen);
@@ -169,7 +169,7 @@ it('keeps Queen chitin neutral and shades moving plate normals with an exposure-
   expect(Math.max(shell.r,shell.g,shell.b)-Math.min(shell.r,shell.g,shell.b)).toBeLessThan(.08);
   expect(identity.material.vertexShader).toContain('plateNormal.xy=mat2(');
   expect(identity.material.vertexShader).toContain('identityNormal=normalMatrix*plateNormal');
-  expect(identity.material.fragmentShader).toContain('edge*identityOpening');
+  expect(identity.material.fragmentShader).toContain('if(identityOpening<.08)discard;');expect(identity.material.vertexShader).toContain('organScale');
   const material=identity.material,geometry=identity.geometry;
   let body:T.MeshStandardMaterial|undefined;
   model.root.traverse(object=>{if(object instanceof T.SkinnedMesh&&!body)body=object.material as T.MeshStandardMaterial;});

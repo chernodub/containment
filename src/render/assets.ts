@@ -2,7 +2,7 @@ import * as T from 'three';
 const initDeathPhysics=()=>import('./DeathRagdolls').then(module=>module.initDeathPhysics());
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
-import {batchActorSkins} from './ActorSkinBatching';
+import {prepareFlatActorSkin} from './ActorFlatSkin';
 import {authorActorRegions} from './ActorRegions';
 export const ASSET_NAMES=['marine','dretch','basilisk','marauder','dragoon','tyrant','pistol','rifle','shotgun','plasma','rocket'] as const;
 export type AssetName=typeof ASSET_NAMES[number];
@@ -17,8 +17,7 @@ function loadAsset(name:AssetName,loader:GLTFLoader){
  pending.set(name,work);return work;
 }
 export function registerAsset(name:AssetName,asset:GLTF){
- if(['marine','tyrant','marauder','basilisk','dretch','dragoon'].includes(name))authorActorRegions(asset.scene,name==='marine');
- if(name==='marine')batchActorSkins(asset.scene,asset.animations);
+ if(['marine','tyrant','marauder','basilisk','dretch','dragoon'].includes(name)){authorActorRegions(asset.scene,name==='marine');prepareFlatActorSkin(asset.scene,name,asset.animations);}
  asset.scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.userData.sharedAsset=true;o.castShadow=o.receiveShadow=true;o.frustumCulled=false;const materials=Array.isArray(o.material)?o.material:[o.material];for(const m of materials)if(m instanceof T.MeshStandardMaterial){for(const map of [m.map,m.normalMap])if(map)map.anisotropy=4;}}});
  templates.set(name,asset);
 }

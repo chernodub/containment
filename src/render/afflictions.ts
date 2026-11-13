@@ -13,15 +13,11 @@ export function afflictionEffects(root:T.Group,span:number,height:number){
   m.onBeforeCompile=(shader,renderer)=>{previous.call(m,shader,renderer);shader.uniforms.statusFrost=frost;
    shader.vertexShader='varying vec3 statusPosition;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nstatusPosition = position;');
    shader.fragmentShader='uniform float statusFrost; varying vec3 statusPosition;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-    vec3 sp=statusPosition*19.0;
-    float grain=fract(sin(dot(floor(sp*6.0),vec3(12.9898,78.233,37.719)))*43758.5453);
-    float frostPatch=sin(sp.x*.73)*sin(sp.y*.91)+cos(sp.z*.57);
-    float cover=smoothstep(1.65-statusFrost*.85,1.95-statusFrost*.85,frostPatch+grain*.25);
-    float fracture=pow(1.0-abs(sin(sp.x+sin(sp.z)*1.7)*sin(sp.y*.7+sp.z)),32.0);
-    // Translucent blue glaze retains the albedo; bright veins occupy only fractures.
-    vec3 glaze=diffuseColor.rgb*vec3(.65,1.12,1.3)+vec3(.025,.065,.09);
-    diffuseColor.rgb=mix(diffuseColor.rgb,glaze,(.12+cover*.65)*statusFrost);
-    diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.34,.68,.78),cover*fracture*statusFrost*.55);
+    // Broad regional glaze preserves anatomical value groups; frost never
+    // invents a second, noisy surface pattern or changes the ink partition.
+    float frostAmount=.26*statusFrost;
+    vec3 glaze=diffuseColor.rgb*vec3(.78,1.08,1.18)+vec3(.018,.045,.065);
+    diffuseColor.rgb=mix(diffuseColor.rgb,glaze,frostAmount);
    `);};m.customProgramCacheKey=()=>previousKey+':actor-frost-v3';m.needsUpdate=true;
  }});
  return {set(status:AfflictionStatus){data.status=status;frost.value=status.frozen?1:status.chilled?Math.min(3,Math.max(1,status.chillStacks??1))*.29:0;},animate(_time:number){},reset(){data.status=NO_AFFLICTION;frost.value=0;}};

@@ -30,6 +30,15 @@ function selected(name:string,family:string){
 function fitSkin(root:T.Object3D,bones:T.Bone[]){
  const fits=new Map(bones.map(b=>[b,{bounds:new T.Box3(),origin:b.getWorldPosition(new T.Vector3()),inverseRotation:b.getWorldQuaternion(new T.Quaternion()).normalize().invert()}]));
  root.traverse(o=>{
+  if(o instanceof T.Mesh&&!(o instanceof T.SkinnedMesh)&&o.name.endsWith('-identity')){
+   // Authored rigid anatomy follows its nearest simulated torso just like a
+   // weighted plate. Fit visible corpse pieces so broad shields/blades cannot
+   // penetrate the deck while their source skin remains correctly supported.
+   let owner:T.Object3D|null=o.parent;while(owner&&!fits.has(owner as T.Bone))owner=owner.parent;
+   const fit=owner?fits.get(owner as T.Bone):undefined;
+   if(fit){const point=new T.Vector3(),positions=o.geometry.getAttribute('position');for(let i=0;i<positions.count;i++){o.getVertexPosition(i,point).applyMatrix4(o.matrixWorld).sub(fit.origin).applyQuaternion(fit.inverseRotation);fit.bounds.expandByPoint(point);}}
+   return;
+  }
   if(!(o instanceof T.SkinnedMesh))return;
   const positions=o.geometry.getAttribute('position'),indices=o.geometry.getAttribute('skinIndex'),weights=o.geometry.getAttribute('skinWeight');
   if(!positions||!indices||!weights)return;

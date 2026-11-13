@@ -112,6 +112,9 @@ export const inkComposite = /* glsl */ `
   vec3 contour=mix(neutralInk,boldInk,inkStrength);
   float darkBackdrop=(1.0-smoothstep(.008,.027,inkBackdropLuma))*step(3.5,geometry.w)*step(geometry.w,6.5);
   contour=mix(contour,vec3(.045,.058,.068),darkBackdrop*.82);
+  // Elite silhouettes carry a restrained bronze contour in addition to their crest.
+  float eliteContour=step(4.5,geometry.w)*step(geometry.w,5.5);
+  contour=mix(contour,vec3(.16,.055,.018),eliteContour*.82);
   color=mix(color,contour,line);
  }
 `;
