@@ -33,7 +33,7 @@ npm run test:smoke
 npm run test:authored-smoke:all
 ```
 
-For visual changes run `npm run capture -- --label=review --scenarios=<relevant>` and inspect the resulting PNGs. Use `npm run bench` for measured scenario comparisons; do not claim hardware performance from staged screenshots. Playtest npm scripts are not currently defined; use the existing desktop smoke and authored gates plus manual play. See `scripts/nextgen/README.md` for fixture limitations.
+For visual changes run `npm run capture -- --label=review --scenarios=<relevant>` and inspect the resulting PNGs. Use `npm run bench` for measured scenario comparisons; do not claim hardware performance from staged screenshots. Playtest scripts now include native desktop bot campaigns (`npm run playtest -- --rig=<id> --seed=1729`) and a three-room `npm run playtest:smoke` gate. Retain the desktop smoke and all twenty authored-room gates; fixed-step bot timings are CPU submission evidence, not hardware FPS. See `scripts/nextgen/README.md` for fixture limitations.
 
 Preserve gameplay, determinism, persistence, navigation, keyboard accessibility and safety assertions. When an approved redesign supersedes a presentation-specific test, replace it with an equivalent behavioral guarantee and list the change; never just delete assertions. Cover new simulation with deterministic tests, UI with DOM/browser contracts, and rendering with lifecycle/tier tests. Retain native input, resizing, context recovery and authored-room checks.
 

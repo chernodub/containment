@@ -376,16 +376,17 @@ class PyroPresentation implements AbilityPresentation {
     const move = frame.game?.player, moving = move && Math.hypot(move.vx, move.vy) > 18;
     const exhaustAngle = moving ? Math.atan2(-move.vy, -move.vx) : angle + Math.PI;
     const pulse = kit.reducedMotion ? 1 : .88 + Math.sin(kit.time * 8) * .12;
-    // Charged seams and shoulder vents belong to the marine, so retain their silhouette priority.
+    // Unequal rear flames rise above the suit without widening the floor aura.
+    // Charged seams and shoulder vents retain their attached silhouette priority.
     kit.impact();
     for (let side = -1; side <= 1; side += 2) {
       const bx = x - c * .3 - s * side * .4, bz = z - s * .3 + c * side * .4;
       kit.draw('solid', bx, 1.36, bz, .28, .22, .34, 0xd95b16, (.9 + pulse * .1) * fade, -angle);
       kit.draw('spark', bx, side < 0 ? 1.4 : 1.3, bz, .15, .17, 1, CORE, .96 * fade);
-      const height = side < 0 ? 1.35 : 1.05, base = side < 0 ? 1.18 : 1.25;
-      kit.directedFlame(bx, base, bz, side < 0 ? .37 : .32, height * (.95 + pulse * .05),
+      const height = side < 0 ? 2.4 : 1.8, base = side < 0 ? 1.3 : 1.25;
+      kit.directedFlame(bx, base, bz, side < 0 ? .52 : .43, height * (.95 + pulse * .05),
         exhaustAngle, moving ? 1.1 : .5, side + zone.id, .9 * fade, true);
-      if (!kit.low) kit.directedFlame(bx - c * .18, 1.08, bz - s * .18, .25, 1.5,
+      if (!kit.low) kit.directedFlame(bx - c * .18, 1.08, bz - s * .18, .28, 2.6,
         exhaustAngle, .65, side * 2.7, .78 * fade);
     }
     kit.draw('solid', x - c * .3, 1.12, z - s * .3, .22, .55, .36, 0xb9450e, .94 * fade, -angle);

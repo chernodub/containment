@@ -316,6 +316,7 @@ export async function stageKiting(attempt=0){
  }
  d.invulnerable(true);g.enemies.reset();
  // Pack against the final HUD reservation, including the optional right radar.
+ d.measureLuminance=true;
  d.uiFixture({preferences:{radar:true,combatText:true}});d.refresh();
  const bounds=g.geometry.bounds,candidates=[];
  for(let y=bounds.y+100;y<bounds.y+bounds.height-100;y+=70)for(let x=bounds.x+100;x<bounds.x+bounds.width-100;x+=70){
@@ -443,7 +444,7 @@ export function inspectFrame(){
  const xs=[];for(let y=0;y<18;y++)for(let x=0;x<32;x++){const p=new Uint8Array(4);gl.readPixels(Math.floor((x+.5)*gl.drawingBufferWidth/32),Math.floor((y+.5)*gl.drawingBufferHeight/18),1,1,gl.RGBA,gl.UNSIGNED_BYTE,p);xs.push(`${p[0]>>3},${p[1]>>3},${p[2]>>3}`);}
  const enemies=g.enemies.snapshot.enemies.filter(e=>e.health>0),visible=enemies.filter(e=>r.visible(e.x,e.y));
  if(d.g5Proof){
-  const owners=[{model:r.player,family:'marine'},...enemies.map(e=>({model:r.actors.get(e.id),family:e.type,elite:e.elite,champion:e.champion}))].filter(o=>o.model);
+  const owners=[{model:r.player,family:'marine'},...(g.boss.snapshot.active&&r.queen?[{model:r.queen,family:'queen'}]:[]),...enemies.map(e=>({model:r.actors.get(e.id),family:e.type,elite:e.elite,champion:e.champion}))].filter(o=>o.model);
   d.g5Proof.projected=owners.map(o=>{const p=o.model.root.position.clone();p.y=o.model.height*.5;p.project(r.camera);return {name:o.family,elite:o.elite,champion:o.champion,x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2};});
   if(d.g5Proof.silhouette){
    // One-shot evidence readback only, following G3's existing fixture convention.

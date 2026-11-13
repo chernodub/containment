@@ -204,7 +204,7 @@ describe('Pyro presentation lifecycle and readability', () => {
     expect(shoulderVents).toHaveLength(2);
     for (const call of shoulderVents) {
       expect(call[1]).toBeGreaterThanOrEqual(1.15); expect(call[4]).toBeGreaterThan(1);
-      expect(call[1] + call[4]).toBeLessThanOrEqual(2.8);
+      expect(call[1] + call[4]).toBeLessThanOrEqual(3.9);
       // Exhaust is outboard of the helmet axis and behind the facing direction.
       const dx = call[0] - 4, dz = call[2] - 5;
       expect(dx * Math.cos(.1) + dz * Math.sin(.1)).toBeLessThan(-.25);
@@ -212,8 +212,9 @@ describe('Pyro presentation lifecycle and readability', () => {
     }
     const backpackVents = exhaust.mock.calls.filter(call => call[3] < .3);
     expect(backpackVents).toHaveLength(tier === 'low' ? 0 : 2);
-    for (const call of backpackVents) { expect(call[1]).toBeGreaterThanOrEqual(1); expect(call[1] + call[4]).toBeLessThan(2.8); }
+    for (const call of backpackVents) { expect(call[1]).toBeGreaterThanOrEqual(1); expect(call[1] + call[4]).toBeLessThan(3.9); }
     expect(shoulderVents[0][4]).not.toBe(shoulderVents[1][4]);
+    expect(Math.max(...shoulderVents.map(call => call[1] + call[4]))).toBeGreaterThan(3.5);
     expect(scale(kit.batches.solid.mesh, 0).x).toBeCloseTo(.28);
     expect(scale(kit.batches.solid.mesh, 2).y).toBeGreaterThanOrEqual(.1);
     expect(kit.counts.rings).toBe(0); expect(kit.batches.decal.mesh.count).toBe(0);

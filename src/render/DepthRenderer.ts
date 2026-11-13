@@ -279,6 +279,20 @@ export class DepthRenderer {
   const result=new T.Vector3();return this.raycaster.ray.intersectPlane(this.ground,result)?{x:result.x*UNIT,y:result.z*UNIT}:null;
  }
  visible(x:number,y:number){const p=this.visiblePoint.set(x/UNIT,.6,y/UNIT).project(this.camera),v=this.hudFraming?.viewport??FULL_COMBAT_VIEWPORT;return p.z>=-1&&p.z<=1&&Math.abs(p.x-v.centerX)<v.halfX*.9&&Math.abs(p.y-v.centerY)<v.halfY*.8;}
+ /** Fill caller-owned CSS bounds for a live body, including its authored family/rank height. */
+ actorScreenBounds(id:number,x:number,y:number,radius:number,out:{left:number;top:number;right:number;bottom:number}):boolean {
+  const model=id===-1?this.queen:this.actors.get(id);
+  if(!model||!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(radius)||radius<0||!Number.isFinite(model.height))return false;
+  const rect=this.canvasRect;if(!rect)return false;
+  const point=this.screenPoint,base=model.root.position.y;
+  out.left=out.top=Infinity;out.right=out.bottom=-Infinity;
+  for(let ix=-1;ix<=1;ix+=2)for(let iz=-1;iz<=1;iz+=2)for(let iy=0;iy<2;iy++){
+   point.set((x+ix*radius)/UNIT,base+iy*model.height,(y+iz*radius)/UNIT).project(this.camera);
+   const px=rect.left+(point.x+1)*rect.width/2,py=rect.top+(1-point.y)*rect.height/2;
+   out.left=Math.min(out.left,px);out.right=Math.max(out.right,px);out.top=Math.min(out.top,py);out.bottom=Math.max(out.bottom,py);
+  }
+  return Number.isFinite(out.left)&&Number.isFinite(out.right)&&Number.isFinite(out.top)&&Number.isFinite(out.bottom);
+ }
  playerScreenBounds(radius:number){
   const rect=this.canvasRect??this.canvas.getBoundingClientRect(),position=this.player.root.position,point=this.screenPoint??=new T.Vector3();
   const result=this.projectedPlayer??={left:0,top:0,right:0,bottom:0};

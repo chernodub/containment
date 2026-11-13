@@ -6,6 +6,7 @@ import type {RunStatsSnapshot} from '../game/abilities/RunStats';
 import type {GraphicsTier} from '../render/FrameBudget';
 import {ENEMY_ATTACK_SHAPES} from '../game/enemies/attackShapes';
 import {canTraverseExpedition} from '../game/world/expeditionGeometry';
+import type {ScreenBox} from './hud/weaponInput';
 export {getShopProjection} from './shopProjection';
 
 type NextRenderer = DepthRenderer & {
@@ -13,6 +14,7 @@ type NextRenderer = DepthRenderer & {
   setGraphicsOptions?: (options: Partial<GraphicsOptions>) => void;
   worldToScreen?: (x: number, y: number, height?: number) => {x: number; y: number};
   setHudInsets?: (insets: HudInsets) => void;
+  actorScreenBounds?: (id: number, x: number, y: number, radius: number, out: ScreenBox) => boolean;
 };
 
 export type HudInsets = Readonly<{top: number; right: number; bottom: number; left: number}>;
@@ -31,6 +33,12 @@ export function setHudInsets(renderer: DepthRenderer, value: HudInsets): void {
   const next = {top, right, bottom, left};
   hudInsets.set(renderer, next);
   hook.call(renderer, next);
+}
+
+/** Optional live body projection; legacy/missing models retain the caller's radius fallback. */
+export function projectActorBounds(renderer: DepthRenderer, id: number, x: number, y: number, radius: number, out: ScreenBox): boolean {
+  const hook = (renderer as NextRenderer).actorScreenBounds;
+  return typeof hook === 'function' && hook.call(renderer, id, x, y, radius, out);
 }
 
 type HostileWarningVisitor = (x: number, y: number, radius: number, endX: number, endY: number) => void;

@@ -11,7 +11,7 @@ import { ABILITY_CATALOG } from '../../game/abilities/catalog';
 import type { AbilitySlotSnapshot, AbilitiesSnapshot } from '../../game/abilities/contract';
 import { boonElement, boonIcon } from '../boonPresentation';
 import { playerFacingText } from '../units';
-import { getAbilities, showInvalidAbilityPlacement, setHudInsets, projectWorld, visitHostileWarnings } from '../gameAdapter';
+import { getAbilities, showInvalidAbilityPlacement, setHudInsets, projectWorld, projectActorBounds, visitHostileWarnings } from '../gameAdapter';
 import { icon } from '../icons';
 import { el } from '../shell';
 import { CombatText } from './CombatText';
@@ -148,6 +148,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     const recentKills = new Int32Array(16).fill(-1);
     const owned = new Set<string>();
     const bounds = { left: 0, right: 0, top: 0, bottom: 0 };
+    const actorBounds = { left: 0, right: 0, top: 0, bottom: 0 };
     const projected = {x: 0, y: 0, visible: false};
     const projectedRadius = {x: 0, y: 0, visible: false};
     const warnings = Array.from({length:32}, () => ({x:0,y:0,targetX:0,targetY:0,radius:0,life:0}));
@@ -167,12 +168,17 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         obscureWorld(x, y, radius, .05);
         if (x !== endX || y !== endY) for (let step = 1; step <= 8; step++) obscureWorld(x + (endX - x) * step / 8, y + (endY - y) * step / 8, radius, .05);
     };
+    const obscureActor = (id: number, x: number, y: number, radius: number) => {
+        if (projectActorBounds(renderer, id, x, y, radius, actorBounds))
+            markHudOcclusion(actorBounds.left, actorBounds.top, actorBounds.right, actorBounds.bottom);
+        else obscureWorld(x, y, radius);
+    };
     const protectPanels = () => {
         beginHudOcclusion();
         markHudOcclusion(bounds.left, bounds.top, bounds.right, bounds.bottom);
-        for (const enemy of game.enemies.snapshot.enemies) if (enemy.health > 0 && enemy.alpha >= .2) obscureWorld(enemy.x, enemy.y, enemy.radius);
+        for (const enemy of game.enemies.snapshot.enemies) if (enemy.health > 0 && enemy.alpha >= .2) obscureActor(enemy.id, enemy.x, enemy.y, enemy.radius);
         const boss = game.boss.snapshot;
-        if (boss.active) obscureWorld(boss.x, boss.y, 92);
+        if (boss.active) obscureActor(-1, boss.x, boss.y, 92);
         visitHostileWarnings(game, obscureWarning);
         for (const warning of warnings) if (warning.life > 0) {
             obscureWarning(warning.x, warning.y, warning.radius, warning.targetX, warning.targetY);

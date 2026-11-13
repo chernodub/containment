@@ -72,4 +72,28 @@ describe('HUD-aware combat viewport',()=>{
   const floorNdc=new T.Vector3(0,-.9,0).unproject(camera),origin=camera.position,direction=floorNdc.sub(origin);floorNdc.multiplyScalar(-origin.y/direction.y).add(origin);
   expect(probe.visible(floorNdc.x*32,floorNdc.z*32)).toBe(false);
  });
+ it('projects tall enemy and Queen body corners into cached CSS coordinates without viewport reads or new bounds',()=>{
+  for(const perspective of [false,true]){
+   const {camera,rig,framing,point,target}=setup(1920,1080,perspective);
+   framing.center(camera,rig.focus,point,target);
+   const root=new T.Group();root.position.y=.18;
+   const enemy={root,height:4.2},queen={root,height:6.1},rect={left:11,top:17,width:1920,height:1080};
+   const probe=Object.assign(Object.create(DepthRenderer.prototype),{camera,canvasRect:rect,canvas:{width:960,height:540,getBoundingClientRect(){throw Error('Body projection measured the DOM');}},actors:new Map([[71,enemy]]),queen,screenPoint:new T.Vector3()});
+   const output={left:0,right:0,top:0,bottom:0};
+   for(const [id,radius,height]of [[71,25,4.2],[-1,92,6.1]]){
+    expect(probe.actorScreenBounds(id,17*32,18*32,radius,output)).toBe(true);
+    const expected={left:Infinity,right:-Infinity,top:Infinity,bottom:-Infinity};
+    for(const x of [17-radius/32,17+radius/32])for(const z of [18-radius/32,18+radius/32])for(const y of [.18,.18+height]){
+     const p=new T.Vector3(x,y,z).project(camera),px=rect.left+(p.x+1)*rect.width/2,py=rect.top+(1-p.y)*rect.height/2;
+     expected.left=Math.min(expected.left,px);expected.right=Math.max(expected.right,px);expected.top=Math.min(expected.top,py);expected.bottom=Math.max(expected.bottom,py);
+    }
+    for(const edge of ['left','right','top','bottom'] as const)expect(output[edge]).toBeCloseTo(expected[edge],9);
+    const center=new T.Vector3(17,.8,18).project(camera);
+    expect(output.top).toBeLessThan(rect.top+(1-center.y)*rect.height/2-24);
+   }
+   const retained={...output};
+   expect(probe.actorScreenBounds(999,17*32,18*32,25,output)).toBe(false);expect(output).toEqual(retained);
+   expect(probe.actorScreenBounds(71,NaN,18*32,25,output)).toBe(false);expect(output).toEqual(retained);
+  }
+ });
 });

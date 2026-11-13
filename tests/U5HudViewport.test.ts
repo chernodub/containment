@@ -111,3 +111,52 @@ it('reserves a top-right status column on its anchored right edge rather than it
     expect(result.insets.top).toBeLessThan(result.columnBottom);
   } finally {await page.close();}
 });
+
+it('fades a panel when tall enemy anatomy overlaps even while its center projection is clear', async () => {
+  const page = await mountHud(1280,720);
+  try {
+    await liveHud(page);
+    const result = await page.evaluate(() => {
+      const {game,hud,renderer,point}=(window as any).__u5;
+      game.enemies.reset();game.enemies.spawn('spitter',200,200);
+      point.x=innerWidth/2;point.y=innerHeight/2;
+      let bodyVisible=false;
+      const outputs = new Set<unknown>();
+      const calls: {id:number;x:number;y:number;radius:number;context:boolean}[]=[];
+      renderer.actorScreenBounds=function(id:number,x:number,y:number,radius:number,out:{left:number;right:number;top:number;bottom:number}) {
+        outputs.add(out);calls.push({id,x,y,radius,context:this===renderer});
+        if(!bodyVisible)return false;
+        const panel=document.getElementById('status-hud')!.getBoundingClientRect();
+        // The head/crest enters the panel while the old center/radius proxy remains in clear space.
+        out.left=panel.left+10;out.right=panel.right-10;out.top=panel.bottom-14;out.bottom=point.y+20;
+        return true;
+      };
+      hud();
+      const panel=document.getElementById('status-hud')!,box=panel.getBoundingClientRect();
+      const withoutBody=panel.dataset.obscuresThreat;
+      bodyVisible=true;hud();hud();
+      return {withoutBody,withBody:panel.dataset.obscuresThreat,centerClear:point.x+24<box.left||point.x-24>box.right||point.y+24<box.top||point.y-24>box.bottom,outputs:outputs.size,calls};
+    });
+    expect(result.centerClear).toBe(true);
+    expect(result.withoutBody).toBe('false');
+    expect(result.withBody).toBe('true');
+    expect(result.outputs).toBe(1);
+    expect(result.calls.every(call=>call.context&&call.x===200&&call.y===200&&call.radius>0)).toBe(true);
+    await page.waitForTimeout(180);
+    expect(Number(await page.locator('#status-hud').evaluate(node=>getComputedStyle(node).opacity))).toBeLessThanOrEqual(.36);
+    expect(await page.locator(".hud-panel-threat[data-panel='status-hud']").isVisible()).toBe(true);
+    await page.evaluate(() => {
+      const {game,hud,renderer}=(window as any).__u5;
+      game.enemies.reset();
+      const boss={...game.boss.snapshot,active:true,x:220,y:210};
+      Object.defineProperty(game.boss,'snapshot',{configurable:true,get:()=>boss});
+      renderer.actorScreenBounds=function(id:number,x:number,y:number,radius:number,out:{left:number;right:number;top:number;bottom:number}) {
+        if(id!==-1||x!==220||y!==210||radius!==92)throw Error('Queen body bounds did not use the public projection hook');
+        const panel=document.getElementById('status-hud')!.getBoundingClientRect();
+        out.left=panel.left+10;out.right=panel.right-10;out.top=panel.bottom-14;out.bottom=panel.bottom+50;return true;
+      };
+      hud();
+    });
+    expect(await page.locator('#status-hud').getAttribute('data-obscures-threat')).toBe('true');
+  } finally {await page.close();}
+});
