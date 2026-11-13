@@ -322,7 +322,13 @@ export function stageCombat({status=false}){
   d.refresh();d.refresh();
  }
  if(g.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y)).length<18)throw Error('Heavy native framing lost eighteen initial visible targets');
- if(!status){g.grenade();d.step(700);}
+ if(!status){
+  // Resolve the real grenade before firing, so the first captured plasma pulse
+  // does not depend on a short accidental overlap between two independent clocks.
+  g.grenade();d.step(700);
+  for(let i=0;i<60&&!d.events.some(e=>e.type==='explosion'&&g.elapsed-e.at<.25);i++)d.step(1000/60);
+  if(!d.events.some(e=>e.type==='explosion'&&g.elapsed-e.at<.25))throw Error('Heavy fixture grenade did not explode');
+ }
  g.switchWeapon(status?'rifle':'plasma');d.setInput({fire:true,angle:null,autoAim:true});
  if(status){
   // A confirmed rifle hit supplies burn, poison and chill; native Cryo Nova then
@@ -343,8 +349,19 @@ export function stageCombat({status=false}){
    d.step(1000/60);
   }
  }else{
-  d.step(360);
-  for(let i=0;i<60&&!(d.renderer.muzzle.intensity>0&&g.bullets.some(b=>b.kind==='player')&&d.events.some(e=>e.type==='explosion'&&g.elapsed-e.at<.25));i++)d.step(1000/60);
+  // Aim a native shot through legal floor with enough travel before a body.
+  // Autoaim could select an adjacent shield and consume every round immediately.
+  let aim=null,clearance=-1;
+  for(let i=0;i<48;i++){
+   const angle=i*Math.PI/24,fx=Math.cos(angle),fy=Math.sin(angle);
+   if(![32,64,96].every(radius=>d.canStand(g.player.x+fx*radius,g.player.y+fy*radius,16))||!d.clearShot(g.player.x+fx*120,g.player.y+fy*120))continue;
+   let travel=300;
+   for(const e of g.enemies.snapshot.enemies){const dx=e.x-g.player.x,dy=e.y-g.player.y,along=dx*fx+dy*fy;if(along>0&&Math.abs(dx*fy-dy*fx)<60)travel=Math.min(travel,along);}
+   if(travel>clearance){clearance=travel;aim=angle;}
+  }
+  if(aim===null||clearance<60)throw Error('No legal travelling plasma lane in heavy fixture');
+  d.setInput({fire:true,angle:aim,autoAim:false});d.step(1000/60);
+  if(!(d.renderer.muzzle.intensity>0&&g.bullets.some(b=>b.kind==='player')))throw Error('Heavy fixture lacks first real plasma pulse');
  }
  return {staged:staged.length,player:{x:g.player.x,y:g.player.y}};
 }
@@ -496,11 +513,19 @@ export function advanceKiting({frame,stepMs}){
  }
  if(frame===2){d.fillOverdrive();if(!g.useAbility('overdrive'))throw Error('Kiting Whiteout denied');}
  if(frame){
-  // Favor a clear short lane, with enough lookahead to prevent wall-hugging screenshots.
-  const base=(frame%8)*Math.PI/4;let direction=null;
+  // Keep the authored first-legal motion while eighteen contacts remain visible.
+  // In a thin view, rank legal lanes by the worst translated native footprint in
+  // either follow direction; actual movement and camera still run normally.
+  const base=(frame%8)*Math.PI/4,contacts=g.enemies.snapshot.enemies.filter(e=>e.health>0);
+  const distance=220*stepMs/1000*g.abilities.moveSpeedMultiplier,hasReserve=contacts.filter(e=>d.renderer.visible(e.x,e.y)).length>=18;let direction=null,best=-Infinity;
   for(let i=0;i<16;i++){
-   const angle=base+i*Math.PI/8;
-   if([24,48,72].every(radius=>d.canStand(g.player.x+Math.cos(angle)*radius,g.player.y+Math.sin(angle)*radius,20))){direction={x:Math.cos(angle),y:Math.sin(angle)};break;}
+   const angle=base+i*Math.PI/8,x=Math.cos(angle),y=Math.sin(angle);
+   if(![24,48,72].every(radius=>d.canStand(g.player.x+x*radius,g.player.y+y*radius,20)))continue;
+   if(hasReserve){direction={x,y};break;}
+   const retained=Math.min(...[-1,1].map(sign=>contacts.filter(e=>d.renderer.visible(e.x+sign*x*distance,e.y+sign*y*distance)).length));
+   const interior=contacts.filter(e=>[[-20,0],[20,0],[0,-20],[0,20]].every(([dx,dy])=>d.renderer.visible(e.x-x*distance+dx,e.y-y*distance+dy))).length;
+   const score=retained*100+interior;
+   if(score>best){best=score;direction={x,y};}
   }
   if(!direction)throw Error('Kiting fixture lost its movement lane');
   d.setInput({...direction,fire:true,angle:null,autoAim:true});d.step(stepMs);

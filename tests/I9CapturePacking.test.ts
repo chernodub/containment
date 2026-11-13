@@ -21,11 +21,13 @@ function setup(width: number, height: number) {
   hud.resize(width, height);
   hud.setInsets({top: 182, right: 292, bottom: height === 720 ? 108 : 120, left: 0});
   const desired = new T.Vector3(), point = new T.Vector3(), scratch = new T.Vector3(), focus = new T.Vector3();
-  let room = '';
+  let room = '', muzzleLife = 0;
   const renderer = {
     muzzle: {intensity: 0}, roomLoading: false, prepare: async () => {},
-    effect(event: {type: string}) {if (event.type === 'shot') this.muzzle.intensity = 1;},
+    effect(event: {type: string}) {if (event.type === 'shot') muzzleLife = .045;},
     render(game: DepthGame, dt = 0) {
+      muzzleLife -= dt;
+      this.muzzle.intensity = muzzleLife > 0 ? 6 * Math.min(1, muzzleLife / .035) : 0;
       const p = game.player, b = game.geometry.bounds;
       if (room !== game.node.id) {
         room = game.node.id;
@@ -75,10 +77,13 @@ for (const [width, height] of [[1280, 720], [1920, 1080]]) {
     }
     expect(game.stats.abilityUses).toMatchObject({dash: 1, tactical: 1, power: 1, overdrive: 1});
   });
-  it.each(['awakening-bay', 'communal-atrium', 'containment-annulus', 'passenger-vault'])(`retains twelve heavy bodies after real combat at ${width}×${height}: %s`, async room => {
+  it.each(['awakening-bay', 'communal-atrium', 'containment-annulus', 'passenger-vault', 'overload-floor'])(`retains twelve heavy bodies after real combat at ${width}×${height}: %s`, async room => {
     const {game, renderer, debug} = setup(width, height);
     await debug.gotoRoom(room);
     stageCombat({status: false});
+    expect(renderer.muzzle.intensity).toBeGreaterThan(0);
+    expect(game.bullets.some(b => b.kind === 'player')).toBe(true);
+    expect(debug.events.some((e: {type: string;at: number}) => e.type === 'explosion' && game.elapsed - e.at < .25)).toBe(true);
     for (let frame = 0; frame < 4; frame++) {
       if (frame) debug.step(150);
       expect(game.enemies.snapshot.enemies.filter(e => e.health > 0 && renderer.visible(e.x, e.y)).length, `frame ${frame}`).toBeGreaterThanOrEqual(12);
