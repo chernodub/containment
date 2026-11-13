@@ -62,6 +62,21 @@ describe('HUD-aware combat viewport',()=>{
    expect((a.top-a.bottom)*height/2).toBeGreaterThan(height*.065);
   }
  });
+ it('corrects the exact failed native720 perspective matrix without relaxing marine safety',()=>{
+  const camera=new T.PerspectiveCamera(28,1280/720,.1,160);camera.zoom=.5;camera.updateProjectionMatrix();
+  camera.matrix.fromArray([1, 0, 0, 0, 0, 0.5900165893423099, -0.807391122257898, 0, 0, 0.807391122257898, 0.5900165893423099, 0, 10.935422726259358, 24.287016892935643, 31.502003518644635, 1]);camera.matrix.decompose(camera.position,camera.quaternion,camera.scale);camera.updateMatrixWorld(true);
+  const focus=new T.Vector3().fromArray([7.9496680124370265, 0, 14.690970262941164]),framing=new HudCombatFraming(),point=new T.Vector3(),target=new T.Vector3();
+  const x=167.90905765161747/32,z=495.7129016217312/32,ex=260.0662478226219/32,ez=834.1510276377002/32,height=2.05,enemyHeight=.9826191737943052;
+  framing.resize(1280,720);framing.setInsets({top:182,right:292,bottom:108,left:0});
+  expect(bounds(camera,ex,ez,17/32,enemyHeight).bottom).toBeLessThan(framing.viewport.bottom);
+  framing.selectContacts(x,z,1.3617798661837357,[{id:1,x:ex*32,y:ez*32,radius:17,health:100}],32,()=>enemyHeight);
+  framing.protectEngagement(camera,focus,x,z,.5,height,point,target);protectPlayerFrame(camera,focus,x,z,.5,height,point,target,framing.viewport);
+  const v=framing.viewport,a=bounds(camera,x,z,.5,height),b=bounds(camera,ex,ez,17/32,enemyHeight);
+  expect(a.left).toBeGreaterThanOrEqual(v.centerX-.60*v.halfX-1e-5);expect(a.right).toBeLessThanOrEqual(v.centerX+.60*v.halfX+1e-5);expect(a.bottom).toBeGreaterThanOrEqual(v.centerY-.55*v.halfY-1e-5);expect(a.top).toBeLessThanOrEqual(v.centerY+.55*v.halfY+1e-5);
+  expect(b.left).toBeGreaterThanOrEqual(v.left);expect(b.right).toBeLessThanOrEqual(v.right);expect(b.bottom).toBeGreaterThanOrEqual(v.bottom);expect(b.top).toBeLessThanOrEqual(v.top);
+  expect(framing.diagnostics.fit,JSON.stringify({a,b,v,diagnostics:framing.diagnostics})).toBe(true);expect(camera.zoom).toBe(.5);
+  expect((a.top-a.bottom)*720/2).toBeGreaterThanOrEqual(720*.065);
+ });
  it('weights nearby attacking contacts and aimed targets while ignoring remote idle enemies',()=>{
   const f=new HudCombatFraming(),out=new T.Vector3();f.resize(1920,1080);
   f.selectContacts(0,0,0,[{x:32*5,y:0,radius:20},{x:-32*20,y:0,radius:20}]);f.biasTarget(0,0,0,false,false,out);expect(out.x).toBeGreaterThan(1.8);expect(out.x).toBeLessThan(2.8);expect(out.z).toBe(0);expect(f.diagnostics.contacts).toBe(1);

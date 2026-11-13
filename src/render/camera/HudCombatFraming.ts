@@ -94,7 +94,7 @@ export class HudCombatFraming {
     if(!this.count)return;
     const v=this.viewport,leftLimit=v.left+.06*v.halfX,rightLimit=v.right-.06*v.halfX,topLimit=v.top-.10*v.halfY,bottomLimit=v.bottom+.10*v.halfY;
     let selected=-1;
-    for(let pass=0;pass<16;pass++){
+    for(let pass=0;pass<32;pass++){
       let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
       let marineLeft=0,marineRight=0,marineTop=0,marineBottom=0;
       for(let actor=-1;actor<this.count;actor++){
@@ -117,7 +117,15 @@ export class HudCombatFraming {
         const zoom=Math.max(selected<0?.85:.5,camera.zoom*Math.min(.96,scale*.98));
         if(zoom<camera.zoom-1e-6){camera.zoom=zoom;this.diagnostics.pullback=zoom;camera.updateProjectionMatrix();continue;}
         if(selected<0){selected=0;for(let n=1;n<this.count;n++)if(this.contacts[n*5+4]>this.contacts[selected*5+4])selected=n;this.diagnostics.focusedPair=true;this.diagnostics.focusContactId=this.diagnostics.selectedIds[selected];continue;}
-        this.diagnostics.fit=false;return;
+        // Perspective body extents change when the camera moves on the deck.
+        // Disjoint current intervals do not prove that the pair cannot fit:
+        // first use the marine's remaining central-safe translation, then
+        // measure the actual eight-corner bounds again at the same zoom.
+        const dx=Math.max(marineRight-v.centerX-marineHalfX,Math.min(marineLeft-v.centerX+marineHalfX,(left+right)*.5-v.centerX));
+        const dy=Math.max(marineTop-v.centerY-marineHalfY,Math.min(marineBottom-v.centerY+marineHalfY,(top+bottom)*.5-v.centerY));
+        if(Math.abs(dx)+Math.abs(dy)<1e-7){this.diagnostics.fit=false;return;}
+        point.set(x,height*.5,z).project(camera);target.copy(point);target.x-=dx;target.y-=dy;
+        this.translate(camera,focus,point,target,true);continue;
       }
       const dx=Math.max(minX,Math.min(maxX,0));
       const dy=Math.max(minY,Math.min(maxY,0));
