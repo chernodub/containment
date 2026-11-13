@@ -14,12 +14,19 @@ for(const room of rooms){
  for(const s of [calm,...kite]){assert(s.evidence.e6KitProof,room+' kit readiness');assert(s.evidence.e6KitProof.triangles<32000,room+' triangle cap');assert(s.evidence.e6KitProof.marineSightlineSamples>50);const file=resolve(root,'e6-final',s.file),bytes=await readFile(file);frames.push({file,sha256:sha(bytes),room,scenario:s.scenario,frame:s.frame??null,kitTriangles:s.evidence.e6KitProof.triangles,marineSamples:s.evidence.e6KitProof.marineSightlineSamples});}
 }
 assert(capture.shots.filter(s=>s.scenario==='boss').length===4);assert(capture.shots.filter(s=>s.scenario==='g2-queen-exposed').length===4);
+const edges=capture.shots.filter(s=>s.scenario==='e6-far-edge');assert.equal(edges.length,20);assert.equal(new Set(edges.map(s=>s.room)).size,20);
+for(const s of capture.shots.filter(s=>!['combat-calm','combat-kiting'].includes(s.scenario))){
+ const proof=s.evidence.e6KitProof;assert(proof&&proof.triangles<32000&&proof.floorSurface.maxHeight<.024);
+ const file=resolve(root,'e6-final',s.file),bytes=await readFile(file);frames.push({file,sha256:sha(bytes),room:s.room,scenario:s.scenario,frame:s.frame??null,kitTriangles:proof.triangles,marineSamples:proof.marineSightlineSamples});
+}
+assert.equal(frames.length,128);
 await writeFile(resolve(out,'frame-ledger.json'),JSON.stringify(frames,null,2)+'\n');
 const kitRows=rooms.map(room=>{
  const proof=capture.shots.find(s=>s.room===room&&s.scenario==='combat-calm').evidence.e6KitProof;
  const models=proof.placements.filter(p=>p.model!=='connection');assert(models.length>0,room+' has accepted author geometry');
  if(room==='residential-gallery')assert(proof.majorCabinForms>=4,'restored cabin furniture');
  assert(proof.floorSurface.views.every(v=>v.features.length>=3),room+' three functional floor features per sampled view');
+ assert(proof.floorSurface.maxHeight<.024);assert(proof.floorSurface.aftermath.admitted>3,room+' visible room-specific aftermath geometry');
  assert(proof.perimeter.edges.every(e=>e.attempted===0||e.accepted>0),room+' every dressed hull edge');assert(proof.perimeter.overheadAccepted>0);
  return{room,triangles:proof.triangles,models:models.length,marineSightlineSamples:proof.marineSightlineSamples,majorCabinForms:proof.majorCabinForms,narrativeVignette:proof.narrativeVignette,floor:proof.floorSurface,perimeter:proof.perimeter,footprintClusters:proof.footprintClusters,rejected:proof.rejected};
 });
@@ -32,11 +39,17 @@ await writeFile(resolve(out,'luminance.md'),luma.method+'\n\n'+lum.join('\n')+'\
 const links=['| Room | Before calm | After calm | Before kiting02 | After kiting02 |','|---|---|---|---|---|',...rooms.map(room=>`| ${room} | [PNG](${resolve(root,'e6-before-all',`combat-calm-${room}.png`)}) | [PNG](${resolve(root,'e6-final',`combat-calm-${room}.png`)}) | [PNG](${resolve(root,'e6-before-all',`combat-kiting-${room}-02.png`)}) | [PNG](${resolve(root,'e6-final',`combat-kiting-${room}-02.png`)}) |`)];await writeFile(resolve(out,'all-room-paths.md'),links.join('\n')+'\n');
 const benchmarks=await Promise.all(['e6-before-bench/benchmark.json','e6-after-bench/benchmark.json'].map(json));
 const roomAudits=await Promise.all(['e6-before-rooms/rooms.json','e6-after-rooms/rooms.json'].map(json));
+const sourceSHA=capture.distSnapshot.sourceSHA;
+assert.equal(benchmarks[1].distSnapshot.sourceSHA,sourceSHA,'final benchmark application provenance');
+assert.equal(roomAudits[1].distSourceSHA,sourceSHA,'final readiness application provenance');
+assert.equal(benchmarks[0].distSnapshot.sourceSHA,beforeCapture.distSnapshot.sourceSHA,'baseline benchmark provenance');
+assert.equal(roomAudits[0].distSourceSHA,beforeCapture.distSnapshot.sourceSHA,'baseline readiness provenance');
 const quant=(values,p)=>{values=[...values].sort((a,b)=>a-b);return values[Math.floor((values.length-1)*p)];};
 const range=a=>[Math.min(...a),Math.max(...a)];
 const summary=(b,a)=>({trials:b.runs.length,errors:b.errors,budgetFailures:b.budgetFailures,drawPeak:Math.max(...b.runs.map(r=>r.summary.draws.max)),combatCompiles:Math.max(...b.runs.map(r=>r.programs)),programPeak:Math.max(...b.runs.map(r=>typeof r.programInventory==='number'?r.programInventory:r.programInventory?.length??0)),highFrameP50:range(b.runs.filter(r=>r.tier==='high').map(r=>r.summary.frame.p50)),highFrameP95:range(b.runs.filter(r=>r.tier==='high').map(r=>r.summary.frame.p95)),highCpuP95:range(b.runs.filter(r=>r.tier==='high').map(r=>r.summary.cpu.p95)),highMedianScale:range(b.runs.filter(r=>r.tier==='high').map(r=>r.summary.adaptiveScale.p50)),load1m:range(b.runs.flatMap(r=>[r.before.load[0],r.after.load[0]])),roomEntries:a.rows.length,roomMedian:quant(a.rows.map(r=>r.total),.5),roomP95:quant(a.rows.map(r=>r.total),.95),roomMax:Math.max(...a.rows.map(r=>r.total)),allPreparationMedian:quant(a.rows.flatMap(r=>r.preparation.map(p=>p.total)),.5),allPreparationMax:Math.max(...a.rows.flatMap(r=>r.preparation.map(p=>p.total))),postReadyCompiles:Math.max(...a.rows.map(r=>r.postReadyCompiles??0)),roomCombatCompiles:Math.max(...a.rows.map(r=>r.combatCompiles??0)),roomLoad1m:range(a.rows.flatMap(r=>[r.before.load[0],r.after.load[0]])),roomErrors:a.errors,roomFailures:a.failures});
 const budget={before:summary(benchmarks[0],roomAudits[0]),after:summary(benchmarks[1],roomAudits[1])};
 const scan=await json('e6-after-scan/benchmark.json');
+assert.equal(scan.distSnapshot.sourceSHA,sourceSHA,'all-room inventory application provenance');
 assert.deepEqual(scan.errors,[]);assert.deepEqual(scan.budgetFailures,[]);assert.equal(scan.scan.length,20);
 assert(new Set(scan.scan.map(row=>row.room)).size===20);
 assert(scan.scan.every(row=>row.calls<=330&&row.programs===0));
