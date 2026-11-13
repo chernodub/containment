@@ -71,7 +71,7 @@ ${kind === 'smoke' ? `
  a*=s.a*mix(.9,.72,vapor)*smoothstep(.015,.22,worldHeight);
  ` : ''}
 ${kind === 'flame' ? TEXTURED_FIRE_GLSL : ''}
-${kind === 'spark' ? 'vec4 s=effectTile(phase>=200.?floor(phase)-200.:154.,uvLocal);a*=s.a;c*=3.5;' : ''}
+${kind === 'spark' ? 'float tile=phase>=200.?floor(phase)-200.:154.;vec4 s=tile==176.?effectSequence(176.,8.,24.,fract(phase)*64.,uvLocal):effectTile(tile,uvLocal);a*=s.a;c*=3.5;' : ''}
 ${kind === 'decal' ? `
  if(phase>=200.){
   float tile=floor(phase)-(phase>=1000.?1000.:phase>=600.?600.:200.);
@@ -90,33 +90,15 @@ ${kind === 'decal' ? `
  // Soot fans and fracture discs reject empty coverage before the expensive paths.
  if(variant<.5&&d>1.)discard;
  if(variant>2.5&&variant<3.5&&(d>1.||abs(a0)>fract(phase)*6.283185))discard;
- float n=abilityNoise(p*19.);
- float cracks=0.;float lip=0.;
- // Fuel, frost and wind never pay for the fracture paths. Instance-coherent branch.
- if(variant<.5||(variant>2.5&&variant<3.5)){
- // Seven unequal structural splits, each with a bent primary and one shorter branch.
- for(int split=0;split<7;split++){
-  float seed=float(split)*2.39996323+.37;
-  vec2 axis=vec2(cos(seed),sin(seed));vec2 crossAxis=vec2(-axis.y,axis.x);
-  float along=dot(p,axis);float across=dot(p,crossAxis);
-  float bend=sin(seed*3.7)*max(0.,along-.18)*.38-sin(seed*3.7)*max(0.,along-.36)*.68+sin(seed*7.1)*max(0.,along-.62)*.55;
-  float reach=.63+.32*fract(sin(seed*37.1)*437.13);
-  float splitCoverage=smoothstep(.06,.15,along)*(1.-smoothstep(reach-.07,reach,along));
-  float width=(.007+.008*fract(seed*1.7))*(1.-along*.65);
-  float groove=1.-smoothstep(width*.4,width,abs(across-bend));
-  float branch=1.-smoothstep(.004,.012,abs(across-bend-(along-.4)*(.35+sin(seed)*.15)));
-  float breaks=1.-smoothstep(.018,.036,abs(along-(.3+fract(seed)*.2)));
-  float intact=1.-breaks*.8;
-  cracks=max(cracks,max(groove*intact,branch*smoothstep(.38,.46,along)*.65)*splitCoverage);
-  lip=max(lip,(1.-smoothstep(.003,.009,abs(across-bend-.016)))*splitCoverage);
- }
- }
+ float n=effectTile(161.,uvLocal).a;
+ // Ground breakup is authored offline; no seven-split procedural fragment loop.
+ float cracks=effectTile(158.,uvLocal).a;
+ float lip=effectTile(158.,clamp(uvLocal+vec2(.008,0.),0.,1.)).a*.45;
  if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,lip*.35);c=mix(vec3(.006,.009,.012),vec3(.095,.085,.062),lip*.55);}
  else if(variant<1.5){
   if(d>1.)discard;
-  float powder=abilityNoise(p*31.);
-  float fern=pow(1.-abs(sin(a0*17.+sin(d*39.)*.4)),24.)*smoothstep(.5,.8,powder);
-  a*=(powder*.018+fern*.045)*(1.-smoothstep(.82,1.,d))*smoothstep(.18,.42,d);c*=.85;
+  a*=effectTile(156.,uvLocal).a*(1.-smoothstep(.82,1.,d))*.55;c*=.85;
+
  }
  else if(variant<2.5){float edge=abs(p.y);float slag=pow(max(0.,1.-abs(p.y+sin(p.x*31.)*.12)*4.),3.)*(.4+n*.6);a*=(1.-smoothstep(.7,1.,abs(p.x)))*(1.-smoothstep(.5,1.,edge))*(.5+n*.4);c=mix(ink,vec3(2.8,.5,.015),slag*fract(phase)*10.*flash);}
  else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.72+sin(a0*23.)*.05,.96,d))*(.14+cracks*.12);}
@@ -168,7 +150,7 @@ ${kind === 'decal' ? `
   float liquid=variant<8.5?d:length(vec2(p.x*.18,p.y));
   float edge=.9+sin(a0*5.+.7)*.035+sin(a0*9.-.4)*.025;
   if(liquid>edge||abs(p.x)>.995)discard;
-  float flow=abilityNoise(p*3.+vec2(abilityTime*.12,-abilityTime*.08));
+  float flow=.15+effectTile(161.,fract(uvLocal+vec2(abilityTime*.025,-abilityTime*.018))).a*.75;
   float glossy=pow(max(0.,1.-abs(p.y+p.x*.22+sin(p.x*5.+abilityTime*.4)*.08)*7.),5.);
   float meniscus=1.-smoothstep(.015,.045,abs(liquid-edge+.025));
   c=mix(vec3(.075,.013,.002),vec3(.32,.055,.004),flow*.65);
@@ -187,6 +169,8 @@ ${kind === 'decal' ? `
  }
  ` : ''}
 ${kind === 'front' ? `
+ vec4 waveTexture=effectSequence(168.,8.,16.,phase*7.,vec2(fract(uvLocal.x*8.),uvLocal.y));
+ a*=.28+waveTexture.a*.72;
  if(phase>2.5){
   float roll=.5+.5*cos(uvLocal.y*6.283185);
   float curl=.5+.5*sin(uvLocal.x*43.9823+sin(uvLocal.x*18.8496)*1.4-abilityTime*.9);
@@ -245,7 +229,7 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
       premultipliedAlpha: kind !== 'spark',
       depthWrite: false,
       // Flat cards have no back/front sorting benefit; render both faces in one submission.
-      forceSinglePass: kind === 'flame' || kind === 'spark' || kind === 'smoke' || kind === 'decal',
+      forceSinglePass: kind !== 'solid' && kind !== 'shard',
       // Closed graphic constructs show their outer shell; hidden rear faces add only overdraw.
       side: kind === 'solid' || kind === 'shard' ? T.FrontSide : T.DoubleSide,
       blending: kind === 'flame' || kind === 'shard' || kind === 'smoke' || kind === 'decal' || kind === 'solid' || kind === 'ghost' || kind === 'front'

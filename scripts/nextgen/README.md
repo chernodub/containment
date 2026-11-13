@@ -738,3 +738,17 @@ For exact native solid-black actor masks, use the existing `--graphics='{"adapti
 `i9-remote-spitter` and `i9-remote-stalker` replay the legal world positions of two actual seed1729 camera failures. They require every sampled selected body inside the usable viewport, a successful fit receipt, and a bounded marine size. They are staged geometry regressions; the four unassisted campaigns remain the organic evidence. Failure JSON includes the exact native camera matrix and actor heights.
 
 `node scripts/nextgen/i9-summary.mjs --cohort=organic-fix --performance-only` reads a separately named five-repeat cohort; `--campaigns-only` reads its four rig reports. `--benchmark-label=<safe-label>` selects an explicitly named replacement sustained cohort while retaining the cohort’s original room-preparation and campaign receipts. An omitted cohort preserves the earlier default labels. Native stress replenishment fills multi-kill deficits through the same legal native spawn/spacing checks, includes driver CPU cost, and retains the target25 and minimum population assertions; `refillAudit` records blocked passes and maximum deficit. The source reports are never replaced by favorable samples.
+
+## V6 texture-authored ability review
+
+`node scripts/nextgen/v6-capture.mjs --label=v6-before --dist=<frozen-dist> --dist-source-sha=<sha>`
+serializes four small rig batches: all sixteen seven-phase abilities plus all four
+full kits in bright Containment Annulus and dark Infested Workshop. The combined
+manifest retains all source manifests, native 1920px sprite cells, 280 native
+frames and exact 480×270 area reductions. Use a fresh label for every critique.
+It starts only one browser at a time; do not overlap other browser gates/bench.
+
+After final capture, `node scripts/nextgen/v6-evidence.mjs <before-dir> <final-dir>`
+checks 40 sheets / 280 clock-matched pairs, hashes the actual PNGs and emits an
+absolute-path native/480 evidence index under `artifacts/nextgen/v6/` without
+starting a browser. It cannot certify temporal motion or hardware performance.

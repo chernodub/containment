@@ -103,6 +103,7 @@ for names,index,alias in [(['spark_01.png','spark_02.png'],184,'kenney-spark'),(
         if candidates: found=candidates[0]; break
     if found:
         pattern(alias,index,Image.open(found)); chosen.append(dict(name=alias,file=str(found.relative_to(ROOT)),sha256=sha(found),license='CC0-1.0',author='Kenney',source='https://kenney.nl/assets/particle-pack'))
+assert len(chosen)==4, "Restore the verified Kenney data before regenerating this atlas"
 sources+=chosen
 # Lossless PNG compression, no random dithering. One shipped atlas/set.
 path=OUT/'elements.png'; atlas.save(path,optimize=True,compress_level=9)

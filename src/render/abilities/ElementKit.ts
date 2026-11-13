@@ -320,8 +320,15 @@ export class ElementKit {
         }
     }
 
-    /** Camera-facing flame ribbon whose long axis follows a real three-dimensional flow. */
+    /** Short authored flame card aligned to the actual three-dimensional flow. */
     flowFlame(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, core = false): void {
+        this.flowCard('flame', x, y, z, tx, ty, tz, width, core ? 0xffedb5 : 0xff7a2e, opacity, 100 + Math.abs(seed) % 64);
+    }
+    /** Authored animated bolt strip for suit crawl/contact flashes; long chains keep their structure. */
+    boltCard(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, color = 0xb79cff): void {
+        this.flowCard('spark', x, y, z, tx, ty, tz, width, color, opacity, 376 + authoredVariation(seed) * .95);
+    }
+    private flowCard(kind: Primitive, x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, color: number, opacity: number, variant: number): void {
         const axis = this.flowAxis.set(tx - x, ty - y, tz - z), length = axis.length();
         if (length < .01) return;
         axis.multiplyScalar(1 / length);
@@ -330,8 +337,8 @@ export class ElementKit {
         this.flowSide.crossVectors(axis, this.flowView);
         if (this.flowSide.lengthSq() < .0001) this.flowSide.set(1, 0, 0); else this.flowSide.normalize();
         this.flowNormal.crossVectors(this.flowSide, axis).normalize();
-        const batch = this.batches.flame, before = batch.mesh.count;
-        this.draw('flame', mx, my, mz, width, length * .5, 1, core ? 0xffedb5 : 0xff7a2e, opacity, 0, 0, 100 + Math.abs(seed) % 64);
+        const batch = this.batches[kind], before = batch.mesh.count;
+        this.draw(kind, mx, my, mz, width, length * .5, 1, color, opacity, 0, 0, variant);
         if (batch.mesh.count === before) return;
         const matrix = batch.mesh.instanceMatrix.array, o = before * 16;
         matrix[o] = this.flowSide.x * width; matrix[o + 1] = this.flowSide.y * width; matrix[o + 2] = this.flowSide.z * width;

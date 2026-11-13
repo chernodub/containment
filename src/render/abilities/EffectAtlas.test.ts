@@ -32,6 +32,7 @@ describe('V6 authored atlas lifecycle and rendering contract', () => {
     }) as typeof T.ImageLoader.prototype.load);
     try {
       const atlas = new EffectAtlas(); expect(load).not.toHaveBeenCalled();
+      expect(atlas.texture.version).toBe(0); // No immutable 1x1 GPU upload before decode.
       const first = atlas.prepare(), second = atlas.prepare();
       expect(first).toBe(second); expect(load).toHaveBeenCalledOnce();
       expect(load.mock.calls[0][0]).toContain('assets/vfx/containment-v6/elements.png');

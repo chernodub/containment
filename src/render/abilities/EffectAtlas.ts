@@ -16,21 +16,18 @@ export class EffectAtlas {
   loaded = false;
 
   constructor() {
-    if (typeof document === 'undefined') this.texture = new T.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
-    else {
-      const placeholder = document.createElement('canvas');
-      placeholder.width = placeholder.height = 1;
-      const context = placeholder.getContext('2d');
-      if (context) { context.fillStyle = 'white'; context.fillRect(0, 0, 1, 1); }
-      this.texture = new T.Texture(placeholder);
-    }
+    // An unuploaded Texture binds Three's empty sampler until decode. Uploading a
+    // 1x1 placeholder would allocate immutable storage that cannot later grow.
+    this.texture = typeof document === 'undefined'
+      ? new T.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1)
+      : new T.Texture();
     this.texture.name = 'ability-elements-cc0-v6';
     this.texture.colorSpace = T.NoColorSpace;
     this.texture.minFilter = T.LinearMipmapLinearFilter;
     this.texture.magFilter = T.LinearFilter;
     this.texture.generateMipmaps = true;
     this.texture.flipY = true;
-    this.texture.needsUpdate = true;
+    if (typeof document === 'undefined') this.texture.needsUpdate = true;
   }
 
   /** Await before first-room material warmup; safe to call again after room changes. */
