@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as T from 'three';
 import { authoredVariation, createArmorSection, createFractureMass, createMarineEcho, impactBeat, GRAPHIC_FLAME_FRAGMENT, GRAPHIC_SOLID_FRAGMENT } from './GraphicLanguage';
+import { TEXTURED_FIRE_GLSL } from './EffectAtlas';
 import { InstanceBatch } from './InstanceBatch';
 describe('V5 authored graphic language', () => {
     it('keeps variation stable, bounded and unequal, with a two-to-three frame hot beat', () => {
@@ -53,7 +54,9 @@ describe('V5 authored graphic language', () => {
         const fire = flame.mesh.material as T.ShaderMaterial, armor = solid.mesh.material as T.ShaderMaterial;
         expect(fire.blending).toBe(T.NormalBlending);
         expect(fire.forceSinglePass).toBe(true);
-        expect(fire.fragmentShader).toContain(GRAPHIC_FLAME_FRAGMENT);
+        expect(fire.fragmentShader).toContain(TEXTURED_FIRE_GLSL);
+        expect(fire.uniforms.map.value).toBeInstanceOf(T.Texture);
+        expect(fire.premultipliedAlpha).toBe(true);
         expect(fire.fragmentShader).not.toContain('inkEdge');
         expect(armor.fragmentShader).toContain(GRAPHIC_SOLID_FRAGMENT);
         expect(armor.side).toBe(T.FrontSide);

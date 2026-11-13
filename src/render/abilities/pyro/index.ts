@@ -201,6 +201,15 @@ class PyroPresentation implements AbilityPresentation {
     else this.source.set(p.x + c * .3, .95, p.z + s * .3);
     kit.sustain(p.age + .20);
     kit.fireFan(p.x, p.z, p.range * grow, p.angle, p.arc, fade * .85, this.source.y, this.source.x, this.source.z);
+    // The first blast has expanding turbulent lobes from the authored explosion sequence.
+    // Short cards overlap in depth; the exact ground cone stays in the boundary batch.
+    if (p.age < .24) for (let i = 0; i < (kit.low ? 2 : 4); i++) {
+      const t = .24 + i * .16, a = p.angle + (i % 2 ? -.15 : .15) * p.arc;
+      const r = p.range * t, w = Math.min(p.range * .16, r * Math.sin(p.arc * .5) * .65);
+      kit.draw('flame', p.x + Math.cos(a) * r, this.source.y + .16 + i * .12,
+        p.z + Math.sin(a) * r, w, w * .72, 1, FIRE, fade * .82,
+        0, 0, 328 + Math.min(24, Math.floor(p.age * 65) + i));
+    }
     kit.lightAt(p.lightId, p.x + Math.cos(p.angle) * p.range * .34,
       p.z + Math.sin(p.angle) * p.range * .34, FIRE, (12 + 16 * hot) * fade, Math.max(8, p.range * 1.1));
     // Range curls are downstream, above the jet rather than a wall of ground flames.

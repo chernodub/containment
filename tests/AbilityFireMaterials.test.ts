@@ -10,14 +10,14 @@ describe('element-true open fire materials', () => {
     const material=fire.mesh.material as T.ShaderMaterial;
     expect(material.blending).toBe(T.NormalBlending);
     expect(material.forceSinglePass).toBe(true);
-    expect(material.uniforms.map.value).toBeNull();
+    expect(material.uniforms.map.value).toBeInstanceOf(T.Texture);
     expect((smoke.mesh.material as T.ShaderMaterial).uniforms.map.value).toBeInstanceOf(T.Texture);
     expect(material.fragmentShader).toContain('a*=coverage');
     expect(material.fragmentShader).toContain('vec3(.17,.007,.001)');
     expect(material.fragmentShader).toContain('vec3(1.05,.105,.003)');
     expect(material.fragmentShader).toContain('vec3(2.8,1.9,.34)');
     expect(material.fragmentShader).not.toContain('inkEdge');
-    expect((smoke.mesh.material as T.ShaderMaterial).fragmentShader).toContain('a*=s.a*edge');
+    expect((smoke.mesh.material as T.ShaderMaterial).fragmentShader).toContain('a*=s.a*mix(.9,.72,vapor)');
     expect(material.fragmentShader).toContain('actionBar');
     expect(fire.mesh.geometry.hasAttribute('abilityPhase')).toBe(true);
     fire.begin(.2);fire.draw(1,.3,2,.3,.4,1,0xff7a2e);fire.end();
@@ -36,7 +36,7 @@ describe('element-true open fire materials', () => {
     kit.begin(.2);kit.fireFan(2,3,4,.4,1.3);kit.liquidFire(8,3,2);kit.outline(2,3,4,0xff7a2e);kit.end();
     expect(kit.batches.decal.mesh.count).toBe(1);expect(kit.batches.decal.mesh.geometry.getAttribute('abilityPhase').getX(0)).toBe(8);expect(kit.batches.flame.mesh.count).toBeLessThan(32);
     const phase=kit.batches.flame.mesh.geometry.getAttribute('abilityPhase');
-    expect(Array.from(phase.array).slice(0,kit.batches.flame.mesh.count).filter(p=>p>=100)).toHaveLength(5);
+    expect(Array.from(phase.array).slice(0,kit.batches.flame.mesh.count).filter(p=>p>=100)).toHaveLength(15);
     const matrix=new T.Matrix4(),position=new T.Vector3(),scale=new T.Vector3();
     for(let i=0;i<kit.batches.flame.mesh.count;i++){
       kit.batches.flame.mesh.getMatrixAt(i,matrix);position.setFromMatrixPosition(matrix);scale.setFromMatrixScale(matrix);

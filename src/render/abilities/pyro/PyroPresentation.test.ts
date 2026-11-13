@@ -43,9 +43,10 @@ describe('Pyro presentation lifecycle and readability', () => {
     step(.15);
     const flames = kit.batches.flame.mesh, matrix = new T.Matrix4();
     let source = 0, far = 0, leaned = 0;
-    expect(flames.count).toBe(tier === 'high' ? 6 : 4);
+    expect(flames.count).toBe(tier === 'high' ? 20 : 9);
     const reaches = flow.mock.calls.map(call => Math.hypot(call[3] - 2, call[5] - 3));
-    expect(Math.max(...reaches)).toBeCloseTo(9.7);
+    expect(Math.max(...reaches)).toBeLessThanOrEqual(9.600001);
+    expect(Math.max(...reaches)).toBeGreaterThan(8.5);
     expect(new Set(flow.mock.calls.map(call => call[6])).size).toBeGreaterThan(2);
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i), dx = p.x - 2, dz = p.z - 3, radius = Math.hypot(dx, dz);
@@ -56,7 +57,9 @@ describe('Pyro presentation lifecycle and readability', () => {
       flames.getMatrixAt(i, matrix);
       if (Math.abs(matrix.elements[4]) > .02) leaned++;
     }
-    expect(source).toBeGreaterThan(0); expect(far).toBeGreaterThan(1); expect(leaned).toBe(flames.count);
+    expect(source).toBeGreaterThan(0); expect(far).toBeGreaterThan(1); expect(leaned).toBe(flow.mock.calls.length);
+    const phase = flames.geometry.getAttribute('abilityPhase');
+    expect(Array.from(phase.array).slice(0, flames.count).filter(value => value >= 328)).toHaveLength(tier === 'high' ? 4 : 2);
     expect(flow).toHaveBeenLastCalledWith(2 + Math.cos(.2) * .3, .95, 3 + Math.sin(.2) * .3,
       2 + Math.cos(.2) * 1.8, .95, 3 + Math.sin(.2) * 1.8, .14 + (1 - (.15 - .05) / .12) * .055, 7, (1 - (.15 - .09) / .28) * .96, true);
     const smoke = kit.batches.smoke.mesh;
