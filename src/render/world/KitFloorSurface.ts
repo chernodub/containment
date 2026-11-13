@@ -2,13 +2,14 @@ import * as T from 'three';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import type {ShipEnvironment} from '../ShipEnvironments';
 import {kitHull,kitInside} from './KitSafety';
+import {addKitFloorAftermath,type FloorAftermathProof} from './KitFloorAftermath';
 
 type Reservation={x:number;y:number;width:number;height:number};
 type Mark={x:number;z:number;kind:string};
-export type KitFloorProof={idea:string;coverage:number;triangles:number;features:Record<string,number>;views:{x:number;z:number;features:string[]}[];maxHeight:number};
+export type KitFloorProof={idea:string;coverage:number;triangles:number;features:Record<string,number>;views:{x:number;z:number;features:string[]}[];maxHeight:number;aftermath:FloorAftermathProof};
 /** Floor-only albedo calibration after the saved all20 density value audit. */
 export const KIT_FLOOR_VALUE_GAIN:Readonly<Record<string,number>>={
- 'awakening-bay':.60,'passenger-vault':.20,'transmission-chamber':.64,
+ 'awakening-bay':.60,'passenger-vault':.40,'transmission-chamber':.64,
  'crew-checkpoint':.48,'armory':.68,'breached-loading-bay':.60,
  'shielding-gate':.55,'overload-floor':.85,
  'manual-control-chamber':.64,'diagnostic-gallery':.80,
@@ -52,18 +53,32 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
  },100);
  const quad=(x:number,z:number,width:number,depth:number,angle:number,color:number,kind:string,y=.021)=>{
   const ca=Math.cos(angle),sa=Math.sin(angle),corners=[[-width/2,-depth/2],[-width/2,depth/2],[width/2,depth/2],[width/2,-depth/2]].map(([a,b])=>[x+a*ca-b*sa,z+a*sa+b*ca]);
-  if(!corners.every(([a,b])=>valid(a,b)))return;
+  if(!corners.every(([a,b])=>valid(a,b)))return false;
+  if(width>1||depth>1)for(let u=-width/2;u<=width/2;u+=.35)for(let v=-depth/2;v<=depth/2;v+=.35)if(!valid(x+u*ca-v*sa,z+u*sa+v*ca))return false;
   const c=new T.Color(color);
   for(const i of [0,1,2,0,2,3]){positions.push(corners[i][0],y,corners[i][1]);normals.push(0,1,0);colors.push(c.r,c.g,c.b);}
-  counts[kind]=(counts[kind]??0)+1;marks.push({x,z,kind});
+  counts[kind]=(counts[kind]??0)+1;marks.push({x,z,kind});return true;
  };
  const segment=(ax:number,az:number,bx:number,bz:number,width:number,color:number,kind:string,y=.024)=>quad((ax+bx)/2,(az+bz)/2,Math.hypot(bx-ax,bz-az),width,Math.atan2(bz-az,bx-ax),color,kind,y);
- const pitch=matOrganic||environment==='cryogenics'?.55:.8;let legalCells=0,coveredCells=0;
+ const patch=(points:readonly(readonly[number,number])[],color:number,kind:string,y=.024)=>{
+  const polygon=points.map(p=>new T.Vector2(p[0],p[1])),c=new T.Color(color);let admitted=false;
+  for(const triangle of T.ShapeUtils.triangulateShape(polygon,[])){
+   const [a,b,d]=triangle.map(i=>polygon[i]);if(![a,b,d].every(p=>valid(p.x,p.y)))continue;
+   const cross=(p:T.Vector2,u:T.Vector2,v:T.Vector2)=>(p.x-v.x)*(u.y-v.y)-(u.x-v.x)*(p.y-v.y);
+   let safe=true;
+   for(let x=Math.min(a.x,b.x,d.x);x<=Math.max(a.x,b.x,d.x)&&safe;x+=.35)for(let z=Math.min(a.y,b.y,d.y);z<=Math.max(a.y,b.y,d.y);z+=.35){const p=new T.Vector2(x,z),s=[cross(p,a,b),cross(p,b,d),cross(p,d,a)];if(!(s.some(v=>v<0)&&s.some(v=>v>0))&&!valid(x,z)){safe=false;break;}}
+   if(!safe)continue;if((b.x-a.x)*(d.y-a.y)-(b.y-a.y)*(d.x-a.x)>0)triangle.reverse();
+   for(const i of triangle){positions.push(polygon[i].x,y,polygon[i].y);normals.push(0,1,0);colors.push(c.r,c.g,c.b);}admitted=true;
+  }
+  if(admitted){counts[kind]=(counts[kind]??0)+1;marks.push({x:points.reduce((n,p)=>n+p[0],0)/points.length,z:points.reduce((n,p)=>n+p[1],0)/points.length,kind});}return admitted;
+ };
+ const pitch=environment==='infested'?.4:matOrganic||environment==='cryogenics'?.55:.8;let legalCells=0,coveredCells=0;
  const livingField=(x:number,z:number)=>{
   const wave=Math.sin(x*.64+phase)+Math.cos(z*.51-phase);
   const mass=3.4+wave*.7-nearest(x,z),branch=2.4+wave*.3-Math.abs(x-w*.5-Math.sin(z*.22+phase)*w*.2);
-  const holes=.83-Math.sin(x*.71+phase)*Math.cos(z*.57-phase);
-  return Math.min(Math.max(mass,branch),holes*3);
+  const holes=.88-Math.sin(x*.71+phase)*Math.cos(z*.57-phase)-.2*Math.sin(x*1.7+z*1.1);
+  const fringe=.22*Math.sin(x*2.4+z*1.8+phase)+.12*Math.cos(x*1.8-z*3.1);
+  return Math.min(Math.max(mass,branch)+fringe,holes*3);
  };
  const frostField=(x:number,z:number)=>3.9+Math.sin(x*.8+phase)*.7+Math.cos(z*.67-phase)*.6-nearest(x,z);
  // Interpolate the contour across each cell, instead of drawing stair-step squares.
@@ -124,27 +139,17 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
    const x=(r.x+r.width*.5)/32,z=(r.y+r.height*.5)/32,a=phase+i*.7+arm*2.1;
    const curve=new T.CatmullRomCurve3([new T.Vector3(x,.027,z),new T.Vector3(x+Math.cos(a)*2.4,.027,z+Math.sin(a)*2.4),new T.Vector3(x+Math.cos(a+.35)*5,.027,z+Math.sin(a+.35)*5),new T.Vector3(x+Math.cos(a+.15)*7,.027,z+Math.sin(a+.15)*7)]);
    for(let step=0;step<36;step++){const a=curve.getPoint(step/36),b=curve.getPoint((step+1)/36);segment(a.x,a.z,b.x,b.z,.045+.09*(1-step/36),palette[2],'growth-vein',.027);}
+   for(const t of [.32,.61]){
+    const p=curve.getPoint(t),tangent=curve.getTangent(t),side=arm%2?1:-1,end=p.clone().add(new T.Vector3(tangent.x*1.6-tangent.z*1.4*side,0,tangent.z*1.6+tangent.x*1.4*side));
+    const fork=new T.CatmullRomCurve3([p,p.clone().lerp(end,.5).add(new T.Vector3(tangent.x*.3,0,tangent.z*.3)),end]);
+    for(let step=0;step<12;step++){const a=fork.getPoint(step/12),b=fork.getPoint((step+1)/12);segment(a.x,a.z,b.x,b.z,.025+.045*(1-step/12),palette[2],'growth-vein-branch',.027);}
+   }
   }
  }else for(let z=3.2+phase%2;z<h-1;z+=5.2)for(let x=.8;x<w-.6;x+=.7){
    const grate=environment==='maintenance'||environment==='communications';
    quad(x,z,.57,grate?.24:.075,0,grate?palette[1]:palette[2],grate?'cross-service-channel':'bay-inlay',.024);
  }
- // Wear follows circulation and machine service edges. Clusters carry the room story.
- const anchors:([number,number])[]=reservations.map(r=>[(r.x+r.width*.65)/32,(r.y+r.height+26)/32]);
- for(let z=2.4;z<h-1;z+=7.2)anchors.push([w*(Math.floor(z/7.2)%2?.73:.26)+Math.sin(z*.4+phase)*1.1,z]);
- for(const [i,[x,z]]of anchors.entries()){
-  const a=phase+i*.83;
-  for(let k=0;k<5;k++){
-   const px=x+Math.sin(a+k*2.3)*.7,pz=z+Math.cos(a+k*1.8)*.55,angle=a+k*.73;
-   const paper=environment==='habitation'||environment==='communications'||environment==='containment';
-   const glass=environment==='cryogenics'||environment==='containment';
-   quad(px,pz,paper?.23:glass?.16:.11,paper?.32:glass?.28:.075,angle,paper?palette[2]:palette[1],paper?'story-papers':glass?'broken-glass':'spent-debris',.028);
-  }
-  segment(x-.8,z-.2,x+.6,z+.28,.11,palette[1],environment==='reactor'||environment==='engineering'?'scorch-track':'drag-mark',.025);
-  for(let step=0;step<4;step++)for(const side of [-1,1])quad(x+side*.16+step*.11,z+step*.39,.10,.23,.24,palette[1],'footprints',.029);
-  if(environment==='habitation')quad(x+.45,z+.25,.55,.8,a,palette[1],'discarded-clothing',.026);
-  if(environment==='maintenance')quad(x,z,1.8,1.1,a,palette[3],'drain-seepage',.020);
- }
+ const aftermath=addKitFloorAftermath(t,id,reservations,{valid,quad,segment,patch});
  // Low-contrast circulation wear reaches quiet edges without repeating a pile
  // of story props in every bay. It is a separate large-scale surface feature.
  for(let z=1.8;z<h-1;z+=3.6)for(const x of [1.4,w*.5,w-1.4]){
@@ -167,5 +172,5 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
  // Approximate shipping long-lens surface view, sampled across legal room positions.
  const views:KitFloorProof['views']=[];
  for(let x=1.5;x<w;x+=4)for(let z=1.5;z<h;z+=4)if(valid(x,z))views.push({x,z,features:[...new Set(marks.filter(m=>Math.abs(m.x-x)<10&&m.z>z-8&&m.z<z+6).map(m=>m.kind))]});
- return{geometry,proof:{idea:FLOOR_IDEAS[environment],coverage:coveredCells/Math.max(1,legalCells),triangles:positions.length/9,features:counts,views,maxHeight:.029*.75}};
+ return{geometry,proof:{idea:FLOOR_IDEAS[environment],coverage:coveredCells/Math.max(1,legalCells),triangles:positions.length/9,features:counts,views,maxHeight:.029*.75,aftermath}};
 }

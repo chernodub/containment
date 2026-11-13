@@ -10,6 +10,8 @@ describe('functional floor density without navigation or camera cost',()=>{
   const t=ROOM_TEMPLATES[room.templateId],before=JSON.stringify(t),primary=equipmentReservations(t,room.templateId);
   const a=buildKitFloorSurface(t,room.environment,room.templateId,primary.length?primary:equipmentReservations(t,'e6-'+room.templateId));
   expect(a.proof.coverage).toBeGreaterThan(.2);expect(a.proof.views.length).toBeGreaterThan(4);
+  expect(a.proof.aftermath.admitted).toBeGreaterThan(3);
+  expect(a.proof.features['footprints']).toBeUndefined();expect(a.proof.features['drag-mark']).toBeUndefined();
   for(const view of a.proof.views)expect(view.features.length,`${room.templateId} view ${view.x},${view.z}`).toBeGreaterThanOrEqual(3);
   const p=a.geometry.getAttribute('position'),c=a.geometry.getAttribute('color');expect(c.count).toBe(p.count);
   for(let i=0;i<p.count;i++){
@@ -28,5 +30,6 @@ describe('functional floor density without navigation or camera cost',()=>{
   const t=ROOM_TEMPLATES['infested-workshop'],a=buildKitFloorSurface(t,'infested','infested-workshop',equipmentReservations(t,'infested-workshop'));
   expect(a.proof.coverage).toBeGreaterThan(.3);expect(a.proof.coverage).toBeLessThan(.85);
   expect(a.proof.features['creep-mat']).toBeGreaterThan(100);expect(a.proof.features['growth-vein']).toBeGreaterThan(20);a.geometry.dispose();
+  expect(a.proof.features['growth-vein-branch']).toBeGreaterThan(12);
  });
 });
