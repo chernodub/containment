@@ -84,18 +84,19 @@ function debugHost() {
   vi.stubGlobal('window', target); vi.stubGlobal('location', {search: '?debug=1&seed=1729'});
   const intent: GameInput = {...idle, x: 1}, advanceUi = vi.fn();
   const presentation = {setEnabled: vi.fn(), reset: vi.fn(), effect: vi.fn(), step: vi.fn((ms: number, input: GameInput, update: (ms: number, input: GameInput) => void) => update(ms * .5, input))};
-  const renderer = {render: vi.fn(), effect: vi.fn(), prepare: vi.fn(async () => {}), roomLoading: false} as unknown as DepthRenderer;
+  const renderer = {beginGameplayPresentation:vi.fn(),render: vi.fn(), effect: vi.fn(), prepare: vi.fn(async () => {}), roomLoading: false} as unknown as DepthRenderer;
   installDebug(game, renderer, vi.fn(), vi.fn(), vi.fn(), advanceUi, presentation, () => intent, () => true);
-  return {game, data, debug: target.__containmentDebug, presentation};
+  return {game, data, debug: target.__containmentDebug, presentation,renderer};
 }
 
 describe('diagnostic initial legacy bootstrap', () => {
   it('requires the real selected rig boundary and preserves native input, feel and assistance settings', async () => {
-    const {game, debug, presentation} = debugHost();
+    const {game, debug, presentation,renderer} = debugHost();
     expect(game.chooseRig('cryo')).toBe(true);
     debug.nativeInput(true); debug.presentation(true); debug.incomingDamageScale(.25);
     const setEnabledCalls = presentation.setEnabled.mock.calls.length;
     await debug.startLegacyRun(1729, 'cryo');
+    expect(renderer.beginGameplayPresentation).toHaveBeenCalledOnce();
     expect(game.expedition.run).toMatchObject({version: 2, phase: 'combat', currentNodeId: generateRun(1729, 2).startId, completedNodeIds: []});
     expect(game.expedition.build).toEqual({mutations: [], rig: 'cryo'});
     expect(debug.events).toEqual([]);

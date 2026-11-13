@@ -15,13 +15,14 @@ it.each([...(DEFAULT_ROOMS as string[]), 'communal-atrium:retry', 'containment-a
   vi.stubGlobal('window', target);
   vi.stubGlobal('location', {search: '?debug=1&seed=1729'});
   const rendererStub = {
-    muzzle: {intensity: 0}, render: vi.fn(), prepare: async () => {}, roomLoading: false,
+    muzzle: {intensity: 0}, beginGameplayPresentation:vi.fn(), render: vi.fn(), prepare: async () => {}, roomLoading: false,
     visible: () => true,
     effect(event: {type: string}) {if (event.type === 'shot') this.muzzle.intensity = 1;},
   };
   const game = new DepthGame(effect => rendererStub.effect(effect));
   installDebug(game, rendererStub as unknown as DepthRenderer, () => {}, () => {});
   await target.__containmentDebug.gotoRoom(room, {rig: 'cryo'});
+  expect(rendererStub.beginGameplayPresentation).toHaveBeenCalled();
   const staged = await stageKiting(mode === 'retry' ? 1 : 0);
   // Native footprint/placement rejection may require a later deterministic lane.
   expect(staged.laneAttempt).toBeGreaterThanOrEqual(mode === 'retry' ? 1 : 0);

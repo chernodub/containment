@@ -23,7 +23,7 @@ function setup(width: number, height: number) {
   const desired = new T.Vector3(), point = new T.Vector3(), scratch = new T.Vector3(), focus = new T.Vector3();
   let room = '', muzzleLife = 0;
   const renderer = {
-    muzzle: {intensity: 0}, roomLoading: false, prepare: async () => {},
+    muzzle: {intensity: 0}, beginGameplayPresentation:vi.fn(), roomLoading: false, prepare: async () => {},
     effect(event: {type: string}) {if (event.type === 'shot') muzzleLife = .045;},
     render(game: DepthGame, dt = 0) {
       muzzleLife -= dt;
@@ -64,6 +64,7 @@ for (const [width, height] of [[1280, 720], [1920, 1080]]) {
   it.each(rooms)(`packs legal kiting bodies in the native ${width}×${height} HUD footprint: %s`, async room => {
     const {game, renderer, debug} = setup(width, height);
     await debug.gotoRoom(room, {rig: 'cryo'});
+    expect(renderer.beginGameplayPresentation).toHaveBeenCalled();
     const result = await stageKiting();
     expect(result.initialVisible).toBeGreaterThanOrEqual(room === 'communal-atrium' ? 15 : 18);
     expect(result.placedVisible).toBeGreaterThanOrEqual(room === 'communal-atrium' ? 15 : 18);
@@ -80,6 +81,7 @@ for (const [width, height] of [[1280, 720], [1920, 1080]]) {
   it.each(['awakening-bay', 'communal-atrium', 'containment-annulus', 'passenger-vault', 'overload-floor'])(`retains twelve heavy bodies after real combat at ${width}×${height}: %s`, async room => {
     const {game, renderer, debug} = setup(width, height);
     await debug.gotoRoom(room);
+    expect(renderer.beginGameplayPresentation).toHaveBeenCalled();
     stageCombat({status: false});
     expect(renderer.muzzle.intensity).toBeGreaterThan(0);
     expect(game.bullets.some(b => b.kind === 'player')).toBe(true);
