@@ -1,0 +1,113 @@
+{
+  "pack": "Nature Kit",
+  "author": "Kenney",
+  "sourceURL": "https://kenney.nl/assets/nature-kit",
+  "license": "CC0-1.0",
+  "downloadDate": "2026-11-13",
+  "archiveSHA256": "fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d",
+  "archiveFileListSHA256": "f7ed9128bdd285ff47ab13b6f58a5344d4f40d975b869d005a37ffea472c4863",
+  "output": {
+    "file": "kit.glb",
+    "bytes": 34396,
+    "sha256": "31aee3281d314c0c1db4a6e0792a611e5207b5d29583fec2e9fc302e5fec2398"
+  },
+  "models": [
+    {
+      "name": "rock_largeA",
+      "sourceFile": "tools/assets-src/kenney-nature/inspected/Models/GLTF format/rock_largeA.glb",
+      "sourceSHA256": "6dd15390fd96501dcd1454765a17ba61dbbd8d47705dfe5149c8dd92b353ce25",
+      "sourceBytes": 7552,
+      "triangles": 80,
+      "size": [
+        0.7849066853523254,
+        0.25977596640586886,
+        1.0154614448547363
+      ]
+    },
+    {
+      "name": "rock_largeB",
+      "sourceFile": "tools/assets-src/kenney-nature/inspected/Models/GLTF format/rock_largeB.glb",
+      "sourceSHA256": "caa8b025833d4dabf6d98fe2e96cf2fbd886693ac990df0db75f9d827194374b",
+      "sourceBytes": 8560,
+      "triangles": 85,
+      "size": [
+        0.7667151093482971,
+        0.4302540123462683,
+        1.0154614448547363
+      ]
+    },
+    {
+      "name": "rock_largeD",
+      "sourceFile": "tools/assets-src/kenney-nature/inspected/Models/GLTF format/rock_largeD.glb",
+      "sourceSHA256": "e4fefd8d8d7deab42be61bd222bcd088330012f0025789146b81f25a46095ffd",
+      "sourceBytes": 7992,
+      "triangles": 80,
+      "size": [
+        1.0687768459320068,
+        0.5682599544525154,
+        1.0302830934524536
+      ]
+    },
+    {
+      "name": "rock_tallA",
+      "sourceFile": "tools/assets-src/kenney-nature/inspected/Models/GLTF format/rock_tallA.glb",
+      "sourceSHA256": "88250f236a3b75f8b55c1d8afb6af020f8a91b1e81f9fb51f7ef513420d45a2d",
+      "sourceBytes": 12072,
+      "triangles": 136,
+      "size": [
+        0.9830688834190369,
+        0.9959259033203125,
+        0.6832107901573181
+      ]
+    },
+    {
+      "name": "rock_tallB",
+      "sourceFile": "tools/assets-src/kenney-nature/inspected/Models/GLTF format/rock_tallB.glb",
+      "sourceSHA256": "b3fb7899c317a3b026fa6ced0e1eaaa596d9dd0d95efeacfb5e05d25322f19b9",
+      "sourceBytes": 14060,
+      "triangles": 172,
+      "size": [
+        0.7647884488105774,
+        0.8837795853614812,
+        0.7700374126434326
+      ]
+    },
+    {
+      "name": "rock_smallFlatA",
+      "sourceFile": "tools/assets-src/kenney-nature/inspected/Models/GLTF format/rock_smallFlatA.glb",
+      "sourceSHA256": "40ceafacfaabb0f04f93688fd8696c1464c65512bef219e1459c1f238cbbbe21",
+      "sourceBytes": 3300,
+      "triangles": 20,
+      "size": [
+        0.4957897365093231,
+        0.06494399160146713,
+        0.4295773506164551
+      ]
+    },
+    {
+      "name": "rock_smallTopA",
+      "sourceFile": "tools/assets-src/kenney-nature/inspected/Models/GLTF format/rock_smallTopA.glb",
+      "sourceSHA256": "758063d1f535da58c6a0d40416b011b268e5f9f888bbb7eddef0a31ba37e30b5",
+      "sourceBytes": 5220,
+      "triangles": 52,
+      "size": [
+        0.48773422837257385,
+        0.2200000137090683,
+        0.4891464114189148
+      ]
+    },
+    {
+      "name": "rock_smallC",
+      "sourceFile": "tools/assets-src/kenney-nature/inspected/Models/GLTF format/rock_smallC.glb",
+      "sourceSHA256": "5cbc0a805f275771baf19165c7132288e4834ba97ec0fb16ce9cc37e1c2522e2",
+      "sourceBytes": 3044,
+      "triangles": 16,
+      "size": [
+        0.36079999804496765,
+        0.12267200648784635,
+        0.36079999804496765
+      ]
+    }
+  ],
+  "pipeline": "Author GLB geometry, world transforms baked, origin centered at footprint/base, source palette sampled into body/dark/trim/accent/cloth roles, textures/UVs removed, weld/dedup/prune, no decoder extension."
+}
