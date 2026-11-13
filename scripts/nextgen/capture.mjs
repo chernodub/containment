@@ -13,7 +13,7 @@ import {stitchPngFrames} from './sprites.mjs';
 import {compareGalleries} from './gallery.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');process.chdir(root);
-const args=process.argv.slice(2),flags=new Set(['build','headed','keep-going','help']);
+const args=process.argv.slice(2),flags=new Set(['build','headed','keep-going','help','scaffold']);
 const known=new Set([...flags,'label','scenarios','rooms','burst','width','height','dpr','timestamp','seed','compare','step-ms','sprite-width','dist','dist-source-sha','graphics','style','hud-insets','kiting-retries']);
 for(const arg of args){assert(arg.startsWith('--')&&known.has(arg.slice(2).split('=')[0]),`Unknown option ${arg}`);assert(arg.includes('=')||flags.has(arg.slice(2)),`Use --name=value: ${arg}`);}
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
@@ -92,6 +92,15 @@ async function save(){
  const cards=await Promise.all(manifest.shots.map(async s=>{const data=linked?encodeURIComponent(s.file):'data:image/png;base64,'+(await readFile(resolve(out,s.file))).toString('base64');return `<figure><a href="#${escape(s.file)}" target="_blank"><img src="${data}" alt="${escape(s.file)}" loading="lazy"></a><figcaption><b>${escape(s.file)}</b><br>${s.evidence.visibleEnemies} visible enemies · ${s.evidence.playerBullets} player projectiles · ${s.performance.drawCalls} draws · ${s.performance.triangles.toLocaleString()} triangles</figcaption></figure>`;}));
  await writeFile(resolve(out,'index.html'),`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Containment — ${escape(label)}</title><style>body{margin:0;background:#0c1015;color:#dbe7ee;font:15px system-ui}header{padding:24px 28px}h1{margin:0 0 10px}p{max-width:1100px;line-height:1.5;color:#9eafbd}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:18px;padding:0 24px 24px}figure{margin:0;background:#17202a;border:1px solid #34404c;border-radius:6px;overflow:hidden}img{display:block;width:100%;height:auto}figcaption{padding:12px;line-height:1.6}.failure{color:#ffab9b}</style><header><h1>Containment / ${escape(label)}</h1><p>${escape(timestamp)} · ${escape(manifest.gitSHA)}<br>${escape(manifest.renderer??'No renderer')} · ${viewport.width}×${viewport.height} @ ${dpr} · Per-shot graphics tier<br>${escape(manifest.note)}<br>${manifest.shots.length} shots · ${manifest.runtimeSeconds}s</p>${manifest.failures.map(f=>`<p class="failure">${escape(f.scenario)} ${escape(f.room??'')}: ${escape(f.error)}</p>`).join('')}</header><main class="grid">${spriteCards.join('')}${cards.join('')}</main><script>document.querySelectorAll('a').forEach(a=>a.onclick=e=>{e.preventDefault();const w=open('about:blank','_blank');if(w){w.document.title=a.querySelector('img').alt;w.document.body.style='margin:0;background:#080b10';const i=w.document.createElement('img');i.src=a.querySelector('img').src;i.style='max-width:100%;height:auto';w.document.body.append(i);}})</script></html>`);
 }
+/** Measure computed foreground/backing and inherited opacity, never screenshot colors. */
+function criticalContrast() {
+ const rgb=s=>s.match(/[\d.]+/g).map(Number),lum=rgb=>rgb.slice(0,3).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+ return [...document.querySelectorAll('[data-hud-critical],[data-obscures-threat=true] [data-ability][data-state=ready] .ability-icon')].filter(n=>n.getClientRects().length&&(n.textContent.trim()||n.matches('.ability-icon'))).map(n=>{
+  const style=getComputedStyle(n),fg=rgb(style.color),bg=rgb(style.backgroundColor),a=lum(fg),b=lum(bg);
+  let opacity=1;for(let node=n;node;node=node.parentElement)opacity*=Number(getComputedStyle(node).opacity);
+  return {name:n.id||n.textContent.trim()||`${n.closest('[data-ability]').dataset.ability} ready glyph`,contrast:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),backingAlpha:bg[3]??1,opacity,faded:n.closest('[data-obscures-threat=true]')!==null};
+ });
+}
 function installDrawAudit(){
     const d=window.__containmentDebug,r=d.renderer,gl=r.renderer.getContext(),render=r.renderer.render;d.drawErrors=[];
     const direct=r.renderer.renderBufferDirect;
@@ -164,6 +173,8 @@ try{
      for(const animation of art.getAnimations({subtree:true})){animation.pause();animation.currentTime=ms;}
     },frame*frameStepMs);
     const evidence=await page.evaluate(inspectFrame);
+    if(scenario.u7Crossing)evidence.u7Crossing=await page.evaluate(()=>window.__containmentDebug.u7Crossing);
+    if(scenario.nativeReload){assert(await page.evaluate(()=>window.__containmentDebug.game.combat.snapshot.reloading),`${name}: native reload is absent`);assert.equal(await page.locator('#reload-label').innerText(),'RELOADING');}
     if(scenario.titleArtTimeline){
      assert.equal(await page.locator('.title-screen').evaluate(node=>getComputedStyle(node).opacity),'1','Title shell exposed the hidden 3D cast');
      evidence.titleArt=await page.evaluate(()=>Object.fromEntries(['ka-emergency','ka-marine-reveal','ka-eyes-main'].map(name=>[name,Number(getComputedStyle(document.querySelector('.'+name)).opacity)])));
@@ -199,6 +210,10 @@ try{
     if(scenario.room)assert.equal(evidence.templateId,scenario.room);
     if(scenario.state==='playing'){assert(evidence.hud&&evidence.player.visible&&!evidence.overlay,`${name}: HUD/player missing or overlay blocks scene`);}
     if(scenario.state==='playing')assert.deepEqual(evidence.hudOverlaps,[],`${name}: HUD covers the projected marine`);
+    if(scenario.state==='playing') {
+     evidence.ui.criticalContrast=await page.evaluate(criticalContrast);
+     for(const value of evidence.ui.criticalContrast)assert(value.contrast>=4.5&&value.backingAlpha===1&&value.opacity===1,`${name}: critical HUD value loses contrast: ${JSON.stringify(value)}`);
+    }
     if(scenario.liveKiting){assert(evidence.kitingProof.startEnemies>=10&&evidence.kitingProof.endEnemies>=8,`${name}: heavy encounter missing`);assert(evidence.stats.abilityUses.power>0&&evidence.stats.overdrivesUsed>0,`${name}: live ability receipts missing`);}
     if(scenario.kiting){
      assert(evidence.visibleEnemies>=12,`${name}: only ${evidence.visibleEnemies} visible enemies while kiting`);
@@ -214,6 +229,13 @@ try{
     for(const s of evidence.statuses)for(const key of ['burning','chilled','frozen','poisoned'])if(s[key])observed.add(key);
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     const file=name+(scenario.burst?`-${String(frame+1).padStart(2,'0')}`:'')+'.png',bytes=await page.screenshot({path:resolve(out,file),animations:scenario.titleArtTimeline?'allow':'disabled'}),pixels=samplePng(bytes);
+    if(args.includes('--scaffold')&&await page.locator('[data-key-art-scaffold]').count()) {
+     await page.locator('[data-key-art-scaffold]').evaluate(node=>node.style.display='');
+     const scaffoldFile=file.replace('.png','-scaffold.png');
+     await page.screenshot({path:resolve(out,scaffoldFile),animations:'disabled'});
+     await page.locator('[data-key-art-scaffold]').evaluate(node=>node.style.display='none');
+     evidence.scaffoldFile=scaffoldFile;
+    }
     if(scenario.burst)burstFrames.push(bytes);
     const errors=manifest.errors.slice(errorStart);assert.equal(errors.length,0,JSON.stringify(errors));
     manifest.shots.push({scenario:scenario.id,room:scenario.room??null,frame:scenario.burst?frame+1:null,file,presentationMs:frame*frameStepMs,simulationMs:Math.round(evidence.elapsed*1000),performance:evidence.performance,errors,pixels,staging,evidence});

@@ -179,14 +179,14 @@ it.each([[1920,1080],[1280,720]])('keeps every critical value on an opaque contr
         for(const panel of document.querySelectorAll('.vitals,#action-bar,#status-hud,#radar-hud')) (panel as HTMLElement).dataset.obscuresThreat='true';
       },state);
       await page.waitForTimeout(180);
-      const rows=await page.locator('[data-hud-critical]').evaluateAll(nodes=>{
+      const rows=await page.locator('[data-hud-critical],[data-ability][data-state=ready] .ability-icon').evaluateAll(nodes=>{
         const rgb=(s:string)=>s.match(/[\d.]+/g)!.map(Number);
         const luminance=(rgb:number[])=>rgb.slice(0,3).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
-        return nodes.filter(node=>node.getClientRects().length&&node.textContent?.trim()).map(node=>{
+        return nodes.filter(node=>node.getClientRects().length&&(node.textContent?.trim()||node.matches('.ability-icon'))).map(node=>{
           const style=getComputedStyle(node),fg=rgb(style.color),bg=rgb(style.backgroundColor);
           let opacity=1;for(let ancestor:Element|null=node;ancestor;ancestor=ancestor.parentElement)opacity*=Number(getComputedStyle(ancestor).opacity);
           const a=luminance(fg),b=luminance(bg);
-          return {name:node.id||node.textContent,contrast:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),alpha:bg[3]??1,opacity};
+          return {name:node.id||node.textContent||'ready glyph',contrast:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),alpha:bg[3]??1,opacity};
         });
       });
       expect(rows.length).toBeGreaterThanOrEqual(16);

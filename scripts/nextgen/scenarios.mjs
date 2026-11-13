@@ -1,3 +1,4 @@
+import {U7_SCENARIOS} from './u7-scenarios.mjs';
 import {U6_SCENARIOS} from './u6-scenarios.mjs';
 import {G4_FORM_SCENARIOS} from './g4-forms.mjs';
 import {G4_SCENARIOS} from './g4-scenarios.mjs';
@@ -733,3 +734,5 @@ import {registerG6Scenarios} from './g6-scenarios.mjs';
 registerG6Scenarios(SCENARIOS,stageGraphicsKiting);
 import {registerI9Scenarios} from './i9-scenarios.mjs';
 registerI9Scenarios(SCENARIOS);
+
+SCENARIOS.push(...U7_SCENARIOS);

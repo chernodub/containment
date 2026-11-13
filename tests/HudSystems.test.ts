@@ -248,9 +248,11 @@ it('makes ready rigs elemental, fills Overdrive energy, marks low ammunition and
         expect(cooling).toBeLessThan(ready.opacity);
         expect(await page.locator('[data-ability=tactical] .ability-value').textContent()).toMatch(/s$/);
         await page.evaluate(() => { const { game, hud, adapter, fixtures } = (window as any).__live; adapter.setUiFixture(game, { abilities: fixtures.abilityFixture('arc', 'overdrive') }); hud(); });
-        const full = await page.locator('[data-ability=overdrive]').evaluate(el => ({ background: getComputedStyle(el).backgroundImage, key: getComputedStyle(el.querySelector('kbd')!).backgroundColor, edge: getComputedStyle(el, '::after').animationName }));
+        const full = await page.locator('[data-ability=overdrive]').evaluate(el => ({ background: getComputedStyle(el).backgroundImage, key: getComputedStyle(el.querySelector('kbd')!).backgroundColor, keyColor:getComputedStyle(el.querySelector('kbd')!).color, rigColor:getComputedStyle(el.querySelector('.ability-icon')!).color, edge: getComputedStyle(el, '::after').animationName }));
         expect(full.background).not.toBe('none');
-        expect(full.key).toBe('rgb(183, 156, 255)');
+        expect(full.key).toBe('rgb(7, 17, 24)');
+        expect(full.keyColor).toBe('rgb(232, 251, 255)');
+        expect(full.rigColor).toBe('rgb(183, 156, 255)');
         expect(full.edge).toBe('none');
         await page.evaluate(() => { const { game, hud } = (window as any).__live; const resources = game.combat.getRunResources(); resources.ammo.pistol.magazine = 1; game.combat.restoreRunResources(resources); hud(); game.combat.startReload(); game.combat.update(300); hud(); });
         expect(await page.locator('.weapon-hud').getAttribute('data-ammo')).toBe('low');
@@ -416,7 +418,7 @@ it('keeps held-key ability inspection opaque above a threat-faded action bar', a
         await page.evaluate(()=>{
             (window as any).__live.hud.tick(.01);
             const bar=document.getElementById('action-bar')!;
-            bar.dataset.obscuresThreat='true';bar.style.transition='none';bar.style.opacity='.3';
+            bar.dataset.obscuresThreat='true';bar.style.transition='none';
         });
         const tooltip=page.locator('#ability-rules-tactical');
         expect(await tooltip.isVisible()).toBe(true);
@@ -431,7 +433,7 @@ it('keeps held-key ability inspection opaque above a threat-faded action bar', a
                 anchorCenter:(anchorBox.left+anchorBox.right)/2,center:(box.left+box.right)/2,gap:anchorBox.top-box.bottom};
         });
         expect(appearance.host).toBe('hud');expect(appearance.inBar).toBe(false);
-        expect(Number(appearance.barOpacity)).toBe(.3);expect(appearance.ancestorOpacity).toBe(1);
+        expect(Number(appearance.barOpacity)).toBe(1);expect(appearance.ancestorOpacity).toBe(1);
         expect(appearance.background).toBe('rgba(6, 19, 26, 0.98)');
         expect(appearance.pointerEvents).toBe('none');expect(appearance.position).toBe('fixed');
         expect(appearance.color).toBe(appearance.anchorColor);
@@ -589,7 +591,7 @@ it('keeps every world label layer below every panel, tooltip, toast and beat',as
     }finally{await page.close();}
 });
 
-it('bounds the 720p right column, fades radar contacts, and preserves critical objectives',async()=>{
+it('bounds the 720p right column, yields radar chrome, and preserves contacts and critical objectives',async()=>{
     const page=await mountHud(1280,720);
     try{
         await liveHud(page);
@@ -606,7 +608,11 @@ it('bounds the 720p right column, fades radar contacts, and preserves critical o
         });
         expect(result.width).toBeLessThanOrEqual(260);expect(result.area/(1280*720)).toBeLessThan(.14);
         expect(result.critical).toBe('Overload is NOT armed.');expect(result.faded).toBe('true');
-        await page.waitForTimeout(180);expect(Number(await page.locator('#radar-hud').evaluate(node=>getComputedStyle(node).opacity))).toBeCloseTo(.35,1);
+        await page.waitForTimeout(180);
+        expect(await page.locator('#radar-hud').evaluate(node=>getComputedStyle(node).opacity)).toBe('1');
+        expect(await page.locator('#radar-hud').evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgba(7, 17, 24, 0.094)');
+        expect(await page.locator('#radar-map .radar-floor').evaluate(node=>getComputedStyle(node).opacity)).toBe('0.3');
+        expect(await page.locator('#radar-map .radar-enemy').first().evaluate(node=>getComputedStyle(node).opacity)).toBe('1');
         const overlaps=await page.evaluate(()=>['#status-hud','#radar-hud'].filter(selector=>{const r=document.querySelector(selector)!.getBoundingClientRect();return r.left<667&&r.right>613&&r.top<430&&r.bottom>290;}));expect(overlaps).toEqual([]);
     }finally{await page.close();}
 });

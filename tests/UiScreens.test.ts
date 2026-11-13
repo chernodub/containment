@@ -685,3 +685,27 @@ test('title motion is decorative, reduced motion retains authored geometry, and 
     expect(await page.locator('.title-key-art').getAttribute('class')).toContain('key-art-revealed');
   } finally {await page.close();}
 });
+
+test.each([[1280,720,1],[1280,720,1.5],[1280,720,2],[1920,1080,1],[1920,1080,1.5],[1920,1080,2]])('shop stock inspection and purchases stay keyboard reachable at desktop %i × %i / %s zoom', async(physicalWidth,physicalHeight,zoom)=>{
+  // Browser zoom reduces the CSS viewport; retain desktop keyboard/mouse behavior.
+  const width=Math.floor(physicalWidth/zoom),height=Math.floor(physicalHeight/zoom),page=await mount(width,height);
+  try {
+    await page.evaluate(()=>{(window as any).ui.game.combat.snapshot.credits=180;});
+    await phase(page,'reward',3);
+    const summary=page.locator('.unchanged-stock>summary');
+    await summary.focus();await page.keyboard.press('Enter');
+    expect(await page.locator('.unchanged-stock').getAttribute('open')).not.toBeNull();
+    expect(await page.locator('[data-resource=rifle]').innerText()).toContain('Rifle reserve');
+    expect(await page.locator('[data-resource=rifle]').innerText()).not.toContain('100,000');
+    for(const action of [summary,page.locator('#claim'),page.locator('[data-purchase=armor]'),page.locator('[data-purchase=ammo]')]){
+      await action.focus();await action.scrollIntoViewIfNeeded();
+      const reachable=await action.evaluate(node=>{
+        const box=node.getBoundingClientRect(),x=box.left+box.width/2,y=box.top+box.height/2;
+        return {focus:node===document.activeElement,left:box.left,right:box.right,top:box.top,bottom:box.bottom,mouse:node.contains(document.elementFromPoint(x,y))};
+      });
+      expect(reachable.focus).toBe(true);expect(reachable.mouse).toBe(true);
+      expect(reachable.left).toBeGreaterThanOrEqual(0);expect(reachable.right).toBeLessThanOrEqual(width);
+      expect(reachable.top).toBeGreaterThanOrEqual(0);expect(reachable.bottom).toBeLessThanOrEqual(height);
+    }
+  } finally {await page.close();}
+});

@@ -738,3 +738,16 @@ For exact native solid-black actor masks, use the existing `--graphics='{"adapti
 `i9-remote-spitter` and `i9-remote-stalker` replay the legal world positions of two actual seed1729 camera failures. They require every sampled selected body inside the usable viewport, a successful fit receipt, and a bounded marine size. They are staged geometry regressions; the four unassisted campaigns remain the organic evidence. Failure JSON includes the exact native camera matrix and actor heights.
 
 `node scripts/nextgen/i9-summary.mjs --cohort=organic-fix --performance-only` reads a separately named five-repeat cohort; `--campaigns-only` reads its four rig reports. `--benchmark-label=<safe-label>` selects an explicitly named replacement sustained cohort while retaining the cohort’s original room-preparation and campaign receipts. An omitted cohort preserves the earlier default labels. Native stress replenishment fills multi-kill deficits through the same legal native spawn/spacing checks, includes driver CPU cost, and retains the target25 and minimum population assertions; `refillAudit` records blocked passes and maximum deficit. The source reports are never replaced by favorable samples.
+
+## U7 illustration and HUD review
+
+`node scripts/nextgen/u7-review.mjs <1..6>` freezes one production build per
+critique round, captures title and ending at1920×1080,1280×720 and2560×1080,
+and writes exact area-reduced480×270 reviews. `capture --scaffold` adds a
+capture-only title anatomy overlay PNG; normal production art keeps it hidden.
+Source SVG generators are retained beside each immutable dist for provenance.
+`u7-crossing-{action-bar,vitals,status-hud,radar-hud}` searches legal native
+floor marks for a real Brute whose anatomy crosses the named panel, then uses
+native rifle fire and Cryo Nova. No fade override is used. Every playing capture
+now records computed critical text/backing contrast and effective ancestor
+opacity, rejecting text below4.5:1 or a translucent local backing.
