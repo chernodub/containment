@@ -80,7 +80,12 @@ for row in range(-1,7):
         hex_draw.line(points+[points[0]],fill=(255,255,255,215),width=2)
 pattern('hex',162,hex_image)
 pattern('scan',163,gray((np.exp(-abs((y*11)%1-.5)*20)*.6+.05)*(1-abs(x)*.08)))
-pattern('snow',164,gray(np.maximum(0,1-r)**1.6*(.2+np.maximum(0,n-.47)*7)))
+# A field of wind-driven snow grains, rather than a single procedural streak.
+snow=np.zeros_like(x); snow_rng=np.random.default_rng(621)
+for i in range(52):
+    px,py=snow_rng.uniform(-1,1,2); size=.012+(i%5)*.006
+    snow=np.maximum(snow,np.exp(-((x-px)**2/(size*.65)**2+(y-py)**2/(size*2.8)**2)))
+pattern('snow',164,gray(snow))
 pattern('shard',165,gray(np.maximum(0,1-(abs(x)*1.9+abs(y)*.68))**.45,.45+np.maximum(0,x)*.55))
 # Eight driven mist frames: offline advected noise, with a broken trailing edge.
 for i in range(8):

@@ -269,9 +269,9 @@ class CryoPresentation implements AbilityPresentation {
         fade * (.85 + upwind * .15), seed, 'billboard', 0, tilt);
       // A few driven snow strips read through the dense cloud masses. Broad
       // overlapping vapor, rather than isolated flakes, carries the storm.
-      if (i % 4 === 0) k.sprite('snow', px - wx * .22, .45 + variation * .8, pz - wz * .22,
-        .16 + variation * .08, .36 + variation * .2, CORE,
-        fade * .72, seed + 3, 'billboard', 0, -.72);
+      if (i % (k.low ? 4 : 3) === 0) k.sprite('snow', px - wx * .22, 1.0 + variation * .35, pz - wz * .22,
+        .55 + variation * .15, .65 + variation * .2, CORE,
+        fade * .95, seed + 3, 'billboard', 0, -.72);
     }
     // Short ground currents reinforce direction without filling the storm's eye.
     const strokes = k.low ? 3 : 6;

@@ -78,7 +78,10 @@ ${kind === 'decal' ? `
   vec4 stamp;
   if(tile>=168.&&tile<176.)stamp=effectSequence(168.,8.,16.,fract(phase)*64.,uvLocal);
   else if(tile>=176.&&tile<184.)stamp=effectSequence(176.,8.,24.,fract(phase)*64.,uvLocal);
-  else stamp=effectTile(tile,tile==162.?fract(uvLocal*vec2(3.,1.)):uvLocal);
+  else if(tile==164.){
+   stamp=effectTile(tile,fract(uvLocal+vec2(abilityTime*.31,-abilityTime*.57)));
+   stamp.a*=smoothstep(0.,.08,uvLocal.x)*smoothstep(0.,.08,1.-uvLocal.x)*smoothstep(0.,.08,uvLocal.y)*smoothstep(0.,.08,1.-uvLocal.y);
+  }else stamp=effectTile(tile,tile==162.?fract(uvLocal*vec2(3.,1.)):uvLocal);
   c=ink*(.55+stamp.r*.65);a*=stamp.a;
   if(phase<600.)a*=smoothstep(.015,.20,worldHeight);
   if(tile==162.||tile==163.){

@@ -238,7 +238,7 @@ describe('Cryo signatures', () => {
     f.game = { geometry: { blockers: [{ x: 480, y: 300, width: 40, height: 40 }, { x: 900, y: 900, width: 40, height: 40 }] } } as never;
     fx.update(f);
     const clouds = kit.sprite.mock.calls.filter(c => c[0] === 'mist'), snow = kit.sprite.mock.calls.filter(c => c[0] === 'snow');
-    expect(clouds).toHaveLength(20); expect(snow).toHaveLength(5);
+    expect(clouds).toHaveLength(20); expect(snow).toHaveLength(7);
     expect(new Set(clouds.map(c => c[5].toFixed(3))).size).toBeGreaterThan(8);
     for (const c of [...clouds, ...snow]) {
       const distance = Math.hypot(c[1] - 10, c[3] - 10);
@@ -402,7 +402,7 @@ describe('Cryo signatures', () => {
       expect(settled[i].slice(1, 4)).toEqual(fresh[i].slice(1, 4));
     }
     // Perimeter + target vapor + deposits leave room in the 64-decal pool.
-    expect(kit.sprite.mock.calls.length).toBeLessThanOrEqual(low ? 17 : 33);
+    expect(kit.sprite.mock.calls.length).toBeLessThanOrEqual(low ? 17 : 35);
   });
 
   it('renders no denied/ready world feedback and clears all transient state', () => {
