@@ -57,7 +57,14 @@ async function performance(){
   const grouped=new Map(),trials=[];
   for(const run of bench?.value.runs??[]){
     const summary=run.summary??{},precision={frameP50:round1(summary.frame?.p50),frameP95:round1(summary.frame?.p95)};
-    const timingEligible=run.timingAcceptanceEligible!==false&&!run.profile&&!bench.value.auditCosts&&!bench.value.gpuFlush;
+    const timingExclusions=[
+      run.timingAcceptanceEligible===false?'run marks timing ineligible':null,
+      run.profile?'CPU profiling enabled':null,
+      bench.value.auditCosts?'cost instrumentation enabled':null,
+      bench.value.gpuFlush?'intrusive GPU flush enabled':null,
+      bench.value.gpuPasses?'per-pass GPU queries replace runtime adaptive GPU feedback':null,
+    ].filter(Boolean);
+    const timingEligible=timingExclusions.length===0;
     const targets={
       timingEligible,
       frameP50:precision.frameP50!==null&&precision.frameP50<=16.7,
@@ -73,6 +80,7 @@ async function performance(){
       before:run.before,after:run.after,programs:run.programs,programInventory:run.programInventory,
       wallSeconds:run.wallSeconds,simulationSeconds:run.simulationSeconds,initialEnemies:run.initialEnemies,
       uses:run.uses,timingScope:run.timingScope,timingAcceptanceEligible:run.timingAcceptanceEligible};
+    trial.timingExclusions=timingExclusions;
     trials.push(trial);const key=`${run.room}/${run.rig}/${run.tier}`;
     if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(trial);
   }
@@ -117,7 +125,7 @@ async function performance(){
   const expectedRoomCases=expectedRooms.flatMap(room=>['fresh','sequential'].map(mode=>`${room}/${mode}`));
   const results={
     method:'Native benchmark reports retained in full. Requested frame targets compare values rounded to the browser reporting precision of0.1ms; raw summaries and original harness budget booleans remain beside them. High frame p50≤16.7ms,p95≤20ms,median adaptive scale≥.9; Low p50≤16.7ms; all draws≤330 and combat compiles0. Five repeats per case; no best-of-N selection. Host load is1-minute system load, not CPU utilization.',
-    benchmarkSource:bench?{path:bench.path,sha256:bench.sha256,source:bench.value.distSnapshot,harnessSHA:bench.value.sha,gpu:bench.value.gpu,seconds:bench.value.seconds,repeats:bench.value.repeats,host:bench.value.host,errors:bench.value.errors,budgetFailures:bench.value.budgetFailures}:null,
+    benchmarkSource:bench?{path:bench.path,sha256:bench.sha256,source:bench.value.distSnapshot,harnessSHA:bench.value.sha,gpu:bench.value.gpu,seconds:bench.value.seconds,repeats:bench.value.repeats,host:bench.value.host,diagnosticModes:{auditCosts:bench.value.auditCosts===true,gpuPasses:bench.value.gpuPasses===true,gpuFlush:bench.value.gpuFlush===true,gpuMicro:bench.value.gpuMicro===true},errors:bench.value.errors,budgetFailures:bench.value.budgetFailures}:null,
     coverage:{expectedCases:16,expectedTrials:80,actualCases:cases.length,actualTrials:trials.length,complete:cases.length===16&&trials.length===80&&cases.every(c=>c.fiveRepeats),sourceMatches},
     cases,trials,
     roomPreparation:{method:'Public gotoRoom readiness is separate from inclusive preparation receipts. All preparation histories, including initial cold/warm work, are deduplicated per retained renderer within each run; fresh pages remain distinct. Values are milliseconds;≤3000 worst and≤1500 median targets.',
@@ -232,17 +240,20 @@ async function campaigns(){
       const target=`${rig}-${file}`,targetJson=target.replace(/\.png$/,'.json');
       await copyFile(pngPath,resolve(organic,target));await copyFile(jsonPath,resolve(organic,targetJson));
       const png=decode(bytes),s=snapshot.value,e=s.framingEvidence,viewport=s.hud?.viewport??{width:png.width,height:png.height},insets=e?.insets??s.hud?.insets;
-      const panels=s.hud?.opaqueBounds??[],contacts=e?.contacts??[];
+      const framing=e?.framing??s.hud?.framing,selectedIds=framing?.focusedPair?[framing.focusContactId]:framing?.selectedIds??[];
+      const panels=s.hud?.opaqueBounds??[],contacts=[...(e?.contacts??[])];
+      if(e?.queenBounds&&!contacts.some(contact=>contact.id===-1))contacts.push({id:-1,type:'queen',bounds:e.queenBounds,selected:selectedIds.includes(-1)});
+      const missingSelectedIds=selectedIds.filter(id=>!contacts.some(contact=>contact.id===id));
       const contactRows=contacts.map(c=>{
         const covered=panels.filter(p=>overlap(c.bounds,p.bounds)>0).map(p=>({id:p.id,overlapPixels:overlap(c.bounds,p.bounds),obscuresThreat:p.obscuresThreat===true,opacity:p.opacity??null,
           yields:p.obscuresThreat===true||p.opacity!==null&&p.opacity!==undefined&&finite(Number(p.opacity))&&Number(p.opacity)<.5}));
-        return{...c,insideUsable:inside(c.bounds,insets,viewport),coveredByFadedPanels:covered.filter(p=>p.yields),coveredByUnfadedPanels:covered.filter(p=>!p.yields)};
+        return{...c,selected:c.selected===true||selectedIds.includes(c.id),savedInsideUsable:c.insideUsable??null,insideUsable:inside(c.bounds,insets,viewport),coveredByFadedPanels:covered.filter(p=>p.yields),coveredByUnfadedPanels:covered.filter(p=>!p.yields)};
       });
       const marine=e?.marine??s.hud?.marine,marineOverlaps=panels.filter(p=>overlap(marine,p.bounds)>0).map(p=>({id:p.id,overlapPixels:overlap(marine,p.bounds)}));
       const roomFraming=e?.roomFraming??null,minimumHeroPixels=100*viewport.height/1080;
       const c6ReceiptComplete=!!roomFraming&&['heroPixels','outside','hullOutside','outsideX','outsideZ'].every(key=>finite(roomFraming[key]))&&['smallX','smallZ','centeredX','centeredZ'].every(key=>typeof roomFraming[key]==='boolean');
       const smallAxisQualification=roomFraming?.smallX===true||roomFraming?.smallZ===true;
-      const audit={rig,file:target,room:s.node?.templateId,depth:s.node?.depth,elapsed:s.elapsed,viewport,insets,framing:e?.framing??s.hud?.framing,
+      const audit={rig,file:target,room:s.node?.templateId,depth:s.node?.depth,elapsed:s.elapsed,viewport,insets,framing,selectedIds,missingSelectedIds,
         nativeViewportMatches:png.width===viewport.width&&png.height===viewport.height,
         roomFraming,c6ReceiptComplete,smallAxisQualification,minimumHeroPixels,heroScalePass:finite(roomFraming?.heroPixels)&&roomFraming.heroPixels>=minimumHeroPixels-.05,
         fullAabbAreaPass:finite(roomFraming?.outside)&&roomFraming.outside<=.180001,
@@ -275,12 +286,13 @@ async function campaigns(){
       finalStats:report.final?.stats,limitations:report.limitations,
       pass:['dead','complete','room-limit'].includes(report.outcome)&&(report.errors??[]).length===0&&(report.defects??[]).length===0,provenanceVerified:provenance.verified});
   }
-  const framingAudit={method:'Actual saved8-corner body projections and measured CSS HUD insets. C6 heroPixels is the conservative foot-to-head scale, compared with100px at1080p scaled by CSS height; outside is literal playable AABB area and hullOutside is the actual hull diagnostic, reported separately. The qualified C6 rule requires every non-small axis to meet18%; genuinely small axes must center. Total AABB≤18% applies when neither axis is small. Selected engagement contacts and marine are audited separately from peripheral contacts. Peripheral outside contacts are reported, not automatically errors. Overlap of a conservative body box with an unfaded HUD rectangle is a review candidate, not proof that dangerous pixels are hidden. Panel yielding is indicated by saved obscuresThreat or opacity<.5. Screenshots remain unmodified.',
+  const framingAudit={method:'Actual saved8-corner body projections and measured CSS HUD insets. C6 heroPixels is the conservative foot-to-head scale, compared with100px at1080p scaled by CSS height; outside is literal playable AABB area and hullOutside is the actual hull diagnostic, reported separately. The qualified C6 rule requires every non-small axis to meet18%; genuinely small axes must center. Total AABB≤18% applies when neither axis is small. Selected engagement contacts and marine are audited separately from peripheral contacts. Peripheral outside contacts are reported, not automatically errors. Overlap of a conservative body box with an unfaded HUD rectangle is a review candidate, not proof that dangerous pixels are hidden. Panel yielding is indicated by saved obscuresThreat or opacity<.5. Saved selected IDs, including Queenid-1, require actual contact bounds; missing selected IDs are explicit evidence failures. Screenshots remain unmodified.',
     frames:auditRows,marineFailures:auditRows.filter(r=>r.eightCornerEvidence&&!r.marineInside),marineHudOverlaps:auditRows.filter(r=>r.marineOverlaps.length),
     nativeViewportMismatches:auditRows.filter(r=>!r.nativeViewportMatches),
     heroScaleFailures:auditRows.filter(r=>r.roomFraming&&!r.heroScalePass),roomAabbFailures:auditRows.filter(r=>r.roomFraming&&!r.roomAabbPass),
     literalAabbExceedances:auditRows.filter(r=>r.c6ReceiptComplete&&!r.fullAabbAreaPass),smallAxisQualifiedFrames:auditRows.filter(r=>r.c6ReceiptComplete&&r.smallAxisQualification),
     exactHullExceedances:auditRows.filter(r=>r.roomFraming&&!r.exactHullPass),missingRoomFraming:auditRows.filter(r=>!r.c6ReceiptComplete),
+    missingSelectedContactFrames:auditRows.filter(r=>r.eightCornerEvidence&&r.missingSelectedIds.length),
     selectedBoundsFailures:auditRows.filter(r=>r.eightCornerEvidence&&r.selectedOutside.length),missingEightCornerEvidence:auditRows.filter(r=>!r.eightCornerEvidence),
     peripheralOutsideFrames:auditRows.filter(r=>r.peripheralOutside.length).length,
     fadedCoverageFrames:auditRows.filter(r=>r.fadedCoverage.length).length,unfadedCoverageCandidateFrames:auditRows.filter(r=>r.unfadedCoverageCandidates.length).length};
@@ -291,7 +303,8 @@ async function campaigns(){
   summary.organic.nativeViewportMismatches=framingAudit.nativeViewportMismatches.length;
   summary.organic.literalAabbExceedances=framingAudit.literalAabbExceedances.length;
   summary.organic.smallAxisQualifiedFrames=framingAudit.smallAxisQualifiedFrames.length;
-  summary.organic.framingBoundsAccepted=framingAudit.marineFailures.length===0&&framingAudit.marineHudOverlaps.length===0&&framingAudit.selectedBoundsFailures.length===0&&framingAudit.missingEightCornerEvidence.length===0&&framingAudit.nativeViewportMismatches.length===0;
+  summary.organic.missingSelectedContactFrames=framingAudit.missingSelectedContactFrames.length;
+  summary.organic.framingBoundsAccepted=framingAudit.marineFailures.length===0&&framingAudit.marineHudOverlaps.length===0&&framingAudit.selectedBoundsFailures.length===0&&framingAudit.missingSelectedContactFrames.length===0&&framingAudit.missingEightCornerEvidence.length===0&&framingAudit.nativeViewportMismatches.length===0;
   summary.organic.heroAndAabbAccepted=framingAudit.heroScaleFailures.length===0&&framingAudit.roomAabbFailures.length===0&&framingAudit.missingRoomFraming.length===0;
   summary.organic.exactHullAccepted=framingAudit.exactHullExceedances.length===0&&framingAudit.missingRoomFraming.length===0;
   summary.accepted=summary.runtimeAccepted&&summary.organic.minimumSixPerRig&&summary.organic.earlyAndLateEveryRig&&summary.organic.framingBoundsAccepted&&summary.organic.heroAndAabbAccepted;
@@ -307,7 +320,7 @@ async function campaigns(){
     ...rigReports.map(r=>{
       const q=r.overdrives.intervalSummary,p50=r.roomCpuFrames.p50AcrossRooms,p95=r.roomCpuFrames.p95AcrossRooms;
       return`| ${r.rig} | ${r.outcome} | ${r.clears} / ${r.entered} | ${r.deaths} | ${r.overdrives.authoritativeTotal??'?'} / ${r.overdrives.castReceiptCount} | ${q?[q.min,q.p50,q.max].map(fmt).join(' / '):'none'} | ${r.preparationHolds.count} / ${fmt(r.preparationHolds.summaryMs?.max)} | ${p50?[p50.min,p50.p50,p50.max].map(fmt).join(' / '):'missing'} | ${p95?[p95.min,p95.p50,p95.max].map(fmt).join(' / '):'missing'} | ${fmt(r.wallSeconds)} | ${fmt(r.hostLoad?.start?.[0])} → ${fmt(r.hostLoad?.latest?.[0])} | ${r.errors.length} / ${r.defects.length} |`;
-    }),'',`Organic frames: ${organicReceipts.length}. Minimum6 perrig: ${summary.organic.minimumSixPerRig}. Early (depth≤5) and late (depth≥10) coverage perrig: ${summary.organic.earlyAndLateEveryRig}. Actual marine-bound failures: ${framingAudit.marineFailures.length}; marine/HUD overlaps: ${framingAudit.marineHudOverlaps.length}; selected-contact bounds failures: ${framingAudit.selectedBoundsFailures.length}.`,
+    }),'',`Organic frames: ${organicReceipts.length}. Minimum6 perrig: ${summary.organic.minimumSixPerRig}. Early (depth≤5) and late (depth≥10) coverage perrig: ${summary.organic.earlyAndLateEveryRig}. Actual marine-bound failures: ${framingAudit.marineFailures.length}; marine/HUD overlaps: ${framingAudit.marineHudOverlaps.length}; selected-contact bounds failures: ${framingAudit.selectedBoundsFailures.length}; missing selected-contact receipt frames: ${framingAudit.missingSelectedContactFrames.length}.`,
     `Hero scale failures: ${framingAudit.heroScaleFailures.length}; qualified AABB-rule failures: ${framingAudit.roomAabbFailures.length}; literal full-AABB exceedances: ${framingAudit.literalAabbExceedances.length}; small-axis qualified frames: ${framingAudit.smallAxisQualifiedFrames.length}; actual hull exceedances: ${framingAudit.exactHullExceedances.length}; missing C6 receipts: ${framingAudit.missingRoomFraming.length}. An AABB pass does not mean an exact-hull pass.`,
     `Peripheral outside frames: ${framingAudit.peripheralOutsideFrames}; faded-HUD coverage frames: ${framingAudit.fadedCoverageFrames}; conservative unfaded-coverage candidates: ${framingAudit.unfadedCoverageCandidateFrames}. Candidates require PNG review; they are not automatically classified as hidden danger.`,
     '', '| Rig | Organic frames | Saved depth range | Hero pixels min–max | AABB outside max | Exact hull outside max |',

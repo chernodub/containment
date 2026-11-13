@@ -43,14 +43,35 @@ export async function stageCorpseBudget() {
   const d=window.__containmentDebug,g=d.game,r=d.renderer;
   await d.gotoRoom('relay-racks',{rig:'pyro'});d.invulnerable(true);g.enemies.reset();
   d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});d.step(600);
-  const b=g.geometry.bounds,points=[],probe=r.player.root.position.clone();
-  for(let y=b.y+40;y<b.y+b.height-40;y+=40)for(let x=b.x+40;x<b.x+b.width-40;x+=40){
-    if(!d.canStand(x,y,32)||Math.hypot(x-g.player.x,y-g.player.y)>420)continue;
-    probe.set(x/32,.8,y/32).project(r.camera);
-    if(Math.abs(probe.x)>.7||probe.y<-.4||probe.y>.5)continue;
-    if(points.some(p=>Math.hypot(p.x-x,p.y-y)<76))continue;points.push({x,y});
+  const b=g.geometry.bounds,probe=r.player.root.position.clone(),i=r.hudInsets,centers=[];
+  let points=[],origin;
+  // The former door mark/normalized crop assumed the old distant camera.
+  // Search legal interior marks against the actual closer native viewport.
+  for(let y=b.y+64;y<b.y+b.height-64;y+=64)for(let x=b.x+64;x<b.x+b.width-64;x+=64){
+    if(d.canStand(x,y,g.player.radius))centers.push({x,y});
+  }
+  centers.sort((a,c)=>Math.hypot(a.x-b.x-b.width/2,a.y-b.y-b.height/2)-Math.hypot(c.x-b.x-b.width/2,c.y-b.y-b.height/2));
+  for(const center of centers){
+    Object.assign(g.player,{x:center.x,y:center.y,vx:0,vy:0});
+    r.cameraRig.reset(center.x/32,center.y/32);r.roomCombatFraming.reset();d.refresh();
+    const candidates=[];
+    for(let y=b.y+40;y<b.y+b.height-40;y+=26)for(let x=b.x+40;x<b.x+b.width-40;x+=26){
+      const distance=Math.hypot(x-center.x,y-center.y);
+      if(!d.canStand(x,y,32)||distance<64||distance>420)continue;
+      let fits=true;
+      for(const dx of [-32,32])for(const dz of [-32,32])for(const h of [0,1.2]){
+        probe.set((x+dx)/32,h,(y+dz)/32).project(r.camera);
+        const sx=(probe.x+1)*innerWidth/2,sy=(1-probe.y)*innerHeight/2;
+        if(sx<i.left+12||sx>innerWidth-i.right-12||sy<i.top+12||sy>innerHeight-i.bottom-12)fits=false;
+      }
+      if(fits&&candidates.every(p=>Math.hypot(p.x-x,p.y-y)>=76))candidates.push({x,y});
+    }
+    if(candidates.length>points.length){points=candidates;origin=center;}
+    if(points.length>=13)break;
   }
   if(points.length<13)throw Error('Not enough legal corpse comparison marks');
+  Object.assign(g.player,{x:origin.x,y:origin.y,vx:0,vy:0});
+  r.cameraRig.reset(origin.x/32,origin.y/32);r.roomCombatFraming.reset();d.refresh();
   let killed=0;
   for(const p of points){
     const id=d.spawn(['crawler','spitter','brute','carrier','stalker'][killed%5],p.x,p.y,false);

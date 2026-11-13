@@ -216,6 +216,8 @@ ${kind === 'shard' ? `
 ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.-abilityTime*5.));' : ''}
  vec2 screen=screenPosition.xy/max(.001,screenPosition.w)*.5+.5;
  ${kind === 'flame' || kind === 'smoke' ? `
+ // All remaining alpha factors are <=1; these texels cannot survive the existing final cutoff.
+ if(a<.004)discard;
  if(softCamera.w>.5){
   float d=texture2D(softDepth,screen).r;
   float sceneDistance=softCamera.z>.5?softCamera.x*softCamera.y/(softCamera.y-(softCamera.y-softCamera.x)*d):mix(softCamera.x,softCamera.y,d);
