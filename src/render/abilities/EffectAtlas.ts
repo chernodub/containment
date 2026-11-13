@@ -74,7 +74,7 @@ export const TEXTURED_FIRE_GLSL = `
  vec4 fire=phase>=200.?effectTile(floor(phase)-200.,fireUv):effectSequence(0.,64.,24.,phase,fireUv);
  float coverage=fire.a;
  float heat=clamp(fire.g/max(.05,fire.r)*.82+fire.r*.18,0.,1.);
- float body=smoothstep(.08,.55,heat),core=smoothstep(.59,.93,heat);
+ float body=smoothstep(.08,.55,heat),core=smoothstep(.76,.98,heat)*smoothstep(.3,.76,fire.g);
  c=mix(vec3(.17,.007,.001),vec3(1.05,.105,.003),body);
  c=mix(c,vec3(2.8,1.9,.34),core);
  a*=coverage;

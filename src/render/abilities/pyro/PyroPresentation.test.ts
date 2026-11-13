@@ -177,14 +177,18 @@ describe('Pyro presentation lifecycle and readability', () => {
     frame.snapshot = snapshot([zone({ radius: 80 })]); step(.016);
     expect(liquid).toHaveBeenCalledWith(4, 5, 2.5, .78);
     const flames = kit.batches.flame.mesh;
-    expect(flames.count).toBe(tier === 'low' ? 2 : 4);
+    expect(flames.count).toBe(tier === 'low' ? 4 : 8);
+    let edgeFires = 0;
     let tallest = 0;
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i);
-      expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThanOrEqual(2.5);
+      const distance = Math.hypot(p.x - 4, p.z - 5);
+      expect(distance).toBeLessThanOrEqual(2.5);
+      if (distance > 2.5 * .7) edgeFires++;
       tallest = Math.max(tallest, p.y + scale(flames, i).y);
     }
     expect(tallest).toBeGreaterThan(1.7);
+    expect(edgeFires).toBe(tier === 'low' ? 2 : 6);
     expect(kit.batches.smoke.mesh.count).toBe(tier === 'low' ? 1 : 4);
     frame.snapshot = snapshot(); step(0);
     expect(flames.count).toBe(0); expect(kit.batches.smoke.mesh.count).toBe(0); dispose();

@@ -83,6 +83,8 @@ ${kind === 'decal' ? `
   if(tile==162.||tile==163.){
    float scan=.65+.35*sin(uvLocal.y*38.-abilityTime*7.);
    c=ink*(1.1+stamp.r*1.8);a*=scan;
+   // Fixed field normals face the aim/danger side; friendly rear face is brighter.
+   if(phase>=600.&&phase<1000.){c*=gl_FrontFacing?.52:1.25;a*=gl_FrontFacing?.7:1.;}
   }
  }else{
 

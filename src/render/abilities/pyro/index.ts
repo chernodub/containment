@@ -361,12 +361,16 @@ class PyroPresentation implements AbilityPresentation {
     }
     kit.sustain(elapsed);
     kit.liquidFire(x, z, radius * growth, .78 * fade);
-    // A few anchored fuel vents give the pool a tall, sparse profile and visible liquid gaps.
-    for (let i = 0; i < (kit.low ? 2 : 4); i++) {
-      const a = i * 2.399963 + zone.id * .71, r = radius * growth * (.2 + i * .12);
+    // Fuel burns at the ragged edge, with two taller interior vents. The center
+    // remains open deck between pockets rather than an opaque orange carpet.
+    const tongues = kit.low ? 4 : 8;
+    for (let i = 0; i < tongues; i++) {
+      const a = i * 2.399963 + zone.id * .71;
       const variation = .5 + .5 * Math.sin(i * 7.83 + zone.id * 3.17);
+      const r = radius * growth * (i < 2 ? .22 + i * .18 : .74 + variation * .13);
       kit.directedFlame(x + Math.cos(a) * r, .06, z + Math.sin(a) * r,
-        .26 + variation * .13, (1.7 + variation * .85) * fade, a, .22, i * 2.17 + zone.id, .72 * fade);
+        .23 + variation * .13, (i < 2 ? 1.8 + variation * .85 : .6 + variation * .8) * fade,
+        a, .22, i * 2.17 + zone.id, (i < 2 ? .72 : .60) * fade);
     }
     // A single loose smoke column rises from the hottest interior fuel pocket.
     for (let i = 0; i < (kit.low ? 1 : 4); i++) {
@@ -409,8 +413,12 @@ class PyroPresentation implements AbilityPresentation {
     kit.grade(.65 * fade);
     kit.lightAt(zone.id, x, z, FIRE, 5 * fade, 6);
     if (emit) {
-      kit.mote('spark', x - c * .3, 1.2, z - s * .3,
-        Math.cos(exhaustAngle) * .8, .65, Math.sin(exhaustAngle) * .8, .025, .65, CORE);
+      // Bounded ember storm is attached to the moving suit, never a floor aura fill.
+      for (let i = 0; i < (kit.low ? 1 : 3); i++) {
+        const a = exhaustAngle + (i - 1) * .7, side = i - 1;
+        kit.mote('spark', x - c * .3 - s * side * .22, 1.05 + i * .22, z - s * .3 + c * side * .22,
+          Math.cos(a) * (.8 + i * .3), .65 + i * .35, Math.sin(a) * (.8 + i * .3), .025 + i * .008, .65, CORE);
+      }
       if (!kit.low) kit.mote('smoke', x - c * .35, 1.2, z - s * .35,
         Math.cos(exhaustAngle) * .4, .45, Math.sin(exhaustAngle) * .4, .23, .9, SOOT);
     }
