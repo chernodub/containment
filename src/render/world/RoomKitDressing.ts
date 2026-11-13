@@ -9,7 +9,6 @@ import {equipmentReservations} from './WorldDressing';
 import {membraneGeometry} from './OrganicGrowth';
 import {ROOM_KIT_STORIES} from './RoomKitStories';
 import {buildKitFloorSurface,KIT_FLOOR_VALUE_GAIN} from './KitFloorSurface';
-import {kitFloorDepthPrimer} from './KitFloorDepthPrimer';
 import {addKitPerimeter} from './KitPerimeter';
 import {addKitFootprintClusters} from './KitFootprintClusters';
 import {acquireRoomKit,roomKitURLs} from './RoomKitAssets';
@@ -159,7 +158,7 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
   }
  }
  root.userData.majorCabinForms=placements.filter(p=>p.model==='bedSingle'||p.model==='loungeSofa').length;root.userData.triangles=triangleCount;root.userData.placements=placements;root.userData.rejected=rejected;root.userData.marineSightlineSamples=samples.length;root.userData.visualIdea=story?.idea??id+' / connected infrastructure and interrupted service';root.userData.narrativeVignette=story?.idea;
- for(const [role,list] of parts){const geometry=mergeGeometries(list,false);list.forEach(g=>g.dispose());if(!geometry)throw Error('kit role merge failed');geometry.computeBoundingBox();geometry.computeBoundingSphere();const mesh=new T.Mesh(geometry,finish(role));mesh.name='e6-kit-'+role;mesh.castShadow=role!=='conduit';mesh.receiveShadow=true;mesh.userData.visualOnly=true;root.add(mesh);if(env==='infested'&&role==='conduit')root.add(kitFloorDepthPrimer(mesh));}
+ for(const [role,list] of parts){const geometry=mergeGeometries(list,false);list.forEach(g=>g.dispose());if(!geometry)throw Error('kit role merge failed');geometry.computeBoundingBox();geometry.computeBoundingSphere();const mesh=new T.Mesh(geometry,finish(role));mesh.name='e6-kit-'+role;mesh.castShadow=role!=='conduit';mesh.receiveShadow=true;mesh.userData.visualOnly=true;root.add(mesh);}
  world.add(root);return root;
 }
 

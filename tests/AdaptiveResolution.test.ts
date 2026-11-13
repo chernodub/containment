@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AdaptiveResolution } from '../src/render/post/AdaptiveResolution';
+import { RENDER_BUDGET } from '../src/render/FrameBudget';
 import { GRAPHICS_OPTION_LABELS, GRAPHICS_PRESETS, resolveGraphicsOptions } from '../src/render/graphicsOptions';
 
 function run(controller: AdaptiveResolution, seconds: number, frameMs: number, gpuMs?: number) {
@@ -13,6 +14,32 @@ describe('adaptive resolution', () => {
     run(resolution, 30, 1000 / 60);
     run(resolution, 30, 1000 / 60, 13);
     expect(resolution.scale).toBe(1);
+  });
+
+  it('retains resolution through 60 seconds of steady work between the old and new GPU overload points',()=>{
+    const resolution=new AdaptiveResolution();resolution.setEnabled(true);
+    expect(RENDER_BUDGET.gpuTargetMs).toBe(15.5);
+    run(resolution,60,1000/60,16);
+    expect(resolution.scale).toBe(1);expect(resolution.snapshot.source).toBe('gpu');
+    expect(resolution.snapshot.smoothedMs).toBeCloseTo(16);
+    // External frame acceptance and resource bounds are independent of tuning.
+    expect(RENDER_BUDGET).toMatchObject({highFrameP50Ms:16.7,highFrameP95Ms:20,lowFrameP50Ms:16.7,drawCalls:330,preparationMs:3000,adaptiveMinScale:.8,adaptiveMaxScale:1});
+  });
+
+  it('still downshifts for sustained work above the derived GPU overload threshold',()=>{
+    const resolution=new AdaptiveResolution();resolution.setEnabled(true);
+    const overload=RENDER_BUDGET.gpuTargetMs+1;
+    run(resolution,60,1000/60,overload);
+    expect(resolution.scale).toBe(1);
+    // New operating point changes neither the .65s pressure requirement nor
+    // the .025 step; this is not an extended benchmark-only grace period.
+    resolution.update(1000/60,overload+.5);
+    run(resolution,.5,1000/60,overload+.5);
+    expect(resolution.scale).toBe(1);
+    run(resolution,2,1000/60,overload+.5);
+    expect(resolution.scale).toBeLessThan(1);
+    run(resolution,60,1000/60,overload+.5);
+    expect(resolution.scale).toBe(.8);
   });
 
   it('reaches a bounded safety scale after sustained pressure without resizing every frame', () => {

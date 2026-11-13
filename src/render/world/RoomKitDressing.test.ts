@@ -20,13 +20,11 @@ beforeAll(async()=>{
 describe('CC0 room dressing safety and lifecycle',()=>{
  it.each([...ROOM_STORY_ROUTE.map(r=>[r.templateId,r.environment] as const),['reactor-vault','reactor'] as const])('%s preserves topology and every added solid protects navigation and marine sightlines',(id,env)=>{
   const t=ROOM_TEMPLATES[id],before=JSON.stringify(t),world=new T.Group(),root=buildRoomKitDressing(world,t,env as ShipEnvironment,id,sources),placements=root.userData.placements as KitPlacement[],samples=kitMarineSamples(t);
-  const primers=root.children.filter(o=>o.userData.kitFloorDepthPrimer===true);
-  expect(primers).toHaveLength(env==='infested'?1:0);
-  expect(JSON.stringify(t)).toBe(before);expect(placements.length).toBeGreaterThan(4);expect(root.children.length-primers.length).toBeLessThanOrEqual(8);
+  expect(JSON.stringify(t)).toBe(before);expect(placements.length).toBeGreaterThan(4);expect(root.children.length).toBeLessThanOrEqual(8);
   expect(placements.some(p=>p.purpose.includes('wall'))).toBe(true);expect(samples.length).toBeGreaterThan(50);
   for(const p of placements){const b=new T.Box3(new T.Vector3().fromArray(p.bounds[0]),new T.Vector3().fromArray(p.bounds[1]));expect(kitBoundsSupported(t,b),p.model+' support').toBe(true);expect(!kitOccludesMarine(b,samples)||p.meshChecked===true,p.model+' conservative or exact sightline').toBe(true);}
   let triangles=0;
-  root.traverse(o=>{if(o instanceof T.Mesh){if(o.userData.kitFloorDepthPrimer){expect(o.geometry).toBe((root.getObjectByName('e6-kit-conduit') as T.Mesh).geometry);expect(o.material).toBeInstanceOf(T.MeshDepthMaterial);expect(o.material.colorWrite).toBe(false);expect(o.castShadow).toBe(false);return;}const p=o.geometry.getAttribute('position');triangles+=p.count/3;for(let i=0;i<p.count;i++){expect(Number.isFinite(p.getX(i)+p.getY(i)+p.getZ(i))).toBe(true);if(p.getY(i)>.024&&p.getY(i)<3)expect(kitSupported(t,p.getX(i),p.getZ(i)),`${id} ${p.getX(i)} / ${p.getZ(i)}`).toBe(true);}expect(o.material).toBeInstanceOf(T.MeshStandardMaterial);expect((o.material as T.MeshStandardMaterial).map).toBeNull();}});
+  root.traverse(o=>{if(o instanceof T.Mesh){const p=o.geometry.getAttribute('position');triangles+=p.count/3;for(let i=0;i<p.count;i++){expect(Number.isFinite(p.getX(i)+p.getY(i)+p.getZ(i))).toBe(true);if(p.getY(i)>.024&&p.getY(i)<3)expect(kitSupported(t,p.getX(i),p.getZ(i)),`${id} ${p.getX(i)} / ${p.getZ(i)}`).toBe(true);}expect(o.material).toBeInstanceOf(T.MeshStandardMaterial);expect((o.material as T.MeshStandardMaterial).map).toBeNull();}});
   expect(triangles).toBeLessThan(32000);expect(root.userData.floorSurface.views.every((v:{features:string[]})=>v.features.length>=3)).toBe(true);if(id==='residential-gallery')expect(root.userData.majorCabinForms).toBeGreaterThanOrEqual(4);
   // Actual mesh rays complement the more conservative per-placement box cone.
   world.updateMatrixWorld(true);const ray=new T.Raycaster(),target=new T.Vector3();
