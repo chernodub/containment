@@ -74,7 +74,9 @@ it('lets real contacts and hostile warning footprints show through each panel wi
       }, selector);
       expect(await page.locator(selector).getAttribute('data-obscures-threat')).toBe('true');
       await page.waitForTimeout(180);
-      expect(Number(await page.locator(selector).evaluate(node=>getComputedStyle(node).opacity))).toBeLessThanOrEqual(.36);
+      const faded = await page.locator(selector).evaluate(node=>({opacity:getComputedStyle(node).opacity,background:getComputedStyle(node).backgroundColor}));
+      expect(faded.opacity).toBe('1');
+      expect(faded.background).toBe('rgba(7, 17, 24, 0.094)');
       const marker = page.locator(`.hud-panel-threat[data-panel='${selector==='.vitals'?'vitals':selector.slice(1)}']`);
       expect(await marker.isVisible()).toBe(true);
       expect(await marker.evaluate(node=>getComputedStyle(node).pointerEvents)).toBe('none');
@@ -143,7 +145,7 @@ it('fades a panel when tall enemy anatomy overlaps even while its center project
     expect(result.outputs).toBe(1);
     expect(result.calls.every(call=>call.context&&call.x===200&&call.y===200&&call.radius>0)).toBe(true);
     await page.waitForTimeout(180);
-    expect(Number(await page.locator('#status-hud').evaluate(node=>getComputedStyle(node).opacity))).toBeLessThanOrEqual(.36);
+    expect(await page.locator('#status-hud').evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgba(7, 17, 24, 0.094)');
     expect(await page.locator(".hud-panel-threat[data-panel='status-hud']").isVisible()).toBe(true);
     await page.evaluate(() => {
       const {game,hud,renderer}=(window as any).__u5;
@@ -158,5 +160,37 @@ it('fades a panel when tall enemy anatomy overlaps even while its center project
       hud();
     });
     expect(await page.locator('#status-hud').getAttribute('data-obscures-threat')).toBe('true');
+  } finally {await page.close();}
+});
+
+
+it.each([[1920,1080],[1280,720]])('keeps every critical value on an opaque contrast chip while all panels yield at %i × %i', async (width,height) => {
+  const page=await mountHud(width,height);
+  try {
+    await liveHud(page);
+    for(const state of ['ready','cooling','casting','denied','overdrive']) {
+      await page.evaluate(async state=>{
+        const load=new Function('path','return import(path)');
+        const {setUiFixture}=await load('/src/ui/gameAdapter.ts');
+        const {abilityFixture}=await load('/src/ui/fixtures.ts');
+        const {game,hud}=(window as any).__u5;
+        setUiFixture(game,{abilities:abilityFixture('cryo',state)});hud();
+        document.getElementById('reload-label')!.textContent='RELOADING';
+        for(const panel of document.querySelectorAll('.vitals,#action-bar,#status-hud,#radar-hud')) (panel as HTMLElement).dataset.obscuresThreat='true';
+      },state);
+      await page.waitForTimeout(180);
+      const rows=await page.locator('[data-hud-critical]').evaluateAll(nodes=>{
+        const rgb=(s:string)=>s.match(/[\d.]+/g)!.map(Number);
+        const luminance=(rgb:number[])=>rgb.slice(0,3).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+        return nodes.filter(node=>node.getClientRects().length&&node.textContent?.trim()).map(node=>{
+          const style=getComputedStyle(node),fg=rgb(style.color),bg=rgb(style.backgroundColor);
+          let opacity=1;for(let ancestor:Element|null=node;ancestor;ancestor=ancestor.parentElement)opacity*=Number(getComputedStyle(ancestor).opacity);
+          const a=luminance(fg),b=luminance(bg);
+          return {name:node.id||node.textContent,contrast:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),alpha:bg[3]??1,opacity};
+        });
+      });
+      expect(rows.length).toBeGreaterThanOrEqual(16);
+      for(const row of rows){expect(row.contrast,row.name!).toBeGreaterThanOrEqual(4.5);expect(row.alpha,row.name!).toBe(1);expect(row.opacity,row.name!).toBe(1);}
+    }
   } finally {await page.close();}
 });

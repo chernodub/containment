@@ -48,8 +48,8 @@
 }
 /* Contacts beneath the diagram take precedence over the map. Marine clearance
    remains owned by positionHudPanels, which includes the radar rectangle. */
-#hud #radar-hud {transition:opacity 160ms ease-out;}
-#hud #radar-hud[data-obscures-threat=true] {opacity:.35;}
+#hud #radar-hud[data-obscures-threat=true] {opacity:1;background:#07111818;border-color:#9fe8ff15;box-shadow:none;}
+#hud #radar-hud[data-obscures-threat=true] :is(.radar-floor,.radar-wall,.radar-camera,.radar-breach) {opacity:.3;}
 @media(max-height:800px) {#hud #radar-hud {width:128px;padding:7px;top:275px;}}
 @media(max-height:650px) {#hud #radar-hud {top:auto;bottom:140px;}}
 @media(max-height:450px) {#hud #radar-hud {width:100px;}}

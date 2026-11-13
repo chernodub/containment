@@ -108,8 +108,8 @@ describe('paid room services', () => {
     expect(serviceTag(game, 'armor')).toContain('disabled');
     expect(serviceTag(game, 'ammo')).not.toContain('disabled');
     expect(serviceTag(game, 'heal')).toContain('aria-describedby="service-heal-reason"');
-    expect(shopScreen(game)).toContain('<small id="service-heal-reason">Capped after free allocation</small>');
-    expect(shopScreen(game)).toContain('<small id="service-armor-reason">Capped after free allocation</small>');
+    expect(shopScreen(game)).toContain('<small id="service-heal-reason">No benefit — already full after free allocation</small>');
+    expect(shopScreen(game)).toContain('<small id="service-armor-reason">No benefit — already full after free allocation</small>');
     const useful = reward({health: 100, armor: 0, mutations: ['field-medic']}).game;
     expect(serviceTag(useful, 'heal')).not.toContain('disabled');
   });
@@ -142,8 +142,12 @@ describe('U5 resource purchase receipts', () => {
     expect(html).toContain('Need 11 more credits');
     expect(html).toContain('27 health exceeds capacity');
     expect(html).toContain('data-value="capped"');
-    expect(html).toContain('CURRENT → AFTER ALLOCATION / MAXIMUM');
+    expect(html).toContain('CURRENT → AFTER FREE ALLOCATION');
     expect(html).toContain('<b>89</b> credits available');
+    expect(html).not.toContain('100,000');
+    expect(html).toContain('class="service-capped" data-purchase="armor"');
+    expect(html).toContain('class="unchanged-stock"');
+    expect(html).not.toContain('UNCHANGED</em>');
     for (const r of getShopProjection(game).resources) expect(html).toContain(`data-resource="${r.id}"`);
     game.combat.setCredits(500);
     expect(shopScreen(game)).toContain('Balance after purchase: 400 CR');

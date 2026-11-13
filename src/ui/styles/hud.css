@@ -416,8 +416,18 @@ body[data-state=playing] #world{cursor:none}
 #hud #action-bar .overdrive-meter {margin-left:38px;}
 #hud #action-bar .desktop-hint {display:none;}
 #hud #action-bar :is(.ability-value,#magazine,kbd) {text-shadow:0 1px 2px #000,0 0 4px #000;}
-#hud :is(.vitals,#status-hud,#action-bar,#radar-hud) {transition:opacity 120ms ease-out;}
-#hud :is(.vitals,#status-hud,#action-bar)[data-obscures-threat=true] {opacity:.3;}
+/* Occlusion changes chrome, never the opacity of a critical value's ancestor. */
+#hud :is(.vitals,#status-hud,#action-bar,#radar-hud) {transition:background-color 120ms ease-out,border-color 120ms ease-out;}
+#hud :is(.vitals,#status-hud,#action-bar,#radar-hud)[data-obscures-threat=true] {opacity:1;background:#07111818;border-color:#9fe8ff15;box-shadow:none;--hud-backplate:transparent;}
+#hud [data-obscures-threat=true] :is(.vital-caption,.armor-line>span,.meter,#desktop-stock>span>span,#desktop-stock .icon,.room-label,#story-status,#story-line,#build-strip,#current-weapon-icon,.ability-title,.dial-track,.dial-progress,.overdrive-meter) {opacity:.3;}
+/* Opaque, compact local chips give a contrast floor independent of world lighting.
+   Applied in both states so a contact entering a panel cannot move its layout. */
+#hud [data-hud-critical] {background-color:#071118;background-image:none;color:#e8fbff;opacity:1;border-radius:2px;box-shadow:0 0 0 2px #071118;text-shadow:none;}
+#hud #action-bar :is(#magazine,#reserve,#reload-label,.ability-value,kbd),#hud .vitals :is(#health,#armor,#medkit-count,#grenade-count,kbd),#hud #status-hud :is(#credits,#encounter-count,#room-objective),#hud #weapon-picker small,#hud #radar-hud .radar-label span {background-color:#071118;background-image:none;color:#e8fbff;opacity:1;}
+#hud [data-hud-critical]:empty {box-shadow:none;}
+#hud [data-obscures-threat=true] .ability-icon {background:#071118;border-radius:3px;}
+#hud [data-obscures-threat=true] .dash-pips {background:#071118;box-shadow:0 0 0 2px #071118;}
+@media(prefers-reduced-motion:reduce) {#hud :is(.vitals,#status-hud,#action-bar,#radar-hud) {transition:none;}}
 #hud .hud-panel-threat {position:fixed;z-index:12;width:22px;height:12px;margin:-6px -11px;background:#ff5a36;clip-path:polygon(0 35%,65% 35%,65% 0,100% 50%,65% 100%,65% 65%,0 65%);transform:rotate(var(--hud-threat-angle));filter:drop-shadow(0 0 2px #000);pointer-events:none;}
 #hud .hud-panel-threat[hidden] {display:none;}
 @media(max-height:800px) {

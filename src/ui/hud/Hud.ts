@@ -278,7 +278,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         text('room-objective', combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
         const critical = game.storyRoom?.objective.match(/Overload is NOT armed\.|PASSENGERS ALIVE\..*|No escape\..*/)?.[0] ?? '';
         let criticalNode = document.getElementById('objective-critical');
-        if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';nodes['story-hud'].append(criticalNode);}
+        if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';criticalNode.setAttribute('data-hud-critical','');nodes['story-hud'].append(criticalNode);}
         criticalNode.textContent=critical;criticalNode.hidden=!critical;
         hidden('story-presentation', !game.storyPresentation);
         text('story-line', game.storyPresentation ?? '');

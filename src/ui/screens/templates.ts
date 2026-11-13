@@ -103,15 +103,22 @@ export function draftScreen(game: DepthGame): string {
 export function shopScreen(game: DepthGame): string {
   const healing = game.node.reward==='healing', preview=getShopProjection(game);
   const number=(n:number)=>n<0?'∞':n.toLocaleString('en-US');
-  const value=(r:typeof preview.resources[number],after:number)=>`${r.label} <b>${number(r.current)} → ${number(after)} <small>/ ${number(r.maximum)}</small></b>`;
+  const capacity=(r:typeof preview.resources[number])=>['health','armor','grenades'].includes(r.id)?` <small>/ ${number(r.maximum)}</small>`:'';
+  const value=(r:typeof preview.resources[number],after:number)=>`${r.label} <b>${number(r.current)} → ${number(after)}${capacity(r)}</b>`;
   const services=([['heal','Health service',100,'health',30],['armor','Armor service',90,'armor',25],['ammo','Reserve ammunition',100,'rifle',0]] as const).map(([id,label,cost,symbol,nominal])=>{
-    const affected=preview.resources.filter(r=>id==='heal'?r.id==='health'||r.after[id]!==r.free:id==='armor'?r.id==='armor':['rifle','shotgun','plasma','rocket'].includes(r.id));
-    const gain=affected.reduce((sum,r)=>sum+Math.max(0,r.after[id]-r.free),0), capped=gain===0;
-    const resource=affected[0], waste=nominal?Math.max(0,nominal-(resource.after[id]-resource.free)):0;
-    const reason=[preview.credits<cost?`Need ${cost-preview.credits} more credits`:'',capped?'Capped after free allocation':waste?`${waste} ${id==='heal'?'health':'armor'} exceeds capacity`:'',!capped&&preview.credits>=cost?`Balance after purchase: ${preview.credits-cost} CR`:''].filter(Boolean).join(' · ');
-    return `<button class="service-card" data-purchase="${id}" data-value="${capped?'capped':waste?'partial':'full'}" aria-describedby="service-${id}-reason" ${preview.available[id]?'':'disabled'}>${icon(symbol)}<span><b>${label}</b><span class="service-outcome">${affected.map(r=>value(r,r.after[id])).join('<br>')}</span><small id="service-${id}-reason">${reason}</small></span><strong>${cost} <small>CR</small></strong>${arrow()}</button>`;
+    const affected=preview.resources.filter(r=>r.after[id]>r.free);
+    const capped=affected.length===0, shortfall=Math.max(0,cost-preview.credits);
+    const primary=preview.resources.find(r=>r.id===(id==='heal'?'health':'armor'))!;
+    const waste=nominal&&!capped?Math.max(0,nominal-(primary.after[id]-primary.free)):0;
+    const reason=capped?'No benefit — already full after free allocation':[
+      shortfall?`Need ${shortfall} more credits`:`Balance after purchase: ${preview.credits-cost} CR`,
+      waste?`${waste} ${id==='heal'?'health':'armor'} exceeds capacity`:'',
+    ].filter(Boolean).join(' · ');
+    return `<button class="${capped?'service-capped':'service-card'}" data-purchase="${id}" data-value="${capped?'capped':waste?'partial':'full'}" data-availability="${capped?'full':shortfall?'credits':'available'}" aria-describedby="service-${id}-reason" ${preview.available[id]?'':'disabled'}>${icon(capped?'check':symbol)}<span><b>${label}</b>${capped?'':`<span class="service-outcome">${affected.map(r=>value(r,r.after[id])).join('<br>')}</span>`}<small id="service-${id}-reason">${reason}</small></span>${capped?'':`<strong>${cost} <small>CR</small></strong>${arrow()}`}</button>`;
   }).join('');
-  return `<section class="panel shop-panel screen-enter"><div class="supply-hero">${icon(healing?'medkit':'armory','supply-emblem')}${tag(`RECOVERY STATION / SECTOR ${serial(game.node.depth+1)}`)}<h2>${healing?'Infirmary':'Supply cache'}</h2><p class="panel-intro">Your standard allocation is free.</p><dl class="allocation-ledger" aria-label="Current resources and free allocation">${preview.resources.map(r=>`<div data-resource="${r.id}"><dt>${r.label}</dt><dd>${number(r.current)} <span>→</span> <b>${number(r.free)}</b> <small>/ ${number(r.maximum)}</small><em>${r.free>r.current?`+${r.free-r.current} FREE`:r.current>=r.maximum?'CAPPED':'UNCHANGED'}</em></dd></div>`).join('')}</dl><button id="claim" class="primary">Collect free allocation ${arrow()}</button><span class="supply-label">CURRENT → AFTER ALLOCATION / MAXIMUM</span></div>
+  const changed=preview.resources.filter(r=>r.free!==r.current), unchanged=preview.resources.filter(r=>r.free===r.current);
+  const ledger=(rows:typeof preview.resources)=>rows.map(r=>`<div data-resource="${r.id}"><dt>${r.label}</dt><dd>${number(r.current)}${r.free===r.current?'':` <span>→</span> <b>${number(r.free)}</b>`}${capacity(r)}${r.free>r.current?`<em>+${number(r.free-r.current)} FREE</em>`:''}</dd></div>`).join('');
+  return `<section class="panel shop-panel screen-enter"><div class="supply-hero">${icon(healing?'medkit':'armory','supply-emblem')}${tag(`RECOVERY STATION / SECTOR ${serial(game.node.depth+1)}`)}<h2>${healing?'Infirmary':'Supply cache'}</h2><p class="panel-intro">Your standard allocation is free.</p>${changed.length?`<dl class="allocation-ledger" aria-label="Current resources and free allocation">${ledger(changed)}</dl>`:'<p class="allocation-full">Free allocation: resources already full.</p>'}${unchanged.length?`<details class="unchanged-stock"><summary>Current stock · ${unchanged.length} unchanged</summary><dl class="allocation-ledger" aria-label="Unchanged current stock">${ledger(unchanged)}</dl></details>`:''}<button id="claim" class="primary">Collect free allocation ${arrow()}</button><span class="supply-label">CURRENT → AFTER FREE ALLOCATION</span></div>
     <div class="service-shop"><div class="shop-heading">${tag('OPTIONAL REQUISITION')}<h3>Take what you need.</h3><span class="credit-balance" role="status">${icon('credits')} <b>${preview.credits}</b> credits available</span><p>Each preview includes the free allocation. Choose one service, or collect free supplies.</p></div>${services}</div></section>`;
 }
 

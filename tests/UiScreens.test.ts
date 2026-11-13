@@ -562,9 +562,12 @@ test('unaffordable service rows explain the missing credits without fading their
   try {
     await page.evaluate(()=>{(window as any).ui.game.combat.snapshot.credits=20;});
     await phase(page,'reward',3);
-    expect(await page.locator('#service-heal-reason').innerText()).toContain('Need 80 more credits');
-    expect(await page.locator('#service-heal-reason').innerText()).toContain('Capped after free allocation');
-    expect(await page.locator('.service-outcome').first().innerText()).toContain('Health 100 → 100 / 100');
+    expect(await page.locator('#service-heal-reason').innerText()).toBe('No benefit — already full after free allocation');
+    expect(await page.locator('[data-purchase=heal]').getAttribute('class')).toBe('service-capped');
+    expect(await page.locator('[data-purchase=heal] .service-outcome').count()).toBe(0);
+    expect(await page.locator('#service-armor-reason').innerText()).toContain('Need 70 more credits');
+    expect(await page.locator('[data-purchase=armor]').getAttribute('data-availability')).toBe('credits');
+    expect(await page.locator('.shop-panel').innerText()).not.toContain('100,000');
     expect(await page.locator('[data-purchase=heal]').isDisabled()).toBe(true);
     expect(await page.locator('[data-purchase=heal]').evaluate(node=>getComputedStyle(node).opacity)).toBe('1');
     await page.evaluate(()=>{const ui=(window as any).ui;ui.game.combat.snapshot.health=62;ui.game.combat.snapshot.credits=180;ui.screens.syncScreen();});

@@ -581,3 +581,16 @@
 /* The augment path and MODIFIES row already explain identity; omit the
    repeated rig/family sentence beneath its set badge. */
 #overlay .choice-card[data-augment=true] .boon-hint {display:none;}
+
+/* A full service is a compact receipt, while a useful unaffordable purchase
+   keeps its preview and a separate credit-shortfall treatment. */
+#overlay .service-capped,#overlay .service-capped:disabled {display:flex;align-items:center;gap:10px;min-height:0;padding:8px 0;background:transparent;border:0;border-top:1px solid #9fe8ff26;text-align:left;opacity:1;color:#bdd3dc;}
+#overlay .service-capped>.icon {width:18px;height:18px;flex-shrink:0;color:#b7d8ce;}
+#overlay .service-capped b {display:block;font-size:12px;}
+#overlay .service-capped small {display:block;font-size:11px;color:#bdd3dc;}
+#overlay .service-card[data-availability=credits] {border-left:3px solid #ffd27a;background:#242921;}
+#overlay .service-card[data-availability=credits] small[id] {color:#ffe0a4;}
+#overlay .unchanged-stock {width:100%;margin:0 0 14px;color:#b9ced8;font-size:12px;}
+#overlay .unchanged-stock>summary {cursor:pointer;padding:9px 0;}
+#overlay .unchanged-stock .allocation-ledger {margin:6px 0;}
+#overlay .allocation-full {font-size:13px;color:#bfd5dc;}
