@@ -752,3 +752,11 @@ After final capture, `node scripts/nextgen/v6-evidence.mjs <before-dir> <final-d
 checks 40 sheets / 280 clock-matched pairs, hashes the actual PNGs and emits an
 absolute-path native/480 evidence index under `artifacts/nextgen/v6/` without
 starting a browser. It cannot certify temporal motion or hardware performance.
+
+`v6-open-whiteout-<room>` and `v6-open-overclock-<room>` inspect a native
+ultimate at the legal interior mark with greatest room-boundary clearance,
+using bright `containment-annulus` or dark `infested-workshop`. They supplement
+the unchanged edge-lane V2 timelines: cleared initial enemies (native reinforcements may appear), invulnerable marine, explicit
+atlas readiness wait, 650ms after native activation, fatal new-program guard.
+They are staged silhouette inspections, not combat, population or timing proof.
+The selected native mark and boundary clearance are retained in g4DangerProof.

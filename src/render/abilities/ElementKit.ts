@@ -148,7 +148,7 @@ export class ElementKit {
         this.low = tier === 'low';
         this.batches.flame.maxCoverage = this.low ? .16 : .30;
         this.batches.smoke.maxCoverage = this.low ? .10 : .18;
-        this.batches.decal.maxCoverage = this.low ? .14 : .24;
+        this.batches.decal.maxCoverage = this.low ? .14 : .28;
         this.ribbons.low = this.low;
         this.reducedMotion = reducedMotion;
         this.flashIntensity = options.flashIntensity * (reducedMotion ? .5 : 1);

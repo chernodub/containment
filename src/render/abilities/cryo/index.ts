@@ -252,15 +252,15 @@ class CryoPresentation implements AbilityPresentation {
       const a = i * TAU / wisps + Math.sin(time * .65 + seed) * .085;
       const upwind = Math.max(0, -(Math.cos(a) * wx + Math.sin(a) * wz));
       const halfWidth = Math.min(radius * .26, (k.low ? 1.8 : 1.4) + variation * .4);
-      const halfHeight = Math.min(radius * .1, k.low
-        ? .4 + variation * .05 + upwind * .1
-        : .6 + variation * .1 + upwind * .2);
+      const halfHeight = Math.min(radius * .16, k.low
+        ? .5 + variation * .05 + upwind * .1
+        : .9 + variation * .25 + upwind * .25);
       // Account for the actual tilted rectangle, including its vertical axis's
       // horizontal component. Every card and its wind drift stays in the hit disc.
       const tilt = k.low ? -.15 : -.24;
-      const horizontalSupport = halfWidth * Math.cos(tilt) + halfHeight * Math.abs(Math.sin(tilt));
+      const horizontalSupport = Math.hypot(halfWidth, halfHeight);
       const verticalSupport = halfWidth * Math.abs(Math.sin(tilt)) + halfHeight * Math.cos(tilt);
-      const r = Math.max(0, radius - horizontalSupport - (k.low ? .85 : .22));
+      const r = Math.max(0, radius - horizontalSupport - (k.low ? .55 : .22));
       const drift = k.reducedMotion ? 0 : Math.sin(time * 1.7 + seed) * .15;
       const px = x + Math.cos(a) * r + wx * drift;
       const pz = z + Math.sin(a) * r + wz * drift;

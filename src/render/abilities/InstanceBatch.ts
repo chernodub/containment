@@ -31,7 +31,7 @@ export class InstanceBatch {
   private view?: T.Vector3;
   private camera?: T.Camera;
   private coverage = 0;
-  /** Sum of projected card rectangles, including hidden overlap: a conservative fill cap. */
+  /** Sum of projected card rectangle estimates, including hidden overlap: a bounded fill cap. */
   maxCoverage = .42;
 
 
@@ -309,6 +309,16 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
       matrix[offset + 6] = s * b * sy;
       matrix[offset + 9] = 0;
       matrix[offset + 10] = c * sz;
+    }
+    // Vapor and light use spherical billboards. Yaw-only cards collapse into
+    // floor-like ribbons under the steep gameplay camera; fire remains upright.
+    if (this.camera && (billboardDecal || this.kind === 'smoke' || this.kind === 'spark')) {
+      const cameraBasis = this.camera.matrixWorld.elements;
+      for (let axis = 0; axis < 3; axis++) {
+        matrix[offset + axis] = (cameraBasis[axis] * a + cameraBasis[4 + axis] * b) * sx;
+        matrix[offset + 4 + axis] = (-cameraBasis[axis] * b + cameraBasis[4 + axis] * a) * sy;
+        matrix[offset + 8 + axis] = cameraBasis[8 + axis] * sz;
+      }
     }
     matrix[offset + 3] = matrix[offset + 7] = matrix[offset + 11] = 0;
     matrix[offset + 12] = x; matrix[offset + 13] = y; matrix[offset + 14] = z; matrix[offset + 15] = 1;

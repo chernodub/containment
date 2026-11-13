@@ -295,11 +295,11 @@ describe('Cryo signatures', () => {
     for (const c of clouds) {
       expect(c[4]).toBeGreaterThanOrEqual(low ? 1.8 : 1.4);
       expect(c[4]).toBeLessThanOrEqual(low ? 2.2 : 1.8);
-      expect(c[5]).toBeGreaterThanOrEqual(low ? .4 : .6);
-      expect(c[5]).toBeLessThanOrEqual(low ? .55 : .9);
+      expect(c[5]).toBeGreaterThanOrEqual(low ? .5 : .9);
+      expect(c[5]).toBeLessThanOrEqual(low ? .65 : 1.4);
       expect(c[7]).toBeGreaterThanOrEqual(.85); expect(c[7]).toBeLessThanOrEqual(1);
       const vertical = c[4] * Math.abs(Math.sin(c[11])) + c[5] * Math.cos(c[11]);
-      const horizontal = c[4] * Math.cos(c[11]) + c[5] * Math.abs(Math.sin(c[11]));
+      const horizontal = Math.hypot(c[4], c[5]);
       expect(c[2] - vertical).toBeGreaterThanOrEqual(.034999);
       const distance = Math.hypot(c[1] - 10, c[3] - 10);
       expect(distance - horizontal).toBeGreaterThan(4);
