@@ -211,6 +211,17 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
             const material = zone.ability === 'meltdown' ? this.auraMaterial : this.zoneMaterials[zone.element === 'kinetic' ? 'arc' : zone.element];
             slot.body.material = slot.start.material = slot.end.material = material;
             const x = zone.x / UNIT, z = zone.y / UNIT;
+            this.footprints.setColdDominance();
+            if (zone.element === 'cryo' && zone.ability !== 'whiteout') {
+                let dominantRadius = 0;
+                for (const other of snapshot!.zones) if (other.ability === 'whiteout' && other.remainingMs > 0 && other.radius > dominantRadius) {
+                    const reach = zone.shape === 'strip' ? Math.hypot(zone.x2 - zone.x, zone.y2 - zone.y) + zone.width * .5 : zone.radius;
+                    if (Math.hypot(zone.x - other.x, zone.y - other.y) < other.radius + reach) {
+                        dominantRadius = other.radius;
+                        this.footprints.setColdDominance(other.x / UNIT, other.y / UNIT, other.radius / UNIT);
+                    }
+                }
+            }
             if (zone.shape === 'circle') {
                 slot.start.position.set(x, .04, z);
                 slot.start.scale.set(zone.radius / UNIT, zone.radius / UNIT, 1);
@@ -228,11 +239,11 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
                 slot.start.scale.set(radius, radius, 1);
                 slot.end.scale.copy(slot.start.scale);
                 slot.start.visible = slot.end.visible = true;
-                this.lineFootprint(x, z, length, radius * 2, angle, COLORS[zone.element]);
-                this.circleFootprint(x, z, radius, COLORS[zone.element]);
-                this.circleFootprint(ex, ez, radius, COLORS[zone.element]);
+                this.footprints.priorityWeight = 1;
+                this.footprints.addCapsule(x, z, length, radius * 2, angle, COLORS[zone.element], .22);
             }
         }
+        this.footprints.setColdDominance();
         if (this.ownsZonePresentation) for (const slot of this.zones) slot.body.visible = slot.start.visible = slot.end.visible = false;
         for (let i = 0; i < this.deployables.length; i++) {
             const slot = this.deployables[i], entity = snapshot?.deployables[i];

@@ -35,7 +35,7 @@ describe('V2 common marine and struck feedback', () => {
     const addTrauma = vi.fn(), punch = vi.fn(), kick = vi.fn();
     kit.bind({ lights: {} as never, distortion: {} as never, camera: { addTrauma, punch, kick } });
     fx.event(event(), 128, 128); update(snapshot(), .01);
-    expect(kit.batches.ghost.mesh.count).toBeGreaterThanOrEqual(7); expect(addTrauma).toHaveBeenCalledOnce(); expect(kick).toHaveBeenCalledOnce();
+    expect(kit.batches.ghost.mesh.count).toBe(1); expect(addTrauma).toHaveBeenCalledOnce(); expect(kick).toHaveBeenCalledOnce();
     update(snapshot(), .3); expect(kit.batches.ghost.mesh.count).toBe(0);
     kit.setOptions(GRAPHICS_PRESETS.high, 'high', true); fx.event(event(), 128, 128); update(snapshot(), .01);
     expect(kit.batches.ghost.mesh.count).toBe(0); expect(addTrauma).toHaveBeenCalledOnce();
@@ -76,7 +76,7 @@ describe('V2 common marine and struck feedback', () => {
     const { kit, fx, update, states, enemies } = fixture();
     enemies.push(enemy()); states.set(1, { frozen: true, burning: true, shocked: true, chilled: true });
     fx.event(event({ phase: 'impact', ability: 'seismic-slam', slot: 'tactical', targetIds: [1] }), 128, 128); update();
-    expect(kit.batches.shard.mesh.count).toBe(7); expect(kit.batches.flame.mesh.count).toBe(3); expect(kit.batches.spark.mesh.count).toBeGreaterThanOrEqual(5); expect(kit.ribbons.mesh.count).toBeGreaterThanOrEqual(12);
+    expect(kit.batches.shard.mesh.count).toBe(1); expect(kit.batches.flame.mesh.count).toBe(3); expect(kit.batches.spark.mesh.count).toBeGreaterThanOrEqual(5); expect(kit.ribbons.mesh.count).toBeGreaterThanOrEqual(12);
     states.clear(); enemies.length = 0; update(snapshot(), .5);
     expect(kit.batches.shard.mesh.count).toBe(0); expect(kit.batches.flame.mesh.count).toBe(0);
     fx.dispose(); kit.dispose();
@@ -89,7 +89,7 @@ describe('V2 common marine and struck feedback', () => {
     fx.event(event({ phase: 'impact', ability: 'cryo-nova', rig: 'cryo', element: 'cryo', targetIds: [-1] }), 128, 128);
     update(snapshot(), 0); expect(kit.batches.shard.mesh.count).toBe(0);
     queen.active = true; update(snapshot(), 0);
-    expect(kit.batches.shard.mesh.count).toBe(7); expect(burst).not.toHaveBeenCalled();
+    expect(kit.batches.shard.mesh.count).toBe(1); expect(burst).not.toHaveBeenCalled();
     for (const call of draw.mock.calls) {
       expect(Math.hypot(call[1] - queen.x / 32, call[3] - queen.y / 32)).toBeLessThanOrEqual(92 / 32);
     }
@@ -98,7 +98,7 @@ describe('V2 common marine and struck feedback', () => {
     expect(burst).toHaveBeenCalledWith(8, 4.5 * .45, 6, 'cryo', 7, 1.2, .3);
     update(snapshot(), .3); expect(kit.batches.shard.mesh.count).toBe(0);
     states.set(-1, { frozen: true, burning: true, shocked: true, chilled: true }); update();
-    expect(kit.batches.shard.mesh.count).toBe(7); expect(kit.batches.flame.mesh.count).toBe(3);
+    expect(kit.batches.shard.mesh.count).toBe(1); expect(kit.batches.flame.mesh.count).toBe(3);
     expect(kit.batches.spark.mesh.count).toBe(4);
     queen.defeated = true; update();
     expect(kit.batches.shard.mesh.count).toBe(0); expect(kit.batches.flame.mesh.count).toBe(0);
@@ -125,7 +125,7 @@ describe('V2 common marine and struck feedback', () => {
     for (let id = 1; id <= 44; id++) { enemies.push(enemy({ id })); states.set(id, frozen); }
     const geometry = kit.batches.shard.mesh.geometry, buffer = kit.batches.shard.mesh.instanceMatrix.array;
     update(snapshot(), 0);
-    const targets = tier === 'low' ? 24 : 40, shards = tier === 'low' ? 3 : 7;
+    const targets = tier === 'low' ? 24 : 40, shards = 1;
     expect(kit.batches.shard.mesh.count).toBe(targets * shards);
     // First shard belongs to the Queen; the crowd uses the remaining budget.
     const position = new T.Vector3(), matrix = new T.Matrix4(); kit.batches.shard.mesh.getMatrixAt(0, matrix); position.setFromMatrixPosition(matrix);

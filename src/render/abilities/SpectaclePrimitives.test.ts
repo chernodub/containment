@@ -56,17 +56,19 @@ describe('V3 shared spectacle', () => {
     k.begin(0); k.end(); expect(phase.getX(0)).toBeCloseTo(2.1);
     k.begin(1.1); k.fireFan(2, 3, 9, .7, 1.4, .8); k.end();
     expect(phase.getX(0)).toBe(2); expect(k.batches.decal.mesh.count).toBe(1);
-    expect(k.batches.flame.mesh.count).toBeGreaterThanOrEqual(16);
-    expect(k.batches.flame.mesh.count).toBeLessThan(48);
+    expect(k.batches.flame.mesh.count).toBe(5);
+    const widths = new Set<number>();
     expect(k.batches.flame.mesh.count).toBeLessThanOrEqual(k.batches.flame.capacity);
     for (let i = 0; i < k.batches.flame.mesh.count; i++) {
       k.batches.flame.mesh.getMatrixAt(i, m); scale.setFromMatrixScale(m); position.setFromMatrixPosition(m);
+      widths.add(Math.round(scale.x * 1000));
       const dx = position.x - 2, dz = position.z - 3;
       expect(Math.hypot(dx, dz)).toBeLessThan(9);
       expect(Math.abs(Math.atan2(dz, dx) - .7)).toBeLessThan(.7);
       expect(scale.y * 2).toBeGreaterThan(.5); expect(scale.y * 2).toBeLessThanOrEqual(9);
       expect(position.y).toBeGreaterThan(.15);
     }
+    expect(widths.size).toBeGreaterThan(2);
     expect(k.batches.decal.mesh.material).toBe(material);
     k.begin(0); k.end(); expect(k.batches.flame.mesh.count).toBe(0); k.dispose();
   });
@@ -80,6 +82,17 @@ describe('V3 shared spectacle', () => {
     k.batches.flame.mesh.getMatrixAt(1,m);expect(m.elements[4]).toBeGreaterThan(.1);k.dispose();
   });
 
+
+  it('keeps directed flame silhouettes seeded while their source moves and shares storm vapor with the decal draw', () => {
+    const k = new ElementKit(new T.Group()); k.begin(0);
+    k.directedFlame(1, 1, 2, .3, 1.4, .5, .7, 9); k.end();
+    const phase = k.batches.flame.mesh.geometry.getAttribute('abilityPhase').getX(0);
+    k.begin(0); k.directedFlame(7, 1, 9, .3, 1.4, .5, .7, 9); k.stormWisp(2, .7, 3, .6, .5, 4, .5); k.end();
+    expect(k.batches.flame.mesh.geometry.getAttribute('abilityPhase').getX(0)).toBe(phase);
+    expect(k.batches.decal.mesh.count).toBe(1); expect(k.batches.front.mesh.count).toBe(0);
+    const variant = k.batches.decal.mesh.geometry.getAttribute('abilityPhase').getX(0);
+    expect(variant).toBeGreaterThanOrEqual(12); expect(variant).toBeLessThan(13); k.dispose();
+  });
 
   it('bounds curved weather strokes without another mesh, texture or fullscreen layer', () => {
     const root = new T.Group(),k = new ElementKit(root),inventory=k.root.children.slice();k.begin(0);k.sustain();

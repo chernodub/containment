@@ -28,7 +28,7 @@ describe('ability instance streaming', () => {
     batch.end(); expect(batch.mesh.count).toBe(8); batch.dispose();
   });
 
-  it('streams grounded ice variants without changing default shards or adding a batch', () => {
+  it('streams seeded grounded fracture variants without adding a batch', () => {
     const root = new T.Group(), batch = new InstanceBatch(root, 'shard', 8);
     const phase = batch.mesh.geometry.getAttribute('abilityPhase');
     const geometry = batch.mesh.geometry, material = batch.mesh.material;

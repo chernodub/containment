@@ -1,7 +1,9 @@
+import { Vector3, type Object3D } from 'three';
 import type { AbilityEvent, AbilityZoneSnapshot } from '../../../game/abilities/contract';
 import { ABILITY_CATALOG } from '../../../game/abilities/catalog';
 import type { ElementKit } from '../ElementKit';
 import { UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
+import { impactBeat } from '../GraphicLanguage';
 
 const FIRE = 0xff7a2e;
 const CORE = 0xffedb5;
@@ -41,6 +43,8 @@ class PyroPresentation implements AbilityPresentation {
   private printCursor = 0;
   private printClock = 0;
   private disposed = false;
+  private muzzle?: Object3D;
+  private readonly source = new Vector3();
 
   constructor(private readonly kit: ElementKit) {}
 
@@ -112,7 +116,7 @@ class PyroPresentation implements AbilityPresentation {
     if (event.ability === 'meltdown') {
       if (event.phase === 'impact' || event.phase === 'burst') {
         const radius = (event.radius ?? 130) / UNIT;
-        const p = this.acquire('ignition', x, z, event.phase === 'burst' ? .38 : .65); p.radius = radius;
+        const p = this.acquire('ignition', x, z, event.phase === 'burst' ? .38 : .65); p.radius = radius; p.angle = event.angle ?? 0;
         kit.burst(x, .35, z, 'pyro', event.phase === 'burst' ? 12 : 20, 3, .65);
         // The authoritative aura boundary is shared; the suit itself is the heat source.
         kit.flash(x, z, FIRE, event.phase === 'burst' ? 5 : 14, 6, event.phase === 'burst' ? 3 : 6, .25);
@@ -142,7 +146,7 @@ class PyroPresentation implements AbilityPresentation {
       if (!p.live) continue;
       p.age += dt;
       if (p.age >= p.life) { p.live = false; continue; }
-      if (p.kind === 'cone') this.cone(p, emit);
+      if (p.kind === 'cone') this.cone(p, emit, frame);
       else if (p.kind === 'lob') this.lob(p, emit);
       else if (p.kind === 'exhaust') this.exhaust(p, frame, emit);
       else this.ignition(p);
@@ -164,8 +168,8 @@ class PyroPresentation implements AbilityPresentation {
       if (print.age >= 1.5) { print.live = false; continue; }
       const fade = 1 - print.age / 1.5;
       kit.sustain();
-      kit.draw('solid', print.x, .035, print.z, .56, .018, .22, 0x57240d, fade * .65, -print.angle);
-      kit.directedFlame(print.x, .04, print.z, .18, .32, print.angle + Math.PI, .8, print.angle + print.x, fade * .48);
+      kit.draw('decal', print.x, .035, print.z, .52, .19, 1, 0x57240d, fade * .65, 0, -print.angle, 9);
+      kit.directedFlame(print.x, .04, print.z, .20, .42, print.angle + Math.PI, .8, print.angle + print.x, fade * .48);
     }
     if (!frame.snapshot) { kit.impact(); return; }
     for (const zone of frame.snapshot.zones) {
@@ -188,13 +192,17 @@ class PyroPresentation implements AbilityPresentation {
     kit.impact();
   }
 
-  private cone(p: Transient, emit: boolean): void {
+  private cone(p: Transient, emit: boolean, frame: AbilityFrame): void {
     const kit = this.kit, grow = Math.min(1, .6 + p.age / .05);
-    const fade = Math.max(0, 1 - Math.max(0, p.age - .35) / .37);
-    kit.sustain(p.age);
-    kit.fireFan(p.x, p.z, p.range * grow, p.angle, p.arc, fade * .85);
+    const fade = Math.max(0, 1 - Math.max(0, p.age - .09) / .28), hot = impactBeat(p.age);
+    const c = Math.cos(p.angle), s = Math.sin(p.angle);
+    if (!this.muzzle || !this.visibleSocket(this.muzzle, frame.marine)) this.muzzle = frame.marine ? this.findMuzzle(frame.marine) : undefined;
+    if (this.muzzle) { frame.marine?.updateWorldMatrix(true, false); this.muzzle.getWorldPosition(this.source); }
+    else this.source.set(p.x + c * .3, .95, p.z + s * .3);
+    kit.sustain(p.age + .20);
+    kit.fireFan(p.x, p.z, p.range * grow, p.angle, p.arc, fade * .85, this.source.y, this.source.x, this.source.z);
     kit.lightAt(p.lightId, p.x + Math.cos(p.angle) * p.range * .34,
-      p.z + Math.sin(p.angle) * p.range * .34, FIRE, 28 * fade, Math.max(8, p.range * 1.1));
+      p.z + Math.sin(p.angle) * p.range * .34, FIRE, (12 + 16 * hot) * fade, Math.max(8, p.range * 1.1));
     // Range curls are downstream, above the jet rather than a wall of ground flames.
     for (let i = 0; i < (kit.low ? 0 : 5); i++) {
       const seed = i * 2.731 + .71, a = p.angle + Math.sin(seed * 3.17) * p.arc * .36;
@@ -205,15 +213,31 @@ class PyroPresentation implements AbilityPresentation {
     }
     // Hot nozzle is attached to the discharge point, with a thin velocity-stretched core.
     kit.impact();
-    const c = Math.cos(p.angle), s = Math.sin(p.angle);
-    kit.flowFlame(p.x + c * .3, .95, p.z + s * .3,
-      p.x + c * 1.8, .95, p.z + s * 1.8, .2, 7, fade * .94, true);
+    kit.flowFlame(this.source.x, this.source.y, this.source.z,
+      this.muzzle ? this.source.x + c * 1.05 : p.x + c * 1.8, this.source.y,
+      this.muzzle ? this.source.z + s * 1.05 : p.z + s * 1.8,
+      .14 + hot * .055, 7, fade * .96, true);
     if (emit && !kit.low) {
       const a = p.angle + Math.sin(p.age * 43) * p.arc * .3, r = p.range * grow * .82;
       kit.mote('smoke', p.x + Math.cos(a) * r, .8, p.z + Math.sin(a) * r,
         Math.cos(a) * 1.5, .55, Math.sin(a) * 1.5, .5, .8, SOOT);
       kit.mote('spark', p.x + c, .65, p.z + s, c * 7, .3, s * 7, .035, .6, CORE);
     }
+  }
+
+  private visibleSocket(socket: Object3D, root?: Object3D): boolean {
+    for (let node: Object3D | null = socket; node; node = node.parent) {
+      if (!node.visible) return false;
+      if (node === root) return true;
+    }
+    return false;
+  }
+
+  private findMuzzle(node: Object3D): Object3D | undefined {
+    if (!node.visible) return undefined;
+    if (node.name === 'muzzle') return node;
+    for (const child of node.children) { const socket = this.findMuzzle(child); if (socket) return socket; }
+    return undefined;
   }
 
   private lob(p: Transient, emit: boolean): void {
@@ -279,8 +303,12 @@ class PyroPresentation implements AbilityPresentation {
     } else {
       // Meltdown activation vents upward at the backpack; no radial carpet of fires.
       kit.impact();
-      for (let side = -1; side <= 1; side += 2)
-        kit.directedFlame(p.x + side * .28, .75, p.z, .22, 1.4 * fade, side, .55, side, fade * .85, true);
+      for (let i = 0; i < (kit.low ? 2 : 3); i++) {
+        const side = i - 1, hot = impactBeat(p.age);
+        kit.directedFlame(p.x - Math.cos(p.angle) * .22 - Math.sin(p.angle) * side * .37, .9,
+          p.z - Math.sin(p.angle) * .22 + Math.cos(p.angle) * side * .37, .27 + hot * .12,
+          (1.8 + hot * .8 - i * .17) * fade, side, .35, i * 2.73, fade * .96, true);
+      }
     }
   }
 
@@ -288,7 +316,7 @@ class PyroPresentation implements AbilityPresentation {
     const kit = this.kit, x = zone.x / UNIT, z = zone.y / UNIT, ex = zone.x2 / UNIT, ez = zone.y2 / UNIT;
     const angle = Math.atan2(ez - z, ex - x), radius = zone.width / UNIT * .5;
     const c = Math.cos(angle), s = Math.sin(angle), length = Math.hypot(ex - x, ez - z);
-    const fade = Math.min(1, zone.remainingMs / 350), points = Math.min(kit.low ? 8 : 14, Math.max(4, Math.ceil(length / .55)));
+    const fade = Math.min(1, zone.remainingMs / 350), points = Math.min(kit.low ? 5 : 8, Math.max(4, Math.ceil(length / .85)));
     kit.sustain((zone.durationMs - zone.remainingMs) / 1000);
     kit.draw('decal', (x + ex) * .5, .045, (z + ez) * .5, length * .5, radius * .42, 1, FIRE, .68 * fade, 0, -angle, 9);
     for (let i = 0; i <= points; i++) {
@@ -297,7 +325,7 @@ class PyroPresentation implements AbilityPresentation {
       const px = x + (ex - x) * t - s * lateral, pz = z + (ez - z) * t + c * lateral;
       // Short flames are swept by dash momentum over one continuous glossy fuel stroke.
       kit.directedFlame(px, .045, pz, .16 + variation * .08,
-        (.32 + variation * .26) * fade, angle, 1.5, i * 1.73 + zone.id, (.6 + variation * .14) * fade, i % 7 === 0);
+        (.25 + variation * .30) * fade, angle, 1.5, i * 1.73 + zone.id, (.6 + variation * .14) * fade, i % 7 === 0);
     }
     kit.lightAt(zone.id, (x + ex) * .5, (z + ez) * .5, FIRE, 4 * fade, 4);
     if (emit) {
@@ -352,15 +380,22 @@ class PyroPresentation implements AbilityPresentation {
     kit.impact();
     for (let side = -1; side <= 1; side += 2) {
       const bx = x - c * .3 - s * side * .4, bz = z - s * .3 + c * side * .4;
-      kit.draw('solid', bx, 1.1, bz, .11, .8, .11, CORE, (.9 + pulse * .1) * fade);
+      kit.draw('solid', bx, 1.36, bz, .28, .22, .34, 0xd95b16, (.9 + pulse * .1) * fade, -angle);
       kit.draw('spark', bx, side < 0 ? 1.4 : 1.3, bz, .15, .17, 1, CORE, .96 * fade);
-      const height = side < 0 ? .55 : .5, base = side < 0 ? 1.4 : 1.3;
-      kit.directedFlame(bx, base, bz, side < 0 ? .32 : .3, height * (.95 + pulse * .05),
-        exhaustAngle, moving ? 1.7 : 1.05, side + zone.id, .9 * fade, true);
-      if (!kit.low) kit.directedFlame(bx - c * .18, 1.08, bz - s * .18, .27, .55,
-        exhaustAngle, 1.45, side * 2.7, .78 * fade);
+      const height = side < 0 ? 1.35 : 1.05, base = side < 0 ? 1.18 : 1.25;
+      kit.directedFlame(bx, base, bz, side < 0 ? .37 : .32, height * (.95 + pulse * .05),
+        exhaustAngle, moving ? 1.1 : .5, side + zone.id, .9 * fade, true);
+      if (!kit.low) kit.directedFlame(bx - c * .18, 1.08, bz - s * .18, .25, 1.5,
+        exhaustAngle, .65, side * 2.7, .78 * fade);
     }
-    kit.draw('solid', x - c * .3, 1.34, z - s * .3, .12, .12, .8, CORE, .98 * fade, -angle);
+    kit.draw('solid', x - c * .3, 1.12, z - s * .3, .22, .55, .36, 0xb9450e, .94 * fade, -angle);
+    // Short heated armor seams describe shoulders, chest and weapon, leaving the helmet open.
+    for (let side = -1; side <= 1; side += 2) {
+      kit.ribbon(x + c * .08 - s * side * .25, 1.25, z + s * .08 + c * side * .25,
+        x + c * .18 - s * side * .14, 1.02, z + s * .18 + c * side * .14, HOT, .035, .9 * fade, false);
+      kit.ribbon(x - c * .15 - s * side * .34, 1.5, z - s * .15 + c * side * .34,
+        x + c * .04 - s * side * .29, 1.42, z + s * .04 + c * side * .29, CORE, .025, .84 * fade, false);
+    }
     kit.grade(.65 * fade);
     kit.lightAt(zone.id, x, z, FIRE, 5 * fade, 6);
     if (emit) {
@@ -374,7 +409,7 @@ class PyroPresentation implements AbilityPresentation {
   clear(): void {
     for (const p of this.effects) p.live = false;
     for (const print of this.prints) print.live = false;
-    this.next = 0; this.emission = 0; this.shimmer = 0; this.printCursor = 0; this.printClock = 0;
+    this.next = 0; this.emission = 0; this.shimmer = 0; this.printCursor = 0; this.printClock = 0; this.muzzle = undefined;
   }
 
   dispose(): void {

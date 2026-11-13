@@ -49,19 +49,30 @@ describe('authoritative ability geometry bridge', () => {
     fx.dispose();
   });
 
-  it('matches strip capsules, including endpoint discs and the zero-length case', () => {
+  it('matches an exact single-boundary strip capsule, including rounded endpoints and zero length', () => {
     const fx = new AbilityGeometry(new T.Scene()), p = probe(fx);
     fx.update(snapshot({ zones: [zone({ shape: 'strip', attached: false, radius: 0 })] }), 0);
     const slot = p.zones[0];
     expect(slot.body.scale.toArray()).toEqual([2.5, .5, 1]);
     expect(slot.body.position.toArray()).toEqual([4.5, .04, 3]);
     expect(slot.start.position.x).toBe(2); expect(slot.end.position.x).toBe(7);
-    expect(slot.start.scale.x).toBe(.5); expect(p.footprints.mesh.count).toBe(3);
+    expect(slot.start.scale.x).toBe(.5); expect(p.footprints.mesh.count).toBe(1);
+    const boundary = transform(p.footprints.mesh);
+    expect(boundary.position.x).toBeCloseTo(4.5); expect(boundary.position.y).toBeCloseTo(.035); expect(boundary.position.z).toBeCloseTo(3);
+    expect(boundary.scale.x).toBeCloseTo(3); expect(boundary.scale.y).toBeCloseTo(.5);
+    expect(p.footprints.mesh.geometry.getAttribute('boundaryCapsule').getX(0)).toBeCloseTo(1 / 6);
+    // Rounded support reaches the same outer endpoints as the original two end discs.
+    expect(boundary.position.x - boundary.scale.x).toBeCloseTo(1.5);
+    expect(boundary.position.x + boundary.scale.x).toBeCloseTo(7.5);
     // Rectangle UVs stay within the exported material's disc, preserving flat sides.
     const uv = slot.body.geometry.getAttribute('uv');
     for (let i = 0; i < uv.count; i++) expect(Math.hypot(uv.getX(i) * 2 - 1, uv.getY(i) * 2 - 1)).toBeLessThan(1);
     fx.update(snapshot({ zones: [zone({ shape: 'strip', x2: 64, y2: 96 })] }), 0);
     expect(slot.body.visible).toBe(false); expect(slot.start.visible).toBe(true);
+    expect(p.footprints.mesh.count).toBe(1);
+    expect(transform(p.footprints.mesh).position.x).toBeCloseTo(2);
+    expect(transform(p.footprints.mesh).scale.x).toBeCloseTo(.5);
+    expect(p.footprints.mesh.geometry.getAttribute('boundaryCapsule').getX(0)).toBe(1);
     fx.dispose();
   });
 

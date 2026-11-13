@@ -97,9 +97,8 @@ class SystemPresentation implements AbilityPresentation {
     if (p) {
       const x = p.x / UNIT, z = p.y / UNIT;
       const color = snapshot?.rig ? ELEMENT_COLORS[RIG_ELEMENTS[snapshot.rig]] : FRIENDLY;
-      const overclock = snapshot?.rig === 'arc' && snapshot.overdrive.active;
       const electricalDash = snapshot?.rig === 'arc' && snapshot.dashing;
-      const trailing = !electricalDash && (snapshot?.dashing || this.dashTime > .07 || overclock);
+      const trailing = !electricalDash && (snapshot?.dashing || this.dashTime > .07);
       this.ghostClock -= dt;
       if (trailing && dt > 0 && this.ghostClock <= 0 && !k.reducedMotion) {
         this.ghost(x, z, p.angle, color, snapshot?.dashing ? .22 : .06);
@@ -221,13 +220,8 @@ class SystemPresentation implements AbilityPresentation {
   }
 
   private frozenShell(x: number, z: number, radius: number, height: number, seed: number, flash: number): void {
-    const k = this.kit, count = k.low ? 2 : 5;
-    k.iceShell(x, z, radius, height, .1 + flash * .16);
-    for (let i = 0; i < count; i++) {
-      const a = i * Math.PI * 2 / count + seed * .73;
-      k.draw('shard', x + Math.cos(a) * radius * .76, height * (.38 + i % 3 * .16), z + Math.sin(a) * radius * .76,
-        radius * .16, height * (.2 + i % 3 * .035), radius * .18, i % 3 ? ELEMENT_COLORS.cryo : WHITE, (.21 + flash * .24) * (.5 + .5 * k.flashIntensity), a, .22);
-    }
+    // One shell preserves family silhouette and avoids statues built from stacked crystals.
+    this.kit.iceShell(x, z, radius, height, .13 + flash * .12);
   }
 
   /** Frost accretes from the feet to the shoulders as authoritative chill stacks rise. */

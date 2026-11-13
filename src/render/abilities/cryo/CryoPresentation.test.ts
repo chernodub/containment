@@ -10,7 +10,7 @@ function recordingKit() {
     time: 1, low: false, reducedMotion: false, flashIntensity: 1,
     draw: vi.fn(), mote: vi.fn(), burst: vi.fn(), ring: vi.fn(), outline: vi.fn(), beam: vi.fn(),
     ribbon: vi.fn(), decal: vi.fn(), flash: vi.fn(), distort: vi.fn(), camera: vi.fn(), lightAt: vi.fn(),
-    sustain: vi.fn(), impact: vi.fn(), gust: vi.fn(), frostFilm: vi.fn(), front: vi.fn(), scar: vi.fn(), debris: vi.fn(), iceColumn: vi.fn(),
+    sustain: vi.fn(), impact: vi.fn(), stormWisp: vi.fn(), gust: vi.fn(), frostFilm: vi.fn(), front: vi.fn(), scar: vi.fn(), debris: vi.fn(), iceColumn: vi.fn(),
   };
 }
 const snapshot = (extra: Partial<AbilitiesSnapshot> = {}): AbilitiesSnapshot => ({
@@ -94,20 +94,22 @@ describe('Cryo signatures', () => {
     }
     expect(kit.draw.mock.calls.filter(c => c[0] === 'shard').map(c => c[8])).toEqual(freshSnow);
     expect(kit.front).not.toHaveBeenCalled();
+    expect(kit.stormWisp).toHaveBeenCalledTimes(32);
   });
 
-  it('builds irregular overlapping Glacier facets with no backing slab inside the blocking strip', () => {
+  it('interlocks three unequal Glacier crowns with a fractured waist inside the exact blocking strip', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     for (const angle of [0, Math.PI / 2, .67]) {
       kit.draw.mockClear();
       fx.update(frame({ deployables: [wall({ angle })] }, 0));
       const facets = kit.draw.mock.calls;
-      expect(facets.length).toBeGreaterThan(20);
-      expect(facets.length).toBeLessThanOrEqual(36);
+      expect(facets.length).toBe(6);
+      expect(facets.filter(c => c[6] === 200 / 32 / 2)).toHaveLength(1);
       expect(facets.every(c => c[0] === 'shard')).toBe(true);
       const heights = new Set(facets.map(c => Number(c[5].toFixed(3))));
       const yaws = new Set(facets.map(c => Number(c[9].toFixed(3))));
-      expect(heights.size).toBeGreaterThan(12); expect(yaws.size).toBeGreaterThan(6);
+      expect(heights.size).toBeGreaterThan(5); expect(yaws.size).toBeGreaterThan(3);
+      expect(new Set(facets.map(c => c[6].toFixed(3))).size).toBeGreaterThan(3);
       for (const c of facets) {
         const dx = c[1] - 10, dz = c[3] - 10;
         const lateral = dx * Math.cos(angle) + dz * Math.sin(angle);
@@ -211,25 +213,25 @@ describe('Cryo signatures', () => {
     expect(kit.ring).toHaveBeenCalledTimes(2);
   });
 
-  it('shatters Glacier into dozens of pooled tumbling shards and persistent full-radius frost', () => {
+  it('shatters Glacier into fewer large pooled fracture masses and persistent full-radius frost', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     fx.event(receipt({ ability: 'glacier', phase: 'burst', radius: 180 }), 64, 96);
-    expect(kit.debris).toHaveBeenCalledWith(2, 3, 180 / 32, 'cryo', 48);
+    expect(kit.debris).toHaveBeenCalledWith(2, 3, 180 / 32, 'cryo', 18);
     expect(kit.scar).toHaveBeenCalledWith('frost', 2, 3, 180 / 32, 0x7fd6ff, 7);
     fx.update(frame({}, .15));
     expect(kit.front).not.toHaveBeenCalled();
     expect(kit.ring).toHaveBeenCalledWith(2, 3, 180 / 32, 0xe8fbff, .5);
   });
 
-  it('circulates directional snow and three sparse ground-mist arms around a clear marine eye', () => {
+  it('circulates sparse snow and short gusts along one perimeter storm wall with a calm eye', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     const f = frame({ zones: [zone()] }, 0);
     f.game = { geometry: { blockers: [{ x: 480, y: 300, width: 40, height: 40 }, { x: 900, y: 900, width: 40, height: 40 }] } } as never;
     fx.update(f);
     const shards = kit.draw.mock.calls.filter(c => c[0] === 'shard');
-    expect(shards.length).toBeGreaterThanOrEqual(48); expect(shards.length).toBeLessThan(65);
-    const snow = shards.slice(0, 48);
-    expect(snow.filter(c => c[6] > .2).length).toBeGreaterThan(12);
+    expect(shards.length).toBe(24);
+    const snow = shards.slice(0, 24);
+    expect(snow.filter(c => c[6] > .2).length).toBeGreaterThan(6);
     expect(snow.every(c => c[4] >= .028 && c[8] >= .4)).toBe(true);
     for (const c of kit.draw.mock.calls) {
       const distance = Math.hypot(c[1] - 10, c[3] - 10);
@@ -239,10 +241,11 @@ describe('Cryo signatures', () => {
       expect(c[8]).toBeLessThanOrEqual(.58);
     }
     const gusts = kit.gust.mock.calls;
-    expect(gusts).toHaveLength(15);
+    expect(gusts).toHaveLength(6);
     const radii = gusts.map(c => Math.hypot(c[0] - 10, c[1] - 10));
-    expect(Math.max(...radii) - Math.min(...radii)).toBeGreaterThan(4);
-    expect(new Set(gusts.map(c => c[2].toFixed(2))).size).toBeGreaterThan(8);
+    expect(Math.min(...radii)).toBeGreaterThan(300 / 32 * .8);
+    expect(Math.max(...radii) - Math.min(...radii)).toBeGreaterThan(.1);
+    expect(new Set(gusts.map(c => c[2].toFixed(2))).size).toBeGreaterThan(3);
     let supportArea = 0;
     for (const c of gusts) {
       const dx = c[0] - 10, dz = c[1] - 10, cosine = Math.cos(c[4]), sine = Math.sin(c[4]);
@@ -257,11 +260,7 @@ describe('Cryo signatures', () => {
       supportArea += c[2] * c[3];
     }
     expect(supportArea).toBeLessThan(Math.PI * (300 / 32) ** 2 * .24);
-    for (let arm = 0; arm < 3; arm++) for (let i = 0; i < 4; i++) {
-      const first = gusts[arm * 5 + i], second = gusts[arm * 5 + i + 1];
-      const separation = Math.hypot(first[0] - second[0], first[1] - second[1]);
-      expect((first[2] + second[2]) / 2).toBeGreaterThan(separation);
-    }
+    expect(kit.stormWisp).toHaveBeenCalledTimes(16);
     // All spiral markers were replaced; only short authored-prop frost seams remain.
     for (const c of kit.ribbon.mock.calls) expect(Math.hypot(c[3] - c[0], c[5] - c[2])).toBeLessThanOrEqual(.350001);
     const positions = shards.map(c => [c[1], c[3], c[9]]), gustAngle = gusts[0][4];
@@ -269,16 +268,17 @@ describe('Cryo signatures', () => {
     fx.update(frame({ zones: [zone({ remainingMs: 6500 })] }, 0));
     expect(kit.draw.mock.calls.filter(c => c[0] === 'shard').map(c => [c[1], c[3], c[9]])).not.toEqual(positions);
     expect(kit.gust.mock.calls[0][4] - gustAngle).toBeCloseTo(.12);
-    expect(Math.abs(kit.gust.mock.calls[5][4] - kit.gust.mock.calls[0][4] - Math.PI * 2 / 3)).toBeLessThan(.12);
+    expect(kit.gust.mock.calls).toHaveLength(6);
     expect(kit.front).not.toHaveBeenCalled();
   });
 
-  it('reserves thick shock fronts for Nova and never emits them for any Whiteout phase or pulse', () => {
+  it('reserves expanding impact fronts for Nova and holds Whiteout at its exact storm perimeter', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     for (const phase of ['impact', 'burst', 'end'] as const) fx.event(receipt({ ability: 'whiteout', phase, radius: 300 }), 320, 320);
     fx.update(frame({ zones: [zone({ remainingMs: 5990 })] }, .1));
     fx.update(frame({}, .1));
     expect(kit.front).not.toHaveBeenCalled();
+    expect(kit.stormWisp).toHaveBeenCalledTimes(16);
     expect(kit.ring).toHaveBeenCalledTimes(4);
     fx.event(receipt({ radius: 210 }), 320, 320); fx.update(frame({}, .1));
     expect(kit.front).toHaveBeenCalled();
@@ -288,12 +288,13 @@ describe('Cryo signatures', () => {
     const high = recordingKit(), low = recordingKit(); low.low = true;
     createCryoPresentation(high as unknown as ElementKit).update(frame({ zones: [zone()], deployables: [wall({ health: 80 })] }));
     createCryoPresentation(low as unknown as ElementKit).update(frame({ zones: [zone()], deployables: [wall({ health: 80 })] }));
-    expect(low.draw.mock.calls.length).toBeGreaterThan(20);
-    expect(low.draw.mock.calls.length).toBeLessThan(high.draw.mock.calls.length / 2);
+    expect(low.draw.mock.calls.length).toBe(16);
+    expect(low.draw.mock.calls.length).toBeLessThan(high.draw.mock.calls.length);
     expect(low.ribbon.mock.calls.length).toBeLessThan(high.ribbon.mock.calls.length);
-    expect(low.gust).toHaveBeenCalledTimes(9);
+    expect(low.gust).toHaveBeenCalledTimes(3);
     expect(low.gust.mock.calls.length).toBeLessThan(high.gust.mock.calls.length);
-    expect(low.front).not.toHaveBeenCalled();
+    expect(low.stormWisp).toHaveBeenCalledTimes(8);
+    expect(high.stormWisp).toHaveBeenCalledTimes(16);
   });
 
   it('marks sustained coverage by authoritative age and resets priority before leaving each presentation', () => {
@@ -304,14 +305,14 @@ describe('Cryo signatures', () => {
     expect(kit.impact.mock.invocationCallOrder.at(-1)).toBeGreaterThan(kit.sustain.mock.invocationCallOrder.at(-1)!);
     kit.reducedMotion = true; kit.draw.mockClear();
     fx.update(frame({ zones: [zone()] }, 0));
-    const still = kit.draw.mock.calls.map(c => c.slice()), stillGusts = kit.gust.mock.calls.slice(-15).map(c => c.slice());
+    const still = kit.draw.mock.calls.map(c => c.slice()), stillGusts = kit.gust.mock.calls.slice(-6).map(c => c.slice());
     kit.draw.mockClear(); kit.gust.mockClear(); kit.time = 20;
     fx.update(frame({ zones: [zone({ remainingMs: 6500 })] }, 0));
     expect(kit.draw.mock.calls).toEqual(still);
     expect(kit.gust.mock.calls).toEqual(stillGusts);
   });
 
-  it('keeps Low mist connected and its complete rectangular support in the annulus', () => {
+  it('keeps three Low currents and the continuous storm wall in the exact outer annulus', () => {
     const kit = recordingKit(); kit.low = true;
     createCryoPresentation(kit as unknown as ElementKit).update(frame({ zones: [zone()] }, 0));
     const gusts = kit.gust.mock.calls;
@@ -324,10 +325,10 @@ describe('Cryo signatures', () => {
           dz + sine * end * c[2] / 2 + cosine * side * c[3] / 2)).toBeLessThan(300 / 32);
       }
     }
-    for (let arm = 0; arm < 3; arm++) for (let i = 0; i < 2; i++) {
-      const first = gusts[arm * 3 + i], second = gusts[arm * 3 + i + 1];
-      expect((first[2] + second[2]) / 2).toBeGreaterThan(Math.hypot(first[0] - second[0], first[1] - second[1]));
-    }
+    expect(gusts).toHaveLength(3);
+    expect(kit.front).not.toHaveBeenCalled();
+    expect(kit.stormWisp).toHaveBeenCalledTimes(8);
+
   });
 
   it('renders no denied/ready world feedback and clears all transient state', () => {

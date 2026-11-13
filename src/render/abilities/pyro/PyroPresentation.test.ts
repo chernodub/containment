@@ -43,19 +43,22 @@ describe('Pyro presentation lifecycle and readability', () => {
     step(.15);
     const flames = kit.batches.flame.mesh, matrix = new T.Matrix4();
     let source = 0, far = 0, leaned = 0;
-    expect(flames.count).toBeGreaterThan(tier === 'high' ? 24 : 12);
+    expect(flames.count).toBe(tier === 'high' ? 6 : 4);
+    const reaches = flow.mock.calls.map(call => Math.hypot(call[3] - 2, call[5] - 3));
+    expect(Math.max(...reaches)).toBeCloseTo(9.7);
+    expect(new Set(flow.mock.calls.map(call => call[6])).size).toBeGreaterThan(2);
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i), dx = p.x - 2, dz = p.z - 3, radius = Math.hypot(dx, dz);
       expect(radius).toBeLessThanOrEqual(10);
       expect(Math.abs(Math.atan2(dz, dx) - .2)).toBeLessThanOrEqual(.7);
       if (radius < 1.3) source++;
-      if (radius > 6) far++;
+      if (radius > 4) far++;
       flames.getMatrixAt(i, matrix);
       if (Math.abs(matrix.elements[4]) > .02) leaned++;
     }
-    expect(source).toBeGreaterThan(0); expect(far).toBeGreaterThan(2); expect(leaned).toBeGreaterThan(8);
+    expect(source).toBeGreaterThan(0); expect(far).toBeGreaterThan(1); expect(leaned).toBe(flames.count);
     expect(flow).toHaveBeenLastCalledWith(2 + Math.cos(.2) * .3, .95, 3 + Math.sin(.2) * .3,
-      2 + Math.cos(.2) * 1.8, .95, 3 + Math.sin(.2) * 1.8, .2, 7, .94, true);
+      2 + Math.cos(.2) * 1.8, .95, 3 + Math.sin(.2) * 1.8, .14 + (1 - (.15 - .05) / .12) * .055, 7, (1 - (.15 - .09) / .28) * .96, true);
     const smoke = kit.batches.smoke.mesh;
     if (tier === 'low') expect(smoke.count).toBe(0);
     else {
@@ -72,10 +75,26 @@ describe('Pyro presentation lifecycle and readability', () => {
     dispose();
   });
 
-  it('holds the pressure dump for 350ms, then yields and retires without extending the hit cone', () => {
+  it('attaches the pressure throat to the animated visible weapon muzzle and follows weapon switching', () => {
+    const { scene, kit, fx, frame, step, dispose } = setup(), flow = vi.spyOn(kit, 'flowFlame');
+    const marine = new T.Group(), weaponA = new T.Group(), weaponB = new T.Group();
+    const a = new T.Object3D(), b = new T.Object3D(); a.name = b.name = 'muzzle';
+    marine.position.set(2, 0, 3); a.position.set(.8, 1.3, .1); b.position.set(.6, 1.15, -.2);
+    weaponA.add(a); weaponB.add(b); weaponB.visible = false; marine.add(weaponA, weaponB); scene.add(marine);
+    frame.marine = marine; fx.event(event({ angle: 0 }), 64, 96); step(.03);
+    expect(flow.mock.calls[0].slice(0, 3)).toEqual([2.8, 1.3, 3.1]); // Main mass and hot throat share one source.
+    expect(flow.mock.lastCall!.slice(0, 3)).toEqual([2.8, 1.3, 3.1]);
+    a.position.y = 1.4; step(0); expect(flow.mock.lastCall![1]).toBe(1.4);
+    weaponA.visible = false; weaponB.visible = true; step(0);
+    expect(flow.mock.lastCall!.slice(0, 3)).toEqual([2.6, 1.15, 2.8]);
+    expect(flow.mock.lastCall![3]).toBeCloseTo(3.65);
+    fx.clear(); step(0); expect(kit.batches.flame.mesh.count).toBe(0); dispose();
+  });
+
+  it('hits hot for three frames, then collapses to shaped aftermath without extending the hit cone', () => {
     const { kit, fx, step, dispose } = setup(), light = vi.spyOn(kit, 'lightAt');
     fx.event(event({ length: 320, arcRadians: 1.4 }), 64, 96);
-    step(.33);
+    step(.03);
     expect(light).toHaveBeenLastCalledWith(expect.any(Number), expect.any(Number), expect.any(Number), 0xff7a2e, 28, 11);
     const flames = kit.batches.flame.mesh;
     const totalAlpha = () => {
@@ -85,8 +104,9 @@ describe('Pyro presentation lifecycle and readability', () => {
       return sum;
     };
     const hotAlpha = totalAlpha();
-    step(.32); expect(totalAlpha()).toBeLessThan(hotAlpha * .25);
-    step(.1); expect(flames.count).toBe(0); dispose();
+    step(.46); expect(totalAlpha()).toBeLessThan(hotAlpha * .25);
+    expect(light.mock.lastCall![4]).toBeLessThan(2);
+    step(.25); expect(flames.count).toBe(0); dispose();
   });
 
   it('keeps a lobbed canister on the captured trajectory and retires it on authoritative impact', () => {
@@ -183,8 +203,8 @@ describe('Pyro presentation lifecycle and readability', () => {
     const shoulderVents = exhaust.mock.calls.filter(call => call[3] >= .3);
     expect(shoulderVents).toHaveLength(2);
     for (const call of shoulderVents) {
-      expect(call[1]).toBeGreaterThanOrEqual(1.3); expect(call[4]).toBeGreaterThan(.45);
-      expect(call[1] + call[4]).toBeLessThanOrEqual(2);
+      expect(call[1]).toBeGreaterThanOrEqual(1.15); expect(call[4]).toBeGreaterThan(1);
+      expect(call[1] + call[4]).toBeLessThanOrEqual(2.8);
       // Exhaust is outboard of the helmet axis and behind the facing direction.
       const dx = call[0] - 4, dz = call[2] - 5;
       expect(dx * Math.cos(.1) + dz * Math.sin(.1)).toBeLessThan(-.25);
@@ -192,9 +212,9 @@ describe('Pyro presentation lifecycle and readability', () => {
     }
     const backpackVents = exhaust.mock.calls.filter(call => call[3] < .3);
     expect(backpackVents).toHaveLength(tier === 'low' ? 0 : 2);
-    for (const call of backpackVents) { expect(call[1]).toBeGreaterThanOrEqual(1); expect(call[1] + call[4]).toBeLessThan(1.9); }
+    for (const call of backpackVents) { expect(call[1]).toBeGreaterThanOrEqual(1); expect(call[1] + call[4]).toBeLessThan(2.8); }
     expect(shoulderVents[0][4]).not.toBe(shoulderVents[1][4]);
-    expect(scale(kit.batches.solid.mesh, 0).x).toBeGreaterThanOrEqual(.1);
+    expect(scale(kit.batches.solid.mesh, 0).x).toBeCloseTo(.28);
     expect(scale(kit.batches.solid.mesh, 2).y).toBeGreaterThanOrEqual(.1);
     expect(kit.counts.rings).toBe(0); expect(kit.batches.decal.mesh.count).toBe(0);
     dispose();
@@ -218,7 +238,8 @@ describe('Pyro presentation lifecycle and readability', () => {
     const flames = kit.batches.flame.mesh, priority = flames.geometry.getAttribute('abilityPriority');
     expect(priority.getX(0)).toBe(1); // First new wake has no renewed impact grace.
     for (let i = 1; i < flames.count; i++) expect(priority.getX(i)).toBe(0);
-    expect(kit.batches.solid.mesh.geometry.getAttribute('abilityPriority').getX(0)).toBe(1);
+    expect(kit.batches.decal.mesh.geometry.getAttribute('abilityPriority').getX(0)).toBe(1);
+    expect(kit.batches.solid.mesh.geometry.getAttribute('abilityPriority').getX(0)).toBe(0);
     const before = flames.instanceMatrix.array.slice(); step(0);
     expect(flames.instanceMatrix.array).toEqual(before); expect(priority.getX(0)).toBe(1);
     frame.snapshot = snapshot(); frame.game = undefined; step(2);
@@ -230,13 +251,13 @@ describe('Pyro presentation lifecycle and readability', () => {
     const { kit, fx, frame, step, dispose } = setup();
     frame.snapshot = { ...snapshot(), overdrive: { charge: 0, ready: false, active: true, activeRemainingMs: 5000 } };
     frame.game = { player: { x: 128, y: 160, vx: 100, vy: 0, angle: .1 }, bullets: [] } as never;
-    step(.2); step(.01); expect(kit.batches.solid.mesh.count).toBeGreaterThan(0);
+    step(.2); step(.01); expect(kit.batches.decal.mesh.count).toBeGreaterThan(0);
     for (let i = 0; i < 40; i++) step(.17);
-    expect(kit.batches.solid.mesh.count).toBeLessThanOrEqual(12);
-    const before = kit.batches.solid.mesh.instanceMatrix.array.slice(); step(0);
-    expect(kit.batches.solid.mesh.instanceMatrix.array).toEqual(before);
+    expect(kit.batches.decal.mesh.count).toBeLessThanOrEqual(12);
+    const before = kit.batches.decal.mesh.instanceMatrix.array.slice(); step(0);
+    expect(kit.batches.decal.mesh.instanceMatrix.array).toEqual(before);
     frame.snapshot = snapshot(); frame.game = undefined; step(2);
-    expect(kit.batches.solid.mesh.count).toBe(0);
+    expect(kit.batches.decal.mesh.count).toBe(0);
     fx.clear(); dispose();
   });
 

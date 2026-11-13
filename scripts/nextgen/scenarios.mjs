@@ -593,3 +593,5 @@ SCENARIOS.push({...SCENARIOS.find(s=>s.id==='shop'),id:'u5-shop-recovery',setup:
  const d=window.__containmentDebug;await d.gotoRoom('communal-atrium',{phase:'reward'});
  const r=d.game.combat.getRunResources();d.game.combat.restoreRunResources({...r,health:62,armor:60,credits:180});d.refresh();
 }});
+import {registerV5Scenarios} from './v5-scenarios.mjs';
+registerV5Scenarios(SCENARIOS);

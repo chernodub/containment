@@ -15,6 +15,7 @@ describe('friendly ability readability contracts', () => {
       if (node.name === 'ground-telegraphs') {
         const material = node.material as T.ShaderMaterial;
         expect(material.userData.friendlyBoundary).toBe(true);
+        expect(material.forceSinglePass).toBe(true);
         expect(material.fragmentShader).toContain('float dash=');
         expect(material.fragmentShader).toContain('float tick=');
         expect(material.fragmentShader).not.toContain('filled');
@@ -65,6 +66,37 @@ describe('friendly ability readability contracts', () => {
     expect(scale.x).toBeCloseTo(7); expect(scale.y).toBeCloseTo(7); b.dispose();
   });
 
+
+  it('keeps the exact rounded strip in one instance and fades only its pixels inside the dominant storm', () => {
+    const b = new FriendlyBoundaryBatch(new T.Group(), 8), m = new T.Matrix4();
+    b.setColdDominance(3, 4, 7);
+    b.addCapsule(2, 4, 5, 1.5, .7, 0x7fd6ff, .22);
+    b.mesh.getMatrixAt(0, m);
+    const start = new T.Vector3(-1, 0, 0).applyMatrix4(m), end = new T.Vector3(1, 0, 0).applyMatrix4(m);
+    expect(start.x).toBeCloseTo(2 - Math.cos(.7) * .75);
+    expect(start.z).toBeCloseTo(4 - Math.sin(.7) * .75);
+    expect(end.x).toBeCloseTo(2 + Math.cos(.7) * 5.75);
+    expect(end.z).toBeCloseTo(4 + Math.sin(.7) * 5.75);
+    expect(b.mesh.count).toBe(1);
+    expect(b.mesh.geometry.getAttribute('boundaryCapsule').getX(0)).toBeCloseTo(1.5 / 6.5);
+    const cold = b.mesh.geometry.getAttribute('coldDominance');
+    expect([cold.getX(0), cold.getY(0), cold.getZ(0)]).toEqual([3, 4, 7]);
+    b.setColdDominance(); b.add({ shape: 'circle', x: 3, z: 4, radius: 7 });
+    expect(cold.getZ(1)).toBe(0); // Dominant perimeter never suppresses itself.
+    b.clear(); b.add({ shape: 'circle', x: 1, z: 2, radius: 3 });
+    expect(b.mesh.geometry.getAttribute('boundaryCapsule').getX(0)).toBe(0);
+    expect(cold.getZ(0)).toBe(0); b.dispose();
+  });
+
+  it('lets Whiteout own the persistent local boundary while preserving exact Frost Trail endpoints', () => {
+    const v = new AbilityVisuals(new T.Group());
+    const common = { element: 'cryo' as const, x: 96, y: 128, radius: 240, x2: 192, y2: 128, width: 44, durationMs: 6000, remainingMs: 4000, attached: false };
+    v.update({rig:'cryo',slots:null,zones:[{...common,id:1,ability:'whiteout',shape:'circle'}, {...common,id:2,ability:'frost-trail',shape:'strip'}],deployables:[],overdrive:{active:false,ready:false,charge:0,activeRemainingMs:0},invulnerable:false,dashing:false,hostileTimeScale:1},0);
+    const b = v.kit.rings.mesh, cold = b.geometry.getAttribute('coldDominance');
+    expect(b.count).toBe(2); expect(cold.getZ(0)).toBe(0); expect(cold.getZ(1)).toBe(7.5);
+    expect(b.geometry.getAttribute('boundaryCapsule').getX(1)).toBeCloseTo(44 / (96 + 44));
+    v.clear(); expect(b.count).toBe(0); v.dispose();
+  });
 
   it.each([false,true])('spends only two segments on local suit crackles without changing long target bolts (Low %s)', low => {
     const b = new AbilityLightningBatch(new T.Group(),256);b.low=low;

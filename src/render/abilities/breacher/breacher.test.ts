@@ -29,62 +29,52 @@ const event = (extra: Partial<AbilityEvent> = {}): AbilityEvent => ({
 });
 
 describe('Breacher presentation', () => {
-  it('grounds one continuous field on the exact footprint, with nodes at both ends and a thick top edge', () => {
+  it('grounds articulated cover on the exact footprint with two armored ends and a solid readable top', () => {
     const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
     fx.update(frame([barrier()]));
-    const fields = kit.draw.mock.calls.filter(c => c[0] === 'solid' && c[5] === 2.4);
-    expect(fields).toHaveLength(1);
-    const field = fields[0];
-    expect(field[1]).toBe(2); expect(field[3]).toBe(3);
-    expect(field[4]).toBeCloseTo(.5 * .72); expect(field[6]).toBe(7);
-    expect(field[9]).toBeCloseTo(-Math.PI / 2);
-    expect(field[7]).toBe(0x9fe8ff);
-    expect(field[8]).toBeGreaterThan(.15); expect(field[8]).toBeLessThan(.25);
-    const nodes = kit.draw.mock.calls.filter(c => c[0] === 'solid' && c[5] === .22);
-    expect(nodes).toHaveLength(5);
-    expect(nodes.some(c => c[1] < 2 - 3.3)).toBe(true);
-    expect(nodes.some(c => c[1] > 2 + 3.3)).toBe(true);
-    for (const node of nodes) {
-      expect(node[3]).toBeCloseTo(3);
-      expect(Math.abs(node[1] - 2) + node[6] / 2).toBeLessThanOrEqual(3.5);
+    const fields = kit.draw.mock.calls.filter(c => c[7] === 0x487d91), ends = kit.draw.mock.calls.filter(c => c[7] === 0x293e4b);
+    expect(fields).toHaveLength(3); expect(ends).toHaveLength(2);
+    expect(ends.some(c => c[1] < 2 - 3.3)).toBe(true); expect(ends.some(c => c[1] > 2 + 3.3)).toBe(true);
+    const tops = kit.draw.mock.calls.filter(c => c[7] === 0xc3eff8);
+    expect(tops).toHaveLength(3);
+    expect(new Set(tops.map(c => c[2])).size).toBe(2);
+    for (const top of tops) { expect(top[5]).toBe(.105); expect(top[8]).toBeGreaterThan(.9); }
+    for (const piece of kit.draw.mock.calls) {
+      expect(Math.abs(piece[1] - 2) + piece[6] / 2).toBeLessThanOrEqual(3.5 + .00001);
+      expect(Math.abs(piece[3] - 3) + piece[4] / 2).toBeLessThanOrEqual(.25 + .00001);
+      expect(piece[9]).toBeCloseTo(-Math.PI / 2);
     }
-    const rims = kit.ribbon.mock.calls.filter(c => c[1] === 2.46 && c[4] === 2.46);
-    expect(rims).toHaveLength(4); // Front/back rails and the two depth caps.
-    expect(kit.ribbon.mock.calls.length).toBeLessThan(7 * 20);
-    fx.dispose();
+    expect(kit.ribbon.mock.calls.length).toBeLessThan(10); fx.dispose();
   });
 
-  it('unfolds a single field within 150ms and keeps Low cover with fewer decorative cells', () => {
+  it('unfolds cover within 150ms and retains the solid top and both armored ends on Low', () => {
     const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
     fx.update(frame([barrier({ remainingMs: 6000 })], 0));
-    expect(kit.draw.mock.calls.some(c => c[7] === 0x9fe8ff && c[5] > .1)).toBe(false);
-    expect(kit.draw.mock.calls.filter(c => c[5] === .22)).toHaveLength(5);
-    kit.draw.mockClear();
-    fx.update(frame([barrier({ remainingMs: 5980 })], 0));
-    const opening = kit.draw.mock.calls.find(c => c[7] === 0x9fe8ff && c[5] > .1)!;
-    expect(opening[5]).toBeGreaterThan(0); expect(opening[5]).toBeLessThan(2.4);
-    kit.draw.mockClear(); kit.ribbon.mockClear();
-    fx.update(frame([barrier({ remainingMs: 5800 })], 0));
-    expect(kit.draw.mock.calls.filter(c => c[5] === 2.4)).toHaveLength(1);
-    const highCount = kit.ribbon.mock.calls.length;
+    expect(kit.draw.mock.calls.filter(c => c[7] === 0xc3eff8)).toHaveLength(0);
+    expect(kit.draw.mock.calls.filter(c => c[7] === 0x293e4b)).toHaveLength(2);
+    kit.draw.mockClear(); fx.update(frame([barrier({ remainingMs: 5980 })], 0));
+    const opening = kit.draw.mock.calls.find(c => c[7] === 0xc3eff8)!;
+    expect(opening[2]).toBeGreaterThan(0); expect(opening[2]).toBeLessThan(2.4);
+    kit.draw.mockClear(); fx.update(frame([barrier({ remainingMs: 5800 })], 0));
+    expect(kit.draw.mock.calls.find(c => c[7] === 0xc3eff8)![2]).toBeCloseTo(2.46);
+    const highCount = kit.draw.mock.calls.length;
     const low = kitMock(true), lowFx = new BreacherPresentation(low as unknown as ElementKit);
     lowFx.update(frame([barrier()], 0));
-    expect(low.ribbon.mock.calls.length).toBeLessThan(highCount);
-    expect(low.draw.mock.calls.filter(c => c[5] === 2.4)).toHaveLength(1);
-    expect(low.draw.mock.calls.filter(c => c[5] === .22)).toHaveLength(3);
+    expect(low.draw.mock.calls.length).toBeLessThan(highCount);
+    expect(low.draw.mock.calls.filter(c => c[7] === 0xc3eff8)).toHaveLength(2);
+    expect(low.draw.mock.calls.filter(c => c[7] === 0x293e4b)).toHaveLength(2);
     fx.dispose(); lowFx.dispose();
   });
 
-  it('lights only nearby hex cells on a load receipt and leaves other cells subdued', () => {
+  it('responds to load with only localized stress seams and no idle field wallpaper', () => {
     const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
-    fx.update(frame([barrier()])); kit.ribbon.mockClear();
-    fx.update(frame([barrier({ health: 160 })]));
-    const cells = kit.ribbon.mock.calls.filter(c => c[7] < .012);
-    const hot = cells.filter(c => c[6] === 0xfff2d2), cool = cells.filter(c => c[6] === 0x9fe8ff);
-    expect(hot.length).toBeGreaterThan(0);
-    expect(hot.length).toBeLessThanOrEqual(24); expect(cool.length).toBeLessThan(16);
-    expect(kit.outline).not.toHaveBeenCalled(); // No friendly circular warning appears on impact.
-    fx.dispose();
+    fx.update(frame([barrier()]));
+    expect(kit.ribbon.mock.calls.filter(c => c[6] === 0xfff2d2)).toHaveLength(0);
+    kit.ribbon.mockClear(); fx.update(frame([barrier({ health: 160 })]));
+    const hot = kit.ribbon.mock.calls.filter(c => c[6] === 0xfff2d2);
+    expect(hot.length).toBeGreaterThan(0); expect(hot.length).toBeLessThanOrEqual(2);
+    for (const call of hot) expect(Math.hypot(call[3] - call[0], call[5] - call[2])).toBeLessThan(1.1);
+    expect(kit.outline).not.toHaveBeenCalled(); fx.dispose();
   });
 
   it('responds once to health receipts and collapses retired barriers once', () => {
@@ -105,7 +95,7 @@ describe('Breacher presentation', () => {
     const kit = kitMock(true), fx = new BreacherPresentation(kit as unknown as ElementKit);
     fx.update(frame(Array.from({ length: 20 }, (_, id) => barrier({ id }))));
     expect(kit.lightAt).toHaveBeenCalledTimes(BREACHER_LIMITS.barriers);
-    expect(kit.draw.mock.calls.filter(c => c[5] === 2.4)).toHaveLength(8);
+    expect(kit.draw.mock.calls.filter(c => c[7] === 0xc3eff8)).toHaveLength(8 * 2);
     fx.dispose();
   });
 
@@ -150,7 +140,8 @@ describe('Breacher presentation', () => {
     expect(new Set(rings.map(r => r[4])).size).toBe(3);
     for (const ring of rings) { expect(ring[9]).toBeCloseTo(0); expect(ring[10]).toBe(Math.PI / 2); }
     kit.draw.mockClear(); fx.update(frame([], 1));
-    expect(kit.draw.mock.calls.some(c => c[0] === 'solid' && c[4] === 900 / 32 && c[5] === .012)).toBe(true);
+    expect(kit.draw.mock.calls.some(c => c[0] === 'solid')).toBe(false);
+    expect(kit.scar).toHaveBeenCalledTimes(1); // One exact trench owns the lingering floor read.
     fx.dispose();
   });
 
@@ -158,7 +149,7 @@ describe('Breacher presentation', () => {
     const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
     fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-start', angle: Math.PI / 2 }), 64, 96);
     fx.update({ ...frame([], .07), game: { player: { x: 320, y: 224 } } as never });
-    const shield = kit.draw.mock.calls.filter(c => c[0] === 'shard');
+    const shield = kit.draw.mock.calls.filter(c => c[0] === 'solid');
     expect(shield).toHaveLength(1);
     for (const face of shield) {
       expect(face[1]).toBeCloseTo(10); expect(face[3]).toBeGreaterThan(7);
@@ -173,7 +164,7 @@ describe('Breacher presentation', () => {
       const kit = kitMock(low), fx = new BreacherPresentation(kit as unknown as ElementKit);
       fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-end', angle: 0, targetX: 320, targetY: 224 }), 64, 96);
       fx.update(frame([], .03));
-      const caps = kit.draw.mock.calls.filter(c => c[0] === 'shard');
+      const caps = kit.draw.mock.calls.filter(c => c[0] === 'solid');
       expect(caps.length).toBe(low ? 1 : 2);
       expect(caps[0][1]).toBeGreaterThan(10); expect(caps[0][3]).toBeCloseTo(7);
       expect(caps[0][8]).toBeGreaterThan(.35);
