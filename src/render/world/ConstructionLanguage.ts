@@ -4,7 +4,7 @@ import { ROOM_STORY_ROUTE, storyRoomFor } from '../../game/roguelike/storyRooms'
 import type { ShipEnvironment } from '../ShipEnvironments';
 import { deckMarkingSupported } from './DeckMarkings';
 import { industrialBoxGeometry } from './IndustrialFormKit';
-import { membraneGeometry, organicGeometry } from './OrganicGrowth';
+import { membraneGeometry } from './OrganicGrowth';
 
 type Writer = {
   box: (material:T.Material,x:number,y:number,z:number,w:number,h:number,d:number,angle?:number)=>void;
@@ -137,12 +137,7 @@ export function addConstructionLanguage(
         if(rear)for(let slat=0;slat<4;slat++)wall(m.paint,t+span*.5,.94+slat*.22,span*.67,.045,.06,.17);
       }else if(environment==='infested'){
         wall(m.dark,t+span/2,height/2,span,height,.18,.29);
-        // One readable mass per long wall bay replaces a forest of decorative cords.
-        if(t<.5){
-          const x=a.x/32+tx*(t+span*.43)+nx*.45,z=a.y/32+tz*(t+span*.43)+nz*.45;
-          const g=organicGeometry(edge%3).clone();g.scale(Math.min(2.4,span*.48),height*.55,.20);g.rotateY(angle);g.translate(x,height*.52,z);add(g,m.resin,0,0,0);
-          wall(m.vein,t+span*.64,height*.68,span*.19,.055,.04,.055);
-        }
+        // Consumption is authored below as connected machine-to-hull webs.
       }else if(environment==='cryogenics'){
         wall(m.paint,t+span/2,height*.52,span*.94,height*.90,.14,.30);
         for(const end of [.12,span-.10])wall(m.steel,t+end,height*.5,.12,height,.23,.20);
@@ -284,44 +279,114 @@ export function addConstructionLanguage(
   root.userData.narrativeVignette.parts=acceptedParts-beforeNarrative;
   const consumed=environment==='infested'||id==='breached-loading-bay'||id==='reactor-vault';
   if(consumed){
-    let count=0;
-    for(const [index,r]of reservations.entries()){
-      if(index>=(id==='reactor-vault'?1:4)||Math.min(r.width,r.height)<26)continue;
+    type ConsumptionFixture={x:number;y:number;z:number;color:number;nativeColor:true;poolStyle:3;poolAngle:number;gain:number};
+    const fixtures:ConsumptionFixture[]=[],forms:Array<{kind:string;source:number[];footprint?:Rect}>=[];
+    const emit=(x:number,y:number,z:number,index:number,kind:string,footprint?:Rect)=>{
+      if(fixtures.length>=4)return;
+      fixtures.push({x,y,z,color:index%2?0xc47fae:0xa6d878,nativeColor:true,poolStyle:3,poolAngle:Math.atan2(w/2-x,h/2-z),gain:.72});
+      forms.push({kind,source:[x,y,z],footprint});
+    };
+    // A connected skin is fitted affinely to a solid; no sphere, boulder or
+    // independently scattered nodule is added by this construction layer.
+    const fitSkin=(g:T.BufferGeometry,r:Rect)=>{
+      g.computeBoundingBox();const b=g.boundingBox!,rw=r.width/32-.06,rd=r.height/32-.06;
+      const scale=Math.min(1,rw/(b.max.x-b.min.x),rd/(b.max.z-b.min.z)),cx=(b.min.x+b.max.x)/2,cz=(b.min.z+b.max.z)/2;
+      const tx=Math.max(r.x/32+.03+(b.max.x-b.min.x)*scale/2,Math.min((r.x+r.width)/32-.03-(b.max.x-b.min.x)*scale/2,cx));
+      const tz=Math.max(r.y/32+.03+(b.max.z-b.min.z)*scale/2,Math.min((r.y+r.height)/32-.03-(b.max.z-b.min.z)*scale/2,cz));
+      const p=g.getAttribute('position');for(let i=0;i<p.count;i++)p.setXYZ(i,(p.getX(i)-cx)*scale+tx,p.getY(i),(p.getZ(i)-cz)*scale+tz);
+      g.computeVertexNormals();return g;
+    };
+    const flatSkin=(points:T.Vector3[],width:number,material:T.Material)=>{
+      const g=membraneGeometry(points,width,.002,undefined,6),p=g.getAttribute('position');
+      // Existing floor-support guarantees remain stricter than navigation:
+      // neither a void nor an equipment reservation may carry a floor web.
+      for(let i=0;i<p.count;i++)if(!deckMarkingSupported(template,p.getX(i),p.getZ(i))){g.dispose();return false;}
+      const indices=g.index!;for(let i=0;i<indices.count;i+=3){const a=indices.getX(i),b=indices.getX(i+1),c=indices.getX(i+2);if(!deckMarkingSupported(template,(p.getX(a)+p.getX(b)+p.getX(c))/3,(p.getZ(a)+p.getZ(b)+p.getZ(c))/3)){g.dispose();return false;}}
+      add(g,material,0,0,0);return true;
+    };
+    let count=0,wallAuthored=false;
+    for(const r of reservations){
+      if(count>=2||Math.min(r.width,r.height)<26)continue;
       const x=(r.x+r.width*.5)/32,z=(r.y+r.height*.5)/32,rw=r.width/32,rd=r.height/32;
-      ray.set(new T.Vector3(x,20,z),down);const roof=ray.intersectObject(world,true).find(hit=>hit.point.y>.15)?.point.y;
-      if(!roof)continue;
-      const px=x-rw*.12,pz=z+rd*.1;
-      const constrain=(g:T.BufferGeometry)=>{
-        g.computeBoundingBox();const b=g.boundingBox!,width=rw-.05,depth=rd-.05,scale=Math.min(1,width/(b.max.x-b.min.x),depth/(b.max.z-b.min.z));
-        const cx=(b.min.x+b.max.x)/2,cz=(b.min.z+b.max.z)/2;
-        const targetX=Math.max(r.x/32+.025+(b.max.x-b.min.x)*scale/2,Math.min((r.x+r.width)/32-.025-(b.max.x-b.min.x)*scale/2,cx));
-        const targetZ=Math.max(r.y/32+.025+(b.max.z-b.min.z)*scale/2,Math.min((r.y+r.height)/32-.025-(b.max.z-b.min.z)*scale/2,cz));
-        const p=g.getAttribute('position');for(let k=0;k<p.count;k++)p.setXYZ(k,(p.getX(k)-cx)*scale+targetX,p.getY(k),(p.getZ(k)-cz)*scale+targetZ);
-        g.computeVertexNormals();return g;
-      };
-      const mass=organicGeometry(index).clone();mass.scale(rw*.30,roof*.75,rd*.30);mass.rotateY(.15+index*.7);mass.translate(px,roof*.8,pz);add(constrain(mass),m.resin,0,0,0);
-      for(let branch=0;branch<2;branch++){
-        const endX=x+(branch?1:-1)*rw*.43,endZ=z+(branch?-.2:.2)*rd;
-        if(!solid(endX,endZ))continue;
-        add(constrain(membraneGeometry([new T.Vector3(px,roof+.10,pz),new T.Vector3(x,roof+.22,z),new T.Vector3(endX,roof*.65,endZ),new T.Vector3(endX,.04,endZ)],Math.min(rw,rd)*.22,.13,undefined,14)),m.resin,0,0,0);
+      let roof=0;
+      for(const fx of [.18,.35,.5,.65,.82])for(const fz of [.18,.35,.5,.65,.82]){
+        ray.set(new T.Vector3((r.x+r.width*fx)/32,20,(r.y+r.height*fz)/32),down);
+        const hit=ray.intersectObject(world,true).find(value=>value.point.y>.15&&value.point.y<5);
+        if(hit)roof=Math.max(roof,hit.point.y);
       }
-      // Connect the consumed machinery to its nearest hull as a floor-flat tissue fan.
-      let nearest={x:0,z:0,distance:Infinity};
+      if(!roof)continue;
+      const alongX=rw>=rd,long=alongX?rw:rd,short=alongX?rd:rw;
+      const point=(along:number,across:number,y:number)=>new T.Vector3(x+(alongX?along:across),y,z+(alongX?across:along));
+      const main=[point(-long*.45,short*.10,.055),point(-long*.34,short*.10,roof*.62),point(-long*.14,short*.07,roof+.17),point(long*.16,-short*.04,roof+.12),point(long*.35,-short*.10,roof*.55),point(long*.45,-short*.12,.055)];
+      const before=acceptedParts;
+      add(fitSkin(membraneGeometry(main,short*.43,Math.min(.18,short*.09),undefined,16),r),m.resin,0,0,0);
+      // A broad return saddle folds over the same machinery and meets the main
+      // skin, visually binding separate retained supports into one consumed form.
+      const shoulder=[point(-long*.08,-short*.44,.06),point(-long*.12,-short*.31,roof*.72),point(-long*.10,0,roof+.23),point(long*.06,short*.32,roof*.70),point(long*.12,short*.44,.055)];
+      add(fitSkin(membraneGeometry(shoulder,Math.min(long*.24,short*.42),.10,undefined,12),r),m.resin,0,0,0);
+      if(count===0){
+        // The surviving human strip is physically under the fold: one end
+        // protrudes from the wide skin, with its old dark housing still visible.
+        const fragment=point(-long*.12,-short*.10,roof+.10);
+        box(m.dark,fragment.x,fragment.y-.035,fragment.z,alongX?.12:short*.77,.06,alongX?short*.77:.12);
+        box(m.steel,fragment.x,fragment.y+.006,fragment.z,alongX?.065:short*.72,.035,alongX?short*.72:.065);
+        root.userData.partlyBuriedHumanFixture={position:fragment.toArray(),axis:alongX?'z':'x',span:short*.72};
+      }
+      const wound=[point(-long*.16,short*.045,roof+.245),point(-long*.05,short*.02,roof+.265),point(long*.12,-short*.04,roof+.23)];
+      add(fitSkin(membraneGeometry(wound,Math.min(.065,short*.05),.012,undefined,8),r),m.vein,0,0,0);
+      if(acceptedParts===before)continue;
+      emit(x,roof+.28,z,count,'machine-saddle',r);count++;
+      let nearest={x:0,z:0,distance:Infinity,edge:0,t:0};
       for(let edge=0;edge<boundary.length;edge++){
         const a=boundary[edge],b=boundary[(edge+1)%boundary.length],dx=(b.x-a.x)/32,dz=(b.y-a.y)/32;
         const t=Math.max(0,Math.min(1,((x-a.x/32)*dx+(z-a.y/32)*dz)/(dx*dx+dz*dz||1))),px=a.x/32+dx*t,pz=a.y/32+dz*t,distance=Math.hypot(px-x,pz-z);
-        if(distance<nearest.distance)nearest={x:px,z:pz,distance};
+        if(distance<nearest.distance)nearest={x:px,z:pz,distance,edge,t};
       }
-      const dx=nearest.x-x,dz=nearest.z-z,segments=Math.min(22,Math.max(3,Math.ceil(nearest.distance/.5)));
-      for(let step=0;step<segments;step++){
-        const t=(step+.5)/segments,curve=Math.sin(t*Math.PI)*.38;
-        const px=x+dx*t-dz/(nearest.distance||1)*curve,pz=z+dz*t+dx/(nearest.distance||1)*curve;
-        flat(m.resin,px,pz,.46+(1-t)*.34,nearest.distance/segments+.12,Math.atan2(dx,dz));
+      const dx=nearest.x-x,dz=nearest.z-z,distance=nearest.distance||1;
+      const sample=(t:number)=>{const bend=Math.sin(t*Math.PI)*.42;return new T.Vector3(x+dx*t-dz/distance*bend,.026,z+dz*t+dx/distance*bend);};
+      const bridge=membraneGeometry([sample(0),sample(.28),sample(.64),sample(1)],.48,.002,undefined,Math.min(28,Math.max(8,Math.ceil(distance/.65))));
+      const flatBridge=bridge.toNonIndexed();bridge.dispose();
+      const p=flatBridge.getAttribute('position'),normal=flatBridge.getAttribute('normal'),uv=flatBridge.getAttribute('uv');
+      const positions:number[]=[],normals:number[]=[],uvs:number[]=[];
+      // One continuous fan is clipped at existing solids/voids. It does not
+      // repeat a scalloped tile or add raised geometry across a combat lane.
+      for(let i=0;i<p.count;i+=3){
+        let valid=true;
+        for(let k=0;k<3;k++){const j=i+k,l=i+(k+1)%3;if(!deckMarkingSupported(template,p.getX(j),p.getZ(j))||!deckMarkingSupported(template,(p.getX(j)+p.getX(l))*.5,(p.getZ(j)+p.getZ(l))*.5)){valid=false;break;}}
+        if(valid&&!deckMarkingSupported(template,(p.getX(i)+p.getX(i+1)+p.getX(i+2))/3,(p.getZ(i)+p.getZ(i+1)+p.getZ(i+2))/3))valid=false;
+        if(!valid)continue;
+        for(let k=0;k<3;k++){const j=i+k;positions.push(p.getX(j),p.getY(j),p.getZ(j));normals.push(normal.getX(j),normal.getY(j),normal.getZ(j));uvs.push(uv.getX(j),uv.getY(j));}
       }
-      count++;
+      flatBridge.dispose();
+      if(positions.length){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setAttribute('normal',new T.Float32BufferAttribute(normals,3));g.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));add(g,m.resin,0,0,0);}
+      if(!wallAuthored){
+        const a=boundary[nearest.edge],b=boundary[(nearest.edge+1)%boundary.length],ex=(b.x-a.x)/32,ez=(b.y-a.y)/32,length=Math.hypot(ex,ez),tx=ex/length,tz=ez/length,nx=tz*winding,nz=-tx*winding;
+        const center=Math.max(Math.min(3.0,length*.40),Math.min(length-Math.min(3.0,length*.40),nearest.t*length)),span=Math.min(2.7,length*.36);
+        const wallPoint=(t:number,y:number,out=.36)=>new T.Vector3(a.x/32+tx*(center+t)+nx*out,y,a.y/32+tz*(center+t)+nz*out);
+        const normal=new T.Vector3(nx,0,nz),wallBefore=acceptedParts;
+        // Thick sheets climb and spread over the actual hull segment. Their
+        // thickness remains entirely outboard of the unchanged navigation edge.
+        add(membraneGeometry([wallPoint(-span*.62,.05),wallPoint(-span*.25,.72),wallPoint(.05,1.42),wallPoint(span*.23,2.20)],Math.min(.92,span*.42),.13,normal,14),m.resin,0,0,0);
+        add(membraneGeometry([wallPoint(-span,.35),wallPoint(-span*.38,1.08),wallPoint(span*.22,.98),wallPoint(span,.43)],.46,.12,normal,12),m.resin,0,0,0);
+        add(membraneGeometry([wallPoint(-span*.16,.84,.205),wallPoint(0,1.25,.205),wallPoint(span*.15,1.65,.205)],.055,.012,normal,9),m.vein,0,0,0);
+        if(acceptedParts>wallBefore){const source=wallPoint(0,1.30,.16);emit(source.x,source.y,source.z,2,'climbing-hull-web');wallAuthored=true;}
+      }
     }
+    // Smother one existing breach grille with a broad floor-flat membrane;
+    // some old metal bars remain embedded as human evidence, not a new blocker.
+    let coveredBreach:number[]|null=null;
+    for(const breach of template.breaches){
+      const bx=breach.x/32,bz=breach.y/32;
+      if(flatSkin([new T.Vector3(bx-.83,.026,bz-.43),new T.Vector3(bx-.15,.026,bz-.05),new T.Vector3(bx+.80,.026,bz+.35)],.78,m.resin)){
+        coveredBreach=[bx,bz];break;
+      }
+    }
+    const existing=(root.userData.lightFixtures??[]) as ConsumptionFixture[];
+    root.userData.lightFixtures=[...existing,...fixtures].slice(0,4);
     root.userData.consumedConstruction=count;
-    root.userData.failedHumanFixtureZones=reservations.slice(0,4).map(r=>({...r}));
+    root.userData.consumptionForms=forms;
+    root.userData.coveredBreach=coveredBreach;
+    root.userData.failedHumanFixtureZones=reservations.slice(0,2).map(r=>({...r}));
   }
   root.userData.constructionLanguage=environment;
   root.userData.constructionIdea=profile.idea;

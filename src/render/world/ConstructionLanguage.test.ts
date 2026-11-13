@@ -1,9 +1,10 @@
 import {describe,it,expect} from 'vitest';
 import * as T from 'three';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
-import {shipEnvironment} from '../ShipEnvironments';
+import {shipEnvironment,appendEnvironment,environmentObstacle,environmentArchitecture} from '../ShipEnvironments';
 import {addConstructionLanguage,CONSTRUCTION_STANDARD_ROOMS} from './ConstructionLanguage';
-import {equipmentReservations} from './WorldDressing';
+import {equipmentReservations,addWorldDressing} from './WorldDressing';
+import {disposeModel} from '../meshParts';
 import {deckMarkingSupported} from './DeckMarkings';
 import {organicGeometry} from './OrganicGrowth';
 
@@ -51,4 +52,33 @@ describe('authored construction propagation',()=>{
     for(let i=0;i<a.parts.length;i++)expect(Array.from(a.parts[i].g.getAttribute('position').array)).toEqual(Array.from(b.parts[i].g.getAttribute('position').array));
     expect(Array.from(shared.getAttribute('position').array)).toEqual(positions);a.dispose();b.dispose();
   });
+});
+
+it.each(['swarm-junction','infested-workshop','breached-loading-bay','reactor-vault'] as const)('%s binds three connected consumption forms and their lights to actual room geometry',id=>{
+ const template=ROOM_TEMPLATES[id],environment=shipEnvironment(id)!,world=new T.Group();
+ // Use the same procedural machine kit as the production room, rather than
+ // broad test boxes that could hide a missing roof probe between real supports.
+ for(const [index,r]of template.obstacles.entries())appendEnvironment(world,environmentObstacle(environment,{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},index,id));
+ environmentArchitecture(world,environment,template.width/32,template.height/32,id);
+ const root=addWorldDressing(world,template,environment,id),forms=root.userData.consumptionForms as Array<{kind:string;source:number[]}>;
+ expect(forms.filter(form=>form.kind==='machine-saddle')).toHaveLength(2);
+ expect(forms.filter(form=>form.kind==='climbing-hull-web')).toHaveLength(1);
+ expect(root.userData.coveredBreach).not.toBeNull();
+ expect(root.userData.partlyBuriedHumanFixture.span).toBeGreaterThan(.5);
+ expect(root.userData.constructionNewFinishes).toEqual([]);
+ const fixtures=root.userData.lightFixtures as Array<{x:number;y:number;z:number;poolStyle:number;nativeColor:boolean;gain:number}>;
+ expect(fixtures).toHaveLength(3);
+ const triangle=new T.Triangle(),target=new T.Vector3(),closest=new T.Vector3();
+ for(const fixture of fixtures){
+  expect(fixture.poolStyle).toBe(3);expect(fixture.nativeColor).toBe(true);expect(fixture.gain).toBeGreaterThan(0);expect(fixture.gain).toBeLessThanOrEqual(1);
+  expect([fixture.x,fixture.y,fixture.z].every(Number.isFinite)).toBe(true);
+  target.set(fixture.x,fixture.y,fixture.z);let nearest=Infinity;
+  root.traverse(object=>{
+   if(!(object instanceof T.Mesh)||!['g2-dressing-resin','g2-dressing-vein'].includes((object.material as T.Material).name))return;
+   const p=object.geometry.getAttribute('position'),index=object.geometry.index;
+   for(let i=0;i<(index?.count??p.count);i+=3){triangle.a.fromBufferAttribute(p,index?.getX(i)??i);triangle.b.fromBufferAttribute(p,index?.getX(i+1)??i+1);triangle.c.fromBufferAttribute(p,index?.getX(i+2)??i+2);triangle.closestPointToPoint(target,closest);nearest=Math.min(nearest,closest.distanceTo(target));}
+  });
+  expect(nearest,`${id} fixture ${target.toArray()} detached from consumption surface`).toBeLessThan(.36);
+ }
+ disposeModel(world);
 });
