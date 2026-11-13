@@ -1,0 +1,6230 @@
+[
+  {
+    "path": "Instructions.url",
+    "bytes": 66
+  },
+  {
+    "path": "Isometric/",
+    "bytes": 0
+  },
+  {
+    "path": "Isometric/bathroomCabinetDrawer_NE.png",
+    "bytes": 2785
+  },
+  {
+    "path": "Isometric/bathroomCabinetDrawer_NW.png",
+    "bytes": 2743
+  },
+  {
+    "path": "Isometric/bathroomCabinetDrawer_SE.png",
+    "bytes": 3154
+  },
+  {
+    "path": "Isometric/bathroomCabinetDrawer_SW.png",
+    "bytes": 3213
+  },
+  {
+    "path": "Isometric/bathroomCabinet_NE.png",
+    "bytes": 1309
+  },
+  {
+    "path": "Isometric/bathroomCabinet_NW.png",
+    "bytes": 1358
+  },
+  {
+    "path": "Isometric/bathroomCabinet_SE.png",
+    "bytes": 1585
+  },
+  {
+    "path": "Isometric/bathroomCabinet_SW.png",
+    "bytes": 1558
+  },
+  {
+    "path": "Isometric/bathroomMirror_NE.png",
+    "bytes": 1591
+  },
+  {
+    "path": "Isometric/bathroomMirror_NW.png",
+    "bytes": 1585
+  },
+  {
+    "path": "Isometric/bathroomMirror_SE.png",
+    "bytes": 2087
+  },
+  {
+    "path": "Isometric/bathroomMirror_SW.png",
+    "bytes": 2099
+  },
+  {
+    "path": "Isometric/bathroomSinkSquare_NE.png",
+    "bytes": 2827
+  },
+  {
+    "path": "Isometric/bathroomSinkSquare_NW.png",
+    "bytes": 2807
+  },
+  {
+    "path": "Isometric/bathroomSinkSquare_SE.png",
+    "bytes": 2677
+  },
+  {
+    "path": "Isometric/bathroomSinkSquare_SW.png",
+    "bytes": 2629
+  },
+  {
+    "path": "Isometric/bathroomSink_NE.png",
+    "bytes": 2382
+  },
+  {
+    "path": "Isometric/bathroomSink_NW.png",
+    "bytes": 2544
+  },
+  {
+    "path": "Isometric/bathroomSink_SE.png",
+    "bytes": 2756
+  },
+  {
+    "path": "Isometric/bathroomSink_SW.png",
+    "bytes": 2698
+  },
+  {
+    "path": "Isometric/bathtub_NE.png",
+    "bytes": 5151
+  },
+  {
+    "path": "Isometric/bathtub_NW.png",
+    "bytes": 5042
+  },
+  {
+    "path": "Isometric/bathtub_SE.png",
+    "bytes": 5018
+  },
+  {
+    "path": "Isometric/bathtub_SW.png",
+    "bytes": 4931
+  },
+  {
+    "path": "Isometric/bear_NE.png",
+    "bytes": 1915
+  },
+  {
+    "path": "Isometric/bear_NW.png",
+    "bytes": 1935
+  },
+  {
+    "path": "Isometric/bear_SE.png",
+    "bytes": 2584
+  },
+  {
+    "path": "Isometric/bear_SW.png",
+    "bytes": 2634
+  },
+  {
+    "path": "Isometric/bedBunk_NE.png",
+    "bytes": 8609
+  },
+  {
+    "path": "Isometric/bedBunk_NW.png",
+    "bytes": 8621
+  },
+  {
+    "path": "Isometric/bedBunk_SE.png",
+    "bytes": 8268
+  },
+  {
+    "path": "Isometric/bedBunk_SW.png",
+    "bytes": 9094
+  },
+  {
+    "path": "Isometric/bedDouble_NE.png",
+    "bytes": 5229
+  },
+  {
+    "path": "Isometric/bedDouble_NW.png",
+    "bytes": 5248
+  },
+  {
+    "path": "Isometric/bedDouble_SE.png",
+    "bytes": 5795
+  },
+  {
+    "path": "Isometric/bedDouble_SW.png",
+    "bytes": 5888
+  },
+  {
+    "path": "Isometric/bedSingle_NE.png",
+    "bytes": 4519
+  },
+  {
+    "path": "Isometric/bedSingle_NW.png",
+    "bytes": 4387
+  },
+  {
+    "path": "Isometric/bedSingle_SE.png",
+    "bytes": 4693
+  },
+  {
+    "path": "Isometric/bedSingle_SW.png",
+    "bytes": 4925
+  },
+  {
+    "path": "Isometric/benchCushionLow_NE.png",
+    "bytes": 2126
+  },
+  {
+    "path": "Isometric/benchCushionLow_NW.png",
+    "bytes": 2140
+  },
+  {
+    "path": "Isometric/benchCushionLow_SE.png",
+    "bytes": 2112
+  },
+  {
+    "path": "Isometric/benchCushionLow_SW.png",
+    "bytes": 2138
+  },
+  {
+    "path": "Isometric/benchCushion_NE.png",
+    "bytes": 2795
+  },
+  {
+    "path": "Isometric/benchCushion_NW.png",
+    "bytes": 2802
+  },
+  {
+    "path": "Isometric/benchCushion_SE.png",
+    "bytes": 3012
+  },
+  {
+    "path": "Isometric/benchCushion_SW.png",
+    "bytes": 3077
+  },
+  {
+    "path": "Isometric/bench_NE.png",
+    "bytes": 2927
+  },
+  {
+    "path": "Isometric/bench_NW.png",
+    "bytes": 3099
+  },
+  {
+    "path": "Isometric/bench_SE.png",
+    "bytes": 3087
+  },
+  {
+    "path": "Isometric/bench_SW.png",
+    "bytes": 3089
+  },
+  {
+    "path": "Isometric/bookcaseClosedDoors_NE.png",
+    "bytes": 3535
+  },
+  {
+    "path": "Isometric/bookcaseClosedDoors_NW.png",
+    "bytes": 3578
+  },
+  {
+    "path": "Isometric/bookcaseClosedDoors_SE.png",
+    "bytes": 2803
+  },
+  {
+    "path": "Isometric/bookcaseClosedDoors_SW.png",
+    "bytes": 2929
+  },
+  {
+    "path": "Isometric/bookcaseClosedWide_NE.png",
+    "bytes": 5605
+  },
+  {
+    "path": "Isometric/bookcaseClosedWide_NW.png",
+    "bytes": 5503
+  },
+  {
+    "path": "Isometric/bookcaseClosedWide_SE.png",
+    "bytes": 4833
+  },
+  {
+    "path": "Isometric/bookcaseClosedWide_SW.png",
+    "bytes": 5115
+  },
+  {
+    "path": "Isometric/bookcaseClosed_NE.png",
+    "bytes": 4389
+  },
+  {
+    "path": "Isometric/bookcaseClosed_NW.png",
+    "bytes": 4380
+  },
+  {
+    "path": "Isometric/bookcaseClosed_SE.png",
+    "bytes": 4352
+  },
+  {
+    "path": "Isometric/bookcaseClosed_SW.png",
+    "bytes": 4398
+  },
+  {
+    "path": "Isometric/bookcaseOpenLow_NE.png",
+    "bytes": 3162
+  },
+  {
+    "path": "Isometric/bookcaseOpenLow_NW.png",
+    "bytes": 3185
+  },
+  {
+    "path": "Isometric/bookcaseOpenLow_SE.png",
+    "bytes": 3259
+  },
+  {
+    "path": "Isometric/bookcaseOpenLow_SW.png",
+    "bytes": 3259
+  },
+  {
+    "path": "Isometric/bookcaseOpen_NE.png",
+    "bytes": 4540
+  },
+  {
+    "path": "Isometric/bookcaseOpen_NW.png",
+    "bytes": 4569
+  },
+  {
+    "path": "Isometric/bookcaseOpen_SE.png",
+    "bytes": 4417
+  },
+  {
+    "path": "Isometric/bookcaseOpen_SW.png",
+    "bytes": 4464
+  },
+  {
+    "path": "Isometric/books_NE.png",
+    "bytes": 1411
+  },
+  {
+    "path": "Isometric/books_NW.png",
+    "bytes": 1432
+  },
+  {
+    "path": "Isometric/books_SE.png",
+    "bytes": 1436
+  },
+  {
+    "path": "Isometric/books_SW.png",
+    "bytes": 1405
+  },
+  {
+    "path": "Isometric/cabinetBedDrawerTable_NE.png",
+    "bytes": 1955
+  },
+  {
+    "path": "Isometric/cabinetBedDrawerTable_NW.png",
+    "bytes": 1946
+  },
+  {
+    "path": "Isometric/cabinetBedDrawerTable_SE.png",
+    "bytes": 2003
+  },
+  {
+    "path": "Isometric/cabinetBedDrawerTable_SW.png",
+    "bytes": 2018
+  },
+  {
+    "path": "Isometric/cabinetBedDrawer_NE.png",
+    "bytes": 1805
+  },
+  {
+    "path": "Isometric/cabinetBedDrawer_NW.png",
+    "bytes": 1818
+  },
+  {
+    "path": "Isometric/cabinetBedDrawer_SE.png",
+    "bytes": 2098
+  },
+  {
+    "path": "Isometric/cabinetBedDrawer_SW.png",
+    "bytes": 2127
+  },
+  {
+    "path": "Isometric/cabinetBed_NE.png",
+    "bytes": 1596
+  },
+  {
+    "path": "Isometric/cabinetBed_NW.png",
+    "bytes": 1686
+  },
+  {
+    "path": "Isometric/cabinetBed_SE.png",
+    "bytes": 2051
+  },
+  {
+    "path": "Isometric/cabinetBed_SW.png",
+    "bytes": 2085
+  },
+  {
+    "path": "Isometric/cabinetTelevisionDoors_NE.png",
+    "bytes": 2372
+  },
+  {
+    "path": "Isometric/cabinetTelevisionDoors_NW.png",
+    "bytes": 2397
+  },
+  {
+    "path": "Isometric/cabinetTelevisionDoors_SE.png",
+    "bytes": 3361
+  },
+  {
+    "path": "Isometric/cabinetTelevisionDoors_SW.png",
+    "bytes": 3312
+  },
+  {
+    "path": "Isometric/cabinetTelevision_NE.png",
+    "bytes": 2390
+  },
+  {
+    "path": "Isometric/cabinetTelevision_NW.png",
+    "bytes": 2397
+  },
+  {
+    "path": "Isometric/cabinetTelevision_SE.png",
+    "bytes": 3598
+  },
+  {
+    "path": "Isometric/cabinetTelevision_SW.png",
+    "bytes": 3538
+  },
+  {
+    "path": "Isometric/cardboardBoxClosed_NE.png",
+    "bytes": 1811
+  },
+  {
+    "path": "Isometric/cardboardBoxClosed_NW.png",
+    "bytes": 1804
+  },
+  {
+    "path": "Isometric/cardboardBoxClosed_SE.png",
+    "bytes": 1790
+  },
+  {
+    "path": "Isometric/cardboardBoxClosed_SW.png",
+    "bytes": 1832
+  },
+  {
+    "path": "Isometric/cardboardBoxOpen_NE.png",
+    "bytes": 2258
+  },
+  {
+    "path": "Isometric/cardboardBoxOpen_NW.png",
+    "bytes": 2292
+  },
+  {
+    "path": "Isometric/cardboardBoxOpen_SE.png",
+    "bytes": 2300
+  },
+  {
+    "path": "Isometric/cardboardBoxOpen_SW.png",
+    "bytes": 2299
+  },
+  {
+    "path": "Isometric/ceilingFan_NE.png",
+    "bytes": 2059
+  },
+  {
+    "path": "Isometric/ceilingFan_NW.png",
+    "bytes": 2066
+  },
+  {
+    "path": "Isometric/ceilingFan_SE.png",
+    "bytes": 2062
+  },
+  {
+    "path": "Isometric/ceilingFan_SW.png",
+    "bytes": 2075
+  },
+  {
+    "path": "Isometric/chairCushion_NE.png",
+    "bytes": 2416
+  },
+  {
+    "path": "Isometric/chairCushion_NW.png",
+    "bytes": 2215
+  },
+  {
+    "path": "Isometric/chairCushion_SE.png",
+    "bytes": 2424
+  },
+  {
+    "path": "Isometric/chairCushion_SW.png",
+    "bytes": 2376
+  },
+  {
+    "path": "Isometric/chairDesk_NE.png",
+    "bytes": 2805
+  },
+  {
+    "path": "Isometric/chairDesk_NW.png",
+    "bytes": 2714
+  },
+  {
+    "path": "Isometric/chairDesk_SE.png",
+    "bytes": 3533
+  },
+  {
+    "path": "Isometric/chairDesk_SW.png",
+    "bytes": 3480
+  },
+  {
+    "path": "Isometric/chairModernCushion_NE.png",
+    "bytes": 1871
+  },
+  {
+    "path": "Isometric/chairModernCushion_NW.png",
+    "bytes": 1887
+  },
+  {
+    "path": "Isometric/chairModernCushion_SE.png",
+    "bytes": 2240
+  },
+  {
+    "path": "Isometric/chairModernCushion_SW.png",
+    "bytes": 2216
+  },
+  {
+    "path": "Isometric/chairModernFrameCushion_NE.png",
+    "bytes": 2302
+  },
+  {
+    "path": "Isometric/chairModernFrameCushion_NW.png",
+    "bytes": 2290
+  },
+  {
+    "path": "Isometric/chairModernFrameCushion_SE.png",
+    "bytes": 2408
+  },
+  {
+    "path": "Isometric/chairModernFrameCushion_SW.png",
+    "bytes": 2385
+  },
+  {
+    "path": "Isometric/chairRounded_NE.png",
+    "bytes": 2393
+  },
+  {
+    "path": "Isometric/chairRounded_NW.png",
+    "bytes": 2382
+  },
+  {
+    "path": "Isometric/chairRounded_SE.png",
+    "bytes": 2530
+  },
+  {
+    "path": "Isometric/chairRounded_SW.png",
+    "bytes": 2535
+  },
+  {
+    "path": "Isometric/chair_NE.png",
+    "bytes": 2334
+  },
+  {
+    "path": "Isometric/chair_NW.png",
+    "bytes": 2295
+  },
+  {
+    "path": "Isometric/chair_SE.png",
+    "bytes": 2439
+  },
+  {
+    "path": "Isometric/chair_SW.png",
+    "bytes": 2420
+  },
+  {
+    "path": "Isometric/coatRackStanding_NE.png",
+    "bytes": 2545
+  },
+  {
+    "path": "Isometric/coatRackStanding_NW.png",
+    "bytes": 2483
+  },
+  {
+    "path": "Isometric/coatRackStanding_SE.png",
+    "bytes": 2472
+  },
+  {
+    "path": "Isometric/coatRackStanding_SW.png",
+    "bytes": 2479
+  },
+  {
+    "path": "Isometric/coatRack_NE.png",
+    "bytes": 2086
+  },
+  {
+    "path": "Isometric/coatRack_NW.png",
+    "bytes": 2068
+  },
+  {
+    "path": "Isometric/coatRack_SE.png",
+    "bytes": 2327
+  },
+  {
+    "path": "Isometric/coatRack_SW.png",
+    "bytes": 2290
+  },
+  {
+    "path": "Isometric/computerKeyboard_NE.png",
+    "bytes": 1446
+  },
+  {
+    "path": "Isometric/computerKeyboard_NW.png",
+    "bytes": 1468
+  },
+  {
+    "path": "Isometric/computerKeyboard_SE.png",
+    "bytes": 1527
+  },
+  {
+    "path": "Isometric/computerKeyboard_SW.png",
+    "bytes": 1562
+  },
+  {
+    "path": "Isometric/computerMouse_NE.png",
+    "bytes": 464
+  },
+  {
+    "path": "Isometric/computerMouse_NW.png",
+    "bytes": 470
+  },
+  {
+    "path": "Isometric/computerMouse_SE.png",
+    "bytes": 478
+  },
+  {
+    "path": "Isometric/computerMouse_SW.png",
+    "bytes": 483
+  },
+  {
+    "path": "Isometric/computerScreen_NE.png",
+    "bytes": 2088
+  },
+  {
+    "path": "Isometric/computerScreen_NW.png",
+    "bytes": 2031
+  },
+  {
+    "path": "Isometric/computerScreen_SE.png",
+    "bytes": 2130
+  },
+  {
+    "path": "Isometric/computerScreen_SW.png",
+    "bytes": 2201
+  },
+  {
+    "path": "Isometric/deskCorner_NE.png",
+    "bytes": 4353
+  },
+  {
+    "path": "Isometric/deskCorner_NW.png",
+    "bytes": 4440
+  },
+  {
+    "path": "Isometric/deskCorner_SE.png",
+    "bytes": 4162
+  },
+  {
+    "path": "Isometric/deskCorner_SW.png",
+    "bytes": 4583
+  },
+  {
+    "path": "Isometric/desk_NE.png",
+    "bytes": 3421
+  },
+  {
+    "path": "Isometric/desk_NW.png",
+    "bytes": 3459
+  },
+  {
+    "path": "Isometric/desk_SE.png",
+    "bytes": 3131
+  },
+  {
+    "path": "Isometric/desk_SW.png",
+    "bytes": 3077
+  },
+  {
+    "path": "Isometric/doorwayFront_NE.png",
+    "bytes": 2851
+  },
+  {
+    "path": "Isometric/doorwayFront_NW.png",
+    "bytes": 2803
+  },
+  {
+    "path": "Isometric/doorwayFront_SE.png",
+    "bytes": 2842
+  },
+  {
+    "path": "Isometric/doorwayFront_SW.png",
+    "bytes": 2773
+  },
+  {
+    "path": "Isometric/doorwayOpen_NE.png",
+    "bytes": 1596
+  },
+  {
+    "path": "Isometric/doorwayOpen_NW.png",
+    "bytes": 1783
+  },
+  {
+    "path": "Isometric/doorwayOpen_SE.png",
+    "bytes": 1626
+  },
+  {
+    "path": "Isometric/doorwayOpen_SW.png",
+    "bytes": 1886
+  },
+  {
+    "path": "Isometric/doorway_NE.png",
+    "bytes": 3784
+  },
+  {
+    "path": "Isometric/doorway_NW.png",
+    "bytes": 3830
+  },
+  {
+    "path": "Isometric/doorway_SE.png",
+    "bytes": 3933
+  },
+  {
+    "path": "Isometric/doorway_SW.png",
+    "bytes": 3811
+  },
+  {
+    "path": "Isometric/dryer_NE.png",
+    "bytes": 2680
+  },
+  {
+    "path": "Isometric/dryer_NW.png",
+    "bytes": 2800
+  },
+  {
+    "path": "Isometric/dryer_SE.png",
+    "bytes": 2949
+  },
+  {
+    "path": "Isometric/dryer_SW.png",
+    "bytes": 2942
+  },
+  {
+    "path": "Isometric/floorCornerRound_NE.png",
+    "bytes": 2223
+  },
+  {
+    "path": "Isometric/floorCornerRound_NW.png",
+    "bytes": 2198
+  },
+  {
+    "path": "Isometric/floorCornerRound_SE.png",
+    "bytes": 2172
+  },
+  {
+    "path": "Isometric/floorCornerRound_SW.png",
+    "bytes": 2163
+  },
+  {
+    "path": "Isometric/floorCorner_NE.png",
+    "bytes": 2179
+  },
+  {
+    "path": "Isometric/floorCorner_NW.png",
+    "bytes": 2186
+  },
+  {
+    "path": "Isometric/floorCorner_SE.png",
+    "bytes": 2161
+  },
+  {
+    "path": "Isometric/floorCorner_SW.png",
+    "bytes": 2090
+  },
+  {
+    "path": "Isometric/floorFull_NE.png",
+    "bytes": 2954
+  },
+  {
+    "path": "Isometric/floorFull_NW.png",
+    "bytes": 3015
+  },
+  {
+    "path": "Isometric/floorFull_SE.png",
+    "bytes": 2964
+  },
+  {
+    "path": "Isometric/floorFull_SW.png",
+    "bytes": 3010
+  },
+  {
+    "path": "Isometric/floorHalf_NE.png",
+    "bytes": 2486
+  },
+  {
+    "path": "Isometric/floorHalf_NW.png",
+    "bytes": 2515
+  },
+  {
+    "path": "Isometric/floorHalf_SE.png",
+    "bytes": 2428
+  },
+  {
+    "path": "Isometric/floorHalf_SW.png",
+    "bytes": 2499
+  },
+  {
+    "path": "Isometric/hoodLarge_NE.png",
+    "bytes": 2392
+  },
+  {
+    "path": "Isometric/hoodLarge_NW.png",
+    "bytes": 2442
+  },
+  {
+    "path": "Isometric/hoodLarge_SE.png",
+    "bytes": 2830
+  },
+  {
+    "path": "Isometric/hoodLarge_SW.png",
+    "bytes": 2899
+  },
+  {
+    "path": "Isometric/hoodModern_NE.png",
+    "bytes": 2555
+  },
+  {
+    "path": "Isometric/hoodModern_NW.png",
+    "bytes": 2543
+  },
+  {
+    "path": "Isometric/hoodModern_SE.png",
+    "bytes": 2994
+  },
+  {
+    "path": "Isometric/hoodModern_SW.png",
+    "bytes": 2896
+  },
+  {
+    "path": "Isometric/kitchenBarEnd_NE.png",
+    "bytes": 1337
+  },
+  {
+    "path": "Isometric/kitchenBarEnd_NW.png",
+    "bytes": 1580
+  },
+  {
+    "path": "Isometric/kitchenBarEnd_SE.png",
+    "bytes": 1609
+  },
+  {
+    "path": "Isometric/kitchenBarEnd_SW.png",
+    "bytes": 1387
+  },
+  {
+    "path": "Isometric/kitchenBar_NE.png",
+    "bytes": 2448
+  },
+  {
+    "path": "Isometric/kitchenBar_NW.png",
+    "bytes": 2416
+  },
+  {
+    "path": "Isometric/kitchenBar_SE.png",
+    "bytes": 2414
+  },
+  {
+    "path": "Isometric/kitchenBar_SW.png",
+    "bytes": 2431
+  },
+  {
+    "path": "Isometric/kitchenBlender_NE.png",
+    "bytes": 1467
+  },
+  {
+    "path": "Isometric/kitchenBlender_NW.png",
+    "bytes": 1457
+  },
+  {
+    "path": "Isometric/kitchenBlender_SE.png",
+    "bytes": 1544
+  },
+  {
+    "path": "Isometric/kitchenBlender_SW.png",
+    "bytes": 1478
+  },
+  {
+    "path": "Isometric/kitchenCabinetCornerInner_NE.png",
+    "bytes": 2937
+  },
+  {
+    "path": "Isometric/kitchenCabinetCornerInner_NW.png",
+    "bytes": 3129
+  },
+  {
+    "path": "Isometric/kitchenCabinetCornerInner_SE.png",
+    "bytes": 3168
+  },
+  {
+    "path": "Isometric/kitchenCabinetCornerInner_SW.png",
+    "bytes": 3080
+  },
+  {
+    "path": "Isometric/kitchenCabinetCornerRound_NE.png",
+    "bytes": 2394
+  },
+  {
+    "path": "Isometric/kitchenCabinetCornerRound_NW.png",
+    "bytes": 2411
+  },
+  {
+    "path": "Isometric/kitchenCabinetCornerRound_SE.png",
+    "bytes": 2885
+  },
+  {
+    "path": "Isometric/kitchenCabinetCornerRound_SW.png",
+    "bytes": 2641
+  },
+  {
+    "path": "Isometric/kitchenCabinetDrawer_NE.png",
+    "bytes": 2616
+  },
+  {
+    "path": "Isometric/kitchenCabinetDrawer_NW.png",
+    "bytes": 2672
+  },
+  {
+    "path": "Isometric/kitchenCabinetDrawer_SE.png",
+    "bytes": 3361
+  },
+  {
+    "path": "Isometric/kitchenCabinetDrawer_SW.png",
+    "bytes": 3425
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpperCorner_NE.png",
+    "bytes": 1494
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpperCorner_NW.png",
+    "bytes": 2016
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpperCorner_SE.png",
+    "bytes": 2625
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpperCorner_SW.png",
+    "bytes": 2004
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpperDouble_NE.png",
+    "bytes": 1775
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpperDouble_NW.png",
+    "bytes": 1736
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpperDouble_SE.png",
+    "bytes": 2411
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpperDouble_SW.png",
+    "bytes": 2343
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpperLow_NE.png",
+    "bytes": 1698
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpperLow_NW.png",
+    "bytes": 1749
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpperLow_SE.png",
+    "bytes": 2235
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpperLow_SW.png",
+    "bytes": 2216
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpper_NE.png",
+    "bytes": 1775
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpper_NW.png",
+    "bytes": 1736
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpper_SE.png",
+    "bytes": 2271
+  },
+  {
+    "path": "Isometric/kitchenCabinetUpper_SW.png",
+    "bytes": 2224
+  },
+  {
+    "path": "Isometric/kitchenCabinet_NE.png",
+    "bytes": 2636
+  },
+  {
+    "path": "Isometric/kitchenCabinet_NW.png",
+    "bytes": 2654
+  },
+  {
+    "path": "Isometric/kitchenCabinet_SE.png",
+    "bytes": 3157
+  },
+  {
+    "path": "Isometric/kitchenCabinet_SW.png",
+    "bytes": 3265
+  },
+  {
+    "path": "Isometric/kitchenCoffeeMachine_NE.png",
+    "bytes": 1769
+  },
+  {
+    "path": "Isometric/kitchenCoffeeMachine_NW.png",
+    "bytes": 1749
+  },
+  {
+    "path": "Isometric/kitchenCoffeeMachine_SE.png",
+    "bytes": 1896
+  },
+  {
+    "path": "Isometric/kitchenCoffeeMachine_SW.png",
+    "bytes": 1894
+  },
+  {
+    "path": "Isometric/kitchenFridgeBuiltIn_NE.png",
+    "bytes": 2018
+  },
+  {
+    "path": "Isometric/kitchenFridgeBuiltIn_NW.png",
+    "bytes": 2097
+  },
+  {
+    "path": "Isometric/kitchenFridgeBuiltIn_SE.png",
+    "bytes": 3191
+  },
+  {
+    "path": "Isometric/kitchenFridgeBuiltIn_SW.png",
+    "bytes": 3228
+  },
+  {
+    "path": "Isometric/kitchenFridgeLarge_NE.png",
+    "bytes": 2079
+  },
+  {
+    "path": "Isometric/kitchenFridgeLarge_NW.png",
+    "bytes": 2122
+  },
+  {
+    "path": "Isometric/kitchenFridgeLarge_SE.png",
+    "bytes": 3499
+  },
+  {
+    "path": "Isometric/kitchenFridgeLarge_SW.png",
+    "bytes": 3577
+  },
+  {
+    "path": "Isometric/kitchenFridgeSmall_NE.png",
+    "bytes": 2103
+  },
+  {
+    "path": "Isometric/kitchenFridgeSmall_NW.png",
+    "bytes": 2123
+  },
+  {
+    "path": "Isometric/kitchenFridgeSmall_SE.png",
+    "bytes": 2466
+  },
+  {
+    "path": "Isometric/kitchenFridgeSmall_SW.png",
+    "bytes": 2567
+  },
+  {
+    "path": "Isometric/kitchenFridge_NE.png",
+    "bytes": 2053
+  },
+  {
+    "path": "Isometric/kitchenFridge_NW.png",
+    "bytes": 2108
+  },
+  {
+    "path": "Isometric/kitchenFridge_SE.png",
+    "bytes": 2673
+  },
+  {
+    "path": "Isometric/kitchenFridge_SW.png",
+    "bytes": 2817
+  },
+  {
+    "path": "Isometric/kitchenMicrowave_NE.png",
+    "bytes": 1870
+  },
+  {
+    "path": "Isometric/kitchenMicrowave_NW.png",
+    "bytes": 1846
+  },
+  {
+    "path": "Isometric/kitchenMicrowave_SE.png",
+    "bytes": 1902
+  },
+  {
+    "path": "Isometric/kitchenMicrowave_SW.png",
+    "bytes": 1922
+  },
+  {
+    "path": "Isometric/kitchenSink_NE.png",
+    "bytes": 3651
+  },
+  {
+    "path": "Isometric/kitchenSink_NW.png",
+    "bytes": 3596
+  },
+  {
+    "path": "Isometric/kitchenSink_SE.png",
+    "bytes": 4210
+  },
+  {
+    "path": "Isometric/kitchenSink_SW.png",
+    "bytes": 4233
+  },
+  {
+    "path": "Isometric/kitchenStoveElectric_NE.png",
+    "bytes": 3584
+  },
+  {
+    "path": "Isometric/kitchenStoveElectric_NW.png",
+    "bytes": 3617
+  },
+  {
+    "path": "Isometric/kitchenStoveElectric_SE.png",
+    "bytes": 4316
+  },
+  {
+    "path": "Isometric/kitchenStoveElectric_SW.png",
+    "bytes": 4382
+  },
+  {
+    "path": "Isometric/kitchenStove_NE.png",
+    "bytes": 3974
+  },
+  {
+    "path": "Isometric/kitchenStove_NW.png",
+    "bytes": 3991
+  },
+  {
+    "path": "Isometric/kitchenStove_SE.png",
+    "bytes": 4701
+  },
+  {
+    "path": "Isometric/kitchenStove_SW.png",
+    "bytes": 4911
+  },
+  {
+    "path": "Isometric/lampRoundFloor_NE.png",
+    "bytes": 1936
+  },
+  {
+    "path": "Isometric/lampRoundFloor_NW.png",
+    "bytes": 1931
+  },
+  {
+    "path": "Isometric/lampRoundFloor_SE.png",
+    "bytes": 1884
+  },
+  {
+    "path": "Isometric/lampRoundFloor_SW.png",
+    "bytes": 1888
+  },
+  {
+    "path": "Isometric/lampRoundTable_NE.png",
+    "bytes": 1741
+  },
+  {
+    "path": "Isometric/lampRoundTable_NW.png",
+    "bytes": 1756
+  },
+  {
+    "path": "Isometric/lampRoundTable_SE.png",
+    "bytes": 1740
+  },
+  {
+    "path": "Isometric/lampRoundTable_SW.png",
+    "bytes": 1762
+  },
+  {
+    "path": "Isometric/lampSquareCeiling_NE.png",
+    "bytes": 1464
+  },
+  {
+    "path": "Isometric/lampSquareCeiling_NW.png",
+    "bytes": 1483
+  },
+  {
+    "path": "Isometric/lampSquareCeiling_SE.png",
+    "bytes": 1468
+  },
+  {
+    "path": "Isometric/lampSquareCeiling_SW.png",
+    "bytes": 1487
+  },
+  {
+    "path": "Isometric/lampSquareFloor_NE.png",
+    "bytes": 1672
+  },
+  {
+    "path": "Isometric/lampSquareFloor_NW.png",
+    "bytes": 1696
+  },
+  {
+    "path": "Isometric/lampSquareFloor_SE.png",
+    "bytes": 1721
+  },
+  {
+    "path": "Isometric/lampSquareFloor_SW.png",
+    "bytes": 1696
+  },
+  {
+    "path": "Isometric/lampSquareTable_NE.png",
+    "bytes": 1683
+  },
+  {
+    "path": "Isometric/lampSquareTable_NW.png",
+    "bytes": 1679
+  },
+  {
+    "path": "Isometric/lampSquareTable_SE.png",
+    "bytes": 1716
+  },
+  {
+    "path": "Isometric/lampSquareTable_SW.png",
+    "bytes": 1694
+  },
+  {
+    "path": "Isometric/lampWall_NE.png",
+    "bytes": 1649
+  },
+  {
+    "path": "Isometric/lampWall_NW.png",
+    "bytes": 1665
+  },
+  {
+    "path": "Isometric/lampWall_SE.png",
+    "bytes": 1444
+  },
+  {
+    "path": "Isometric/lampWall_SW.png",
+    "bytes": 1442
+  },
+  {
+    "path": "Isometric/laptop_NE.png",
+    "bytes": 1815
+  },
+  {
+    "path": "Isometric/laptop_NW.png",
+    "bytes": 1816
+  },
+  {
+    "path": "Isometric/laptop_SE.png",
+    "bytes": 2194
+  },
+  {
+    "path": "Isometric/laptop_SW.png",
+    "bytes": 2236
+  },
+  {
+    "path": "Isometric/loungeChairRelax_NE.png",
+    "bytes": 3503
+  },
+  {
+    "path": "Isometric/loungeChairRelax_NW.png",
+    "bytes": 3379
+  },
+  {
+    "path": "Isometric/loungeChairRelax_SE.png",
+    "bytes": 5123
+  },
+  {
+    "path": "Isometric/loungeChairRelax_SW.png",
+    "bytes": 4952
+  },
+  {
+    "path": "Isometric/loungeChair_NE.png",
+    "bytes": 3034
+  },
+  {
+    "path": "Isometric/loungeChair_NW.png",
+    "bytes": 2995
+  },
+  {
+    "path": "Isometric/loungeChair_SE.png",
+    "bytes": 4130
+  },
+  {
+    "path": "Isometric/loungeChair_SW.png",
+    "bytes": 4153
+  },
+  {
+    "path": "Isometric/loungeDesignChair_NE.png",
+    "bytes": 3580
+  },
+  {
+    "path": "Isometric/loungeDesignChair_NW.png",
+    "bytes": 3649
+  },
+  {
+    "path": "Isometric/loungeDesignChair_SE.png",
+    "bytes": 4743
+  },
+  {
+    "path": "Isometric/loungeDesignChair_SW.png",
+    "bytes": 4563
+  },
+  {
+    "path": "Isometric/loungeDesignSofaCorner_NE.png",
+    "bytes": 5129
+  },
+  {
+    "path": "Isometric/loungeDesignSofaCorner_NW.png",
+    "bytes": 6469
+  },
+  {
+    "path": "Isometric/loungeDesignSofaCorner_SE.png",
+    "bytes": 7627
+  },
+  {
+    "path": "Isometric/loungeDesignSofaCorner_SW.png",
+    "bytes": 6351
+  },
+  {
+    "path": "Isometric/loungeDesignSofa_NE.png",
+    "bytes": 3987
+  },
+  {
+    "path": "Isometric/loungeDesignSofa_NW.png",
+    "bytes": 3963
+  },
+  {
+    "path": "Isometric/loungeDesignSofa_SE.png",
+    "bytes": 5332
+  },
+  {
+    "path": "Isometric/loungeDesignSofa_SW.png",
+    "bytes": 5278
+  },
+  {
+    "path": "Isometric/loungeSofaCorner_NE.png",
+    "bytes": 4389
+  },
+  {
+    "path": "Isometric/loungeSofaCorner_NW.png",
+    "bytes": 5436
+  },
+  {
+    "path": "Isometric/loungeSofaCorner_SE.png",
+    "bytes": 6872
+  },
+  {
+    "path": "Isometric/loungeSofaCorner_SW.png",
+    "bytes": 5484
+  },
+  {
+    "path": "Isometric/loungeSofaLong_NE.png",
+    "bytes": 4147
+  },
+  {
+    "path": "Isometric/loungeSofaLong_NW.png",
+    "bytes": 4188
+  },
+  {
+    "path": "Isometric/loungeSofaLong_SE.png",
+    "bytes": 5876
+  },
+  {
+    "path": "Isometric/loungeSofaLong_SW.png",
+    "bytes": 5849
+  },
+  {
+    "path": "Isometric/loungeSofaOttoman_NE.png",
+    "bytes": 2480
+  },
+  {
+    "path": "Isometric/loungeSofaOttoman_NW.png",
+    "bytes": 2455
+  },
+  {
+    "path": "Isometric/loungeSofaOttoman_SE.png",
+    "bytes": 2513
+  },
+  {
+    "path": "Isometric/loungeSofaOttoman_SW.png",
+    "bytes": 2505
+  },
+  {
+    "path": "Isometric/loungeSofa_NE.png",
+    "bytes": 3597
+  },
+  {
+    "path": "Isometric/loungeSofa_NW.png",
+    "bytes": 3505
+  },
+  {
+    "path": "Isometric/loungeSofa_SE.png",
+    "bytes": 5162
+  },
+  {
+    "path": "Isometric/loungeSofa_SW.png",
+    "bytes": 5139
+  },
+  {
+    "path": "Isometric/paneling_NE.png",
+    "bytes": 1658
+  },
+  {
+    "path": "Isometric/paneling_NW.png",
+    "bytes": 1610
+  },
+  {
+    "path": "Isometric/paneling_SE.png",
+    "bytes": 2726
+  },
+  {
+    "path": "Isometric/paneling_SW.png",
+    "bytes": 2642
+  },
+  {
+    "path": "Isometric/pillowBlueLong_NE.png",
+    "bytes": 1666
+  },
+  {
+    "path": "Isometric/pillowBlueLong_NW.png",
+    "bytes": 1618
+  },
+  {
+    "path": "Isometric/pillowBlueLong_SE.png",
+    "bytes": 1782
+  },
+  {
+    "path": "Isometric/pillowBlueLong_SW.png",
+    "bytes": 1801
+  },
+  {
+    "path": "Isometric/pillowBlue_NE.png",
+    "bytes": 1169
+  },
+  {
+    "path": "Isometric/pillowBlue_NW.png",
+    "bytes": 1068
+  },
+  {
+    "path": "Isometric/pillowBlue_SE.png",
+    "bytes": 1250
+  },
+  {
+    "path": "Isometric/pillowBlue_SW.png",
+    "bytes": 1248
+  },
+  {
+    "path": "Isometric/pillowLong_NE.png",
+    "bytes": 1486
+  },
+  {
+    "path": "Isometric/pillowLong_NW.png",
+    "bytes": 1570
+  },
+  {
+    "path": "Isometric/pillowLong_SE.png",
+    "bytes": 1704
+  },
+  {
+    "path": "Isometric/pillowLong_SW.png",
+    "bytes": 1675
+  },
+  {
+    "path": "Isometric/pillow_NE.png",
+    "bytes": 1331
+  },
+  {
+    "path": "Isometric/pillow_NW.png",
+    "bytes": 1167
+  },
+  {
+    "path": "Isometric/pillow_SE.png",
+    "bytes": 1438
+  },
+  {
+    "path": "Isometric/pillow_SW.png",
+    "bytes": 1510
+  },
+  {
+    "path": "Isometric/plantSmall1_NE.png",
+    "bytes": 930
+  },
+  {
+    "path": "Isometric/plantSmall1_NW.png",
+    "bytes": 907
+  },
+  {
+    "path": "Isometric/plantSmall1_SE.png",
+    "bytes": 930
+  },
+  {
+    "path": "Isometric/plantSmall1_SW.png",
+    "bytes": 906
+  },
+  {
+    "path": "Isometric/plantSmall2_NE.png",
+    "bytes": 981
+  },
+  {
+    "path": "Isometric/plantSmall2_NW.png",
+    "bytes": 957
+  },
+  {
+    "path": "Isometric/plantSmall2_SE.png",
+    "bytes": 981
+  },
+  {
+    "path": "Isometric/plantSmall2_SW.png",
+    "bytes": 957
+  },
+  {
+    "path": "Isometric/plantSmall3_NE.png",
+    "bytes": 1015
+  },
+  {
+    "path": "Isometric/plantSmall3_NW.png",
+    "bytes": 1004
+  },
+  {
+    "path": "Isometric/plantSmall3_SE.png",
+    "bytes": 1015
+  },
+  {
+    "path": "Isometric/plantSmall3_SW.png",
+    "bytes": 1004
+  },
+  {
+    "path": "Isometric/pottedPlant_NE.png",
+    "bytes": 2350
+  },
+  {
+    "path": "Isometric/pottedPlant_NW.png",
+    "bytes": 2358
+  },
+  {
+    "path": "Isometric/pottedPlant_SE.png",
+    "bytes": 2337
+  },
+  {
+    "path": "Isometric/pottedPlant_SW.png",
+    "bytes": 2333
+  },
+  {
+    "path": "Isometric/radio_NE.png",
+    "bytes": 1838
+  },
+  {
+    "path": "Isometric/radio_NW.png",
+    "bytes": 1843
+  },
+  {
+    "path": "Isometric/radio_SE.png",
+    "bytes": 2053
+  },
+  {
+    "path": "Isometric/radio_SW.png",
+    "bytes": 2068
+  },
+  {
+    "path": "Isometric/rugDoormat_NE.png",
+    "bytes": 1562
+  },
+  {
+    "path": "Isometric/rugDoormat_NW.png",
+    "bytes": 1513
+  },
+  {
+    "path": "Isometric/rugDoormat_SE.png",
+    "bytes": 1580
+  },
+  {
+    "path": "Isometric/rugDoormat_SW.png",
+    "bytes": 1532
+  },
+  {
+    "path": "Isometric/rugRectangle_NE.png",
+    "bytes": 3979
+  },
+  {
+    "path": "Isometric/rugRectangle_NW.png",
+    "bytes": 3960
+  },
+  {
+    "path": "Isometric/rugRectangle_SE.png",
+    "bytes": 3818
+  },
+  {
+    "path": "Isometric/rugRectangle_SW.png",
+    "bytes": 3931
+  },
+  {
+    "path": "Isometric/rugRounded_NE.png",
+    "bytes": 4522
+  },
+  {
+    "path": "Isometric/rugRounded_NW.png",
+    "bytes": 4453
+  },
+  {
+    "path": "Isometric/rugRounded_SE.png",
+    "bytes": 4402
+  },
+  {
+    "path": "Isometric/rugRounded_SW.png",
+    "bytes": 4493
+  },
+  {
+    "path": "Isometric/rugRound_NE.png",
+    "bytes": 3531
+  },
+  {
+    "path": "Isometric/rugRound_NW.png",
+    "bytes": 3455
+  },
+  {
+    "path": "Isometric/rugRound_SE.png",
+    "bytes": 3403
+  },
+  {
+    "path": "Isometric/rugRound_SW.png",
+    "bytes": 3427
+  },
+  {
+    "path": "Isometric/rugSquare_NE.png",
+    "bytes": 3335
+  },
+  {
+    "path": "Isometric/rugSquare_NW.png",
+    "bytes": 3242
+  },
+  {
+    "path": "Isometric/rugSquare_SE.png",
+    "bytes": 3180
+  },
+  {
+    "path": "Isometric/rugSquare_SW.png",
+    "bytes": 3255
+  },
+  {
+    "path": "Isometric/showerRound_NE.png",
+    "bytes": 3144
+  },
+  {
+    "path": "Isometric/showerRound_NW.png",
+    "bytes": 3770
+  },
+  {
+    "path": "Isometric/showerRound_SE.png",
+    "bytes": 7029
+  },
+  {
+    "path": "Isometric/showerRound_SW.png",
+    "bytes": 4533
+  },
+  {
+    "path": "Isometric/shower_NE.png",
+    "bytes": 4592
+  },
+  {
+    "path": "Isometric/shower_NW.png",
+    "bytes": 4305
+  },
+  {
+    "path": "Isometric/shower_SE.png",
+    "bytes": 6790
+  },
+  {
+    "path": "Isometric/shower_SW.png",
+    "bytes": 6995
+  },
+  {
+    "path": "Isometric/sideTableDrawers_NE.png",
+    "bytes": 2615
+  },
+  {
+    "path": "Isometric/sideTableDrawers_NW.png",
+    "bytes": 2600
+  },
+  {
+    "path": "Isometric/sideTableDrawers_SE.png",
+    "bytes": 2685
+  },
+  {
+    "path": "Isometric/sideTableDrawers_SW.png",
+    "bytes": 2712
+  },
+  {
+    "path": "Isometric/sideTable_NE.png",
+    "bytes": 2562
+  },
+  {
+    "path": "Isometric/sideTable_NW.png",
+    "bytes": 2600
+  },
+  {
+    "path": "Isometric/sideTable_SE.png",
+    "bytes": 2524
+  },
+  {
+    "path": "Isometric/sideTable_SW.png",
+    "bytes": 2561
+  },
+  {
+    "path": "Isometric/speakerSmall_NE.png",
+    "bytes": 1615
+  },
+  {
+    "path": "Isometric/speakerSmall_NW.png",
+    "bytes": 1618
+  },
+  {
+    "path": "Isometric/speakerSmall_SE.png",
+    "bytes": 1698
+  },
+  {
+    "path": "Isometric/speakerSmall_SW.png",
+    "bytes": 1692
+  },
+  {
+    "path": "Isometric/speaker_NE.png",
+    "bytes": 1570
+  },
+  {
+    "path": "Isometric/speaker_NW.png",
+    "bytes": 1568
+  },
+  {
+    "path": "Isometric/speaker_SE.png",
+    "bytes": 1926
+  },
+  {
+    "path": "Isometric/speaker_SW.png",
+    "bytes": 1949
+  },
+  {
+    "path": "Isometric/stairsCorner_NE.png",
+    "bytes": 7432
+  },
+  {
+    "path": "Isometric/stairsCorner_NW.png",
+    "bytes": 11465
+  },
+  {
+    "path": "Isometric/stairsCorner_SE.png",
+    "bytes": 12863
+  },
+  {
+    "path": "Isometric/stairsCorner_SW.png",
+    "bytes": 10673
+  },
+  {
+    "path": "Isometric/stairsOpenSingle_NE.png",
+    "bytes": 5468
+  },
+  {
+    "path": "Isometric/stairsOpenSingle_NW.png",
+    "bytes": 10859
+  },
+  {
+    "path": "Isometric/stairsOpenSingle_SE.png",
+    "bytes": 11129
+  },
+  {
+    "path": "Isometric/stairsOpenSingle_SW.png",
+    "bytes": 5326
+  },
+  {
+    "path": "Isometric/stairsOpen_NE.png",
+    "bytes": 6196
+  },
+  {
+    "path": "Isometric/stairsOpen_NW.png",
+    "bytes": 11747
+  },
+  {
+    "path": "Isometric/stairsOpen_SE.png",
+    "bytes": 11577
+  },
+  {
+    "path": "Isometric/stairsOpen_SW.png",
+    "bytes": 6097
+  },
+  {
+    "path": "Isometric/stairs_NE.png",
+    "bytes": 7400
+  },
+  {
+    "path": "Isometric/stairs_NW.png",
+    "bytes": 11975
+  },
+  {
+    "path": "Isometric/stairs_SE.png",
+    "bytes": 11996
+  },
+  {
+    "path": "Isometric/stairs_SW.png",
+    "bytes": 7387
+  },
+  {
+    "path": "Isometric/stoolBarSquare_NE.png",
+    "bytes": 1985
+  },
+  {
+    "path": "Isometric/stoolBarSquare_NW.png",
+    "bytes": 2071
+  },
+  {
+    "path": "Isometric/stoolBarSquare_SE.png",
+    "bytes": 2039
+  },
+  {
+    "path": "Isometric/stoolBarSquare_SW.png",
+    "bytes": 2050
+  },
+  {
+    "path": "Isometric/stoolBar_NE.png",
+    "bytes": 2100
+  },
+  {
+    "path": "Isometric/stoolBar_NW.png",
+    "bytes": 2076
+  },
+  {
+    "path": "Isometric/stoolBar_SE.png",
+    "bytes": 2109
+  },
+  {
+    "path": "Isometric/stoolBar_SW.png",
+    "bytes": 2114
+  },
+  {
+    "path": "Isometric/tableCloth_NE.png",
+    "bytes": 3416
+  },
+  {
+    "path": "Isometric/tableCloth_NW.png",
+    "bytes": 3365
+  },
+  {
+    "path": "Isometric/tableCloth_SE.png",
+    "bytes": 3334
+  },
+  {
+    "path": "Isometric/tableCloth_SW.png",
+    "bytes": 3388
+  },
+  {
+    "path": "Isometric/tableCoffeeGlassSquare_NE.png",
+    "bytes": 3645
+  },
+  {
+    "path": "Isometric/tableCoffeeGlassSquare_NW.png",
+    "bytes": 3729
+  },
+  {
+    "path": "Isometric/tableCoffeeGlassSquare_SE.png",
+    "bytes": 3666
+  },
+  {
+    "path": "Isometric/tableCoffeeGlassSquare_SW.png",
+    "bytes": 3652
+  },
+  {
+    "path": "Isometric/tableCoffeeGlass_NE.png",
+    "bytes": 4332
+  },
+  {
+    "path": "Isometric/tableCoffeeGlass_NW.png",
+    "bytes": 4288
+  },
+  {
+    "path": "Isometric/tableCoffeeGlass_SE.png",
+    "bytes": 4410
+  },
+  {
+    "path": "Isometric/tableCoffeeGlass_SW.png",
+    "bytes": 4306
+  },
+  {
+    "path": "Isometric/tableCoffeeSquare_NE.png",
+    "bytes": 2772
+  },
+  {
+    "path": "Isometric/tableCoffeeSquare_NW.png",
+    "bytes": 2786
+  },
+  {
+    "path": "Isometric/tableCoffeeSquare_SE.png",
+    "bytes": 2714
+  },
+  {
+    "path": "Isometric/tableCoffeeSquare_SW.png",
+    "bytes": 2838
+  },
+  {
+    "path": "Isometric/tableCoffee_NE.png",
+    "bytes": 3182
+  },
+  {
+    "path": "Isometric/tableCoffee_NW.png",
+    "bytes": 3166
+  },
+  {
+    "path": "Isometric/tableCoffee_SE.png",
+    "bytes": 3185
+  },
+  {
+    "path": "Isometric/tableCoffee_SW.png",
+    "bytes": 3139
+  },
+  {
+    "path": "Isometric/tableCrossCloth_NE.png",
+    "bytes": 3261
+  },
+  {
+    "path": "Isometric/tableCrossCloth_NW.png",
+    "bytes": 3231
+  },
+  {
+    "path": "Isometric/tableCrossCloth_SE.png",
+    "bytes": 3126
+  },
+  {
+    "path": "Isometric/tableCrossCloth_SW.png",
+    "bytes": 3120
+  },
+  {
+    "path": "Isometric/tableCross_NE.png",
+    "bytes": 3100
+  },
+  {
+    "path": "Isometric/tableCross_NW.png",
+    "bytes": 3073
+  },
+  {
+    "path": "Isometric/tableCross_SE.png",
+    "bytes": 3042
+  },
+  {
+    "path": "Isometric/tableCross_SW.png",
+    "bytes": 3001
+  },
+  {
+    "path": "Isometric/tableGlass_NE.png",
+    "bytes": 4401
+  },
+  {
+    "path": "Isometric/tableGlass_NW.png",
+    "bytes": 4339
+  },
+  {
+    "path": "Isometric/tableGlass_SE.png",
+    "bytes": 4257
+  },
+  {
+    "path": "Isometric/tableGlass_SW.png",
+    "bytes": 4279
+  },
+  {
+    "path": "Isometric/tableRound_NE.png",
+    "bytes": 2428
+  },
+  {
+    "path": "Isometric/tableRound_NW.png",
+    "bytes": 2457
+  },
+  {
+    "path": "Isometric/tableRound_SE.png",
+    "bytes": 2422
+  },
+  {
+    "path": "Isometric/tableRound_SW.png",
+    "bytes": 2475
+  },
+  {
+    "path": "Isometric/table_NE.png",
+    "bytes": 3201
+  },
+  {
+    "path": "Isometric/table_NW.png",
+    "bytes": 3191
+  },
+  {
+    "path": "Isometric/table_SE.png",
+    "bytes": 3186
+  },
+  {
+    "path": "Isometric/table_SW.png",
+    "bytes": 3164
+  },
+  {
+    "path": "Isometric/televisionAntenna_NE.png",
+    "bytes": 1251
+  },
+  {
+    "path": "Isometric/televisionAntenna_NW.png",
+    "bytes": 1237
+  },
+  {
+    "path": "Isometric/televisionAntenna_SE.png",
+    "bytes": 1229
+  },
+  {
+    "path": "Isometric/televisionAntenna_SW.png",
+    "bytes": 1222
+  },
+  {
+    "path": "Isometric/televisionModern_NE.png",
+    "bytes": 2959
+  },
+  {
+    "path": "Isometric/televisionModern_NW.png",
+    "bytes": 2806
+  },
+  {
+    "path": "Isometric/televisionModern_SE.png",
+    "bytes": 2629
+  },
+  {
+    "path": "Isometric/televisionModern_SW.png",
+    "bytes": 2656
+  },
+  {
+    "path": "Isometric/televisionVintage_NE.png",
+    "bytes": 2533
+  },
+  {
+    "path": "Isometric/televisionVintage_NW.png",
+    "bytes": 2475
+  },
+  {
+    "path": "Isometric/televisionVintage_SE.png",
+    "bytes": 2450
+  },
+  {
+    "path": "Isometric/televisionVintage_SW.png",
+    "bytes": 2537
+  },
+  {
+    "path": "Isometric/toaster_NE.png",
+    "bytes": 1506
+  },
+  {
+    "path": "Isometric/toaster_NW.png",
+    "bytes": 1609
+  },
+  {
+    "path": "Isometric/toaster_SE.png",
+    "bytes": 1571
+  },
+  {
+    "path": "Isometric/toaster_SW.png",
+    "bytes": 1505
+  },
+  {
+    "path": "Isometric/toiletSquare_NE.png",
+    "bytes": 2657
+  },
+  {
+    "path": "Isometric/toiletSquare_NW.png",
+    "bytes": 2558
+  },
+  {
+    "path": "Isometric/toiletSquare_SE.png",
+    "bytes": 3013
+  },
+  {
+    "path": "Isometric/toiletSquare_SW.png",
+    "bytes": 3084
+  },
+  {
+    "path": "Isometric/toilet_NE.png",
+    "bytes": 2863
+  },
+  {
+    "path": "Isometric/toilet_NW.png",
+    "bytes": 2699
+  },
+  {
+    "path": "Isometric/toilet_SE.png",
+    "bytes": 3315
+  },
+  {
+    "path": "Isometric/toilet_SW.png",
+    "bytes": 3244
+  },
+  {
+    "path": "Isometric/trashcan_NE.png",
+    "bytes": 1775
+  },
+  {
+    "path": "Isometric/trashcan_NW.png",
+    "bytes": 1777
+  },
+  {
+    "path": "Isometric/trashcan_SE.png",
+    "bytes": 1799
+  },
+  {
+    "path": "Isometric/trashcan_SW.png",
+    "bytes": 1823
+  },
+  {
+    "path": "Isometric/wallCornerRond_NE.png",
+    "bytes": 2220
+  },
+  {
+    "path": "Isometric/wallCornerRond_NW.png",
+    "bytes": 2657
+  },
+  {
+    "path": "Isometric/wallCornerRond_SE.png",
+    "bytes": 2180
+  },
+  {
+    "path": "Isometric/wallCornerRond_SW.png",
+    "bytes": 2383
+  },
+  {
+    "path": "Isometric/wallCorner_NE.png",
+    "bytes": 2106
+  },
+  {
+    "path": "Isometric/wallCorner_NW.png",
+    "bytes": 2668
+  },
+  {
+    "path": "Isometric/wallCorner_SE.png",
+    "bytes": 2116
+  },
+  {
+    "path": "Isometric/wallCorner_SW.png",
+    "bytes": 2245
+  },
+  {
+    "path": "Isometric/wallDoorwayWide_NE.png",
+    "bytes": 2990
+  },
+  {
+    "path": "Isometric/wallDoorwayWide_NW.png",
+    "bytes": 2863
+  },
+  {
+    "path": "Isometric/wallDoorwayWide_SE.png",
+    "bytes": 2741
+  },
+  {
+    "path": "Isometric/wallDoorwayWide_SW.png",
+    "bytes": 3029
+  },
+  {
+    "path": "Isometric/wallDoorway_NE.png",
+    "bytes": 3238
+  },
+  {
+    "path": "Isometric/wallDoorway_NW.png",
+    "bytes": 2949
+  },
+  {
+    "path": "Isometric/wallDoorway_SE.png",
+    "bytes": 2887
+  },
+  {
+    "path": "Isometric/wallDoorway_SW.png",
+    "bytes": 3133
+  },
+  {
+    "path": "Isometric/wallHalf_NE.png",
+    "bytes": 1810
+  },
+  {
+    "path": "Isometric/wallHalf_NW.png",
+    "bytes": 1599
+  },
+  {
+    "path": "Isometric/wallHalf_SE.png",
+    "bytes": 1516
+  },
+  {
+    "path": "Isometric/wallHalf_SW.png",
+    "bytes": 1604
+  },
+  {
+    "path": "Isometric/wallWindowSlide_NE.png",
+    "bytes": 4580
+  },
+  {
+    "path": "Isometric/wallWindowSlide_NW.png",
+    "bytes": 4526
+  },
+  {
+    "path": "Isometric/wallWindowSlide_SE.png",
+    "bytes": 4279
+  },
+  {
+    "path": "Isometric/wallWindowSlide_SW.png",
+    "bytes": 4566
+  },
+  {
+    "path": "Isometric/wallWindow_NE.png",
+    "bytes": 4112
+  },
+  {
+    "path": "Isometric/wallWindow_NW.png",
+    "bytes": 3934
+  },
+  {
+    "path": "Isometric/wallWindow_SE.png",
+    "bytes": 3892
+  },
+  {
+    "path": "Isometric/wallWindow_SW.png",
+    "bytes": 4085
+  },
+  {
+    "path": "Isometric/wall_NE.png",
+    "bytes": 2334
+  },
+  {
+    "path": "Isometric/wall_NW.png",
+    "bytes": 1980
+  },
+  {
+    "path": "Isometric/wall_SE.png",
+    "bytes": 2326
+  },
+  {
+    "path": "Isometric/wall_SW.png",
+    "bytes": 2035
+  },
+  {
+    "path": "Isometric/washerDryerStacked_NE.png",
+    "bytes": 3448
+  },
+  {
+    "path": "Isometric/washerDryerStacked_NW.png",
+    "bytes": 3784
+  },
+  {
+    "path": "Isometric/washerDryerStacked_SE.png",
+    "bytes": 4423
+  },
+  {
+    "path": "Isometric/washerDryerStacked_SW.png",
+    "bytes": 4537
+  },
+  {
+    "path": "Isometric/washer_NE.png",
+    "bytes": 2653
+  },
+  {
+    "path": "Isometric/washer_NW.png",
+    "bytes": 2853
+  },
+  {
+    "path": "Isometric/washer_SE.png",
+    "bytes": 3204
+  },
+  {
+    "path": "Isometric/washer_SW.png",
+    "bytes": 3265
+  },
+  {
+    "path": "Kenney.url",
+    "bytes": 45
+  },
+  {
+    "path": "License.txt",
+    "bytes": 614
+  },
+  {
+    "path": "Models/",
+    "bytes": 0
+  },
+  {
+    "path": "Models/DAE format/",
+    "bytes": 0
+  },
+  {
+    "path": "Models/DAE format/bathroomCabinet.dae",
+    "bytes": 18579
+  },
+  {
+    "path": "Models/DAE format/bathroomCabinetDrawer.dae",
+    "bytes": 63852
+  },
+  {
+    "path": "Models/DAE format/bathroomMirror.dae",
+    "bytes": 17775
+  },
+  {
+    "path": "Models/DAE format/bathroomSink.dae",
+    "bytes": 55593
+  },
+  {
+    "path": "Models/DAE format/bathroomSinkSquare.dae",
+    "bytes": 38037
+  },
+  {
+    "path": "Models/DAE format/bathtub.dae",
+    "bytes": 88838
+  },
+  {
+    "path": "Models/DAE format/bear.dae",
+    "bytes": 30265
+  },
+  {
+    "path": "Models/DAE format/bedBunk.dae",
+    "bytes": 76225
+  },
+  {
+    "path": "Models/DAE format/bedDouble.dae",
+    "bytes": 45783
+  },
+  {
+    "path": "Models/DAE format/bedSingle.dae",
+    "bytes": 45283
+  },
+  {
+    "path": "Models/DAE format/bench.dae",
+    "bytes": 27117
+  },
+  {
+    "path": "Models/DAE format/benchCushion.dae",
+    "bytes": 31512
+  },
+  {
+    "path": "Models/DAE format/benchCushionLow.dae",
+    "bytes": 26330
+  },
+  {
+    "path": "Models/DAE format/bookcaseClosed.dae",
+    "bytes": 57112
+  },
+  {
+    "path": "Models/DAE format/bookcaseClosedDoors.dae",
+    "bytes": 55119
+  },
+  {
+    "path": "Models/DAE format/bookcaseClosedWide.dae",
+    "bytes": 57182
+  },
+  {
+    "path": "Models/DAE format/bookcaseOpen.dae",
+    "bytes": 45035
+  },
+  {
+    "path": "Models/DAE format/bookcaseOpenLow.dae",
+    "bytes": 28982
+  },
+  {
+    "path": "Models/DAE format/books.dae",
+    "bytes": 18205
+  },
+  {
+    "path": "Models/DAE format/cabinetBed.dae",
+    "bytes": 18868
+  },
+  {
+    "path": "Models/DAE format/cabinetBedDrawer.dae",
+    "bytes": 38700
+  },
+  {
+    "path": "Models/DAE format/cabinetBedDrawerTable.dae",
+    "bytes": 30130
+  },
+  {
+    "path": "Models/DAE format/cabinetTelevision.dae",
+    "bytes": 26470
+  },
+  {
+    "path": "Models/DAE format/cabinetTelevisionDoors.dae",
+    "bytes": 40956
+  },
+  {
+    "path": "Models/DAE format/cardboardBoxClosed.dae",
+    "bytes": 14146
+  },
+  {
+    "path": "Models/DAE format/cardboardBoxOpen.dae",
+    "bytes": 14145
+  },
+  {
+    "path": "Models/DAE format/ceilingFan.dae",
+    "bytes": 39234
+  },
+  {
+    "path": "Models/DAE format/chair.dae",
+    "bytes": 27022
+  },
+  {
+    "path": "Models/DAE format/chairCushion.dae",
+    "bytes": 31643
+  },
+  {
+    "path": "Models/DAE format/chairDesk.dae",
+    "bytes": 95761
+  },
+  {
+    "path": "Models/DAE format/chairModernCushion.dae",
+    "bytes": 18936
+  },
+  {
+    "path": "Models/DAE format/chairModernFrameCushion.dae",
+    "bytes": 46236
+  },
+  {
+    "path": "Models/DAE format/chairRounded.dae",
+    "bytes": 42634
+  },
+  {
+    "path": "Models/DAE format/coatRack.dae",
+    "bytes": 25463
+  },
+  {
+    "path": "Models/DAE format/coatRackStanding.dae",
+    "bytes": 33250
+  },
+  {
+    "path": "Models/DAE format/computerKeyboard.dae",
+    "bytes": 9732
+  },
+  {
+    "path": "Models/DAE format/computerMouse.dae",
+    "bytes": 15054
+  },
+  {
+    "path": "Models/DAE format/computerScreen.dae",
+    "bytes": 16483
+  },
+  {
+    "path": "Models/DAE format/desk.dae",
+    "bytes": 37101
+  },
+  {
+    "path": "Models/DAE format/deskCorner.dae",
+    "bytes": 44363
+  },
+  {
+    "path": "Models/DAE format/doorway.dae",
+    "bytes": 36229
+  },
+  {
+    "path": "Models/DAE format/doorwayFront.dae",
+    "bytes": 33207
+  },
+  {
+    "path": "Models/DAE format/doorwayOpen.dae",
+    "bytes": 9035
+  },
+  {
+    "path": "Models/DAE format/dryer.dae",
+    "bytes": 43934
+  },
+  {
+    "path": "Models/DAE format/floorCorner.dae",
+    "bytes": 7376
+  },
+  {
+    "path": "Models/DAE format/floorCornerRound.dae",
+    "bytes": 13405
+  },
+  {
+    "path": "Models/DAE format/floorFull.dae",
+    "bytes": 6825
+  },
+  {
+    "path": "Models/DAE format/floorHalf.dae",
+    "bytes": 6825
+  },
+  {
+    "path": "Models/DAE format/hoodLarge.dae",
+    "bytes": 12592
+  },
+  {
+    "path": "Models/DAE format/hoodModern.dae",
+    "bytes": 10983
+  },
+  {
+    "path": "Models/DAE format/kitchenBar.dae",
+    "bytes": 15965
+  },
+  {
+    "path": "Models/DAE format/kitchenBarEnd.dae",
+    "bytes": 28297
+  },
+  {
+    "path": "Models/DAE format/kitchenBlender.dae",
+    "bytes": 45836
+  },
+  {
+    "path": "Models/DAE format/kitchenCabinet.dae",
+    "bytes": 25931
+  },
+  {
+    "path": "Models/DAE format/kitchenCabinetCornerInner.dae",
+    "bytes": 13754
+  },
+  {
+    "path": "Models/DAE format/kitchenCabinetCornerRound.dae",
+    "bytes": 34553
+  },
+  {
+    "path": "Models/DAE format/kitchenCabinetDrawer.dae",
+    "bytes": 36595
+  },
+  {
+    "path": "Models/DAE format/kitchenCabinetUpper.dae",
+    "bytes": 20821
+  },
+  {
+    "path": "Models/DAE format/kitchenCabinetUpperCorner.dae",
+    "bytes": 34201
+  },
+  {
+    "path": "Models/DAE format/kitchenCabinetUpperDouble.dae",
+    "bytes": 43792
+  },
+  {
+    "path": "Models/DAE format/kitchenCabinetUpperLow.dae",
+    "bytes": 18657
+  },
+  {
+    "path": "Models/DAE format/kitchenCoffeeMachine.dae",
+    "bytes": 33007
+  },
+  {
+    "path": "Models/DAE format/kitchenFridge.dae",
+    "bytes": 48669
+  },
+  {
+    "path": "Models/DAE format/kitchenFridgeBuiltIn.dae",
+    "bytes": 54378
+  },
+  {
+    "path": "Models/DAE format/kitchenFridgeLarge.dae",
+    "bytes": 74528
+  },
+  {
+    "path": "Models/DAE format/kitchenFridgeSmall.dae",
+    "bytes": 32417
+  },
+  {
+    "path": "Models/DAE format/kitchenMicrowave.dae",
+    "bytes": 27832
+  },
+  {
+    "path": "Models/DAE format/kitchenSink.dae",
+    "bytes": 58644
+  },
+  {
+    "path": "Models/DAE format/kitchenStove.dae",
+    "bytes": 135193
+  },
+  {
+    "path": "Models/DAE format/kitchenStoveElectric.dae",
+    "bytes": 47891
+  },
+  {
+    "path": "Models/DAE format/lampRoundFloor.dae",
+    "bytes": 17066
+  },
+  {
+    "path": "Models/DAE format/lampRoundTable.dae",
+    "bytes": 17034
+  },
+  {
+    "path": "Models/DAE format/lampSquareCeiling.dae",
+    "bytes": 14725
+  },
+  {
+    "path": "Models/DAE format/lampSquareFloor.dae",
+    "bytes": 14751
+  },
+  {
+    "path": "Models/DAE format/lampSquareTable.dae",
+    "bytes": 14743
+  },
+  {
+    "path": "Models/DAE format/lampWall.dae",
+    "bytes": 13033
+  },
+  {
+    "path": "Models/DAE format/laptop.dae",
+    "bytes": 14888
+  },
+  {
+    "path": "Models/DAE format/loungeChair.dae",
+    "bytes": 24488
+  },
+  {
+    "path": "Models/DAE format/loungeChairRelax.dae",
+    "bytes": 35135
+  },
+  {
+    "path": "Models/DAE format/loungeDesignChair.dae",
+    "bytes": 23293
+  },
+  {
+    "path": "Models/DAE format/loungeDesignSofa.dae",
+    "bytes": 23292
+  },
+  {
+    "path": "Models/DAE format/loungeDesignSofaCorner.dae",
+    "bytes": 34002
+  },
+  {
+    "path": "Models/DAE format/loungeSofa.dae",
+    "bytes": 24508
+  },
+  {
+    "path": "Models/DAE format/loungeSofaCorner.dae",
+    "bytes": 33733
+  },
+  {
+    "path": "Models/DAE format/loungeSofaLong.dae",
+    "bytes": 33068
+  },
+  {
+    "path": "Models/DAE format/loungeSofaOttoman.dae",
+    "bytes": 18129
+  },
+  {
+    "path": "Models/DAE format/paneling.dae",
+    "bytes": 10738
+  },
+  {
+    "path": "Models/DAE format/pillow.dae",
+    "bytes": 13177
+  },
+  {
+    "path": "Models/DAE format/pillowBlue.dae",
+    "bytes": 13185
+  },
+  {
+    "path": "Models/DAE format/pillowBlueLong.dae",
+    "bytes": 13268
+  },
+  {
+    "path": "Models/DAE format/pillowLong.dae",
+    "bytes": 13222
+  },
+  {
+    "path": "Models/DAE format/plantSmall1.dae",
+    "bytes": 21098
+  },
+  {
+    "path": "Models/DAE format/plantSmall2.dae",
+    "bytes": 32685
+  },
+  {
+    "path": "Models/DAE format/plantSmall3.dae",
+    "bytes": 21560
+  },
+  {
+    "path": "Models/DAE format/pottedPlant.dae",
+    "bytes": 19693
+  },
+  {
+    "path": "Models/DAE format/radio.dae",
+    "bytes": 62170
+  },
+  {
+    "path": "Models/DAE format/rugDoormat.dae",
+    "bytes": 34160
+  },
+  {
+    "path": "Models/DAE format/rugRectangle.dae",
+    "bytes": 9179
+  },
+  {
+    "path": "Models/DAE format/rugRound.dae",
+    "bytes": 26433
+  },
+  {
+    "path": "Models/DAE format/rugRounded.dae",
+    "bytes": 27356
+  },
+  {
+    "path": "Models/DAE format/rugSquare.dae",
+    "bytes": 9176
+  },
+  {
+    "path": "Models/DAE format/shower.dae",
+    "bytes": 129771
+  },
+  {
+    "path": "Models/DAE format/showerRound.dae",
+    "bytes": 175482
+  },
+  {
+    "path": "Models/DAE format/sideTable.dae",
+    "bytes": 22617
+  },
+  {
+    "path": "Models/DAE format/sideTableDrawers.dae",
+    "bytes": 37682
+  },
+  {
+    "path": "Models/DAE format/speaker.dae",
+    "bytes": 39379
+  },
+  {
+    "path": "Models/DAE format/speakerSmall.dae",
+    "bytes": 37977
+  },
+  {
+    "path": "Models/DAE format/stairs.dae",
+    "bytes": 53919
+  },
+  {
+    "path": "Models/DAE format/stairsCorner.dae",
+    "bytes": 54066
+  },
+  {
+    "path": "Models/DAE format/stairsOpen.dae",
+    "bytes": 66529
+  },
+  {
+    "path": "Models/DAE format/stairsOpenSingle.dae",
+    "bytes": 60097
+  },
+  {
+    "path": "Models/DAE format/stoolBar.dae",
+    "bytes": 29931
+  },
+  {
+    "path": "Models/DAE format/stoolBarSquare.dae",
+    "bytes": 24841
+  },
+  {
+    "path": "Models/DAE format/table.dae",
+    "bytes": 20812
+  },
+  {
+    "path": "Models/DAE format/tableCloth.dae",
+    "bytes": 25245
+  },
+  {
+    "path": "Models/DAE format/tableCoffee.dae",
+    "bytes": 21076
+  },
+  {
+    "path": "Models/DAE format/tableCoffeeGlass.dae",
+    "bytes": 24181
+  },
+  {
+    "path": "Models/DAE format/tableCoffeeGlassSquare.dae",
+    "bytes": 24271
+  },
+  {
+    "path": "Models/DAE format/tableCoffeeSquare.dae",
+    "bytes": 21172
+  },
+  {
+    "path": "Models/DAE format/tableCross.dae",
+    "bytes": 30627
+  },
+  {
+    "path": "Models/DAE format/tableCrossCloth.dae",
+    "bytes": 35077
+  },
+  {
+    "path": "Models/DAE format/tableGlass.dae",
+    "bytes": 25118
+  },
+  {
+    "path": "Models/DAE format/tableRound.dae",
+    "bytes": 16614
+  },
+  {
+    "path": "Models/DAE format/televisionAntenna.dae",
+    "bytes": 11863
+  },
+  {
+    "path": "Models/DAE format/televisionModern.dae",
+    "bytes": 16626
+  },
+  {
+    "path": "Models/DAE format/televisionVintage.dae",
+    "bytes": 48500
+  },
+  {
+    "path": "Models/DAE format/Textures/",
+    "bytes": 0
+  },
+  {
+    "path": "Models/DAE format/toaster.dae",
+    "bytes": 37667
+  },
+  {
+    "path": "Models/DAE format/toilet.dae",
+    "bytes": 45492
+  },
+  {
+    "path": "Models/DAE format/toiletSquare.dae",
+    "bytes": 43289
+  },
+  {
+    "path": "Models/DAE format/trashcan.dae",
+    "bytes": 16658
+  },
+  {
+    "path": "Models/DAE format/wall.dae",
+    "bytes": 9970
+  },
+  {
+    "path": "Models/DAE format/wallCorner.dae",
+    "bytes": 12516
+  },
+  {
+    "path": "Models/DAE format/wallCornerRond.dae",
+    "bytes": 27026
+  },
+  {
+    "path": "Models/DAE format/wallDoorway.dae",
+    "bytes": 17131
+  },
+  {
+    "path": "Models/DAE format/wallDoorwayWide.dae",
+    "bytes": 17113
+  },
+  {
+    "path": "Models/DAE format/wallHalf.dae",
+    "bytes": 9974
+  },
+  {
+    "path": "Models/DAE format/wallWindow.dae",
+    "bytes": 27168
+  },
+  {
+    "path": "Models/DAE format/wallWindowSlide.dae",
+    "bytes": 35489
+  },
+  {
+    "path": "Models/DAE format/washer.dae",
+    "bytes": 119693
+  },
+  {
+    "path": "Models/DAE format/washerDryerStacked.dae",
+    "bytes": 158047
+  },
+  {
+    "path": "Models/FBX format/",
+    "bytes": 0
+  },
+  {
+    "path": "Models/FBX format/bathroomCabinet.fbx",
+    "bytes": 20162
+  },
+  {
+    "path": "Models/FBX format/bathroomCabinetDrawer.fbx",
+    "bytes": 70490
+  },
+  {
+    "path": "Models/FBX format/bathroomMirror.fbx",
+    "bytes": 20620
+  },
+  {
+    "path": "Models/FBX format/bathroomSink.fbx",
+    "bytes": 50855
+  },
+  {
+    "path": "Models/FBX format/bathroomSinkSquare.fbx",
+    "bytes": 37501
+  },
+  {
+    "path": "Models/FBX format/bathtub.fbx",
+    "bytes": 90099
+  },
+  {
+    "path": "Models/FBX format/bear.fbx",
+    "bytes": 34399
+  },
+  {
+    "path": "Models/FBX format/bedBunk.fbx",
+    "bytes": 80386
+  },
+  {
+    "path": "Models/FBX format/bedDouble.fbx",
+    "bytes": 48952
+  },
+  {
+    "path": "Models/FBX format/bedSingle.fbx",
+    "bytes": 40417
+  },
+  {
+    "path": "Models/FBX format/bench.fbx",
+    "bytes": 25079
+  },
+  {
+    "path": "Models/FBX format/benchCushion.fbx",
+    "bytes": 27612
+  },
+  {
+    "path": "Models/FBX format/benchCushionLow.fbx",
+    "bytes": 23732
+  },
+  {
+    "path": "Models/FBX format/bookcaseClosed.fbx",
+    "bytes": 44542
+  },
+  {
+    "path": "Models/FBX format/bookcaseClosedDoors.fbx",
+    "bytes": 43875
+  },
+  {
+    "path": "Models/FBX format/bookcaseClosedWide.fbx",
+    "bytes": 47192
+  },
+  {
+    "path": "Models/FBX format/bookcaseOpen.fbx",
+    "bytes": 38100
+  },
+  {
+    "path": "Models/FBX format/bookcaseOpenLow.fbx",
+    "bytes": 26186
+  },
+  {
+    "path": "Models/FBX format/books.fbx",
+    "bytes": 19229
+  },
+  {
+    "path": "Models/FBX format/cabinetBed.fbx",
+    "bytes": 21644
+  },
+  {
+    "path": "Models/FBX format/cabinetBedDrawer.fbx",
+    "bytes": 36228
+  },
+  {
+    "path": "Models/FBX format/cabinetBedDrawerTable.fbx",
+    "bytes": 29346
+  },
+  {
+    "path": "Models/FBX format/cabinetTelevision.fbx",
+    "bytes": 25175
+  },
+  {
+    "path": "Models/FBX format/cabinetTelevisionDoors.fbx",
+    "bytes": 35737
+  },
+  {
+    "path": "Models/FBX format/cardboardBoxClosed.fbx",
+    "bytes": 17427
+  },
+  {
+    "path": "Models/FBX format/cardboardBoxOpen.fbx",
+    "bytes": 17511
+  },
+  {
+    "path": "Models/FBX format/ceilingFan.fbx",
+    "bytes": 41411
+  },
+  {
+    "path": "Models/FBX format/chair.fbx",
+    "bytes": 25130
+  },
+  {
+    "path": "Models/FBX format/chairCushion.fbx",
+    "bytes": 27786
+  },
+  {
+    "path": "Models/FBX format/chairDesk.fbx",
+    "bytes": 94274
+  },
+  {
+    "path": "Models/FBX format/chairModernCushion.fbx",
+    "bytes": 19354
+  },
+  {
+    "path": "Models/FBX format/chairModernFrameCushion.fbx",
+    "bytes": 44287
+  },
+  {
+    "path": "Models/FBX format/chairRounded.fbx",
+    "bytes": 38436
+  },
+  {
+    "path": "Models/FBX format/coatRack.fbx",
+    "bytes": 27488
+  },
+  {
+    "path": "Models/FBX format/coatRackStanding.fbx",
+    "bytes": 33130
+  },
+  {
+    "path": "Models/FBX format/computerKeyboard.fbx",
+    "bytes": 15355
+  },
+  {
+    "path": "Models/FBX format/computerMouse.fbx",
+    "bytes": 20078
+  },
+  {
+    "path": "Models/FBX format/computerScreen.fbx",
+    "bytes": 21480
+  },
+  {
+    "path": "Models/FBX format/desk.fbx",
+    "bytes": 34207
+  },
+  {
+    "path": "Models/FBX format/deskCorner.fbx",
+    "bytes": 41311
+  },
+  {
+    "path": "Models/FBX format/doorway.fbx",
+    "bytes": 36720
+  },
+  {
+    "path": "Models/FBX format/doorwayFront.fbx",
+    "bytes": 32495
+  },
+  {
+    "path": "Models/FBX format/doorwayOpen.fbx",
+    "bytes": 13969
+  },
+  {
+    "path": "Models/FBX format/dryer.fbx",
+    "bytes": 43291
+  },
+  {
+    "path": "Models/FBX format/floorCorner.fbx",
+    "bytes": 12569
+  },
+  {
+    "path": "Models/FBX format/floorCornerRound.fbx",
+    "bytes": 18498
+  },
+  {
+    "path": "Models/FBX format/floorFull.fbx",
+    "bytes": 11916
+  },
+  {
+    "path": "Models/FBX format/floorHalf.fbx",
+    "bytes": 11904
+  },
+  {
+    "path": "Models/FBX format/hoodLarge.fbx",
+    "bytes": 15637
+  },
+  {
+    "path": "Models/FBX format/hoodModern.fbx",
+    "bytes": 14502
+  },
+  {
+    "path": "Models/FBX format/kitchenBar.fbx",
+    "bytes": 17595
+  },
+  {
+    "path": "Models/FBX format/kitchenBarEnd.fbx",
+    "bytes": 30976
+  },
+  {
+    "path": "Models/FBX format/kitchenBlender.fbx",
+    "bytes": 49510
+  },
+  {
+    "path": "Models/FBX format/kitchenCabinet.fbx",
+    "bytes": 24927
+  },
+  {
+    "path": "Models/FBX format/kitchenCabinetCornerInner.fbx",
+    "bytes": 17198
+  },
+  {
+    "path": "Models/FBX format/kitchenCabinetCornerRound.fbx",
+    "bytes": 35347
+  },
+  {
+    "path": "Models/FBX format/kitchenCabinetDrawer.fbx",
+    "bytes": 32928
+  },
+  {
+    "path": "Models/FBX format/kitchenCabinetUpper.fbx",
+    "bytes": 21803
+  },
+  {
+    "path": "Models/FBX format/kitchenCabinetUpperCorner.fbx",
+    "bytes": 36669
+  },
+  {
+    "path": "Models/FBX format/kitchenCabinetUpperDouble.fbx",
+    "bytes": 38968
+  },
+  {
+    "path": "Models/FBX format/kitchenCabinetUpperLow.fbx",
+    "bytes": 20200
+  },
+  {
+    "path": "Models/FBX format/kitchenCoffeeMachine.fbx",
+    "bytes": 33931
+  },
+  {
+    "path": "Models/FBX format/kitchenFridge.fbx",
+    "bytes": 42227
+  },
+  {
+    "path": "Models/FBX format/kitchenFridgeBuiltIn.fbx",
+    "bytes": 45781
+  },
+  {
+    "path": "Models/FBX format/kitchenFridgeLarge.fbx",
+    "bytes": 72014
+  },
+  {
+    "path": "Models/FBX format/kitchenFridgeSmall.fbx",
+    "bytes": 29942
+  },
+  {
+    "path": "Models/FBX format/kitchenMicrowave.fbx",
+    "bytes": 27890
+  },
+  {
+    "path": "Models/FBX format/kitchenSink.fbx",
+    "bytes": 50873
+  },
+  {
+    "path": "Models/FBX format/kitchenStove.fbx",
+    "bytes": 110692
+  },
+  {
+    "path": "Models/FBX format/kitchenStoveElectric.fbx",
+    "bytes": 41857
+  },
+  {
+    "path": "Models/FBX format/lampRoundFloor.fbx",
+    "bytes": 21092
+  },
+  {
+    "path": "Models/FBX format/lampRoundTable.fbx",
+    "bytes": 21261
+  },
+  {
+    "path": "Models/FBX format/lampSquareCeiling.fbx",
+    "bytes": 17440
+  },
+  {
+    "path": "Models/FBX format/lampSquareFloor.fbx",
+    "bytes": 18027
+  },
+  {
+    "path": "Models/FBX format/lampSquareTable.fbx",
+    "bytes": 18047
+  },
+  {
+    "path": "Models/FBX format/lampWall.fbx",
+    "bytes": 16993
+  },
+  {
+    "path": "Models/FBX format/laptop.fbx",
+    "bytes": 18631
+  },
+  {
+    "path": "Models/FBX format/loungeChair.fbx",
+    "bytes": 24573
+  },
+  {
+    "path": "Models/FBX format/loungeChairRelax.fbx",
+    "bytes": 34168
+  },
+  {
+    "path": "Models/FBX format/loungeDesignChair.fbx",
+    "bytes": 25382
+  },
+  {
+    "path": "Models/FBX format/loungeDesignSofa.fbx",
+    "bytes": 25224
+  },
+  {
+    "path": "Models/FBX format/loungeDesignSofaCorner.fbx",
+    "bytes": 35584
+  },
+  {
+    "path": "Models/FBX format/loungeSofa.fbx",
+    "bytes": 24419
+  },
+  {
+    "path": "Models/FBX format/loungeSofaCorner.fbx",
+    "bytes": 31075
+  },
+  {
+    "path": "Models/FBX format/loungeSofaLong.fbx",
+    "bytes": 30079
+  },
+  {
+    "path": "Models/FBX format/loungeSofaOttoman.fbx",
+    "bytes": 19196
+  },
+  {
+    "path": "Models/FBX format/paneling.fbx",
+    "bytes": 15361
+  },
+  {
+    "path": "Models/FBX format/pillow.fbx",
+    "bytes": 19559
+  },
+  {
+    "path": "Models/FBX format/pillowBlue.fbx",
+    "bytes": 19598
+  },
+  {
+    "path": "Models/FBX format/pillowBlueLong.fbx",
+    "bytes": 19739
+  },
+  {
+    "path": "Models/FBX format/pillowLong.fbx",
+    "bytes": 19835
+  },
+  {
+    "path": "Models/FBX format/plantSmall1.fbx",
+    "bytes": 25382
+  },
+  {
+    "path": "Models/FBX format/plantSmall2.fbx",
+    "bytes": 38646
+  },
+  {
+    "path": "Models/FBX format/plantSmall3.fbx",
+    "bytes": 26021
+  },
+  {
+    "path": "Models/FBX format/pottedPlant.fbx",
+    "bytes": 23744
+  },
+  {
+    "path": "Models/FBX format/radio.fbx",
+    "bytes": 62624
+  },
+  {
+    "path": "Models/FBX format/rugDoormat.fbx",
+    "bytes": 40504
+  },
+  {
+    "path": "Models/FBX format/rugRectangle.fbx",
+    "bytes": 13510
+  },
+  {
+    "path": "Models/FBX format/rugRound.fbx",
+    "bytes": 29259
+  },
+  {
+    "path": "Models/FBX format/rugRounded.fbx",
+    "bytes": 30035
+  },
+  {
+    "path": "Models/FBX format/rugSquare.fbx",
+    "bytes": 13537
+  },
+  {
+    "path": "Models/FBX format/shower.fbx",
+    "bytes": 115269
+  },
+  {
+    "path": "Models/FBX format/showerRound.fbx",
+    "bytes": 157414
+  },
+  {
+    "path": "Models/FBX format/sideTable.fbx",
+    "bytes": 22455
+  },
+  {
+    "path": "Models/FBX format/sideTableDrawers.fbx",
+    "bytes": 40877
+  },
+  {
+    "path": "Models/FBX format/speaker.fbx",
+    "bytes": 42248
+  },
+  {
+    "path": "Models/FBX format/speakerSmall.fbx",
+    "bytes": 40334
+  },
+  {
+    "path": "Models/FBX format/stairs.fbx",
+    "bytes": 45685
+  },
+  {
+    "path": "Models/FBX format/stairsCorner.fbx",
+    "bytes": 46698
+  },
+  {
+    "path": "Models/FBX format/stairsOpen.fbx",
+    "bytes": 74950
+  },
+  {
+    "path": "Models/FBX format/stairsOpenSingle.fbx",
+    "bytes": 49329
+  },
+  {
+    "path": "Models/FBX format/stoolBar.fbx",
+    "bytes": 30868
+  },
+  {
+    "path": "Models/FBX format/stoolBarSquare.fbx",
+    "bytes": 25330
+  },
+  {
+    "path": "Models/FBX format/table.fbx",
+    "bytes": 24396
+  },
+  {
+    "path": "Models/FBX format/tableCloth.fbx",
+    "bytes": 27440
+  },
+  {
+    "path": "Models/FBX format/tableCoffee.fbx",
+    "bytes": 21919
+  },
+  {
+    "path": "Models/FBX format/tableCoffeeGlass.fbx",
+    "bytes": 23788
+  },
+  {
+    "path": "Models/FBX format/tableCoffeeGlassSquare.fbx",
+    "bytes": 24374
+  },
+  {
+    "path": "Models/FBX format/tableCoffeeSquare.fbx",
+    "bytes": 22476
+  },
+  {
+    "path": "Models/FBX format/tableCross.fbx",
+    "bytes": 32944
+  },
+  {
+    "path": "Models/FBX format/tableCrossCloth.fbx",
+    "bytes": 36009
+  },
+  {
+    "path": "Models/FBX format/tableGlass.fbx",
+    "bytes": 27405
+  },
+  {
+    "path": "Models/FBX format/tableRound.fbx",
+    "bytes": 19706
+  },
+  {
+    "path": "Models/FBX format/televisionAntenna.fbx",
+    "bytes": 18292
+  },
+  {
+    "path": "Models/FBX format/televisionModern.fbx",
+    "bytes": 19524
+  },
+  {
+    "path": "Models/FBX format/televisionVintage.fbx",
+    "bytes": 49201
+  },
+  {
+    "path": "Models/FBX format/Textures/",
+    "bytes": 0
+  },
+  {
+    "path": "Models/FBX format/toaster.fbx",
+    "bytes": 37319
+  },
+  {
+    "path": "Models/FBX format/toilet.fbx",
+    "bytes": 44789
+  },
+  {
+    "path": "Models/FBX format/toiletSquare.fbx",
+    "bytes": 45881
+  },
+  {
+    "path": "Models/FBX format/trashcan.fbx",
+    "bytes": 21455
+  },
+  {
+    "path": "Models/FBX format/wall.fbx",
+    "bytes": 12985
+  },
+  {
+    "path": "Models/FBX format/wallCorner.fbx",
+    "bytes": 14912
+  },
+  {
+    "path": "Models/FBX format/wallCornerRond.fbx",
+    "bytes": 27270
+  },
+  {
+    "path": "Models/FBX format/wallDoorway.fbx",
+    "bytes": 18367
+  },
+  {
+    "path": "Models/FBX format/wallDoorwayWide.fbx",
+    "bytes": 18696
+  },
+  {
+    "path": "Models/FBX format/wallHalf.fbx",
+    "bytes": 13002
+  },
+  {
+    "path": "Models/FBX format/wallWindow.fbx",
+    "bytes": 25738
+  },
+  {
+    "path": "Models/FBX format/wallWindowSlide.fbx",
+    "bytes": 32303
+  },
+  {
+    "path": "Models/FBX format/washer.fbx",
+    "bytes": 108355
+  },
+  {
+    "path": "Models/FBX format/washerDryerStacked.fbx",
+    "bytes": 142961
+  },
+  {
+    "path": "Models/GLTF format/",
+    "bytes": 0
+  },
+  {
+    "path": "Models/GLTF format/bathroomCabinet.glb",
+    "bytes": 7216
+  },
+  {
+    "path": "Models/GLTF format/bathroomCabinetDrawer.glb",
+    "bytes": 34744
+  },
+  {
+    "path": "Models/GLTF format/bathroomMirror.glb",
+    "bytes": 6792
+  },
+  {
+    "path": "Models/GLTF format/bathroomSink.glb",
+    "bytes": 22536
+  },
+  {
+    "path": "Models/GLTF format/bathroomSinkSquare.glb",
+    "bytes": 15108
+  },
+  {
+    "path": "Models/GLTF format/bathtub.glb",
+    "bytes": 35500
+  },
+  {
+    "path": "Models/GLTF format/bear.glb",
+    "bytes": 11884
+  },
+  {
+    "path": "Models/GLTF format/bedBunk.glb",
+    "bytes": 40784
+  },
+  {
+    "path": "Models/GLTF format/bedDouble.glb",
+    "bytes": 23368
+  },
+  {
+    "path": "Models/GLTF format/bedSingle.glb",
+    "bytes": 18636
+  },
+  {
+    "path": "Models/GLTF format/bench.glb",
+    "bytes": 10756
+  },
+  {
+    "path": "Models/GLTF format/benchCushion.glb",
+    "bytes": 12500
+  },
+  {
+    "path": "Models/GLTF format/benchCushionLow.glb",
+    "bytes": 10268
+  },
+  {
+    "path": "Models/GLTF format/bookcaseClosed.glb",
+    "bytes": 23132
+  },
+  {
+    "path": "Models/GLTF format/bookcaseClosedDoors.glb",
+    "bytes": 22644
+  },
+  {
+    "path": "Models/GLTF format/bookcaseClosedWide.glb",
+    "bytes": 23140
+  },
+  {
+    "path": "Models/GLTF format/bookcaseOpen.glb",
+    "bytes": 18020
+  },
+  {
+    "path": "Models/GLTF format/bookcaseOpenLow.glb",
+    "bytes": 11520
+  },
+  {
+    "path": "Models/GLTF format/books.glb",
+    "bytes": 6864
+  },
+  {
+    "path": "Models/GLTF format/cabinetBed.glb",
+    "bytes": 7496
+  },
+  {
+    "path": "Models/GLTF format/cabinetBedDrawer.glb",
+    "bytes": 16088
+  },
+  {
+    "path": "Models/GLTF format/cabinetBedDrawerTable.glb",
+    "bytes": 12200
+  },
+  {
+    "path": "Models/GLTF format/cabinetTelevision.glb",
+    "bytes": 10524
+  },
+  {
+    "path": "Models/GLTF format/cabinetTelevisionDoors.glb",
+    "bytes": 16876
+  },
+  {
+    "path": "Models/GLTF format/cardboardBoxClosed.glb",
+    "bytes": 5400
+  },
+  {
+    "path": "Models/GLTF format/cardboardBoxOpen.glb",
+    "bytes": 5404
+  },
+  {
+    "path": "Models/GLTF format/ceilingFan.glb",
+    "bytes": 15284
+  },
+  {
+    "path": "Models/GLTF format/chair.glb",
+    "bytes": 10756
+  },
+  {
+    "path": "Models/GLTF format/chairCushion.glb",
+    "bytes": 12588
+  },
+  {
+    "path": "Models/GLTF format/chairDesk.glb",
+    "bytes": 39016
+  },
+  {
+    "path": "Models/GLTF format/chairModernCushion.glb",
+    "bytes": 7376
+  },
+  {
+    "path": "Models/GLTF format/chairModernFrameCushion.glb",
+    "bytes": 18592
+  },
+  {
+    "path": "Models/GLTF format/chairRounded.glb",
+    "bytes": 17156
+  },
+  {
+    "path": "Models/GLTF format/coatRack.glb",
+    "bytes": 9948
+  },
+  {
+    "path": "Models/GLTF format/coatRackStanding.glb",
+    "bytes": 13288
+  },
+  {
+    "path": "Models/GLTF format/computerKeyboard.glb",
+    "bytes": 3476
+  },
+  {
+    "path": "Models/GLTF format/computerMouse.glb",
+    "bytes": 5868
+  },
+  {
+    "path": "Models/GLTF format/computerScreen.glb",
+    "bytes": 6404
+  },
+  {
+    "path": "Models/GLTF format/desk.glb",
+    "bytes": 15048
+  },
+  {
+    "path": "Models/GLTF format/deskCorner.glb",
+    "bytes": 17984
+  },
+  {
+    "path": "Models/GLTF format/doorway.glb",
+    "bytes": 14532
+  },
+  {
+    "path": "Models/GLTF format/doorwayFront.glb",
+    "bytes": 13016
+  },
+  {
+    "path": "Models/GLTF format/doorwayOpen.glb",
+    "bytes": 3256
+  },
+  {
+    "path": "Models/GLTF format/dryer.glb",
+    "bytes": 17760
+  },
+  {
+    "path": "Models/GLTF format/floorCorner.glb",
+    "bytes": 2524
+  },
+  {
+    "path": "Models/GLTF format/floorCornerRound.glb",
+    "bytes": 5168
+  },
+  {
+    "path": "Models/GLTF format/floorFull.glb",
+    "bytes": 2260
+  },
+  {
+    "path": "Models/GLTF format/floorHalf.glb",
+    "bytes": 2264
+  },
+  {
+    "path": "Models/GLTF format/hoodLarge.glb",
+    "bytes": 4652
+  },
+  {
+    "path": "Models/GLTF format/hoodModern.glb",
+    "bytes": 3968
+  },
+  {
+    "path": "Models/GLTF format/kitchenBar.glb",
+    "bytes": 6004
+  },
+  {
+    "path": "Models/GLTF format/kitchenBarEnd.glb",
+    "bytes": 11084
+  },
+  {
+    "path": "Models/GLTF format/kitchenBlender.glb",
+    "bytes": 18728
+  },
+  {
+    "path": "Models/GLTF format/kitchenCabinet.glb",
+    "bytes": 10444
+  },
+  {
+    "path": "Models/GLTF format/kitchenCabinetCornerInner.glb",
+    "bytes": 5184
+  },
+  {
+    "path": "Models/GLTF format/kitchenCabinetCornerRound.glb",
+    "bytes": 13656
+  },
+  {
+    "path": "Models/GLTF format/kitchenCabinetDrawer.glb",
+    "bytes": 15384
+  },
+  {
+    "path": "Models/GLTF format/kitchenCabinetUpper.glb",
+    "bytes": 8168
+  },
+  {
+    "path": "Models/GLTF format/kitchenCabinetUpperCorner.glb",
+    "bytes": 13712
+  },
+  {
+    "path": "Models/GLTF format/kitchenCabinetUpperDouble.glb",
+    "bytes": 18184
+  },
+  {
+    "path": "Models/GLTF format/kitchenCabinetUpperLow.glb",
+    "bytes": 7216
+  },
+  {
+    "path": "Models/GLTF format/kitchenCoffeeMachine.glb",
+    "bytes": 13332
+  },
+  {
+    "path": "Models/GLTF format/kitchenFridge.glb",
+    "bytes": 20116
+  },
+  {
+    "path": "Models/GLTF format/kitchenFridgeBuiltIn.glb",
+    "bytes": 22616
+  },
+  {
+    "path": "Models/GLTF format/kitchenFridgeLarge.glb",
+    "bytes": 30632
+  },
+  {
+    "path": "Models/GLTF format/kitchenFridgeSmall.glb",
+    "bytes": 12988
+  },
+  {
+    "path": "Models/GLTF format/kitchenMicrowave.glb",
+    "bytes": 11248
+  },
+  {
+    "path": "Models/GLTF format/kitchenSink.glb",
+    "bytes": 23480
+  },
+  {
+    "path": "Models/GLTF format/kitchenStove.glb",
+    "bytes": 54324
+  },
+  {
+    "path": "Models/GLTF format/kitchenStoveElectric.glb",
+    "bytes": 18604
+  },
+  {
+    "path": "Models/GLTF format/lampRoundFloor.glb",
+    "bytes": 6600
+  },
+  {
+    "path": "Models/GLTF format/lampRoundTable.glb",
+    "bytes": 6604
+  },
+  {
+    "path": "Models/GLTF format/lampSquareCeiling.glb",
+    "bytes": 5628
+  },
+  {
+    "path": "Models/GLTF format/lampSquareFloor.glb",
+    "bytes": 5624
+  },
+  {
+    "path": "Models/GLTF format/lampSquareTable.glb",
+    "bytes": 5624
+  },
+  {
+    "path": "Models/GLTF format/lampWall.glb",
+    "bytes": 4828
+  },
+  {
+    "path": "Models/GLTF format/laptop.glb",
+    "bytes": 5540
+  },
+  {
+    "path": "Models/GLTF format/loungeChair.glb",
+    "bytes": 9648
+  },
+  {
+    "path": "Models/GLTF format/loungeChairRelax.glb",
+    "bytes": 13904
+  },
+  {
+    "path": "Models/GLTF format/loungeDesignChair.glb",
+    "bytes": 9136
+  },
+  {
+    "path": "Models/GLTF format/loungeDesignSofa.glb",
+    "bytes": 9128
+  },
+  {
+    "path": "Models/GLTF format/loungeDesignSofaCorner.glb",
+    "bytes": 13744
+  },
+  {
+    "path": "Models/GLTF format/loungeSofa.glb",
+    "bytes": 9644
+  },
+  {
+    "path": "Models/GLTF format/loungeSofaCorner.glb",
+    "bytes": 13412
+  },
+  {
+    "path": "Models/GLTF format/loungeSofaLong.glb",
+    "bytes": 13112
+  },
+  {
+    "path": "Models/GLTF format/loungeSofaOttoman.glb",
+    "bytes": 6960
+  },
+  {
+    "path": "Models/GLTF format/paneling.glb",
+    "bytes": 3960
+  },
+  {
+    "path": "Models/GLTF format/pillow.glb",
+    "bytes": 5044
+  },
+  {
+    "path": "Models/GLTF format/pillowBlue.glb",
+    "bytes": 5056
+  },
+  {
+    "path": "Models/GLTF format/pillowBlueLong.glb",
+    "bytes": 5088
+  },
+  {
+    "path": "Models/GLTF format/pillowLong.glb",
+    "bytes": 5072
+  },
+  {
+    "path": "Models/GLTF format/plantSmall1.glb",
+    "bytes": 8224
+  },
+  {
+    "path": "Models/GLTF format/plantSmall2.glb",
+    "bytes": 12996
+  },
+  {
+    "path": "Models/GLTF format/plantSmall3.glb",
+    "bytes": 8424
+  },
+  {
+    "path": "Models/GLTF format/pottedPlant.glb",
+    "bytes": 7576
+  },
+  {
+    "path": "Models/GLTF format/radio.glb",
+    "bytes": 25020
+  },
+  {
+    "path": "Models/GLTF format/rugDoormat.glb",
+    "bytes": 13812
+  },
+  {
+    "path": "Models/GLTF format/rugRectangle.glb",
+    "bytes": 3188
+  },
+  {
+    "path": "Models/GLTF format/rugRound.glb",
+    "bytes": 10164
+  },
+  {
+    "path": "Models/GLTF format/rugRounded.glb",
+    "bytes": 10876
+  },
+  {
+    "path": "Models/GLTF format/rugSquare.glb",
+    "bytes": 3180
+  },
+  {
+    "path": "Models/GLTF format/shower.glb",
+    "bytes": 52020
+  },
+  {
+    "path": "Models/GLTF format/showerRound.glb",
+    "bytes": 72048
+  },
+  {
+    "path": "Models/GLTF format/sideTable.glb",
+    "bytes": 8800
+  },
+  {
+    "path": "Models/GLTF format/sideTableDrawers.glb",
+    "bytes": 19072
+  },
+  {
+    "path": "Models/GLTF format/speaker.glb",
+    "bytes": 15744
+  },
+  {
+    "path": "Models/GLTF format/speakerSmall.glb",
+    "bytes": 15244
+  },
+  {
+    "path": "Models/GLTF format/stairs.glb",
+    "bytes": 21616
+  },
+  {
+    "path": "Models/GLTF format/stairsCorner.glb",
+    "bytes": 21576
+  },
+  {
+    "path": "Models/GLTF format/stairsOpen.glb",
+    "bytes": 39924
+  },
+  {
+    "path": "Models/GLTF format/stairsOpenSingle.glb",
+    "bytes": 24600
+  },
+  {
+    "path": "Models/GLTF format/stoolBar.glb",
+    "bytes": 11816
+  },
+  {
+    "path": "Models/GLTF format/stoolBarSquare.glb",
+    "bytes": 9784
+  },
+  {
+    "path": "Models/GLTF format/table.glb",
+    "bytes": 8196
+  },
+  {
+    "path": "Models/GLTF format/tableCloth.glb",
+    "bytes": 9920
+  },
+  {
+    "path": "Models/GLTF format/tableCoffee.glb",
+    "bytes": 8256
+  },
+  {
+    "path": "Models/GLTF format/tableCoffeeGlass.glb",
+    "bytes": 9428
+  },
+  {
+    "path": "Models/GLTF format/tableCoffeeGlassSquare.glb",
+    "bytes": 9448
+  },
+  {
+    "path": "Models/GLTF format/tableCoffeeSquare.glb",
+    "bytes": 8276
+  },
+  {
+    "path": "Models/GLTF format/tableCross.glb",
+    "bytes": 12140
+  },
+  {
+    "path": "Models/GLTF format/tableCrossCloth.glb",
+    "bytes": 13852
+  },
+  {
+    "path": "Models/GLTF format/tableGlass.glb",
+    "bytes": 9848
+  },
+  {
+    "path": "Models/GLTF format/tableRound.glb",
+    "bytes": 6444
+  },
+  {
+    "path": "Models/GLTF format/televisionAntenna.glb",
+    "bytes": 4500
+  },
+  {
+    "path": "Models/GLTF format/televisionModern.glb",
+    "bytes": 6368
+  },
+  {
+    "path": "Models/GLTF format/televisionVintage.glb",
+    "bytes": 19392
+  },
+  {
+    "path": "Models/GLTF format/toaster.glb",
+    "bytes": 14924
+  },
+  {
+    "path": "Models/GLTF format/toilet.glb",
+    "bytes": 18112
+  },
+  {
+    "path": "Models/GLTF format/toiletSquare.glb",
+    "bytes": 17548
+  },
+  {
+    "path": "Models/GLTF format/trashcan.glb",
+    "bytes": 6452
+  },
+  {
+    "path": "Models/GLTF format/wall.glb",
+    "bytes": 3340
+  },
+  {
+    "path": "Models/GLTF format/wallCorner.glb",
+    "bytes": 4460
+  },
+  {
+    "path": "Models/GLTF format/wallCornerRond.glb",
+    "bytes": 10448
+  },
+  {
+    "path": "Models/GLTF format/wallDoorway.glb",
+    "bytes": 6444
+  },
+  {
+    "path": "Models/GLTF format/wallDoorwayWide.glb",
+    "bytes": 6468
+  },
+  {
+    "path": "Models/GLTF format/wallHalf.glb",
+    "bytes": 3348
+  },
+  {
+    "path": "Models/GLTF format/wallWindow.glb",
+    "bytes": 10744
+  },
+  {
+    "path": "Models/GLTF format/wallWindowSlide.glb",
+    "bytes": 14564
+  },
+  {
+    "path": "Models/GLTF format/washer.glb",
+    "bytes": 48104
+  },
+  {
+    "path": "Models/GLTF format/washerDryerStacked.glb",
+    "bytes": 64060
+  },
+  {
+    "path": "Models/OBJ format/",
+    "bytes": 0
+  },
+  {
+    "path": "Models/OBJ format/bathroomCabinet.mtl",
+    "bytes": 366
+  },
+  {
+    "path": "Models/OBJ format/bathroomCabinet.obj",
+    "bytes": 5646
+  },
+  {
+    "path": "Models/OBJ format/bathroomCabinetDrawer.mtl",
+    "bytes": 475
+  },
+  {
+    "path": "Models/OBJ format/bathroomCabinetDrawer.obj",
+    "bytes": 37984
+  },
+  {
+    "path": "Models/OBJ format/bathroomMirror.mtl",
+    "bytes": 366
+  },
+  {
+    "path": "Models/OBJ format/bathroomMirror.obj",
+    "bytes": 7311
+  },
+  {
+    "path": "Models/OBJ format/bathroomSink.mtl",
+    "bytes": 344
+  },
+  {
+    "path": "Models/OBJ format/bathroomSink.obj",
+    "bytes": 29855
+  },
+  {
+    "path": "Models/OBJ format/bathroomSinkSquare.mtl",
+    "bytes": 366
+  },
+  {
+    "path": "Models/OBJ format/bathroomSinkSquare.obj",
+    "bytes": 24888
+  },
+  {
+    "path": "Models/OBJ format/bathtub.mtl",
+    "bytes": 366
+  },
+  {
+    "path": "Models/OBJ format/bathtub.obj",
+    "bytes": 73456
+  },
+  {
+    "path": "Models/OBJ format/bear.mtl",
+    "bytes": 369
+  },
+  {
+    "path": "Models/OBJ format/bear.obj",
+    "bytes": 18584
+  },
+  {
+    "path": "Models/OBJ format/bedBunk.mtl",
+    "bytes": 356
+  },
+  {
+    "path": "Models/OBJ format/bedBunk.obj",
+    "bytes": 48319
+  },
+  {
+    "path": "Models/OBJ format/bedDouble.mtl",
+    "bytes": 466
+  },
+  {
+    "path": "Models/OBJ format/bedDouble.obj",
+    "bytes": 22141
+  },
+  {
+    "path": "Models/OBJ format/bedSingle.mtl",
+    "bytes": 466
+  },
+  {
+    "path": "Models/OBJ format/bedSingle.obj",
+    "bytes": 19691
+  },
+  {
+    "path": "Models/OBJ format/bench.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/bench.obj",
+    "bytes": 14107
+  },
+  {
+    "path": "Models/OBJ format/benchCushion.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/benchCushion.obj",
+    "bytes": 16373
+  },
+  {
+    "path": "Models/OBJ format/benchCushionLow.mtl",
+    "bytes": 349
+  },
+  {
+    "path": "Models/OBJ format/benchCushionLow.obj",
+    "bytes": 11565
+  },
+  {
+    "path": "Models/OBJ format/bookcaseClosed.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/bookcaseClosed.obj",
+    "bytes": 30742
+  },
+  {
+    "path": "Models/OBJ format/bookcaseClosedDoors.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/bookcaseClosedDoors.obj",
+    "bytes": 24128
+  },
+  {
+    "path": "Models/OBJ format/bookcaseClosedWide.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/bookcaseClosedWide.obj",
+    "bytes": 32334
+  },
+  {
+    "path": "Models/OBJ format/bookcaseOpen.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/bookcaseOpen.obj",
+    "bytes": 25668
+  },
+  {
+    "path": "Models/OBJ format/bookcaseOpenLow.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/bookcaseOpenLow.obj",
+    "bytes": 14348
+  },
+  {
+    "path": "Models/OBJ format/books.mtl",
+    "bytes": 469
+  },
+  {
+    "path": "Models/OBJ format/books.obj",
+    "bytes": 6308
+  },
+  {
+    "path": "Models/OBJ format/cabinetBed.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/cabinetBed.obj",
+    "bytes": 6794
+  },
+  {
+    "path": "Models/OBJ format/cabinetBedDrawer.mtl",
+    "bytes": 349
+  },
+  {
+    "path": "Models/OBJ format/cabinetBedDrawer.obj",
+    "bytes": 15985
+  },
+  {
+    "path": "Models/OBJ format/cabinetBedDrawerTable.mtl",
+    "bytes": 349
+  },
+  {
+    "path": "Models/OBJ format/cabinetBedDrawerTable.obj",
+    "bytes": 12383
+  },
+  {
+    "path": "Models/OBJ format/cabinetTelevision.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/cabinetTelevision.obj",
+    "bytes": 12636
+  },
+  {
+    "path": "Models/OBJ format/cabinetTelevisionDoors.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/cabinetTelevisionDoors.obj",
+    "bytes": 16293
+  },
+  {
+    "path": "Models/OBJ format/cardboardBoxClosed.mtl",
+    "bytes": 256
+  },
+  {
+    "path": "Models/OBJ format/cardboardBoxClosed.obj",
+    "bytes": 4676
+  },
+  {
+    "path": "Models/OBJ format/cardboardBoxOpen.mtl",
+    "bytes": 256
+  },
+  {
+    "path": "Models/OBJ format/cardboardBoxOpen.obj",
+    "bytes": 4580
+  },
+  {
+    "path": "Models/OBJ format/ceilingFan.mtl",
+    "bytes": 363
+  },
+  {
+    "path": "Models/OBJ format/ceilingFan.obj",
+    "bytes": 23234
+  },
+  {
+    "path": "Models/OBJ format/chair.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/chair.obj",
+    "bytes": 13851
+  },
+  {
+    "path": "Models/OBJ format/chairCushion.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/chairCushion.obj",
+    "bytes": 16056
+  },
+  {
+    "path": "Models/OBJ format/chairDesk.mtl",
+    "bytes": 264
+  },
+  {
+    "path": "Models/OBJ format/chairDesk.obj",
+    "bytes": 50342
+  },
+  {
+    "path": "Models/OBJ format/chairModernCushion.mtl",
+    "bytes": 261
+  },
+  {
+    "path": "Models/OBJ format/chairModernCushion.obj",
+    "bytes": 7513
+  },
+  {
+    "path": "Models/OBJ format/chairModernFrameCushion.mtl",
+    "bytes": 261
+  },
+  {
+    "path": "Models/OBJ format/chairModernFrameCushion.obj",
+    "bytes": 29161
+  },
+  {
+    "path": "Models/OBJ format/chairRounded.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/chairRounded.obj",
+    "bytes": 25909
+  },
+  {
+    "path": "Models/OBJ format/coatRack.mtl",
+    "bytes": 263
+  },
+  {
+    "path": "Models/OBJ format/coatRack.obj",
+    "bytes": 13917
+  },
+  {
+    "path": "Models/OBJ format/coatRackStanding.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/coatRackStanding.obj",
+    "bytes": 15680
+  },
+  {
+    "path": "Models/OBJ format/computerKeyboard.mtl",
+    "bytes": 268
+  },
+  {
+    "path": "Models/OBJ format/computerKeyboard.obj",
+    "bytes": 3277
+  },
+  {
+    "path": "Models/OBJ format/computerMouse.mtl",
+    "bytes": 152
+  },
+  {
+    "path": "Models/OBJ format/computerMouse.obj",
+    "bytes": 7293
+  },
+  {
+    "path": "Models/OBJ format/computerScreen.mtl",
+    "bytes": 262
+  },
+  {
+    "path": "Models/OBJ format/computerScreen.obj",
+    "bytes": 8220
+  },
+  {
+    "path": "Models/OBJ format/desk.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/desk.obj",
+    "bytes": 17411
+  },
+  {
+    "path": "Models/OBJ format/deskCorner.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/deskCorner.obj",
+    "bytes": 23384
+  },
+  {
+    "path": "Models/OBJ format/doorway.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/doorway.obj",
+    "bytes": 16229
+  },
+  {
+    "path": "Models/OBJ format/doorwayFront.mtl",
+    "bytes": 470
+  },
+  {
+    "path": "Models/OBJ format/doorwayFront.obj",
+    "bytes": 12813
+  },
+  {
+    "path": "Models/OBJ format/doorwayOpen.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/doorwayOpen.obj",
+    "bytes": 2956
+  },
+  {
+    "path": "Models/OBJ format/dryer.mtl",
+    "bytes": 383
+  },
+  {
+    "path": "Models/OBJ format/dryer.obj",
+    "bytes": 24050
+  },
+  {
+    "path": "Models/OBJ format/floorCorner.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/floorCorner.obj",
+    "bytes": 1629
+  },
+  {
+    "path": "Models/OBJ format/floorCornerRound.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/floorCornerRound.obj",
+    "bytes": 6616
+  },
+  {
+    "path": "Models/OBJ format/floorFull.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/floorFull.obj",
+    "bytes": 933
+  },
+  {
+    "path": "Models/OBJ format/floorHalf.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/floorHalf.obj",
+    "bytes": 1029
+  },
+  {
+    "path": "Models/OBJ format/hoodLarge.mtl",
+    "bytes": 244
+  },
+  {
+    "path": "Models/OBJ format/hoodLarge.obj",
+    "bytes": 3531
+  },
+  {
+    "path": "Models/OBJ format/hoodModern.mtl",
+    "bytes": 246
+  },
+  {
+    "path": "Models/OBJ format/hoodModern.obj",
+    "bytes": 2776
+  },
+  {
+    "path": "Models/OBJ format/kitchenBar.mtl",
+    "bytes": 366
+  },
+  {
+    "path": "Models/OBJ format/kitchenBar.obj",
+    "bytes": 6296
+  },
+  {
+    "path": "Models/OBJ format/kitchenBarEnd.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/kitchenBarEnd.obj",
+    "bytes": 17342
+  },
+  {
+    "path": "Models/OBJ format/kitchenBlender.mtl",
+    "bytes": 373
+  },
+  {
+    "path": "Models/OBJ format/kitchenBlender.obj",
+    "bytes": 17741
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinet.mtl",
+    "bytes": 366
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinet.obj",
+    "bytes": 9201
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetCornerInner.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetCornerInner.obj",
+    "bytes": 5274
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetCornerRound.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetCornerRound.obj",
+    "bytes": 19966
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetDrawer.mtl",
+    "bytes": 366
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetDrawer.obj",
+    "bytes": 13056
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetUpper.mtl",
+    "bytes": 366
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetUpper.obj",
+    "bytes": 6300
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetUpperCorner.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetUpperCorner.obj",
+    "bytes": 19971
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetUpperDouble.mtl",
+    "bytes": 366
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetUpperDouble.obj",
+    "bytes": 15583
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetUpperLow.mtl",
+    "bytes": 366
+  },
+  {
+    "path": "Models/OBJ format/kitchenCabinetUpperLow.obj",
+    "bytes": 4891
+  },
+  {
+    "path": "Models/OBJ format/kitchenCoffeeMachine.mtl",
+    "bytes": 363
+  },
+  {
+    "path": "Models/OBJ format/kitchenCoffeeMachine.obj",
+    "bytes": 16257
+  },
+  {
+    "path": "Models/OBJ format/kitchenFridge.mtl",
+    "bytes": 486
+  },
+  {
+    "path": "Models/OBJ format/kitchenFridge.obj",
+    "bytes": 16920
+  },
+  {
+    "path": "Models/OBJ format/kitchenFridgeBuiltIn.mtl",
+    "bytes": 590
+  },
+  {
+    "path": "Models/OBJ format/kitchenFridgeBuiltIn.obj",
+    "bytes": 19385
+  },
+  {
+    "path": "Models/OBJ format/kitchenFridgeLarge.mtl",
+    "bytes": 269
+  },
+  {
+    "path": "Models/OBJ format/kitchenFridgeLarge.obj",
+    "bytes": 38748
+  },
+  {
+    "path": "Models/OBJ format/kitchenFridgeSmall.mtl",
+    "bytes": 486
+  },
+  {
+    "path": "Models/OBJ format/kitchenFridgeSmall.obj",
+    "bytes": 10440
+  },
+  {
+    "path": "Models/OBJ format/kitchenMicrowave.mtl",
+    "bytes": 476
+  },
+  {
+    "path": "Models/OBJ format/kitchenMicrowave.obj",
+    "bytes": 12443
+  },
+  {
+    "path": "Models/OBJ format/kitchenSink.mtl",
+    "bytes": 687
+  },
+  {
+    "path": "Models/OBJ format/kitchenSink.obj",
+    "bytes": 31279
+  },
+  {
+    "path": "Models/OBJ format/kitchenStove.mtl",
+    "bytes": 579
+  },
+  {
+    "path": "Models/OBJ format/kitchenStove.obj",
+    "bytes": 83952
+  },
+  {
+    "path": "Models/OBJ format/kitchenStoveElectric.mtl",
+    "bytes": 695
+  },
+  {
+    "path": "Models/OBJ format/kitchenStoveElectric.obj",
+    "bytes": 30761
+  },
+  {
+    "path": "Models/OBJ format/lampRoundFloor.mtl",
+    "bytes": 249
+  },
+  {
+    "path": "Models/OBJ format/lampRoundFloor.obj",
+    "bytes": 8594
+  },
+  {
+    "path": "Models/OBJ format/lampRoundTable.mtl",
+    "bytes": 249
+  },
+  {
+    "path": "Models/OBJ format/lampRoundTable.obj",
+    "bytes": 8663
+  },
+  {
+    "path": "Models/OBJ format/lampSquareCeiling.mtl",
+    "bytes": 249
+  },
+  {
+    "path": "Models/OBJ format/lampSquareCeiling.obj",
+    "bytes": 5090
+  },
+  {
+    "path": "Models/OBJ format/lampSquareFloor.mtl",
+    "bytes": 249
+  },
+  {
+    "path": "Models/OBJ format/lampSquareFloor.obj",
+    "bytes": 5842
+  },
+  {
+    "path": "Models/OBJ format/lampSquareTable.mtl",
+    "bytes": 249
+  },
+  {
+    "path": "Models/OBJ format/lampSquareTable.obj",
+    "bytes": 5853
+  },
+  {
+    "path": "Models/OBJ format/lampWall.mtl",
+    "bytes": 249
+  },
+  {
+    "path": "Models/OBJ format/lampWall.obj",
+    "bytes": 4408
+  },
+  {
+    "path": "Models/OBJ format/laptop.mtl",
+    "bytes": 378
+  },
+  {
+    "path": "Models/OBJ format/laptop.obj",
+    "bytes": 6812
+  },
+  {
+    "path": "Models/OBJ format/loungeChair.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/loungeChair.obj",
+    "bytes": 12087
+  },
+  {
+    "path": "Models/OBJ format/loungeChairRelax.mtl",
+    "bytes": 367
+  },
+  {
+    "path": "Models/OBJ format/loungeChairRelax.obj",
+    "bytes": 19183
+  },
+  {
+    "path": "Models/OBJ format/loungeDesignChair.mtl",
+    "bytes": 261
+  },
+  {
+    "path": "Models/OBJ format/loungeDesignChair.obj",
+    "bytes": 12053
+  },
+  {
+    "path": "Models/OBJ format/loungeDesignSofa.mtl",
+    "bytes": 261
+  },
+  {
+    "path": "Models/OBJ format/loungeDesignSofa.obj",
+    "bytes": 11959
+  },
+  {
+    "path": "Models/OBJ format/loungeDesignSofaCorner.mtl",
+    "bytes": 261
+  },
+  {
+    "path": "Models/OBJ format/loungeDesignSofaCorner.obj",
+    "bytes": 18483
+  },
+  {
+    "path": "Models/OBJ format/loungeSofa.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/loungeSofa.obj",
+    "bytes": 11893
+  },
+  {
+    "path": "Models/OBJ format/loungeSofaCorner.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/loungeSofaCorner.obj",
+    "bytes": 16673
+  },
+  {
+    "path": "Models/OBJ format/loungeSofaLong.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/loungeSofaLong.obj",
+    "bytes": 17225
+  },
+  {
+    "path": "Models/OBJ format/loungeSofaOttoman.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/loungeSofaOttoman.obj",
+    "bytes": 7186
+  },
+  {
+    "path": "Models/OBJ format/paneling.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/paneling.obj",
+    "bytes": 3960
+  },
+  {
+    "path": "Models/OBJ format/pillow.mtl",
+    "bytes": 148
+  },
+  {
+    "path": "Models/OBJ format/pillow.obj",
+    "bytes": 6068
+  },
+  {
+    "path": "Models/OBJ format/pillowBlue.mtl",
+    "bytes": 151
+  },
+  {
+    "path": "Models/OBJ format/pillowBlue.obj",
+    "bytes": 6107
+  },
+  {
+    "path": "Models/OBJ format/pillowBlueLong.mtl",
+    "bytes": 151
+  },
+  {
+    "path": "Models/OBJ format/pillowBlueLong.obj",
+    "bytes": 6143
+  },
+  {
+    "path": "Models/OBJ format/pillowLong.mtl",
+    "bytes": 148
+  },
+  {
+    "path": "Models/OBJ format/pillowLong.obj",
+    "bytes": 6132
+  },
+  {
+    "path": "Models/OBJ format/plantSmall1.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/plantSmall1.obj",
+    "bytes": 10705
+  },
+  {
+    "path": "Models/OBJ format/plantSmall2.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/plantSmall2.obj",
+    "bytes": 16077
+  },
+  {
+    "path": "Models/OBJ format/plantSmall3.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/plantSmall3.obj",
+    "bytes": 9612
+  },
+  {
+    "path": "Models/OBJ format/pottedPlant.mtl",
+    "bytes": 366
+  },
+  {
+    "path": "Models/OBJ format/pottedPlant.obj",
+    "bytes": 6062
+  },
+  {
+    "path": "Models/OBJ format/radio.mtl",
+    "bytes": 373
+  },
+  {
+    "path": "Models/OBJ format/radio.obj",
+    "bytes": 48228
+  },
+  {
+    "path": "Models/OBJ format/rugDoormat.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/rugDoormat.obj",
+    "bytes": 24766
+  },
+  {
+    "path": "Models/OBJ format/rugRectangle.mtl",
+    "bytes": 260
+  },
+  {
+    "path": "Models/OBJ format/rugRectangle.obj",
+    "bytes": 2319
+  },
+  {
+    "path": "Models/OBJ format/rugRound.mtl",
+    "bytes": 260
+  },
+  {
+    "path": "Models/OBJ format/rugRound.obj",
+    "bytes": 17612
+  },
+  {
+    "path": "Models/OBJ format/rugRounded.mtl",
+    "bytes": 260
+  },
+  {
+    "path": "Models/OBJ format/rugRounded.obj",
+    "bytes": 18876
+  },
+  {
+    "path": "Models/OBJ format/rugSquare.mtl",
+    "bytes": 260
+  },
+  {
+    "path": "Models/OBJ format/rugSquare.obj",
+    "bytes": 2332
+  },
+  {
+    "path": "Models/OBJ format/shower.mtl",
+    "bytes": 470
+  },
+  {
+    "path": "Models/OBJ format/shower.obj",
+    "bytes": 72396
+  },
+  {
+    "path": "Models/OBJ format/showerRound.mtl",
+    "bytes": 452
+  },
+  {
+    "path": "Models/OBJ format/showerRound.obj",
+    "bytes": 62610
+  },
+  {
+    "path": "Models/OBJ format/sideTable.mtl",
+    "bytes": 239
+  },
+  {
+    "path": "Models/OBJ format/sideTable.obj",
+    "bytes": 10050
+  },
+  {
+    "path": "Models/OBJ format/sideTableDrawers.mtl",
+    "bytes": 349
+  },
+  {
+    "path": "Models/OBJ format/sideTableDrawers.obj",
+    "bytes": 18638
+  },
+  {
+    "path": "Models/OBJ format/speaker.mtl",
+    "bytes": 263
+  },
+  {
+    "path": "Models/OBJ format/speaker.obj",
+    "bytes": 26402
+  },
+  {
+    "path": "Models/OBJ format/speakerSmall.mtl",
+    "bytes": 263
+  },
+  {
+    "path": "Models/OBJ format/speakerSmall.obj",
+    "bytes": 25530
+  },
+  {
+    "path": "Models/OBJ format/stairs.mtl",
+    "bytes": 256
+  },
+  {
+    "path": "Models/OBJ format/stairs.obj",
+    "bytes": 31893
+  },
+  {
+    "path": "Models/OBJ format/stairsCorner.mtl",
+    "bytes": 256
+  },
+  {
+    "path": "Models/OBJ format/stairsCorner.obj",
+    "bytes": 32880
+  },
+  {
+    "path": "Models/OBJ format/stairsOpen.mtl",
+    "bytes": 366
+  },
+  {
+    "path": "Models/OBJ format/stairsOpen.obj",
+    "bytes": 36611
+  },
+  {
+    "path": "Models/OBJ format/stairsOpenSingle.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/stairsOpenSingle.obj",
+    "bytes": 24885
+  },
+  {
+    "path": "Models/OBJ format/stoolBar.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/stoolBar.obj",
+    "bytes": 16345
+  },
+  {
+    "path": "Models/OBJ format/stoolBarSquare.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/stoolBarSquare.obj",
+    "bytes": 12270
+  },
+  {
+    "path": "Models/OBJ format/table.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/table.obj",
+    "bytes": 11756
+  },
+  {
+    "path": "Models/OBJ format/tableCloth.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/tableCloth.obj",
+    "bytes": 14076
+  },
+  {
+    "path": "Models/OBJ format/tableCoffee.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/tableCoffee.obj",
+    "bytes": 10634
+  },
+  {
+    "path": "Models/OBJ format/tableCoffeeGlass.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/tableCoffeeGlass.obj",
+    "bytes": 11815
+  },
+  {
+    "path": "Models/OBJ format/tableCoffeeGlassSquare.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/tableCoffeeGlassSquare.obj",
+    "bytes": 12092
+  },
+  {
+    "path": "Models/OBJ format/tableCoffeeSquare.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/tableCoffeeSquare.obj",
+    "bytes": 10903
+  },
+  {
+    "path": "Models/OBJ format/tableCross.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/tableCross.obj",
+    "bytes": 18075
+  },
+  {
+    "path": "Models/OBJ format/tableCrossCloth.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/tableCrossCloth.obj",
+    "bytes": 20383
+  },
+  {
+    "path": "Models/OBJ format/tableGlass.mtl",
+    "bytes": 257
+  },
+  {
+    "path": "Models/OBJ format/tableGlass.obj",
+    "bytes": 13699
+  },
+  {
+    "path": "Models/OBJ format/tableRound.mtl",
+    "bytes": 147
+  },
+  {
+    "path": "Models/OBJ format/tableRound.obj",
+    "bytes": 8409
+  },
+  {
+    "path": "Models/OBJ format/televisionAntenna.mtl",
+    "bytes": 154
+  },
+  {
+    "path": "Models/OBJ format/televisionAntenna.obj",
+    "bytes": 5367
+  },
+  {
+    "path": "Models/OBJ format/televisionModern.mtl",
+    "bytes": 262
+  },
+  {
+    "path": "Models/OBJ format/televisionModern.obj",
+    "bytes": 7256
+  },
+  {
+    "path": "Models/OBJ format/televisionVintage.mtl",
+    "bytes": 487
+  },
+  {
+    "path": "Models/OBJ format/televisionVintage.obj",
+    "bytes": 33527
+  },
+  {
+    "path": "Models/OBJ format/Textures/",
+    "bytes": 0
+  },
+  {
+    "path": "Models/OBJ format/toaster.mtl",
+    "bytes": 264
+  },
+  {
+    "path": "Models/OBJ format/toaster.obj",
+    "bytes": 22755
+  },
+  {
+    "path": "Models/OBJ format/toilet.mtl",
+    "bytes": 458
+  },
+  {
+    "path": "Models/OBJ format/toilet.obj",
+    "bytes": 27915
+  },
+  {
+    "path": "Models/OBJ format/toiletSquare.mtl",
+    "bytes": 252
+  },
+  {
+    "path": "Models/OBJ format/toiletSquare.obj",
+    "bytes": 27458
+  },
+  {
+    "path": "Models/OBJ format/trashcan.mtl",
+    "bytes": 262
+  },
+  {
+    "path": "Models/OBJ format/trashcan.obj",
+    "bytes": 7316
+  },
+  {
+    "path": "Models/OBJ format/wall.mtl",
+    "bytes": 353
+  },
+  {
+    "path": "Models/OBJ format/wall.obj",
+    "bytes": 1004
+  },
+  {
+    "path": "Models/OBJ format/wallCorner.mtl",
+    "bytes": 353
+  },
+  {
+    "path": "Models/OBJ format/wallCorner.obj",
+    "bytes": 2516
+  },
+  {
+    "path": "Models/OBJ format/wallCornerRond.mtl",
+    "bytes": 353
+  },
+  {
+    "path": "Models/OBJ format/wallCornerRond.obj",
+    "bytes": 11584
+  },
+  {
+    "path": "Models/OBJ format/wallDoorway.mtl",
+    "bytes": 353
+  },
+  {
+    "path": "Models/OBJ format/wallDoorway.obj",
+    "bytes": 5697
+  },
+  {
+    "path": "Models/OBJ format/wallDoorwayWide.mtl",
+    "bytes": 353
+  },
+  {
+    "path": "Models/OBJ format/wallDoorwayWide.obj",
+    "bytes": 5876
+  },
+  {
+    "path": "Models/OBJ format/wallHalf.mtl",
+    "bytes": 353
+  },
+  {
+    "path": "Models/OBJ format/wallHalf.obj",
+    "bytes": 1024
+  },
+  {
+    "path": "Models/OBJ format/wallWindow.mtl",
+    "bytes": 462
+  },
+  {
+    "path": "Models/OBJ format/wallWindow.obj",
+    "bytes": 8951
+  },
+  {
+    "path": "Models/OBJ format/wallWindowSlide.mtl",
+    "bytes": 462
+  },
+  {
+    "path": "Models/OBJ format/wallWindowSlide.obj",
+    "bytes": 10846
+  },
+  {
+    "path": "Models/OBJ format/washer.mtl",
+    "bytes": 694
+  },
+  {
+    "path": "Models/OBJ format/washer.obj",
+    "bytes": 50974
+  },
+  {
+    "path": "Models/OBJ format/washerDryerStacked.mtl",
+    "bytes": 694
+  },
+  {
+    "path": "Models/OBJ format/washerDryerStacked.obj",
+    "bytes": 78337
+  },
+  {
+    "path": "Models/STL format/",
+    "bytes": 0
+  },
+  {
+    "path": "Models/STL format/bathroomCabinet.stl",
+    "bytes": 3284
+  },
+  {
+    "path": "Models/STL format/bathroomCabinetDrawer.stl",
+    "bytes": 25484
+  },
+  {
+    "path": "Models/STL format/bathroomMirror.stl",
+    "bytes": 3684
+  },
+  {
+    "path": "Models/STL format/bathroomSink.stl",
+    "bytes": 15884
+  },
+  {
+    "path": "Models/STL format/bathroomSinkSquare.stl",
+    "bytes": 11784
+  },
+  {
+    "path": "Models/STL format/bathtub.stl",
+    "bytes": 30184
+  },
+  {
+    "path": "Models/STL format/bear.stl",
+    "bytes": 6784
+  },
+  {
+    "path": "Models/STL format/bedBunk.stl",
+    "bytes": 29084
+  },
+  {
+    "path": "Models/STL format/bedDouble.stl",
+    "bytes": 13284
+  },
+  {
+    "path": "Models/STL format/bedSingle.stl",
+    "bytes": 10784
+  },
+  {
+    "path": "Models/STL format/bench.stl",
+    "bytes": 8584
+  },
+  {
+    "path": "Models/STL format/benchCushion.stl",
+    "bytes": 9884
+  },
+  {
+    "path": "Models/STL format/benchCushionLow.stl",
+    "bytes": 6984
+  },
+  {
+    "path": "Models/STL format/bookcaseClosed.stl",
+    "bytes": 18684
+  },
+  {
+    "path": "Models/STL format/bookcaseClosedDoors.stl",
+    "bytes": 14884
+  },
+  {
+    "path": "Models/STL format/bookcaseClosedWide.stl",
+    "bytes": 18684
+  },
+  {
+    "path": "Models/STL format/bookcaseOpen.stl",
+    "bytes": 16084
+  },
+  {
+    "path": "Models/STL format/bookcaseOpenLow.stl",
+    "bytes": 9284
+  },
+  {
+    "path": "Models/STL format/books.stl",
+    "bytes": 3184
+  },
+  {
+    "path": "Models/STL format/cabinetBed.stl",
+    "bytes": 3684
+  },
+  {
+    "path": "Models/STL format/cabinetBedDrawer.stl",
+    "bytes": 9184
+  },
+  {
+    "path": "Models/STL format/cabinetBedDrawerTable.stl",
+    "bytes": 7084
+  },
+  {
+    "path": "Models/STL format/cabinetTelevision.stl",
+    "bytes": 7784
+  },
+  {
+    "path": "Models/STL format/cabinetTelevisionDoors.stl",
+    "bytes": 10584
+  },
+  {
+    "path": "Models/STL format/cardboardBoxClosed.stl",
+    "bytes": 3084
+  },
+  {
+    "path": "Models/STL format/cardboardBoxOpen.stl",
+    "bytes": 3084
+  },
+  {
+    "path": "Models/STL format/ceilingFan.stl",
+    "bytes": 10784
+  },
+  {
+    "path": "Models/STL format/chair.stl",
+    "bytes": 8584
+  },
+  {
+    "path": "Models/STL format/chairCushion.stl",
+    "bytes": 9984
+  },
+  {
+    "path": "Models/STL format/chairDesk.stl",
+    "bytes": 29484
+  },
+  {
+    "path": "Models/STL format/chairModernCushion.stl",
+    "bytes": 4684
+  },
+  {
+    "path": "Models/STL format/chairModernFrameCushion.stl",
+    "bytes": 14284
+  },
+  {
+    "path": "Models/STL format/chairRounded.stl",
+    "bytes": 14084
+  },
+  {
+    "path": "Models/STL format/coatRack.stl",
+    "bytes": 6684
+  },
+  {
+    "path": "Models/STL format/coatRackStanding.stl",
+    "bytes": 9584
+  },
+  {
+    "path": "Models/STL format/computerKeyboard.stl",
+    "bytes": 1684
+  },
+  {
+    "path": "Models/STL format/computerMouse.stl",
+    "bytes": 3634
+  },
+  {
+    "path": "Models/STL format/computerScreen.stl",
+    "bytes": 3684
+  },
+  {
+    "path": "Models/STL format/desk.stl",
+    "bytes": 9984
+  },
+  {
+    "path": "Models/STL format/deskCorner.stl",
+    "bytes": 12584
+  },
+  {
+    "path": "Models/STL format/doorway.stl",
+    "bytes": 9484
+  },
+  {
+    "path": "Models/STL format/doorwayFront.stl",
+    "bytes": 7884
+  },
+  {
+    "path": "Models/STL format/doorwayOpen.stl",
+    "bytes": 1484
+  },
+  {
+    "path": "Models/STL format/dryer.stl",
+    "bytes": 13184
+  },
+  {
+    "path": "Models/STL format/floorCorner.stl",
+    "bytes": 884
+  },
+  {
+    "path": "Models/STL format/floorCornerRound.stl",
+    "bytes": 3084
+  },
+  {
+    "path": "Models/STL format/floorFull.stl",
+    "bytes": 684
+  },
+  {
+    "path": "Models/STL format/floorHalf.stl",
+    "bytes": 684
+  },
+  {
+    "path": "Models/STL format/hoodLarge.stl",
+    "bytes": 1884
+  },
+  {
+    "path": "Models/STL format/hoodModern.stl",
+    "bytes": 1484
+  },
+  {
+    "path": "Models/STL format/kitchenBar.stl",
+    "bytes": 3884
+  },
+  {
+    "path": "Models/STL format/kitchenBarEnd.stl",
+    "bytes": 7684
+  },
+  {
+    "path": "Models/STL format/kitchenBlender.stl",
+    "bytes": 12384
+  },
+  {
+    "path": "Models/STL format/kitchenCabinet.stl",
+    "bytes": 5784
+  },
+  {
+    "path": "Models/STL format/kitchenCabinetCornerInner.stl",
+    "bytes": 2784
+  },
+  {
+    "path": "Models/STL format/kitchenCabinetCornerRound.stl",
+    "bytes": 9784
+  },
+  {
+    "path": "Models/STL format/kitchenCabinetDrawer.stl",
+    "bytes": 8784
+  },
+  {
+    "path": "Models/STL format/kitchenCabinetUpper.stl",
+    "bytes": 4084
+  },
+  {
+    "path": "Models/STL format/kitchenCabinetUpperCorner.stl",
+    "bytes": 10284
+  },
+  {
+    "path": "Models/STL format/kitchenCabinetUpperDouble.stl",
+    "bytes": 11784
+  },
+  {
+    "path": "Models/STL format/kitchenCabinetUpperLow.stl",
+    "bytes": 3284
+  },
+  {
+    "path": "Models/STL format/kitchenCoffeeMachine.stl",
+    "bytes": 8384
+  },
+  {
+    "path": "Models/STL format/kitchenFridge.stl",
+    "bytes": 12584
+  },
+  {
+    "path": "Models/STL format/kitchenFridgeBuiltIn.stl",
+    "bytes": 13484
+  },
+  {
+    "path": "Models/STL format/kitchenFridgeLarge.stl",
+    "bytes": 21884
+  },
+  {
+    "path": "Models/STL format/kitchenFridgeSmall.stl",
+    "bytes": 7684
+  },
+  {
+    "path": "Models/STL format/kitchenMicrowave.stl",
+    "bytes": 7684
+  },
+  {
+    "path": "Models/STL format/kitchenSink.stl",
+    "bytes": 15984
+  },
+  {
+    "path": "Models/STL format/kitchenStove.stl",
+    "bytes": 41584
+  },
+  {
+    "path": "Models/STL format/kitchenStoveElectric.stl",
+    "bytes": 16984
+  },
+  {
+    "path": "Models/STL format/lampRoundFloor.stl",
+    "bytes": 3884
+  },
+  {
+    "path": "Models/STL format/lampRoundTable.stl",
+    "bytes": 3884
+  },
+  {
+    "path": "Models/STL format/lampSquareCeiling.stl",
+    "bytes": 3084
+  },
+  {
+    "path": "Models/STL format/lampSquareFloor.stl",
+    "bytes": 3084
+  },
+  {
+    "path": "Models/STL format/lampSquareTable.stl",
+    "bytes": 3084
+  },
+  {
+    "path": "Models/STL format/lampWall.stl",
+    "bytes": 2184
+  },
+  {
+    "path": "Models/STL format/laptop.stl",
+    "bytes": 3484
+  },
+  {
+    "path": "Models/STL format/loungeChair.stl",
+    "bytes": 6484
+  },
+  {
+    "path": "Models/STL format/loungeChairRelax.stl",
+    "bytes": 9484
+  },
+  {
+    "path": "Models/STL format/loungeDesignChair.stl",
+    "bytes": 5884
+  },
+  {
+    "path": "Models/STL format/loungeDesignSofa.stl",
+    "bytes": 5884
+  },
+  {
+    "path": "Models/STL format/loungeDesignSofaCorner.stl",
+    "bytes": 8884
+  },
+  {
+    "path": "Models/STL format/loungeSofa.stl",
+    "bytes": 6484
+  },
+  {
+    "path": "Models/STL format/loungeSofaCorner.stl",
+    "bytes": 9584
+  },
+  {
+    "path": "Models/STL format/loungeSofaLong.stl",
+    "bytes": 9384
+  },
+  {
+    "path": "Models/STL format/loungeSofaOttoman.stl",
+    "bytes": 4284
+  },
+  {
+    "path": "Models/STL format/paneling.stl",
+    "bytes": 2084
+  },
+  {
+    "path": "Models/STL format/pillow.stl",
+    "bytes": 2584
+  },
+  {
+    "path": "Models/STL format/pillowBlue.stl",
+    "bytes": 2584
+  },
+  {
+    "path": "Models/STL format/pillowBlueLong.stl",
+    "bytes": 2584
+  },
+  {
+    "path": "Models/STL format/pillowLong.stl",
+    "bytes": 2584
+  },
+  {
+    "path": "Models/STL format/plantSmall1.stl",
+    "bytes": 5184
+  },
+  {
+    "path": "Models/STL format/plantSmall2.stl",
+    "bytes": 7984
+  },
+  {
+    "path": "Models/STL format/plantSmall3.stl",
+    "bytes": 4984
+  },
+  {
+    "path": "Models/STL format/pottedPlant.stl",
+    "bytes": 3084
+  },
+  {
+    "path": "Models/STL format/radio.stl",
+    "bytes": 21684
+  },
+  {
+    "path": "Models/STL format/rugDoormat.stl",
+    "bytes": 10284
+  },
+  {
+    "path": "Models/STL format/rugRectangle.stl",
+    "bytes": 1484
+  },
+  {
+    "path": "Models/STL format/rugRound.stl",
+    "bytes": 9484
+  },
+  {
+    "path": "Models/STL format/rugRounded.stl",
+    "bytes": 10284
+  },
+  {
+    "path": "Models/STL format/rugSquare.stl",
+    "bytes": 1484
+  },
+  {
+    "path": "Models/STL format/shower.stl",
+    "bytes": 40584
+  },
+  {
+    "path": "Models/STL format/showerRound.stl",
+    "bytes": 48084
+  },
+  {
+    "path": "Models/STL format/sideTable.stl",
+    "bytes": 5984
+  },
+  {
+    "path": "Models/STL format/sideTableDrawers.stl",
+    "bytes": 11984
+  },
+  {
+    "path": "Models/STL format/speaker.stl",
+    "bytes": 11484
+  },
+  {
+    "path": "Models/STL format/speakerSmall.stl",
+    "bytes": 11084
+  },
+  {
+    "path": "Models/STL format/stairs.stl",
+    "bytes": 15484
+  },
+  {
+    "path": "Models/STL format/stairsCorner.stl",
+    "bytes": 15684
+  },
+  {
+    "path": "Models/STL format/stairsOpen.stl",
+    "bytes": 27984
+  },
+  {
+    "path": "Models/STL format/stairsOpenSingle.stl",
+    "bytes": 16384
+  },
+  {
+    "path": "Models/STL format/stoolBar.stl",
+    "bytes": 8884
+  },
+  {
+    "path": "Models/STL format/stoolBarSquare.stl",
+    "bytes": 7184
+  },
+  {
+    "path": "Models/STL format/table.stl",
+    "bytes": 6084
+  },
+  {
+    "path": "Models/STL format/tableCloth.stl",
+    "bytes": 7284
+  },
+  {
+    "path": "Models/STL format/tableCoffee.stl",
+    "bytes": 6284
+  },
+  {
+    "path": "Models/STL format/tableCoffeeGlass.stl",
+    "bytes": 7084
+  },
+  {
+    "path": "Models/STL format/tableCoffeeGlassSquare.stl",
+    "bytes": 7084
+  },
+  {
+    "path": "Models/STL format/tableCoffeeSquare.stl",
+    "bytes": 6284
+  },
+  {
+    "path": "Models/STL format/tableCross.stl",
+    "bytes": 8984
+  },
+  {
+    "path": "Models/STL format/tableCrossCloth.stl",
+    "bytes": 10184
+  },
+  {
+    "path": "Models/STL format/tableGlass.stl",
+    "bytes": 7284
+  },
+  {
+    "path": "Models/STL format/tableRound.stl",
+    "bytes": 4084
+  },
+  {
+    "path": "Models/STL format/televisionAntenna.stl",
+    "bytes": 2284
+  },
+  {
+    "path": "Models/STL format/televisionModern.stl",
+    "bytes": 3684
+  },
+  {
+    "path": "Models/STL format/televisionVintage.stl",
+    "bytes": 14084
+  },
+  {
+    "path": "Models/STL format/toaster.stl",
+    "bytes": 11084
+  },
+  {
+    "path": "Models/STL format/toilet.stl",
+    "bytes": 11584
+  },
+  {
+    "path": "Models/STL format/toiletSquare.stl",
+    "bytes": 11484
+  },
+  {
+    "path": "Models/STL format/trashcan.stl",
+    "bytes": 3484
+  },
+  {
+    "path": "Models/STL format/wall.stl",
+    "bytes": 684
+  },
+  {
+    "path": "Models/STL format/wallCorner.stl",
+    "bytes": 1484
+  },
+  {
+    "path": "Models/STL format/wallCornerRond.stl",
+    "bytes": 5884
+  },
+  {
+    "path": "Models/STL format/wallDoorway.stl",
+    "bytes": 3084
+  },
+  {
+    "path": "Models/STL format/wallDoorwayWide.stl",
+    "bytes": 3084
+  },
+  {
+    "path": "Models/STL format/wallHalf.stl",
+    "bytes": 684
+  },
+  {
+    "path": "Models/STL format/wallWindow.stl",
+    "bytes": 5484
+  },
+  {
+    "path": "Models/STL format/wallWindowSlide.stl",
+    "bytes": 7684
+  },
+  {
+    "path": "Models/STL format/washer.stl",
+    "bytes": 36084
+  },
+  {
+    "path": "Models/STL format/washerDryerStacked.stl",
+    "bytes": 49684
+  },
+  {
+    "path": "Patreon.url",
+    "bytes": 55
+  },
+  {
+    "path": "Preview.png",
+    "bytes": 149661
+  },
+  {
+    "path": "Sample.png",
+    "bytes": 143718
+  },
+  {
+    "path": "Side/",
+    "bytes": 0
+  },
+  {
+    "path": "Side/bathroomCabinet.png",
+    "bytes": 415
+  },
+  {
+    "path": "Side/bathroomCabinetDrawer.png",
+    "bytes": 2137
+  },
+  {
+    "path": "Side/bathroomMirror.png",
+    "bytes": 1754
+  },
+  {
+    "path": "Side/bathroomSink.png",
+    "bytes": 2261
+  },
+  {
+    "path": "Side/bathroomSinkSquare.png",
+    "bytes": 1953
+  },
+  {
+    "path": "Side/bathtub.png",
+    "bytes": 1286
+  },
+  {
+    "path": "Side/bear.png",
+    "bytes": 2725
+  },
+  {
+    "path": "Side/bedBunk.png",
+    "bytes": 4140
+  },
+  {
+    "path": "Side/bedDouble.png",
+    "bytes": 2744
+  },
+  {
+    "path": "Side/bedSingle.png",
+    "bytes": 2547
+  },
+  {
+    "path": "Side/bench.png",
+    "bytes": 2302
+  },
+  {
+    "path": "Side/benchCushion.png",
+    "bytes": 2303
+  },
+  {
+    "path": "Side/benchCushionLow.png",
+    "bytes": 1922
+  },
+  {
+    "path": "Side/bookcaseClosed.png",
+    "bytes": 4562
+  },
+  {
+    "path": "Side/bookcaseClosedDoors.png",
+    "bytes": 2419
+  },
+  {
+    "path": "Side/bookcaseClosedWide.png",
+    "bytes": 4791
+  },
+  {
+    "path": "Side/bookcaseOpen.png",
+    "bytes": 2802
+  },
+  {
+    "path": "Side/bookcaseOpenLow.png",
+    "bytes": 2167
+  },
+  {
+    "path": "Side/books.png",
+    "bytes": 1261
+  },
+  {
+    "path": "Side/cabinetBed.png",
+    "bytes": 1777
+  },
+  {
+    "path": "Side/cabinetBedDrawer.png",
+    "bytes": 1906
+  },
+  {
+    "path": "Side/cabinetBedDrawerTable.png",
+    "bytes": 1678
+  },
+  {
+    "path": "Side/cabinetTelevision.png",
+    "bytes": 2508
+  },
+  {
+    "path": "Side/cabinetTelevisionDoors.png",
+    "bytes": 2312
+  },
+  {
+    "path": "Side/cardboardBoxClosed.png",
+    "bytes": 898
+  },
+  {
+    "path": "Side/cardboardBoxOpen.png",
+    "bytes": 1487
+  },
+  {
+    "path": "Side/ceilingFan.png",
+    "bytes": 1422
+  },
+  {
+    "path": "Side/chair.png",
+    "bytes": 2016
+  },
+  {
+    "path": "Side/chairCushion.png",
+    "bytes": 1999
+  },
+  {
+    "path": "Side/chairDesk.png",
+    "bytes": 2650
+  },
+  {
+    "path": "Side/chairModernCushion.png",
+    "bytes": 1758
+  },
+  {
+    "path": "Side/chairModernFrameCushion.png",
+    "bytes": 1607
+  },
+  {
+    "path": "Side/chairRounded.png",
+    "bytes": 2114
+  },
+  {
+    "path": "Side/coatRack.png",
+    "bytes": 2402
+  },
+  {
+    "path": "Side/coatRackStanding.png",
+    "bytes": 2006
+  },
+  {
+    "path": "Side/computerKeyboard.png",
+    "bytes": 452
+  },
+  {
+    "path": "Side/computerMouse.png",
+    "bytes": 265
+  },
+  {
+    "path": "Side/computerScreen.png",
+    "bytes": 1712
+  },
+  {
+    "path": "Side/desk.png",
+    "bytes": 2770
+  },
+  {
+    "path": "Side/deskCorner.png",
+    "bytes": 3338
+  },
+  {
+    "path": "Side/doorway.png",
+    "bytes": 3260
+  },
+  {
+    "path": "Side/doorwayFront.png",
+    "bytes": 2412
+  },
+  {
+    "path": "Side/doorwayOpen.png",
+    "bytes": 907
+  },
+  {
+    "path": "Side/dryer.png",
+    "bytes": 2319
+  },
+  {
+    "path": "Side/floorCorner.png",
+    "bytes": 215
+  },
+  {
+    "path": "Side/floorCornerRound.png",
+    "bytes": 280
+  },
+  {
+    "path": "Side/floorFull.png",
+    "bytes": 206
+  },
+  {
+    "path": "Side/floorHalf.png",
+    "bytes": 204
+  },
+  {
+    "path": "Side/hoodLarge.png",
+    "bytes": 1095
+  },
+  {
+    "path": "Side/hoodModern.png",
+    "bytes": 1520
+  },
+  {
+    "path": "Side/kitchenBar.png",
+    "bytes": 1479
+  },
+  {
+    "path": "Side/kitchenBarEnd.png",
+    "bytes": 1524
+  },
+  {
+    "path": "Side/kitchenBlender.png",
+    "bytes": 1471
+  },
+  {
+    "path": "Side/kitchenCabinet.png",
+    "bytes": 2031
+  },
+  {
+    "path": "Side/kitchenCabinetCornerInner.png",
+    "bytes": 1650
+  },
+  {
+    "path": "Side/kitchenCabinetCornerRound.png",
+    "bytes": 2247
+  },
+  {
+    "path": "Side/kitchenCabinetDrawer.png",
+    "bytes": 2303
+  },
+  {
+    "path": "Side/kitchenCabinetUpper.png",
+    "bytes": 1007
+  },
+  {
+    "path": "Side/kitchenCabinetUpperCorner.png",
+    "bytes": 2656
+  },
+  {
+    "path": "Side/kitchenCabinetUpperDouble.png",
+    "bytes": 1631
+  },
+  {
+    "path": "Side/kitchenCabinetUpperLow.png",
+    "bytes": 989
+  },
+  {
+    "path": "Side/kitchenCoffeeMachine.png",
+    "bytes": 1490
+  },
+  {
+    "path": "Side/kitchenFridge.png",
+    "bytes": 1737
+  },
+  {
+    "path": "Side/kitchenFridgeBuiltIn.png",
+    "bytes": 2277
+  },
+  {
+    "path": "Side/kitchenFridgeLarge.png",
+    "bytes": 2938
+  },
+  {
+    "path": "Side/kitchenFridgeSmall.png",
+    "bytes": 1576
+  },
+  {
+    "path": "Side/kitchenMicrowave.png",
+    "bytes": 1359
+  },
+  {
+    "path": "Side/kitchenSink.png",
+    "bytes": 2139
+  },
+  {
+    "path": "Side/kitchenStove.png",
+    "bytes": 2388
+  },
+  {
+    "path": "Side/kitchenStoveElectric.png",
+    "bytes": 2340
+  },
+  {
+    "path": "Side/lampRoundFloor.png",
+    "bytes": 1625
+  },
+  {
+    "path": "Side/lampRoundTable.png",
+    "bytes": 1481
+  },
+  {
+    "path": "Side/lampSquareCeiling.png",
+    "bytes": 693
+  },
+  {
+    "path": "Side/lampSquareFloor.png",
+    "bytes": 808
+  },
+  {
+    "path": "Side/lampSquareTable.png",
+    "bytes": 847
+  },
+  {
+    "path": "Side/lampWall.png",
+    "bytes": 592
+  },
+  {
+    "path": "Side/laptop.png",
+    "bytes": 1353
+  },
+  {
+    "path": "Side/loungeChair.png",
+    "bytes": 2530
+  },
+  {
+    "path": "Side/loungeChairRelax.png",
+    "bytes": 2937
+  },
+  {
+    "path": "Side/loungeDesignChair.png",
+    "bytes": 2743
+  },
+  {
+    "path": "Side/loungeDesignSofa.png",
+    "bytes": 2606
+  },
+  {
+    "path": "Side/loungeDesignSofaCorner.png",
+    "bytes": 3034
+  },
+  {
+    "path": "Side/loungeSofa.png",
+    "bytes": 2718
+  },
+  {
+    "path": "Side/loungeSofaCorner.png",
+    "bytes": 3219
+  },
+  {
+    "path": "Side/loungeSofaLong.png",
+    "bytes": 3031
+  },
+  {
+    "path": "Side/loungeSofaOttoman.png",
+    "bytes": 1682
+  },
+  {
+    "path": "Side/paneling.png",
+    "bytes": 1772
+  },
+  {
+    "path": "Side/pillow.png",
+    "bytes": 1176
+  },
+  {
+    "path": "Side/pillowBlue.png",
+    "bytes": 769
+  },
+  {
+    "path": "Side/pillowBlueLong.png",
+    "bytes": 1170
+  },
+  {
+    "path": "Side/pillowLong.png",
+    "bytes": 1193
+  },
+  {
+    "path": "Side/plantSmall1.png",
+    "bytes": 922
+  },
+  {
+    "path": "Side/plantSmall2.png",
+    "bytes": 936
+  },
+  {
+    "path": "Side/plantSmall3.png",
+    "bytes": 928
+  },
+  {
+    "path": "Side/pottedPlant.png",
+    "bytes": 2485
+  },
+  {
+    "path": "Side/radio.png",
+    "bytes": 1598
+  },
+  {
+    "path": "Side/rugDoormat.png",
+    "bytes": 205
+  },
+  {
+    "path": "Side/rugRectangle.png",
+    "bytes": 151
+  },
+  {
+    "path": "Side/rugRound.png",
+    "bytes": 855
+  },
+  {
+    "path": "Side/rugRounded.png",
+    "bytes": 868
+  },
+  {
+    "path": "Side/rugSquare.png",
+    "bytes": 151
+  },
+  {
+    "path": "Side/shower.png",
+    "bytes": 3444
+  },
+  {
+    "path": "Side/showerRound.png",
+    "bytes": 3874
+  },
+  {
+    "path": "Side/sideTable.png",
+    "bytes": 2042
+  },
+  {
+    "path": "Side/sideTableDrawers.png",
+    "bytes": 2359
+  },
+  {
+    "path": "Side/speaker.png",
+    "bytes": 1597
+  },
+  {
+    "path": "Side/speakerSmall.png",
+    "bytes": 1321
+  },
+  {
+    "path": "Side/stairs.png",
+    "bytes": 6934
+  },
+  {
+    "path": "Side/stairsCorner.png",
+    "bytes": 7103
+  },
+  {
+    "path": "Side/stairsOpen.png",
+    "bytes": 7461
+  },
+  {
+    "path": "Side/stairsOpenSingle.png",
+    "bytes": 4741
+  },
+  {
+    "path": "Side/stoolBar.png",
+    "bytes": 1841
+  },
+  {
+    "path": "Side/stoolBarSquare.png",
+    "bytes": 1687
+  },
+  {
+    "path": "Side/table.png",
+    "bytes": 2042
+  },
+  {
+    "path": "Side/tableCloth.png",
+    "bytes": 2204
+  },
+  {
+    "path": "Side/tableCoffee.png",
+    "bytes": 1541
+  },
+  {
+    "path": "Side/tableCoffeeGlass.png",
+    "bytes": 1516
+  },
+  {
+    "path": "Side/tableCoffeeGlassSquare.png",
+    "bytes": 1337
+  },
+  {
+    "path": "Side/tableCoffeeSquare.png",
+    "bytes": 1380
+  },
+  {
+    "path": "Side/tableCross.png",
+    "bytes": 3125
+  },
+  {
+    "path": "Side/tableCrossCloth.png",
+    "bytes": 3177
+  },
+  {
+    "path": "Side/tableGlass.png",
+    "bytes": 2185
+  },
+  {
+    "path": "Side/tableRound.png",
+    "bytes": 1534
+  },
+  {
+    "path": "Side/televisionAntenna.png",
+    "bytes": 1028
+  },
+  {
+    "path": "Side/televisionModern.png",
+    "bytes": 1330
+  },
+  {
+    "path": "Side/televisionVintage.png",
+    "bytes": 2034
+  },
+  {
+    "path": "Side/toaster.png",
+    "bytes": 861
+  },
+  {
+    "path": "Side/toilet.png",
+    "bytes": 2672
+  },
+  {
+    "path": "Side/toiletSquare.png",
+    "bytes": 2492
+  },
+  {
+    "path": "Side/trashcan.png",
+    "bytes": 1308
+  },
+  {
+    "path": "Side/wall.png",
+    "bytes": 358
+  },
+  {
+    "path": "Side/wallCorner.png",
+    "bytes": 284
+  },
+  {
+    "path": "Side/wallCornerRond.png",
+    "bytes": 319
+  },
+  {
+    "path": "Side/wallDoorway.png",
+    "bytes": 1610
+  },
+  {
+    "path": "Side/wallDoorwayWide.png",
+    "bytes": 1557
+  },
+  {
+    "path": "Side/wallHalf.png",
+    "bytes": 287
+  },
+  {
+    "path": "Side/wallWindow.png",
+    "bytes": 2666
+  },
+  {
+    "path": "Side/wallWindowSlide.png",
+    "bytes": 2996
+  },
+  {
+    "path": "Side/washer.png",
+    "bytes": 2951
+  },
+  {
+    "path": "Side/washerDryerStacked.png",
+    "bytes": 4198
+  }
+]

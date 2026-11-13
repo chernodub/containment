@@ -4,6 +4,7 @@ import { getEnvironmentMood } from './EnvironmentMoods';
 import { applyFloorVariation } from './FloorVariation';
 import { optimizeLocalLights } from './LocalLightShading';
 import { applyHotFixtureSurface } from './HotFixtureSurface';
+import {registerFlatFloorLighting} from './FlatFloorLighting';
 
 const originals = new WeakMap<T.MeshStandardMaterial, { color: T.Color; roughness: number; metalness: number; emissiveIntensity: number }>();
 // Subtle surface tint only: environment identity comes from motivated light, not tinted black paint.
@@ -13,9 +14,13 @@ const deckTint: Readonly<Record<ShipEnvironment, number>> = {
   infested: 0xf1f6f0, containment: 0xf4f3fa, reactor: 0xf9f4ed,
 };
 // Bounded cool reflected fill keeps construction legible in the unlit deck toe.
-const deckBounce: Readonly<Record<ShipEnvironment,number>>={cryogenics:.006,habitation:.006,security:.001,cargo:.004,communications:.013,engineering:.004,maintenance:.006,infested:.003,containment:.002,reactor:.007};
+const deckBounce: Readonly<Record<ShipEnvironment,number>>={cryogenics:.006,habitation:.006,security:.001,cargo:.004,communications:.016,engineering:.004,maintenance:.006,infested:.003,containment:.002,reactor:.012};
 const readableSteel = new T.Color(0x657481);
 const reactorSteel = new T.Color(0x626b73);
+const roomDeckGain:Readonly<Record<string,number>>={'awakening-bay':1.06,'communal-atrium':1.20,'freight-hold':1.18,'transmission-chamber':1.10,'safety-interlock-station':1.32,'coolant-plant':1.18};
+const deckNames = new Set(['painted-steel-deck','annulus-deck','annulus-circulation','environment-floor','shaft-deck']);
+// A readable deck toe must not become an ambient wash across dark rack faces.
+const hardwareBounce:Partial<Record<ShipEnvironment,number>> = {communications:.006,security:.0002,containment:.0005,reactor:.007};
 
 /** Tune room-owned surfaces and hot fixtures without changing warning, enemy or navigation colors. */
 export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 'cryogenics', templateId?:string, practicalShapes?:T.Vector4[]) {
@@ -34,6 +39,8 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         original = { color: material.color.clone(), roughness: material.roughness, metalness: material.metalness, emissiveIntensity: material.emissiveIntensity };
         originals.set(material, original);
       }
+      const floor=deckNames.has(material.name)||material.userData.floorDressing===true;
+      if(material.userData.floorDressing===true&&!deckNames.has(material.name))registerFlatFloorLighting(material,environment,practicalShapes);
       // Authored deck materials are shared by their baked floor meshes only.
       if (material.name === 'painted-steel-deck' || material.name === 'annulus-deck' || material.name === 'annulus-circulation' || material.name === 'environment-floor') {
         material.roughness = environment === 'maintenance' ? mood.floorRoughness : Math.max(.82, mood.floorRoughness);
@@ -46,12 +53,14 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         }
         applyFloorVariation(material, environment, practicalShapes);
       }
+      if(deckNames.has(material.name))material.color.multiplyScalar(roomDeckGain[templateId??'']??1);
       if(environment==='reactor'&&material.name==='ship-cold-practical'){material.color.setHex(0xfff4e8);material.emissive.setHex(0xfffaf0);material.emissiveIntensity=10;applyHotFixtureSurface(material,hotCore);}
       // Keep the authored hue: red warning strips and green safe routes retain their meaning.
       if (!(environment === 'reactor' && material.name === 'ship-cold-practical') && !material.userData.motivatedEmitter && original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {
         material.emissiveIntensity = Math.max(2.6, original.emissiveIntensity * 1.75);
       }
-      optimizeLocalLights(material,environment==='reactor'?(templateId==='overload-floor'||templateId==='manual-control-chamber'?.12:1):.02,environment==='cargo'||environment==='communications'?.16:.025,Math.max(templateId==='reactor-vault'?.013:templateId==='manual-control-chamber'?.010:deckBounce[environment],legacyBounce));
+      const surfaceBounce=!floor&&hardwareBounce[environment]!==undefined?hardwareBounce[environment]!:deckBounce[environment];
+      optimizeLocalLights(material,environment==='reactor'?(templateId==='overload-floor'||templateId==='manual-control-chamber'?.12:1):.02,environment==='cargo'||environment==='communications'?.16:.025,Math.max(templateId==='reactor-vault'?.013:templateId==='manual-control-chamber'?.010:surfaceBounce,legacyBounce));
     }
   });
 }

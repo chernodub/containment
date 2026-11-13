@@ -74,7 +74,7 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
   installed.add(material);
   const previous = material.onBeforeCompile;
   const key = material.customProgramCacheKey();
-  const floor=['environment-floor','painted-steel-deck','annulus-deck','annulus-circulation'].includes(material.name);
+  const floor=['environment-floor','painted-steel-deck','annulus-deck','annulus-circulation'].includes(material.name)||material.userData.floorDressing===true;
   const floorShape=`
 #if UNROLLED_LOOP_INDEX < 4
  vec3 floorDeltaView=pointLight.position-geometryPosition;
@@ -90,7 +90,7 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
  }
 #endif
 `;
-  const nearField={value:['environment-floor','painted-steel-deck','annulus-deck','shaft-deck'].includes(material.name)?3.24:9};
+  const nearField={value:floor||material.name==='shaft-deck'?3.24:9};
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);
     shader.uniforms??={};shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;shader.uniforms.roomPracticalShadowFill=shadowFill!;shader.uniforms.roomPracticalNearField=nearField;shader.uniforms.roomShadowReadability=bounce!;

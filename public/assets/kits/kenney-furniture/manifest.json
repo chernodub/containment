@@ -1,0 +1,231 @@
+{
+  "pack": "Furniture Kit",
+  "author": "Kenney",
+  "sourceURL": "https://kenney.nl/assets/furniture-kit",
+  "license": "CC0-1.0",
+  "licenseEvidence": [
+    "https://kenney.nl/assets/furniture-kit",
+    "original archive License.txt"
+  ],
+  "downloadDate": "2026-11-13",
+  "archiveSHA256": "e67652d0932cee41683f74711c03d3e192a2af9979ef8e6b237711f5482d46b0",
+  "archiveFileListSHA256": "a978d6340108b2fe31414dadce59b58116d43925c4cc758284d7e7451b34c309",
+  "output": {
+    "file": "kit.glb",
+    "bytes": 116712,
+    "sha256": "f17d6f9ab072f3a83c43e9fe1cf2834017275fbe71c14edb96adca6bb9f84bc8"
+  },
+  "models": [
+    {
+      "name": "bedSingle",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/bedSingle.glb",
+      "sourceSHA256": "ca00c63f9a12da3138d902b2f5f18e0360fb6e8a5ac42ccb4bc3f185724b65d1",
+      "sourceBytes": 18636,
+      "dependencies": [],
+      "triangles": 214,
+      "size": [
+        0.5709999895372528,
+        0.37499999999996686,
+        1.125
+      ],
+      "outputTriangles": 214
+    },
+    {
+      "name": "pillow",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/pillow.glb",
+      "sourceSHA256": "6fae7c190d0b676ef3efd35e5178cef21dffb5c80e1257d8b537ad424da0e5f6",
+      "sourceBytes": 5044,
+      "dependencies": [],
+      "triangles": 50,
+      "size": [
+        0.23000000417232513,
+        0.22216293215751648,
+        0.08848358690738678
+      ],
+      "outputTriangles": 50
+    },
+    {
+      "name": "desk",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/desk.glb",
+      "sourceSHA256": "0164fe828f028b321730fb8c74502e353583f751be74da1682d42fff7d3c5a42",
+      "sourceBytes": 15048,
+      "dependencies": [],
+      "triangles": 198,
+      "size": [
+        0.7344754431396723,
+        0.38440755009651184,
+        0.39229999445510866
+      ],
+      "outputTriangles": 198
+    },
+    {
+      "name": "chairDesk",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/chairDesk.glb",
+      "sourceSHA256": "46406619186034cbe92b19b79a5f1a8e3f442a17a70a7524ef2c0ad0f35095c6",
+      "sourceBytes": 39016,
+      "dependencies": [],
+      "triangles": 588,
+      "size": [
+        0.3349500000476837,
+        0.6075999760627746,
+        0.3142990320920944
+      ],
+      "outputTriangles": 588
+    },
+    {
+      "name": "loungeSofa",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/loungeSofa.glb",
+      "sourceSHA256": "1886b811c0d3ad0d8525a4fd43adf4112c497c8e0ed906f06877ca3517f4c7dd",
+      "sourceBytes": 9644,
+      "dependencies": [],
+      "triangles": 128,
+      "size": [
+        0.9799999594688416,
+        0.46000000834465027,
+        0.4100000262260437
+      ],
+      "outputTriangles": 128
+    },
+    {
+      "name": "cardboardBoxOpen",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/cardboardBoxOpen.glb",
+      "sourceSHA256": "960da412564774c75e7b32f9af0100895e1edb877fc1e70dd34ee2422a2196d4",
+      "sourceBytes": 5404,
+      "dependencies": [],
+      "triangles": 60,
+      "size": [
+        0.37187498062849045,
+        0.2809999883174896,
+        0.21249999105930337
+      ],
+      "outputTriangles": 60
+    },
+    {
+      "name": "cardboardBoxClosed",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/cardboardBoxClosed.glb",
+      "sourceSHA256": "4af079dca52960912764574950f0549ff2ae1224b3db1528718629473a2d5d81",
+      "sourceBytes": 5400,
+      "dependencies": [],
+      "triangles": 60,
+      "size": [
+        0.21249999105930328,
+        0.2809999883174896,
+        0.21249999105930337
+      ],
+      "outputTriangles": 60
+    },
+    {
+      "name": "books",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/books.glb",
+      "sourceSHA256": "b8dc56e5d29f6fc1f4727fccb1b9642627fee9942c48060a00034e98df02701c",
+      "sourceBytes": 6864,
+      "dependencies": [],
+      "triangles": 62,
+      "size": [
+        0.15044759213924408,
+        0.10390225797891617,
+        0.09449999779462814
+      ],
+      "outputTriangles": 62
+    },
+    {
+      "name": "radio",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/radio.glb",
+      "sourceSHA256": "1ba93d6ba6f049750853b4652b92f286f2898e527695a0705b75cc7615897fed",
+      "sourceBytes": 25020,
+      "dependencies": [],
+      "triangles": 432,
+      "size": [
+        0.3149999976158142,
+        0.228191077709198,
+        0.09750000387430191
+      ],
+      "outputTriangles": 432
+    },
+    {
+      "name": "coatRack",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/coatRack.glb",
+      "sourceSHA256": "0f56540d57367ea6fea6b9aedf305d4fc58abeec8ff3b039dbff44360d819c76",
+      "sourceBytes": 9948,
+      "dependencies": [],
+      "triangles": 132,
+      "size": [
+        0.4479999840259552,
+        0.2800000011920929,
+        0.13439999520778656
+      ],
+      "outputTriangles": 132
+    },
+    {
+      "name": "kitchenCoffeeMachine",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/kitchenCoffeeMachine.glb",
+      "sourceSHA256": "063f582c6fa0f00a9f24e3393dac2295491c4becdaf5513c893ab1a2826b6ec3",
+      "sourceBytes": 13332,
+      "dependencies": [],
+      "triangles": 166,
+      "size": [
+        0.1895400075316429,
+        0.17748900577425955,
+        0.24016705217957496
+      ],
+      "outputTriangles": 166
+    },
+    {
+      "name": "tableCoffee",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/tableCoffee.glb",
+      "sourceSHA256": "e38bea760fbd514efbb75528d09b4752c91af44677bbb97e6d4386c263525179",
+      "sourceBytes": 8256,
+      "dependencies": [],
+      "triangles": 124,
+      "size": [
+        0.6609960943460464,
+        0.2300000041723255,
+        0.4000000134110451
+      ],
+      "outputTriangles": 124
+    },
+    {
+      "name": "pottedPlant",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/pottedPlant.glb",
+      "sourceSHA256": "5b760eda2766f75fda36b2c5df652a1662f82981ef64cd8fa7fe7bcd386b3a15",
+      "sourceBytes": 7576,
+      "dependencies": [],
+      "triangles": 60,
+      "size": [
+        0.21205927431583405,
+        0.6540167939567566,
+        0.24146194756031036
+      ],
+      "outputTriangles": 60
+    },
+    {
+      "name": "cabinetBedDrawer",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/cabinetBedDrawer.glb",
+      "sourceSHA256": "e3dfd2e120af3d4d29b66509e317452cd15bd3f57ac8945575462c582adc6de8",
+      "sourceBytes": 16088,
+      "dependencies": [],
+      "triangles": 182,
+      "size": [
+        0.26599998213350773,
+        0.26319998502731323,
+        0.21730001233650206
+      ],
+      "outputTriangles": 182
+    },
+    {
+      "name": "lampRoundTable",
+      "sourceFile": "tools/assets-src/kenney-furniture/inspected/Models/GLTF format/lampRoundTable.glb",
+      "sourceSHA256": "75bb644caaa3da003b4fcad7a931722dd61cd2858aab70cf660021d5061fa1b2",
+      "sourceBytes": 6604,
+      "dependencies": [],
+      "triangles": 76,
+      "size": [
+        0.15203941613435745,
+        0.31424999237060547,
+        0.1755599994212389
+      ],
+      "outputTriangles": 76
+    }
+  ],
+  "pipeline": "Author static glTF/GLB geometry, world transforms baked, origin centered at footprint/base, source palette sampled into body/dark/trim/accent/cloth roles, textures/UVs removed, weld/dedup/prune; Quaternius only: meshoptimizer simplify target25%, relative error<=1%; no decoder extension."
+}

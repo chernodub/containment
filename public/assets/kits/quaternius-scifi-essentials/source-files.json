@@ -1,0 +1,1042 @@
+[
+  {
+    "path": "FBX/",
+    "bytes": 0
+  },
+  {
+    "path": "FBX/Enemy_EyeDrone.fbx",
+    "bytes": 425676
+  },
+  {
+    "path": "FBX/Enemy_QuadShell.fbx",
+    "bytes": 1535388
+  },
+  {
+    "path": "FBX/Enemy_Trilobite.fbx",
+    "bytes": 1277900
+  },
+  {
+    "path": "FBX/Gun_Pistol.fbx",
+    "bytes": 113628
+  },
+  {
+    "path": "FBX/Gun_Revolver.fbx",
+    "bytes": 152972
+  },
+  {
+    "path": "FBX/Gun_Rifle.fbx",
+    "bytes": 182844
+  },
+  {
+    "path": "FBX/Gun_SMG_Ammo.fbx",
+    "bytes": 34556
+  },
+  {
+    "path": "FBX/Gun_Sniper.fbx",
+    "bytes": 256012
+  },
+  {
+    "path": "FBX/Gun_Sniper_Ammo.fbx",
+    "bytes": 35692
+  },
+  {
+    "path": "FBX/Prop_Ammo.fbx",
+    "bytes": 179868
+  },
+  {
+    "path": "FBX/Prop_Ammo_Closed.fbx",
+    "bytes": 83388
+  },
+  {
+    "path": "FBX/Prop_Ammo_Small.fbx",
+    "bytes": 107308
+  },
+  {
+    "path": "FBX/Prop_Barrel1.fbx",
+    "bytes": 85036
+  },
+  {
+    "path": "FBX/Prop_Barrel2_Closed.fbx",
+    "bytes": 129756
+  },
+  {
+    "path": "FBX/Prop_Barrel2_Open.fbx",
+    "bytes": 129804
+  },
+  {
+    "path": "FBX/Prop_Chair.fbx",
+    "bytes": 56396
+  },
+  {
+    "path": "FBX/Prop_Chest.fbx",
+    "bytes": 215484
+  },
+  {
+    "path": "FBX/Prop_Crate.fbx",
+    "bytes": 125772
+  },
+  {
+    "path": "FBX/Prop_Crate_Large.fbx",
+    "bytes": 125788
+  },
+  {
+    "path": "FBX/Prop_Crate_Tarp.fbx",
+    "bytes": 97740
+  },
+  {
+    "path": "FBX/Prop_Crate_Tarp_Large.fbx",
+    "bytes": 134220
+  },
+  {
+    "path": "FBX/Prop_Desk_L.fbx",
+    "bytes": 46124
+  },
+  {
+    "path": "FBX/Prop_Desk_Medium.fbx",
+    "bytes": 40764
+  },
+  {
+    "path": "FBX/Prop_Desk_Small.fbx",
+    "bytes": 40444
+  },
+  {
+    "path": "FBX/Prop_Grenade.fbx",
+    "bytes": 67820
+  },
+  {
+    "path": "FBX/Prop_HealthPack.fbx",
+    "bytes": 86588
+  },
+  {
+    "path": "FBX/Prop_HealthPack_Tube.fbx",
+    "bytes": 29036
+  },
+  {
+    "path": "FBX/Prop_KeyCard.fbx",
+    "bytes": 40460
+  },
+  {
+    "path": "FBX/Prop_Locker.fbx",
+    "bytes": 28812
+  },
+  {
+    "path": "FBX/Prop_Mine.fbx",
+    "bytes": 70732
+  },
+  {
+    "path": "FBX/Prop_Mug.fbx",
+    "bytes": 35132
+  },
+  {
+    "path": "FBX/Prop_SatelliteDish.fbx",
+    "bytes": 107788
+  },
+  {
+    "path": "FBX/Prop_Shelves_ThinShort.fbx",
+    "bytes": 51484
+  },
+  {
+    "path": "FBX/Prop_Shelves_ThinTall.fbx",
+    "bytes": 79500
+  },
+  {
+    "path": "FBX/Prop_Shelves_WideShort.fbx",
+    "bytes": 51564
+  },
+  {
+    "path": "FBX/Prop_Shelves_WideTall.fbx",
+    "bytes": 79596
+  },
+  {
+    "path": "FBX/Prop_Syringe.fbx",
+    "bytes": 53708
+  },
+  {
+    "path": "FBX (Unity)/",
+    "bytes": 0
+  },
+  {
+    "path": "FBX (Unity)/Enemy_EyeDrone.fbx",
+    "bytes": 430092
+  },
+  {
+    "path": "FBX (Unity)/Enemy_QuadShell.fbx",
+    "bytes": 1535388
+  },
+  {
+    "path": "FBX (Unity)/Enemy_Trilobite.fbx",
+    "bytes": 1277900
+  },
+  {
+    "path": "FBX (Unity)/Gun_Pistol.fbx",
+    "bytes": 113004
+  },
+  {
+    "path": "FBX (Unity)/Gun_Revolver.fbx",
+    "bytes": 153420
+  },
+  {
+    "path": "FBX (Unity)/Gun_Rifle.fbx",
+    "bytes": 182268
+  },
+  {
+    "path": "FBX (Unity)/Gun_SMG_Ammo.fbx",
+    "bytes": 34044
+  },
+  {
+    "path": "FBX (Unity)/Gun_Sniper.fbx",
+    "bytes": 257676
+  },
+  {
+    "path": "FBX (Unity)/Gun_Sniper_Ammo.fbx",
+    "bytes": 35132
+  },
+  {
+    "path": "FBX (Unity)/Prop_Ammo.fbx",
+    "bytes": 179324
+  },
+  {
+    "path": "FBX (Unity)/Prop_Ammo_Closed.fbx",
+    "bytes": 83484
+  },
+  {
+    "path": "FBX (Unity)/Prop_Ammo_Small.fbx",
+    "bytes": 107388
+  },
+  {
+    "path": "FBX (Unity)/Prop_Barrel1.fbx",
+    "bytes": 84844
+  },
+  {
+    "path": "FBX (Unity)/Prop_Barrel2_Closed.fbx",
+    "bytes": 129692
+  },
+  {
+    "path": "FBX (Unity)/Prop_Barrel2_Open.fbx",
+    "bytes": 129868
+  },
+  {
+    "path": "FBX (Unity)/Prop_Chair.fbx",
+    "bytes": 56668
+  },
+  {
+    "path": "FBX (Unity)/Prop_Chest.fbx",
+    "bytes": 215484
+  },
+  {
+    "path": "FBX (Unity)/Prop_Crate.fbx",
+    "bytes": 125196
+  },
+  {
+    "path": "FBX (Unity)/Prop_Crate_Large.fbx",
+    "bytes": 125100
+  },
+  {
+    "path": "FBX (Unity)/Prop_Crate_Tarp.fbx",
+    "bytes": 98268
+  },
+  {
+    "path": "FBX (Unity)/Prop_Crate_Tarp_Large.fbx",
+    "bytes": 134924
+  },
+  {
+    "path": "FBX (Unity)/Prop_Desk_L.fbx",
+    "bytes": 46380
+  },
+  {
+    "path": "FBX (Unity)/Prop_Desk_Medium.fbx",
+    "bytes": 40268
+  },
+  {
+    "path": "FBX (Unity)/Prop_Desk_Small.fbx",
+    "bytes": 39996
+  },
+  {
+    "path": "FBX (Unity)/Prop_Grenade.fbx",
+    "bytes": 67516
+  },
+  {
+    "path": "FBX (Unity)/Prop_HealthPack.fbx",
+    "bytes": 86492
+  },
+  {
+    "path": "FBX (Unity)/Prop_HealthPack_Tube.fbx",
+    "bytes": 28636
+  },
+  {
+    "path": "FBX (Unity)/Prop_KeyCard.fbx",
+    "bytes": 40284
+  },
+  {
+    "path": "FBX (Unity)/Prop_Locker.fbx",
+    "bytes": 28300
+  },
+  {
+    "path": "FBX (Unity)/Prop_Mine.fbx",
+    "bytes": 70684
+  },
+  {
+    "path": "FBX (Unity)/Prop_Mug.fbx",
+    "bytes": 34524
+  },
+  {
+    "path": "FBX (Unity)/Prop_SatelliteDish.fbx",
+    "bytes": 108380
+  },
+  {
+    "path": "FBX (Unity)/Prop_Shelves_ThinShort.fbx",
+    "bytes": 50780
+  },
+  {
+    "path": "FBX (Unity)/Prop_Shelves_ThinTall.fbx",
+    "bytes": 78396
+  },
+  {
+    "path": "FBX (Unity)/Prop_Shelves_WideShort.fbx",
+    "bytes": 50684
+  },
+  {
+    "path": "FBX (Unity)/Prop_Shelves_WideTall.fbx",
+    "bytes": 78412
+  },
+  {
+    "path": "FBX (Unity)/Prop_Syringe.fbx",
+    "bytes": 53628
+  },
+  {
+    "path": "glTF/",
+    "bytes": 0
+  },
+  {
+    "path": "glTF/Enemy_EyeDrone.bin",
+    "bytes": 221780
+  },
+  {
+    "path": "glTF/Enemy_EyeDrone.gltf",
+    "bytes": 53939
+  },
+  {
+    "path": "glTF/Enemy_QuadShell.bin",
+    "bytes": 551404
+  },
+  {
+    "path": "glTF/Enemy_QuadShell.gltf",
+    "bytes": 235254
+  },
+  {
+    "path": "glTF/Enemy_Trilobite.bin",
+    "bytes": 667940
+  },
+  {
+    "path": "glTF/Enemy_Trilobite.gltf",
+    "bytes": 189636
+  },
+  {
+    "path": "glTF/Gun_Pistol.bin",
+    "bytes": 123132
+  },
+  {
+    "path": "glTF/Gun_Pistol.gltf",
+    "bytes": 2211
+  },
+  {
+    "path": "glTF/Gun_Revolver.bin",
+    "bytes": 180468
+  },
+  {
+    "path": "glTF/Gun_Revolver.gltf",
+    "bytes": 3440
+  },
+  {
+    "path": "glTF/Gun_Rifle.bin",
+    "bytes": 214892
+  },
+  {
+    "path": "glTF/Gun_Rifle.gltf",
+    "bytes": 2210
+  },
+  {
+    "path": "glTF/Gun_SMG_Ammo.bin",
+    "bytes": 18668
+  },
+  {
+    "path": "glTF/Gun_SMG_Ammo.gltf",
+    "bytes": 2208
+  },
+  {
+    "path": "glTF/Gun_Sniper.bin",
+    "bytes": 316336
+  },
+  {
+    "path": "glTF/Gun_Sniper.gltf",
+    "bytes": 2215
+  },
+  {
+    "path": "glTF/Gun_Sniper_Ammo.bin",
+    "bytes": 19796
+  },
+  {
+    "path": "glTF/Gun_Sniper_Ammo.gltf",
+    "bytes": 2213
+  },
+  {
+    "path": "glTF/Prop_Ammo.bin",
+    "bytes": 242532
+  },
+  {
+    "path": "glTF/Prop_Ammo.gltf",
+    "bytes": 2216
+  },
+  {
+    "path": "glTF/Prop_Ammo_Closed.bin",
+    "bytes": 101032
+  },
+  {
+    "path": "glTF/Prop_Ammo_Closed.gltf",
+    "bytes": 2226
+  },
+  {
+    "path": "glTF/Prop_Ammo_Small.bin",
+    "bytes": 125928
+  },
+  {
+    "path": "glTF/Prop_Ammo_Small.gltf",
+    "bytes": 2227
+  },
+  {
+    "path": "glTF/Prop_Barrel1.bin",
+    "bytes": 97472
+  },
+  {
+    "path": "glTF/Prop_Barrel1.gltf",
+    "bytes": 2226
+  },
+  {
+    "path": "glTF/Prop_Barrel2_Closed.bin",
+    "bytes": 157176
+  },
+  {
+    "path": "glTF/Prop_Barrel2_Closed.gltf",
+    "bytes": 2239
+  },
+  {
+    "path": "glTF/Prop_Barrel2_Open.bin",
+    "bytes": 157176
+  },
+  {
+    "path": "glTF/Prop_Barrel2_Open.gltf",
+    "bytes": 2236
+  },
+  {
+    "path": "glTF/Prop_Chair.bin",
+    "bytes": 35924
+  },
+  {
+    "path": "glTF/Prop_Chair.gltf",
+    "bytes": 3629
+  },
+  {
+    "path": "glTF/Prop_Chest.bin",
+    "bytes": 223204
+  },
+  {
+    "path": "glTF/Prop_Chest.gltf",
+    "bytes": 17853
+  },
+  {
+    "path": "glTF/Prop_Crate.bin",
+    "bytes": 211872
+  },
+  {
+    "path": "glTF/Prop_Crate.gltf",
+    "bytes": 2186
+  },
+  {
+    "path": "glTF/Prop_Crate_Large.bin",
+    "bytes": 218528
+  },
+  {
+    "path": "glTF/Prop_Crate_Large.gltf",
+    "bytes": 2226
+  },
+  {
+    "path": "glTF/Prop_Crate_Tarp.bin",
+    "bytes": 127736
+  },
+  {
+    "path": "glTF/Prop_Crate_Tarp.gltf",
+    "bytes": 2223
+  },
+  {
+    "path": "glTF/Prop_Crate_Tarp_Large.bin",
+    "bytes": 189648
+  },
+  {
+    "path": "glTF/Prop_Crate_Tarp_Large.gltf",
+    "bytes": 2238
+  },
+  {
+    "path": "glTF/Prop_Desk_L.bin",
+    "bytes": 28020
+  },
+  {
+    "path": "glTF/Prop_Desk_L.gltf",
+    "bytes": 5495
+  },
+  {
+    "path": "glTF/Prop_Desk_Medium.bin",
+    "bytes": 20688
+  },
+  {
+    "path": "glTF/Prop_Desk_Medium.gltf",
+    "bytes": 5521
+  },
+  {
+    "path": "glTF/Prop_Desk_Small.bin",
+    "bytes": 20128
+  },
+  {
+    "path": "glTF/Prop_Desk_Small.gltf",
+    "bytes": 5415
+  },
+  {
+    "path": "glTF/Prop_Grenade.bin",
+    "bytes": 66112
+  },
+  {
+    "path": "glTF/Prop_Grenade.gltf",
+    "bytes": 2225
+  },
+  {
+    "path": "glTF/Prop_HealthPack.bin",
+    "bytes": 97160
+  },
+  {
+    "path": "glTF/Prop_HealthPack.gltf",
+    "bytes": 2230
+  },
+  {
+    "path": "glTF/Prop_HealthPack_Tube.bin",
+    "bytes": 13816
+  },
+  {
+    "path": "glTF/Prop_HealthPack_Tube.gltf",
+    "bytes": 2231
+  },
+  {
+    "path": "glTF/Prop_KeyCard.bin",
+    "bytes": 32428
+  },
+  {
+    "path": "glTF/Prop_KeyCard.gltf",
+    "bytes": 2216
+  },
+  {
+    "path": "glTF/Prop_Locker.bin",
+    "bytes": 17712
+  },
+  {
+    "path": "glTF/Prop_Locker.gltf",
+    "bytes": 2153
+  },
+  {
+    "path": "glTF/Prop_Mine.bin",
+    "bytes": 111336
+  },
+  {
+    "path": "glTF/Prop_Mine.gltf",
+    "bytes": 2211
+  },
+  {
+    "path": "glTF/Prop_Mug.bin",
+    "bytes": 16688
+  },
+  {
+    "path": "glTF/Prop_Mug.gltf",
+    "bytes": 2172
+  },
+  {
+    "path": "glTF/Prop_SatelliteDish.bin",
+    "bytes": 120100
+  },
+  {
+    "path": "glTF/Prop_SatelliteDish.gltf",
+    "bytes": 5732
+  },
+  {
+    "path": "glTF/Prop_Shelves_ThinShort.bin",
+    "bytes": 76048
+  },
+  {
+    "path": "glTF/Prop_Shelves_ThinShort.gltf",
+    "bytes": 2429
+  },
+  {
+    "path": "glTF/Prop_Shelves_ThinTall.bin",
+    "bytes": 145328
+  },
+  {
+    "path": "glTF/Prop_Shelves_ThinTall.gltf",
+    "bytes": 2429
+  },
+  {
+    "path": "glTF/Prop_Shelves_WideShort.bin",
+    "bytes": 76048
+  },
+  {
+    "path": "glTF/Prop_Shelves_WideShort.gltf",
+    "bytes": 2429
+  },
+  {
+    "path": "glTF/Prop_Shelves_WideTall.bin",
+    "bytes": 145328
+  },
+  {
+    "path": "glTF/Prop_Shelves_WideTall.gltf",
+    "bytes": 2429
+  },
+  {
+    "path": "glTF/Prop_Syringe.bin",
+    "bytes": 50548
+  },
+  {
+    "path": "glTF/Prop_Syringe.gltf",
+    "bytes": 2223
+  },
+  {
+    "path": "glTF/T_Enemies_BaseColor_png.png",
+    "bytes": 1076933
+  },
+  {
+    "path": "glTF/T_Enemies_Large_BaseColor.png",
+    "bytes": 1910747
+  },
+  {
+    "path": "glTF/T_Enemies_Large_Normal.png",
+    "bytes": 3116376
+  },
+  {
+    "path": "glTF/T_Enemies_Large_ORM.png",
+    "bytes": 3299099
+  },
+  {
+    "path": "glTF/T_Enemies_Normal.png",
+    "bytes": 313447
+  },
+  {
+    "path": "glTF/T_Enemies_ORM.png",
+    "bytes": 3043013
+  },
+  {
+    "path": "glTF/T_Guns_Batch1_BaseColor.png",
+    "bytes": 1437203
+  },
+  {
+    "path": "glTF/T_Guns_Batch1_Normal.png",
+    "bytes": 2941899
+  },
+  {
+    "path": "glTF/T_Guns_Batch1_ORM.png",
+    "bytes": 3107515
+  },
+  {
+    "path": "glTF/T_Guns_Batch2_BaseColor.png",
+    "bytes": 1077844
+  },
+  {
+    "path": "glTF/T_Guns_Batch2_Normal.png",
+    "bytes": 2934510
+  },
+  {
+    "path": "glTF/T_Guns_Batch2_ORM.png",
+    "bytes": 2960135
+  },
+  {
+    "path": "glTF/T_Props_Batch1_BaseColor.png",
+    "bytes": 298258
+  },
+  {
+    "path": "glTF/T_Props_Batch1_Normal.png",
+    "bytes": 838136
+  },
+  {
+    "path": "glTF/T_Props_Batch1_ORM.png",
+    "bytes": 842901
+  },
+  {
+    "path": "glTF/T_Props_Batch2_BaseColor.png",
+    "bytes": 450209
+  },
+  {
+    "path": "glTF/T_Props_Batch2_Normal.png",
+    "bytes": 770775
+  },
+  {
+    "path": "glTF/T_Props_Batch2_ORM.png",
+    "bytes": 931537
+  },
+  {
+    "path": "glTF/T_Props_Crates_BaseColor.png",
+    "bytes": 5601390
+  },
+  {
+    "path": "glTF/T_Props_Crates_Normal.png",
+    "bytes": 12047004
+  },
+  {
+    "path": "glTF/T_Props_Crates_ORM.png",
+    "bytes": 11086609
+  },
+  {
+    "path": "glTF/T_Trim_01_BaseColor_Red.png",
+    "bytes": 965873
+  },
+  {
+    "path": "glTF/T_Trim_01_Normal.png",
+    "bytes": 585626
+  },
+  {
+    "path": "glTF/T_Trim_01_ORM.png",
+    "bytes": 3338790
+  },
+  {
+    "path": "glTF/T_Trim_02_BaseColor.png",
+    "bytes": 1125543
+  },
+  {
+    "path": "glTF/T_Trim_02_BaseColor_Red.png",
+    "bytes": 1150649
+  },
+  {
+    "path": "glTF/T_Trim_02_Normal.png",
+    "bytes": 756841
+  },
+  {
+    "path": "glTF/T_Trim_02_ORM.png",
+    "bytes": 3994352
+  },
+  {
+    "path": "glTF/T_Trim_03_BaseColor.png",
+    "bytes": 1285125
+  },
+  {
+    "path": "glTF/T_Trim_03_Cables.png",
+    "bytes": 779284
+  },
+  {
+    "path": "glTF/T_Trim_03_Normal.png",
+    "bytes": 375307
+  },
+  {
+    "path": "glTF/T_Trim_03_ORM.png",
+    "bytes": 3009230
+  },
+  {
+    "path": "License_Standard.txt",
+    "bytes": 838
+  },
+  {
+    "path": "OBJ/",
+    "bytes": 0
+  },
+  {
+    "path": "OBJ/Enemy_EyeDrone.mtl",
+    "bytes": 517
+  },
+  {
+    "path": "OBJ/Enemy_EyeDrone.obj",
+    "bytes": 234725
+  },
+  {
+    "path": "OBJ/Enemy_QuadShell.mtl",
+    "bytes": 508
+  },
+  {
+    "path": "OBJ/Enemy_QuadShell.obj",
+    "bytes": 489009
+  },
+  {
+    "path": "OBJ/Enemy_Trilobite.mtl",
+    "bytes": 320
+  },
+  {
+    "path": "OBJ/Enemy_Trilobite.obj",
+    "bytes": 517160
+  },
+  {
+    "path": "OBJ/Gun_Pistol.mtl",
+    "bytes": 549
+  },
+  {
+    "path": "OBJ/Gun_Pistol.obj",
+    "bytes": 232223
+  },
+  {
+    "path": "OBJ/Gun_Revolver.mtl",
+    "bytes": 297
+  },
+  {
+    "path": "OBJ/Gun_Revolver.obj",
+    "bytes": 309412
+  },
+  {
+    "path": "OBJ/Gun_Rifle.mtl",
+    "bytes": 549
+  },
+  {
+    "path": "OBJ/Gun_Rifle.obj",
+    "bytes": 420003
+  },
+  {
+    "path": "OBJ/Gun_SMG_Ammo.mtl",
+    "bytes": 549
+  },
+  {
+    "path": "OBJ/Gun_SMG_Ammo.obj",
+    "bytes": 28820
+  },
+  {
+    "path": "OBJ/Gun_Sniper.mtl",
+    "bytes": 549
+  },
+  {
+    "path": "OBJ/Gun_Sniper.obj",
+    "bytes": 599299
+  },
+  {
+    "path": "OBJ/Gun_Sniper_Ammo.mtl",
+    "bytes": 549
+  },
+  {
+    "path": "OBJ/Gun_Sniper_Ammo.obj",
+    "bytes": 33667
+  },
+  {
+    "path": "OBJ/Prop_Ammo.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Ammo.obj",
+    "bytes": 461112
+  },
+  {
+    "path": "OBJ/Prop_Ammo_Closed.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Ammo_Closed.obj",
+    "bytes": 152360
+  },
+  {
+    "path": "OBJ/Prop_Ammo_Small.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Ammo_Small.obj",
+    "bytes": 223953
+  },
+  {
+    "path": "OBJ/Prop_Barrel1.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Barrel1.obj",
+    "bytes": 149847
+  },
+  {
+    "path": "OBJ/Prop_Barrel2_Closed.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Barrel2_Closed.obj",
+    "bytes": 269616
+  },
+  {
+    "path": "OBJ/Prop_Barrel2_Open.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Barrel2_Open.obj",
+    "bytes": 269582
+  },
+  {
+    "path": "OBJ/Prop_Chair.mtl",
+    "bytes": 1016
+  },
+  {
+    "path": "OBJ/Prop_Chair.obj",
+    "bytes": 78212
+  },
+  {
+    "path": "OBJ/Prop_Chest.mtl",
+    "bytes": 312
+  },
+  {
+    "path": "OBJ/Prop_Chest.obj",
+    "bytes": 226741
+  },
+  {
+    "path": "OBJ/Prop_Crate.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Crate.obj",
+    "bytes": 255143
+  },
+  {
+    "path": "OBJ/Prop_Crate_Large.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Crate_Large.obj",
+    "bytes": 256498
+  },
+  {
+    "path": "OBJ/Prop_Crate_Tarp.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Crate_Tarp.obj",
+    "bytes": 200611
+  },
+  {
+    "path": "OBJ/Prop_Crate_Tarp_Large.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Crate_Tarp_Large.obj",
+    "bytes": 294534
+  },
+  {
+    "path": "OBJ/Prop_Desk_L.mtl",
+    "bytes": 1495
+  },
+  {
+    "path": "OBJ/Prop_Desk_L.obj",
+    "bytes": 50429
+  },
+  {
+    "path": "OBJ/Prop_Desk_Medium.mtl",
+    "bytes": 1495
+  },
+  {
+    "path": "OBJ/Prop_Desk_Medium.obj",
+    "bytes": 35606
+  },
+  {
+    "path": "OBJ/Prop_Desk_Small.mtl",
+    "bytes": 1495
+  },
+  {
+    "path": "OBJ/Prop_Desk_Small.obj",
+    "bytes": 34939
+  },
+  {
+    "path": "OBJ/Prop_Grenade.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Grenade.obj",
+    "bytes": 109567
+  },
+  {
+    "path": "OBJ/Prop_HealthPack.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_HealthPack.obj",
+    "bytes": 155731
+  },
+  {
+    "path": "OBJ/Prop_HealthPack_Tube.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_HealthPack_Tube.obj",
+    "bytes": 21334
+  },
+  {
+    "path": "OBJ/Prop_KeyCard.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_KeyCard.obj",
+    "bytes": 38695
+  },
+  {
+    "path": "OBJ/Prop_Locker.mtl",
+    "bytes": 537
+  },
+  {
+    "path": "OBJ/Prop_Locker.obj",
+    "bytes": 25225
+  },
+  {
+    "path": "OBJ/Prop_Mine.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Mine.obj",
+    "bytes": 131245
+  },
+  {
+    "path": "OBJ/Prop_Mug.mtl",
+    "bytes": 537
+  },
+  {
+    "path": "OBJ/Prop_Mug.obj",
+    "bytes": 35967
+  },
+  {
+    "path": "OBJ/Prop_SatelliteDish.mtl",
+    "bytes": 1495
+  },
+  {
+    "path": "OBJ/Prop_SatelliteDish.obj",
+    "bytes": 236992
+  },
+  {
+    "path": "OBJ/Prop_Shelves_ThinShort.mtl",
+    "bytes": 537
+  },
+  {
+    "path": "OBJ/Prop_Shelves_ThinShort.obj",
+    "bytes": 128659
+  },
+  {
+    "path": "OBJ/Prop_Shelves_ThinTall.mtl",
+    "bytes": 537
+  },
+  {
+    "path": "OBJ/Prop_Shelves_ThinTall.obj",
+    "bytes": 254059
+  },
+  {
+    "path": "OBJ/Prop_Shelves_WideShort.mtl",
+    "bytes": 537
+  },
+  {
+    "path": "OBJ/Prop_Shelves_WideShort.obj",
+    "bytes": 128659
+  },
+  {
+    "path": "OBJ/Prop_Shelves_WideTall.mtl",
+    "bytes": 537
+  },
+  {
+    "path": "OBJ/Prop_Shelves_WideTall.obj",
+    "bytes": 254059
+  },
+  {
+    "path": "OBJ/Prop_Syringe.mtl",
+    "bytes": 552
+  },
+  {
+    "path": "OBJ/Prop_Syringe.obj",
+    "bytes": 73742
+  },
+  {
+    "path": "Preview_1.jpg",
+    "bytes": 275133
+  }
+]

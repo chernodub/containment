@@ -157,7 +157,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
   // actorMaterial is an ownership marker also used by room props; use the
   // explicit actor shader family instead of flattening every owned material.
   const kind = { value: new Vector2(key.includes(':actor-surface-') ? 1 : 0,
-    /floor|deck/.test(material.name) ? 1 : 0) };
+    /floor|deck/.test(material.name)||material.userData.floorDressing===true ? 1 : 0) };
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);
     Object.assign(shader.uniforms, {

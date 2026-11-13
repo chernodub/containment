@@ -1,0 +1,521 @@
+{
+  "pack": "Space Station Kit",
+  "author": "Kenney",
+  "sourceURL": "https://kenney.nl/assets/space-station-kit",
+  "license": "CC0-1.0",
+  "licenseEvidence": [
+    "https://kenney.nl/assets/space-station-kit",
+    "original archive License.txt"
+  ],
+  "downloadDate": "2026-11-13",
+  "archiveSHA256": "215e79bd5415cff93665183390f0343ed9acf87780306331013b78520170c6d8",
+  "archiveFileListSHA256": "9de7f718f817d330d8779da426b3d640f02a13f9c4dc0311f2e9f8e7b9a6167c",
+  "output": {
+    "file": "kit.glb",
+    "bytes": 138332,
+    "sha256": "27db3846caef2e2b83db8e7eddd773c4e7b822a0782a6189fc7037aa1d1b72f4"
+  },
+  "models": [
+    {
+      "name": "bed-single",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/bed-single.glb",
+      "sourceSHA256": "5eca54cb1f72da773380ded3a326e1c116e9353aebdf202b9353ed7ddc1cc6db",
+      "sourceBytes": 6480,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 56,
+      "size": [
+        0.5,
+        0.3500000238418579,
+        1
+      ],
+      "outputTriangles": 56
+    },
+    {
+      "name": "bed-single-cover",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/bed-single-cover.glb",
+      "sourceSHA256": "1fd3738b10f71de374d8c3ac6fd69edf397866c822ce42bc805b7c929a7acee8",
+      "sourceBytes": 5356,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 44,
+      "size": [
+        0.6000000238418579,
+        0.15000000596046448,
+        0.5
+      ],
+      "outputTriangles": 44
+    },
+    {
+      "name": "chair-cushion",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/chair-cushion.glb",
+      "sourceSHA256": "c46da13f8891d38331142972ec53275490cbad4ed3693af6565f974738af12cc",
+      "sourceBytes": 7780,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 74,
+      "size": [
+        0.30000001192092896,
+        0.550000011920929,
+        0.3500000089406967
+      ],
+      "outputTriangles": 74
+    },
+    {
+      "name": "computer",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/computer.glb",
+      "sourceSHA256": "dede29d81fd122c484af3e0dbf566f34893ed0f3c80182586feb19b23c33c0b7",
+      "sourceBytes": 13804,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 140,
+      "size": [
+        0.4000000059604645,
+        0.6608729362487793,
+        0.4381411224603653
+      ],
+      "outputTriangles": 140
+    },
+    {
+      "name": "computer-screen",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/computer-screen.glb",
+      "sourceSHA256": "dd2a95a9c46f430e6fd0d2af6c6a94b4542d0501dda2700504642cecc33369e3",
+      "sourceBytes": 19584,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 198,
+      "size": [
+        0.8000000417232513,
+        0.6608729362487793,
+        0.4381411373615265
+      ],
+      "outputTriangles": 198
+    },
+    {
+      "name": "computer-wide",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/computer-wide.glb",
+      "sourceSHA256": "62420ce928f288f91ce85e2245e80e6c9efbee9b6e91b7ea9b83d0289fa647c4",
+      "sourceBytes": 17136,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 174,
+      "size": [
+        0.8000000417232513,
+        0.49684643745422363,
+        0.533178985118866
+      ],
+      "outputTriangles": 174
+    },
+    {
+      "name": "computer-system",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/computer-system.glb",
+      "sourceSHA256": "87666d5211fdce8830d1abf55fab16bc21d67714d78f9525f1399c33c4cb54bb",
+      "sourceBytes": 17552,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 176,
+      "size": [
+        0.8999999761581421,
+        0.6000000238418579,
+        0.6948888599872589
+      ],
+      "outputTriangles": 176
+    },
+    {
+      "name": "display-wall-wide",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/display-wall-wide.glb",
+      "sourceSHA256": "27b9b2cddd27ac6c5590d98af6ff71e5bb23fb621f171974cbdb661b4b54f1d0",
+      "sourceBytes": 9780,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 96,
+      "size": [
+        0.6000000238418579,
+        0.46087291836738586,
+        0.3843683898448944
+      ],
+      "outputTriangles": 96
+    },
+    {
+      "name": "container-flat-open",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/container-flat-open.glb",
+      "sourceSHA256": "b85823ea93a830fe515732e800e515f66432453369a2f3ff42597bdf3588d832",
+      "sourceBytes": 13028,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 132,
+      "size": [
+        0.6594970524311066,
+        0.6000000238418474,
+        0.9909452795982361
+      ],
+      "outputTriangles": 132
+    },
+    {
+      "name": "container-wide",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/container-wide.glb",
+      "sourceSHA256": "3bed318d187ce26b816b7f84b706ecb57cffef94ab1bb8266ca91aa35073e6f0",
+      "sourceBytes": 12212,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 116,
+      "size": [
+        0.6000000238418579,
+        0.699999988079071,
+        0.6000000238418579
+      ],
+      "outputTriangles": 116
+    },
+    {
+      "name": "container-tall",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/container-tall.glb",
+      "sourceSHA256": "e790f12cdab2e50d266d54e1bbb8a05a1cd77629a065254be3734a67b6053358",
+      "sourceBytes": 13052,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 116,
+      "size": [
+        0.6000000238418579,
+        0.8999999761581421,
+        0.6000000238418579
+      ],
+      "outputTriangles": 116
+    },
+    {
+      "name": "pipe",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/pipe.glb",
+      "sourceSHA256": "b33fe37fee9d1dfe92dc75d5af7e54877199b9d865cb988afa25f40b7bed49ef",
+      "sourceBytes": 3536,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 20,
+      "size": [
+        0.24641014635562897,
+        0.5,
+        0.2845299541950226
+      ],
+      "outputTriangles": 20
+    },
+    {
+      "name": "pipe-bend",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/pipe-bend.glb",
+      "sourceSHA256": "dcbb380dde0687af80f74a84c8fbd22efbb5dc007b822a6522577fba0fd0e676",
+      "sourceBytes": 6544,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 48,
+      "size": [
+        0.5000000074505806,
+        0.5,
+        0.2845299541950226
+      ],
+      "outputTriangles": 48
+    },
+    {
+      "name": "pipe-ring",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/pipe-ring.glb",
+      "sourceSHA256": "5e5821b9e9579c60c1200414eece3d8ad3c5ffaa3488e9c3a172eb49700f64f8",
+      "sourceBytes": 5344,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 40,
+      "size": [
+        0.3464101552963257,
+        0.5,
+        0.4000000059604645
+      ],
+      "outputTriangles": 40
+    },
+    {
+      "name": "rocks",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/rocks.glb",
+      "sourceSHA256": "cdad530e15972f1f3cdf4dec1d1ca2d3b9406b46c2bbd67bb67abf3bbf173aa3",
+      "sourceBytes": 9308,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 80,
+      "size": [
+        1.1113616228103638,
+        0.35255998373031616,
+        1.0171608626842499
+      ],
+      "outputTriangles": 80
+    },
+    {
+      "name": "skip-rocks",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/skip-rocks.glb",
+      "sourceSHA256": "2cdb4a670d18dc9ddf8fd8edfbd24e2541bf12cd89d4a3c758a312036cd95167",
+      "sourceBytes": 13516,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 138,
+      "size": [
+        0.699999988079071,
+        0.699999988079071,
+        1.2000000476837158
+      ],
+      "outputTriangles": 138
+    },
+    {
+      "name": "table",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/table.glb",
+      "sourceSHA256": "c0670a41634afe2ad3fc8236371afbcd26f97ae9d5cb8971bd773fbad30f4f0c",
+      "sourceBytes": 9808,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 104,
+      "size": [
+        1.100000023841858,
+        0.4000000059604645,
+        0.6000000238418579
+      ],
+      "outputTriangles": 104
+    },
+    {
+      "name": "structure",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/structure.glb",
+      "sourceSHA256": "ef12f1eaec019116ece1aebb0c512ce19a5cbc385f7a393c62d9f32f129cf088",
+      "sourceBytes": 29828,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 144,
+      "size": [
+        1.000000001490116,
+        1.000000001490116,
+        1.000000001490116
+      ],
+      "outputTriangles": 144
+    },
+    {
+      "name": "wall-pillar",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/wall-pillar.glb",
+      "sourceSHA256": "aa87480d88da5feffff04a654d78059e59882cf7fcfbb9c0cd37ce4183728014",
+      "sourceBytes": 9224,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 88,
+      "size": [
+        1,
+        1,
+        0.5
+      ],
+      "outputTriangles": 88
+    },
+    {
+      "name": "rail",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/rail.glb",
+      "sourceSHA256": "fda7cd2ab910db8e251345a9b488a41bd55da2f55627ad4344653c9d6d5c088f",
+      "sourceBytes": 9692,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 96,
+      "size": [
+        1,
+        0.4000000059604645,
+        0.10000000149011612
+      ],
+      "outputTriangles": 96
+    },
+    {
+      "name": "wall-detail",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/wall-detail.glb",
+      "sourceSHA256": "7cee7abe1ea412acdf182da770bd3920bf023ecd165d5c9b3db3a60a0d7ae7d8",
+      "sourceBytes": 15096,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 120,
+      "size": [
+        0.4000001296401024,
+        0.699999988079071,
+        0.17320519803337098
+      ],
+      "outputTriangles": 120
+    },
+    {
+      "name": "wall-switch",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/wall-switch.glb",
+      "sourceSHA256": "2b297783053aa9b091972f31f5fc3892b7cb7572d017dd37fc22af9ac2640c20",
+      "sourceBytes": 3192,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 18,
+      "size": [
+        0.10000000149011612,
+        0.20000000298023224,
+        0.025000005960464478
+      ],
+      "outputTriangles": 18
+    },
+    {
+      "name": "wall",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/wall.glb",
+      "sourceSHA256": "561253375e765f825899d13031e52c07b84304d394e1d69579e0749e23fba42f",
+      "sourceBytes": 5252,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 44,
+      "size": [
+        1,
+        1,
+        0.30000001192092896
+      ],
+      "outputTriangles": 44
+    },
+    {
+      "name": "wall-window",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/wall-window.glb",
+      "sourceSHA256": "55053731040bad9e0a02cd5cbef4d6ce4516f40019d41488eb36a5bdebcda6f3",
+      "sourceBytes": 9720,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 104,
+      "size": [
+        1,
+        1,
+        0.30000001192092896
+      ],
+      "outputTriangles": 104
+    },
+    {
+      "name": "table-display-small",
+      "sourceFile": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/table-display-small.glb",
+      "sourceSHA256": "cb896c1f0ef4535b5209d40cb0a74fc1dd78874a00c10b99b25621ebadc7b197",
+      "sourceBytes": 29116,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/kenney-space-station/inspected/Models/GLB format/Textures/colormap.png",
+          "bytes": 7440,
+          "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+        }
+      ],
+      "triangles": 272,
+      "size": [
+        0.841421365737915,
+        0.600000013411045,
+        0.8155995309352875
+      ],
+      "outputTriangles": 272
+    }
+  ],
+  "pipeline": "Author static glTF/GLB geometry, world transforms baked, origin centered at footprint/base, source palette sampled into body/dark/trim/accent/cloth roles, textures/UVs removed, weld/dedup/prune; Quaternius only: meshoptimizer simplify target25%, relative error<=1%; no decoder extension."
+}
