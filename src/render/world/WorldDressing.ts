@@ -95,7 +95,7 @@ export function equipmentReservations(template:RoomTemplate,templateId:string):A
 }
 
 /** Deterministic, material-merged fittings. Raised detail is supported by existing solids. */
-export function addWorldDressing(world:T.Group,template:RoomTemplate,environment:ShipEnvironment,templateId:string,seed=1729):T.Group {
+export function addWorldDressing(world:T.Group,template:RoomTemplate,environment:ShipEnvironment,templateId:string,seed=1729,kitReplacement=false):T.Group {
   const root=new T.Group();root.name='g2-world-dressing';
   root.userData.seed=seed;root.userData.signature=templateId;root.userData.visualIdea=ROOM_IDEAS[templateId]??'retained-ship-utility';
   const make=(name:string,color:number,metalness:number,roughness:number,emissive=0,intensity=0)=>{
@@ -137,7 +137,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     const left=r.x/UNIT,right=(r.x+r.width)/UNIT,near=r.y/UNIT,far=(r.y+r.height)/UNIT,w=right-left,d=far-near;
     if(Math.min(w,d)<.8)continue;
     const cx=(left+right)/2,cz=(near+far)/2;
-    const looseFittings=environment==='communications'||environment==='maintenance'||environment==='cargo'||environment==='infested'?0:Math.min(6,Math.ceil(w*d/9));
+    const looseFittings=kitReplacement?0:environment==='communications'||environment==='maintenance'||environment==='cargo'||environment==='infested'?0:Math.min(6,Math.ceil(w*d/9));
     for(let n=0;n<looseFittings;n++){
       const margin=Math.min(.52,w*.35,d*.35),x=left+margin+random()*Math.max(0,w-2*margin),z=near+margin+random()*Math.max(0,d-2*margin);
       ray.set(point(x,20,z),down);const hit=ray.intersectObject(world,true).find(h=>h.point.y>.15&&(templateId!=='armory'||h.point.y<1.5));if(!hit)continue;
@@ -192,7 +192,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
       }
       root.userData.consumedArchitecture=(root.userData.consumedArchitecture??0)+1;
     }
-    if(environment!=='infested'&&centerHit&&(index<4||index===signatureIndex)){
+    if(!kitReplacement&&environment!=='infested'&&centerHit&&(index<4||index===signatureIndex)){
       const top=centerHit.point.y+.018,sw=Math.min(w*.46,1.6),sd=Math.min(d*.22,.48);
       box(dark,cx,top+.025,cz,sw,.05,sd);
       for(let tick=0;tick<7;tick++)box(tick===0?signal:paint,cx-sw*.4+tick*sw*.12,top+.055,cz,sw*.055,.008,sd*(tick%3===0?.6:.3));

@@ -72,6 +72,7 @@ try {
     console.log(`Graphics High/Low defaults and selection passed: desktop`);
     timing.start('menu-audio');
     const selectedVolume = await checkMenuSound(page);
+    assert.equal([...assets].filter(path=>path.includes('/assets/kits/')).length,0,'Room kits must not load on the title/settings path');
     const chooseStartingBoon = async (capture = false) => {
       await page.locator('#start').click();
       await page.waitForFunction(() => document.body.dataset.state === 'rig-select');
@@ -141,10 +142,12 @@ try {
       await page.screenshot({path:`docs/pr-screenshots/v2-desktop-gameplay.png`});
     }
     assert.equal([...assets].filter(p=>p.includes('/assets/models/')&&p.endsWith('.glb')).length,11);
-    const roomModels=['assets/benchmark/sealed-cryo.glb','assets/awakening/released-berth/released-berth.glb','assets/awakening/recovery-kit/room-kit.glb'];
+    const roomModels=['assets/benchmark/sealed-cryo.glb','assets/awakening/released-berth/released-berth.glb','assets/awakening/recovery-kit/room-kit.glb','assets/kits/kenney-space-station/kit.glb','assets/kits/quaternius-scifi-essentials/kit.glb'];
     for(const path of roomModels)assert.ok(assets.has(prefix+path),`Missing room model: ${path}`);
     assert.equal([...assets].filter(p=>p.endsWith('.glb')).length,11+roomModels.length);
     assert.equal([...assets].filter(p=>p.includes('/environment/')).length,9);
+    const modelCredits=await fetch(origin+prefix+'asset-credits.html');assert.equal(modelCredits.status,200);const modelCreditsHtml=await modelCredits.text();
+    for(const pack of ['kenney-space-station','kenney-furniture','kenney-nature','quaternius-scifi-essentials'])for(const file of ['CREDITS.md','LICENSE.txt','manifest.json']){const path=`assets/kits/${pack}/${file}`;assert.ok(modelCreditsHtml.includes(path),`Missing kit credit link ${path}`);const response=await fetch(origin+prefix+path);assert.equal(response.status,200,`Kit credit response ${path}`);if(file==='LICENSE.txt')assert.match(await response.text(),/CC0|Creative Commons Zero/);}
     assert.ok([...assets].some(p=>p.includes('/audio/')));
     assert.ok([...assets].every(p=>p.startsWith(prefix)));
     timing.start('restart');

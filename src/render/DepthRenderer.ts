@@ -1,3 +1,5 @@
+import {attachRoomKits,KIT_STANDARD_ROOMS} from './world/RoomKitDressing';
+import {prepareKitAssets} from './world/RoomKitAssets';
 import {AREA_ATTACK_DELAY_MS} from '../game/enemies/QueenBossSystem';
 import { registerGeometry, GEOMETRY_CLASSES } from './post/GeometryBuffer';
 import {freezeStaticRoom} from './StaticRoomTransforms';
@@ -70,6 +72,7 @@ export class DepthRenderer {
  readonly menuPresentation='cinematic' as const;
  readonly renderer:T.WebGLRenderer;readonly scene=new T.Scene();camera:T.OrthographicCamera|T.PerspectiveCamera=new T.PerspectiveCamera(28);
  private contextResources=new ContextResources();private afflictions=new AfflictionBatches(new T.TextureLoader());private healthBars=new EnemyHealthBars();private hudScene=new T.Scene();private world=new T.Group();private actors=new Map<number,ActorModel>();private nests=new Map<number,T.Group>();private queen:ActorModel|null=null;
+ private kitDressing:ReturnType<typeof attachRoomKits>|undefined;private kitStartupComplete=false;
  private interimAbilities=new AbilityVisuals(this.scene);
  private ragdolls=new DeathRagdolls();private staticDirty=false;private corpseIds=new Set<number>();
  private staticLoaded(owner:T.Group){return()=>{if(this.world!==owner)return;const newProfiles=this.materialWarmup?.register(owner)??0;this.contextResources?.track(owner);this.reflection?.invalidate();this.shadowsDirty=true;this.staticDirty=true;if(this.materialWarmup&&newProfiles)this.queueRoomWarmup();};}
@@ -178,6 +181,7 @@ export class DepthRenderer {
  prepareAhead(nodes:readonly RunNode[]){if(!this.disposed)this.aheadRooms?.prepareAhead(nodes);}
  private buildAhead(node:RunNode):T.Group|null{
   const t=ROOM_TEMPLATES[node.templateId],environment=shipEnvironment(node.templateId)??(node.templateId==='reactor-vault'?'reactor':'cryogenics');
+  if(KIT_STANDARD_ROOMS.has(node.templateId))prepareKitAssets(environment);
   const root=node.templateId==='service-shaft-landing'?serviceShaftLanding(t):authoredRoom(node.templateId,t);
   if(root){batchStaticRoom(root);applyRoomMood(root,environment,node.templateId);this.materialWarmup.register(root);}
   // Link the retained shared shaders against the future light topology without
@@ -196,18 +200,18 @@ export class DepthRenderer {
  }
  /** Load shaders, textures, GPU buffers and common animation actions before combat. */
  async prepare(node:RunNode){
-  if(this.materialWarmup){while(this.roomWarmPending)await this.roomWarmWork;this.forceRoomWarm=true;try{this.loadRoom(node);}finally{this.forceRoomWarm=false;}await this.roomWarmWork;while(this.roomWarmPending)await this.roomWarmWork;return;}
+  if(this.materialWarmup){while(this.roomWarmPending)await this.roomWarmWork;this.forceRoomWarm=true;try{this.loadRoom(node);}finally{this.forceRoomWarm=false;}await this.roomWarmWork;while(this.roomWarmPending)await this.roomWarmWork;this.kitStartupComplete=true;return;}
   this.loadRoom(node);
   // Settle every room owner before GPU work competes with image decoding.
   // Each optional owner already bounds its load and resolves on fallback.
-  await Promise.all([this.surfaces.ready,this.passengerVault?.ready,this.residentialGalleryEquipment?.ready,this.communalGarden?.ready,this.sealedBank?.ready,this.releasedBerth?.ready,this.recoveryKit?.ready]);
-  this.captureRoomReflections();await this.prepareScene();
+  await Promise.all([this.surfaces.ready,this.passengerVault?.ready,this.residentialGalleryEquipment?.ready,this.communalGarden?.ready,this.sealedBank?.ready,this.releasedBerth?.ready,this.recoveryKit?.ready,this.kitDressing?.ready]);
+  this.captureRoomReflections();await this.prepareScene();this.kitStartupComplete=true;
  }
  /** Serialize room preparation, keeping input blocked until every actual material is ready. */
  private queueRoomWarmup(){
   if(this.roomWarmPending){if(this.roomWarmCompiling)this.warmAgain=true;return;}
   this.roomWarmPending=true;this.roomWarmCompiling=false;const world=this.world,generation=this.graphicsGeneration,timing=this.preparationTiming,waitStarted=performance.now();
-  const ready=[this.surfaces.ready,this.passengerVault?.ready,this.residentialGalleryEquipment?.ready,this.communalGarden?.ready,this.sealedBank?.ready,this.releasedBerth?.ready,this.recoveryKit?.ready];
+  const ready=[this.surfaces.ready,this.passengerVault?.ready,this.residentialGalleryEquipment?.ready,this.communalGarden?.ready,this.sealedBank?.ready,this.releasedBerth?.ready,this.recoveryKit?.ready,this.kitDressing?.ready];
   this.roomWarmWork=Promise.all(ready).then(async()=>{if(this.disposed||this.world!==world||generation!==this.graphicsGeneration||this.renderer.getContext().isContextLost())return;this.roomWarmCompiling=true;if(timing)timing.phases.assets=(timing.phases.assets??0)+performance.now()-waitStarted;const captureStarted=performance.now();this.captureRoomReflections();if(timing)timing.phases.reflection=(timing.phases.reflection??0)+performance.now()-captureStarted;const warmStarted=performance.now();await this.prepareScene();if(timing){timing.phases.warm=(timing.phases.warm??0)+performance.now()-warmStarted;timing.total=performance.now()-timing.started;timing.programsAfter=this.renderer.info.programs?.length??0;timing.materialProfiles=this.materialWarmup?.profileCount??0;}}).catch(error=>{if(error!==PREPARATION_CANCELLED&&generation===this.graphicsGeneration&&!this.renderer.getContext().isContextLost())throw error;}).finally(()=>{
    this.roomWarmPending=false;this.roomWarmCompiling=false;const next=this.deferredRoom;this.deferredRoom=null;
    if(next)this.loadRoom(next.node,next.environment);
@@ -328,6 +332,7 @@ export class DepthRenderer {
   if(this.roomWarmPending){this.deferredRoom={node,environment};return;}
   const timing:RoomPreparationTiming={room:node.templateId,started:performance.now(),total:0,phases:{},compilePasses:0,textureUploads:0,programsBefore:this.renderer?.info?.programs?.length??0,programsAfter:0,materialProfiles:0};this.preparationTiming=timing;(this.preparationHistory??=[]).push(timing);if(this.preparationHistory.length>24)this.preparationHistory.shift();
   const keyChanged=(this.roomEnvironment==='reactor')!==(environment==='reactor');
+  this.kitDressing?.dispose();this.kitDressing=undefined;
   this.communalGarden?.dispose();this.communalGarden=undefined;
   this.passengerVault?.dispose();this.passengerVault=undefined;
   this.residentialGalleryEquipment?.dispose();this.residentialGalleryEquipment=undefined;
@@ -443,11 +448,12 @@ export class DepthRenderer {
   // Rigid exit parts share finishes and transforms; retain three merged draws.
   batch(this.exit,true);
   // Flat markings and obstacle-supported dressing are registered before room preparation.
-  addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));addEnvironmentalStory(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);
+  addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id),this.kitStartupComplete&&(node.templateId==='residential-gallery'||node.templateId==='relay-racks'));addEnvironmentalStory(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
   this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.world.userData.staticBatching=batchStaticRoom(this.world);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId,this.lighting.practicalShapes);
   const leaks=this.world.getObjectByName('g2-world-dressing')?.userData.leakPositions??[];this.world.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial)setFloorLeaks(material,leaks);});
   const mood=getEnvironmentMood(environment);this.scene.fog=new T.FogExp2(mood.fog.color,mood.fog.density*.25);this.scene.background=new T.Color(mood.fog.color).multiplyScalar(.24);this.scene.environmentIntensity=mood.reflectionIntensity;this.post?.setMood(mood);this.atmosphere?.loadRoom(environment,w,h,this.lighting.fixtures);this.backdrop?.loadRoom(this.world,w,h,environment);this.arena?.loadRoom(node.templateId,w,h);this.post?.distortion.clear();this.heatClock=0;
+  if(this.kitStartupComplete&&KIT_STANDARD_ROOMS.has(node.templateId)){const kitWorld=this.world;this.kitDressing=attachRoomKits(kitWorld,t,this.roomEnvironment,node.templateId,()=>{if(this.world!==kitWorld)return;applyRoomMood(kitWorld,this.roomEnvironment,node.templateId,this.lighting.practicalShapes);staticLoaded();},this.residentialGalleryEquipment?.ready);}
   const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged))this.queueRoomWarmup();
  }
  private roomSeed(id:string){let seed=2166136261;for(let i=0;i<id.length;i++)seed=Math.imul(seed^id.charCodeAt(i),16777619);return seed>>>0;}
@@ -475,7 +481,7 @@ export class DepthRenderer {
   this.effects.event(effect);
  }
  syncCorpse(id:number,x:number,y:number){const corpse=this.corpses.find(c=>c.id===id);if(corpse){corpse.x=x/UNIT;corpse.y=y/UNIT;corpse.vx=corpse.vy=0;if(this.ragdolls.has(id))this.ragdolls.sync(id,x/UNIT,y/UNIT);else{corpse.model.root.position.x=x/UNIT;corpse.model.root.position.z=y/UNIT;}}}
- get roomLoading(){return this.roomWarmPending||this.recoveringGraphics||this.communalGarden?.state==='loading'||this.residentialGalleryEquipment?.state==='loading'||this.passengerVault?.state==='loading'||this.recoveryKit?.state==='loading'||this.sealedBank?.state==='loading'||this.releasedBerth?.state==='loading';}
+ get roomLoading(){return this.kitDressing?.state==='loading'||this.roomWarmPending||this.recoveringGraphics||this.communalGarden?.state==='loading'||this.residentialGalleryEquipment?.state==='loading'||this.passengerVault?.state==='loading'||this.recoveryKit?.state==='loading'||this.sealedBank?.state==='loading'||this.releasedBerth?.state==='loading';}
  render(game:DepthGame,delta:number,menu=false){
   if(this.roomKey!==game.node.id)this.loadRoom(game.node);
   // ImageBitmap completion shares browser/GPU scheduling with WebGL. Do not
@@ -616,5 +622,5 @@ export class DepthRenderer {
   for(const[id,mesh]of this.poolMeshes)if(!poolIds.has(id)){mesh.geometry.dispose();mesh.material.dispose();mesh.removeFromParent();this.poolMeshes.delete(id);}
  }
  private clearPools(){for(const mesh of this.poolMeshes.values()){mesh.geometry.dispose();mesh.material.dispose();mesh.removeFromParent();}this.poolMeshes.clear();}
- dispose(){if(this.disposed)return;this.disposed=true;this.aheadRooms?.dispose();this.ragdolls.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.corpseIds?.clear();for(const model of this.actors.values())this.actorPool.release(model);this.actors.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;this.communalGarden?.dispose();this.communalGarden=undefined;this.residentialGalleryEquipment?.dispose();this.residentialGalleryEquipment=undefined;this.passengerVault?.dispose();this.clearPools();this.recoveryKit?.dispose();this.sealedBank?.dispose();this.releasedBerth?.dispose();disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.practicalPools?.dispose();this.arena?.dispose();this.title?.dispose();this.backdrop?.dispose();this.atmosphere.dispose();this.lighting.dispose();this.contacts.dispose();this.afflictions.dispose();this.actorPool.dispose();this.healthBars.dispose();this.pickupInstances?.dispose();this.playerBeacon?.dispose();this.effects.dispose();this.interimAbilities.dispose();for(const model of [this.player,this.menuMarine,this.menuAlien])if(model){model.stop?.();disposeModel(model.root);}if(this.bulletMesh.geometry){this.bulletMesh.geometry.dispose();(this.bulletMesh.material as T.Material).dispose();}for(const object of this.warning.children)if(object instanceof T.Mesh){object.geometry.dispose();(object.material as T.Material).dispose();}this.canvas.removeEventListener('webglcontextlost',this.loseGraphics);this.canvas.removeEventListener('webglcontextrestored',this.restoreGraphics);this.motionQuery?.removeEventListener('change',this.motionChanged);this.reflection.dispose();this.post.dispose();this.materialWarmup?.dispose();this.contextResources?.invalidate();this.renderer.dispose();this.surfaces.dispose();}
+ dispose(){if(this.disposed)return;this.disposed=true;this.kitDressing?.dispose();this.aheadRooms?.dispose();this.ragdolls.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.corpseIds?.clear();for(const model of this.actors.values())this.actorPool.release(model);this.actors.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;this.communalGarden?.dispose();this.communalGarden=undefined;this.residentialGalleryEquipment?.dispose();this.residentialGalleryEquipment=undefined;this.passengerVault?.dispose();this.clearPools();this.recoveryKit?.dispose();this.sealedBank?.dispose();this.releasedBerth?.dispose();disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.practicalPools?.dispose();this.arena?.dispose();this.title?.dispose();this.backdrop?.dispose();this.atmosphere.dispose();this.lighting.dispose();this.contacts.dispose();this.afflictions.dispose();this.actorPool.dispose();this.healthBars.dispose();this.pickupInstances?.dispose();this.playerBeacon?.dispose();this.effects.dispose();this.interimAbilities.dispose();for(const model of [this.player,this.menuMarine,this.menuAlien])if(model){model.stop?.();disposeModel(model.root);}if(this.bulletMesh.geometry){this.bulletMesh.geometry.dispose();(this.bulletMesh.material as T.Material).dispose();}for(const object of this.warning.children)if(object instanceof T.Mesh){object.geometry.dispose();(object.material as T.Material).dispose();}this.canvas.removeEventListener('webglcontextlost',this.loseGraphics);this.canvas.removeEventListener('webglcontextrestored',this.restoreGraphics);this.motionQuery?.removeEventListener('change',this.motionChanged);this.reflection.dispose();this.post.dispose();this.materialWarmup?.dispose();this.contextResources?.invalidate();this.renderer.dispose();this.surfaces.dispose();}
 }
