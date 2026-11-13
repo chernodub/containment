@@ -751,3 +751,5 @@ import { registerV6Scenarios } from './v6-scenarios.mjs';
 registerV6Scenarios(SCENARIOS);
 import {registerC6Scenarios} from './c6-scenarios.mjs';
 registerC6Scenarios(SCENARIOS);
+import {registerI10Scenarios} from './i10-scenarios.mjs';
+registerI10Scenarios(SCENARIOS);

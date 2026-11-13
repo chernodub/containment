@@ -18,7 +18,7 @@ describe('adaptive resolution', () => {
 
   it('retains resolution through 60 seconds of steady work between the old and new GPU overload points',()=>{
     const resolution=new AdaptiveResolution();resolution.setEnabled(true);
-    expect(RENDER_BUDGET.gpuTargetMs).toBe(15.5);
+    expect(RENDER_BUDGET.gpuTargetMs).toBe(16.5);
     run(resolution,60,1000/60,16);
     expect(resolution.scale).toBe(1);expect(resolution.snapshot.source).toBe('gpu');
     expect(resolution.snapshot.smoothedMs).toBeCloseTo(16);

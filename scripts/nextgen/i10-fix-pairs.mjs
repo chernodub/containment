@@ -12,6 +12,8 @@ const pairs=[
  ['DETACHED DEPTH / MATCHED CAMERA COHORT','i10-round1/v2-flashfire-containment-annulus-containment-annulus-04.png','i10-soft-depth/v2-flashfire-containment-annulus-containment-annulus-04.png','Existing draws/pools; new depth blit, no opaque redraw.'],
  ['QUEEN / EXPLICITLY DIFFERENT LEGAL VIEWING MARKS','i10-round1/g2-queen-exposed-reactor-vault-04.png','i10-round2/g2-queen-exposed-reactor-vault-04.png','Native exposure; closer legal side mark is staging, not a matched camera claim.'],
  ['ENTERING BODY / LOST THEN RETAINED BEARING','i10-round3-retry/i9-remote-stalker-swarm-junction-failure.png','i10-final-focused/i9-remote-stalker-swarm-junction-04.png','Failed original phase retained; public-body projection now owns warning suppression.'],
+ ['HALF-SIZE DEPTH / CRYO SAME PHASE','i10-depth-half-before/v2-full-cryo-relay-racks-relay-racks-04.png','i10-depth-half-after/v2-full-cryo-relay-racks-relay-racks-04.png','Same cards/caps; about2 scene-pixel depth precision. These images do not measure timing.'],
+ ['HALF-SIZE DEPTH / PYRO SAME PHASE','i10-depth-half-before/v2-full-pyro-infested-workshop-infested-workshop-04.png','i10-depth-half-after/v2-full-pyro-infested-workshop-infested-workshop-04.png','No particle density cut; small camera translation remains. Native sources and hashes retained.'],
 ];
 const sheet=canvas(1920,pairs.length*586),receipts=[];
 for(let n=0;n<pairs.length;n++){

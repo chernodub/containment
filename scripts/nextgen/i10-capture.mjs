@@ -17,7 +17,7 @@ for(const shot of prior.shots){
  const frames=prior.shots.filter(s=>s.scenario===shot.scenario&&s.room===shot.room).length;
  entries.set(key,{key,frames:scenario.burst?frames:4});
 }
-for(const key of ['c6-silhouettes:containment-annulus','c6-frozen-silhouettes:containment-annulus',...['cryo','arc'].flatMap(rig=>['containment-annulus','infested-workshop'].map(room=>`v6-open-${rig==='cryo'?'whiteout':'overclock'}-${room}`))])entries.set(key,{key,frames:4});
+for(const key of ['i10-arena-calm-motion','c6-silhouettes:containment-annulus','c6-frozen-silhouettes:containment-annulus',...['cryo','arc'].flatMap(rig=>['containment-annulus','infested-workshop'].map(room=>`v6-open-${rig==='cryo'?'whiteout':'overclock'}-${room}`))])entries.set(key,{key,frames:4});
 const out=resolve('artifacts/nextgen/i10');await mkdir(out,{recursive:true});
 const batches=[];
 for(const frames of [4,7])for(const masks of [false,true]){const same=[...entries.values()].filter(e=>e.frames===frames&&e.key.includes('silhouette')===masks);for(let n=0;n<same.length;n+=10)batches.push({frames,scenarios:same.slice(n,n+10).map(e=>e.key)});}
