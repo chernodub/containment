@@ -14,7 +14,7 @@ import {compareGalleries} from './gallery.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');process.chdir(root);
 const args=process.argv.slice(2),flags=new Set(['build','headed','keep-going','help']);
-const known=new Set([...flags,'label','scenarios','rooms','burst','width','height','dpr','timestamp','seed','compare','step-ms','sprite-width','dist','dist-source-sha','graphics','style']);
+const known=new Set([...flags,'label','scenarios','rooms','burst','width','height','dpr','timestamp','seed','compare','step-ms','sprite-width','dist','dist-source-sha','graphics','style','hud-insets']);
 for(const arg of args){assert(arg.startsWith('--')&&known.has(arg.slice(2).split('=')[0]),`Unknown option ${arg}`);assert(arg.includes('=')||flags.has(arg.slice(2)),`Use --name=value: ${arg}`);}
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const integer=(name,fallback,min,max)=>{const n=Number(option(name,fallback));assert(Number.isInteger(n)&&n>=min&&n<=max,`--${name} must be ${min}..${max}`);return n;};
@@ -25,6 +25,7 @@ const viewport={width:integer('width',1920,640,7680),height:integer('height',108
 const burst=integer('burst',4,1,30),seed=integer('seed',1729,0,0xffffffff),keepGoing=args.includes('--keep-going');
 const style=option('style','bold');assert(['subtle','medium','bold'].includes(style),'Invalid --style strength');
 const graphics=JSON.parse(option('graphics','{}'));assert(graphics&&typeof graphics==='object'&&!Array.isArray(graphics),'--graphics requires an options JSON object');
+const hudInsets=JSON.parse(option('hud-insets','null'));if(hudInsets!==null){assert(hudInsets&&typeof hudInsets==='object'&&!Array.isArray(hudInsets),'--hud-insets requires an object');assert(['top','right','bottom','left'].every(key=>Number.isFinite(hudInsets[key])&&hudInsets[key]>=0),'HUD insets require four finite nonnegative CSS-pixel values');}
 const rooms=option('rooms',DEFAULT_ROOMS.join(',')).split(',');assert(rooms.length&&rooms.every(id=>/^[a-z0-9-]+$/.test(id)),'Invalid room list');
 const selection=option('scenarios','all').split(','),requested=selection.includes('all')?SCENARIOS.map(s=>s.id):selection;
 const scenarios=requested.flatMap(item=>{const direct=SCENARIOS.find(s=>s.id===item);if(direct&&!direct.rooms)return [{...direct}];const [id,room,...extra]=item.split(':'),entry=SCENARIOS.find(s=>s.id===id);assert(entry&&!extra.length&&(!room||entry.rooms),`Unknown scenario ${item}`);return entry.rooms?(room?[{...entry,room}]:rooms.map(room=>({...entry,room}))):[{...entry}];});
@@ -33,7 +34,7 @@ if(comparison){const result=await compareGalleries(resolve('artifacts/nextgen'),
 const stepMs=integer('step-ms',150,1,1000),spriteWidth=integer('sprite-width',960,160,1920);
 const prefix='/containment/',dist=resolve(option('dist','dist'));
 const timestamp=option('timestamp',new Date().toISOString());assert(Number.isFinite(Date.parse(timestamp)),'Invalid --timestamp');
-const manifest={graphicStrength:style,graphicsOverrides:graphics,gitSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),timestamp,label,seed,viewport,deviceScaleFactor:dpr,burstStepMs:stepMs,shots:[],sprites:[],failures:[],errors:[],fontFallbacks:[],gpuAttempts:[],runtimeSeconds:0,note:'Production game, per-shot High/Low tiers. Fixed-step captures include idle RAF/screenshot overhead; i2 kitingProof separately records live normal-loop samples.'};
+const manifest={hudInsets,graphicStrength:style,graphicsOverrides:graphics,gitSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),timestamp,label,seed,viewport,deviceScaleFactor:dpr,burstStepMs:stepMs,shots:[],sprites:[],failures:[],errors:[],fontFallbacks:[],gpuAttempts:[],runtimeSeconds:0,note:'Production game, per-shot High/Low tiers. Fixed-step captures include idle RAF/screenshot overhead; i2 kitingProof separately records live normal-loop samples.'};
 let browser,context,server,page;const started=performance.now();
 async function latest(path){let result=0;for(const entry of await readdir(path,{withFileTypes:true})){const p=resolve(path,entry.name);result=Math.max(result,entry.isDirectory()?await latest(p):(await stat(p)).mtimeMs);}return result;}
 async function buildIfNeeded(){if(option('dist','')){await stat(resolve(dist,'index.html'));manifest.distSnapshot={path:dist,sourceSHA:option('dist-source-sha','unrecorded')};return;}let built=0;try{built=(await stat(resolve(dist,'index.html'))).mtimeMs;}catch{}const source=Math.max(...await Promise.all(['src','public','scripts/nextgen'].map(latest)),...await Promise.all(['package.json','package-lock.json','vite.config.ts','tsconfig.json','index.html'].map(async p=>(await stat(p)).mtimeMs)));if(args.includes('--build')||built<source){console.log('Building production dist/…');await new Promise((ok,fail)=>{const p=spawn('npm',['run','build'],{stdio:'inherit'});p.on('error',fail);p.on('exit',code=>code===0?ok():fail(Error(`Production build failed (${code})`)));});}}
@@ -113,6 +114,7 @@ try{
    await page.evaluate(seed=>window.__captureSeed(seed),seed);
    let staging;if(scenario.combat)staging=await page.evaluate(stageCombat,{status:!!scenario.status});
    if(scenario.kiting)staging=await page.evaluate(stageKiting);
+   if(hudInsets)await page.evaluate(insets=>{const d=window.__containmentDebug;if(typeof d.renderer.setHudInsets!=='function')throw Error('Frozen renderer has no setHudInsets API');d.renderer.setHudInsets(insets);d.refresh();},hudInsets);
    await page.waitForFunction(()=>!window.__containmentDebug.renderer.roomLoading&&document.querySelector('#world').getAttribute('aria-busy')!=='true');
    if(scenario.state==='playing')await page.mouse.move(Math.round(viewport.width*.64),Math.round(viewport.height*.48));else await page.mouse.move(4,4);
    if(scenario.nativeFocus)await page.locator(scenario.nativeFocus).first().focus();

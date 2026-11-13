@@ -686,3 +686,10 @@ exact 480×270 area reductions and grayscale room-identity sheets using only
 saved harness PNGs; it does not open another browser. The three standard rooms
 are Residential Gallery, Transmission Chamber and Swarm Junction. Original
 round manifests and failed captures remain separate.
+
+The additive capture flag `--hud-insets='{"top":0,"right":300,"bottom":160,"left":280}'`
+reserves those exact CSS pixels after setup on any existing fixture, records them
+in the manifest and refreshes the real rendered camera without advancing the
+simulation clock. It requires the renderer API. This allows matched G2 before/after
+room fixtures with unchanged staging clocks. `g6-calm` likewise does not advance
+simulation; `g6-kiting` intentionally adds its documented650ms organic-style lead-in.
