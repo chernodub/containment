@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {patchActorRegions} from '../ActorRegions';
 import {optimizeLocalLights} from '../lighting/LocalLightShading';
 
 /** Shared uniforms per actor, never per mesh or frame; adds no draws or resources. */
@@ -25,10 +26,11 @@ float plateHeight=(actorPosition.y-actorPlateBounds.x)/actorPlateBounds.y;
 if(actorPlateOpening>.05&&plateHeight>.72&&abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y&&abs(actorPosition.z-actorPlateBounds.z)<actorPlateBounds.w*.15*actorPlateOpening)discard;
 float ash=fract(sin(dot(floor(actorPosition*65.0),vec3(12.9898,78.233,37.719)))*43758.5453);
 if(ash<actorDissolve)discard;
-float deathFracture=smoothstep(.965,.995,fract(sin(dot(floor(actorPosition*18.0),vec3(31.1,17.7,48.3)))*18643.31));
-if(actorDeathStyle>.5&&actorDeathStyle<1.5)diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.28,.46,.54),.4);
-if(actorDeathStyle>1.5&&actorDeathStyle<2.5)diffuseColor.rgb*=.38;
-if(actorDeathStyle>2.5)diffuseColor.rgb=mix(diffuseColor.rgb*.6,vec3(.10,.16,.055),.35);
+// Death finish stays inside authored regions; no stochastic fracture lines.
+float deathFracture=step(1.5,vActorRegion)*step(vActorRegion,2.5);
+if(actorDeathStyle>.5&&actorDeathStyle<1.5)diffuseColor.rgb=diffuseColor.rgb*vec3(.76,1.06,1.18)+vec3(.012,.028,.038);
+if(actorDeathStyle>1.5&&actorDeathStyle<2.5)diffuseColor.rgb*=.54;
+if(actorDeathStyle>2.5)diffuseColor.rgb=diffuseColor.rgb*vec3(.62,.78,.50)+vec3(.006,.014,.003);
 ${friendly ? '' : 'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(dot(diffuseColor.rgb,vec3(.2126,.7152,.0722))),.12)*1.12+vec3(.006,.009,.012);diffuseColor.rgb*=mix(.55,1.0,actorCamouflage);'}
 diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.9,.98,1.0),actorFlash*actorFlashIntensity*.35);`)
         .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
@@ -43,6 +45,7 @@ totalEmissiveRadiance+=actorRimColor*actorRim*actorRimStrength*actorStageLight*m
     material.customProgramCacheKey = () => `${previousKey}:actor-surface-v5:${friendly ? 'marine' : 'alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
+    patchActorRegions(material,friendly);
   }
   return {
     stage(value:number) { stageLight.value=T.MathUtils.clamp(value,0,1); },

@@ -78,8 +78,10 @@ export function patchGeometryMaterial(material: MeshStandardMaterial): void {
     previous.call(material, shader, renderer);
     shader.uniforms.containmentIdentity = identity;
     if (shader.fragmentShader.includes('out highp vec4 containmentGeometry')) return;
+    if(!shader.vertexShader.includes('varying float vActorRegion;'))shader.vertexShader='attribute float actorRegion;varying float vActorRegion;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvActorRegion=actorRegion;');
     shader.fragmentShader = `layout(location = 1) out highp vec4 containmentGeometry;
 uniform vec2 containmentIdentity;
+${shader.fragmentShader.includes('varying float vActorRegion;')?'':'varying float vActorRegion;'}
 vec2 containmentOctNormal(vec3 n) {
  n /= abs(n.x) + abs(n.y) + abs(n.z);
  return n.z >= 0.0 ? n.xy : (1.0 - abs(n.yx)) * sign(n.xy);
@@ -91,7 +93,7 @@ vec2 containmentOctNormal(vec3 n) {
 #else
  vec3 containmentNormal = normalize(vNormal);
 #endif
-containmentGeometry = vec4(containmentOctNormal(containmentNormal) * .5 + .5, containmentIdentity / 255.0);
+containmentGeometry = vec4(containmentOctNormal(containmentNormal) * .5 + .5, vec2(containmentIdentity.x,containmentIdentity.y+8.0*floor(vActorRegion+.5)*step(2.5,containmentIdentity.y)) / 255.0);
 `);
   };
   material.customProgramCacheKey = () => key.includes(':geometry-mrt-v1')?key:`${key}:geometry-mrt-v1`;

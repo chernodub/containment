@@ -34,7 +34,7 @@ export class DepthGTAO {
   constructor(depth: DepthTexture, camera: Camera, packedAO: Texture, geometry?: Texture) {
     this.material = new ShaderMaterial({
       name: 'Containment depth GTAO', vertexShader: screenVertex,
-      fragmentShader: GTAOShader.fragmentShader.replace('return unpackRGBToNormal(textureLod(tNormal, uv, 0.).rgb);', `vec4 geometry=textureLod(tNormal,uv,0.);geometry.zw*=255.0; if(geometry.z<.5||geometry.w>6.5||abs(geometry.z-floor(geometry.z+.5))>.01||abs(geometry.w-floor(geometry.w+.5))>.01)return computeNormalFromDepth(uv); vec2 e=geometry.rg*2.0-1.0; vec3 n=vec3(e,1.0-abs(e.x)-abs(e.y)); if(n.z<0.0)n.xy=(1.0-abs(n.yx))*sign(n.xy); return normalize(n);`),
+      fragmentShader: GTAOShader.fragmentShader.replace('return unpackRGBToNormal(textureLod(tNormal, uv, 0.).rgb);', `vec4 geometry=textureLod(tNormal,uv,0.);geometry.zw*=255.0; geometry.w=mod(floor(geometry.w+.5),8.0); if(geometry.z<.5||geometry.w>6.5||abs(geometry.z-floor(geometry.z+.5))>.01||abs(geometry.w-floor(geometry.w+.5))>.01)return computeNormalFromDepth(uv); vec2 e=geometry.rg*2.0-1.0; vec3 n=vec3(e,1.0-abs(e.x)-abs(e.y)); if(n.z<0.0)n.xy=(1.0-abs(n.yx))*sign(n.xy); return normalize(n);`),
       defines: {
         ...GTAOShader.defines, NORMAL_VECTOR_TYPE: geometry ? 1 : 0, SAMPLES: 12,
         FRAGMENT_OUTPUT: 'vec4(ao, packNormalToRGB(viewNormal))',

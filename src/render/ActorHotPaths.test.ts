@@ -100,7 +100,7 @@ it('uploads only live affliction instances and leaves inactive buffers untouched
   }finally{batches.dispose();}
 });
 
-it('omits fragment-discarded corpse identity draws and restores them on pool reuse',()=>{
+it('retains funded corpse anatomy in resident buffers and restores live state on pool reuse',()=>{
  const model=alien('brute'),identity=model.root.getObjectByName('brute-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
- try{expect(identity.visible).toBe(true);model.freeze!();expect(identity.material.uniforms.identityDeath.value).toBe(1);expect(identity.visible).toBe(false);model.reset!();expect(identity.visible).toBe(true);expect(identity.material.uniforms.identityDeath.value).toBe(0);}finally{disposeModel(model.root);}
+ try{const geometry=identity.geometry,material=identity.material;expect(identity.visible).toBe(true);model.freeze!();expect(identity.material.uniforms.identityDeath.value).toBe(1);expect(identity.visible).toBe(true);expect(identity.geometry).toBe(geometry);expect(identity.material).toBe(material);model.dissolve!(.4);expect(identity.material.uniforms.identityDissolve.value).toBe(.4);model.reset!();expect(identity.visible).toBe(true);expect(identity.material.uniforms.identityDeath.value).toBe(0);expect(identity.material.uniforms.identityDissolve.value).toBe(0);}finally{disposeModel(model.root);}
 });

@@ -13,6 +13,11 @@ beforeAll(loadModels);
 
 function skins(root:T.Object3D){const result:T.SkinnedMesh[]=[];root.traverse(o=>{if(o instanceof T.SkinnedMesh)result.push(o);});return result;}
 function visibleSkins(beacon:PlayerBeacon){return skins(beacon.root).filter(s=>s.visible);}
+/** Explicit multi-skin compatibility fixture, independent of the shipping one-draw body. */
+function separatedSkins(model:ReturnType<typeof marine>){
+ const first=skins(model.root)[0];for(let i=1;i<4;i++){const copy=first.clone(false);copy.name=`beacon-skin-fixture-${i}`;first.parent!.add(copy);}return skins(model.root);
+}
+
 
 // Match skinnormal_vertex: normals use the weighted skin matrix's linear part,
 // followed by the object's inverse-transpose world normal matrix.
@@ -30,7 +35,7 @@ function normalSampler(){
   };
 }
 
-it('merges the real marine into one exact skin through gait, aiming, brace, dash and restored poses',()=>{
+it('borrows the consolidated marine skin exactly through gait, aiming, brace, dash and restored poses',()=>{
   const model=marine(),scene=new T.Scene(),beacon=new PlayerBeacon(model.root,scene),sources=skins(model.root);
   const kit=new ElementKit(new T.Group()),presentation=createSystemPresentation(kit);
   const baseline:AbilitiesSnapshot={rig:'breacher',slots:null,overdrive:{active:false,ready:false,charge:0,activeRemainingMs:0},invulnerable:false,dashing:false,hostileTimeScale:1,zones:[],deployables:[]};
@@ -39,7 +44,7 @@ it('merges the real marine into one exact skin through gait, aiming, brace, dash
   const game={player:{x:128,y:128,angle:.4},combat:{snapshot:{dead:false}},enemies:{snapshot:{enemies:[]}},boonStatuses:()=>NO_AFFLICTION} as unknown as DepthGame;
   try{
     model.root.position.set(4,.2,7);model.animate(0,1,.4);beacon.update(model.root,.4);beacon.root.updateMatrixWorld(true);
-    expect(sources).toHaveLength(4);expect(visibleSkins(beacon)).toHaveLength(1);
+    expect(sources).toHaveLength(1);expect(visibleSkins(beacon)).toHaveLength(1);expect(visibleSkins(beacon)[0].geometry).toBe(sources[0].geometry);
     const merged=visibleSkins(beacon)[0];expect(merged.skeleton).toBe(sources[0].skeleton);
     let vertexOffset=0,indexOffset=0,attributeError=0;
     for(const source of sources){
@@ -73,7 +78,7 @@ it('merges the real marine into one exact skin through gait, aiming, brace, dash
 });
 
 it('fails back to authoritative individual skins for visibility, transform, bind and geometry changes',()=>{
-  const model=marine(),beacon=new PlayerBeacon(model.root),sources=skins(model.root),first=sources[0];
+  const model=marine(),sources=separatedSkins(model),beacon=new PlayerBeacon(model.root),first=sources[0];
   try{
     beacon.update(model.root,0);const merged=visibleSkins(beacon)[0];
     first.visible=false;beacon.update(model.root,0);expect(merged.visible).toBe(false);expect(visibleSkins(beacon)).toHaveLength(sources.length-1);
@@ -89,7 +94,7 @@ it('fails back to authoritative individual skins for visibility, transform, bind
 });
 
 it('retains incompatible skin groups and disposes only its own merged buffers exactly once',()=>{
-  const model=marine(),sources=skins(model.root),different=sources[0];different.skeleton=new T.Skeleton([...different.skeleton.bones],different.skeleton.boneInverses.map(m=>m.clone()));
+  const model=marine(),sources=separatedSkins(model),different=sources[0];different.skeleton=new T.Skeleton([...different.skeleton.bones],different.skeleton.boneInverses.map(m=>m.clone()));
   const other=sources[1];other.position.x=.1;const scene=new T.Scene(),beacon=new PlayerBeacon(model.root,scene);
   const sourceGeometry=new Map(sources.map(s=>[s.geometry,vi.spyOn(s.geometry,'dispose')])),skeletons=new Map(sources.map(s=>[s.skeleton,vi.spyOn(s.skeleton,'dispose')]));
   const own=skins(beacon.root).filter(s=>!sourceGeometry.has(s.geometry)).map(s=>vi.spyOn(s.geometry,'dispose'));

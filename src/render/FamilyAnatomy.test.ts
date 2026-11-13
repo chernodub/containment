@@ -1,0 +1,64 @@
+import {expect, it} from 'vitest';
+import type {ActorPart} from './ActorIdentity';
+import {familyAnatomy, rankAnatomy} from './FamilyAnatomy';
+
+/** Conservative bounds include the supported plate/shield bevel and full cone radius. */
+function bounds(parts: readonly ActorPart[]) {
+  const min = [Infinity,Infinity,Infinity], max = [-Infinity,-Infinity,-Infinity];
+  for (const part of parts) for (let axis=0;axis<3;axis++) {
+    const gain = part.shape==='shield' ? axis===1?.5:1.12 : part.shape==='plate' && axis===1 ? 1.1 : 1;
+    min[axis]=Math.min(min[axis],part.position[axis]-part.scale[axis]*gain);
+    max[axis]=Math.max(max[axis],part.position[axis]+part.scale[axis]*gain);
+  }
+  return {min,max,width:max[0]-min[0],height:max[1]-min[1],length:max[2]-min[2]};
+}
+
+it('gives the crawler a compact low shell, the Stalker low separated blades, and the Carrier one rear egg',()=>{
+  const crawler=familyAnatomy('crawler',1,1),stalker=familyAnatomy('stalker',1,1),carrier=familyAnatomy('carrier',1,1);
+  const shell=bounds(crawler),blades=stalker.filter(p=>p.shape==='shield'),thorax=stalker.find(p=>p.shape==='plate'&&p.position[0]===0)!;
+  expect(shell.height).toBeLessThan(shell.width);
+  expect(shell.max[1]).toBeLessThan(.75);
+  expect(blades).toHaveLength(2);
+  expect(blades[0].position[0]).toBeLessThan(-thorax.scale[0]);
+  expect(blades[1].position[0]).toBeGreaterThan(thorax.scale[0]);
+  expect(bounds(blades).length).toBeGreaterThan(thorax.scale[0]*6);
+  expect(bounds(blades).max[1]).toBeLessThan(thorax.position[1]);
+  const egg=carrier.filter(p=>p.shape==='sac');expect(egg).toHaveLength(1);
+  expect(egg[0].position[2]).toBeLessThan(0);
+  expect(bounds(egg).height).toBeGreaterThan(shell.height*1.4);
+  expect(bounds(egg).max[1]).toBeGreaterThan(1);
+  // These shape measurements remain distinct without reading a family palette.
+  const signatures=[crawler,stalker,carrier].map(parts=>{const b=bounds(parts);return [b.width,b.height,b.length,...parts.map(p=>p.position[1])].join('/');});
+  expect(new Set(signatures).size).toBe(3);
+});
+
+it('keeps new torso anatomy inside the conservative radial envelope at any authored scale',()=>{
+  for(const span of [.55,1,2.4])for(const height of [.32,1,2.3])for(const kind of ['crawler','stalker','carrier']){
+    const parts=familyAnatomy(kind,span,height);
+    expect(parts.length).toBeLessThanOrEqual(5);
+    for(const part of parts){
+      expect(part.fitted).toBe(false);
+      const b=bounds([part]);
+      const farX=Math.max(Math.abs(b.min[0]),Math.abs(b.max[0]));
+      const farZ=Math.max(Math.abs(b.min[2]),Math.abs(b.max[2]));
+      expect(Math.hypot(farX,farZ),`${kind}/${part.shape}`).toBeLessThanOrEqual(span*.50);
+      expect(part.position.every(Number.isFinite)&&part.scale.every(n=>Number.isFinite(n)&&n>0)).toBe(true);
+    }
+  }
+  expect(familyAnatomy('brute',1,1)).toEqual([]);
+  expect(familyAnatomy('spitter',1,1)).toEqual([]);
+  expect(familyAnatomy('queen',1,1)).toEqual([]);
+});
+
+it('separates elite crest from a taller, wider champion crown using prebuilt role gates',()=>{
+  const parts=rankAnatomy(1,1),elite=parts.filter(p=>p.role===1),champion=parts.filter(p=>p.role===6);
+  expect(elite).toHaveLength(1);
+  expect(champion.filter(p=>p.shape==='spine')).toHaveLength(3);
+  expect(bounds(champion).max[1]).toBeGreaterThan(bounds(elite).max[1]+.35);
+  expect(bounds(champion).width).toBeGreaterThan(bounds(elite).width*2.5);
+  for(const part of parts){
+    const b=bounds([part]);
+    expect(Math.hypot(Math.max(Math.abs(b.min[0]),Math.abs(b.max[0])),Math.max(Math.abs(b.min[2]),Math.abs(b.max[2])))).toBeLessThan(.43);
+    expect(part.fitted).toBe(false);
+  }
+});

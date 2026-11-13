@@ -101,11 +101,11 @@ describe('template skin primitive batching', () => {
     disposeModel(original.scene); disposeModel(merged.scene);
   });
 
-  it('shares the four merged template geometries across independently animated actor clones', async () => {
+  it('shares the one regional template geometry across independently animated actor clones', async () => {
     const asset = await sourceMarine(); registerAsset('marine', asset);
     const a = instantiateAsset('marine'), b = instantiateAsset('marine');
     const aa = skins(a.root), bb = skins(b.root);
-    expect(aa).toHaveLength(4); expect(bb).toHaveLength(4);
+    expect(aa).toHaveLength(1); expect(bb).toHaveLength(1);
     aa.forEach((mesh, index) => {
       expect(mesh.geometry).toBe(bb[index].geometry);
       expect(mesh.geometry.userData.sharedAsset).toBe(true);

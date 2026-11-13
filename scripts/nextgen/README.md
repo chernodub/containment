@@ -679,3 +679,26 @@ no purchase, damage or progression rule changes. `u4-radar-fade`, ordinary
 `combat-kiting` and full Cryo/Whiteout bursts exercise the new panel fade and
 bounded running totals. These remain staged presentation evidence. Native
 `playtest:smoke` supplies organic input/progression evidence separately.
+## G5 designed actor review
+
+`g5-standard` and `g5-standard-close` stage the native marine/Brute/Spitter on
+legal marks. The close view explicitly reduces only the fixture's view height
+and width by1.65; it does not change production camera behavior. Use bright
+Awakening Bay, dark Infested Workshop and warm Overload Floor. Four samples at
+66ms retain the actual rig motion. `g5-silhouettes:containment-annulus` stages
+all five native families including elite/champion variants, then reads the
+existing geometry attachment only for evidence. Each mask retains actual owner
+IDs and native pixel scale; it is not an approximate color threshold.
+
+`node scripts/nextgen/g5-review.mjs artifacts/nextgen/<label>` writes exact
+area-reduced480×270 PNGs, per-actor four-frame native crops, and native/480
+solid-black silhouette sheets. It launches no browser. `g5-queen-status` adds a
+clearly recorded presentation-only frozen/burning treatment to the real exposed
+phase; simulation status, phase and hitboxes stay unchanged. Ordinary Queen
+opening/exposed/closing scenarios retain native phase clocks.
+
+The geometry attachment's RG normal and B owner bytes are unchanged. A stores
+`class +8*region`; decode class with `%8`, region with integer division by8.
+Classes0/255 still represent clear/excluded priority. Actor interior ink uses
+region boundaries exclusively; normal/depth creases remain world-only. Existing
+G3 evidence readers decode the packed class before their original assertions.

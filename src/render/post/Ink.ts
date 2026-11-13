@@ -19,13 +19,15 @@ vec3 inkNormal(vec2 e) {
 float inkBackdropLuma=1.0;
 float inkCoverage(vec2 uv, float depth, vec4 center) {
  inkBackdropLuma=1.0;
+ center.w=floor(center.w+.5);
+ float centerRegion=floor(center.w/8.0);center.w=mod(center.w,8.0);
  if(inkMode<.5||center.z<.5||center.w<.5||center.w>6.5||abs(center.z-floor(center.z+.5))>.01||abs(center.w-floor(center.w+.5))>.01)return 0.0;
  bool actor=center.w>2.5;
  bool floorSurface=center.w<1.5;
  if(floorSurface)return 0.0;
  // Low's silhouette path performs no normal comparisons.
  float width=actor?inkStyle.x:inkStyle.y;
- if(center.w==3.0||center.w>4.5)width*=mix(1.18,1.06,inkStrength);
+ if(center.w==3.0)width*=1.25;else if(center.w>4.5)width*=mix(1.18,1.06,inkStrength);
  vec3 p=viewPosition(uv,depth);
  float edge=0.0,crease=0.0;
  vec3 normal=vec3(0.0,0.0,1.0);if(inkMode>1.5)normal=inkNormal(center.xy);
@@ -33,7 +35,7 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
   float a=float(i)*.7853981634;
   vec2 offset=vec2(cos(a),sin(a))*inkPixel*width;
   vec2 q=clamp(uv+offset,inkPixel,1.0-inkPixel);
-  vec4 neighbor=texture2D(tGeometry,q);neighbor.zw*=255.0;
+  vec4 neighbor=texture2D(tGeometry,q);neighbor.zw*=255.0;neighbor.w=mod(floor(neighbor.w+.5),8.0);
   // Identity compares exact normalized-byte integers, never color/luminance edges.
   float different=step(.5,abs(center.z-neighbor.z));
   float surface=step(.5,neighbor.z)*step(1.0,neighbor.w)*step(neighbor.w,6.5);
@@ -69,18 +71,24 @@ float inkCoverage(vec2 uv, float depth, vec4 center) {
    crease=max(crease,smoothstep(.22,.55,bend)*smoothstep(.007,.04,plane)*(1.0-inkStrength));
   }
  }
- // Major geometric forms use a narrower kernel than silhouettes. No texture normals.
- if(inkMode>1.5&&inkStrength>.01) {
-  float innerWidth=actor?1.5:1.0;
-  for(int i=0;i<8;i++) {
-   if(!actor&&i>=4)break;
-   float a=float(i)*(actor?.7853981634:1.5707963268);vec2 q=clamp(uv+vec2(cos(a),sin(a))*inkPixel*innerWidth,inkPixel,1.0-inkPixel);
+ // Actor interior ink follows only authored region IDs; normals/depth never contribute.
+ if(inkMode>1.5&&actor) {
+  for(int i=0;i<4;i++) {
+   float a=float(i)*1.5707963268;
+   vec2 q=clamp(uv+vec2(cos(a),sin(a))*inkPixel*1.0,inkPixel,1.0-inkPixel);
+   vec4 neighbor=texture2D(tGeometry,q);neighbor.zw=floor(neighbor.zw*255.0+.5);
+   if(abs(neighbor.z-center.z)<.5&&abs(mod(neighbor.w,8.0)-center.w)<.5)
+    crease=max(crease,step(.5,abs(floor(neighbor.w/8.0)-centerRegion))*.80);
+  }
+ } else if(inkMode>1.5&&inkStrength>.01) {
+  for(int i=0;i<4;i++) {
+   float a=float(i)*1.5707963268;vec2 q=clamp(uv+vec2(cos(a),sin(a))*inkPixel,inkPixel,1.0-inkPixel);
    vec4 neighbor=texture2D(tGeometry,q);neighbor.zw*=255.0;
    if(abs(neighbor.z-center.z)<.5&&abs(neighbor.w-center.w)<.5) {
     vec3 delta=viewPosition(q,texture2D(tDepth,q).x)-p;
     float bend=1.0-dot(normal,inkNormal(neighbor.xy));
-    float major=smoothstep(actor?.30:.16,actor?.55:.40,bend)*smoothstep(actor?.006:.0015,actor?.025:.009,abs(dot(delta,normal)));
-    crease=max(crease,major*mix(.86,1.0,float(!actor))*inkStrength);
+    float major=smoothstep(.16,.40,bend)*smoothstep(.0015,.009,abs(dot(delta,normal)));
+    crease=max(crease,major*inkStrength);
    }
   }
  }
@@ -95,6 +103,7 @@ export const inkComposite = /* glsl */ `
  if(inkMode>.5) {
   vec4 geometry=texture2D(tGeometry,uv);geometry.zw*=255.0;
   float line=inkCoverage(uv,texture2D(tDepth,uv).x,geometry);
+  geometry.w=mod(floor(geometry.w+.5),8.0);
   // Hot effects stay above ink; the line inherits a restrained local light tint.
   float hotYield=1.0-smoothstep(1.1,2.4,max(color.r,max(color.g,color.b)));
   line*=mix(hotYield,1.0,inkStrength*step(2.5,geometry.w));
@@ -103,6 +112,9 @@ export const inkComposite = /* glsl */ `
   vec3 contour=mix(neutralInk,boldInk,inkStrength);
   float darkBackdrop=(1.0-smoothstep(.008,.027,inkBackdropLuma))*step(3.5,geometry.w)*step(geometry.w,6.5);
   contour=mix(contour,vec3(.045,.058,.068),darkBackdrop*.82);
+  // Elite silhouettes carry a restrained bronze contour in addition to their crest.
+  float eliteContour=step(4.5,geometry.w)*step(geometry.w,5.5);
+  contour=mix(contour,vec3(.16,.055,.018),eliteContour*.82);
   color=mix(color,contour,line);
  }
 `;

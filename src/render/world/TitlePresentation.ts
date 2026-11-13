@@ -83,18 +83,32 @@ outgoingLight=outgoingLight*1.6+vec3(.04,.095,.125)*titleMarineRim;
           }else{
             Object.assign(shader.uniforms,{titleBodyColor:{value:new T.Color(0x34233b)}});
             shader.fragmentShader='uniform vec3 titleBodyColor;\n'+shader.fragmentShader.replace('#include <opaque_fragment>',`vec3 titleNormal=normalize(normal);
-float titleTone=.54+.28*smoothstep(.22,.28,abs(titleNormal.x))+.32*smoothstep(.60,.66,max(titleNormal.y,0.0));
+// The title cast uses the same semantic region palette as live actors.
+float titleRegion=floor(vActorRegion+.5);
+float titleTone=titleRegion==2.0?1.28:titleRegion==5.0?.50:titleRegion==3.0||titleRegion==4.0?.72:1.0;
+float titleLight=.62+.28*smoothstep(.28,.32,max(titleNormal.y,0.0))+.28*smoothstep(.65,.69,max(titleNormal.y,0.0));
 float titleInnerRim=pow(1.0-clamp(dot(titleNormal,normalize(vViewPosition)),0.0,1.0),5.0);
-outgoingLight=titleBodyColor*titleTone*1.2+vec3(.14,.07,.20)*titleInnerRim*.04;
+outgoingLight=titleBodyColor*titleTone*titleLight+vec3(.14,.07,.20)*titleInnerRim*.04;
 #include <opaque_fragment>`);
           }
         };
         material.customProgramCacheKey=()=>key+':title-graphic-v2';material.needsUpdate=true;
       }else if(!friendly&&material instanceof T.ShaderMaterial&&material.uniforms.identityColor){
         material.uniforms.identityColor.value.setHex(0xff7146);
+        // The title sees the rig from the front. Turn its overhead shoulder
+        // shields down onto the shoulders instead of presenting a floating bar.
+        material.vertexShader=material.vertexShader.replace('identityNormal=normalMatrix*plateNormal;',`
+          if(role>3.5&&role<4.5){
+            vec3 delta=p-identityAnchor;float tilt=identitySide*.65;
+            mat2 turn=mat2(cos(tilt),sin(tilt),-sin(tilt),cos(tilt));
+            delta.xy=turn*delta.xy;delta.x*=.80;p=identityAnchor+delta;p.y-=identityHeight*.12;
+            plateNormal.xy=turn*plateNormal.xy;
+          }
+          identityNormal=normalMatrix*plateNormal;`);
+
         material.fragmentShader=material.fragmentShader
           .replace('gl_FragColor=vec4(color*light*identityStageLight,1.0);',
-            'vec3 titleOrnament=role<.5?vec3(1.0,.16,.035)*2.2:vec3(.024,.010,.031)*(.72+.55*smoothstep(.3,.6,facing));gl_FragColor=vec4(titleOrnament,1.0);');
+            'float titlePlateLight=.40+.28*smoothstep(.28,.32,facing)+.24*smoothstep(.65,.69,facing);vec3 titleOrnament=role<.5?vec3(1.0,.16,.035)*1.45:role>3.5&&role<4.5?vec3(.28,.23,.30)*titlePlateLight:vec3(.035,.018,.044)*titlePlateLight;gl_FragColor=vec4(titleOrnament,1.0);');
         material.needsUpdate=true;
       }
     }
