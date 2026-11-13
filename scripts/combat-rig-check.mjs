@@ -6,11 +6,15 @@ export async function checkCombatRig(page) {
   const url = new URL(page.url());
   url.searchParams.set('debug', '1');
   const settleRoom = async () => {
-    await page.evaluate(async () => {
-      if (window.__containmentDebug) await window.__containmentDebug.prepare();
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    // Wait for native ownership/readiness. Forcing debug.prepare immediately
+    // after a route action can reload its still-loading GLB owner and create
+    // an artificial ERR_ABORTED before the real input hold has settled.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await page.waitForFunction(() => {
+      const d = window.__containmentDebug;
+      return document.querySelector('#world').getAttribute('aria-busy') === 'false'
+        && (!d || d.renderer.roomKey === d.game.node.id && !d.renderer.roomLoading);
     });
-    await page.waitForFunction(() => document.querySelector('#world').getAttribute('aria-busy') === 'false');
     await page.waitForLoadState('networkidle');
   };
   await settleRoom();
@@ -30,6 +34,7 @@ export async function checkCombatRig(page) {
   assert.deepEqual(await uses(), beforeMenus, 'Starting boon must gate gameplay keys');
   await page.locator('[data-mutation]').first().click();
   await page.waitForFunction(() => document.body.dataset.state === 'playing');
+  await settleRoom();
   await page.evaluate(async () => {
     const d = window.__containmentDebug, g = d.game;
     await d.prepare();
@@ -153,7 +158,7 @@ export async function checkCombatRig(page) {
       await page.locator('[data-rig="pyro"]').click();
       await page.locator('#equip-rig').click();
     }
-    await page.evaluate(() => window.__containmentDebug.prepare());
+    await settleRoom();
     const saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), checkpointKey);
     assert.equal(saved?.run.phase, phase, `The actual ${phase} action must save its phase`);
     await settleRoom();
@@ -169,7 +174,7 @@ export async function checkCombatRig(page) {
     assert.equal(await page.evaluate(() => window.__containmentDebug.game.abilities.snapshot.rig), phase === 'starting-boon' ? 'pyro' : 'cryo');
     await page.locator('[data-mutation]').first().click();
     await page.waitForFunction(() => document.body.dataset.state === 'playing');
-    await page.evaluate(() => window.__containmentDebug.prepare());
+    await settleRoom();
   }
 
   // A genuine legacy cleared-room save has no rig or runtime extension fields.
@@ -195,7 +200,7 @@ export async function checkCombatRig(page) {
     await page.waitForFunction(() => document.body.dataset.state === 'route');
     await page.locator('[data-route]').first().click();
     await page.waitForFunction(() => document.body.dataset.state === 'playing');
-    await page.evaluate(() => window.__containmentDebug.prepare());
+    await settleRoom();
   } finally { await ssr.close(); }
   console.log('Combat Rig smoke passed: live Arc selection, Shift/Q/F/V receipts and HUD, Overdrive fill/active, menu/pause/typing gates, Continue rig-select/starting-boon/legacy.');
 }
