@@ -26,7 +26,7 @@ const prefix='/containment/';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const host=()=>({at:new Date().toISOString(),load:loadavg(),logicalCores:cpus().length});
 const round=value=>Math.round(value*10)/10;
-const forbidden=url=>url.includes('/assets/kits/')||url.includes('/assets/vfx/containment-v6/');
+const forbidden=url=>url.includes('/assets/kits/')||url.includes('/assets/vfx/containment-v6/')||/\/(?:AbilityVisuals|RoomKitDressing|RoomKitAssets)-[^/]+\.js$/.test(url);
 const role=url=>/\.js(?:\?|$)/.test(url)?'js':/\.css(?:\?|$)/.test(url)?'css':/\.(woff2?|ttf|otf)(?:\?|$)/.test(url)?'font':/\.(glb|gltf)(?:\?|$)/.test(url)?'model':/\.(png|jpe?g|webp|svg)(?:\?|$)/.test(url)?'image':/\.(ogg|mp3|wav)(?:\?|$)/.test(url)?'audio':'other';
 const total=rows=>({requests:rows.length,decodedBytes:rows.reduce((sum,row)=>sum+(row.decodedBytes??0),0),gzipEstimateBytes:rows.reduce((sum,row)=>sum+(row.gzipEstimateBytes??0),0)});
 const report={head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),started:host(),
@@ -34,8 +34,9 @@ const report={head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).tr
  method:'One native Chromium browser, one isolated fresh context/page at a time, production /containment/ URL without debug. Native Start → equip Breacher → first boon → first combat. No screenshots, simulation fixtures, throttling or cache reuse.',
  qualifications:[
   'The baseline source is exact 0cfcecb reconstructed inside this worktree using git cat-file. Its build reuses the current public tree; initial requested public media are expected to be unchanged. Each requested baseline public file is compared to the 0cfcecb blob and any difference is reported, not hidden.',
-  'Decoded response-body bytes and per-response gzip level9 estimates are measured locally. The audit server serves uncompressed bodies with no-store; gzip estimates are not observed network transfers and summing per-file estimates includes per-file gzip overhead.',
+  'HTTP response bytes are hashed from the exact local server files; blob URLs are internal decoded-texture resources, not network transfers. Per-response gzip level9 estimates are measured locally. The audit server serves uncompressed bodies with no-store; gzip estimates are not observed network transfers and summing per-file estimates includes per-file gzip overhead.',
   'Menu-ready elapsed and host loads are single observations, not hardware frame/preparation acceptance. Resource timing and DOM loading intervals retain first-gameplay request/readiness evidence without asserting sub-frame causality.',
+  'Completed-body ERR_ABORTED notifications are retained separately only when HTTP200 and browser Resource Timing decoded bytes exactly equal the full served file; incomplete/failed requests remain errors.',
   'Fresh contexts and no-store responses prevent application/HTTP-cache reuse. Both sources share one browser process and OS/GPU caches, with baseline measured first; this is not a cold-machine startup speed comparison.',
  ]};
 let servingDist=baselineDist,browser,context,server;
@@ -72,7 +73,7 @@ async function measure(name,directory,sourceSHA){
  page.on('pageerror',error=>row.errors.push({type:'pageerror',phase,message:error.message}));
  page.on('console',message=>{if(message.type()==='error')row.errors.push({type:'console',phase,message:message.text()});});
  page.on('request',request=>{
-  const entry={url:request.url(),method:request.method(),resourceType:request.resourceType(),phase,startedMs:elapsed()};
+  const entry={url:request.url(),method:request.method(),resourceType:request.resourceType(),phase,role:role(request.url()),network:/^https?:/.test(request.url()),startedMs:elapsed()};
   row.requests.push(entry);requestRows.set(request,entry);
   if(!request.url().startsWith(origin)&&/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(request.url()))row.errors.push({type:'external-font',url:request.url(),phase});
  });
@@ -82,7 +83,8 @@ async function measure(name,directory,sourceSHA){
   enqueue((async()=>{
    entry.status=response.status();entry.role=role(response.url());entry.responseMs=elapsed();
    if(response.status()>=400)row.errors.push({type:'http',phase:entry.phase,status:response.status(),url:response.url()});
-   try{const bytes=await response.body();entry.completedMs=elapsed();entry.decodedBytes=bytes.length;entry.gzipEstimateBytes=gzipSync(bytes,{level:9}).length;entry.sha256=hash(bytes);}
+   if(!entry.network){entry.internalResource=true;return;}
+   try{const url=new URL(response.url());assert.equal(url.origin,origin,'Unexpected external response');const bytes=await readFile(resolve(servingDist,decodeURIComponent(url.pathname.slice(prefix.length))||'index.html'));entry.completedMs=elapsed();entry.decodedBytes=bytes.length;entry.gzipEstimateBytes=gzipSync(bytes,{level:9}).length;entry.sha256=hash(bytes);}
    catch(error){entry.bodyError=String(error);row.errors.push({type:'body',phase:entry.phase,url:response.url(),message:String(error)});}
   })());
  });
@@ -92,16 +94,16 @@ async function measure(name,directory,sourceSHA){
   await page.goto(origin+prefix+'?seed=1729',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.body.dataset.state==='menu'&&!!window.__containmentPerformance);
   const menuReadyMs=elapsed(),menuHost=host();
-  await page.evaluate(()=>document.fonts.ready);await page.waitForLoadState('networkidle');await drain();
+  await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(1000);await page.waitForLoadState('networkidle');await drain();
   const initialState=await page.evaluate(()=>({state:document.body.dataset.state,browserNow:performance.now(),fonts:[...document.fonts].map(font=>({family:font.family,style:font.style,weight:font.weight,status:font.status})),resources:performance.getEntriesByType('resource').map(resource=>({url:resource.name,initiatorType:resource.initiatorType,startTime:resource.startTime,responseEnd:resource.responseEnd,duration:resource.duration,decodedBodySize:resource.decodedBodySize,encodedBodySize:resource.encodedBodySize,transferSize:resource.transferSize})),renderer:(()=>{const canvas=document.querySelector('#world');const gl=canvas?.getContext?.('webgl2');const ext=gl?.getExtension('WEBGL_debug_renderer_info');return gl?(ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)):null;})()}));
   report.renderer??=initialState.renderer;
-  const initialRequests=row.requests.filter(request=>request.phase==='initial');
+  const initialRequests=row.requests.filter(request=>request.phase==='initial'&&request.network);
   row.initial={menuReadyMs,menuHost,settledMs:elapsed(),state:initialState.state,browserNow:initialState.browserNow,fonts:initialState.fonts,resources:initialState.resources,total:total(initialRequests),byRole:Object.fromEntries(['js','css','font','model','image','audio','other'].map(kind=>[kind,total(initialRequests.filter(request=>request.role===kind))])),loadedModules:initialRequests.filter(request=>['js','css'].includes(request.role)).map(({url,role,decodedBytes,gzipEstimateBytes,sha256})=>({url,role,decodedBytes,gzipEstimateBytes,sha256})),eagerAssets:initialRequests.filter(request=>forbidden(request.url))};
   assert.equal(row.initial.eagerAssets.length,0,`${name}: kits/effect atlas were eagerly requested before native Start`);
   if(name==='BASELINE')for(const request of initialRequests){
    const url=new URL(request.url);if(!url.pathname.startsWith(prefix)||request.role==='js'||request.role==='css'||url.pathname===prefix)continue;
    const relative=decodeURIComponent(url.pathname.slice(prefix.length));if(!relative)continue;
-   let expected;try{expected=hash(execFileSync('git',['cat-file','blob',`${sourceSHA}:public/${relative}`],{stdio:['ignore','pipe','ignore']}));}catch{expected=null;}
+   let expected;try{expected=hash(execFileSync('git',['cat-file','blob',`${sourceSHA}:public/${relative}`],{stdio:['ignore','pipe','ignore'],maxBuffer:64*1024*1024}));}catch{expected=null;}
    if(expected!==request.sha256)row.baselinePublicMismatches.push({path:relative,baselineSHA256:expected,servedSHA256:request.sha256??null});
   }
   // A handle owns observation state; no extra global or production/debug hook is installed.
@@ -122,7 +124,7 @@ async function measure(name,directory,sourceSHA){
   const readyNodeMs=elapsed(),readyHost=host(),readyState=await observer.evaluate(value=>value.read());
   await page.waitForLoadState('networkidle');await drain();
   const timeline=await observer.evaluate(value=>value.rows),resources=await page.evaluate(()=>performance.getEntriesByType('resource').map(resource=>({url:resource.name,initiatorType:resource.initiatorType,startTime:resource.startTime,responseEnd:resource.responseEnd,duration:resource.duration,decodedBodySize:resource.decodedBodySize,encodedBodySize:resource.encodedBodySize,transferSize:resource.transferSize})));
-  const gameplayRequests=row.requests.filter(request=>request.phase==='first-gameplay'),kitRequests=gameplayRequests.filter(request=>request.url.includes('/assets/kits/')),atlasRequests=gameplayRequests.filter(request=>request.url.includes('/assets/vfx/containment-v6/elements.png'));
+  const gameplayRequests=row.requests.filter(request=>request.phase==='first-gameplay'&&request.network),kitRequests=gameplayRequests.filter(request=>request.url.includes('/assets/kits/')),atlasRequests=gameplayRequests.filter(request=>request.url.includes('/assets/vfx/containment-v6/elements.png'));
   const observedLoadingHold=timeline.some(state=>state.worldBusy==='true'||state.loadingVisible);
   row.gameplay={flow:'Native UI only; no debug URL or staging',actions,ready:true,readyNodeMs,readyBrowserMs:readyState.at,readyHost,readyState,timeline,resources,total:total(gameplayRequests),kitRequests,atlasRequests,observedLoadingHold,
    newAssetsReadyBeforeInput:resources.filter(resource=>forbidden(resource.url)).map(resource=>({...resource,responseCompletedBeforeReady:resource.responseEnd>0&&resource.responseEnd<=readyState.at}))};
@@ -132,6 +134,14 @@ async function measure(name,directory,sourceSHA){
    for(const request of [...kitRequests,...atlasRequests])assert(row.gameplay.newAssetsReadyBeforeInput.some(asset=>asset.url===request.url),`FINAL: missing resource-timing receipt for ${request.url}`);
    for(const asset of row.gameplay.newAssetsReadyBeforeInput)assert(asset.responseCompletedBeforeReady,`FINAL: ${asset.url} did not finish before first gameplay readiness`);
   }
+  // Chromium can report ERR_ABORTED after Fetch fully delivered a model body.
+  // Retain it separately only when browser Resource Timing proves every byte arrived.
+  row.completedResponseCancellations=row.errors.filter(error=>{
+   if(error.type!=='requestfailed'||error.failure?.errorText!=='net::ERR_ABORTED')return false;
+   const request=row.requests.find(request=>request.url===error.url&&request.failure);
+   return request?.status===200&&request.decodedBytes>0&&resources.some(resource=>resource.url===error.url&&resource.responseEnd>0&&resource.decodedBodySize===request.decodedBytes);
+  });
+  row.errors=row.errors.filter(error=>!row.completedResponseCancellations.includes(error));
   assert.deepEqual(row.errors,[],`${name}: console/page/network errors`);row.passed=true;row.after=host();
   console.log(`${name}: initial ${row.initial.total.requests} requests / ${row.initial.total.decodedBytes} decoded bytes; JS ${row.initial.byRole.js.decodedBytes}; native first gameplay ready; load ${row.after.load[0].toFixed(2)}`);
  }finally{
