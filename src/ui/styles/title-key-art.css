@@ -35,3 +35,5 @@
 .key-art-revealed .ka-marine-reveal {animation:none;}
 .key-art-revealed .ka-eyes {animation:ka-blink 13s 1800ms infinite;}
 #overlay .asset-loading-art .asset-loading {height:100%;background:transparent;}
+/* Contour hierarchy: deep structural ribs and a single lit arris, never wireframe armor. */
+.ka-rib-edge {stroke:#648591;stroke-opacity:.14;stroke-width:1.6;}

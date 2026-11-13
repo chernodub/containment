@@ -11,6 +11,19 @@ describe('authored title key art', () => {
     expect(malicious).not.toContain('<script>');
     expect(malicious).toContain('--suit-accent:#9fe8ff');
   });
+  it('retains capture-only gesture evidence without exposing it in the shipped composition', () => {
+    const art = titleKeyArt();
+    expect(art).toContain('data-key-art-scaffold="true" style="display:none"');
+    for (const contact of ['CHEEK / STOCK', 'GRIP', 'SUPPORT', 'LOAD → REAR FOOT']) expect(art).toContain(contact);
+    expect(art).toContain('7.5 HEADS / OPPOSED AXES');
+    expect(art).toContain('translate(1190 350)');
+    expect(art).toContain('ka-eyes-main');
+    expect(art).not.toMatch(/<filter|<canvas|<script|onload=|onclick=/);
+    for (const tag of art.match(/<[a-zA-Z][^>]*>/g) ?? []) {
+      const attributes = [...tag.matchAll(/\s([\w:-]+)=/g)].map(match => match[1]);
+      expect(new Set(attributes).size).toBe(attributes.length);
+    }
+  });
   it('ships local vector planes, a safe aspect ratio, and a static loading variant', () => {
     const art = titleKeyArt();
     for (const plane of ['far', 'middle', 'threat', 'marine', 'front']) expect(art).toContain(`ka-${plane}`);
