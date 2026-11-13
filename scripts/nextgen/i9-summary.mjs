@@ -8,13 +8,16 @@ import {canvas,decode,encode,drawImage,drawText} from './g2-png.mjs';
 
 const args=process.argv.slice(2);
 if(args.includes('--help')){
-  console.log('node scripts/nextgen/i9-summary.mjs [--performance-only|--campaigns-only] [--base=artifacts/nextgen]');
+  console.log('node scripts/nextgen/i9-summary.mjs [--performance-only|--campaigns-only] [--base=artifacts/nextgen] [--cohort=<safe-label>]');
   process.exit(0);
 }
-for(const arg of args)assert(/^--(?:performance-only|campaigns-only|base=.+)$/.test(arg),`Unknown flag ${arg}`);
+for(const arg of args)assert(/^--(?:performance-only|campaigns-only|base=.+|cohort=[\w.-]+)$/.test(arg),`Unknown flag ${arg}`);
 assert(!(args.includes('--performance-only')&&args.includes('--campaigns-only')),'Choose at most one partial mode');
 const base=resolve(args.find(a=>a.startsWith('--base='))?.slice(7)??'artifacts/nextgen');
 const out=resolve(base,'i9');await mkdir(out,{recursive:true});
+const cohort=args.find(a=>a.startsWith('--cohort='))?.slice(9)??'';
+const benchmarkPrefix=cohort?`i9-${cohort}`:'i9';
+const campaignPrefix=cohort?`i9-${cohort}`:'i9-final';
 const missing=[];
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 const finite=value=>typeof value==='number'&&Number.isFinite(value);
@@ -43,10 +46,10 @@ function fill(image,x,y,width,height,color){
 }
 
 async function performance(){
-  const bench=await json(resolve(base,'i9-bench-five/benchmark.json'));
+  const bench=await json(resolve(base,`${benchmarkPrefix}-bench-five/benchmark.json`));
   const roomReports=[];
   for(let repeat=1;repeat<=5;repeat++){
-    const source=await json(resolve(base,`i9-rooms-five-${repeat}/rooms.json`));
+    const source=await json(resolve(base,`${benchmarkPrefix}-rooms-five-${repeat}/rooms.json`));
     if(source)roomReports.push({repeat,...source});
   }
   const grouped=new Map(),trials=[];
@@ -185,7 +188,7 @@ async function campaigns(){
   const rigReports=[],organic=resolve(base,'final3/organic'),organicReceipts=[],auditRows=[];
   await mkdir(organic,{recursive:true});
   for(const rig of ['breacher','cryo','pyro','arc']){
-    const directory=resolve(base,`playtest/i9-final-${rig}-1729`),source=await json(resolve(directory,'report.json'));
+    const directory=resolve(base,`playtest/${campaignPrefix}-${rig}-1729`),source=await json(resolve(directory,'report.json'));
     if(!source)continue;
     const report=source.value,provenance=await distributionProvenance(report),tracePath=resolve(directory,'trace.ndjson');
     let trace=[],traceHash=null;

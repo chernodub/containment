@@ -114,7 +114,7 @@ export class HudCombatFraming {
         // Keep ordinary crowds at the authored scale. A remote priority pair
         // gets additional bounded room before abandoning its actual body bounds;
         // the marine's central safety envelope remains unchanged.
-        const zoom=Math.max(selected<0?.85:.5,camera.zoom*Math.min(selected<0?.96:.88,scale*.98));
+        const zoom=Math.max(selected<0?.85:.5,camera.zoom*Math.min(.96,scale*.98));
         if(zoom<camera.zoom-1e-6){camera.zoom=zoom;this.diagnostics.pullback=zoom;camera.updateProjectionMatrix();continue;}
         if(selected<0){selected=0;for(let n=1;n<this.count;n++)if(this.contacts[n*5+4]>this.contacts[selected*5+4])selected=n;this.diagnostics.focusedPair=true;this.diagnostics.focusContactId=this.diagnostics.selectedIds[selected];continue;}
         this.diagnostics.fit=false;return;
