@@ -15,10 +15,10 @@ export function registerV5Scenarios(scenarios) {
         }
         if (!found) throw Error('No legal V5 diagonal cover placement');
         d.step(3800); g.enemies.reset(); d.refresh();
+        const gl = d.renderer.renderer.getContext();
+        gl.createProgram = function () { throw Error('V5 construct combat shader compile'); };
         if (!g.useAbility('power')) throw Error('V5 native cover denied ' + ability);
         d.step(g.abilities.snapshot.slots.power.castRemainingMs + 30);
-        const gl = d.renderer.renderer.getContext(), create = gl.createProgram;
-        gl.createProgram = function () { throw Error('V5 construct combat shader compile'); };
         d.v5Proof = { nativeAbility: ability, angle, presentationOnly: true, shaderGuard: true };
         d.refresh();
       },

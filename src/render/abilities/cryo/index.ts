@@ -9,8 +9,8 @@ const TAU = Math.PI * 2;
 const EMPTY_ZONES: readonly AbilityZoneSnapshot[] = [];
 const EMPTY_DEPLOYABLES: readonly DeployableSnapshot[] = [];
 const PULSE_CAPACITY = 24;
-const WALL_SECTIONS = [0, .17, .43, .63, .86, 1] as const;
-const LOW_WALL_SECTIONS = [0, .23, .51, .79, 1] as const;
+const WALL_SECTIONS = [0, .24, .67, 1] as const;
+const LOW_WALL_SECTIONS = [0, .24, .67, 1] as const;
 type ColdWave = { live: boolean; x: number; z: number; radius: number; age: number; life: number; shatter: boolean; aftermath: boolean };
 type ZoneClock = { id: number; pulse: number; seen: boolean };
 type WallState = { id: number; health: number; flash: number; seen: boolean };
@@ -191,11 +191,11 @@ class CryoPresentation implements AbilityPresentation {
       const height = Math.min(half * (cluster ? .95 : .65), (cluster ? .4 : .14) + variation * .3) * growth;
       // Needles lean along the dash, never a repeated diamond paving pattern.
       k.draw('shard', px, height * .76 + .025, pz, size, height, size * .62,
-        i % 5 ? ICE : CORE, fade * (.55 + variation * .25) * overlapYield, -direction + Math.sin(seed) * .7, .12);
+        i % 5 ? ICE : CORE, fade * (.55 + variation * .25) * overlapYield, -direction + Math.sin(seed) * .7, .12, 21 + variation * 3);
       if (cluster) {
         const shift = half * .12;
         k.draw('shard', px + Math.cos(direction) * shift, height * .42 + .025, pz + Math.sin(direction) * shift,
-          size * .62, height * .52, size * .5, CORE, fade * .62 * overlapYield, -direction - .38, -.08);
+          size * .62, height * .52, size * .5, CORE, fade * .62 * overlapYield, -direction - .38, -.08, 22 + variation * 3);
       }
       const seamLength = half * (cluster ? .36 : .23), yaw = direction + tangent;
       k.ribbon(px, .035, pz, px + Math.cos(yaw) * seamLength, .035, pz + Math.sin(yaw) * seamLength,
@@ -236,7 +236,15 @@ class CryoPresentation implements AbilityPresentation {
     const groundYield = 1 - .65 * Math.min(1, Math.max(0, (age - 250) / 120));
     const time = k.reducedMotion ? 0 : age / 1000;
     const clearRadius = radius * .76, count = k.low ? 10 : 24;
-    k.front(x, z, radius, 1, ICE, .65, fade * .18, 3);
+    const wisps = k.low ? 8 : 16;
+    for (let i = 0; i < wisps; i++) {
+      const seed = i * 2.731 + zone.id * .73, variation = authoredVariation(seed, 4);
+      const a = i * TAU / wisps + time * .19 + (variation - .5) * .14;
+      const halfWidth = Math.min(radius * .075, .48 + variation * .23);
+      const r = radius - halfWidth * 1.45;
+      k.stormWisp(x + Math.cos(a) * r, .36 + variation * .25, z + Math.sin(a) * r,
+        halfWidth, .23 + variation * .13, seed, fade * (.35 + variation * .13));
+    }
     // Snow follows the same circulation as the low mist, rather than a field of unrelated flecks.
     for (let i = 0; i < count; i++) {
       const seed = i * 2.39996323 + zone.id * .7;
@@ -308,6 +316,10 @@ class CryoPresentation implements AbilityPresentation {
       state.health = wall.health;
     }
     k.sustain(age);
+    // One fractured waist interlocks the three unequal crowns into a continuous blocking silhouette.
+    const baseRise = k.reducedMotion ? 1 : Math.min(1, Math.max(.02, age / .095));
+    k.draw('shard', x, .58 * baseRise, z, thickness * .46, .58 * baseRise, length * .5,
+      0x4f8fa8, fade * .94, -wall.angle, 0, 3.7);
     const sections = k.low ? LOW_WALL_SECTIONS : WALL_SECTIONS, count = sections.length - 1;
     for (let i = 0; i < count; i++) {
       const seed = wall.id * .73 + i * 2.731, variation = authoredVariation(seed, 2);
@@ -317,7 +329,7 @@ class CryoPresentation implements AbilityPresentation {
       const height = (1.65 + variation * 1.0 + (i % 2 ? .25 : 0)) * rise;
       const yaw = -wall.angle + (variation - .5) * .075;
       const px = x + alongX * offset, pz = z + alongZ * offset;
-      const width = Math.min(column * .59, length * .5 - Math.abs(offset) - thickness * .06);
+      const width = Math.min(column * .68, length * .5 - Math.abs(offset) - thickness * .06);
       const depth = thickness * (.37 - Math.abs(Math.sin(yaw + wall.angle)) * .4);
       // Few large interlocking broken-crown blocks: the wall reads as cover, not a spike fence.
       k.draw('shard', px, height * .5, pz, depth, height * .5, width,

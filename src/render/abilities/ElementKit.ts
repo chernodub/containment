@@ -291,11 +291,11 @@ export class ElementKit {
         const count = this.low ? 3 : 5;
         for (let i = 0; i < count; i++) {
             const seed = i * 3.731 + .71, v = authoredVariation(seed);
-            const spread = i === 0 ? 0 : (i % 2 ? -1 : 1) * (.17 + v * .2);
+            const spread = i === 0 ? 0 : i === 1 ? .06 : i === 2 ? -.27 : i === 3 ? .29 : -.18;
             const a = angle + spread * arc;
-            const start = i === 0 ? .035 : .24 + v * .18;
-            const end = i === 0 ? .94 : .68 + v * .23;
-            const throat = radius * (i === 0 ? .115 : .08 + v * .055);
+            const start = i === 0 ? .035 : i === 1 ? .52 : i === 2 ? .28 : i === 3 ? .4 : .62;
+            const end = i === 0 ? .8 : i === 1 ? .97 : i === 2 ? .7 : i === 3 ? .88 : .89;
+            const throat = radius * (i === 0 ? .10 : i === 1 ? .18 : i === 2 ? .13 : i === 3 ? .14 : .10) * (.94 + v * .08);
             this.flowFlame(x + Math.cos(a) * radius * start, .82 + i * .035, z + Math.sin(a) * radius * start,
                 x + Math.cos(a) * radius * end, .9 + v * .45, z + Math.sin(a) * radius * end,
                 throat, seed, opacity * (i === 0 ? 1 : .94), i === 0);
@@ -327,7 +327,7 @@ export class ElementKit {
     directedFlame(x: number, y: number, z: number, width: number, height: number, angle: number, lean: number, seed: number, opacity = 1, core = false): void {
         const cycle = this.reducedMotion ? .4 : (this.time * (1.6 + Math.sin(seed) * .25) + seed * .6180339) % 1;
         this.draw('flame', x, y + height * .5, z, width, height * (.38 + Math.sin(cycle * Math.PI) * .12), 1,
-            core ? 0xffedb5 : 0xff7a2e, opacity, 0, this.flameTilt(angle, lean), 1);
+            core ? 0xffedb5 : 0xff7a2e, opacity, 0, this.flameTilt(angle, lean), 64 + Math.abs(seed) % 32);
     }
     /** Glossy ballistic fuel lobe, sharing the retained decal plane and material. */
     fuelDroplet(x: number, y: number, z: number, halfWidth: number, halfHeight: number, tilt: number, seed: number, opacity = 1): void {
@@ -345,6 +345,11 @@ export class ElementKit {
     gust(x: number, z: number, length: number, width: number, angle: number, seed: number, opacity = .4, color = 0x9bdcf0): void {
         this.draw('decal', x, .055, z, length * .5, width * .5, 1, color, opacity, 0, -angle,
             10 + (Math.sin(seed * 7.13) * .5 + .5) * .4);
+    }
+    /** Soft perimeter vapor, sharing the prepared ground/aftermath draw as a billboard variant. */
+    stormWisp(x: number, y: number, z: number, halfWidth: number, halfHeight: number, seed: number, opacity: number): void {
+        this.draw('decal', x, y, z, halfWidth, halfHeight, 1, 0x8cbccd, opacity, 0, 0,
+            12 + authoredVariation(seed, 5) * .8);
     }
     /** Solid-looking faceted translucent column, with a narrow luminous internal vein. */
     iceColumn(x: number, z: number, width: number, depth: number, height: number, angle: number, opacity = 1): void {

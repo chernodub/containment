@@ -10,7 +10,7 @@ function recordingKit() {
     time: 1, low: false, reducedMotion: false, flashIntensity: 1,
     draw: vi.fn(), mote: vi.fn(), burst: vi.fn(), ring: vi.fn(), outline: vi.fn(), beam: vi.fn(),
     ribbon: vi.fn(), decal: vi.fn(), flash: vi.fn(), distort: vi.fn(), camera: vi.fn(), lightAt: vi.fn(),
-    sustain: vi.fn(), impact: vi.fn(), gust: vi.fn(), frostFilm: vi.fn(), front: vi.fn(), scar: vi.fn(), debris: vi.fn(), iceColumn: vi.fn(),
+    sustain: vi.fn(), impact: vi.fn(), stormWisp: vi.fn(), gust: vi.fn(), frostFilm: vi.fn(), front: vi.fn(), scar: vi.fn(), debris: vi.fn(), iceColumn: vi.fn(),
   };
 }
 const snapshot = (extra: Partial<AbilitiesSnapshot> = {}): AbilitiesSnapshot => ({
@@ -93,16 +93,18 @@ describe('Cryo signatures', () => {
       expect(kit.gust.mock.calls[i][6]).toBeLessThan(freshGusts[i][6] * .36);
     }
     expect(kit.draw.mock.calls.filter(c => c[0] === 'shard').map(c => c[8])).toEqual(freshSnow);
-    expect(kit.front.mock.calls.every(c => c[7] === 3 && c[3] === 1)).toBe(true);
+    expect(kit.front).not.toHaveBeenCalled();
+    expect(kit.stormWisp).toHaveBeenCalledTimes(32);
   });
 
-  it('builds irregular overlapping Glacier facets with no backing slab inside the blocking strip', () => {
+  it('interlocks three unequal Glacier crowns with a fractured waist inside the exact blocking strip', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     for (const angle of [0, Math.PI / 2, .67]) {
       kit.draw.mockClear();
       fx.update(frame({ deployables: [wall({ angle })] }, 0));
       const facets = kit.draw.mock.calls;
-      expect(facets.length).toBe(8);
+      expect(facets.length).toBe(6);
+      expect(facets.filter(c => c[6] === 200 / 32 / 2)).toHaveLength(1);
       expect(facets.every(c => c[0] === 'shard')).toBe(true);
       const heights = new Set(facets.map(c => Number(c[5].toFixed(3))));
       const yaws = new Set(facets.map(c => Number(c[9].toFixed(3))));
@@ -258,7 +260,7 @@ describe('Cryo signatures', () => {
       supportArea += c[2] * c[3];
     }
     expect(supportArea).toBeLessThan(Math.PI * (300 / 32) ** 2 * .24);
-    expect(kit.front).toHaveBeenCalledWith(10, 10, 300 / 32, 1, 0x7fd6ff, .65, .18, 3);
+    expect(kit.stormWisp).toHaveBeenCalledTimes(16);
     // All spiral markers were replaced; only short authored-prop frost seams remain.
     for (const c of kit.ribbon.mock.calls) expect(Math.hypot(c[3] - c[0], c[5] - c[2])).toBeLessThanOrEqual(.350001);
     const positions = shards.map(c => [c[1], c[3], c[9]]), gustAngle = gusts[0][4];
@@ -267,7 +269,7 @@ describe('Cryo signatures', () => {
     expect(kit.draw.mock.calls.filter(c => c[0] === 'shard').map(c => [c[1], c[3], c[9]])).not.toEqual(positions);
     expect(kit.gust.mock.calls[0][4] - gustAngle).toBeCloseTo(.12);
     expect(kit.gust.mock.calls).toHaveLength(6);
-    expect(kit.front.mock.calls.every(c => c[7] === 3)).toBe(true);
+    expect(kit.front).not.toHaveBeenCalled();
   });
 
   it('reserves expanding impact fronts for Nova and holds Whiteout at its exact storm perimeter', () => {
@@ -275,7 +277,8 @@ describe('Cryo signatures', () => {
     for (const phase of ['impact', 'burst', 'end'] as const) fx.event(receipt({ ability: 'whiteout', phase, radius: 300 }), 320, 320);
     fx.update(frame({ zones: [zone({ remainingMs: 5990 })] }, .1));
     fx.update(frame({}, .1));
-    expect(kit.front).toHaveBeenCalledExactlyOnceWith(10, 10, 300 / 32, 1, 0x7fd6ff, .65, .18, 3);
+    expect(kit.front).not.toHaveBeenCalled();
+    expect(kit.stormWisp).toHaveBeenCalledTimes(16);
     expect(kit.ring).toHaveBeenCalledTimes(4);
     fx.event(receipt({ radius: 210 }), 320, 320); fx.update(frame({}, .1));
     expect(kit.front).toHaveBeenCalled();
@@ -286,11 +289,12 @@ describe('Cryo signatures', () => {
     createCryoPresentation(high as unknown as ElementKit).update(frame({ zones: [zone()], deployables: [wall({ health: 80 })] }));
     createCryoPresentation(low as unknown as ElementKit).update(frame({ zones: [zone()], deployables: [wall({ health: 80 })] }));
     expect(low.draw.mock.calls.length).toBe(16);
-    expect(low.draw.mock.calls.length).toBeLessThanOrEqual(high.draw.mock.calls.length / 2);
+    expect(low.draw.mock.calls.length).toBeLessThan(high.draw.mock.calls.length);
     expect(low.ribbon.mock.calls.length).toBeLessThan(high.ribbon.mock.calls.length);
     expect(low.gust).toHaveBeenCalledTimes(3);
     expect(low.gust.mock.calls.length).toBeLessThan(high.gust.mock.calls.length);
-    expect(low.front.mock.calls[0]).toEqual(high.front.mock.calls[0]);
+    expect(low.stormWisp).toHaveBeenCalledTimes(8);
+    expect(high.stormWisp).toHaveBeenCalledTimes(16);
   });
 
   it('marks sustained coverage by authoritative age and resets priority before leaving each presentation', () => {
@@ -322,7 +326,8 @@ describe('Cryo signatures', () => {
       }
     }
     expect(gusts).toHaveLength(3);
-    expect(kit.front).toHaveBeenCalledExactlyOnceWith(10, 10, 300 / 32, 1, 0x7fd6ff, .65, .18, 3);
+    expect(kit.front).not.toHaveBeenCalled();
+    expect(kit.stormWisp).toHaveBeenCalledTimes(8);
 
   });
 

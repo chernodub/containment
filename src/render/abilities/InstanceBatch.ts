@@ -121,6 +121,16 @@ ${kind === 'decal' ? `
   // Frost is a broken edge deposit, not a continuous pale capsule fill.
   a*=film*(.025+fern*.24+smoothstep(.55,.85,abs(p.y))*.14);
  }
+ else if(variant>11.5){
+  float seed=fract(phase)*31.;
+  vec2 cloud=vec2(p.x,p.y*1.15);
+  cloud.x+=sin(p.y*4.+seed+abilityTime*.8)*.09;
+  float edge=.78+sin(p.x*6.+seed)*.085+sin(p.y*9.-seed)*.045;
+  float vapor=(1.-smoothstep(.24,edge,length(cloud)));
+  // Rounded, broken vapor masses, never opaque slices of a torus.
+  c=mix(ink*.38,ink*.82+vec3(.08),smoothstep(.24,.42,vapor));
+  a*=vapor*.52;
+ }
  else if(variant>10.5){
   float drop=length(vec2(p.x/max(.1,.66-p.y*.22),p.y));
   if(drop>1.)discard;
@@ -199,10 +209,12 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
 }`;
     const material = new T.ShaderMaterial({
       uniforms: { abilityTime: { value: 0 }, map: { value: this.texture ?? null }, flash: { value: 1 } },
-      vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){float seed=abilityPhase;posedPosition.xz*=.91+.08*sin(seed*3.7+position.y*2.1);posedPosition.xz+=max(0.,position.y)*vec2(sin(seed)*.12,cos(seed*1.7)*.1);posedPosition.xz=clamp(posedPosition.xz,vec2(-1.),vec2(1.));}' : kind === 'front' ? 'if(abilityPhase>1.5){float a=atan(position.z,position.x);posedPosition.xz*=.88+.07*sin(a*7.)+.035*sin(a*3.+.4);posedPosition.y*=.74+.24*sin(a*5.+.7);}' : ''),
+      vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){float seed=abilityPhase;if(seed>1.&&seed<10.&&position.y>0.)posedPosition.y*=.84+.16*sin(seed+position.x*2.1+position.z*3.7);if(seed>20.&&seed<30.)posedPosition.xz*=mix(1.,.18,max(0.,position.y));posedPosition.xz*=.91+.08*sin(seed*3.7+position.y*2.1);posedPosition.xz+=max(0.,position.y)*vec2(sin(seed)*.12,cos(seed*1.7)*.1);posedPosition.xz=clamp(posedPosition.xz,vec2(-1.),vec2(1.));}' : kind === 'front' ? 'if(abilityPhase>1.5){float a=atan(position.z,position.x);posedPosition.xz*=.88+.07*sin(a*7.)+.035*sin(a*3.+.4);posedPosition.y*=.74+.24*sin(a*5.+.7);}' : ''),
       fragmentShader: fragment,
       transparent: true,
       depthWrite: false,
+      // Flat cards have no back/front sorting benefit; render both faces in one submission.
+      forceSinglePass: kind === 'flame' || kind === 'spark' || kind === 'smoke' || kind === 'decal',
       side: T.DoubleSide,
       blending: kind === 'flame' || kind === 'shard' || kind === 'smoke' || kind === 'decal' || kind === 'solid' || kind === 'ghost' || kind === 'front'
         ? T.NormalBlending : T.AdditiveBlending,
@@ -229,8 +241,8 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
     color: number, opacity = 1, rotationY = 0, rotationZ = 0, variant = 0): void {
     const i = this.mesh.count;
     if (i >= this.capacity || opacity <= 0) return;
-    const billboardFuel = this.kind === 'decal' && variant >= 11 && variant < 12;
-    if (this.view && (billboardFuel || this.kind === 'smoke' || this.kind === 'spark' || this.kind === 'flame')) {
+    const billboardDecal = this.kind === 'decal' && variant >= 11 && variant < 13;
+    if (this.view && (billboardDecal || this.kind === 'smoke' || this.kind === 'spark' || this.kind === 'flame')) {
       rotationY = Math.atan2(this.view.x - x, this.view.z - z);
       // Flame tongues rise vertically; tumbling the card creates paper-like shards.
       if (this.kind === 'smoke') rotationZ = 0;
@@ -243,7 +255,7 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
     matrix[offset] = c * a * sx;
     matrix[offset + 4] = -c * b * sy;
     matrix[offset + 8] = s * sz;
-    if (this.kind === 'decal' && !billboardFuel) {
+    if (this.kind === 'decal' && !billboardDecal) {
       matrix[offset + 1] = -s * a * sx;
       matrix[offset + 2] = -b * sx;
       matrix[offset + 5] = s * b * sy;
@@ -270,7 +282,7 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
     this.mesh.instanceColor!.setXYZ(i, this.colorValues[rgb], this.colorValues[rgb + 1], this.colorValues[rgb + 2]);
     this.alpha.setX(i, opacity);
     this.priority.setX(i, this.priorityWeight);
-    this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' || this.kind === 'front' || this.kind === 'flame' && variant >= 100 ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
+    this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' || this.kind === 'front' || this.kind === 'flame' && variant >= 64 ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
   }
 

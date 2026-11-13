@@ -113,7 +113,7 @@ class PyroPresentation implements AbilityPresentation {
     if (event.ability === 'meltdown') {
       if (event.phase === 'impact' || event.phase === 'burst') {
         const radius = (event.radius ?? 130) / UNIT;
-        const p = this.acquire('ignition', x, z, event.phase === 'burst' ? .38 : .65); p.radius = radius;
+        const p = this.acquire('ignition', x, z, event.phase === 'burst' ? .38 : .65); p.radius = radius; p.angle = event.angle ?? 0;
         kit.burst(x, .35, z, 'pyro', event.phase === 'burst' ? 12 : 20, 3, .65);
         // The authoritative aura boundary is shared; the suit itself is the heat source.
         kit.flash(x, z, FIRE, event.phase === 'burst' ? 5 : 14, 6, event.phase === 'burst' ? 3 : 6, .25);
@@ -191,8 +191,8 @@ class PyroPresentation implements AbilityPresentation {
 
   private cone(p: Transient, emit: boolean): void {
     const kit = this.kit, grow = Math.min(1, .6 + p.age / .05);
-    const fade = Math.max(0, 1 - Math.max(0, p.age - .18) / .34), hot = impactBeat(p.age);
-    kit.sustain(p.age);
+    const fade = Math.max(0, 1 - Math.max(0, p.age - .09) / .28), hot = impactBeat(p.age);
+    kit.sustain(p.age + .20);
     kit.fireFan(p.x, p.z, p.range * grow, p.angle, p.arc, fade * .85);
     kit.lightAt(p.lightId, p.x + Math.cos(p.angle) * p.range * .34,
       p.z + Math.sin(p.angle) * p.range * .34, FIRE, (12 + 16 * hot) * fade, Math.max(8, p.range * 1.1));
@@ -282,7 +282,8 @@ class PyroPresentation implements AbilityPresentation {
       kit.impact();
       for (let i = 0; i < (kit.low ? 2 : 3); i++) {
         const side = i - 1, hot = impactBeat(p.age);
-        kit.directedFlame(p.x + side * .37, .75, p.z - .18, .27 + hot * .12,
+        kit.directedFlame(p.x - Math.cos(p.angle) * .22 - Math.sin(p.angle) * side * .37, .9,
+          p.z - Math.sin(p.angle) * .22 + Math.cos(p.angle) * side * .37, .27 + hot * .12,
           (1.8 + hot * .8 - i * .17) * fade, side, .35, i * 2.73, fade * .96, true);
       }
     }
@@ -356,7 +357,7 @@ class PyroPresentation implements AbilityPresentation {
     kit.impact();
     for (let side = -1; side <= 1; side += 2) {
       const bx = x - c * .3 - s * side * .4, bz = z - s * .3 + c * side * .4;
-      kit.draw('solid', bx, 1.1, bz, .075, .65, .075, HOT, (.9 + pulse * .1) * fade);
+      kit.draw('solid', bx, 1.36, bz, .28, .22, .34, 0xd95b16, (.9 + pulse * .1) * fade, -angle);
       kit.draw('spark', bx, side < 0 ? 1.4 : 1.3, bz, .15, .17, 1, CORE, .96 * fade);
       const height = side < 0 ? 1.35 : 1.05, base = side < 0 ? 1.18 : 1.25;
       kit.directedFlame(bx, base, bz, side < 0 ? .37 : .32, height * (.95 + pulse * .05),
@@ -364,7 +365,7 @@ class PyroPresentation implements AbilityPresentation {
       if (!kit.low) kit.directedFlame(bx - c * .18, 1.08, bz - s * .18, .25, 1.5,
         exhaustAngle, .65, side * 2.7, .78 * fade);
     }
-    kit.draw('solid', x - c * .3, 1.34, z - s * .3, .10, .10, .7, CORE, .98 * fade, -angle);
+    kit.draw('solid', x - c * .3, 1.12, z - s * .3, .22, .55, .36, 0xb9450e, .94 * fade, -angle);
     // Short heated armor seams describe shoulders, chest and weapon, leaving the helmet open.
     for (let side = -1; side <= 1; side += 2) {
       kit.ribbon(x + c * .08 - s * side * .25, 1.25, z + s * .08 + c * side * .25,

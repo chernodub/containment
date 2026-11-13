@@ -38,10 +38,9 @@ export function createArmorSection(): T.BufferGeometry {
 export function createFractureMass(): T.BufferGeometry {
   const bottom = [[-.9, -1, -.76], [.68, -1, -.92], [1, -1, .43], [.17, -1, 1], [-.87, -1, .62]];
   const top = [[-.66, .72, -.57], [.39, 1, -.73], [.83, .48, .29], [.12, .87, .76], [-.7, .35, .42]];
-  const vertices: number[] = [], uv: number[] = [], edge: number[] = [];
+  const vertices: number[] = [], uv: number[] = [];
   const triangle = (a: number[], b: number[], c: number[]) => {
     vertices.push(...a, ...c, ...b); uv.push(0, 0, 1, 0, .5, 1);
-    edge.push(1, 0, 0, 0, 1, 0, 0, 0, 1);
   };
   for (let i = 0; i < 5; i++) {
     const n = (i + 1) % 5;
@@ -51,7 +50,6 @@ export function createFractureMass(): T.BufferGeometry {
   const g = new T.BufferGeometry();
   g.setAttribute('position', new T.Float32BufferAttribute(vertices, 3));
   g.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
-  g.setAttribute('fractureEdge', new T.Float32BufferAttribute(edge, 3));
   g.computeVertexNormals(); g.computeBoundingBox();
   return g;
 }

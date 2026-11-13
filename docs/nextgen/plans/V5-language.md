@@ -29,3 +29,13 @@ Inspected native Flashfire, Meltdown, Glacier, Bulwark, Overclock and full Cryo 
 
 Fix: narrow hot core and its reach, saturate orange body, change jet envelope from leaf to pressure mass; soften/lower Whiteout perimeter alpha and remove hard wind cuts. Add an oblique native construct inspection for the second round. No simulation/actor/world/UI edits.
 
+
+### Round 2 — 52d9b65 / `v5-round2`
+
+Inspected bright/dark Flashfire, Meltdown, full Cryo/Pyro and both native oblique cover captures. 70 native frames/10 sheets, errors[]/failures[]. Orange separation improved, but the oblique Glacier exposed detached, repeated block crowns; rejected despite the much better edge-on silhouette. Whiteout still read as a toroidal ribbon. Bulwark’s articulated top and end assemblies are clear in the diagonal view; keep them. The dark full-kit shot showed Flashfire holding broad coverage too far beyond its hot beat, and Meltdown needed a physical heated suit read.
+
+Fix: one fractured ice waist plus three unequal crown masses, per-seed crown deformation; retain exact wall footprint. Replace the torus storm with rounded billboard vapor in the existing decal draw (16/8 High/Low), keeping short outer currents and a calm eye. Re-author Flashfire as a narrow pressure throat, a larger detached downstream mass and unequal side masses; yield around actors from70ms and collapse by370ms. Heated shoulder/back plates and facing-aligned activation accompany the mantle. Stable directed-flame seeds avoid motion-induced silhouette boiling. No new draw family or texture.
+
+### Benchmark protocol
+
+The first default benchmark overlapped G5/G6 browsers and was stopped; its log is retained as rejected timing evidence. At the clean process check there were no other benchmark/capture/smoke processes. Matched native cohort uses Relay Racks (scan heaviest) and Swarm Junction (integration median inventory room), all4 rigs × both tiers × one20s trial, with all raw host load retained. This is a bounded acceptance cohort, not broad hardware certification. A later run must match rooms/times and retain all misses. Baseline observation so far: native frame p50=16.7ms, p95≈18ms, zero combat programs. No CPU/GPU certification is inferred from PNG capture timings.

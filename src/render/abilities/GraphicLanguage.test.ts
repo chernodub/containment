@@ -31,8 +31,9 @@ describe('V5 authored graphic language', () => {
   it('uses normal-blended banded flames with no ink and solid-only thin edge shading in retained batches', () => {
     const root = new T.Group(), flame = new InstanceBatch(root, 'flame', 4), solid = new InstanceBatch(root, 'solid', 4);
     const fire = flame.mesh.material as T.ShaderMaterial, armor = solid.mesh.material as T.ShaderMaterial;
-    expect(fire.blending).toBe(T.NormalBlending); expect(fire.fragmentShader).toContain(GRAPHIC_FLAME_FRAGMENT);
+    expect(fire.blending).toBe(T.NormalBlending); expect(fire.forceSinglePass).toBe(true); expect(fire.fragmentShader).toContain(GRAPHIC_FLAME_FRAGMENT);
     expect(fire.fragmentShader).not.toContain('inkEdge'); expect(armor.fragmentShader).toContain(GRAPHIC_SOLID_FRAGMENT);
+    expect(armor.forceSinglePass).toBe(false);
     expect(root.children).toHaveLength(2); flame.dispose(); solid.dispose(); expect(root.children).toHaveLength(0);
   });
 });

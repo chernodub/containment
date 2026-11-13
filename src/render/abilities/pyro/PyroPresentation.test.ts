@@ -45,7 +45,7 @@ describe('Pyro presentation lifecycle and readability', () => {
     let source = 0, far = 0, leaned = 0;
     expect(flames.count).toBe(tier === 'high' ? 6 : 4);
     const reaches = flow.mock.calls.map(call => Math.hypot(call[3] - 2, call[5] - 3));
-    expect(Math.max(...reaches)).toBeCloseTo(9.4);
+    expect(Math.max(...reaches)).toBeCloseTo(9.7);
     expect(new Set(flow.mock.calls.map(call => call[6])).size).toBeGreaterThan(2);
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i), dx = p.x - 2, dz = p.z - 3, radius = Math.hypot(dx, dz);
@@ -58,7 +58,7 @@ describe('Pyro presentation lifecycle and readability', () => {
     }
     expect(source).toBeGreaterThan(0); expect(far).toBeGreaterThan(1); expect(leaned).toBe(flames.count);
     expect(flow).toHaveBeenLastCalledWith(2 + Math.cos(.2) * .3, .95, 3 + Math.sin(.2) * .3,
-      2 + Math.cos(.2) * 1.8, .95, 3 + Math.sin(.2) * 1.8, .14 + (1 - (.15 - .05) / .12) * .055, 7, .96, true);
+      2 + Math.cos(.2) * 1.8, .95, 3 + Math.sin(.2) * 1.8, .14 + (1 - (.15 - .05) / .12) * .055, 7, (1 - (.15 - .09) / .28) * .96, true);
     const smoke = kit.batches.smoke.mesh;
     if (tier === 'low') expect(smoke.count).toBe(0);
     else {
@@ -198,7 +198,7 @@ describe('Pyro presentation lifecycle and readability', () => {
     expect(backpackVents).toHaveLength(tier === 'low' ? 0 : 2);
     for (const call of backpackVents) { expect(call[1]).toBeGreaterThanOrEqual(1); expect(call[1] + call[4]).toBeLessThan(2.8); }
     expect(shoulderVents[0][4]).not.toBe(shoulderVents[1][4]);
-    expect(scale(kit.batches.solid.mesh, 0).x).toBeCloseTo(.075);
+    expect(scale(kit.batches.solid.mesh, 0).x).toBeCloseTo(.28);
     expect(scale(kit.batches.solid.mesh, 2).y).toBeGreaterThanOrEqual(.1);
     expect(kit.counts.rings).toBe(0); expect(kit.batches.decal.mesh.count).toBe(0);
     dispose();
