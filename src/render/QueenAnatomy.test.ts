@@ -31,8 +31,9 @@ function pose(mesh:T.Mesh<T.BufferGeometry,T.ShaderMaterial>,opening:number){
     }else if(id===3){
       result.coreAnchors.add(`${hinge.x}/${hinge.y}/${hinge.z}`);
       point.sub(hinge).multiply(new T.Vector3(1+opening*.08,1+opening*.08,1+opening*.08)).add(hinge);
-      point.y+=opening*height*.012;
+      point.y+=opening*height*.162;
     }
+    if(id===8||id===9)point.y+=opening*height*(id===8?.19:.18);
     point.applyMatrix4(transform);
     if(id===3)result.core.expandByPoint(point);else if(id===5)result.plates.expandByPoint(point);else if(id===8)result.rim.expandByPoint(point);else if(id===9)result.cavity.expandByPoint(point);
     result.maxRadius=Math.max(result.maxRadius,Math.hypot(point.x,point.z));
@@ -53,7 +54,8 @@ it('opens two flush shell halves around a recessed organ and deep anatomical wel
     expect(opened.core.min.y).toBeGreaterThan(opened.cavity.min.y);
     expect(opened.cavity.getSize(new T.Vector3()).y).toBeGreaterThan((mesh.material.uniforms.identityHeight.value as number)*.15);
     expect(opened.core.getSize(new T.Vector3()).y).toBeGreaterThan((mesh.material.uniforms.identityHeight.value as number)*.10);
-    expect(closed.plates.max.y).toBeGreaterThan(closed.rim.max.y);
+    expect(mesh.material.fragmentShader).toContain('if(role>7.5&&role<9.5&&identityOpening<.08)discard;');
+    expect(closed.core.getSize(new T.Vector3()).x).toBeLessThan(closed.plates.getSize(new T.Vector3()).x);
     expect(mesh.material.fragmentShader).toContain('identityInner*identityOpening');
     // The mantle's visible silhouette changes substantially, with no new mesh.
     expect(Math.abs(opened.plates.getSize(new T.Vector3()).x-closed.plates.getSize(new T.Vector3()).x)).toBeGreaterThan(mesh.material.uniforms.identitySpan.value*.12);

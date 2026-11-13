@@ -8,8 +8,8 @@ export function familyAnatomy(kind: string, span: number, height: number): Actor
     // The accent is part of the mandible geometry, never a floating light/card.
     return [
       {shape:'plate', role:0, position:[0,h*.62,-s*.015], scale:[s*.34,h*.34,s*.30], fitted:false},
-      {shape:'plate', role:10, position:[-s*.13,h*.26,s*.30], scale:[s*.060,h*.15,s*.13], fitted:false},
-      {shape:'plate', role:10, position:[s*.13,h*.26,s*.30], scale:[s*.060,h*.15,s*.13], fitted:false},
+      {shape:'plate', role:10, position:[-s*.13,h*.26,s*.30], scale:[s*.090,h*.19,s*.13], fitted:false},
+      {shape:'plate', role:10, position:[s*.13,h*.26,s*.30], scale:[s*.090,h*.19,s*.13], fitted:false},
     ];
   }
   if (kind === 'stalker') {
@@ -20,7 +20,7 @@ export function familyAnatomy(kind: string, span: number, height: number): Actor
       {shape:'shield', role:2, position:[-s*.21,h*.22,s*.055], scale:[s*.085,h*.20,s*.24], fitted:false},
       {shape:'shield', role:2, position:[s*.21,h*.22,s*.055], scale:[s*.085,h*.20,s*.24], fitted:false},
       {shape:'plate', role:2, position:[0,h*.67,-s*.18], scale:[s*.12,h*.22,s*.10], fitted:false},
-      {shape:'spine', role:10, position:[0,h*.94,-s*.18], scale:[s*.10,h*.30,s*.075], fitted:false},
+      {shape:'spine', role:10, position:[0,h*.94,-s*.18], scale:[s*.12,h*.36,s*.09], fitted:false},
     ];
   }
   if (kind === 'carrier') {

@@ -3,6 +3,7 @@ import * as T from 'three';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import {CameraRig} from './CameraRig';
+import {DepthRenderer} from '../DepthRenderer';
 import {combatFocusTarget, COMBAT_VIEW_HEIGHT, protectPlayerFrame} from './CombatFraming';
 import {HudCombatFraming} from './HudCombatFraming';
 import {RoomCombatFraming, HERO_MIN_PIXELS, ROOM_OUTSIDE_LIMIT} from './RoomCombatFraming';
@@ -139,4 +140,29 @@ describe('final room and hero camera constraints',()=>{
     hud.selectContacts(15,14,0,[{id:8,x:17*32,y:14*32,radius:18,health:100}]);
     hud.refreshFit(camera,point);expect(hud.diagnostics.fit).toBe(true);
   });
+  it('retains native pointer, visible and cached CSS player-bounds contracts after final constraints',()=>{
+    const camera=makeCamera(1920,1080),rig=new CameraRig(),hud=new HudCombatFraming(),final=new RoomCombatFraming();
+    const point=new T.Vector3(),target=new T.Vector3(),root=new T.Group();
+    root.position.set(15,0,14);reserveHud(hud,1920,1080);
+    rig.reset(15,14);rig.apply(camera,.5,COMBAT_VIEW_HEIGHT,0);hud.center(camera,rig.focus,point,target);
+    final.apply(camera,rig.focus,15,14,.5,2.05,37.5,27.5,hud.viewport,1080,1/60,false);
+    const rect={left:11,top:17,width:1920,height:1080};
+    const probe=Object.assign(Object.create(DepthRenderer.prototype),{
+      camera,cameraRig:rig,hudFraming:hud,viewportSize:{width:1920,height:1080},canvasRect:rect,
+      canvas:{getBoundingClientRect:()=>rect},
+      player:{root,height:2.05},visiblePoint:new T.Vector3(),screenPoint:point,screenTarget:target,
+      raycaster:new T.Raycaster(),ground:new T.Plane(new T.Vector3(0,1,0),0),actors:new Map(),
+    });
+    const projected=new T.Vector3(16,0,13).project(camera);
+    const pointer=probe.pointer(rect.left+(projected.x+1)*960,rect.top+(1-projected.y)*540);
+    expect(pointer.x).toBeCloseTo(16*32,8);expect(pointer.y).toBeCloseTo(13*32,8);
+    expect(probe.visible(15*32,14*32)).toBe(true);
+    probe.canvas.getBoundingClientRect=()=>{throw Error('Player bounds must use cached CSS bounds');};
+    const body=probe.playerScreenBounds(16);
+    expect(body.left).toBeGreaterThanOrEqual(rect.left+hud.insets.left);
+    expect(body.right).toBeLessThanOrEqual(rect.left+1920-hud.insets.right);
+    expect(body.top).toBeGreaterThanOrEqual(rect.top+hud.insets.top);
+    expect(body.bottom).toBeLessThanOrEqual(rect.top+1080-hud.insets.bottom);
+  });
+
 });

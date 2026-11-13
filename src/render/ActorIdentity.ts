@@ -144,13 +144,13 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   } else if(kind==='queen') {
     // One organ and two large shell halves make exposure an anatomical change,
     // rather than a glow added between many small plates. Both poses are resident.
-    detail('core',0,h*.84,s*.015,s*.15,h*.065,s*.19,3,false);
+    detail('core',0,h*.84,s*.015,s*.15,h*.075,s*.19,3,false);
     detail('rim',0,h*.91,s*.015,s*.19,h*.04,s*.25,8,false);
-    detail('cavity',0,h*.82,s*.015,s*.19,h*.09,s*.25,9,false);
+    detail('cavity',0,h*.82,s*.015,s*.19,h*.10,s*.25,9,false);
     for(const side of [-1,1])detail('plate',side*s*.16,h*.86,0,s*.195,h*.18,s*.29,5,false);
     // The low diadem frames the closed shell; the organ stays below its lip.
     // The mantle opens around the deep thorax rather than lifting a badge.
-    for(let i=0;i<5;i++)detail('spine',(i-2)*s*.058,h*(.98+(.10-Math.abs(i-2)*.025)),s*.18,s*.023,h*(.075-Math.abs(i-2)*.012),s*.045,2,false);
+    for(const side of [-1,1])detail('spine',side*s*.23,h*.98,-s*.17,s*.030,h*.065,s*.045,2,false);
     detail('sac',0,h*.51,-s*.29,s*.24,h*.25,s*.23,7,false);
     for(const side of [-1,1])for(let i=0;i<3;i++)detail('plate',side*s*.18,h*.60,-s*(.17+i*.10),s*.07,h*.09,s*.085,2,false);
     // Low vascular tendons keep the hinged carapace rooted into the torso.
@@ -158,7 +158,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   } else {
     parts.push(...familyAnatomy(kind,s,h));
   }
-  parts.push(...rankAnatomy(s,h));
+  if(kind!=='queen')parts.push(...rankAnatomy(s,h));
   const mesh=new T.Mesh(identityGeometry(`c6-recessed-identity:${kind}:${elite}`,parts,root),new T.ShaderMaterial({
     uniforms:{identityColor:{value:new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler)},identityStageLight:{value:1},identityPulse:{value:1},identityTime:{value:0},identityShimmer:{value:kind==='stalker'?1:0},identityElite:{value:elite||kind==='queen'?1:0},identityChampion:{value:0},identityExposed:{value:0},identityOpening:{value:0},identitySpan:{value:span},identityHeight:{value:height},identityWindup:{value:0},identityOrganMotion:{value:kind==='spitter'?1:0},identityDissolve:{value:0},identityStatus:{value:0},identityAlpha:{value:1},identityDeath:{value:0}},
     vertexShader:`
@@ -178,10 +178,11 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
         if(role>2.5&&role<3.5){
           vec3 organScale=vec3(1.0+identityOpening*.08,1.0+identityOpening*.08,1.0+identityOpening*.08);
           p=identityAnchor+(p-identityAnchor)*organScale;
-          p.y+=identityOpening*identityHeight*.012;
+          p.y+=identityOpening*identityHeight*.162;
           // The geometry attachment receives this same deformed normal/position.
           plateNormal=normalize(plateNormal/organScale);
         }
+        if(role>7.5&&role<9.5)p.y+=identityOpening*identityHeight*(role<8.5?.19:.18);
         if(role<.5&&identityOrganMotion>.5){p=identityAnchor+(p-identityAnchor)*(1.0+identityWindup*.28);p.y+=identityWindup*identityHeight*.05;}
         identityNormal=normalMatrix*plateNormal;vec4 view=modelViewMatrix*vec4(p,1.0);
         identityView=-view.xyz;gl_Position=projectionMatrix*view;
@@ -196,7 +197,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
         if(role>5.5&&role<6.5&&identityChampion<.5)discard;
         // A corpse retains its authored anatomy; the exposed weak point is retired.
         if(identityDeath>=1.0&&((role>2.5&&role<3.5)||(role>7.5&&role<9.5)))discard;
-        if(role>7.5&&identityOpening<.08)discard;
+        if(role>7.5&&role<9.5&&identityOpening<.08)discard;
         float identityAsh=fract(sin(dot(floor(identityLocal*65.0),vec3(12.9898,78.233,37.719)))*43758.5453);
         if(identityAsh<identityDissolve)discard;
         float facing=abs(dot(normalize(identityNormal),normalize(identityView)));
@@ -209,8 +210,8 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
           // Two quiet value groups preserve one simple weak-point shape even
           // through colored status light; no veins, stripes or texture detail.
           float organLobe=smoothstep(.35,.82,facing);
-          color=mix(vec3(.50,.008,.055),vec3(1.0,.22,.34),organLobe);
-          light=(1.65+identityPulse*.22)*(.6+identityOpening*.4);
+          color=mix(vec3(.32,.003,.025),vec3(.95,.12,.25),organLobe);
+          light=(1.1+identityPulse*.18)*(.6+identityOpening*.4);
         }
         if(role>3.5&&role<4.5){color=vec3(.62,.61,.52);float plateLight=max(0.0,dot(normalize(identityNormal),normalize(vec3(.25,.65,.72))));light=.30+.25*smoothstep(.28,.32,plateLight)+.25*smoothstep(.65,.69,plateLight);}
         if(role>4.5&&role<5.5){
