@@ -1,3 +1,4 @@
+import {ENVIRONMENT_COMPOSITION} from './lighting/EnvironmentComposition';
 import * as T from 'three';
 import {groundIndicatorMaterial} from './vfx/GroundIndicatorMaterial';
 import type {ShipEnvironment} from './ShipEnvironments';
@@ -111,10 +112,10 @@ export class SceneLighting {
  }
  private setFixtureShape(light:T.PointLight,fixture:Fixture,index:number){
   const angle=fixture.poolAngle??Math.atan2(this.width/2-fixture.x,this.height/2-fixture.z);
-  light.userData.poolAngle=angle;
-  const style=fixture.poolStyle??APERTURE_STYLE[this.mood.environment];light.userData.poolStyle=style;light.userData.fixtureGain=fixture.gain??1;light.userData.humanFailed=this.mood.environment==='infested'&&fixture.poolStyle===0;light.userData.poolWidth=fixture.poolWidth??(style===3?.9:undefined);light.userData.poolDepth=fixture.poolDepth??(style===3?2.7:undefined);
+  light.userData.poolAngle=angle;light.userData.worldBounceGain=ENVIRONMENT_COMPOSITION[this.mood.environment].bounce;
+  const profile=ENVIRONMENT_COMPOSITION[this.mood.environment],style=fixture.poolStyle??APERTURE_STYLE[this.mood.environment];light.userData.poolStyle=style;light.userData.fixtureGain=fixture.gain??1;light.userData.humanFailed=this.mood.environment==='infested'&&fixture.poolStyle===0;light.userData.poolWidth=fixture.poolWidth??profile.width;light.userData.poolDepth=fixture.poolDepth??profile.depth;
   // Long axis follows the visible emitter toward the room; cross-axis stays narrow.
-  this.practicalShapes[index].set(Math.sin(angle),Math.cos(angle),light.visible?(fixture.poolWidth??(style===1?1.15:style===3?.9:.82)):0,fixture.poolDepth??(style===3?2.7:3.4));
+  this.practicalShapes[index].set(Math.sin(angle),Math.cos(angle),light.visible?(fixture.poolWidth??profile.width):0,fixture.poolDepth??profile.depth);
  }
  setPlayer(x:number,z:number,aimRadians:number,camera?:T.Camera){
   this.lamp.update(x,z,aimRadians);

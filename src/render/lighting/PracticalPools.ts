@@ -49,7 +49,7 @@ float pool=edge*reach*grille*interruption*(.78+.22*q.y);gl_FragColor=vec4(poolCo
         this.dummy.rotation.y=angle;this.dummy.scale.set(width,1,depth);this.dummy.updateMatrix();this.root.setMatrixAt(count,this.dummy.matrix);matricesChanged=true;
       }
       const colorOffset=count*3;
-      this.color.copy(fixture.color);this.color.multiplyScalar(reactor?Math.min(1.5,.6+fixture.intensity/32):Math.min(2.2,.6+fixture.intensity/160));
+      this.color.copy(fixture.color).multiplyScalar(fixture.userData.worldBounceGain??1);this.color.multiplyScalar(reactor?Math.min(1.5,.6+fixture.intensity/32):Math.min(2.2,.6+fixture.intensity/160));
       if(this.colors[colorOffset]!==this.color.r||this.colors[colorOffset+1]!==this.color.g||this.colors[colorOffset+2]!==this.color.b){
         this.colors[colorOffset]=this.color.r;this.colors[colorOffset+1]=this.color.g;this.colors[colorOffset+2]=this.color.b;this.root.setColorAt(count,this.color);colorsChanged=true;
       }
