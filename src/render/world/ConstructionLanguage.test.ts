@@ -67,8 +67,9 @@ it.each(['swarm-junction','infested-workshop','breached-loading-bay','reactor-va
  expect(root.userData.coveredBreach).not.toBeNull();
  expect(root.userData.partlyBuriedHumanFixture.span).toBeGreaterThan(.5);
  expect(root.userData.constructionNewFinishes).toEqual([]);
- const fixtures=root.userData.lightFixtures as Array<{x:number;y:number;z:number;poolStyle:number;nativeColor:boolean;gain:number}>;
+ const fixtures=root.userData.lightFixtures as Array<{x:number;y:number;z:number;color:number;poolStyle:number;nativeColor:boolean;gain:number}>;
  expect(fixtures).toHaveLength(3);
+ const colors=fixtures.map(f=>new T.Color(f.color));expect(colors.some(c=>c.g>c.r&&c.g>c.b)).toBe(true);expect(colors.some(c=>c.r>c.g&&c.b>c.g)).toBe(true);
  const triangle=new T.Triangle(),target=new T.Vector3(),closest=new T.Vector3();
  for(const fixture of fixtures){
   expect(fixture.poolStyle).toBe(3);expect(fixture.nativeColor).toBe(true);expect(fixture.gain).toBeGreaterThan(0);expect(fixture.gain).toBeLessThanOrEqual(1);

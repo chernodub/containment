@@ -283,7 +283,7 @@ export function addConstructionLanguage(
     const fixtures:ConsumptionFixture[]=[],forms:Array<{kind:string;source:number[];footprint?:Rect}>=[];
     const emit=(x:number,y:number,z:number,index:number,kind:string,footprint?:Rect)=>{
       if(fixtures.length>=4)return;
-      fixtures.push({x,y,z,color:index%2?0xc47fae:0xa6d878,nativeColor:true,poolStyle:3,growthSource:true,poolWidth:2.5,poolDepth:6.4,poolAngle:Math.atan2(w/2-x,h/2-z),gain:.72});
+      fixtures.push({x,y,z,color:index===0?0xa6d878:0xc47fae,nativeColor:true,poolStyle:3,growthSource:true,poolWidth:2.5,poolDepth:6.4,poolAngle:Math.atan2(w/2-x,h/2-z),gain:.72});
       forms.push({kind,source:[x,y,z],footprint});
     };
     // A connected skin is fitted affinely to a solid; no sphere, boulder or
