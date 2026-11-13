@@ -37,7 +37,7 @@ const IDEAS:Record<string,string>={
 
 /** One large, room-specific interruption, rather than the same stamp at every machine toe. */
 export function addKitFloorAftermath(t:RoomTemplate,id:string,reservations:readonly Reservation[],p:FloorPainter):FloorAftermathProof {
- const w=t.width/32,h=t.height/32,r=reservations[id==='transmission-chamber'?1:0]??reservations[0];
+ const w=t.width/32,h=t.height/32,r=reservations[0];
  const desired:Point=r?[(r.x+r.width*.5)/32,(r.y+r.height)/32+2.1]:[w*.5,h*.5];
  const candidates:Point[]=[desired];
  if(r)candidates.push([(r.x-64)/32,(r.y+r.height*.5)/32],[(r.x+r.width+64)/32,(r.y+r.height*.5)/32]);
