@@ -131,7 +131,7 @@ async function snapshot() {
       memory:{heap:performance.memory?.usedJSHeapSize??null,geometries:perf.geometries,textures:perf.textures,programs:r.renderer.info.programs?.length??null},
       visualOverlays:['#presentation-beat','#contextual-onboarding'].flatMap(selector=>{const el=document.querySelector(selector);if(!el||el.hidden||!el.getClientRects().length)return [];const b=el.getBoundingClientRect();return [{left:b.left,top:b.top,right:b.right,bottom:b.bottom}];}),
       onboarding:{visible:!document.querySelector('#contextual-onboarding')?.hidden,copy:document.querySelector('#contextual-onboarding')?.textContent,seen:localStorage.getItem('containment.onboarding.v1')},
-      hud:{slots,marine:r.playerScreenBounds(g.player.radius),health:document.querySelector('#health')?.textContent,magazine:document.querySelector('#magazine')?.textContent,opaqueBounds:['#status-hud','#action-bar','.vitals','#boss-hud','#radar-hud','#hud-toasts'].flatMap(selector=>{const el=document.querySelector(selector);if(!el||el.hidden||!el.getClientRects().length)return [];const b=el.getBoundingClientRect();return b.width&&b.height?[{id:selector,bounds:{left:b.left,top:b.top,right:b.right,bottom:b.bottom}}]:[];})},
+      hud:{slots,insets:{...r.hudInsets},framing:r.combatFramingDiagnostics?{...r.combatFramingDiagnostics,selectedIds:[...r.combatFramingDiagnostics.selectedIds]}:null,viewport:{width:innerWidth,height:innerHeight},marine:r.playerScreenBounds(g.player.radius),health:document.querySelector('#health')?.textContent,magazine:document.querySelector('#magazine')?.textContent,opaqueBounds:['#status-hud','#action-bar','.vitals','#boss-hud','#radar-hud','#hud-toasts'].flatMap(selector=>{const el=document.querySelector(selector);if(!el||el.hidden||!el.getClientRects().length)return [];const b=el.getBoundingClientRect();return b.width&&b.height?[{id:selector,obscuresThreat:el.dataset.obscuresThreat==='true',opacity:getComputedStyle(el).opacity,bounds:{left:b.left,top:b.top,right:b.right,bottom:b.bottom}}]:[];})},
       loading:r.roomLoading||d.canStepNative===false||r.roomKey!==g.node.id||document.querySelector('#world')?.getAttribute('aria-busy')==='true',
       actions:[...document.querySelectorAll('#overlay button:not(:disabled)')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>({id:b.id,mutation:b.dataset.mutation,route:b.dataset.route,inspect:b.dataset.inspectRoute,purchase:b.dataset.purchase,text:b.textContent})),
       audio:window.__containmentPlaytestAudio?{starts:window.__containmentPlaytestAudio.starts,stops:window.__containmentPlaytestAudio.stops,loopsStarted:window.__containmentPlaytestAudio.loopsStarted,loopsStopped:window.__containmentPlaytestAudio.loopsStopped}:null,
@@ -141,6 +141,16 @@ async function snapshot() {
 async function shot(name,s) {
   const file=`${name}.png`,bytes=await page.screenshot({path:resolve(out,file)});
   report.screenshots.push(file);
+  // Save actual body extents only at evidence frames; policy and native inputs are unchanged.
+  if(s.status==='playing'&&!s.loading)s.framingEvidence=await page.evaluate(()=>{
+    const d=window.__containmentDebug,g=d.game,r=d.renderer,i=r.hudInsets;
+    const selected=r.combatFramingDiagnostics?.focusedPair?[r.combatFramingDiagnostics.focusContactId]:r.combatFramingDiagnostics?.selectedIds??[];
+    const contacts=g.enemies.snapshot.enemies.filter(e=>e.health>0).map(e=>{
+      const point=r.camera.position.clone(),height=r.actors.get(e.id)?.height??2;let left=Infinity,right=-Infinity,top=Infinity,bottom=-Infinity;
+      for(const ix of [-1,1])for(const iz of [-1,1])for(const iy of [0,1]){point.set((e.x+ix*e.radius)/32,iy*height,(e.y+iz*e.radius)/32).project(r.camera);const x=(point.x+1)*innerWidth/2,y=(1-point.y)*innerHeight/2;left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);}
+      return{id:e.id,type:e.type,selected:selected.includes(e.id),bounds:{left,right,top,bottom},insideUsable:left>=i.left&&right<=innerWidth-i.right&&top>=i.top&&bottom<=innerHeight-i.bottom};
+    });return{contacts,insets:{...i},marine:r.playerScreenBounds(g.player.radius),framing:r.combatFramingDiagnostics};
+  });
   await writeFile(resolve(out,`${name}.json`),JSON.stringify(s,null,2));
   try{samplePng(bytes);}catch(error){report.defects.push({kind:'black-frame',area:'render',severity:'high',evidence:file,error:String(error)});}
   if(s.status==='playing'&&!s.loading){const world=sampleWorldPng(bytes,[...(s.hud?.opaqueBounds??[]),...(s.visualOverlays??[])]);if(world.likelyBlank)report.defects.push({kind:'blank-world-behind-hud',area:'render',severity:'high',evidence:file,samples:world});}

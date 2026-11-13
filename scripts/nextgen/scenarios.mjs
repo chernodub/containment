@@ -315,6 +315,8 @@ export async function stageKiting(attempt=0){
   await d.gotoRoom(g.node.templateId,{version:g.expedition.run.version,rig:'cryo'});
  }
  d.invulnerable(true);g.enemies.reset();
+ // Pack against the final HUD reservation, including the optional right radar.
+ d.uiFixture({preferences:{radar:true,combatText:true}});d.refresh();
  const bounds=g.geometry.bounds,candidates=[];
  for(let y=bounds.y+100;y<bounds.y+bounds.height-100;y+=70)for(let x=bounds.x+100;x<bounds.x+bounds.width-100;x+=70){
   if(!d.canStand(x,y,28))continue;
@@ -391,13 +393,19 @@ export async function stageKiting(attempt=0){
   if(id)placed.push({...p,id});
  }
  if(placed.length<18)throw Error(`Only ${placed.length} legal kiting targets`);
+ // Engagement framing is active only once actors exist. Retry the native lane
+ // if its final rendered footprint cannot retain the original visible target budget.
+ d.refresh();d.refresh();
+ const placedVisible=g.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y)).length;
+ if(placedVisible<viewMinimum&&attempt<23)return stageKiting(attempt+1);
+ if(placedVisible<viewMinimum)throw Error(`Only ${placedVisible} kiting targets fit the HUD-aware camera`);
  g.switchWeapon('rifle');
  if(!g.useAbility('tactical'))throw Error('Kiting Cryo Nova denied');
  // Acquire the first actual travelling round without drifting out of its verified lane.
  d.setInput({x:0,y:0,fire:true,angle:shotAngle,autoAim:false});d.step(1000/60);
  if(!(d.renderer.muzzle.intensity>0&&g.bullets.some(bullet=>bullet.kind==='player')))throw Error(`No travelling rifle round in verified kiting lane: ${JSON.stringify({player:origin,shotAngle,weapon:g.combat.snapshot.weaponId,magazine:g.combat.snapshot.magazine,shots:g.stats.shotsFired,bullets:g.bullets.length,state:g.status})}`);
  d.uiFixture({preferences:{radar:true,combatText:true}});
- return {staged:placed.length,initialVisible,offscreenStaged:placed.length-initialVisible,laneAttempt:attempt,player:origin,dashStart:start,heading,shotAngle,reservedFiringLane:{length:320,halfWidth:75},liveRig:'cryo',script:'Frost Trail into open center; Nova + rifle; Glacier at frame 2; Whiteout at frame 3',invulnerable:true};
+ return {staged:placed.length,initialVisible,placedVisible,offscreenStaged:placed.length-initialVisible,laneAttempt:attempt,player:origin,dashStart:start,heading,shotAngle,reservedFiringLane:{length:320,halfWidth:75},liveRig:'cryo',script:'Frost Trail into open center; Nova + rifle; Glacier at frame 2; Whiteout at frame 3',invulnerable:true};
 }
 
 /** Deterministic motion and public ability actions are keyed to burst frame index. */

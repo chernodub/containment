@@ -2,6 +2,18 @@
 
 The `nextgen` branch integrates the overhaul. Reports describe work at their recorded revisions; verify current behavior in source. Tool usage is in [scripts/nextgen/README.md](../../scripts/nextgen/README.md).
 
+## Current presentation and controls
+
+The wave-4 [graphic ink direction](streams/W4-direction.md) extends the original vision. The current renderer combines geometry silhouettes, authored actor-region lines, broad material value bands and fixture-shaped room lighting. Actor interior lines follow major body/armor regions rather than skin-normal noise; world architecture retains crease lines. Friendly sustained effects yield to actors and hostile attack warnings. Simulation footprints and hit decisions remain in the deterministic game layer.
+
+The [graphics contract](../../src/render/graphicsOptions.ts) exposes `inkOutlines` (`off`, `silhouette`, `full`), `stylizedShading` and `adaptiveResolution` alongside the existing effects and manual `resolutionScale`. High defaults to Full ink and adaptive resolution; Low defaults to Silhouettes and fixed scale. Both presets enable stylized shading. The native settings controls persist preferences separately from expedition checkpoints.
+
+The HUD publishes measured CSS-pixel reservations through its adapter to `DepthRenderer.setHudInsets`. The combat camera frames the marine and selected engaged threats inside the usable area, with bounded pullback and a priority-pair fallback for wider encounters. Threats beneath the action bar, vitals or right column fade those panels and retain a separate danger marker. Combat text consolidates repeated damage by target, source and element. Rig portraits, recovery previews (current → resulting / maximum, including free allocation), and an illustrated final transmission complete the screen updates. See the [root README](../../README.md#controls-and-settings) for unchanged desktop keyboard/mouse controls and the settings reference.
+
+Use `npm run capture` for staged native PNGs and burst sheets, `npm run bench` for serial realtime fight measurements, `npm run bench:rooms` for preparation audits, and `npm run playtest` for native-input bot campaigns. Keep benchmark browsers isolated from captures and campaigns. Reports include their clocks and limitations; staged screenshots and accelerated campaign CPU submission timings are not hardware frame-rate measurements.
+
+## Direction and reports
+
 - [00-VISION.md](00-VISION.md) — Creative direction, story constraints and Combat Rig design.
 - [01-ENGINEERING.md](01-ENGINEERING.md) — Architecture, ownership, test policy and required gates.
 - [02-ROADMAP.md](02-ROADMAP.md) — Stream sequencing and integration milestones.
@@ -13,6 +25,12 @@ The `nextgen` branch integrates the overhaul. Reports describe work at their rec
 - [I4-REPORT.md](I4-REPORT.md) — Performance integration, profiling and benchmark limitations.
 - [INTEGRATION-6A-REPORT.md](INTEGRATION-6A-REPORT.md) — Integration checkpoint findings and remaining release work.
 - [V2-REPORT.md](V2-REPORT.md) — Elemental ability presentation, budgets and capture results.
+- [I8-REPORT.md](I8-REPORT.md) — Wave-4 integration, acceptance method and revision-specific evidence.
+- [R7-verdict.md](reviews/R7-verdict.md) — Independent wave-4 review and the B1–B15 wave-5 defect list.
+- [U5-REPORT.md](U5-REPORT.md) — HUD reservations/fading, damage consolidation, rig portraits, recovery clarity and illustrated ending.
+- [V5-language.md](plans/V5-language.md) — Shared effect language, ability constructions, Cryo boundary budget and retained validation.
+- [G5-REPORT.md](G5-REPORT.md) — Authored actor regions, body signatures, family silhouettes and Queen transformation.
+- [G6-REPORT.md](G6-REPORT.md) — Environment construction, shaped fixture spill, consuming infestation and usable-viewport camera contract.
 
 ## Stream briefs and plans
 

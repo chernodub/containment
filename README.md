@@ -2,6 +2,8 @@
 
 Containment is a standalone desktop browser top-down 3D action roguelike with its own setting and storyline. Awaken aboard a hostile colony vessel and descend through twenty rooms across ten environments. Build your weapons and Combat Rig as the ship’s records reveal what happened. The overhaul preserves the story and ending.
 
+The current presentation uses a graphic, inked sci-fi look: broad surface value bands, authored actor-region lines, family-specific creature forms and fixture-shaped lighting. The marine carries cyan-white armor accents. Friendly sustained effects yield around actors and hostile warnings; fire, ice constructs and electrical effects follow the same combat priority. Rig selection has original suit portraits, recovery stations preview current and resulting resources against their caps, and the story ending has an illustrated final transmission.
+
 This repository is a fork of [cdb-lumen/containment](https://github.com/cdb-lumen/containment); `nextgen` is the overhaul integration branch. The upstream [GitHub Pages game](https://cdb-lumen.github.io/containment/) follows upstream `main`, not this branch.
 
 ## Combat Rig
@@ -43,7 +45,16 @@ Keyboard and mouse are required. Gameplay keys use physical positions (`Keyboard
 | Shift / Q / F / V | Dash / tactical / power / Overdrive |
 | Esc | Pause/resume or close the current menu |
 
-Settings offer High (default) and Low graphics presets, with individual bloom, ambient occlusion, lens effects, distortion, atmosphere, dynamic lights, shadows and render-scale controls. Quality changes are manual; preferences persist when storage is available. Comfort controls include screen shake, flash intensity, combat text and threat radar. The system’s reduced-motion preference disables camera motion and flashes while preserving preferred values. Audio has master, music and effects volumes and mute.
+Settings offer High (default) and Low graphics presets, with individual bloom, ambient occlusion, lens effects, distortion, atmosphere, dynamic lights and shadow controls. Choosing a preset resets picture options to that preset; individual preferences persist when storage is available.
+
+| Setting | Behavior |
+| --- | --- |
+| Ink outlines (`inkOutlines`) | Off, Silhouettes or Full. Full adds authored actor-region lines and architecture creases. High defaults to Full; Low defaults to Silhouettes. |
+| Stylized shading (`stylizedShading`) | Broad value bands and restrained surface detail; enabled in both presets. |
+| Image sharpness (`resolutionScale`) | Manual internal render scale from 50% to 100%. |
+| Adaptive resolution (`adaptiveResolution`) | High can gradually adjust internal resolution within 80–100% of the selected scale, with a 50% effective floor. Disable it for a fixed manual scale. Low disables adaptation. |
+
+The bottom action bar, vitals and right HUD column publish their measured screen space to the combat camera. Framing favors the marine and nearby engaged threats within the usable viewport. When threats intersect HUD panels, those panels fade and a separate danger marker remains visible. Damage from the same target, source and element is consolidated into running totals. Comfort controls include camera movement, combat flashes, combat text with reduced feedback, and threat radar. The system’s reduced-motion preference disables camera motion and flashes while preserving preferred values. Audio has master, music and effects volumes and mute.
 
 Progress saves between rooms, including unresolved rewards, when browser storage is available. Continue restores the checkpoint, rather than an in-progress combat frame. Death clears it. Storage failures are shown in reward, pause, result and title screens; a failed deletion can leave an old checkpoint available after reloading.
 
@@ -78,10 +89,13 @@ Browser gates are desktop-only. Smoke tests production assets and credits under 
 
 - `npm run capture -- --label=review --scenarios=all`: generate a production screenshot gallery, manifests and burst sheets under `artifacts/nextgen/`.
 - `npm run bench`: run the sequential realtime production benchmark; results describe the recorded machine and scenarios.
+- `npm run bench:rooms`: audit fresh-page and sequential room preparation, resource inventories and shader creation after readiness.
 - `npm run playtest -- --rig=<id> --seed=<n>`: automated bot campaign through the real production build with a JSON/HTML report; `npm run playtest:smoke` plays the first three rooms as a quick gate; `npm run playtest:sim` runs fast deterministic simulation-only campaigns for balance work.
 - `?debug=1`: opt into `window.__containmentDebug` for deterministic staged scenarios and explicit simulation stepping.
 
 See [tooling instructions](scripts/nextgen/README.md) and the [overhaul documentation index](docs/nextgen/README.md). Staged captures are not full-playthrough or performance certification.
+
+For repeated hardware measurements, use one benchmark browser with other capture/playtest browsers closed, for example `npm run bench -- --label=review-bench --rooms=relay-racks,swarm-junction --repeat=5 --seconds=20`. Reports retain host load, renderer, frame and CPU quantiles, adaptive scale, draws and combat shader creation. The default bot campaign sends native keyboard/mouse input and renders every fixed simulation tick; `--realtime` observes the normal production RAF loop. Fixed-step campaign timings and simulation-only policy results do not certify hardware frame rate or native-camera parity.
 
 ## Source, credits and licensing
 

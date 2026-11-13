@@ -92,3 +92,22 @@ it('lets real contacts and hostile warning footprints show through each panel wi
     expect(await page.evaluate(() => (window as any).__u5.receipts.at(-1))).toEqual({top:0,right:0,bottom:0,left:0});
   } finally {await page.close();}
 });
+
+
+it('reserves a top-right status column on its anchored right edge rather than its shorter dimension', async () => {
+  const page = await mountHud(1920,1080);
+  try {
+    await liveHud(page);
+    const result = await page.evaluate(() => {
+      const {hud,receipts,layout}=(window as any).__u5;
+      const status=document.getElementById('status-hud')!;
+      status.style.width='260px';status.style.height='210px';
+      layout.invalidateHudLayout();hud();
+      const column=status.getBoundingClientRect(),vitals=document.querySelector('.vitals')!.getBoundingClientRect();
+      return {insets:receipts.at(-1),right:Math.ceil(innerWidth-column.left+8),top:Math.ceil(vitals.bottom+8),columnBottom:column.bottom};
+    });
+    expect(result.insets.right).toBeGreaterThanOrEqual(result.right);
+    expect(result.insets.top).toBe(result.top);
+    expect(result.insets.top).toBeLessThan(result.columnBottom);
+  } finally {await page.close();}
+});

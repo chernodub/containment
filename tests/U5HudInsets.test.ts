@@ -21,7 +21,7 @@ describe('HUD camera boundary', () => {
   });
 
   it('rejects invalid edge values and supports a renderer hook arriving after the UI', () => {
-    const renderer = {} as DepthRenderer & {setHudInsets?: ReturnType<typeof vi.fn>};
+    const renderer = {} as DepthRenderer;
     setHudInsets(renderer, {top:10,right:20,bottom:30,left:0});
     renderer.setHudInsets = vi.fn();
     setHudInsets(renderer, {top:NaN,right:Infinity,bottom:-4,left:12.5});

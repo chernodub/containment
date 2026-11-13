@@ -59,8 +59,9 @@ function updateInsets(width: number, height: number): void {
         const preferred = group.element.id === 'action-bar' ? 'bottom' : group.element.id === 'status-hud' || group.element.id === 'radar-hud' ? 'right' : 'top';
         // A relocated panel reserves its nearest edge instead of swallowing the playfield.
         const costs = {top: box.bottom, right: width - box.left, bottom: height - box.top, left: box.right};
+        const gaps = {top: box.top, right: width - box.right, bottom: height - box.bottom, left: box.left};
         let side: keyof typeof costs = preferred;
-        for (const candidate of ['top','right','bottom','left'] as const) if (costs[candidate] + 40 < costs[side]) side = candidate;
+        for (const candidate of ['top','right','bottom','left'] as const) if (gaps[candidate] + 40 < gaps[side]) side = candidate;
         insets[side] = Math.max(insets[side], Math.ceil(costs[side] + 8));
     }
 }
