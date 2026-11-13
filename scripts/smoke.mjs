@@ -70,9 +70,11 @@ try {
     await page.locator('#quality').selectOption('high');
     await page.locator('#settings').click();
     console.log(`Graphics High/Low defaults and selection passed: desktop`);
+    // checkMenuSound deliberately starts a run to test muted initialization.
+    // Check title/settings loading before crossing that gameplay boundary.
+    assert.equal([...assets].filter(path=>path.includes('/assets/kits/')).length,0,'Room kits must not load on the title/settings path');
     timing.start('menu-audio');
     const selectedVolume = await checkMenuSound(page);
-    assert.equal([...assets].filter(path=>path.includes('/assets/kits/')).length,0,'Room kits must not load on the title/settings path');
     const chooseStartingBoon = async (capture = false) => {
       await page.locator('#start').click();
       await page.waitForFunction(() => document.body.dataset.state === 'rig-select');
