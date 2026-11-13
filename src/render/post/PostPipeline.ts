@@ -90,11 +90,11 @@ export class PostPipeline {
   ) { this.softDepth=new SoftParticleDepth(renderer);this.releaseGeometryClear=installGeometryClearPolicy(renderer);setRenderDiagnostics(()=>this.diagnostics);this.distortion.setEnabled(false); if(renderer.getContext)this.gpuTimer=new GpuFrameTimer(renderer.getContext() as WebGL2RenderingContext); }
 
   /** Borrowed flame/smoke meshes keep their existing preparation/atlas hooks. */
-  bindSoftParticles(meshes:readonly Mesh[], receive:(depth:DepthTexture|null)=>void, enabled:()=>boolean):void {
+  bindSoftParticles(meshes:readonly Mesh[], receive:(depth:DepthTexture|null)=>void, enabled:()=>boolean, needsDepth:(mesh:Mesh)=>boolean=()=>true):void {
     this.softParticleBinding?.release();
     const hooks=meshes.map(mesh=>{
       const previous=mesh.onBeforeRender;
-      const hook:Mesh['onBeforeRender']=function(this:Mesh,renderer,scene,camera,geometry,material,group){previous.call(this,renderer,scene,camera,geometry,material,group);receive(enabled()?owner.softDepth.capture():null);};
+      const hook:Mesh['onBeforeRender']=function(this:Mesh,renderer,scene,camera,geometry,material,group){previous.call(this,renderer,scene,camera,geometry,material,group);receive(enabled()&&needsDepth(this)?owner.softDepth.capture():null);};
       const owner=this;mesh.onBeforeRender=hook;
       return ()=>{if(mesh.onBeforeRender===hook)mesh.onBeforeRender=previous;};
     });

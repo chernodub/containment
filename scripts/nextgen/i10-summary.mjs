@@ -59,6 +59,8 @@ async function performance(){
     const summary=run.summary??{},precision={frameP50:round1(summary.frame?.p50),frameP95:round1(summary.frame?.p95)};
     const timingExclusions=[
       run.timingAcceptanceEligible===false?'run marks timing ineligible':null,
+      bench.value.timingAcceptanceEligible===false?'report marks timing ineligible':null,
+      bench.value.noSoftDepth===true?'soft-depth disabled diagnostic':null,
       run.profile?'CPU profiling enabled':null,
       bench.value.auditCosts?'cost instrumentation enabled':null,
       bench.value.gpuFlush?'intrusive GPU flush enabled':null,
@@ -125,7 +127,7 @@ async function performance(){
   const expectedRoomCases=expectedRooms.flatMap(room=>['fresh','sequential'].map(mode=>`${room}/${mode}`));
   const results={
     method:'Native benchmark reports retained in full. Requested frame targets compare values rounded to the browser reporting precision of0.1ms; raw summaries and original harness budget booleans remain beside them. High frame p50≤16.7ms,p95≤20ms,median adaptive scale≥.9; Low p50≤16.7ms; all draws≤330 and combat compiles0. Five repeats per case; no best-of-N selection. Host load is1-minute system load, not CPU utilization.',
-    benchmarkSource:bench?{path:bench.path,sha256:bench.sha256,source:bench.value.distSnapshot,harnessSHA:bench.value.sha,gpu:bench.value.gpu,seconds:bench.value.seconds,repeats:bench.value.repeats,host:bench.value.host,diagnosticModes:{auditCosts:bench.value.auditCosts===true,gpuPasses:bench.value.gpuPasses===true,gpuFlush:bench.value.gpuFlush===true,gpuMicro:bench.value.gpuMicro===true},errors:bench.value.errors,budgetFailures:bench.value.budgetFailures}:null,
+    benchmarkSource:bench?{path:bench.path,sha256:bench.sha256,source:bench.value.distSnapshot,harnessSHA:bench.value.sha,gpu:bench.value.gpu,seconds:bench.value.seconds,repeats:bench.value.repeats,host:bench.value.host,timingAcceptanceEligible:bench.value.timingAcceptanceEligible??null,diagnosticModes:{noSoftDepth:bench.value.noSoftDepth===true,auditCosts:bench.value.auditCosts===true,gpuPasses:bench.value.gpuPasses===true,gpuFlush:bench.value.gpuFlush===true,gpuMicro:bench.value.gpuMicro===true},errors:bench.value.errors,budgetFailures:bench.value.budgetFailures}:null,
     coverage:{expectedCases:16,expectedTrials:80,actualCases:cases.length,actualTrials:trials.length,complete:cases.length===16&&trials.length===80&&cases.every(c=>c.fiveRepeats),sourceMatches},
     cases,trials,
     roomPreparation:{method:'Public gotoRoom readiness is separate from inclusive preparation receipts. All preparation histories, including initial cold/warm work, are deduplicated per retained renderer within each run; fresh pages remain distinct. Values are milliseconds;≤3000 worst and≤1500 median targets.',
@@ -205,6 +207,54 @@ async function distributionProvenance(report){
     note:startupAssets?'Startup JS/CSS hashes from the original runner report are authoritative and are compared with the report-named frozen distribution at summary time. Harness head remains separate.':'Legacy runner supplied no startup asset witness; source marker and hashes are summary-time observations only.'};
 }
 
+/** Deduplicate one campaign page's renderer history without losing repeated observations. */
+function preparationReceiptSummary(sources){
+  const groups=new Map(),missingSources=[],invalidRows=[];
+  let observedRows=0;
+  for(const source of sources){
+    const {history,...origin}=source;
+    if(!Array.isArray(history)){
+      missingSources.push({...origin,reason:'preparation history missing or not an array'});continue;
+    }
+    if(!history.length)missingSources.push({...origin,reason:'preparation history is empty'});
+    for(let index=0;index<history.length;index++){
+      const receipt=history[index];
+      if(!receipt||typeof receipt.room!=='string'||!receipt.room||!finite(receipt.started)||receipt.started<0||!finite(receipt.total)||receipt.total<0){
+        invalidRows.push({...origin,index,receipt,reason:'invalid room, started or total in preparation receipt'});continue;
+      }
+      observedRows++;
+      const key=JSON.stringify([receipt.room,receipt.started]),observedAt={...origin,index};
+      let group=groups.get(key);
+      if(!group){group={key,room:receipt.room,started:receipt.started,receipt,variants:new Map()};groups.set(key,group);}
+      // Histories can be sampled during work. Keep the longest observed total;
+      // every shorter/zero variant remains inspectable beside its actual source.
+      if(receipt.total>=group.receipt.total)group.receipt=receipt;
+      const receiptSHA256=sha256(Buffer.from(JSON.stringify(receipt)));
+      let variant=group.variants.get(receiptSHA256);
+      if(!variant){variant={receiptSHA256,receipt,observedAt:[]};group.variants.set(receiptSHA256,variant);}
+      variant.observedAt.push(observedAt);
+    }
+  }
+  const receipts=[...groups.values()].sort((a,b)=>a.started-b.started).map(group=>({
+    key:group.key,room:group.room,started:group.started,totalMs:group.receipt.total,
+    receipt:group.receipt,variants:[...group.variants.values()],
+  }));
+  const completed=receipts.filter(row=>row.totalMs>0),incomplete=receipts.filter(row=>row.totalMs===0);
+  const summaryMs=quantiles(completed.map(row=>row.totalMs));
+  const overBudget=completed.filter(row=>row.totalMs>3000);
+  const targets={hasReceipts:receipts.length>0,sourceCoverage:missingSources.length===0,
+    validReceipts:invalidRows.length===0,completeRecordedTotals:incomplete.length===0,
+    worstWithin3000:!!summaryMs&&overBudget.length===0,typicalWithin1500:!!summaryMs&&summaryMs.p50<=1500};
+  return{
+    method:'Actual renderer preparation histories from every report-listed native shot JSON plus report.final.preparation when present. Deduplicate by room+started within this campaign page. Repeated variants/source hashes remain; the greatest recorded total is canonical, never the fastest observation. total=0 is an initialized/unsettled or unrecorded-total sentinel, retained as incomplete rather than certified as zero-cost readiness. This is separate from policy-sampled UI loadingHolds, which can miss short holds. No readiness timing is inferred from screenshots or UI polling.',
+    sourceCount:sources.length,sources:sources.map(({history,...origin})=>({...origin,historyRows:Array.isArray(history)?history.length:null})),
+    observedRows,distinctCount:receipts.length,duplicatesCollapsed:observedRows-receipts.length,
+    receipts,missingSources,invalidRows,incomplete,completedCount:completed.length,
+    summaryMs,rawRecordedTotalSummaryMs:quantiles(receipts.map(row=>row.totalMs)),overBudget,
+    targets,accepted:Object.values(targets).every(Boolean),
+  };
+}
+
 async function campaigns(){
   const rigReports=[],organic=resolve(base,'final4/organic'),organicReceipts=[],auditRows=[];
   await mkdir(organic,{recursive:true});
@@ -230,12 +280,27 @@ async function campaigns(){
     const frames=(report.rooms??[]).filter(r=>finite(r.frame?.p50)&&finite(r.frame?.p95)).map(r=>({room:r.id,nodeId:r.nodeId,result:r.result,frame:r.frame,scope:r.frameScope,timingReset:r.timingReset}));
     const holds=[...(report.loadingHolds??[])];
     for(const room of report.rooms??[])for(const hold of room.loadingHolds??[])if(!holds.some(h=>h.room===hold.room&&h.wallMs===hold.wallMs))holds.push(hold);
+    const screenshotFiles=[...new Set(report.screenshots??[])],snapshotRecords=new Map(),preparationSources=[],derivedScreenshots=[];
+    for(const file of screenshotFiles){
+      assert(/^[\w.-]+\.png$/.test(file),`Unsafe campaign PNG filename ${file}`);
+      if(file.endsWith('-sprite.png')){derivedScreenshots.push(file);continue;}
+      const path=resolve(directory,file.replace(/\.png$/,'.json')),snapshot=await json(path);
+      snapshotRecords.set(file,snapshot);
+      preparationSources.push({path,sha256:snapshot?.sha256??null,field:'preparation',
+        elapsed:snapshot?.value.elapsed??null,room:snapshot?.value.node?.templateId??null,history:snapshot?.value.preparation});
+    }
+    if(report.final)preparationSources.push({path:source.path,sha256:source.sha256,field:'final.preparation',elapsed:report.final.elapsed??null,room:report.final.node?.templateId??null,history:report.final.preparation});
+    const actualPreparation=preparationReceiptSummary(preparationSources);
+    actualPreparation.derivedScreenshotsExcluded=derivedScreenshots;
+    actualPreparation.campaignRoomsWithoutReceipts=[...new Set((report.rooms??[]).map(room=>room.id))].filter(room=>!actualPreparation.receipts.some(row=>row.room===room));
+    actualPreparation.targets.allEnteredRoomsObserved=actualPreparation.campaignRoomsWithoutReceipts.length===0;
+    actualPreparation.accepted=Object.values(actualPreparation.targets).every(Boolean);
     // The original run report owns coverage; stale files in a reused label are not evidence.
-    const midFiles=[...new Set(report.screenshots??[])].filter(f=>/-mid\.png$/.test(f)).sort((a,b)=>Number(a.match(/^r(\d+)/)?.[1]??0)-Number(b.match(/^r(\d+)/)?.[1]??0));
+    const midFiles=screenshotFiles.filter(f=>/-mid\.png$/.test(f)).sort((a,b)=>Number(a.match(/^r(\d+)/)?.[1]??0)-Number(b.match(/^r(\d+)/)?.[1]??0));
     const midRows=[];
     for(const file of midFiles){
       assert(/^[\w.-]+\.png$/.test(file),`Unsafe campaign PNG filename ${file}`);
-      const pngPath=resolve(directory,file),jsonPath=pngPath.replace(/\.png$/,'.json'),snapshot=await json(jsonPath),bytes=await readFile(pngPath);
+      const pngPath=resolve(directory,file),jsonPath=pngPath.replace(/\.png$/,'.json'),snapshot=snapshotRecords.get(file),bytes=await readFile(pngPath);
       if(!snapshot)continue;
       const target=`${rig}-${file}`,targetJson=target.replace(/\.png$/,'.json');
       await copyFile(pngPath,resolve(organic,target));await copyFile(jsonPath,resolve(organic,targetJson));
@@ -278,7 +343,8 @@ async function campaigns(){
       fullNativeRendering:/render every fixed tick|native production RAF/.test(report.clock??''),clock:report.clock,wallSeconds:report.wallSeconds,
       errors:report.errors??[],defects:report.defects??[],hostLoad:report.hostLoad,gpu:report.gpu,
       overdrives:{authoritativeTotal:finalOverdrives,castReceiptCount:casts.length,receiptCountMatchesFinal:finalOverdrives===casts.length,casts,intervalsSeconds:intervals,nonMonotonicIntervals:intervals.filter(v=>v<0),intervalSummary:quantiles(intervals),counterTransitions},
-      preparationHolds:{count:holds.length,summaryMs:quantiles(holds.map(h=>h.wallMs)),holds},
+      preparationHolds:{method:'Policy-sampled UI loading intervals; short holds can be missed. Actual renderer receipt history is reported separately.',count:holds.length,summaryMs:quantiles(holds.map(h=>h.wallMs)),holds},
+      actualPreparation,
       roomCpuFrames:{scope:'Per-room fixed-step update+render CPU submission quantiles, or separately identified native RAF quantiles; not pooled GPU completion or hardware FPS.',
         rooms:frames,p50AcrossRooms:quantiles(frames.map(f=>f.frame.p50)),p95AcrossRooms:quantiles(frames.map(f=>f.frame.p95))},
       organicFrames:midRows.length,organicEarlyLateDepthRange:range(midRows.map(r=>r.depth)),
@@ -300,6 +366,19 @@ async function campaigns(){
     rigs:rigReports,missingInputs:[...missing],accepted:missing.length===0&&rigReports.length===4&&rigReports.every(r=>r.pass&&r.naturalUnassisted&&r.fullNativeRendering&&r.provenanceVerified),
     organic:{path:organic,frames:organicReceipts.length,minimumSixPerRig:rigReports.length===4&&rigReports.every(r=>r.organicFrames>=6),earlyAndLateEveryRig:rigReports.length===4&&rigReports.every(r=>r.organicEarlyAndLate),framing:{marineFailures:framingAudit.marineFailures.length,marineHudOverlaps:framingAudit.marineHudOverlaps.length,selectedBoundsFailures:framingAudit.selectedBoundsFailures.length,missingEightCornerEvidence:framingAudit.missingEightCornerEvidence.length,heroScaleFailures:framingAudit.heroScaleFailures.length,roomAabbFailures:framingAudit.roomAabbFailures.length,exactHullExceedances:framingAudit.exactHullExceedances.length,missingRoomFraming:framingAudit.missingRoomFraming.length,peripheralOutsideFrames:framingAudit.peripheralOutsideFrames,fadedCoverageFrames:framingAudit.fadedCoverageFrames,unfadedCoverageCandidateFrames:framingAudit.unfadedCoverageCandidateFrames}}};
   summary.runtimeAccepted=summary.accepted;
+  const preparationRows=rigReports.flatMap(report=>report.actualPreparation.receipts.map(row=>({rig:report.rig,...row})));
+  const completedPreparationRows=preparationRows.filter(row=>row.totalMs>0);
+  summary.actualPreparation={
+    method:'Per-campaign room+started deduplication of actual renderer histories; every report-listed native shot JSON and terminal report snapshot are inspected. Campaign pages remain distinct. UI loadingHolds are separate sampled observations, not substituted for receipt totals.',
+    distinctCount:preparationRows.length,completedCount:completedPreparationRows.length,
+    summaryMs:quantiles(completedPreparationRows.map(row=>row.totalMs)),
+    rawRecordedTotalSummaryMs:quantiles(preparationRows.map(row=>row.totalMs)),
+    overBudget:completedPreparationRows.filter(row=>row.totalMs>3000),
+    incomplete:preparationRows.filter(row=>row.totalMs===0),
+    rigsWithMissingSources:rigReports.filter(report=>report.actualPreparation.missingSources.length).map(report=>report.rig),
+    rigsWithInvalidRows:rigReports.filter(report=>report.actualPreparation.invalidRows.length).map(report=>report.rig),
+    accepted:rigReports.length===4&&rigReports.every(report=>report.actualPreparation.accepted),
+  };
   summary.organic.nativeViewportMismatches=framingAudit.nativeViewportMismatches.length;
   summary.organic.literalAabbExceedances=framingAudit.literalAabbExceedances.length;
   summary.organic.smallAxisQualifiedFrames=framingAudit.smallAxisQualifiedFrames.length;
@@ -307,20 +386,26 @@ async function campaigns(){
   summary.organic.framingBoundsAccepted=framingAudit.marineFailures.length===0&&framingAudit.marineHudOverlaps.length===0&&framingAudit.selectedBoundsFailures.length===0&&framingAudit.missingSelectedContactFrames.length===0&&framingAudit.missingEightCornerEvidence.length===0&&framingAudit.nativeViewportMismatches.length===0;
   summary.organic.heroAndAabbAccepted=framingAudit.heroScaleFailures.length===0&&framingAudit.roomAabbFailures.length===0&&framingAudit.missingRoomFraming.length===0;
   summary.organic.exactHullAccepted=framingAudit.exactHullExceedances.length===0&&framingAudit.missingRoomFraming.length===0;
-  summary.accepted=summary.runtimeAccepted&&summary.organic.minimumSixPerRig&&summary.organic.earlyAndLateEveryRig&&summary.organic.framingBoundsAccepted&&summary.organic.heroAndAabbAccepted;
+  summary.accepted=summary.runtimeAccepted&&summary.actualPreparation.accepted&&summary.organic.minimumSixPerRig&&summary.organic.earlyAndLateEveryRig&&summary.organic.framingBoundsAccepted&&summary.organic.heroAndAabbAccepted;
   summary.exactHullCameraAccepted=summary.accepted&&summary.organic.exactHullAccepted;
   await writeJson('campaign-summary.json',summary);
   await writeFile(resolve(organic,'source-receipts.json'),JSON.stringify(organicReceipts,null,2)+'\n');
   await writeFile(resolve(organic,'framing-audit.json'),JSON.stringify(framingAudit,null,2)+'\n');
   await organicReview(organic,organicReceipts);
   await writeFile(resolve(organic,'index.html'),`<!doctype html><html lang="en"><meta charset="utf-8"><title>I10 organic mid-fight evidence</title><style>body{background:#111923;color:#dceaf3;font:15px system-ui;margin:24px}a{color:#9ee3ff}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}figure{margin:0}img{display:block;width:100%}figcaption{padding:8px}p{line-height:1.5}</style><h1>I10 organic mid-fight evidence</h1><p>${organicReceipts.length} unchanged native campaign frames. <a href="source-receipts.json">Hashes/provenance</a> · <a href="framing-audit.json">Actual projection audit</a> · <a href="review480/index.html">Every frame at480×270</a></p><div class="grid">${organicReceipts.map(s=>`<figure><a href="${url(s.file)}"><img src="${url(s.file)}" loading="lazy" alt="${escape(s.file)}"></a><figcaption>${escape(s.file)}<br><a href="${url(s.json)}">Original snapshot</a> · ${s.elapsed?.toFixed(2)??'?'}s</figcaption></figure>`).join('')}</div></html>`);
-  const lines=['# I10 native campaign acceptance','',summary.method,'',`Runtime accepted: ${summary.runtimeAccepted}. Selected-body framing bounds accepted: ${summary.organic.framingBoundsAccepted}. Hero scale and AABB constraint accepted: ${summary.organic.heroAndAabbAccepted}. Exact playable-hull constraint accepted: ${summary.organic.exactHullAccepted}. These do not certify world occlusion or the full art vision.`,'',
-    '| Rig | Outcome | Clears / entered | Deaths | Overdrives / cast receipts | V intervals min / median / max s | Holds / max ms | CPU room p50 min / median / max ms | CPU room p95 min / median / max ms | Wall s | Load1m start → end | Errors / defects |',
+  const lines=['# I10 native campaign acceptance','',summary.method,'',`Runtime accepted: ${summary.runtimeAccepted}. Actual preparation receipts accepted: ${summary.actualPreparation.accepted}. Selected-body framing bounds accepted: ${summary.organic.framingBoundsAccepted}. Hero scale and AABB constraint accepted: ${summary.organic.heroAndAabbAccepted}. Exact playable-hull constraint accepted: ${summary.organic.exactHullAccepted}. These do not certify world occlusion or the full art vision.`,'',
+    '| Rig | Outcome | Clears / entered | Deaths | Overdrives / cast receipts | V intervals min / median / max s | Sampled UI holds / max ms | CPU room p50 min / median / max ms | CPU room p95 min / median / max ms | Wall s | Load1m start → end | Errors / defects |',
     '|---|---|---|---:|---|---|---|---|---|---:|---|---|',
     ...rigReports.map(r=>{
       const q=r.overdrives.intervalSummary,p50=r.roomCpuFrames.p50AcrossRooms,p95=r.roomCpuFrames.p95AcrossRooms;
       return`| ${r.rig} | ${r.outcome} | ${r.clears} / ${r.entered} | ${r.deaths} | ${r.overdrives.authoritativeTotal??'?'} / ${r.overdrives.castReceiptCount} | ${q?[q.min,q.p50,q.max].map(fmt).join(' / '):'none'} | ${r.preparationHolds.count} / ${fmt(r.preparationHolds.summaryMs?.max)} | ${p50?[p50.min,p50.p50,p50.max].map(fmt).join(' / '):'missing'} | ${p95?[p95.min,p95.p50,p95.max].map(fmt).join(' / '):'missing'} | ${fmt(r.wallSeconds)} | ${fmt(r.hostLoad?.start?.[0])} → ${fmt(r.hostLoad?.latest?.[0])} | ${r.errors.length} / ${r.defects.length} |`;
-    }),'',`Organic frames: ${organicReceipts.length}. Minimum6 perrig: ${summary.organic.minimumSixPerRig}. Early (depth≤5) and late (depth≥10) coverage perrig: ${summary.organic.earlyAndLateEveryRig}. Actual marine-bound failures: ${framingAudit.marineFailures.length}; marine/HUD overlaps: ${framingAudit.marineHudOverlaps.length}; selected-contact bounds failures: ${framingAudit.selectedBoundsFailures.length}; missing selected-contact receipt frames: ${framingAudit.missingSelectedContactFrames.length}.`,
+    }),'', '## Actual renderer preparation receipts','',summary.actualPreparation.method,'',
+    '| Rig | Completed / distinct receipts | Min / median / max ms | Over3s | Typical≤1.5s | Missing / invalid / zero-total | Entered rooms without receipts | Accepted |',
+    '|---|---:|---:|---:|---|---:|---|---|',
+    ...rigReports.map(report=>{const prep=report.actualPreparation,q=prep.summaryMs;return`| ${report.rig} | ${prep.completedCount} / ${prep.distinctCount} | ${q?[q.min,q.p50,q.max].map(fmt).join(' / '):'missing'} | ${prep.overBudget.length} | ${prep.targets.typicalWithin1500} | ${prep.missingSources.length} / ${prep.invalidRows.length} / ${prep.incomplete.length} | ${prep.campaignRoomsWithoutReceipts.join(', ')||'none'} | ${prep.accepted} |`;}),'',
+    `All completed receipts: ${summary.actualPreparation.completedCount}; min / median / max ${summary.actualPreparation.summaryMs?[summary.actualPreparation.summaryMs.min,summary.actualPreparation.summaryMs.p50,summary.actualPreparation.summaryMs.max].map(fmt).join(' / '):'missing'}ms. Raw recorded totals including zero sentinels are retained separately in JSON. Over3s failures: ${summary.actualPreparation.overBudget.length}.`,
+    'The UI-hold column above is sampled by the bot policy and may miss short holds. It is not the renderer-preparation table. Zero-total-only receipts remain incomplete; no missing preparation history is inferred from a favorable UI sample.',
+    '',`Organic frames: ${organicReceipts.length}. Minimum6 perrig: ${summary.organic.minimumSixPerRig}. Early (depth≤5) and late (depth≥10) coverage perrig: ${summary.organic.earlyAndLateEveryRig}. Actual marine-bound failures: ${framingAudit.marineFailures.length}; marine/HUD overlaps: ${framingAudit.marineHudOverlaps.length}; selected-contact bounds failures: ${framingAudit.selectedBoundsFailures.length}; missing selected-contact receipt frames: ${framingAudit.missingSelectedContactFrames.length}.`,
     `Hero scale failures: ${framingAudit.heroScaleFailures.length}; qualified AABB-rule failures: ${framingAudit.roomAabbFailures.length}; literal full-AABB exceedances: ${framingAudit.literalAabbExceedances.length}; small-axis qualified frames: ${framingAudit.smallAxisQualifiedFrames.length}; actual hull exceedances: ${framingAudit.exactHullExceedances.length}; missing C6 receipts: ${framingAudit.missingRoomFraming.length}. An AABB pass does not mean an exact-hull pass.`,
     `Peripheral outside frames: ${framingAudit.peripheralOutsideFrames}; faded-HUD coverage frames: ${framingAudit.fadedCoverageFrames}; conservative unfaded-coverage candidates: ${framingAudit.unfadedCoverageCandidateFrames}. Candidates require PNG review; they are not automatically classified as hidden danger.`,
     '', '| Rig | Organic frames | Saved depth range | Hero pixels min–max | AABB outside max | Exact hull outside max |',

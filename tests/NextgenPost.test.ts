@@ -545,3 +545,28 @@ it('binds detached particle depth without replacing atlas hooks or adding a scen
   pipeline.setOptions(GRAPHICS_PRESETS.low,'low');expect(received).toHaveBeenLastCalledWith(null);
   pipeline.dispose();expect(mesh.onBeforeRender).toBe(original);detached.dispose();
 });
+
+it('captures depth only for meshes that demand it, after their atlas hook, and unbinds legacy batches',()=>{
+  const {pipeline,gpu,scene,camera}=fixture(),legacy=new Mesh(),authored=new Mesh(),calls:string[]=[];
+  const detached=new DepthTexture(1,1),received:Array<DepthTexture|null>=[];
+  const owner=(pipeline as unknown as {softDepth:{capture:()=>DepthTexture|null}}).softDepth;
+  const capture=vi.spyOn(owner,'capture').mockImplementation(()=>{calls.push('copy');return detached;});
+  const beforeLegacy=vi.fn(()=>calls.push('atlas-legacy')),beforeAuthored=vi.fn(()=>calls.push('atlas-authored'));
+  legacy.onBeforeRender=beforeLegacy;authored.onBeforeRender=beforeAuthored;
+  let demand=true;
+  pipeline.bindSoftParticles([legacy,authored],value=>{received.push(value);},()=>true,mesh=>{calls.push(mesh===legacy?'demand-legacy':'demand-authored');return mesh===authored&&demand;});
+  const draw=(mesh:Mesh)=>Reflect.apply(mesh.onBeforeRender,mesh,[gpu,scene,camera,mesh.geometry,mesh.material,null]);
+  draw(legacy);draw(authored);draw(legacy);
+  expect(calls).toEqual(['atlas-legacy','demand-legacy','atlas-authored','demand-authored','copy','atlas-legacy','demand-legacy']);
+  expect(received).toEqual([null,detached,null]);expect(capture).toHaveBeenCalledOnce();
+  demand=false;draw(authored);expect(received.at(-1)).toBeNull();expect(capture).toHaveBeenCalledOnce();
+  pipeline.dispose();expect(legacy.onBeforeRender).toBe(beforeLegacy);expect(authored.onBeforeRender).toBe(beforeAuthored);
+  expect(received.at(-1)).toBeNull();detached.dispose();
+});
+
+it('does not ask a particle mesh for demand when atlas enablement is false',()=>{
+  const {pipeline,gpu,scene,camera}=fixture(),mesh=new Mesh(),needsDepth=vi.fn(()=>true),receive=vi.fn();
+  pipeline.bindSoftParticles([mesh],receive,()=>false,needsDepth);
+  Reflect.apply(mesh.onBeforeRender,mesh,[gpu,scene,camera,mesh.geometry,mesh.material,null]);
+  expect(needsDepth).not.toHaveBeenCalled();expect(receive).toHaveBeenLastCalledWith(null);pipeline.dispose();
+});

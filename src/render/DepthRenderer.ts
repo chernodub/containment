@@ -230,7 +230,7 @@ export class DepthRenderer {
   const root=this.interimAbilities.root;
   if(this.abilityWarmupRoot!==root){
    this.materialWarmup?.register(root);this.contextResources?.track(root);this.abilityWarmupRoot=root;
-   this.post.bindSoftParticles([kit.batches.flame.mesh,kit.batches.smoke.mesh],depth=>this.interimAbilities.setSoftDepth(depth,this.camera.near,this.camera.far,this.camera instanceof T.PerspectiveCamera),()=>kit.atlas.loaded);
+   this.post.bindSoftParticles([kit.batches.flame.mesh,kit.batches.smoke.mesh],depth=>this.interimAbilities.setSoftDepth(depth,this.camera.near,this.camera.far,this.camera instanceof T.PerspectiveCamera),()=>kit.atlas.loaded,mesh=>mesh===kit.batches.flame.mesh?kit.batches.flame.needsSoftDepth:kit.batches.smoke.needsSoftDepth);
   }
   if(kit.atlas.loaded)this.renderer.initTexture(kit.atlas.texture);
  }

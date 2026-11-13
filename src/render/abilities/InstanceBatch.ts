@@ -31,6 +31,9 @@ export class InstanceBatch {
   private view?: T.Vector3;
   private camera?: T.Camera;
   private coverage = 0;
+  private softDepthDemand = false;
+  /** Only accepted authored volume variants require a detached depth snapshot. */
+  get needsSoftDepth():boolean { return this.softDepthDemand; }
   /** Sum of projected card rectangle estimates, including hidden overlap: a bounded fill cap. */
   maxCoverage = .42;
 
@@ -218,7 +221,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
  ${kind === 'flame' || kind === 'smoke' ? `
  // All remaining alpha factors are <=1; these texels cannot survive the existing final cutoff.
  if(a<.004)discard;
- if(softCamera.w>.5){
+ if(softCamera.w>.5&&phase>=64.){
   float d=texture2D(softDepth,screen).r;
   float sceneDistance=softCamera.z>.5?softCamera.x*softCamera.y/(softCamera.y-(softCamera.y-softCamera.x)*d):mix(softCamera.x,softCamera.y,d);
   a*=smoothstep(0.,.28,sceneDistance-viewDepth);
@@ -268,6 +271,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
   begin(time = 0): void {
     this.mesh.count = 0;
     this.coverage = 0;
+    this.softDepthDemand = false;
     this.mesh.visible = false;
     (this.mesh.material as T.ShaderMaterial).uniforms.abilityTime.value = time;
   }
@@ -338,6 +342,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
     this.priority.setX(i, this.priorityWeight);
     this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' || this.kind === 'front' || ((this.kind === 'flame' || this.kind === 'smoke') && variant >= 64 || this.kind === 'spark' && variant >= 200) ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
+    if((this.kind==='flame'||this.kind==='smoke')&&variant>=64)this.softDepthDemand=true;
   }
 
   end(): void {
@@ -360,6 +365,7 @@ ${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.
   }
 
   dispose(): void {
+    this.softDepthDemand=false;
     this.mesh.geometry.dispose();
     (this.mesh.material as T.Material).dispose();
     if (this.ownsAtlas) this.atlas.dispose();
