@@ -31,8 +31,8 @@ export const RENDER_BUDGET = Object.freeze({
  highFrameP95Ms: 20,
  lowFrameP50Ms: 16.7,
  // Adaptive operating point, not the external frame acceptance limit. Keep
- // ~1.2ms nominal GPU headroom at60Hz; overload remains target+1ms.
- gpuTargetMs: 15.5,
+ // ~0.2ms nominal GPU headroom at60Hz; overload remains target+1ms.
+ gpuTargetMs: 16.5,
  drawCalls: 330,
  programs: 400,
  materialFamilies: 160,
