@@ -14,7 +14,7 @@ export const ROOM_COMPOSITIONS:Readonly<Record<string,RoomComposition>>=Object.f
   'breached-loading-bay':composition('The boarding scar sealed inside the hull',[-16,8,10],2.2,2.2,1.5),
   'relay-racks':composition('Dark rack faces and localized data signals',[-16,10,10],1,1,.85),
   'transmission-chamber':composition('A single bright uplink against quiet racks',[-14,10,11],1.6,1.9,1.1),
-  'diagnostic-gallery':composition('The independent display wall exposes the truth',[-16,5,10],1.8,3.0),
+  'diagnostic-gallery':composition('The independent display wall exposes the truth',[-16,5,10],1.8,4.6),
   'safety-interlock-station':composition('Amber evidence preserved on the service recorder',[-16,5,10],1.85,2.3),
   'coolant-plant':composition('Wet teal steel beneath warm copper coolant loops',[-15,9,11],1,1.03,1.4),
   'service-shaft-landing':composition('A fading green bridge above the disconnected ship',[-16,9,10],1.45,1.35,1.5),
