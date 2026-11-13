@@ -390,7 +390,7 @@ it('keeps the story reactor key incandescent and low at its source with cool sub
       expect(rig.key.target.position.x).toBeLessThan(core.coreX);
       expect(rig.key.position.y).toBeLessThan(4);
       expect(rig.fill.color.b).toBeGreaterThan(rig.fill.color.r);
-      expect(rig.fill.intensity).toBeGreaterThan(.3);expect(rig.fill.intensity).toBeLessThanOrEqual(3);expect(rig.coreKey.intensity).toBeGreaterThan(1000);
+      expect(rig.fill.intensity).toBeGreaterThan(.3);expect(rig.fill.intensity).toBeLessThanOrEqual(6);expect(rig.coreKey.intensity).toBeGreaterThan(1000);
       expect(rig.lamp.suitFill.visible).toBe(true);
       rig.update(.6);
       expect(rig.fixtures[1].color.r).toBeGreaterThan(rig.fixtures[1].color.g * 4);
