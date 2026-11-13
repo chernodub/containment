@@ -464,8 +464,7 @@
  #overlay .choice-panel .choice-card,#overlay .rig-card {corner-shape:bevel;border-radius:0 8px 0 8px;}
 }
 
-#overlay .title-screen.screen-enter {animation-name:title-arrive;}
-@keyframes title-arrive {from{opacity:0}to{opacity:1}}
+#overlay .title-screen.screen-enter {animation:none;}
 
 
 

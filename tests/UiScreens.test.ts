@@ -661,6 +661,8 @@ test('title motion is decorative, reduced motion retains authored geometry, and 
   const page=await mount(1920,1080);
   try {
     await page.mouse.move(1700,700);
+    expect(await page.locator('.title-screen').evaluate(node=>getComputedStyle(node).animationName)).toBe('none');
+    expect(await page.locator('.title-screen').evaluate(node=>getComputedStyle(node).opacity)).toBe('1');
     const plane=page.locator('.ka-marine');
     expect(await plane.evaluate(node=>getComputedStyle(node).transform)).not.toBe('none');
     const pod=page.locator('use[href="#ka-pod"]').last();

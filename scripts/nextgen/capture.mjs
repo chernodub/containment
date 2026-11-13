@@ -165,6 +165,7 @@ try{
     },frame*frameStepMs);
     const evidence=await page.evaluate(inspectFrame);
     if(scenario.titleArtTimeline){
+     assert.equal(await page.locator('.title-screen').evaluate(node=>getComputedStyle(node).opacity),'1','Title shell exposed the hidden 3D cast');
      evidence.titleArt=await page.evaluate(()=>Object.fromEntries(['ka-emergency','ka-marine-reveal','ka-eyes-main'].map(name=>[name,Number(getComputedStyle(document.querySelector('.'+name)).opacity)])));
      if(frame===0){assert(evidence.titleArt['ka-marine-reveal']<=.061,'Marine reveal skipped its dark opening');assert.equal(evidence.titleArt['ka-eyes-main'],0,'Threat eyes opened before the light');}
      if(frame*frameStepMs>=1800){assert.equal(evidence.titleArt['ka-marine-reveal'],1);assert.equal(evidence.titleArt['ka-eyes-main'],1);}
