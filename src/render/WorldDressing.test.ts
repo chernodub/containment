@@ -24,11 +24,11 @@ function inside(x:number,z:number,polygon:readonly {x:number;y:number}[]){let va
 describe('G2 deterministic world dressing',()=>{
  it.each(ROOM_STORY_ROUTE.map(room=>[room.templateId,room.environment] as const))('%s retains its topology and bounds the material/triangle inventory', (id,environment)=>{
   const template=ROOM_TEMPLATES[id],before=JSON.stringify(template),world=platformWorld(template),root=addWorldDressing(world,template,environment,id,1729);
-  expect(JSON.stringify(template)).toBe(before);expect(root.userData.visualIdea).toBeTruthy();expect(root.children.length).toBeLessThanOrEqual(7);
+  expect(JSON.stringify(template)).toBe(before);expect(root.userData.visualIdea).toBeTruthy();expect(root.children.length).toBeLessThanOrEqual(7);expect(root.userData.constructionNewFinishes).toEqual([]);
   let triangles=0;root.traverse(o=>{if(o instanceof T.Mesh){triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;expect((o.material as T.Material).userData.actorMaterial).toBe(true);expect(Array.from(o.geometry.attributes.position.array).every(Number.isFinite)).toBe(true);}});
   expect(triangles).toBeLessThan(12000);
-  // All raised fitting vertices remain over the original nonwalkable solids,
-  // including authored sealed polygons used by passenger rows and the carousel.
+  // Raised fittings stay over the original nonwalkable solids; approved hull
+  // construction may extend outboard, while every interior navigation sample remains protected.
   root.traverse(object=>{
    if(!(object instanceof T.Mesh))return;
    const positions=object.geometry.attributes.position;
@@ -36,7 +36,8 @@ describe('G2 deterministic world dressing',()=>{
     if(positions.getY(i)<=.08)continue;
     const x=positions.getX(i)*32,z=positions.getZ(i)*32;
     const supported=template.obstacles.some(r=>x>=r.x-.01&&x<=r.x+r.width+.01&&z>=r.y-.01&&z<=r.y+r.height+.01)||!!template.voids?.some(polygon=>inside(x,z,polygon));
-    expect(supported,`${object.name} ${x}/${z} at ${positions.getY(i)}`).toBe(true);
+    const hull=template.boundary??[{x:0,y:0},{x:template.width,y:0},{x:template.width,y:template.height},{x:0,y:template.height}];
+    expect(supported||!inside(x,z,hull),`${object.name} ${x}/${z} at ${positions.getY(i)}`).toBe(true);
    }
   });
   disposeModel(root);for(const child of world.children)if(child instanceof T.Mesh){child.geometry.dispose();(child.material as T.Material).dispose();}
@@ -64,13 +65,13 @@ describe('G2 deterministic world dressing',()=>{
   expect(texture).toBeInstanceOf(T.DataTexture);expect(mesh.material.emissiveMap).toBe(texture);const image=texture.image as {width:number;height:number};expect(image.width*image.height).toBeLessThanOrEqual(65536);
   const retired=vi.spyOn(texture,'dispose');disposeModel(root);expect(retired).toHaveBeenCalledTimes(1);
  });
- it.each(['diagnostic-gallery','safety-interlock-station'] as const)('%s projects the full story quad in front of all foreground hardware',id=>{
-  const t=ROOM_TEMPLATES[id],world=new T.Group();
-  for(const [index,r] of t.obstacles.entries())appendEnvironment(world,environmentObstacle('engineering',{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},index,id));
-  environmentArchitecture(world,'engineering',t.width/32,t.height/32,id);
-  const root=addWorldDressing(world,t,'engineering',id),display=root.userData.storyDisplay as {center:number[];corners:number[][];normal:number[]};
-  addEnvironmentalStory(world,t,'engineering',id);
-  addRoomPracticals(world,t.width/32,t.height/32,'engineering');addInteriorPracticals(world,t,'engineering');
+ it.each(['diagnostic-gallery','safety-interlock-station','manual-control-chamber'] as const)('%s projects the full story quad in front of all foreground hardware',id=>{
+  const t=ROOM_TEMPLATES[id],world=new T.Group(),environment=id==='manual-control-chamber'?'reactor':'engineering';
+  for(const [index,r] of t.obstacles.entries())appendEnvironment(world,environmentObstacle(environment,{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},index,id));
+  environmentArchitecture(world,environment,t.width/32,t.height/32,id);
+  const root=addWorldDressing(world,t,environment,id),display=root.userData.storyDisplay as {center:number[];corners:number[][];normal:number[]};
+  addEnvironmentalStory(world,t,environment,id);
+  addRoomPracticals(world,t.width/32,t.height/32,environment);addInteriorPracticals(world,t,environment);
   expect(display.corners).toHaveLength(4);
   const camera=new T.PerspectiveCamera(28,16/9,.1,160),rig=new CameraRig();world.updateWorldMatrix(true,true);
   const desired=new T.Vector3(),scratch=new T.Vector3(),target=new T.Vector3();
@@ -106,7 +107,7 @@ describe('G2 deterministic world dressing',()=>{
  it('consumes the four Queen machinery islands asymmetrically inside their existing reservations',()=>{
   const t=ROOM_TEMPLATES['reactor-vault'],world=platformWorld(t),root=addWorldDressing(world,t,'reactor',t.id,1729);
   expect(root.userData.consumedArchitecture).toBe(4);expect(root.children.length).toBeLessThanOrEqual(7);
-  root.traverse(object=>{if(object instanceof T.Mesh){const p=object.geometry.getAttribute('position');for(let i=0;i<p.count;i++)if(p.getY(i)>.08){const x=p.getX(i)*32,z=p.getZ(i)*32;expect(t.obstacles.some(r=>x>=r.x-.01&&x<=r.x+r.width+.01&&z>=r.y-.01&&z<=r.y+r.height+.01)).toBe(true);}}});
+  root.traverse(object=>{if(object instanceof T.Mesh){const p=object.geometry.getAttribute('position');for(let i=0;i<p.count;i++)if(p.getY(i)>.08){const x=p.getX(i)*32,z=p.getZ(i)*32;expect(t.obstacles.some(r=>x>=r.x-.01&&x<=r.x+r.width+.01&&z>=r.y-.01&&z<=r.y+r.height+.01)||x<0||z<0||x>t.width||z>t.height).toBe(true);}}});
   disposeModel(world);
  });
  it('pulses retained material only, freezes reduced motion, and retires every room allocation once',()=>{

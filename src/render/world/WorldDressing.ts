@@ -74,7 +74,7 @@ function insideSolid(x:number,z:number,polygon:readonly {x:number;y:number}[]):b
 }
 
 /** Authored solids are polygons. Only fully-contained roof tiles may carry raised detail. */
-function equipmentReservations(template:RoomTemplate,templateId:string):Array<{x:number;y:number;width:number;height:number}> {
+export function equipmentReservations(template:RoomTemplate,templateId:string):Array<{x:number;y:number;width:number;height:number}> {
   const reservations=[...template.obstacles];
   if(templateId==='passenger-vault'||templateId==='awakening-bay')return reservations;
   const polygons=templateId==='communal-atrium'?COMMUNAL_ATRIUM_BLOCKOUT.filter(f=>f.kind==='table').map(f=>f.footprint):template.voids??[];
@@ -281,7 +281,13 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     }
     root.userData.breachCount=index+1;
   }
-  addConstructionLanguage(world,root,template,environment,templateId,{box,add},{steel,dark,paint,resin,vein,signal});
+  const previousConstructionBuckets=new Set(buckets.keys());
+  // An authored form may reuse only an already-populated finish: no new room draw.
+  const constructionFallback=buckets.has(steel)?steel:buckets.keys().next().value??dark;
+  const retainedConstructionFinish=(material:T.Material)=>buckets.has(material)?material:constructionFallback;
+  const constructionFinishes={steel:retainedConstructionFinish(steel),dark:retainedConstructionFinish(dark),paint:retainedConstructionFinish(paint),resin:retainedConstructionFinish(resin),vein:retainedConstructionFinish(vein),signal:retainedConstructionFinish(signal)};
+  addConstructionLanguage(world,root,template,environment,templateId,{box,add},constructionFinishes,reservations);
+  root.userData.constructionNewFinishes=[...buckets.keys()].filter(material=>!previousConstructionBuckets.has(material)).map(material=>material.name);
   root.userData.fittings=fittings;root.userData.growthIntensity=vein.emissiveIntensity;
   root.userData.leakPositions=leakPositions;
   root.userData.leakOrigins=leakOrigins;
