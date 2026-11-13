@@ -1,14 +1,14 @@
 # Nature Kit
 
 Author: Kenney. Source: https://kenney.nl/assets/nature-kit
-License: CC0 1.0 Universal. Author's original dedication: [LICENSE.txt](LICENSE.txt).
+License: CC0 1.0 Universal. Original author dedication: [LICENSE.txt](LICENSE.txt).
 Downloaded: 2026-11-13. Archive SHA-256: `fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d`.
 
 Author page and original archive license both explicitly identify CC0. The original author license is preserved verbatim. Full archive inventory: [source-files.json](source-files.json); selected source/output sizes and SHA-256: [manifest.json](manifest.json). Sources remain excluded from git.
 
-Conversion: Author GLB geometry, world transforms baked, origin centered at footprint/base, source palette sampled into body/dark/trim/accent/cloth roles, textures/UVs removed, weld/dedup/prune, no decoder extension.
+Conversion: Author static glTF/GLB geometry, world transforms baked, origin centered at footprint/base, source palette sampled into body/dark/trim/accent/cloth roles, textures/UVs removed, weld/dedup/prune; Quaternius only: meshoptimizer simplify target25%, relative error<=1%; no decoder extension.
 
-Shipped file: kit.glb, 34396 bytes, SHA-256 `31aee3281d314c0c1db4a6e0792a611e5207b5d29583fec2e9fc302e5fec2398`.
+Shipped file: kit.glb, 34424 bytes, SHA-256 `7ed72ebbc5fa56ac731ce2d1be774e5b59802a6f13593a44e0509b58222bc423`.
 
 ## Selected original models
 

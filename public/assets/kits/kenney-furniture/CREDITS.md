@@ -1,14 +1,14 @@
 # Furniture Kit
 
 Author: Kenney. Source: https://kenney.nl/assets/furniture-kit
-License: CC0 1.0 Universal. Author's original dedication: [LICENSE.txt](LICENSE.txt).
+License: CC0 1.0 Universal. Original author dedication: [LICENSE.txt](LICENSE.txt).
 Downloaded: 2026-11-13. Archive SHA-256: `e67652d0932cee41683f74711c03d3e192a2af9979ef8e6b237711f5482d46b0`.
 
 Author page and original archive license both explicitly identify CC0. The original author license is preserved verbatim. Full archive inventory: [source-files.json](source-files.json); selected source/output sizes and SHA-256: [manifest.json](manifest.json). Sources remain excluded from git.
 
-Conversion: Author GLB geometry, world transforms baked, origin centered at footprint/base, source palette sampled into body/dark/trim/accent/cloth roles, textures/UVs removed, weld/dedup/prune, no decoder extension.
+Conversion: Author static glTF/GLB geometry, world transforms baked, origin centered at footprint/base, source palette sampled into body/dark/trim/accent/cloth roles, textures/UVs removed, weld/dedup/prune; Quaternius only: meshoptimizer simplify target25%, relative error<=1%; no decoder extension.
 
-Shipped file: kit.glb, 116296 bytes, SHA-256 `c42fd78e1aa0087c324cfce59330d7c61f5b38c30defe5a359c0a85a8a08a48c`.
+Shipped file: kit.glb, 116712 bytes, SHA-256 `f17d6f9ab072f3a83c43e9fe1cf2834017275fbe71c14edb96adca6bb9f84bc8`.
 
 ## Selected original models
 

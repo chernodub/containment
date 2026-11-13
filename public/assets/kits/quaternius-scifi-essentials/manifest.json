@@ -1,0 +1,796 @@
+{
+  "pack": "Sci-Fi Essentials Kit (Standard)",
+  "author": "Quaternius",
+  "sourceURL": "https://quaternius.com/packs/scifiessentialskit.html",
+  "license": "CC0-1.0",
+  "licenseEvidence": [
+    "https://quaternius.com/packs/scifiessentialskit.html",
+    "https://opengameart.org/content/sci-fi-essentials-kit"
+  ],
+  "downloadDate": "2026-11-13",
+  "archiveSHA256": "f5cb9382a029730f9fa8f93e7fdb103c1aaaec094a22b1397833ce0e48bd1016",
+  "archiveFileListSHA256": "a91c50a303f64ec59e6a46d2f22131c313fb4c0fb2ce82e54179fb770cbcdeb8",
+  "output": {
+    "file": "kit.glb",
+    "bytes": 960656,
+    "sha256": "5d22c38307cb32495a19fc4df5ac07b1725c81d3ff7a561e3cd344816d4492f7"
+  },
+  "models": [
+    {
+      "name": "Prop_Ammo",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Ammo.gltf",
+      "sourceSHA256": "99159f5e3497fef89bbeaa2f32f4b4dbc8438eabe88aa04dd1742141fb113273",
+      "sourceBytes": 2216,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch2_Normal.png",
+          "bytes": 770775,
+          "sha256": "5dc16d40e5e92c956f0fdbeea346d2b6792f9f25b13addee5f33d984d75072aa"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch2_BaseColor.png",
+          "bytes": 450209,
+          "sha256": "e94bc5ac9bd7c0d5771936da662bbed9c8fa8cb44d9ec51b59ccd6512104b4cc"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch2_ORM.png",
+          "bytes": 931537,
+          "sha256": "30a45c78f17e41d6e85a1caedbeac5974121fe1aa8095f1a4887a9ab1ea1fab1"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Ammo.bin",
+          "bytes": 242532,
+          "sha256": "4206ac93be5498845036af5211fea692a35a3f0b73344c04838c8a1468bc96b7"
+        }
+      ],
+      "triangles": 7366,
+      "size": [
+        0.5706620812416077,
+        0.28191767912358046,
+        0.722870260477066
+      ],
+      "outputTriangles": 2681
+    },
+    {
+      "name": "Prop_Ammo_Closed",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Ammo_Closed.gltf",
+      "sourceSHA256": "2999c942bc91217be16e8e52f1faeb5c68c9b07105e8ced338cad8888389a3dc",
+      "sourceBytes": 2226,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch2_Normal.png",
+          "bytes": 770775,
+          "sha256": "5dc16d40e5e92c956f0fdbeea346d2b6792f9f25b13addee5f33d984d75072aa"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch2_BaseColor.png",
+          "bytes": 450209,
+          "sha256": "e94bc5ac9bd7c0d5771936da662bbed9c8fa8cb44d9ec51b59ccd6512104b4cc"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch2_ORM.png",
+          "bytes": 931537,
+          "sha256": "30a45c78f17e41d6e85a1caedbeac5974121fe1aa8095f1a4887a9ab1ea1fab1"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Ammo_Closed.bin",
+          "bytes": 101032,
+          "sha256": "3d33965dffdd723cd20b218ecd54642d6d705545b2d6d1c7ef3ab59a131a2577"
+        }
+      ],
+      "triangles": 2316,
+      "size": [
+        0.5706620812416077,
+        0.41216890793293715,
+        0.722870260477066
+      ],
+      "outputTriangles": 1010
+    },
+    {
+      "name": "Prop_Barrel1",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Barrel1.gltf",
+      "sourceSHA256": "b22e5ec50459b4e4a044941cbe523653d4001824d6238654c91819efac44d7cc",
+      "sourceBytes": 2226,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch1_Normal.png",
+          "bytes": 838136,
+          "sha256": "3a0d462366e5d03ef13fb35efc97c38c2463c118a89e303d356bac54d941d4ee"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch1_BaseColor.png",
+          "bytes": 298258,
+          "sha256": "b8428a3df1d8e920e185d7a76bb6755f6ecbda3259d963263c92c149e94d85ca"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch1_ORM.png",
+          "bytes": 842901,
+          "sha256": "4ec5e8db4c8cf5e849461d76bfeeb3d9e722380696c6688911e4751745d8021e"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Barrel1.bin",
+          "bytes": 97472,
+          "sha256": "131b5646895f15c197e2c5a89b001033838bbdf2ef5f99abb1dcc7a0821e2acf"
+        }
+      ],
+      "triangles": 2352,
+      "size": [
+        0.7220181226730347,
+        1.1111057420577595,
+        0.64854696393013
+      ],
+      "outputTriangles": 1198
+    },
+    {
+      "name": "Prop_Barrel2_Closed",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Barrel2_Closed.gltf",
+      "sourceSHA256": "091626d31266b76acbd6ed82ffe0efd9dc7cdcb20e49a1b94bc5a17106ae87f4",
+      "sourceBytes": 2239,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch1_Normal.png",
+          "bytes": 838136,
+          "sha256": "3a0d462366e5d03ef13fb35efc97c38c2463c118a89e303d356bac54d941d4ee"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch1_BaseColor.png",
+          "bytes": 298258,
+          "sha256": "b8428a3df1d8e920e185d7a76bb6755f6ecbda3259d963263c92c149e94d85ca"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch1_ORM.png",
+          "bytes": 842901,
+          "sha256": "4ec5e8db4c8cf5e849461d76bfeeb3d9e722380696c6688911e4751745d8021e"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Barrel2_Closed.bin",
+          "bytes": 157176,
+          "sha256": "b477e6ca1d3cd0bf10ad020672bc74824ce4a7d4593b44caec281a76f9ebb197"
+        }
+      ],
+      "triangles": 4180,
+      "size": [
+        0.5422042608261108,
+        0.7661127719482685,
+        0.5422039330005646
+      ],
+      "outputTriangles": 1493
+    },
+    {
+      "name": "Prop_Barrel2_Open",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Barrel2_Open.gltf",
+      "sourceSHA256": "7ca34636f23bea2ab51b008977aa3b74deb82126d0e6068543b8a586a86a15df",
+      "sourceBytes": 2236,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch1_Normal.png",
+          "bytes": 838136,
+          "sha256": "3a0d462366e5d03ef13fb35efc97c38c2463c118a89e303d356bac54d941d4ee"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch1_BaseColor.png",
+          "bytes": 298258,
+          "sha256": "b8428a3df1d8e920e185d7a76bb6755f6ecbda3259d963263c92c149e94d85ca"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch1_ORM.png",
+          "bytes": 842901,
+          "sha256": "4ec5e8db4c8cf5e849461d76bfeeb3d9e722380696c6688911e4751745d8021e"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Barrel2_Open.bin",
+          "bytes": 157176,
+          "sha256": "6c79ff4b69c9fabfeb141de02a04a367fa2c035eb074662f8e54bcf241a0ee23"
+        }
+      ],
+      "triangles": 4180,
+      "size": [
+        0.5422042608261108,
+        1.096023348291805,
+        0.5422039330005646
+      ],
+      "outputTriangles": 1376
+    },
+    {
+      "name": "Prop_Chair",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Chair.gltf",
+      "sourceSHA256": "3b87c634abb635344606102d4272a7b2448b5ce64cab96cda41433cb4278d377",
+      "sourceBytes": 3629,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_Normal.png",
+          "bytes": 375307,
+          "sha256": "b2c3238cbe2586e44df0b00179adf85e5b7ac7fed1713ec0b807482245a30738"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_Cables.png",
+          "bytes": 779284,
+          "sha256": "758a95beccdc9f0621d8b8a283ee2593e04b56f1cd32776165ec85e1568e8eb8"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_ORM.png",
+          "bytes": 3009230,
+          "sha256": "c57134b5d496b39b955a87765ea32b93567b1ab494fe6b890de24c75dcfd6fe4"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_BaseColor.png",
+          "bytes": 1285125,
+          "sha256": "2a15eadbedbc928d771ed8f2a7a8c1a16bce89b2836a0ecf34ece7e2fab96769"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Chair.bin",
+          "bytes": 35924,
+          "sha256": "2a127ae035fb1efb80b50bc85bd86cb7f99acb8dec496609a759029f88b18fee"
+        }
+      ],
+      "triangles": 1134,
+      "size": [
+        0.8806595802307129,
+        1.64174918923527,
+        1.1224296689033508
+      ],
+      "outputTriangles": 360
+    },
+    {
+      "name": "Prop_Crate",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Crate.gltf",
+      "sourceSHA256": "593077978159b4d5283a60a291f5b55b80915896d82b0218dc3e5de2f92c3d6a",
+      "sourceBytes": 2186,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Crates_Normal.png",
+          "bytes": 12047004,
+          "sha256": "9fe8aa4951198c0dd3e06a41cd7aca1e50e308c2629f620f4d5be53dfc835b21"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Crates_BaseColor.png",
+          "bytes": 5601390,
+          "sha256": "79d604644b8ef63731735cfb29a4a9ded81598d20ecffe75e2af3fd9e18d255c"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Crates_ORM.png",
+          "bytes": 11086609,
+          "sha256": "a36b59d07082dde265f13689f0acaacfa0cfb22b4769a2dad1bad282a39bf795"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Crate.bin",
+          "bytes": 211872,
+          "sha256": "ec472c1c9ea48727d2a40085365b4bad6031a785b75b2dae083291bc1d295752"
+        }
+      ],
+      "triangles": 3984,
+      "size": [
+        1.5689852833747864,
+        1.5000003767199814,
+        1.5
+      ],
+      "outputTriangles": 2786
+    },
+    {
+      "name": "Prop_Crate_Large",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Crate_Large.gltf",
+      "sourceSHA256": "2b54a8fd4da534507ff3bd976f97abfe2b8ee2106dd934a73890248e33f8014a",
+      "sourceBytes": 2226,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Crates_Normal.png",
+          "bytes": 12047004,
+          "sha256": "9fe8aa4951198c0dd3e06a41cd7aca1e50e308c2629f620f4d5be53dfc835b21"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Crates_BaseColor.png",
+          "bytes": 5601390,
+          "sha256": "79d604644b8ef63731735cfb29a4a9ded81598d20ecffe75e2af3fd9e18d255c"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Crates_ORM.png",
+          "bytes": 11086609,
+          "sha256": "a36b59d07082dde265f13689f0acaacfa0cfb22b4769a2dad1bad282a39bf795"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Crate_Large.bin",
+          "bytes": 218528,
+          "sha256": "5f79642b6a60ed000a86477444c0c7a26197fd0df32b24d2bc9985092945d268"
+        }
+      ],
+      "triangles": 4016,
+      "size": [
+        3.4660485982894897,
+        1.5000015201512724,
+        1.500000238418579
+      ],
+      "outputTriangles": 2569
+    },
+    {
+      "name": "Prop_Crate_Tarp",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Crate_Tarp.gltf",
+      "sourceSHA256": "4635986fa77090d1166bf1785856f450478c954902db9ddd8f43a7cf1ed5ab0c",
+      "sourceBytes": 2223,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Crates_Normal.png",
+          "bytes": 12047004,
+          "sha256": "9fe8aa4951198c0dd3e06a41cd7aca1e50e308c2629f620f4d5be53dfc835b21"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Crates_BaseColor.png",
+          "bytes": 5601390,
+          "sha256": "79d604644b8ef63731735cfb29a4a9ded81598d20ecffe75e2af3fd9e18d255c"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Crates_ORM.png",
+          "bytes": 11086609,
+          "sha256": "a36b59d07082dde265f13689f0acaacfa0cfb22b4769a2dad1bad282a39bf795"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Crate_Tarp.bin",
+          "bytes": 127736,
+          "sha256": "57dae62dbefc34f0649dfa0c2e9483be689e53a13a4fa3a83340d189f8dbe4cc"
+        }
+      ],
+      "triangles": 2964,
+      "size": [
+        1.7167899012565613,
+        1.5675698118284345,
+        1.7149025201797485
+      ],
+      "outputTriangles": 1516
+    },
+    {
+      "name": "Prop_Crate_Tarp_Large",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Crate_Tarp_Large.gltf",
+      "sourceSHA256": "617c76ecbff5c4d1e147f6af8e248f0f596a1118c56834365598833729662973",
+      "sourceBytes": 2238,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Crates_Normal.png",
+          "bytes": 12047004,
+          "sha256": "9fe8aa4951198c0dd3e06a41cd7aca1e50e308c2629f620f4d5be53dfc835b21"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Crates_BaseColor.png",
+          "bytes": 5601390,
+          "sha256": "79d604644b8ef63731735cfb29a4a9ded81598d20ecffe75e2af3fd9e18d255c"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Crates_ORM.png",
+          "bytes": 11086609,
+          "sha256": "a36b59d07082dde265f13689f0acaacfa0cfb22b4769a2dad1bad282a39bf795"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Crate_Tarp_Large.bin",
+          "bytes": 189648,
+          "sha256": "91e6ffcc4635b4964ecfc3ca073f85ea1c359212591b3866fd123620fc31ddc3"
+        }
+      ],
+      "triangles": 4472,
+      "size": [
+        3.2196247577667236,
+        1.5675704190507531,
+        1.7167905569076538
+      ],
+      "outputTriangles": 2174
+    },
+    {
+      "name": "Prop_Desk_Small",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Desk_Small.gltf",
+      "sourceSHA256": "b902113328237fd29e3dae13d61888fb861b1db24143705403933e7d772de6a1",
+      "sourceBytes": 5415,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_Normal.png",
+          "bytes": 375307,
+          "sha256": "b2c3238cbe2586e44df0b00179adf85e5b7ac7fed1713ec0b807482245a30738"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_Cables.png",
+          "bytes": 779284,
+          "sha256": "758a95beccdc9f0621d8b8a283ee2593e04b56f1cd32776165ec85e1568e8eb8"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_ORM.png",
+          "bytes": 3009230,
+          "sha256": "c57134b5d496b39b955a87765ea32b93567b1ab494fe6b890de24c75dcfd6fe4"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_BaseColor.png",
+          "bytes": 1285125,
+          "sha256": "2a15eadbedbc928d771ed8f2a7a8c1a16bce89b2836a0ecf34ece7e2fab96769"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_Normal.png",
+          "bytes": 585626,
+          "sha256": "1aec7ad47a642fc68216b5a3119341b7dca038c1fc9493df8a15ad4aa27ddbcf"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_BaseColor_Red.png",
+          "bytes": 965873,
+          "sha256": "15fc0e344ed35483bc771aaa95c1c2a0b0ec2349a893cf24af18b8742f0842ac"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_ORM.png",
+          "bytes": 3338790,
+          "sha256": "6ab7ad231df22867652048ebfd602684a9072d45c483ca57df0fcd4cb2cb4feb"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Desk_Small.bin",
+          "bytes": 20128,
+          "sha256": "5fe24035cb2abd5cdc9c49644e6e5b26d00c94dc73abb8e4b58f0e6619b24c37"
+        }
+      ],
+      "triangles": 496,
+      "size": [
+        2.0634689331054688,
+        0.9396035671234131,
+        1.02888023853302
+      ],
+      "outputTriangles": 160
+    },
+    {
+      "name": "Prop_Desk_Medium",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Desk_Medium.gltf",
+      "sourceSHA256": "6f26a2a78898ca79e2593fa4bae7bd95ef9e914ca56c0a0492a65ab0217f6a6a",
+      "sourceBytes": 5521,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_Normal.png",
+          "bytes": 375307,
+          "sha256": "b2c3238cbe2586e44df0b00179adf85e5b7ac7fed1713ec0b807482245a30738"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_Cables.png",
+          "bytes": 779284,
+          "sha256": "758a95beccdc9f0621d8b8a283ee2593e04b56f1cd32776165ec85e1568e8eb8"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_ORM.png",
+          "bytes": 3009230,
+          "sha256": "c57134b5d496b39b955a87765ea32b93567b1ab494fe6b890de24c75dcfd6fe4"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_BaseColor.png",
+          "bytes": 1285125,
+          "sha256": "2a15eadbedbc928d771ed8f2a7a8c1a16bce89b2836a0ecf34ece7e2fab96769"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_Normal.png",
+          "bytes": 585626,
+          "sha256": "1aec7ad47a642fc68216b5a3119341b7dca038c1fc9493df8a15ad4aa27ddbcf"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_BaseColor_Red.png",
+          "bytes": 965873,
+          "sha256": "15fc0e344ed35483bc771aaa95c1c2a0b0ec2349a893cf24af18b8742f0842ac"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_ORM.png",
+          "bytes": 3338790,
+          "sha256": "6ab7ad231df22867652048ebfd602684a9072d45c483ca57df0fcd4cb2cb4feb"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Desk_Medium.bin",
+          "bytes": 20688,
+          "sha256": "5eaf07f59c8cd58374c6da564210e95b17ee11fc71a86eaa53c5472abab62ed5"
+        }
+      ],
+      "triangles": 504,
+      "size": [
+        2.843118667602539,
+        0.9396037093625296,
+        1.0288802683353424
+      ],
+      "outputTriangles": 141
+    },
+    {
+      "name": "Prop_Locker",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Locker.gltf",
+      "sourceSHA256": "99ce345d2d751ad23a20ef3153bc82a85d4d1cbc5787074fc1c54a3278f295c1",
+      "sourceBytes": 2153,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_02_Normal.png",
+          "bytes": 756841,
+          "sha256": "7faaa7059192f43aded9cc2f93917dd54fd14545509c37318d4e6bf0a8104960"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_02_BaseColor.png",
+          "bytes": 1125543,
+          "sha256": "7b13c6a7d82b434314237c4b1930b8e12ddc69a70ffef28d73cbd178d3ff6293"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_02_ORM.png",
+          "bytes": 3994352,
+          "sha256": "2a433e6a7fbcec375b5c5e5c7aa57dbe1fd23ca6592f48c52d09dde2d622aab8"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Locker.bin",
+          "bytes": 17712,
+          "sha256": "02ff3313a5905d349db9f2116d4effb942e904577aecb0f74a77371183910736"
+        }
+      ],
+      "triangles": 424,
+      "size": [
+        0.9830201864242554,
+        2.6685118675231934,
+        0.4993797838687897
+      ],
+      "outputTriangles": 106
+    },
+    {
+      "name": "Prop_HealthPack_Tube",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_HealthPack_Tube.gltf",
+      "sourceSHA256": "7d8c3210629244410a4fba5c7debaa9d5ae355b87ef71cead3f57d1a989ec2c2",
+      "sourceBytes": 2231,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch2_Normal.png",
+          "bytes": 770775,
+          "sha256": "5dc16d40e5e92c956f0fdbeea346d2b6792f9f25b13addee5f33d984d75072aa"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch2_BaseColor.png",
+          "bytes": 450209,
+          "sha256": "e94bc5ac9bd7c0d5771936da662bbed9c8fa8cb44d9ec51b59ccd6512104b4cc"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Props_Batch2_ORM.png",
+          "bytes": 931537,
+          "sha256": "30a45c78f17e41d6e85a1caedbeac5974121fe1aa8095f1a4887a9ab1ea1fab1"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_HealthPack_Tube.bin",
+          "bytes": 13816,
+          "sha256": "916be0c81f05cec3ffc5931163472519bd946e78e76d333389d6f7cecf9e53eb"
+        }
+      ],
+      "triangles": 340,
+      "size": [
+        0.14953993260860443,
+        0.31456969678401947,
+        0.14953996241092682
+      ],
+      "outputTriangles": 338
+    },
+    {
+      "name": "Prop_Mug",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Mug.gltf",
+      "sourceSHA256": "81c6aca3656b84a338db681729f3a7e2abff11ceca19bed1fbe2739aaa8a5107",
+      "sourceBytes": 2172,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_Normal.png",
+          "bytes": 375307,
+          "sha256": "b2c3238cbe2586e44df0b00179adf85e5b7ac7fed1713ec0b807482245a30738"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_BaseColor.png",
+          "bytes": 1285125,
+          "sha256": "2a15eadbedbc928d771ed8f2a7a8c1a16bce89b2836a0ecf34ece7e2fab96769"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_ORM.png",
+          "bytes": 3009230,
+          "sha256": "c57134b5d496b39b955a87765ea32b93567b1ab494fe6b890de24c75dcfd6fe4"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Mug.bin",
+          "bytes": 16688,
+          "sha256": "f0f0d8556e573b4aa9f2a54bbf16ad6c346f6040a475e311b20df14c4ba6c9dc"
+        }
+      ],
+      "triangles": 552,
+      "size": [
+        0.1825122907757759,
+        0.1718283363734372,
+        0.1324526071548462
+      ],
+      "outputTriangles": 362
+    },
+    {
+      "name": "Prop_SatelliteDish",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_SatelliteDish.gltf",
+      "sourceSHA256": "2d311ee9fa42ebc541036d934de2ceb989364c1e724de14a4b21b2e901a51b21",
+      "sourceBytes": 5732,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_Normal.png",
+          "bytes": 585626,
+          "sha256": "1aec7ad47a642fc68216b5a3119341b7dca038c1fc9493df8a15ad4aa27ddbcf"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_BaseColor_Red.png",
+          "bytes": 965873,
+          "sha256": "15fc0e344ed35483bc771aaa95c1c2a0b0ec2349a893cf24af18b8742f0842ac"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_ORM.png",
+          "bytes": 3338790,
+          "sha256": "6ab7ad231df22867652048ebfd602684a9072d45c483ca57df0fcd4cb2cb4feb"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_02_Normal.png",
+          "bytes": 756841,
+          "sha256": "7faaa7059192f43aded9cc2f93917dd54fd14545509c37318d4e6bf0a8104960"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_02_BaseColor_Red.png",
+          "bytes": 1150649,
+          "sha256": "4a08abf8dc0a5bf558a0ae38dc0d70eddc328eaa8060725d07b95d7c8a75663c"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_02_ORM.png",
+          "bytes": 3994352,
+          "sha256": "2a433e6a7fbcec375b5c5e5c7aa57dbe1fd23ca6592f48c52d09dde2d622aab8"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_Normal.png",
+          "bytes": 375307,
+          "sha256": "b2c3238cbe2586e44df0b00179adf85e5b7ac7fed1713ec0b807482245a30738"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_Cables.png",
+          "bytes": 779284,
+          "sha256": "758a95beccdc9f0621d8b8a283ee2593e04b56f1cd32776165ec85e1568e8eb8"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_03_ORM.png",
+          "bytes": 3009230,
+          "sha256": "c57134b5d496b39b955a87765ea32b93567b1ab494fe6b890de24c75dcfd6fe4"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_SatelliteDish.bin",
+          "bytes": 120100,
+          "sha256": "70bca5b61df2904589b666ddef044ea3b25c5fc69697d395d2e1fdbc9d036a58"
+        }
+      ],
+      "triangles": 3302,
+      "size": [
+        1.84011709690094,
+        5.794862058013678,
+        2.779226779937744
+      ],
+      "outputTriangles": 894
+    },
+    {
+      "name": "Prop_Shelves_ThinShort",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Shelves_ThinShort.gltf",
+      "sourceSHA256": "e90fd40a9e04afd53616615cd24c2da844301edccf5e8cb92f726bbca19b29ee",
+      "sourceBytes": 2429,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_Normal.png",
+          "bytes": 585626,
+          "sha256": "1aec7ad47a642fc68216b5a3119341b7dca038c1fc9493df8a15ad4aa27ddbcf"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_BaseColor_Red.png",
+          "bytes": 965873,
+          "sha256": "15fc0e344ed35483bc771aaa95c1c2a0b0ec2349a893cf24af18b8742f0842ac"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_ORM.png",
+          "bytes": 3338790,
+          "sha256": "6ab7ad231df22867652048ebfd602684a9072d45c483ca57df0fcd4cb2cb4feb"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Shelves_ThinShort.bin",
+          "bytes": 76048,
+          "sha256": "269874ce280233e5dc418fe252633fd123649ca9f7fc5c740eea41ab8adb3aa3"
+        }
+      ],
+      "triangles": 2232,
+      "size": [
+        1.3723626136779785,
+        1.2103599905967712,
+        0.540682315826416
+      ],
+      "outputTriangles": 648
+    },
+    {
+      "name": "Prop_Shelves_ThinTall",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Shelves_ThinTall.gltf",
+      "sourceSHA256": "6fffd2c3a37d736298b3f693c601e422ac2b2f8a62b7b50c2a747d010dd92675",
+      "sourceBytes": 2429,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_Normal.png",
+          "bytes": 585626,
+          "sha256": "1aec7ad47a642fc68216b5a3119341b7dca038c1fc9493df8a15ad4aa27ddbcf"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_BaseColor_Red.png",
+          "bytes": 965873,
+          "sha256": "15fc0e344ed35483bc771aaa95c1c2a0b0ec2349a893cf24af18b8742f0842ac"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_ORM.png",
+          "bytes": 3338790,
+          "sha256": "6ab7ad231df22867652048ebfd602684a9072d45c483ca57df0fcd4cb2cb4feb"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Shelves_ThinTall.bin",
+          "bytes": 145328,
+          "sha256": "a72089723b62b0f6a2de6d93c9d320cb0b8f4e45dae01dea6527c6e6405ee836"
+        }
+      ],
+      "triangles": 4360,
+      "size": [
+        1.3723626136779785,
+        2.6699807047843933,
+        0.540682315826416
+      ],
+      "outputTriangles": 1123
+    },
+    {
+      "name": "Prop_Shelves_WideShort",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Shelves_WideShort.gltf",
+      "sourceSHA256": "96f68e5e43fc23f8f781d7d1eb9f96afa82b2988f04dd005e4f963ed2d21e242",
+      "sourceBytes": 2429,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_Normal.png",
+          "bytes": 585626,
+          "sha256": "1aec7ad47a642fc68216b5a3119341b7dca038c1fc9493df8a15ad4aa27ddbcf"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_BaseColor_Red.png",
+          "bytes": 965873,
+          "sha256": "15fc0e344ed35483bc771aaa95c1c2a0b0ec2349a893cf24af18b8742f0842ac"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_ORM.png",
+          "bytes": 3338790,
+          "sha256": "6ab7ad231df22867652048ebfd602684a9072d45c483ca57df0fcd4cb2cb4feb"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Shelves_WideShort.bin",
+          "bytes": 76048,
+          "sha256": "721721fc19d6a9f93de487237f28e7f9539fff62ead8515afdd31d9f5411d73f"
+        }
+      ],
+      "triangles": 2232,
+      "size": [
+        1.976539969444275,
+        1.2103599905967712,
+        0.540682315826416
+      ],
+      "outputTriangles": 622
+    },
+    {
+      "name": "Prop_Shelves_WideTall",
+      "sourceFile": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Shelves_WideTall.gltf",
+      "sourceSHA256": "5ae989d2547cb9331bf13fe078938c254645f85b5213105c91989577fc5011d9",
+      "sourceBytes": 2429,
+      "dependencies": [
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_Normal.png",
+          "bytes": 585626,
+          "sha256": "1aec7ad47a642fc68216b5a3119341b7dca038c1fc9493df8a15ad4aa27ddbcf"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_BaseColor_Red.png",
+          "bytes": 965873,
+          "sha256": "15fc0e344ed35483bc771aaa95c1c2a0b0ec2349a893cf24af18b8742f0842ac"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/T_Trim_01_ORM.png",
+          "bytes": 3338790,
+          "sha256": "6ab7ad231df22867652048ebfd602684a9072d45c483ca57df0fcd4cb2cb4feb"
+        },
+        {
+          "file": "tools/assets-src/quaternius-scifi-essentials/inspected/glTF/Prop_Shelves_WideTall.bin",
+          "bytes": 145328,
+          "sha256": "b44561a46f711db92ecfc70f9f6bb6c930ddd77a8e29947cd8d77203363cd1d1"
+        }
+      ],
+      "triangles": 4360,
+      "size": [
+        1.976539969444275,
+        2.6699807047843933,
+        0.540682315826416
+      ],
+      "outputTriangles": 1122
+    }
+  ],
+  "pipeline": "Author static glTF/GLB geometry, world transforms baked, origin centered at footprint/base, source palette sampled into body/dark/trim/accent/cloth roles, textures/UVs removed, weld/dedup/prune; Quaternius only: meshoptimizer simplify target25%, relative error<=1%; no decoder extension."
+}

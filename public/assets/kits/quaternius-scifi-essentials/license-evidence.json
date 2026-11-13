@@ -1,0 +1,7 @@
+{
+  "authorPageSHA256": "8e7e0ac49d352768658beabebfa39ecdecf656c953676041d889d9379e1716f5",
+  "authorUploadPageSHA256": "ff5991be8228a872e3ef8899e5a48c27f69a3a04a920980c67dfd38ef93ae4ac",
+  "textureArchiveSHA256": "d80b61c7be7200c68e584f25292df6d0620516d5eb4d2043aec2cc54decb1e55",
+  "textureArchiveUsed": false,
+  "note": "The model archive already contains the selected glTF texture dependencies; the separately downloaded matching texture archive was assessed but is not required."
+}

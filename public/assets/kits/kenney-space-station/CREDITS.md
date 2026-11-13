@@ -1,14 +1,14 @@
 # Space Station Kit
 
 Author: Kenney. Source: https://kenney.nl/assets/space-station-kit
-License: CC0 1.0 Universal. Author's original dedication: [LICENSE.txt](LICENSE.txt).
+License: CC0 1.0 Universal. Original author dedication: [LICENSE.txt](LICENSE.txt).
 Downloaded: 2026-11-13. Archive SHA-256: `215e79bd5415cff93665183390f0343ed9acf87780306331013b78520170c6d8`.
 
 Author page and original archive license both explicitly identify CC0. The original author license is preserved verbatim. Full archive inventory: [source-files.json](source-files.json); selected source/output sizes and SHA-256: [manifest.json](manifest.json). Sources remain excluded from git.
 
-Conversion: Author GLB geometry, world transforms baked, origin centered at footprint/base, source palette sampled into body/dark/trim/accent/cloth roles, textures/UVs removed, weld/dedup/prune, no decoder extension.
+Conversion: Author static glTF/GLB geometry, world transforms baked, origin centered at footprint/base, source palette sampled into body/dark/trim/accent/cloth roles, textures/UVs removed, weld/dedup/prune; Quaternius only: meshoptimizer simplify target25%, relative error<=1%; no decoder extension.
 
-Shipped file: kit.glb, 104292 bytes, SHA-256 `7392a8503587ebe96547abfdc21e84e378f7599ec6e915910484a8c1f34e0dc2`.
+Shipped file: kit.glb, 138332 bytes, SHA-256 `27db3846caef2e2b83db8e7eddd773c4e7b822a0782a6189fc7037aa1d1b72f4`.
 
 ## Selected original models
 
@@ -16,6 +16,7 @@ Shipped file: kit.glb, 104292 bytes, SHA-256 `7392a8503587ebe96547abfdc21e84e378
 - bed-single-cover.glb — 1fd3738b10f71de374d8c3ac6fd69edf397866c822ce42bc805b7c929a7acee8
 - chair-cushion.glb — c46da13f8891d38331142972ec53275490cbad4ed3693af6565f974738af12cc
 - computer.glb — dede29d81fd122c484af3e0dbf566f34893ed0f3c80182586feb19b23c33c0b7
+- computer-screen.glb — dd2a95a9c46f430e6fd0d2af6c6a94b4542d0501dda2700504642cecc33369e3
 - computer-wide.glb — 62420ce928f288f91ce85e2245e80e6c9efbee9b6e91b7ea9b83d0289fa647c4
 - computer-system.glb — 87666d5211fdce8830d1abf55fab16bc21d67714d78f9525f1399c33c4cb54bb
 - display-wall-wide.glb — 27b9b2cddd27ac6c5590d98af6ff71e5bb23fb621f171974cbdb661b4b54f1d0
@@ -33,3 +34,6 @@ Shipped file: kit.glb, 104292 bytes, SHA-256 `7392a8503587ebe96547abfdc21e84e378
 - rail.glb — fda7cd2ab910db8e251345a9b488a41bd55da2f55627ad4344653c9d6d5c088f
 - wall-detail.glb — 7cee7abe1ea412acdf182da770bd3920bf023ecd165d5c9b3db3a60a0d7ae7d8
 - wall-switch.glb — 2b297783053aa9b091972f31f5fc3892b7cb7572d017dd37fc22af9ac2640c20
+- wall.glb — 561253375e765f825899d13031e52c07b84304d394e1d69579e0749e23fba42f
+- wall-window.glb — 55053731040bad9e0a02cd5cbef4d6ce4516f40019d41488eb36a5bdebcda6f3
+- table-display-small.glb — cb896c1f0ef4535b5209d40cb0a74fc1dd78874a00c10b99b25621ebadc7b197
