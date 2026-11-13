@@ -9,12 +9,12 @@ const materials=(model:ReturnType<typeof alien>)=>{const set=new Set<T.MeshStand
 it('briefly brightens only the struck actor, preserves frozen status and clears on reuse',()=>{
  const pool=new ActorPool(),a=pool.take('crawler'),b=pool.take('crawler');a.animate(0,0,0);b.animate(0,0,0);
  a.setAffliction!({frozen:true,chilled:true,burning:false,poisoned:false});a.hit!();a.animate(.01,0,0);
- expect(Math.max(...materials(a).map(m=>m.emissiveIntensity))).toBeGreaterThan(.12);
- expect(Math.max(...materials(a).map(m=>m.emissiveIntensity))).toBeLessThanOrEqual(.22);
+ expect(Math.max(...materials(a).map(m=>m.emissiveIntensity))).toBeGreaterThan(.10);
+ expect(Math.max(...materials(a).map(m=>m.emissiveIntensity))).toBeLessThanOrEqual(.12);
  expect(materials(a).every(m=>m.emissive.getHex()===0x79ddff)).toBe(true);
  expect(Math.max(...materials(b).map(m=>m.emissiveIntensity))).toBe(0);
  for(let i=1;i<8;i++)a.animate(i*.05,0,0);
- expect(Math.max(...materials(a).map(m=>m.emissiveIntensity))).toBeCloseTo(.12);
+ expect(Math.max(...materials(a).map(m=>m.emissiveIntensity))).toBeGreaterThanOrEqual(.01);expect(Math.max(...materials(a).map(m=>m.emissiveIntensity))).toBeLessThanOrEqual(.025);
  pool.release(a);const reused=pool.take('crawler');reused.animate(0,0,0);expect(Math.max(...materials(reused).map(m=>m.emissiveIntensity))).toBe(0);pool.release(reused);pool.release(b);pool.dispose();
 });
 it('caps repeated actor hits without washing out material or exposed colors',()=>{

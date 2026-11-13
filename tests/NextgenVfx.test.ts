@@ -95,7 +95,7 @@ describe('next generation combat presentation', () => {
     material.onBeforeCompile(shader as never, {} as T.WebGLRenderer);
     const uniforms = shader.uniforms as Record<string, { value: number }>;
     expect(uniforms.actorFlash.value).toBe(1); expect(uniforms.actorDissolve.value).toBe(.4); expect(uniforms.statusFrost.value).toBe(1);
-    expect(shader.fragmentShader).toContain('actorRim'); expect(shader.fragmentShader).toContain('frostAmount=.26*statusFrost');expect(shader.fragmentShader).not.toContain('frostPatch');
+    expect(shader.fragmentShader).toContain('actorRim'); expect(shader.fragmentShader).toContain('frostAmount=.40*statusFrost');expect(shader.fragmentShader).toContain('float frostLower=');expect(shader.fragmentShader).toContain('float frostEdge=');expect(shader.fragmentShader).not.toContain('frostPatch');
     surface.reset(); status.reset(); expect(uniforms.actorDissolve.value).toBe(0); expect(uniforms.statusFrost.value).toBe(0);
     root.children[0].removeFromParent(); material.dispose();
   });

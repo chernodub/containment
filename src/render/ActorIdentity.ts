@@ -17,7 +17,7 @@ export type ActorPart = {
   position:[number,number,number];
   scale:[number,number,number];
   role:number;
-  shape:'eye'|'seam'|'spine'|'sac'|'plate'|'core'|'shield';
+  shape:'eye'|'seam'|'spine'|'sac'|'plate'|'core'|'shield'|'rim'|'cavity';
   fitted?:boolean;
 };
 type Part=ActorPart;
@@ -64,6 +64,30 @@ function queenCarapacePlate():T.BufferGeometry {
   plate.computeVertexNormals();return plate;
 }
 
+/** An irregular open thorax: a rolled lip above sloped, visibly deep cavity walls. */
+function queenCavity(wall: boolean):T.BufferGeometry {
+  const vertices:number[]=[],indices:number[]=[],segments=24;
+  for(let row=0;row<2;row++)for(let i=0;i<=segments;i++){
+    const angle=i/segments*Math.PI*2;
+    const anatomy=1+.055*Math.sin(angle*5)+.035*Math.cos(angle*3);
+    const radius=(wall?(row===0?.74:.92):(row===0?.92:1.08))*anatomy;
+    vertices.push(Math.cos(angle)*radius,wall?(row===0?-1:1):(row===0?.72:1),Math.sin(angle)*radius);
+  }
+  for(let i=0;i<segments;i++){const j=i+segments+1;indices.push(i,i+1,j,i+1,j+1,j);}
+  const result=new T.BufferGeometry();result.setAttribute('position',new T.Float32BufferAttribute(vertices,3));result.setAttribute('uv',new T.Float32BufferAttribute(new Float32Array(vertices.length/3*2),2));result.setIndex(indices);result.computeVertexNormals();return result;
+}
+
+/** Three fused vascular lobes avoid the flat circular badge silhouette. */
+function queenOrgan():T.BufferGeometry {
+  const result=new T.SphereGeometry(1,20,12),p=result.getAttribute('position');
+  for(let i=0;i<p.count;i++){
+    const x=p.getX(i),y=p.getY(i),z=p.getZ(i),angle=Math.atan2(z,x);
+    const lobe=1+.14*Math.cos(angle*3)+.045*Math.sin(angle*5);
+    p.setXYZ(i,x*lobe,y*(.88+.12*Math.cos(z*3)),z*lobe);
+  }
+  result.computeVertexNormals();return result;
+}
+
 /** Broad five-sided shoulder shield, with one bevel instead of surface greebles. */
 function shoulderShield():T.BufferGeometry {
   const outline=new T.Shape();outline.moveTo(0,-1);outline.lineTo(.86,-.52);outline.lineTo(1,.64);outline.lineTo(-1,.64);outline.lineTo(-.86,-.52);outline.closePath();
@@ -81,7 +105,7 @@ function identityGeometry(key:string,parts:readonly Part[],root:T.Group) {
         const distance=point.position.distanceToSquared(target);
         if(distance<best){best=distance;nearest=point;}
       }
-      const g=(part.shape==='shield'?shoulderShield():part.shape==='core'?new T.SphereGeometry(1,16,10):part.shape==='plate'?(part.role===5?queenCarapacePlate():carapacePlate()):part.shape==='seam'?new T.BoxGeometry(2,2,2):part.shape==='spine'?new T.ConeGeometry(1,2,4):new T.SphereGeometry(1,8,5)).toNonIndexed();
+      const g=(part.shape==='shield'?shoulderShield():part.shape==='core'?queenOrgan():part.shape==='rim'?queenCavity(false):part.shape==='cavity'?queenCavity(true):part.shape==='plate'?(part.role===5?queenCarapacePlate():carapacePlate()):part.shape==='seam'?new T.BoxGeometry(2,2,2):part.shape==='spine'?new T.ConeGeometry(1,2,4):new T.SphereGeometry(1,8,5)).toNonIndexed();
       g.scale(...part.scale);
       // Tiny positive relief embeds seams in the actual rest carapace instead of floating above it.
       if(nearest&&part.fitted!==false){
@@ -120,11 +144,13 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   } else if(kind==='queen') {
     // One organ and two large shell halves make exposure an anatomical change,
     // rather than a glow added between many small plates. Both poses are resident.
-    detail('core',0,h*.88,s*.015,s*.16,h*.15,s*.21,3,false);
+    detail('core',0,h*.806,s*.015,s*.15,h*.075,s*.19,3,false);
+    detail('rim',0,h*.91,s*.015,s*.19,h*.04,s*.25,8,false);
+    detail('cavity',0,h*.82,s*.015,s*.19,h*.13,s*.25,9,false);
     for(const side of [-1,1])detail('plate',side*s*.16,h*.86,0,s*.195,h*.18,s*.29,5,false);
-    // The low diadem belongs to the armored silhouette; the exposed organ rises
-    // past it while the split mantle stands on edge around the open thorax.
-    for(let i=0;i<5;i++)detail('spine',(i-2)*s*.058,h*(.98+(.10-Math.abs(i-2)*.025)),s*.18,s*.023,h*(.075-Math.abs(i-2)*.012),s*.045,2,false);
+    // The low diadem frames the closed shell; the organ stays below its lip.
+    // The mantle opens around the deep thorax rather than lifting a badge.
+    for(const side of [-1,1])detail('spine',side*s*.23,h*.98,-s*.17,s*.030,h*.065,s*.045,2,false);
     detail('sac',0,h*.51,-s*.29,s*.24,h*.25,s*.23,7,false);
     for(const side of [-1,1])for(let i=0;i<3;i++)detail('plate',side*s*.18,h*.60,-s*(.17+i*.10),s*.07,h*.09,s*.085,2,false);
     // Low vascular tendons keep the hinged carapace rooted into the torso.
@@ -132,15 +158,15 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   } else {
     parts.push(...familyAnatomy(kind,s,h));
   }
-  parts.push(...rankAnatomy(s,h));
-  const mesh=new T.Mesh(identityGeometry(`g5-designed-identity:${kind}:${elite}`,parts,root),new T.ShaderMaterial({
+  if(kind!=='queen')parts.push(...rankAnatomy(s,h));
+  const mesh=new T.Mesh(identityGeometry(`c6-recessed-identity:${kind}:${elite}`,parts,root),new T.ShaderMaterial({
     uniforms:{identityColor:{value:new T.Color(FAMILY_IDENTITY[kind as keyof typeof FAMILY_IDENTITY]??FAMILY_IDENTITY.crawler)},identityStageLight:{value:1},identityPulse:{value:1},identityTime:{value:0},identityShimmer:{value:kind==='stalker'?1:0},identityElite:{value:elite||kind==='queen'?1:0},identityChampion:{value:0},identityExposed:{value:0},identityOpening:{value:0},identitySpan:{value:span},identityHeight:{value:height},identityWindup:{value:0},identityOrganMotion:{value:kind==='spitter'?1:0},identityDissolve:{value:0},identityStatus:{value:0},identityAlpha:{value:1},identityDeath:{value:0}},
     vertexShader:`
       attribute float identityRole;attribute float identitySide;attribute vec3 identityAnchor;
       uniform float identityOpening;uniform float identitySpan;uniform float identityHeight;uniform float identityWindup;uniform float identityOrganMotion;
-      varying vec3 identityNormal;varying vec3 identityView;varying vec3 identityLocal;varying float role;
+      varying vec3 identityNormal;varying vec3 identityView;varying vec3 identityLocal;varying float identityInner;varying float role;
       void main(){
-        role=identityRole;vec3 p=position;vec3 plateNormal=normal;identityLocal=position-identityAnchor;
+        role=identityRole;identityInner=max(0.0,-normal.x*identitySide)*.7+max(0.0,-normal.y)*.3;vec3 p=position;vec3 plateNormal=normal;identityLocal=position-identityAnchor;
         if(role>4.5&&role<5.5){
           vec3 hinge=identityAnchor+vec3(identitySide*identitySpan*.075,0.0,0.0);
           vec3 delta=p-hinge;
@@ -150,12 +176,13 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
           plateNormal.xy=mat2(cos(angle),sin(angle),-sin(angle),cos(angle))*plateNormal.xy;
         }
         if(role>2.5&&role<3.5){
-          vec3 organScale=vec3(1.0+identityOpening*.20,1.0+identityOpening*.50,1.0+identityOpening*.20);
+          vec3 organScale=vec3(1.0+identityOpening*.08,1.0+identityOpening*.08,1.0+identityOpening*.08);
           p=identityAnchor+(p-identityAnchor)*organScale;
-          p.y+=identityOpening*identityHeight*.30;
+          p.y+=identityOpening*identityHeight*.162;
           // The geometry attachment receives this same deformed normal/position.
           plateNormal=normalize(plateNormal/organScale);
         }
+        if(role>7.5&&role<9.5)p.y+=identityOpening*identityHeight*(role<8.5?.19:.18);
         if(role<.5&&identityOrganMotion>.5){p=identityAnchor+(p-identityAnchor)*(1.0+identityWindup*.28);p.y+=identityWindup*identityHeight*.05;}
         identityNormal=normalMatrix*plateNormal;vec4 view=modelViewMatrix*vec4(p,1.0);
         identityView=-view.xyz;gl_Position=projectionMatrix*view;
@@ -164,12 +191,13 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
       uniform float identityStageLight;uniform vec3 identityColor;uniform float identityPulse;uniform float identityTime;uniform float identityShimmer;uniform float identityElite;
       uniform float identityChampion;uniform float identityExposed;uniform float identityOpening;
       uniform float identityAlpha;uniform float identityDeath;uniform float identitySpan;uniform float identityDissolve;uniform float identityStatus;
-      varying vec3 identityNormal;varying vec3 identityView;varying vec3 identityLocal;varying float role;
+      varying vec3 identityNormal;varying vec3 identityView;varying vec3 identityLocal;varying float identityInner;varying float role;
       void main(){
         if(role>.5&&role<1.5&&identityElite<.5)discard;
         if(role>5.5&&role<6.5&&identityChampion<.5)discard;
         // A corpse retains its authored anatomy; the exposed weak point is retired.
-        if(identityDeath>=1.0&&role>2.5&&role<3.5)discard;
+        if(identityDeath>=1.0&&((role>2.5&&role<3.5)||(role>7.5&&role<9.5)))discard;
+        if(role>7.5&&role<9.5&&identityOpening<.08)discard;
         float identityAsh=fract(sin(dot(floor(identityLocal*65.0),vec3(12.9898,78.233,37.719)))*43758.5453);
         if(identityAsh<identityDissolve)discard;
         float facing=abs(dot(normalize(identityNormal),normalize(identityView)));
@@ -181,20 +209,25 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
           if(identityOpening<.08)discard;
           // Two quiet value groups preserve one simple weak-point shape even
           // through colored status light; no veins, stripes or texture detail.
-          color=mix(vec3(.75,.015,.12),vec3(1.0,.62,.70),smoothstep(.66,.70,facing));
-          light=(1.6+identityPulse*.10)*(.6+identityOpening*.4);
+          float organLobe=smoothstep(.35,.82,facing);
+          color=mix(vec3(.32,.003,.025),vec3(.95,.12,.25),organLobe);
+          light=(1.1+identityPulse*.18)*(.6+identityOpening*.4);
         }
         if(role>3.5&&role<4.5){color=vec3(.62,.61,.52);float plateLight=max(0.0,dot(normalize(identityNormal),normalize(vec3(.25,.65,.72))));light=.30+.25*smoothstep(.28,.32,plateLight)+.25*smoothstep(.65,.69,plateLight);}
         if(role>4.5&&role<5.5){
           color=mix(vec3(.075,.055,.095),vec3(.17,.09,.12),identityOpening*.45);
           light=.38+.40*smoothstep(.28,.32,facing)+.35*smoothstep(.65,.69,facing);
+          color+=vec3(.42,.018,.048)*identityInner*identityOpening*(.85+identityPulse*.15);
         }
         if(role>5.5&&role<6.5){color=identityChampion>1.5?vec3(1.0,.26,.64):vec3(1.0,.70,.23);light=.9+.35*smoothstep(.28,.32,facing)+.35*smoothstep(.65,.69,facing);}
-        if(role>6.5){color=vec3(.22,.11,.19);light=.40+.35*smoothstep(.28,.32,facing)+.35*smoothstep(.65,.69,facing)+identityOpening*.20;}
+        if(role>6.5&&role<7.5){color=vec3(.22,.11,.19);light=.40+.35*smoothstep(.28,.32,facing)+.35*smoothstep(.65,.69,facing)+identityOpening*.20;}
+        if(role>7.5&&role<8.5){color=vec3(.24,.045,.075)+vec3(.38,.022,.048)*identityOpening*(.8+identityPulse*.2);light=.65+.45*facing;}
+        if(role>8.5&&role<9.5){color=mix(vec3(.018,.004,.012),vec3(.13,.008,.025),facing);light=.65;}
+        if(role>9.5){color=vec3(.95,.28,.08);light=.85+.25*facing;}
         if(role<.5)light*=identityPulse*(1.0+identityShimmer*.12*sin(identityTime*4.0));
         // Large authored pieces retain family values through status treatments.
         if(role<2.5||role>3.5){
-          if(identityStatus>.5&&identityStatus<1.5)color=color*vec3(.78,1.08,1.18)+vec3(.018,.045,.065);
+          if(identityStatus>.5&&identityStatus<1.5){float frostMix=role>9.5?.20:.40;color=mix(color,vec3(dot(color,vec3(.2126,.7152,.0722))),frostMix)*vec3(.83,.99,1.06)+vec3(.006,.014,.022);}
           if(identityStatus>1.5&&identityStatus<2.5)color*=.78;
           if(identityStatus>2.5)color=color*vec3(.72,.90,.58)+vec3(.006,.014,.003);
         }
@@ -212,7 +245,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   const vertexPosition=mesh.getVertexPosition;
   mesh.getVertexPosition=function(index:number,target:T.Vector3){
     const role=mesh.geometry.getAttribute('identityRole').getX(index);
-    const hidden=corpse&&((role===1&&!elite&&kind!=='queen'&&!rank)||(role===6&&!rank)||role===3);
+    const hidden=corpse&&((role===1&&!elite&&kind!=='queen'&&!rank)||(role===6&&!rank)||role===3||role===8||role===9);
     return hidden?target.set(0,h*.5,0):vertexPosition.call(this,index,target);
   };
   const liveGeometry=mesh.geometry;

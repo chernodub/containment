@@ -9,7 +9,7 @@ it('batches crowds with independent statuses, bounded capacity and immediate ret
  expect(batch.counts.fire).toBe(48);expect(batch.counts.poison).toBe(32);expect(batch.counts.ice).toBeGreaterThan(0);
  roots.forEach(r=>r.removeFromParent());batch.update(scene.children,new T.PerspectiveCamera(),1);expect(Object.values(batch.counts).every(n=>n===0)).toBe(true);batch.dispose();
 });
-it('keeps fire compact with fewer embers while chill crystals pulse below frozen size',()=>{
+it('keeps fire compact and gathers pulsing chill crystals at the feet around a flat frozen patch',()=>{
  const scene=new T.Scene(),batch=new AfflictionBatches(undefined,1),root=new T.Group();scene.add(root);
  const state=afflictionEffects(root,2,1),camera=new T.Camera(),matrix=new T.Matrix4(),scale=new T.Vector3();
  state.set({burning:true,chilled:false});batch.update(scene.children,camera,1);
@@ -17,11 +17,11 @@ it('keeps fire compact with fewer embers while chill crystals pulse below frozen
  fire.getMatrixAt(0,matrix);scale.setFromMatrixScale(matrix);
  expect(scale.x).toBeLessThanOrEqual(.7);expect(scale.y).toBeLessThanOrEqual(1.25);expect(batch.counts.embers).toBe(6);
  state.set({burning:false,chilled:true,chillStacks:3});batch.update(scene.children,camera,1);
- const ice=batch.root.children[2] as T.InstancedMesh;ice.getMatrixAt(0,matrix);scale.setFromMatrixScale(matrix);const chilled=scale.y;
- expect(chilled).toBeGreaterThan(.21);expect(chilled).toBeLessThan(.3);expect(batch.counts.ice).toBe(6);
- batch.update(scene.children,camera,1.4);ice.getMatrixAt(0,matrix);scale.setFromMatrixScale(matrix);expect(scale.y).not.toBeCloseTo(chilled,4);
+ const ice=batch.root.children[2] as T.InstancedMesh;ice.getMatrixAt(1,matrix);scale.setFromMatrixScale(matrix);const chilled=scale.y;
+ expect(chilled).toBeGreaterThan(.09);expect(chilled).toBeLessThan(.13);expect(batch.counts.ice).toBe(6);
+ batch.update(scene.children,camera,1.4);ice.getMatrixAt(1,matrix);scale.setFromMatrixScale(matrix);expect(scale.y).not.toBeCloseTo(chilled,4);
  state.set({burning:false,chilled:true,frozen:true});batch.update(scene.children,camera,1.4);ice.getMatrixAt(0,matrix);scale.setFromMatrixScale(matrix);
- expect(scale.y).toBeCloseTo(.3);expect(batch.counts.ice).toBe(10);batch.dispose();
+ expect(scale.y).toBeCloseTo(.018);expect(scale.x).toBeGreaterThan(.6);expect(batch.counts.ice).toBe(10);batch.dispose();
 });
 it('samples authored alpha and inset sRGB flame cells',()=>{
  const scene=new T.Scene(),batch=new AfflictionBatches(undefined,1),root=new T.Group();scene.add(root);

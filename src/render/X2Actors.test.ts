@@ -175,7 +175,7 @@ it('keeps Queen chitin neutral and shades moving plates around an exposure-only 
   model.root.traverse(object=>{if(object instanceof T.SkinnedMesh&&!body)body=object.material as T.MeshStandardMaterial;});
   const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:T.ShaderLib.standard.vertexShader,fragmentShader:T.ShaderLib.standard.fragmentShader};
   body!.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);
-  expect(shader.uniforms.actorRimStrength.value as number).toBeLessThanOrEqual(.22);
+  expect(shader.uniforms.actorRimStrength.value as number).toBeGreaterThanOrEqual(.35);expect(shader.uniforms.actorRimStrength.value as number).toBeLessThanOrEqual(.55);
   model.animate(0,0,0);model.setExposed!(true);
   for(let i=1;i<=40;i++)model.animate(i/60,0,0);
   const opened=material.uniforms.identityOpening.value;
@@ -183,6 +183,6 @@ it('keeps Queen chitin neutral and shades moving plates around an exposure-only 
   model.setExposed!(false);for(let i=41;i<=80;i++)model.animate(i/60,0,0);
   expect(material.uniforms.identityOpening.value).toBeLessThan(.01);
   expect(identity.material).toBe(material);expect(identity.geometry).toBe(geometry);
-  model.reset!();expect(shader.uniforms.actorRimStrength.value as number).toBeLessThanOrEqual(.22);
+  model.reset!();expect(shader.uniforms.actorRimStrength.value as number).toBeGreaterThanOrEqual(.35);expect(shader.uniforms.actorRimStrength.value as number).toBeLessThanOrEqual(.55);
  }finally{disposeModel(model.root);}
 });

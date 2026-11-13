@@ -13,12 +13,17 @@ export function afflictionEffects(root:T.Group,span:number,height:number){
   m.onBeforeCompile=(shader,renderer)=>{previous.call(m,shader,renderer);shader.uniforms.statusFrost=frost;
    shader.vertexShader='varying vec3 statusPosition;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nstatusPosition = position;');
    shader.fragmentShader='uniform float statusFrost; varying vec3 statusPosition;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-    // Broad regional glaze preserves anatomical value groups; frost never
-    // invents a second, noisy surface pattern or changes the ink partition.
-    float frostAmount=.26*statusFrost;
-    vec3 glaze=diffuseColor.rgb*vec3(.78,1.08,1.18)+vec3(.018,.045,.065);
-    diffuseColor.rgb=mix(diffuseColor.rgb,glaze,frostAmount);
-   `);};m.customProgramCacheKey=()=>previousKey+':actor-frost-v3';m.needsUpdate=true;
+    // Chilled palettes retain hue and categorical ink. Ice gathers at the feet;
+    // upper anatomy receives only a restrained cool cast, never a pale cap.
+    float frostAmount=.40*statusFrost;
+    float frostLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+    vec3 glaze=mix(diffuseColor.rgb,vec3(frostLuma),frostAmount)*mix(vec3(1.0),vec3(.89,1.0,1.07),statusFrost);
+    float frostLower=${shader.vertexShader.includes('varying float vActorRegion;')?'step(4.5,vActorRegion)*step(vActorRegion,5.5)':'0.0'};
+    diffuseColor.rgb=mix(glaze,glaze*vec3(.78,1.04,1.12)+vec3(.012,.032,.042),frostLower*statusFrost*.24);
+   `).replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+    float frostEdge=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),5.0);
+    totalEmissiveRadiance+=vec3(.035,.10,.13)*frostEdge*statusFrost;
+   `);};m.customProgramCacheKey=()=>previousKey+':actor-frost-v4';m.needsUpdate=true;
  }});
  return {set(status:AfflictionStatus){data.status=status;frost.value=status.frozen?1:status.chilled?Math.min(3,Math.max(1,status.chillStacks??1))*.29:0;},animate(_time:number){},reset(){data.status=NO_AFFLICTION;frost.value=0;}};
 }
@@ -46,7 +51,7 @@ void main(){vec4 s=texture2D(map,texUV);float edge=smoothstep(0.0,.12,localUV.y)
    const mesh=this.batch(geometry,material,count);mesh.userData.grid=[cols,rows];return mesh;
   };
   this.fire=atlas('Flame02',16,4,new T.Color(1,.5,.1),true);this.poison=atlas('WispySmoke02',8,8,new T.Color(.08,.36,.012));
-  this.ice=this.batch(new T.OctahedronGeometry(1,0),new T.MeshStandardMaterial({color:0xa6e2ef,roughness:.24,metalness:.15,transparent:true,opacity:.78,flatShading:true,depthWrite:false}),capacity*10);
+  this.ice=this.batch(new T.OctahedronGeometry(1,0),new T.MeshStandardMaterial({color:0x74a5b4,roughness:.58,metalness:0,transparent:true,opacity:.58,flatShading:true,depthWrite:false}),capacity*10);
   this.drops=this.batch(new T.SphereGeometry(1,6,4),new T.MeshStandardMaterial({color:0x81b94b,emissive:0x345918,emissiveIntensity:.4,roughness:.2}),capacity*4);
   const emberGeometry=new T.PlaneGeometry(1,1);emberGeometry.setAttribute('particleAlpha',new T.InstancedBufferAttribute(new Float32Array(capacity*6),1).setUsage(T.DynamicDrawUsage));
   this.embers=this.batch(emberGeometry,new T.ShaderMaterial({vertexShader:`attribute float particleAlpha;varying float opacity;varying vec2 localUV;void main(){opacity=particleAlpha;localUV=uv;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`,fragmentShader:`varying float opacity;varying vec2 localUV;
@@ -63,7 +68,7 @@ void main(){vec2 p=localUV*2.0-1.0;float edge=.72+.12*sin(p.y*9.0+p.x*5.0);float
  setOptions(options:AttackEffectOptions){this.options={...this.options,...options};(this.fire.material as T.ShaderMaterial).uniforms.flashScale.value=.35+.65*T.MathUtils.clamp(this.options.flashIntensity??1,0,1);}
  private batch(g:T.BufferGeometry,m:T.Material,n:number){const mesh=new T.InstancedMesh(g,m,n);mesh.count=0;mesh.setColorAt(0,new T.Color(0xffffff));mesh.frustumCulled=false;mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.root.add(mesh);this.meshes.push(mesh);return mesh;}
  private put(mesh:T.InstancedMesh,x:number,y:number,z:number,sx:number,sy:number,sz:number,camera?:T.Camera,angle=0){
-  const d=this.dummy;d.position.set(x,y,z);d.scale.set(sx,sy,sz);if(camera)d.quaternion.copy(camera.quaternion);else d.rotation.set(angle*.3,angle,angle*.2);d.updateMatrix();mesh.setMatrixAt(mesh.count++,d.matrix);
+  const d=this.dummy;d.position.set(x,y,z);d.scale.set(sx,sy,sz);if(camera)d.quaternion.copy(camera.quaternion);else if(mesh===this.ice)d.rotation.set(0,angle,0);else d.rotation.set(angle*.3,angle,angle*.2);d.updateMatrix();mesh.setMatrixAt(mesh.count++,d.matrix);
  }
  private card(mesh:T.InstancedMesh,x:number,y:number,z:number,w:number,h:number,time:number,camera:T.Camera,alpha:number){
   const [cols,rows]=mesh.userData.grid,frame=Math.floor(time*24)%64,a=mesh.geometry.getAttribute('atlas') as T.InstancedBufferAttribute;
@@ -88,7 +93,17 @@ void main(){vec2 p=localUV*2.0-1.0;float edge=.72+.12*sin(p.y*9.0+p.x*5.0);float
    if(s.poisoned){for(let i=0;i<poisonCount;i++){const p=(t/(1.4+i*.15)+i/poisonCount)%1,a=i*2.399+d.phase,spread=.45+p*.25;
     this.card(this.poison,x+Math.cos(a)*r*spread,y+h*(.3+p*.4),z+Math.sin(a)*r*spread,d.span*(.22+p*.06),h*(.5+p*.2),t*.7+i*.7,camera,Math.sin(p*Math.PI));
    }for(let i=0;i<dropCount;i++){const p=(t*.45+i/dropCount)%1,a=i*2.4;this.put(this.drops,x+Math.cos(a)*r*.8,y+h*(1-p)*.8+.05,z+Math.sin(a)*r*.8,.045,.075,.045);}}
-   if((s.frozen||s.chilled)&&!abilityOwners?.has(root)){const n=s.frozen?(low?6:10):Math.min(3,Math.max(1,s.chillStacks??1))*(low?1:2);for(let i=0;i<n;i++){const a=i*2.399+d.phase,large=s.frozen?1:.82+Math.sin(t*3.2+i*.8)*.08;this.put(this.ice,x+Math.cos(a)*r,y+.08+(i%3)*h*(s.frozen?.18:.24),z+Math.sin(a)*r,.11*large,.3*large*(1+(i%3)*.35),.15*large,undefined,a);this.color.setHex(i%3?0x9cd5e5:0xe5fbff);this.ice.setColorAt(this.ice.count-1,this.color);}}
+   if((s.frozen||s.chilled)&&!abilityOwners?.has(root)){
+    const n=s.frozen?(low?6:10):Math.min(3,Math.max(1,s.chillStacks??1))*(low?1:2);
+    for(let i=0;i<n;i++){
+     const a=i*2.399+d.phase,large=s.frozen?1:.82+Math.sin(t*3.2+i*.8)*.08;
+     // Reuse the same ice draw: one low patch and short outboard foot crystals.
+     // No pale sleeves or crown can cover the family organ, head or mandibles.
+     if(i===0)this.put(this.ice,x,y+.022,z,r*1.16*large,.018,r*1.04*large,undefined,a);
+     else this.put(this.ice,x+Math.cos(a)*r,y+h*(.065+(i%2)*.025),z+Math.sin(a)*r,Math.min(.075,d.span*.05)*large,Math.min(.14,h*.13)*large,Math.min(.095,d.span*.065)*large,undefined,a);
+     this.color.setHex(i%3?0x77b5c8:0xa6d3df);this.ice.setColorAt(this.ice.count-1,this.color);
+    }
+   }
   }
   // Only the live prefix was written. Reuse range records because Three clears the list
   // after uploading, and addUpdateRange would allocate a new object for every buffer/frame.

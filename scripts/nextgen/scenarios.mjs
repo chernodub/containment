@@ -738,3 +738,5 @@ registerI9Scenarios(SCENARIOS);
 SCENARIOS.push(...U7_SCENARIOS);
 import { registerV6Scenarios } from './v6-scenarios.mjs';
 registerV6Scenarios(SCENARIOS);
+import {registerC6Scenarios} from './c6-scenarios.mjs';
+registerC6Scenarios(SCENARIOS);

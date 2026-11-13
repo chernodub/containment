@@ -13,20 +13,24 @@ function bounds(parts: readonly ActorPart[]) {
   return {min,max,width:max[0]-min[0],height:max[1]-min[1],length:max[2]-min[2]};
 }
 
-it('gives the crawler a compact low shell, the Stalker low separated blades, and the Carrier one rear egg',()=>{
+it('gives each small family a solid primary body and a defining anatomical silhouette',()=>{
   const crawler=familyAnatomy('crawler',1,1),stalker=familyAnatomy('stalker',1,1),carrier=familyAnatomy('carrier',1,1);
-  const shell=bounds(crawler),blades=stalker.filter(p=>p.shape==='shield'),thorax=stalker.find(p=>p.shape==='plate'&&p.position[0]===0)!;
-  expect(shell.height).toBeLessThan(shell.width);
-  expect(shell.max[1]).toBeLessThan(.75);
-  expect(blades).toHaveLength(2);
-  expect(blades[0].position[0]).toBeLessThan(-thorax.scale[0]);
-  expect(blades[1].position[0]).toBeGreaterThan(thorax.scale[0]);
-  expect(bounds(blades).length).toBeGreaterThan(thorax.scale[0]*6);
-  expect(bounds(blades).max[1]).toBeLessThan(thorax.position[1]);
+  const shell=bounds(crawler.filter(p=>p.role===0)),mandibles=crawler.filter(p=>p.role===10);
+  expect(shell.width).toBeGreaterThanOrEqual(.65);
+  expect(shell.height).toBeGreaterThan(.6);
+  expect(shell.max[1]).toBeGreaterThan(.9);
+  expect(mandibles).toHaveLength(2);
+  expect(mandibles[0].position[0]).toBeLessThan(0);expect(mandibles[1].position[0]).toBeGreaterThan(0);
+  expect(bounds(mandibles).max[2]).toBeGreaterThan(shell.max[2]+.1);
+  for(const part of mandibles)expect(Math.min(...part.scale)).toBeGreaterThanOrEqual(.06);
+  const thorax=stalker.find(p=>p.role===0)!,blades=stalker.filter(p=>p.shape==='shield'),stinger=stalker.filter(p=>p.role===10);
+  expect(thorax.scale[0]).toBeGreaterThanOrEqual(.2);expect(thorax.scale[1]).toBeGreaterThanOrEqual(.25);
+  expect(blades).toHaveLength(2);expect(blades[0].position[0]).toBeLessThan(-thorax.scale[0]);expect(blades[1].position[0]).toBeGreaterThan(thorax.scale[0]);
+  expect(stinger).toHaveLength(1);expect(stinger[0].position[2]).toBeLessThan(0);
+  expect(bounds(stinger).max[1]).toBeGreaterThan(bounds([thorax]).max[1]+.3);
+  expect(stinger[0].scale[0]).toBeGreaterThanOrEqual(.1);
   const egg=carrier.filter(p=>p.shape==='sac');expect(egg).toHaveLength(1);
-  expect(egg[0].position[2]).toBeLessThan(0);
-  expect(bounds(egg).height).toBeGreaterThan(shell.height*1.4);
-  expect(bounds(egg).max[1]).toBeGreaterThan(1);
+  expect(egg[0].position[2]).toBeLessThan(0);expect(bounds(egg).max[1]).toBeGreaterThan(1);
   // These shape measurements remain distinct without reading a family palette.
   const signatures=[crawler,stalker,carrier].map(parts=>{const b=bounds(parts);return [b.width,b.height,b.length,...parts.map(p=>p.position[1])].join('/');});
   expect(new Set(signatures).size).toBe(3);
