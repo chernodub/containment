@@ -1,8 +1,9 @@
 # V6 offline atlas tooling
 
-Run from the repository root in a temporary Python environment with Pillow and NumPy:
+Run from the repository root in a temporary Python environment. Install the offline-only versions from `requirements.txt` (Pillow and NumPy); they are not application dependencies:
 
-```
+```sh
+python -m pip install -r tools/assets/vfx/requirements.txt
 python tools/assets/vfx/unpack.py tools/assets-src/kenney-mirror-v6/pack.zip tools/assets-src/kenney-mirror-v6/extracted
 python tools/assets/vfx/build_atlas.py
 ```

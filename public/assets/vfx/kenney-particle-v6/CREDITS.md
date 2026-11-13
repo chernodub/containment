@@ -19,3 +19,6 @@ Mirror: https://github.com/Calinou/kenney-particle-pack (master archive, retriev
 Archive SHA-256: 9d4ad2b3f9dbef4c34e8778e6ec372506333b7317e01ec1c852febfc91c8e0ee
 
 Publisher direct ZIP returned HTTP403; mirror data only was extracted by tools/assets/vfx/unpack.py.
+
+Mirror content commit (ZIP metadata): `ab7086639ee73be31abd87feb21bf1402d4e8144`.
+Pinned source tree: https://github.com/Calinou/kenney-particle-pack/tree/ab7086639ee73be31abd87feb21bf1402d4e8144
