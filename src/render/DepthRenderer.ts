@@ -72,7 +72,7 @@ export class DepthRenderer {
  readonly menuPresentation='cinematic' as const;
  readonly renderer:T.WebGLRenderer;readonly scene=new T.Scene();camera:T.OrthographicCamera|T.PerspectiveCamera=new T.PerspectiveCamera(28);
  private contextResources=new ContextResources();private afflictions=new AfflictionBatches(new T.TextureLoader());private healthBars=new EnemyHealthBars();private hudScene=new T.Scene();private world=new T.Group();private actors=new Map<number,ActorModel>();private nests=new Map<number,T.Group>();private queen:ActorModel|null=null;
- private kitDressing:ReturnType<typeof attachRoomKits>|undefined;private kitStartupComplete=false;
+ private kitDressing:ReturnType<typeof attachRoomKits>|undefined;private kitStartupComplete=false;private gameplayPresentationStarted=false;
  private interimAbilities=new LazyAbilityVisuals(this.scene);private abilityWarmupRoot:T.Object3D|undefined;
  private ragdolls=new DeathRagdolls();private staticDirty=false;private corpseIds=new Set<number>();
  private staticLoaded(owner:T.Group){return()=>{if(this.world!==owner)return;const newProfiles=this.materialWarmup?.register(owner)??0;this.contextResources?.track(owner);this.reflection?.invalidate();this.shadowsDirty=true;this.staticDirty=true;if(this.materialWarmup&&newProfiles)this.queueRoomWarmup();};}
@@ -145,6 +145,8 @@ export class DepthRenderer {
   configureCinematicLayers(this.title.root,this.menuActors,this.lighting,this.contacts.mesh,this.muzzle);
   this.contextResources.track(this.scene);this.contextResources.track(this.hudScene);this.resize();
  }
+ /** Native Start/Continue crosses the lazy gameplay asset boundary once. */
+ beginGameplayPresentation(){this.gameplayPresentationStarted=true;}
  get qualityTier(){return this.tier;}
  /** Current immutable settings; selecting a tier resets its overrides. */
  get graphicsOptions(){return this.options;}
@@ -221,7 +223,7 @@ export class DepthRenderer {
  }
  /** Decode/upload the shared atlas inside the first gameplay hold, never title preparation. */
  private async prepareAbilityAssets(){
-  if(!this.kitStartupComplete||!this.interimAbilities)return;
+  if(!this.kitStartupComplete||!this.gameplayPresentationStarted||!this.interimAbilities)return;
   const generation=this.graphicsGeneration;
   await this.interimAbilities.prepare();this.checkGraphicsGeneration(generation);
   const kit=this.interimAbilities.kit;if(!kit)return;
@@ -461,13 +463,13 @@ export class DepthRenderer {
   // Rigid exit parts share finishes and transforms; retain three merged draws.
   batch(this.exit,true);
   // Flat markings and obstacle-supported dressing are registered before room preparation.
-  addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id),this.kitStartupComplete&&(node.templateId==='residential-gallery'||node.templateId==='relay-racks'));addEnvironmentalStory(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);
+  addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id),this.kitStartupComplete&&this.gameplayPresentationStarted&&(node.templateId==='residential-gallery'||node.templateId==='relay-racks'));addEnvironmentalStory(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
   this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.roomCombatFraming?.reset();this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.world.userData.staticBatching=batchStaticRoom(this.world);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId,this.lighting.practicalShapes);
   const leaks=this.world.getObjectByName('g2-world-dressing')?.userData.leakPositions??[];this.world.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial)setFloorLeaks(material,leaks);});
   const mood=getEnvironmentMood(environment);this.scene.fog=new T.FogExp2(mood.fog.color,mood.fog.density*.25);this.scene.background=new T.Color(mood.fog.color).multiplyScalar(.24);this.scene.environmentIntensity=mood.reflectionIntensity;this.post?.setMood(mood);this.atmosphere?.loadRoom(environment,w,h,this.lighting.fixtures);this.backdrop?.loadRoom(this.world,w,h,environment);this.arena?.loadRoom(node.templateId,w,h);this.post?.distortion.clear();this.heatClock=0;
-  if(this.kitStartupComplete&&KIT_STANDARD_ROOMS.has(node.templateId)){const kitWorld=this.world;this.kitDressing=attachRoomKits(kitWorld,t,this.roomEnvironment,node.templateId,()=>{if(this.world!==kitWorld)return;applyRoomMood(kitWorld,this.roomEnvironment,node.templateId,this.lighting.practicalShapes);staticLoaded();},this.residentialGalleryEquipment?.ready);}
-  const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged||this.kitStartupComplete&&!this.interimAbilities.kit?.atlas.loaded))this.queueRoomWarmup();
+  if(this.kitStartupComplete&&this.gameplayPresentationStarted&&KIT_STANDARD_ROOMS.has(node.templateId)){const kitWorld=this.world;this.kitDressing=attachRoomKits(kitWorld,t,this.roomEnvironment,node.templateId,()=>{if(this.world!==kitWorld)return;applyRoomMood(kitWorld,this.roomEnvironment,node.templateId,this.lighting.practicalShapes);staticLoaded();},this.residentialGalleryEquipment?.ready);}
+  const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged||this.kitStartupComplete&&this.gameplayPresentationStarted&&!this.interimAbilities.kit?.atlas.loaded))this.queueRoomWarmup();
  }
  private roomSeed(id:string){let seed=2166136261;for(let i=0;i<id.length;i++)seed=Math.imul(seed^id.charCodeAt(i),16777619);return seed>>>0;}
  private wallPanel(x:number,z:number,height:number,length:number,rotation:number){

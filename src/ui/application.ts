@@ -164,6 +164,7 @@ export async function bootstrap() {
         if (resume) {
             if (!game.continueRun()) {screens.continueFailed();syncHud();return;}
         } else game.newRun(debugRunSeed(location.search), {rigSelect: true});
+        renderer.beginGameplayPresentation();
         feel.reset(); beats?.reset();
         syncScreen(true);
         syncHud();

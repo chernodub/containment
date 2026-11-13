@@ -41,7 +41,7 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   game.hurt=(n,origin,source)=>{if(!immune){const scaled=Number.isFinite(n)?n*incomingDamageScale:n;if(source!==undefined)hurt(scaled,origin,source);else if(origin===undefined)hurt(scaled);else hurt(scaled,origin);}};
  }
  const refresh=()=>{render(game,0,game.status==='menu');sync();advanceUi(0);};
- const ready=async()=>{beforePrepare();await renderer.prepare(game.node);refresh();};
+ const ready=async()=>{if(game.status!=='menu')renderer.beginGameplayPresentation();beforePrepare();await renderer.prepare(game.node);refresh();};
  const api={game,renderer,events,prepare:ready,
   /** Passive mode keeps the production update/render/audio effect functions intact. */
   get liveObservation(){return liveObservation;},

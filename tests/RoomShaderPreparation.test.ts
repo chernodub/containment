@@ -79,7 +79,7 @@ it('defers ability atlas requests on title, then holds first gameplay until deco
  const prepare=vi.fn(()=>atlasReady.promise),initTexture=vi.fn();
  probe.interimAbilities={prepare,kit:{atlas:{loaded:false,texture}}};probe.renderer.initTexture=initTexture;
  probe.kitStartupComplete=false;await probe.prepareAbilityAssets();expect(prepare).not.toHaveBeenCalled();
- probe.kitStartupComplete=true;probe.queueRoomWarmup();images.resolve();
+ probe.kitStartupComplete=true;await probe.prepareAbilityAssets();expect(prepare).not.toHaveBeenCalled();probe.beginGameplayPresentation();probe.queueRoomWarmup();images.resolve();
  await Promise.resolve();expect(prepare).toHaveBeenCalledOnce();expect(probe.prepareScene).not.toHaveBeenCalled();expect(probe.roomLoading).toBe(true);
  probe.interimAbilities.kit.atlas.loaded=true;atlasReady.resolve();
  await vi.waitFor(()=>expect(probe.prepareScene).toHaveBeenCalledOnce());expect(initTexture).toHaveBeenCalledWith(texture);
@@ -87,7 +87,7 @@ it('defers ability atlas requests on title, then holds first gameplay until deco
 });
 
 it('does not upload a late ability decode into a replaced graphics context',async()=>{
- const {probe}=fixture(),ready=deferred(),texture=new T.Texture();probe.kitStartupComplete=true;
+ const {probe}=fixture(),ready=deferred(),texture=new T.Texture();probe.kitStartupComplete=true;probe.beginGameplayPresentation();
  probe.interimAbilities={prepare:()=>ready.promise,kit:{atlas:{loaded:true,texture}}};probe.renderer.initTexture=vi.fn();
  const work=probe.prepareAbilityAssets().catch((error:unknown)=>error);probe.graphicsGeneration++;ready.resolve();
  expect(typeof await work).toBe('symbol');expect(probe.renderer.initTexture).not.toHaveBeenCalled();texture.dispose();
