@@ -14,7 +14,10 @@ describe('fixture-motivated floor apertures',()=>{
   const pools=new PracticalPools(new T.Scene());
   for(const [x,z]of [[2,3],[22,17],[13,9]]){lighting.setPlayer(x,z,0);lighting.update(.016);pools.update(lighting.fixtures,true);for(let i=0;i<lighting.fixtures.length;i++){const f=lighting.fixtures[i],axis=lighting.practicalShapes[i];if(f.intensity===0)continue;expect(Math.hypot(axis.x,axis.y)).toBeCloseTo(1);expect(axis.w/axis.z).toBeGreaterThan(3);expect(Math.sin(f.userData.poolAngle)).toBeCloseTo(axis.x);}}
   expect(shader.fragmentShader).toContain('roomFloorPracticalShapes[UNROLLED_LOOP_INDEX]');
-  expect(shader.fragmentShader).toContain('directLight.color*=.12+slit*.40');
+  // Cryo strip floors omit the old radial pedestal; other constructions retain
+  // their original shaped-source fill. The shared aperture still drives both.
+  expect(shader.fragmentShader).toContain('float stripOnly=1.0-step(.5,roomFloorPattern.z)');
+  expect(shader.fragmentShader).toContain('directLight.color*=mix(.12+slit*.40,slit*.40,stripOnly)');
   pools.dispose();lighting.dispose();floorMaterial.dispose();
  });
  it('does not apply room aperture attenuation to actors or dynamic source slots',()=>{
