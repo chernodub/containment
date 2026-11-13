@@ -114,6 +114,12 @@ try{
    let staging;if(scenario.combat)staging=await page.evaluate(stageCombat,{status:!!scenario.status});
    if(scenario.kiting)staging=await page.evaluate(stageKiting);
    await page.waitForFunction(()=>!window.__containmentDebug.renderer.roomLoading&&document.querySelector('#world').getAttribute('aria-busy')!=='true');
+   // A terminal game snapshot can precede its lazy DOM commit. Inspect only
+   // the matching screen; screenshot() previously settled this after inspection.
+   if(scenario.state==='complete'||scenario.state==='dead') {
+    await page.waitForFunction(state=>document.body.dataset.state===state&&document.querySelector(`.debrief-panel[data-outcome="${state}"]`),scenario.state);
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+   }
    if(scenario.state==='playing')await page.mouse.move(Math.round(viewport.width*.64),Math.round(viewport.height*.48));else await page.mouse.move(4,4);
    if(scenario.nativeFocus)await page.locator(scenario.nativeFocus).first().focus();
    for(const key of scenario.nativeHold??[])await page.keyboard.down(key);

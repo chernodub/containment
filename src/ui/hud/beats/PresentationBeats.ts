@@ -4,7 +4,7 @@ import {ROOM_TEMPLATES} from '../../../game/roguelike/roomTemplates';
 import {runLength} from '../../../game/roguelike/run';
 import {getAbilities} from '../../gameAdapter';
 import {icon} from '../../icons';
-import {hudObstructs, presentationObstructs, setPresentationObstacle} from '../layout';
+import {hudObstructs, presentationObstructs, setPresentationObstacle, getHudInsets} from '../layout';
 import '../../styles/beats.css';
 
 export type BeatKind = 'room-enter' | 'room-clear' | 'boss-intro' | 'boss-defeated' | 'death' | 'victory' | 'overdrive-ready';
@@ -125,13 +125,17 @@ export class PresentationBeats {
       this.cardWidth = rect.width; this.cardHeight = rect.height; this.preferredTop = rect.top;
       this.viewportWidth = innerWidth; this.viewportHeight = innerHeight; this.layoutDirty = false;
     }
-    const w = this.cardWidth, h = this.cardHeight, preferred = (innerWidth-w)/2;
+    const insets = getHudInsets();
+    const w = this.cardWidth, h = this.cardHeight;
+    const viewportLeft = Math.min(insets.left, innerWidth / 3), viewportRight = innerWidth - Math.min(insets.right, innerWidth / 3);
+    const preferred = (viewportLeft + viewportRight - w)/2;
+    const preferredTop = Math.max(8, Math.min(this.preferredTop, innerHeight - insets.bottom - h - 8));
     let left = preferred, top = this.preferredTop, found = false;
     const clear = (x:number,y:number) => x >= 8 && y >= 8 && x+w <= innerWidth-8 && y+h <= innerHeight-8
       && !(x < player.right+12 && x+w > player.left-12 && y < player.bottom+12 && y+h > player.top-12)
       && !hudObstructs(x,y,x+w,y+h) && !presentationObstructs(x,y,x+w,y+h,'beat');
     for (let row=0;row<5&&!found;row++) {
-      const y = row===0?this.preferredTop:row===1?8:row===2?player.top-h-12:row===3?player.bottom+12:innerHeight-h-8;
+      const y = row===0?preferredTop:row===1?Math.max(8,insets.top+8):row===2?player.top-h-12:row===3?player.bottom+12:innerHeight-insets.bottom-h-8;
       for (let lane=0;lane<15;lane++) {
         const x = lane===13?8:lane===14?innerWidth-w-8:preferred+Math.ceil(lane/2)*24*(lane%2?1:-1);
         if (clear(x,y)) {left=x;top=y;found=true;break;}

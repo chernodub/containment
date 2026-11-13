@@ -37,3 +37,6 @@
 @media (prefers-reduced-motion: reduce) {
   #combat-text .combat-float { animation: none; transition: none; will-change: auto; }
 }
+/* A quiet 600 ms gap resolves the running total with a restrained ink weight. */
+#combat-text .combat-float[data-kind=damage][data-settled=true] {font-weight:800;filter:drop-shadow(0 0 2px #030a10);}
+#combat-text .combat-float[data-kind=damage][data-settled=false]>span:last-child {display:inline-block;}

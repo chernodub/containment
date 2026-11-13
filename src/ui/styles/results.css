@@ -1,3 +1,4 @@
+@import './rig-portraits.css';
 /* Failure analysis leads; optional output telemetry remains one native disclosure away. */
 #overlay .incoming-report {
   display: grid;
@@ -117,4 +118,61 @@
   #overlay .debrief-panel:has(.result-details[open]) .secondary-stat-groups {margin-top:12px;gap:16px;}
   #overlay .debrief-panel:has(.result-details[open]) .result-actions {margin-top:12px;padding-top:10px;}
   #overlay .debrief-panel .damage-source-note {margin:4px 0 8px;font-size:12px;line-height:1.4;}
+}
+
+/* The aftermath is a full-bleed plate, followed by a quiet archive footer. */
+#overlay .debrief-panel[data-outcome='complete'] {padding:0;background:#050d19;}
+#overlay .completion-ending[data-ending='sacrifice'] {position:relative;isolation:isolate;min-height:78dvh;padding:0 7vw 5vh;align-items:flex-start;justify-content:flex-end;text-align:left;overflow:hidden;}
+#overlay .completion-ending[data-ending='sacrifice']>.eyebrow {position:absolute;top:5vh;left:7vw;z-index:2;color:#d8eced;letter-spacing:.24em;}
+#overlay .ending-transmission {position:absolute;inset:0;width:100%;margin:0;z-index:-2;}
+#overlay .ending-space {height:100%;width:100%;max-height:none;overflow:hidden;animation:aftermath-reveal 1.6s ease-out both;}
+#overlay .completion-ending[data-ending='sacrifice']::after {content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,#050d19 0%,#050d19d9 12%,#050d1900 48%);pointer-events:none;}
+#overlay .completion-ending[data-ending='sacrifice'] .ending-exact {max-width:1000px;font:500 clamp(30px,3.1vw,54px)/1.16 var(--font-display);letter-spacing:.045em;margin:0;text-shadow:0 2px 12px #02060b;animation:aftermath-caption 1s .55s both;}
+#overlay .completion-ending[data-ending='sacrifice'] .ending-rule {display:none;}
+#overlay .ending-outcomes {position:absolute;top:58%;right:6%;margin:0;gap:18px;display:flex;flex-direction:column;text-align:right;animation:aftermath-caption 1s .8s both;}
+#overlay .ending-outcomes>div {gap:3px;}
+#overlay .ending-outcomes .eyebrow {font-size:9px;}
+#overlay .ending-outcomes strong {font:400 13px var(--font-body);letter-spacing:.01em;}
+#overlay .ending-success,#overlay .ending-loss {text-align:right;}
+#overlay .ending-ship {fill:none;stroke:#030914;stroke-width:8;}
+#overlay .ending-hull {fill:url(#ending-steel);}
+#overlay .ending-hull-detail {stroke:#bac1b8;stroke-width:2;}
+#overlay .ending-earth {fill:url(#ending-earth-light);stroke:#b2dadb;stroke-width:2;}
+#overlay .ending-land {fill:#9cbeb9;stroke:#243d4b;stroke-width:3;}
+#overlay .ending-engines {fill:#2b4555;stroke:#030914;}
+#overlay .ending-window {fill:#c0f4f0;stroke:#030914;stroke-width:5;}
+#overlay .ending-fracture {stroke:#ffd8a4;stroke-width:6;}
+#overlay .ending-debris {fill:#516773;stroke:#030914;stroke-width:4;transform-origin:0 0;animation:aftermath-debris 1.6s ease-out both;}
+#overlay .ending-ship-aft {transform-origin:-90px 0;animation:aftermath-aft 1.6s ease-out both;}
+#overlay .ending-ship-bow {transform-origin:60px 0;animation:aftermath-bow 1.6s ease-out both;}
+#overlay .ending-pods {animation:aftermath-caption 1.6s .3s both;}
+#overlay .ending-signal-track {stroke-width:3;opacity:.85;}
+#overlay .ending-signal {stroke-width:3;stroke-dasharray:20 560;animation:ending-warning-travel 5s linear infinite;}
+#overlay .debrief-panel[data-outcome='complete']>.result-details {margin:0 7vw;padding-top:2vh;animation:aftermath-caption 1s 1.2s both;}
+#overlay .debrief-panel[data-outcome='complete']>.result-actions {margin:0 7vw;padding:12px 0 26px;border-top:1px solid #9fe8ff20;animation:aftermath-caption 1s 1.35s both;}
+#overlay .debrief-panel[data-outcome='complete']>.result-actions>.primary {background:#d2edf01a;color:#d9f2f5;border:1px solid #a9dce077;box-shadow:none;min-width:180px;}
+#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) {padding:24px 7vw;}
+#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .completion-ending {min-height:0;padding:0;overflow:visible;}
+#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .completion-ending::after {display:none;}
+#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .ending-exact {font-size:20px;margin:0 0 12px;max-width:none;}
+#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open])>.result-details,#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open])>.result-actions {margin:0;animation:none;}
+@keyframes aftermath-reveal {from {opacity:0;transform:scale(1.025);}to {opacity:1;transform:scale(1);}}
+@keyframes aftermath-caption {from {opacity:0;transform:translateY(8px);}to {opacity:1;transform:translateY(0);}}
+@keyframes aftermath-debris {from {transform:scale(.85);}to {transform:scale(1.15);}}
+@keyframes aftermath-aft {from {transform:translate(0,0) rotate(0);}to {transform:translate(-16px,12px) rotate(-3deg);}}
+@keyframes aftermath-bow {from {transform:translate(0,0) rotate(0);}to {transform:translate(17px,-10px) rotate(3deg);}}
+@media (max-height:800px) {
+ #overlay .completion-ending[data-ending='sacrifice'] {min-height:74dvh;padding-bottom:4vh;}
+ #overlay .ending-outcomes {top:55%;right:4%;gap:12px;}
+ #overlay .ending-outcomes strong {font-size:11px;}
+ #overlay .completion-ending[data-ending='sacrifice'] .ending-exact {font-size:clamp(27px,3vw,38px);max-width:780px;}
+ #overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) {padding:18px 5vw;}
+ #overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .ending-exact {font-size:18px;}
+}
+@media (prefers-reduced-motion:reduce) {
+ #overlay .completion-ending *,#overlay .debrief-panel[data-outcome='complete']>.result-details,#overlay .debrief-panel[data-outcome='complete']>.result-actions {animation:none!important;}
+ #overlay .ending-signal {stroke-dasharray:4 12;opacity:.7;}
+ #overlay .ending-ship-aft {transform:translate(-16px,12px) rotate(-3deg);}
+ #overlay .ending-ship-bow {transform:translate(17px,-10px) rotate(3deg);}
+ #overlay .ending-debris {transform:scale(1.15);}
 }

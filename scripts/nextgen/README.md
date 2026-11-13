@@ -670,3 +670,12 @@ serialized browser timing lease is free:
 VITEST_MAX_WORKERS=2 npx vitest run scripts/nextgen/gpu-micro.test.mjs scripts/nextgen/gpu-pass-audit.test.mjs
 node scripts/nextgen/bench.mjs --self-test
 ```
+
+## U5 HUD and aftermath review
+
+`u5-shop-recovery` explicitly stages Health62, Armor60 and180 credits at the
+native Infirmary reward. It exposes free/paid/max receipts and partial waste;
+no purchase, damage or progression rule changes. `u4-radar-fade`, ordinary
+`combat-kiting` and full Cryo/Whiteout bursts exercise the new panel fade and
+bounded running totals. These remain staged presentation evidence. Native
+`playtest:smoke` supplies organic input/progression evidence separately.

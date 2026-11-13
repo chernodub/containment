@@ -3,6 +3,7 @@ import {DepthGame} from '../src/DepthGame';
 import {generateRun} from '../src/game/roguelike/run';
 import type {MutationId} from '../src/game/roguelike/types';
 import {shopScreen} from '../src/ui/screens/templates';
+import {getShopProjection} from '../src/ui/gameAdapter';
 
 function reward(options: {health?: number; armor?: number; credits?: number; mutations?: MutationId[]; kind?: 'healing' | 'supplies'} = {}) {
   const storage = new Map<string, string>();
@@ -107,9 +108,44 @@ describe('paid room services', () => {
     expect(serviceTag(game, 'armor')).toContain('disabled');
     expect(serviceTag(game, 'ammo')).not.toContain('disabled');
     expect(serviceTag(game, 'heal')).toContain('aria-describedby="service-heal-reason"');
-    expect(shopScreen(game)).toContain('<small id="service-heal-reason">No extra recovery after allocation.</small>');
-    expect(shopScreen(game)).toContain('<small id="service-armor-reason">Armor full after allocation.</small>');
+    expect(shopScreen(game)).toContain('<small id="service-heal-reason">Capped after free allocation</small>');
+    expect(shopScreen(game)).toContain('<small id="service-armor-reason">Capped after free allocation</small>');
     const useful = reward({health: 100, armor: 0, mutations: ['field-medic']}).game;
     expect(serviceTag(useful, 'heal')).not.toContain('disabled');
+  });
+});
+
+
+describe('U5 resource purchase receipts', () => {
+  it('previews free and paid allocations exactly, including recovery boon conversions, without mutation', () => {
+    for (const options of [{health:20,armor:0}, {health:62,armor:90}, {health:100,armor:0,mutations:['field-medic'] as MutationId[]}, {health:70,armor:0,kind:'supplies' as const}]) {
+      for (const service of [null,'heal','armor','ammo'] as const) {
+        const {game}=reward(options), before=game.combat.getRunResources(), expedition=game.expedition;
+        const projection=getShopProjection(game);
+        expect(game.combat.getRunResources()).toEqual(before);
+        expect(game.expedition).toBe(expedition);
+        if (service && !projection.available[service]) continue;
+        game.claimResources(service);
+        const actual=game.combat.getRunResources();
+        for (const r of projection.resources) {
+          const value=r.id==='health'?actual.health:r.id==='armor'?actual.armor:r.id==='grenades'?actual.grenades:actual.ammo[r.id as keyof typeof actual.ammo].reserve;
+          expect(service?r.after[service]:r.free,`${r.id}/${service}`).toBe(value);
+        }
+        expect(actual.credits).toBe(before.credits-(service?{heal:100,armor:90,ammo:100}[service]:0));
+      }
+    }
+  });
+  it('shows current, free, maximum, partial waste and credit shortfall beside native purchases', () => {
+    const {game}=reward({health:62,armor:90,credits:89});
+    const html=shopScreen(game);
+    expect(html).toContain('Health <b>62 → 100 <small>/ 100</small></b>');
+    expect(html).toContain('Need 11 more credits');
+    expect(html).toContain('27 health exceeds capacity');
+    expect(html).toContain('data-value="capped"');
+    expect(html).toContain('CURRENT → AFTER ALLOCATION / MAXIMUM');
+    expect(html).toContain('<b>89</b> credits available');
+    for (const r of getShopProjection(game).resources) expect(html).toContain(`data-resource="${r.id}"`);
+    game.combat.setCredits(500);
+    expect(shopScreen(game)).toContain('Balance after purchase: 400 CR');
   });
 });

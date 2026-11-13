@@ -12,13 +12,14 @@ import {progressionFor} from '../../game/roguelike/progression';
 import {generateRun, ROOM_REWARD_LABELS, runLength} from '../../game/roguelike/run';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
 import {storyRoomFor} from '../../game/roguelike/storyRooms';
-import {getAbilities, getRunStats} from '../gameAdapter';
+import {getAbilities, getRunStats, getShopProjection} from '../gameAdapter';
 import {icon} from '../icons';
 import {boonElement, boonIcon, boonPath, boonRuleLabel} from '../boonPresentation';
 import {boonBenefit, boonNumbers} from '../boonBenefits';
 import {formatDistance, playerFacingText, playerFacingStat} from '../units';
 import {abilityVignette} from './abilityVignettes';
 import {completionEnding, incomingDamageReport} from './damageReport';
+import {rigPortrait, RIG_FANTASIES} from './rigPortraits';
 
 /** Text coming from snapshots or saved state must never become HTML. */
 
@@ -56,7 +57,7 @@ export function rigScreen(selected: RigId): string {
   const rig = RIG_CATALOG[selected];
   return `<section class="panel rig-panel screen-enter" data-element="${rig.element}" aria-labelledby="rig-title">${tag('COMBAT SYSTEMS / 01')}<div class="screen-heading"><div><h2 id="rig-title">Choose your rig.</h2><p class="panel-intro">Four systems. One way through.</p></div><span class="keyboard-guide"><kbd>←</kbd><kbd>→</kbd> inspect · <kbd>1–4</kbd> select · <kbd>Enter</kbd> equip</span></div>
     <div class="rig-grid" role="group" aria-label="Combat rigs">${RIG_IDS.map((id,index)=>`<button class="rig-card ${id===selected?'selected':''}" data-rig="${id}" data-element="${RIG_CATALOG[id].element}" aria-pressed="${id===selected}"><span class="rig-number">${serial(index+1)} <kbd>${index+1}</kbd></span>${icon(id,'rig-emblem')}<h3>${RIG_CATALOG[id].name}</h3><p>${RIG_CATALOG[id].tagline}</p>${rigProfile(id)}<span class="rig-path sr-only">${RIG_CATALOG[id].boonPath}</span></button>`).join('')}</div>
-    <div class="rig-detail-head" data-element="${rig.element}"><div><span class="eyebrow">${rig.boonPath}</span><h3>${rig.name} / ${rig.tagline}</h3><p>${rig.description}</p></div><button id="equip-rig" class="primary">Equip ${rig.name} ${arrow()}</button></div>${abilityPreview(selected)}<p class="screen-footnote rig-footnote"><span>WHITE: MARINE · ORANGE: HOSTILE · FOCUS FOR RULES</span>Dash passes through enemies, never walls. Overdrive charges through damage and kills and carries between rooms.</p></section>`;
+    <div class="rig-identity" data-element="${rig.element}">${rigPortrait(selected)}<div class="rig-identity-copy"><span class="eyebrow">${rig.name.toUpperCase()} / ${rig.boonPath}</span><h3>${RIG_FANTASIES[selected]}</h3><p>${rig.description}</p><button id="equip-rig" class="primary">Equip ${rig.name} ${arrow()}</button><span class="rig-equip-status" aria-hidden="true">SYSTEM LINK / READY</span></div></div>${abilityPreview(selected)}<p class="screen-footnote rig-footnote"><span>WHITE: MARINE · ORANGE: HOSTILE · FOCUS FOR RULES</span>Dash passes through enemies, never walls. Overdrive charges through damage and kills and carries between rooms.</p></section>`;
 }
 
 const augmentSlots: Record<string, 'dash'|'tactical'|'power'|'overdrive'> = {'reserve-thruster':'dash','slide-loader':'dash','tactical-salvage':'tactical','drive-dynamo':'overdrive',afterquake:'tactical','reinforced-bulwark':'power','spreading-nova':'tactical','twin-glacier':'power','scorched-fan':'tactical','napalm-triplet':'power','forked-overload':'tactical','twin-pylon':'power'};
@@ -100,15 +101,18 @@ export function draftScreen(game: DepthGame): string {
 }
 
 export function shopScreen(game: DepthGame): string {
-  const healing = game.node.reward==='healing';
-  const act = progressionFor(game.node).act;
-  const services=([['heal','30 health',100,'health'],['armor','25 armor',90,'armor'],['ammo','Extra ammunition',100,'rifle']] as const).map(([id,label,cost,symbol])=>{
-    const affordable=game.combat.snapshot.credits>=cost,available=game.canPurchaseService?.(id)??affordable;
-    const reason=!affordable?`Need ${cost-game.combat.snapshot.credits} credits`:!available?id==='armor'?'Armor full after allocation.':'No extra recovery after allocation.':`Supplies + ${label}`;
-    return `<button class="service-card" data-purchase="${id}" aria-describedby="service-${id}-reason" ${available?'':'disabled'}>${icon(symbol)}<span><b>${label}</b><small id="service-${id}-reason">${reason}</small></span><strong>${cost} <small>CR</small></strong>${arrow()}</button>`;
+  const healing = game.node.reward==='healing', preview=getShopProjection(game);
+  const number=(n:number)=>n<0?'∞':n.toLocaleString('en-US');
+  const value=(r:typeof preview.resources[number],after:number)=>`${r.label} <b>${number(r.current)} → ${number(after)} <small>/ ${number(r.maximum)}</small></b>`;
+  const services=([['heal','Health service',100,'health',30],['armor','Armor service',90,'armor',25],['ammo','Reserve ammunition',100,'rifle',0]] as const).map(([id,label,cost,symbol,nominal])=>{
+    const affected=preview.resources.filter(r=>id==='heal'?r.id==='health'||r.after[id]!==r.free:id==='armor'?r.id==='armor':['rifle','shotgun','plasma','rocket'].includes(r.id));
+    const gain=affected.reduce((sum,r)=>sum+Math.max(0,r.after[id]-r.free),0), capped=gain===0;
+    const resource=affected[0], waste=nominal?Math.max(0,nominal-(resource.after[id]-resource.free)):0;
+    const reason=[preview.credits<cost?`Need ${cost-preview.credits} more credits`:'',capped?'Capped after free allocation':waste?`${waste} ${id==='heal'?'health':'armor'} exceeds capacity`:'',!capped&&preview.credits>=cost?`Balance after purchase: ${preview.credits-cost} CR`:''].filter(Boolean).join(' · ');
+    return `<button class="service-card" data-purchase="${id}" data-value="${capped?'capped':waste?'partial':'full'}" aria-describedby="service-${id}-reason" ${preview.available[id]?'':'disabled'}>${icon(symbol)}<span><b>${label}</b><span class="service-outcome">${affected.map(r=>value(r,r.after[id])).join('<br>')}</span><small id="service-${id}-reason">${reason}</small></span><strong>${cost} <small>CR</small></strong>${arrow()}</button>`;
   }).join('');
-  return `<section class="panel shop-panel screen-enter"><div class="supply-hero">${icon(healing?'medkit':'armory','supply-emblem')}${tag(`RECOVERY STATION / SECTOR ${serial(game.node.depth+1)}`)}<h2>${healing?'Infirmary':'Supply cache'}</h2><p class="panel-intro">${healing?`Restore ${35+act*5} health and ${15+act*5} armor.`:'Rifle, shotgun, plasma and rocket ammunition. One grenade.'}</p><button id="claim" class="primary">Collect supplies ${arrow()}</button><span class="supply-label">STANDARD ALLOCATION / NO COST</span></div>
-    <div class="service-shop"><div class="shop-heading">${tag('OPTIONAL REQUISITION')}<h3>Take what you need.</h3><span class="credit-balance">${icon('credits')} ${game.combat.snapshot.credits} credits</span><p>Standard supplies plus one service. Purchasing also collects the standard allocation.</p></div>${services}</div></section>`;
+  return `<section class="panel shop-panel screen-enter"><div class="supply-hero">${icon(healing?'medkit':'armory','supply-emblem')}${tag(`RECOVERY STATION / SECTOR ${serial(game.node.depth+1)}`)}<h2>${healing?'Infirmary':'Supply cache'}</h2><p class="panel-intro">Your standard allocation is free.</p><dl class="allocation-ledger" aria-label="Current resources and free allocation">${preview.resources.map(r=>`<div data-resource="${r.id}"><dt>${r.label}</dt><dd>${number(r.current)} <span>→</span> <b>${number(r.free)}</b> <small>/ ${number(r.maximum)}</small><em>${r.free>r.current?`+${r.free-r.current} FREE`:r.current>=r.maximum?'CAPPED':'UNCHANGED'}</em></dd></div>`).join('')}</dl><button id="claim" class="primary">Collect free allocation ${arrow()}</button><span class="supply-label">CURRENT → AFTER ALLOCATION / MAXIMUM</span></div>
+    <div class="service-shop"><div class="shop-heading">${tag('OPTIONAL REQUISITION')}<h3>Take what you need.</h3><span class="credit-balance" role="status">${icon('credits')} <b>${preview.credits}</b> credits available</span><p>Each preview includes the free allocation. Choose one service, or collect free supplies.</p></div>${services}</div></section>`;
 }
 
 /** Compact sectional map: environment decks descend, actual graph edges remain intact. */

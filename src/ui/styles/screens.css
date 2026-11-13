@@ -546,6 +546,35 @@
 #overlay .service-card:disabled>svg:first-child {color:#94b1be;}
 #overlay .service-card:disabled small {color:#c8d8df;}
 #overlay .service-card:disabled strong {color:#e0c188;}
+
+/* Recovery is a receipt: show actual current, free, and paid outcomes together. */
+#overlay .shop-panel {width:min(1200px,100%);gap:30px;}
+#overlay .shop-panel .supply-emblem {width:48px;height:48px;padding:8px;margin-bottom:12px;}
+#overlay .allocation-ledger {width:100%;margin:18px 0;display:grid;gap:7px;}
+#overlay .allocation-ledger>div {display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #9fe8ff1c;padding-bottom:6px;}
+#overlay .allocation-ledger dt {color:#c3d8e1;font-size:13px;}
+#overlay .allocation-ledger dd {margin:0;font:500 16px var(--font-display);white-space:nowrap;color:#e8fbff;}
+#overlay .allocation-ledger dd>span {color:#8dabb9;margin:0 4px;}
+#overlay .allocation-ledger small {color:#b2c8d2;font-size:12px;}
+#overlay .allocation-ledger em {display:inline-block;min-width:68px;margin-left:10px;color:#9fe8ff;font:500 9px var(--font-body);font-style:normal;text-align:right;}
+#overlay .service-card {padding:12px;gap:10px;}
+#overlay .service-card .service-outcome {display:block;color:#d9edf5;font-size:12px;line-height:1.45;margin-bottom:5px;}
+#overlay .service-outcome b {display:inline;font:600 16px var(--font-display);color:#ecfbff;}
+#overlay .service-card[data-purchase='ammo'] .service-outcome {column-count:2;column-gap:10px;}
+#overlay .service-card[data-value='partial'] {border-left:3px solid #ffd27a;}
+#overlay .service-card[data-value='capped'] {border-style:dashed;}
+#overlay .credit-balance {display:flex;align-items:center;gap:7px;}
+#overlay .credit-balance b {font:600 25px var(--font-display);}
+@media (max-height:800px) {
+ #overlay .shop-panel {gap:24px;padding:22px;}
+ #overlay .shop-panel h2 {font-size:40px;margin:8px 0;}
+ #overlay .shop-panel .supply-emblem {width:32px;height:32px;padding:5px;margin-bottom:7px;}
+ #overlay .allocation-ledger {margin:12px 0;gap:5px;}
+ #overlay .service-shop {padding-left:22px;gap:9px;}
+ #overlay .shop-heading h3 {font-size:27px;margin:6px 0;}
+ #overlay .shop-heading p {margin:8px 0;font-size:12px;}
+ #overlay .service-card {padding:10px;}
+}
 #overlay .destroy-alternative {width:100%;justify-content:center;margin-top:12px;}
 #overlay .resume-run-state {font-size:17px;color:#e2f5fa;margin:8px 0 14px;}
 @media(max-height:820px) {

@@ -4,7 +4,8 @@ import type { HudEffect } from './effects';
 import {hudObstructs, presentationObstructs} from './layout';
 import {icon} from '../icons';
 import {damageToken} from '../damageTokens';
-export const COMBAT_TEXT_CAPACITY = 28;
+export const COMBAT_TEXT_CAPACITY = 12;
+export const COMBAT_TEXT_MERGE_SECONDS = .6;
 type Float = {
     node: HTMLDivElement;
     glyph: HTMLSpanElement;
@@ -16,6 +17,11 @@ type Float = {
     y: number;
     target: number | undefined;
     amount: number;
+    displayed: number;
+    fromAmount: number;
+    countAge: number;
+    quiet: number;
+    priority: number;
     kind: string;
     status: string;
     source: string;
@@ -42,6 +48,7 @@ export class CombatText {
     private readonly pool: Float[] = [];
     private enabled = true;
     private disposed = false;
+    private reduced = false;
     private motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     private reducedMotion = this.motion.matches;
     private onMotion = () => { this.reducedMotion = this.motion.matches; };
@@ -59,12 +66,14 @@ export class CombatText {
             for (const glyph of glyphs) glyph.setAttribute('hidden','');
             node.append(glyph, label);
             fragment.append(node);
-            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, amount: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
+            this.pool.push({ node,glyph,label,glyphs,life: 0, age: 0, x: 0, y: 0, target: undefined, amount: 0, displayed: 0, fromAmount: 0, countAge: 0, quiet: 0, priority: 0, kind: 'damage', status: '', source: '', lethal: false, critical: false, width: 75, height: 40, baseWidth:75,baseHeight:40,fontSize:34,scale:1,placedX:0,placedY:0,placed:false,point: { x: 0, y: 0, visible: false },floor:{x:0,y:0,visible:false} });
         }
         host.append(fragment);
     }
     setEnabled(enabled: boolean): void { if (this.enabled && !enabled)
         this.clear(); this.enabled = enabled; }
+    /** Reduced feedback retains damage totals and kills, with no status chips. */
+    setReduced(reduced: boolean): void { if (this.reduced !== reduced) this.clear(); this.reduced = reduced; }
     effect(e: HudEffect): void {
         if (!this.enabled || this.disposed)
             return;
@@ -84,38 +93,53 @@ export class CombatText {
     }
     private add(x: number, y: number, target: number | undefined, amount: number, kind: string, status: string, lethal: boolean, critical = false, source = ''): void {
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-        // One status chip per target. Hard control wins over damage-over-time
-        // and slows, so sustained mixed-element pulses cannot cover the actor.
-        const currentStatus = kind === 'status' ? this.pool.find(p => p.life > 0 && p.kind === 'status' && (target !== undefined ? p.target === target : Math.hypot(p.x-x,p.y-y)<72)) : undefined;
+        if (this.reduced && kind === 'status') return;
+        const sameTarget = (p: Float) => target !== undefined ? p.target === target : Math.hypot(p.x-x,p.y-y)<(kind === 'status'?72:25);
+        // A target receives one terminal mark. Late duplicate status/area receipts
+        // must not recreate a cloud around an actor already confirmed killed.
+        const killed = this.pool.find(p => p.life > 0 && p.lethal && sameTarget(p));
+        if (killed) return;
+        const currentStatus = kind === 'status' ? this.pool.find(p => p.life > 0 && p.kind === 'status' && sameTarget(p)) : undefined;
         if (currentStatus && (statusPriority[currentStatus.status] ?? 0) > (statusPriority[status] ?? 0)) return;
-        // Reuse a visible receipt until there is a quiet gap. Repeated zone/status ticks
-        // cannot stack new labels faster than old ones expire.
-        let entry = currentStatus ?? this.pool.find(p => p.life > 0 && p.kind === kind && p.source === source && p.status === status && (target !== undefined ? p.target === target : Math.hypot(p.x - x, p.y - y) < (kind === 'status' ? 72 : 25)));
-        if (!entry)
-            entry = this.pool.find(p => p.life <= 0);
+        let entry = currentStatus ?? this.pool.find(p => p.life > 0 && p.kind === kind && p.source === source && p.status === status && sameTarget(p));
+        const merge = !!entry && entry.kind === kind && entry.source === source && entry.status === status && entry.quiet <= COMBAT_TEXT_MERGE_SECONDS;
+        const total = (merge ? entry!.amount : 0) + amount;
+        const priority = lethal ? 3 : critical || total >= 30 ? 2 : kind === 'damage' && source !== 'status' ? 1 : 0;
+        if (!entry) entry = this.pool.find(p => p.life <= 0);
         if (!entry) {
-            entry = this.pool[0];
-            for (const p of this.pool)
-                if (p.life < entry.life)
-                    entry = p;
+            // Kills outrank substantial hits, which outrank routine ticks/chips.
+            // Within a tier retire the oldest receipt, never a newer higher tier.
+            let lowest = this.pool[0];
+            for (const p of this.pool) if (p.priority < lowest.priority || p.priority === lowest.priority && p.life < lowest.life) lowest = p;
+            if (lowest.priority > priority) return;
+            entry = lowest;
         }
-        const merge = entry.life > 0 && entry.kind === kind && entry.source === source && entry.status === status && (target !== undefined ? entry.target === target : Math.hypot(entry.x - x, entry.y - y) < (kind === 'status' ? 72 : 25));
-        entry.amount = (merge ? entry.amount : 0) + amount;
-        entry.lethal = lethal || merge && entry.lethal;
+        if (lethal) for (const p of this.pool) if (p !== entry && p.life > 0 && sameTarget(p)) {p.life=0;p.node.hidden=true;}
+        entry.fromAmount = merge ? entry.displayed : amount;
+        entry.amount = total;
+        entry.displayed = this.reducedMotion || lethal ? total : entry.fromAmount;
+        entry.countAge = 0;
+        entry.quiet = 0;
+        entry.priority = priority;
+        entry.lethal = lethal;
         entry.critical = critical || merge && entry.critical;
         const color = status || (merge ? entry.status : '');
         entry.x = x;
         entry.y = y;
         entry.target = target;
         entry.age = merge ? entry.age : 0;
-        entry.life = .75;
+        entry.life = .8;
         entry.kind = kind;
         entry.status = color;
         entry.source = source;
         entry.node.dataset.source = source;
+        entry.node.dataset.target = target === undefined ? '' : String(target);
+        entry.node.dataset.total = String(Math.round(entry.amount));
+        entry.node.dataset.settled = String(entry.lethal);
+        entry.node.dataset.priority = String(priority);
         entry.node.hidden = false;
         const label = kind === 'damage' ? `${Math.round(entry.amount)}${entry.lethal ? ' ×' : ''}` : statusLabels[status];
-        entry.label.textContent = label;
+        entry.label.textContent = kind === 'damage' ? `${Math.round(entry.displayed)}${entry.lethal ? ' ×' : ''}` : label;
         if (kind === 'status') {entry.node.title = label; entry.node.setAttribute('aria-label', label);}
         else {entry.node.removeAttribute('title'); entry.node.removeAttribute('aria-label');}
         entry.glyph.hidden = kind !== 'status';
@@ -144,6 +168,14 @@ export class CombatText {
                 continue;
             p.life = Math.max(0, p.life - dt);
             p.age += dt;
+            p.quiet += dt;
+            p.countAge += dt;
+            if (p.kind === 'damage') {
+                const progress = this.reducedMotion || p.lethal ? 1 : Math.min(1, p.countAge / .12);
+                p.displayed = p.fromAmount + (p.amount - p.fromAmount) * (1 - (1-progress) ** 3);
+                p.label.textContent = `${Math.round(p.displayed)}${p.lethal ? ' ×' : ''}`;
+                p.node.dataset.settled = String(p.lethal || p.quiet >= COMBAT_TEXT_MERGE_SECONDS);
+            }
             if (!p.life) {
                 p.node.hidden = true;
                 continue;
@@ -153,6 +185,7 @@ export class CombatText {
                 p.node.hidden = true;
                 continue;
             }
+            if (this.reduced && !p.lethal && p.source === 'status' && p.amount < 30) {p.node.hidden=true;continue;}
             p.node.hidden = false;
             // G1 projects world height through its follow camera. Legacy facades
             // that do not project height keep the authored one-to-one font sizes.

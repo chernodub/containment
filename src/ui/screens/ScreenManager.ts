@@ -98,7 +98,7 @@ export function createScreens(context: ScreenContext) {
 
   function inspectRig(id: RigId, focusCard = false): void {
     selectedRig = id;
-    playUiCue(audio,'select');
+    playUiCue(audio,'rig-equip');
     syncScreen(true);
     if (focusCard) el('overlay').querySelector<HTMLButtonElement>(`[data-rig="${id}"]`)?.focus();
   }
@@ -199,7 +199,7 @@ export function createScreens(context: ScreenContext) {
     const key=JSON.stringify([status,phase,game.node.id,settingsOpen,creditsOpen,controlsOpen,pauseTab,selectedRig,selectedRoute,continuation,
       game.checkpointStatus,game.checkpointWarning,game.checkpointNote,context.graphicsLost(),recoveryPending,graphicsBlocked?context.recovering():false,
       blocked?game.storyStatus:null,status==='menu'?game.canContinue:null,
-      blocked?game.combat.snapshot.credits:0,blocked?run.draftRoll:0,
+      blocked?game.combat.snapshot.credits:0,status==='reward'?game.combat.snapshot:null,blocked?run.draftRoll:0,
       blocked?game.expedition.build.mutations:[],status==='rig-select'||status==='paused'?getAbilities(game)?.rig:null,
       status==='complete'||status==='dead'?getRunStats(game):null]);
     if(!force&&key===screenKey) return;

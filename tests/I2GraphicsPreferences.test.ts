@@ -59,7 +59,7 @@ describe('I2 preferences against live renderer methods', () => {
       settings.apply();
       expect(renderer.qualityTier).toBe(tier);
       expect(renderer.graphicsOptions).toEqual(graphics);
-      expect(settings.preferences).toEqual({radar: true, combatText: false});
+      expect(settings.preferences).toEqual({radar: true, combatText: false, combatTextDensity: 'full'});
       expect(storage.getItem(UI_STORAGE_KEY)).toBe(before);
       expect(renderer.renderer.shadowMap.enabled).toBe(tier === 'high');
       settings.dispose();

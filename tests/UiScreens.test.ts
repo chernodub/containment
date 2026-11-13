@@ -442,7 +442,7 @@ test.each([[1280,720],[1920,1080]])('settings and controls fit title and pause c
       expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width+1);expect(layout.scrollHeight).toBeLessThanOrEqual(layout.height+1);
     };
     await page.locator('#settings').click();await fit('.configuration-drawer');
-    expect(await page.locator('[data-setting]').count()).toBe(Object.keys(GRAPHICS_OPTION_LABELS).length+6);
+    expect(await page.locator('[data-setting]').count()).toBe(Object.keys(GRAPHICS_OPTION_LABELS).length+7);
     await page.locator('#close-drawer').click();await page.locator('#controls').click();await fit('.controls-drawer');
     expect(await page.locator('.drawn-key').count()).toBe(14);
     await phase(page,'paused');await page.locator('[data-tab=settings]').click();await fit('.pause-panel');await fit('#pause-tabpanel');
@@ -560,8 +560,16 @@ test('unaffordable service rows explain the missing credits without fading their
   try {
     await page.evaluate(()=>{(window as any).ui.game.combat.snapshot.credits=20;});
     await phase(page,'reward',3);
-    expect(await page.locator('#service-heal-reason').innerText()).toBe('Need 80 credits');
+    expect(await page.locator('#service-heal-reason').innerText()).toContain('Need 80 more credits');
+    expect(await page.locator('#service-heal-reason').innerText()).toContain('Capped after free allocation');
+    expect(await page.locator('.service-outcome').first().innerText()).toContain('Health 100 → 100 / 100');
     expect(await page.locator('[data-purchase=heal]').isDisabled()).toBe(true);
+    expect(await page.locator('[data-purchase=heal]').evaluate(node=>getComputedStyle(node).opacity)).toBe('1');
+    await page.evaluate(()=>{const ui=(window as any).ui;ui.game.combat.snapshot.health=62;ui.game.combat.snapshot.credits=180;ui.screens.syncScreen();});
+    expect(await page.locator('.credit-balance').innerText()).toContain('180');
+    expect(await page.locator('.service-outcome').first().innerText()).toContain('Health 62 → 100 / 100');
+    expect(await page.locator('#service-heal-reason').innerText()).toContain('Balance after purchase: 80 CR');
+    expect(await page.locator('[data-purchase=heal]').isEnabled()).toBe(true);
     expect(await page.locator('[data-purchase=heal]').evaluate(node=>getComputedStyle(node).opacity)).toBe('1');
   } finally {await page.close();}
 });
@@ -623,5 +631,26 @@ test('draft benefit cards expose exact rules only through deliberate native insp
     expect(await page.locator('.boon-inspect-detail:visible').count()).toBe(0);
     const actions=await page.evaluate(()=>(window as any).ui.actions);
     expect(actions.filter((action:string)=>action.startsWith('boon:'))).toEqual([]);
+  } finally {await page.close();}
+});
+
+test.each([[1280,720],[1920,1080]])('reduced-motion aftermath fills the viewport and leaves the archive secondary at %i × %i',async(width,height)=>{
+  const page=await mount(width,height);
+  try {
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.evaluate(()=>{(window as any).ui.game.storyRoom={};});
+    await phase(page,'complete',19);
+    const geometry=await page.locator('.debrief-panel').evaluate(node=>{
+      const box=node.getBoundingClientRect(),art=document.querySelector('.ending-space')!,headline=document.querySelector('.ending-exact')!;
+      return {left:box.left,top:box.top,right:box.right,bottom:box.bottom,scroll:node.scrollHeight,height:node.clientHeight,art:art.getBoundingClientRect().height,motion:getComputedStyle(art).animationName,headlines:node.querySelectorAll('h2').length,text:headline.textContent};
+    });
+    expect(geometry).toMatchObject({left:0,top:0,right:width,bottom:height,motion:'none',headlines:1});
+    expect(geometry.scroll).toBeLessThanOrEqual(geometry.height+1);
+    expect(geometry.art).toBeGreaterThan(height*.65);
+    expect(geometry.text).toBe('SHIP DESTROYED / ALL ABOARD LOST / NEW EARTH WARNED');
+    expect(await page.locator('.result-details').getAttribute('open')).toBeNull();
+    await page.locator('.result-details>summary').focus();await page.keyboard.press('Enter');
+    expect(await page.locator('[data-stat]').count()).toBe(16);
+    expect(await page.locator('#start').isVisible()).toBe(true);
   } finally {await page.close();}
 });
