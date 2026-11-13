@@ -4,6 +4,7 @@ import { getEnvironmentMood } from './EnvironmentMoods';
 import { applyFloorVariation } from './FloorVariation';
 import { optimizeLocalLights } from './LocalLightShading';
 import { applyHotFixtureSurface } from './HotFixtureSurface';
+import {registerFlatFloorLighting} from './FlatFloorLighting';
 
 const originals = new WeakMap<T.MeshStandardMaterial, { color: T.Color; roughness: number; metalness: number; emissiveIntensity: number }>();
 // Subtle surface tint only: environment identity comes from motivated light, not tinted black paint.
@@ -39,6 +40,7 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         originals.set(material, original);
       }
       const floor=deckNames.has(material.name)||material.userData.floorDressing===true;
+      if(material.userData.floorDressing===true&&!deckNames.has(material.name))registerFlatFloorLighting(material,environment,practicalShapes);
       // Authored deck materials are shared by their baked floor meshes only.
       if (material.name === 'painted-steel-deck' || material.name === 'annulus-deck' || material.name === 'annulus-circulation' || material.name === 'environment-floor') {
         material.roughness = environment === 'maintenance' ? mood.floorRoughness : Math.max(.82, mood.floorRoughness);
