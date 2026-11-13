@@ -51,6 +51,7 @@ it('opens two flush shell halves around a recessed organ and deep anatomical wel
     // Vulnerability is a hollow thorax: the organ remains below the lip and
     // above the cavity bottom, rather than rising as an attached flat emblem.
     expect(opened.core.max.y).toBeLessThan(opened.rim.min.y);
+    expect(opened.core.max.y).toBeLessThan(opened.plates.max.y);
     expect(opened.core.min.y).toBeGreaterThan(opened.cavity.min.y);
     expect(opened.cavity.getSize(new T.Vector3()).y).toBeGreaterThan((mesh.material.uniforms.identityHeight.value as number)*.15);
     expect(opened.core.getSize(new T.Vector3()).y).toBeGreaterThan((mesh.material.uniforms.identityHeight.value as number)*.10);

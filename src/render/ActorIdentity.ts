@@ -144,9 +144,9 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   } else if(kind==='queen') {
     // One organ and two large shell halves make exposure an anatomical change,
     // rather than a glow added between many small plates. Both poses are resident.
-    detail('core',0,h*.84,s*.015,s*.15,h*.075,s*.19,3,false);
+    detail('core',0,h*.806,s*.015,s*.15,h*.075,s*.19,3,false);
     detail('rim',0,h*.91,s*.015,s*.19,h*.04,s*.25,8,false);
-    detail('cavity',0,h*.82,s*.015,s*.19,h*.10,s*.25,9,false);
+    detail('cavity',0,h*.82,s*.015,s*.19,h*.13,s*.25,9,false);
     for(const side of [-1,1])detail('plate',side*s*.16,h*.86,0,s*.195,h*.18,s*.29,5,false);
     // The low diadem frames the closed shell; the organ stays below its lip.
     // The mantle opens around the deep thorax rather than lifting a badge.
