@@ -49,7 +49,7 @@ describe('shared key occlusion for fixed practicals', () => {
     expect(shared).toContain('roomKeyShadow.shadowBias');
     expect(shared).toContain('roomKeyShadow.shadowRadius');
     expect(shared).toContain('vDirectionalShadowCoord[ 0 ]');
-    expect(material.customProgramCacheKey()).toBe('authored-physical:local-light-rejection-v7');
+    expect(material.customProgramCacheKey()).toBe('authored-physical:local-light-rejection-v8');
     material.dispose();
   });
 
@@ -124,4 +124,16 @@ it('bounds dark-surface bounce without changing pooled material shader topology'
  optimizeLocalLights(material,.02,.16,100);expect(shader.uniforms.roomShadowReadability.value).toBe(.02);
  optimizeLocalLights(material,.02,.16,0);expect(shader.uniforms.roomShadowReadability.value).toBe(0);
  expect(material.customProgramCacheKey()).toBe(key);material.dispose();
+});
+
+
+it('keeps Cryo deck practicals inside the authored strip aperture without a radial pedestal',()=>{
+ const material=new T.MeshStandardMaterial({name:'painted-steel-deck'});
+ optimizeLocalLights(material);
+ const shader={uniforms:{},fragmentShader:T.ShaderLib.standard.fragmentShader};
+ material.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);
+ expect(shader.fragmentShader).toContain('float stripOnly=1.0-step(.5,roomFloorPattern.z)');
+ expect(shader.fragmentShader).toContain('mix(.12+slit*.40,slit*.40,stripOnly)');
+ expect(shader.fragmentShader).toContain('#if UNROLLED_LOOP_INDEX < 4');
+ material.dispose();
 });
