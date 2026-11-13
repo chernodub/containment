@@ -31,7 +31,7 @@ describe('physical actor ornaments in the shared geometry buffer', () => {
     expect(shader.vertexShader).toContain('identityNormal=normalMatrix*plateNormal');
     expect(shader.fragmentShader).toContain('actorGeometryOctNormal(identityNormal)');
     expect(shader.fragmentShader).toContain('if(role>5.5&&role<6.5&&identityChampion<.5)discard;');
-    expect(shader.fragmentShader).toContain('if(identityDeath>=1.0&&role>2.5&&role<3.5)discard;');
+    expect(shader.fragmentShader).toContain('if(identityDeath>=1.0&&((role>2.5&&role<3.5)||(role>7.5&&role<9.5)))discard;');
     expect(shader.fragmentShader).toContain('if(identityOpening<.08)discard;');
     expect(shader.fragmentShader).toContain('gl_FragColor=vec4(color*light*identityStageLight,1.0);');
     expect(shader.fragmentShader).not.toContain('containmentGeometry=vec4(0.0,0.0,0.0,1.0)');

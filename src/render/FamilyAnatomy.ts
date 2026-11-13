@@ -4,17 +4,23 @@ import type {ActorPart} from './ActorIdentity';
 export function familyAnatomy(kind: string, span: number, height: number): ActorPart[] {
   const s = span, h = height;
   if (kind === 'crawler') {
-    // One low, broad shell reads as a compact swarm body rather than a small Spitter.
-    return [{shape:'plate', role:0, position:[0,h*.48,0], scale:[s*.28,h*.22,s*.25], fitted:false}];
+    // A solid armored hump and two blunt forward mandibles survive small masks.
+    // The accent is part of the mandible geometry, never a floating light/card.
+    return [
+      {shape:'plate', role:0, position:[0,h*.62,-s*.015], scale:[s*.34,h*.34,s*.30], fitted:false},
+      {shape:'plate', role:10, position:[-s*.13,h*.26,s*.30], scale:[s*.060,h*.15,s*.13], fitted:false},
+      {shape:'plate', role:10, position:[s*.13,h*.26,s*.30], scale:[s*.060,h*.15,s*.13], fitted:false},
+    ];
   }
   if (kind === 'stalker') {
-    // Paired low lances flank a narrow thorax. Their pointed fronts face +Z.
+    // One raised rear stinger defines the dark runner, with a substantial thorax
+    // and broad folded forelimbs instead of additional hair-thin leg detail.
     return [
-      {shape:'plate', role:2, position:[0,h*.48,-s*.025], scale:[s*.075,h*.12,s*.26], fitted:false},
-      {shape:'shield', role:0, position:[-s*.18,h*.20,s*.08], scale:[s*.09,h*.16,s*.28], fitted:false},
-      {shape:'shield', role:0, position:[s*.18,h*.20,s*.08], scale:[s*.09,h*.16,s*.28], fitted:false},
-      {shape:'plate', role:2, position:[-s*.12,h*.28,-s*.035], scale:[s*.12,h*.045,s*.075], fitted:false},
-      {shape:'plate', role:2, position:[s*.12,h*.28,-s*.035], scale:[s*.12,h*.045,s*.075], fitted:false},
+      {shape:'plate', role:0, position:[0,h*.57,-s*.025], scale:[s*.20,h*.28,s*.27], fitted:false},
+      {shape:'shield', role:2, position:[-s*.21,h*.22,s*.055], scale:[s*.085,h*.20,s*.24], fitted:false},
+      {shape:'shield', role:2, position:[s*.21,h*.22,s*.055], scale:[s*.085,h*.20,s*.24], fitted:false},
+      {shape:'plate', role:2, position:[0,h*.67,-s*.18], scale:[s*.12,h*.22,s*.10], fitted:false},
+      {shape:'spine', role:10, position:[0,h*.94,-s*.18], scale:[s*.10,h*.30,s*.075], fitted:false},
     ];
   }
   if (kind === 'carrier') {

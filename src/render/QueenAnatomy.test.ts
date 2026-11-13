@@ -15,12 +15,12 @@ function pose(mesh:T.Mesh<T.BufferGeometry,T.ShaderMaterial>,opening:number){
   const side=geometry.getAttribute('identitySide'),anchor=geometry.getAttribute('identityAnchor');
   const span=mesh.material.uniforms.identitySpan.value as number,height=mesh.material.uniforms.identityHeight.value as number;
   const point=new T.Vector3(),hinge=new T.Vector3(),delta=new T.Vector3();
-  const result={plates:new T.Box3(),core:new T.Box3(),maxRadius:0,plateAnchors:new Set<string>(),coreAnchors:new Set<string>()};
+  const result={plates:new T.Box3(),core:new T.Box3(),rim:new T.Box3(),cavity:new T.Box3(),maxRadius:0,plateAnchors:new Set<string>(),coreAnchors:new Set<string>()};
   mesh.updateWorldMatrix(true,false);
   let actor:T.Object3D=mesh;while(actor.parent&&actor.name!=='alien-queen')actor=actor.parent;
   const transform=actor.matrixWorld.clone().invert().multiply(mesh.matrixWorld);
   for(let i=0;i<p.count;i++){
-    const id=role.getX(i);if(id!==3&&id!==5&&id!==7)continue;
+    const id=role.getX(i);if(id!==3&&id!==5&&id!==7&&id!==8&&id!==9)continue;
     point.fromBufferAttribute(p,i);hinge.fromBufferAttribute(anchor,i);
     if(id===5){
       result.plateAnchors.add(`${hinge.x}/${hinge.y}/${hinge.z}`);
@@ -30,26 +30,31 @@ function pose(mesh:T.Mesh<T.BufferGeometry,T.ShaderMaterial>,opening:number){
       point.y=hinge.y+Math.sin(angle)*delta.x+Math.cos(angle)*delta.y+opening*height*.035;
     }else if(id===3){
       result.coreAnchors.add(`${hinge.x}/${hinge.y}/${hinge.z}`);
-      point.sub(hinge).multiply(new T.Vector3(1+opening*.20,1+opening*.50,1+opening*.20)).add(hinge);
-      point.y+=opening*height*.30;
+      point.sub(hinge).multiply(new T.Vector3(1+opening*.08,1+opening*.08,1+opening*.08)).add(hinge);
+      point.y+=opening*height*.012;
     }
     point.applyMatrix4(transform);
-    if(id===3)result.core.expandByPoint(point);else if(id===5)result.plates.expandByPoint(point);
+    if(id===3)result.core.expandByPoint(point);else if(id===5)result.plates.expandByPoint(point);else if(id===8)result.rim.expandByPoint(point);else if(id===9)result.cavity.expandByPoint(point);
     result.maxRadius=Math.max(result.maxRadius,Math.hypot(point.x,point.z));
   }
   return result;
 }
 
-it('opens two broad shell halves around one rising weak point without expanding collision',()=>{
+it('opens two flush shell halves around a recessed organ and deep anatomical well inside collision',()=>{
   const model=alien('queen'),mesh=queenIdentity(model);
   try{
     model.animate(0,0,0);model.root.updateMatrixWorld(true);
     const closed=pose(mesh,0),opened=pose(mesh,1);
     expect(closed.plateAnchors.size).toBe(2);
     expect(closed.coreAnchors.size).toBe(1);
-    expect(opened.core.getCenter(new T.Vector3()).y-closed.core.getCenter(new T.Vector3()).y).toBeGreaterThan((mesh.material.uniforms.identityHeight.value as number)*.25);
-    expect(opened.core.getSize(new T.Vector3()).y/closed.core.getSize(new T.Vector3()).y).toBeGreaterThan(1.45);
-    expect(opened.core.max.y).toBeGreaterThan((mesh.material.uniforms.identityHeight.value as number)*1.35);
+    // Vulnerability is a hollow thorax: the organ remains below the lip and
+    // above the cavity bottom, rather than rising as an attached flat emblem.
+    expect(opened.core.max.y).toBeLessThan(opened.rim.min.y);
+    expect(opened.core.min.y).toBeGreaterThan(opened.cavity.min.y);
+    expect(opened.cavity.getSize(new T.Vector3()).y).toBeGreaterThan((mesh.material.uniforms.identityHeight.value as number)*.15);
+    expect(opened.core.getSize(new T.Vector3()).y).toBeGreaterThan((mesh.material.uniforms.identityHeight.value as number)*.10);
+    expect(closed.plates.max.y).toBeGreaterThan(closed.rim.max.y);
+    expect(mesh.material.fragmentShader).toContain('identityInner*identityOpening');
     // The mantle's visible silhouette changes substantially, with no new mesh.
     expect(Math.abs(opened.plates.getSize(new T.Vector3()).x-closed.plates.getSize(new T.Vector3()).x)).toBeGreaterThan(mesh.material.uniforms.identitySpan.value*.12);
     for(const opening of [0,.25,.5,.75,1])expect(pose(mesh,opening).maxRadius).toBeLessThanOrEqual(92/32*.99);
