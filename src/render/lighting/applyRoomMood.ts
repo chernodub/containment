@@ -16,7 +16,7 @@ const deckTint: Readonly<Record<ShipEnvironment, number>> = {
 const deckBounce: Readonly<Record<ShipEnvironment,number>>={cryogenics:.006,habitation:.006,security:.001,cargo:.004,communications:.016,engineering:.004,maintenance:.006,infested:.003,containment:.002,reactor:.012};
 const readableSteel = new T.Color(0x657481);
 const reactorSteel = new T.Color(0x626b73);
-const roomDeckGain:Readonly<Record<string,number>>={'awakening-bay':1.06,'communal-atrium':1.08,'freight-hold':1.18,'transmission-chamber':1.10,'safety-interlock-station':1.32,'coolant-plant':1.18};
+const roomDeckGain:Readonly<Record<string,number>>={'awakening-bay':1.06,'communal-atrium':1.20,'freight-hold':1.18,'transmission-chamber':1.10,'safety-interlock-station':1.32,'coolant-plant':1.18};
 const deckNames = new Set(['painted-steel-deck','annulus-deck','annulus-circulation','environment-floor','shaft-deck']);
 // A readable deck toe must not become an ambient wash across dark rack faces.
 const hardwareBounce:Partial<Record<ShipEnvironment,number>> = {communications:.006,security:.0002,containment:.0005,reactor:.007};

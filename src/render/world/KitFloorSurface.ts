@@ -9,7 +9,9 @@ export type KitFloorProof={idea:string;coverage:number;triangles:number;features
 /** Floor-only albedo calibration after the saved all20 density value audit. */
 export const KIT_FLOOR_VALUE_GAIN:Readonly<Record<string,number>>={
  'awakening-bay':.60,'passenger-vault':.20,'transmission-chamber':.64,
- 'crew-checkpoint':.68,'manual-control-chamber':.64,'diagnostic-gallery':.80,
+ 'crew-checkpoint':.48,'armory':.68,'breached-loading-bay':.60,
+ 'shielding-gate':.55,'overload-floor':.85,
+ 'manual-control-chamber':.64,'diagnostic-gallery':.80,
  'infested-workshop':.85,'swarm-junction':.85,
 };
 const FLOOR_IDEAS:Record<ShipEnvironment,string>={
@@ -159,9 +161,11 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
    quad(x+side*.32,z+.42,.07,.07,0,palette[2],'service-hatch',.028);
   }
  }
+ // Preserve ordering inside our pass, below every combat ground decal.
+ for(let i=1;i<positions.length;i+=3)positions[i]*=.75;
  const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setAttribute('normal',new T.Float32BufferAttribute(normals,3));geometry.setAttribute('color',new T.Float32BufferAttribute(colors,3));geometry.computeBoundingBox();geometry.computeBoundingSphere();
  // Approximate shipping long-lens surface view, sampled across legal room positions.
  const views:KitFloorProof['views']=[];
  for(let x=1.5;x<w;x+=4)for(let z=1.5;z<h;z+=4)if(valid(x,z))views.push({x,z,features:[...new Set(marks.filter(m=>Math.abs(m.x-x)<10&&m.z>z-8&&m.z<z+6).map(m=>m.kind))]});
- return{geometry,proof:{idea:FLOOR_IDEAS[environment],coverage:coveredCells/Math.max(1,legalCells),triangles:positions.length/9,features:counts,views,maxHeight:.029}};
+ return{geometry,proof:{idea:FLOOR_IDEAS[environment],coverage:coveredCells/Math.max(1,legalCells),triangles:positions.length/9,features:counts,views,maxHeight:.029*.75}};
 }

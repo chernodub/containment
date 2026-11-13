@@ -13,7 +13,7 @@ describe('functional floor density without navigation or camera cost',()=>{
   for(const view of a.proof.views)expect(view.features.length,`${room.templateId} view ${view.x},${view.z}`).toBeGreaterThanOrEqual(3);
   const p=a.geometry.getAttribute('position'),c=a.geometry.getAttribute('color');expect(c.count).toBe(p.count);
   for(let i=0;i<p.count;i++){
-   expect(p.getY(i)).toBeGreaterThan(0);expect(p.getY(i)).toBeLessThanOrEqual(.031);
+   expect(p.getY(i)).toBeGreaterThan(0);expect(p.getY(i)).toBeLessThanOrEqual(.024);
    expect(kitInside(p.getX(i)*32,p.getZ(i)*32,kitHull(t))).toBe(true);
    expect(t.voids?.some(poly=>kitInside(p.getX(i)*32,p.getZ(i)*32,poly))??false).toBe(false);
    expect(Number.isFinite(c.getX(i)+c.getY(i)+c.getZ(i))).toBe(true);

@@ -21,7 +21,8 @@ export function kitSupported(t:RoomTemplate,x:number,z:number):boolean {
 }
 /** Conservative full projected box, including edges/interior, rather than vertex-only validation. */
 export function kitBoundsSupported(t:RoomTemplate,box:T.Box3):boolean {
-  if(box.max.y<=.031)return true;
+  // Reserve the27mm friendly decal and30/35mm hostile danger layers.
+  if(box.max.y<=.024)return true;
   // The lead-approved upper layer clears the tallest sampled body by .95m.
   // It still has to pass the independent full camera-cone / triangle guards.
   if(box.min.y>=3)return true;

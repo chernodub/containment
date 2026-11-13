@@ -106,12 +106,12 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
   const nearest=crossing.length?new T.Vector2(i%2?crossing[crossing.length-1]:crossing[0],z):candidates[0].p;
   // L-shaped flat tray spans machine → actual hull, never an overhead playfield obstruction.
   const bend=new T.Vector2(nearest.x,z),mid=new T.Vector2(x,z).lerp(bend,.5);
-  box('conduit',mid.x,.027,z,Math.abs(x-nearest.x)+.08,.007,.34,'machine-to-wall cable trench');
-  box('conduit',nearest.x,.027,(z+nearest.y)/2,.34,.007,Math.abs(z-nearest.y)+.08,'wall return trench');
+  box('conduit',mid.x,.014,z,Math.abs(x-nearest.x)+.08,.004,.34,'machine-to-wall cable trench');
+  box('conduit',nearest.x,.014,(z+nearest.y)/2,.34,.004,Math.abs(z-nearest.y)+.08,'wall return trench');
   if(env==='infested'||id==='breached-loading-bay'||id==='reactor-vault'){
    // Author rocks flattened into one dark connective skin; raised masses continue only over architecture.
-   const path=[new T.Vector3(x,.025,z),new T.Vector3(x+(nearest.x-x)*.36,.025,z+.5),new T.Vector3(x+(nearest.x-x)*.72,.025,z+.22),new T.Vector3(nearest.x,.025,nearest.y)];
-   const skin=membraneGeometry(path,.34,.003,undefined,24);skin.computeBoundingBox();if(boundsSafe(skin.boundingBox!)){push(skin.toNonIndexed(),'resin');}skin.dispose();
+   const path=[new T.Vector3(x,.016,z),new T.Vector3(x+(nearest.x-x)*.36,.016,z+.5),new T.Vector3(x+(nearest.x-x)*.72,.016,z+.22),new T.Vector3(nearest.x,.016,nearest.y)];
+   const skin=membraneGeometry(path,.34,.002,undefined,24);skin.computeBoundingBox();if(boundsSafe(skin.boundingBox!)){push(skin.toNonIndexed(),'resin');}skin.dispose();
   }
   // Every story has one deliberate service interruption. It is composed as a
   // supported cluster; no case/chair is scattered into a circulation lane.
