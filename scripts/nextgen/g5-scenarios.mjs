@@ -20,6 +20,8 @@ async function stageStandard(room, close = false) {
   d.g5Proof.projected=[r.player,...ids.map(id=>r.actors.get(id))].map(model=>{const p=model.root.position.clone();p.y=model.height*.5;p.project(r.camera);return {name:model.root.name,x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2};});
 }
 export function registerG5Scenarios(scenarios) {
+  const kiting=scenarios.find(s=>s.id==='combat-kiting');
+  scenarios.push({...kiting,id:'g5-body-only',setup:new Function('room',`return (async()=>{await (${kiting.setup.toString()})(room);const d=window.__containmentDebug;d.renderer.playerBeacon.locatorMaterial.opacity=0;d.g5Proof={presentationOnly:true,groundLocatorHidden:true,bodyAndOcclusionSkinUnchanged:true};d.refresh();})();`)});
   const exposed=scenarios.find(s=>s.id==='g2-queen-exposed');
   scenarios.push({...exposed,id:'g5-queen-status',setup:new Function(`return (async()=>{await (${exposed.setup.toString()})();const d=window.__containmentDebug,q=d.renderer.queen,apply=q.setAffliction;q.setAffliction=status=>apply({...status,chilled:true,frozen:true,burning:true});d.g5Proof={presentationOnly:true,queenStatus:'frozen+burning',noSimulationStatusOverride:true};d.refresh();})();`)});
   scenarios.push({id:'g5-silhouettes',rooms:true,state:'playing',burst:true,stepMs:66,setup:new Function('room',`return (async()=>{await (${stageFamilies.toString()})(room);window.__containmentDebug.g5Proof={presentationOnly:true,silhouette:true};})();`)});

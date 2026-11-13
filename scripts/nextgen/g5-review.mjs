@@ -54,3 +54,13 @@ for(const shot of manifest.shots.filter(s=>s.evidence?.g5Proof?.masks)){
  }
  await writeFile(resolve(out,stem+'-silhouette-sheet-native.png'),encode(sheet));await writeFile(resolve(out,stem+'-silhouette-sheet480.png'),encode(area(sheet)));
 }
+
+// Native crowd crops are copied 1:1 around the actual projected marine bounds.
+const motion=new Map();for(const shot of manifest.shots.filter(s=>/combat-kiting|g5-body-only/.test(s.file))){const key=shot.file.replace(/-\d\d.png$/,'.png');if(!motion.has(key))motion.set(key,[]);motion.get(key).push(shot);}
+for(const[key,shots]of motion){const sheet=canvas(600*shots.length,430);for(let i=0;i<shots.length;i++){const shot=shots[i],bounds=shot.evidence.marineBounds;const x=Math.round((bounds.left+bounds.right)/2)-300,y=Math.round((bounds.top+bounds.bottom)/2)-200;const source=decode(await readFile(resolve(root,shot.file))),native=crop(source,x,y,600,400);drawImage(sheet,native,i*600,0,600,400);drawText(sheet,'FRAME '+(i+1)+' NATIVE PIXELS',i*600+8,408,undefined,1);await writeFile(resolve(out,'crop-'+shot.file),encode(native));}await writeFile(resolve(out,'motion-'+key),encode(sheet));}
+const queenPhases=['boss-reactor-vault-01.png','x2-queen-opening-high-reactor-vault-04.png','g2-queen-exposed-reactor-vault-04.png','x2-queen-closing-high-reactor-vault-04.png'];
+if(queenPhases.every(file=>manifest.shots.some(s=>s.file===file))){
+ const native=canvas(700*4,680),thumbs=canvas(480*4,300),receipt=[];
+ for(let i=0;i<queenPhases.length;i++){const file=queenPhases[i],shot=manifest.shots.find(s=>s.file===file),source=decode(await readFile(resolve(root,file)));const p=shot.evidence.queenProjected??{x:900,y:485};const x=Math.round(p.x)-350,y=Math.round(p.y)-325;drawImage(native,crop(source,x,y,700,650),i*700,0,700,650);drawText(native,shot.evidence.queenPhase+' '+shot.evidence.elapsed.toFixed(2)+'S',i*700+8,660,undefined,2);drawImage(thumbs,area(source),i*480,0,480,270);drawText(thumbs,shot.evidence.queenPhase,i*480+8,278,undefined,1);receipt.push({file,phase:shot.evidence.queenPhase,elapsed:shot.evidence.elapsed,nativeCrop:{x,y,width:700,height:650}});}
+ await writeFile(resolve(out,'queen-phases-native.png'),encode(native));await writeFile(resolve(out,'queen-phases480.png'),encode(thumbs));await writeFile(resolve(out,'queen-phases.json'),JSON.stringify(receipt,null,2));
+}
