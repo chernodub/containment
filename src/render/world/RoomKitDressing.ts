@@ -9,10 +9,10 @@ import {equipmentReservations} from './WorldDressing';
 import {membraneGeometry} from './OrganicGrowth';
 import {ROOM_KIT_STORIES} from './RoomKitStories';
 import {acquireRoomKit,roomKitURLs} from './RoomKitAssets';
-import {kitBoundsSupported,kitHull,kitMarineSamples,kitOccludesMarine} from './KitSafety';
+import {kitBoundsSupported,kitHull,kitMarineSamples,kitOccludesMarine,kitMeshOccludesMarine,kitOccludesStory} from './KitSafety';
 
 export const KIT_STANDARD_ROOMS=new Set<string>([...ROOM_STORY_ROUTE.map(room=>room.templateId),'reactor-vault']);
-export type KitPlacement={model:string;position:number[];size:number[];angle:number;purpose:string;bounds:number[][]};
+export type KitPlacement={model:string;position:number[];size:number[];angle:number;purpose:string;bounds:number[][];meshChecked?:boolean};
 export const KIT_PALETTES:Record<ShipEnvironment,readonly number[]>={
  cryogenics:[0x60777e,0x182a32,0x9faeac,0x91cddd,0x44565c],
  habitation:[0x68776d,0x1e2c30,0xa69778,0x87b6bd,0x785953],
@@ -40,7 +40,7 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
   if(role==='accent'){m.emissive.setHex(env==='infested'?0x719a53:0x9fe8ff);m.emissiveIntensity=env==='communications'?.38:.10;m.userData.motivatedEmitter=true;}
   finishes.set(role,m);return m;
  };
- const story=ROOM_KIT_STORIES[id];let triangleCount=0;
+ const story=ROOM_KIT_STORIES[id],storyDisplay=world.getObjectByName('g2-world-dressing')?.userData.storyDisplay;let triangleCount=0;
  const placements:KitPlacement[]=[],rejected:{model:string;reason:string}[]=[],samples=kitMarineSamples(t);
  const push=(geometry:T.BufferGeometry,role:string)=>{triangleCount+=geometry.getAttribute('position').count/3;for(const key of Object.keys(geometry.attributes))if(key!=='position'&&key!=='normal')geometry.deleteAttribute(key);const a=parts.get(role)??[];a.push(geometry);parts.set(role,a);};
  const boundsSafe=(b:T.Box3)=>kitBoundsSupported(t,b)&&!kitOccludesMarine(b,samples);
@@ -52,7 +52,17 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
   const scale=flat?new T.Vector3(w/size.x,h/size.y,d/size.z):new T.Vector3(1,1,1).multiplyScalar(Math.min(w/size.x,h/size.y,d/size.z));
   const matrix=new T.Matrix4().compose(new T.Vector3(x,y,z),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),angle),scale);
   const bounds=original.clone().applyMatrix4(matrix);
-  if(!boundsSafe(bounds)){rejected.push({model:name,reason:kitBoundsSupported(t,bounds)?'marine sightline':'navigation support'});return false;}
+  if(!kitBoundsSupported(t,bounds)){rejected.push({model:name,reason:'navigation support'});return false;}
+  let candidate:T.Object3D|undefined,meshChecked=false;
+  const candidateMesh=()=>{if(!candidate){candidate=model.clone(true);candidate.applyMatrix4(matrix);candidate.updateWorldMatrix(true,true);}return candidate;};
+  if(kitOccludesMarine(bounds,samples)){
+   // The actual silhouette keeps the same body-clearance/ray guarantee without
+   // pretending the empty space above a bed's mattress is an opaque box.
+   if(!['bedSingle','desk','loungeSofa','wall-window'].includes(name)||kitMeshOccludesMarine(candidateMesh(),bounds,samples)){rejected.push({model:name,reason:'marine sightline'});return false;}
+   meshChecked=true;
+  }
+  if(storyDisplay&&kitOccludesStory(candidateMesh(),storyDisplay)){rejected.push({model:name,reason:'authored story display sightline'});return false;}
+
   model.updateWorldMatrix(true,true);
   model.traverse(o=>{
    if(!(o instanceof T.Mesh))return;
@@ -65,7 +75,7 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
    for(const a of Object.keys(geometry.attributes))if(a!=='position'&&a!=='normal')geometry.deleteAttribute(a);
    push(geometry,role);
   });
-  placements.push({model:name,position:[x,y,z],size:[w,h,d],angle,purpose,bounds:[bounds.min.toArray(),bounds.max.toArray()]});return true;
+  placements.push({model:name,position:[x,y,z],size:[w,h,d],angle,purpose,bounds:[bounds.min.toArray(),bounds.max.toArray()],meshChecked});return true;
  };
  const box=(role:string,x:number,y:number,z:number,w:number,h:number,d:number,purpose:string)=>{
   const g=new T.BoxGeometry(w,h,d).translate(x,y,z);g.computeBoundingBox();if(!boundsSafe(g.boundingBox!)){g.dispose();return;}
@@ -87,10 +97,8 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
   box('conduit',nearest.x,.027,(z+nearest.y)/2,.34,.007,Math.abs(z-nearest.y)+.08,'wall return trench');
   if(env==='infested'||id==='breached-loading-bay'||id==='reactor-vault'){
    // Author rocks flattened into one dark connective skin; raised masses continue only over architecture.
-   const direction=new T.Vector2(nearest.x-x,nearest.y-z),distance=direction.length();
-   for(let n=0;n<7;n++){const f=n/6,bend=Math.sin(f*Math.PI)*.7,px=x+(nearest.x-x)*f,pz=z+(nearest.y-z)*f+bend;
-    place(n%2?'rock_largeB':'rock_largeA',px,.013,pz,.75+(n%3)*.18,.015,Math.max(.65,distance/5),Math.atan2(nearest.x-x,nearest.y-z)+.15*Math.sin(n),'continuous growth seam','resin',true);
-   }
+   const path=[new T.Vector3(x,.025,z),new T.Vector3(x+(nearest.x-x)*.36,.025,z+.5),new T.Vector3(x+(nearest.x-x)*.72,.025,z+.22),new T.Vector3(nearest.x,.025,nearest.y)];
+   const skin=membraneGeometry(path,.34,.003,undefined,24);skin.computeBoundingBox();if(boundsSafe(skin.boundingBox!)){push(skin.toNonIndexed(),'resin');}skin.dispose();
   }
   // Every story has one deliberate service interruption. It is composed as a
   // supported cluster; no case/chair is scattered into a circulation lane.
@@ -98,7 +106,7 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
   const replace=env==='habitation';
   let roof=replace?.17:.2;
   if(!replace){world.updateWorldMatrix(true,true);const ray=new T.Raycaster(new T.Vector3(x,12,z),new T.Vector3(0,-1,0));roof=ray.intersectObject(world,true).find(hit=>hit.point.y>.15)?.point.y??.2;}
-  if(i===0&&story){
+  if((i===0&&id!=='transmission-chamber'||i===1&&id==='transmission-chamber')&&story&&env!=='containment'&&env!=='reactor'&&env!=='infested'&&id!=='service-shaft-landing'){
    const anchorY=env==='habitation'?.17:roof+.02;
    for(const [n,name] of story.props.entries()){
     const px=x+(n-1)*Math.min(rw*.23,.75),pz=z+rd*.22;
@@ -109,11 +117,11 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
   }
   if(env==='habitation'){
    box('dark',x,.08,z,rw-.08,.16,rd-.08,'cabin foundation inside original reservation');
-   place('wall-window',x,.17,z-rd*.43,rw*.94,.85,.20,0,'cabin bulkhead behind interrupted domestic scene',undefined,true);
+   place('wall-window',x,.17,z-rd*.27,rw*.94,.85,.20,0,'cabin bulkhead behind interrupted domestic scene',undefined,true);
    if(i%2===0){
-    place('bedSingle',x-rw*.22,.17,z,rw*.45,1.05,rd*.92,0,'arrival berth left made');
-    place('desk',x+rw*.20,.17,z-rd*.18,rw*.40,1.1,rd*.40,0,'interrupted domestic desk');
-    place('radio',x+rw*.20,.92,z-rd*.18,.42,.28,.24,0,'radio still waiting for arrival');
+    place('bedSingle',x-rw*.22,.17,z+rd*.08,rw*.45,.9,Math.min(2.3,rd*.68),0,'arrival berth left made');
+    place('desk',x+rw*.20,.17,z-rd*.08,rw*.40,.85,rd*.28,0,'interrupted domestic desk');
+    place('radio',x+rw*.20,1.04,z-rd*.08,.42,.28,.24,0,'radio still waiting for arrival');
     place('chairDesk',x+rw*.19,.17,z+rd*.16,.65,.85,.65,.24,'chair pulled from desk');
    }else{
     place('loungeSofa',x,.17,z-rd*.23,rw*.88,1.05,rd*.42,0,'abandoned cabin sitting area');
@@ -127,11 +135,11 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
    place('computer-wide',x,roof+.85,z,Math.min(rw*.85,2.4),.8,Math.min(rd*.8,1.1),0,'local relay console');
    if(i===0)place('container-flat-open',x,roof,z+rd*.28,rw*.58,.5,rd*.25,.08,'interrupted cassette replacement');
   }else if(env==='infested'||id==='reactor-vault'){
-   place('Prop_Crate_Tarp',x,Math.max(.1,roof-.65),z,rw*.96,.85,rd*.94,.12,'workshop stock crushed into brood foundation','resin');
+   place('rock_largeD',x,.17,z,rw*.66,1.15,rd*.66,.12,'growth consumes machine foundation','resin',true);
    place(i%2?'rock_largeD':'rock_largeA',x-rw*.10,Math.max(.1,roof-.28),z+rd*.10,rw*.94,.72,rd*.86,i*.6,'growth consumes machine supports','resin');
    place('rock_smallTopA',x+rw*.23,roof+.1,z-rd*.2,rw*.30,.45,rd*.3,0,'acid vesicle in engulfed machine','scar');
    for(const side of [-1,1]){const path=[new T.Vector3(x,roof+.28,z),new T.Vector3(x+side*rw*.25,roof+.12,z),new T.Vector3(x+side*rw*.44,Math.max(.12,roof-.35),z)];const g=membraneGeometry(path,Math.min(.6,rd*.18),.04);g.computeBoundingBox();if(boundsSafe(g.boundingBox!)){g.deleteAttribute('uv');push(g.toNonIndexed(),'resin');}g.dispose();}
-  }else{
+  }else if(env!=='containment'&&env!=='reactor'&&env!=='engineering'&&id!=='service-shaft-landing'){
    const name=env==='cargo'?'Prop_Crate_Tarp_Large':env==='security'?'container-flat-open':env==='maintenance'?'pipe-ring':env==='cryogenics'?'computer':env==='containment'?'computer-screen':'computer-wide';
    place(name,x,roof+.03,z,Math.min(rw*.78,2.4),.75,Math.min(rd*.76,1.5),i%2?Math.PI/2:0,'interrupted '+env+' service work');
   }
@@ -144,11 +152,11 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
   for(let n=0;n<Math.min(4,Math.floor(len/4));n++){
    const f=(n+.4)/Math.min(4,Math.floor(len/4)),x=a.x/32+dx*f+nx*.82,z=a.y/32+dz*f+nz*.82,rear=z<h*.25,maxHeight=rear?2.2:.42;
    const name=env==='habitation'?(n%2?'cardboardBoxClosed':'cabinetBedDrawer'):env==='infested'?'rock_largeD':env==='cargo'?(n%2?'Prop_Crate_Tarp_Large':'Prop_Crate_Large'):env==='security'?'Prop_Locker':env==='communications'?'Prop_Shelves_ThinTall':env==='maintenance'?'Prop_Barrel1':n%2?'Prop_Locker':'Prop_Shelves_WideShort';
-   place(name,x,.03,z,1.35,maxHeight,1.35,-Math.atan2(dz,dx),env==='habitation'?'belongings left outside sealed cabins':'perimeter '+env+' service cluster',env==='infested'?'resin':undefined,!rear);
+   place(name,x,.03,z,1.35,maxHeight,1.35,-Math.atan2(dz,dx),edge===0&&n===0&&story?story.idea:env==='habitation'?'belongings left outside sealed cabins':'perimeter '+env+' service cluster',env==='infested'?'resin':undefined,!rear);
    if(rear)pipe(new T.Vector3(x,.3,z),new T.Vector3(x,2.1,z),.07,'dark');
   }
  }
- root.userData.triangles=triangleCount;root.userData.placements=placements;root.userData.rejected=rejected;root.userData.marineSightlineSamples=samples.length;root.userData.visualIdea=story?.idea??id+' / connected infrastructure and interrupted service';root.userData.narrativeVignette=story?.idea;
+ root.userData.majorCabinForms=placements.filter(p=>p.model==='bedSingle'||p.model==='loungeSofa').length;root.userData.triangles=triangleCount;root.userData.placements=placements;root.userData.rejected=rejected;root.userData.marineSightlineSamples=samples.length;root.userData.visualIdea=story?.idea??id+' / connected infrastructure and interrupted service';root.userData.narrativeVignette=story?.idea;
  for(const [role,list] of parts){const geometry=mergeGeometries(list,false);list.forEach(g=>g.dispose());if(!geometry)throw Error('kit role merge failed');geometry.computeBoundingBox();geometry.computeBoundingSphere();const mesh=new T.Mesh(geometry,finish(role));mesh.name='e6-kit-'+role;mesh.castShadow=mesh.receiveShadow=true;mesh.userData.visualOnly=true;root.add(mesh);}
  world.add(root);return root;
 }
@@ -166,7 +174,7 @@ export function attachRoomKits(world:T.Group,t:RoomTemplate,env:ShipEnvironment,
    const failure=results.find(result=>result.status==='rejected');if(failure?.status==='rejected')throw failure.reason;
    if(!active)return;
    root=buildRoomKitDressing(world,t,env,id,sources);
-   if(env==='habitation'&&id==='residential-gallery'){const original=world.getObjectByName('residential-gallery-equipment');if(original){replaced=original;original.visible=false;}}
+   if(env==='habitation'&&id==='residential-gallery'){const original=world.getObjectByName('residential-gallery-equipment');if(original&&root.userData.majorCabinForms>=t.obstacles.length){replaced=original;original.visible=false;}}
    
    owner.state='ready';onChanged();
   }finally{sources.forEach(source=>retireRoomModels(source));}

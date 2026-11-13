@@ -55,3 +55,29 @@ export function kitOccludesMarine(bounds:T.Box3,samples:readonly T.Vector3[]):bo
   }
   return false;
 }
+
+/** Exact static triangles resolve conservative box false positives on cutaway beds/desks. */
+export function kitMeshOccludesMarine(model:T.Object3D,bounds:T.Box3,samples:readonly T.Vector3[]):boolean {
+  const broad=bounds.clone().expandByVector(new T.Vector3(.34,0,.34)),ray=new T.Raycaster(),hit=new T.Vector3(),target=new T.Vector3();
+  model.updateWorldMatrix(true,true);
+  for(const p of samples){
+    if(p.x<bounds.min.x-3||p.x>bounds.max.x+3||p.z<bounds.min.z-6||p.z>bounds.max.z+.2)continue;
+    for(const height of [.12,.55,1.1,1.6,2.05])for(const lateral of [-8,-4,0,4,8])for(const dx of [-.34,0,.34])for(const dz of [-.34,0,.34]){
+      target.set(p.x+dx,height,p.z+dz);const origin=target.clone().add(new T.Vector3(lateral,CAMERA_OFFSET_Y,CAMERA_OFFSET_Z));
+      ray.set(origin,target.clone().sub(origin).normalize());ray.far=origin.distanceTo(target)-.01;
+      if(ray.ray.intersectBox(broad,hit)&&hit.distanceTo(origin)<ray.far&&ray.intersectObject(model,true).length)return true;
+    }
+  }
+  return false;
+}
+
+/** Keep the authored fatal-cost lettering clear of newly added dressing. */
+export function kitOccludesStory(model:T.Object3D,display:{corners:number[][]}|undefined):boolean {
+  if(!display)return false;
+  model.updateWorldMatrix(true,true);const corners=display.corners.map(p=>new T.Vector3().fromArray(p)),ray=new T.Raycaster();
+  for(let column=0;column<11;column++)for(let row=0;row<5;row++){
+    const u=.005+column*.99/10,v=.005+row*.99/4,target=corners[0].clone().lerp(corners[1],u).lerp(corners[3].clone().lerp(corners[2],u),v);
+    for(const lateral of [-8,0,8]){const origin=target.clone().add(new T.Vector3(lateral,CAMERA_OFFSET_Y,CAMERA_OFFSET_Z));ray.set(origin,target.clone().sub(origin).normalize());ray.far=origin.distanceTo(target)-.01;if(ray.intersectObject(model,true).length)return true;}
+  }
+  return false;
+}
