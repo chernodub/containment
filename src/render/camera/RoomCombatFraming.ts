@@ -18,6 +18,16 @@ export class RoomCombatFraming {
   private readonly polygonB = new Float64Array(128);
   private readonly boundsPolygon = [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}];
   private ready = false;
+  private shallowZoomFloor = 0;
+  private floorDepth = -1;
+  private floorHeroHeight = -1;
+  private floorCameraHeight = -1;
+  private floorCameraUpY = -1;
+  private floorCameraUpZ = -1;
+  private floorProjectionTop = -1;
+  private floorProjectionBottom = -1;
+  private floorViewportTop = -1;
+  private floorViewportBottom = -1;
   private roomWidth = 0;
   private roomDepth = 0;
   private x = 0;
@@ -26,14 +36,18 @@ export class RoomCombatFraming {
   private vz = 0;
   private zoom = 1;
   private zoomVelocity = 0;
-  readonly diagnostics = {heroPixels:0, outside:0, hullOutside:0, heroBoundsPixels:0, centeredX:false, centeredZ:false, smallX:false, smallZ:false, outsideX:0, outsideZ:0};
+  readonly diagnostics = {heroPixels:0, outside:0, hullOutside:0, heroBoundsPixels:0, centeredX:false, centeredZ:false, smallX:false, smallZ:false, outsideX:0, outsideZ:0, shallowZoomFloor:0};
 
-  reset():void { this.ready = false; }
+  reset():void { this.ready = false; this.floorDepth = -1; }
 
   /** Keep the marine legible; nearby walls take precedence over a remote threat. */
   apply(camera:Camera, focus:T.Vector3, x:number, z:number, radius:number, height:number,
     roomWidth:number, roomDepth:number, viewport:CombatViewport, cssHeight:number,
     dt:number, reducedMotion:boolean, boundary?:Boundary):void {
+    let roomLeft=0,roomTop=0,roomRight=roomWidth,roomBottom=roomDepth;
+    if(boundary?.length){roomLeft=roomTop=Infinity;roomRight=roomBottom=-Infinity;for(const p of boundary){roomLeft=Math.min(roomLeft,p.x/32);roomRight=Math.max(roomRight,p.x/32);roomTop=Math.min(roomTop,p.y/32);roomBottom=Math.max(roomBottom,p.y/32);}}
+    const roomZoomFloor=this.minimumShallowZoom(camera,viewport,roomBottom-roomTop,height);
+    this.diagnostics.shallowZoomFloor=roomZoomFloor;
     this.point.set(x,0,z).project(camera);
     this.target.set(x,height,z).project(camera);
     const heroSpan = Math.max(.0001,Math.abs(this.target.y-this.point.y)*cssHeight*.5);
@@ -41,7 +55,7 @@ export class RoomCombatFraming {
     const normal = camera.zoom * (HERO_NORMAL_PIXELS*cssHeight/1080) / heroSpan;
     // The existing pair solver may request a pullback, but cannot spend hero size.
     const threatRoom=T.MathUtils.clamp((camera.zoom-.85)/.15,0,1);
-    const desiredZoom = T.MathUtils.lerp(minimum,normal,threatRoom);
+    const desiredZoom = Math.max(roomZoomFloor,T.MathUtils.lerp(minimum,normal,threatRoom));
     const fresh = !this.ready || this.roomWidth!==roomWidth || this.roomDepth!==roomDepth;
     if(fresh){this.x=camera.position.x;this.z=camera.position.z;this.zoom=desiredZoom;this.vx=this.vz=this.zoomVelocity=0;this.ready=true;}
     this.roomWidth=roomWidth;this.roomDepth=roomDepth;
@@ -50,9 +64,7 @@ export class RoomCombatFraming {
     const sz=this.spring(this.z,this.vz,camera.position.z,omega,step,decay);this.z=sz[0];this.vz=sz[1];
     const zoomStep=this.spring(this.zoom,this.zoomVelocity,desiredZoom,omega,step,decay);this.zoom=zoomStep[0];this.zoomVelocity=zoomStep[1];
     this.move(camera,focus,this.x-camera.position.x,this.z-camera.position.z);
-    camera.zoom=this.zoom;camera.updateProjectionMatrix();
-    let roomLeft=0,roomTop=0,roomRight=roomWidth,roomBottom=roomDepth;
-    if(boundary?.length){roomLeft=roomTop=Infinity;roomRight=roomBottom=-Infinity;for(const p of boundary){roomLeft=Math.min(roomLeft,p.x/32);roomRight=Math.max(roomRight,p.x/32);roomTop=Math.min(roomTop,p.y/32);roomBottom=Math.max(roomBottom,p.y/32);}}
+    camera.zoom=Math.max(this.zoom,roomZoomFloor);camera.updateProjectionMatrix();
     this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
     // If a shallow deck fits but its actor head does not, use a modest closer
     // view until the deck once again extends beyond the usable frame. This
@@ -71,7 +83,7 @@ export class RoomCombatFraming {
     // that strip with a bounded pullback, stopping at the hero's size floor.
     for(let pass=0;pass<8&&outside>ROOM_OUTSIDE_LIMIT&&!this.diagnostics.centeredX&&!this.diagnostics.centeredZ;pass++){
       const oldZoom=camera.zoom;
-      camera.zoom*=.97;camera.updateProjectionMatrix();
+      camera.zoom=Math.max(roomZoomFloor,camera.zoom*.97);camera.updateProjectionMatrix();
       this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
       outside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
       if(camera.zoom>=oldZoom-1e-6)break;
@@ -95,6 +107,65 @@ export class RoomCombatFraming {
     this.diagnostics.outsideX=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
     this.setRectangle(minX,roomTop,maxX,roomBottom);
     this.diagnostics.outsideZ=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
+  }
+
+  /** A shallow room that fits the normal hero view should keep that framing
+   * through remote-threat changes. Derive its floor from deck-ray geometry,
+   * leaving genuinely smaller rooms on their existing centered-axis path.
+   * Cached inputs exclude translation/zoom, so live updates do no extra search. */
+  private minimumShallowZoom(camera:Camera,viewport:CombatViewport,depth:number,heroHeight:number):number {
+    const perspective=camera instanceof T.PerspectiveCamera;
+    const projectionTop=perspective?camera.fov:camera.top;
+    const projectionBottom=perspective?0:camera.bottom;
+    const upY=camera.matrixWorld.elements[5],upZ=camera.matrixWorld.elements[6];
+    if(this.floorDepth===depth&&this.floorHeroHeight===heroHeight&&Math.abs(this.floorCameraHeight-camera.position.y)<1e-8
+      &&Math.abs(this.floorCameraUpY-upY)<1e-10&&Math.abs(this.floorCameraUpZ-upZ)<1e-10&&this.floorProjectionTop===projectionTop
+      &&this.floorProjectionBottom===projectionBottom&&this.floorViewportTop===viewport.top
+      &&this.floorViewportBottom===viewport.bottom)return this.shallowZoomFloor;
+    this.floorDepth=depth;this.floorHeroHeight=heroHeight;this.floorCameraHeight=camera.position.y;
+    this.floorCameraUpY=upY;this.floorCameraUpZ=upZ;this.floorProjectionTop=projectionTop;
+    this.floorProjectionBottom=projectionBottom;this.floorViewportTop=viewport.top;this.floorViewportBottom=viewport.bottom;
+    const originalZoom=camera.zoom;
+    camera.zoom=1;camera.updateProjectionMatrix();
+    this.deckPoint(camera,viewport.centerX,viewport.centerY);
+    this.target.copy(this.point);this.target.y+=heroHeight;
+    this.point.project(camera);this.target.project(camera);
+    const referenceSpan=Math.max(.0001,Math.abs(this.target.y-this.point.y)*540);
+    let low=HERO_MIN_PIXELS/referenceSpan,high=HERO_NORMAL_PIXELS/referenceSpan;
+    const targetDepth=depth*.96;
+    this.shallowZoomFloor=0;
+    camera.zoom=high;camera.updateProjectionMatrix();
+    const fitsNormal=this.deckDepth(camera,viewport)<=targetDepth;
+    if(fitsNormal){
+      camera.zoom=low;camera.updateProjectionMatrix();
+      if(this.deckDepth(camera,viewport)>targetDepth){
+        for(let pass=0;pass<10;pass++){
+          const middle=(low+high)*.5;
+          camera.zoom=middle;camera.updateProjectionMatrix();
+          if(this.deckDepth(camera,viewport)>targetDepth)low=middle;else high=middle;
+        }
+        this.shallowZoomFloor=high;
+      }
+    }
+    camera.zoom=originalZoom;camera.updateProjectionMatrix();
+    return this.shallowZoomFloor;
+  }
+
+  private deckDepth(camera:Camera,viewport:CombatViewport):number {
+    this.deckPoint(camera,viewport.centerX,viewport.top);
+    const top=this.point.z;
+    this.deckPoint(camera,viewport.centerX,viewport.bottom);
+    return Math.abs(this.point.z-top);
+  }
+
+  private deckPoint(camera:Camera,x:number,y:number):void {
+    this.point.set(x,y,0).unproject(camera);
+    if(camera instanceof T.PerspectiveCamera){
+      this.point.sub(camera.position).multiplyScalar(-camera.position.y/this.point.y).add(camera.position);
+    }else{
+      this.target.set(0,0,-1).transformDirection(camera.matrixWorld);
+      this.point.addScaledVector(this.target,-this.point.y/this.target.y);
+    }
   }
 
   private setRectangle(left:number,top:number,right:number,bottom:number):void {
@@ -141,9 +212,7 @@ export class RoomCombatFraming {
 
   private deckCorners(camera:Camera,v:CombatViewport):void {
     for(let n=0;n<4;n++){
-      this.point.set(n<2?v.left:v.right,n%2?v.top:v.bottom,0).unproject(camera);
-      if(camera instanceof T.PerspectiveCamera){this.point.sub(camera.position);this.point.multiplyScalar(-camera.position.y/this.point.y).add(camera.position);}
-      else {this.target.set(0,0,-1).transformDirection(camera.matrixWorld);this.point.addScaledVector(this.target,-this.point.y/this.target.y);}
+      this.deckPoint(camera,n<2?v.left:v.right,n%2?v.top:v.bottom);
       this.corners[n*2]=this.point.x;this.corners[n*2+1]=this.point.z;
     }
   }
