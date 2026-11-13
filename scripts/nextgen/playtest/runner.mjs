@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {createServer} from 'node:http';
-import {readFile, writeFile, mkdir, appendFile, stat} from 'node:fs/promises';
+import {readFile, writeFile, mkdir, appendFile, stat, readdir} from 'node:fs/promises';
 import {resolve, extname, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
@@ -49,8 +49,11 @@ await writeFile(resolve(out,'trace.ndjson'),'');
 await mkdir(resolve(out,'source'),{recursive:true});
 const harnessHashes={};
 for(const file of ['runner.mjs','policy.mjs','ability-aim.ts','lifecycle.mjs','screen-progress.mjs','diagnostics.mjs','evidence.mjs','resume.mjs','visuals.mjs','bot-navigation.ts','bot-navigation-version.mjs']){const content=await readFile(resolve('scripts/nextgen/playtest',file));harnessHashes[file]=createHash('sha256').update(content).digest('hex');await writeFile(resolve(out,'source',file),content);}
+const distributionAssets={};
+for(const file of (await readdir(resolve(distRoot,'assets'))).filter(file=>/\.(js|css)$/.test(file)).sort())distributionAssets[file]=createHash('sha256').update(await readFile(resolve(distRoot,'assets',file))).digest('hex');
+const distributionSourceSHA=await readFile(resolve(distRoot,'SOURCE_SHA'),'utf8').then(value=>value.trim()).catch(()=>null);
 const report = {
-  label, rig, seed, hostLoad:{start:loadavg(),logicalCores:cpus().length}, distributionDirectory:distRoot, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
+  label, rig, seed, hostLoad:{start:loadavg(),logicalCores:cpus().length}, distributionDirectory:distRoot, distributionSourceSHA, distributionAssets, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
   legacy: resumed?.parent.legacy??!!options.legacy, fastRendering:!!options.fast, lifecycleOnly:!!options['death-probe'], presentation:true, roomLimit, harnessHashes, head: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
   branch: execFileSync('git',['branch','--show-current'],{encoding:'utf8'}).trim(), started: new Date().toISOString(),
   policyVersion:BOT_POLICY_VERSION, navigationVersion:BOT_NAVIGATION_VERSION,
