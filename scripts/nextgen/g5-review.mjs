@@ -64,3 +64,19 @@ if(queenPhases.every(file=>manifest.shots.some(s=>s.file===file))){
  for(let i=0;i<queenPhases.length;i++){const file=queenPhases[i],shot=manifest.shots.find(s=>s.file===file),source=decode(await readFile(resolve(root,file)));const p=shot.evidence.queenProjected??{x:900,y:485};const x=Math.round(p.x)-350,y=Math.round(p.y)-325;drawImage(native,crop(source,x,y,700,650),i*700,0,700,650);drawText(native,shot.evidence.queenPhase+' '+shot.evidence.elapsed.toFixed(2)+'S',i*700+8,660,undefined,2);drawImage(thumbs,area(source),i*480,0,480,270);drawText(thumbs,shot.evidence.queenPhase,i*480+8,278,undefined,1);receipt.push({file,phase:shot.evidence.queenPhase,elapsed:shot.evidence.elapsed,nativeCrop:{x,y,width:700,height:650}});}
  await writeFile(resolve(out,'queen-phases-native.png'),encode(native));await writeFile(resolve(out,'queen-phases480.png'),encode(thumbs));await writeFile(resolve(out,'queen-phases.json'),JSON.stringify(receipt,null,2));
 }
+
+// Four native transition samples preserve the real plate/organ motion between phases.
+for(const phase of ['opening','closing']){
+ const shots=manifest.shots.filter(s=>s.file.startsWith(`x2-queen-${phase}-high-reactor-vault-`)&&/-\d\d.png$/.test(s.file));
+ if(shots.length!==4)continue;
+ const sheet=canvas(700*4,680),receipt=[];
+ for(let i=0;i<shots.length;i++){
+  const shot=shots[i],source=decode(await readFile(resolve(root,shot.file))),p=shot.evidence.queenProjected??{x:900,y:485};
+  const x=Math.round(p.x)-350,y=Math.round(p.y)-325;
+  drawImage(sheet,crop(source,x,y,700,650),i*700,0,700,650);
+  drawText(sheet,`${shot.evidence.queenPhase} ${shot.evidence.elapsed.toFixed(2)}S`,i*700+8,660,undefined,2);
+  receipt.push({file:shot.file,phase:shot.evidence.queenPhase,elapsed:shot.evidence.elapsed,nativeCrop:{x,y,width:700,height:650}});
+ }
+ await writeFile(resolve(out,`queen-${phase}-native-sprite.png`),encode(sheet));
+ await writeFile(resolve(out,`queen-${phase}-native-sprite.json`),JSON.stringify(receipt,null,2));
+}
