@@ -65,8 +65,13 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
   const polygon:T.Vector2[]=[];
   for(let i=0;i<4;i++){const a=corners[i],b=corners[(i+1)%4],fa=field(a.x,a.y),fb=field(b.x,b.y);if(fa>=0)polygon.push(a);if((fa>=0)!==(fb>=0))polygon.push(a.clone().lerp(b,fa/(fa-fb)));}
   if(polygon.length<3)return;
-  const c=new T.Color(color);
-  for(const triangle of T.ShapeUtils.triangulateShape(polygon,[]))for(const i of triangle){positions.push(polygon[i].x,.018,polygon[i].y);normals.push(0,1,0);colors.push(c.r,c.g,c.b);}
+  const c=new T.Color(color),secondary=new T.Color(palette[matOrganic?1:2]),shade=new T.Color();
+  for(const triangle of T.ShapeUtils.triangulateShape(polygon,[])){
+   const [a,b,d]=triangle.map(i=>polygon[i]);
+   // Earcut winds for the XY plane; the shipping floor lies in XZ.
+   if((b.x-a.x)*(d.y-a.y)-(b.y-a.y)*(d.x-a.x)>0)triangle.reverse();
+   for(const i of triangle){const p=polygon[i],strength=T.MathUtils.clamp(field(p.x,p.y)/3,0,1);shade.copy(c).lerp(secondary,strength*.35);positions.push(p.x,.018,p.y);normals.push(0,1,0);colors.push(shade.r,shade.g,shade.b);}
+  }
   counts[kind]=(counts[kind]??0)+1;marks.push({x,z,kind});coveredCells++;
  };
  // Large material fields are defined by room use and machine position, not a universal decal stamp.
@@ -91,7 +96,7 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
   }
   if(matOrganic){contour(x,z,livingField,palette[0],'creep-mat');continue;}
   if(environment==='cryogenics'){contour(x,z,frostField,color,kind);continue;}
-  if(field){quad(x,z,pitch-.006,pitch-.006,0,color,kind,.018);coveredCells++;}
+  if(field){quad(x,z,pitch+.002,pitch+.002,0,color,kind,.018);coveredCells++;}
  }
  // Functional route/inlay network. Its scale is several metres, independent of tile seams.
  for(let z=1;z<h-1;z+=.65){

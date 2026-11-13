@@ -18,6 +18,10 @@ describe('functional floor density without navigation or camera cost',()=>{
    expect(t.voids?.some(poly=>kitInside(p.getX(i)*32,p.getZ(i)*32,poly))??false).toBe(false);
    expect(Number.isFinite(c.getX(i)+c.getY(i)+c.getZ(i))).toBe(true);
   }
+  for(let i=0;i<p.count;i+=3){
+   const ax=p.getX(i+1)-p.getX(i),az=p.getZ(i+1)-p.getZ(i),bx=p.getX(i+2)-p.getX(i),bz=p.getZ(i+2)-p.getZ(i);
+   expect(az*bx-ax*bz,'floor triangles face the gameplay camera').toBeGreaterThanOrEqual(0);
+  }
   expect(JSON.stringify(t)).toBe(before);a.geometry.dispose();
  });
  it('spreads flat organic mats while preserving substantial exposed human floor',()=>{
