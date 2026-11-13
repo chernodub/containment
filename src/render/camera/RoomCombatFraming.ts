@@ -1,0 +1,187 @@
+import * as T from 'three';
+import {type CombatViewport} from './HudCombatFraming';
+
+type Boundary = readonly Readonly<{x:number;y:number}>[];
+type Camera = T.OrthographicCamera | T.PerspectiveCamera;
+
+/** Final presentation limits, measured in CSS pixels at the reference height. */
+export const HERO_MIN_PIXELS = 100;
+export const HERO_NORMAL_PIXELS = 122;
+export const ROOM_OUTSIDE_LIMIT = .18;
+
+/** Constrain the actual camera after threat and HUD framing. No scene/DOM reads. */
+export class RoomCombatFraming {
+  private readonly point = new T.Vector3();
+  private readonly target = new T.Vector3();
+  private readonly corners = new Float64Array(8);
+  private readonly polygonA = new Float64Array(128);
+  private readonly polygonB = new Float64Array(128);
+  private readonly boundsPolygon = [{x:0,y:0},{x:0,y:0},{x:0,y:0},{x:0,y:0}];
+  private ready = false;
+  private roomWidth = 0;
+  private roomDepth = 0;
+  private x = 0;
+  private z = 0;
+  private vx = 0;
+  private vz = 0;
+  private zoom = 1;
+  private zoomVelocity = 0;
+  readonly diagnostics = {heroPixels:0, outside:0, hullOutside:0, heroBoundsPixels:0, centeredX:false, centeredZ:false, smallX:false, smallZ:false, outsideX:0, outsideZ:0};
+
+  reset():void { this.ready = false; }
+
+  /** Keep the marine legible; nearby walls take precedence over a remote threat. */
+  apply(camera:Camera, focus:T.Vector3, x:number, z:number, radius:number, height:number,
+    roomWidth:number, roomDepth:number, viewport:CombatViewport, cssHeight:number,
+    dt:number, reducedMotion:boolean, boundary?:Boundary):void {
+    this.point.set(x,0,z).project(camera);
+    this.target.set(x,height,z).project(camera);
+    const heroSpan = Math.max(.0001,Math.abs(this.target.y-this.point.y)*cssHeight*.5);
+    const minimum = camera.zoom * (HERO_MIN_PIXELS*cssHeight/1080) / heroSpan;
+    const normal = camera.zoom * (HERO_NORMAL_PIXELS*cssHeight/1080) / heroSpan;
+    // The existing pair solver may request a pullback, but cannot spend hero size.
+    const threatRoom=T.MathUtils.clamp((camera.zoom-.85)/.15,0,1);
+    const desiredZoom = T.MathUtils.lerp(minimum,normal,threatRoom);
+    const fresh = !this.ready || this.roomWidth!==roomWidth || this.roomDepth!==roomDepth;
+    if(fresh){this.x=camera.position.x;this.z=camera.position.z;this.zoom=desiredZoom;this.vx=this.vz=this.zoomVelocity=0;this.ready=true;}
+    this.roomWidth=roomWidth;this.roomDepth=roomDepth;
+    const step=Math.max(0,Math.min(.05,dt)),omega=reducedMotion?6:8,decay=Math.exp(-omega*step);
+    const sx=this.spring(this.x,this.vx,camera.position.x,omega,step,decay);this.x=sx[0];this.vx=sx[1];
+    const sz=this.spring(this.z,this.vz,camera.position.z,omega,step,decay);this.z=sz[0];this.vz=sz[1];
+    const zoomStep=this.spring(this.zoom,this.zoomVelocity,desiredZoom,omega,step,decay);this.zoom=zoomStep[0];this.zoomVelocity=zoomStep[1];
+    this.move(camera,focus,this.x-camera.position.x,this.z-camera.position.z);
+    camera.zoom=this.zoom;camera.updateProjectionMatrix();
+    let roomLeft=0,roomTop=0,roomRight=roomWidth,roomBottom=roomDepth;
+    if(boundary?.length){roomLeft=roomTop=Infinity;roomRight=roomBottom=-Infinity;for(const p of boundary){roomLeft=Math.min(roomLeft,p.x/32);roomRight=Math.max(roomRight,p.x/32);roomTop=Math.min(roomTop,p.y/32);roomBottom=Math.max(roomBottom,p.y/32);}}
+    this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
+    // If a shallow deck fits but its actor head does not, use a modest closer
+    // view until the deck once again extends beyond the usable frame. This
+    // avoids claiming a centered small room after body clearance moved it.
+    for(let pass=0;pass<14&&((this.diagnostics.smallX&&!this.diagnostics.centeredX)||(this.diagnostics.smallZ&&!this.diagnostics.centeredZ));pass++){
+      this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);
+      if(Math.abs(this.target.y-this.point.y)*540>=150)break;
+      camera.zoom*=1.025;camera.updateProjectionMatrix();
+      this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
+    }
+    const rectangle=this.boundsPolygon;
+    rectangle[0].x=rectangle[3].x=roomLeft*32;rectangle[1].x=rectangle[2].x=roomRight*32;
+    rectangle[0].y=rectangle[1].y=roomTop*32;rectangle[2].y=rectangle[3].y=roomBottom*32;
+    let outside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
+    // At a north corner the head needs a narrow strip beyond the deck. Reclaim
+    // that strip with a bounded pullback, stopping at the hero's size floor.
+    for(let pass=0;pass<8&&outside>ROOM_OUTSIDE_LIMIT&&!this.diagnostics.centeredX&&!this.diagnostics.centeredZ;pass++){
+      const oldZoom=camera.zoom;
+      camera.zoom*=.97;camera.updateProjectionMatrix();
+      this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
+      outside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
+      if(camera.zoom>=oldZoom-1e-6)break;
+    }
+    this.x=camera.position.x;this.z=camera.position.z;this.zoom=camera.zoom;
+    this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);
+    this.diagnostics.heroPixels=Math.abs(this.target.y-this.point.y)*cssHeight*.5;
+    this.diagnostics.outside=outside;
+    this.diagnostics.hullOutside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,boundary);
+    let top=-Infinity,bottom=Infinity;
+    for(let ix=-1;ix<=1;ix+=2)for(let iz=-1;iz<=1;iz+=2)for(let iy=0;iy<2;iy++){
+      this.point.set(x+ix*radius,iy*height,z+iz*radius).project(camera);top=Math.max(top,this.point.y);bottom=Math.min(bottom,this.point.y);
+    }
+    this.diagnostics.heroBoundsPixels=(top-bottom)*cssHeight*.5;
+    this.deckCorners(camera,viewport);
+    const minX=Math.min(this.corners[0],this.corners[2],this.corners[4],this.corners[6])-.001;
+    const maxX=Math.max(this.corners[0],this.corners[2],this.corners[4],this.corners[6])+.001;
+    const minZ=Math.min(this.corners[1],this.corners[3],this.corners[5],this.corners[7])-.001;
+    const maxZ=Math.max(this.corners[1],this.corners[3],this.corners[5],this.corners[7])+.001;
+    this.setRectangle(roomLeft,minZ,roomRight,maxZ);
+    this.diagnostics.outsideX=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
+    this.setRectangle(minX,roomTop,maxX,roomBottom);
+    this.diagnostics.outsideZ=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
+  }
+
+  private setRectangle(left:number,top:number,right:number,bottom:number):void {
+    const p=this.boundsPolygon;
+    p[0].x=p[3].x=left*32;p[1].x=p[2].x=right*32;
+    p[0].y=p[1].y=top*32;p[2].y=p[3].y=bottom*32;
+  }
+
+  private contain(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,
+    roomLeft:number,roomTop:number,roomRight:number,roomBottom:number,viewport:CombatViewport):void {
+    // Alternating projections retain HUD clearance even at bevels and corners.
+    for(let pass=0;pass<12;pass++){
+      this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);
+      const span=Math.abs(this.target.y-this.point.y)*540;
+      if(span<HERO_MIN_PIXELS){camera.zoom*=HERO_MIN_PIXELS/span;camera.updateProjectionMatrix();}
+      this.deckCorners(camera,viewport);
+      let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+      for(let n=0;n<4;n++){minX=Math.min(minX,this.corners[n*2]);maxX=Math.max(maxX,this.corners[n*2]);minZ=Math.min(minZ,this.corners[n*2+1]);maxZ=Math.max(maxZ,this.corners[n*2+1]);}
+      const spanX=maxX-minX,spanZ=maxZ-minZ;
+      this.diagnostics.smallX=spanX>roomRight-roomLeft;this.diagnostics.smallZ=spanZ>roomBottom-roomTop;
+      const dx=spanX>roomRight-roomLeft?(roomLeft+roomRight)*.5-(minX+maxX)*.5:Math.max(roomLeft-minX,Math.min(roomRight-maxX,0));
+      const dz=spanZ>roomBottom-roomTop?(roomTop+roomBottom)*.5-(minZ+maxZ)*.5:Math.max(roomTop-minZ,Math.min(roomBottom-maxZ,0));
+      this.move(camera,focus,dx,dz);
+      this.protectBody(camera,focus,x,z,radius,height,viewport);
+      this.deckCorners(camera,viewport);
+      const centerX=(Math.min(this.corners[0],this.corners[2],this.corners[4],this.corners[6])+Math.max(this.corners[0],this.corners[2],this.corners[4],this.corners[6]))*.5;
+      const centerZ=(Math.min(this.corners[1],this.corners[3],this.corners[5],this.corners[7])+Math.max(this.corners[1],this.corners[3],this.corners[5],this.corners[7]))*.5;
+      this.diagnostics.centeredX=this.diagnostics.smallX&&Math.abs(centerX-(roomLeft+roomRight)*.5)<1e-5;
+      this.diagnostics.centeredZ=this.diagnostics.smallZ&&Math.abs(centerZ-(roomTop+roomBottom)*.5)<1e-5;
+      if(Math.abs(dx)+Math.abs(dz)<1e-6&&pass>1)break;
+    }
+  }
+
+  private readonly springResult = [0,0];
+  private spring(value:number,velocity:number,target:number,omega:number,dt:number,decay:number):number[]{
+    const delta=value-target,term=(velocity+omega*delta)*dt;
+    this.springResult[0]=target+(delta+term)*decay;this.springResult[1]=(velocity-omega*term)*decay;
+    return this.springResult;
+  }
+
+  private move(camera:Camera,focus:T.Vector3,dx:number,dz:number):void {
+    camera.position.x+=dx;camera.position.z+=dz;focus.x+=dx;focus.z+=dz;camera.updateMatrixWorld();
+  }
+
+  private deckCorners(camera:Camera,v:CombatViewport):void {
+    for(let n=0;n<4;n++){
+      this.point.set(n<2?v.left:v.right,n%2?v.top:v.bottom,0).unproject(camera);
+      if(camera instanceof T.PerspectiveCamera){this.point.sub(camera.position);this.point.multiplyScalar(-camera.position.y/this.point.y).add(camera.position);}
+      else {this.target.set(0,0,-1).transformDirection(camera.matrixWorld);this.point.addScaledVector(this.target,-this.point.y/this.target.y);}
+      this.corners[n*2]=this.point.x;this.corners[n*2+1]=this.point.z;
+    }
+  }
+
+  private protectBody(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,v:CombatViewport):void {
+    for(let pass=0;pass<3;pass++){
+      let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
+      for(let ix=-1;ix<=1;ix+=2)for(let iz=-1;iz<=1;iz+=2)for(let iy=0;iy<2;iy++){
+        this.point.set(x+ix*radius,iy*height,z+iz*radius).project(camera);
+        left=Math.min(left,this.point.x);right=Math.max(right,this.point.x);top=Math.max(top,this.point.y);bottom=Math.min(bottom,this.point.y);
+      }
+      const padX=.025*v.halfX,padY=.025*v.halfY;
+      const dx=left<v.left+padX?left-v.left-padX:right>v.right-padX?right-v.right+padX:0;
+      const dy=top>v.top-padY?top-v.top+padY:bottom<v.bottom+padY?bottom-v.bottom-padY:0;
+      if(Math.abs(dx)+Math.abs(dy)<1e-7)return;
+      this.point.set(x,height*.5,z).project(camera);this.target.copy(this.point);this.target.x-=dx;this.target.y-=dy;
+      this.point.unproject(camera);this.target.unproject(camera);
+      if(camera instanceof T.PerspectiveCamera){const amount=(this.point.y-camera.position.y)/(this.target.y-camera.position.y);this.target.sub(camera.position).multiplyScalar(amount).add(camera.position);}
+      else {this.target.z-= (this.target.y-this.point.y)*camera.matrixWorld.elements[10]/camera.matrixWorld.elements[9];this.target.y=this.point.y;}
+      this.point.sub(this.target);this.move(camera,focus,this.point.x,this.point.z);
+    }
+  }
+
+  /** Exact screen-area receipt of the projected deck rectangle, clipped to HUD. */
+  outsideFraction(camera:Camera,width:number,depth:number,v:CombatViewport,boundary?:Boundary):number {
+    let source=this.polygonA,dest=this.polygonB,count=boundary?.length??4;
+    for(let n=0;n<count;n++){this.point.set(boundary?boundary[n].x/32:n===1||n===2?width:0,0,boundary?boundary[n].y/32:n>=2?depth:0).project(camera);source[n*2]=this.point.x;source[n*2+1]=this.point.y;}
+    for(let edge=0;edge<4;edge++){
+      const axis=edge<2?0:1,bound=edge===0?v.left:edge===1?v.right:edge===2?v.bottom:v.top,sign=edge%2===0?1:-1;
+      let next=0;
+      for(let n=0;n<count;n++){
+        const p=(n+count-1)%count,a=source[p*2+axis],b=source[n*2+axis],insideA=(a-bound)*sign>=0,insideB=(b-bound)*sign>=0;
+        if(insideA!==insideB){const t=(bound-a)/(b-a);dest[next*2]=source[p*2]+(source[n*2]-source[p*2])*t;dest[next*2+1]=source[p*2+1]+(source[n*2+1]-source[p*2+1])*t;next++;}
+        if(insideB){dest[next*2]=source[n*2];dest[next*2+1]=source[n*2+1];next++;}
+      }
+      count=next;const swap=source;source=dest;dest=swap;
+    }
+    let area=0;for(let n=0;n<count;n++){const p=(n+1)%count;area+=source[n*2]*source[p*2+1]-source[p*2]*source[n*2+1];}
+    return Math.max(0,Math.min(1,1-Math.abs(area)*.5/((v.right-v.left)*(v.top-v.bottom))));
+  }
+}
