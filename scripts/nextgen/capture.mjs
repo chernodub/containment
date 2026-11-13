@@ -14,7 +14,7 @@ import {compareGalleries} from './gallery.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');process.chdir(root);
 const args=process.argv.slice(2),flags=new Set(['build','headed','keep-going','help']);
-const known=new Set([...flags,'label','scenarios','rooms','burst','width','height','dpr','timestamp','seed','compare','step-ms','sprite-width','dist','dist-source-sha','graphics','style','hud-insets']);
+const known=new Set([...flags,'label','scenarios','rooms','burst','width','height','dpr','timestamp','seed','compare','step-ms','sprite-width','dist','dist-source-sha','graphics','style','hud-insets','kiting-retries']);
 for(const arg of args){assert(arg.startsWith('--')&&known.has(arg.slice(2).split('=')[0]),`Unknown option ${arg}`);assert(arg.includes('=')||flags.has(arg.slice(2)),`Use --name=value: ${arg}`);}
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const integer=(name,fallback,min,max)=>{const n=Number(option(name,fallback));assert(Number.isInteger(n)&&n>=min&&n<=max,`--${name} must be ${min}..${max}`);return n;};
@@ -23,6 +23,7 @@ const comparison=option('compare','');
 const label=option('label',comparison?'comparison-'+comparison.replaceAll(',','-'):'baseline');assert(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(label),'Unsafe label');
 const viewport={width:integer('width',1920,640,7680),height:integer('height',1080,360,4320)},dpr=Number(option('dpr',1));assert(dpr>=.5&&dpr<=4,'--dpr must be .5..4');
 const burst=integer('burst',4,1,30),seed=integer('seed',1729,0,0xffffffff),keepGoing=args.includes('--keep-going');
+const kitingRetries=integer('kiting-retries',0,0,32);
 const style=option('style','bold');assert(['subtle','medium','bold'].includes(style),'Invalid --style strength');
 const graphics=JSON.parse(option('graphics','{}'));assert(graphics&&typeof graphics==='object'&&!Array.isArray(graphics),'--graphics requires an options JSON object');
 const hudInsets=JSON.parse(option('hud-insets','null'));if(hudInsets!==null){assert(hudInsets&&typeof hudInsets==='object'&&!Array.isArray(hudInsets),'--hud-insets requires an object');assert(['top','right','bottom','left'].every(key=>Number.isFinite(hudInsets[key])&&hudInsets[key]>=0),'HUD insets require four finite nonnegative CSS-pixel values');}
@@ -53,6 +54,31 @@ async function launch(){
  throw Error('No usable WebGL2 renderer. Try --headed or PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH.');
 }
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/** Opt-in fixture search, never a campaign retry or a changed visibility gate. */
+async function stageKitingBurst(frames){
+ const attempts=[];let next=0,chosen=null;
+ for(let trial=0;trial<kitingRetries&&next<32;trial++){
+  await page.evaluate(seed=>window.__captureSeed(seed),seed);
+  const staged=await page.evaluate(stageKiting,next),counts=[];
+  for(let frame=0;frame<frames;frame++){
+   await page.evaluate(advanceKiting,{frame,stepMs});
+   const count=await page.evaluate(()=>{const d=window.__containmentDebug;d.refresh();return d.game.enemies.snapshot.enemies.filter(e=>e.health>0&&d.renderer.visible(e.x,e.y)).length;});
+   counts.push(count);if(count<12)break;
+  }
+  attempts.push({laneAttempt:staged.laneAttempt,player:staged.player,counts});
+  if(counts.length===frames&&counts.every(count=>count>=12)){chosen=staged;break;}
+  next=staged.laneAttempt+1;
+ }
+ assert(chosen,`No native kiting burst retained twelve visible threats: ${JSON.stringify(attempts)}`);
+ // Recreate the chosen real room/rig and its ordinary public ability/input
+ // sequence; the capture still executes and asserts every phase independently.
+ await page.evaluate(async()=>{const d=window.__containmentDebug,g=d.game;await d.gotoRoom(g.node.templateId,{version:g.expedition.run.version,rig:'cryo'});});
+ await page.evaluate(seed=>window.__captureSeed(seed),seed);
+ const replay=await page.evaluate(stageKiting,chosen.laneAttempt);
+ assert.equal(replay.laneAttempt,chosen.laneAttempt,'Native lane replay changed the validated attempt');
+ assert.deepEqual(replay.player,chosen.player,'Native lane replay changed the legal marine origin');
+ return{...replay,preflight:{frames,stepMs,attempts,method:'Real native four-phase fixture search, then fresh room replay; all original capture assertions remain.'}};
+}
 async function save(){
  await writeFile(resolve(out,'pngs.txt'),[...manifest.shots,...manifest.sprites].map(s=>resolve(out,s.file)).join('\n')+'\n');
  manifest.runtimeSeconds=Number(((performance.now()-started)/1000).toFixed(2));
@@ -113,7 +139,7 @@ try{
    // stream only after room preparation, before synchronous combat/VFX staging.
    await page.evaluate(seed=>window.__captureSeed(seed),seed);
    let staging;if(scenario.combat)staging=await page.evaluate(stageCombat,{status:!!scenario.status});
-   if(scenario.kiting)staging=await page.evaluate(stageKiting);
+   if(scenario.kiting)staging=kitingRetries?await stageKitingBurst(scenario.burst?burst:1):await page.evaluate(stageKiting);
    if(hudInsets)await page.evaluate(insets=>{const d=window.__containmentDebug;if(typeof d.renderer.setHudInsets!=='function')throw Error('Frozen renderer has no setHudInsets API');d.renderer.setHudInsets(insets);d.refresh();},hudInsets);
    await page.waitForFunction(()=>!window.__containmentDebug.renderer.roomLoading&&document.querySelector('#world').getAttribute('aria-busy')!=='true');
    // A terminal game snapshot can precede its lazy DOM commit. Inspect only

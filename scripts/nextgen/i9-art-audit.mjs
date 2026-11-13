@@ -131,7 +131,8 @@ for(const kind of ['families','queen-armored','queen-exposed'])for(const frame o
 }
 const groups=[...families,'queen-armored','queen-exposed'].map(name=>{
   let candidates=tiles.filter(t=>families.includes(name)?t.kind==='families'&&t.actor.name===name:t.kind===name);
-  if(!families.includes(name))candidates=candidates.filter(t=>String(t.phase).toLowerCase()===(name==='queen-armored'?'armored':'exposed'));
+  // The authoritative simulation names the exposed phase "vulnerable".
+  if(!families.includes(name))candidates=candidates.filter(t=>name==='queen-armored'?t.phase==='armored':['exposed','vulnerable'].includes(t.phase));
   const preferredFrame=families.includes(name)?4:1,chosenFrame=candidates.some(t=>t.frame===preferredFrame)?preferredFrame:candidates[0]?.frame;
   const selected=candidates.filter(t=>t.frame===chosenFrame);
   if(!selected.length)failures.push({kind:'silhouette-sheet',name,reason:'missing visible family/actual Queen phase spans'});
