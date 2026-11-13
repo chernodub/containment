@@ -2,6 +2,7 @@ import type {PerformanceSample} from '../../scripts/nextgen/debug';
 import { app, el, mountShell } from './shell';
 import { createHud } from './hud/Hud';
 import { createScreens } from './screens/ScreenManager';
+import {titleKeyArt} from './screens/title/keyArt';
 import { systemScreen } from './screens/initialTemplates';
 import { createSettings } from './settings';
 import {getUiPreferences, getAbilities, hasAudioDirector, forwardAudioEffect, playUiCue, playPresentationCue, syncAudioDirector, cameraEffect} from './gameAdapter';
@@ -42,7 +43,7 @@ export async function bootstrap() {
         el('system-retry').addEventListener('click', () => location.reload());
     };
     function positionHud() { positionHudPanels(renderer.playerScreenBounds(game.player.radius), innerWidth, innerHeight); }
-    el('overlay').innerHTML = '<div class="asset-loading"><span>CONTAINMENT / DEPTH</span><h2>Establishing connection</h2><p>Synchronizing ship systems</p><div role="progressbar" aria-label="Loading assets" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="asset-track"><i id="asset-progress"></i></div><small>AWAITING MARINE WAKE PROTOCOL</small></div>';
+    el('overlay').innerHTML = `<div class="asset-loading-art">${titleKeyArt(undefined,true)}<div class="asset-loading"><span>CONTAINMENT / DEPTH</span><h2>Establishing connection</h2><p>Synchronizing ship systems</p><div role="progressbar" aria-label="Loading assets" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="asset-track"><i id="asset-progress"></i></div><small>AWAITING MARINE WAKE PROTOCOL</small></div></div>`;
     const rendererCode=import('../render/DepthRenderer');
     const audioCode=import('../game/audio/AudioSystem');
     try {

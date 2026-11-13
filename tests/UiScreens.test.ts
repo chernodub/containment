@@ -499,15 +499,17 @@ test('menu shortcuts follow physical positions and retain native modifier shortc
   } finally {await page.close();}
 });
 
-test.each([[1280,720],[1920,1080]])('cinematic menu yields vector art while keeping the front door in the left 45 percent at %i × %i',async(width,height)=>{
+test.each([[1280,720],[1920,1080]])('authored key art covers either renderer contract while keeping the front door in the left 45 percent at %i × %i',async(width,height)=>{
   const page=await mount(width,height);
   try {
-    expect(await page.locator('.title-hull').count()).toBe(1);
+    expect(await page.locator('.title-key-art').count()).toBe(1);
     await page.evaluate(()=>{
       const ui=(window as any).ui;
       ui.renderer.menuPresentation='cinematic';ui.screens.syncScreen(true);
     });
-    expect(await page.locator('.title-hull').count()).toBe(0);
+    expect(await page.locator('.title-key-art').count()).toBe(1);
+    expect(await page.locator('.title-key-art').getAttribute('aria-hidden')).toBe('true');
+    expect(await page.locator('.title-key-art').evaluate(node=>getComputedStyle(node).pointerEvents)).toBe('none');
     expect(await page.locator('.title-screen').getAttribute('data-menu-presentation')).toBe('cinematic');
     const box=(await page.locator('.title-copy').boundingBox())!;
     expect(box.x+box.width).toBeLessThanOrEqual(width*.45+1);

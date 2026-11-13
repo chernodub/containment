@@ -237,7 +237,7 @@ export function createScreens(context: ScreenContext) {
       const restoring=context.graphicsLost()||context.recovering();
       html=`<section class="panel recovery-panel" aria-labelledby="recovery-title"><h2 id="recovery-title">${restoring?'Restoring graphics…':'Graphics restored.'}</h2><p role="status">${restoring?'Your expedition is on hold. Wait for graphics to return, or reload your last checkpoint.':'Your expedition is still on hold. Continue when you are ready.'}</p><button id="graphics-continue" class="primary" ${restoring?'disabled':''}>${recoveryStatus==='paused'||recoveryStatus==='playing'?'Return to pause':'Continue'}</button><button id="recover" class="secondary">Reload game</button></section>`;
     }
-    else if(isMenu) html=titleScreen(game,settingsOpen?settings():'',settingsOpen,creditsOpen,controlsOpen,continuation,hasCinematicMenu(renderer));
+    else if(isMenu) html=titleScreen(game,settingsOpen?settings():'',settingsOpen,creditsOpen,controlsOpen,continuation,hasCinematicMenu(renderer),previousStatus!=='menu');
     else if(status==='rig-select') html=secondary!.rigScreen(selectedRig);
     else if(status==='paused') html=secondary!.pauseScreen(game,pauseTab,pauseTab==='settings'?settings():'',context.graphicsLost());
     else if(status==='reward') html=expeditionRewardOffers(game.expedition).length?secondary!.draftScreen(game):secondary!.shopScreen(game);

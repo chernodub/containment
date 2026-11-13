@@ -13,7 +13,7 @@ export function configureIntegratedRenderer(renderer: DepthRenderer): void {
   (renderer as unknown as IntegratedRenderer).handlesCameraEffects = true;
 }
 
-/** Let a future cinematic backdrop replace only the optional right-hand vector artwork. */
+/** Retain renderer capability reporting beneath the authored, opaque title artwork. */
 export function hasCinematicMenu(renderer: DepthRenderer): boolean {
   return (renderer as unknown as IntegratedRenderer).menuPresentation === 'cinematic';
 }
