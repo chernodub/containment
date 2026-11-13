@@ -20,7 +20,7 @@ float grille=1.0-.56*(1.0-smoothstep(.05,.13,abs(q.x+.12+q.y*.29)));
 float interruption=1.0-.34*(1.0-smoothstep(.10,.20,abs(q.y-.16)))*smoothstep(-.6,.6,q.x);
 if(apertureStyle>.5&&apertureStyle<1.5){edge=1.0-smoothstep(.78,.93,abs(q.x)/(1.0-.25*q.y));reach=1.0-smoothstep(.82,1.0,abs(q.y));}
 if(apertureStyle>1.5&&apertureStyle<2.5){grille=mix(.55,1.0,smoothstep(.08,.18,abs(fract(q.y*2.3+.17)-.5)));}
-if(apertureStyle>2.5&&apertureStyle<3.5){edge=1.0-smoothstep(.30,.91,abs(q.x+.23*sin(q.y*3.8)));grille=.72;interruption=1.0;reach*=.72;}
+if(apertureStyle>2.5&&apertureStyle<3.5){float membrane=q.x+.19*sin(q.y*4.7)+.08*sin(q.y*11.0);float lobes=.60+.19*sin(q.y*6.0+.8)+.09*sin(q.y*13.0);edge=1.0-smoothstep(lobes,lobes+.24,abs(membrane));grille=.72+.18*sin(q.y*7.0+q.x*3.0);interruption=1.0-.48*smoothstep(.05,.20,abs(q.x+.29*q.y))*(1.0-smoothstep(.23,.65,abs(q.y-.21)));reach=1.0-smoothstep(.55,1.0,abs(q.y));}
 if(apertureStyle>3.5){edge=1.0-smoothstep(.50,.94,abs(q.x+.3*q.y));grille=.60+.4*smoothstep(-.25,.2,q.x);}
 float pool=edge*reach*grille*interruption*(.78+.22*q.y);gl_FragColor=vec4(poolColor,pool*poolIntensity);
 #include <tonemapping_fragment>
@@ -39,7 +39,7 @@ float pool=edge*reach*grille*interruption*(.78+.22*q.y);gl_FragColor=vec4(poolCo
       const reactor=!!fixture.userData.reactorMood;
       const radius=reactor?2.5:Math.min(3.5,Math.max(2.3,fixture.distance*.5));
       const angle=fixture.userData.poolAngle??Math.atan2((fixture.userData.poolCenterX??0)-fixture.position.x,(fixture.userData.poolCenterZ??0)-fixture.position.z);
-      const style=fixture.userData.poolStyle??0,width=style===1?1.15:style===3?.72:reactor?.72:.85,depth=style===3?radius*.8:radius;
+      const style=fixture.userData.poolStyle??0,width=fixture.userData.poolWidth??(style===1?1.15:style===3?.9:reactor?.72:.85),depth=fixture.userData.poolDepth??(style===3?2.7:radius);
       if(styles.getX(count)!==style){styles.setX(count,style);stylesChanged=true;}
       this.dummy.position.set(fixture.position.x,.035,fixture.position.z);
       if(!reactor&&fixture.position.y<1.8){const dx=(fixture.userData.poolCenterX??fixture.position.x)-fixture.position.x,dz=(fixture.userData.poolCenterZ??fixture.position.z)-fixture.position.z,distance=Math.hypot(dx,dz);if(distance>.01){const offset=Math.min(1.6,distance*.25);this.dummy.position.x+=dx/distance*offset;this.dummy.position.z+=dz/distance*offset;}}

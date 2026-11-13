@@ -12,6 +12,8 @@ const deckTint: Readonly<Record<ShipEnvironment, number>> = {
   communications: 0xeff6f9, engineering: 0xf9f6ee, maintenance: 0xeff7f3,
   infested: 0xf1f6f0, containment: 0xf4f3fa, reactor: 0xf9f4ed,
 };
+// Bounded cool reflected fill keeps construction legible in the unlit deck toe.
+const deckBounce: Readonly<Record<ShipEnvironment,number>>={cryogenics:.006,habitation:.006,security:.004,cargo:.006,communications:.013,engineering:.010,maintenance:.006,infested:.003,containment:.004,reactor:.013};
 const readableSteel = new T.Color(0x657481);
 const reactorSteel = new T.Color(0x626b73);
 
@@ -49,7 +51,7 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
       if (!(environment === 'reactor' && material.name === 'ship-cold-practical') && !material.userData.motivatedEmitter && original.emissiveIntensity >= .5 && material.emissive.getHex() !== 0) {
         material.emissiveIntensity = Math.max(2.6, original.emissiveIntensity * 1.75);
       }
-      optimizeLocalLights(material,environment==='reactor'?(templateId==='overload-floor'||templateId==='manual-control-chamber'?.12:1):.02,environment==='cargo'||environment==='communications'?.16:.025,environment==='cargo'?.006:environment==='communications'?.009:templateId==='manual-control-chamber'?.008:legacyBounce);
+      optimizeLocalLights(material,environment==='reactor'?(templateId==='overload-floor'||templateId==='manual-control-chamber'?.12:1):.02,environment==='cargo'||environment==='communications'?.16:.025,Math.max(deckBounce[environment],legacyBounce));
     }
   });
 }

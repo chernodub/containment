@@ -131,8 +131,14 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
           diffuseColor.rgb*=1.0-gutter*.25;
         }else if(construction<7.5){
           float eaten=smoothstep(.36,.68,roomFloorNoise(roomFloorP*.20+vec2(12.0,4.0)));
-          diffuseColor.rgb*=1.0-eaten*.36;
-          deckJoint*=1.0-eaten*.85;
+          diffuseColor.rgb*=1.15-eaten*.70;
+          // Consumed cassettes still expose broken transverse braces and service trenches.
+          vec2 remnant=fract(roomFloorP/vec2(1.9,4.6));vec2 edge=min(remnant,1.0-remnant)*vec2(1.9,4.6);
+          deckJoint=roomFloorLine(min(edge.x,edge.y),.024)*(1.0-eaten*.62);
+          float trench=1.0-smoothstep(.10,.18,abs(mod(roomFloorP.x+roomFloorP.y*.07,7.6)-3.8));
+          diffuseColor.rgb*=1.0-trench*.31;
+          float scar=roomFloorLine(abs(roomFloorNoise(roomFloorP*vec2(.15,1.1))-.53),.022)*eaten;
+          diffuseColor.rgb*=1.0-scar*.14;
         }else if(construction<8.5){
           vec2 cell=fract(roomFloorP/4.2)*2.0-1.0;
           vec2 edge=(1.0-abs(cell))*2.1;
@@ -196,7 +202,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         float roomFloorPolish=smoothstep(0.28,0.82,roomFloorMacro)*(1.0-roomFloorStain*0.25);
         roughnessFactor=clamp(roughnessFactor-roomFloorPolish*0.12-roomFloorScuff*0.025+roomFloorStain*0.06-roomFloorWet*0.27-(deckScrape-.12)*.06+(deckSilt-.58)*.06+deckGrain*.008,mix(0.64,0.28,roomFloorWet),1.0);`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v8:${genericDeck ? 'plates' : 'authored'}`;
+    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v9:${genericDeck ? 'plates' : 'authored'}`;
     material.needsUpdate = true;
   }
   if(practicalShapes)uniforms.practicals.value=practicalShapes;

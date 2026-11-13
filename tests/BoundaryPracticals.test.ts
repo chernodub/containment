@@ -65,7 +65,7 @@ describe('practicals follow physical room boundaries', () => {
     const enormous = new T.Group();
     addRoomPracticals(enormous, 1000, 1000, 'infested', [{ x: 10, y: 10 }, { x: 990, y: 10 }, { x: 990, y: 990 }, { x: 10, y: 990 }]);
     expect(enormous.userData.lightFixtures).toHaveLength(32);
-    expect(new Set((enormous.userData.lightFixtures as Fixture[]).map(fixture => fixture.color))).toEqual(new Set([0xdc68ca, 0xa1ef72]));
+    expect(new Set((enormous.userData.lightFixtures as Fixture[]).map(fixture => fixture.color))).toEqual(new Set([0xdc68ca, 0xa1ef72, 0xbfd2e1]));
     disposeModel(enormous);
   });
 
@@ -79,7 +79,7 @@ describe('practicals follow physical room boundaries', () => {
       const fixture=fixtures[i],index=i%4;
       expect(fixture.x).toBe(i>=4?24-.32:.32);expect(fixture.z).toBeGreaterThan(1.2);expect(fixture.z).toBeLessThan(16.8);
       expect(fixture.y).toBeGreaterThan(.7);expect(fixture.y).toBeLessThan(1.6);heights.add(fixture.y);
-      expect(fixture.color).toBe(index%3===1?0xdc68ca:0xa1ef72);expect(fixture.nativeColor).toBe(true);
+      expect(fixture.color).toBe(i%7===0?0xbfd2e1:index%3===1?0xdc68ca:0xa1ef72);expect(fixture.nativeColor).toBe(true);
       const matrix=new T.Matrix4(),same=new T.Matrix4(),position=new T.Vector3();
       (world.children[1] as T.InstancedMesh).getMatrixAt(i,matrix);(repeat.children[1] as T.InstancedMesh).getMatrixAt(i,same);
       expect(matrix.elements).toEqual(same.elements);expect(matrix.elements.every(Number.isFinite)).toBe(true);

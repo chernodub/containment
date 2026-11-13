@@ -121,7 +121,7 @@ it('bounds dark-surface bounce without changing pooled material shader topology'
  material.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);
  expect(shader.uniforms.roomShadowReadability.value).toBe(.006);
  expect(shader.fragmentShader.match(/float roomShadowLuma=/g)).toHaveLength(1);
- optimizeLocalLights(material,.02,.16,100);expect(shader.uniforms.roomShadowReadability.value).toBe(.01);
+ optimizeLocalLights(material,.02,.16,100);expect(shader.uniforms.roomShadowReadability.value).toBe(.02);
  optimizeLocalLights(material,.02,.16,0);expect(shader.uniforms.roomShadowReadability.value).toBe(0);
  expect(material.customProgramCacheKey()).toBe(key);material.dispose();
 });
