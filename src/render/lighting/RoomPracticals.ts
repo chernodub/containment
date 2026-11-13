@@ -3,9 +3,9 @@ import type {ShipEnvironment} from '../ShipEnvironments';
 import {getEnvironmentMood} from './EnvironmentMoods';
 import {organicFissureGeometry,organicWallGeometry} from '../world/OrganicGrowth';
 
-const practicalClocks=new WeakMap<T.Object3D,{value:number}>();
+const practicalClocks=new WeakMap<T.Object3D,{clock:{value:number};gain:{value:number}}>();
 /** One existing emitter batch: failed human strips dim beneath the living cover. */
-export function updateRoomPracticals(world:T.Object3D,time:number,reduced=false){const clock=practicalClocks.get(world);if(clock)clock.value=reduced?0:time;}
+export function updateRoomPracticals(world:T.Object3D,time:number,reduced=false,flashIntensity=1){const state=practicalClocks.get(world);if(state){state.clock.value=reduced||flashIntensity<=0?0:time;state.gain.value=reduced?0:Math.max(0,Math.min(1,Number.isFinite(flashIntensity)?flashIntensity:0));}}
 
 type BoundaryPoint = Readonly<{ x: number; y: number }>;
 type BoundaryFixture = Readonly<{ x: number; z: number; mountX: number; mountZ: number; angle: number }>;
@@ -58,9 +58,9 @@ export function addRoomPracticals(world:T.Group,width:number,depth:number,enviro
   const organic=environment==='infested',count=polygonFixtures?.length??Math.min(32,Math.max(4,Math.ceil(depth/4.5)*2));
   const geometry=organic?organicFissureGeometry().clone():new T.BoxGeometry(1,1,1);
   const material=new T.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:organic?.48:1.5,roughness:.45,metalness:.15});
-  const clock={value:0};practicalClocks.set(world,clock);
+  const clock={value:0},failureGain={value:1};practicalClocks.set(world,{clock,gain:failureGain});
   geometry.setAttribute('humanFixtureFailure',new T.InstancedBufferAttribute(new Float32Array(count),1));
-  material.onBeforeCompile=shader=>{shader.uniforms??={};shader.vertexShader??='';shader.uniforms.roomPracticalTime=clock;shader.vertexShader='attribute float humanFixtureFailure;varying float vHumanFixtureFailure;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvHumanFixtureFailure=humanFixtureFailure;');shader.fragmentShader='uniform float roomPracticalTime;varying float vHumanFixtureFailure;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n#ifdef USE_COLOR\n totalEmissiveRadiance*=vColor.rgb;\n#endif\nfloat humanFailure=.16+.84*pow(clamp(sin(roomPracticalTime*5.3)+.35*sin(roomPracticalTime*17.1),0.0,1.0),2.0);totalEmissiveRadiance*=mix(1.0,humanFailure,vHumanFixtureFailure);');};
+  material.onBeforeCompile=shader=>{shader.uniforms??={};shader.vertexShader??='';shader.uniforms.roomPracticalTime=clock;shader.uniforms.roomPracticalFailureGain=failureGain;shader.vertexShader='attribute float humanFixtureFailure;varying float vHumanFixtureFailure;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvHumanFixtureFailure=humanFixtureFailure;');shader.fragmentShader='uniform float roomPracticalTime;uniform float roomPracticalFailureGain;varying float vHumanFixtureFailure;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n#ifdef USE_COLOR\n totalEmissiveRadiance*=vColor.rgb;\n#endif\nfloat humanFailure=.16+.84*pow(clamp(sin(roomPracticalTime*5.3)+.35*sin(roomPracticalTime*17.1),0.0,1.0),2.0);totalEmissiveRadiance*=mix(1.0,humanFailure,vHumanFixtureFailure*roomPracticalFailureGain);');};
   material.customProgramCacheKey=()=> 'room-practical-emission-v2';
   const lights=new T.InstancedMesh(geometry,material,count),mounts=new T.InstancedMesh(organic?organicWallGeometry().clone():new T.BoxGeometry(1,1,1),new T.MeshStandardMaterial({color:organic?0x593746:0x28363b,roughness:organic?.85:.65,metalness:organic?.05:.6}),count);
   material.userData.actorMaterial=true;material.userData.motivatedEmitter=true;(mounts.material as T.Material).userData.actorMaterial=true;

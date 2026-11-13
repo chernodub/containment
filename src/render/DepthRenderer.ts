@@ -516,7 +516,7 @@ export class DepthRenderer {
    c.model.root.position.set(c.x,c.height,c.y);c.model.body.rotation.z=Math.min(Math.PI*.78,c.age*5);c.model.root.rotation.y+=c.spin*dt*Math.exp(-c.age*3);
   }
 
-  updateRoomPracticals(this.world,this.time,!!this.motionQuery?.matches);updateHotFixtureSurfaces(this.motionQuery?.matches?0:this.time);this.lighting.update(dt);this.practicalPools?.update(this.lighting.fixtures,this.tier==='high');
+  updateRoomPracticals(this.world,this.time,!!this.motionQuery?.matches,this.options.flashIntensity);updateHotFixtureSurfaces(this.motionQuery?.matches?0:this.time);this.lighting.update(dt);this.practicalPools?.update(this.lighting.fixtures,this.tier==='high');
   this.contacts.begin();
   if(menu){this.contacts.add(TITLE_STAGE.marine.x,TITLE_STAGE.marine.z,.75);this.contacts.add(TITLE_STAGE.creature.x,TITLE_STAGE.creature.z,1.2);}else{
    this.contacts.add(p.x/UNIT,p.y/UNIT,.45);
