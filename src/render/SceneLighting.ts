@@ -194,7 +194,7 @@ export class SceneLighting {
   if(!this.bossArena||this.menuPresentation)return;
   this.coreKey.position.set(x,9,z+7);this.coreKey.target.position.set(x,1.2,z);
   this.coreKey.color.setHex(vulnerable?0xffd9f4:0xffe6c6);this.coreKey.intensity=defeated?480:720;
-  this.fill.intensity=defeated?3.0:4.2;this.rim.intensity=.55;
+  this.fill.intensity=defeated?3.5:5.5;this.rim.intensity=.55;
   this.fixtures[0].position.set(x,4.5,z+1.8);this.fixtures[0].color.setHex(vulnerable?0xff83ce:0xc0dcff);this.fixtures[0].distance=14;
  }
  invalidateShadows(){for(const light of [this.directionalKey,this.coreKey]){light.shadow.map?.dispose();light.shadow.map=null;light.shadow.mapPass?.dispose();light.shadow.mapPass=null;light.shadow.needsUpdate=true;}}
@@ -223,7 +223,7 @@ export class SceneLighting {
    const core=this.staging;this.coreKey.position.set(core?.coreX??width/2,core?.coreY??3.2,core?.coreZ??height/2);
    this.coreKey.target.position.set(width*.12,0,core?.coreZ??height/2);this.coreKey.intensity=mood.key.intensity*980*this.composition.keyGain;this.coreKey.distance=Math.max(30,Math.hypot(width,height)*1.1);this.fill.intensity*=this.composition.fillGain;
    if(this.manualConsole&&this.staging){this.coreKey.target.position.set(width*.28,0,this.staging.coreZ);}
-   if(this.bossArena){this.coreKey.position.set(width/2,9,height/2+7);this.coreKey.target.position.set(width/2,1.2,height/2);this.coreKey.intensity=720;this.coreKey.color.setHex(0xffe6c6);this.fill.intensity=4.2;this.rim.color.setHex(0x9ecfe6);this.rim.intensity=.65;this.ambient.intensity=.18;}
+   if(this.bossArena){this.coreKey.position.set(width/2,9,height/2+7);this.coreKey.target.position.set(width/2,1.2,height/2);this.coreKey.intensity=720;this.coreKey.color.setHex(0xffe6c6);this.fill.intensity=5.5;this.rim.color.setHex(0x9ecfe6);this.rim.intensity=.65;this.ambient.intensity=.18;}
   }
  }
 }

@@ -433,3 +433,8 @@ it('raises only Overload local suit-fill energy without changing Manual, Queen o
   }
   rig.dispose();
 });
+
+it('applies construction to the actual flush annulus circulation finish without recoloring it or adding a material',()=>{
+ const world=new T.Group(),material=new T.MeshStandardMaterial({color:0x354247,roughness:.92,metalness:.06});material.name='annulus-circulation';const color=material.color.clone();world.add(new T.Mesh(new T.PlaneGeometry(4,4),material));applyRoomMood(world,'containment','containment-annulus');
+ const shader={uniforms:{} as Record<string,{value:any}>,vertexShader:T.ShaderLib.standard.vertexShader,fragmentShader:T.ShaderLib.standard.fragmentShader};material.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);expect(material.color.equals(color)).toBe(true);expect(shader.uniforms.roomFloorPattern.value.z).toBe(8);expect(shader.fragmentShader).toContain('float gasket=');const hook=material.onBeforeCompile,key=material.customProgramCacheKey();applyRoomMood(world,'containment','containment-annulus');expect(material.onBeforeCompile).toBe(hook);expect(material.customProgramCacheKey()).toBe(key);expect(world.children).toHaveLength(1);(world.children[0] as T.Mesh).geometry.dispose();world.children[0].removeFromParent();material.dispose();
+});

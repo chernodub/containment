@@ -101,8 +101,8 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
           vec2 inspection=fract(roomFloorP/vec2(2.9,1.25));
           vec2 edge=min(inspection,1.0-inspection)*vec2(2.9,1.25);
           deckJoint=roomFloorLine(min(edge.x,edge.y),.023);
-          float stop=roomFloorLine(abs(mod(roomFloorP.y,5.0)-.18),.11);
-          diffuseColor.rgb*=1.0-stop*.26;
+          float stop=roomFloorLine(abs(mod(roomFloorP.y,5.0)-.25),.22);
+          diffuseColor.rgb*=1.0-stop*.75;
         }else if(construction<3.5){
           float freightRow=floor(roomFloorP.y/2.3);
           vec2 freight=fract(vec2(roomFloorP.x/6.4+mod(freightRow,2.0)*.14,roomFloorP.y/2.3));
@@ -122,7 +122,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
           deckJoint=roomFloorLine(min(edge.x,edge.y),.020);
           float channel=1.0-smoothstep(.24,.31,abs(mod(roomFloorP.x,3.0)-1.5));
           float grate=roomFloorLine(abs(fract(roomFloorP.y*2.8)-.5),.12);
-          diffuseColor.rgb*=1.0-channel*(.20+grate*.22);
+          diffuseColor.rgb*=1.0-channel*(.45+grate*.25);
         }else if(construction<6.5){
           vec2 drain=fract(roomFloorP/vec2(4.8,1.6));
           vec2 edge=min(drain,1.0-drain)*vec2(4.8,1.6);
@@ -145,12 +145,13 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
           float chamfer=abs(abs(cell.x)+abs(cell.y)-1.72)*1.48;
           deckJoint=max(roomFloorLine(min(edge.x,edge.y),.016),roomFloorLine(chamfer,.017));
           diffuseColor.rgb*=.96+roomFloorLine(min(edge.x,edge.y),.075)*.025;
+          float gasket=roomFloorLine(min(edge.x,edge.y),.10);diffuseColor.rgb*=1.0-gasket*.62;
         }else{
           float chevron=roomFloorP.y+abs(mod(roomFloorP.x,8.0)-4.0)*.38;
           float seam=abs(fract(chevron/1.6)-.5)*1.6;
           deckJoint=roomFloorLine(seam,.021);
-          float expansion=roomFloorLine(abs(mod(roomFloorP.x,8.0)-.19),.10);
-          diffuseColor.rgb*=1.0-expansion*.24;
+          float expansion=roomFloorLine(abs(mod(roomFloorP.x,8.0)-.32),.27);
+          diffuseColor.rgb*=1.0-expansion*.75;
         }
         diffuseColor.rgb*=1.0-deckJoint*.19;
         float deckWear=roomFloorLine(min(deckEdge.x,deckEdge.y),.032)-deckJoint;
@@ -202,7 +203,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         float roomFloorPolish=smoothstep(0.28,0.82,roomFloorMacro)*(1.0-roomFloorStain*0.25);
         roughnessFactor=clamp(roughnessFactor-roomFloorPolish*0.12-roomFloorScuff*0.025+roomFloorStain*0.06-roomFloorWet*0.27-(deckScrape-.12)*.06+(deckSilt-.58)*.06+deckGrain*.008,mix(0.64,0.28,roomFloorWet),1.0);`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v9:${genericDeck ? 'plates' : 'authored'}`;
+    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v10:${genericDeck ? 'plates' : 'authored'}`;
     material.needsUpdate = true;
   }
   if(practicalShapes)uniforms.practicals.value=practicalShapes;

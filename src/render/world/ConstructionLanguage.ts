@@ -373,7 +373,16 @@ export function addConstructionLanguage(
       if(!wallAuthored&&visibleSide)nearest=visibleSide;
       const dx=nearest.x-x,dz=nearest.z-z,distance=nearest.distance||1;
       const sample=(t:number)=>{const bend=Math.sin(t*Math.PI)*.42;return new T.Vector3(x+dx*t-dz/distance*bend,.026,z+dz*t+dx/distance*bend);};
-      const bridge=tissueRibbon([sample(0),sample(.28),sample(.64),sample(1)],1.22,.002,Math.min(30,Math.max(10,Math.ceil(distance/.65))),count*.8+.9).geometry;
+      // A single planar skin avoids collapsed tube facets becoming a sawtooth
+      // carpet. Its two unequal edges taper into the consuming forms.
+      const curve=new T.CatmullRomCurve3([sample(0),sample(.28),sample(.64),sample(1)],false,'centripetal'),steps=Math.min(36,Math.max(16,Math.ceil(distance/.45)));
+      const bridgePositions:number[]=[],bridgeUV:number[]=[],bridgeIndices:number[]=[];
+      for(let row=0;row<=steps;row++){
+        const t=row/steps,c=curve.getPoint(t),tangent=curve.getTangent(t),length=Math.hypot(tangent.x,tangent.z)||1,flare=.04+.96*Math.pow(Math.sin(t*Math.PI),.72);
+        for(const side of [-1,1]){const width=.64*flare*(side<0?.88+.18*Math.sin(t*8.1+.5):1.0+.22*Math.sin(t*6.7+1.3));bridgePositions.push(c.x-tangent.z/length*width*side,.026,c.z+tangent.x/length*width*side);bridgeUV.push(side<0?0:1,t);}
+        if(row<steps){const i=row*2;bridgeIndices.push(i,i+2,i+1,i+1,i+2,i+3);}
+      }
+      const bridge=new T.BufferGeometry();bridge.setAttribute('position',new T.Float32BufferAttribute(bridgePositions,3));bridge.setAttribute('uv',new T.Float32BufferAttribute(bridgeUV,2));bridge.setIndex(bridgeIndices);bridge.computeVertexNormals();
       const flatBridge=bridge.toNonIndexed();bridge.dispose();
       const p=flatBridge.getAttribute('position'),normal=flatBridge.getAttribute('normal'),uv=flatBridge.getAttribute('uv');
       const positions:number[]=[],normals:number[]=[],uvs:number[]=[];
@@ -384,10 +393,10 @@ export function addConstructionLanguage(
         for(let k=0;k<3;k++){const j=i+k,l=i+(k+1)%3;if(!deckMarkingSupported(template,p.getX(j),p.getZ(j))||!deckMarkingSupported(template,(p.getX(j)+p.getX(l))*.5,(p.getZ(j)+p.getZ(l))*.5)){valid=false;break;}}
         if(valid&&!deckMarkingSupported(template,(p.getX(i)+p.getX(i+1)+p.getX(i+2))/3,(p.getZ(i)+p.getZ(i+1)+p.getZ(i+2))/3))valid=false;
         if(!valid)continue;
-        for(let k=0;k<3;k++){const j=i+k;positions.push(p.getX(j),p.getY(j),p.getZ(j));normals.push(normal.getX(j),normal.getY(j),normal.getZ(j));uvs.push(uv.getX(j),uv.getY(j));}
+        for(let k=0;k<3;k++){const j=i+k;positions.push(p.getX(j),.026,p.getZ(j));normals.push(0,1,0);uvs.push(uv.getX(j),uv.getY(j));}
       }
       flatBridge.dispose();
-      if(positions.length){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setAttribute('normal',new T.Float32BufferAttribute(normals,3));g.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));add(g,m.resin,0,0,0);}
+      if(positions.length){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setAttribute('normal',new T.Float32BufferAttribute(normals,3));g.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));add(g,m.dark,0,0,0);}
       if(!wallAuthored){
         const a=boundary[nearest.edge],b=boundary[(nearest.edge+1)%boundary.length],ex=(b.x-a.x)/32,ez=(b.y-a.y)/32,length=Math.hypot(ex,ez),tx=ex/length,tz=ez/length,nx=tz*winding,nz=-tx*winding;
         const center=Math.max(Math.min(3.0,length*.40),Math.min(length-Math.min(3.0,length*.40),nearest.t*length)),span=Math.min(2.7,length*.36);
@@ -395,10 +404,10 @@ export function addConstructionLanguage(
         const normal=new T.Vector3(nx,0,nz),wallBefore=acceptedParts;
         // Thick sheets climb and spread over the actual hull segment. Their
         // thickness remains entirely outboard of the unchanged navigation edge.
-        add(tissueRibbon([wallPoint(-span*.62,.05),wallPoint(-span*.25,.72),wallPoint(.05,1.42),wallPoint(span*.23,2.20)],Math.min(1.06,span*.46),.17,16,.4,normal).geometry,m.resin,0,0,0);
-        add(tissueRibbon([wallPoint(-span,.35),wallPoint(-span*.38,1.08),wallPoint(span*.22,.98),wallPoint(span,.43)],.48,.16,12,1.7,normal).geometry,m.resin,0,0,0);
-        add(membraneGeometry([wallPoint(-span*.16,.84,.205),wallPoint(0,1.25,.205),wallPoint(span*.15,1.65,.205)],.055,.012,normal,9),m.vein,0,0,0);
-        if(acceptedParts>wallBefore){const source=wallPoint(0,1.30,.16);emit(source.x,source.y,source.z,2,'climbing-hull-web');wallAuthored=true;}
+        add(tissueRibbon([wallPoint(-span*.62,.05),wallPoint(-span*.25,1.45),wallPoint(.05,2.8),wallPoint(span*.23,4.15)],Math.min(1.06,span*.46),.17,16,.4,normal).geometry,m.resin,0,0,0);
+        add(tissueRibbon([wallPoint(-span,1.35),wallPoint(-span*.38,2.8),wallPoint(span*.22,2.65),wallPoint(span,1.7)],.48,.16,12,1.7,normal).geometry,m.resin,0,0,0);
+        add(membraneGeometry([wallPoint(-span*.16,2.5,.205),wallPoint(0,3.0,.205),wallPoint(span*.15,3.5,.205)],.055,.012,normal,9),m.vein,0,0,0);
+        if(acceptedParts>wallBefore){const source=wallPoint(0,3.0,.16);emit(source.x,source.y,source.z,2,'climbing-hull-web');wallAuthored=true;}
       }
     }
     // Smother one existing breach grille with a broad floor-flat membrane;
