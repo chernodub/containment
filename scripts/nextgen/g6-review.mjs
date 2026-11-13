@@ -24,3 +24,6 @@ for(const kind of ['calm','kiting']){
 }
 const sheet=canvas(1440,Math.max(1,Math.ceil(entries.length/3))*296);entries.forEach((e,i)=>{const x=i%3*480,y=Math.floor(i/3)*296;drawText(sheet,e.shot.file,x+4,y+5,undefined,1);drawImage(sheet,e.small,x,y+24,480,270);});await writeFile(resolve(dir,'critique.png'),encode(sheet));
 console.log(`${manifest.shots.length} native/480 grayscale frames; ${entries.length} identity entries; ${dir}`);
+const pageDir=resolve(dir,'review-pages');await mkdir(pageDir,{recursive:true});
+const scenarios=[...new Set(entries.map(e=>e.shot.scenario))];
+for(const scenario of scenarios){const group=entries.filter(e=>e.shot.scenario===scenario);for(let start=0;start<group.length;start+=6){const page=canvas(1440,592);group.slice(start,start+6).forEach((e,i)=>{const x=i%3*480,y=Math.floor(i/3)*296;drawText(page,e.shot.room+' / '+(e.shot.frame??'calm'),x+5,y+5,undefined,1);drawImage(page,e.small,x,y+24,480,270);});await writeFile(resolve(pageDir,`${scenario}-${start/6+1}.png`),encode(page));}}

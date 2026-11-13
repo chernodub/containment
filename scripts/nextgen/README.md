@@ -693,3 +693,5 @@ in the manifest and refreshes the real rendered camera without advancing the
 simulation clock. It requires the renderer API. This allows matched G2 before/after
 room fixtures with unchanged staging clocks. `g6-calm` likewise does not advance
 simulation; `g6-kiting` intentionally adds its documented650ms organic-style lead-in.
+
+G6 floor values: `node scripts/nextgen/g6-luminance.mjs artifacts/nextgen/<label>` writes `deck-luminance.json` and `.md`. Calm and kiting scenarios opt into capture-only samples: a70×70 uniform legal-floor world grid, projected into the central70%×60% canvas area. World-mesh rays exclude visible surfaces above.085m so machine roofs do not masquerade as dark floor. Measurements are sRGB Rec.709 code values0–255 with no exposure normalization; shadows, flush details, ink/effects remain. The raw legal-grid histogram including occluders is retained. Hero samples use legal visible floor within3m. Use all20 explicit room IDs for the complete story matrix; DEFAULT_ROOMS is a ten-room representative subset. Keep production dist snapshots frozen while captures run.
