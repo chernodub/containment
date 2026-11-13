@@ -14,7 +14,8 @@ export const BREACHER_LIMITS = Object.freeze({ casts: 8, impacts: 12, barriers: 
 
 type Cast = { live: boolean; rail: boolean; x: number; z: number; angle: number; radius: number; length: number; age: number; life: number };
 type Impact = { live: boolean; kind: 'slam' | 'rail' | 'ram' | 'ram-arrival'; x: number; z: number; angle: number; size: number; age: number; life: number; wallDone: boolean };
-type Barrier = { id: number; seen: boolean; x: number; z: number; angle: number; length: number; health: number; pulse: number; contact: number };
+type Barrier = { id: number; seen: boolean; x: number; z: number; angle: number; length: number; health: number; pulse: number; contact: number; shotPulse: number; shotContact: number; hostileContact: number; hostileAge: number };
+type Crossing = { bullet?: object; barrier: number };
 
 /** Hard industrial kinetic language, composed entirely through the shared fixed pools. */
 export class BreacherPresentation implements AbilityPresentation {
@@ -25,8 +26,10 @@ export class BreacherPresentation implements AbilityPresentation {
     live: false, kind: 'slam', x: 0, z: 0, angle: 0, size: 1, age: 0, life: 1, wallDone: false,
   }));
   private readonly barriers: Barrier[] = Array.from({ length: BREACHER_LIMITS.barriers }, () => ({
-    id: -1, seen: false, x: 0, z: 0, angle: 0, length: 1, health: 1, pulse: 0, contact: 0,
+    id: -1, seen: false, x: 0, z: 0, angle: 0, length: 1, health: 1, pulse: 0, contact: 0, shotPulse: 0, shotContact: 0, hostileContact: 0, hostileAge: 1,
   }));
+  private readonly crossings: Crossing[] = Array.from({ length: 64 }, () => ({ barrier: -1 }));
+  private crossingCursor = 0;
   private nextCast = 0;
   private nextImpact = 0;
   private emissionClock = 0;
@@ -180,7 +183,7 @@ export class BreacherPresentation implements AbilityPresentation {
     for (const b of this.barriers) b.seen = false;
     for (const entity of frame.snapshot?.deployables ?? NO_DEPLOYABLES) {
       if (entity.ability !== 'bulwark' || entity.health <= 0 || entity.remainingMs <= 0) continue;
-      this.drawBulwark(entity, dt);
+      this.drawBulwark(entity, dt, frame);
     }
     for (const b of this.barriers) {
       if (b.id < 0 || b.seen) continue;
@@ -216,7 +219,7 @@ export class BreacherPresentation implements AbilityPresentation {
       this.kit.draw('solid', c.x + sx * .33 * side + nx * .3, .8, c.z + sz * .33 * side + nz * .3,
         .05, .08, .65, STEEL, .7, Math.PI / 2 - c.angle);
     }
-    this.kit.draw('spark', c.x + nx * .7, .85, c.z + nz * .7, .15 + t * .3, .15 + t * .3, .1, CORE, .2 + t * .8, -c.angle);
+    this.kit.sprite('star', c.x + nx * .7, .85, c.z + nz * .7, .15 + t * .3, .15 + t * .3, CORE, .2 + t * .8, 0, 'light', -c.angle);
     if (emit && !this.kit.low) {
       for (let i = 0; i < 6; i++) {
         const a = this.kit.time * 11 + i * TAU / 6, r = 1.2 * (1 - t * .4);
@@ -253,8 +256,7 @@ export class BreacherPresentation implements AbilityPresentation {
     const lead = .3 + t * .6, x = p.x + nx * lead, z = p.z + nz * lead;
     // An upright forward cap and two dust shoulders retain a directional shove, never a new ground disc.
     this.kit.draw('solid', x, .82, z, p.size * 2, 1.4 * (1 - t * .25), .52, STEEL, fade * .6, Math.PI / 2 - p.angle);
-    if (!this.kit.low) this.kit.draw('solid', x - nx * .12, .76, z - nz * .12,
-      p.size * 1.7, 1.1, .32, AMBER, fade * .23, Math.PI / 2 - p.angle);
+    this.kit.sprite('impact', x + nx * .04, .82, z + nz * .04, p.size * .9, p.size * .72, AMBER, fade * (this.kit.low ? .36 : .55), 0, 'light');
     for (let side = -1; side <= 1; side += 2) {
       const offset = side * p.size * .8;
       this.kit.draw('smoke', x - nz * offset, .4 + t * .25, z + nx * offset,
@@ -269,7 +271,11 @@ export class BreacherPresentation implements AbilityPresentation {
     const progress = Math.min(1, .06 + p.age / .19), radius = p.size * progress;
     const frontFade = Math.max(0, 1 - p.age / .42);
     // A low, broad impact edge rolls out first; dust has distinct radial momentum.
-    if (frontFade > 0) k.front(p.x, p.z, p.size, progress, p.age < .075 ? CORE : AMBER, .06, frontFade * .62, 1);
+    if (frontFade > 0) {
+      k.sustain(p.age + .2);
+      k.sprite('shockwave', p.x, .055, p.z, radius, radius, p.age < .075 ? CORE : AMBER, frontFade * .62, 0, 'ground');
+    }
+    if (p.age < .065) k.sprite('impact', p.x, .24, p.z, .8, .58, CORE, (1 - p.age / .065) * .75, 0, 'light');
     const count = k.low ? 5 : 11;
     for (let i = 0; i < count; i++) {
       const seed = i * 2.39996323, f = Math.sin(seed * 3.17 + .4) ** 2;
@@ -301,8 +307,8 @@ export class BreacherPresentation implements AbilityPresentation {
       const rings = this.kit.low ? 2 : 3, shock = 1 - p.age / .36;
       for (let i = 0; i < rings; i++) {
         const distance = (.13 + i * .27 + Math.sin(i * 2.73) * .04) * p.size, r = (.38 + i * .17) + p.age * (1.7 + i * .3);
-        this.kit.draw('front', p.x + nx * distance, .85, p.z + nz * distance,
-          r, .4 + i * .18, r * (.85 + i * .12), p.age < .065 ? CORE : AMBER, shock * .7, -p.angle, Math.PI / 2);
+        this.kit.sprite('shockwave', p.x + nx * distance, .85, p.z + nz * distance,
+          r, r * (.85 + i * .12), p.age < .065 ? CORE : AMBER, shock * .7, i, 'vertical', Math.PI / 2 - p.angle);
       }
     }
     const heat = (1 - p.age / .85) * .65, sideX = -nz, sideZ = nx, count = this.kit.low ? 2 : 4;
@@ -356,66 +362,113 @@ export class BreacherPresentation implements AbilityPresentation {
     return along > .05 && edge >= 0 && edge <= 1 ? along : Infinity;
   }
 
-  private drawBulwark(e: DeployableSnapshot, dt: number): void {
+  private drawBulwark(e: DeployableSnapshot, dt: number, frame: AbilityFrame): void {
     let slot: Barrier | undefined;
     for (const b of this.barriers) if (b.id === e.id) { slot = b; break; }
     if (!slot) for (const b of this.barriers) if (b.id < 0) { slot = b; break; }
     if (!slot) return;
-    const x = e.x / UNIT, z = e.y / UNIT, length = e.length / UNIT, thickness = e.thickness / UNIT;
+    const k = this.kit, x = e.x / UNIT, z = e.y / UNIT, length = e.length / UNIT, thickness = e.thickness / UNIT;
     if (slot.id !== e.id) {
-      slot.id = e.id; slot.health = e.health; slot.pulse = 0; slot.contact = 0;
+      slot.id = e.id; slot.health = e.health; slot.pulse = slot.shotPulse = 0;
+      slot.contact = slot.shotContact = slot.hostileContact = 0; slot.hostileAge = 1;
     } else if (dt > 0 && e.health < slot.health) {
       slot.pulse = .22;
-      // The snapshot reports total load rather than an impact point. Keep its response local
-      // to one projector, selected from the receipt, without implying a new gameplay hit.
-      slot.contact = Math.sin(e.health * 17.1) * length * .35;
-      this.kit.burst(x - Math.sin(e.angle) * slot.contact, .7, z + Math.cos(e.angle) * slot.contact, 'kinetic', 7, 1.4, .3);
-      this.kit.flash(x, z, EDGE, 2, 3, 2, .07);
-      this.kit.distort(x, z, length * .5, .0015, .22, true);
+      // A recent native hazard approach supplies a presentation contact when observed.
+      // Total health alone has no impact point: use a centered load response otherwise.
+      slot.contact = slot.hostileAge < .15 ? slot.hostileContact : 0;
+      k.burst(x - Math.sin(e.angle) * slot.contact, .85, z + Math.cos(e.angle) * slot.contact, 'kinetic', 7, 1.4, .3);
+      k.flash(x, z, EDGE, 2, 3, 2, .07);
+      k.distort(x, z, length * .5, .0015, .22, true);
     }
     slot.seen = true; slot.health = e.health; slot.x = x; slot.z = z; slot.angle = e.angle; slot.length = length;
     slot.pulse = Math.max(0, slot.pulse - dt);
+    slot.shotPulse = Math.max(0, slot.shotPulse - dt);
+    slot.hostileAge += dt;
     const nx = Math.cos(e.angle), nz = Math.sin(e.angle), ux = -nz, uz = nx;
     const age = Math.max(0, (e.durationMs - e.remainingMs) / 1000);
-    this.kit.sustain(age);
-    const growth = this.kit.reducedMotion ? 1 : Math.min(1, age / .14), h = 2.4 * growth;
+    k.sustain(age + .2);
+    const growth = k.reducedMotion ? 1 : Math.min(1, age / .14), h = 2.4 * growth;
     const fade = Math.min(1, e.remainingMs / 180);
-    const flicker = e.remainingMs < 1000 && !this.kit.reducedMotion && !this.kit.low
-      ? .86 + Math.sin(this.kit.time * 19 + e.id) * .05 : 1;
-    this.kit.draw('solid', x, .055, z, thickness * .92, .1, length, STEEL, .96 * fade, -e.angle);
-    // Two armored end assemblies hold the articulated projected cover; no repeated support railing.
+    const flicker = e.remainingMs < 1000 && !k.reducedMotion && !k.low
+      ? .86 + Math.sin(k.time * 19 + e.id) * .05 : 1;
+    // Compact physical emitters stand at the exact ends; the center is projected light.
     for (let side = -1; side <= 1; side += 2) {
       const along = side * (length * .5 - thickness * .35), px = x + ux * along, pz = z + uz * along;
-      this.kit.draw('solid', px, h * .43 + .08, pz, thickness * .95, h * .86, thickness * .66,
+      k.draw('solid', px, .09, pz, thickness * .96, .18, thickness * .68, STEEL, fade, -e.angle);
+      k.draw('solid', px, h * .5 + .12, pz, thickness * .70, h * .94, thickness * .52,
         0x293e4b, fade, -e.angle);
-      this.kit.draw('solid', px + nx * thickness * .08, h * .83 + .09, pz + nz * thickness * .08,
-        thickness * .78, h * .11, thickness * .67, EDGE, fade * .94, -e.angle);
-      if (growth > 0) this.kit.ribbon(px + nx * thickness * .39, .25, pz + nz * thickness * .39,
-        px + nx * thickness * .39, h * .77, pz + nz * thickness * .39, EDGE, .025, fade * .8, false);
-    }
-    if (growth > 0) {
-      const panels = this.kit.low ? 2 : 3, usable = Math.max(.01, length - thickness * .7), panel = usable / panels;
-      for (let i = 0; i < panels; i++) {
-        const along = (i + .5) * panel - usable * .5;
-        const offset = (i % 2 ? -.07 : .07) * thickness;
-        const px = x + ux * along + nx * offset, pz = z + uz * along + nz * offset;
-        const top = h * (i === 1 ? .95 : 1) + .06;
-        // Broad value body, solid luminous top edge, lower armored skirt: cover reads at thumbnail scale.
-        this.kit.draw('solid', px, top * .54, pz, thickness * .5, top * .83, panel * .99,
-          0x487d91, .5 * fade * flicker, -e.angle);
-        this.kit.draw('solid', px, top, pz, thickness * .65, .105 * growth, panel,
-          0xc3eff8, .95 * fade * flicker, -e.angle);
-        this.kit.draw('solid', px, .22 * growth, pz, thickness * .58, .27 * growth, panel * .99,
-          0x2d505d, .88 * fade, -e.angle);
-        const load = slot.pulse * Math.max(0, 1 - Math.abs(along - slot.contact) / Math.max(.4, length * .4));
-        if (load > .04) {
-          const fx = px + nx * thickness * .28, fz = pz + nz * thickness * .28;
-          this.kit.ribbon(fx - ux * panel * .25, top * .68, fz - uz * panel * .25,
-            fx + ux * panel * .18, top * .43, fz + uz * panel * .18, CORE, .025, load * 3 * fade, false);
-        }
+      k.draw('solid', px - nx * thickness * .08, h + .12, pz - nz * thickness * .08,
+        thickness * .65, h * .10, thickness * .54, EDGE, fade * .94, -e.angle);
+      if (growth > 0) {
+        k.ribbon(px - nx * thickness * .37, .25, pz - nz * thickness * .37,
+          px - nx * thickness * .37, h * .78 + .14, pz - nz * thickness * .37, EDGE, .035, fade * .9, false);
+        if (!k.low) k.sprite('glow', px - nx * thickness * .38, h * .53 + .14, pz - nz * thickness * .38,
+          thickness * .6, h * .40, EDGE, fade * .30, side, 'vertical', Math.PI / 2 - e.angle);
       }
     }
-    this.kit.lightAt(e.id, x, z, EDGE, 1.8 * fade, 4.5);
+    if (growth > 0) {
+      const halfLength = Math.max(.01, length * .5 - thickness * .16), yaw = Math.PI / 2 - e.angle;
+      // Bright friendly-facing hex lattice and restrained far-face scanning light.
+      k.sprite(k.low ? 'scan' : 'hex', x - nx * thickness * .12, h * .5 + .12, z - nz * thickness * .12,
+        halfLength, h * .5, EDGE, fade * flicker * .36, e.id, 'vertical', yaw);
+      if (!k.low) k.sprite('scan', x + nx * thickness * .10, h * .5 + .12, z + nz * thickness * .10,
+        halfLength, h * .5, 0x6bb8d2, fade * flicker * .16, e.id, 'vertical', yaw);
+      k.ribbon(x + ux * halfLength, h + .12, z + uz * halfLength,
+        x - ux * halfLength, h + .12, z - uz * halfLength, 0xe8fbff, .035, .78 * fade, false);
+      k.ribbon(x + ux * halfLength, .12, z + uz * halfLength,
+        x - ux * halfLength, .12, z - uz * halfLength, EDGE, .018, .32 * fade, false);
+      this.observeBarrierBullets(slot, e, frame, dt);
+      this.fieldRipple(slot, x, z, nx, nz, ux, uz, thickness, halfLength, h, fade, yaw, false);
+      this.fieldRipple(slot, x, z, nx, nz, ux, uz, thickness, halfLength, h, fade, yaw, true);
+    }
+    k.lightAt(e.id, x, z, EDGE, 1.8 * fade, 4.5);
+  }
+
+  private observeBarrierBullets(slot: Barrier, e: DeployableSnapshot, frame: AbilityFrame, dt: number): void {
+    const bullets = frame.game?.bullets;
+    if (dt <= 0 || !bullets) return;
+    const nx = Math.cos(e.angle), nz = Math.sin(e.angle), ux = -nz, uz = nx;
+    const x = e.x / UNIT, z = e.y / UNIT, halfLength = e.length / UNIT * .5;
+    let considered = 0;
+    for (const bullet of bullets) {
+      if (bullet.kind !== 'player' && bullet.kind !== 'hazard') continue;
+      if (considered++ >= 64) break;
+      const vx = Math.cos(bullet.request.angle) * bullet.request.speed / UNIT;
+      const vz = Math.sin(bullet.request.angle) * bullet.request.speed / UNIT;
+      const dx = bullet.x / UNIT - x, dz = bullet.y / UNIT - z;
+      const side = dx * nx + dz * nz, speed = vx * nx + vz * nz;
+      if (Math.abs(speed) < .0001) continue;
+      const along = dx * ux + dz * uz - side / speed * (vx * ux + vz * uz);
+      if (Math.abs(along) >= halfLength) continue;
+      if (bullet.kind === 'hazard') {
+        const reach = bullet.request.speed / UNIT * dt * (frame.snapshot?.hostileTimeScale ?? 1);
+        if (side * speed < 0 && Math.abs(side) < reach * 1.5 + e.thickness / UNIT) {
+          slot.hostileContact = along; slot.hostileAge = 0;
+        }
+        continue;
+      }
+      // Reconstruct only the observed native player's last segment; never an aim ray.
+      if (side * (side - speed * dt) > 0) continue;
+      let seen = false;
+      for (const crossing of this.crossings) if (crossing.bullet === bullet && crossing.barrier === e.id) { seen = true; break; }
+      if (seen) continue;
+      const crossing = this.crossings[this.crossingCursor++ % this.crossings.length];
+      crossing.bullet = bullet; crossing.barrier = e.id;
+      slot.shotContact = along; slot.shotPulse = .20;
+    }
+  }
+
+  private fieldRipple(slot: Barrier, x: number, z: number, nx: number, nz: number, ux: number, uz: number,
+    thickness: number, halfLength: number, height: number, fade: number, yaw: number, friendly: boolean): void {
+    const life = friendly ? .20 : .22, pulse = friendly ? slot.shotPulse : slot.pulse;
+    if (pulse <= 0) return;
+    const along = friendly ? slot.shotContact : slot.contact, age = life - pulse;
+    const radius = Math.max(.02, Math.min(.14 + age * 2.7, halfLength - Math.abs(along), height * .42));
+    const px = x + ux * along - nx * thickness * .14, pz = z + uz * along - nz * thickness * .14;
+    this.kit.sprite('ring', px, Math.min(.85, height * .5 + .12), pz, radius, radius,
+      friendly ? CORE : EDGE, pulse / life * fade * .92, 0, 'vertical', yaw);
+    if (!this.kit.low && age < .065) this.kit.sprite('impact', px, Math.min(.85, height * .5 + .12), pz,
+      radius * .7, radius * .7, CORE, (1 - age / .065) * fade * .7, 0, 'light');
   }
 
   private collapseBarrier(b: Barrier): void {
@@ -430,7 +483,9 @@ export class BreacherPresentation implements AbilityPresentation {
   clear(): void {
     for (const c of this.casts) c.live = false;
     for (const p of this.impacts) p.live = false;
-    for (const b of this.barriers) { b.id = -1; b.seen = false; b.pulse = 0; b.contact = 0; }
+    for (const b of this.barriers) { b.id = -1; b.seen = false; b.pulse = b.shotPulse = 0; b.contact = b.shotContact = b.hostileContact = 0; b.hostileAge = 1; }
+    for (const crossing of this.crossings) { crossing.bullet = undefined; crossing.barrier = -1; }
+    this.crossingCursor = 0;
     this.emissionClock = 0;
     this.ramStartValid = false; this.ramStartAge = 0;
   }
