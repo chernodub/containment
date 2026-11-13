@@ -380,12 +380,12 @@ export function addConstructionLanguage(
       for(let row=0;row<=steps;row++){
         const t=row/steps,c=curve.getPoint(t),tangent=curve.getTangent(t),length=Math.hypot(tangent.x,tangent.z)||1,flare=.04+.96*Math.pow(Math.sin(t*Math.PI),.72);
         for(const side of [-1,1]){const width=.64*flare*(side<0?.88+.18*Math.sin(t*8.1+.5):1.0+.22*Math.sin(t*6.7+1.3));bridgePositions.push(c.x-tangent.z/length*width*side,.026,c.z+tangent.x/length*width*side);bridgeUV.push(side<0?0:1,t);}
-        if(row<steps){const i=row*2;bridgeIndices.push(i,i+2,i+1,i+1,i+2,i+3);}
+        if(row<steps){const i=row*2;bridgeIndices.push(i,i+1,i+2,i+1,i+3,i+2);}
       }
       const bridge=new T.BufferGeometry();bridge.setAttribute('position',new T.Float32BufferAttribute(bridgePositions,3));bridge.setAttribute('uv',new T.Float32BufferAttribute(bridgeUV,2));bridge.setIndex(bridgeIndices);bridge.computeVertexNormals();
       const flatBridge=bridge.toNonIndexed();bridge.dispose();
       const p=flatBridge.getAttribute('position'),normal=flatBridge.getAttribute('normal'),uv=flatBridge.getAttribute('uv');
-      const positions:number[]=[],normals:number[]=[],uvs:number[]=[];
+      const positions:number[]=[],normals:number[]=[],uvs:number[]=[];let upward=0,downward=0;
       // One continuous fan is clipped at existing solids/voids. It does not
       // repeat a scalloped tile or add raised geometry across a combat lane.
       for(let i=0;i<p.count;i+=3){
@@ -393,9 +393,10 @@ export function addConstructionLanguage(
         for(let k=0;k<3;k++){const j=i+k,l=i+(k+1)%3;if(!deckMarkingSupported(template,p.getX(j),p.getZ(j))||!deckMarkingSupported(template,(p.getX(j)+p.getX(l))*.5,(p.getZ(j)+p.getZ(l))*.5)){valid=false;break;}}
         if(valid&&!deckMarkingSupported(template,(p.getX(i)+p.getX(i+1)+p.getX(i+2))/3,(p.getZ(i)+p.getZ(i+1)+p.getZ(i+2))/3))valid=false;
         if(!valid)continue;
+        const crossY=(p.getZ(i+1)-p.getZ(i))*(p.getX(i+2)-p.getX(i))-(p.getX(i+1)-p.getX(i))*(p.getZ(i+2)-p.getZ(i));if(crossY>1e-8)upward++;else if(crossY< -1e-8)downward++;
         for(let k=0;k<3;k++){const j=i+k;positions.push(p.getX(j),.026,p.getZ(j));normals.push(0,1,0);uvs.push(uv.getX(j),uv.getY(j));}
       }
-      flatBridge.dispose();
+      flatBridge.dispose();(root.userData.consumptionSkinWinding??=[]).push({upward,downward});
       if(positions.length){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setAttribute('normal',new T.Float32BufferAttribute(normals,3));g.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));add(g,m.dark,0,0,0);}
       if(!wallAuthored){
         const a=boundary[nearest.edge],b=boundary[(nearest.edge+1)%boundary.length],ex=(b.x-a.x)/32,ez=(b.y-a.y)/32,length=Math.hypot(ex,ez),tx=ex/length,tz=ez/length,nx=tz*winding,nz=-tx*winding;

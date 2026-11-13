@@ -65,6 +65,7 @@ it.each(['swarm-junction','infested-workshop','breached-loading-bay','reactor-va
  expect(forms.filter(form=>form.kind==='climbing-hull-web')).toHaveLength(1);
  expect(forms.find(form=>form.kind==='climbing-hull-web')!.source[0]).toBeLessThan(template.width/32*.40);
  expect(root.userData.coveredBreach).not.toBeNull();
+ expect(root.userData.consumptionSkinWinding.every((skin:{upward:number;downward:number})=>skin.upward>0&&skin.downward===0)).toBe(true);
  expect(root.userData.partlyBuriedHumanFixture.span).toBeGreaterThan(.5);
  expect(root.userData.constructionNewFinishes).toEqual([]);
  const fixtures=root.userData.lightFixtures as Array<{x:number;y:number;z:number;color:number;poolStyle:number;nativeColor:boolean;gain:number}>;
