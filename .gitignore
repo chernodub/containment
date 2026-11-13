@@ -4,3 +4,6 @@ dist/
 *.tgz
 .DS_Store
 artifacts/
+
+# Untrusted downloaded art sources; generated shipped VFX live in public/assets/vfx.
+tools/assets-src/
