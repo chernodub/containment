@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {FULL_COMBAT_VIEWPORT,type CombatViewport} from './HudCombatFraming';
 
 /** Fifteen-percent pullback: final uniform marine measures110–118 px in the native camera. */
 export const COMBAT_VIEW_HEIGHT = 15;
@@ -29,7 +30,7 @@ export function combatFocusTarget(
 export function protectPlayerFrame(
   camera: T.OrthographicCamera | T.PerspectiveCamera, focus: T.Vector3,
   x: number, z: number, radius: number, height: number,
-  point: T.Vector3, target: T.Vector3,
+  point: T.Vector3, target: T.Vector3, viewport:CombatViewport=FULL_COMBAT_VIEWPORT,
 ): boolean {
   let changed = false;
   for (let pass = 0; pass < 3; pass++) {
@@ -41,10 +42,10 @@ export function protectPlayerFrame(
       top = Math.max(top, point.y);
       bottom = Math.min(bottom, point.y);
     }
-    const insetX = Math.max(PLAYER_SAFE_INSET.x, (right - left) * .5 + .015);
-    const insetY = Math.max(PLAYER_SAFE_INSET.y, (top - bottom) * .5 + .015);
-    const correctionX = left < -insetX ? left + insetX : right > insetX ? right - insetX : 0;
-    const correctionY = top > insetY ? top - insetY : bottom < -insetY ? bottom + insetY : 0;
+    const insetX = Math.max(PLAYER_SAFE_INSET.x*viewport.halfX, (right - left) * .5 + .015);
+    const insetY = Math.max(PLAYER_SAFE_INSET.y*viewport.halfY, (top - bottom) * .5 + .015);
+    const correctionX = left < viewport.centerX-insetX ? left-viewport.centerX+insetX : right > viewport.centerX+insetX ? right-viewport.centerX-insetX : 0;
+    const correctionY = top > viewport.centerY+insetY ? top-viewport.centerY-insetY : bottom < viewport.centerY-insetY ? bottom-viewport.centerY+insetY : 0;
     if (Math.abs(correctionX) + Math.abs(correctionY) < 1e-7) break;
     point.set(x, height * .5, z).project(camera);
     target.copy(point);

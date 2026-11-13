@@ -69,19 +69,33 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
   if(!environmentGain){environmentGain={value:diffuseEnvironmentGain??1};environmentGains.set(material,environmentGain);}
   if(diffuseEnvironmentGain!==undefined)environmentGain.value=Math.max(0,Math.min(1,diffuseEnvironmentGain));
   let shadowFill=practicalShadowFills.get(material);if(!shadowFill){shadowFill={value:practicalShadowFill??.025};practicalShadowFills.set(material,shadowFill);}if(practicalShadowFill!==undefined)shadowFill.value=Math.max(.025,Math.min(.25,practicalShadowFill));
-  let bounce=shadowReadability.get(material);if(!bounce){bounce={value:readableBounce??0};shadowReadability.set(material,bounce);}if(readableBounce!==undefined)bounce.value=Math.max(0,Math.min(.01,readableBounce));
-  if (installed.has(material)||material.customProgramCacheKey().includes(':local-light-rejection-v6')) return;
+  let bounce=shadowReadability.get(material);if(!bounce){bounce={value:readableBounce??0};shadowReadability.set(material,bounce);}if(readableBounce!==undefined)bounce.value=Math.max(0,Math.min(.02,readableBounce));
+  if (installed.has(material)||material.customProgramCacheKey().includes(':local-light-rejection-v7')) return;
   installed.add(material);
   const previous = material.onBeforeCompile;
   const key = material.customProgramCacheKey();
+  const floor=['environment-floor','painted-steel-deck','annulus-deck','annulus-circulation'].includes(material.name);
+  const floorShape=`
+#if UNROLLED_LOOP_INDEX < 4
+ vec3 floorDeltaView=pointLight.position-geometryPosition;
+ vec2 floorDelta=vec2(dot(floorDeltaView,viewMatrix[0].xyz),dot(floorDeltaView,viewMatrix[2].xyz));
+ vec4 aperture=roomFloorPracticalShapes[UNROLLED_LOOP_INDEX];
+ if(aperture.z>0.0){
+ vec2 chart=vec2(dot(floorDelta,vec2(aperture.y,-aperture.x)),dot(floorDelta,aperture.xy));
+ float across=abs(chart.x+chart.y*.10);
+ float slit=(1.0-smoothstep(aperture.z*.50,aperture.z*1.35,across))*(1.0-smoothstep(aperture.w*.40,aperture.w,abs(chart.y)));
+ directLight.color*=.12+slit*.40;
+ }
+#endif
+`;
   const nearField={value:['environment-floor','painted-steel-deck','annulus-deck','shaft-deck'].includes(material.name)?3.24:9};
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);
     shader.uniforms??={};shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;shader.uniforms.roomPracticalShadowFill=shadowFill!;shader.uniforms.roomPracticalNearField=nearField;shader.uniforms.roomShadowReadability=bounce!;
-    shader.fragmentShader = 'uniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
+    shader.fragmentShader = 'uniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', floor?localLights.replace(practicalOcclusion,practicalOcclusion+floorShape):localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
       float roomShadowLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));
       reflectedLight.indirectDiffuse+=vec3(.68,.82,1.0)*roomShadowReadability*(1.0-smoothstep(.008,.04,roomShadowLuma));`);
   };
-  material.customProgramCacheKey = () => `${key}:local-light-rejection-v6`;
+  material.customProgramCacheKey = () => `${key}:local-light-rejection-v7`;
   material.needsUpdate = true;
 }

@@ -7,7 +7,7 @@ import {batchStaticRoom} from './StaticRoomBatching';
 import {MaterialWarmup} from './MaterialWarmup';
 import {configureCinematicLayers,CINEMATIC_LAYER} from './CinematicLayers';
 import {ContextResources} from './ContextResources';
-import {addRoomPracticals} from './lighting/RoomPracticals';
+import {addRoomPracticals,updateRoomPracticals} from './lighting/RoomPracticals';
 import {addInteriorPracticals} from './lighting/InteriorPracticals';
 import {updateHotFixtureSurfaces} from './lighting/HotFixtureSurface';
 import {PracticalPools} from './lighting/PracticalPools';
@@ -15,6 +15,7 @@ import {optimizeLocalLights} from './lighting/LocalLightShading';
 import {COMBAT_VIEW_HEIGHT,combatFocusTarget,protectPlayerFrame} from './camera/CombatFraming';
 import {roomFocus} from './roomFraming';
 import {CameraRig} from './camera/CameraRig';
+import {HudCombatFraming,FULL_COMBAT_VIEWPORT,ZERO_HUD_INSETS,type HudInsets} from './camera/HudCombatFraming';
 import {PostPipeline} from './post/PostPipeline';
 import {Atmosphere} from './atmosphere/Atmosphere';
 import {ShipBackdrop} from './atmosphere/ShipBackdrop';
@@ -87,6 +88,14 @@ export class DepthRenderer {
  private post:PostPipeline;private tier:GraphicsTier='high';private shadowTime=0;private shadowsDirty=true;private pixelRatio=1;
  private options:GraphicsOptions=GRAPHICS_PRESETS.high;
  private cameraRig=new CameraRig();private viewHeight=13;private viewWidth=13;private desiredFocus=new T.Vector3();private screenPoint=new T.Vector3();private screenTarget=new T.Vector3();private bulletColor=new T.Color();private playerVelocity={x:0,y:0};private attachedLight={x:0,y:1,z:0,color:0xffffff,intensity:1,distance:3,duration:.1,priority:1};
+ private hudFraming=new HudCombatFraming();
+ private cameraContactHeight=(id:number)=>this.actors.get(id)?.height??3.2;
+ /** Current effective CSS-pixel HUD reservations; invalid or oversized values are bounded. */
+ get hudInsets():HudInsets{return this.hudFraming?.insets??ZERO_HUD_INSETS;}
+ /** Bounded renderer-only camera proof for the opt-in capture adapter. */
+ get combatFramingDiagnostics(){return this.hudFraming?.diagnostics;}
+ /** Reserve the actual desktop HUD. Defaults to zero; no DOM query or simulation mutation. */
+ setHudInsets(insets:HudInsets){const framing=this.hudFraming??=new HudCombatFraming();framing.resize(this.viewportWidth,this.viewportHeight);framing.setInsets(insets);}
  private viewportSize?:{width:number;height:number};
  /** CSS viewport dimensions sampled on resize, shared with pooled DOM projection. */
  get viewportWidth(){return this.viewportSize?.width??this.canvas.clientWidth;}
@@ -148,7 +157,7 @@ export class DepthRenderer {
   this.canvasRect=this.canvas.getBoundingClientRect();
   const w=window.innerWidth,h=window.innerHeight,post=this.tier==='high';this.pixelRatio=Math.min(devicePixelRatio||1,post?1.5:1)*this.options.resolutionScale;
   this.renderer.setPixelRatio(this.pixelRatio);this.renderer.setSize(w,h,false);this.effects?.setPriorityViewport(this.canvas.width,this.canvas.height);this.post.setSize(w,h,Math.min(devicePixelRatio||1,post?1.5:1));
-  const viewport=this.viewportSize??={width:0,height:0};viewport.width=this.canvas.clientWidth??Math.round(this.canvasRect.width);viewport.height=this.canvas.clientHeight??Math.round(this.canvasRect.height);
+  const viewport=this.viewportSize??={width:0,height:0};viewport.width=this.canvas.clientWidth??Math.round(this.canvasRect.width);viewport.height=this.canvas.clientHeight??Math.round(this.canvasRect.height);this.hudFraming?.resize(viewport.width,viewport.height);
   const view=h>w?18:COMBAT_VIEW_HEIGHT;this.viewHeight=view;this.viewWidth=view*w/h;if(this.camera instanceof T.OrthographicCamera){this.camera.left=-this.viewWidth/2;this.camera.right=this.viewWidth/2;this.camera.top=view/2;this.camera.bottom=-view/2;}else this.camera.aspect=w/h;this.camera.near=.1;this.camera.far=160;this.camera.updateProjectionMatrix();
  }
  /** Switch projection for matched-framing art review; perspective is the shipping default. */
@@ -269,7 +278,7 @@ export class DepthRenderer {
   if(selected)return selected;
   const result=new T.Vector3();return this.raycaster.ray.intersectPlane(this.ground,result)?{x:result.x*UNIT,y:result.z*UNIT}:null;
  }
- visible(x:number,y:number){const p=this.visiblePoint.set(x/UNIT,.6,y/UNIT).project(this.camera);return p.z>=-1&&p.z<=1&&Math.abs(p.x)<.9&&Math.abs(p.y)<.8;}
+ visible(x:number,y:number){const p=this.visiblePoint.set(x/UNIT,.6,y/UNIT).project(this.camera),v=this.hudFraming?.viewport??FULL_COMBAT_VIEWPORT;return p.z>=-1&&p.z<=1&&Math.abs(p.x-v.centerX)<v.halfX*.9&&Math.abs(p.y-v.centerY)<v.halfY*.8;}
  playerScreenBounds(radius:number){
   const rect=this.canvasRect??this.canvas.getBoundingClientRect(),position=this.player.root.position,point=this.screenPoint??=new T.Vector3();
   const result=this.projectedPlayer??={left:0,top:0,right:0,bottom:0};
@@ -422,7 +431,7 @@ export class DepthRenderer {
   // Flat markings and obstacle-supported dressing are registered before room preparation.
   addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));addEnvironmentalStory(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
-  this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.world.userData.staticBatching=batchStaticRoom(this.world);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId);
+  this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.world.userData.staticBatching=batchStaticRoom(this.world);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId,this.lighting.practicalShapes);
   const leaks=this.world.getObjectByName('g2-world-dressing')?.userData.leakPositions??[];this.world.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial)setFloorLeaks(material,leaks);});
   const mood=getEnvironmentMood(environment);this.scene.fog=new T.FogExp2(mood.fog.color,mood.fog.density*.25);this.scene.background=new T.Color(mood.fog.color).multiplyScalar(.24);this.scene.environmentIntensity=mood.reflectionIntensity;this.post?.setMood(mood);this.atmosphere?.loadRoom(environment,w,h,this.lighting.fixtures);this.backdrop?.loadRoom(this.world,w,h,environment);this.arena?.loadRoom(node.templateId,w,h);this.post?.distortion.clear();this.heatClock=0;
   const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged))this.queueRoomWarmup();
@@ -464,14 +473,17 @@ export class DepthRenderer {
   this.captureRoomReflections();
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
   const dt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);this.time+=dt;const p=game.player;
-  const bounds=game.geometry.bounds;
+  const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;
   combatFocusTarget(p.x/UNIT,p.y/UNIT,p.angle,bossFrame.x/UNIT,bossFrame.y/UNIT,bossWeight,!!this.motionQuery?.matches||menu,this.desiredFocus);
+  const hud=this.hudFraming??=new HudCombatFraming();hud.selectContacts(p.x/UNIT,p.y/UNIT,p.angle,enemies,UNIT,this.cameraContactHeight);hud.biasTarget(p.x/UNIT,p.y/UNIT,p.angle,!!this.motionQuery?.matches,bossWeight,this.desiredFocus);
   const framed=roomFocus(this.desiredFocus.x,this.desiredFocus.z,bounds.width/UNIT,bounds.height/UNIT,this.viewWidth/baseZoom,this.viewHeight/baseZoom,game.node.templateId,this.frameFocus);
-  this.desiredFocus.set(framed.x,0,framed.z);if(menu){this.desiredFocus.set(22,0,14);if(!this.lastMenu)this.cameraRig.reset(22,14);}
+  if(!hud.hasEngagement||bossWeight)this.desiredFocus.set(framed.x,0,framed.z);if(menu){this.desiredFocus.set(22,0,14);if(!this.lastMenu)this.cameraRig.reset(22,14);}
   this.cameraRig.update(dt,this.desiredFocus.x,this.desiredFocus.z,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig.apply(this.camera,baseZoom,this.viewHeight,this.options.screenShake);this.focus.copy(this.cameraRig.focus);
   if(menu)this.title?.apply(this.camera,this.time,!!this.motionQuery?.matches,this.tier==='high'&&this.options.atmosphere);
   if(this.title)this.title.root.visible=menu;this.world.visible=!menu;if(this.backdrop)this.backdrop.root.visible=!menu;
+  if(!menu)hud.center(this.camera,this.cameraRig.focus,this.screenPoint,this.screenTarget);
+  if(!menu&&!bossWeight)hud.protectEngagement(this.camera,this.focus,p.x/UNIT,p.y/UNIT,p.radius/UNIT,this.player.height,this.screenPoint,this.screenTarget);
   if(bossWeight)this.protectBossFraming(p.x/UNIT,p.y/UNIT,p.radius/UNIT,bossFrame.x/UNIT,bossFrame.y/UNIT);
   if(!menu)this.protectPlayerFraming(p.x/UNIT,p.y/UNIT,p.radius/UNIT);
   this.effects.beginPriorityActors(this.camera);if(!menu)this.effects.addPriorityActor(p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,.78),this.player.height);
@@ -481,7 +493,7 @@ export class DepthRenderer {
   this.player.setRig?.(game.abilities?.snapshot.rig??'breacher');this.menuMarine?.setRig?.(game.abilities?.snapshot.rig??'breacher');
   this.playerVelocity.x=p.vx;this.playerVelocity.y=p.vy;this.player.animate(this.time,p.moving?1:0,p.angle,this.recoil,combat.reloading?Math.max(.001,1-combat.reloadRemainingMs/combat.reloadDurationMs):0,this.playerVelocity);this.recoil=Math.max(0,this.recoil-dt*14);
   this.lighting.setMenu?.(menu);if(this.lighting.setPlayer(menu?TITLE_STAGE.marine.x:p.x/UNIT,menu?TITLE_STAGE.marine.z:p.y/UNIT,menu?TITLE_STAGE.marine.angle:p.angle,this.camera))this.atmosphere?.syncFixtures(this.lighting.fixtures);
-  const active=this.activeActorIds;active.clear();let crowding=0;const enemies=game.enemies.snapshot.enemies;
+  const active=this.activeActorIds;active.clear();let crowding=0;
   for(const e of enemies){if(Math.hypot(e.x-p.x,e.y-p.y)<80)crowding+=.25;active.add(e.id);let model=this.actors.get(e.id);if(!model){model=this.actorPool.take(e.type,e.elite);model.setFlashIntensity?.(this.options.flashIntensity);this.shadowsDirty=true;this.actors.set(e.id,model);registerGeometry(model.root,(e.elite||e.champion)?GEOMETRY_CLASSES.elite:GEOMETRY_CLASSES.enemy);this.scene.add(model.root);this.contextResources?.track(model.root);}if(!menu)this.effects.addPriorityActor(e.x/UNIT,e.y/UNIT,e.radius/UNIT,model.height);model.setColliderDebug?.(this.colliderDebug,e.radius/UNIT);model.root.position.set(e.x/UNIT,0,e.y/UNIT);const status=game.boonStatuses(e.id);model.setAffliction?.(status);model.root.userData.visualStatus=status;model.setThreat?.(e.windupMs,e.pendingAttack,e.champion,e.alpha);model.animate(this.time+e.id,Math.hypot(e.velocityX,e.velocityY)>2?1:.12,Math.atan2((e.type==='spitter'?game.player.y:e.targetY)-e.y,(e.type==='spitter'?game.player.x:e.targetX)-e.x));}
   for(const [id,model]of this.actors)if(!active.has(id)){this.actorPool.release(model);this.actors.delete(id);this.shadowsDirty=true;}
   let healthCount=0;for(const e of enemies){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=e.x/UNIT;bar.z=e.y/UNIT;bar.height=this.actors.get(e.id)?.height??1;bar.health=e.health;bar.maxHealth=e.maxHealth;bar.elite=e.elite||!!e.champion;bar.armor=e.armor;bar.status=this.actors.get(e.id)?.root.userData.visualStatus;}for(const n of game.boss.snapshot.nests){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=n.x/UNIT;bar.z=n.y/UNIT;bar.height=1.35;bar.health=n.health;bar.maxHealth=n.maxHealth;bar.elite=false;bar.armor=0;bar.status=undefined;}for(let i=healthCount;i<128;i++)this.healthEntries[i].health=0;
@@ -504,7 +516,7 @@ export class DepthRenderer {
    c.model.root.position.set(c.x,c.height,c.y);c.model.body.rotation.z=Math.min(Math.PI*.78,c.age*5);c.model.root.rotation.y+=c.spin*dt*Math.exp(-c.age*3);
   }
 
-  updateHotFixtureSurfaces(this.motionQuery?.matches?0:this.time);this.lighting.update(dt);this.practicalPools?.update(this.lighting.fixtures,this.tier==='high');
+  updateRoomPracticals(this.world,this.time,!!this.motionQuery?.matches,this.options.flashIntensity);updateHotFixtureSurfaces(this.motionQuery?.matches?0:this.time);this.lighting.update(dt);this.practicalPools?.update(this.lighting.fixtures,this.tier==='high');
   this.contacts.begin();
   if(menu){this.contacts.add(TITLE_STAGE.marine.x,TITLE_STAGE.marine.z,.75);this.contacts.add(TITLE_STAGE.creature.x,TITLE_STAGE.creature.z,1.2);}else{
    this.contacts.add(p.x/UNIT,p.y/UNIT,.45);
@@ -553,7 +565,7 @@ export class DepthRenderer {
  /** Fit both silhouettes below the boss header and above the desktop action bar. */
  private protectBossFraming(px:number,pz:number,playerRadius:number,qx:number,qz:number){
   // Reserve 18% at the top and 24% below; this envelope is independent of DOM layout.
-  const queenHeight=this.queen?.height??4.5;
+  const queenHeight=this.queen?.height??4.5,v=this.hudFraming?.viewport??FULL_COMBAT_VIEWPORT;
   for(let pass=0;pass<3;pass++){
    let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
    for(let actor=0;actor<2;actor++){
@@ -563,9 +575,9 @@ export class DepthRenderer {
      left=Math.min(left,this.screenPoint.x);right=Math.max(right,this.screenPoint.x);top=Math.max(top,this.screenPoint.y);bottom=Math.min(bottom,this.screenPoint.y);
     }
    }
-   const scale=Math.min(1,1.8/(right-left),1.12/(top-bottom));
+   const scale=Math.min(1,1.8*v.halfX/(right-left),1.12*v.halfY/(top-bottom));
    if(scale<1){this.camera.zoom*=scale*.98;this.camera.updateProjectionMatrix();continue;}
-   const dx=(left+right)*.5,dy=(top+bottom)*.5-.08;
+   const dx=(left+right)*.5-v.centerX,dy=(top+bottom)*.5-v.centerY-.08*v.halfY;
    this.screenPoint.set((px+qx)*.5,0,(pz+qz)*.5).project(this.camera);this.screenTarget.copy(this.screenPoint);this.screenTarget.x-=dx;this.screenTarget.y-=dy;
    this.screenPoint.unproject(this.camera);this.screenTarget.unproject(this.camera);this.screenPoint.sub(this.screenTarget);
    this.screenPoint.z-=this.screenPoint.y*this.camera.matrixWorld.elements[10]/this.camera.matrixWorld.elements[9];this.screenPoint.y=0;
@@ -575,7 +587,7 @@ export class DepthRenderer {
 
  /** Reserve projected body headroom even while aim lead or recoil is settling. */
  private protectPlayerFraming(x:number,z:number,radius:number){
-  protectPlayerFrame(this.camera,this.cameraRig.focus,x,z,radius,this.player.height,this.screenPoint,this.screenTarget);this.focus.copy(this.cameraRig.focus);
+  protectPlayerFrame(this.camera,this.cameraRig.focus,x,z,radius,this.player.height,this.screenPoint,this.screenTarget,this.hudFraming?.viewport??FULL_COMBAT_VIEWPORT);this.focus.copy(this.cameraRig.focus);
  }
 
  private syncPools(pools:readonly {id:number;x:number;y:number;radius:number;life:number}[]){

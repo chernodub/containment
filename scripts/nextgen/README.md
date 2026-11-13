@@ -702,3 +702,29 @@ The geometry attachment's RG normal and B owner bytes are unchanged. A stores
 Classes0/255 still represent clear/excluded priority. Actor interior ink uses
 region boundaries exclusively; normal/depth creases remain world-only. Existing
 G3 evidence readers decode the packed class before their original assertions.
+## G6 environment and usable-viewport review
+
+`g6-calm:<room>` and `g6-kiting:<room>` use the renderer's feature-detected
+`setHudInsets({top,right,bottom,left})` with CSS-pixel values 0/300/160/280 at
+1920×1080, scaled to the capture viewport. Kiting reuses the legal G2 spread
+and native rifle/grenade/movement actions, then advances 650ms before a burst.
+These are staged organic-style encounters, not organic campaign outcomes.
+`g6FramingProof` retains the requested insets, cached viewport, actual projected
+marine bounds and live contact visibility. No UI or simulation override is added.
+
+`node scripts/nextgen/g6-review.mjs <gallery>` creates native grayscale PNGs,
+exact 480×270 area reductions and grayscale room-identity sheets using only
+saved harness PNGs; it does not open another browser. The three standard rooms
+are Residential Gallery, Transmission Chamber and Swarm Junction. Original
+round manifests and failed captures remain separate.
+
+The additive capture flag `--hud-insets='{"top":0,"right":300,"bottom":160,"left":280}'`
+reserves those exact CSS pixels after setup on any existing fixture, records them
+in the manifest and refreshes the real rendered camera without advancing the
+simulation clock. It requires the renderer API. This allows matched G2 before/after
+room fixtures with unchanged staging clocks. `g6-calm` likewise does not advance
+simulation; `g6-kiting` intentionally adds its documented650ms organic-style lead-in.
+
+G6 floor values: `node scripts/nextgen/g6-luminance.mjs artifacts/nextgen/<label>` writes `deck-luminance.json` and `.md`. Calm and kiting scenarios opt into capture-only samples: a70×70 uniform legal-floor world grid, projected into the central70%×60% canvas area. World-mesh rays exclude visible surfaces above.085m so machine roofs do not masquerade as dark floor. Measurements are sRGB Rec.709 code values0–255 with no exposure normalization; shadows, flush details, ink/effects remain. The raw legal-grid histogram including occluders is retained. Hero samples use legal visible floor within3m. Use all20 explicit room IDs for the complete story matrix; DEFAULT_ROOMS is a ten-room representative subset. Keep production dist snapshots frozen while captures run.
+
+`node scripts/nextgen/g6-select-evidence.mjs <primary> <recapture> [<recapture> ...] <output>` selects byte-identical native PNGs into a separate review folder. It requires every source manifest to pass and their seed/viewport/HUD/step contracts to match, then checks duplicate frame scenario/room/clock identity. Every chosen PNG retains its original absolute path and SHA256 in `source-receipts.json`; original galleries are unchanged. Run `g6-review`, `g6-luminance` and `g6-framing-audit` on that selection. Its manifest explicitly identifies multiple source captures rather than claiming a third browser run.

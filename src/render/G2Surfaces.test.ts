@@ -72,3 +72,10 @@ describe('G2 supported deck stencils and wall relief',()=>{
     expect(deckMarkingSupported(template,-1,2)).toBe(false);expect(deckMarkingSupported(template,2.5,2.5)).toBe(false);expect(deckMarkingSupported(template,5,5)).toBe(false);expect(deckMarkingSupported(template,7,7)).toBe(true);
   });
 });
+
+it('binds the current renderer fixture axes even when a pooled floor was initialized before room loading',()=>{
+ const material=new T.MeshStandardMaterial({name:'environment-floor'});applyFloorVariation(material,'cryogenics');
+ const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:T.ShaderLib.standard.vertexShader,fragmentShader:T.ShaderLib.standard.fragmentShader};material.onBeforeCompile(shader as Parameters<T.Material['onBeforeCompile']>[0],{} as T.WebGLRenderer);
+ const slots=Array.from({length:4},()=>new T.Vector4(0,1,.82,3.4));applyFloorVariation(material,'communications',slots);
+ expect(shader.uniforms.roomFloorPracticalShapes.value).toBe(slots);slots[0].set(1,0,.6,2);expect((shader.uniforms.roomFloorPracticalShapes.value as T.Vector4[])[0].w).toBe(2);material.dispose();
+});
