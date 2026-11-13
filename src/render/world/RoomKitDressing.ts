@@ -154,24 +154,25 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
 }
 
 /** An optional room owner always settles before shader warmup, and never adds late combat geometry. */
-export function attachRoomKits(world:T.Group,t:RoomTemplate,env:ShipEnvironment,id:string,onChanged:()=>void,prerequisite:Promise<unknown>=Promise.resolve()){
- const controller=new AbortController();let root:T.Group|undefined,active=true,timer:ReturnType<typeof setTimeout>;
- const owner={state:'loading',error:undefined as unknown,ready:Promise.resolve(),dispose(){if(!active)return;active=false;controller.abort();clearTimeout(timer);if(root)disposeModel(root);owner.state='disposed';}};
+export function attachRoomKits(world:T.Group,t:RoomTemplate,env:ShipEnvironment,id:string,onChanged:()=>void,prerequisite:Promise<unknown>=Promise.resolve(),load=acquireRoomKit){
+ const controller=new AbortController();let root:T.Group|undefined,replaced:T.Object3D|undefined,active=true,timer:ReturnType<typeof setTimeout>;
+ const owner={state:'loading',error:undefined as unknown,ready:Promise.resolve(),dispose(){if(owner.state==='disposed')return;active=false;controller.abort();clearTimeout(timer);if(root){disposeModel(root);root=undefined;}if(replaced)replaced.visible=true;owner.state='disposed';}};
  const work=async()=>{
   const sources:T.Group[]=[];
   try{
    await prerequisite;
-   const results=await Promise.allSettled(roomKitURLs(env).map(url=>acquireRoomKit(url,controller.signal)));
+   const results=await Promise.allSettled(roomKitURLs(env).map(url=>load(url,controller.signal)));
    for(const result of results)if(result.status==='fulfilled')sources.push(result.value);
    const failure=results.find(result=>result.status==='rejected');if(failure?.status==='rejected')throw failure.reason;
    if(!active)return;
    root=buildRoomKitDressing(world,t,env,id,sources);
-   if(env==='habitation'&&id==='residential-gallery'){const original=world.getObjectByName('residential-gallery-equipment');if(original)original.visible=false;}
+   if(env==='habitation'&&id==='residential-gallery'){const original=world.getObjectByName('residential-gallery-equipment');if(original){replaced=original;original.visible=false;}}
    
    owner.state='ready';onChanged();
   }finally{sources.forEach(source=>retireRoomModels(source));}
  };
  const deadline=new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(Error('CC0 room dressing preparation timed out')),2500);});
- owner.ready=Promise.race([work(),deadline]).catch(error=>{owner.error=error;if(active){active=false;controller.abort();owner.state='fallback';console.error('CC0 room dressing failed',error);}}).finally(()=>clearTimeout(timer));
+ const cancelled=new Promise<never>((_,reject)=>controller.signal.addEventListener('abort',()=>reject(Error('CC0 room dressing cancelled')),{once:true}));
+ owner.ready=Promise.race([work(),deadline,cancelled]).catch(error=>{owner.error=error;if(active){active=false;controller.abort();if(root){disposeModel(root);root=undefined;}if(replaced)replaced.visible=true;owner.state='fallback';console.error('CC0 room dressing failed',error);}}).finally(()=>clearTimeout(timer));
  return owner;
 }
