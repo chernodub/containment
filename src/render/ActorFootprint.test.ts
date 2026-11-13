@@ -37,7 +37,7 @@ function identityTorsoEnvelope(model:ActorModel){
     const p=object.geometry.getAttribute('position'),roles=object.geometry.getAttribute('identityRole');
     if(!roles)return;
     for(let i=0;i<p.count;i++){
-      const role=roles.getX(i);if(role>.5&&role!==4&&role!==5&&role!==7)continue;
+      const role=roles.getX(i);if(role>.5&&role!==4&&role!==5&&role!==7&&role!==10)continue;
       point.fromBufferAttribute(p,i).applyMatrix4(object.matrixWorld).applyMatrix4(inverse);
       radius=Math.max(radius,Math.hypot(point.x,point.z));
     }
