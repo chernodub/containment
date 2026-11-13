@@ -8,6 +8,9 @@ import {disposeModel} from '../meshParts';
 import {equipmentReservations} from './WorldDressing';
 import {membraneGeometry} from './OrganicGrowth';
 import {ROOM_KIT_STORIES} from './RoomKitStories';
+import {buildKitFloorSurface} from './KitFloorSurface';
+import {addKitPerimeter} from './KitPerimeter';
+import {addKitFootprintClusters} from './KitFootprintClusters';
 import {acquireRoomKit,roomKitURLs} from './RoomKitAssets';
 import {kitBoundsSupported,kitHull,kitMarineSamples,kitOccludesMarine,kitMeshOccludesMarine,kitOccludesStory} from './KitSafety';
 
@@ -36,21 +39,26 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
   let m=finishes.get(role);if(m)return m;
   const index=roles.indexOf(role),organic=role==='resin'||role==='scar';
   m=new T.MeshStandardMaterial({color:organic?role==='resin'?0x584151:0x586448:palette[Math.max(0,index)],roughness:organic?.93:.84,metalness:organic?0:role==='trim'?.3:.12});
-  m.name='e6-kit-'+role;m.userData.actorMaterial=true;m.userData.kitRole=role;if(role==='conduit'){m.userData.floorDressing=true;m.roughness=1;m.metalness=0;}
+  m.name='e6-kit-'+role;m.userData.actorMaterial=true;m.userData.kitRole=role;if(role==='conduit'){m.userData.floorDressing=true;m.roughness=1;m.metalness=0;m.vertexColors=true;m.color.setHex(0xffffff);}
   if(role==='accent'){m.emissive.setHex(env==='infested'?0x719a53:0x9fe8ff);m.emissiveIntensity=env==='communications'?.38:.10;m.userData.motivatedEmitter=true;}
   finishes.set(role,m);return m;
  };
  const story=ROOM_KIT_STORIES[id],storyDisplay=world.getObjectByName('g2-world-dressing')?.userData.storyDisplay;let triangleCount=0;
  const placements:KitPlacement[]=[],rejected:{model:string;reason:string}[]=[],samples=kitMarineSamples(t);
- const push=(geometry:T.BufferGeometry,role:string)=>{triangleCount+=geometry.getAttribute('position').count/3;for(const key of Object.keys(geometry.attributes))if(key!=='position'&&key!=='normal')geometry.deleteAttribute(key);const a=parts.get(role)??[];a.push(geometry);parts.set(role,a);};
+ const push=(geometry:T.BufferGeometry,role:string)=>{
+  const count=geometry.getAttribute('position').count;triangleCount+=count/3;
+  for(const key of Object.keys(geometry.attributes))if(key!=='position'&&key!=='normal'&&!(role==='conduit'&&key==='color'))geometry.deleteAttribute(key);
+  if(role==='conduit'&&!geometry.hasAttribute('color')){const c=new T.Color(palette[0]),values=new Float32Array(count*3);for(let i=0;i<count;i++)values.set([c.r,c.g,c.b],i*3);geometry.setAttribute('color',new T.BufferAttribute(values,3));}
+  const a=parts.get(role)??[];a.push(geometry);parts.set(role,a);
+ };
  const boundsSafe=(b:T.Box3)=>kitBoundsSupported(t,b)&&!kitOccludesMarine(b,samples);
- const place=(name:string,x:number,y:number,z:number,w:number,h:number,d:number,angle=0,purpose='room equipment',override?:string,flat=false)=>{
+ const place=(name:string,x:number,y:number,z:number,w:number,h:number,d:number,angle=0,purpose='room equipment',override?:string,flat=false,tiltX=0,tiltZ=0)=>{
   const model=models.get(name);if(!model)throw Error('Unknown CC0 model '+name);
   let sourceTriangles=0;model.traverse(o=>{if(o instanceof T.Mesh)sourceTriangles+=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3;});
-  if(triangleCount+sourceTriangles>17000){rejected.push({model:name,reason:'17000 triangle kit budget'});return false;}
+  if(triangleCount+sourceTriangles>30000){rejected.push({model:name,reason:'30000 triangle kit and floor budget'});return false;}
   const original=new T.Box3().setFromObject(model),size=original.getSize(new T.Vector3());
   const scale=flat?new T.Vector3(w/size.x,h/size.y,d/size.z):new T.Vector3(1,1,1).multiplyScalar(Math.min(w/size.x,h/size.y,d/size.z));
-  const matrix=new T.Matrix4().compose(new T.Vector3(x,y,z),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),angle),scale);
+  const matrix=new T.Matrix4().compose(new T.Vector3(x,y,z),new T.Quaternion().setFromEuler(new T.Euler(tiltX,angle,tiltZ)),scale);
   const bounds=original.clone().applyMatrix4(matrix);
   if(!kitBoundsSupported(t,bounds)){rejected.push({model:name,reason:'navigation support'});return false;}
   let candidate:T.Object3D|undefined,meshChecked=false;
@@ -84,7 +92,12 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
  const pipe=(a:T.Vector3,b:T.Vector3,r:number,role='dark')=>{
   const g=new T.CylinderGeometry(r,r,a.distanceTo(b),8).applyQuaternion(new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),b.clone().sub(a).normalize())).translate(...a.clone().add(b).multiplyScalar(.5).toArray());g.computeBoundingBox();if(boundsSafe(g.boundingBox!))push(g.toNonIndexed(),role);g.dispose();
  };
- const primary=equipmentReservations(t,id),reservations=primary.length?primary:equipmentReservations(t,'e6-'+id),w=t.width/32,h=t.height/32;
+ const primary=equipmentReservations(t,id),reservations=primary.length?primary:equipmentReservations(t,'e6-'+id);
+ const floor=buildKitFloorSurface(t,env,id,reservations);push(floor.geometry,'conduit');root.userData.floorSurface=floor.proof;
+ root.userData.perimeter=addKitPerimeter(t,env,id,{place,box,pipe});
+ world.updateWorldMatrix(true,true);
+ const supportHeight=(x:number,z:number)=>new T.Raycaster(new T.Vector3(x,12,z),new T.Vector3(0,-1,0)).intersectObject(world,true).find(hit=>hit.point.y>.08)?.point.y??.17;
+ root.userData.footprintClusters=addKitFootprintClusters({template:t,environment:env,roomId:id,reservations,place,placeTilted:place,supportHeight});
  // Infrastructure is physically attached at each end; intervening navigation crossings are inset into the deck.
  for(const [i,r] of reservations.slice(0,8).entries()){
   const x=(r.x+r.width*.5)/32,z=(r.y+r.height*.5)/32,rw=r.width/32,rd=r.height/32;
@@ -144,20 +157,8 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
    place(name,x,roof+.03,z,Math.min(rw*.78,2.4),.75,Math.min(rd*.76,1.5),i%2?Math.PI/2:0,'interrupted '+env+' service work');
   }
  }
- // Perimeter clusters occupy the actual outboard side of hull edges. Foreground stays very low.
- const hull=kitHull(t);let area=0;hull.forEach((a,i)=>{const b=hull[(i+1)%hull.length];area+=a.x*b.y-b.x*a.y;});
- for(let edge=0;edge<hull.length;edge++){
-  const a=hull[edge],b=hull[(edge+1)%hull.length],dx=(b.x-a.x)/32,dz=(b.y-a.y)/32,len=Math.hypot(dx,dz),nx=dz/len*Math.sign(area),nz=-dx/len*Math.sign(area);
-  if(len<3)continue;
-  for(let n=0;n<Math.min(4,Math.floor(len/4));n++){
-   const f=(n+.4)/Math.min(4,Math.floor(len/4)),x=a.x/32+dx*f+nx*.82,z=a.y/32+dz*f+nz*.82,rear=z<h*.25,maxHeight=rear?2.2:.42;
-   const name=env==='habitation'?(n%2?'cardboardBoxClosed':'cabinetBedDrawer'):env==='infested'?'rock_largeD':env==='cargo'?(n%2?'Prop_Crate_Tarp_Large':'Prop_Crate_Large'):env==='security'?'Prop_Locker':env==='communications'?'Prop_Shelves_ThinTall':env==='maintenance'?'Prop_Barrel1':n%2?'Prop_Locker':'Prop_Shelves_WideShort';
-   place(name,x,.03,z,1.35,maxHeight,1.35,-Math.atan2(dz,dx),edge===0&&n===0&&story?story.idea:env==='habitation'?'belongings left outside sealed cabins':'perimeter '+env+' service cluster',env==='infested'?'resin':undefined,!rear);
-   if(rear)pipe(new T.Vector3(x,.3,z),new T.Vector3(x,2.1,z),.07,'dark');
-  }
- }
  root.userData.majorCabinForms=placements.filter(p=>p.model==='bedSingle'||p.model==='loungeSofa').length;root.userData.triangles=triangleCount;root.userData.placements=placements;root.userData.rejected=rejected;root.userData.marineSightlineSamples=samples.length;root.userData.visualIdea=story?.idea??id+' / connected infrastructure and interrupted service';root.userData.narrativeVignette=story?.idea;
- for(const [role,list] of parts){const geometry=mergeGeometries(list,false);list.forEach(g=>g.dispose());if(!geometry)throw Error('kit role merge failed');geometry.computeBoundingBox();geometry.computeBoundingSphere();const mesh=new T.Mesh(geometry,finish(role));mesh.name='e6-kit-'+role;mesh.castShadow=mesh.receiveShadow=true;mesh.userData.visualOnly=true;root.add(mesh);}
+ for(const [role,list] of parts){const geometry=mergeGeometries(list,false);list.forEach(g=>g.dispose());if(!geometry)throw Error('kit role merge failed');geometry.computeBoundingBox();geometry.computeBoundingSphere();const mesh=new T.Mesh(geometry,finish(role));mesh.name='e6-kit-'+role;mesh.castShadow=role!=='conduit';mesh.receiveShadow=true;mesh.userData.visualOnly=true;root.add(mesh);}
  world.add(root);return root;
 }
 

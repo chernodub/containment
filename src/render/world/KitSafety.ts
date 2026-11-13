@@ -22,6 +22,9 @@ export function kitSupported(t:RoomTemplate,x:number,z:number):boolean {
 /** Conservative full projected box, including edges/interior, rather than vertex-only validation. */
 export function kitBoundsSupported(t:RoomTemplate,box:T.Box3):boolean {
   if(box.max.y<=.031)return true;
+  // The lead-approved upper layer clears the tallest sampled body by .95m.
+  // It still has to pass the independent full camera-cone / triangle guards.
+  if(box.min.y>=3)return true;
   for(let x=box.min.x;x<=box.max.x+.01;x+=Math.max(.08,(box.max.x-box.min.x)/8))for(let z=box.min.z;z<=box.max.z+.01;z+=Math.max(.08,(box.max.z-box.min.z)/8))if(!kitSupported(t,x,z))return false;
   return [[box.min.x,box.min.z],[box.min.x,box.max.z],[box.max.x,box.min.z],[box.max.x,box.max.z]].every(([x,z])=>kitSupported(t,x,z));
 }
