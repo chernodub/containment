@@ -64,6 +64,8 @@ async function performance(){
       highMedianScale:run.tier!=='high'||finite(summary.adaptiveScale?.p50)&&summary.adaptiveScale.p50>=.9,
       draws:finite(summary.draws?.max)&&summary.draws.max<=330,
       combatCompiles:run.programs===0,
+      nativePopulation:run.initialEnemies===25&&finite(summary.enemies?.average)&&summary.enemies.average>=22&&finite(summary.enemies?.p50)&&summary.enemies.p50>=24,
+      fullNativeKit:!!run.uses&&Object.values(run.uses).length===4&&Object.values(run.uses).every(n=>n>0),
     };
     const trial={name:run.name,room:run.room,rig:run.rig,tier:run.tier,repeat:run.repeat,
       summary,reportedPrecisionMs:precision,rawHarnessBudgetBooleans:run.budget,targets,pass:Object.values(targets).every(Boolean),
@@ -112,6 +114,7 @@ async function performance(){
   const results={
     method:'Native benchmark reports retained in full. Requested frame targets compare values rounded to the browser reporting precision of0.1ms; raw summaries and original harness budget booleans remain beside them. High frame p50≤16.7ms,p95≤20ms,median adaptive scale≥.9; Low p50≤16.7ms; all draws≤330 and combat compiles0. Five repeats per case; no best-of-N selection. Host load is1-minute system load, not CPU utilization.',
     benchmarkSource:bench?{path:bench.path,sha256:bench.sha256,source:bench.value.distSnapshot,harnessSHA:bench.value.sha,gpu:bench.value.gpu,seconds:bench.value.seconds,repeats:bench.value.repeats,host:bench.value.host,errors:bench.value.errors,budgetFailures:bench.value.budgetFailures}:null,
+    coverage:{expectedCases:16,expectedTrials:80,actualCases:cases.length,actualTrials:trials.length,complete:cases.length===16&&trials.length===80&&cases.every(c=>c.fiveRepeats)},
     cases,trials,
     roomPreparation:{method:'Public gotoRoom readiness is separate from inclusive preparation receipts. All preparation histories, including initial cold/warm work, are deduplicated per retained renderer within each run; fresh pages remain distinct. Values are milliseconds;≤3000 worst and≤1500 median targets.',
       sources:roomSources,readiness,preparations,cases:roomCases,readinessSummary:readinessStats,allPreparationSummary:preparationStats,
@@ -120,7 +123,7 @@ async function performance(){
         allPreparationWorst:!!preparationStats&&preparationStats.max<=3000,allPreparationTypical:!!preparationStats&&preparationStats.p50<=1500,
         zeroCombatCompiles:readiness.length>0&&readiness.every(r=>r.combatCompiles===0),zeroPostReadyCompiles:readiness.length>0&&readiness.every(r=>r.postReadyCompiles===0)}}};
   results.missingInputs=[...missing];
-  results.accepted=missing.length===0&&cases.length>0&&cases.every(c=>c.pass)&&Object.values(results.roomPreparation.targets).every(Boolean)
+  results.accepted=missing.length===0&&results.coverage.complete&&cases.every(c=>c.pass)&&Object.values(results.roomPreparation.targets).every(Boolean)
     &&(bench?.value.errors??[]).length===0&&(bench?.value.budgetFailures??[]).length===0&&roomReports.every(r=>(r.value.errors??[]).length===0&&(r.value.failures??[]).length===0);
   await writeJson('performance.json',results);
   const lines=[
