@@ -43,6 +43,8 @@ export class AbilityHints {
   };
 
   constructor(anchors: readonly { slot: AbilitySlot; node: HTMLElement }[]) {
+    // Inspect copy must stay opaque when threats fade its anchor's dock.
+    const host = document.getElementById('hud') ?? document.body;
     for (const entry of anchors) {
       const node = document.createElement('aside');
       node.className = 'ability-tooltip'; node.id = `ability-rules-${entry.slot}`;
@@ -50,7 +52,7 @@ export class AbilityHints {
       entry.node.tabIndex = 0;
       entry.node.setAttribute('role', 'group');
       entry.node.setAttribute('aria-describedby', node.id);
-      entry.node.append(node);
+      host.append(node);
       this.hints.push({slot:entry.slot,anchor:entry.node,node,bounds:{left:0,right:0,top:0,bottom:0},anchorBounds:{left:0,right:0,top:0,bottom:0},available:false,ability:''});
     }
     for(const hint of this.hints) this.observer?.observe(hint.anchor);
@@ -79,7 +81,7 @@ export class AbilityHints {
 
   private refresh(): void {
     for (const hint of this.hints) {
-      const visible = (!this.playing || this.inspecting) && (hint === this.focused || hint === this.hovered);
+      const visible = hint.available && (!this.playing || this.inspecting) && (hint === this.focused || hint === this.hovered);
       if(hint.node.hidden===visible) {hint.node.hidden=!visible;this.dirty=true;}
     }
   }
@@ -91,12 +93,20 @@ export class AbilityHints {
     const revision=hudLayoutRevision();
     if(revision!==this.layoutRevision||playing!==this.playing) {this.layoutRevision=revision;this.playing=playing;this.dirty=true;this.refresh();}
     if(this.dirty) {
-      this.dirty=false;
       for(const hint of this.hints) {
         hint.available=!hint.anchor.closest('[hidden]');
-        if(hint.available) this.copyBounds(hint.anchorBounds,hint.anchor);
-        if(!hint.node.hidden) this.copyBounds(hint.bounds,hint.node);
+        if(hint.available) {
+          this.copyBounds(hint.anchorBounds,hint.anchor);
+          hint.node.style.setProperty('--ability-color',getComputedStyle(hint.anchor).getPropertyValue('--ability-color').trim() || '#9fe8ff');
+          // Cache CSS-pixel placement even while hidden, so held-key inspection
+          // can open immediately without measuring in its input event.
+          hint.node.style.left=`${(hint.anchorBounds.left+hint.anchorBounds.right)/2}px`;
+          hint.node.style.bottom=`${window.innerHeight-hint.anchorBounds.top+16}px`;
+        }
       }
+      this.refresh();
+      for(const hint of this.hints) if(!hint.node.hidden) this.measureAndClamp(hint);
+      this.dirty=false;
     }
     for (const hint of this.hints) {
       if (hint.node.hidden) continue;
@@ -107,6 +117,16 @@ export class AbilityHints {
 
   private copyBounds(out:Bounds,node:HTMLElement): void {
     const box=node.getBoundingClientRect();out.left=box.left;out.right=box.right;out.top=box.top;out.bottom=box.bottom;
+  }
+
+  private measureAndClamp(hint:Hint): void {
+    this.copyBounds(hint.bounds,hint.node);
+    const box=hint.bounds;
+    const dx=Math.max(8-box.left,Math.min(0,window.innerWidth-8-box.right));
+    const dy=Math.max(8-box.top,Math.min(0,window.innerHeight-8-box.bottom));
+    if(dx) hint.node.style.left=`${(hint.anchorBounds.left+hint.anchorBounds.right)/2+dx}px`;
+    if(dy) hint.node.style.bottom=`${window.innerHeight-hint.anchorBounds.top+16-dy}px`;
+    box.left+=dx;box.right+=dx;box.top+=dy;box.bottom+=dy;
   }
 
   dispose(): void {

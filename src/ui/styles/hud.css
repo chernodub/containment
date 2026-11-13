@@ -268,10 +268,10 @@ body[data-state=playing] #world{cursor:none}
 
 /* Inspection keeps mouse fire on the canvas; only native keyboard focus is added. */
 #hud [data-ability]:focus-visible {outline:2px solid #e8fbff;outline-offset:5px;}
-#hud .ability-tooltip {position:absolute;z-index:8;bottom:calc(100% + 16px);left:50%;transform:translateX(-50%);width:280px;padding:14px 16px;border:1px solid var(--ability-color,#9fe8ff);background:#06131afa;box-shadow:0 8px 24px #0009;pointer-events:none;text-align:left;color:#e8fbff;}
-#hud .ability-tooltip b {display:block;font:600 23px/1.05 var(--font-display);color:var(--ability-color);margin-bottom:9px;}
-#hud .ability-tooltip > span {display:block;font:400 13px/1.5 var(--font-body);color:#d0e2eb;}
-#hud .ability-tooltip small {display:block;font:500 11px/1.4 var(--font-body);color:#a7c3d1;border-top:1px solid #9fe8ff33;padding-top:9px;margin-top:10px;}
+:is(#hud,body) > .ability-tooltip {position:fixed;box-sizing:border-box;z-index:20;left:50%;transform:translateX(-50%);width:280px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:hidden;padding:14px 16px;border:1px solid var(--ability-color,#9fe8ff);background:#06131afa;box-shadow:0 8px 24px #0009;pointer-events:none;text-align:left;color:#e8fbff;}
+:is(#hud,body) > .ability-tooltip b {display:block;font:600 23px/1.05 var(--font-display);color:var(--ability-color);margin-bottom:9px;}
+:is(#hud,body) > .ability-tooltip > span {display:block;font:400 13px/1.5 var(--font-body);color:#d0e2eb;}
+:is(#hud,body) > .ability-tooltip small {display:block;font:500 11px/1.4 var(--font-body);color:#a7c3d1;border-top:1px solid #9fe8ff33;padding-top:9px;margin-top:10px;}
 #hud .overdrive-body {position:relative;}
 #hud .overdrive-duration {position:absolute;left:-7px;top:50%;width:44px;height:44px;transform:translateY(-50%) rotate(-90deg);fill:none;stroke:var(--ability-color);stroke-width:2;pointer-events:none;}
 #hud .overdrive-duration circle {stroke-dasharray:132;stroke-linecap:round;}

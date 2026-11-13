@@ -32,10 +32,10 @@ it('pointer movement never measures ability anchors or tooltip layout',async()=>
       Element.prototype.getBoundingClientRect=function(){reads++;return original.call(this);};
       let passiveVisible=false;
       try{for(let i=0;i<100;i++)document.dispatchEvent(new PointerEvent('pointermove',{pointerType:'mouse',clientX:box.left+1,clientY:box.top+1}));
-        passiveVisible=entries[0].node.querySelector('.ability-tooltip')?.hasAttribute('hidden')===false;
+        passiveVisible=document.getElementById(entries[0].node.getAttribute('aria-describedby')!)?.hasAttribute('hidden')===false;
         document.dispatchEvent(new KeyboardEvent('keydown',{code:'AltLeft',key:'Alt'}));
       }finally{Element.prototype.getBoundingClientRect=original;}
-      const visible=entries[0].node.querySelector('.ability-tooltip')?.hasAttribute('hidden')===false;
+      const visible=document.getElementById(entries[0].node.getAttribute('aria-describedby')!)?.hasAttribute('hidden')===false;
       hints.dispose();return {reads,visible,passiveVisible};
     });
     expect(result).toEqual({reads:0,passiveVisible:false,visible:true});

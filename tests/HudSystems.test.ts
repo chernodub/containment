@@ -406,6 +406,43 @@ it('offers full ability rules only during deliberate combat inspection, includin
     } finally {await page.close();}
 });
 
+it('keeps held-key ability inspection opaque above a threat-faded action bar', async () => {
+    const page=await mountHud(1920,1080);
+    try {
+        await liveHud(page);
+        await page.evaluate(()=>{const {game,hud,adapter,fixtures}=(window as any).__live;adapter.setUiFixture(game,{abilities:fixtures.abilityFixture('cryo','active')});hud();hud.tick(.01);});
+        await page.locator('[data-ability=tactical]').focus();
+        await page.keyboard.down('Alt');
+        await page.evaluate(()=>{
+            (window as any).__live.hud.tick(.01);
+            const bar=document.getElementById('action-bar')!;
+            bar.dataset.obscuresThreat='true';bar.style.transition='none';bar.style.opacity='.3';
+        });
+        const tooltip=page.locator('#ability-rules-tactical');
+        expect(await tooltip.isVisible()).toBe(true);
+        const appearance=await tooltip.evaluate(node=>{
+            const bar=document.getElementById('action-bar')!,anchor=document.querySelector<HTMLElement>('[data-ability=tactical]')!;
+            const style=getComputedStyle(node),box=node.getBoundingClientRect(),anchorBox=anchor.getBoundingClientRect();
+            let ancestorOpacity=1;
+            for(let parent:Element|null=node;parent;parent=parent.parentElement) ancestorOpacity*=Number(getComputedStyle(parent).opacity);
+            return {host:node.parentElement?.id,inBar:bar.contains(node),barOpacity:getComputedStyle(bar).opacity,ancestorOpacity,
+                background:style.backgroundColor,pointerEvents:style.pointerEvents,position:style.position,
+                color:style.getPropertyValue('--ability-color').trim(),anchorColor:getComputedStyle(anchor).getPropertyValue('--ability-color').trim(),
+                anchorCenter:(anchorBox.left+anchorBox.right)/2,center:(box.left+box.right)/2,gap:anchorBox.top-box.bottom};
+        });
+        expect(appearance.host).toBe('hud');expect(appearance.inBar).toBe(false);
+        expect(Number(appearance.barOpacity)).toBe(.3);expect(appearance.ancestorOpacity).toBe(1);
+        expect(appearance.background).toBe('rgba(6, 19, 26, 0.98)');
+        expect(appearance.pointerEvents).toBe('none');expect(appearance.position).toBe('fixed');
+        expect(appearance.color).toBe(appearance.anchorColor);
+        expect(appearance.center).toBeCloseTo(appearance.anchorCenter,0);expect(appearance.gap).toBeCloseTo(16,0);
+        await page.keyboard.up('Alt');expect(await tooltip.isHidden()).toBe(true);
+        await page.evaluate(()=>(window as any).__live.hud.dispose());
+        expect(await page.locator('.ability-tooltip').count()).toBe(0);
+        expect(await page.locator('[data-ability=tactical]').getAttribute('aria-describedby')).toBeNull();
+    } finally {await page.close();}
+});
+
 it('shows remaining-enemy progress and deduplicates a short multi-kill beat with a cooldown', async () => {
     const page=await mountHud(1920,1080);
     try {
