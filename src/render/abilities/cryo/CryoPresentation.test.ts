@@ -8,7 +8,7 @@ import { createCryoPresentation } from './index';
 function recordingKit() {
   return {
     time: 1, low: false, reducedMotion: false, flashIntensity: 1,
-    draw: vi.fn(), mote: vi.fn(), burst: vi.fn(), ring: vi.fn(), outline: vi.fn(), beam: vi.fn(),
+    sprite: vi.fn(), statusActor: vi.fn(), draw: vi.fn(), mote: vi.fn(), burst: vi.fn(), ring: vi.fn(), outline: vi.fn(), beam: vi.fn(),
     ribbon: vi.fn(), decal: vi.fn(), flash: vi.fn(), distort: vi.fn(), camera: vi.fn(), lightAt: vi.fn(),
     sustain: vi.fn(), impact: vi.fn(), stormWisp: vi.fn(), gust: vi.fn(), frostFilm: vi.fn(), front: vi.fn(), scar: vi.fn(), debris: vi.fn(), iceColumn: vi.fn(),
   };
@@ -42,26 +42,33 @@ describe('Cryo signatures', () => {
     expect(shards.length).toBeLessThan(65);
     expect(new Set(shards.map(c => c[4].toFixed(3))).size).toBeGreaterThan(10);
     for (const draw of shards) expect(Math.hypot(draw[1] - 2, draw[3] - 3)).toBeLessThanOrEqual(310 / 32);
-    expect(kit.front.mock.calls[0][2]).toBe(310 / 32);
-    expect(kit.front.mock.calls[0][3]).toBeGreaterThan(.95);
-    expect(kit.front.mock.calls[0][5]).toBeGreaterThanOrEqual(.27);
-    expect(kit.front.mock.calls[0][5]).toBeLessThan(.5); // At150ms the impact curtain is already thinning.
-    expect(kit.front.mock.calls[0][7]).toBe(2); // Matte rolling cold vapor uses the existing front batch.
-    expect(kit.front).toHaveBeenCalledOnce();
+    const mist = kit.sprite.mock.calls.filter(c => c[0] === 'mist');
+    expect(mist).toHaveLength(8);
+    for (const c of mist) {
+      expect(Math.hypot(c[1] - 2, c[3] - 3) + c[4]).toBeLessThanOrEqual(310 / 32);
+      expect(c[5]).toBeLessThan(.4); expect(c[7]).toBeLessThan(.5);
+    }
+    expect(kit.front).not.toHaveBeenCalled();
+
   });
 
-  it('retains the Nova impact wall then thins the same wavy edge before sustained combat', () => {
+  it('retains the Nova texture-vapor impact then thins it before sustained combat', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     fx.event(receipt({ radius: 230 }), 64, 96);
     fx.update(frame({}, .09));
-    const impact = kit.front.mock.calls.at(-1)!;
-    expect(impact[5]).toBe(.7); expect(impact[6]).toBeGreaterThan(.4);
-    kit.front.mockClear(); fx.update(frame({}, .077));
-    const settled = kit.front.mock.calls.at(-1)!;
-    expect(settled[2]).toBe(impact[2]); expect(settled[3]).toBeGreaterThan(impact[3]);
-    expect(settled[5]).toBeGreaterThanOrEqual(.27); expect(settled[5]).toBeLessThan(.35);
-    expect(settled[6]).toBeLessThan(impact[6] * .5); expect(settled[7]).toBe(2);
-    // The authored flash, camera response and impact particles keep their original receipt.
+    const impact = kit.sprite.mock.calls.filter(c => c[0] === 'mist');
+    expect(impact).toHaveLength(8); expect(impact[0][5]).toBeCloseTo(.46); expect(impact[0][7]).toBeGreaterThan(.4);
+    kit.sprite.mockClear(); fx.update(frame({}, .077));
+    const settled = kit.sprite.mock.calls.filter(c => c[0] === 'mist');
+    expect(settled).toHaveLength(impact.length);
+    for (let i = 0; i < settled.length; i++) {
+      const c = settled[i];
+      expect(Math.hypot(c[1] - 2, c[3] - 3)).toBeGreaterThan(Math.hypot(impact[i][1] - 2, impact[i][3] - 3));
+      expect(Math.hypot(c[1] - 2, c[3] - 3) + c[4]).toBeLessThanOrEqual(230 / 32);
+      expect(c[5]).toBeGreaterThanOrEqual(.24); expect(c[5]).toBeLessThan(.3);
+      expect(c[7]).toBeLessThan(impact[i][7] * .5);
+    }
+    expect(kit.front).not.toHaveBeenCalled();
     expect(kit.flash).toHaveBeenCalledWith(2, 3, 0xe8fbff, 15, expect.any(Number), 4, .14);
     expect(kit.burst).toHaveBeenCalledWith(2, .18, 3, 'cryo', 32, 5.2, .95);
   });
@@ -84,26 +91,28 @@ describe('Cryo signatures', () => {
     kit.draw.mockClear(); kit.gust.mockClear();
     fx.update(frame({ zones: [zone({ remainingMs: 7850 })] }, 0));
     const freshGusts = kit.gust.mock.calls.map(c => [...c]);
-    const freshSnow = kit.draw.mock.calls.filter(c => c[0] === 'shard').map(c => c[8]);
-    kit.draw.mockClear(); kit.gust.mockClear();
+    const freshSnow = kit.sprite.mock.calls.filter(c => c[0] === 'snow').map(c => c[7]);
+    kit.draw.mockClear(); kit.gust.mockClear(); kit.sprite.mockClear();
     fx.update(frame({ zones: [zone({ remainingMs: 7000 })] }, 0));
     expect(kit.gust.mock.calls).toHaveLength(freshGusts.length);
     for (let i = 0; i < freshGusts.length; i++) {
       expect(kit.gust.mock.calls[i].slice(2, 4)).toEqual(freshGusts[i].slice(2, 4));
       expect(kit.gust.mock.calls[i][6]).toBeLessThan(freshGusts[i][6] * .36);
     }
-    expect(kit.draw.mock.calls.filter(c => c[0] === 'shard').map(c => c[8])).toEqual(freshSnow);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'snow').map(c => c[7])).toEqual(freshSnow);
     expect(kit.front).not.toHaveBeenCalled();
-    expect(kit.stormWisp).toHaveBeenCalledTimes(32);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(16);
   });
 
-  it('interlocks three unequal Glacier crowns with a fractured waist inside the exact blocking strip', () => {
+  it('grounds seven unequal tapered Glacier crystals inside the exact blocking strip', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     for (const angle of [0, Math.PI / 2, .67]) {
       kit.draw.mockClear();
       fx.update(frame({ deployables: [wall({ angle })] }, 0));
       const facets = kit.draw.mock.calls;
-      expect(facets.length).toBe(6);
+      expect(facets.length).toBe(11);
+      expect(facets.filter(c => c[11] >= 22 && c[11] < 26)).toHaveLength(7);
+      expect(facets[0][2] - facets[0][5]).toBe(0);
       expect(facets.filter(c => c[6] === 200 / 32 / 2)).toHaveLength(1);
       expect(facets.every(c => c[0] === 'shard')).toBe(true);
       const heights = new Set(facets.map(c => Number(c[5].toFixed(3))));
@@ -197,7 +206,7 @@ describe('Cryo signatures', () => {
     expect(low.draw.mock.calls.some(c => c[0] === 'smoke')).toBe(true);
     expect(low.draw.mock.calls.some(c => c[0] === 'shard' && c[5] > .4)).toBe(true);
     expect(low.draw.mock.calls.some(c => c[0] === 'solid')).toBe(false);
-    expect(low.ribbon.mock.calls.length).toBeLessThan(high.ribbon.mock.calls.length);
+    expect(low.sprite.mock.calls.length).toBeLessThan(high.sprite.mock.calls.length);
   });
 
   it('makes Whiteout freeze waves once per authoritative two-second boundary', () => {
@@ -223,22 +232,26 @@ describe('Cryo signatures', () => {
     expect(kit.ring).toHaveBeenCalledWith(2, 3, 180 / 32, 0xe8fbff, .5);
   });
 
-  it('circulates sparse snow and short gusts along one perimeter storm wall with a calm eye', () => {
+  it('drives authored snow and mist around one storm perimeter with a calm eye', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     const f = frame({ zones: [zone()] }, 0);
     f.game = { geometry: { blockers: [{ x: 480, y: 300, width: 40, height: 40 }, { x: 900, y: 900, width: 40, height: 40 }] } } as never;
     fx.update(f);
-    const shards = kit.draw.mock.calls.filter(c => c[0] === 'shard');
-    expect(shards.length).toBe(24);
-    const snow = shards.slice(0, 24);
-    expect(snow.filter(c => c[6] > .2).length).toBeGreaterThan(6);
-    expect(snow.every(c => c[4] >= .028 && c[8] >= .4)).toBe(true);
-    for (const c of kit.draw.mock.calls) {
+    const clouds = kit.sprite.mock.calls.filter(c => c[0] === 'mist'), snow = kit.sprite.mock.calls.filter(c => c[0] === 'snow');
+    expect(clouds).toHaveLength(16); expect(snow).toHaveLength(6);
+    expect(new Set(clouds.map(c => c[5].toFixed(3))).size).toBeGreaterThan(8);
+    for (const c of [...clouds, ...snow]) {
       const distance = Math.hypot(c[1] - 10, c[3] - 10);
-      const support = Math.max(c[4], c[6]);
-      expect(distance - support).toBeGreaterThan(2.25);
-      expect(distance + support).toBeLessThan(300 / 32);
-      expect(c[8]).toBeLessThanOrEqual(.58);
+      expect(distance - c[4]).toBeGreaterThan(2.25);
+      expect(distance + c[4]).toBeLessThan(300 / 32);
+      expect(c[7]).toBeLessThanOrEqual(.69); expect(c[9]).toBe('billboard');
+      expect(c[11]).toBe(c[0] === 'mist' ? -.62 : -.72);
+    }
+    const deposits = kit.sprite.mock.calls.filter(c => c[0] === 'frost');
+    expect(deposits.length).toBeGreaterThan(0); expect(deposits.length).toBeLessThanOrEqual(4);
+    for (const c of deposits) {
+      expect(c[9]).toBe('ground');
+      expect(Math.hypot(c[1] - 10, c[3] - 10) + Math.hypot(c[4], c[5])).toBeLessThan(300 / 32);
     }
     const gusts = kit.gust.mock.calls;
     expect(gusts).toHaveLength(6);
@@ -260,41 +273,42 @@ describe('Cryo signatures', () => {
       supportArea += c[2] * c[3];
     }
     expect(supportArea).toBeLessThan(Math.PI * (300 / 32) ** 2 * .24);
-    expect(kit.stormWisp).toHaveBeenCalledTimes(16);
-    // All spiral markers were replaced; only short authored-prop frost seams remain.
-    for (const c of kit.ribbon.mock.calls) expect(Math.hypot(c[3] - c[0], c[5] - c[2])).toBeLessThanOrEqual(.350001);
-    const positions = shards.map(c => [c[1], c[3], c[9]]), gustAngle = gusts[0][4];
-    kit.draw.mockClear(); kit.gust.mockClear();
+    // Shared pool leaves room for status wisps and scars; no geometry snow draw remains.
+    expect(kit.draw).not.toHaveBeenCalled();
+    const positions = clouds.map(c => [c[1], c[3]]), gustAngle = gusts[0][4];
+    kit.sprite.mockClear(); kit.gust.mockClear();
     fx.update(frame({ zones: [zone({ remainingMs: 6500 })] }, 0));
-    expect(kit.draw.mock.calls.filter(c => c[0] === 'shard').map(c => [c[1], c[3], c[9]])).not.toEqual(positions);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist').map(c => [c[1], c[3]])).not.toEqual(positions);
     expect(kit.gust.mock.calls[0][4] - gustAngle).toBeCloseTo(.12);
     expect(kit.gust.mock.calls).toHaveLength(6);
     expect(kit.front).not.toHaveBeenCalled();
+
   });
 
-  it('reserves expanding impact fronts for Nova and holds Whiteout at its exact storm perimeter', () => {
+  it('reserves expanding textured vapor for Nova and holds Whiteout at its exact storm perimeter', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     for (const phase of ['impact', 'burst', 'end'] as const) fx.event(receipt({ ability: 'whiteout', phase, radius: 300 }), 320, 320);
     fx.update(frame({ zones: [zone({ remainingMs: 5990 })] }, .1));
     fx.update(frame({}, .1));
     expect(kit.front).not.toHaveBeenCalled();
-    expect(kit.stormWisp).toHaveBeenCalledTimes(16);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(16);
     expect(kit.ring).toHaveBeenCalledTimes(4);
     fx.event(receipt({ radius: 210 }), 320, 320); fx.update(frame({}, .1));
-    expect(kit.front).toHaveBeenCalled();
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(24);
+    expect(kit.front).not.toHaveBeenCalled();
   });
 
   it('keeps low-tier wall and storm silhouettes with fewer pooled instances and segments', () => {
     const high = recordingKit(), low = recordingKit(); low.low = true;
     createCryoPresentation(high as unknown as ElementKit).update(frame({ zones: [zone()], deployables: [wall({ health: 80 })] }));
     createCryoPresentation(low as unknown as ElementKit).update(frame({ zones: [zone()], deployables: [wall({ health: 80 })] }));
-    expect(low.draw.mock.calls.length).toBe(16);
+    expect(low.draw.mock.calls.length).toBe(8);
     expect(low.draw.mock.calls.length).toBeLessThan(high.draw.mock.calls.length);
-    expect(low.ribbon.mock.calls.length).toBeLessThan(high.ribbon.mock.calls.length);
+    expect(low.sprite.mock.calls.length).toBeLessThan(high.sprite.mock.calls.length);
     expect(low.gust).toHaveBeenCalledTimes(3);
     expect(low.gust.mock.calls.length).toBeLessThan(high.gust.mock.calls.length);
-    expect(low.stormWisp).toHaveBeenCalledTimes(8);
-    expect(high.stormWisp).toHaveBeenCalledTimes(16);
+    expect(low.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(8);
+    expect(high.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(16);
   });
 
   it('marks sustained coverage by authoritative age and resets priority before leaving each presentation', () => {
@@ -303,12 +317,13 @@ describe('Cryo signatures', () => {
     expect(kit.sustain).toHaveBeenCalledWith(1);
     expect(kit.sustain).toHaveBeenCalledWith(.5);
     expect(kit.impact.mock.invocationCallOrder.at(-1)).toBeGreaterThan(kit.sustain.mock.invocationCallOrder.at(-1)!);
-    kit.reducedMotion = true; kit.draw.mockClear();
+    kit.reducedMotion = true; kit.draw.mockClear(); kit.sprite.mockClear();
     fx.update(frame({ zones: [zone()] }, 0));
-    const still = kit.draw.mock.calls.map(c => c.slice()), stillGusts = kit.gust.mock.calls.slice(-6).map(c => c.slice());
-    kit.draw.mockClear(); kit.gust.mockClear(); kit.time = 20;
+    const still = kit.draw.mock.calls.map(c => c.slice()), stillSprites = kit.sprite.mock.calls.map(c => c.slice()), stillGusts = kit.gust.mock.calls.slice(-6).map(c => c.slice());
+    kit.draw.mockClear(); kit.gust.mockClear(); kit.sprite.mockClear(); kit.time = 20;
     fx.update(frame({ zones: [zone({ remainingMs: 6500 })] }, 0));
     expect(kit.draw.mock.calls).toEqual(still);
+    expect(kit.sprite.mock.calls).toEqual(stillSprites);
     expect(kit.gust.mock.calls).toEqual(stillGusts);
   });
 
@@ -327,8 +342,43 @@ describe('Cryo signatures', () => {
     }
     expect(gusts).toHaveLength(3);
     expect(kit.front).not.toHaveBeenCalled();
-    expect(kit.stormWisp).toHaveBeenCalledTimes(8);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(8);
 
+  });
+
+  it.each([false, true])('puts bounded vapor on actually chilled targets and creeps frost at real blocker bases (Low %s)', low => {
+    const kit = recordingKit(); kit.low = low;
+    const fx = createCryoPresentation(kit as unknown as ElementKit);
+    const f = frame({ zones: [zone()] }, 0);
+    f.game = {
+      enemies: { snapshot: { enemies: Array.from({ length: 9 }, (_, i) => ({
+        id: i, x: i === 8 ? 2000 : 340 + i * 10, y: 350, radius: 16, health: i === 7 ? 0 : 30,
+      })) } },
+      boonStatuses: (id: number) => ({ chilled: id !== 0, frozen: id === 2 }),
+      geometry: { blockers: [{ x: 480, y: 300, width: 40, height: 40 }] },
+    } as never;
+    fx.update(f);
+    const mist = kit.sprite.mock.calls.filter(c => c[0] === 'mist');
+    const target = mist.slice(low ? 8 : 16);
+    expect(target).toHaveLength(low ? 2 : 4);
+    expect(target.every(c => c[7] <= .38 && c[5] <= .58)).toBe(true);
+    expect(target.map(c => c[8])).not.toContain(0);
+    expect(target.map(c => c[8])).not.toContain(7);
+    expect(target.map(c => c[8])).not.toContain(8);
+    const fresh = kit.sprite.mock.calls.filter(c => c[0] === 'frost');
+    expect(fresh).toHaveLength(low ? 2 : 4);
+    kit.sprite.mockClear();
+    f.snapshot = snapshot({ zones: [zone({ remainingMs: 5000 })] });
+    fx.update(f);
+    const settled = kit.sprite.mock.calls.filter(c => c[0] === 'frost');
+    expect(settled).toHaveLength(fresh.length);
+    for (let i = 0; i < fresh.length; i++) {
+      expect(settled[i][4]).toBeGreaterThan(fresh[i][4]);
+      expect(settled[i][5]).toBeGreaterThan(fresh[i][5]);
+      expect(settled[i].slice(1, 4)).toEqual(fresh[i].slice(1, 4));
+    }
+    // Perimeter + target vapor + deposits leave room in the 64-decal pool.
+    expect(kit.sprite.mock.calls.length).toBeLessThanOrEqual(low ? 15 : 30);
   });
 
   it('renders no denied/ready world feedback and clears all transient state', () => {
