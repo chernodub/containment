@@ -730,3 +730,5 @@ import {registerG5Scenarios} from './g5-scenarios.mjs';
 registerG5Scenarios(SCENARIOS);
 import {registerG6Scenarios} from './g6-scenarios.mjs';
 registerG6Scenarios(SCENARIOS,stageGraphicsKiting);
+import {registerI9Scenarios} from './i9-scenarios.mjs';
+registerI9Scenarios(SCENARIOS);

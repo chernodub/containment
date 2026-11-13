@@ -43,6 +43,25 @@ describe('HUD-aware combat viewport',()=>{
    expect(camera.zoom).toBeGreaterThanOrEqual(.85);expect(framing.diagnostics.fit).toBe(true);
   }
  });
+ it.each([false,true])('retains the actual seed1729 remote priority bodies and central marine envelope with perspective=%s',perspective=>{
+  // Organic Breacher r15/r16: the old .85 ceiling left this selected body
+  // beneath the dock or below the frame, even after priority-pair fallback.
+  const cases=[{x:322.3842405618243/32,z:592.9199102514939/32,ex:190.48293549557826/32,ez:857.8569938652564/32,r:18/32,angle:1.4820376670167805},
+   {x:167.90905765161747/32,z:495.7129016217312/32,ex:260.0662478226219/32,ez:834.1510276377002/32,r:17/32,angle:1.3617798661837357}];
+  for(const [width,height]of desktopSizes)for(const c of cases){
+   const {camera,rig,framing,point,target}=setup(width,height,perspective);
+   framing.setInsets({top:182,right:292,bottom:height===720?108:120,left:0});
+   framing.selectContacts(c.x,c.z,c.angle,[{id:2,x:c.ex*32,y:c.ez*32,radius:c.r*32,health:100}],32,()=>3.2);
+   combatFocusTarget(c.x,c.z,c.angle,0,0,false,false,point);framing.biasTarget(c.x,c.z,c.angle,false,false,point);rig.reset(point.x,point.z);rig.apply(camera,1,COMBAT_VIEW_HEIGHT,0);framing.center(camera,rig.focus,point,target);
+   framing.protectEngagement(camera,rig.focus,c.x,c.z,.5,2.2,point,target);protectPlayerFrame(camera,rig.focus,c.x,c.z,.5,2.2,point,target,framing.viewport);
+   const v=framing.viewport,a=bounds(camera,c.x,c.z,.5,2.2),b=bounds(camera,c.ex,c.ez,c.r,3.2);
+   expect(a.left).toBeGreaterThanOrEqual(v.centerX-.60*v.halfX-1e-5);expect(a.right).toBeLessThanOrEqual(v.centerX+.60*v.halfX+1e-5);
+   expect(a.bottom).toBeGreaterThanOrEqual(v.centerY-.55*v.halfY-1e-5);expect(a.top).toBeLessThanOrEqual(v.centerY+.55*v.halfY+1e-5);
+   expect(b.left).toBeGreaterThanOrEqual(v.left-1e-5);expect(b.right).toBeLessThanOrEqual(v.right+1e-5);expect(b.bottom).toBeGreaterThanOrEqual(v.bottom-1e-5);expect(b.top).toBeLessThanOrEqual(v.top+1e-5);
+   expect(camera.zoom).toBeGreaterThanOrEqual(.5);expect(framing.diagnostics.fit,JSON.stringify({width,height,c,zoom:camera.zoom,a,b,v,d:framing.diagnostics})).toBe(true);
+   expect((a.top-a.bottom)*height/2).toBeGreaterThan(height*.065);
+  }
+ });
  it('weights nearby attacking contacts and aimed targets while ignoring remote idle enemies',()=>{
   const f=new HudCombatFraming(),out=new T.Vector3();f.resize(1920,1080);
   f.selectContacts(0,0,0,[{x:32*5,y:0,radius:20},{x:-32*20,y:0,radius:20}]);f.biasTarget(0,0,0,false,false,out);expect(out.x).toBeGreaterThan(1.8);expect(out.x).toBeLessThan(2.8);expect(out.z).toBe(0);expect(f.diagnostics.contacts).toBe(1);

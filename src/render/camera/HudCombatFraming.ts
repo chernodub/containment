@@ -94,7 +94,7 @@ export class HudCombatFraming {
     if(!this.count)return;
     const v=this.viewport,leftLimit=v.left+.06*v.halfX,rightLimit=v.right-.06*v.halfX,topLimit=v.top-.10*v.halfY,bottomLimit=v.bottom+.10*v.halfY;
     let selected=-1;
-    for(let pass=0;pass<8;pass++){
+    for(let pass=0;pass<16;pass++){
       let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
       let marineLeft=0,marineRight=0,marineTop=0,marineBottom=0;
       for(let actor=-1;actor<this.count;actor++){
@@ -111,8 +111,10 @@ export class HudCombatFraming {
       const minY=Math.max(top-topLimit,marineTop-v.centerY-marineHalfY),maxY=Math.min(bottom-bottomLimit,marineBottom-v.centerY+marineHalfY);
       if(scale<1-1e-6||minX>maxX+1e-6||minY>maxY+1e-6){
         // Try the complete engaged group before falling back to its highest-priority pair.
-        // A15% ceiling preserves the authored long-lens hero scale in remote crowds.
-        const zoom=Math.max(.85,camera.zoom*Math.min(.96,scale*.98));
+        // Keep ordinary crowds at the authored scale. A remote priority pair
+        // gets additional bounded room before abandoning its actual body bounds;
+        // the marine's central safety envelope remains unchanged.
+        const zoom=Math.max(selected<0?.85:.5,camera.zoom*Math.min(selected<0?.96:.88,scale*.98));
         if(zoom<camera.zoom-1e-6){camera.zoom=zoom;this.diagnostics.pullback=zoom;camera.updateProjectionMatrix();continue;}
         if(selected<0){selected=0;for(let n=1;n<this.count;n++)if(this.contacts[n*5+4]>this.contacts[selected*5+4])selected=n;this.diagnostics.focusedPair=true;this.diagnostics.focusContactId=this.diagnostics.selectedIds[selected];continue;}
         this.diagnostics.fit=false;return;
