@@ -136,7 +136,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
           vec2 remnant=fract(roomFloorP/vec2(1.9,4.6));vec2 edge=min(remnant,1.0-remnant)*vec2(1.9,4.6);
           deckJoint=roomFloorLine(min(edge.x,edge.y),.024)*(1.0-eaten*.62);
           float trench=1.0-smoothstep(.22,.32,abs(mod(roomFloorP.x+roomFloorP.y*.07,7.6)-3.8));
-          diffuseColor.rgb*=1.0-trench*.31;
+          diffuseColor.rgb*=1.0-trench*.75;
           float scar=roomFloorLine(abs(roomFloorNoise(roomFloorP*vec2(.15,1.1))-.53),.022)*eaten;
           diffuseColor.rgb*=1.0-scar*.14;
         }else if(construction<8.5){
@@ -203,7 +203,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         float roomFloorPolish=smoothstep(0.28,0.82,roomFloorMacro)*(1.0-roomFloorStain*0.25);
         roughnessFactor=clamp(roughnessFactor-roomFloorPolish*0.12-roomFloorScuff*0.025+roomFloorStain*0.06-roomFloorWet*0.27-(deckScrape-.12)*.06+(deckSilt-.58)*.06+deckGrain*.008,mix(0.64,0.28,roomFloorWet),1.0);`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v10:${genericDeck ? 'plates' : 'authored'}`;
+    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v11:${genericDeck ? 'plates' : 'authored'}`;
     material.needsUpdate = true;
   }
   if(practicalShapes)uniforms.practicals.value=practicalShapes;
