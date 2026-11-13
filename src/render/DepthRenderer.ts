@@ -137,6 +137,7 @@ export class DepthRenderer {
 
   this.bulletMesh=new T.InstancedMesh(new T.SphereGeometry(1,6,4),new T.MeshBasicMaterial({color:0xffffff}),320);this.bulletMesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.bulletMesh.setColorAt(0,this.bulletColor);this.bulletMesh.frustumCulled=false;this.scene.add(this.bulletMesh);
   this.post=new PostPipeline(this.renderer,this.scene,this.camera);this.post.setOptions(this.options,this.tier);
+  this.post.bindSoftParticles([this.interimAbilities.kit.batches.flame.mesh,this.interimAbilities.kit.batches.smoke.mesh],depth=>this.interimAbilities.setSoftDepth(depth,this.camera.near,this.camera.far,this.camera instanceof T.PerspectiveCamera),()=>this.interimAbilities.kit.atlas.loaded);
   // V2: public pooled feedback services, constructed before shader preparation.
   this.interimAbilities.setHostilePrioritySource(this.effects);
   this.interimAbilities.bind({statusActor:id=>id===-1?this.queen??undefined:this.actors.get(id),lights:this.lighting.pool,distortion:this.post.distortion,camera:this.cameraRig,presentation:this.post});
@@ -212,13 +213,21 @@ export class DepthRenderer {
  private queueRoomWarmup(){
   if(this.roomWarmPending){if(this.roomWarmCompiling)this.warmAgain=true;return;}
   this.roomWarmPending=true;this.roomWarmCompiling=false;const world=this.world,generation=this.graphicsGeneration,timing=this.preparationTiming,waitStarted=performance.now();
-  const ready=[this.surfaces.ready,this.passengerVault?.ready,this.residentialGalleryEquipment?.ready,this.communalGarden?.ready,this.sealedBank?.ready,this.releasedBerth?.ready,this.recoveryKit?.ready,this.kitDressing?.ready];
+  const ready=[this.surfaces.ready,this.passengerVault?.ready,this.residentialGalleryEquipment?.ready,this.communalGarden?.ready,this.sealedBank?.ready,this.releasedBerth?.ready,this.recoveryKit?.ready,this.kitDressing?.ready,this.prepareAbilityAssets()];
   this.roomWarmWork=Promise.all(ready).then(async()=>{if(this.disposed||this.world!==world||generation!==this.graphicsGeneration||this.renderer.getContext().isContextLost())return;this.roomWarmCompiling=true;if(timing)timing.phases.assets=(timing.phases.assets??0)+performance.now()-waitStarted;const captureStarted=performance.now();this.captureRoomReflections();if(timing)timing.phases.reflection=(timing.phases.reflection??0)+performance.now()-captureStarted;const warmStarted=performance.now();await this.prepareScene();if(timing){timing.phases.warm=(timing.phases.warm??0)+performance.now()-warmStarted;timing.total=performance.now()-timing.started;timing.programsAfter=this.renderer.info.programs?.length??0;timing.materialProfiles=this.materialWarmup?.profileCount??0;}}).catch(error=>{if(error!==PREPARATION_CANCELLED&&generation===this.graphicsGeneration&&!this.renderer.getContext().isContextLost())throw error;}).finally(()=>{
    this.roomWarmPending=false;this.roomWarmCompiling=false;const next=this.deferredRoom;this.deferredRoom=null;
    if(next)this.loadRoom(next.node,next.environment);
    if(this.warmAgain){this.warmAgain=false;this.queueRoomWarmup();}
   });
   void this.roomWarmWork.catch(error=>console.error('Room graphics preparation failed',error));
+ }
+ /** Decode/upload the shared atlas inside the first gameplay hold, never title preparation. */
+ private async prepareAbilityAssets(){
+  if(!this.kitStartupComplete||!this.interimAbilities)return;
+  const generation=this.graphicsGeneration;
+  await this.interimAbilities.prepare();this.checkGraphicsGeneration(generation);
+  const atlas=this.interimAbilities.kit.atlas;
+  if(atlas.loaded)this.renderer.initTexture(atlas.texture);
  }
  /** Generation-aware polling avoids Three's uncancellable async callbacks on a lost context. */
  private async compilePrepared(scene:T.Scene|T.Group,camera:T.Camera,targetScene?:T.Scene){
@@ -455,7 +464,7 @@ export class DepthRenderer {
   const leaks=this.world.getObjectByName('g2-world-dressing')?.userData.leakPositions??[];this.world.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial)setFloorLeaks(material,leaks);});
   const mood=getEnvironmentMood(environment);this.scene.fog=new T.FogExp2(mood.fog.color,mood.fog.density*.25);this.scene.background=new T.Color(mood.fog.color).multiplyScalar(.24);this.scene.environmentIntensity=mood.reflectionIntensity;this.post?.setMood(mood);this.atmosphere?.loadRoom(environment,w,h,this.lighting.fixtures);this.backdrop?.loadRoom(this.world,w,h,environment);this.arena?.loadRoom(node.templateId,w,h);this.post?.distortion.clear();this.heatClock=0;
   if(this.kitStartupComplete&&KIT_STANDARD_ROOMS.has(node.templateId)){const kitWorld=this.world;this.kitDressing=attachRoomKits(kitWorld,t,this.roomEnvironment,node.templateId,()=>{if(this.world!==kitWorld)return;applyRoomMood(kitWorld,this.roomEnvironment,node.templateId,this.lighting.practicalShapes);staticLoaded();},this.residentialGalleryEquipment?.ready);}
-  const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged))this.queueRoomWarmup();
+  const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged||this.kitStartupComplete&&!this.interimAbilities.kit.atlas.loaded))this.queueRoomWarmup();
  }
  private roomSeed(id:string){let seed=2166136261;for(let i=0;i<id.length;i++)seed=Math.imul(seed^id.charCodeAt(i),16777619);return seed>>>0;}
  private wallPanel(x:number,z:number,height:number,length:number,rotation:number){
@@ -497,7 +506,7 @@ export class DepthRenderer {
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;
   combatFocusTarget(p.x/UNIT,p.y/UNIT,p.angle,bossFrame.x/UNIT,bossFrame.y/UNIT,bossWeight,!!this.motionQuery?.matches||menu,this.desiredFocus);
-  const hud=this.hudFraming??=new HudCombatFraming();hud.selectContacts(p.x/UNIT,p.y/UNIT,p.angle,enemies,UNIT,this.cameraContactHeight);hud.biasTarget(p.x/UNIT,p.y/UNIT,p.angle,!!this.motionQuery?.matches,bossWeight,this.desiredFocus);
+  const hud=this.hudFraming??=new HudCombatFraming();hud.selectContacts(p.x/UNIT,p.y/UNIT,p.angle,enemies,UNIT,this.cameraContactHeight);if(bossWeight)hud.selectPrimaryContact(-1,bossFrame.x/UNIT,bossFrame.y/UNIT,3.4,this.queen?.height??4.5);hud.biasTarget(p.x/UNIT,p.y/UNIT,p.angle,!!this.motionQuery?.matches,bossWeight,this.desiredFocus);
   const framed=roomFocus(this.desiredFocus.x,this.desiredFocus.z,bounds.width/UNIT,bounds.height/UNIT,this.viewWidth/baseZoom,this.viewHeight/baseZoom,game.node.templateId,this.frameFocus);
   if(!hud.hasEngagement||bossWeight)this.desiredFocus.set(framed.x,0,framed.z);if(menu){this.desiredFocus.set(22,0,14);if(!this.lastMenu)this.cameraRig.reset(22,14);}
   this.cameraRig.update(dt,this.desiredFocus.x,this.desiredFocus.z,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig.apply(this.camera,baseZoom,this.viewHeight,this.options.screenShake);this.focus.copy(this.cameraRig.focus);
@@ -507,7 +516,7 @@ export class DepthRenderer {
   if(!menu&&!bossWeight)hud.protectEngagement(this.camera,this.focus,p.x/UNIT,p.y/UNIT,p.radius/UNIT,this.player.height,this.screenPoint,this.screenTarget);
   if(bossWeight)this.protectBossFraming(p.x/UNIT,p.y/UNIT,p.radius/UNIT,bossFrame.x/UNIT,bossFrame.y/UNIT);
   if(!menu)this.protectPlayerFraming(p.x/UNIT,p.y/UNIT,p.radius/UNIT);
-  if(!menu){this.roomCombatFraming.apply(this.camera,this.cameraRig.focus,p.x/UNIT,p.y/UNIT,p.radius/UNIT,this.player.height,bounds.width/UNIT,bounds.height/UNIT,hud.viewport,this.viewportHeight,dt,!!this.motionQuery?.matches,game.geometry.boundary);hud.refreshFit(this.camera,this.screenPoint);this.focus.copy(this.cameraRig.focus);}
+  if(!menu){this.roomCombatFraming.apply(this.camera,this.cameraRig.focus,p.x/UNIT,p.y/UNIT,p.radius/UNIT,this.player.height,bounds.width/UNIT,bounds.height/UNIT,hud.viewport,this.viewportHeight,dt,!!this.motionQuery?.matches,game.geometry.boundary,hud);hud.refreshFit(this.camera,this.screenPoint);this.focus.copy(this.cameraRig.focus);}
   this.effects.beginPriorityActors(this.camera);if(!menu)this.effects.addPriorityActor(p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,.78),this.player.height);
   // The shadow projection remains anchored to the room, avoiding subpixel shimmer.
   this.player.setColliderDebug?.(this.colliderDebug,p.radius/UNIT);this.player.root.position.set(p.x/UNIT,0,p.y/UNIT);this.player.root.visible=!menu;this.player.root.rotation.z=game.combat.snapshot.dead?1.4:0;

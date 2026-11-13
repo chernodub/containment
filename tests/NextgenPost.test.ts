@@ -3,7 +3,7 @@ import { lowAntialiasFragment } from '../src/render/post/LowAntialias';
 import { describe, expect, it, vi } from 'vitest';
 import {
   ACESFilmicToneMapping, AgXToneMapping, Camera, Color, DataUtils, HalfFloatType, RGBFormat, UnsignedInt101111Type, NearestFilter, SRGBColorSpace, NoToneMapping, OrthographicCamera,
-  PerspectiveCamera, Scene, ShaderMaterial, UnsignedByteType, WebGLRenderer, WebGLRenderTarget,
+  DepthTexture, Mesh, PerspectiveCamera, Scene, ShaderMaterial, UnsignedByteType, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { GRAPHICS_PRESETS } from '../src/render/graphicsOptions';
 import { DISTORTION_CAPACITY, DistortionField } from '../src/render/post/DistortionField';
@@ -527,4 +527,21 @@ describe('post shader work and packed normal precision', () => {
     expect(r.gtao.denoiseMaterial.defines.FRAGMENT_OUTPUT).toBe('vec4(vec3(denoised.r), 1.0)');
     pipeline.dispose();
   });
+});
+
+
+it('binds detached particle depth without replacing atlas hooks or adding a scene draw',()=>{
+  const {pipeline,gpu,scene,camera,frames}=fixture(),mesh=new Mesh(),original=vi.fn();
+  mesh.onBeforeRender=original;
+  const received=vi.fn(),detached=new DepthTexture(1,1),owner=(pipeline as unknown as {softDepth:{capture:()=>DepthTexture|null;begin:(source:WebGLRenderTarget|null)=>void;end:()=>void}}).softDepth;
+  const capture=vi.spyOn(owner,'capture').mockReturnValue(detached),begin=vi.spyOn(owner,'begin'),end=vi.spyOn(owner,'end');
+  pipeline.bindSoftParticles([mesh],received,()=>true);
+  const render=gpu.render.getMockImplementation()!;
+  gpu.render.mockImplementation((rendered,c)=>{render(rendered,c);if(rendered===scene)Reflect.apply(mesh.onBeforeRender,mesh,[gpu,scene,camera,mesh.geometry,mesh.material,null]);});
+  pipeline.setOptions(GRAPHICS_PRESETS.high,'high');end.mockClear();pipeline.render(0);
+  expect(original).toHaveBeenCalledOnce();expect(received).toHaveBeenLastCalledWith(detached);
+  expect(capture).toHaveBeenCalledOnce();expect(begin).toHaveBeenLastCalledWith(resources(pipeline)!.scene);expect(end).toHaveBeenCalledOnce();
+  expect(frames.filter(frame=>frame.scene===scene)).toHaveLength(1);
+  pipeline.setOptions(GRAPHICS_PRESETS.low,'low');expect(received).toHaveBeenLastCalledWith(null);
+  pipeline.dispose();expect(mesh.onBeforeRender).toBe(original);detached.dispose();
 });

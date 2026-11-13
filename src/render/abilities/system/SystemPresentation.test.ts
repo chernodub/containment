@@ -129,8 +129,10 @@ describe('V2 common marine and struck feedback', () => {
     expect(kit.batches.shard.mesh.count).toBe(targets * shards);
     // First shard belongs to the Queen; the crowd uses the remaining budget.
     const position = new T.Vector3(), matrix = new T.Matrix4(); kit.batches.shard.mesh.getMatrixAt(0, matrix); position.setFromMatrixPosition(matrix);
-    // The first facet now encases the complete actor; glints retain the outer target-bound ring.
+    // Frozen ability ice stays below the knees; actor-owned frost retains family anatomy.
     expect(Math.hypot(position.x - queen.x / 32, position.z - queen.y / 32)).toBeCloseTo(0, 5);
+    const scale=new T.Vector3();matrix.decompose(new T.Vector3(),new T.Quaternion(),scale);
+    expect(position.y+scale.y).toBeLessThanOrEqual(4.5*.23);
     queen.active = false; update(snapshot(), 0);
     expect(kit.batches.shard.mesh.count).toBe(targets * shards);
     expect(kit.batches.shard.mesh.geometry).toBe(geometry); expect(kit.batches.shard.mesh.instanceMatrix.array).toBe(buffer);
@@ -145,6 +147,7 @@ describe('V2 common marine and struck feedback', () => {
     expect(kit.batches.shard.mesh.count).toBe(4); expect(kit.batches.flame.mesh.count).toBe(0);
     states.set(1, { frozen: false, burning: false, shocked: false, chilled: true, chillStacks: 5 });
     update(snapshot(), 0); expect(kit.batches.shard.mesh.instanceMatrix.array.slice(0, 4 * 16)).not.toEqual(first);
+    for(let i=0;i<kit.batches.shard.mesh.count;i++){const m=new T.Matrix4(),p=new T.Vector3(),scale=new T.Vector3();kit.batches.shard.mesh.getMatrixAt(i,m);m.decompose(p,new T.Quaternion(),scale);expect(p.y+scale.y).toBeLessThanOrEqual(1.5*.23);}
     const m = new T.Matrix4(), p = new T.Vector3();
     for (let i = 0; i < 4; i++) { kit.batches.shard.mesh.getMatrixAt(i, m); p.setFromMatrixPosition(m);
       expect(Math.hypot(p.x - 5, p.z - 4)).toBeGreaterThan(.5); }

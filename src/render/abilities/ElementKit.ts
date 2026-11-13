@@ -384,7 +384,9 @@ export class ElementKit {
     }
     /** One restrained shell; the frozen actor remains the dominant interior shape. */
     iceShell(x: number, z: number, radius: number, height: number, opacity = .35): void {
-        this.draw('shard', x, height * .5, z, radius * 1.05, height * .5, radius * 1.05, 0x7fd6ff, opacity, 0, 0, 7.3);
+        // Actor materials own upper-body frost. Keep ability ice at the feet so
+        // Whiteout cannot replace distinct family anatomy with matching statues.
+        this.draw('shard', x, height * .11, z, radius * 1.05, height * .11, radius * 1.05, 0x6fa8bb, opacity, 0, 0, 7.3);
     }
     /** One clean authored echo silhouette; weapon and split stride share one instance. */
     afterImage(x: number, z: number, angle: number, color: number, opacity: number, lean = 0): void {

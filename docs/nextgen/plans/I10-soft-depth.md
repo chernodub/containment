@@ -1,0 +1,11 @@
+# I10 — detached soft-particle depth
+
+High now binds the V6 flame/smoke depth hook to a detached snapshot of the scene's depth attachment. No opaque scene is rendered twice. The first visible flame/smoke batch after opaque submission performs one Three185 depth blit; both batches share that copy. Their existing atlas callbacks run first. Scene submission ends before post, HUD or reflection work, so those paths receive no stale depth. No shader variant or new draw is introduced.
+
+The target owns a same-size unsigned depth texture plus an unused R8 color attachment (Three185 requires at least one color attachment). At 1920×1080 this adds approximately 9.9MiB nominal storage, with no color draw/copy. It is allocated during gameplay post preparation once the atlas is loaded; title preparation and Low allocate none. Resize/adaptive changes follow the actual source-target dimensions. Tier/context/disposal release the copy and unbind the uniforms before disposal. Callbacks use explicit arguments and retain no per-frame arrays.
+
+Three's depth blit resets READ/DRAW framebuffer bindings. The owner restores the current scene target, then explicitly selects color-only MRT output before the particle's existing material hook. This matters when an earlier transparent object already selected color-only output: re-enabling the geometry attachment would otherwise overwrite saved actor IDs without causing that hook to reselect its unchanged state.
+
+CPU validation: `VITEST_MAX_WORKERS=1 npx vitest run src/render/post/SoftParticleDepth.test.ts tests/NextgenPost.test.ts`: 2 files/26 tests pass. `npm run build`: pass (existing chunk-size warning). Tests cover detached identity, once-per-frame reuse, no disabled/forward allocation, native target resize, failed-copy framebuffer restoration, context/tier retirement, original hook restoration and a single scene submission. No presentation pin removed or rewritten. No simulation/balance change.
+
+Browser acceptance remains root-owned: confirm Pyro copies>0, no WebGL/feedback-loop errors, stable context/tier cycles and frame/draw budgets. Existing post diagnostics expose `softParticles.{allocated,width,height,copies}`. The ordinary browser smoke, capture and benchmark are the evidence for actual driver behavior; CPU mocks are not GPU certification.

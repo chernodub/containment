@@ -9,6 +9,7 @@ import {execFileSync,spawn} from 'node:child_process';
 import {chromium} from 'playwright';
 import {SCENARIOS,DEFAULT_ROOMS,stageCombat,stageKiting,advanceKiting,inspectFrame} from './scenarios.mjs';
 import {samplePng} from './png.mjs';
+import {assertPriorityPair} from './i10-framing-contract.mjs';
 import {stitchPngFrames} from './sprites.mjs';
 import {compareGalleries} from './gallery.mjs';
 
@@ -181,7 +182,7 @@ try{
      if(frame===0){assert(evidence.titleArt['ka-marine-reveal']<=.061,'Marine reveal skipped its dark opening');assert.equal(evidence.titleArt['ka-eyes-main'],0,'Threat eyes opened before the light');}
      if(frame*frameStepMs>=1800){assert.equal(evidence.titleArt['ka-marine-reveal'],1);assert.equal(evidence.titleArt['ka-eyes-main'],1);}
     }
-    if(scenario.priorityPair){const p=evidence.g6FramingProof;assert(p?.framing?.fit===true,`${name}: organic priority pair did not fit`);const ids=p.framing.focusedPair?[p.framing.focusContactId]:p.framing.selectedIds.filter(id=>id>=0);assert(ids.length>0,`${name}: missing organic priority contact`);for(const id of ids)assert(p.contacts.some(c=>c.id===id&&c.insideUsable),`${name}: selected organic body intersects HUD or frame`);assert(evidence.marineBounds.bottom-evidence.marineBounds.top>=viewport.height*.065,`${name}: organic marine became too small`);}
+    if(scenario.priorityPair)assertPriorityPair(evidence,viewport,name);
     if(scenario.auditGraphics)assert.deepEqual(evidence.drawErrors,[],`${name}: GPU draw errors ${JSON.stringify(evidence.drawErrors)}`);
     if(scenario.feelImpact){if(feelStart===null)feelStart=evidence.elapsed*1000;const advanced=evidence.elapsed*1000-feelStart,wall=frame*frameStepMs;if(wall<40)assert(Math.abs(advanced)<.001,`${name}: hit-stop did not hold simulation`);if(wall>=60)assert(advanced>0&&advanced<wall,`${name}: hit-stop did not resume on a delayed fixed step`);}
     for(const selector of scenario.required??[])assert(await page.locator(selector).first().isVisible(),`${name}: missing ${selector}`);

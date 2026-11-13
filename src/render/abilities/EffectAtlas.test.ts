@@ -68,6 +68,16 @@ describe('V6 authored atlas lifecycle and rendering contract', () => {
     expect(smoke.fragmentShader).toBe(shader); k.dispose();
   });
 
+  it('feathers time-light stamps before the card edge and breaks up the bright echo fill', () => {
+    const kit=new ElementKit(new T.Group());
+    const decal=kit.batches.decal.mesh.material as T.ShaderMaterial;
+    const ghost=kit.batches.ghost.mesh.material as T.ShaderMaterial;
+    expect(decal.fragmentShader).toContain('if(tile==161.)a*=1.-smoothstep(.62,1.,length(p))');
+    expect(ghost.fragmentShader).toContain('sin(worldHeight*32.-abilityTime*5.)');
+    expect(ghost.depthWrite).toBe(false);expect(kit.root.children.filter(node=>node===kit.batches.ghost.mesh)).toHaveLength(1);
+    kit.dispose();
+  });
+
   it('bounds accumulated projected alpha-card coverage and tightens it on Low', () => {
     const b = new InstanceBatch(new T.Group(), 'smoke', 192), camera = new T.OrthographicCamera(-10, 10, 10, -10, .1, 100);
     camera.position.set(0, 8, 8); camera.lookAt(0,0,0); camera.updateMatrixWorld(); b.setView(camera);

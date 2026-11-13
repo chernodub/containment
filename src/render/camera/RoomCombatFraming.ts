@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {type CombatViewport} from './HudCombatFraming';
+import {type CombatViewport,type HudCombatFraming} from './HudCombatFraming';
 
 type Boundary = readonly Readonly<{x:number;y:number}>[];
 type Camera = T.OrthographicCamera | T.PerspectiveCamera;
@@ -43,7 +43,7 @@ export class RoomCombatFraming {
   /** Keep the marine legible; nearby walls take precedence over a remote threat. */
   apply(camera:Camera, focus:T.Vector3, x:number, z:number, radius:number, height:number,
     roomWidth:number, roomDepth:number, viewport:CombatViewport, cssHeight:number,
-    dt:number, reducedMotion:boolean, boundary?:Boundary):void {
+    dt:number, reducedMotion:boolean, boundary?:Boundary, engagement?:HudCombatFraming):void {
     let roomLeft=0,roomTop=0,roomRight=roomWidth,roomBottom=roomDepth;
     if(boundary?.length){roomLeft=roomTop=Infinity;roomRight=roomBottom=-Infinity;for(const p of boundary){roomLeft=Math.min(roomLeft,p.x/32);roomRight=Math.max(roomRight,p.x/32);roomTop=Math.min(roomTop,p.y/32);roomBottom=Math.max(roomBottom,p.y/32);}}
     const roomZoomFloor=this.minimumShallowZoom(camera,viewport,roomBottom-roomTop,height);
@@ -87,6 +87,28 @@ export class RoomCombatFraming {
       this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
       outside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
       if(camera.zoom>=oldZoom-1e-6)break;
+    }
+    // The spring/room correction can undo the earlier HUD solve even when a
+    // nearby fight fits. Solve once more against the rendered pose, with the
+    // hero floor fixed and the room/body constraints reapplied after translation.
+    if(engagement?.needsFinalFit(x,z)){
+      engagement.refreshFit(camera,this.point);
+      for(let pass=0;pass<3&&!engagement.diagnostics.fit;pass++){
+        const oldX=camera.position.x,oldZ=camera.position.z,oldZoom=camera.zoom;
+        this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);
+        const span=Math.max(.0001,Math.abs(this.target.y-this.point.y)*540);
+        engagement.protectEngagement(camera,focus,x,z,radius,height,this.point,this.target,Math.max(roomZoomFloor,camera.zoom*HERO_MIN_PIXELS/span));
+        this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
+        this.setRectangle(roomLeft,roomTop,roomRight,roomBottom);
+        const candidateOutside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
+        if((!this.diagnostics.smallX&&!this.diagnostics.smallZ&&candidateOutside>ROOM_OUTSIDE_LIMIT+1e-6)
+          ||this.diagnostics.smallX&&!this.diagnostics.centeredX||this.diagnostics.smallZ&&!this.diagnostics.centeredZ){
+          this.move(camera,focus,oldX-camera.position.x,oldZ-camera.position.z);camera.zoom=oldZoom;camera.updateProjectionMatrix();
+          this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
+          engagement.refreshFit(camera,this.point);break;
+        }
+        outside=candidateOutside;engagement.refreshFit(camera,this.point);
+      }
     }
     this.x=camera.position.x;this.z=camera.position.z;this.zoom=camera.zoom;
     this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);

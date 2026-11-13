@@ -220,16 +220,16 @@ class SystemPresentation implements AbilityPresentation {
   }
 
   private frozenShell(x: number, z: number, radius: number, height: number, seed: number, flash: number): void {
-    // One shell preserves family silhouette and avoids statues built from stacked crystals.
+    // One low foot shell complements actor-owned frost without encasing anatomy.
     this.kit.iceShell(x, z, radius, height, .13 + flash * .12);
   }
 
-  /** Frost accretes from the feet to the shoulders as authoritative chill stacks rise. */
+  /** Chill stacks thicken the foot fringe; actor materials retain upper-body identity. */
   private chilling(x: number, z: number, radius: number, height: number, seed: number, progress: number): void {
     const k = this.kit, count = k.low ? 2 : 4;
     for (let i = 0; i < count; i++) {
       const a = seed * .73 + i * 2.39996323, r = radius * (.72 + i % 2 * .11);
-      const h = height * (.13 + progress * (.2 + i * .12));
+      const h = height * (.035 + progress * (.025 + i * .015));
       k.draw('shard', x + Math.cos(a) * r, h, z + Math.sin(a) * r,
         radius * (.13 + progress * .09), h * (.4 + progress * .3), radius * .13,
         i % 2 ? WHITE : ELEMENT_COLORS.cryo, .3 + progress * .35, a, .2 + progress * .15);

@@ -15,6 +15,7 @@ import { setRenderDiagnostics, type GraphicsTier } from '../FrameBudget';
 import { GRAPHICS_PRESETS, type GraphicsOptions } from '../graphicsOptions';
 import { DistortionField, distortionFragment } from './DistortionField';
 import { DepthGTAO } from './DepthGTAO';
+import { SoftParticleDepth } from './SoftParticleDepth';
 import {
   bloomBlurFragment, bloomExtractFragment, compositeFragment, occlusionFragment, screenVertex,
 } from './shaders';
@@ -50,7 +51,7 @@ export class PostPipeline {
   readonly distortion = new DistortionField();
   readonly adaptive = new AdaptiveResolution();
   gpuTimer?: GpuFrameTimer;
-  get diagnostics() { return { adaptiveScale:this.adaptive.scale, adaptive:this.adaptive.snapshot, gpu:this.gpuTimer?.snapshot }; }
+  get diagnostics() { return { adaptiveScale:this.adaptive.scale, adaptive:this.adaptive.snapshot, gpu:this.gpuTimer?.snapshot, softParticles:this.softDepth.diagnostics }; }
   /** Borrowed current scene depth for the native-resolution occlusion silhouette. */
   get sceneDepthTexture(): DepthTexture | null { return this.resources?.scene.depthTexture ?? null; }
   private styleStrength:GraphicStrength='bold';
@@ -74,6 +75,8 @@ export class PostPipeline {
   private focusDistance = 26;
   private menuPresentation = false;
   private readonly abilityPresentation = new Vector3();
+  private readonly softDepth: SoftParticleDepth;
+  private softParticleBinding?: {enabled:()=>boolean;receive:(depth:DepthTexture|null)=>void;release:()=>void};
 
   /** V3's bounded presentation inputs reuse the prepared composite; Low keeps its forward path. */
   setAbilityPresentation(exposure: number, warm: number, cool: number): void {
@@ -84,7 +87,19 @@ export class PostPipeline {
     private readonly renderer: WebGLRenderer,
     private readonly scene: Scene,
     private camera: Camera,
-  ) { this.releaseGeometryClear=installGeometryClearPolicy(renderer);setRenderDiagnostics(()=>this.diagnostics);this.distortion.setEnabled(false); if(renderer.getContext)this.gpuTimer=new GpuFrameTimer(renderer.getContext() as WebGL2RenderingContext); }
+  ) { this.softDepth=new SoftParticleDepth(renderer);this.releaseGeometryClear=installGeometryClearPolicy(renderer);setRenderDiagnostics(()=>this.diagnostics);this.distortion.setEnabled(false); if(renderer.getContext)this.gpuTimer=new GpuFrameTimer(renderer.getContext() as WebGL2RenderingContext); }
+
+  /** Borrowed flame/smoke meshes keep their existing preparation/atlas hooks. */
+  bindSoftParticles(meshes:readonly Mesh[], receive:(depth:DepthTexture|null)=>void, enabled:()=>boolean):void {
+    this.softParticleBinding?.release();
+    const hooks=meshes.map(mesh=>{
+      const previous=mesh.onBeforeRender;
+      const hook:Mesh['onBeforeRender']=function(this:Mesh,renderer,scene,camera,geometry,material,group){previous.call(this,renderer,scene,camera,geometry,material,group);receive(enabled()?owner.softDepth.capture():null);};
+      const owner=this;mesh.onBeforeRender=hook;
+      return ()=>{if(mesh.onBeforeRender===hook)mesh.onBeforeRender=previous;};
+    });
+    this.softParticleBinding={receive,enabled,release:()=>{receive(null);for(const release of hooks)release();}};
+  }
 
   /** Target allocation stays lazy until render/prepare after selecting High. */
   setOptions(options: GraphicsOptions, tier: GraphicsTier): void {
@@ -158,6 +173,7 @@ export class PostPipeline {
     const warmTarget = this.target(1, 1);
     try {
       this.renderer.setRenderTarget(resources.scene);this.renderer.toneMapping=NoToneMapping;
+      if(this.tier==='high'&&this.softParticleBinding?.enabled()){this.softDepth.prepare(resources.scene);this.renderer.setRenderTarget(resources.scene);}
       await compile(this.scene,this.camera);
       if(this.disposed||this.resources!==resources)return;
       // Compile the actual screen color-space variants before the offscreen draw.
@@ -185,6 +201,7 @@ export class PostPipeline {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.softParticleBinding?.release();this.softParticleBinding=undefined;
     this.releaseGeometryClear();
     setRenderDiagnostics(undefined);
     this.releaseResources();
@@ -221,7 +238,9 @@ export class PostPipeline {
       this.time += Number.isFinite(dt) ? Math.max(0, Math.min(dt, 0.1)) : 0;
       this.camera.updateMatrixWorld();
       renderer.setRenderTarget(r.scene);
-      renderer.render(this.scene, this.camera);
+      this.softParticleBinding?.receive(null);
+      this.softDepth.begin(this.tier==='high'&&this.softParticleBinding?.enabled()?r.scene:null);
+      try{renderer.render(this.scene, this.camera);}finally{this.softDepth.end();}
       r.occlusion.uniforms.projectionInverse.value.copy(this.camera.projectionMatrixInverse);
       r.occlusion.uniforms.projection.value.copy(this.camera.projectionMatrix);
       if (this.tier==='high'&&(this.options.ambientOcclusion || warm)) {
@@ -395,6 +414,7 @@ export class PostPipeline {
   }
 
   private releaseResources(): void {
+    this.softParticleBinding?.receive(null);this.softDepth.invalidate();
     const r = this.resources;
     if (!r) return;
     for (const target of [r.scene, r.present, r.ao, r.aoDenoised, r.bloomA, r.bloomB, r.distortion]) target.dispose();

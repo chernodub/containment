@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {checkCheckpointFeedback} from './checkpoint-feedback-check.mjs';
 import {checkCombatRig} from './combat-rig-check.mjs';
 import {observeAudio,checkMenuSound,checkPausedSound} from './sound-controls-check.mjs';
@@ -73,6 +74,7 @@ try {
     // checkMenuSound deliberately starts a run to test muted initialization.
     // Check title/settings loading before crossing that gameplay boundary.
     assert.equal([...assets].filter(path=>path.includes('/assets/kits/')).length,0,'Room kits must not load on the title/settings path');
+    assert.equal([...assets].filter(path=>path.includes('/assets/vfx/containment-v6/')).length,0,'Ability atlas must not load on the title/settings path');
     timing.start('menu-audio');
     const selectedVolume = await checkMenuSound(page);
     const chooseStartingBoon = async (capture = false) => {
@@ -150,6 +152,16 @@ try {
     assert.equal([...assets].filter(p=>p.includes('/environment/')).length,9);
     const modelCredits=await fetch(origin+prefix+'asset-credits.html');assert.equal(modelCredits.status,200);const modelCreditsHtml=await modelCredits.text();
     for(const pack of ['kenney-space-station','kenney-furniture','kenney-nature','quaternius-scifi-essentials'])for(const file of ['CREDITS.md','LICENSE.txt','manifest.json']){const path=`assets/kits/${pack}/${file}`;assert.ok(modelCreditsHtml.includes(path),`Missing kit credit link ${path}`);const response=await fetch(origin+prefix+path);assert.equal(response.status,200,`Kit credit response ${path}`);if(file==='LICENSE.txt')assert.match(await response.text(),/CC0|Creative Commons Zero/);}
+    const atlasPath='assets/vfx/containment-v6/elements.png';
+    assert.ok(assets.has(prefix+atlasPath),'The first gameplay readiness hold must request the ability atlas');
+    const atlasResponse=await fetch(origin+prefix+'assets/vfx/containment-v6/atlas.json');assert.equal(atlasResponse.status,200);const atlasManifest=await atlasResponse.json();
+    const atlasImageResponse=await fetch(origin+prefix+atlasPath);assert.equal(atlasImageResponse.status,200);const atlasBytes=Buffer.from(await atlasImageResponse.arrayBuffer());
+    assert.equal(atlasBytes.length,atlasManifest.output.bytes);assert.equal(createHash('sha256').update(atlasBytes).digest('hex'),atlasManifest.output.sha256);
+    for(const [pack,files] of [['containment-v6',['CREDITS.md','LICENSE.txt','atlas.json']],['unity-labs-v6',['CREDITS.md','LICENSE.txt']],['kenney-particle-v6',['CREDITS.md','LICENSE.txt']]])for(const file of files){
+      const path=`assets/vfx/${pack}/${file}`;assert.ok(modelCreditsHtml.includes(path),`Missing effect credit link ${path}`);const response=await fetch(origin+prefix+path);assert.equal(response.status,200,`Effect credit response ${path}`);
+      if(file==='LICENSE.txt')assert.match(await response.text(),pack==='containment-v6'?/MIT License/:/CC0|Creative Commons Zero/);
+    }
+    assert.equal(atlasManifest.sources.length,7);for(const source of atlasManifest.sources){assert.equal(source.license,'CC0-1.0');assert.match(source.sha256,/^[a-f0-9]{64}$/);assert.match(source.source,/^https:\/\//);}
     assert.ok([...assets].some(p=>p.includes('/audio/')));
     assert.ok([...assets].every(p=>p.startsWith(prefix)));
     timing.start('restart');

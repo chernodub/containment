@@ -83,6 +83,8 @@ ${kind === 'decal' ? `
    stamp.a*=smoothstep(0.,.08,uvLocal.x)*smoothstep(0.,.08,1.-uvLocal.x)*smoothstep(0.,.08,uvLocal.y)*smoothstep(0.,.08,1.-uvLocal.y);
   }else stamp=effectTile(tile,tile==162.?fract(uvLocal*vec2(3.,1.)):uvLocal);
   c=ink*(.55+stamp.r*.65);a*=stamp.a;
+  // The time ripple is a broken light field, not a square pasted onto the deck.
+  if(tile==161.)a*=1.-smoothstep(.62,1.,length(p));
   if(phase<600.)a*=smoothstep(.015,.20,worldHeight);
   if(tile==162.||tile==163.){
    float scan=.65+.35*sin(uvLocal.y*38.-abilityTime*7.);
@@ -211,7 +213,7 @@ ${kind === 'shard' ? `
  c*=mix(1.,.5+crystal.r*1.1,cold);
  c+=ink*pow(crystal.r,4.)*.42*cold;
  ` : ''}
-${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
+${kind === 'ghost' ? 'c*=1.05; a*=.42+.36*smoothstep(.72,.96,sin(worldHeight*32.-abilityTime*5.));' : ''}
  vec2 screen=screenPosition.xy/max(.001,screenPosition.w)*.5+.5;
  ${kind === 'flame' || kind === 'smoke' ? `
  if(softCamera.w>.5){

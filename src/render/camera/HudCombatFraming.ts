@@ -22,6 +22,7 @@ export class HudCombatFraming {
   // x,z,radius,height,score. Fixed slots avoid sorting/allocating live snapshots.
   private readonly contacts=new Float64Array(CAPACITY*5);
   private count=0;
+  private primary=false;
   private centroidX=0;
   private centroidZ=0;
   private weight=0;
@@ -53,7 +54,7 @@ export class HudCombatFraming {
 
   /** Nearby danger counts in every direction; farther contacts must be aimed at or attacking. */
   selectContacts(x:number,z:number,angle:number,enemies:readonly Contact[],units=32,heightForContact?:(id:number)=>number):void {
-    this.count=0;this.weight=0;this.centroidX=this.centroidZ=0;this.diagnostics.contacts=0;this.diagnostics.selectedIds.fill(-1);this.diagnostics.focusContactId=-1;this.diagnostics.focusedPair=false;this.diagnostics.fit=true;this.diagnostics.pullback=1;
+    this.primary=false;this.count=0;this.weight=0;this.centroidX=this.centroidZ=0;this.diagnostics.contacts=0;this.diagnostics.selectedIds.fill(-1);this.diagnostics.focusContactId=-1;this.diagnostics.focusedPair=false;this.diagnostics.fit=true;this.diagnostics.pullback=1;
     const ax=Math.cos(angle),az=Math.sin(angle);
     for(const e of enemies){
       if(e.health!==undefined&&e.health<=0)continue;
@@ -70,6 +71,21 @@ export class HudCombatFraming {
     for(let n=0;n<this.count;n++){const p=n*5,w=this.contacts[p+4];this.centroidX+=this.contacts[p]*w;this.centroidZ+=this.contacts[p+1]*w;this.weight+=w;}
     this.diagnostics.contacts=this.count;
     if(this.weight>0){this.centroidX/=this.weight;this.centroidZ/=this.weight;}
+  }
+
+  /** Boss framing keeps its complete primary anatomy, independent of normal enemy range selection. */
+  selectPrimaryContact(id:number,x:number,z:number,radius:number,height:number):void {
+    this.primary=true;this.count=1;this.centroidX=x;this.centroidZ=z;this.weight=1;
+    this.contacts[0]=x;this.contacts[1]=z;this.contacts[2]=radius;this.contacts[3]=height;this.contacts[4]=1;
+    this.diagnostics.contacts=1;this.diagnostics.selectedIds.fill(-1);this.diagnostics.selectedIds[0]=id;
+    this.diagnostics.focusContactId=id;this.diagnostics.focusedPair=true;this.diagnostics.fit=true;this.diagnostics.pullback=1;
+  }
+
+  /** Nearby combat gets a final fit after the room spring; remote targets may yield to room/hero limits. */
+  needsFinalFit(x:number,z:number):boolean {
+    if(this.primary)return true;
+    for(let n=0;n<this.count;n++)if(Math.hypot(this.contacts[n*5]-x,this.contacts[n*5+1]-z)<=5.5)return true;
+    return false;
   }
 
   /** Add bounded centroid/aim lead to the existing boss-aware focus target. */
@@ -90,10 +106,10 @@ export class HudCombatFraming {
 
   /** Shift a fitting engagement as one group; if oversized, prefer the aimed/most urgent contact.
    * The bounded extra pullback is only used when HUD reservation makes that pair too large. */
-  protectEngagement(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,point:T.Vector3,target:T.Vector3):void {
+  protectEngagement(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,point:T.Vector3,target:T.Vector3,minimumZoom=.5):void {
     if(!this.count)return;
     const v=this.viewport,leftLimit=v.left+.06*v.halfX,rightLimit=v.right-.06*v.halfX,topLimit=v.top-.10*v.halfY,bottomLimit=v.bottom+.10*v.halfY;
-    let selected=-1;
+    let selected=this.primary?0:-1;
     for(let pass=0;pass<32;pass++){
       let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
       let marineLeft=0,marineRight=0,marineTop=0,marineBottom=0;
@@ -106,7 +122,7 @@ export class HudCombatFraming {
         if(actor<0){marineLeft=left;marineRight=right;marineTop=top;marineBottom=bottom;}
       }
       const scale=Math.min(1,(rightLimit-leftLimit)/(right-left),(topLimit-bottomLimit)/(top-bottom));
-      const marineHalfX=Math.max(.60*v.halfX,(marineRight-marineLeft)*.5+.015),marineHalfY=Math.max(.55*v.halfY,(marineTop-marineBottom)*.5+.015);
+      const marineHalfX=Math.max((this.primary?.94:.60)*v.halfX,(marineRight-marineLeft)*.5+.015),marineHalfY=Math.max((this.primary?.94:.55)*v.halfY,(marineTop-marineBottom)*.5+.015);
       const minX=Math.max(right-rightLimit,marineRight-v.centerX-marineHalfX),maxX=Math.min(left-leftLimit,marineLeft-v.centerX+marineHalfX);
       const minY=Math.max(top-topLimit,marineTop-v.centerY-marineHalfY),maxY=Math.min(bottom-bottomLimit,marineBottom-v.centerY+marineHalfY);
       if(scale<1-1e-6||minX>maxX+1e-6||minY>maxY+1e-6){
@@ -114,7 +130,7 @@ export class HudCombatFraming {
         // Keep ordinary crowds at the authored scale. A remote priority pair
         // gets additional bounded room before abandoning its actual body bounds;
         // the marine's central safety envelope remains unchanged.
-        const zoom=Math.max(selected<0?.85:.5,camera.zoom*Math.min(.96,scale*.98));
+        const zoom=Math.max(minimumZoom,selected<0?.85:.5,camera.zoom*Math.min(.96,scale*.98));
         if(zoom<camera.zoom-1e-6){camera.zoom=zoom;this.diagnostics.pullback=zoom;camera.updateProjectionMatrix();continue;}
         if(selected<0){selected=0;for(let n=1;n<this.count;n++)if(this.contacts[n*5+4]>this.contacts[selected*5+4])selected=n;this.diagnostics.focusedPair=true;this.diagnostics.focusContactId=this.diagnostics.selectedIds[selected];continue;}
         // Perspective body extents change when the camera moves on the deck.

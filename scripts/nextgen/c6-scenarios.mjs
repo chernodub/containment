@@ -1,5 +1,5 @@
 /** Legal native family packing for the closer hero camera; no hitbox/status edits. */
-async function stageC6Families(room) {
+export async function stageC6Families(room) {
  const d=window.__containmentDebug,g=d.game,r=d.renderer;
  await d.gotoRoom(room,{rig:'breacher'});d.invulnerable(true);g.enemies.reset();
  d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});
@@ -79,6 +79,10 @@ async function stageC6Families(room) {
 
 /** C6 organic-style native kiting with exact deck projection for offline overlays. */
 export function registerC6Scenarios(scenarios) {
+ // The closer camera supersedes the old wide-view packing. Preserve every
+ // family/spacing/minimum-count check and add actual full-body HUD clearance.
+ for(const id of ['i8-families','g5-silhouettes']){const entry=scenarios.find(s=>s.id===id);if(entry)entry.setup=stageC6Families;}
+
  const source=scenarios.find(s=>s.id==='g6-kiting');
  scenarios.push({...source,id:'c6-kiting',setup:new Function('room',`return (async()=>{
   await (${source.setup.toString()})(room);

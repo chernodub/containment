@@ -65,7 +65,7 @@ describe('final room and hero camera constraints',()=>{
           hud.center(camera,rig.focus,point,target);
           hud.protectEngagement(camera,rig.focus,x,z,.5,2.05,point,target);
           protectPlayerFrame(camera,rig.focus,x,z,.5,2.05,point,target,hud.viewport);
-          final.apply(camera,rig.focus,x,z,.5,2.05,w,d,hud.viewport,height,1/60,false,room.boundary);
+          final.apply(camera,rig.focus,x,z,.5,2.05,w,d,hud.viewport,height,1/60,false,room.boundary,hud);
           const diag=final.diagnostics;
           const info=`${room.id} ${width}x${height} perspective=${perspective} ${x},${z} angle${angle} ${JSON.stringify(diag)}`;
           expect(diag.heroPixels,info).toBeGreaterThanOrEqual(HERO_MIN_PIXELS*height/1080-.5);
@@ -123,7 +123,7 @@ describe('final room and hero camera constraints',()=>{
     reserveHud(hud,1920,1080);
     rig.reset(18.75,3.5);rig.apply(camera,1,COMBAT_VIEW_HEIGHT,0);
     hud.center(camera,rig.focus,new T.Vector3(),new T.Vector3());
-    final.apply(camera,rig.focus,18.75,1.85,.5,2.05,room.width/32,room.height/32,hud.viewport,1080,1/60,false,room.boundary);
+    final.apply(camera,rig.focus,18.75,1.85,.5,2.05,room.width/32,room.height/32,hud.viewport,1080,1/60,false,room.boundary,hud);
     expect(final.diagnostics.outside).toBeLessThanOrEqual(ROOM_OUTSIDE_LIMIT);
     // The north tip is locally narrower than the full room AABB. Do not claim
     // its real polygon coverage passed merely because rectangular bounds did.

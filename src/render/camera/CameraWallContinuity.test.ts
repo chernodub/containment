@@ -48,7 +48,7 @@ describe('wall-adjacent priority-pair camera continuity',()=>{
         rig.apply(camera,1,COMBAT_VIEW_HEIGHT,0);hud.center(camera,rig.focus,point,target);
         hud.protectEngagement(camera,rig.focus,x,z,.5,2.05,point,target);
         protectPlayerFrame(camera,rig.focus,x,z,.5,2.05,point,target,hud.viewport);
-        final.apply(camera,rig.focus,x,z,.5,2.05,room.width/32,room.height/32,hud.viewport,1080,1/60,reducedMotion,room.boundary);
+        final.apply(camera,rig.focus,x,z,.5,2.05,room.width/32,room.height/32,hud.viewport,1080,1/60,reducedMotion,room.boundary,hud);
         if(hud.diagnostics.focusedPair){
           pairFrames++;
           if(lastPriority!==-1&&lastPriority!==hud.diagnostics.focusContactId)priorityChanges++;
@@ -89,7 +89,7 @@ describe('wall-adjacent priority-pair camera continuity',()=>{
     const update=(frame:number)=>{
       const x=17.5+frame*.02,z=10.5-frame*.015;
       rig.reset(x,z);rig.apply(camera,.5,COMBAT_VIEW_HEIGHT,0);hud.center(camera,rig.focus,point,target);
-      final.apply(camera,rig.focus,x,z,.5,2.05,room.width/32,room.height/32,hud.viewport,1080,1/60,false,room.boundary);
+      final.apply(camera,rig.focus,x,z,.5,2.05,room.width/32,room.height/32,hud.viewport,1080,1/60,false,room.boundary,hud);
     };
     update(0);
     const initialQueries=depthQueries;

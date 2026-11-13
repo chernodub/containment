@@ -1,7 +1,7 @@
 import { hudObstructs, presentationObstructs } from './layout';
 import type { DepthRenderer } from '../../render/DepthRenderer';
 import type { EnemySnapshot } from '../../game/enemies/EnemySystem';
-import { projectWorld, getViewportWidth, getViewportHeight, type ScreenPoint } from '../gameAdapter';
+import { projectWorld, projectActorBounds, getViewportWidth, getViewportHeight, type ScreenPoint } from '../gameAdapter';
 import type { HudEffect } from './effects';
 import { formatDistance } from '../units';
 export const THREAT_CAPACITY = 8;
@@ -100,6 +100,7 @@ export class ThreatIndicators {
     private readonly point: ScreenPoint = { x: 0, y: 0, visible: false };
     private readonly source: ScreenPoint = { x: 0, y: 0, visible: false };
     private readonly edge: Point = { x: 0, y: 0 };
+    private readonly bodyBounds = {left:0,top:0,right:0,bottom:0};
     private recentAttack = -1;
     private originX = 0;
     private originY = 0;
@@ -206,12 +207,18 @@ export class ThreatIndicators {
         }
         return false;
     }
-    private consider(id: number, kind: ThreatKind, x: number, y: number, distance: number, attacking: boolean, inFlight: boolean): void {
+    private consider(id: number, kind: ThreatKind, x: number, y: number, distance: number, attacking: boolean, inFlight: boolean, radius = 16): void {
         if (kind !== 'boss' && !attacking && distance > 1000)
             return;
         projectWorld(this.renderer, x, y, this.point);
-        if (this.point.visible || !Number.isFinite(this.point.x) || !Number.isFinite(this.point.y))
+        if (!Number.isFinite(this.point.x) || !Number.isFinite(this.point.y))
             return;
+        if(this.point.visible){
+            const b=this.bodyBounds;
+            // A center crossing the frame is not a visible body. Keep the native
+            // danger bearing until the complete actor also clears screen/HUD.
+            if(!projectActorBounds(this.renderer,id,x,y,radius,b)||b.left>32&&b.top>32&&b.right<this.width-32&&b.bottom<this.height-32&&!hudObstructs(b.left,b.top,b.right,b.bottom)&&!presentationObstructs(b.left,b.top,b.right,b.bottom))return;
+        }
         const angle = Math.atan2(this.point.y - this.originY, this.point.x - this.originX);
         threatEdgePoint(this.originX, this.originY, angle, this.width, this.height, this.edge);
         const score = (attacking ? 1000000 : 0) - distance + rank[kind] * 5;
@@ -269,7 +276,7 @@ export class ThreatIndicators {
                 continue;
             const flight = this.inFlight(enemy, player, bullets), attacking = enemy.windupMs > 0 || enemy.chargeMs > 0 || !!enemy.pendingAttack || flight;
             const kind: ThreatKind = enemy.champion ? 'champion' : enemy.elite ? 'elite' : enemy.type === 'spitter' ? 'ranged' : 'standard';
-            this.consider(enemy.id, kind, enemy.x, enemy.y, Math.hypot(enemy.x - player.x, enemy.y - player.y), attacking, flight);
+            this.consider(enemy.id, kind, enemy.x, enemy.y, Math.hypot(enemy.x - player.x, enemy.y - player.y), attacking, flight, enemy.radius);
         }
         if (boss?.active && boss.health > 0)
             this.consider(-1, 'boss', boss.x, boss.y, Math.hypot(boss.x - player.x, boss.y - player.y), !!boss.pendingTelegraph, false);

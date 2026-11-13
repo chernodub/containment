@@ -13,7 +13,7 @@ async function rig(page: Page, scale = 4) {
         const renderer = { canvas, worldToScreen: (x: number, y: number) => ({ x: 640 + x * scale, y: 450 + y * scale }) };
         const threats = new ThreatIndicators(document.getElementById('threat-indicators'), document.getElementById('damage-directions'), renderer);
         const enemy = (id: number, x: number, y: number, extra: Record<string, unknown> = {}) => ({ id, x, y, type: 'crawler', elite: false, health: 100, alpha: 1, windupMs: 0, chargeMs: 0, pendingAttack: null, ...extra });
-        (window as any).__threat = { threats, enemy, bounds, player: { x: 0, y: 0 } };
+        (window as any).__threat = { renderer, threats, enemy, bounds, player: { x: 0, y: 0 } };
     }, scale);
 }
 async function markers(page: Page) {
@@ -140,4 +140,25 @@ it('never reuses a cached spitter bearing for source-less damage',async()=>{
       expect(await page.locator('.damage-direction:not([hidden])').count()).toBe(1);
       expect(await page.locator('.damage-direction:not([hidden])').getAttribute('style')).toContain('1.570796');
     }finally{await page.close();}
+});
+
+
+it('retains the native danger bearing until an entering body clears the frame and HUD',async()=>{
+ const page=await mountHud(1280,900);
+ try{
+  await rig(page);
+  await page.evaluate(()=>{
+   const {renderer,threats,enemy,player,bounds}=(window as any).__threat;
+   renderer.worldToScreen=()=>({x:1000,y:850});
+   renderer.actorScreenBounds=(_id:number,_x:number,_y:number,_r:number,out:Record<string,number>)=>{Object.assign(out,{left:960,right:1040,top:800,bottom:930});return true;};
+   threats.update([enemy(1,100,100)],player,bounds,[]);
+  });
+  expect(await markers(page)).toHaveLength(1);
+  await page.evaluate(()=>{
+   const {renderer,threats,enemy,player,bounds}=(window as any).__threat;
+   renderer.actorScreenBounds=(_id:number,_x:number,_y:number,_r:number,out:Record<string,number>)=>{Object.assign(out,{left:960,right:1040,top:650,bottom:740});return true;};
+   threats.update([enemy(1,100,100)],player,bounds,[]);
+  });
+  expect(await markers(page)).toHaveLength(0);
+ }finally{await page.close();}
 });
