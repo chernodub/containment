@@ -1,5 +1,4 @@
-import {attachRoomKits,KIT_STANDARD_ROOMS} from './world/RoomKitDressing';
-import {prepareKitAssets} from './world/RoomKitAssets';
+import {attachRoomKits,KIT_STANDARD_ROOMS,prepareKitAssets} from './world/LazyRoomKits';
 import {AREA_ATTACK_DELAY_MS} from '../game/enemies/QueenBossSystem';
 import { registerGeometry, GEOMETRY_CLASSES } from './post/GeometryBuffer';
 import {freezeStaticRoom} from './StaticRoomTransforms';
@@ -49,7 +48,7 @@ import * as T from 'three';
 import {EnemyHealthBars,type HealthBarEntry} from './EnemyHealthBars';
 import {AttackEffects} from './AttackEffects';
 // V2 ability routing: isolated from world presentation.
-import {AbilityVisuals} from './abilities/AbilityVisuals';
+import {LazyAbilityVisuals} from './abilities/LazyAbilityVisuals';
 import {AcidPoolMaterial} from './acidPool';
 import {AfflictionBatches} from './afflictions';
 import {WEAPON_APPEARANCE} from './weapons';
@@ -74,7 +73,7 @@ export class DepthRenderer {
  readonly renderer:T.WebGLRenderer;readonly scene=new T.Scene();camera:T.OrthographicCamera|T.PerspectiveCamera=new T.PerspectiveCamera(28);
  private contextResources=new ContextResources();private afflictions=new AfflictionBatches(new T.TextureLoader());private healthBars=new EnemyHealthBars();private hudScene=new T.Scene();private world=new T.Group();private actors=new Map<number,ActorModel>();private nests=new Map<number,T.Group>();private queen:ActorModel|null=null;
  private kitDressing:ReturnType<typeof attachRoomKits>|undefined;private kitStartupComplete=false;
- private interimAbilities=new AbilityVisuals(this.scene);
+ private interimAbilities=new LazyAbilityVisuals(this.scene);private abilityWarmupRoot:T.Object3D|undefined;
  private ragdolls=new DeathRagdolls();private staticDirty=false;private corpseIds=new Set<number>();
  private staticLoaded(owner:T.Group){return()=>{if(this.world!==owner)return;const newProfiles=this.materialWarmup?.register(owner)??0;this.contextResources?.track(owner);this.reflection?.invalidate();this.shadowsDirty=true;this.staticDirty=true;if(this.materialWarmup&&newProfiles)this.queueRoomWarmup();};}
  private actorPool=new ActorPool();private player=marine();private playerBeacon=new PlayerBeacon(this.player.root,this.hudScene);private corpses:Corpse[]=[];private effects:AttackEffects;
@@ -128,7 +127,7 @@ export class DepthRenderer {
   // Shared pickup/nest finishes can appear after a kill in a different room.
   // Match their future shaders to the retained generic material family before preparation.
   for(const material of Object.values(MAT))optimizeLocalLights(material);
-  this.surfaces=new EnvironmentMaterials(this.renderer.capabilities.getMaxAnisotropy());this.floorMaterial=this.surfaces.floor;this.materialWarmup=new MaterialWarmup(this.surfaces);this.scene.add(this.materialWarmup.root);this.materialWarmup.register(this.interimAbilities.root);this.materialWarmup.register(this.title.root);
+  this.surfaces=new EnvironmentMaterials(this.renderer.capabilities.getMaxAnisotropy());this.floorMaterial=this.surfaces.floor;this.materialWarmup=new MaterialWarmup(this.surfaces);this.scene.add(this.materialWarmup.root);this.materialWarmup.register(this.title.root);
   this.scene.add(this.world,this.player.root,this.pickupInstances.root);this.materialWarmup.register(this.pickupInstances.root);
   this.muzzle=new T.PointLight(0xffc679,0,3,2);this.scene.add(this.muzzle);
   this.effects=new AttackEffects(this.scene,undefined,this.world);this.effects.setPriorityScene(this.hudScene);
@@ -137,7 +136,6 @@ export class DepthRenderer {
 
   this.bulletMesh=new T.InstancedMesh(new T.SphereGeometry(1,6,4),new T.MeshBasicMaterial({color:0xffffff}),320);this.bulletMesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.bulletMesh.setColorAt(0,this.bulletColor);this.bulletMesh.frustumCulled=false;this.scene.add(this.bulletMesh);
   this.post=new PostPipeline(this.renderer,this.scene,this.camera);this.post.setOptions(this.options,this.tier);
-  this.post.bindSoftParticles([this.interimAbilities.kit.batches.flame.mesh,this.interimAbilities.kit.batches.smoke.mesh],depth=>this.interimAbilities.setSoftDepth(depth,this.camera.near,this.camera.far,this.camera instanceof T.PerspectiveCamera),()=>this.interimAbilities.kit.atlas.loaded);
   // V2: public pooled feedback services, constructed before shader preparation.
   this.interimAbilities.setHostilePrioritySource(this.effects);
   this.interimAbilities.bind({statusActor:id=>id===-1?this.queen??undefined:this.actors.get(id),lights:this.lighting.pool,distortion:this.post.distortion,camera:this.cameraRig,presentation:this.post});
@@ -226,8 +224,13 @@ export class DepthRenderer {
   if(!this.kitStartupComplete||!this.interimAbilities)return;
   const generation=this.graphicsGeneration;
   await this.interimAbilities.prepare();this.checkGraphicsGeneration(generation);
-  const atlas=this.interimAbilities.kit.atlas;
-  if(atlas.loaded)this.renderer.initTexture(atlas.texture);
+  const kit=this.interimAbilities.kit;if(!kit)return;
+  const root=this.interimAbilities.root;
+  if(this.abilityWarmupRoot!==root){
+   this.materialWarmup?.register(root);this.contextResources?.track(root);this.abilityWarmupRoot=root;
+   this.post.bindSoftParticles([kit.batches.flame.mesh,kit.batches.smoke.mesh],depth=>this.interimAbilities.setSoftDepth(depth,this.camera.near,this.camera.far,this.camera instanceof T.PerspectiveCamera),()=>kit.atlas.loaded);
+  }
+  if(kit.atlas.loaded)this.renderer.initTexture(kit.atlas.texture);
  }
  /** Generation-aware polling avoids Three's uncancellable async callbacks on a lost context. */
  private async compilePrepared(scene:T.Scene|T.Group,camera:T.Camera,targetScene?:T.Scene){
@@ -464,7 +467,7 @@ export class DepthRenderer {
   const leaks=this.world.getObjectByName('g2-world-dressing')?.userData.leakPositions??[];this.world.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial)setFloorLeaks(material,leaks);});
   const mood=getEnvironmentMood(environment);this.scene.fog=new T.FogExp2(mood.fog.color,mood.fog.density*.25);this.scene.background=new T.Color(mood.fog.color).multiplyScalar(.24);this.scene.environmentIntensity=mood.reflectionIntensity;this.post?.setMood(mood);this.atmosphere?.loadRoom(environment,w,h,this.lighting.fixtures);this.backdrop?.loadRoom(this.world,w,h,environment);this.arena?.loadRoom(node.templateId,w,h);this.post?.distortion.clear();this.heatClock=0;
   if(this.kitStartupComplete&&KIT_STANDARD_ROOMS.has(node.templateId)){const kitWorld=this.world;this.kitDressing=attachRoomKits(kitWorld,t,this.roomEnvironment,node.templateId,()=>{if(this.world!==kitWorld)return;applyRoomMood(kitWorld,this.roomEnvironment,node.templateId,this.lighting.practicalShapes);staticLoaded();},this.residentialGalleryEquipment?.ready);}
-  const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged||this.kitStartupComplete&&!this.interimAbilities.kit.atlas.loaded))this.queueRoomWarmup();
+  const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged||this.kitStartupComplete&&!this.interimAbilities.kit?.atlas.loaded))this.queueRoomWarmup();
  }
  private roomSeed(id:string){let seed=2166136261;for(let i=0;i<id.length;i++)seed=Math.imul(seed^id.charCodeAt(i),16777619);return seed>>>0;}
  private wallPanel(x:number,z:number,height:number,length:number,rotation:number){

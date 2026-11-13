@@ -279,7 +279,7 @@ export class ThreatIndicators {
             this.consider(enemy.id, kind, enemy.x, enemy.y, Math.hypot(enemy.x - player.x, enemy.y - player.y), attacking, flight, enemy.radius);
         }
         if (boss?.active && boss.health > 0)
-            this.consider(-1, 'boss', boss.x, boss.y, Math.hypot(boss.x - player.x, boss.y - player.y), !!boss.pendingTelegraph, false);
+            this.consider(-1, 'boss', boss.x, boss.y, Math.hypot(boss.x - player.x, boss.y - player.y), !!boss.pendingTelegraph, false, 92);
         for (const marker of this.markers) {
             marker.active = false;
             marker.node.hidden = true;

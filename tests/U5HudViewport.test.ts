@@ -136,13 +136,14 @@ it('fades a panel when tall enemy anatomy overlaps even while its center project
       hud();
       const panel=document.getElementById('status-hud')!,box=panel.getBoundingClientRect();
       const withoutBody=panel.dataset.obscuresThreat;
-      bodyVisible=true;hud();hud();
+      bodyVisible=true;for(let frame=0;frame<100;frame++)hud();
       return {withoutBody,withBody:panel.dataset.obscuresThreat,centerClear:point.x+24<box.left||point.x-24>box.right||point.y+24<box.top||point.y-24>box.bottom,outputs:outputs.size,calls};
     });
     expect(result.centerClear).toBe(true);
     expect(result.withoutBody).toBe('false');
     expect(result.withBody).toBe('true');
-    expect(result.outputs).toBe(1);
+    // Panel fading and edge warnings each reuse their one projection scratch.
+    expect(result.outputs).toBe(2);
     expect(result.calls.every(call=>call.context&&call.x===200&&call.y===200&&call.radius>0)).toBe(true);
     await page.waitForTimeout(180);
     expect(await page.locator('#status-hud').evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgba(7, 17, 24, 0.094)');
