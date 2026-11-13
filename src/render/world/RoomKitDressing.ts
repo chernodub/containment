@@ -8,7 +8,7 @@ import {disposeModel} from '../meshParts';
 import {equipmentReservations} from './WorldDressing';
 import {membraneGeometry} from './OrganicGrowth';
 import {ROOM_KIT_STORIES} from './RoomKitStories';
-import {buildKitFloorSurface} from './KitFloorSurface';
+import {buildKitFloorSurface,KIT_FLOOR_VALUE_GAIN} from './KitFloorSurface';
 import {addKitPerimeter} from './KitPerimeter';
 import {addKitFootprintClusters} from './KitFootprintClusters';
 import {acquireRoomKit,roomKitURLs} from './RoomKitAssets';
@@ -39,7 +39,7 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
   let m=finishes.get(role);if(m)return m;
   const index=roles.indexOf(role),organic=role==='resin'||role==='scar';
   m=new T.MeshStandardMaterial({color:organic?role==='resin'?0x584151:0x586448:palette[Math.max(0,index)],roughness:organic?.93:.84,metalness:organic?0:role==='trim'?.3:.12});
-  m.name='e6-kit-'+role;m.userData.actorMaterial=true;m.userData.kitRole=role;if(role==='conduit'){m.userData.floorDressing=true;m.roughness=1;m.metalness=0;m.vertexColors=true;m.color.setHex(0xffffff);}
+  m.name='e6-kit-'+role;m.userData.actorMaterial=true;m.userData.kitRole=role;if(role==='conduit'){m.userData.floorDressing=true;m.roughness=1;m.metalness=0;m.vertexColors=true;m.color.setScalar(KIT_FLOOR_VALUE_GAIN[id]??1);}
   if(role==='accent'){m.emissive.setHex(env==='infested'?0x719a53:0x9fe8ff);m.emissiveIntensity=env==='communications'?.38:.10;m.userData.motivatedEmitter=true;}
   finishes.set(role,m);return m;
  };

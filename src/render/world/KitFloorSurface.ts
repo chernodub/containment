@@ -6,6 +6,12 @@ import {kitHull,kitInside} from './KitSafety';
 type Reservation={x:number;y:number;width:number;height:number};
 type Mark={x:number;z:number;kind:string};
 export type KitFloorProof={idea:string;coverage:number;triangles:number;features:Record<string,number>;views:{x:number;z:number;features:string[]}[];maxHeight:number};
+/** Floor-only albedo calibration after the saved all20 density value audit. */
+export const KIT_FLOOR_VALUE_GAIN:Readonly<Record<string,number>>={
+ 'awakening-bay':.60,'passenger-vault':.60,'transmission-chamber':.64,
+ 'crew-checkpoint':.68,'manual-control-chamber':.64,'diagnostic-gallery':.80,
+ 'infested-workshop':.85,'swarm-junction':.85,
+};
 const FLOOR_IDEAS:Record<ShipEnvironment,string>={
  cryogenics:'Quiet release aisle, broad frost creep at berth seals and interrupted evacuation tracks',
  habitation:'Worn vinyl circulation, domestic carpet islands, unpacked papers and clothing trails',
