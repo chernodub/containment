@@ -13,7 +13,7 @@
     "test:room-evidence": "node --test scripts/room-evidence-check.mjs scripts/room-evidence-network-check.mjs scripts/room-demo-check.mjs scripts/vfx-audit-demo-check.mjs && node scripts/ragdoll-demo.mjs --self-test",
     "test:vfx": "node tests/render-afflictions.mjs",
     "verify": "npm test && npm run test:room-evidence && npm run build && npm run test:smoke && npm run test:authored-smoke:all",
-    "test:authored-smoke:all": "npm run test:authored-smoke -- --viewport=desktop --out=artifacts/authored-smoke/desktop",
+    "test:authored-smoke:all": "npm run test:authored-smoke -- --viewport=desktop --out=artifacts/authored-smoke/desktop --rooms=awakening-bay,passenger-vault,residential-gallery,communal-atrium,crew-checkpoint,armory,freight-hold,breached-loading-bay,relay-racks,transmission-chamber,diagnostic-gallery,safety-interlock-station,coolant-plant,service-shaft-landing,infested-workshop,swarm-junction,shielding-gate,containment-annulus,manual-control-chamber,overload-floor",
     "playtest": "node scripts/nextgen/playtest/runner.mjs",
     "playtest:sim": "node scripts/nextgen/playtest/sim.mjs",
     "playtest:smoke": "node scripts/nextgen/playtest/runner.mjs --rig=arc --seed=1729 --rooms=3 --label=smoke --max-wall-seconds=235",
