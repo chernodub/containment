@@ -96,7 +96,8 @@ class CryoPresentation implements AbilityPresentation {
     this.mistAge += dt;
     this.emitMist = dt > 0 && this.mistAge >= (k.low ? .15 : .065);
     if (this.emitMist) this.mistAge %= k.low ? .15 : .065;
-    const whiteout = frame.snapshot?.zones.find(zone => zone.ability === 'whiteout' && zone.remainingMs > 0);
+    let whiteout: AbilityZoneSnapshot | undefined;
+    for (const zone of frame.snapshot?.zones ?? EMPTY_ZONES) if (zone.ability === 'whiteout' && zone.remainingMs > 0) { whiteout = zone; break; }
     for (const wave of this.waves) {
       if (!wave.live) continue;
       wave.age += dt;

@@ -82,6 +82,7 @@ describe('Pyro presentation lifecycle and readability', () => {
     marine.position.set(2, 0, 3); a.position.set(.8, 1.3, .1); b.position.set(.6, 1.15, -.2);
     weaponA.add(a); weaponB.add(b); weaponB.visible = false; marine.add(weaponA, weaponB); scene.add(marine);
     frame.marine = marine; fx.event(event({ angle: 0 }), 64, 96); step(.03);
+    expect(flow.mock.calls[0].slice(0, 3)).toEqual([2.8, 1.3, 3.1]); // Main mass and hot throat share one source.
     expect(flow.mock.lastCall!.slice(0, 3)).toEqual([2.8, 1.3, 3.1]);
     a.position.y = 1.4; step(0); expect(flow.mock.lastCall![1]).toBe(1.4);
     weaponA.visible = false; weaponB.visible = true; step(0);

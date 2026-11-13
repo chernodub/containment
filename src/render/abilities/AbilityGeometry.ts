@@ -214,7 +214,7 @@ void main(){float r=length(p);if(r>1.)discard;float rim=1.-smoothstep(.006,.025,
             this.footprints.setColdDominance();
             if (zone.element === 'cryo' && zone.ability !== 'whiteout') {
                 let dominantRadius = 0;
-                for (const other of snapshot?.zones ?? []) if (other.ability === 'whiteout' && other.remainingMs > 0 && other.radius > dominantRadius) {
+                for (const other of snapshot!.zones) if (other.ability === 'whiteout' && other.remainingMs > 0 && other.radius > dominantRadius) {
                     const reach = zone.shape === 'strip' ? Math.hypot(zone.x2 - zone.x, zone.y2 - zone.y) + zone.width * .5 : zone.radius;
                     if (Math.hypot(zone.x - other.x, zone.y - other.y) < other.radius + reach) {
                         dominantRadius = other.radius;

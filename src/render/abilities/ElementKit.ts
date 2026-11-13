@@ -287,7 +287,7 @@ export class ElementKit {
         this.draw('decal', x, .045, z, radius, radius, 1, 0xff7a2e, opacity, 0, 0, 8);
     }
     /** Directional jet: source-hot stretched tongues, accelerating and curling outwards. */
-    fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1): void {
+    fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1, height = .9, sourceX?: number, sourceZ?: number): void {
         const count = this.low ? 3 : 5;
         for (let i = 0; i < count; i++) {
             const seed = i * 3.731 + .71, v = authoredVariation(seed);
@@ -296,8 +296,10 @@ export class ElementKit {
             const start = i === 0 ? .075 : i === 1 ? .52 : i === 2 ? .28 : i === 3 ? .4 : .62;
             const end = i === 0 ? .8 : i === 1 ? .97 : i === 2 ? .7 : i === 3 ? .88 : .89;
             const throat = radius * (i === 0 ? .10 : i === 1 ? .18 : i === 2 ? .13 : i === 3 ? .14 : .10) * (.94 + v * .08);
-            this.flowFlame(x + Math.cos(a) * radius * start, .82 + i * .035, z + Math.sin(a) * radius * start,
-                x + Math.cos(a) * radius * end, .9 + v * .45, z + Math.sin(a) * radius * end,
+            this.flowFlame(i === 0 && sourceX !== undefined ? sourceX : x + Math.cos(a) * radius * start,
+                i === 0 && sourceX !== undefined ? height : height - .08 + i * .035,
+                i === 0 && sourceZ !== undefined ? sourceZ : z + Math.sin(a) * radius * start,
+                x + Math.cos(a) * radius * end, height + v * .45, z + Math.sin(a) * radius * end,
                 throat, seed, opacity * (i === 0 ? 1 : .94), i === 0);
         }
     }

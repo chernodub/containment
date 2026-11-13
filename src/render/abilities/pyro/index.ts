@@ -195,8 +195,12 @@ class PyroPresentation implements AbilityPresentation {
   private cone(p: Transient, emit: boolean, frame: AbilityFrame): void {
     const kit = this.kit, grow = Math.min(1, .6 + p.age / .05);
     const fade = Math.max(0, 1 - Math.max(0, p.age - .09) / .28), hot = impactBeat(p.age);
+    const c = Math.cos(p.angle), s = Math.sin(p.angle);
+    if (!this.muzzle || !this.visibleSocket(this.muzzle, frame.marine)) this.muzzle = frame.marine ? this.findMuzzle(frame.marine) : undefined;
+    if (this.muzzle) { frame.marine?.updateWorldMatrix(true, false); this.muzzle.getWorldPosition(this.source); }
+    else this.source.set(p.x + c * .3, .95, p.z + s * .3);
     kit.sustain(p.age + .20);
-    kit.fireFan(p.x, p.z, p.range * grow, p.angle, p.arc, fade * .85);
+    kit.fireFan(p.x, p.z, p.range * grow, p.angle, p.arc, fade * .85, this.source.y, this.source.x, this.source.z);
     kit.lightAt(p.lightId, p.x + Math.cos(p.angle) * p.range * .34,
       p.z + Math.sin(p.angle) * p.range * .34, FIRE, (12 + 16 * hot) * fade, Math.max(8, p.range * 1.1));
     // Range curls are downstream, above the jet rather than a wall of ground flames.
@@ -209,10 +213,6 @@ class PyroPresentation implements AbilityPresentation {
     }
     // Hot nozzle is attached to the discharge point, with a thin velocity-stretched core.
     kit.impact();
-    const c = Math.cos(p.angle), s = Math.sin(p.angle);
-    if (!this.muzzle || !this.visibleSocket(this.muzzle, frame.marine)) this.muzzle = frame.marine ? this.findMuzzle(frame.marine) : undefined;
-    if (this.muzzle) { frame.marine?.updateWorldMatrix(true, false); this.muzzle.getWorldPosition(this.source); }
-    else this.source.set(p.x + c * .3, .95, p.z + s * .3);
     kit.flowFlame(this.source.x, this.source.y, this.source.z,
       this.muzzle ? this.source.x + c * 1.05 : p.x + c * 1.8, this.source.y,
       this.muzzle ? this.source.z + s * 1.05 : p.z + s * 1.8,
