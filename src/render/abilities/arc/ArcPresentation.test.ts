@@ -144,11 +144,11 @@ describe('Arc presentation signatures and lifecycle', () => {
 
   it('grounds a small electrical landing corona and aftermath at the authoritative pylon placement', () => {
     const { kit, fx, step, dispose } = setup();
-    const front = vi.spyOn(kit, 'front'), draw = vi.spyOn(kit, 'draw'), scar = vi.spyOn(kit, 'scar');
+    const front = vi.spyOn(kit, 'front'), sprite = vi.spyOn(kit, 'sprite'), scar = vi.spyOn(kit, 'scar');
     fx.event(event({ ability: 'tesla-pylon', slot: 'power', phase: 'impact', targetX: 320, targetY: 224 }), 64, 96);
     step(.08);
     expect(front).not.toHaveBeenCalled();
-    const corona = draw.mock.calls.filter(call => call[0] === 'decal' && call[11] === 4);
+    const corona = sprite.mock.calls.filter(call => call[0] === 'impact' && call[9] === 'ground');
     expect(corona).toHaveLength(1);
     expect(corona[0].slice(1, 4)).toEqual([10, .06, 7]);
     expect(corona[0][4]).toBeLessThanOrEqual(.72);
@@ -161,7 +161,7 @@ describe('Arc presentation signatures and lifecycle', () => {
   it.each(['high', 'low'] as const)('makes sustained Overclock visible on %s without changing hostile endpoints', tier => {
     const { kit, frame, step, dispose } = setup();
     kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
-    const grade = vi.spyOn(kit, 'grade'), ribbon = vi.spyOn(kit, 'ribbon'), gust = vi.spyOn(kit, 'gust');
+    const grade = vi.spyOn(kit, 'grade'), ribbon = vi.spyOn(kit, 'ribbon'), sprite = vi.spyOn(kit, 'sprite'), bolt = vi.spyOn(kit, 'boltCard');
     frame.game = { player: { x: 128, y: 128, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [
       { x: 256, y: 160, velocityX: 120, velocityY: 0 },
     ] } }, bullets: [{ kind: 'player', x: 160, y: 128, request: { angle: 0 } }] } as never;
@@ -174,8 +174,11 @@ describe('Arc presentation signatures and lifecycle', () => {
     expect(kit.batches.front.mesh.count).toBe(0);
     expect(kit.batches.shard.mesh.count).toBe(0);
     expect(ribbon.mock.calls.filter(call => Math.hypot(call[0] - 4, call[2] - 4) < .5 && call[1] > .1).length).toBeGreaterThanOrEqual(7);
-    expect(gust).toHaveBeenCalledTimes(tier === 'low' ? 3 : 4);
-    expect(gust.mock.calls.every(call => call[7] === 0xb79cff)).toBe(true);
+    const ripple = sprite.mock.calls.filter(call => call[0] === 'caustic');
+    expect(ripple).toHaveLength(tier === 'low' ? 3 : 4);
+    expect(ripple.every(call => call[6] === 0xb79cff && call[9] === 'ground')).toBe(true);
+    expect(bolt).toHaveBeenCalledTimes(tier === 'low' ? 5 : 11);
+    expect(bolt.mock.calls.filter(call => call[1] >= 1.4)).toHaveLength(3);
     expect(ribbon.mock.calls.some(call => call[1] === 1.52 && (call[7] ?? 0) >= .022 && (call[7] ?? 0) <= .032)).toBe(true);
     expect(kit.batches.ghost.mesh.count).toBe(2);
     const calls = grade.mock.calls.length; frame.snapshot = snapshot(); step(.016);
@@ -184,22 +187,24 @@ describe('Arc presentation signatures and lifecycle', () => {
 
   it('keeps curved activation and reverse expiry ripples inside their true radius without floating bars', () => {
     const { kit, fx, step, dispose } = setup();
-    const volume = vi.spyOn(kit, 'front'), ribbon = vi.spyOn(kit, 'ribbon'), gust = vi.spyOn(kit, 'gust');
+    const volume = vi.spyOn(kit, 'front'), ribbon = vi.spyOn(kit, 'ribbon'), sprite = vi.spyOn(kit, 'sprite');
     fx.event(event({ ability: 'overclock', slot: 'overdrive', phase: 'impact' }), 64, 96);
     step(.15); expect(volume).not.toHaveBeenCalled(); expect(ribbon).not.toHaveBeenCalled();
-    expect(gust).toHaveBeenCalledTimes(4);
-    for (const call of gust.mock.calls) {
-      const [x, z, length, width, angle] = call;
-      expect(call[7]).toBe(0xb79cff);
+    const ripples = sprite.mock.calls.filter(call => call[0] === 'caustic');
+    expect(ripples).toHaveLength(4);
+    for (const call of ripples) {
+      const x = call[1], z = call[3], length = call[4] * 2, width = call[5] * 2, angle = -call[11]!;
+      expect(call[6]).toBe(0xb79cff);
+      expect(call[9]).toBe('ground');
       for (const side of [-1, 1]) for (const end of [-1, 1]) {
         const px = x + Math.cos(angle) * length * .5 * end - Math.sin(angle) * width * .5 * side;
         const pz = z + Math.sin(angle) * length * .5 * end + Math.cos(angle) * width * .5 * side;
         expect(Math.hypot(px - 2, pz - 3)).toBeLessThanOrEqual(6.001);
       }
     }
-    step(1); gust.mockClear();
+    step(1); sprite.mockClear();
     fx.event(event({ ability: 'overclock', slot: 'overdrive', phase: 'end' }), 64, 96);
-    step(.1); expect(gust).toHaveBeenCalledTimes(4); expect(volume).not.toHaveBeenCalled();
+    step(.1); expect(sprite.mock.calls.filter(call => call[0] === 'caustic')).toHaveLength(4); expect(volume).not.toHaveBeenCalled();
     step(1); expect(kit.ribbons.mesh.count).toBe(0); expect(kit.batches.decal.mesh.count).toBe(0); dispose();
   });
 
@@ -242,8 +247,8 @@ describe('Arc presentation signatures and lifecycle', () => {
     const { kit, frame, fx, step, dispose } = setup();
     const samples: { y: number; weight: number; lightning: boolean }[] = [];
     const worldWeights: number[] = [];
-    const gust = kit.gust.bind(kit);
-    vi.spyOn(kit, 'gust').mockImplementation((...args) => { worldWeights.push(kit.priorityWeight); gust(...args); });
+    const sprite = kit.sprite.bind(kit);
+    vi.spyOn(kit, 'sprite').mockImplementation((...args) => { if (args[0] === 'caustic') worldWeights.push(kit.priorityWeight); sprite(...args); });
     const ribbon = kit.ribbon.bind(kit);
     vi.spyOn(kit, 'ribbon').mockImplementation((...args) => { samples.push({ y: args[1], weight: kit.priorityWeight, lightning: args[9] ?? true }); ribbon(...args); });
     frame.game = { player: { x: 128, y: 128, angle: 0, vx: 100, vy: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [] } as never;
@@ -260,15 +265,23 @@ describe('Arc presentation signatures and lifecycle', () => {
     dispose();
   });
 
-  it('leaves hostile projectiles to their danger presentation during time dilation', () => {
+  it('keeps native hostile projectile heads unchanged while adding separated masked time smears', () => {
     const { kit, frame, step, dispose } = setup();
-    const ribbon = vi.spyOn(kit, 'ribbon');
-    frame.game = { player: { x: 128, y: 128, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [
-      { kind: 'hazard', x: 320, y: 224, request: { angle: 0 } },
-    ] } as never;
+    const ribbon = vi.spyOn(kit, 'ribbon'), sprite = vi.spyOn(kit, 'sprite');
+    const hazard = Object.freeze({ kind: 'hazard', x: 320, y: 224, request: Object.freeze({ angle: 0 }) });
+    frame.game = { player: { x: 128, y: 128, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [hazard] } as never;
     frame.snapshot = snapshot({ hostileTimeScale: .3, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
     step(.016);
     expect(ribbon.mock.calls.some(call => call[0] === 10 && call[2] === 7)).toBe(false);
+    const smear = ribbon.mock.calls.filter(call => call[2] === 7 && call[0] > 8);
+    expect(smear).toHaveLength(1);
+    expect(smear[0].slice(0,6)).toEqual([9.72,.5,7,8.9,.5,7]);
+    expect(smear[0][8]).toBe(.12);
+    expect(sprite.mock.calls.some(call => call[0] === 'scan' && call[1] === 9.28 && call[3] === 7)).toBe(true);
+    expect(hazard).toEqual({ kind: 'hazard', x: 320, y: 224, request: { angle: 0 } });
+    const priority = kit.ribbons.mesh.geometry.getAttribute('ribbonPriority');
+    step(.4);
+    expect(priority.getX(kit.ribbons.mesh.count - 1)).toBe(1);
     dispose();
   });
 
@@ -282,9 +295,16 @@ describe('Arc presentation signatures and lifecycle', () => {
     step(.12);
     expect(kit.batches.ghost.mesh.count).toBeGreaterThan(0);
     const ribbons = kit.ribbons.mesh.instanceMatrix.array.slice(), ghosts = kit.batches.ghost.mesh.instanceMatrix.array.slice();
+    const stamps = kit.batches.decal.mesh.instanceMatrix.array.slice();
+    const atlasClock = (kit.batches.spark.mesh.material as T.ShaderMaterial).uniforms.abilityTime.value;
+    const bolt = vi.spyOn(kit, 'boltCard');
     step(0);
     expect(kit.ribbons.mesh.instanceMatrix.array).toEqual(ribbons);
     expect(kit.batches.ghost.mesh.instanceMatrix.array).toEqual(ghosts);
+    expect(kit.batches.decal.mesh.instanceMatrix.array).toEqual(stamps);
+    expect((kit.batches.spark.mesh.material as T.ShaderMaterial).uniforms.abilityTime.value).toBe(atlasClock);
+    const frozenBolts = bolt.mock.calls.map(call => [...call]); bolt.mockClear(); step(0);
+    expect(bolt.mock.calls).toEqual(frozenBolts);
     const after = new Set<unknown>();
     scene.traverse(node => { if (node instanceof T.Mesh) { after.add(node.geometry); after.add(node.material); } });
     expect(after).toEqual(inventory);
@@ -296,7 +316,7 @@ describe('Arc presentation signatures and lifecycle', () => {
   it.each(['high', 'low'] as const)('keeps two separated marine echoes and localized electric armor edges readable on %s', tier => {
     const { kit, frame, step, dispose } = setup();
     kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
-    const afterImage = vi.spyOn(kit, 'afterImage'), ribbon = vi.spyOn(kit, 'ribbon'), gust = vi.spyOn(kit, 'gust');
+    const afterImage = vi.spyOn(kit, 'afterImage'), ribbon = vi.spyOn(kit, 'ribbon'), sprite = vi.spyOn(kit, 'sprite'), bolt = vi.spyOn(kit, 'boltCard');
     frame.game = { player: { x: 128, y: 128, angle: 0, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [] } as never;
     frame.snapshot = snapshot({ hostileTimeScale: .3, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
     step(.016);
@@ -305,7 +325,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     for (const call of afterImage.mock.calls) {
       expect(Math.hypot(call[0] - 4, call[1] - 4)).toBeGreaterThanOrEqual(.85);
       expect(Math.hypot(call[0] - 4, call[1] - 4)).toBeLessThanOrEqual(1.4);
-      expect(call[4]).toBe(.4);
+      expect(call[3]).toBe(0xf2ecff); expect(call[4]).toBe(.7);
     }
     expect((positions[0][1] - 4) * (positions[1][1] - 4)).toBeLessThan(0);
     const seams = ribbon.mock.calls.filter(call => call[9] === false && call[1] > .1);
@@ -317,8 +337,12 @@ describe('Arc presentation signatures and lifecycle', () => {
     afterImage.mockClear(); step(.14);
     expect(afterImage).toHaveBeenCalledTimes(2);
     expect(afterImage.mock.calls.map(call => [call[0], call[1]])).toEqual(positions);
-    for (const call of gust.mock.calls) {
-      expect(call[2]).toBeLessThan(3.8); expect(call[6]).toBeLessThanOrEqual(.06);
+    const armorBolts = bolt.mock.calls.filter(call => call[1] >= 1.4);
+    expect(armorBolts).toHaveLength(6);
+    expect(bolt).toHaveBeenCalledTimes(tier === 'low' ? 10 : 22);
+    for (const call of armorBolts) expect(call[6]).toBeLessThanOrEqual(.12);
+    for (const call of sprite.mock.calls.filter(call => call[0] === 'caustic')) {
+      expect(call[4] * 2).toBeLessThan(3.8); expect(call[7]).toBeLessThanOrEqual(.21);
     }
     dispose();
   });

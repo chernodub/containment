@@ -169,7 +169,7 @@ class ArcPresentation implements AbilityPresentation {
       else {
         // A local forked electrical contact, not a shiny expanding volume. One retained instance.
         const radius = f.radius * (.65 + progress * .35);
-        k.draw('decal', f.x, .06, f.z, radius, radius, 1, VIOLET, (1 - t) * .8, 0, f.age * 1.4, 4);
+        k.sprite('impact', f.x, .06, f.z, radius, radius, VIOLET, (1 - t) * .8, f.radius, 'ground', 0, f.age * 1.4);
       }
     }
     k.impact();
@@ -197,13 +197,13 @@ class ArcPresentation implements AbilityPresentation {
       k.impact();
       const fade = 1 - (d.age - d.delay) / d.life;
       const contact = Math.max(0, 1 - (d.age - d.delay) / .12);
-      k.draw('spark', d.x, .75, d.z, .22, .3, 1, WHITE, contact * .95);
+      k.sprite('impact', d.x, .75, d.z, .38, .38, WHITE, contact * .95, d.seed, 'light');
       const count = k.low ? 2 : 5;
       for (let i = 0; i < count; i++) {
         const a = d.seed + i * TAU / count + (k.reducedMotion ? 0 : k.time * 5);
         const radius = .22 + i % 2 * .18;
-        k.draw('spark', d.x + Math.cos(a) * radius, .5 + i % 3 * .22, d.z + Math.sin(a) * radius,
-          .045, .13, 1, i % 2 ? VIOLET : WHITE, fade * .8, -a, .7);
+        k.sprite('spark', d.x + Math.cos(a) * radius, .5 + i % 3 * .22, d.z + Math.sin(a) * radius,
+          .075, .15, i % 2 ? VIOLET : WHITE, fade * .8, d.seed + i, 'light', -a, .7);
         if (!k.low && i % 2 === 0) k.ribbon(d.x, .55, d.z, d.x + Math.cos(a) * radius, .9, d.z + Math.sin(a) * radius, VIOLET, .025, fade * .55, true);
       }
     }
@@ -241,12 +241,13 @@ class ArcPresentation implements AbilityPresentation {
 
   private timeRipple(x: number, z: number, radius: number, opacity: number, phase: number): void {
     const k = this.kit, count = k.low ? 3 : 4;
-    // Broad curved brushes have tapered, unequal ends. Every brush's full rectangular bounds
-    // remain inside the ripple radius; sparse air disturbance never becomes floating clock ticks.
+    // Broken caustic arcs are confined to the same real ripple support. A quiet
+    // center leaves the marine and moving hostile bodies above this world layer.
     for (let i = 0; i < count; i++) {
       const a = i * 2.39996323 + phase, r = radius * (.9 + i % 3 * .04);
-      k.gust(x + Math.cos(a) * r * .55, z + Math.sin(a) * r * .55,
-        r * 1.1, r * .5, a + Math.PI / 2, i * 3.17 + phase, opacity * (.7 + i % 2 * .2), VIOLET);
+      k.sprite('caustic', x + Math.cos(a) * r * .55, .055, z + Math.sin(a) * r * .55,
+        r * .55, r * .25, VIOLET, opacity * (1.4 + i % 2 * .3), i * 3.17 + phase,
+        'ground', 0, -a - Math.PI / 2);
     }
   }
 
@@ -263,6 +264,11 @@ class ArcPresentation implements AbilityPresentation {
     k.ribbon(x, 1.3, z, x - sx * .42, .9, z - sz * .42, VIOLET, .024, fade, true);
     k.ribbon(x, .7, z, x + sx * .22, .05, z + sz * .22, VIOLET, .028, fade, true);
     k.ribbon(x, .7, z, x - sx * .22, .05, z - sz * .22, VIOLET, .028, fade, true);
+    k.boltCard(x, 1.65, z, x, .7, z, .1, 0, fade * .8, WHITE);
+    for (let side = -1; side <= 1; side += 2) {
+      k.boltCard(x, 1.3, z, x + sx * .42 * side, .9, z + sz * .42 * side, .085, side + 2, fade * .8);
+      if (!k.low) k.boltCard(x, .7, z, x + sx * .22 * side, .05, z + sz * .22 * side, .075, side + 5, fade * .7);
+    }
   }
 
   private pylon(p: DeployableSnapshot, dt: number): void {
@@ -303,6 +309,13 @@ class ArcPresentation implements AbilityPresentation {
       }
     }
     k.draw('shard', x, 1.63 * rise, z, .12, .14, .12, WHITE, fade * .75, p.angle);
+    k.sprite('glow', x, 1.48 * rise, z, .28, .32, VIOLET, glow * fade * .6, p.id, 'light');
+    const arcs = k.low ? 1 : 3;
+    for (let i = 0; i < arcs; i++) {
+      const a = p.angle + i * TAU / arcs + (k.reducedMotion ? 0 : Math.floor(k.time * 12) * 1.7);
+      k.boltCard(x, 1.55 * rise, z, x + Math.cos(a) * radius * .7, 1.08 * rise,
+        z + Math.sin(a) * radius * .7, .085, p.id + i, glow * fade * .65);
+    }
     k.lightAt(p.id, x, z, VIOLET, 2.8 * glow * fade, 4.8);
   }
 
@@ -334,7 +347,11 @@ class ArcPresentation implements AbilityPresentation {
       this.start.set(g.player.x / UNIT + c * sz + s * sx, sy, g.player.y / UNIT + s * sz - c * sx);
       this.end.set(g.player.x / UNIT + c * ez + s * ex, ey, g.player.y / UNIT + s * ez - c * ex);
     }
-    this.kit.ribbon(this.start.x, this.start.y, this.start.z, this.end.x, this.end.y, this.end.z, VIOLET, width, opacity, false);
+    const k = this.kit;
+    k.ribbon(this.start.x, this.start.y, this.start.z, this.end.x, this.end.y, this.end.z, VIOLET, width, opacity, false);
+    // Animated branches crawl over the same armor rails, rather than orbiting the suit.
+    if (!k.low || sy > 1.4) k.boltCard(this.start.x, this.start.y, this.start.z, this.end.x, this.end.y, this.end.z,
+      width * (k.low ? 2.8 : 3.4), sx * 7.1 + sy * 11.3, opacity * .8, WHITE);
   }
 
   private overclock(frame: AbilityFrame, emit: boolean): void {
@@ -365,11 +382,12 @@ class ArcPresentation implements AbilityPresentation {
     const mx = this.end.x, my = this.end.y, mz = this.end.z;
     k.ribbon(mx - Math.cos(angle) * .48, my, mz - Math.sin(angle) * .48, mx, my, mz,
       WHITE, .032, fade, false);
+    k.boltCard(mx - Math.cos(angle) * .48, my, mz - Math.sin(angle) * .48, mx, my, mz, .11, 19, fade * .85, WHITE);
     const crackles = k.low ? 1 : 3;
     for (let i = 0; i < crackles; i++) {
       const a = angle + i * TAU / crackles + (k.reducedMotion ? 0 : Math.floor(k.time * 18) * 1.7);
-      k.ribbon(mx, my, mz, mx + Math.cos(a) * .17, my + .08 + i * .035, mz + Math.sin(a) * .17,
-        VIOLET, .03, fade * .9, true);
+      k.boltCard(mx, my, mz, mx + Math.cos(a) * .27, my + .13 + i * .045, mz + Math.sin(a) * .27,
+        .105, i * 1.73, fade * .9, VIOLET);
     }
     if (starting || frame.dt > 0 && this.echoAge >= .14) {
       this.echoAge %= .14;
@@ -390,11 +408,11 @@ class ArcPresentation implements AbilityPresentation {
       echo.age += frame.dt;
       if (echo.age >= .35) { echo.live = false; continue; }
       k.sustain(this.overclockAge);
-      k.afterImage(echo.x, echo.z, echo.angle, VIOLET, fade * (1 - echo.age / .35) * .4);
+      k.afterImage(echo.x, echo.z, echo.angle, WHITE, fade * (1 - echo.age / .35) * .7);
     }
     k.sustain(this.overclockAge);
     const progress = k.reducedMotion ? .7 : (this.overclockAge * .65) % 1;
-    this.timeRipple(x, z, 1.3 + progress * 2.2, fade * Math.sin(progress * Math.PI) * .06,
+    this.timeRipple(x, z, 1.3 + progress * 2.2, fade * Math.sin(progress * Math.PI) * .12,
       k.reducedMotion ? 0 : this.overclockAge * .08);
     k.lightAt(9000, x, z, VIOLET, 1.1 * fade, 4);
     {
@@ -410,15 +428,33 @@ class ArcPresentation implements AbilityPresentation {
         const tx = e.x / UNIT - e.velocityX / speed * length, tz = e.y / UNIT - e.velocityY / speed * length;
         k.ribbon(e.x / UNIT, .35, e.y / UNIT, tx, .35, tz, VIOLET, .045, fade * .32, false);
         if (!k.low) k.ribbon(e.x / UNIT, .7, e.y / UNIT, tx, .7, tz, WHITE, .02, fade * .14, false);
+        // Two displaced scan impressions make slow motion legible without replacing
+        // the actual enemy silhouette or changing its live rendering/material.
+        const radius = Math.max(.2, Math.min(.7, (e.radius ?? 16) / UNIT));
+        k.sprite('scan', tx, .6, tz, radius, .5, VIOLET, fade * .14, e.id ?? n);
+        if (!k.low) k.sprite('scan', tx - e.velocityX / speed * .22, .6, tz - e.velocityY / speed * .22,
+          radius * .9, .48, WHITE, fade * .065, (e.id ?? n) + 3);
       }
-      n = 0;
+      let friendly = 0, hostile = 0;
       for (const bullet of g.bullets) {
-        if (n++ >= (k.low ? 24 : 80)) break;
-        if (bullet.kind !== 'player') continue;
+        const a = bullet.request.angle, dx = Math.cos(a), dz = Math.sin(a);
+        if (bullet.kind === 'hazard') {
+          if (hostile++ >= (k.low ? 8 : 20)) continue;
+          // The hostile projectile and its danger color remain owned by AttackEffects.
+          // A separated, faint time smear follows behind it and yields through the
+          // same danger mask; no overlay ever sits on the actual projectile head.
+          const px = bullet.x / UNIT, pz = bullet.y / UNIT;
+          k.ribbon(px - dx * .28, .5, pz - dz * .28, px - dx * 1.1, .5, pz - dz * 1.1,
+            VIOLET, .025, fade * .12, false);
+          if (!k.low) k.sprite('scan', px - dx * .72, .5, pz - dz * .72, .35, .08,
+            VIOLET, fade * .09, hostile);
+          continue;
+        }
+        if (bullet.kind !== 'player' || friendly++ >= (k.low ? 24 : 80)) continue;
         const length = 2.1;
         k.ribbon(bullet.x / UNIT, bullet.visualMuzzle?.y ?? .9, bullet.y / UNIT,
-          bullet.x / UNIT - Math.cos(bullet.request.angle) * length, bullet.visualMuzzle?.y ?? .9,
-          bullet.y / UNIT - Math.sin(bullet.request.angle) * length, WHITE,
+          bullet.x / UNIT - dx * length, bullet.visualMuzzle?.y ?? .9,
+          bullet.y / UNIT - dz * length, WHITE,
           k.low ? .018 : .028, fade * .65, false);
       }
       if (emit && Math.hypot(g.player.vx, g.player.vy) > 25) {
