@@ -7,7 +7,7 @@ import type { AbilitiesSnapshot, AbilityEvent, DeployableSnapshot } from '../../
 function kitMock(low = false) {
   return {
     time: .2, low, reducedMotion: false, flashIntensity: 1,
-    draw: vi.fn(), ribbon: vi.fn(), mote: vi.fn(), burst: vi.fn(), flash: vi.fn(), ring: vi.fn(),
+    draw: vi.fn(), sprite: vi.fn(), ribbon: vi.fn(), mote: vi.fn(), burst: vi.fn(), flash: vi.fn(), ring: vi.fn(),
     distort: vi.fn(), camera: vi.fn(), decal: vi.fn(), beam: vi.fn(), outline: vi.fn(), lightAt: vi.fn(),
     sustain: vi.fn(), impact: vi.fn(), front: vi.fn(), debris: vi.fn(), scar: vi.fn(), heavyBeam: vi.fn(), anticipate: vi.fn(), exposureFlash: vi.fn(),
   };
@@ -29,52 +29,118 @@ const event = (extra: Partial<AbilityEvent> = {}): AbilityEvent => ({
 });
 
 describe('Breacher presentation', () => {
-  it('grounds articulated cover on the exact footprint with two armored ends and a solid readable top', () => {
+  it('grounds two emitter devices on the exact footprint and projects an open textured field between them', () => {
     const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
     fx.update(frame([barrier()]));
-    const fields = kit.draw.mock.calls.filter(c => c[7] === 0x487d91), ends = kit.draw.mock.calls.filter(c => c[7] === 0x293e4b);
-    expect(fields).toHaveLength(3); expect(ends).toHaveLength(2);
+    const fields = kit.sprite.mock.calls.filter(c => c[0] === 'hex' || c[0] === 'scan');
+    const ends = kit.draw.mock.calls.filter(c => c[7] === 0x293e4b);
+    expect(fields).toHaveLength(2); expect(ends).toHaveLength(2);
     expect(ends.some(c => c[1] < 2 - 3.3)).toBe(true); expect(ends.some(c => c[1] > 2 + 3.3)).toBe(true);
-    const tops = kit.draw.mock.calls.filter(c => c[7] === 0xc3eff8);
-    expect(tops).toHaveLength(3);
-    expect(new Set(tops.map(c => c[2])).size).toBe(2);
-    for (const top of tops) { expect(top[5]).toBe(.105); expect(top[8]).toBeGreaterThan(.9); }
+    expect(kit.draw.mock.calls).toHaveLength(6);
     for (const piece of kit.draw.mock.calls) {
       expect(Math.abs(piece[1] - 2) + piece[6] / 2).toBeLessThanOrEqual(3.5 + .00001);
       expect(Math.abs(piece[3] - 3) + piece[4] / 2).toBeLessThanOrEqual(.25 + .00001);
       expect(piece[9]).toBeCloseTo(-Math.PI / 2);
+      expect(Math.abs(piece[1] - 2)).toBeGreaterThan(3.3); // No solid central furniture.
     }
-    expect(kit.ribbon.mock.calls.length).toBeLessThan(10); fx.dispose();
+    for (const field of fields) {
+      expect(field[1]).toBeCloseTo(2); expect(Math.abs(field[3] - 3)).toBeLessThan(.25);
+      expect(field[4]).toBeLessThanOrEqual(3.5); expect(field[5]).toBe(1.2);
+      expect(field[9]).toBe('vertical'); expect(field[10]).toBeCloseTo(0);
+    }
+    expect(fields[0][3]).toBeLessThan(3); expect(fields[0][6]).toBe(0x9fe8ff);
+    expect(fields[0][7]).toBeGreaterThan(fields[1][7]);
+    expect(kit.ribbon.mock.calls.filter(c => c[6] === 0xe8fbff)).toHaveLength(1);
+    expect(kit.sustain).toHaveBeenCalledWith(.5); fx.dispose();
   });
 
-  it('unfolds cover within 150ms and retains the solid top and both armored ends on Low', () => {
+  it('raises the field within 150ms and keeps both emitters and full native field width on Low', () => {
     const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
     fx.update(frame([barrier({ remainingMs: 6000 })], 0));
-    expect(kit.draw.mock.calls.filter(c => c[7] === 0xc3eff8)).toHaveLength(0);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'hex')).toHaveLength(0);
     expect(kit.draw.mock.calls.filter(c => c[7] === 0x293e4b)).toHaveLength(2);
-    kit.draw.mockClear(); fx.update(frame([barrier({ remainingMs: 5980 })], 0));
-    const opening = kit.draw.mock.calls.find(c => c[7] === 0xc3eff8)!;
-    expect(opening[2]).toBeGreaterThan(0); expect(opening[2]).toBeLessThan(2.4);
-    kit.draw.mockClear(); fx.update(frame([barrier({ remainingMs: 5800 })], 0));
-    expect(kit.draw.mock.calls.find(c => c[7] === 0xc3eff8)![2]).toBeCloseTo(2.46);
-    const highCount = kit.draw.mock.calls.length;
+    kit.sprite.mockClear(); fx.update(frame([barrier({ remainingMs: 5980 })], 0));
+    const opening = kit.sprite.mock.calls.find(c => c[0] === 'hex')!;
+    expect(opening[5]).toBeGreaterThan(0); expect(opening[5]).toBeLessThan(1.2);
+    kit.sprite.mockClear(); fx.update(frame([barrier({ remainingMs: 5800 })], 0));
+    const highField = kit.sprite.mock.calls.find(c => c[0] === 'hex')!;
+    expect(highField[2] + highField[5]).toBeCloseTo(2.52);
+    const highCount = kit.sprite.mock.calls.length;
     const low = kitMock(true), lowFx = new BreacherPresentation(low as unknown as ElementKit);
     lowFx.update(frame([barrier()], 0));
-    expect(low.draw.mock.calls.length).toBeLessThan(highCount);
-    expect(low.draw.mock.calls.filter(c => c[7] === 0xc3eff8)).toHaveLength(2);
+    expect(low.sprite.mock.calls.length).toBeLessThan(highCount);
+    expect(low.sprite.mock.calls.filter(c => c[0] === 'scan')).toHaveLength(1);
+    expect(low.sprite.mock.calls[0][4]).toBe(highField[4]);
     expect(low.draw.mock.calls.filter(c => c[7] === 0x293e4b)).toHaveLength(2);
     fx.dispose(); lowFx.dispose();
   });
 
-  it('responds to load with only localized stress seams and no idle field wallpaper', () => {
+  it('responds to field load with one local textured ripple and keeps idle coverage restrained', () => {
     const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
     fx.update(frame([barrier()]));
-    expect(kit.ribbon.mock.calls.filter(c => c[6] === 0xfff2d2)).toHaveLength(0);
-    kit.ribbon.mockClear(); fx.update(frame([barrier({ health: 160 })]));
-    const hot = kit.ribbon.mock.calls.filter(c => c[6] === 0xfff2d2);
-    expect(hot.length).toBeGreaterThan(0); expect(hot.length).toBeLessThanOrEqual(2);
-    for (const call of hot) expect(Math.hypot(call[3] - call[0], call[5] - call[2])).toBeLessThan(1.1);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'ring')).toHaveLength(0);
+    kit.sprite.mockClear(); fx.update(frame([barrier({ health: 160 })]));
+    const hot = kit.sprite.mock.calls.filter(c => c[0] === 'ring');
+    expect(hot).toHaveLength(1); expect(hot[0][4]).toBeLessThan(.7);
+    expect(hot[0][9]).toBe('vertical'); expect(hot[0][5]).toBe(hot[0][4]);
     expect(kit.outline).not.toHaveBeenCalled(); fx.dispose();
+  });
+
+  it('places one friendly-shot ripple on the observed crossing, deduplicates it and freezes it on pause', () => {
+    const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
+    const shot = { x: 68, y: 128, kind: 'player', request: { angle: 0, speed: 400 } };
+    const game = { bullets: [shot] } as never;
+    const e = barrier({ angle: 0 }); // Plane x=2, longitudinal axis +Z.
+    fx.update({ ...frame([e], .016), game });
+    let ripples = kit.sprite.mock.calls.filter(c => c[0] === 'ring');
+    expect(ripples).toHaveLength(1);
+    expect(ripples[0][1]).toBeCloseTo(2 - .5 * .14); expect(ripples[0][3]).toBeCloseTo(4);
+    expect(ripples[0][6]).toBe(0xfff2d2);
+    const firstRadius = ripples[0][4];
+    kit.sprite.mockClear(); fx.update({ ...frame([e], .016), game });
+    ripples = kit.sprite.mock.calls.filter(c => c[0] === 'ring');
+    expect(ripples).toHaveLength(1); expect(ripples[0][4]).toBeGreaterThan(firstRadius);
+    kit.sprite.mockClear(); fx.update({ ...frame([e], 0), game });
+    const paused = kit.sprite.mock.calls.map(c => [...c]);
+    kit.sprite.mockClear(); fx.update({ ...frame([e], 0), game });
+    expect(kit.sprite.mock.calls).toEqual(paused);
+    kit.sprite.mockClear(); fx.update({ ...frame([e], .22), game: { bullets: [] } as never });
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'ring')).toHaveLength(0);
+    fx.dispose();
+  });
+
+  it('does not invent ripples from a future aim ray, an out-of-bounds crossing or paused native bullets', () => {
+    const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
+    const e = barrier({ angle: 0 });
+    const bullets = [
+      { x: 40, y: 96, kind: 'player', request: { angle: 0, speed: 400 } }, // Still approaching.
+      { x: 68, y: 224, kind: 'player', request: { angle: 0, speed: 400 } }, // Past wall end.
+    ];
+    fx.update({ ...frame([e], .016), game: { bullets } as never });
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'ring')).toHaveLength(0);
+    bullets[0].x = 68;
+    fx.update({ ...frame([e], 0), game: { bullets } as never });
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'ring')).toHaveLength(0);
+    fx.clear(); kit.sprite.mockClear();
+    fx.update({ ...frame([e], .016), game: { bullets: [bullets[0]] } as never });
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'ring')).toHaveLength(1);
+    fx.dispose();
+  });
+
+  it('uses a recently observed hostile approach for load feedback without changing the projectile or health', () => {
+    const kit = kitMock(), fx = new BreacherPresentation(kit as unknown as ElementKit);
+    const hazard = { x: 70, y: 128, kind: 'hazard', request: { angle: Math.PI, speed: 400 } };
+    const e = barrier({ angle: 0 });
+    const game = { bullets: [hazard] } as never;
+    fx.update({ ...frame([e], .016), game });
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'ring')).toHaveLength(0);
+    kit.sprite.mockClear();
+    const damaged = barrier({ angle: 0, health: 160 });
+    fx.update({ ...frame([damaged], .016), game: { bullets: [] } as never });
+    const load = kit.sprite.mock.calls.find(c => c[0] === 'ring')!;
+    expect(load[3]).toBeCloseTo(4); expect(load[6]).toBe(0x9fe8ff);
+    expect(hazard).toEqual({ x: 70, y: 128, kind: 'hazard', request: { angle: Math.PI, speed: 400 } });
+    expect(damaged.health).toBe(160); fx.dispose();
   });
 
   it('responds once to health receipts and collapses retired barriers once', () => {
@@ -95,7 +161,8 @@ describe('Breacher presentation', () => {
     const kit = kitMock(true), fx = new BreacherPresentation(kit as unknown as ElementKit);
     fx.update(frame(Array.from({ length: 20 }, (_, id) => barrier({ id }))));
     expect(kit.lightAt).toHaveBeenCalledTimes(BREACHER_LIMITS.barriers);
-    expect(kit.draw.mock.calls.filter(c => c[7] === 0xc3eff8)).toHaveLength(8 * 2);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'scan')).toHaveLength(BREACHER_LIMITS.barriers);
+    expect(kit.draw.mock.calls.filter(c => c[7] === 0x293e4b)).toHaveLength(BREACHER_LIMITS.barriers * 2);
     fx.dispose();
   });
 
@@ -109,7 +176,11 @@ describe('Breacher presentation', () => {
     expect(kit.camera).toHaveBeenCalledTimes(1);
     expect(kit.anticipate).toHaveBeenCalledWith(34, .045);
     fx.update(frame([], .15));
-    expect(kit.front).toHaveBeenCalledWith(2, 3, 310 / 32, expect.any(Number), 0xffb454, .06, expect.any(Number), 1);
+    const shock = kit.sprite.mock.calls.find(c => c[0] === 'shockwave')!;
+    expect(shock[1]).toBe(2); expect(shock[3]).toBe(3);
+    expect(shock[4]).toBeGreaterThan(0); expect(shock[4]).toBeLessThanOrEqual(310 / 32);
+    expect(shock[5]).toBe(shock[4]); expect(shock[9]).toBe('ground');
+    expect(kit.front).not.toHaveBeenCalled();
     expect(kit.ring).toHaveBeenCalledWith(2, 3, 310 / 32, 0xffb454, .3);
     expect(kit.scar).toHaveBeenCalledTimes(1);
     const chips = kit.draw.mock.calls.filter(c => c[0] === 'shard');
@@ -135,10 +206,10 @@ describe('Breacher presentation', () => {
     expect(kit.camera).toHaveBeenCalledWith(.92, 0);
     expect(kit.exposureFlash).toHaveBeenCalledWith(.95);
     fx.update(frame([], .03));
-    const rings = kit.draw.mock.calls.filter(c => c[0] === 'front');
+    const rings = kit.sprite.mock.calls.filter(c => c[0] === 'shockwave');
     expect(rings).toHaveLength(3);
     expect(new Set(rings.map(r => r[4])).size).toBe(3);
-    for (const ring of rings) { expect(ring[9]).toBeCloseTo(0); expect(ring[10]).toBe(Math.PI / 2); }
+    for (const ring of rings) { expect(ring[9]).toBe('vertical'); expect(ring[10]).toBeCloseTo(Math.PI / 2); }
     kit.draw.mockClear(); fx.update(frame([], 1));
     expect(kit.draw.mock.calls.some(c => c[0] === 'solid')).toBe(false);
     expect(kit.scar).toHaveBeenCalledTimes(1); // One exact trench owns the lingering floor read.
@@ -165,7 +236,8 @@ describe('Breacher presentation', () => {
       fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-end', angle: 0, targetX: 320, targetY: 224 }), 64, 96);
       fx.update(frame([], .03));
       const caps = kit.draw.mock.calls.filter(c => c[0] === 'solid');
-      expect(caps.length).toBe(low ? 1 : 2);
+      expect(caps).toHaveLength(1);
+      expect(kit.sprite.mock.calls.filter(c => c[0] === 'impact')).toHaveLength(1);
       expect(caps[0][1]).toBeGreaterThan(10); expect(caps[0][3]).toBeCloseTo(7);
       expect(caps[0][8]).toBeGreaterThan(.35);
       expect(kit.draw.mock.calls.filter(c => c[0] === 'smoke')).toHaveLength(2);

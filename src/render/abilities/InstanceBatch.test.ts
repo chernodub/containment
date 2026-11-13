@@ -7,7 +7,7 @@ const kinds: Primitive[] = ['shard', 'spark', 'smoke', 'flame', 'solid', 'ghost'
 describe('ability instance streaming', () => {
   it.each(kinds)('preserves %s transforms, colors and billboard orientation', kind => {
     const batch = new InstanceBatch(new T.Group(), kind, 8);
-    const camera = new T.PerspectiveCamera(); camera.position.set(-5, 9, 8);
+    const camera = new T.PerspectiveCamera(); camera.position.set(-5, 9, 8); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
     batch.setView(camera); batch.begin();
     const expected = new T.Object3D(), matrix = new T.Matrix4(), color = new T.Color(0xff7a2e);
     for (let i = 0; i < 8; i++) {
@@ -19,6 +19,10 @@ describe('ability instance streaming', () => {
       expected.rotation.set(kind === 'decal' ? -Math.PI / 2 : 0,
         billboard ? Math.atan2(camera.position.x - x, camera.position.z - z) : yaw,
         kind === 'smoke' ? 0 : tilt);
+      if (kind === 'smoke' || kind === 'spark') {
+        expected.quaternion.copy(camera.quaternion);
+        expected.rotateZ(kind === 'smoke' ? 0 : tilt);
+      }
       expected.updateMatrix(); batch.mesh.getMatrixAt(i, matrix);
       for (let j = 0; j < 16; j++) expect(matrix.elements[j]).toBeCloseTo(expected.matrix.elements[j], 6);
       expect(batch.mesh.instanceColor!.getX(i)).toBeCloseTo(color.r, 6);
@@ -26,6 +30,25 @@ describe('ability instance streaming', () => {
       expect(batch.mesh.instanceColor!.getZ(i)).toBeCloseTo(color.b, 6);
     }
     batch.end(); expect(batch.mesh.count).toBe(8); batch.dispose();
+  });
+
+  it('faces vapor toward a steep camera while keeping a fixed field and deck decal in their real planes', () => {
+    const camera = new T.PerspectiveCamera(); camera.position.set(3, 26, 19); camera.lookAt(0,0,0); camera.updateMatrixWorld();
+    const root = new T.Group(), smoke = new InstanceBatch(root, 'smoke', 4), decal = new InstanceBatch(root, 'decal', 4);
+    smoke.setView(camera); decal.setView(camera); smoke.begin(); decal.begin();
+    smoke.draw(0,1,0,1,1,1,0x7fd6ff);
+    decal.draw(0,1,0,1,1,1,0x7fd6ff,1,0,-.24,368);
+    decal.draw(0,1,0,1,1,1,0x7fd6ff,1,.7,0,762);
+    decal.draw(0,.03,0,1,1,1,0x7fd6ff,1,0,0,1156);
+    const m = new T.Matrix4(), n = new T.Vector3(), view = new T.Vector3().setFromMatrixColumn(camera.matrixWorld,2);
+    for (const [batch,index] of [[smoke,0],[decal,0]] as const) {
+      batch.mesh.getMatrixAt(index,m); n.setFromMatrixColumn(m,2).normalize();
+      expect(n.dot(view)).toBeCloseTo(1);
+      expect(new T.Vector3().setFromMatrixColumn(m,1).length()).toBeCloseTo(1);
+    }
+    decal.mesh.getMatrixAt(1,m); n.setFromMatrixColumn(m,2).normalize(); expect(n.y).toBe(0);
+    decal.mesh.getMatrixAt(2,m); n.setFromMatrixColumn(m,2).normalize(); expect(Math.abs(n.y)).toBeCloseTo(1);
+    smoke.dispose(); decal.dispose();
   });
 
   it('streams seeded grounded fracture variants without adding a batch', () => {

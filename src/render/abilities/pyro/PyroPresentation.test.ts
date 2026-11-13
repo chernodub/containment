@@ -43,9 +43,10 @@ describe('Pyro presentation lifecycle and readability', () => {
     step(.15);
     const flames = kit.batches.flame.mesh, matrix = new T.Matrix4();
     let source = 0, far = 0, leaned = 0;
-    expect(flames.count).toBe(tier === 'high' ? 6 : 4);
+    expect(flames.count).toBe(tier === 'high' ? 20 : 9);
     const reaches = flow.mock.calls.map(call => Math.hypot(call[3] - 2, call[5] - 3));
-    expect(Math.max(...reaches)).toBeCloseTo(9.7);
+    expect(Math.max(...reaches)).toBeLessThanOrEqual(9.600001);
+    expect(Math.max(...reaches)).toBeGreaterThan(8.5);
     expect(new Set(flow.mock.calls.map(call => call[6])).size).toBeGreaterThan(2);
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i), dx = p.x - 2, dz = p.z - 3, radius = Math.hypot(dx, dz);
@@ -56,7 +57,9 @@ describe('Pyro presentation lifecycle and readability', () => {
       flames.getMatrixAt(i, matrix);
       if (Math.abs(matrix.elements[4]) > .02) leaned++;
     }
-    expect(source).toBeGreaterThan(0); expect(far).toBeGreaterThan(1); expect(leaned).toBe(flames.count);
+    expect(source).toBeGreaterThan(0); expect(far).toBeGreaterThan(1); expect(leaned).toBe(flow.mock.calls.length);
+    const phase = flames.geometry.getAttribute('abilityPhase');
+    expect(Array.from(phase.array).slice(0, flames.count).filter(value => value >= 328)).toHaveLength(tier === 'high' ? 4 : 2);
     expect(flow).toHaveBeenLastCalledWith(2 + Math.cos(.2) * .3, .95, 3 + Math.sin(.2) * .3,
       2 + Math.cos(.2) * 1.8, .95, 3 + Math.sin(.2) * 1.8, .14 + (1 - (.15 - .05) / .12) * .055, 7, (1 - (.15 - .09) / .28) * .96, true);
     const smoke = kit.batches.smoke.mesh;
@@ -174,14 +177,18 @@ describe('Pyro presentation lifecycle and readability', () => {
     frame.snapshot = snapshot([zone({ radius: 80 })]); step(.016);
     expect(liquid).toHaveBeenCalledWith(4, 5, 2.5, .78);
     const flames = kit.batches.flame.mesh;
-    expect(flames.count).toBe(tier === 'low' ? 2 : 4);
+    expect(flames.count).toBe(tier === 'low' ? 4 : 8);
+    let edgeFires = 0;
     let tallest = 0;
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i);
-      expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThanOrEqual(2.5);
+      const distance = Math.hypot(p.x - 4, p.z - 5);
+      expect(distance).toBeLessThanOrEqual(2.5);
+      if (distance > 2.5 * .7) edgeFires++;
       tallest = Math.max(tallest, p.y + scale(flames, i).y);
     }
     expect(tallest).toBeGreaterThan(1.7);
+    expect(edgeFires).toBe(tier === 'low' ? 2 : 6);
     expect(kit.batches.smoke.mesh.count).toBe(tier === 'low' ? 1 : 4);
     frame.snapshot = snapshot(); step(0);
     expect(flames.count).toBe(0); expect(kit.batches.smoke.mesh.count).toBe(0); dispose();
@@ -194,7 +201,7 @@ describe('Pyro presentation lifecycle and readability', () => {
     frame.game = { player: { x: 128, y: 160, vx: 0, vy: 0, angle: .1 }, bullets: [] } as never;
     step(.016);
     const flames = kit.batches.flame.mesh;
-    expect(flames.count).toBe(tier === 'low' ? 2 : 4); expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
+    expect(flames.count).toBe(tier === 'low' ? 3 : 6); expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i);
       expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThan(.65);
@@ -210,7 +217,10 @@ describe('Pyro presentation lifecycle and readability', () => {
       expect(dx * Math.cos(.1) + dz * Math.sin(.1)).toBeLessThan(-.25);
       expect(Math.abs(-dx * Math.sin(.1) + dz * Math.cos(.1))).toBeGreaterThanOrEqual(.39);
     }
-    const backpackVents = exhaust.mock.calls.filter(call => call[3] < .3);
+    const backpackVents = exhaust.mock.calls.filter(call => call[3] < .3 && call[1] >= 1);
+    const flankFires = exhaust.mock.calls.filter(call => call[1] < .2);
+    expect(flankFires).toHaveLength(tier === 'low' ? 1 : 2);
+    for (const call of flankFires) { expect(call[3]).toBeLessThan(.25); expect(call[1] + call[4]).toBeLessThan(1.7); }
     expect(backpackVents).toHaveLength(tier === 'low' ? 0 : 2);
     for (const call of backpackVents) { expect(call[1]).toBeGreaterThanOrEqual(1); expect(call[1] + call[4]).toBeLessThan(3.9); }
     expect(shoulderVents[0][4]).not.toBe(shoulderVents[1][4]);

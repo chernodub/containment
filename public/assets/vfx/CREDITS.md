@@ -9,3 +9,7 @@ Original archives:
 - https://unity3d.com/files/labs/downloads/vfx/assets01/WispySmoke02/WispySmoke02-flipbooks.zip
 
 Original atlases: Flame02_16x4.tga, 2048x1024, 64 frames; WispySmoke02_8x8.tga, 1024x1024, 64 frames. No resampling. Frost accumulation shader and fractured ice geometry authored for Containment; no third-party ice assets.
+
+## V6 texture library
+
+See [compact atlas](containment-v6/CREDITS.md), [Unity source hashes/license](unity-labs-v6/CREDITS.md), and [Kenney source hashes/license](kenney-particle-v6/CREDITS.md). The new atlas is 2,759,007 bytes; retained original flipbooks remain for pre-existing weapon/status effects.

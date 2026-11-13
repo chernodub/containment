@@ -8,6 +8,7 @@ import type { LightPool } from '../lighting/LightPool';
 import type { DistortionField } from '../post/DistortionField';
 import type { AbilityElement } from '../../game/abilities/contract';
 import { ELEMENT_COLORS } from './types';
+import { EffectAtlas, EFFECT_TILES } from './EffectAtlas';
 import { InstanceBatch, type Primitive } from './InstanceBatch';
 import { authoredVariation } from './GraphicLanguage';
 export const ABILITY_VFX_LIMITS = Object.freeze({ particles: 768, rings: 64, beams: 64, decals: 32, instances: 2048 });
@@ -87,6 +88,9 @@ export class ElementKit {
     readonly rings = new FriendlyBoundaryBatch(this.root, 304);
     readonly ribbons = new AbilityLightningBatch(this.root, 2048);
     /** Claimed only for targets drawn this frame; legacy status batches cover overflow. */
+    readonly atlas = new EffectAtlas();
+    /** Owner readiness hook for the first room; never creates another texture. */
+    prepare(): Promise<void> { return this.atlas.prepare(); }
     readonly statusOwners = new StatusOwnership();
     statusActor(id: number): StatusActor | undefined { return this.services?.statusActor?.(id); }
     time = 0;
@@ -130,7 +134,7 @@ export class ElementKit {
     constructor(root: T.Object3D) {
         root.add(this.root);
         this.root.name = 'ability-element-kit';
-        this.batches = { shard: new InstanceBatch(this.root, 'shard', 512), spark: new InstanceBatch(this.root, 'spark', 512), smoke: new InstanceBatch(this.root, 'smoke', 192), flame: new InstanceBatch(this.root, 'flame', 384), solid: new InstanceBatch(this.root, 'solid', 512), ghost: new InstanceBatch(this.root, 'ghost', 128), decal: new InstanceBatch(this.root, 'decal', 64), front: new InstanceBatch(this.root, 'front', 64) };
+        this.batches = { shard: new InstanceBatch(this.root, 'shard', 512, this.atlas), spark: new InstanceBatch(this.root, 'spark', 512, this.atlas), smoke: new InstanceBatch(this.root, 'smoke', 192, this.atlas), flame: new InstanceBatch(this.root, 'flame', 384, this.atlas), solid: new InstanceBatch(this.root, 'solid', 512, this.atlas), ghost: new InstanceBatch(this.root, 'ghost', 128, this.atlas), decal: new InstanceBatch(this.root, 'decal', 64, this.atlas), front: new InstanceBatch(this.root, 'front', 64, this.atlas) };
     }
     setView(camera: T.Camera): void { this.viewPosition.copy(camera.position); this.viewRightX = camera.matrixWorld.elements[0]; this.viewRightZ = camera.matrixWorld.elements[2]; for (const k in this.batches)
         this.batches[k as Primitive].setView(camera); }
@@ -142,6 +146,9 @@ export class ElementKit {
 
         }
         this.low = tier === 'low';
+        this.batches.flame.maxCoverage = this.low ? .16 : .30;
+        this.batches.smoke.maxCoverage = this.low ? .10 : .18;
+        this.batches.decal.maxCoverage = this.low ? .14 : .28;
         this.ribbons.low = this.low;
         this.reducedMotion = reducedMotion;
         this.flashIntensity = options.flashIntensity * (reducedMotion ? .5 : 1);
@@ -157,6 +164,15 @@ export class ElementKit {
         batch.draw(x, y, z, sx, sy, sz, color, opacity * (kind === 'spark' || kind === 'flame' ? .35 + .65 * this.flashIntensity : 1), angle, tilt, variant);
         this.instanceCount += batch.mesh.count - before;
     }
+    /** Authored atlas stamp in retained alpha/light pools; dimensions are half extents. */
+    sprite(tile: keyof typeof EFFECT_TILES | number, x: number, y: number, z: number,
+        halfWidth: number, halfHeight: number, color: number, opacity = 1, seed = 0,
+        plane: 'billboard' | 'ground' | 'vertical' | 'light' = 'billboard', yaw = 0, tilt = 0): void {
+        const index = typeof tile === 'number' ? tile : EFFECT_TILES[tile];
+        this.draw(plane === 'light' ? 'spark' : 'decal', x, y, z, halfWidth, halfHeight, 1,
+            color, opacity, yaw, tilt, (plane === 'ground' ? 1000 : plane === 'vertical' ? 600 : 200) + index + authoredVariation(seed) * .95);
+    }
+
     mote(kind: Primitive, x: number, y: number, z: number, vx: number, vy: number, vz: number, size: number, life: number, color: number): void {
         const cap = this.low ? 160 : this.particles.length, p = this.particles[this.cursor++ % cap];
         p.live = true;
@@ -286,26 +302,33 @@ export class ElementKit {
     liquidFire(x: number, z: number, radius: number, opacity = 1): void {
         this.draw('decal', x, .045, z, radius, radius, 1, 0xff7a2e, opacity, 0, 0, 8);
     }
-    /** Directional jet: source-hot stretched tongues, accelerating and curling outwards. */
+    /** Layered short flipbook plumes fill the native cone; no room-length flame cards. */
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1, height = .9, sourceX?: number, sourceZ?: number): void {
-        const count = this.low ? 3 : 5;
+        const count = this.low ? 6 : 15;
         for (let i = 0; i < count; i++) {
             const seed = i * 3.731 + .71, v = authoredVariation(seed);
-            const spread = i === 0 ? 0 : i === 1 ? .06 : i === 2 ? -.27 : i === 3 ? .29 : -.18;
-            const a = angle + spread * arc;
-            const start = i === 0 ? .075 : i === 1 ? .52 : i === 2 ? .28 : i === 3 ? .4 : .62;
-            const end = i === 0 ? .8 : i === 1 ? .97 : i === 2 ? .7 : i === 3 ? .88 : .89;
-            const throat = radius * (i === 0 ? .10 : i === 1 ? .18 : i === 2 ? .13 : i === 3 ? .14 : .10) * (.94 + v * .08);
-            this.flowFlame(i === 0 && sourceX !== undefined ? sourceX : x + Math.cos(a) * radius * start,
-                i === 0 && sourceX !== undefined ? height : height - .08 + i * .035,
-                i === 0 && sourceZ !== undefined ? sourceZ : z + Math.sin(a) * radius * start,
-                x + Math.cos(a) * radius * end, height + v * .45, z + Math.sin(a) * radius * end,
-                throat, seed, opacity * (i === 0 ? 1 : .94), i === 0);
+            const row = i === 0 ? 0 : i < count * .4 ? 1 : 2;
+            const fraction = row === 0 ? .06 : row === 1 ? .34 + v * .12 : .63 + v * .14;
+            const spread = i === 0 ? 0 : (authoredVariation(seed, 2) - .5) * arc * .72;
+            const a = angle + spread, reach = Math.min(.96, fraction + .17 + v * .1);
+            const width = radius * Math.min(.11, Math.max(.035, fraction * Math.sin(arc * .5 - Math.abs(spread)) * .48));
+            this.flowFlame(i === 0 && sourceX !== undefined ? sourceX : x + Math.cos(a) * radius * fraction,
+                height + (row === 2 ? v * .5 : 0),
+                i === 0 && sourceZ !== undefined ? sourceZ : z + Math.sin(a) * radius * fraction,
+                x + Math.cos(a) * radius * reach, height + .12 + v * .65, z + Math.sin(a) * radius * reach,
+                width, seed, opacity * (.72 + v * .25), i === 0);
         }
     }
 
-    /** Camera-facing flame ribbon whose long axis follows a real three-dimensional flow. */
+    /** Short authored flame card aligned to the actual three-dimensional flow. */
     flowFlame(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, core = false): void {
+        this.flowCard('flame', x, y, z, tx, ty, tz, width, core ? 0xffedb5 : 0xff7a2e, opacity, 100 + Math.abs(seed) % 64);
+    }
+    /** Authored animated bolt strip for suit crawl/contact flashes; long chains keep their structure. */
+    boltCard(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, color = 0xb79cff): void {
+        this.flowCard('spark', x, y, z, tx, ty, tz, width * 3.5, color, opacity, 376 + authoredVariation(seed) * .95);
+    }
+    private flowCard(kind: Primitive, x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, color: number, opacity: number, variant: number): void {
         const axis = this.flowAxis.set(tx - x, ty - y, tz - z), length = axis.length();
         if (length < .01) return;
         axis.multiplyScalar(1 / length);
@@ -314,8 +337,8 @@ export class ElementKit {
         this.flowSide.crossVectors(axis, this.flowView);
         if (this.flowSide.lengthSq() < .0001) this.flowSide.set(1, 0, 0); else this.flowSide.normalize();
         this.flowNormal.crossVectors(this.flowSide, axis).normalize();
-        const batch = this.batches.flame, before = batch.mesh.count;
-        this.draw('flame', mx, my, mz, width, length * .5, 1, core ? 0xffedb5 : 0xff7a2e, opacity, 0, 0, 100 + Math.abs(seed) % 64);
+        const batch = this.batches[kind], before = batch.mesh.count;
+        this.draw(kind, mx, my, mz, width, length * .5, 1, color, opacity, 0, 0, variant);
         if (batch.mesh.count === before) return;
         const matrix = batch.mesh.instanceMatrix.array, o = before * 16;
         matrix[o] = this.flowSide.x * width; matrix[o + 1] = this.flowSide.y * width; matrix[o + 2] = this.flowSide.z * width;
@@ -468,7 +491,7 @@ export class ElementKit {
             const fade = 1 - p.age / p.life, s = p.size * (p.kind === 'smoke' ? 1 + p.age * 2 : 1);
             this.sustain(p.age);
             this.priorityWeight = Math.max(this.priorityWeight, p.priority);
-            this.draw(p.kind, p.x, p.y, p.z, s, p.kind === 'spark' ? s * 2 : s, s, p.color, fade * (p.kind === 'smoke' ? .22 : .7), p.seed * .8, p.seed + p.age);
+            this.draw(p.kind, p.x, p.y, p.z, s, p.kind === 'spark' ? s * 2 : s, s, p.color, fade * (p.kind === 'smoke' ? .22 : .7), p.seed * .8, p.seed + p.age, p.kind === 'smoke' || p.kind === 'flame' ? 64 + p.seed % 64 : 0);
         }
         this.impact();
         this.peakParticles = Math.max(this.peakParticles, live);
@@ -540,5 +563,5 @@ export class ElementKit {
         this.batches[k as Primitive].begin(); }
     dispose(): void { if (this.disposed)
         return; this.disposed = true; this.clear(); for (const k in this.batches)
-        this.batches[k as Primitive].dispose(); this.rings.dispose(); this.ribbons.dispose(); this.root.removeFromParent(); }
+        this.batches[k as Primitive].dispose(); this.rings.dispose(); this.ribbons.dispose(); this.atlas.dispose(); this.root.removeFromParent(); }
 }

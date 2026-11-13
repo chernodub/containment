@@ -751,3 +751,24 @@ floor marks for a real Brute whose anatomy crosses the named panel, then uses
 native rifle fire and Cryo Nova. No fade override is used. Every playing capture
 now records computed critical text/backing contrast and effective ancestor
 opacity, rejecting text below4.5:1 or a translucent local backing.
+## V6 texture-authored ability review
+
+`node scripts/nextgen/v6-capture.mjs --label=v6-before --dist=<frozen-dist> --dist-source-sha=<sha>`
+serializes four small rig batches: all sixteen seven-phase abilities plus all four
+full kits in bright Containment Annulus and dark Infested Workshop. The combined
+manifest retains all source manifests, native 1920px sprite cells, 280 native
+frames and exact 480×270 area reductions. Use a fresh label for every critique.
+It starts only one browser at a time; do not overlap other browser gates/bench.
+
+After final capture, `node scripts/nextgen/v6-evidence.mjs <before-dir> <final-dir>`
+checks 40 sheets / 280 clock-matched pairs, hashes the actual PNGs and emits an
+absolute-path native/480 evidence index under `artifacts/nextgen/v6/` without
+starting a browser. It cannot certify temporal motion or hardware performance.
+
+`v6-open-whiteout-<room>` and `v6-open-overclock-<room>` inspect a native
+ultimate at the legal interior mark with greatest room-boundary clearance,
+using bright `containment-annulus` or dark `infested-workshop`. They supplement
+the unchanged edge-lane V2 timelines: cleared initial enemies (native reinforcements may appear), invulnerable marine, explicit
+atlas readiness wait, 650ms after native activation, fatal new-program guard.
+They are staged silhouette inspections, not combat, population or timing proof.
+The selected native mark and boundary clearance are retained in g4DangerProof.

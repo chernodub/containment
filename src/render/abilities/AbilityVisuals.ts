@@ -45,6 +45,13 @@ export class AbilityVisuals extends AbilityGeometry {
                 g.getAttribute('abilityPriority') ? 'abilityPriority' : g.getAttribute('ribbonPriority') ? 'ribbonPriority' : undefined);
         });
     }
+    /** Renderer integration: await this before first-room warmup. */
+    prepare(): Promise<void> { return this.kit.prepare(); }
+    /** Borrow an opaque-depth copy; caller owns its target and unbinds before disposal. */
+    setSoftDepth(texture: T.Texture | null, near = .1, far = 100, perspective = true): void {
+        this.kit.batches.flame.setSoftDepth(texture, near, far, perspective);
+        this.kit.batches.smoke.setSoftDepth(texture, near, far, perspective);
+    }
     register(rig: RigId, factory: PresentationFactory): void { this.registry.get(rig)?.dispose(); this.registry.set(rig, factory(this.kit)); }
     registerSystem(factory: PresentationFactory): void { this.system?.dispose(); this.system = factory(this.kit); }
     bind(services: AbilityServices): void { this.kit.bind(services); }
@@ -60,6 +67,7 @@ export class AbilityVisuals extends AbilityGeometry {
     override update(snapshot: AbilitiesSnapshot | undefined, dt: number, visible = true, game?: DepthGame, marine?: T.Object3D, camera?: T.Camera, marineBody?: T.Object3D): void {
         if (this.dead)
             return;
+        if (visible && game && game.status !== 'menu') void this.prepare();
         if (camera)
             this.kit.setView(camera);
         if (game && (game.status === 'dead' || game.status === 'complete' || game.status === 'menu'))

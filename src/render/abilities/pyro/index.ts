@@ -201,6 +201,15 @@ class PyroPresentation implements AbilityPresentation {
     else this.source.set(p.x + c * .3, .95, p.z + s * .3);
     kit.sustain(p.age + .20);
     kit.fireFan(p.x, p.z, p.range * grow, p.angle, p.arc, fade * .85, this.source.y, this.source.x, this.source.z);
+    // The first blast has expanding turbulent lobes from the authored explosion sequence.
+    // Short cards overlap in depth; the exact ground cone stays in the boundary batch.
+    if (p.age < .24) for (let i = 0; i < (kit.low ? 2 : 4); i++) {
+      const t = .24 + i * .16, a = p.angle + (i % 2 ? -.15 : .15) * p.arc;
+      const r = p.range * t, w = Math.min(p.range * .16, r * Math.sin(p.arc * .5) * .65);
+      kit.draw('flame', p.x + Math.cos(a) * r, this.source.y + .16 + i * .12,
+        p.z + Math.sin(a) * r, w, w * .72, 1, FIRE, fade * .82,
+        0, 0, 328 + Math.min(24, Math.floor(p.age * 65) + i));
+    }
     kit.lightAt(p.lightId, p.x + Math.cos(p.angle) * p.range * .34,
       p.z + Math.sin(p.angle) * p.range * .34, FIRE, (12 + 16 * hot) * fade, Math.max(8, p.range * 1.1));
     // Range curls are downstream, above the jet rather than a wall of ground flames.
@@ -352,12 +361,16 @@ class PyroPresentation implements AbilityPresentation {
     }
     kit.sustain(elapsed);
     kit.liquidFire(x, z, radius * growth, .78 * fade);
-    // A few anchored fuel vents give the pool a tall, sparse profile and visible liquid gaps.
-    for (let i = 0; i < (kit.low ? 2 : 4); i++) {
-      const a = i * 2.399963 + zone.id * .71, r = radius * growth * (.2 + i * .12);
+    // Fuel burns at the ragged edge, with two taller interior vents. The center
+    // remains open deck between pockets rather than an opaque orange carpet.
+    const tongues = kit.low ? 4 : 8;
+    for (let i = 0; i < tongues; i++) {
+      const a = i * 2.399963 + zone.id * .71;
       const variation = .5 + .5 * Math.sin(i * 7.83 + zone.id * 3.17);
+      const r = radius * growth * (i < 2 ? .22 + i * .18 : .74 + variation * .13);
       kit.directedFlame(x + Math.cos(a) * r, .06, z + Math.sin(a) * r,
-        .26 + variation * .13, (1.7 + variation * .85) * fade, a, .22, i * 2.17 + zone.id, .72 * fade);
+        .23 + variation * .13, (i < 2 ? 1.8 + variation * .85 : .6 + variation * .8) * fade,
+        a, .22, i * 2.17 + zone.id, (i < 2 ? .72 : .60) * fade);
     }
     // A single loose smoke column rises from the hottest interior fuel pocket.
     for (let i = 0; i < (kit.low ? 1 : 4); i++) {
@@ -389,6 +402,15 @@ class PyroPresentation implements AbilityPresentation {
       if (!kit.low) kit.directedFlame(bx - c * .18, 1.08, bz - s * .18, .28, 2.6,
         exhaustAngle, .65, side * 2.7, .78 * fade);
     }
+    // A low attached mantle wraps the armor flanks, distinct from the tall rear vents.
+    // Its narrow shoulders leave the cyan helmet and central aiming silhouette exposed.
+    const flanks = kit.low ? 1 : 2;
+    for (let i = 0; i < flanks; i++) {
+      const side = i === 0 ? -1 : 1;
+      kit.directedFlame(x - c * .04 - s * side * .27, .12,
+        z - s * .04 + c * side * .27, .23, 1.45, exhaustAngle, .2,
+        zone.id + side * 8.1, .68 * fade);
+    }
     kit.draw('solid', x - c * .3, 1.12, z - s * .3, .22, .55, .36, 0xb9450e, .94 * fade, -angle);
     // Short heated armor seams describe shoulders, chest and weapon, leaving the helmet open.
     for (let side = -1; side <= 1; side += 2) {
@@ -400,8 +422,12 @@ class PyroPresentation implements AbilityPresentation {
     kit.grade(.65 * fade);
     kit.lightAt(zone.id, x, z, FIRE, 5 * fade, 6);
     if (emit) {
-      kit.mote('spark', x - c * .3, 1.2, z - s * .3,
-        Math.cos(exhaustAngle) * .8, .65, Math.sin(exhaustAngle) * .8, .025, .65, CORE);
+      // Bounded ember storm is attached to the moving suit, never a floor aura fill.
+      for (let i = 0; i < (kit.low ? 1 : 3); i++) {
+        const a = exhaustAngle + (i - 1) * .7, side = i - 1;
+        kit.mote('spark', x - c * .3 - s * side * .22, 1.05 + i * .22, z - s * .3 + c * side * .22,
+          Math.cos(a) * (.8 + i * .3), .65 + i * .35, Math.sin(a) * (.8 + i * .3), .025 + i * .008, .65, CORE);
+      }
       if (!kit.low) kit.mote('smoke', x - c * .35, 1.2, z - s * .35,
         Math.cos(exhaustAngle) * .4, .45, Math.sin(exhaustAngle) * .4, .23, .9, SOOT);
     }

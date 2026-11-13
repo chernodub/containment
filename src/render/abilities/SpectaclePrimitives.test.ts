@@ -56,7 +56,7 @@ describe('V3 shared spectacle', () => {
     k.begin(0); k.end(); expect(phase.getX(0)).toBeCloseTo(2.1);
     k.begin(1.1); k.fireFan(2, 3, 9, .7, 1.4, .8); k.end();
     expect(phase.getX(0)).toBe(2); expect(k.batches.decal.mesh.count).toBe(1);
-    expect(k.batches.flame.mesh.count).toBe(5);
+    expect(k.batches.flame.mesh.count).toBe(15);
     const widths = new Set<number>();
     expect(k.batches.flame.mesh.count).toBeLessThanOrEqual(k.batches.flame.capacity);
     for (let i = 0; i < k.batches.flame.mesh.count; i++) {
@@ -104,7 +104,7 @@ describe('V3 shared spectacle', () => {
 
 
   it('anchors a pressure jet ribbon to exact world endpoints while reusing the flame batch', () => {
-    const k=new ElementKit(new T.Group()),camera=new T.PerspectiveCamera();camera.position.set(0,8,8);camera.updateMatrixWorld();k.setView(camera);k.begin(0);
+    const k=new ElementKit(new T.Group()),camera=new T.PerspectiveCamera();camera.position.set(0,8,8);camera.lookAt(0,0,0);camera.updateMatrixWorld();k.setView(camera);k.begin(0);
     k.flowFlame(1,1,2,5,1.2,7,.8,3,.7,true);k.end();
     const b=k.batches.flame.mesh,m=new T.Matrix4();b.getMatrixAt(0,m);
     expect(new T.Vector3(0,-1,0).applyMatrix4(m).distanceTo(new T.Vector3(1,1,2))).toBeLessThan(.000001);

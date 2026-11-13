@@ -1,16 +1,17 @@
 import * as T from 'three';
+import { EffectAtlas, EFFECT_ATLAS_GLSL, TEXTURED_FIRE_GLSL } from './EffectAtlas';
 import { FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
-import { createArmorSection, createFractureMass, createMarineEcho, GRAPHIC_FLAME_FRAGMENT, GRAPHIC_SOLID_FRAGMENT, GRAPHIC_FRACTURE_FRAGMENT } from './GraphicLanguage';
+import { createArmorSection, createFractureMass, createMarineEcho, GRAPHIC_SOLID_FRAGMENT, GRAPHIC_FRACTURE_FRAGMENT } from './GraphicLanguage';
 
 export type Primitive = 'shard' | 'spark' | 'smoke' | 'flame' | 'solid' | 'ghost' | 'decal' | 'front';
 const vertex = `
 attribute float abilityAlpha;attribute float abilityPhase;
-varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;
+varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;varying float worldHeight;varying float viewDepth;
 void main(){alpha=abilityAlpha;phase=abilityPhase;ink=instanceColor;uvLocal=uv;facetNormal=normalize(normalMatrix*mat3(instanceMatrix)*normal);
 vec3 posedPosition=position;/* ability shape */
-gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(posedPosition,1.);screenPosition=gl_Position;}`;
+viewDepth=-(modelViewMatrix*instanceMatrix*vec4(posedPosition,1.)).z;worldHeight=(modelMatrix*instanceMatrix*vec4(posedPosition,1.)).y;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(posedPosition,1.);screenPosition=gl_Position;}`;
 
-/** Fixed GPU inventory: analytic flames and the retained licensed smoke atlas. */
+/** Fixed GPU inventory: shared mipmapped authored flipbooks and textured constructs. */
 export class InstanceBatch {
   readonly mesh: T.InstancedMesh;
   private readonly color = new T.Color();
@@ -22,17 +23,26 @@ export class InstanceBatch {
   private readonly phaseRange = { start: 0, count: 0 };
   private readonly alpha: T.InstancedBufferAttribute;
   private readonly phase: T.InstancedBufferAttribute;
-  private readonly texture?: T.Texture;
+  readonly atlas: EffectAtlas;
+  private readonly ownsAtlas: boolean;
   private readonly priority: T.InstancedBufferAttribute;
   private readonly priorityRange = { start: 0, count: 0 };
   priorityWeight = 0;
   private view?: T.Vector3;
+  private camera?: T.Camera;
+  private coverage = 0;
+  /** Sum of projected card rectangle estimates, including hidden overlap: a bounded fill cap. */
+  maxCoverage = .42;
+
 
   setView(camera: T.Camera): void {
     this.view = camera.position;
+    this.camera = camera;
   }
 
-  constructor(root: T.Object3D, readonly kind: Primitive, readonly capacity: number) {
+  constructor(root: T.Object3D, readonly kind: Primitive, readonly capacity: number, atlas?: EffectAtlas) {
+    this.atlas = atlas ?? new EffectAtlas();
+    this.ownsAtlas = !atlas;
     const geometry = kind === 'front' ? new T.TorusGeometry(.88, .12, 6, 64).rotateX(-Math.PI / 2)
       : kind === 'shard' ? createFractureMass()
       : kind === 'ghost' ? createMarineEcho() : kind === 'solid' ? createArmorSection()
@@ -44,67 +54,57 @@ export class InstanceBatch {
     geometry.setAttribute('abilityAlpha', this.alpha);
     geometry.setAttribute('abilityPhase', this.phase);
 
-    const atlas = kind === 'smoke';
-    if (atlas) {
-      this.texture = typeof document === 'undefined'
-        ? new T.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1)
-        : new T.TextureLoader().load(`${import.meta.env.BASE_URL}assets/vfx/WispySmoke02.png`);
-      this.texture.colorSpace = T.NoColorSpace;
-      this.texture.minFilter = this.texture.magFilter = T.LinearFilter;
-      this.texture.generateMipmaps = false;
-    }
-
     const fragment = `
-uniform float abilityTime;uniform sampler2D map;uniform float flash;
-varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;
+uniform float abilityTime;uniform float flash;uniform float atlasAvailable;
+uniform sampler2D softDepth;uniform vec4 softCamera;
+${EFFECT_ATLAS_GLSL}
+varying float alpha;varying float phase;varying vec3 ink;varying vec2 uvLocal;varying vec4 screenPosition;varying vec3 facetNormal;varying float worldHeight;varying float viewDepth;
 float abilityHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
 float abilityNoise(vec2 p){vec2 b=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(abilityHash(b),abilityHash(b+vec2(1.,0.)),f.x),mix(abilityHash(b+vec2(0.,1.)),abilityHash(b+vec2(1.)),f.x),f.y);}
 void main(){
- vec2 p=uvLocal*2.-1.;float a=alpha;vec3 c=ink;
-${atlas ? `
- float frame=mod(floor(abilityTime*18.+phase),64.);
- vec2 grid=vec2(8.,8.);
- vec2 cell=vec2(mod(frame,grid.x),grid.y-1.-floor(frame/grid.x));
- vec2 inset=vec2(.006,.008);vec2 at=(cell+clamp(uvLocal,inset,1.-inset))/grid;
- vec4 s=texture2D(map,at);
- float edge=smoothstep(0.,.07,uvLocal.x)*smoothstep(0.,.07,1.-uvLocal.x)*smoothstep(0.,.07,uvLocal.y)*smoothstep(0.,.07,1.-uvLocal.y);
- a*=s.a*edge;
- float vapor=step(ink.r*1.12,ink.b)*smoothstep(.18,.5,ink.b);float dust=step(.08,ink.r+ink.g+ink.b)*(1.-vapor);c=mix(vec3(.007,.009,.012),ink*.65,dust);c=mix(c,ink*.85,vapor);a*=mix(.65,.52,vapor);
+ vec2 p=uvLocal*2.-1.;float a=alpha*atlasAvailable;vec3 c=ink;
+${kind === 'smoke' ? `
+ vec4 s=effectSequence(64.,64.,18.,phase,uvLocal);
+ float vapor=step(ink.r*1.12,ink.b)*smoothstep(.18,.5,ink.b);
+ c=mix(vec3(.018,.022,.028),ink*.76,vapor);
+ c*=.7+floor(s.r*5.)*.1;
+ a*=s.a*mix(.9,.72,vapor)*smoothstep(.015,.22,worldHeight);
  ` : ''}
-${kind === 'flame' ? GRAPHIC_FLAME_FRAGMENT : ''}
-${kind === 'spark' ? 'float d=dot(p,p);if(d>1.)discard;a*=pow(1.-d,2.);c*=3.5;' : ''}
+${kind === 'flame' ? TEXTURED_FIRE_GLSL : ''}
+${kind === 'spark' ? 'float tile=phase>=200.?floor(phase)-200.:154.;vec4 s=tile==176.?effectSequence(176.,8.,24.,fract(phase)*64.,vec2(.5+(uvLocal.x-.5)*.5,uvLocal.y)):effectTile(tile,uvLocal);a*=s.a;c*=3.5;' : ''}
 ${kind === 'decal' ? `
+ if(phase>=200.){
+  float tile=floor(phase)-(phase>=1000.?1000.:phase>=600.?600.:200.);
+  vec4 stamp;
+  if(tile>=168.&&tile<176.)stamp=effectSequence(168.,8.,16.,fract(phase)*64.,uvLocal);
+  else if(tile>=176.&&tile<184.)stamp=effectSequence(176.,8.,24.,fract(phase)*64.,uvLocal);
+  else if(tile==164.){
+   stamp=effectTile(tile,fract(uvLocal+vec2(abilityTime*.31,-abilityTime*.57)));
+   stamp.a*=smoothstep(0.,.08,uvLocal.x)*smoothstep(0.,.08,1.-uvLocal.x)*smoothstep(0.,.08,uvLocal.y)*smoothstep(0.,.08,1.-uvLocal.y);
+  }else stamp=effectTile(tile,tile==162.?fract(uvLocal*vec2(3.,1.)):uvLocal);
+  c=ink*(.55+stamp.r*.65);a*=stamp.a;
+  if(phase<600.)a*=smoothstep(.015,.20,worldHeight);
+  if(tile==162.||tile==163.){
+   float scan=.65+.35*sin(uvLocal.y*38.-abilityTime*7.);
+   c=ink*(1.1+stamp.r*1.8);a*=scan;
+   // Fixed field normals face the aim/danger side; friendly rear face is brighter.
+   if(phase>=600.&&phase<1000.){c*=gl_FrontFacing?.52:1.25;a*=gl_FrontFacing?.7:1.;}
+  }
+ }else{
+
  float d=length(p);float a0=atan(p.y,p.x);float variant=floor(phase+.01);
  // Soot fans and fracture discs reject empty coverage before the expensive paths.
  if(variant<.5&&d>1.)discard;
  if(variant>2.5&&variant<3.5&&(d>1.||abs(a0)>fract(phase)*6.283185))discard;
- float n=abilityNoise(p*19.);
- float cracks=0.;float lip=0.;
- // Fuel, frost and wind never pay for the fracture paths. Instance-coherent branch.
- if(variant<.5||(variant>2.5&&variant<3.5)){
- // Seven unequal structural splits, each with a bent primary and one shorter branch.
- for(int split=0;split<7;split++){
-  float seed=float(split)*2.39996323+.37;
-  vec2 axis=vec2(cos(seed),sin(seed));vec2 crossAxis=vec2(-axis.y,axis.x);
-  float along=dot(p,axis);float across=dot(p,crossAxis);
-  float bend=sin(seed*3.7)*max(0.,along-.18)*.38-sin(seed*3.7)*max(0.,along-.36)*.68+sin(seed*7.1)*max(0.,along-.62)*.55;
-  float reach=.63+.32*fract(sin(seed*37.1)*437.13);
-  float splitCoverage=smoothstep(.06,.15,along)*(1.-smoothstep(reach-.07,reach,along));
-  float width=(.007+.008*fract(seed*1.7))*(1.-along*.65);
-  float groove=1.-smoothstep(width*.4,width,abs(across-bend));
-  float branch=1.-smoothstep(.004,.012,abs(across-bend-(along-.4)*(.35+sin(seed)*.15)));
-  float breaks=1.-smoothstep(.018,.036,abs(along-(.3+fract(seed)*.2)));
-  float intact=1.-breaks*.8;
-  cracks=max(cracks,max(groove*intact,branch*smoothstep(.38,.46,along)*.65)*splitCoverage);
-  lip=max(lip,(1.-smoothstep(.003,.009,abs(across-bend-.016)))*splitCoverage);
- }
- }
+ float n=effectTile(161.,uvLocal).a;
+ // Ground breakup is authored offline; no seven-split procedural fragment loop.
+ float cracks=effectTile(158.,uvLocal).a;
+ float lip=effectTile(158.,clamp(uvLocal+vec2(.008,0.),0.,1.)).a*.45;
  if(variant<.5){if(d>1.)discard;a*=max(cracks*.8,lip*.35);c=mix(vec3(.006,.009,.012),vec3(.095,.085,.062),lip*.55);}
  else if(variant<1.5){
   if(d>1.)discard;
-  float powder=abilityNoise(p*31.);
-  float fern=pow(1.-abs(sin(a0*17.+sin(d*39.)*.4)),24.)*smoothstep(.5,.8,powder);
-  a*=(powder*.018+fern*.045)*(1.-smoothstep(.82,1.,d))*smoothstep(.18,.42,d);c*=.85;
+  a*=effectTile(156.,uvLocal).a*(1.-smoothstep(.82,1.,d))*.55;c*=.85;
+
  }
  else if(variant<2.5){float edge=abs(p.y);float slag=pow(max(0.,1.-abs(p.y+sin(p.x*31.)*.12)*4.),3.)*(.4+n*.6);a*=(1.-smoothstep(.7,1.,abs(p.x)))*(1.-smoothstep(.5,1.,edge))*(.5+n*.4);c=mix(ink,vec3(2.8,.5,.015),slag*fract(phase)*10.*flash);}
  else if(variant<3.5){if(d>1.)discard;float cone=step(abs(a0),fract(phase)*6.283185);a*=cone*(1.-smoothstep(.72+sin(a0*23.)*.05,.96,d))*(.14+cracks*.12);}
@@ -122,14 +122,9 @@ ${kind === 'decal' ? `
   a*=film*(.025+fern*.24+smoothstep(.55,.85,abs(p.y))*.14);
  }
  else if(variant>11.5){
-  float seed=fract(phase)*31.;
-  vec2 cloud=vec2(p.x,p.y*1.15);
-  cloud.x+=sin(p.y*4.+seed+abilityTime*.8)*.09;
-  float edge=.78+sin(p.x*6.+seed)*.085+sin(p.y*9.-seed)*.045;
-  float vapor=(1.-smoothstep(.24,edge,length(cloud)));
-  // Rounded, broken vapor masses, never opaque slices of a torus.
-  c=mix(ink*.38,ink*.82+vec3(.08),smoothstep(.24,.42,vapor));
-  a*=vapor*.52;
+  vec4 cloud=effectSequence(168.,8.,16.,fract(phase)*64.,uvLocal);
+  c=ink*(.62+cloud.r*.42);a*=cloud.a;
+
  }
  else if(variant>10.5){
   float drop=length(vec2(p.x/max(.1,.66-p.y*.22),p.y));
@@ -161,7 +156,7 @@ ${kind === 'decal' ? `
   float liquid=variant<8.5?d:length(vec2(p.x*.18,p.y));
   float edge=.9+sin(a0*5.+.7)*.035+sin(a0*9.-.4)*.025;
   if(liquid>edge||abs(p.x)>.995)discard;
-  float flow=abilityNoise(p*3.+vec2(abilityTime*.12,-abilityTime*.08));
+  float flow=.15+effectTile(161.,fract(uvLocal+vec2(abilityTime*.025,-abilityTime*.018))).a*.75;
   float glossy=pow(max(0.,1.-abs(p.y+p.x*.22+sin(p.x*5.+abilityTime*.4)*.08)*7.),5.);
   float meniscus=1.-smoothstep(.015,.045,abs(liquid-edge+.025));
   c=mix(vec3(.075,.013,.002),vec3(.32,.055,.004),flow*.65);
@@ -177,8 +172,11 @@ ${kind === 'decal' ? `
   }
  }
  else {if(d>1.)discard;if(variant>6.5&&abs(a0)>fract(phase)*6.283185)discard;a*=.035*(1.-smoothstep(.6,1.,d));c=vec3(.014,.009,.006);}
+ }
  ` : ''}
 ${kind === 'front' ? `
+ vec4 waveTexture=effectSequence(168.,8.,16.,phase*7.,vec2(fract(uvLocal.x*8.),uvLocal.y));
+ a*=.28+waveTexture.a*.72;
  if(phase>2.5){
   float roll=.5+.5*cos(uvLocal.y*6.283185);
   float curl=.5+.5*sin(uvLocal.x*43.9823+sin(uvLocal.x*18.8496)*1.4-abilityTime*.9);
@@ -207,28 +205,44 @@ ${kind === 'front' ? `
  }
  ` : ''}
 ${kind === 'shard' ? GRAPHIC_FRACTURE_FRAGMENT : kind === 'solid' ? GRAPHIC_SOLID_FRAGMENT : ''}
+${kind === 'shard' ? `
+ float cold=step(ink.r*1.1,ink.b);
+ vec4 crystal=effectTile(157.,uvLocal);
+ c*=mix(1.,.5+crystal.r*1.1,cold);
+ c+=ink*pow(crystal.r,4.)*.42*cold;
+ ` : ''}
 ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
  vec2 screen=screenPosition.xy/max(.001,screenPosition.w)*.5+.5;
+ ${kind === 'flame' || kind === 'smoke' ? `
+ if(softCamera.w>.5){
+  float d=texture2D(softDepth,screen).r;
+  float sceneDistance=softCamera.z>.5?softCamera.x*softCamera.y/(softCamera.y-(softCamera.y-softCamera.x)*d):mix(softCamera.x,softCamera.y,d);
+  a*=smoothstep(0.,.28,sceneDistance-viewDepth);
+ }
+ ` : ''}
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  a*=1.-actionBar*.94;
  if(a<.004)discard;gl_FragColor=vec4(c,a);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
+ ${kind !== 'spark' ? 'gl_FragColor.rgb*=gl_FragColor.a;' : ''}
 }`;
     const material = new T.ShaderMaterial({
-      uniforms: { abilityTime: { value: 0 }, map: { value: this.texture ?? null }, flash: { value: 1 } },
+      uniforms: { atlasAvailable: { value: typeof document === 'undefined' ? 1 : 0 }, softDepth: { value: this.atlas.texture }, softCamera: { value: new T.Vector4(.1, 100, 1, 0) }, abilityTime: { value: 0 }, map: { value: this.atlas.texture }, flash: { value: 1 } },
       vertexShader: vertex.replace('/* ability shape */', kind === 'shard' ? 'if(abilityPhase>.5){float seed=abilityPhase;if(seed>1.&&seed<10.&&position.y>0.)posedPosition.y*=.84+.16*sin(seed+position.x*2.1+position.z*3.7);if(seed>20.&&seed<30.)posedPosition.xz*=mix(1.,.18,max(0.,position.y));posedPosition.xz*=.91+.08*sin(seed*3.7+position.y*2.1);posedPosition.xz+=max(0.,position.y)*vec2(sin(seed)*.12,cos(seed*1.7)*.1);posedPosition.xz=clamp(posedPosition.xz,vec2(-1.),vec2(1.));}' : kind === 'front' ? 'if(abilityPhase>1.5){float a=atan(position.z,position.x);posedPosition.xz*=.88+.07*sin(a*7.)+.035*sin(a*3.+.4);posedPosition.y*=.74+.24*sin(a*5.+.7);}' : ''),
       fragmentShader: fragment,
       transparent: true,
+      premultipliedAlpha: kind !== 'spark',
       depthWrite: false,
       // Flat cards have no back/front sorting benefit; render both faces in one submission.
-      forceSinglePass: kind === 'flame' || kind === 'spark' || kind === 'smoke' || kind === 'decal',
+      forceSinglePass: kind !== 'solid' && kind !== 'shard',
       // Closed graphic constructs show their outer shell; hidden rear faces add only overdraw.
       side: kind === 'solid' || kind === 'shard' ? T.FrontSide : T.DoubleSide,
       blending: kind === 'flame' || kind === 'shard' || kind === 'smoke' || kind === 'decal' || kind === 'solid' || kind === 'ghost' || kind === 'front'
         ? T.NormalBlending : T.AdditiveBlending,
     });
     this.mesh = new T.InstancedMesh(geometry, material, capacity);
+    this.mesh.onBeforeRender = () => { material.uniforms.atlasAvailable.value = this.atlas.loaded || typeof document === 'undefined' ? 1 : 0; };
     this.mesh.name = `ability-${kind}-batch`;
     if (kind === 'decal') this.mesh.renderOrder = FRIENDLY_GROUND_ORDER;
     // Soot silhouettes the hot volume, below friendly boundaries and hostile timing fills.
@@ -240,8 +254,16 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
     root.add(this.mesh);
   }
 
+  /** Only bind a detached opaque-depth snapshot, never the active render target. */
+  setSoftDepth(texture: T.Texture | null, near = .1, far = 100, perspective = true): void {
+    const uniforms = (this.mesh.material as T.ShaderMaterial).uniforms;
+    uniforms.softDepth.value = texture ?? this.atlas.texture;
+    (uniforms.softCamera.value as T.Vector4).set(near, far, perspective ? 1 : 0, texture ? 1 : 0);
+  }
+
   begin(time = 0): void {
     this.mesh.count = 0;
+    this.coverage = 0;
     this.mesh.visible = false;
     (this.mesh.material as T.ShaderMaterial).uniforms.abilityTime.value = time;
   }
@@ -250,7 +272,16 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
     color: number, opacity = 1, rotationY = 0, rotationZ = 0, variant = 0): void {
     const i = this.mesh.count;
     if (i >= this.capacity || opacity <= 0) return;
-    const billboardDecal = this.kind === 'decal' && variant >= 11 && variant < 13;
+    if (this.camera && this.camera.matrixWorld.elements[12] === this.camera.position.x && this.camera.matrixWorld.elements[13] === this.camera.position.y && this.camera.matrixWorld.elements[14] === this.camera.position.z && (this.kind === 'flame' || this.kind === 'smoke' || this.kind === 'decal' && (variant >= 12 && variant < 13 || variant >= 200 && variant < 600))) {
+      const view = this.camera.matrixWorldInverse.elements, projection = this.camera.projectionMatrix.elements;
+      const depth = Math.max(.1, -(view[2] * x + view[6] * y + view[10] * z + view[14]));
+      const perspective = projection[15] === 0;
+      const area = Math.abs(sx * sy * projection[0] * projection[5]) / (perspective ? depth * depth : 1);
+      if (this.coverage + area > this.maxCoverage) return;
+      this.coverage += area;
+    }
+    const billboardDecal = this.kind === 'decal' && (variant >= 11 && variant < 13 || variant >= 200 && variant < 600);
+    const uprightDecal = this.kind === 'decal' && variant >= 600 && variant < 1000;
     if (this.view && (billboardDecal || this.kind === 'smoke' || this.kind === 'spark' || this.kind === 'flame')) {
       rotationY = Math.atan2(this.view.x - x, this.view.z - z);
       // Flame tongues rise vertically; tumbling the card creates paper-like shards.
@@ -264,7 +295,7 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
     matrix[offset] = c * a * sx;
     matrix[offset + 4] = -c * b * sy;
     matrix[offset + 8] = s * sz;
-    if (this.kind === 'decal' && !billboardDecal) {
+    if (this.kind === 'decal' && !billboardDecal && !uprightDecal) {
       matrix[offset + 1] = -s * a * sx;
       matrix[offset + 2] = -b * sx;
       matrix[offset + 5] = s * b * sy;
@@ -279,6 +310,16 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
       matrix[offset + 9] = 0;
       matrix[offset + 10] = c * sz;
     }
+    // Vapor and light use spherical billboards. Yaw-only cards collapse into
+    // floor-like ribbons under the steep gameplay camera; fire remains upright.
+    if (this.camera && (billboardDecal || this.kind === 'smoke' || this.kind === 'spark')) {
+      const cameraBasis = this.camera.matrixWorld.elements;
+      for (let axis = 0; axis < 3; axis++) {
+        matrix[offset + axis] = (cameraBasis[axis] * a + cameraBasis[4 + axis] * b) * sx;
+        matrix[offset + 4 + axis] = (-cameraBasis[axis] * b + cameraBasis[4 + axis] * a) * sy;
+        matrix[offset + 8 + axis] = cameraBasis[8 + axis] * sz;
+      }
+    }
     matrix[offset + 3] = matrix[offset + 7] = matrix[offset + 11] = 0;
     matrix[offset + 12] = x; matrix[offset + 13] = y; matrix[offset + 14] = z; matrix[offset + 15] = 1;
     // A fixed cache keeps repeated element colors from repeating sRGB conversion.
@@ -291,7 +332,7 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
     this.mesh.instanceColor!.setXYZ(i, this.colorValues[rgb], this.colorValues[rgb + 1], this.colorValues[rgb + 2]);
     this.alpha.setX(i, opacity);
     this.priority.setX(i, this.priorityWeight);
-    this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' || this.kind === 'front' || this.kind === 'flame' && variant >= 64 ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
+    this.phase.setX(i, this.kind === 'decal' || this.kind === 'shard' || this.kind === 'front' || ((this.kind === 'flame' || this.kind === 'smoke') && variant >= 64 || this.kind === 'spark' && variant >= 200) ? variant : Math.abs(x * 13.7 + z * 19.3 + y * 7.1) % 64);
     this.mesh.count++;
   }
 
@@ -317,7 +358,7 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
   dispose(): void {
     this.mesh.geometry.dispose();
     (this.mesh.material as T.Material).dispose();
-    this.texture?.dispose();
+    if (this.ownsAtlas) this.atlas.dispose();
     this.mesh.removeFromParent();
   }
 }

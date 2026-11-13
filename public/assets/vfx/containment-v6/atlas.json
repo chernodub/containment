@@ -1,0 +1,183 @@
+{
+  "version": 1,
+  "width": 2048,
+  "height": 2048,
+  "columns": 16,
+  "tile": 128,
+  "gutter": 2,
+  "frames": {
+    "Flame02": {
+      "first": 0,
+      "count": 64,
+      "fps": 24
+    },
+    "WispySmoke02": {
+      "first": 64,
+      "count": 64,
+      "fps": 18
+    },
+    "Explosion01": {
+      "first": 128,
+      "count": 25,
+      "fps": 24
+    },
+    "glow": {
+      "first": 153,
+      "count": 1,
+      "fps": 16
+    },
+    "ember": {
+      "first": 154,
+      "count": 1,
+      "fps": 16
+    },
+    "star": {
+      "first": 155,
+      "count": 1,
+      "fps": 16
+    },
+    "frost": {
+      "first": 156,
+      "count": 1,
+      "fps": 16
+    },
+    "crystal": {
+      "first": 157,
+      "count": 1,
+      "fps": 16
+    },
+    "crack": {
+      "first": 158,
+      "count": 1,
+      "fps": 16
+    },
+    "scorch": {
+      "first": 159,
+      "count": 1,
+      "fps": 16
+    },
+    "ring": {
+      "first": 160,
+      "count": 1,
+      "fps": 16
+    },
+    "caustic": {
+      "first": 161,
+      "count": 1,
+      "fps": 16
+    },
+    "hex": {
+      "first": 162,
+      "count": 1,
+      "fps": 16
+    },
+    "scan": {
+      "first": 163,
+      "count": 1,
+      "fps": 16
+    },
+    "snow": {
+      "first": 164,
+      "count": 1,
+      "fps": 16
+    },
+    "shard": {
+      "first": 165,
+      "count": 1,
+      "fps": 16
+    },
+    "mist": {
+      "first": 168,
+      "count": 8,
+      "fps": 16
+    },
+    "bolt": {
+      "first": 176,
+      "count": 8,
+      "fps": 24
+    },
+    "kenney-spark": {
+      "first": 184,
+      "count": 1,
+      "fps": 16
+    },
+    "kenney-star": {
+      "first": 185,
+      "count": 1,
+      "fps": 16
+    },
+    "kenney-smoke": {
+      "first": 186,
+      "count": 1,
+      "fps": 16
+    },
+    "kenney-ring": {
+      "first": 187,
+      "count": 1,
+      "fps": 16
+    }
+  },
+  "sources": [
+    {
+      "name": "Flame02",
+      "file": "public/assets/vfx/Flame02.png",
+      "sha256": "0778641cc0a46344393b1215ccd2594305f641588d021faad1cb3ecac1080319",
+      "license": "CC0-1.0",
+      "author": "Thomas Iche / Unity Labs Paris",
+      "source": "https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks"
+    },
+    {
+      "name": "WispySmoke02",
+      "file": "public/assets/vfx/WispySmoke02.png",
+      "sha256": "b12cadfc310d6eddd63163b4cd44c8fb8886e0caf9c4d9a5e4cc9fd49ad75d50",
+      "license": "CC0-1.0",
+      "author": "Thomas Iche / Unity Labs Paris",
+      "source": "https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks"
+    },
+    {
+      "name": "Explosion01",
+      "file": "public/assets/vfx/Explosion01.png",
+      "sha256": "37e7ec22b45fc25128d73893dd6ed42f0741939fbcb229d3f40c77c6200b6707",
+      "license": "CC0-1.0",
+      "author": "Thomas Iche / Unity Labs Paris",
+      "source": "https://unity.com/blog/engine-platform/free-vfx-image-sequences-flipbooks"
+    },
+    {
+      "name": "kenney-spark",
+      "file": "tools/assets-src/kenney-mirror-v6/extracted/kenney-particle-pack-master/addons/kenney_particle_pack/spark_01.png",
+      "sha256": "ca5e7eac772d5af176f0d45be34f416908859bf28697c31f3ec7f34609919f53",
+      "license": "CC0-1.0",
+      "author": "Kenney",
+      "source": "https://kenney.nl/assets/particle-pack"
+    },
+    {
+      "name": "kenney-star",
+      "file": "tools/assets-src/kenney-mirror-v6/extracted/kenney-particle-pack-master/addons/kenney_particle_pack/star_04.png",
+      "sha256": "76a6414a7689b9e7a86095cb0085a3a9f078e2e3c361abddf70d3117eba226b5",
+      "license": "CC0-1.0",
+      "author": "Kenney",
+      "source": "https://kenney.nl/assets/particle-pack"
+    },
+    {
+      "name": "kenney-smoke",
+      "file": "tools/assets-src/kenney-mirror-v6/extracted/kenney-particle-pack-master/addons/kenney_particle_pack/smoke_01.png",
+      "sha256": "89df665bb2e9a021edad2a9077d2651c44e6c6cd28f3fd38f800c41a5febd2a2",
+      "license": "CC0-1.0",
+      "author": "Kenney",
+      "source": "https://kenney.nl/assets/particle-pack"
+    },
+    {
+      "name": "kenney-ring",
+      "file": "tools/assets-src/kenney-mirror-v6/extracted/kenney-particle-pack-master/addons/kenney_particle_pack/circle_05.png",
+      "sha256": "616c989de83cd805c80ed78f692c5a4cb754151edbb1d3550f20cc3a2857b706",
+      "license": "CC0-1.0",
+      "author": "Kenney",
+      "source": "https://kenney.nl/assets/particle-pack"
+    }
+  ],
+  "output": {
+    "file": "elements.png",
+    "bytes": 2759007,
+    "sha256": "44669a02d6af2f482c509c8240c5e246b5382ed051d0d26806929f52fa6e5e0b"
+  }
+}
