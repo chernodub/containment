@@ -1,74 +1,79 @@
 import * as T from 'three';
-
 /** Stable presentation variation; independent of frame order and simulation RNG. */
 export function authoredVariation(seed: number, lane = 0): number {
-  const n = Math.sin(seed * 12.9898 + lane * 78.233) * 43758.5453;
-  return n - Math.floor(n);
+    const n = Math.sin(seed * 12.9898 + lane * 78.233) * 43758.5453;
+    return n - Math.floor(n);
 }
-
 /** The hot beat lasts two to three 60Hz frames, then the body rapidly takes over. */
 export function impactBeat(age: number): number {
-  return age < .05 ? 1 : Math.max(0, 1 - (age - .05) / .12);
+    return age < .05 ? 1 : Math.max(0, 1 - (age - .05) / .12);
 }
-
 /** Clipped armor section, with broad top/side/bevel planes instead of a bare cube. */
 export function createArmorSection(): T.BufferGeometry {
-  const section = new T.Shape();
-  section.moveTo(-.5, -.34); section.lineTo(-.34, -.5);
-  section.lineTo(.34, -.5); section.lineTo(.5, -.34);
-  section.lineTo(.5, .34); section.lineTo(.34, .5);
-  section.lineTo(-.34, .5); section.lineTo(-.5, .34); section.closePath();
-  const g = new T.ExtrudeGeometry(section, { depth: .84, bevelEnabled: true, bevelSegments: 1, steps: 1, bevelSize: .04, bevelThickness: .08, curveSegments: 1 });
-  g.translate(0, 0, -.42);
-  // Normalize the public unit bounds so existing exact footprint scales stay valid.
-  g.computeBoundingBox();
-  const box = g.boundingBox!, size = box.getSize(new T.Vector3()), center = box.getCenter(new T.Vector3());
-  g.translate(-center.x, -center.y, -center.z); g.scale(1 / size.x, 1 / size.y, 1 / size.z);
-  const positions = g.getAttribute('position'), normals = g.getAttribute('normal'), uv = g.getAttribute('uv');
-  for (let i = 0; i < positions.count; i++) {
-    const nx = Math.abs(normals.getX(i)), ny = Math.abs(normals.getY(i)), nz = Math.abs(normals.getZ(i));
-    uv.setXY(i, (nx > ny && nx > nz ? positions.getZ(i) : positions.getX(i)) + .5,
-      (ny > nx && ny > nz ? positions.getZ(i) : positions.getY(i)) + .5);
-  }
-  g.computeBoundingBox();
-  return g;
+    const section = new T.Shape();
+    section.moveTo(-.5, -.34);
+    section.lineTo(-.34, -.5);
+    section.lineTo(.34, -.5);
+    section.lineTo(.5, -.34);
+    section.lineTo(.5, .34);
+    section.lineTo(.34, .5);
+    section.lineTo(-.34, .5);
+    section.lineTo(-.5, .34);
+    section.closePath();
+    const g = new T.ExtrudeGeometry(section, { depth: .84, bevelEnabled: true, bevelSegments: 1, steps: 1, bevelSize: .04, bevelThickness: .08, curveSegments: 1 });
+    g.translate(0, 0, -.42);
+    // Normalize the public unit bounds so existing exact footprint scales stay valid.
+    g.computeBoundingBox();
+    const box = g.boundingBox!, size = box.getSize(new T.Vector3()), center = box.getCenter(new T.Vector3());
+    g.translate(-center.x, -center.y, -center.z);
+    g.scale(1 / size.x, 1 / size.y, 1 / size.z);
+    const positions = g.getAttribute('position'), normals = g.getAttribute('normal'), uv = g.getAttribute('uv');
+    for (let i = 0; i < positions.count; i++) {
+        const nx = Math.abs(normals.getX(i)), ny = Math.abs(normals.getY(i)), nz = Math.abs(normals.getZ(i));
+        uv.setXY(i, (nx > ny && nx > nz ? positions.getZ(i) : positions.getX(i)) + .5, (ny > nx && ny > nz ? positions.getZ(i) : positions.getY(i)) + .5);
+    }
+    g.computeBoundingBox();
+    return g;
 }
-
 /** A fractured block with unequal planes and a broken crown; no pyramid apex. */
 export function createFractureMass(): T.BufferGeometry {
-  const bottom = [[-.9, -1, -.76], [.68, -1, -.92], [1, -1, .43], [.17, -1, 1], [-.87, -1, .62]];
-  const top = [[-.66, .72, -.57], [.39, 1, -.73], [.83, .48, .29], [.12, .87, .76], [-.7, .35, .42]];
-  const vertices: number[] = [], uv: number[] = [];
-  const triangle = (a: number[], b: number[], c: number[]) => {
-    vertices.push(...a, ...c, ...b); uv.push(0, 0, 1, 0, .5, 1);
-  };
-  for (let i = 0; i < 5; i++) {
-    const n = (i + 1) % 5;
-    triangle(bottom[i], bottom[n], top[n]); triangle(bottom[i], top[n], top[i]);
-  }
-  for (let i = 1; i < 4; i++) { triangle(top[0], top[i], top[i + 1]); triangle(bottom[0], bottom[i + 1], bottom[i]); }
-  const g = new T.BufferGeometry();
-  g.setAttribute('position', new T.Float32BufferAttribute(vertices, 3));
-  g.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
-  g.computeVertexNormals(); g.computeBoundingBox();
-  return g;
+    const bottom = [[-.9, -1, -.76], [.68, -1, -.92], [1, -1, .43], [.17, -1, 1], [-.87, -1, .62]];
+    const top = [[-.66, .72, -.57], [.39, 1, -.73], [.83, .48, .29], [.12, .87, .76], [-.7, .35, .42]];
+    const vertices: number[] = [], uv: number[] = [];
+    const triangle = (a: number[], b: number[], c: number[]) => {
+        vertices.push(...a, ...c, ...b);
+        uv.push(0, 0, 1, 0, .5, 1);
+    };
+    for (let i = 0; i < 5; i++) {
+        const n = (i + 1) % 5;
+        triangle(bottom[i], bottom[n], top[n]);
+        triangle(bottom[i], top[n], top[i]);
+    }
+    for (let i = 1; i < 4; i++) {
+        triangle(top[0], top[i], top[i + 1]);
+        triangle(bottom[0], bottom[i + 1], bottom[i]);
+    }
+    const g = new T.BufferGeometry();
+    g.setAttribute('position', new T.Float32BufferAttribute(vertices, 3));
+    g.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
+    g.computeVertexNormals();
+    g.computeBoundingBox();
+    return g;
 }
-
 /** One authored marine contour: helmet, pauldron, aimed weapon, split stride. */
 export function createMarineEcho(): T.BufferGeometry {
-  const points = [
-    [-.10,.50],[.08,.50],[.13,.43],[.12,.33],[.27,.27],[.28,.18],
-    [.48,.18],[.50,.13],[.47,.09],[.23,.09],[.18,.03],[.15,-.12],
-    [.28,-.41],[.25,-.49],[.11,-.50],[-.02,-.19],[-.10,-.45],
-    [-.21,-.50],[-.30,-.46],[-.25,-.34],[-.21,-.08],[-.24,.08],
-    [-.34,.11],[-.32,.26],[-.18,.31],[-.15,.41],
-  ];
-  const shape = new T.Shape(points.map(([x,y]) => new T.Vector2(x,y)));
-  const g = new T.ExtrudeGeometry(shape, { depth: .16, bevelEnabled: false, steps: 1, curveSegments: 1 });
-  g.translate(0, 0, -.08);
-  return g;
+    const points = [
+        [-.10, .50], [.08, .50], [.13, .43], [.12, .33], [.27, .27], [.28, .18],
+        [.48, .18], [.50, .13], [.47, .09], [.23, .09], [.18, .03], [.15, -.12],
+        [.28, -.41], [.25, -.49], [.11, -.50], [-.02, -.19], [-.10, -.45],
+        [-.21, -.50], [-.30, -.46], [-.25, -.34], [-.21, -.08], [-.24, .08],
+        [-.34, .11], [-.32, .26], [-.18, .31], [-.15, .41],
+    ];
+    const shape = new T.Shape(points.map(([x, y]) => new T.Vector2(x, y)));
+    const g = new T.ExtrudeGeometry(shape, { depth: .16, bevelEnabled: false, steps: 1, curveSegments: 1 });
+    g.translate(0, 0, -.08);
+    return g;
 }
-
 /** Three deliberate combustion values; silhouette bites move without boiling noise. */
 export const GRAPHIC_FLAME_FRAGMENT = `
  float t=uvLocal.y;float jet=step(100.,phase);float seed=phase-jet*100.;
@@ -92,7 +97,6 @@ export const GRAPHIC_FLAME_FRAGMENT = `
  c=mix(c,vec3(2.8,1.9,.34),hot*clamp(.55+ink.g,.55,1.));
  a*=coverage*(.90+.10*body)*(.35+.65*flash);
 `;
-
 /** Solid-only crease/edge treatment. Gases and electrical light never use this. */
 export const GRAPHIC_SOLID_FRAGMENT = `
  float lightBand=dot(normalize(facetNormal),normalize(vec3(-.3,.7,.6)));
@@ -103,9 +107,7 @@ export const GRAPHIC_SOLID_FRAGMENT = `
  float inkEdge=1.-smoothstep(0.,edgeWidth,edge);
  c=mix(c,vec3(.018,.033,.043),inkEdge*.62);
 `;
-
 /** Fractured solids expose real triangular planes; use their barycentric edge distance. */
 export const GRAPHIC_FRACTURE_FRAGMENT = GRAPHIC_SOLID_FRAGMENT
-  .replace('float edge=min(uvLocal.x, min(uvLocal.y,min(1.-uvLocal.x,1.-uvLocal.y)));',
-    'float edge=min(uvLocal.y,min(1.-uvLocal.x-uvLocal.y*.5,uvLocal.x-uvLocal.y*.5));')
-  .replace('inkEdge*.62', 'inkEdge*.84');
+    .replace('float edge=min(uvLocal.x, min(uvLocal.y,min(1.-uvLocal.x,1.-uvLocal.y)));', 'float edge=min(uvLocal.y,min(1.-uvLocal.x-uvLocal.y*.5,uvLocal.x-uvLocal.y*.5));')
+    .replace('inkEdge*.62', 'inkEdge*.84');

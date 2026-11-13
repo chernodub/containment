@@ -215,7 +215,8 @@ ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
       depthWrite: false,
       // Flat cards have no back/front sorting benefit; render both faces in one submission.
       forceSinglePass: kind === 'flame' || kind === 'spark' || kind === 'smoke' || kind === 'decal',
-      side: T.DoubleSide,
+      // Closed graphic constructs show their outer shell; hidden rear faces add only overdraw.
+      side: kind === 'solid' || kind === 'shard' ? T.FrontSide : T.DoubleSide,
       blending: kind === 'flame' || kind === 'shard' || kind === 'smoke' || kind === 'decal' || kind === 'solid' || kind === 'ghost' || kind === 'front'
         ? T.NormalBlending : T.AdditiveBlending,
     });
