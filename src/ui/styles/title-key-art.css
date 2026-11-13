@@ -27,7 +27,8 @@
 #overlay .asset-loading-art .title-key-art {opacity:.35;}
 #overlay .asset-loading-art .asset-loading {position:relative;}
 @media(prefers-reduced-motion:reduce) {
- .title-key-art :is(g,path) {animation:none!important;transform:none!important;}
+ .title-key-art :is(g,path) {animation:none!important;}
+ .title-key-art :is(.ka-plane,.ka-eyes,.ka-haze,.ka-frost) {transform:none!important;}
 }
 /* Drawer refreshes retain the settled composition instead of replaying the entry. */
 .key-art-revealed .ka-emergency {animation:ka-failing-light 11s linear infinite;}

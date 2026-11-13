@@ -34,7 +34,7 @@
 /* CONTAINMENT owns the wordmark; DEPTH is its compact expedition tag. */
 #overlay .title-screen {width:100%;height:100%;position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;padding:48px clamp(60px,7vw,150px);}
 #overlay .title-screen::before {content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(0deg,#02080ed9,transparent 30%,transparent 70%,#02080eaa),repeating-linear-gradient(0deg,transparent 0 79px,#9fe8ff04 79px 80px);}
-#overlay .title-copy {position:relative;z-index:1;width:min(760px,38vw);}
+#overlay .title-copy {position:relative;z-index:1;width:min(860px,38vw);}
 #overlay .edition {display:flex;align-items:center;color:#b9d0da;gap:12px;margin-bottom:32px;}
 #overlay .edition i {width:6px;height:6px;background:#ff7955;box-shadow:0 0 14px #ff5a3688;}
 #overlay .title-screen h1 {margin:0;font-family:var(--font-display);font-weight:600;text-transform:uppercase;line-height:.88;letter-spacing:-.02em;}

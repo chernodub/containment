@@ -1,3 +1,4 @@
+import {U6_SCENARIOS} from './u6-scenarios.mjs';
 import {G4_FORM_SCENARIOS} from './g4-forms.mjs';
 import {G4_SCENARIOS} from './g4-scenarios.mjs';
 import {I4_SCENARIOS} from './i4-scenarios.mjs';
@@ -72,7 +73,7 @@ function integrationKitingSetup(tier){
 }
 
 export const SCENARIOS=[
- ...G4_SCENARIOS,...G4_FORM_SCENARIOS,
+ ...U6_SCENARIOS,...G4_SCENARIOS,...G4_FORM_SCENARIOS,
  ...I4_SCENARIOS,...V2_SCENARIOS,...V3_SCENARIOS,
  ...ABILITY_SCENARIOS,DESKTOP_ABILITY_SCENARIO,INTEGRATION_SETTINGS_SCENARIO,
  {id:'title',state:'menu',required:['.title-screen','#start'],setup:async()=>{const d=window.__containmentDebug;await d.startRun();d.game.menu();d.refresh();}},

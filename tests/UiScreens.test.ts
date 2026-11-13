@@ -499,7 +499,7 @@ test('menu shortcuts follow physical positions and retain native modifier shortc
   } finally {await page.close();}
 });
 
-test.each([[1280,720],[1920,1080]])('authored key art covers either renderer contract while keeping the front door in the left 45 percent at %i × %i',async(width,height)=>{
+test.each([[1280,720],[1920,1080],[3440,1440]])('authored key art covers either renderer contract while keeping the front door in the left 45 percent at %i × %i',async(width,height)=>{
   const page=await mount(width,height);
   try {
     expect(await page.locator('.title-key-art').count()).toBe(1);
@@ -654,5 +654,28 @@ test.each([[1280,720],[1920,1080]])('reduced-motion aftermath fills the viewport
     await page.locator('.result-details>summary').focus();await page.keyboard.press('Enter');
     expect(await page.locator('[data-stat]').count()).toBe(16);
     expect(await page.locator('#start').isVisible()).toBe(true);
+  } finally {await page.close();}
+});
+
+test('title motion is decorative, reduced motion retains authored geometry, and drawers do not replay entry', async()=>{
+  const page=await mount(1920,1080);
+  try {
+    await page.mouse.move(1700,700);
+    const plane=page.locator('.ka-marine');
+    expect(await plane.evaluate(node=>getComputedStyle(node).transform)).not.toBe('none');
+    const pod=page.locator('use[href="#ka-pod"]').last();
+    const before=await pod.evaluate(node=>getComputedStyle(node).transform);
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.waitForFunction(()=>getComputedStyle(document.querySelector('.ka-marine')!).transform==='none');
+    expect(await plane.evaluate(node=>getComputedStyle(node).transform)).toBe('none');
+    expect(await pod.evaluate(node=>getComputedStyle(node).transform)).toEqual(before);
+    expect(await page.locator('.title-key-art').evaluate(node=>node.getAnimations({subtree:true}).length)).toBe(0);
+    await page.mouse.move(200,100);
+    expect(await plane.evaluate(node=>getComputedStyle(node).transform)).toBe('none');
+    await page.locator('#settings').click();
+    expect(await page.locator('.title-key-art').getAttribute('class')).toContain('key-art-revealed');
+    await page.keyboard.press('Escape');
+    expect(await page.locator('#settings').evaluate(node=>node===document.activeElement)).toBe(true);
+    expect(await page.locator('.title-key-art').getAttribute('class')).toContain('key-art-revealed');
   } finally {await page.close();}
 });
