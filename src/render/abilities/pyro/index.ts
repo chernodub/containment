@@ -1,3 +1,4 @@
+import { Vector3, type Object3D } from 'three';
 import type { AbilityEvent, AbilityZoneSnapshot } from '../../../game/abilities/contract';
 import { ABILITY_CATALOG } from '../../../game/abilities/catalog';
 import type { ElementKit } from '../ElementKit';
@@ -42,6 +43,8 @@ class PyroPresentation implements AbilityPresentation {
   private printCursor = 0;
   private printClock = 0;
   private disposed = false;
+  private muzzle?: Object3D;
+  private readonly source = new Vector3();
 
   constructor(private readonly kit: ElementKit) {}
 
@@ -143,7 +146,7 @@ class PyroPresentation implements AbilityPresentation {
       if (!p.live) continue;
       p.age += dt;
       if (p.age >= p.life) { p.live = false; continue; }
-      if (p.kind === 'cone') this.cone(p, emit);
+      if (p.kind === 'cone') this.cone(p, emit, frame);
       else if (p.kind === 'lob') this.lob(p, emit);
       else if (p.kind === 'exhaust') this.exhaust(p, frame, emit);
       else this.ignition(p);
@@ -189,7 +192,7 @@ class PyroPresentation implements AbilityPresentation {
     kit.impact();
   }
 
-  private cone(p: Transient, emit: boolean): void {
+  private cone(p: Transient, emit: boolean, frame: AbilityFrame): void {
     const kit = this.kit, grow = Math.min(1, .6 + p.age / .05);
     const fade = Math.max(0, 1 - Math.max(0, p.age - .09) / .28), hot = impactBeat(p.age);
     kit.sustain(p.age + .20);
@@ -207,14 +210,34 @@ class PyroPresentation implements AbilityPresentation {
     // Hot nozzle is attached to the discharge point, with a thin velocity-stretched core.
     kit.impact();
     const c = Math.cos(p.angle), s = Math.sin(p.angle);
-    kit.flowFlame(p.x + c * .3, .95, p.z + s * .3,
-      p.x + c * 1.8, .95, p.z + s * 1.8, .14 + hot * .055, 7, fade * .96, true);
+    if (!this.muzzle || !this.visibleSocket(this.muzzle, frame.marine)) this.muzzle = frame.marine ? this.findMuzzle(frame.marine) : undefined;
+    if (this.muzzle) { frame.marine?.updateWorldMatrix(true, false); this.muzzle.getWorldPosition(this.source); }
+    else this.source.set(p.x + c * .3, .95, p.z + s * .3);
+    kit.flowFlame(this.source.x, this.source.y, this.source.z,
+      this.muzzle ? this.source.x + c * 1.05 : p.x + c * 1.8, this.source.y,
+      this.muzzle ? this.source.z + s * 1.05 : p.z + s * 1.8,
+      .14 + hot * .055, 7, fade * .96, true);
     if (emit && !kit.low) {
       const a = p.angle + Math.sin(p.age * 43) * p.arc * .3, r = p.range * grow * .82;
       kit.mote('smoke', p.x + Math.cos(a) * r, .8, p.z + Math.sin(a) * r,
         Math.cos(a) * 1.5, .55, Math.sin(a) * 1.5, .5, .8, SOOT);
       kit.mote('spark', p.x + c, .65, p.z + s, c * 7, .3, s * 7, .035, .6, CORE);
     }
+  }
+
+  private visibleSocket(socket: Object3D, root?: Object3D): boolean {
+    for (let node: Object3D | null = socket; node; node = node.parent) {
+      if (!node.visible) return false;
+      if (node === root) return true;
+    }
+    return false;
+  }
+
+  private findMuzzle(node: Object3D): Object3D | undefined {
+    if (!node.visible) return undefined;
+    if (node.name === 'muzzle') return node;
+    for (const child of node.children) { const socket = this.findMuzzle(child); if (socket) return socket; }
+    return undefined;
   }
 
   private lob(p: Transient, emit: boolean): void {
@@ -386,7 +409,7 @@ class PyroPresentation implements AbilityPresentation {
   clear(): void {
     for (const p of this.effects) p.live = false;
     for (const print of this.prints) print.live = false;
-    this.next = 0; this.emission = 0; this.shimmer = 0; this.printCursor = 0; this.printClock = 0;
+    this.next = 0; this.emission = 0; this.shimmer = 0; this.printCursor = 0; this.printClock = 0; this.muzzle = undefined;
   }
 
   dispose(): void {

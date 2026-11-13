@@ -75,6 +75,21 @@ describe('Pyro presentation lifecycle and readability', () => {
     dispose();
   });
 
+  it('attaches the pressure throat to the animated visible weapon muzzle and follows weapon switching', () => {
+    const { scene, kit, fx, frame, step, dispose } = setup(), flow = vi.spyOn(kit, 'flowFlame');
+    const marine = new T.Group(), weaponA = new T.Group(), weaponB = new T.Group();
+    const a = new T.Object3D(), b = new T.Object3D(); a.name = b.name = 'muzzle';
+    marine.position.set(2, 0, 3); a.position.set(.8, 1.3, .1); b.position.set(.6, 1.15, -.2);
+    weaponA.add(a); weaponB.add(b); weaponB.visible = false; marine.add(weaponA, weaponB); scene.add(marine);
+    frame.marine = marine; fx.event(event({ angle: 0 }), 64, 96); step(.03);
+    expect(flow.mock.lastCall!.slice(0, 3)).toEqual([2.8, 1.3, 3.1]);
+    a.position.y = 1.4; step(0); expect(flow.mock.lastCall![1]).toBe(1.4);
+    weaponA.visible = false; weaponB.visible = true; step(0);
+    expect(flow.mock.lastCall!.slice(0, 3)).toEqual([2.6, 1.15, 2.8]);
+    expect(flow.mock.lastCall![3]).toBeCloseTo(3.65);
+    fx.clear(); step(0); expect(kit.batches.flame.mesh.count).toBe(0); dispose();
+  });
+
   it('hits hot for three frames, then collapses to shaped aftermath without extending the hit cone', () => {
     const { kit, fx, step, dispose } = setup(), light = vi.spyOn(kit, 'lightAt');
     fx.event(event({ length: 320, arcRadians: 1.4 }), 64, 96);

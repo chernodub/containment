@@ -83,6 +83,17 @@ describe('V3 shared spectacle', () => {
   });
 
 
+  it('keeps directed flame silhouettes seeded while their source moves and shares storm vapor with the decal draw', () => {
+    const k = new ElementKit(new T.Group()); k.begin(0);
+    k.directedFlame(1, 1, 2, .3, 1.4, .5, .7, 9); k.end();
+    const phase = k.batches.flame.mesh.geometry.getAttribute('abilityPhase').getX(0);
+    k.begin(0); k.directedFlame(7, 1, 9, .3, 1.4, .5, .7, 9); k.stormWisp(2, .7, 3, .6, .5, 4, .5); k.end();
+    expect(k.batches.flame.mesh.geometry.getAttribute('abilityPhase').getX(0)).toBe(phase);
+    expect(k.batches.decal.mesh.count).toBe(1); expect(k.batches.front.mesh.count).toBe(0);
+    const variant = k.batches.decal.mesh.geometry.getAttribute('abilityPhase').getX(0);
+    expect(variant).toBeGreaterThanOrEqual(12); expect(variant).toBeLessThan(13); k.dispose();
+  });
+
   it('bounds curved weather strokes without another mesh, texture or fullscreen layer', () => {
     const root = new T.Group(),k = new ElementKit(root),inventory=k.root.children.slice();k.begin(0);k.sustain();
     k.gust(2,3,1.8,.7,.4,7,.4);k.end();expect(k.root.children).toEqual(inventory);

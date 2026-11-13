@@ -103,3 +103,9 @@ export const GRAPHIC_SOLID_FRAGMENT = `
  float inkEdge=1.-smoothstep(0.,edgeWidth,edge);
  c=mix(c,vec3(.018,.033,.043),inkEdge*.62);
 `;
+
+/** Fractured solids expose real triangular planes; use their barycentric edge distance. */
+export const GRAPHIC_FRACTURE_FRAGMENT = GRAPHIC_SOLID_FRAGMENT
+  .replace('float edge=min(uvLocal.x, min(uvLocal.y,min(1.-uvLocal.x,1.-uvLocal.y)));',
+    'float edge=min(uvLocal.y,min(1.-uvLocal.x-uvLocal.y*.5,uvLocal.x-uvLocal.y*.5));')
+  .replace('inkEdge*.62', 'inkEdge*.84');

@@ -293,7 +293,7 @@ export class ElementKit {
             const seed = i * 3.731 + .71, v = authoredVariation(seed);
             const spread = i === 0 ? 0 : i === 1 ? .06 : i === 2 ? -.27 : i === 3 ? .29 : -.18;
             const a = angle + spread * arc;
-            const start = i === 0 ? .035 : i === 1 ? .52 : i === 2 ? .28 : i === 3 ? .4 : .62;
+            const start = i === 0 ? .075 : i === 1 ? .52 : i === 2 ? .28 : i === 3 ? .4 : .62;
             const end = i === 0 ? .8 : i === 1 ? .97 : i === 2 ? .7 : i === 3 ? .88 : .89;
             const throat = radius * (i === 0 ? .10 : i === 1 ? .18 : i === 2 ? .13 : i === 3 ? .14 : .10) * (.94 + v * .08);
             this.flowFlame(x + Math.cos(a) * radius * start, .82 + i * .035, z + Math.sin(a) * radius * start,
@@ -348,7 +348,7 @@ export class ElementKit {
     }
     /** Soft perimeter vapor, sharing the prepared ground/aftermath draw as a billboard variant. */
     stormWisp(x: number, y: number, z: number, halfWidth: number, halfHeight: number, seed: number, opacity: number): void {
-        this.draw('decal', x, y, z, halfWidth, halfHeight, 1, 0x8cbccd, opacity, 0, 0,
+        this.draw('decal', x, y, z, halfWidth, halfHeight, 1, 0x7fd6ff, opacity, 0, 0,
             12 + authoredVariation(seed, 5) * .8);
     }
     /** Solid-looking faceted translucent column, with a narrow luminous internal vein. */

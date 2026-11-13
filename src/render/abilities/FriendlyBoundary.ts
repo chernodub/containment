@@ -35,6 +35,7 @@ export class FriendlyBoundaryBatch extends TelegraphBatch {
     this.mesh.geometry.setAttribute('coldDominance', this.dominance);
     const material = this.mesh.material as T.ShaderMaterial;
     material.name = 'friendly-ability-boundary';
+    material.forceSinglePass = true;
     material.vertexShader = 'attribute float boundaryCapsule; attribute vec3 coldDominance; varying float capsuleRatio; varying vec3 cold; varying vec2 boundaryWorld;\n' + material.vertexShader.replace('void main(){', 'void main(){capsuleRatio=boundaryCapsule;cold=coldDominance;boundaryWorld=(modelMatrix*instanceMatrix*vec4(position,1.)).xz;');
     material.userData.friendlyBoundary = true;
     material.uniforms.boundaryTime = { value: 0 };

@@ -242,8 +242,8 @@ class CryoPresentation implements AbilityPresentation {
       const a = i * TAU / wisps + time * .19 + (variation - .5) * .14;
       const halfWidth = Math.min(radius * .075, .48 + variation * .23);
       const r = radius - halfWidth * 1.45;
-      k.stormWisp(x + Math.cos(a) * r, .36 + variation * .25, z + Math.sin(a) * r,
-        halfWidth, .23 + variation * .13, seed, fade * (.35 + variation * .13));
+      k.stormWisp(x + Math.cos(a) * r, .52 + variation * .18, z + Math.sin(a) * r,
+        halfWidth, .42 + variation * .20, seed, fade * (.46 + variation * .12));
     }
     // Snow follows the same circulation as the low mist, rather than a field of unrelated flecks.
     for (let i = 0; i < count; i++) {

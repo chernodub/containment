@@ -1,6 +1,6 @@
 import * as T from 'three';
 import { FRIENDLY_GROUND_ORDER } from './FriendlyBoundary';
-import { createArmorSection, createFractureMass, createMarineEcho, GRAPHIC_FLAME_FRAGMENT, GRAPHIC_SOLID_FRAGMENT } from './GraphicLanguage';
+import { createArmorSection, createFractureMass, createMarineEcho, GRAPHIC_FLAME_FRAGMENT, GRAPHIC_SOLID_FRAGMENT, GRAPHIC_FRACTURE_FRAGMENT } from './GraphicLanguage';
 
 export type Primitive = 'shard' | 'spark' | 'smoke' | 'flame' | 'solid' | 'ghost' | 'decal' | 'front';
 const vertex = `
@@ -198,7 +198,7 @@ ${kind === 'front' ? `
  a*=vapor*mix(.2+ridge*.65,.6,dusty);c*=mix(1.2+ridge*4.*flash,.65+roll*.4,dusty);
  }
  ` : ''}
-${kind === 'shard' || kind === 'solid' ? GRAPHIC_SOLID_FRAGMENT : ''}
+${kind === 'shard' ? GRAPHIC_FRACTURE_FRAGMENT : kind === 'solid' ? GRAPHIC_SOLID_FRAGMENT : ''}
 ${kind === 'ghost' ? 'c*=1.15; a*=.78;' : ''}
  vec2 screen=screenPosition.xy/max(.001,screenPosition.w)*.5+.5;
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));

@@ -39,3 +39,9 @@ Fix: one fractured ice waist plus three unequal crown masses, per-seed crown def
 ### Benchmark protocol
 
 The first default benchmark overlapped G5/G6 browsers and was stopped; its log is retained as rejected timing evidence. At the clean process check there were no other benchmark/capture/smoke processes. Matched native cohort uses Relay Racks (scan heaviest) and Swarm Junction (integration median inventory room), all4 rigs × both tiers × one20s trial, with all raw host load retained. This is a bounded acceptance cohort, not broad hardware certification. A later run must match rooms/times and retain all misses. Baseline observation so far: native frame p50=16.7ms, p95≈18ms, zero combat programs. No CPU/GPU certification is inferred from PNG capture timings.
+
+### Round 3 — 7e6fa84 / `v5-round3`
+
+49 native frames/7 sheets, errors[]/failures[], zero compile guards. Inspected Flashfire/Meltdown, bright/dark full Cryo/Pyro, and native oblique Glacier, plus exact480 reductions. The waist and three unequal crowns give Glacier a connected cover silhouette. The calm storm eye is substantially clearer; the first vapor version is now too quiet at thumbnail scale. Flashfire’s downstream mass/early actor yield improves full-kit composition but its hot throat is still a manual source offset. Meltdown now has heated armor plus the upper silhouette, though its procedural flame contour remains simpler than bespoke animation.
+
+Final fixes: taller, bluer perimeter vapor without expanding its footprint or adding a draw; explicit thin barycentric fracture ink on ice/debris; actual visible muzzle attachment with weapon-switch/animation coverage for Flashfire. Single-pass the flat friendly boundary as well as flat effect cards; solid constructs keep their existing two-sided transparency handling. Final full16×bright/dark capture follows these fixes. No simulation/UI/actor/world files changed.

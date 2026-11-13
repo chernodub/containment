@@ -15,6 +15,7 @@ describe('friendly ability readability contracts', () => {
       if (node.name === 'ground-telegraphs') {
         const material = node.material as T.ShaderMaterial;
         expect(material.userData.friendlyBoundary).toBe(true);
+        expect(material.forceSinglePass).toBe(true);
         expect(material.fragmentShader).toContain('float dash=');
         expect(material.fragmentShader).toContain('float tick=');
         expect(material.fragmentShader).not.toContain('filled');
