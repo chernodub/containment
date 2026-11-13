@@ -30,7 +30,7 @@ function selected(name:string,family:string){
 function fitSkin(root:T.Object3D,bones:T.Bone[]){
  const fits=new Map(bones.map(b=>[b,{bounds:new T.Box3(),origin:b.getWorldPosition(new T.Vector3()),inverseRotation:b.getWorldQuaternion(new T.Quaternion()).normalize().invert()}]));
  root.traverse(o=>{
-  if(o instanceof T.Mesh&&!(o instanceof T.SkinnedMesh)&&o.name.endsWith('-identity')){
+  if(o instanceof T.Mesh&&!(o instanceof T.SkinnedMesh)&&(o.name==='brute-identity'||o.name==='stalker-identity')){
    // Authored rigid anatomy follows its nearest simulated torso just like a
    // weighted plate. Fit visible corpse pieces so broad shields/blades cannot
    // penetrate the deck while their source skin remains correctly supported.
