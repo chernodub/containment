@@ -772,3 +772,30 @@ the unchanged edge-lane V2 timelines: cleared initial enemies (native reinforcem
 atlas readiness wait, 650ms after native activation, fatal new-program guard.
 They are staged silhouette inspections, not combat, population or timing proof.
 The selected native mark and boundary clearance are retained in g4DangerProof.
+
+## I10 wave-6 acceptance evidence
+
+Use a frozen production directory with its exact `SOURCE_SHA`; pass matching
+`--dist` / `--dist-source-sha` to capture, loading and benchmark commands. The
+`i10-run.mjs <label> <command> ...` wrapper preserves the complete log, exit,
+wall time and actual host load before/after. Run benchmark browsers alone.
+
+- `i10-license-audit.mjs` rehashes all shipped CC0 kit/atlas outputs and inventories.
+- `i10-loading.mjs --dist=<frozen> --dist-source-sha=<sha> --out=<json>` compares native cold-title requests/served bytes with the reconstructed baseline, then checks the first native Start hold. Completed-body cancellation notices remain separate from incomplete requests; blobs are internal decodes, not extra HTTP requests.
+- `i10-capture.mjs --label=<prefix> --width=1920 --height=1080 --dist=<frozen> --dist-source-sha=<sha>` replays final3 coverage plus wave-6 proofs in serial bounded batches. Repeat at1280×720; `--start` / `--end` resume under a new prefix without replacing failures. Identity masks are isolated from guarded ultimate scenarios.
+- `i10-gallery.mjs <gallery> <clean-batches...>` assembles unchanged original PNGs with source receipts, exact480 reductions, ORIGINAL/final3/final4 comparison and showcase. Never include a failed batch. Historical sources are read only.
+- `i10-art-audit.mjs <gallery>` measures all twenty saved floor grids, actor identity masks, literal/exact-hull room coverage and actual body bounds. Derivative generation is not a witness that an image was opened. `i10-review-prep.mjs` separates prepared derivatives from explicitly named actual-open records.
+- `i10-summary.mjs` reports all80 ordinary benchmark trials, all210 fresh/sequential readiness rows and native campaigns; it copies original organic mid-fight evidence with hashes. Missing inputs/selected-body receipts and source mismatches remain failures, not omitted rows.
+
+`bench --no-soft-depth` is a harness-only A/B diagnostic: it retains the prepared
+target but suppresses depth copying and soft attenuation, asserts copy delta0,
+and restores the binding. Its timings are ineligible for acceptance. CPU/cost
+profiles, GPU flush and per-pass GPU probes also stay outside the ordinary
+five-repeat cohort. Per-pass GPU probes replace runtime GPU adaptive feedback;
+Metal submission/scheduling latency must not be added as independent shader costs.
+
+Use `bench --acceptance --repeat=5 --seconds=20` for the requested native timing
+limits with early failure: frame p50≤16.7ms (0.1ms reporting precision), High
+p95≤20ms and High median scale≥.9. Every failed trial is saved before stopping;
+restart a corrected cohort under a new label. This flag rejects diagnostic
+instrumentation and retains the original draw/population/program/resource checks.

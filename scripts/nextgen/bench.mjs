@@ -356,6 +356,16 @@ try{
   const run={name,room,rig,tier,repeat,timingAcceptanceEligible:!report.gpuFlush&&!report.noSoftDepth,timingScope:report.noSoftDepth?'detached soft-depth disabled A/B diagnostic; ineligible for acceptance':report.gpuFlush?'intrusive gl.flush pass isolation; not production frame timing':'ordinary submission; optional asynchronous query instrumentation',nativeAudioContexts:[...audioContexts.values()],before,after:host(),profile,profiling,summary,budget,...data,cdp:{initial:initial.metrics,final:final.metrics}};
   report.runs.push(run);await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));
   console.log(`${name}: frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
+  if(args.includes('--acceptance')){
+   assert(!profile&&!report.auditCosts&&!report.gpuPasses&&!report.gpuFlush&&!report.noSoftDepth,'Acceptance requires ordinary production timing');
+   const precision=value=>Math.round(value*10)/10;
+   const misses=[];
+   if(precision(summary.frame.p50)>16.7)misses.push({metric:'frameP50',observed:summary.frame.p50,limit:16.7});
+   if(tier==='high'&&precision(summary.frame.p95)>20)misses.push({metric:'highFrameP95',observed:summary.frame.p95,limit:20});
+   if(tier==='high'&&summary.adaptiveScale.p50<.9)misses.push({metric:'highMedianScale',observed:summary.adaptiveScale.p50,minimum:.9});
+   report.budgetFailures.push(...misses.map(miss=>({scenario:name,...miss})));
+   assert.equal(misses.length,0,'Requested acceptance target missed: '+JSON.stringify(misses));
+  }
   assert.equal(data.programs,0,'Mid-combat shader compile');
   if(report.noSoftDepth){assert.equal(data.softDepthDiagnostic?.copyDelta,0,'Disabled soft-depth diagnostic copied depth');assert.equal(data.softDepthDiagnostic?.restored,true,'Soft-depth diagnostic did not restore its binding');}
   assert(!data.glError&&!data.contextLost,'WebGL error or lost context during combat');
