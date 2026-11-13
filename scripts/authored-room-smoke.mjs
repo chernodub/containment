@@ -7,11 +7,11 @@ import {execFileSync} from 'node:child_process';
 import {createServer as viteServer} from 'vite';
 import {chromium} from 'playwright';
 const option=(name,fallback)=>process.argv.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
-const ids=option('rooms','passenger-vault,breached-loading-bay,overload-floor').split(',');
+const requestedRooms=option('rooms','all');
 const selectedViewport=option('viewport','desktop');
 assert.equal(selectedViewport,'desktop','Only the desktop viewport is supported');
 const viewport={width:1280,height:900};
-const out=resolve(option('out','docs/pr-screenshots/authored/hud-desktop'));
+const out=resolve(option('out','artifacts/authored-smoke/desktop'));
 const prefix='/containment/',root=resolve('dist'),types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.jpg':'image/jpeg','.png':'image/png','.glb':'model/gltf-binary','.ogg':'audio/ogg','.mp3':'audio/mpeg','.wav':'audio/wav'};
 let ssr,server,browser;const results=[];
 try{
@@ -22,6 +22,9 @@ try{
  const {CombatSystem}=await ssr.ssrLoadModule('/src/game/combat/CombatSystem.ts');
  const {ROOM_TEMPLATES}=await ssr.ssrLoadModule('/src/game/roguelike/roomTemplates.ts');
  const nodes=generateRun(1729,3).nodes;
+ const ids=requestedRooms==='all'?nodes.map(node=>node.templateId):requestedRooms.split(',');
+ assert.equal(new Set(ids).size,ids.length,'Authored rooms must be unique');
+ if(requestedRooms==='all')assert.equal(ids.length,20,'The desktop authored gate must cover all twenty story rooms');
  server=httpServer(async(req,res)=>{const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname),file=resolve(root,path.slice(prefix.length)||'index.html');if(!path.startsWith(prefix)||!file.startsWith(root+'/')){res.writeHead(404).end();return;}try{res.writeHead(200,{'Content-Type':types[extname(file)]??'application/octet-stream'}).end(await readFile(file));}catch{res.writeHead(404).end();}});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin=`http://127.0.0.1:${server.address().port}`;
  browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH?undefined:'chromium',executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH||undefined,args:['--no-sandbox','--enable-unsafe-swiftshader',...(process.platform==='darwin'?['--use-angle=metal','--enable-gpu','--ignore-gpu-blocklist']:[])]});await mkdir(out,{recursive:true});
@@ -65,6 +68,7 @@ try{
   }finally{await context.close();}
  }
  assert.equal(results.length,ids.length);
+ console.log(`Authored desktop smoke passed: ${results.length} rooms, native move/fire, Continue/route, pause/resume, Low quality, no browser errors.`);
 }catch(error){
  await writeFile(resolve(out,'failure.json'),JSON.stringify({error:String(error),results},null,2)+'\n');
  throw error;
