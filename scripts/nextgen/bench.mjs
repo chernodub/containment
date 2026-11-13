@@ -273,15 +273,24 @@ try{
    for(let radius=180;radius<=480;radius+=60)for(let i=0;i<32;i++){const a=i*Math.PI/16,x=lane.x+Math.cos(a)*radius,y=lane.y+Math.sin(a)*radius;if(d.canStand(x,y,40))refillPoints.push({x,y});}
    const refillTypes=['brute','spitter','crawler','stalker','carrier'];
    let refillCursor=0,refillSerial=0,replenished=0;
+   const refillAudit={points:refillPoints.length,passes:0,blockedPasses:0,maxDeficit:0};
    const refill=()=>{
-    if(g.enemies.activeCount>=25)return;
-    const enemies=g.enemies.snapshot.enemies;
-    for(let attempt=0;attempt<refillPoints.length;attempt++){
-     const point=refillPoints[refillCursor++%refillPoints.length],distance=Math.hypot(point.x-g.player.x,point.y-g.player.y);
-     if(distance<180||distance>620||!d.clearShot(point.x,point.y))continue;
-     let clear=true;for(const e of enemies)if(e.health>0&&Math.hypot(e.x-point.x,e.y-point.y)<e.radius+52){clear=false;break;}
-     if(!clear)continue;
-     if(d.spawn(refillTypes[refillSerial%5],point.x,point.y,refillSerial%6===0)){replenished++;refillSerial++;break;}
+    const deficit=25-g.enemies.activeCount;
+    if(deficit<=0)return;
+    refillAudit.passes++;refillAudit.maxDeficit=Math.max(refillAudit.maxDeficit,deficit);
+    // A native area hit can kill several contacts in one tick. Refill the whole
+    // deficit, with fresh collision snapshots after each accepted native spawn.
+    // Driver cost stays inside the measured CPU window; legal spacing is unchanged.
+    for(let missing=0;missing<deficit&&g.enemies.activeCount<25;missing++){
+     const enemies=g.enemies.snapshot.enemies;let spawned=false;
+     for(let attempt=0;attempt<refillPoints.length;attempt++){
+      const point=refillPoints[refillCursor++%refillPoints.length],distance=Math.hypot(point.x-g.player.x,point.y-g.player.y);
+      if(distance<180||distance>620||!d.clearShot(point.x,point.y))continue;
+      let clear=true;for(const e of enemies)if(e.health>0&&Math.hypot(e.x-point.x,e.y-point.y)<e.radius+52){clear=false;break;}
+      if(!clear)continue;
+      if(d.spawn(refillTypes[refillSerial%5],point.x,point.y,refillSerial%6===0)){replenished++;refillSerial++;spawned=true;break;}
+     }
+     if(!spawned){refillAudit.blockedPasses++;break;}
     }
    };
    const start=performance.now(), initialStatus=g.status,initialPhase=g.expedition.run.phase,initialElapsed=g.elapsed,initialPlayer={x:g.player.x,y:g.player.y},initialEnemies=g.enemies.activeCount;
@@ -318,7 +327,7 @@ try{
    for(const key of Object.keys(samples))samples[key]=Array.from(values[key].subarray(0,count));samples.gpu=gpu;
    let finalLightInventory=0,finalInstanceMeshInventory=0;
    r.scene.traverse(o=>{if(o.isLight)finalLightInventory++;if(o.isInstancedMesh)finalInstanceMeshInventory++;});r.hudScene.traverse(o=>{if(o.isInstancedMesh)finalInstanceMeshInventory++;});
-   return {renderPipeline:r.post?.diagnostics??null,gpuPassTimings,initialStatus,initialPhase,finalStatus:g.status,finalPhase:g.expedition.run.phase,roomLoading:r.roomLoading,bodyState:document.body.dataset.state,roomLoadingIndicatorHidden:document.getElementById('room-loading')?.hidden,costAudit:costAudit?{instrumented:true,postPasses:costAudit.postPasses,particleScope:'CPU AttackEffects.drawParticles lists and live ElementKit particles; ability slot scans retained separately; GPU atmosphere excluded',stateScope:'GL state setter API calls; program switches count changed useProgram handles'}:null,instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,combatProgramKeys:r.renderer.info.programs.filter(program=>createdProgramHandles.includes(program.program)).map(program=>({name:program.name,cacheKey:program.cacheKey})),uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
+   return {renderPipeline:r.post?.diagnostics??null,gpuPassTimings,initialStatus,initialPhase,finalStatus:g.status,finalPhase:g.expedition.run.phase,roomLoading:r.roomLoading,bodyState:document.body.dataset.state,roomLoadingIndicatorHidden:document.getElementById('room-loading')?.hidden,costAudit:costAudit?{instrumented:true,postPasses:costAudit.postPasses,particleScope:'CPU AttackEffects.drawParticles lists and live ElementKit particles; ability slot scans retained separately; GPU atmosphere excluded',stateScope:'GL state setter API calls; program switches count changed useProgram handles'}:null,instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,refillAudit,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,combatProgramKeys:r.renderer.info.programs.filter(program=>createdProgramHandles.includes(program.program)).map(program=>({name:program.name,cacheKey:program.cacheKey})),uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
   },{seconds,audit:args.includes('--audit-draws'),auditCosts:args.includes('--audit-costs'),gpuPasses:report.gpuPasses});
   if(audioPoll){clearInterval(audioPoll);timers.delete(audioPoll);}await audioPollWork;
   const final=await cdp.send('Performance.getMetrics');
