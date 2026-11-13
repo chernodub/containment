@@ -167,6 +167,14 @@ ${kind === 'decal' ? `
   c=mix(vec3(.075,.013,.002),vec3(.32,.055,.004),flow*.65);
   c+=vec3(.46,.16,.025)*glossy*.48+vec3(.35,.075,.005)*meniscus*.45;
   a*=.72*(1.-smoothstep(edge-.045,edge,liquid))*(1.-smoothstep(.96,1.,abs(p.x)));
+  if(variant<8.5){
+   // Fuel gathers in unequal hot pockets with open floor between them. Keep
+   // the analytic outer footprint, but avoid a uniformly tinted combat disc.
+   float pocket=smoothstep(.32,.68,flow);
+   c=mix(vec3(.035,.008,.002),c*1.35,pocket);
+   c+=vec3(.58,.16,.018)*smoothstep(.64,.78,flow)*.45;
+   a*=mix(.14,.88,pocket);
+  }
  }
  else {if(d>1.)discard;if(variant>6.5&&abs(a0)>fract(phase)*6.283185)discard;a*=.035*(1.-smoothstep(.6,1.,d));c=vec3(.014,.009,.006);}
  ` : ''}

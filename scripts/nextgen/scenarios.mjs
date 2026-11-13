@@ -264,21 +264,64 @@ SCENARIOS.push({...SCENARIOS.find(s=>s.id==='g2-calm-low'),id:'x2-calm-motion-lo
 // real weapons, real mutation triggers, and the unchanged gameplay camera.
 export function stageCombat({status=false}){
  const d=window.__containmentDebug,g=d.game;d.invulnerable(true);g.enemies.reset();
- const {width,height}=g.geometry.bounds,candidates=[];
- for(let y=120;y<height-100;y+=80)for(let x=120;x<width-100;x+=80){
+ const {x:boundX=0,y:boundY=0,width,height}=g.geometry.bounds,candidates=[];
+ for(let y=boundY+120;y<boundY+height-100;y+=80)for(let x=boundX+120;x<boundX+width-100;x+=80){
   if(!d.canStand(x,y,28))continue;
   let score=0;for(let i=0;i<32;i++){const a=i*Math.PI/16;for(const r of [150,230,310])if(d.canStand(x+Math.cos(a)*r,y+Math.sin(a)*r,28)&&d.clearShot(x+Math.cos(a)*r,y+Math.sin(a)*r,{x,y}))score++;}
-  candidates.push({x,y,score:score-Math.hypot(x-width/2,y-height/2)/1000});
+  candidates.push({x,y,score:score-Math.hypot(x-boundX-width/2,y-boundY-height/2)/1000});
  }
  candidates.sort((a,b)=>b.score-a.score);if(!candidates.length)throw Error('No legal combat staging position');
- Object.assign(g.player,candidates[0]);d.setInput({fire:false});d.step(600); // settle native camera
- const staged=[];
- for(const range of [145,205,265,325,380])for(let i=0;i<40&&staged.length<26;i++){
-  const a=i*Math.PI/20,p={x:g.player.x+Math.cos(a)*range,y:g.player.y+Math.sin(a)*range};
-  if(!d.canStand(p.x,p.y,28)||!d.clearShot(p.x,p.y)||!d.renderer.visible(p.x,p.y)||staged.some(e=>Math.hypot(e.x-p.x,e.y-p.y)<54))continue;
-  const type=staged.length%5===0?'spitter':'brute',id=d.spawn(type,p.x,p.y,staged.length%4===0);if(id)staged.push({...p,id});
+ // Native HUD reservations can make the world-space winner a poor screen-space
+ // arena. Try spatially distinct centers, then pack on the settled native camera.
+ const centers=[],remaining=[...candidates];
+ while(remaining.length&&centers.length<16){
+  let best=0;for(let i=1;i<remaining.length;i++){
+   const merit=p=>p.score-(centers.length?Math.max(0,160-Math.min(...centers.map(c=>Math.hypot(c.x-p.x,c.y-p.y))))/3:0);
+   if(merit(remaining[i])>merit(remaining[best]))best=i;
+  }
+  centers.push(remaining.splice(best,1)[0]);
  }
- if(staged.length<14)throw Error(`Only ${staged.length} visible legal enemies could be staged`);
+ const pack=()=>{
+  let best=[];const spacing=54.01,row=spacing*Math.sqrt(3)/2;
+  // Alternative hex phases avoid a radial-first greedy packing wasting the
+  // narrow native viewport. Every layout keeps the original54-unit separation.
+  for(let layout=0;layout<8;layout++){
+   const points=[];
+   for(let iy=-9;iy<=9;iy++)for(let ix=-10;ix<=10;ix++){
+    const u=(ix+(iy&1)*.5+(layout&1)*.5)*spacing,v=(iy+((layout>>1)&1)*.5)*row;
+    const x=g.player.x+(layout<4?u:v),y=g.player.y+(layout<4?v:u),distance=Math.hypot(x-g.player.x,y-g.player.y);
+    if(distance<145||distance>380||!d.renderer.visible(x,y)||!d.canStand(x,y,28)||!d.clearShot(x,y))continue;
+    const interior=[[-20,0],[20,0],[0,-20],[0,20]].filter(([dx,dy])=>d.renderer.visible(x+dx,y+dy)).length;
+    points.push({x,y,distance,interior});
+   }
+   points.sort((a,b)=>b.interior-a.interior||a.distance-b.distance||a.y-b.y||a.x-b.x);
+   const packed=points.slice(0,26);if(packed.length>best.length)best=packed;
+  }
+  return best;
+ };
+ let staged=[],chosen=null,mostVisible=0;
+ for(const center of centers){
+  // Retain the preceding trial's actors while the native camera settles; an
+  // empty encounter must not be advanced repeatedly just to search its floor.
+  Object.assign(g.player,{x:center.x,y:center.y,vx:0,vy:0});d.setInput({x:0,y:0,fire:false});d.step(600);
+  g.enemies.reset();staged=[];
+  for(const p of pack()){
+   const id=d.spawn(staged.length%5===0?'spitter':'brute',p.x,p.y,staged.length%4===0);if(id)staged.push({...p,id});
+  }
+  d.refresh();d.refresh();const visible=g.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y)).length;
+  if(visible>mostVisible){mostVisible=visible;chosen=center;}
+  if(visible>=24)break;
+ }
+ // Recreate the best trial when the last spatial candidate was worse. Eighteen
+ // initial visible bodies leave the unchanged twelve-per-frame combat gate room
+ // for native movement, damage and the grenade; no enemies are frozen or buffed.
+ if(mostVisible<18)throw Error(`Only ${mostVisible} visible legal enemies could be staged`);
+ if(g.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y)).length<mostVisible){
+  Object.assign(g.player,{x:chosen.x,y:chosen.y,vx:0,vy:0});d.setInput({x:0,y:0,fire:false});d.step(600);g.enemies.reset();staged=[];
+  for(const p of pack()){const id=d.spawn(staged.length%5===0?'spitter':'brute',p.x,p.y,staged.length%4===0);if(id)staged.push({...p,id});}
+  d.refresh();d.refresh();
+ }
+ if(g.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y)).length<18)throw Error('Heavy native framing lost eighteen initial visible targets');
  if(!status){g.grenade();d.step(700);}
  g.switchWeapon(status?'rifle':'plasma');d.setInput({fire:true,angle:null,autoAim:true});
  if(status){
@@ -318,23 +361,33 @@ export async function stageKiting(attempt=0){
  // Pack against the final HUD reservation, including the optional right radar.
  d.measureLuminance=true;
  d.uiFixture({preferences:{radar:true,combatText:true}});d.refresh();
- const bounds=g.geometry.bounds,candidates=[];
- for(let y=bounds.y+100;y<bounds.y+bounds.height-100;y+=70)for(let x=bounds.x+100;x<bounds.x+bounds.width-100;x+=70){
+ const bounds=g.geometry.bounds,candidates=[],footprint=[];
+ // Read the current native HUD-aware footprint without moving/zooming the camera.
+ // Translating these offsets ranks floor candidates only; final packing below is
+ // always queried again against the actually settled camera at the chosen lane.
+ for(let dy=-520;dy<=520;dy+=65)for(let dx=-520;dx<=520;dx+=65)if(Math.hypot(dx,dy)>=135&&Math.hypot(dx,dy)<=650&&d.renderer.visible(g.player.x+dx,g.player.y+dy))footprint.push({dx,dy});
+ for(let y=bounds.y+70;y<bounds.y+bounds.height-70;y+=70)for(let x=bounds.x+70;x<bounds.x+bounds.width-70;x+=70){
   if(!d.canStand(x,y,28))continue;
-  let score=0;
-  for(let i=0;i<24;i++){const angle=i*Math.PI/12;for(const radius of [160,230,310])if(d.canStand(x+Math.cos(angle)*radius,y+Math.sin(angle)*radius,28)&&d.clearShot(x+Math.cos(angle)*radius,y+Math.sin(angle)*radius,{x,y}))score++;}
-  candidates.push({x,y,score:score-Math.hypot(x-bounds.x-bounds.width/2,y-bounds.y-bounds.height/2)/10000});
+  const floor=footprint.filter(p=>d.canStand(x+p.dx,y+p.dy,28)&&d.clearShot(x+p.dx,y+p.dy,{x,y})),headings=[];
+  for(let i=0;i<16;i++){
+   const angle=i*Math.PI/8,fx=Math.cos(angle),fy=Math.sin(angle);let legal=true;
+   for(let distance=-150;distance<=80;distance+=10)if(!d.canStand(x+fx*distance,y+fy*distance,20)){legal=false;break;}
+   if(legal)headings.push({angle,score:floor.filter(p=>!(p.dx*fx+p.dy*fy>0&&p.dx*fx+p.dy*fy<320&&Math.abs(p.dx*fy-p.dy*fx)<75)).length});
+  }
+  if(!headings.length)continue;headings.sort((a,b)=>b.score-a.score);
+  candidates.push({x,y,headings,score:floor.length-Math.hypot(x-bounds.x-bounds.width/2,y-bounds.y-bounds.height/2)/10000});
  }
  candidates.sort((a,b)=>b.score-a.score);
- let center,heading=0,legalIndex=0;
- for(const candidate of candidates){
-  for(let i=0;i<16;i++){
-   const angle=i*Math.PI/8;let legal=true;
-   for(let distance=-150;distance<=80;distance+=10)if(!d.canStand(candidate.x+Math.cos(angle)*distance,candidate.y+Math.sin(angle)*distance,20)){legal=false;break;}
-   if(legal){if(legalIndex++===attempt){center=candidate;heading=angle;}break;}
+ const lanes=[],remaining=[...candidates];
+ while(remaining.length&&lanes.length<16){
+  let best=0;for(let i=1;i<remaining.length;i++){
+   const merit=p=>p.score-(lanes.length?Math.max(0,160-Math.min(...lanes.map(c=>Math.hypot(c.x-p.x,c.y-p.y))))/5:0);
+   if(merit(remaining[i])>merit(remaining[best]))best=i;
   }
-  if(center)break;
+  lanes.push(remaining.splice(best,1)[0]);
  }
+ const center=lanes[attempt%lanes.length],heading=center?.headings[Math.floor(attempt/lanes.length)%center.headings.length].angle??0;
+ const maxAttempts=Math.min(32,lanes.length*2);
  if(!center)throw Error('No legal kiting movement lane');
  // Dash INTO the scored open space, before enemies are staged. Placing the
  // swarm before the dash could leave the marine inside a brute's shot radius.
@@ -347,58 +400,77 @@ export async function stageKiting(attempt=0){
  const origin={x:g.player.x,y:g.player.y};
  // Choose the reserved firing lane against the real rendered footprint. The old
  // first-legal angle could reserve the only visible floor around the reactor core.
- const positions=[];
- const collect=p=>{
-  const distance=Math.hypot(p.x-origin.x,p.y-origin.y);
-  if(distance<135||distance>650||!d.canStand(p.x,p.y,28)||!d.clearShot(p.x,p.y)||!d.renderer.visible(p.x,p.y))return;
-  positions.push(p);
+ let shotAngle=null,best=[],initialVisible=0;
+ const viewMinimum=g.node.templateId==='communal-atrium'?15:18;
+ // Preview the same public placement-ready contract used by the HUD. A denser
+ // candidate must still support the burst's later real Glacier, at the shot aim.
+ const glacierFits=angle=>{
+  const previous=g.player.angle;g.player.angle=angle;let available=false;
+  for(const radius of [220,160,300])for(let i=0;i<16&&!available;i++){
+   const a=i*Math.PI/8,target={x:origin.x+Math.cos(a)*radius,y:origin.y+Math.sin(a)*radius};
+   if(!d.canStand(target.x,target.y,28)||!d.clearShot(target.x,target.y))continue;
+   g.setAimPoint(target);available=g.abilities.snapshot.slots.power.ready;
+  }
+  g.setAimPoint(null);g.player.angle=previous;return available;
  };
- for(const radius of [155,225,300,375,460])for(let i=0;i<48;i++){
-  const angle=i*Math.PI/24+radius*.01;collect({x:origin.x+Math.cos(angle)*radius,y:origin.y+Math.sin(angle)*radius});
- }
- let shotAngle=null,best=[];
- const chooseLane=()=>{for(let i=0;i<48;i++){
-  const angle=heading+Math.PI+i*Math.PI/24;
-  if(![60,120,180,240].every(radius=>d.canStand(origin.x+Math.cos(angle)*radius,origin.y+Math.sin(angle)*radius,16))||!d.clearShot(origin.x+Math.cos(angle)*260,origin.y+Math.sin(angle)*260))continue;
-  const forward={x:Math.cos(angle),y:Math.sin(angle)},packing=[];
-  for(const p of positions){
-   const dx=p.x-origin.x,dy=p.y-origin.y,along=dx*forward.x+dy*forward.y,across=Math.abs(dx*forward.y-dy*forward.x);
-   if(along>0&&along<320&&across<75||packing.some(e=>Math.hypot(e.x-p.x,e.y-p.y)<65))continue;
-   packing.push(p);if(packing.length===26)break;
+ const choosePacking=()=>{
+  let choice=[],angleChoice=null;const spacing=65.01,row=spacing*Math.sqrt(3)/2,layouts=[];
+  // All points within each hex phase already satisfy the original65-unit
+  // separation. Dense native-visible floor is no longer blocked by inner rings.
+  for(let layout=0;layout<8;layout++){
+   const points=[];
+   for(let iy=-12;iy<=12;iy++)for(let ix=-12;ix<=12;ix++){
+    const u=(ix+(iy&1)*.5+(layout&1)*.5)*spacing,v=(iy+((layout>>1)&1)*.5)*row;
+    const x=origin.x+(layout<4?u:v),y=origin.y+(layout<4?v:u),distance=Math.hypot(x-origin.x,y-origin.y);
+    if(distance<135||distance>650||!d.renderer.visible(x,y)||!d.canStand(x,y,28)||!d.clearShot(x,y))continue;
+    const interior=[[-20,0],[20,0],[0,-20],[0,20]].filter(([dx,dy])=>d.renderer.visible(x+dx,y+dy)).length;
+    points.push({x,y,distance,interior});
+   }
+   points.sort((a,b)=>b.interior-a.interior||a.distance-b.distance||a.y-b.y||a.x-b.x);layouts.push(points);
   }
-  if(packing.length>best.length){best=packing;shotAngle=angle;}
-  if(best.length===26)break;
- }};
- chooseLane();
- if(best.length<26){
-  for(let y=bounds.y+70;y<bounds.y+bounds.height-70;y+=35)for(let x=bounds.x+70;x<bounds.x+bounds.width-70;x+=35)collect({x,y});
-  chooseLane();
- }
- const initialVisible=best.length,viewMinimum=g.node.templateId==='communal-atrium'?15:18;
- // The closer camera legitimately exposes only part of an authored room. Keep
- // the burst's twelve-visible guarantee and eighteen legal world threats;
- // additional offscreen hostiles also exercise the bearing/radar integration.
- if(best.length>=viewMinimum&&best.length<18&&shotAngle!==null){
-  const fx=Math.cos(shotAngle),fy=Math.sin(shotAngle);
-  for(let y=bounds.y+70;y<bounds.y+bounds.height-70&&best.length<26;y+=35)for(let x=bounds.x+70;x<bounds.x+bounds.width-70&&best.length<26;x+=35){
-   const dx=x-origin.x,dy=y-origin.y,distance=Math.hypot(dx,dy),along=dx*fx+dy*fy,across=Math.abs(dx*fy-dy*fx);
-   if(distance<135||distance>650||along>0&&along<320&&across<75||d.renderer.visible(x,y)||!d.canStand(x,y,28)||!d.clearShot(x,y)||best.some(p=>Math.hypot(p.x-x,p.y-y)<65))continue;
-   best.push({x,y});
+  for(let i=0;i<48;i++){
+   const angle=heading+Math.PI+i*Math.PI/24,fx=Math.cos(angle),fy=Math.sin(angle);
+   if(![60,120,180,240].every(radius=>d.canStand(origin.x+fx*radius,origin.y+fy*radius,16))||!d.clearShot(origin.x+fx*260,origin.y+fy*260))continue;
+   for(const points of layouts){
+    const packed=points.filter(p=>{const dx=p.x-origin.x,dy=p.y-origin.y,along=dx*fx+dy*fy;return !(along>0&&along<320&&Math.abs(dx*fy-dy*fx)<75);}).slice(0,26);
+    if(packed.length>choice.length&&glacierFits(angle)){choice=packed;angleChoice=angle;}
+   }
   }
+  return {points:choice,angle:angleChoice};
+ };
+ const place=()=>{
+  const packing=choosePacking();best=packing.points;shotAngle=packing.angle;initialVisible=best.length;
+  // Preserve fifteen initial visible bodies in the atrium plus eighteen legal
+  // world targets. Bearing/radar integration still has real offscreen threats.
+  if(best.length>=viewMinimum&&best.length<18&&shotAngle!==null){
+   const fx=Math.cos(shotAngle),fy=Math.sin(shotAngle);
+   for(let y=bounds.y+28;y<bounds.y+bounds.height-28&&best.length<26;y+=35)for(let x=bounds.x+28;x<bounds.x+bounds.width-28&&best.length<26;x+=35){
+    const dx=x-origin.x,dy=y-origin.y,distance=Math.hypot(dx,dy),along=dx*fx+dy*fy,across=Math.abs(dx*fy-dy*fx);
+    if(distance<135||distance>650||along>0&&along<320&&across<75||d.renderer.visible(x,y)||!d.canStand(x,y,28)||!d.clearShot(x,y)||best.some(p=>Math.hypot(p.x-x,p.y-y)<65))continue;
+    best.push({x,y});
+   }
+  }
+  if(best.length<18||initialVisible<viewMinimum||shotAngle===null)return [];
+  g.enemies.reset();const placed=[];
+  for(const p of best){const id=d.spawn(placed.length%5===0?'spitter':'brute',p.x,p.y,placed.length%3===0);if(id)placed.push({...p,id});}
+  return placed;
+ };
+ let placed=place(),placedVisible=0;
+ // Contact framing starts only after actors exist. Repack against that native
+ // footprint before paying for a fresh room/dash attempt; do not edit the camera.
+ for(let pass=0;pass<3&&placed.length>=18;pass++){
+  d.refresh();d.refresh();placedVisible=g.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y)).length;
+  if(placedVisible>=viewMinimum)break;
+  if(pass<2)placed=place();
  }
- if((best.length<18||initialVisible<viewMinimum)&&attempt<23)return stageKiting(attempt+1);
+ // Fifteen remains the atrium's hard floor, but prefer an eighteen-body native
+ // reserve in the first few distinct lanes so movement does not immediately
+ // exhaust the unchanged twelve-per-frame requirement.
+ const thinAtrium=g.node.templateId==='communal-atrium'&&Math.min(initialVisible,placedVisible)<18&&attempt<4;
+ if((placed.length<18||initialVisible<viewMinimum||placedVisible<viewMinimum||thinAtrium)&&attempt+1<maxAttempts)return stageKiting(attempt+1);
  if(shotAngle===null)throw Error('No clear kiting firing lane');
- const placed=[];
- for(const p of best){
-  const type=placed.length%5===0?'spitter':'brute',id=d.spawn(type,p.x,p.y,placed.length%3===0);
-  if(id)placed.push({...p,id});
- }
- if(placed.length<18)throw Error(`Only ${placed.length} legal kiting targets`);
- // Engagement framing is active only once actors exist. Retry the native lane
- // if its final rendered footprint cannot retain the original visible target budget.
- d.refresh();d.refresh();
- const placedVisible=g.enemies.snapshot.enemies.filter(e=>d.renderer.visible(e.x,e.y)).length;
- if(placedVisible<viewMinimum&&attempt<23)return stageKiting(attempt+1);
+ if(placed.length<18)throw Error(`Only ${placed.length} legal kiting targets (best visible packing ${initialVisible}, lane ${attempt+1}/${maxAttempts})`);
+ if(initialVisible<viewMinimum)throw Error(`Only ${initialVisible} initial visible kiting targets`);
  if(placedVisible<viewMinimum)throw Error(`Only ${placedVisible} kiting targets fit the HUD-aware camera`);
  g.switchWeapon('rifle');
  if(!g.useAbility('tactical'))throw Error('Kiting Cryo Nova denied');
