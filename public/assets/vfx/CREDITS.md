@@ -12,4 +12,4 @@ Original atlases: Flame02_16x4.tga, 2048x1024, 64 frames; WispySmoke02_8x8.tga, 
 
 ## V6 texture library
 
-See [compact atlas](containment-v6/CREDITS.md), [Unity source hashes/license](unity-labs-v6/CREDITS.md), and [Kenney source hashes/license](kenney-particle-v6/CREDITS.md). The new atlas is 2,755,863 bytes; retained original flipbooks remain for pre-existing weapon/status effects.
+See [compact atlas](containment-v6/CREDITS.md), [Unity source hashes/license](unity-labs-v6/CREDITS.md), and [Kenney source hashes/license](kenney-particle-v6/CREDITS.md). The new atlas is 2,760,628 bytes; retained original flipbooks remain for pre-existing weapon/status effects.

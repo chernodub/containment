@@ -326,7 +326,7 @@ export class ElementKit {
     }
     /** Authored animated bolt strip for suit crawl/contact flashes; long chains keep their structure. */
     boltCard(x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, seed: number, opacity = 1, color = 0xb79cff): void {
-        this.flowCard('spark', x, y, z, tx, ty, tz, width, color, opacity, 376 + authoredVariation(seed) * .95);
+        this.flowCard('spark', x, y, z, tx, ty, tz, width * 3.5, color, opacity, 376 + authoredVariation(seed) * .95);
     }
     private flowCard(kind: Primitive, x: number, y: number, z: number, tx: number, ty: number, tz: number, width: number, color: number, opacity: number, variant: number): void {
         const axis = this.flowAxis.set(tx - x, ty - y, tz - z), length = axis.length();

@@ -201,7 +201,7 @@ describe('Pyro presentation lifecycle and readability', () => {
     frame.game = { player: { x: 128, y: 160, vx: 0, vy: 0, angle: .1 }, bullets: [] } as never;
     step(.016);
     const flames = kit.batches.flame.mesh;
-    expect(flames.count).toBe(tier === 'low' ? 2 : 4); expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
+    expect(flames.count).toBe(tier === 'low' ? 3 : 6); expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i);
       expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThan(.65);
@@ -217,7 +217,10 @@ describe('Pyro presentation lifecycle and readability', () => {
       expect(dx * Math.cos(.1) + dz * Math.sin(.1)).toBeLessThan(-.25);
       expect(Math.abs(-dx * Math.sin(.1) + dz * Math.cos(.1))).toBeGreaterThanOrEqual(.39);
     }
-    const backpackVents = exhaust.mock.calls.filter(call => call[3] < .3);
+    const backpackVents = exhaust.mock.calls.filter(call => call[3] < .3 && call[1] >= 1);
+    const flankFires = exhaust.mock.calls.filter(call => call[1] < .2);
+    expect(flankFires).toHaveLength(tier === 'low' ? 1 : 2);
+    for (const call of flankFires) { expect(call[3]).toBeLessThan(.25); expect(call[1] + call[4]).toBeLessThan(1.7); }
     expect(backpackVents).toHaveLength(tier === 'low' ? 0 : 2);
     for (const call of backpackVents) { expect(call[1]).toBeGreaterThanOrEqual(1); expect(call[1] + call[4]).toBeLessThan(3.9); }
     expect(shoulderVents[0][4]).not.toBe(shoulderVents[1][4]);

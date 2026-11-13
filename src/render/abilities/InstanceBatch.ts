@@ -71,15 +71,16 @@ ${kind === 'smoke' ? `
  a*=s.a*mix(.9,.72,vapor)*smoothstep(.015,.22,worldHeight);
  ` : ''}
 ${kind === 'flame' ? TEXTURED_FIRE_GLSL : ''}
-${kind === 'spark' ? 'float tile=phase>=200.?floor(phase)-200.:154.;vec4 s=tile==176.?effectSequence(176.,8.,24.,fract(phase)*64.,uvLocal):effectTile(tile,uvLocal);a*=s.a;c*=3.5;' : ''}
+${kind === 'spark' ? 'float tile=phase>=200.?floor(phase)-200.:154.;vec4 s=tile==176.?effectSequence(176.,8.,24.,fract(phase)*64.,vec2(.5+(uvLocal.x-.5)*.5,uvLocal.y)):effectTile(tile,uvLocal);a*=s.a;c*=3.5;' : ''}
 ${kind === 'decal' ? `
  if(phase>=200.){
   float tile=floor(phase)-(phase>=1000.?1000.:phase>=600.?600.:200.);
   vec4 stamp;
   if(tile>=168.&&tile<176.)stamp=effectSequence(168.,8.,16.,fract(phase)*64.,uvLocal);
   else if(tile>=176.&&tile<184.)stamp=effectSequence(176.,8.,24.,fract(phase)*64.,uvLocal);
-  else stamp=effectTile(tile,uvLocal);
+  else stamp=effectTile(tile,tile==162.?fract(uvLocal*vec2(3.,1.)):uvLocal);
   c=ink*(.55+stamp.r*.65);a*=stamp.a;
+  if(phase<600.)a*=smoothstep(.015,.20,worldHeight);
   if(tile==162.||tile==163.){
    float scan=.65+.35*sin(uvLocal.y*38.-abilityTime*7.);
    c=ink*(1.1+stamp.r*1.8);a*=scan;

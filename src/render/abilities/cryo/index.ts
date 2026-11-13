@@ -243,7 +243,7 @@ class CryoPresentation implements AbilityPresentation {
     k.sustain(age / 1000);
     const groundYield = 1 - .65 * Math.min(1, Math.max(0, (age - 250) / 120));
     const time = k.reducedMotion ? 0 : age / 1000;
-    const wisps = k.low ? 8 : 16;
+    const wisps = k.low ? 10 : 20;
     // One driven wind direction gives the ultimate a legible, asymmetric storm
     // silhouette. Dense outer vapor leaves a large open eye for combat bodies.
     const wind = -.72, wx = Math.cos(wind), wz = Math.sin(wind);
@@ -251,19 +251,27 @@ class CryoPresentation implements AbilityPresentation {
       const seed = i * 2.731 + zone.id * .73, variation = authoredVariation(seed, 4);
       const a = i * TAU / wisps + Math.sin(time * .65 + seed) * .085;
       const upwind = Math.max(0, -(Math.cos(a) * wx + Math.sin(a) * wz));
-      const halfWidth = Math.min(radius * .105, .72 + variation * .32);
-      const r = radius - halfWidth * 1.25;
-      const drift = k.reducedMotion ? 0 : Math.sin(time * 1.7 + seed) * .16;
+      const halfWidth = Math.min(radius * .26, (k.low ? 1.8 : 1.4) + variation * .4);
+      const halfHeight = Math.min(radius * .1, k.low
+        ? .4 + variation * .05 + upwind * .1
+        : .6 + variation * .1 + upwind * .2);
+      // Account for the actual tilted rectangle, including its vertical axis's
+      // horizontal component. Every card and its wind drift stays in the hit disc.
+      const tilt = k.low ? -.15 : -.24;
+      const horizontalSupport = halfWidth * Math.cos(tilt) + halfHeight * Math.abs(Math.sin(tilt));
+      const verticalSupport = halfWidth * Math.abs(Math.sin(tilt)) + halfHeight * Math.cos(tilt);
+      const r = Math.max(0, radius - horizontalSupport - (k.low ? .85 : .22));
+      const drift = k.reducedMotion ? 0 : Math.sin(time * 1.7 + seed) * .15;
       const px = x + Math.cos(a) * r + wx * drift;
       const pz = z + Math.sin(a) * r + wz * drift;
-      k.sprite('mist', px, .45 + variation * .3 + upwind * .32, pz,
-        halfWidth, .38 + variation * .18 + upwind * .22,
-        upwind > .5 ? CORE : ICE, fade * (.54 + upwind * .15), seed,
-        'billboard', 0, -.62);
-      // Texture-authored driven snow shares the same wind; no crystal confetti.
-      if (i % 3 === 0) k.sprite('snow', px - wx * .22, .45 + variation * .8, pz - wz * .22,
+      k.sprite('mist', px, verticalSupport + .035 + upwind * (k.low ? .04 : .13), pz,
+        halfWidth, halfHeight, upwind > .5 ? CORE : ICE,
+        fade * (.85 + upwind * .15), seed, 'billboard', 0, tilt);
+      // A few driven snow strips read through the dense cloud masses. Broad
+      // overlapping vapor, rather than isolated flakes, carries the storm.
+      if (i % 4 === 0) k.sprite('snow', px - wx * .22, .45 + variation * .8, pz - wz * .22,
         .16 + variation * .08, .36 + variation * .2, CORE,
-        fade * .64, seed + 3, 'billboard', 0, -.72);
+        fade * .72, seed + 3, 'billboard', 0, -.72);
     }
     // Short ground currents reinforce direction without filling the storm's eye.
     const strokes = k.low ? 3 : 6;

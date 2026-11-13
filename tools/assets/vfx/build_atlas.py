@@ -71,8 +71,14 @@ pattern('crack',158,gray(crack*np.maximum(0,1-r*.9)))
 pattern('scorch',159,gray(np.clip((n*.8+.32-r)*1.2,0,.8),.035))
 pattern('ring',160,gray(np.exp(-((r-.77)*25)**2)*np.clip(n*1.6,.1,1)))
 pattern('caustic',161,gray(np.exp(-abs(n-.5)*26)*.7))
-hexagon=np.maximum(abs(x)*.866+abs(y)*.5,abs(y)); hexline=np.exp(-abs((hexagon*5)%1-.5)*28)
-pattern('hex',162,gray(hexline*.8+.055))
+# Authored repeating hex lattice with quiet transparent cell interiors.
+hex_image=Image.new('RGBA',(124,124)); hex_draw=ImageDraw.Draw(hex_image)
+for row in range(-1,7):
+    for col in range(-1,7):
+        cx=col*26.8+(row%2)*13.4; cy=row*23.2
+        points=[(cx+15.5*math.cos(math.pi/6+j*math.pi/3),cy+15.5*math.sin(math.pi/6+j*math.pi/3)) for j in range(6)]
+        hex_draw.line(points+[points[0]],fill=(255,255,255,215),width=2)
+pattern('hex',162,hex_image)
 pattern('scan',163,gray((np.exp(-abs((y*11)%1-.5)*20)*.6+.05)*(1-abs(x)*.08)))
 pattern('snow',164,gray(np.maximum(0,1-r)**1.6*(.2+np.maximum(0,n-.47)*7)))
 pattern('shard',165,gray(np.maximum(0,1-(abs(x)*1.9+abs(y)*.68))**.45,.45+np.maximum(0,x)*.55))
@@ -86,8 +92,8 @@ for i in range(8):
     rng=np.random.default_rng(800+i); im=Image.new('RGBA',(496,496)); draw=ImageDraw.Draw(im)
     ys=np.linspace(20,476,13); xs=248+rng.uniform(-64,64,13); xs[[0,-1]]=248
     pts=list(zip(xs,ys))
-    draw.line(pts,fill=(160,160,160,180),width=14)
-    draw.line(pts,fill=(255,255,255,255),width=5)
+    draw.line(pts,fill=(160,160,160,180),width=30)
+    draw.line(pts,fill=(255,255,255,255),width=12)
     for j in (3,6,9):
         side=1 if j%2 else -1
         draw.line([(xs[j],ys[j]),(xs[j]+side*65,ys[j]+27),(xs[j]+side*90,ys[j]+60)],fill=(215,215,215,210),width=4)

@@ -47,6 +47,11 @@ export class AbilityVisuals extends AbilityGeometry {
     }
     /** Renderer integration: await this before first-room warmup. */
     prepare(): Promise<void> { return this.kit.prepare(); }
+    /** Borrow an opaque-depth copy; caller owns its target and unbinds before disposal. */
+    setSoftDepth(texture: T.Texture | null, near = .1, far = 100, perspective = true): void {
+        this.kit.batches.flame.setSoftDepth(texture, near, far, perspective);
+        this.kit.batches.smoke.setSoftDepth(texture, near, far, perspective);
+    }
     register(rig: RigId, factory: PresentationFactory): void { this.registry.get(rig)?.dispose(); this.registry.set(rig, factory(this.kit)); }
     registerSystem(factory: PresentationFactory): void { this.system?.dispose(); this.system = factory(this.kit); }
     bind(services: AbilityServices): void { this.kit.bind(services); }
