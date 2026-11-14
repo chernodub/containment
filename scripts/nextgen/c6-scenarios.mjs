@@ -85,11 +85,11 @@ export async function stageC6Families(room) {
  function nativeFamilyFallback(){
   const families=['crawler','spitter','brute','carrier','stalker'],i=r.hudInsets,box={left:0,right:0,top:0,bottom:0};
   const trials=[];d.i8FamilyProof={actors:[],requested:15,fullBodyCount:0,presentationOnly:true,invulnerable:true,spacing:76,packingMode:'native-hex-fallback',fallbackTrials:trials,stagingFailed:true};
-  // The 720p HUD leaves fewer legal tall-body marks. Search additional lawful
-  // origins and reserve headroom for the final production framing convergence.
-  const compactAnnulus=room==='containment-annulus'&&innerHeight<=720;
-  const bodyPadding=compactAnnulus?18:6;
-  for(const center of centers.slice(0,compactAnnulus?96:48)){
+  // The 720p HUD leaves fewer legal tall-body marks. Every compact fallback
+  // searches additional lawful origins and reserves convergence headroom.
+  const compactRoom=innerHeight<=720;
+  const bodyPadding=compactRoom?18:6;
+  for(const center of centers.slice(0,compactRoom?96:48)){
    Object.assign(g.player,{x:center.x,y:center.y,vx:0,vy:0,angle:0});g.enemies.reset();
    const seed=[],seedCandidates=[];
    for(let y=b.y+40;y<b.y+b.height-40;y+=38)for(let x=b.x+40;x<b.x+b.width-40;x+=38){

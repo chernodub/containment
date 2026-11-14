@@ -211,3 +211,18 @@ Both have zero errors/failures, five families and requested15. Native720 phases
 were opened individually; their silhouettes remain distinct, while the broad
 Annulus foundation still dominates the right side. The capture then resumed
 batches19–27 using fresh prefix `i11-720-lawful`; original failed19 is not reused.
+
+Lawful19–20 subsequently passed all eighty phases. Lawful21 failed before saving
+frames at Diagnostic Gallery with the same convergence problem: matching could
+find fifteen bodies, then production framing moved their bounds. The failed
+`i11-720-lawful-batch-21/` PNG/JSON/manifest is retained unchanged.
+
+The lead requested consistent compact fallback treatment. All720 family fallbacks
+now use the same stricter18px margin and96 lawful origins; exact1080 behavior is
+unchanged. No room allowlist or count/assertion relaxation remains. A bounded
+all-ten-mood720 probe passed40 native phases, with full body counts12/15/13/12/12/
+15/15/13/15/13 for Awakening/Residential/Checkpoint/Freight/Relay/Diagnostic/Shaft/
+Infested/Shielding/Overload. Every saved phase retains five families, requested15,
+minimum twelve,76 spacing and existing full-body/HUD/phase guards. Separate
+Diagnostic probes passed all four native phases at720 and1080. These probes are
+validation only; final selection uses base00–18, lawful19–20 and fresh compact21–27.
