@@ -817,3 +817,21 @@ Prepared reductions are not actual-open evidence; strict review bridges require
 both native and exact480 SHA matches to an actual witness, with both old/new byte
 streams rehashed. See `docs/nextgen/I10-REPORT.md` for the frozen cohort, gate-pin
 qualification, adverse-load miss and retained art/framing gaps.
+
+## E7 equipment-grounded floor and landmark review
+
+`e7-landmark-annulus` and `e7-landmark-cargo` replay the cited final4 organic
+marine mark/aim and the nearest two saved real contacts from the sibling JSON,
+then perform160ms of actual firing and actor movement before four capture phases.
+They retain `e7LandmarkProof` with the source filename and initial coordinates.
+They are staged presentation replays, not organic campaign or performance results.
+Existing `g6-kiting` supplies six-room native movement/fire evidence separately.
+
+`e7-review.mjs <gallery> [before-directory]` makes exact480 area reductions,
+native/480 Rec.709 grayscale, matched color/grayscale comparison PNGs and the
+color/grayscale ten-mood sheet. No exposure normalization. Native calm uses the
+same marine rig/idle pose and long-lens tilt; native hull/hero/HUD constraints
+still place each camera, so it is not a mathematically identical view matrix.
+`e7-standard-contact.mjs` retains one comparison sheet per critique round.
+`e7-metrics.mjs` reads only explicitly named before/after native benchmark and
+readiness cohorts, retaining best-of-three paired load/scale and all raw trials.

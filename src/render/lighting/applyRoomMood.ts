@@ -17,7 +17,7 @@ const deckTint: Readonly<Record<ShipEnvironment, number>> = {
 const deckBounce: Readonly<Record<ShipEnvironment,number>>={cryogenics:.006,habitation:.006,security:.001,cargo:.004,communications:.016,engineering:.004,maintenance:.006,infested:.010,containment:.002,reactor:.012};
 const readableSteel = new T.Color(0x657481);
 const reactorSteel = new T.Color(0x626b73);
-const roomDeckGain:Readonly<Record<string,number>>={'residential-gallery':1.5,'awakening-bay':.92,'communal-atrium':1.39,'freight-hold':1.75,'transmission-chamber':1.10,'safety-interlock-station':1.32,'coolant-plant':1.18,'relay-racks':3.25,'infested-workshop':2.65,'swarm-junction':2.4,'shielding-gate':.93,'service-shaft-landing':1.12};
+const roomDeckGain:Readonly<Record<string,number>>={'residential-gallery':1.5,'awakening-bay':.92,'communal-atrium':1.39,'freight-hold':1.75,'transmission-chamber':4.6,'safety-interlock-station':1.32,'coolant-plant':1.18,'relay-racks':3.25,'infested-workshop':2.65,'swarm-junction':2.4,'shielding-gate':.93,'service-shaft-landing':1.12};
 const deckNames = new Set(['painted-steel-deck','annulus-deck','annulus-circulation','environment-floor','shaft-deck','shaft-floor-panel']);
 // A readable deck toe must not become an ambient wash across dark rack faces.
 const hardwareBounce:Partial<Record<ShipEnvironment,number>> = {infested:.001,communications:.006,security:.0002,containment:.0005,reactor:.007};

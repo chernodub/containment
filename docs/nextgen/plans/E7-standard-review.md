@@ -58,3 +58,10 @@ claim that the full ten-mood percentile table passes follows from this standard.
 Focused Relay recheck: native calm plus four native combat phases pass; measured
 calm53.2/combat02 50.9. The native calm recheck was opened. The three-room standard
 is accepted for propagation with explicit nominal shadow-percentile exceptions.
+
+Rejected post-propagation contact-stain experiment: actual native Armory/Freight
+PNGs showed inked polygon skirts reading as another flat presentation layer.
+It improved Armory shadow p5 but did not fix Cryo/Cargo p5. The geometry experiment
+was removed; raw probe plus patch receipt remains. Do not describe it as shipped.
+Transmission floor-only calibration remains because the all20 audit found a
+canonical36.5 median after broad field removal. Shadow-p5 misses remain explicit.
