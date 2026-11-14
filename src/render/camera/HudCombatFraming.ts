@@ -91,9 +91,18 @@ export class HudCombatFraming {
   /** Add bounded centroid/aim lead to the existing boss-aware focus target. */
   biasTarget(x:number,z:number,angle:number,reducedMotion:boolean,bossActive:boolean,out:T.Vector3):void {
     if(bossActive||this.count===0)return;
-    const dx=this.centroidX-x,dz=this.centroidZ-z,distance=Math.hypot(dx,dz);
+    // Immediate bodies own the look-ahead before a distant contact centroid.
+    // Selection/fit still retains every original contact and all safety bounds.
+    let nearX=0,nearZ=0,nearWeight=0;
+    for(let n=0;n<this.count;n++){
+      const p=n*5,d=Math.hypot(this.contacts[p]-x,this.contacts[p+1]-z);
+      if(d>4)continue;
+      const w=this.contacts[p+4]*(1+(4-d)*.35);
+      nearX+=this.contacts[p]*w;nearZ+=this.contacts[p+1]*w;nearWeight+=w;
+    }
+    const dx=(nearWeight?nearX/nearWeight:this.centroidX)-x,dz=(nearWeight?nearZ/nearWeight:this.centroidZ)-z,distance=Math.hypot(dx,dz);
     const amount=distance>.001?Math.min(reducedMotion?1.1:2.4,distance*.38)/distance:0;
-    const aim=reducedMotion?0:.35*Math.min(this.viewport.halfX,this.viewport.halfY);
+    const aim=reducedMotion?0:.60*Math.min(this.viewport.halfX,this.viewport.halfY);
     out.set(x+dx*amount+Math.cos(angle)*aim,0,z+dz*amount+Math.sin(angle)*aim);
   }
 

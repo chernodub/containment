@@ -150,7 +150,9 @@ it('stages the Queen reactor core within the fixed practical budget and preserve
   expect(rig.staging).toBeNull();
   expect(Math.max(...rig.key.color.toArray())-Math.min(...rig.key.color.toArray())).toBeLessThan(.25);
   const innerGlow=new T.Color(rig.mood.practical.color);expect(innerGlow.g).toBeGreaterThan(innerGlow.r);
-  expect(rig.mood.practical.distance).toBeGreaterThanOrEqual(6);expect(rig.mood.practical.distance).toBeLessThanOrEqual(9);
+  // E7 organs light local masses instead of washing the whole floor.
+  expect(rig.mood.practical.distance).toBeGreaterThanOrEqual(4);expect(rig.mood.practical.distance).toBeLessThanOrEqual(6);
+  expect(rig.mood.key.intensity).toBeLessThan(2);expect(rig.mood.fill.intensity).toBeLessThan(1);
   expect(rig.fill.color.b).toBeGreaterThan(rig.fill.color.r);
   expect(rig.rim.color.b).toBeGreaterThan(rig.rim.color.g);
   expect(rig.fixtures.every(light => !light.userData.reactorCore)).toBe(true);

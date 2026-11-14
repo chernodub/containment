@@ -877,3 +877,30 @@ benchmark reports alone supply timing evidence. See `docs/nextgen/V7-REPORT.md`.
 `node scripts/nextgen/k7-review.mjs --root=artifacts/nextgen/k7-final --before=artifacts/nextgen/k7-before --route-a=artifacts/nextgen/k7-route-a-final` makes native actor motion strips, exact-area480 frames, geometry-owner black silhouettes, before/final rig/family and Queen/crowd boards, and a source/output hash receipt without launching a browser. Native tile dimensions grow to fit actual masks; actors are never resized to fit a comparison cell. Queen studies are excluded from the production phase board.
 
 `k7-merge-evidence.mjs <destination> <source>` merges only successful complete capture scenarios with matching application assets, viewport, seed and frozen-source identity, retaining exact parent manifests and source hashes. Candidate conversion/audit tools live under `tools/assets/k7-actors/`; the rejected CC0 candidate remains review-only. See `docs/nextgen/plans/K7-provenance.md`.
+## E7 equipment-grounded floor and landmark review
+
+`e7-landmark-annulus` and `e7-landmark-cargo` replay the cited final4 organic
+marine mark/aim and the nearest two saved real contacts from the sibling JSON,
+then perform160ms of actual firing and actor movement before four capture phases.
+They retain `e7LandmarkProof` with the source filename and initial coordinates.
+They are staged presentation replays, not organic campaign or performance results.
+Existing `g6-kiting` supplies six-room native movement/fire evidence separately.
+
+`e7-review.mjs <gallery> [before-directory]` makes exact480 area reductions,
+native/480 Rec.709 grayscale, matched color/grayscale comparison PNGs and the
+color/grayscale ten-mood sheet. No exposure normalization. Native calm uses the
+same marine rig/idle pose and long-lens tilt; native hull/hero/HUD constraints
+still place each camera, so it is not a mathematically identical view matrix.
+`e7-standard-contact.mjs` retains one comparison sheet per critique round.
+`e7-metrics.mjs` reads only explicitly named before/after native benchmark and
+readiness cohorts, retaining best-of-three paired load/scale and all raw trials.
+Its explicit assessment evaluates the E7 frame/scale limits even when an ordinary
+benchmark's `budgetFailures` list is empty.
+
+`e7-overlay.mjs <assembled-gallery> <armory-capture>` replaces exactly five
+matching Armory frames and their sprite after checking clean capture receipts,
+viewport, seed, scenario and clocks. It preserves originals, both asset inventories
+and per-shot hashes, and labels the result as mixed-source. Run only on a fresh
+primary assembly; it is not a general capture filter or a single-source build.
+After approval of the standard, only its three round contact sheets remain;
+intermediate successful round PNGs may be removed, but failed raw runs stay intact.

@@ -38,8 +38,9 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
  const finish=(role:string)=>{
   let m=finishes.get(role);if(m)return m;
   const index=roles.indexOf(role),organic=role==='resin'||role==='scar';
-  m=new T.MeshStandardMaterial({color:organic?role==='resin'?0x584151:0x586448:palette[Math.max(0,index)],roughness:organic?.93:.84,metalness:organic?0:role==='trim'?.3:.12});
+  m=new T.MeshStandardMaterial({color:organic?role==='resin'?0x362b31:0x819746:palette[Math.max(0,index)],roughness:organic?.93:.84,metalness:organic?0:role==='trim'?.3:.12});
   m.name='e6-kit-'+role;m.userData.actorMaterial=true;m.userData.kitRole=role;if(role==='conduit'){m.userData.floorDressing=true;m.roughness=1;m.metalness=0;m.vertexColors=true;m.color.setScalar(KIT_FLOOR_VALUE_GAIN[id]??1);}
+  if(role==='scar'){m.emissive.setHex(0x9dff5a);m.emissiveIntensity=.55;m.userData.motivatedEmitter=true;}
   if(role==='accent'){m.emissive.setHex(env==='infested'?0x719a53:0x9fe8ff);m.emissiveIntensity=env==='communications'?.38:.10;m.userData.motivatedEmitter=true;}
   finishes.set(role,m);return m;
  };
@@ -111,7 +112,7 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
   if(env==='infested'||id==='breached-loading-bay'||id==='reactor-vault'){
    // Author rocks flattened into one dark connective skin; raised masses continue only over architecture.
    const path=[new T.Vector3(x,.016,z),new T.Vector3(x+(nearest.x-x)*.36,.016,z+.5),new T.Vector3(x+(nearest.x-x)*.72,.016,z+.22),new T.Vector3(nearest.x,.016,nearest.y)];
-   const skin=membraneGeometry(path,.34,.002,undefined,24);skin.computeBoundingBox();if(boundsSafe(skin.boundingBox!)){push(skin.toNonIndexed(),'resin');}skin.dispose();
+   const skin=membraneGeometry(path,.055,.002,undefined,24);skin.computeBoundingBox();if(boundsSafe(skin.boundingBox!)){push(skin.toNonIndexed(),'resin');}skin.dispose();
   }
   // Every story has one deliberate service interruption. It is composed as a
   // supported cluster; no case/chair is scattered into a circulation lane.
@@ -129,7 +130,7 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
    }
   }
   if(env==='habitation'){
-   box('dark',x,.08,z,rw-.08,.16,rd-.08,'cabin foundation inside original reservation');
+   for(const side of [-1,1])box('dark',x+side*rw*.34,.055,z,.13,.11,rd*.60,'cabin floor-mounted fixing');
    place('wall-window',x,.17,z-rd*.27,rw*.94,.85,.20,0,'cabin bulkhead behind interrupted domestic scene',undefined,true);
    if(i%2===0){
     place('bedSingle',x-rw*.22,.17,z+rd*.08,rw*.45,.9,Math.min(2.3,rd*.68),0,'arrival berth left made');
@@ -148,10 +149,14 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
    place('computer-wide',x,roof+.85,z,Math.min(rw*.85,2.4),.8,Math.min(rd*.8,1.1),0,'local relay console');
    if(i===0)place('container-flat-open',x,roof,z+rd*.28,rw*.58,.5,rd*.25,.08,'interrupted cassette replacement');
   }else if(env==='infested'||id==='reactor-vault'){
-   place('rock_largeD',x,.17,z,rw*.66,1.15,rd*.66,.12,'growth consumes machine foundation','resin',true);
-   place(i%2?'rock_largeD':'rock_largeA',x-rw*.10,Math.max(.1,roof-.28),z+rd*.10,rw*.94,.72,rd*.86,i*.6,'growth consumes machine supports','resin');
-   place('rock_smallTopA',x+rw*.23,roof+.1,z-rd*.2,rw*.30,.45,rd*.3,0,'acid vesicle in engulfed machine','scar');
-   for(const side of [-1,1]){const path=[new T.Vector3(x,roof+.28,z),new T.Vector3(x+side*rw*.25,roof+.12,z),new T.Vector3(x+side*rw*.44,Math.max(.12,roof-.35),z)];const g=membraneGeometry(path,Math.min(.6,rd*.18),.04);g.computeBoundingBox();if(boundsSafe(g.boundingBox!)){g.deleteAttribute('uv');push(g.toNonIndexed(),'resin');}g.dispose();}
+   // Asymmetric roots climb actual machine faces; nothing raised enters circulation.
+   for(const side of [-1,1]){
+    const path=[new T.Vector3(x+side*rw*.39,.12,z-rd*.22),new T.Vector3(x+side*rw*.36,roof*.55,z-rd*.18),new T.Vector3(x+side*rw*.24,roof+.12,z),new T.Vector3(x-side*rw*.08,roof+.22,z+rd*.17)];
+    const g=membraneGeometry(path,Math.min(.32,rd*.11),.17,undefined,16);g.computeBoundingBox();
+    if(boundsSafe(g.boundingBox!))push(g.toNonIndexed(),'resin');g.dispose();
+   }
+   place(i%2?'rock_largeD':'rock_largeA',x-rw*.15,Math.max(.1,roof-.18),z+rd*.10,rw*.55,.65,rd*.56,i*.6,'thick cyst shell attached to machine seam','resin');
+   for(let n=0;n<3;n++)place('rock_smallTopA',x+rw*(.12+n*.08),roof+.06,z-rd*.12+n*.08,Math.min(.34,rw*.12),.27+n*.05,Math.min(.3,rd*.12),n*.7,'identifiable luminous cyst cluster','scar');
   }else if(env!=='containment'&&env!=='reactor'&&env!=='engineering'&&id!=='service-shaft-landing'){
    const name=env==='cargo'?'Prop_Crate_Tarp_Large':env==='security'?'container-flat-open':env==='maintenance'?'pipe-ring':env==='cryogenics'?'computer':env==='containment'?'computer-screen':'computer-wide';
    place(name,x,roof+.03,z,Math.min(rw*.78,2.4),.75,Math.min(rd*.76,1.5),i%2?Math.PI/2:0,'interrupted '+env+' service work');

@@ -68,12 +68,12 @@ export function addEnvironmentalStory(world:T.Group,template:RoomTemplate,enviro
       const a=template.obstacles[i],b=template.obstacles[i+1],from=point((a.x+a.width*.5)/32,.012,(a.y+a.height*.5)/32),to=point((b.x+b.width*.5)/32,.012,(b.y+b.height*.5)/32);
       const delta=to.clone().sub(from),normal=point(-delta.z,0,delta.x).normalize(),phase=seed*.0017+i*1.9,span=delta.length(),bend=Math.min(1.3,span*.13);
       const path=[from,from.clone().lerp(to,.27).addScaledVector(normal,bend*Math.sin(phase+1)),from.clone().lerp(to,.64).addScaledVector(normal,bend*Math.sin(phase+3.5)),to];
-      vein(path,.13+(i%3)*.035,i%3?GROWTH_MAT.tissue:GROWTH_MAT.carapace,Math.min(64,Math.max(24,Math.ceil(span*4))));
+      vein(path,.035+(i%3)*.008,i%3?GROWTH_MAT.tissue:GROWTH_MAT.carapace,Math.min(64,Math.max(24,Math.ceil(span*4))));
       const curve=new T.CatmullRomCurve3(path,false,'centripetal');
       for(let branch=0;branch<3;branch++){
         const t=.22+branch*.23,start=curve.getPoint(t),tangent=curve.getTangent(t),side=point(-tangent.z,0,tangent.x).normalize().multiplyScalar(branch%2?-1:1),reach=.8+Math.sin(phase+branch)*.35;
         const end=start.clone().addScaledVector(side,reach).addScaledVector(tangent,.6),elbow=start.clone().addScaledVector(side,reach*.4).addScaledVector(tangent,-.12);
-        vein([start,elbow,end.clone().addScaledVector(tangent,-.22),end],.07+(branch%2)*.025,GROWTH_MAT.tissue,20);
+        vein([start,elbow,end.clone().addScaledVector(tangent,-.22),end],.018+(branch%2)*.006,GROWTH_MAT.tissue,20);
       }
     }
     root.userData.sinuousRoots=rootCount;

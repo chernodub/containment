@@ -61,14 +61,19 @@ it.each([[80,340],[360,620],[640,900],[920,1120]])('keeps all walkable floor flu
  }
  disposeModel(model);
 });
+// E7 contracts the raised decorative assembly while the collision/deck stay fixed.
+function decorativeSurface(model:T.Object3D,x:number,z:number){
+ const scale=model.userData.decorativeCoreScale as number;expect(scale).toBe(.78);
+ return surface(model,600+(x-600)*scale,440+(z-440)*scale);
+}
 it('closes the shield roof with broad ceramic panels and keeps the front jacket low',()=>{
  const model=authoredRoom(t.id,t)!;
  for(let i=0;i<16;i++){
-  const a=(i+.5)*Math.PI/8,hit=surface(model,600+Math.cos(a)*105,440+Math.sin(a)*97);
+  const a=(i+.5)*Math.PI/8,hit=decorativeSurface(model,600+Math.cos(a)*105,440+Math.sin(a)*97);
   expect((hit.object as T.Mesh<T.BufferGeometry,T.Material>).material.name).toMatch(/^annulus-ceramic/);
   expect(hit.point.y*32).toBeGreaterThanOrEqual(30);
  }
- const front=surface(model,600,605),back=surface(model,600,275);
+ const front=decorativeSurface(model,600,605),back=decorativeSurface(model,600,275);
  expect(front.point.y*32).toBeLessThanOrEqual(42);expect(back.point.y).toBeGreaterThan(front.point.y);
  const ceramic:T.MeshStandardMaterial[]=[];
  model.traverse(o=>{if(o instanceof T.Mesh&&o.material.name.startsWith('annulus-ceramic'))ceramic.push(o.material);});
@@ -78,16 +83,16 @@ it('closes the shield roof with broad ceramic panels and keeps the front jacket 
 it('raises load-bearing shoes above the solid plinth and recesses displays inside guards',()=>{
  const model=authoredRoom(t.id,t)!;
  // West foot is clear of the status rail. Shoes must not be buried in the plinth.
- const shoe=surface(model,376,440);
+ const shoe=decorativeSurface(model,376,440);
  expect(shoe.point.y*32).toBeGreaterThanOrEqual(17);
  expect((shoe.object as T.Mesh<T.BufferGeometry,T.Material>).material.name).toBe('annulus-bands');
- const web=surface(model,400,432);
+ const web=decorativeSurface(model,400,432);
  expect(web.point.y*32).toBeGreaterThan(23);
- const screen=surface(model,810,350),guard=surface(model,833,350);
+ const screen=decorativeSurface(model,810,350),guard=decorativeSurface(model,833,350);
  expect(guard.point.y*32-screen.point.y*32).toBeGreaterThanOrEqual(6);
  expect((guard.object as T.Mesh<T.BufferGeometry,T.Material>).material.name).toBe('annulus-bands');
  // A recessed service throat and its flanged collar are separate solid levels.
- expect(surface(model,600,634).point.y*32).toBeGreaterThan(surface(model,600,622).point.y*32);
+ expect(decorativeSurface(model,600,634).point.y*32).toBeGreaterThan(decorativeSurface(model,600,622).point.y*32);
  disposeModel(model);
 });
 it.each([[330,460],[465,595],[600,730],[735,870]])('keeps raised construction inside the exact canonical solid footprint from x%s to x%s',(first,last)=>{

@@ -25,10 +25,10 @@ export function applyHotFixtureSurface(material: T.MeshStandardMaterial,core?:{x
       float hotFixtureBand=0.5+0.5*sin(hotFixtureRadius*15.0+vHotFixturePosition.y*9.0-hotFixtureTime*2.8+sin(hotFixtureAzimuth*3.0+hotFixtureTime)*1.3);
       float hotFixtureSeam=1.0-smoothstep(0.025,0.09,abs(fract(hotFixtureRadius*2.0-hotFixtureTime*.07)-0.5));
       vec3 hotFixtureTint=mix(vec3(1.0,0.055,0.002),vec3(1.0,0.995,0.98),hotFixturePearl);
-      float hotFixtureEnergy=mix(0.28,3.0,hotFixturePearl)*(0.32+hotFixtureBand*0.68)*(1.0-hotFixtureSeam*0.48);
+      float hotFixtureEnergy=mix(0.28,2.2,hotFixturePearl)*(0.32+hotFixtureBand*0.68)*(1.0-hotFixtureSeam*0.48);
       totalEmissiveRadiance*=hotFixtureTint*hotFixtureEnergy;`);
   };
-  material.customProgramCacheKey = () => `${key}:hot-fixture-bands-v4`;
+  material.customProgramCacheKey = () => `${key}:hot-fixture-bands-v5-headroom`;
   material.needsUpdate = true;
 }
 

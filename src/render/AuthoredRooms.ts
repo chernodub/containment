@@ -607,7 +607,7 @@ function breachedBay(f:Fabricator,t:RoomPlan){
  for(const side of [-1,1])f.box(ex+side*.68,.051,ez,.1,.008,1.35,exitTrim,0);
 }
 function reactorFloor(f:Fabricator,t:RoomPlan){
- for(const hole of t.voids??[]){const b=bounds(hole),radius=Math.min(b.w,b.d)*.42;
+ for(const hole of t.voids??[]){const b=bounds(hole),radius=Math.min(b.w,b.d)*.36;
   f.root.userData.hotCore={x:b.x,z:b.z,radius};
   f.pipe(v(b.x,-4.5,b.z),v(b.x,-.5,b.z),radius*.7,f.dark);
   for(const y of [-3.3,-1.4,.15]){f.ring(b.x,y,b.z,radius,.15,f.edge);f.ring(b.x,y+.2,b.z,radius*.83,.055,f.cold);}
@@ -642,7 +642,7 @@ function reactorFloor(f:Fabricator,t:RoomPlan){
 /** Coherent equipment assemblies inside exact collision footprints; no arbitrary object stretching. */
 function equipment(f:Fabricator,t:RoomPlan,kind:'cryo'|'cargo'|'reactor'){
  for(const r of t.obstacles){const x=(r.x+r.width/2)/U,z=(r.y+r.height/2)/U,w=r.width/U,d=r.height/U;
-  f.box(x,.12,z,w,.24,d,f.dark,.07);f.box(x,.47,z,w-.12,.62,d-.12,kind==='cargo'?f.rust:f.paint,.09);f.box(x,.82,z,w-.18,.1,d-.18,f.edge,.03);
+  for(const side of [-1,1])f.box(x+side*w*.34,.12,z,.16,.24,d*.78,f.dark,.035);f.box(x,.47,z,w-.12,.62,d-.12,kind==='cargo'?f.rust:f.paint,.09);f.box(x,.82,z,w-.18,.1,d-.18,f.edge,.03);
   if(kind==='cargo'){
    // One reinforced pressure freight container, with lifting sockets and panel seams.
    for(let dx=-w/2+.3;dx<w/2;dx+=1.3)for(const side of [-1,1])f.box(x+dx,.49,z+side*(d/2-.1),.1,.71,.13,f.bronze,.02);

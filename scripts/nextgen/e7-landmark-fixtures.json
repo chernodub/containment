@@ -1,0 +1,52 @@
+[
+  {
+    "id": "e7-landmark-annulus",
+    "room": "containment-annulus",
+    "rig": "breacher",
+    "x": 250.3127524153771,
+    "y": 418.07067603039803,
+    "angle": 1.8723178246009469,
+    "enemies": [
+      {
+        "type": "crawler",
+        "x": 177.85498596539398,
+        "y": 202.2070786346821,
+        "radius": 14,
+        "elite": false
+      },
+      {
+        "type": "brute",
+        "x": 168.2953422329452,
+        "y": 670.0325270969478,
+        "radius": 28,
+        "elite": true
+      }
+    ],
+    "source": "breacher-r18-containment-annulus-mid.json"
+  },
+  {
+    "id": "e7-landmark-cargo",
+    "room": "freight-hold",
+    "rig": "arc",
+    "x": 111.53939859544025,
+    "y": 516.2461711054816,
+    "angle": -1.591224028142272,
+    "enemies": [
+      {
+        "type": "stalker",
+        "x": 160.04896803582142,
+        "y": 674.9944605694005,
+        "radius": 17,
+        "elite": false
+      },
+      {
+        "type": "spitter",
+        "x": 152.1039700706638,
+        "y": 760.3873982205353,
+        "radius": 18,
+        "elite": false
+      }
+    ],
+    "source": "arc-r7-freight-hold-mid.json"
+  }
+]

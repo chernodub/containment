@@ -96,14 +96,7 @@ export function addConstructionLanguage(
     for(const ix of [-1,-.5,0,.5,1])for(const iz of [-1,-.5,0,.5,1])if(!deckMarkingSupported(template,x+ix*width/2*c+iz*depth/2*s,z-ix*width/2*s+iz*depth/2*c))return;
     box(material,x,.021,z,width,.008,depth,angle);
   };
-  const spine=environment==='habitation'?1.9:w*profile.spine;
-  for(let z=.8;z<h-.8;z+=.55){
-    flat(m.dark,spine,z,profile.width,.53);
-    if(environment==='communications'||environment==='maintenance')for(const side of [-1,1])flat(m.steel,spine+side*(profile.width/2+.03),z,.035,.53);
-    if(environment==='habitation'&&Math.floor(z*2)%5!==0)flat(m.paint,spine+.16,z,.06,.43);
-    if(environment==='cargo'&&Math.floor(z*2)%7===0)flat(m.steel,spine+.32,z,.06,.48);
-    if(environment==='engineering'&&Math.floor(z*2)%3===0)flat(m.paint,spine,z,profile.width*.8,.075);
-  }
+  // No generic longitudinal lane. Every floor feed is now attached to equipment.
   // Existing portals receive flush construction thresholds, never a new collision frame.
   const ex=template.exit.x/32,ez=template.exit.y/32;
   for(const offset of [-.32,0,.32])flat(offset===0?m.dark:m.steel,ex,ez+offset,1.75,.10);
@@ -378,7 +371,7 @@ export function addConstructionLanguage(
       const bridgePositions:number[]=[],bridgeUV:number[]=[],bridgeIndices:number[]=[];
       for(let row=0;row<=steps;row++){
         const t=row/steps,c=curve.getPoint(t),tangent=curve.getTangent(t),length=Math.hypot(tangent.x,tangent.z)||1,flare=.04+.96*Math.pow(Math.sin(t*Math.PI),.72);
-        for(const side of [-1,1]){const width=.64*flare*(side<0?.88+.18*Math.sin(t*8.1+.5):1.0+.22*Math.sin(t*6.7+1.3));bridgePositions.push(c.x-tangent.z/length*width*side,.026,c.z+tangent.x/length*width*side);bridgeUV.push(side<0?0:1,t);}
+        for(const side of [-1,1]){const width=.055*flare*(side<0?.88+.18*Math.sin(t*8.1+.5):1.0+.22*Math.sin(t*6.7+1.3));bridgePositions.push(c.x-tangent.z/length*width*side,.026,c.z+tangent.x/length*width*side);bridgeUV.push(side<0?0:1,t);}
         if(row<steps){const i=row*2;bridgeIndices.push(i,i+1,i+2,i+1,i+3,i+2);}
       }
       const bridge=new T.BufferGeometry();bridge.setAttribute('position',new T.Float32BufferAttribute(bridgePositions,3));bridge.setAttribute('uv',new T.Float32BufferAttribute(bridgeUV,2));bridge.setIndex(bridgeIndices);bridge.computeVertexNormals();
@@ -415,7 +408,7 @@ export function addConstructionLanguage(
     let coveredBreach:number[]|null=null;
     for(const breach of template.breaches){
       const bx=breach.x/32,bz=breach.y/32;
-      if(flatSkin([new T.Vector3(bx-.83,.026,bz-.43),new T.Vector3(bx-.15,.026,bz-.05),new T.Vector3(bx+.80,.026,bz+.35)],.78,m.resin)){
+      if(flatSkin([new T.Vector3(bx-.83,.026,bz-.43),new T.Vector3(bx-.15,.026,bz-.05),new T.Vector3(bx+.80,.026,bz+.35)],.12,m.resin)){
         coveredBreach=[bx,bz];break;
       }
     }
