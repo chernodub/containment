@@ -13,9 +13,15 @@ export function registerV7PlacementScenarios(scenarios) {
         const b=g.geometry.bounds,targets=[];
         if(blocked) for(const rect of g.geometry.blockers){
           if(g.geometry.boundaryWalls.includes(rect))continue;
-          targets.push({x:rect.x+rect.width/2,y:rect.y+rect.height/2});
+          targets.push({x:rect.x+rect.width/2,y:rect.y+rect.height/2},
+            {x:rect.x-2,y:rect.y+rect.height/2},{x:rect.x+rect.width+2,y:rect.y+rect.height/2},
+            {x:rect.x+rect.width/2,y:rect.y-2},{x:rect.x+rect.width/2,y:rect.y+rect.height+2});
         }
         else for(let y=b.y+180;y<b.y+b.height-180;y+=64)for(let x=b.x+180;x<b.x+b.width-180;x+=64)targets.push({x,y});
+        if(blocked)for(const polygon of g.geometry.voids??[]){
+          targets.push({x:polygon.reduce((n,p)=>n+p.x,0)/polygon.length,y:polygon.reduce((n,p)=>n+p.y,0)/polygon.length});
+          for(let i=0;i<polygon.length;i++){const a=polygon[i],c=polygon[(i+1)%polygon.length];targets.push(a,{x:(a.x+c.x)/2,y:(a.y+c.y)/2});}
+        }
         targets.sort((a,c)=>Math.hypot(a.x-b.width/2,a.y-b.height/2)-Math.hypot(c.x-b.width/2,c.y-b.height/2));
         let mark=null;
         search:for(const target of targets)for(const distance of [110,160,220,280,70])for(let i=0;i<16;i++){

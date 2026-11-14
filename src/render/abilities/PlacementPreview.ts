@@ -29,11 +29,11 @@ void main(){
  float invalid=1.-data.y;
  // Blocked placement has interrupted crossbars as well as a warm boundary,
  // preserving a shape cue independently of color.
- float cross=(1.-smoothstep(.018,.045,abs(abs(p.x)-abs(p.y))))*step(.5,fract((p.x-p.y)*6.));
+ float cross=(1.-smoothstep(.018,.045,abs(abs(p.x)-abs(p.y))))*(1.-smoothstep(.18,.30,length(p)));
  float mark=max(edge*dash,cross*invalid*.72);
  float backing=max(edge,cross*invalid)*.8;
  if(backing<.01)discard;
- gl_FragColor=vec4(mix(vec3(.012,.022,.028),color,mark),max(mark,backing)*.9);
+ gl_FragColor=vec4(mix(vec3(.012,.022,.028),color,mark),max(mark,backing)*.55);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
 }`;
