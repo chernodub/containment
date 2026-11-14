@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { PlacementPreview, type PlacementPreviewState } from './PlacementPreview';
 import { AbilityPriorityMask, bindPriorityMask, type HostilePrioritySource } from './PriorityMask';
 import type { AbilitiesSnapshot, AbilityEvent, RigId } from '../../game/abilities/contract';
 import type { DepthGame } from '../../DepthGame';
@@ -16,6 +17,8 @@ import type { AbilityFrame, AbilityPresentation, PresentationFactory } from './t
 export class AbilityVisuals extends AbilityGeometry {
     readonly kit = new ElementKit(this.root);
     readonly priorityMask = new AbilityPriorityMask();
+    readonly placementPreview = new PlacementPreview(this.root);
+    setPlacementPreview(value: PlacementPreviewState | null): void { this.placementPreview.set(value); }
     private readonly priorityActor = (id: number) => this.kit.statusActor(id);
     private prioritySource?: HostilePrioritySource;
     /** Optional world-renderer accessor; old renderers keep snapshot/projectile fallback. */
@@ -93,12 +96,13 @@ export class AbilityVisuals extends AbilityGeometry {
         if (visible && snapshot?.rig)
             this.registry.get(snapshot.rig)?.update(f);
         this.system?.update(f);
+        this.placementPreview.update(this.kit.time, this.kit.reducedMotion, visible);
         this.kit.end();
     }
-    override clear(): void { super.clear(); this.priorityMask?.clear(); this.kit?.clear(); if (this.registry)
+    override clear(): void { super.clear(); this.placementPreview?.clear(); this.priorityMask?.clear(); this.kit?.clear(); if (this.registry)
         for (const p of this.registry.values())
             p.clear(); this.system?.clear(); }
     override dispose(): void { if (this.dead)
         return; this.dead = true; for (const p of this.registry.values())
-        p.dispose(); this.system?.dispose(); this.kit.dispose(); this.priorityMask.dispose(); super.dispose(); }
+        p.dispose(); this.system?.dispose(); this.placementPreview.dispose(); this.kit.dispose(); this.priorityMask.dispose(); super.dispose(); }
 }

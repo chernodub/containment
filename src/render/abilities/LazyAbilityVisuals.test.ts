@@ -9,7 +9,7 @@ function deferred<T>(){let resolve!:(value:T)=>void,reject!:(error:unknown)=>voi
 function fixture(){
  const scene=new Group(),atlas=deferred<void>();
  const owner={root:new Group(),kit:{atlas:{loaded:false}},priorityMask:{marker:true},
-  bind:vi.fn(),setHostilePrioritySource:vi.fn(),setOptions:vi.fn(),setReducedMotion:vi.fn(),setSoftDepth:vi.fn(),
+  setPlacementPreview:vi.fn(),bind:vi.fn(),setHostilePrioritySource:vi.fn(),setOptions:vi.fn(),setReducedMotion:vi.fn(),setSoftDepth:vi.fn(),
   event:vi.fn(),update:vi.fn(),clear:vi.fn(),prepare:vi.fn(()=>atlas.promise),dispose:vi.fn(()=>owner.root.removeFromParent()),
  };
  const construct=vi.fn(function(target:Group){target.add(owner.root);return owner as unknown as AbilityVisuals;});
