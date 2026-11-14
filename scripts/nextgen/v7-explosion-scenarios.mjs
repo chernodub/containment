@@ -14,44 +14,121 @@ export async function stageV7Explosion({ origin, source, event, room, samples })
   const d = window.__containmentDebug, g = d.game, r = d.renderer;
   await d.gotoRoom(room, { rig: 'breacher' }); d.invulnerable(true); g.enemies.reset();
   const b = g.geometry.bounds;
-  let best = null, score = -Infinity;
-  for (let y = b.y + 170; y < b.y + b.height - 170; y += 48) {
-    for (let x = b.x + 170; x < b.x + b.width - 170; x += 48) {
-      if (!d.canStand(x, y, 28)) continue;
-      for (const angle of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
-        const tx = x + Math.cos(angle) * 240, ty = y + Math.sin(angle) * 240;
-        if (!d.canStand(tx, ty, 32) || !d.clearShot(tx, ty, { x, y })) continue;
-        let open = 0;
-        for (let i = 0; i < 8; i++) if (d.canStand(tx + Math.cos(i * Math.PI / 4) * 170, ty + Math.sin(i * Math.PI / 4) * 170, 16)) open++;
-        const margin = Math.min(x - b.x, y - b.y, b.x + b.width - x, b.y + b.height - y,
-          tx - b.x, ty - b.y, b.x + b.width - tx, b.y + b.height - ty);
-        const rank = open * 1000 + margin;
-        if (rank > score) { score = rank; best = { x, y, tx, ty, angle, open }; }
-      }
+  let marine = null, marineScore = -Infinity;
+  // Choose the native marine mark first. The blast is selected only after the
+  // real camera settles; room-space clearance alone says nothing about framing.
+  for (let y = b.y + 150; y < b.y + b.height - 150; y += 40) {
+    for (let x = b.x + 150; x < b.x + b.width - 150; x += 40) {
+      if (!d.canStand(x, y, 32)) continue;
+      const rank = -Math.hypot(x - (b.x + b.width / 2), y - (b.y + b.height / 2));
+      if (rank > marineScore) { marineScore = rank; marine = { x, y }; }
     }
   }
-  if (!best) throw Error('No legal V7 shared explosion inspection mark');
-  Object.assign(g.player, { x: best.x, y: best.y, angle: best.angle, vx: 0, vy: 0 });
-  d.setInput({ x: 0, y: 0, fire: false, angle: best.angle, autoAim: false });
+  if (!marine) throw Error('No legal V7 shared explosion inspection mark');
+  Object.assign(g.player, { ...marine, angle: 0, vx: 0, vy: 0 });
+  d.setInput({ x: 0, y: 0, fire: false, angle: 0, autoAim: false });
   d.step(3800); g.enemies.reset(); d.refresh();
+  const canvas = r.canvas.getBoundingClientRect(), insets = r.hudInsets ?? {};
+  const safe = { left: canvas.left + (insets.left ?? 0) + 24,
+    right: canvas.right - (insets.right ?? 0) - 24,
+    top: canvas.top + (insets.top ?? 0) + 24,
+    bottom: canvas.bottom - (insets.bottom ?? 0) - 24 };
+  const panels = [];
+  for (const node of document.querySelectorAll('#action-bar,.vitals,#status-hud,#radar-hud,#boss-hud')) {
+    if (node.hidden) continue;
+    const box = node.getBoundingClientRect();
+    if (box.width > 0 && box.height > 0) panels.push({ left: box.left - 12, right: box.right + 12,
+      top: box.top - 12, bottom: box.bottom + 12 });
+  }
+  const point = r.camera.position.clone();
+  function support(x, y) {
+    const bounds = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity };
+    let points = 0, depthValid = true;
+    const basis = r.camera.matrixWorld.elements;
+    const add = (wx, wy, wz) => {
+      point.set(wx, wy, wz).project(r.camera); points++;
+      depthValid &&= point.z >= -1 && point.z <= 1;
+      const px = canvas.left + (point.x + 1) * canvas.width / 2;
+      const py = canvas.top + (1 - point.y) * canvas.height / 2;
+      bounds.left = Math.min(bounds.left, px); bounds.right = Math.max(bounds.right, px);
+      bounds.top = Math.min(bounds.top, py); bounds.bottom = Math.max(bounds.bottom, py);
+    };
+    const cx = x / 32, cz = y / 32;
+    // A circumscribed 64-gon encloses the complete largest native Queen pulse,
+    // including extrema between vertices, rather than checking its center only.
+    const radius = (240 / 32) / Math.cos(Math.PI / 64);
+    for (let i = 0; i < 64; i++) {
+      const a = i * Math.PI / 32;
+      add(cx + Math.cos(a) * radius, .10, cz + Math.sin(a) * radius);
+    }
+    // The largest native fire card grows to 6.25m wide; include its full camera-
+    // facing corners at both start/end heights. Source radii are never reduced.
+    for (const height of [1.9, 2.31]) for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+      add(cx + basis[0] * sx * 3.125 + basis[4] * sy * 3.125,
+        height + basis[1] * sx * 3.125 + basis[5] * sy * 3.125,
+        cz + basis[2] * sx * 3.125 + basis[6] * sy * 3.125);
+    }
+    // Smoke's bounded native drift (<=2.6m) and rotated 4.025m cards fit this
+    // conservative envelope. This includes their full alpha-card support.
+    const smokeRadius = 2.85 / Math.cos(Math.PI / 16);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (const height of [.1, 2.6]) {
+      for (let i = 0; i < 16; i++) {
+        const a = i * Math.PI / 8, right = Math.cos(a) * smokeRadius, up = Math.sin(a) * smokeRadius;
+        add(cx + sx * 2.6 + basis[0] * right + basis[4] * up,
+          height + basis[1] * right + basis[5] * up,
+          cz + sz * 2.6 + basis[2] * right + basis[6] * up);
+      }
+    }
+    const overlapsHud = panels.some(panel => bounds.right > panel.left && bounds.left < panel.right && bounds.bottom > panel.top && bounds.top < panel.bottom);
+    const inside = depthValid && !overlapsHud && bounds.left >= safe.left && bounds.right <= safe.right && bounds.top >= safe.top && bounds.bottom <= safe.bottom;
+    return { bounds, inside, depthValid, overlapsHud, points, nativeQueenRadius: 240,
+      fireCardWidthMetres: 6.25, smokeDriftMetres: 2.6, smokeCardDiagonalMetres: 5.7 };
+  }
+  let best = null, score = -Infinity;
+  // Derive legal floor candidates from the actual settled camera. Prefer a
+  // central readable target near the marine, with a clear 52-unit hot core.
+  for (let py = safe.top + 32; py < safe.bottom - 32; py += 24) {
+    for (let px = safe.left + 32; px < safe.right - 32; px += 24) {
+      const floor = r.pointer(px, py);
+      if (!floor || !d.canStand(floor.x, floor.y, 52)) continue;
+      const distance = Math.hypot(floor.x - g.player.x, floor.y - g.player.y);
+      if (distance < 80 || distance > 360 || !d.clearShot(floor.x, floor.y, g.player)) continue;
+      const projected = support(floor.x, floor.y);
+      if (!projected.inside) continue;
+      const margin = Math.min(projected.bounds.left - safe.left, safe.right - projected.bounds.right,
+        projected.bounds.top - safe.top, safe.bottom - projected.bounds.bottom);
+      const rank = margin * 4 - Math.abs(distance - 140) * .15 - Math.hypot(px - canvas.left - canvas.width * .5, py - canvas.top - canvas.height * .48) * .05;
+      if (rank > score) { score = rank; best = { x: g.player.x, y: g.player.y,
+        tx: floor.x, ty: floor.y, angle: Math.atan2(floor.y - g.player.y, floor.x - g.player.x),
+        distance, screen: { x: px, y: py }, support: projected }; }
+    }
+  }
+  if (!best) throw Error('No legal V7 explosion mark with complete projected Queen/fire/smoke support inside the HUD-safe viewport');
+  const supportTrace = [];
+  function assertSupport(sampleMs) {
+    const projected = support(best.tx, best.ty);
+    if (!projected.inside) throw Error('V7 explosion support clipped at ' + sampleMs + 'ms: ' + JSON.stringify(projected));
+    supportTrace.push({ sampleMs, ...projected });
+  }
   const warning = { type: 'enemy-warning', x: best.tx - Math.sin(best.angle) * 75,
     y: best.ty + Math.cos(best.angle) * 75, radius: 34, durationMs: 2500 };
   const proof = d.g4DangerProof = {
     presentationOnly: true, nativeAction: false, kind: 'shared-explosion-payload-replay',
     origin, source, room, mark: best, event: { ...event, x: best.tx, y: best.ty },
     warning, samples, sampleMs: 0, shaderGuard: true, programs: 0,
+    framing: { safeViewport: safe, measuredHudPanels: panels, supportTrace, cameraOverride: false, coreClearance: 52, note: 'Full pulse/fire/smoke-card support; ejected sparks/debris are separate tiny ballistic tails.' },
     qualification: 'Native payload replay at a common legal mark; this does not simulate its originating action, kill or damage. Native grenade action remains covered by combat-heavy.',
   };
   const gl = r.renderer.getContext();
   gl.createProgram = function () { proof.programs++; throw Error('V7 shared explosion compiled a combat shader'); };
-  r.effect(warning); r.effect(proof.event); d.refresh();
+  r.effect(warning); r.effect(proof.event); d.refresh(); assertSupport(0);
   const original = d.step; let sample = 0, elapsed = 0;
   // Capture's standard 150ms requests map onto explicit impact/body/smoke clocks.
   d.step = ms => {
     if (ms !== 150) return original(ms);
     const target = samples[Math.min(++sample, samples.length - 1)];
     original(Math.max(0, target - elapsed)); elapsed = target;
-    proof.sampleMs = target; d.shaderCompilations = proof.programs;
+    proof.sampleMs = target; d.shaderCompilations = proof.programs; assertSupport(target);
     if (proof.programs) throw Error('V7 shared explosion shader guard failed');
   };
   d.shaderCompilations = 0;
