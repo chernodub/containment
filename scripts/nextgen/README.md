@@ -817,3 +817,18 @@ Prepared reductions are not actual-open evidence; strict review bridges require
 both native and exact480 SHA matches to an actual witness, with both old/new byte
 streams rehashed. See `docs/nextgen/I10-REPORT.md` for the frozen cohort, gate-pin
 qualification, adverse-load miss and retained art/framing gaps.
+
+## V7 shared explosion review
+
+`v7-explosion-{weapon,grenade,rocket,nest,queen}` adds five seven-phase Annulus
+inspections. Use `--burst=7 --step-ms=150 --sprite-width=1920` with either frozen
+before or final dist. Standard requests map to 0/30/90/180/340/600/1000ms after
+injection; the actual clock, source payload, legal mark, warning and fatal shader
+compile guard are recorded in `g4DangerProof`.
+
+These are explicitly **presentation-only native-payload replays** at one common
+legal mark, not five native kills/actions. Weapon uses the real Combustion boon
+shape; grenade/rocket replay their burning-target blast payloads. Nest/Queen keep
+their actual element-free payloads and therefore inspect smoke/glow rather than
+an invented fireball. The unchanged `combat-heavy` scenario supplies native
+grenade action/firing evidence. Exact 480×270 reductions use `v3-gallery.mjs`.
