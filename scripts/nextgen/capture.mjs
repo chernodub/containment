@@ -13,6 +13,7 @@ import {assertPriorityPair} from './i10-framing-contract.mjs';
 import {assertCaptureCanvas} from './capture-canvas.mjs';
 import {assertKitingMovement} from './capture-movement.mjs';
 import {assertPlayingMarine} from './capture-marine-contract.mjs';
+import {configureCaptureGraphics} from './capture-graphics.mjs';
 import {inspectI10ArmoryReplay} from './i10-armory-replay.mjs';
 import {inspectV7Placement} from './v7-placement-scenarios.mjs';
 import {stitchPngFrames} from './sprites.mjs';
@@ -145,9 +146,10 @@ try{
    if(scenarioIndex++||scenario.resetPreferences){await page.evaluate(()=>{const d=window.__containmentDebug;d.game.menu();d.refresh();});await page.waitForLoadState('networkidle');await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);}
    await page.emulateMedia({reducedMotion:scenario.reducedMotion?'reduce':'no-preference'});
    if(scenario.auditGraphics)await page.evaluate(installDrawAudit);
-   await page.evaluate(seed=>{window.__captureSeed(seed);},seed);await page.evaluate(scenario.setup,scenario.setupArgument??scenario.room);
+   await page.evaluate(seed=>{window.__captureSeed(seed);},seed);
+   await page.evaluate(configureCaptureGraphics,graphics);
+   await page.evaluate(scenario.setup,scenario.setupArgument??scenario.room);
    await page.evaluate(strength=>{window.__containmentDebug.renderer.post.setStyleStrength(strength);window.__containmentDebug.refresh();},style);
-   if(Object.keys(graphics).length)await page.evaluate(async options=>{const d=window.__containmentDebug;d.renderer.setGraphicsOptions(options);await d.prepare();d.refresh();},graphics);
    if(scenario.reloadAfterSetup){await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);if(scenario.auditGraphics)await page.evaluate(installDrawAudit);await page.evaluate(scenario.afterReload);}
    if(scenario.nativeKeys){await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));for(const [key,ms]of scenario.nativeKeys){await page.keyboard.press(key);await page.evaluate(ms=>window.__containmentDebug.step(ms),ms);}}
    // Asset warm-up may consume random values asynchronously. Restart the visual

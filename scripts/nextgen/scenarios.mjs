@@ -853,3 +853,5 @@ import {registerK7Scenarios} from './k7-scenarios.mjs';
 registerK7Scenarios(SCENARIOS);
 import {registerE7Scenarios} from './e7-scenarios.mjs';
 registerE7Scenarios(SCENARIOS);
+import {registerI11Scenarios} from './i11-scenarios.mjs';
+registerI11Scenarios(SCENARIOS);
