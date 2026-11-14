@@ -69,6 +69,33 @@ export async function stageCorpseBudget() {
     if(candidates.length>points.length){points=candidates;origin=center;}
     if(points.length>=13)break;
   }
+  // Preserve all adequate old marks. Only a deficient closer-camera crop
+  // gets the same76unit hex phase search, with identical native floor/body pads.
+  let packingMode='legacy-grid';const fallbackTrials=[];
+  if(points.length<13)for(const center of centers){
+    Object.assign(g.player,{x:center.x,y:center.y,vx:0,vy:0});
+    r.cameraRig.reset(center.x/32,center.y/32);r.roomCombatFraming.reset();d.refresh();
+    let centerBest=0;
+    for(let layout=0;layout<32;layout++){
+      const candidates=[],spacing=76,row=spacing*Math.sqrt(3)/2;
+      for(let iy=-9;iy<=9;iy++)for(let ix=-9;ix<=9;ix++){
+        const u=(ix+(iy&1)*.5+(layout&3)*.25)*spacing,w=(iy+((layout>>2)&3)*.25)*row;
+        const x=center.x+(layout<16?u:w),y=center.y+(layout<16?w:u),distance=Math.hypot(x-center.x,y-center.y);
+        if(!d.canStand(x,y,32)||distance<64||distance>420)continue;
+        let fits=true;
+        for(const dx of [-32,32])for(const dz of [-32,32])for(const h of [0,1.2]){
+          probe.set((x+dx)/32,h,(y+dz)/32).project(r.camera);
+          const sx=(probe.x+1)*innerWidth/2,sy=(1-probe.y)*innerHeight/2;
+          if(sx<i.left+12||sx>innerWidth-i.right-12||sy<i.top+12||sy>innerHeight-i.bottom-12)fits=false;
+        }
+        if(fits)candidates.push({x,y});
+      }
+      centerBest=Math.max(centerBest,candidates.length);
+      if(candidates.length>points.length){points=candidates;origin=center;packingMode='hex-fallback';}
+      if(points.length>=13)break;
+    }
+    fallbackTrials.push({x:center.x,y:center.y,best:centerBest});if(points.length>=13)break;
+  }
   if(points.length<13)throw Error('Not enough legal corpse comparison marks');
   Object.assign(g.player,{x:origin.x,y:origin.y,vx:0,vy:0});
   r.cameraRig.reset(origin.x/32,origin.y/32);r.roomCombatFraming.reset();d.refresh();
@@ -79,5 +106,5 @@ export async function stageCorpseBudget() {
   }
   if(killed!==13)throw Error('Expected thirteen legal native deaths; got '+killed);
   d.step(600);d.refresh();
-  d.i8CorpseProof={nativeDeaths:13,retained:r.corpses.length,ids:r.corpses.map(c=>c.id)};
+  d.i8CorpseProof={nativeDeaths:13,retained:r.corpses.length,ids:r.corpses.map(c=>c.id),packingMode,fallbackTrials,marks:points.slice(0,13),origin};
 }

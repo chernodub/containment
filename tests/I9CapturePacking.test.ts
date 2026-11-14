@@ -12,6 +12,10 @@ import {loadModels} from './loadModels';
 import {alien,marine,disposeModel} from '../src/render/models';
 // @ts-expect-error The capture functions intentionally run as serialized JavaScript.
 import {stageKiting, advanceKiting, stageCombat} from '../scripts/nextgen/scenarios.mjs';
+// @ts-expect-error Native capture fixture is serialized self-contained JavaScript.
+import {stageC6Families} from '../scripts/nextgen/c6-scenarios.mjs';
+// @ts-expect-error Native death/packing fixture is serialized JavaScript.
+import {stageCorpseBudget} from '../scripts/nextgen/i8-scenarios.mjs';
 
 // CPU integration only: real simulation/geometry and native camera mathematics,
 // without WebGL, a browser, HUD DOM or claims about pixel/asset correctness.
@@ -26,6 +30,7 @@ beforeAll(async()=>{
 function setup(width: number, height: number) {
   const target: Record<string, any> = {};
   vi.stubGlobal('window', target);
+  vi.stubGlobal('innerWidth',width);vi.stubGlobal('innerHeight',height);
   vi.stubGlobal('location', {search: '?debug=1&seed=1729'});
   const camera = new T.PerspectiveCamera(28, width / height, .1, 160);
   const rig = new CameraRig(), hud = new HudCombatFraming(), roomFraming = new RoomCombatFraming();
@@ -34,7 +39,14 @@ function setup(width: number, height: number) {
   const desired = new T.Vector3(), point = new T.Vector3(), scratch = new T.Vector3(), focus = new T.Vector3();
   let room = '', muzzleLife = 0;const nativeActorIds=new Set<number>();
   const renderer = {
-    muzzle: {intensity: 0}, beginGameplayPresentation:vi.fn(), roomLoading: false,
+    muzzle: {intensity: 0}, corpses:[] as {id:number}[], beginGameplayPresentation:vi.fn(), roomLoading: false,
+    camera,cameraRig:rig,roomCombatFraming:roomFraming,hudInsets:{top:182,right:292,bottom:height===720?108:120,left:0},viewportWidth:width,viewportHeight:height,
+    player:{root:new T.Group(),height:marineHeight},actors:new Map<number,{height:number}>(),
+    actorScreenBounds(id:number,x:number,y:number,radius:number,box:{left:number;right:number;top:number;bottom:number}){
+      const actor=this.actors.get(id);if(!actor)return false;box.left=box.top=Infinity;box.right=box.bottom=-Infinity;
+      for(const ix of [-1,1])for(const iz of [-1,1])for(const iy of [0,1]){point.set((x+ix*radius)/32,iy*actor.height,(y+iz*radius)/32).project(camera);const sx=(point.x+1)*width/2,sy=(1-point.y)*height/2;box.left=Math.min(box.left,sx);box.right=Math.max(box.right,sx);box.top=Math.min(box.top,sy);box.bottom=Math.max(box.bottom,sy);}
+      return true;
+    },
     // Production prepare reloads even the same node: reset presentation state
     // on a legal lane retry rather than carrying the prior trial's spring.
     prepare: async () => {room='';muzzleLife=0;nativeActorIds.clear();},
@@ -43,6 +55,7 @@ function setup(width: number, height: number) {
       muzzleLife -= dt;
       this.muzzle.intensity = muzzleLife > 0 ? 6 * Math.min(1, muzzleLife / .035) : 0;
       const p = game.player, b = game.geometry.bounds;
+      this.player.root.position.set(p.x/32,0,p.y/32);this.actors.clear();for(const e of game.enemies.snapshot.enemies)this.actors.set(e.id,{height:heights.get(`${e.type}:${e.elite}:${e.champion??''}`)??3.2});
       if (room !== game.node.id) {
         room = game.node.id;
         const initial = roomFocus(p.x / 32, p.y / 32, b.width / 32, b.height / 32, COMBAT_VIEW_HEIGHT * width / height, COMBAT_VIEW_HEIGHT, game.node.templateId);
@@ -148,4 +161,38 @@ it.each([[1280,720],[1920,1080]])('retains Relay bodies and native movement acro
   }
   expect(game.stats.abilityUses).toMatchObject({dash:1,tactical:1,power:1,overdrive:1});
   expect(game.status).toBe('playing');
+});
+
+
+// Same actual body-height/camera adapter as native packing: the720 HUD reserves
+// substantial vertical space, so center-point or wide-camera counts are not proof.
+it.each(['containment-annulus','infested-workshop','overload-floor','awakening-bay','communal-atrium','armory','breached-loading-bay','relay-racks','safety-interlock-station','service-shaft-landing'])('packs native720 family bodies without reducing coverage: %s',async room=>{
+  const {game,renderer,debug}=setup(1280,720);await stageC6Families(room);
+  const proof=debug.i8FamilyProof;if(room==='containment-annulus')expect(proof.packingMode).toBe('native-hex-fallback');expect(proof.requested).toBe(15);expect(proof.fullBodyCount).toBeGreaterThanOrEqual(12);expect(new Set(proof.actors.map((p:{family:string})=>p.family)).size).toBe(5);
+  for(const [n,a]of proof.actors.entries())for(const b of proof.actors.slice(n+1))expect(Math.hypot(a.x-b.x,a.y-b.y)).toBeGreaterThanOrEqual(76-1e-6);
+  const elapsed=game.elapsed,box={left:0,right:0,top:0,bottom:0};
+  for(let refresh=0;refresh<4;refresh++){
+    renderer.render(game,0);expect(game.elapsed).toBe(elapsed);
+    const frame=renderer.roomCombatFraming.diagnostics;expect(frame.heroPixels*1080/720).toBeGreaterThanOrEqual(100-1e-6);if(!frame.smallX&&!frame.smallZ)expect(frame.outside).toBeLessThanOrEqual(.18+1e-6);
+    for(const dx of [-game.player.radius,game.player.radius])for(const dz of [-game.player.radius,game.player.radius])for(const h of [0,marineHeight]){const p=new T.Vector3((game.player.x+dx)/32,h,(game.player.y+dz)/32).project(renderer.camera);expect((p.x+1)*640).toBeGreaterThanOrEqual(0);expect((p.x+1)*640).toBeLessThanOrEqual(988);expect((1-p.y)*360).toBeGreaterThanOrEqual(182);expect((1-p.y)*360).toBeLessThanOrEqual(612);}
+    for(const p of proof.actors){const e=game.enemies.getSnapshot(p.id)!;expect(debug.canStand(e.x,e.y,e.radius)).toBe(true);expect(renderer.actorScreenBounds(p.id,p.x,p.y,e.radius,box)).toBe(true);expect(box.left).toBeGreaterThanOrEqual(0);expect(box.right).toBeLessThanOrEqual(988);expect(box.top).toBeGreaterThanOrEqual(182);expect(box.bottom).toBeLessThanOrEqual(612);}
+  }
+});
+
+// The CPU adapter deliberately does not implement corpse rendering/retention.
+// This proves native deaths and legal marks; native capture owns the ten-pool proof.
+it('finds thirteen legal720 corpse marks and uses the native damage path',async()=>{
+ const {game,debug}=setup(1280,720);await stageCorpseBudget();
+ const proof=debug.i8CorpseProof;expect(proof.nativeDeaths).toBe(13);expect(game.kills).toBe(13);
+ expect(debug.events.filter((e:{type:string})=>e.type==='corpse')).toHaveLength(13);
+ expect(proof.marks).toHaveLength(13);expect(proof.packingMode).toBe('hex-fallback');
+ for(const [n,p] of proof.marks.entries()){
+  expect(debug.canStand(p.x,p.y,32)).toBe(true);expect(Math.hypot(p.x-proof.origin.x,p.y-proof.origin.y)).toBeGreaterThanOrEqual(64);
+  for(const q of proof.marks.slice(n+1))expect(Math.hypot(p.x-q.x,p.y-q.y)).toBeGreaterThanOrEqual(76-1e-6);
+ }
+});
+
+it('keeps an already adequate1080 family composition on its legacy path',async()=>{
+ const {debug}=setup(1920,1080);await stageC6Families('containment-annulus');
+ expect(debug.i8FamilyProof.packingMode).toBe('legacy-grid');expect(debug.i8FamilyProof.fullBodyCount).toBeGreaterThanOrEqual(12);expect(debug.i8FamilyProof.fallbackTrials).toEqual([]);
 });
