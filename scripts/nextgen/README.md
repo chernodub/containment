@@ -835,3 +835,13 @@ still place each camera, so it is not a mathematically identical view matrix.
 `e7-standard-contact.mjs` retains one comparison sheet per critique round.
 `e7-metrics.mjs` reads only explicitly named before/after native benchmark and
 readiness cohorts, retaining best-of-three paired load/scale and all raw trials.
+Its explicit assessment evaluates the E7 frame/scale limits even when an ordinary
+benchmark's `budgetFailures` list is empty.
+
+`e7-overlay.mjs <assembled-gallery> <armory-capture>` replaces exactly five
+matching Armory frames and their sprite after checking clean capture receipts,
+viewport, seed, scenario and clocks. It preserves originals, both asset inventories
+and per-shot hashes, and labels the result as mixed-source. Run only on a fresh
+primary assembly; it is not a general capture filter or a single-source build.
+After approval of the standard, only its three round contact sheets remain;
+intermediate successful round PNGs may be removed, but failed raw runs stay intact.
