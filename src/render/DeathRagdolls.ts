@@ -1,3 +1,4 @@
+import {identityRoleVisible} from './ActorIdentity';
 import {getStaticColliderParts} from './StaticColliderParts';
 import RAPIER from '@dimforge/rapier3d-compat';
 import * as T from 'three';
@@ -44,8 +45,10 @@ function fitSkin(root:T.Object3D,bones:T.Bone[]){
   if(!positions||!indices||!weights)return;
   const owners=o.skeleton.bones.map(b=>{let ancestor:T.Object3D|null=b;while(ancestor&&!fits.has(ancestor as T.Bone))ancestor=ancestor.parent;return ancestor?fits.get(ancestor as T.Bone):undefined;});
   const transforms=o.skeleton.bones.map((b,i)=>new T.Matrix4().multiplyMatrices(o.matrixWorld,o.bindMatrixInverse).multiply(b.matrixWorld).multiply(o.skeleton.boneInverses[i]).multiply(o.bindMatrix));
-  const point=new T.Vector3();
+  const point=new T.Vector3(),roles=o.geometry.getAttribute('identityRole');
+  const anatomy=o.material instanceof T.ShaderMaterial?o.material.uniforms:undefined;
   for(let i=0;i<positions.count;i++)for(let slot=0;slot<4;slot++){
+   if(roles&&anatomy&&!identityRoleVisible(roles.getX(i),anatomy.identityElite.value,anatomy.identityChampion.value,anatomy.identityOpening.value,anatomy.identityDeath.value>.5))continue;
    if(weights.getComponent(i,slot)<=0)continue;
    const index=indices.getComponent(i,slot),fit=owners[index];if(!fit)continue;
    point.fromBufferAttribute(positions,i).applyMatrix4(transforms[index]).sub(fit.origin).applyQuaternion(fit.inverseRotation);fit.bounds.expandByPoint(point);

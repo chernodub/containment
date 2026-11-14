@@ -1,3 +1,4 @@
+import {ENEMY_BODY_COLORS} from '../ActorIdentity';
 import { setActorGeometryIdentity } from './ActorGeometryMaterial';
 import { optimizeLocalLights } from '../lighting/LocalLightShading';
 import { patchGraphicSurface, setGraphicActorBase } from '../lighting/GraphicSurface';
@@ -139,7 +140,7 @@ export function registerGeometry(root: Object3D, kind?: GeometryClass): void {
       }
       if(kind) {
         const family=root.name.replace('alien-','');
-        const palette:Record<string,number>={marine:0x3d4348,crawler:0xa05235,brute:0x424b50,spitter:0x315c2e,stalker:0x1d304b,carrier:0x713f69,queen:0x716078};
+        const palette:Record<string,number>={marine:0x3d4348,...ENEMY_BODY_COLORS};
         setGraphicActorBase(material,root.userData.graphicActorBase??palette[family]??(kind===GEOMETRY_CLASSES.marine?0x3d4348:0xa05235));
       }
       patchGeometryMaterial(material);
