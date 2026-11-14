@@ -103,7 +103,7 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
    }
    case 'cargo':{
     // Three clear value roles, broad ribs and corner castings replace tiny roof fittings.
-    const levels=index%3===0?3:2;
+    const levels=2;
     for(let level=0;level<levels;level++){
      const y=.5+level*.88,z=level%2?.10:0;
      industrialCrate(formWriter,{body:level%2?MAT.orange:MAT.steel,trim:MAT.edge,accent:MAT.black},0,y,z,1.8,.84,2.23);
@@ -116,7 +116,7 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
     }break;
    }
    case 'communications':{
-    b(0,.12,0,1.8,.24,2.5,MAT.steel);
+    for(const side of [-1,1])b(side*.65,.08,0,.18,.16,2.3,MAT.steel);
     for(const z of [-.64,.64]){
      b(0,1.05,z,1.66,1.95,1.03,MAT.black);
      // Cells rotate to fit their room reservation. Detail every vertical face so
@@ -193,7 +193,7 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
   }
   // Fit actual vertex bounds, including bevels, rods and rotations. No new navigation obstacles.
   cell.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(cell),size=bounds.getSize(v(0,0,0)),center=bounds.getCenter(v(0,0,0));
-  const cw=short/columns*.97,cd=long/rows*.97;
+  const fit=environment==='cargo'?.84:.97,cw=short/columns*fit,cd=long/rows*fit;
   cell.scale.set(cw/size.x,Math.min(environment==='reactor'?1.6:1,cw/1.5)*(templateId==='reactor-vault'&&index===1?.66:1),cd/size.z);
   cell.position.set((i%columns-(columns-1)/2)*short/columns-center.x*cell.scale.x,-bounds.min.y*cell.scale.y,(Math.floor(i/columns)-(rows-1)/2)*long/rows-center.z*cell.scale.z);
  }
@@ -223,20 +223,6 @@ export function environmentArchitecture(parent:T.Group,env:ShipEnvironment,w:num
  // Deck language stays readable even when the nearest prop is off camera.
  if(env==='cryogenics'){
   for(let x=.3;x<w-.3;x+=3)for(let z=.3;z<h-.3;z+=3){const tw=Math.min(2.94,w-.3-x),td=Math.min(2.94,h-.3-z);inlay(x+tw/2,z+td/2,tw,td,MAT.armor);}
- }else if(residential){
-  // Quiet flush route cue; the cabin thresholds, not a cafeteria cross, lead the room.
-  inlay(w/2,h/2,w-1,.06,MAT.edge);
- }else if(env==='habitation'){
-  inlay(w/2,h/2,w-1,2.3,MAT.orange);inlay(w/2,h/2,2.3,h-1,MAT.orange);
-  for(const side of [-1,1]){inlay(w/2,h/2+side*1.2,w-1,.045,MAT.bone);inlay(w/2+side*1.2,h/2,.045,h-1,MAT.bone);}
- }else if(env==='communications'){
-  for(let lane=0;lane<4;lane++){const x=w*.3+lane*.15;inlay(x,h/2,.055,h-1,lane===0?MAT.cyan:MAT.black);inlay(w*.55,h*.3+lane*.15,w*.5,.045,MAT.edge);}
- }else if(env==='engineering'){
-  for(const z of [h*.3,h*.7]){inlay(w/2,z,w-2,.09,MAT.trim);for(let x=3;x<w-2;x+=3)inlay(x,z+.3,.65,.06,MAT.bone);}
- }else if(env==='cargo'||env==='security'){
-  for(const x of [w*.25,w*.75])for(const z of [h*.25,h*.75]){
-   for(const side of [-1,1]){inlay(x+side*1.5,z,.065,3,MAT.trim);inlay(x,z+side*1.5,3,.065,MAT.trim);}
-  }
  }else if(env==='maintenance'){
   // One upward-facing layer: dark gaps abut the bars rather than sharing
   // the old slab's top face. The cached unit plane has no hidden box faces.

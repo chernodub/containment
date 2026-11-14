@@ -39,3 +39,22 @@ inlays. Its complete raised support, raycast and lifecycle checks still pass.
  Round2 source is f293102 plus the exact
 SOURCE.patch retained beside its frozen dist; its clean base SHA alone does
 not describe that application. Final delivery must use a clean committed build.
+
+## Round 3 — visual standard accepted, focused Relay value recheck required
+
+Actually opened native calm for all three rooms, exact480 color/grayscale
+before/after pages including all three canonical combat02s, and the grayscale
+10-up. The abandoned cabin pool, dark coherent racks, and organ/machine island
+have distinguishable value distributions. Thin roots yield to raised tissue;
+no lavender carpet or court-sized rectangular floor hatches remains. Functional
+floor still looks economical and repeated kit construction remains apparent;
+this is an improvement, not an independent premium-art certification.
+
+Residential51.7/67.5 and Infested58.9/51.9 are within the50–80 canonical median
+band. Relay49.8/48.4 is still below it: a focused final floor-only calibration
+must pass before propagation. Nominal shadow-p5 excursions are retained; no
+claim that the full ten-mood percentile table passes follows from this standard.
+
+Focused Relay recheck: native calm plus four native combat phases pass; measured
+calm53.2/combat02 50.9. The native calm recheck was opened. The three-room standard
+is accepted for propagation with explicit nominal shadow-percentile exceptions.

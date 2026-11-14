@@ -8,7 +8,7 @@ type Plan=Pick<RoomTemplate,'width'|'height'|'boundary'|'voids'|'obstacles'>;
  * Game coordinates use 32 units per renderer unit. All equipment stays inside
  * the solid core. The low near-side jacket preserves the stage2 silhouette. */
 export function containmentAnnulusBlockout(t:Plan):T.Group{
- const root=new T.Group();root.name='authored-containment-annulus';
+ const root=new T.Group();root.name='authored-containment-annulus';root.userData.decorativeCoreScale=.78;
  root.userData.stage='model-iteration';
  root.userData.assemblies=['sealed-core','segmented-jacket','radial-feet','inspection-plugs','passenger-vitals','authorization-state'];
  const finish=(name:string,color:number,roughness=.78,metalness=.2)=>{const m=new T.MeshStandardMaterial({color,roughness,metalness});m.name=name;m.userData.actorMaterial=true;return m;};
@@ -18,7 +18,14 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
  // competes with the ink contours as the camera moves.
  const parts=new Map<T.Material,T.BufferGeometry[]>();
  const add=(g:T.BufferGeometry,m:T.Material,x=0,y=0,z=0,angle=0)=>{
-  g.rotateY(angle);g.translate(x,y,z);const flat=g.index?g.toNonIndexed():g;if(flat!==g)g.dispose();
+  g.rotateY(angle);g.translate(x,y,z);
+  // Contract only the raised decorative core assembly inside the unchanged
+  // sealed footprint. Deck, circulation and low foundation retain authored bounds.
+  g.computeBoundingBox();const b=g.boundingBox!;
+  if(b.min.y>.30&&b.min.x>11&&b.max.x<26.5&&b.min.z>6&&b.max.z<21.5){
+   g.translate(-600/32,0,-440/32);g.scale(.78,1,.78);g.translate(600/32,0,440/32);
+  }
+  const flat=g.index?g.toNonIndexed():g;if(flat!==g)g.dispose();
   const list=parts.get(m)??[];list.push(flat);parts.set(m,list);
  };
  const box=(m:T.Material,x:number,z:number,w:number,d:number,bottom:number,height:number,angle=0)=>add(industrialBoxGeometry(w/32,height/32,d/32,height<1?0:undefined),m,x/32,(bottom+height/2)/32,z/32,angle);
