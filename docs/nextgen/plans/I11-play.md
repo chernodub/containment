@@ -3,7 +3,7 @@
 The existing native runner accepts the optional `--storyboard-room=awakening-bay`.
 It registers the existing entry and actual clear captures and saves one additional
 read-only observation after existing steps whenever the room clock crosses another
-whole simulated second. It never releases input, advances a tick, changes policy,
+0.5 simulated seconds. It never releases input, advances a tick, changes policy,
 changes camera, injects health/damage or alters a live ability. All normal per-tick
 rendering, native inputs, receipts and campaign guards remain. The flag rejects
 fast draw decimation and passive realtime mode; ordinary runs without it retain

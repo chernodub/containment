@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {selectStoryboardFrames} from './storyboard.mjs';
+import {selectStoryboardFrames, blitStoryboardFrame} from './storyboard.mjs';
 
 function observations(length = 25) {
   return Array.from({length}, (_, index) => ({
@@ -37,4 +37,26 @@ describe('native campaign storyboard selection', () => {
     expect(() => selectStoryboardFrames(duplicate)).toThrow('Duplicate fight clocks');
     expect(() => selectStoryboardFrames(observations().map(frame => ({...frame, shooting:false})))).toThrow('native firing');
   });
+});
+
+
+it('copies every exact480 contact-cell pixel without the floating-point column duplication of scaled blits', () => {
+  const width = 480, height = 270;
+  const source = {width, height, channels:4, pixels:new Uint8Array(width * height * 4)};
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const offset = (y * width + x) * 4;
+    source.pixels.set([x % 256, y % 256, (x + y) % 256, 255], offset);
+  }
+  const before = source.pixels.slice();
+  const target = {width:960, height:300, channels:3, pixels:new Uint8Array(960 * 300 * 3)};
+  blitStoryboardFrame(target, source, 480, 22);
+  const actual = new Uint8Array(width * height * 3), expected = new Uint8Array(actual.length);
+  for (let y = 0; y < height; y++) {
+    const row = ((y + 22) * target.width + 480) * 3;
+    actual.set(target.pixels.subarray(row, row + width * 3), y * width * 3);
+    for (let x = 0; x < width; x++) expected.set([(x % 256), (y % 256), ((x + y) % 256)], (y * width + x) * 3);
+  }
+  expect(Buffer.from(actual).equals(Buffer.from(expected))).toBe(true);
+  expect(Buffer.from(source.pixels).equals(Buffer.from(before))).toBe(true);
+  expect(() => blitStoryboardFrame(target, source, 481, 22)).toThrow('cell bounds');
 });

@@ -39,3 +39,14 @@ export function selectStoryboardFrames(frames, count = 12) {
   assert(new Set(selected.map(frame => frame.file)).size === count, 'Storyboard cannot repeat an observation');
   return selected;
 }
+
+/** Copy a complete RGB/RGBA observation cell exactly, without floating resampling. */
+export function blitStoryboardFrame(target, source, x, y) {
+  assert(Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0
+    && x + source.width <= target.width && y + source.height <= target.height, 'Storyboard cell bounds');
+  for (let row = 0; row < source.height; row++) for (let column = 0; column < source.width; column++) {
+    const from = (row * source.width + column) * source.channels;
+    const to = ((y + row) * target.width + x + column) * 3;
+    for (let channel = 0; channel < 3; channel++) target.pixels[to + channel] = source.pixels[from + channel];
+  }
+}

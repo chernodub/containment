@@ -5,8 +5,8 @@ import {createHash} from 'node:crypto';
 import {constants} from 'node:fs';
 import {readFile, writeFile, mkdir, copyFile} from 'node:fs/promises';
 import {resolve, basename} from 'node:path';
-import {canvas, decode, encode, drawImage, drawText} from './g2-png.mjs';
-import {selectStoryboardFrames} from './playtest/storyboard.mjs';
+import {canvas, decode, encode, drawText} from './g2-png.mjs';
+import {selectStoryboardFrames, blitStoryboardFrame} from './playtest/storyboard.mjs';
 
 const args = process.argv.slice(2);
 if (args.includes('--help') || args.length < 2) {
@@ -102,7 +102,7 @@ for (const campaign of campaigns) {
     await writeFile(resolve(directory, 'review480', file), smallBytes);
     const x = index % 4 * 480, y = Math.floor(index / 4) * 304;
     drawText(sheet, `${index + 1}/12 ${frame.beat.toUpperCase()} ${frame.roomSeconds.toFixed(2)}s`, x + 5, y + 4, undefined, 1);
-    drawImage(sheet, small, x, y + 22, 480, 270);
+    blitStoryboardFrame(sheet, small, x, y + 22);
     drawText(sheet, `LEFT ${frame.remaining} KILLS ${frame.kills} ${frame.shooting ? 'FIRING' : ''}`, x + 5, y + 294, undefined, 1);
     frames.push({
       ...frame, file:`${campaign.rig}/${file}`, snapshot:`${campaign.rig}/${snapshotFile}`,
