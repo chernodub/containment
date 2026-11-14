@@ -125,7 +125,7 @@ for (const [width, height] of [[1280, 720], [1920, 1080]]) {
     const staged = stageCombat({status: false});
     expect(staged.plasmaLaneProof).toMatchObject({minimumTravel:60,bodyHalfWidth:60,simulationAdvancedMs:0});
     expect(staged.plasmaLaneProof.tested).toBeLessThanOrEqual(192);
-    if(room!=='breached-loading-bay'||staged.plasmaLaneProof.coarseClearance>=60)expect(staged.plasmaLaneProof.tested).toBe(48);
+    if(!['breached-loading-bay','overload-floor'].includes(room)||staged.plasmaLaneProof.coarseClearance>=60)expect(staged.plasmaLaneProof.tested).toBe(48);
     expect(staged.plasmaLaneProof.clearance).toBeGreaterThanOrEqual(60);
     expect(renderer.muzzle.intensity).toBeGreaterThan(0);
     expect(game.bullets.some(b => b.kind === 'player')).toBe(true);

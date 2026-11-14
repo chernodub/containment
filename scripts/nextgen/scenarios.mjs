@@ -408,10 +408,10 @@ export function stageCombat({status=false}){
   };
   for(let i=0;i<48;i++)evaluateAngle(i*Math.PI/24);
   const coarseClearance=clearance;
-  // Only this authored bay has a narrow gap between the unchanged wall/body
+  // These authored bays have a narrow gap between the unchanged wall/body
   // cones after grenade resolution. Keep every sufficient original48-angle
   // aim, then test144 quarter-offsets only if its60-unit travel gate failed.
-  if(g.node.templateId==='breached-loading-bay'&&(aim===null||clearance<60))for(let i=0;i<192;i++)if(i%4)evaluateAngle(i*Math.PI/96);
+  if(['breached-loading-bay','overload-floor'].includes(g.node.templateId)&&(aim===null||clearance<60))for(let i=0;i<192;i++)if(i%4)evaluateAngle(i*Math.PI/96);
   plasmaLaneProof={tested,legal,coarseClearance,clearance,aim,player:{x:g.player.x,y:g.player.y},minimumTravel:60,bodyHalfWidth:60,simulationAdvancedMs:0};
   if(aim===null||clearance<60)throw Error('No legal travelling plasma lane in heavy fixture '+JSON.stringify({room:g.node.templateId,player:{x:g.player.x,y:g.player.y},aim,clearance,reservedAngle:shotLaneAngle}));
   d.setInput({fire:true,angle:aim,autoAim:false});d.step(1000/60);
