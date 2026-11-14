@@ -50,6 +50,7 @@ export function addDeckMarkings(world: T.Object3D, template: RoomTemplate, envir
       quad(x,z,length/steps*.98,width,color,angle);
     }
   };
+  const w=template.width/UNIT,h=template.height/UNIT;
   // Flush service corners and short worn hazard bars describe existing equipment.
   for(const [index,r] of template.obstacles.entries()){
     if(index>=12)break;
