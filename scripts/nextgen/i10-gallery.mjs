@@ -45,6 +45,7 @@ async function assemble(){
     assert.deepEqual(m.errors??[],[],`Errors in ${directory}`);
     assert.deepEqual(m.failures??[],[],`Failures in ${directory}`);
     for(const key of ['viewport','deviceScaleFactor','seed','appAssets'])assert.deepEqual(m[key],reference[key],`${directory}: mismatched ${key}`);
+    if(reference.distSnapshot?.sourceSHA)assert.equal(m.distSnapshot?.sourceSHA,reference.distSnapshot.sourceSHA,`${directory}: mismatched frozen application source`);
     assert(m.shots.length,`No shots in ${directory}`);
   }
   const selected=new Map(),sprites=new Map(),receipts=[],superseded=[];
@@ -77,8 +78,8 @@ async function assemble(){
     label:basename(output),gitSHA:captures.at(-1).manifest.gitSHA,viewport:reference.viewport,
     deviceScaleFactor:reference.deviceScaleFactor,seed:reference.seed,appAssets:reference.appAssets,
     renderer:reference.renderer,hardwareAccelerated:captures.every(c=>c.manifest.hardwareAccelerated),
-    errors:[],failures:[],sources:captures.map(({directory,manifest:m})=>({directory,gitSHA:m.gitSHA,distSnapshot:m.distSnapshot??null,viewport:m.viewport,shots:m.shots.length})),
-    distSnapshot:{selection:true,note:'Native PNG bytes copied without modification from verified captures of identical application bundles. This is an evidence selection, not another browser run.'},
+    errors:[],failures:[],sources:captures.map(({directory,manifest:m})=>({directory,gitSHA:m.gitSHA,distSnapshot:m.distSnapshot??null,viewport:m.viewport,shots:m.shots.length,validationScope:m.validationScope??null})),
+    distSnapshot:{selection:true,sourceSHA:reference.distSnapshot?.sourceSHA??null,note:'Native PNG bytes copied without modification from verified captures of identical application bundles. Completed-scenario subsets retain explicit parent-failure scope provenance. This is an evidence selection, not another browser run.'},
     shots:[...selected.values()].map(({shot,source})=>({...shot,evidenceSource:source})),
     sprites:[...sprites.values()].map(({sprite,source})=>({...sprite,evidenceSource:source})),
   };
@@ -87,7 +88,7 @@ async function assemble(){
   await writeFile(resolve(output,'pngs.txt'),[...manifest.shots,...manifest.sprites].map(s=>resolve(output,s.file)).join('\n')+'\n');
   const cards=manifest.shots.map(s=>`<figure><a href="${url(s.file)}"><img src="${url(s.file)}" alt="${escape(s.file)}" loading="lazy"></a><figcaption>${escape(s.file)}<br><small>${escape(s.scenario)} · ${s.simulationMs??'?'} ms simulation · ${s.performance?.drawCalls??'?'} draws</small></figcaption></figure>`).join('');
   const sheets=manifest.sprites.map(s=>`<figure><a href="${url(s.file)}"><img src="${url(s.file)}" alt="${escape(s.file)}" loading="lazy"></a><figcaption>${escape(s.file)}</figcaption></figure>`).join('');
-  await writeFile(resolve(output,'index.html'),html(`Containment / ${basename(output)}`,`<p>${manifest.shots.length} native captures, ${manifest.sprites.length} phase sheets. ${reference.viewport.width}×${reference.viewport.height}; original capture bytes and source hashes retained. Staged screenshots are not organic gameplay or performance certification.</p><p><a href="compare.html">Three generations</a> · <a href="showcase.html">Twelve candidates</a> · <a href="review480/index.html">All 480×270 review pages</a> · <a href="manifest.json">Manifest</a> · <a href="source-receipts.json">Source receipts</a></p><h2>Native frames</h2><main class="grid">${cards}</main><h2>Phase sheets</h2><section class="grid">${sheets}</section>`));
+  await writeFile(resolve(output,'index.html'),html(`Containment / ${basename(output)}`,`<p>${manifest.shots.length} native captures, ${manifest.sprites.length} phase sheets. ${reference.viewport.width}×${reference.viewport.height}; original capture bytes and source hashes retained. Staged screenshots are not organic gameplay or performance certification.</p><p>${should('compare')?'<a href="compare.html">Three generations</a> · ':''}${should('showcase')?'<a href="showcase.html">Twelve selected views</a> · ':''}<a href="review480/index.html">All 480×270 review pages</a> · <a href="manifest.json">Manifest</a> · <a href="source-receipts.json">Source receipts</a></p><h2>Native frames</h2><main class="grid">${cards}</main><h2>Phase sheets</h2><section class="grid">${sheets}</section>`));
   console.log(`Assembled ${manifest.shots.length} native frames / ${manifest.sprites.length} sheets from ${captures.length} capture directories.`);
   return manifest;
 }
@@ -260,7 +261,7 @@ async function showcase(manifest){
   }
   await writeFile(resolve(output,'showcase.png'),encode(board));
   await writeJson('showcase.json',{note:selectionFile?'Twelve original PNGs chosen through an explicit acceptance-engineer selection file; hashes and capture receipts retained.':'Twelve candidate views selected by filename; final art selection requires visual inspection by the acceptance engineer.',selectionFile:selectionFile?resolve(selectionFile):null,images:receipts});
-  await writeFile(resolve(output,'showcase.html'),html('Containment / Twelve showcase candidates',`<p>Candidate selection for visual review. <a href="showcase.png">Contact sheet</a> · <a href="showcase.json">Source receipts</a></p><main class="grid">${receipts.map(s=>s.missing?`<figure><figcaption>${escape(s.title)}</figcaption><div class="missing">Not captured</div></figure>`:`<figure><a href="${url(s.file)}"><img src="${url(s.file)}" alt="${escape(s.title)}" loading="lazy"></a><figcaption>${escape(s.title)}<br>${escape(s.file)}</figcaption></figure>`).join('')}</main>`));
+  await writeFile(resolve(output,'showcase.html'),html(selectionFile?'Containment / Twelve selected views':'Containment / Twelve showcase candidates',`<p>${selectionFile?'Selected acceptance-review views; remaining art limitations are documented in I10.':'Candidate selection for visual review.'} <a href="showcase.png">Contact sheet</a> · <a href="showcase.json">Source receipts</a></p><main class="grid">${receipts.map(s=>s.missing?`<figure><figcaption>${escape(s.title)}</figcaption><div class="missing">Not captured</div></figure>`:`<figure><a href="${url(s.file)}"><img src="${url(s.file)}" alt="${escape(s.title)}" loading="lazy"></a><figcaption>${escape(s.title)}<br>${escape(s.file)}</figcaption></figure>`).join('')}</main>`));
   console.log(`Showcase: ${receipts.filter(s=>!s.missing).length}/12 candidates found.`);
 }
 

@@ -800,3 +800,20 @@ limits with early failure: frame p50≤16.7ms (0.1ms reporting precision), High
 p95≤20ms and High median scale≥.9. Every failed trial is saved before stopping;
 restart a corrected cohort under a new label. This flag rejects diagnostic
 instrumentation and retains the original draw/population/program/resource checks.
+
+Playing captures now require complete physical marine bounds inside the measured
+HUD-safe viewport, matching native viewport/bounds receipts, minimum100 reference
+pixels at1080p, and C6's18% playable-AABB rule. The renderer's `player.visible`
+point-composition flag is retained verbatim as a diagnostic; it is not the physical
+body guarantee. `capture --failure-evidence` saves a same-task frame/camera snapshot
+and PNG for failed setups/assertions without changing the application or weakening
+native input, actor counts, spacing, phase, hostile-priority or GL checks.
+
+Assembly preserves the frozen application SHA as well as bundle hashes. A clean
+completed-scenario subset may be assembled only with its raw failed-parent manifest
+SHA/failure list, complete original phase count and successful final native burst
+receipt. Keep the failed parent immutable and recapture only failed scenarios.
+Prepared reductions are not actual-open evidence; strict review bridges require
+both native and exact480 SHA matches to an actual witness, with both old/new byte
+streams rehashed. See `docs/nextgen/I10-REPORT.md` for the frozen cohort, gate-pin
+qualification, adverse-load miss and retained art/framing gaps.
