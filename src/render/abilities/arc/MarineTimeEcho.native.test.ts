@@ -27,13 +27,18 @@ it('uses the shipped marine animated skeleton for its two held Overclock poses',
     expect(newPose).not.toEqual(oldPose);
     kit.begin(.016); fx.update(frame); kit.end();
     expect(fallback).not.toHaveBeenCalled();
-    expect(kit.batches.solid.mesh.count).toBe(26);
-    const delayed = kit.batches.solid.mesh.instanceMatrix.array.slice();
+    expect(kit.batches.solid.mesh.count).toBe(0);
+    const native: T.SkinnedMesh[] = [];
+    kit.root.traverse(node => { if (node instanceof T.SkinnedMesh) native.push(node); });
+    expect(native).toHaveLength(2);
+    expect(native.every(mesh => mesh.visible)).toBe(true);
+    const delayed = native.map(mesh => mesh.skeleton.boneMatrices!.slice());
     // Paused refresh changes neither the stored delayed pose nor GPU inventory.
     frame.dt = 0; kit.begin(0); fx.update(frame); kit.end();
-    expect(kit.batches.solid.mesh.instanceMatrix.array).toEqual(delayed);
+    expect(native.map(mesh => mesh.skeleton.boneMatrices)).toEqual(delayed);
     frame.snapshot = { ...frame.snapshot!, hostileTimeScale: 1 };
     kit.begin(.016); fx.update(frame); kit.end();
     expect(kit.batches.solid.mesh.count).toBe(0);
+    expect(native.every(mesh => !mesh.visible)).toBe(true);
   } finally { fx.dispose(); kit.dispose(); disposeModel(model.root); }
 });
