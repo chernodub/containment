@@ -106,7 +106,7 @@ export class HudCombatFraming {
 
   /** Shift a fitting engagement as one group; if oversized, prefer the aimed/most urgent contact.
    * The bounded extra pullback is only used when HUD reservation makes that pair too large. */
-  protectEngagement(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,point:T.Vector3,target:T.Vector3,minimumZoom=.5):void {
+  protectEngagement(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,point:T.Vector3,target:T.Vector3,minimumZoom=.5,allowMarineMargin=false):void {
     if(!this.count)return;
     const v=this.viewport,leftLimit=v.left+.06*v.halfX,rightLimit=v.right-.06*v.halfX,topLimit=v.top-.10*v.halfY,bottomLimit=v.bottom+.10*v.halfY;
     let selected=this.primary?0:-1;
@@ -122,7 +122,10 @@ export class HudCombatFraming {
         if(actor<0){marineLeft=left;marineRight=right;marineTop=top;marineBottom=bottom;}
       }
       const scale=Math.min(1,(rightLimit-leftLimit)/(right-left),(topLimit-bottomLimit)/(top-bottom));
-      const marineHalfX=Math.max((this.primary?.94:.60)*v.halfX,(marineRight-marineLeft)*.5+.015),marineHalfY=Math.max((this.primary?.94:.55)*v.halfY,(marineTop-marineBottom)*.5+.015);
+      // The final room solve may spend central composition to keep actual
+      // bodies safe, but retains six percent of the usable half-viewport.
+      const fullMarineMargin=this.primary||allowMarineMargin;
+      const marineHalfX=Math.max((fullMarineMargin?.94:.60)*v.halfX,(marineRight-marineLeft)*.5+.015),marineHalfY=Math.max((fullMarineMargin?.94:.55)*v.halfY,(marineTop-marineBottom)*.5+.015);
       const minX=Math.max(right-rightLimit,marineRight-v.centerX-marineHalfX),maxX=Math.min(left-leftLimit,marineLeft-v.centerX+marineHalfX);
       const minY=Math.max(top-topLimit,marineTop-v.centerY-marineHalfY),maxY=Math.min(bottom-bottomLimit,marineBottom-v.centerY+marineHalfY);
       if(scale<1-1e-6||minX>maxX+1e-6||minY>maxY+1e-6){

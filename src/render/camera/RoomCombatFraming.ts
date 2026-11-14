@@ -97,8 +97,8 @@ export class RoomCombatFraming {
         const oldX=camera.position.x,oldZ=camera.position.z,oldZoom=camera.zoom;
         this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);
         const span=Math.max(.0001,Math.abs(this.target.y-this.point.y)*540);
-        engagement.protectEngagement(camera,focus,x,z,radius,height,this.point,this.target,Math.max(roomZoomFloor,camera.zoom*HERO_MIN_PIXELS/span));
-        this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
+        engagement.protectEngagement(camera,focus,x,z,radius,height,this.point,this.target,Math.max(roomZoomFloor,camera.zoom*HERO_MIN_PIXELS/span),true);
+        this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport,true);
         this.setRectangle(roomLeft,roomTop,roomRight,roomBottom);
         const candidateOutside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
         if((!this.diagnostics.smallX&&!this.diagnostics.smallZ&&candidateOutside>ROOM_OUTSIDE_LIMIT+1e-6)
@@ -197,9 +197,10 @@ export class RoomCombatFraming {
   }
 
   private contain(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,
-    roomLeft:number,roomTop:number,roomRight:number,roomBottom:number,viewport:CombatViewport):void {
+    roomLeft:number,roomTop:number,roomRight:number,roomBottom:number,viewport:CombatViewport,engagementMargin=false):void {
     // Alternating projections retain HUD clearance even at bevels and corners.
     for(let pass=0;pass<12;pass++){
+      if(engagementMargin)this.protectBody(camera,focus,x,z,radius,height,viewport);
       this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);
       const span=Math.abs(this.target.y-this.point.y)*540;
       if(span<HERO_MIN_PIXELS){camera.zoom*=HERO_MIN_PIXELS/span;camera.updateProjectionMatrix();}
@@ -208,6 +209,14 @@ export class RoomCombatFraming {
       for(let n=0;n<4;n++){minX=Math.min(minX,this.corners[n*2]);maxX=Math.max(maxX,this.corners[n*2]);minZ=Math.min(minZ,this.corners[n*2+1]);maxZ=Math.max(maxZ,this.corners[n*2+1]);}
       const spanX=maxX-minX,spanZ=maxZ-minZ;
       this.diagnostics.smallX=spanX>roomRight-roomLeft;this.diagnostics.smallZ=spanZ>roomBottom-roomTop;
+      // A valid fight may use the authored 18% allowance. Re-clamping it to
+      // zero outside area here would undo the body fit on the previous line.
+      const centeredX=this.diagnostics.smallX&&Math.abs((minX+maxX-roomLeft-roomRight)*.5)<1e-5;
+      const centeredZ=this.diagnostics.smallZ&&Math.abs((minZ+maxZ-roomTop-roomBottom)*.5)<1e-5;
+      if(engagementMargin&&this.fitsRoomMargin(camera,viewport,roomLeft,roomTop,roomRight,roomBottom,minX,maxX,minZ,maxZ,centeredX,centeredZ)){
+        this.diagnostics.centeredX=centeredX;this.diagnostics.centeredZ=centeredZ;
+        break;
+      }
       const dx=spanX>roomRight-roomLeft?(roomLeft+roomRight)*.5-(minX+maxX)*.5:Math.max(roomLeft-minX,Math.min(roomRight-maxX,0));
       const dz=spanZ>roomBottom-roomTop?(roomTop+roomBottom)*.5-(minZ+maxZ)*.5:Math.max(roomTop-minZ,Math.min(roomBottom-maxZ,0));
       this.move(camera,focus,dx,dz);
@@ -219,6 +228,22 @@ export class RoomCombatFraming {
       this.diagnostics.centeredZ=this.diagnostics.smallZ&&Math.abs(centerZ-(roomTop+roomBottom)*.5)<1e-5;
       if(Math.abs(dx)+Math.abs(dz)<1e-6&&pass>1)break;
     }
+  }
+
+  /** Validate the exact projected allowance without relaxing either small-axis rule. */
+  private fitsRoomMargin(camera:Camera,viewport:CombatViewport,left:number,top:number,right:number,bottom:number,
+    minX:number,maxX:number,minZ:number,maxZ:number,centeredX:boolean,centeredZ:boolean):boolean {
+    const d=this.diagnostics;
+    if(d.smallX&&!centeredX||d.smallZ&&!centeredZ)return false;
+    this.setRectangle(left,top,right,bottom);
+    const total=this.outsideFraction(camera,right,bottom,viewport,this.boundsPolygon);
+    this.setRectangle(left,minZ-.001,right,maxZ+.001);
+    const outsideX=this.outsideFraction(camera,right,bottom,viewport,this.boundsPolygon);
+    this.setRectangle(minX-.001,top,maxX+.001,bottom);
+    const outsideZ=this.outsideFraction(camera,right,bottom,viewport,this.boundsPolygon);
+    this.setRectangle(left,top,right,bottom);
+    return(d.smallX||outsideX<=ROOM_OUTSIDE_LIMIT)&&(d.smallZ||outsideZ<=ROOM_OUTSIDE_LIMIT)
+      &&(d.smallX||d.smallZ||total<=ROOM_OUTSIDE_LIMIT);
   }
 
   private readonly springResult = [0,0];
