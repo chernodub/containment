@@ -12,12 +12,13 @@ import {samplePng} from './png.mjs';
 import {assertPriorityPair} from './i10-framing-contract.mjs';
 import {assertCaptureCanvas} from './capture-canvas.mjs';
 import {assertKitingMovement} from './capture-movement.mjs';
+import {assertPlayingMarine} from './capture-marine-contract.mjs';
 import {inspectI10ArmoryReplay} from './i10-armory-replay.mjs';
 import {stitchPngFrames} from './sprites.mjs';
 import {compareGalleries} from './gallery.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');process.chdir(root);
-const args=process.argv.slice(2),flags=new Set(['build','headed','keep-going','help','scaffold']);
+const args=process.argv.slice(2),flags=new Set(['build','headed','keep-going','help','scaffold','failure-evidence']);
 const known=new Set([...flags,'label','scenarios','rooms','burst','width','height','dpr','timestamp','seed','compare','step-ms','sprite-width','dist','dist-source-sha','graphics','style','hud-insets','kiting-retries']);
 for(const arg of args){assert(arg.startsWith('--')&&known.has(arg.slice(2).split('=')[0]),`Unknown option ${arg}`);assert(arg.includes('=')||flags.has(arg.slice(2)),`Use --name=value: ${arg}`);}
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
@@ -134,7 +135,7 @@ try{
  assert.equal(manifest.errors.length,0,JSON.stringify(manifest.errors));
  let scenarioIndex=0;
  for(const scenario of scenarios){
-  const name=scenario.id.replaceAll(':','-')+(scenario.room?`-${scenario.room}`:'');console.log(`Capturing ${name}…`);const errorStart=manifest.errors.length;
+  const name=scenario.id.replaceAll(':','-')+(scenario.room?`-${scenario.room}`:'');console.log(`Capturing ${name}…`);const errorStart=manifest.errors.length;let lastEvidence=null,lastCamera=null;
   try{
    // Leave combat before navigation: blur would otherwise start a lazy pause
    // chunk during unload. Settle pending modules without ignoring failed requests.
@@ -176,7 +177,14 @@ try{
      art.classList.remove('key-art-revealed');
      for(const animation of art.getAnimations({subtree:true})){animation.pause();animation.currentTime=ms;}
     },frame*frameStepMs);
-    const evidence=await page.evaluate(inspectFrame);
+    // Opt-in failed-case diagnosis records camera and evidence in one page task,
+    // before the unchanged visibility/HUD assertions run. Ordinary captures keep
+    // their original inspection path and presentation clocks.
+    const inspected=args.includes('--failure-evidence')?await page.evaluate(new Function(`
+     const evidence=(${inspectFrame.toString()})();const d=window.__containmentDebug,r=d.renderer;
+     return{evidence,camera:{world:r.camera.matrixWorld.toArray(),inverseProjection:r.camera.projectionMatrixInverse.toArray(),zoom:r.camera.zoom,focus:r.cameraRig.focus.toArray(),marineHeight:r.player.height,roomBounds:d.game.geometry.bounds,roomBoundary:d.game.geometry.boundary,actors:Array.from(r.actors,([id,m])=>({id,height:m.height,elevation:m.root.position.y}))}};
+    `)):null;
+    const evidence=inspected?.evidence??await page.evaluate(inspectFrame);lastEvidence=evidence;lastCamera=inspected?.camera??null;
     if(scenario.i10ArmoryReplay)evidence.i10ArmoryReplay=await page.evaluate(inspectI10ArmoryReplay);
     if(scenario.u7Crossing)evidence.u7Crossing=await page.evaluate(()=>window.__containmentDebug.u7Crossing);
     if(scenario.nativeReload){assert(await page.evaluate(()=>window.__containmentDebug.game.combat.snapshot.reloading),`${name}: native reload is absent`);assert.equal(await page.locator('#reload-label').innerText(),'RELOADING');}
@@ -213,7 +221,7 @@ try{
     if(scenario.id==='combat-calm')assert.equal(evidence.enemies,0,`${name}: calm room contains enemies`);
     assert.equal(evidence.state,scenario.state,`${name}: wrong game state`);assertCaptureCanvas(evidence,{scenarioId:scenario.id,viewport,dpr,name});
     if(scenario.room)assert.equal(evidence.templateId,scenario.room);
-    if(scenario.state==='playing'){assert(evidence.hud&&evidence.player.visible&&!evidence.overlay,`${name}: HUD/player missing or overlay blocks scene`);}
+    if(scenario.state==='playing')assertPlayingMarine(evidence,viewport,name);
     if(scenario.state==='playing')assert.deepEqual(evidence.hudOverlaps,[],`${name}: HUD covers the projected marine`);
     if(scenario.state==='playing') {
      evidence.ui.criticalContrast=await page.evaluate(criticalContrast);
@@ -256,7 +264,7 @@ try{
    if(scenario.id==='combat-heavy')assert(explosion,`${name}: burst lacks a real explosion`);
    if(scenario.status)assert(['burning','chilled','frozen','poisoned'].every(s=>observed.has(s)),`Missing elemental statuses: ${[...observed]}`);
    console.log(`  ${count} PNGs verified`);
-  }catch(error){const failure={scenario:scenario.id,room:scenario.room,error:String(error),errors:manifest.errors.slice(errorStart)};manifest.failures.push(failure);console.error(`FAILED ${name}: ${error}`);if(scenario.priorityPair){const evidence=await page.evaluate(inspectFrame).catch(()=>null);const camera=await page.evaluate(()=>{const r=window.__containmentDebug.renderer;return{world:Array.from(r.camera.matrixWorld.elements),inverseProjection:Array.from(r.camera.projectionMatrixInverse.elements),zoom:r.camera.zoom,focus:r.cameraRig.focus.toArray(),marineHeight:r.player.height,actors:Array.from(r.actors,([id,m])=>({id,height:m.height,elevation:m.root.position.y}))};}).catch(()=>null);await writeFile(resolve(out,name+'-failure.json'),JSON.stringify({failure,distSnapshot:manifest.distSnapshot,appAssets:manifest.appAssets,evidence,camera},null,2));}await page.screenshot({path:resolve(out,name+'-failure.png'),timeout:10000}).catch(()=>{});if(!keepGoing)throw error;}
+  }catch(error){const failure={scenario:scenario.id,room:scenario.room,error:String(error),errors:manifest.errors.slice(errorStart)};manifest.failures.push(failure);console.error(`FAILED ${name}: ${error}`);if(scenario.priorityPair||args.includes('--failure-evidence')){const evidence=lastEvidence??await page.evaluate(inspectFrame).catch(()=>null);const camera=lastCamera??await page.evaluate(()=>{const r=window.__containmentDebug.renderer;return{world:Array.from(r.camera.matrixWorld.elements),inverseProjection:Array.from(r.camera.projectionMatrixInverse.elements),zoom:r.camera.zoom,focus:r.cameraRig.focus.toArray(),marineHeight:r.player.height,actors:Array.from(r.actors,([id,m])=>({id,height:m.height,elevation:m.root.position.y}))};}).catch(()=>null);await writeFile(resolve(out,name+'-failure.json'),JSON.stringify({failure,atAssertion:!!lastEvidence&&!!lastCamera,distSnapshot:manifest.distSnapshot,appAssets:manifest.appAssets,evidence,camera},null,2));}await page.screenshot({path:resolve(out,name+'-failure.png'),timeout:10000}).catch(()=>{});if(!keepGoing)throw error;}
   for(const key of scenario.nativeHold??[])await page.keyboard.up(key);
   // The final contact sheet is self-contained; avoid rewriting its large image payload per shot.
   await writeFile(resolve(out,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
