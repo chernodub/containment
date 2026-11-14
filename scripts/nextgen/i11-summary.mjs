@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import {constants} from 'node:fs';
 import {readFile,writeFile,readdir,mkdir,copyFile} from 'node:fs/promises';
 import {resolve,basename,sep} from 'node:path';
-import {canvas,decode,encode,drawImage,drawText} from './g2-png.mjs';
+import {canvas,decode,encode,drawText} from './g2-png.mjs';
 import {activeSelectedContactIds,missingSelectedContactIds} from './i10-selected-contacts.mjs';
 
 const args=process.argv.slice(2);
@@ -454,7 +454,13 @@ async function organicReview(directory,receipts){
     const image=canvas(1440,592),entries=receipts.slice(start,start+6),file=`organic-${String(start/6+1).padStart(3,'0')}.png`;
     for(let i=0;i<entries.length;i++){
       const entry=entries[i],small=area(decode(await readFile(resolve(directory,entry.file)))),x=i%3*480,y=Math.floor(i/3)*296;
-      drawText(image,entry.file,x+4,y+5,undefined,1);drawImage(image,small,x,y+24,480,270);
+      drawText(image,entry.file,x+4,y+5,undefined,1);
+      // Integer 1:1 copy: scaling an already reduced tile can duplicate columns
+      // through floating-point floor rounding in the historical sheet helper.
+      for(let row=0;row<270;row++)for(let column=0;column<480;column++){
+        const from=(row*480+column)*3,to=((y+24+row)*image.width+x+column)*3;
+        for(let channel=0;channel<3;channel++)image.pixels[to+channel]=small.pixels[from+channel];
+      }
       await writeFile(resolve(review,entry.file),encode(small));
     }
     await writeFile(resolve(review,file),encode(image));pages.push({file,entries:entries.map(e=>({file:e.file,sha256:e.sha256,room:e.room,depth:e.depth,rig:e.rig}))});
