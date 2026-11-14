@@ -67,10 +67,11 @@ float abilityNoise(vec2 p){vec2 b=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix
 void main(){
  vec2 p=uvLocal*2.-1.;float a=alpha*atlasAvailable;vec3 c=ink;
 ${kind === 'smoke' ? `
- vec4 s=effectSequence(64.,64.,18.,phase,uvLocal);
+ vec4 s=effectGraphicSequence(64.,64.,18.,phase,uvLocal);
+ s.a=graphicCoverage(s.a);
  float vapor=step(ink.r*1.12,ink.b)*smoothstep(.18,.5,ink.b);
  c=mix(vec3(.018,.022,.028),ink*.76,vapor);
- c*=.7+floor(s.r*5.)*.1;
+ c=graphicSmoke(s,c);
  a*=s.a*mix(.9,.72,vapor)*smoothstep(.015,.22,worldHeight);
  ` : ''}
 ${kind === 'flame' ? TEXTURED_FIRE_GLSL : ''}

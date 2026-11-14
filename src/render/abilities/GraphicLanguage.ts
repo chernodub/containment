@@ -105,9 +105,35 @@ export const GRAPHIC_SOLID_FRAGMENT = `
  float edge=min(uvLocal.x, min(uvLocal.y,min(1.-uvLocal.x,1.-uvLocal.y)));
  float edgeWidth=max(.004,min(.018,fwidth(edge)*.85));
  float inkEdge=1.-smoothstep(0.,edgeWidth,edge);
- c=mix(c,vec3(.018,.033,.043),inkEdge*.62);
+ // Manufactured debris uses the same planes, with no particle contour.
+ if(phase<30.||phase>=40.)c=mix(c,vec3(.018,.033,.043),inkEdge*.62);
 `;
 /** Fractured solids expose real triangular planes; use their barycentric edge distance. */
 export const GRAPHIC_FRACTURE_FRAGMENT = GRAPHIC_SOLID_FRAGMENT
     .replace('float edge=min(uvLocal.x, min(uvLocal.y,min(1.-uvLocal.x,1.-uvLocal.y)));', 'float edge=min(uvLocal.y,min(1.-uvLocal.x-uvLocal.y*.5,uvLocal.x-uvLocal.y*.5));')
     .replace('inkEdge*.62', 'inkEdge*.84');
+
+/** One four-value combustion palette, shared by every authored fire/explosion path.
+ * A small mip bias removes photographic microtexture before the value decisions;
+ * derivative-width transitions antialias the bands without adding noisy shading.
+ */
+export const GRAPHIC_COMBUSTION_GLSL = `
+float graphicBand(float value,float threshold){
+ float aa=max(.008,min(.035,fwidth(value)*.8));
+ return smoothstep(threshold-aa,threshold+aa,value);
+}
+float graphicCoverage(float coverage){
+ return smoothstep(.055,.18,coverage);
+}
+vec3 graphicCombustion(vec4 source){
+ float flame=graphicBand(max(0.,source.r-source.b),.065);
+ float heat=clamp(source.g/max(.035,source.r)*.72+source.r*.28,0.,1.);
+ vec3 value=mix(vec3(.025,.036,.044),vec3(1.05,.105,.003),flame);
+ value=mix(value,vec3(2.15,.65,.055),flame*graphicBand(heat,.58));
+ return mix(value,vec3(2.8,1.9,.34),flame*graphicBand(heat,.89));
+}
+vec3 graphicSmoke(vec4 source,vec3 tint){
+ float shade=.56+graphicBand(source.r,.28)*.20+graphicBand(source.r,.62)*.24;
+ return tint*shade;
+}
+`;

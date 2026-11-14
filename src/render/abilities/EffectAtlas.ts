@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { GRAPHIC_COMBUSTION_GLSL } from './GraphicLanguage';
 
 /** Immutable tile addresses emitted by tools/assets/vfx/build_atlas.py. */
 export const EFFECT_TILES = Object.freeze({
@@ -56,10 +57,21 @@ export class EffectAtlas {
 
 /** Padded tile sampling; frame clocks never depend on wall time or source motion. */
 export const EFFECT_ATLAS_GLSL = `
+${GRAPHIC_COMBUSTION_GLSL}
 uniform sampler2D map;
 vec4 effectTile(float frame,vec2 uv){
  vec2 cell=vec2(mod(frame,16.),15.-floor(frame/16.));
  return texture2D(map,(cell+(vec2(2.5)+clamp(uv,0.,1.)*123.)/128.)/16.);
+}
+// The original texture/source hashes stay unchanged. Coarse mip sampling removes
+// photographic grain only from combustion; crystals, bolts and field detail stay crisp.
+vec4 effectGraphicTile(float frame,vec2 uv){
+ vec2 cell=vec2(mod(frame,16.),15.-floor(frame/16.));
+ return texture2D(map,(cell+(vec2(2.5)+clamp(uv,0.,1.)*123.)/128.)/16.,1.5);
+}
+vec4 effectGraphicSequence(float first,float count,float fps,float seed,vec2 uv){
+ float f=mod(abilityTime*fps+seed,count);
+ return mix(effectGraphicTile(first+floor(f),uv),effectGraphicTile(first+mod(floor(f)+1.,count),uv),fract(f));
 }
 vec4 effectSequence(float first,float count,float fps,float seed,vec2 uv){
  float f=mod(abilityTime*fps+seed,count);
@@ -68,15 +80,12 @@ vec4 effectSequence(float first,float count,float fps,float seed,vec2 uv){
 }
 `;
 
-/** Texture radiance is banded gently; silhouettes retain their authored alpha. */
+/** Four deliberate combustion values and a clean alpha silhouette, without particle ink. */
 export const TEXTURED_FIRE_GLSL = `
  vec2 fireUv=uvLocal;
- vec4 fire=phase>=200.?effectTile(floor(phase)-200.,fireUv):effectSequence(0.,64.,24.,phase,fireUv);
- float coverage=fire.a;
- float heat=clamp(fire.g/max(.05,fire.r)*.82+fire.r*.18,0.,1.);
- float body=smoothstep(.08,.55,heat),core=smoothstep(.76,.98,heat)*smoothstep(.3,.76,fire.g);
- c=mix(vec3(.17,.007,.001),vec3(1.05,.105,.003),body);
- c=mix(c,vec3(2.8,1.9,.34),core);
+ vec4 fire=phase>=200.?effectGraphicTile(floor(phase)-200.,fireUv):effectGraphicSequence(0.,64.,24.,phase,fireUv);
+ float coverage=graphicCoverage(fire.a);
+ c=graphicCombustion(fire);
  a*=coverage;
  // No opaque card edge against the deck; real alpha silhouettes are continuous.
  a*=smoothstep(.015,.16,worldHeight);

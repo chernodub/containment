@@ -1,5 +1,6 @@
 import * as T from 'three';
 import type {AttackEffectOptions} from './AttackEffects';
+import {GRAPHIC_COMBUSTION_GLSL} from './abilities/GraphicLanguage';
 export type AfflictionStatus={chilled:boolean;burning:boolean;poisoned?:boolean;chillStacks?:number;frozen?:boolean};
 export const NO_AFFLICTION:AfflictionStatus={chilled:false,burning:false,poisoned:false,frozen:false,chillStacks:0};
 type Attachment={status:AfflictionStatus;span:number;height:number;phase:number};
@@ -38,13 +39,14 @@ export class AfflictionBatches{
  private options:AttackEffectOptions={};
  constructor(loader?:T.TextureLoader,private capacity=128){
   const atlas=(name:string,cols:number,rows:number,tint:T.Color,fire=false)=>{
-   const texture=loader?.load(`${import.meta.env.BASE_URL}assets/vfx/${name}.png`)??new T.Texture();texture.minFilter=T.LinearFilter;texture.magFilter=T.LinearFilter;texture.generateMipmaps=false;this.textures.push(texture);
+   const texture=loader?.load(`${import.meta.env.BASE_URL}assets/vfx/${name}.png`)??new T.Texture();texture.minFilter=T.LinearMipmapLinearFilter;texture.magFilter=T.LinearFilter;texture.generateMipmaps=true;this.textures.push(texture);
    const count=capacity*(fire?6:4),geometry=new T.PlaneGeometry(1,1);geometry.setAttribute('atlas',new T.InstancedBufferAttribute(new Float32Array(count*4),4).setUsage(T.DynamicDrawUsage));
    geometry.setAttribute('particleAlpha',new T.InstancedBufferAttribute(new Float32Array(count),1).setUsage(T.DynamicDrawUsage));
    // Authored RGBA contains bright RGB outside its silhouette. Never derive coverage from RGB.
    texture.colorSpace=fire?T.SRGBColorSpace:T.NoColorSpace;
    const material=new T.ShaderMaterial({uniforms:{map:{value:texture},tint:{value:tint},flashScale:{value:1}},vertexShader:vertex,fragmentShader:`uniform sampler2D map;uniform vec3 tint;uniform float flashScale;varying float opacity;varying vec2 texUV;varying vec2 localUV;
-void main(){vec4 s=texture2D(map,texUV);float edge=smoothstep(0.0,.12,localUV.y)*smoothstep(0.0,.06,localUV.x)*smoothstep(0.0,.06,1.0-localUV.x);float a=s.a*${fire?'.68':'.48'}*edge*opacity;if(a<.008)discard;gl_FragColor=vec4(${fire?'s.rgb*vec3(2.2,1.05,.3)*flashScale':'tint'},a);
+${GRAPHIC_COMBUSTION_GLSL}
+void main(){vec4 s=texture2D(map,texUV,1.5);float edge=smoothstep(0.0,.12,localUV.y)*smoothstep(0.0,.06,localUV.x)*smoothstep(0.0,.06,1.0-localUV.x);float a=graphicCoverage(s.a)*${fire?'.68':'.48'}*edge*opacity;if(a<.008)discard;gl_FragColor=vec4(${fire?'graphicCombustion(s)*flashScale':'graphicSmoke(s,tint)'},a);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`,transparent:true,depthWrite:false,side:T.DoubleSide,blending:T.NormalBlending});
