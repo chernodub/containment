@@ -193,7 +193,7 @@ export function environmentObstacle(environment:ShipEnvironment,footprint:Footpr
   }
   // Fit actual vertex bounds, including bevels, rods and rotations. No new navigation obstacles.
   cell.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(cell),size=bounds.getSize(v(0,0,0)),center=bounds.getCenter(v(0,0,0));
-  const fit=environment==='cargo'?.84:.97,cw=short/columns*fit,cd=long/rows*fit;
+  const fit=environment==='cargo'?.82:.97,cw=short/columns*fit,cd=long/rows*fit;
   cell.scale.set(cw/size.x,Math.min(environment==='reactor'?1.6:1,cw/1.5)*(templateId==='reactor-vault'&&index===1?.66:1),cd/size.z);
   cell.position.set((i%columns-(columns-1)/2)*short/columns-center.x*cell.scale.x,-bounds.min.y*cell.scale.y,(Math.floor(i/columns)-(rows-1)/2)*long/rows-center.z*cell.scale.z);
  }
