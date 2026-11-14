@@ -6,7 +6,7 @@ import { UNIT, ELEMENT_COLORS, type AbilityFrame, type AbilityPresentation } fro
 const AMBER = ELEMENT_COLORS.kinetic;
 const EDGE = 0x9fe8ff;
 const CORE = 0xfff2d2;
-const DUST = 0x968673;
+const DUST = 0x727675;
 const STEEL = 0x34424a;
 const TAU = Math.PI * 2;
 const NO_DEPLOYABLES: readonly DeployableSnapshot[] = [];
@@ -84,7 +84,7 @@ export class BreacherPresentation implements AbilityPresentation {
       this.kit.flash(x, z, AMBER, 13, radius, 4, .18);
       this.kit.camera(.54);
       this.kit.anticipate(34, .045);
-      this.kit.scar('crack', x, z, radius, 0x211a13, 10);
+      this.kit.scar('crack', x, z, radius, 0x121c23, 10);
       this.kit.burst(x, .15, z, 'kinetic', 24, 6, .45);
       this.dust(x, z, radius, this.kit.low ? 5 : 14);
       this.kit.debris(x, z, radius, 'kinetic', 32);
@@ -95,7 +95,11 @@ export class BreacherPresentation implements AbilityPresentation {
       this.impact('rail', x, z, angle, length, 2.6);
       // Ribbon width is a radius: this is a .7m core, with a broad short corona and .85s air trail.
       this.kit.heavyBeam(x, .85, z, endX, .85, endZ, AMBER, .35, .85, false);
-      this.kit.scar('trench', (x + endX) * .5, (z + endZ) * .5, length * .5, 0x1b1510, 12, angle, .62);
+      // One near-full-width white pressure core wins the impact frame. It is
+      // shorter than the corona and never exceeds the native damage-lane width.
+      const halfWidth = (event.width ?? (shape.kind === 'line' ? shape.width : 44)) / UNIT * .5;
+      this.kit.beam(x, .85, z, endX, .85, endZ, 0xfffbf2, Math.min(.64, halfWidth * .86), .075, false);
+      this.kit.scar('trench', (x + endX) * .5, (z + endZ) * .5, length * .5, 0x111b22, 12, angle, .62);
       this.kit.burst(x, .85, z, 'kinetic', 32, 6.5, .6);
       this.kit.flash(x, z, CORE, 36, 11, 6, .065);
       this.kit.flash(x, z, AMBER, 14, 9, 5, .24);
@@ -141,7 +145,7 @@ export class BreacherPresentation implements AbilityPresentation {
       const sx = -nz * side * .38, sz = nx * side * .38;
       // Both traces stop at the observed arrival; the dash-start target is deliberately unused.
       this.kit.scar('trench', (this.ramStartX + x) * .5 + sx, (this.ramStartZ + z) * .5 + sz,
-        length * .5, 0x352a20, 2.4, angle, .075);
+        length * .5, 0x20313a, 2.4, angle, .075);
       this.kit.beam(this.ramStartX + sx, .055, this.ramStartZ + sz, x + sx, .055, z + sz,
         AMBER, .04, .65, false);
     }
@@ -264,6 +268,13 @@ export class BreacherPresentation implements AbilityPresentation {
       this.kit.ribbon(p.x - nz * offset, .12, p.z + nx * offset,
         x + nx * .25 - nz * offset, .16, z + nz * .25 + nx * offset, AMBER, .05, fade * .65, false);
     }
+    const chips = this.kit.low ? 2 : 5;
+    for (let i = 0; i < chips; i++) {
+      const side = (i % 2 ? -1 : 1) * (.22 + i * .07), travel = t * (.42 + i * .07);
+      this.kit.draw('solid', p.x + nx * travel - nz * side, .05 + Math.sin(t * Math.PI) * (.12 + i * .025),
+        p.z + nz * travel + nx * side, .24 + i % 2 * .10, .025, .08 + i % 3 * .03,
+        i % 3 ? STEEL : 0x91a5ad, fade * .72, -p.angle + i + t, t * side, 30);
+    }
   }
 
   private drawSlam(p: Impact): void {
@@ -283,11 +294,16 @@ export class BreacherPresentation implements AbilityPresentation {
       const c = Math.cos(a), s = Math.sin(a);
       const r = Math.min(p.size - .28, p.size * (.1 + f * .12) + p.age * p.size * (.45 + f * .35));
       const hop = Math.max(0, Math.sin(Math.min(1, p.age / (.45 + f * .2)) * Math.PI));
-      // Larger chisel-like fragments originate near the launch zone, tumble and settle.
-      k.draw('shard', p.x + c * r, .065 + hop * (.18 + f * .38), p.z + s * r,
-        .16 + f * .24, .055 + f * .06, .07 + (1 - f) * .12,
-        i % 5 === 0 && p.age < .09 ? AMBER : STEEL, (1 - t) * .85,
-        -a + p.age * (f - .5) * 3, hop * (f - .4));
+      // Thin clipped deck plates tumble once, revealing broad manufactured faces.
+      k.draw('solid', p.x + c * r, .065 + hop * (.18 + f * .38), p.z + s * r,
+        .32 + f * .48, .035 + f * .025, .16 + (1 - f) * .22,
+        i % 5 === 0 && p.age < .09 ? AMBER : i % 3 ? STEEL : 0x91a5ad, (1 - t) * .85,
+        -a + p.age * (f - .5) * 3, hop * (f - .4), 30);
+      if (p.age < .24 && i % 3 === 0) {
+        const px = p.x + c * r, pz = p.z + s * r;
+        k.ribbon(px, .09 + hop * .3, pz, px - c * .32, .08 + hop * .3, pz - s * .32,
+          AMBER, .018, frontFade * .65, false);
+      }
       if (i % 2 === 0 && frontFade > 0) {
         const wake = radius * (.88 + f * .05);
         k.draw('smoke', p.x + c * wake, .18 + p.age * .28, p.z + s * wake,
@@ -304,9 +320,9 @@ export class BreacherPresentation implements AbilityPresentation {
     }
     if (p.age > .85) return;
     if (p.age < .36) {
-      const rings = this.kit.low ? 2 : 3, shock = 1 - p.age / .36;
+      const rings = this.kit.low ? 3 : 5, shock = 1 - p.age / .36;
       for (let i = 0; i < rings; i++) {
-        const distance = (.13 + i * .27 + Math.sin(i * 2.73) * .04) * p.size, r = (.38 + i * .17) + p.age * (1.7 + i * .3);
+        const distance = (.10 + i * (this.kit.low ? .32 : .19) + Math.sin(i * 2.73) * .025) * p.size, r = (.45 + i * .13) + p.age * (1.7 + i * .3);
         this.kit.sprite('shockwave', p.x + nx * distance, .85, p.z + nz * distance,
           r, r * (.85 + i * .12), p.age < .065 ? CORE : AMBER, shock * .7, i, 'vertical', Math.PI / 2 - p.angle);
       }
