@@ -29,7 +29,7 @@ class CryoPresentation implements AbilityPresentation {
   private disposed = false;
 
   readonly storm?: WhiteoutState;
-  constructor(private readonly kit: ElementKit) { if (kit.root) this.storm = new WhiteoutState(kit.root); }
+  constructor(private readonly kit: ElementKit) { if (kit.root?.isObject3D === true) this.storm = new WhiteoutState(kit.root); }
 
   event(event: AbilityEvent, x: number, y: number): void {
     if (this.disposed || !Number.isFinite(x) || !Number.isFinite(y)) return;
@@ -390,7 +390,7 @@ class CryoPresentation implements AbilityPresentation {
     this.cursor = 0; this.mistAge = 0; this.emitMist = false;
   }
 
-  dispose(): void { if (this.disposed) return; this.clear(); this.disposed = true; }
+  dispose(): void { if (this.disposed) return; this.clear(); this.storm?.dispose(); this.disposed = true; }
 }
 
 /** Registry factory; all GPU resources remain owned by ElementKit. */
