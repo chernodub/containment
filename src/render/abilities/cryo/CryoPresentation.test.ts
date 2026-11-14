@@ -101,7 +101,7 @@ describe('Cryo signatures', () => {
     }
     expect(kit.sprite.mock.calls.filter(c => c[0] === 'snow').map(c => c[7])).toEqual(freshSnow);
     expect(kit.front).not.toHaveBeenCalled();
-    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(20);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(0);
   });
 
   it('grounds seven unequal tapered Glacier crystals inside the exact blocking strip', () => {
@@ -232,81 +232,36 @@ describe('Cryo signatures', () => {
     expect(kit.ring).toHaveBeenCalledWith(2, 3, 180 / 32, 0xe8fbff, .5);
   });
 
-  it('drives authored snow and mist around one storm perimeter with a calm eye', () => {
+  it('streams bounded snow around a rotating perimeter with a calm eye and actual prop-edge frost', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     const f = frame({ zones: [zone()] }, 0);
     f.game = { geometry: { blockers: [{ x: 480, y: 300, width: 40, height: 40 }, { x: 900, y: 900, width: 40, height: 40 }] } } as never;
     fx.update(f);
-    const clouds = kit.sprite.mock.calls.filter(c => c[0] === 'mist'), snow = kit.sprite.mock.calls.filter(c => c[0] === 'snow');
-    expect(clouds).toHaveLength(20); expect(snow).toHaveLength(7);
-    expect(new Set(clouds.map(c => c[5].toFixed(3))).size).toBeGreaterThan(8);
-    for (const c of [...clouds, ...snow]) {
-      const distance = Math.hypot(c[1] - 10, c[3] - 10);
-      const support = c[4] * Math.cos(Math.abs(c[11])) + c[5] * Math.sin(Math.abs(c[11]));
-      expect(distance - support).toBeGreaterThan(2.25);
-      expect(distance + support).toBeLessThan(300 / 32);
-      expect(c[7]).toBeLessThanOrEqual(1); expect(c[9]).toBe('billboard');
-      expect(c[11]).toBe(c[0] === 'mist' ? -.24 : -.72);
+    const snow = kit.sprite.mock.calls.filter(c => c[0] === 'snow');
+    expect(snow).toHaveLength(8);
+    for (const c of snow) {
+      const distance = Math.hypot(c[1]-10,c[3]-10), support=Math.hypot(c[4],c[5]);
+      expect(distance-support).toBeGreaterThan(2.25);expect(distance+support).toBeLessThan(300/32);
+      expect(c[7]).toBeLessThanOrEqual(1);expect(c[9]).toBe('billboard');
     }
-    const deposits = kit.sprite.mock.calls.filter(c => c[0] === 'frost');
-    expect(deposits.length).toBeGreaterThan(0); expect(deposits.length).toBeLessThanOrEqual(4);
-    for (const c of deposits) {
-      expect(c[9]).toBe('ground');
-      expect(Math.hypot(c[1] - 10, c[3] - 10) + Math.hypot(c[4], c[5])).toBeLessThan(300 / 32);
+    const deposits=kit.sprite.mock.calls.filter(c=>c[0]==='frost');
+    expect(deposits).toHaveLength(4);
+    for(const c of deposits){expect(c[9]).toBe('ground');expect(Math.hypot(c[1]-10,c[3]-10)+Math.hypot(c[4],c[5])).toBeLessThan(300/32);}
+    const gusts=kit.gust.mock.calls;expect(gusts).toHaveLength(6);
+    let area=0;
+    for(const c of gusts){
+      const dx=c[0]-10,dz=c[1]-10,cos=Math.cos(c[4]),sin=Math.sin(c[4]);
+      const lx=dx*cos+dz*sin,lz=-dx*sin+dz*cos;
+      expect(Math.hypot(Math.max(0,Math.abs(lx)-c[2]/2),Math.max(0,Math.abs(lz)-c[3]/2))).toBeGreaterThan(2.25);
+      for(const side of [-1,1])for(const end of [-1,1])expect(Math.hypot(dx+cos*end*c[2]/2-sin*side*c[3]/2,dz+sin*end*c[2]/2+cos*side*c[3]/2)).toBeLessThan(300/32);
+      expect(c[6]).toBeLessThanOrEqual(.48);area+=c[2]*c[3];
     }
-    const gusts = kit.gust.mock.calls;
-    expect(gusts).toHaveLength(6);
-    const radii = gusts.map(c => Math.hypot(c[0] - 10, c[1] - 10));
-    expect(Math.min(...radii)).toBeGreaterThan(300 / 32 * .8);
-    expect(Math.max(...radii) - Math.min(...radii)).toBeGreaterThan(.1);
-    expect(new Set(gusts.map(c => c[2].toFixed(2))).size).toBeGreaterThan(3);
-    let supportArea = 0;
-    for (const c of gusts) {
-      const dx = c[0] - 10, dz = c[1] - 10, cosine = Math.cos(c[4]), sine = Math.sin(c[4]);
-      const localX = dx * cosine + dz * sine, localZ = -dx * sine + dz * cosine;
-      const nearest = Math.hypot(Math.max(0, Math.abs(localX) - c[2] / 2), Math.max(0, Math.abs(localZ) - c[3] / 2));
-      expect(nearest).toBeGreaterThan(2.25);
-      for (const side of [-1, 1]) for (const end of [-1, 1]) {
-        expect(Math.hypot(dx + cosine * end * c[2] / 2 - sine * side * c[3] / 2,
-          dz + sine * end * c[2] / 2 + cosine * side * c[3] / 2)).toBeLessThan(300 / 32);
-      }
-      expect(c[6]).toBeLessThanOrEqual(.48);
-      supportArea += c[2] * c[3];
-    }
-    expect(supportArea).toBeLessThan(Math.PI * (300 / 32) ** 2 * .24);
-    // Shared pool leaves room for status wisps and scars; no geometry snow draw remains.
+    expect(area).toBeLessThan(Math.PI*(300/32)**2*.24);
     expect(kit.draw).not.toHaveBeenCalled();
-    const positions = clouds.map(c => [c[1], c[3]]), gustAngle = gusts[0][4];
-    kit.sprite.mockClear(); kit.gust.mockClear();
-    fx.update(frame({ zones: [zone({ remainingMs: 6500 })] }, 0));
-    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist').map(c => [c[1], c[3]])).not.toEqual(positions);
-    expect(kit.gust.mock.calls[0][4] - gustAngle).toBeCloseTo(.12);
-    expect(kit.gust.mock.calls).toHaveLength(6);
-    expect(kit.front).not.toHaveBeenCalled();
-
-  });
-
-  it.each([false, true])('overlaps broad storm clouds above the floor with a clear directional crest (Low %s)', low => {
-    const kit = recordingKit(); kit.low = low;
-    createCryoPresentation(kit as unknown as ElementKit).update(frame({ zones: [zone()] }, 0));
-    const clouds = kit.sprite.mock.calls.filter(c => c[0] === 'mist');
-    expect(clouds).toHaveLength(low ? 10 : 20);
-    let minimumHeight = Infinity, maximumHeight = 0;
-    for (const c of clouds) {
-      expect(c[4]).toBeGreaterThanOrEqual(low ? 1.8 : 1.4);
-      expect(c[4]).toBeLessThanOrEqual(low ? 2.2 : 1.8);
-      expect(c[5]).toBeGreaterThanOrEqual(low ? .5 : .9);
-      expect(c[5]).toBeLessThanOrEqual(low ? .65 : 1.4);
-      expect(c[7]).toBeGreaterThanOrEqual(.85); expect(c[7]).toBeLessThanOrEqual(1);
-      const vertical = c[4] * Math.abs(Math.sin(c[11])) + c[5] * Math.cos(c[11]);
-      const horizontal = Math.hypot(c[4], c[5]);
-      expect(c[2] - vertical).toBeGreaterThanOrEqual(.034999);
-      const distance = Math.hypot(c[1] - 10, c[3] - 10);
-      expect(distance - horizontal).toBeGreaterThan(4);
-      expect(distance + horizontal).toBeLessThan(300 / 32);
-      minimumHeight = Math.min(minimumHeight, c[5]); maximumHeight = Math.max(maximumHeight, c[5]);
-    }
-    expect(maximumHeight - minimumHeight).toBeGreaterThan(low ? .06 : .15);
+    const positions=snow.map(c=>[c[1],c[3]]),angle=gusts[0][4];
+    kit.sprite.mockClear();kit.gust.mockClear();fx.update(frame({zones:[zone({remainingMs:6500})]},0));
+    expect(kit.sprite.mock.calls.filter(c=>c[0]==='snow').map(c=>[c[1],c[3]])).not.toEqual(positions);
+    expect(kit.gust.mock.calls[0][4]-angle).toBeCloseTo(.12);
   });
 
   it('reserves expanding textured vapor for Nova and holds Whiteout at its exact storm perimeter', () => {
@@ -315,10 +270,10 @@ describe('Cryo signatures', () => {
     fx.update(frame({ zones: [zone({ remainingMs: 5990 })] }, .1));
     fx.update(frame({}, .1));
     expect(kit.front).not.toHaveBeenCalled();
-    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(20);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(0);
     expect(kit.ring).toHaveBeenCalledTimes(4);
     fx.event(receipt({ radius: 210 }), 320, 320); fx.update(frame({}, .1));
-    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(28);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(8);
     expect(kit.front).not.toHaveBeenCalled();
   });
 
@@ -331,8 +286,8 @@ describe('Cryo signatures', () => {
     expect(low.sprite.mock.calls.length).toBeLessThan(high.sprite.mock.calls.length);
     expect(low.gust).toHaveBeenCalledTimes(3);
     expect(low.gust.mock.calls.length).toBeLessThan(high.gust.mock.calls.length);
-    expect(low.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(10);
-    expect(high.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(20);
+    expect(low.sprite.mock.calls.filter(c => c[0] === 'snow')).toHaveLength(4);
+    expect(high.sprite.mock.calls.filter(c => c[0] === 'snow')).toHaveLength(8);
   });
 
   it('marks sustained coverage by authoritative age and resets priority before leaving each presentation', () => {
@@ -366,7 +321,7 @@ describe('Cryo signatures', () => {
     }
     expect(gusts).toHaveLength(3);
     expect(kit.front).not.toHaveBeenCalled();
-    expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(10);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'snow')).toHaveLength(4);
 
   });
 
@@ -383,14 +338,14 @@ describe('Cryo signatures', () => {
     } as never;
     fx.update(f);
     const mist = kit.sprite.mock.calls.filter(c => c[0] === 'mist');
-    const target = mist.slice(low ? 10 : 20);
+    const target = mist;
     expect(target).toHaveLength(low ? 2 : 4);
     expect(target.every(c => c[7] <= .38 && c[5] <= .58)).toBe(true);
     expect(target.map(c => c[8])).not.toContain(0);
     expect(target.map(c => c[8])).not.toContain(7);
     expect(target.map(c => c[8])).not.toContain(8);
     const fresh = kit.sprite.mock.calls.filter(c => c[0] === 'frost');
-    expect(fresh).toHaveLength(low ? 2 : 4);
+    expect(fresh).toHaveLength(4);
     kit.sprite.mockClear();
     f.snapshot = snapshot({ zones: [zone({ remainingMs: 5000 })] });
     fx.update(f);

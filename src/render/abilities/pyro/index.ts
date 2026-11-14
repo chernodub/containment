@@ -45,6 +45,14 @@ class PyroPresentation implements AbilityPresentation {
   private disposed = false;
   private muzzle?: Object3D;
   private readonly source = new Vector3();
+  private suit?: Object3D;
+  private readonly shoulders: (Object3D | undefined)[] = [undefined, undefined];
+  private readonly vent = new Vector3();
+  private readonly locateVents = (node: Object3D): void => {
+    const name = node.name.replace(/\./g, '');
+    if (name === 'upper_armL') this.shoulders[0] = node;
+    if (name === 'upper_armR') this.shoulders[1] = node;
+  };
 
   constructor(private readonly kit: ElementKit) {}
 
@@ -121,8 +129,9 @@ class PyroPresentation implements AbilityPresentation {
         // The authoritative aura boundary is shared; the suit itself is the heat source.
         kit.flash(x, z, FIRE, event.phase === 'burst' ? 5 : 14, 6, event.phase === 'burst' ? 3 : 6, .25);
         kit.distort(x, z, radius, .004, .6, true);
-        if (event.phase === 'impact') { kit.camera(.34); kit.exposureFlash(.2); }
+        if (event.phase === 'impact') { kit.ring(x, z, radius, CORE, .38); kit.camera(.34); kit.exposureFlash(.2); }
       } else if (event.phase === 'end') {
+        kit.ring(x, z, .9, HOT, .35, true);
         kit.burst(x, .2, z, 'pyro', 12, .8, .7);
         for (let i = 0; i < (kit.low ? 2 : 5); i++) kit.mote('smoke', x + Math.cos(i * 2.4) * .4, .5, z + Math.sin(i * 2.4) * .4, 0, .55, 0, .5, 1.3, SOOT);
       }
@@ -389,21 +398,35 @@ class PyroPresentation implements AbilityPresentation {
     const move = frame.game?.player, moving = move && Math.hypot(move.vx, move.vy) > 18;
     const exhaustAngle = moving ? Math.atan2(-move.vy, -move.vx) : angle + Math.PI;
     const pulse = kit.reducedMotion ? 1 : .88 + Math.sin(kit.time * 8) * .12;
+    const age = (zone.durationMs-zone.remainingMs)/1000;
+    if (frame.marine !== this.suit) {
+      this.suit=frame.marine;this.shoulders.fill(undefined);this.suit?.traverse(this.locateVents);
+    }
+    this.suit?.updateWorldMatrix(true, true);
     // Unequal rear flames rise above the suit without widening the floor aura.
     // Charged seams and shoulder vents retain their attached silhouette priority.
     kit.impact();
     for (let side = -1; side <= 1; side += 2) {
-      const bx = x - c * .3 - s * side * .4, bz = z - s * .3 + c * side * .4;
-      kit.draw('solid', bx, 1.36, bz, .28, .22, .34, 0xd95b16, (.9 + pulse * .1) * fade, -angle);
-      kit.draw('spark', bx, side < 0 ? 1.4 : 1.3, bz, .15, .17, 1, CORE, .96 * fade);
-      const height = side < 0 ? 2.4 : 1.8, base = side < 0 ? 1.3 : 1.25;
-      kit.directedFlame(bx, base, bz, side < 0 ? .52 : .43, height * (.95 + pulse * .05),
+      const shoulder=this.shoulders[side<0?0:1];
+      if(shoulder)this.vent.setFromMatrixPosition(shoulder.matrixWorld);
+      const bx = shoulder?this.vent.x-c*.14:x-c*.3-s*side*.48;
+      const bz = shoulder?this.vent.z-s*.14:z-s*.3+c*side*.48;
+      const base = shoulder?this.vent.y:side<0?1.3:1.25;
+      kit.impact();
+      kit.draw('solid', bx, base+.06, bz, .32, .20, .35, 0xd95b16, (.9 + pulse * .1) * fade, -angle);
+      kit.draw('spark', bx, base+.1, bz, .18, .14, 1, CORE, .96 * fade);
+      kit.sustain(age);
+      kit.flowFlame(bx, base, bz, bx-c*.65-s*side*.38, base+.7, bz-s*.65+c*side*.38,
+        kit.low?.12:.2, side+zone.id, .94*fade, true);
+      const height = side < 0 ? 2.4 : 1.8;
+      kit.directedFlame(bx, base, bz, side < 0 ? .73 : .61, height * (.95 + pulse * .05),
         exhaustAngle, moving ? 1.1 : .5, side + zone.id, .9 * fade, true);
       if (!kit.low) kit.directedFlame(bx - c * .18, 1.08, bz - s * .18, .28, 2.6,
         exhaustAngle, .65, side * 2.7, .78 * fade);
     }
     // A low attached mantle wraps the armor flanks, distinct from the tall rear vents.
     // Its narrow shoulders leave the cyan helmet and central aiming silhouette exposed.
+    kit.sustain(age);
     const flanks = kit.low ? 1 : 2;
     for (let i = 0; i < flanks; i++) {
       const side = i === 0 ? -1 : 1;
@@ -411,6 +434,7 @@ class PyroPresentation implements AbilityPresentation {
         z - s * .04 + c * side * .27, .23, 1.45, exhaustAngle, .2,
         zone.id + side * 8.1, .68 * fade);
     }
+    kit.impact();
     kit.draw('solid', x - c * .3, 1.12, z - s * .3, .22, .55, .36, 0xb9450e, .94 * fade, -angle);
     // Short heated armor seams describe shoulders, chest and weapon, leaving the helmet open.
     for (let side = -1; side <= 1; side += 2) {
@@ -422,6 +446,7 @@ class PyroPresentation implements AbilityPresentation {
     kit.grade(.65 * fade);
     kit.lightAt(zone.id, x, z, FIRE, 5 * fade, 6);
     if (emit) {
+      kit.sustain(age);
       // Bounded ember storm is attached to the moving suit, never a floor aura fill.
       for (let i = 0; i < (kit.low ? 1 : 3); i++) {
         const a = exhaustAngle + (i - 1) * .7, side = i - 1;
@@ -436,7 +461,7 @@ class PyroPresentation implements AbilityPresentation {
   clear(): void {
     for (const p of this.effects) p.live = false;
     for (const print of this.prints) print.live = false;
-    this.next = 0; this.emission = 0; this.shimmer = 0; this.printCursor = 0; this.printClock = 0; this.muzzle = undefined;
+    this.next = 0; this.emission = 0; this.shimmer = 0; this.printCursor = 0; this.printClock = 0; this.muzzle = undefined; this.suit=undefined;this.shoulders.fill(undefined);
   }
 
   dispose(): void {

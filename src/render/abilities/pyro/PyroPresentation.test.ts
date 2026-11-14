@@ -201,11 +201,11 @@ describe('Pyro presentation lifecycle and readability', () => {
     frame.game = { player: { x: 128, y: 160, vx: 0, vy: 0, angle: .1 }, bullets: [] } as never;
     step(.016);
     const flames = kit.batches.flame.mesh;
-    expect(flames.count).toBe(tier === 'low' ? 3 : 6); expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
+    expect(flames.count).toBe(tier === 'low' ? 5 : 8); expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i);
-      expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThan(.65);
-      expect(flames.geometry.getAttribute('abilityPriority').getX(i)).toBe(0);
+      expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThan(1);
+      expect(flames.geometry.getAttribute('abilityPriority').getX(i)).toBe(1);
     }
     const shoulderVents = exhaust.mock.calls.filter(call => call[3] >= .3);
     expect(shoulderVents).toHaveLength(2);
@@ -225,9 +225,24 @@ describe('Pyro presentation lifecycle and readability', () => {
     for (const call of backpackVents) { expect(call[1]).toBeGreaterThanOrEqual(1); expect(call[1] + call[4]).toBeLessThan(3.9); }
     expect(shoulderVents[0][4]).not.toBe(shoulderVents[1][4]);
     expect(Math.max(...shoulderVents.map(call => call[1] + call[4]))).toBeGreaterThan(3.5);
-    expect(scale(kit.batches.solid.mesh, 0).x).toBeCloseTo(.28);
+    expect(scale(kit.batches.solid.mesh, 0).x).toBeCloseTo(.32);
     expect(scale(kit.batches.solid.mesh, 2).y).toBeGreaterThanOrEqual(.1);
     expect(kit.counts.rings).toBe(0); expect(kit.batches.decal.mesh.count).toBe(0);
+    dispose();
+  });
+
+  it('attaches shoulder jets to the native animated suit without mutating it',()=>{
+    const {scene,kit,frame,step,dispose}=setup(),flow=vi.spyOn(kit,'flowFlame');
+    const marine=new T.Group(),left=new T.Object3D(),right=new T.Object3D();
+    left.name='upper_arm.L';right.name='upper_arm.R';left.position.set(-.4,1.6,0);right.position.set(.4,1.6,0);
+    marine.position.set(4,0,5);marine.add(left,right);scene.add(marine);frame.marine=marine;
+    frame.snapshot=snapshot([zone({ability:'meltdown',radius:130,attached:true})]);
+    frame.game={player:{x:128,y:160,vx:0,vy:0,angle:0},bullets:[]} as never;
+    step(.016);expect(flow).toHaveBeenCalledTimes(2);
+    expect(flow.mock.calls[0].slice(0,3)).toEqual([3.46,1.6,5]);
+    left.position.y=1.8;flow.mockClear();step(0);expect(flow.mock.calls[0][1]).toBe(1.8);
+    expect(left.position.toArray()).toEqual([-.4,1.8,0]);
+    expect(kit.batches.solid.mesh.geometry.getAttribute('abilityPriority').getX(0)).toBe(0);
     dispose();
   });
 
@@ -248,7 +263,7 @@ describe('Pyro presentation lifecycle and readability', () => {
     step(.016);
     const flames = kit.batches.flame.mesh, priority = flames.geometry.getAttribute('abilityPriority');
     expect(priority.getX(0)).toBe(1); // First new wake has no renewed impact grace.
-    for (let i = 1; i < flames.count; i++) expect(priority.getX(i)).toBe(0);
+    for (let i = 1; i < flames.count; i++) expect(priority.getX(i)).toBe(1); // Detached flame volume yields; hot armor seams remain attached signals.
     expect(kit.batches.decal.mesh.geometry.getAttribute('abilityPriority').getX(0)).toBe(1);
     expect(kit.batches.solid.mesh.geometry.getAttribute('abilityPriority').getX(0)).toBe(0);
     const before = flames.instanceMatrix.array.slice(); step(0);
