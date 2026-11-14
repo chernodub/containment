@@ -84,13 +84,19 @@ export async function stageC6Families(room) {
  // eight-corner bounds. No simulation tick, status, health or camera override.
  function nativeFamilyFallback(){
   const families=['crawler','spitter','brute','carrier','stalker'],i=r.hudInsets,box={left:0,right:0,top:0,bottom:0};
-  const trials=[];
+  const trials=[];d.i8FamilyProof={actors:[],requested:15,fullBodyCount:0,presentationOnly:true,invulnerable:true,spacing:76,packingMode:'native-hex-fallback',fallbackTrials:trials,stagingFailed:true};
   for(const center of centers.slice(0,48)){
    Object.assign(g.player,{x:center.x,y:center.y,vx:0,vy:0,angle:0});g.enemies.reset();
-   const seed=[];
+   const seed=[],seedCandidates=[];
    for(let y=b.y+40;y<b.y+b.height-40;y+=38)for(let x=b.x+40;x<b.x+b.width-40;x+=38){
-    if(seed.length<15&&Math.hypot(x-center.x,y-center.y)>=105&&d.canStand(x,y,28)&&seed.every(p=>Math.hypot(x-p.x,y-p.y)>=76))seed.push({x,y});
+    if(Math.hypot(x-center.x,y-center.y)>=105&&d.canStand(x,y,28))seedCandidates.push({x,y});
    }
+   // A far north-row bootstrap can select zero contacts in the annular room,
+   // leaving no real nearby engagement for production framing to solve.
+   // Keep all already passing other-room seed order; Annulus alone begins
+   // with the nearest legal105-reserve marks, still at least76 apart.
+   if(room==='containment-annulus')seedCandidates.sort((a,b)=>Math.hypot(a.x-center.x,a.y-center.y)-Math.hypot(b.x-center.x,b.y-center.y)||a.y-b.y||a.x-b.x);
+   for(const p of seedCandidates)if(seed.length<15&&seed.every(q=>Math.hypot(p.x-q.x,p.y-q.y)>=76))seed.push(p);
    if(seed.length<15)continue;
    let actors=seed.map((p,n)=>({...p,family:families[n%5],elite:n>=10,id:0}));
    const spawn=()=>{g.enemies.reset();for(const p of actors){p.id=d.spawn(p.family,p.x,p.y,p.elite);if(!p.id)return false;if(p.elite&&p.family==='brute')g.enemies.promote(p.id,'warden');if(p.elite&&p.family==='carrier')g.enemies.promote(p.id,'matron');}return true;};
@@ -117,7 +123,7 @@ export async function stageC6Families(room) {
      if(packed.length>best.length&&new Set(packed.map(p=>p.family)).size===5){best=packed;bestLayout=layout;}
      if(best.length===15)break;
     }
-    trials.push({x:center.x,y:center.y,pass,matched:best.length,layout:bestLayout});
+    trials.push({x:center.x,y:center.y,pass,matched:best.length,layout:bestLayout,seedMode:room==='containment-annulus'?'nearby-annulus':'legacy-north-row',seedNearest:Math.min(...seed.map(p=>Math.hypot(p.x-center.x,p.y-center.y))),seedFarthest:Math.max(...seed.map(p=>Math.hypot(p.x-center.x,p.y-center.y)))});
     if(best.length<12)break;
     actors=best;if(!spawn())break;for(let n=0;n<5;n++)d.refresh();
     let stable=true;

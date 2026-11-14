@@ -168,7 +168,7 @@ it.each([[1280,720],[1920,1080]])('retains Relay bodies and native movement acro
 // substantial vertical space, so center-point or wide-camera counts are not proof.
 it.each(['containment-annulus','infested-workshop','overload-floor','awakening-bay','communal-atrium','armory','breached-loading-bay','relay-racks','safety-interlock-station','service-shaft-landing'])('packs native720 family bodies without reducing coverage: %s',async room=>{
   const {game,renderer,debug}=setup(1280,720);await stageC6Families(room);
-  const proof=debug.i8FamilyProof;if(room==='containment-annulus')expect(proof.packingMode).toBe('native-hex-fallback');expect(proof.requested).toBe(15);expect(proof.fullBodyCount).toBeGreaterThanOrEqual(12);expect(new Set(proof.actors.map((p:{family:string})=>p.family)).size).toBe(5);
+  const proof=debug.i8FamilyProof;if(room==='containment-annulus'){expect(proof.packingMode).toBe('native-hex-fallback');expect(proof.fallbackTrials.length).toBeGreaterThan(0);for(const trial of proof.fallbackTrials){expect(trial.seedMode).toBe('nearby-annulus');expect(trial.seedNearest).toBeGreaterThanOrEqual(105);expect(trial.seedNearest).toBeLessThanOrEqual(176);expect(trial.seedFarthest).toBeLessThan(400);}}expect(proof.requested).toBe(15);expect(proof.fullBodyCount).toBeGreaterThanOrEqual(12);expect(new Set(proof.actors.map((p:{family:string})=>p.family)).size).toBe(5);
   for(const [n,a]of proof.actors.entries())for(const b of proof.actors.slice(n+1))expect(Math.hypot(a.x-b.x,a.y-b.y)).toBeGreaterThanOrEqual(76-1e-6);
   const elapsed=game.elapsed,box={left:0,right:0,top:0,bottom:0};
   for(let refresh=0;refresh<4;refresh++){
