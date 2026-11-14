@@ -165,7 +165,12 @@ try{
     await page.waitForFunction(state=>document.body.dataset.state===state&&document.querySelector(`.debrief-panel[data-outcome="${state}"]`),scenario.state);
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
    }
-   if(scenario.v7Placement){
+   if(scenario.i11NativePointer){
+    const point=await page.evaluate(()=>window.__containmentDebug.i11NativePointer);
+    assert(point&&Number.isFinite(point.x)&&Number.isFinite(point.y)&&point.x>=0&&point.x<viewport.width&&point.y>=0&&point.y<viewport.height,`${name}: native pool cursor is outside the viewport`);
+    await page.mouse.move(point.x,point.y);
+    await page.evaluate(()=>{window.__containmentDebug.refresh();window.__containmentDebug.refresh();});
+   }else if(scenario.v7Placement){
     const point=await page.evaluate(()=>window.__containmentDebug.v7PlacementPointer);
     assert(point&&Number.isFinite(point.x)&&Number.isFinite(point.y)&&point.x>=0&&point.x<viewport.width&&point.y>=0&&point.y<viewport.height,`${name}: native placement cursor is outside the viewport`);
     await page.mouse.move(point.x,point.y);
@@ -195,7 +200,12 @@ try{
     const evidence=inspected?.evidence??await page.evaluate(inspectFrame);lastEvidence=evidence;lastCamera=inspected?.camera??null;
     if(scenario.i10ArmoryReplay)evidence.i10ArmoryReplay=await page.evaluate(inspectI10ArmoryReplay);
     if(scenario.u7Crossing)evidence.u7Crossing=await page.evaluate(()=>window.__containmentDebug.u7Crossing);
-    if(scenario.v7Placement){
+    if(scenario.i11NativePointer){
+    const point=await page.evaluate(()=>window.__containmentDebug.i11NativePointer);
+    assert(point&&Number.isFinite(point.x)&&Number.isFinite(point.y)&&point.x>=0&&point.x<viewport.width&&point.y>=0&&point.y<viewport.height,`${name}: native pool cursor is outside the viewport`);
+    await page.mouse.move(point.x,point.y);
+    await page.evaluate(()=>{window.__containmentDebug.refresh();window.__containmentDebug.refresh();});
+   }else if(scenario.v7Placement){
      const proof=evidence.v7Placement=await page.evaluate(inspectV7Placement);
      assert(proof.bridge&&proof.meshCount>0,`${name}: native cursor lacks a prepared world footprint`);
      assert.equal(proof.usesAfter,proof.usesBefore,`${name}: placement inspection changed gameplay`);

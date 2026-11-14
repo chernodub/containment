@@ -1,6 +1,7 @@
 import {describe,expect,it,vi} from 'vitest';
 import * as T from 'three';
 import {MaterialWarmup} from '../src/render/MaterialWarmup';
+import {AcidPoolMaterial} from '../src/render/acidPool';
 
 it('retains future-room materials between prepares and releases owned resources without disposing borrowed surfaces',()=>{
  const map=new T.Texture(),surfaces={floor:new T.MeshStandardMaterial({map}),wall:new T.MeshStandardMaterial({map}),cover:new T.MeshStandardMaterial({map})},borrowed=Object.values(surfaces).map(m=>vi.spyOn(m,'dispose'));
@@ -233,4 +234,27 @@ describe('room shader topology registration', () => {
     expect(shader.uniforms.maps.value).toEqual([half, cube]);
     expect(shader.uniforms.nested.value.atlas).toBe(atlas);
   });
+});
+
+
+it('prepares the native hostile pool shader family before the first legacy attack', () => {
+  const warmup = library();
+  const proxy = warmup.root.getObjectByName('prepared-legacy-acid-pool') as T.Mesh;
+  expect(proxy.material).toBeInstanceOf(AcidPoolMaterial);
+  const material = proxy.material as AcidPoolMaterial;
+  const programKey = material.customProgramCacheKey();
+  for (const id of [1, 99]) {
+    const source = new AcidPoolMaterial(id);
+    const geometry = new T.CircleGeometry(1, 40);
+    const live = new T.Mesh(geometry, source);
+    expect(warmup.register(live)).toBe(0);
+    expect(source.customProgramCacheKey()).toBe(programKey);
+    source.dispose(); geometry.dispose();
+  }
+  expect(warmup.root.visible).toBe(false);
+  const geometryDispose = vi.spyOn(proxy.geometry, 'dispose');
+  const materialDispose = vi.spyOn(material, 'dispose');
+  warmup.dispose(); warmup.dispose();
+  expect(geometryDispose).toHaveBeenCalledOnce();
+  expect(materialDispose).toHaveBeenCalledOnce();
 });

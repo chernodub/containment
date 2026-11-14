@@ -5,6 +5,7 @@ import {applyFloorVariation} from './lighting/FloorVariation';
 import {applyHotFixtureSurface} from './lighting/HotFixtureSurface';
 import {optimizeLocalLights} from './lighting/LocalLightShading';
 import {addRoomPracticals} from './lighting/RoomPracticals';
+import {AcidPoolMaterial} from './acidPool';
 
 const shaderProperties = [
   'side', 'shadowSide', 'transparent', 'blending', 'vertexColors', 'flatShading', 'wireframe',
@@ -158,6 +159,10 @@ export class MaterialWarmup {
     this.add(this.owned({map:surfaces.floor.map}));
     this.add(this.owned({map:surfaces.floor.map,roughnessMap:surfaces.floor.roughnessMap,metalnessMap:surfaces.floor.metalnessMap}));
     this.add(this.owned({map:surfaces.floor.map,alphaTest:.5}));
+    // Legacy Queen pools first appear during combat. Retain their exact
+    // transparent shader family before readiness, independent of pool lifetime.
+    const acid=new T.Mesh(new T.PlaneGeometry(1,1),new AcidPoolMaterial(0));
+    acid.name='prepared-legacy-acid-pool';registerGeometry(acid);this.root.add(acid);
     this.root.traverse(object=>{if(object instanceof T.Mesh){object.frustumCulled=false;object.castShadow=true;object.matrixAutoUpdate=false;this.ownedGeometries.add(object.geometry);for(const material of Array.isArray(object.material)?object.material:[object.material]){this.replaceSamplers(material,material);if(material instanceof T.MeshStandardMaterial)optimizeLocalLights(material);material.userData.actorMaterial=true;material.userData.retainedRoomWarmup=true;this.ownedMaterials.add(material);this.topologies.add(topology(object,material));}}});
     this.root.updateMatrix();this.root.matrixAutoUpdate=false;this.root.visible=false;
   }

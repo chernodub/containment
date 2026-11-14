@@ -11,6 +11,23 @@ const camera = () => {
 const game = () => ({ player: { x: -160, y: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [] }) as unknown as DepthGame;
 
 describe('friendly priority mask', () => {
+  it('keeps live acid pools protected after warning retirement without mutating their lifetime', () => {
+    const mask = new AbilityPriorityMask(), c = camera(), g = game();
+    mask.update(g, c); const empty = mask.pixels.slice();
+    const pool = Object.freeze({id:1,x:96,y:0,radius:80,life:1.9});
+    Object.assign(g, {pools:[pool]});
+    mask.update(g, c);
+    expect(mask.pixels.some((value, index) => value > empty[index])).toBe(true);
+    const covered = mask.pixels.slice();
+    mask.update(g, c);
+    expect(mask.pixels).toEqual(covered);
+    expect(pool.life).toBe(1.9);
+    Object.assign(g, {pools:[{...pool,life:0}]});
+    mask.update(g, c);
+    expect(mask.pixels).toEqual(empty);
+    mask.dispose();
+  });
+
   it('preserves every byte of max-composited coverage when stamps overlap or clip offscreen', () => {
     const mask = new AbilityPriorityMask(), reference = new Uint8Array(mask.pixels.length);
     const stamp = (mask as unknown as { ellipse(cx: number, cy: number, rx: number, ry: number, strength: number): void }).ellipse.bind(mask);

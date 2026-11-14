@@ -68,6 +68,10 @@ export class AbilityPriorityMask {
         const t = q.pendingTelegraph;
         this.ground(t.targetX / 32, t.targetY / 32, t.radius / 32 + .18);
       }
+      // Persistent hostile ground remains dangerous after its wind-up retires.
+      // Friendly weather and placement previews must yield to the pool teeth.
+      for (const pool of game.pools ?? []) if (pool.life > 0)
+        this.ground(pool.x / 32, pool.y / 32, pool.radius / 32 + .18);
       for (const b of game.bullets) {
         if (b.kind !== 'hazard') continue;
         const x = b.x / 32, z = b.y / 32, a = b.request.angle;
