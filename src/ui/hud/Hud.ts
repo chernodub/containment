@@ -11,7 +11,7 @@ import { ABILITY_CATALOG } from '../../game/abilities/catalog';
 import type { AbilitySlotSnapshot, AbilitiesSnapshot } from '../../game/abilities/contract';
 import { boonElement, boonIcon } from '../boonPresentation';
 import { playerFacingText } from '../units';
-import { getAbilities, showInvalidAbilityPlacement, setHudInsets, projectWorld, projectActorBounds, visitHostileWarnings } from '../gameAdapter';
+import { getAbilities, setPlacementPreview, createPlacementPreview, readPlacementPreview, placementPointer, setHudInsets, projectWorld, projectActorBounds, visitHostileWarnings } from '../gameAdapter';
 import { icon } from '../icons';
 import { el } from '../shell';
 import { CombatText } from './CombatText';
@@ -94,7 +94,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     (document.getElementById('app') ?? nodes.hud).append(denial);
     let weaponInspect = 0, roomIntro = 4, inspectObjective = false, denialLife = 0;
     const inspectionKeys = new Set<string>();
-    let pointerX = innerWidth * .64, pointerY = innerHeight * .48;
+    let pointerX = innerWidth * .64, pointerY = innerHeight * .48, pointerActive=false, pointerKnown=false, aimPointerX=0, aimPointerY=0, powerAim=false, deniedPlacementLife=0;
+    const placement=createPlacementPreview(),deniedPlacement=createPlacementPreview(),deniedAim={x:0,y:0};
     const refreshInspection = () => {
         const expanded = weaponInspect > 0 || inspectObjective;
         const narrative = roomIntro > 0 || inspectObjective;
@@ -103,20 +104,23 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     };
     const onKey = (event: KeyboardEvent) => {
         const target=event.target as HTMLElement | null;
-        if (event.type === 'keyup') inspectionKeys.delete(event.code);
+        if (event.type === 'keyup') {inspectionKeys.delete(event.code);if(event.code==='KeyF')powerAim=false;}
         if (game.status!=='playing' || target?.matches('input,textarea,select,[contenteditable=true]')) return;
+        if(event.code==='KeyF'&&event.type==='keydown')powerAim=true;
         if (['Tab','AltLeft','AltRight'].includes(event.code)) {
             if(event.type==='keydown') inspectionKeys.add(event.code);
             inspectObjective=inspectionKeys.size>0;refreshInspection();
         }
         if (event.type==='keydown' && /^Digit[1-5]$/.test(event.code)) {weaponInspect=1.5;refreshInspection();}
     };
-    const onBlur = () => {inspectionKeys.clear();inspectObjective=false;refreshInspection();};
+    const onBlur = () => {inspectionKeys.clear();inspectObjective=false;pointerActive=false;pointerKnown=false;powerAim=false;denialLife=0;deniedPlacementLife=0;denial.hidden=true;setPlacementPreview(renderer,null);refreshInspection();};
     const onPointer = (event: PointerEvent) => {
         if(event.pointerType!=='mouse')return;pointerX=event.clientX;pointerY=event.clientY;
+        pointerActive=event.target===renderer.canvas;
+        if(pointerActive){pointerKnown=true;aimPointerX=pointerX;aimPointerY=pointerY;}
     };
     document.addEventListener('keydown',onKey);document.addEventListener('keyup',onKey);
-    document.addEventListener('pointermove',onPointer,{passive:true});window.addEventListener('blur',onBlur);
+    document.addEventListener('pointermove',onPointer,{passive:true});window.addEventListener('blur',onBlur);window.addEventListener('resize',onBlur);
     const showDenial = (reason:string) => {
         denialLife=.9;denial.textContent=reason;denial.hidden=false;
         denial.style.left=`${Math.max(85,Math.min(innerWidth-85,pointerX))}px`;
@@ -219,7 +223,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         else if (overdrive)
             value = snapshot.overdrive.roomLimited && snapshot.overdrive.charge >= 1 ? 'NEXT ROOM' : snapshot.overdrive.ready ? 'READY' : `${Math.floor(clamp(snapshot.overdrive.charge) * 100)}%`;
         else if (!s.ready)
-            value = s.cooldownRemainingMs > 0 ? seconds(s.cooldownRemainingMs) : s.charges <= 0 ? 'No charge' : snapshot.dashing || snapshot.slots && (snapshot.slots.dash.castRemainingMs > 0 || snapshot.slots.tactical.castRemainingMs > 0 || snapshot.slots.power.castRemainingMs > 0 || snapshot.slots.overdrive.castRemainingMs > 0) ? 'Casting' : entry.slot === 'power' ? 'Need clear ground' : 'Unavailable';
+            value = s.cooldownRemainingMs > 0 ? seconds(s.cooldownRemainingMs) : s.charges <= 0 ? 'No charge' : snapshot.dashing || snapshot.slots && (snapshot.slots.dash.castRemainingMs > 0 || snapshot.slots.tactical.castRemainingMs > 0 || snapshot.slots.power.castRemainingMs > 0 || snapshot.slots.overdrive.castRemainingMs > 0) ? 'Casting' : entry.slot === 'power' ? 'REPOSITION' : 'Unavailable';
         entry.node.dataset.reason = state === 'cooling' && s.cooldownRemainingMs > 0 ? 'Recharging' : '';
         if (entry.node.dataset.reason) entry.node.setAttribute('data-state-label','Recharging');
         else entry.node.removeAttribute('data-state-label');
@@ -260,7 +264,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (revision !== game.roomRevision) {
             revision = game.roomRevision;
             for (const warning of warnings) warning.life = 0;
-            roomIntro=4;denialLife=0;denial.hidden=true;showInvalidAbilityPlacement(renderer,null);
+            roomIntro=4;denialLife=0;deniedPlacementLife=0;denial.hidden=true;setPlacementPreview(renderer,null);
             combatText.clear();
             threats.clear();
             toasts.clear();
@@ -478,10 +482,19 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 entry.node.dataset.flash = 'false';
                 entry.node.dataset.state = 'denied';
                 const reason = event.ability.denial as string | undefined;
-                const definition=ABILITY_CATALOG[event.ability.ability];
                 entry.denial = reason==='blocked' ? entry.slot==='overdrive'&&getAbilities(game)?.overdrive.roomLimited ? 'Next room' : entry.slot==='power' ? 'Need clear ground' : 'Unavailable' : ({cooldown:'Recharging',casting:'Casting','no-charge':'No charge','no-rig':'Choose a rig','no-target':'No target'} as Record<string,string>)[reason??'no-charge'] ?? 'No target';
-                showDenial(entry.denial);
-                if(reason==='blocked'&&definition.targeting==='point')showInvalidAbilityPlacement(renderer,definition.id,event.ability.targetX,event.ability.targetY);
+                let cursorReason=entry.denial;
+                let attempted=pointerKnown?placementPointer(renderer,game,aimPointerX,aimPointerY):null;
+                if(Number.isFinite(event.ability.targetX)&&Number.isFinite(event.ability.targetY)) {deniedAim.x=event.ability.targetX!;deniedAim.y=event.ability.targetY!;attempted=deniedAim;}
+                if(reason==='blocked'&&entry.slot==='power'&&readPlacementPreview(game,attempted,deniedPlacement)) {
+                    deniedPlacement.valid=false;
+                    for(let i=0;i<deniedPlacement.pointCount;i++)deniedPlacement.points[i].valid=false;
+                    cursorReason=deniedPlacement.reason??'Need clear ground';
+                    deniedPlacement.reason=cursorReason;deniedPlacementLife=.95;
+                    setPlacementPreview(renderer,deniedPlacement);
+                }
+                if(reason==='blocked'&&entry.slot==='power')entry.denial='REPOSITION';
+                showDenial(cursorReason);
                 entry.value.textContent = entry.denial;
             }
             if (event.ability.phase === 'ready' || event.ability.phase === 'overdrive-ready') {
@@ -502,8 +515,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const elapsed = Number.isFinite(dt) ? Math.max(0, Math.min(dt, .1)) : 0;
         for (const warning of warnings) warning.life = Math.max(0, warning.life - elapsed);
         weaponInspect=Math.max(0,weaponInspect-elapsed);roomIntro=Math.max(0,roomIntro-elapsed);
-        denialLife=Math.max(0,denialLife-elapsed);
-        if(!denialLife&&!denial.hidden){denial.hidden=true;showInvalidAbilityPlacement(renderer,null);}
+        denialLife=Math.max(0,denialLife-elapsed);deniedPlacementLife=Math.max(0,deniedPlacementLife-elapsed);
+        if(!denialLife&&!denial.hidden){denial.hidden=true;setPlacementPreview(renderer,null);}
         refreshInspection();
         streakWindow = Math.max(0, streakWindow - elapsed); streakCooldown = Math.max(0, streakCooldown - elapsed);
         for (const entry of slots) {
@@ -513,11 +526,18 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 entry.node.dataset.flash = 'false';
         }
         if (game.status !== 'playing') {
-            denial.hidden=true;denialLife=0;inspectObjective=false;showInvalidAbilityPlacement(renderer,null);
+            denial.hidden=true;denialLife=0;deniedPlacementLife=0;inspectObjective=false;powerAim=false;setPlacementPreview(renderer,null);
             combatText.clear();
             threats.clear();
             abilityHints.tick(bounds, false);
             return;
+        }
+        if(deniedPlacementLife>0) setPlacementPreview(renderer,deniedPlacement);
+        else {
+            const snapshot=getAbilities(game),power=snapshot?.slots?.power;
+            const casting=snapshot?.slots&&(snapshot.slots.dash.castRemainingMs>0||snapshot.slots.tactical.castRemainingMs>0||snapshot.slots.power.castRemainingMs>0||snapshot.slots.overdrive.castRemainingMs>0);
+            const aiming=(pointerActive||powerAim)&&power&&power.charges>0&&!casting&&!snapshot?.dashing;
+            setPlacementPreview(renderer,aiming&&readPlacementPreview(game,pointerKnown?placementPointer(renderer,game,aimPointerX,aimPointerY):null,placement)?placement:null);
         }
         hpDelay = Math.max(0, hpDelay - elapsed);
         armorDelay = Math.max(0, armorDelay - elapsed);
@@ -538,8 +558,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (disposed)
             return;
         disposed = true;
-        document.removeEventListener('keydown',onKey);document.removeEventListener('keyup',onKey);document.removeEventListener('pointermove',onPointer);window.removeEventListener('blur',onBlur);
-        denial.remove();showInvalidAbilityPlacement(renderer,null);
+        document.removeEventListener('keydown',onKey);document.removeEventListener('keyup',onKey);document.removeEventListener('pointermove',onPointer);window.removeEventListener('blur',onBlur);window.removeEventListener('resize',onBlur);
+        denial.remove();setPlacementPreview(renderer,null);
         combatText.dispose();
         threats.dispose();
         toasts.dispose();

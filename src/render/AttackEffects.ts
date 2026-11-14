@@ -7,6 +7,7 @@ import type {WeaponId} from '../game/combat/types';
 import type {Bullet,GameEffect} from '../DepthGame';
 import {WEAPON_APPEARANCE} from './weapons';
 import {wallSurface} from './wallSurface';
+import {GRAPHIC_COMBUSTION_GLSL} from './abilities/GraphicLanguage';
 import type {GraphicsOptions} from './graphicsOptions';
 import type {GraphicsTier} from './FrameBudget';
 const UP=new T.Vector3(0,1,0),WHITE=new T.Color(0xffffff);
@@ -22,6 +23,7 @@ export const PRIORITY_ACTOR_LIMIT=130;
 const vertex=`attribute float effectFrame; varying float vFrame;attribute vec4 effectShape;varying vec4 vShape;attribute float effectAlpha;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
 void main(){vShape=effectShape;vFrame=effectFrame;vUv=uv;vColor=instanceColor;vAlpha=effectAlpha;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`;
 const fragment=`uniform sampler2D map;uniform float inset;uniform float grid;uniform float textured;uniform float flashScale;varying float vFrame;uniform float style;varying vec4 vShape;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
+${GRAPHIC_COMBUSTION_GLSL}
 uniform vec4 priorityActors[130];uniform int priorityActorCount;uniform vec2 priorityViewport;
 void main(){vec2 p=vUv*2.0-1.0;float d=length(p);float alpha=vAlpha;vec3 color=vColor;
 if(style>6.5){
@@ -85,7 +87,7 @@ else if(style>3.5){
 else if(vFrame<0.0){float drop=length(vec2(p.x/(.76-.18*p.y),p.y));alpha*=1.0-smoothstep(.82,1.0,drop);color*=.72+.28*max(0.0,1.0-drop);color=mix(color,vec3(.64,.78,.33),.35*(1.0-smoothstep(.08,.30,length(p-vec2(-.22,.28)))));}
 else if(style<0.5){alpha*=pow(max(0.0,1.0-d),1.8);color*=1.0+2.0*pow(max(0.0,1.0-d),5.0);}
 else if(style<1.5){float n=.86+.09*sin(p.x*13.0+p.y*7.0)+.05*sin(p.y*19.0-p.x*4.0);alpha*=(1.0-smoothstep(.15,1.0,d/n))*.48;}
-if(textured>.5&&vFrame>=0.0){float frame=floor(vFrame);vec2 cell=vec2(mod(frame,grid),grid-1.0-floor(frame/grid));vec4 tex=texture2D(map,(cell+clamp(vUv,inset,1.0-inset))/grid);alpha=vAlpha*tex.a*(style>2.5?.9*smoothstep(.0,.12,vUv.y):.42);color=style>2.5?tex.rgb:vColor*(.6+tex.r*.8);}
+if(textured>.5&&vFrame>=0.0){float frame=floor(vFrame);vec2 cell=vec2(mod(frame,grid),grid-1.0-floor(frame/grid));vec4 tex=texture2D(map,(cell+clamp(vUv,inset,1.0-inset))/grid,1.5);alpha=vAlpha*graphicCoverage(tex.a)*(style>2.5?.9*smoothstep(.0,.12,vUv.y):.42);color=style>2.5?graphicCombustion(tex):graphicSmoke(tex,vColor);}
 if(style<.5||style>2.5&&style<3.5)alpha*=flashScale;
 if(alpha<.003)discard;gl_FragColor=vec4(color,alpha);
 #include <tonemapping_fragment>
@@ -121,7 +123,7 @@ export class AttackEffects {
  private bulletPosition=new T.Vector3();private bulletPrevious=new T.Vector3();private axis=new T.Vector3(0,0,1);private beamColor=new T.Color();
  private arcAxis=new T.Vector3();private arcSide=new T.Vector3();private arcStart=new T.Vector3();private arcEnd=new T.Vector3();private forkStart=new T.Vector3();private forkEnd=new T.Vector3();
  constructor(scene:T.Scene,loader:T.TextureLoader|undefined=typeof document==='undefined'?undefined:new T.TextureLoader(),private world?:T.Object3D){
-  const texture=(name:string,srgb=false)=>{const t=loader?.load(`${import.meta.env.BASE_URL}assets/vfx/${name}.png`)??new T.Texture();t.minFilter=t.magFilter=T.LinearFilter;t.generateMipmaps=false;t.colorSpace=srgb?T.SRGBColorSpace:T.NoColorSpace;this.textures.push(t);return t;};
+  const texture=(name:string,srgb=false)=>{const t=loader?.load(`${import.meta.env.BASE_URL}assets/vfx/${name}.png`)??new T.Texture();t.minFilter=T.LinearMipmapLinearFilter;t.magFilter=T.LinearFilter;t.generateMipmaps=true;t.colorSpace=srgb?T.SRGBColorSpace:T.NoColorSpace;this.textures.push(t);return t;};
   this.fireMesh=pool(scene,new T.PlaneGeometry(1,1),EFFECT_LIMITS.fire,3,false,texture('Explosion01',true),5);this.fireMesh.name='explosion-fire';
   this.glowMesh=pool(scene,new T.PlaneGeometry(1,1),EFFECT_LIMITS.glow,0,true);
   this.smokeMesh=pool(scene,new T.PlaneGeometry(1,1),EFFECT_LIMITS.smoke,1,false,texture('WispySmoke02'),8);

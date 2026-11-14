@@ -817,3 +817,56 @@ Prepared reductions are not actual-open evidence; strict review bridges require
 both native and exact480 SHA matches to an actual witness, with both old/new byte
 streams rehashed. See `docs/nextgen/I10-REPORT.md` for the frozen cohort, gate-pin
 qualification, adverse-load miss and retained art/framing gaps.
+
+## V7 shared explosion review
+
+`v7-explosion-{weapon,grenade,rocket,nest,queen}` adds five seven-phase Annulus
+inspections. Use `--burst=7 --step-ms=150 --sprite-width=1920` with either frozen
+before or final dist. Standard requests map to 0/30/90/180/340/600/1000ms after
+injection; the actual clock, source payload, legal mark, warning and fatal shader
+compile guard are recorded in `g4DangerProof`.
+
+These are explicitly **presentation-only native-payload replays** at one common
+legal mark, not five native kills/actions. Weapon uses the real Combustion boon
+shape; grenade/rocket replay their burning-target blast payloads. Nest/Queen keep
+their actual element-free payloads and therefore inspect smoke/glow rather than
+an invented fireball. The unchanged `combat-heavy` scenario supplies native
+grenade action/firing evidence. Exact 480×270 reductions use `v3-gallery.mjs`.
+
+## V7 sustained-state review
+
+`v7-state-{railbreaker,whiteout,meltdown,overclock}-<room>` and the `-low-<room>`
+variants inspect the native ultimate at a legal open mark in bright Containment
+Annulus or dark Infested Workshop. Sustained states settle650ms after activation;
+Railbreaker begins at impact+30ms with30ms phase spacing. Every case awaits the
+lazy owner and forbids new combat shader programs. Meltdown/Overclock then use
+native movement/fire inputs. Canonical V2 seven-phase and full-kit clocks remain
+unchanged. These are presentation fixtures, never hardware timing evidence.
+
+### V7 evidence qualifications and review tools
+
+The strict `v7-explosion-*` fixtures require the full native Queen pulse and a
+conservative envelope of every fire/smoke card to fit the actual HUD-safe viewport
+at every phase. They intentionally reject the tested close-camera marks; failed
+raw manifests remain. These new diagnostics require explicit scenario selection
+and are excluded from the default `all` review. Their strict guards stay intact.
+Use `v7-material-explosion-{weapon,grenade,rocket,nest,queen}`
+for the accepted matched material inspection:0/30/90/180/340/500/600ms, complete
+fire-card support, with full Queen-pulse and conservative smoke-envelope clipping
+retained separately in proof. This does not certify complete Queen-ring framing.
+No payload radius, camera, native body/HUD, action, phase or priority guard changes.
+
+`v7-placement-{bulwark,glacier,napalm-charge,tesla-pylon}-{valid,blocked}` uses
+the native cursor and trusted F key. Run `--burst=4`; blocked cases require the
+real denied receipt, cursor reason, unchanged stored charge/use count and actual
+prepared footprint. The old HUD availability cue remains separately asserted.
+
+`v7-contact.mjs <capture-root> <contact-output>` creates one exact480 critique
+contact with source hashes. `v7-evidence.mjs <before-root> <final-root>` verifies
+the canonical40-sheet/280-phase native/480 clock/hash pairs.
+`v7-bench-summary.mjs <before-label> <final-label>` accepts optional
+`--before-extra=<label,...>` / `--after-extra=<label,...>` isolated cohorts from
+the identical runtime SHA. It retains every raw miss and peak draw, prefers
+jointly passing trials before minimizing frame p95, and keeps scale/CPU/load
+from that same selected trial. The PNGs are art evidence; ordinary native
+benchmark reports alone supply timing evidence. See `docs/nextgen/V7-REPORT.md`.

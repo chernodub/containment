@@ -14,6 +14,7 @@ import {assertCaptureCanvas} from './capture-canvas.mjs';
 import {assertKitingMovement} from './capture-movement.mjs';
 import {assertPlayingMarine} from './capture-marine-contract.mjs';
 import {inspectI10ArmoryReplay} from './i10-armory-replay.mjs';
+import {inspectV7Placement} from './v7-placement-scenarios.mjs';
 import {stitchPngFrames} from './sprites.mjs';
 import {compareGalleries} from './gallery.mjs';
 
@@ -33,7 +34,7 @@ const style=option('style','bold');assert(['subtle','medium','bold'].includes(st
 const graphics=JSON.parse(option('graphics','{}'));assert(graphics&&typeof graphics==='object'&&!Array.isArray(graphics),'--graphics requires an options JSON object');
 const hudInsets=JSON.parse(option('hud-insets','null'));if(hudInsets!==null){assert(hudInsets&&typeof hudInsets==='object'&&!Array.isArray(hudInsets),'--hud-insets requires an object');assert(['top','right','bottom','left'].every(key=>Number.isFinite(hudInsets[key])&&hudInsets[key]>=0),'HUD insets require four finite nonnegative CSS-pixel values');}
 const rooms=option('rooms',DEFAULT_ROOMS.join(',')).split(',');assert(rooms.length&&rooms.every(id=>/^[a-z0-9-]+$/.test(id)),'Invalid room list');
-const selection=option('scenarios','all').split(','),requested=selection.includes('all')?SCENARIOS.map(s=>s.id):selection;
+const selection=option('scenarios','all').split(','),requested=selection.includes('all')?SCENARIOS.filter(s=>!s.diagnosticOnly).map(s=>s.id):selection;
 const scenarios=requested.flatMap(item=>{const direct=SCENARIOS.find(s=>s.id===item);if(direct&&!direct.rooms)return [{...direct}];const [id,room,...extra]=item.split(':'),entry=SCENARIOS.find(s=>s.id===id);assert(entry&&!extra.length&&(!room||entry.rooms),`Unknown scenario ${item}`);return entry.rooms?(room?[{...entry,room}]:rooms.map(room=>({...entry,room}))):[{...entry}];});
 const out=resolve('artifacts/nextgen',label);
 if(comparison){const result=await compareGalleries(resolve('artifacts/nextgen'),comparison.split(','),out);console.log(`${result.pairs} aligned views (missing counterparts labelled)\n${result.file}`);process.exit(0);}
@@ -162,7 +163,12 @@ try{
     await page.waitForFunction(state=>document.body.dataset.state===state&&document.querySelector(`.debrief-panel[data-outcome="${state}"]`),scenario.state);
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
    }
-   if(scenario.state==='playing')await page.mouse.move(Math.round(viewport.width*.64),Math.round(viewport.height*.48));else await page.mouse.move(4,4);
+   if(scenario.v7Placement){
+    const point=await page.evaluate(()=>window.__containmentDebug.v7PlacementPointer);
+    assert(point&&Number.isFinite(point.x)&&Number.isFinite(point.y)&&point.x>=0&&point.x<viewport.width&&point.y>=0&&point.y<viewport.height,`${name}: native placement cursor is outside the viewport`);
+    await page.mouse.move(point.x,point.y);
+    await page.evaluate(()=>{window.__containmentDebug.refresh();window.__containmentDebug.refresh();});
+   }else if(scenario.state==='playing')await page.mouse.move(Math.round(viewport.width*.64),Math.round(viewport.height*.48));else await page.mouse.move(4,4);
    if(scenario.nativeFocus)await page.locator(scenario.nativeFocus).first().focus();
    for(const key of scenario.nativeHold??[])await page.keyboard.down(key);
    if(scenario.nativeHold?.length)await page.evaluate(()=>window.__containmentDebug.refresh());
@@ -187,6 +193,14 @@ try{
     const evidence=inspected?.evidence??await page.evaluate(inspectFrame);lastEvidence=evidence;lastCamera=inspected?.camera??null;
     if(scenario.i10ArmoryReplay)evidence.i10ArmoryReplay=await page.evaluate(inspectI10ArmoryReplay);
     if(scenario.u7Crossing)evidence.u7Crossing=await page.evaluate(()=>window.__containmentDebug.u7Crossing);
+    if(scenario.v7Placement){
+     const proof=evidence.v7Placement=await page.evaluate(inspectV7Placement);
+     assert(proof.bridge&&proof.meshCount>0,`${name}: native cursor lacks a prepared world footprint`);
+     assert.equal(proof.usesAfter,proof.usesBefore,`${name}: placement inspection changed gameplay`);
+     assert(proof.charges>0,`${name}: placement inspection consumed its charge`);
+     if(proof.blocked){assert.equal(proof.nativeFKey,1,`${name}: missing trusted native F press`);assert.equal(proof.nativeDenied,1,`${name}: missing native blocked denial`);assert(proof.valid.every(value=>!value),`${name}: denied footprint remains valid`);assert(['Blocked by machinery','Need clear ground'].includes(proof.label),`${name}: cursor denial reason absent`);assert.equal(proof.slot,'REPOSITION',`${name}: slot lost its availability cue`);}
+     else assert(proof.valid.some(Boolean),`${name}: legal native placement has no valid outline`);
+    }
     if(scenario.nativeReload){assert(await page.evaluate(()=>window.__containmentDebug.game.combat.snapshot.reloading),`${name}: native reload is absent`);assert.equal(await page.locator('#reload-label').innerText(),'RELOADING');}
     if(scenario.titleArtTimeline){
      assert.equal(await page.locator('.title-screen').evaluate(node=>getComputedStyle(node).opacity),'1','Title shell exposed the hidden 3D cast');

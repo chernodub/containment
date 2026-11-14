@@ -9,7 +9,7 @@ function deferred<T>(){let resolve!:(value:T)=>void,reject!:(error:unknown)=>voi
 function fixture(){
  const scene=new Group(),atlas=deferred<void>();
  const owner={root:new Group(),kit:{atlas:{loaded:false}},priorityMask:{marker:true},
-  bind:vi.fn(),setHostilePrioritySource:vi.fn(),setOptions:vi.fn(),setReducedMotion:vi.fn(),setSoftDepth:vi.fn(),
+  setPlacementPreview:vi.fn(),bind:vi.fn(),setHostilePrioritySource:vi.fn(),setOptions:vi.fn(),setReducedMotion:vi.fn(),setSoftDepth:vi.fn(),
   event:vi.fn(),update:vi.fn(),clear:vi.fn(),prepare:vi.fn(()=>atlas.promise),dispose:vi.fn(()=>owner.root.removeFromParent()),
  };
  const construct=vi.fn(function(target:Group){target.add(owner.root);return owner as unknown as AbilityVisuals;});
@@ -67,5 +67,21 @@ describe('lazy ability presentation boundary',()=>{
   const scene=new Group(),first=deferred<never>(),load=vi.fn(()=>first.promise),lazy=new LazyAbilityVisuals(scene,load);
   const failure=lazy.prepare();first.reject(Error('code unavailable'));await expect(failure).rejects.toThrow('code unavailable');
   const second=lazy.prepare();await expect(second).rejects.toThrow('code unavailable');expect(load).toHaveBeenCalledTimes(2);lazy.dispose();
+ });
+});
+
+describe('lazy placement bridge lifecycle',()=>{
+ it('retains the latest pooled aim without importing and forwards it after readiness',async()=>{
+  const {scene,lazy,load,owner,code,module,atlas}=fixture();
+  const state={ability:'glacier' as const,x:64,y:96,angle:.3,valid:true};
+  scene.userData.setPlacementPreview(state);expect(load).not.toHaveBeenCalled();
+  const work=lazy.prepare();code.resolve(module);atlas.resolve();await work;
+  expect(owner.setPlacementPreview).toHaveBeenCalledWith(state);
+  lazy.clear();expect(owner.clear).toHaveBeenCalledOnce();lazy.dispose();
+  expect(scene.userData.setPlacementPreview).toBeUndefined();
+ });
+ it('does not delete a successor bridge when an old graphics owner is disposed',()=>{
+  const {scene,lazy}=fixture(),successor=vi.fn();scene.userData.setPlacementPreview=successor;
+  lazy.dispose();expect(scene.userData.setPlacementPreview).toBe(successor);
  });
 });

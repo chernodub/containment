@@ -3,6 +3,7 @@ import type { ElementKit } from '../ElementKit';
 import { ELEMENT_COLORS, UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
 import type { EnemySnapshot } from '../../../game/enemies/EnemySystem';
 import { authoredVariation } from '../GraphicLanguage';
+import { WhiteoutState } from './WhiteoutState';
 
 const ICE = ELEMENT_COLORS.cryo;
 const CORE = 0xe8fbff;
@@ -27,7 +28,8 @@ class CryoPresentation implements AbilityPresentation {
   private emitMist = false;
   private disposed = false;
 
-  constructor(private readonly kit: ElementKit) {}
+  readonly storm?: WhiteoutState;
+  constructor(private readonly kit: ElementKit) { if (kit.root?.isObject3D === true) this.storm = new WhiteoutState(kit.root); }
 
   event(event: AbilityEvent, x: number, y: number): void {
     if (this.disposed || !Number.isFinite(x) || !Number.isFinite(y)) return;
@@ -100,6 +102,7 @@ class CryoPresentation implements AbilityPresentation {
     if (this.emitMist) this.mistAge %= k.low ? .15 : .065;
     let whiteout: AbilityZoneSnapshot | undefined;
     for (const zone of frame.snapshot?.zones ?? EMPTY_ZONES) if (zone.ability === 'whiteout' && zone.remainingMs > 0) { whiteout = zone; break; }
+    this.storm?.update(whiteout, k.low, k.reducedMotion, k.flashIntensity);
     for (const wave of this.waves) {
       if (!wave.live) continue;
       wave.age += dt;
@@ -243,49 +246,29 @@ class CryoPresentation implements AbilityPresentation {
     k.sustain(age / 1000);
     const groundYield = 1 - .65 * Math.min(1, Math.max(0, (age - 250) / 120));
     const time = k.reducedMotion ? 0 : age / 1000;
-    const wisps = k.low ? 10 : 20;
-    // One driven wind direction gives the ultimate a legible, asymmetric storm
-    // silhouette. Dense outer vapor leaves a large open eye for combat bodies.
-    const wind = -.72, wx = Math.cos(wind), wz = Math.sin(wind);
+    // Connected weather is a fixed perimeter mesh. A few atlas snow wisps add
+    // parallax without rebuilding the old disconnected cloud-stamp silhouette.
+    const wisps = k.low ? 4 : 8;
     for (let i = 0; i < wisps; i++) {
-      const seed = i * 2.731 + zone.id * .73, variation = authoredVariation(seed, 4);
-      const a = i * TAU / wisps + Math.sin(time * .65 + seed) * .085;
-      const upwind = Math.max(0, -(Math.cos(a) * wx + Math.sin(a) * wz));
-      const halfWidth = Math.min(radius * .26, (k.low ? 1.8 : 1.4) + variation * .4);
-      const halfHeight = Math.min(radius * .16, k.low
-        ? .5 + variation * .05 + upwind * .1
-        : .9 + variation * .25 + upwind * .25);
-      // Account for the actual tilted rectangle, including its vertical axis's
-      // horizontal component. Every card and its wind drift stays in the hit disc.
-      const tilt = k.low ? -.15 : -.24;
-      const horizontalSupport = Math.hypot(halfWidth, halfHeight);
-      const verticalSupport = halfWidth * Math.abs(Math.sin(tilt)) + halfHeight * Math.cos(tilt);
-      const r = Math.max(0, radius - horizontalSupport - (k.low ? .55 : .22));
-      const drift = k.reducedMotion ? 0 : Math.sin(time * 1.7 + seed) * .15;
-      const px = x + Math.cos(a) * r + wx * drift;
-      const pz = z + Math.sin(a) * r + wz * drift;
-      k.sprite('mist', px, verticalSupport + .035 + upwind * (k.low ? .04 : .13), pz,
-        halfWidth, halfHeight, upwind > .5 ? CORE : ICE,
-        fade * (.85 + upwind * .15), seed, 'billboard', 0, tilt);
-      // A few driven snow strips read through the dense cloud masses. Broad
-      // overlapping vapor, rather than isolated flakes, carries the storm.
-      if (i % (k.low ? 4 : 3) === 0) k.sprite('snow', px - wx * .22, 1.0 + variation * .35, pz - wz * .22,
-        .55 + variation * .15, .65 + variation * .2, CORE,
-        fade * .95, seed + 3, 'billboard', 0, -.72);
+      const seed = i * 2.731 + zone.id * .73;
+      const a = i * TAU / wisps + time * .48;
+      const r = radius * (i % 4 === 0 ? .46 : .87), width = Math.min(.48, radius * .045);
+      k.sprite('snow', x + Math.cos(a) * r, .65 + (i % 3) * .14, z + Math.sin(a) * r,
+        width, .32, CORE, fade * .72, seed, 'billboard', 0, -.72);
     }
     // Short ground currents reinforce direction without filling the storm's eye.
     const strokes = k.low ? 3 : 6;
     for (let i = 0; i < strokes; i++) {
       const seed = i * 2.731 + zone.id, variation = authoredVariation(seed, 3);
       const a = i * TAU / strokes + time * .24 + variation * .21;
-      const r = radius * (.84 + variation * .045), halfWidth = Math.min(.17, radius * .025);
+      const r = radius * (i % 3 === 0 ? .52 : .84 + variation * .045), halfWidth = Math.min(.17, radius * .025);
       const halfLength = Math.min(radius * (.14 + variation * .08), Math.sqrt(Math.max(.001, radius * radius - (r + halfWidth) ** 2)) * .85);
       k.gust(x + Math.cos(a) * r, z + Math.sin(a) * r, halfLength * 2, halfWidth * 2,
         a + Math.PI / 2, seed, fade * (.33 + variation * .13) * groundYield);
     }
     this.targetVapor(zone, frame, fade);
     k.lightAt(zone.id, x, z, ICE, .85 * fade, 4.5);
-    this.frostRims(zone, frame, fade * .45);
+    this.frostRims(zone, frame, fade * .85);
     k.impact();
   }
 
@@ -309,24 +292,33 @@ class CryoPresentation implements AbilityPresentation {
   }
 
   private frostRims(zone: AbilityZoneSnapshot, frame: AbilityFrame, fade: number): void {
-    const blockers = frame.game?.geometry?.blockers;
-    if (!blockers) return;
-    const k = this.kit, radius = zone.radius / UNIT;
-    const creep = Math.min(1, (zone.durationMs - zone.remainingMs) / 2400);
-    let count = 0;
-    // The actual authored blocker skirts receive small creeping deposits. No
-    // invented prop height, material mutation or added collision participates.
-    for (const rect of blockers) {
-      for (let corner = 0; corner < 4; corner++) {
-        const x = (rect.x + (corner % 2) * rect.width) / UNIT;
-        const z = (rect.y + Math.floor(corner / 2) * rect.height) / UNIT;
-        const w = .16 + creep * .24, h = .12 + creep * .14;
-        if (Math.hypot(x - zone.x / UNIT, z - zone.y / UNIT) + Math.hypot(w, h) >= radius) continue;
-        k.sprite('frost', x, .032, z, w, h, CORE, fade * .55,
-          corner + rect.x * .13, 'ground', 0, corner * Math.PI / 2);
-        if (++count >= (k.low ? 2 : 4)) return;
+    const geometry=frame.game?.geometry;
+    if(!geometry)return;
+    const k=this.kit,radius=zone.radius/UNIT,creep=Math.min(1,(zone.durationMs-zone.remainingMs)/2400);
+    const width=.16+creep*.24,height=.12+creep*.14;
+    let count=0;
+    // Authored machinery may be a blocker or an occupied deck void. Frost only
+    // their actual skirts/edges; never modify source prop materials or colliders.
+    for(const rect of geometry.blockers){
+      if(geometry.boundaryWalls?.includes(rect))continue;
+      for(let corner=0;corner<4;corner++){
+        const x=(rect.x+(corner%2)*rect.width)/UNIT,z=(rect.y+Math.floor(corner/2)*rect.height)/UNIT;
+        if(Math.hypot(x-zone.x/UNIT,z-zone.y/UNIT)+Math.hypot(width,height)>=radius)continue;
+        this.frostEdge(x,z,width,height,corner*Math.PI/2,fade,corner+rect.x*.13);
+        if(++count>=(k.low?2:4))return;
       }
     }
+    if(geometry.voids)for(const polygon of geometry.voids)for(let i=0;i<polygon.length;i++){
+      const a=polygon[i],b=polygon[(i+1)%polygon.length],x=(a.x+b.x)/UNIT/2,z=(a.y+b.y)/UNIT/2;
+      if(Math.hypot(x-zone.x/UNIT,z-zone.y/UNIT)+Math.hypot(width,height)>=radius)continue;
+      this.frostEdge(x,z,width,height,-Math.atan2(b.y-a.y,b.x-a.x),fade,i+a.x*.13);
+      if(++count>=(k.low?2:4))return;
+    }
+  }
+
+  private frostEdge(x:number,z:number,width:number,height:number,angle:number,fade:number,seed:number):void{
+    this.kit.sprite('frost',x,.032,z,width,height,CORE,fade*.55,seed,'ground',0,angle);
+    this.kit.sprite('frost',x,.18,z,width*.85,.14,ICE,fade*.65,seed,'vertical',angle,0);
   }
 
   private glacier(wall: DeployableSnapshot, dt: number): void {
@@ -391,13 +383,14 @@ class CryoPresentation implements AbilityPresentation {
   }
 
   clear(): void {
+    this.storm?.clear();
     for (const wave of this.waves) wave.live = false;
     for (const clock of this.zones) { clock.id = -1; clock.pulse = 0; clock.seen = false; }
     for (const state of this.walls) { state.id = -1; state.flash = 0; state.seen = false; }
     this.cursor = 0; this.mistAge = 0; this.emitMist = false;
   }
 
-  dispose(): void { if (this.disposed) return; this.clear(); this.disposed = true; }
+  dispose(): void { if (this.disposed) return; this.clear(); this.storm?.dispose(); this.disposed = true; }
 }
 
 /** Registry factory; all GPU resources remain owned by ElementKit. */

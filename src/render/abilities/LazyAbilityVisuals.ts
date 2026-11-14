@@ -5,6 +5,7 @@ import type {GraphicsOptions} from '../graphicsOptions';
 import type {GraphicsTier} from '../FrameBudget';
 import type {AbilityVisuals} from './AbilityVisuals';
 import type {AbilityServices} from './ElementKit';
+import type {PlacementPreviewState} from './PlacementPreview';
 
 type Module=Pick<typeof import('./AbilityVisuals'),'AbilityVisuals'>;
 const loadVisuals=()=>import('./AbilityVisuals');
@@ -19,12 +20,15 @@ export class LazyAbilityVisuals {
   private hostileSource?:unknown;
   private preferences?:{options:GraphicsOptions;tier:GraphicsTier;reducedMotion:boolean};
   private reducedMotion?:boolean;
+  private placement:PlacementPreviewState|null=null;
+  private readonly placementBridge=(value:PlacementPreviewState|null)=>this.setPlacementPreview(value);
   private softDepth?:{texture:Texture|null;near:number;far:number;perspective:boolean};
   private cancel!:()=>void;
   private readonly cancelled=new Promise<void>(resolve=>{this.cancel=resolve;});
 
   constructor(private readonly scene:Object3D,private readonly load:()=>Promise<Module>=loadVisuals){
     this.placeholder.name='interim-ability-visuals';scene.add(this.placeholder);
+    scene.userData.setPlacementPreview=this.placementBridge;
   }
 
   /** The placeholder is replaced at preparation, before material registration. */
@@ -44,6 +48,7 @@ export class LazyAbilityVisuals {
       if(this.preferences)owner.setOptions(this.preferences.options,this.preferences.tier,this.preferences.reducedMotion);
       if(this.reducedMotion!==undefined)owner.setReducedMotion(this.reducedMotion);
       if(this.softDepth){const d=this.softDepth;owner.setSoftDepth(d.texture,d.near,d.far,d.perspective);}
+      owner.setPlacementPreview(this.placement);
       await owner.prepare();
     };
     this.work=Promise.race([create(),this.cancelled]).catch(error=>{if(!this.dead&&!this.owner)this.work=undefined;throw error;});
@@ -62,13 +67,16 @@ export class LazyAbilityVisuals {
     if(this.owner){this.owner.setSoftDepth(texture,near,far,perspective);return;}
     this.softDepth={texture,near,far,perspective};
   }
+  /** Stable presentation bridge: does not load the lazy owner or request its atlas. */
+  setPlacementPreview(value:PlacementPreviewState|null):void{if(this.dead)return;this.placement=value;this.owner?.setPlacementPreview(value);}
   event(event:AbilityEvent,x:number,y:number):void{if(!this.dead)this.owner?.event(event,x,y);}
   update(snapshot:AbilitiesSnapshot|undefined,dt:number,visible=true,game?:DepthGame,marine?:Object3D,camera?:Camera,marineBody?:Object3D):void{
     if(!this.dead)this.owner?.update(snapshot,dt,visible,game,marine,camera,marineBody);
   }
-  clear():void{this.owner?.clear();}
+  clear():void{this.placement=null;this.owner?.clear();}
   dispose():void{
     if(this.dead)return;this.dead=true;this.cancel();this.owner?.dispose();this.owner=undefined;
-    this.placeholder.removeFromParent();this.services=undefined;this.hostileSource=undefined;this.softDepth=undefined;
+    if(this.scene.userData.setPlacementPreview===this.placementBridge)delete this.scene.userData.setPlacementPreview;
+    this.placement=null;this.placeholder.removeFromParent();this.services=undefined;this.hostileSource=undefined;this.softDepth=undefined;
   }
 }

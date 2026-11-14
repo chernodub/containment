@@ -273,14 +273,19 @@ export class ElementKit {
         const h = height * (this.low ? .6 : 1);
         this.draw('front', x, h * .5 + .025, z, r, h / .24, r, color, opacity * (.35 + .65 * this.flashIntensity), 0, 0, style);
     }
-    /** Ballistic chunks have visible mass and one damped deck bounce, within the particle pool. */
+    /** Cryo keeps crystal chunks; kinetic pressure throws short hot deck splinters.
+     * The Breacher owner draws the larger manufactured plates from its fixed impact pool.
+     */
     debris(x: number, z: number, radius: number, element: 'kinetic' | 'cryo', count = 28): void {
         count = this.low ? Math.min(8, count) : Math.min(64, count);
         for (let i = 0; i < count; i++) {
             const a = i * 2.39996323, speed = radius * (.65 + i % 7 * .09);
-            this.mote('shard', x + Math.cos(a) * .25, .12, z + Math.sin(a) * .25,
-                Math.cos(a) * speed, 2 + i % 5 * .55, Math.sin(a) * speed, .12 + Math.sin(i * 7.13) ** 2 * .17, 1.2 + i % 3 * .15,
-                element === 'cryo' ? (i % 3 ? 0x7fd6ff : 0xe8fbff) : (i % 5 ? 0x4b4540 : 0xffb454));
+            const cold = element === 'cryo';
+            this.mote(cold ? 'shard' : 'spark', x + Math.cos(a) * .25, .12, z + Math.sin(a) * .25,
+                Math.cos(a) * speed, cold ? 2 + i % 5 * .55 : .7 + i % 5 * .24, Math.sin(a) * speed,
+                cold ? .12 + Math.sin(i * 7.13) ** 2 * .17 : .025 + i % 3 * .012,
+                cold ? 1.2 + i % 3 * .15 : .38 + i % 3 * .09,
+                cold ? (i % 3 ? 0x7fd6ff : 0xe8fbff) : (i % 4 ? 0xffb454 : 0xe8fbff));
         }
     }
     /** Thick hot core, broad corona and persistent glowing air, all in the existing ribbon draw. */

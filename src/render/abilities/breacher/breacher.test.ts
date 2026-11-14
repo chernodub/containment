@@ -171,7 +171,7 @@ describe('Breacher presentation', () => {
     fx.event(event({ radius: 310 }), 64, 96);
     expect(kit.ring).toHaveBeenCalledWith(2, 3, 310 / 32, 0xffb454, .3);
     expect(kit.distort).toHaveBeenCalledWith(2, 3, 310 / 32, .007, .55);
-    expect(kit.scar).toHaveBeenCalledWith('crack', 2, 3, 310 / 32, 0x211a13, 10);
+    expect(kit.scar).toHaveBeenCalledWith('crack', 2, 3, 310 / 32, 0x121c23, 10);
     expect(kit.debris).toHaveBeenCalledWith(2, 3, 310 / 32, 'kinetic', 32);
     expect(kit.camera).toHaveBeenCalledTimes(1);
     expect(kit.anticipate).toHaveBeenCalledWith(34, .045);
@@ -183,11 +183,16 @@ describe('Breacher presentation', () => {
     expect(kit.front).not.toHaveBeenCalled();
     expect(kit.ring).toHaveBeenCalledWith(2, 3, 310 / 32, 0xffb454, .3);
     expect(kit.scar).toHaveBeenCalledTimes(1);
-    const chips = kit.draw.mock.calls.filter(c => c[0] === 'shard');
+    const chips = kit.draw.mock.calls.filter(c => c[0] === 'solid' && c[11] === 30);
     expect(chips.length).toBeGreaterThan(0);
-    for (const chip of chips) { expect(chip[4]).toBeGreaterThanOrEqual(.16); expect(chip[4]).toBeLessThan(.41); expect(chip[6]).toBeLessThanOrEqual(.19);
-      expect(Math.hypot(chip[1] - 2, chip[3] - 3)).toBeLessThan(310 / 32 * .5); }
-    expect(kit.draw.mock.calls.some(c => c[0] === 'solid')).toBe(false);
+    for (const chip of chips) {
+      expect(chip[4]).toBeGreaterThanOrEqual(.32); expect(chip[4]).toBeLessThan(.81);
+      expect(chip[5]).toBeLessThanOrEqual(.06); expect(chip[6]).toBeLessThanOrEqual(.38);
+      expect(chip[5]).toBeLessThan(chip[4] * .2); // Thin manufactured deck sheet, no stone mass.
+      expect([0x34424a, 0x91a5ad, 0xffb454]).toContain(chip[7]);
+      expect(Math.hypot(chip[1] - 2, chip[3] - 3)).toBeLessThan(310 / 32 * .5);
+    }
+    expect(kit.draw.mock.calls.some(c => c[0] === 'shard')).toBe(false);
     for (const call of kit.draw.mock.calls) expect(Math.hypot(call[1] - 2, call[3] - 3)).toBeLessThanOrEqual(310 / 32);
     fx.dispose();
   });
@@ -198,17 +203,21 @@ describe('Breacher presentation', () => {
     expect(kit.heavyBeam).not.toHaveBeenCalled();
     fx.event(event({ ability: 'railbreaker', slot: 'overdrive', radius: undefined, length: 900, width: 44, angle: 0 }), 64, 96);
     expect(kit.heavyBeam).toHaveBeenCalledTimes(1);
+    const white = kit.beam.mock.calls.find(c => c[6] === 0xfffbf2)!;
+    expect(white).toBeDefined(); expect(white[7] * 2).toBeGreaterThan(1);
+    expect(white[7] * 2).toBeLessThanOrEqual(44 / 32);
+    expect(white[8]).toBeLessThan(.1); // The persistent air trail yields after the impact beat.
     const core = kit.heavyBeam.mock.calls[0];
     expect(core.slice(0, 6)).toEqual([2, .85, 3, 2 + 900 / 32, .85, 3]);
     expect(core[7] * 2).toBeGreaterThanOrEqual(.7);
     expect(core[8]).toBeGreaterThanOrEqual(.5);
-    expect(kit.scar).toHaveBeenCalledWith('trench', 2 + 900 / 32 / 2, 3, 900 / 32 / 2, 0x1b1510, 12, 0, .62);
+    expect(kit.scar).toHaveBeenCalledWith('trench', 2 + 900 / 32 / 2, 3, 900 / 32 / 2, 0x111b22, 12, 0, .62);
     expect(kit.camera).toHaveBeenCalledWith(.92, 0);
     expect(kit.exposureFlash).toHaveBeenCalledWith(.95);
     fx.update(frame([], .03));
     const rings = kit.sprite.mock.calls.filter(c => c[0] === 'shockwave');
-    expect(rings).toHaveLength(3);
-    expect(new Set(rings.map(r => r[4])).size).toBe(3);
+    expect(rings).toHaveLength(5);
+    expect(new Set(rings.map(r => r[4])).size).toBe(5);
     for (const ring of rings) { expect(ring[9]).toBe('vertical'); expect(ring[10]).toBeCloseTo(Math.PI / 2); }
     kit.draw.mockClear(); fx.update(frame([], 1));
     expect(kit.draw.mock.calls.some(c => c[0] === 'solid')).toBe(false);
@@ -235,8 +244,14 @@ describe('Breacher presentation', () => {
       const kit = kitMock(low), fx = new BreacherPresentation(kit as unknown as ElementKit);
       fx.event(event({ ability: 'ram', slot: 'dash', phase: 'dash-end', angle: 0, targetX: 320, targetY: 224 }), 64, 96);
       fx.update(frame([], .03));
-      const caps = kit.draw.mock.calls.filter(c => c[0] === 'solid');
+      const caps = kit.draw.mock.calls.filter(c => c[0] === 'solid' && c[11] !== 30);
       expect(caps).toHaveLength(1);
+      const chips = kit.draw.mock.calls.filter(c => c[0] === 'solid' && c[11] === 30);
+      expect(chips).toHaveLength(low ? 2 : 5);
+      for (const chip of chips) {
+        expect(chip[1]).toBeGreaterThanOrEqual(10); expect(Math.abs(chip[3] - 7)).toBeLessThan(.6);
+        expect(chip[5]).toBe(.025); expect(chip[2]).toBeLessThan(.25);
+      }
       expect(kit.sprite.mock.calls.filter(c => c[0] === 'impact')).toHaveLength(1);
       expect(caps[0][1]).toBeGreaterThan(10); expect(caps[0][3]).toBeCloseTo(7);
       expect(caps[0][8]).toBeGreaterThan(.35);

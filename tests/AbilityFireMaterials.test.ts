@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { InstanceBatch } from '../src/render/abilities/InstanceBatch';
 import { ElementKit } from '../src/render/abilities/ElementKit';
 import { createAbilityZoneMaterial } from '../src/render/abilities/ZoneMaterials';
+import { GRAPHIC_COMBUSTION_GLSL } from '../src/render/abilities/GraphicLanguage';
 
 describe('element-true open fire materials', () => {
   it('owns clean animated flame shapes and alpha-covered smoke atlas and retires their resources', () => {
@@ -13,7 +14,9 @@ describe('element-true open fire materials', () => {
     expect(material.uniforms.map.value).toBeInstanceOf(T.Texture);
     expect((smoke.mesh.material as T.ShaderMaterial).uniforms.map.value).toBeInstanceOf(T.Texture);
     expect(material.fragmentShader).toContain('a*=coverage');
-    expect(material.fragmentShader).toContain('vec3(.17,.007,.001)');
+    expect(material.fragmentShader).toContain(GRAPHIC_COMBUSTION_GLSL);
+    expect(material.fragmentShader).toContain('vec3(.025,.036,.044)');
+    expect(material.fragmentShader).toContain('vec3(2.15,.65,.055)');
     expect(material.fragmentShader).toContain('vec3(1.05,.105,.003)');
     expect(material.fragmentShader).toContain('vec3(2.8,1.9,.34)');
     expect(material.fragmentShader).not.toContain('inkEdge');

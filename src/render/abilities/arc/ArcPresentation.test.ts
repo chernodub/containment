@@ -122,7 +122,8 @@ describe('Arc presentation signatures and lifecycle', () => {
     expect(ring).toHaveBeenCalledTimes(2); expect(camera).toHaveBeenCalledOnce();
     step(.1); step(.1); expect(camera).toHaveBeenCalledOnce();
     fx.event(event({ ability: 'overclock', slot: 'overdrive', phase: 'end' }), 64, 96);
-    expect(ring.mock.calls[2][5]).toBe(true); dispose();
+    expect(ring.mock.calls[2][5]).toBe(true);
+    expect(ring.mock.calls[2][4]).toBeLessThanOrEqual(.25); dispose();
   });
 
   it('connects Static Step to the observed marine and actual arrival, leaving a ground scorch star', () => {
@@ -323,10 +324,12 @@ describe('Arc presentation signatures and lifecycle', () => {
     expect(afterImage).toHaveBeenCalledTimes(2);
     const positions = afterImage.mock.calls.map(call => [call[0], call[1]]);
     for (const call of afterImage.mock.calls) {
-      expect(Math.hypot(call[0] - 4, call[1] - 4)).toBeGreaterThanOrEqual(.85);
-      expect(Math.hypot(call[0] - 4, call[1] - 4)).toBeLessThanOrEqual(1.4);
+      expect(Math.hypot(call[0] - 4, call[1] - 4)).toBeGreaterThanOrEqual(1);
+      expect(Math.hypot(call[0] - 4, call[1] - 4)).toBeLessThanOrEqual(2.3);
       expect(call[3]).toBe(0xf2ecff); expect(call[4]).toBe(.7);
     }
+    // V7 separates the two bodies by at least one marine width at reduction.
+    expect(Math.hypot(positions[0][0] - positions[1][0], positions[0][1] - positions[1][1])).toBeGreaterThanOrEqual(1.25);
     expect((positions[0][1] - 4) * (positions[1][1] - 4)).toBeLessThan(0);
     const seams = ribbon.mock.calls.filter(call => call[9] === false && call[1] > .1);
     expect(seams).toHaveLength(8);
@@ -370,6 +373,38 @@ describe('Arc presentation signatures and lifecycle', () => {
     for (let i = 0; i < ghosts.count; i++) expect(priority.getX(i)).toBe(0);
     expect(kit.priorityWeight).toBe(0);
     dispose();
+  });
+
+  it.each(['high', 'low'] as const)('echoes every authoritative shot once after a delay on %s, even after the real projectile retired', tier => {
+    const { kit, frame, step, dispose } = setup();
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    const stats = { shotsFired: 0 }, sprite = vi.spyOn(kit, 'sprite');
+    frame.game = { player: { x: 128, y: 128, angle: 0, vx: 0, vy: 0 },
+      stats, enemies: { snapshot: { enemies: [] } }, bullets: [] } as never;
+    step(.016); // Establish the actual inactive shot counter.
+    frame.snapshot = snapshot({ hostileTimeScale: .3,
+      overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
+    step(.016); sprite.mockClear();
+    stats.shotsFired = 1; step(.016);
+    expect(sprite.mock.calls.filter(call => call[0] === 'impact')).toHaveLength(0);
+    sprite.mockClear(); step(.05);
+    expect(sprite.mock.calls.filter(call => call[0] === 'impact')).toHaveLength(1);
+    const first = sprite.mock.calls.find(call => call[0] === 'impact')!;
+    expect(first[1]).toBeLessThan(4); expect(first[3]).toBeGreaterThan(4);
+    sprite.mockClear(); step(.085);
+    expect(sprite.mock.calls.filter(call => call[0] === 'impact')).toHaveLength(tier === 'high' ? 1 : 0);
+    if (tier === 'high') {
+      const second = sprite.mock.calls.find(call => call[0] === 'impact')!;
+      expect(second[1]).toBeLessThan(first[1]); expect(second[3]).toBeLessThan(4);
+    }
+    step(.5); sprite.mockClear(); step(.05);
+    expect(sprite.mock.calls.filter(call => call[0] === 'impact')).toHaveLength(0);
+    stats.shotsFired = 2; step(.016); sprite.mockClear(); step(.05);
+    expect(sprite.mock.calls.filter(call => call[0] === 'impact')).toHaveLength(1);
+    const matrices = kit.ribbons.mesh.instanceMatrix.array.slice(); step(0);
+    expect(kit.ribbons.mesh.instanceMatrix.array).toEqual(matrices);
+    frame.snapshot = snapshot(); step(.016);
+    expect(kit.ribbons.mesh.count).toBe(0); dispose();
   });
 
 });

@@ -48,10 +48,14 @@ describe('full ability-kit resource budgets', () => {
       meshes.push(node); geometries.add(node.geometry);
       for (const material of Array.isArray(node.material) ? node.material : [node.material]) materials.add(material);
     });
-    // V3 adds exactly one retained torus batch; no ability creates combat-time resources.
-    expect(meshes.length).toBeLessThanOrEqual(111);
-    expect(geometries.size).toBeLessThanOrEqual(17);
-    expect(materials.size).toBeLessThanOrEqual(23);
+    // V7 adds exactly two connected weather surfaces and one pooled footprint.
+    // Retain the previous inventory caps for every existing owner independently.
+    const additions=meshes.filter(mesh=>['whiteout-connected-wind-wall','whiteout-spreading-floor-frost','ability-placement-preview'].includes(mesh.name));
+    expect(additions).toHaveLength(3);
+    expect(meshes.length-additions.length).toBeLessThanOrEqual(111);
+    expect(geometries.size-new Set(additions.map(mesh=>mesh.geometry)).size).toBeLessThanOrEqual(17);
+    expect(materials.size-new Set(additions.map(mesh=>mesh.material)).size).toBeLessThanOrEqual(23);
+    expect(meshes.length).toBeLessThanOrEqual(114);expect(geometries.size).toBeLessThanOrEqual(20);expect(materials.size).toBeLessThanOrEqual(26);
     const buffers = meshes.filter((mesh): mesh is T.InstancedMesh => mesh instanceof T.InstancedMesh)
       .map(mesh => ({ mesh, matrix: mesh.instanceMatrix.array, color: mesh.instanceColor?.array }));
     const rigs: RigId[] = ['breacher', 'cryo', 'pyro', 'arc'];

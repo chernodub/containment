@@ -27,7 +27,7 @@ it('samples authored alpha and inset sRGB flame cells',()=>{
  const scene=new T.Scene(),batch=new AfflictionBatches(undefined,1),root=new T.Group();scene.add(root);
  afflictionEffects(root,2,1).set({chilled:false,burning:true});batch.update(scene.children,new T.Camera(),1);
  const fire=batch.root.children[0] as T.InstancedMesh,material=fire.material as T.ShaderMaterial;
- expect(material.fragmentShader).toContain('float a=s.a*');expect(material.fragmentShader).not.toContain('max(s.r');
+ expect(material.fragmentShader).toContain('float a=graphicCoverage(s.a)*');expect(material.fragmentShader).not.toContain('max(s.r');
  expect(material.uniforms.map.value.colorSpace).toBe(T.SRGBColorSpace);
  const uv=fire.geometry.getAttribute('atlas');expect(uv.getZ(0)).toBeLessThan(1/16);expect(uv.getW(0)).toBeLessThan(1/4);batch.dispose();
 });

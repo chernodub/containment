@@ -6,6 +6,11 @@ import type {RunStatsSnapshot} from '../game/abilities/RunStats';
 import type {GraphicsTier} from '../render/FrameBudget';
 import {ENEMY_ATTACK_SHAPES} from '../game/enemies/attackShapes';
 import {canTraverseExpedition} from '../game/world/expeditionGeometry';
+import {hasClearExpeditionShot} from '../game/world/expeditionGeometry';
+import {enemyShotRadius} from '../game/combat/enemyContact';
+import {segmentIntersectsRect} from '../game/input/aimAssist';
+import {ABILITY_CATALOG} from '../game/abilities/catalog';
+import type {PlacementPreviewState, PlacementPreviewPoint, PlacementAbility} from '../render/abilities/PlacementPreview';
 import type {ScreenBox} from './hud/weaponInput';
 export {getShopProjection} from './shopProjection';
 
@@ -117,6 +122,87 @@ export function showInvalidAbilityPlacement(renderer: DepthRenderer, abilityId: 
   if (typeof hook !== 'function') return;
   if (abilityId !== null && (!Number.isFinite(x) || !Number.isFinite(y))) return;
   hook.call(renderer, abilityId, x, y);
+}
+
+/** Optional ability presentation surface; scene fallback keeps older renderer orchestration compatible. */
+export function setPlacementPreview(renderer: DepthRenderer, value: PlacementPreviewState | null): void {
+  if (value && (!Number.isFinite(value.x)||!Number.isFinite(value.y)||!Number.isFinite(value.angle)||!placementAbilities.has(value.ability))) return;
+  const direct = renderer as unknown as {setPlacementPreview?: (value: PlacementPreviewState | null) => void};
+  if (typeof direct.setPlacementPreview === 'function') {direct.setPlacementPreview(value); return;}
+  const scene = renderer.scene?.userData;
+  if (typeof scene?.setPlacementPreview === 'function') {scene.setPlacementPreview(value); return;}
+  // Legacy optional preview hooks still receive denied placements and clearing.
+  if (!value || !value.valid) showInvalidAbilityPlacement(renderer,value?.ability ?? null,value?.x,value?.y);
+}
+
+export type UiPlacementPreview = PlacementPreviewState & {points: PlacementPreviewPoint[]; pointCount: number};
+const placementAbilities=new Set<string>(['glacier','napalm-charge','tesla-pylon','bulwark']);
+/** Allocate the bounded UI scratch once; snapshots and gameplay are never mutated. */
+export function createPlacementPreview(): UiPlacementPreview {
+  return {ability:'glacier',x:0,y:0,angle:0,valid:false,points:Array.from({length:3},()=>({x:0,y:0,valid:false,radius:0})),pointCount:1};
+}
+
+/** Read the same native range clamp, wall orientation and augment offsets as the power slot. */
+export function readPlacementPreview(game: DepthGame, aim: {x:number;y:number} | null, out: UiPlacementPreview): boolean {
+  const snapshot=getAbilities(game),slot=snapshot?.slots?.power;
+  if (game.status!=='playing'||!slot||!placementAbilities.has(slot.id)) return false;
+  if (aim&&(!Number.isFinite(aim.x)||!Number.isFinite(aim.y))) return false;
+  const d=ABILITY_CATALOG[slot.id],p=game.player,angle=p.angle;
+  if (!Number.isFinite(p.x)||!Number.isFinite(p.y)||!Number.isFinite(angle)) return false;
+  out.ability=slot.id as PlacementAbility;out.angle=angle;
+  const dx=(aim?.x??p.x+Math.cos(angle)*d.range)-p.x,dy=(aim?.y??p.y+Math.sin(angle)*d.range)-p.y;
+  const scale=Math.min(1,d.range/(Math.hypot(dx,dy)||1));
+  out.x=d.targeting==='point'?p.x+dx*scale:p.x+Math.cos(angle)*d.range;
+  out.y=d.targeting==='point'?p.y+dy*scale:p.y+Math.sin(angle)*d.range;
+  const twin=slot.id==='glacier'&&game.combat.hasMutation('twin-glacier')||slot.id==='tesla-pylon'&&game.combat.hasMutation('twin-pylon');
+  const triplet=slot.id==='napalm-charge'&&game.combat.hasMutation('napalm-triplet');
+  out.pointCount=triplet?3:twin?2:1;
+  let any=false;
+  for(let i=0;i<out.pointCount;i++) {
+    const offset=triplet?(i-1)*100:twin?(i?1:-1)*(slot.id==='glacier'?40:50):0;
+    const point=out.points[i],along=slot.id==='glacier'?offset:0,lateral=slot.id==='glacier'?0:offset;
+    point.x=out.x+Math.cos(angle)*along-Math.sin(angle)*lateral;
+    point.y=out.y+Math.sin(angle)*along+Math.cos(angle)*lateral;
+    point.radius=triplet?80:d.shape.kind==='circle'?d.shape.radius:0;
+    point.valid=canTraverseExpedition(game.geometry,p,point,slot.id==='tesla-pylon'?18:4);
+    if(point.valid&&d.shape.kind==='wall') {
+      const dx=-Math.sin(angle)*d.shape.length/2,dy=Math.cos(angle)*d.shape.length/2;
+      warningFrom.x=point.x-dx;warningFrom.y=point.y-dy;warningTo.x=point.x+dx;warningTo.y=point.y+dy;
+      point.valid=canTraverseExpedition(game.geometry,warningFrom,warningTo,d.shape.thickness/2);
+    }
+    any ||= point.valid;
+  }
+  out.valid=any;
+  // A range-clamped press is accepted natively; do not invent an out-of-range rejection.
+  out.reason=any?undefined:'Need clear ground';
+  if(!any) for(const rect of game.geometry.blockers) {
+    if(game.geometry.boundaryWalls.includes(rect)) continue;
+    for(let i=0;i<out.pointCount;i++) {
+      const point=out.points[i];
+      if(segmentIntersectsRect(p,point,rect)||point.x>=rect.x-24&&point.x<=rect.x+rect.width+24&&point.y>=rect.y-24&&point.y<=rect.y+rect.height+24) out.reason='Blocked by machinery';
+    }
+  }
+  return true;
+}
+
+type AimTarget={id:number;x:number;y:number;radius:number};
+const aimScratch=new WeakMap<DepthRenderer,{pool:AimTarget[];live:AimTarget[]}>();
+/** Reuse native torso picking so preview and the next physical F press share an aim. */
+export function placementPointer(renderer: DepthRenderer, game: DepthGame, x:number, y:number): {x:number;y:number}|null {
+  if(typeof renderer.pointer!=='function') return null;
+  let scratch=aimScratch.get(renderer);
+  if(!scratch){scratch={pool:Array.from({length:128},()=>({id:0,x:0,y:0,radius:0})),live:[]};aimScratch.set(renderer,scratch);}
+  let count=0;
+  for(const target of game.targets()) {
+    if(count===scratch.pool.length) break;
+    if(!hasClearExpeditionShot(game.geometry,game.player,target)) continue;
+    const entry=scratch.pool[count],enemy=target.id>0?game.enemies.getSnapshot(target.id):undefined;
+    entry.id=target.id;entry.x=target.x;entry.y=target.y;entry.radius=enemy?enemyShotRadius(enemy.type,enemy.elite):target.radius;
+    scratch.live[count++]=entry;
+  }
+  scratch.live.length=count;
+  const point=renderer.pointer(x,y,scratch.live);
+  return point&&Number.isFinite(point.x)&&Number.isFinite(point.y)?point:null;
 }
 
 /** Nested, immutable simulation statistics drive the debrief. */

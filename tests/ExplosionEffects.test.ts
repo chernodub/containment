@@ -26,10 +26,10 @@ it('keeps authored coverage, linear shading, inset UVs and injectable atlas load
  const loader={load:()=>{const t=new T.Texture();loaded.push(t);return t;}} as unknown as T.TextureLoader;
  const scene=new T.Scene(),fx=new AttackEffects(scene,loader);
  expect(loaded).toHaveLength(2);expect(loaded[0].colorSpace).toBe(T.SRGBColorSpace);expect(loaded[1].colorSpace).toBe(T.NoColorSpace);
- for(const t of loaded){expect(t.generateMipmaps).toBe(false);expect(t.minFilter).toBe(T.LinearFilter);}
+ for(const t of loaded){expect(t.generateMipmaps).toBe(true);expect(t.minFilter).toBe(T.LinearMipmapLinearFilter);}
  const fire=scene.children.find(m=>m.name==='explosion-fire') as T.InstancedMesh;
  const mat=fire.material as T.ShaderMaterial;
- expect(mat.uniforms.inset.value).toBe(.5/256);expect(mat.fragmentShader).toContain('vAlpha*tex.a');expect(mat.fragmentShader).toContain('smoothstep(.0,.12,vUv.y)');expect(mat.fragmentShader).toContain('colorspace_fragment');expect(mat.fragmentShader).not.toContain('tex.rgb*vec3');
+ expect(mat.uniforms.inset.value).toBe(.5/256);expect(mat.fragmentShader).toContain('vAlpha*graphicCoverage(tex.a)');expect(mat.fragmentShader).toContain('smoothstep(.0,.12,vUv.y)');expect(mat.fragmentShader).toContain('colorspace_fragment');expect(mat.fragmentShader).not.toContain('tex.rgb*vec3');
  fx.event({type:'explosion',elements:['fire'],x:0,y:0,radius:100});fx.update(.016,new T.PerspectiveCamera(),[]);
  const matrix=new T.Matrix4();fire.getMatrixAt(0,matrix);expect(new T.Vector3().setFromMatrixPosition(matrix).y).toBeGreaterThan(1);
  fx.dispose();

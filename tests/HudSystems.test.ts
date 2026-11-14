@@ -330,7 +330,7 @@ it('dismisses the ready announcement immediately when real Overdrive starts', as
     } finally {await page.close();}
 });
 
-it('explains that a stored charge needs clear ground instead of showing a zero-second cooldown', async () => {
+it('keeps the stored-charge availability cue separate from cursor placement reasons', async () => {
     const page=await mountHud(1920,1080);
     try {
         await liveHud(page);
@@ -340,7 +340,7 @@ it('explains that a stored charge needs clear ground instead of showing a zero-s
             adapter.setUiFixture(game,{abilities:{...s,slots:{...s.slots,power:{...s.slots.power,ready:false,charges:1,cooldownRemainingMs:0}}}});
             hud();
         });
-        expect(await page.locator('[data-ability="power"] .ability-value').textContent()).toBe('Need clear ground');
+        expect(await page.locator('[data-ability="power"] .ability-value').textContent()).toBe('REPOSITION');
         expect(await page.locator('[data-ability="power"]').getAttribute('data-charges')).toBe('1');
     } finally {await page.close();}
 });
@@ -651,4 +651,45 @@ it('registers a newly enabled radar with marine clearance immediately',async()=>
         });
         expect(overlaps).toBe(false);
     }finally{await page.close();}
+});
+
+it('keeps the native cursor footprint at the denied mark for one second and restores live aim without moving gameplay',async()=>{
+    const page=await mountHud(1280,720);
+    try {
+        await liveHud(page);
+        await page.evaluate(()=>{
+            const {game,hud,renderer}=(window as any).__live;
+            game.abilities.setRig('cryo');game.player.x=game.player.y=500;game.player.angle=0;
+            game.geometry={...game.geometry,bounds:{x:0,y:0,width:2000,height:2000},boundary:undefined,voids:undefined,blockers:[],boundaryWalls:[]};
+            (window as any).__placement=[];
+            renderer.setPlacementPreview=(value:unknown)=>(window as any).__placement.push(value?JSON.parse(JSON.stringify(value)):null);
+            renderer.pointer=()=>({x:650,y:500});
+            renderer.canvas.dispatchEvent(new PointerEvent('pointermove',{pointerType:'mouse',clientX:820,clientY:320,bubbles:true}));
+            hud();hud.tick(.016);
+        });
+        let result=await page.evaluate(()=>(window as any).__placement.at(-1));
+        expect(result).toMatchObject({ability:'glacier',x:650,y:500,valid:true,pointCount:1});
+        await page.evaluate(()=>{
+            const {game,hud}=(window as any).__live;
+            game.geometry={...game.geometry,blockers:[{x:630,y:480,width:40,height:40}]};
+            hud.effect({type:'ability',x:500,y:500,ability:{phase:'denied',slot:'power',ability:'glacier',rig:'cryo',element:'cryo',denial:'blocked'}});
+        });
+        expect(await page.locator('#ability-denial').textContent()).toBe('Blocked by machinery');
+        expect(await page.locator('[data-ability="power"] .ability-value').textContent()).toBe('REPOSITION');
+        const before=await page.evaluate(()=>{const {game}=(window as any).__live;return JSON.stringify({player:game.player,abilities:game.abilities.snapshot});});
+        await page.evaluate(()=>{const {hud,renderer}=(window as any).__live;renderer.pointer=()=>({x:800,y:700});hud.tick(.1);});
+        result=await page.evaluate(()=>(window as any).__placement.at(-1));
+        expect(result).toMatchObject({x:650,y:500,valid:false,reason:'Blocked by machinery'});
+        expect(result.points[0].valid).toBe(false);
+        await page.evaluate(()=>{const {hud}=(window as any).__live;for(let i=0;i<10;i++)hud.tick(.1);});
+        expect(await page.locator('#ability-denial').isHidden()).toBe(true);
+        result=await page.evaluate(()=>(window as any).__placement.at(-1));
+        expect(result).toMatchObject({x:800,y:700,valid:true});
+        const after=await page.evaluate(()=>{const {game}=(window as any).__live;return JSON.stringify({player:game.player,abilities:game.abilities.snapshot});});
+        expect(after).toBe(before);
+        await page.evaluate(()=>{const {game,hud}=(window as any).__live;game.status='paused';hud.tick(.01);});
+        expect(await page.evaluate(()=>(window as any).__placement.at(-1))).toBeNull();
+        await page.evaluate(()=>(window as any).__live.hud.dispose());
+        expect(await page.locator('#ability-denial').count()).toBe(0);
+    } finally {await page.close();}
 });
