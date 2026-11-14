@@ -228,6 +228,7 @@ async function comparison(manifest){
 }
 
 async function showcase(manifest){
+  const availableShots=manifest.shots.slice();
   let candidates=[
     ['Title',['title.png']],['Starting boon',['starting-boon.png']],['Cryo rig',['rig-select-cryo.png']],['Route',['route.png']],
     ['Illustrated ending',['complete-fixture.png']],['Armory construction',['combat-calm-armory.png']],
@@ -243,10 +244,27 @@ async function showcase(manifest){
     const selection=JSON.parse(await readFile(resolve(selectionFile),'utf8'));
     assert(Array.isArray(selection)&&selection.length===12,'Showcase selection must contain twelve {title,file} rows');
     assert(new Set(selection.map(row=>row.file)).size===12,'Showcase selections must use twelve distinct originals');
-    for(const row of selection){safeFile(row.file);assert(typeof row.title==='string'&&row.title.trim(),'Showcase title required');const shot=manifest.shots.find(s=>s.file===row.file);assert(shot,`Showcase file absent from capture manifest: ${row.file}`);assert(!legacy(shot),`Legacy boss evidence cannot enter the showcase: ${row.file}`);assert(!/v2-full-|v2-kit-|combat-heavy|i[45]-/.test(shot.scenario??''),`Stacked stress fixtures cannot enter the showcase: ${row.file}`);}
+    let organicReceipts;
+    for(const row of selection){
+      assert(typeof row.title==='string'&&row.title.trim(),'Showcase title required');
+      let shot=availableShots.find(s=>s.file===row.file);
+      if(!shot&&typeof row.file==='string'&&/^organic\/[\w.-]+\.png$/.test(row.file)){
+        organicReceipts??=JSON.parse(await readFile(resolve(output,'organic/source-receipts.json'),'utf8'));
+        const receipt=organicReceipts.find(r=>r.file===row.file.slice('organic/'.length));
+        assert(receipt,`Organic showcase file has no source receipt: ${row.file}`);
+        assert.deepEqual(receipt.application?.appAssets,manifest.appAssets,`Organic showcase application assets: ${row.file}`);
+        assert.equal(receipt.application?.applicationSHA,manifest.distSnapshot?.sourceSHA,`Organic showcase frozen source: ${row.file}`);
+        assert.equal(hash(await readFile(resolve(output,row.file))),receipt.sha256,`Organic showcase source hash: ${row.file}`);
+        shot={file:row.file,scenario:'organic-campaign',room:receipt.room,evidenceSource:receipt};
+        availableShots.push(shot);
+      }else safeFile(row.file);
+      assert(shot,`Showcase file absent from capture manifest or organic receipts: ${row.file}`);
+      assert(!legacy(shot),`Legacy boss evidence cannot enter the showcase: ${row.file}`);
+      assert(!/v2-full-|v2-kit-|combat-heavy|i[45]-/.test(shot.scenario??''),`Stacked stress fixtures cannot enter the showcase: ${row.file}`);
+    }
     candidates=selection.map(row=>[row.title,[row.file]]);
   }
-  const selected=candidates.map(([title,files])=>({title,shot:files.map(file=>manifest.shots.find(s=>s.file===file)).find(Boolean)}));
+  const selected=candidates.map(([title,files])=>({title,shot:files.map(file=>availableShots.find(s=>s.file===file)).find(Boolean)}));
   for(const {shot} of selected)if(shot)assert(!legacy(shot),`Legacy boss evidence cannot enter the showcase: ${shot.file}`);
   // Small partial review batches still produce twelve candidate slots, honestly labeled missing.
   const board=canvas(1440,4*302),receipts=[];
