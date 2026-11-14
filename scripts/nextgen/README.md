@@ -842,3 +842,31 @@ Railbreaker begins at impact+30ms with30ms phase spacing. Every case awaits the
 lazy owner and forbids new combat shader programs. Meltdown/Overclock then use
 native movement/fire inputs. Canonical V2 seven-phase and full-kit clocks remain
 unchanged. These are presentation fixtures, never hardware timing evidence.
+
+### V7 evidence qualifications and review tools
+
+The strict `v7-explosion-*` fixtures require the full native Queen pulse and a
+conservative envelope of every fire/smoke card to fit the actual HUD-safe viewport
+at every phase. They intentionally reject the tested close-camera marks; failed
+raw manifests remain. These new diagnostics require explicit scenario selection
+and are excluded from the default `all` review. Their strict guards stay intact.
+Use `v7-material-explosion-{weapon,grenade,rocket,nest,queen}`
+for the accepted matched material inspection:0/30/90/180/340/500/600ms, complete
+fire-card support, with full Queen-pulse and conservative smoke-envelope clipping
+retained separately in proof. This does not certify complete Queen-ring framing.
+No payload radius, camera, native body/HUD, action, phase or priority guard changes.
+
+`v7-placement-{bulwark,glacier,napalm-charge,tesla-pylon}-{valid,blocked}` uses
+the native cursor and trusted F key. Run `--burst=4`; blocked cases require the
+real denied receipt, cursor reason, unchanged stored charge/use count and actual
+prepared footprint. The old HUD availability cue remains separately asserted.
+
+`v7-contact.mjs <capture-root> <contact-output>` creates one exact480 critique
+contact with source hashes. `v7-evidence.mjs <before-root> <final-root>` verifies
+the canonical40-sheet/280-phase native/480 clock/hash pairs.
+`v7-bench-summary.mjs <before-label> <final-label>` accepts optional
+`--before-extra=<label,...>` / `--after-extra=<label,...>` isolated cohorts from
+the identical runtime SHA. It retains every raw miss and peak draw, prefers
+jointly passing trials before minimizing frame p95, and keeps scale/CPU/load
+from that same selected trial. The PNGs are art evidence; ordinary native
+benchmark reports alone supply timing evidence. See `docs/nextgen/V7-REPORT.md`.

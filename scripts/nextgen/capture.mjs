@@ -34,7 +34,7 @@ const style=option('style','bold');assert(['subtle','medium','bold'].includes(st
 const graphics=JSON.parse(option('graphics','{}'));assert(graphics&&typeof graphics==='object'&&!Array.isArray(graphics),'--graphics requires an options JSON object');
 const hudInsets=JSON.parse(option('hud-insets','null'));if(hudInsets!==null){assert(hudInsets&&typeof hudInsets==='object'&&!Array.isArray(hudInsets),'--hud-insets requires an object');assert(['top','right','bottom','left'].every(key=>Number.isFinite(hudInsets[key])&&hudInsets[key]>=0),'HUD insets require four finite nonnegative CSS-pixel values');}
 const rooms=option('rooms',DEFAULT_ROOMS.join(',')).split(',');assert(rooms.length&&rooms.every(id=>/^[a-z0-9-]+$/.test(id)),'Invalid room list');
-const selection=option('scenarios','all').split(','),requested=selection.includes('all')?SCENARIOS.map(s=>s.id):selection;
+const selection=option('scenarios','all').split(','),requested=selection.includes('all')?SCENARIOS.filter(s=>!s.diagnosticOnly).map(s=>s.id):selection;
 const scenarios=requested.flatMap(item=>{const direct=SCENARIOS.find(s=>s.id===item);if(direct&&!direct.rooms)return [{...direct}];const [id,room,...extra]=item.split(':'),entry=SCENARIOS.find(s=>s.id===id);assert(entry&&!extra.length&&(!room||entry.rooms),`Unknown scenario ${item}`);return entry.rooms?(room?[{...entry,room}]:rooms.map(room=>({...entry,room}))):[{...entry}];});
 const out=resolve('artifacts/nextgen',label);
 if(comparison){const result=await compareGalleries(resolve('artifacts/nextgen'),comparison.split(','),out);console.log(`${result.pairs} aligned views (missing counterparts labelled)\n${result.file}`);process.exit(0);}

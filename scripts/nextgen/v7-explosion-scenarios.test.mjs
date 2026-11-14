@@ -31,7 +31,7 @@ describe('V7 explosion capture contracts', () => {
     expect(scenarios).toHaveLength(6); expect(scenarios[0]).toBe(old);
     expect(scenarios.slice(1).map(s => s.setupArgument.origin)).toEqual(['weapon', 'grenade', 'rocket', 'nest', 'queen']);
     for (const s of scenarios.slice(1)) {
-      expect(s.burst).toBe(true); expect(s.setupArgument.samples).toEqual([0, 30, 90, 180, 340, 600, 1000]);
+      expect(s.burst).toBe(true); expect(s.diagnosticOnly).toBe(true); expect(s.setupArgument.samples).toEqual([0, 30, 90, 180, 340, 600, 1000]);
       expect(s.setup).toBe(stageV7Explosion);
     }
     expect(V7_EXPLOSION_ORIGINS.find(s => s.origin === 'nest').event).toEqual({ type: 'explosion', radius: 64 });

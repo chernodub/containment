@@ -142,7 +142,7 @@ export async function stageV7Explosion({ origin, source, event, room, samples, m
     presentationOnly: true, nativeAction: false, kind: 'shared-explosion-payload-replay',
     origin, source, room, mark: best, event: { ...event, x: best.tx, y: best.ty },
     warning, samples, sampleMs: 0, shaderGuard: true, programs: 0,
-    framing: { scope:materialReview?'complete fire alpha card; full Queen pulse and conservative smoke envelope retained as separate clipping diagnostics':'complete Queen pulse and fire/smoke support', nativeContacts, safeViewport: safe, measuredHudPanels: panels, supportTrace, cameraOverride: false, coreClearance: 52, note: 'Full pulse/fire/smoke-card support; ejected sparks/debris are separate tiny ballistic tails.' },
+    framing: { scope:materialReview?'complete fire alpha card; full Queen pulse and conservative smoke envelope retained as separate clipping diagnostics':'complete Queen pulse and fire/smoke support', nativeContacts, safeViewport: safe, measuredHudPanels: panels, supportTrace, cameraOverride: false, coreClearance: 52, note: materialReview?'Fire-card support is certified; full pulse and conservative smoke clipping are recorded separately.':'Full pulse/fire/smoke-card support; ejected sparks/debris are separate tiny ballistic tails.' },
     qualification: 'Native payload replay at a common legal mark; this does not simulate its originating action, kill or damage. Native grenade action remains covered by combat-heavy.',
   };
   const gl = r.renderer.getContext();
@@ -167,7 +167,7 @@ export function registerV7ExplosionScenarios(scenarios) {
     const id = `v7-explosion-${entry.origin}`;
     if (scenarios.some(s => s.id === id)) continue;
     const room = 'containment-annulus';
-    scenarios.push({ id, room, state: 'playing', burst: true, stepMs: 150,
+    scenarios.push({ id, room, state: 'playing', burst: true, stepMs: 150, diagnosticOnly: true,
       setupArgument: { ...entry, room, samples: [0, 30, 90, 180, 340, 600, 1000] },
       setup: stageV7Explosion });
   }
