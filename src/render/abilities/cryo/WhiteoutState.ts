@@ -30,7 +30,7 @@ void main(){
  else snow=step(.95,fract(u*31.-stormTime*8.+floor(local.y*9.)*.17))*step(.65,fract(local.y*13.+u*.8))*.6;
  float leading=pow(crest,5.);
  float edge=(1.-smoothstep(.018,.055,abs(local.y-(.56+sin(u*3.-stormTime*1.4)*.13))))*leading;
- float a=(body*(.25+current*.24)+snow*.82*detail+edge*.53)*storm.w;
+ float a=(body*(.25+current*.24)+snow*.82+edge*.62)*storm.w;
  vec3 cold=mix(vec3(.12,.31,.41),vec3(.39,.71,.87),step(.34,current));
  cold=mix(cold,vec3(1.05,1.55,1.7),max(step(.3,snow),edge));
  if(a<.004)discard;gl_FragColor=vec4(cold,a);

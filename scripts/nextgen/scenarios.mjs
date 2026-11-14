@@ -846,3 +846,6 @@ import {registerV7ExplosionScenarios} from './v7-explosion-scenarios.mjs';
 registerV7ExplosionScenarios(SCENARIOS);
 import {registerV7PlacementScenarios} from './v7-placement-scenarios.mjs';
 registerV7PlacementScenarios(SCENARIOS);
+
+import {registerV7ExplosionMaterialScenarios} from './v7-explosion-scenarios.mjs';
+registerV7ExplosionMaterialScenarios(SCENARIOS);

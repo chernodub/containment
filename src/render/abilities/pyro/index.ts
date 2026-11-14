@@ -431,9 +431,9 @@ class PyroPresentation implements AbilityPresentation {
       kit.draw('spark', bx, base+.1, bz, .18, .14, 1, CORE, .96 * fade);
       kit.sustain(age);
       kit.flowFlame(bx, base, bz, bx-c*.65-s*side*.38, base+.7, bz-s*.65+c*side*.38,
-        kit.low?.12:.2, side+zone.id, .94*fade, true);
+        kit.low?.16:.26, side+zone.id, .94*fade, true);
       const height = side < 0 ? 2.4 : 1.8;
-      kit.directedFlame(bx, base, bz, side < 0 ? .73 : .61, height * (.95 + pulse * .05),
+      kit.directedFlame(bx, base, bz, side < 0 ? .84 : .70, height * (.95 + pulse * .05),
         exhaustAngle, moving ? 1.1 : .5, side + zone.id, .9 * fade, true);
       if (!kit.low) kit.directedFlame(bx - c * .18, 1.08, bz - s * .18, .28, 2.6,
         exhaustAngle, .65, side * 2.7, .78 * fade);

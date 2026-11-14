@@ -98,3 +98,15 @@ describe('V7 explosion capture contracts', () => {
       .rejects.toThrow('No legal V7 shared explosion inspection mark');
   });
 });
+
+
+it('keeps the strict full-pulse guard while explicitly recording clipped rings in material-only review',async()=>{
+  harness({viewWidth:24});
+  await expect(stageV7Explosion({...V7_EXPLOSION_ORIGINS[4],room:'containment-annulus',samples:[0,30]})).rejects.toThrow('complete projected Queen/fire/smoke support');
+  const h=harness({viewWidth:24});
+  await stageV7Explosion({...V7_EXPLOSION_ORIGINS[4],room:'containment-annulus',samples:[0,30],materialReview:true});
+  const p=h.d.g4DangerProof;
+  expect(p.mark.support.inside).toBe(true);expect(p.mark.support.materialReview).toBe(true);
+  expect(p.mark.support.pulseInside).toBe(false);expect(p.event.radius).toBe(240);
+  expect(p.framing.scope).toContain('separate clipping diagnostic');
+});
