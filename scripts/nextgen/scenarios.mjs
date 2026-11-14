@@ -441,11 +441,18 @@ export async function stageKiting(attempt=0){
   if(!headings.length)continue;headings.sort((a,b)=>b.score-a.score);
   candidates.push({x,y,headings,score:floor.length-Math.hypot(x-bounds.x-bounds.width/2,y-bounds.y-bounds.height/2)/10000});
  }
- candidates.sort((a,b)=>b.score-a.score);
+ // The manual chamber's narrow north rim straddles both sides of the marine:
+ // its initial shot can show twenty bodies, then native auto-aim flips the
+ // contact composition and loses the twelve-body reserve. Prefer the legal
+ // west-side approach in this authored room, keeping the crowd on the same
+ // side through the burst. Candidate legality, all32 lane attempts, spacing,
+ // native abilities and every saved-frame visibility guard remain unchanged.
+ const westApproach=g.node.templateId==='manual-control-chamber';
+ candidates.sort((a,b)=>westApproach?a.x-b.x||b.score-a.score:b.score-a.score);
  const lanes=[],remaining=[...candidates];
  while(remaining.length&&lanes.length<16){
   let best=0;for(let i=1;i<remaining.length;i++){
-   const merit=p=>p.score-(lanes.length?Math.max(0,160-Math.min(...lanes.map(c=>Math.hypot(c.x-p.x,c.y-p.y))))/5:0);
+   const merit=p=>p.score-(westApproach?(p.x-bounds.x)/4:0)-(lanes.length?Math.max(0,160-Math.min(...lanes.map(c=>Math.hypot(c.x-p.x,c.y-p.y))))/5:0);
    if(merit(remaining[i])>merit(remaining[best]))best=i;
   }
   lanes.push(remaining.splice(best,1)[0]);
@@ -569,7 +576,7 @@ export async function stageKiting(attempt=0){
  d.setInput({x:0,y:0,fire:true,angle:shotAngle,autoAim:false});d.step(1000/60);
  if(!(d.renderer.muzzle.intensity>0&&g.bullets.some(bullet=>bullet.kind==='player')))throw Error(`No travelling rifle round in verified kiting lane: ${JSON.stringify({player:origin,shotAngle,weapon:g.combat.snapshot.weaponId,magazine:g.combat.snapshot.magazine,shots:g.stats.shotsFired,bullets:g.bullets.length,state:g.status})}`);
  d.uiFixture({preferences:{radar:true,combatText:true}});
- return {staged:placed.length,initialVisible,placedVisible,offscreenStaged:placed.length-initialVisible,packingExclusion,minimumSpawnClearance:Math.min(...placed.map(p=>Math.hypot(p.x-origin.x,p.y-origin.y)-p.radius-g.player.radius)),packingSpacing:65.01,packingPoints:placed.map(({id,x,y,radius})=>({id,x,y,radius})),packingPasses,laneSearch,laneAttempt:attempt,player:origin,dashStart:start,heading,shotAngle,reservedFiringLane:{length:320,halfWidth:75},liveRig:'cryo',script:'Frost Trail into open center; Nova + rifle; Glacier at frame 2; Whiteout at frame 3',invulnerable:true};
+ return {staged:placed.length,initialVisible,placedVisible,approach:westApproach?'west':'ranked-native-footprint',offscreenStaged:placed.length-initialVisible,packingExclusion,minimumSpawnClearance:Math.min(...placed.map(p=>Math.hypot(p.x-origin.x,p.y-origin.y)-p.radius-g.player.radius)),packingSpacing:65.01,packingPoints:placed.map(({id,x,y,radius})=>({id,x,y,radius})),packingPasses,laneSearch,laneAttempt:attempt,player:origin,dashStart:start,heading,shotAngle,reservedFiringLane:{length:320,halfWidth:75},liveRig:'cryo',script:'Frost Trail into open center; Nova + rifle; Glacier at frame 2; Whiteout at frame 3',invulnerable:true};
 }
 
 /** Deterministic motion and public ability actions are keyed to burst frame index. */
