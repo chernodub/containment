@@ -69,3 +69,19 @@ describe('lazy ability presentation boundary',()=>{
   const second=lazy.prepare();await expect(second).rejects.toThrow('code unavailable');expect(load).toHaveBeenCalledTimes(2);lazy.dispose();
  });
 });
+
+describe('lazy placement bridge lifecycle',()=>{
+ it('retains the latest pooled aim without importing and forwards it after readiness',async()=>{
+  const {scene,lazy,load,owner,code,module,atlas}=fixture();
+  const state={ability:'glacier' as const,x:64,y:96,angle:.3,valid:true};
+  scene.userData.setPlacementPreview(state);expect(load).not.toHaveBeenCalled();
+  const work=lazy.prepare();code.resolve(module);atlas.resolve();await work;
+  expect(owner.setPlacementPreview).toHaveBeenCalledWith(state);
+  lazy.clear();expect(owner.clear).toHaveBeenCalledOnce();lazy.dispose();
+  expect(scene.userData.setPlacementPreview).toBeUndefined();
+ });
+ it('does not delete a successor bridge when an old graphics owner is disposed',()=>{
+  const {scene,lazy}=fixture(),successor=vi.fn();scene.userData.setPlacementPreview=successor;
+  lazy.dispose();expect(scene.userData.setPlacementPreview).toBe(successor);
+ });
+});

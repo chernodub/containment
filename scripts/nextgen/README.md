@@ -832,3 +832,13 @@ shape; grenade/rocket replay their burning-target blast payloads. Nest/Queen kee
 their actual element-free payloads and therefore inspect smoke/glow rather than
 an invented fireball. The unchanged `combat-heavy` scenario supplies native
 grenade action/firing evidence. Exact 480×270 reductions use `v3-gallery.mjs`.
+
+## V7 sustained-state review
+
+`v7-state-{railbreaker,whiteout,meltdown,overclock}-<room>` and the `-low-<room>`
+variants inspect the native ultimate at a legal open mark in bright Containment
+Annulus or dark Infested Workshop. Sustained states settle650ms after activation;
+Railbreaker begins at impact+30ms with30ms phase spacing. Every case awaits the
+lazy owner and forbids new combat shader programs. Meltdown/Overclock then use
+native movement/fire inputs. Canonical V2 seven-phase and full-kit clocks remain
+unchanged. These are presentation fixtures, never hardware timing evidence.
