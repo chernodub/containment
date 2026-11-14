@@ -11,6 +11,7 @@ import {SCENARIOS,DEFAULT_ROOMS,stageCombat,stageKiting,advanceKiting,inspectFra
 import {samplePng} from './png.mjs';
 import {assertPriorityPair} from './i10-framing-contract.mjs';
 import {assertCaptureCanvas} from './capture-canvas.mjs';
+import {assertKitingMovement} from './capture-movement.mjs';
 import {inspectI10ArmoryReplay} from './i10-armory-replay.mjs';
 import {stitchPngFrames} from './sprites.mjs';
 import {compareGalleries} from './gallery.mjs';
@@ -164,7 +165,7 @@ try{
    if(scenario.nativeFocus)await page.locator(scenario.nativeFocus).first().focus();
    for(const key of scenario.nativeHold??[])await page.keyboard.down(key);
    if(scenario.nativeHold?.length)await page.evaluate(()=>window.__containmentDebug.refresh());
-   const count=scenario.burst?burst:1,frameStepMs=scenario.stepMs??stepMs;let projectiles=false,muzzle=false,explosion=false;const observed=new Set(),burstFrames=[];let kitingStart=null,feelStart=null;
+   const count=scenario.burst?burst:1,frameStepMs=scenario.stepMs??stepMs;let projectiles=false,muzzle=false,explosion=false;const observed=new Set(),burstFrames=[];let kitingPrevious=null,feelStart=null;
    for(let frame=0;frame<count;frame++){
     if(scenario.kiting)await page.evaluate(advanceKiting,{frame,stepMs:frameStepMs});
     else if(frame)await page.evaluate(ms=>window.__containmentDebug.step(ms),frameStepMs);
@@ -222,8 +223,7 @@ try{
     if(scenario.kiting){
      assert(evidence.visibleEnemies>=12,`${name}: only ${evidence.visibleEnemies} visible enemies while kiting`);
      assert(evidence.abilities.rig==='cryo'&&evidence.stats.abilityUses.dash>=1&&evidence.stats.abilityUses.tactical>=1,`${name}: missing live kiting rig receipts`);
-     if(!kitingStart)kitingStart={x:evidence.player.x,y:evidence.player.y};
-     if(frame>0)assert(Math.hypot(evidence.player.x-kitingStart.x,evidence.player.y-kitingStart.y)>1,`${name}: marine did not move`);
+     kitingPrevious=assertKitingMovement(kitingPrevious,evidence.player,name);
      projectiles||=evidence.playerBullets>0;muzzle||=evidence.muzzle>0;
     }
     if(scenario.combat){assert(evidence.visibleEnemies>=12,`${name}: only ${evidence.visibleEnemies} visible enemies`);projectiles||=evidence.playerBullets>0;muzzle||=evidence.muzzle>0;}
