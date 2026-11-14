@@ -2,6 +2,7 @@ import { Vector3, type Object3D } from 'three';
 import type { AbilityEvent, AbilityLinkSnapshot, DeployableSnapshot } from '../../../game/abilities/contract';
 import type { ElementKit } from '../ElementKit';
 import { ELEMENT_COLORS, UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
+import { MarineTimeEcho } from './MarineTimeEcho';
 
 const VIOLET = ELEMENT_COLORS.arc;
 const WHITE = 0xf2ecff;
@@ -13,7 +14,8 @@ type Discharge = { live: boolean; x: number; z: number; age: number; delay: numb
 type PylonState = { id: number; health: number; flash: number; seen: boolean };
 type Blink = { live: boolean; x: number; z: number; angle: number; age: number };
 type Bolt = { live: boolean; x: number; z: number; tx: number; tz: number; age: number };
-type Echo = { live: boolean; x: number; z: number; angle: number; age: number };
+type Echo = { live: boolean; x: number; z: number; angle: number; age: number; articulated: boolean; pose: Float32Array };
+type ShotEcho = { live: boolean; x: number; y: number; z: number; angle: number; age: number; dx: number; dz: number };
 type Front = { live: boolean; x: number; z: number; radius: number; age: number; life: number; reverse: boolean; time: boolean };
 
 /** Heavy violet-white discharges, grounded machinery and cool time-dilation language. */
@@ -23,7 +25,12 @@ class ArcPresentation implements AbilityPresentation {
   private blinks: Blink[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
   private bolts: Bolt[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, tx: 0, tz: 0, age: 0 }));
   private fronts: Front[] = Array.from({ length: 12 }, () => ({ live: false, x: 0, z: 0, radius: 1, age: 0, life: 1, reverse: false, time: false }));
-  private echoes: Echo[] = Array.from({ length: 2 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
+  private echoes: Echo[] = Array.from({ length: 2 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0, articulated: false, pose: MarineTimeEcho.pose() }));
+  private readonly marineEcho = new MarineTimeEcho();
+  private readonly shotEchoes: ShotEcho[] = Array.from({ length: 24 }, () => ({ live: false, x: 0, y: 0, z: 0, angle: 0, age: 0, dx: 0, dz: 0 }));
+  private nextShot = 0;
+  private shotsObserved = 0;
+  private shotBaseline = false;
   private nextEcho = 0;
   private echoAge = 0;
   private overclockAge = 0;
@@ -124,9 +131,10 @@ class ArcPresentation implements AbilityPresentation {
         k.burst(px, .65, pz, 'arc', 24, 3.2, .6);
         k.camera(.27);
       } else if (event.phase === 'end') {
-        k.ring(px, pz, 5.5, VIOLET, .65, true);
-        this.front(px, pz, 6, .65, true, true);
-        k.distort(px, pz, 5.5, -.0025, .65);
+        // A short reverse collapse ends the temporal state in one hard beat.
+        k.ring(px, pz, 5.5, VIOLET, .2, true);
+        this.front(px, pz, 6, .24, true, true);
+        k.distort(px, pz, 5.5, -.0025, .2);
         k.burst(px, .2, pz, 'arc', 12, 1.5, .4);
       }
     }
@@ -231,12 +239,18 @@ class ArcPresentation implements AbilityPresentation {
       }
     }
     if (frame.snapshot?.hostileTimeScale !== undefined && frame.snapshot.hostileTimeScale < 1) this.overclock(frame, emit);
-    else { this.overclockAge = 0; this.echoAge = 0; for (const echo of this.echoes) echo.live = false; }
+    else {
+      this.overclockAge = 0; this.echoAge = 0;
+      for (const echo of this.echoes) echo.live = false;
+      for (const shot of this.shotEchoes) shot.live = false;
+      this.shotsObserved = frame.game?.stats?.shotsFired ?? 0;
+      this.shotBaseline = true;
+    }
     k.impact();
   }
 
   private timeFront(f: Front, progress: number, fade: number): void {
-    this.timeRipple(f.x, f.z, f.radius * .7 * Math.max(.02, progress), fade * .1, f.reverse ? -.4 : .2);
+    this.timeRipple(f.x, f.z, f.radius * .7 * Math.max(.02, progress), fade * (f.reverse ? .25 : .18), f.reverse ? -.4 : .2);
   }
 
   private timeRipple(x: number, z: number, radius: number, opacity: number, phase: number): void {
@@ -398,9 +412,10 @@ class ArcPresentation implements AbilityPresentation {
       const count = starting ? 2 : 1;
       for (let i = 0; i < count; i++) {
         const index = this.nextEcho++ % this.echoes.length, echo = this.echoes[index];
-        const trail = index ? 1.25 : .85, side = index ? -.35 : .28;
+        const trail = index ? 2.15 : 1.05, side = index ? -.42 : .3;
         echo.live = true; echo.age = -frame.dt;
         echo.x = x - dx * trail - dz * side; echo.z = z - dz * trail + dx * side; echo.angle = angle;
+        echo.articulated = this.marineEcho.capture(echo.pose, frame.marine, x, z, mx, my, mz, angle);
       }
     }
     for (const echo of this.echoes) {
@@ -408,8 +423,11 @@ class ArcPresentation implements AbilityPresentation {
       echo.age += frame.dt;
       if (echo.age >= .35) { echo.live = false; continue; }
       k.sustain(this.overclockAge);
-      k.afterImage(echo.x, echo.z, echo.angle, WHITE, fade * (1 - echo.age / .35) * .7);
+      const opacity = fade * (1 - echo.age / .35) * .7;
+      if (echo.articulated) this.marineEcho.draw(k, echo.pose, echo.x, echo.z, opacity);
+      else k.afterImage(echo.x, echo.z, echo.angle, WHITE, opacity);
     }
+    this.firingEchoes(frame, mx, my, mz, angle, fade);
     k.sustain(this.overclockAge);
     const progress = k.reducedMotion ? .7 : (this.overclockAge * .65) % 1;
     this.timeRipple(x, z, 1.3 + progress * 2.2, fade * Math.sin(progress * Math.PI) * .12,
@@ -431,9 +449,9 @@ class ArcPresentation implements AbilityPresentation {
         // Two displaced scan impressions make slow motion legible without replacing
         // the actual enemy silhouette or changing its live rendering/material.
         const radius = Math.max(.2, Math.min(.7, (e.radius ?? 16) / UNIT));
-        k.sprite('scan', tx, .6, tz, radius, .5, VIOLET, fade * .14, e.id ?? n);
+        k.sprite('scan', tx, .6, tz, radius, .5, VIOLET, fade * .22, e.id ?? n);
         if (!k.low) k.sprite('scan', tx - e.velocityX / speed * .22, .6, tz - e.velocityY / speed * .22,
-          radius * .9, .48, WHITE, fade * .065, (e.id ?? n) + 3);
+          radius * .9, .48, WHITE, fade * .10, (e.id ?? n) + 3);
       }
       let friendly = 0, hostile = 0;
       for (const bullet of g.bullets) {
@@ -464,9 +482,52 @@ class ArcPresentation implements AbilityPresentation {
     }
   }
 
+  private firingEchoes(frame: AbilityFrame, x: number, y: number, z: number, angle: number, fade: number): void {
+    const g = frame.game!, k = this.kit, total = g.stats?.shotsFired;
+    // Run statistics are authoritative shot receipts, including projectiles that
+    // hit and retire before the renderer sees them. Never infer a shot from ammo
+    // (Overclock consumes none), elapsed time or a repeatedly observed bullet.
+    if (Number.isFinite(total)) {
+      if (this.shotBaseline && frame.dt > 0) {
+        const count = Math.min(this.shotEchoes.length, Math.max(0, total! - this.shotsObserved));
+        const speed = Math.hypot(g.player.vx, g.player.vy);
+        const dx = speed > 25 ? g.player.vx / speed : Math.cos(angle);
+        const dz = speed > 25 ? g.player.vy / speed : Math.sin(angle);
+        for (let i = 0; i < count; i++) {
+          const shot = this.shotEchoes[this.nextShot++ % this.shotEchoes.length];
+          shot.live = true; shot.x = x; shot.y = y; shot.z = z; shot.angle = angle;
+          shot.dx = dx; shot.dz = dz; shot.age = -frame.dt;
+        }
+      }
+      this.shotsObserved = total!; this.shotBaseline = true;
+    }
+    k.sustain(this.overclockAge);
+    for (const shot of this.shotEchoes) {
+      if (!shot.live) continue;
+      shot.age += frame.dt;
+      if (shot.age >= .36) { shot.live = false; continue; }
+      for (let i = 0; i < (k.low ? 1 : 2); i++) {
+        const delay = .045 + i * .085, age = shot.age - delay;
+        if (age < 0 || age >= .17) continue;
+        const trail = i ? 2.15 : 1.05, side = i ? -.42 : .3;
+        const sx = shot.x - shot.dx * trail - shot.dz * side;
+        const sz = shot.z - shot.dz * trail + shot.dx * side;
+        const c = Math.cos(shot.angle), s = Math.sin(shot.angle);
+        const travel = age * 13, opacity = fade * (1 - age / .17) * (i ? .44 : .66);
+        k.ribbon(sx + c * travel, shot.y, sz + s * travel,
+          sx + c * (travel + 1.5), shot.y, sz + s * (travel + 1.5),
+          i ? VIOLET : WHITE, k.low ? .025 : .035, opacity, false);
+        if (age < .065) k.sprite('impact', sx, shot.y, sz, .21, .21, WHITE,
+          opacity * (1 - age / .065), this.nextShot + i, 'light');
+      }
+    }
+  }
+
   clear(): void {
     for (const d of this.discharges) d.live = false;
     for (const echo of this.echoes) echo.live = false;
+    for (const shot of this.shotEchoes) shot.live = false;
+    this.marineEcho.clear(); this.nextShot = 0; this.shotsObserved = 0; this.shotBaseline = false;
     this.overclockAge = 0; this.echoAge = 0; this.muzzle = undefined;
     for (const b of this.blinks) b.live = false;
     for (const p of this.pylons) p.id = -1;
