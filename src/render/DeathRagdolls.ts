@@ -40,6 +40,9 @@ function fitSkin(root:T.Object3D,bones:T.Bone[]){
    if(fit){const point=new T.Vector3(),positions=o.geometry.getAttribute('position');for(let i=0;i<positions.count;i++){o.getVertexPosition(i,point).applyMatrix4(o.matrixWorld).sub(fit.origin).applyQuaternion(fit.inverseRotation);fit.bounds.expandByPoint(point);}}
    return;
   }
+  // Keep the Carrier's validated source proxies: its broad brood armor is
+  // visual support, and retirement still recovers the complete rendered bounds.
+  if(o.name==='carrier-identity')return;
   if(!(o instanceof T.SkinnedMesh))return;
   const positions=o.geometry.getAttribute('position'),indices=o.geometry.getAttribute('skinIndex'),weights=o.geometry.getAttribute('skinWeight');
   if(!positions||!indices||!weights)return;
@@ -51,6 +54,7 @@ function fitSkin(root:T.Object3D,bones:T.Bone[]){
    if(roles&&anatomy&&!identityRoleVisible(roles.getX(i),anatomy.identityElite.value,anatomy.identityChampion.value,anatomy.identityOpening.value,anatomy.identityDeath.value>.5))continue;
    if(weights.getComponent(i,slot)<=0)continue;
    const index=indices.getComponent(i,slot),fit=owners[index];if(!fit)continue;
+
    point.fromBufferAttribute(positions,i).applyMatrix4(transforms[index]).sub(fit.origin).applyQuaternion(fit.inverseRotation);fit.bounds.expandByPoint(point);
   }
  });
