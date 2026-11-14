@@ -102,33 +102,33 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
           vec2 edge=min(inspection,1.0-inspection)*vec2(2.9,1.25);
           deckJoint=roomFloorLine(min(edge.x,edge.y),.023);
           float stop=roomFloorLine(abs(mod(roomFloorP.y,5.0)-.25),.22);
-          diffuseColor.rgb*=1.0-stop*.75;
+          // Inspection stop paint belongs to actual checkpoint hardware.
         }else if(construction<3.5){
           float freightRow=floor(roomFloorP.y/2.3);
           vec2 freight=fract(vec2(roomFloorP.x/6.4+mod(freightRow,2.0)*.14,roomFloorP.y/2.3));
           vec2 edge=min(freight,1.0-freight)*vec2(6.4,2.3);
           deckJoint=roomFloorLine(min(edge.x,edge.y),.022);
           float rail=roomFloorLine(abs(mod(roomFloorP.x,6.4)-.34),.065);
-          diffuseColor.rgb*=1.0-rail*.32;
+          // Cargo restraints are authored at actual container positions.
         }else if(construction<4.5){
           vec2 access=fract(roomFloorP/vec2(1.45,2.9));
           vec2 edge=min(access,1.0-access)*vec2(1.45,2.9);
           deckJoint=roomFloorLine(min(edge.x,edge.y),.022);
           float socket=roomFloorLine(abs(edge.x-.14),.036)*roomFloorLine(abs(edge.y-.21),.09);
-          diffuseColor.rgb*=1.0-socket*.42;
+          // Access sockets are modeled beside their owning rack.
         }else if(construction<5.5){
           vec2 service=fract(roomFloorP/vec2(3.0,5.4));
           vec2 edge=min(service,1.0-service)*vec2(3.0,5.4);
           deckJoint=roomFloorLine(min(edge.x,edge.y),.020);
           float channel=1.0-smoothstep(.24,.31,abs(mod(roomFloorP.x,3.0)-1.5));
           float grate=roomFloorLine(abs(fract(roomFloorP.y*2.8)-.5),.12);
-          diffuseColor.rgb*=1.0-channel*(.45+grate*.25);
+          // Machine drains belong to actual service connections.
         }else if(construction<6.5){
           vec2 drain=fract(roomFloorP/vec2(4.8,1.6));
           vec2 edge=min(drain,1.0-drain)*vec2(4.8,1.6);
           deckJoint=roomFloorLine(min(edge.x,edge.y),.017);
           float gutter=1.0-smoothstep(.16,.23,abs(mod(roomFloorP.y,4.8)-2.4));
-          diffuseColor.rgb*=1.0-gutter*.25;
+          // Seepage is tied to roomFloorLeaks, never an arbitrary gutter.
         }else if(construction<7.5){
           float eaten=smoothstep(.36,.68,roomFloorNoise(roomFloorP*.20+vec2(12.0,4.0)));
           diffuseColor.rgb*=1.15-eaten*.70;
@@ -136,7 +136,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
           vec2 remnant=fract(roomFloorP/vec2(1.9,4.6));vec2 edge=min(remnant,1.0-remnant)*vec2(1.9,4.6);
           deckJoint=roomFloorLine(min(edge.x,edge.y),.024)*(1.0-eaten*.62);
           float trench=1.0-smoothstep(.22,.32,abs(mod(roomFloorP.x+roomFloorP.y*.07,7.6)-3.8));
-          diffuseColor.rgb*=1.0-trench*.75;
+          // Thin roots originate at actual machine seams.
           float scar=roomFloorLine(abs(roomFloorNoise(roomFloorP*vec2(.15,1.1))-.53),.022)*eaten;
           diffuseColor.rgb*=1.0-scar*.14;
         }else if(construction<8.5){
@@ -145,13 +145,13 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
           float chamfer=abs(abs(cell.x)+abs(cell.y)-1.72)*1.48;
           deckJoint=max(roomFloorLine(min(edge.x,edge.y),.016),roomFloorLine(chamfer,.017));
           diffuseColor.rgb*=.96+roomFloorLine(min(edge.x,edge.y),.075)*.025;
-          float gasket=roomFloorLine(min(edge.x,edge.y),.10);diffuseColor.rgb*=1.0-gasket*.62;
+          float gasket=roomFloorLine(min(edge.x,edge.y),.10);// No nested bright/dark court border around every floor panel.
         }else{
           float chevron=roomFloorP.y+abs(mod(roomFloorP.x,8.0)-4.0)*.38;
           float seam=abs(fract(chevron/1.6)-.5)*1.6;
           deckJoint=roomFloorLine(seam,.021);
           float expansion=roomFloorLine(abs(mod(roomFloorP.x,8.0)-.32),.27);
-          diffuseColor.rgb*=1.0-expansion*.75;
+          // Reactor expansion detail is authored around its core.
         }
         diffuseColor.rgb*=1.0-deckJoint*.19;
         float deckWear=roomFloorLine(min(deckEdge.x,deckEdge.y),.032)-deckJoint;
@@ -182,7 +182,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
           diffuseColor.rgb*=1.0-(deckScrape-.12)*.18;
         }else if(deckIdentity<4.5){
           float access=roomFloorLine(abs(fract(roomFloorP.x/2.2)-.5),.006)*roomFloorLine(abs(fract(roomFloorP.y/2.2)-.5),.035);
-          diffuseColor.rgb*=1.0-access*.2;
+          // Removed the repeated socket grid from the quiet aisle.
         }else if(deckIdentity<5.5){
           vec2 grateUV=fract(roomFloorP*vec2(1.35,8.0));
           float grate=smoothstep(.18,.23,grateUV.x)*(1.0-smoothstep(.77,.82,grateUV.x))*smoothstep(.2,.28,grateUV.y)*(1.0-smoothstep(.64,.72,grateUV.y));
@@ -203,7 +203,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         float roomFloorPolish=smoothstep(0.28,0.82,roomFloorMacro)*(1.0-roomFloorStain*0.25);
         roughnessFactor=clamp(roughnessFactor-roomFloorPolish*0.12-roomFloorScuff*0.025+roomFloorStain*0.06-roomFloorWet*0.27-(deckScrape-.12)*.06+(deckSilt-.58)*.06+deckGrain*.008,mix(0.64,0.28,roomFloorWet),1.0);`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v11:${genericDeck ? 'plates' : 'authored'}`;
+    material.customProgramCacheKey = () => `${previousKey}:room-floor-macro-v12-equipment-context:${genericDeck ? 'plates' : 'authored'}`;
     material.needsUpdate = true;
   }
   if(practicalShapes)uniforms.practicals.value=practicalShapes;

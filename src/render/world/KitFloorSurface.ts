@@ -10,7 +10,7 @@ type Mark={x:number;z:number;kind:string};
 export type KitFloorProof={idea:string;coverage:number;triangles:number;features:Record<string,number>;views:{x:number;z:number;features:string[]}[];maxHeight:number;aftermath:FloorAftermathProof;architecture:DeckArchitectureProof};
 /** Floor-only albedo calibration after the saved all20 density value audit. */
 export const KIT_FLOOR_VALUE_GAIN:Readonly<Record<string,number>>={
- 'awakening-bay':.60,'passenger-vault':.40,'transmission-chamber':.64,
+ 'awakening-bay':.48,'passenger-vault':.40,'transmission-chamber':.64,
  'crew-checkpoint':.48,'armory':.68,'breached-loading-bay':.60,
  'shielding-gate':.38,'overload-floor':.78,
  'manual-control-chamber':.64,'diagnostic-gallery':.80,
