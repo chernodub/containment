@@ -28,17 +28,20 @@ test('retires room-owned grain and canvas sign through actual flatten/bake/dispo
    const meshes:any[]=[];root.traverse((o:any)=>{if(o.isMesh)meshes.push(o);});
    const materials=[...new Set<any>(meshes.map(o=>o.material))],textures=[...new Set<any>(materials.map(m=>m.map).filter(Boolean))];
    const sources=meshes.map(o=>o.geometry),counts=new Map<any,number>();
+   const panel=materials.find(m=>m.name==='shaft-floor-panel'),steel=materials.find(m=>m.name==='shaft-steel');
+   const panelOwners=meshes.filter(o=>o.material===panel);
+   const floorOnlyOwner=!!panel&&panel!==steel&&panelOwners.length>0&&panelOwners.every(o=>o.parent?.name==='deck-finish'&&Math.abs(o.position.y*32-.08)<1e-8);
    const observe=(o:any)=>{counts.set(o,0);o.addEventListener('dispose',()=>counts.set(o,counts.get(o)!+1));};
    [...materials,...textures,...sources].forEach(observe);
    appendEnvironment(world,root);DepthRenderer.prototype.bakeWorld.call({world,floorMaterial:null});
    const baked=world.children.map((o:any)=>o.geometry);baked.forEach(observe);
-   const before={sourceOnce:sources.every(o=>counts.get(o)===1),texturesLive:textures.every(o=>counts.get(o)===0)};
+   const before={sourceOnce:sources.every(o=>counts.get(o)===1),texturesLive:textures.every(o=>counts.get(o)===0),floorOnlyOwner,authoredMaterials:materials.filter(m=>!m.map?.isCanvasTexture).length};
    disposeModel(world);
    visits.push({...before,buckets:baked.length,textureKinds:textures.map(t=>t.isCanvasTexture?'canvas':t.isDataTexture?'data':'other').sort(),allOnce:[...materials,...textures,...sources,...baked].every(o=>counts.get(o)===1)});
   }
   MAT.steel.removeEventListener('dispose',shared);return {visits,sharedDisposals};
  });
  expect(errors).toEqual([]);expect(result.sharedDisposals).toBe(0);expect(result.visits).toHaveLength(3);
- for(const visit of result.visits){expect(visit).toMatchObject({sourceOnce:true,texturesLive:true,allOnce:true,textureKinds:['canvas','data']});expect(visit.buckets).toBe(8);}
+ for(const visit of result.visits){expect(visit).toMatchObject({sourceOnce:true,texturesLive:true,allOnce:true,floorOnlyOwner:true,authoredMaterials:8,textureKinds:['canvas','data']});expect(visit.buckets).toBe(9);}
  await page.close();
 },30000);

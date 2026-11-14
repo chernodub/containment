@@ -24,7 +24,7 @@ describe('E6 room value hierarchy',()=>{
   ['service-shaft-landing','maintenance'],['containment-annulus','containment'],
  ] as const)('%s recalibrates only floor albedo without compounding room preparation', (room,environment)=>{
   const world=new T.Group(),geometry=new T.PlaneGeometry(2,2);
-  const decks=['painted-steel-deck','annulus-deck','annulus-circulation','environment-floor','shaft-deck'].map(name=>new T.MeshStandardMaterial({name,color:0x354247,roughness:.92,metalness:.06}));
+  const decks=['painted-steel-deck','annulus-deck','annulus-circulation','environment-floor','shaft-deck','shaft-floor-panel'].map(name=>new T.MeshStandardMaterial({name,color:0x354247,roughness:.92,metalness:.06}));
   const semantics=['marine-suit','enemy-family','hostile-warning','navigation-safe','e6-kit-body'].map(name=>new T.MeshStandardMaterial({name,color:0x93634f}));
   const dressing=new T.MeshStandardMaterial({name:'e6-kit-floor',color:0x63777f});dressing.userData.floorDressing=true;
   const all=[...decks,...semantics,dressing],untouched=[...semantics,dressing].map(material=>material.color.clone());

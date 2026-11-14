@@ -9,11 +9,30 @@ import {disposeModel} from '../../src/render/meshParts';
 import {DepthGame} from '../../src/DepthGame';
 import {FacilityNavigation} from '../../src/game/world/FacilityNavigation';
 import {generateRun} from '../../src/game/roguelike/run';
+import {applyRoomMood} from '../../src/render/lighting/applyRoomMood';
 const template=ROOM_TEMPLATES['service-shaft-landing'];
 const points=[[340,240],[900,240],[900,540],[1200,540],[1200,640],[340,640]].map(([x,y])=>({x,y}));
 const geometry=createExpeditionGeometry({id:'shaft-test',templateId:'service-shaft-landing'} as any);
 function bake(root:T.Group){const world=new T.Group();appendEnvironment(world,root);const r=Object.create(DepthRenderer.prototype) as any;r.world=world;r.floorMaterial=new T.MeshStandardMaterial();r.bakeWorld();r.floorMaterial.dispose();world.updateMatrixWorld(true);return world;}
 describe('Room14 accepted C balcony rough placement',()=>{
+ it('owns one floor-only cassette finish with the unchanged steel shader and normal disposal',()=>{
+  const root=serviceShaftLanding(template),materials=new Set<T.MeshStandardMaterial>();
+  root.traverse(object=>{if(object instanceof T.Mesh)materials.add(object.material as T.MeshStandardMaterial);});
+  expect(materials.size).toBeLessThanOrEqual(8);
+  const steel=[...materials].find(material=>material.name==='shaft-steel')!,floor=[...materials].find(material=>material.name==='shaft-floor-panel')!;
+  expect(floor).toBeDefined();expect(floor).not.toBe(steel);expect(floor.userData.actorMaterial).toBe(true);
+  expect(floor.color.equals(steel.color)).toBe(true);expect(floor.roughness).toBe(steel.roughness);expect(floor.metalness).toBe(steel.metalness);expect(floor.map).toBe(steel.map);
+  expect(floor.onBeforeCompile).toBe(steel.onBeforeCompile);expect(floor.customProgramCacheKey()).toBe(steel.customProgramCacheKey());
+  const compile=(material:T.MeshStandardMaterial)=>{const shader={uniforms:{},vertexShader:T.ShaderLib.standard.vertexShader,fragmentShader:T.ShaderLib.standard.fragmentShader};material.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);return shader;};
+  expect(compile(floor)).toEqual(compile(steel));
+  const finish=root.getObjectByName('deck-finish')!;let bases=0;
+  root.traverse(object=>{if(!(object instanceof T.Mesh))return;if(object.material===floor){expect(object.parent).toBe(finish);expect(object.position.y*32).toBeCloseTo(.08);expect((object.geometry as T.BoxGeometry).parameters.height*32).toBeCloseTo(.16);bases++;}});
+  expect(bases).toBeGreaterThan(0);
+  finish.children.filter(object=>object instanceof T.Mesh&&Math.abs(object.position.y*32-.08)<1e-9).forEach(object=>expect((object as T.Mesh).material).toBe(floor));
+  const hardware=steel.color.clone();applyRoomMood(root,'maintenance','service-shaft-landing');expect(steel.color.equals(hardware)).toBe(true);expect(floor.color.r).toBeGreaterThan(hardware.r);
+  const calibrated=floor.color.clone();for(let n=0;n<4;n++)applyRoomMood(root,'maintenance','service-shaft-landing');expect(floor.color.equals(calibrated)).toBe(true);expect(steel.color.equals(hardware)).toBe(true);
+  let retired=0;floor.addEventListener('dispose',()=>retired++);disposeModel(root);expect(retired).toBe(1);
+ });
  it('exposes a rear truss above the deck without moving it onto the route',()=>{
   const root=serviceShaftLanding(template);root.updateMatrixWorld(true);
   const rear=root.getObjectByName('rear-truss');expect(rear).toBeTruthy();

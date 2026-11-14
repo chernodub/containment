@@ -21,6 +21,10 @@ export function serviceShaftLanding(t:RoomTemplate):T.Group{
     diffuseColor.rgb*=.93+brushed*.035+weldWear*.035;`);
   };m.customProgramCacheKey=()=> 'g2-shaft-manufactured-v1';
  }
+ // One room-owned floor surface shares the authored steel finish, while its
+ // albedo can be calibrated without recoloring the shaft's raised hardware.
+ const floorPanel=steel.clone();floorPanel.name='shaft-floor-panel';
+ floorPanel.onBeforeCompile=steel.onBeforeCompile;floorPanel.customProgramCacheKey=steel.customProgramCacheKey;
  const grate=material('worn-grate',0x687c83,.5);grate.roughness=.84;
  // Low-contrast rolled-metal grain, generated locally with no borrowed assets.
  const pixels=new Uint8Array(64*64*4);
@@ -168,7 +172,7 @@ export function serviceShaftLanding(t:RoomTemplate):T.Group{
  // Three runs trace the connected C, with separate short exit-side panels.
  const finish=group('deck-finish');
  const panel=(x:number,z:number,w:number,d:number)=>{
-  box(finish,x,.08,z,w,.16,d,steel);
+  box(finish,x,.08,z,w,.16,d,floorPanel);
   for(const dz of [-d/2+3,d/2-3])box(finish,x,.19,z+dz,w-6,.12,1.4,grate);
   for(const dx of [-w/2+3,w/2-3])box(finish,x+dx,.19,z,1.4,.12,d-6,grate);
   // Dark slots with a worn zinc lip read as grating without opening the floor.
