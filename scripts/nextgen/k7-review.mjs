@@ -247,7 +247,7 @@ if(route){
   await save('k7-route-ab.png',board);
 }
 
-const queenSelectors=[s=>s.scenario==='boss',s=>/queen-opening/.test(s.scenario),s=>/queen-exposed/.test(s.scenario),s=>/queen-closing/.test(s.scenario)];
+const queenSelectors=[s=>s.scenario==='boss',s=>s.scenario==='x2-queen-opening-high',s=>s.scenario==='g2-queen-exposed',s=>s.scenario==='x2-queen-closing-high'];
 function queenCrop(shot,image){
   const owner=masks(shot)?.actors.find(a=>a.name==='queen'&&bounds(a)),b=owner?bounds(owner):shot.evidence.queenBounds;
   if(b){

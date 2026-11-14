@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 const sourceRoot=resolve(process.argv[2]??'tools/assets-src/k7-quaternius-monsters');
-const candidate=resolve(process.argv[3]??'artifacts/nextgen/k7-standard/route-a2-dist');
+const candidate=resolve(process.argv[3]??'artifacts/nextgen/k7-standard/route-a-final-dist');
 const out=resolve(process.argv[4]??'artifacts/nextgen/k7-standard/provenance');
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const files={};

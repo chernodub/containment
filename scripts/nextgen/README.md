@@ -817,3 +817,11 @@ Prepared reductions are not actual-open evidence; strict review bridges require
 both native and exact480 SHA matches to an actual witness, with both old/new byte
 streams rehashed. See `docs/nextgen/I10-REPORT.md` for the frozen cohort, gate-pin
 qualification, adverse-load miss and retained art/framing gaps.
+
+## K7 creature and character review
+
+`k7-standard-{breacher,cryo,pyro,arc}:<room>` uses the existing legal Brute/Spitter/marine fixture and production camera. `k7-windup-brute` and `k7-windup-spitter` wait for real native warnings and record remaining milliseconds plus physical anticipation progress; they do not set cooldowns or attack state. `k7-frozen-families` / `k7-burning-families` are explicitly presentation-only palette fixtures. `k7-queen-armored-study` / `k7-queen-exposed-study` show unlit grayscale anatomy masses with the retained source skin hidden only for that study. Normal boss/opening/exposed/closing captures remain authoritative for the full design.
+
+`node scripts/nextgen/k7-review.mjs --root=artifacts/nextgen/k7-final --before=artifacts/nextgen/k7-before --route-a=artifacts/nextgen/k7-route-a-final` makes native actor motion strips, exact-area480 frames, geometry-owner black silhouettes, before/final rig/family and Queen/crowd boards, and a source/output hash receipt without launching a browser. Native tile dimensions grow to fit actual masks; actors are never resized to fit a comparison cell. Queen studies are excluded from the production phase board.
+
+`k7-merge-evidence.mjs <destination> <source>` merges only successful complete capture scenarios with matching application assets, viewport, seed and frozen-source identity, retaining exact parent manifests and source hashes. Candidate conversion/audit tools live under `tools/assets/k7-actors/`; the rejected CC0 candidate remains review-only. See `docs/nextgen/plans/K7-provenance.md`.

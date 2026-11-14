@@ -20,7 +20,7 @@ Audit result: **PASS**, review output 624,456 bytes, new shipped actor asset byt
 ## File-only review tooling
 
 ```sh
-node scripts/nextgen/k7-review.mjs --root=artifacts/nextgen/k7-final --before=artifacts/nextgen/k7-before --route-a=artifacts/nextgen/k7-route-a2
+node scripts/nextgen/k7-review.mjs --root=artifacts/nextgen/k7-final --before=artifacts/nextgen/k7-before --route-a=artifacts/nextgen/k7-route-a-final
 ```
 
 The script does not launch a browser or alter capture manifests. It writes exact-area 480×270 reductions, native actor motion strips, actual-owner black masks, a standard contact sheet, family/rank and four-rig silhouettes, before/final family crops, A/B route board, Queen phases and three-room crowd comparisons. Missing views are explicit in `review/k7-review-receipt.json`; every native source and generated PNG has a SHA-256 entry.
@@ -29,7 +29,7 @@ All native crops and owner tiles copy pixels 1:1. A silhouette sheet may become 
 
 Owner masks contain actual visible rendered pixels and therefore retain body/world occlusion. They are not proof of unoccluded anatomy or blind recognition rates. Before/final poses and framing can differ; the comparisons preserve pixel scale and are art evidence, not controlled hardware timings.
 
-The frozen before gallery now also contains the native Pyro/Arc standard: `node scripts/nextgen/k7-merge-evidence.mjs artifacts/nextgen/k7-before artifacts/nextgen/k7-before-rigs` passed with 8 complete frames +2 sprites added, 64 frames total. The merger rejects any error/failure/fatal run, incomplete phase sheet, changed application assets, viewport, DPR, seed or frozen distribution. It preserves `manifest-initial.json` and the exact source manifest, then records source/retained file hashes. An idempotent rerun rehashed all10 merged files. Raw `k7-before-rigs` remains untouched.
+The frozen before gallery now also contains the native Pyro/Arc standard: `node scripts/nextgen/k7-merge-evidence.mjs artifacts/nextgen/k7-before artifacts/nextgen/k7-before-rigs` passed with 8 complete frames +2 sprites added, 64 frames total. The merger rejects any error/failure/fatal run, incomplete phase sheet, changed application assets, viewport, DPR, seed or frozen distribution. It preserves `manifest-initial.json` and the exact source manifest, then records source/retained file hashes. An idempotent rerun rehashed all10 merged files. Its exact source manifest and merged-file hashes remain; duplicate successful PNGs are compacted after final review.
 
 The merged before review reports **64 native sources,181 outputs,zero missing views**. All four marine rigs are present. Before/final family and rig comparisons use their actual owner pixels, without substituting another rig for missing coverage.
 
@@ -38,3 +38,5 @@ Three successful standard rounds are compacted into `artifacts/nextgen/k7-standa
 The propagation review's taller Carrier exposed a fixed250px comparison tile. The file-only tool now derives native tile width/height from actual owner masks in every comparison layout, and Queen phase crops preserve the entire available viewport-visible body area. No native actor is resized to fit. A frame's off-viewport anatomy remains unavailable and is recorded as such.
 
 Recheck: `k7-propagation` **85 sources,254 outputs,zero missing views**. The Queen-only flat study has8 sources/32 outputs; its9 missing family/rig views are expected because it is a boss-only fixture. `propagation-native480-contact.png` and `queen-study-native480-contact.png` live under `artifacts/nextgen/k7-standard/`, with exact retained manifest copies and85/8 native source hashes plus owner-mask hashes in `retained-contact-receipt.json`. The candidate audit was rerun and passes.
+
+Final fair A/B was refreshed on `c06b175` as `k7-route-a-final`, after the duplicate Brute-height fix and warning-timing correction. The candidate conversion hash is unchanged. The final retained A/B board is copied from the final review and links both final-app manifests, source hashes and the refreshed candidate audit. Successful intermediate PNGs are now removed under the user’s disk policy; `compaction-receipt.json` records1,501 removed files (1,444,307,601bytes). Only before/final complete successful galleries remain. The semantically invalid first A run retains all76 raw/review PNGs.
