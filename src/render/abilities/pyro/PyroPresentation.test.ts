@@ -251,7 +251,7 @@ describe('Pyro presentation lifecycle and readability', () => {
     frame.snapshot = snapshot([zone({ ability: 'meltdown', radius: 130, attached: true })]);
     frame.game = { player: { x: 128, y: 160, vx: 0, vy: 100, angle: 0 }, bullets: [] } as never;
     step(.7);
-    expect(distort).toHaveBeenCalledExactlyOnceWith(4, 5 - .65, .7, .0022, .55, true);
+    expect(distort).toHaveBeenCalledExactlyOnceWith(4, 5 - .40, 1.05, .0028, .45, true);
     step(0); expect(distort).toHaveBeenCalledTimes(1);
     dispose();
   });
@@ -285,6 +285,16 @@ describe('Pyro presentation lifecycle and readability', () => {
     frame.snapshot = snapshot(); frame.game = undefined; step(2);
     expect(kit.batches.decal.mesh.count).toBe(0);
     fx.clear(); dispose();
+  });
+
+  it('finishes the inferno with pooled cold vent steam while burning prints expire independently',()=>{
+    const {kit,fx,step,dispose}=setup();
+    fx.event(event({ability:'meltdown',slot:'overdrive',phase:'end'}),128,160);
+    step(.15);expect(kit.batches.smoke.mesh.count).toBeGreaterThan(0);
+    const phase=kit.batches.smoke.mesh.geometry.getAttribute('abilityPhase');
+    expect(Array.from(phase.array).slice(0,kit.batches.smoke.mesh.count).some(p=>p>=64)).toBe(true);
+    const held=kit.batches.smoke.mesh.instanceMatrix.array.slice();step(0);expect(kit.batches.smoke.mesh.instanceMatrix.array).toEqual(held);
+    step(2);expect(kit.batches.smoke.mesh.count).toBe(0);dispose();
   });
 
   it('marks sustained fuel for priority masking after the impact grace and resets shared state', () => {

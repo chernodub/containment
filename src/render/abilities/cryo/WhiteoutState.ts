@@ -27,6 +27,7 @@ void main(){
  float snow=0.;
  if(detail>.5)snow=pow(max(0.,sin(u*73.-stormTime*21.+floor(local.y*13.)*2.4)),12.)
   *pow(max(0.,sin(local.y*49.+u*4.-stormTime*7.)),5.);
+ else snow=step(.95,fract(u*31.-stormTime*8.+floor(local.y*9.)*.17))*step(.65,fract(local.y*13.+u*.8))*.6;
  float leading=pow(crest,5.);
  float edge=(1.-smoothstep(.018,.055,abs(local.y-(.56+sin(u*3.-stormTime*1.4)*.13))))*leading;
  float a=(body*(.25+current*.24)+snow*.82*detail+edge*.53)*storm.w;
@@ -49,7 +50,7 @@ void main(){
  float branch=pow(max(0.,1.-abs(sin(angle*19.+sin(r*27.)*.32))),18.);
  float twig=0.;if(detail>.5)twig=pow(max(0.,1.-abs(sin(angle*41.-r*35.))),24.)*branch;
  float deposit=.5+.25*sin(p.x*13.+sin(p.y*9.))+.25*sin(p.y*11.-p.x*5.);
- float field=.07+smoothstep(.28,.36,deposit)*.06+smoothstep(.70,.78,deposit)*.05;
+ float field=.025+smoothstep(.56,.60,deposit)*.08;
  float frost=field+branch*.09+twig*.12;
  float pulseAge=mod(stormAge,2.);float front=.245+.75*min(1.,pulseAge/.38);
  float pulse=(1.-smoothstep(.004,.014,abs(r-front)))*(1.-smoothstep(.25,.38,pulseAge));

@@ -252,7 +252,7 @@ class CryoPresentation implements AbilityPresentation {
     for (let i = 0; i < wisps; i++) {
       const seed = i * 2.731 + zone.id * .73;
       const a = i * TAU / wisps + time * .48;
-      const r = radius * .87, width = Math.min(.48, radius * .045);
+      const r = radius * (i % 4 === 0 ? .46 : .87), width = Math.min(.48, radius * .045);
       k.sprite('snow', x + Math.cos(a) * r, .65 + (i % 3) * .14, z + Math.sin(a) * r,
         width, .32, CORE, fade * .72, seed, 'billboard', 0, -.72);
     }
@@ -261,7 +261,7 @@ class CryoPresentation implements AbilityPresentation {
     for (let i = 0; i < strokes; i++) {
       const seed = i * 2.731 + zone.id, variation = authoredVariation(seed, 3);
       const a = i * TAU / strokes + time * .24 + variation * .21;
-      const r = radius * (.84 + variation * .045), halfWidth = Math.min(.17, radius * .025);
+      const r = radius * (i % 3 === 0 ? .52 : .84 + variation * .045), halfWidth = Math.min(.17, radius * .025);
       const halfLength = Math.min(radius * (.14 + variation * .08), Math.sqrt(Math.max(.001, radius * radius - (r + halfWidth) ** 2)) * .85);
       k.gust(x + Math.cos(a) * r, z + Math.sin(a) * r, halfLength * 2, halfWidth * 2,
         a + Math.PI / 2, seed, fade * (.33 + variation * .13) * groundYield);
@@ -292,24 +292,33 @@ class CryoPresentation implements AbilityPresentation {
   }
 
   private frostRims(zone: AbilityZoneSnapshot, frame: AbilityFrame, fade: number): void {
-    const blockers = frame.game?.geometry?.blockers;
-    if (!blockers) return;
-    const k = this.kit, radius = zone.radius / UNIT;
-    const creep = Math.min(1, (zone.durationMs - zone.remainingMs) / 2400);
-    let count = 0;
-    // The actual authored blocker skirts receive small creeping deposits. No
-    // invented prop height, material mutation or added collision participates.
-    for (const rect of blockers) {
-      for (let corner = 0; corner < 4; corner++) {
-        const x = (rect.x + (corner % 2) * rect.width) / UNIT;
-        const z = (rect.y + Math.floor(corner / 2) * rect.height) / UNIT;
-        const w = .16 + creep * .24, h = .12 + creep * .14;
-        if (Math.hypot(x - zone.x / UNIT, z - zone.y / UNIT) + Math.hypot(w, h) >= radius) continue;
-        k.sprite('frost', x, .032, z, w, h, CORE, fade * .55,
-          corner + rect.x * .13, 'ground', 0, corner * Math.PI / 2);
-        if (++count >= (k.low ? 4 : 8)) return;
+    const geometry=frame.game?.geometry;
+    if(!geometry)return;
+    const k=this.kit,radius=zone.radius/UNIT,creep=Math.min(1,(zone.durationMs-zone.remainingMs)/2400);
+    const width=.16+creep*.24,height=.12+creep*.14;
+    let count=0;
+    // Authored machinery may be a blocker or an occupied deck void. Frost only
+    // their actual skirts/edges; never modify source prop materials or colliders.
+    for(const rect of geometry.blockers){
+      if(geometry.boundaryWalls?.includes(rect))continue;
+      for(let corner=0;corner<4;corner++){
+        const x=(rect.x+(corner%2)*rect.width)/UNIT,z=(rect.y+Math.floor(corner/2)*rect.height)/UNIT;
+        if(Math.hypot(x-zone.x/UNIT,z-zone.y/UNIT)+Math.hypot(width,height)>=radius)continue;
+        this.frostEdge(x,z,width,height,corner*Math.PI/2,fade,corner+rect.x*.13);
+        if(++count>=(k.low?2:4))return;
       }
     }
+    if(geometry.voids)for(const polygon of geometry.voids)for(let i=0;i<polygon.length;i++){
+      const a=polygon[i],b=polygon[(i+1)%polygon.length],x=(a.x+b.x)/UNIT/2,z=(a.y+b.y)/UNIT/2;
+      if(Math.hypot(x-zone.x/UNIT,z-zone.y/UNIT)+Math.hypot(width,height)>=radius)continue;
+      this.frostEdge(x,z,width,height,-Math.atan2(b.y-a.y,b.x-a.x),fade,i+a.x*.13);
+      if(++count>=(k.low?2:4))return;
+    }
+  }
+
+  private frostEdge(x:number,z:number,width:number,height:number,angle:number,fade:number,seed:number):void{
+    this.kit.sprite('frost',x,.032,z,width,height,CORE,fade*.55,seed,'ground',0,angle);
+    this.kit.sprite('frost',x,.18,z,width*.85,.14,ICE,fade*.65,seed,'vertical',angle,0);
   }
 
   private glacier(wall: DeployableSnapshot, dt: number): void {

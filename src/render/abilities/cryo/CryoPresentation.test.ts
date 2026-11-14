@@ -245,8 +245,9 @@ describe('Cryo signatures', () => {
       expect(c[7]).toBeLessThanOrEqual(1);expect(c[9]).toBe('billboard');
     }
     const deposits=kit.sprite.mock.calls.filter(c=>c[0]==='frost');
-    expect(deposits).toHaveLength(4);
-    for(const c of deposits){expect(c[9]).toBe('ground');expect(Math.hypot(c[1]-10,c[3]-10)+Math.hypot(c[4],c[5])).toBeLessThan(300/32);}
+    expect(deposits).toHaveLength(8);
+    expect(deposits.filter(c=>c[9]==='ground')).toHaveLength(4);expect(deposits.filter(c=>c[9]==='vertical')).toHaveLength(4);
+    for(const c of deposits){expect(Math.hypot(c[1]-10,c[3]-10)+Math.hypot(c[4],c[5])).toBeLessThan(300/32);}
     const gusts=kit.gust.mock.calls;expect(gusts).toHaveLength(6);
     let area=0;
     for(const c of gusts){
@@ -345,7 +346,7 @@ describe('Cryo signatures', () => {
     expect(target.map(c => c[8])).not.toContain(7);
     expect(target.map(c => c[8])).not.toContain(8);
     const fresh = kit.sprite.mock.calls.filter(c => c[0] === 'frost');
-    expect(fresh).toHaveLength(4);
+    expect(fresh).toHaveLength(low?4:8);
     kit.sprite.mockClear();
     f.snapshot = snapshot({ zones: [zone({ remainingMs: 5000 })] });
     fx.update(f);
@@ -353,7 +354,8 @@ describe('Cryo signatures', () => {
     expect(settled).toHaveLength(fresh.length);
     for (let i = 0; i < fresh.length; i++) {
       expect(settled[i][4]).toBeGreaterThan(fresh[i][4]);
-      expect(settled[i][5]).toBeGreaterThan(fresh[i][5]);
+      if(fresh[i][9]==='ground')expect(settled[i][5]).toBeGreaterThan(fresh[i][5]);
+      else expect(settled[i][5]).toBe(.14);
       expect(settled[i].slice(1, 4)).toEqual(fresh[i].slice(1, 4));
     }
     // Perimeter + target vapor + deposits leave room in the 64-decal pool.

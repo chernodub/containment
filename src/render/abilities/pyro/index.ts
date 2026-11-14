@@ -17,7 +17,7 @@ type Footprint = { live: boolean; x: number; z: number; angle: number; age: numb
 type Transient = {
   live: boolean;
   lightId: number;
-  kind: 'cone' | 'lob' | 'exhaust' | 'ignition';
+  kind: 'cone' | 'lob' | 'exhaust' | 'ignition' | 'cooling';
   age: number;
   life: number;
   x: number;
@@ -43,6 +43,7 @@ class PyroPresentation implements AbilityPresentation {
   private printCursor = 0;
   private printClock = 0;
   private disposed = false;
+  private suitAngle = 0;
   private muzzle?: Object3D;
   private readonly source = new Vector3();
   private suit?: Object3D;
@@ -131,6 +132,7 @@ class PyroPresentation implements AbilityPresentation {
         kit.distort(x, z, radius, .004, .6, true);
         if (event.phase === 'impact') { kit.ring(x, z, radius, CORE, .38); kit.camera(.34); kit.exposureFlash(.2); }
       } else if (event.phase === 'end') {
+        const cooling=this.acquire('cooling',x,z,.65);cooling.angle=this.suitAngle;
         kit.ring(x, z, .9, HOT, .35, true);
         kit.burst(x, .2, z, 'pyro', 12, .8, .7);
         for (let i = 0; i < (kit.low ? 2 : 5); i++) kit.mote('smoke', x + Math.cos(i * 2.4) * .4, .5, z + Math.sin(i * 2.4) * .4, 0, .55, 0, .5, 1.3, SOOT);
@@ -148,7 +150,7 @@ class PyroPresentation implements AbilityPresentation {
     const kit = this.kit, dt = Math.max(0, frame.dt);
     this.emission += dt; this.shimmer += dt;
     const emit = dt > 0 && this.emission >= (kit.low ? .15 : .065);
-    const shimmer = dt > 0 && this.shimmer >= .65;
+    const shimmer = dt > 0 && this.shimmer >= .32;
     if (emit) this.emission = 0;
     if (shimmer) this.shimmer = 0;
     for (const p of this.effects) {
@@ -158,6 +160,7 @@ class PyroPresentation implements AbilityPresentation {
       if (p.kind === 'cone') this.cone(p, emit, frame);
       else if (p.kind === 'lob') this.lob(p, emit);
       else if (p.kind === 'exhaust') this.exhaust(p, frame, emit);
+      else if (p.kind === 'cooling') this.cooling(p);
       else this.ignition(p);
     }
     if (frame.snapshot?.rig === 'pyro' && frame.snapshot.overdrive.active && frame.game) {
@@ -330,6 +333,16 @@ class PyroPresentation implements AbilityPresentation {
     }
   }
 
+  private cooling(p: Transient): void {
+    const kit=this.kit,t=p.age/p.life,c=Math.cos(p.angle),s=Math.sin(p.angle);
+    kit.sustain(p.age+.4);
+    for(let i=0;i<(kit.low?1:3);i++){
+      const side=i-1;
+      kit.draw('smoke',p.x-c*.3-s*side*.3,.9+t*.85,p.z-s*.3+c*side*.3,
+        .23+t*.15,.30+t*.14,1,0xa1cad7,(1-t)*.38,0,0,64+i*17);
+    }
+  }
+
   private fireStrip(zone: AbilityZoneSnapshot, emit: boolean): void {
     const kit = this.kit, x = zone.x / UNIT, z = zone.y / UNIT, ex = zone.x2 / UNIT, ez = zone.y2 / UNIT;
     const angle = Math.atan2(ez - z, ex - x), radius = zone.width / UNIT * .5;
@@ -364,7 +377,7 @@ class PyroPresentation implements AbilityPresentation {
         const player = frame.game?.player;
         const angle = player && Math.hypot(player.vx, player.vy) > 18
           ? Math.atan2(player.vy, player.vx) : player?.angle ?? 0;
-        kit.distort(x - Math.cos(angle) * .65, z - Math.sin(angle) * .65, .7, .0022 * fade, .55, true);
+        kit.distort(x - Math.cos(angle) * .40, z - Math.sin(angle) * .40, 1.05, .0028 * fade, .45, true);
       }
       return;
     }
@@ -399,6 +412,7 @@ class PyroPresentation implements AbilityPresentation {
     const exhaustAngle = moving ? Math.atan2(-move.vy, -move.vx) : angle + Math.PI;
     const pulse = kit.reducedMotion ? 1 : .88 + Math.sin(kit.time * 8) * .12;
     const age = (zone.durationMs-zone.remainingMs)/1000;
+    this.suitAngle=angle;
     if (frame.marine !== this.suit) {
       this.suit=frame.marine;this.shoulders.fill(undefined);this.suit?.traverse(this.locateVents);
     }
@@ -461,7 +475,7 @@ class PyroPresentation implements AbilityPresentation {
   clear(): void {
     for (const p of this.effects) p.live = false;
     for (const print of this.prints) print.live = false;
-    this.next = 0; this.emission = 0; this.shimmer = 0; this.printCursor = 0; this.printClock = 0; this.muzzle = undefined; this.suit=undefined;this.shoulders.fill(undefined);
+    this.next = 0; this.emission = 0; this.shimmer = 0; this.printCursor = 0; this.printClock = 0; this.muzzle = undefined; this.suit=undefined;this.shoulders.fill(undefined); this.suitAngle=0;
   }
 
   dispose(): void {
