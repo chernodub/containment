@@ -3,17 +3,19 @@ import type {RoomTemplate} from '../../game/roguelike/types';
 import type {ShipEnvironment} from '../ShipEnvironments';
 import {kitHull,kitInside} from './KitSafety';
 import {addKitFloorAftermath,type FloorAftermathProof} from './KitFloorAftermath';
+import {addKitDeckArchitecture,type DeckArchitectureProof} from './KitDeckArchitecture';
 
 type Reservation={x:number;y:number;width:number;height:number};
 type Mark={x:number;z:number;kind:string};
-export type KitFloorProof={idea:string;coverage:number;triangles:number;features:Record<string,number>;views:{x:number;z:number;features:string[]}[];maxHeight:number;aftermath:FloorAftermathProof};
+export type KitFloorProof={idea:string;coverage:number;triangles:number;features:Record<string,number>;views:{x:number;z:number;features:string[]}[];maxHeight:number;aftermath:FloorAftermathProof;architecture:DeckArchitectureProof};
 /** Floor-only albedo calibration after the saved all20 density value audit. */
 export const KIT_FLOOR_VALUE_GAIN:Readonly<Record<string,number>>={
  'awakening-bay':.60,'passenger-vault':.40,'transmission-chamber':.64,
  'crew-checkpoint':.48,'armory':.68,'breached-loading-bay':.60,
- 'shielding-gate':.55,'overload-floor':.85,
+ 'shielding-gate':.46,'overload-floor':.78,
  'manual-control-chamber':.64,'diagnostic-gallery':.80,
- 'infested-workshop':.85,'swarm-junction':.85,
+ 'infested-workshop':.85,'swarm-junction':.80,
+ 'freight-hold':1.40,'relay-racks':.90,'containment-annulus':.962,
 };
 const FLOOR_IDEAS:Record<ShipEnvironment,string>={
  cryogenics:'Quiet release aisle, broad frost creep at berth seals and interrupted evacuation tracks',
@@ -149,6 +151,7 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
    const grate=environment==='maintenance'||environment==='communications';
    quad(x,z,.57,grate?.24:.075,0,grate?palette[1]:palette[2],grate?'cross-service-channel':'bay-inlay',.024);
  }
+ const architecture=addKitDeckArchitecture(t,id,reservations,{quad,segment});
  const aftermath=addKitFloorAftermath(t,id,reservations,{valid,quad,segment,patch});
  // Low-contrast circulation wear reaches quiet edges without repeating a pile
  // of story props in every bay. It is a separate large-scale surface feature.
@@ -172,5 +175,5 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
  // Approximate shipping long-lens surface view, sampled across legal room positions.
  const views:KitFloorProof['views']=[];
  for(let x=1.5;x<w;x+=4)for(let z=1.5;z<h;z+=4)if(valid(x,z))views.push({x,z,features:[...new Set(marks.filter(m=>Math.abs(m.x-x)<10&&m.z>z-8&&m.z<z+6).map(m=>m.kind))]});
- return{geometry,proof:{idea:FLOOR_IDEAS[environment],coverage:coveredCells/Math.max(1,legalCells),triangles:positions.length/9,features:counts,views,maxHeight:.029*.75,aftermath}};
+ return{geometry,proof:{idea:FLOOR_IDEAS[environment],coverage:coveredCells/Math.max(1,legalCells),triangles:positions.length/9,features:counts,views,maxHeight:.029*.75,aftermath,architecture}};
 }
