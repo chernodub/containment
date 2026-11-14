@@ -41,7 +41,7 @@ const safeFile=file=>assert(typeof file==='string'&&/^[\w.-]+\.png$/.test(file),
 const readManifest=async dir=>JSON.parse(await readFile(resolve(dir,'manifest.json'),'utf8'));
 const writeJson=(file,value)=>writeFile(resolve(output,file),JSON.stringify(value,null,2)+'\n');
 const css='body{background:#10161e;color:#e1eef5;font:15px system-ui;margin:24px}h1,h2{font-weight:650}p{line-height:1.5;color:#b3c5d1}a{color:#a5e7ff}figure{margin:0;background:#18222c;border:1px solid #394958}img{display:block;width:100%;height:auto}figcaption{padding:9px;overflow-wrap:anywhere}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.missing{min-height:160px;display:grid;place-content:center;color:#dfb4a3;padding:12px;background:#281c1c}.row{margin-bottom:24px}small{color:#a7b9c9}';
-const legacy = shot => /reactor-vault|queen/i.test([shot.room, shot.scenario, shot.file].filter(Boolean).join(' '));
+const legacy = shot => /reactor-vault|queen|beat-boss-(?:intro|defeated)-fixture/i.test([shot.room, shot.scenario, shot.file].filter(Boolean).join(' '));
 const label = shot => (legacy(shot) ? 'legacy saves only / ' : '') + shot.file;
 const html=(title,body)=>`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escape(title)}</title><style>${css}</style><h1>${escape(title)}</h1>${body}</html>`;
 await mkdir(output,{recursive:true});
@@ -243,11 +243,11 @@ async function showcase(manifest){
     ['Title',['title.png']],['Starting boon',['starting-boon.png']],['Cryo rig',['rig-select-cryo.png']],['Route',['route.png']],
     ['Illustrated ending',['complete-fixture.png']],['Armory construction',['combat-calm-armory.png']],
     ['Infested construction',['combat-calm-infested-workshop.png','combat-calm-swarm-junction.png']],
-    ['Marine in bright crowd',['g5-body-only-containment-annulus-04.png','combat-kiting-containment-annulus-03.png']],
+    ['Residential construction',['combat-calm-residential-gallery.png']],
     ['Reactor climax',['combat-calm-overload-floor.png']],
-    ['Warm encounter',['combat-kiting-residential-gallery-03.png']],
-    ['Cold encounter',['combat-kiting-awakening-bay-03.png']],
-    ['Dark encounter',['combat-kiting-swarm-junction-03.png','combat-kiting-infested-workshop-03.png']],
+    ['Cold construction',['combat-calm-awakening-bay.png']],
+    ['Relay construction',['combat-calm-relay-racks.png']],
+    ['Annulus construction',['combat-calm-containment-annulus.png']],
   ];
   const selectionFile=args.find(a=>a.startsWith('--showcase-selection='))?.slice(21);
   if(selectionFile){
@@ -270,7 +270,7 @@ async function showcase(manifest){
       }else safeFile(row.file);
       assert(shot,`Showcase file absent from capture manifest or organic receipts: ${row.file}`);
       assert(!legacy(shot),`Legacy boss evidence cannot enter the showcase: ${row.file}`);
-      assert(!/v2-full-|v2-kit-|combat-heavy|i[45]-/.test(shot.scenario??''),`Stacked stress fixtures cannot enter the showcase: ${row.file}`);
+      assert(!/v2-full-|v2-kit-|combat-heavy|combat-kiting|g[25]-.*kiting|g5-body-only|i[45]-/.test(shot.scenario??''),`Stacked stress fixtures cannot enter the showcase: ${row.file}`);
     }
     candidates=selection.map(row=>[row.title,[row.file]]);
   }
