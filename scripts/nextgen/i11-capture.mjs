@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /** Replay final4 coverage plus wave7 proofs through I10's guarded serial capture method. */
 import assert from 'node:assert/strict';
-import {readFile, writeFile} from 'node:fs/promises';
+import {access, readFile, writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {spawn} from 'node:child_process';
 import {resolve} from 'node:path';
 import {loadavg} from 'node:os';
@@ -10,6 +11,12 @@ const option=(key,fallback)=>process.argv.find(a=>a.startsWith(`--${key}=`))?.sl
 const width=Number(option('width','1920')),height=Number(option('height','1080'));
 assert([[1920,1080],[1280,720]].some(v=>v[0]===width&&v[1]===height),'Desktop evidence sizes only');
 const source=JSON.parse(await readFile('artifacts/nextgen/i11/frozen-source.json'));
+const prefix=option('label-prefix',`i11-${height}`);
+assert(/^[\w.-]+$/.test(prefix),'Safe label prefix required');
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+assert.equal((await readFile(resolve(source.directory,'SOURCE_SHA'),'utf8')).trim(),source.sourceSHA,'Frozen source marker');
+for(const [file,expected]of Object.entries(source.assets))assert.equal(hash(await readFile(resolve(source.directory,'assets',file))),expected,`Frozen asset ${file}`);
+if(source.indexSHA256)assert.equal(hash(await readFile(resolve(source.directory,'index.html'))),source.indexSHA256,'Frozen index');
 const history=resolve(option('history','/Users/chernodub/.t3/projects/containment-game/artifacts/nextgen/final4'));
 const prior=JSON.parse(await readFile(resolve(history,'manifest.json'))),entries=new Map();
 function add(key,frames=4){
@@ -38,15 +45,17 @@ for(const frames of [4,7])for(const masks of [false,true]){
 }
 assert([...entries.values()].every(e=>[4,7].includes(e.frames)),'Unexpected historical phase count');
 const start=Number(option('start','0')),end=Number(option('end',String(batches.length))),receipts=[];
+assert(Number.isInteger(start)&&Number.isInteger(end)&&start>=0&&end>=start&&end<=batches.length,'Valid batch range required');
 await writeFile(`artifacts/nextgen/i11/capture-plan-${height}.json`,JSON.stringify({source,history,batches},null,2)+'\n');
 for(let n=start;n<Math.min(end,batches.length);n++){
-  const batch=batches[n],label=`i11-${height}-batch-${String(n).padStart(2,'0')}`;
+  const batch=batches[n],label=`${prefix}-batch-${String(n).padStart(2,'0')}`;
+  try{await access(resolve('artifacts/nextgen',label));throw Error(`Capture directory already exists: ${label}; preserve it and use --label-prefix=<fresh-retry-prefix>`);}catch(error){if(error.code!=='ENOENT')throw error;}
   const args=['scripts/nextgen/i10-run.mjs',label,'npm','run','capture','--',`--label=${label}`,`--width=${width}`,`--height=${height}`,`--burst=${batch.frames}`,'--sprite-width=1920','--kiting-retries=32','--graphics={"adaptiveResolution":false}','--failure-evidence',`--dist=${source.directory}`,`--dist-source-sha=${source.sourceSHA}`,`--scenarios=${batch.scenarios.join(',')}`];
   console.log(`I11 ${height}: batch ${n+1}/${batches.length}; load=${loadavg()}`);
   const child=spawn(process.execPath,args,{stdio:'inherit'});
   const code=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('close',resolve);});
   receipts.push({batch:n,label,args,code});
-  await writeFile(`artifacts/nextgen/i11/capture-receipts-${height}-${start}.json`,JSON.stringify({source,history,receipts},null,2)+'\n');
+  await writeFile(`artifacts/nextgen/i11/capture-receipts-${prefix}-${start}.json`,JSON.stringify({source,history,receipts},null,2)+'\n');
   assert.equal(code,0,`${label} failed; raw evidence retained. Resume in a new retry label, never overwrite this failed parent.`);
 }
 console.log(JSON.stringify({height,batches:batches.length,completed:receipts.length}));
