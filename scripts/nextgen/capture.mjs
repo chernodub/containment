@@ -220,6 +220,18 @@ try{
      if(frame===0){assert(evidence.titleArt['ka-marine-reveal']<=.061,'Marine reveal skipped its dark opening');assert.equal(evidence.titleArt['ka-eyes-main'],0,'Threat eyes opened before the light');}
      if(frame*frameStepMs>=1800){assert.equal(evidence.titleArt['ka-marine-reveal'],1);assert.equal(evidence.titleArt['ka-eyes-main'],1);}
     }
+    if(scenario.i11Duration){
+     const {ability,durationMs}=scenario.i11Duration,slot=evidence.abilities.slots.overdrive;
+     assert.equal(slot.id,ability,`${name}: native ultimate identity changed`);
+     assert.equal(slot.activeMs,durationMs,`${name}: native duration changed`);
+     assert.equal(evidence.stats.abilityUses.overdrive,1,`${name}: timeline recast ultimate`);
+     const remaining=evidence.abilities.overdrive.activeRemainingMs;
+     assert.equal(evidence.abilities.overdrive.active,remaining>0,`${name}: native active snapshot disagrees`);
+     const phaseMs=30+frame*frameStepMs;
+     if(durationMs&&phaseMs<durationMs-50)assert(remaining>0,`${name}: ultimate expired before its native duration`);
+     if(durationMs&&phaseMs>durationMs+50)assert.equal(remaining,0,`${name}: ultimate stayed active after expiry`);
+     evidence.i11Duration={...scenario.i11Duration,phaseMs,remainingMs:remaining,scope:ability==='railbreaker'?'Instant native attack and its visual aftermath':'Native active duration through expiry; no recast'};
+    }
     if(scenario.priorityPair)assertPriorityPair(evidence,viewport,name);
     if(scenario.auditGraphics)assert.deepEqual(evidence.drawErrors,[],`${name}: GPU draw errors ${JSON.stringify(evidence.drawErrors)}`);
     if(scenario.feelImpact){if(feelStart===null)feelStart=evidence.elapsed*1000;const advanced=evidence.elapsed*1000-feelStart,wall=frame*frameStepMs;if(wall<40)assert(Math.abs(advanced)<.001,`${name}: hit-stop did not hold simulation`);if(wall>=60)assert(advanced>0&&advanced<wall,`${name}: hit-stop did not resume on a delayed fixed step`);}

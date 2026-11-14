@@ -1,5 +1,16 @@
 /** I11 additive integration diagnostics. Production acceptance scenarios retain their guards. */
 export function registerI11Scenarios(scenarios) {
+  for(const [ability,durationMs]of [['railbreaker',0],['whiteout',8000],['meltdown',8000],['overclock',6000]]){
+    for(const room of ['containment-annulus','infested-workshop']){
+      const base=scenarios.find(s=>s.id===`v7-state-${ability}-${room}`);
+      if(!base)throw Error('Missing native ultimate base '+ability);
+      scenarios.push({...base,id:`i11-duration-${ability}-${room}`,
+        stepMs:ability==='railbreaker'?150:1000,
+        setupArgument:{...base.setupArgument,timeline:true},
+        i11Duration:{ability,durationMs},
+      });
+    }
+  }
   for (const guard of [false,true]) scenarios.push({
     id:guard?'i11-legacy-acid-boundary':'i11-legacy-acid-probe',
     room:'reactor-vault',state:'playing',burst:true,diagnosticOnly:!guard,i11NativePointer:true,

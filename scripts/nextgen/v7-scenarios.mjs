@@ -6,7 +6,7 @@ export function registerV7Scenarios(scenarios) {
         id:`v7-state-${ability}${low?'-low':''}-${room}`,room,state:'playing',burst:true,
         stepMs:ability==='railbreaker'?30:150,
         setupArgument:{rig,ability,room,low},
-        setup:async({rig,ability,room,low})=>{
+        setup:async({rig,ability,room,low,timeline=false})=>{
           const d=window.__containmentDebug,g=d.game,r=d.renderer;
           await d.gotoRoom(room,{rig});d.invulnerable(true);g.enemies.reset();
           if(low){r.setQuality('low');await d.prepare();}
@@ -24,9 +24,9 @@ export function registerV7Scenarios(scenarios) {
           if(!g.useAbility('overdrive'))throw Error('Native V7 ultimate denied '+ability);
           const cast=g.abilities.snapshot.slots.overdrive.castRemainingMs;
           // Rail captures the violent impact; sustained states have already settled.
-          d.step(cast+(ability==='railbreaker'?30:650));
+          d.step(cast+(timeline||ability==='railbreaker'?30:650));
           if(ability!=='railbreaker'&&!g.abilities.snapshot.overdrive.active)throw Error('V7 state did not activate');
-          if(ability==='overclock'||ability==='meltdown')d.setInput({fire:true,x:.32,y:.12,angle:-.4,autoAim:false});
+          if(ability==='overclock'||ability==='meltdown')d.setInput({fire:true,x:timeline?.04:.32,y:timeline?.02:.12,angle:-.4,autoAim:false});
           d.g4DangerProof={presentationOnly:true,nativeAbility:ability,room,low,mark:{x:px,y:py},boundaryClearance:score,assetWait:true,shaderGuard:true,fixture:'v7-state'};
           d.refresh();
         },
