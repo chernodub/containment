@@ -293,7 +293,9 @@ export function stageCombat({status=false}){
   }
   centers.push(remaining.splice(best,1)[0]);
  }
- const packingExclusion=Math.max(110,g.player.radius+28+12),packingTrials=[];let shotLaneAngle=null;
+ // Breached bay's narrow approach needs20extra units of pre-grenade
+ // corridor: ordinary700ms approach previously consumed its60travel margin.
+ const packingExclusion=Math.max(110,g.player.radius+28+12),packingTrials=[],reservedHalfWidth=g.node.templateId==='breached-loading-bay'?120:100;let shotLaneAngle=null;
  const settlePresentation=(frames=12)=>{
   const before=g.elapsed,clock=d.renderer.time;
   d.realtime(true);try{for(let frame=0;frame<frames;frame++)d.renderer.render(g,1/60,false);}finally{d.realtime(false);}
@@ -323,14 +325,14 @@ export function stageCombat({status=false}){
    const angle=shotLaneAngle??n*Math.PI/24,fx=Math.cos(angle),fy=Math.sin(angle);
    if(![32,64,96].every(radius=>d.canStand(g.player.x+fx*radius,g.player.y+fy*radius,16))||!d.clearShot(g.player.x+fx*120,g.player.y+fy*120))continue;
    for(const points of layouts){
-    const packed=points.filter(p=>{const dx=p.x-g.player.x,dy=p.y-g.player.y;return !(dx*fx+dy*fy>0&&dx*fx+dy*fy<320&&Math.abs(dx*fy-dy*fx)<100);}).slice(0,26);
+    const packed=points.filter(p=>{const dx=p.x-g.player.x,dy=p.y-g.player.y;return !(dx*fx+dy*fy>0&&dx*fx+dy*fy<320&&Math.abs(dx*fy-dy*fx)<reservedHalfWidth);}).slice(0,26);
     const score=packed.length*10000+packed.reduce((sum,p)=>sum+p.interior,0);if(score>bestScore){best=packed;bestScore=score;angleChoice=angle;}
    }
   }
   if(angleChoice!==null){shotLaneAngle=angleChoice;g.player.angle=angleChoice;d.setInput({x:0,y:0,fire:false,angle:angleChoice,autoAim:false});}
   return best;
  };
- let staged=[],chosen=null,mostVisible=0;
+ let staged=[],chosen=null,mostVisible=0,plasmaLaneProof=null;
  const place=points=>{
   g.enemies.reset();const placed=[];
   for(const p of points){const id=d.spawn(placed.length%5===0?'spitter':'brute',p.x,p.y,placed.length%4===0);if(id){
@@ -396,19 +398,26 @@ export function stageCombat({status=false}){
  }else{
   // Aim a native shot through legal floor with enough travel before a body.
   // Autoaim could select an adjacent shield and consume every round immediately.
-  let aim=null,clearance=-1;
-  for(let i=0;i<48;i++){
-   const angle=i*Math.PI/24,fx=Math.cos(angle),fy=Math.sin(angle);
-   if(![32,64,96].every(radius=>d.canStand(g.player.x+fx*radius,g.player.y+fy*radius,16))||!d.clearShot(g.player.x+fx*120,g.player.y+fy*120))continue;
-   let travel=300;
+  let aim=null,clearance=-1,tested=0,legal=0;
+  const evaluateAngle=angle=>{
+   tested++;const fx=Math.cos(angle),fy=Math.sin(angle);
+   if(![32,64,96].every(radius=>d.canStand(g.player.x+fx*radius,g.player.y+fy*radius,16))||!d.clearShot(g.player.x+fx*120,g.player.y+fy*120))return;
+   legal++;let travel=300;
    for(const e of g.enemies.snapshot.enemies){const dx=e.x-g.player.x,dy=e.y-g.player.y,along=dx*fx+dy*fy;if(along>0&&Math.abs(dx*fy-dy*fx)<60)travel=Math.min(travel,along);}
    if(travel>clearance){clearance=travel;aim=angle;}
-  }
-  if(aim===null||clearance<60)throw Error('No legal travelling plasma lane in heavy fixture');
+  };
+  for(let i=0;i<48;i++)evaluateAngle(i*Math.PI/24);
+  const coarseClearance=clearance;
+  // Only this authored bay has a narrow gap between the unchanged wall/body
+  // cones after grenade resolution. Keep every sufficient original48-angle
+  // aim, then test144 quarter-offsets only if its60-unit travel gate failed.
+  if(g.node.templateId==='breached-loading-bay'&&(aim===null||clearance<60))for(let i=0;i<192;i++)if(i%4)evaluateAngle(i*Math.PI/96);
+  plasmaLaneProof={tested,legal,coarseClearance,clearance,aim,player:{x:g.player.x,y:g.player.y},minimumTravel:60,bodyHalfWidth:60,simulationAdvancedMs:0};
+  if(aim===null||clearance<60)throw Error('No legal travelling plasma lane in heavy fixture '+JSON.stringify({room:g.node.templateId,player:{x:g.player.x,y:g.player.y},aim,clearance,reservedAngle:shotLaneAngle}));
   d.setInput({fire:true,angle:aim,autoAim:false});d.step(1000/60);
   if(!(d.renderer.muzzle.intensity>0&&g.bullets.some(b=>b.kind==='player')))throw Error('Heavy fixture lacks first real plasma pulse');
  }
- return {staged:staged.length,player:{x:g.player.x,y:g.player.y},packingExclusion,packingSpacing:54.01,reservedFiringLane:{angle:shotLaneAngle,length:320,halfWidth:100},packingTrials};
+ return {staged:staged.length,player:{x:g.player.x,y:g.player.y},packingExclusion,packingSpacing:54.01,reservedFiringLane:{angle:shotLaneAngle,length:320,halfWidth:reservedHalfWidth},plasmaLaneProof,packingTrials};
 }
 
 /** A repeatable moving firefight on the native camera, with real Combat Rig receipts. */
