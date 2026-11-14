@@ -5,6 +5,7 @@ import type { ShipEnvironment } from '../ShipEnvironments';
 import { deckMarkingSupported } from './DeckMarkings';
 import { industrialBoxGeometry } from './IndustrialFormKit';
 import { membraneGeometry } from './OrganicGrowth';
+import { VerticalRoofSampler } from './VerticalRoofSampler';
 
 type Writer = {
   box: (material:T.Material,x:number,y:number,z:number,w:number,h:number,d:number,angle?:number)=>void;
@@ -177,7 +178,7 @@ export function addConstructionLanguage(
     if(edge===0&&length>5){wall(m.dark,length*.71,.28,1.45,.24,.34,.62);wall(m.paint,length*.71,.42,1.25,.055,.29,.61);}
   }
   world.updateWorldMatrix(true,true);
-  const ray=new T.Raycaster(),down=new T.Vector3(0,-1,0),sx=template.spawn.x/32,sz=template.spawn.y/32;
+  const roofs=new VerticalRoofSampler(world),sx=template.spawn.x/32,sz=template.spawn.y/32;
   const reservations=[...supportReservations].filter(r=>Math.min(r.width,r.height)>26);
   // The retained cryo GLBs intentionally have no loose-equipment reservations.
   // A conservative inset within their sealed solid polygons may still support
@@ -199,9 +200,8 @@ export function addConstructionLanguage(
   for(const r of reservations){
     let roof=0;
     for(const fx of [.35,.5,.65])for(const fz of [.35,.5,.65]){
-      ray.set(new T.Vector3((r.x+r.width*fx)/32,20,(r.y+r.height*fz)/32),down);
-      const hit=ray.intersectObject(world,true).find(value=>value.point.y>.15&&value.point.y<4);
-      if(hit)roof=Math.max(roof,hit.point.y);
+      const height=roofs.heightAt((r.x+r.width*fx)/32,(r.y+r.height*fz)/32,4);
+      if(height!==undefined)roof=Math.max(roof,height);
     }
     if(roof){selected={r,roof};break;}
   }
@@ -330,9 +330,8 @@ export function addConstructionLanguage(
       const x=(r.x+r.width*.5)/32,z=(r.y+r.height*.5)/32,rw=r.width/32,rd=r.height/32;
       let roof=0;
       for(const fx of [.18,.35,.5,.65,.82])for(const fz of [.18,.35,.5,.65,.82]){
-        ray.set(new T.Vector3((r.x+r.width*fx)/32,20,(r.y+r.height*fz)/32),down);
-        const hit=ray.intersectObject(world,true).find(value=>value.point.y>.15&&value.point.y<5);
-        if(hit)roof=Math.max(roof,hit.point.y);
+        const height=roofs.heightAt((r.x+r.width*fx)/32,(r.y+r.height*fz)/32,5);
+        if(height!==undefined)roof=Math.max(roof,height);
       }
       if(!roof)continue;
       const alongX=rw>=rd,long=alongX?rw:rd,short=alongX?rd:rw;
@@ -431,4 +430,5 @@ export function addConstructionLanguage(
   root.userData.constructionIdea=profile.idea;
   root.userData.constructionParts=acceptedParts;
   root.userData.constructionTriangles=triangleCount;
+  roofs.dispose();
 }
