@@ -48,4 +48,28 @@ export function registerK7Scenarios(scenarios) {
     d.g5Proof={presentationOnly:true,silhouette:true,status:'${status}',noSimulationStatusOverride:true};d.refresh();
   })();`)});
 
+  for(const kind of ['brute','spitter'])scenarios.push({id:`k7-windup-${kind}`,room:'awakening-bay',state:'playing',burst:true,stepMs:300,setup:new Function(`return (async()=>{
+    const d=window.__containmentDebug,g=d.game,r=d.renderer;
+    await d.gotoRoom('awakening-bay',{rig:'breacher'});d.invulnerable(true);g.enemies.reset();
+    const b=g.geometry.bounds,pairs=[];
+    for(let y=b.y+80;y<b.y+b.height-80;y+=40)for(let x=b.x+80;x<b.x+b.width-80;x+=40){
+      if(!d.canStand(x,y,20))continue;
+      for(const radius of [320,280,240])for(let n=0;n<16;n++){
+        const a=n*Math.PI/8,ex=x+Math.cos(a)*radius,ey=y+Math.sin(a)*radius;
+        if(!d.canStand(ex,ey,28)||!d.clearShot(ex,ey,{x,y}))continue;
+        pairs.push({x,y,ex,ey,score:Math.hypot(x-b.x-b.width/2,y-b.y-b.height/2)});
+      }
+    }
+    pairs.sort((a,b)=>a.score-b.score);if(!pairs.length)throw Error('K7 native warning lane unavailable');
+    const p=pairs[0];Object.assign(g.player,{x:p.x,y:p.y,vx:0,vy:0,angle:Math.atan2(p.ey-p.y,p.ex-p.x)});
+    d.setInput({x:0,y:0,fire:false,angle:g.player.angle,autoAim:false});
+    const id=d.spawn('${kind}',p.ex,p.ey,${kind==='brute'});if(!id)throw Error('K7 native warning actor rejected');
+    let enemy;
+    for(let n=0;n<300;n++){d.step(1000/60);enemy=g.enemies.getSnapshot(id);if(enemy?.pendingAttack)break;}
+    if(!enemy?.pendingAttack)throw Error('K7 native warning did not occur');
+    d.g5Proof={presentationOnly:true,silhouette:true,nativeWarning:true,enemyId:id,initialDurationMs:enemy.windupMs};
+    Object.defineProperty(d.g5Proof,'warningTimeline',{enumerable:true,get(){const e=g.enemies.getSnapshot(id),m=r.actors.get(id);return {remainingMs:e?.windupMs??0,pending:e?.pendingAttack??null,progress:m?.root.getObjectByName('${kind}-identity').material.uniforms.identityWindup.value,elapsed:g.elapsed};}});
+    d.refresh();
+  })();`)});
+
 }

@@ -68,3 +68,20 @@ it('switches four resident marine module silhouettes with the existing rig sette
     expect(material.fragmentShader).toContain('abs(role-rigKind)>.25');
   }finally{disposeModel(model.root);}
 });
+
+
+it('times the physical anticipation from actual warning durations including late-room Brutes',()=>{
+  for(const [kind,attack,duration] of [['brute','charge',850],['brute','charge',1150],['spitter','spit',500]] as const){
+    const model=alien(kind,true),mesh=model.root.getObjectByName(`${kind}-identity`) as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
+    try{
+      for(const [n,remaining] of [duration,duration*.75,duration*.5,1].entries()){
+        model.setThreat!(remaining,attack);model.animate(n/60,0,0);
+        expect(mesh.material.uniforms.identityWindup.value).toBeCloseTo(1-remaining/duration,8);
+        model.setThreat!(remaining,attack);model.animate((n+.1)/60,0,0);
+        expect(mesh.material.uniforms.identityWindup.value).toBeCloseTo(1-remaining/duration,8);
+      }
+      model.setThreat!(0,null);model.animate(1,1,0);expect(mesh.material.uniforms.identityWindup.value).toBe(0);
+      model.reset!();model.setThreat!(500,'spit');model.animate(2,0,0);expect(mesh.material.uniforms.identityWindup.value).toBe(0);
+    }finally{disposeModel(model.root);}
+  }
+});
