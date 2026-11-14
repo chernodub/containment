@@ -25,10 +25,13 @@ const args = process.argv.slice(2);
 const options = Object.fromEntries(args.map(arg => {
   assert(/^--[a-z-]+(?:=.*)?$/.test(arg), `Invalid argument ${arg}`);
   const [key, ...value] = arg.slice(2).split('=');
-  assert(['rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir'].includes(key), `Unknown option ${key}`);
+  assert(['rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room'].includes(key), `Unknown option ${key}`);
   return [key, value.length ? value.join('=') : true];
 }));
 const distRoot=resolve(String(options['dist-dir']??'dist'));
+const storyboardRoom=options['storyboard-room']??null;
+assert(!storyboardRoom||typeof storyboardRoom==='string'&&/^[a-z][a-z0-9-]+$/.test(storyboardRoom),'Invalid storyboard room');
+assert(!storyboardRoom||!options.fast&&!options.realtime,'Storyboards require the ordinary fixed clock with every tick rendered');
 const checkpointScreens=options['checkpoint-screens']?new Set(String(options['checkpoint-screens']).split(',')):null;
 if(checkpointScreens){options.checkpoints=true;for(const kind of checkpointScreens)assert(['menu','menu-settings','menu-controls','menu-credits','rig-select','starting-boon','combat','pause','pause-loadout','pause-settings','pause-controls','reward','route','shop','destroy-confirm','dead','complete'].includes(kind),`Unknown checkpoint screen ${kind}`);}
 const shouldProbe=kind=>!!options.checkpoints&&(!checkpointScreens||checkpointScreens.has(kind));
@@ -62,6 +65,10 @@ const report = {
   clock: options.realtime ? 'native production RAF, passive observation; no audio/effect/core wrappers' : options.fast ? 'native fixed 60Hz; 250ms policy decisions; scene/camera every tick, GPU draw at batch end' : 'native fixed 60Hz; 250ms policy decisions; render every fixed tick',
   rooms: resumed?resumed.parent.rooms.filter(r=>['clear','complete'].includes(r.result)&&resumed.checkpoint.run.completedNodeIds.includes(r.nodeId)):[], errors: resumed?[...resumed.parent.errors]:[], defects: resumed?[...resumed.parent.defects]:[], checkpoints: [], screenshots: [], inputs: [], outcome: 'running',
   limitations: ['Incoming damage source is inferred from nearby threats, not authoritative attribution.', 'Accelerated CPU samples include rendering submission, not GPU completion; RAF diagnostics are separately retained.', 'A deterministic seed does not guarantee identical outcomes across policy/render timing; input trace is retained.', 'Audio spy tracks source lifecycle, not perceived sound quality.'],
+};
+if(storyboardRoom)report.storyboard={
+  room:storyboardRoom,sampleIntervalSeconds:1,frames:[],
+  method:'Read-only PNG observations after existing native steps; no added simulation tick, input change, camera change or policy decision.',
 };
 if(options.fast)report.limitations.push('Fast rendering omits intermediate GPU submissions only; timings/draw counts are not a production performance certificate. Preparation and evidence frames are fully drawn.');
 if(options['death-probe'])report.policy='Separate lifecycle-only natural death fixture: native UI start, intentionally idle in the first fight; no damage/state injection. Excluded from campaign balance cohorts.';
@@ -164,6 +171,16 @@ async function shot(name,s) {
   if(s.status==='playing'&&!s.loading){const world=sampleWorldPng(bytes,[...(s.hud?.opaqueBounds??[]),...(s.visualOverlays??[])]);if(world.likelyBlank)report.defects.push({kind:'blank-world-behind-hud',area:'render',severity:'high',evidence:file,samples:world});}
   return bytes;
 }
+/** Register an existing evidence frame without changing native input or advancing the clock. */
+function recordStoryboard(beat,name,s) {
+  if(!report.storyboard||room?.id!==storyboardRoom)return;
+  report.storyboard.frames.push({
+    beat,file:`${name}.png`,snapshot:`${name}.json`,room:room.id,nodeId:room.nodeId,
+    elapsed:s.elapsed,roomSeconds:s.elapsed-room.startedElapsed,status:s.status,phase:s.phase,
+    remaining:s.remaining,kills:s.stats.kills.total,inputs:report.inputs.length,
+    held:[...held],shooting,input:report.inputs.at(-1)??null,
+  });
+}
 async function release() {
   for(const k of held) await page.keyboard.up(k);
   held.clear();
@@ -193,7 +210,9 @@ async function finishRoom(s,result) {
   room.overdrives=s.stats.overdrivesUsed-room.startStats.overdrivesUsed;room.memory=s.memory;
   room.frame=options.realtime?s.performance.nativeUpdateRenderMs:s.performance.debugFixedStep?.updateRenderMs??null;room.frameScope=options.realtime?s.performance.nativeUpdateRenderMs?.scope:room.timingReset?'Latest 2048 ticks within this room; max/mean since room reset.':'Latest 2048 fixed ticks for percentiles; page-lifetime max. Not an isolated room distribution.';room.performance=s.performance;room.credits=s.combat.credits;
   room.audio=await readAudioSpy(page);
-  await shot(`r${room.depth+1}-${room.id}-${result}`,s);
+  const name=`r${room.depth+1}-${room.id}-${result}`;
+  await shot(name,s);
+  recordStoryboard(result,name,s);
   await save();
 }
 try {
@@ -301,7 +320,10 @@ try {
       room.timingReset=await page.evaluate(()=>{const d=window.__containmentDebug;if(!d.resetStepPerformance)return false;d.resetStepPerformance();return true;});
       room.abilityReceipts={};room.denials={};
       report.rooms.push(room);console.log(`${label}: room ${s.node.depth+1} ${s.node.templateId}`);
-      await shot(`r${s.node.depth+1}-${room.id}-start`,s);
+      const entryName=`r${s.node.depth+1}-${room.id}-start`;
+      await shot(entryName,s);
+      recordStoryboard('entry',entryName,s);
+      if(room.id===storyboardRoom)room.nextStoryboardSecond=1;
       previousProgress='';stagnantSince=s.elapsed;
     }
     const pauseProbe=['pause','pause-loadout','pause-settings','pause-controls'].find(kind=>shouldProbe(kind)&&!probed.has(kind));
@@ -348,6 +370,12 @@ try {
     if(pressure>hardest+40&&after.status==='playing') {
       hardest=pressure;hardestFrames=[];report.hardestMoment={pressure,room:room.id,elapsed:after.elapsed};
       for(let frame=0;frame<4;frame++){hardestFrames.push(await shot(`hardest-${steps}-${frame}`,after));if(frame<3&&after.status==='playing'){if(options.realtime)await page.waitForTimeout(67);else await advance(1000/15);after=await snapshot();last=after;await appendFile(resolve(out,'trace.ndjson'),JSON.stringify({burst:true,stepMs:1000/15,aim:input.aim,fire:shooting,elapsed:after.elapsed,held:[...held],state:{status:after.status,player:after.player,stats:after.stats,enemies:after.enemies.map(e=>({id:e.id,type:e.type,x:e.x,y:e.y,health:e.health}))}})+'\n');}}
+    }
+    if(room.id===storyboardRoom&&after.status==='playing'&&!after.loading&&after.elapsed-room.startedElapsed>=room.nextStoryboardSecond) {
+      const name=`play-r${room.depth+1}-${room.id}-${String(report.storyboard.frames.length).padStart(3,'0')}`;
+      await shot(name,after);
+      recordStoryboard('fight',name,after);
+      room.nextStoryboardSecond=Math.floor(after.elapsed-room.startedElapsed)+1;
     }
     const delta=after.stats.damageTaken-s.stats.damageTaken;
     if(delta>0){const source=s.hazards.some(h=>distance(h,s.player)<h.radius+80)?'hazard-proximity':s.enemies.find(e=>distance(e,s.player)<140)?.type??'unknown';room.damageSourcesInferred[source]=(room.damageSourcesInferred[source]??0)+delta;}
