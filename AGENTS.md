@@ -10,7 +10,7 @@ Keep simulation deterministic and render-free: `src/DepthGame.ts` and gameplay s
 
 - `src/game/abilities/`: catalog, contracts, deterministic ability runtime and augments.
 - `src/render/DepthRenderer.ts`: renderer orchestration; authored rooms and environment modules live alongside it.
-- `src/render/post/`, `lighting/`, `atmosphere/`, `camera/`: postprocessing, pooled lights/practicals, environmental layers and camera feedback.
+- `src/render/post/`, `lighting/`, `atmosphere/`, `camera/`: postprocessing, pooled lights/practicals, environmental layers and camera feedback. High gas uses demanded half-size detached depth snapshots; Low allocates none. Preserve preparation warmup, cached framebuffer ownership, color-only transparent MRT writes and context/tier disposal.
 - `src/render/vfx/`, `abilities/`, `world/`: pooled effects, elemental ability presentation and world dressing. The V6 atlas and four CC0 room kits stay lazy on title/settings; gameplay readiness must await asset owners, atlas decode/upload and shader preparation. Preserve atlas/source manifests, pack credits and CC0 licenses.
 - `src/render/camera/RoomCombatFraming.ts`: final marine scale and playable-AABB camera constraint. The 18% outside-area bound is against the AABB, not an exact concave hull; retain both diagnostics and full-body HUD clearance.
 - `src/render/graphicsOptions.ts`: High/Low presets and validated overrides. Keep Low inexpensive; preserve manual selection, recovery and resource disposal.
@@ -23,7 +23,7 @@ Preserve DOM test hooks (`#start`, `#continue`, `#settings`, `#quality`, `#pause
 
 ## Verification and test policy
 
-Run `npm ci`, then `npm run verify`. The full chain includes Python asset tests requiring Blender; do not weaken them or alter assets to bypass a missing Blender installation. JavaScript gates from `docs/nextgen/01-ENGINEERING.md`:
+Run `npm ci`, then `npm run verify`. The full chain includes Python asset tests requiring Blender 4.0+ on `PATH` and Pillow in the selected Python environment; do not weaken them or alter assets to bypass missing prerequisites. JavaScript gates from `docs/nextgen/01-ENGINEERING.md`:
 
 ```sh
 VITEST_MAX_WORKERS=2 npx vitest run --exclude scripts/cryo-model-preview.test.mjs

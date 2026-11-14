@@ -716,7 +716,7 @@ SCENARIOS.push({id:'g3-void-contours',room:'awakening-bay',state:'playing',audit
   r.renderer.readRenderTargetPixels(r.post.resources.scene,0,0,w,h,ids,undefined,1);
  }finally{gl.createProgram=create;}
  let actorPixels=0,darkenedActorPixels=0,backgroundPixels=0;for(let i=0;i<ids.length;i+=4){if(ids[i+3]%8>=3&&ids[i+3]%8<=6){actorPixels++;if(before[i]+before[i+1]+before[i+2]-after[i]-after[i+1]-after[i+2]>15)darkenedActorPixels++;}else if(ids[i+2]===0&&ids[i+3]===0)backgroundPixels++;}
- d.voidContourProof={actorPixels,darkenedActorPixels,backgroundPixels,compiled};
+ d.voidContourProof={width:w,height:h,actorPixels,darkenedActorPixels,backgroundPixels,compiled};
  if(compiled||actorPixels<100||darkenedActorPixels<30||backgroundPixels<w*h*.5)throw Error('Void contour proof failed '+JSON.stringify(d.voidContourProof));
  if(gl.getError()!==gl.NO_ERROR)throw Error('Void contour proof WebGL readback error');
 }});

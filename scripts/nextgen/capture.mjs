@@ -10,6 +10,7 @@ import {chromium} from 'playwright';
 import {SCENARIOS,DEFAULT_ROOMS,stageCombat,stageKiting,advanceKiting,inspectFrame} from './scenarios.mjs';
 import {samplePng} from './png.mjs';
 import {assertPriorityPair} from './i10-framing-contract.mjs';
+import {assertCaptureCanvas} from './capture-canvas.mjs';
 import {stitchPngFrames} from './sprites.mjs';
 import {compareGalleries} from './gallery.mjs';
 
@@ -207,7 +208,7 @@ try{
     if(scenario.state==='dead'||scenario.state==='complete')assert(await page.locator('.damage-source-legend [data-stat] b').evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).color==='rgb(240, 251, 255)')),`${name}: source accounting legend implies an element`);
     if(scenario.uiState)assert.equal(evidence.uiState,scenario.uiState,`${name}: wrong fixture UI phase`);
     if(scenario.id==='combat-calm')assert.equal(evidence.enemies,0,`${name}: calm room contains enemies`);
-    assert.equal(evidence.state,scenario.state,`${name}: wrong game state`);assert(evidence.canvas.colors>8&&!evidence.canvas.contextLost&&!evidence.canvas.error,`${name}: missing/invalid canvas pixels ${JSON.stringify(evidence.canvas)}`);
+    assert.equal(evidence.state,scenario.state,`${name}: wrong game state`);assertCaptureCanvas(evidence,{scenarioId:scenario.id,viewport,dpr,name});
     if(scenario.room)assert.equal(evidence.templateId,scenario.room);
     if(scenario.state==='playing'){assert(evidence.hud&&evidence.player.visible&&!evidence.overlay,`${name}: HUD/player missing or overlay blocks scene`);}
     if(scenario.state==='playing')assert.deepEqual(evidence.hudOverlaps,[],`${name}: HUD covers the projected marine`);

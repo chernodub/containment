@@ -99,6 +99,8 @@ See [tooling instructions](scripts/nextgen/README.md) and the [overhaul document
 
 For repeated hardware measurements, use one benchmark browser with other capture/playtest browsers closed, for example `npm run bench -- --label=review-bench --rooms=relay-racks,swarm-junction --repeat=5 --seconds=20`. Reports retain host load, renderer, frame and CPU quantiles, adaptive scale, draws and combat shader creation. The default bot campaign sends native keyboard/mouse input and renders every fixed simulation tick; `--realtime` observes the normal production RAF loop. Fixed-step campaign timings and simulation-only policy results do not certify hardware frame rate or native-camera parity.
 
+Wave-6 frame acceptance on Apple M1 Pro / ANGLE Metal, 1920×1080 DPR1, used 25 replenished native enemies and all four ability slots in Relay and Armory: five 20-second repeats per rig/tier, 80 trials. All frame medians were 16.7 ms at 0.1 ms reporting precision; High p95 was at most 18.3 ms, High median adaptive scale at least .90, peak draws 297 and combat shader creations zero. Recorded one-minute system load ranged 10.1–30.5. High uses a half-size demanded soft-depth snapshot and a 16.5 ms adaptive GPU operating target; that quality/latency calibration leaves less GPU margin and does not promise every-frame 60 fps. See [I10 evidence and limitations](docs/nextgen/I10-REPORT.md) for source hashes, all repeats, readiness and art review.
+
 ## Source, credits and licensing
 
 Game and reusable domain systems: cdb-lumen / Containment. Original code and overhaul artwork/audio (icons, UI artwork, procedural textures, synthesized audio and authored VFX) use the repository [MIT license](LICENSE). This scope excludes retained third-party media.

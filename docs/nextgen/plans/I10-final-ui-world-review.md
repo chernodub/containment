@@ -1,8 +1,21 @@
 # I10 UI/world PNG review — actual witnesses and source transitions
 
-Reviewer `/root/license_audit`. The first40 native+480 witnesses below identify application1118125fbcf4dd71483eabbdfa286f6a62d0e480. Root has announced a subsequent pixel-identical early-discard optimization and will recapture under a new source/prefix. These1118125 opens are historical until explicit PNG-hash bridge or fresh opens join them to the new source. Assigned final partition remains00–06 at1080/720. **Coverage below is incremental and only explicit actual-open ledger rows count.** No browser/computer-use, product edit or inferred full-gallery review is used.
+Reviewer `/root/license_audit`. Current application is **aa37ea081156ee82ca94f45a01deb94cbf1e12cf** (`quality-dist`); native raw prefix `final4-quality-batch-`. Earlier1118125 opens remain explicitly historical unless both original and exact480 bytes match an existing actual-open witness. Assigned final partition is00–06 at1080/720. **Only explicit actual-open ledger rows count.** No browser/computer-use, product edit or inferred full-gallery review is used.
 
 File-only `scripts/nextgen/i10-review-prep.mjs prepare <batch>` snapshots a capture manifest and creates exact480×270 fractional pixel-area reductions. `witness <batch> <explicit PNG names>` is called only after actual original-detail native and reduction `view_image` opens. Per-batch `prepared.json` makes no review claim; `actual-opens.json` records native/reduction path,SHA256,source receipt and actual-open timestamp. Original capture bytes remain unchanged.
+
+## Current AA native1080 coverage
+
+Batches00–04 contain50/50 witnessed originals and50 exact480 derivatives. Of these,20 frames were freshly opened with original-detail image emission for both sizes;30 were independently rehashed byte-identical bridges to the explicitly opened1118125 originals and reductions. Per-batch `artifacts/nextgen/i10/license-review/final4-quality-batch-XX/actual-opens.json` records absolute paths, both SHA256 values, capture sourceAA and either new timestamp or the full prior actual-open witness chain. `bridge-history.json` preserves carried/changed lists. Aggregate receipt: `artifacts/nextgen/i10/license-review/coverage-quality.json`.
+
+-00:7 bridges; fresh Cryo/Arc rig selection and reward. Portrait/diagram and reward hierarchy remain legible at480, no native clipping.
+-01:7 bridges; fresh pause,loadout,settings. Native controls,focus,stats and all text remain inside panels. At480 the layout hierarchy is preserved; it is not claimed that every quarter-size settings paragraph can be read.
+-02:6 bridges; fresh onboarding,Awakening,Passenger,Atrium. Cyan-white marine body is clear; HUD/onboarding do not overlap it. Pod rows and garden/seating cluster establish places at480. Open central walking corridors remain broad; Passenger composition is left-weighted but marine stays wholly inside viewport.
+-03:10 bridges. Prior room critiques and calm-safety observations below carry exactly because both reviewed image sizes are byte-identical, not merely because application intent is similar.
+
+-04:10 fresh native+480 pairs. Overload has a strong warm reactor landmark and the marine remains cool-white on its dark/warm floor. Low preserves actor/HUD/pickup separation with visibly harder edges. Five pickup silhouettes distinguish at480. Recovery Armory still has a broad empty left corridor and partial dominant machinery at right. Infested Low makes the flat purple floor-mask/ribbon quality particularly obvious; the separate geometric audit establishes it is flush, not overhead. The corpse fixture visibly retains bodies around the unobscured marine; large staged consolidated damage labels dominate the image and are not representative organic combat composition. The ability-inspect tooltip is unobstructed, readable at native and wholly inside the viewport. Critical Annulus has the hero near the far-left border and several engaged enemy bodies clipped at left; calm Reactor Vault crops most of Queen at right. These two fixtures should not be used to claim all fighting bodies fit or a complete Queen climax composition. They do not show E6 world dressing over marine/enemies; separate contact/danger-marker/organic evidence must establish the real framing guarantee.
+
+No new UI/HUD/marine occlusion defect found in this calm/screen partition. This observation does not establish moving-enemy or continuous visibility safety, covered by the separate engaged/organic evidence.
 
 ## Historical1118125 native1080 completed coverage
 
@@ -12,9 +25,15 @@ File-only `scripts/nextgen/i10-review-prep.mjs prepare <batch>` snapshots a capt
 
 - `final4-batch-03`:10/10 native originals and exact480 opened. CalmTransmission,Diagnostic,Safety,Coolant,Shaft,Infested,Swarm,Shielding,Annulus,Manual. Native story boards are unobstructed and readable. No new marine/HUD occlusion or uniformly near-black room found. Coolant/Shaft green service mood,Infested/Swarm purple takeover and warmManual differ at480; broad floor grammar and isolated equipment islands remain visibly shared. Infested/Swarm floors still look like flat purple skin, and the known flush connection strip still reads as a ribbon. Transmission is particularly sparse to the left; it has a clear dish/rack landmark but weak room-wide connectedness. These are art-standard qualifications.
 
+## Partial batch05: historical until clean retry
+
+Five successful AA PNGs in `final4-quality-batch-05` were freshly opened native original+exact480 and explicitly witnessed. They are excluded from current clean aggregate coverage because the batch stopped at `g3-void-contours` (6colors/576litSamples, context intact/GLerror0). This is a failed fixture receipt, not an inferred empty-render product diagnosis. Clean retry must either be freshly opened or bridge both hashes to these witnesses.
+
+Opened: `u4-boon-inspect.png` (native exact-value inspection fits; focus/control hierarchy survives480), `u4-ending-reduced-motion.png` (clear destroyed-ship/NewEarth outcome at both sizes; schematic illustration qualification remains), `u4-burn-ticks-awakening-bay.png` (flames yield to recognizable actor bodies; marine/HUD clear, orange ticks distinct), `u4-radar-fade.png` (large enemy remains visible through faded radar, separate native bearing visible), `g3-geometry-coverage-awakening-bay.png` (ordinary room view, marine/pods clear, no near-black exposure). No new safety or clipping defect observed in these five actual opens. This is not a claim of05complete.
+
 ## Pending coverage
 
-1080 batches04–06 and720 batches00–06 are not yet claimed. Root/other reviewers own07–21.
+AA1080 batches05–06 and720 batches00–06 are not yet claimed. Root/other reviewers own07–21.
 
 ## Documentation consistency checks
 
@@ -25,3 +44,6 @@ The default `artifacts/nextgen/i10/loading.json` inspected during this review is
 A fresh file-only licensing audit was also run against the frozen release checkout: `artifacts/nextgen/i10/license-release-audit.json`, PASS. It records the current HEAD independently, with the same30added asset files/net bytes and third-party license qualifications. Batches00–03 actual-open ledgers independently identify the exact1118125 distribution SHA.
 
 Root's completed `artifacts/nextgen/i10/loading-release.json` was independently read after the prior warning:PASS,0errors/0failures,source1118125 versus0cfcecb,baseline requested public media comparable. Both sources have66initial HTTP requests and17initialJS requests; finalJS decoded bytes4,825,397 versus4,914,384 (−88,987),CSS unchanged154,040bytes. Both have0eager kit/atlas requests; final native first-gameplay receipt observes loading and2kit requests/1atlas request. This supersedes the stale default filename for final-source loading claims. Menu-ready times are single shared-host observations and are not a causal speedup or frame-rate claim.
+
+
+`artifacts/nextgen/i10/loading-quality.json` was independently read: per-source FINAL SHA isAA37ea (top-level HEAD4b1aac is the audit harness checkout). PASS with0errors/0failures; baseline initial public media comparable. Both66HTTP/17JS initial requests, finalJS4,827,104 versus4,914,384bytes (−87,280),CSS154,040 unchanged. Total initial decoded response bytes33,723,469 versus33,810,740 (−87,271); gzip estimates23,495,651 versus23,524,726 (−29,075), not compressed network measurements. Final menu ready2,124.6ms versus2,075.3ms is a single shared-host observation (load25.32/50.34/44.68 initially), not a startup improvement claim. Final native first-gameplay receipt includes loading hold,2kit and1atlas requests completed before readiness; eager kit/atlas lists empty. ThisAA receipt supersedes prior111 loading for current-source acceptance.
