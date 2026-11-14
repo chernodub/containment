@@ -28,7 +28,9 @@ export function drawText(target,text,x,y,color=[216,233,238],scale=2){
  for(const char of text.toUpperCase()){const rows=glyphs[char]?.split('/');if(rows)for(let cy=0;cy<7;cy++)for(let cx=0;cx<5;cx++)if(rows[cy][cx]==='1')for(let sy=0;sy<scale;sy++)for(let sx=0;sx<scale;sx++){const px=x+cx*scale+sx,py=y+cy*scale+sy;if(px<0||px>=target.width||py<0||py>=target.height)continue;const i=(py*target.width+px)*3;for(let c=0;c<3;c++)target.pixels[i+c]=color[c];}x+=6*scale;}
 }
 export function drawImage(target,source,x,y,width,height){
- for(let dy=0;dy<height;dy++)for(let dx=0;dx<width;dx++){const s=(Math.min(source.height-1,Math.floor(dy/height*source.height))*source.width+Math.min(source.width-1,Math.floor(dx/width*source.width)))*source.channels,t=((y+dy)*target.width+x+dx)*3;target.pixels[t]=source.pixels[s];target.pixels[t+1]=source.pixels[s+1];target.pixels[t+2]=source.pixels[s+2];}
+ // A native-size copy must preserve every column/row. Floating division then
+ // multiplication can put an exact integer just below its value before floor.
+ for(let dy=0;dy<height;dy++)for(let dx=0;dx<width;dx++){const sy=source.height===height?dy:Math.min(source.height-1,Math.floor(dy/height*source.height)),sx=source.width===width?dx:Math.min(source.width-1,Math.floor(dx/width*source.width)),s=(sy*source.width+sx)*source.channels,t=((y+dy)*target.width+x+dx)*3;target.pixels[t]=source.pixels[s];target.pixels[t+1]=source.pixels[s+1];target.pixels[t+2]=source.pixels[s+2];}
 }
 const crcTable=Uint32Array.from({length:256},(_,n)=>{for(let i=0;i<8;i++)n=n&1?0xedb88320^(n>>>1):n>>>1;return n>>>0;});
 function chunk(name,data){const type=Buffer.from(name),body=Buffer.concat([type,data]),result=Buffer.alloc(data.length+12);result.writeUInt32BE(data.length);body.copy(result,4);let crc=0xffffffff;for(const b of body)crc=crcTable[(crc^b)&255]^(crc>>>8);result.writeUInt32BE((crc^0xffffffff)>>>0,result.length-4);return result;}
