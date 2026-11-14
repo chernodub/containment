@@ -23,7 +23,12 @@ describe('G2 manufactured service and shielding finishes',()=>{
   });
   expect(bevels).toBeGreaterThan(20);expect(fasteners).toBe(8);expect(violations).toEqual([]);
   const materials=new Set<T.Material>();root.traverse(object=>{if(object instanceof T.Mesh)materials.add(object.material as T.Material);});
-  expect(materials.size).toBe(7);disposeModel(root);
+  const floorPanel=[...materials].find(material=>material.name==='shaft-floor-panel'),steel=[...materials].find(material=>material.name==='shaft-steel');
+  // The eighth owner calibrates floor cassettes without recoloring structural steel.
+  expect(materials.size).toBe(8);expect(floorPanel).toBeDefined();expect(steel).toBeDefined();expect(floorPanel).not.toBe(steel);
+  expect(floorPanel!.onBeforeCompile).toBe(steel!.onBeforeCompile);expect(floorPanel!.customProgramCacheKey).toBe(steel!.customProgramCacheKey);
+  let floorOwners=0;root.traverse(object=>{if(object instanceof T.Mesh&&object.material===floorPanel){floorOwners++;expect(object.parent?.name).toBe('deck-finish');}});
+  expect(floorOwners).toBeGreaterThan(0);disposeModel(root);
  });
  it('retains the shielding material budget and a dry nonemissive ceramic finish',()=>{
   const root=containmentAnnulusBlockout(ROOM_TEMPLATES['containment-annulus']);let triangles=0;
