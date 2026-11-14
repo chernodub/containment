@@ -70,13 +70,18 @@ describe('flush room-specific deck architecture prototype', () => {
       ),
     };
     const proof = addKitDeckArchitecture(t, id, reservations, painter);
-    expect(proof.bays).toBeGreaterThanOrEqual(id === 'crew-checkpoint' ? 1 : 3);
-    expect(proof.connections).toBeGreaterThanOrEqual(id === 'residential-gallery' ? 4 : 1);
+    expect(proof.bays).toBeGreaterThanOrEqual(1);
+    expect(admitted.some(q=>q.kind==='deck-bay-frame'||q.kind==='deck-hatch-rib')).toBe(false);
+    for(const q of admitted.filter(q=>q.kind==='deck-access-bay')){
+      const cx=q.corners.reduce((n,p)=>n+p[0],0)/4,cz=q.corners.reduce((n,p)=>n+p[1],0)/4;
+      expect(reservations.some(r=>Math.abs(cx-(r.x+r.width*.5)/32)<.01&&Math.min(Math.abs(cz-r.y/32),Math.abs(cz-(r.y+r.height)/32))<.7)).toBe(true);
+    }
+    expect(proof.connections).toBeGreaterThanOrEqual(1);
     expect(proof.triangles).toBe(admitted.length * 2);
     expect(proof.triangles).toBeLessThanOrEqual(800);
     expect(proof.triangles).toBeGreaterThan(30);
-    expect(proof.baseArea / (t.width * t.height / 1024)).toBeGreaterThan(.04);
-    expect(proof.baseArea / (t.width * t.height / 1024)).toBeLessThan(.15);
+    expect(proof.baseArea).toBeGreaterThan(0);
+    expect(proof.baseArea / (t.width * t.height / 1024)).toBeLessThan(.01);
     expect(proof.maxHeight).toBeLessThanOrEqual(.022);
     const points = admitted.flatMap(q => q.corners);
     expect(Math.max(...points.map(p => p[0])) - Math.min(...points.map(p => p[0]))).toBeGreaterThan(10);

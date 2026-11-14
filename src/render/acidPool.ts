@@ -41,10 +41,17 @@ export class AcidPoolMaterial extends T.MeshBasicMaterial {
     float acidWet=mix(1.0,clamp(0.38+acidMottle*0.85+acidFilm*0.25+acidDetail,0.38,1.60),acidInterior);
     diffuseColor.rgb *= acidWet;
     float acidRim=smoothstep(.82,.94,length(acidP));
-    diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.018,.027,.012),acidRim);
+    diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.009,.012,.008),acidRim);
+    // The fixed boundary carries the same dark-backed orange grammar as enemy
+    // warnings. Teeth point inward; the green reactive liquid remains inside.
+    float acidAngle=atan(acidP.y,acidP.x)/6.2831853;
+    float acidSegment=fract(acidAngle*18.0);
+    float acidTeeth=step(abs(acidSegment-.5),.36*(length(acidP)-.77)/.19);
+    float acidWarning=acidTeeth*smoothstep(.79,.84,length(acidP))*(1.0-smoothstep(.95,.985,length(acidP)));
+    diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.35,.12,.025),acidWarning);
     diffuseColor.a=max(diffuseColor.a,acidRim*min(1.0,diffuseColor.a*3.2));
    `);
   };
  }
- override customProgramCacheKey(){return 'acid-pool-surface-v3-dark-rim';}
+ override customProgramCacheKey(){return 'acid-pool-surface-v4-hostile-teeth';}
 }

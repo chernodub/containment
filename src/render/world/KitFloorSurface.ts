@@ -26,7 +26,7 @@ const FLOOR_IDEAS:Record<ShipEnvironment,string>={
  communications:'Raised service-floor fields, dark cable trenches, removed panels and service papers',
  engineering:'Machine safety aprons, broken hazard paint, service spills and hot scorch tracks',
  maintenance:'Drain-channel network, grates, wet seepage fans and dragged repair supplies',
- infested:'Broad translucent-looking flat tissue mats, branching veins and islands of surviving human deck',
+ infested:'Thin seam veins around sculptural machine growth; exposed central human deck',
  containment:'Quiet field-sector inlays, calibration lanes, broken-glass and abandoned inspection papers',
  reactor:'Radial heat-stained plating, exclusion chevrons, scorched service lanes and abandoned controls',
 };
@@ -78,7 +78,7 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
  const pitch=environment==='infested'?.4:matOrganic||environment==='cryogenics'?.55:.8;let legalCells=0,coveredCells=0;
  const livingField=(x:number,z:number)=>{
   const wave=Math.sin(x*.64+phase)+Math.cos(z*.51-phase);
-  const mass=3.4+wave*.7-nearest(x,z),branch=2.4+wave*.3-Math.abs(x-w*.5-Math.sin(z*.22+phase)*w*.2);
+  const mass=.38+wave*.10-nearest(x,z),branch=-100;
   const holes=.88-Math.sin(x*.71+phase)*Math.cos(z*.57-phase)-.2*Math.sin(x*1.7+z*1.1);
   const fringe=.22*Math.sin(x*2.4+z*1.8+phase)+.12*Math.cos(x*1.8-z*3.1);
   return Math.min(Math.max(mass,branch)+fringe,holes*3);
@@ -108,49 +108,42 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
   switch(environment){
    case 'habitation':{
     const rug=reservations.some(r=>x>r.x/32-.7&&x<(r.x+r.width)/32+.7&&z>(r.y+r.height)/32+.3&&z<(r.y+r.height)/32+4.1);
-    field=rug||Math.abs(x-w*.26)<2.8;color=rug?palette[1]:palette[0];break;
+    field=rug&&d<.55;color=palette[1];break;
    }
-   case 'cargo':field=(x%7<5.5&&z%6<4.8);color=(Math.floor(x/7)+Math.floor(z/6))%2?palette[0]:palette[3];break;
-   case 'communications':field=x%6<5.5&&z%5<4.5;color=palette[0];break;
-   case 'maintenance':field=d<3.8+wave*.4||Math.abs(nx-.35)<.13||Math.abs(nx-.72)<.10;color=wave>.2?palette[0]:palette[3];break;
-   case 'engineering':field=d<3.1;kind=d<1.1?'hazard-apron':'material-zone';color=d<1.1?(stripe?palette[2]:palette[1]):palette[0];break;
+   case 'cargo':field=d<.65;color=(Math.floor(x/7)+Math.floor(z/6))%2?palette[0]:palette[3];break;
+   case 'communications':field=d<.4;color=palette[0];break;
+   case 'maintenance':field=d<.85+wave*.15;color=wave>.2?palette[0]:palette[3];break;
+   case 'engineering':field=d<.65;kind=d<.35?'hazard-apron':'material-zone';color=d<.35?(stripe?palette[2]:palette[1]):palette[0];break;
    case 'cryogenics':field=frostField(x,z)>0;kind='frost-field';color=palette[0];break;
    case 'infested':field=livingField(x,z)>0;kind='creep-mat';color=palette[0];break;
-   case 'containment':field=d<3.5||Math.abs(nx-.5)<.18; color=(Math.floor(z/4)+seed)%2?palette[0]:palette[3];break;
-   case 'reactor':field=d<4.5||Math.abs(nx-.5)<.28;color=wave>.4?palette[0]:palette[3];break;
-   case 'security':field=Math.abs(nx-.28)<.16||Math.abs(nx-.75)<.14||d<2.4;color=palette[0];break;
+   case 'containment':field=d<.5; color=(Math.floor(z/4)+seed)%2?palette[0]:palette[3];break;
+   case 'reactor':field=d<.8;color=wave>.4?palette[0]:palette[3];break;
+   case 'security':field=d<.55;color=palette[0];break;
   }
   if(matOrganic){contour(x,z,livingField,palette[0],'creep-mat');continue;}
   if(environment==='cryogenics'){contour(x,z,frostField,color,kind);continue;}
   if(field){quad(x,z,pitch+.002,pitch+.002,0,color,kind,.018);coveredCells++;}
  }
- // Functional route/inlay network. Its scale is several metres, independent of tile seams.
- for(let z=1;z<h-1;z+=.65){
-  if(organic)continue;
-  const lane=environment==='communications'?w*.44:environment==='maintenance'?w*.35:w*.26;
-  const offset=environment==='habitation'?Math.sin(z*.12+phase)*.7:0;
-  if(environment==='maintenance'||environment==='communications'){
-   quad(lane+offset,z,.58,.59,0,palette[1],environment==='maintenance'?'drain-channel':'cable-trench',.022);
-   for(const dx of [-.18,0,.18])quad(lane+offset+dx,z,.055,.43,0,palette[2],'grate',.026);
-  }else{
-   quad(lane+offset,z,.12,.43,0,palette[2],'route-inlay',.023);
-   quad(w*.76-offset,z,.08,.43,0,palette[3],'route-inlay',.023);
+ // Equipment service feeds replace the arbitrary court/lane network.
+ for(const r of reservations){
+  const x=(r.x+r.width*.5)/32,z=(r.y+r.height)/32+.30;
+  for(let n=0;n<5;n++){
+   const px=x+(n-2)*.16;
+   quad(px,z,.055,.23,0,palette[1],'equipment-drain',.022);
   }
  }
  if(organic){
   for(const [i,r]of reservations.entries())for(let arm=0;arm<3;arm++){
-   const x=(r.x+r.width*.5)/32,z=(r.y+r.height*.5)/32,a=phase+i*.7+arm*2.1;
-   const curve=new T.CatmullRomCurve3([new T.Vector3(x,.027,z),new T.Vector3(x+Math.cos(a)*2.4,.027,z+Math.sin(a)*2.4),new T.Vector3(x+Math.cos(a+.35)*5,.027,z+Math.sin(a+.35)*5),new T.Vector3(x+Math.cos(a+.15)*7,.027,z+Math.sin(a+.15)*7)]);
-   for(let step=0;step<36;step++){const a=curve.getPoint(step/36),b=curve.getPoint((step+1)/36);segment(a.x,a.z,b.x,b.z,.045+.09*(1-step/36),palette[2],'growth-vein',.027);}
+   const a=phase+i*.7+arm*2.1,cx=(r.x+r.width*.5)/32,cz=(r.y+r.height*.5)/32,reach=Math.min(r.width/64/Math.max(.001,Math.abs(Math.cos(a))),r.height/64/Math.max(.001,Math.abs(Math.sin(a))))+.06;
+   const x=cx+Math.cos(a)*reach,z=cz+Math.sin(a)*reach;
+   const curve=new T.CatmullRomCurve3([new T.Vector3(x,.027,z),new T.Vector3(x+Math.cos(a)*.65,.027,z+Math.sin(a)*.65),new T.Vector3(x+Math.cos(a+.35)*1.1,.027,z+Math.sin(a+.35)*1.1),new T.Vector3(x+Math.cos(a+.15)*1.6,.027,z+Math.sin(a+.15)*1.6)]);
+   for(let step=0;step<36;step++){const a=curve.getPoint(step/36),b=curve.getPoint((step+1)/36);segment(a.x,a.z,b.x,b.z,.018+.025*(1-step/36),palette[2],'growth-vein',.027);}
    for(const t of [.32,.61]){
-    const p=curve.getPoint(t),tangent=curve.getTangent(t),side=arm%2?1:-1,end=p.clone().add(new T.Vector3(tangent.x*1.6-tangent.z*1.4*side,0,tangent.z*1.6+tangent.x*1.4*side));
+    const p=curve.getPoint(t),tangent=curve.getTangent(t),side=arm%2?1:-1,end=p.clone().add(new T.Vector3(tangent.x*.45-tangent.z*.4*side,0,tangent.z*.45+tangent.x*.4*side));
     const fork=new T.CatmullRomCurve3([p,p.clone().lerp(end,.5).add(new T.Vector3(tangent.x*.3,0,tangent.z*.3)),end]);
-    for(let step=0;step<12;step++){const a=fork.getPoint(step/12),b=fork.getPoint((step+1)/12);segment(a.x,a.z,b.x,b.z,.025+.045*(1-step/12),palette[2],'growth-vein-branch',.027);}
+    for(let step=0;step<12;step++){const a=fork.getPoint(step/12),b=fork.getPoint((step+1)/12);segment(a.x,a.z,b.x,b.z,.012+.018*(1-step/12),palette[2],'growth-vein-branch',.027);}
    }
   }
- }else for(let z=3.2+phase%2;z<h-1;z+=5.2)for(let x=.8;x<w-.6;x+=.7){
-   const grate=environment==='maintenance'||environment==='communications';
-   quad(x,z,.57,grate?.24:.075,0,grate?palette[1]:palette[2],grate?'cross-service-channel':'bay-inlay',.024);
  }
  const architecture=addKitDeckArchitecture(t,id,reservations,{quad,segment});
  const aftermath=addKitFloorAftermath(t,id,reservations,{valid,quad,segment,patch});
