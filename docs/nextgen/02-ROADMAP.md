@@ -38,16 +38,19 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 
 | Stream | State | Notes |
 |---|---|---|
-| Waves 0–4 | merged | see git history and reports under docs/nextgen/ |
-| Wave 5 (G5 actors, G6 environments/camera, V5 effect language, U5 UI, I9 integration, U6 illustrated title) | merged | `nextgen`: 3,415 tests, smokes, 20/20 rooms, bot campaigns ×4; High 60 fps (p95 ≤ 18.2 ms), prep ≤ 2.45 s; gallery `artifacts/nextgen/final3/` |
-| R8 independent verdict | done | 6 / 8 / 6.5 / 5.5 / 5 / 6 — shippable as a free browser game; visually still "advanced prototype" — `reviews/R8-verdict.md` |
-| **Wave 6** — change the class of work: artist-authored CC0 kits + effect textures through the ink pipeline | running | |
-| E6 environment kits and compositions, per-mood lighting | running | |
-| V6 texture-authored ability effects, Overdrive state changes, barriers | running | |
-| C6 camera hero scale/room framing, small enemies, frozen read, Queen organ | running | |
-| U7 key art redraw (title, ending), HUD numerals, shop | running | |
+| Waves 0–5 | merged | see git history and reports under docs/nextgen/ |
+| Wave 6 (E6 CC0 environment kits, V6 textured effects, C6 camera/actors, U7 key art/HUD/shop, I10 integration) | merged | `nextgen` @ 4180801: ~3,500 tests, smokes, 20/20 rooms, bot campaigns ×4 (3 endings, 1 death, 0 errors); 80/80 bench trials pass (High p95 ≤ 18.2 ms, scale ≥ 0.90, 289 draws); room prep worst 2.0 s; gallery `artifacts/nextgen/final4/` |
+| R9 independent verdict | done | 6 / 8 / 7 / 5.5 / 5.5 / 6 — "advanced prototype with a polished-indie interface"; biggest blocker: enemy art — `reviews/R9-verdict.md` |
+| **Wave 7** — the named blockers | running | |
+| K7 creature redesign (enemy families, Queen, rig modules on the marine) | running | |
+| E7 functional floors, sculptural infestation, ten lighting compositions, encounter framing, hostile pools | running | |
+| V7 ultimates as state changes, one VFX language, placement footprint at the cursor | running | |
 
-Next (lead): I10 integration + acceptance, gallery `final4`, fifth independent verdict.
+Next (lead): I11 integration + acceptance, gallery `final5`, sixth independent verdict. Open item not assigned this wave: D10 title figure drawing.
+
+Housekeeping 2026-11-14: build outputs and capture galleries in merged agent worktrees were deleted to recover ~227 GB (disk was at 13 GB free);
+final galleries live in the main checkout under `artifacts/nextgen/final*`. Evidence paths inside older stream reports that point into worktree
+`artifacts/` folders no longer resolve.
 
 ## Decisions log
 
