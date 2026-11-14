@@ -43,3 +43,7 @@ Every distinct preparation history remains in JSON. Zero/non-finite/missing tota
 Validation for this additional module is syntax/help only while the parent's isolated benchmark runs. No browser or image processing was launched by this tooling task.
 
 An explicit showcase selection may also use `organic/<native-file>.png`. Such images must exist in `organic/source-receipts.json`, match its native SHA256 and match the assembled gallery's frozen source/application assets. Their original organic receipt is preserved in `showcase.json`; unknown paths, modified files, mixed applications and legacy boss images are rejected.
+
+The I11 gallery/lighting boards use a local exact integer1:1 pixel blit. The inherited g2 helper computes `floor(dx / width * source.width)` even at equal dimensions; floating-point roundoff maps a few columns to their predecessor (for example123→122). That does not alter native PNGs or standalone exact480 reductions, but prevents claiming their former contact cells are byte-identical. Prior opened sheets remain historical visual witnesses. Corrected pages use versioned `*-exact` directories and require fresh actual opens before strict coverage bridges.
+
+A nonuniform480×270 six-cell fixture checked2,332,800 channel values across all offsets (including columns123/245) and proves every corrected page cell equals its standalone exact480 file. No application, shared g2 helper, I10 tool, capture assertion or native image changed.

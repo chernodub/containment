@@ -5,7 +5,17 @@ import {createHash} from 'node:crypto';
 import {constants} from 'node:fs';
 import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
 import {basename,resolve,relative,sep} from 'node:path';
-import {canvas,decode,encode,drawImage,drawText} from './g2-png.mjs';
+import {canvas,decode,encode,drawImage as drawScaledImage,drawText} from './g2-png.mjs';
+
+/** Preserve every pixel for native-scale tiles and exact480 contact cells. */
+function drawImage(target,source,x,y,width,height){
+  if(source.width!==width||source.height!==height)return drawScaledImage(target,source,x,y,width,height);
+  assert(Number.isInteger(x)&&Number.isInteger(y)&&x>=0&&y>=0&&x+width<=target.width&&y+height<=target.height,'Native tile bounds');
+  for(let row=0;row<height;row++)for(let column=0;column<width;column++){
+    const from=(row*width+column)*source.channels,to=((y+row)*target.width+x+column)*3;
+    for(let channel=0;channel<3;channel++)target.pixels[to+channel]=source.pixels[from+channel];
+  }
+}
 
 // Preserve original bytes while avoiding duplicate allocation on APFS. Node
 // falls back to a regular copy when cloning is unavailable.

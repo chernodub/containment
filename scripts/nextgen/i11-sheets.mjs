@@ -4,7 +4,17 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {mkdir, readFile, writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
-import {canvas, decode, drawImage, drawText, encode} from './g2-png.mjs';
+import {canvas, decode, drawText, encode} from './g2-png.mjs';
+
+/** These boards place already-reduced480 images without another sampling step. */
+function drawImage(target,source,x,y,width,height) {
+  assert.equal(source.width,width); assert.equal(source.height,height);
+  assert(Number.isInteger(x)&&Number.isInteger(y)&&x>=0&&y>=0&&x+width<=target.width&&y+height<=target.height,'Exact cell bounds');
+  for(let row=0;row<height;row++)for(let column=0;column<width;column++) {
+    const from=(row*width+column)*source.channels,to=((y+row)*target.width+x+column)*3;
+    for(let channel=0;channel<3;channel++) target.pixels[to+channel]=source.pixels[from+channel];
+  }
+}
 
 const root = resolve(process.argv[2] ?? 'artifacts/nextgen/final5');
 if (process.argv.includes('--help')) {
