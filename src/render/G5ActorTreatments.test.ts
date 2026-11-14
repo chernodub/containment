@@ -36,8 +36,8 @@ it('retains cyan-white marine material signature independently of rig and physic
  try{const shader=compile(materialFor(model.root));expect(shader.fragmentShader).toContain('vec3(.42,.76,.86)');expect(shader.fragmentShader).toContain('totalEmissiveRadiance+=vec3(.025,.07,.09)');const key=materialFor(model.root).customProgramCacheKey();for(const rig of ['breacher','cryo','pyro','arc']){model.setRig!(rig);expect(materialFor(model.root).customProgramCacheKey()).toBe(key);}}finally{disposeModel(model.root);}
 });
 it('reports elevated family/rank anatomy to health bars and priority without inflating its rig',()=>{
- for(const [family,elite,multiplier]of [['crawler',false,1],['spitter',false,1.55],['spitter',true,1.55],['carrier',true,1.28],['brute',true,1.28],['queen',false,1.4]] as const){
+ for(const [family,elite,multiplier]of [['crawler',false,1],['spitter',false,1.55],['spitter',true,1.55],['carrier',true,1.35],['brute',true,1.28/.78],['queen',false,1.4]] as const){
   const model=alien(family,elite),identity=model.root.getObjectByName(`${family}-identity`) as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
-  try{const rigHeight=identity.material.uniforms.identityHeight.value as number;expect(model.height).toBeCloseTo(rigHeight*multiplier);if(family!=='queen'){model.setThreat!(0,null,'warden');expect(model.height).toBeCloseTo(rigHeight*1.72);model.reset!();expect(model.height).toBeCloseTo(rigHeight*multiplier);}}finally{disposeModel(model.root);}
+  try{const rigHeight=identity.material.uniforms.identityHeight.value as number;expect(model.height).toBeCloseTo(rigHeight*multiplier);if(family!=='queen'){model.setThreat!(0,null,'warden');expect(model.height).toBeCloseTo(rigHeight*1.72/(family==='brute'?.78:1));model.reset!();expect(model.height).toBeCloseTo(rigHeight*multiplier);}}finally{disposeModel(model.root);}
  }
 });

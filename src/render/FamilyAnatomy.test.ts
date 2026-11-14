@@ -13,44 +13,42 @@ function bounds(parts: readonly ActorPart[]) {
   return {min,max,width:max[0]-min[0],height:max[1]-min[1],length:max[2]-min[2]};
 }
 
-it('gives each small family a solid primary body and a defining anatomical silhouette',()=>{
-  const crawler=familyAnatomy('crawler',1,1),stalker=familyAnatomy('stalker',1,1),carrier=familyAnatomy('carrier',1,1);
-  const shell=bounds(crawler.filter(p=>p.role===0)),mandibles=crawler.filter(p=>p.role===10);
-  expect(shell.width).toBeGreaterThanOrEqual(.65);
-  expect(shell.height).toBeGreaterThan(.6);
-  expect(shell.max[1]).toBeGreaterThan(.9);
-  expect(mandibles).toHaveLength(2);
-  expect(mandibles[0].position[0]).toBeLessThan(0);expect(mandibles[1].position[0]).toBeGreaterThan(0);
-  expect(bounds(mandibles).max[2]).toBeGreaterThan(shell.max[2]+.1);
-  for(const part of mandibles)expect(Math.min(...part.scale)).toBeGreaterThanOrEqual(.06);
-  const thorax=stalker.find(p=>p.role===0)!,blades=stalker.filter(p=>p.shape==='shield'),stinger=stalker.filter(p=>p.role===10);
-  expect(thorax.scale[0]).toBeGreaterThanOrEqual(.2);expect(thorax.scale[1]).toBeGreaterThanOrEqual(.25);
-  expect(blades).toHaveLength(2);expect(blades[0].position[0]).toBeLessThan(-thorax.scale[0]);expect(blades[1].position[0]).toBeGreaterThan(thorax.scale[0]);
-  expect(stinger).toHaveLength(1);expect(stinger[0].position[2]).toBeLessThan(0);
-  expect(bounds(stinger).max[1]).toBeGreaterThan(bounds([thorax]).max[1]+.3);
-  expect(stinger[0].scale[0]).toBeGreaterThanOrEqual(.1);
-  const egg=carrier.filter(p=>p.shape==='sac');expect(egg).toHaveLength(1);
-  expect(egg[0].position[2]).toBeLessThan(0);expect(bounds(egg).max[1]).toBeGreaterThan(1);
-  // These shape measurements remain distinct without reading a family palette.
-  const signatures=[crawler,stalker,carrier].map(parts=>{const b=bounds(parts);return [b.width,b.height,b.length,...parts.map(p=>p.position[1])].join('/');});
-  expect(new Set(signatures).size).toBe(3);
+it('gives every family a segmented armored back, front mask and substantial jointed limbs',()=>{
+  const signatures=new Set<string>();
+  for(const kind of ['crawler','brute','spitter','stalker','carrier']){
+    const parts=familyAnatomy(kind,1,1),front=parts.filter(p=>p.role===12),armor=parts.filter(p=>p.role===4||p.role===11);
+    expect(front.length).toBeGreaterThan(0);
+    expect(front.every(p=>p.position[2]>.2&&p.scale[0]>=.07)).toBe(true);
+    expect(armor.length).toBeGreaterThanOrEqual(3);
+    expect(parts.some(p=>p.role===2&&p.scale[0]>=.17)).toBe(true);
+    expect(parts.filter(p=>p.end).length).toBeGreaterThanOrEqual(6);
+    expect(parts.filter(p=>p.end).every(p=>p.joint&&p.scale[0]>=.04)).toBe(true);
+    signatures.add(parts.map(p=>p.shape+'/'+p.role+'/'+p.position.join('/')).join('|'));
+  }
+  expect(signatures.size).toBe(5);
+  const crawler=familyAnatomy('crawler',1,1),brute=familyAnatomy('brute',1,1);
+  expect(crawler.filter(p=>p.shape==='carapace')).toHaveLength(3);
+  expect(brute.filter(p=>p.shape==='carapace')).toHaveLength(3);
+  expect(familyAnatomy('spitter',1,1).some(p=>p.shape==='sac'&&p.position[1]>1)).toBe(true);
+  expect(familyAnatomy('stalker',1,1).some(p=>p.shape==='spine'&&p.position[2]<0)).toBe(true);
+  expect(familyAnatomy('carrier',1,1).filter(p=>p.shape==='sac')).toHaveLength(1);
 });
 
-it('keeps new torso anatomy inside the conservative radial envelope at any authored scale',()=>{
-  for(const span of [.55,1,2.4])for(const height of [.32,1,2.3])for(const kind of ['crawler','stalker','carrier']){
+it('keeps all authored segment endpoints and torso masses within the same radial design envelope',()=>{
+  for(const span of [.55,1,2.4])for(const height of [.32,1,2.3])for(const kind of ['crawler','stalker','carrier','brute','spitter']){
     const parts=familyAnatomy(kind,span,height);
-    expect(parts.length).toBeLessThanOrEqual(5);
+    expect(parts.length).toBeLessThan(40);
     for(const part of parts){
       expect(part.fitted).toBe(false);
-      const b=bounds([part]);
-      const farX=Math.max(Math.abs(b.min[0]),Math.abs(b.max[0]));
-      const farZ=Math.max(Math.abs(b.min[2]),Math.abs(b.max[2]));
-      expect(Math.hypot(farX,farZ),`${kind}/${part.shape}`).toBeLessThanOrEqual(span*.50);
+      const points=part.end?[part.position,part.end]:[part.position];
+      for(const p of points){
+        const rx=part.end?part.scale[0]:part.scale[0]*1.01;
+        const rz=part.end?part.scale[2]:part.scale[2]*1.01;
+        expect(Math.hypot(Math.abs(p[0])+rx,Math.abs(p[2])+rz),`${kind}/${part.shape}`).toBeLessThanOrEqual(span*.50);
+      }
       expect(part.position.every(Number.isFinite)&&part.scale.every(n=>Number.isFinite(n)&&n>0)).toBe(true);
     }
   }
-  expect(familyAnatomy('brute',1,1)).toEqual([]);
-  expect(familyAnatomy('spitter',1,1)).toEqual([]);
   expect(familyAnatomy('queen',1,1)).toEqual([]);
 });
 
