@@ -12,11 +12,11 @@ it('authors a bounded triangle-constant region partition shared across pool clon
     try{
       const regions=new Set<number>(),geometries:T.BufferGeometry[]=[];let constant=true;
       a.root.traverse(o=>{if(o instanceof T.SkinnedMesh){
-        const g=o.geometry,region=g.getAttribute('actorRegion');expect(region).toBeDefined();
+        const g=o.geometry,region=g.getAttribute('actorRegion')??g.getAttribute('identityRole');expect(region).toBeDefined();
         geometries.push(g);const index=g.index;
         for(let t=0;t<(index?.count??region.count);t+=3){
           const ids=[0,1,2].map(v=>region.getX(index?index.getX(t+v):t+v));
-          constant&&=ids[0]===ids[1]&&ids[1]===ids[2];regions.add(ids[0]);
+          constant&&=ids[0]===ids[1]&&ids[1]===ids[2];if(g.hasAttribute('actorRegion'))regions.add(ids[0]);else expect(ids[0]).toBeLessThan(23);
         }
       }});
       expect(constant,family).toBe(true);

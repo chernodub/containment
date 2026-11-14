@@ -40,7 +40,7 @@ it('retains friendly cyan-white identifiers independently of every rig and above
  const model=marine(),scene=new T.Scene(),beacon=new PlayerBeacon(model.root,scene);
  const identity=model.root.getObjectByName('marine-rig-accents') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
  try{
-  expect(new Set(identity.geometry.getAttribute('identityRole').array)).toEqual(new Set([0,1]));
+  expect(new Set(identity.geometry.getAttribute('identityRole').array)).toEqual(new Set([0,1,13,14,15,16]));
   expect(identity.material.fragmentShader).toContain('vec3(.65,.93,1.0)');
   model.animate(0,0,0);beacon.update(model.root,0,false,1);
   const skin=beacon.root.children.find(o=>o instanceof T.SkinnedMesh&&o.visible) as T.SkinnedMesh;
@@ -51,15 +51,15 @@ it('retains friendly cyan-white identifiers independently of every rig and above
 });
 
 it('uses different family body values and keeps identity geometry immune to status flashes',()=>{
- const values:number[]=[];
+ const values:string[]=[];
  for(const kind of ['crawler','spitter','carrier','brute','stalker']){
   const model=alien(kind),identity=model.root.getObjectByName(`${kind}-identity`) as T.Mesh;
-  let value=0;model.root.traverse(o=>{if(o instanceof T.SkinnedMesh)value+=(o.material as T.MeshStandardMaterial).color.getHSL({h:0,s:0,l:0}).l;});values.push(value);
+  let value=0;model.root.traverse(o=>{if(o instanceof T.SkinnedMesh&&o.material instanceof T.MeshStandardMaterial)value+=(o.material as T.MeshStandardMaterial).color.getHSL({h:0,s:0,l:0}).l;});values.push(model.root.userData.graphicActorBase+'/'+value.toFixed(3));
   const material=identity.material,geometry=identity.geometry;
   model.setAffliction!({chilled:true,burning:true,frozen:true});model.hit!();model.animate(0,0,0);
   expect(identity.material).toBe(material);expect(identity.geometry).toBe(geometry);disposeModel(model.root);
  }
- expect(new Set(values.map(v=>v.toFixed(2))).size).toBe(5);
+ expect(new Set(values).size).toBe(5);
 });
 
 it('shows only damaged or elite backed health bars at a constant pixel size',()=>{
@@ -82,7 +82,7 @@ it('switches a rooted brood sac into its retained ruptured husk without allocati
  }finally{vi.restoreAllMocks();}
 });
 
-it('gives brute shoulder armor closed bevelled shield volumes with broad planes',()=>{
+it('gives brute segmented carapace closed thickness and three deliberate plate divisions',()=>{
  const model=alien('brute'),identity=model.root.getObjectByName('brute-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
  const role=identity.geometry.getAttribute('identityRole'),normal=identity.geometry.getAttribute('normal'),position=identity.geometry.getAttribute('position');
  const directions=new Set<string>(),bounds=new T.Box3(),point=new T.Vector3();
@@ -91,7 +91,10 @@ it('gives brute shoulder armor closed bevelled shield volumes with broad planes'
    directions.add([normal.getX(i),normal.getY(i),normal.getZ(i)].map(n=>n.toFixed(2)).join(','));
    bounds.expandByPoint(point.fromBufferAttribute(position,i));
   }
-  expect(directions.size).toBeGreaterThanOrEqual(10);expect(directions.size).toBeLessThan(35);
+  expect(directions.size).toBeGreaterThanOrEqual(10);expect(directions.size).toBeLessThan(300);
+  const anchor=identity.geometry.getAttribute('identityAnchor'),plates=new Set<string>();
+  for(let i=0;i<role.count;i++)if((role.getX(i)===4||role.getX(i)===11)&&anchor.getX(i)===0)plates.add(anchor.getZ(i).toFixed(4));
+  expect(plates.size).toBe(3);
   expect(bounds.getSize(point).y).toBeGreaterThan(.15);
   expect(identity.geometry.getAttribute('position').count/3).toBeLessThan(3000);
  }finally{disposeModel(model.root);}
@@ -107,19 +110,21 @@ it('retracts each Queen plate as a rigid side without stretching triangles acros
   }
   expect(plates).toBeGreaterThan(100);
   expect(identity.material.vertexShader).toContain('vec3 hinge=identityAnchor');
-  const anchor=identity.geometry.getAttribute('identityAnchor');
+  const anchor=identity.geometry.getAttribute('identityAnchor'),hinges=new Map<number,Set<string>>();
+  for(let i=0;i<role.count;i++)if(role.getX(i)===5){const direction=side.getX(i),set=hinges.get(direction)??new Set<string>();set.add([anchor.getX(i),anchor.getY(i),anchor.getZ(i)].join('/'));hinges.set(direction,set);}
+  expect([...hinges.keys()].sort()).toEqual([-1,1]);expect([...hinges.values()].map(set=>set.size)).toEqual([1,1]);
   for(let i=0;i<role.count;i+=3)if(role.getX(i)===5)for(let axis=0;axis<3;axis++){expect(anchor.getComponent(i+1,axis)).toBe(anchor.getComponent(i,axis));expect(anchor.getComponent(i+2,axis)).toBe(anchor.getComponent(i,axis));}
  }finally{disposeModel(model.root);}
 });
 
 
-it('nests the closed Queen organ into two bounded shell halves before exposure',()=>{
+it('nests the closed Queen ventricles, valve and artery inside two segmented mantle wings before exposure',()=>{
  const model=alien('queen'),identity=model.root.getObjectByName('queen-identity') as T.Mesh<T.BufferGeometry,T.ShaderMaterial>;
  const role=identity.geometry.getAttribute('identityRole'),position=identity.geometry.getAttribute('position');
  const core=new T.Box3(),plates=new T.Box3(),point=new T.Vector3();
  try{
   for(let i=0;i<role.count;i++){
-   if(role.getX(i)===3)core.expandByPoint(point.fromBufferAttribute(position,i));
+   if(role.getX(i)===3||role.getX(i)===17||role.getX(i)===18)core.expandByPoint(point.fromBufferAttribute(position,i));
    if(role.getX(i)===5)plates.expandByPoint(point.fromBufferAttribute(position,i));
   }
   const h=identity.material.uniforms.identityHeight.value as number,span=identity.material.uniforms.identitySpan.value as number;
@@ -168,8 +173,11 @@ it('keeps Queen chitin neutral and shades moving plates around an exposure-only 
   expect(shell.g).toBeLessThan(shell.r);expect(shell.g).toBeLessThan(shell.b);
   expect(Math.max(shell.r,shell.g,shell.b)-Math.min(shell.r,shell.g,shell.b)).toBeLessThan(.08);
   expect(identity.material.vertexShader).toContain('plateNormal.xy=mat2(');
-  expect(identity.material.vertexShader).toContain('identityNormal=normalMatrix*plateNormal');
+  expect(identity.material.vertexShader).toContain('identityNormal=normalMatrix*objectNormal');expect(identity.material.vertexShader).toContain('#include <skinnormal_vertex>');
   expect(identity.material.fragmentShader).toContain('if(identityOpening<.08)discard;');expect(identity.material.vertexShader).toContain('organScale');
+  expect(identity.material.vertexShader).toContain('if((role>2.5&&role<3.5)||(role>16.5&&role<18.5))');
+  expect(identity.material.vertexShader).toContain('plateNormal=normalize(plateNormal/organScale)');
+  expect(identity.material.fragmentShader).toContain('if((role>2.5&&role<3.5)||(role>16.5&&role<18.5))');
   const material=identity.material,geometry=identity.geometry;
   let body:T.MeshStandardMaterial|undefined;
   model.root.traverse(object=>{if(object instanceof T.SkinnedMesh&&!body)body=object.material as T.MeshStandardMaterial;});

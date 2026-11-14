@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import * as T from 'three';
 import {registerGeometry,GEOMETRY_CLASSES} from '../src/render/post/GeometryBuffer';
-import {FAMILY_IDENTITY} from '../src/render/ActorIdentity';
+import {FAMILY_IDENTITY,ENEMY_BODY_COLORS} from '../src/render/ActorIdentity';
 import {actorSurface} from '../src/render/vfx/ActorSurface';
 
 function actorColor(name:string,kind:number):T.Color {
@@ -21,12 +21,15 @@ describe('I8 deliberate actor values',()=>{
   const stalker=actorColor('alien-stalker',GEOMETRY_CLASSES.enemy),carrier=actorColor('alien-carrier',GEOMETRY_CLASSES.enemy);
   const luma=(c:T.Color)=>c.r*.2126+c.g*.7152+c.b*.0722;
   expect(luma(marine)).toBeLessThan(.08);
-  // Pale Brute plates are physical accents; the body must remain a dark
-  // separate value rather than turning the entire family into beige chitin.
-  expect(luma(brute)).toBeLessThan(luma(new T.Color(FAMILY_IDENTITY.brute))*.25);
-  expect(luma(brute)).toBeGreaterThan(luma(stalker)*1.8);
-  expect(crawler.r).toBeGreaterThan(crawler.g*2);expect(spitter.g).toBeGreaterThan(spitter.r*1.6);
-  expect(stalker.b).toBeGreaterThan(stalker.r*2);expect(luma(stalker)).toBeLessThan(luma(brute)*.55);
-  expect(carrier.r).toBeGreaterThan(carrier.g*2);expect(carrier.b).toBeGreaterThan(carrier.g*1.6);
+  // Each family retains a dark articulated body below its authored armor,
+  // without requiring a saturated primary hue or a pale Brute cape.
+  expect(luma(brute)).toBeLessThan(luma(new T.Color(FAMILY_IDENTITY.brute))*.5);
+  const colors=[crawler,brute,spitter,stalker,carrier];
+  expect(new Set(colors.map(c=>c.getHex())).size).toBe(5);
+  for(const [family,color] of Object.entries(ENEMY_BODY_COLORS)){
+    const actual=actorColor('alien-'+family,GEOMETRY_CLASSES.enemy);
+    expect(actual.getHex()).toBe(color);expect(luma(actual)).toBeLessThan(.08);
+  }
+
  });
 });
