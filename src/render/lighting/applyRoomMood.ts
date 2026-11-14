@@ -17,7 +17,7 @@ const deckTint: Readonly<Record<ShipEnvironment, number>> = {
 const deckBounce: Readonly<Record<ShipEnvironment,number>>={cryogenics:.006,habitation:.006,security:.001,cargo:.004,communications:.016,engineering:.004,maintenance:.006,infested:.003,containment:.002,reactor:.012};
 const readableSteel = new T.Color(0x657481);
 const reactorSteel = new T.Color(0x626b73);
-const roomDeckGain:Readonly<Record<string,number>>={'awakening-bay':1.06,'communal-atrium':1.20,'freight-hold':1.18,'transmission-chamber':1.10,'safety-interlock-station':1.32,'coolant-plant':1.18};
+const roomDeckGain:Readonly<Record<string,number>>={'awakening-bay':1.11,'communal-atrium':1.27,'freight-hold':1.50,'transmission-chamber':1.10,'safety-interlock-station':1.32,'coolant-plant':1.18,'relay-racks':.93,'swarm-junction':.95,'shielding-gate':.93,'service-shaft-landing':1.12};
 const deckNames = new Set(['painted-steel-deck','annulus-deck','annulus-circulation','environment-floor','shaft-deck']);
 // A readable deck toe must not become an ambient wash across dark rack faces.
 const hardwareBounce:Partial<Record<ShipEnvironment,number>> = {communications:.006,security:.0002,containment:.0005,reactor:.007};
@@ -40,6 +40,9 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         originals.set(material, original);
       }
       const floor=deckNames.has(material.name)||material.userData.floorDressing===true;
+      // Re-preparation must start at authored albedo, including shaft/circulation surfaces
+      // which do not take the ordinary readable-steel normalization below.
+      if(deckNames.has(material.name))material.color.copy(original.color);
       if(material.userData.floorDressing===true&&!deckNames.has(material.name))registerFlatFloorLighting(material,environment,practicalShapes);
       // Authored deck materials are shared by their baked floor meshes only.
       if (material.name === 'painted-steel-deck' || material.name === 'annulus-deck' || material.name === 'annulus-circulation' || material.name === 'environment-floor') {
@@ -48,6 +51,8 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         if (material.name === 'painted-steel-deck' || material.name === 'annulus-deck') {
           // Original near-black paint multiplied by colored light hid traversable floor below sRGB 30.
           material.color.copy(original.color).lerp(environment==='reactor'?reactorDeck:readableSteel, .85).multiply(tint);
+        } else if(material.name === 'annulus-circulation' && templateId === 'containment-annulus') {
+          material.color.copy(original.color).lerp(readableSteel,.45).multiply(tint);
         } else if(material.name !== 'annulus-circulation') {
           material.color.copy(material.userData.roomBaseColor ?? original.color).lerp(new T.Color(environment==='reactor'?0x747e88:0x8896a1),.8).multiply(tint);
         }

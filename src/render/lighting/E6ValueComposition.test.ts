@@ -18,6 +18,32 @@ function materials(){
 }
 
 describe('E6 room value hierarchy',()=>{
+ it.each([
+  ['awakening-bay','cryogenics'],['communal-atrium','habitation'],['freight-hold','cargo'],
+  ['relay-racks','communications'],['swarm-junction','infested'],['shielding-gate','containment'],
+  ['service-shaft-landing','maintenance'],['containment-annulus','containment'],
+ ] as const)('%s recalibrates only floor albedo without compounding room preparation', (room,environment)=>{
+  const world=new T.Group(),geometry=new T.PlaneGeometry(2,2);
+  const decks=['painted-steel-deck','annulus-deck','annulus-circulation','environment-floor','shaft-deck'].map(name=>new T.MeshStandardMaterial({name,color:0x354247,roughness:.92,metalness:.06}));
+  const semantics=['marine-suit','enemy-family','hostile-warning','navigation-safe','e6-kit-body'].map(name=>new T.MeshStandardMaterial({name,color:0x93634f}));
+  const dressing=new T.MeshStandardMaterial({name:'e6-kit-floor',color:0x63777f});dressing.userData.floorDressing=true;
+  const all=[...decks,...semantics,dressing],untouched=[...semantics,dressing].map(material=>material.color.clone());
+  for(const material of all)world.add(new T.Mesh(geometry,material));
+  const objects=[...world.children];applyRoomMood(world,environment,room);
+  const calibrated=decks.map(material=>material.color.clone()),hooks=all.map(material=>material.onBeforeCompile),keys=all.map(material=>material.customProgramCacheKey());
+  for(let n=0;n<6;n++)applyRoomMood(world,environment,room);
+  decks.forEach((material,index)=>expect(material.color.equals(calibrated[index])).toBe(true));
+  [...semantics,dressing].forEach((material,index)=>expect(material.color.equals(untouched[index])).toBe(true));
+  all.forEach((material,index)=>{expect(material.onBeforeCompile).toBe(hooks[index]);expect(material.customProgramCacheKey()).toBe(keys[index]);});
+  // A quality/mood transition must also recover the same authored starting albedo.
+  applyRoomMood(world,'cargo','freight-hold');applyRoomMood(world,environment,room);
+  decks.forEach((material,index)=>expect(material.color.equals(calibrated[index])).toBe(true));
+  expect(world.children).toEqual(objects);geometry.dispose();all.forEach(material=>material.dispose());
+ });
+ it('limits the circulation lift to its named room while retaining the main annulus deck calibration',()=>{
+  const run=(room?:string)=>{const world=new T.Group(),geometry=new T.PlaneGeometry(2,2),deck=new T.MeshStandardMaterial({name:'annulus-deck',color:0x354247}),circulation=new T.MeshStandardMaterial({name:'annulus-circulation',color:0x354247});world.add(new T.Mesh(geometry,deck),new T.Mesh(geometry,circulation));applyRoomMood(world,'containment',room);const colors=[deck.color.clone(),circulation.color.clone()];geometry.dispose();deck.dispose();circulation.dispose();return colors;};
+  const named=run('containment-annulus'),generic=run();expect(named[0].equals(generic[0])).toBe(true);expect(named[1].r).toBeGreaterThan(generic[1].r);expect(generic[1].equals(new T.Color(0x354247))).toBe(true);
+ });
  it.each(['communications','security','containment'] as const)('%s keeps deck shadow readability without lifting hardware recesses',environment=>{
   const m=materials();applyRoomMood(m.world,environment);
   const floor=shaderFor(m.deck),hardware=shaderFor(m.hardware);

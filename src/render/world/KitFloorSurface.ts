@@ -16,6 +16,7 @@ export const KIT_FLOOR_VALUE_GAIN:Readonly<Record<string,number>>={
  'manual-control-chamber':.64,'diagnostic-gallery':.80,
  'infested-workshop':.85,'swarm-junction':.80,
  'freight-hold':1.40,'relay-racks':.90,'containment-annulus':.962,
+ 'service-shaft-landing':.90,
 };
 const FLOOR_IDEAS:Record<ShipEnvironment,string>={
  cryogenics:'Quiet release aisle, broad frost creep at berth seals and interrupted evacuation tracks',
