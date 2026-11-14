@@ -39,3 +39,26 @@ it.each([...(DEFAULT_ROOMS as string[]), 'communal-atrium:retry', 'containment-a
   expect(game.enemies.snapshot.enemies.filter(enemy => enemy.health > 0).length).toBeGreaterThanOrEqual(12);
   expect(game.status).toBe('playing');
 });
+
+it('seeds legal contacts before demanding the unchanged eighteen-target reserve from an unengaged close camera', async () => {
+  const target: Record<string, any> = {};
+  vi.stubGlobal('window', target);vi.stubGlobal('location', {search:'?debug=1&seed=1729'});
+  let game: DepthGame;
+  const productionRender=vi.fn((_game:DepthGame,_dt=0)=>{});
+  const renderer = {
+    muzzle:{intensity:0},beginGameplayPresentation:vi.fn(),roomLoading:false,prepare:async()=>{},render:productionRender,
+    visible(x:number,y:number){return game.enemies.activeCount>0||Math.hypot(x-game.player.x,y-game.player.y)<145;},
+    effect(event:{type:string}){if(event.type==='shot')this.muzzle.intensity=1;},
+  };
+  game=new DepthGame(event=>renderer.effect(event));installDebug(game,renderer as unknown as DepthRenderer,()=>{},()=>{});
+  const d=target.__containmentDebug;await d.gotoRoom('awakening-bay',{rig:'cryo'});
+  const result=await stageKiting();
+  expect(result.staged).toBeGreaterThanOrEqual(18);expect(result.initialVisible).toBeGreaterThanOrEqual(18);expect(result.placedVisible).toBeGreaterThanOrEqual(18);
+  expect(result.packingPasses[0].initialVisible).toBeLessThan(18);expect(result.packingPasses.length).toBeGreaterThan(1);
+  // installDebug forces renderer delta0 unless the tool's synchronous mode
+  // bracket is correct. Observe the underlying production render spy.
+  expect(productionRender.mock.calls.some(call=>(call[1]??0)>0)).toBe(true);
+  expect(game.stats.abilityUses).toMatchObject({dash:1,tactical:1});
+  for(let frame=0;frame<4;frame++){advanceKiting({frame,stepMs:150});expect(game.enemies.snapshot.enemies.filter(e=>e.health>0&&renderer.visible(e.x,e.y)).length).toBeGreaterThanOrEqual(12);}
+  expect(game.stats.abilityUses).toMatchObject({dash:1,tactical:1,power:1,overdrive:1});
+});

@@ -1,0 +1,1162 @@
+{
+  "version": 1,
+  "label": "Native-earned-state presentation replay; not organic gameplay or complete simulation restoration",
+  "sources": [
+    {
+      "path": "artifacts/nextgen/playtest/i10-breacher-1729/r6-armory-mid.json",
+      "sha256": "fa34a985fb2dad8d3d868beb06a7e247f3ab55f80654d42be8dfe52f05859cca",
+      "kind": "native bot campaign saved mid-fight snapshot"
+    },
+    {
+      "path": "artifacts/nextgen/i10/armory-camera-fixture.json",
+      "sha256": "fac386cb1195b60e56e211dec7c9441dbae08c68c0aaabfc4700bd9a5ff045fd",
+      "kind": "independent camera reconstruction from saved matrices"
+    }
+  ],
+  "seed": 1729,
+  "room": "armory",
+  "rig": "breacher",
+  "run": {
+    "version": 3,
+    "seed": 1729,
+    "currentNodeId": "1729:v3-r5",
+    "completedNodeIds": [
+      "1729:v3-r0",
+      "1729:v3-r1",
+      "1729:v3-r2",
+      "1729:v3-r3",
+      "1729:v3-r4"
+    ],
+    "phase": "combat",
+    "draftRoll": 0
+  },
+  "node": {
+    "id": "1729:v3-r5",
+    "depth": 5,
+    "templateId": "armory",
+    "kind": "elite",
+    "reward": "rare-upgrade",
+    "next": [
+      "1729:v3-r6"
+    ]
+  },
+  "build": {
+    "mutations": [
+      "breacher",
+      "reinforced-bulwark",
+      "heavy-pellets",
+      "chain-reaction",
+      "seismic-impact"
+    ],
+    "rig": "breacher"
+  },
+  "elapsed": 151.55000000001274,
+  "player": {
+    "x": 112.19879280089408,
+    "y": 471.91372017068306,
+    "radius": 16,
+    "angle": 1.5266594401569926,
+    "moving": true,
+    "vx": 138.47278314528296,
+    "vy": -170.95405326578202,
+    "screen": {
+      "x": 147.9005094719133,
+      "y": 457.0441696658783,
+      "depth": 0.9945935368458589
+    }
+  },
+  "combat": {
+    "weaponId": "rifle",
+    "magazine": 15,
+    "magazineCapacity": 30,
+    "reserve": 80,
+    "reloading": false,
+    "reloadDurationMs": 0,
+    "reloadRemainingMs": 0,
+    "fireCooldownRemainingMs": 27.77777777777776,
+    "bloomRadians": 0.032,
+    "grenades": 0,
+    "grenadeCooldownRemainingMs": 0,
+    "medkits": 2,
+    "health": 100,
+    "armor": 14.962526315789475,
+    "maxArmor": 100,
+    "dead": false,
+    "credits": 1272,
+    "wave": 6,
+    "objective": null,
+    "weapon": "rifle"
+  },
+  "resources": {
+    "health": 100,
+    "armor": 14.962526315789475,
+    "credits": 1272,
+    "grenades": 0,
+    "medkits": 2,
+    "weapon": "rifle",
+    "ammo": {
+      "pistol": {
+        "magazine": 12,
+        "reserve": -1
+      },
+      "rifle": {
+        "magazine": 15,
+        "reserve": 80
+      },
+      "shotgun": {
+        "magazine": 4,
+        "reserve": 21
+      },
+      "plasma": {
+        "magazine": 20,
+        "reserve": 47
+      },
+      "rocket": {
+        "magazine": 1,
+        "reserve": 4
+      }
+    }
+  },
+  "abilities": {
+    "rig": "breacher",
+    "slots": {
+      "dash": {
+        "slot": "dash",
+        "id": "ram",
+        "ready": false,
+        "charges": 0,
+        "maxCharges": 2,
+        "cooldownRemainingMs": 1416.6666666666683,
+        "cooldownMs": 2600,
+        "castRemainingMs": 0,
+        "activeRemainingMs": 0,
+        "activeMs": 0
+      },
+      "tactical": {
+        "slot": "tactical",
+        "id": "seismic-slam",
+        "ready": false,
+        "charges": 0,
+        "maxCharges": 1,
+        "cooldownRemainingMs": 5066.666666666651,
+        "cooldownMs": 6000,
+        "castRemainingMs": 0,
+        "activeRemainingMs": 0,
+        "activeMs": 0
+      },
+      "power": {
+        "slot": "power",
+        "id": "bulwark",
+        "ready": false,
+        "charges": 1,
+        "maxCharges": 1,
+        "cooldownRemainingMs": 0,
+        "cooldownMs": 16000,
+        "castRemainingMs": 0,
+        "activeRemainingMs": 0,
+        "activeMs": 6000
+      },
+      "overdrive": {
+        "slot": "overdrive",
+        "id": "railbreaker",
+        "ready": false,
+        "charges": 0,
+        "maxCharges": 1,
+        "cooldownRemainingMs": 0,
+        "cooldownMs": 0,
+        "castRemainingMs": 0,
+        "activeRemainingMs": 0,
+        "activeMs": 0
+      }
+    },
+    "overdrive": {
+      "charge": 0.9513168596491244,
+      "ready": false,
+      "active": false,
+      "activeRemainingMs": 0
+    },
+    "invulnerable": false,
+    "dashing": false,
+    "hostileTimeScale": 1,
+    "deployables": [],
+    "zones": [],
+    "links": []
+  },
+  "enemies": [
+    {
+      "id": 1,
+      "type": "brute",
+      "elite": true,
+      "x": 128.52716207975018,
+      "y": 725.447334729598,
+      "velocityX": 0,
+      "velocityY": 0,
+      "targetX": 81.31376966506885,
+      "targetY": 491.1398779315011,
+      "health": 603.1840000000001,
+      "maxHealth": 760,
+      "armor": 0,
+      "maxArmor": 120,
+      "radius": 28,
+      "speed": 88,
+      "baseSpeed": 88,
+      "champion": "warden",
+      "windupMs": 500.00000000000074,
+      "pendingAttack": "charge",
+      "lockX": -62.97417587890149,
+      "lockY": -188.0065123426774,
+      "specialCooldownMs": 4249.999999999994,
+      "chargeMs": 0,
+      "contactDamage": 28,
+      "creditReward": 100,
+      "dropChance": 0.3,
+      "contactCooldownRemainingMs": 0,
+      "rangedCooldownRemainingMs": 0,
+      "decisionIntervalMs": 50,
+      "decisionCooldownRemainingMs": 0,
+      "decisionVersion": 32,
+      "camouflageState": "none",
+      "camouflageRemainingMs": 0,
+      "alpha": 1,
+      "reservedChildren": 0,
+      "engagement": "waiting",
+      "clear": true,
+      "visible": false,
+      "screen": {
+        "x": 44.99550852932483,
+        "y": 1026.3973494848217,
+        "depth": 0.9933676793785318
+      }
+    },
+    {
+      "id": 2,
+      "type": "carrier",
+      "elite": false,
+      "x": 917.1664300879788,
+      "y": 105.40662397307796,
+      "velocityX": -71.81964353396853,
+      "velocityY": 2.4016964537403918,
+      "targetX": 720,
+      "targetY": 112,
+      "health": 248.6578947368421,
+      "maxHealth": 248.6578947368421,
+      "armor": 0,
+      "maxArmor": 0,
+      "radius": 24,
+      "speed": 71.85978947368422,
+      "baseSpeed": 71.85978947368422,
+      "windupMs": 0,
+      "pendingAttack": null,
+      "lockX": 0,
+      "lockY": 0,
+      "specialCooldownMs": 0,
+      "chargeMs": 0,
+      "contactDamage": 18.954227368421055,
+      "creditReward": 30,
+      "dropChance": 0.28,
+      "contactCooldownRemainingMs": 0,
+      "rangedCooldownRemainingMs": 0,
+      "decisionIntervalMs": 250,
+      "decisionCooldownRemainingMs": 100.00000000000006,
+      "decisionVersion": 7,
+      "camouflageState": "none",
+      "camouflageRemainingMs": 0,
+      "alpha": 1,
+      "reservedChildren": 3,
+      "engagement": "ranged",
+      "clear": false,
+      "visible": false,
+      "screen": {
+        "x": 1882.1087679299635,
+        "y": -110.45078071075136,
+        "depth": 0.9958153934144143
+      }
+    },
+    {
+      "id": 3,
+      "type": "crawler",
+      "elite": false,
+      "x": 102.97109583483781,
+      "y": 353.28630374157336,
+      "velocityX": -23.54446735451616,
+      "velocityY": 152.1746343080811,
+      "targetX": 87.28644323373406,
+      "targetY": 454.6607046946036,
+      "health": 47.47105263157895,
+      "maxHealth": 47.47105263157895,
+      "armor": 0,
+      "maxArmor": 0,
+      "radius": 14,
+      "speed": 153.98526315789474,
+      "baseSpeed": 153.98526315789474,
+      "windupMs": 0,
+      "pendingAttack": null,
+      "lockX": 0,
+      "lockY": 0,
+      "specialCooldownMs": 0,
+      "chargeMs": 0,
+      "contactDamage": 12.63615157894737,
+      "creditReward": 5,
+      "dropChance": 0.08,
+      "contactCooldownRemainingMs": 0,
+      "rangedCooldownRemainingMs": 0,
+      "decisionIntervalMs": 50,
+      "decisionCooldownRemainingMs": 33.33333333333333,
+      "decisionVersion": 34,
+      "camouflageState": "none",
+      "camouflageRemainingMs": 0,
+      "alpha": 1,
+      "reservedChildren": 0,
+      "attackSlot": {
+        "angle": 3.8684669409577213,
+        "radius": 30.25
+      },
+      "engagement": "engaged",
+      "clear": true,
+      "visible": false,
+      "screen": {
+        "x": 182.23447296438934,
+        "y": 247.33081168228628,
+        "depth": 0.9950450644652605
+      }
+    },
+    {
+      "id": 4,
+      "type": "stalker",
+      "elite": false,
+      "x": 817.1528843191932,
+      "y": 751.8114659755784,
+      "velocityX": -127.83039253391672,
+      "velocityY": -11.210856037841918,
+      "targetX": 25.57638876505586,
+      "targetY": 683.4135965509622,
+      "health": 135.6315789473684,
+      "maxHealth": 135.6315789473684,
+      "armor": 0,
+      "maxArmor": 0,
+      "radius": 17,
+      "speed": 128.32105263157894,
+      "baseSpeed": 128.32105263157894,
+      "windupMs": 0,
+      "pendingAttack": null,
+      "lockX": 0,
+      "lockY": 0,
+      "specialCooldownMs": 0,
+      "chargeMs": 0,
+      "contactDamage": 23.166277894736844,
+      "creditReward": 25,
+      "dropChance": 0.22,
+      "contactCooldownRemainingMs": 0,
+      "rangedCooldownRemainingMs": 0,
+      "decisionIntervalMs": 250,
+      "decisionCooldownRemainingMs": 16.666666666666703,
+      "decisionVersion": 6,
+      "camouflageState": "camouflaged",
+      "camouflageRemainingMs": 416.66666666666333,
+      "alpha": 0.35,
+      "reservedChildren": 0,
+      "engagement": "waiting",
+      "clear": false,
+      "visible": false,
+      "screen": {
+        "x": 2032.252544503888,
+        "y": 1097.8731152537998,
+        "depth": 0.9932137870243541
+      }
+    },
+    {
+      "id": 5,
+      "type": "crawler",
+      "elite": true,
+      "x": 840.4100309716387,
+      "y": 772.9672407252863,
+      "velocityX": -153.6885350330048,
+      "velocityY": 9.554866258349438,
+      "targetX": 656,
+      "targetY": 784,
+      "health": 51.26873684210526,
+      "maxHealth": 51.26873684210526,
+      "armor": 0,
+      "maxArmor": 0,
+      "radius": 14,
+      "speed": 153.98526315789474,
+      "baseSpeed": 153.98526315789474,
+      "windupMs": 0,
+      "pendingAttack": null,
+      "lockX": 0,
+      "lockY": 0,
+      "specialCooldownMs": 0,
+      "chargeMs": 0,
+      "contactDamage": 13.267959157894738,
+      "creditReward": 5,
+      "dropChance": 0.08,
+      "contactCooldownRemainingMs": 0,
+      "rangedCooldownRemainingMs": 0,
+      "decisionIntervalMs": 250,
+      "decisionCooldownRemainingMs": 100.00000000000006,
+      "decisionVersion": 6,
+      "camouflageState": "none",
+      "camouflageRemainingMs": 0,
+      "alpha": 1,
+      "reservedChildren": 0,
+      "engagement": "waiting",
+      "clear": false,
+      "visible": false,
+      "screen": {
+        "x": 2118.1140649282434,
+        "y": 1157.278792910575,
+        "depth": 0.9930858824193772
+      }
+    },
+    {
+      "id": 7,
+      "type": "stalker",
+      "elite": false,
+      "x": 926.3852713604404,
+      "y": 781.7221181059282,
+      "velocityX": -128.31323755486076,
+      "velocityY": 1.4161979615564575,
+      "targetX": 720,
+      "targetY": 784,
+      "health": 135.6315789473684,
+      "maxHealth": 135.6315789473684,
+      "armor": 0,
+      "maxArmor": 0,
+      "radius": 17,
+      "speed": 128.32105263157894,
+      "baseSpeed": 128.32105263157894,
+      "windupMs": 0,
+      "pendingAttack": null,
+      "lockX": 0,
+      "lockY": 0,
+      "specialCooldownMs": 583.3333333333322,
+      "chargeMs": 0,
+      "contactDamage": 23.166277894736844,
+      "creditReward": 25,
+      "dropChance": 0.22,
+      "contactCooldownRemainingMs": 0,
+      "rangedCooldownRemainingMs": 0,
+      "decisionIntervalMs": 250,
+      "decisionCooldownRemainingMs": 150.00000000000006,
+      "decisionVersion": 4,
+      "camouflageState": "camouflaged",
+      "camouflageRemainingMs": 1083.3333333333292,
+      "alpha": 0.35,
+      "reservedChildren": 0,
+      "engagement": "waiting",
+      "clear": false,
+      "visible": false,
+      "screen": {
+        "x": 2381.802018784891,
+        "y": 1182.4194085940962,
+        "depth": 0.9930317529044096
+      }
+    },
+    {
+      "id": 8,
+      "type": "carrier",
+      "elite": false,
+      "x": 145.0635257036105,
+      "y": 157.62480804347723,
+      "velocityX": -7.473524486443836,
+      "velocityY": 71.47010406423612,
+      "targetX": 112.19879280089408,
+      "targetY": 471.91372017068306,
+      "health": 248.6578947368421,
+      "maxHealth": 248.6578947368421,
+      "armor": 0,
+      "maxArmor": 0,
+      "radius": 24,
+      "speed": 71.85978947368422,
+      "baseSpeed": 71.85978947368422,
+      "windupMs": 0,
+      "pendingAttack": null,
+      "lockX": 0,
+      "lockY": 0,
+      "specialCooldownMs": 683.333333333332,
+      "chargeMs": 0,
+      "contactDamage": 18.954227368421055,
+      "creditReward": 30,
+      "dropChance": 0.28,
+      "contactCooldownRemainingMs": 0,
+      "rangedCooldownRemainingMs": 0,
+      "decisionIntervalMs": 50,
+      "decisionCooldownRemainingMs": 50,
+      "decisionVersion": 17,
+      "camouflageState": "none",
+      "camouflageRemainingMs": 0,
+      "alpha": 1,
+      "reservedChildren": 3,
+      "engagement": "ranged",
+      "clear": true,
+      "visible": false,
+      "screen": {
+        "x": 345.60313299422967,
+        "y": -42.663973934446766,
+        "depth": 0.9956694436485775
+      }
+    }
+  ],
+  "stats": {
+    "kills": {
+      "total": 80,
+      "byFamily": {
+        "crawler": 40,
+        "brute": 16,
+        "spitter": 21,
+        "stalker": 1,
+        "carrier": 2,
+        "queen": 0
+      }
+    },
+    "damageDealt": {
+      "weapon": 9761.130277629882,
+      "ability": 2430.1604289976294,
+      "status": 0,
+      "boon": 771.170030214578
+    },
+    "damageTaken": 134.17221052631578,
+    "shotsFired": 535,
+    "shotsHit": 471,
+    "abilityUses": {
+      "dash": 48,
+      "tactical": 21,
+      "power": 6,
+      "overdrive": 1
+    },
+    "overdrivesUsed": 1,
+    "highestMultiKill": 4,
+    "roomTimeMs": {
+      "1729:v3-r0": 14133.333333333178,
+      "1729:v3-r1": 36933.333333333685,
+      "1729:v3-r2": 38816.666666666744,
+      "1729:v3-r3": 25616.6666666671,
+      "1729:v3-r4": 32866.66666666761,
+      "1729:v3-r5": 3183.3333333333267
+    },
+    "creditsEarned": 1372,
+    "lastDamage": {
+      "source": "enemy-projectile",
+      "enemyFamily": "spitter",
+      "amount": 10.324210526315781,
+      "room": "1729:v3-r4",
+      "atMs": 131516.66666666715
+    },
+    "recentDamage": []
+  },
+  "events": [
+    {
+      "type": "acid",
+      "contact": "armor",
+      "x": 123.21457699315367,
+      "y": 689.2649733910018,
+      "angle": 1.3026353455601618,
+      "weapon": "shotgun",
+      "targetId": 1,
+      "damage": 16.632,
+      "lethal": false,
+      "source": "weapon",
+      "at": 150.55000000001195
+    },
+    {
+      "type": "acid",
+      "contact": "armor",
+      "x": 120.10708878038183,
+      "y": 696.4066670907858,
+      "angle": 1.338539811691589,
+      "weapon": "shotgun",
+      "targetId": 1,
+      "damage": 16.632,
+      "lethal": false,
+      "source": "weapon",
+      "at": 150.55000000001195
+    },
+    {
+      "type": "acid",
+      "contact": "armor",
+      "x": 117.44986572657712,
+      "y": 706.8959812996875,
+      "angle": 1.3728255259773032,
+      "weapon": "shotgun",
+      "targetId": 1,
+      "damage": 16.632,
+      "lethal": false,
+      "source": "weapon",
+      "at": 150.56666666667863
+    },
+    {
+      "type": "acid",
+      "contact": "armor",
+      "x": 113.9362706737533,
+      "y": 716.3072373140114,
+      "angle": 1.4071112402630175,
+      "weapon": "shotgun",
+      "targetId": 1,
+      "damage": 16.632,
+      "lethal": false,
+      "source": "weapon",
+      "at": 150.5833333333453
+    },
+    {
+      "type": "acid",
+      "contact": "armor",
+      "x": 109.87685064821987,
+      "y": 725.1329766241813,
+      "angle": 1.4405875786258755,
+      "weapon": "shotgun",
+      "targetId": 1,
+      "damage": 16.632,
+      "lethal": false,
+      "source": "weapon",
+      "at": 150.5833333333453
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "seismic-slam",
+        "slot": "tactical",
+        "rig": "breacher",
+        "element": "kinetic",
+        "phase": "cast",
+        "radius": 230,
+        "angle": 0.4871639476611921,
+        "targetX": 17.57572431828418,
+        "targetY": 680.9537650449358,
+        "durationMs": 220
+      },
+      "x": 17.57572431828418,
+      "y": 680.9537650449358,
+      "at": 150.61666666667867
+    },
+    {
+      "type": "enemy-attack",
+      "id": 6,
+      "family": "spitter",
+      "x": 159.5271193251977,
+      "y": 792.3074008358402,
+      "angle": -1.7757891305616365,
+      "at": 150.6666666666787
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 134.58410772302287,
+      "y": 739.339494137599,
+      "targetId": 1,
+      "damage": 90,
+      "lethal": false,
+      "source": "ability",
+      "at": 150.8500000000122
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 174.1355009723323,
+      "y": 793.3108128920496,
+      "targetId": 6,
+      "damage": 90,
+      "lethal": false,
+      "source": "ability",
+      "at": 150.8500000000122
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "seismic-slam",
+        "slot": "tactical",
+        "rig": "breacher",
+        "element": "kinetic",
+        "phase": "impact",
+        "radius": 230,
+        "angle": 0.4871639476611921,
+        "targetX": 17.57572431828418,
+        "targetY": 680.9537650449358,
+        "targetIds": [
+          1,
+          6
+        ],
+        "durationMs": 0,
+        "totalDamage": 180
+      },
+      "x": 17.57572431828418,
+      "y": 680.9537650449358,
+      "at": 150.8500000000122
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "ram",
+        "slot": "dash",
+        "rig": "breacher",
+        "element": "kinetic",
+        "phase": "cast",
+        "length": 150,
+        "width": 44,
+        "angle": -1.5707963267948966,
+        "targetX": 49.8860403855168,
+        "targetY": 570.843044140285,
+        "durationMs": 0
+      },
+      "x": 49.88604038551679,
+      "y": 720.843044140285,
+      "at": 150.8500000000122
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "ram",
+        "slot": "dash",
+        "rig": "breacher",
+        "element": "kinetic",
+        "phase": "dash-start",
+        "length": 150,
+        "width": 44,
+        "angle": -1.5707963267948966,
+        "targetX": 49.8860403855168,
+        "targetY": 570.843044140285,
+        "durationMs": 140
+      },
+      "x": 49.88604038551679,
+      "y": 720.843044140285,
+      "at": 150.8500000000122
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "ram",
+        "slot": "dash",
+        "rig": "breacher",
+        "element": "kinetic",
+        "phase": "impact",
+        "length": 150,
+        "width": 44,
+        "angle": -1.5707963267948966,
+        "targetX": 49.8860403855168,
+        "targetY": 570.843044140285,
+        "targetIds": [],
+        "durationMs": 0,
+        "totalDamage": 0
+      },
+      "x": 49.88604038551679,
+      "y": 720.843044140285,
+      "at": 150.8500000000122
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "bulwark",
+        "slot": "power",
+        "rig": "breacher",
+        "element": "kinetic",
+        "phase": "denied",
+        "length": 220,
+        "width": 18,
+        "denial": "casting"
+      },
+      "x": 49.88604038551679,
+      "y": 720.843044140285,
+      "at": 150.8500000000122
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "ram",
+        "slot": "dash",
+        "rig": "breacher",
+        "element": "kinetic",
+        "phase": "dash-end",
+        "length": 150,
+        "width": 44,
+        "targetX": 49.88604038551679,
+        "targetY": 570.8430441402847,
+        "angle": -1.5707963267948966,
+        "targetIds": [],
+        "totalDamage": 0
+      },
+      "x": 49.88604038551679,
+      "y": 720.843044140285,
+      "at": 151.0000000000123
+    },
+    {
+      "type": "wall-slam",
+      "x": 269.8478672781322,
+      "y": 880,
+      "wall": {
+        "x": -3.1579622553427637e-15,
+        "y": -1
+      },
+      "targetId": 6,
+      "vx": 3.3058108884118838,
+      "vy": 2.372455812731232,
+      "impulse": 244.1412623214231,
+      "at": 151.11666666667907
+    },
+    {
+      "type": "corpse",
+      "id": 6,
+      "x": 269.71141985300466,
+      "y": 861.9020457119381,
+      "vx": 0,
+      "vy": 0,
+      "family": "spitter",
+      "elite": false,
+      "at": 151.11666666667907
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 269.71141985300466,
+      "y": 861.9020457119381,
+      "targetId": 6,
+      "damage": 23.026315789473685,
+      "lethal": true,
+      "source": "boon",
+      "at": 151.11666666667907
+    },
+    {
+      "type": "shot",
+      "x": 52.193920104604835,
+      "y": 545.9938099191886,
+      "weapon": "rifle",
+      "angle": 1.1544349735026869,
+      "at": 151.11666666667907
+    },
+    {
+      "type": "enemy-warning",
+      "x": 1044,
+      "y": 100,
+      "radius": 38,
+      "durationMs": 650,
+      "at": 151.11666666667907
+    },
+    {
+      "type": "enemy-warning",
+      "id": 1,
+      "family": "brute",
+      "x": 126.70749457894654,
+      "y": 719.7541511563842,
+      "targetX": 63.73331870004505,
+      "targetY": 531.7476388137068,
+      "durationMs": 850,
+      "radius": 32,
+      "at": 151.20000000001247
+    },
+    {
+      "type": "shot",
+      "x": 68.34907813822115,
+      "y": 526.049170371514,
+      "weapon": "rifle",
+      "angle": 1.2630315771609126,
+      "at": 151.23333333334583
+    },
+    {
+      "type": "acid",
+      "contact": "damage",
+      "x": 111.13617869139382,
+      "y": 679.7944536288746,
+      "angle": 1.1558513813676856,
+      "weapon": "rifle",
+      "targetId": 1,
+      "damage": 17.92,
+      "lethal": false,
+      "source": "weapon",
+      "at": 151.2500000000125
+    },
+    {
+      "type": "shot",
+      "x": 84.50423617183749,
+      "y": 506.10453082383947,
+      "weapon": "rifle",
+      "angle": 1.3608107317351974,
+      "at": 151.35000000001259
+    },
+    {
+      "type": "acid",
+      "contact": "damage",
+      "x": 118.09813866474748,
+      "y": 679.7443860970451,
+      "angle": 1.2577529367109084,
+      "weapon": "rifle",
+      "targetId": 1,
+      "damage": 17.92,
+      "lethal": false,
+      "source": "weapon",
+      "at": 151.38333333334594
+    },
+    {
+      "type": "shot",
+      "x": 100.65939420545384,
+      "y": 486.1598912761649,
+      "weapon": "rifle",
+      "angle": 1.4061867575976166,
+      "at": 151.46666666667934
+    },
+    {
+      "type": "acid",
+      "contact": "damage",
+      "x": 120.04515890756002,
+      "y": 681.3697303933654,
+      "angle": 1.3707255867901886,
+      "weapon": "rifle",
+      "targetId": 1,
+      "damage": 17.92,
+      "lethal": false,
+      "source": "weapon",
+      "at": 151.51666666667938
+    }
+  ],
+  "originalFraming": {
+    "contacts": [
+      {
+        "id": 1,
+        "type": "brute",
+        "selected": true,
+        "bounds": {
+          "left": -196.1577245316684,
+          "right": 157.85863790466365,
+          "top": 784.0321175585136,
+          "bottom": 1125.8160905254838
+        },
+        "insideUsable": false
+      },
+      {
+        "id": 2,
+        "type": "carrier",
+        "selected": false,
+        "bounds": {
+          "left": 1812.4516739272503,
+          "right": 2003.646452370796,
+          "top": -287.92218664190744,
+          "bottom": -46.813986195232886
+        },
+        "insideUsable": false
+      },
+      {
+        "id": 3,
+        "type": "crawler",
+        "selected": false,
+        "bounds": {
+          "left": 140.8876458812421,
+          "right": 231.399871847135,
+          "top": 216.33874928509726,
+          "bottom": 302.30205261817287
+        },
+        "insideUsable": true
+      },
+      {
+        "id": 4,
+        "type": "stalker",
+        "selected": false,
+        "bounds": {
+          "left": 1949.4437996353013,
+          "right": 2119.951437020326,
+          "top": 1027.1935353300266,
+          "bottom": 1168.2407166484338
+        },
+        "insideUsable": false
+      },
+      {
+        "id": 5,
+        "type": "crawler",
+        "selected": false,
+        "bounds": {
+          "left": 2042.133921810862,
+          "right": 2188.1940560420444,
+          "top": 1103.407717908022,
+          "bottom": 1219.6243671679963
+        },
+        "insideUsable": false
+      },
+      {
+        "id": 7,
+        "type": "stalker",
+        "selected": false,
+        "bounds": {
+          "left": 2285.5468446811756,
+          "right": 2483.738606248478,
+          "top": 1110.802079319193,
+          "bottom": 1253.6395109136179
+        },
+        "insideUsable": false
+      },
+      {
+        "id": 8,
+        "type": "carrier",
+        "selected": false,
+        "bounds": {
+          "left": 244.8056039836837,
+          "right": 408.99820777702763,
+          "top": -221.6955308088494,
+          "bottom": 22.52244977344507
+        },
+        "insideUsable": false
+      }
+    ],
+    "insets": {
+      "top": 182,
+      "right": 292,
+      "bottom": 120,
+      "left": 0
+    },
+    "marine": {
+      "left": 66.96702052504247,
+      "top": 357.0499999999998,
+      "right": 207.02546020288077,
+      "bottom": 517.9695937134774
+    },
+    "framing": {
+      "contacts": 2,
+      "selectedIds": [
+        1,
+        3,
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "focusContactId": 1,
+      "focusedPair": true,
+      "fit": false,
+      "pullback": 1.071253228546418,
+      "roomConstraints": {
+        "heroPixels": 100,
+        "outside": 0,
+        "hullOutside": 0,
+        "heroBoundsPixels": 160.9195937134776,
+        "centeredX": false,
+        "centeredZ": false,
+        "smallX": false,
+        "smallZ": false,
+        "outsideX": 0,
+        "outsideZ": 0,
+        "shallowZoomFloor": 0
+      }
+    },
+    "roomFraming": {
+      "heroPixels": 100,
+      "outside": 0,
+      "hullOutside": 0,
+      "heroBoundsPixels": 160.9195937134776,
+      "centeredX": false,
+      "centeredZ": false,
+      "smallX": false,
+      "smallZ": false,
+      "outsideX": 0,
+      "outsideZ": 0,
+      "shallowZoomFloor": 0
+    }
+  },
+  "camera": {
+    "fov": 28,
+    "aspect": 1.7777777777777777,
+    "near": 0.1,
+    "far": 160,
+    "position": [
+      14.028286815310697,
+      24.287016892941725,
+      33.35174449197629
+    ],
+    "quaternion": [
+      -0.4527600968822728,
+      0,
+      0,
+      0.8916323764148287
+    ],
+    "zoom": 1.071253228546418,
+    "world": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0.5900165893423099,
+      -0.807391122257898,
+      0,
+      0,
+      0.807391122257898,
+      0.5900165893423099,
+      0,
+      14.028286815310697,
+      24.287016892941725,
+      33.35174449197629,
+      1
+    ],
+    "projection": [
+      2.4168161385240134,
+      0,
+      0,
+      0,
+      0,
+      4.29656202404269,
+      0,
+      0,
+      0,
+      0,
+      -1.0012507817385865,
+      -1,
+      0,
+      0,
+      -0.20012507817385866,
+      0
+    ],
+    "inverseProjection": [
+      0.41376751175234844,
+      0,
+      0,
+      0,
+      0,
+      0.232744225360696,
+      0,
+      0,
+      0,
+      0,
+      0,
+      -4.996875,
+      0,
+      0,
+      -1,
+      5.003124999999999
+    ]
+  },
+  "roomBounds": {
+    "left": 0,
+    "top": 0,
+    "right": 37.5,
+    "bottom": 27.5,
+    "width": 37.5,
+    "depth": 27.5
+  },
+  "viewport": {
+    "width": 1920,
+    "height": 1080,
+    "insets": {
+      "top": 182,
+      "right": 292,
+      "bottom": 120,
+      "left": 0
+    },
+    "ndc": {
+      "left": -1,
+      "right": 0.6958333333333333,
+      "top": 0.662962962962963,
+      "bottom": -0.7777777777777778,
+      "centerX": -0.15208333333333335,
+      "centerY": -0.05740740740740741,
+      "halfX": 0.8479166666666667,
+      "halfY": 0.7203703703703703
+    }
+  },
+  "requiredContactId": 1,
+  "presentation": {
+    "timelineMs": 1000,
+    "stepMs": 16.666666666666668,
+    "settleFrames": 12,
+    "settleStepMs": 16.666666666666668
+  },
+  "limitations": [
+    "The saved receipt has no restorable internal AI/director/RNG history, projectile list, corpse list, render spring velocity or affliction snapshot.",
+    "Native spawn/collision validates every unchanged enemy position/footprint; frozen saved snapshots supply exact presentation values while no simulation step advances.",
+    "Only the final one second of actual recorded effects is replayed at recorded relative ages. Unsaved projectile/pool trajectories and corpses are not invented.",
+    "Common camera origin uses original position-derived ground focus with zero spring/impulse velocity. Settled replay need not reproduce the organic AA failure if missing spring state matters."
+  ]
+}

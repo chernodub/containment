@@ -2,9 +2,14 @@
 /** File-only I10 evidence assembly, exact area review pages and three-generation comparison. */
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {constants} from 'node:fs';
 import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
 import {basename,resolve,relative,sep} from 'node:path';
 import {canvas,decode,encode,drawImage,drawText} from './g2-png.mjs';
+
+// Preserve original bytes while avoiding duplicate allocation on APFS. Node
+// falls back to a regular copy when cloning is unavailable.
+const copyEvidence=(source,target)=>copyFile(source,target,constants.COPYFILE_FICLONE);
 
 const args=process.argv.slice(2);
 if(args.includes('--help')||!args.length){
@@ -66,8 +71,8 @@ async function assemble(){
       sprites.set(sprite.file,{sprite,source});
     }
   }
-  for(const {shot,source}of selected.values())await copyFile(source.original,resolve(output,shot.file));
-  for(const {sprite,source}of sprites.values())await copyFile(source.original,resolve(output,sprite.file));
+  for(const {shot,source}of selected.values())await copyEvidence(source.original,resolve(output,shot.file));
+  for(const {sprite,source}of sprites.values())await copyEvidence(source.original,resolve(output,sprite.file));
   const manifest={
     label:basename(output),gitSHA:captures.at(-1).manifest.gitSHA,viewport:reference.viewport,
     deviceScaleFactor:reference.deviceScaleFactor,seed:reference.seed,appAssets:reference.appAssets,
@@ -206,7 +211,7 @@ async function comparison(manifest){
         const destination=generation.name==='FINAL4'?shot.file:`comparison-sources/${generation.name.toLowerCase()}/${shot.file}`;
         if(generation.name!=='FINAL4'){
           await mkdir(resolve(output,'comparison-sources',generation.name.toLowerCase()),{recursive:true});
-          await copyFile(original,resolve(output,destination));
+          await copyEvidence(original,resolve(output,destination));
         }
         drawImage(sheet,small,column*480,rowIndex*306+24,480,270);
         drawText(sheet,shot.file.slice(0,76),column*480+4,rowIndex*306+296,undefined,1);

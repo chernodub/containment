@@ -6,7 +6,7 @@ File-only `scripts/nextgen/i10-review-prep.mjs prepare <batch>` snapshots a capt
 
 ## Current AA native1080 coverage
 
-Batches00–04 contain50/50 witnessed originals and50 exact480 derivatives. Of these,20 frames were freshly opened with original-detail image emission for both sizes;30 were independently rehashed byte-identical bridges to the explicitly opened1118125 originals and reductions. Per-batch `artifacts/nextgen/i10/license-review/final4-quality-batch-XX/actual-opens.json` records absolute paths, both SHA256 values, capture sourceAA and either new timestamp or the full prior actual-open witness chain. `bridge-history.json` preserves carried/changed lists. Aggregate receipt: `artifacts/nextgen/i10/license-review/coverage-quality.json`.
+Clean batches00–06 contain94/94 witnessed originals and94 exact480 derivatives. Of these,59 frames were freshly opened with original-detail image emission for both sizes;35 were independently rehashed byte-identical bridges to the explicitly opened1118125 originals and reductions. Per-batch `artifacts/nextgen/i10/license-review/final4-quality-batch-XX/actual-opens.json` records absolute paths, both SHA256 values, capture sourceAA and either new timestamp or the full prior actual-open witness chain. `bridge-history.json` preserves carried/changed lists. Aggregate receipt: `artifacts/nextgen/i10/license-review/coverage-quality.json`.
 
 -00:7 bridges; fresh Cryo/Arc rig selection and reward. Portrait/diagram and reward hierarchy remain legible at480, no native clipping.
 -01:7 bridges; fresh pause,loadout,settings. Native controls,focus,stats and all text remain inside panels. At480 the layout hierarchy is preserved; it is not claimed that every quarter-size settings paragraph can be read.
@@ -25,15 +25,33 @@ No new UI/HUD/marine occlusion defect found in this calm/screen partition. This 
 
 - `final4-batch-03`:10/10 native originals and exact480 opened. CalmTransmission,Diagnostic,Safety,Coolant,Shaft,Infested,Swarm,Shielding,Annulus,Manual. Native story boards are unobstructed and readable. No new marine/HUD occlusion or uniformly near-black room found. Coolant/Shaft green service mood,Infested/Swarm purple takeover and warmManual differ at480; broad floor grammar and isolated equipment islands remain visibly shared. Infested/Swarm floors still look like flat purple skin, and the known flush connection strip still reads as a ribbon. Transmission is particularly sparse to the left; it has a clear dish/rack landmark but weak room-wide connectedness. These are art-standard qualifications.
 
-## Partial batch05: historical until clean retry
+## Clean retry05
+
+`final4-quality-retry-batch-05` has errors[]/failures[] and10/10 witnessed native+exact480 pairs on frozenAA. Five original+reduction pairs bridge byte-for-byte to the five successful historical partial05 opens below. Five new frames were actually opened: void-contours,ink-switches and high forms in Armory,Relay,Diagnostic. Native marine contours remain clear against the intentional gray empty world; faint light shafts persist. This is a diagnostic fixture, not a playable room or artwork-quality example. Canvas sparse sample has6bins/576lit samples with intact context/GLerror0. Full native contour receipt is1920×1080,7352actor pixels,2610darkened actor pixels,2,066,248background pixels,compiled0; PNG inspection sample independently has109colors and99.984%lit fraction. Read `capture-canvas.mjs`: ordinary>8palette guard remains unchanged; only this named fixture may use native dimensional/coverage/compile/nonblank proof. The fallback does not authorize normal empty-world captures.
+
+Armory/Relay/Diagnostic forms separate clearly at native and480; marine/HUD unobstructed. Warm Diagnostic signage establishes place, but broad machinery islands and sparse walking decks remain particularly visible in Armory/Relay. Native story sign is legible; its tiny480text is not claimed as universally readable.
+
+## Historical partial batch05 (superseded by clean retry)
 
 Five successful AA PNGs in `final4-quality-batch-05` were freshly opened native original+exact480 and explicitly witnessed. They are excluded from current clean aggregate coverage because the batch stopped at `g3-void-contours` (6colors/576litSamples, context intact/GLerror0). This is a failed fixture receipt, not an inferred empty-render product diagnosis. Clean retry must either be freshly opened or bridge both hashes to these witnesses.
 
 Opened: `u4-boon-inspect.png` (native exact-value inspection fits; focus/control hierarchy survives480), `u4-ending-reduced-motion.png` (clear destroyed-ship/NewEarth outcome at both sizes; schematic illustration qualification remains), `u4-burn-ticks-awakening-bay.png` (flames yield to recognizable actor bodies; marine/HUD clear, orange ticks distinct), `u4-radar-fade.png` (large enemy remains visible through faded radar, separate native bearing visible), `g3-geometry-coverage-awakening-bay.png` (ordinary room view, marine/pods clear, no near-black exposure). No new safety or clipping defect observed in these five actual opens. This is not a claim of05complete.
 
+## Clean retry06
+
+`final4-quality-retry-batch-06`:34/34 native originals and34 exact480 reductions freshly opened with explicit image emission, then independently rehashed into the actual-open ledger. Capture sourceAA,errors[]/failures[]. Coverage: Safety/Freight high-forms,24 presentation-beat frames (4each room-enter,room-clear,boss-intro,boss-defeated,Overdrive-ready,death),8 calm-motion samples (4each Awakening/Passenger).
+
+Safety's native local-record sign is readable, bright warm machinery preserves cool-white marine contrast. Freight's stacked cargo establishes a storage aisle, hero wholly visible between rows. All24 beat banners retain clear native type, headline meanings survive480, fit inside viewport and leave marine/HUD unobscured in every opened frame. Death banner starts just right of the marine's gun/ring without covering the body. Queen-intro/neutralized banners are explicitly staged on Awakening rather than actual boss-campaign outcomes, and the native100health death fixture similarly does not imply real death state. Four calm samples per room preserve pod silhouette,marine/HUD separation and readable values, with no obvious discontinuity across the displayed stills. A4frame PNG sequence does not independently certify continuous animation smoothness or hardware performance.
+
+## Best three from this partition
+
+- `artifacts/nextgen/final4-quality-batch-00/title.png`: strongest identity/key-art screen, with schematic anatomy qualification retained.
+- `artifacts/nextgen/final4-quality-batch-01/complete-fixture.png`: strongest illustrated outcome composition; fixture, not an earned ending receipt.
+- `artifacts/nextgen/final4-quality-batch-04/combat-calm-overload-floor.png`: strongest native warm environment landmark with cool marine separation; calm, not engaged combat evidence.
+
 ## Pending coverage
 
-AA1080 batches05–06 and720 batches00–06 are not yet claimed. Root/other reviewers own07–21.
+AA1080 batches00–06 are complete.720 batches00–06 are not yet claimed. Root/other reviewers own07–21.
 
 ## Documentation consistency checks
 
@@ -47,3 +65,38 @@ Root's completed `artifacts/nextgen/i10/loading-release.json` was independently 
 
 
 `artifacts/nextgen/i10/loading-quality.json` was independently read: per-source FINAL SHA isAA37ea (top-level HEAD4b1aac is the audit harness checkout). PASS with0errors/0failures; baseline initial public media comparable. Both66HTTP/17JS initial requests, finalJS4,827,104 versus4,914,384bytes (−87,280),CSS154,040 unchanged. Total initial decoded response bytes33,723,469 versus33,810,740 (−87,271); gzip estimates23,495,651 versus23,524,726 (−29,075), not compressed network measurements. Final menu ready2,124.6ms versus2,075.3ms is a single shared-host observation (load25.32/50.34/44.68 initially), not a startup improvement claim. Final native first-gameplay receipt includes loading hold,2kit and1atlas requests completed before readiness; eager kit/atlas lists empty. ThisAA receipt supersedes prior111 loading for current-source acceptance.
+
+## Organic Armory camera: concrete feasible counterexample (requires correction)
+
+Read-only CPU audit of `artifacts/nextgen/playtest/i10-breacher-1729/r6-armory-mid.{png,json}`. The native original was actually opened with original-detail image emission (`i10/armory-camera-actual-open.json` records path/hash/timestamp); no480 derivative was opened for this separate audit. Marine is near left edge, selected attacking Bruteid1 is cropped bottom-left and its native bearing/charge telegraph is present. This is an actual framing shortfall, not a physically impossible pair under the requested100px/18%/full-body constraints.
+
+Raw camera matrices were absent from campaignJSON. Recovered the camera using fixed `CameraRig` tilt26:19, FOV28°,16:9 aspect,near.1/far160 and saved zoom, then unprojected the marine's exact .65m screen x/y/depth to recover translation. Independent reprojection of all8 saved world/screen points has max residual2.277e−8px and depth error≤1.11e−16. Recovered eight-corner body heights2.05m marine/4.394141377m Brute; original saved body bounds reproduce within7e−8px. Original camera position[14.0282868153,24.2870168929,33.3517444920],zoom1.071253228546;hero100px,outside0. Brute distance7.939m.
+
+**Strict-padding feasible witness:** translate camera[-1.525,0,+2.35]m, zoom1.041984108766. Marine foot-head100.01px; exact projected playable AABB outside**2.22043%**, safely below18%. Marine body[left246.116,top230.234,right365.726,bottom384.338]; Brute[left50.669,top587.349,right342.403,bottom920.429]. Both complete eight-corner boxes meet the current engagement pair padding: usable padded limits[left48.84,top220.9,right1579.16,bottom921.1]. No body geometry/radius/height assertion was reduced. A fixed-zoom translation[-1.4,0,+2.05]m also fits both literal usable boxes with≥4px clearance,hero102.51px,outside1.18111%; it does not meet the extra engagement pair padding, so the stricter witness above is the implementation target.
+
+`RoomCombatFraming.contain` clamps non-small deck-ray bounds to **zero** outside before the later18% candidate check, so it can undo legal positive-outside pans. `HudCombatFraming.protectEngagement` also imposes a stronger ordinary marine central60%width/55%height composition envelope. The strict witness preserves full-body HUD safety and pair padding but not that central preference; the original already violates its horizontal part. Root must treat any superseded central presentation pin explicitly, retaining full-body safety. Do not attribute this specific frame solely to `needsFinalFit≤5.5`: the additionally selected Crawlerid3 is within5.5m, so it can activate final fitting despite Brute being7.94m away. A generic remote/impossible-contact qualification is false for this measured pair.
+
+Replay: `node scripts/nextgen/i10-armory-camera-feasibility.mjs` (CPUThree only; syntax checked and replayed). Receipts `i10/armory-camera-padding-feasibility.json` and reusable `i10/armory-camera-fixture.json` contain physical body params, original camera quaternion/matrices,room bounds,viewport,padded limits and exact feasible candidate. The separate `armory-camera-feasibility.json`/`armory-camera-fixedzoom-literal-feasibility.json` retain preliminary/literal candidates. No application or test change made by this reviewer; root owns correction and reruns. EarlierAA visual coverage remains historical if application is changed.
+
+## Historical Armory replay pair AA → c04 (actual native+480 opens)
+
+`artifacts/nextgen/i10-armory-replay-aa-final/i10-organic-armory-replay-armory.png` (AA37ea) and `i10-armory-replay-corrected/i10-organic-armory-replay-armory.png` (c04e501ab6ff35a78021e2b9408e2e45fee521c3) were both actually opened at native original detail and exact480 with image emission. Each has one-shot clean manifest and its own `i10/license-review/<batch>/actual-opens.json` with original/reductionSHA256. AA leaves most Brute below/left of the viewport. c04 shows the entire Brute body at lower-left, with marine's cyan-white body clear above; separation survives480. HUD numerals remain bright. c04 receipt hero100px,outside4.04466%; neither small axis. This demonstrates the local correction visibly, but c04 is now historical because root unfroze application work again for far-contact failures. It is not final acceptance promotion.
+
+These are restored-snapshot **presentation replays**, not simulation replay or fresh organic campaign frames. Compared to original organic r6, staged acquisition toasts, extra enemies,deployable/ability effects and attack timing differ; original r6 native PNG and counterexample remain separate. Room/storyboard sparsity is still visible. No continuous-motion or measured hardware-performance inference from this pair.
+
+## Far selected contacts: four additional constructive full-body counterexamples
+
+Inventory of the interrupted historicalAA Breacher campaign's16mid JSONs found5fit=false frames. Armoryr6 has additionally selected Crawlerid3 at3.718m and therefore may trigger nearby final fit; the other4frames have **every live `framing.selectedIds` contact >5.5m**. Actual native originals forr4,r5,r8,r13 were opened with original-detail image emission; `i10/remote-camera-actual-opens.json` records SHA256/timestamp. No480 opens are claimed for this separate CPU audit. Actual images show clear marine bodies and native bearings, but focused enemies cross reserved HUD/viewport borders: Atrium Brute above usable top, Crew Spitters at top-left through faded vitals, Coolant Brute bottom-left, Breach Spitter under the bottom action bar. These should not be dismissed as necessarily impossible pairs.
+
+Recovered exact cameras using the same fixed28°/26:19/near.1/far160 method; all independent screen/world re-projection residuals≤1.024e−10px and saved eight-corner body-bound residuals≈1e−10px or smaller. Search preserves full physical heights/radii,hero≥100,projected AABB≤18%,existing shallowZoomFloor and small-axis centering. Witnesses:
+
+|Historical frame / focus|Camera translation X,Z (m)|Zoom|Hero px|AABB outside|Full-body margin / qualification|
+|---|---:|---:|---:|---:|---|
+|r4Atrium / Brute5,10.432m|0,−1.6|1.218830969879|112.233|15.3398%|≥4px in usable frame; retains shallow-room floor; neither small axis.|
+|r5Crew / Spitters1+4,9.371/8.966m|0,−2.8|1.176261036515|100.01|0%|Both complete selected bodies≥4px inside; neither small axis.|
+|r13Coolant / Brute1,9.158m|−.65,+1.75|1.034654405332|100.01|.55137%|Complete body≥4px inside; neither small axis.|
+|r8Breach / focused Spitter4,12.382m|0,+.3|1.033094820165|100.01|0%|Head1.786px below usable top,enemy foot3.010px above bottom; neither small axis.|
+
+The initial optional4px body-margin search missedr8; the exact required **complete-body** guarantee allows its narrower1.786px witness. No body geometry or viewport boundary is relaxed. Extra current Hud `.06halfX/.10halfY` pair padding and ordinary marine central60%/55% composition preferences are stronger than the user's full-body/100px/18% limits. No stricter-margin witness was found on the initial .05m grid for these4frames; that failed finite search is **not** an analytic impossibility proof. Its retained diagnostic gives Atrium minimum outside≈19.67% among strict-margin grid candidates and Crew no strict padded box-fit. Root/camera owner must explicitly account for superseded presentation preferences while retaining all full-body/HUD,hero-size,room-area,small-axis and motion-continuity safety assertions.
+
+Reproduce file-only: `node scripts/nextgen/i10-remote-camera-feasibility.mjs` (strict extra pair margins), `--literal` (4px audit clearance), `--edge` (literal complete-body containment). JSONs `i10/<rN-room-mid>-camera-{literal-,edge-}feasibility.json` hold original camera quaternion,all physical body params,room boundaries,viewport,exact candidate matrices and bounds; strict/default JSONs and logs preserve failed searches. Constructor method and witnesses were sent directly to `/root/soft_particles`, which owns bounded remote fitting. No application/browser/test edit by this reviewer. AllAA/c04 gallery observations remain historical until final source is frozen and recaptured or explicitly double-hash bridged.

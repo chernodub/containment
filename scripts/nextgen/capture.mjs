@@ -11,6 +11,7 @@ import {SCENARIOS,DEFAULT_ROOMS,stageCombat,stageKiting,advanceKiting,inspectFra
 import {samplePng} from './png.mjs';
 import {assertPriorityPair} from './i10-framing-contract.mjs';
 import {assertCaptureCanvas} from './capture-canvas.mjs';
+import {inspectI10ArmoryReplay} from './i10-armory-replay.mjs';
 import {stitchPngFrames} from './sprites.mjs';
 import {compareGalleries} from './gallery.mjs';
 
@@ -175,6 +176,7 @@ try{
      for(const animation of art.getAnimations({subtree:true})){animation.pause();animation.currentTime=ms;}
     },frame*frameStepMs);
     const evidence=await page.evaluate(inspectFrame);
+    if(scenario.i10ArmoryReplay)evidence.i10ArmoryReplay=await page.evaluate(inspectI10ArmoryReplay);
     if(scenario.u7Crossing)evidence.u7Crossing=await page.evaluate(()=>window.__containmentDebug.u7Crossing);
     if(scenario.nativeReload){assert(await page.evaluate(()=>window.__containmentDebug.game.combat.snapshot.reloading),`${name}: native reload is absent`);assert.equal(await page.locator('#reload-label').innerText(),'RELOADING');}
     if(scenario.titleArtTimeline){

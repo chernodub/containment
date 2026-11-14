@@ -2,9 +2,11 @@
 /** File-only I10 performance, native campaign and unchanged organic-evidence receipts. */
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {constants} from 'node:fs';
 import {readFile,writeFile,readdir,mkdir,copyFile} from 'node:fs/promises';
 import {resolve,basename,sep} from 'node:path';
 import {canvas,decode,encode,drawImage,drawText} from './g2-png.mjs';
+import {activeSelectedContactIds,missingSelectedContactIds} from './i10-selected-contacts.mjs';
 
 const args=process.argv.slice(2);
 if(args.includes('--help')){
@@ -99,7 +101,7 @@ async function performance(){
   const readiness=[],preparations=[],roomSources=[];
   for(const source of roomReports){
     const report=source.value,seen=new Set();
-      roomSources.push({repeat:source.repeat,path:source.path,sha256:source.sha256,sourceSHA:report.distSourceSHA,harnessSHA:report.sha,host:report.host,errors:report.errors,failures:report.failures});
+      roomSources.push({repeat:source.repeat,path:source.path,sha256:source.sha256,sourceSHA:report.distSourceSHA,harnessSHA:report.sha,host:report.host,diagnostic:report.diagnostic===true,timingAcceptanceEligible:report.timingAcceptanceEligible!==false,errors:report.errors,failures:report.failures});
     for(let index=0;index<(report.rows??[]).length;index++){
       const row=report.rows[index],entry={repeat:source.repeat,index,room:row.room,mode:row.mode,totalMs:row.total,
         before:row.before,after:row.after,programs:row.programs,combatCompiles:row.combatCompiles,postReadyCompiles:row.postReadyCompiles,
@@ -121,6 +123,7 @@ async function performance(){
   for(const row of readiness){const key=`${row.room}/${row.mode}`;if(!roomGroups.has(key))roomGroups.set(key,[]);roomGroups.get(key).push(row);}
   const roomCases=[...roomGroups.entries()].map(([key,rows])=>({key,room:rows[0].room,mode:rows[0].mode,
     repeats:rows.length,allMs:rows.sort((a,b)=>a.repeat-b.repeat).map(r=>r.totalMs),summary:quantiles(rows.map(r=>r.totalMs)),load1mRange:range(hostLoads(rows)),pass:rows.length===5&&[1,2,3,4,5].every(n=>rows.some(r=>r.repeat===n))&&rows.every(r=>r.pass)}));
+  const perCaseTypicalExceedances=roomCases.filter(row=>row.summary?.p50>1500).map(row=>({key:row.key,medianMs:row.summary.p50,maximumMs:row.summary.max}));
   const readinessStats=quantiles(readiness.map(r=>r.totalMs)),preparationStats=quantiles(preparations.map(r=>r.total));
   const sourceSHA=bench?.value.distSnapshot?.sourceSHA??null;
   const sourceMatches=!!sourceSHA&&sourceSHA!=='unrecorded'&&roomSources.every(r=>r.sourceSHA===sourceSHA);
@@ -130,9 +133,10 @@ async function performance(){
     benchmarkSource:bench?{path:bench.path,sha256:bench.sha256,source:bench.value.distSnapshot,harnessSHA:bench.value.sha,gpu:bench.value.gpu,seconds:bench.value.seconds,repeats:bench.value.repeats,host:bench.value.host,timingAcceptanceEligible:bench.value.timingAcceptanceEligible??null,diagnosticModes:{noSoftDepth:bench.value.noSoftDepth===true,auditCosts:bench.value.auditCosts===true,gpuPasses:bench.value.gpuPasses===true,gpuFlush:bench.value.gpuFlush===true,gpuMicro:bench.value.gpuMicro===true},errors:bench.value.errors,budgetFailures:bench.value.budgetFailures}:null,
     coverage:{expectedCases:16,expectedTrials:80,actualCases:cases.length,actualTrials:trials.length,complete:cases.length===16&&trials.length===80&&cases.every(c=>c.fiveRepeats),sourceMatches},
     cases,trials,
-    roomPreparation:{method:'Public gotoRoom readiness is separate from inclusive preparation receipts. All preparation histories, including initial cold/warm work, are deduplicated per retained renderer within each run; fresh pages remain distinct. Values are milliseconds;≤3000 worst and≤1500 median targets.',
-      sources:roomSources,readiness,preparations,cases:roomCases,readinessSummary:readinessStats,allPreparationSummary:preparationStats,
+    roomPreparation:{method:'Public gotoRoom readiness is separate from inclusive preparation receipts. All preparation histories, including initial cold/warm work, are deduplicated per retained renderer within each run; fresh pages remain distinct. Values are milliseconds;≤3000 worst and≤1500 overall median targets follow I9. Per-case median excursions remain explicit and are not certified by the overall median.',
+      sources:roomSources,readiness,preparations,cases:roomCases,perCaseTypicalExceedances,readinessSummary:readinessStats,allPreparationSummary:preparationStats,
       targets:{fiveReports:roomReports.length===5,fiveRepeatsPerCase:roomCases.length===42&&roomCases.every(c=>c.pass)&&expectedRoomCases.every(key=>roomGroups.has(key)),
+        unprofiledAudits:roomSources.every(source=>!source.diagnostic&&source.timingAcceptanceEligible),
         sourceMatches,
         publicWorst:!!readinessStats&&readinessStats.max<=3000,publicTypical:!!readinessStats&&readinessStats.p50<=1500,
         allPreparationWorst:!!preparationStats&&preparationStats.max<=3000,allPreparationTypical:!!preparationStats&&preparationStats.p50<=1500,
@@ -152,8 +156,9 @@ async function performance(){
     ...trials.map(r=>`| ${r.name} | ${fmt(r.summary.frame?.p50)} / ${fmt(r.summary.frame?.p95)} | ${round2(r.summary.adaptiveScale?.p50)} / ${round2(r.summary.adaptiveScale?.min)} | ${r.summary.draws?.max??'?'} | ${r.programs??'?'} | ${fmt(r.before?.load?.[0])} → ${fmt(r.after?.load?.[0])} | ${r.pass} |`),
     '', '## Room readiness','',results.roomPreparation.method,'',
     `Public readiness n=${readinessStats?.n??0}: median ${fmt(readinessStats?.p50)}ms, p95 ${fmt(readinessStats?.p95)}ms, max ${fmt(readinessStats?.max)}ms.`,
-    `All distinct preparation receipts n=${preparationStats?.n??0}: median ${fmt(preparationStats?.p50)}ms, p95 ${fmt(preparationStats?.p95)}ms, max ${fmt(preparationStats?.max)}ms.`,'',
-    '| Room / mode | Repeat1 ms | Repeat2 ms | Repeat3 ms | Repeat4 ms | Repeat5 ms | Load1m range | Pass |','|---|---:|---:|---:|---:|---:|---|---|',
+    `All distinct preparation receipts n=${preparationStats?.n??0}: median ${fmt(preparationStats?.p50)}ms, p95 ${fmt(preparationStats?.p95)}ms, max ${fmt(preparationStats?.max)}ms.`,
+    `Typical acceptance above uses I9's overall median. Per-room/mode medians above1500ms: ${perCaseTypicalExceedances.length?perCaseTypicalExceedances.map(row=>`${row.key} ${fmt(row.medianMs)}ms`).join('; '):'none'}. The row pass column checks complete coverage and the3000ms worst limit, not a1500ms per-case certification.`,'',
+    '| Room / mode | Repeat1 ms | Repeat2 ms | Repeat3 ms | Repeat4 ms | Repeat5 ms | Load1m range | Worst-limit pass |','|---|---:|---:|---:|---:|---:|---|---|',
     ...roomCases.map(c=>`| ${c.key} | ${Array.from({length:5},(_,i)=>fmt(readiness.find(r=>r.room===c.room&&r.mode===c.mode&&r.repeat===i+1)?.totalMs)).join(' | ')} | ${c.load1mRange?.map(fmt).join('–')??'missing'} | ${c.pass} |`),
     '', '## Missing inputs','',...(missing.length?missing.map(p=>`- ${p}`):['None.']),'',
     'Original source reports and all failed trials remain unchanged. Campaign/capture CPU timings are excluded from this hardware acceptance table.','',
@@ -303,12 +308,12 @@ async function campaigns(){
       const pngPath=resolve(directory,file),jsonPath=pngPath.replace(/\.png$/,'.json'),snapshot=snapshotRecords.get(file),bytes=await readFile(pngPath);
       if(!snapshot)continue;
       const target=`${rig}-${file}`,targetJson=target.replace(/\.png$/,'.json');
-      await copyFile(pngPath,resolve(organic,target));await copyFile(jsonPath,resolve(organic,targetJson));
+      await copyFile(pngPath,resolve(organic,target),constants.COPYFILE_FICLONE);await copyFile(jsonPath,resolve(organic,targetJson),constants.COPYFILE_FICLONE);
       const png=decode(bytes),s=snapshot.value,e=s.framingEvidence,viewport=s.hud?.viewport??{width:png.width,height:png.height},insets=e?.insets??s.hud?.insets;
-      const framing=e?.framing??s.hud?.framing,selectedIds=framing?.focusedPair?[framing.focusContactId]:framing?.selectedIds??[];
+      const framing=e?.framing??s.hud?.framing,selectedIds=activeSelectedContactIds(framing,`${rig}/${file}`);
       const panels=s.hud?.opaqueBounds??[],contacts=[...(e?.contacts??[])];
       if(e?.queenBounds&&!contacts.some(contact=>contact.id===-1))contacts.push({id:-1,type:'queen',bounds:e.queenBounds,selected:selectedIds.includes(-1)});
-      const missingSelectedIds=selectedIds.filter(id=>!contacts.some(contact=>contact.id===id));
+      const missingSelectedIds=missingSelectedContactIds(selectedIds,contacts);
       const contactRows=contacts.map(c=>{
         const covered=panels.filter(p=>overlap(c.bounds,p.bounds)>0).map(p=>({id:p.id,overlapPixels:overlap(c.bounds,p.bounds),obscuresThreat:p.obscuresThreat===true,opacity:p.opacity??null,
           yields:p.obscuresThreat===true||p.opacity!==null&&p.opacity!==undefined&&finite(Number(p.opacity))&&Number(p.opacity)<.5}));
@@ -352,7 +357,7 @@ async function campaigns(){
       finalStats:report.final?.stats,limitations:report.limitations,
       pass:['dead','complete','room-limit'].includes(report.outcome)&&(report.errors??[]).length===0&&(report.defects??[]).length===0,provenanceVerified:provenance.verified});
   }
-  const framingAudit={method:'Actual saved8-corner body projections and measured CSS HUD insets. C6 heroPixels is the conservative foot-to-head scale, compared with100px at1080p scaled by CSS height; outside is literal playable AABB area and hullOutside is the actual hull diagnostic, reported separately. The qualified C6 rule requires every non-small axis to meet18%; genuinely small axes must center. Total AABB≤18% applies when neither axis is small. Selected engagement contacts and marine are audited separately from peripheral contacts. Peripheral outside contacts are reported, not automatically errors. Overlap of a conservative body box with an unfaded HUD rectangle is a review candidate, not proof that dangerous pixels are hidden. Panel yielding is indicated by saved obscuresThreat or opacity<.5. Saved selected IDs, including Queenid-1, require actual contact bounds; missing selected IDs are explicit evidence failures. Screenshots remain unmodified.',
+  const framingAudit={method:'Actual saved8-corner body projections and measured CSS HUD insets. C6 heroPixels is the conservative foot-to-head scale, compared with100px at1080p scaled by CSS height; outside is literal playable AABB area and hullOutside is the actual hull diagnostic, reported separately. The qualified C6 rule requires every non-small axis to meet18%; genuinely small axes must center. Total AABB≤18% applies when neither axis is small. Selected engagement contacts and marine are audited separately from peripheral contacts. Peripheral outside contacts are reported, not automatically errors. Overlap of a conservative body box with an unfaded HUD rectangle is a review candidate, not proof that dangerous pixels are hidden. Panel yielding is indicated by saved obscuresThreat or opacity<.5. Only the active selectedIds prefix of integer diagnostics.contacts is used; focusedPair uses its validated active focusContactId. Padding outside that prefix is ignored by position, never by ID sign. Saved active IDs, including Queenid-1, require actual contact bounds; missing selected IDs are explicit evidence failures. Screenshots remain unmodified.',
     frames:auditRows,marineFailures:auditRows.filter(r=>r.eightCornerEvidence&&!r.marineInside),marineHudOverlaps:auditRows.filter(r=>r.marineOverlaps.length),
     nativeViewportMismatches:auditRows.filter(r=>!r.nativeViewportMatches),
     heroScaleFailures:auditRows.filter(r=>r.roomFraming&&!r.heroScalePass),roomAabbFailures:auditRows.filter(r=>r.roomFraming&&!r.roomAabbPass),

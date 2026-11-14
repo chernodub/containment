@@ -1,5 +1,8 @@
+import {registerI10ArmoryReplay} from './i10-armory-replay.mjs';
+
 /** Additive arena floor receipts; preserve all original native setup/actions/assertions. */
 export function registerI10Scenarios(scenarios){
+  registerI10ArmoryReplay(scenarios);
   if(scenarios.some(scenario=>scenario.id==='i10-arena-calm-motion'))return;
   const calm=scenarios.find(scenario=>scenario.id==='combat-calm');
   const boss=scenarios.find(scenario=>scenario.id==='boss');

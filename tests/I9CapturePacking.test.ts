@@ -1,29 +1,43 @@
-import {afterEach, expect, it, vi} from 'vitest';
+import {afterEach, beforeAll, expect, it, vi} from 'vitest';
 import * as T from 'three';
 import {DepthGame} from '../src/DepthGame';
 import type {DepthRenderer} from '../src/render/DepthRenderer';
 import {CameraRig} from '../src/render/camera/CameraRig';
 import {HudCombatFraming} from '../src/render/camera/HudCombatFraming';
+import {RoomCombatFraming} from '../src/render/camera/RoomCombatFraming';
 import {COMBAT_VIEW_HEIGHT, combatFocusTarget, protectPlayerFrame} from '../src/render/camera/CombatFraming';
 import {roomFocus} from '../src/render/roomFraming';
 import {installDebug} from '../scripts/nextgen/debug';
+import {loadModels} from './loadModels';
+import {alien,marine,disposeModel} from '../src/render/models';
 // @ts-expect-error The capture functions intentionally run as serialized JavaScript.
 import {stageKiting, advanceKiting, stageCombat} from '../scripts/nextgen/scenarios.mjs';
 
 // CPU integration only: real simulation/geometry and native camera mathematics,
 // without WebGL, a browser, HUD DOM or claims about pixel/asset correctness.
+const heights=new Map<string,number>();let marineHeight=2.05;
+beforeAll(async()=>{
+  await loadModels();const body=marine();marineHeight=body.height;body.stop?.();disposeModel(body.root);
+  for(const family of ['crawler','spitter','brute','carrier','stalker'])for(const elite of [false,true])for(const champion of [undefined,...(elite&&family==='brute'?['warden']:elite&&family==='carrier'?['matron']:[])]){
+    const model=alien(family,elite);model.setThreat?.(0,null,champion as 'warden'|'matron'|undefined);
+    heights.set(`${family}:${elite}:${champion??''}`,model.height);model.stop?.();disposeModel(model.root);
+  }
+});
 function setup(width: number, height: number) {
   const target: Record<string, any> = {};
   vi.stubGlobal('window', target);
   vi.stubGlobal('location', {search: '?debug=1&seed=1729'});
   const camera = new T.PerspectiveCamera(28, width / height, .1, 160);
-  const rig = new CameraRig(), hud = new HudCombatFraming();
+  const rig = new CameraRig(), hud = new HudCombatFraming(), roomFraming = new RoomCombatFraming();
   hud.resize(width, height);
   hud.setInsets({top: 182, right: 292, bottom: height === 720 ? 108 : 120, left: 0});
   const desired = new T.Vector3(), point = new T.Vector3(), scratch = new T.Vector3(), focus = new T.Vector3();
-  let room = '', muzzleLife = 0;
+  let room = '', muzzleLife = 0;const nativeActorIds=new Set<number>();
   const renderer = {
-    muzzle: {intensity: 0}, beginGameplayPresentation:vi.fn(), roomLoading: false, prepare: async () => {},
+    muzzle: {intensity: 0}, beginGameplayPresentation:vi.fn(), roomLoading: false,
+    // Production prepare reloads even the same node: reset presentation state
+    // on a legal lane retry rather than carrying the prior trial's spring.
+    prepare: async () => {room='';muzzleLife=0;nativeActorIds.clear();},
     effect(event: {type: string}) {if (event.type === 'shot') muzzleLife = .045;},
     render(game: DepthGame, dt = 0) {
       muzzleLife -= dt;
@@ -33,9 +47,14 @@ function setup(width: number, height: number) {
         room = game.node.id;
         const initial = roomFocus(p.x / 32, p.y / 32, b.width / 32, b.height / 32, COMBAT_VIEW_HEIGHT * width / height, COMBAT_VIEW_HEIGHT, game.node.templateId);
         rig.reset(initial.x, initial.z);
+        roomFraming.reset();
+        nativeActorIds.clear();
       }
       combatFocusTarget(p.x / 32, p.y / 32, p.angle, 0, 0, false, false, desired);
-      hud.selectContacts(p.x / 32, p.y / 32, p.angle, game.enemies.snapshot.enemies, 32, () => 3.2);
+      hud.selectContacts(p.x / 32, p.y / 32, p.angle, game.enemies.snapshot.enemies, 32, id => {
+        const e=game.enemies.getSnapshot(id);
+        return e&&nativeActorIds.has(id)?heights.get(`${e.type}:${e.elite}:${e.champion??''}`)??3.2:3.2;
+      });
       hud.biasTarget(p.x / 32, p.y / 32, p.angle, false, false, desired);
       const bounded = roomFocus(desired.x, desired.z, b.width / 32, b.height / 32, COMBAT_VIEW_HEIGHT * width / height, COMBAT_VIEW_HEIGHT, game.node.templateId);
       if (!hud.hasEngagement) desired.set(bounded.x, 0, bounded.z);
@@ -43,8 +62,11 @@ function setup(width: number, height: number) {
       rig.apply(camera, 1, COMBAT_VIEW_HEIGHT, 0);
       focus.copy(rig.focus);
       hud.center(camera, rig.focus, point, scratch);
-      hud.protectEngagement(camera, focus, p.x / 32, p.y / 32, p.radius / 32, 2.2, point, scratch);
-      protectPlayerFrame(camera, rig.focus, p.x / 32, p.y / 32, p.radius / 32, 2.2, point, scratch, hud.viewport);
+      hud.protectEngagement(camera, focus, p.x / 32, p.y / 32, p.radius / 32, marineHeight, point, scratch);
+      protectPlayerFrame(camera, rig.focus, p.x / 32, p.y / 32, p.radius / 32, marineHeight, point, scratch, hud.viewport);
+      roomFraming.apply(camera, rig.focus, p.x / 32, p.y / 32, p.radius / 32, marineHeight, b.width / 32, b.height / 32, hud.viewport, height, dt, false, game.geometry.boundary, hud);
+      hud.refreshFit(camera, point);
+      nativeActorIds.clear();for(const e of game.enemies.snapshot.enemies)nativeActorIds.add(e.id);
     },
     visible(x: number, y: number) {
       point.set(x / 32, .6, y / 32).project(camera);
@@ -70,6 +92,11 @@ for (const [width, height] of [[1280, 720], [1920, 1080]]) {
     expect(result.placedVisible).toBeGreaterThanOrEqual(room === 'communal-atrium' ? 15 : 18);
     expect(result.staged).toBeGreaterThanOrEqual(18);
     expect(result.laneAttempt).toBeLessThan(32);
+    expect(result.packingExclusion).toBeGreaterThanOrEqual(110);
+    expect(result.minimumSpawnClearance).toBeGreaterThanOrEqual(12);
+    expect(result.packingPasses.length).toBeGreaterThan(0);
+    expect(result.packingPasses.length).toBeLessThanOrEqual(6);
+    for (const [n, a] of result.packingPoints.entries()) for (const b of result.packingPoints.slice(n + 1)) expect(Math.hypot(a.x-b.x,a.y-b.y)).toBeGreaterThanOrEqual(65.01-1e-6);
     for (const enemy of game.enemies.snapshot.enemies) expect(debug.canStand(enemy.x, enemy.y, enemy.radius)).toBe(true);
     for (let frame = 0; frame < 4; frame++) {
       advanceKiting({frame, stepMs: 150});
