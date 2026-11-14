@@ -187,3 +187,27 @@ Tool verification: targeted Vitest 4/4 passed (149ms); runner and assembler Node
 syntax checks passed. An initial invocation with `node --test` used the wrong
 runner for this Vitest file and failed during import; the correct Vitest run
 above passed without any code change.
+
+### Bounded 720p evidence staging correction
+
+Base720 batches00–18 passed. Batch19 stopped before saving any guarded frame:
+`i8-families:containment-annulus` reported ten legal initial family marks and its
+fallback could not settle twelve full native bodies. The failed directory
+`artifacts/nextgen/i11-720-batch-19/` is immutable, including failure PNG/JSON.
+This is a fixture placement failure; application assets remained frozen.
+
+At the lead's instruction the compact Annulus fallback alone now reserves18px
+body headroom instead of6px and searches up to96 lawful marine origins instead
+of48. Its final production camera, complete native actor bounds, radius/hull
+predicates,105-unit marine reserve,76-unit spacing, requested15 and existing
+minimum twelve/five-family/phase/HUD assertions are all retained. No assertion
+or presentation pin was rewritten. The additional margin is stricter and lets
+placement survive production framing convergence.
+
+Fresh isolated browser probes passed all four phases at both desktop viewports:
+`i11-720-c6-lawful-probe` retained twelve full native bodies;
+`i11-1080-c6-lawful-probe` retained fourteen through the unchanged legacy grid.
+Both have zero errors/failures, five families and requested15. Native720 phases
+were opened individually; their silhouettes remain distinct, while the broad
+Annulus foundation still dominates the right side. The capture then resumed
+batches19–27 using fresh prefix `i11-720-lawful`; original failed19 is not reused.

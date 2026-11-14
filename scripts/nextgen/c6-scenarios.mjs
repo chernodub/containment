@@ -85,7 +85,11 @@ export async function stageC6Families(room) {
  function nativeFamilyFallback(){
   const families=['crawler','spitter','brute','carrier','stalker'],i=r.hudInsets,box={left:0,right:0,top:0,bottom:0};
   const trials=[];d.i8FamilyProof={actors:[],requested:15,fullBodyCount:0,presentationOnly:true,invulnerable:true,spacing:76,packingMode:'native-hex-fallback',fallbackTrials:trials,stagingFailed:true};
-  for(const center of centers.slice(0,48)){
+  // The 720p HUD leaves fewer legal tall-body marks. Search additional lawful
+  // origins and reserve headroom for the final production framing convergence.
+  const compactAnnulus=room==='containment-annulus'&&innerHeight<=720;
+  const bodyPadding=compactAnnulus?18:6;
+  for(const center of centers.slice(0,compactAnnulus?96:48)){
    Object.assign(g.player,{x:center.x,y:center.y,vx:0,vy:0,angle:0});g.enemies.reset();
    const seed=[],seedCandidates=[];
    for(let y=b.y+40;y<b.y+b.height-40;y+=38)for(let x=b.x+40;x<b.x+b.width-40;x+=38){
@@ -112,7 +116,7 @@ export async function stageC6Families(room) {
       if(Math.hypot(x-center.x,y-center.y)<105||Math.hypot(x-center.x,y-center.y)>600||!d.canStand(x,y,28))continue;
       marks.push({x,y});
      }
-     const edges=actors.map(p=>{const e=g.enemies.snapshot.enemies.find(e=>e.id===p.id);return marks.flatMap((q,n)=>d.canStand(q.x,q.y,e.radius)&&r.actorScreenBounds(p.id,q.x,q.y,e.radius,box)&&box.left>=i.left+6&&box.right<=innerWidth-i.right-6&&box.top>=i.top+6&&box.bottom<=innerHeight-i.bottom-6?[n]:[]);});
+     const edges=actors.map(p=>{const e=g.enemies.snapshot.enemies.find(e=>e.id===p.id);return marks.flatMap((q,n)=>d.canStand(q.x,q.y,e.radius)&&r.actorScreenBounds(p.id,q.x,q.y,e.radius,box)&&box.left>=i.left+bodyPadding&&box.right<=innerWidth-i.right-bodyPadding&&box.top>=i.top+bodyPadding&&box.bottom<=innerHeight-i.bottom-bodyPadding?[n]:[]);});
      const owner=new Map(),assigned=new Map();
      const match=(a,seen)=>{for(const m of edges[a]){if(seen.has(m))continue;seen.add(m);const prior=owner.get(m);if(prior===undefined||match(prior,seen)){owner.set(m,a);assigned.set(a,m);return true;}}return false;};
      // Base five family representatives precede redundant variants if the
