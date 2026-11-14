@@ -120,3 +120,28 @@ for (const [width, height] of [[1280, 720], [1920, 1080]]) {
     }
   });
 }
+
+// A native burst does more zero-delta presentation work than a bare simulation
+// step: inspectFrame and screenshot RAFs refresh the unchanged snapshot. The
+// legal Relay reserve must survive that boundary as well as all4 native casts.
+it.each([[1280,720],[1920,1080]])('retains Relay bodies and native movement across capture refreshes at %i×%i',async(width,height)=>{
+  const {game,renderer,debug}=setup(width,height);
+  await debug.gotoRoom('freight-hold',{rig:'cryo'});
+  await stageKiting();for(let frame=0;frame<4;frame++)advanceKiting({frame,stepMs:150});
+  await debug.gotoRoom('relay-racks',{rig:'cryo'});
+  const staged=await stageKiting();expect(staged.initialVisible).toBeGreaterThanOrEqual(18);expect(staged.staged).toBeGreaterThanOrEqual(18);expect(staged.staged).toBeLessThanOrEqual(26);
+  let previous={x:game.player.x,y:game.player.y};
+  for(let frame=0;frame<4;frame++){
+    advanceKiting({frame,stepMs:150});
+    if(frame)expect(Math.hypot(game.player.x-previous.x,game.player.y-previous.y)).toBeGreaterThan(1);
+    previous={x:game.player.x,y:game.player.y};
+    const elapsed=game.elapsed;
+    for(let refresh=0;refresh<8;refresh++){
+      renderer.render(game,0);
+      expect(game.enemies.snapshot.enemies.filter(e=>e.health>0&&renderer.visible(e.x,e.y)).length,`phase${frame},refresh${refresh}`).toBeGreaterThanOrEqual(12);
+      expect(game.elapsed).toBe(elapsed);
+    }
+  }
+  expect(game.stats.abilityUses).toMatchObject({dash:1,tactical:1,power:1,overdrive:1});
+  expect(game.status).toBe('playing');
+});
