@@ -36,9 +36,10 @@ export class RoomCombatFraming {
   private vz = 0;
   private zoom = 1;
   private zoomVelocity = 0;
+  private remoteProgress = false;
   readonly diagnostics = {heroPixels:0, outside:0, hullOutside:0, heroBoundsPixels:0, centeredX:false, centeredZ:false, smallX:false, smallZ:false, outsideX:0, outsideZ:0, shallowZoomFloor:0};
 
-  reset():void { this.ready = false; this.floorDepth = -1; }
+  reset():void { this.ready = false; this.floorDepth = -1; this.remoteProgress=false; }
 
   /** Keep the marine legible; nearby walls take precedence over a remote threat. */
   apply(camera:Camera, focus:T.Vector3, x:number, z:number, radius:number, height:number,
@@ -57,6 +58,9 @@ export class RoomCombatFraming {
     const threatRoom=T.MathUtils.clamp((camera.zoom-.85)/.15,0,1);
     const desiredZoom = Math.max(roomZoomFloor,T.MathUtils.lerp(minimum,normal,threatRoom));
     const fresh = !this.ready || this.roomWidth!==roomWidth || this.roomDepth!==roomDepth;
+    const previousX=this.x,previousZ=this.z,previousZoom=this.zoom;
+    const urgent=engagement?.needsFinalFit(x,z)??false;
+    const remote=!urgent&&(engagement?.hasEngagement===true||this.remoteProgress);
     if(fresh){this.x=camera.position.x;this.z=camera.position.z;this.zoom=desiredZoom;this.vx=this.vz=this.zoomVelocity=0;this.ready=true;}
     this.roomWidth=roomWidth;this.roomDepth=roomDepth;
     const step=Math.max(0,Math.min(.05,dt)),omega=reducedMotion?6:8,decay=Math.exp(-omega*step);
@@ -91,7 +95,7 @@ export class RoomCombatFraming {
     // The spring/room correction can undo the earlier HUD solve even when a
     // nearby fight fits. Solve once more against the rendered pose, with the
     // hero floor fixed and the room/body constraints reapplied after translation.
-    if(engagement?.needsFinalFit(x,z)){
+    if(urgent&&engagement){
       engagement.refreshFit(camera,this.point);
       for(let pass=0;pass<3&&!engagement.diagnostics.fit;pass++){
         const oldX=camera.position.x,oldZ=camera.position.z,oldZoom=camera.zoom;
@@ -110,6 +114,66 @@ export class RoomCombatFraming {
         outside=candidateOutside;engagement.refreshFit(camera,this.point);
       }
     }
+    // A remote target may need several metres of legal room-margin pan. Keep
+    // advancing from the last rendered pose instead of restarting at the room's
+    // zero-outside clamp each frame, then cap the actual presented movement.
+    // Nearby urgent fights retain their existing immediate final fit above.
+    if(remote&&!fresh&&engagement){
+      const baseX=camera.position.x,baseZ=camera.position.z,baseZoom=camera.zoom;
+      this.move(camera,focus,previousX-camera.position.x,previousZ-camera.position.z);
+      camera.zoom=previousZoom;camera.updateProjectionMatrix();
+      if(engagement.hasEngagement){
+        engagement.refreshFit(camera,this.point);
+        for(let padding=0;padding<2&&!engagement.diagnostics.fit;padding++){
+          const edge=padding===0?4:1;
+          for(let pass=0;pass<3&&!engagement.diagnostics.fit;pass++){
+            this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);
+            const span=Math.max(.0001,Math.abs(this.target.y-this.point.y)*540);
+            engagement.protectEngagement(camera,focus,x,z,radius,height,this.point,this.target,Math.max(roomZoomFloor,camera.zoom*HERO_MIN_PIXELS/span),true,edge);
+            this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport,true,edge*2/cssHeight);
+            engagement.refreshFit(camera,this.point);
+          }
+        }
+      }else{
+        this.move(camera,focus,baseX-camera.position.x,baseZ-camera.position.z);camera.zoom=baseZoom;camera.updateProjectionMatrix();
+      }
+      const candidateX=camera.position.x,candidateZ=camera.position.z,candidateZoom=camera.zoom;
+      const distance=Math.hypot(candidateX-previousX,candidateZ-previousZ);
+      const elapsed=Math.max(0,Math.min(1,dt*60)),positionLimit=(reducedMotion?.25:.5)*elapsed,zoomLimit=(reducedMotion?.02:.04)*elapsed;
+      let accepted=false;
+      for(let goal=0;goal<2&&!accepted;goal++){
+        const goalX=goal===0?candidateX:baseX,goalZ=goal===0?candidateZ:baseZ,goalZoom=goal===0?candidateZoom:baseZoom;
+        const length=Math.hypot(goalX-previousX,goalZ-previousZ);
+        let fraction=Math.min(1,length>0?positionLimit/length:1);
+        for(let attempt=0;attempt<10;attempt++){
+          this.move(camera,focus,previousX+(goalX-previousX)*fraction-camera.position.x,previousZ+(goalZ-previousZ)*fraction-camera.position.z);
+          // Hero scale follows the current player depth independently of the
+          // long pan fraction; moving at a100px floor must not freeze the pose.
+          camera.zoom=previousZoom+T.MathUtils.clamp(goalZoom-previousZoom,-zoomLimit,zoomLimit);camera.updateProjectionMatrix();
+          this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);
+          const span=Math.max(.0001,Math.abs(this.target.y-this.point.y)*540);
+          if(span<HERO_MIN_PIXELS){camera.zoom*=HERO_MIN_PIXELS/span;camera.updateProjectionMatrix();}
+          this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport,true,2/cssHeight);
+          const bounded=Math.hypot(camera.position.x-previousX,camera.position.z-previousZ)<=positionLimit+1e-6&&Math.abs(camera.zoom-previousZoom)<=zoomLimit+1e-6;
+          if(this.validPose(camera,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport)&&bounded){accepted=true;break;}
+          fraction*=.5;
+        }
+      }
+      if(!accepted){
+        this.move(camera,focus,previousX-camera.position.x,previousZ-camera.position.z);camera.zoom=previousZoom;camera.updateProjectionMatrix();
+        if(!this.validPose(camera,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport)){
+          // A changed player/viewport can invalidate the old pose. Keep the
+          // existing valid body/room result instead of holding an unsafe frame.
+          this.move(camera,focus,baseX-camera.position.x,baseZ-camera.position.z);camera.zoom=baseZoom;camera.updateProjectionMatrix();
+          this.validPose(camera,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
+        }
+      }
+      this.setRectangle(roomLeft,roomTop,roomRight,roomBottom);
+      outside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
+      engagement.refreshFit(camera,this.point);
+      this.vx=this.vz=this.zoomVelocity=0;
+      this.remoteProgress=engagement.hasEngagement||distance>.001||Math.abs(candidateZoom-previousZoom)>.0001;
+    }else this.remoteProgress=remote;
     this.x=camera.position.x;this.z=camera.position.z;this.zoom=camera.zoom;
     this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);
     this.diagnostics.heroPixels=Math.abs(this.target.y-this.point.y)*cssHeight*.5;
@@ -180,6 +244,25 @@ export class RoomCombatFraming {
     return Math.abs(this.point.z-top);
   }
 
+  /** Test the actual intermediate pose, without moving it to another clamp. */
+  private validPose(camera:Camera,x:number,z:number,radius:number,height:number,left:number,top:number,right:number,bottom:number,v:CombatViewport):boolean {
+    this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);
+    let valid=Math.abs(this.target.y-this.point.y)*540>=HERO_MIN_PIXELS-1e-6;
+    for(let ix=-1;ix<=1;ix+=2)for(let iz=-1;iz<=1;iz+=2)for(let iy=0;iy<2;iy++){
+      this.point.set(x+ix*radius,iy*height,z+iz*radius).project(camera);
+      if(this.point.x<v.left-1e-6||this.point.x>v.right+1e-6||this.point.y<v.bottom-1e-6||this.point.y>v.top+1e-6)valid=false;
+    }
+    this.deckCorners(camera,v);
+    let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+    for(let n=0;n<4;n++){minX=Math.min(minX,this.corners[n*2]);maxX=Math.max(maxX,this.corners[n*2]);minZ=Math.min(minZ,this.corners[n*2+1]);maxZ=Math.max(maxZ,this.corners[n*2+1]);}
+    const d=this.diagnostics;
+    d.smallX=maxX-minX>right-left;d.smallZ=maxZ-minZ>bottom-top;
+    d.centeredX=d.smallX&&Math.abs((minX+maxX-left-right)*.5)<1e-5;
+    d.centeredZ=d.smallZ&&Math.abs((minZ+maxZ-top-bottom)*.5)<1e-5;
+    const roomFits=this.fitsRoomMargin(camera,v,left,top,right,bottom,minX,maxX,minZ,maxZ,d.centeredX,d.centeredZ);
+    return valid&&roomFits;
+  }
+
   private deckPoint(camera:Camera,x:number,y:number):void {
     this.point.set(x,y,0).unproject(camera);
     if(camera instanceof T.PerspectiveCamera){
@@ -197,10 +280,10 @@ export class RoomCombatFraming {
   }
 
   private contain(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,
-    roomLeft:number,roomTop:number,roomRight:number,roomBottom:number,viewport:CombatViewport,engagementMargin=false):void {
+    roomLeft:number,roomTop:number,roomRight:number,roomBottom:number,viewport:CombatViewport,engagementMargin=false,bodyEdgePaddingY?:number):void {
     // Alternating projections retain HUD clearance even at bevels and corners.
     for(let pass=0;pass<12;pass++){
-      if(engagementMargin)this.protectBody(camera,focus,x,z,radius,height,viewport);
+      if(engagementMargin)this.protectBody(camera,focus,x,z,radius,height,viewport,bodyEdgePaddingY);
       this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);
       const span=Math.abs(this.target.y-this.point.y)*540;
       if(span<HERO_MIN_PIXELS){camera.zoom*=HERO_MIN_PIXELS/span;camera.updateProjectionMatrix();}
@@ -220,7 +303,7 @@ export class RoomCombatFraming {
       const dx=spanX>roomRight-roomLeft?(roomLeft+roomRight)*.5-(minX+maxX)*.5:Math.max(roomLeft-minX,Math.min(roomRight-maxX,0));
       const dz=spanZ>roomBottom-roomTop?(roomTop+roomBottom)*.5-(minZ+maxZ)*.5:Math.max(roomTop-minZ,Math.min(roomBottom-maxZ,0));
       this.move(camera,focus,dx,dz);
-      this.protectBody(camera,focus,x,z,radius,height,viewport);
+      this.protectBody(camera,focus,x,z,radius,height,viewport,bodyEdgePaddingY);
       this.deckCorners(camera,viewport);
       const centerX=(Math.min(this.corners[0],this.corners[2],this.corners[4],this.corners[6])+Math.max(this.corners[0],this.corners[2],this.corners[4],this.corners[6]))*.5;
       const centerZ=(Math.min(this.corners[1],this.corners[3],this.corners[5],this.corners[7])+Math.max(this.corners[1],this.corners[3],this.corners[5],this.corners[7]))*.5;
@@ -264,14 +347,15 @@ export class RoomCombatFraming {
     }
   }
 
-  private protectBody(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,v:CombatViewport):void {
+  private protectBody(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,v:CombatViewport,edgePaddingY?:number):void {
     for(let pass=0;pass<3;pass++){
       let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
       for(let ix=-1;ix<=1;ix+=2)for(let iz=-1;iz<=1;iz+=2)for(let iy=0;iy<2;iy++){
         this.point.set(x+ix*radius,iy*height,z+iz*radius).project(camera);
         left=Math.min(left,this.point.x);right=Math.max(right,this.point.x);top=Math.max(top,this.point.y);bottom=Math.min(bottom,this.point.y);
       }
-      const padX=.025*v.halfX,padY=.025*v.halfY;
+      const aspect=camera instanceof T.PerspectiveCamera?camera.aspect:(camera.right-camera.left)/(camera.top-camera.bottom);
+      const padX=edgePaddingY===undefined?.025*v.halfX:edgePaddingY/aspect,padY=edgePaddingY===undefined?.025*v.halfY:edgePaddingY;
       const dx=left<v.left+padX?left-v.left-padX:right>v.right-padX?right-v.right+padX:0;
       const dy=top>v.top-padY?top-v.top+padY:bottom<v.bottom+padY?bottom-v.bottom-padY:0;
       if(Math.abs(dx)+Math.abs(dy)<1e-7)return;

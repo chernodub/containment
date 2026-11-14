@@ -105,10 +105,13 @@ export class HudCombatFraming {
   }
 
   /** Shift a fitting engagement as one group; if oversized, prefer the aimed/most urgent contact.
-   * The bounded extra pullback is only used when HUD reservation makes that pair too large. */
-  protectEngagement(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,point:T.Vector3,target:T.Vector3,minimumZoom=.5,allowMarineMargin=false):void {
+   * The bounded extra pullback is only used when HUD reservation makes that pair too large.
+   * Final remote progression may explicitly spend compositional padding down
+   * to a CSS-pixel body edge; the ordinary solve retains its larger margins. */
+  protectEngagement(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,point:T.Vector3,target:T.Vector3,minimumZoom=.5,allowMarineMargin=false,bodyEdgePaddingCss?:number):void {
     if(!this.count)return;
-    const v=this.viewport,leftLimit=v.left+.06*v.halfX,rightLimit=v.right-.06*v.halfX,topLimit=v.top-.10*v.halfY,bottomLimit=v.bottom+.10*v.halfY;
+    const v=this.viewport,padX=bodyEdgePaddingCss===undefined?.06*v.halfX:bodyEdgePaddingCss*2/this.width,padY=bodyEdgePaddingCss===undefined?.10*v.halfY:bodyEdgePaddingCss*2/this.height;
+    const leftLimit=v.left+padX,rightLimit=v.right-padX,topLimit=v.top-padY,bottomLimit=v.bottom+padY;
     let selected=this.primary?0:-1;
     for(let pass=0;pass<32;pass++){
       let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
@@ -125,14 +128,16 @@ export class HudCombatFraming {
       // The final room solve may spend central composition to keep actual
       // bodies safe, but retains six percent of the usable half-viewport.
       const fullMarineMargin=this.primary||allowMarineMargin;
-      const marineHalfX=Math.max((fullMarineMargin?.94:.60)*v.halfX,(marineRight-marineLeft)*.5+.015),marineHalfY=Math.max((fullMarineMargin?.94:.55)*v.halfY,(marineTop-marineBottom)*.5+.015);
+      const marineHalfX=bodyEdgePaddingCss!==undefined?v.halfX-padX:Math.max((fullMarineMargin?.94:.60)*v.halfX,(marineRight-marineLeft)*.5+.015);
+      const marineHalfY=bodyEdgePaddingCss!==undefined?v.halfY-padY:Math.max((fullMarineMargin?.94:.55)*v.halfY,(marineTop-marineBottom)*.5+.015);
       const minX=Math.max(right-rightLimit,marineRight-v.centerX-marineHalfX),maxX=Math.min(left-leftLimit,marineLeft-v.centerX+marineHalfX);
       const minY=Math.max(top-topLimit,marineTop-v.centerY-marineHalfY),maxY=Math.min(bottom-bottomLimit,marineBottom-v.centerY+marineHalfY);
       if(scale<1-1e-6||minX>maxX+1e-6||minY>maxY+1e-6){
         // Try the complete engaged group before falling back to its highest-priority pair.
         // Keep ordinary crowds at the authored scale. A remote priority pair
         // gets additional bounded room before abandoning its actual body bounds;
-        // the marine's central safety envelope remains unchanged.
+        // the ordinary marine central composition remains unless the final
+        // remote solve explicitly requests literal body-edge clearance.
         const zoom=Math.max(minimumZoom,selected<0?.85:.5,camera.zoom*Math.min(.96,scale*.98));
         if(zoom<camera.zoom-1e-6){camera.zoom=zoom;this.diagnostics.pullback=zoom;camera.updateProjectionMatrix();continue;}
         if(selected<0){selected=0;for(let n=1;n<this.count;n++)if(this.contacts[n*5+4]>this.contacts[selected*5+4])selected=n;this.diagnostics.focusedPair=true;this.diagnostics.focusContactId=this.diagnostics.selectedIds[selected];continue;}
