@@ -97,11 +97,16 @@ export class RoomCombatFraming {
     // hero floor fixed and the room/body constraints reapplied after translation.
     if(urgent&&engagement){
       engagement.refreshFit(camera,this.point);
-      for(let pass=0;pass<3&&!engagement.diagnostics.fit;pass++){
+      for(let pass=0;pass<8&&!engagement.diagnostics.fit;pass++){
         const oldX=camera.position.x,oldZ=camera.position.z,oldZoom=camera.zoom;
         this.point.set(x,0,z).project(camera);this.target.set(x,height,z).project(camera);
         const span=Math.max(.0001,Math.abs(this.target.y-this.point.y)*540);
-        engagement.protectEngagement(camera,focus,x,z,radius,height,this.point,this.target,Math.max(roomZoomFloor,camera.zoom*HERO_MIN_PIXELS/span),true);
+        const minimumZoom=Math.max(roomZoomFloor,camera.zoom*HERO_MIN_PIXELS/span);
+        // A group can fit the viewport at this zoom while its required pan
+        // exceeds the room allowance. Retrying that same pan cannot progress:
+        // spend the available hero-size pullback before the next joint attempt.
+        if(pass>0){camera.zoom=minimumZoom;camera.updateProjectionMatrix();}
+        engagement.protectEngagement(camera,focus,x,z,radius,height,this.point,this.target,minimumZoom,true);
         this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport,true);
         this.setRectangle(roomLeft,roomTop,roomRight,roomBottom);
         const candidateOutside=this.outsideFraction(camera,roomWidth,roomDepth,viewport,rectangle);
@@ -109,10 +114,11 @@ export class RoomCombatFraming {
           ||this.diagnostics.smallX&&!this.diagnostics.centeredX||this.diagnostics.smallZ&&!this.diagnostics.centeredZ){
           this.move(camera,focus,oldX-camera.position.x,oldZ-camera.position.z);camera.zoom=oldZoom;camera.updateProjectionMatrix();
           this.contain(camera,focus,x,z,radius,height,roomLeft,roomTop,roomRight,roomBottom,viewport);
-          engagement.refreshFit(camera,this.point);break;
+          engagement.refreshFit(camera,this.point);continue;
         }
-        outside=candidateOutside;engagement.refreshFit(camera,this.point);
+        outside=candidateOutside;engagement.refreshFit(camera,this.point,true);
       }
+      engagement.refreshFit(camera,this.point);
     }
     // A remote target may need several metres of legal room-margin pan. Keep
     // advancing from the last rendered pose instead of restarting at the room's

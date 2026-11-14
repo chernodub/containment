@@ -162,15 +162,15 @@ export class HudCombatFraming {
 
   /** Re-measure selected contacts after final room/hero constraints. A remote
    * contact may yield to hero size; receipts must describe the rendered matrix. */
-  refreshFit(camera:Camera,point:T.Vector3):void {
-    const v=this.viewport;
+  refreshFit(camera:Camera,point:T.Vector3,compositionPadding=false):void {
+    const v=this.viewport,padX=compositionPadding?.06*v.halfX:0,padY=compositionPadding?.10*v.halfY:0,tolerance=compositionPadding?1e-7:1e-5;
     this.diagnostics.fit=true;
     for(let n=0;n<this.count;n++){
       if(this.diagnostics.focusedPair&&this.diagnostics.selectedIds[n]!==this.diagnostics.focusContactId)continue;
       const offset=n*5;
       for(let ix=-1;ix<=1;ix+=2)for(let iz=-1;iz<=1;iz+=2)for(let iy=0;iy<2;iy++){
         point.set(this.contacts[offset]+ix*this.contacts[offset+2],iy*this.contacts[offset+3],this.contacts[offset+1]+iz*this.contacts[offset+2]).project(camera);
-        if(point.x<v.left-1e-5||point.x>v.right+1e-5||point.y<v.bottom-1e-5||point.y>v.top+1e-5)this.diagnostics.fit=false;
+        if(point.x<v.left+padX-tolerance||point.x>v.right-padX+tolerance||point.y<v.bottom+padY-tolerance||point.y>v.top-padY+tolerance)this.diagnostics.fit=false;
       }
     }
     this.diagnostics.pullback=camera.zoom;
