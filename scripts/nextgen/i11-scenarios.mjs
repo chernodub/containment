@@ -11,10 +11,19 @@ export function registerI11Scenarios(scenarios) {
       gl.createProgram=function(){programs++;if(guard)throw Error('I11 legacy native pool combat shader compile');return create.call(gl);};
       for(let n=0;n<600&&!g.pools.length;n++)d.step(50);
       if(!g.pools.length)throw Error('Native legacy Queen did not create an acid pool');
-      const pool=g.pools[0],point=r.camera.position.clone().set(pool.x/32,0,pool.y/32).project(r.camera);
+      const pool=g.pools[0];let target={x:pool.x,y:pool.y};
+      // Offset a valid native preview so reviewers can see its dashed ends and
+      // the hostile teeth together; overlap still yields through the live mask.
+      for(const dx of [140,100,-100]){
+        const candidate={x:pool.x+dx,y:pool.y};
+        if(!d.canStand(candidate.x,candidate.y,28))continue;
+        g.setAimPoint(candidate);
+        if(g.abilities.snapshot.slots.power.ready){target=candidate;break;}
+      }
+      const point=r.camera.position.clone().set(target.x/32,0,target.y/32).project(r.camera);
       d.i11NativePointer={x:(point.x+1)*innerWidth/2,y:(1-point.y)*innerHeight/2};
       d.g4DangerProof={presentationOnly:true,legacySavesOnly:true,nativeQueenPool:true,
-        previewAbility:'glacier',previewTarget:{x:pool.x,y:pool.y},
+        previewAbility:'glacier',previewTarget:target,
         nativePools:g.pools.map(p=>({...p})),postReadyPrograms:programs,shaderGuard:guard};
       d.refresh();
     },
