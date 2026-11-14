@@ -30,6 +30,7 @@ const options = Object.fromEntries(args.map(arg => {
 }));
 const distRoot=resolve(String(options['dist-dir']??'dist'));
 const storyboardRoom=options['storyboard-room']??null;
+const storyboardIntervalSeconds=.5;
 assert(!storyboardRoom||typeof storyboardRoom==='string'&&/^[a-z][a-z0-9-]+$/.test(storyboardRoom),'Invalid storyboard room');
 assert(!storyboardRoom||!options.fast&&!options.realtime,'Storyboards require the ordinary fixed clock with every tick rendered');
 const checkpointScreens=options['checkpoint-screens']?new Set(String(options['checkpoint-screens']).split(',')):null;
@@ -67,7 +68,7 @@ const report = {
   limitations: ['Incoming damage source is inferred from nearby threats, not authoritative attribution.', 'Accelerated CPU samples include rendering submission, not GPU completion; RAF diagnostics are separately retained.', 'A deterministic seed does not guarantee identical outcomes across policy/render timing; input trace is retained.', 'Audio spy tracks source lifecycle, not perceived sound quality.'],
 };
 if(storyboardRoom)report.storyboard={
-  room:storyboardRoom,sampleIntervalSeconds:1,frames:[],
+  room:storyboardRoom,sampleIntervalSeconds:storyboardIntervalSeconds,frames:[],
   method:'Read-only PNG observations after existing native steps; no added simulation tick, input change, camera change or policy decision.',
 };
 if(options.fast)report.limitations.push('Fast rendering omits intermediate GPU submissions only; timings/draw counts are not a production performance certificate. Preparation and evidence frames are fully drawn.');
@@ -323,7 +324,7 @@ try {
       const entryName=`r${s.node.depth+1}-${room.id}-start`;
       await shot(entryName,s);
       recordStoryboard('entry',entryName,s);
-      if(room.id===storyboardRoom)room.nextStoryboardSecond=1;
+      if(room.id===storyboardRoom)room.nextStoryboardSecond=storyboardIntervalSeconds;
       previousProgress='';stagnantSince=s.elapsed;
     }
     const pauseProbe=['pause','pause-loadout','pause-settings','pause-controls'].find(kind=>shouldProbe(kind)&&!probed.has(kind));
@@ -375,7 +376,7 @@ try {
       const name=`play-r${room.depth+1}-${room.id}-${String(report.storyboard.frames.length).padStart(3,'0')}`;
       await shot(name,after);
       recordStoryboard('fight',name,after);
-      room.nextStoryboardSecond=Math.floor(after.elapsed-room.startedElapsed)+1;
+      room.nextStoryboardSecond=(Math.floor((after.elapsed-room.startedElapsed)/storyboardIntervalSeconds)+1)*storyboardIntervalSeconds;
     }
     const delta=after.stats.damageTaken-s.stats.damageTaken;
     if(delta>0){const source=s.hazards.some(h=>distance(h,s.player)<h.radius+80)?'hazard-proximity':s.enemies.find(e=>distance(e,s.player)<140)?.type??'unknown';room.damageSourcesInferred[source]=(room.damageSourcesInferred[source]??0)+delta;}

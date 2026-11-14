@@ -40,3 +40,5 @@ Focused pure selection tests prove endpoints, order, uniqueness, nonmutation,
 short-fight rejection, foreign-clear rejection, duplicate-clock rejection and
 native firing coverage. Browser smoke/full campaigns are deferred to the parent,
 who controls the single-browser benchmark and at-most-two-browser campaign schedule.
+
+I11 smoke provided13 observations over11.75 simulated seconds. Final capture sampling is every0.5 simulated seconds to retain at least ten distinct fight observations even when a rig clears the room faster; this remains read-only and advances no extra simulation.
