@@ -19,6 +19,8 @@ describe('V7 common combustion vocabulary', () => {
         expect(shader.fragmentShader).toContain(GRAPHIC_COMBUSTION_GLSL);
         expect(shader.fragmentShader).toMatch(/(?:color=style>2\.5\?|c=|vec4\()graphicCombustion\(/);
         expect(shader.fragmentShader).toContain('graphicCoverage(');
+        expect(shader.fragmentShader).toContain('return coverage*smoothstep(.035,.14,coverage)');
+        expect(shader.fragmentShader).toContain('graphicBand(source.r,.86)');
         expect(shader.fragmentShader).toContain(',1.5)');
         expect(shader.depthWrite).toBe(false);
         const texture = shader.uniforms.map.value as T.Texture;

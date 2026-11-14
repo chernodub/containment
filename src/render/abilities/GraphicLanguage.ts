@@ -123,10 +123,12 @@ float graphicBand(float value,float threshold){
  return smoothstep(threshold-aa,threshold+aa,value);
 }
 float graphicCoverage(float coverage){
- return smoothstep(.055,.18,coverage);
+ // Cull faint grain without turning translucent late smoke into an opaque stamp.
+ return coverage*smoothstep(.035,.14,coverage);
 }
 vec3 graphicCombustion(vec4 source){
- float flame=graphicBand(max(0.,source.r-source.b),.065);
+ // White-hot pixels have no chroma; retain their core rather than mistaking them for soot.
+ float flame=max(graphicBand(max(0.,source.r-source.b),.065),graphicBand(source.r,.86));
  float heat=clamp(source.g/max(.035,source.r)*.72+source.r*.28,0.,1.);
  vec3 value=mix(vec3(.025,.036,.044),vec3(1.05,.105,.003),flame);
  value=mix(value,vec3(2.15,.65,.055),flame*graphicBand(heat,.58));
