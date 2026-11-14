@@ -904,3 +904,11 @@ and per-shot hashes, and labels the result as mixed-source. Run only on a fresh
 primary assembly; it is not a general capture filter or a single-source build.
 After approval of the standard, only its three round contact sheets remain;
 intermediate successful round PNGs may be removed, but failed raw runs stay intact.
+
+## I11 wave-7 integration evidence
+
+`i11-gallery.mjs` reuses I10's guarded same-asset assembly and exact-area review, with ORIGINAL / final4 / final5 comparisons. `i11-sheets.mjs` builds the ten-up color/grayscale lighting references. Queen/reactor-vault cards say **legacy saves only** and cannot enter the showcase. New runs end with the twenty-room Overload Floor holdout.
+
+`playtest --storyboard-room=awakening-bay` records read-only observations during the ordinary native campaign, without advancing extra simulation or changing inputs. `i11-play-storyboards.mjs artifacts/nextgen/final5/play <campaign-dirs...>` requires a real clear and assembles twelve distinct entry→fight→clear frames per rig with source hashes.
+
+Capture graphics overrides are configured before scenario staging/compile guards and retained across an explicit native tier switch. `i11-legacy-acid-boundary` waits for an actual Queen pool under a fatal zero-compilation guard and aims the native Glacier preview at it. `i11-legacy-acid-probe` and `i11-compile-probe-*` are diagnostic-only traces, excluded from default `all`; they are not performance acceptance. All native actor/action/framing/priority assertions remain.
