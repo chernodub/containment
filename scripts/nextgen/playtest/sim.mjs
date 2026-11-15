@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { actorMetrics } from './sim-metrics.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 process.chdir(root);
-const allowed = new Set(['label', 'rig', 'rigs', 'seed', 'seeds', 'rooms', 'assisted', 'legacy', 'trace', 'max-room-seconds', 'workers', 'game-ref', 'game-revision', 'tuning']);
+const allowed = new Set(['label', 'rig', 'rigs', 'seed', 'seeds', 'rooms', 'assisted', 'legacy', 'trace', 'max-room-seconds', 'workers', 'game-ref', 'game-revision', 'policy-revision', 'tuning']);
 const args = Object.fromEntries(process.argv.slice(2).map(arg => { const [key, ...value] = arg.replace(/^--/, '').split('='); return [key, value.length ? value.join('=') : true]; }));
 for (const key of Object.keys(args))
     if (!allowed.has(key))
@@ -27,7 +27,10 @@ const gameRef = args['game-revision'] ?? args['game-ref'];
 if (args.tuning !== undefined && args.tuning !== true) throw Error('--tuning is a switch without a value');
 const tuningFile = resolve('src/game/roguelike/i5Tuning.ts');
 const sourceCache = new Map();
-const plugins = [{ name: 'simulation-snapshot', load(id) { if (id === root + '/src/DepthGame.ts' || id.startsWith(root + '/src/game/')) {
+const policyFiles = new Set(['policy.mjs','ability-aim.ts','bot-navigation.ts','bot-navigation-version.mjs']);
+const policySources = new Map();
+if (args['policy-revision']) for (const file of policyFiles) policySources.set(resolve('scripts/nextgen/playtest',file), execFileSync('git',['show',`${args['policy-revision']}:scripts/nextgen/playtest/${file}`],{encoding:'utf8'}));
+const plugins = [{ name: 'simulation-snapshot', load(id) { if (policySources.has(id)) return policySources.get(id); if (id === root + '/src/DepthGame.ts' || id.startsWith(root + '/src/game/')) {
             if (!sourceCache.has(id)) {
                 let content = gameRef ? execFileSync('git', ['show', `${gameRef}:${id.slice(root.length + 1)}`], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 }) : readFileSync(id, 'utf8');
                 if (args.tuning && id === tuningFile) {
@@ -41,7 +44,7 @@ const plugins = [{ name: 'simulation-snapshot', load(id) { if (id === root + '/s
 const source = resolve(out, 'source');
 await mkdir(source, { recursive: true });
 for (const file of ['sim-core.ts', 'sim-native-emulation.ts', 'sim.mjs', 'sim-metrics.mjs', 'sim-worker.mjs', 'policy.mjs', 'ability-aim.ts', 'bot-navigation.ts', 'bot-navigation-version.mjs'])
-    await writeFile(resolve(source, file), await readFile(resolve('scripts/nextgen/playtest', file)));
+    await writeFile(resolve(source, file), policySources.get(resolve('scripts/nextgen/playtest', file)) ?? await readFile(resolve('scripts/nextgen/playtest', file)));
 await build({ configFile: false, publicDir: false, plugins, logLevel: 'error', build: { ssr: resolve('scripts/nextgen/playtest/sim-core.ts'), outDir: source, emptyOutDir: false, rollupOptions: { output: { entryFileNames: 'sim-core.mjs' } } } });
 if (args.tuning && !sourceCache.has(tuningFile)) throw Error('--tuning requires a game revision with the I5 encounter flag');
 const tuningEnabled = sourceCache.has(tuningFile) ? /I5_ENCOUNTER_TUNING_ENABLED\s*=\s*true\b/.test(sourceCache.get(tuningFile)) : undefined;
@@ -106,6 +109,7 @@ async function worker() {
         report.head = head;
         report.backendProvenance = backendProvenance;
         report.gameRef = gameRef ?? 'working-tree';
+        report.policyRef = args['policy-revision'] ?? 'working-tree';
         if (tuningEnabled !== undefined) report.tuningEnabled = tuningEnabled;
         report.bundleHash = bundleHash;
         report.policyHash = policyHash;

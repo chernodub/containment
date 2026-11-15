@@ -1,3 +1,6 @@
+import {MELEE_ATTACKS} from './meleeAttacks';
+import type {StandardEnemyId} from './types';
+
 /** Stable local attack berths. The forward half-plane remains an escape lane. */
 export type EngagementState = 'engaged' | 'waiting' | 'ranged';
 export type AttackSlot = Readonly<{
@@ -10,11 +13,14 @@ export type EngagementBody = {
     x: number;
     y: number;
     radius: number;
+    speed?: number;
+    contactCooldownRemainingMs?: number;
     attackSlot?: AttackSlot;
     engagement?: EngagementState;
     meleePhase?: 'approach'|'windup'|'strike'|'recovery';
 };
 const angleDistance = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+const heavy = (body: EngagementBody) => MELEE_ATTACKS[body.type as StandardEnemyId]?.heavy === true;
 export class Engagement {
     #escape = 0;
     #anchorX = Infinity;
@@ -22,6 +28,7 @@ export class Engagement {
     readonly #bodies: EngagementBody[] = [];
     readonly #legalSamples = new Map<number, Uint8Array>();
     readonly #occupied: EngagementBody[] = [];
+    #heavyOccupied = 0;
     readonly #occupiedX = new Float64Array(3);
     readonly #occupiedY = new Float64Array(3);
     readonly #candidates: EngagementBody[] = [];
@@ -30,6 +37,7 @@ export class Engagement {
         this.#anchorX = Infinity;
         this.#anchorY = Infinity;
         this.#bodies.length = this.#occupied.length = this.#candidates.length = 0;
+        this.#heavyOccupied = 0;
         this.#legalSamples.clear();
     }
     update<T extends EngagementBody>(bodies: Iterable<T>, player: {
@@ -60,14 +68,16 @@ export class Engagement {
                 }
         }
         this.#occupied.length = 0;
+        this.#heavyOccupied = 0;
         this.#candidates.length = 0;
         for (const samples of this.#legalSamples.values())
             samples.fill(0);
-        const occupy = (body: EngagementBody) => {
+        const occupy = (body: EngagementBody, active = false) => {
             const i = this.#occupied.length, slot = body.attackSlot!;
-            this.#occupiedX[i] = Math.cos(slot.angle) * slot.radius;
-            this.#occupiedY[i] = Math.sin(slot.angle) * slot.radius;
+            this.#occupiedX[i] = active ? body.x - player.x : Math.cos(slot.angle) * slot.radius;
+            this.#occupiedY[i] = active ? body.y - player.y : Math.sin(slot.angle) * slot.radius;
             this.#occupied.push(body);
+            if (heavy(body)) this.#heavyOccupied++;
         };
         const fits = (body: T, angle: number, radius: number, sample?: number) => {
             // Tangent enemies on the other half-plane leave >= one marine diameter
@@ -75,6 +85,10 @@ export class Engagement {
             if (angleDistance(angle, this.#escape) < Math.PI / 2 + .025)
                 return false;
             if (this.#occupied.length >= 3)
+                return false;
+            // A waiting heavy must not monopolize a berth that another family
+            // can use while the one permitted heavy attack is in progress.
+            if (heavy(body) && this.#heavyOccupied >= 1)
                 return false;
             const rx = Math.cos(angle) * radius, ry = Math.sin(angle) * radius;
             for (let i = 0; i < this.#occupied.length; i++) {
@@ -100,7 +114,27 @@ export class Engagement {
             }
             return true;
         };
+        // An announced attack owns its berth through recovery. Player movement
+        // must not recycle that ownership or steer its fixed strike origin.
         for (const body of actors) {
+            if (!body.meleePhase || body.meleePhase === 'approach' || !body.attackSlot) continue;
+            if (this.#occupied.length >= 3) {
+                body.attackSlot = undefined;
+                body.engagement = 'waiting';
+                continue;
+            }
+            body.engagement = 'engaged';
+            occupy(body, true);
+        }
+        for (const body of actors) {
+            if (body.meleePhase && body.meleePhase !== 'approach' && body.attackSlot) continue;
+            // Rest/control is not an attack reservation. Ready actors may take
+            // these berths while the former owner holds the outer ring.
+            if ((body.contactCooldownRemainingMs ?? 0) > 0 || body.speed === 0) {
+                body.attackSlot = undefined;
+                body.engagement = body.type === 'spitter' || body.type === 'carrier' ? 'ranged' : 'waiting';
+                continue;
+            }
             const ranged = (body.type === 'spitter' || body.type === 'carrier')&&
                 Math.hypot(body.x-player.x,body.y-player.y)>pr+body.radius+20&&
                 (!body.meleePhase||body.meleePhase==='approach');
@@ -132,6 +166,8 @@ export class Engagement {
         for (const body of this.#candidates) {
             if (this.#occupied.length >= 3)
                 break;
+            if (heavy(body) && this.#heavyOccupied >= 1)
+                continue;
             const radius = pr + body.radius + .25;
             let best = Infinity, angle: number | undefined;
             for (let i = 0; i < 48; i++) {

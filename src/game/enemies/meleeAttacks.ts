@@ -14,31 +14,42 @@ export type MeleeAttackProfile = Readonly<{
   windupMs: number;
   strikeMs: number;
   recoveryMs: number;
-  lockProgress: number;
+  /** Includes one native50ms step of margin above the minimum visible lock. */
+  lockLeadMs: number;
+  heavy: boolean;
   engageRange: number;
   damageMultiplier: number;
-  cooldownMs?: number;
+  /** Rest time begins after recovery, rather than at the warning. */
+  cooldownMs: number;
   shape: MeleeStrikeShape;
 }>;
 
 function profile(windupMs: number, strikeMs: number, recoveryMs: number,
   engageRange: number, kind: MeleeStrikeShape['kind'], range: number,
-  halfAngle: number, damageMultiplier: number, width = 0, cooldownMs?: number): MeleeAttackProfile {
-  return Object.freeze({windupMs, strikeMs, recoveryMs, engageRange, damageMultiplier, cooldownMs, lockProgress: .72,
+  halfAngle: number, width = 0, heavy = false, cooldownMs = 900, damageMultiplier = 1): MeleeAttackProfile {
+  return Object.freeze({windupMs, strikeMs, recoveryMs, engageRange, damageMultiplier, cooldownMs,
+    lockLeadMs: heavy ? 250 : 170, heavy,
     shape: Object.freeze({kind, range, halfAngle, width})});
 }
 
-/** Melee-only tuning; ranged source damage and clocks retain their original catalog values. */
+/** Short native strikes; player radius is added once by the intersection function. */
 export const MELEE_ATTACKS: Readonly<Record<StandardEnemyId, MeleeAttackProfile>> = Object.freeze({
-  crawler: profile(260, 70, 240, 54, 'arc', 66, .72, 15 / 12),
-  stalker: profile(420, 90, 560, 105, 'line', 155, 0, 26 / 22, 36),
-  brute: profile(650, 120, 450, 74, 'arc', 94, 1.08, 42 / 35),
-  spitter: profile(350, 90, 420, 48, 'cone', 58, .78, 12 / 10, 0, 860),
-  carrier: profile(620, 120, 460, 63, 'cone', 82, 1.15, 22 / 18),
+  crawler: profile(180, 70, 240, 14.5, 'arc', 42, 50 * Math.PI / 180, 0, false, 900, 78 / 12),
+  stalker: profile(240, 90, 560, 17.5, 'line', 66, 0, 16, false, 900, 80 / 22),
+  brute: profile(650, 120, 450, 28.5, 'arc', 41, 55 * Math.PI / 180, 0, true, 1200),
+  spitter: profile(350, 90, 420, 18.5, 'cone', 38, Math.PI / 4, 0, false, 1500),
+  carrier: profile(620, 120, 460, 24.5, 'cone', 44, 50 * Math.PI / 180, 0, true, 1100),
 });
 
 export const ELITE_MELEE_WINDUP_SCALE = .82;
 export const ELITE_MELEE_RECOVERY_SCALE = .85;
+export const MELEE_START_STAGGER_MS = 140;
+
+/** Cap scaled small-family strikes before the combat host applies incoming boons. */
+export function calculateMeleeDamage(type: StandardEnemyId, sourceDamage: number): number {
+  const damage = sourceDamage * MELEE_ATTACKS[type].damageMultiplier;
+  return type === 'crawler' || type === 'stalker' ? Math.min(90, damage) : damage;
+}
 
 function segmentDistanceSquared(x: number, y: number, bx: number, by: number): number {
   const lengthSquared = bx * bx + by * by;

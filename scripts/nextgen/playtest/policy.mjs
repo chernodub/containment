@@ -8,16 +8,126 @@ const PATHS = {
   arc: ['hot-reload', 'magnetic-feed', 'reactor-cascade', 'last-shell', 'rapid-cycle', 'crossfire', 'forked-overload', 'twin-pylon'],
 };
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const WALK_SPEED = 220;
+const DECISION_MS = 250;
+const INPUT_MS = 1000 / 60;
+const EXIT_MARGIN = 6;
+
+function segmentDistanceSquared(px, py, ax, ay, bx, by) {
+  const dx=bx-ax,dy=by-ay,length=dx*dx+dy*dy;
+  const t=length?Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/length)):0;
+  return (px-ax-dx*t)**2+(py-ay-dy*t)**2;
+}
+
+function warningContains(enemy, point, radius=point.radius??16) {
+  const shape=enemy.meleeShape,angle=enemy.meleeAngle??0;
+  const dx=point.x-(enemy.meleeOriginX??enemy.x),dy=point.y-(enemy.meleeOriginY??enemy.y);
+  const x=dx*Math.cos(angle)+dy*Math.sin(angle),y=-dx*Math.sin(angle)+dy*Math.cos(angle);
+  if(shape.kind==='line')return segmentDistanceSquared(x,y,0,0,shape.range,0)<=(shape.width*.5+radius)**2;
+  if(Math.abs(Math.atan2(y,x))<=shape.halfAngle&&Math.hypot(x,y)<=shape.range+radius)return true;
+  const bx=Math.cos(shape.halfAngle)*shape.range,by=Math.sin(shape.halfAngle)*shape.range;
+  return Math.min(segmentDistanceSquared(x,y,0,0,bx,by),segmentDistanceSquared(x,y,0,0,bx,-by))<=radius**2;
+}
+
 /** Read only an active native warning; stepping/dashing never predicts a future hit. */
 export function insideMeleeWarning(enemy, point) {
   if (enemy.meleePhase !== 'windup' || !enemy.meleeShape) return false;
-  const shape=enemy.meleeShape,angle=enemy.meleeAngle??0;
-  const dx=point.x-enemy.meleeOriginX,dy=point.y-enemy.meleeOriginY;
-  const x=dx*Math.cos(angle)+dy*Math.sin(angle),y=-dx*Math.sin(angle)+dy*Math.cos(angle),radius=point.radius??16;
-  const segment=(bx,by)=>{const t=Math.max(0,Math.min(1,(x*bx+y*by)/(bx*bx+by*by||1)));return (x-bx*t)**2+(y-by*t)**2;};
-  if(shape.kind==='line')return segment(shape.range,0)<=(shape.width*.5+radius)**2;
-  if(Math.abs(Math.atan2(y,x))<=shape.halfAngle&&Math.hypot(x,y)<=shape.range+radius)return true;
-  return Math.min(segment(Math.cos(shape.halfAngle)*shape.range,Math.sin(shape.halfAngle)*shape.range),segment(Math.cos(shape.halfAngle)*shape.range,-Math.sin(shape.halfAngle)*shape.range))<=radius**2;
+  return warningContains(enemy,point);
+}
+
+function visibleEnemies(s) {
+  return s.enemies.filter(enemy=>enemy.visible&&enemy.health>0);
+}
+
+function walkingSpeed(s) {
+  // A stopped or blocked marine still knows the ordinary walking speed. Faster
+  // movement is learned from the marine's own observed velocity, not rig rules.
+  return Math.max(WALK_SPEED,s.abilities.dashing?0:Math.hypot(s.player.vx??0,s.player.vy??0));
+}
+
+function warningTime(enemy,s) {
+  const remaining=Number.isFinite(enemy.meleeRemainingMs)?enemy.meleeRemainingMs:
+    Number.isFinite(enemy.meleeDurationMs)?enemy.meleeDurationMs*(1-(enemy.meleeProgress??0)):Infinity;
+  const scale=Math.max(.01,s.abilities.hostileTimeScale??1);
+  const active=s.abilities.overdrive?.activeRemainingMs;
+  // A visible dilation timer can expire before the strike; do not assume the
+  // current slow lasts longer than the marine's own displayed active duration.
+  if(scale<1&&Number.isFinite(active)&&active>0){
+    const slowed=active*scale;
+    return remaining<=slowed?remaining/scale:active+remaining-slowed;
+  }
+  return remaining/scale;
+}
+
+/** Distance along a proposed input ray until the currently drawn footprint clears. */
+function exitDistance(enemy,player,ux,uy) {
+  const radius=(player.radius??16)+EXIT_MARGIN;
+  let low=0,high=distance(player,{x:enemy.meleeOriginX??enemy.x,y:enemy.meleeOriginY??enemy.y})
+    +enemy.meleeShape.range+(enemy.meleeShape.width??0)+radius*2+1;
+  for(let step=0;step<12;step++){
+    const middle=(low+high)/2;
+    if(warningContains(enemy,{x:player.x+ux*middle,y:player.y+uy*middle},radius))low=middle;
+    else high=middle;
+  }
+  return high;
+}
+
+function candidateVelocity(s,candidate) {
+  // Match the public native WASD transform used by both players. Probe points
+  // remain the ordinary 90-unit navigation lookahead; melee exits use actual input.
+  const x=candidate.dx,y=candidate.dy/.81,length=Math.hypot(x,y)||1,speed=walkingSpeed(s);
+  return {x:x/length*speed,y:y/length*speed};
+}
+
+/** Escape the visible shape itself, before ordinary fire-lane/spacing preferences. */
+function meleeEscapePlan(s) {
+  const warnings=visibleEnemies(s).filter(enemy=>enemy.meleePhase==='windup'&&enemy.meleeShape);
+  const inside=warnings.filter(enemy=>insideMeleeWarning(enemy,s.player));
+  if(!inside.length)return null;
+  inside.sort((a,b)=>warningTime(a,s)-warningTime(b,s)||a.id-b.id);
+  const primary=inside[0],angle=primary.meleeAngle??0;
+  const px=s.player.x-(primary.meleeOriginX??primary.x),py=s.player.y-(primary.meleeOriginY??primary.y);
+  const radial=Math.hypot(px,py);
+  // Back away from a lunge arc. Lines and cones are shorter to cross sideways
+  // than to run down their length; either side remains an ordinary legal input.
+  const away=primary.meleeShape.kind==='arc'
+    ?{x:radial?px/radial:Math.cos(angle),y:radial?py/radial:Math.sin(angle)}:null;
+  const speed=walkingSpeed(s),radius=s.player.radius??16;
+  const choices=[];
+  for(const candidate of s.candidates){
+    const length=Math.hypot(candidate.dx,candidate.dy);
+    if(!candidate.legal||!length)continue;
+    const velocity=candidateVelocity(s,candidate),ux=velocity.x/speed,uy=velocity.y/speed;
+    const alignment=away?ux*away.x+uy*away.y:Math.abs(-ux*Math.sin(angle)+uy*Math.cos(angle));
+    const needed=Math.max(...inside.map(enemy=>exitDistance(enemy,s.player,ux,uy)));
+    const walkable=inside.every(enemy=>exitDistance(enemy,s.player,ux,uy)/speed*1000+INPUT_MS<=warningTime(enemy,s));
+    let crossing=0;
+    for(const enemy of warnings){
+      if(inside.includes(enemy))continue;
+      const time=warningTime(enemy,s);
+      if(time>DECISION_MS)continue;
+      const p={x:s.player.x+ux*speed*time/1000,y:s.player.y+uy*speed*time/1000,radius};
+      if(insideMeleeWarning(enemy,p))crossing++;
+    }
+    const exit={x:s.player.x+ux*needed,y:s.player.y+uy*needed};
+    const hazard=s.hazards.filter(h=>h.visible!==false&&h.kind!=='melee-warning')
+      .reduce((sum,h)=>sum+Math.max(0,h.radius+radius-distance(exit,h)),0);
+    choices.push({candidate,alignment,needed,walkable,crossing,cost:needed+hazard*.25+(1-alignment)*12});
+  }
+  if(!choices.length)return null;
+  const preferred=choices.filter(choice=>choice.alignment>=.70);
+  let pool=preferred.length?preferred:choices;
+  const safeWalk=pool.filter(choice=>choice.walkable&&!choice.crossing);
+  if(safeWalk.length)pool=safeWalk;
+  else{
+    // A blocked preferred lane can yield to another walking exit before spending
+    // a charge. No target or future enemy decision enters this comparison.
+    const alternateWalk=choices.filter(choice=>choice.walkable&&!choice.crossing);
+    if(alternateWalk.length)pool=alternateWalk;
+  }
+  pool.sort((a,b)=>a.crossing-b.crossing||a.cost-b.cost);
+  const chosen=pool[0];
+  return {candidate:chosen.candidate,needsDash:!chosen.walkable};
 }
 /** Prefer own augments, then path enablers, universal cooldown/charge, survival. */
 export function chooseBoon(ids, rig, owned = []) {
@@ -48,17 +158,35 @@ export function chooseTarget(enemies, player) {
 }
 /** Score legal movement endpoints for spacing, fire lanes and hazard avoidance. */
 export function chooseMovement(s, previous = {x: 0, y: 0}) {
+  const escape=meleeEscapePlan(s);
+  if(escape)return escape.candidate;
   const target = chooseTarget(s.enemies, s.player);
   const chase = !target && s.enemies.length ? [...s.enemies].sort((a, b) => distance(a, s.player) - distance(b, s.player))[0] : null;
+  const visible=visibleEnemies(s),speed=walkingSpeed(s),radius=s.player.radius??16;
   let best = null, highest = -Infinity;
-  for (const c of s.candidates.filter(c => c.legal)) {
+  for (const c of s.candidates.filter(candidate=>candidate.legal)) {
+    const velocity=candidateVelocity(s,c),seconds=Math.min(DECISION_MS/1000,distance(c,s.player)/speed);
+    const next={x:s.player.x+velocity.x*seconds,y:s.player.y+velocity.y*seconds,radius};
     const nearest = Math.min(800, ...s.enemies.map(e => distance(c, e)));
+    // Swarmer reach is a lower safety bound, not an invitation to rush a firing
+    // lane. Keep ordinary weapon stand-off when ranged enemies share the room.
     const desired = s.combat.weapon === 'shotgun' ? 220 : 360;
     let score = Math.min(nearest, desired) * .6;
     if (target) score -= Math.abs(distance(c, target) - desired) * .3;
     if (chase && c.waypoint) score -= distance(c, c.waypoint) * 1.5;
-    for (const h of s.hazards) score -= Math.max(0, h.radius + 100 - distance(c, h)) * 5;
-    for (const e of s.enemies) if (insideMeleeWarning(e, {...c,radius:s.player.radius})) score -= 900;
+    for (const h of s.hazards) if(h.kind!=='melee-warning')
+      score -= Math.max(0, h.radius + 100 - distance(c, h)) * 5;
+    for (const e of visible) {
+      if(insideMeleeWarning(e,next))score-=900;
+      if(e.type!=='crawler'||!e.meleeShape)continue;
+      const keepOut=e.meleeShape.range+radius+18;
+      score-=Math.max(0,keepOut-distance(next,e))*18;
+      const start=distance(s.player,e);
+      if(start>=keepOut){
+        const closest=Math.sqrt(segmentDistanceSquared(e.x,e.y,s.player.x,s.player.y,next.x,next.y));
+        score-=Math.max(0,keepOut-closest)*22;
+      }
+    }
     score += (c.dx * previous.x + c.dy * previous.y) * 14;
     if (c.clear) score += 45;
     if (score > highest) { highest = score; best = c; }
@@ -68,12 +196,14 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
 /** Slots with an actual tactical opportunity; normal input remains authoritative. */
 export function chooseActions(s) {
   const near = Math.min(Infinity, ...s.enemies.map(e => distance(e, s.player)));
-  const danger = near < 105 || s.hazards.some(h => distance(s.player, h) < h.radius + 50)
-    || s.enemies.some(e=>e.meleeProgress>=.55&&insideMeleeWarning(e,s.player));
+  const escape=meleeEscapePlan(s);
+  // Retain the accepted ranged/acid proximity response. Melee uses only its
+  // exact warning and walking deadline, never a duplicate generic circle.
+  const hazardDanger=s.hazards.some(h=>h.kind!=='melee-warning'&&distance(s.player,h)<h.radius+50);
   const slots = s.abilities.slots;
   const keys = [];
   if (s.combat.health < 40 && s.combat.medkits > 0) keys.push('e');
-  if (danger && slots?.dash?.ready) keys.push('Shift');
+  if ((escape?.needsDash||hazardDanger) && slots?.dash?.ready) keys.push('Shift');
   if (slots?.tactical?.ready && near < (s.rig === 'arc' ? 500 : 240)) keys.push('q');
   if ((slots?.power?.ready || s.abilityAims?.power && slots?.power?.charges > 0 && !s.abilities.dashing && !Object.values(slots).some(slot => slot.castRemainingMs > 0)) && s.enemies.length >= 2) keys.push('f');
   if (s.abilities.overdrive.ready && (s.enemies.length >= 6 || s.enemies.some(e => e.champion || e.id < 0))) keys.push('v');

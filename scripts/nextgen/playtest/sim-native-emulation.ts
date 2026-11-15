@@ -30,8 +30,8 @@ export function recordNativeObservedEvent(events: NativeObservedEvent[], event: 
 
 /** The native debug event observer persists across ordinary route/load-room boundaries. */
 export function nativeWarningHazards(events: readonly NativeObservedEvent[], elapsed: number) {
-    return events.filter(e => e.type === 'enemy-warning' && elapsed - e.at < (e.durationMs ?? 800) / 1000)
-        .map(e => ({x: e.targetX ?? e.x, y: e.targetY ?? e.y, radius: e.radius ?? 50}));
+    return events.filter(e => e.type === 'enemy-warning' && !e.meleeShape && elapsed - e.at < (e.durationMs ?? 800) / 1000)
+        .map(e => ({x: e.targetX ?? e.x, y: e.targetY ?? e.y, radius:e.radius??50,kind:'warning',warningRemainingMs:Math.max(0,(e.durationMs??800)-(elapsed-e.at)*1000)}));
 }
 
 /** runner.snapshot includes living standard enemies and living negative-id Queen/nest targets. */

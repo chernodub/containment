@@ -12,6 +12,7 @@ import type {GraphicsOptions} from './graphicsOptions';
 import type {GraphicsTier} from './FrameBudget';
 import type {DeathCue} from './DeathRagdolls';
 const UP=new T.Vector3(0,1,0),WHITE=new T.Color(0xffffff);
+const meleeWarningWeight=(family:string,elite=false)=>family==='crawler'?(elite?.17:.12):family==='brute'||family==='carrier'?.48:elite?.34:.24;
 export type AttackEffectOptions=Partial<GraphicsOptions>&{reducedMotion?:boolean;tier?:GraphicsTier};
 export type AttackFeedback={
  flash?:(event:{position:T.Vector3;color:number;intensity:number;radius:number;duration:number;priority:number})=>void;
@@ -37,17 +38,20 @@ else if(style>5.5){
  if(sector&&abs(atan(p.y,p.x))>vShape.z)discard;
  if(path){vec2 capsule=vec2(max(abs(p.x)*(vShape.y+1.0)-vShape.y,0.0),p.y);d=length(capsule);}
  if(d>1.0)discard;
- // A bounded projected torso mask keeps bodies visible through the after-post
- // warning overlay. Its unchanged ground footprint remains visible elsewhere.
- vec2 screen=gl_FragCoord.xy/max(priorityViewport,vec2(1.0))*2.0-1.0;
- for(int i=0;i<130;i++){
-  if(i>=priorityActorCount)break;
-  vec4 actor=priorityActors[i];vec2 q=(screen-actor.xy)/max(actor.zw,vec2(.00001));
-  if(dot(q,q)<1.0)discard;
- }
- float edge=1.0-smoothstep(.020,.055,abs(d-.90));
- if(sector)edge=max(edge,(1.0-smoothstep(.01,.04,abs(abs(atan(p.y,p.x))-vShape.z)))*smoothstep(.08,.2,d));
+ bool melee=vShape.w>.5;
+ float threat=clamp((vShape.w-1.12)/.36,0.0,1.0);
+ float edge=melee?1.0-smoothstep(mix(.005,.014,threat),mix(.015,.035,threat),abs(d-.985)):1.0-smoothstep(.020,.055,abs(d-.90));
+ if(sector)edge=max(edge,(1.0-smoothstep(melee?mix(.003,.008,threat):.01,melee?mix(.009,.025,threat):.04,abs(abs(atan(p.y,p.x))-vShape.z)))*smoothstep(.08,.2,d));
  if(vFrame<.5){color*=1.2;alpha*=edge;}
+ else if(melee){
+  float progress=clamp(vFrame-1.0,0.0,1.0),phase=path?vUv.x:d;
+  float filled=1.0-smoothstep(progress-.02,progress+.02,phase);
+  float timing=1.0-smoothstep(.006,.018,abs(phase-progress*.98));
+  // Small contact threats get a fine perimeter, not a floor-covering hatch.
+  // The full native footprint remains faintly present; heavy attacks earn weight.
+  color=vec3(1.8,.13,.035);
+  alpha=vAlpha*min(1.0,edge*(.66+.34*progress)+timing*.10+(.035+threat*.13)*(.5+.5*filled));
+ }
  else{
   float progress=clamp(vFrame-1.0,0.0,1.0),phase=path?vUv.x:d,filled=1.0-smoothstep(progress-.02,progress+.02,phase);
   float hatch=step(.58,fract((p.x*(path?vShape.y+1.0:1.0)+p.y)*10.0-progress*2.0));
@@ -56,6 +60,16 @@ else if(style>5.5){
   color=mix(vec3(.012,.008,.010),vec3(1.8,.13,.035)*(1.0+edge*.2),danger);
   color=mix(color,vec3(.004,.005,.007),smoothstep(.95,.975,d));
   alpha=min(1.0,.92+edge*.08+filled*.04)*(vShape.w>.5?vAlpha:min(1.0,vAlpha*2.5));
+ }
+ // Reject invisible fill before scanning the projected torso masks.
+ if(alpha<.003)discard;
+ // A bounded projected torso mask keeps bodies visible through the after-post
+ // warning overlay. Its unchanged ground footprint remains visible elsewhere.
+ vec2 screen=gl_FragCoord.xy/max(priorityViewport,vec2(1.0))*2.0-1.0;
+ for(int i=0;i<130;i++){
+  if(i>=priorityActorCount)break;
+  vec4 actor=priorityActors[i];vec2 q=(screen-actor.xy)/max(actor.zw,vec2(.00001));
+  if(dot(q,q)<1.0)discard;
  }
 }
 else if(style>4.5){
@@ -107,6 +121,15 @@ function pool(scene:T.Scene,geometry:T.BufferGeometry,count:number,style:number,
 export class AttackEffects {
  private readonly nativeWarnings=Array.from({length:32},()=>({active:false,id:0,melee:false,weight:1,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
  private readonly warningFrom={x:0,y:0};private readonly warningTo={x:0,y:0};
+ private warningFrustum:T.Frustum|undefined;private readonly warningBounds=new T.Sphere();
+ /** Borrow the renderer's settled frustum; warning state and priority stay live. */
+ setWarningFrustum(frustum:T.Frustum):void{this.warningFrustum=frustum;}
+ private warningVisible(x:number,z:number,radius:number,length=0,angle=0,y=.04):boolean{
+  if(!this.warningFrustum)return true;
+  const halfLength=length*.5;
+  this.warningBounds.center.set(x+Math.cos(angle)*halfLength,y,z+Math.sin(angle)*halfLength);this.warningBounds.radius=halfLength+radius;
+  return this.warningFrustum.intersectsSphere(this.warningBounds);
+ }
  private readonly priorityShape={shape:'circle' as const,x:0,z:0,radius:0};
  /** Read-only live hostile warning footprints for friendly-effect priority. No copies or rendering changes. */
  forEachHostilePriority(visit:(shape:Readonly<Telegraph>)=>void):void{for(const warning of this.nativeWarnings)if(warning.active)visit(warning.shape);for(const p of this.pulses){if(!p.stable||p.age>=p.life)continue;const s=this.priorityShape;s.x=p.p.x;s.z=p.p.z;s.radius=p.radius;visit(s);}if(this.bossWarning){const s=this.priorityShape,w=this.bossWarning;s.x=w.x;s.z=w.z;s.radius=w.radius;visit(s);}}
@@ -180,7 +203,7 @@ export class AttackEffects {
    for(const candidate of enemies)if(candidate.id===warning.id){enemy=candidate;break;}
    if(warning.melee){
     if(!enemy||enemy.health<=0||enemy.meleePhase!=='windup'){warning.active=false;continue;}
-    const w=warning.shape,m=enemy.meleeShape;w.shape=m.kind==='line'?'line':'cone';w.x=enemy.meleeOriginX/32;w.z=enemy.meleeOriginY/32;w.angle=enemy.meleeAngle;w.radius=m.range/32;w.length=m.range/32;w.width=m.width/32;w.arc=m.halfAngle*2;w.progress=enemy.meleeProgress;warning.remainingMs=enemy.meleeRemainingMs;warning.weight=enemy.type==='brute'||enemy.type==='carrier'?.48:enemy.elite?.38:.27;continue;
+    const w=warning.shape,m=enemy.meleeShape;w.shape=m.kind==='line'?'line':'cone';w.x=enemy.meleeOriginX/32;w.z=enemy.meleeOriginY/32;w.angle=enemy.meleeAngle;w.radius=m.range/32;w.length=m.range/32;w.width=m.width/32;w.arc=m.halfAngle*2;w.progress=enemy.meleeProgress;warning.remainingMs=enemy.meleeRemainingMs;warning.weight=meleeWarningWeight(enemy.type,enemy.elite);continue;
    }
    if(!enemy||enemy.health<=0||enemy.windupMs<=0||!enemy.pendingAttack){warning.active=false;continue;}
    const shape=warning.shape,charge=enemy.pendingAttack==='charge';
@@ -280,7 +303,7 @@ export class AttackEffects {
    if(e.id!==undefined&&e.family){
     let warning=this.nativeWarnings.find(w=>w.active&&w.id===e.id);
     warning??=this.nativeWarnings.find(w=>!w.active);
-    if(warning){warning.active=true;warning.id=e.id;warning.melee=!!e.meleeShape;warning.weight=e.dangerWeight==='low'?.27:1;warning.durationMs=e.durationMs??650;warning.remainingMs=warning.durationMs;warning.shape.length=-1;}
+    if(warning){warning.active=true;warning.id=e.id;warning.melee=!!e.meleeShape;warning.weight=e.meleeShape?meleeWarningWeight(e.family??'crawler',e.elite):e.dangerWeight==='low'?.27:1;warning.durationMs=e.durationMs??650;warning.remainingMs=warning.durationMs;warning.shape.length=-1;}
     return;
    }
    p.y=.035;const life=(e.durationMs??650)/1000;
@@ -610,17 +633,18 @@ export class AttackEffects {
    this.fieldMesh.setMatrixAt(field,this.dummy.matrix);this.fieldMesh.setColorAt(field,f.color);
    (this.fieldMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(field++,Math.min(1,f.age/.12,(f.life-f.age)/.25));
   }write=0;for(const f of this.fields)if(f.age<f.life)this.fields[write++]=f;this.fields.length=write;this.finish(this.fieldMesh,field);
-  let ring=0,slash=0,warning=0;for(const pulse of this.pulses){pulse.age+=dt;if(pulse.age>=pulse.life)continue;const t=pulse.age/pulse.life,mesh=pulse.stable?this.hostileWarningMesh:pulse.slash?this.slashMesh:this.pulseMesh,index=pulse.stable?warning++:pulse.slash?slash++:ring++;
+  let ring=0,slash=0,warning=0;for(const pulse of this.pulses){pulse.age+=dt;if(pulse.age>=pulse.life)continue;if(pulse.stable&&!this.warningVisible(pulse.p.x,pulse.p.z,pulse.radius,0,0,pulse.p.y))continue;const t=pulse.age/pulse.life,mesh=pulse.stable?this.hostileWarningMesh:pulse.slash?this.slashMesh:this.pulseMesh,index=pulse.stable?warning++:pulse.slash?slash++:ring++;
    this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);const size=pulse.radius*(pulse.stable?1:pulse.slash?.65+t*.35:.15+t*.85);this.dummy.scale.setScalar(size);this.dummy.updateMatrix();(mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(index,0,0,0,0);mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,pulse.stable?1+t:0);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,pulse.stable?.4+.5*t:(1-t)*.8);
   }
   for(const native of this.nativeWarnings){if(!native.active)continue;const w=native.shape,sector=w.shape==='cone',radius=sector?w.radius!:w.width!*.5,length=sector?0:w.length!,angle=w.angle!;
+   if(!this.warningVisible(w.x,w.z,radius,length,angle))continue;
    this.dummy.position.set(w.x+Math.cos(angle)*length*.5,.04,w.z+Math.sin(angle)*length*.5);this.dummy.rotation.set(-Math.PI/2,0,-angle);this.dummy.scale.set(length*.5+radius,radius,1);this.dummy.updateMatrix();
    this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);
-   (this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,sector?2:w.shape==='line'?1:0,length/(2*radius),sector?w.arc!*.5:0,native.melee?1:0);
+   (this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,sector?2:w.shape==='line'?1:0,length/(2*radius),sector?w.arc!*.5:0,native.melee?1+native.weight:0);
    (this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress!);
    (this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,native.weight);
   }
-  if(this.bossWarning){const w=this.bossWarning;this.dummy.position.set(w.x,.045,w.z);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.setScalar(w.radius);this.dummy.updateMatrix();(this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,0,0,0,0);this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);(this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress);(this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,1);}
+  if(this.bossWarning&&this.warningVisible(this.bossWarning.x,this.bossWarning.z,this.bossWarning.radius,0,0,.045)){const w=this.bossWarning;this.dummy.position.set(w.x,.045,w.z);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.setScalar(w.radius);this.dummy.updateMatrix();(this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,0,0,0,0);this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);(this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress);(this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,1);}
   write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,warning);
  }
  clear(){for(const warning of this.nativeWarnings)warning.active=false;this.priorityCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}

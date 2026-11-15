@@ -36,8 +36,18 @@ export class AuthoredMotionPlayer {
     private previous: T.AnimationAction | undefined;
     private blend = 1;
     private fade = .06;
+    private batching = false;
+    private pendingEvaluation = false;
+    private deferredUpperClear = false;
+    private upperRequested = false;
+    private gripRequested = false;
+    private immediate = false;
+    private readonly localMatrixBones: T.Bone[] = [];
     readonly available: boolean;
-    constructor(private readonly mixer: T.AnimationMixer, clips: readonly T.AnimationClip[], root?: T.Object3D) {
+    constructor(private readonly mixer: T.AnimationMixer, clips: readonly T.AnimationClip[], root?: T.Object3D, localMatrixRoot?: T.Object3D) {
+        localMatrixRoot?.traverse(node => {
+            if (node instanceof T.Bone) this.localMatrixBones.push(node);
+        });
         const upperNames = new Set<string>();
         root?.getObjectByName('ribs')?.traverse(node => upperNames.add(node.name));
         const ready = clips.find(clip => clip.name === 'm10-ready-shotgun');
@@ -95,8 +105,52 @@ export class AuthoredMotionPlayer {
     impact(name: string): number {
         return this.markers.get(name) ?? .32 / .88;
     }
+    isCurrent(name: string): boolean {
+        return this.current?.getClip().name === name;
+    }
     duration(name: string): number {
         return this.actions.get(name)?.getClip().duration ?? 0;
+    }
+    /** A base pose and its grip/action layers share one final binding pass. */
+    beginBatch(): void {
+        this.batching = true;
+        this.deferredUpperClear = false;
+    }
+    endBatch(): void {
+        if (this.deferredUpperClear) {
+            if (!this.upperRequested && this.upperCurrent) {
+                this.upperCurrent.stop();
+                this.upperCurrent = undefined;
+                this.pendingEvaluation = true;
+            }
+            if (!this.gripRequested && this.gripCurrent) {
+                this.gripCurrent.stop();
+                this.gripCurrent = undefined;
+                this.pendingEvaluation = true;
+            }
+            this.deferredUpperClear = false;
+        }
+        this.batching = false;
+        if (this.pendingEvaluation) {
+            this.pendingEvaluation = false;
+            this.evaluateNow();
+        }
+    }
+    /** Resume a hidden actor at its current native phase, without a stale-pose fade. */
+    snapNext(): void { this.immediate = true; }
+    private evaluate(): void {
+        if (this.batching) this.pendingEvaluation = true;
+        else this.evaluateNow();
+    }
+    private evaluateNow(): void {
+        this.mixer.update(0);
+        // Enemy locals change only when an authored pose is evaluated. Cache
+        // them before world propagation, including the final authored death pose.
+        // Pool reset restores automatic updates; Rapier receives no more samples.
+        for (const bone of this.localMatrixBones) {
+            bone.matrixAutoUpdate = false;
+            bone.updateMatrix();
+        }
     }
     sample(name: string, progress: number, dt: number, fade = .06, amplitude = 1): boolean {
         const next = this.actions.get(name);
@@ -112,6 +166,12 @@ export class AuthoredMotionPlayer {
             next.paused = true;
             this.fade = fade;
             this.blend = this.previous ? 0 : 1;
+        }
+        if (this.immediate) {
+            this.previous?.stop();
+            this.previous = undefined;
+            this.blend = 1;
+            this.immediate = false;
         }
         this.blend = Math.min(1, this.blend + dt / Math.max(.001, this.fade));
         next.time = T.MathUtils.clamp(progress, 0, 1) * next.getClip().duration;
@@ -133,10 +193,17 @@ export class AuthoredMotionPlayer {
             else
                 this.neutral.stop();
         }
-        this.mixer.update(0);
+        this.evaluate();
         return true;
     }
     clearUpper(): void {
+        // The marine reselects its layers inside the existing pose batch.
+        // Keep unchanged actions bound; retire only unrequested layers at flush.
+        if (this.batching) {
+            this.deferredUpperClear = true;
+            this.upperRequested = this.gripRequested = false;
+            return;
+        }
         this.upperCurrent?.stop();
         this.upperCurrent = undefined;
         this.gripCurrent?.stop();
@@ -146,31 +213,42 @@ export class AuthoredMotionPlayer {
         const action = this.grips.get(weapon);
         if (!action)
             return;
-        action.play();
-        action.paused = true;
+        this.gripRequested = true;
+        if (this.gripCurrent !== action) {
+            this.gripCurrent?.stop();
+            action.play();
+            action.paused = true;
+            this.gripCurrent = action;
+        }
         action.time = 0;
         action.setEffectiveWeight(1);
-        this.gripCurrent = action;
-        this.mixer.update(0);
+        this.evaluate();
     }
     overlay(name: string, progress: number): void {
         const action = this.upper.get(name);
         if (!action)
             return;
-        action.reset().play();
-        action.paused = true;
+        this.upperRequested = true;
+        if (this.upperCurrent !== action) {
+            this.upperCurrent?.stop();
+            action.reset().play();
+            action.paused = true;
+            this.upperCurrent = action;
+        }
         action.time = T.MathUtils.clamp(progress, 0, 1) * action.getClip().duration;
         action.setEffectiveWeight(1);
-        this.upperCurrent = action;
-        this.mixer.update(0);
+        this.evaluate();
     }
     reset(): void {
+        this.batching = false;
         this.clearUpper();
         this.neutral?.stop();
         this.current?.stop();
         this.previous?.stop();
         this.current = this.previous = undefined;
         this.blend = 1;
+        this.batching = this.pendingEvaluation = this.immediate = false;
+        this.deferredUpperClear = this.upperRequested = this.gripRequested = false;
     }
 }
 /** Native clocks select authored marine choreography; roots remain simulation-owned. */
@@ -318,7 +396,20 @@ export class AuthoredEnemyMotion {
     private phase: EnemyAttackPhase = 'approach';
     private progress = 0;
     private feedback = 1;
+    private visible = true;
+    private renderManaged = false;
+    private quietLocomotion = false;
+    private idlePoseTime = -Infinity;
     constructor(readonly player: AuthoredMotionPlayer) { }
+    setVisible(visible: boolean, quietLocomotion = false): void {
+        this.renderManaged = true;
+        this.quietLocomotion = quietLocomotion;
+        if (visible && !this.visible) {
+            this.player.snapNext();
+            this.idlePoseTime = -Infinity;
+        }
+        this.visible = visible;
+    }
     setOptions(strength: number, reduced: boolean): void {
         this.feedback = T.MathUtils.clamp(strength, 0, 1) * (reduced ? .3 : 1);
         if (this.feedback === 0)
@@ -348,11 +439,18 @@ export class AuthoredEnemyMotion {
         this.age += dt;
         this.hitAge += dt;
         this.attackAge += dt;
+        // Only pose evaluation is suspended. Native phase inputs and all local
+        // ages keep advancing, so returning actors never replay missed actions.
+        if (!this.visible) return true;
+        // A fresh native warning/strike must remain visible after thaw even
+        // when an older hit reaction was held by the frozen visual clock.
+        if (this.phase === 'windup' || this.phase === 'strike')
+            return this.player.sample(this.phase === 'windup' ? 'm10-windup' : 'm10-strike', this.progress, dt, this.phase === 'strike' ? .02 : .04);
         const hit = (this.heavy ? HEAVY_HITS : LIGHT_HITS)[directionIndex(this.hitDirection, aim)];
         if (this.hitAge < this.player.duration(hit))
             return this.player.sample(hit, this.hitAge / this.player.duration(hit), dt, .025, this.feedback);
-        if (this.phase !== 'approach')
-            return this.player.sample(this.phase === 'windup' ? 'm10-windup' : this.phase === 'strike' ? 'm10-strike' : 'm10-recovery', this.progress, dt, this.phase === 'strike' ? .02 : .04);
+        if (this.phase === 'recovery')
+            return this.player.sample('m10-recovery', this.progress, dt, .04);
         if (winding)
             return this.player.sample('m10-windup', anticipation, dt, .04);
         if (this.attackAge < .16)
@@ -364,9 +462,20 @@ export class AuthoredEnemyMotion {
             return this.player.sample('m10-spawn', this.age / spawnDuration, dt);
         const name = shocked && this.feedback > 0 ? 'm10-shocked' : burning && this.feedback > 0 ? 'm10-burning' : moving > .3 ? 'm10-run' : 'm10-idle';
         const duration = this.player.duration(name);
-        return this.player.sample(name, (time * (moving > .3 ? speed : 1) % duration) / duration, dt, .06, name === 'm10-shocked' || name === 'm10-burning' ? this.feedback : 1);
+        // Only renderer-managed waiting locomotion samples at30Hz. Native time,
+        // roots and facing stay full rate; combat/status/spawn branches above
+        // bypass this pose-only LOD, as do berth owners and direct rig studies.
+        let poseDelta = dt;
+        if (this.renderManaged && this.quietLocomotion && (name === 'm10-idle' || name === 'm10-run')) {
+            const continuing = this.player.isCurrent(name);
+            if (continuing && time - this.idlePoseTime < 1 / 30 - 1e-6) return true;
+            poseDelta = continuing ? Math.min(.05, Math.max(dt, time - this.idlePoseTime)) : dt;
+            this.idlePoseTime = time;
+        }
+        return this.player.sample(name, (time * (moving > .3 ? speed : 1) % duration) / duration, poseDelta, .06, name === 'm10-shocked' || name === 'm10-burning' ? this.feedback : 1);
     }
     death(cue: DeathCue, progress: number): number {
+        this.setVisible(true);
         const name = DEATHS[cue];
         if (!this.player.has(name))
             return 0;
@@ -378,6 +487,10 @@ export class AuthoredEnemyMotion {
         this.previous = undefined;
         this.age = 0;
         this.hitAge = this.attackAge = 10;
+        this.visible = true;
+        this.renderManaged = false;
+        this.quietLocomotion = false;
+        this.idlePoseTime = -Infinity;
         this.phase = 'approach';
         this.progress = 0;
     }

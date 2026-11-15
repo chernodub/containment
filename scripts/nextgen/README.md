@@ -266,6 +266,13 @@ node scripts/nextgen/playtest/balance-summary.mjs artifacts/nextgen/playtest/my-
 node scripts/nextgen/playtest/native-batch.mjs --label=my-native --seeds=1729,2718 --workers=2 --fast --dist-dir=artifacts/nextgen/my-dist
 ```
 
+`--policy-revision=<commit>` freezes the policy and its navigation/aim helpers
+alongside `--game-revision`; use both when replaying a historical policy/game pair.
+Per-room rows retain observed `hitsTaken` and family `pressure` (windups, strikes,
+geometric contacts, accepted melee hits, all accepted hits and actual damage).
+These are event observers and never enter bot decisions. `byDepth` includes
+`medianHitsTaken`. A geometric contact can still be rejected by native immunity.
+
 The simulation defaults to ten fixed seeds for each of the four rigs. Use a new
 label for every batch; existing simulation directories are never overwritten. It records
 immutable bundles, policy/source hashes, deaths, censors and per-room results;
@@ -1039,3 +1046,16 @@ Awakening Bay and waits for an actual simulation wind-up. Run with `--burst=30`:
 have a hostile footprint. The stationary invulnerable marine is a declared
 capture fixture. These bursts prove native phases/ground warnings, not campaign
 balance or hardware timing. Failed capture parents remain intact.
+
+`m10-melee-crowd` is an opt-in crowd fixture with ten Crawlers and ten mixed
+ordinary enemies on legal visible floor. It waits for a genuine warning and
+reports live family/phase counts. Use it to inspect warning weight at1920×1080
+and480×270; it changes no enemy timers, damage or health. The stationary marine
+is invulnerable. Default captures and benchmark encounters are unchanged.
+
+The M10 policy uses currently visible exact melee footprints to choose a legal
+short exit (backwards from arcs, sideways from lines/cones), spending a dash only
+when walking cannot clear that melee warning in time. Crawler reach supplies a
+spacing lower bound. Prior ranged/acid endpoint scoring and hazard dash behavior
+remain; melee warnings are excluded from the approximate generic circle list.
+No enemy future decisions or cooldowns enter those melee choices.
