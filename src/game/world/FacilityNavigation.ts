@@ -15,7 +15,7 @@ const neighbors=(id:number)=>adjacency[id];
 export class FacilityNavigation {
   constructor(private readonly geometry?:NavigationGeometry,private readonly clearance=30) {}
   private wider=new Map<number,FacilityNavigation>();
-  private commitments=new WeakMap<object,{wave:number;goal:FacilityPoint;point:FacilityPoint}>();
+  private commitments=new WeakMap<object,{wave:number;goal:FacilityPoint;point:FacilityPoint;sample:FacilityPoint;decision?:number;bestRemaining:number;stalled:number}>();
   private wave=-1;private goal=-1;private playerCell=-1;private walls:readonly FacilityRect[]=[];
   private walkable=new Uint8Array(COUNT);private distance=new Int32Array(COUNT);private queue=new Int32Array(COUNT);private expanded=new Map<number,readonly FacilityRect[]>();
   private clear(a:FacilityPoint,b:FacilityPoint,radius:number):boolean {
@@ -39,7 +39,7 @@ export class FacilityNavigation {
     const queue=this.queue;let head=0,tail=1;queue[0]=goal;this.distance[goal]=0;
     while(head<tail){const current=queue[head++]!;for(const next of neighbors(current)){if(!this.walkable[next]||this.distance[next]>=0)continue;this.distance[next]=this.distance[current]!+1;queue[tail++]=next;}}
   }
-  waypoint(enemy:FacilityPoint & {radius:number},player:FacilityPoint,wave:number):FacilityPoint|null {
+  waypoint(enemy:FacilityPoint & {radius:number;decisionVersion?:number},player:FacilityPoint,wave:number):FacilityPoint|null {
     // Preserve the shared standard-enemy grid; wider probes need cells that
     // their own body can reach. Bound the cache when callers vary radii.
     if(enemy.radius+2>this.clearance){
@@ -54,7 +54,21 @@ export class FacilityNavigation {
     // decision and never round a perfectly passable bulkhead corner.
     const committed=this.commitments.get(enemy);
     if(committed&&committed.wave===wave&&Math.hypot(player.x-committed.goal.x,player.y-committed.goal.y)<64
-      &&Math.hypot(enemy.x-committed.point.x,enemy.y-committed.point.y)>8&&this.clear(enemy,committed.point,enemy.radius+2))return {...committed.point};
+      &&Math.hypot(enemy.x-committed.point.x,enemy.y-committed.point.y)>8&&this.clear(enemy,committed.point,enemy.radius+2)){
+      // Native decisionVersion advances once per actor decision, including a
+      // stationary body. Optional firing probes in that decision count once.
+      // Plain geometry callers without versions use distinct body positions.
+      const decision=Number.isFinite(enemy.decisionVersion)?enemy.decisionVersion:undefined;
+      const observed=decision!==undefined?decision!==committed.decision:enemy.x!==committed.sample.x||enemy.y!==committed.sample.y;
+      if(observed){
+        const remaining=Math.hypot(enemy.x-committed.point.x,enemy.y-committed.point.y);
+        if(remaining<=committed.bestRemaining-1){committed.bestRemaining=remaining;committed.stalled=0;}else committed.stalled++;
+        committed.sample={x:enemy.x,y:enemy.y};committed.decision=decision;
+      }
+      // Eight distinct decisions without one unit of net improvement are
+      // deterministic evidence that this cached leg is no longer useful.
+      if(committed.stalled<8)return {...committed.point};
+    }
     this.commitments.delete(enemy);
     let current=this.closest(enemy,true,this.clearance>30?enemy.radius+2:enemy.radius);if(current<0)return enemy;
     let target=point(current);
@@ -64,7 +78,8 @@ export class FacilityNavigation {
       const candidate=point(next);if(!this.clear(enemy,candidate,enemy.radius+2))break;
       current=next;target=candidate;
     }
-    if(Math.hypot(target.x-enemy.x,target.y-enemy.y)>8)this.commitments.set(enemy,{wave,goal:{x:player.x,y:player.y},point:{x:target.x,y:target.y}});
+    const remaining=Math.hypot(target.x-enemy.x,target.y-enemy.y);
+    if(remaining>8)this.commitments.set(enemy,{wave,goal:{x:player.x,y:player.y},point:{x:target.x,y:target.y},sample:{x:enemy.x,y:enemy.y},decision:Number.isFinite(enemy.decisionVersion)?enemy.decisionVersion:undefined,bestRemaining:remaining,stalled:0});
     return {x:target.x,y:target.y};
   }
   reachable(p:FacilityPoint):boolean {return this.closest(p,true)>=0;}
