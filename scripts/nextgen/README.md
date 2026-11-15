@@ -950,6 +950,35 @@ explicit frozen baseline dist. The existing pause-loadout-augments required
 selectors are now scoped to `.pause-panel`, so a collapsed HUD copy cannot mask
 the visible loadout assertion.
 
+## E9 room-interior tours
+
+`room-tour:<room>` captures exactly five quiet inspection frames at native spawn,
+the declared fight circle, two spatially separated named sub-spaces and native exit.
+Marks use the production radius32 occupancy predicate. Each frame leaves simulation
+time frozen, settles120 native presentation ticks and rejects new shader programs;
+the ordinary full-body/HUD, warning and canvas guards remain mandatory. These are
+staged art inspections, not a walking campaign or hardware performance evidence.
+The desktop pointer rests over the existing Pause control so native UI behavior
+retires the idle ability placement preview.
+
+For the three-room standard, use
+`npm run capture -- --label=e9-standard-round1 --scenarios=room-tour --rooms=diagnostic-gallery,crew-checkpoint,swarm-junction`.
+Then assemble file-only exact480 reviews with
+`node scripts/nextgen/e9-gallery.mjs --tour-only --rooms=diagnostic-gallery,crew-checkpoint,swarm-junction --out=artifacts/nextgen/e9-standard-review artifacts/nextgen/e9-standard-round1`.
+The Residential standard comparison places the original L8 Residential frame beside
+all five new frames of each room; source/native hashes are retained in `gallery.json`.
+
+For final evidence, capture `room-tour,combat-calm,g6-kiting` for all twenty room ids,
+then run `node scripts/nextgen/e9-gallery.mjs --out=artifacts/nextgen/e9-final <raw-dirs...>`.
+Assembly requires complete guarded five-frame tours, original calm and four-frame G6
+scenarios with identical application assets, viewport and seed. It retains failed
+parent manifests and selects only complete clean replacements. Output includes twenty
+`tour-<room>.png` strips, original native images, exact480 reductions, `twenty-calm.png`,
+`twenty-kiting.png` and `twenty-before-after.png` against read-only L8 native sources.
+Use `--failed-parent=<raw-dir>` for rejected-only attempts, including build failures
+that have no PNGs or asset inventory; their unchanged manifest and hash are retained
+without supplying any selected frame.
+
 ## L8 ship-architecture review
 
 `node scripts/nextgen/l8-plans.mjs <output> [before-templates.json]` uses the real

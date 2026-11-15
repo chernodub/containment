@@ -1,3 +1,4 @@
+import {buildRoomInteriors} from './world/RoomInteriors';
 import {act3ShipPresentation,ACT3_PRESENTATION_ROOMS} from './world/Act3ShipPresentation';
 import {act1ShipPresentation} from './world/Act1ShipPresentation';
 import {shipArchitectureRoom} from './world/ShipArchitectureRoom';
@@ -150,6 +151,7 @@ export class DepthRenderer {
  }
  /** Native Start/Continue crosses the lazy gameplay asset boundary once. */
  beginGameplayPresentation(){this.gameplayPresentationStarted=true;}
+ endGameplayPresentation(){this.gameplayPresentationStarted=false;this.kitDressing?.dispose();this.kitDressing=undefined;}
  get qualityTier(){return this.tier;}
  /** Current immutable settings; selecting a tier resets its overrides. */
  get graphicsOptions(){return this.options;}
@@ -483,6 +485,7 @@ export class DepthRenderer {
   batch(this.exit,true);
   // Flat markings and obstacle-supported dressing are registered before room preparation.
   addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id),this.kitStartupComplete&&this.gameplayPresentationStarted&&(node.templateId==='residential-gallery'||node.templateId==='relay-racks'));if(!ACT3_PRESENTATION_ROOMS.has(node.templateId)&&!bespoke?.getObjectByName('l8-ship-seam-growth'))addEnvironmentalStory(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);
+  const interiors=buildRoomInteriors(node.templateId,t,this.world);if(interiors)this.world.add(interiors);
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
   this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.roomCombatFraming?.reset();this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.world.userData.staticBatching=batchStaticRoom(this.world);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId,this.lighting.practicalShapes);
   const leaks=this.world.getObjectByName('g2-world-dressing')?.userData.leakPositions??[];this.world.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial)setFloorLeaks(material,leaks);});

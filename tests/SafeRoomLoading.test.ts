@@ -7,9 +7,9 @@ import {DepthGame} from '../src/DepthGame';
 import {expeditionRewardOffers} from '../src/game/roguelike/expedition';
 
 // Execute the actual main RAF body, with only GPU/DOM/audio adapters replaced.
-function harness(graphicsBlocked=false){
- const game=new DepthGame();game.newRun(137);game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
- const renderer={roomLoading:true,loadRoom:vi.fn(),render:vi.fn(),observeFrame:vi.fn(),playerScreenBounds:()=>({left:0,top:0,right:0,bottom:0})};
+function harness(graphicsBlocked=false,game=new DepthGame()){
+ game.newRun(137);game.chooseMutation(expeditionRewardOffers(game.expedition)[0].id);
+ const renderer={roomLoading:true,beginGameplayPresentation:vi.fn(),endGameplayPresentation:vi.fn(),loadRoom:vi.fn(),render:vi.fn(),observeFrame:vi.fn(),playerScreenBounds:()=>({left:0,top:0,right:0,bottom:0})};
  let held=true;const input={read:()=>({x:held?1:0,y:0,fire:held,angle:0,autoAim:false}),reset:vi.fn(()=>{held=false;})};
  const node={hidden:true,setAttribute:vi.fn()},audio={syncCombat:vi.fn(),setMusicIntensity:vi.fn(),syncFrozen:vi.fn()};
  const source=uiSource;
@@ -43,4 +43,29 @@ it('keeps restored graphics held while rendering and delivering opt-in benchmark
  expect(h.observer.mock.lastCall?.[0]).toMatchObject({frame:50,update:0,render:0,hud:0,audio:0});
  h.screens.graphicsBlocked=false;h.frame(250);
  expect(h.game.elapsed).toBeCloseTo(.05);expect(h.game.player.x).toBe(230);expect(h.game.bullets).toHaveLength(0);
+});
+
+it('holds lazy gameplay assets through rig selection and starts them before the first combat readiness hold',()=>{
+ const h=harness();h.game.newRun(1729,{rigSelect:true});
+ h.frame(0);expect(h.game.expedition.run.phase).toBe('rig-select');expect(h.renderer.beginGameplayPresentation).not.toHaveBeenCalled();
+ expect(h.game.chooseRig('arc')).toBe(true);h.frame(50);expect(h.renderer.beginGameplayPresentation).not.toHaveBeenCalled();
+ h.game.chooseMutation(expeditionRewardOffers(h.game.expedition)[0].id);h.renderer.loadRoom.mockClear();h.frame(100);
+ expect(h.renderer.beginGameplayPresentation).toHaveBeenCalledOnce();expect(h.renderer.loadRoom).toHaveBeenCalledOnce();
+ expect(h.renderer.beginGameplayPresentation.mock.invocationCallOrder[0]).toBeLessThan(h.renderer.loadRoom.mock.invocationCallOrder[0]);
+ expect(h.renderer.render).not.toHaveBeenCalled();
+ h.game.menu();h.frame(150);h.frame(200);expect(h.renderer.endGameplayPresentation).toHaveBeenCalledOnce();
+ h.game.newRun(1730,{rigSelect:true});h.frame(250);expect(h.renderer.beginGameplayPresentation).toHaveBeenCalledOnce();
+ h.game.chooseRig('cryo');h.game.chooseMutation(expeditionRewardOffers(h.game.expedition)[0].id);h.frame(300);
+ expect(h.renderer.beginGameplayPresentation).toHaveBeenCalledTimes(2);
+});
+
+it('restores Continue choices without acquiring assets until the restored run enters combat',()=>{
+ const data=new Map<string,string>(),storage={getItem:(key:string)=>data.get(key)??null,setItem:(key:string,value:string)=>{data.set(key,value);},removeItem:(key:string)=>{data.delete(key);}};
+ const h=harness(false,new DepthGame(()=>{},storage));
+ h.game.newRun(1729,{rigSelect:true});h.game.chooseRig('arc');
+ h.game.menu();h.frame(0);expect(h.renderer.endGameplayPresentation).toHaveBeenCalledOnce();
+ expect(h.game.continueRun()).toBe(true);h.frame(50);
+ expect(h.game.status).toBe('reward');expect(h.renderer.beginGameplayPresentation).not.toHaveBeenCalled();
+ h.game.chooseMutation(expeditionRewardOffers(h.game.expedition)[0].id);h.frame(100);
+ expect(h.game.status).toBe('playing');expect(h.renderer.beginGameplayPresentation).toHaveBeenCalledOnce();expect(h.renderer.render).not.toHaveBeenCalled();
 });

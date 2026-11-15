@@ -164,7 +164,6 @@ export async function bootstrap() {
         if (resume) {
             if (!game.continueRun()) {screens.continueFailed();syncHud();return;}
         } else game.newRun(debugRunSeed(location.search), {rigSelect: true});
-        renderer.beginGameplayPresentation();
         feel.reset(); beats?.reset();
         syncScreen(true);
         syncHud();
@@ -241,9 +240,14 @@ export async function bootstrap() {
             return;
         const dt = Math.min(.05, elapsed), started = performance.now();
         benchmarkSample.audio=0;benchmarkSample.hud=0;
+        if (game.status === 'menu' && lastStatus !== 'menu')
+            renderer.endGameplayPresentation();
         // Synchronize before input/update: a boon, restart or route can change rooms between RAFs.
         if (lastRoom !== game.roomRevision) {
             feel.reset();
+            // Rig selection is still a menu. Acquire lazy room/ability owners
+            // only at the first combat room, before its readiness hold.
+            if (game.status === 'playing') renderer.beginGameplayPresentation();
             renderer.loadRoom(game.node);
             lastRoom = game.roomRevision;
             roomRecovering = true;

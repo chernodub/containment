@@ -15,6 +15,8 @@ import {addKitPerimeter} from './KitPerimeter';
 import {addKitFootprintClusters} from './KitFootprintClusters';
 import {acquireRoomKit,roomKitURLs} from './RoomKitAssets';
 import {kitBoundsSupported,kitHull,kitMarineSamples,kitOccludesMarine,kitMeshOccludesMarine,kitOccludesStory} from './KitSafety';
+import {addInteriorKitClusters,type InteriorKitClusterProof} from './InteriorKitClusters';
+import type {InteriorProof} from './RoomInteriors';
 
 export const KIT_STANDARD_ROOMS=new Set<string>([...ROOM_STORY_ROUTE.map(room=>room.templateId),'reactor-vault']);
 export type KitPlacement={model:string;position:number[];size:number[];angle:number;purpose:string;bounds:number[][];meshChecked?:boolean};
@@ -35,23 +37,29 @@ const roles=['body','dark','trim','accent','cloth'];
 /** Build merged room-owned scenery from borrowed author geometry, at a preparation boundary only. */
 export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnvironment,id:string,sources:readonly T.Group[]):T.Group {
  const root=new T.Group();root.name='e6-room-kits';root.userData.visualOnly=true;
- const palette=KIT_PALETTES[env],finishes=new Map<string,T.MeshStandardMaterial>(),parts=new Map<string,T.BufferGeometry[]>(),models=new Map<string,T.Object3D>();
+ const interiorValues=!!world.getObjectByName('e9-room-interiors');
+ const palette=id==='diagnostic-gallery'?[0x7d959a,0x132831,0xb1c5c7,0x6cd7e8,0x506771]:KIT_PALETTES[env],finishes=new Map<string,T.MeshStandardMaterial>(),parts=new Map<string,T.BufferGeometry[]>(),models=new Map<string,T.Object3D>();
  for(const source of sources)for(const child of source.children)models.set(child.name,child);
  const finish=(role:string)=>{
   let m=finishes.get(role);if(m)return m;
   const index=roles.indexOf(role),organic=role==='resin'||role==='scar';
   m=new T.MeshStandardMaterial({color:organic?role==='resin'?0x362b31:0x819746:palette[Math.max(0,index)],roughness:organic?.93:.84,metalness:organic?0:role==='trim'?.3:.12});
-  m.name='e6-kit-'+role;m.userData.actorMaterial=true;m.userData.kitRole=role;if(role==='conduit'){m.userData.floorDressing=true;m.roughness=1;m.metalness=0;m.vertexColors=true;m.color.setScalar(KIT_FLOOR_VALUE_GAIN[id]??1);}
+  m.vertexColors=interiorValues;m.name='e6-kit-'+role;m.userData.actorMaterial=true;m.userData.kitRole=role;if(role==='conduit'){m.userData.floorDressing=true;m.roughness=1;m.metalness=0;m.vertexColors=true;m.color.setScalar(KIT_FLOOR_VALUE_GAIN[id]??1);}
   if(role==='scar'){m.emissive.setHex(0x9dff5a);m.emissiveIntensity=.55;m.userData.motivatedEmitter=true;}
-  if(role==='accent'){m.emissive.setHex(env==='infested'?0x719a53:0x9fe8ff);m.emissiveIntensity=env==='communications'?.38:.10;m.userData.motivatedEmitter=true;}
+  if(role==='accent'){m.emissive.setHex(env==='infested'?0x719a53:0x9fe8ff);m.emissiveIntensity=id==='diagnostic-gallery'?.75:env==='communications'?.38:.10;m.userData.motivatedEmitter=true;}
   finishes.set(role,m);return m;
  };
  const story=ROOM_KIT_STORIES[id],storyDisplay=world.getObjectByName('g2-world-dressing')?.userData.storyDisplay;let triangleCount=0;
  const placements:KitPlacement[]=[],rejected:{model:string;reason:string}[]=[],samples=kitMarineSamples(t);
  const push=(geometry:T.BufferGeometry,role:string)=>{
   const count=geometry.getAttribute('position').count;triangleCount+=count/3;
-  for(const key of Object.keys(geometry.attributes))if(key!=='position'&&key!=='normal'&&!(role==='conduit'&&key==='color'))geometry.deleteAttribute(key);
+  for(const key of Object.keys(geometry.attributes))if(key!=='position'&&key!=='normal'&&key!=='color')geometry.deleteAttribute(key);
   if(role==='conduit'&&!geometry.hasAttribute('color')){const c=new T.Color(palette[0]),values=new Float32Array(count*3);for(let i=0;i<count;i++)values.set([c.r,c.g,c.b],i*3);geometry.setAttribute('color',new T.BufferAttribute(values,3));}
+  if(role!=='conduit'){
+   const normal=geometry.getAttribute('normal'),values=new Float32Array(count*3);
+   for(let i=0;i<count;i++){const gain=normal.getY(i)>.5?1.35:normal.getZ(i)>.35?.44:.78;values.set([gain,gain,gain],i*3);}
+   geometry.setAttribute('color',new T.BufferAttribute(values,3));
+  }
   const a=parts.get(role)??[];a.push(geometry);parts.set(role,a);
  };
  const boundsSafe=(b:T.Box3)=>kitBoundsSupported(t,b)&&!kitOccludesMarine(b,samples);
@@ -95,6 +103,9 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
  const pipe=(a:T.Vector3,b:T.Vector3,r:number,role='dark')=>{
   const g=new T.CylinderGeometry(r,r,a.distanceTo(b),8).applyQuaternion(new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),b.clone().sub(a).normalize())).translate(...a.clone().add(b).multiplyScalar(.5).toArray());g.computeBoundingBox();if(boundsSafe(g.boundingBox!))push(g.toNonIndexed(),role);g.dispose();
  };
+ // Reserve the function-specific furnishings before optional story clutter can
+ // consume the existing room triangle budget. They join the same role batches.
+ root.userData.interiorKitClusters=addInteriorKitClusters(world,id,env,place);
  const connectedCabins=id==='residential-gallery',architected=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,id),feedFor=architected?kitEquipmentFeeds(t):undefined;
  const equipmentFeeds:{reservation:number;reason:string;path:readonly {x:number;y:number}[]}[]=[];
  const primary=equipmentReservations(t,id),reservations=primary.length?primary:equipmentReservations(t,'e6-'+id);
@@ -197,24 +208,40 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
 
 /** An optional room owner always settles before shader warmup, and never adds late combat geometry. */
 export function attachRoomKits(world:T.Group,t:RoomTemplate,env:ShipEnvironment,id:string,onChanged:()=>void,prerequisite:Promise<unknown>=Promise.resolve(),load=acquireRoomKit){
- const controller=new AbortController();let root:T.Group|undefined,replaced:T.Object3D|undefined,active=true,timer:ReturnType<typeof setTimeout>;
- const owner={state:'loading',error:undefined as unknown,ready:Promise.resolve(),dispose(){if(owner.state==='disposed')return;active=false;controller.abort();clearTimeout(timer);if(root){disposeModel(root);root=undefined;}if(replaced)replaced.visible=true;owner.state='disposed';}};
+ const controller=new AbortController();let root:T.Group|undefined,active=true,timer:ReturnType<typeof setTimeout>;
+ const replaced:{object:T.Object3D;visible:boolean}[]=[];
+ const hide=(object:T.Object3D)=>{replaced.push({object,visible:object.visible});object.visible=false;};
+ const restore=()=>{for(const item of replaced)item.object.visible=item.visible;replaced.length=0;};
+ const sources=new Set<T.Group>();
+ const retireSources=()=>{sources.forEach(source=>retireRoomModels(source));sources.clear();};
+ const owner={state:'loading',error:undefined as unknown,ready:Promise.resolve(),dispose(){if(owner.state==='disposed')return;active=false;controller.abort();clearTimeout(timer);retireSources();if(root){disposeModel(root);root=undefined;}restore();owner.state='disposed';}};
  const work=async()=>{
-  const sources:T.Group[]=[];
   try{
    await prerequisite;
-   const results=await Promise.allSettled(roomKitURLs(env).map(url=>load(url,controller.signal)));
-   for(const result of results)if(result.status==='fulfilled')sources.push(result.value);
+   // A room can leave while its preceding asset owner is still preparing.
+   // Do not start a transfer for that retired room. Session-owned transfers
+   // already in progress remain available to the next borrower.
+   if(!active)return;
+   const results=await Promise.allSettled(roomKitURLs(env).map(async url=>{
+    const source=await load(url,controller.signal);
+    // Retire each late borrow independently; one hung sibling must not keep
+    // a completed model/material lease alive after the room has left.
+    if(active)sources.add(source);else retireRoomModels(source);
+    return source;
+   }));
    const failure=results.find(result=>result.status==='rejected');if(failure?.status==='rejected')throw failure.reason;
    if(!active)return;
-   root=buildRoomKitDressing(world,t,env,id,sources);
-   if(env==='habitation'&&id==='residential-gallery'){const original=world.getObjectByName('residential-gallery-equipment');if(original&&root.userData.majorCabinForms>=6){replaced=original;original.visible=false;}}
+   root=buildRoomKitDressing(world,t,env,id,results.flatMap(result=>result.status==='fulfilled'?[result.value]:[]));
+   if(env==='habitation'&&id==='residential-gallery'){const original=world.getObjectByName('residential-gallery-equipment');if(original&&root.userData.majorCabinForms>=6)hide(original);}
+   const fallback=world.getObjectByName('e9-furnishing-fallback'),clusters=root.userData.interiorKitClusters as InteriorKitClusterProof[];
+   const interior=world.getObjectByName('e9-room-interiors')?.userData.interior as InteriorProof|undefined;
+   if(fallback&&interior&&interior.floor.length>0&&interior.floor.every(floor=>clusters.some(cluster=>cluster.space===floor.name&&cluster.accepted.length>=3)))hide(fallback);
    
    owner.state='ready';onChanged();
-  }finally{sources.forEach(source=>retireRoomModels(source));}
+  }finally{retireSources();}
  };
  const deadline=new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(Error('CC0 room dressing preparation timed out')),2500);});
- const cancelled=new Promise<never>((_,reject)=>controller.signal.addEventListener('abort',()=>reject(Error('CC0 room dressing cancelled')),{once:true}));
- owner.ready=Promise.race([work(),deadline,cancelled]).catch(error=>{owner.error=error;if(active){active=false;controller.abort();if(root){disposeModel(root);root=undefined;}if(replaced)replaced.visible=true;owner.state='fallback';console.error('CC0 room dressing failed',error);}}).finally(()=>clearTimeout(timer));
+ const cancelled=new Promise<void>(resolve=>controller.signal.addEventListener('abort',()=>resolve(),{once:true}));
+ owner.ready=Promise.race([work(),deadline,cancelled]).catch(error=>{if(active){owner.error=error;active=false;controller.abort();retireSources();if(root){disposeModel(root);root=undefined;}restore();owner.state='fallback';console.error('CC0 room dressing failed',error);}}).finally(()=>clearTimeout(timer));
  return owner;
 }

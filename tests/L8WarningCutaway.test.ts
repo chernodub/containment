@@ -8,7 +8,7 @@ import {disposeModel} from '../src/render/meshParts';
 import {MaterialWarmup} from '../src/render/MaterialWarmup';
 import {SceneLighting} from '../src/render/SceneLighting';
 import {WARNING_FRAME_LOWEST} from '../src/render/world/WarningRepeaters';
-it.each(['diagnostic-gallery','safety-interlock-station','manual-control-chamber'] as const)('%s preserves native bodies through a transparent physical gantry with stable prepared resources',id=>{
+it.each(['diagnostic-gallery','safety-interlock-station','manual-control-chamber'] as const)('%s preserves native bodies through a solid opaque gantry with actor cutouts with stable prepared resources',id=>{
  const t=ROOM_TEMPLATES[id],world=new T.Group(),node=generateRun(1729,3).nodes.find(n=>n.templateId===id)!;
  world.add(DepthRenderer.prototype['buildRoomArchitecture'].call(Object.create(DepthRenderer.prototype),node,t)!);
  const root=addWorldDressing(world,t,id==='manual-control-chamber'?'reactor':'engineering',id),state=root.userData.warningVisibility,display=root.userData.storyDisplays[0];world.updateMatrixWorld(true);
@@ -16,7 +16,7 @@ it.each(['diagnostic-gallery','safety-interlock-station','manual-control-chamber
  for(const foot of root.userData.warningSupports)expect(t.obstacles.some(r=>foot.x>=r.x&&foot.x<=r.x+r.width&&foot.y>=r.y&&foot.y<=r.y+r.height)).toBe(true);
  expect(root.userData.warningClearance).toBe(WARNING_FRAME_LOWEST);
  const screen=state.material as T.MeshStandardMaterial,structure=(root.getObjectByName('g2-dressing-resin') as T.Mesh).material as T.MeshStandardMaterial;
- expect(screen.transparent).toBe(true);expect(screen.depthWrite).toBe(false);expect(structure.transparent).toBe(true);expect(structure.depthWrite).toBe(false);expect(structure.opacity).toBe(1);expect(structure.vertexColors).toBe(true);
+ expect(screen.transparent).toBe(true);expect(screen.depthWrite).toBe(false);expect(structure.transparent).toBe(false);expect(structure.depthWrite).toBe(true);expect(structure.alphaTest).toBe(.3);expect(structure.opacity).toBe(1);expect(structure.vertexColors).toBe(true);
  const center=new T.Vector3().fromArray(display.center),camera=new T.PerspectiveCamera(28,16/9,.1,160);camera.position.copy(center).add(new T.Vector3(0,20,26));camera.lookAt(center);camera.updateMatrixWorld(true);
  // Place a native body in the exact viewing cone, between the camera and text.
  const at=camera.position.clone().lerp(center,(camera.position.y-1)/(camera.position.y-center.y)),body={x:at.x*32,y:at.z*32,radius:28},far={x:-32000,y:-32000,radius:16};
@@ -30,7 +30,7 @@ it.each(['diagnostic-gallery','safety-interlock-station','manual-control-chamber
  for(const bay of root.userData.warningWorkBays)expect(bay.maxHeight).toBeLessThanOrEqual(.91);
  const gantry=root.getObjectByName('g2-dressing-resin') as T.Mesh,colors=gantry.geometry.getAttribute('color') as T.BufferAttribute;
  expect(colors.itemSize).toBe(4);expect(colors.normalized).toBe(true);expect(colors.array).toBeInstanceOf(Uint8Array);expect(colors.usage).toBe(T.DynamicDrawUsage);
- for(const part of root.userData.warningStructure){const alpha=part.faded?14:part.alpha;for(let i=part.start;i<part.end;i++)expect(part.colors.array[i*4+3]).toBe(alpha);}
+ for(const part of root.userData.warningStructure){const alpha=part.faded?14:part.alpha;expect((alpha/255)>=structure.alphaTest).toBe(!part.faded);for(let i=part.start;i<part.end;i++)expect(part.colors.array[i*4+3]).toBe(alpha);}
  const surfaces={floor:new T.MeshStandardMaterial(),wall:new T.MeshStandardMaterial(),cover:new T.MeshStandardMaterial()},warmup=new MaterialWarmup(surfaces);
  expect(warmup.register(gantry)).toBe(1);const proxy=warmup.root.children.at(-1) as T.Mesh,prepared=proxy.geometry.getAttribute('color');
  expect(prepared.itemSize).toBe(4);expect(prepared.normalized).toBe(true);expect(prepared.array).toBeInstanceOf(Uint8Array);expect(prepared.array).not.toBe(colors.array);

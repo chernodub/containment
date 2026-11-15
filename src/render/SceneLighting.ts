@@ -30,7 +30,7 @@ export class SceneLighting {
  mood:EnvironmentMood=getEnvironmentMood();
  staging:ReactorStaging|null=null;
  private composition:RoomComposition=roomComposition();private width=0;private height=0;private bossArena=false;private manualConsole=false;private overloadFloor=false;private menuPresentation=false;
- private templateArchitecture=false;
+ private templateArchitecture=false;private interiorPresentation=false;
  private coveragePoint=new T.Vector3();private authoredFixtures:Fixture[]=[];private nearbyFixtures:Fixture[]=[];private playerX=NaN;private playerZ=NaN;private fixtureTint=new T.Color();
  private blastLife=0;private time=0;private tier:GraphicsTier='high';private fixtureCount=0;private dynamicLights=true;private flashIntensity=1;private disposed=false;private shadowQuality:ShadowQuality='high';
  constructor(){
@@ -53,6 +53,7 @@ export class SceneLighting {
   for(let i=0;i<this.fixtures.length;i++){this.fixtures[i].visible=tier==='high'||i<2;if(!this.fixtures[i].visible){this.fixtures[i].intensity=0;this.practicalShapes[i].z=0;}}this.playerX=NaN;
  }
  loadRoom(world:T.Group,width:number,height:number,environment?:ShipEnvironment,templateId?:string){
+  this.interiorPresentation=!!world.getObjectByName('e9-room-interiors');
   this.templateArchitecture=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,templateId??'');
   this.width=width;this.height=height;this.bossArena=templateId==='reactor-vault';this.manualConsole=templateId==='manual-control-chamber';this.overloadFloor=templateId==='overload-floor';this.composition=roomComposition(templateId);this.menuPresentation=false;
   this.blastLife=0;this.blast.intensity=0;this.pool.reset();this.time=0;
@@ -115,7 +116,7 @@ export class SceneLighting {
  }
  private setFixtureShape(light:T.PointLight,fixture:Fixture,index:number){
   const angle=fixture.poolAngle??Math.atan2(this.width/2-fixture.x,this.height/2-fixture.z);
-  light.userData.poolAngle=angle;light.userData.worldBounceGain=ENVIRONMENT_COMPOSITION[this.mood.environment].bounce;
+  light.userData.poolAngle=angle;light.userData.worldBounceGain=this.interiorPresentation?0:ENVIRONMENT_COMPOSITION[this.mood.environment].bounce;
   const profile=ENVIRONMENT_COMPOSITION[this.mood.environment],style=fixture.poolStyle??(this.templateArchitecture?1:APERTURE_STYLE[this.mood.environment]);light.userData.poolStyle=style;light.userData.fixtureGain=fixture.gain??1;light.userData.humanFailed=this.mood.environment==='infested'&&fixture.poolStyle===0;light.userData.poolWidth=fixture.poolWidth??(this.templateArchitecture?.55:profile.width);light.userData.poolDepth=fixture.poolDepth??(this.templateArchitecture?7:profile.depth);
   // Long axis follows the visible emitter toward the room; cross-axis stays narrow.
   this.practicalShapes[index].set(Math.sin(angle),Math.cos(angle),light.visible?(fixture.poolWidth??(this.templateArchitecture?.55:profile.width)):0,fixture.poolDepth??(this.templateArchitecture?7:profile.depth));

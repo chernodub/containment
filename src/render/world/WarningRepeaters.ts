@@ -14,7 +14,7 @@ type Display={center:number[];corners:number[][];normal:number[];support:{x:numb
 const EMPTY:readonly NativeBody[]=Object.freeze([]);
 const NORMAL_ALPHA=184,FADED_ALPHA=14;
 type Component={kind:string;min:number[];max:number[];start:number;end:number;faded:boolean;material:T.Material;alpha:number;colors?:T.Uint8BufferAttribute};
-/** A pair of physical, ceiling-supported warning boards. Masts stand on the
+/** Physical, ceiling-supported warning boards. Masts stand on the
  * actual recorder/control cabinet; the entire cross-room span clears champions.
  * Manufactured structure and actor-aware text/structure cutaways preserve silhouettes. */
 export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id:string,w:Writer,m:Finishes):void {
@@ -26,18 +26,34 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  const height=BOARD_HEIGHT,panelHeight=BOARD_DEPTH,width=3.6,ceiling=6.8,forward=height*19/26*32;
  const centers=[{x:t.spawn.x+220,z:t.spawn.y+forward},{x:plan.arena.x+(id==='safety-interlock-station'?108:96),z:plan.arena.y+forward}];
  if(Math.hypot(centers[0].x-centers[1].x,centers[0].z-centers[1].z)<170)centers.splice(0,1);
- const headerZ=Math.min(...centers.map(p=>p.z))/32-.70,routeX=source.x;
- const structural=m.structure;structural.color.setHex(id==='manual-control-chamber'?0x71675a:0x64747a);structural.metalness=.65;structural.roughness=.62;structural.transparent=true;structural.opacity=1;structural.vertexColors=true;structural.depthWrite=false;structural.userData.warningCutaway=true;
+ const canonicalCenters=centers.length;
+ // Repeat the same fatal record at the named workbays and exit, rather than
+ // covering only the old spawn/arena crops. Lateral clearance keeps every
+ // repeated face away from all named-space actor anchors; the runtime's
+ // original full-body cutaway still protects actors between those anchors.
+ const anchors=[t.spawn,plan.arena,t.exit,...plan.spaces.map(space=>space.anchor)],hull=t.boundary??[{x:0,y:0},{x:t.width,y:t.height}];
+ const minX=Math.min(...hull.map(p=>p.x))+width*16+8,maxX=Math.max(...hull.map(p=>p.x))-width*16-8;
+ const maxZ=Math.max(...hull.map(p=>p.y))-16;
+ for(const anchor of [...plan.spaces.map(space=>space.anchor),t.exit]){
+  if(centers.slice(0,canonicalCenters).some(center=>Math.abs(center.z-forward-anchor.y)<100&&Math.abs(center.x-anchor.x)<380))continue;
+  const z=Math.min(maxZ,anchor.y+forward),apparentY=z-forward;
+  const x=[144,-144,220,-220,130,-130].map(offset=>anchor.x+offset).find(candidate=>candidate>=minX&&candidate<=maxX&&anchors.every(other=>Math.abs(apparentY-other.y)>=100||Math.abs(candidate-other.x)>=120));
+  if(x===undefined)continue;
+  if(centers.some(center=>Math.hypot(center.x-x,center.z-z)<150))continue;
+  centers.push({x,z});
+ }
+ const canonical=centers.slice(0,canonicalCenters),headerZ=Math.min(...canonical.map(p=>p.z))/32-.70,routeX=source.x;
+ const structural=m.structure;structural.color.setHex(id==='manual-control-chamber'?0x71675a:0x64747a);structural.metalness=.65;structural.roughness=.62;structural.transparent=false;structural.opacity=1;structural.vertexColors=true;structural.depthWrite=true;structural.alphaTest=.3;structural.userData.warningCutaway=true;
  const components:Component[]=[];
  const beam=(kind:string,x:number,y:number,z:number,bw:number,bh:number,bd:number,material:T.Material=structural,alpha=NORMAL_ALPHA)=>{
-  const start=w.vertexCount(material);w.box(material,x,y,z,bw,bh,bd);components.push({kind,material,alpha,start,end:w.vertexCount(material),faded:false,min:[x-bw/2,y-bh/2,z-bd/2],max:[x+bw/2,y+bh/2,z+bd/2]});
+  const start=w.vertexCount(material);w.add(new T.BoxGeometry(bw,bh,bd),material,x,y,z);components.push({kind,material,alpha,start,end:w.vertexCount(material),faded:false,min:[x-bw/2,y-bh/2,z-bd/2],max:[x+bw/2,y+bh/2,z+bd/2]});
  };
- const tray=(a:T.Vector3,b:T.Vector3)=>{
+ const tray=(a:T.Vector3,b:T.Vector3,y=ceiling)=>{
   const dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz);if(length<.01)return;
   const alongX=Math.abs(dx)>Math.abs(dz),x=(a.x+b.x)/2,z=(a.z+b.z)/2;
-  beam('service-tray-web',x,ceiling,z,alongX?length:.38,.12,alongX?.38:length);
-  for(const side of [-1,1])beam('service-tray-flange',x+(alongX?0:side*.22),ceiling+.15,z+(alongX?side*.22:0),alongX?length:.055,.24,alongX?.055:length);
-  const count=Math.max(1,Math.ceil(length/.70));for(let j=0;j<count;j++){const f=(j+.5)/count;beam('tray-cross-rib',a.x+dx*f,ceiling+.20,a.z+dz*f,alongX?.045:.46,.055,alongX?.46:.045);}
+  beam('service-tray-web',x,y,z,alongX?length:.38,.12,alongX?.38:length);
+  for(const side of [-1,1])beam('service-tray-flange',x+(alongX?0:side*.22),y+.15,z+(alongX?side*.22:0),alongX?length:.055,.24,alongX?.055:length);
+  const count=Math.max(1,Math.ceil(length/3.0));for(let j=0;j<count;j++){const f=(j+.5)/count;beam('tray-cross-rib',a.x+dx*f,y+.20,a.z+dz*f,alongX?.045:.46,.055,alongX?.46:.045);}
  };
  const lampColor=id==='diagnostic-gallery'?0xb4dee5:id==='safety-interlock-station'?0xe5c99c:0xffad61;m.signal.color.setHex(lampColor);m.signal.emissive.setHex(lampColor);
  m.screen.transparent=true;m.screen.opacity=.96;m.screen.depthWrite=false;
@@ -78,16 +94,29 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  // A continuous cable tray and return rail connect the real case to the
  // repeated displays. The route follows the recorder's actual service axis;
  // individual beam bounds drive cutaway where actors cross that axis.
- const route=[new T.Vector3(source.x,ceiling,source.z),new T.Vector3(routeX,ceiling,source.z),new T.Vector3(routeX,ceiling,headerZ)];
- for(let i=1;i<route.length;i++)tray(route[i-1],route[i]);
- const left=Math.min(routeX,...centers.map(p=>p.x/32-width*.5)),right=Math.max(routeX,...centers.map(p=>p.x/32+width*.5));tray(new T.Vector3(left,ceiling,headerZ),new T.Vector3(right,ceiling,headerZ));
+ tray(new T.Vector3(routeX,ceiling,source.z),new T.Vector3(routeX,ceiling,headerZ));
+ const left=Math.min(routeX,...canonical.map(p=>p.x/32-width*.5)),right=Math.max(routeX,...canonical.map(p=>p.x/32+width*.5));
+ tray(new T.Vector3(left,ceiling,headerZ),new T.Vector3(right,ceiling,headerZ));
+ // Extension carriers run above the original gantry's reading cone. They
+ // remain connected to the same pair of cabinet-backed load-bearing masts.
+ const extensionHeight=8.8,extensions=centers.slice(canonicalCenters),extensionSpineX=(Math.max(...hull.map(p=>p.x))+48)/32;
+ if(extensions.length){
+  beam('extension-upright',source.x,(ceiling+extensionHeight)/2,source.z,.13,extensionHeight-ceiling,.16);
+  const zs=extensions.map(p=>p.z/32-.70);
+  tray(new T.Vector3(routeX,extensionHeight,source.z),new T.Vector3(extensionSpineX,extensionHeight,source.z),extensionHeight);
+  tray(new T.Vector3(extensionSpineX,extensionHeight,Math.min(source.z,...zs)),new T.Vector3(extensionSpineX,extensionHeight,Math.max(source.z,...zs)),extensionHeight);
+  const rows=new Map<number,{left:number;right:number}>();
+  for(const center of extensions){const z=center.z/32-.70,row=rows.get(z)??{left:extensionSpineX,right:extensionSpineX};row.left=Math.min(row.left,center.x/32-width*.5);row.right=Math.max(row.right,center.x/32+width*.5);rows.set(z,row);}
+  for(const [z,row]of rows)tray(new T.Vector3(row.left,extensionHeight,z),new T.Vector3(row.right,extensionHeight,z),extensionHeight);
+ }
  const displays:Display[]=[];
- for(const center of centers){
-  const x=center.x/32,z=center.z/32;
+ for(const [index,center]of centers.entries()){
+  const x=center.x/32,z=center.z/32,carrier=index<canonicalCenters?ceiling:extensionHeight;
+  const localHeaderZ=index<canonicalCenters?headerZ:z-.70;
   for(const side of[-1,1]){
    const px=x+side*width*.49;
-   beam('display-bracket-run',px,ceiling,(headerZ+z-.18)/2,.08,.10,z-.18-headerZ);
-   beam('display-hanger',px,(ceiling+height+panelHeight/2)/2,z-.18,.09,ceiling-height-panelHeight/2,.11);
+   beam('display-bracket-run',px,carrier,(localHeaderZ+z-.18)/2,.08,.10,z-.18-localHeaderZ);
+   beam('display-hanger',px,(carrier+height+panelHeight/2)/2,z-.18,.09,carrier-height-panelHeight/2,.11);
    beam('display-side-casing',px,height,z,.085,panelHeight,.20);
   }
   beam('display-back-casing',x,height,z,width,panelHeight,.12);beam('display-top-casing',x,height+panelHeight/2,z,width,.045,.20);beam('display-lower-casing',x,height-panelHeight/2,z,width,.045,.20);
@@ -105,7 +134,7 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  // appended, physically mounted overhead task source is an additional pool.
  w.box(m.signal,source.x,source.y+.045,source.z,.28,.06,.14);
  root.userData.lightFixtures=[{x:source.x,y:source.y+.08,z:source.z,color:m.signal.emissive.getHex(),nativeColor:true,poolStyle:1,poolWidth:.35,poolDepth:5},{x:lampX,y:ceiling-.23,z:headerZ,color:lampColor,nativeColor:true,poolStyle:1,poolAngle:Math.PI/2,poolWidth:.7,poolDepth:5.5,distance:10,gain:.8}];
- root.userData.warningStructure=components;root.userData.storyDisplays=displays;root.userData.storyDisplay=displays[0];root.userData.warningSupports=supports;root.userData.warningClearance=WARNING_FRAME_LOWEST;
+ root.userData.warningStructure=components;root.userData.canonicalWarningDisplays=canonicalCenters;root.userData.storyDisplays=displays;root.userData.storyDisplay=displays[0];root.userData.warningSupports=supports;root.userData.warningClearance=WARNING_FRAME_LOWEST;
  root.userData.warningVisibility={material:m.screen,structure:structural,point:new T.Vector3(),structureBounds:new Float64Array(components.length*4),screenBounds:new Float64Array(displays.length*4),actorBounds:new Float64Array(1025*4),faded:false,normalOpacity:.96};
 }
 
@@ -114,6 +143,7 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
 export function prepareWarningVertexColors(root:T.Group,material:T.Material,geometry:T.BufferGeometry):void {
  const state=root.userData.warningVisibility;if(!state)return;const components=root.userData.warningStructure as Component[];if(!components.some(c=>c.material===material))return;
  const colors=new T.Uint8BufferAttribute(new Uint8Array(geometry.attributes.position.count*4).fill(255),4,true);colors.setUsage(T.DynamicDrawUsage);
+ const normals=geometry.getAttribute('normal');for(let i=0;i<normals.count;i++){const value=normals.getY(i)>.5?255:normals.getZ(i)>.35?130:205;colors.array[i*4]=colors.array[i*4+1]=colors.array[i*4+2]=value;}
  for(const component of components)if(component.material===material){component.colors=colors;for(let i=component.start;i<component.end;i++)colors.array[i*4+3]=component.alpha;}
  geometry.setAttribute('color',colors);if(state.structure===material)state.colors=colors;
 }

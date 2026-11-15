@@ -25,7 +25,9 @@ it.each(['diagnostic-gallery','safety-interlock-station','manual-control-chamber
  const displays=dressing.userData.storyDisplays as {corners:number[][]}[],camera=new T.PerspectiveCamera(28,16/9,.1,160),rig=new CameraRig(),desired=new T.Vector3(),scratch=new T.Vector3(),targetScratch=new T.Vector3(),ray=new T.Raycaster();
  for(const [px,pz] of [[t.spawn.x/32,t.spawn.y/32],[SHIP_ARCHITECTURE_PLANS[id]!.arena.x/32,SHIP_ARCHITECTURE_PLANS[id]!.arena.y/32]]){
   combatFocusTarget(px,pz,0,0,0,false,false,desired);const focus=roomFocus(desired.x,desired.z,t.width/32,t.height/32,COMBAT_VIEW_HEIGHT*16/9,COMBAT_VIEW_HEIGHT,id);rig.reset(focus.x,focus.z);rig.apply(camera,1,COMBAT_VIEW_HEIGHT,0);protectPlayerFrame(camera,rig.focus,px,pz,.5,2.2,scratch,targetScratch);
-  for(const display of displays){const corners=display.corners.map(v=>new T.Vector3().fromArray(v));expect(corners[0].distanceTo(corners[1])).toBeGreaterThanOrEqual(3.2);
+  // Canonical entry/fight repeaters retain their original119-ray guarantee.
+  // Distributed workbay repeaters are covered in each native tour crop by E9.
+  for(const display of displays.slice(0,dressing.userData.canonicalWarningDisplays)){const corners=display.corners.map(v=>new T.Vector3().fromArray(v));expect(corners[0].distanceTo(corners[1])).toBeGreaterThanOrEqual(3.2);
   for(let column=0;column<17;column++)for(let row=0;row<7;row++){
    const u=.005+column*.99/16,v=.005+row*.99/6,target=corners[0].clone().lerp(corners[1],u).lerp(corners[3].clone().lerp(corners[2],u),v);ray.set(camera.position,target.sub(camera.position).normalize());
    const first=ray.intersectObject(world,true)[0];expect(first,`${id} ${u}/${v}`).toBeDefined();expect((first.object as T.Mesh<T.BufferGeometry,T.Material>).material.name,`${id} ${u}/${v}`).toBe('g2-dressing-display');
