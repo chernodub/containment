@@ -25,7 +25,7 @@ export function selectL8Evidence(captures,rooms,sourceSHA,{calmScenario='combat-
     assert.equal(e.state,'playing');assert.equal(e.templateId,room.id);assert.deepEqual(e.hudOverlaps,[]);assertPlayingMarine(e,m.viewport,id);
     if(scenario!=='g6-kiting'){
      assert.equal(e.enemies,0);
-     if(scenario==='l8-arena-calm'){const p=e.l8ArenaCalmProof;assert(p?.nativeStep&&p.settledTicks===120&&p.cameraOverride===false);assert.deepEqual(p.arena,room.arena);assert.deepEqual({x:e.player.x,y:e.player.y},room.arena);assert.equal(e.phase,'combat');}
+     if(scenario==='l8-arena-calm'){const p=e.l8ArenaCalmProof;assert(p?.nativePresentation&&p.presentationTicks===120&&p.simulationBefore===p.simulationAfter&&p.cameraOverride===false);assert.equal(p.preparedShaderCompiles,0);assert.deepEqual(p.arena,room.arena);assert.deepEqual({x:e.player.x,y:e.player.y},room.arena);assert.equal(e.phase,'combat');}
     }
     else{
      const p=e.l8FixtureProof;assert(p,'Missing authored G6 proof');assert.deepEqual(p.arena,room.arena);assert.equal(p.cameraOverride,false);assert.equal(p.minimumSpreadActors,10);assert(p.actors.length>=10);assert.equal(new Set(p.actors.map(a=>a.family)).size,5);assert(p.grenadeThrown&&p.shotsAfter>p.shotsBefore);assert(e.stats.shotsFired>=p.shotsAfter);assert.equal(e.phase,'combat');

@@ -135,6 +135,17 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
    }
    refresh();
   },
+  /** Presentation-only settling uses the original renderer/follow-camera path.
+   * Simulation, encounter clocks and UI effect clocks remain frozen. */
+  settlePresentation(ticks:number){
+   if(liveObservation)throw Error('Presentation settling unavailable in live observation mode');
+   if(!Number.isInteger(ticks)||ticks<0||ticks>600)throw Error('Presentation settling expects 0..600 ticks');
+   if(renderer.roomLoading)throw Error('Room is still loading');
+   const elapsed=game.elapsed;
+   for(let i=0;i<ticks;i++)render(game,1/60,game.status==='menu');
+   if(game.elapsed!==elapsed)throw Error('Presentation settling advanced simulation');
+   sync();advanceUi(0);
+  },
   invulnerable(value:boolean){if(liveObservation&&value)throw Error('Invulnerability unavailable in live observation mode');immune=value;},
   /** Fill the real runtime meter without injecting a presentation snapshot. */
   fillOverdrive(){game.abilities.addCharge(12000);refresh();},

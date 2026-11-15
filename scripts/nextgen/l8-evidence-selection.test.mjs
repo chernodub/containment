@@ -23,7 +23,7 @@ test('exact-area reviews preserve constant fields and Rec709 code-value grayscal
 });
 
 test('arena calm is an explicit supplemental scenario with unchanged marine guards',()=>{
- const raw=capture(),shot=raw.manifest.shots[0];shot.scenario='l8-arena-calm';shot.evidence.player={...shot.evidence.player,...room.arena};shot.evidence.l8ArenaCalmProof={arena:room.arena,nativeStep:true,settledTicks:120,cameraOverride:false};
+ const raw=capture(),shot=raw.manifest.shots[0];shot.scenario='l8-arena-calm';shot.evidence.player={...shot.evidence.player,...room.arena};shot.evidence.l8ArenaCalmProof={arena:room.arena,nativePresentation:true,presentationTicks:120,preparedShaderCompiles:0,simulationBefore:0,simulationAfter:0,cameraOverride:false};
  assert.equal(selectL8Evidence([raw],[room],sha,{calmScenario:'l8-arena-calm'}).length,2);
  assert.throws(()=>selectL8Evidence([raw],[room],sha),/no complete guarded/);
  shot.evidence.l8ArenaCalmProof.cameraOverride=true;assert.throws(()=>selectL8Evidence([raw],[room],sha,{calmScenario:'l8-arena-calm'}));

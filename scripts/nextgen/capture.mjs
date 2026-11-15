@@ -265,8 +265,8 @@ try{
     if(scenario.id==='combat-calm')assert.equal(evidence.enemies,0,`${name}: calm room contains enemies`);
     if(scenario.id==='l8-arena-calm'){
      assert.equal(evidence.enemies,0,`${name}: arena calm contains enemies`);const proof=evidence.l8ArenaCalmProof;
-     assert(proof?.nativeStep&&proof.settledTicks===120&&proof.cameraOverride===false,`${name}: native arena settling proof missing`);
-     assert.deepEqual({x:evidence.player.x,y:evidence.player.y},proof.arena,`${name}: arena calm left declared fight arena`);
+     assert(proof?.nativePresentation&&proof.presentationTicks===120&&proof.simulationBefore===proof.simulationAfter&&proof.cameraOverride===false,`${name}: native presentation-only arena settling proof missing`);
+     assert.equal(proof.preparedShaderCompiles,0,`${name}: prepared presentation compiled new programs`);assert.deepEqual({x:evidence.player.x,y:evidence.player.y},proof.arena,`${name}: arena calm left declared fight arena`);
     }
     assert.equal(evidence.state,scenario.state,`${name}: wrong game state`);assertCaptureCanvas(evidence,{scenarioId:scenario.id,viewport,dpr,name});
     if(scenario.room)assert.equal(evidence.templateId,scenario.room);
