@@ -55,3 +55,10 @@ observer moduleea14420d58d149a73d46d790c5e3f707168d2c378c76edae3a5217814b5d0749.
 Future source/ref/label selection requires a fresh immutable preparation and a
 separate prospective run declaration. No observer run or finite-wave change is
 authorized by this report.
+
+Subsequent separately authorized execution: `L8-navigation-control.md` declares
+exactly eight c7 replays under fresh label `l8-dispatch-c7-eight`. All original
+native gameplay-field parity passes8/8 before timeline interpretation; the
+six-contract Vitest integration also passes. Complete results and timing
+limitations are in `L8-c7-dispatch-observations.md`. The original preparation
+label above remains unexecuted; no pressure/source change is selected.
