@@ -10,6 +10,7 @@ const option = (name, fallback = '') => process.argv.find(a => a.startsWith(`--$
 const label = option('label'), dist = resolve(option('dist', 'dist'));
 const sha = option('dist-source-sha');
 assert(/^[\w.-]+$/.test(label)); assert(/^[a-f0-9]{40}$/.test(sha));
+assert.equal((await readFile(resolve(dist,'SOURCE_SHA'),'utf8')).trim(),sha,'Frozen source receipt mismatch');
 const room = option('room', 'containment-annulus');
 assert(['containment-annulus', 'infested-workshop'].includes(room));
 const abilities = ['seismic-slam','afterburn','flashfire','napalm-charge','meltdown','whiteout','overclock'];
