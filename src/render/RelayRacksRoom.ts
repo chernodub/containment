@@ -185,7 +185,7 @@ export function relayRacksRoom(includeShell=true,template?:RoomTemplate):T.Group
  for(const [g,batches]of groups)for(const [m,{parts,name}]of batches){
   if(!includeShell&&[shell,seams,panels,channels].includes(g)){for(const p of parts)p.dispose();continue;}
   const geo=mergeGeometries(parts,false)!;for(const p of parts)p.dispose();
-  const mesh=new T.Mesh(geo,m);mesh.name=name;mesh.castShadow=g!==channels&&g!==shell;mesh.receiveShadow=true;mesh.userData.bakedEnvironment=true;(g===shell?root:g).add(mesh);
+  const mesh=new T.Mesh(geo,m);mesh.name=name;mesh.castShadow=m!==contact&&g!==channels&&g!==shell;mesh.receiveShadow=true;mesh.userData.bakedEnvironment=true;(g===shell?root:g).add(mesh);
  }
  if(!includeShell)root.userData.lightFixtures=[];
  // Skipped source-shell batches must retire their private finishes/normal map.

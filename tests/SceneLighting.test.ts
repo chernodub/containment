@@ -10,20 +10,36 @@ it('wires lighting and contact patches into the production renderer and reset li
  expect(source).toContain('this.lighting.dispose()');
 });
 import {SceneLighting,ContactShadows} from '../src/render/SceneLighting';
-import {authoredRoom,AUTHORED_ROOMS} from '../src/render/AuthoredRooms';
+import {AUTHORED_ROOMS} from '../src/render/AuthoredRooms';
 import {ROOM_TEMPLATES} from '../src/game/roguelike/roomTemplates';
 import {DepthRenderer} from '../src/render/DepthRenderer';
 import {disposeModel} from '../src/render/meshParts';
-import {appendEnvironment} from '../src/render/ShipEnvironments';
+import {appendEnvironment,shipEnvironment} from '../src/render/ShipEnvironments';
+import {generateRun} from '../src/game/roguelike/run';
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../src/game/roguelike/shipArchitectureLayouts';
+function activeRoom(id:typeof AUTHORED_ROOMS[number]){const node=generateRun(1729,3).nodes.find(n=>n.templateId===id)!;return DepthRenderer.prototype['buildRoomArchitecture'].call(Object.create(DepthRenderer.prototype),node,ROOM_TEMPLATES[id])!;}
+function fixtureOrigins(root:T.Object3D){root.updateMatrixWorld(true);const origins:T.Vector3[]=[];root.traverse(o=>{for(const f of o.userData.lightFixtures??[])origins.push(new T.Vector3(f.x,f.y,f.z).applyMatrix4(o.matrixWorld));});return origins;}
+
+function belowDeckEmitterCenter(root:T.Object3D){
+ const bounds=new T.Box3(),point=new T.Vector3();
+ root.traverse(o=>{if(o instanceof T.Mesh&&!Array.isArray(o.material)&&o.material.name==='ship-cold-practical'){
+  const positions=o.geometry.getAttribute('position');
+  for(let i=0;i<positions.count;i++)if(positions.getY(i)<=-.75)bounds.expandByPoint(point.fromBufferAttribute(positions,i).applyMatrix4(o.matrixWorld));
+ }});
+ expect(bounds.isEmpty()).toBe(false);return bounds.getCenter(new T.Vector3()).setY(3.2);
+}
 
 it('retains actual fixture origins when authored geometry is baked',()=>{
  for(const id of AUTHORED_ROOMS){
-  const room=authoredRoom(id,ROOM_TEMPLATES[id])!;
-  expect(room.userData.lightFixtures?.length??0).toBeGreaterThan(3);
-  expect(room.userData.lightFixtures.length).toBeLessThanOrEqual(256);
-  const rig=new SceneLighting();rig.loadRoom(room,ROOM_TEMPLATES[id].width/32,ROOM_TEMPLATES[id].height/32);
+  const room=activeRoom(id),origins=fixtureOrigins(room);
+  expect(origins.length).toBeGreaterThan(3);
+  expect(origins.length).toBeLessThanOrEqual(256);
+  const rig=new SceneLighting();rig.loadRoom(room,ROOM_TEMPLATES[id].width/32,ROOM_TEMPLATES[id].height/32,shipEnvironment(id),id);
   expect(rig.fixtures.filter(l=>l.intensity>0)).toHaveLength(4);
-  for(const light of rig.fixtures)expect(room.userData.lightFixtures.some((f:{x:number;y:number;z:number})=>light.position.equals(new T.Vector3(f.x,f.y,f.z)))).toBe(true);
+  for(const light of rig.fixtures){
+   if(light.userData.reactorCore){expect(id).toBe('overload-floor');expect(light.position.distanceTo(belowDeckEmitterCenter(room))).toBeLessThan(1e-5);}
+   else expect(origins.some(origin=>light.position.distanceTo(origin)<1e-5),id+' actual fixture '+light.position.toArray()).toBe(true);
+  }
   rig.dispose();disposeModel(room);
  }
 });
@@ -86,9 +102,10 @@ it('routes real explosion events to one light in world units',()=>{
 
 describe('bounded presentation lighting',()=>{
  it('never substitutes the origin of a translated baked room for a fixture',()=>{
-  const rig=new SceneLighting(),room=authoredRoom('passenger-vault',ROOM_TEMPLATES['passenger-vault'])!;
-  room.position.set(40,2,20);rig.loadRoom(room,80,40);
-  for(const light of rig.fixtures)expect(room.userData.lightFixtures.some((f:{x:number;y:number;z:number})=>light.position.equals(new T.Vector3(f.x+40,f.y+2,f.z+20)))).toBe(true);
+  const rig=new SceneLighting(),room=activeRoom('passenger-vault');
+  room.position.set(40,2,20);room.rotation.y=.35;room.scale.set(1.2,.8,1.3);const origins=fixtureOrigins(room);rig.loadRoom(room,80,40,'cryogenics','passenger-vault');
+  for(const light of rig.fixtures)expect(origins.some(origin=>light.position.distanceTo(origin)<1e-5),'actual transformed fixture '+light.position.toArray()).toBe(true);
+  expect(rig.fixtures.some(light=>light.position.distanceTo(room.position)<1e-5)).toBe(false);
   rig.dispose();disposeModel(room);
  });
  it('uses a cool shadow key, subordinate fill and a bounded local readability light',()=>{
@@ -145,13 +162,13 @@ describe('bounded presentation lighting',()=>{
 
 it('uses authored fixture apertures and the directional suit lamp without a circular suit-fill pedestal in revised ship rooms',()=>{
  const rig=new SceneLighting(),children=[...rig.root.children];
- for(const id of ['residential-gallery','crew-checkpoint','relay-racks']){
-  const env=id==='residential-gallery'?'habitation':id==='crew-checkpoint'?'security':'communications';
+ for(const id of Object.keys(SHIP_ARCHITECTURE_LAYOUTS)){
+  const env=shipEnvironment(id)!;
   const room=new T.Group();room.userData.lightFixtures=[{x:4,y:1.3,z:1,color:0xbad8dc,nativeColor:true,poolStyle:1,poolWidth:2,poolDepth:7}];
   rig.loadRoom(room,40,30,env,id);rig.setPlayer(6,8,0);rig.update(.016);
   expect(rig.lamp.suitFill.intensity).toBe(0);expect(rig.lamp.light.intensity).toBeGreaterThan(0);
-  expect(rig.fixtures[0].intensity).toBeGreaterThan(0);expect(rig.practicalShapes[0].z).toBe(2);expect(rig.practicalShapes[0].w).toBe(7);
+  const fixtureIndex=rig.fixtures.findIndex(light=>light.position.distanceTo(new T.Vector3(4,1.3,1))<1e-5);expect(fixtureIndex,id).toBeGreaterThanOrEqual(0);expect(rig.fixtures[fixtureIndex].intensity,id).toBeGreaterThan(0);expect(rig.practicalShapes[fixtureIndex].z).toBe(2);expect(rig.practicalShapes[fixtureIndex].w).toBe(7);
   expect(rig.root.children).toEqual(children);
  }
- rig.loadRoom(new T.Group(),40,30,'cryogenics','awakening-bay');expect(rig.lamp.suitFill.intensity).toBeGreaterThan(0);rig.dispose();
+ rig.loadRoom(new T.Group(),40,30,'cargo','receiving');expect(rig.lamp.suitFill.intensity).toBeGreaterThan(0);rig.dispose();
 });

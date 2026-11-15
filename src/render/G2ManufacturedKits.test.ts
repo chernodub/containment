@@ -33,7 +33,12 @@ describe('G2 manufactured service and shielding finishes',()=>{
  it('retains the shielding material budget and a dry nonemissive ceramic finish',()=>{
   const root=containmentAnnulusBlockout(ROOM_TEMPLATES['containment-annulus']);let triangles=0;
   const materials=new Set<T.MeshStandardMaterial>();root.traverse(object=>{if(object instanceof T.Mesh){materials.add(object.material as T.MeshStandardMaterial);triangles+=(object.geometry.index?.count??object.geometry.attributes.position.count)/3;}});
-  expect(materials.size).toBe(8);expect(root.children.length).toBe(8);expect(triangles).toBeLessThan(30000);
+  expect(materials.size).toBe(8);expect(triangles).toBeLessThan(30000);
+  // Keep the original core's eight draw/material owners. Added hull housings
+  // are a separate architecture owner using the SAME existing finish palette.
+  expect(root.children.filter(o=>o instanceof T.Mesh)).toHaveLength(8);
+  const housing=root.getObjectByName('act4-function-architecture');expect(housing).toBeDefined();
+  let housingDraws=0;housing!.traverse(o=>{if(o instanceof T.Mesh){housingDraws++;expect(materials.has(o.material as T.MeshStandardMaterial)).toBe(true);}});expect(housingDraws).toBeLessThanOrEqual(3);
   for(const material of materials)if(material.name.startsWith('annulus-ceramic')){
    expect(material.emissive.getHex()).toBe(0);expect(material.metalness).toBeLessThan(.1);expect(material.roughness).toBeGreaterThan(.8);
   }

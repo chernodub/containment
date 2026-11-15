@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import type {ShipEnvironment} from '../ShipEnvironments';
 import {COMMUNAL_ATRIUM_BLOCKOUT} from '../../game/roguelike/authoredRoomTopologies';
@@ -137,7 +138,9 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     const left=r.x/UNIT,right=(r.x+r.width)/UNIT,near=r.y/UNIT,far=(r.y+r.height)/UNIT,w=right-left,d=far-near;
     if(Math.min(w,d)<.8)continue;
     const cx=(left+right)/2,cz=(near+far)/2;
-    const looseFittings=kitReplacement?0:environment==='communications'||environment==='maintenance'||environment==='cargo'||environment==='infested'?0:Math.min(6,Math.ceil(w*d/9));
+    // Architecture helpers already own these mounted mechanisms. Preserve the
+    // signature screens below without repeating loose generic roof cartridges.
+    const looseFittings=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,templateId)||kitReplacement?0:environment==='communications'||environment==='maintenance'||environment==='cargo'||environment==='infested'?0:Math.min(6,Math.ceil(w*d/9));
     for(let n=0;n<looseFittings;n++){
       const margin=Math.min(.52,w*.35,d*.35),x=left+margin+random()*Math.max(0,w-2*margin),z=near+margin+random()*Math.max(0,d-2*margin);
       ray.set(point(x,20,z),down);const hit=ray.intersectObject(world,true).find(h=>h.point.y>.15&&(templateId!=='armory'||h.point.y<1.5));if(!hit)continue;

@@ -419,18 +419,19 @@ it('subordinates rough reactor probe light without muting the real core emitter 
 });
 
 
-it('raises only Overload local suit-fill energy without changing Manual, Queen or other rooms', () => {
+it('uses authored sources and the directional lamp in current ship rooms while preserving legacy local fill', () => {
   const rig = new SceneLighting(), room = new T.Group();
   const children = [...rig.root.children];
   for (const [id, environment, intensity] of [
-    ['overload-floor', 'reactor', 48],
-    ['manual-control-chamber', 'reactor', 36],
+    ['overload-floor', 'reactor', 0],
+    ['manual-control-chamber', 'reactor', 0],
     ['reactor-vault', 'reactor', 24],
-    ['awakening-bay', 'cryogenics', 24],
+    ['awakening-bay', 'cryogenics', 0],
+    ['receiving', 'cargo', 40],
   ] as const) {
     rig.loadRoom(room, 48, 36, environment, id);
     expect(rig.lamp.suitFill.intensity).toBeCloseTo(intensity * 1.55);
-    expect(rig.lamp.suitFill.distance).toBe(6.4);
+    expect(rig.lamp.suitFill.distance).toBe(6.4);expect(rig.lamp.light.intensity).toBeGreaterThan(0);
     expect(rig.root.children).toEqual(children);
   }
   rig.dispose();
