@@ -180,8 +180,8 @@ class PyroPresentation implements AbilityPresentation {
       if (print.age >= 1.5) { print.live = false; continue; }
       const fade = 1 - print.age / 1.5;
       kit.sustain();
-      kit.draw('decal', print.x, .035, print.z, .52, .19, 1, 0x57240d, fade * .65, 0, -print.angle, 9);
-      kit.directedFlame(print.x, .04, print.z, .20, .42, print.angle + Math.PI, .8, print.angle + print.x, fade * .48);
+      kit.draw('decal', print.x, .035, print.z, .64, .22, 1, 0x231b16, fade * .58, 0, -print.angle, 9);
+      kit.directedFlame(print.x, .04, print.z, .16, .36, print.angle + Math.PI, 1.1, print.angle + print.x, fade * .42);
     }
     if (!frame.snapshot) { kit.impact(); return; }
     for (const zone of frame.snapshot.zones) {
@@ -213,15 +213,8 @@ class PyroPresentation implements AbilityPresentation {
     else this.source.set(p.x + c * .3, .95, p.z + s * .3);
     kit.sustain(p.age + .20);
     kit.fireFan(p.x, p.z, p.range * grow, p.angle, p.arc, fade * .85, this.source.y, this.source.x, this.source.z);
-    // The first blast has expanding turbulent lobes from the authored explosion sequence.
-    // Short cards overlap in depth; the exact ground cone stays in the boundary batch.
-    if (p.age < .24) for (let i = 0; i < (kit.low ? 2 : 4); i++) {
-      const t = .24 + i * .16, a = p.angle + (i % 2 ? -.15 : .15) * p.arc;
-      const r = p.range * t, w = Math.min(p.range * .16, r * Math.sin(p.arc * .5) * .65);
-      kit.draw('flame', p.x + Math.cos(a) * r, this.source.y + .16 + i * .12,
-        p.z + Math.sin(a) * r, w, w * .72, 1, FIRE, fade * .82,
-        0, 0, 328 + Math.min(24, Math.floor(p.age * 65) + i));
-    }
+    // The connected tapered family owns the whole cone. Detached explosion
+    // stamps formerly put similar yellow islands over the directional body.
     kit.lightAt(p.lightId, p.x + Math.cos(p.angle) * p.range * .34,
       p.z + Math.sin(p.angle) * p.range * .34, FIRE, (12 + 16 * hot) * fade, Math.max(8, p.range * 1.1));
     // Range curls are downstream, above the jet rather than a wall of ground flames.
@@ -324,11 +317,11 @@ class PyroPresentation implements AbilityPresentation {
     } else {
       // Meltdown activation vents upward at the backpack; no radial carpet of fires.
       kit.impact();
-      for (let i = 0; i < (kit.low ? 2 : 3); i++) {
-        const side = i - 1, hot = impactBeat(p.age);
+      for (let i = 0; i < 2; i++) {
+        const side = i === 0 ? -1 : 1, hot = impactBeat(p.age);
         kit.directedFlame(p.x - Math.cos(p.angle) * .22 - Math.sin(p.angle) * side * .37, .9,
-          p.z - Math.sin(p.angle) * .22 + Math.cos(p.angle) * side * .37, .27 + hot * .12,
-          (1.8 + hot * .8 - i * .17) * fade, side, .35, i * 2.73, fade * .96, true);
+          p.z - Math.sin(p.angle) * .22 + Math.cos(p.angle) * side * .37, .23 + hot * .09,
+          (1.8 + hot * .8 - i * .17) * fade, side, .35, i * 2.73, fade * .90, true);
       }
     }
   }
@@ -433,9 +426,9 @@ class PyroPresentation implements AbilityPresentation {
       kit.flowFlame(bx, base, bz, bx-c*.65-s*side*.38, base+.7, bz-s*.65+c*side*.38,
         kit.low?.16:.26, side+zone.id, .94*fade, true);
       const height = side < 0 ? 2.4 : 1.8;
-      kit.directedFlame(bx, base, bz, side < 0 ? .84 : .70, height * (.95 + pulse * .05),
-        exhaustAngle, moving ? 1.1 : .5, side + zone.id, .9 * fade, true);
-      if (!kit.low) kit.directedFlame(bx - c * .18, 1.08, bz - s * .18, .28, 2.6,
+      kit.directedFlame(bx, base, bz, side < 0 ? .43 : .34, height * (.95 + pulse * .05),
+        exhaustAngle, moving ? 1.1 : .5, side + zone.id, .82 * fade);
+      if (!kit.low) kit.directedFlame(bx - c * .18, 1.08, bz - s * .18, .20, 2.15,
         exhaustAngle, .65, side * 2.7, .78 * fade);
     }
     // A low attached mantle wraps the armor flanks, distinct from the tall rear vents.

@@ -307,21 +307,40 @@ export class ElementKit {
     liquidFire(x: number, z: number, radius: number, opacity = 1): void {
         this.draw('decal', x, .045, z, radius, radius, 1, 0xff7a2e, opacity, 0, 0, 8);
     }
-    /** Layered short flipbook plumes fill the native cone; no room-length flame cards. */
+    /** Connected pressure core, broad overlapping lobes, then smaller broken tips. */
     fireFan(x: number, z: number, radius: number, angle: number, arc: number, opacity = 1, height = .9, sourceX?: number, sourceZ?: number): void {
-        const count = this.low ? 6 : 15;
-        for (let i = 0; i < count; i++) {
+        const c = Math.cos(angle), s = Math.sin(angle);
+        // Three unequal sections overlap by design, with one bright source.
+        const sections = this.low ? 2 : 3;
+        for (let i = 0; i < sections; i++) {
+            const start = i === 0 ? .025 : i === 1 ? .21 : .48;
+            const end = i === 0 ? .39 : i === 1 ? .73 : .91;
+            const width = radius * (i === 0 ? .055 : i === 1 ? .145 : .12);
+            this.flowFlame(i === 0 && sourceX !== undefined ? sourceX : x + c * radius * start,
+                height + i * .08, i === 0 && sourceZ !== undefined ? sourceZ : z + s * radius * start,
+                x + c * radius * end, height + .16 + i * .12, z + s * radius * end,
+                width, i * 7.31 + .71, opacity * (1 - i * .13), i === 0);
+        }
+        // Lobes connect to the core, rather than scattering similar-size stamps.
+        const lobes = this.low ? 2 : 6;
+        for (let i = 0; i < lobes; i++) {
+            const side = i % 2 ? -1 : 1, row = Math.floor(i / 2);
+            const spread = side * arc * (.16 + row * .075);
+            const a = angle + spread, start = .21 + row * .13, end = .65 + row * .13;
+            const width = radius * (.12 - row * .018);
+            this.flowFlame(x + c * radius * start, height + .08, z + s * radius * start,
+                x + Math.cos(a) * radius * end, height + .24 + row * .08, z + Math.sin(a) * radius * end,
+                width, 3.71 + i * 2.17, opacity * (.81 - row * .1));
+        }
+        const fragments = this.low ? 2 : 6;
+        for (let i = 0; i < fragments; i++) {
             const seed = i * 3.731 + .71, v = authoredVariation(seed);
-            const row = i === 0 ? 0 : i < count * .4 ? 1 : 2;
-            const fraction = row === 0 ? .06 : row === 1 ? .34 + v * .12 : .63 + v * .14;
-            const spread = i === 0 ? 0 : (authoredVariation(seed, 2) - .5) * arc * .72;
-            const a = angle + spread, reach = Math.min(.96, fraction + .17 + v * .1);
-            const width = radius * Math.min(.11, Math.max(.035, fraction * Math.sin(arc * .5 - Math.abs(spread)) * .48));
-            this.flowFlame(i === 0 && sourceX !== undefined ? sourceX : x + Math.cos(a) * radius * fraction,
-                height + (row === 2 ? v * .5 : 0),
-                i === 0 && sourceZ !== undefined ? sourceZ : z + Math.sin(a) * radius * fraction,
-                x + Math.cos(a) * radius * reach, height + .12 + v * .65, z + Math.sin(a) * radius * reach,
-                width, seed, opacity * (.72 + v * .25), i === 0);
+            const spread = (authoredVariation(seed, 2) - .5) * arc * .78;
+            const a = angle + spread, start = .75 + v * .06, end = .88 + v * .075;
+            this.flowFlame(x + Math.cos(a) * radius * start, height + .30 + v * .22,
+                z + Math.sin(a) * radius * start, x + Math.cos(a) * radius * end,
+                height + .42 + v * .3, z + Math.sin(a) * radius * end,
+                radius * (.027 + v * .019), seed + 15, opacity * (.42 + v * .16));
         }
     }
 

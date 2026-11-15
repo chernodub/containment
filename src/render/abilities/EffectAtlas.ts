@@ -80,13 +80,40 @@ vec4 effectSequence(float first,float count,float fps,float seed,vec2 uv){
 }
 `;
 
-/** Four deliberate combustion values and a clean alpha silhouette, without particle ink. */
+/** Tapered original flame family; retained explosions still use their authored atlas. */
 export const TEXTURED_FIRE_GLSL = `
  vec2 fireUv=uvLocal;
- vec4 fire=phase>=200.?effectGraphicTile(floor(phase)-200.,fireUv):effectGraphicSequence(0.,64.,24.,phase,fireUv);
- float coverage=graphicCoverage(fire.a);
- c=graphicCombustion(fire);
+ float coverage;
+ if(phase>=200.){
+  vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
+  coverage=graphicCoverage(fire.a);
+  c=graphicCombustion(fire);
+ }else{
+  // The same three unequal tongues serve jets, fuel edges and suit exhaust.
+  // Source alpha no longer decides the silhouette: broad photo-core islands
+  // cannot turn the pressure body into floating yellow leaves.
+  float t=fireUv.y;float seed=mod(phase,32.);
+  float family=mod(floor(seed),3.);
+  float clock=abilityTime*3.1;
+  float jet=step(100.,phase);
+  float bend=(sin(t*6.4+seed-clock)*.09+sin(t*12.3-seed+clock*.7)*.035)*t;
+  float throat=mix(.73,.27,jet);
+  float envelope=mix(throat,1.,smoothstep(.015,.30,t))*pow(max(.001,1.-t),.64);
+  float lobe=.84+.12*sin(t*(10.+family*2.)-clock+seed)+.055*sin(t*23.+clock*.6+seed);
+  float width=max(.008,envelope*lobe);
+  float side=abs(p.x-bend)/width;
+  float aa=max(.012,min(.12,fwidth(side)));
+  coverage=(1.-smoothstep(.84-aa,.84+aa,side))*smoothstep(.0,.035,t)*(1.-smoothstep(.94,1.,t));
+  // A narrow heated spine lives at the source. The outer connected lobes are
+  // orange, with a dark char edge; only the nozzle earns a near-white value.
+  float body=1.-smoothstep(.63,.82,side);
+  float inner=(1.-smoothstep(.10,.34,side))*(1.-smoothstep(.12,.63,t));
+  float core=inner*smoothstep(.30,.65,ink.g);
+  c=mix(vec3(.025,.036,.044),vec3(1.05,.105,.003),body);
+  c=mix(c,vec3(2.15,.65,.055),inner*.58);
+  c=mix(c,vec3(2.8,1.9,.34),core);
+ }
  a*=coverage;
- // No opaque card edge against the deck; real alpha silhouettes are continuous.
+ // Every path hides all four card edges, including the source end of a jet.
  a*=smoothstep(.015,.16,worldHeight);
 `;

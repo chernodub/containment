@@ -14,6 +14,10 @@ describe('element-true open fire materials', () => {
     expect(material.uniforms.map.value).toBeInstanceOf(T.Texture);
     expect((smoke.mesh.material as T.ShaderMaterial).uniforms.map.value).toBeInstanceOf(T.Texture);
     expect(material.fragmentShader).toContain('a*=coverage');
+    expect(material.fragmentShader).toContain('float family=mod(floor(seed),3.)');
+    expect(material.fragmentShader).toContain('float throat=mix(.73,.27,jet)');
+    expect(material.fragmentShader).toContain('smoothstep(.0,.035,t)*(1.-smoothstep(.94,1.,t))');
+    expect(material.fragmentShader).toContain('float core=inner*smoothstep(.30,.65,ink.g)');
     expect(material.fragmentShader).toContain(GRAPHIC_COMBUSTION_GLSL);
     expect(material.fragmentShader).toContain('vec3(.025,.036,.044)');
     expect(material.fragmentShader).toContain('vec3(2.15,.65,.055)');

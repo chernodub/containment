@@ -43,7 +43,7 @@ describe('Pyro presentation lifecycle and readability', () => {
     step(.15);
     const flames = kit.batches.flame.mesh, matrix = new T.Matrix4();
     let source = 0, far = 0, leaned = 0;
-    expect(flames.count).toBe(tier === 'high' ? 20 : 9);
+    expect(flames.count).toBe(tier === 'high' ? 16 : 7); // Connected bodies replace four/two detached blast stamps.
     const reaches = flow.mock.calls.map(call => Math.hypot(call[3] - 2, call[5] - 3));
     expect(Math.max(...reaches)).toBeLessThanOrEqual(9.600001);
     expect(Math.max(...reaches)).toBeGreaterThan(8.5);
@@ -59,7 +59,7 @@ describe('Pyro presentation lifecycle and readability', () => {
     }
     expect(source).toBeGreaterThan(0); expect(far).toBeGreaterThan(1); expect(leaned).toBe(flow.mock.calls.length);
     const phase = flames.geometry.getAttribute('abilityPhase');
-    expect(Array.from(phase.array).slice(0, flames.count).filter(value => value >= 328)).toHaveLength(tier === 'high' ? 4 : 2);
+    expect(Array.from(phase.array).slice(0, flames.count).every(value => value >= 100 && value < 200)).toBe(true); // One tapered family, no explosion islands.
     expect(flow).toHaveBeenLastCalledWith(2 + Math.cos(.2) * .3, .95, 3 + Math.sin(.2) * .3,
       2 + Math.cos(.2) * 1.8, .95, 3 + Math.sin(.2) * 1.8, .14 + (1 - (.15 - .05) / .12) * .055, 7, (1 - (.15 - .09) / .28) * .96, true);
     const smoke = kit.batches.smoke.mesh;

@@ -74,6 +74,26 @@ describe('V3 shared spectacle', () => {
   });
 
 
+  it.each(['high', 'low'] as const)('overlaps the bright pressure core into broad lobes before shrinking downstream fragments (%s)', tier => {
+    const k = new ElementKit(new T.Group()), flow = vi.spyOn(k, 'flowFlame');
+    k.setOptions(GRAPHICS_PRESETS[tier], tier, false); k.begin(0);
+    k.fireFan(0, 0, 10, 0, 1.4); k.end();
+    const calls = flow.mock.calls, sections = tier === 'high' ? 3 : 2;
+    expect(calls.filter(call => call[9])).toHaveLength(1);
+    for (let i = 1; i < sections; i++) {
+      expect(calls[i][0]).toBeLessThan(calls[i - 1][3]);
+      expect(calls[i][6]).toBeGreaterThan(calls[0][6]);
+    }
+    const fragments = calls.slice(tier === 'high' ? 9 : 4);
+    for (const fragment of fragments) {
+      expect(Math.hypot(fragment[0], fragment[2])).toBeGreaterThanOrEqual(7.5);
+      expect(fragment[6]).toBeLessThan(calls[1][6] * .4);
+      expect(fragment[8]).toBeLessThan(calls[1][8]);
+    }
+    expect(k.root.children.length).toBeGreaterThan(0);
+    k.dispose();
+  });
+
   it('projects directional combustion along the actual camera right axis instead of a fixed screen diagonal', () => {
     const k = new ElementKit(new T.Group()), camera = new T.PerspectiveCamera();
     camera.position.set(0,8,8);camera.lookAt(0,0,0);camera.updateMatrixWorld();k.setView(camera);k.begin(0);
