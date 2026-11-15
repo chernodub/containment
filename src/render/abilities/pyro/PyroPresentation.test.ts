@@ -201,7 +201,8 @@ describe('Pyro presentation lifecycle and readability', () => {
     frame.game = { player: { x: 128, y: 160, vx: 0, vy: 0, angle: .1 }, bullets: [] } as never;
     step(.016);
     const flames = kit.batches.flame.mesh;
-    expect(flames.count).toBe(tier === 'low' ? 5 : 6); // Two long High backpack tongues become two small embers. expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
+    expect(flames.count).toBe(tier === 'low' ? 5 : 6); // Two long High backpack tongues become two small embers.
+    expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i);
       expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThan(1);
