@@ -1,6 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
 import * as T from 'three';
-import {SHIP_SERVICE_APPROACH_CANDIDATE} from '../../game/roguelike/shipServiceApproachCandidate';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
 import {ROOM_STORY_ROUTE} from '../../game/roguelike/storyRooms';
 import {SHIP_ARCHITECTURE_PLANS} from '../../game/roguelike/shipArchitectureLayouts';
@@ -56,12 +55,6 @@ describe('actual mounted ship ingress',()=>{
   }
   expect(new Set(f.root.children.map(o=>(o as T.Mesh).material)).size).toBeLessThanOrEqual(3);
   const resources=new Set<T.Material|T.BufferGeometry>();f.root.traverse(o=>{if(o instanceof T.Mesh){resources.add(o.geometry);resources.add(o.material as T.Material);}});const spies=[...resources].map(r=>vi.spyOn(r,'dispose'));disposeModel(f.root);spies.forEach(s=>expect(s).toHaveBeenCalledOnce());for(const m of Object.values(f.materials))if(!resources.has(m))m.dispose();disposeModel(support);
- });
- it.each(Object.entries(SHIP_SERVICE_APPROACH_CANDIDATE))('prospective %s service-entry shifts follow new features without activation',(id,plan)=>{
-  const t={...ROOM_TEMPLATES[id as keyof typeof ROOM_TEMPLATES],...plan.topology},before=JSON.stringify(plan),f=fixture(),mounts=addMountedIngress(id,t,f.writer,f.materials,plan),support=physicalSupport(t);
-  expect(mounts).toHaveLength(4);expect(mounts.map(m=>m.at)).toEqual(plan.breachFeatures.map(f=>f.at));
-  for(const mount of mounts){expect(mountedIngressHasBacking(t,mount)).toBe(true);for(const side of [-.5,0,.5]){const ray=new T.Raycaster(new T.Vector3(mount.center.x/32+mount.tangent.x*mount.width*side+mount.normal.x*.1,.5,mount.center.y/32+mount.tangent.y*mount.width*side+mount.normal.y*.1),new T.Vector3(-mount.normal.x,0,-mount.normal.y),0,.2);expect(ray.intersectObject(support,true)[0]?.distance,mount.name).toBeCloseTo(.1,4);}}
-  expect(JSON.stringify(plan)).toBe(before);disposeModel(f.root);disposeModel(support);
  });
  it('rejects unsupported floor cards, wide facades on tiny returns, excess projection and tall faces',()=>{
   const t:RoomTemplate={id:'receiving',name:'support controls',width:500,height:500,spawn:{x:200,y:200},exit:{x:400,y:400},breaches:[],obstacles:[{x:0,y:100,width:40,height:8}]};

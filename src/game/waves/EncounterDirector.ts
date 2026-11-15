@@ -37,9 +37,9 @@ export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
   const story=node.id.includes(':v3-'),tuning=story&&I5_ENCOUNTER_TUNING_ENABLED,holdout=story&&(node.depth===9||node.depth===19);
   const guardian=progressionFor(node).guardianKind;
   const extraSpawns=tuning?(node.depth>=10?8:node.depth>=2&&node.kind==='combat'&&!guardian?2:0):0;
-  // L8 measured these five authored approaches after geometry-first trials.
-  // Append measured real requests; every original seeded request and timing stays exact.
-  const architectureSpawns=tuning?(node.templateId==='freight-hold'?1:['transmission-chamber','diagnostic-gallery','safety-interlock-station','shielding-gate'].includes(node.templateId)?2:0):0;
+  // L8 measured these four authored approaches after geometry-first trials.
+  // Append two real requests; every original seeded request and timing stays exact.
+  const architectureSpawns=tuning&&['transmission-chamber','diagnostic-gallery','safety-interlock-station','shielding-gate'].includes(node.templateId)?2:0;
   const totalSpawns = combat ? story ? holdout ? (node.depth===9?32:48)+architectureSpawns : 12+Math.round(node.depth*.7)+(node.kind==='elite'?5:0)+extraSpawns+architectureSpawns : Math.round((12 + node.depth * 3 + (node.kind === 'elite' ? 5 : 0))*(node.id.includes(':v2-')?1.25:1)) : 0;
   const pressureAct=story?Math.floor(node.depth/5):0;
   // Experimental brood-free mixes have no three-child reservations: normalize their live-body pressure.

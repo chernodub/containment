@@ -57,10 +57,10 @@ describe('I5 active story profile keeps legacy encounters and reviewed story num
     const nodes = SEEDS.flatMap(seed => generateRun(seed).nodes.map(node => ({seed, node})));
     const plans = nodes.map(({seed, node}) => createEncounterPlan({seed, node, breachIds: ['north', 'south', 'east', 'west']}));
     const balances = nodes.map(({node}) => progressionFor(node));
-    // L8 appends two actual combatants in four measured fast rooms and one in Freight.
+    // L8 appends exactly two actual combatants in four measured fast rooms.
     // Preserve the historical all200-plan digest after removing only those tails.
     const originalPlans=plans.map((plan,index)=>{
-      const appended=nodes[index].node.templateId==='freight-hold'?1:['transmission-chamber','diagnostic-gallery','safety-interlock-station','shielding-gate'].includes(nodes[index].node.templateId)?2:0;
+      const appended=['transmission-chamber','diagnostic-gallery','safety-interlock-station','shielding-gate'].includes(nodes[index].node.templateId)?2:0;
       return {...plan,totalSpawns:plan.totalSpawns-appended,schedule:plan.schedule.slice(0,plan.totalSpawns-appended)};
     });
     expect(digest(originalPlans)).toBe(STORY_PROFILE.plans);
