@@ -1,6 +1,6 @@
 import * as T from 'three';
 import {industrialBoxGeometry,industrialCylinderGeometry,industrialStencil} from './world/IndustrialFormKit';
-import {ARMORY_COUNTER,ARMORY_CAROUSEL} from '../game/world/armoryCarouselLayout';
+import {ARMORY_COUNTER,ARMORY_CAROUSEL,ARMORY_COUNTER_START,ARMORY_COUNTER_END} from '../game/world/armoryCarouselLayout';
 import type {Point} from '../game/roguelike/types';
 import {createStoredArmoryRifle} from './ArmoryBlockout';
 
@@ -38,7 +38,7 @@ export function armoryCarousel():T.Group{
  }
  // Inset brushed-metal safety edges stay strictly inside the segmented solid.
  for(const [inner,outer] of [[216,219],[290,294]] as const){
-  const strip=[...Array.from({length:25},(_,i)=>{const angle=(150+i*10)*Math.PI/180;return{x:600+outer*Math.cos(angle),y:450+outer*Math.sin(angle)};}),...Array.from({length:25},(_,i)=>{const angle=(390-i*10)*Math.PI/180;return{x:600+inner*Math.cos(angle),y:450+inner*Math.sin(angle)};})];
+  const strip=[...Array.from({length:25},(_,i)=>{const angle=(ARMORY_COUNTER_START+i*(ARMORY_COUNTER_END-ARMORY_COUNTER_START)/24)*Math.PI/180;return{x:600+outer*Math.cos(angle),y:450+outer*Math.sin(angle)};}),...Array.from({length:25},(_,i)=>{const angle=(ARMORY_COUNTER_END-i*(ARMORY_COUNTER_END-ARMORY_COUNTER_START)/24)*Math.PI/180;return{x:600+inner*Math.cos(angle),y:450+inner*Math.sin(angle)};})];
   slab('worktop-machined-edge',strip,1.142,.012,pale);
  }
  for(let degrees=155;degrees<=385;degrees+=20){

@@ -91,10 +91,11 @@ describe('Room14 accepted C balcony rough placement',()=>{
   }
   disposeModel(root);
  });
- it('installs exactly the accepted shaft and retains canonical anchors',()=>{
+ it('retains the exact C core and legal live spawn, exit and mounted breach anchors',()=>{
   expect(template.voids).toEqual([points]);expect(template.obstacles).toEqual([]);
-  expect(template.spawn).toEqual({x:100,y:440});expect(template.exit).toEqual({x:1100,y:440});
-  expect(template.breaches).toEqual([[100,100],[1100,100],[100,780],[1100,780]].map(([x,y])=>({x,y})));
+  expect(geometry.playerSpawn).toEqual(template.spawn);expect(geometry.exitPoint).toEqual(template.exit);
+  expect(geometry.breaches.map(({x,y})=>({x,y}))).toEqual(template.breaches);
+  for(const p of [template.spawn,template.exit,...template.breaches])expect(canOccupyExpedition(geometry,p,38)).toBe(true);
  });
  for(const radius of [16,28,30,38])it(`retains full C and progression sweeps at radius ${radius}`,()=>{
   const route=[[1044,740],[180,740],[180,140],[1040,140],[1040,440],[1100,440]].map(([x,y])=>({x,y}));

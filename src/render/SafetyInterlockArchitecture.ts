@@ -1,9 +1,11 @@
+import type {RoomTemplate} from '../game/roguelike/types';
+import {clearPolygonTopology} from '../game/world/polygonGeometry';
 import * as T from 'three';
 import {box,rod} from './meshParts';
 import {safetyInterlockEntries,safetyInterlockEntryPoint} from './SafetyInterlockBlockout';
 
 /** Room12 only: flush deck finish and outboard insulation, never new collision. */
-export function safetyInterlockArchitecture(parent:T.Group,w:number,h:number){
+export function safetyInterlockArchitecture(parent:T.Group,w:number,h:number,template?:RoomTemplate){
  const shell=new T.Group();shell.name='room12-insulated-shell';parent.add(shell);
  const material=(name:string,color:number,metalness:number,roughness:number)=>{
   const m=new T.MeshStandardMaterial({color,metalness,roughness});m.name=`room12-shell-${name}`;m.userData.actorMaterial=true;return m;
@@ -31,20 +33,33 @@ export function safetyInterlockArchitecture(parent:T.Group,w:number,h:number){
  // quiet and open rather than acquiring detached equipment pads or boxes.
  const deck=new T.Group();deck.name='room12-service-deck';shell.add(deck);
  // Slot faces sit above the channel, never coplanar with its top face.
- const inlay=(name:string,x:number,z:number,width:number,depth:number,m:T.Material)=>{const slot=name==='channel-slot';const mesh=box(deck,x,slot?.018:.006,z,width,slot?.004:.012,depth,m,0);mesh.name=name;mesh.castShadow=false;};
+ const supported=(x:number,z:number,width:number,depth:number)=>{
+  if(!template)return true;
+  const corners=[[-1,-1],[-1,1],[1,1],[1,-1]].map(([ix,iz])=>({x:(x+ix*width/2)*32,y:(z+iz*depth/2)*32}));
+  return corners.every((p,i)=>clearPolygonTopology(template,p,p)&&clearPolygonTopology(template,p,corners[(i+1)%4]))
+   &&clearPolygonTopology(template,corners[0],corners[2])&&clearPolygonTopology(template,corners[1],corners[3]);
+ };
+ const inlay=(name:string,x:number,z:number,width:number,depth:number,m:T.Material)=>{if(!supported(x,z,width,depth))return;const slot=name==='channel-slot';const mesh=box(deck,x,slot?.018:.006,z,width,slot?.004:.012,depth,m,0);mesh.name=name;mesh.castShadow=false;};
  for(const z of [1.75,h-1.75]){
-  inlay('service-channel',w/2,z,w-2,.52,metal);
+  if(template){for(let x=1.2;x<w-1;x+=.42)inlay('service-channel',x,z,.42,.52,metal);}
+  else inlay('service-channel',w/2,z,w-2,.52,metal);
   for(let x=1.2;x<w-1;x+=.42)inlay('channel-slot',x,z,.065,.36,dark);
  }
  // Fitted base entries, not reservation centers. Three independent service runs:
  // load jaw to recorder, battery return to the south deck, rear feed to the
  // AI's loose plug. Nothing joins the AI receptacle or crosses the jaw break.
- const footprints=[[330,210,160,140],[700,210,160,140],[480,580,240,120]].map(([x,z,width,depth])=>({x:x*w/1200,y:z*h/880,width:width*w/1200,height:depth*h/880}));
+ const footprints=template?template.obstacles.map(r=>({x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32})):[[330,210,160,140],[700,210,160,140],[480,580,240,120]].map(([x,z,width,depth])=>({x:x*w/1200,y:z*h/880,width:width*w/1200,height:depth*h/880}));
  const [recorder,ai,load,ret]=safetyInterlockEntries.map((e,i)=>safetyInterlockEntryPoint(footprints[i<2?i:2],e));
  const route=(name:string,points:T.Vector2[])=>{
   const group=new T.Group();group.name=`service-route-${name}`;deck.add(group);
   const piece=(name:string,x:number,y:number,z:number,width:number,height:number,depth:number,m:T.Material)=>{
-   const mesh=box(group,x,y,z,width,height,depth,m,0);mesh.name=name;mesh.castShadow=false;
+   const count=Math.max(1,Math.ceil(Math.max(width,depth)/.25));
+   for(let n=0;n<(template?count:1);n++){
+    const alongX=width>=depth,cw=template&&alongX?width/count:width,cd=template&&!alongX?depth/count:depth;
+    const px=x+(template&&alongX?(n+.5-count/2)*cw:0),pz=z+(template&&!alongX?(n+.5-count/2)*cd:0);
+    if(!supported(px,pz,cw,cd))continue;
+    const mesh=box(group,px,y,pz,cw,height,cd,m,0);mesh.name=name;mesh.castShadow=false;
+   }
   };
   for(let i=1;i<points.length;i++){
    const a=points[i-1],b=points[i],alongX=Math.abs(b.x-a.x)>1e-6;
@@ -63,8 +78,10 @@ export function safetyInterlockArchitecture(parent:T.Group,w:number,h:number){
  b('rear-feed-riser-case',ai.x,.60,-.0801,.34,1.20,.16,metal);
  b('rear-feed-riser-conductor',ai.x,.60,-.0121,.10,1.20,.024,orange);
  b('rear-feed-termination',ai.x,1.20,-.1401,.44,.26,.28,ceramic);
- // Short worn approach stripes belong to existing equipment, not new zones.
- for(const [x,z,width] of [[w*410/1200,h*380/880,4.5],[w*780/1200,h*380/880,4.5],[w*.5,h*735/880,6.8]]){
+ // Approach paint terminates at the live equipment face; it never describes a
+ // detached island left behind by a historical reservation.
+ const approaches=template?footprints.map(r=>[r.x+r.width/2,r.y+r.height+.30,Math.min(r.width*.78,6.8)]):[[w*410/1200,h*380/880,4.5],[w*780/1200,h*380/880,4.5],[w*.5,h*735/880,6.8]];
+ for(const [x,z,width] of approaches){
   for(const side of [-1,1])inlay('equipment-approach-mark',x+side*width*.36,z,width*.24,.075,orange);
  }
 }
