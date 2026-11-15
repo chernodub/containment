@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createServer as httpServer} from 'node:http';
-import {readFile,mkdir,writeFile} from 'node:fs/promises';
+import {readFile,mkdir,writeFile,readdir} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
@@ -12,8 +12,10 @@ const selectedViewport=option('viewport','desktop');
 assert.equal(selectedViewport,'desktop','Only the desktop viewport is supported');
 const viewport={width:1280,height:900};
 const out=resolve(option('out','artifacts/authored-smoke/desktop'));
-const prefix='/containment/',root=resolve('dist'),types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.jpg':'image/jpeg','.png':'image/png','.glb':'model/gltf-binary','.ogg':'audio/ogg','.mp3':'audio/mpeg','.wav':'audio/wav'};
-let ssr,server,browser;const results=[];
+const distSourceSHA=option('dist-source-sha',null);if(distSourceSHA)assert.match(distSourceSHA,/^[a-f0-9]{7,40}$/,'Invalid frozen source SHA');
+const prefix='/containment/',root=resolve(option('dist','dist')),types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.jpg':'image/jpeg','.png':'image/png','.glb':'model/gltf-binary','.ogg':'audio/ogg','.mp3':'audio/mpeg','.wav':'audio/wav'};
+let ssr,server,browser;const results=[],appAssets=Object.fromEntries(await Promise.all((await readdir(resolve(root,'assets'))).filter(f=>/\.(js|css)$/.test(f)).sort().map(async f=>[f,createHash('sha256').update(await readFile(resolve(root,'assets',f))).digest('hex')])));
+const distSnapshot={path:root,sourceSHA:distSourceSHA};
 try{
  await mkdir(out,{recursive:true});
  ssr=await viteServer({configFile:false,server:{middlewareMode:true},logLevel:'error'});
@@ -58,7 +60,7 @@ try{
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
    const file=`${id}-desktop-hud.png`,bytes=await page.screenshot({path:resolve(out,file)});
    results.push({id,file,viewport,quality:'low',state:await page.evaluate(()=>document.body.dataset.state),room:await page.locator('#room-name').textContent(),input:'real keyboard move/fire',explicitFatalAuthorization:id==='overload-floor',errors,sha256:createHash('sha256').update(bytes).digest('hex')});
-   await writeFile(resolve(out,'manifest.json'),JSON.stringify({commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),evidence:'Built production app, seeded validated prior-room checkpoint, real Continue/route/authorization/fire/pause/resume. Short interaction smoke, not full playthrough or balance proof.',results},null,2)+'\n');console.log(JSON.stringify(results.at(-1)));
+   await writeFile(resolve(out,'manifest.json'),JSON.stringify({commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),distSnapshot,appAssets,evidence:'Built production app, seeded validated prior-room checkpoint, real Continue/route/authorization/fire/pause/resume. Short interaction smoke, not full playthrough or balance proof.',results},null,2)+'\n');console.log(JSON.stringify(results.at(-1)));
   }catch(error){
    const failure={id,viewport,errors,error:String(error),completedResults:results};
    await writeFile(resolve(out,`${id}-failure.json`),JSON.stringify(failure,null,2)+'\n');
@@ -70,6 +72,6 @@ try{
  assert.equal(results.length,ids.length);
  console.log(`Authored desktop smoke passed: ${results.length} rooms, native move/fire, Continue/route, pause/resume, Low quality, no browser errors.`);
 }catch(error){
- await writeFile(resolve(out,'failure.json'),JSON.stringify({error:String(error),results},null,2)+'\n');
+ await writeFile(resolve(out,'failure.json'),JSON.stringify({error:String(error),distSnapshot,appAssets,results},null,2)+'\n');
  throw error;
 }finally{await browser?.close();await ssr?.close();if(server)await new Promise(r=>server.close(r));}
