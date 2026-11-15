@@ -44,6 +44,7 @@ Use `--name=value` for valued flags.
 | `--build` | Off | Forces a production build |
 | `--headed` | Off | Uses visible full Chromium, useful if the headless GPU path is unavailable |
 | `--keep-going` | Off | Continues after scenario failures; still exits non-zero and records failures |
+| `--canvas-only` | Off | Saves the refreshed world canvas without DOM HUD pixels; existing native camera/HUD diagnostics still run |
 | `--help` | Off | Prints a short command summary |
 
 The default rooms are `awakening-bay`, `communal-atrium`, `armory`, `breached-loading-bay`, `relay-racks`, `safety-interlock-station`, `service-shaft-landing`, `infested-workshop`, `containment-annulus`, and `overload-floor`.

@@ -137,6 +137,9 @@ def export_marine(meshes, path, material=None, images=None):
         },
     }]
     document["materials"][0].setdefault("extras", {})["k10Original"] = True
+    extensions = document["materials"][0].get("extensions", {})
+    if extensions:
+        document["extensionsUsed"] = list(dict.fromkeys([*document.get("extensionsUsed", []), *extensions]))
     document["images"], document["textures"] = [], []
     document["samplers"] = [{"magFilter": 9729, "minFilter": 9987,
                               "wrapS": 33071, "wrapT": 33071}]

@@ -21,12 +21,12 @@ import {stitchPngFrames} from './sprites.mjs';
 import {compareGalleries} from './gallery.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');process.chdir(root);
-const args=process.argv.slice(2),flags=new Set(['build','headed','keep-going','help','scaffold','failure-evidence']);
+const args=process.argv.slice(2),flags=new Set(['build','headed','keep-going','help','scaffold','failure-evidence','canvas-only']);
 const known=new Set([...flags,'label','scenarios','rooms','burst','width','height','dpr','timestamp','seed','compare','step-ms','sprite-width','dist','dist-source-sha','graphics','style','hud-insets','kiting-retries']);
 for(const arg of args){assert(arg.startsWith('--')&&known.has(arg.slice(2).split('=')[0]),`Unknown option ${arg}`);assert(arg.includes('=')||flags.has(arg.slice(2)),`Use --name=value: ${arg}`);}
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const integer=(name,fallback,min,max)=>{const n=Number(option(name,fallback));assert(Number.isInteger(n)&&n>=min&&n<=max,`--${name} must be ${min}..${max}`);return n;};
-if(args.includes('--help')){console.log('npm run capture -- --label=baseline --scenarios=all [--rooms=id,id] [--burst=4 --step-ms=150 --sprite-width=960] [--compare=labelA,labelB] [--width=1920 --height=1080 --dpr=1] [--build] [--headed] [--keep-going] [--timestamp=ISO] [--seed=1729]\nSee scripts/nextgen/README.md');process.exit(0);}
+if(args.includes('--help')){console.log('npm run capture -- --label=baseline --scenarios=all [--rooms=id,id] [--burst=4 --step-ms=150 --sprite-width=960] [--compare=labelA,labelB] [--width=1920 --height=1080 --dpr=1] [--build] [--headed] [--canvas-only] [--keep-going] [--timestamp=ISO] [--seed=1729]\nSee scripts/nextgen/README.md');process.exit(0);}
 const comparison=option('compare','');
 const label=option('label',comparison?'comparison-'+comparison.replaceAll(',','-'):'baseline');assert(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(label),'Unsafe label');
 const viewport={width:integer('width',1920,640,7680),height:integer('height',1080,360,4320)},dpr=Number(option('dpr',1));assert(dpr>=.5&&dpr<=4,'--dpr must be .5..4');
@@ -43,7 +43,8 @@ if(comparison){const result=await compareGalleries(resolve('artifacts/nextgen'),
 const stepMs=integer('step-ms',150,1,1000),spriteWidth=integer('sprite-width',960,160,1920);
 const prefix='/containment/',dist=resolve(option('dist','dist'));
 const timestamp=option('timestamp',new Date().toISOString());assert(Number.isFinite(Date.parse(timestamp)),'Invalid --timestamp');
-const manifest={hudInsets,graphicStrength:style,graphicsOverrides:graphics,gitSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),timestamp,label,seed,viewport,deviceScaleFactor:dpr,burstStepMs:stepMs,shots:[],sprites:[],failures:[],errors:[],fontFallbacks:[],gpuAttempts:[],runtimeSeconds:0,note:'Production game, per-shot High/Low tiers. Fixed-step captures include idle RAF/screenshot overhead; i2 kitingProof separately records live normal-loop samples.'};
+const canvasOnly=args.includes('--canvas-only');
+const manifest={canvasOnly,hudInsets,graphicStrength:style,graphicsOverrides:graphics,gitSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),timestamp,label,seed,viewport,deviceScaleFactor:dpr,burstStepMs:stepMs,shots:[],sprites:[],failures:[],errors:[],fontFallbacks:[],gpuAttempts:[],runtimeSeconds:0,note:'Production game, per-shot High/Low tiers. Fixed-step captures include idle RAF/screenshot overhead; i2 kitingProof separately records live normal-loop samples.'};
 let browser,context,server,page;const started=performance.now();
 async function latest(path){let result=0;for(const entry of await readdir(path,{withFileTypes:true})){const p=resolve(path,entry.name);result=Math.max(result,entry.isDirectory()?await latest(p):(await stat(p)).mtimeMs);}return result;}
 async function buildIfNeeded(){if(option('dist','')){await stat(resolve(dist,'index.html'));manifest.distSnapshot={path:dist,sourceSHA:option('dist-source-sha','unrecorded')};return;}let built=0;try{built=(await stat(resolve(dist,'index.html'))).mtimeMs;}catch{}const source=Math.max(...await Promise.all(['src','public','scripts/nextgen'].map(latest)),...await Promise.all(['package.json','package-lock.json','vite.config.ts','tsconfig.json','index.html'].map(async p=>(await stat(p)).mtimeMs)));if(args.includes('--build')||built<source){console.log('Building production dist/…');await new Promise((ok,fail)=>{const p=spawn('npm',['run','build'],{stdio:'inherit'});p.on('error',fail);p.on('exit',code=>code===0?ok():fail(Error(`Production build failed (${code})`)));});}}
@@ -291,7 +292,12 @@ try{
     explosion||=evidence.recentEffects.some(e=>e.type==='explosion');
     for(const s of evidence.statuses)for(const key of ['burning','chilled','frozen','poisoned'])if(s[key])observed.add(key);
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
-    const file=name+(scenario.burst?`-${String(frame+1).padStart(2,'0')}`:'')+'.png',bytes=await page.screenshot({path:resolve(out,file),animations:scenario.titleArtTimeline?'allow':'disabled'}),pixels=samplePng(bytes);
+    const file=name+(scenario.burst?`-${String(frame+1).padStart(2,'0')}`:'')+'.png';
+    // Art-only world view: leave native DOM/input/framing inspection intact,
+    // but export the actual rendered canvas so HUD cannot identify the rig.
+    const bytes=canvasOnly?Buffer.from(await page.evaluate(()=>{const d=window.__containmentDebug;d.refresh();return d.renderer.renderer.domElement.toDataURL('image/png').split(',')[1];}),'base64'):await page.screenshot({path:resolve(out,file),animations:scenario.titleArtTimeline?'allow':'disabled'});
+    if(canvasOnly)await writeFile(resolve(out,file),bytes);
+    const pixels=samplePng(bytes);
     if(args.includes('--scaffold')&&await page.locator('[data-key-art-scaffold]').count()) {
      await page.locator('[data-key-art-scaffold]').evaluate(node=>node.style.display='');
      const scaffoldFile=file.replace('.png','-scaffold.png');

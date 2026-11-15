@@ -1,17 +1,7 @@
 {
-  "triangles": {
-    "k10-body": 10960,
-    "k10-rig-breacher": 1052,
-    "k10-rig-cryo": 2420,
-    "k10-rig-pyro": 2556,
-    "k10-rig-arc": 2512
-  },
-  "atlasSize": 1024,
-  "maps": [
-    "basecolor",
-    "normal",
-    "ao",
-    "emissive"
-  ],
-  "sourceBake": "Cycles AO + pointiness curvature + shader bevel tangent normal; flat-zone albedo"
+  "k10-body": 17411,
+  "k10-rig-breacher": 4504,
+  "k10-rig-cryo": 6458,
+  "k10-rig-pyro": 7344,
+  "k10-rig-arc": 6138
 }

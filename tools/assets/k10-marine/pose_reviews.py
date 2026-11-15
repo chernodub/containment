@@ -1,7 +1,8 @@
 """Artist pose turntables of the shipping skin; no exported skeleton changes."""
-import bpy,math
+import bpy,math,sys
 from pathlib import Path
 from mathutils import Vector,Quaternion
+sys.path.insert(0,str(Path(__file__).resolve().parent))
 ROOT=Path(__file__).resolve().parents[3]
 OUT=ROOT/'artifacts/nextgen/k10-final/poses';OUT.mkdir(parents=True,exist_ok=True)
 bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
@@ -11,6 +12,8 @@ for b in arm.pose.bones:b.matrix_basis.identity()
 meshes=[o for o in bpy.data.objects if o.type=='MESH' and o.name.startswith('k10-')]
 # Native source units, source facing -X. Camera looks down over the back.
 scene=bpy.context.scene;scene.render.engine='CYCLES';scene.cycles.samples=24
+from render_device import choose_render_device
+choose_render_device(scene)
 scene.render.resolution_x=640;scene.render.resolution_y=640;scene.render.resolution_percentage=100
 scene.world.use_nodes=True;scene.world.node_tree.nodes.get('Background').inputs[0].default_value=(.13,.17,.20,1);scene.world.node_tree.nodes.get('Background').inputs[1].default_value=.65
 for pos,power in [((-18,10,30),12000),((15,-15,25),10000)]:
