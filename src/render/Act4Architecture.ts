@@ -2,13 +2,15 @@ import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {Point,RoomTemplate} from '../game/roguelike/types';
 import {SHIP_ACT4_PLANS} from '../game/roguelike/shipArchitectureAct4';
+import type {ShipPlan} from '../game/roguelike/shipArchitecturePlan';
 
 type Plan=Pick<RoomTemplate,'width'|'height'|'obstacles'|'boundary'|'voids'>;
 type Palette=Readonly<{shell:T.MeshStandardMaterial;recess:T.MeshStandardMaterial;edge:T.MeshStandardMaterial}>;
 /** Act4 presentation only. Housings are built to live collider rectangles;
  * source core/gate/control models stay with their existing asset owners. */
-export function act4Architecture(id:string,t:Plan,palette?:Palette):T.Group|null {
- const plan=SHIP_ACT4_PLANS[id];if(!plan)return null;
+export function act4Architecture(id:string,t:Plan,palette?:Palette,activePlan?:ShipPlan):T.Group|null {
+ if(!Object.hasOwn(SHIP_ACT4_PLANS,id))return null;
+ const plan=activePlan??SHIP_ACT4_PLANS[id];
  const root=new T.Group();root.name='act4-function-architecture';root.userData.lightFixtures=[];
  const material=(name:string,color:number,metalness:number)=>{const m=new T.MeshStandardMaterial({color,metalness,roughness:.86});m.name=name;m.userData.actorMaterial=true;return m;};
  const own=palette??{shell:material('act4-shielded-housing',id==='overload-floor'?0x66594b:0x66736d,.25),recess:material('act4-service-recess',0x25332f,.12),edge:material('act4-service-edge',id==='swarm-junction'?0x78816a:0x8e9384,.35)};

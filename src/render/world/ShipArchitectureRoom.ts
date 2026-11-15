@@ -2,7 +2,7 @@ import * as T from 'three';
 import {buildL8ShipSeamGrowth} from './L8ShipSeamGrowth';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {RoomTemplate,Point} from '../../game/roguelike/types';
-import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
+import {SHIP_ARCHITECTURE_LAYOUTS,SHIP_ARCHITECTURE_PLANS} from '../../game/roguelike/shipArchitectureLayouts';
 import {environmentObstacle,shipEnvironment} from '../ShipEnvironments';
 import {armoryCarousel} from '../ArmoryCarousel';
 import {relayRacksRoom} from '../RelayRacksRoom';
@@ -67,7 +67,7 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
        box(x,.40,z,.045,.68,.045,dark);
        if(environment==='security')box(x,.83,z,.035,.12,.035,trim);
       }
-      box((a.x+b.x)/64,.91,(a.y+b.y)/64,length,.04,.04,trim,-Math.atan2(dz,dx));
+      box((a.x+b.x)/64,.89,(a.y+b.y)/64,length,.04,.04,trim,-Math.atan2(dz,dx));
     }
   }
   const fixture=(x:number,z:number,angle:number,width:number,depth:number,color:number,gain=1,y=1.30)=>{
@@ -88,7 +88,8 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
    fixture(640/32,964/32,Math.PI,.55,8,0x9cc8c6,1);fixture(640/32,304/32,Math.PI,.4,6,0xc1e6dc,.48);
   }
   if(id==='swarm-junction'){
-   for(const [i,p]of [[280,180],[920,180],[280,860],[920,860]].entries())fixture(p[0]/32,p[1]/32,i<2?0:Math.PI,.30,i<2?6:4.5,0xa5c8bc,[.85,.14,.26,.38][i],.84);
+   const plan=SHIP_ARCHITECTURE_PLANS['swarm-junction']!;
+   for(const [i,f]of plan.breachFeatures.entries())fixture(f.at.x/32,f.at.y/32,i<2?0:Math.PI,.30,i<2?6:4.5,0xa5c8bc,[.85,.14,.26,.38][i],.84);
   }else if(id==='shielding-gate'){
    const north=t.obstacles[0],south=t.obstacles[2];
    fixture((north.x+north.width/2)/32,(north.y+north.height-2)/32,0,.35,7,0xbad7db,1,.84);
@@ -102,7 +103,7 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
   for(const [m,parts]of batches){const merged=mergeGeometries(parts,false)!;parts.forEach(p=>p.dispose());const mesh=new T.Mesh(merged,m);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);}
   for(const material of [deck,steel,cutaway,dark,trim,practical])if(!batches.has(material))material.dispose();
   const act3=act3ShipPresentation(id,t);if(act3){root.userData.lightFixtures.push(...act3.userData.lightFixtures??[]);delete act3.userData.lightFixtures;root.add(act3);}
-  const act4=act4Architecture(id,t);if(act4)root.add(act4);
+  const act4=act4Architecture(id,t,undefined,SHIP_ARCHITECTURE_PLANS[id as keyof typeof SHIP_ARCHITECTURE_PLANS]);if(act4)root.add(act4);
   if(id==='manual-control-chamber'){
    const northY=Math.min(...hull.map(p=>p.y)),north=hull.filter(p=>p.y===northY),left=Math.min(...north.map(p=>p.x)),right=Math.max(...north.map(p=>p.x));
    const shell=new T.Group();shell.name='manual-control-template-observation';shell.position.set(left/32,0,northY/32);manualControlArchitecture(shell,(right-left)/32);root.add(shell);
