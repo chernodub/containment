@@ -2,7 +2,7 @@
 
 Branch `t3/wave7-integration-acceptance`. Frozen application **`a112e70154be57c77430d0ad5c61bd9e87ef90e1`**, distribution `artifacts/nextgen/i11/frozen-dist/`; descriptor `artifacts/nextgen/i11/frozen-source.json`. Application code is frozen; later commits affect evidence tooling, tests and documentation only. Final delivery HEAD is recorded in the final handoff.
 
-**Final visual/campaign evidence is in progress.** Integration and behavioral gates are complete. Hardware acceptance is qualified:77/80 trials pass; the three Freight/Breacher High frame-tail misses remain explicit.
+**Converged delivery; qualified acceptance.** All captures, four campaigns, comparison pages and the twelve-image showcase are complete. Hardware acceptance is 77/80 trials. Blender-dependent asset gates, the three Freight/Breacher High tail misses and remaining art/framing/review coverage gaps are explicit below. The lead requested convergence after the current review batches; no further tuning, capture rounds or passed-gate reruns followed that instruction.
 
 ## What shipped
 
@@ -33,13 +33,15 @@ The second review found one genuine cold native Queen-pool shader and missing pe
 
 ## Presentation assertions
 
+A later strict file-only review check found floating-point column duplication in the inherited contact-sheet scaler when copying already reduced tiles at 1:1. Native PNGs and standalone exact480 reductions were correct. I11 gallery, lighting, organic and storyboard sheets now copy those pixels directly at integer offsets. Nonuniform full-cell comparisons pass; corrected final sheets are reopened and separately witnessed. Earlier preflight contact pages remain historical visual observations, with their small blit defect explicit; they are not promoted to exact-pixel witnesses.
+
 I11 rewrites/removes **no** presentation assertion. It adds capture configuration ordering/native-tier contracts, acid-family sharing/exact-once ownership, live-pool priority expiry/nonmutation and pure real-storyboard selection coverage. Stream-specific presentation replacements remain documented in [V7](V7-REPORT.md#presentation-pins-rewritten), [K7](K7-REPORT.md#verification-and-presentation-pin-replacements) and [E7](plans/E7-assertions.md). Gameplay, determinism, persistence, accessibility, native input, resizing/recovery and authored-room assertions remain intact.
 
 ## Frozen gates
 
-`npm ci`:84 packages installed, lockfile unchanged. The exact two-worker final JavaScript suite passes345 files /3,849 tests, with two pre-existing skips. Native model preview2/2; first three Python artifact stages pass. Full `npm run verify` then stops at unchanged monitor subprocess `FileNotFoundError: 'blender'`. Blender was not installed, per engineering. Service-finish independently retains the same missing-Blender error. An ignored worktree-local Python/Pillow13 environment runs the unaffected materials2/2, material-budget4/4 and bundle-runtime6/6 checks successfully; no asset/test was altered to bypass prerequisites.
+`npm ci`:84 packages installed, lockfile unchanged. The final host-permitted two-worker JavaScript suite passes **346 files /3,852 tests**, with two pre-existing skips (3,854 total). Native model preview2/2; first three Python artifact stages pass. Full `npm run verify` then stops at unchanged monitor subprocess `FileNotFoundError: 'blender'`. Blender was not installed, per engineering. Service-finish independently retains the same missing-Blender error. An ignored worktree-local Python/Pillow13 environment runs the unaffected materials2/2, material-budget4/4 and bundle-runtime6/6 checks successfully; no asset/test was altered to bypass prerequisites.
 
-Room evidence28/28 plus33 ragdoll checks, TypeScript/Vite build, desktop smoke, all20 authored rooms and native three-room bot smoke pass. Smoke has zero errors/defects and validates a real twelve-frame entry→clear selection. The required build reproduces all27 frozen JS/CSS asset hashes exactly. Complete logs and host-load receipts: `artifacts/nextgen/i10/logs/i11-*`; chain `artifacts/nextgen/i11/gate-chain.json`.
+Room evidence28/28 plus33 ragdoll checks, TypeScript/Vite build, desktop smoke, all20 authored rooms and native three-room bot smoke pass. Smoke has zero errors/defects and validates a real twelve-frame entry→clear selection. The required build reproduces all27 frozen JS/CSS asset hashes exactly. The later delivery verification includes the evidence-tool tests: 255.73s, load22.56→24.78, same missing-Blender stop. Its first sandboxed attempt failed Chromium/localhost permissions (18 suites), then the host-permitted rerun passed all JavaScript tests; both logs remain. Complete logs and host-load receipts: `artifacts/nextgen/i10/logs/i11-*`; chain `artifacts/nextgen/i11/gate-chain.json`.
 
 | Frozen command | Result | Wall seconds | Host load1m start → end |
 |---|---|---:|---:|
@@ -91,8 +93,58 @@ The pre-freeze two-case risk probe passes requested conditions but overlaps file
 
 ## Native campaigns and final evidence
 
-Pending. The Queen (`reactor-vault`) is **legacy saves only**. New runs use the twenty-room story ending in the Overload Floor holdout; the showcase excludes the Queen.
+All four single native seed1729 campaigns reached their natural terminal state, with **zero errors and zero soft-lock defects**. Cryo cleared twenty rooms; three rigs died naturally. There are no favorable reruns, assisted damage scaling, rendering skips, balance changes or legacy-room substitutions. Statistics below are fixed-step CPU submission evidence, excluded from hardware acceptance. Native cast events match authoritative Overdrive counters.
 
-## Honest vision gaps
+| Rig | Outcome | Clears / entered | Deaths | Overdrives | Cast intervals min / median / max s | Sampled loading holds / max ms | Room CPU p95 min / median / max ms | Runtime wall s | Host load1m start → end |
+|---|---|---|---:|---:|---|---|---|---:|---|
+|Breacher|Dead|15 / 16|1|11|33.6 / 55.8 / 87.9|15 / 711.7|4.2 / 7.1 / 9.8|616.5|11.4 → 19.9|
+|Cryo|Complete|20 / 20|0|14|28.1 / 50.8 / 78.1|19 / 660.7|5.0 / 8.0 / 12.8|751.2|17.7 → 22.3|
+|Pyro|Dead|16 / 17|1|11|30.5 / 46.1 / 58.8|16 / 640.4|5.9 / 8.4 / 18.8|568.5|18.5 → 48.7|
+|Arc|Dead|17 / 18|1|13|33.5 / 39.3 / 76.6|18 / 675.4|6.8 / 9.0 / 23.2|703.6|47.2 → 60.5|
 
-Preliminary combined review still finds economical procedural anatomy, tiny Crawler/Stalker detail at480, restrained Meltdown, sheet-like Whiteout, repeated infestation folds and machinery support rectangles. Saved Annulus/Cargo poses retain distant contact crops and a substantial low foundation: the tested35% raised-decoration bound is not universal whole-landmark share or full-fight visibility. R9's title-anatomy criticism is not changed by these three source branches. Final quantitative/galleries/campaign qualifications will be added after their actual runs.
+[Campaign summary](../../artifacts/nextgen/i11/campaign-summary.md), JSON, source reports, native inputs and traces retain every result. There are **71 organic mid-fight frames** (16 / 20 / 17 / 18): each rig has at least six across early and late rooms. All marine bounds/HUD overlaps, hero scale and AABB/hull receipts pass: hero100–124.9px at1080, maximum AABB outside17.2%. Four real first-room storyboards contain twelve distinct increasing entry→clear frames each; no fixture replay substitutes for a bot fight.
+
+Aggregate campaign acceptance remains **false**. Fourteen organic selected-contact bound failures remain, and actual peripheral crops/remote-only fights were seen. A safe marine does not prove complete enemy-body fit or world-occlusion safety. Fifty zero-total renderer histories remain incomplete; the29 completed preparation receipts are371.5 /840.3 /1537.3ms min /median /max, none over3s. Sampled UI holds do not replace those histories. The isolated five-repeat room benchmark above supplies the complete preparation cohort, not these incomplete campaign observations.
+
+All71 organic native originals,48 selected storyboard originals and their exact480 cells have actual-open/hash witnesses in `artifacts/nextgen/i11/campaign-review-coverage.json`. The four storyboard sheets and sixteen organic/storyboard480 pages were opened;46,267,200 cell channel comparisons pass. Details: [campaign review](plans/I11-campaign-review.md). Final galleries, comparison and showcase are complete. Visual review stopped at the lead’s convergence instruction; the archived witness bridge lists each reviewed and unreviewed frame rather than claiming exhaustive review.
+
+The Queen (`reactor-vault`) is **legacy saves only**. New runs use the twenty-room story ending in the Overload Floor holdout; all Queen/legacy boss fixture cards are labeled and the showcase excludes them.
+
+## Final galleries and Part B acceptance
+
+Capture labels: `i11-1080-batch-00..27`, selected `i11-720` / `i11-720-lawful` / `i11-720-compact` batches, plus `i11-duration-1080` and `i11-duration-720`. Both final galleries contain **1,042 guarded native images**, including all 739 final4 frames and wave7 additions. Each has 174 exact480 review pages, native metadata and source receipts. All accepted captures have zero runtime errors and retain native action, phase, family, priority, marine/HUD/AABB and shader-compile guards. Two compact family fixture attempts failed before producing accepted PNGs; stricter full-body headroom and a larger lawful-origin search fixed the fixture without changing application code or reducing the twelve-body/five-family requirement. Failed manifests/errors are preserved separately.
+
+| Standing check | Result and evidence |
+|---|---|
+| Family and rank identity | Improved brown segmented Brutes, olive Spitters, purple Carriers and small hooked families hold across ten lighting fixtures and status overlays. No white-pennant shell observed in reviewed live/frozen/elite/corpse images. Brute-heavy stress fixtures remain repetitive; tiny Crawler/Stalker detail is not equally recognizable in every480 view. `final5/review/k7-silhouettes-native.png`, `k7-silhouettes480.png`. |
+| Rooms and lighting | Equipment-linked routes, grounded props and raised infestation establish places; nested court linework was replaced. Color sheet separates warm cargo/reactor, green maintenance and cold cryo/comms. Grayscale still groups several rooms around a common floor value. `final5/lighting-ten-color.png`, `lighting-ten-grayscale.png`. I10 hard luminance audit passes, but E7 target-band exceptions remain: canonical40 samples1080 median2/shadow20 misses;720 median4/shadow19. Full100 retained calm/combat phases1080 median7/shadow29,720 median15/shadow25. `i11/e7-value-band-exceptions.json` retains every value. |
+| Four ultimate announcements | Eight native timeline scenarios per size add80 frames from activation through expiration in bright Annulus and dark Infested. Whiteout/Meltdown last8s; Overclock6s; all retain authoritative state assertions. Whiteout storm, orange Meltdown pack/jets and double Overclock echoes persist; Meltdown is less conspicuous in a melee. Railbreaker is an instantaneous native attack plus fading beam/debris, not a timed buff. Root opened all80 native1080 frames and14exact480 pages; gallery reviewer did the720 counterpart. |
+| Friendly / hostile grammar | Valid friendly thin dashed blue outlines and invalid thin orange outlines remain geometrically distinct from hostile thick orange hatching/acid teeth. Preview is faint on bright floors at480. Native legacy pool preparation and persistent pool mask fix preserve hostile priority; no visual determines a hit. |
+| Marine, rig modules and camera | All1,019 playing captures per size pass marine/HUD hard framing. Separate conservative selected-body flags remain118 at1080 /209 at720; Queen bounds77 each (legacy), exact concave hull exceptions1/4 are distinct from the18% AABB rule. Organic hero100–124.9px and max AABB17.2%; fourteen selected-contact failures remain. The35% raised-decoration share bound does not bound the entire low Annulus foundation. |
+| Ordinary fights |71 organic mid-fight images across early/late rooms and four12-frame real bot storyboards retained. Critical HUD numerals remain readable with local backing; remote/peripheral contacts and actor overlap remain. See campaign table above. |
+| Queen | All boss cards labeled **legacy saves only**; no Queen or stacked25-enemy stress fixture enters the showcase. New story ends in Overload Floor. |
+
+Artifacts relative to this worktree:
+
+- `artifacts/nextgen/final5/index.html` —1920×1080 gallery.
+- `artifacts/nextgen/final5-720/index.html` —1280×720 desktop gallery.
+- `artifacts/nextgen/final5/compare.html` and `before-after.png` —22 requested three-way rows. ORIGINAL lacks four requested slots (Breacher rig select, ending, Residential calm/combat); these are explicitly marked missing. FINAL4 and FINAL5 are present in every row.
+- `artifacts/nextgen/final5/showcase.html`, `showcase.png`, `showcase.json` —twelve explicitly selected originals: four UI, two calm rooms and six ordinary campaign fights across all four rigs. Frozen hashes/organic receipts validated; no legacy boss/stress fixture.
+- `artifacts/nextgen/final5/organic/index.html` —71 ordinary fights.
+- `artifacts/nextgen/final5/play/index.html` and `{breacher,cryo,pyro,arc}-storyboard.png` —entry→clear storyboards.
+- `final5*/review-witnesses/witness-bridge.json` —actual-open hashes and exact page-cell comparisons, with uncovered frames explicit. At lead convergence1080 both native+480 coverage965/1042;720 expected781/1042 after final ledger refresh. The bridge receipt is authoritative. All119 organic/storyboard originals and their480 cells were reviewed separately. No unreviewed frame is represented as visually accepted.
+
+First look (absolute paths):
+
+1. `/Users/chernodub/.t3/worktrees/containment-game/t3-26ffbbf6/artifacts/nextgen/final5/showcase.png`
+2. `/Users/chernodub/.t3/worktrees/containment-game/t3-26ffbbf6/artifacts/nextgen/final5/lighting-ten-grayscale.png`
+3. `/Users/chernodub/.t3/worktrees/containment-game/t3-26ffbbf6/artifacts/nextgen/final5/review/k7-silhouettes480.png`
+4. `/Users/chernodub/.t3/worktrees/containment-game/t3-26ffbbf6/artifacts/nextgen/final5/organic/arc-r8-breached-loading-bay-mid.png`
+5. `/Users/chernodub/.t3/worktrees/containment-game/t3-26ffbbf6/artifacts/nextgen/final5/play/cryo-storyboard.png`
+6. `/Users/chernodub/.t3/worktrees/containment-game/t3-26ffbbf6/artifacts/nextgen/final5/before-after.png`
+
+## Integration requests and honest remaining gaps
+
+No blocking integration hook is requested from another owner. No gameplay/balance, persistence or accessibility assertion was weakened. The compact-only family fixture search became stricter; native1080 behavior and all guard minima remain unchanged. README/AGENTS and stream credits are factual, with existing third-party notices intact.
+
+This is an integrated improvement, not an unqualified vision/AAA pass. The Freight/Breacher High tail misses, absent Blender verification, incomplete campaign preparation histories, remote/cropped contacts, broad Annulus foundation, tiny small-family detail, repetitive stress crowds/infestation, faint preview, common grayscale floor values, restrained Meltdown and sheet-like Whiteout remain. Title rifle grip/elbow/stance anatomy remains unchanged. Recommended next work is a separately scoped physics/impact-raycast profile optimization, encounter/body framing and landmark composition pass, and art-directed silhouette/value/preview refinement. Complete the missing Blender asset gates on a provisioned host. Do not infer hardware FPS from fixed-step campaign timing or screenshot capture speed.
