@@ -1,8 +1,9 @@
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {DispatchObservation,readDispatchSample} from '../scripts/nextgen/l8-dispatch-observation.mjs';
 import {instrumentDispatchCore} from '../scripts/nextgen/l8-dispatch-observer.mjs';
+import {assertObservationParity} from '../scripts/nextgen/l8-dispatch-audit.mjs';
 const makeGame=()=>({node:{id:'test'},elapsed:0,director:{plan:{schedule:[{spawnId:'a',atMs:650,enemyId:'carrier'},{spawnId:'b',atMs:740,enemyId:'spitter'}]},snapshot:{elapsedMs:0,dispatched:0,phase:'combat',concurrentCap:15}},enemies:{activeCount:0,reservedCount:0,snapshot:{enemies:[]}},pending:[],stats:{overdrivesUsed:0},abilities:{snapshot:{overdrive:{charge:.8,active:false,activeRemainingMs:0,ready:false}}}});
 test('observer copies the original plan and never mutates frozen native reads',()=>{
     const g=makeGame();g.pending.push({type:'carrier'},{type:'spitter'});
@@ -33,4 +34,9 @@ test('source instrumentation is deterministic and leaves each native action exac
     const core=await readFile('scripts/nextgen/playtest/sim-core.ts','utf8'),out=instrumentDispatchCore(core,'/observer.mjs');assert.equal(instrumentDispatchCore(core,'/observer.mjs'),out);
     for(const anchor of ['game.update(step, input);','applyNativeImmediateKey(game, key, readInput);','const actions = chooseActions(s);'])assert.equal(out.split(anchor).length,2,anchor);
     assert.equal(await readFile('scripts/nextgen/playtest/sim-core.ts','utf8'),core);assert.throws(()=>instrumentDispatchCore('unrecognized','/observer.mjs'),/source anchor/);
+});
+test('parity permits only observation and receipt fields, rejects gameplay changes',()=>{
+    const vanilla={rig:'cryo',seed:1729,wallSeconds:1,head:'original',rooms:[{boons:['cryo'],startHealth:100,seconds:30}],stats:{kills:20},final:{health:90},outcome:'complete'};
+    const observed=structuredClone(vanilla);observed.rooms[0].dispatchObservation={events:[]};observed.l8Diagnostic={diagnostic:true};observed.wallSeconds=2;observed.head='observed';assertObservationParity(vanilla,observed);
+    for(const mutate of [r=>r.rooms[0].startHealth--,r=>r.rooms[0].boons.push('unexpected'),r=>r.stats.kills++,r=>r.final.health--,r=>r.outcome='dead']){const changed=structuredClone(observed);mutate(changed);assert.throws(()=>assertObservationParity(vanilla,changed),/Original gameplay fields differ/);}
 });
