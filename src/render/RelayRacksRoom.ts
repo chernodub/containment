@@ -57,7 +57,11 @@ export function relayRacksRoom(includeShell=true):T.Group{
  }
  for(const [i,r]of RELAY_RACKS_FOOTPRINTS.entries()){
   const g=group(`relay-fixture-${i}`),x=r.x+r.width/2,z=r.y+r.height/2;
-  box(g,x,4,z,r.width,8,r.height,dark);
+  // Author one170-unit rack assembly, then fit its complete frame (not just
+  // a low collision base) along the wall-connected cooling bank.
+  const depthScale=i<4?r.height/170:1;
+  if(i<4){g.scale.z=depthScale;g.position.z=z/32*(1-depthScale);}
+  box(g,x,4,z,r.width,8,i<4?170:r.height,dark);
   add(shell,new T.PlaneGeometry(r.width/32,r.height/32).rotateX(-Math.PI/2).translate(x/32,.005,z/32),contact);
   if(i<4){
    const broken=i===1,height=broken?56:76;

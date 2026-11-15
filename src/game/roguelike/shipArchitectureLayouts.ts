@@ -1,3 +1,4 @@
+import {RELAY_RACKS_FOOTPRINTS} from './relayRacksLayout';
 import type {Point, Rect, RoomTemplate} from './types';
 import type {StoryTemplateId} from './storyRooms';
 
@@ -38,11 +39,11 @@ export const SHIP_ARCHITECTURE_LAYOUTS: Readonly<Partial<Record<StoryTemplateId,
     breaches: points([[100,180],[1100,160],[100,700],[1100,720]]),
   }),
   'relay-racks': Object.freeze({
-    boundary: points([[0,160],[200,160],[200,0],[1000,0],[1000,160],[1200,160],[1200,720],[1000,720],[1000,880],[200,880],[200,720],[0,720]]),
+    boundary: points([[0,160],[120,160],[120,0],[1080,0],[1080,160],[1200,160],[1200,720],[1080,720],[1080,880],[120,880],[120,720],[0,720]]),
     // Two cooling aisles, a cross-aisle and open-ended distribution bay.
-    obstacles: rectangles([[300,160,100,170],[300,550,100,170],[800,160,100,170],[800,550,100,170],[550,360,100,150]]),
+    obstacles: RELAY_RACKS_FOOTPRINTS,
     voids: Object.freeze([wall(300,0,100,60),wall(800,0,100,60),wall(300,820,100,60),wall(800,820,100,60)]),
     spawn: Object.freeze({x:220,y:440}), exit: Object.freeze({x:1100,y:440}),
-    breaches: points([[240,100],[960,100],[240,780],[960,780]]),
+    breaches: points([[160,100],[1040,100],[160,780],[1040,780]]),
   }),
 });
