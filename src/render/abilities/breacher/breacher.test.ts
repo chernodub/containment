@@ -189,7 +189,7 @@ describe('Breacher presentation', () => {
       expect(chip[4]).toBeGreaterThanOrEqual(.32); expect(chip[4]).toBeLessThan(.81);
       expect(chip[5]).toBeLessThanOrEqual(.06); expect(chip[6]).toBeLessThanOrEqual(.38);
       expect(chip[5]).toBeLessThan(chip[4] * .2); // Thin manufactured deck sheet, no stone mass.
-      expect([0x34424a, 0x91a5ad, 0xffb454]).toContain(chip[7]);
+      expect([0x34424a, 0x91a5ad]).toContain(chip[7]);
       expect(Math.hypot(chip[1] - 2, chip[3] - 3)).toBeLessThan(310 / 32 * .5);
     }
     const buckles = kit.draw.mock.calls.filter(c => c[0] === 'shard' && c[11] === 31);

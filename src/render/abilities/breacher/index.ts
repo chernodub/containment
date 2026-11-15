@@ -312,7 +312,7 @@ export class BreacherPresentation implements AbilityPresentation {
       // Unequal clipped steel shards eject along the same radial fissures.
       k.draw('shard', p.x + c * r, .065 + hop * (.18 + f * .38), p.z + s * r,
         .32 + f * .48, .035 + f * .025, .16 + (1 - f) * .22,
-        i % 5 === 0 && p.age < .09 ? AMBER : i % 3 ? STEEL : 0x91a5ad, (1 - t) * .85,
+        i % 3 ? STEEL : 0x91a5ad, (1 - t) * .85,
         Math.PI / 2 - a + p.age * (f - .5), hop * (f - .4), 30);
       if (p.age < .24 && i % 3 === 0) {
         const px = p.x + c * r, pz = p.z + s * r;

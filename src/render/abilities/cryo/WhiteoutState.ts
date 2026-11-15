@@ -47,11 +47,15 @@ void main(){
  float reach=r+sin(angle*7.+sin(angle*3.)*1.8)*.055+sin(angle*13.)*.026;
  float spread=smoothstep(reach-.05,reach+.025,creep);
  float edge=1.-smoothstep(.92,1.,r);
- vec2 q=p*7.;q+=vec2(sin(q.y*1.4),sin(q.x*1.1))*.32;
- float vein=1.-smoothstep(.025,.075,abs(sin(q.x+q.y*.53)*sin(q.y-q.x*.31)));
- float twig=0.;if(detail>.5)twig=(1.-smoothstep(.015,.045,abs(sin(q.x*2.7-q.y*1.3))))*vein;
- float deposit=smoothstep(.56,.74,.5+.25*sin(q.x)+.25*sin(q.y*1.2));
- float frost=deposit*.10+vein*.18+twig*.11;
+ // Constant-width veins prevent broad four-point junctions in the frost.
+ vec2 q=p*24.;q+=vec2(sin(q.y*.72),sin(q.x*.63))*.55;
+ float mainVein=abs(sin(q.x+q.y*.53));
+ float branchVein=abs(sin(q.y-q.x*.31));
+ float vein=1.-smoothstep(.025,.10,min(mainVein,branchVein));
+ vein*=smoothstep(-.4,.2,sin(q.x*.42-q.y*.37));
+ float twig=0.;if(detail>.5)twig=(1.-smoothstep(.025,.095,abs(sin(q.x*2.7-q.y*1.3))))*smoothstep(.4,.85,sin(q.x*.6+q.y));
+ float deposit=smoothstep(.69,.88,.5+.25*sin(q.x*.37)+.25*sin(q.y*.43));
+ float frost=deposit*.055+vein*.16+twig*.08;
  float leading=1.-smoothstep(.012,.04,abs(reach-creep));
  float pulseAge=mod(stormAge,2.);float front=.245+.75*min(1.,pulseAge/.38);
  // Unequal crystalline teeth replace the luminous circular pulse.
