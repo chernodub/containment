@@ -24,7 +24,7 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  const support=ray.intersectObject(world,true).find(hit=>hit.point.y>.2);if(!support)throw Error('Warning gantry support has no physical cabinet roof');
  source.y=support.point.y;
  const height=BOARD_HEIGHT,panelHeight=BOARD_DEPTH,width=3.6,ceiling=6.8,forward=height*19/26*32;
- const centers=[{x:t.spawn.x+220,z:t.spawn.y+forward},{x:plan.arena.x+108,z:plan.arena.y+forward}];
+ const centers=[{x:t.spawn.x+220,z:t.spawn.y+forward},{x:plan.arena.x+(id==='safety-interlock-station'?108:96),z:plan.arena.y+forward}];
  if(Math.hypot(centers[0].x-centers[1].x,centers[0].z-centers[1].z)<170)centers.splice(0,1);
  const headerZ=Math.min(...centers.map(p=>p.z))/32-.70,routeX=source.x;
  const structural=m.structure;structural.color.setHex(id==='manual-control-chamber'?0x71675a:0x64747a);structural.metalness=.65;structural.roughness=.62;structural.transparent=true;structural.opacity=1;structural.vertexColors=true;structural.depthWrite=false;structural.userData.warningCutaway=true;

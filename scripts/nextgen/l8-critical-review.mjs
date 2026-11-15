@@ -1,3 +1,4 @@
+import {assertNativeWarning} from './capture-warning-contract.mjs';
 /** File-only warning/growth review. Keeps native parents untouched. */
 import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
@@ -19,7 +20,7 @@ for(const [i,id]of ids.entries()){
  for(const entry of entries)for(const shot of entry.shots){
   const raw=await readFile(resolve(directory,shot.file)),im=decode(raw),small=review480(im),gray=grayscale(small),proof=shot.evidence.warningProof;
   if(!shot.frame)assert.equal(shot.evidence.l8PointerProof.previewCount,0,'Native HUD hover must retire preview');
-  if(proof){const f=shot.evidence.g6FramingProof,v=f.viewport,n=f.insets,b={left:n.left/v.width*2-1,right:1-n.right/v.width*2,top:1-n.top/v.height*2,bottom:n.bottom/v.height*2-1};assert(proof.panels.some(p=>p.corners.every(c=>c[0]>=b.left&&c[0]<=b.right&&c[1]>=b.bottom&&c[1]<=b.top&&c[2]<1)),'Full native warning quad must be HUD safe');}
+  assertNativeWarning(shot.evidence,shot.file,{quiet:!shot.frame});
   await writeFile(resolve(out,'review480',shot.file),encode(small));await writeFile(resolve(out,'grayscale',shot.file),encode(grayscale(im)));await writeFile(resolve(out,'grayscale','480-'+shot.file),encode(gray));
   receipts.push({file:shot.file,native:resolve(directory,shot.file),nativeSHA256:hash(raw),warning:proof});
   if(!shot.frame||shot.frame===2){const x=shot.frame?(hasArena?1920:960):entry.scenario==='l8-arena-calm'?960:0,y=i*294;for(const [offset,image]of [[0,small],[480,gray]]){drawText(overview,id+(shot.frame?' / G6-02':entry.scenario==='l8-arena-calm'?' / arena calm':' / entry calm'),x+offset+4,y+5,undefined,1);drawImage(overview,image,x+offset,y+24,480,270);}}
