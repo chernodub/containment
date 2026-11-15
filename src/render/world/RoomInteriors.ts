@@ -56,6 +56,15 @@ export function interiorFloorServices(id: string, t: RoomTemplate): readonly Int
             for (const dx of [-96, 0, 96])
                 add(south.anchor.x + dx, south.anchor.y, true);
     }
+    if (!['diagnostic-gallery','crew-checkpoint','swarm-junction'].includes(id)) {
+        const industrial = ['freight-hold','breached-loading-bay','coolant-plant','service-shaft-landing','infested-workshop'].includes(id);
+        for (const space of plan.spaces)
+            add(space.anchor.x + 96, space.anchor.y, industrial);
+        if (['relay-racks','transmission-chamber','shielding-gate'].includes(id))
+            for (const dz of [-106,106])
+                for (const dx of [-144,-48,48,144])
+                    add(a.x + dx, a.y + dz, false);
+    }
     for (const [i, space] of plan.spaces.entries()) {
         const industrial = id === 'swarm-junction' || id === 'coolant-plant' || id === 'infested-workshop' || id === 'service-shaft-landing';
         const width = 96, depth = industrial ? 24 : 16;

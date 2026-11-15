@@ -34,6 +34,7 @@ type Asset = Readonly<{
     depth: number;
     centerX: number;
     centerZ: number;
+    scale?: readonly [number, number, number];
 }>;
 type Face = Readonly<{
     a: Point;
@@ -58,7 +59,7 @@ const ANALYSER = clinical('clinical-analyser', 4.2, 1.193, -.0035);
 const TESTBENCH = clinical('clinical-testbench', 2.8, 1.2);
 const CRYO = clinical('cryo-service-console', 2.5, 1.104, .002);
 const HABITATION = clinical('habitation-console-locker', 2.4, .8);
-const BERTH = clinical('habitation-berth', 2.4085, 1.1735, .01175, -.00425);
+const BERTH: Asset = Object.freeze({ ...clinical('habitation-berth', 2.4085, 1.1735 * 1.7, .01175 * 1.7, -.00425), scale: Object.freeze([1, 1, 1.7] as const) });
 const DESK = clinical('habitation-desk', 1.65, 1.058, .119);
 const COMMS = clinical('comms-rack-low', 1.8, .8795, .00975);
 const CONSOLE = security('security-console', 2.8, 1.2);
@@ -153,15 +154,20 @@ function clearFloor(t: RoomTemplate, rect: Rect, occupied: readonly Rect[] = [])
         return false;
     return true;
 }
-function reserved(t: RoomTemplate, plan: ShipPlan, rect: Rect, openingMargin = 70): boolean {
+function reserved(t: RoomTemplate, plan: ShipPlan, rect: Rect, openingMargin = 70, solid = false): boolean {
     if (distanceSquared(rect, plan.arena) < FIGHT_RADIUS ** 2 || distanceSquared(rect, t.spawn) < 34 ** 2 ||
         distanceSquared(rect, t.exit) < 34 ** 2)
         return true;
     if (plan.openings.some(o => segmentOverlaps(rect, o.from, o.to, openingMargin)))
         return true;
     for (const [i, breach] of t.breaches.entries()) {
-        if (distanceSquared(rect, breach) < 70 ** 2)
+        if (distanceSquared(rect, breach) < (solid ? 24 : 70) ** 2)
             return true;
+        // A replacement casing inside an existing solid cannot narrow the
+        // native breach approach. Keep its source visible, without reserving
+        // an extra70u of already non-walkable cabinet roof.
+        if (solid)
+            continue;
         const backing = plan.breachFeatures[i]?.at;
         if (!backing)
             continue;
@@ -213,7 +219,7 @@ function footprint(x: number, z: number, ux: number, uz: number, width: number, 
 }
 function wallCandidate(t: RoomTemplate, plan: ShipPlan, space: ShipSpace, asset: Asset, faces: readonly Face[], occupied: readonly Rect[], fronts: readonly Rect[], solid: boolean): Candidate | undefined {
     const width = asset.width * UNIT, depth = asset.depth * UNIT;
-    if (depth > MAX_PROTRUSION)
+    if (!solid && depth > MAX_PROTRUSION)
         return;
     let best: Candidate | undefined;
     for (const face of faces) {
@@ -238,9 +244,14 @@ function wallCandidate(t: RoomTemplate, plan: ShipPlan, space: ShipSpace, asset:
                 const nx = -uz * side, nz = ux * side, sign = solid ? -1 : 1;
                 const x = px + nx * (depth / 2 + .35) * sign, z = pz + nz * (depth / 2 + .35) * sign;
                 const rect = footprint(x, z, ux, uz, width, depth);
+                // A gallery must not claim a neighbouring cabin's bed bank.
+                // The three authored standards intentionally use adjacent
+                // machinery banks; propagated stations own their named space.
+                if (solid && !['diagnostic-gallery','crew-checkpoint','swarm-junction'].includes(t.id) && !inside({x,y:z},space.outline))
+                    continue;
                 if (!solid && (!inside({ x, y: z }, space.outline) || fronts.some(r => overlaps(rect, r, 2))))
                     continue;
-                if (reserved(t, plan, rect, solid ? 5 : 70) || occupied.some(r => overlaps(rect, r, 4)))
+                if (reserved(t, plan, rect, solid ? 5 : 70, solid) || occupied.some(r => overlaps(rect, r, 4)))
                     continue;
                 let frontRect: Rect | undefined;
                 if (solid) {
@@ -281,7 +292,7 @@ function wallCandidate(t: RoomTemplate, plan: ShipPlan, space: ShipSpace, asset:
 }
 function furnishing(id: string, space: string, candidate: Candidate, source: 'wall' | 'solid'): ShipInteriorFurnishing {
     return Object.freeze({ id, space, pack: candidate.asset.pack, asset: candidate.asset.name,
-        x: candidate.x, z: candidate.z, angle: candidate.angle, scale: SCALE, source,
+        x: candidate.x, z: candidate.z, angle: candidate.angle, scale: candidate.asset.scale ?? SCALE, source,
         colliders: source === 'solid' ? Object.freeze([]) : Object.freeze([Object.freeze(candidate.rect)]),
     });
 }
@@ -396,33 +407,38 @@ export function shipInteriorFurnishings(t: RoomTemplate): readonly ShipInteriorF
     for (const [index, space] of plan.spaces.entries()) {
         if (result.some(f => f.space === space.name))
             continue;
-        const assets = spaceAssets(t.id, space, index);
-        let candidate: Candidate | undefined, source: 'wall' | 'solid' = 'wall';
-        for (const asset of assets) {
-            candidate = wallCandidate(t, plan, space, asset, faces, occupied, fronts, false);
-            if (candidate)
-                break;
-        }
-        if (!candidate) {
-            source = 'solid';
-            for (const [preference, asset] of assets.entries()) {
-                const mount = wallCandidate(t, plan, space, asset, faces, occupied, fronts, true);
-                if (!mount)
-                    continue;
-                // Keep the analyser as the room's hero; compact fallback groups should
-                // otherwise use the closest native bank rather than a distant cabinet.
-                mount.score += preference * (t.id === 'diagnostic-gallery' && space.name === 'Diagnostic nave' ? 10000 : 24);
-                if (!candidate || mount.score < candidate.score)
-                    candidate = mount;
+        const recipe = spaceAssets(t.id, space, index);
+        const slots = ['diagnostic-gallery', 'crew-checkpoint', 'swarm-junction'].includes(t.id) ? 1 : 3;
+        for (let slot = 0; slot < slots; slot++) {
+            const assets = [...recipe.slice(slot % recipe.length), ...recipe.slice(0, slot % recipe.length)]
+                .filter(asset => !result.some(f => f.space === space.name && f.asset === asset.name));
+            let candidate: Candidate | undefined, source: 'wall' | 'solid' = 'wall';
+            for (const asset of assets) {
+                candidate = wallCandidate(t, plan, space, asset, faces, occupied, fronts, false);
+                if (candidate)
+                    break;
             }
+            if (!candidate) {
+                source = 'solid';
+                for (const [preference, asset] of assets.entries()) {
+                    const mount = wallCandidate(t, plan, space, asset, faces, occupied, fronts, true);
+                    if (!mount)
+                        continue;
+                    // Keep the analyser as the room's hero; compact fallback groups should
+                    // otherwise use the closest native bank rather than a distant cabinet.
+                    mount.score += preference * (t.id === 'diagnostic-gallery' && space.name === 'Diagnostic nave' ? 10000 : 24);
+                    if (!candidate || mount.score < candidate.score)
+                        candidate = mount;
+                }
+            }
+            if (!candidate)
+                continue;
+            const slug = space.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            result.push(furnishing(`${t.id}-${slug}-${slot}`, space.name, candidate, source));
+            occupied.push(candidate.rect);
+            if (candidate.front)
+                fronts.push(candidate.front);
         }
-        if (!candidate)
-            continue;
-        const slug = space.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        result.push(furnishing(`${t.id}-${slug}`, space.name, candidate, source));
-        occupied.push(candidate.rect);
-        if (candidate.front)
-            fronts.push(candidate.front);
     }
     const frozen = Object.freeze(result);
     cached.set(t, frozen);
