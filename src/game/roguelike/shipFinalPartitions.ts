@@ -1,10 +1,10 @@
 import {SHIP_INGRESS_CANDIDATE_PLANS} from './shipIngressCandidates';
 import {SHIP_ACT3_CANDIDATE_V11} from './shipArchitectureAct3CandidateV11';
-import {defineShipRoom,point as p,partition as wall,spaceBox as space,opening as gate,type ShipPlan,type ShipOpening} from './shipArchitecturePlan';
+import {defineShipRoom,point as p,partition as wall,spaceBox as space,opening as gate,type ShipPlan,type ShipOpening,type ShipAperture} from './shipArchitecturePlan';
 import type {Point} from './types';
 /** Dormant structural revision. This module never registers or mutates a live
  * template. A broad workbay mouth has two lanes, not two claimed doors. */
-export type PartitionAperture=Readonly<{name:string;kind:'wide workbay mouth'|'door';from:Point;to:Point;lanes:readonly ShipOpening[]}>;
+export type PartitionAperture=ShipAperture;
 const aperture=(name:string,kind:PartitionAperture['kind'],from:Point,to:Point,lanes:readonly ShipOpening[]):PartitionAperture=>Object.freeze({name,kind,from,to,lanes:Object.freeze(lanes)});
 const diagnosticBase=SHIP_INGRESS_CANDIDATE_PLANS['diagnostic-gallery'];
 const workshopBase=SHIP_ACT3_CANDIDATE_V11['infested-workshop'];
@@ -31,7 +31,7 @@ const safetyDoors=Object.freeze([
 ]);
 export const SHIP_PARTITION_APERTURES:Readonly<Record<string,readonly PartitionAperture[]>>=Object.freeze({'diagnostic-gallery':diagnosticMouths,'infested-workshop':workshopMouths,'safety-interlock-station':safetyDoors});
 export const SHIP_FINAL_PARTITION_PLANS:Readonly<Record<string,ShipPlan>>=Object.freeze({
- 'diagnostic-gallery':Object.freeze({...diagnosticBase,
+ 'diagnostic-gallery':Object.freeze({...diagnosticBase,apertures:diagnosticMouths,
   topology:defineShipRoom({...diagnosticBase.topology,
    // Actual three-sided cutaway workbays. The right separator moves20units,
    // rather than24, retaining R38 clearance at native904/80 behind it.
@@ -42,7 +42,7 @@ export const SHIP_FINAL_PARTITION_PLANS:Readonly<Record<string,ShipPlan>>=Object
   openings:Object.freeze([...diagnosticMouths.flatMap(m=>m.lanes),gate('Port access landing','Diagnostic nave',200,320,200,460),gate('Port access landing','Diagnostic nave',200,500,200,640),gate('Diagnostic nave','Starboard access landing',1080,320,1080,460),gate('Diagnostic nave','Starboard access landing',1080,500,1080,640)]),
   bays:Object.freeze([{space:'Port access landing',from:p(0,320),to:p(0,640)},{space:'Starboard access landing',from:p(1280,320),to:p(1280,640)}]),
  }),
- 'infested-workshop':Object.freeze({...workshopBase,
+ 'infested-workshop':Object.freeze({...workshopBase,apertures:workshopMouths,
   topology:defineShipRoom({...workshopBase.topology,
    // Keep all four V11 source machinery reservations. Connected cheeks make
    // a real loading threshold; the gantry is an open-front service workbay.
@@ -53,7 +53,7 @@ export const SHIP_FINAL_PARTITION_PLANS:Readonly<Record<string,ShipPlan>>=Object
   openings:Object.freeze(workshopMouths.flatMap(m=>m.lanes)),
   bays:Object.freeze([{space:'Loading dock',from:p(0,240),to:p(0,760)},{space:'Gantry workbay',from:p(1280,200),to:p(1280,760)}]),
  }),
- 'safety-interlock-station':Object.freeze({...safetyBase,
+ 'safety-interlock-station':Object.freeze({...safetyBase,apertures:safetyDoors,
   // This is an open instrumentation gallery, not two enclosed booths. The
   // two-ended cage remains the actual enclosure; no unnecessary collider edit.
   spaces:Object.freeze(safetyBase.spaces.map(s=>s.name==='Recorder and AI booths'?Object.freeze({...s,name:'Open recorder and AI gallery'}):s)),

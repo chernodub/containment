@@ -3,18 +3,15 @@ import {SHIP_FINAL_PARTITION_PLANS as plans,SHIP_PARTITION_APERTURES as aperture
 import {ROOM_TEMPLATES} from '../src/game/roguelike/roomTemplates';
 import {SHIP_ARCHITECTURE_PLANS} from '../src/game/roguelike/shipArchitectureLayouts';
 import {createRoomTemplateGeometry,canOccupyExpedition,canTraverseExpedition} from '../src/game/world/expeditionGeometry';
-import {shipSolidStatistics,shipPlanOpeningErrors,shipBlockedOpeningErrors} from '../src/game/roguelike/shipPlanChecks';
+import {shipSolidStatistics,shipPlanOpeningErrors,shipBlockedOpeningErrors,shipPhysicalApertureErrors} from '../src/game/roguelike/shipPlanChecks';
 import baseline from './fixtures/l8-walkable-baseline.json';
 import previous from './fixtures/l8-pre-partition-geometry.json';
 import type {Point,RoomTemplate,TemplateId} from '../src/game/roguelike/types';
 const oldTemplate=(id:string):RoomTemplate=>previous.templates[id as keyof typeof previous.templates] as RoomTemplate;
 const template=(id:string):RoomTemplate=>({...ROOM_TEMPLATES[id as TemplateId],...plans[id].topology});
-/** A real aperture needs solid flanks, not just two endpoints on open floor. */
+/** Exercise the shared production audit with the exact prospective geometry. */
 function apertureErrors(t:RoomTemplate,a:Pick<PartitionAperture,'from'|'to'>){
- const g=createRoomTemplateGeometry(t,'jamb'),dx=a.to.x-a.from.x,dy=a.to.y-a.from.y,len=Math.hypot(dx,dy),ux=dx/len,uy=dy/len,nx=-uy,ny=ux,errors:string[]=[];
- for(const [end,sign]of [[a.from,-1],[a.to,1]] as const)for(const d of [0,4,8])for(const n of [-4,0,4]){const p={x:end.x+ux*d*sign+nx*n,y:end.y+uy*d*sign+ny*n};if(canOccupyExpedition(g,p,0))errors.push('unsupported jamb '+JSON.stringify(p));}
- const c={x:(a.from.x+a.to.x)/2,y:(a.from.y+a.to.y)/2};if(len<140||!canOccupyExpedition(g,c,70))errors.push('narrow aperture');
- if(!canTraverseExpedition(g,{x:c.x+nx*64,y:c.y+ny*64},{x:c.x-nx*64,y:c.y-ny*64},32))errors.push('blocked crossing');return errors;
+ return shipPhysicalApertureErrors(createRoomTemplateGeometry(t,'jamb'),a);
 }
 describe('dormant final workbay structure',()=>{
  it.each(Object.keys(plans))('%s retains source machinery, arena, route anchors and R38 rear ingress',id=>{

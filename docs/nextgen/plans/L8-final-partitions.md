@@ -60,9 +60,12 @@ from entry and arena in Diagnostic/Safety. No existing assertion was weakened.
 Evidence: `artifacts/nextgen/l8-final-partitions/strict-check.json`, `review.json`,
 `proof/`, and labeled `plans/{diagnostic-gallery,infested-workshop,safety-interlock-station}.png`;
 `plans/twenty-old-new.png` is the contact sheet. Candidate immutable geometry
-SHA256: `87d1220096e08431d832ede8d18d01f4ab1a86d5268c9ea0848c2d3c99f59eaa`.
+SHA256: `c559c831718d5bd16acfef0d8345fc50a7da411575362b6a6f9e28fc819beeed`.
 
-Parent owns promotion of the physical-aperture contract into shared checks,
-activation, new N160 cohorts, full integration gates, dressed captures and
-measured budgets. Until then this remains inactive. Existing frozen V11 tests
+The physical-aperture contract is now shared (`976d4ce`): all three candidates
+declare `ShipPlan.apertures`, and production checks validate actual jambs, the
+full R32 span, lane width/colinearity/nonoverlap/classification and graph presence.
+All88 focused tests and TypeScript pass again against that shared implementation.
+Parent owns activation, new N160 cohorts, full integration gates, dressed captures
+and measured budgets. Until then this remains inactive. Existing frozen V11 tests
 remain historical; the new candidate tests carry its actual escape contract.
