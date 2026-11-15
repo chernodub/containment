@@ -36,7 +36,9 @@
 #overlay .rig-shield-field {fill:color-mix(in srgb,var(--element) 8%,transparent);stroke:var(--element);stroke-width:2;}
 #overlay .rig-hose {fill:none;stroke:#040b12;stroke-width:10;}
 #overlay .rig-nozzle {fill:#101c26;stroke:#01070c;stroke-width:4;}
-#overlay .rig-coils {fill:none;stroke:var(--element);stroke-width:5;}
+#overlay .rig-coils {fill:none;stroke:var(--element);stroke-width:3;}
+#overlay .rig-coil-frames {fill:none;stroke:#597381;stroke-width:10;}
+#overlay .rig-antenna {fill:none;stroke:#819aa6;stroke-width:6;}
 #overlay .rig-arc {fill:none;stroke:var(--element);stroke-width:2;}
 #overlay .rig-coolant-vapor {fill:none;stroke:#bfefff;stroke-width:3;opacity:.35;animation:rig-vent 3.2s ease-in-out infinite;}
 #overlay .rig-idle-energy {animation:rig-idle 3.2s ease-in-out infinite;}
