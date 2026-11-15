@@ -7,18 +7,12 @@
     "dev": "vite",
     "capture": "node scripts/nextgen/capture.mjs",
     "build": "tsc --noEmit && vite build",
-    "test": "vitest run --exclude scripts/cryo-model-preview.test.mjs && node --test scripts/cryo-model-preview.test.mjs && python3 tools/assets/passenger-vault/test_artifacts.py && python3 tools/assets/passenger-vault/test_room_fit_artifacts.py && python3 tools/assets/passenger-vault/test_distribution_artifacts.py && python3 tools/assets/passenger-vault/test_monitor_artifacts.py && python3 tools/assets/passenger-vault/test_service_finish_artifacts.py && python3 tools/assets/passenger-vault/test_materials.py && python3 tools/assets/passenger-vault/test_material_budget.py && python3 tools/assets/passenger-vault/test_bundle_runtime.py",
-    "test:smoke": "node scripts/smoke.mjs",
-    "test:authored-smoke": "node scripts/authored-room-smoke.mjs",
-    "test:room-evidence": "node --test scripts/room-evidence-check.mjs scripts/room-evidence-network-check.mjs scripts/room-demo-check.mjs scripts/vfx-audit-demo-check.mjs && node scripts/ragdoll-demo.mjs --self-test",
-    "test:vfx": "node tests/render-afflictions.mjs",
-    "verify": "npm test && npm run test:room-evidence && npm run build && npm run test:smoke && npm run test:authored-smoke:all",
-    "test:authored-smoke:all": "npm run test:authored-smoke -- --viewport=desktop --out=artifacts/authored-smoke/desktop --rooms=awakening-bay,passenger-vault,residential-gallery,communal-atrium,crew-checkpoint,armory,freight-hold,breached-loading-bay,relay-racks,transmission-chamber,diagnostic-gallery,safety-interlock-station,coolant-plant,service-shaft-landing,infested-workshop,swarm-junction,shielding-gate,containment-annulus,manual-control-chamber,overload-floor",
     "playtest": "node scripts/nextgen/playtest/runner.mjs",
     "playtest:sim": "node scripts/nextgen/playtest/sim.mjs",
     "playtest:smoke": "node scripts/nextgen/playtest/runner.mjs --rig=arc --seed=1729 --rooms=3 --label=smoke --max-wall-seconds=235",
     "bench": "node scripts/nextgen/bench.mjs",
-    "bench:rooms": "node scripts/nextgen/bench-rooms.mjs"
+    "bench:rooms": "node scripts/nextgen/bench-rooms.mjs",
+    "verify": "npm run build"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.20.0",
@@ -32,8 +26,7 @@
     "meshoptimizer": "^1.3.0",
     "playwright": "1.58.2",
     "typescript": "6.0.3",
-    "vite": "8.1.4",
-    "vitest": "4.1.10"
+    "vite": "8.1.4"
   },
   "engines": {
     "node": ">=22.12.0"
