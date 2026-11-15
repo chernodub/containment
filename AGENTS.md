@@ -2,7 +2,7 @@
 
 Containment targets desktop browsers with keyboard and mouse. The user removed all phone compatibility and future mobile testing on 2026-10-31. Do not add or run phone/touch-only controls, compatibility branches, captures, CI gates or release requirements. Historical mobile evidence remains historical and is not a release blocker.
 
-Preserve desktop resizing, keyboard accessibility, native mouse and keyboard actions, graphics recovery, checkpoint persistence feedback and authored-room checks. Run `npm run verify` for changes; the required browser gates are desktop-only. Do not remove desktop assertions to resolve failures.
+Preserve desktop resizing, keyboard accessibility, native mouse and keyboard actions, graphics recovery and checkpoint persistence feedback as product behaviour. The automated test suites were removed by the owner on 2026-11-15 (see below); `npm run verify` is now the type-check and production build.
 
 ## Architecture and module map
 
@@ -19,26 +19,31 @@ Keep simulation deterministic and render-free: `src/DepthGame.ts` and gameplay s
 - `src/ui/`: DOM/CSS/SVG application, screens, settings, onboarding and HUD, including original illustrated title/ending art. Read snapshots through `src/ui/gameAdapter.ts`; dispatch gameplay through public game methods. Critical HUD numerals keep their opaque local backing when surrounding panels fade.
 - `src/game/audio/`: synthesis, cues, preferences, mix engine and audio lifecycle.
 - `scripts/nextgen/`: production captures, galleries, debug fixtures, audio audition and realtime benchmark; see its README.
-- `src/game/roguelike/checkpoints.ts`: versioned, validated checkpoints. New fields need backward-compatible defaults, round-trip coverage and corrupt-data rejection. Keep UI preferences separate from run saves.
+- `src/game/roguelike/checkpoints.ts`: versioned, validated checkpoints. New fields need backward-compatible defaults and corrupt-data rejection. Keep UI preferences separate from run saves.
 
-Preserve DOM test hooks (`#start`, `#continue`, `#settings`, `#quality`, `#pause`, `#resume`, `#menu`, `#master-volume`, `#sound`, `[data-mutation]`, `[data-route]`, `[data-purchase]`, `[data-weapon]`, `body[data-state]`) and `window.__containmentPerformance`. Update consuming scripts in the same change if a hook must change. Extend the opt-in `?debug=1` / `window.__containmentDebug` fixture API instead of adding globals.
+Preserve the DOM hooks the capture, bench and playtest tools drive (`#start`, `#continue`, `#settings`, `#quality`, `#pause`, `#resume`, `#menu`, `#master-volume`, `#sound`, `[data-mutation]`, `[data-route]`, `[data-purchase]`, `[data-weapon]`, `body[data-state]`) and `window.__containmentPerformance`. Update consuming scripts in the same change if a hook must change. Extend the opt-in `?debug=1` / `window.__containmentDebug` fixture API instead of adding globals.
 
-## Verification and test policy
+## Verification (no test suites)
 
-Run `npm ci`, then `npm run verify`. The full chain includes Python asset tests requiring Blender 4.0+ on `PATH` and Pillow in the selected Python environment; do not weaken them or alter assets to bypass missing prerequisites. JavaScript gates from `docs/nextgen/01-ENGINEERING.md`:
+The owner removed every automated test on 2026-11-15: unit/integration tests, Python asset tests, browser smoke and authored-room gates, and their CI steps. Do not add tests, test runners or assertion gates back, and do not spend time on proof infrastructure. The last commit that contains them is tagged `pre-test-removal`.
+
+Verify changes by running the game:
 
 ```sh
-VITEST_MAX_WORKERS=2 npx vitest run --exclude scripts/cryo-model-preview.test.mjs
-node --test scripts/cryo-model-preview.test.mjs
-npm run build
-npm run test:room-evidence
-npm run test:smoke
-npm run test:authored-smoke:all
+npm ci
+npm run build            # tsc --noEmit + vite build; must pass
+npm run capture -- --label=review --scenarios=<relevant>   # then open and look at the PNGs
+npm run playtest -- --rig=<id> --seed=1729                 # native desktop bot campaign; must finish without errors
+npm run bench                                              # measured scenario comparisons
 ```
 
-For visual changes run `npm run capture -- --label=review --scenarios=<relevant>` and inspect the resulting PNGs. Use `npm run bench` for measured scenario comparisons; do not claim hardware performance from staged screenshots. Playtest scripts now include native desktop bot campaigns (`npm run playtest -- --rig=<id> --seed=1729`) and a three-room `npm run playtest:smoke` gate. Retain the desktop smoke and all twenty authored-room gates; fixed-step bot timings are CPU submission evidence, not hardware FPS. See `scripts/nextgen/README.md` for fixture limitations. `scripts/nextgen/i10-capture.mjs` replays historical final3 coverage from a frozen build; `i10-gallery.mjs` assembles native evidence, exact 480×270 review images and original/final3/final4 comparisons. These reductions are desktop art review, not phone captures. `i10-license-audit.mjs` rehashes wave-6 outputs and provenance inventories without a browser. Playing captures enforce actual eight-corner marine bounds inside the measured HUD-safe viewport plus hero-scale and room-AABB rules; `player.visible` remains a point-composition diagnostic. Preserve all native actor/action/phase/priority assertions. Opt-in `capture --failure-evidence` saves same-task failure snapshots. Gallery subsets must retain failed-parent hashes and include only complete guarded scenarios; never erase a failed raw run.
+For visual changes inspect the resulting PNGs at native size and at 480×270. Use `npm run bench` for measured comparisons; do not claim hardware performance from staged screenshots, and fixed-step bot timings are CPU submission evidence, not hardware FPS. See `scripts/nextgen/README.md` for the capture, bench and playtest tools and their fixture limitations. Capture guards (marine bounds inside the HUD-safe viewport, hero scale, room-AABB rules) are tool diagnostics: fix the cause when one trips on new work, or retire a guard that an approved redesign supersedes.
 
-Preserve gameplay, determinism, persistence, navigation, keyboard accessibility and safety assertions. When an approved redesign supersedes a presentation-specific test, replace it with an equivalent behavioral guarantee and list the change; never just delete assertions. Cover new simulation with deterministic tests, UI with DOM/browser contracts, and rendering with lifecycle/tier tests. Retain native input, resizing, context recovery and authored-room checks.
+Keep the simulation deterministic, saves backward compatible, and keyboard navigation working — by design and by playing, not by test files.
+
+## Blender and remodelling
+
+Blender is installed (`blender` on `PATH`, or `/Applications/Blender.app/Contents/MacOS/Blender`). The owner authorised remodelling any asset from the ground up on 2026-11-15: characters, creatures, weapons, props, room kits, rigs and animation clips may be authored in Blender (scripted with `bpy`, run headless with `blender -b -P <script>`), baked and exported to GLB. Keep the generating scripts under `tools/assets/` so an asset can be rebuilt; original work is MIT like the rest of the overhaul. Existing third-party CC0 packs may be replaced by original models; keep credits accurate for whatever still ships.
 
 ## Checkout and licensing
 

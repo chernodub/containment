@@ -1011,3 +1011,41 @@ Prospective unregistered act plans use `node scripts/nextgen/l8-check-plan.mjs s
 `node scripts/nextgen/l8-retire-standard8.mjs` retires successful superseded round8 PNGs only after preserving its two review contacts, immutable manifests/reports and complete SHA/byte inventory. It refuses failed/censored/assisted parents. Round9 standard and final-source evidence are outside its selection.
 
 `node scripts/nextgen/l8-native-campaigns.mjs --dist=<immutable-dist> --prefix=<unique-label>` queues the four rigs through the unchanged production browser runner, serially. It refuses existing dispatch/raw directories, requires source-matched unassisted20-room attempts with every tick rendered, and retains natural deaths and all errors/defects. Arc observes the three standard rooms plus Swarm during actual play; only genuinely cleared room storyboards may be presented as entry→fight→clear. These submission timings are separate from hardware benchmarks.
+
+## M9 subject motion strips
+
+`node scripts/nextgen/m9-motion.mjs --out=artifacts/nextgen/m9-final/before-fixed`
+loads the production build and records isolated production rig studies at the
+settled native gameplay camera projection. Each PNG contains native-pixel crops
+in row-major order, with 12 frames at four 60 Hz presentation ticks per cell;
+attack/death studies extend to24 frames. `--subjects=marine,crawler,spitter` and
+`--actions=run-90,attack,heavy-hit` select standard critique rounds. `--frames`
+and `--steps` are explicit integer controls. `--dist=<frozen-dist>` is supported.
+The runner never builds implicitly; freeze/build the intended source first.
+
+Every frame projects all deformed actor vertices, adds12px padding and uses the
+union of all frame bounds. No native crop is resized. Manifest entries retain
+actual clocks, full crop bounds, body/root transforms, muzzle positions,
+ragdoll use and PNG SHA256. The simulation clock is checked unchanged for every
+study. Ability rows replay the existing ability snapshot body-pose path; enemy
+deaths use the real prepared pooled Rapier world with a declared killing impulse.
+Contact families do not acquire invented windups. Status and impact rows replay
+production model inputs; the manifest states their limitations. These isolated
+rig studies do not replace guarded native action/priority captures, campaigns or
+ordinary realtime benchmarks. They do not establish foot-world contact by themselves.
+
+`node scripts/nextgen/m9-contacts.mjs <capture-dir>` makes labeled native4-phase contact pages (at most7 actions/page)
+for efficient review; native PNGs remain authoritative. A generated
+contact is not evidence that anyone opened it. Retain before/after native strips
+and record actual opened-strip critiques in the motion audit/report.
+
+`node scripts/nextgen/m9-native-strips.mjs <guarded-capture-root> [output-dir]`
+adds native simulation evidence without starting a browser: it crops the original
+successful burst PNGs using their recorded `marineBounds` and identified K7/G5
+enemy contact bounds. It refuses failed/error parents, incomplete bursts, missing
+subject bounds and actors outside the original viewport. It retains the unchanged
+source manifest, original PNG hashes, per-frame presentation/simulation clocks
+and crop receipts. Crops preserve original pixels and surrounding world context.
+Scenario-specific clocks stay literal: K7 warning fixtures use300ms spacing even
+when the capture CLI requests33ms. Move a completed capture into its final retained
+location before running this offline derivative if its paths must remain stable.

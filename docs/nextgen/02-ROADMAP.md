@@ -41,12 +41,14 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | Waves 0–6 | merged | see git history and reports under docs/nextgen/ |
 | Wave 7 (K7 creature redesign, E7 floors/infestation/lighting/framing, V7 ultimates + VFX language + placement preview, I11 integration) | merged | `nextgen` @ a63eb1f: 3,852 tests, smokes, 20/20 rooms; bench 77/80 (Freight/Breacher High p95 ≈ 24 ms); gallery `artifacts/nextgen/final5/` |
 | R10 independent verdict | done | 7 / 7.5 / 7 / 5.5 / 6 / 6.5 — biggest blocker: rooms look like modular arenas — `reviews/R10-verdict.md` |
-| **Wave 8** — level architecture | running | |
-| L8 room layouts re-authored as ship architecture (templates + walls + nav + dressing + balance re-verify) | running | |
-| V8 fire shapes, Overclock, Whiteout, quiet placement previews | running | |
-| U9 combat HUD editing, effect-vs-set labels, rig portrait silhouettes | running | |
+| **Wave 8** — level architecture (L8 ship plans, V8 ability polish, U9 combat HUD) | merged | `nextgen` @ 13496bd. L8: all twenty rooms re-authored as hull-connected ship plans with named sub-spaces; 5,264 tests + 20/20 authored rooms on its branch. Accepted balance record (N160): 58.75% completion; misses: rig spread 16.25pp, ordinary median 29.92 s. Open: eleven staged draw-cap misses (Armory, Freight, Transmission kiting), intermittent smoke failure (kit fetch aborted on return to menu), and — lead review of `l8-final` — most gameplay frames still show bare tile grid with walls reading as floor stripes. |
+| **Wave 9** — what the player sees and feels | running | |
+| E9 room interiors: walls that read as walls, floor zoning per sub-space, function furnishing, fixture light (`streams/E9-room-interiors.md`) | running | also owns the smoke abort bug and the three draw-cap rooms |
+| M9 motion and game feel (`streams/M9-motion-feel.md`) | merged | first motion audit: marine 3.25 → 5.39, enemies 3.27 → 4.79, crowd 4 → 7 (self-scored, harsh scale); 5,403 tests; CPU 7.70 → 7.80 ms. Lead review: poses timid; contact-only melee has no wind-up in the simulation |
+| M10 melee attack states + bold motion (`streams/M10-attacks-and-amplitude.md`) | running | authorised gameplay change: contact damage → wind-up/strike/recovery with telegraph and counterplay; measured silhouette change; marine 8-direction locomotion, 16 cast poses, real death |
+| K10 original marine (four rig variants) and five weapons modelled in Blender on the existing skeleton (`streams/K10-original-marine.md`) | running | replaces the converted third-party marine/weapons |
 
-Next (lead): I12 integration + acceptance (fix the Freight/Breacher frame miss), gallery `final6`, seventh independent verdict.
+Next (lead): I12 integration + acceptance alone (Freight/Breacher frame miss, per-rig native campaigns, bench ×5), gallery `final6` incl. motion strips, seventh independent verdict (stills + motion).
 
 ## Decisions log
 
@@ -60,3 +62,6 @@ Next (lead): I12 integration + acceptance (fix the Freight/Breacher frame miss),
 - 2026-11-12 After R6: commit to a graphic inked look (stylize to unify actors and procedural props) and a strict combat visual priority (danger > marine/cursor > enemies > friendly effects > world > HUD). High tier must hold 60 fps on an M1 Pro.
 - 2026-11-13 After R8: code-authored art has plateaued. Allow artist-authored assets under CC0 only (Quaternius, Kenney, Poly Haven and similar; license text and source URL recorded per pack; no CC-BY-NC/unknown), restyled through the ink/banded pipeline.
 - 2026-11-15 After R10: lift the visual-only rule for ONE deliberate level-architecture pass (L8): room templates may change (boundaries, obstacles, breaches) to become authored ship spaces, with navigation tests, bot soak and balance cohorts re-verified; template ids, the 20-room route and story stay.
+- 2026-11-15 L8 converged by lead decision after ten hours: balance frozen at the audited c7 source, hairline misses accepted rather than chased with further cohorts. Lead review of `l8-final`: plans are right, frames are not — wave 9 inserts a presentation-only interiors pass (E9) and the first motion/game-feel stream (M9) before the next independent review.
+- 2026-11-15 After M9: contact-only melee damage is replaced by deterministic attack states (wind-up → strike → recovery, telegraphed, dodgeable) — the second authorised gameplay change after L8; balance re-verified with one before/after bot cohort, not an audit programme.
+- 2026-11-15 Owner decisions: (1) all automated tests and test gates removed (commit 4b2a5f4, tag `pre-test-removal`) — verification is build + bot playtest + looking at captures; (2) Blender installed and ground-up remodelling authorised. E9 may model an original ship kit, M10 authors real animation clips, K10 builds an original marine and arsenal. If K10 succeeds, original creature families follow.
