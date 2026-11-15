@@ -23,7 +23,7 @@ Frozen reference: `tests/fixtures/l8-walkable-baseline.json`, source `7ceefa5a52
 | Room | Extent before→after | Walkable before→after | Change | Connected solid union | Free groups | Smallest opening |
 |---|---|---:|---:|---:|---:|---:|
 | Diagnostic |1200×880→1280×960|969600→913600|-5.7756%|100%|0|140|
-| Safety |1200×880→1280×960|982400→933184|-5.0098%|92.3016%|2|140|
+| Safety |1200×880→1280×960|982400→936544|-4.6678%|93.5882%|2|140|
 | Coolant |1200×880→1360×960|956000→932800|-2.4268%|82.0896%|1|140|
 | Shaft |1200×880→1200×880|802000→783600|-2.2943%|100%|0|160|
 | Workshop |1200×880→1280×1000|948400→921600|-2.8258%|100%|0|180|
@@ -106,3 +106,11 @@ Absolute evidence prefix: `/Users/chernodub/.t3/worktrees/containment-game/t3-38
 The inspected prospective20-up comparison is `/Users/chernodub/.t3/worktrees/containment-game/t3-38b08eb5/artifacts/nextgen/l8-act3-plans/twenty-old-new.png`. Non-Act3 rows reflect the registry available when rendered and are not final propagation evidence. There are no intermediate image rounds in this packet.
 
 Root owns activation, final native dressed calm/kiting/storyboard critique, exact 480×270/grayscale review, E7 camera/HUD/hero/viewport sampling, all 20 smoke/capture gates, full verification, frozen-bot matched cohorts and final before/after hardware benches. No browser, capture, bench or native campaign was run by this sub-agent. No 60fps/preparation/draw-budget compliance, completion-rate balance or final environmental art acceptance is claimed from CPU tests. The long C exit pursuit and the visual continuity of the new connected machine banks remain explicit native-review concerns.
+
+## Final simulation-driven corrections
+
+The all20 native named-space crowd sweep exposed two Safety Stalkers pinned north of the symmetric cage when the marine stood in Battery return. The authorized geometry-only fix moves the upper header north face y320→332 and shrinks its depth24→12 while retaining south face344. Door openings, U legs and source machinery stay fixed. Safety solid union244416→241056, connected solid area225600 unchanged, free groups2, walkable933184→936544. Every one of its ten entry/exit/arena/named-space mixed-crowd cases now clears20/20 within60s. All five strict plan checker errors arrays remain empty. The original all20 raw failed run is preserved under `artifacts/nextgen/l8-sim/first-failure/`.
+
+Shaft's declared radius144 arena moves170,440→170,170, the real upper-left docking/working elbow. This changes no collision, hull, void, machinery, floor grain, shader/cache/disposal or area number. The new circle is fully legal, and the integrated framing test now passes >=60% actual playable viewport floor in1080/720 and both ordinary/reduced modes. The earlier center sample was52.14%. Source C core remains exact.
+
+Post-correction verification: Act3 strict checker five rooms all errors[]; ten owned source/render/native suites90 tests passed; ten Safety mixed-crowd targets passed; integrated Shaft framing case passed (all four arena modes). Root owns the other three global crowd failures and an exact rounded-corner navigation correction. Final all20 named-space attack/crowd/dense/replay reruns and matched40 cohorts are reported separately in `L8-simulation-verification.md` after that source freeze. No actors, abilities, encounters or policy were changed.

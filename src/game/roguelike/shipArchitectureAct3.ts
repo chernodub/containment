@@ -16,7 +16,7 @@ const safety=defineShipRoom({width:1280,height:960,
  // The recorder and disconnected AI occupy real booths; battery backs onto hull.
  obstacles:rectangles([[280,0,180,180],[820,0,180,180],[500,820,280,140]]),
  voids:[wall(40,0,1200,40),wall(40,920,460,40),wall(780,920,460,40),wall(40,760,160,160),wall(1080,760,160,160),
-  wall(500,320,280,24),wall(500,344,24,56),wall(756,344,24,56),wall(500,616,280,24),wall(500,560,24,56),wall(756,560,24,56)],
+  wall(500,332,280,12),wall(500,344,24,56),wall(756,344,24,56),wall(500,616,280,24),wall(500,560,24,56),wall(756,560,24,56)],
  spawn:p(100,480),exit:p(1180,480),breaches:poly([[300,260],[980,260],[300,820],[980,820]]),
 });
 const coolant=defineShipRoom({width:1360,height:960,
@@ -56,7 +56,7 @@ export const SHIP_ACT3_PLANS:Readonly<Partial<Record<StoryTemplateId,ShipPlan>>>
    gate('Entry lock','Port pump gallery',260,320,260,460),gate('Entry lock','Port pump gallery',260,500,260,640),gate('Starboard pump gallery','Exit lock',1100,320,1100,460),gate('Starboard pump gallery','Exit lock',1100,500,1100,640)],
   bays:[{space:'Entry lock',from:p(0,320),to:p(0,640)},{space:'Exit lock',from:p(1360,320),to:p(1360,640)}],
   breachFeatures:[feature('Port header vent',260,180),feature('Starboard header vent',1100,180),feature('Port return door',260,780),feature('Starboard return door',1100,780)]},
- 'service-shaft-landing':{topology:shaft,arena:p(170,440),
+ 'service-shaft-landing':{topology:shaft,arena:p(170,170),
   spaces:[space('Upper docking balcony',0,0,1200,240,1060,120),space('Local lift landing',0,240,340,400,170,440),space('Lower docking balcony',0,640,1200,240,1060,760)],
   openings:[gate('Upper docking balcony','Local lift landing',0,240,160,240),gate('Upper docking balcony','Local lift landing',180,240,340,240),gate('Local lift landing','Lower docking balcony',0,640,160,640),gate('Local lift landing','Lower docking balcony',180,640,340,640)],
   bays:[{space:'Upper docking balcony',from:p(1200,40),to:p(1200,200)},{space:'Lower docking balcony',from:p(1200,680),to:p(1200,840)}],
