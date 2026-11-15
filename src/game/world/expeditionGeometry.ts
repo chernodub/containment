@@ -3,6 +3,7 @@ import { ROOM_TEMPLATES } from '../roguelike/roomTemplates';
 import type { FacilityBreach, QueenArena } from './facilityLayout';
 import { segmentIntersectsRect } from '../input/aimAssist';
 import {clearPolygonTopology} from './polygonGeometry';
+import {paritySafeVoids} from './voidParity';
 
 export type ExpeditionGeometry = Readonly<{
   bounds: Rect;
@@ -42,7 +43,7 @@ export function createRoomTemplateGeometry(template:RoomTemplate,nodeId:string):
   })));
   return Object.freeze({
     bounds, boundaryWalls, blockers: Object.freeze([...boundaryWalls, ...template.obstacles]),
-    boundary: template.boundary, voids: template.voids,
+    boundary: template.boundary, voids: paritySafeVoids(template.voids),
     breaches, playerSpawn: template.spawn, exitPoint: template.exit, bossSpawn,
     queenArena: Object.freeze({ ...bounds, roomId: nodeId, safeCenter: bossSpawn, safeRadius: 180 }),
   });
