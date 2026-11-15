@@ -1,7 +1,7 @@
 # V8 — ability shape and combat grammar
 
 Branch: `t3/vfx-wave8-ability-polish`. Baseline: `7ceefa5a52cc74a6b95712f29653d9bf523906be`.
-Frozen runtime: `92bbf3bc9ef10056b72dc925fbda66133bab42e4`. Delivery HEAD is recorded in the final handoff.
+Frozen runtime: `47426f1bb42af9c8f68ccded300baeedd5890e8c`. Delivery HEAD is recorded in the final handoff.
 Work is confined to this worktree. No push, PR, computer-use, gameplay, world, actor, camera or asset-license changes.
 The HUD change consists of two statements at the existing placement-preview call sites.
 
@@ -26,7 +26,7 @@ The HUD change consists of two statements at the existing placement-preview call
   facets. The center stays transparent and the native friendly boundary stays thin. Nearby authored
   blocker/occupied-void bases retain bounded frost skirts; this is not universal prop-material coating.
 - **F6 / placement:** static thin idle footprints use maximum alpha.12, held-F aim.50 and denied.72.
-  Valid/blocked states keep the rig's friendly color, with small upright check/cross glyphs. Pointer
+  Valid/blocked states keep the rig's friendly color, with upright check/cross glyphs offset inside the footprint clear of the cursor; wall endcaps are solid rather than striped. Pointer
   presence alone does not activate strong emphasis. The real blocked F receipt still holds its exact
   footprint/reason for about one second without consuming a stored charge or inventing placement rules.
 - **Seismic Slam:** six short-lived hinged deck sectors (three Low), dark fissures, cut edges and
@@ -81,7 +81,7 @@ npm ci: passed;84 packages installed;lockfile unchanged.
 VITEST_MAX_WORKERS=2 npx vitest run --exclude scripts/cryo-model-preview.test.mjs
  Test Files  346 passed | 2 skipped (348)
       Tests  3864 passed | 2 skipped (3866)
-   Duration  309.71s
+   Duration  243.86s
 node --test scripts/cryo-model-preview.test.mjs
  tests2;pass2;fail0
 npm run build
@@ -103,7 +103,7 @@ The JavaScript command above was executed by `npm run verify` / `npm test` using
 the same local Vitest binary and the required two-worker limit.
 
 ```text
-npm run test:smoke (isolated retry)
+npm run test:smoke (final corrected source)
  Browser smoke passed: desktop, production Pages subpath, assets, fire, weapon switch, pause/resume, credits.
 npm run test:authored-smoke:all
  Authored desktop smoke passed: 20 rooms, native move/fire, Continue/route, pause/resume, Low quality, no browser errors.
@@ -180,14 +180,25 @@ Matched native cursor/F-key placement:32 frames/eight sheets per side; every nat
 
 | Placement | Before native /480 | Final native /480 |
 |---|---|---|
-| v7-placement-bulwark-valid | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-bulwark-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-bulwark-valid-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/v7-placement-bulwark-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/review/v7-placement-bulwark-valid-awakening-bay-sheet.png) |
-| v7-placement-bulwark-blocked | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-bulwark-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-bulwark-blocked-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/v7-placement-bulwark-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/review/v7-placement-bulwark-blocked-awakening-bay-sheet.png) |
-| v7-placement-glacier-valid | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-glacier-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-glacier-valid-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/v7-placement-glacier-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/review/v7-placement-glacier-valid-awakening-bay-sheet.png) |
-| v7-placement-glacier-blocked | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-glacier-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-glacier-blocked-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/v7-placement-glacier-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/review/v7-placement-glacier-blocked-awakening-bay-sheet.png) |
-| v7-placement-napalm-charge-valid | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-napalm-charge-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-napalm-charge-valid-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/v7-placement-napalm-charge-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/review/v7-placement-napalm-charge-valid-awakening-bay-sheet.png) |
-| v7-placement-napalm-charge-blocked | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-napalm-charge-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-napalm-charge-blocked-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/v7-placement-napalm-charge-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/review/v7-placement-napalm-charge-blocked-awakening-bay-sheet.png) |
-| v7-placement-tesla-pylon-valid | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-tesla-pylon-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-tesla-pylon-valid-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/v7-placement-tesla-pylon-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/review/v7-placement-tesla-pylon-valid-awakening-bay-sheet.png) |
-| v7-placement-tesla-pylon-blocked | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-tesla-pylon-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-tesla-pylon-blocked-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/v7-placement-tesla-pylon-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/review/v7-placement-tesla-pylon-blocked-awakening-bay-sheet.png) |
+| v7-placement-bulwark-valid | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-bulwark-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-bulwark-valid-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/v7-placement-bulwark-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/review/v7-placement-bulwark-valid-awakening-bay-sheet.png) |
+| v7-placement-bulwark-blocked | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-bulwark-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-bulwark-blocked-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/v7-placement-bulwark-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/review/v7-placement-bulwark-blocked-awakening-bay-sheet.png) |
+| v7-placement-glacier-valid | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-glacier-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-glacier-valid-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/v7-placement-glacier-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/review/v7-placement-glacier-valid-awakening-bay-sheet.png) |
+| v7-placement-glacier-blocked | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-glacier-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-glacier-blocked-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/v7-placement-glacier-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/review/v7-placement-glacier-blocked-awakening-bay-sheet.png) |
+| v7-placement-napalm-charge-valid | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-napalm-charge-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-napalm-charge-valid-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/v7-placement-napalm-charge-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/review/v7-placement-napalm-charge-valid-awakening-bay-sheet.png) |
+| v7-placement-napalm-charge-blocked | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-napalm-charge-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-napalm-charge-blocked-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/v7-placement-napalm-charge-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/review/v7-placement-napalm-charge-blocked-awakening-bay-sheet.png) |
+| v7-placement-tesla-pylon-valid | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-tesla-pylon-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-tesla-pylon-valid-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/v7-placement-tesla-pylon-valid-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/review/v7-placement-tesla-pylon-valid-awakening-bay-sheet.png) |
+| v7-placement-tesla-pylon-blocked | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/v7-placement-tesla-pylon-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-before/review/v7-placement-tesla-pylon-blocked-awakening-bay-sheet.png) | [native](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/v7-placement-tesla-pylon-blocked-awakening-bay-sprite.png) /[480](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/review/v7-placement-tesla-pylon-blocked-awakening-bay-sheet.png) |
+
+Final native F6 inspection prompted a cursor-clear glyph/endcap correction. The
+complete JavaScript suite, build, room evidence, native forty-sheet matrix,
+all32 placement frames, all49 Low/danger/recovery frames, production desktop smoke
+and all20 authored-room gates were refreshed from corrected source47426f1.
+The corrected-source smoke passes directly; the earlier pre-glyph restart-abort
+failure and unchanged passing retry remain as historical logs. Superseded source92
+successful art was retired only after fresh complete pairing; its manifests,
+retention map, hash inventories and timing data remain under explicit old labels.
+An additional1,502 superseded PNG/HTML files (3,792,535,128 bytes) were retired;
+failed raw runs and all three critique contacts remain untouched.
 
 ## Matched native benchmark
 
@@ -195,55 +206,63 @@ Best ordinary frame-p95 trial among jointly passing trials when available, other
 
 | Room /rig /tier | Best frame p95 before→after ms | Median/min scale before→after | Peak draws all repeats | Load1m for selected trial | Jointly passing trials |
 |---|---:|---:|---:|---:|---:|
-| relay-racks/breacher/high | 18.1→18 | 1.000/0.975→0.975/0.975 | 289→295 | 30.75→10.74 | 2/2→2/2 |
-| relay-racks/cryo/high | 18.1→17.9 | 1.000/0.975→1.000/0.975 | 284→288 | 28.66→8.61 | 2/2→2/2 |
-| relay-racks/pyro/high | 18→17.9 | 1.000/0.975→1.000/1.000 | 291→291 | 21.45→10.65 | 2/2→2/2 |
-| relay-racks/arc/high | 17.9→18 | 0.975/0.975→1.000/0.975 | 268→271 | 22.63→10.31 | 2/2→2/2 |
-| freight-hold/breacher/high | 18.3→18.7 | 1.000/0.975→0.950/0.925 | 216→220 | 13.99→12.00 | 1/2→1/2 |
-| freight-hold/cryo/high | 18.1→18.1 | 1.000/0.975→0.950/0.925 | 219→213 | 11.58→10.76 | 2/2→2/2 |
-| freight-hold/pyro/high | 18.2→18.3 | 1.000/0.975→1.000/0.975 | 205→218 | 10.76→10.90 | 2/2→2/2 |
-| freight-hold/arc/high | 18.1→18.1 | 1.000/0.975→1.000/0.975 | 201→209 | 10.14→11.27 | 2/2→2/2 |
+| relay-racks/breacher/high | 18.1→17.9 | 1.000/0.975→0.975/0.975 | 289→282 | 30.75→8.57 | 2/2→2/2 |
+| relay-racks/cryo/high | 18.1→18 | 1.000/0.975→0.950/0.925 | 284→306 | 28.66→13.79 | 2/2→2/2 |
+| relay-racks/pyro/high | 18→17.9 | 1.000/0.975→1.000/0.975 | 291→295 | 21.45→10.49 | 2/2→2/2 |
+| relay-racks/arc/high | 17.9→18 | 0.975/0.975→1.000/0.975 | 268→268 | 22.63→12.22 | 2/2→2/2 |
+| freight-hold/breacher/high | 18.3→18.3 | 1.000/0.975→1.000/0.975 | 216→227 | 13.99→10.82 | 1/2→1/2 |
+| freight-hold/cryo/high | 18.1→18.2 | 1.000/0.975→1.000/0.975 | 219→212 | 11.58→14.47 | 2/2→2/2 |
+| freight-hold/pyro/high | 18.2→18.2 | 1.000/0.975→0.975/0.975 | 205→215 | 10.76→23.36 | 2/2→2/2 |
+| freight-hold/arc/high | 18.1→18.1 | 1.000/0.975→1.000/0.975 | 201→201 | 10.14→27.69 | 2/2→2/2 |
 
 v8-before-native: 16 trials; load1m 10.14–32.01; peak draws 291; 1 timing/scale/draw/program trial misses.
 - freight-hold-breacher-high-1: High frame p95; p95 24.6ms; median scale 0.975; load 12.86.
 
-v8-final-native: 16 trials; load1m 8.61–12.19; peak draws 295; 1 timing/scale/draw/program trial misses.
-- freight-hold-breacher-high-0: High frame p95; p95 23.6ms; median scale 1; load 12.09.
-
+v8-glyph-isolated-final-native: 16 trials; load1m 8.57–28.46; peak draws 306; 1 timing/scale/draw/program trial misses.
+- freight-hold-breacher-high-0: High frame p95; p95 24.1ms; median scale 1; load 10.29.
 
 Two ordinary20-second trials per case, all four rigs on High,1920×1080 DPR1,
 Relay Racks and Freight Hold (I11's selected heavy/median rooms), Apple M1 Pro10-core /
 ANGLE Metal. Native25-enemy replenishment/full-kit rules and default adaptive scaling
-remain. No GPU flush, disabled depth, fixed-step screenshot timing, CPU profile or
-other diagnostic mode is used. Low resource behavior is tested/captured separately;
-this cohort makes no Low hardware timing claim.
+remain. No GPU flush, disabled depth, screenshot timing, CPU profile or diagnostic
+mode is used. Low resources/behavior are tested and captured separately; this cohort
+makes no Low hardware timing claim.
 
-Both `npm run bench` commands exit0, with errors[] and budgetFailures[] under the
-unchanged native collector. The stricter V8 best-of-two summary passes8/8 cases,
-requiring frame p95≤20ms, **minimum** adaptive scale≥.9 (stronger than I11's median
-check), peak draws≤330 and zero combat programs. Both cohorts have15/16 individually
-passing trials. The Freight/Breacher tail remains:24.6ms before and23.6ms final.
-The selected passing final trial is18.7ms with minimum scale.925. This is a qualified
-best-of-N result, not an all-trials or every-frame60fps guarantee.
+Both completed `npm run bench` cohorts exit0 with errors[] and budgetFailures[] under
+the unchanged native collector. Strict V8 best-of-two passes8/8 cases: frame p95≤20ms,
+**minimum** scale≥.9, peak draws≤330 and zero combat programs. Each completed cohort
+has15/16 individually passing trials. The known Freight/Breacher tail remains:
+24.6ms before,24.1ms final. Its selected passing final trial is18.3ms. This is a
+qualified best-of-N result, not an all-trials or every-frame60fps guarantee.
 
-All32 frame medians are16.7ms. Raw CPU p95 ranges9.8–23.2ms before and10.0–23.5ms
-final; this does **not** establish the older universal8ms CPU target. No out-of-scope
-physics/raycast optimization or favorable replacement cohort hides the tail.
-Host load differs, so these observations do not establish a causal performance gain.
+All32 frame medians are16.7ms. Raw CPU p95 ranges9.8–23.2ms before and9.7–24.1ms final;
+this does not establish the older universal8ms CPU target. No out-of-scope physics/
+raycast optimization or favorable replacement hides the tail. Host load differs,
+so these observations do not establish a causal speedup. Final all-repeat peak306
+retains24 draws of headroom below330; selected minimum scale is.925.
+
+The first corrected-source refresh (`v8-glyph-final-native`) was interrupted when
+another automation browser started. Its partial report/log and ownership proof
+remain and are **excluded** from acceptance. After the slot cleared, the complete
+unchanged-source retry (`v8-glyph-isolated-final-native`) passed the native gates.
+The earlier source92bbf3b final cohort also remains under its original label; it is
+not combined with corrected-source timing.
 
 [Raw baseline](../../artifacts/nextgen/v8-before-native/benchmark.json),
-[raw final](../../artifacts/nextgen/v8-final-native/benchmark.json),
-[paired analysis](../../artifacts/nextgen/v8/performance.json) and
-[browser ownership](../../artifacts/nextgen/v8/v8-benchmark-ownership.json) retain every
-trial, selected paired metrics and all168 OS snapshots:maximum owned browser1,
-foreign automation browsers0. The production build and frozen shipping directory
-match all27 JS/CSS hashes in `final-build-witness.json`.
+[raw corrected final](../../artifacts/nextgen/v8-glyph-isolated-final-native/benchmark.json),
+[paired analysis](../../artifacts/nextgen/v8/performance.json),
+[baseline ownership](../../artifacts/nextgen/v8/v8-benchmark-ownership.json) and
+[corrected final ownership](../../artifacts/nextgen/v8/v8-glyph-isolated-benchmark-ownership.json)
+retain every trial and same-trial selected frame/scale/CPU/load. The two completed
+cohorts retain84+84 OS snapshots, maximum owned browser1 and foreign automation
+browsers0. All27 production JS/CSS hashes match the frozen corrected distribution
+in `final-build-witness.json`.
 
 ```text
-npm run bench (before):16 ordinary High trials;exit0;errors[];combat programs0.
-npm run bench (final):16 ordinary High trials;exit0;errors[];combat programs0.
-V8 final best-of-N acceptance: PASS;8/8 cases;all-repeat peak draws295/330.
-Raw Freight/Breacher timing miss retained in each cohort;aggregate verify blocked by Blender.
+npm run bench (baseline):16 ordinary High trials;exit0;errors[];combat programs0.
+npm run bench (corrected final):16 ordinary High trials;exit0;errors[];combat programs0.
+V8 final best-of-N acceptance: PASS;8/8 cases;all-repeat peak draws306/330.
+Raw Freight/Breacher p95 miss retained in each cohort;aggregate verify blocked by Blender.
 ```
 
 ## First native PNGs to inspect
@@ -251,8 +270,8 @@ Raw Freight/Breacher timing miss retained in each cohort;aggregate verify blocke
 - [Full Pyro /Annulus](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-final/v2-full-pyro-containment-annulus-containment-annulus-04.png)
 - [Full Arc /Annulus](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-final/v2-full-arc-containment-annulus-containment-annulus-04.png)
 - [Whiteout /Annulus](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-final/v2-whiteout-containment-annulus-containment-annulus-06.png)
-- [Moving Meltdown /Annulus](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-final-supplement/v7-state-meltdown-containment-annulus-containment-annulus-04.png)
+- [Moving Meltdown /Annulus](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-final-supplement-glyph/v7-state-meltdown-containment-annulus-containment-annulus-04.png)
 - [Seismic Slam /Annulus](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-final/v2-seismic-slam-containment-annulus-containment-annulus-03.png)
-- [Denied Glacier preview](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final/v7-placement-glacier-blocked-awakening-bay-01.png)
+- [Cursor-clear denied Glacier](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8-placement-final-glyph/v7-placement-glacier-blocked-awakening-bay-01.png)
 
 Three retained critiques: [round1 contact](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8/v8-round1/contact.png), [round2 contact](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8/v8-round2-native/contact.png), [round3 contact](/Users/chernodub/.t3/worktrees/containment-game/t3-bff215a7/artifacts/nextgen/v8/v8-round3-native/contact.png).
