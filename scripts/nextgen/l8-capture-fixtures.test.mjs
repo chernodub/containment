@@ -15,5 +15,6 @@ test('all20 G6 fixtures use a real native arena and pack the unchanged ten-threa
  }}finally{globalThis.window=previous;}
 });
 test('G6 remains a native self-contained browser function without a camera override',()=>{
+ assert.equal(SCENARIOS.find(s=>s.id==='combat-calm').nativePointerHover,'#pause');
  const g6=SCENARIOS.find(s=>s.id==='g6-kiting');assert(g6);assert(!/cameraZoom|\.zoom\s*[=*]|cameraRig\.reset/.test(g6.setup.toString()));assert(!/import\s*\(/.test(g6.setup.toString()));assert.match(g6.setup.toString(),/Authored fight arena/);
 });

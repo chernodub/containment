@@ -175,6 +175,12 @@ try{
     assert(point&&Number.isFinite(point.x)&&Number.isFinite(point.y)&&point.x>=0&&point.x<viewport.width&&point.y>=0&&point.y<viewport.height,`${name}: native placement cursor is outside the viewport`);
     await page.mouse.move(point.x,point.y);
     await page.evaluate(()=>{window.__containmentDebug.refresh();window.__containmentDebug.refresh();});
+   }else if(scenario.nativePointerHover){
+    // A real desktop pointer leaving the canvas lets the normal HUD retire its
+    // idle power-placement preview. No ability mesh or simulation is masked.
+    await page.locator(scenario.nativePointerHover).hover();
+    const pointerProof=await page.evaluate(selector=>{const d=window.__containmentDebug;d.refresh();d.refresh();const mesh=d.renderer.scene.getObjectByName('ability-placement-preview');return d.l8PointerProof={selector,method:'native pointer hover on existing HUD control',previewCount:mesh?.count??0};},scenario.nativePointerHover);
+    assert.equal(pointerProof.previewCount,0,`${name}: native HUD hover did not clear idle ability preview`);
    }else if(scenario.state==='playing')await page.mouse.move(Math.round(viewport.width*.64),Math.round(viewport.height*.48));else await page.mouse.move(4,4);
    if(scenario.nativeFocus)await page.locator(scenario.nativeFocus).first().focus();
    for(const key of scenario.nativeHold??[])await page.keyboard.down(key);
