@@ -9,8 +9,8 @@ const nodes=generateRun(1729,3).nodes.filter(n=>Object.hasOwn(SHIP_ARCHITECTURE_
  * contact positions, not an impossible demand to put a Brute inside a wall. */
 describe('L8 ship architecture clearance',()=>{
  it.each(nodes)('$templateId has one connected radius32 circulation field with legal continuous sweeps',node=>{
-  const g=createExpeditionGeometry(node),step=16,cols=76,marks=new Map<number,{x:number;y:number}>();
-  for(let y=32;y<880;y+=step)for(let x=32;x<1200;x+=step)if(canOccupyExpedition(g,{x,y},32))marks.set(y/step*cols+x/step,{x,y});
+  const g=createExpeditionGeometry(node),step=16,cols=Math.ceil(g.bounds.width/16)+1,marks=new Map<number,{x:number;y:number}>();
+  for(let y=32;y<g.bounds.height;y+=step)for(let x=32;x<g.bounds.width;x+=step)if(canOccupyExpedition(g,{x,y},32))marks.set(y/step*cols+x/step,{x,y});
   const start=[...marks.keys()].sort((a,b)=>Math.hypot(marks.get(a)!.x-g.playerSpawn.x,marks.get(a)!.y-g.playerSpawn.y)-Math.hypot(marks.get(b)!.x-g.playerSpawn.x,marks.get(b)!.y-g.playerSpawn.y))[0];
   const seen=new Set([start]),queue=[start];
   for(let i=0;i<queue.length;i++)for(const d of [-1,1,-cols,cols]){const a=queue[i],b=a+d;if(marks.has(b)&&!seen.has(b)&&canTraverseExpedition(g,marks.get(a)!,marks.get(b)!,32)){seen.add(b);queue.push(b);}}
@@ -19,7 +19,7 @@ describe('L8 ship architecture clearance',()=>{
  });
  it.each(nodes)('$templateId routes all enemy radii from each breach to a dense grid of marine positions',node=>{
   const g=createExpeditionGeometry(node);
-  for(let y=48;y<880;y+=80)for(let x=48;x<1200;x+=80){
+  for(let y=48;y<g.bounds.height;y+=80)for(let x=48;x<g.bounds.width;x+=80){
    const goal={x,y};if(!canOccupyExpedition(g,goal,16))continue;
    for(const radius of [14,18,24,28]){
     const nav=new FacilityNavigation(g);

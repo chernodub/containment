@@ -1,7 +1,7 @@
 import type {Point,Rect,RoomTemplate} from './types';
 
 /** Transient room topology; no checkpoint schema or encounter values. */
-export type ShipRoomTopology=Pick<RoomTemplate,'boundary'|'voids'|'spawn'|'exit'|'breaches'|'obstacles'>;
+export type ShipRoomTopology=Pick<RoomTemplate,'boundary'|'voids'|'spawn'|'exit'|'breaches'|'obstacles'> & Partial<Pick<RoomTemplate,'width'|'height'>>;
 export const point=(x:number,y:number):Point=>Object.freeze({x,y});
 export const polygon=(pairs:readonly (readonly [number,number])[]):readonly Point[]=>Object.freeze(pairs.map(([x,y])=>point(x,y)));
 export const rectangles=(rows:readonly (readonly [number,number,number,number])[]):readonly Rect[]=>Object.freeze(rows.map(([x,y,width,height])=>Object.freeze({x,y,width,height})));
