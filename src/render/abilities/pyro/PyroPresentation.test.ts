@@ -201,33 +201,46 @@ describe('Pyro presentation lifecycle and readability', () => {
     frame.game = { player: { x: 128, y: 160, vx: 0, vy: 0, angle: .1 }, bullets: [] } as never;
     step(.016);
     const flames = kit.batches.flame.mesh;
-    expect(flames.count).toBe(tier === 'low' ? 5 : 8); expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
+    expect(flames.count).toBe(tier === 'low' ? 5 : 6); // Two long High backpack tongues become two small embers. expect(kit.batches.solid.mesh.count).toBe(3); expect(grade).toHaveBeenCalled();
     for (let i = 0; i < flames.count; i++) {
       const p = position(flames, i);
       expect(Math.hypot(p.x - 4, p.z - 5)).toBeLessThan(1);
       expect(flames.geometry.getAttribute('abilityPriority').getX(i)).toBe(1);
     }
-    const shoulderVents = exhaust.mock.calls.filter(call => call[3] >= .3);
+    const shoulderVents = exhaust.mock.calls.filter(call => call[1] >= 1.15);
     expect(shoulderVents).toHaveLength(2);
     for (const call of shoulderVents) {
-      expect(call[1]).toBeGreaterThanOrEqual(1.15); expect(call[4]).toBeGreaterThan(1);
-      expect(call[1] + call[4]).toBeLessThanOrEqual(3.9);
+      expect(call[1]).toBeGreaterThanOrEqual(1.15); expect(call[4]).toBeGreaterThan(.7);
+      expect(call[1] + call[4]).toBeLessThanOrEqual(2.5);
       // Exhaust is outboard of the helmet axis and behind the facing direction.
       const dx = call[0] - 4, dz = call[2] - 5;
       expect(dx * Math.cos(.1) + dz * Math.sin(.1)).toBeLessThan(-.25);
       expect(Math.abs(-dx * Math.sin(.1) + dz * Math.cos(.1))).toBeGreaterThanOrEqual(.39);
     }
-    const backpackVents = exhaust.mock.calls.filter(call => call[3] < .3 && call[1] >= 1);
+    const backpackVents = exhaust.mock.calls.filter(call => call[1] >= 1 && call[1] < 1.15);
     const flankFires = exhaust.mock.calls.filter(call => call[1] < .2);
     expect(flankFires).toHaveLength(tier === 'low' ? 1 : 2);
     for (const call of flankFires) { expect(call[3]).toBeLessThan(.25); expect(call[1] + call[4]).toBeLessThan(1.7); }
-    expect(backpackVents).toHaveLength(tier === 'low' ? 0 : 2);
+    expect(backpackVents).toHaveLength(0);
     for (const call of backpackVents) { expect(call[1]).toBeGreaterThanOrEqual(1); expect(call[1] + call[4]).toBeLessThan(3.9); }
     expect(shoulderVents[0][4]).not.toBe(shoulderVents[1][4]);
-    expect(Math.max(...shoulderVents.map(call => call[1] + call[4]))).toBeGreaterThan(3.5);
+    expect(Math.max(...shoulderVents.map(call => call[1] + call[4]))).toBeGreaterThan(2.2);
+    expect(kit.batches.spark.mesh.count).toBe(tier === 'low' ? 2 : 4);
     expect(scale(kit.batches.solid.mesh, 0).x).toBeCloseTo(.32);
     expect(scale(kit.batches.solid.mesh, 2).y).toBeGreaterThanOrEqual(.1);
     expect(kit.counts.rings).toBe(0); expect(kit.batches.decal.mesh.count).toBe(0);
+    dispose();
+  });
+
+  it('keeps the activation burst as two short outboard vents instead of a helmet horn crown', () => {
+    const { kit, fx, step, dispose } = setup(), exhaust = vi.spyOn(kit, 'directedFlame');
+    fx.event(event({ ability: 'meltdown', slot: 'overdrive', phase: 'impact', radius: 130 }), 128, 160);
+    step(.03);
+    expect(exhaust).toHaveBeenCalledTimes(2);
+    for (const call of exhaust.mock.calls) {
+      expect(call[1] + call[4]).toBeLessThan(2.3);
+      expect(Math.abs(call[2] - 5)).toBeGreaterThan(.3);
+    }
     dispose();
   });
 

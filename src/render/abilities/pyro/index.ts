@@ -321,7 +321,7 @@ class PyroPresentation implements AbilityPresentation {
         const side = i === 0 ? -1 : 1, hot = impactBeat(p.age);
         kit.directedFlame(p.x - Math.cos(p.angle) * .22 - Math.sin(p.angle) * side * .37, .9,
           p.z - Math.sin(p.angle) * .22 + Math.cos(p.angle) * side * .37, .23 + hot * .09,
-          (1.8 + hot * .8 - i * .17) * fade, side, .35, i * 2.73, fade * .90, true);
+          (.85 + hot * .5 - i * .16) * fade, side, .65, i * 2.73, fade * .90, true);
       }
     }
   }
@@ -410,7 +410,7 @@ class PyroPresentation implements AbilityPresentation {
       this.suit=frame.marine;this.shoulders.fill(undefined);this.suit?.traverse(this.locateVents);
     }
     this.suit?.updateWorldMatrix(true, true);
-    // Unequal rear flames rise above the suit without widening the floor aura.
+    // Short unequal exhaust curls stay close to the heated shoulder hardware.
     // Charged seams and shoulder vents retain their attached silhouette priority.
     kit.impact();
     for (let side = -1; side <= 1; side += 2) {
@@ -423,22 +423,26 @@ class PyroPresentation implements AbilityPresentation {
       kit.draw('solid', bx, base+.06, bz, .32, .20, .35, 0xd95b16, (.9 + pulse * .1) * fade, -angle);
       kit.draw('spark', bx, base+.1, bz, .18, .14, 1, CORE, .96 * fade);
       kit.sustain(age);
-      kit.flowFlame(bx, base, bz, bx-c*.65-s*side*.38, base+.7, bz-s*.65+c*side*.38,
-        kit.low?.16:.26, side+zone.id, .94*fade, true);
-      const height = side < 0 ? 2.4 : 1.8;
-      kit.directedFlame(bx, base, bz, side < 0 ? .43 : .34, height * (.95 + pulse * .05),
-        exhaustAngle, moving ? 1.1 : .5, side + zone.id, .82 * fade);
-      if (!kit.low) kit.directedFlame(bx - c * .18, 1.08, bz - s * .18, .20, 2.15,
-        exhaustAngle, .65, side * 2.7, .78 * fade);
+      kit.flowFlame(bx, base, bz, bx-c*.42-s*side*.24, base+.30, bz-s*.42+c*side*.24,
+        kit.low?.12:.18, side+zone.id, .94*fade, true);
+      const height = side < 0 ? 1.10 : .78;
+      kit.directedFlame(bx, base, bz, side < 0 ? .25 : .21, height * (.95 + pulse * .05),
+        exhaustAngle + side * .32, moving ? 1.6 : .95, side + zone.id, .82 * fade);
+      if (!kit.low) {
+        // Replace the long parallel backpack tongue with a small moving ember.
+        const turn = kit.reducedMotion ? side : kit.time * 4 + side * 1.7;
+        kit.draw('spark', bx - c * .25 + Math.cos(turn) * .12, base + .18 + Math.sin(turn) * .14,
+          bz - s * .25 + Math.sin(turn) * .12, .028, .052, 1, HOT, .72 * fade);
+      }
     }
-    // A low attached mantle wraps the armor flanks, distinct from the tall rear vents.
+    // Low short flank fire and small embers surround the suit without a horn crown.
     // Its narrow shoulders leave the cyan helmet and central aiming silhouette exposed.
     kit.sustain(age);
     const flanks = kit.low ? 1 : 2;
     for (let i = 0; i < flanks; i++) {
       const side = i === 0 ? -1 : 1;
       kit.directedFlame(x - c * .04 - s * side * .27, .12,
-        z - s * .04 + c * side * .27, .23, 1.45, exhaustAngle, .2,
+        z - s * .04 + c * side * .27, .17, .90, exhaustAngle, .45,
         zone.id + side * 8.1, .68 * fade);
     }
     kit.impact();
