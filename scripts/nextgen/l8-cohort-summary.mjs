@@ -21,12 +21,13 @@ export function validateCohort(reports,{seeds=L8_RELEASE_SEEDS,source,baseline=f
  for(const r of reports){
   assert.equal(r.policyHash,L8_POLICY,'Frozen policy');assert.equal(r.backendProvenance.backendHash,L8_BACKEND,'Vanilla backend');
   assert.equal(r.backendProvenance.dirtyBackend,false,'Clean backend');assert.equal(r.assisted,false,'Unassisted');assert.equal(r.legacy,false,'Current story');
-  assert.equal(r.l8Diagnostic,undefined,'Diagnostic overrides are never release acceptance');assert.equal(r.tuningEnabled,false,'No diagnostic tuning');
+  assert.equal(r.l8Diagnostic,undefined,'Diagnostic overrides are never release acceptance');assert.equal(r.tuningEnabled,true,'Shipped I5 production profile');
   for(const key of ['gameHash','bundleHash'])assert.equal(r[key],first[key],'Single '+key);
   assert.deepEqual(r.backendProvenance.sourceHashes,first.backendProvenance.sourceHashes,'Identical metrics and backend source');
   assert.equal(r.navigationVersion,first.navigationVersion,'Single navigation observer');
   if(baseline&&r.gameRef==='working-tree')assert.equal(r.backendProvenance.workspaceHead,source,'Original clean baseline HEAD');
   else assert.equal(r.gameRef,source,'Explicit committed game source');
+  if(baseline){assert.equal(r.gameHash,'2803f6d9f1adde0199c7b2713db8f4f26815f9a0e1139b588fccd5529bb6868a','Frozen baseline game');assert.equal(r.bundleHash,'fd3232e5cb79d125fab946cea1f9d12d5d303afdb1030f858d21881683618f74','Frozen baseline actor metrics and bundle');}
  }
  return {source,gameHash:first.gameHash,bundleHash:first.bundleHash,policyHash:first.policyHash,backendHash:first.backendProvenance.backendHash,navigationVersion:first.navigationVersion,backendSourceHashes:first.backendProvenance.sourceHashes};
 }
