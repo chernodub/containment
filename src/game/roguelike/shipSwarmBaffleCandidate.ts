@@ -1,10 +1,11 @@
 import {SHIP_SWARM_BAY_340_ARENA400_CANDIDATE} from './shipArchitectureSwarmBayCandidate';
 import {defineShipRoom,polygon,spaceBox,point,type ShipPlan} from './shipArchitecturePlan';
-/** Dormant counterplay study. Attached8-unit vent returns interrupt the northern
- * raw approach sightlines. The inner chamfers and small inward doglegs retain
- * native attack berths on both sides of the original fringes;
- * all source reservations and southern banks persist.
- * Open circulation planes are not declared physical doorways. */
+/** REJECTED: native near-face proof; never activated.
+ * Earlier 67 selected-target tests were not acceptance: original 340 passes
+ * 288/288 native face trials, this proposal 256/288 (32 failures), including
+ * near-face rear-half attack-berth traps. Full outcomes and exact poses:
+ * artifacts/nextgen/l8-swarm-baffle/face-probe/near-face-comparison.json.
+ * Retained geometry is historical rejected evidence, not a pending live map. */
 const base=SHIP_SWARM_BAY_340_ARENA400_CANDIDATE['swarm-junction'];
 export const SHIP_SWARM_BAFFLE_CANDIDATE:Readonly<Record<string,ShipPlan>>=Object.freeze({
  'swarm-junction':Object.freeze({...base,

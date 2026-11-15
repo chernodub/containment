@@ -1,9 +1,30 @@
-# Dormant Swarm vent-return candidate
+# REJECTED Swarm vent-return candidate
 
-Export `SHIP_SWARM_BAFFLE_CANDIDATE` from
-`src/game/roguelike/shipSwarmBaffleCandidate.ts`. It derives from active
-`SHIP_SWARM_BAY_340_ARENA400_CANDIDATE`; nothing registers this new map.
-This is a geometry-only counterplay study, not balance or release acceptance.
+**REJECTED: native near-face proof. Never activated.** The earlier67 selected-
+target tests below are historical and are not acceptance. The stronger generic
+face probe retains all36 R16-legal positions across four lower-fin faces,
+gaps16/24/32 and y416/432/448, Brute/Stalker and all4 requested native entrances
+with identical production240-unit fallback. Original340 passes288/288 native
+attack trials; the proposal passes256/288 and fails32 at the unchanged60s bound.
+
+The failures form8 face/gap/height/family groups: left-inner gap16 at432/416
+(Brute) and432/432 (Brute/Stalker); right-outer gap16 at808/416 and808/432
+(Brute/Stalker), plus gap24 at816/416 (Brute). All four entrance trials fail in
+each group. These are attack-proof near-wall positions where native rear-half
+berths become unavailable; earlier selected corner targets did not cover the
+continuous faces. No geometry microshift, actor/navigation fix or target omission
+followed this result. The active layout remains unchanged.
+
+Complete576 trial outcomes, initial/final poses and exact geometry are preserved
+under `artifacts/nextgen/l8-swarm-baffle/face-probe/`: `near-face-comparison.json`,
+`near-face-comparison-geometry.json`, `summary.md`, `summary.json`, `vitest.log`
+and exact probe source `near-face-probe.test.ts.txt`. Rejected-proposal failures
+stay as ignored evidence; no failing proposal probe enters default gates.
+
+Export `SHIP_SWARM_BAFFLE_CANDIDATE` in
+`src/game/roguelike/shipSwarmBaffleCandidate.ts` remains historical rejected
+evidence. No active registry imports it. The following geometry, limited-target
+proof and opportunity measurements document the rejected study.
 
 Only the two northern void polygons change. The original inner chamfer runs to
 408/326 on the port side (mirrored at792/326). An eight-unit attached return
@@ -68,7 +89,7 @@ actual attack/holding time and position. This is directional counterplay, not a
 claim that every spitter must enter Seismic Slam's230-unit radius: even this
 fixed NW opportunity remains234, and southern ones remain413.5.
 
-Final focused proof: four new files,67 tests pass; TypeScript passes. Strict
+Earlier limited-target proof (not acceptance): four new files,67 tests pass; TypeScript passes. Strict
 prospective checker returns errors[]. Dense64-unit sampling covers173 marine
 goals and3460 actual five-family/breach routes. Native opportunity proof covers
 520 trials at26 unique targets (maximum13.2s against60s). All26 production-
@@ -91,5 +112,13 @@ Evidence: `artifacts/nextgen/l8-swarm-baffle/strict-check.json`, `proof/`,
 `plans/swarm-junction.png`, `plans/twenty-old-new.png` and `failures/`.
 Exact baseline+candidate plan/template SHA256:
 `a42782e59b7783f3fe2e25c69fd4ec2cb9f2d90032be0b381457ca39b2b0e5bf`.
-The parent owns plan review, activation, cohorts, rendered captures, measured
-budgets and full integration gates. No browser or cohort was run for this study.
+The proposal is rejected and must not be activated. No browser or cohort was
+run for this study. `tests/L8SwarmActiveAttackAccess.test.ts` protects all36
+face-probe positions against current active geometry, retaining native event,
+60-second and continuous body-sweep assertions for all288 trials.
+
+Active-layout regression verification: **37/37 tests pass**, covering all36 admitted
+R16 positions and288 native attack trials (maximum8550ms against60000ms).
+Exact active geometry and all poses: `artifacts/nextgen/l8-swarm-active-face-proof/`.
+The regression suite imports only active room data and never imports the rejected
+proposal or its harness.
