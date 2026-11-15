@@ -1,5 +1,4 @@
-import { segmentIntersectsRect } from '../input/aimAssist';
-import { circleBlocked, facilityBlockers } from './facilityGeometry';
+import { circleBlocked, facilityBlockers, clearRectSweep } from './facilityGeometry';
 import type { FacilityPoint, FacilityRect } from './facilityLayout';
 import {clearPolygonTopology,type PolygonTopology} from './polygonGeometry';
 const CELL=32,COLS=80,ROWS=45,COUNT=COLS*ROWS;
@@ -16,12 +15,13 @@ const neighbors=(id:number)=>adjacency[id];
 export class FacilityNavigation {
   constructor(private readonly geometry?:NavigationGeometry,private readonly clearance=30) {}
   private wider=new Map<number,FacilityNavigation>();
+  private commitments=new WeakMap<object,{wave:number;goal:FacilityPoint;point:FacilityPoint}>();
   private wave=-1;private goal=-1;private playerCell=-1;private walls:readonly FacilityRect[]=[];
   private walkable=new Uint8Array(COUNT);private distance=new Int32Array(COUNT);private queue=new Int32Array(COUNT);private expanded=new Map<number,readonly FacilityRect[]>();
   private clear(a:FacilityPoint,b:FacilityPoint,radius:number):boolean {
     if(this.geometry&&!clearPolygonTopology(this.geometry,a,b,radius))return false;
     let walls=this.expanded.get(radius);if(!walls){walls=this.walls.map(r=>({x:r.x-radius,y:r.y-radius,width:r.width+radius*2,height:r.height+radius*2}));this.expanded.set(radius,walls);}
-    for(const r of walls)if(segmentIntersectsRect(a,b,r))return false;return true;
+    for(let i=0;i<walls.length;i++){const r=walls[i];if(Math.max(a.x,b.x)<r.x||Math.min(a.x,b.x)>r.x+r.width||Math.max(a.y,b.y)<r.y||Math.min(a.y,b.y)>r.y+r.height)continue;if(!clearRectSweep(a,b,radius,this.walls[i]))return false;}return true;
   }
   private closest(p:FacilityPoint,reachable=false,radius=12):number {
     const center=index(p);let best=-1,score=Infinity;
@@ -48,7 +48,14 @@ export class FacilityNavigation {
       return nav.waypoint(enemy,player,wave);
     }
     this.prepare(player,wave);
-    if(this.clear(enemy,player,enemy.radius+2))return null;
+    if(this.clear(enemy,player,enemy.radius+2)){this.commitments.delete(enemy);return null;}
+    // Commit to a visible, swept-clear leg while a nearby moving goal jitters
+    // across BFS cells. Otherwise optional flanks can alternate homotopy every
+    // decision and never round a perfectly passable bulkhead corner.
+    const committed=this.commitments.get(enemy);
+    if(committed&&committed.wave===wave&&Math.hypot(player.x-committed.goal.x,player.y-committed.goal.y)<64
+      &&Math.hypot(enemy.x-committed.point.x,enemy.y-committed.point.y)>8&&this.clear(enemy,committed.point,enemy.radius+2))return {...committed.point};
+    this.commitments.delete(enemy);
     let current=this.closest(enemy,true,this.clearance>30?enemy.radius+2:enemy.radius);if(current<0)return enemy;
     let target=point(current);
     for(let n=0;n<7;n++){
@@ -56,7 +63,9 @@ export class FacilityNavigation {
       if(next===undefined)break;
       const candidate=point(next);if(!this.clear(enemy,candidate,enemy.radius+2))break;
       current=next;target=candidate;
-    }return {x:target.x,y:target.y};
+    }
+    if(Math.hypot(target.x-enemy.x,target.y-enemy.y)>32)this.commitments.set(enemy,{wave,goal:{x:player.x,y:player.y},point:{x:target.x,y:target.y}});
+    return {x:target.x,y:target.y};
   }
   reachable(p:FacilityPoint):boolean {return this.closest(p,true)>=0;}
 }
