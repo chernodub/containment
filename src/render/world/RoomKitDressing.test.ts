@@ -23,6 +23,11 @@ describe('CC0 room dressing safety and lifecycle',()=>{
   const t=ROOM_TEMPLATES[id],before=JSON.stringify(t),world=new T.Group(),root=buildRoomKitDressing(world,t,env as ShipEnvironment,id,sources),placements=root.userData.placements as KitPlacement[],samples=kitMarineSamples(t);
   expect(JSON.stringify(t)).toBe(before);expect(placements.length).toBeGreaterThan(4);expect(root.children.length).toBeLessThanOrEqual(8);
   expect(placements.some(p=>p.purpose.includes('wall'))).toBe(true);expect(samples.length).toBeGreaterThan(50);
+  if(Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,id)){
+   expect(placements.filter(p=>p.purpose==='machine-to-wall cable trench'||p.purpose==='wall return trench')).toHaveLength(0);
+   for(const p of placements.filter(p=>p.purpose==='local equipment feed to nearest hull')){expect(Math.max(p.size[0],p.size[2])).toBeLessThanOrEqual(4);expect(p.size[0]*p.size[2]).toBeGreaterThan(0);expect(p.bounds[1][1]).toBeLessThan(.022);}
+   expect(root.userData.equipmentFeeds.every((feed:{reason:string;path:unknown[]})=>feed.reason==='local-feed'||feed.path.length===0)).toBe(true);
+  }else expect(placements.some(p=>p.purpose==='machine-to-wall cable trench')).toBe(true);
   for(const p of placements){const b=new T.Box3(new T.Vector3().fromArray(p.bounds[0]),new T.Vector3().fromArray(p.bounds[1]));expect(kitBoundsSupported(t,b),p.model+' support').toBe(true);expect(!kitOccludesMarine(b,samples)||p.meshChecked===true,p.model+' conservative or exact sightline').toBe(true);}
   let triangles=0;
   root.traverse(o=>{if(o instanceof T.Mesh){const p=o.geometry.getAttribute('position');triangles+=p.count/3;for(let i=0;i<p.count;i++){expect(Number.isFinite(p.getX(i)+p.getY(i)+p.getZ(i))).toBe(true);if(p.getY(i)>.024&&p.getY(i)<3)expect(kitSupported(t,p.getX(i),p.getZ(i)),`${id} ${p.getX(i)} / ${p.getZ(i)}`).toBe(true);}expect(o.material).toBeInstanceOf(T.MeshStandardMaterial);expect((o.material as T.MeshStandardMaterial).map).toBeNull();}});

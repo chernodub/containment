@@ -1,3 +1,5 @@
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
+import {kitEquipmentFeeds} from './KitEquipmentFeeds';
 import {ROOM_STORY_ROUTE} from '../../game/roguelike/storyRooms';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -93,7 +95,8 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
  const pipe=(a:T.Vector3,b:T.Vector3,r:number,role='dark')=>{
   const g=new T.CylinderGeometry(r,r,a.distanceTo(b),8).applyQuaternion(new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),b.clone().sub(a).normalize())).translate(...a.clone().add(b).multiplyScalar(.5).toArray());g.computeBoundingBox();if(boundsSafe(g.boundingBox!))push(g.toNonIndexed(),role);g.dispose();
  };
- const connectedCabins=id==='residential-gallery';
+ const connectedCabins=id==='residential-gallery',architected=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,id),feedFor=architected?kitEquipmentFeeds(t):undefined;
+ const equipmentFeeds:{reservation:number;reason:string;path:readonly {x:number;y:number}[]}[]=[];
  const primary=equipmentReservations(t,id),reservations=primary.length?primary:equipmentReservations(t,'e6-'+id);
  const floor=buildKitFloorSurface(t,env,id,reservations);push(floor.geometry,'conduit');root.userData.floorSurface=floor.proof;
  root.userData.perimeter=addKitPerimeter(t,env,id,{place,box,pipe});
@@ -118,6 +121,13 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
  }
  for(const [i,r] of (connectedCabins?[]:reservations.slice(0,8)).entries()){
   const x=(r.x+r.width*.5)/32,z=(r.y+r.height*.5)/32,rw=r.width/32,rd=r.height/32;
+  if(feedFor){
+   const feed=feedFor(r);equipmentFeeds.push({reservation:i,...feed});
+   for(let n=1;n<feed.path.length;n++){
+    const a=feed.path[n-1],b=feed.path[n];
+    box('conduit',(a.x+b.x)/64,.014,(a.y+b.y)/64,Math.max(.08,Math.abs(a.x-b.x)/32),.004,Math.max(.08,Math.abs(a.y-b.y)/32),'local equipment feed to nearest hull');
+   }
+  }else{
   const hull=kitHull(t),candidates=hull.map((a,j)=>{const b=hull[(j+1)%hull.length],av=new T.Vector2(a.x/32,a.y/32),delta=new T.Vector2((b.x-a.x)/32,(b.y-a.y)/32),f=T.MathUtils.clamp(new T.Vector2(x,z).sub(av).dot(delta)/delta.lengthSq(),0,1),p=av.addScaledVector(delta,f);return {p,d:p.distanceTo(new T.Vector2(x,z))};}).sort((a,b)=>a.d-b.d);
   const crossing=hull.flatMap((a,j)=>{const b=hull[(j+1)%hull.length];if((a.y/32>z)===(b.y/32>z))return [];return [a.x/32+(b.x-a.x)/32*(z-a.y/32)/((b.y-a.y)/32)];}).sort((a,b)=>a-b);
   const nearest=crossing.length?new T.Vector2(i%2?crossing[crossing.length-1]:crossing[0],z):candidates[0].p;
@@ -129,6 +139,7 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
    // Author rocks flattened into one dark connective skin; raised masses continue only over architecture.
    const path=[new T.Vector3(x,.016,z),new T.Vector3(x+(nearest.x-x)*.36,.016,z+.5),new T.Vector3(x+(nearest.x-x)*.72,.016,z+.22),new T.Vector3(nearest.x,.016,nearest.y)];
    const skin=membraneGeometry(path,.055,.002,undefined,24);skin.computeBoundingBox();if(boundsSafe(skin.boundingBox!)){push(skin.toNonIndexed(),'resin');}skin.dispose();
+  }
   }
   // Every story has one deliberate service interruption. It is composed as a
   // supported cluster; no case/chair is scattered into a circulation lane.
@@ -178,6 +189,7 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
    place(name,x,roof+.03,z,Math.min(rw*.78,2.4),.75,Math.min(rd*.76,1.5),i%2?Math.PI/2:0,'interrupted '+env+' service work');
   }
  }
+ root.userData.equipmentFeeds=equipmentFeeds;
  root.userData.majorCabinForms=placements.filter(p=>p.model==='bedSingle'||p.model==='loungeSofa').length;root.userData.triangles=triangleCount;root.userData.placements=placements;root.userData.rejected=rejected;root.userData.marineSightlineSamples=samples.length;root.userData.visualIdea=story?.idea??id+' / connected infrastructure and interrupted service';root.userData.narrativeVignette=story?.idea;
  for(const [role,list] of parts){const geometry=mergeGeometries(list,false);list.forEach(g=>g.dispose());if(!geometry)throw Error('kit role merge failed');geometry.computeBoundingBox();geometry.computeBoundingSphere();const mesh=new T.Mesh(geometry,finish(role));mesh.name='e6-kit-'+role;mesh.castShadow=role!=='conduit';mesh.receiveShadow=true;mesh.userData.visualOnly=true;root.add(mesh);}
  world.add(root);return root;
