@@ -3,21 +3,22 @@ import * as T from 'three';
 import {authoredRoom} from './AuthoredRooms';
 import {disposeModel} from './meshParts';
 import {ROOM_TEMPLATES} from '../game/roguelike/roomTemplates';
-import {generateRun} from '../game/roguelike/run';
-import {createExpeditionGeometry,canOccupyExpedition} from '../game/world/expeditionGeometry';
+import {SHIP_ACT2_PLANS} from '../game/roguelike/shipArchitectureAct2';
+import {createRoomTemplateGeometry,canOccupyExpedition} from '../game/world/expeditionGeometry';
 import {FacilityNavigation} from '../game/world/FacilityNavigation';
 import {DepthGame} from '../DepthGame';
 const id='breached-loading-bay';
-const node=generateRun(1729,3).nodes.find(n=>n.templateId===id)!;
-const routes=[[[140,440],[240,320],[370,235],[570,150],[770,160],[1020,360],[1080,520]],[[140,440],[220,510],[420,550],[590,620],[970,640],[1080,520]]];
+const template={...ROOM_TEMPLATES[id],...SHIP_ACT2_PLANS[id].topology};
+const routes=[[[140,440],[280,520],[440,560],[600,620],[960,620],[1080,520]],[[140,440],[160,700],[500,760],[600,780],[940,780],[980,740],[980,620],[1080,520]]];
 describe('Room8 story-flow placement',()=>{
- it('places the outbound pallet in its accepted solid footprint',()=>{
-  expect(ROOM_TEMPLATES[id].obstacles).toEqual([{x:300,y:600,width:100,height:70},{x:640,y:740,width:120,height:50}]);
-  const geometry=createExpeditionGeometry(node);
-  expect(canOccupyExpedition(geometry,{x:700,y:765},16)).toBe(false);
+ it('secures both loading beds against the stern and retains the exact diagonal scar',()=>{
+  expect(template.obstacles).toEqual([{x:280,y:840,width:140,height:80},{x:700,y:840,width:200,height:80}]);for(const r of template.obstacles)expect(r.y+r.height).toBe(920);
+  expect(template.voids![0]).toEqual(ROOM_TEMPLATES[id].voids![0]);
+  const geometry=createRoomTemplateGeometry(template,'room8-layout');
+  expect(canOccupyExpedition(geometry,{x:780,y:880},16)).toBe(false);
  });
  it('renders a continuous raised hull seal across the solid scar',()=>{
-  const room=authoredRoom(id,ROOM_TEMPLATES[id])!;room.updateMatrixWorld(true);
+  const room=authoredRoom(id,template)!;room.updateMatrixWorld(true);
   const seal=room.children.find(o=>o instanceof T.Mesh&&(o.material as T.Material).name==='room8-hull-seal') as T.Mesh;
   expect(seal).toBeDefined();
   if(seal){
@@ -29,8 +30,8 @@ describe('Room8 story-flow placement',()=>{
   }
   disposeModel(room);
  });
- it('keeps both accepted loops usable for player and large actors in runtime geometry',()=>{
-  const geometry=createExpeditionGeometry(node),navigation=new FacilityNavigation(geometry);navigation.prepare(geometry.playerSpawn,1);
+ it('keeps both broad lanes below the hull-connected tear usable for player and large actors in runtime geometry',()=>{
+  const geometry=createRoomTemplateGeometry(template,'room8-layout'),navigation=new FacilityNavigation(geometry);navigation.prepare(geometry.playerSpawn,1);
   for(const route of routes)for(let i=1;i<route.length;i++){
    const a=route[i-1],b=route[i],steps=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/4);
    for(let j=0;j<=steps;j++)for(const radius of [16,28,38])expect(canOccupyExpedition(geometry,{x:a[0]+(b[0]-a[0])*j/steps,y:a[1]+(b[1]-a[1])*j/steps},radius)).toBe(true);

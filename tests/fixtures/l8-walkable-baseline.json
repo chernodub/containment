@@ -1,0 +1,26 @@
+{
+  "source": "7ceefa5a52cc74a6b95712f29653d9bf523906be",
+  "sampleUnits": 2,
+  "areas": {
+    "awakening-bay": 748840,
+    "passenger-vault": 691056,
+    "residential-gallery": 961000,
+    "communal-atrium": 316332,
+    "crew-checkpoint": 973184,
+    "armory": 940184,
+    "freight-hold": 868800,
+    "breached-loading-bay": 655540,
+    "relay-racks": 973000,
+    "transmission-chamber": 976800,
+    "diagnostic-gallery": 969600,
+    "safety-interlock-station": 982400,
+    "coolant-plant": 956000,
+    "service-shaft-landing": 802000,
+    "infested-workshop": 948400,
+    "swarm-junction": 950800,
+    "shielding-gate": 965000,
+    "containment-annulus": 707600,
+    "manual-control-chamber": 972400,
+    "overload-floor": 607160
+  }
+}

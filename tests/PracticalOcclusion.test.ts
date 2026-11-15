@@ -132,7 +132,7 @@ it('keeps Cryo deck practicals inside the authored strip aperture without a radi
  optimizeLocalLights(material);
  const shader={uniforms:{},fragmentShader:T.ShaderLib.standard.fragmentShader};
  material.onBeforeCompile(shader as T.WebGLProgramParametersWithUniforms,{} as T.WebGLRenderer);
- expect(shader.fragmentShader).toContain('float stripOnly=1.0-step(.5,roomFloorPattern.z)');
+ expect(shader.fragmentShader).toContain('float stripOnly=max(roomFloorApertureOnly,1.0-step(.5,roomFloorPattern.z))');
  expect(shader.fragmentShader).toContain('mix(.12+slit*.40,slit*.40,stripOnly)');
  expect(shader.fragmentShader).toContain('#if UNROLLED_LOOP_INDEX < 4');
  material.dispose();

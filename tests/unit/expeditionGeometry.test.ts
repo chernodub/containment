@@ -74,12 +74,11 @@ describe('expedition local geometry', () => {
         }
       }
       const connected=(point:Point)=>queue.some(p=>Math.hypot(p.x-point.x,p.y-point.y)<=15&&canTraverseExpedition(geometry,p,point,28));
-      expect(node.templateId==='communal-atrium'?connected(geometry.exitPoint):visited.has(key(geometry.exitPoint))).toBe(true);
+      expect(connected(geometry.exitPoint),node.templateId+' continuous exit connection').toBe(true);
       for (const breach of geometry.breaches) {
-        expect(node.templateId==='communal-atrium'?connected(breach):visited.has(key(breach))).toBe(true);
+        expect(connected(breach),node.templateId+' continuous breach connection').toBe(true);
         const offset = { x: breach.x + (breach.facing === 'east' ? 56 : -56), y: breach.y };
-        if(node.templateId==='communal-atrium')expect(connected(actualInwardSpawn(node,offset))).toBe(true);
-        else expect(visited.has(key({x:Math.round(offset.x/10)*10,y:offset.y}))).toBe(true);
+        expect(connected(actualInwardSpawn(node,offset)),node.templateId+' continuous inward spawn connection').toBe(true);
       }
     }
     expect(seenTemplates.size).toBe(20);

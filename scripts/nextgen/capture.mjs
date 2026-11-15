@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {assertNativeWarning} from './capture-warning-contract.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {createServer} from 'node:http';
@@ -175,6 +176,12 @@ try{
     assert(point&&Number.isFinite(point.x)&&Number.isFinite(point.y)&&point.x>=0&&point.x<viewport.width&&point.y>=0&&point.y<viewport.height,`${name}: native placement cursor is outside the viewport`);
     await page.mouse.move(point.x,point.y);
     await page.evaluate(()=>{window.__containmentDebug.refresh();window.__containmentDebug.refresh();});
+   }else if(scenario.nativePointerHover){
+    // A real desktop pointer leaving the canvas lets the normal HUD retire its
+    // idle power-placement preview. No ability mesh or simulation is masked.
+    await page.locator(scenario.nativePointerHover).hover();
+    const pointerProof=await page.evaluate(selector=>{const d=window.__containmentDebug;d.refresh();d.refresh();const mesh=d.renderer.scene.getObjectByName('ability-placement-preview');return d.l8PointerProof={selector,method:'native pointer hover on existing HUD control',previewCount:mesh?.count??0};},scenario.nativePointerHover);
+    assert.equal(pointerProof.previewCount,0,`${name}: native HUD hover did not clear idle ability preview`);
    }else if(scenario.state==='playing')await page.mouse.move(Math.round(viewport.width*.64),Math.round(viewport.height*.48));else await page.mouse.move(4,4);
    if(scenario.nativeFocus)await page.locator(scenario.nativeFocus).first().focus();
    for(const key of scenario.nativeHold??[])await page.keyboard.down(key);
@@ -256,7 +263,13 @@ try{
     if(scenario.id==='results'){assert(evidence.stats.kills.total>0&&evidence.stats.damageDealt.ability>0&&evidence.stats.damageDealt.weapon>0&&evidence.stats.shotsHit>0&&evidence.stats.abilityUses.tactical===1&&evidence.stats.overdrivesUsed===1,'Results lack genuine ability and weapon combat receipts');}
     if(scenario.state==='dead'||scenario.state==='complete')assert(await page.locator('.damage-source-legend [data-stat] b').evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).color==='rgb(240, 251, 255)')),`${name}: source accounting legend implies an element`);
     if(scenario.uiState)assert.equal(evidence.uiState,scenario.uiState,`${name}: wrong fixture UI phase`);
+    assertNativeWarning(evidence,name,{quiet:scenario.id==='combat-calm'||scenario.id==='l8-arena-calm'});
     if(scenario.id==='combat-calm')assert.equal(evidence.enemies,0,`${name}: calm room contains enemies`);
+    if(scenario.id==='l8-arena-calm'){
+     assert.equal(evidence.enemies,0,`${name}: arena calm contains enemies`);const proof=evidence.l8ArenaCalmProof;
+     assert(proof?.nativePresentation&&proof.presentationTicks===120&&proof.simulationBefore===proof.simulationAfter&&proof.cameraOverride===false,`${name}: native presentation-only arena settling proof missing`);
+     assert.equal(proof.preparedShaderCompiles,0,`${name}: prepared presentation compiled new programs`);assert.deepEqual({x:evidence.player.x,y:evidence.player.y},proof.arena,`${name}: arena calm left declared fight arena`);
+    }
     assert.equal(evidence.state,scenario.state,`${name}: wrong game state`);assertCaptureCanvas(evidence,{scenarioId:scenario.id,viewport,dpr,name});
     if(scenario.room)assert.equal(evidence.templateId,scenario.room);
     if(scenario.state==='playing')assertPlayingMarine(evidence,viewport,name);

@@ -84,7 +84,7 @@ describe('authored communal garden',()=>{
   for(const mesh of foliage){const normals=mesh.geometry.getAttribute('normal');for(let i=0;i<normals.count;i++)maxNormalError=Math.max(maxNormalError,Math.abs(normal.fromBufferAttribute(normals,i).length()-1));}
   expect(maxNormalError).toBeLessThan(.000005);
   const bounds=new T.Box3();for(const m of imported)bounds.expandByObject(m,true);
-  expect(bounds.min.x*32).toBeCloseTo(480);expect(bounds.max.x*32).toBeCloseTo(698);expect(bounds.min.z*32).toBeGreaterThanOrEqual(294);expect(bounds.min.z*32).toBeLessThan(310);expect(bounds.max.z*32).toBeCloseTo(400);expect(bounds.min.y).toBeCloseTo(0);expect(bounds.max.y*32).toBeLessThan(93.909111);
+  expect(bounds.min.x*32).toBeGreaterThanOrEqual(464);expect(bounds.min.x*32).toBeLessThan(480);expect(bounds.max.x*32).toBeCloseTo(698);expect(bounds.min.z*32).toBeGreaterThanOrEqual(310);expect(bounds.min.z*32).toBeLessThan(330);expect(bounds.max.z*32).toBeCloseTo(400);expect(bounds.min.y).toBeCloseTo(0);expect(bounds.max.y*32).toBeLessThan(93.909111);
   expect(new Set(meshes(built).map(m=>m.material)).size).toBe(8);
   expect(meshes(built).length).toBeLessThanOrEqual(11);
   for(const m of meshes(built)){expect(m.castShadow&&m.receiveShadow).toBe(true);expect((m.material as T.Material).userData.actorMaterial).toBe(true);expect(Object.values(MAT)).not.toContain(m.material);}

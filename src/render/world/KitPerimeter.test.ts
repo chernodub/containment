@@ -38,6 +38,12 @@ describe('continuous CC0 perimeter and far-edge overhead planning',()=>{
     expect(overhead.every(item=>item.bounds.min.y>=6)).toBe(true);
     expect(accepted.every(item=>!kitOccludesMarine(item.bounds,samples))).toBe(true);
   });
+  it('leaves short articulated return joints to the exact hull instead of squeezing a cabinet into a notch',()=>{
+    const t=ROOM_TEMPLATES['breached-loading-bay'],proof=addKitPerimeter(t,'cargo',t.id,{place(){return true;},box(){},pipe(){}});
+    const short=t.boundary!.flatMap((a,i)=>{const b=t.boundary![(i+1)%t.boundary!.length];return Math.hypot(b.x-a.x,b.y-a.y)<48?[i]:[];});
+    expect(short.length).toBeGreaterThan(0);for(const i of short)expect(proof.edges.some(e=>e.index===i&&e.attempted>0)).toBe(false);
+    expect(proof.segmentsAccepted).toBeGreaterThan(30);
+  });
   it('retains guard rejection rather than forcing density into the scene',()=>{
     const proof=addKitPerimeter(ROOM_TEMPLATES['residential-gallery'],'habitation','residential-gallery',{
       place(){return false;},box(){},pipe(){},

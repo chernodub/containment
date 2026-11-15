@@ -1,9 +1,12 @@
+import {SHIP_ACT3_PLANS} from '../src/game/roguelike/shipArchitectureAct3';
+import {ROOM_TEMPLATES} from '../src/game/roguelike/roomTemplates';
+import {createRoomTemplateGeometry} from '../src/game/world/expeditionGeometry';
 import {describe,expect,it,vi} from 'vitest';
 import * as T from 'three';
 import {environmentObstacle,appendEnvironment} from '../src/render/ShipEnvironments';
 import {DepthRenderer} from '../src/render/DepthRenderer';
 import {disposeModel,MAT} from '../src/render/meshParts';
-import {createExpeditionGeometry,canTraverseExpedition,canOccupyExpedition} from '../src/game/world/expeditionGeometry';
+import {canTraverseExpedition,canOccupyExpedition} from '../src/game/world/expeditionGeometry';
 
 const reservations=[[330,210,160,140],[700,210,160,140],[480,580,240,120]].map(([x,y,width,height])=>({x:x/32,y:y/32,width:width/32,height:height/32}));
 const model=(i:number,id='safety-interlock-station')=>environmentObstacle('engineering',reservations[i],i,id);
@@ -105,10 +108,10 @@ describe('Room12 rough safety equipment',()=>{
   expect(signature(model(0,'diagnostic-gallery'))).toEqual(signature(model(0,'')));
   expect(model(0).name).not.toBe(model(0,'diagnostic-gallery').name);
  });
- it('retains canonical collision, direct route, bypasses and viewing approaches for both actor radii',()=>{
-  const g=createExpeditionGeometry({id:'room12-check',depth:11,kind:'combat',reward:'upgrade',next:[],templateId:'safety-interlock-station'});
-  expect(g.voids??[]).toEqual([]);
-  const paths=[[[100,440],[1100,440]],[[100,440],[100,140],[1100,140],[1100,440]],[[100,440],[100,760],[1100,760],[1100,440]],[[410,440],[410,395]],[[780,440],[780,395]],[[600,440],[600,535]]];
+ it('keeps the live interlock traversable through the cage and both booth bypasses for both actor radii',()=>{
+  const t={...ROOM_TEMPLATES['safety-interlock-station'],...SHIP_ACT3_PLANS['safety-interlock-station']!.topology},g=createRoomTemplateGeometry(t,'room12-check');
+  expect(g.voids?.length).toBeGreaterThan(0);
+  const paths=[[[100,480],[1180,480]],[[100,480],[100,240],[1180,240],[1180,480]],[[100,480],[100,720],[1180,720],[1180,480]],[[370,250],[370,215]],[[910,250],[910,215]],[[640,730],[640,785]]];
   for(const r of [16,28]){for(const path of paths)for(let j=1;j<path.length;j++)expect(canTraverseExpedition(g,{x:path[j-1][0],y:path[j-1][1]},{x:path[j][0],y:path[j][1]},r)).toBe(true);for(const b of g.breaches)expect(canOccupyExpedition(g,{x:b.x+(b.facing==='east'?56:-56),y:b.y},r)).toBe(true);}
  });
 });

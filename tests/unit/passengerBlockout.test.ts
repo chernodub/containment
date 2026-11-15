@@ -1,3 +1,4 @@
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../src/game/roguelike/shipArchitectureLayouts';
 import {describe,it,expect} from 'vitest';
 import * as T from 'three';
 import {DepthGame,type GameEffect} from '../../src/DepthGame';
@@ -11,29 +12,35 @@ import {ENEMIES} from '../../src/game/enemies/catalog';
 import {authoredRoom} from '../../src/render/AuthoredRooms';
 import {disposeModel} from '../../src/render/meshParts';
 const nodes=generateRun(3,3).nodes,node=nodes.find(n=>n.templateId==='passenger-vault')!;
-const rectangles=[[320,240,200,120,40],[680,240,200,120,40],[320,520,200,120,40],[680,520,200,120,40],[300,40,600,80,48],[300,760,600,80,32],[1040,240,120,80,40],[1002.55,479.35,87.45,38.63,58.34]];
+const template=ROOM_TEMPLATES[node.templateId];
+const rectangles=[[320,260,200,100,40],[680,260,200,100,40],[320,520,200,100,40],[680,520,200,100,40],[300,40,600,80,48],[300,760,600,80,32],[1040,240,120,80,40],[1020,479.35,87.45,38.63,58.34]];
+const solids=[...rectangles,...template.obstacles.map(r=>[r.x,r.y,r.width,r.height,30])];
 const point=(x:number,y:number)=>({x,y});
 const geometry=()=>createExpeditionGeometry(node);
 const setup=(emit:(e:GameEffect)=>void=()=>{})=>{const game=new DepthGame(emit);game.node=node;game.geometry=geometry();game.navigation=new FacilityNavigation(game.geometry);game.status='playing';Object.assign(game.player,game.geometry.playerSpawn);return game;};
-const routes=[[[100,440],[1100,440]],[[100,440],[260,440],[260,180],[960,180],[960,440],[1100,440]],[[100,440],[260,440],[260,700],[960,700],[960,440],[1100,440]],[[600,180],[600,700]]].map(r=>r.map(([x,y])=>point(x,y)));
+const southCircuit=[[100,440],[180,440],[180,700],[960,700],[960,440],[1100,440]];
+// A hull-backed north pod bank supersedes the old north cross aisle. The
+// actual independent routes are the centre aisle and southern service circuit.
+const routes=[[[100,440],[1100,440]],southCircuit,[...southCircuit].reverse(),[[600,180],[600,440],[960,440],[960,700],[600,700]]].map(r=>r.map(([x,y])=>point(x,y)));
 const targets=[point(180,440),point(600,180),point(600,700),point(600,440),point(1100,440)];
-// Exclude boundary-flush faces and the console east face whose 88-unit
-// drop-attraction probe exceeds the unchanged hall boundary. Its shorter
-// gameplay route remains covered separately.
-const accessibleFaces=rectangles.flatMap(([x,y,w,h],i)=>[
+const outward=(face:{x:number;y:number},normal:{x:number;y:number},distance:number)=>point(face.x+normal.x*distance,face.y+normal.y*distance);
+// Test every genuinely exposed face, including the new connecting banks.
+// Buried hull/overlap faces are not pretend approach surfaces. The longer
+// collection probes form a separate explicitly checked subset.
+const exposedFaces=solids.flatMap(([x,y,w,h])=>[
  {face:point(x,y+h/2),normal:point(-1,0),side:'west'},
  {face:point(x+w,y+h/2),normal:point(1,0),side:'east'},
  {face:point(x+w/2,y),normal:point(0,-1),side:'north'},
  {face:point(x+w/2,y+h),normal:point(0,1),side:'south'},
-].filter(f=>!(i===4&&f.side==='north'||i===5&&f.side==='south'||i>=6&&f.side==='east')));
-const outward=(face:{x:number;y:number},normal:{x:number;y:number},distance:number)=>point(face.x+normal.x*distance,face.y+normal.y*distance);
+].filter(f=>canOccupyExpedition(geometry(),outward(f.face,f.normal,28),16)));
+const accessibleFaces=exposedFaces.filter(f=>canTraverseExpedition(geometry(),outward(f.face,f.normal,28),outward(f.face,f.normal,88),16));
 describe('reviewed Passenger Vault whole-room blockout',()=>{
- it('preserves all nineteen other templates',()=>expect(nodes.filter(n=>n!==node).map(n=>ROOM_TEMPLATES[n.templateId])).toMatchSnapshot());
- it('uses exactly the eight sealed reservations, rectangular deck and four offset-safe breaches',()=>{
-  const g=geometry();expect(g.boundary).toEqual([point(40,40),point(1160,40),point(1160,840),point(40,840)]);
+ it('preserves all sixteen non-story legacy templates including the Queen exactly',()=>{const legacy=Object.values(ROOM_TEMPLATES).filter(t=>!Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,t.id));expect(legacy).toHaveLength(16);expect(legacy.some(t=>t.id==='reactor-vault')).toBe(true);expect(legacy).toMatchSnapshot();});
+ it('uses eight sealed reservations with real hull bridges, articulated deck and four offset-safe breaches',()=>{
+  const g=geometry();expect(g.boundary).toEqual([[40,40],[1160,40],[1160,360],[1200,360],[1200,520],[1160,520],[1160,840],[40,840],[40,520],[0,520],[0,360],[40,360]].map(([x,y])=>point(x,y)));expect(g.boundary).toHaveLength(12);expect(g.voids).toHaveLength(8);
   expect(g.voids).toEqual(rectangles.map(([x,y,w,h])=>[point(x,y),point(x+w,y),point(x+w,y+h),point(x,y+h)]));
-  expect(ROOM_TEMPLATES[node.templateId].obstacles).toEqual([]);
-  expect(g.breaches.map(({x,y})=>point(x,y))).toEqual([point(260,180),point(960,180),point(260,700),point(960,700)]);
+  expect(template.obstacles).toEqual([{x:320,y:120,width:200,height:140},{x:680,y:120,width:200,height:140},{x:520,y:520,width:160,height:100},{x:1107.45,y:479.35,width:92.55,height:38.63}]);
+  expect(g.breaches.map(({x,y})=>point(x,y))).toEqual([point(220,200),point(980,200),point(220,700),point(980,700)]);
  });
  it('sweeps player and encounter radii on all four routes and diagonally through open intersections',()=>{
   const g=geometry();for(const radius of new Set([16,28,...Object.values(ENEMIES).filter(e=>e.radius<=38).map(e=>e.radius)])){
@@ -44,11 +51,12 @@ describe('reviewed Passenger Vault whole-room blockout',()=>{
  });
  it('reaches every working and maintenance position at radius 28',()=>{
   const g=geometry(),nav=new FacilityNavigation(g);nav.prepare(g.playerSpawn,1);
-  const positions=[... [345,395,445,495,705,755,805,855].flatMap(x=>[point(x,400),point(x,480)]),...[420,600,780].flatMap(x=>[point(x,180),point(x,700)]),point(1000,280),point(1000,600),g.playerSpawn,g.exitPoint];
+  const positions=[... [345,395,445,495,705,755,805,855].flatMap(x=>[point(x,400),point(x,480)]),... [420,600,780].map(x=>point(x,700)),point(220,200),point(600,180),point(980,200),point(1000,280),point(1000,600),g.playerSpawn,g.exitPoint];
   for(const p of positions){
    expect(canOccupyExpedition(g,p,28),JSON.stringify(p)).toBe(true);expect(nav.reachable(p),JSON.stringify(p)).toBe(true);
-   const approach=p.x===1000?[g.playerSpawn,point(960,440),point(960,p.y),p]
-    :p.y===180||p.y===700?[g.playerSpawn,point(260,440),point(260,p.y),p]
+   const approach=p.x===1000||p.x===980?[g.playerSpawn,point(960,440),point(960,p.y),p]
+    :p.y===700?[g.playerSpawn,point(180,440),point(180,700),p]
+    :p.x===220?[g.playerSpawn,point(220,440),p]
     :[g.playerSpawn,point(600,440),point(600,p.y),p];
    for(let i=1;i<approach.length;i++)expect(canTraverseExpedition(g,approach[i-1],approach[i],28),JSON.stringify({p,segment:i})).toBe(true);
   }
@@ -59,10 +67,13 @@ describe('reviewed Passenger Vault whole-room blockout',()=>{
    const id=game.enemies.snapshot.enemies[0].id;let steps=0;for(;steps<1200;steps++){const e=game.enemies.getSnapshot(id)!;expect(canOccupyExpedition(game.geometry,e,e.radius)).toBe(true);if(Math.hypot(e.x-target.x,e.y-target.y)<80)break;game.enemies.update(50,game.player);}expect(steps,JSON.stringify({start,target})).toBeLessThan(1200);
   }
   for(const [x,y,w,h] of rectangles){const game=setup();expect(game['spawn']('brute',x+w/2,y+h/2)).toBe(true);for(const e of game.enemies.snapshot.enemies){expect(canOccupyExpedition(game.geometry,e,e.radius)).toBe(true);game.navigation.prepare(game.player,1);expect(game.navigation.reachable(e)).toBe(true);}}
+  // New hull bridges are not spawn reservations. Their centres can exceed the
+  // native bounded relocation search; rejection must not create an illegal body.
+  for(const r of template.obstacles){const game=setup();game['spawn']('brute',r.x+r.width/2,r.y+r.height/2);for(const e of game.enemies.snapshot.enemies){expect(canOccupyExpedition(game.geometry,e,e.radius)).toBe(true);game.navigation.prepare(game.player,1);expect(game.navigation.reachable(e)).toBe(true);}}
  });
- it('keeps L1/L2 open and the oblique A ray blocked',()=>{const g=geometry();expect(hasClearExpeditionShot(g,point(180,440),point(1020,440))).toBe(true);expect(hasClearExpeditionShot(g,point(600,180),point(600,700))).toBe(true);expect(hasClearExpeditionShot(g,point(260,440),point(780,180))).toBe(false);});
+ it('keeps L1/L2 open and the oblique A ray blocked',()=>{const g=geometry();expect(hasClearExpeditionShot(g,point(180,440),point(1020,440))).toBe(true);expect(hasClearExpeditionShot(g,point(960,200),point(960,700))).toBe(true);expect(hasClearExpeditionShot(g,point(260,440),point(780,180))).toBe(false);});
  it('passes real player and hazard projectiles through L1/L2 without wall impacts',()=>{
-  for(const [from,to] of [[point(180,440),point(1020,440)],[point(600,180),point(600,700)]])for(const kind of ['player','hazard'] as const){
+  for(const [from,to] of [[point(180,440),point(1020,440)],[point(960,200),point(960,700)]])for(const kind of ['player','hazard'] as const){
    const events:GameEffect[]=[],game=setup(e=>events.push(e)),distance=Math.hypot(to.x-from.x,to.y-from.y),angle=Math.atan2(to.y-from.y,to.x-from.x);
    game.bullets.push({kind,...from,life:2,request:{weaponId:'plasma',damage:20,speed:1000,radius:9,angle,penetration:1,splashRadius:0,knockback:0},tracker:new ProjectileHitTracker(1)});
    for(let remaining=distance/1000;remaining>0;remaining-=.05)game['updateBullets'](Math.min(.05,remaining));
@@ -71,13 +82,13 @@ describe('reviewed Passenger Vault whole-room blockout',()=>{
  });
  it('matches rendered low solid contacts to every accessible logical face',()=>{
   const group=authoredRoom('passenger-vault',ROOM_TEMPLATES[node.templateId])!;group.updateMatrixWorld(true);
-  const ray=new T.Raycaster();for(const [x,y,w,h] of rectangles)for(const [start,end] of [[point(x-60,y+h/2),point(x,y+h/2)],[point(x+w+60,y+h/2),point(x+w,y+h/2)],[point(x+w/2,y-60),point(x+w/2,y)],[point(x+w/2,y+h+60),point(x+w/2,y+h)]]){
+  const ray=new T.Raycaster();for(const [x,y,w,h] of solids)for(const [start,end] of [[point(x-60,y+h/2),point(x,y+h/2)],[point(x+w+60,y+h/2),point(x+w,y+h/2)],[point(x+w/2,y-60),point(x+w/2,y)],[point(x+w/2,y+h+60),point(x+w/2,y+h)]]){
    if(!canOccupyExpedition(geometry(),start,16))continue;
    ray.set(new T.Vector3(start.x/32,16/32,start.y/32),new T.Vector3(end.x-start.x,0,end.y-start.y).normalize());const hit=ray.intersectObject(group,true)[0];expect(hit).toBeDefined();expect(hit.point.x*32).toBeCloseTo(end.x,3);expect(hit.point.z*32).toBeCloseTo(end.y,3);
   }disposeModel(group);
  });
  it('stops real bullets and grenades at every accessible row/service face with matching impact events',()=>{
-  for(const [x,y,w,h] of rectangles){const faces=[[point(x-60,y+h/2),0],[point(x+w+60,y+h/2),Math.PI],[point(x+w/2,y-60),Math.PI/2],[point(x+w/2,y+h+60),-Math.PI/2]] as const;
+  for(const [x,y,w,h] of solids){const faces=[[point(x-60,y+h/2),0],[point(x+w+60,y+h/2),Math.PI],[point(x+w/2,y-60),Math.PI/2],[point(x+w/2,y+h+60),-Math.PI/2]] as const;
    for(const [start,angle] of faces){if(!canOccupyExpedition(geometry(),start,16))continue;
     for(const kind of ['player','hazard','grenade'] as const){const events:GameEffect[]=[],game=setup(e=>events.push(e));game.bullets.push({kind,...start,life:1.1,request:{weaponId:'shotgun',damage:20,speed:1000,radius:7,angle,penetration:1,splashRadius:kind==='grenade'?80:0,knockback:0},tracker:new ProjectileHitTracker(1)});
      for(let i=0;i<24;i++){game.update(50);for(const b of game.bullets)expect(canOccupyExpedition(game.geometry,b,7)).toBe(true);}expect(game.bullets).toHaveLength(0);expect(events.some(e=>e.type===(kind==='grenade'?'explosion':'hit'))).toBe(true);
@@ -86,7 +97,7 @@ describe('reviewed Passenger Vault whole-room blockout',()=>{
   }
  });
  it('places and collects real drops at probes, every row corner and service face; preserves clear-room sweep',()=>{
-  const positions=[point(600,440),point(260,300),point(960,580),...rectangles.flatMap(([x,y,w,h])=>[point(x-28,y-28),point(x+w+28,y-28),point(x-28,y+h+28),point(x+w+28,y+h+28),point(x+w/2,y-28),point(x+w/2,y+h+28),point(x-28,y+h/2)])].filter(p=>canOccupyExpedition(geometry(),p,16));
+  const positions=[point(600,440),point(260,300),point(960,580),...solids.flatMap(([x,y,w,h])=>[point(x-28,y-28),point(x+w+28,y-28),point(x-28,y+h+28),point(x+w+28,y+h+28),point(x+w/2,y-28),point(x+w/2,y+h+28),point(x-28,y+h/2)])].filter(p=>canOccupyExpedition(geometry(),p,16));
   for(const p of positions){const game=setup();game.navigation.prepare(game.player,1);expect(game.navigation.reachable(p)).toBe(true);let dropped=false;for(let i=0;i<100&&!dropped;i++)dropped=game.pickups.rollEnemyDrop('brute',p.x,p.y).dropped;expect(dropped).toBe(true);Object.assign(game.player,p);game.update(50);expect(game.pickups.snapshot).toHaveLength(0);}
   const game=setup();for(const p of [point(600,440),point(260,300),point(960,580)])expect(game.pickups.spawn('credits',10,p.x,p.y).spawned).toBe(true);const before=game.combat.snapshot.credits;game['collectLoot'](true);expect(game.pickups.snapshot).toHaveLength(0);expect(game.combat.snapshot.credits).toBe(before+30);
  });
@@ -96,7 +107,7 @@ describe('reviewed Passenger Vault whole-room blockout',()=>{
   Object.assign(game.player,point(568,380));for(let i=0;i<20;i++)game.update(50);expect(game.pickups.snapshot).toHaveLength(0);
  });
  it('pins first face contact, shotgun normals, previous-centre hits and stopped grenade fuse semantics',()=>{
-  expect(accessibleFaces).toHaveLength(28);
+  expect(exposedFaces).toHaveLength(31);expect(accessibleFaces).toHaveLength(31);
   for(const {face,normal} of accessibleFaces)for(const mode of ['shotgun','rifle','hazard','grenade'] as const){
    const events:GameEffect[]=[],game=setup(e=>events.push(e)),start=outward(face,normal,60),previous=outward(face,normal,11);
    expect(canOccupyExpedition(game.geometry,start,16)).toBe(true);
@@ -119,14 +130,14 @@ describe('reviewed Passenger Vault whole-room blockout',()=>{
   }
  });
  it('traces along-face and corner grazing with real player and hazard projectiles',()=>{
-  for(const kind of ['player','hazard'] as const)for(const y of [232,234]){
+  for(const kind of ['player','hazard'] as const)for(const y of [512,514]){
    const events:GameEffect[]=[],game=setup(e=>events.push(e));
    game.bullets.push({kind,x:290,y,life:2,request:{weaponId:'shotgun',damage:20,speed:1000,radius:7,angle:0,penetration:1,splashRadius:0,knockback:0},tracker:new ProjectileHitTracker(1)});
    for(let i=0;i<38;i++)game['updateBullets'](.007);
-   if(y===232){expect(events).toEqual([]);expect(game.bullets).toHaveLength(1);expect(game.bullets[0].x).toBeCloseTo(556);expect(game.bullets[0].y).toBe(y);}
+   if(y===512){expect(events).toEqual([]);expect(game.bullets).toHaveLength(1);expect(game.bullets[0].x).toBeCloseTo(556);expect(game.bullets[0].y).toBe(y);}
    else{expect(game.bullets).toHaveLength(0);expect(events).toHaveLength(1);expect(events[0].type).toBe('hit');
-    if(kind==='player'){expect(events[0].x).toBeCloseTo(320,4);expect(events[0].y).toBeCloseTo(240,4);expect(events[0].wall!.x).toBeLessThan(0);expect(events[0].wall!.y).toBeLessThan(0);expect(Math.hypot(events[0].wall!.x,events[0].wall!.y)).toBeCloseTo(1);}
-    else{expect(events[0].x).toBe(311);expect(events[0].y).toBe(234);expect(events[0].wall).toBeUndefined();}
+    if(kind==='player'){expect(events[0].x).toBeCloseTo(320,4);expect(events[0].y).toBeCloseTo(520,4);expect(events[0].wall!.x).toBeLessThan(0);expect(events[0].wall!.y).toBeLessThan(0);expect(Math.hypot(events[0].wall!.x,events[0].wall!.y)).toBeCloseTo(1);}
+    else{expect(events[0].x).toBe(311);expect(events[0].y).toBe(514);expect(events[0].wall).toBeUndefined();}
    }
   }
  });
@@ -142,7 +153,7 @@ describe('reviewed Passenger Vault whole-room blockout',()=>{
  });
  it('rejects radius-14 crawler edge drops without relocation on every accessible face',()=>{
   expect(ENEMIES.crawler.radius).toBe(14);
-  for(const {face,normal} of accessibleFaces){
+  for(const {face,normal} of exposedFaces){
    const game=setup(),p=outward(face,normal,15);
    expect(canOccupyExpedition(game.geometry,p,ENEMIES.crawler.radius)).toBe(true);expect(canOccupyExpedition(game.geometry,p,16)).toBe(false);
    expect(game.pickups.spawn('credits',10,p.x,p.y)).toEqual({spawned:false,reason:'invalid'});

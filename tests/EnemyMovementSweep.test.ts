@@ -9,9 +9,11 @@ function fixture(x:number,y:number){
  return {game,id:result.enemy.id,before:game.enemies.getSnapshot(result.enemy.id)!};
 }
 describe('production enemy swept movement',()=>{
- it('does not knock a spitter across the recorded Shielding Gate corner into a legal endpoint',()=>{
-  // Native sourceaa4, frames420→421: both endpoints are legal, the intervening radius18 sweep is not.
-  const from={x:289.3859237654455,y:107.50048220650496},to={x:281.2396715160295,y:187.0846425293285};
+ it('does not knock a spitter across the redesigned Shielding Gate corner into a legal endpoint',()=>{
+  // The old sourceaa4 corner is now buried in a hull-backed bank. This
+  // fixture straddles the real new bank corner560/340: both radius18 endpoints
+  // remain legal while the diagonal sweep cuts the solid; sliding must survive.
+  const from={x:580,y:330},to={x:550,y:360};
   const {game,id,before}=fixture(from.x,from.y);
   expect(canOccupyExpedition(game.geometry,from,before.radius)).toBe(true);
   expect(canOccupyExpedition(game.geometry,to,before.radius)).toBe(true);

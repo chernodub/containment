@@ -94,6 +94,7 @@ export function crewCheckpointBlockout(f:Footprint,index:number):T.Group{
   for(const x of [3.01,3.66])b('weapon-retaining-lock',x,1.015,.48,.055,.23,.38,MAT.orange);
  }else{
   // One connected line faces the west arrival; the east side retains its braces.
+  b('shield-continuous-grounded-infill',1.25,.49,d/2,2.48,.98,d-.02,MAT.steel);
   const wallZ=index===0?.1:d-.1,gateZ=index===0?d-.2:.2;
   b('wall-anchor',.65,.7,wallZ,1.3,1.4,.2,MAT.edge);
   b('gate-jamb',.65,.9,gateZ,1.3,1.8,.4,MAT.steel);
@@ -140,6 +141,6 @@ export function crewCheckpointBlockout(f:Footprint,index:number):T.Group{
   const fit=new T.Group();root.add(fit);fit.add(parts);
   parts.rotation.y=Math.PI/2;parts.position.z=w;
   fit.scale.set(f.width/d,Math.min(1,f.width/d,f.height/w),f.height/w);
- }else parts.scale.set(f.width/w,Math.min(1,f.width/w,f.height/d),f.height/d);
+ }else parts.scale.set(f.width/w,Math.min(1,f.width/w),f.height/d);
  root.position.set(f.x,0,f.y);root.userData.footprint={...f};return root;
 }

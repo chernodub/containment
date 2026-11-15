@@ -1,10 +1,15 @@
 import {describe,expect,it,vi} from 'vitest';
 import * as T from 'three';
+import {mountedIngressHasBacking,mountedIngressContainsVertex,type MountedIngress} from './world/MountedIngress';
+import {WARNING_FRAME_LOWEST} from './world/WarningRepeaters';
 import {addWorldDressing,updateWorldDressing} from './world/WorldDressing';
 import {ROOM_TEMPLATES} from '../game/roguelike/roomTemplates';
+import {DepthRenderer} from './DepthRenderer';
+import {generateRun} from '../game/roguelike/run';
+import {SHIP_ARCHITECTURE_PLANS} from '../game/roguelike/shipArchitectureLayouts';
+import {ACT3_PRESENTATION_ROOMS} from './world/Act3ShipPresentation';
 import {ROOM_STORY_ROUTE} from '../game/roguelike/storyRooms';
 import {disposeModel} from './meshParts';
-import {environmentArchitecture,environmentObstacle,appendEnvironment} from './ShipEnvironments';
 import {CameraRig} from './camera/CameraRig';
 import {roomFocus} from './roomFraming';
 import {addEnvironmentalStory} from './world/EnvironmentalStory';
@@ -13,9 +18,13 @@ import {addRoomPracticals} from './lighting/RoomPracticals';
 import {COMBAT_VIEW_HEIGHT,combatFocusTarget,protectPlayerFrame} from './camera/CombatFraming';
 
 function platformWorld(template:typeof ROOM_TEMPLATES['armory']){
- const root=new T.Group();
- for(const r of template.obstacles){const mesh=new T.Mesh(new T.BoxGeometry(r.width/32,1,r.height/32),new T.MeshStandardMaterial());mesh.position.set((r.x+r.width/2)/32,.5,(r.y+r.height/2)/32);root.add(mesh);}
- for(const polygon of template.voids??[]){const shape=new T.Shape(polygon.map(p=>new T.Vector2(p.x/32,-p.y/32))),geometry=new T.ExtrudeGeometry(shape,{depth:1,bevelEnabled:false,steps:1});geometry.rotateX(-Math.PI/2);root.add(new T.Mesh(geometry,new T.MeshStandardMaterial()));}
+ const supportMaterial=()=>{const material=new T.MeshStandardMaterial();material.userData.actorMaterial=true;return material;};
+ const root=new T.Group(),node=generateRun(1729,3).nodes.find(n=>n.templateId===template.id);
+ if(node){const architecture=DepthRenderer.prototype['buildRoomArchitecture'].call(Object.create(DepthRenderer.prototype),node,template);if(architecture){root.add(architecture);return root;}expect(template.id).toBe('communal-atrium');}
+ // Atrium composition and the legacy Queen have separate full-room owners;
+ // this dressing-only fixture supplies their bounded support surfaces.
+ for(const r of template.obstacles){const mesh=new T.Mesh(new T.BoxGeometry(r.width/32,1,r.height/32),supportMaterial());mesh.position.set((r.x+r.width/2)/32,.5,(r.y+r.height/2)/32);root.add(mesh);}
+ for(const polygon of template.voids??[]){const shape=new T.Shape(polygon.map(p=>new T.Vector2(p.x/32,-p.y/32))),geometry=new T.ExtrudeGeometry(shape,{depth:1,bevelEnabled:false,steps:1});geometry.rotateX(-Math.PI/2);root.add(new T.Mesh(geometry,supportMaterial()));}
  return root;
 }
 function arrays(root:T.Object3D){const all:number[][]=[];root.traverse(o=>{if(o instanceof T.Mesh)all.push(Array.from(o.geometry.attributes.position.array));});return all;}
@@ -24,9 +33,12 @@ function inside(x:number,z:number,polygon:readonly {x:number;y:number}[]){let va
 describe('G2 deterministic world dressing',()=>{
  it.each(ROOM_STORY_ROUTE.map(room=>[room.templateId,room.environment] as const))('%s retains its topology and bounds the material/triangle inventory', (id,environment)=>{
   const template=ROOM_TEMPLATES[id],before=JSON.stringify(template),world=platformWorld(template),root=addWorldDressing(world,template,environment,id,1729);
-  expect(JSON.stringify(template)).toBe(before);expect(root.userData.visualIdea).toBeTruthy();expect(root.children.length).toBeLessThanOrEqual(7);expect(root.userData.constructionNewFinishes).toEqual([]);
+  expect(JSON.stringify(template)).toBe(before);expect(root.userData.visualIdea).toBeTruthy();expect(root.children.length).toBeLessThanOrEqual(7);expect(root.userData.constructionNewFinishes).toEqual([]);expect(root.userData.ingressNewFinishes).toEqual([]);expect(root.userData.fittings).toBe(0);
   let triangles=0;root.traverse(o=>{if(o instanceof T.Mesh){triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;expect((o.material as T.Material).userData.actorMaterial).toBe(true);expect(Array.from(o.geometry.attributes.position.array).every(Number.isFinite)).toBe(true);}});
+  if(process.env.L8_DRESSING_REPORT==='1')process.stdout.write(`[L8 dressing] ${id}: ${triangles} triangles; ${root.userData.fittings} loose fittings\n`);
   expect(triangles).toBeLessThan(12000);
+  const ingress=(root.userData.mountedIngress??[]) as MountedIngress[];
+  for(const fitting of ingress)expect(mountedIngressHasBacking(template,fitting),fitting.name+' actual exposed backing').toBe(true);
   // Raised fittings stay over the original nonwalkable solids; approved hull
   // construction may extend outboard, while every interior navigation sample remains protected.
   root.traverse(object=>{
@@ -37,10 +49,15 @@ describe('G2 deterministic world dressing',()=>{
     const x=positions.getX(i)*32,z=positions.getZ(i)*32;
     const supported=template.obstacles.some(r=>x>=r.x-.01&&x<=r.x+r.width+.01&&z>=r.y-.01&&z<=r.y+r.height+.01)||!!template.voids?.some(polygon=>inside(x,z,polygon));
     const hull=template.boundary??[{x:0,y:0},{x:template.width,y:0},{x:template.width,y:template.height},{x:0,y:template.height}];
-    expect(supported||!inside(x,z,hull),`${object.name} ${x}/${z} at ${positions.getY(i)}`).toBe(true);
+    const range=root.userData.warningVertexRanges?.[(object.material as T.Material).name];
+    const overhead=range&&i>=range.start&&i<range.end;
+    const fitting=ingress.find(f=>f.parts.some(part=>part.material===(object.material as T.Material).name&&i>=part.start&&i<part.end));
+    if(fitting){expect(mountedIngressContainsVertex(fitting,[positions.getX(i),positions.getY(i),positions.getZ(i)]),fitting.name+' embedded <=.035m facade / <=.91m cutaway').toBe(true);}
+    else if(overhead&&!supported){expect(positions.getY(i)).toBeGreaterThanOrEqual(WARNING_FRAME_LOWEST-.001);expect((object.material as T.Material).transparent).toBe(true);expect((object.material as T.Material).depthWrite).toBe(false);}
+    else expect(supported||!inside(x,z,hull),`${object.name} ${x}/${z} at ${positions.getY(i)}`).toBe(true);
    }
   });
-  disposeModel(root);for(const child of world.children)if(child instanceof T.Mesh){child.geometry.dispose();(child.material as T.Material).dispose();}
+  disposeModel(world);
  });
  it('keeps sixteen frosted observation windows inside sealed passenger rows and retires their texture',()=>{
   const t=ROOM_TEMPLATES['passenger-vault'],world=platformWorld(t),root=addWorldDressing(world,t,'cryogenics',t.id,3);
@@ -49,7 +66,7 @@ describe('G2 deterministic world dressing',()=>{
   expect(display.material.map).toBeInstanceOf(T.DataTexture);expect(display.material.roughness).toBeLessThan(.3);
   const texture=display.material.map!,image=texture.image as {width:number;height:number;data:Uint8Array};
   expect(image.width*image.height).toBeLessThanOrEqual(32768);expect(new Set(image.data).size).toBeGreaterThan(20);
-  const dispose=vi.spyOn(texture,'dispose');disposeModel(root);expect(dispose).toHaveBeenCalledTimes(1);
+  const dispose=vi.spyOn(texture,'dispose');disposeModel(root);expect(dispose).toHaveBeenCalledTimes(1);disposeModel(world);
  });
  it('roots every bounded wet patch in a visible machine outlet',()=>{
   const t=ROOM_TEMPLATES['coolant-plant'],world=platformWorld(t),root=addWorldDressing(world,t,'maintenance',t.id,3);
@@ -63,19 +80,17 @@ describe('G2 deterministic world dressing',()=>{
   expect(root.userData.displayText).toEqual(['INDEPENDENT DIAGNOSTIC','OCCUPIED CRYO DECKS','PURGE IS FATAL']);
   const mesh=root.getObjectByName('g2-dressing-display') as T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>,texture=mesh.material.map!;
   expect(texture).toBeInstanceOf(T.DataTexture);expect(mesh.material.emissiveMap).toBe(texture);const image=texture.image as {width:number;height:number};expect(image.width*image.height).toBeLessThanOrEqual(65536);
-  const retired=vi.spyOn(texture,'dispose');disposeModel(root);expect(retired).toHaveBeenCalledTimes(1);
+  const retired=vi.spyOn(texture,'dispose');disposeModel(root);expect(retired).toHaveBeenCalledTimes(1);disposeModel(world);
  });
  it.each(['diagnostic-gallery','safety-interlock-station','manual-control-chamber'] as const)('%s projects the full story quad in front of all foreground hardware',id=>{
-  const t=ROOM_TEMPLATES[id],world=new T.Group(),environment=id==='manual-control-chamber'?'reactor':'engineering';
-  for(const [index,r] of t.obstacles.entries())appendEnvironment(world,environmentObstacle(environment,{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},index,id));
-  environmentArchitecture(world,environment,t.width/32,t.height/32,id);
+  const t=ROOM_TEMPLATES[id],world=platformWorld(t),environment=id==='manual-control-chamber'?'reactor':'engineering';
   const root=addWorldDressing(world,t,environment,id),display=root.userData.storyDisplay as {center:number[];corners:number[][];normal:number[]};
-  addEnvironmentalStory(world,t,environment,id);
+  if(!ACT3_PRESENTATION_ROOMS.has(id))addEnvironmentalStory(world,t,environment,id);
   addRoomPracticals(world,t.width/32,t.height/32,environment);addInteriorPracticals(world,t,environment);
   expect(display.corners).toHaveLength(4);
   const camera=new T.PerspectiveCamera(28,16/9,.1,160),rig=new CameraRig();world.updateWorldMatrix(true,true);
   const desired=new T.Vector3(),scratch=new T.Vector3(),target=new T.Vector3();
-  for(const [px,pz] of [[t.spawn.x/32,t.spawn.y/32],[(id==='diagnostic-gallery'?550:560)/32,440/32]]){
+  for(const [px,pz] of [[t.spawn.x/32,t.spawn.y/32],[SHIP_ARCHITECTURE_PLANS[id]!.arena.x/32,SHIP_ARCHITECTURE_PLANS[id]!.arena.y/32]]){
   combatFocusTarget(px,pz,0,0,0,false,false,desired);
   const focus=roomFocus(desired.x,desired.z,t.width/32,t.height/32,COMBAT_VIEW_HEIGHT*16/9,COMBAT_VIEW_HEIGHT,id);
   rig.reset(focus.x,focus.z);rig.apply(camera,1,COMBAT_VIEW_HEIGHT,0);protectPlayerFrame(camera,rig.focus,px,pz,.5,2.2,scratch,target);
@@ -116,6 +131,6 @@ describe('G2 deterministic world dressing',()=>{
   const spies=[...resources].map(resource=>vi.spyOn(resource,'dispose')),oldArrays=arrays(root),count=root.children.length;
   updateWorldDressing(world,1);expect(material.emissiveIntensity).not.toBe(root.userData.growthIntensity);
   updateWorldDressing(root,90,true);expect(material.emissiveIntensity).toBe(root.userData.growthIntensity);expect(root.children.length).toBe(count);expect(arrays(root)).toEqual(oldArrays);
-  disposeModel(root);for(const spy of spies)expect(spy).toHaveBeenCalledTimes(1);
+  disposeModel(root);for(const spy of spies)expect(spy).toHaveBeenCalledTimes(1);disposeModel(world);
  });
 });

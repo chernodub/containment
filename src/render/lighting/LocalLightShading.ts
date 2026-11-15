@@ -85,7 +85,7 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
  float across=abs(chart.x+chart.y*.10);
  float slit=(1.0-smoothstep(aperture.z*.50,aperture.z*1.35,across))*(1.0-smoothstep(aperture.w*.40,aperture.w,abs(chart.y)));
  // Cryo strip fixtures have no circular point-light pedestal outside the aperture.
- float stripOnly=1.0-step(.5,roomFloorPattern.z);
+ float stripOnly=max(roomFloorApertureOnly,1.0-step(.5,roomFloorPattern.z));
  directLight.color*=mix(.12+slit*.40,slit*.40,stripOnly);
  }
 #endif

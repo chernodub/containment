@@ -6,7 +6,8 @@ import {disposeModel} from './meshParts';
 
 describe('residential manufactured forms',()=>{
   it('keeps broad beveled cabin and packing forms in all four existing reservations',()=>{
-    for(const [index,r] of ROOM_TEMPLATES['residential-gallery'].obstacles.entries()){
+    // Source-model manufacture contract, independent of the redesigned live kit.
+    for(const [index,r] of [{x:280,y:160,width:240,height:100},{x:280,y:520,width:120,height:200},{x:650,y:270,width:260,height:100},{x:780,y:570,width:140,height:150}].entries()){
       const f={x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},root=residentialGalleryBlockout(f,index);
       root.updateWorldMatrix(true,true);const bounds=new T.Box3().setFromObject(root,true);
       expect(bounds.min.x).toBeGreaterThanOrEqual(f.x-.001);expect(bounds.max.x).toBeLessThanOrEqual(f.x+f.width+.001);

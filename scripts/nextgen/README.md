@@ -949,3 +949,36 @@ make no assertion about UI elements introduced by U9. Use them only with the
 explicit frozen baseline dist. The existing pause-loadout-augments required
 selectors are now scoped to `.pause-panel`, so a collapsed HUD copy cannot mask
 the visible loadout assertion.
+
+## L8 ship-architecture review
+
+`node scripts/nextgen/l8-plans.mjs <output> [before-templates.json]` uses the real
+collision predicates to render top-down PNGs and all twenty old/new pairs. Dark
+floor is legal point space; lighter floor admits radius32; cyan/gold are native
+entry/exit, orange marks breaches and muted lines are unobstructed sightlines.
+The sampled area JSON is geometry evidence, not timing or a navigation proof.
+Green lines mark verified clear route spans. They may be lanes through one broad
+mouth or open circulation boundaries; they do not by themselves prove door jambs
+or separately enclosed rooms. Physical walls are the actual dark solid geometry.
+`tests/L8ArchitectureClearance.test.ts` separately checks continuous sweeps and
+largest-enemy margin, dense marine destinations and each native breach offset.
+
+`playtest --storyboard-room=residential-gallery,crew-checkpoint,relay-racks`
+observes several rooms during one ordinary native campaign. Each room has its
+own `report.storyboards` entry and unchanged half-second observation clock;
+`report.storyboard` retains the first entry for existing single-room consumers.
+No extra fixed tick or input decision is added. Each board must be selected and
+validated separately, including a native clear; frames from different rooms
+must never be pooled into a single entry-to-clear sequence.
+
+The replacement L8 standard uses `ShipPlan` in `shipArchitecturePlan.ts`: named sub-space outlines/anchors, real≥140-unit openings, two named hull bays, a9m fight circle and breach-feature locations accompany the frozen topology. `createRoomTemplateGeometry(template,nodeId)` constructs identical pure simulation geometry for candidate plans before registration. `shipPlanChecks.ts` measures solid union/hull chains and physically seals each opening to prove alternate radius32 routes; the only permitted single-route exception is an explicit Transmission/Overload holdout. No encounter or save schema is part of this authoring metadata.
+
+`node scripts/nextgen/l8-retire-rounds.mjs` retires only complete, guard-successful intermediate rounds1–7 after their contact sheet exists. It preserves each original manifest and a SHA/byte inventory, keeps the three lead-correction labeled round7 plans, and refuses failed raw runs. Current/native final evidence is outside its selection.
+
+Prospective unregistered act plans use `node scripts/nextgen/l8-check-plan.mjs src/game/roguelike/shipArchitectureAct2.ts SHIP_ACT2_PLANS`. The checker validates their true template geometry and dense navigation without changing the active map. Labeled candidate PNGs use `node scripts/nextgen/l8-plans.mjs <out-dir> artifacts/nextgen/l8-baseline/plans/templates.json src/game/roguelike/shipArchitectureAct2.ts SHIP_ACT2_PLANS`; the candidate map is overlaid only inside the offline renderer. Substitute Act3/Act4 and their export names. Every candidate must carry complete `ShipPlan` metadata, not only collision rectangles.
+
+`l8-final-gallery.mjs --sha=<full-source> --out=<gallery> --plans=<plans> <raw-dirs...>` requires complete guarded spawn-calm and four-phase G6 scenarios for every story room, matching assets and source. Add `--include-arena-calm` only when all twenty supplemental `l8-arena-calm` scenarios exist: these retain their explicit staged-arena receipts and separate sheets. Original spawn calm and final5 before comparisons remain unchanged. Arena staging uses the declared legal9m fight floor and120 native renderer presentation ticks with the original camera and frozen simulation; it is not entry or campaign evidence. Failed-parent receipts and incomplete-scenario rejection remain mandatory.
+
+`node scripts/nextgen/l8-retire-standard8.mjs` retires successful superseded round8 PNGs only after preserving its two review contacts, immutable manifests/reports and complete SHA/byte inventory. It refuses failed/censored/assisted parents. Round9 standard and final-source evidence are outside its selection.
+
+`node scripts/nextgen/l8-native-campaigns.mjs --dist=<immutable-dist> --prefix=<unique-label>` queues the four rigs through the unchanged production browser runner, serially. It refuses existing dispatch/raw directories, requires source-matched unassisted20-room attempts with every tick rendered, and retains natural deaths and all errors/defects. Arc observes the three standard rooms plus Swarm during actual play; only genuinely cleared room storyboards may be presented as entry→fight→clear. These submission timings are separate from hardware benchmarks.

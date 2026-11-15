@@ -31,8 +31,14 @@ function gardenCanopy(source:T.BufferGeometry,seed:number):T.BufferGeometry {
  g.translate(-c.x,-c.y,-c.z);g.scale(size.x/a.x,size.y/a.y,size.z/a.z);g.translate(center.x,center.y,center.z);return g;
 }
 
+/** Stable story roles fitted to the active geometry, for source and fallback. */
+export function communalFixtureLayout(t:RoomTemplate,fixtures=COMMUNAL_ATRIUM_BLOCKOUT):typeof fixtures {
+ if(fixtures!==COMMUNAL_ATRIUM_BLOCKOUT||t.voids?.length!==fixtures.length)return fixtures;
+ return Object.freeze(fixtures.map((f,i)=>{const p=t.voids![i],xs=p.map(v=>v.x),ys=p.map(v=>v.y),x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;return Object.freeze({...f,x,y,w,h,footprint:p});})) as typeof fixtures;
+}
 /** Split garden court: fit each authored bed independently in loaded and fallback modes. */
 export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT, garden?:T.Group):T.Group{
+ fixtures=communalFixtureLayout(t,fixtures);
  const root=new T.Group();root.name='communal-atrium-rough';
  const finish=(name:string,source:T.MeshStandardMaterial,color:number,metalness:number,roughness:number)=>{
   const m=source.clone();m.name=`ca_${name}`;m.color.setHex(color);m.metalness=metalness;m.roughness=roughness;m.emissive.setHex(0);m.emissiveIntensity=0;m.userData.actorMaterial=true;return m;
@@ -89,6 +95,7 @@ export function communalAtrium(t:RoomTemplate, fixtures=COMMUNAL_ATRIUM_BLOCKOUT
     }
    }
    const g=own(new T.BufferGeometry());g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setIndex(indices);g.computeVertexNormals();
+   if(f.h>f.w){g.translate(-cx/32,0,-cz/32);g.rotateY(Math.PI/2);g.translate(cx/32,0,cz/32);}
    const foliage=new T.Mesh(g,leaf);foliage.castShadow=foliage.receiveShadow=true;root.add(foliage);
   }else if(f.kind==='garden'&&garden){
    const roles:Record<string,T.Material>={ca_support:support,ca_ceramic:ceramic,ca_soil:soil,ca_leaf:leaf,ca_irrigation:bark};

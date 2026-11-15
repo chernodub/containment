@@ -1,3 +1,4 @@
+import type {RoomTemplate} from '../game/roguelike/types';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RELAY_RACKS_FOOTPRINTS} from '../game/roguelike/relayRacksLayout';
@@ -7,7 +8,7 @@ import {serviceCartridge,serviceHousingGeometry} from './world/EquipmentDetail';
 /** Room-local shell and major forms. Dimensions are game units.
  * Raised forms remain inside the five production solids. Cross-aisle cables
  * are flush deck inlays, not extra blockers or relay-success indicators. */
-export function relayRacksRoom():T.Group{
+export function relayRacksRoom(includeShell=true,template?:RoomTemplate):T.Group{
  const root=new T.Group();root.name='authored-relay-racks';
  const material=(name:string,color:number,metalness=.35)=>{const m=new T.MeshStandardMaterial({color,metalness,roughness:.78});m.name=name;m.userData.actorMaterial=true;return m;};
  const deck=material('painted-steel-deck',0x30383a,.1),dark=material('relay-frame-metal',0x1d272b,.65),rail=material('relay-rail-metal',0x526164,.7),pale=material('relay-ceramic',0xc7cec0,.05),cyan=material('relay-fiber',0x568b91,.1),amber=material('relay-bridge-metal',0x8b7350,.65),damage=material('relay-cut-metal',0x765746);
@@ -55,11 +56,22 @@ export function relayRacksRoom():T.Group{
   box(shell,x,27,-6,28,4,8,cyan);
   root.userData.lightFixtures.push({x:x/32,y:27/32,z:-6/32,color:cyan.emissive.getHex()});
  }
- for(const [i,r]of RELAY_RACKS_FOOTPRINTS.entries()){
+ for(const [i,r]of (template?.obstacles??RELAY_RACKS_FOOTPRINTS).entries()){
   const g=group(`relay-fixture-${i}`),x=r.x+r.width/2,z=r.y+r.height/2;
-  box(g,x,4,z,r.width,8,r.height,dark);
+  // Author one170-unit rack assembly, then fit its complete frame (not just
+  // a low collision base) along the wall-connected cooling bank.
+  const isRack=i<4||!!template&&i===4,depthScale=isRack?r.height/170:1;
+  if(!includeShell)g.scale.y=.34;
+  if(isRack){g.scale.z=depthScale;g.position.z=z/32*(1-depthScale);}
+  if(template&&i===5){
+   g.scale.y=1;
+   box(g,x,10,z,r.width,20,r.height,dark);
+   for(let cx=r.x+32;cx<r.x+r.width-24;cx+=72){box(g,cx,25,z,56,12,r.height-8,rail);box(g,cx,31,z,42,2,r.height-16,cyan);}
+   continue;
+  }
+  box(g,x,4,z,r.width,8,isRack?170:r.height,dark);
   add(shell,new T.PlaneGeometry(r.width/32,r.height/32).rotateX(-Math.PI/2).translate(x/32,.005,z/32),contact);
-  if(i<4){
+  if(isRack){
    const broken=i===1,height=broken?56:76;
    const plenum=group(`relay-cooling-plenum-${i}`);g.add(plenum);
    box(plenum,x,13,z,84,10,148,dark);
@@ -171,9 +183,14 @@ export function relayRacksRoom():T.Group{
  box(channels,600,.15,627,10,.3,86,damage);
  box(channels,500,.15,670,200,.3,10,damage);
  for(const [g,batches]of groups)for(const [m,{parts,name}]of batches){
+  if(!includeShell&&[shell,seams,panels,channels].includes(g)){for(const p of parts)p.dispose();continue;}
   const geo=mergeGeometries(parts,false)!;for(const p of parts)p.dispose();
-  const mesh=new T.Mesh(geo,m);mesh.name=name;mesh.castShadow=g!==channels&&g!==shell;mesh.receiveShadow=true;mesh.userData.bakedEnvironment=true;(g===shell?root:g).add(mesh);
+  const mesh=new T.Mesh(geo,m);mesh.name=name;mesh.castShadow=m!==contact&&g!==channels&&g!==shell;mesh.receiveShadow=true;mesh.userData.bakedEnvironment=true;(g===shell?root:g).add(mesh);
  }
+ if(!includeShell)root.userData.lightFixtures=[];
+ // Skipped source-shell batches must retire their private finishes/normal map.
+ const used=new Set<T.Material>();root.traverse(o=>{if(o instanceof T.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])used.add(m);});
+ for(const m of [deck,dark,rail,pale,cyan,amber,damage,contact])if(!used.has(m))m.dispose();
  root.userData.localizedStatusIndicators=4*3*3;
  return root;
 }

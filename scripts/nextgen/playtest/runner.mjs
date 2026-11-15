@@ -30,8 +30,9 @@ const options = Object.fromEntries(args.map(arg => {
 }));
 const distRoot=resolve(String(options['dist-dir']??'dist'));
 const storyboardRoom=options['storyboard-room']??null;
+const storyboardRooms=String(storyboardRoom??'').split(',').filter(Boolean);
 const storyboardIntervalSeconds=.5;
-assert(!storyboardRoom||typeof storyboardRoom==='string'&&/^[a-z][a-z0-9-]+$/.test(storyboardRoom),'Invalid storyboard room');
+assert(!storyboardRoom||typeof storyboardRoom==='string'&&storyboardRooms.every(id=>/^[a-z][a-z0-9-]+$/.test(id)),'Invalid storyboard room');
 assert(!storyboardRoom||!options.fast&&!options.realtime,'Storyboards require the ordinary fixed clock with every tick rendered');
 const checkpointScreens=options['checkpoint-screens']?new Set(String(options['checkpoint-screens']).split(',')):null;
 if(checkpointScreens){options.checkpoints=true;for(const kind of checkpointScreens)assert(['menu','menu-settings','menu-controls','menu-credits','rig-select','starting-boon','combat','pause','pause-loadout','pause-settings','pause-controls','reward','route','shop','destroy-confirm','dead','complete'].includes(kind),`Unknown checkpoint screen ${kind}`);}
@@ -67,10 +68,11 @@ const report = {
   rooms: resumed?resumed.parent.rooms.filter(r=>['clear','complete'].includes(r.result)&&resumed.checkpoint.run.completedNodeIds.includes(r.nodeId)):[], errors: resumed?[...resumed.parent.errors]:[], defects: resumed?[...resumed.parent.defects]:[], checkpoints: [], screenshots: [], inputs: [], outcome: 'running',
   limitations: ['Incoming damage source is inferred from nearby threats, not authoritative attribution.', 'Accelerated CPU samples include rendering submission, not GPU completion; RAF diagnostics are separately retained.', 'A deterministic seed does not guarantee identical outcomes across policy/render timing; input trace is retained.', 'Audio spy tracks source lifecycle, not perceived sound quality.'],
 };
-if(storyboardRoom)report.storyboard={
-  room:storyboardRoom,sampleIntervalSeconds:storyboardIntervalSeconds,frames:[],
-  method:'Read-only PNG observations after existing native steps; no added simulation tick, input change, camera change or policy decision.',
-};
+if(storyboardRoom){
+ report.storyboards=storyboardRooms.map(room=>({room,sampleIntervalSeconds:storyboardIntervalSeconds,frames:[],method:'Read-only PNG observations after existing native steps; no added simulation tick, input change, camera change or policy decision.'}));
+ report.storyboard=report.storyboards[0];
+}
+const storyboardFor=id=>report.storyboards?.find(board=>board.room===id);
 if(options.fast)report.limitations.push('Fast rendering omits intermediate GPU submissions only; timings/draw counts are not a production performance certificate. Preparation and evidence frames are fully drawn.');
 if(options['death-probe'])report.policy='Separate lifecycle-only natural death fixture: native UI start, intentionally idle in the first fight; no damage/state injection. Excluded from campaign balance cohorts.';
 if(resumed)report.continuation={source:resumed.source,parentLabel:resumed.parent.label,parentHead:resumed.parent.head,parentWallSeconds:resumed.parent.wallSeconds,provenRooms:resumed.checkpoint.run.completedNodeIds,explanation:'Continues a recorded earned boundary through real Continue; no unfought rooms are advanced.'};
@@ -174,8 +176,8 @@ async function shot(name,s) {
 }
 /** Register an existing evidence frame without changing native input or advancing the clock. */
 function recordStoryboard(beat,name,s) {
-  if(!report.storyboard||room?.id!==storyboardRoom)return;
-  report.storyboard.frames.push({
+  const board=storyboardFor(room?.id);if(!board)return;
+  board.frames.push({
     beat,file:`${name}.png`,snapshot:`${name}.json`,room:room.id,nodeId:room.nodeId,
     elapsed:s.elapsed,roomSeconds:s.elapsed-room.startedElapsed,status:s.status,phase:s.phase,
     remaining:s.remaining,kills:s.stats.kills.total,inputs:report.inputs.length,
@@ -324,7 +326,7 @@ try {
       const entryName=`r${s.node.depth+1}-${room.id}-start`;
       await shot(entryName,s);
       recordStoryboard('entry',entryName,s);
-      if(room.id===storyboardRoom)room.nextStoryboardSecond=storyboardIntervalSeconds;
+      if(storyboardFor(room.id))room.nextStoryboardSecond=storyboardIntervalSeconds;
       previousProgress='';stagnantSince=s.elapsed;
     }
     const pauseProbe=['pause','pause-loadout','pause-settings','pause-controls'].find(kind=>shouldProbe(kind)&&!probed.has(kind));
@@ -372,8 +374,8 @@ try {
       hardest=pressure;hardestFrames=[];report.hardestMoment={pressure,room:room.id,elapsed:after.elapsed};
       for(let frame=0;frame<4;frame++){hardestFrames.push(await shot(`hardest-${steps}-${frame}`,after));if(frame<3&&after.status==='playing'){if(options.realtime)await page.waitForTimeout(67);else await advance(1000/15);after=await snapshot();last=after;await appendFile(resolve(out,'trace.ndjson'),JSON.stringify({burst:true,stepMs:1000/15,aim:input.aim,fire:shooting,elapsed:after.elapsed,held:[...held],state:{status:after.status,player:after.player,stats:after.stats,enemies:after.enemies.map(e=>({id:e.id,type:e.type,x:e.x,y:e.y,health:e.health}))}})+'\n');}}
     }
-    if(room.id===storyboardRoom&&after.status==='playing'&&!after.loading&&after.elapsed-room.startedElapsed>=room.nextStoryboardSecond) {
-      const name=`play-r${room.depth+1}-${room.id}-${String(report.storyboard.frames.length).padStart(3,'0')}`;
+    if(storyboardFor(room.id)&&after.status==='playing'&&!after.loading&&after.elapsed-room.startedElapsed>=room.nextStoryboardSecond) {
+      const name=`play-r${room.depth+1}-${room.id}-${String(storyboardFor(room.id).frames.length).padStart(3,'0')}`;
       await shot(name,after);
       recordStoryboard('fight',name,after);
       room.nextStoryboardSecond=(Math.floor((after.elapsed-room.startedElapsed)/storyboardIntervalSeconds)+1)*storyboardIntervalSeconds;

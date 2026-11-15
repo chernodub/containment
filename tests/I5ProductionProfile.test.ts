@@ -57,7 +57,13 @@ describe('I5 active story profile keeps legacy encounters and reviewed story num
     const nodes = SEEDS.flatMap(seed => generateRun(seed).nodes.map(node => ({seed, node})));
     const plans = nodes.map(({seed, node}) => createEncounterPlan({seed, node, breachIds: ['north', 'south', 'east', 'west']}));
     const balances = nodes.map(({node}) => progressionFor(node));
-    expect(digest(plans)).toBe(STORY_PROFILE.plans);
+    // L8 appends exactly two actual combatants in four measured fast rooms.
+    // Preserve the historical all200-plan digest after removing only those tails.
+    const originalPlans=plans.map((plan,index)=>{
+      const appended=['transmission-chamber','diagnostic-gallery','safety-interlock-station','shielding-gate'].includes(nodes[index].node.templateId)?2:0;
+      return {...plan,totalSpawns:plan.totalSpawns-appended,schedule:plan.schedule.slice(0,plan.totalSpawns-appended)};
+    });
+    expect(digest(originalPlans)).toBe(STORY_PROFILE.plans);
     expect(digest(balances)).toBe(STORY_PROFILE.progression);
     for (const {node} of nodes) {
       const balance = progressionFor(node);
@@ -69,16 +75,16 @@ describe('I5 active story profile keeps legacy encounters and reviewed story num
     }
   });
 
-  it('pins the active story guardian set and unchanged Transmission pacing', () => {
+  it('pins the active story guardian set and finite Transmission append at the original cadence', () => {
     for (const seed of SEEDS) {
       const nodes = generateRun(seed).nodes;
       expect(nodes.filter(node => progressionFor(node).guardian).map(node => node.depth)).toEqual([5, 8, 12, 15, 18]);
       expect(progressionFor(nodes[5]).guardianKind).toBe('warden');
       expect(progressionFor(nodes[15]).guardianKind).toBe('matron');
       const transmission = createEncounterPlan({seed, node: nodes[9], breachIds: ['north', 'south', 'east', 'west']});
-      expect(transmission).toMatchObject({totalSpawns: 32, concurrentCap: 14});
+      expect(transmission).toMatchObject({totalSpawns: 34, concurrentCap: 14});
       expect(transmission.schedule[0].atMs).toBe(650);
-      expect(transmission.schedule.at(-1)!.atMs).toBe(23900);
+      expect(transmission.schedule.at(-1)!.atMs).toBe(25400);
       expect(transmission.schedule.every(request => !request.elite)).toBe(true);
     }
   });

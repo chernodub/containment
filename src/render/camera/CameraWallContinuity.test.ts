@@ -1,3 +1,4 @@
+import {AUTHORED_ROOM_TOPOLOGIES} from '../../game/roguelike/authoredRoomTopologies';
 import {describe,expect,it} from 'vitest';
 import * as T from 'three';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
@@ -19,7 +20,7 @@ describe('wall-adjacent priority-pair camera continuity',()=>{
   it.each(walls)('$id retains bounded per-frame zoom while the remote priority changes',wall=>{
     const results=[];
     for(const reducedMotion of [false,true]){
-      const room=ROOM_TEMPLATES[wall.id],camera=new T.PerspectiveCamera(28,16/9,.1,160);
+      const room=wall.id==='communal-atrium'?{...ROOM_TEMPLATES[wall.id],width:1200,height:880,boundary:AUTHORED_ROOM_TOPOLOGIES[wall.id]!.boundary}:ROOM_TEMPLATES[wall.id],camera=new T.PerspectiveCamera(28,16/9,.1,160);
       const rig=new CameraRig(),hud=new HudCombatFraming(),final=new RoomCombatFraming();
       const point=new T.Vector3(),target=new T.Vector3(),desired=new T.Vector3();
       hud.resize(1920,1080);hud.setInsets({top:182,right:292,bottom:120,left:0});
@@ -80,7 +81,7 @@ describe('wall-adjacent priority-pair camera continuity',()=>{
   it('caches shallow-depth searches across translated lookAt poses and invalidates on viewport change',()=>{
     const camera=new T.PerspectiveCamera(28,16/9,.1,160),rig=new CameraRig(),hud=new HudCombatFraming();
     const final=new RoomCombatFraming(),point=new T.Vector3(),target=new T.Vector3();
-    const room=ROOM_TEMPLATES['communal-atrium'];
+    const room={...ROOM_TEMPLATES['communal-atrium'],width:1200,height:880,boundary:AUTHORED_ROOM_TOPOLOGIES['communal-atrium']!.boundary};
     hud.resize(1920,1080);hud.setInsets({top:182,right:292,bottom:120,left:0});
     let depthQueries=0;
     const instrumented=final as unknown as {deckDepth(c:T.Camera,v:typeof hud.viewport):number};

@@ -1,3 +1,4 @@
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../src/game/roguelike/shipArchitectureLayouts';
 import {describe,it,expect} from 'vitest';
 import {generateRun} from '../../src/game/roguelike/run';
 import {ROOM_TEMPLATES} from '../../src/game/roguelike/roomTemplates';
@@ -9,9 +10,9 @@ import {DepthGame} from '../../src/DepthGame';
 const nodes=generateRun(3,3).nodes;
 const geometry=()=>createExpeditionGeometry(nodes.find(n=>n.templateId==='awakening-bay')!);
 describe('awakening cradle',()=>{
- it('preserves the other nineteen complete templates exactly',()=>{
-  const unchanged=nodes.filter(n=>n.templateId!=='awakening-bay').map(n=>ROOM_TEMPLATES[n.templateId]);
-  expect(unchanged).toHaveLength(19);expect(unchanged).toMatchSnapshot();
+ it('preserves all sixteen non-story legacy templates including the Queen exactly',()=>{
+  const unchanged=Object.values(ROOM_TEMPLATES).filter(t=>!Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,t.id));expect(unchanged.some(t=>t.id==='reactor-vault')).toBe(true);
+  expect(unchanged).toHaveLength(16);expect(unchanged).toMatchSnapshot();
  });
  it('blocks chamfered corners and straight equipment footprints',()=>{
   const g=geometry();
@@ -22,10 +23,11 @@ describe('awakening cradle',()=>{
  it('allows radius-38 traversal from the broken cradle to exit on both broad routes',()=>{
   const g=geometry(),nav=new FacilityNavigation(g);nav.prepare(g.playerSpawn,1);
   for(const radius of [16,28,38])expect(canTraverseExpedition(g,g.playerSpawn,g.exitPoint,radius),`center radius ${radius}`).toBe(true);
-  for(const side of [190,700]){
-   const route=[g.playerSpawn,{x:350,y:440},{x:350,y:side},{x:960,y:side},{x:960,y:440},g.exitPoint];
-   for(const radius of [16,28,38])for(let i=1;i<route.length;i++)expect(canTraverseExpedition(g,route[i-1],route[i],radius),JSON.stringify(route[i])).toBe(true);
-  }
+  // The northern bank now has a real hull connection. The complete loop
+  // follows Release → Recovery → Service → Observation, independently of the
+  // straight Pod aisle; both directions of the real circuit remain swept.
+  const loop=[g.playerSpawn,{x:350,y:440},{x:350,y:580},{x:80,y:580},{x:80,y:800},{x:640,y:800},{x:960,y:800},{x:960,y:440},g.exitPoint];
+  for(const route of [loop,[...loop].reverse()])for(const radius of [16,28,38])for(let i=1;i<route.length;i++)expect(canTraverseExpedition(g,route[i-1],route[i],radius),JSON.stringify({radius,from:route[i-1],to:route[i]})).toBe(true);
   for(const b of g.breaches)for(const p of [b,{x:b.x+(b.facing==='east'?56:-56),y:b.y}]){
    expect(canOccupyExpedition(g,p,38)).toBe(true);expect(nav.reachable(p)).toBe(true);
   }

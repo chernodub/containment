@@ -1,3 +1,6 @@
+import {act3ShipPresentation,ACT3_PRESENTATION_ROOMS} from './world/Act3ShipPresentation';
+import {act1ShipPresentation} from './world/Act1ShipPresentation';
+import {shipArchitectureRoom} from './world/ShipArchitectureRoom';
 import {attachRoomKits,KIT_STANDARD_ROOMS,prepareKitAssets} from './world/LazyRoomKits';
 import {AREA_ATTACK_DELAY_MS} from '../game/enemies/QueenBossSystem';
 import { registerGeometry, GEOMETRY_CLASSES } from './post/GeometryBuffer';
@@ -63,7 +66,7 @@ import {MAT,box,ball,rod,marine,alien,nest,updateNest,disposeModel,freezeCorpse,
 const {DeathRagdolls}=await import('../ui/loading/DeferredRagdolls');
 import {ROOM_TEMPLATES} from '../game/roguelike/roomTemplates';
 import type {DepthGame,GameEffect} from '../DepthGame';
-import type {RunNode} from '../game/roguelike/types';
+import type {RunNode,RoomTemplate} from '../game/roguelike/types';
 const UNIT=32;
 const PREPARATION_CANCELLED=Symbol('graphics-generation-replaced');
 export type RoomPreparationTiming={room:string;started:number;total:number;phases:Record<string,number>;compilePasses:number;textureUploads:number;programsBefore:number;programsAfter:number;materialProfiles:number};
@@ -181,10 +184,25 @@ export class DepthRenderer {
  punch(amount:number,ms:number){this.cameraRig.punch(amount,ms);}
  /** Speculate at most two known route nodes while rewards/routes leave the GPU idle. */
  prepareAhead(nodes:readonly RunNode[]){if(!this.disposed)this.aheadRooms?.prepareAhead(nodes);}
+ private buildRoomArchitecture(node:RunNode,t:RoomTemplate):T.Group|null{
+  const root=shipArchitectureRoom(node.templateId,t)??(node.templateId==='service-shaft-landing'?serviceShaftLanding(t):authoredRoom(node.templateId,t));
+  if(root&&node.templateId==='service-shaft-landing'){
+   root.traverse(object=>{if(object.userData.lightFixtures)object.userData.lightFixtures=object.userData.lightFixtures.map((fixture:Record<string,number>)=>({...fixture,poolStyle:fixture.poolStyle??1,poolAngle:fixture.poolAngle??Math.atan2(t.width/64-fixture.x,t.height/64-fixture.z),poolWidth:fixture.poolWidth??.35,poolDepth:fixture.poolDepth??5}));});
+   const presentation=act3ShipPresentation(node.templateId,t);if(presentation)root.add(presentation);
+  }
+  return root;
+ }
+ /** Flatten the bespoke shaft without discarding its authored source origins. */
+ private appendShaftArchitecture(root:T.Group){
+  root.updateWorldMatrix(true,true);this.world.updateWorldMatrix(true,false);
+  const inverse=new T.Matrix4().copy(this.world.matrixWorld).invert(),position=new T.Vector3(),fixtures=this.world.userData.lightFixtures??=[];
+  root.traverse(object=>{for(const fixture of object.userData.lightFixtures??[]){position.set(fixture.x,fixture.y,fixture.z).applyMatrix4(object.matrixWorld).applyMatrix4(inverse);fixtures.push({...fixture,x:position.x,y:position.y,z:position.z});}});
+  appendEnvironment(this.world,root);this.bakeWorld();
+ }
  private buildAhead(node:RunNode):T.Group|null{
   const t=ROOM_TEMPLATES[node.templateId],environment=shipEnvironment(node.templateId)??(node.templateId==='reactor-vault'?'reactor':'cryogenics');
   if(KIT_STANDARD_ROOMS.has(node.templateId))prepareKitAssets(environment);
-  const root=node.templateId==='service-shaft-landing'?serviceShaftLanding(t):authoredRoom(node.templateId,t);
+  const root=this.buildRoomArchitecture(node,t);
   if(root){batchStaticRoom(root);applyRoomMood(root,environment,node.templateId);this.materialWarmup.register(root);}
   // Link the retained shared shaders against the future light topology without
   // replacing the active room, capturing reflections, or holding route input.
@@ -362,12 +380,13 @@ export class DepthRenderer {
   const atrium=node.templateId==='communal-atrium';
   this.corpseIds?.clear();this.staticDirty=false;const staticLoaded=this.staticLoaded(this.world);
   this.muzzle.intensity=0;this.contacts.begin();this.contacts.end();
-  this.aheadRooms?.clearPending();const cached=this.aheadRooms?.take(node);const bespoke=cached!==undefined?cached:node.templateId==='service-shaft-landing'?serviceShaftLanding(t):authoredRoom(node.templateId,t);
+  this.aheadRooms?.clearPending();const cached=this.aheadRooms?.take(node);const bespoke=cached!==undefined?cached:this.buildRoomArchitecture(node,t);
   const act=Math.min(2,Math.floor(node.depth/4));this.surfaces.theme(act);if(environment)this.surfaces.shipTheme(environment);
   // Room-local habitation finish; theme() resets it on every subsequent room.
   if(node.templateId==='residential-gallery'){this.surfaces.floor.color.setHex(0x747976);this.surfaces.wall.color.setHex(0x788687);}
   if(atrium){this.surfaces.floor.color.setHex(0x77766c);this.surfaces.wall.color.setHex(0x777a6e);this.surfaces.cover.color.setHex(0x64695e);}
-  if(bespoke){if(node.templateId==='service-shaft-landing'){appendEnvironment(this.world,bespoke);this.bakeWorld();}else this.world.add(bespoke);if(node.templateId==='passenger-vault')this.passengerVault=attachPassengerVault(bespoke,staticLoaded);if(node.templateId==='awakening-bay'){this.sealedBank=attachSealedBank(bespoke,staticLoaded);this.releasedBerth=attachReleasedBerth(bespoke,staticLoaded);this.recoveryKit=attachRecoveryKit(bespoke,staticLoaded);}}else{
+  if(bespoke){if(node.templateId==='service-shaft-landing'){this.appendShaftArchitecture(bespoke);}else this.world.add(bespoke);if(bespoke.userData.templateArchitecture&&node.templateId==='residential-gallery'){const fallback=bespoke.getObjectByName('residential-gallery-equipment-fallback');if(fallback)this.world.add(fallback);}
+  if(node.templateId==='passenger-vault')this.passengerVault=attachPassengerVault(bespoke,staticLoaded);if(node.templateId==='awakening-bay'){this.sealedBank=attachSealedBank(bespoke,staticLoaded);this.releasedBerth=attachReleasedBerth(bespoke,staticLoaded);this.recoveryKit=attachRecoveryKit(bespoke,staticLoaded);}}else{
   // Atrium's straight physical enclosure follows its shared boundary; the
   // template dimensions below remain the unchanged camera/lighting envelope.
   const shellH=atrium?Math.max(...t.boundary!.map(p=>p.y))/UNIT:h;
@@ -423,7 +442,7 @@ export class DepthRenderer {
   // Nested ownership prevents appendEnvironment/bakeWorld from flattening fallback.
   const residentialFallback=node.templateId==='residential-gallery'?new T.Group():undefined;
   if(residentialFallback){residentialFallback.name='residential-gallery-equipment-fallback';this.world.add(residentialFallback);}
-  if(atrium)this.world.add(communalAtrium(t));
+  if(atrium){this.world.add(communalAtrium(t));const architecture=act1ShipPresentation(node.templateId,t);if(architecture)this.world.add(architecture);}
   for(const [obstacleIndex,r] of (atrium?[]:t.obstacles).entries()){
    const x=(r.x+r.width/2)/UNIT,z=(r.y+r.height/2)/UNIT,rw=r.width/UNIT,rh=r.height/UNIT;
    if(residentialFallback){residentialFallback.add(environmentObstacle('habitation',{x:r.x/UNIT,y:r.y/UNIT,width:rw,height:rh},obstacleIndex,node.templateId,this.roomSeed(node.id)));continue;}
@@ -455,7 +474,7 @@ export class DepthRenderer {
   if(node.templateId==='reactor-vault'){const hot=MAT.cyan.clone();hot.name='ship-cold-practical';hot.userData.actorMaterial=true;this.world.traverse(object=>{if(object instanceof T.Mesh&&object.material===MAT.cyan)object.material=hot;});}
   this.bakeWorld();
   }
-  if(node.templateId==='residential-gallery')this.residentialGalleryEquipment=attachResidentialGalleryEquipment(this.world,staticLoaded);
+  if(node.templateId==='residential-gallery'&&!bespoke)this.residentialGalleryEquipment=attachResidentialGalleryEquipment(this.world,staticLoaded);
   if(atrium)this.communalGarden=attachCommunalGarden(this.world,t,staticLoaded);
   this.exit=new T.Group();this.exit.position.set(t.exit.x/UNIT,0,t.exit.y/UNIT);this.world.add(this.exit);
   for(const side of [-1,1]){box(this.exit,0,.7,side*.7,.12,1.4,.18,MAT.steel);box(this.exit,.08,.7,side*.7,.04,1.05,.05,MAT.cyan,.01);}
@@ -463,7 +482,7 @@ export class DepthRenderer {
   // Rigid exit parts share finishes and transforms; retain three merged draws.
   batch(this.exit,true);
   // Flat markings and obstacle-supported dressing are registered before room preparation.
-  addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id),this.kitStartupComplete&&this.gameplayPresentationStarted&&(node.templateId==='residential-gallery'||node.templateId==='relay-racks'));addEnvironmentalStory(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);
+  addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id),this.kitStartupComplete&&this.gameplayPresentationStarted&&(node.templateId==='residential-gallery'||node.templateId==='relay-racks'));if(!ACT3_PRESENTATION_ROOMS.has(node.templateId)&&!bespoke?.getObjectByName('l8-ship-seam-growth'))addEnvironmentalStory(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
   this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.roomCombatFraming?.reset();this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.world.userData.staticBatching=batchStaticRoom(this.world);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId,this.lighting.practicalShapes);
   const leaks=this.world.getObjectByName('g2-world-dressing')?.userData.leakPositions??[];this.world.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial)setFloorLeaks(material,leaks);});
@@ -562,7 +581,7 @@ export class DepthRenderer {
    for(const c of this.corpses)this.contacts.add(c.x,c.y,.45);
   }
   this.contacts.end();
-  this.atmosphere.update(dt,this.camera);this.backdrop?.update(dt,this.focus);this.arena?.update(dt,this.options.flashIntensity,!!this.motionQuery?.matches);updateWorldDressing(this.world,this.time,!!this.motionQuery?.matches);updateExitSignal(this.exit,this.time,game.status==='reward'||game.status==='route',!!this.motionQuery?.matches);if(this.atmosphere?.root)this.atmosphere.root.visible=!menu&&this.tier==='high'&&this.options.atmosphere;
+  this.atmosphere.update(dt,this.camera);this.backdrop?.update(dt,this.focus);this.arena?.update(dt,this.options.flashIntensity,!!this.motionQuery?.matches);updateWorldDressing(this.world,this.time,!!this.motionQuery?.matches,this.camera,p,this.player.height,enemies,this.actors);updateExitSignal(this.exit,this.time,game.status==='reward'||game.status==='route',!!this.motionQuery?.matches);if(this.atmosphere?.root)this.atmosphere.root.visible=!menu&&this.tier==='high'&&this.options.atmosphere;
   this.heatClock+=dt;if(this.heatClock>1.5&&this.tier==='high'&&this.options.atmosphere&&this.options.distortion&&!this.motionQuery?.matches){this.heatClock=0;if(this.roomEnvironment==='engineering'||this.roomEnvironment==='reactor'||this.roomEnvironment==='cryogenics'){const fixture=this.lighting.fixtures[0],core=game.node.templateId==='overload-floor'?this.lighting.staging:null;this.post.distortion.heat(core?.coreX??fixture.position.x,core?.coreZ??fixture.position.z,core?2.4:3,core?.0024:this.roomEnvironment==='cryogenics'?-.0006:.0012,2.5);}}
   // Age the shared pool before refreshing every continuously attached source.
   if(this.tier==='high'&&this.options.dynamicLights)for(const e of enemies){const status=this.actors.get(e.id)?.root.userData.visualStatus;if(status&&(status.burning||status.frozen||status.poisoned)){const light=this.attachedLight;light.x=e.x/UNIT;light.z=e.y/UNIT;light.color=status.burning?0xff7a2e:status.poisoned?0x9dff5a:0x7fd6ff;light.intensity=status.burning?2:1.1;light.priority=1;this.lighting.pool.attach(e.id,light);}}

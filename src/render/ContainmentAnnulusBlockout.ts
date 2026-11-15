@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {Point,RoomTemplate} from '../game/roguelike/types';
+import {act4Architecture} from './Act4Architecture';
 import {industrialBoxGeometry,industrialCylinderGeometry} from './world/IndustrialFormKit';
 
 type Plan=Pick<RoomTemplate,'width'|'height'|'boundary'|'voids'|'obstacles'>;
@@ -16,6 +17,10 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
  const circulation=finish('annulus-circulation',0x354247,.92,.06),ceramicShade=finish('annulus-ceramic-shadow',0x737f82,.92,.03);
  // Broad ceramic courses stay flat and dry; no high-frequency glaze pattern
  // competes with the ink contours as the camera moves.
+ const boundary=t.boundary!,core=t.voids![0];
+ const center={x:(Math.min(...core.map(p=>p.x))+Math.max(...core.map(p=>p.x)))/2,y:(Math.min(...core.map(p=>p.y))+Math.max(...core.map(p=>p.y)))/2};
+ const offset={x:center.x-600,y:center.y-440};let sourceCore=false;
+ root.userData.coreCenter=center;root.userData.coreOffset=offset;
  const parts=new Map<T.Material,T.BufferGeometry[]>();
  const add=(g:T.BufferGeometry,m:T.Material,x=0,y=0,z=0,angle=0)=>{
   g.rotateY(angle);g.translate(x,y,z);
@@ -25,6 +30,7 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
   if(b.min.y>.30&&b.min.x>11&&b.max.x<26.5&&b.min.z>6&&b.max.z<21.5){
    g.translate(-600/32,0,-440/32);g.scale(.78,1,.78);g.translate(600/32,0,440/32);
   }
+  if(sourceCore)g.translate(offset.x/32,0,offset.y/32);
   const flat=g.index?g.toNonIndexed():g;if(flat!==g)g.dispose();
   const list=parts.get(m)??[];list.push(flat);parts.set(m,list);
  };
@@ -37,13 +43,13 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
   const r=(m===ceramic||m===ceramicShade)&&bottom>=11?Math.min(.05,height/32*.16):0;
   const g=new T.ExtrudeGeometry(shape,{depth:height/32-2*r,bevelEnabled:r>0,bevelSize:r,bevelThickness:r,bevelOffset:-r,bevelSegments:1,steps:1});g.rotateX(-Math.PI/2);add(g,m,0,bottom/32+r,0);
  };
- const boundary=t.boundary!,core=t.voids![0];
  slab(boundary,-14,14,deck,t.voids);slab(core,-14,25,dark);
  // The walkable ring is a broad, flush finish, not a raised catwalk.
- const expandedCore=(amount:number)=>core.map(p=>({x:p.x+Math.sign(p.x-600)*amount,y:p.y+Math.sign(p.y-440)*amount}));
+ const expandedCore=(amount:number)=>core.map(p=>({x:p.x+Math.sign(p.x-center.x)*amount,y:p.y+Math.sign(p.y-center.y)*amount}));
  slab(expandedCore(24),0,.2,dark,[core]);
  slab(expandedCore(124),0,.25,dark,[expandedCore(24)]);
  slab(expandedCore(120),.25,.2,circulation,[expandedCore(28)]);
+ sourceCore=true;
  // Sparse expansion joints cross the finish; no arrows or hazard countdown ring.
  for(const x of [470,730])for(const z of [268-74,612+74])box(deck,x,z,2,90,.45,.12);
  for(const x of [306,894])for(const z of [355,525])box(deck,x,z,90,2,.45,.12);
@@ -125,8 +131,9 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
   for(const dz of [-10,0,10])box(ceramicShade,815,z+49+dz,24,4,19,8);
   box(dark,782,z,8,46,31,4);
  }
- root.userData.localSigns=[{text:'PASSENGERS ALIVE',x:810,z:350,h:31,width:48,depth:30},{text:'NOT ARMED',x:810,z:490,h:31,width:48,depth:30}];
- if(typeof document!=='undefined')for(const sign of root.userData.localSigns){
+ const sourceSigns=[{text:'PASSENGERS ALIVE',x:810,z:350,h:31,width:48,depth:30},{text:'NOT ARMED',x:810,z:490,h:31,width:48,depth:30}];
+ root.userData.localSigns=sourceSigns.map(sign=>({...sign,x:center.x+(sign.x-600)*.78,z:center.y+(sign.z-440)*.78,h:sign.h+.1,width:sign.width*.78,depth:sign.depth*.78}));
+ if(typeof document!=='undefined')for(const sign of sourceSigns){
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=240;const ctx=canvas.getContext('2d');if(!ctx)continue;
   ctx.fillStyle='#172126';ctx.fillRect(0,0,512,240);ctx.fillStyle='#dce1cf';ctx.font='bold 58px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
   const words=sign.text==='PASSENGERS ALIVE'?['PASSENGERS','ALIVE']:['NOT ARMED','MANUAL ONLY'];for(let i=0;i<words.length;i++)ctx.fillText(words[i],256,75+i*95,490);
@@ -135,6 +142,7 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
   material.addEventListener('dispose',()=>texture.dispose());
   const g=new T.PlaneGeometry(sign.width/32,sign.depth/32);g.rotateX(-Math.PI/2);add(g,material,sign.x/32,(sign.h+.1)/32,sign.z/32);
  }
+ sourceCore=false;
  // Low perimeter wall cassettes sit against the existing envelope. Rear wall
  // panels are taller; the camera-facing edge stays at the blockout curb height.
  for(let i=0;i<boundary.length;i++){
@@ -149,6 +157,9 @@ export function containmentAnnulusBlockout(t:Plan):T.Group{
    box(metal,px,pz,len/count-10,12,height-3,3,angle);
   }
  }
+ // Shielding/service housings use exact live reservations and waist-height
+ // cutaways; their continuous bodies join the hull, not the sealed core.
+ const bays=act4Architecture('containment-annulus',t,{shell:ceramicShade,recess:dark,edge:metal});if(bays)root.add(bays);
  for(const [material,list] of parts){const g=mergeGeometries(list,false)!;list.forEach(p=>p.dispose());g.computeBoundingBox();g.computeBoundingSphere();const mesh=new T.Mesh(g,material);mesh.userData.bakedEnvironment=true;mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);}
  return root;
 }

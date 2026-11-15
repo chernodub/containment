@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type {RoomTemplate,Point} from '../game/roguelike/types';
+import {clearPolygonTopology} from '../game/world/polygonGeometry';
 
 const U=32;
 /** Room14 shell and machinery. All dimensions are game units. The template owns
@@ -155,23 +156,30 @@ export function serviceShaftLanding(t:RoomTemplate):T.Group{
    const sign=mesh(local,new T.PlaneGeometry(168/U,27/U),m);sign.rotation.x=-Math.PI/2;sign.position.set(810/U,15.1/U,258/U);
   }
  }
- const shell=group('outer-shell');
- box(shell,600,22,-6,1200,68,12,steel);
- for(const x of [0,1200])box(shell,x,8,440,10,28,880,steel);
- box(shell,600,4,886,1200,20,12,steel);
- // Recessed wall panels and exposed flanges stay beyond the legal boundary.
- const ribs=group('wall-ribs');
- for(let x=60;x<1200;x+=120){
-  box(ribs,x,20,-.8,108,48,1.2,dark);
-  box(ribs,x-56,22,-5,7,66,10,zinc);
-  box(ribs,x,48,-4,106,4,6,zinc);
-  if(x%240===60)box(ribs,x,43,-.6,30,4,1,amber);
+ const shell=group('outer-shell'),ribs=group('wall-ribs');
+ // Docking recesses and the open shaft mouth follow the live authored hull.
+ // Each outer panel is offset outboard, including the reentrant bay returns.
+ for(let i=0;i<outline.length;i++){
+  const a=outline[i],b=outline[(i+1)%outline.length],dx=b.x-a.x,dz=b.y-a.y,length=Math.hypot(dx,dz),nx=dz/length,nz=-dx/length,angle=-Math.atan2(dz,dx);
+  const h=dx>0?68:dx<0?20:28;
+  const plate=box(shell,(a.x+b.x)/2+nx*6,h/2-12,(a.y+b.y)/2+nz*6,length,h,12,steel);plate.rotation.y=angle;
+  const count=Math.max(1,Math.floor(length/120));
+  for(let j=0;j<count;j++){
+   const f=(j+.5)/count,x=a.x+dx*f,z=a.y+dz*f,w=Math.min(108,length/count-8),rh=dx>0?48:24;
+   const panel=box(ribs,x+nx*.8,rh/2-4,z+nz*.8,w,rh,1.2,dark);panel.rotation.y=angle;
+   const flange=box(ribs,x+nx*5,h/2-12,z+nz*5,7,h-2,8,zinc);flange.rotation.y=angle;
+   if(dx>0){const lamp=box(ribs,x+nx*.6,43,z+nz*.6,30,4,1,amber);lamp.rotation.y=angle;}
+  }
  }
- for(const x of [-1,1201])for(let z=80;z<880;z+=120)box(ribs,x,10,z,1.5,26,10,zinc);
  // Welded floor cassettes are flush markings, not new raised obstacles.
  // Three runs trace the connected C, with separate short exit-side panels.
  const finish=group('deck-finish');
+ const supported=(x:number,z:number,w:number,d:number)=>{
+  const corners=[[-1,-1],[-1,1],[1,1],[1,-1]].map(([sx,sz])=>({x:x+sx*w/2,y:z+sz*d/2}));
+  return corners.every((p,i)=>clearPolygonTopology(t,p,p)&&clearPolygonTopology(t,p,corners[(i+1)%4]))&&clearPolygonTopology(t,corners[0],corners[2])&&clearPolygonTopology(t,corners[1],corners[3]);
+ };
  const panel=(x:number,z:number,w:number,d:number)=>{
+  if(!supported(x,z,w,d))return;
   box(finish,x,.08,z,w,.16,d,floorPanel);
   for(const dz of [-d/2+3,d/2-3])box(finish,x,.19,z+dz,w-6,.12,1.4,grate);
   for(const dx of [-w/2+3,w/2-3])box(finish,x+dx,.19,z,1.4,.12,d-6,grate);
@@ -185,8 +193,8 @@ export function serviceShaftLanding(t:RoomTemplate):T.Group{
  for(const z of [280,420,560])panel(180,z,104,126);
  for(const z of [300,460])panel(1050,z,150,110);
  // Narrow drainage seams and worn edge paint follow real shaft edges only.
- for(const [x,z,w,d] of [[620,220,552,3],[620,660,552,3],[320,440,3,390],[920,380,3,292],[1050,520,250,3],[1050,660,250,3]]){
-  box(finish,x,.15,z,w,.2,d,dark);
+ for(const [x,z,w,d] of [[620,220,552,3],[620,660,552,3],[320,440,3,390],[920,380,3,292],[1030,520,230,3],[1030,660,230,3]]){
+  if(supported(x,z,w,d))box(finish,x,.15,z,w,.2,d,dark);
  }
  for(const z of [228,652])for(let x=368;x<900;x+=80)box(finish,x,.22,z,32,.2,4,amber);
  return root;

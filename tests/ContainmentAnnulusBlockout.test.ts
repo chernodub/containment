@@ -4,28 +4,31 @@ import {STORY_ROOM_TEMPLATES} from '../src/game/roguelike/storyRoomTemplates';
 import {ROOM_STORY_ROUTE} from '../src/game/roguelike/storyRooms';
 import {authoredRoom} from '../src/render/AuthoredRooms';
 import {disposeModel} from '../src/render/meshParts';
-import {createExpeditionGeometry,canOccupyExpedition,canTraverseExpedition,hasClearExpeditionShot} from '../src/game/world/expeditionGeometry';
-const t=STORY_ROOM_TEMPLATES['containment-annulus'];
-it('integrates the approved solid core and ring without detached blockers',()=>{
- expect(t.boundary).toEqual([{x:80,y:40},{x:1120,y:40},{x:1160,y:80},{x:1160,y:800},{x:1120,y:840},{x:80,y:840},{x:40,y:800},{x:40,y:80}]);
- expect(t.voids).toEqual([[{x:420,y:240},{x:780,y:240},{x:840,y:300},{x:840,y:580},{x:780,y:640},{x:420,y:640},{x:360,y:580},{x:360,y:300}]]);
- expect(t.obstacles).toEqual([]);
+import {createRoomTemplateGeometry,canOccupyExpedition,canTraverseExpedition,hasClearExpeditionShot} from '../src/game/world/expeditionGeometry';
+import {SHIP_ACT4_PLANS} from '../src/game/roguelike/shipArchitectureAct4';
+import {shipSolidStatistics} from '../src/game/roguelike/shipPlanChecks';
+const t={...STORY_ROOM_TEMPLATES['containment-annulus'],...SHIP_ACT4_PLANS['containment-annulus'].topology};
+const geometry=()=>createRoomTemplateGeometry(t,'annulus-owned-builder');
+it('keeps the original sealed core shape and attaches service housings to the live hull',()=>{
+ expect(t.voids![0].map(q=>({x:q.x-200,y:q.y-80}))).toEqual([{x:420,y:240},{x:780,y:240},{x:840,y:300},{x:840,y:580},{x:780,y:640},{x:420,y:640},{x:360,y:580},{x:360,y:300}]);
+ const stats=shipSolidStatistics(t);expect(stats.connectedFraction).toBeGreaterThanOrEqual(.6);expect(stats.freeGroups).toBe(1);
+ expect(t.obstacles).toHaveLength(2);for(const r of t.obstacles)expect(r.y===0||r.y+r.height===t.height).toBe(true);
 });
 it('keeps both complete ring directions and entry/exit open at player and enemy clearance',()=>{
- const g=createExpeditionGeometry({id:'room18-test',templateId:'containment-annulus',depth:17,kind:'combat',reward:'upgrade',next:[]});const ring=[[240,440],[240,220],[340,140],[860,140],[960,220],[960,660],[860,740],[340,740],[240,660],[240,440]].map(([x,y])=>({x,y}));
+ const g=geometry(),ring=[[350,520],[350,230],[1160,230],[1160,810],[350,810],[350,520]].map(([x,y])=>({x,y}));
  for(const r of [16,28,30,38]){
-  for(const path of [ring,[...ring].reverse(),[t.spawn,ring[0]],[{x:960,y:440},t.exit]])for(let i=1;i<path.length;i++)expect(canTraverseExpedition(g,path[i-1],path[i],r)).toBe(true);
-  for(const p of [...t.breaches,{x:600,y:160},{x:600,y:720},{x:930,y:350},{x:930,y:490}])expect(canOccupyExpedition(g,p,r)).toBe(true);
-  expect(canOccupyExpedition(g,{x:600,y:440},r)).toBe(false);
+  for(const path of [ring,[...ring].reverse(),[t.spawn,ring[0]],[{x:1160,y:520},t.exit]])for(let i=1;i<path.length;i++)expect(canTraverseExpedition(g,path[i-1],path[i],r)).toBe(true);
+  for(const p of [...t.breaches,{x:800,y:230},{x:800,y:810},{x:1160,y:350},{x:1160,y:650}])expect(canOccupyExpedition(g,p,r)).toBe(true);
+  expect(canOccupyExpedition(g,{x:800,y:520},r)).toBe(false);
  }
- expect(hasClearExpeditionShot(g,{x:240,y:440},{x:960,y:440})).toBe(false);
+ expect(hasClearExpeditionShot(g,{x:350,y:520},{x:1160,y:520})).toBe(false);
 });
 it('places bounded room assemblies and preserves owned resource disposal',()=>{
  const model=authoredRoom(t.id,t);expect(model).not.toBeNull();if(!model)return;
  expect(model.userData.stage).toBe('model-iteration');
  expect(model.userData.assemblies).toEqual(['sealed-core','segmented-jacket','radial-feet','inspection-plugs','passenger-vitals','authorization-state']);
- const bounds=new T.Box3().setFromObject(model,true);expect(bounds.min.x).toBeGreaterThanOrEqual(40/32-1e-5);expect(bounds.max.x).toBeLessThanOrEqual(1160/32+1e-5);expect(bounds.max.y).toBeLessThanOrEqual(1.7);
- const meshes:T.Mesh[]=[];model.traverse(o=>{if(o instanceof T.Mesh)meshes.push(o);});expect(meshes.length).toBeLessThanOrEqual(8);
+ const bounds=new T.Box3().setFromObject(model,true);expect(bounds.min.x).toBeGreaterThanOrEqual(0-1e-5);expect(bounds.max.x).toBeLessThanOrEqual(t.width/32+1e-5);expect(bounds.max.y).toBeLessThanOrEqual(1.7);
+ const meshes:T.Mesh[]=[];model.traverse(o=>{if(o instanceof T.Mesh)meshes.push(o);});expect(meshes.length).toBeLessThanOrEqual(11);
  const materials=[...new Set(meshes.map(m=>m.material as T.Material))];const gs=meshes.map(m=>vi.spyOn(m.geometry,'dispose')),ms=materials.map(m=>vi.spyOn(m,'dispose'));
  disposeModel(model);for(const spy of [...gs,...ms])expect(spy).toHaveBeenCalledTimes(1);vi.restoreAllMocks();
 });
@@ -34,7 +37,9 @@ it('retires document-present sign textures with their owned materials',()=>{
  try{
   const model=authoredRoom(t.id,t)!;const textures=new Set<T.Texture>();
   model.traverse(o=>{if(o instanceof T.Mesh){const m=o.material as T.MeshBasicMaterial;if(m.map)textures.add(m.map);}});
-  expect(textures.size).toBe(2);const spies=[...textures].map(texture=>vi.spyOn(texture,'dispose'));
+  expect(textures.size).toBe(2);
+  for(const sign of model.userData.localSigns){const hit=surface(model,sign.x,sign.z);expect((hit.object as T.Mesh<T.BufferGeometry,T.MeshBasicMaterial>).material.map).toBeInstanceOf(T.Texture);expect(hit.point.y*32).toBeCloseTo(sign.h,3);}
+  const spies=[...textures].map(texture=>vi.spyOn(texture,'dispose'));
   disposeModel(model);for(const spy of spies)expect(spy).toHaveBeenCalledTimes(1);
  }finally{vi.unstubAllGlobals();vi.restoreAllMocks();}
 });
@@ -45,26 +50,26 @@ function surface(model:T.Object3D,x:number,z:number){
 }
 it('builds a continuous contrasting circulation finish with flush service seams',()=>{
  const model=authoredRoom(t.id,t)!;
- for(const [x,z] of [[600,150],[600,730],[300,440],[900,440],[390,165],[810,715]]){
+ for(const [x,z] of [[800,230],[800,810],[500,520],[1100,520],[590,245],[1010,795]]){
   const hit=surface(model,x,z);expect(hit).toBeDefined();
   expect((hit.object as T.Mesh<T.BufferGeometry,T.Material>).material.name).toBe('annulus-circulation');
   expect(hit.point.y*32).toBeGreaterThan(0);expect(hit.point.y*32).toBeLessThanOrEqual(1);
  }
  disposeModel(model);
 });
-// Keep every original sample, split into bounded cases on the shared host.
-it.each([[80,340],[360,620],[640,900],[920,1120]])('keeps all walkable floor flush from x%s to x%s',(first,last)=>{
- const model=authoredRoom(t.id,t)!;
- for(let x=first;x<=last;x+=20)for(let z=80;z<=800;z+=20){
-  const insideCore=x>=350&&x<=850&&z>=230&&z<=650;
-  if(!insideCore)expect(surface(model,x,z).point.y*32).toBeLessThanOrEqual(1.01);
+// The live walkability query replaces the superseded rectangular core mask.
+it.each([[32,352],[368,704],[720,1056],[1072,1408]])('keeps every actual walking surface flush from x%s to x%s',(first,last)=>{
+ const model=authoredRoom(t.id,t)!,g=geometry();
+ for(let x=first;x<=last;x+=20)for(let z=32;z<t.height;z+=20){
+  if(canOccupyExpedition(g,{x,y:z},16))expect(surface(model,x,z)?.point.y! *32,`${x},${z}`).toBeLessThanOrEqual(1.01);
  }
  disposeModel(model);
 });
 // E7 contracts the raised decorative assembly while the collision/deck stay fixed.
 function decorativeSurface(model:T.Object3D,x:number,z:number){
  const scale=model.userData.decorativeCoreScale as number;expect(scale).toBe(.78);
- return surface(model,600+(x-600)*scale,440+(z-440)*scale);
+ const center=model.userData.coreCenter;
+ return surface(model,center.x+(x-600)*scale,center.y+(z-440)*scale);
 }
 it('closes the shield roof with broad ceramic panels and keeps the front jacket low',()=>{
  const model=authoredRoom(t.id,t)!;
@@ -77,7 +82,7 @@ it('closes the shield roof with broad ceramic panels and keeps the front jacket 
  expect(front.point.y*32).toBeLessThanOrEqual(42);expect(back.point.y).toBeGreaterThan(front.point.y);
  const ceramic:T.MeshStandardMaterial[]=[];
  model.traverse(o=>{if(o instanceof T.Mesh&&o.material.name.startsWith('annulus-ceramic'))ceramic.push(o.material);});
- expect(ceramic.length).toBe(2);for(const m of ceramic){expect(m.metalness).toBeLessThan(.1);expect(m.roughness).toBeGreaterThan(.8);expect(m.emissive.getHex()).toBe(0);}
+ expect(new Set(ceramic).size).toBe(2);for(const m of ceramic){expect(m.metalness).toBeLessThan(.1);expect(m.roughness).toBeGreaterThan(.8);expect(m.emissive.getHex()).toBe(0);}
  disposeModel(model);
 });
 it('raises load-bearing shoes above the solid plinth and recesses displays inside guards',()=>{
@@ -97,8 +102,8 @@ it('raises load-bearing shoes above the solid plinth and recesses displays insid
 });
 it.each([[330,460],[465,595],[600,730],[735,870]])('keeps raised construction inside the exact canonical solid footprint from x%s to x%s',(first,last)=>{
  const model=authoredRoom(t.id,t)!;
- const g=createExpeditionGeometry({id:'room18-model-test',templateId:t.id,depth:17,kind:'combat',reward:'upgrade',next:[]});
- for(let x=first;x<=last;x+=5)for(let z=215;z<=665;z+=5){
+ const g=geometry();
+ for(let x=first+200;x<=last+200;x+=5)for(let z=295;z<=745;z+=5){
   if(canOccupyExpedition(g,{x,y:z},0))expect(surface(model,x,z).point.y*32,`${x},${z}`).toBeLessThanOrEqual(1.01);
  }
  disposeModel(model);

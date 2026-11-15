@@ -1,3 +1,4 @@
+import {AUTHORED_ROOM_TOPOLOGIES} from '../../game/roguelike/authoredRoomTopologies';
 import {describe, it, expect} from 'vitest';
 import * as T from 'three';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
@@ -119,7 +120,7 @@ describe('final room and hero camera constraints',()=>{
 
   it('retains a concave-hull receipt separately from the rectangular room limit',()=>{
     const camera=makeCamera(1920,1080),rig=new CameraRig(),hud=new HudCombatFraming(),final=new RoomCombatFraming();
-    const room=ROOM_TEMPLATES['overload-floor'];
+    const room={...ROOM_TEMPLATES['overload-floor'],width:1200,height:880,boundary:AUTHORED_ROOM_TOPOLOGIES['overload-floor']!.boundary};
     reserveHud(hud,1920,1080);
     rig.reset(18.75,3.5);rig.apply(camera,1,COMBAT_VIEW_HEIGHT,0);
     hud.center(camera,rig.focus,new T.Vector3(),new T.Vector3());

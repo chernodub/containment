@@ -1,5 +1,8 @@
 import * as T from 'three';
+import {addMountedIngress} from './MountedIngress';
+import {addWarningRepeaters,prepareWarningVertexColors,updateWarningRepeaterVisibility,WARNING_REPEATER_ROOMS} from './WarningRepeaters';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import type {ShipEnvironment} from '../ShipEnvironments';
 import {COMMUNAL_ATRIUM_BLOCKOUT} from '../../game/roguelike/authoredRoomTopologies';
@@ -97,6 +100,7 @@ export function equipmentReservations(template:RoomTemplate,templateId:string):A
 /** Deterministic, material-merged fittings. Raised detail is supported by existing solids. */
 export function addWorldDressing(world:T.Group,template:RoomTemplate,environment:ShipEnvironment,templateId:string,seed=1729,kitReplacement=false):T.Group {
   const root=new T.Group();root.name='g2-world-dressing';
+  const overheadWarning=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,templateId)&&WARNING_REPEATER_ROOMS.has(templateId);
   root.userData.seed=seed;root.userData.signature=templateId;root.userData.visualIdea=ROOM_IDEAS[templateId]??'retained-ship-utility';
   const make=(name:string,color:number,metalness:number,roughness:number,emissive=0,intensity=0)=>{
     const m=new T.MeshStandardMaterial({color,metalness,roughness,emissive,emissiveIntensity:intensity});
@@ -137,7 +141,9 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     const left=r.x/UNIT,right=(r.x+r.width)/UNIT,near=r.y/UNIT,far=(r.y+r.height)/UNIT,w=right-left,d=far-near;
     if(Math.min(w,d)<.8)continue;
     const cx=(left+right)/2,cz=(near+far)/2;
-    const looseFittings=kitReplacement?0:environment==='communications'||environment==='maintenance'||environment==='cargo'||environment==='infested'?0:Math.min(6,Math.ceil(w*d/9));
+    // Architecture helpers already own these mounted mechanisms. Preserve the
+    // signature screens below without repeating loose generic roof cartridges.
+    const looseFittings=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,templateId)||kitReplacement?0:environment==='communications'||environment==='maintenance'||environment==='cargo'||environment==='infested'?0:Math.min(6,Math.ceil(w*d/9));
     for(let n=0;n<looseFittings;n++){
       const margin=Math.min(.52,w*.35,d*.35),x=left+margin+random()*Math.max(0,w-2*margin),z=near+margin+random()*Math.max(0,d-2*margin);
       ray.set(point(x,20,z),down);const hit=ray.intersectObject(world,true).find(h=>h.point.y>.15&&(templateId!=='armory'||h.point.y<1.5));if(!hit)continue;
@@ -200,7 +206,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
         const radius=Math.min(.21,w*.1,d*.1);const dial=new T.TorusGeometry(radius,.025,6,24);dial.rotateX(-Math.PI/2);add(dial,steel,cx,top+.12,cz);
         box(signal,cx,top+.09,cz,radius*1.5,.015,radius*1.5);box(dark,cx,top+.13,cz,.026,.01,radius*1.3,.8);
       }
-      if(index===signatureIndex&&(templateId==='diagnostic-gallery'||templateId==='safety-interlock-station'||templateId==='manual-control-chamber'||templateId==='service-shaft-landing')){
+      if(!overheadWarning&&index===signatureIndex&&(templateId==='diagnostic-gallery'||templateId==='safety-interlock-station'||templateId==='manual-control-chamber'||templateId==='service-shaft-landing')){
         const width=Math.min(w*.72,3.6),panelHeight=Math.min(width/4,d*.62),displayY=highest+.72;
         const tilt=-Math.atan2(26,19),c=Math.cos(tilt),s=Math.sin(tilt);
         // Bring the entire reading surface forward of overhead service runs;
@@ -230,6 +236,11 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
         root.userData.lightFixtures=[{x:cx,y:dishY+.72,z:cz,color:0x71dac4,nativeColor:true}];
       }
     }
+  }
+  if(overheadWarning){
+    const counts=new Map([...buckets].map(([m,list])=>[m,list.reduce((n,g)=>n+g.attributes.position.count,0)]));
+    addWarningRepeaters(world,root,template,templateId,{box,pipe,add,vertexCount:m=>(buckets.get(m)??[]).reduce((n,g)=>n+g.attributes.position.count,0)},{structure:resin,screen:display,signal,case:paint,metal:steel,recess:dark});
+    root.userData.warningVertexRanges=Object.fromEntries([...buckets].map(([m,list])=>[m.name,{start:counts.get(m)??0,end:list.reduce((n,g)=>n+g.attributes.position.count,0)}]));
   }
   if(templateId==='passenger-vault'){
     // Dark glazing lies below a narrow metal frame on the existing domed lids.
@@ -281,6 +292,9 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     }
     root.userData.breachCount=index+1;
   }
+  const ingressBuckets=new Set(buckets.keys());
+  root.userData.mountedIngress=addMountedIngress(templateId,template,{box,vertexCount:m=>(buckets.get(m)??[]).reduce((n,g)=>n+g.attributes.position.count,0)},{steel,dark,signal});
+  root.userData.ingressNewFinishes=[...buckets.keys()].filter(m=>!ingressBuckets.has(m)).map(m=>m.name);
   const previousConstructionBuckets=new Set(buckets.keys());
   // An authored form may reuse only an already-populated finish: no new room draw.
   const constructionFallback=buckets.has(steel)?steel:buckets.keys().next().value??dark;
@@ -295,15 +309,16 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   for(const [material,list] of buckets){
     // Every primitive contributes the same position/normal/uv layout.
     const g=mergeGeometries(list,false);for(const part of list)part.dispose();if(!g)throw Error('World dressing geometry mismatch');
-    const mesh=new T.Mesh(g,material);mesh.name=material.name;mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);
+    prepareWarningVertexColors(root,material,g);const mesh=new T.Mesh(g,material);mesh.name=material.name;mesh.userData.bakedEnvironment=true;mesh.castShadow=!material.transparent;mesh.receiveShadow=true;root.add(mesh);
   }
   for(const material of materials)if(!buckets.has(material))material.dispose();
   world.add(root);return root;
 }
 
 /** Uniform-only biological breathing; no geometry, textures or arrays allocated per frame. */
-export function updateWorldDressing(world:T.Object3D,time:number,reducedMotion=false):void {
+export function updateWorldDressing(world:T.Object3D,time:number,reducedMotion=false,camera?:T.Camera,marine?:{x:number;y:number;radius:number},marineHeight=2.05,enemies?:readonly {id:number;x:number;y:number;radius:number}[],models?:ReadonlyMap<number,{height:number;root?:T.Object3D}>):void {
   const root=world.name==='g2-world-dressing'?world:world.getObjectByName('g2-world-dressing');if(!root)return;
   const material=root.userData.pulseMaterial as T.MeshStandardMaterial|undefined;
+  updateWarningRepeaterVisibility(root,camera,marine,marineHeight,enemies,models);
   if(material)material.emissiveIntensity=(root.userData.growthIntensity as number)*(reducedMotion?1:1+Math.sin(time*1.4)*.1);
 }

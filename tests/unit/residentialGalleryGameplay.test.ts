@@ -5,11 +5,14 @@ import {expeditionRewardOffers} from '../../src/game/roguelike/expedition';
 import {createExpeditionGeometry, canOccupyExpedition, canTraverseExpedition, hasClearExpeditionShot} from '../../src/game/world/expeditionGeometry';
 import {FacilityNavigation} from '../../src/game/world/FacilityNavigation';
 import {ProjectileHitTracker} from '../../src/game/combat/CombatSystem';
+import {STORY_ROOM_TEMPLATES} from '../../src/game/roguelike/storyRoomTemplates';
+import {SHIP_STANDARD_PLANS} from '../../src/game/roguelike/shipArchitectureStandards';
 import {ENEMIES} from '../../src/game/enemies/catalog';
 
 const node = generateRun(3, 3).nodes.find(n => n.templateId === 'residential-gallery')!;
 const point = (x: number, y: number) => ({x, y});
-const solids = [[280,160,240,100], [280,520,120,200], [650,270,260,100], [780,570,140,150]];
+const template=STORY_ROOM_TEMPLATES['residential-gallery'];
+const solids=template.obstacles.map(r=>[r.x,r.y,r.width,r.height]);
 const families = ['crawler', 'brute', 'spitter'] as const;
 const geometry = () => createExpeditionGeometry(node);
 // Isolated geometry probes leave the director idle. Rebuild enemies after selecting
@@ -25,25 +28,28 @@ const setup = (emit: (e: GameEffect) => void = () => {}) => {
   return game;
 };
 const routes = [
-  [[100,440],[1100,440]],
-  [[100,440],[100,100],[1100,100],[1100,440]],
-  [[100,440],[100,780],[1100,780],[1100,440]],
-  [[580,100],[580,780]],
-  [[100,440],[460,440],[460,650],[580,650],[580,780]],
-  [[1100,440],[1000,440],[1000,650],[1000,780]],
-  [[100,440],[560,440],[600,420],[1040,420],[1100,440]],
-].map(route => route.map(([x,y]) => point(x,y)));
-const targets = [point(100,440), point(580,440), point(1100,440), point(460,650), point(1000,650), point(580,100), point(580,780)];
-const faces = solids.flatMap(([x,y,w,h]) => [
+ [[200,200],[200,480],[1100,480]],
+ [[200,220],[600,220],[984,220],[1060,480]],
+ [[200,740],[600,740],[984,740],[1060,480]],
+ [[600,220],[600,740]],
+ [[200,220],[200,480],[600,480],[600,220],[200,220]],
+ [[984,220],[1060,480],[984,740],[600,740],[600,480],[984,480],[984,220]],
+ [[216,80],[216,220],[600,220],[600,80]],
+].map(route=>route.map(([x,y])=>point(x,y)));
+const targets=SHIP_STANDARD_PLANS['residential-gallery'].spaces.map(s=>s.anchor);
+// Hull-connected and adjoining faces cannot be approached from outside the ship
+// or through another solid. Test every exposed face, including cabin partitions.
+const collisionRects=[...solids,...template.voids!.map(poly=>{const xs=poly.map(p=>p.x),ys=poly.map(p=>p.y);return[Math.min(...xs),Math.min(...ys),Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys)];})];
+const faces = collisionRects.flatMap(([x,y,w,h]) => [
   {face:point(x,y+h/2), normal:point(-1,0)},
   {face:point(x+w,y+h/2), normal:point(1,0)},
   {face:point(x+w/2,y), normal:point(0,-1)},
   {face:point(x+w/2,y+h), normal:point(0,1)},
-]);
+]).filter(({face,normal})=>canOccupyExpedition(geometry(),point(face.x+normal.x*60,face.y+normal.y*60),16)&&canOccupyExpedition(geometry(),point(face.x+normal.x*15,face.y+normal.y*15),14));
 const outward = (p: {x:number;y:number}, n: {x:number;y:number}, d: number) => point(p.x+n.x*d,p.y+n.y*d);
 
 describe('Residential Gallery production gameplay', () => {
-  it('walks the spine, perimeter loops, x580 connection and both southern bays with actual player updates', () => {
+  it('walks the gallery, cabin side doors, cross connections and both end bays with actual player updates', () => {
     const game = setup();
     for (const radius of [16, ...families.map(f => ENEMIES[f].radius)]) {
       for (const route of routes) for (let i=1;i<route.length;i++) {
@@ -69,7 +75,11 @@ describe('Residential Gallery production gameplay', () => {
       expect(canOccupyExpedition(game.geometry,start,ENEMIES[family].radius)).toBe(true);
       expect(game['spawn'](family,start.x,start.y)).toBe(true);
       const initial=game.enemies.snapshot.enemies[0];
-      expect(point(initial.x,initial.y)).toEqual(start);
+      const safetyDistance=initial.radius+game.player.radius+80;
+      expect(canOccupyExpedition(game.geometry,initial,initial.radius)).toBe(true);
+      expect(Math.hypot(initial.x-target.x,initial.y-target.y)).toBeGreaterThan(safetyDistance);
+      if(Math.hypot(start.x-target.x,start.y-target.y)>safetyDistance)expect(point(initial.x,initial.y)).toEqual(start);
+      else expect(Math.hypot(initial.x-start.x,initial.y-start.y)).toBeLessThanOrEqual(20+Math.sqrt(24)*18);
       expect(initial.radius).toBe(ENEMIES[family].radius); // brute is 28, not the radius-38 warning envelope.
       let attacked=false;
       const step = () => {
@@ -121,9 +131,9 @@ describe('Residential Gallery production gameplay', () => {
       expect(hasClearExpeditionShot(game.geometry,game.enemies.getSnapshot(initial.id)!,game.player)).toBe(true);
   });
 
-  it('keeps spine and cross-connection shots open and cabin/bunk/trolley shots blocked', () => {
+  it('keeps gallery and cross-cabin shots open and furnished rear banks blocked', () => {
     const g=geometry();
-    for (const [from,to] of [[point(180,440),point(1020,440)],[point(580,100),point(580,780)]]) {
+    for (const [from,to] of [[point(180,480),point(1020,480)],[point(600,180),point(600,780)]]) {
       expect(hasClearExpeditionShot(g,from,to)).toBe(true);
       for (const kind of ['player','hazard'] as const) {
         const events:GameEffect[]=[], game=setup(e=>events.push(e));
@@ -139,6 +149,7 @@ describe('Residential Gallery production gameplay', () => {
   });
 
   it('stops real player/hazard shots and grenade motion at every solid face, preserving fuse and impact normals', () => {
+    expect(faces.length).toBeGreaterThanOrEqual(24);
     for (const {face,normal} of faces) for (const kind of ['player','hazard','grenade'] as const) {
       const events:GameEffect[]=[], game=setup(e=>events.push(e));
       const start=outward(face,normal,60), previous=outward(face,normal,11);
@@ -164,17 +175,18 @@ describe('Residential Gallery production gameplay', () => {
 
   it('damages an exposed target but not a target behind the northwest cabin with real grenade splash', () => {
     const game=setup();
-    const exposed=game.enemies.spawn('crawler',220,280), shielded=game.enemies.spawn('crawler',548,210);
+    const exposed=game.enemies.spawn('crawler',340,200), shielded=game.enemies.spawn('crawler',448,160);
     if (!exposed.spawned || !shielded.spawned) throw new Error('illegal splash fixture');
     const before=game.enemies.getSnapshot(shielded.enemy.id)!.health;
-    game.bullets.push({kind:'grenade',x:269,y:210,life:.01,request:{weaponId:'rocket',damage:20,speed:0,radius:7,angle:0,penetration:1,splashRadius:300,knockback:0},tracker:new ProjectileHitTracker(1)});
+    game.bullets.push({kind:'grenade',x:376,y:120,life:.01,request:{weaponId:'rocket',damage:20,speed:0,radius:7,angle:0,penetration:1,splashRadius:300,knockback:0},tracker:new ProjectileHitTracker(1)});
     game['updateBullets'](.02);
     expect(game.enemies.getSnapshot(exposed.enemy.id)!.health).toBeLessThan(exposed.enemy.health);
     expect(game.enemies.getSnapshot(shielded.enemy.id)!.health).toBe(before);
   });
 
   it('collects legal real drops at every corner and representative route position', () => {
-    const positions=[...targets,...solids.flatMap(([x,y,w,h])=>[point(x-28,y-28),point(x+w+28,y-28),point(x-28,y+h+28),point(x+w+28,y+h+28)])];
+    const positions=[...targets,...collisionRects.flatMap(([x,y,w,h])=>[point(x-28,y-28),point(x+w+28,y-28),point(x-28,y+h+28),point(x+w+28,y+h+28)])].filter(p=>canOccupyExpedition(geometry(),p,16));
+    expect(positions.length).toBeGreaterThanOrEqual(20);
     for (const p of positions) {
       const events:GameEffect[]=[],game=setup(e=>events.push(e));
       expect(canOccupyExpedition(game.geometry,p,16)).toBe(true);
@@ -187,16 +199,20 @@ describe('Residential Gallery production gameplay', () => {
   });
 
   it('blocks corner magnet shortcuts at every solid, then collects from an open approach', () => {
-    for (const [x,y,w,h] of solids) {
-      const game=setup(), corner=point(x+w,y+h);
-      Object.assign(game.player,point(corner.x-20,corner.y+28));
-      expect(game.pickups.spawn('credits',10,corner.x+28,corner.y-20).spawned).toBe(true);
+    const corners=collisionRects.flatMap(([x,y,w,h])=>[-1,1].flatMap(sx=>[-1,1].map(sy=>({x:sx>0?x+w:x,y:sy>0?y+h:y,sx,sy})))).filter(c=>[
+     point(c.x-20*c.sx,c.y+28*c.sy),point(c.x+28*c.sx,c.y-20*c.sy),point(c.x+48*c.sx,c.y+20*c.sy)
+    ].every(p=>canOccupyExpedition(geometry(),p,16)));
+    expect(corners.length).toBeGreaterThanOrEqual(12);
+    for (const corner of corners) {
+      const game=setup(),{sx,sy}=corner;
+      Object.assign(game.player,point(corner.x-20*sx,corner.y+28*sy));
+      expect(game.pickups.spawn('credits',10,corner.x+28*sx,corner.y-20*sy).spawned).toBe(true);
       expect(canTraverseExpedition(game.geometry,game.pickups.snapshot[0],game.player,16)).toBe(false);
       const credits=game.combat.snapshot.credits;
       for (let i=0;i<10;i++) game.update(50);
       expect(game.pickups.snapshot).toHaveLength(1);
       expect(canOccupyExpedition(game.geometry,game.pickups.snapshot[0],16)).toBe(true);
-      Object.assign(game.player,point(corner.x+48,corner.y+20));
+      Object.assign(game.player,point(corner.x+48*sx,corner.y+20*sy));
       for (let i=0;i<20;i++) game.update(50);
       expect(game.pickups.snapshot).toHaveLength(0); expect(game.combat.snapshot.credits).toBe(credits+10);
     }

@@ -1,3 +1,4 @@
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../game/roguelike/shipArchitectureLayouts';
 import {ENVIRONMENT_COMPOSITION} from './lighting/EnvironmentComposition';
 import * as T from 'three';
 import {groundIndicatorMaterial} from './vfx/GroundIndicatorMaterial';
@@ -29,6 +30,7 @@ export class SceneLighting {
  mood:EnvironmentMood=getEnvironmentMood();
  staging:ReactorStaging|null=null;
  private composition:RoomComposition=roomComposition();private width=0;private height=0;private bossArena=false;private manualConsole=false;private overloadFloor=false;private menuPresentation=false;
+ private templateArchitecture=false;
  private coveragePoint=new T.Vector3();private authoredFixtures:Fixture[]=[];private nearbyFixtures:Fixture[]=[];private playerX=NaN;private playerZ=NaN;private fixtureTint=new T.Color();
  private blastLife=0;private time=0;private tier:GraphicsTier='high';private fixtureCount=0;private dynamicLights=true;private flashIntensity=1;private disposed=false;private shadowQuality:ShadowQuality='high';
  constructor(){
@@ -51,6 +53,7 @@ export class SceneLighting {
   for(let i=0;i<this.fixtures.length;i++){this.fixtures[i].visible=tier==='high'||i<2;if(!this.fixtures[i].visible){this.fixtures[i].intensity=0;this.practicalShapes[i].z=0;}}this.playerX=NaN;
  }
  loadRoom(world:T.Group,width:number,height:number,environment?:ShipEnvironment,templateId?:string){
+  this.templateArchitecture=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,templateId??'');
   this.width=width;this.height=height;this.bossArena=templateId==='reactor-vault';this.manualConsole=templateId==='manual-control-chamber';this.overloadFloor=templateId==='overload-floor';this.composition=roomComposition(templateId);this.menuPresentation=false;
   this.blastLife=0;this.blast.intensity=0;this.pool.reset();this.time=0;
   this.mood=getEnvironmentMood(environment??(templateId==='reactor-vault'?'reactor':undefined));
@@ -113,9 +116,9 @@ export class SceneLighting {
  private setFixtureShape(light:T.PointLight,fixture:Fixture,index:number){
   const angle=fixture.poolAngle??Math.atan2(this.width/2-fixture.x,this.height/2-fixture.z);
   light.userData.poolAngle=angle;light.userData.worldBounceGain=ENVIRONMENT_COMPOSITION[this.mood.environment].bounce;
-  const profile=ENVIRONMENT_COMPOSITION[this.mood.environment],style=fixture.poolStyle??APERTURE_STYLE[this.mood.environment];light.userData.poolStyle=style;light.userData.fixtureGain=fixture.gain??1;light.userData.humanFailed=this.mood.environment==='infested'&&fixture.poolStyle===0;light.userData.poolWidth=fixture.poolWidth??profile.width;light.userData.poolDepth=fixture.poolDepth??profile.depth;
+  const profile=ENVIRONMENT_COMPOSITION[this.mood.environment],style=fixture.poolStyle??(this.templateArchitecture?1:APERTURE_STYLE[this.mood.environment]);light.userData.poolStyle=style;light.userData.fixtureGain=fixture.gain??1;light.userData.humanFailed=this.mood.environment==='infested'&&fixture.poolStyle===0;light.userData.poolWidth=fixture.poolWidth??(this.templateArchitecture?.55:profile.width);light.userData.poolDepth=fixture.poolDepth??(this.templateArchitecture?7:profile.depth);
   // Long axis follows the visible emitter toward the room; cross-axis stays narrow.
-  this.practicalShapes[index].set(Math.sin(angle),Math.cos(angle),light.visible?(fixture.poolWidth??profile.width):0,fixture.poolDepth??profile.depth);
+  this.practicalShapes[index].set(Math.sin(angle),Math.cos(angle),light.visible?(fixture.poolWidth??(this.templateArchitecture?.55:profile.width)):0,fixture.poolDepth??(this.templateArchitecture?7:profile.depth));
  }
  setPlayer(x:number,z:number,aimRadians:number,camera?:T.Camera){
   this.lamp.update(x,z,aimRadians);
@@ -215,7 +218,7 @@ export class SceneLighting {
   return{coreX:(bounds.min.x+bounds.max.x)/2,coreY:3.2,coreZ:(bounds.min.z+bounds.max.z)/2,coreColor:0xffdfad,coreRadius:Math.max(bounds.max.x-bounds.min.x,bounds.max.z-bounds.min.z)/2};
  }
  private applyMood(width:number,height:number){
-  const mood=this.mood;const reactor=mood.environment==='reactor';this.key.castShadow=this.tier==='high'&&this.shadowQuality!=='off';this.directionalKey.visible=!reactor;this.coreKey.visible=reactor;this.lamp.setRoom(mood.environment==='cargo'?40:this.manualConsole?36:this.overloadFloor?48:24);this.ambient.color.setHex(mood.ambient.sky);this.ambient.groundColor.setHex(mood.ambient.ground);this.ambient.intensity=mood.ambient.intensity;
+  const mood=this.mood;const reactor=mood.environment==='reactor';this.key.castShadow=this.tier==='high'&&this.shadowQuality!=='off';this.directionalKey.visible=!reactor;this.coreKey.visible=reactor;this.lamp.setRoom(this.templateArchitecture?0:mood.environment==='cargo'?40:this.manualConsole?36:this.overloadFloor?48:24);this.ambient.color.setHex(mood.ambient.sky);this.ambient.groundColor.setHex(mood.ambient.ground);this.ambient.intensity=mood.ambient.intensity;
   this.lamp.light.intensity=mood.environment==='infested'?8:12;
   for(const [light,data] of [[this.key,mood.key],[this.fill,mood.fill],[this.rim,mood.rim]] as const){light.color.setHex(data.color);light.intensity=data.intensity*(data.irradianceScale??1);light.target.position.set(width/2,0,height/2);light.position.set(width/2+data.offset[0],data.offset[1],height/2+data.offset[2]);}
   if(!reactor){const offset=this.composition===roomComposition()?mood.key.offset:this.composition.keyOffset;this.key.position.set(width/2+offset[0],offset[1],height/2+offset[2]);this.key.intensity*=this.composition.keyGain;this.fill.intensity*=this.composition.fillGain;}

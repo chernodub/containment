@@ -11,15 +11,20 @@ const probes=[{x:420,y:280},{x:680,y:380},{x:600,y:440},{x:600,y:280},{x:584,y:3
 describe('authored walkable topologies',()=>{
  it('preserves each authored room boundary and sealed interior',()=>{
   expect(nodes).toHaveLength(20);
-  for(const n of nodes){const t=ROOM_TEMPLATES[n.templateId];if(ids.includes(n.templateId)){
-   expect(t).toHaveProperty('boundary');expect(t).toHaveProperty('voids');
-   const g=createExpeditionGeometry(n);
+  for(const n of nodes){const t=ROOM_TEMPLATES[n.templateId],g=createExpeditionGeometry(n);
+   // All20 story rooms now have real authored hulls; the old eight-room opt-in
+   // is superseded. Keep the old sealed probes and outside-corner contracts.
+   expect(t).toHaveProperty('boundary');expect(t.boundary!.length).toBeGreaterThan(4);
+   expect(t.obstacles.length+(t.voids?.length??0)).toBeGreaterThan(0);
    for(const radius of [0,9,28,38]){
-    const outside=n.templateId==='service-shaft-landing'?{x:-1,y:440}:n.templateId==='armory'?{x:-1,y:50}:n.templateId==='passenger-vault'?{x:30,y:50}:{x:50,y:50};
-    expect(canOccupyExpedition(g,outside,radius)).toBe(false);
-    expect(canOccupyExpedition(g,probes[ids.indexOf(n.templateId)],radius)).toBe(false);
+    expect(canOccupyExpedition(g,{x:-1,y:-1},radius)).toBe(false);
+    if(ids.includes(n.templateId)){
+     const outside=n.templateId==='service-shaft-landing'?{x:-1,y:440}:n.templateId==='armory'?{x:-1,y:50}:n.templateId==='passenger-vault'?{x:30,y:50}:{x:50,y:50};
+     expect(canOccupyExpedition(g,outside,radius)).toBe(false);
+     expect(canOccupyExpedition(g,probes[ids.indexOf(n.templateId)],radius)).toBe(false);
+    }
    }
-  }else{expect(t).not.toHaveProperty('boundary');expect(t).not.toHaveProperty('voids');}}
+  }
  });
  it('connects spawn, exit and inward-offset breaches for larger actors',()=>{
   // South32 uses human-scale furniture: its production radii, inward-spawn

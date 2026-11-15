@@ -1,3 +1,5 @@
+import {l8PresentationSource} from '../../../tests/helpers/l8PresentationSource';
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import {describe,expect,it} from 'vitest';
 import {ROOM_STORY_ROUTE} from '../../game/roguelike/storyRooms';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
@@ -15,7 +17,10 @@ describe('functional floor density without navigation or camera cost',()=>{
   expect(a.proof.aftermath.admitted).toBeGreaterThan(3);
   expect(a.proof.features['footprints']).toBeUndefined();expect(a.proof.features['drag-mark']).toBeUndefined();
   expect(Object.keys(a.proof.features).length).toBeGreaterThanOrEqual(3);
-  for(const view of a.proof.views)expect(view.features.length,`${room.templateId} view ${view.x},${view.z}`).toBeGreaterThanOrEqual(1);
+  if(Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,room.templateId)){
+   for(const removed of ['material-zone','circulation-scuff','service-hatch','unpacked-clothing','failed-defense-blast','relay-service-notes'])expect(a.proof.features[removed]).toBeUndefined();
+   expect(a.proof.views.some(v=>v.features.length>0)).toBe(true);
+  }else for(const view of a.proof.views)expect(view.features.length,`${room.templateId} view ${view.x},${view.z}`).toBeGreaterThanOrEqual(1);
   const p=a.geometry.getAttribute('position'),c=a.geometry.getAttribute('color');expect(c.count).toBe(p.count);
   for(let i=0;i<p.count;i++){
    expect(p.getY(i)).toBeGreaterThan(0);expect(p.getY(i)).toBeLessThanOrEqual(.024);
@@ -29,8 +34,8 @@ describe('functional floor density without navigation or camera cost',()=>{
   }
   expect(JSON.stringify(t)).toBe(before);a.geometry.dispose();
  });
- it('restricts floor tissue to equipment seams and keeps central combat floor exposed',()=>{
-  const t=ROOM_TEMPLATES['infested-workshop'],a=buildKitFloorSurface(t,'infested','infested-workshop',equipmentReservations(t,'infested-workshop'));
+ it('retains the historical equipment-seam floor control while live rooms use authored ship seams',()=>{
+  const t=l8PresentationSource('infested-workshop'),a=buildKitFloorSurface(t,'infested','l8-source-infested-workshop',equipmentReservations(t,'l8-source-infested-workshop'));
   expect(a.proof.coverage).toBeGreaterThan(.01);expect(a.proof.coverage).toBeLessThan(.10);
   expect(a.proof.features['creep-mat']).toBeGreaterThan(0);expect(a.proof.features['growth-vein']).toBeGreaterThan(20);a.geometry.dispose();
   expect(a.proof.features['growth-vein-branch']).toBeGreaterThan(12);

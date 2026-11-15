@@ -5,7 +5,8 @@ import {appendEnvironment,environmentArchitecture,environmentObstacle} from '../
 import {MAT,disposeModel} from '../src/render/meshParts';
 import {STORY_ROOM_TEMPLATES} from '../src/game/roguelike/storyRoomTemplates';
 
-const reservations=STORY_ROOM_TEMPLATES['residential-gallery'].obstacles.map(r=>({x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32}));
+// Retained source-model fixtures; the new live cabin kit is checked separately.
+const reservations=[{x:280,y:160,width:240,height:100},{x:280,y:520,width:120,height:200},{x:650,y:270,width:260,height:100},{x:780,y:570,width:140,height:150}].map(r=>({x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32}));
 function bake(world:T.Group){
  const renderer=Object.create(DepthRenderer.prototype) as {world:T.Group;floorMaterial:T.Material;bakeWorld():void};
  renderer.world=world;renderer.floorMaterial=new T.MeshStandardMaterial();renderer.bakeWorld();renderer.floorMaterial.dispose();world.updateMatrixWorld(true);return world;
