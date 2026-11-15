@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Group, Matrix4, ShaderMaterial, Vector3 } from 'three';
+import { Color, Group, Matrix4, ShaderMaterial, Vector3 } from 'three';
 import { PlacementPreview, type PlacementPreviewState } from './PlacementPreview';
+import { ELEMENT_COLORS } from './types';
 
 const state = (patch: Partial<PlacementPreviewState> = {}): PlacementPreviewState => ({
   ability: 'glacier', x: 320, y: 640, angle: Math.PI / 4, valid: true, ...patch,
@@ -47,9 +48,25 @@ describe('native placement footprint', () => {
     expect(dimensions(preview, 1).scale.x).toBeCloseTo(80 / 32);
     const data = preview.mesh.geometry.getAttribute('preview');
     expect([data.getY(0), data.getY(1), data.getY(2)]).toEqual([1, 0, 1]);
-    expect((preview.mesh.material as ShaderMaterial).fragmentShader).toContain('cross*invalid');
+    expect((preview.mesh.material as ShaderMaterial).fragmentShader).toContain('mix(check,cross,invalid)');
     expect(preview.mesh.renderOrder).toBeLessThan(20);
     expect((preview.mesh.material as ShaderMaterial).depthWrite).toBe(false);
+    preview.dispose();
+  });
+
+  it.each([
+    ['glacier', 'cryo'], ['napalm-charge', 'pyro'], ['tesla-pylon', 'arc'], ['bulwark', 'kinetic'],
+  ] as const)('keeps %s idle and blocked previews in their friendly color with deliberate emphasis only', (ability, element) => {
+    const preview = new PlacementPreview(new Group());
+    const data = preview.mesh.geometry.getAttribute('preview'), tint = preview.mesh.geometry.getAttribute('tint');
+    const expected = new Color(ELEMENT_COLORS[element]);
+    for (const valid of [false, true]) {
+      preview.set(state({ ability, valid }));
+      expect(data.getW(0)).toBeCloseTo(.12);
+      expect([tint.getX(0), tint.getY(0), tint.getZ(0)]).toEqual(expected.toArray().map(v => expect.closeTo(v)));
+      preview.set(state({ ability, valid, intent: 'aiming' })); expect(data.getW(0)).toBeCloseTo(.5);
+      preview.set(state({ ability, valid, intent: 'denied' })); expect(data.getW(0)).toBeCloseTo(.72);
+    }
     preview.dispose();
   });
 

@@ -11,29 +11,33 @@ export type PlacementPreviewState = {
   y: number;
   angle: number;
   valid: boolean;
+  /** Pointer presence alone stays idle; only a held placement key or denial emphasizes it. */
+  intent?: 'idle' | 'aiming' | 'denied';
   reason?: string;
   points?: readonly PlacementPreviewPoint[];
   pointCount?: number;
 };
 
 const vertex = `attribute vec4 preview;attribute vec3 tint;
-varying vec2 local;varying vec4 data;varying vec3 color;
-void main(){local=uv*2.-1.;data=preview;color=tint;
+varying vec2 local;varying vec2 symbol;varying vec4 data;varying vec3 color;
+void main(){local=uv*2.-1.;symbol=local;symbol.x*=length(instanceMatrix[0].xyz)/max(.001,length(instanceMatrix[1].xyz));data=preview;color=tint;
 gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.);}`;
-const fragment = `varying vec2 local;varying vec4 data;varying vec3 color;
+const fragment = `varying vec2 local;varying vec2 symbol;varying vec4 data;varying vec3 color;
+float stroke(vec2 p,vec2 a,vec2 b){vec2 d=b-a;return 1.-smoothstep(.024,.042,length(p-a-d*clamp(dot(p-a,d)/dot(d,d),0.,1.)));}
 void main(){
  vec2 p=local;float edge;float along;
- if(data.x<.5){float r=length(p);if(r>1.)discard;edge=1.-smoothstep(.965,1.,r);edge=1.-edge;along=atan(p.y,p.x)/6.283185;}
- else{float r=max(abs(p.x),abs(p.y));edge=smoothstep(.88,.98,r);along=(p.x+p.y)*.25;}
+ if(data.x<.5){float r=length(p);if(r>1.)discard;edge=smoothstep(.985,.997,r);along=atan(p.y,p.x)/6.283185;}
+ else{float r=max(abs(p.x),abs(p.y));edge=smoothstep(.95,.985,r);along=(p.x+p.y)*.25;}
  float dash=step(.32,fract(along*data.z));
  float invalid=1.-data.y;
- // Blocked placement has interrupted crossbars as well as a warm boundary,
- // preserving a shape cue independently of color.
- float cross=(1.-smoothstep(.018,.045,abs(abs(p.x)-abs(p.y))))*(1.-smoothstep(.18,.30,length(p)));
- float mark=max(edge*dash,cross*invalid*.72);
- float backing=max(edge,cross*invalid)*.8;
+ // A static check/blocked glyph identifies a planning footprint without attack hatching.
+ float cross=max(stroke(symbol,vec2(-.16,-.16),vec2(.16,.16)),stroke(symbol,vec2(-.16,.16),vec2(.16,-.16)));
+ float check=max(stroke(symbol,vec2(-.19,.01),vec2(-.045,-.13)),stroke(symbol,vec2(-.045,-.13),vec2(.20,.18)));
+ float glyph=mix(check,cross,invalid);
+ float mark=max(edge*dash,glyph*.9);
+ float backing=max(edge,glyph)*.65;
  if(backing<.01)discard;
- gl_FragColor=vec4(mix(vec3(.012,.022,.028),color,mark),max(mark,backing)*.55);
+ gl_FragColor=vec4(mix(vec3(.012,.022,.028),color,mark),max(mark,backing)*data.w);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
 }`;
@@ -94,8 +98,9 @@ export class PlacementPreview {
       this.dummy.updateMatrix();
       const slot = this.mesh.count++;
       this.mesh.setMatrixAt(slot, this.dummy.matrix);
-      this.data.setXYZW(slot, shape.kind === 'wall' ? 1 : 0, +valid, state.ability === 'tesla-pylon' ? 12 : 28, 1);
-      this.color.set(valid ? ELEMENT_COLORS[definition.element] : 0xff9b72);
+      this.data.setXYZW(slot, shape.kind === 'wall' ? 1 : 0, +valid, state.ability === 'tesla-pylon' ? 12 : 28,
+        state.intent === 'denied' ? .72 : state.intent === 'aiming' ? .5 : .12);
+      this.color.set(ELEMENT_COLORS[definition.element]);
       this.tint.setXYZ(slot, this.color.r, this.color.g, this.color.b);
     }
     this.mesh.instanceMatrix.needsUpdate = true;
