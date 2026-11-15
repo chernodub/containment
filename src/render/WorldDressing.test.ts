@@ -1,5 +1,6 @@
 import {describe,expect,it,vi} from 'vitest';
 import * as T from 'three';
+import {mountedIngressHasBacking,mountedIngressContainsVertex,type MountedIngress} from './world/MountedIngress';
 import {WARNING_FRAME_LOWEST} from './world/WarningRepeaters';
 import {addWorldDressing,updateWorldDressing} from './world/WorldDressing';
 import {ROOM_TEMPLATES} from '../game/roguelike/roomTemplates';
@@ -32,10 +33,12 @@ function inside(x:number,z:number,polygon:readonly {x:number;y:number}[]){let va
 describe('G2 deterministic world dressing',()=>{
  it.each(ROOM_STORY_ROUTE.map(room=>[room.templateId,room.environment] as const))('%s retains its topology and bounds the material/triangle inventory', (id,environment)=>{
   const template=ROOM_TEMPLATES[id],before=JSON.stringify(template),world=platformWorld(template),root=addWorldDressing(world,template,environment,id,1729);
-  expect(JSON.stringify(template)).toBe(before);expect(root.userData.visualIdea).toBeTruthy();expect(root.children.length).toBeLessThanOrEqual(7);expect(root.userData.constructionNewFinishes).toEqual([]);expect(root.userData.fittings).toBe(0);
+  expect(JSON.stringify(template)).toBe(before);expect(root.userData.visualIdea).toBeTruthy();expect(root.children.length).toBeLessThanOrEqual(7);expect(root.userData.constructionNewFinishes).toEqual([]);expect(root.userData.ingressNewFinishes).toEqual([]);expect(root.userData.fittings).toBe(0);
   let triangles=0;root.traverse(o=>{if(o instanceof T.Mesh){triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;expect((o.material as T.Material).userData.actorMaterial).toBe(true);expect(Array.from(o.geometry.attributes.position.array).every(Number.isFinite)).toBe(true);}});
   if(process.env.L8_DRESSING_REPORT==='1')process.stdout.write(`[L8 dressing] ${id}: ${triangles} triangles; ${root.userData.fittings} loose fittings\n`);
   expect(triangles).toBeLessThan(12000);
+  const ingress=(root.userData.mountedIngress??[]) as MountedIngress[];
+  for(const fitting of ingress)expect(mountedIngressHasBacking(template,fitting),fitting.name+' actual exposed backing').toBe(true);
   // Raised fittings stay over the original nonwalkable solids; approved hull
   // construction may extend outboard, while every interior navigation sample remains protected.
   root.traverse(object=>{
@@ -48,7 +51,9 @@ describe('G2 deterministic world dressing',()=>{
     const hull=template.boundary??[{x:0,y:0},{x:template.width,y:0},{x:template.width,y:template.height},{x:0,y:template.height}];
     const range=root.userData.warningVertexRanges?.[(object.material as T.Material).name];
     const overhead=range&&i>=range.start&&i<range.end;
-    if(overhead&&!supported){expect(positions.getY(i)).toBeGreaterThanOrEqual(WARNING_FRAME_LOWEST-.001);expect((object.material as T.Material).transparent).toBe(true);expect((object.material as T.Material).depthWrite).toBe(false);}
+    const fitting=ingress.find(f=>f.parts.some(part=>part.material===(object.material as T.Material).name&&i>=part.start&&i<part.end));
+    if(fitting){expect(mountedIngressContainsVertex(fitting,[positions.getX(i),positions.getY(i),positions.getZ(i)]),fitting.name+' embedded <=.035m facade / <=.91m cutaway').toBe(true);}
+    else if(overhead&&!supported){expect(positions.getY(i)).toBeGreaterThanOrEqual(WARNING_FRAME_LOWEST-.001);expect((object.material as T.Material).transparent).toBe(true);expect((object.material as T.Material).depthWrite).toBe(false);}
     else expect(supported||!inside(x,z,hull),`${object.name} ${x}/${z} at ${positions.getY(i)}`).toBe(true);
    }
   });

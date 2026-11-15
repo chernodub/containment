@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {addMountedIngress} from './MountedIngress';
 import {addWarningRepeaters,prepareWarningVertexColors,updateWarningRepeaterVisibility,WARNING_REPEATER_ROOMS} from './WarningRepeaters';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
@@ -291,6 +292,9 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     }
     root.userData.breachCount=index+1;
   }
+  const ingressBuckets=new Set(buckets.keys());
+  root.userData.mountedIngress=addMountedIngress(templateId,template,{box,vertexCount:m=>(buckets.get(m)??[]).reduce((n,g)=>n+g.attributes.position.count,0)},{steel,dark,signal});
+  root.userData.ingressNewFinishes=[...buckets.keys()].filter(m=>!ingressBuckets.has(m)).map(m=>m.name);
   const previousConstructionBuckets=new Set(buckets.keys());
   // An authored form may reuse only an already-populated finish: no new room draw.
   const constructionFallback=buckets.has(steel)?steel:buckets.keys().next().value??dark;
