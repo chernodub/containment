@@ -172,7 +172,7 @@ describe('Breacher presentation', () => {
     expect(kit.ring).toHaveBeenCalledWith(2, 3, 310 / 32, 0xffb454, .3);
     expect(kit.distort).toHaveBeenCalledWith(2, 3, 310 / 32, .007, .55);
     expect(kit.scar).toHaveBeenCalledWith('crack', 2, 3, 310 / 32, 0x121c23, 10);
-    expect(kit.debris).toHaveBeenCalledWith(2, 3, 310 / 32, 'kinetic', 32);
+    expect(kit.debris).not.toHaveBeenCalled(); // Only directed clipped steel, no generic random masses.
     expect(kit.camera).toHaveBeenCalledTimes(1);
     expect(kit.anticipate).toHaveBeenCalledWith(34, .045);
     fx.update(frame([], .15));
@@ -183,16 +183,26 @@ describe('Breacher presentation', () => {
     expect(kit.front).not.toHaveBeenCalled();
     expect(kit.ring).toHaveBeenCalledWith(2, 3, 310 / 32, 0xffb454, .3);
     expect(kit.scar).toHaveBeenCalledTimes(1);
-    const chips = kit.draw.mock.calls.filter(c => c[0] === 'solid' && c[11] === 30);
+    const chips = kit.draw.mock.calls.filter(c => c[0] === 'shard' && c[11] === 30);
     expect(chips.length).toBeGreaterThan(0);
     for (const chip of chips) {
       expect(chip[4]).toBeGreaterThanOrEqual(.32); expect(chip[4]).toBeLessThan(.81);
       expect(chip[5]).toBeLessThanOrEqual(.06); expect(chip[6]).toBeLessThanOrEqual(.38);
       expect(chip[5]).toBeLessThan(chip[4] * .2); // Thin manufactured deck sheet, no stone mass.
-      expect([0x34424a, 0x91a5ad, 0xffb454]).toContain(chip[7]);
+      expect([0x34424a, 0x91a5ad]).toContain(chip[7]);
       expect(Math.hypot(chip[1] - 2, chip[3] - 3)).toBeLessThan(310 / 32 * .5);
     }
-    expect(kit.draw.mock.calls.some(c => c[0] === 'shard')).toBe(false);
+    const buckles = kit.draw.mock.calls.filter(c => c[0] === 'shard' && c[11] === 31);
+    expect(buckles).toHaveLength(6);
+    for (const plate of buckles) { expect(plate[5]).toBe(.022); expect(plate[2]).toBeLessThan(.2); }
+    const firstPositions = chips.map(c => [c[1], c[3]]);
+    kit.draw.mockClear(); fx.update(frame([], .1));
+    const moved = kit.draw.mock.calls.filter(c => c[0] === 'shard' && c[11] === 30);
+    for (let i=0;i<moved.length;i++) {
+      const a=firstPositions[i],b=moved[i];
+      expect((a[0]-2)*(b[3]-3)-(a[1]-3)*(b[1]-2)).toBeCloseTo(0);
+      expect(Math.hypot(b[1]-2,b[3]-3)).toBeGreaterThan(Math.hypot(a[0]-2,a[1]-3));
+    }
     for (const call of kit.draw.mock.calls) expect(Math.hypot(call[1] - 2, call[3] - 3)).toBeLessThanOrEqual(310 / 32);
     fx.dispose();
   });

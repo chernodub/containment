@@ -478,6 +478,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 if(Number.isFinite(event.ability.targetX)&&Number.isFinite(event.ability.targetY)) {deniedAim.x=event.ability.targetX!;deniedAim.y=event.ability.targetY!;attempted=deniedAim;}
                 if(reason==='blocked'&&entry.slot==='power'&&readPlacementPreview(game,attempted,deniedPlacement)) {
                     deniedPlacement.valid=false;
+                    deniedPlacement.intent='denied';
                     for(let i=0;i<deniedPlacement.pointCount;i++)deniedPlacement.points[i].valid=false;
                     cursorReason=deniedPlacement.reason??'Need clear ground';
                     deniedPlacement.reason=cursorReason;deniedPlacementLife=.95;
@@ -527,6 +528,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             const snapshot=getAbilities(game),power=snapshot?.slots?.power;
             const casting=snapshot?.slots&&(snapshot.slots.dash.castRemainingMs>0||snapshot.slots.tactical.castRemainingMs>0||snapshot.slots.power.castRemainingMs>0||snapshot.slots.overdrive.castRemainingMs>0);
             const aiming=(pointerActive||powerAim)&&power&&power.charges>0&&!casting&&!snapshot?.dashing;
+            placement.intent=powerAim?'aiming':'idle';
             setPlacementPreview(renderer,aiming&&readPlacementPreview(game,pointerKnown?placementPointer(renderer,game,aimPointerX,aimPointerY):null,placement)?placement:null);
         }
         hpDelay = Math.max(0, hpDelay - elapsed);

@@ -1,5 +1,18 @@
 # Next-gen visual review
 
+## V8 ability refinement
+
+`v6-capture.mjs --label=v8-{before,final} --dist=<frozen-dist> --dist-source-sha=<sha>`
+retains the unchanged forty canonical bright/dark seven-phase sheets. `v8-round.mjs`
+adds bounded seven-ability critique batches (`--label`, `--dist`, `--dist-source-sha`,
+and `--room=containment-annulus|infested-workshop`). It creates exact480 reviews and
+a hashed contact under `artifacts/nextgen/v8/<label>/`. All original action, native
+shape, actor/priority, hero/HUD/AABB and fatal combat-program guards stay enabled.
+`v8-evidence.mjs <before> <final>` pairs all280 clocks and native/480 PNG hashes;
+`v8-bench-summary.mjs <before-label> <final-label>` retains every ordinary trial
+and selects jointly passing best-of-N trials with paired scale/CPU/load. PNGs
+provide art evidence only. Browser jobs must run serially.
+
 Capture the **real production application**, including its DOM HUD, at High graphics quality. These are staged visual fixtures, not evidence of organic encounter balance or performance certification. Desktop keyboard/mouse remains the supported target.
 
 ```sh

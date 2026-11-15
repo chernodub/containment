@@ -70,6 +70,8 @@ describe('V7 common combustion vocabulary', () => {
         expect(call[8]).toBeLessThan(.6); expect([0xffb454, 0xe8fbff]).toContain(call[9]);
       }
       expect(GRAPHIC_SOLID_FRAGMENT).toContain('if(phase<30.||phase>=40.)');
+      // Blue steel fragments keep the manufactured response; color alone cannot turn them into ice.
+      expect(material(kit.batches.shard.mesh).fragmentShader).toContain('float cold=phase>=30.&&phase<32.?0.:step(ink.r*1.1,ink.b)');
     } finally { kit.dispose(); }
   });
 });

@@ -6,6 +6,7 @@ import type { EnemySnapshot } from '../../../game/enemies/EnemySystem';
 import { ElementKit } from '../ElementKit';
 import { GRAPHICS_PRESETS } from '../../graphicsOptions';
 import { createSystemPresentation } from './index';
+import { TEXTURED_FIRE_GLSL } from '../EffectAtlas';
 import { AfflictionBatches, afflictionEffects } from '../../afflictions';
 
 const event = (extra: Partial<AbilityEvent> = {}): AbilityEvent => ({ ability: 'ram', rig: 'breacher', slot: 'dash', element: 'kinetic', phase: 'dash-start', angle: 0, ...extra });
@@ -170,6 +171,30 @@ describe('V2 common marine and struck feedback', () => {
     expect(fire.count).toBe(fireCount / 2); expect(ice.count).toBe(iceCount / 2); expect(poison.count).toBe(poisonCount);
     f.kit.begin(0); legacy.update([first, overflow], camera, .2, f.kit.statusOwners);
     expect(fire.count).toBe(fireCount); expect(ice.count).toBe(iceCount);
+    legacy.dispose(); f.fx.dispose(); f.kit.dispose();
+  });
+
+  it.each(['high', 'low'] as const)('uses the tapered ability family for live burning enemies without duplicate legacy fire (%s)', tier => {
+    const f = fixture(), actor = new T.Group(), camera = new T.PerspectiveCamera();
+    const status = { frozen: false, burning: true, shocked: false, chilled: false };
+    const legacy = new AfflictionBatches(undefined, 8);
+    afflictionEffects(actor, 2, 1.5).set(status);
+    f.kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    f.kit.bind({ lights: {} as never, distortion: {} as never, camera: {} as never,
+      statusActor: id => id === 1 ? { root: actor, height: 1.5 } : undefined });
+    f.enemies.push(enemy()); f.states.set(1, status); f.update(snapshot(), 0);
+    const flame = f.kit.batches.flame.mesh, phases = flame.geometry.getAttribute('abilityPhase');
+    expect(flame.count).toBe(tier === 'high' ? 3 : 2);
+    expect((flame.material as T.ShaderMaterial).fragmentShader).toContain(TEXTURED_FIRE_GLSL);
+    for (let i = 0; i < flame.count; i++) {
+      expect(phases.getX(i)).toBeGreaterThanOrEqual(64);
+      expect(phases.getX(i)).toBeLessThan(96); // Upright analytic tongues, never explosion/flipbook stamps.
+    }
+    expect(f.kit.statusOwners.has(actor)).toBe(true);
+    legacy.update([actor], camera, .2, f.kit.statusOwners);
+    expect(legacy.counts.fire).toBe(0); expect(legacy.counts.embers).toBe(0);
+    f.states.clear(); f.update(snapshot(), 0);
+    expect(flame.count).toBe(0); expect(f.kit.statusOwners.has(actor)).toBe(false);
     legacy.dispose(); f.fx.dispose(); f.kit.dispose();
   });
 

@@ -668,7 +668,13 @@ it('keeps the native cursor footprint at the denied mark for one second and rest
             hud();hud.tick(.016);
         });
         let result=await page.evaluate(()=>(window as any).__placement.at(-1));
-        expect(result).toMatchObject({ability:'glacier',x:650,y:500,valid:true,pointCount:1});
+        expect(result).toMatchObject({ability:'glacier',x:650,y:500,valid:true,pointCount:1,intent:'idle'});
+        await page.keyboard.down('f');
+        await page.evaluate(()=> (window as any).__live.hud.tick(.016));
+        expect(await page.evaluate(()=>(window as any).__placement.at(-1).intent)).toBe('aiming');
+        await page.keyboard.up('f');
+        await page.evaluate(()=> (window as any).__live.hud.tick(.016));
+        expect(await page.evaluate(()=>(window as any).__placement.at(-1).intent)).toBe('idle');
         await page.evaluate(()=>{
             const {game,hud}=(window as any).__live;
             game.geometry={...game.geometry,blockers:[{x:630,y:480,width:40,height:40}]};
@@ -679,12 +685,12 @@ it('keeps the native cursor footprint at the denied mark for one second and rest
         const before=await page.evaluate(()=>{const {game}=(window as any).__live;return JSON.stringify({player:game.player,abilities:game.abilities.snapshot});});
         await page.evaluate(()=>{const {hud,renderer}=(window as any).__live;renderer.pointer=()=>({x:800,y:700});hud.tick(.1);});
         result=await page.evaluate(()=>(window as any).__placement.at(-1));
-        expect(result).toMatchObject({x:650,y:500,valid:false,reason:'Blocked by machinery'});
+        expect(result).toMatchObject({x:650,y:500,valid:false,reason:'Blocked by machinery',intent:'denied'});
         expect(result.points[0].valid).toBe(false);
         await page.evaluate(()=>{const {hud}=(window as any).__live;for(let i=0;i<10;i++)hud.tick(.1);});
         expect(await page.locator('#ability-denial').isHidden()).toBe(true);
         result=await page.evaluate(()=>(window as any).__placement.at(-1));
-        expect(result).toMatchObject({x:800,y:700,valid:true});
+        expect(result).toMatchObject({x:800,y:700,valid:true,intent:'idle'});
         const after=await page.evaluate(()=>{const {game}=(window as any).__live;return JSON.stringify({player:game.player,abilities:game.abilities.snapshot});});
         expect(after).toBe(before);
         await page.evaluate(()=>{const {game,hud}=(window as any).__live;game.status='paused';hud.tick(.01);});

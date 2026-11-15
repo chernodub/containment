@@ -18,7 +18,7 @@ describe('exact native temporal marine', () => {
     const model = marine(), root = new T.Group(), echoes = new NativeMarineEchoes(root);
     const source = nativeSkin(model.root), sourcePose = new T.Vector3(), copiedPose = new T.Vector3();
     try {
-      expect(echoes.slots).toHaveLength(2);
+      expect(echoes.slots).toHaveLength(1);
       expect(echoes.slots.every(slot => slot.meshes.length === 1)).toBe(true);
       for (let frame = 0; frame < 8; frame++) {
         model.root.position.set(4 + frame * .1, .12, 5 - frame * .08);
@@ -42,17 +42,17 @@ describe('exact native temporal marine', () => {
     } finally { echoes.dispose(); disposeModel(model.root); }
   });
 
-  it('holds a complete frozen native pose, simplifies Low to one exact draw and keeps prepared inventory stable', () => {
+  it('holds a complete frozen native pose, keeps exactly one draw on both tiers and keeps prepared inventory stable', () => {
     const model = marine(), root = new T.Group(), echoes = new NativeMarineEchoes(root);
     const geometry = echoes.slots.map(slot => slot.meshes[0].mesh.geometry);
     const material = echoes.material, textures = echoes.slots.flatMap(slot => slot.skeletons.map(skeleton => skeleton.boneTexture));
     try {
       expect(textures.every(Boolean)).toBe(true);
-      expect(new Set(textures).size).toBe(2);
+      expect(new Set(textures).size).toBe(1);
       const preparationTextures = Object.values(echoes.material!).filter(value => value instanceof T.Texture);
       expect(preparationTextures).toEqual(expect.arrayContaining(textures));
       model.root.position.set(4, 0, 5); model.animate(0, 1, .4);
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < 1; i++) {
         expect(echoes.capture(i, model.root, 4, 5)).toBe(true);
         echoes.draw(i, 2.9 - i, 5.3, .7, 1, 0, false);
       }
@@ -65,7 +65,8 @@ describe('exact native temporal marine', () => {
       expect(copy.skeleton.boneMatrices).toEqual(oldPose);
       expect(copy.matrixWorld.equals(world)).toBe(true);
       expect(echoes.slots[0].meshes[0].mesh.visible).toBe(true);
-      expect(echoes.slots[1].meshes[0].mesh.visible).toBe(false);
+      expect(echoes.slots).toHaveLength(1);
+      expect(echoes.capture(1, model.root, 4, 5)).toBe(false);
       expect(echoes.slots.map(slot => slot.meshes[0].mesh.geometry)).toEqual(geometry);
       expect(echoes.material).toBe(material);
       expect(echoes.slots.flatMap(slot => slot.skeletons.map(skeleton => skeleton.boneTexture))).toEqual(textures);
@@ -79,7 +80,9 @@ describe('exact native temporal marine', () => {
     const geometry = vi.spyOn(echoes.slots[0].meshes[0].mesh.geometry, 'dispose');
     const bones = echoes.slots.flatMap(slot => slot.skeletons.map(skeleton => vi.spyOn(skeleton.boneTexture!, 'dispose')));
     const sourceInverse = echoes.slots[0].meshes[0].mesh.skeleton.boneInverses[0];
-    expect(sourceInverse).not.toBe(echoes.slots[1].meshes[0].mesh.skeleton.boneInverses[0]);
+    const model = marine();
+    expect(sourceInverse).not.toBe(nativeSkin(model.root).skeleton.boneInverses[0]);
+    disposeModel(model.root);
     echoes.dispose(); echoes.dispose();
     expect(material).toHaveBeenCalledOnce(); expect(geometry).not.toHaveBeenCalled();
     for (const bone of bones) expect(bone).toHaveBeenCalledOnce();
@@ -98,7 +101,7 @@ describe('exact native temporal marine', () => {
       expect(shader.fragmentShader).toContain('priority*echoPriority*.97');
       expect(material.fragmentShader).not.toContain('inkEdge');
       expect(material.depthWrite).toBe(false); expect(material.premultipliedAlpha).toBe(true);
-      expect(material.customProgramCacheKey()).toBe('v7-overclock-native-skin-v1');
+      expect(material.customProgramCacheKey()).toBe('v8-overclock-native-skin-v1');
     } finally { echoes.dispose(); texture.dispose(); }
   });
 });

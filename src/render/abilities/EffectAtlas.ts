@@ -80,13 +80,51 @@ vec4 effectSequence(float first,float count,float fps,float seed,vec2 uv){
 }
 `;
 
-/** Four deliberate combustion values and a clean alpha silhouette, without particle ink. */
+/** Tapered original flame family; retained explosions still use their authored atlas. */
 export const TEXTURED_FIRE_GLSL = `
  vec2 fireUv=uvLocal;
- vec4 fire=phase>=200.?effectGraphicTile(floor(phase)-200.,fireUv):effectGraphicSequence(0.,64.,24.,phase,fireUv);
- float coverage=graphicCoverage(fire.a);
- c=graphicCombustion(fire);
+ float coverage;
+ if(phase>=200.){
+  vec4 fire=effectGraphicTile(floor(phase)-200.,fireUv);
+  coverage=graphicCoverage(fire.a);
+  c=graphicCombustion(fire);
+ }else{
+  // The same three unequal tongues serve jets, fuel edges and suit exhaust.
+  // Source alpha no longer decides the silhouette: broad photo-core islands
+  // cannot turn the pressure body into floating yellow leaves.
+  float t=fireUv.y;float seed=mod(phase,32.);
+  float family=mod(floor(seed),3.);
+  float clock=abilityTime*3.1;
+  float jet=step(100.,phase);
+  float bend=(sin(t*5.7+seed-clock)*.13+sin(t*13.3-seed+clock*.7)*.045)*t;
+  float throat=mix(.73,.27,jet);
+  float envelope=mix(throat,1.,smoothstep(.015,.30,t))*pow(max(.001,1.-t),.52+family*.13);
+  float lobe=.80+.16*sin(t*(11.+family*2.7)-clock+seed)+.075*sin(t*27.+clock*.6+seed);
+  float width=max(.008,envelope*lobe);
+  float signedSide=(p.x-bend)/width;
+  // Unequal side cavities curl with the flow but stop outside the unbroken spine.
+  float biteA=(1.-smoothstep(.025,.13,abs(t-(.36+family*.085+.045*sin(seed+clock)))));
+  float biteB=(1.-smoothstep(.018,.095,abs(t-(.69-family*.04+.035*cos(seed-clock)))));
+  float left=.82-.31*biteA+.045*sin(t*31.+seed-clock);
+  float right=.79-.37*biteB+.055*cos(t*24.-seed+clock);
+  float side=abs(signedSide)/mix(left,right,step(0.,signedSide));
+  float aa=max(.014,min(.12,fwidth(side)));
+  coverage=(1.-smoothstep(1.-aa,1.+aa,side))*smoothstep(.0,.035,t)*(1.-smoothstep(.94,1.,t));
+  // A narrow heated spine lives at the source. The outer connected lobes are
+  // orange, with a dark char edge; only the nozzle earns a near-white value.
+  float body=1.-smoothstep(.61,.85,side);
+  float rolling=sin(t*21.-clock*1.4+seed+signedSide*4.8);
+  float fold=smoothstep(.24,.78,side)*smoothstep(.16,.32,t)*(1.-smoothstep(.76,.95,t));
+  body*=1.-smoothstep(.26,.83,rolling)*fold*.56;
+  float spine=abs(signedSide-sin(t*10.-clock+seed)*.065);
+  float inner=(1.-smoothstep(.10,.31,spine))*(1.-smoothstep(.12,.63,t));
+  float core=inner*smoothstep(.30,.65,ink.g);
+  c=mix(vec3(.018,.009,.005),vec3(.95,.068,.002),body);
+  c=mix(c,vec3(2.15,.65,.055),inner*.64);
+  coverage*=mix(.78,1.,smoothstep(.40,.90,side));
+  c=mix(c,vec3(2.8,1.9,.34),core);
+ }
  a*=coverage;
- // No opaque card edge against the deck; real alpha silhouettes are continuous.
+ // Every path hides all four card edges, including the source end of a jet.
  a*=smoothstep(.015,.16,worldHeight);
 `;

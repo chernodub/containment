@@ -9,7 +9,7 @@ import { MarineTimeEcho } from './MarineTimeEcho';
 
 beforeAll(loadModels);
 
-it('uses the shipped marine animated skeleton for its two held Overclock poses', () => {
+it('uses the shipped marine animated skeleton for its one subdued held Overclock pose', () => {
   const model = marine(), kit = new ElementKit(new T.Group()), fx = createArcPresentation(kit);
   const echo = new MarineTimeEcho(), oldPose = MarineTimeEcho.pose(), newPose = MarineTimeEcho.pose();
   const fallback = vi.spyOn(kit, 'afterImage');
@@ -30,8 +30,13 @@ it('uses the shipped marine animated skeleton for its two held Overclock poses',
     expect(kit.batches.solid.mesh.count).toBe(0);
     const native: T.SkinnedMesh[] = [];
     kit.root.traverse(node => { if (node instanceof T.SkinnedMesh) native.push(node); });
-    expect(native).toHaveLength(2);
+    expect(native).toHaveLength(1);
     expect(native.every(mesh => mesh.visible)).toBe(true);
+    const material = native[0].material as T.ShaderMaterial;
+    native[0].onBeforeRender({} as T.WebGLRenderer, {} as T.Scene, {} as T.Camera,
+      native[0].geometry, material, null as never);
+    expect(material.uniforms.echoAlpha.value).toBeLessThanOrEqual(.24);
+    expect(material.fragmentShader).not.toContain('sin(echoHeight');
     const delayed = native.map(mesh => mesh.skeleton.boneMatrices!.slice());
     // Paused refresh changes neither the stored delayed pose nor GPU inventory.
     frame.dt = 0; kit.begin(0); fx.update(frame); kit.end();
