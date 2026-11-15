@@ -44,12 +44,14 @@ function plan(t,annotation){
  if(annotation){
   const a=annotation.arena;for(let i=0;i<96;i++)line({x:a.x+Math.cos(i/96*Math.PI*2)*144,y:a.y+Math.sin(i/96*Math.PI*2)*144},{x:a.x+Math.cos((i+1)/96*Math.PI*2)*144,y:a.y+Math.sin((i+1)/96*Math.PI*2)*144},[105,176,211]);
   for(const o of annotation.openings)line(o.from,o.to,[124,224,180],1);
+  for(const aperture of annotation.apertures??[]){line(aperture.from,aperture.to,[226,233,221]);dot(aperture.from,[226,233,221],2);dot(aperture.to,[226,233,221],2);}
   for(const s of annotation.spaces){const q=screen(s.anchor),x=Math.round(q.x-s.name.length*3),y=q.y-3;for(let yy=y-3;yy<y+10;yy++)for(let xx=x-3;xx<x+s.name.length*6+2;xx++)if(xx>=0&&xx<W)image.pixels.set([17,25,31],(yy*W+xx)*3);drawText(image,s.name,x,y,[230,232,216],1);}
   for(const [i,f]of annotation.breachFeatures.entries()){dot(f.at,[220,120,80],3);const q=screen(f.at);drawText(image,String(i+1),q.x+5,q.y-7,[255,164,105],1);}
  }
  for(const [i,b]of t.breaches.entries()){dot(b,[246,100,67],5);const q=screen(b);drawText(image,String(i+1),q.x+7,q.y+1,[255,179,110],1);}dot(t.spawn,[114,235,237],6);dot(t.exit,[244,204,106],6);
  drawText(image,t.id,12,8,[220,232,233],2);drawText(image,`AREA ${area} / R32 ${clearanceArea}`,12,32,[167,191,196],1);
  drawText(image,'CYAN ENTRY / GOLD EXIT / ORANGE BREACH',12,50,[157,195,198],1);
+ if(annotation?.apertures?.length)drawText(image,'WHITE SOLID-JAMB APERTURES / GREEN CIRCULATION',12,576,[226,233,221],1);
  drawText(image,'GREEN CLEAR ROUTE SPANS 140 MIN / BLUE CIRCLE 9M',12,592,[124,224,180],1);
  if(annotation){const s=stats(t);drawText(image,`HULL SOLID ${Math.round(s.connectedFraction*100)} PCT / FREE GROUPS ${s.freeGroups}`,12,610,[210,223,220],1);
   annotation.breachFeatures.forEach((f,i)=>drawText(image,`${i+1} ${f.name}`,12+(i%2)*340,632+Math.floor(i/2)*16,[220,160,120],1));}
