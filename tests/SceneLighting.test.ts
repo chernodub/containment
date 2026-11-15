@@ -142,3 +142,16 @@ describe('bounded presentation lighting',()=>{
   shadows.dispose();expect(geometry).toHaveBeenCalledOnce();expect(material).toHaveBeenCalledOnce();
  });
 });
+
+it('uses authored fixture apertures and the directional suit lamp without a circular suit-fill pedestal in revised ship rooms',()=>{
+ const rig=new SceneLighting(),children=[...rig.root.children];
+ for(const id of ['residential-gallery','crew-checkpoint','relay-racks']){
+  const env=id==='residential-gallery'?'habitation':id==='crew-checkpoint'?'security':'communications';
+  const room=new T.Group();room.userData.lightFixtures=[{x:4,y:1.3,z:1,color:0xbad8dc,nativeColor:true,poolStyle:1,poolWidth:2,poolDepth:7}];
+  rig.loadRoom(room,40,30,env,id);rig.setPlayer(6,8,0);rig.update(.016);
+  expect(rig.lamp.suitFill.intensity).toBe(0);expect(rig.lamp.light.intensity).toBeGreaterThan(0);
+  expect(rig.fixtures[0].intensity).toBeGreaterThan(0);expect(rig.practicalShapes[0].z).toBe(2);expect(rig.practicalShapes[0].w).toBe(7);
+  expect(rig.root.children).toEqual(children);
+ }
+ rig.loadRoom(new T.Group(),40,30,'cryogenics','awakening-bay');expect(rig.lamp.suitFill.intensity).toBeGreaterThan(0);rig.dispose();
+});

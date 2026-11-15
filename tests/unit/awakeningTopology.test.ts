@@ -1,3 +1,4 @@
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../src/game/roguelike/shipArchitectureLayouts';
 import {describe,it,expect} from 'vitest';
 import {generateRun} from '../../src/game/roguelike/run';
 import {ROOM_TEMPLATES} from '../../src/game/roguelike/roomTemplates';
@@ -9,9 +10,9 @@ import {DepthGame} from '../../src/DepthGame';
 const nodes=generateRun(3,3).nodes;
 const geometry=()=>createExpeditionGeometry(nodes.find(n=>n.templateId==='awakening-bay')!);
 describe('awakening cradle',()=>{
- it('preserves the other nineteen complete templates exactly',()=>{
-  const unchanged=nodes.filter(n=>n.templateId!=='awakening-bay').map(n=>ROOM_TEMPLATES[n.templateId]);
-  expect(unchanged).toHaveLength(19);expect(unchanged).toMatchSnapshot();
+ it('preserves every unrevised complete story template exactly',()=>{
+  const unchanged=nodes.filter(n=>n.templateId!=='awakening-bay'&&!Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,n.templateId)).map(n=>ROOM_TEMPLATES[n.templateId]);
+  expect(unchanged).toHaveLength(16);expect(unchanged).toMatchSnapshot();
  });
  it('blocks chamfered corners and straight equipment footprints',()=>{
   const g=geometry();

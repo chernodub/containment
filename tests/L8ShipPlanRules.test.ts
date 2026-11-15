@@ -31,5 +31,6 @@ it('rejects corner-only chains, too many islands and a decorative octagon',()=>{
  expect(islands.freeGroups).toBe(3);expect(islands.connectedFraction).toBe(.25);
  const plan=SHIP_STANDARD_PLANS['relay-racks'],g=createExpeditionGeometry(generateRun(1729,3).nodes.find(n=>n.templateId==='relay-racks')!);
  expect(shipPlanOpeningErrors({...plan,openings:plan.openings.map((o,i)=>i?o:{...o,to:{x:o.from.x+100,y:o.from.y}})},g)).toContain('Opening 0: 100 <140');
+ expect(shipBlockedOpeningErrors(plan,{...g,blockers:[...g.blockers,{x:0,y:700,width:1280,height:48}]}).length).toBeGreaterThan(0);
  expect(shipPlanOpeningErrors(plan,{...g,boundary:[{x:40,y:0},{x:1240,y:0},{x:1280,y:40},{x:1280,y:960},{x:1240,y:1000},{x:40,y:1000},{x:0,y:960},{x:0,y:40}]})).toContain('Boundary needs functional recesses/bays, not a convex decorative hull');
 });

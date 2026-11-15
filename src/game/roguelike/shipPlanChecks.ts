@@ -47,6 +47,10 @@ export function shipPlanOpeningErrors(plan:ShipPlan,g:ExpeditionGeometry):string
   if(!names.has(o.a)||!names.has(o.b)||o.a===o.b)errors.push(`Opening ${i}: invalid space names`);
   if(len<140)errors.push(`Opening ${i}: ${len} <140`);
   if(!canOccupyExpedition(g,c,70))errors.push(`Opening ${i}: no 140-unit clear width`);
+  if(len>=140)for(let d=32;d<=len-32;d+=8){const point={x:o.from.x+dx*d/len,y:o.from.y+dy*d/len};if(!canOccupyExpedition(g,point,32)){errors.push(`Opening ${i}: declared span narrows inside the opening`);break;}}
+  const sideA={x:c.x-dy/len*64,y:c.y+dx/len*64},sideB={x:c.x+dy/len*64,y:c.y-dx/len*64};
+  const a=plan.spaces.find(s=>s.name===o.a),b=plan.spaces.find(s=>s.name===o.b);
+  if(a&&b&&!((insidePlanPolygon(sideA,a.outline)&&insidePlanPolygon(sideB,b.outline))||(insidePlanPolygon(sideB,a.outline)&&insidePlanPolygon(sideA,b.outline))))errors.push(`Opening ${i}: does not join its declared sub-spaces`);
   if(!canTraverseExpedition(g,{x:c.x-dy/len*64,y:c.y+dx/len*64},{x:c.x+dy/len*64,y:c.y-dx/len*64},32))errors.push(`Opening ${i}: blocked threshold crossing`);
  }
  // Every edge must lie on a cycle. Parallel edges represent spatially separate

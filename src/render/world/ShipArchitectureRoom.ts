@@ -53,16 +53,16 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
   // sides reproduce the exact polygon, including L-shaped control booths.
   for(const p of t.voids??[]){
     const wallShape=new T.Shape(path(p));
-    const wall=new T.ExtrudeGeometry(wallShape,{depth:.72,bevelEnabled:false,steps:1,curveSegments:1});wall.rotateX(-Math.PI/2);push(wall,cutaway);
+    const wall=new T.ExtrudeGeometry(wallShape,{depth:.90,bevelEnabled:false,steps:1,curveSegments:1});wall.rotateX(-Math.PI/2);push(wall,cutaway);
     for(let i=0;i<p.length;i++){
       const a=p[i],b=p[(i+1)%p.length],dx=(b.x-a.x)/32,dz=(b.y-a.y)/32,length=Math.hypot(dx,dz);
       if(length<1)continue;
       for(let s=.4;s<length-.1;s+=.8){
        const f=s/length,x=(a.x+(b.x-a.x)*f)/32,z=(a.y+(b.y-a.y)*f)/32;
        box(x,.40,z,.045,.68,.045,dark);
-       if(environment==='security')box(x,.65,z,.035,.12,.035,trim);
+       if(environment==='security')box(x,.83,z,.035,.12,.035,trim);
       }
-      box((a.x+b.x)/64,.73,(a.y+b.y)/64,length,.04,.04,trim,-Math.atan2(dz,dx));
+      box((a.x+b.x)/64,.91,(a.y+b.y)/64,length,.04,.04,trim,-Math.atan2(dz,dx));
     }
   }
   const fixture=(x:number,z:number,angle:number,width:number,depth:number,color:number,gain=1)=>{
@@ -90,7 +90,7 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
     const equipment=new T.Group();equipment.name=id==='residential-gallery'?'residential-gallery-equipment-fallback':'l8-equipment';root.add(equipment);
     for(const [i,r]of t.obstacles.entries()){
       if(id==='residential-gallery'||id==='crew-checkpoint'){
-       const h=id==='residential-gallery'?.10:.72;
+       const h=id==='residential-gallery'?.10:.90;
        const g=new T.BoxGeometry(r.width/32,h,r.height/32).translate((r.x+r.width/2)/32,h/2,(r.y+r.height/2)/32);
        const mesh=new T.Mesh(g,dark.clone());mesh.material.userData.actorMaterial=true;mesh.name='cutaway-equipment-plinth';mesh.castShadow=mesh.receiveShadow=true;equipment.add(mesh);
       }else equipment.add(environmentObstacle(environment,{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},i,id));

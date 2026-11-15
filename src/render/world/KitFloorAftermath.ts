@@ -42,9 +42,14 @@ export function addKitFloorAftermath(t:RoomTemplate,id:string,reservations:reado
   let admitted=0;
   const stroke=(ax:number,az:number,bx:number,bz:number,width:number,color:number,kind:string)=>{if(p.segment(ax,az,bx,bz,width,color,kind,.023))admitted++;};
   if(id==='residential-gallery'){
-   for(const x of [216,600,984])for(const south of [false,true]){
-    const z=south?740:220,front=south?660:300;
-    if(p.quad(x/32,z/32,248/32,104/32,0,south?0x555d55:0x695e50,'cabin-vinyl',.018))admitted++;
+   for(const [i,left]of [40,416,808].entries())for(const south of [false,true]){
+    const width=i===1?368:352,x=left+width/2,front=south?660:300,color=south?0x4e5855:0x605b52;
+    const field=(x0:number,y0:number,x1:number,y1:number)=>{if(p.quad((x0+x1)/64,(y0+y1)/64,(x1-x0)/32,(y1-y0)/32,0,color,'cabin-vinyl',.018))admitted++;};
+    // The finish fills the actual U-shaped cabin floor between bed, desk and
+    // wardrobe, ending at its gallery threshold. No floating rug rectangle.
+    field(left+.1,south?660.1:140.1,left+width-.1,south?819.9:299.9);
+    field(left+94.1,south?820.1:40.1,left+width-68.1,south?919.9:139.9);
+    field(left+width-67.9,south?820.1:100.1,left+width-.1,south?859.9:139.9);
     stroke((x-100)/32,front/32,(x+100)/32,front/32,.09,0x918674,'cabin-threshold');
     for(const side of [-1,1])stroke((x+side*12)/32,(front+(south?14:-14))/32,(x+side*12)/32,(front+(south?36:-36))/32,.05,0x444a43,'doorway-footwear');
    }

@@ -109,6 +109,7 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
    place('bedSingle',bx,.10,bz,1.90,.78,2.85,angle,label+' made berth inside hull-connected cabin');
    place('desk',dx,.10,dz,1.75,.74,1.50,angle,label+' writing desk',undefined,false);
    place('radio',dx,.78,dz,.30,.18,.20,angle,label+' silent radio');
+   place('chairDesk',dx,.10,dz+(south?-.30:.30),.64,.64,.64,angle+.08,label+' chair still tucked under writing desk');
    // Cutaway lockers retain their CC0 doors and handles at waist height.
    for(let n=-1;n<=1;n++)place('Prop_Locker',rx+n*2.5,.10,rz,1.85,.62,.95,angle,label+' cutaway rear lockers',undefined,true);
    place('books',dx,.81,dz+.19,.32,.12,.25,angle,label+' interrupted reading');
@@ -195,7 +196,7 @@ export function attachRoomKits(world:T.Group,t:RoomTemplate,env:ShipEnvironment,
    const failure=results.find(result=>result.status==='rejected');if(failure?.status==='rejected')throw failure.reason;
    if(!active)return;
    root=buildRoomKitDressing(world,t,env,id,sources);
-   if(env==='habitation'&&id==='residential-gallery'){const original=world.getObjectByName('residential-gallery-equipment');if(original&&root.userData.majorCabinForms>=t.obstacles.length){replaced=original;original.visible=false;}}
+   if(env==='habitation'&&id==='residential-gallery'){const original=world.getObjectByName('residential-gallery-equipment');if(original&&root.userData.majorCabinForms>=6){replaced=original;original.visible=false;}}
    
    owner.state='ready';onChanged();
   }finally{sources.forEach(source=>retireRoomModels(source));}
