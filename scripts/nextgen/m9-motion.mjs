@@ -55,7 +55,7 @@ try{
     const models=[model];if(crowd)for(let i=1;i<6;i++){const extra=r.actorPool.take('crawler');extra.reset?.();extra.setMotionSeed?.(1729+i*13);extra.setMotionOptions?.(1,false);extra.setStageLight?.(.65);extra.root.position.set(origin.x+(i%3-1)*1.4,0,origin.z+Math.floor(i/3)*1.4);r.scene.add(extra.root);models.push(extra);}
     const modelRoots=new Set(models.map(m=>m.root));
     model.setThreat?.(0,null,champion,1);if(!human)r.scene.add(model.root);
-    if(action!=='spawn')for(let n=1;n<=90;n++)animate(timeBase+n/60,0,0);
+    if(action!=='spawn')for(let n=1;n<=90;n++){animate(timeBase+n/60,0,0);if(crowd)for(let i=1;i<models.length;i++)models[i].animate(timeBase+n/60+i,0,0);}
     // Stop normal renderer updates from overwriting the controlled production pose.
     model.animate=()=>{};if(human)model.equip=()=>{};if(hasDeathAdapter)model.setDead=()=>{};r.interimAbilities.update=()=>{};
     r.effects.clear();const shotStudy=action.startsWith('fire-'),deathStudy=action.startsWith('death'),effectMeshes=shotStudy||deathStudy?new Set(r.effects.meshes()):new Set();

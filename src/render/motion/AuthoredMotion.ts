@@ -109,7 +109,8 @@ export class AuthoredMarineMotion {
     else if(moving&&this.wasMoving&&vx*this.lastVx+vy*this.lastVy<-.45*speed*Math.hypot(this.lastVx,this.lastVy)){this.transition=REVERSALS[direction];this.transitionAge=0;}
     this.wasMoving=moving;this.lastDirection=direction;this.lastVx=vx;this.lastVy=vy;
     if(this.weapon&&this.weapon!==weapon)this.switchAge=0;this.weapon=weapon;
-    if(recoil>this.recoil+.08)this.fireAge=0;this.recoil=recoil;
+    // An accepted shot interrupts the cosmetic lower/equip beat immediately.
+    if(recoil>this.recoil+.08){this.fireAge=0;this.switchAge=10;}this.recoil=recoil;
     const cast=CASTS[this.motion.actionName];
     if(cast&&this.player.has(cast)){
       const phase=this.motion.actionNormalized;
