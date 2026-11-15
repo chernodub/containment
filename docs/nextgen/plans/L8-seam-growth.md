@@ -52,3 +52,17 @@ Critical-five source3c7623c native/480/gray review confirmed useful growth visib
 Near real ingress mechanisms, folded root collars now occupy cabinet and airway solid faces, rising.10–.895m. Their width is at most80units and they group by actual face length/feature distance. Cabinet folds have3.2units of inward relief where source housings are inset; exact partition faces use.005units of inward attachment with polygon offset solely to resolve coplanar host faces. Every vertex, edge and interior sample still lies inside an actual solid. There is no outward gameplay footprint expansion. Source caps retain the existing.909m bound.
 
 With the combined live V11 geometry, Workshop has2draws/4452triangles/6fold collars; Swarm2draws/5526triangles/12fold collars. The projected triangle-area sums are4.56% and4.36% of room AABB respectively (includes fibre overlap; not a gameplay or viewport area). Tests additionally require meaningful vertical face detail and the narrow11unit main seams while preserving all previous strict native geometry, quiet circle, camera body-ray, determinism and disposal assertions.7tests pass. Native art acceptance remains pending the combined-source critical-five capture; this section makes no art-score or hardware performance claim.
+
+## Fit to activated real workbays
+
+The new Workshop partitions reduced feature-near folded collars to3, correctly failing the existing>4density assertion. The source now also anchors folds to actual authored `ShipPlan.apertures` (side doors and workbay mouths), and links them along supported cap fibres. This follows new architecture rather than lowering density requirements or incrementing metadata. A collar is recorded only after real body triangles emit; tests additionally require every recorded collar to own nonzero geometry and Workshop to include actual partition-mouth roots.
+
+Activated Workshop:23fold collars,8352triangles,2draws. Activated Swarm340/600400:12fold collars,5758triangles,2draws. All original strict per-vertex/edge/interior support, floor≤.0205m, raised≤.91m, quietR160, exact native body-ray and deterministic disposal tests remain; no budget limit is raised.
+
+```text
+VITEST_MAX_WORKERS=2 npx vitest run src/render/world/L8ShipSeamGrowth.test.ts tests/L8RoomPresentationIntegration.test.ts
+Test Files2 passed(2)
+Tests25 passed(25)
+```
+
+No new material family or render updater is introduced by this fit. Native review and measured final hardware budgets await the parent's combined freeze.

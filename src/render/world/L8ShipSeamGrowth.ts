@@ -85,16 +85,18 @@ export function buildL8ShipSeamGrowth(id:string,t:Plan):T.Group|null{
  // Folded root collars occupy real cabinet/airway faces, grouped at the
  // ingress mechanisms. Their raised area is architectural consumption rather
  // than free-floating floor growth. Near-face stems meet the cap/door seams.
- const folds:Array<{solid:number;edge:number;width:number;depth:number}>=[];
+ const folds:Array<{solid:number;edge:number;width:number;depth:number;source:string;bodyTriangles:number}>=[];
  for(const [si,poly]of solids.entries())for(let edge=0;edge<poly.length;edge++){
   const a=poly[edge],b=poly[(edge+1)%poly.length],length=Math.hypot(b.x-a.x,b.y-a.y);if(length<55)continue;
   const mx=(a.x+b.x)/2,my=(a.y+b.y)/2,dx=(b.x-a.x)/length,dy=(b.y-a.y)/length;
   const face=[-1,1].map(sign=>({x:mx-dy*sign*5,y:my+dx*sign*5,sign})).find(q=>deck(q));if(!face)continue;
-  const nearest=Math.min(...plan.breachFeatures.map(f=>distanceToSegment(f.at,a,b)));if(nearest>210)continue;
+  const nearest=Math.min(...plan.breachFeatures.map(f=>distanceToSegment(f.at,a,b)));
+  const apertureDistance=Math.min(...(plan.apertures??[]).flatMap(m=>[distanceToSegment(m.from,a,b),distanceToSegment(m.to,a,b)]));
+  if(Math.min(nearest,apertureDistance)>210)continue;
   const inwardX=dy*face.sign,inwardY=-dx*face.sign,count=Math.min(3,Math.max(1,Math.floor(length/125)));
   for(let rootIndex=0;rootIndex<count;rootIndex++){
    const along=length*(rootIndex+1)/(count+1),spread=Math.min(40,length/(count+1)*.40),depth=si<t.obstacles.length?3.2:.005;
-   const rows=9,cols=6;
+   const rows=9,cols=6,bodyBefore=bins[0].p.length;
    const v=(row:number,col:number)=>{
     const rise=row/rows,q=col/cols*2-1,taper=.25+.75*Math.sin(Math.PI*rise)**.35,center=along+Math.sin(rise*5.4+si)*4.2;
     const offset=.005+depth*(1-Math.cos(q*Math.PI*3+rise*1.8))*.5;
@@ -108,7 +110,11 @@ export function buildL8ShipSeamGrowth(id:string,t:Plan):T.Group|null{
      emit(f0,f1,g0,1,poly);emit(g0,f1,g1,1,poly);
     }
    }
-   folds.push({solid:si,edge,width:spread*2,depth});
+   const bodyTriangles=(bins[0].p.length-bodyBefore)/9;if(bodyTriangles>0)folds.push({solid:si,edge,width:spread*2,depth,source:apertureDistance<=210?'partition-mouth':'breach',bodyTriangles});
+  }
+  if(apertureDistance<=210){
+   const offset=(q:Point)=>({x:q.x+inwardX*2,y:q.y+inwardY*2});
+   ribbon([offset(mix(a,b,.08)),offset(mix(a,b,.92))],3,si+edge,'aperture-root-cap',poly);
   }
  }
  root.userData.foldedRootCollars=folds;

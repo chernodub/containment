@@ -27,7 +27,8 @@ describe('L8 architecture-consumed seam growth',()=>{
     }
    });expect(floor).toBeGreaterThan(200);expect(caps).toBeGreaterThan(20);expect(nearArena).toBeGreaterThan(100);expect(area).toBeGreaterThan(10000);expect(area/(t.width*t.height)).toBeLessThan(.13);
    expect(root.children).toHaveLength(2);expect(root.userData.triangles).toBeLessThan(12000);
-   expect(root.userData.foldedRootCollars.length).toBeGreaterThan(4);
+   expect(root.userData.foldedRootCollars.length).toBeGreaterThan(4);expect(root.userData.foldedRootCollars.every((f:{bodyTriangles:number})=>f.bodyTriangles>0)).toBe(true);
+   if(id==='infested-workshop'){expect(root.userData.foldedRootCollars.some((f:{source:string})=>f.source==='partition-mouth')).toBe(true);expect(root.userData.paths.some((p:{kind:string})=>p.kind==='aperture-root-cap')).toBe(true);}
    if(process.env.L8_GROWTH_REPORT==='1')process.stdout.write(JSON.stringify({id,draws:root.children.length,triangles:root.userData.triangles,folds:root.userData.foldedRootCollars.length,floorProjectedArea:area,roomRatio:area/(t.width*t.height)})+'\n');
    const foldHeights:number[]=[];root.traverse(o=>{if(o instanceof T.Mesh){const p=o.geometry.getAttribute('position');for(let j=0;j<p.count;j++)if(p.getY(j)>.1&&p.getY(j)<.899)foldHeights.push(p.getY(j));}});expect(foldHeights.length).toBeGreaterThan(200);
    expect(root.userData.paths.filter((p:{kind:string})=>p.kind==='plate-seam').every((p:{width:number})=>p.width===11)).toBe(true);
