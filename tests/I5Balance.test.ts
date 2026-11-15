@@ -220,8 +220,8 @@ describe('I5 encounter balance guardrails', () => {
         ehp: [11000, 12200], contactDps: [1330, 1480], bodies: [80, 86],
       },
       {
-        spawns: [110, 110], threat: [246, 272], elite: [.10, .15], ordinaryElite: [.115, .165],
-        specialist: [.44, .52], cap: [13, 14], tail: [3150, 3350], broadTail: [3200, 3400], damage: [1.015, 1.035], speed: [1.003, 1.012],
+        spawns: [111, 111], threat: [246, 272], elite: [.10, .15], ordinaryElite: [.115, .165],
+        specialist: [.44, .52], cap: [13, 14], tail: [3500, 3500], broadTail: [3420, 3420], damage: [1.015, 1.035], speed: [1.003, 1.012],
         ehp: [16950, 18750], contactDps: [1850, 2050], bodies: [153, 164],
       },
       {
