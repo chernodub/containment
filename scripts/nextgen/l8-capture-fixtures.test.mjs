@@ -18,3 +18,14 @@ test('G6 remains a native self-contained browser function without a camera overr
  assert.equal(SCENARIOS.find(s=>s.id==='combat-calm').nativePointerHover,'#pause');
  const g6=SCENARIOS.find(s=>s.id==='g6-kiting');assert(g6);assert(!/cameraZoom|\.zoom\s*[=*]|cameraRig\.reset/.test(g6.setup.toString()));assert(!/import\s*\(/.test(g6.setup.toString()));assert.match(g6.setup.toString(),/Authored fight arena/);
 });
+
+test('explicit arena calm preserves canonical spawn calm and settles only through normal native ticks',async()=>{
+ const previous=globalThis.window,scenario=SCENARIOS.find(s=>s.id==='l8-arena-calm');
+ assert(scenario);assert.equal(scenario.nativePointerHover,'#pause');assert(!/cameraZoom|\.zoom\s*[=*]|cameraRig\.reset/.test(scenario.setup.toString()));assert(!/import\s*\(/.test(scenario.setup.toString()));
+ try{for(const room of L8_CAPTURE_ROOMS){
+  const geometry=api.geometry(api.templates[room.id],'offline-arena-'+room.id),steps=[],inputs=[],game={player:{...room.spawn,radius:16},enemies:{reset(){}}};
+  const debug={game,gotoRoom:async()=>{},invulnerable(){},canStand:(x,y,r)=>api.occupy(geometry,{x,y},r),setInput:i=>inputs.push(i),step:ms=>steps.push(ms),refresh(){}};
+  globalThis.window={__containmentDebug:debug};await scenario.setup(room.id);
+  assert.equal(steps.length,120);assert(steps.every(ms=>ms===1000/60));assert.deepEqual(debug.l8ArenaCalmProof.arena,room.arena);assert.equal(debug.l8ArenaCalmProof.cameraOverride,false);assert.deepEqual({x:game.player.x,y:game.player.y},room.arena);assert(inputs.every(i=>i.fire===false));
+ }}finally{globalThis.window=previous;}
+});

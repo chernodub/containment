@@ -263,6 +263,11 @@ try{
     if(scenario.state==='dead'||scenario.state==='complete')assert(await page.locator('.damage-source-legend [data-stat] b').evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).color==='rgb(240, 251, 255)')),`${name}: source accounting legend implies an element`);
     if(scenario.uiState)assert.equal(evidence.uiState,scenario.uiState,`${name}: wrong fixture UI phase`);
     if(scenario.id==='combat-calm')assert.equal(evidence.enemies,0,`${name}: calm room contains enemies`);
+    if(scenario.id==='l8-arena-calm'){
+     assert.equal(evidence.enemies,0,`${name}: arena calm contains enemies`);const proof=evidence.l8ArenaCalmProof;
+     assert(proof?.nativeStep&&proof.settledTicks===120&&proof.cameraOverride===false,`${name}: native arena settling proof missing`);
+     assert.deepEqual({x:evidence.player.x,y:evidence.player.y},proof.arena,`${name}: arena calm left declared fight arena`);
+    }
     assert.equal(evidence.state,scenario.state,`${name}: wrong game state`);assertCaptureCanvas(evidence,{scenarioId:scenario.id,viewport,dpr,name});
     if(scenario.room)assert.equal(evidence.templateId,scenario.room);
     if(scenario.state==='playing')assertPlayingMarine(evidence,viewport,name);
