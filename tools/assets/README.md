@@ -19,3 +19,7 @@ The weapon converter lists exact MD3 and texture filenames. Preserve the source 
 Characters retain +X forward in Y-up glTF; runtime rotates -90 degrees around Y. Their skeletons, skin weights and authored clips are cloned independently, while GPU geometry and textures are shared. Upper-body weapon poses layer over locomotion. Corpse baking deforms every vertex with the impact-time skin pose before detaching the skeleton.
 
 Validation: all six characters pass Khronos glTF Validator without errors or warnings; all five weapons without errors. Production GLB geometry and animations are parsed by the model tests. Asset silhouettes and grip were additionally inspected using offline textured geometry renders; this is not an iPhone/Safari device test.
+
+## K10 original marine and arsenal (2026-11-15)
+
+The shipping marine geometry/texture set and all five weapon GLBs are now generated from original Blender sources by `tools/assets/k10-marine/rebuild.sh`. The IQE/MD3 conversion commands above describe historical source conversion, not the rebuild path for those six current geometry sets. The existing marine skeleton and seventeen clips are intentionally retained for M10 compatibility and keep their CC BY-SA attribution. See `k10-marine/README.md` and `public/asset-credits.html` for the separate MIT art / retained animation scope. Alien models are unchanged.

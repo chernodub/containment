@@ -152,6 +152,11 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
   if (key.includes(':graphic-surface-v1')) return;
   installed.add(material);
   const previous = material.onBeforeCompile;
+  // K10's original flat zones replace inherited photographic skins. Keep the
+  // common lighting bands, but let their authored atlas define material values.
+  const authoredMapResponse = material.userData.k10Original ? mapResponse.replace(
+    'graphicEnabled * graphicStrength * graphicSurfaceKind.x * graphicResponse.w * (1.0 - graphicSac)', '0.0',
+  ) : mapResponse;
   let actorBase = actorBases.get(material);
   if (!actorBase) { actorBase = { value: new Color(0x647b8b) }; actorBases.set(material, actorBase); }
   // actorMaterial is an ownership marker also used by room props; use the
@@ -166,7 +171,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
       graphicStrength: strength, graphicActorBase: actorBase,
     });
     shader.fragmentShader = declarations + shader.fragmentShader
-      .replace('#include <map_fragment>', mapResponse)
+      .replace('#include <map_fragment>', authoredMapResponse)
       .replace('#include <normal_fragment_maps>', normals)
       .replace('#include <lights_physical_pars_fragment>', directResponse)
       .replace('float deckGrain=', 'float deckGrain=0.0;if(graphicEnabled*graphicStrength<.99)deckGrain=')

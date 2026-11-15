@@ -2,7 +2,7 @@ import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {geometry} from './meshParts';
 import {familyAnatomy,rankAnatomy} from './FamilyAnatomy';
-import {marineRigAnatomy} from './MarineRigAnatomy';
+import {marineRigAnatomy,originalMarineRig} from './MarineRigAnatomy';
 import {queenDesign} from './QueenDesign';
 
 export const FAMILY_IDENTITY = Object.freeze({
@@ -307,6 +307,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
 
 /** Rig lamps mount on the torso and shoulders, leaving the original marine/weapon silhouette intact. */
 export function marineIdentity(root:T.Group) {
+  const original=originalMarineRig(root);if(original)return original;
   const parts:Part[]=[
     {position:[-.29,1.52,.005],scale:[.09,.012,.045],role:0,shape:'seam'},
     {position:[.29,1.52,.005],scale:[.09,.012,.045],role:0,shape:'seam'},

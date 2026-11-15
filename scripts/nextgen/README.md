@@ -1020,3 +1020,7 @@ and crop receipts. Crops preserve original pixels and surrounding world context.
 Scenario-specific clocks stay literal: K7 warning fixtures use300ms spacing even
 when the capture CLI requests33ms. Move a completed capture into its final retained
 location before running this offline derivative if its paths must remain stable.
+
+## K10 original marine review
+
+`k10-calm-{breacher,cryo,pyro,arc}:<room>` and `k10-heavy-{breacher,cryo,pyro,arc}:<room>` reuse the ordinary calm/heavy production fixtures with only the native rig selection changed. Use the same seed, rooms, viewport and burst clocks for before/after model comparisons. Standard physical body/HUD/AABB, actor/action and shader diagnostics remain enabled. These staged captures are art evidence; ordinary `bench` runs and native `playtest` campaigns remain separate.

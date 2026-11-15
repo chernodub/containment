@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {batchActorSkins} from './ActorSkinBatching';
+import {originalMarineRig} from './MarineRigAnatomy';
 
 type SourceFinish = {
   name: string;
@@ -28,6 +29,25 @@ export function prepareFlatActorSkin(
   clips: readonly T.AnimationClip[],
 ): number {
   if (root.userData.actorSkinPreparation) return 0;
+  // The original marine already has designed flat zones and baked surface detail.
+  // Its four named skins must remain independent so hidden variants cost no draw.
+  if (asset === 'marine' && originalMarineRig(root)) {
+    let count = 0;
+    root.traverse(object => {
+      if (!(object instanceof T.Mesh)) return;
+      count++;
+      // Title presentation patches each mesh finish; variants need independent
+      // material owners while keeping their atlas textures shared.
+      object.material = Array.isArray(object.material)
+        ? object.material.map(material => material.clone()) : object.material.clone();
+      for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+        material.userData.k10Original = true;
+      }
+    });
+    root.userData.k10Original = true;
+    root.userData.actorSkinPreparation = {before: count, after: count, saved: 0, authoredFinish: true};
+    return 0;
+  }
   const meshes: T.SkinnedMesh[] = [];
   const sources = new Map<T.Material, SourceFinish>();
   root.traverse(object => {
