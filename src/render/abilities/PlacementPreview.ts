@@ -21,16 +21,18 @@ export type PlacementPreviewState = {
 const vertex = `attribute vec4 preview;attribute vec3 tint;
 varying vec2 local;varying vec2 symbol;varying vec4 data;varying vec3 color;
 void main(){local=uv*2.-1.;data=preview;color=tint;
-// Keep the validity glyph upright and at one small physical size as the footprint rotates.
-symbol=(modelViewMatrix*instanceMatrix*vec4(position.xy,0.,0.)).xy/.55;
+// Place the upright validity glyph away from the native cursor, within the footprint.
+vec2 marker=preview.x<.5?vec2(.55,0.):vec2(.45,0.);
+symbol=(modelViewMatrix*instanceMatrix*vec4(position.xy-marker,0.,0.)).xy/.9;
 gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.);}`;
 const fragment = `varying vec2 local;varying vec2 symbol;varying vec4 data;varying vec3 color;
-float stroke(vec2 p,vec2 a,vec2 b){vec2 d=b-a;return 1.-smoothstep(.024,.042,length(p-a-d*clamp(dot(p-a,d)/dot(d,d),0.,1.)));}
+float stroke(vec2 p,vec2 a,vec2 b){vec2 d=b-a;return 1.-smoothstep(.035,.060,length(p-a-d*clamp(dot(p-a,d)/dot(d,d),0.,1.)));}
 void main(){
  vec2 p=local;float edge;float along;
  if(data.x<.5){float r=length(p);if(r>1.)discard;edge=smoothstep(.985,.997,r);along=atan(p.y,p.x)/6.283185;}
- else{float r=max(abs(p.x),abs(p.y));edge=smoothstep(.95,.985,r);along=(p.x+p.y)*.25;}
+ else{float r=max(abs(p.x),abs(p.y));edge=smoothstep(.95,.985,r);along=p.x*.5;}
  float dash=step(.32,fract(along*data.z));
+ if(data.x>.5&&abs(p.x)>.95)dash=1.;
  float invalid=1.-data.y;
  // A static check/blocked glyph identifies a planning footprint without attack hatching.
  float cross=max(stroke(symbol,vec2(-.16,-.16),vec2(.16,.16)),stroke(symbol,vec2(-.16,.16),vec2(.16,-.16)));
@@ -100,7 +102,7 @@ export class PlacementPreview {
       this.dummy.updateMatrix();
       const slot = this.mesh.count++;
       this.mesh.setMatrixAt(slot, this.dummy.matrix);
-      this.data.setXYZW(slot, shape.kind === 'wall' ? 1 : 0, +valid, state.ability === 'tesla-pylon' ? 12 : 28,
+      this.data.setXYZW(slot, shape.kind === 'wall' ? 1 : 0, +valid, state.ability === 'tesla-pylon' || shape.kind === 'wall' ? 12 : 28,
         state.intent === 'denied' ? .72 : state.intent === 'aiming' ? .5 : .12);
       this.color.set(ELEMENT_COLORS[definition.element]);
       this.tint.setXYZ(slot, this.color.r, this.color.g, this.color.b);

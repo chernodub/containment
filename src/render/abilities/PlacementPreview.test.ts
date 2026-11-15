@@ -60,7 +60,10 @@ describe('native placement footprint', () => {
     const preview = new PlacementPreview(new Group());
     const data = preview.mesh.geometry.getAttribute('preview'), tint = preview.mesh.geometry.getAttribute('tint');
     const expected = new Color(ELEMENT_COLORS[element]);
-    expect((preview.mesh.material as ShaderMaterial).vertexShader).toContain('symbol=(modelViewMatrix*instanceMatrix*vec4(position.xy,0.,0.)).xy/.55');
+    const shader = preview.mesh.material as ShaderMaterial;
+    expect(shader.vertexShader).toContain('vec2 marker=preview.x<.5?vec2(.55,0.):vec2(.45,0.)');
+    expect(shader.vertexShader).toContain('vec4(position.xy-marker,0.,0.)).xy/.9');
+    expect(shader.fragmentShader).toContain('along=p.x*.5');
     for (const valid of [false, true]) {
       preview.set(state({ ability, valid }));
       expect(data.getW(0)).toBeCloseTo(.12);
