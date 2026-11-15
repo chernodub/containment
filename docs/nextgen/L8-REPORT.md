@@ -76,6 +76,8 @@ Final required gate summaries, native campaign receipts, source-hashed20-up calm
 
 ## Remaining release gates
 
+Additional exact-opening A3 coverage now exposes a liveness gap omitted by named-space/grid samples: six of157 opening midpoints leave mixed actors unresolved at60s (Awakening, Atrium, two Diagnostic thresholds, Workshop, Annulus). `tests/L8OpeningCrowdSoak.test.ts` retains all targets and native bounds, and mirrors the actual director's240-unit occupied-breach fallback. Full actor states and requested/used entrance maps are retained in `artifacts/nextgen/l8-sim/opening-midpoint-native-dispatch659/`. The original fixture attempt, which incorrectly insisted on spawning on the marine at four nearby vents, is also retained separately. The new invariant failure blocks acceptance and the proposed ingress cohort until resolved; the earlier named-space pass is not presented as exhaustive crowd proof.
+
 The659-game/9b6-render preflight now passes the full JavaScript suite (`399 passed | 2 skipped` files; `5040 passed | 2 skipped` tests), build, native desktop smoke and exact `test:authored-smoke:all`: `Authored desktop smoke passed: 20 rooms, native move/fire, Continue/route, pause/resume, Low quality, no browser errors.` The full verify then stops at the documented absent Blender executable in `MonitorArtifacts.test_imported_geometry_regression`; no test or asset was altered to bypass it. Both skips are existing opt-in CPU-profile/historical-camera-replay suites. Logs and hashes: `artifacts/nextgen/l8-sim/verification-preflight-250ee77/receipt.json`. These are source preflight passes, not acceptance of a later geometry revision.
 
 - Final PNG art review and all20 guarded entry/arena/kiting captures.
