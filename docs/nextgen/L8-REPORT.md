@@ -1,95 +1,83 @@
-# L8 implementation report — release gates in progress
+# L8 — authored ship layouts, convergence record
 
-Branch: `t3/re-author-story-room-layouts`. Baseline gameplay source: `7ceefa5a52cc74a6b95712f29653d9bf523906be`. Current complete gameplay audit: `c7c75b985a30eb297596680cff9735e2ca86d6de`; current mounted-fitting rendering source: `26d45f0ae140f229411cd8f714a199d39e4b1fd9` (identical gameplay bytes). The earlier659 and9b6 packets remain historical. This document does not yet claim final art, cohort or performance acceptance.
+Branch: `t3/re-author-story-room-layouts`. Gameplay is byte-identical to repaired-navigation **`c7c75b985a30eb297596680cff9735e2ca86d6de`**; production rendering is byte-identical to mounted-fitting **`26d45f0ae140f229411cd8f714a199d39e4b1fd9`**. Convergence commit: `96ceeb69dd5890ab43a61e0d72acce473d291eff`. The Freight19 request and rejected service-ingress/Swarm-baffle code were removed. Freight remains 18. No Freight19 cohort ran.
 
-## Plan language and hard geometry proof
+The twenty rooms now use articulated hulls, connected partitions, named sub-spaces, structural bays and feature-backed breaches. The checker requires ≥60% connected solid UNION, ≤2 freestanding groups, ≥3 named spaces, 140-unit openings, R70 threshold clearance, full R32 opening sweeps, an R144 fight circle and ±20% walkable area. Nonholdouts also require alternate physical routes with each opening sealed; Transmission and Overload retain deliberate holdout exemptions. All 16 legacy templates, route ids, story, run generation and checkpoint schema remain unchanged.
 
-The lead-rejected floating-island standard was withdrawn. Replacement standard round9 uses hull-connected cabins/booths/banks, actual named sub-spaces, wide openings and waist-height cutaways. It passed three substantive plan/dressed/native critique rounds before propagation; the critique ledger is `plans/L8-standard-review.md`. Residential uses existing CC0 beds, desks, chairs and cutaway lockers. No disc-pool recipe is retained in the inspected standard; fixture-shaped spill follows cabin doors, scanner/guard circulation and cooling aisles.
+|Room|What changed|
+|---|---|
+|Awakening Bay|Wake threshold, pod aisle, recovery bay and observation/service circuit.|
+|Passenger Vault|Hull-backed cryo banks, inspection aisle and service return.|
+|Residential Gallery|Six furnished open-front cabins, central gallery, common nook and exit bay.|
+|Communal Atrium|Galley frontage, common floor, garden and welcome nook.|
+|Crew Checkpoint|Vestibule, inspection booths, scanner hall, two bypasses, guard cage and exit lock.|
+|Armory|Retained horseshoe issue counter connected to magazine and fitting/weapon court.|
+|Freight Hold|Loading neck, stock court/control booth, tow floor and dispatch recess.|
+|Breached Loading Bay|Dock apron, repair trunk around the retained hull scar and pressure lock.|
+|Relay Racks|Paired rack aisles, service spine, cross-aisles and console bay.|
+|Transmission Chamber|Defensible nave, uplink chancel/apse, airlock and service chapel.|
+|Diagnostic Gallery|Four three-sided workbays, side doors, nave and access landings.|
+|Safety Interlock Station|Open recorder/AI gallery, two-ended interlock cage and battery return.|
+|Coolant Plant|Pump galleries, split return banks and cross-service opening.|
+|Service Shaft Landing|Retained C balcony/shaft, docking recesses and lift landing.|
+|Infested Workshop|Loading dock, lathe/tool/gantry workbays, side door and rear service gallery.|
+|Swarm Junction|Deep hull-connected vent banks, growth crossing and northern throat; no candidate baffles.|
+|Shielding Gate|Offset shield banks, scanner floor and sterilization bypass.|
+|Containment Annulus|Intact core translated (+200,+80), inspection ring, paired airlocks and western fight floor.|
+|Manual Control Chamber|Authorization booth, core threshold and fatal-cost gallery.|
+|Overload Floor|Retained translated hot core, reaction feed, exhaust and western holdout floor.|
 
-Independent implementation review `plans/L8-final-plan-review.md` withheld ship-wide semantic acceptance because Diagnostic/Workshop named uninterrupted floor as separate rooms. The subsequent revision adds actual hull-connected workbay dividers, jambs and side doors; broad mouths are honestly represented as single apertures with two lanes. Safety's equipment band is now named an open instrumentation gallery. The shared checker rejects fake floor doors, missing jambs, overlapping lanes and blocked thresholds. Native proof and guarded captures cover the revised geometry; premium art acceptance is still not claimed.
+Decks subtract the actual solid UNION. Existing CC0 furniture fits the new spaces; interior walls use 0.90m cutaways with 0.91m caps. Architecture-shaped fixture spill replaces circular suit-fill discs; the marine lamp remains. Function-tied markings replace the repeated patch/confetti/bar recipe, infestation follows structural seams, and sixty mounted ingress fittings use actual backing faces. Maximum dressing is 11860/12000 triangles. Safety's 903 static meshes batch to 24 without changing geometry/material ownership. Camera/body/HUD guards remain; the radar follows the geometry without UI edits. No actor or ability-system source changed.
 
-Every plan passes solid-UNION measurement with at least60% hull-connected area, at most2 free components, at least3 named legal spaces, two articulated named hull bays,140-unit openings, R70 opening midpoints, full-span R32 sweeps, an R144 fight circle and actual raw/inward breach access. Nonholdouts additionally pass graph-cycle AND physical sealed-door reachability. Only Transmission/Overload receive holdout exemptions. All16 legacy templates, story text, ids, route generation and checkpoint formats remain unchanged.
+## Simulation and accepted balance record
 
-|Room|Plan language|Walkable before → after|Ratio|Connected solids|Free groups|
-|---|---|---:|---:|---:|---:|
-|awakening-bay|Release threshold, pod aisle, recovery bay and observation/service circuit.|748840 → 829060|1.1071|63.49%|2|
-|passenger-vault|Hull-backed cryo banks, central inspection aisle and southern service return.|691056 → 644360|0.9324|78.82%|1|
-|residential-gallery|Six furnished cabins open onto a gallery, common nook and exit bay.|961000 → 931280|0.9691|100.00%|0|
-|communal-atrium|Galley frontage, inhabited common floor, living garden and welcome nook.|316332 → 377040|1.1919|68.34%|2|
-|crew-checkpoint|Entry vestibule, inspection booths, scanner hall, two bypasses and open guard cage.|973184 → 795712|0.8176|84.86%|2|
-|armory|Hull-connected magazine, retained horseshoe issue counter and fitting/weapon court.|940184 → 826832|0.8794|86.81%|1|
-|freight-hold|Loading neck, stock court/control booth, tow floor and recessed dispatch.|868800 → 755760|0.8699|73.24%|2|
-|breached-loading-bay|Docking apron, structural repair trunk around the retained hull scar and pressure lock.|655540 → 728080|1.1107|100.00%|0|
-|relay-racks|Two rack aisles around a service spine, north cross-aisle and console bay.|973000 → 948800|0.9751|85.55%|1|
-|transmission-chamber|Defensible transmission nave, uplink chancel/apse, airlock and service chapel.|976800 → 812672|0.8320|93.73%|2|
-|diagnostic-gallery|Four actual three-sided workbays, nave, service side doors and access landings.|969600 → 898600|0.9268|99.66%|2|
-|safety-interlock-station|Open recorder/AI gallery, low interlock cage, battery return and independent galleries.|982400 → 936544|0.9533|93.59%|2|
-|coolant-plant|Wall pump galleries and split return banks with a real cross-service opening.|956000 → 958400|1.0025|89.19%|2|
-|service-shaft-landing|Retained C balcony around the shaft; upper/lower docking recesses and local lift.|802000 → 783600|0.9771|100.00%|0|
-|infested-workshop|Loading dock, lathe/tool/gantry workbays, side door and rear service gallery.|948400 → 939040|0.9901|99.82%|1|
-|swarm-junction|Deep hull-connected vent banks around a playable northern crossing and hull exit.|950800 → 764680|0.8042|100.00%|0|
-|shielding-gate|Offset shielding banks, inspection scanner floor and sterilization bypass.|965000 → 794800|0.8236|100.00%|0|
-|containment-annulus|Intact translated sealed core, two inspection-ring routes and paired airlocks.|707600 → 794400|1.1227|62.92%|1|
-|manual-control-chamber|Hardwired authorization booth, core floor, fatal-cost gallery and core threshold.|972400 → 924000|0.9502|100.00%|0|
-|overload-floor|Intact translated core, western holdout floor, reaction feed and exhaust gallery.|607160 → 717600|1.1819|68.29%|1|
+The navigation repair expires stale commitments after eight distinct deterministic decisions without one unit of net improvement; repeated speculative queries in one decision do not advance it. Final c7 proof: 2256 legal marine goals / 45120 family routes, 3360 native family opportunities, 168 mixed-crowd targets and 157 opening targets / 3140 actors, all with zero unresolved cases. Worst opening crowd resolution is 18.05s against the unchanged 60s bound. Four rigs ×20 rooms replay identically. The additional active Swarm attack-access regression passes 288/288 native trials across 36 positions, maximum 8.55s.
 
-Areas use the deterministic2-unit UNION method; continuous occupancy PNG area differs slightly at polygon edges. Every room remains within±20%. All old/new coordinates, including every hull/void vertex, obstacle, spawn, exit and breach, are recorded with exact source ids in `artifacts/nextgen/l8-sim/revised659-hardproof/all20-numeric-layout-changes.json`. The c7/26 templates are identical to659; only navigation/presentation differ. The packet asserts that no template fields beyond the eight authorized geometry fields changed.
+The accepted audit uses forty fixed seeds per rig, 160 matched attempts per profile and the unchanged reference bot. Exact source identities, per-room distributions and all 320 report hashes remain in [the c7 comparison](../../artifacts/nextgen/l8-final/converged/balance/c7-N160-comparison.md) and its [JSON](../../artifacts/nextgen/l8-final/converged/balance/c7-N160-comparison.json).
 
-All20 labeled final plans and the20-up comparison are under `artifacts/nextgen/l8-final/release/plans/`. The final native gallery will live under `artifacts/nextgen/l8-final/release/`; earlier rejected review files at the parent path retain their original receipts.
-
-## Simulation and finite encounter changes
-
-Final hard proof receipt: `artifacts/nextgen/l8-sim/revised659-hardproof/receipt.json`. Thirty-four files /840 tests pass;20 strict checker errors arrays are empty. All five independent geometry packets hash to `e18ff45ab40c0dde0222e1aba76d6e67338d77e756730f641ca31f66cd885d44`.
-
-- 168 native mixed-crowd targets /3360 actors:0 unresolved; worst22.35s.
-- 3360 native family/breach opportunities:0 missing; worst29.60s. Carriers are checked at their real visible holding range; Spitters must complete real firing attacks.
-- 2256 dense legal marine positions /45120 five-family routes:0 failures;2256 reachable native Spitter firing fields.
-- 4 rigs ×20 rooms ×120 fixed steps ×2: identical every-frame state/effect hashes and legal sweeps.
-- 3 actual Brute corner controls pass. Exact native rounded sweeps and short committed navigation legs fix real stalls without changing actors.
-
-The original825 layout packet failed balance. V1 and V1.1 corrected the pump/workshop rig skew but remained too fast/easy. The separate Transmission door-spacing experiment shortened fights further and was rejected. All raw failed packets remain. Live source combines the proven V1.1 pump/workshop layout with rear cabin/booth/service ingresses; entrance spacing is not claimed to guarantee slowdown.
-
-Only four encounter counts change, after those layout-first experiments:
-
-|Room|Requests before → after|Last scheduled request before → after|
+|Metric|Before|c7 accepted record|
 |---|---:|---:|
-|Transmission|32 →34|23900 →25400ms|
-|Diagnostic|27 →29|4230 →4410ms|
-|Safety|28 →30|4320 →4500ms|
-|Shielding|31 →33|4400 →4580ms|
+|Completion|88/160,55.00%|94/160,58.75%|
+|Breacher / Cryo / Pyro / Arc completion|47.5 /75 /35 /62.5%|42.5 /70 /52.5 /70%|
+|Maximum rig distance from overall rate|20.00pp|**16.25pp — accepted miss** against≈15pp|
+|Ordinary-room median|32.175s|**29.916667s — accepted miss** against30–45s|
+|Transmission median|67.4417s|61.4333s|
+|Rooms per Overdrive, per-rig range|1.364–1.429|1.393–1.429|
 
-These are eight additional actual seeded enemies per complete campaign. Every original request/RNG field is retained exactly. Family pools, caps, first650ms, interval formulas, progression, firstfive introductory encounters and Overload48 remain unchanged. No timer padding or artificial clear wait was added. The historical200-plan digest remains exact after removing only those four tails.
+The lead accepted those two misses on 2026-11-15; neither is rounded into a pass. All 160 runs clear the first five rooms; 94 complete and 66 die naturally, deaths in rooms10–20, with no errors/censors or ordinary-room Overdrive-cap violations. Full-kit ability attribution is 33.169/32.601/42.340/32.646%, clear times 93.25/97.15/80.70/89.05s, spread 1.20384×: unchanged 30–45% and≤1.25× guards pass.
 
-The fixed final validation is160 matched attempts/profile,40 declared seeds/rig, unchanged policy `976eb173f26b67e0d02806b91b316a13fc11eecee94ba0310ac2287a7e402502`. Declaration: `plans/L8-N40-VALIDATION.md`. Baseline160 completes88/160=55%; B47.5/C75/P35/A62.5%; maximum rig distance20pp is an inherited miss. The revised659 complete160 packet fails acceptance:98/160=61.25%; B42.5/C82.5/P52.5/A67.5%; maximum distance21.25pp (range40pp), ordinary29.9167s. Transmission61.5167s, every-rig Overdrive cadence, natural terminals, welcoming firstfive and deaths9–20 pass. Exact paired comparison is `artifacts/nextgen/l8-sim/revised659-N160-comparison.{json,md}`. This failed packet remains immutable; a further measured source revision and full controlled rerun are required. Diagnostic overrides never count as release evidence.
+Encounter changes from baseline are limited to Transmission 32→34 (last 23900→25400ms), Diagnostic 27→29 (4230→4410ms), Safety 28→30 (4320→4500ms), Shielding 31→33 (4400→4580ms): eight additional requests total. Every original prefix/RNG field, family pool, cap and introductory encounter remains; Freight 18 and Overload 48 remain. Numeric geometry changes and c7 soak receipts are retained under `artifacts/nextgen/l8-final/converged/simulation/`.
 
-Frozen final full-kit guard passes unchanged30–45% ability attribution and≤1.25× clear-time spread: B33.1691/C32.6012/P42.3396/A32.6459%;93.25/97.15/80.70/89.05s; spread1.20384×. All rigs use every slot, earn OD and resolve the same55 actual kills. Campaign direct/status/weapon buckets are reported separately. The unchanged actual `I5Cadence.mjs` guard also passes.
+## Final gates and evidence
 
-## Presentation and verification audit
+All requested convergence gates passed once on the frozen source; full logs and browser receipts are in `artifacts/nextgen/l8-final/converged/verification/`.
 
-Geometry owns decks, hulls, cutaway partitions, fitted kit reservations, seam growth and radar footprints. Shared deck clipping subtracts overlapping solid UNION once. New function-tied floor marks replace detached patch/confetti recipes. All20 live rooms disable circular suit-fill pedestals while retaining the directional marine lamp. Core decorations stay within the unchanged C6/E7 combat-plane, body/HUD, hero-scale and AABB bounds.
+```text
+Vitest: Test Files 405 passed | 2 skipped (407)
+Vitest: Tests 5264 passed | 2 skipped (5266); Duration 434.00s
+cryo preview: tests 2; pass 2; fail 0
+build: ✓ built in 562ms (existing large-chunk warning)
+room-evidence: pass 28; fail 0; ragdoll {"passed":true,"cpuOnly":true,"checks":33}
+Browser smoke passed: desktop, production Pages subpath, assets, fire, weapon switch, pause/resume, credits.
+Authored desktop smoke passed: 20 rooms, native move/fire, Continue/route, pause/resume, Low quality, no browser errors.
+l8-converged-smoke: room-limit; 3 rooms cleared; 0 errors
+```
 
-All migrated tests and reasons are listed individually in `plans/L8-test-migrations.md`. Old camera/construction/navigation reproductions use exact historical fixtures; independent live-room tests preserve actual current guarantees. The Safety service owner consolidates903 static meshes to24 using the existing collider-part-preserving batcher, with unchanged triangles/bounds/rays/names/routes and exact-once private disposal.
+The initial sandboxed smoke invocation could not bind 127.0.0.1 and stopped before browser assertions; the permitted invocation above is the completed run. No test failure was rerun.
 
-No UI, actor, ability, checkpoint schema, run-generation or story-text source is edited.52 frozen observer/presentation imports and five actor GLBs remain byte-identical to baseline, recorded in `final-observer-actor-identity.json`.
+The source-frozen 27 JS/CSS build assets match the mounted26 distribution exactly. [The migration ledger](plans/L8-test-migrations.md) lists each rewritten layout/presentation test and its replacement behavioral guarantee; gameplay, navigation, persistence, determinism, input and accessibility invariants were retained. Proposal-only suites were removed with the rejected code.
 
-Final required gate summaries, native campaign receipts, source-hashed20-up calm gallery, per-room absolute image paths and quiet paired hardware budgets remain pending below. The full `npm run verify` chain is expected to stop at the documented pre-existing absent-Blender asset tests; engineering explicitly prohibits installing Blender or bypassing those tests. Other Python asset checks use the isolated Pillow environment, without changing repository prerequisites.
+Final evidence root: `artifacts/nextgen/l8-final/converged/`. [Gallery](../../artifacts/nextgen/l8-final/converged/index.html), [old/new twenty-room plans](../../artifacts/nextgen/l8-final/converged/twenty-old-new-plans.png), [twenty calm](../../artifacts/nextgen/l8-final/converged/twenty-calm.png), [twenty kiting](../../artifacts/nextgen/l8-final/converged/twenty-kiting02.png), [per-room absolute before/after paths and hashes](../../artifacts/nextgen/l8-final/converged/gallery.json). Native PNGs, exact 480×270 and grayscale reviews, four-phase storyboards and parent manifests are retained there. Kiting is a guarded staged native fixture, not an organic campaign or balance proof.
 
-## Remaining release gates
+Per lead convergence, no final per-rig native browser campaigns or quiet hardware benchmarks ran: integration owns those after merge. No final hardware FPS/budget pass is claimed. The staged final G6 captures contain **eleven draw-cap misses** against 330: Armory 360/356/356, Freight 365/355/339/357, Transmission 493/492/395/355. Calm/arena-calm and the canonical standard stay ≤330. These are recorded misses, left unchanged by convergence; staged counters do not establish hardware FPS. The retained capture preparation counters have median 0.680s and worst 1.994s; all twenty arena-calm views add zero new programs. [Staged budget receipt](../../artifacts/nextgen/l8-final/converged/verification/staged-budget-summary.json). The existing Freight/Breacher hardware miss is not certified resolved. Superseded L8 capture rounds and uncited simulation raw outputs are removed after verifying final copies; the c7 comparison and cited proof remain. Cleanup removed 100 paths /5.366GiB; `cleanup.json` records every retired path and the retained replacements.
 
-The complete repaired-navigation c7 audit retains160 matched attempts:94/160=58.75%; B42.5/C70/P52.5/A70%. Maximum rig distance16.25pp and strict ordinary median29.9166667s fail without rounding. Transmission61.4333s, all-rig OD cadence, firstfive welcoming, natural outcomes and zero ordinary OD-cap violations pass. Baseline remains88/160=55%, distance20pp, ordinary32.175s. Full source/seed identities and320 raw report hashes: `artifacts/nextgen/l8-sim/c7-N160-comparison.{json,md}`. The optional three-service-ingress trial is rejected and dormant; its same-nav primary40 worsened spread and Pyro survival. Eight read-only observer replays have exact original gameplay-field parity with vanilla controls; actual capped arrivals usually last much longer than nominal request eligibility, so no stagger or elite-pressure change is selected.
+## What still looks weak
 
-The mounted26 application passes the expanded full JavaScript gate: `405 passed | 2 skipped` files, `5296 passed | 2 skipped` tests; duration499.51s while controlled CPU validation shares the host. Room evidence passes28 plus33 ragdoll checks; build passes and all27 JS/CSS outputs exactly reproduce the frozen26 distribution. Full verify then stops at the same documented missing Blender executable. Mounted ingress adds60 physically grounded cassettes in15 rooms, using existing draw buckets; maximum dressing11860/12000 triangles. Ten guarded entry/arena preflight PNGs pass, errors/failures empty, all five settled arena views compile0 new programs. Full120/native canonical standard/authored20 capture jobs are still running; these are correctness/art evidence, not hardware performance certification.
+- Low partition walls often read as thin floor stripes or shallow modular blocks from the gameplay camera.
+- Crew Checkpoint, Diagnostic, Infested Workshop, Swarm Junction, Containment Annulus and Manual Control spawn views are mostly bare tile grid.
+- Furniture and mounted architectural detail often sit outside the close fighting crop; Residential's fight floor still feels sparse.
+- Freight's low box masses do not fully convey the scale and weight of a working cargo hold.
+- Workshop growth reads as thin graphic strands; several combat floors share a sterile value/tiling pattern.
+- The Annulus foundation remains visually heavy, while Overload's heat composition is stronger than its quiet-floor detail.
 
-Two prospective adjustments are under preparation after the failed complete c7 audit: attached thin Swarm vent-mouth baffles to improve directional counterplay at its largest Breacher death concentration, and two actual Freight requests to restore measured ordinary pacing. Neither is activated here; they require strict geometry/native proof, an explicit source selection and a complete new fixed160 cohort. No count/elite/schedule hypothesis is presented as a passing result.
-
-Additional exact-opening A3 coverage exposed a liveness gap omitted by named-space/grid samples: six of157 opening midpoints left mixed actors unresolved at60s (Awakening, Atrium, two Diagnostic thresholds, Workshop, Annulus). Full failed states remain in `artifacts/nextgen/l8-sim/opening-midpoint-native-dispatch659/`. Repair `c7c75b9` expires a stale navigation commitment after eight deterministic native decisions without one unit of net improvement; same-decision speculative queries never advance that counter. Plain callers retain position-based observation. It changes no actor, ability, collision predicate or BFS algorithm. All157 openings/3140 actors now resolve under the unchanged60s native horizon, with accepted body sweeps and the actual director's240-unit occupied-breach fallback. Five focused files/173 tests pass, including exact stale states, completely stationary actors, healthy slow progress and prior corner/jitter controls. Details and red/green evidence: `plans/L8-navigation-progress-repair.md`. Broader final proof and a new controlled cohort remain required; the earlier659 cohort cannot certify this repair's balance.
-
-The659-game/9b6-render preflight now passes the full JavaScript suite (`399 passed | 2 skipped` files; `5040 passed | 2 skipped` tests), build, native desktop smoke and exact `test:authored-smoke:all`: `Authored desktop smoke passed: 20 rooms, native move/fire, Continue/route, pause/resume, Low quality, no browser errors.` The full verify then stops at the documented absent Blender executable in `MonitorArtifacts.test_imported_geometry_regression`; no test or asset was altered to bypass it. Both skips are existing opt-in CPU-profile/historical-camera-replay suites. Logs and hashes: `artifacts/nextgen/l8-sim/verification-preflight-250ee77/receipt.json`. These are source preflight passes, not acceptance of a later geometry revision.
-
-- Final PNG art review and all20 guarded entry/arena/kiting captures.
-- Final fixed160 cohort table and target assessment.
-- Final native browser campaign per rig; desktop smoke, all20 authored smoke and playtest smoke.
-- Full Vitest, build, room-evidence and verify summary lines.
-- Quiet measured benchmark/preparation comparisons with every raw miss and host-load receipt.
-
-No final completion claim is made until these results are recorded.
+These are follow-up art work, left unchanged by the convergence decision. This report does not claim premium environment-art acceptance.
