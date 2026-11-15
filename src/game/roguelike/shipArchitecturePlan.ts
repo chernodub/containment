@@ -18,8 +18,15 @@ export function defineShipRoom(t:ShipRoomTopology):ShipRoomTopology {
 
 export type ShipSpace=Readonly<{name:string;outline:readonly Point[];anchor:Point}>;
 export type ShipOpening=Readonly<{a:string;b:string;from:Point;to:Point}>;
+/** Physical jamb-supported aperture, distinct from an open circulation span.
+ * Two lanes through one broad mouth are never described as two doors. */
+export type ShipAperture=Readonly<{
+ name:string;kind:'wide workbay mouth'|'door';from:Point;to:Point;
+ lanes:readonly ShipOpening[];
+}>;
 export type ShipPlan=Readonly<{
  topology:ShipRoomTopology;spaces:readonly ShipSpace[];openings:readonly ShipOpening[];arena:Point;
+ apertures?:readonly ShipAperture[];
  bays:readonly Readonly<{space:string;from:Point;to:Point}>[];
  breachFeatures:readonly Readonly<{name:string;at:Point}>[];
  /** Only the two explicitly authored holdout rooms may use a single route. */

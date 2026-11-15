@@ -1,6 +1,6 @@
 /** Offline authoring checks. Uses simulation geometry; never imported by gameplay. */
 import type {Point,RoomTemplate} from './types';
-import type {ShipPlan} from './shipArchitecturePlan';
+import type {ShipPlan,ShipAperture} from './shipArchitecturePlan';
 import {FacilityNavigation} from '../world/FacilityNavigation';
 import {canOccupyExpedition,canTraverseExpedition,type ExpeditionGeometry} from '../world/expeditionGeometry';
 const cross=(a:Point,b:Point,c:Point)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
@@ -42,6 +42,39 @@ export function shipSolidStatistics(t:RoomTemplate){
  }
  return {solidArea,connectedArea,connectedFraction:connectedArea/solidArea,freeGroups:used.size,walkableArea};
 }
+/** A claimed physical door must have actual solid flanks, with depth and width.
+ * Open-floor route annotations do not become doorways merely by naming them. */
+export function shipPhysicalApertureErrors(
+ g:ExpeditionGeometry,
+ aperture:Pick<ShipAperture,'from'|'to'> & Partial<ShipAperture>,
+):string[]{
+ const {from,to}=aperture,dx=to.x-from.x,dy=to.y-from.y,len=Math.hypot(dx,dy),errors:string[]=[];
+ if(!Number.isFinite(len)||len<140)return ['Physical aperture width must be at least140'];
+ const ux=dx/len,uy=dy/len,nx=-uy,ny=ux;
+ for(const [end,sign,label]of [[from,-1,'start'],[to,1,'end']] as const){
+  let supported=true;
+  for(const d of [0,4,8])for(const n of [-4,0,4]){
+   const p={x:end.x+ux*d*sign+nx*n,y:end.y+uy*d*sign+ny*n};
+   if(canOccupyExpedition(g,p,0))supported=false;
+  }
+  if(!supported)errors.push(`${label}: no actual8-unit-wide/deep solid jamb`);
+ }
+ const c={x:(from.x+to.x)/2,y:(from.y+to.y)/2};
+ if(!canOccupyExpedition(g,c,70))errors.push('Physical aperture has no140-unit clear midpoint');
+ if(!canTraverseExpedition(g,{x:c.x+nx*64,y:c.y+ny*64},{x:c.x-nx*64,y:c.y-ny*64},32))errors.push('Physical aperture crossing is blocked');
+ for(let d=32;d<=len-32;d+=8)if(!canOccupyExpedition(g,{x:from.x+ux*d,y:from.y+uy*d},32)){errors.push('Physical aperture span narrows or crosses solid');break;}
+ if(aperture.lanes){
+  const spans=aperture.lanes.map(l=>{
+   const project=(p:Point)=>(p.x-from.x)*ux+(p.y-from.y)*uy;
+   if(Math.abs((l.from.x-from.x)*nx+(l.from.y-from.y)*ny)>1e-6||Math.abs((l.to.x-from.x)*nx+(l.to.y-from.y)*ny)>1e-6)errors.push('Lane does not lie on physical aperture');
+   return[project(l.from),project(l.to)];
+  }).sort((a,b)=>a[0]-b[0]);
+  for(const span of spans)if(span[0]<0||span[1]>len||span[1]-span[0]<140)errors.push('Physical aperture lane is outside the mouth or narrower than140');
+  for(let i=1;i<spans.length;i++)if(spans[i][0]<spans[i-1][1])errors.push('Physical aperture lanes overlap');
+  if(aperture.kind&&spans.length!==(aperture.kind==='door'?1:2))errors.push('Door/mouth lane classification does not match physical aperture');
+ }
+ return errors;
+}
 export function shipPlanOpeningErrors(plan:ShipPlan,g:ExpeditionGeometry):string[]{
  const errors:string[]=[],names=new Set(plan.spaces.map(s=>s.name));
  const hull=g.boundary??[],signed=hull.reduce((n,a,i)=>{const b=hull[(i+1)%hull.length];return n+a.x*b.y-b.x*a.y;},0);
@@ -64,6 +97,10 @@ export function shipPlanOpeningErrors(plan:ShipPlan,g:ExpeditionGeometry):string
   const a=plan.spaces.find(s=>s.name===o.a),b=plan.spaces.find(s=>s.name===o.b);
   if(a&&b&&!((insidePlanPolygon(sideA,a.outline)&&insidePlanPolygon(sideB,b.outline))||(insidePlanPolygon(sideB,a.outline)&&insidePlanPolygon(sideA,b.outline))))errors.push(`Opening ${i}: does not join its declared sub-spaces`);
   if(!canTraverseExpedition(g,{x:c.x-dy/len*64,y:c.y+dx/len*64},{x:c.x+dy/len*64,y:c.y-dx/len*64},32))errors.push(`Opening ${i}: blocked threshold crossing`);
+ }
+ for(const aperture of plan.apertures??[]){
+  errors.push(...shipPhysicalApertureErrors(g,aperture).map(error=>`${aperture.name}: ${error}`));
+  for(const lane of aperture.lanes)if(!plan.openings.some(o=>o.a===lane.a&&o.b===lane.b&&o.from.x===lane.from.x&&o.from.y===lane.from.y&&o.to.x===lane.to.x&&o.to.y===lane.to.y))errors.push(`${aperture.name}: physical lane is absent from circulation graph`);
  }
  // Every edge must lie on a cycle. Parallel edges represent spatially separate
  // lanes of a broad opening; the physical blocked-opening check also runs below.

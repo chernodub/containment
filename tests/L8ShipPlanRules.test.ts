@@ -4,8 +4,9 @@ import {SHIP_ARCHITECTURE_PLANS} from '../src/game/roguelike/shipArchitectureLay
 import {SHIP_STANDARD_PLANS} from '../src/game/roguelike/shipArchitectureStandards';
 import {STORY_ROOM_TEMPLATES} from '../src/game/roguelike/storyRoomTemplates';
 import {generateRun} from '../src/game/roguelike/run';
-import {createExpeditionGeometry,canOccupyExpedition} from '../src/game/world/expeditionGeometry';
-import {shipSolidStatistics,shipPlanOpeningErrors,shipBlockedOpeningErrors} from '../src/game/roguelike/shipPlanChecks';
+import {createExpeditionGeometry,createRoomTemplateGeometry,canOccupyExpedition} from '../src/game/world/expeditionGeometry';
+import {ROOM_TEMPLATES} from '../src/game/roguelike/roomTemplates';
+import {shipSolidStatistics,shipPlanOpeningErrors,shipBlockedOpeningErrors,shipPhysicalApertureErrors} from '../src/game/roguelike/shipPlanChecks';
 // Frozen 7ceefa5a52cc74a6b95712f29653d9bf523906be,2-unit union sample.
 const before:Record<string,number>=baseline.areas;
 describe('L8 ship plans: lead architectural rules',()=>{
@@ -36,4 +37,22 @@ it('rejects corner-only chains, too many islands and a decorative octagon',()=>{
  expect(shipPlanOpeningErrors({...plan,openings:plan.openings.map((o,i)=>i?o:{...o,to:{x:o.from.x+100,y:o.from.y}})},g)).toContain('Opening 0: 100 <140');
  expect(shipBlockedOpeningErrors(plan,{...g,blockers:[...g.blockers,{x:0,y:700,width:1280,height:48}]}).length).toBeGreaterThan(0);
  expect(shipPlanOpeningErrors(plan,{...g,boundary:[{x:40,y:0},{x:1240,y:0},{x:1280,y:40},{x:1280,y:960},{x:1240,y:1000},{x:40,y:1000},{x:0,y:960},{x:0,y:40}]})).toContain('Boundary needs functional recesses/bays, not a convex decorative hull');
+});
+
+it('distinguishes real jamb-supported apertures from floor lines and overlapping claimed lanes',()=>{
+ const t={...ROOM_TEMPLATES.receiving,width:1000,height:800,boundary:undefined,voids:[],
+  spawn:{x:100,y:200},exit:{x:900,y:200},breaches:[{x:100,y:100},{x:900,y:100},{x:100,y:700},{x:900,y:700}],
+  obstacles:[{x:0,y:380,width:300,height:40},{x:600,y:380,width:400,height:40}]};
+ const g=createRoomTemplateGeometry(t,'physical-aperture'),mouth={name:'Service bay mouth',kind:'wide workbay mouth' as const,
+  from:{x:300,y:400},to:{x:600,y:400},lanes:[
+   {a:'Bay',b:'Hall',from:{x:300,y:400},to:{x:440,y:400}},
+   {a:'Bay',b:'Hall',from:{x:460,y:400},to:{x:600,y:400}},
+  ]};
+ expect(shipPhysicalApertureErrors(g,mouth)).toEqual([]);
+ expect(shipPhysicalApertureErrors(g,{from:{x:300,y:200},to:{x:600,y:200}})).not.toEqual([]);
+ const halfJamb=createRoomTemplateGeometry({...t,obstacles:t.obstacles.map(r=>({...r,height:20}))},'half-jamb');
+ expect(shipPhysicalApertureErrors(halfJamb,mouth).some(e=>e.includes('solid jamb'))).toBe(true);
+ expect(shipPhysicalApertureErrors(g,{...mouth,lanes:[mouth.lanes[0],{...mouth.lanes[1],from:{x:430,y:400}}]})).toContain('Physical aperture lanes overlap');
+ expect(shipPhysicalApertureErrors(g,{...mouth,kind:'door'})).toContain('Door/mouth lane classification does not match physical aperture');
+ expect(shipPhysicalApertureErrors(g,{...mouth,lanes:[mouth.lanes[0],{...mouth.lanes[1],from:{x:460,y:401},to:{x:600,y:401}}]})).toContain('Lane does not lie on physical aperture');
 });
