@@ -912,3 +912,27 @@ intermediate successful round PNGs may be removed, but failed raw runs stay inta
 `playtest --storyboard-room=awakening-bay` records read-only observations during the ordinary native campaign, without advancing extra simulation or changing inputs. `i11-play-storyboards.mjs artifacts/nextgen/final5/play <campaign-dirs...>` requires a real clear and assembles twelve distinct entry→fight→clear frames per rig with source hashes.
 
 Capture graphics overrides are configured before scenario staging/compile guards and retained across an explicit native tier switch. `i11-legacy-acid-boundary` waits for an actual Queen pool under a fatal zero-compilation guard and aims the native Glacier preview at it. `i11-legacy-acid-probe` and `i11-compile-probe-*` are diagnostic-only traces, excluded from default `all`; they are not performance acceptance. All native actor/action/framing/priority assertions remain.
+
+## U9 edited combat HUD and rig portraits
+
+`u9-combat:<room>` inspects a real room with a newly changed build, including its
+bounded two-second Effect/Set reveal. `u9-combat-settled:<room>` advances 2500ms
+of actual native fire after grants (capture-only invulnerability), then observes
+the collapsed combat column. These are staged UI/framing proofs, not campaigns.
+`u9-clear:<room>` uses the existing validated reward boundary; `u9-pause-records`
+checks that skipped dialogue remains in the real Pause archive. `u9-results-build`
+opens the actual debrief build. All ordinary native body/HUD/contrast guards run.
+
+`u9-silhouette-sheet` copies all four production SVG portraits at equal scale
+through real rig selection into an explicitly labelled review-only sheet. Its
+second row overrides material fills to solid black and omits energy, vapor and
+ink detail, retaining physical tank/hose/coil strokes. It adds no game UI or save
+state. `node scripts/nextgen/u9-review.mjs <gallery> ...` creates native-source
+hash receipts, mathematically area-weighted 480×270 reductions and contacts,
+including non-integer 1280→480 reduction. Failed raw runs remain immutable.
+
+`u9-before-clear` and `u9-before-pause` are baseline-compatible observations; they
+make no assertion about UI elements introduced by U9. Use them only with the
+explicit frozen baseline dist. The existing pause-loadout-augments required
+selectors are now scoped to `.pause-panel`, so a collapsed HUD copy cannot mask
+the visible loadout assertion.

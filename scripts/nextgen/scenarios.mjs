@@ -1,3 +1,4 @@
+import {U9_SCENARIOS} from './u9-scenarios.mjs';
 import {U7_SCENARIOS} from './u7-scenarios.mjs';
 import {U6_SCENARIOS} from './u6-scenarios.mjs';
 import {G4_FORM_SCENARIOS} from './g4-forms.mjs';
@@ -151,7 +152,7 @@ export const SCENARIOS=[
  {id:'f2-pause-focus',state:'paused',required:['#resume'],nativeKeys:[['Tab',0]],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();for(let i=0;i<900&&!document.querySelector('#pause-tabpanel');i++)await new Promise(requestAnimationFrame);document.querySelector('#pause-tabpanel').focus();}},
  {id:'pause',state:'paused',required:['.pause-panel','#resume'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('passenger-vault');d.game.pause();d.refresh();}},
  {id:'pause-loadout',state:'paused',required:['.owned-boons','.ability-preview'],setup:async()=>{const d=window.__containmentDebug;await d.gotoRoom('armory',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','spreading-nova','twin-glacier','reserve-thruster']);d.game.pause();d.refresh();for(let i=0;i<900&&!document.querySelector('[data-pause-tab=loadout]');i++)await new Promise(requestAnimationFrame);document.querySelector('[data-pause-tab=loadout]').click();}},
- {id:'pause-loadout-augments',state:'paused',required:['[data-boon=spreading-nova]','[data-boon=twin-glacier]','[data-boon=reserve-thruster]'],setup:async()=>{
+ {id:'pause-loadout-augments',state:'paused',required:['.pause-panel [data-boon=spreading-nova]','.pause-panel [data-boon=twin-glacier]','.pause-panel [data-boon=reserve-thruster]'],setup:async()=>{
    const d=window.__containmentDebug;await d.gotoRoom('armory',{rig:'cryo'});d.grantBoons(['cryogenic','permafrost','spreading-nova','twin-glacier','reserve-thruster']);
    d.game.pause();d.refresh();for(let i=0;i<900&&!document.querySelector('[data-pause-tab=loadout]');i++)await new Promise(requestAnimationFrame);document.querySelector('[data-pause-tab=loadout]').click();
    const panel=document.querySelector('#pause-tabpanel');panel.scrollTop=panel.scrollHeight;
@@ -855,3 +856,5 @@ import {registerE7Scenarios} from './e7-scenarios.mjs';
 registerE7Scenarios(SCENARIOS);
 import {registerI11Scenarios} from './i11-scenarios.mjs';
 registerI11Scenarios(SCENARIOS);
+
+SCENARIOS.push(...U9_SCENARIOS);

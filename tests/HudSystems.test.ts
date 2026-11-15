@@ -606,7 +606,7 @@ it('bounds the 720p right column, yields radar chrome, and preserves contacts an
             const objective=document.getElementById('status-hud')!.getBoundingClientRect();
             return {width:objective.width,area:objective.width*objective.height+radar.width*radar.height,opacity:getComputedStyle(document.getElementById('radar-hud')!).opacity,faded:document.getElementById('radar-hud')!.dataset.obscuresThreat,critical:document.getElementById('objective-critical')!.textContent};
         });
-        expect(result.width).toBeLessThanOrEqual(260);expect(result.area/(1280*720)).toBeLessThan(.14);
+        expect(result.width).toBeLessThanOrEqual(260);expect(result.area/(1280*720)).toBeLessThan(.1);
         expect(result.critical).toBe('PASSENGERS ALIVE. Overload is NOT armed.');expect(result.faded).toBe('true');
         await page.waitForTimeout(180);
         expect(await page.locator('#radar-hud').evaluate(node=>getComputedStyle(node).opacity)).toBe('1');
