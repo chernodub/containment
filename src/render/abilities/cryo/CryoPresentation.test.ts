@@ -212,14 +212,14 @@ describe('Cryo signatures', () => {
   it('makes Whiteout freeze waves once per authoritative two-second boundary', () => {
     const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
     fx.update(frame({ zones: [zone()] }));
-    expect(kit.ring).not.toHaveBeenCalled();
+    expect(kit.flash).not.toHaveBeenCalled();
     fx.update(frame({ zones: [zone({ remainingMs: 5990 })] }));
-    expect(kit.ring).toHaveBeenCalledTimes(1);
+    expect(kit.flash).toHaveBeenCalledTimes(1);
     fx.update(frame({ zones: [zone({ remainingMs: 5990 })] }, 0));
     fx.update(frame({ zones: [zone({ remainingMs: 5750 })] }));
-    expect(kit.ring).toHaveBeenCalledTimes(1);
+    expect(kit.flash).toHaveBeenCalledTimes(1);
     fx.update(frame({ zones: [zone({ remainingMs: 3990 })] }));
-    expect(kit.ring).toHaveBeenCalledTimes(2);
+    expect(kit.flash).toHaveBeenCalledTimes(2);
   });
 
   it('shatters Glacier into fewer large pooled fracture masses and persistent full-radius frost', () => {
@@ -272,7 +272,7 @@ describe('Cryo signatures', () => {
     fx.update(frame({}, .1));
     expect(kit.front).not.toHaveBeenCalled();
     expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(0);
-    expect(kit.ring).toHaveBeenCalledTimes(4);
+    expect(kit.ring).toHaveBeenCalledTimes(3);
     fx.event(receipt({ radius: 210 }), 320, 320); fx.update(frame({}, .1));
     expect(kit.sprite.mock.calls.filter(c => c[0] === 'mist')).toHaveLength(8);
     expect(kit.front).not.toHaveBeenCalled();
@@ -360,6 +360,20 @@ describe('Cryo signatures', () => {
     }
     // Perimeter + target vapor + deposits leave room in the 64-decal pool.
     expect(kit.sprite.mock.calls.length).toBeLessThanOrEqual(low ? 17 : 35);
+  });
+
+  it('crystallizes frozen feet only on a native freeze pulse, keeping target anatomy clear', () => {
+    const kit = recordingKit(), fx = createCryoPresentation(kit as unknown as ElementKit);
+    const f = frame({ zones: [zone({remainingMs: 5990})] }, 0);
+    f.game = { enemies: {snapshot: {enemies: [{id: 1, x: 370, y: 350, radius: 16, health: 30}]}},
+      boonStatuses: () => ({frozen: true, chilled: true}) } as never;
+    fx.update(f);
+    const tips = kit.sprite.mock.calls.filter(c => c[0] === 'crystal');
+    expect(tips).toHaveLength(4);
+    for(const tip of tips) { expect(tip[2]).toBe(.13); expect(tip[4]).toBe(.13); expect(tip[5]).toBeLessThan(.25); }
+    kit.sprite.mockClear(); f.snapshot = snapshot({zones: [zone({remainingMs: 5600})]});fx.update(f);
+    expect(kit.sprite.mock.calls.filter(c => c[0] === 'crystal')).toHaveLength(0);
+    fx.dispose();
   });
 
   it('renders no denied/ready world feedback and clears all transient state', () => {

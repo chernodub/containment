@@ -239,7 +239,7 @@ class CryoPresentation implements AbilityPresentation {
       const pulse = Math.floor(age / 2000);
       if (dt > 0 && pulse > clock.pulse) {
         clock.pulse = pulse;
-        k.ring(x, z, radius, CORE, .65);
+        // Crystalline pulse tips are drawn by the retained ground surface.
         k.flash(x, z, ICE, 1.1, 4, 3, .1);
       }
     }
@@ -256,12 +256,12 @@ class CryoPresentation implements AbilityPresentation {
       k.sprite('snow', x + Math.cos(a) * r, .65 + (i % 3) * .14, z + Math.sin(a) * r,
         width, .32, CORE, fade * .72, seed, 'billboard', 0, -.72);
     }
-    // Short ground currents reinforce direction without filling the storm's eye.
+    // Tangential gust ribbons keep the interior transparent.
     const strokes = k.low ? 3 : 6;
     for (let i = 0; i < strokes; i++) {
       const seed = i * 2.731 + zone.id, variation = authoredVariation(seed, 3);
       const a = i * TAU / strokes + time * .24 + variation * .21;
-      const r = radius * (i % 3 === 0 ? .52 : .84 + variation * .045), halfWidth = Math.min(.17, radius * .025);
+      const r = radius * (.84 + variation * .045), halfWidth = Math.min(.17, radius * .025);
       const halfLength = Math.min(radius * (.14 + variation * .08), Math.sqrt(Math.max(.001, radius * radius - (r + halfWidth) ** 2)) * .85);
       k.gust(x + Math.cos(a) * r, z + Math.sin(a) * r, halfLength * 2, halfWidth * 2,
         a + Math.PI / 2, seed, fade * (.33 + variation * .13) * groundYield);
@@ -287,6 +287,16 @@ class CryoPresentation implements AbilityPresentation {
       k.sprite('mist', x - .22, actorHeight * .3, z + .15,
         Math.min(.65, radius * 1.05), Math.min(.58, actorHeight * .4),
         ICE, fade * .38, enemy.id, 'billboard', 0, -.55);
+      const pulseAge = ((zone.durationMs - zone.remainingMs) % 2000) / 1000;
+      if (status.frozen && pulseAge < .32) {
+        // Contact facets frame the feet, never a white overlay across anatomy.
+        for (let i = 0; i < (k.low ? 2 : 4); i++) {
+          const a = i * TAU / (k.low ? 2 : 4) + .37, r = radius * 1.25;
+          if (Math.hypot(dx / UNIT, dz / UNIT) + r + .2 >= zone.radius / UNIT) continue;
+          k.sprite('crystal', x + Math.cos(a) * r, .13, z + Math.sin(a) * r,
+            .13, .25 * (1 - pulseAge / .32), CORE, fade * (1 - pulseAge / .32) * .65, enemy.id + i, 'vertical', -a);
+        }
+      }
       if (++count >= (k.low ? 2 : 4)) break;
     }
   }

@@ -87,7 +87,7 @@ export class BreacherPresentation implements AbilityPresentation {
       this.kit.scar('crack', x, z, radius, 0x121c23, 10);
       this.kit.burst(x, .15, z, 'kinetic', 24, 6, .45);
       this.dust(x, z, radius, this.kit.low ? 5 : 14);
-      this.kit.debris(x, z, radius, 'kinetic', 32);
+      // drawSlam owns the clipped deck fragments and their radial momentum.
     } else if (event.ability === 'railbreaker') {
       const shape = ABILITY_CATALOG.railbreaker.shape;
       const length = (event.length ?? (shape.kind === 'line' ? shape.length : 900)) / UNIT;
@@ -287,6 +287,21 @@ export class BreacherPresentation implements AbilityPresentation {
       k.sprite('shockwave', p.x, .055, p.z, radius, radius, p.age < .075 ? CORE : AMBER, frontFade * .62, 0, 'ground');
     }
     if (p.age < .065) k.sprite('impact', p.x, .24, p.z, .8, .58, CORE, (1 - p.age / .065) * .75, 0, 'light');
+    // Six hinged deck sectors lift from a common impact and settle quickly.
+    // Dark bent seams and their cool cut edges remain beneath the debris.
+    const buckle = Math.max(0, 1 - p.age / .34), sectors = k.low ? 3 : 6;
+    for (let i = 0; i < sectors && buckle > 0; i++) {
+      const a = p.angle + i * TAU / sectors, c = Math.cos(a), s = Math.sin(a);
+      const inner = p.size * .09, outer = p.size * (.34 + i % 2 * .055);
+      const bend = .06 + Math.sin(Math.min(1, p.age / .24) * Math.PI) * .22;
+      k.ribbon(p.x + c * inner, .052, p.z + s * inner,
+        p.x + c * outer, .052, p.z + s * outer, 0x101b22, .06, buckle * .85, false);
+      k.draw('shard', p.x + c * outer * .64, .048 + bend * .4, p.z + s * outer * .64,
+        p.size * .09, .022, (outer - inner) * .45, STEEL, buckle * .8,
+        Math.PI / 2 - a, bend, 31);
+      k.ribbon(p.x + c * inner - s * .07, .061, p.z + s * inner + c * .07,
+        p.x + c * outer - s * .07, .061, p.z + s * outer + c * .07, 0x91a5ad, .012, buckle * .5, false);
+    }
     const count = k.low ? 5 : 11;
     for (let i = 0; i < count; i++) {
       const seed = i * 2.39996323, f = Math.sin(seed * 3.17 + .4) ** 2;
@@ -294,11 +309,11 @@ export class BreacherPresentation implements AbilityPresentation {
       const c = Math.cos(a), s = Math.sin(a);
       const r = Math.min(p.size - .28, p.size * (.1 + f * .12) + p.age * p.size * (.45 + f * .35));
       const hop = Math.max(0, Math.sin(Math.min(1, p.age / (.45 + f * .2)) * Math.PI));
-      // Thin clipped deck plates tumble once, revealing broad manufactured faces.
-      k.draw('solid', p.x + c * r, .065 + hop * (.18 + f * .38), p.z + s * r,
+      // Unequal clipped steel shards eject along the same radial fissures.
+      k.draw('shard', p.x + c * r, .065 + hop * (.18 + f * .38), p.z + s * r,
         .32 + f * .48, .035 + f * .025, .16 + (1 - f) * .22,
         i % 5 === 0 && p.age < .09 ? AMBER : i % 3 ? STEEL : 0x91a5ad, (1 - t) * .85,
-        -a + p.age * (f - .5) * 3, hop * (f - .4), 30);
+        Math.PI / 2 - a + p.age * (f - .5), hop * (f - .4), 30);
       if (p.age < .24 && i % 3 === 0) {
         const px = p.x + c * r, pz = p.z + s * r;
         k.ribbon(px, .09 + hop * .3, pz, px - c * .32, .08 + hop * .3, pz - s * .32,

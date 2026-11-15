@@ -18,21 +18,19 @@ const wallFragment = `
 uniform float stormTime;uniform float stormAge;uniform vec4 storm;uniform float detail;
 varying vec2 local;varying float crest;
 void main(){
- // A single continuous rotating wind wall, with broad layered currents. The
- // streaks follow its circumference rather than revealing billboard edges.
+ // Broken, tapered wind ribbons carry clockwise gusts; no opaque cylinder.
  float u=local.x*6.283185;
- float lane=local.y+sin(u*3.-stormTime*1.4)*.13;
- float body=(1.-smoothstep(.48,.96,local.y))*smoothstep(0.,.1,local.y);
- float current=1.-smoothstep(.025,.10,abs(sin(lane*11.+u*2.-stormTime*4.)));
+ float drift=u-stormTime*.82;
+ float lane=local.y+sin(drift*3.)*.12;
+ float ribbon=1.-smoothstep(.018,.064,abs(sin(lane*13.+drift*2.)));
+ float packet=pow(max(0.,sin(drift*5.+local.y*3.)),3.);
+ float vertical=smoothstep(0.,.14,local.y)*(1.-smoothstep(.48,.9,local.y));
  float snow=0.;
  if(detail>.5)snow=pow(max(0.,sin(u*73.-stormTime*21.+floor(local.y*13.)*2.4)),12.)
   *pow(max(0.,sin(local.y*49.+u*4.-stormTime*7.)),5.);
  else snow=step(.95,fract(u*31.-stormTime*8.+floor(local.y*9.)*.17))*step(.65,fract(local.y*13.+u*.8))*.6;
- float leading=pow(crest,5.);
- float edge=(1.-smoothstep(.018,.055,abs(local.y-(.56+sin(u*3.-stormTime*1.4)*.13))))*leading;
- float a=(body*(.25+current*.24)+snow*.82+edge*.62)*storm.w;
- vec3 cold=mix(vec3(.12,.31,.41),vec3(.39,.71,.87),step(.34,current));
- cold=mix(cold,vec3(1.05,1.55,1.7),max(step(.3,snow),edge));
+ float a=(ribbon*packet*.48+snow*.65)*vertical*storm.w;
+ vec3 cold=mix(vec3(.24,.51,.64),vec3(.83,1.22,1.4),max(ribbon*.6,snow));
  if(a<.004)discard;gl_FragColor=vec4(cold,a);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
@@ -44,18 +42,23 @@ varying vec2 local;varying float crest;
 void main(){
  vec2 p=local*2.-1.;float r=length(p);if(r>1.||r<.245)discard;
  float angle=atan(p.y,p.x);
- float spread=smoothstep(r-.07,r+.04,min(1.,stormAge/1.9));
+ // Irregular frost fingers creep over exposed steel, rather than drawing a clock face.
+ float creep=min(1.,stormAge/1.9);
+ float reach=r+sin(angle*7.+sin(angle*3.)*1.8)*.055+sin(angle*13.)*.026;
+ float spread=smoothstep(reach-.05,reach+.025,creep);
  float edge=1.-smoothstep(.92,1.,r);
- // Large branching deposits and three value groups, with exposed steel between.
- float branch=pow(max(0.,1.-abs(sin(angle*19.+sin(r*27.)*.32))),18.);
- float twig=0.;if(detail>.5)twig=pow(max(0.,1.-abs(sin(angle*41.-r*35.))),24.)*branch;
- float deposit=.5+.25*sin(p.x*13.+sin(p.y*9.))+.25*sin(p.y*11.-p.x*5.);
- float field=.025+smoothstep(.56,.60,deposit)*.08;
- float frost=field+branch*.09+twig*.12;
+ vec2 q=p*7.;q+=vec2(sin(q.y*1.4),sin(q.x*1.1))*.32;
+ float vein=1.-smoothstep(.025,.075,abs(sin(q.x+q.y*.53)*sin(q.y-q.x*.31)));
+ float twig=0.;if(detail>.5)twig=(1.-smoothstep(.015,.045,abs(sin(q.x*2.7-q.y*1.3))))*vein;
+ float deposit=smoothstep(.56,.74,.5+.25*sin(q.x)+.25*sin(q.y*1.2));
+ float frost=deposit*.10+vein*.18+twig*.11;
+ float leading=1.-smoothstep(.012,.04,abs(reach-creep));
  float pulseAge=mod(stormAge,2.);float front=.245+.75*min(1.,pulseAge/.38);
- float pulse=(1.-smoothstep(.004,.014,abs(r-front)))*(1.-smoothstep(.25,.38,pulseAge));
- float a=(frost*spread*edge+pulse*.18*edge)*smoothstep(.245,.32,r)*storm.w;
- vec3 c=mix(vec3(.24,.47,.58),vec3(.63,.92,1.02),step(.17,frost));
+ // Unequal crystalline teeth replace the luminous circular pulse.
+ float tooth=pow(max(0.,cos(angle*23.+sin(angle*7.)*1.7)),12.);
+ float pulse=(1.-smoothstep(.008,.035,abs(r-front+tooth*.065)))*tooth*(1.-smoothstep(.25,.38,pulseAge));
+ float a=((frost+leading*vein*.3)*spread*edge+pulse*.28*edge)*smoothstep(.245,.32,r)*storm.w;
+ vec3 c=mix(vec3(.24,.47,.58),vec3(.63,.92,1.02),step(.16,frost));
  c=mix(c,vec3(1.2,1.7,1.9),pulse);
  if(a<.004)discard;gl_FragColor=vec4(c,a);
  #include <tonemapping_fragment>
