@@ -20,7 +20,9 @@ export type PlacementPreviewState = {
 
 const vertex = `attribute vec4 preview;attribute vec3 tint;
 varying vec2 local;varying vec2 symbol;varying vec4 data;varying vec3 color;
-void main(){local=uv*2.-1.;symbol=local;symbol.x*=length(instanceMatrix[0].xyz)/max(.001,length(instanceMatrix[1].xyz));data=preview;color=tint;
+void main(){local=uv*2.-1.;data=preview;color=tint;
+// Keep the validity glyph upright and at one small physical size as the footprint rotates.
+symbol=(modelViewMatrix*instanceMatrix*vec4(position.xy,0.,0.)).xy/.55;
 gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.);}`;
 const fragment = `varying vec2 local;varying vec2 symbol;varying vec4 data;varying vec3 color;
 float stroke(vec2 p,vec2 a,vec2 b){vec2 d=b-a;return 1.-smoothstep(.024,.042,length(p-a-d*clamp(dot(p-a,d)/dot(d,d),0.,1.)));}
