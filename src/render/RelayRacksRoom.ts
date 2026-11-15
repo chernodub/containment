@@ -64,6 +64,7 @@ export function relayRacksRoom(includeShell=true,template?:RoomTemplate):T.Group
   if(!includeShell)g.scale.y=.34;
   if(isRack){g.scale.z=depthScale;g.position.z=z/32*(1-depthScale);}
   if(template&&i===5){
+   g.scale.y=1;
    box(g,x,10,z,r.width,20,r.height,dark);
    for(let cx=r.x+32;cx<r.x+r.width-24;cx+=72){box(g,cx,25,z,56,12,r.height-8,rail);box(g,cx,31,z,42,2,r.height-16,cyan);}
    continue;
@@ -186,6 +187,10 @@ export function relayRacksRoom(includeShell=true,template?:RoomTemplate):T.Group
   const geo=mergeGeometries(parts,false)!;for(const p of parts)p.dispose();
   const mesh=new T.Mesh(geo,m);mesh.name=name;mesh.castShadow=g!==channels&&g!==shell;mesh.receiveShadow=true;mesh.userData.bakedEnvironment=true;(g===shell?root:g).add(mesh);
  }
+ if(!includeShell)root.userData.lightFixtures=[];
+ // Skipped source-shell batches must retire their private finishes/normal map.
+ const used=new Set<T.Material>();root.traverse(o=>{if(o instanceof T.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])used.add(m);});
+ for(const m of [deck,dark,rail,pale,cyan,amber,damage,contact])if(!used.has(m))m.dispose();
  root.userData.localizedStatusIndicators=4*3*3;
  return root;
 }

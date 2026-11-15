@@ -130,6 +130,8 @@ function partsFor(environment: ShipEnvironment, roomId: string): Part[] {
  * story-screen and shared triangle guards decide every admission.
  */
 export function addKitFootprintClusters(context: KitFootprintContext): KitFootprintCluster[] {
+  // Connected cabins have complete furnished rooms, not one debris cluster per solid.
+  if(context.roomId==='residential-gallery')return [];
   const {template, environment, roomId, place, placeTilted, supportHeight} = context;
   const original = new Set(template.obstacles);
   const reservations = [...context.reservations].sort((a, b) => Number(original.has(b)) - Number(original.has(a)));

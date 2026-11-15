@@ -16,7 +16,7 @@ describe('fixture-motivated floor apertures',()=>{
   expect(shader.fragmentShader).toContain('roomFloorPracticalShapes[UNROLLED_LOOP_INDEX]');
   // Cryo strip floors omit the old radial pedestal; other constructions retain
   // their original shaped-source fill. The shared aperture still drives both.
-  expect(shader.fragmentShader).toContain('float stripOnly=1.0-step(.5,roomFloorPattern.z)');
+  expect(shader.fragmentShader).toContain('float stripOnly=max(roomFloorApertureOnly,1.0-step(.5,roomFloorPattern.z))');
   expect(shader.fragmentShader).toContain('directLight.color*=mix(.12+slit*.40,slit*.40,stripOnly)');
   pools.dispose();lighting.dispose();floorMaterial.dispose();
  });

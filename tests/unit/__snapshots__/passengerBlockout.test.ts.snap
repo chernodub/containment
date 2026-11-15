@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`reviewed Passenger Vault whole-room blockout > preserves all nineteen other templates 1`] = `
+exports[`reviewed Passenger Vault whole-room blockout > preserves all unrevised other templates 1`] = `
 [
   {
     "boundary": [
@@ -177,64 +177,6 @@ exports[`reviewed Passenger Vault whole-room blockout > preserves all nineteen o
         },
       ],
     ],
-    "width": 1200,
-  },
-  {
-    "breaches": [
-      {
-        "x": 100,
-        "y": 100,
-      },
-      {
-        "x": 1100,
-        "y": 100,
-      },
-      {
-        "x": 100,
-        "y": 780,
-      },
-      {
-        "x": 1100,
-        "y": 780,
-      },
-    ],
-    "exit": {
-      "x": 1100,
-      "y": 440,
-    },
-    "height": 880,
-    "id": "residential-gallery",
-    "name": "Residential gallery",
-    "obstacles": [
-      {
-        "height": 100,
-        "width": 240,
-        "x": 280,
-        "y": 160,
-      },
-      {
-        "height": 200,
-        "width": 120,
-        "x": 280,
-        "y": 520,
-      },
-      {
-        "height": 100,
-        "width": 260,
-        "x": 650,
-        "y": 270,
-      },
-      {
-        "height": 150,
-        "width": 140,
-        "x": 780,
-        "y": 570,
-      },
-    ],
-    "spawn": {
-      "x": 100,
-      "y": 440,
-    },
     "width": 1200,
   },
   {
@@ -498,64 +440,6 @@ exports[`reviewed Passenger Vault whole-room blockout > preserves all nineteen o
         },
       ],
     ],
-    "width": 1200,
-  },
-  {
-    "breaches": [
-      {
-        "x": 100,
-        "y": 100,
-      },
-      {
-        "x": 1100,
-        "y": 100,
-      },
-      {
-        "x": 100,
-        "y": 780,
-      },
-      {
-        "x": 1100,
-        "y": 780,
-      },
-    ],
-    "exit": {
-      "x": 1100,
-      "y": 440,
-    },
-    "height": 880,
-    "id": "crew-checkpoint",
-    "name": "Crew checkpoint",
-    "obstacles": [
-      {
-        "height": 384,
-        "width": 80,
-        "x": 530,
-        "y": 0,
-      },
-      {
-        "height": 368,
-        "width": 80,
-        "x": 530,
-        "y": 512,
-      },
-      {
-        "height": 160,
-        "width": 80,
-        "x": 610,
-        "y": 224,
-      },
-      {
-        "height": 112,
-        "width": 88,
-        "x": 610,
-        "y": 484,
-      },
-    ],
-    "spawn": {
-      "x": 100,
-      "y": 440,
-    },
     "width": 1200,
   },
   {
@@ -1163,70 +1047,6 @@ exports[`reviewed Passenger Vault whole-room blockout > preserves all nineteen o
         },
       ],
     ],
-    "width": 1200,
-  },
-  {
-    "breaches": [
-      {
-        "x": 100,
-        "y": 100,
-      },
-      {
-        "x": 1100,
-        "y": 100,
-      },
-      {
-        "x": 100,
-        "y": 780,
-      },
-      {
-        "x": 1100,
-        "y": 780,
-      },
-    ],
-    "exit": {
-      "x": 1100,
-      "y": 440,
-    },
-    "height": 880,
-    "id": "relay-racks",
-    "name": "Relay racks",
-    "obstacles": [
-      {
-        "height": 170,
-        "width": 100,
-        "x": 300,
-        "y": 160,
-      },
-      {
-        "height": 170,
-        "width": 100,
-        "x": 300,
-        "y": 550,
-      },
-      {
-        "height": 170,
-        "width": 100,
-        "x": 800,
-        "y": 160,
-      },
-      {
-        "height": 170,
-        "width": 100,
-        "x": 800,
-        "y": 550,
-      },
-      {
-        "height": 150,
-        "width": 100,
-        "x": 550,
-        "y": 360,
-      },
-    ],
-    "spawn": {
-      "x": 100,
-      "y": 440,
-    },
     "width": 1200,
   },
   {

@@ -78,8 +78,11 @@ describe('spitter LOS steering contract', () => {
       escaped=events.some(e=>e.type==='hazard-attack');
     }
     expect(escaped).toBe(true);
-    // The escaped enemy is now north of the player; move south for a clear opportunity.
-    const legal={x:1000,y:800};
+    // Reposition along the new open gallery, preserving a real swept path and
+    // a clear opportunity at the unchanged180..420 native attack range.
+    const escapedEnemy=game.enemies.getSnapshot(id)!;
+    const legal=Array.from({length:72},(_,i)=>({x:escapedEnemy.x+280*Math.cos(i*Math.PI/36),y:escapedEnemy.y+280*Math.sin(i*Math.PI/36)})).find(p=>canOccupyExpedition(game.geometry,p,16)&&canTraverseExpedition(game.geometry,game.player,p,16)&&canTraverseExpedition(game.geometry,escapedEnemy,p,9));
+    expect(legal).toBeDefined();if(!legal)throw Error('No clear swept Gallery reposition');
     expect(canTraverseExpedition(game.geometry,game.player,legal,16)).toBe(true);
     Object.assign(game.player,legal);
     const enemy=game.enemies.getSnapshot(id)!;

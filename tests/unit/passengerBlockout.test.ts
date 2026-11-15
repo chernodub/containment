@@ -1,3 +1,4 @@
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../src/game/roguelike/shipArchitectureLayouts';
 import {describe,it,expect} from 'vitest';
 import * as T from 'three';
 import {DepthGame,type GameEffect} from '../../src/DepthGame';
@@ -28,7 +29,7 @@ const accessibleFaces=rectangles.flatMap(([x,y,w,h],i)=>[
 ].filter(f=>!(i===4&&f.side==='north'||i===5&&f.side==='south'||i>=6&&f.side==='east')));
 const outward=(face:{x:number;y:number},normal:{x:number;y:number},distance:number)=>point(face.x+normal.x*distance,face.y+normal.y*distance);
 describe('reviewed Passenger Vault whole-room blockout',()=>{
- it('preserves all nineteen other templates',()=>expect(nodes.filter(n=>n!==node).map(n=>ROOM_TEMPLATES[n.templateId])).toMatchSnapshot());
+ it('preserves all unrevised other templates',()=>expect(nodes.filter(n=>n!==node&&!Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,n.templateId)).map(n=>ROOM_TEMPLATES[n.templateId])).toMatchSnapshot());
  it('uses exactly the eight sealed reservations, rectangular deck and four offset-safe breaches',()=>{
   const g=geometry();expect(g.boundary).toEqual([point(40,40),point(1160,40),point(1160,840),point(40,840)]);
   expect(g.voids).toEqual(rectangles.map(([x,y,w,h])=>[point(x,y),point(x+w,y),point(x+w,y+h),point(x,y+h)]));

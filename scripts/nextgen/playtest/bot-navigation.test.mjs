@@ -11,7 +11,7 @@ const FIXTURES = [
   {name:'Transmission Breacher2026',seed:2026,depth:9,player:{x:1086.9348987396934,y:428.99468223662575},target:{x:278.48162659838425,y:691.1328156329026},visible:false},
   {name:'Workshop Breacher65537 clear offscreen',seed:65537,depth:14,player:{x:56.18104625959782,y:822.07967737569},target:{x:667.6870201012963,y:731.9520496103099},visible:false},
   {name:'Loading Bay Cryo1729 v2',seed:1729,depth:7,player:{x:380.12897875736587,y:689.1721118138313},target:{x:410.9104939753582,y:588.194970711651},visible:true},
-  {name:'Relay Arc2718 v1',seed:2718,depth:8,player:{x:210.11794569655135,y:808.7930312871434},target:{x:910.123874281684,y:148.40271330249863},visible:false},
+  {name:'Relay Arc2718 new port-to-starboard cross aisle',seed:2718,depth:8,player:{x:300,y:800},target:{x:980,y:220},visible:false},
   {name:'Interlock Cryo8675309 v1 clear offscreen',seed:8675309,depth:11,player:{x:309.23355261972523,y:447.2521363241124},target:{x:731.2435878287295,y:569.1671769509402},visible:false},
   {name:'Manual Control Arc2718 v2',seed:2718,depth:18,player:{x:1044.6664034490716,y:571.8079570673501},target:{x:459.0079805378,y:721.4548724408013},visible:false},
   {name:'Relay Breacher1729 v2',seed:1729,depth:8,player:{x:378.49390770689786,y:410.3115896845478},target:{x:410.2228147623044,y:149.00441652312293},visible:false},
@@ -23,6 +23,8 @@ function recordedFixture(fixture=FIXTURES[0], capturedSelfWaypoint=false){
   game.geometry=createExpeditionGeometry(game.node);
   game.navigation=new FacilityNavigation(game.geometry);
   Object.assign(game.player,fixture.player);
+  expect(canOccupyExpedition(game.geometry,game.player,16),fixture.name+' starts on current legal floor').toBe(true);
+  expect(canOccupyExpedition(game.geometry,fixture.target,14),fixture.name+' target on current legal floor').toBe(true);
   if(capturedSelfWaypoint)vi.spyOn(game.navigation,'waypoint').mockImplementation(()=>({...game.player}));
   return {game,target:{id:29,type:'crawler',health:56,...fixture.target,clear:hasClearExpeditionShot(game.geometry,game.player,fixture.target),visible:fixture.visible}};
 }

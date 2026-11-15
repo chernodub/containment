@@ -71,7 +71,7 @@ describe('E6 room value hierarchy',()=>{
   const rig=new SceneLighting(),world=new T.Group(),original=[...rig.root.children];
   rig.loadRoom(world,37.5,27.5,'engineering','diagnostic-gallery');
   expect(rig.key.position.y).toBe(4.2);expect(rig.key.color.r).toBeGreaterThan(rig.key.color.b*2);expect(rig.fill.intensity).toBeCloseTo(.42*3.8);
-  rig.loadRoom(world,37.5,27.5,'communications','relay-racks');expect(rig.fill.intensity).toBeCloseTo(.20*.70);
+  rig.loadRoom(world,37.5,27.5,'communications','relay-racks');expect(rig.fill.intensity).toBeCloseTo(.20*.65);
   rig.loadRoom(world,37.5,27.5,'containment','shielding-gate');expect(ROOM_COMPOSITIONS['shielding-gate'].practicalGain).toBe(2);expect(rig.root.children).toEqual(original);
   for(const environment of ['security','cryogenics','containment'] as const){const m=materials();applyRoomMood(m.world,environment);expect(m.deck.roughness).toBeGreaterThanOrEqual(.85);m.dispose();}
   rig.dispose();

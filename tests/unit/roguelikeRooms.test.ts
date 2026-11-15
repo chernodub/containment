@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ROOM_TEMPLATES } from '../../src/game/roguelike/roomTemplates';
 import type { Point, RoomTemplate } from '../../src/game/roguelike/types';
+import {createRoomTemplateGeometry,canTraverseExpedition} from '../../src/game/world/expeditionGeometry';
 import {clearPolygonTopology} from '../../src/game/world/polygonGeometry';
 
 const RADIUS = 28;
@@ -65,7 +66,8 @@ describe('roguelike room templates', () => {
       }
     }
     // Anchors need not lie on the ten-unit sampling grid (south32 spawn x436).
-    const connects = (a:Point,b:Point) => clearPolygonTopology(template,a,b,RADIUS);
+    const geometry=createRoomTemplateGeometry(template,'template-check');
+    const connects = (a:Point,b:Point) => canTraverseExpedition(geometry,a,b,RADIUS);
     const start = {x:Math.round(template.spawn.x/STEP)*STEP,y:Math.round(template.spawn.y/STEP)*STEP};
     expect(clear(template,start)&&connects(template.spawn,start)).toBe(true);
     const queue = [start];
@@ -82,8 +84,7 @@ describe('roguelike room templates', () => {
       }
     }
     for (const point of [template.exit, ...template.breaches]) {
-      if(template.id==='communal-atrium')expect(queue.some(p=>Math.hypot(p.x-point.x,p.y-point.y)<=STEP&&connects(p,point)),JSON.stringify(point)).toBe(true);
-      else expect(visited.has(key(point.x,point.y))).toBe(true);
+      expect(queue.some(p=>Math.hypot(p.x-point.x,p.y-point.y)<=STEP&&connects(p,point)),template.id+' '+JSON.stringify(point)).toBe(true);
     }
     expect(visited.size).toBe(walkable.size);
   });

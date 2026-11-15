@@ -1,7 +1,7 @@
 import * as T from 'three';
 import type {ShipEnvironment} from '../ShipEnvironments';
 
-type FloorLighting={pattern:{value:T.Vector4};practicals:{value:T.Vector4[]};apertureOnly:{value:number}};
+type FloorLighting={pattern:{value:T.Vector4};practicals:{value:readonly T.Vector4[]};apertureOnly:{value:number}};
 const registered=new WeakMap<T.MeshStandardMaterial,FloorLighting>();
 
 /** Share the authored floor apertures without painting another tile/wear pattern over floor art. */
@@ -20,5 +20,5 @@ export function registerFlatFloorLighting(material:T.MeshStandardMaterial,enviro
  }
  state.apertureOnly.value=material.userData.architectureApertureOnly?1:0;
  state.pattern.value.set(1,1,environment==='cryogenics'?0:1,0);
- for(let i=0;i<4;i++){if(shapes?.[i])state.practicals.value[i].copy(shapes[i]);else state.practicals.value[i].set(1,0,.82,3.4);}
+ state.practicals.value=shapes??Array.from({length:4},()=>new T.Vector4(1,0,.82,3.4));
 }

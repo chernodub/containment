@@ -1,5 +1,6 @@
 import {afterEach,describe,expect,it} from 'vitest';
 import * as T from 'three';
+import {shipArchitectureRoom} from './world/ShipArchitectureRoom';
 import {authoredRoom} from './AuthoredRooms';
 import {disposeModel} from './models';
 import {ROOM_TEMPLATES} from '../game/roguelike/roomTemplates';
@@ -13,7 +14,7 @@ const expected=[[300,160,100,240],[300,550,100,190],[800,160,100,240],[800,550,1
 const owned:T.Group[]=[];
 const make=()=>{const g=authoredRoom('relay-racks',template);expect(g).not.toBeNull();owned.push(g!);g!.updateMatrixWorld(true);return g!;};
 afterEach(()=>{for(const g of owned)disposeModel(g);owned.length=0;});
-describe('Room9 room visuals and retained placement',()=>{
+describe('Room9 source manufacture and live architectural placement',()=>{
  it('uses dark rack rails, pale ceramic and restrained non-animated link indicators',()=>{
   const g=make(),materials=new Map<string,T.MeshStandardMaterial>();
   g.traverse(o=>{if(o instanceof T.Mesh&&o.material instanceof T.MeshStandardMaterial)materials.set(o.material.name,o.material);});
@@ -41,29 +42,36 @@ describe('Room9 room visuals and retained placement',()=>{
    expect(b.min.z*32).toBeGreaterThanOrEqual(expected[i][1]);expect(b.max.z*32).toBeLessThanOrEqual(expected[i][1]+expected[i][3]);
   }
  });
- it('retains the five reservations with the repaired central south edge and unchanged room anchors',()=>{
-  expect(template.obstacles.map(r=>[r.x,r.y,r.width,r.height])).toEqual(expected);
-  expect([template.width,template.height]).toEqual([1200,880]);
-  expect(template.spawn).toEqual({x:220,y:440});expect(template.exit).toEqual({x:1100,y:440});
-  expect(template.breaches).toEqual([{x:160,y:100},{x:1040,y:100},{x:160,y:780},{x:1040,y:780}]);
+ it('uses hull-attached cooling vaults, a service spine and a console bay in the live plan',()=>{
+  expect(template.obstacles.map(r=>[r.x,r.y,r.width,r.height])).toEqual([[40,0,160,340],[40,660,160,340],[1080,0,160,340],[1080,660,160,340],[590,300,100,400],[400,960,480,40]]);
+  expect([template.width,template.height]).toEqual([1280,1000]);
+  expect(template.spawn).toEqual({x:300,y:500});expect(template.exit).toEqual({x:1180,y:500});
+  expect(template.breaches).toEqual([{x:300,y:220},{x:980,y:220},{x:300,y:780},{x:980,y:780}]);
  });
- it.each([16,28,38])('keeps both forks, end cross-links and offset breach approaches clear at radius %i',radius=>{
-  const routes=[[[100,440],[460,440],[460,280],[740,280],[740,440],[1100,440]],[[100,440],[460,440],[460,600],[740,600],[740,440],[1100,440]],[[160,112],[1040,112]],[[160,780],[1040,780]],...template.breaches.map(p=>[[p.x+(p.x<600?56:-56),p.y],[p.x<600?216:984,p.y],[p.x<600?216:984,440]])];
+ it.each([16,28,38])('keeps both rack aisles and north/south cross-links clear at radius %i',radius=>{
+  const routes=[[[300,500],[395,500],[395,160],[885,160],[885,500],[1180,500]],[[300,500],[395,500],[395,840],[885,840],[885,500],[1180,500]],[[300,220],[980,220]],[[300,780],[980,780]],...template.breaches.map(p=>[[p.x+(p.x<640?56:-56),p.y],[p.x<640?356:924,p.y],[p.x<640?356:924,500]])];
   for(const route of routes)for(let i=1;i<route.length;i++){
    const a={x:route[i-1][0],y:route[i-1][1]},b={x:route[i][0],y:route[i][1]};
-   expect(canTraverseExpedition(geometry,a,b,radius)).toBe(true);
-   expect(hasClearExpeditionShot(geometry,a,b)).toBe(true);
+   expect(canTraverseExpedition(geometry,a,b,radius)).toBe(true);expect(hasClearExpeditionShot(geometry,a,b)).toBe(true);
   }
-  expect(canOccupyExpedition(geometry,{x:600,y:440},radius)).toBe(false);
-  expect(hasClearExpeditionShot(geometry,{x:460,y:440},{x:740,y:440})).toBe(false);
+  expect(canOccupyExpedition(geometry,{x:640,y:500},radius)).toBe(false);
+  expect(hasClearExpeditionShot(geometry,{x:395,y:500},{x:885,y:500})).toBe(false);
  });
- it('connects breach spawns and both forks through shipping FacilityNavigation',()=>{
+ it('connects all breach approaches and both aisles through shipping FacilityNavigation',()=>{
   const nav=new FacilityNavigation(geometry);nav.prepare(template.exit,0);
-  for(const p of [...template.breaches,template.spawn,{x:600,y:280},{x:600,y:600}])expect(nav.reachable(p)).toBe(true);
-  const from={x:460,y:440,radius:28},target={x:740,y:440};
-  const next=nav.waypoint(from,target,0);expect(next).not.toBeNull();
-  expect(Math.hypot(next!.x-from.x,next!.y-from.y)).toBeGreaterThan(1);
-  expect(canTraverseExpedition(geometry,from,next!,from.radius)).toBe(true);
+  for(const p of [...template.breaches,template.spawn,{x:640,y:160},{x:640,y:840}])expect(nav.reachable(p)).toBe(true);
+  const from={x:395,y:500,radius:28},target={x:885,y:500},next=nav.waypoint(from,target,0);expect(next).not.toBeNull();
+  expect(Math.hypot(next!.x-from.x,next!.y-from.y)).toBeGreaterThan(1);expect(canTraverseExpedition(geometry,from,next!,from.radius)).toBe(true);
+ });
+ it('fits complete cutaway assemblies to all six live solids and retires phantom source-shell fixtures',()=>{
+  const g=shipArchitectureRoom('relay-racks',template)!;owned.push(g);g.updateMatrixWorld(true);
+  for(const [i,r]of template.obstacles.entries()){
+   const rack=g.getObjectByName(`relay-fixture-${i}`)!;expect(rack).toBeDefined();const b=new T.Box3().setFromObject(rack,true);
+   expect(b.min.x*32).toBeCloseTo(r.x,3);expect(b.max.x*32).toBeCloseTo(r.x+r.width,3);expect(b.min.z*32).toBeCloseTo(r.y,3);expect(b.max.z*32).toBeCloseTo(r.y+r.height,3);
+   expect(b.min.y).toBeCloseTo(0,4);expect(b.max.y).toBeLessThanOrEqual(1.02);expect(b.max.y).toBeGreaterThan(.2);
+  }
+  const source=g.getObjectByName('authored-relay-racks')!;expect(source.userData.lightFixtures).toEqual([]);
+  expect(source.getObjectByName('relay-neutral-shell')!.children).toHaveLength(0);
  });
  it('places grounded rough assemblies inside their exact collision footprints',()=>{
   const g=make();

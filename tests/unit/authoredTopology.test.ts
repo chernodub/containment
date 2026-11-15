@@ -19,7 +19,7 @@ describe('authored walkable topologies',()=>{
     expect(canOccupyExpedition(g,outside,radius)).toBe(false);
     expect(canOccupyExpedition(g,probes[ids.indexOf(n.templateId)],radius)).toBe(false);
    }
-  }else if(['residential-gallery','crew-checkpoint','relay-racks'].includes(n.templateId)){expect(t.boundary!.length).toBeGreaterThan(4);expect(t.voids!.length).toBeGreaterThan(0);}else{expect(t).not.toHaveProperty('boundary');expect(t).not.toHaveProperty('voids');}}
+  }else if(['residential-gallery','crew-checkpoint','relay-racks'].includes(n.templateId)){expect(t.boundary!.length).toBeGreaterThan(4);expect(t.obstacles.length+(t.voids?.length??0)).toBeGreaterThan(0);}else{expect(t).not.toHaveProperty('boundary');expect(t).not.toHaveProperty('voids');}}
  });
  it('connects spawn, exit and inward-offset breaches for larger actors',()=>{
   // South32 uses human-scale furniture: its production radii, inward-spawn

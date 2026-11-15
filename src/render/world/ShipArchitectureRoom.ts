@@ -73,15 +73,15 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
   };
   if(id==='residential-gallery'){
    for(const [i,x]of [216,600,984].entries()){
-    fixture(x/32,.12,0,2.8,8.4,0xe8bc87,i===2?.14:1);
-    fixture(x/32,(t.height-4)/32,Math.PI,2.4,6.8,0xc6d9df,i===1?.28:.55);
+    fixture(x/32,.12,0,.85,8.4,0xe8bc87,i===2?.14:1);
+    fixture(x/32,(t.height-4)/32,Math.PI,.65,6.8,0xc6d9df,i===1?.28:.55);
    }
   }else if(id==='crew-checkpoint'){
-   fixture(360/32,84/32,0,2.2,6,0xd5e5ea,1);fixture(360/32,796/32,Math.PI,1.8,5,0xd2dbdc,.38);
-   fixture(800/32,84/32,0,1.1,7,0xe8b486,.62);fixture(1084/32,440/32,-Math.PI/2,2,6,0xbddce3,.75);
+   fixture(360/32,84/32,0,.4,6,0xd5e5ea,1);fixture(360/32,796/32,Math.PI,.35,5,0xd2dbdc,.38);
+   fixture(800/32,84/32,0,.35,7,0xe8b486,.62);fixture(1084/32,440/32,-Math.PI/2,.4,6,0xbddce3,.75);
   }else if(id==='relay-racks'){
-   fixture(196/32,170/32,-Math.PI/2,1.3,8,0x89cad5,.82);fixture(1084/32,170/32,Math.PI/2,1.3,8,0x9be0d2,.42);
-   fixture(640/32,964/32,Math.PI,2.2,8,0x9cc8c6,1);fixture(640/32,304/32,Math.PI,1.1,6,0xc1e6dc,.48);
+   fixture(196/32,170/32,-Math.PI/2,.4,8,0x89cad5,.82);fixture(1084/32,170/32,Math.PI/2,.4,8,0x9be0d2,.42);
+   fixture(640/32,964/32,Math.PI,.55,8,0x9cc8c6,1);fixture(640/32,304/32,Math.PI,.4,6,0xc1e6dc,.48);
   }
   for(const [m,parts]of batches){const merged=mergeGeometries(parts,false)!;parts.forEach(p=>p.dispose());const mesh=new T.Mesh(merged,m);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);}
   if(id==='relay-racks')root.add(relayRacksRoom(false,t));

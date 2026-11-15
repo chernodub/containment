@@ -19,6 +19,7 @@ describe('flat authored surface registration uses the existing floor light compo
   applyRoomMood(world,'communications','relay-racks',shapes);patchGraphicSurface(material);const shader=compile(material);
   expect(shader.fragmentShader).toContain('vec4 aperture=roomFloorPracticalShapes[UNROLLED_LOOP_INDEX]');
   expect(shader.fragmentShader.match(/uniform vec4 roomFloorPracticalShapes\[4\]/g)).toHaveLength(1);
+  expect(shader.uniforms.roomFloorPracticalShapes.value).toBe(shapes);
   expect(shader.uniforms.roomFloorPracticalShapes.value.map((v:T.Vector4)=>v.toArray())).toEqual(shapes.map(v=>v.toArray()));
   expect(shader.uniforms.roomPracticalNearField.value).toBe(3.24);
   expect(shader.uniforms.roomFloorApertureOnly.value).toBe(1);
