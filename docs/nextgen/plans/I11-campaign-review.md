@@ -226,3 +226,57 @@ Infested/Shielding/Overload. Every saved phase retains five families, requested1
 minimum twelve,76 spacing and existing full-body/HUD/phase guards. Separate
 Diagnostic probes passed all four native phases at720 and1080. These probes are
 validation only; final selection uses base00–18, lawful19–20 and fresh compact21–27.
+
+### Final 720p capture and bounded visual review
+
+All28 selected720 capture batches completed with962 guarded native frames. The
+successful selection is base00–18, lawful19–20 and compact21–27. The two failed
+parents described above remain evidence; neither supplied a final guarded frame.
+All browser work is closed. Capture load was high during parallel gallery work
+(last one-minute load47.29; observed peaks above150); these are presentation
+captures, never hardware frame-rate measurements.
+
+At the lead's convergence instruction, this reviewer finished current odd batch23
+and stopped. Actual full-original1280×720 review covers **417 of494 assigned odd
+native frames**, every saved phase in batches01/03/05/07/09/11/13/15/17/19/21/23,
+plus **74 exact480×270 contact pages** containing all417 reductions. Eight
+additional full-native validation probe frames were opened. Batches25 and27
+(77 native frames and14 prepared contact pages) **were not visually reviewed by
+this agent**. Preparation or a successful guard is not an image-open claim.
+
+`artifacts/nextgen/i11/odd720-actual-opens.json` records499 unique actual opens,
+absolute original paths and SHA256 hashes. Its final SHA256 is
+`33899954a9b72caa420ff008c8d82931b2517dfa09c5b59953058b2901539a5f`.
+`odd720-actual-open-paths.json` is the matching path inventory. Corrected review
+pages and metadata are in `i11/review-720-odd-XX-exact`; the acceptance reviewer
+owns their final `final5-720/review-witnesses` archive and source-to-final hash
+bridge before intermediate deletion. Crops are supplementary, not substitutes
+for these417 full-native opens. No new application change or assertion rewrite
+was made for this review.
+
+Native and480 observations agree: olive Spitter, small brown Crawler, low purple
+Leaper, broad articulated Brute and tall pink-backed Summoner remain separable
+in the reviewed family lineups, including dark Relay/Infested and bright floors.
+Frozen bodies retain articulated masses; burning bodies retain their family
+shape and palette. No old white-pennant shell was observed in this reviewed
+scope, including the labeled legacy Queen status sequence. Stress fixtures
+still repeat Brutes deliberately and cannot establish organic crowd variety.
+
+Friendly placement previews remain thin/dashed and hostile attacks remain bold,
+filled and hatched; blocked placement also has readable native text. Tesla's
+small purple preview is faint at480 and should not be called equally conspicuous.
+Whiteout's large ice perimeter, Meltdown's orange suit state and Overclock's
+violet echoes announce different states. Four early V7 phases are not full
+duration proof; the separate duration supplement is reviewed by its owner.
+Railbreaker is a bright beam with a lingering track, while combustion shares
+orange/yellow flame and ember shapes rather than unrelated particle styles.
+
+HUD health/ammo numerals remain readable on opaque local backing at native720.
+Fine auxiliary labels become small in480 review reductions. Heavy fight phase4
+telegraphs remain dominant but actors can overlap the marine's lower body.
+The native landmark Annulus fixture still gives its broad foundation most of
+the right half while enemies approach at the left edge or beneath HUD panels;
+the raised-landmark bound does not certify that foundation's composition.
+Freight fixtures similarly bias marine and enemies toward the left edge.
+Projection/body guards certify bounds, not uninterrupted actor/world visibility.
+These qualifications agree with the full organic campaign review above.
