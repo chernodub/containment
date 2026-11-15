@@ -46,6 +46,8 @@ Thirteen anchor cases cover all named spaces, entry/exit, both the chosen and ol
 
 Replay compares120 native crowded ticks twice. Four cardinal220-unit R32 escape sweeps, the R144 ability reserve and long cross-ship firing lane remain legal. The unchanged G6 geometry fixture packs≥10 spaced threats from all five families at the selected arena. This mocked fixture check is not a browser firing receipt or an organic campaign. No simulation, actor or ability system is edited.
 
+The2-unit raster mask prints an approximate floor-area figure; analytic solid-union statistics above provide the hard area ratio.
+
 Plan PNGs, inspected as files:
 
 - `artifacts/nextgen/l8-swarm-bay-proposal/selected-plans/swarm-junction.png`

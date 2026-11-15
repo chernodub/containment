@@ -22,7 +22,7 @@ for(const [i,id]of ids.entries()){
   if(!shot.frame)assert.equal(shot.evidence.l8PointerProof.previewCount,0,'Native HUD hover must retire preview');
   assertNativeWarning(shot.evidence,shot.file,{quiet:!shot.frame});
   await writeFile(resolve(out,'review480',shot.file),encode(small));await writeFile(resolve(out,'grayscale',shot.file),encode(grayscale(im)));await writeFile(resolve(out,'grayscale','480-'+shot.file),encode(gray));
-  receipts.push({file:shot.file,native:resolve(directory,shot.file),nativeSHA256:hash(raw),warning:proof});
+  receipts.push({file:shot.file,native:resolve(directory,shot.file),nativeSHA256:hash(raw),warning:proof,arenaCalm:shot.evidence.l8ArenaCalmProof??null,performance:{drawCalls:shot.performance?.drawCalls,triangles:shot.performance?.triangles},budgetFailure:(shot.performance?.drawCalls??Infinity)>330});
   if(!shot.frame||shot.frame===2){const x=shot.frame?(hasArena?1920:960):entry.scenario==='l8-arena-calm'?960:0,y=i*294;for(const [offset,image]of [[0,small],[480,gray]]){drawText(overview,id+(shot.frame?' / G6-02':entry.scenario==='l8-arena-calm'?' / arena calm':' / entry calm'),x+offset+4,y+5,undefined,1);drawImage(overview,image,x+offset,y+24,480,270);}}
   if(shot.frame){const x=(shot.frame-1)%2*480,y=Math.floor((shot.frame-1)/2)*294;drawText(story,id+' / G6 '+shot.frame,x+5,y+5,undefined,1);drawImage(story,small,x,y+24,480,270);}
  }

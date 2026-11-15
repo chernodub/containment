@@ -1,4 +1,4 @@
-# L8 final capture evidence
+# L8 capture and warning repair evidence
 
 First review runtime source: `6fa1e2c2c9bda6a94e6fd5b9ccd4779315b91384`. Capture tooling reads pure Node-bundled plans, embeds plain arena data in self-contained browser fixture functions and verifies native debug geometry. Browser work is serial under the parent grant.
 
@@ -44,3 +44,33 @@ The recurring yellow dashed vertical rectangle was traced to `src/render/abiliti
 Critical-five repair capture source: `3c7623c26e2261e52b601b6921965c6a53d2fde8`, immutable `artifacts/nextgen/l8-warning-review/dist`. Raw `artifacts/nextgen/l8-warning-review-raw1` completed25 guarded PNGs/10scenarios in96.7s, zero failures/errors, native ANGLE AppleM1Pro. This is capture submission timing, not a hardware-FPS measurement. Full native safe-quad proof passed all15warning frames; all5calms retired the idle preview through actual HUD pointer hover. Diagnostic and Manual text faded inG6frames1–3 and restored inframe4; Safety faded inall4frames because a body still overlapped its projected sign.
 
 Review contact: `artifacts/nextgen/l8-warning-review/critical-five-color-gray.png`; all25native/480/gray receipts: `artifacts/nextgen/l8-warning-review/review-receipts.json`; per-room native G6storyboards are in `artifacts/nextgen/l8-warning-review/storyboards/`. Inspected native Manual calm, DiagnosticG6-02, WorkshopG6-02, SwarmG6-02 and the fullcolor/graycontact. Warning readability and actor priority are repaired. The broader visual review remains rejected: Manual entry has much less visible inhabited architecture than final5's console view; faint distant gantry support can read as a suspended sign. The new seam growth is visible and attached to seams/doors during fights, but its broad flat purple ribbons lack depth and do not establish an improvement over final5 machinery/growth. Sparse floor views remain a material limitation. These observations are not a premium visual score or final acceptance.
+
+## Current guarded warning revision
+
+Exact clean rebuild/snapshot: `af9e80fb224d0055f6b2670541d8931748020fb6`, `artifacts/nextgen/l8-warning-mount-review/dist`. The source HEAD was identical before/after build, the checkout was clean, and the copy reasserted both. Automatic approval review rejected an earlier proposal to stamp an older renderer commit after HEAD had advanced; that call copied nothing. The safer current-HEAD rebuild produced this receipt without a permission waiver.
+
+The first structure revision at`e2e819b` was rejected because quiet-arena text overlapped the marine and faded; its director-advancing arena fixture also showed spawn telegraphs. The next`7fbd814` revision prepared per-beam RGBA cutaways but its actual Diagnostic/Manual quiet quads crossed the measured right HUD bound by27–31px. Both raw parents remain unchanged, with one labeled rejected contact/hashed review per round. Only their incomplete derived reductions were removed.
+
+The current fixed mounts use entryX=spawnX+220, Diagnostic/Manual arenaX=arenaX+96, Safety arenaX=arenaX+108. The source-height/depth,3.24m text width and camera limits remain. Projection CPU tests now cover both normal follow ticks and120zero-delta frozen refresh ticks, all8marine corners, hero size, room-AABB limit and full HUD-safe quads. The capture harness independently checks the actual rendered warning quad and.96quiet text opacity before accepting each frame.
+
+The frame has deep casings, actual cabinet-supported uprights, ribbed cable trays, service drawer fronts and a physically mounted underside linear luminaire. Original cabinet enamel stays opaque. Gantry batches use built-in Standard RGBA normalized-byte vertex alpha:184/255normally,14/255only on physical beam ranges intersecting native body cones. Unaffected beams remain visible. Materials, geometry identities, shader keys and alpha attribute layouts remain stable; exact owned RGBA warmup proxies and High/Low restoration are tested. The extra linear pool follows a real diffuser; the low console remains the reactor key. Diagnostic uses a cold source, Safety a warm inspection source and Manual hotter authorization light. No texture, custom shader code, camera override or new gameplay collider is added.
+
+`l8-arena-calm` is explicitly separate from canonical`combat-calm` room entry. It places the marine at the declared legal R144arena and calls the original renderer for120presentation ticks with simulation frozen. The fixture asserts identical game elapsed time and0new GPU programs after preparation; it does not step encounters. A new opt-in debug method owns that presentation-only operation. Full native marine/HUD/hero/AABB guards remain in both scenarios.
+
+Replacement raw`artifacts/nextgen/l8-warning-mount-review-raw1` completed30guarded PNGs/15scenarios in127.65s, failures[]/errors[]. All18warning frames pass the real quad guard; all6warning calms retain.96text opacity; all5arena calms compile0programs and advance0simulation time. This is capture submission timing, not hardware-FPS evidence.
+
+| Critical room | Entry draws | Arena draws | Maximum G6 draws | Quiet faded beams / total |
+| --- | ---: | ---: | ---: | ---: |
+| Diagnostic Gallery |44|45|84|5/93|
+| Safety Interlock Station |62|65|141|7/63|
+| Manual-control Chamber |57|65|121|0/93|
+| Infested Workshop |50|53|96|—|
+| Swarm Junction |45|45|81|—|
+
+Safety's original source missed330draws (old G6frame02=377); the parent's exact static-source batching fix brings this reviewed maximum to141. The whole20-room draw inventory, hardware frame budgets and organic campaigns remain parent-owned final gates.
+
+Inspected contact: `artifacts/nextgen/l8-warning-mount-review/critical-five-color-gray.png`. It separately labels entry/arena/nativeG6-02 in color and exact480×270 Rec.709 code-value gray. All30native hashes, source manifest identity, actual warning/compile receipts and frame draw counts are in`review-receipts.json`; all four G6phases remain in`storyboards/`. Native Diagnostic/Manual arena frames demonstrate readable text and visible physical frames.
+
+Demanding art judgment on this still-live geometry: Diagnostic/Safety/Manual about6/10place identity; Workshop/Swarm about5/10. Warning clarity and structural/light context improved, but the latter rooms still show remote equipment and too much empty floor. The seam skins are less tape-like and have real attached face folds, yet those source faces remain outside key views. This is a technical warning pass, not premium environment acceptance. Root's new real-bay partition candidates and the separate dormant Swarm340/600400proposal address the remaining layout cause. No final120capture, authored smoke20, balanced completion cohort or premium visual score is claimed from this review.
+
+Foreground Safety source audit: the inherited south battery is1.955m tall, but its tall hardware is deeply seated inside the reserved bay.336above-waist native-camera corner rays at28legal north-face poses have0occlusions. Full ground/torso sampling finds only the low.30mcontact plinth at the closest collider-touch poses; no tall terminal, cylinder or guard occludes the tested body. The source is retained rather than flattened solely from its AABB height. A new regression test keeps all torso rays clear and bounds any sole contact to that low plinth. This is a world-source occlusion audit, separate from the unchanged full marine/HUD-screen bounds.
