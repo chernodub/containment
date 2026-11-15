@@ -457,7 +457,7 @@ export class DepthRenderer {
   if(node.templateId==='reactor-vault'){const hot=MAT.cyan.clone();hot.name='ship-cold-practical';hot.userData.actorMaterial=true;this.world.traverse(object=>{if(object instanceof T.Mesh&&object.material===MAT.cyan)object.material=hot;});}
   this.bakeWorld();
   }
-  if(node.templateId==='residential-gallery')this.residentialGalleryEquipment=attachResidentialGalleryEquipment(this.world,staticLoaded);
+  if(node.templateId==='residential-gallery'&&!bespoke)this.residentialGalleryEquipment=attachResidentialGalleryEquipment(this.world,staticLoaded);
   if(atrium)this.communalGarden=attachCommunalGarden(this.world,t,staticLoaded);
   this.exit=new T.Group();this.exit.position.set(t.exit.x/UNIT,0,t.exit.y/UNIT);this.world.add(this.exit);
   for(const side of [-1,1]){box(this.exit,0,.7,side*.7,.12,1.4,.18,MAT.steel);box(this.exit,.08,.7,side*.7,.04,1.05,.05,MAT.cyan,.01);}

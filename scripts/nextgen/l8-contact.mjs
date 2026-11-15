@@ -10,6 +10,6 @@ for(const [i,room]of rooms.entries())for(const [j,mode]of ['combat-calm','g6-kit
  const row=j*3+i,file=`${mode}-${room}${j?'-02':''}.png`;
  drawText(sheet,`ROUND ${round}: ${room} ${mode} / NATIVE480 - GRAY480`,6,row*296+5,undefined,1);
  for(const [k,p]of [`review480/${file}`,`grayscale/480-${file}`].entries())drawImage(sheet,decode(await readFile(resolve(dir,p))),k*480,row*296+24,480,270);
- const plan=decode(await readFile(resolve(out,`round${process.argv[3]??round}-plans`,room+'.png')));drawImage(sheet,plan,960,row*296+24,600,270);
+ const plan=decode(await readFile(resolve(out,`round${process.argv[3]??round}-plans`,room+'.png')));const ph=270,pw=Math.round(plan.width/plan.height*ph);drawImage(sheet,plan,960,row*296+24,pw,ph);
 }
 await writeFile(resolve(out,`round${round}-contact.png`),encode(sheet));

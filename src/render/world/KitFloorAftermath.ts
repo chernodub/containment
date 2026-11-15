@@ -41,14 +41,24 @@ export function addKitFloorAftermath(t:RoomTemplate,id:string,reservations:reado
  if(Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,id)){
   let admitted=0;
   const stroke=(ax:number,az:number,bx:number,bz:number,width:number,color:number,kind:string)=>{if(p.segment(ax,az,bx,bz,width,color,kind,.023))admitted++;};
+  if(id==='residential-gallery'){
+   for(const x of [216,600,984])for(const south of [false,true]){
+    const z=south?740:220,front=south?660:300;
+    if(p.quad(x/32,z/32,248/32,104/32,0,south?0x555d55:0x695e50,'cabin-vinyl',.018))admitted++;
+    stroke((x-100)/32,front/32,(x+100)/32,front/32,.09,0x918674,'cabin-threshold');
+    for(const side of [-1,1])stroke((x+side*12)/32,(front+(south?14:-14))/32,(x+side*12)/32,(front+(south?36:-36))/32,.05,0x444a43,'doorway-footwear');
+   }
+   return {idea:'Six cabin finishes meet their gallery thresholds',site:[t.spawn.x/32,t.spawn.y/32],admitted};
+  }
+  if(id==='crew-checkpoint'){
+   for(const y of [288,592])stroke(272/32,y/32,464/32,y/32,.075,0x8c907d,'inspection-booth-threshold');
+   for(const y of [344,408,472,536])stroke(476/32,y/32,492/32,y/32,.055,0x899889,'scanner-alignment-ticks');
+   return {idea:'Inspection booth thresholds and scanner alignment',site:[450/32,440/32],admitted};
+  }
   for(const r of reservations){
    const x=(r.x+r.width/2)/32,z=(r.y+r.height/2)/32;
    const front=r.y<440?(r.y+r.height)/32+.2:r.y/32-.2;
-   if(id==='residential-gallery'){
-    if(r.y===0&&p.quad(x,(r.height+70)/32,188/32,136/32,0,0x695d4e,'cabin-vinyl',.018))admitted++;
-    stroke(x-1,front,x+1,front,.12,0x7c7968,'cabin-threshold');
-    for(const side of [-1,1])stroke(x+side*.35,front,x+side*.35,front+(r.y<440?1:-1)*.8,.06,0x3b4948,'doorway-footwear');
-   }else if(id==='crew-checkpoint'){
+   if(id==='crew-checkpoint'){
     const gx=r.x/32-.35;
     for(let n=0;n<3;n++)stroke(gx-.25,z-.5+n*.5,gx+.25,z-.5+n*.5,.06,0x92907b,'inspection-width-marks');
     stroke(gx,z-.8,gx,z+.8,.045,0x576a70,'screening-plane');

@@ -19,6 +19,9 @@ describe('template-driven ship architecture',()=>{
    expect(clearPolygonTopology(t,point,point,0)).toBe(true);
   }
   root.updateMatrixWorld(true);
+  root.traverse(o=>{if(o instanceof T.Mesh&&(o.material as T.Material).name==='ship-interior-cutaway'){
+   o.geometry.computeBoundingBox();expect(o.geometry.boundingBox!.max.y).toBeLessThanOrEqual(.73);
+  }});
   const resources=new Set<T.BufferGeometry|T.Material>();root.traverse(o=>{if(o instanceof T.Mesh){if(![...geometries.values()].includes(o.geometry)&&!o.geometry.userData.sharedAsset)resources.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.userData.actorMaterial)resources.add(m);}});
   const spies=[...resources].map(r=>vi.spyOn(r,'dispose'));disposeModel(root);spies.forEach(s=>expect(s).toHaveBeenCalledTimes(1));
   expect(JSON.stringify(t)).toBe(before);

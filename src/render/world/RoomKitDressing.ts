@@ -93,14 +93,29 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
  const pipe=(a:T.Vector3,b:T.Vector3,r:number,role='dark')=>{
   const g=new T.CylinderGeometry(r,r,a.distanceTo(b),8).applyQuaternion(new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),b.clone().sub(a).normalize())).translate(...a.clone().add(b).multiplyScalar(.5).toArray());g.computeBoundingBox();if(boundsSafe(g.boundingBox!))push(g.toNonIndexed(),role);g.dispose();
  };
+ const connectedCabins=id==='residential-gallery';
  const primary=equipmentReservations(t,id),reservations=primary.length?primary:equipmentReservations(t,'e6-'+id);
  const floor=buildKitFloorSurface(t,env,id,reservations);push(floor.geometry,'conduit');root.userData.floorSurface=floor.proof;
  root.userData.perimeter=addKitPerimeter(t,env,id,{place,box,pipe});
  world.updateWorldMatrix(true,true);
  const supportHeight=(x:number,z:number)=>new T.Raycaster(new T.Vector3(x,12,z),new T.Vector3(0,-1,0)).intersectObject(world,true).find(hit=>hit.point.y>.08)?.point.y??.17;
- root.userData.footprintClusters=addKitFootprintClusters({template:t,environment:env,roomId:id,reservations,place,placeTilted:place,supportHeight});
+ root.userData.footprintClusters=connectedCabins?[]:addKitFootprintClusters({template:t,environment:env,roomId:id,reservations,place,placeTilted:place,supportHeight});
  // Infrastructure is physically attached at each end; intervening navigation crossings are inset into the deck.
- for(const [i,r] of reservations.slice(0,8).entries()){
+ if(connectedCabins){
+  for(const [i,x]of [40,416,808].entries())for(const south of [false,true]){
+   const start=south?3:0,bed=t.obstacles[i*6+start+1],desk=t.obstacles[i*6+start+2],rear=t.obstacles[i*6+start],angle=south?Math.PI:0;
+   const center=(r:typeof bed)=>[(r.x+r.width/2)/32,(r.y+r.height/2)/32];
+   const [bx,bz]=center(bed),[dx,dz]=center(desk),[rx,rz]=center(rear),label=`Cabin ${south?'S':'N'}${i+1}`;
+   place('bedSingle',bx,.10,bz,1.90,.78,2.85,angle,label+' made berth inside hull-connected cabin');
+   place('desk',dx,.10,dz,1.75,.74,1.50,angle,label+' writing desk',undefined,false);
+   place('radio',dx,.78,dz,.30,.18,.20,angle,label+' silent radio');
+   // Cutaway lockers retain their CC0 doors and handles at waist height.
+   for(let n=-1;n<=1;n++)place('Prop_Locker',rx+n*2.5,.10,rz,1.85,.62,.95,angle,label+' cutaway rear lockers',undefined,true);
+   place('books',dx,.81,dz+.19,.32,.12,.25,angle,label+' interrupted reading');
+   if(south&&i===2)place('cardboardBoxOpen',bx,.55,bz,.65,.48,.65,.1,'Blocked cabin rear berth packed for an arrival that never happened');
+  }
+ }
+ for(const [i,r] of (connectedCabins?[]:reservations.slice(0,8)).entries()){
   const x=(r.x+r.width*.5)/32,z=(r.y+r.height*.5)/32,rw=r.width/32,rd=r.height/32;
   const hull=kitHull(t),candidates=hull.map((a,j)=>{const b=hull[(j+1)%hull.length],av=new T.Vector2(a.x/32,a.y/32),delta=new T.Vector2((b.x-a.x)/32,(b.y-a.y)/32),f=T.MathUtils.clamp(new T.Vector2(x,z).sub(av).dot(delta)/delta.lengthSq(),0,1),p=av.addScaledVector(delta,f);return {p,d:p.distanceTo(new T.Vector2(x,z))};}).sort((a,b)=>a.d-b.d);
   const crossing=hull.flatMap((a,j)=>{const b=hull[(j+1)%hull.length];if((a.y/32>z)===(b.y/32>z))return [];return [a.x/32+(b.x-a.x)/32*(z-a.y/32)/((b.y-a.y)/32)];}).sort((a,b)=>a-b);

@@ -2,6 +2,7 @@ import * as T from 'three';
 import type { ShipEnvironment } from '../ShipEnvironments';
 
 type FloorUniforms = {
+  apertureOnly:{value:number};
   wetness: { value: number };
   grime: { value: number };
   albedoGain: { value: number };
@@ -22,7 +23,7 @@ const patterns: Readonly<Record<ShipEnvironment, readonly [number, number, numbe
 export function applyFloorVariation(material: T.MeshStandardMaterial, environment: ShipEnvironment, practicalShapes?:T.Vector4[]) {
   let uniforms = surfaces.get(material);
   if (!uniforms) {
-    uniforms = { wetness: { value: 0 }, grime: { value: .15 }, albedoGain: { value: 4.8 }, pattern: { value: new T.Vector4() }, leaks:{value:Array.from({length:4},()=>new T.Vector4())},practicals:{value:Array.from({length:4},()=>new T.Vector4(1,0,.82,3.4))} };
+    uniforms = { apertureOnly:{value:0},wetness: { value: 0 }, grime: { value: .15 }, albedoGain: { value: 4.8 }, pattern: { value: new T.Vector4() }, leaks:{value:Array.from({length:4},()=>new T.Vector4())},practicals:{value:Array.from({length:4},()=>new T.Vector4(1,0,.82,3.4))} };
     surfaces.set(material, uniforms);
     const previous = material.onBeforeCompile;
     const previousKey = material.customProgramCacheKey();
@@ -30,6 +31,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
     const genericDeck = material.name === 'environment-floor';
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
+      shader.uniforms.roomFloorApertureOnly=params.apertureOnly;
       shader.uniforms.roomFloorWetness = params.wetness;
       shader.uniforms.roomFloorPracticalShapes=params.practicals;
       shader.uniforms.roomFloorGrime = params.grime;
@@ -45,6 +47,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
         vRoomFloorPosition=(modelMatrix*roomFloorLocal).xyz;`);
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
         varying vec3 vRoomFloorPosition;
+        uniform float roomFloorApertureOnly;
         uniform float roomFloorWetness;
         uniform float roomFloorGrime;
         uniform float roomFloorAlbedoGain;
@@ -207,6 +210,7 @@ export function applyFloorVariation(material: T.MeshStandardMaterial, environmen
     material.needsUpdate = true;
   }
   if(practicalShapes)uniforms.practicals.value=practicalShapes;
+  uniforms.apertureOnly.value=material.userData.architectureApertureOnly?1:0;
   uniforms.pattern.value.fromArray(patterns[environment]);
   uniforms.albedoGain.value = ({cryogenics:4.8,habitation:6.4,security:6.8,cargo:4.8,communications:4.8,engineering:7.2,maintenance:9,infested:7.4,containment:8,reactor:3.2} as const)[environment];
   uniforms.wetness.value = environment === 'maintenance' ? 1 : environment === 'infested' ? .28 : environment === 'cryogenics' ? .18 : 0;

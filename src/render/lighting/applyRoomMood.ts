@@ -1,3 +1,4 @@
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import * as T from 'three';
 import type { ShipEnvironment } from '../ShipEnvironments';
 import { getEnvironmentMood } from './EnvironmentMoods';
@@ -40,6 +41,7 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         originals.set(material, original);
       }
       const floor=deckNames.has(material.name)||material.userData.floorDressing===true;
+      if(floor)material.userData.architectureApertureOnly=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,templateId??'');
       // Re-preparation must start at authored albedo, including shaft/circulation surfaces
       // which do not take the ordinary readable-steel normalization below.
       if(deckNames.has(material.name))material.color.copy(original.color);

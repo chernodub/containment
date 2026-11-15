@@ -21,7 +21,10 @@ describe('flat authored surface registration uses the existing floor light compo
   expect(shader.fragmentShader.match(/uniform vec4 roomFloorPracticalShapes\[4\]/g)).toHaveLength(1);
   expect(shader.uniforms.roomFloorPracticalShapes.value.map((v:T.Vector4)=>v.toArray())).toEqual(shapes.map(v=>v.toArray()));
   expect(shader.uniforms.roomPracticalNearField.value).toBe(3.24);
+  expect(shader.uniforms.roomFloorApertureOnly.value).toBe(1);
+  expect(shader.fragmentShader).toContain('float stripOnly=max(roomFloorApertureOnly,1.0-step(.5,roomFloorPattern.z))');
   expect(shader.uniforms.graphicSurfaceKind.value.toArray()).toEqual([0,1]);
+  applyRoomMood(world,'habitation','legacy-cabin',shapes);expect(compile(material).uniforms.roomFloorApertureOnly.value).toBe(0);
   expect(material.customProgramCacheKey()).toContain(':flat-floor-apertures-v1');
   const key=material.customProgramCacheKey();applyRoomMood(world,'cryogenics','awakening-bay',shapes);
   expect(material.customProgramCacheKey()).toBe(key);expect(compile(material).uniforms.roomFloorPattern.value.z).toBe(0);

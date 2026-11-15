@@ -20,6 +20,7 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
   };
   const deck=material('painted-steel-deck',environment==='habitation'?0x646861:0x46565c);
   const steel=material('ship-bulkhead',environment==='habitation'?0x6f7568:0x55646b,.45);
+  const cutaway=material('ship-interior-cutaway',0x66726f,.35);
   const dark=material('ship-bulkhead-recess',0x17232b);
   const trim=material('ship-bulkhead-ribs',0x85908b,.55);
   const practical=material(environment==='habitation'?'ship-warm-practical':'ship-cold-practical',environment==='habitation'?0xe4b37b:0x9bc7d2);
@@ -43,7 +44,7 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
     for(let j=0;j<count;j++){
       const f=(j+.5)/count,x=(a.x+(b.x-a.x)*f)/32,z=(a.y+(b.y-a.y)*f)/32;
       box(x+nx*.24,height/2,z+nz*.24,.16,height,.24,dark,angle);
-      if(dx<=0)continue;
+      if(dx<=0||['residential-gallery','crew-checkpoint','relay-racks'].includes(id))continue;
       box(x+nx*.02,height-.16,z+nz*.02,Math.min(1.1,length/count*.4),.08,.08,practical,angle);
       root.userData.lightFixtures.push({x:x+nx*.02,y:height-.16,z:z+nz*.02,color:practical.emissive.getHex()});
     }
@@ -52,24 +53,48 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
   // sides reproduce the exact polygon, including L-shaped control booths.
   for(const p of t.voids??[]){
     const wallShape=new T.Shape(path(p));
-    const wall=new T.ExtrudeGeometry(wallShape,{depth:.78,bevelEnabled:false,steps:1,curveSegments:1});wall.rotateX(-Math.PI/2);push(wall,steel);
+    const wall=new T.ExtrudeGeometry(wallShape,{depth:.72,bevelEnabled:false,steps:1,curveSegments:1});wall.rotateX(-Math.PI/2);push(wall,cutaway);
     for(let i=0;i<p.length;i++){
       const a=p[i],b=p[(i+1)%p.length],dx=(b.x-a.x)/32,dz=(b.y-a.y)/32,length=Math.hypot(dx,dz);
       if(length<1)continue;
       for(let s=.4;s<length-.1;s+=.8){
        const f=s/length,x=(a.x+(b.x-a.x)*f)/32,z=(a.y+(b.y-a.y)*f)/32;
        box(x,.40,z,.045,.68,.045,dark);
-       if(environment==='security')box(x,1.02,z,.035,.48,.035,trim);
+       if(environment==='security')box(x,.65,z,.035,.12,.035,trim);
       }
-      box((a.x+b.x)/64,.79,(a.y+b.y)/64,length,.04,.04,trim,-Math.atan2(dz,dx));
+      box((a.x+b.x)/64,.73,(a.y+b.y)/64,length,.04,.04,trim,-Math.atan2(dz,dx));
     }
   }
+  const fixture=(x:number,z:number,angle:number,width:number,depth:number,color:number,gain=1)=>{
+   const y=1.30;
+   box(x,y-.045,z,1.65,.16,.20,dark,angle);box(x,y,z,1.45,.07,.08,gain<.2?dark:practical,angle);
+   // A failed diffuser remains dark instead of inventing a round task-light pool.
+   root.userData.lightFixtures.push({x,y,z,color,nativeColor:true,poolStyle:1,poolAngle:angle,poolWidth:width,poolDepth:depth,gain});
+  };
+  if(id==='residential-gallery'){
+   for(const [i,x]of [216,600,984].entries()){
+    fixture(x/32,.12,0,2.8,8.4,0xe8bc87,i===2?.14:1);
+    fixture(x/32,(t.height-4)/32,Math.PI,2.4,6.8,0xc6d9df,i===1?.28:.55);
+   }
+  }else if(id==='crew-checkpoint'){
+   fixture(360/32,84/32,0,2.2,6,0xd5e5ea,1);fixture(360/32,796/32,Math.PI,1.8,5,0xd2dbdc,.38);
+   fixture(800/32,84/32,0,1.1,7,0xe8b486,.62);fixture(1084/32,440/32,-Math.PI/2,2,6,0xbddce3,.75);
+  }else if(id==='relay-racks'){
+   fixture(196/32,170/32,-Math.PI/2,1.3,8,0x89cad5,.82);fixture(1084/32,170/32,Math.PI/2,1.3,8,0x9be0d2,.42);
+   fixture(640/32,964/32,Math.PI,2.2,8,0x9cc8c6,1);fixture(640/32,304/32,Math.PI,1.1,6,0xc1e6dc,.48);
+  }
   for(const [m,parts]of batches){const merged=mergeGeometries(parts,false)!;parts.forEach(p=>p.dispose());const mesh=new T.Mesh(merged,m);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);}
-  if(id==='relay-racks')root.add(relayRacksRoom(false));
+  if(id==='relay-racks')root.add(relayRacksRoom(false,t));
   else if(id==='armory')root.add(armoryCarousel());
   else {
     const equipment=new T.Group();equipment.name=id==='residential-gallery'?'residential-gallery-equipment-fallback':'l8-equipment';root.add(equipment);
-    for(const [i,r]of t.obstacles.entries())equipment.add(environmentObstacle(environment,{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},i,id));
+    for(const [i,r]of t.obstacles.entries()){
+      if(id==='residential-gallery'||id==='crew-checkpoint'){
+       const h=id==='residential-gallery'?.10:.72;
+       const g=new T.BoxGeometry(r.width/32,h,r.height/32).translate((r.x+r.width/2)/32,h/2,(r.y+r.height/2)/32);
+       const mesh=new T.Mesh(g,dark.clone());mesh.material.userData.actorMaterial=true;mesh.name='cutaway-equipment-plinth';mesh.castShadow=mesh.receiveShadow=true;equipment.add(mesh);
+      }else equipment.add(environmentObstacle(environment,{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},i,id));
+    }
   }
   root.userData.templateArchitecture=true;
   return root;
