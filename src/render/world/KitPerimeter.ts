@@ -65,7 +65,9 @@ export function addKitPerimeter(
     const a=hull[edge],b=hull[(edge+1)%hull.length];
     const ax=a.x/32,az=a.y/32;
     const dx=(b.x-a.x)/32,dz=(b.y-a.y)/32,length=Math.hypot(dx,dz);
-    if(length<.7)continue;
+    // Short return joints belong to the exact hull builder, not a squeezed
+    // CC0 cabinet. Their rejected placements cannot leave a fake wall fragment.
+    if(length<1.5)continue;
     const tx=dx/length,tz=dz/length;
     const nx=tz*orientation,nz=-tx*orientation;
     // There is no end-to-end gap between the base panels. Storage, vents and

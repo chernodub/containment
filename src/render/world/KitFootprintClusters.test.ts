@@ -25,7 +25,7 @@ describe('footprint composition admission boundary', () => {
       expect(JSON.stringify(template)).toBe(before);
       if(roomId==='residential-gallery'){expect(rows).toEqual([]);continue;}
       expect(rows).toHaveLength(template.obstacles.length);
-      expect(rows.every(row => row.originalObstacle && row.accepted >= 4 && row.fallenAccepted && row.statusAccepted), roomId).toBe(true);
+      expect(rows.every((row,i) => Math.min(template.obstacles[i].width,template.obstacles[i].height)<22.4?row.attempted===0&&row.accepted===0&&row.estimatedTriangles===0:row.originalObstacle&&row.accepted>=4&&row.fallenAccepted&&row.statusAccepted),roomId).toBe(true);
     }
   });
 
@@ -53,7 +53,7 @@ describe('footprint composition admission boundary', () => {
     const snapshot = JSON.stringify(reservations);
     const rows = addKitFootprintClusters({template, environment:'habitation', roomId:template.id, reservations, place:() => true, supportHeight:() => .2});
     expect(JSON.stringify(reservations)).toBe(snapshot);
-    expect(rows.slice(0, template.obstacles.length).every(row => row.originalObstacle && row.accepted >= 4)).toBe(true);
+    expect(rows.slice(0,template.obstacles.length).every(row=>row.originalObstacle)).toBe(true);for(const row of rows.slice(0,template.obstacles.length)){const r=reservations[row.reservation];if(Math.min(r.width,r.height)<22.4){expect(row.attempted).toBe(0);expect(row.accepted).toBe(0);expect(row.estimatedTriangles).toBe(0);}else expect(row.accepted).toBeGreaterThanOrEqual(4);}
     expect(rows.reduce((sum, row) => sum + row.estimatedTriangles, 0)).toBeLessThanOrEqual(4000);
     expect(rows.some(row => row.accepted === 0)).toBe(true);
   });

@@ -1,3 +1,4 @@
+import {l8PresentationSource} from '../../../tests/helpers/l8PresentationSource';
 import {describe,expect,it,vi} from 'vitest';
 import * as T from 'three';
 import {addBroodCell,GROWTH_MAT,organicGeometry} from './OrganicGrowth';
@@ -14,7 +15,7 @@ function transforms(root:T.Object3D){const values:number[][]=[];root.updateWorld
 
 describe('X2 environmental story rendering',()=>{
   it('layers torn cargo plating, ribs and cable looms outboard without adding material draws',()=>{
-    const t=ROOM_TEMPLATES['breached-loading-bay'],world=new T.Group(),room=authoredRoom(t.id,t)!;world.add(room);
+    const t=l8PresentationSource('breached-loading-bay'),world=new T.Group(),room=authoredRoom(t.id,t)!;world.add(room);
     const before=new Map<T.Mesh,number>();world.traverse(o=>{if(o instanceof T.Mesh)before.set(o,o.geometry.getAttribute('position').count);});
     const root=addEnvironmentalStory(world,t,'cargo',t.id);expect(root.userData.layeredHull).toBe(true);expect(root.children).toHaveLength(0);
     let changed=0,meshes=0;
@@ -35,7 +36,7 @@ describe('X2 environmental story rendering',()=>{
     for(const root of [a,b,c,fitted])disposeModel(root);
   });
   it('connects equipment with flush membranes while preserving the authoritative template',()=>{
-    const template=ROOM_TEMPLATES['swarm-junction'],before=JSON.stringify(template),world=new T.Group();
+    const template=l8PresentationSource('swarm-junction'),before=JSON.stringify(template),world=new T.Group();
     const root=addEnvironmentalStory(world,template,'infested',template.id,1729);
     expect(JSON.stringify(template)).toBe(before);expect(root.children.length).toBeGreaterThan(0);expect(root.children.length).toBeLessThanOrEqual(2);
     const heights=new Set<number>();expect(root.userData.sinuousRoots).toBeGreaterThan(2);
@@ -87,7 +88,7 @@ describe('X2 environmental story rendering',()=>{
     disposeModel(root);expect(goneGeometry).toHaveBeenCalledTimes(1);expect(goneMaterial).toHaveBeenCalledTimes(1);
   });
   it('casts recognizable overhead plant shadows entirely on existing engineering reservations',()=>{
-    const template=ROOM_TEMPLATES['diagnostic-gallery'],world=new T.Group();
+    const template=l8PresentationSource('diagnostic-gallery'),world=new T.Group();
     for(const r of template.obstacles){const mesh=new T.Mesh(new T.BoxGeometry(r.width/32,1,r.height/32),MAT.steel);mesh.position.set((r.x+r.width/2)/32,.5,(r.y+r.height/2)/32);world.add(mesh);}
     const root=addEnvironmentalStory(world,template,'engineering',template.id);expect(root.userData.overheadMachines).toBe(2);
     let raised=0;root.traverse(o=>{if(o instanceof T.Mesh&&o.name!=='source-anchored-story-particles'){

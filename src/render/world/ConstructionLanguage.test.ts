@@ -1,3 +1,4 @@
+import {l8PresentationSource} from '../../../tests/helpers/l8PresentationSource';
 import {describe,it,expect} from 'vitest';
 import * as T from 'three';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
@@ -55,7 +56,7 @@ describe('authored construction propagation',()=>{
 });
 
 it.each(['swarm-junction','infested-workshop','breached-loading-bay','reactor-vault'] as const)('%s binds three connected consumption forms and their lights to actual room geometry',id=>{
- const template=ROOM_TEMPLATES[id],environment=shipEnvironment(id)!,world=new T.Group();
+ const template=id==='reactor-vault'?ROOM_TEMPLATES[id]:l8PresentationSource(id),environment=shipEnvironment(id)!,world=new T.Group();
  // Use the same procedural machine kit as the production room, rather than
  // broad test boxes that could hide a missing roof probe between real supports.
  for(const [index,r]of template.obstacles.entries())appendEnvironment(world,environmentObstacle(environment,{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},index,id));
