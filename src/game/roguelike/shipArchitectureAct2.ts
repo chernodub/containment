@@ -27,7 +27,8 @@ const loading=defineShipRoom({height:960,
 const transmission=defineShipRoom({
  boundary:poly([[0,240],[200,240],[200,40],[480,40],[480,0],[720,0],[720,40],[1200,40],[1200,800],[1040,800],[1040,880],[200,880],[200,640],[0,640]]),
  obstacles:rectangles([[480,0,240,180],[200,720,180,160],[1040,640,160,160]]),
- voids:[wall(420,320,160,24),wall(760,320,160,24)],
+ // Unequal chancel screens leave a broad native holding approach at the east end.
+ voids:[wall(420,320,160,24),wall(760,336,112,24)],
  spawn:p(600,440),exit:p(1100,440),breaches:poly([[280,160],[1080,160],[100,560],[940,780]]),
 });
 export const SHIP_ACT2_PLANS:Readonly<Record<string,ShipPlan>>=Object.freeze({
