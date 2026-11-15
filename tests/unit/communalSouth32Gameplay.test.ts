@@ -1,6 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {DepthGame} from '../../src/DepthGame';
 import {generateRun} from '../../src/game/roguelike/run';
+import {SHIP_ACT1_PLANS} from '../../src/game/roguelike/shipArchitectureAct1';
 import {ROOM_TEMPLATES} from '../../src/game/roguelike/roomTemplates';
 import {createExpeditionGeometry,canOccupyExpedition,canTraverseExpedition,hasClearExpeditionShot} from '../../src/game/world/expeditionGeometry';
 import {FacilityNavigation} from '../../src/game/world/FacilityNavigation';
@@ -15,17 +16,17 @@ const geometry=()=>createExpeditionGeometry(node);
 const oldWater=[point(1008,440),point(1068,440),point(1068,480),point(1008,480)];
 const oldGarden=[point(512,304),point(656,304),point(656,368),point(512,368)];
 const setup=()=>{const game=new DepthGame();game.node=node;game.geometry=geometry();game.navigation=new FacilityNavigation(game.geometry);game.enemies=game['makeEnemies']();game.status='playing';Object.assign(game.player,game.geometry.playerSpawn);return game;};
-const targets=[point(436,440),point(584,256),point(744,360),point(744,528),point(980,528),point(1100,440)];
-const route=[point(436,440),point(436,528),point(1100,528),point(1100,440)];
+const targets=SHIP_ACT1_PLANS['communal-atrium']!.spaces.map(space=>space.anchor);
+const route=[point(436,440),point(436,528),point(1160,528),point(1160,420),point(1248,420)];
 
-describe('accepted Communal Atrium south32 gameplay',()=>{
- it('installs the exact inset physical polygon without changing the shipping envelope',()=>{
+describe('authored Communal Atrium south-gallery gameplay',()=>{
+ it('installs the articulated galley, dining court and actual exit-lock envelope',()=>{
   const t=ROOM_TEMPLATES[node.templateId],g=geometry();
-  expect([t.width,t.height]).toEqual([1200,880]);
-  expect(t.boundary).toEqual([[192,216],[782,216],[1200,288],[1200,556],[932,556],[882,580],[192,580]].map(([x,y])=>point(x,y)));
-  expect(g.playerSpawn).toEqual(point(436,440));expect(g.exitPoint).toEqual(point(1100,440));
-  expect(t.voids).toHaveLength(11);expect(t.obstacles).toEqual([]);
-  for(const p of [point(100,440),point(600,700),point(964,414),point(584,336),point(807,468)])expect(canOccupyExpedition(g,p,16)).toBe(false);
+  expect([t.width,t.height]).toEqual([1296,880]);
+  expect(t.boundary).toEqual([[192,80],[782,80],[782,216],[1120,272],[1200,272],[1200,280],[1296,280],[1296,560],[1200,560],[1200,572],[1120,572],[932,556],[882,580],[480,580],[480,584],[192,584]].map(([x,y])=>point(x,y)));
+  expect(g.playerSpawn).toEqual(point(436,440));expect(g.exitPoint).toEqual(point(1248,420));
+  expect(t.voids).toHaveLength(11);expect(t.obstacles).toEqual([{x:192,y:80,width:590,height:90},{x:192,y:170,width:48,height:32},{x:1068,y:388,width:8,height:20},{x:1068,y:420,width:8,height:20}]);
+  for(const p of [point(100,440),point(600,700),point(1044,414),point(584,336),point(728,150)])expect(canOccupyExpedition(g,p,16)).toBe(false);
  });
  it('walks the main southern passage with production input and finite actor clearance',()=>{
   const game=setup();
@@ -64,7 +65,7 @@ describe('accepted Communal Atrium south32 gameplay',()=>{
   // The old water-adjacent request is now open; keep it as a negative control.
   expect(canOccupyExpedition(g,point(1044,500),ENEMIES.brute.radius)).toBe(true);
   expect(canOccupyExpedition({...g,voids:[...g.voids!,oldWater]},point(1044,500),ENEMIES.brute.radius)).toBe(false);
-  const requested=point(807,500);expect(canOccupyExpedition(g,requested,ENEMIES.brute.radius)).toBe(false);
+  const requested=point(728,180);expect(canOccupyExpedition(g,requested,ENEMIES.brute.radius)).toBe(false);
   const game=setup();expect(game['spawn']('brute',requested.x,requested.y)).toBe(true);
   const actual=game.enemies.snapshot.enemies[0];expect(canOccupyExpedition(g,actual,actual.radius)).toBe(true);
   expect(point(actual.x,actual.y)).not.toEqual(requested);
@@ -72,14 +73,15 @@ describe('accepted Communal Atrium south32 gameplay',()=>{
  });
  it('rejects a deliberately disconnected navigation control',()=>{
   const g=geometry(),blocked={...g,voids:[...g.voids!,[point(720,192),point(780,192),point(780,580),point(720,580)]]};
-  const nav=new FacilityNavigation(blocked);nav.prepare(point(436,440),1);
-  expect(nav.reachable(point(1100,440))).toBe(false);
+  const normal=new FacilityNavigation(g);normal.prepare(g.playerSpawn,1);expect(normal.reachable(g.exitPoint)).toBe(true);
+  const nav=new FacilityNavigation(blocked);nav.prepare(g.playerSpawn,1);expect(canOccupyExpedition(blocked,g.exitPoint,28)).toBe(true);
+  expect(nav.reachable(g.exitPoint)).toBe(false);
  });
  it('runs finite player and hazard shots along the passage and stops them at the table and garden',()=>{
   for(const kind of ['player','hazard'] as const)for(const [from,to,clear] of [
-   [point(436,528),point(1100,528),true],
-   [point(744,440),point(980,440),false],
-   [point(584,256),point(584,400),false],
+   [point(436,528),point(1160,528),true],
+   [point(790,440),point(1120,440),false],
+   [point(600,240),point(600,440),false],
   ] as const){
    const game=setup(),distance=Math.hypot(to.x-from.x,to.y-from.y);
    expect(hasClearExpeditionShot(game.geometry,from,to)).toBe(clear);

@@ -4,7 +4,8 @@ import { EnemySystem } from '../src/game/enemies/EnemySystem';
 import { DepthGame } from '../src/DepthGame';
 import { expeditionRewardOffers } from '../src/game/roguelike/expedition';
 import { SpatialHash } from '../src/game/enemies/SpatialHash';
-import { canTraverseExpedition, createExpeditionGeometry } from '../src/game/world/expeditionGeometry';
+import { canTraverseExpedition, createRoomTemplateGeometry } from '../src/game/world/expeditionGeometry';
+import {ROOM_TEMPLATES} from '../src/game/roguelike/roomTemplates';
 import { generateRun } from '../src/game/roguelike/run';
 const player = { x: 700, y: 500, radius: 16, angle: 0 };
 const step = (system: EnemySystem, n: number) => { for (let i = 0; i < n; i++)
@@ -75,7 +76,13 @@ describe('A3 crowd constraints', () => {
         expect(clearance(system)).toBeGreaterThanOrEqual(-.25);
     });
     it('never projects a packed crowd through a recorded wall corner or void', () => {
-        const node = generateRun(1729, 3).nodes.find(n => n.templateId === 'shielding-gate')!, geometry = createExpeditionGeometry(node);
+        const node = generateRun(1729, 3).nodes.find(n => n.templateId === 'shielding-gate')!;
+        // Shielding had no AUTHORED_ROOM_TOPOLOGIES entry. Preserve its exact
+        // frozen7ceefa5 rectangle plan for the recorded sourceaa4 regression.
+        const historical=Object.freeze({...ROOM_TEMPLATES[node.templateId],width:1200,height:880,boundary:undefined,voids:undefined,
+            spawn:{x:100,y:440},exit:{x:1100,y:440},breaches:[{x:100,y:100},{x:1100,y:100},{x:100,y:780},{x:1100,y:780}],
+            obstacles:[{x:300,y:140,width:100,height:310},{x:520,y:590,width:160,height:150},{x:800,y:340,width:100,height:360}]});
+        const geometry=createRoomTemplateGeometry(historical,node.id+':historical-aa4');
         const system = new EnemySystem({ route: e => e, canMove: c => canTraverseExpedition(geometry, { x: c.fromX, y: c.fromY }, { x: c.toX, y: c.toY }, c.radius) });
         for (let i = 0; i < 12; i++)
             system.spawn('spitter', 289.3859237654455, 107.50048220650496);
