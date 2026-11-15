@@ -84,7 +84,7 @@ export function act3ShipPresentation(id:string,t:RoomTemplate):T.Group|null {
    box(x,3,z,w,6,d,dark);
    // Two serviceable horizontal pump barrels share a wall manifold. A valve
    // operator can use either gallery; the center bank is a low return manifold.
-   const radius=Math.min(23,w*.17,d*.15),height=i===4?20:24;
+   const radius=Math.min(23,w*.17,d*.15),height=i>=4?20:24;
    for(const side of [-1,1]){
     const px=x+side*w*.23;
     cylinder(px,height,z,radius,d*.78,steel);
