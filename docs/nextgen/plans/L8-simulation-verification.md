@@ -1,6 +1,6 @@
 # L8 final simulation verification — in progress
 
-Scope: new CPU-only tests/reports for all twenty activated story rooms; no policy, actor, ability, encounter or progression edits. The root integration agent owns the final geometry freeze and native/browser evidence. Matched40 after cohorts will wait for that freeze signal.
+Scope: CPU-only verification of all twenty story rooms, immutable cohort diagnostics, the reviewed V1.1/ingress layout activation, and four explicitly authorized finite encounter appends after failed layout-first pacing trials. No policy, actor, ability or progression edits. Root owns native/browser evidence and hardware budgets. Final release evidence uses the declared fixed160 attempts per profile.
 
 Frozen reference: `artifacts/nextgen/playtest/l8-before/summary.json` has40 runs, ten seeds per rig,21 completions (52.5%), and policy hash `976eb173f26b67e0d02806b91b316a13fc11eecee94ba0310ac2287a7e402502`. The directory is `l8-before`, not `l8-before40`. The runner also freezes backend/game hashes and exact policy sources; those identities must match as applicable before comparison.
 
@@ -50,7 +50,7 @@ The initial dense firing probe incorrectly restricted Spitters to optional240–
 
 ## Frozen825 verification and failed balance acceptance
 
-Final simulation source: `82541a0601dcc98e5ccd8cceb5734e5c4e21b0b1`. The final short-leg navigation correction keeps every legal leg longer than8 units, with the existing8-unit arrival threshold. It fixes the native Brute fringe regression without geometry changes. Root owns the exact rectangle/leg implementation and its focused regressions.
+First all20 simulation freeze: `82541a0601dcc98e5ccd8cceb5734e5c4e21b0b1`. The final short-leg navigation correction keeps every legal leg longer than8 units, with the existing8-unit arrival threshold. It fixes the native Brute fringe regression without geometry changes. Root owns the exact rectangle/leg implementation and its focused regressions.
 
 ```text
 Final all20 CPU verification:
@@ -117,3 +117,26 @@ Root declared and committed `docs/nextgen/plans/L8-N40-VALIDATION.md` at395ad09 
 `shipArchitectureTransmissionCandidate.ts` is dormant. Raw doors280,160 /1080,160 /100,560 /940,780 become260,120 /1120,120 /100,600 /960,800; actual inward points316,120 /1064,120 /156,600 /904,800 and real feature mounts200,120 /1200,120 /0,600 /1040,800. All defensive walls, floor, spaces, source assets and encounter timings/counts stay exact. Strict checker errors are empty: walk812672 unchanged, connected93.7308%,2 free groups. Sixteen overlay tests pass across actual native family attacks, dense five-family/firing fields, mixed crowds and both desktop/reduced-motion camera modes. The inspected labeled plan is `artifacts/nextgen/l8-tx-candidate/transmission-chamber.png`. No combined candidate cohort or live adoption yet.
 
 The ordinary-room timing miss requires broader layout work: V1.1 clears514 ordinary samples,287 below30 seconds, median28.9083. Baseline clears502 with220 below30. Lost long approaches primarily affect Residential (below30 samples16→26), Checkpoint14→23, Diagnostic10→22, Safety6→21 and Shielding10→24. Workshop improves from live17 below30 samples to9. More late cleared samples do not by themselves explain the miss. No global entry delay or timer padding was added.
+
+
+## Reviewed combined live source9a44e60
+
+Root authorized the bounded release candidate source at `9a44e604bf644b6cf0ab8b2637913e19ca3e4740`, after Act2 ingress dependency0e6a325. Registry precedence is base20 plans, then V1.1 Coolant/Workshop, then the proven five ingress overrides. Transmission keeps its original280,160 /1080,160 /100,560 /940,780 doors: the isolated replacement-door40 diagnostic made pooled Transmission faster59.6167→58.6000s and was rejected. That failed raw packet remains `artifacts/nextgen/playtest/l8-tx-candidate-40/`; comparison `artifacts/nextgen/l8-sim/tx-candidate-comparison.{json,md}`. Root/Act2's ingress report owns each of the five new feature mounts and native margins.
+
+After V1, V1.1 and the failed Transmission layout attempt, root explicitly authorized two additional real enemy requests in each of four measured fast rooms. No initial delay, elapsed-clear timer, family/power multiplier, actor AI, policy or ability change was added. All original request prefixes, seeded RNG order, spawn-time formulas and caps remain exact.
+
+|Room|Requests before→after|Cap|Last request ms before→after|
+|---|---:|---:|---:|
+|Transmission|32→34|14|23900→25400|
+|Diagnostic|27→29|15|4230→4410|
+|Safety|28→30|15|4320→4500|
+|Shielding|31→33|15|4400→4580|
+
+First request remains650ms. Transmission retains750ms cadence and other rooms retain the original6-request grouping and90ms within-burst spacing; no spawn formula changed. Eight real requests are added per complete campaign. Act request totals73/108/142/180 become73/110/146/182. Late reservation pins142/183 become146/185. All original non-count threat/stat envelopes remain unchanged and pass. `L8EncounterAppend` validates all40 release seeds, native pending-request completion and exact schedules; both it and `I5ProductionProfile` preserve the original200-plan historical SHA after removing exactly the two authorized tails from each named room. Legacy graph-v1/v2 digests, all progression records, champion stats, save formats and firstfive request counts remain unchanged.
+
+Honest expectation migrations: `I5ProductionProfile` normalizes only the new tails before its historical digest and separately pins34/tail25400; `I5Balance` pins changed act counts/reservations while retaining all stat/threat/cap/family envelopes; `StoryRoute` pins34/tail25400; `A1Balance` pins34 and seed137 composition8crawler/6brute/10spitter/3stalker/7carrier instead of7/6/9/3/7. Its complete input function is byte-identical to baseline; every ability-share/clear-spread/native kill/finite-completion assertion is retained. Seed137 gets one additional crawler and one additional spitter, so all rigs kill55 instead of53.
+
+Combined hardproof:13 files539 tests pass; strict20 rooms errors[].165 mixed named-space scenarios/3300 actors have0 unresolved, worst22.35s.3300 native family trials all reach their native criterion, worst29.6s. Dense2275 marine positions yield45500 five-family breach routes and2275 firing fields, failures0. Four rigs each replay all20 rooms identically; three actual native edge regressions pass. All five suite packets share geometry SHA `9a1a8d88ad7781d19ae09c25f47c39d530008d248677675c377a462c0b03be9c`; working game source matches9a44 exactly. Packet and receipt: `artifacts/nextgen/l8-sim/final-combined/`. Frozen source-matched fullkit/cadence passes2 files5 tests, including all four seed1729 earned-cadence guards without relaxing thresholds. Fullkit input SHA76d6d2a54af55b4618162a83f86d8d57a22ce63d80840751feac30b759c9a60d matches baseline. Final shares B33.1691%/C32.6012%/P42.3396%/A32.6459%, clear93.25/97.15/80.70/89.05s, spread1.203841×; all slots used and each rig earns native Overdrive. Fullkit packet: `artifacts/nextgen/l8-sim/final-full-kit-comparison.json`. All52 checked actor/observer source/assets are byte-identical to baseline (`final-observer-actor-identity.json`, changes[]). Final-source160 cohorts are running as primary40 plus remaining120, both vanilla backendf7c6d801…/policy976eb173… on the same9a44 commit, with no outcome-dependent stopping. Candidate gameHashd8601138d86e028b5b252a14ab797339fb6ffff131717d754e3abf8611a1e22f, bundled27b30d69162bf9512b8d1d0903d110203a3dad88a243a6490059d8ae4becb564; both batches must retain these exact identities.
+
+
+Every numeric template change from frozen baseline to adopted9a44 is also recorded directly from the actual loaded simulation DTOs in `artifacts/nextgen/l8-sim/final-combined/all20-numeric-layout-changes.json`. It contains before/after field arrays, area/connectivity/free-component statistics and complete new plan annotations for all20 rooms. An explicit audit rejects changes to any template field outside width/height/spawn/exit/obstacles/breaches/boundary/voids. This complements the initial per-act sketches; it is the authoritative all20 final numeric layout diff.

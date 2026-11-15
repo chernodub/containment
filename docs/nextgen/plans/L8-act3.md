@@ -1,6 +1,6 @@
 # L8 Act 3 — replacement-standard implementation
 
-This packet supersedes the dormant round6 Act3 candidates. It follows the accepted replacement round9 standard at source `73d164e61af7c0d4172a7b189c319037e92d2d2e`. It is prospective until root integrates its map and presentation hook. No route, story, encounter, ability, actor, checkpoint, progression, input or UI fields changed.
+This packet supersedes the dormant round6 Act3 candidates. It follows the accepted replacement round9 standard at source `73d164e61af7c0d4172a7b189c319037e92d2d2e`. Root has integrated its plan and presentation hook. The initial pass changed no route, story, encounter, ability, actor, checkpoint, progression, input or UI fields. Later authorized layout/encounter balance corrections are recorded below and in `L8-simulation-verification.md`.
 
 ## Architectural language and semantic critique
 
@@ -8,7 +8,7 @@ Diagnostic Gallery is a working diagnostic nave between an instrument gallery an
 
 Safety-interlock Station has a port inspection floor, a double-ended interlock cage, recorder/AI booths off the north gallery and a battery-backed south return. The disconnected source mechanisms remain separate. A marine may cross the cage, skirt through the booths, or return south. Only the cage's two U-shaped ends are free solid components; they are both waist height. The cage doorways are 160 units wide, with a native-tested escape at either side.
 
-Coolant Plant has four hull-built pump banks, port/starboard service galleries and north/south headers. One low independent return manifold makes the loop and provides cover. The machinery is continuous pressure equipment with two pump barrels per bank, collars, supported bearings, headers and manual valves; it is no longer dozens of tiled isolated pump cells. Its source count is bounded by five live machine footprints.
+Coolant Plant has four hull-built pump banks, port/starboard service galleries and north/south headers. The final return manifold is split into two low160×100 banks with a160-unit cross-service route between them, so enemies and the marine can cross the loop directly. The machinery is continuous pressure equipment with two pump barrels per bank, collars, supported bearings, headers and manual valves; it is no longer dozens of tiled isolated pump cells. Its source count is bounded by six live machine footprints; both low return banks retain their machinery details.
 
 Service Shaft retains the exact accepted C cutout and all lift/counterweight/guide/sheave/sign assemblies. The upper and lower docking recesses make actual hull bays; the east mouth touches the hull. Its two 140+ lanes at each broad C elbow preserve separate escape routes without inventing a bridge over the shaft. The source floor grain, separate cassette material, shader hook/cache key, roof support semantics and exact-once disposal remain intact. New shell panels, outboard ribs and flush seam endpoints follow the actual polygon.
 
@@ -116,3 +116,26 @@ Shaft's declared radius144 arena moves170,440→170,170, the real upper-left doc
 Post-correction verification: Act3 strict checker five rooms all errors[]; ten owned source/render/native suites90 tests passed; ten Safety mixed-crowd targets passed; integrated Shaft framing case passed (all four arena modes). Root owns the other three global crowd failures and an exact rounded-corner navigation correction. Final all20 named-space attack/crowd/dense/replay reruns and matched40 cohorts are reported separately in `L8-simulation-verification.md` after that source freeze. No actors, abilities, encounters or policy were changed.
 
 The final committed-leg navigation rerun revealed a second, perfectly opposed Stalker pair above both the Relay spine and Safety cage. Layout asymmetry resolves it without touching actors: Safety's upper U moves16 units east (header516,332,280,12; legs516,344,24,56 and772,344,24,56), lower U remains fixed; its north Starboard opening starts812 rather than780, and its mounted inspection fixture moves512→528. Solid/walkable area and both doorways stay unchanged. Root also assigned Relay: central spine x590→606, Port named-space width390→406, Starboard x690→706/width390→374, matching north/south opening ends move16 units. Relay areas and anchors remain unchanged. The live Relay source-placement coordinate pin moves590→606; all original source-model, radius16/28/38 route, projectile-gap and lifecycle invariants remain. All19 affected mixed-crowd targets and380 isolated family/breach trials pass, as do89 source-fit/sightline/shot-gap/framing tests. Final strict all20 checker reports every errors array empty.
+
+
+## Adopted final balance layout9a44e60
+
+Final committed gameplay source: `9a44e604bf644b6cf0ab8b2637913e19ca3e4740`. Registry selects reviewed V1.1 for Coolant/Workshop and the proven rear-ingress map for Diagnostic/Safety. Failed V1, V1.1 and isolated Transmission diagnostic runs remain immutable evidence; the adopted source combines reviewed geometry with minimal explicitly authorized finite encounter appends. No policy, actor, ability or progression change was made.
+
+|Act3 room|Initial authored walkable→final|Final vs frozen baseline|Connected solid union|Free groups|
+|---|---:|---:|---:|---:|
+|Diagnostic|913600→913600|94.2244%|100%|0|
+|Safety|936544→936544|95.3322%|93.5882%|2|
+|Coolant|932800→958400|100.2510%|89.1892%|2|
+|Shaft|783600→783600|97.7057%|100%|0|
+|Workshop|921600→971200|102.4040%|100%|0|
+
+Coolant's160×360 return manifold at600,300 becomes two160×100 banks at600,300 and600,560. The new opening680,400→680,560 connects the service galleries. Their outlines become260,300,420,360 and680,300,420,360, with existing anchors unchanged. Machinery/floor/lighting are derived from these actual solids.
+
+Workshop port hull inset160→40 and northeast hull1120→1200 widen the former service galleries; the east hull notch remains actual architecture. The southwest workbench becomes40,800,420,200 instead of160,800,300,200, filling the one-ended120×200 rear strip with real bench machinery. This keeps its front playable at100,768 with independent R32 north/east escapes, rather than leaving a marine-only pocket. Four breaches become100,100 /1100,100 /80,730 /1180,720, with real hull feature mounts40,100 /1200,100 /0,730 /1280,720.
+
+Diagnostic rear-service breaches become600,80 /960,80 /456,880 /960,880, mounted at600,40 /960,40 /456,920 /960,920. Safety rear-service breaches become160,80 /1100,80 /360,880 /920,880, mounted at160,40 /1080,40 /360,920 /920,920. They preserve every existing source machine, warning display, floor, named-space anchor and cage opening. All raw/native-inward R32 and R38 anchors are legal; Act2's ingress proof covers them. Shaft geometry and exact C source remain unchanged.
+
+After failed layout-first pacing trials, Diagnostic requests27→29 (tail4230→4410ms) and Safety28→30 (4320→4500ms), two actual requests each. Caps15, first650ms, native families/elites, original requests/RNG order, six-request grouping and90ms within-burst spacing remain exact. Root also authorized the separately reported Transmission/Shielding appends; all other encounter numbers are unchanged.
+
+All20 final hardproof:13 files539 tests;20 strict checker errors arrays empty;165 mixed crowd targets3300 actors with0 unresolved;3300 actual native family trials pass;2275 dense marine positions/45500 family routes/2275 Spitter firing fields pass;4rig×20room replay equality;3 actual edge controls. Frozen final full-kit/cadence:2 files5 tests pass, unchanged cadence/ability-share/clear-time-spread guards. Geometry SHA `9a1a8d88ad7781d19ae09c25f47c39d530008d248677675c377a462c0b03be9c`; evidence under `artifacts/nextgen/l8-sim/final-combined/`. Root owns final dressed/calm/native art acceptance and hardware evidence; fixed160 final cohorts are running on the committed source. Historical plan PNGs above remain explicitly historical; root's final gallery is authoritative for the adopted geometry and new entrance locations.
