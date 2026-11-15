@@ -50,7 +50,7 @@ function plan(t,annotation){
  for(const [i,b]of t.breaches.entries()){dot(b,[246,100,67],5);const q=screen(b);drawText(image,String(i+1),q.x+7,q.y+1,[255,179,110],1);}dot(t.spawn,[114,235,237],6);dot(t.exit,[244,204,106],6);
  drawText(image,t.id,12,8,[220,232,233],2);drawText(image,`AREA ${area} / R32 ${clearanceArea}`,12,32,[167,191,196],1);
  drawText(image,'CYAN ENTRY / GOLD EXIT / ORANGE BREACH',12,50,[157,195,198],1);
- drawText(image,'GREEN OPENINGS 140 MIN / BLUE CIRCLE 9M',12,592,[124,224,180],1);
+ drawText(image,'GREEN CLEAR ROUTE SPANS 140 MIN / BLUE CIRCLE 9M',12,592,[124,224,180],1);
  if(annotation){const s=stats(t);drawText(image,`HULL SOLID ${Math.round(s.connectedFraction*100)} PCT / FREE GROUPS ${s.freeGroups}`,12,610,[210,223,220],1);
   annotation.breachFeatures.forEach((f,i)=>drawText(image,`${i+1} ${f.name}`,12+(i%2)*340,632+Math.floor(i/2)*16,[220,160,120],1));}
  const result={image,area,clearanceArea,g};cache.set(t,result);return result;

@@ -920,6 +920,9 @@ collision predicates to render top-down PNGs and all twenty old/new pairs. Dark
 floor is legal point space; lighter floor admits radius32; cyan/gold are native
 entry/exit, orange marks breaches and muted lines are unobstructed sightlines.
 The sampled area JSON is geometry evidence, not timing or a navigation proof.
+Green lines mark verified clear route spans. They may be lanes through one broad
+mouth or open circulation boundaries; they do not by themselves prove door jambs
+or separately enclosed rooms. Physical walls are the actual dark solid geometry.
 `tests/L8ArchitectureClearance.test.ts` separately checks continuous sweeps and
 largest-enemy margin, dense marine destinations and each native breach offset.
 
