@@ -1,0 +1,260 @@
+{
+  "name": "Containment original architectural foundation kit",
+  "license": "MIT",
+  "author": "Containment contributors",
+  "source": "tools/assets/e9-ship-kit/structure.py",
+  "rebuild": "blender -b --factory-startup -P tools/assets/e9-ship-kit/structure.py",
+  "coordinateSystem": "glTF Y-up, metres; bottom-centred origins, walls length along local X",
+  "description": "Original broad-cap cutaway bulkheads, closed jambs, threshold and quiet flush deck families.",
+  "ao": "12 deterministic BVH hemisphere rays per vertex, 0.28m distance; normalized AO COLOR_0 multiplier",
+  "materials": {
+    "e9-body": "#24343c",
+    "e9-ceramic": "#d5ded3",
+    "e9-trim": "#8faaa8",
+    "e9-dark": "#0e1820",
+    "e9-cyan": "#65d8e6",
+    "e9-amber": "#e0b95a",
+    "e9-green": "#71c793",
+    "e9-red": "#b96755",
+    "e9-floor-ceramic": "#a4b5ac",
+    "e9-floor-rubber": "#26353c",
+    "e9-floor-oxidised": "#6e7765",
+    "e9-yellow": "#c3ab59",
+    "e9-glass": "#9dcad1"
+  },
+  "models": [
+    {
+      "name": "wall-bulkhead",
+      "size": [
+        4.0,
+        1.2,
+        0.75
+      ],
+      "bounds": {
+        "min": [
+          -2.0,
+          0.0,
+          -0.375
+        ],
+        "max": [
+          2.0,
+          1.2,
+          0.375
+        ]
+      },
+      "triangles": 4552,
+      "primitives": 5,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "wall-bulkhead-low",
+      "size": [
+        4.0,
+        0.65,
+        0.75
+      ],
+      "bounds": {
+        "min": [
+          -2.0,
+          0.0,
+          -0.375
+        ],
+        "max": [
+          2.0,
+          0.65,
+          0.375
+        ]
+      },
+      "triangles": 4552,
+      "primitives": 5,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "wall-end-jamb",
+      "size": [
+        0.45,
+        1.2,
+        0.75
+      ],
+      "bounds": {
+        "min": [
+          -0.225,
+          0.0,
+          -0.375
+        ],
+        "max": [
+          0.225,
+          1.2,
+          0.375
+        ]
+      },
+      "triangles": 1620,
+      "primitives": 5,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "door-threshold",
+      "size": [
+        4.5,
+        0.04,
+        0.8
+      ],
+      "bounds": {
+        "min": [
+          -2.25,
+          0.0,
+          -0.4
+        ],
+        "max": [
+          2.25,
+          0.04,
+          0.4
+        ]
+      },
+      "triangles": 916,
+      "primitives": 5,
+      "materials": [
+        "e9-body",
+        "e9-dark",
+        "e9-floor-rubber",
+        "e9-trim",
+        "e9-yellow"
+      ]
+    },
+    {
+      "name": "deck-ceramic-panel",
+      "size": [
+        2.0,
+        0.06,
+        2.0
+      ],
+      "bounds": {
+        "min": [
+          -1.0,
+          0.0,
+          -1.0
+        ],
+        "max": [
+          1.0,
+          0.06,
+          1.0
+        ]
+      },
+      "triangles": 1636,
+      "primitives": 3,
+      "materials": [
+        "e9-dark",
+        "e9-floor-ceramic",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "deck-rubber-panel",
+      "size": [
+        2.0,
+        0.06,
+        2.0
+      ],
+      "bounds": {
+        "min": [
+          -1.0,
+          0.0,
+          -1.0
+        ],
+        "max": [
+          1.0,
+          0.06,
+          1.0
+        ]
+      },
+      "triangles": 1620,
+      "primitives": 3,
+      "materials": [
+        "e9-body",
+        "e9-dark",
+        "e9-floor-rubber"
+      ]
+    },
+    {
+      "name": "deck-oxidised-panel",
+      "size": [
+        2.0,
+        0.06,
+        2.0
+      ],
+      "bounds": {
+        "min": [
+          -1.0,
+          0.0,
+          -1.0
+        ],
+        "max": [
+          1.0,
+          0.06,
+          1.0
+        ]
+      },
+      "triangles": 1188,
+      "primitives": 4,
+      "materials": [
+        "e9-body",
+        "e9-dark",
+        "e9-floor-oxidised",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "floor-glass-channel",
+      "size": [
+        3.0,
+        0.1,
+        0.5
+      ],
+      "bounds": {
+        "min": [
+          -1.5,
+          0.0,
+          -0.25
+        ],
+        "max": [
+          1.5,
+          0.1,
+          0.25
+        ]
+      },
+      "triangles": 2228,
+      "primitives": 5,
+      "materials": [
+        "e9-body",
+        "e9-cyan",
+        "e9-dark",
+        "e9-glass",
+        "e9-trim"
+      ]
+    }
+  ],
+  "output": {
+    "file": "structure.glb",
+    "bytes": 625484,
+    "sha256": "b78816093467a775aa2fe94fee62c08cf6d31b07b19388353e3c7cbb42a998ec",
+    "triangles": 18312
+  }
+}

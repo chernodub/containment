@@ -7,35 +7,35 @@ import type {InteriorDeckChart} from './InteriorDeckGeometry';
 /** Direction for retained machinery; this module does not activate any room. */
 export const ACT2_INTERIOR_PROFILES: Record<string, InteriorProfile> = {
   'safety-interlock-station': {
-    kind: 'interlock', deck: 0x617079, zone: 0x87938e, trim: 0xb7c7c2, key: 0xb4d0cc,
+    kind: 'interlock', deck: 0x284754, zone: 0x456575, trim: 0xd8cda8, key: 0xd3b15c,
     landmark: 'Recorder and AI gallery behind the sealed interlock gate',
   },
   'coolant-plant': {
-    kind: 'coolant', deck: 0x526b68, zone: 0x788e82, trim: 0xa6bdb3, key: 0x9bcac8,
+    kind: 'coolant', deck: 0x9baf9d, zone: 0x748f7c, trim: 0x9ebfc2, key: 0x73cfbd,
     landmark: 'Paired horizontal pump banks with continuous valve headers',
   },
   'service-shaft-landing': {
-    kind: 'shaft', deck: 0x657077, zone: 0x8a918b, trim: 0xb5c2c3, key: 0xb5ccd2,
+    kind: 'shaft', deck: 0x5b5747, zone: 0x77705c, trim: 0xb8cbd0, key: 0xd8bd74,
     landmark: 'Open service shaft, docking balconies and local lift console',
   },
   'infested-workshop': {
-    kind: 'workshop', deck: 0x5c685f, zone: 0x766c68, trim: 0xa3aa98, key: 0xacba9b,
+    kind: 'workshop', deck: 0x4d424e, zone: 0x6d5967, trim: 0xabc3b0, key: 0xb6ca78,
     landmark: 'Lathe and wall gantry workbays consumed along their service seams',
   },
   'shielding-gate': {
-    kind: 'shielding', deck: 0x76818a, zone: 0xa2a9a3, trim: 0xbdcbd1, key: 0xbacbe0,
+    kind: 'shielding', deck: 0x333f5d, zone: 0x53627b, trim: 0xdfddc3, key: 0xb9a3e1,
     landmark: 'Offset shield banks framing the inspection scanner floor',
   },
   'containment-annulus': {
-    kind: 'annulus', deck: 0x76808a, zone: 0x949698, trim: 0xb8c0ce, key: 0xc4c6df,
+    kind: 'annulus', deck: 0xa6bcc3, zone: 0x809eaa, trim: 0xb6a9c6, key: 0xc1a7e2,
     landmark: 'Intact containment core surrounded by its inspection ring',
   },
   'manual-control-chamber': {
-    kind: 'manual-control', deck: 0x66686f, zone: 0x827f78, trim: 0xb8b6ac, key: 0xd2c6a9,
+    kind: 'manual-control', deck: 0x8f836a, zone: 0xaa9b7a, trim: 0xa2b6bd, key: 0xd6b268,
     landmark: 'Guarded authorization console beneath the observation aperture',
   },
   'overload-floor': {
-    kind: 'overload', deck: 0x686b6b, zone: 0x817b70, trim: 0xb0ada2, key: 0xd0c5a4,
+    kind: 'overload', deck: 0x23384c, zone: 0x3b5367, trim: 0xd1bea0, key: 0xf1d29e,
     landmark: 'Hot reactor core with reaction feed and exhaust galleries',
   },
 };

@@ -1,0 +1,515 @@
+"""Original Containment industrial ship furniture, MIT.
+
+Rebuild: Blender -b --factory-startup -P tools/assets/e9-ship-kit/industrial.py
+Use --hero-only for an early two-plenum export; --preview renders the hero.
+No external geometry, textures, fonts or procedural downloads are used.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import sys
+from pathlib import Path
+
+import bpy
+from mathutils import Vector
+from mathutils.bvhtree import BVHTree
+
+ROOT = Path(__file__).resolve().parents[3]
+OUT = ROOT / 'public/assets/e9-ship-kit/industrial'
+OUT.mkdir(parents=True, exist_ok=True)
+bpy.ops.object.select_all(action='SELECT')
+bpy.ops.object.delete(use_global=False)
+
+PALETTE = {
+    'e9-body': '#24343c', 'e9-ceramic': '#d5ded3', 'e9-trim': '#8faaa8',
+    'e9-dark': '#0e1820', 'e9-cyan': '#65d8e6', 'e9-amber': '#e0b95a',
+    'e9-violet': '#b286d1', 'e9-green': '#71c793',
+}
+MATERIALS = {}
+ASSETS = []
+CURRENT = None
+
+
+def linear(hex_color):
+    values = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+    return tuple(c / 12.92 if c <= .04045 else ((c + .055) / 1.055) ** 2.4 for c in values)
+
+
+for name, hex_color in PALETTE.items():
+    material = bpy.data.materials.new(name)
+    material.use_nodes = True
+    color = (*linear(hex_color), 1)
+    material.diffuse_color = color
+    shader = material.node_tree.nodes.get('Principled BSDF')
+    shader.inputs['Base Color'].default_value = color
+    shader.inputs['Metallic'].default_value = .52 if name in ('e9-body', 'e9-trim') else .06
+    shader.inputs['Roughness'].default_value = .43 if name == 'e9-body' else .36 if name == 'e9-trim' else .57
+    if name in ('e9-cyan', 'e9-amber', 'e9-violet', 'e9-green'):
+        shader.inputs['Emission Color'].default_value = color
+        shader.inputs['Emission Strength'].default_value = 3.2 if name == 'e9-violet' else 2.4
+    MATERIALS[name] = material
+
+
+def asset(name):
+    global CURRENT
+    CURRENT = bpy.data.objects.new(name, None)
+    bpy.context.collection.objects.link(CURRENT)
+    CURRENT['license'] = 'MIT'
+    CURRENT['originalAsset'] = True
+    ASSETS.append(CURRENT)
+    return CURRENT
+
+
+def finish(obj, role='e9-body', bevel=.025, smooth=True):
+    obj.parent = CURRENT
+    obj.data.materials.append(MATERIALS[role])
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    if bevel:
+        modifier = obj.modifiers.new('Manufactured edge radius', 'BEVEL')
+        modifier.width = bevel
+        modifier.segments = 2
+        modifier.affect = 'EDGES'
+        modifier.harden_normals = True
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+    for face in obj.data.polygons:
+        face.use_smooth = smooth
+    if smooth:
+        modifier = obj.modifiers.new('Weighted broad faces', 'WEIGHTED_NORMAL')
+        modifier.keep_sharp = True
+        modifier.weight = 35
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+    for layer in list(obj.data.uv_layers):
+        obj.data.uv_layers.remove(layer)
+    return obj
+
+
+def box(name, location, size, role='e9-body', bevel=.025):
+    bpy.ops.mesh.primitive_cube_add(size=1, location=location)
+    obj = bpy.context.object
+    obj.name = name
+    obj.scale = size
+    return finish(obj, role, min(bevel, min(size) * .22) if min(size) >= .04 else 0)
+
+
+def cylinder(name, location, radius, length, role='e9-trim', axis='Z', vertices=16, bevel=.015):
+    bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=length, location=location)
+    obj = bpy.context.object
+    obj.name = name
+    if axis == 'Y':
+        obj.rotation_euler[0] = math.pi / 2
+    elif axis == 'X':
+        obj.rotation_euler[1] = math.pi / 2
+    return finish(obj, role, min(bevel, radius * .16, length * .18))
+
+
+def sphere(name, location, scale, role='e9-dark', subdivisions=1):
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=subdivisions, radius=1, location=location)
+    obj = bpy.context.object
+    obj.name = name
+    obj.scale = scale
+    return finish(obj, role, 0)
+
+
+def ring(name, location, radius, tube=.025, role='e9-trim', axis='Y', segments=24):
+    bpy.ops.mesh.primitive_torus_add(major_segments=segments, minor_segments=4,
+                                   location=location, major_radius=radius - tube, minor_radius=tube)
+    obj = bpy.context.object
+    obj.name = name
+    if axis == 'Y':
+        obj.rotation_euler[0] = math.pi / 2
+    elif axis == 'X':
+        obj.rotation_euler[1] = math.pi / 2
+    return finish(obj, role, 0)
+
+
+def tube(name, coordinates, radius, role='e9-dark', radial=8):
+    """Smooth swept root/pipe, with thickness carried through every bend."""
+    controls = [Vector(p) for p in coordinates]
+    points = []
+    for i in range(len(controls) - 1):
+        p0, p1 = controls[max(0, i - 1)], controls[i]
+        p2, p3 = controls[i + 1], controls[min(len(controls) - 1, i + 2)]
+        for step in range(3):
+            t = step / 3
+            points.append((p1 * 2 + (p2 - p0) * t + (p0 * 2 - p1 * 5 + p2 * 4 - p3) * t * t +
+                           (-p0 + p1 * 3 - p2 * 3 + p3) * t * t * t) * .5)
+    points.append(controls[-1])
+    vertices, faces = [], []
+    for i, point in enumerate(points):
+        tangent = (points[min(len(points) - 1, i + 1)] - points[max(0, i - 1)]).normalized()
+        side = tangent.cross(Vector((0, 1, 0)))
+        if side.length < .1:
+            side = tangent.cross(Vector((0, 0, 1)))
+        side.normalize()
+        up = tangent.cross(side).normalized()
+        taper = 1 - .48 * i / max(1, len(points) - 1)
+        for j in range(radial):
+            angle = j * math.pi * 2 / radial
+            vertices.append(tuple(point + (side * math.cos(angle) + up * math.sin(angle)) * radius * taper))
+        if i:
+            for j in range(radial):
+                a, b = (i - 1) * radial + j, (i - 1) * radial + (j + 1) % radial
+                faces.append((a, b, i * radial + (j + 1) % radial, i * radial + j))
+    faces.extend([tuple(reversed(range(radial))), tuple((len(points) - 1) * radial + j for j in range(radial))])
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    return finish(obj, role, 0)
+
+
+def bolt(x, y, z):
+    cylinder('Captive service fastener', (x, y, z), .021, .012, 'e9-trim', 'Y', 8, 0)
+
+
+def chassis(width, depth, height, cutaway=False):
+    box('Connected cast plinth', (0, 0, .065), (width, depth, .13), 'e9-dark')
+    box('Rear machinery casing', (0, depth * .25, height / 2), (width - .08, depth * .47, height - .12))
+    box('Bright continuous cutaway cap', (0, 0, height - (.205 if cutaway else .055)), (width - .025, depth - .025, .11), 'e9-ceramic', .03)
+    for x in [-width / 2 + .065, width / 2 - .065]:
+        box('Structural end cheek', (x, 0, height / 2), (.13, depth - .04, height - .05), 'e9-body', .03)
+        box('Inlaid cheek trim', (x, -depth / 2 + .03, height * .5), (.065, .028, height * .62), 'e9-trim', .009)
+
+
+def instrument(x, y, z, color='e9-cyan', width=.22, height=.14):
+    box('Recessed instrument bezel', (x, y, z), (width + .065, .045, height + .055), 'e9-dark', .009)
+    box('Instrument phosphor', (x, y - .027, z), (width, .01, height), color, .002)
+    for n in range(2):
+        box('Quiet meter graduations', (x + .01, y - .033, z + (n - .5) * height * .35), (width * .58, .003, .009), 'e9-dark', 0)
+
+
+def pierced_panel(name, x, y, z, width, height, hole):
+    panel = box(name, (x, y, z), (width, .10, height), 'e9-ceramic', 0)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=hole, depth=.35, location=(x, y, z), rotation=(math.pi / 2, 0, 0))
+    cutter = bpy.context.object
+    modifier = panel.modifiers.new('Real recessed duct aperture', 'BOOLEAN')
+    modifier.operation, modifier.object = 'DIFFERENCE', cutter
+    bpy.context.view_layer.objects.active = panel
+    bpy.ops.object.modifier_apply(modifier=modifier.name)
+    bpy.data.objects.remove(cutter, do_unlink=True)
+    modifier = panel.modifiers.new('Duct panel soft edge', 'BEVEL')
+    modifier.width, modifier.segments = .022, 2
+    bpy.ops.object.modifier_apply(modifier=modifier.name)
+    return panel
+
+
+def plenum(name, height):
+    asset(name)
+    width, depth = 4.8, 1.4
+    chassis(width, depth, height, True)
+    radius = .285 if height < 1 else .405
+    z = .48 if height < 1 else 1.02
+    for index, x in enumerate([-1.55, 0, 1.55]):
+        pierced_panel('Three independent service duct faces', x, -.56, z, 1.34, radius * 2 + .13, radius)
+        cylinder('Deep black duct throat', (x, -.27, z), radius * .93, .04, 'e9-dark', 'Y', 24, 0)
+        ring('Raised annular duct lip', (x, -.635, z), radius + .025, .035)
+        ring('Inset gasket inside throat', (x, -.49, z), radius * .89, .015, 'e9-dark')
+        cylinder('Stationary fan hub', (x, -.34, z), radius * .17, .075, 'e9-trim', 'Y', 12)
+        for blade in range(5):
+            angle = blade * math.pi * 2 / 5
+            obj = box('Stopped wide impeller blade', (x + math.cos(angle) * radius * .43, -.36, z + math.sin(angle) * radius * .43),
+                      (radius * .78, .038, radius * .18), 'e9-body', .008)
+            obj.rotation_euler[1] = -angle + .22
+        for dx in [-.55, .55]:
+            bolt(x + dx, -.618, z + radius + .025)
+        if index != 1:
+            box('Human emergency diffuser', (x, -.616, height - .165), (.38, .025, .045), 'e9-amber', .008)
+    if height > 1:
+        for x in [-1.55, 0, 1.55]:
+            box('Lower access drawer', (x, -.46, .30), (1.32, .32, .34), 'e9-body')
+            box('Drawer recessed handle', (x, -.635, .34), (.34, .028, .055), 'e9-dark', .009)
+    for side in [-1,1]:
+        box('Lit manufactured end cap', (side*2.335, 0, height-.02), (.13, 1.4, .04), 'e9-trim', .012)
+    instrument(-1.90, -.653, .31, 'e9-cyan', .18, .12)
+    for x in [-1.55, 0, 1.55]:
+        box('Crown recessed inspection hatch', (x, .08, height - .137), (1.32, .87, .025), 'e9-dark', .008)
+        box('Three separated ceramic crown panels', (x, .08, height - .116), (1.20, .76, .025), 'e9-ceramic', .012)
+        box('Crown hatch recessed grip', (x, .23, height - .101), (.30, .065, .006), 'e9-dark', .002)
+    crown_paths = [
+        [(-2.12, .48, height-.12), (-1.72, .20, height-.12), (-.84, -.08, height-.10), (-.45, -.35, height-.18), (.24, -.57, height*.74)],
+        [(2.06, .48, height-.10), (1.72, .09, height-.10), (.95, -.10, height-.13), (.63, -.40, height-.20), (.48, -.60, height*.74)],
+    ]
+    for path in crown_paths:
+        path = [(x,y,min(z,height-.12)) for x,y,z in path]
+        tube('Root bundle breaks through the cutaway crown', path, .105)
+        tube('Visible crown violet vessel', [(x, y-.022, z+.036) for x,y,z in path], .014, 'e9-violet', 6)
+    for x,y in [(-1.1,-.07),(-.68,-.18),(1.20,.08)]:
+        sphere('Crown cyst body', (x,y,height-.10), (.27,.18,.085))
+        sphere('Crown cyst luminous aperture', (x+.018,y-.01,height-.038), (.065,.055,.026), 'e9-violet')
+    # Anchored bundled roots enter the machinery; they never become loose floor strands.
+    h = height / .95
+    paths = [
+        [(-2.23, -.36, .14), (-1.96, -.60, .29 * h), (-1.20, -.65, .73 * h), (-.57, -.36, .82 * h), (.26, -.11, .83 * h)],
+        [(2.22, -.26, .18), (1.98, -.61, .38 * h), (1.29, -.63, .69 * h), (.76, -.40, .78 * h), (.18, -.05, .85 * h)],
+        [(-.25, .46, .16), (-.38, .17, .48 * h), (-.51, -.29, .63 * h), (-.26, -.60, .72 * h), (.48, -.65, .74 * h)],
+    ]
+    for i, path in enumerate(paths):
+        path = [(x, max(-.57, y), z) for x, y, z in path]
+        tube('Embedded heavy root bundle', path, .095 if i < 2 else .073)
+        offset = [(x + .05, y + .032, min(height - .04, z + .045)) for x, y, z in path]
+        tube('Parallel rooting cable', offset, .045, 'e9-body')
+        tube('Sickly violet seam vessel', [(x, y - .025, min(height - .035, z + .025)) for x, y, z in path[1:]], .014, 'e9-violet', 6)
+    for i, (x, z) in enumerate([(-1.08, .67 * h), (-.55, .76 * h), (.58, .74 * h), (1.26, .68 * h), (1.72, .57 * h)]):
+        sphere('Cyst shell grown into metal', (x, -.62, z), (.16, .075, .13), 'e9-dark')
+        sphere('Violet cyst aperture', (x + .02, -.672, z + .015), (.070, .026, .061), 'e9-violet')
+
+
+def pump_skid():
+    asset('pump-skid')
+    chassis(3.5, 1.3, .9)
+    for x in [-.83, .83]:
+        cylinder('Horizontal pump motor', (x, -.12, .44), .285, .76, 'e9-body', 'Y', 20)
+        cylinder('Pump service face', (x, -.53, .44), .287, .075, 'e9-ceramic', 'Y', 20)
+        ring('Pump face gasket', (x, -.579, .44), .22, .025)
+        cylinder('Recessed pump centre', (x, -.58, .44), .146, .02, 'e9-dark', 'Y', 16, 0)
+        for offset in [-.27, .27]:
+            box('Vibration mount foot', (x + offset, -.08, .17), (.14, .86, .10), 'e9-trim', .02)
+        cylinder('Pump crown outlet', (x, -.03, .77), .10, .15, 'e9-trim')
+    tube('Shared lower return', [(-1.46, -.35, .25), (-1.46, -.49, .16), (1.46, -.49, .16), (1.46, -.35, .25)], .065, 'e9-trim')
+    instrument(0, -.56, .66, 'e9-green', .25, .15)
+    box('Pump row designation', (0, -.535, .40), (.24, .04, .17), 'e9-ceramic', .018)
+
+
+def pipe_manifold():
+    asset('pipe-manifold')
+    box('Manifold skid', (0, 0, .055), (3.2, .7, .11), 'e9-dark')
+    box('Mounted backing panel', (0, .24, .47), (3.12, .17, .86), 'e9-body')
+    cylinder('Continuous return manifold', (0, -.03, .46), .145, 2.92, 'e9-trim', 'X', 16)
+    for x in [-1.23, 0, 1.23]:
+        cylinder('Service elbow upright', (x, -.03, .66), .085, .34, 'e9-body')
+        cylinder('Valve bonnet', (x, -.17, .70), .12, .18, 'e9-ceramic', 'Y', 12)
+        ring('Open valve wheel', (x, -.29, .70), .145, .022, 'e9-trim')
+        for angle in [0, math.pi / 2]:
+            obj = box('Valve wheel spoke', (x, -.29, .70), (.24, .022, .023), 'e9-trim', .005)
+            obj.rotation_euler[1] = angle
+        cylinder('Saddle fixing', (x, .06, .20), .12, .13, 'e9-body')
+    instrument(.59, -.105, .72, 'e9-cyan', .22, .12)
+
+
+def cargo_bank(name, height):
+    asset(name)
+    chassis(3.2, 1.3, height)
+    for x in [-1.03, 0, 1.03]:
+        box('Restraint locker cassette', (x, -.16, height * .49), (.91, .78, height * .66), 'e9-body', .03)
+        box('Ceramic load panel', (x, -.57, height * .49), (.72, .055, height * .49), 'e9-ceramic', .025)
+        box('Load strap restraint', (x, -.61, height * .49), (.11, .035, height * .56), 'e9-dark', .012)
+        box('Captive strap ratchet', (x, -.626, height * .51), (.22, .045, .16), 'e9-trim', .018)
+        for side in [-1, 1]:
+            cylinder('Deck tiedown socket', (x + side * .33, -.46, .17), .07, .055, 'e9-trim', 'Z', 12)
+    instrument(-1.10, -.615, height - .20, 'e9-amber', .19, .09)
+
+
+def service_bay(name, reactor=False):
+    asset(name)
+    chassis(3.5, 1.2, .9)
+    chassis_parts = set(CURRENT.children)
+    if reactor:
+        for x in [-1.15, 0, 1.15]:
+            box('Feed regulator ceramic cassette', (x, -.19, .46), (.91, .79, .60), 'e9-ceramic', .035)
+            box('Expansion socket inset', (x, -.61, .46), (.72, .045, .42), 'e9-dark', .02)
+            for slot in range(4):
+                box('Regulator heat fin', (x + (slot - 1.5) * .16, -.638, .46), (.075, .04, .32), 'e9-trim', .01)
+            box('Human reactor status line', (x, -.645, .70), (.39, .025, .035), 'e9-amber', .006)
+        instrument(0, -.67, .23, 'e9-cyan', .23, .11)
+    else:
+        for x in [-1.10, 1.10]:
+            box('Shield coil cassette', (x, -.17, .45), (1.03, .79, .61), 'e9-body', .035)
+            box('Ceramic coil end shield', (x, -.60, .45), (.82, .055, .47), 'e9-ceramic', .028)
+            cylinder('Recessed shielding coupler', (x, -.64, .45), .18, .03, 'e9-dark', 'Y', 20, 0)
+            ring('Shield coil collar', (x, -.664, .45), .17, .022)
+            ring('Violet coupler charge', (x, -.671, .45), .113, .012, 'e9-violet', segments=20)
+        box('Central diagnostic plate', (0, -.19, .45), (.84, .79, .61), 'e9-ceramic')
+        instrument(0, -.624, .52, 'e9-cyan', .42, .20)
+        box('Guarded physical isolator', (0, -.63, .27), (.25, .055, .10), 'e9-dark', .018)
+    for obj in CURRENT.children:
+        if obj not in chassis_parts:
+            obj.location.y += .105
+
+
+def cable_tray():
+    asset('cabletray-open-cover')
+    box('Cable tray bottom', (0, 0, .012), (3, .8, .024), 'e9-dark', .005)
+    for y in [-.38, .38]:
+        box('Flush tray edge', (0, y, .059), (3, .04, .082), 'e9-trim', .008)
+    for x in [-1.47, 1.47]:
+        box('Tray end', (x, 0, .055), (.06, .76, .08), 'e9-body', .009)
+    for y in [-.23, -.07, .10, .24]:
+        tube('Visible sleeved cable', [(-1.39, y, .048), (-.54, y + .015, .050), (.36, y - .012, .048), (1.39, y, .048)], .024, 'e9-body', 6)
+        box('Cable bridge clamp', (.40, y, .074), (.06, .075, .025), 'e9-trim', .004)
+    box('Slid-open service lid', (-.88, 0, .089), (1.12, .69, .018), 'e9-ceramic', .004)
+    box('Recessed lid grip', (-.88, 0, .099), (.25, .11, .002), 'e9-dark', 0)
+
+
+def drain_grating():
+    asset('drainage-grating')
+    box('Wet channel bed', (0, 0, .012), (3, 1, .024), 'e9-dark', .005)
+    for y in [-.475, .475]:
+        box('Drain edge frame', (0, y, .066), (3, .05, .108), 'e9-body', .009)
+    for x in [-1.47, 1.47]:
+        box('Drain end frame', (x, 0, .066), (.06, .90, .108), 'e9-body', .009)
+    for y in [-.25, .25]:
+        cylinder('Visible pipe below grating', (0, y, .048), .030, 2.86, 'e9-trim', 'X', 10, 0)
+    for i in range(15):
+        box('Drain grating rib', (-1.34 + i * .192, 0, .105), (.055, .88, .03), 'e9-trim', .005)
+    box('Removable inspection crosspiece', (.04, 0, .106), (2.8, .052, .028), 'e9-body', .005)
+
+
+def merge_finishes(group):
+    buckets = {}
+    for obj in list(group.children):
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        buckets.setdefault(obj.data.materials[0].name, []).append(obj)
+    for role, objects in buckets.items():
+        bpy.ops.object.select_all(action='DESELECT')
+        for obj in objects:
+            obj.select_set(True)
+        bpy.context.view_layer.objects.active = objects[0]
+        if len(objects) > 1:
+            bpy.ops.object.join()
+        obj = bpy.context.object
+        obj.name = group.name + '--' + role
+        obj.parent = group
+        obj['finish'] = role
+
+
+def bake_ao(group):
+    """Bake eight geometric hemisphere rays into a stock COLOR_0 multiplier."""
+    vertices, polygons = [], []
+    for obj in group.children:
+        offset = len(vertices)
+        vertices.extend(tuple(vertex.co) for vertex in obj.data.vertices)
+        polygons.extend(tuple(offset + i for i in polygon.vertices) for polygon in obj.data.polygons)
+    tree = BVHTree.FromPolygons(vertices, polygons, epsilon=.0001)
+    for obj in group.children:
+        mesh = obj.data
+        colors = mesh.color_attributes.new(name='AO', type='BYTE_COLOR', domain='CORNER')
+        mesh.color_attributes.active_color = colors
+        mesh.color_attributes.render_color_index = 0
+        emitter = obj.data.materials[0].name in ('e9-cyan', 'e9-amber', 'e9-violet', 'e9-green')
+        values = []
+        for vertex in mesh.vertices:
+            if emitter:
+                values.append(1)
+                continue
+            normal = vertex.normal.normalized()
+            tangent = normal.cross(Vector((0, 0, 1)))
+            if tangent.length < .01:
+                tangent = normal.cross(Vector((0, 1, 0)))
+            tangent.normalize()
+            side = normal.cross(tangent).normalized()
+            occlusion = 0
+            for sample in range(8):
+                radius, angle = math.sqrt((sample + .5) / 8), sample * 2.399963229728653
+                direction = (tangent * (radius * math.cos(angle)) + side * (radius * math.sin(angle)) + normal * math.sqrt(1 - radius * radius)).normalized()
+                hit, _, _, distance = tree.ray_cast(vertex.co + normal * .006, direction, .45)
+                if hit is not None:
+                    occlusion += (1 - distance / .45) * .70
+            values.append(max(.48, 1 - occlusion / 8))
+        for loop in mesh.loops:
+            value = values[loop.vertex_index]
+            colors.data[loop.index].color = (value, value, value, 1)
+        mesh.update()
+
+
+def export_pack():
+    models = []
+    for group in ASSETS:
+        merge_finishes(group)
+        bake_ao(group)
+        points = [obj.matrix_world @ Vector(corner) for obj in group.children for corner in obj.bound_box]
+        lo = [min(p[i] for p in points) for i in range(3)]
+        hi = [max(p[i] for p in points) for i in range(3)]
+        triangles = 0
+        for obj in group.children:
+            obj.data.calc_loop_triangles()
+            triangles += len(obj.data.loop_triangles)
+        models.append({'name': group.name, 'dimensions': [round(hi[0] - lo[0], 4), round(hi[2] - lo[2], 4), round(hi[1] - lo[1], 4)],
+                       'bounds': {'min': [round(lo[0], 4), round(lo[2], 4), round(-hi[1], 4)],
+                                  'max': [round(hi[0], 4), round(hi[2], 4), round(-lo[1], 4)]},
+                       'triangles': triangles, 'materials': sorted({obj.data.materials[0].name for obj in group.children}),
+                       'primitives': len(group.children)})
+    bpy.ops.object.select_all(action='DESELECT')
+    for group in ASSETS:
+        group.select_set(True)
+        for obj in group.children:
+            obj.select_set(True)
+    path = OUT / 'kit.glb'
+    bpy.ops.export_scene.gltf(filepath=str(path), export_format='GLB', use_selection=True,
+                             export_yup=True, export_apply=True, export_extras=True,
+                             export_materials='EXPORT', export_vertex_color='ACTIVE',
+                             export_all_vertex_colors=False, export_animations=False,
+                             export_cameras=False, export_lights=False)
+    manifest = {'name': 'Containment original industrial ship kit', 'license': 'MIT',
+                'author': 'Containment contributors', 'source': str(Path(__file__).relative_to(ROOT)),
+                'rebuild': 'blender -b --factory-startup -P tools/assets/e9-ship-kit/industrial.py',
+                'coordinateSystem': 'glTF Y-up, metres; named group origins bottom-centred',
+                'description': 'Original low-cutaway ship machinery, embedded infestation and flush access surfaces; no external source art.',
+                'ao': 'Eight deterministic BVH hemisphere rays per vertex, .45m range; baked BYTE_COLOR AO exported as COLOR_0',
+                'materials': PALETTE, 'models': models,
+                'output': {'file': path.name, 'bytes': path.stat().st_size,
+                           'triangles': sum(model['triangles'] for model in models),
+                           'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}}
+    (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    (OUT / 'LICENSE.txt').write_text((ROOT / 'LICENSE').read_text())
+    bpy.context.preferences.filepaths.save_version = 0
+    bpy.ops.wm.save_as_mainfile(filepath=str(OUT / 'industrial.blend'))
+    print('E9_INDUSTRIAL_EXPORT ' + json.dumps(manifest['output']))
+
+
+def preview(whole_pack=False):
+    for index, group in enumerate(ASSETS):
+        if whole_pack:
+            group.location = ((index % 3 - 1) * 5.8, (1.5 - index // 3) * 3.4, 0)
+        for obj in group.children:
+            obj.hide_render = False if whole_pack else group.name != 'swarm-plenum-low'
+    scene = bpy.context.scene
+    scene.render.engine = 'CYCLES'
+    scene.cycles.samples = 24
+    scene.cycles.use_denoising = True
+    scene.render.resolution_x, scene.render.resolution_y = (1920, 1080) if whole_pack else (1280, 720)
+    scene.render.resolution_percentage = 100
+    scene.render.image_settings.file_format = 'PNG'
+    scene.world.color = (.035, .045, .055)
+    bpy.ops.mesh.primitive_plane_add(size=200, location=(0, 0, -.012))
+    ground = bpy.data.materials.new('PREVIEW ONLY neutral floor')
+    ground.diffuse_color = (.045, .058, .067, 1)
+    bpy.context.object.data.materials.append(ground)
+    for location, power, size in [((2, -5, 7), 1350, 5), ((-5, -1, 3), 700, 4), ((1, 5, 6), 1400, 4)]:
+        light = bpy.data.lights.new('PREVIEW ONLY softbox', 'AREA')
+        light.energy, light.shape, light.size = power * (5 if whole_pack else 1), 'DISK', size * (3 if whole_pack else 1)
+        obj = bpy.data.objects.new(light.name, light)
+        bpy.context.collection.objects.link(obj)
+        obj.location = tuple(v * 2.7 for v in location) if whole_pack else location
+        obj.rotation_euler = (Vector((0, 0, .45)) - obj.location).to_track_quat('-Z', 'Y').to_euler()
+    data = bpy.data.cameras.new('PREVIEW ONLY camera')
+    camera = bpy.data.objects.new(data.name, data)
+    bpy.context.collection.objects.link(camera)
+    camera.location = (15, -23, 24) if whole_pack else (6, -9, 6)
+    camera.rotation_euler = (Vector((0, 0, .40)) - camera.location).to_track_quat('-Z', 'Y').to_euler()
+    data.type, data.ortho_scale = 'ORTHO', 26 if whole_pack else 6.4
+    scene.camera = camera
+    scene.render.filepath = str(OUT / ('kit-preview.png' if whole_pack else 'hero-preview.png'))
+    bpy.ops.render.render(write_still=True)
+
+
+plenum('swarm-plenum-low', .95)
+plenum('swarm-plenum-tall', 1.7)
+if '--hero-only' not in sys.argv:
+    pump_skid()
+    pipe_manifold()
+    cargo_bank('cargo-restraintbank', .9)
+    cargo_bank('cargo-restraintbank-tall', 1.7)
+    service_bay('shielding-servicebay')
+    service_bay('reactor-servicebay', True)
+    cable_tray()
+    drain_grating()
+export_pack()
+if '--preview' in sys.argv or '--preview-pack' in sys.argv:
+    preview('--preview-pack' in sys.argv)

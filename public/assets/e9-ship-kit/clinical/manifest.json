@@ -1,0 +1,415 @@
+{
+  "name": "Containment original clinical ship kit",
+  "license": "MIT",
+  "author": "Containment contributors",
+  "source": "tools/assets/e9-ship-kit/clinical.py",
+  "rebuild": "blender -b --factory-startup -P tools/assets/e9-ship-kit/clinical.py",
+  "coordinateSystem": "glTF Y-up, metres; bottom-centred asset groups; front +Z",
+  "description": "Original diagnostics, cryogenic service, habitation and communications furnishings. No external source assets or fonts.",
+  "ao": "12 deterministic BVH hemisphere rays per vertex, .32m range; normalized AO COLOR_0 multiplier",
+  "marineReferenceHeightMetres": 2.05,
+  "materials": {
+    "e9-body": "#24343c",
+    "e9-ceramic": "#d5ded3",
+    "e9-trim": "#8faaa8",
+    "e9-dark": "#0e1820",
+    "e9-cyan": "#65d8e6",
+    "e9-amber": "#e0b95a"
+  },
+  "models": [
+    {
+      "name": "clinical-analyser",
+      "size": [
+        4.2,
+        0.95,
+        1.193
+      ],
+      "bounds": {
+        "min": [
+          -2.1,
+          0.0,
+          -0.6
+        ],
+        "max": [
+          2.1,
+          0.95,
+          0.593
+        ]
+      },
+      "triangles": 7028,
+      "primitives": 5,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "clinical-testbench",
+      "size": [
+        2.8,
+        0.897,
+        1.2
+      ],
+      "bounds": {
+        "min": [
+          -1.4,
+          0.0,
+          -0.6
+        ],
+        "max": [
+          1.4,
+          0.897,
+          0.6
+        ]
+      },
+      "triangles": 2584,
+      "primitives": 5,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "clinical-diagnostic-tower",
+      "size": [
+        1.6,
+        1.8,
+        0.9
+      ],
+      "bounds": {
+        "min": [
+          -0.8,
+          0.0,
+          -0.45
+        ],
+        "max": [
+          0.8,
+          1.8,
+          0.45
+        ]
+      },
+      "triangles": 1920,
+      "primitives": 5,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "cryo-service-console",
+      "size": [
+        2.5,
+        0.8975,
+        1.104
+      ],
+      "bounds": {
+        "min": [
+          -1.25,
+          0.0,
+          -0.55
+        ],
+        "max": [
+          1.25,
+          0.8975,
+          0.554
+        ]
+      },
+      "triangles": 2548,
+      "primitives": 5,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "comms-rack-low",
+      "size": [
+        1.8,
+        0.8885,
+        0.8795
+      ],
+      "bounds": {
+        "min": [
+          -0.9,
+          0.0,
+          -0.43
+        ],
+        "max": [
+          0.9,
+          0.8885,
+          0.4495
+        ]
+      },
+      "triangles": 2700,
+      "primitives": 6,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "comms-rack-tall",
+      "size": [
+        1.8,
+        1.7885,
+        0.8795
+      ],
+      "bounds": {
+        "min": [
+          -0.9,
+          0.0,
+          -0.43
+        ],
+        "max": [
+          0.9,
+          1.7885,
+          0.4495
+        ]
+      },
+      "triangles": 4320,
+      "primitives": 6,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "habitation-console-locker",
+      "size": [
+        2.4,
+        0.8975,
+        0.8
+      ],
+      "bounds": {
+        "min": [
+          -1.2,
+          0.0,
+          -0.4
+        ],
+        "max": [
+          1.2,
+          0.8975,
+          0.4
+        ]
+      },
+      "triangles": 1520,
+      "primitives": 5,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "habitation-berth",
+      "size": [
+        2.4085,
+        0.66,
+        1.1735
+      ],
+      "bounds": {
+        "min": [
+          -1.2085,
+          0.0,
+          -0.575
+        ],
+        "max": [
+          1.2,
+          0.66,
+          0.5985
+        ]
+      },
+      "triangles": 1080,
+      "primitives": 5,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "habitation-desk",
+      "size": [
+        1.65,
+        0.918,
+        1.058
+      ],
+      "bounds": {
+        "min": [
+          -0.825,
+          0.0,
+          -0.41
+        ],
+        "max": [
+          0.825,
+          0.918,
+          0.648
+        ]
+      },
+      "triangles": 2060,
+      "primitives": 5,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "deck-access-panel",
+      "size": [
+        2.0,
+        0.04,
+        2.0
+      ],
+      "bounds": {
+        "min": [
+          -1.0,
+          0.0,
+          -1.0
+        ],
+        "max": [
+          1.0,
+          0.04,
+          1.0
+        ]
+      },
+      "triangles": 652,
+      "primitives": 3,
+      "materials": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "deck-rubber-panel",
+      "size": [
+        2.0,
+        0.034,
+        2.0
+      ],
+      "bounds": {
+        "min": [
+          -1.0,
+          0.0,
+          -1.0
+        ],
+        "max": [
+          1.0,
+          0.034,
+          1.0
+        ]
+      },
+      "triangles": 264,
+      "primitives": 2,
+      "materials": [
+        "e9-body",
+        "e9-dark"
+      ]
+    },
+    {
+      "name": "fixture-glass-strip",
+      "size": [
+        1.6,
+        0.089,
+        0.14
+      ],
+      "bounds": {
+        "min": [
+          -0.8,
+          0.0,
+          -0.07
+        ],
+        "max": [
+          0.8,
+          0.089,
+          0.07
+        ]
+      },
+      "triangles": 380,
+      "primitives": 4,
+      "materials": [
+        "e9-body",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "clinical-scanner-arch",
+      "size": [
+        8.7,
+        2.6,
+        1.2
+      ],
+      "bounds": {
+        "min": [
+          -4.35,
+          0.0,
+          -0.6
+        ],
+        "max": [
+          4.35,
+          2.6,
+          0.6
+        ]
+      },
+      "triangles": 5728,
+      "primitives": 5,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ]
+    }
+  ],
+  "scannerArch": {
+    "asset": "clinical-scanner-arch",
+    "clearWidthMetres": 8.06,
+    "minimumOverheadHeightMetres": 2.22,
+    "supportCentresX": [
+      -4.195,
+      4.195
+    ],
+    "supportWidthMetres": 0.31,
+    "supportDepthMetres": 1.2,
+    "supportInnerFacesX": [
+      -4.04,
+      4.04
+    ]
+  },
+  "output": {
+    "file": "clinical.glb",
+    "bytes": 758508,
+    "sha256": "49c2c038206155e6468f6870634c2896acbca173480bf6a4453def956ab07486",
+    "triangles": 32784
+  }
+}

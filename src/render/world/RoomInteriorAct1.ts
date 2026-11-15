@@ -7,39 +7,39 @@ import type {InteriorDeckChart} from './InteriorDeckGeometry';
 /** Room direction for the first nine interiors. Existing native landmarks stay owned by their builders. */
 export const ACT1_INTERIOR_PROFILES:Record<string,InteriorProfile> = {
   'awakening-bay': {
-    kind:'cryo-recovery', deck:0x65737b, zone:0x82979b, trim:0xabc4c6, key:0xb4e1ea,
+    kind:'cryo-recovery', deck:0x203d49, zone:0x355461, trim:0xe2e4ce, key:0x8cdbef,
     landmark:'Released berth and sealed cryo bank beside the recovery observation floor',
   },
   'passenger-vault': {
-    kind:'cryo-inspection', deck:0x61737b, zone:0x8a9b9c, trim:0xb5c8c5, key:0xa7dbe2,
+    kind:'cryo-inspection', deck:0x333e5b, zone:0x4d5974, trim:0xd8e4d7, key:0x82d0c3,
     landmark:'Paired occupied cryo banks and their life-sign inspection consoles',
   },
   'residential-gallery': {
-    kind:'domestic-gallery', deck:0x72776b, zone:0x8e8b75, trim:0xb4b299, key:0xe2c6a1,
+    kind:'domestic-gallery', deck:0x655344, zone:0x8e7658, trim:0xc9d7c5, key:0xe4ba7d,
     landmark:'Six open-front arrival cabins with made berths, writing desks and silent radios',
   },
   'communal-atrium': {
-    kind:'communal-dining', deck:0x74786a, zone:0x94937c, trim:0xbab49b, key:0xdfc7a4,
+    kind:'communal-dining', deck:0x765c4b, zone:0x9b8262, trim:0x9fbba5, key:0xe4c37d,
     landmark:'Shared dining table and conservatory garden against the abandoned galley frontage',
   },
   'armory': {
-    kind:'ordnance', deck:0x646e73, zone:0x85877a, trim:0xa9b4ae, key:0xd3e0dc,
+    kind:'ordnance', deck:0x26364e, zone:0x3e5170, trim:0xdce0ba, key:0xd8bf73,
     landmark:'Secured radial rifle carousel inside the horseshoe issue and maintenance counter',
   },
   'freight-hold': {
-    kind:'freight', deck:0x72766b, zone:0x97927a, trim:0xb8b69d, key:0xd6c59f,
+    kind:'freight', deck:0x786844, zone:0x9a875b, trim:0x9bb5bf, key:0xe2bf73,
     landmark:'Heavy stacked colony freight banks and the enclosed loading control booth',
   },
   'breached-loading-bay': {
-    kind:'docking', deck:0x70766f, zone:0x8f8a78, trim:0xb1b5a4, key:0xd2c5a8,
+    kind:'docking', deck:0x3c5665, zone:0x5c7782, trim:0xd2c6a4, key:0xd6b17a,
     landmark:'Retained diagonal hull scar and torn metal along the repaired docking trunk',
   },
   'relay-racks': {
-    kind:'data-relay', deck:0x607178, zone:0x7c918d, trim:0xa1b8b3, key:0xa5d9d1,
+    kind:'data-relay', deck:0x322f3e, zone:0x4d4658, trim:0xc4d9cb, key:0x74d4b8,
     landmark:'Paired hull-backed relay rack banks and the long central service spine',
   },
   'transmission-chamber': {
-    kind:'uplink', deck:0x64747a, zone:0x82958f, trim:0xa5bcb4, key:0xb0dcd0,
+    kind:'uplink', deck:0x4d3d53, zone:0x6f5872, trim:0xddd4b6, key:0x8bd8ce,
     landmark:'Elevated uplink dish behind the staggered chancel screens and transmission nave',
   },
 };

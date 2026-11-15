@@ -1,3 +1,5 @@
+import {attachOriginalRoomInteriors} from './world/OriginalRoomInteriors';
+import {INTERIOR_ROOMS} from './world/RoomInteriors';
 import {buildRoomInteriors} from './world/RoomInteriors';
 import {actorImpact,actorDeathCue,enemyMotionAim} from './motion/MotionEvents'; // M9 presentation-only routing
 import {act3ShipPresentation,ACT3_PRESENTATION_ROOMS} from './world/Act3ShipPresentation';
@@ -204,7 +206,7 @@ export class DepthRenderer {
  }
  private buildAhead(node:RunNode):T.Group|null{
   const t=ROOM_TEMPLATES[node.templateId],environment=shipEnvironment(node.templateId)??(node.templateId==='reactor-vault'?'reactor':'cryogenics');
-  if(KIT_STANDARD_ROOMS.has(node.templateId))prepareKitAssets(environment);
+  if(KIT_STANDARD_ROOMS.has(node.templateId)&&!INTERIOR_ROOMS.has(node.templateId))prepareKitAssets(environment);
   const root=this.buildRoomArchitecture(node,t);
   if(root){batchStaticRoom(root);applyRoomMood(root,environment,node.templateId);this.materialWarmup.register(root);}
   // Link the retained shared shaders against the future light topology without
@@ -491,7 +493,10 @@ export class DepthRenderer {
   this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.roomCombatFraming?.reset();this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.world.userData.staticBatching=batchStaticRoom(this.world);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId,this.lighting.practicalShapes);
   const leaks=this.world.getObjectByName('g2-world-dressing')?.userData.leakPositions??[];this.world.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial)setFloorLeaks(material,leaks);});
   const mood=getEnvironmentMood(environment);this.scene.fog=new T.FogExp2(mood.fog.color,mood.fog.density*.25);this.scene.background=new T.Color(mood.fog.color).multiplyScalar(.24);this.scene.environmentIntensity=mood.reflectionIntensity;this.post?.setMood(mood);this.atmosphere?.loadRoom(environment,w,h,this.lighting.fixtures);this.backdrop?.loadRoom(this.world,w,h,environment);this.arena?.loadRoom(node.templateId,w,h);this.post?.distortion.clear();this.heatClock=0;
-  if(this.kitStartupComplete&&this.gameplayPresentationStarted&&KIT_STANDARD_ROOMS.has(node.templateId)){const kitWorld=this.world;this.kitDressing=attachRoomKits(kitWorld,t,this.roomEnvironment,node.templateId,()=>{if(this.world!==kitWorld)return;applyRoomMood(kitWorld,this.roomEnvironment,node.templateId,this.lighting.practicalShapes);staticLoaded();},this.residentialGalleryEquipment?.ready);}
+  if(this.kitStartupComplete&&this.gameplayPresentationStarted&&KIT_STANDARD_ROOMS.has(node.templateId)){
+   const kitWorld=this.world,changed=()=>{if(this.world!==kitWorld)return;if(INTERIOR_ROOMS.has(node.templateId))this.lighting.loadRoom(kitWorld,w,h,this.roomEnvironment,node.templateId);applyRoomMood(kitWorld,this.roomEnvironment,node.templateId,this.lighting.practicalShapes);staticLoaded();};
+   this.kitDressing=INTERIOR_ROOMS.has(node.templateId)?attachOriginalRoomInteriors(kitWorld,t,changed,Promise.all([this.passengerVault?.ready,this.communalGarden?.ready,this.residentialGalleryEquipment?.ready])):attachRoomKits(kitWorld,t,this.roomEnvironment,node.templateId,changed,this.residentialGalleryEquipment?.ready);
+  }
   const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged||this.kitStartupComplete&&this.gameplayPresentationStarted&&!this.interimAbilities.kit?.atlas.loaded))this.queueRoomWarmup();
  }
  private roomSeed(id:string){let seed=2166136261;for(let i=0;i<id.length;i++)seed=Math.imul(seed^id.charCodeAt(i),16777619);return seed>>>0;}

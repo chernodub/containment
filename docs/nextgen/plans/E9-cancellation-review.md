@@ -1,0 +1,9 @@
+# E9 manual kit-cancellation playthrough
+
+2026-11-15, production `dist/`, one headless Chromium browser using the capture harness's Metal flags and `/containment/?debug=1&seed=1729` at 1280×720. Temporary Playwright script lived in `/private/tmp`; no test or capture assertion was added or changed.
+
+- **Original owner / Diagnostic Gallery:** held both actual original-kit GLB requests while public `debug.gotoRoom` had the owner in `loading` and `renderer.roomLoading=true`. Called `game.menu()` and `debug.refresh()`, allowed two native RAFs, then observed the saved owner `disposed`, no current owner and no original or legacy kit root attached. Released the requests. The next same-page `gotoRoom` completed with owner `ready`, `roomLoading=false` and the original kit attached. Console errors: 0; failed requests: 0.
+- **Legacy CC0 owner / Awakening Bay:** repeated with two actual CC0 GLB requests held. After menu plus two RAFs: owner `disposed`, no current owner and no kit root attached. Released responses; next same-page load completed `ready`, `roomLoading=false`, with the legacy kit attached. Console errors: 0; failed requests: 0.
+- **Genuine failure remains visible:** on a separate fresh page, returned an intentional HTTP 404 for `clinical/clinical.glb`. Owner settled to `fallback` with `Error: Original clinical ship kit HTTP 404`; the browser reported the HTTP failure and the owner emitted `Original ship interiors failed ... HTTP 404` through `console.error`.
+
+The immediate synchronous menu call precedes disposal; the production application disposes the owner on its next RAF. The cancellation observations above were taken after that lifecycle boundary and before releasing any held kit response. All pages, context, browser and temporary HTTP server closed normally before handing the browser reservation back.

@@ -15,8 +15,6 @@ import {addKitPerimeter} from './KitPerimeter';
 import {addKitFootprintClusters} from './KitFootprintClusters';
 import {acquireRoomKit,roomKitURLs} from './RoomKitAssets';
 import {kitBoundsSupported,kitHull,kitMarineSamples,kitOccludesMarine,kitMeshOccludesMarine,kitOccludesStory} from './KitSafety';
-import {addInteriorKitClusters,type InteriorKitClusterProof} from './InteriorKitClusters';
-import type {InteriorProof} from './RoomInteriors';
 
 export const KIT_STANDARD_ROOMS=new Set<string>([...ROOM_STORY_ROUTE.map(room=>room.templateId),'reactor-vault']);
 export type KitPlacement={model:string;position:number[];size:number[];angle:number;purpose:string;bounds:number[][];meshChecked?:boolean};
@@ -103,9 +101,6 @@ export function buildRoomKitDressing(world:T.Group,t:RoomTemplate,env:ShipEnviro
  const pipe=(a:T.Vector3,b:T.Vector3,r:number,role='dark')=>{
   const g=new T.CylinderGeometry(r,r,a.distanceTo(b),8).applyQuaternion(new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),b.clone().sub(a).normalize())).translate(...a.clone().add(b).multiplyScalar(.5).toArray());g.computeBoundingBox();if(boundsSafe(g.boundingBox!))push(g.toNonIndexed(),role);g.dispose();
  };
- // Reserve the function-specific furnishings before optional story clutter can
- // consume the existing room triangle budget. They join the same role batches.
- root.userData.interiorKitClusters=addInteriorKitClusters(world,id,env,place);
  const connectedCabins=id==='residential-gallery',architected=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,id),feedFor=architected?kitEquipmentFeeds(t):undefined;
  const equipmentFeeds:{reservation:number;reason:string;path:readonly {x:number;y:number}[]}[]=[];
  const primary=equipmentReservations(t,id),reservations=primary.length?primary:equipmentReservations(t,'e6-'+id);
@@ -233,9 +228,6 @@ export function attachRoomKits(world:T.Group,t:RoomTemplate,env:ShipEnvironment,
    if(!active)return;
    root=buildRoomKitDressing(world,t,env,id,results.flatMap(result=>result.status==='fulfilled'?[result.value]:[]));
    if(env==='habitation'&&id==='residential-gallery'){const original=world.getObjectByName('residential-gallery-equipment');if(original&&root.userData.majorCabinForms>=6)hide(original);}
-   const fallback=world.getObjectByName('e9-furnishing-fallback'),clusters=root.userData.interiorKitClusters as InteriorKitClusterProof[];
-   const interior=world.getObjectByName('e9-room-interiors')?.userData.interior as InteriorProof|undefined;
-   if(fallback&&interior&&interior.floor.length>0&&interior.floor.every(floor=>clusters.some(cluster=>cluster.space===floor.name&&cluster.accepted.length>=3)))hide(fallback);
    
    owner.state='ready';onChanged();
   }finally{retireSources();}

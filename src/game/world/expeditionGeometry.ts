@@ -1,3 +1,4 @@
+import {shipInteriorFurnishings} from '../roguelike/shipInteriorFurnishings';
 import type { Point, Rect, RoomTemplate, RunNode } from '../roguelike/types';
 import { ROOM_TEMPLATES } from '../roguelike/roomTemplates';
 import type { FacilityBreach, QueenArena } from './facilityLayout';
@@ -42,7 +43,7 @@ export function createRoomTemplateGeometry(template:RoomTemplate,nodeId:string):
     facing: point.x < width / 2 ? 'east' as const : 'west' as const,
   })));
   return Object.freeze({
-    bounds, boundaryWalls, blockers: Object.freeze([...boundaryWalls, ...template.obstacles]),
+    bounds, boundaryWalls, blockers: Object.freeze([...boundaryWalls, ...template.obstacles,...shipInteriorFurnishings(template).flatMap(f=>f.colliders)]),
     boundary: template.boundary, voids: paritySafeVoids(template.voids),
     breaches, playerSpawn: template.spawn, exitPoint: template.exit, bossSpawn,
     queenArena: Object.freeze({ ...bounds, roomId: nodeId, safeCenter: bossSpawn, safeRadius: 180 }),

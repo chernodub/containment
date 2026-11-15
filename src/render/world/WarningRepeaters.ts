@@ -50,9 +50,14 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  };
  const tray=(a:T.Vector3,b:T.Vector3,y=ceiling)=>{
   const dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz);if(length<.01)return;
-  const alongX=Math.abs(dx)>Math.abs(dz),x=(a.x+b.x)/2,z=(a.z+b.z)/2;
-  beam('service-tray-web',x,y,z,alongX?length:.38,.12,alongX?.38:length);
-  for(const side of [-1,1])beam('service-tray-flange',x+(alongX?0:side*.22),y+.15,z+(alongX?side*.22:0),alongX?length:.055,.24,alongX?.055:length);
+  const alongX=Math.abs(dx)>Math.abs(dz),sections=Math.ceil(length/1.25),span=length/sections;
+  // Cut away a local carrier section above an actor, not the whole room-long
+  // web while leaving its cross-ribs suspended in empty space.
+  for(let n=0;n<sections;n++){
+   const f=(n+.5)/sections,x=a.x+dx*f,z=a.z+dz*f;
+   beam('service-tray-web',x,y,z,alongX?span:.38,.12,alongX?.38:span);
+   for(const side of [-1,1])beam('service-tray-flange',x+(alongX?0:side*.22),y+.15,z+(alongX?side*.22:0),alongX?span:.055,.24,alongX?.055:span);
+  }
   const count=Math.max(1,Math.ceil(length/3.0));for(let j=0;j<count;j++){const f=(j+.5)/count;beam('tray-cross-rib',a.x+dx*f,y+.20,a.z+dz*f,alongX?.045:.46,.055,alongX?.46:.045);}
  };
  const lampColor=id==='diagnostic-gallery'?0xb4dee5:id==='safety-interlock-station'?0xe5c99c:0xffad61;m.signal.color.setHex(lampColor);m.signal.emissive.setHex(lampColor);
