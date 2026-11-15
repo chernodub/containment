@@ -140,3 +140,48 @@ Combined hardproof:13 files539 tests pass; strict20 rooms errors[].165 mixed nam
 
 
 Every numeric template change from frozen baseline to adopted9a44 is also recorded directly from the actual loaded simulation DTOs in `artifacts/nextgen/l8-sim/final-combined/all20-numeric-layout-changes.json`. It contains before/after field arrays, area/connectivity/free-component statistics and complete new plan annotations for all20 rooms. An explicit audit rejects changes to any template field outside width/height/spawn/exit/obstacles/breaches/boundary/voids. This complements the initial per-act sketches; it is the authoritative all20 final numeric layout diff.
+
+
+## Primary subset and Pyro paired diagnosis
+
+The unchanged9a44 primary40 finishes26/40 (65%), B70/C70/P40/A80%, maximum rig distance25pp/range40pp. Strict ordinary29.6333s still misses30; Transmission63.725s now passes. Median rooms/OD1.35714; all terminals natural, firstfive all clear, ordinary cap0. These primary figures are not release acceptance: the declared remaining120 continue on the identical source regardless of this subset's outcome. Full subset table: `artifacts/nextgen/l8-sim/final-primary-comparison.{json,md}`.
+
+Root requested a cheap read-only paired Pyro comparison against V1.1, without new simulation jobs. Same-policy/same-boon rows identify Safety as the strongest local ingress suspect:9 common pairs, mean incoming+38.42 (other rigs B+16.0/C+6.7/A+10.1), median direct ability share25.79→20.61%, despite power casts2.5→3 and tactical4→5. Shield adds mean12.80 incoming across7 pairs but ability share rises24.02→26.41% and accepted casts stay stable. Crew incoming improves1.61; Diagnostic improves8.41 overall despite seed65537's earlier death. Residential adds4.78 mean incoming across10 pairs and has some early carry divergences. These are paired descriptive results, not proof that rear doors alone cause each death: the four count appends are also changed in9a44.
+
+V1.1 Pyro completions lost in the primary subset are seed137 (complete→death20) and2026 (complete→death16). Seed65537 was already a noncompletion at20 and now dies11. Unchanged Swarm has the largest downstream incoming jump, mean+47.50 across9 paired entries despite mean entry vitality+14.88; its direct ability share stays23.33→23.36%. Seed2026 takes172 additional damage in Swarm after Diagnostic/Safety actually improve its prior condition, so a single local-ingress attribution would be false. Full room/seed/entry-vitality/damage/cast data: `artifacts/nextgen/l8-sim/pyro-v11-final-primary-analysis.{json,md}`.
+
+Final vanilla reports do not contain ready/denied/LOS observation counters; none are inferred. V1.1's retained observer shows power ready-with-visible-but-no-aim0 in all five changed rooms; API denials mix same-frame cast timing and are not pure geometry failures. If the complete fixed160 fails, Safety's original four doors are the first layout-only revert hypothesis, retaining its reviewed architecture and two real appended requests. No revert or extra cohort is selected while fixed validation runs.
+
+
+## Independent plan qualification withheld
+
+`L8-final-plan-review.md` atcf6708d finds genuine semantic blockers in the9a44 architecture: Diagnostic and Workshop declare open floor spans as openings without real separating partitions; Safety calls an open equipment gallery two booths. Root agrees and has assigned dormant real-partition proposals to Act2, with all existing source/clearance/area/arena guarantees retained. My earlier Act3 semantic critique overstated the separation. Strict geometry/navigation passes remain valid evidence of their stated invariants, but they do not establish a physically authored ship plan. The current fixed160 continues and remains a complete retained packet regardless of these issues. No live change is permitted during it, no final art/balance acceptance is implied, and further geometry waits for root review.
+
+
+## Complete retained9a44 N160 result — failed acceptance
+
+All320 paired before/after reports validate the exact declared40 seeds per rig, committed game source, vanilla backend/metrics, frozen policy, unassisted/current-story flags and single bundle per profile. Both source batches have fully exited; no worker remains. Final packet: `artifacts/nextgen/l8-sim/final160-comparison.{json,md}` with per-report SHA receipts, primary/additional/combined tables and every rig/all20 room debt/cast/timing records. All raw runs remain in their original directories.
+
+|Rig|Before complete|After complete|Before ordinary / Tx seconds|After ordinary / Tx seconds|Before→after rooms/OD|
+|---|---|---|---|---|---|
+|breacher|19/40|22/40|33.533 / 73.983|31.917 / 65.200|1.429→1.429|
+|cryo|30/40|32/40|36.400 / 78.867|33.133 / 73.342|1.429→1.357|
+|pyro|14/40|22/40|28.733 / 59.650|27.533 / 55.700|1.364→1.387|
+|arc|25/40|30/40|29.917 / 60.650|27.783 / 58.925|1.429→1.429|
+
+Pooled completion88/160 (55%)→106/160 (66.25%), **fails** the40–60% target. Maximum rig distance20→13.75pp now **passes**15pp; max–min range40→25pp remains explicitly visible. The complete sample supersedes the primary subset's misleading Pyro spread. Pooled strict ordinary32.175→29.8833s still **fails**30–45s; Transmission67.4417→61.5167s passes60–75. All four rig cadence medians pass1.2–1.7; pooled1.428571 both profiles. Ordinary OD-cap violations0; every firstfive room160/160 clears. Terminals after106 complete/54 dead, with no errors/censors; deaths10:1,11:1,12:1,14:3,15:4,16:6,17:10,18:9,19:1,20:18. All frozen full-kit guards pass separately (ability32.60–42.34%, spread1.203841×). Campaign direct ability22.4107→23.9213% and ability+status30.6282→32.6636% remain separate labeled buckets.
+
+In the complete sample, Diagnostic30.7167s, Safety34.7167s and Workshop35.8833s meet the ordinary target locally. The pooled median includes fast early rooms: Residential28.15s, Checkpoint29.2333s, Freight29.0917s, Loading28.65s and welcoming rooms1/2/4. A Safety-only easing revert is **not selected**; it would respond to a primary-subset imbalance that the complete sample does not establish. Root retains the current eight appended requests and has selected no further composition/count changes.
+
+Ship-wide semantic acceptance is independently withheld by cf6708d. The next work is Act2's dormant real-bay partition proposal and root's plan review, with no source changes during the completed measurement. For the next reviewed committed geometry, root explicitly authorizes one vanilla fixed160 queue with four simulation workers (Vitest remains MAX_WORKERS2), identical frozen reference files and the same40 seeds. No further seed extension, outcome-dependent stopping or FPS certification while workers remain active is allowed. No next cohort has launched yet.
+
+
+## Predeclared next fixed160 dispatch — source pending review
+
+The unchanged vanilla runner permits only1 or2 workers. Root therefore selects two balanced80-attempt queues, each with two workers, instead of changing any frozen backend file. Split the original ordered40-seed declaration by index parity, preserving exactly40 matched seeds per rig overall. This split is committed before outcomes from the new semantic proposal; no new source/cohort launches until Act2 proof and root review/freeze.
+
+QueueA (even indexes0,2,…38): 1729,31415,137,2026,65537,1000,1002,1004,1006,1008,2646007777,1420519048,3293539470,3031516705,3763819556,2570684887,676147701,1576486972,1190535481,3344254954.
+
+QueueB (odd indexes1,3,…39): 2718,42,8675309,9001,123456,1001,1003,1005,1007,1009,2400273476,926231573,302625857,315632507,1353316589,2825160470,1074335564,719510212,3640216177,2595108862.
+
+Each queue runs all four rigs,20 seeds each,80 attempts. Both run simultaneously: four CPU workers total, unchanged vanilla backendf7c6d801…/policy976eb173…, same observers/actors; Vitest remains MAX_WORKERS2. Combined outcomes from all160 attempts are mandatory, without early outcome-dependent stopping. No FPS certification while either queue is active. The exact dispatch manifest is `artifacts/nextgen/l8-sim/next-fixed160-dispatch.json`. Root has selected no further encounter/count change; the next candidate must first resolve actual physical subspace/threshold semantics.
