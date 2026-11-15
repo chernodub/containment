@@ -112,7 +112,7 @@ The Queen (`reactor-vault`) is **legacy saves only**. New runs use the twenty-ro
 
 ## Final galleries and Part B acceptance
 
-Capture labels: `i11-1080-batch-00..27`, selected `i11-720` / `i11-720-lawful` / `i11-720-compact` batches, plus `i11-duration-1080` and `i11-duration-720`. Both final galleries contain **1,042 guarded native images**, including all 739 final4 frames and wave7 additions. Each has 174 exact480 review pages, native metadata and source receipts. All accepted captures have zero runtime errors and retain native action, phase, family, priority, marine/HUD/AABB and shader-compile guards. Two compact family fixture attempts failed before producing accepted PNGs; stricter full-body headroom and a larger lawful-origin search fixed the fixture without changing application code or reducing the twelve-body/five-family requirement. Failed manifests/errors are preserved separately.
+Capture labels: `i11-1080-batch-00..27`, selected `i11-720` / `i11-720-lawful` / `i11-720-compact` batches, plus `i11-duration-1080` and `i11-duration-720`. Both final galleries contain **1,042 guarded native images**, including all 739 final4 frames and wave7 additions. Each has 174 exact480 review pages, native metadata and source receipts. All accepted captures have zero runtime errors and retain native action, phase, family, priority, marine/HUD/AABB and shader-compile guards. Two compact family fixture attempts failed before producing accepted PNGs; stricter full-body headroom and a larger lawful-origin search fixed the fixture without changing application code or reducing the twelve-body/five-family requirement. Failed raw PNGs/manifests/errors are preserved byte-for-byte at `artifacts/nextgen/i11/failures/compact-annulus-rejected/` and `compact-diagnostic-rejected/`; the earlier `i11-states1` raw failure remains intact.
 
 | Standing check | Result and evidence |
 |---|---|
@@ -132,7 +132,7 @@ Artifacts relative to this worktree:
 - `artifacts/nextgen/final5/showcase.html`, `showcase.png`, `showcase.json` —twelve explicitly selected originals: four UI, two calm rooms and six ordinary campaign fights across all four rigs. Frozen hashes/organic receipts validated; no legacy boss/stress fixture.
 - `artifacts/nextgen/final5/organic/index.html` —71 ordinary fights.
 - `artifacts/nextgen/final5/play/index.html` and `{breacher,cryo,pyro,arc}-storyboard.png` —entry→clear storyboards.
-- `final5*/review-witnesses/witness-bridge.json` —actual-open hashes and exact page-cell comparisons, with uncovered frames explicit. At lead convergence1080 both native+480 coverage965/1042;720 expected781/1042 after final ledger refresh. The bridge receipt is authoritative. All119 organic/storyboard originals and their480 cells were reviewed separately. No unreviewed frame is represented as visually accepted.
+- `final5*/review-witnesses/witness-bridge.json` —actual-open hashes and exact page-cell comparisons, with uncovered frames explicit. At lead convergence1080 both native+480 coverage965/1042;720 both native+480 coverage781/1042 (793 native originals,781 exact480 cells). The bridge receipt is authoritative. All119 organic/storyboard originals and their480 cells were reviewed separately. No unreviewed frame is represented as visually accepted.
 
 First look (absolute paths):
 
@@ -142,6 +142,37 @@ First look (absolute paths):
 4. `/Users/chernodub/.t3/worktrees/containment-game/t3-26ffbbf6/artifacts/nextgen/final5/organic/arc-r8-breached-loading-bay-mid.png`
 5. `/Users/chernodub/.t3/worktrees/containment-game/t3-26ffbbf6/artifacts/nextgen/final5/play/cryo-storyboard.png`
 6. `/Users/chernodub/.t3/worktrees/containment-game/t3-26ffbbf6/artifacts/nextgen/final5/before-after.png`
+
+### Per-room value table
+
+Same I10 method: Rec.709-weighted sRGB PNG code values0–255, visible legal world-floor samples, no exposure normalization. Canonical calm and combat frame02. Target median50–80 and shadow p5 12–28; a table value is evidence, not a claim that every target passes. Full sample masks/counts and all phases are retained in `final5/luminance.json` and its720 counterpart.
+
+| Room | Calm median / p5 | Combat02 median / p5 |
+|---|---:|---:|
+|awakening-bay|74.0 / 54.7|56.8 / 14.8|
+|passenger-vault|68.3 / 43.8|67.3 / 16.4|
+|residential-gallery|51.7 / 40.8|57.5 / 23.1|
+|communal-atrium|61.0 / 31.7|52.7 / 26.6|
+|crew-checkpoint|76.0 / 36.6|72.9 / 27.7|
+|armory|71.9 / 56.3|76.5 / 31.2|
+|freight-hold|79.0 / 66.0|70.2 / 30.7|
+|breached-loading-bay|61.1 / 39.9|62.5 / 15.7|
+|relay-racks|53.4 / 31.5|49.3 / 20.1|
+|transmission-chamber|51.9 / 15.8|66.6 / 23.7|
+|diagnostic-gallery|53.9 / 27.9|69.1 / 27.8|
+|safety-interlock-station|52.4 / 33.4|55.8 / 25.1|
+|coolant-plant|51.5 / 39.4|52.3 / 12.5|
+|service-shaft-landing|54.5 / 28.3|62.0 / 22.8|
+|infested-workshop|59.0 / 35.5|49.6 / 16.2|
+|swarm-junction|55.0 / 34.2|58.9 / 29.4|
+|shielding-gate|51.8 / 25.4|76.5 / 29.4|
+|containment-annulus|51.7 / 25.8|60.1 / 19.3|
+|manual-control-chamber|64.2 / 41.5|50.5 / 17.1|
+|overload-floor|54.7 / 37.1|55.1 / 14.8|
+
+## Cleanup and delivery
+
+Removed all **58** intermediate `artifacts/nextgen/i11-*-batch-*` capture directories, releasing **7.49GiB**. Before deletion, every final native byte matched its source receipt; archived witnesses retain opened page PNGs, metadata, actual-open ledgers and all source manifests. Both bridges have **zero source-copy mismatches and zero receipt issues**. Failed parent evidence was copied and hash-verified into the failure archives above before removal. Final galleries, campaign reports/inputs/traces, benchmark data, frozen distribution and failure evidence remain. Receipt: `artifacts/nextgen/i11/cleanup-receipt.json`. No passed gate or hardware trial was rerun after the lead’s convergence instruction.
 
 ## Integration requests and honest remaining gaps
 
