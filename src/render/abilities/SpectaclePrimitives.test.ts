@@ -88,7 +88,7 @@ describe('V3 shared spectacle', () => {
     for (const fragment of fragments) {
       expect(Math.hypot(fragment[0], fragment[2])).toBeGreaterThanOrEqual(7.5);
       expect(fragment[6]).toBeLessThan(calls[1][6] * .4);
-      expect(fragment[8]).toBeLessThan(calls[1][8]);
+      expect(fragment[8] ?? 1).toBeLessThan(calls[1][8] ?? 1);
     }
     expect(k.root.children.length).toBeGreaterThan(0);
     k.dispose();
