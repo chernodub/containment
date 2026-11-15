@@ -18,6 +18,10 @@ describe('element-true open fire materials', () => {
     expect(material.fragmentShader).toContain('float throat=mix(.73,.27,jet)');
     expect(material.fragmentShader).toContain('smoothstep(.0,.035,t)*(1.-smoothstep(.94,1.,t))');
     expect(material.fragmentShader).toContain('float core=inner*smoothstep(.30,.65,ink.g)');
+    expect(material.fragmentShader).toContain('float left=.82-.31*biteA');
+    expect(material.fragmentShader).toContain('float right=.79-.37*biteB');
+    expect(material.fragmentShader).toContain('float rolling=sin(t*21.');
+    expect(material.fragmentShader).toContain('coverage*=mix(.78,1.,smoothstep(.40,.90,side))');
     expect(material.fragmentShader).toContain(GRAPHIC_COMBUSTION_GLSL);
     expect(material.fragmentShader).toContain('vec3(.025,.036,.044)');
     expect(material.fragmentShader).toContain('vec3(2.15,.65,.055)');

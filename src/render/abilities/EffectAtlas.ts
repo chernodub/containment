@@ -96,21 +96,32 @@ export const TEXTURED_FIRE_GLSL = `
   float family=mod(floor(seed),3.);
   float clock=abilityTime*3.1;
   float jet=step(100.,phase);
-  float bend=(sin(t*6.4+seed-clock)*.09+sin(t*12.3-seed+clock*.7)*.035)*t;
+  float bend=(sin(t*5.7+seed-clock)*.13+sin(t*13.3-seed+clock*.7)*.045)*t;
   float throat=mix(.73,.27,jet);
-  float envelope=mix(throat,1.,smoothstep(.015,.30,t))*pow(max(.001,1.-t),.64);
-  float lobe=.84+.12*sin(t*(10.+family*2.)-clock+seed)+.055*sin(t*23.+clock*.6+seed);
+  float envelope=mix(throat,1.,smoothstep(.015,.30,t))*pow(max(.001,1.-t),.52+family*.13);
+  float lobe=.80+.16*sin(t*(11.+family*2.7)-clock+seed)+.075*sin(t*27.+clock*.6+seed);
   float width=max(.008,envelope*lobe);
-  float side=abs(p.x-bend)/width;
-  float aa=max(.012,min(.12,fwidth(side)));
-  coverage=(1.-smoothstep(.84-aa,.84+aa,side))*smoothstep(.0,.035,t)*(1.-smoothstep(.94,1.,t));
+  float signedSide=(p.x-bend)/width;
+  // Unequal side cavities curl with the flow but stop outside the unbroken spine.
+  float biteA=(1.-smoothstep(.025,.13,abs(t-(.36+family*.085+.045*sin(seed+clock)))));
+  float biteB=(1.-smoothstep(.018,.095,abs(t-(.69-family*.04+.035*cos(seed-clock)))));
+  float left=.82-.31*biteA+.045*sin(t*31.+seed-clock);
+  float right=.79-.37*biteB+.055*cos(t*24.-seed+clock);
+  float side=abs(signedSide)/mix(left,right,step(0.,signedSide));
+  float aa=max(.014,min(.12,fwidth(side)));
+  coverage=(1.-smoothstep(1.-aa,1.+aa,side))*smoothstep(.0,.035,t)*(1.-smoothstep(.94,1.,t));
   // A narrow heated spine lives at the source. The outer connected lobes are
   // orange, with a dark char edge; only the nozzle earns a near-white value.
-  float body=1.-smoothstep(.63,.82,side);
-  float inner=(1.-smoothstep(.10,.34,side))*(1.-smoothstep(.12,.63,t));
+  float body=1.-smoothstep(.61,.85,side);
+  float rolling=sin(t*21.-clock*1.4+seed+signedSide*4.8);
+  float fold=smoothstep(.24,.78,side)*smoothstep(.16,.32,t)*(1.-smoothstep(.76,.95,t));
+  body*=1.-smoothstep(.26,.83,rolling)*fold*.56;
+  float spine=abs(signedSide-sin(t*10.-clock+seed)*.065);
+  float inner=(1.-smoothstep(.10,.31,spine))*(1.-smoothstep(.12,.63,t));
   float core=inner*smoothstep(.30,.65,ink.g);
-  c=mix(vec3(.025,.036,.044),vec3(1.05,.105,.003),body);
-  c=mix(c,vec3(2.15,.65,.055),inner*.58);
+  c=mix(vec3(.018,.009,.005),vec3(.95,.068,.002),body);
+  c=mix(c,vec3(2.15,.65,.055),inner*.64);
+  coverage*=mix(.78,1.,smoothstep(.40,.90,side));
   c=mix(c,vec3(2.8,1.9,.34),core);
  }
  a*=coverage;

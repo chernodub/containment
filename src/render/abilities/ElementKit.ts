@@ -315,7 +315,7 @@ export class ElementKit {
         for (let i = 0; i < sections; i++) {
             const start = i === 0 ? .025 : i === 1 ? .21 : .48;
             const end = i === 0 ? .39 : i === 1 ? .73 : .91;
-            const width = radius * (i === 0 ? .055 : i === 1 ? .145 : .12);
+            const width = radius * (i === 0 ? .055 : i === 1 ? .12 : .09);
             this.flowFlame(i === 0 && sourceX !== undefined ? sourceX : x + c * radius * start,
                 height + i * .08, i === 0 && sourceZ !== undefined ? sourceZ : z + s * radius * start,
                 x + c * radius * end, height + .16 + i * .12, z + s * radius * end,
@@ -325,9 +325,10 @@ export class ElementKit {
         const lobes = this.low ? 2 : 6;
         for (let i = 0; i < lobes; i++) {
             const side = i % 2 ? -1 : 1, row = Math.floor(i / 2);
-            const spread = side * arc * (.16 + row * .075);
-            const a = angle + spread, start = .21 + row * .13, end = .65 + row * .13;
-            const width = radius * (.12 - row * .018);
+            const variation = authoredVariation(3.71 + i * 2.17);
+            const spread = side * arc * (.16 + row * .075 + variation * .025);
+            const a = angle + spread, start = .18 + row * .11 + variation * .08, end = .60 + row * .12 + variation * .07;
+            const width = radius * (.12 - row * .018) * (.85 + variation * .23);
             this.flowFlame(x + c * radius * start, height + .08, z + s * radius * start,
                 x + Math.cos(a) * radius * end, height + .24 + row * .08, z + Math.sin(a) * radius * end,
                 width, 3.71 + i * 2.17, opacity * (.81 - row * .1));
