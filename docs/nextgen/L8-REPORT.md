@@ -1,10 +1,12 @@
 # L8 implementation report — release gates in progress
 
-Branch: `t3/re-author-story-room-layouts`. Baseline gameplay source: `7ceefa5a52cc74a6b95712f29653d9bf523906be`. Frozen final gameplay source: `9a44e604bf644b6cf0ab8b2637913e19ca3e4740`. Rendering source will be recorded after the final PNG review. This document does not yet claim final art, cohort or performance acceptance.
+Branch: `t3/re-author-story-room-layouts`. Baseline gameplay source: `7ceefa5a52cc74a6b95712f29653d9bf523906be`. Audited candidate gameplay source: `9a44e604bf644b6cf0ab8b2637913e19ca3e4740`. Rendering source will be recorded after the final PNG review. This document does not yet claim final art, cohort or performance acceptance.
 
 ## Plan language and hard geometry proof
 
 The lead-rejected floating-island standard was withdrawn. Replacement standard round9 uses hull-connected cabins/booths/banks, actual named sub-spaces, wide openings and waist-height cutaways. It passed three substantive plan/dressed/native critique rounds before propagation; the critique ledger is `plans/L8-standard-review.md`. Residential uses existing CC0 beds, desks, chairs and cutaway lockers. No disc-pool recipe is retained in the inspected standard; fixture-shaped spill follows cabin doors, scanner/guard circulation and cooling aisles.
+
+Independent implementation review `plans/L8-final-plan-review.md` accepts the replacement three-room standard but **withholds ship-wide semantic acceptance**: Diagnostic/Workshop still name parts of an uninterrupted hall as separate rooms; Safety overstates its equipment band as booths. Numerical clearance does not establish inhabited architecture. A real connected-partition revision is being authored prospectively, without disturbing the running9a44 cohort. The following tables and receipts remain exact evidence for9a44, not acceptance of those semantic deficiencies.
 
 Every plan passes solid-UNION measurement with at least60% hull-connected area, at most2 free components, at least3 named legal spaces, two articulated named hull bays,140-unit openings, R70 opening midpoints, full-span R32 sweeps, an R144 fight circle and actual raw/inward breach access. Nonholdouts additionally pass graph-cycle AND physical sealed-door reachability. Only Transmission/Overload receive holdout exemptions. All16 legacy templates, story text, ids, route generation and checkpoint formats remain unchanged.
 
