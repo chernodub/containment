@@ -930,3 +930,7 @@ own `report.storyboards` entry and unchanged half-second observation clock;
 No extra fixed tick or input decision is added. Each board must be selected and
 validated separately, including a native clear; frames from different rooms
 must never be pooled into a single entry-to-clear sequence.
+
+The replacement L8 standard uses `ShipPlan` in `shipArchitecturePlan.ts`: named sub-space outlines/anchors, real≥140-unit openings, two named hull bays, a9m fight circle and breach-feature locations accompany the frozen topology. `createRoomTemplateGeometry(template,nodeId)` constructs identical pure simulation geometry for candidate plans before registration. `shipPlanChecks.ts` measures solid union/hull chains and physically seals each opening to prove alternate radius32 routes; the only permitted single-route exception is an explicit Transmission/Overload holdout. No encounter or save schema is part of this authoring metadata.
+
+`node scripts/nextgen/l8-retire-rounds.mjs` retires only complete, guard-successful intermediate rounds1–7 after their contact sheet exists. It preserves each original manifest and a SHA/byte inventory, keeps the three lead-correction labeled round7 plans, and refuses failed raw runs. Current/native final evidence is outside its selection.

@@ -21,6 +21,11 @@ export type ExpeditionGeometry = Readonly<{
 export function createExpeditionGeometry(node: RunNode): ExpeditionGeometry {
   const template = ROOM_TEMPLATES[node.templateId];
   if (!template) throw new Error('Unknown expedition room template.');
+  return createRoomTemplateGeometry(template,node.id);
+}
+
+/** Shared pure construction also lets authoring checks inspect an unregistered plan. */
+export function createRoomTemplateGeometry(template:RoomTemplate,nodeId:string):ExpeditionGeometry {
   const { width, height } = template;
   const bounds = Object.freeze({ x: 0, y: 0, width, height });
   const boundaryWalls = Object.freeze([
@@ -31,7 +36,7 @@ export function createExpeditionGeometry(node: RunNode): ExpeditionGeometry {
   ].map(rect => Object.freeze(rect)));
   const bossSpawn = Object.freeze({ x: width / 2, y: height / 2 });
   const breaches: readonly FacilityBreach[] = Object.freeze(template.breaches.map((point, index) => Object.freeze({
-    ...point, id: `${node.id}:breach-${index}`, unlockWave: 0,
+    ...point, id: `${nodeId}:breach-${index}`, unlockWave: 0,
     // Existing HordeRuntime adds a 56-unit inward offset. All corners face inward.
     facing: point.x < width / 2 ? 'east' as const : 'west' as const,
   })));
@@ -39,7 +44,7 @@ export function createExpeditionGeometry(node: RunNode): ExpeditionGeometry {
     bounds, boundaryWalls, blockers: Object.freeze([...boundaryWalls, ...template.obstacles]),
     boundary: template.boundary, voids: template.voids,
     breaches, playerSpawn: template.spawn, exitPoint: template.exit, bossSpawn,
-    queenArena: Object.freeze({ ...bounds, roomId: node.id, safeCenter: bossSpawn, safeRadius: 180 }),
+    queenArena: Object.freeze({ ...bounds, roomId: nodeId, safeCenter: bossSpawn, safeRadius: 180 }),
   });
 }
 

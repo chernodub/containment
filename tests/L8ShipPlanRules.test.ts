@@ -1,14 +1,17 @@
 import {describe,it,expect} from 'vitest';
+import baseline from './fixtures/l8-walkable-baseline.json';
+import {SHIP_ARCHITECTURE_PLANS} from '../src/game/roguelike/shipArchitectureLayouts';
 import {SHIP_STANDARD_PLANS} from '../src/game/roguelike/shipArchitectureStandards';
 import {STORY_ROOM_TEMPLATES} from '../src/game/roguelike/storyRoomTemplates';
 import {generateRun} from '../src/game/roguelike/run';
 import {createExpeditionGeometry,canOccupyExpedition} from '../src/game/world/expeditionGeometry';
 import {shipSolidStatistics,shipPlanOpeningErrors,shipBlockedOpeningErrors} from '../src/game/roguelike/shipPlanChecks';
 // Frozen 7ceefa5a52cc74a6b95712f29653d9bf523906be,2-unit union sample.
-const before:Record<string,number>={'residential-gallery':961000,'crew-checkpoint':973184,'relay-racks':973000};
+const before:Record<string,number>=baseline.areas;
 describe('L8 ship plans: lead architectural rules',()=>{
- it.each(Object.entries(SHIP_STANDARD_PLANS))('%s meets connected architecture, circulation and crowd-space requirements',(id,plan)=>{
+ it.each(Object.entries(SHIP_ARCHITECTURE_PLANS))('%s meets connected architecture, circulation and crowd-space requirements',(id,plan)=>{
   const t=STORY_ROOM_TEMPLATES[id as keyof typeof STORY_ROOM_TEMPLATES],g=createExpeditionGeometry(generateRun(1729,3).nodes.find(n=>n.templateId===id)!);
+  if(plan.holdout)expect(['transmission-chamber','overload-floor']).toContain(id);
   const stats=shipSolidStatistics(t);
   expect(stats.connectedFraction,'at least60% of solid union area connects to hull').toBeGreaterThanOrEqual(.6);
   expect(stats.freeGroups,'at most two freestanding components').toBeLessThanOrEqual(2);

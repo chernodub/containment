@@ -15,3 +15,16 @@ export function defineShipRoom(t:ShipRoomTopology):ShipRoomTopology {
   ...t.voids?{voids:Object.freeze(t.voids.map(p=>Object.freeze(p.map(v=>point(v.x,v.y)))))}:{},
  });
 }
+
+export type ShipSpace=Readonly<{name:string;outline:readonly Point[];anchor:Point}>;
+export type ShipOpening=Readonly<{a:string;b:string;from:Point;to:Point}>;
+export type ShipPlan=Readonly<{
+ topology:ShipRoomTopology;spaces:readonly ShipSpace[];openings:readonly ShipOpening[];arena:Point;
+ bays:readonly Readonly<{space:string;from:Point;to:Point}>[];
+ breachFeatures:readonly Readonly<{name:string;at:Point}>[];
+ /** Only the two explicitly authored holdout rooms may use a single route. */
+ holdout?:boolean;
+}>;
+export const spaceBox=(name:string,x:number,y:number,w:number,h:number,ax=x+w/2,ay=y+h/2):ShipSpace=>Object.freeze({name,outline:partition(x,y,w,h),anchor:point(ax,ay)});
+export const opening=(a:string,b:string,x:number,y:number,x2:number,y2:number):ShipOpening=>Object.freeze({a,b,from:point(x,y),to:point(x2,y2)});
+export const breachFeature=(name:string,x:number,y:number)=>Object.freeze({name,at:point(x,y)});

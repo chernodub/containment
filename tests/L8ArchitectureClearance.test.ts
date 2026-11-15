@@ -1,7 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {generateRun} from '../src/game/roguelike/run';
 import {SHIP_ARCHITECTURE_LAYOUTS} from '../src/game/roguelike/shipArchitectureLayouts';
-import {FacilityNavigation} from '../src/game/world/FacilityNavigation';
+import {shipNavigationErrors} from '../src/game/roguelike/shipPlanChecks';
 import {canOccupyExpedition,canTraverseExpedition,createExpeditionGeometry} from '../src/game/world/expeditionGeometry';
 
 const nodes=generateRun(1729,3).nodes.filter(n=>Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,n.templateId));
@@ -18,22 +18,6 @@ describe('L8 ship architecture clearance',()=>{
   for(const p of [g.playerSpawn,g.exitPoint,...g.breaches,...g.breaches.map(b=>({x:b.x+(b.facing==='east'?56:-56),y:b.y}))])expect(canOccupyExpedition(g,p,32),JSON.stringify(p)).toBe(true);
  });
  it.each(nodes)('$templateId routes all enemy radii from each breach to a dense grid of marine positions',node=>{
-  const g=createExpeditionGeometry(node);
-  for(let y=48;y<g.bounds.height;y+=80)for(let x=48;x<g.bounds.width;x+=80){
-   const goal={x,y};if(!canOccupyExpedition(g,goal,16))continue;
-   for(const radius of [14,18,24,28]){
-    const nav=new FacilityNavigation(g);
-    for(const b of g.breaches){
-     const p={x:b.x+(b.facing==='east'?56:-56),y:b.y,radius};let arrived=false;
-     for(let i=0;i<900;i++){
-      if(Math.hypot(p.x-x,p.y-y)<=radius+16+8&&canTraverseExpedition(g,p,goal,0)){arrived=true;break;}
-      const q=nav.waypoint(p,goal,1)??goal,d=Math.hypot(q.x-p.x,q.y-p.y);if(d<1e-6)break;
-      const n={x:p.x+(q.x-p.x)/d*Math.min(8,d),y:p.y+(q.y-p.y)/d*Math.min(8,d)};
-      if(!canTraverseExpedition(g,p,n,radius))break;Object.assign(p,n);
-     }
-     expect(arrived,`${node.templateId} radius${radius} breach${b.id} → ${x},${y}; stopped ${p.x},${p.y}`).toBe(true);
-    }
-   }
-  }
+  expect(shipNavigationErrors(createExpeditionGeometry(node))).toEqual([]);
  },60000);
 });
