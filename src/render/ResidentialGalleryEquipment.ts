@@ -1,3 +1,4 @@
+import {STORY_ROOM_TEMPLATES} from '../game/roguelike/storyRoomTemplates';
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {disposeModel} from './meshParts';
@@ -100,6 +101,13 @@ export function attachResidentialGalleryEquipment(room:T.Group,onChanged:()=>voi
   if(!active)return;if(!fallback||fallback.parent!==room)throw Error('stale Residential fallback');
   validateResidentialGalleryEquipment(source!);
   applyOwnedEquipmentPalette(source!,RESIDENTIAL_FINISHES);
+  for(const [i,zone]of ZONES.entries()){
+   const target=STORY_ROOM_TEMPLATES['residential-gallery'].obstacles[i],part=source!.getObjectByName(zone.name)!;
+   const fit=new T.Matrix4().makeTranslation(target.x/32,0,target.y/32)
+    .multiply(new T.Matrix4().makeScale(target.width/zone.w,1,target.height/zone.d))
+    .multiply(new T.Matrix4().makeTranslation(-zone.x/32,0,-zone.z/32));
+   part.applyMatrix4(fit);
+  }
   // Exported roots already contain their final translations. No fitting or second transform.
   source!.name='residential-gallery-equipment';source!.traverse(o=>{if(o instanceof T.Mesh)o.castShadow=o.receiveShadow=true;});
   room.add(source!);disposeModel(fallback);owner.state='ready';

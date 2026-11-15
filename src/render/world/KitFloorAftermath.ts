@@ -1,3 +1,4 @@
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import * as T from 'three';
 import type {RoomTemplate} from '../../game/roguelike/types';
 
@@ -37,6 +38,28 @@ const IDEAS:Record<string,string>={
 
 /** One large, room-specific interruption, rather than the same stamp at every machine toe. */
 export function addKitFloorAftermath(t:RoomTemplate,id:string,reservations:readonly Reservation[],p:FloorPainter):FloorAftermathProof {
+ if(Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,id)){
+  let admitted=0;
+  const stroke=(ax:number,az:number,bx:number,bz:number,width:number,color:number,kind:string)=>{if(p.segment(ax,az,bx,bz,width,color,kind,.023))admitted++;};
+  for(const r of reservations){
+   const x=(r.x+r.width/2)/32,z=(r.y+r.height/2)/32;
+   const front=r.y<440?(r.y+r.height)/32+.2:r.y/32-.2;
+   if(id==='residential-gallery'){
+    if(r.y===0&&p.quad(x,(r.height+70)/32,188/32,136/32,0,0x695d4e,'cabin-vinyl',.018))admitted++;
+    stroke(x-1,front,x+1,front,.12,0x7c7968,'cabin-threshold');
+    for(const side of [-1,1])stroke(x+side*.35,front,x+side*.35,front+(r.y<440?1:-1)*.8,.06,0x3b4948,'doorway-footwear');
+   }else if(id==='crew-checkpoint'){
+    const gx=r.x/32-.35;
+    for(let n=0;n<3;n++)stroke(gx-.25,z-.5+n*.5,gx+.25,z-.5+n*.5,.06,0x92907b,'inspection-width-marks');
+    stroke(gx,z-.8,gx,z+.8,.045,0x576a70,'screening-plane');
+   }else{
+    const end=(r.y+r.height)/32+.12;
+    stroke(x-r.width/64,end,x+r.width/64,end,.07,0x68797b,'rack-service-threshold');
+    for(const side of [-1,1])stroke(x+side*.25,end,x+side*.25,end+.55,.04,0x34494f,'cooling-access-wear');
+   }
+  }
+  return {idea:'Wear follows actual cabin, inspection and rack thresholds',site:[t.spawn.x/32,t.spawn.y/32],admitted};
+ }
  const w=t.width/32,h=t.height/32,r=reservations[0];
  const desired:Point=r?[(r.x+r.width*.5)/32,(r.y+r.height)/32+2.1]:[w*.5,h*.5];
  const candidates:Point[]=[desired];

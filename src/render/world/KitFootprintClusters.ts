@@ -75,6 +75,12 @@ const IDEAS: Readonly<Record<ShipEnvironment, string>> = {
 };
 
 function partsFor(environment: ShipEnvironment, roomId: string): Part[] {
+  if(roomId==='crew-checkpoint')return [
+    {model:'rail',x:-.18,z:.21,width:.35,height:.08,depth:.16,purpose:'removed armor inspection strip',role:'dark',flat:true,fallen:true},
+    {model:'wall-switch',x:.28,z:-.24,width:.07,height:.18,depth:.04,purpose:'checkpoint circuit isolation',role:'accent',status:true},
+    {model:'wall-detail',x:-.25,z:-.25,width:.23,height:.16,depth:.06,purpose:'shield-side maintenance access',role:'dark',flat:true},
+    {model:'rail',x:.25,z:.20,width:.24,height:.08,depth:.12,purpose:'retained gate latch plate',role:'trim',flat:true},
+  ];
   const coveredCore = environment === 'containment' || environment === 'reactor';
   const organic = environment === 'infested' || roomId === 'reactor-vault';
   if (environment === 'habitation') return [

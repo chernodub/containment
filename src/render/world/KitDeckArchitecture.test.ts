@@ -1,3 +1,4 @@
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import { describe, expect, it } from 'vitest';
 import * as T from 'three';
 import { readFile } from 'node:fs/promises';
@@ -70,6 +71,8 @@ describe('flush room-specific deck architecture prototype', () => {
       ),
     };
     const proof = addKitDeckArchitecture(t, id, reservations, painter);
+    const thresholdPlan=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,id);
+    if(thresholdPlan){expect(admitted).toEqual([]);expect(proof.triangles).toBe(0);}else{
     expect(proof.bays).toBeGreaterThanOrEqual(1);
     expect(admitted.some(q=>q.kind==='deck-bay-frame'||q.kind==='deck-hatch-rib')).toBe(false);
     for(const q of admitted.filter(q=>q.kind==='deck-access-bay')){
@@ -91,6 +94,7 @@ describe('flush room-specific deck architecture prototype', () => {
       raw.setHex(q.color);
       expect(raw.r + raw.g + raw.b).toBeGreaterThan(.1);
     }
+    }
     // Rejected hull/void/solid spans must not become orphan ribs or end plates.
     const reject = {
       quad: () => false,
@@ -105,7 +109,7 @@ describe('flush room-specific deck architecture prototype', () => {
     });
     const a = buildKitFloorSurface(t, environment, id, reservations);
     const b = buildKitFloorSurface(t, environment, id, reservations);
-    expect(a.proof.architecture.bays).toBeGreaterThan(0);
+    if(thresholdPlan){expect(a.proof.features['deck-frontage-feed']).toBeUndefined();expect(a.proof.aftermath.admitted).toBeGreaterThan(3);}else expect(a.proof.architecture.bays).toBeGreaterThan(0);
     expect(a.proof.architecture.triangles).toBeLessThanOrEqual(800);
     expect(a.geometry.getAttribute('position').array).toEqual(b.geometry.getAttribute('position').array);
     expect(a.geometry.getAttribute('color').array).toEqual(b.geometry.getAttribute('color').array);

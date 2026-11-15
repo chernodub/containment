@@ -1,3 +1,4 @@
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import * as T from 'three';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import type {ShipEnvironment} from '../ShipEnvironments';
@@ -48,6 +49,7 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
  const positions:number[]=[],normals:number[]=[],colors:number[]=[],marks:Mark[]=[],counts:Record<string,number>={};
  const hull=kitHull(t),w=t.width/32,h=t.height/32,palette=COLORS[id==='reactor-vault'?'infested':environment];
  let seed=0;for(const c of id)seed=(Math.imul(seed,31)+c.charCodeAt(0))>>>0;
+ const authored=Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,id);
  const phase=(seed%97)/17,matOrganic=environment==='infested'||id==='reactor-vault',organic=matOrganic||id==='breached-loading-bay';
  const valid=(x:number,z:number)=>kitInside(x*32,z*32,hull)&&!t.voids?.some(p=>kitInside(x*32,z*32,p))&&!t.obstacles.some(r=>x*32>r.x&&x*32<r.x+r.width&&z*32>r.y&&z*32<r.y+r.height);
  const nearest=(x:number,z:number)=>reservations.reduce((best,r)=>{
@@ -122,7 +124,7 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
   }
   if(matOrganic){contour(x,z,livingField,palette[0],'creep-mat');continue;}
   if(environment==='cryogenics'){contour(x,z,frostField,color,kind);continue;}
-  if(field){quad(x,z,pitch+.002,pitch+.002,0,color,kind,.018);coveredCells++;}
+  if(field&&!authored){quad(x,z,pitch+.002,pitch+.002,0,color,kind,.018);coveredCells++;}
  }
  // Equipment service feeds replace the arbitrary court/lane network.
  for(const r of reservations){
@@ -149,13 +151,13 @@ export function buildKitFloorSurface(t:RoomTemplate,environment:ShipEnvironment,
  const aftermath=addKitFloorAftermath(t,id,reservations,{valid,quad,segment,patch});
  // Low-contrast circulation wear reaches quiet edges without repeating a pile
  // of story props in every bay. It is a separate large-scale surface feature.
- for(let z=1.8;z<h-1;z+=3.6)for(const x of [1.4,w*.5,w-1.4]){
+ for(let z=1.8;!authored&&z<h-1;z+=3.6)for(const x of [1.4,w*.5,w-1.4]){
   const a=.18*Math.sin(z*.4+phase),px=x+Math.sin(z*.7+phase)*.35;
   const kind=organic?'resin-smear':environment==='cryogenics'?'thaw-streak':'circulation-scuff';
   quad(px,z,1.45,.055,a,palette[1],kind,.025);
   quad(px+.22,z+.23,.72,.035,a+.05,palette[3],kind,.026);
  }
- for(let z=3;z<h-1;z+=7.1)for(const x of [1.5,w-1.5]){
+ for(let z=3;!authored&&z<h-1;z+=7.1)for(const x of [1.5,w-1.5]){
   quad(x,z,.95,1.25,0,palette[1],'service-hatch',.025);
   for(const side of [-1,1]){
    quad(x+side*.5,z,.065,1.3,0,palette[3],'service-hatch',.027);

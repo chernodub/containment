@@ -8,50 +8,51 @@ import {createExpeditionGeometry,canOccupyExpedition,canTraverseExpedition,hasCl
 import {DepthGame} from '../src/DepthGame';
 
 const room=STORY_ROOM_TEMPLATES['crew-checkpoint'];
-const footprints=room.obstacles.map(f=>({x:f.x/32,y:f.y/32,width:f.width/32,height:f.height/32}));
+const originalObstacles=[{x:530,y:0,width:80,height:384},{x:530,y:512,width:80,height:368},{x:610,y:224,width:80,height:160},{x:610,y:484,width:88,height:112}];
+// Frozen asset-scale construction probes remain independent of production plan placement.
+const footprints=originalObstacles.map(f=>({x:f.x/32,y:f.y/32,width:f.width/32,height:f.height/32}));
 const model=(index:number)=>environmentObstacle('security',footprints[index],index,'crew-checkpoint');
 const named=(root:T.Object3D,name:string)=>{root.updateWorldMatrix(true,true);const result:T.Object3D[]=[];root.traverse(o=>{if(o.name===name)result.push(o);});return result;};
 describe('Room5 checkpoint rough',()=>{
- it('joins both room walls and leaves one breached passage beside the protected station',()=>{
-  expect([room.width,room.height,room.spawn,room.exit]).toEqual([1200,880,{x:100,y:440},{x:1100,y:440}]);
+ it('provides a main inspection gate, independent emergency passages and open-ended cages',()=>{
   const [north,south,desk]=room.obstacles;
-  expect(north.y).toBe(0);expect(south.y+south.height).toBe(room.height);
-  expect(north.x).toBe(south.x);expect(north.width).toBe(south.width);
+  expect(room.boundary!.length).toBeGreaterThan(4);expect(room.voids).toHaveLength(4);
+  expect(north.x).toBe(south.x);expect(north.x+north.width).toBe(desk.x);
   expect(south.y-north.y-north.height).toBe(128);
-  expect(north.x+north.width).toBe(desk.x);
-  expect(desk.y+desk.height).toBe(north.y+north.height);
+  expect(north.y).toBeGreaterThan(120);expect(south.y+south.height).toBeLessThan(room.height-120);
  });
- it.each([16,28])('keeps radius %s routes and the crew position legal through production movement',radius=>{
+ it.each([16,28])('keeps independent escape routes legal through production movement for radius %s',radius=>{
   const geometry=createExpeditionGeometry(generateRun(137).nodes[4]),game=new DepthGame();game.geometry=geometry;
-  const operator={x:730,y:320};
-  for(const point of [room.spawn,room.exit,operator,...room.breaches])expect(canOccupyExpedition(geometry,point,radius)).toBe(true);
-  const routes=[[[100,440],[1100,440]],[[1100,440],[100,440]],[[730,440],[730,320]],[[100,100],[400,100],[400,440],[730,440],[730,320]],[[1100,780],[730,780],[730,440],[730,320]]];
+  for(const p of [room.spawn,room.exit,...room.breaches])expect(canOccupyExpedition(geometry,p,radius)).toBe(true);
+  const routes=[[[room.spawn.x,440],[1100,440]],[[100,180],[400,180],[400,130],[800,130],[1100,160]],[[100,700],[400,750],[800,750],[1100,720]]];
   for(const route of routes){
    Object.assign(game.player,{x:route[0][0],y:route[0][1],radius});
-   for(const [x,y] of route.slice(1)){
-    const from={x:game.player.x,y:game.player.y},to={x,y};expect(canTraverseExpedition(geometry,from,to,radius)).toBe(true);
+   for(const [x,y]of route.slice(1)){
+    const from={x:game.player.x,y:game.player.y};expect(canTraverseExpedition(geometry,from,{x,y},radius)).toBe(true);
     const steps=Math.ceil(Math.hypot(x-from.x,y-from.y)/2);
     for(let i=0;i<steps;i++){const moved=game.moveCorpse(game.player,(x-from.x)/steps,(y-from.y)/steps);expect(moved.blocked).toBe(false);Object.assign(game.player,{x:moved.x,y:moved.y});expect(canOccupyExpedition(geometry,game.player,radius)).toBe(true);}
     expect(game.player.x).toBeCloseTo(x,5);expect(game.player.y).toBeCloseTo(y,5);
    }
   }
-  // Every possible crossing of the partition centre lies in its gate. Closing
-  // that gap disconnects west/east, rather than leaving a walk-around at a wall.
-  const [north,south]=room.obstacles,mid=north.x+north.width/2;
-  const closed={...geometry,blockers:[...geometry.blockers,{x:north.x,y:north.y+north.height,width:north.width,height:south.y-north.y-north.height}]};
-  let open=0;
-  for(let y=radius;y<=room.height-radius;y++){
-   const legal=canOccupyExpedition(geometry,{x:mid,y},radius);
-   if(legal){open++;expect(y).toBeGreaterThanOrEqual(north.y+north.height+radius);expect(y).toBeLessThanOrEqual(south.y-radius);}
-   expect(canOccupyExpedition(closed,{x:mid,y},radius)).toBe(false);
-  }
-  expect(open).toBeGreaterThan(0);
+  // Sealing the primary gate must preserve both emergency bypasses.
+  const closed={...geometry,blockers:[...geometry.blockers,{x:500,y:376,width:80,height:128}]};
+  expect(canTraverseExpedition(closed,{x:400,y:440},{x:800,y:440},radius)).toBe(false);
+  for(const y of [130,750])expect(canTraverseExpedition(closed,{x:400,y},{x:800,y},radius)).toBe(true);
  });
- it('blocks west-approach shots at the shield and operator, but leaves the gate open',()=>{
+ it('blocks shielded sightlines while keeping the inspection and emergency lanes open',()=>{
   const geometry=createExpeditionGeometry(generateRun(137).nodes[4]);
-  expect(hasClearExpeditionShot(geometry,{x:100,y:440},{x:1100,y:440})).toBe(true);
-  for(const y of [100,320,700])expect(hasClearExpeditionShot(geometry,{x:400,y},{x:800,y})).toBe(false);
-  for(const y of [360,400,440])expect(hasClearExpeditionShot(geometry,{x:100,y},{x:730,y:320})).toBe(false);
+  for(const y of [130,440,750])expect(hasClearExpeditionShot(geometry,{x:400,y},{x:800,y})).toBe(true);
+  for(const y of [280,600])expect(hasClearExpeditionShot(geometry,{x:400,y},{x:800,y})).toBe(false);
+ });
+ it('matches the live shortened plan solids with visible equipment at projectile height',()=>{
+  const geometry=createExpeditionGeometry(generateRun(137).nodes[4]);
+  for(const [i,r]of room.obstacles.entries()){
+   const live=environmentObstacle('security',{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},i,'crew-checkpoint');live.updateWorldMatrix(true,true);
+   const z=r.y+r.height/2,a=new T.Vector3((r.x-40)/32,.8,z/32),b=new T.Vector3((r.x+r.width+40)/32,.8,z/32);
+   expect(hasClearExpeditionShot(geometry,{x:a.x*32,y:z},{x:b.x*32,y:z})).toBe(false);
+   expect(new T.Raycaster(a,b.clone().sub(a).normalize(),0,a.distanceTo(b)).intersectObject(live,true).length).toBeGreaterThan(0);
+   const bounds=new T.Box3().setFromObject(live,true);expect(bounds.min.x*32).toBeGreaterThanOrEqual(r.x-1e-4);expect(bounds.max.x*32).toBeLessThanOrEqual(r.x+r.width+1e-4);expect(bounds.min.z*32).toBeGreaterThanOrEqual(r.y-1e-4);expect(bounds.max.z*32).toBeLessThanOrEqual(r.y+r.height+1e-4);
+  }
  });
  it.each([0,1])('builds low longitudinal cover with grounded diagonal braces at reservation %s',index=>{
   const root=model(index),plates=named(root,'ballistic-panel'),braces=named(root,'rear-brace');
@@ -148,7 +149,7 @@ describe('Room5 checkpoint rough',()=>{
   expect(room.obstacles).toHaveLength(4);
   const f=footprints[3],root=model(3),sheet=named(root,'fallen-gate-infill');
   expect(sheet).toHaveLength(1);
-  expect(room.obstacles[3]).toEqual({x:610,y:484,width:88,height:112});
+  expect(originalObstacles[3]).toEqual({x:610,y:484,width:88,height:112});
   const infill=new T.Box3().setFromObject(sheet[0],true);
   expect(infill.max.x-infill.min.x).toBeGreaterThan(2);
   expect(infill.max.z-infill.min.z).toBeGreaterThan(2.8);
@@ -160,7 +161,7 @@ describe('Room5 checkpoint rough',()=>{
   expect(bounds.max.y).toBeGreaterThan(1);
   expect(bounds.max.y).toBeLessThan(1.65);
   expect(f.y*32-440).toBeGreaterThanOrEqual(28);
-  const geometry=createExpeditionGeometry(generateRun(137).nodes[4]);
+  const geometry=({...createExpeditionGeometry(generateRun(137).nodes[4]),boundary:undefined,voids:undefined,blockers:originalObstacles});
   expect(canTraverseExpedition(geometry,{x:100,y:440},{x:1100,y:440},28)).toBe(true);
   expect(canOccupyExpedition(geometry,{x:(f.x+f.width/2)*32,y:(f.y+f.height/2)*32},16)).toBe(false);
   const corner=new T.Box3().setFromObject(named(root,'fallen-gate-displaced-corner')[0],true);
@@ -187,8 +188,8 @@ describe('Room5 checkpoint rough',()=>{
   const up=new T.Raycaster(new T.Vector3(f.x+1,0,f.y+1),new T.Vector3(0,1,0)).intersectObject(leaf)[0];
   expect(down.point.y-up.point.y).toBeCloseTo(.16,5);
  });
- it.each([.8,.95])('matches blocked production shots with visible wreck metal at height %s',height=>{
-  const root=model(3),geometry=createExpeditionGeometry(generateRun(137).nodes[4]);root.updateWorldMatrix(true,true);
+ it.each([.8,.95])('retains frozen wreck construction shot coverage at source height %s',height=>{
+  const root=model(3),geometry=({...createExpeditionGeometry(generateRun(137).nodes[4]),boundary:undefined,voids:undefined,blockers:originalObstacles});root.updateWorldMatrix(true,true);
   const shots:number[][]=[ [650,440,650,680] ];
   for(const x of [610.5,614,630,650,675,697.5])shots.push([x,440,x,680],[x,680,x,440]);
   for(const z of [484.5,490,520,560,590,595.5])shots.push([605,z,710,z],[710,z,605,z]);

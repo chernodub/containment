@@ -44,11 +44,11 @@ describe('Room9 room visuals and retained placement',()=>{
  it('retains the five reservations with the repaired central south edge and unchanged room anchors',()=>{
   expect(template.obstacles.map(r=>[r.x,r.y,r.width,r.height])).toEqual(expected);
   expect([template.width,template.height]).toEqual([1200,880]);
-  expect(template.spawn).toEqual({x:100,y:440});expect(template.exit).toEqual({x:1100,y:440});
-  expect(template.breaches).toEqual([{x:100,y:100},{x:1100,y:100},{x:100,y:780},{x:1100,y:780}]);
+  expect(template.spawn).toEqual({x:220,y:440});expect(template.exit).toEqual({x:1100,y:440});
+  expect(template.breaches).toEqual([{x:240,y:100},{x:960,y:100},{x:240,y:780},{x:960,y:780}]);
  });
  it.each([16,28,38])('keeps both forks, end cross-links and offset breach approaches clear at radius %i',radius=>{
-  const routes=[[[100,440],[460,440],[460,280],[740,280],[740,440],[1100,440]],[[100,440],[460,440],[460,600],[740,600],[740,440],[1100,440]],[[100,110],[1100,110]],[[100,770],[1100,770]],...template.breaches.map(p=>[[p.x+(p.x<600?56:-56),p.y],[p.x+(p.x<600?56:-56),440]])];
+  const routes=[[[100,440],[460,440],[460,280],[740,280],[740,440],[1100,440]],[[100,440],[460,440],[460,600],[740,600],[740,440],[1100,440]],[[240,112],[960,112]],[[240,768],[960,768]],...template.breaches.map(p=>[[p.x+(p.x<600?56:-56),p.y],[p.x<600?240:960,p.y],[p.x<600?240:960,440]])];
   for(const route of routes)for(let i=1;i<route.length;i++){
    const a={x:route[i-1][0],y:route[i-1][1]},b={x:route[i][0],y:route[i][1]};
    expect(canTraverseExpedition(geometry,a,b,radius)).toBe(true);

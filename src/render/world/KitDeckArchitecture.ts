@@ -1,3 +1,4 @@
+import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import type { RoomTemplate } from '../../game/roguelike/types';
 
 type Reservation = {x:number;y:number;width:number;height:number};
@@ -14,6 +15,7 @@ export type DeckArchitectureProof = {
  * The floor owner clips every stroke against the authored hull/void/solids. */
 export function addKitDeckArchitecture(t:RoomTemplate,id:string,reservations:readonly Reservation[],p:FloorPainter):DeckArchitectureProof {
   const proof:DeckArchitectureProof={idea:'Equipment access covers with narrow wall feeds',bays:0,connections:0,triangles:0,baseArea:0,maxHeight:0,anchors:[]};
+  if(Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,id))return proof;
   if(!['residential-gallery','crew-checkpoint','transmission-chamber'].includes(id))return proof;
   const quad=(x:number,z:number,w:number,d:number,color:number,kind:string,y=.024)=>{
     if(proof.triangles>=800||!p.quad(x,z,w,d,0,color,kind,y))return false;

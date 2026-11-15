@@ -7,7 +7,7 @@ import {serviceCartridge,serviceHousingGeometry} from './world/EquipmentDetail';
 /** Room-local shell and major forms. Dimensions are game units.
  * Raised forms remain inside the five production solids. Cross-aisle cables
  * are flush deck inlays, not extra blockers or relay-success indicators. */
-export function relayRacksRoom():T.Group{
+export function relayRacksRoom(includeShell=true):T.Group{
  const root=new T.Group();root.name='authored-relay-racks';
  const material=(name:string,color:number,metalness=.35)=>{const m=new T.MeshStandardMaterial({color,metalness,roughness:.78});m.name=name;m.userData.actorMaterial=true;return m;};
  const deck=material('painted-steel-deck',0x30383a,.1),dark=material('relay-frame-metal',0x1d272b,.65),rail=material('relay-rail-metal',0x526164,.7),pale=material('relay-ceramic',0xc7cec0,.05),cyan=material('relay-fiber',0x568b91,.1),amber=material('relay-bridge-metal',0x8b7350,.65),damage=material('relay-cut-metal',0x765746);
@@ -171,6 +171,7 @@ export function relayRacksRoom():T.Group{
  box(channels,600,.15,627,10,.3,86,damage);
  box(channels,500,.15,670,200,.3,10,damage);
  for(const [g,batches]of groups)for(const [m,{parts,name}]of batches){
+  if(!includeShell&&[shell,seams,panels,channels].includes(g)){for(const p of parts)p.dispose();continue;}
   const geo=mergeGeometries(parts,false)!;for(const p of parts)p.dispose();
   const mesh=new T.Mesh(geo,m);mesh.name=name;mesh.castShadow=g!==channels&&g!==shell;mesh.receiveShadow=true;mesh.userData.bakedEnvironment=true;(g===shell?root:g).add(mesh);
  }
