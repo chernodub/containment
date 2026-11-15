@@ -17,6 +17,6 @@ describe('L8 fixed cohort provenance and honest outcomes',()=>{
  it('reports each rig median and the I5 distance from pooled separately from the rig range',()=>{
   const rs=rigs.map(fixture);rs[0].outcome='dead';rs[0].deathRoom=20;
   const s=summarizeCohort(rs);expect(s.completionPct).toBe(75);expect(s.maxRigDistancePp).toBe(75);expect(s.rigRangePp).toBe(100);expect(s.byRig.breacher.roomsPerOverdrive).toBe(2);expect(s.byRig.cryo.transmissionSeconds).toBe(65);
-  expect(s.strictOrdinarySeconds).toBe(35);expect(s.broadNonholdoutSeconds).toBe(35);expect(s.byDepth[9].entryHealthDebt).toBe(10);
+  expect(s.strictOrdinarySeconds).toBe(35);expect(s.broadNonholdoutSeconds).toBe(35);expect(s.byDepth[9].entryHealthDebt).toBe(10);expect(s.byRig.cryo.directAbilityShare).toBe(.3);expect(s.byRig.cryo.abilityPlusStatusShare).toBe(.35);
  });
 });
