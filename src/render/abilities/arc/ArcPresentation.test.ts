@@ -181,7 +181,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     expect(bolt).toHaveBeenCalledTimes(tier === 'low' ? 5 : 11);
     expect(bolt.mock.calls.filter(call => call[1] >= 1.4)).toHaveLength(3);
     expect(ribbon.mock.calls.some(call => call[1] === 1.52 && (call[7] ?? 0) >= .022 && (call[7] ?? 0) <= .032)).toBe(true);
-    expect(kit.batches.ghost.mesh.count).toBe(2);
+    expect(kit.batches.ghost.mesh.count).toBe(1);
     const calls = grade.mock.calls.length; frame.snapshot = snapshot(); step(.016);
     expect(grade.mock.calls).toHaveLength(calls); expect(kit.batches.front.mesh.count).toBe(0); dispose();
   });
@@ -209,10 +209,10 @@ describe('Arc presentation signatures and lifecycle', () => {
     step(1); expect(kit.ribbons.mesh.count).toBe(0); expect(kit.batches.decal.mesh.count).toBe(0); dispose();
   });
 
-  it.each(['high', 'low'] as const)('keeps slowed-moving hostile echoes visible and bounded on %s, excluding stationary actors', tier => {
+  it.each(['high', 'low'] as const)('uses short tapered motion contours on %s without scan cards or stationary smears', tier => {
     const { kit, frame, step, dispose } = setup();
     kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
-    const ribbon = vi.spyOn(kit, 'ribbon');
+    const ribbon = vi.spyOn(kit, 'ribbon'), sprite = vi.spyOn(kit, 'sprite');
     frame.game = { player: { x: 128, y: 128, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [
       { x: 256, y: 160, velocityX: 3, velocityY: 4 },
       { x: 320, y: 160, velocityX: 0, velocityY: 0 },
@@ -220,11 +220,43 @@ describe('Arc presentation signatures and lifecycle', () => {
     ] } }, bullets: [] } as never;
     frame.snapshot = snapshot({ hostileTimeScale: .2, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 3000 } });
     step(.016);
-    const trails = ribbon.mock.calls.filter(call => call[0] === 8 || call[0] === 12);
-    expect(trails).toHaveLength(tier === 'low' ? 2 : 4);
-    for (const call of trails) expect(Math.hypot(call[3] - call[0], call[5] - call[2])).toBeGreaterThanOrEqual(.45);
-    for (const call of trails) expect(Math.hypot(call[3] - call[0], call[5] - call[2])).toBeLessThanOrEqual(1.501);
-    expect(ribbon.mock.calls.some(call => call[0] === 10)).toBe(false); dispose();
+    const segments = tier === 'low' ? 2 : 3;
+    const trails = ribbon.mock.calls.filter(call => call[1] === .35);
+    expect(trails).toHaveLength(segments * 2);
+    for (let group = 0; group < 2; group++) {
+      const trail = trails.slice(group * segments, (group + 1) * segments);
+      for (let i = 1; i < trail.length; i++) {
+        expect(trail[i].slice(0, 3)).toEqual(trail[i - 1].slice(3, 6));
+        expect(trail[i][7]).toBeLessThan(trail[i - 1][7]!);
+        expect(trail[i][8]).toBeLessThan(trail[i - 1][8]!);
+      }
+      const first = trail[0], last = trail[trail.length - 1];
+      const length = Math.hypot(first[0] - last[3], first[2] - last[5]);
+      expect(length).toBeGreaterThanOrEqual(.319); expect(length).toBeLessThanOrEqual(.901);
+      expect(first[8]).toBeLessThanOrEqual(.19);
+    }
+    expect(sprite.mock.calls.some(call => call[0] === 'scan')).toBe(false);
+    expect(ribbon.mock.calls.some(call => call[0] === 10)).toBe(false);
+    dispose();
+  });
+
+  it.each(['high', 'low'] as const)('attaches tapered suit wakes to actual marine motion on %s and hides them when stopped', tier => {
+    const { kit, frame, step, dispose } = setup();
+    kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
+    const player = { x: 128, y: 128, angle: Math.PI / 2, vx: 100, vy: 0 };
+    frame.game = { player, enemies: { snapshot: { enemies: [] } }, bullets: [] } as never;
+    frame.snapshot = snapshot({ hostileTimeScale: .3, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
+    const ribbon = vi.spyOn(kit, 'ribbon'); step(.016);
+    const trails = ribbon.mock.calls.filter(call => call[1] === 1.18);
+    expect(trails).toHaveLength(tier === 'low' ? 4 : 6);
+    for (const trail of trails) {
+      expect(trail[3]).toBeLessThan(trail[0]); expect(trail[5]).toBe(trail[2]);
+      expect(trail[6]).toBe(0xb79cff); expect(trail[8]).toBeLessThanOrEqual(.28);
+      expect(trail[9]).toBe(false);
+    }
+    player.vx = 0; ribbon.mockClear(); step(.016);
+    expect(ribbon.mock.calls.filter(call => call[1] === 1.18)).toHaveLength(0);
+    dispose();
   });
 
   it('attaches Overclock gun energy to the visible animated muzzle and follows weapon switches', () => {
@@ -275,10 +307,16 @@ describe('Arc presentation signatures and lifecycle', () => {
     step(.016);
     expect(ribbon.mock.calls.some(call => call[0] === 10 && call[2] === 7)).toBe(false);
     const smear = ribbon.mock.calls.filter(call => call[2] === 7 && call[0] > 8);
-    expect(smear).toHaveLength(1);
-    expect(smear[0].slice(0,6)).toEqual([9.72,.5,7,8.9,.5,7]);
+    expect(smear).toHaveLength(3);
+    expect(smear[0].slice(0,3)).toEqual([9.72,.5,7]);
+    expect(smear[2].slice(3,6)).toEqual([8.9,.5,7]);
+    for (let i = 1; i < smear.length; i++) {
+      expect(smear[i].slice(0,3)).toEqual(smear[i - 1].slice(3,6));
+      expect(smear[i][7]).toBeLessThan(smear[i - 1][7]!);
+      expect(smear[i][8]).toBeLessThan(smear[i - 1][8]!);
+    }
     expect(smear[0][8]).toBe(.12);
-    expect(sprite.mock.calls.some(call => call[0] === 'scan' && call[1] === 9.28 && call[3] === 7)).toBe(true);
+    expect(sprite.mock.calls.some(call => call[0] === 'scan')).toBe(false);
     expect(hazard).toEqual({ kind: 'hazard', x: 320, y: 224, request: { angle: 0 } });
     const priority = kit.ribbons.mesh.geometry.getAttribute('ribbonPriority');
     step(.4);
@@ -314,23 +352,22 @@ describe('Arc presentation signatures and lifecycle', () => {
     dispose();
   });
 
-  it.each(['high', 'low'] as const)('keeps two separated marine echoes and localized electric armor edges readable on %s', tier => {
+  it.each(['high', 'low'] as const)('keeps one subdued marine ghost and localized electric armor edges readable on %s', tier => {
     const { kit, frame, step, dispose } = setup();
     kit.setOptions(GRAPHICS_PRESETS[tier], tier, false);
     const afterImage = vi.spyOn(kit, 'afterImage'), ribbon = vi.spyOn(kit, 'ribbon'), sprite = vi.spyOn(kit, 'sprite'), bolt = vi.spyOn(kit, 'boltCard');
     frame.game = { player: { x: 128, y: 128, angle: 0, vx: 0, vy: 0 }, enemies: { snapshot: { enemies: [] } }, bullets: [] } as never;
     frame.snapshot = snapshot({ hostileTimeScale: .3, overdrive: { active: true, charge: 0, ready: false, activeRemainingMs: 4000 } });
     step(.016);
-    expect(afterImage).toHaveBeenCalledTimes(2);
+    expect(afterImage).toHaveBeenCalledTimes(1);
     const positions = afterImage.mock.calls.map(call => [call[0], call[1]]);
     for (const call of afterImage.mock.calls) {
       expect(Math.hypot(call[0] - 4, call[1] - 4)).toBeGreaterThanOrEqual(1);
       expect(Math.hypot(call[0] - 4, call[1] - 4)).toBeLessThanOrEqual(2.3);
-      expect(call[3]).toBe(0xf2ecff); expect(call[4]).toBe(.7);
+      expect(call[3]).toBe(0xb79cff); expect(call[4]).toBe(.24);
     }
-    // V7 separates the two bodies by at least one marine width at reduction.
-    expect(Math.hypot(positions[0][0] - positions[1][0], positions[0][1] - positions[1][1])).toBeGreaterThanOrEqual(1.25);
-    expect((positions[0][1] - 4) * (positions[1][1] - 4)).toBeLessThan(0);
+    expect(positions).toHaveLength(1);
+    expect(sprite.mock.calls.some(call => call[0] === 'scan')).toBe(false);
     const seams = ribbon.mock.calls.filter(call => call[9] === false && call[1] > .1);
     expect(seams).toHaveLength(8);
     for (const call of seams) {
@@ -338,7 +375,7 @@ describe('Arc presentation signatures and lifecycle', () => {
       expect(Math.hypot(call[0] - 4, call[2] - 4)).toBeLessThan(1);
     }
     afterImage.mockClear(); step(.14);
-    expect(afterImage).toHaveBeenCalledTimes(2);
+    expect(afterImage).toHaveBeenCalledTimes(1);
     expect(afterImage.mock.calls.map(call => [call[0], call[1]])).toEqual(positions);
     const armorBolts = bolt.mock.calls.filter(call => call[1] >= 1.4);
     expect(armorBolts).toHaveLength(6);
@@ -358,7 +395,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     frame.snapshot = active;
     step(.2); step(.2); // Refresh a new ghost while the sustained ultimate is already .4s old.
     const ghosts = kit.batches.ghost.mesh, priority = ghosts.geometry.getAttribute('abilityPriority');
-    expect(ghosts.count).toBe(2);
+    expect(ghosts.count).toBe(1);
     for (let i = 0; i < ghosts.count; i++) expect(priority.getX(i)).toBe(1);
     const pose = ghosts.instanceMatrix.array.slice();
     step(0);
@@ -392,11 +429,7 @@ describe('Arc presentation signatures and lifecycle', () => {
     const first = sprite.mock.calls.find(call => call[0] === 'impact')!;
     expect(first[1]).toBeLessThan(4); expect(first[3]).toBeGreaterThan(4);
     sprite.mockClear(); step(.085);
-    expect(sprite.mock.calls.filter(call => call[0] === 'impact')).toHaveLength(tier === 'high' ? 1 : 0);
-    if (tier === 'high') {
-      const second = sprite.mock.calls.find(call => call[0] === 'impact')!;
-      expect(second[1]).toBeLessThan(first[1]); expect(second[3]).toBeLessThan(4);
-    }
+    expect(sprite.mock.calls.filter(call => call[0] === 'impact')).toHaveLength(0);
     step(.5); sprite.mockClear(); step(.05);
     expect(sprite.mock.calls.filter(call => call[0] === 'impact')).toHaveLength(0);
     stats.shotsFired = 2; step(.016); sprite.mockClear(); step(.05);

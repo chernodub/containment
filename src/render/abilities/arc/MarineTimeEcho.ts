@@ -13,7 +13,7 @@ const SECTIONS = [
   [14, 15, .23, .24], [15, 16, .19, .22], [16, 17, .22, .27],
 ] as const;
 
-/** Fixed CPU pose storage; two delayed poses share the prepared solid batch. */
+/** Fixed CPU pose storage; the delayed pose share the prepared solid batch. */
 export class MarineTimeEcho {
   private root?: Object3D;
   private readonly bones: (Object3D | undefined)[] = Array(BONES.length);
@@ -69,16 +69,16 @@ export class MarineTimeEcho {
       const dx = ex - sx, dy = ey - sy, dz = ez - sz, length = Math.hypot(dx, dy, dz);
       if (length < .015) continue;
       const yaw = Math.atan2(dz, -dx), tilt = Math.acos(Math.max(-1, Math.min(1, dy / length)));
-      // Broad white body, restrained violet joint rails. Actual live marine stays
+      // Subdued violet body and joint rails. Actual live marine stays
       // opaque and cyan; the copied pose is a sparse, locally masked time image.
       kit.draw('solid', (sx + ex) * .5, (sy + ey) * .5, (sz + ez) * .5,
-        width, length + (i === 2 ? .16 : .03), depth, i === 2 ? 0xf2ecff : 0xcfc5e9,
+        width, length + (i === 2 ? .16 : .03), depth, i === 2 ? 0x9b86b8 : 0x79688f,
         opacity, yaw, tilt);
       if (!kit.low && i < 7) kit.ribbon(sx, sy, sz, ex, ey, ez, 0xb79cff, .014, opacity * .35, false);
     }
     const o = BONES.length * 3, mx = x + pose[o], my = pose[o + 1], mz = z + pose[o + 2];
     kit.ribbon(mx - pose[o + 3] * .62, my, mz - pose[o + 5] * .62,
-      mx, my, mz, 0xf2ecff, .075, opacity * .85, false);
+      mx, my, mz, 0xb79cff, .028, opacity * .45, false);
   }
 
   clear(): void { this.root = undefined; this.valid = false; this.bones.fill(undefined); }

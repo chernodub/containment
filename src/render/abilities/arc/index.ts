@@ -26,14 +26,13 @@ class ArcPresentation implements AbilityPresentation {
   private blinks: Blink[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
   private bolts: Bolt[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, tx: 0, tz: 0, age: 0 }));
   private fronts: Front[] = Array.from({ length: 12 }, () => ({ live: false, x: 0, z: 0, radius: 1, age: 0, life: 1, reverse: false, time: false }));
-  private echoes: Echo[] = Array.from({ length: 2 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0, articulated: false, native: false, pose: MarineTimeEcho.pose(), gunX: 0, gunY: 0, gunZ: 0 }));
+  private echoes: Echo[] = Array.from({ length: 1 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0, articulated: false, native: false, pose: MarineTimeEcho.pose(), gunX: 0, gunY: 0, gunZ: 0 }));
   private readonly marineEcho = new MarineTimeEcho();
   private readonly nativeEchoes: NativeMarineEchoes;
   private readonly shotEchoes: ShotEcho[] = Array.from({ length: 24 }, () => ({ live: false, x: 0, y: 0, z: 0, angle: 0, age: 0, dx: 0, dz: 0 }));
   private nextShot = 0;
   private shotsObserved = 0;
   private shotBaseline = false;
-  private nextEcho = 0;
   private echoAge = 0;
   private overclockAge = 0;
   private readonly start = new Vector3();
@@ -408,20 +407,16 @@ class ArcPresentation implements AbilityPresentation {
     }
     if (starting || frame.dt > 0 && this.echoAge >= .14) {
       this.echoAge %= .14;
-      // Two separated articulated poses expose the suit silhouette even while holding aim.
+      // A single quiet delayed body makes the live marine the unique bright actor.
       const speed = Math.hypot(g.player.vx, g.player.vy);
       const dx = speed > 25 ? g.player.vx / speed : Math.cos(angle);
       const dz = speed > 25 ? g.player.vy / speed : Math.sin(angle);
-      const count = starting ? 2 : 1;
-      for (let i = 0; i < count; i++) {
-        const index = this.nextEcho++ % this.echoes.length, echo = this.echoes[index];
-        const trail = index ? 2.15 : 1.05, side = index ? -.42 : .3;
-        echo.live = true; echo.age = -frame.dt;
-        echo.x = x - dx * trail - dz * side; echo.z = z - dz * trail + dx * side; echo.angle = angle;
-        echo.gunX = mx - x; echo.gunY = my; echo.gunZ = mz - z;
-        echo.native = this.nativeEchoes.capture(index, frame.marine, x, z);
-        echo.articulated = !echo.native && this.marineEcho.capture(echo.pose, frame.marine, x, z, mx, my, mz, angle);
-      }
+      const echo = this.echoes[0];
+      echo.live = true; echo.age = -frame.dt;
+      echo.x = x - dx * 1.05 - dz * .3; echo.z = z - dz * 1.05 + dx * .3; echo.angle = angle;
+      echo.gunX = mx - x; echo.gunY = my; echo.gunZ = mz - z;
+      echo.native = this.nativeEchoes.capture(0, frame.marine, x, z);
+      echo.articulated = !echo.native && this.marineEcho.capture(echo.pose, frame.marine, x, z, mx, my, mz, angle);
     }
     for (let index = 0; index < this.echoes.length; index++) {
       const echo = this.echoes[index];
@@ -429,20 +424,27 @@ class ArcPresentation implements AbilityPresentation {
       echo.age += frame.dt;
       if (echo.age >= .35) { echo.live = false; continue; }
       k.sustain(this.overclockAge);
-      const opacity = fade * (1 - echo.age / .35) * .7;
+      const opacity = fade * (1 - echo.age / .35) * .24;
       if (echo.native) {
         this.nativeEchoes.draw(index, echo.x, echo.z, opacity, k.priorityWeight, k.time, k.low);
         if (!k.low || index === 0) {
           const mx = echo.x + echo.gunX, mz = echo.z + echo.gunZ;
           k.ribbon(mx - Math.cos(echo.angle) * .62, echo.gunY, mz - Math.sin(echo.angle) * .62,
-            mx, echo.gunY, mz, WHITE, .055, opacity * .8, false);
+            mx, echo.gunY, mz, VIOLET, .028, opacity * .45, false);
         }
       }
       else if (echo.articulated) this.marineEcho.draw(k, echo.pose, echo.x, echo.z, opacity);
-      else k.afterImage(echo.x, echo.z, echo.angle, WHITE, opacity);
+      else k.afterImage(echo.x, echo.z, echo.angle, VIOLET, opacity);
     }
     this.firingEchoes(frame, mx, my, mz, angle, fade);
     k.sustain(this.overclockAge);
+    const speed = Math.hypot(g.player.vx, g.player.vy);
+    if (speed > 25) {
+      const dx = g.player.vx / speed, dz = g.player.vy / speed;
+      for (let side = -1; side <= 1; side += 2) this.motionContour(
+        x - dz * side * .28, 1.18, z + dx * side * .28, dx, dz,
+        Math.min(1.4, .5 + speed / UNIT * .07), fade * .28);
+    }
     const progress = k.reducedMotion ? .7 : (this.overclockAge * .65) % 1;
     this.timeRipple(x, z, 1.3 + progress * 2.2, fade * Math.sin(progress * Math.PI) * .12,
       k.reducedMotion ? 0 : this.overclockAge * .08);
@@ -454,18 +456,14 @@ class ArcPresentation implements AbilityPresentation {
         if (n++ >= (k.low ? 12 : 25)) break;
         const speed = Math.hypot(e.velocityX, e.velocityY);
         if (speed < 1) continue;
-        // Slowed simulation velocity can be only a few units/s: preserve its direction while
-        // giving the presentation-only time echo enough length to survive 480px reduction.
-        const length = Math.min(1.5, Math.max(.55, speed / UNIT * .4));
-        const tx = e.x / UNIT - e.velocityX / speed * length, tz = e.y / UNIT - e.velocityY / speed * length;
-        k.ribbon(e.x / UNIT, .35, e.y / UNIT, tx, .35, tz, VIOLET, .045, fade * .32, false);
-        if (!k.low) k.ribbon(e.x / UNIT, .7, e.y / UNIT, tx, .7, tz, WHITE, .02, fade * .14, false);
-        // Two displaced scan impressions make slow motion legible without replacing
-        // the actual enemy silhouette or changing its live rendering/material.
+        // Short contour fragments stay attached to motion. Round, soft-capped
+        // pooled ribbons taper in both width and alpha; no rectangular scan cards.
+        const length = Math.min(.9, Math.max(.32, speed / UNIT * .28));
+        const dx = e.velocityX / speed, dz = e.velocityY / speed;
         const radius = Math.max(.2, Math.min(.7, (e.radius ?? 16) / UNIT));
-        k.sprite('scan', tx, .6, tz, radius, .5, VIOLET, fade * .22, e.id ?? n);
-        if (!k.low) k.sprite('scan', tx - e.velocityX / speed * .22, .6, tz - e.velocityY / speed * .22,
-          radius * .9, .48, WHITE, fade * .10, (e.id ?? n) + 3);
+        this.motionContour(e.x / UNIT, .35, e.y / UNIT, dx, dz, length, fade * .19);
+        if (!k.low) this.motionContour(e.x / UNIT - dz * radius * .45, .7,
+          e.y / UNIT + dx * radius * .45, dx, dz, length * .75, fade * .10);
       }
       let friendly = 0, hostile = 0;
       for (const bullet of g.bullets) {
@@ -476,10 +474,7 @@ class ArcPresentation implements AbilityPresentation {
           // A separated, faint time smear follows behind it and yields through the
           // same danger mask; no overlay ever sits on the actual projectile head.
           const px = bullet.x / UNIT, pz = bullet.y / UNIT;
-          k.ribbon(px - dx * .28, .5, pz - dz * .28, px - dx * 1.1, .5, pz - dz * 1.1,
-            VIOLET, .025, fade * .12, false);
-          if (!k.low) k.sprite('scan', px - dx * .72, .5, pz - dz * .72, .35, .08,
-            VIOLET, fade * .09, hostile);
+          this.motionContour(px - dx * .28, .5, pz - dz * .28, dx, dz, .82, fade * .12);
           continue;
         }
         if (bullet.kind !== 'player' || friendly++ >= (k.low ? 24 : 80)) continue;
@@ -493,6 +488,17 @@ class ArcPresentation implements AbilityPresentation {
         const vx = g.player.vx / UNIT, vz = g.player.vy / UNIT;
         k.mote('spark', x - vx * .06, .6, z - vz * .06, -vx * .1, .2, -vz * .1, .055, .3, VIOLET);
       }
+    }
+  }
+
+  /** Contiguous round segments shrink toward the wake; existing material fades both caps. */
+  private motionContour(x: number, y: number, z: number, dx: number, dz: number, length: number, opacity: number): void {
+    const k = this.kit, segments = k.low ? 2 : 3;
+    for (let i = 0; i < segments; i++) {
+      const t = i / segments, next = (i + 1) / segments;
+      k.ribbon(x - dx * length * t, y, z - dz * length * t,
+        x - dx * length * next, y, z - dz * length * next,
+        VIOLET, .037 * (1 - t * .8), opacity * (1 - t) * (1 - t), false);
     }
   }
 
@@ -520,20 +526,16 @@ class ArcPresentation implements AbilityPresentation {
       if (!shot.live) continue;
       shot.age += frame.dt;
       if (shot.age >= .36) { shot.live = false; continue; }
-      for (let i = 0; i < (k.low ? 1 : 2); i++) {
-        const delay = .045 + i * .085, age = shot.age - delay;
-        if (age < 0 || age >= .17) continue;
-        const trail = i ? 2.15 : 1.05, side = i ? -.42 : .3;
-        const sx = shot.x - shot.dx * trail - shot.dz * side;
-        const sz = shot.z - shot.dz * trail + shot.dx * side;
-        const c = Math.cos(shot.angle), s = Math.sin(shot.angle);
-        const travel = age * 13, opacity = fade * (1 - age / .17) * (i ? .44 : .66);
-        k.ribbon(sx + c * travel, shot.y, sz + s * travel,
-          sx + c * (travel + 1.5), shot.y, sz + s * (travel + 1.5),
-          i ? VIOLET : WHITE, k.low ? .025 : .035, opacity, false);
-        if (age < .065) k.sprite('impact', sx, shot.y, sz, .21, .21, WHITE,
-          opacity * (1 - age / .065), this.nextShot + i, 'light');
-      }
+      const age = shot.age - .045;
+      if (age < 0 || age >= .17) continue;
+      const sx = shot.x - shot.dx * 1.05 - shot.dz * .3;
+      const sz = shot.z - shot.dz * 1.05 + shot.dx * .3;
+      const c = Math.cos(shot.angle), s = Math.sin(shot.angle);
+      const travel = age * 13, opacity = fade * (1 - age / .17) * .25;
+      this.motionContour(sx + c * (travel + 1.1), shot.y, sz + s * (travel + 1.1),
+        c, s, 1.1, opacity);
+      if (age < .065) k.sprite('impact', sx, shot.y, sz, .13, .13, VIOLET,
+        opacity * (1 - age / .065), this.nextShot, 'light');
     }
   }
 

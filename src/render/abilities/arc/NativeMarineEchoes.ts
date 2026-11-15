@@ -16,7 +16,7 @@ type EchoSlot = {
   priority: number;
 };
 
-/** Exact native skin poses with borrowed geometry and two private skeletons. */
+/** Exact native skin poses with borrowed geometry and one private skeleton. */
 export class NativeMarineEchoes {
   readonly material?: T.ShaderMaterial;
   readonly slots: readonly EchoSlot[];
@@ -55,11 +55,10 @@ uniform float echoAlpha;uniform float echoPriority;uniform float echoTime;
 varying vec3 echoNormal;varying float echoHeight;
 void main(){
  float face=abs(normalize(echoNormal).z);
- float band=face<.28?.48:(face<.70?.78:1.08);
+ float band=face<.28?.32:(face<.70?.46:.60);
  float rim=1.-smoothstep(.12,.45,face);
- vec3 color=vec3(.70,.64,.91)*band+vec3(.30,.24,.48)*rim;
- float scan=.97+.03*sin(echoHeight*28.-echoTime*4.);
- gl_FragColor=vec4(color,echoAlpha*scan*(.87+rim*.13));
+ vec3 color=vec3(.48,.40,.68)*band+vec3(.18,.13,.30)*rim;
+ gl_FragColor=vec4(color,echoAlpha*(.58+rim*.42));
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
  gl_FragColor.rgb*=gl_FragColor.a;
@@ -70,10 +69,10 @@ void main(){
     material.onBeforeCompile = shader => {
       shader.fragmentShader = shader.fragmentShader.replace('priority*1.*.97', 'priority*echoPriority*.97');
     };
-    material.customProgramCacheKey = () => 'v7-overclock-native-skin-v1';
+    material.customProgramCacheKey = () => 'v8-overclock-native-skin-v1';
     const slots: EchoSlot[] = [];
-    for (let i = 0; i < 2; i++) {
-      const asset = i ? instantiateAsset('marine') : first;
+    for (let i = 0; i < 1; i++) {
+      const asset = first;
       const meshes: T.SkinnedMesh[] = [];
       asset.root.traverse(node => { if (node instanceof T.SkinnedMesh) meshes.push(node); });
       const skeletons = [...new Set(meshes.map(mesh => mesh.skeleton))];
