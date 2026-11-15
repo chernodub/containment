@@ -187,7 +187,7 @@ QueueB (odd indexes1,3,…39): 2718,42,8675309,9001,123456,1001,1003,1005,1007,1
 Each queue runs all four rigs,20 seeds each,80 attempts. Both run simultaneously: four CPU workers total, unchanged vanilla backendf7c6d801…/policy976eb173…, same observers/actors; Vitest remains MAX_WORKERS2. Combined outcomes from all160 attempts are mandatory, without early outcome-dependent stopping. No FPS certification while either queue is active. The exact dispatch manifest is `artifacts/nextgen/l8-sim/next-fixed160-dispatch.json`. Root has selected no further encounter/count change; the next candidate must first resolve actual physical subspace/threshold semantics.
 
 
-## Reviewed real-bay source659 — fixed validation running
+## Reviewed real-bay source659 — fixed validation failed
 
 Root accepted the labeled physical-bay revision and froze `659ac9ddf167b9d0b24ec65001ebd2912aaf79e2`. Diagnostic now has actual recorder/instrument and port/return workbays, with real140-unit side doors and supported broad front mouths. Workshop has connected loading cheeks, a lathe side door and real tool/gantry/return separators, preserving V11's filled bench. Safety honestly names its open instrumentation gallery; its collision is unchanged. Swarm's340-depth banks and600,400 encounter circle bring the real northern throat into the combat viewport. Exact plan/number records are in `L8-final-partitions.md`, `L8-swarm-bay-proposal.md`, and `artifacts/nextgen/l8-sim/revised659-hardproof/all20-numeric-layout-changes.json`. No additional encounter changes were made: the existing eight real request appends remain.
 
@@ -199,4 +199,67 @@ All five all20 geometry packets share SHA `e18ff45ab40c0dde0222e1aba76d6e67338d7
 
 Both predeclared alternating-seed80 queues have launched on exact659: `artifacts/nextgen/playtest/l8-revised659-even80/` and `artifacts/nextgen/playtest/l8-revised659-odd80/`, two workers each. They use the unchanged vanilla npm runner/backendf7c6d801… and policy976eb173…, same40 seeds/rig as baseline and no outcome-dependent stopping. Orchestration waits for both child processes to close; every raw report is retained. Dispatch receipt: `artifacts/nextgen/l8-sim/revised659-dispatch.json`. FPS certification remains held until every worker exits.
 
-Both queues compiled the same gameHash `5d88a05eb2f1b8ccfe9bb8bea8d30d946995e6a1b7418fcfdf3773dea6550df2` and bundleHash `b723abecd7574ca648fdbc749d4abfe4308665add6db5349b7e7d40b8d1bb9e6`. Full fixed160 outcomes remain pending; no balance, native-campaign or hardware acceptance is claimed from these hard proofs.
+Both queues compiled the same gameHash `5d88a05eb2f1b8ccfe9bb8bea8d30d946995e6a1b7418fcfdf3773dea6550df2` and bundleHash `b723abecd7574ca648fdbc749d4abfe4308665add6db5349b7e7d40b8d1bb9e6`. All160 finish:98 complete (61.25%), B42.5/C82.5/P52.5/A67.5%, maximum rig distance21.25pp, ordinary29.916667s. Completion, rig distance and strict ordinary pacing fail; Transmission61.516667s and every-rig OD cadence pass. All attempts remain natural, firstfive all clear, ordinary cap violations0. The packet `revised659-N160-comparison.json` retains the full failed results; no hard proof is substituted for balance acceptance.
+
+## Mandatory c7 navigation repair and complete fixed160 audit
+
+Extra actual opening-midpoint crowd coverage exposes six real native jams on
+659 across Awakening, Atrium, Diagnostic(two), Workshop and Annulus. The
+world-only fix `c7c75b985a30eb297596680cff9735e2ca86d6de` expires a retained
+navigation leg after eight distinct existing native decision versions without
+one unit of best-distance improvement. Plain geometry callers use distinct
+positions; repeated speculative queries in one decision do not count. No
+actors, abilities, policy, colliders, encounters or clocks change. All157 real
+opening points/3140 native actors now pass the unchanged60s horizon and body
+sweeps. All20 hard proof31 files1041 tests, candidate-overlay75 tests and six
+untouched legacy91 tests pass; original failed states/traces remain. See
+`L8-navigation-progress-repair.md` and `l8-sim/navfix-c7-hardproof/`.
+
+A dormant three-ingress approach candidate passes structural/native proofs but
+fails its single declared primary40 diagnostic. Actual source includes the
+required c7 repair, with geometry override only and no observation counters.
+The later vanilla c7 control40 isolates it: control B40/C50/P40/A70% versus
+candidate B60/C80/P20/A70%, identical first-ten histories all40 pairs. Candidate
+distance37.5pp and ordinary29.533333s fail; root rejects activation. Every
+collider/aperture/arena/count remains current659 in live runtime. The failed
+packet and exact three proposed coordinates remain in
+`L8-service-approach-candidate.md` and `artifacts/nextgen/l8-service-approach/`.
+
+Eight separately declared dispatch/OD observer replays on c7 pass exhaustive
+native gameplay-field parity8/8 against the vanilla control before timelines
+are interpreted. Seven complete, Cryo2718 dies room15 and its five unearned
+late rooms stay absent. Actual room11–19 request tails span9.183–34.917s
+(median16.392s), rather than nominal4.320–4.850s: a small nominal stagger is
+not established pressure. The tool's core has a separate diagnostic hash;
+none of these eight enters release metrics. Six Vitest contracts preserve
+read-only/exactly-once/parity guarantees. `L8-c7-dispatch-observations.md`
+retains counts, intervals, limitations and no selected pressure change.
+
+Root then predeclares completing the original40-seeds-per-rig audit on c7:
+reuse the40 genuine vanilla controls after exact identity proof and run the
+remaining120 as two balanced60 queues with two workers each. Both finish60/60
+exit0, with all owned workers reaped. All160 source/seed/game/bundle/backend/
+metrics/policy checks pass, including52 frozen actor/model/observer/backend
+paths identical baseline=c7=current. No override, assistance, new seed,
+optional stopping, error or censor is present. No gameplay edit occurs during
+the audit. `L8-c7-N160-audit.md` is the prospective declaration plus full result.
+
+|Fixed160|Baseline7cee|Required c7 audit|
+|---|---:|---:|
+|Completion|88/160 (55%)|94/160 (58.75%)|
+|B/C/P/A|47.5/75/35/62.5%|42.5/70/52.5/70%|
+|Max rig distance / full range|20 /40pp|16.25 /27.5pp — fail|
+|Strict ordinary median|32.175000s|29.916667s — fail|
+|Transmission median|67.441667s|61.433333s|
+|Rooms/OD B/C/P/A|1.428571/1.428571/1.363636/1.428571|1.428571/1.392857/1.422619/1.428571|
+
+Firstfive clear160/160 each; ordinary OD cap violations0. Death rooms
+10×1,12×5,14×2,15×6,16×17,17×10,18×6,19×2,20×17. The exact ordinary median
+is below30 and is never rounded into acceptance. Breacher's maximum rig
+distance remains16.25pp by the declared I5 method; inherited baseline skew
+does not waive it. All320 matched before/after raw hashes and complete
+primary/additional/combined/per-rig/per-room entry-debt, cast, damage and death
+tables are in `artifacts/nextgen/l8-sim/c7-N160-comparison.json` and `.md`.
+The +8 previously approved real requests remain unchanged. No new elite,
+stagger, count or layout source is selected; native browser/hardware and
+isolated full-kit evidence remain separate from this failed balance audit.

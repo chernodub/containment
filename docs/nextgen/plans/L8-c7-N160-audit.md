@@ -42,3 +42,75 @@ additional and complete distributions, every rig's OD median, strict ordinary
 and holdout pacing, full rig range and maximum distance, deaths, per-room
 incoming/entry debt/casts, native full-kit evidence separately, and every raw
 hash. Only the completed160 packet can inform subsequent source selection.
+
+## Complete fixed160 result — failed, not accepted
+
+Both60-attempt queues finish60/60 with exit0 (sessions85998 and47157), after
+the earlier vanilla control40 exit0. All owned simulation/observer workers are
+reaped. The complete validator checks the exact original40 seeds per rig,
+single c7 game/bundle identity, unchanged backend/metrics/policy, no diagnostic,
+unassisted/current story and production tuning. All pass; all160 are natural
+terminal outcomes,94 complete and66 dead, with zero errors or censors. No seed
+extension, optional stopping or gameplay change occurs during this audit.
+
+|Measure|Frozen baseline160|Repaired c7 audit160|
+|---|---:|---:|
+|Complete|88/160 (55%)|94/160 (58.75%)|
+|B/C/P/A completion|47.5/75/35/62.5%|42.5/70/52.5/70%|
+|Maximum rig distance / full range|20 /40pp|16.25 /27.5pp — fail|
+|Strict ordinary median|32.175000s|29.916667s — fail|
+|Transmission median|67.441667s|61.433333s|
+|B rooms/OD|1.428571|1.428571|
+|C rooms/OD|1.428571|1.392857|
+|P rooms/OD|1.363636|1.422619|
+|A rooms/OD|1.428571|1.428571|
+|First-five clear counts|160/160 each|160/160 each|
+|Ordinary-room OD cap violations|0|0|
+
+The exact ordinary median is29.91666666664… and is not rounded into a30s pass.
+Maximum rig distance is the established absolute distance from pooled,
+not half the range. Breacher42.5% lies16.25pp below58.75%; no inherited baseline
+failure waives the target. The primary40 remains50% complete with20pp distance
+and29.783333s ordinary median; the additional120 has61.666667%,18.333333pp,
+and30.000000s. Only their complete declared160 set is evaluated above.
+
+|Rig|Strict ordinary before→c7|Transmission before→c7|
+|---|---:|---:|
+|Breacher|33.533→31.917s|73.983→65.367s|
+|Cryo|36.400→33.658s|78.867→75.058s|
+|Pyro|28.733→27.217s|59.650→53.150s|
+|Arc|29.917→28.342s|60.650→59.083s|
+
+Pooled Transmission passes; individual holdout values remain exposed rather
+than described as four passing holdout medians. Campaign direct ability shares
+B/C/P/A are22.877/20.864/23.901/28.493%; ability+status shares are
+26.394/28.121/44.003/31.886%. These raw campaign buckets are distinct from the
+unchanged native isolated full-kit attribution and clear-spread guard.
+
+Death rooms are10×1,12×5,14×2,15×6,16×17,17×10,18×6,19×2,20×17. All occur
+inside the declared9–20 range. Breacher's largest local loss is Swarm35
+entries→27 clears, versus Cryo37→35,Pyro36→31,Arc38→36. Median Swarm entry
+vitality B97.61/C177.60/P100.14/A105.77 and incoming67.98/89.74/53.42/54.97
+show substantial carried-state differences. Breacher's Overload21→17 clears
+and median incoming69.33 do not establish finale pressure as its sole cause;
+Cryo's median incoming there is133.46. These are observations for subsequent
+review, not a selected rig-specific buff, new schedule or layout variant.
+
+No gameplay number changed during this audit. The mandatory c7 world repair
+adds expiration after eight distinct native decisions without one unit of net
+leg progress; actors, abilities, policy, colliders and encounters stay frozen.
+Previously approved real request counts remain Transmission34,Diagnostic29,
+Safety30,Shield33 (+2 each, +8 per complete campaign). The rejected three-ingress
+candidate and all failed prior cohorts remain retained and absent from this
+vanilla source. No further elite-bit, stagger, count or layout trial is selected.
+
+Evidence: `artifacts/nextgen/l8-sim/c7-N160-comparison.json` and `.md` contain
+all320 matched raw hashes, source/backend/policy/metrics receipts, exact
+primary/additional/combined summaries, every rig and every room, entry health
+debt/vitality, accepted casts, damage buckets, deaths and target booleans.
+`c7-N160-audit/primary-reuse-receipt.json` proves reuse identity before the
+additional outcomes; `observer-actor-identity.json` proves all52 frozen
+actor/model/observer/backend paths identical baseline=c7=current. Raw source
+snapshots remain in all three vanilla output folders. Hard proof, isolated
+full-kit, native browser outcomes and hardware budgets remain separate evidence;
+this failed audit does not constitute release acceptance.
