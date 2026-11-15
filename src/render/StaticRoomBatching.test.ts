@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as T from 'three';
 import { batchStaticRoom } from './StaticRoomBatching';
-import { batch, disposeModel } from './meshParts';
+import { batch, disposeModel, MAT } from './meshParts';
 import { appendEnvironment, environmentObstacle } from './ShipEnvironments';
 import { authoredRoom } from './AuthoredRooms';
 import { ROOM_TEMPLATES } from '../game/roguelike/roomTemplates';
 import type { ShipEnvironment } from './ShipEnvironments';
 import { getStaticColliderParts } from './StaticColliderParts';
+import { shipArchitectureRoom } from './world/ShipArchitectureRoom';
+import { optimizeLocalLights } from './lighting/LocalLightShading';
 
 function finish() {
   const material = new T.MeshStandardMaterial({ color: 0x71828a, roughness: .67, metalness: .2 });
@@ -22,9 +24,9 @@ function mesh(parent: T.Object3D, material: T.Material = finish()) {
   return result;
 }
 
-function triangles(root: T.Object3D) {
+function vertices(root: T.Object3D) {
   root.updateWorldMatrix(true, true);
-  const result: string[] = [];
+  const result: number[][] = [];
   root.traverse(object => {
     if (!(object instanceof T.Mesh)) return;
     const geometry = object.geometry, p = geometry.attributes.position, n = geometry.attributes.normal;
@@ -34,11 +36,44 @@ function triangles(root: T.Object3D) {
       const index = geometry.index?.getX(i) ?? i;
       const position = new T.Vector3().fromBufferAttribute(p, index).applyMatrix4(object.matrixWorld);
       const normal = new T.Vector3().fromBufferAttribute(n, index).applyNormalMatrix(normalMatrix);
-      result.push([...position.toArray(), ...normal.toArray(), uv.getX(index), uv.getY(index)]
-        .map(value => Math.round(value * 10000)).join(','));
+      result.push([...position.toArray(), ...normal.toArray(), uv.getX(index), uv.getY(index)]);
     }
   });
-  return result.sort();
+  return result;
+}
+
+function triangles(root: T.Object3D) {
+  return vertices(root).map(vertex => vertex.map(value => Math.round(value * 10000)).join(',')).sort();
+}
+
+// Nested native models move from local Float32 vertices to a room-local
+// Float32 buffer. Compare actual world coordinates/normals/UVs to 10 microns,
+// allowing only that unavoidable float bake precision, not changed geometry.
+function expectSameVertices(before: number[][], root: T.Object3D) {
+  const after = vertices(root);
+  expect(after.length).toBe(before.length);
+  const cellSize = .001, epsilon = .00001;
+  const cells = new Map<string, Map<string, { value: number[]; count: number }>>();
+  const cell = (value: number[]) => value.slice(0, 3).map(number => Math.floor(number / cellSize));
+  for (const value of before) {
+    const key = cell(value).join(','), bucket = cells.get(key) ?? new Map();
+    const signature = value.join(','), entry = bucket.get(signature) ?? { value, count: 0 };
+    entry.count++; bucket.set(signature, entry); cells.set(key, bucket);
+  }
+  const offsets = [[0, 0, 0]];
+  for (const x of [-1, 0, 1]) for (const y of [-1, 0, 1]) for (const z of [-1, 0, 1]) {
+    if (x || y || z) offsets.push([x, y, z]);
+  }
+  for (const value of after) {
+    const origin = cell(value); let matched = false;
+    for (const offset of offsets) {
+      const bucket = cells.get(origin.map((number, i) => number + offset[i]).join(','));
+      const match = bucket && [...bucket.values()].find(entry => entry.count &&
+        entry.value.every((number, i) => Math.abs(number - value[i]) < epsilon));
+      if (match) { match.count--; matched = true; break; }
+    }
+    if (!matched) throw Error(`Batched vertex no longer matches native position/normal/UV: ${value.join(',')}`);
+  }
 }
 
 function genericRoom(id: keyof typeof ROOM_TEMPLATES, environment: ShipEnvironment) {
@@ -51,6 +86,42 @@ function genericRoom(id: keyof typeof ROOM_TEMPLATES, environment: ShipEnvironme
 }
 
 describe('static room finish consolidation', () => {
+  it.each(['armory', 'freight-hold', 'transmission-chamber'] as const)(
+    '%s batches native rigid fittings without losing a single authored triangle', id => {
+      const root = shipArchitectureRoom(id, ROOM_TEMPLATES[id])!;
+      const before = vertices(root);
+      const stats = batchStaticRoom(root);
+      expect(stats.mergedMeshes).toBeGreaterThan(100);
+      expect(stats.meshesAfter).toBeLessThanOrEqual(62);
+      expectSameVertices(before, root);
+      expect(batchStaticRoom(root).mergedMeshes).toBe(0);
+      disposeModel(root);
+    },
+  );
+
+  it('keeps rigid-owner transforms, fixture groups, exact collider parts and excluded subtrees', () => {
+    const world = new T.Group(), owner = new T.Group();
+    world.add(owner); owner.name = 'l8-equipment'; owner.position.set(5, .2, 9);
+    const a = new T.Group(), b = new T.Group(), hidden = new T.Group(), reflected = new T.Group();
+    a.position.set(2, 0, -1); a.rotation.y = .3; a.scale.set(1.2, .7, .9);
+    b.position.set(-2, 1, 3); b.rotation.y = -.5;
+    a.userData.lightFixtures = [{x: 0, y: .7, z: .2}];
+    hidden.visible = false; reflected.scale.x = -1; owner.add(a, b, hidden, reflected);
+    const first = mesh(a), second = mesh(b), excluded = [mesh(hidden), mesh(reflected), mesh(a)];
+    for (const object of [first, second, ...excluded]) delete object.userData.bakedEnvironment;
+    excluded[2].onBeforeRender = () => {};
+    const before = vertices(world), originals = [first.geometry, second.geometry];
+    const result = batchStaticRoom(world);
+    expect(result.mergedMeshes).toBe(1); expectSameVertices(before, world);
+    expect(a.parent).toBe(owner); expect(b.parent).toBe(owner);
+    expect(a.userData.lightFixtures).toEqual([{x: 0, y: .7, z: .2}]);
+    expect(excluded.map(mesh => mesh.parent)).toEqual([hidden, reflected, a]);
+    const merged = owner.children.find(child => child instanceof T.Mesh) as T.Mesh;
+    expect(getStaticColliderParts(merged)!.map(part => part.geometry)).toEqual(originals);
+    expect(merged.castShadow).toBe(true); expect(merged.receiveShadow).toBe(true);
+    disposeModel(world);
+  });
+
   it('retains original collision partitions and composes them through subsequent render merges', () => {
     const root = new T.Group(), a = mesh(root), b = mesh(root);
     a.position.x = 1; b.position.x = 3;
@@ -204,5 +275,16 @@ describe('static room finish consolidation', () => {
     expect(materialDisposed.mock.contexts.filter(value => value === materialB)).toHaveLength(1);
     expect(geometryDisposed.mock.contexts.filter(value => value === oldB)).toHaveLength(1);
     materialDisposed.mockRestore(); geometryDisposed.mockRestore();
+  });
+  it('batches later native equipment after retained session finishes gained the room light hook', () => {
+    for (const material of Object.values(MAT)) optimizeLocalLights(material);
+    for (const id of ['freight-hold', 'transmission-chamber'] as const) {
+      const root = shipArchitectureRoom(id, ROOM_TEMPLATES[id])!;
+      const before = vertices(root), stats = batchStaticRoom(root);
+      expect(stats.mergedMeshes).toBeGreaterThan(100);
+      expect(stats.meshesAfter).toBeLessThanOrEqual(11);
+      expectSameVertices(before, root);
+      disposeModel(root);
+    }
   });
 });
