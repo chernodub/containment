@@ -50,16 +50,18 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
   for(let n=0;n<count;n++){
    const px=cx-cw/2+(n+.5)*pitch;
    w.box(m.case,px,.43,near-.035,pitch-.085,.54,.045);
-   w.box(m.metal,px,.66,near-.008,Math.min(.42,pitch*.5),.035,.012);
-   w.box(m.recess,px,.33,near-.009,pitch*.55,.13,.014);
-   for(let slot=0;slot<3;slot++)w.box(m.metal,px+(slot-1)*.11,.34,near-.001,.024,.09,.008);
+   if(i!==0||Math.abs(px-cx)>1.95){
+    w.box(m.metal,px,.66,near-.008,Math.min(.42,pitch*.5),.035,.012);
+    w.box(m.recess,px,.33,near-.009,pitch*.55,.13,.014);
+    for(let slot=0;slot<3;slot++)w.box(m.metal,px+(slot-1)*.11,.34,near-.001,.024,.09,.008);
+   }
   }
   // A continuous instrument well and matched load rails, inside the same bay.
   for(const side of[-1,1])w.box(m.metal,cx+side*cw/2,.42,near-.20,.065,.78,.39);
   if(i===0){
    const sw=Math.min(3.24,cw-.25),sh=.58;
    w.box(m.recess,cx,.46,near-.035,sw+.13,sh+.12,.045);
-   w.add(new T.PlaneGeometry(sw,sh),m.screen,cx,.46,near-.008);
+   for(let row=0;row<3;row++){w.box(m.signal,cx-sw*.36,.64-row*.17,near-.001,sw*.10,.055,.008);w.box(m.metal,cx+sw*.07,.64-row*.17,near-.001,sw*(row===1?.43:.62),.025,.008);}
   }
   bayParts.push({role:id==='manual-control-chamber'?'guarded-authorization-workbay':id==='safety-interlock-station'?'recorder-isolation-cabinet':'cryo-instrument-workbay',support:{...cell},maxHeight:.81});
  }
