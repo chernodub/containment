@@ -1,3 +1,4 @@
+import {l8PresentationSource} from '../../../tests/helpers/l8PresentationSource';
 import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import {describe,expect,it} from 'vitest';
 import {ROOM_STORY_ROUTE} from '../../game/roguelike/storyRooms';
@@ -33,8 +34,8 @@ describe('functional floor density without navigation or camera cost',()=>{
   }
   expect(JSON.stringify(t)).toBe(before);a.geometry.dispose();
  });
- it('restricts floor tissue to equipment seams and keeps central combat floor exposed',()=>{
-  const t=ROOM_TEMPLATES['infested-workshop'],a=buildKitFloorSurface(t,'infested','infested-workshop',equipmentReservations(t,'infested-workshop'));
+ it('retains the historical equipment-seam floor control while live rooms use authored ship seams',()=>{
+  const t=l8PresentationSource('infested-workshop'),a=buildKitFloorSurface(t,'infested','l8-source-infested-workshop',equipmentReservations(t,'l8-source-infested-workshop'));
   expect(a.proof.coverage).toBeGreaterThan(.01);expect(a.proof.coverage).toBeLessThan(.10);
   expect(a.proof.features['creep-mat']).toBeGreaterThan(0);expect(a.proof.features['growth-vein']).toBeGreaterThan(20);a.geometry.dispose();
   expect(a.proof.features['growth-vein-branch']).toBeGreaterThan(12);

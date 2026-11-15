@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {buildL8ShipSeamGrowth} from './L8ShipSeamGrowth';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {RoomTemplate,Point} from '../../game/roguelike/types';
 import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
@@ -125,6 +126,7 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
       }
     }
   }
+  const growth=buildL8ShipSeamGrowth(id,t);if(growth)root.add(growth);
   root.userData.templateArchitecture=true;
   return root;
 }
