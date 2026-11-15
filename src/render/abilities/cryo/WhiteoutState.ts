@@ -58,8 +58,8 @@ void main(){
  vec2 cells=p*5.;vec2 cell=floor(cells),q=fract(cells)-.5;
  float seed=frostHash(cell),other=frostHash(cell+vec2(19.,7.));
  q-=vec2(seed-.5,other-.5)*.10;
- float theta=seed*6.283185,c=cos(theta),s=sin(theta);
- q=mat2(c,-s,s,c)*q;
+ float theta=seed*6.283185,cosine=cos(theta),sine=sin(theta);
+ q=mat2(cosine,-sine,sine,cosine)*q;
  float halfStem=.19+other*.12;
  float stem=frostSegment(q,vec2(0.,-halfStem),vec2(0.,halfStem));
  float vein=(1.-smoothstep(.006,.018,stem))*(1.-smoothstep(halfStem*.65,halfStem,abs(q.y))*.65);
