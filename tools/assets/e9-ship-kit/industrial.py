@@ -1,7 +1,8 @@
 """Original Containment industrial ship furniture, MIT.
 
 Rebuild: Blender -b --factory-startup -P tools/assets/e9-ship-kit/industrial.py
-Use --hero-only for an early two-plenum export; --preview renders the hero.
+Use --hero-only for a two-plenum export; --preview renders that hero.
+Use --preview-overheads for the three separate native/480 hanging landmarks.
 No external geometry, textures, fonts or procedural downloads are used.
 """
 from __future__ import annotations
@@ -358,6 +359,177 @@ def drain_grating():
     box('Removable inspection crosspiece', (.04, 0, .106), (2.8, .052, .028), 'e9-body', .005)
 
 
+def bottom_origin(group):
+    """Only new hanging assets use this: their lowest metal point is local Z0."""
+    bpy.context.view_layer.update()
+    low = min((obj.matrix_world @ Vector(corner)).z
+              for obj in group.children for corner in obj.bound_box)
+    for obj in group.children:
+        obj.location.z -= low
+    group['mount'] = 'overhead; renderer places bottom at approximately 5m'
+    group['floorCollider'] = False
+
+
+def cargo_hoist_header():
+    group = asset('cargo-hoist-header')
+    # A deep fabricated beam, with broad upper inspection panels, carries a
+    # travelling motor/drum and a genuine curved forged hook below it.
+    box('Hoist lower structural flange', (0, 0, 1.355), (6, 1.30, .13), 'e9-body', .035)
+    box('Hoist deep continuous web', (0, .18, 1.62), (5.84, .48, .48), 'e9-body', .035)
+    box('Hoist broad upper flange', (0, 0, 1.925), (6, 1.50, .15), 'e9-trim', .035)
+    for x in (-2.13, 0, 2.13):
+        box('Hoist top hatch dark reveal', (x, -.01, 2.008), (1.74, 1.18, .016), 'e9-dark', 0)
+        box('Hoist broad ceramic inspection cover', (x, -.01, 2.026), (1.57, 1.02, .025), 'e9-ceramic', 0)
+        box('Hoist hatch inset lifting eye', (x, .22, 2.042), (.39, .10, .009), 'e9-dark', 0)
+        for side in (-1, 1):
+            cylinder('Hoist top captive fixing', (x+side*.61, -.36, 2.044), .027, .012,
+                     'e9-trim', 'Z', 8, 0)
+    for x in (-2.76, 2.76):
+        box('Hoist end mounting cheek', (x, 0, 1.63), (.22, 1.39, .58), 'e9-body', .030)
+        box('Hoist end inset ceramic plate', (x, -.709, 1.65), (.15, .023, .34), 'e9-ceramic', 0)
+    for x in (-1.86, 1.86):
+        box('Hoist front maintenance recess', (x, -.287, 1.62), (1.07, .026, .27), 'e9-dark', 0)
+        box('Hoist sparse amber ready lamp', (x, -.308, 1.64), (.29, .010, .037), 'e9-amber', 0)
+    # Keep the upper winding motor exposed to the gameplay camera, rather
+    # than describing the hoist only through a hidden underside drum.
+    for obj in group.children:
+        obj.location.z -= .16
+    cylinder('Visible upper hoist winding motor', (.36, -.15, 1.91), .24, 1.05,
+             'e9-body', 'X', 24)
+    for x in (-.195, .915):
+        cylinder('Upper winding motor machined end', (x, -.15, 1.91), .25, .060,
+                 'e9-trim', 'X', 24)
+    box('Upper motor amber status recess', (.36, -.15, 2.156), (.46, .18, .018), 'e9-dark', 0)
+    box('Upper motor sparse amber source', (.36, -.15, 2.169), (.24, .060, .010), 'e9-amber', 0)
+    box('Travelling hoist carriage', (.36, -.06, 1.28), (1.32, 1.06, .23), 'e9-ceramic', .035)
+    for x in (-.12, .84):
+        cylinder('Captured carriage wheel', (x, -.53, 1.32), .14, .13, 'e9-body', 'Y', 16)
+    cylinder('Hoist cable winding drum', (.36, -.39, 1.06), .24, .87, 'e9-body', 'X', 20)
+    for x in (-.105, .825):
+        cylinder('Drum machined end flange', (x, -.39, 1.06), .275, .055, 'e9-trim', 'X', 20)
+    for y in (-.64, -.53):
+        cylinder('Taut captive suspension cable', (.46, y, .91), .022, .30,
+                 'e9-dark', 'Z', 8, 0)
+    cylinder('Hook upper swivel', (.46, -.60, .78), .104, .17, 'e9-trim', 'Z', 16)
+    # A J-shaped forged throat, rather than a straight hanging pin.
+    tube('Large forged cargo hook', [(.46, -.60, .78), (.48, -.60, .43),
+         (.62, -.60, .17), (.42, -.60, .06), (.05, -.60, .10),
+         (-.12, -.60, .35), (.05, -.60, .56)], .14, 'e9-trim', 12)
+    bar = box('Hook sprung safety latch', (.25, -.60, .63), (.40, .060, .040), 'e9-body', .008)
+    bar.rotation_euler[1] = -.18
+    # Captured power loom follows the beam and drops only at its own motor.
+    tube('Hoist captured electrical loom', [(-2.61, .42, 1.77), (-1.49, .42, 1.76),
+         (-.18, .42, 1.73), (.47, .37, 1.51), (.51, .28, 1.25)], .035, 'e9-dark')
+    bottom_origin(group)
+
+
+def workshop_tool_bridge():
+    group = asset('workshop-tool-bridge')
+    box('Tool bridge continuous spine', (0, .10, .89), (6, .62, .29), 'e9-body', .035)
+    for y in (-.675, .675):
+        box('Tool bridge captive carriage rail', (0, y, 1.045), (6, .15, .16), 'e9-trim', .028)
+    for x in (-2.85, 2.85):
+        box('Tool bridge broad end saddle', (x, 0, .95), (.30, 1.50, .42), 'e9-body', .035)
+        box('End saddle ceramic top plate', (x, 0, 1.17), (.22, 1.26, .035), 'e9-ceramic', 0)
+    for index, x in enumerate((-1.82, 0, 1.82)):
+        box('Independent tool carriage shoe', (x, 0, .895), (1.34, 1.31, .18), 'e9-dark', .030)
+        box('Three shaped ceramic carriage housings', (x, -.02, .997), (1.14, 1.15, .10), 'e9-ceramic', .030)
+        cylinder('Exposed rounded spindle motor upper face', (x, -.23, 1.005), .225, .83,
+                 'e9-body', 'X', 20)
+        for side in (-1, 1):
+            cylinder('Spindle motor service end cap', (x+side*.44, -.23, 1.005), .227, .05,
+                     'e9-trim', 'X', 20)
+        box('Motor top inset status recess', (x, -.24, 1.235), (.44, .16, .018), 'e9-dark', 0)
+        box('Sparse motor amber status source', (x, -.24, 1.248), (.20, .052, .009), 'e9-amber', 0)
+        # Three unlike working ends make the purpose legible from the sides too.
+        cylinder('Hanging tool spindle neck', (x, -.27, .625), .115, .35, 'e9-trim', 'Z', 16)
+        if index == 0:
+            cylinder('Broad cutter head', (x, -.27, .30), .235, .23, 'e9-body', 'Z', 20)
+            cylinder('Cutter machined lower flange', (x, -.27, .169), .27, .055, 'e9-trim', 'Z', 20)
+            for side in (-1, 1):
+                box('Captive cutting insert', (x+side*.14, -.27, .11), (.075, .26, .067), 'e9-ceramic', .012)
+        elif index == 1:
+            box('Fork press tool shoulder', (x, -.27, .41), (.65, .46, .18), 'e9-body', .025)
+            for side in (-1, 1):
+                box('Open fork press jaw', (x+side*.25, -.27, .21), (.15, .42, .36), 'e9-trim', .022)
+            box('Fork press contained punch', (x, -.27, .20), (.09, .13, .30), 'e9-ceramic', .014)
+        else:
+            cylinder('Precision drive collet', (x, -.27, .29), .175, .36, 'e9-body', 'Z', 16)
+            for z in (.15, .29, .43):
+                ring('Machined tool collet race', (x, -.27, z), .185, .025, 'e9-trim', 'Z', 20)
+            cylinder('Captured narrow driver', (x, -.27, .055), .065, .12, 'e9-trim', 'Z', 12)
+        for side in (-1, 1):
+            cylinder('Carriage front captive wheel', (x+side*.44, -.63, .88), .075, .075,
+                     'e9-body', 'Y', 12)
+    for offset in (-.07, 0, .07):
+        tube('Continuous captive upper cable bundle', [(-2.64, .43+offset, 1.08),
+             (-1.82, .45+offset, 1.13), (-.87, .43+offset, 1.10),
+             (0, .45+offset, 1.13), (.90, .43+offset, 1.10),
+             (1.82, .45+offset, 1.13), (2.64, .43+offset, 1.08)], .029, 'e9-dark')
+    for x in (-2.60, -.90, .90, 2.60):
+        box('Cable bundle retained bridge clamp', (x, .43, 1.12), (.09, .32, .10), 'e9-trim', .018)
+    bottom_origin(group)
+
+
+def upward_fan_blade(x, y, z, angle, radius):
+    """Original swept impeller vane, with a broad curved face and real depth."""
+    outline = []
+    for r, turn in ((.16,.02),(.46,.02),(.57,.21),(.54,.48),(.36,.53),(.16,.30)):
+        theta=angle+turn
+        outline.append((x+radius*r/.57*math.cos(theta),y+radius*r/.57*math.sin(theta)))
+    vertices=[(px,py,z+dz) for dz in (-.021,.021) for px,py in outline]
+    count=len(outline)
+    faces=[tuple(reversed(range(count))),tuple(range(count,count*2))]
+    faces.extend((i,(i+1)%count,(i+1)%count+count,i+count) for i in range(count))
+    mesh=bpy.data.meshes.new('Swept fan impeller blade')
+    mesh.from_pydata(vertices,[],faces);mesh.update()
+    obj=bpy.data.objects.new('Swept stopped fan impeller blade',mesh)
+    bpy.context.collection.objects.link(obj)
+    return finish(obj,'e9-trim',.012)
+
+
+def airway_exchanger():
+    group=asset('airway-exchanger')
+    box('Air exchanger captive lower pan', (0,0,.075), (4.8,2,.15), 'e9-dark', .035)
+    for y in (-.92,.92):
+        box('Exchanger long structural sidewall', (0,y,.37), (4.8,.16,.59), 'e9-body', .030)
+    for x in (-2.32,2.32):
+        box('Exchanger structural end cap', (x,0,.37), (.16,1.75,.59), 'e9-body', .030)
+    for index,x in enumerate((-1.55,0,1.55)):
+        plate=box('Upward-facing exchanger mouth panel', (x,0,.665), (1.43,1.72,.10), 'e9-ceramic', 0)
+        bpy.ops.mesh.primitive_cylinder_add(vertices=32,radius=.565,depth=.34,location=(x,0,.665))
+        cutter=bpy.context.object
+        modifier=plate.modifiers.new('Real upward air intake aperture','BOOLEAN')
+        modifier.operation,modifier.object='DIFFERENCE',cutter
+        bpy.context.view_layer.objects.active=plate
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+        bpy.data.objects.remove(cutter,do_unlink=True)
+        modifier=plate.modifiers.new('Soft manufactured intake panel edge','BEVEL')
+        modifier.width,modifier.segments=.025,2
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+        cylinder('Deep upward fan throat', (x,0,.215), .54,.035, 'e9-dark','Z',32,0)
+        ring('Fat round upward fan mouth', (x,0,.72), .625,.075, 'e9-trim','Z',32)
+        ring('Fan mouth inner black gasket', (x,0,.665), .555,.020, 'e9-dark','Z',32)
+        for blade in range(5):
+            upward_fan_blade(x,0,.43,blade*math.pi*2/5,.48)
+        cylinder('Upward stationary impeller hub', (x,0,.465), .125,.10, 'e9-body','Z',20)
+        cylinder('Impeller hub pale machined crown', (x,0,.522), .088,.018, 'e9-ceramic','Z',16)
+        for side in (-1,1):
+            cylinder('Exchanger top captive fastening', (x+side*.59,.68,.731), .027,.014,
+                     'e9-trim','Z',8,0)
+    roots=[
+        [(-2.22,.77,.69),(-1.70,.65,.77),(-.91,.69,.74),(-.46,.50,.77),(.12,.64,.72)],
+        [(2.20,-.72,.67),(1.72,-.65,.77),(.96,-.72,.73),(.50,-.52,.78),(-.20,-.66,.72)],
+    ]
+    for path in roots:
+        tube('Heavy roots captured across exchanger frame', path,.115,'e9-dark')
+        tube('Exchanger violet root vessel',[(x,y-.025,z+.047) for x,y,z in path],.020,'e9-violet',6)
+    for x,y,z in ((-.82,.67,.80),(.75,-.68,.79),(2.12,.65,.73)):
+        sphere('Rooted exchanger cyst shell',(x,y,z),(.24,.19,.14),'e9-dark',2)
+        sphere('Exchanger violet cyst opening',(x+.018,y-.018,z+.115),(.085,.070,.045),'e9-violet',2)
+    bottom_origin(group)
+
+
 def merge_finishes(group):
     buckets = {}
     for obj in list(group.children):
@@ -435,22 +607,27 @@ def export_pack():
                                   'max': [round(hi[0], 4), round(hi[2], 4), round(-lo[1], 4)]},
                        'triangles': triangles, 'materials': sorted({obj.data.materials[0].name for obj in group.children}),
                        'primitives': len(group.children)})
+        if group.get('mount'):
+            models[-1]['mount']='overhead; bottom approximately 5m above deck'
+            models[-1]['floorCollider']=False
     bpy.ops.object.select_all(action='DESELECT')
     for group in ASSETS:
         group.select_set(True)
         for obj in group.children:
             obj.select_set(True)
     path = OUT / 'kit.glb'
-    bpy.ops.export_scene.gltf(filepath=str(path), export_format='GLB', use_selection=True,
+    temporary = OUT / 'kit.next.glb'
+    bpy.ops.export_scene.gltf(filepath=str(temporary), export_format='GLB', use_selection=True,
                              export_yup=True, export_apply=True, export_extras=True,
                              export_materials='EXPORT', export_vertex_color='ACTIVE',
                              export_all_vertex_colors=False, export_animations=False,
                              export_cameras=False, export_lights=False)
+    temporary.replace(path)
     manifest = {'name': 'Containment original industrial ship kit', 'license': 'MIT',
                 'author': 'Containment contributors', 'source': str(Path(__file__).relative_to(ROOT)),
                 'rebuild': 'blender -b --factory-startup -P tools/assets/e9-ship-kit/industrial.py',
                 'coordinateSystem': 'glTF Y-up, metres; named group origins bottom-centred',
-                'description': 'Original low-cutaway ship machinery, embedded infestation and flush access surfaces; no external source art.',
+                'description': 'Original low-cutaway ship machinery, embedded infestation, flush access surfaces and overhead hoist/tool/exchanger landmarks; no external source art.',
                 'ao': 'Eight deterministic BVH hemisphere rays per vertex, .45m range; baked BYTE_COLOR AO exported as COLOR_0',
                 'materials': PALETTE, 'models': models,
                 'output': {'file': path.name, 'bytes': path.stat().st_size,
@@ -499,6 +676,48 @@ def preview(whole_pack=False):
     bpy.ops.render.render(write_still=True)
 
 
+def preview_overheads():
+    """Three separate asset-art views, after export; no stage enters the GLB."""
+    scene=bpy.context.scene
+    scene.render.engine='CYCLES'
+    scene.cycles.samples=20
+    scene.cycles.use_denoising=True
+    scene.render.resolution_percentage=100
+    scene.render.image_settings.file_format='PNG'
+    scene.world.color=(.045,.055,.065)
+    bpy.ops.mesh.primitive_plane_add(size=200,location=(0,0,-.018))
+    ground=bpy.data.materials.new('PREVIEW ONLY neutral slate deck')
+    ground.use_nodes=True
+    ground.node_tree.nodes.get('Principled BSDF').inputs['Base Color'].default_value=(.025,.038,.048,1)
+    ground.node_tree.nodes.get('Principled BSDF').inputs['Roughness'].default_value=.87
+    bpy.context.object.data.materials.append(ground)
+    for location,power,size in (((3,-5,8),1500,6),((-5,-1,5),900,5),((1,6,8),1700,5)):
+        light=bpy.data.lights.new('PREVIEW ONLY softbox','AREA')
+        light.energy,light.shape,light.size=power,'DISK',size
+        obj=bpy.data.objects.new(light.name,light)
+        bpy.context.collection.objects.link(obj)
+        obj.location=location
+        obj.rotation_euler=(Vector((0,0,.7))-obj.location).to_track_quat('-Z','Y').to_euler()
+    data=bpy.data.cameras.new('PREVIEW ONLY overhead review camera')
+    camera=bpy.data.objects.new(data.name,data)
+    bpy.context.collection.objects.link(camera)
+    camera.location=(5.8,-7.5,10.5)
+    camera.rotation_euler=(Vector((0,0,.7))-camera.location).to_track_quat('-Z','Y').to_euler()
+    data.type='ORTHO'
+    scene.camera=camera
+    for name,scale in (('cargo-hoist-header',8.7),('workshop-tool-bridge',7.6),('airway-exchanger',6.3)):
+        data.ortho_scale=scale
+        target=Vector((0,0,1.12 if name=='cargo-hoist-header' else .7))
+        camera.rotation_euler=(target-camera.location).to_track_quat('-Z','Y').to_euler()
+        for group in ASSETS:
+            for obj in group.children:
+                obj.hide_render=group.name!=name
+        for width,height,suffix in ((1920,1080,''),(480,270,'-480')):
+            scene.render.resolution_x,scene.render.resolution_y=width,height
+            scene.render.filepath=str(OUT/(name+'-preview'+suffix+'.png'))
+            bpy.ops.render.render(write_still=True)
+
+
 plenum('swarm-plenum-low', .95)
 plenum('swarm-plenum-tall', 1.7)
 if '--hero-only' not in sys.argv:
@@ -510,6 +729,12 @@ if '--hero-only' not in sys.argv:
     service_bay('reactor-servicebay', True)
     cable_tray()
     drain_grating()
+    cargo_hoist_header()
+    workshop_tool_bridge()
+    airway_exchanger()
 export_pack()
 if '--preview' in sys.argv or '--preview-pack' in sys.argv:
     preview('--preview-pack' in sys.argv)
+
+if '--preview-overheads' in sys.argv:
+    preview_overheads()

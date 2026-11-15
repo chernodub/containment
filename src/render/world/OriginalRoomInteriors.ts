@@ -9,11 +9,26 @@ import { interiorFloorServices } from './RoomInteriors';
 import { cutInteriorWallNiches } from './InteriorWallNiches';
 import { INTERIOR_PROFILES, INTERIOR_WALL_FINISHES } from './RoomInteriorProfiles';
 const floorNames = new Set(['painted-steel-deck', 'annulus-deck', 'annulus-circulation', 'environment-floor', 'shaft-deck', 'shaft-floor-panel']);
+const legacyFloorNames=new Set([...floorNames,'annulus-sealed','shaft-zinc','shaft-worn-grate','shaft-depth','shaft-amber']);
 function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
     const instances: OriginalKitInstance[] = [], id = t.id, plan = SHIP_ARCHITECTURE_PLANS[id as keyof typeof SHIP_ARCHITECTURE_PLANS];
     const matrix = (x: number, y: number, z: number, angle: number, sx = 1, sy = 1, sz = 1) => new T.Matrix4().compose(new T.Vector3(x, y, z), new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), angle), new T.Vector3(sx, sy, sz));
     for (const furnishing of shipInteriorFurnishings(t))
-        instances.push({ pack: furnishing.pack, asset: furnishing.asset, matrix: matrix(furnishing.x / 32, 0, furnishing.z / 32, furnishing.angle, ...furnishing.scale), purpose: furnishing.space + ' / ' + furnishing.asset });
+        instances.push({ pack: furnishing.pack, asset: furnishing.asset, matrix: matrix(furnishing.x / 32, 0, furnishing.z / 32, furnishing.angle, ...furnishing.scale), purpose: furnishing.space + ' / ' + furnishing.asset,cutaway:furnishing.source==='portal' });
+    const overhead=(pack:OriginalKitPack,asset:string,x:number,z:number,height:number,angle=0)=>instances.push({pack,asset,matrix:matrix(x/32,height,z/32,angle),purpose:'Suspended '+asset,cutaway:true});
+    // Ceiling services occupy no deck area. Their visible manufactured source
+    // gives the open nave a landmark where all wall bays lie outside the crop.
+    if(id==='residential-gallery')overhead('clinical','habitation-gallery-pendant',730,580,5);
+    if(id==='transmission-chamber')overhead('clinical','comms-uplink-dish',850,680,5);
+    if(id==='freight-hold'){
+        overhead('industrial','cargo-hoist-header',350,600,5);
+        overhead('industrial','cargo-hoist-header',900,820,5);
+    }
+    if(id==='infested-workshop'){
+        overhead('industrial','workshop-tool-bridge',300,640,5);
+        overhead('industrial','workshop-tool-bridge',780,620,5);
+    }
+    if(id==='swarm-junction')overhead('industrial','airway-exchanger',750,900,5);
     const hull = t.boundary ?? [{ x: 0, y: 0 }, { x: t.width, y: 0 }, { x: t.width, y: t.height }, { x: 0, y: t.height }];
     const addWall = (x: number, z: number, length: number, depth: number, angle: number, near: boolean, purpose: string) => {
         const count = Math.max(1, Math.ceil(length / 4.1));
@@ -127,12 +142,24 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
                     restores.push(() => { o.visible = visible; });
                     return;
                 }
-                const cuts = floorNames.has(name) ? services : name === 'ship-interior-cutaway' ? [...thin, ...replacements] : replacements;
-                if (!cuts.length)
+                const cuts = legacyFloorNames.has(name) ? services : name === 'ship-interior-cutaway' ? [...thin, ...replacements] : replacements;
+                if (!cuts.length&&!legacyFloorNames.has(name))
                     return;
                 const old = o.geometry, relative = new T.Matrix4().multiplyMatrices(worldInverse, o.matrixWorld);
-                const construction = old.clone().applyMatrix4(relative), next = cutInteriorWallNiches(construction, cuts);
-                construction.dispose();
+                const construction = (old.index?old.toNonIndexed():old.clone()).applyMatrix4(relative);
+                if(legacyFloorNames.has(name)){
+                    const p=construction.getAttribute('position'),n=construction.getAttribute('normal');
+                    // The replacement skin owns these millimetre-high finishes.
+                    // Keep raised hardware and the shaft's retained grain hook;
+                    // move only old horizontal floor faces below the new skin.
+                    for(let i=0;i<p.count;i+=3){
+                        const lo=Math.min(p.getY(i),p.getY(i+1),p.getY(i+2)),hi=Math.max(p.getY(i),p.getY(i+1),p.getY(i+2));
+                        if(lo>=-.00001&&hi<=.026&&hi-lo<.0001&&n.getY(i)>.99)
+                            for(let k=0;k<3;k++)p.setY(i+k,-.025);
+                    }
+                }
+                const next = cuts.length?cutInteriorWallNiches(construction,cuts):construction;
+                if(next!==construction)construction.dispose();
                 next.applyMatrix4(relative.invert());
                 o.geometry = next;
                 // Keep replacement ownership simple: the room's normal disposal owns

@@ -37,7 +37,8 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  for(const anchor of [...plan.spaces.map(space=>space.anchor),t.exit]){
   if(centers.slice(0,canonicalCenters).some(center=>Math.abs(center.z-forward-anchor.y)<100&&Math.abs(center.x-anchor.x)<380))continue;
   const z=Math.min(maxZ,anchor.y+forward),apparentY=z-forward;
-  const x=[144,-144,220,-220,130,-130].map(offset=>anchor.x+offset).find(candidate=>candidate>=minX&&candidate<=maxX&&anchors.every(other=>Math.abs(apparentY-other.y)>=100||Math.abs(candidate-other.x)>=120));
+  const offsets=id==='safety-interlock-station'?[-130,130,-144,144,-220,220]:[144,-144,220,-220,130,-130];
+  const x=offsets.map(offset=>anchor.x+offset).find(candidate=>candidate>=minX&&candidate<=maxX&&anchors.every(other=>Math.abs(apparentY-other.y)>=100||Math.abs(candidate-other.x)>=120));
   if(x===undefined)continue;
   if(centers.some(center=>Math.hypot(center.x-x,center.z-z)<150))continue;
   centers.push({x,z});

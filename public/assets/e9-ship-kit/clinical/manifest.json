@@ -389,6 +389,64 @@
         "e9-dark",
         "e9-trim"
       ]
+    },
+    {
+      "name": "habitation-gallery-pendant",
+      "size": [
+        4.8,
+        0.65,
+        1.4
+      ],
+      "bounds": {
+        "min": [
+          -2.4,
+          0.0,
+          -0.7
+        ],
+        "max": [
+          2.4,
+          0.65,
+          0.7
+        ]
+      },
+      "triangles": 4168,
+      "primitives": 5,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "comms-uplink-dish",
+      "size": [
+        4.8,
+        1.0,
+        4.8
+      ],
+      "bounds": {
+        "min": [
+          -2.4,
+          0.0,
+          -2.4
+        ],
+        "max": [
+          2.4,
+          1.0,
+          2.4
+        ]
+      },
+      "triangles": 11668,
+      "primitives": 5,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ]
     }
   ],
   "scannerArch": {
@@ -406,10 +464,20 @@
       4.04
     ]
   },
+  "suspendedLandmarks": {
+    "habitation-gallery-pendant": {
+      "placementHeightMetres": 4.5,
+      "description": "Three rounded domestic ceramic lamp pods with warm top and underside sources."
+    },
+    "comms-uplink-dish": {
+      "placementHeightMetres": 4.5,
+      "description": "Twelve upward-facing parabolic petals, supported receiver and real cyan status channel."
+    }
+  },
   "output": {
     "file": "clinical.glb",
-    "bytes": 758508,
-    "sha256": "49c2c038206155e6468f6870634c2896acbca173480bf6a4453def956ab07486",
-    "triangles": 32784
+    "bytes": 1109344,
+    "sha256": "1cd0a2702fd04f4bf7790d04247d71371c89aee47a2f94e70ea0d70307714904",
+    "triangles": 48620
   }
 }

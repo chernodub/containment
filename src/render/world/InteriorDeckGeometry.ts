@@ -35,11 +35,15 @@ export class InteriorDeckChart {
       {x:r.x,y:r.y},{x:r.x+r.width,y:r.y},{x:r.x+r.width,y:r.y+r.height},{x:r.x,y:r.y+r.height},
     ])]});
   }
-  polygon(outline:readonly Point[],color:T.Color,y:number,name?:string):number {
-    const tris=T.ShapeUtils.triangulateShape(outline.map(p=>new T.Vector2(p.x,p.y)),[]);
+  polygon(outline:readonly Point[],color:T.Color,y:number,name?:string,exclude:readonly (readonly Point[])[]=[],within?:readonly Point[]):number {
+    const domain=within??outline;
+    const fields=exclude.length?shipDeckPolygons({width:1,height:1,boundary:domain,voids:exclude}):[domain];
     let count=0,totalArea=0;
+    for(const field of fields){
+    const tris=T.ShapeUtils.triangulateShape(field.map(p=>new T.Vector2(p.x,p.y)),[]);
     for(const row of tris)for(const deck of this.deck) {
-      const cut=clip(deck,row.map(i=>outline[i]));
+      const piece=clip(deck,row.map(i=>field[i]));
+      const cut=within?clip(piece,outline):piece;
       if(!cut.length)continue;
       totalArea+=Math.abs(area(cut));
       // XZ winding faces upward.
@@ -51,13 +55,14 @@ export class InteriorDeckChart {
         }
       }
     }
+    }
     if(name)this.zones.push({name,triangles:count/3,area:totalArea});
     return count/3;
   }
-  strip(a:Point,b:Point,width:number,color:T.Color,y=.018):void {
+  strip(a:Point,b:Point,width:number,color:T.Color,y=.018,exclude:readonly (readonly Point[])[]=[],within?:readonly Point[]):void {
     const length=Math.hypot(b.x-a.x,b.y-a.y);if(length<.001)return;
     const nx=-(b.y-a.y)/length*width/2,ny=(b.x-a.x)/length*width/2;
-    this.polygon([{x:a.x+nx,y:a.y+ny},{x:b.x+nx,y:b.y+ny},{x:b.x-nx,y:b.y-ny},{x:a.x-nx,y:a.y-ny}],color,y);
+    this.polygon([{x:a.x+nx,y:a.y+ny},{x:b.x+nx,y:b.y+ny},{x:b.x-nx,y:b.y-ny},{x:a.x-nx,y:a.y-ny}],color,y,undefined,exclude,within);
   }
   geometry():T.BufferGeometry {
     const g=new T.BufferGeometry();

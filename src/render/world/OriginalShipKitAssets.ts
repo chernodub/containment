@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoomModelCache} from '../RoomModelCache';
+import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
 
 export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure';
 
@@ -33,9 +34,10 @@ export type OriginalKitInstance = {
   matrix: T.Matrix4;
   purpose: string;
   castShadow?: boolean;
+  cutaway?: boolean;
 };
 
-type Bucket = {material: T.MeshStandardMaterial; geometries: T.BufferGeometry[]; castShadow: boolean};
+type Bucket = {material: T.MeshStandardMaterial; geometries: T.BufferGeometry[]; castShadow: boolean; vertices:number; cutaway:boolean};
 type Emitter = {position: T.Vector3; area: number};
 type Fixture = {
   x: number; y: number; z: number; color: number;
@@ -111,6 +113,8 @@ export function buildOriginalShipKit(
   const ownedGeometry = new Set<T.BufferGeometry>(), ownedMaterials = new Set<T.Material>();
   const placements: {pack: OriginalKitPack; asset: string; purpose: string; matrix: number[]; bounds: number[][]; triangles: number}[] = [];
   const fixtures: Fixture[] = [];
+  const cutaways:{bounds:T.Box3;parts:{finish:string;start:number;end:number}[]}[]=[];
+  const mergedColors=new Map<string,T.BufferAttribute>();
   let totalTriangles = 0;
   try {
     for (const instance of instances) {
@@ -119,6 +123,7 @@ export function buildOriginalShipKit(
       if (!instance.matrix.elements.every(Number.isFinite) || Math.abs(instance.matrix.determinant()) < 1e-12)
         throw Error('Invalid original ship kit instance transform: ' + instance.asset);
       const bounds = new T.Box3(), lamps: {position: T.Vector3; area: number; color: number}[] = [];
+      const parts:{finish:string;start:number;end:number}[]=[];
       let instanceTriangles = 0, meshCount = 0;
       const visit = (object: T.Object3D, relative: T.Matrix4): void => {
         if (object instanceof T.SkinnedMesh || object instanceof T.InstancedMesh)
@@ -137,12 +142,12 @@ export function buildOriginalShipKit(
           const combined = new T.Matrix4().multiplyMatrices(instance.matrix, relative);
           const geometry = original.index ? original.toNonIndexed() : original.clone();
           geometry.userData = {}; ownedGeometry.add(geometry);
-          const sourceColor = geometry.getAttribute('color'), rgb = new Float32Array(geometry.getAttribute('position').count * 3);
+          const sourceColor = geometry.getAttribute('color'), rgb = new Float32Array(geometry.getAttribute('position').count * 4);
           for (let i = 0; i < sourceColor.count; i++) {
-            rgb[i * 3] = sourceColor.getX(i); rgb[i * 3 + 1] = sourceColor.getY(i); rgb[i * 3 + 2] = sourceColor.getZ(i);
+            rgb[i * 4] = sourceColor.getX(i); rgb[i * 4 + 1] = sourceColor.getY(i); rgb[i * 4 + 2] = sourceColor.getZ(i);rgb[i*4+3]=1;
           }
           for (const name of Object.keys(geometry.attributes)) if (name !== 'position' && name !== 'normal') geometry.deleteAttribute(name);
-          geometry.setAttribute('color', new T.BufferAttribute(rgb, 3));
+          geometry.setAttribute('color', new T.BufferAttribute(rgb, 4));
           geometry.applyMatrix4(combined); geometry.computeBoundingBox(); bounds.union(geometry.boundingBox!);
           const count = geometry.getAttribute('position').count / 3;
           totalTriangles += count; instanceTriangles += count;
@@ -155,8 +160,11 @@ export function buildOriginalShipKit(
             if (finish.startsWith('e9-floor-')) material.userData.floorDressing = true;
             if (material.emissive.getHex() !== 0 && material.emissiveIntensity > 0) material.userData.motivatedEmitter = true;
             if (material.transparent || material.opacity < 1) material.depthWrite = false;
-            bucket = {material, geometries: [], castShadow: false}; buckets.set(finish, bucket);
+            bucket = {material, geometries: [], castShadow: false,vertices:0,cutaway:false}; buckets.set(finish, bucket);
           }
+          const vertices=geometry.getAttribute('position').count;
+          if(instance.cutaway&&!bucket.material.transparent){parts.push({finish,start:bucket.vertices,end:bucket.vertices+vertices});bucket.cutaway=true;}
+          bucket.vertices+=vertices;
           bucket.geometries.push(geometry);
           bucket.castShadow ||= instance.castShadow !== false;
           if (sourceMaterial.emissive.getHex() !== 0 && sourceMaterial.emissiveIntensity > 0 && !sourceMaterial.transparent) {
@@ -181,6 +189,7 @@ export function buildOriginalShipKit(
       if (meshCount === 0 || bounds.isEmpty()) throw Error('Original ship kit asset has no geometry: ' + instance.asset);
       placements.push({pack: instance.pack, asset: instance.asset, purpose: instance.purpose,
         matrix: instance.matrix.toArray(), bounds: [bounds.min.toArray(), bounds.max.toArray()], triangles: instanceTriangles});
+      if(parts.length)cutaways.push({bounds:bounds.clone(),parts});
       const angle = Math.atan2(-instance.matrix.elements[2], instance.matrix.elements[0]);
       for (const lamp of lamps.sort((a, b) => b.area - a.area).slice(0, 2)) fixtures.push({
         x: lamp.position.x, y: lamp.position.y, z: lamp.position.z, color: lamp.color,
@@ -193,6 +202,8 @@ export function buildOriginalShipKit(
       ownedGeometry.add(geometry);
       for (const part of bucket.geometries) {part.dispose(); ownedGeometry.delete(part);}
       geometry.computeBoundingBox(); geometry.computeBoundingSphere();
+      const colors=geometry.getAttribute('color') as T.BufferAttribute;mergedColors.set(finish,colors);
+      if(bucket.cutaway){bucket.material.alphaTest=.3;colors.setUsage(T.DynamicDrawUsage);}
       const mesh = new T.Mesh(geometry, bucket.material);
       mesh.name = finish; mesh.userData.bakedEnvironment = true; mesh.userData.visualOnly = true;
       const glass = bucket.material.transparent || bucket.material.opacity < 1;
@@ -201,6 +212,9 @@ export function buildOriginalShipKit(
     }
     result.userData.instancePlacements = placements; result.userData.placements = placements;
     result.userData.triangles = totalTriangles; result.userData.lightFixtures = fixtures;
+    registerOriginalInteriorCutaways(result,cutaways.map(piece=>({bounds:piece.bounds,hidden:false,
+      parts:piece.parts.map(part=>({colors:mergedColors.get(part.finish)!,start:part.start,end:part.end})),
+    } satisfies InteriorCutaway)));
     return result;
   } catch (error) {
     ownedGeometry.forEach(geometry => geometry.dispose()); ownedMaterials.forEach(material => material.dispose());

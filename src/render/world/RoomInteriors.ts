@@ -94,15 +94,17 @@ export function buildRoomInteriors(id: string, t: RoomTemplate, _world?: T.Group
     const holes = services.map(s => rect(s.x - s.width * 16, s.z - s.depth * 16, s.width * 32, s.depth * 32));
     const chart = new InteriorDeckChart({ ...t, voids: [...t.voids ?? [], ...holes] }), base = new T.Color(profile.deck), zone = new T.Color(profile.zone), trim = new T.Color(profile.trim);
     const hull = t.boundary ?? rect(0, 0, t.width, t.height);
-    chart.polygon(hull, base, .005);
+    const claimed: (readonly Point[])[]=[];
+    chart.polygon(hull, base, .005,undefined,plan.spaces.map(s=>s.outline));
     for (const [i, space] of plan.spaces.entries()) {
         const tone = base.clone().lerp(zone, i % 2 ? .72 : .10).multiplyScalar(1 + (i % 3 - 1) * .045);
-        chart.polygon(space.outline, tone, .006, space.name);
+        chart.polygon(space.outline, tone, .006, space.name,claimed);
         for (let n = 0; n < space.outline.length; n++)
-            chart.strip(space.outline[n], space.outline[(n + 1) % space.outline.length], 2.8, tone.clone().lerp(trim, .26), .012);
+            chart.strip(space.outline[n], space.outline[(n + 1) % space.outline.length], 2.8, tone.clone().lerp(trim, .26), .012,claimed,space.outline);
         const xs = space.outline.map(p => p.x), ys = space.outline.map(p => p.y), x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...ys), z1 = Math.max(...ys);
         for (let n = (i % 2 ? x0 : z0) + 110; n < (i % 2 ? x1 : z1); n += 140)
-            chart.polygon(i % 2 ? rect(n, z0, 1.0, z1 - z0) : rect(x0, n, x1 - x0, 1.0), tone.clone().multiplyScalar(.84), .010);
+            chart.polygon(i % 2 ? rect(n, z0, 1.0, z1 - z0) : rect(x0, n, x1 - x0, 1.0), tone.clone().multiplyScalar(.84), .010,undefined,claimed,space.outline);
+        claimed.push(space.outline);
     }
     const a = plan.arena, ink = base.clone().lerp(trim, .12), dark = base.clone().multiplyScalar(.67);
     const elsewhere = buildAct1InteriorInlay(id, plan, chart, base, trim) || buildAct2InteriorInlay(id, plan, chart, base, trim);
@@ -140,7 +142,7 @@ export function buildRoomInteriors(id: string, t: RoomTemplate, _world?: T.Group
     }
     for (const opening of plan.openings)
         chart.strip(opening.from, opening.to, 4.5, base.clone().lerp(trim, .24), .016);
-    const m = new T.MeshStandardMaterial({ name: 'e9-interior-floor', color: 0xffffff, vertexColors: true, roughness: .91, metalness: .03 });
+    const m = new T.MeshStandardMaterial({ name: 'e9-interior-floor', color: 0xffffff, vertexColors: true, roughness: .91, metalness: .03,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2 });
     m.userData.actorMaterial = true;
     m.userData.floorDressing = true;
     const floor = new T.Mesh(chart.geometry(), m);

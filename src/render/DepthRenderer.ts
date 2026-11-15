@@ -33,6 +33,7 @@ import {addExitSignal,updateExitSignal} from './world/ExitSignal';
 import {TitlePresentation,TITLE_STAGE,styleTitleActor} from './world/TitlePresentation';
 import {addDeckMarkings} from './world/DeckMarkings';
 import {addWorldDressing,updateWorldDressing} from './world/WorldDressing';
+import {updateOriginalInteriorCutaways} from './world/OriginalInteriorCutaways';
 import {PlayerBeacon} from './vfx/PlayerBeacon';
 import {communalAtrium} from './CommunalAtrium';
 import {attachCommunalGarden} from './CommunalGarden';
@@ -571,6 +572,7 @@ export class DepthRenderer {
   this.lastMenu=menu;
   const q=game.boss.snapshot;this.lighting.setBossState?.(q.x/UNIT,q.y/UNIT,q.vulnerable,q.defeated);
   this.warning.visible=false;
+  if(!menu)updateOriginalInteriorCutaways(this.world.getObjectByName('e9-original-ship-kit'),this.camera,p,this.player.height,enemies,this.actors);
   const telegraph=q.pendingTelegraph;this.effects.setBossWarning((telegraph?.targetX??0)/UNIT,(telegraph?.targetY??0)/UNIT,(telegraph?.radius??0)/UNIT,1-(telegraph?.delayRemainingMs??0)/AREA_ATTACK_DELAY_MS,!!telegraph&&!menu);
   this.syncPools(game.pools);
 

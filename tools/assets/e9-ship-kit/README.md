@@ -28,10 +28,11 @@ not runtime textures. The game fetches only GLBs, lazily after entering gameplay
   console and deck05 signage.
 - Clinical: analyser, testbench, diagnostic tower, cryo service console, low/tall
   communication racks, domestic berth/desk/storage, access panels and an8.06m
-  clear probe arch.
+  clear probe arch, a domestic pendant and a segmented uplink dish.
 - Industrial: rooted ventilation plenums, pump skid, pipe manifold, cargo
   restraint bank, shielding/reactor service bays, open cable tray and real
-  drainage grating.
+  drainage grating, a motorised cargo hoist, a three-tool workshop bridge and a
+  rooted overhead airway exchanger.
 
 The retained native cryo, habitation, garden, armory and reactor landmarks keep
 separate owners and their existing provenance. Older/legacy rooms still use the

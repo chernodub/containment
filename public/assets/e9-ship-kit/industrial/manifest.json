@@ -5,7 +5,7 @@
   "source": "tools/assets/e9-ship-kit/industrial.py",
   "rebuild": "blender -b --factory-startup -P tools/assets/e9-ship-kit/industrial.py",
   "coordinateSystem": "glTF Y-up, metres; named group origins bottom-centred",
-  "description": "Original low-cutaway ship machinery, embedded infestation and flush access surfaces; no external source art.",
+  "description": "Original low-cutaway ship machinery, embedded infestation, flush access surfaces and overhead hoist/tool/exchanger landmarks; no external source art.",
   "ao": "Eight deterministic BVH hemisphere rays per vertex, .45m range; baked BYTE_COLOR AO exported as COLOR_0",
   "materials": {
     "e9-body": "#24343c",
@@ -310,12 +310,105 @@
         "e9-trim"
       ],
       "primitives": 3
+    },
+    {
+      "name": "cargo-hoist-header",
+      "dimensions": [
+        6.0,
+        2.2222,
+        1.5
+      ],
+      "bounds": {
+        "min": [
+          -3.0,
+          0.0,
+          -0.75
+        ],
+        "max": [
+          3.0,
+          2.2222,
+          0.75
+        ]
+      },
+      "triangles": 3964,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 5,
+      "mount": "overhead; bottom approximately 5m above deck",
+      "floorCollider": false
+    },
+    {
+      "name": "workshop-tool-bridge",
+      "dimensions": [
+        6.0,
+        1.2575,
+        1.5
+      ],
+      "bounds": {
+        "min": [
+          -3.0,
+          0.0,
+          -0.75
+        ],
+        "max": [
+          3.0,
+          1.2575,
+          0.75
+        ]
+      },
+      "triangles": 8072,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 5,
+      "mount": "overhead; bottom approximately 5m above deck",
+      "floorCollider": false
+    },
+    {
+      "name": "airway-exchanger",
+      "dimensions": [
+        4.8,
+        0.96,
+        2.0
+      ],
+      "bounds": {
+        "min": [
+          -2.4,
+          0.0,
+          -1.0
+        ],
+        "max": [
+          2.4,
+          0.96,
+          1.0
+        ]
+      },
+      "triangles": 8860,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim",
+        "e9-violet"
+      ],
+      "primitives": 5,
+      "mount": "overhead; bottom approximately 5m above deck",
+      "floorCollider": false
     }
   ],
   "output": {
     "file": "kit.glb",
-    "bytes": 813924,
-    "triangles": 32216,
-    "sha256": "f3f0b7fd6a3e662ac2ad6cdefad97a1868d1dee1728a5c3db923725577ef525e"
+    "bytes": 1343668,
+    "triangles": 53112,
+    "sha256": "8e792635ea0e454fb61b7d4233d5ebb38c3d28d728be7c5643ee00b62ecd72f4"
   }
 }

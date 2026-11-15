@@ -1,7 +1,8 @@
 """Original Containment clinical ship kit. MIT, repository LICENSE.
 
 Rebuild: blender -b --factory-startup -P tools/assets/e9-ship-kit/clinical.py
-Optional -- --hero-only or --preview. All dimensions are metres, Blender Z-up.
+Optional -- --hero-only, --preview, --arch-preview or --landmark-previews.
+All dimensions are metres, Blender Z-up.
 The exported GLB has named, bottom-centred Y-up assets, with front toward +Z.
 No source models, textures, fonts or external add-ons are used.
 """
@@ -302,6 +303,123 @@ def scanner_arch():
         cylinder('Downward probe cyan aperture', (x, .18, 2.225), .035, .010, 'e9-cyan', bevel=0)
 
 
+def gallery_pendant():
+    """Domestic three-pod fitting; both upward and downward sources are visible."""
+    asset('habitation-gallery-pendant')
+    CURRENT['suspendedLandmark'] = True
+    CURRENT['placementHeightMetres'] = 4.5
+    box('Domestic pendant shared service spine', (0, 0, .414),
+        (4.80, .36, .10), 'e9-body', .035)
+    for x in (-1.55, 0, 1.55):
+        box('Rounded domestic ceramic lamp casing', (x, 0, .220),
+            (1.42, 1.40, .32), 'e9-ceramic', .070)
+        box('Lamp lower shadow reveal', (x, 0, .060),
+            (1.31, 1.27, .045), 'e9-dark', .009)
+        box('Warm downward domestic diffuser', (x, 0, .0125),
+            (1.15, 1.10, .025), 'e9-amber', .005)
+        box('Lamp top instrument recess', (x, 0, .385),
+            (1.16, 1.12, .022), 'e9-dark', .004)
+        box('Warm upward domestic diffuser', (x, 0, .401),
+            (1.04, .98, .012), 'e9-amber', .002)
+        for y in (-.27, .27):
+            box('Domestic diffuser restrained support rib', (x, y, .412),
+                (1.09, .035, .018), 'e9-trim', .003)
+        for sign in (-1, 1):
+            box('Lamp inset service panel', (x, sign*.695, .225),
+                (.78, .006, .125), 'e9-body', .001)
+            box('Lamp panel recessed latch', (x, sign*.699, .225),
+                (.22, .002, .025), 'e9-dark', 0)
+    for x in (-2.05, 2.05):
+        box('Pendant ceiling mounting shoe', (x, 0, .625),
+            (.33, .42, .050), 'e9-trim', .010)
+        for sign in (-1, 1):
+            cable('Captured domestic ceiling supply',
+                [(x, sign*.10, .458), (x-.055, sign*.15, .505),
+                 (x+.045, sign*.14, .565), (x, sign*.10, .612)], .014)
+        cylinder('Pendant mounting collar', (x, 0, .555), .047, .10, 'e9-body')
+
+
+def dish_petal(index, count=12):
+    """One thick curved petal with genuine open seams and bevelled outer edges."""
+    radial = [.20, .63, 1.06, 1.49, 1.92, 2.35]
+    start = index*2*math.pi/count + .007
+    end = (index+1)*2*math.pi/count - .007
+    angular = [start+(end-start)*step/6 for step in range(7)]
+    vertices, faces = [], []
+    for lower in (False, True):
+        for radius in radial:
+            for angle in angular:
+                height = .20 + .55*(radius/2.4)**2 - (.040 if lower else 0)
+                vertices.append((radius*math.cos(angle), radius*math.sin(angle), height))
+    row, surface = len(angular), len(radial)*len(angular)
+    for ring in range(len(radial)-1):
+        for step in range(row-1):
+            a=ring*row+step
+            faces.append((a,a+row,a+row+1,a+1))
+            b=a+surface
+            faces.append((b+1,b+row+1,b+row,b))
+    for ring in range(len(radial)-1):
+        for side in (0,row-1):
+            a=ring*row+side
+            face=(a,a+surface,a+row+surface,a+row)
+            faces.append(face if side==0 else tuple(reversed(face)))
+    for radius_row in (0,len(radial)-1):
+        for step in range(row-1):
+            a=radius_row*row+step
+            face=(a,a+1,a+surface+1,a+surface)
+            faces.append(face if radius_row==0 else tuple(reversed(face)))
+    mesh=bpy.data.meshes.new('Original parabolic dish petal')
+    mesh.from_pydata(vertices,[],faces)
+    mesh.update()
+    obj=bpy.data.objects.new('Segmented upward-facing receiver petal',mesh)
+    bpy.context.collection.objects.link(obj)
+    finish(obj,'e9-ceramic' if index%3 else 'e9-trim')
+    bpy.context.view_layer.objects.active=obj
+    modifier=obj.modifiers.new('Petal outer-edge 12mm bevel','BEVEL')
+    modifier.width,modifier.segments=.012,2
+    modifier.limit_method='ANGLE'
+    modifier.angle_limit=math.radians(35)
+    modifier.harden_normals=True
+    bpy.ops.object.modifier_apply(modifier=modifier.name)
+    return obj
+
+
+def dish_ring(name, radius, height, thickness, role):
+    bpy.ops.mesh.primitive_torus_add(
+        major_segments=72,minor_segments=8,
+        location=(0,0,height),major_radius=radius,minor_radius=thickness,
+    )
+    obj=bpy.context.object
+    obj.name=name
+    return finish(obj,role)
+
+
+def uplink_dish():
+    asset('comms-uplink-dish')
+    CURRENT['suspendedLandmark']=True
+    CURRENT['placementHeightMetres']=4.5
+    cylinder('Uplink suspended mounting base',(0,0,.07),.74,.14,'e9-dark',vertices=32)
+    cylinder('Uplink central dish support',(0,0,.18),.43,.12,'e9-body',vertices=24)
+    for index in range(12):
+        dish_petal(index)
+    rim_height=.20+.55*(2.36/2.4)**2
+    dish_ring('Dish outer protective rim',2.36,rim_height,.040,'e9-body')
+    dish_ring('Dish rim machined upper highlight',2.36,rim_height+.027,.012,'e9-trim')
+    # Continuous status channel sits above the curved petals, not coplanar.
+    ring_height=.20+.55*(1.97/2.4)**2
+    dish_ring('Recessed status-ring housing',1.97,ring_height+.024,.027,'e9-dark')
+    dish_ring('Visible cyan jade uplink status ring',1.97,ring_height+.048,.013,'e9-cyan')
+    for index in range(3):
+        angle=index*2*math.pi/3+math.pi/6
+        x,y=1.80*math.cos(angle),1.80*math.sin(angle)
+        height=.20+.55*(1.80/2.4)**2
+        cylinder('Receiver strut grounded petal foot',(x,y,height+.018),.10,.036,'e9-body',vertices=12)
+        bar('Receiver supported radial strut',(x,y,height+.035),(0,0,.905),.030,'e9-trim')
+    cylinder('Central upward receiver body',(0,0,.897),.16,.146,'e9-body',vertices=20)
+    cylinder('Receiver recessed optical face',(0,0,.979),.137,.018,'e9-dark',vertices=20,bevel=.003)
+    cylinder('Receiver central cyan instrument window',(0,0,.995),.088,.010,'e9-cyan',vertices=20,bevel=.002)
+
+
 def cryo_console():
     asset('cryo-service-console')
     box('Cryo console shadow plinth', (0, .02, .05), (2.44, 1.04, .10), 'e9-dark', .030)
@@ -517,6 +635,10 @@ def export_pack():
             'supportCentresX':[-4.195,4.195], 'supportWidthMetres':.31,
             'supportDepthMetres':1.20, 'supportInnerFacesX':[-4.04,4.04],
         },
+        'suspendedLandmarks':{
+            'habitation-gallery-pendant':{'placementHeightMetres':4.5,'description':'Three rounded domestic ceramic lamp pods with warm top and underside sources.'},
+            'comms-uplink-dish':{'placementHeightMetres':4.5,'description':'Twelve upward-facing parabolic petals, supported receiver and real cyan status channel.'},
+        },
         'output':{'file':path.name, 'bytes':path.stat().st_size,
                   'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),
                   'triangles':sum(model['triangles'] for model in models)},
@@ -603,6 +725,49 @@ def arch_preview():
         bpy.ops.render.render(write_still=True)
 
 
+def landmark_previews():
+    """Top-biased native and review views of the two suspended fixtures."""
+    scene=bpy.context.scene
+    scene.render.engine='CYCLES'
+    scene.cycles.samples=24
+    scene.cycles.use_denoising=True
+    scene.render.resolution_percentage=100
+    scene.render.image_settings.file_format='PNG'
+    scene.world.color=(.07,.07,.07)
+    material=bpy.data.materials.new('PREVIEW ONLY suspended landmark stage')
+    material.diffuse_color=(.035,.047,.057,1)
+    bpy.ops.mesh.primitive_plane_add(size=200,location=(0,0,-.07))
+    bpy.context.object.data.materials.append(material)
+    for position,power,size in (((4,-5,8),1600,6),((-5,-1,5),1000,5),((0,5,7),1500,5)):
+        data=bpy.data.lights.new('PREVIEW ONLY landmark softbox','AREA')
+        data.energy,data.shape,data.size=power,'DISK',size
+        obj=bpy.data.objects.new(data.name,data)
+        bpy.context.collection.objects.link(obj)
+        obj.location=position
+        obj.rotation_euler=(Vector((0,0,.4))-obj.location).to_track_quat('-Z','Y').to_euler()
+    data=bpy.data.cameras.new('PREVIEW ONLY landmark camera')
+    camera=bpy.data.objects.new(data.name,data)
+    bpy.context.collection.objects.link(camera)
+    data.type='ORTHO'
+    scene.camera=camera
+    for name,position,scale,target in (
+        ('habitation-gallery-pendant',(6,-8,8),6.1,.30),
+        ('comms-uplink-dish',(6,-8,10),7.8,.50),
+    ):
+        if '--dish-preview-only' in sys.argv and name!='comms-uplink-dish':
+            continue
+        for group in GROUPS:
+            for obj in group.children:
+                obj.hide_render=group.name!=name
+        camera.location=position
+        camera.rotation_euler=(Vector((0,0,target))-camera.location).to_track_quat('-Z','Y').to_euler()
+        data.ortho_scale=scale
+        for width,height,suffix in ((1920,1080,''),(480,270,'-480')):
+            scene.render.resolution_x,scene.render.resolution_y=width,height
+            scene.render.filepath=str(OUT/(name+'-preview'+suffix+'.png'))
+            bpy.ops.render.render(write_still=True)
+
+
 analyser()
 if '--hero-only' not in sys.argv:
     testbench()
@@ -615,8 +780,12 @@ if '--hero-only' not in sys.argv:
     desk()
     floor_panels()
     scanner_arch()
+    gallery_pendant()
+    uplink_dish()
 export_pack()
 if '--preview' in sys.argv:
     preview()
 if '--arch-preview' in sys.argv:
     arch_preview()
+if '--landmark-previews' in sys.argv:
+    landmark_previews()
