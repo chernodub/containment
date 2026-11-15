@@ -86,14 +86,17 @@ it('fits identity details to the rest skin once per family and never scans skin 
   }finally{vertices.mockRestore();if(first)disposeModel(first.root);if(second)disposeModel(second.root);}
 });
 
-it('emerges vertically over220ms at the real spawn position and settles before ragdoll handoff',()=>{
+it('climbs over340ms at the native spawn position and hands a supported captured pose to ragdoll',()=>{
   const model=alien('crawler'),restY=model.body.position.y;
   model.root.position.set(4,0,8);model.animate(0,0,.4);
   expect(model.body.position.y).toBeLessThan(restY-.03);
-  for(let i=1;i<=15;i++)model.animate(i/60,0,.4);
-  expect(model.body.position.y).toBeCloseTo(restY);expect(model.root.position.toArray()).toEqual([4,0,8]);
+  for(let i=1;i<=24;i++)model.animate(i/60,0,.4);
+  expect(model.body.position.y).toBeGreaterThanOrEqual(restY);expect(model.body.position.y-restY).toBeLessThanOrEqual(.0066+1e-8);
+  expect(model.body.scale.toArray()).toEqual([1,1,1]);expect(model.root.position.toArray()).toEqual([4,0,8]);
   model.reset!();model.animate(1,0,0);expect(model.body.position.y).toBeLessThan(restY-.03);
-  freezeCorpse(model);expect(model.body.position.y).toBe(restY);expect(model.body.rotation.x).toBe(0);
+  const deathRoot=model.root.position.clone(),deathPose=model.body.quaternion.clone();freezeCorpse(model);
+  expect(new T.Box3().setFromObject(model.root,true).min.y).toBeGreaterThanOrEqual(deathRoot.y-.025);
+  expect(model.root.position.toArray()).toEqual(deathRoot.toArray());expect(model.body.quaternion.angleTo(deathPose)).toBeLessThan(1e-8);
   model.reset!();model.setAffliction!({chilled:true,burning:false,frozen:true});model.animate(2,0,0);
   expect(model.body.position.y).toBe(restY);disposeModel(model.root);
 });

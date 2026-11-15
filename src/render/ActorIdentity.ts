@@ -292,7 +292,7 @@ export function alienIdentity(root:T.Group,kind:string,span:number,height:number
   return {
     mesh,
     update(time:number,windup:number,champion:string|undefined,exposed:boolean,alpha:number,dead:boolean){
-      corpse=dead;rank=champion;mesh.visible=true;mesh.geometry=liveGeometry;
+      corpse=dead;rank=champion;mesh.visible=true;if(!dead)mesh.geometry=liveGeometry;
       const u=mesh.material.uniforms;
       u.identityWindup.value=windup;u.identityTime.value=time;u.identityPulse.value=dead?.18:1+Math.sin(time*2.7)*.06+Math.max(0,Math.min(1,windup))*1.2;
       u.identityChampion.value=champion==='warden'?1:champion==='matron'?2:0;

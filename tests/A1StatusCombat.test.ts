@@ -127,7 +127,7 @@ describe('ability statuses share elemental and mutation reactions', () => {
   });
 
   for (const kind of ['freeze', 'shock'] as const) {
-    it(`${kind} suspends native enemy movement and contact attacks until control expires`, () => {
+    it(`${kind} suspends native movement and requires a fresh attack wind-up after control expires`, () => {
       const enemies = new EnemySystem();
       const spawn = enemies.spawn('crawler', 100, 100);
       if (!spawn.spawned) throw new Error('expected crawler');
@@ -145,7 +145,13 @@ describe('ability statuses share elemental and mutation reactions', () => {
       }
       expect(enemies.getSnapshot(spawn.enemy.id)).toMatchObject({x: 100, y: 100, speed: 0});
       runtime.update(50);
-      expect(enemies.update(50, {x: 110, y: 100}).some(e => e.type === 'contact-attack')).toBe(true);
+      const resumed=enemies.update(50, {x: 110, y: 100});
+      expect(resumed.some(e => e.type === 'contact-attack')).toBe(false);
+      let warned=resumed.some(e=>e.type==='melee-warning');
+      for(let ms=0;ms<1000&&!warned;ms+=10)warned=enemies.update(10,{x:110,y:100}).some(e=>e.type==='melee-warning');
+      expect(warned).toBe(true);
+      expect(enemies.getSnapshot(spawn.enemy.id)?.meleePhase).toBe('windup');
+      expect(enemies.update(260, {x: 110, y: 100}).some(e => e.type === 'contact-attack')).toBe(true);
     });
   }
 

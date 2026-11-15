@@ -1,3 +1,4 @@
+import {PresentationHold} from './motion/PresentationHold'; // M10 bounded presentation clock
 import {actorImpact,actorDeathCue,enemyMotionAim} from './motion/MotionEvents'; // M9 presentation-only routing
 import {act3ShipPresentation,ACT3_PRESENTATION_ROOMS} from './world/Act3ShipPresentation';
 import {act1ShipPresentation} from './world/Act1ShipPresentation';
@@ -78,6 +79,7 @@ export class DepthRenderer {
  private contextResources=new ContextResources();private afflictions=new AfflictionBatches(new T.TextureLoader());private healthBars=new EnemyHealthBars();private hudScene=new T.Scene();private world=new T.Group();private actors=new Map<number,ActorModel>();private nests=new Map<number,T.Group>();private queen:ActorModel|null=null;
  private kitDressing:ReturnType<typeof attachRoomKits>|undefined;private kitStartupComplete=false;private gameplayPresentationStarted=false;
  private interimAbilities=new LazyAbilityVisuals(this.scene);private abilityWarmupRoot:T.Object3D|undefined;
+ private presentationHold=new PresentationHold();private marineDeathStarted=false; // M10
  private ragdolls=new DeathRagdolls();private staticDirty=false;private corpseIds=new Set<number>();
  private staticLoaded(owner:T.Group){return()=>{if(this.world!==owner)return;const newProfiles=this.materialWarmup?.register(owner)??0;this.contextResources?.track(owner);this.reflection?.invalidate();this.shadowsDirty=true;this.staticDirty=true;if(this.materialWarmup&&newProfiles)this.queueRoomWarmup();};}
  private actorPool=new ActorPool();private player=marine();private playerBeacon=new PlayerBeacon(this.player.root,this.hudScene);private corpses:Corpse[]=[];private effects:AttackEffects;
@@ -376,7 +378,7 @@ export class DepthRenderer {
   this.releasedBerth?.dispose();this.releasedBerth=undefined;
   this.reflection?.invalidate();this.roomEnvironment=environment??'cryogenics';this.roomKey=node.id;this.shadowsDirty=true;disposeModel(this.world);this.temporaryMaterials.forEach(m=>m.dispose());this.temporaryMaterials=[];this.world=new T.Group();this.scene.add(this.world);this.effects.setWorld(this.world);
   for(const m of this.actors.values())this.actorPool.release(m);this.actors.clear();for(const n of this.nests.values())disposeModel(n);this.nests.clear();if(this.queen)this.actorPool.release(this.queen);this.queen=null;
-  this.ragdolls?.dispose();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.pickupInstances?.clear();this.effects.clear();this.interimAbilities.clear();this.afflictions.clear();this.pendingShots=[];this.projectileLightIds=new WeakMap();this.nextProjectileLight=-1000;this.muzzleLife=0;this.recoil=0;
+  this.ragdolls?.dispose();this.marineDeathStarted=false;this.presentationHold?.reset();for(const c of this.corpses)this.actorPool.release(c.model);this.corpses=[];this.pickupInstances?.clear();this.effects.clear();this.interimAbilities.clear();this.afflictions.clear();this.pendingShots=[];this.projectileLightIds=new WeakMap();this.nextProjectileLight=-1000;this.muzzleLife=0;this.recoil=0;
   const t=ROOM_TEMPLATES[node.templateId],w=t.width/UNIT,h=t.height/UNIT;this.roomWidth=w;this.roomHeight=h;
   const atrium=node.templateId==='communal-atrium';
   this.corpseIds?.clear();this.staticDirty=false;const staticLoaded=this.staticLoaded(this.world);
@@ -499,9 +501,9 @@ export class DepthRenderer {
   g.updateMatrix();for(const child of [...g.children]){child.applyMatrix4(g.matrix);this.world.add(child);}
  }
  effect(effect:GameEffect){
-  if(effect.type==='ability'){this.player?.motionEvent?.(effect);if(effect.ability){this.interimAbilities.event(effect.ability,effect.x,effect.y);}return;}
+  if(effect.type==='ability'){if(effect.ability?.slot==='overdrive'&&effect.ability.phase==='impact')this.presentationHold?.request(.04,this.options.screenShake,!!this.motionQuery?.matches);this.player?.motionEvent?.(effect);if(effect.ability){this.interimAbilities.event(effect.ability,effect.x,effect.y);}return;}
   const x=effect.x/UNIT,z=effect.y/UNIT;
-  if(effect.type==='hurt'){this.cameraRig?.addTrauma(.34);this.cameraRig?.punch(.015,180);actorImpact(this.player,effect);return;}if(effect.type==='sync-corpse')return;
+  if(effect.type==='hurt'){if((effect.damage??0)>=36)this.presentationHold?.request(.045,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig?.addTrauma(.34);this.cameraRig?.punch(.015,180);actorImpact(this.player,effect);return;}if(effect.type==='sync-corpse')return;
   if(effect.type==='explosion'||(effect.type==='boon'&&(effect.boon==='blast'||(effect.boon==='overload'&&effect.radius!==undefined)))){this.lighting.explosion(x,z,(effect.radius??48)/UNIT);this.cameraRig?.addTrauma(.32);this.cameraRig?.punch(.035,240);}
   if(effect.type==='shot'){
    this.recoil=1;this.cameraRig?.kick(effect.angle??0,effect.weapon==='shotgun'?.08:effect.weapon==='rocket'?.12:.025);if(this.pendingShots.length<4)this.pendingShots.push(effect);return;
@@ -511,6 +513,7 @@ export class DepthRenderer {
   if((effect.contact==='damage'||effect.contact==='armor')&&effect.targetId!==undefined)actorImpact(effect.targetId===-1?this.queen??undefined:this.actors.get(effect.targetId),effect);
   let motionDeathCue:'none'|'frost'|'burn'|'arc'|'acid'='none';
   if(effect.type==='corpse'){
+   if(effect.elite)this.presentationHold?.request(.035,this.options.screenShake,!!this.motionQuery?.matches); // M10 elite-only global beat
    if(effect.id===undefined)return;
    this.corpseIds??=new Set();if(this.corpseIds.has(effect.id))return;this.corpseIds.add(effect.id);
    let existing=this.actors.get(effect.id!);if(!existing&&effect.family){existing=this.actorPool.take(effect.family,effect.elite);existing.root.position.set(x,0,z);registerGeometry(existing.root,GEOMETRY_CLASSES.enemy);this.scene.add(existing.root);}if(existing){motionDeathCue=actorDeathCue(existing);existing.root.userData.motionDeathCue=motionDeathCue;existing.root.position.set(x,0,z);freezeCorpse(existing);this.ragdolls.add(effect.id!,existing,effect.family??existing.root.name.replace('alien-',''),{x:(effect.vx??0)/UNIT,z:(effect.vy??0)/UNIT},motionDeathCue,this.motionQuery?.matches?0:.032*Math.min(this.options.screenShake,this.options.flashIntensity));this.actors.delete(effect.id!);this.corpses.push({model:existing,id:effect.id!,x,y:z,vx:(effect.vx??0)/UNIT,vy:(effect.vy??0)/UNIT,height:.2,lift:3,spin:2.4,age:0});if(this.corpses.length>(this.tier==='low'?6:10)){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}}
@@ -529,7 +532,7 @@ export class DepthRenderer {
   if((game.status==='reward'||game.status==='route')&&this.aheadKey!==game.node.id){this.aheadKey=game.node.id;const nodes=generateRun(game.expedition.run.seed,game.expedition.run.version).nodes;this.prepareAhead(nodes.filter(node=>game.node.next.includes(node.id)));}
   this.captureRoomReflections();
   if(game.status!=='playing'){for(const model of this.actors.values())model.hit?.(0);this.queen?.hit?.(0);}
-  const dt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);this.time+=dt;const p=game.player;
+  const realDt=game.status==='paused'||game.status==='reward'||game.status==='route'?0:Math.min(delta,.05);const dt=this.presentationHold?.advance(realDt,this.options.screenShake,!!this.motionQuery?.matches)??realDt;this.time+=dt;const p=game.player;
   const bounds=game.geometry.bounds,enemies=game.enemies.snapshot.enemies;
   const bossFrame=game.boss.snapshot,bossWeight=!menu&&bossFrame.active&&!bossFrame.defeated,baseZoom=menu?1.23:bossWeight?.78:1;
   combatFocusTarget(p.x/UNIT,p.y/UNIT,p.angle,bossFrame.x/UNIT,bossFrame.y/UNIT,bossWeight,!!this.motionQuery?.matches||menu,this.desiredFocus);
@@ -546,15 +549,18 @@ export class DepthRenderer {
   if(!menu){this.roomCombatFraming.apply(this.camera,this.cameraRig.focus,p.x/UNIT,p.y/UNIT,p.radius/UNIT,this.player.height,bounds.width/UNIT,bounds.height/UNIT,hud.viewport,this.viewportHeight,dt,!!this.motionQuery?.matches,game.geometry.boundary,hud);hud.refreshFit(this.camera,this.screenPoint);this.focus.copy(this.cameraRig.focus);}
   this.effects.beginPriorityActors(this.camera);if(!menu)this.effects.addPriorityActor(p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,.78),this.player.height);
   // The shadow projection remains anchored to the room, avoiding subpixel shimmer.
-  this.player.setColliderDebug?.(this.colliderDebug,p.radius/UNIT);this.player.root.position.set(p.x/UNIT,0,p.y/UNIT);this.player.root.visible=!menu;this.player.root.rotation.z=game.combat.snapshot.dead?1.4:0;
+  this.player.setColliderDebug?.(this.colliderDebug,p.radius/UNIT);if(!this.ragdolls.has(-2147483648))this.player.root.position.set(p.x/UNIT,0,p.y/UNIT);this.player.root.visible=!menu;this.player.root.rotation.z=0; // M10 death belongs to bones
   const combat=game.combat.snapshot;this.player.equip?.(combat.weaponId);
   this.player.setRig?.(game.abilities?.snapshot.rig??'breacher');this.menuMarine?.setRig?.(game.abilities?.snapshot.rig??'breacher');
   // M9: preferences scale secondary motion; authoritative roots remain snapshot-owned.
   this.player.setMotionOptions?.(Math.min(this.options.screenShake,this.options.flashIntensity),!!this.motionQuery?.matches);this.player.setDead?.(combat.dead);
-  this.playerVelocity.x=p.vx;this.playerVelocity.y=p.vy;this.player.animate(this.time,p.moving?1:0,p.angle,this.recoil,combat.reloading?Math.max(.001,1-combat.reloadRemainingMs/combat.reloadDurationMs):0,this.playerVelocity);this.recoil=Math.max(0,this.recoil-dt*14);
+  if(!combat.dead){this.ragdolls.remove(-2147483648);this.marineDeathStarted=false;}
+  this.playerVelocity.x=p.vx;this.playerVelocity.y=p.vy;if(!this.ragdolls.has(-2147483648))this.player.animate(this.time,p.moving?1:0,p.angle,this.recoil,combat.reloading?Math.max(.001,1-combat.reloadRemainingMs/combat.reloadDurationMs):0,this.playerVelocity);this.recoil=Math.max(0,this.recoil-dt*14);
+  // M10: one articulated marine death; native killing direction, retained physics owner.
+  if(combat.dead&&!this.marineDeathStarted){this.marineDeathStarted=true;const direction=this.player.root.userData.motionHitDirection??p.angle;if(this.corpses.length&&this.ragdolls.snapshot().active>=this.ragdolls.snapshot().budget){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}this.ragdolls.add(-2147483648,this.player,'marine',{x:Math.cos(direction)*5,z:Math.sin(direction)*5},'none');}
   this.lighting.setMenu?.(menu);if(this.lighting.setPlayer(menu?TITLE_STAGE.marine.x:p.x/UNIT,menu?TITLE_STAGE.marine.z:p.y/UNIT,menu?TITLE_STAGE.marine.angle:p.angle,this.camera))this.atmosphere?.syncFixtures(this.lighting.fixtures);
   const active=this.activeActorIds;active.clear();let crowding=0;
-  for(const e of enemies){if(Math.hypot(e.x-p.x,e.y-p.y)<80)crowding+=.25;active.add(e.id);let model=this.actors.get(e.id);if(!model){model=this.actorPool.take(e.type,e.elite);model.setMotionSeed?.(e.id);model.setFlashIntensity?.(this.options.flashIntensity);this.shadowsDirty=true;this.actors.set(e.id,model);registerGeometry(model.root,(e.elite||e.champion)?GEOMETRY_CLASSES.elite:GEOMETRY_CLASSES.enemy);this.scene.add(model.root);this.contextResources?.track(model.root);}if(!menu)this.effects.addPriorityActor(e.x/UNIT,e.y/UNIT,e.radius/UNIT,model.height);model.setColliderDebug?.(this.colliderDebug,e.radius/UNIT);model.root.position.set(e.x/UNIT,0,e.y/UNIT);const status=game.boonStatuses(e.id);model.setAffliction?.(status);model.root.userData.visualStatus=status;model.setMotionOptions?.(Math.min(this.options.screenShake,this.options.flashIntensity),!!this.motionQuery?.matches);model.setThreat?.(e.windupMs,e.pendingAttack,e.champion,e.alpha);this.playerVelocity.x=e.velocityX;this.playerVelocity.y=e.velocityY;model.animate(this.time+e.id,Math.hypot(e.velocityX,e.velocityY)>2?1:.12,enemyMotionAim(e,p),0,0,this.playerVelocity);}
+  for(const e of enemies){if(Math.hypot(e.x-p.x,e.y-p.y)<80)crowding+=.25;active.add(e.id);let model=this.actors.get(e.id);if(!model){model=this.actorPool.take(e.type,e.elite);model.setMotionSeed?.(e.id);model.setFlashIntensity?.(this.options.flashIntensity);this.shadowsDirty=true;this.actors.set(e.id,model);registerGeometry(model.root,(e.elite||e.champion)?GEOMETRY_CLASSES.elite:GEOMETRY_CLASSES.enemy);this.scene.add(model.root);this.contextResources?.track(model.root);}if(!menu)this.effects.addPriorityActor(e.x/UNIT,e.y/UNIT,e.radius/UNIT,model.height);model.setColliderDebug?.(this.colliderDebug,e.radius/UNIT);model.root.position.set(e.x/UNIT,0,e.y/UNIT);const status=game.boonStatuses(e.id);model.setAffliction?.(status);model.root.userData.visualStatus=status;model.setMotionOptions?.(Math.min(this.options.screenShake,this.options.flashIntensity),!!this.motionQuery?.matches);model.setThreat?.(e.windupMs,e.pendingAttack,e.champion,e.alpha);model.setAttackState?.(e.meleePhase,e.meleeProgress,e.meleeAngle,e.meleeShape);this.playerVelocity.x=e.velocityX;this.playerVelocity.y=e.velocityY;model.animate(this.time+e.id,Math.hypot(e.velocityX,e.velocityY)>2?1:.12,enemyMotionAim(e,p),0,0,this.playerVelocity);}
   for(const [id,model]of this.actors)if(!active.has(id)){this.actorPool.release(model);this.actors.delete(id);this.shadowsDirty=true;}
   let healthCount=0;for(const e of enemies){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=e.x/UNIT;bar.z=e.y/UNIT;bar.height=this.actors.get(e.id)?.height??1;bar.health=e.health;bar.maxHealth=e.maxHealth;bar.elite=e.elite||!!e.champion;bar.armor=e.armor;bar.status=this.actors.get(e.id)?.root.userData.visualStatus;}for(const n of game.boss.snapshot.nests){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=n.x/UNIT;bar.z=n.y/UNIT;bar.height=1.35;bar.health=n.health;bar.maxHealth=n.maxHealth;bar.elite=false;bar.armor=0;bar.status=undefined;}for(let i=healthCount;i<128;i++)this.healthEntries[i].health=0;
   this.healthBars.update(this.healthEntries,this.camera,this.viewportHeight,menu);
@@ -571,8 +577,8 @@ export class DepthRenderer {
   const nestIds=this.activeNestIds;nestIds.clear();for(const n of q.nests){if(!menu)this.effects.addPriorityActor(n.x/UNIT,n.y/UNIT,.7,1.35);nestIds.add(n.id);let model=this.nests.get(n.id);if(!model){model=nest();registerGeometry(model,GEOMETRY_CLASSES.enemy);this.nests.set(n.id,model);this.scene.add(model);this.contextResources?.track(model);}model.position.set(n.x/UNIT,0,n.y/UNIT);updateNest(model,this.time+n.id);}
   for(const[id,model]of this.nests)if(!nestIds.has(id)){updateNest(model,this.time,true);if(this.nests.size>10){disposeModel(model);this.nests.delete(id);}}
   if(this.staticDirty){this.freezeRoomTransforms();this.ragdolls.refreshStatic(this.world);this.staticDirty=false;}
-  this.ragdolls.update(dt);
-  for(const c of this.corpses){if(this.ragdolls.has(c.id))c.age+=dt;c.model.dissolve?.(Math.max(0,(c.age-18)/2));if(this.ragdolls.has(c.id)){const position=this.ragdolls.position(c.id)!;c.x=position.x;c.y=position.z;continue;}if(dt<=0)continue;if(c.age>2&&Math.abs(c.vx)+Math.abs(c.vy)<.02&&c.height<=.08){c.age+=dt;continue;}c.age+=dt;const moved=game.moveCorpse({x:c.x*UNIT,y:c.y*UNIT,radius:14},c.vx*dt*UNIT,c.vy*dt*UNIT);c.x=moved.x/UNIT;c.y=moved.y/UNIT;if(moved.blocked){c.vx*=-.22;c.vy*=-.22;}c.vx*=Math.exp(-3.8*dt);c.vy*=Math.exp(-3.8*dt);c.lift-=9.8*dt;c.height=Math.max(.08,c.height+c.lift*dt);if(c.height<=.08)c.lift=0;
+  this.ragdolls.update(dt);if(this.ragdolls.has(-2147483648))this.player.syncWeaponPose?.(); // M10 falling hand keeps weapon socket
+  for(const c of this.corpses){c.model.setDeathAge?.(c.age+dt);if(this.ragdolls.has(c.id))c.age+=dt;c.model.dissolve?.(Math.max(0,(c.age-18)/2));if(this.ragdolls.has(c.id)){const position=this.ragdolls.position(c.id)!;c.x=position.x;c.y=position.z;continue;}if(dt<=0)continue;if(c.age>2&&Math.abs(c.vx)+Math.abs(c.vy)<.02&&c.height<=.08){c.age+=dt;continue;}c.age+=dt;const moved=game.moveCorpse({x:c.x*UNIT,y:c.y*UNIT,radius:14},c.vx*dt*UNIT,c.vy*dt*UNIT);c.x=moved.x/UNIT;c.y=moved.y/UNIT;if(moved.blocked){c.vx*=-.22;c.vy*=-.22;}c.vx*=Math.exp(-3.8*dt);c.vy*=Math.exp(-3.8*dt);c.lift-=9.8*dt;c.height=Math.max(.08,c.height+c.lift*dt);if(c.height<=.08)c.lift=0;
    c.model.root.position.set(c.x,c.height,c.y);c.model.body.rotation.z=Math.min(Math.PI*.78,c.age*5);c.model.root.rotation.y+=c.spin*dt*Math.exp(-c.age*3);
   }
 

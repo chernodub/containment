@@ -876,3 +876,6 @@ import {registerI11Scenarios} from './i11-scenarios.mjs';
 registerI11Scenarios(SCENARIOS);
 
 SCENARIOS.push(...U9_SCENARIOS);
+
+import {registerM10Scenarios} from './m10-scenarios.mjs';
+registerM10Scenarios(SCENARIOS);

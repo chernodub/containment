@@ -54,3 +54,10 @@ it('inspects a safer map option even when the initially selected departure is el
   const choices=routeOptions([{route:'1729:v2-r9-elite'},{inspect:'1729:v2-r9-elite'},{inspect:'1729:v2-r9-combat'},{inspect:'1729:v2-r9-combat'}]);
   expect(choices).toHaveLength(2);expect(chooseRoute(choices).id).toBe('1729:v2-r9-combat');
 });
+
+it('steps outside a native locked sector and dashes only for an active warning',()=>{
+  const warning={id:1,x:0,y:0,health:30,clear:true,visible:true,meleePhase:'windup',meleeProgress:.8,meleeOriginX:0,meleeOriginY:0,meleeAngle:0,meleeShape:{kind:'cone',range:180,halfAngle:.45,width:0}};
+  const s={player:{x:120,y:0,radius:16},rig:'arc',combat:{weapon:'rifle',health:100,grenades:0,medkits:0},hazards:[],abilities:{slots:{dash:{ready:true}},overdrive:{}},enemies:[warning],candidates:[{x:130,y:0,dx:1,dy:0,legal:true},{x:120,y:100,dx:0,dy:1,legal:true}]};
+  expect(chooseMovement(s).dy).toBe(1);expect(chooseActions(s)).toContain('Shift');
+  warning.meleePhase='recovery';expect(chooseActions(s)).not.toContain('Shift');
+});

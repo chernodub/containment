@@ -8,6 +8,17 @@ const PATHS = {
   arc: ['hot-reload', 'magnetic-feed', 'reactor-cascade', 'last-shell', 'rapid-cycle', 'crossfire', 'forked-overload', 'twin-pylon'],
 };
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+/** Read only an active native warning; stepping/dashing never predicts a future hit. */
+export function insideMeleeWarning(enemy, point) {
+  if (enemy.meleePhase !== 'windup' || !enemy.meleeShape) return false;
+  const shape=enemy.meleeShape,angle=enemy.meleeAngle??0;
+  const dx=point.x-enemy.meleeOriginX,dy=point.y-enemy.meleeOriginY;
+  const x=dx*Math.cos(angle)+dy*Math.sin(angle),y=-dx*Math.sin(angle)+dy*Math.cos(angle),radius=point.radius??16;
+  const segment=(bx,by)=>{const t=Math.max(0,Math.min(1,(x*bx+y*by)/(bx*bx+by*by||1)));return (x-bx*t)**2+(y-by*t)**2;};
+  if(shape.kind==='line')return segment(shape.range,0)<=(shape.width*.5+radius)**2;
+  if(Math.abs(Math.atan2(y,x))<=shape.halfAngle&&Math.hypot(x,y)<=shape.range+radius)return true;
+  return Math.min(segment(Math.cos(shape.halfAngle)*shape.range,Math.sin(shape.halfAngle)*shape.range),segment(Math.cos(shape.halfAngle)*shape.range,-Math.sin(shape.halfAngle)*shape.range))<=radius**2;
+}
 /** Prefer own augments, then path enablers, universal cooldown/charge, survival. */
 export function chooseBoon(ids, rig, owned = []) {
   const score = id => {
@@ -47,6 +58,7 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
     if (target) score -= Math.abs(distance(c, target) - desired) * .3;
     if (chase && c.waypoint) score -= distance(c, c.waypoint) * 1.5;
     for (const h of s.hazards) score -= Math.max(0, h.radius + 100 - distance(c, h)) * 5;
+    for (const e of s.enemies) if (insideMeleeWarning(e, {...c,radius:s.player.radius})) score -= 900;
     score += (c.dx * previous.x + c.dy * previous.y) * 14;
     if (c.clear) score += 45;
     if (score > highest) { highest = score; best = c; }
@@ -56,7 +68,8 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
 /** Slots with an actual tactical opportunity; normal input remains authoritative. */
 export function chooseActions(s) {
   const near = Math.min(Infinity, ...s.enemies.map(e => distance(e, s.player)));
-  const danger = near < 105 || s.hazards.some(h => distance(s.player, h) < h.radius + 50);
+  const danger = near < 105 || s.hazards.some(h => distance(s.player, h) < h.radius + 50)
+    || s.enemies.some(e=>e.meleeProgress>=.55&&insideMeleeWarning(e,s.player));
   const slots = s.abilities.slots;
   const keys = [];
   if (s.combat.health < 40 && s.combat.medkits > 0) keys.push('e');

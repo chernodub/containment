@@ -348,6 +348,7 @@ describe('desktop simulation collision and hostile time isolation', () => {
     const contactBefore = game.enemies.getSnapshot(contact.id)!;
     const distantBefore = game.enemies.getSnapshot(distant.id)!;
     expect(contactBefore.contactCooldownRemainingMs).toBeGreaterThan(0);
+    expect(contactBefore.meleePhase).toBe('windup');
     const hostile = projectile('hazard', 700, 600), friendly = projectile('player', 700, 700);
     game.bullets.push(hostile, friendly);
     game.pools.push({id: 1, x: 900, y: 700, radius: 20, life: 2, warning: 0, damage: 6, tick: .5});

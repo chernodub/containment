@@ -1,4 +1,5 @@
 import {identityRoleVisible} from './ActorIdentity';
+import {isAnatomicalBone} from './motion/AnatomicalFrost';
 import {getStaticColliderParts} from './StaticColliderParts';
 import RAPIER from '@dimforge/rapier3d-compat';
 import * as T from 'three';
@@ -14,22 +15,12 @@ export const RAGDOLL_MAX_SPEED=8,RAGDOLL_MAX_SPIN=12;
 /** Read only by presentation; supplied from the last living status snapshot. */
 export type DeathCue='none'|'frost'|'burn'|'arc'|'acid';
 const DEATH_POSTURE:Record<string,{lift:number;torque:number}>={
- crawler:{lift:1.2,torque:.10},stalker:{lift:.72,torque:.13},
+ marine:{lift:.35,torque:.16},crawler:{lift:1.2,torque:.10},stalker:{lift:.72,torque:.13},
  spitter:{lift:.95,torque:.08},carrier:{lift:.65,torque:.06},
  brute:{lift:.75,torque:.07},queen:{lift:.45,torque:.05},
 };
 // Authored deformation bones only. IK controls, fingers, antennae and small face
 // bones remain attached to their nearest simulated ancestor. At most 19 bodies.
-const CORE:Record<string,string[]>={crawler:['chest'],stalker:['torso','chest','neck_lo','head'],spitter:['bum','spine2','head'],carrier:['body','body001','body002','head'],brute:['chest','tail','neck','head']};
-const canon=(name:string)=>name.replace(/[.]/g,''); // GLTFLoader sanitizes dots.
-function selected(name:string,family:string){
- const n=canon(name);if(CORE[family]?.includes(n))return true;
- if(family==='crawler')return /^leg\d_(upper|lower)$/.test(n);
- if(family==='stalker')return /^(leg_(back|front)_(up|mid)|arm_(up|mid))[LR]$/.test(n);
- if(family==='spitter')return /^(leg_[bm]1?|hand1?)[LR]$/.test(n);
- if(family==='carrier')return /^(leg_(front|middle|back)(001)?|upper_arm(001)?)[LR]$/.test(n);
- return /^(leg\.(back|front)|foot\.(back|front)|shoulder|forearm)\.[rl]$/.test(name)||/^(leg(back|front)|foot(back|front)|shoulder|forearm)[rl]$/.test(n);
-}
 /** Fit every positive skin influence, not only the dominant bone or a segment.
  * Each unblended influence follows its nearest simulated ancestor rigidly.
  * Their weighted sum therefore stays above a plane if these boxes do.
@@ -70,7 +61,7 @@ function fitSkin(root:T.Object3D,bones:T.Bone[]){
 type BonePose={bone:T.Bone;position:T.Vector3;rotation:T.Quaternion;scale:T.Vector3;auto:boolean};
 type Part={bone:T.Bone;body:RAPIER.RigidBody;bindLinear:T.Matrix4};
 type PoseNode={node:T.Object3D;part:Part|undefined};
-type RagdollRecord={model:ActorModel;parts:Part[];hierarchy:PoseNode[];joints:RAPIER.ImpulseJoint[];poses:BonePose[];age:number;holdTicks:number;settled:boolean;falling:boolean;fallSpeed:number;support:T.Vector3;supportLift:number;rootPosition:T.Vector3;anchor:T.Vector3};
+type RagdollRecord={model:ActorModel;cue:DeathCue;terminalTime:number;terminalPulse:number;parts:Part[];hierarchy:PoseNode[];joints:RAPIER.ImpulseJoint[];poses:BonePose[];age:number;holdTicks:number;settled:boolean;falling:boolean;fallSpeed:number;support:T.Vector3;supportLift:number;rootPosition:T.Vector3;anchor:T.Vector3};
 type Room=Pick<RoomTemplate,'width'|'height'|'obstacles'|'boundary'|'voids'>;
 
 /** Presentation-only world. Never fed back into combat, navigation or mutation state. */
@@ -147,12 +138,12 @@ export class DeathRagdolls {
   if(this.snapshot().active>=RAGDOLL_BUDGET[this.tier]){this.overflow++;return false;}
   model.root.updateMatrixWorld(true);
   const poses:BonePose[]=[],bones:T.Bone[]=[];
-  model.root.traverse(o=>{if(o instanceof T.Bone){poses.push({bone:o,position:o.position.clone(),rotation:o.quaternion.clone(),scale:o.scale.clone(),auto:o.matrixAutoUpdate});if(selected(o.name,family))bones.push(o);}});
+  model.root.traverse(o=>{if(o instanceof T.Bone){poses.push({bone:o,position:o.position.clone(),rotation:o.quaternion.clone(),scale:o.scale.clone(),auto:o.matrixAutoUpdate});if(isAnatomicalBone(o.name,family))bones.push(o);}});
   if(bones.length<3||bones.length>20)return false;
   model.freeze?.();
   const parts:Part[]=[],joints:RAPIER.ImpulseJoint[]=[],mass=family==='brute'?3.5:family==='carrier'?1.8:1;
   const posture=DEATH_POSTURE[family]??DEATH_POSTURE.crawler;
-  const lift=cue==='frost'?.12:cue==='burn'?.30:cue==='arc'?.45:posture.lift;
+  const lift=cue==='frost'?.55:cue==='burn'?.08:cue==='acid'?.04:cue==='arc'?.45:posture.lift;
   // Attenuate before capping: native shotgun (12.75) and rocket (33.75)
   // previously both saturated at 12, erasing weapon strength. Preserve direction
   // and family weight while bounding even extreme presentation-only impulses.
@@ -165,17 +156,20 @@ export class DeathRagdolls {
    const bounds=fits.get(bone)!.bounds;
    // Bone-only fixtures and unweighted controls still need finite inertia.
    if(bounds.isEmpty())bounds.setFromCenterAndSize(new T.Vector3(),new T.Vector3(.1,.1,.1));
-   const half=bounds.getSize(new T.Vector3()).multiplyScalar(.5).addScalar(.003),center=bounds.getCenter(new T.Vector3()).applyQuaternion(rotation);
+   const half=bounds.getSize(new T.Vector3()).multiplyScalar(.5).addScalar(family==='stalker'?.010:.003),center=bounds.getCenter(new T.Vector3()).applyQuaternion(rotation);
    const desc=RAPIER.ColliderDesc.cuboid(half.x,half.y,half.z).setTranslation(center.x,center.y,center.z).setRotation(rotation).setMass(mass*(parts.length===0?3:1)).setCollisionGroups(GROUPS).setFriction(.8).setRestitution(.08);
    this.world.createCollider(desc,body);
-   body.setLinvel({x:velocity.x*scale,y:vertical,z:velocity.z*scale},true);
+   const scatter=cue==='frost'?.9:0,scatterAngle=Math.atan2(position.z-model.root.position.z,position.x-model.root.position.x);
+   const launchX=velocity.x*scale+Math.cos(scatterAngle)*scatter,launchZ=velocity.z*scale+Math.sin(scatterAngle)*scatter;
+   const launchScale=Math.min(1,RAGDOLL_MAX_SPEED/Math.max(.001,Math.hypot(launchX,vertical,launchZ)));
+   body.setLinvel({x:launchX*launchScale,y:vertical*launchScale,z:launchZ*launchScale},true);
    // Off-center shot torque tips the body. Limbs subsequently respond to joints,
    // gravity and contacts rather than a canned rotation or independent animation.
-   const convulse=cue==='arc'?(parts.length%2?-.9:.9):0;
+   const convulse=cue==='arc'?(parts.length%2?-3.8:3.8):cue==='frost'?(parts.length%2?-2.5:2.5):cue==='burn'?(parts.length%2?-.9:.9):0;
    body.setAngvel({x:velocity.z*scale*posture.torque+convulse,y:0,z:-velocity.x*scale*posture.torque},true);
    parts.push({bone,body,bindLinear});
   }
-  for(const part of parts.slice(1)){
+  for(const part of cue==='frost'?[]:parts.slice(1)){
    let parent=part.bone.parent;while(parent&&!parts.some(p=>p.bone===parent))parent=parent.parent;
    const other=parts.find(p=>p.bone===parent)??parts[0];
    const anchor=part.body.translation(),op=other.body.translation(),oq=other.body.rotation();
@@ -194,7 +188,7 @@ export class DeathRagdolls {
   // Quantize down: the 32ms request holds at most three 120Hz ticks (25ms).
   const holdTicks=Number.isFinite(holdSeconds)?Math.floor(Math.min(.032,Math.max(0,holdSeconds))/STEP):0;
   if(holdTicks>0)for(const part of parts)part.body.setEnabled(false);
-  this.records.set(id,{model,parts,hierarchy,joints,poses,age:0,holdTicks,settled:false,falling:false,fallSpeed:0,support:new T.Vector3(),supportLift:.25,rootPosition:model.root.position.clone(),anchor:new T.Vector3().copy(parts[0].body.translation())});return true;
+  this.records.set(id,{model,cue,terminalTime:0,terminalPulse:0,parts,hierarchy,joints,poses,age:0,holdTicks,settled:false,falling:false,fallSpeed:0,support:new T.Vector3(),supportLift:.25,rootPosition:model.root.position.clone(),anchor:new T.Vector3().copy(parts[0].body.translation())});return true;
  }
  update(dt:number){
   this.elapsedMs=0;if(!this.world||dt<=0)return;
@@ -202,7 +196,11 @@ export class DeathRagdolls {
   if(!active&&!falling)return;const start=performance.now(),delta=Math.min(dt,.05);
   if(active){this.accumulator+=delta;while(this.accumulator+1e-9>=STEP){
    this.world.timestep=STEP;this.world.step();
-   for(const record of this.records.values())if(record.holdTicks>0){record.holdTicks--;if(record.holdTicks===0)for(const part of record.parts)part.body.setEnabled(true);}
+   for(const record of this.records.values()){
+    if(record.holdTicks>0){record.holdTicks--;if(record.holdTicks===0)for(const part of record.parts)part.body.setEnabled(true);continue;}
+    record.terminalTime+=STEP;
+    if(record.cue==='arc'&&record.terminalTime<.22){const pulse=Math.floor(record.terminalTime/.07);if(pulse>record.terminalPulse){record.terminalPulse=pulse;for(let i=0;i<record.parts.length;i++){const part=record.parts[i];this.physicsVelocity.x=(i%2?-1:1)*(pulse%2?-4:4);this.physicsVelocity.y=0;this.physicsVelocity.z=(i%2?-1:1)*1.7;part.body.setAngvel(this.physicsVelocity,true);}}}
+   }
    // Contacts and anchors are solved together. Postsolve translations can push
    // otherwise valid skin proxies through the deck without contact resolution.
    // Narrow fitted limbs can amplify joint-limit impulses into extreme energy.
@@ -215,7 +213,7 @@ export class DeathRagdolls {
    }
    this.accumulator-=STEP;this.steps++;}}
   for(const r of this.records.values()){
-   if(r.falling){this.fall(r,delta);continue;}if(r.settled)continue;r.age+=delta;if(r.holdTicks>0)continue;this.apply(r);
+   r.age+=delta;r.model.setDeathAge?.(r.age);if(r.falling){this.fall(r,delta);continue;}if(r.settled)continue;if(r.holdTicks>0)continue;this.apply(r);
    if(r.parts.every(p=>p.body.isSleeping()))this.retire(r);else if(r.age>=6)this.retire(r);
   }
   this.elapsedMs=performance.now()-start;

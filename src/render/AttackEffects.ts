@@ -33,7 +33,8 @@ if(style>6.5){
  else{float edge=1.0-smoothstep(.74,.91,d),core=1.0-smoothstep(.20,.36,d);color=mix(vec3(.008,.006,.009),vec3(1.8,.16,.035),edge);color=mix(color,vec3(.055,.008,.006),core);alpha*=1.0-smoothstep(.92,1.0,d);}
 }
 else if(style>5.5){
- bool path=vShape.x>.5;
+ bool sector=vShape.x>1.5;bool path=vShape.x>.5&&!sector;
+ if(sector&&abs(atan(p.y,p.x))>vShape.z)discard;
  if(path){vec2 capsule=vec2(max(abs(p.x)*(vShape.y+1.0)-vShape.y,0.0),p.y);d=length(capsule);}
  if(d>1.0)discard;
  // A bounded projected torso mask keeps bodies visible through the after-post
@@ -45,6 +46,7 @@ else if(style>5.5){
   if(dot(q,q)<1.0)discard;
  }
  float edge=1.0-smoothstep(.020,.055,abs(d-.90));
+ if(sector)edge=max(edge,(1.0-smoothstep(.01,.04,abs(abs(atan(p.y,p.x))-vShape.z)))*smoothstep(.08,.2,d));
  if(vFrame<.5){color*=1.2;alpha*=edge;}
  else{
   float progress=clamp(vFrame-1.0,0.0,1.0),phase=path?vUv.x:d,filled=1.0-smoothstep(progress-.02,progress+.02,phase);
@@ -53,7 +55,7 @@ else if(style>5.5){
   float danger=max(edge,max(timing*.80,hatch*(.14+filled*.30)));
   color=mix(vec3(.012,.008,.010),vec3(1.8,.13,.035)*(1.0+edge*.2),danger);
   color=mix(color,vec3(.004,.005,.007),smoothstep(.95,.975,d));
-  alpha=min(1.0,.92+edge*.08+filled*.04)*min(1.0,vAlpha*2.5);
+  alpha=min(1.0,.92+edge*.08+filled*.04)*(vShape.w>.5?vAlpha:min(1.0,vAlpha*2.5));
  }
 }
 else if(style>4.5){
@@ -103,7 +105,7 @@ function pool(scene:T.Scene,geometry:T.BufferGeometry,count:number,style:number,
 }
 /** Bounded GPU instance pools: no lights or draw call per pellet / particle. */
 export class AttackEffects {
- private readonly nativeWarnings=Array.from({length:32},()=>({active:false,id:0,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
+ private readonly nativeWarnings=Array.from({length:32},()=>({active:false,id:0,melee:false,weight:1,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
  private readonly warningFrom={x:0,y:0};private readonly warningTo={x:0,y:0};
  private readonly priorityShape={shape:'circle' as const,x:0,z:0,radius:0};
  /** Read-only live hostile warning footprints for friendly-effect priority. No copies or rendering changes. */
@@ -176,6 +178,10 @@ export class AttackEffects {
    if(!warning.active)continue;
    let enemy:typeof enemies[number]|undefined;
    for(const candidate of enemies)if(candidate.id===warning.id){enemy=candidate;break;}
+   if(warning.melee){
+    if(!enemy||enemy.health<=0||enemy.meleePhase!=='windup'){warning.active=false;continue;}
+    const w=warning.shape,m=enemy.meleeShape;w.shape=m.kind==='line'?'line':'cone';w.x=enemy.meleeOriginX/32;w.z=enemy.meleeOriginY/32;w.angle=enemy.meleeAngle;w.radius=m.range/32;w.length=m.range/32;w.width=m.width/32;w.arc=m.halfAngle*2;w.progress=enemy.meleeProgress;warning.remainingMs=enemy.meleeRemainingMs;warning.weight=enemy.type==='brute'||enemy.type==='carrier'?.48:enemy.elite?.38:.27;continue;
+   }
    if(!enemy||enemy.health<=0||enemy.windupMs<=0||!enemy.pendingAttack){warning.active=false;continue;}
    const shape=warning.shape,charge=enemy.pendingAttack==='charge';
    const angle=charge?Math.atan2(enemy.lockY,enemy.lockX):Math.atan2(enemy.lockY-enemy.y,enemy.lockX-enemy.x);
@@ -274,7 +280,7 @@ export class AttackEffects {
    if(e.id!==undefined&&e.family){
     let warning=this.nativeWarnings.find(w=>w.active&&w.id===e.id);
     warning??=this.nativeWarnings.find(w=>!w.active);
-    if(warning){warning.active=true;warning.id=e.id;warning.durationMs=e.durationMs??650;warning.remainingMs=warning.durationMs;warning.shape.length=-1;}
+    if(warning){warning.active=true;warning.id=e.id;warning.melee=!!e.meleeShape;warning.weight=e.dangerWeight==='low'?.27:1;warning.durationMs=e.durationMs??650;warning.remainingMs=warning.durationMs;warning.shape.length=-1;}
     return;
    }
    p.y=.035;const life=(e.durationMs??650)/1000;
@@ -607,12 +613,12 @@ export class AttackEffects {
   let ring=0,slash=0,warning=0;for(const pulse of this.pulses){pulse.age+=dt;if(pulse.age>=pulse.life)continue;const t=pulse.age/pulse.life,mesh=pulse.stable?this.hostileWarningMesh:pulse.slash?this.slashMesh:this.pulseMesh,index=pulse.stable?warning++:pulse.slash?slash++:ring++;
    this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);const size=pulse.radius*(pulse.stable?1:pulse.slash?.65+t*.35:.15+t*.85);this.dummy.scale.setScalar(size);this.dummy.updateMatrix();(mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(index,0,0,0,0);mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,pulse.stable?1+t:0);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,pulse.stable?.4+.5*t:(1-t)*.8);
   }
-  for(const native of this.nativeWarnings){if(!native.active)continue;const w=native.shape,radius=w.width!*.5,length=w.length!,angle=w.angle!;
+  for(const native of this.nativeWarnings){if(!native.active)continue;const w=native.shape,sector=w.shape==='cone',radius=sector?w.radius!:w.width!*.5,length=sector?0:w.length!,angle=w.angle!;
    this.dummy.position.set(w.x+Math.cos(angle)*length*.5,.04,w.z+Math.sin(angle)*length*.5);this.dummy.rotation.set(-Math.PI/2,0,-angle);this.dummy.scale.set(length*.5+radius,radius,1);this.dummy.updateMatrix();
    this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);
-   (this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,w.shape==='line'?1:0,length/(2*radius),0,0);
+   (this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,sector?2:w.shape==='line'?1:0,length/(2*radius),sector?w.arc!*.5:0,native.melee?1:0);
    (this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress!);
-   (this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,1);
+   (this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,native.weight);
   }
   if(this.bossWarning){const w=this.bossWarning;this.dummy.position.set(w.x,.045,w.z);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.setScalar(w.radius);this.dummy.updateMatrix();(this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,0,0,0,0);this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);(this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress);(this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,1);}
   write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,warning);

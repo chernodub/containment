@@ -37,5 +37,15 @@ it('advances accepted cast body punctuation only in presentation time and retire
   motion.update(.05); const progress = setAction.mock.lastCall![1];
   motion.update(.05); expect(setAction.mock.lastCall![1]).toBe(progress);
   for (let i = 2; i <= 6; i++) motion.update(i * .05);
-  expect(setAction).toHaveBeenLastCalledWith('', 0);
+  expect(setAction).toHaveBeenLastCalledWith('glacier', .42);
+  motion.event({type:'ability',x:0,y:0,ability:{ability:'glacier',slot:'power',rig:'cryo',element:'cryo',phase:'impact'}});
+  motion.update(.35);expect(setAction.mock.lastCall![1]).toBeGreaterThan(.43);
+  for(let i=8;i<=13;i++)motion.update(i*.05);
+  expect(setAction).toHaveBeenLastCalledWith('',0);
+});
+
+it('uses the native melee vector through windup strike and recovery',()=>{
+ const enemy={type:'crawler',x:0,y:0,targetX:100,targetY:0,lockX:0,lockY:0,pendingAttack:null,chargeMs:0,meleePhase:'windup',meleeAngle:1.2};
+ for(const phase of ['windup','strike','recovery']){enemy.meleePhase=phase;expect(enemyMotionAim(enemy,{x:-100,y:0})).toBe(1.2);}
+ enemy.meleePhase='approach';expect(enemyMotionAim(enemy,{x:-100,y:0})).toBe(0);
 });

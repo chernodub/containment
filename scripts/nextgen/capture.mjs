@@ -312,6 +312,11 @@ try{
    if(scenario.combat)assert((scenario.status||projectiles)&&muzzle,`${name}: burst lacks player projectiles or muzzle flash`);
    if(scenario.id==='i4-breach'){const shots=manifest.shots.filter(s=>s.scenario===scenario.id);assert(shots[0].evidence.i4Proof?.nativeWarning&&shots[0].evidence.i4Proof.pendingAtStart>0,'Native breach scheduling receipt missing');assert(shots.some(s=>s.evidence.i4Proof.active>0),'Breach burst never reached a native enemy spawn');}
    if(scenario.id==='i4-exit-standby')assert(manifest.shots.at(-1).evidence.i4Proof?.visible,'Authored exit is not visible');
+   if(scenario.m10Melee){
+    const shots=manifest.shots.filter(s=>s.scenario===scenario.id),phases=new Set(shots.map(s=>s.evidence.g5Proof?.warningTimeline?.phase));
+    for(const phase of ['windup','strike','recovery'])assert(phases.has(phase),`${name}: missing native melee ${phase}`);
+    for(const shot of shots){const timeline=shot.evidence.g5Proof.warningTimeline;if(timeline.phase==='windup')assert(timeline.footprints.length>0,`${name}: native warning has no hostile footprint`);}
+   }
    if(scenario.id==='combat-heavy')assert(explosion,`${name}: burst lacks a real explosion`);
    if(scenario.status)assert(['burning','chilled','frozen','poisoned'].every(s=>observed.has(s)),`Missing elemental statuses: ${[...observed]}`);
    console.log(`  ${count} PNGs verified`);

@@ -1020,3 +1020,22 @@ and crop receipts. Crops preserve original pixels and surrounding world context.
 Scenario-specific clocks stay literal: K7 warning fixtures use300ms spacing even
 when the capture CLI requests33ms. Move a completed capture into its final retained
 location before running this offline derivative if its paths must remain stable.
+
+## M10 melee and bold motion
+
+The M9 motion runner now also writes native-registered monochrome actor masks
+(`masks/`) using the isolated flat background, and same-rig idle references for
+marine cast comparisons. `python scripts/nextgen/m10-review.py <strip-root>`
+requires Pillow and writes `iou.json`, exact-quarter BOX reductions and per-subject
+quarter contacts. No mask registration/scale fitting is applied; effect/death
+rows remain presentation studies. Inspect native strips as well as reductions.
+Melee attack rows replay native family phase durations and elite scales; marine
+casts replay normalized choreography, while accepted event clocks are covered
+by deterministic adapter tests. Marine death uses the retained articulated body.
+
+`m10-melee-{crawler,stalker,brute,spitter,carrier}` uses legal native spawns in
+Awakening Bay and waits for an actual simulation wind-up. Run with `--burst=30`:
+50ms native steps must include windup, strike and recovery, and every wind-up must
+have a hostile footprint. The stationary invulnerable marine is a declared
+capture fixture. These bursts prove native phases/ground warnings, not campaign
+balance or hardware timing. Failed capture parents remain intact.

@@ -6,6 +6,7 @@ import {
   WORLD_WIDTH,
 } from '../../src/game/constants';
 import { ENEMIES } from '../../src/game/enemies/catalog';
+import {MELEE_ATTACKS} from '../../src/game/enemies/meleeAttacks';
 import {
   EnemySystem,
   type EnemyEvent,
@@ -258,24 +259,22 @@ describe('EnemySystem combat, reservations, and boundaries', () => {
     expect(system.getSnapshot(crawler.id)).toMatchObject({ x: 100, y: 220 });
   });
 
-  it('enforces finite-range contact attacks and per-enemy cooldowns', () => {
+  it('requires a finite-range wind-up, resolves once, and enforces the family cooldown', () => {
     const system = new EnemySystem();
     const crawler = requireSpawn(system, 'crawler', 100, 100);
-
-    const first = eventsOf(system.update(0, { x: 120, y: 100, radius: 10 }), 'contact-attack');
-    expect(first).toEqual([
-      expect.objectContaining({
-        type: 'contact-attack',
-        enemyId: crawler.id,
-        damage: ENEMIES.crawler.contactDamage,
-      }),
+    const player = {x: 120, y: 100, radius: 10};
+    const warning = system.update(0, player);
+    expect(eventsOf(warning, 'contact-attack')).toEqual([]);
+    expect(eventsOf(warning, 'melee-warning')).toHaveLength(1);
+    expect(system.getSnapshot(crawler.id)).toMatchObject({meleePhase: 'windup', meleeProgress: 0});
+    expect(eventsOf(system.update(259, player), 'contact-attack')).toEqual([]);
+    expect(eventsOf(system.update(1, player), 'contact-attack')).toEqual([
+      expect.objectContaining({enemyId: crawler.id, damage: ENEMIES.crawler.contactDamage*MELEE_ATTACKS.crawler.damageMultiplier}),
     ]);
-    expect(eventsOf(system.update(0, { x: 120, y: 100 }), 'contact-attack')).toEqual([]);
-    system.update(ENEMIES.crawler.attackCooldownMs, { x: 1_000, y: 1_000 });
-    expect(eventsOf(system.update(0, { x: 120, y: 100 }), 'contact-attack')).toHaveLength(
-      1,
-    );
-    expect(eventsOf(system.update(0, { x: Number.POSITIVE_INFINITY, y: 100 }), 'contact-attack')).toEqual([]);
+    expect(eventsOf(system.update(0, player), 'contact-attack')).toEqual([]);
+    system.update(ENEMIES.crawler.attackCooldownMs, {x: 1_000, y: 1_000});
+    expect(eventsOf(system.update(0, {x: 120, y: 100}), 'contact-attack')).toEqual([]);
+    expect(eventsOf(system.update(0, {x: Number.POSITIVE_INFINITY, y: 100}), 'contact-attack')).toEqual([]);
   });
 
   it('applies coherent elite modifiers and emits frozen death metadata once', () => {
@@ -389,7 +388,8 @@ describe('EnemySystem state boundary', () => {
     const unsubscribe = system.subscribe((event) => observed.push(event));
     const first = requireSpawn(system, 'carrier', 100, 100);
     system.update(0, { x: 100, y: 100 });
-    expect(observed.some(({ type }) => type === 'contact-attack')).toBe(true);
+    expect(observed.some(({ type }) => type === 'melee-warning')).toBe(true);
+    expect(observed.some(({ type }) => type === 'contact-attack')).toBe(false);
 
     unsubscribe();
     unsubscribe();

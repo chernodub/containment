@@ -116,3 +116,20 @@ it('continues asset boot on injected physics rejection and restores unanimated b
  const r=fixture();r.actorPool=pool;r.actors.set(1,m);r.effect({type:'corpse',id:1,family:'crawler',x:160,y:160});const mesh=m.root.getObjectByProperty('isMesh',true) as T.Mesh,dispose=vi.spyOn(mesh.material as T.Material,'dispose');r.dispose();expect(dispose).toHaveBeenCalledTimes(1);expect(m.root.parent).toBeNull();expect(r.corpses).toHaveLength(0);
  const another=alien('crawler');expect(another.root.getObjectByName('chest')!.position.equals(original)).toBe(true);
 });
+
+it('reserves one existing physics slot for the marine and removes it on restart without altering simulation',()=>{
+ const r=fixture(),g=game();
+ // A small valid marine hierarchy exercises the actual renderer/Rapier lifecycle.
+ const hips=r.player.body.children[0] as T.Bone;hips.name='hips';hips.children[0].name='spine';hips.children[1].name='ribs';
+ r.player.root.userData.motionHitDirection=Math.PI/2;
+ for(let id=1;id<=6;id++)r.effect({type:'corpse',id,family:'crawler',x:160,y:160});
+ expect(r.ragdolls.snapshot().active).toBe(6);
+ const resources=g.combat.getRunResources();g.combat.applyDamage(10000);g.status='dead';
+ const native={x:g.player.x,y:g.player.y};r.render(g,1/60);
+ expect(r.ragdolls.has(-2147483648)).toBe(true);expect(r.ragdolls.snapshot().active).toBe(6);
+ expect(r.corpses).toHaveLength(5);expect(r.actorPool.release).toHaveBeenCalledTimes(1);
+ expect({x:g.player.x,y:g.player.y}).toEqual(native);
+ r.render(g,1/60);expect(r.actorPool.release).toHaveBeenCalledTimes(1);
+ expect(g.combat.restoreRunResources(resources)).toBe(true);g.status='playing';r.render(g,1/60);
+ expect(r.ragdolls.has(-2147483648)).toBe(false);expect(r.marineDeathStarted).toBe(false);r.dispose();
+});

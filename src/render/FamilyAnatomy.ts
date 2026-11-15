@@ -66,7 +66,9 @@ export function familyAnatomy(kind: string, span: number, height: number): Actor
     for (const side of [-1,1]) {
       // Folded hooked scythes replace a generic shoulder cape.
       limb([side*.10,.66,.18],[side*.285,.37,.255],.08,11,side<0?'arm_midR':'arm_midL');
-      limb([side*.285,.37,.255],[side*.17,.18,.36],.07,10,side<0?'clawR':'clawL');
+      // One rigid hooked forearm keeps its contiguous plates attached while the
+      // imported wrist controls execute their attack clip.
+      limb([side*.285,.37,.255],[side*.17,.18,.36],.07,10,side<0?'arm_midR':'arm_midL');
       for (const back of [false,true]) {
         const z=back?-.25:.13,joint=`leg_${back?'back':'front'}_mid${side<0?'R':'L'}`;
         limb([side*.12,.45,z],[side*.30,.07,z-.025],.06,2,joint);

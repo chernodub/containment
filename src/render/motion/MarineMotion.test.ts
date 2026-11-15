@@ -3,7 +3,7 @@ import * as T from 'three';
 import {loadModels} from '../../../tests/loadModels';
 import {instantiateAsset} from '../assets';
 import {disposeModel} from '../models';
-import {MarineMotion, MARINE_FOOT_CORRECTION, MARINE_HIT_PAUSE} from './MarineMotion';
+import {MarineMotion, MARINE_FOOT_CORRECTION, MARINE_HIT_PAUSE, MARINE_BODY_OFFSET, MARINE_REACTION_SECONDS} from './MarineMotion';
 
 beforeAll(loadModels);
 
@@ -96,8 +96,10 @@ it('reduces planted-foot world drift in forward, strafe and backpedal travel at 
           maxCorrection = Math.max(maxCorrection, offset);
           const soleOffset = sample.rawSoles[foot].distanceTo(sample.soles[foot]);
           maxSoleCorrection = Math.max(maxSoleCorrection, soleOffset);
-          expect(soleOffset, `rendered sole correction ${speed}/${angle}/${frame}`).toBeLessThanOrEqual(MARINE_FOOT_CORRECTION + .002);
-          expect(offset, `bounded foot correction ${speed}/${angle}/${frame}`).toBeLessThanOrEqual(MARINE_FOOT_CORRECTION + .002);
+          // Procedural crossover/backpedal replaces the authored foot path, so
+          // source-clip correction distance is no longer its safety bound.
+          expect(sample.soles[foot].y, `sole above deck ${speed}/${angle}/${frame}`).toBeGreaterThan(-.025);
+          expect(Math.hypot(sample.drawn[foot].x-rig.root.position.x,sample.drawn[foot].z-rig.root.position.z)).toBeLessThan(1.2);
         }
         if (frame > 30 && previous[index]) for (let foot = 0; foot < 2; foot++) {
           const p = previous[index]![foot], q = sample.drawn[foot];
@@ -112,8 +114,7 @@ it('reduces planted-foot world drift in forward, strafe and backpedal travel at 
       const baseline = sums[0] / counts[0], final = sums[1] / counts[1];
       metrics.push({speed, angle, baselineMetresPerTick: baseline, correctedMetresPerTick: final, baselineContacts: counts[0], correctedContacts: counts[1], baselineSoleMetresPerTick: soleSums[0] / counts[0], correctedSoleMetresPerTick: soleSums[1] / counts[1], maxCorrection, maxSoleCorrection});
       expect(maxCorrection).toBeGreaterThan(.02);expect(maxSoleCorrection).toBeGreaterThan(.02);
-      expect(maxCorrection).toBeLessThanOrEqual(MARINE_FOOT_CORRECTION + 1e-6);
-      expect(maxSoleCorrection).toBeLessThanOrEqual(MARINE_FOOT_CORRECTION + 1e-6);
+
       expect(soleSums[1] / counts[1], `actual sole drift ${speed}/${angle}`).toBeLessThan(soleSums[0] / counts[0] * .3);
       expect(counts[0]).toBeGreaterThan(10);expect(counts[1]).toBeGreaterThan(10);
       expect(final, `contact drift ${speed}/${angle}: ${baseline} → ${final}`).toBeLessThan(baseline * .8);
@@ -179,10 +180,11 @@ it('returns stopped legs to the authored neutral stance and settles death over s
     }
     expect(rig.root.position.toArray()).toEqual(stoppedAt.toArray());
     rig.motion.setDead(true);rig.step(0, 0);
-    expect(rig.root.rotation.z).toBeGreaterThan(0);expect(rig.root.rotation.z).toBeLessThan(.2);
-    const first = rig.root.rotation.z;
+    expect(rig.root.rotation.z).toBe(0);
+    const first = rig.source.root.getObjectByName('spine')!.quaternion.clone();
     for (let frame = 0; frame < 20; frame++) rig.step(0, 0);
-    expect(rig.root.rotation.z).toBeGreaterThan(first + 1);expect(rig.root.rotation.z).toBeCloseTo(1.4);
+    expect(rig.root.rotation.z).toBe(0);
+    expect(rig.source.root.getObjectByName('spine')!.quaternion.angleTo(first)).toBeGreaterThan(.4);
     expect(rig.root.position.toArray()).toEqual(stoppedAt.toArray());
     expect(rig.source.root.getObjectByName('shinR')!.quaternion.clone().normalize().angleTo(rest[2].q.clone().normalize())).toBeGreaterThan(.3);
   } finally {rig.dispose();}
@@ -218,4 +220,91 @@ it('keeps secondary motion disabled when strength is zero with reduced motion en
       }
     }
   } finally {quiet.dispose();hit.dispose();}
+});
+
+it('bends the whole body away from a hit within the 35% radius and 250ms presentation bound', () => {
+  const quiet = fixture(), hit = fixture();
+  try {
+    quiet.step(0, 0);hit.step(0, 0);
+    const root = hit.root.position.clone();
+    hit.motion.hit(1, Math.PI / 3, true);
+    let peak = 0, bend = 0;
+    for (let frame = 0; frame < 18; frame++) {
+      quiet.step(0, 0);hit.step(0, 0);
+      const a = quiet.source.root.getObjectByName('hips')!.getWorldPosition(new T.Vector3());
+      const b = hit.source.root.getObjectByName('hips')!.getWorldPosition(new T.Vector3());
+      const offset = Math.hypot(a.x-b.x, a.z-b.z);peak=Math.max(peak,offset);
+      expect(offset).toBeLessThanOrEqual(MARINE_BODY_OFFSET + 1e-6);
+      expect(hit.root.position.toArray()).toEqual(root.toArray());
+      expect(hit.root.rotation.z).toBe(0);
+      const left = quiet.source.root.getObjectByName('ribs')!, right = hit.source.root.getObjectByName('ribs')!;
+      bend=Math.max(bend,left.quaternion.angleTo(right.quaternion));
+      if ((frame+1)/60 > MARINE_REACTION_SECONDS) expect(offset).toBeLessThan(1e-9);
+    }
+    expect(peak).toBeGreaterThan(.15);expect(bend).toBeGreaterThan(.30);
+    expect(hit.root.userData.motionHitDirection).toBeCloseTo(Math.PI/3);
+  } finally {quiet.dispose();hit.dispose();}
+});
+
+it('gives each rig four distinct hand and stance compositions without changing its simulated root', () => {
+  const rig=fixture(), abilities=[
+    ['ram','seismic-slam','bulwark','railbreaker'],
+    ['frost-trail','cryo-nova','glacier','whiteout'],
+    ['afterburn','flashfire','napalm-charge','meltdown'],
+    ['static-step','overload','tesla-pylon','overclock'],
+  ];
+  try {
+    rig.step(0,0);const root=rig.root.position.clone();
+    for(const family of abilities){
+      const poses:T.Vector3[][]=[];
+      for(const ability of family){
+        rig.motion.setAction(ability,.5);rig.step(0,0);
+        poses.push(['handL','handR','hips'].map(name=>rig.source.root.getObjectByName(name)!.getWorldPosition(new T.Vector3())));
+        expect(rig.root.position.toArray()).toEqual(root.toArray());
+      }
+      for(let a=0;a<poses.length;a++)for(let b=a+1;b<poses.length;b++){
+        const distance=poses[a].reduce((sum,p,index)=>sum+p.distanceToSquared(poses[b][index]),0);
+        expect(Math.sqrt(distance),`${family[a]} / ${family[b]}`).toBeGreaterThan(.2);
+      }
+    }
+  }finally{rig.dispose();}
+});
+
+it('keeps aim-facing hips for all eight travel directions with independent crossover foot paths',()=>{
+  const descriptors:number[][]=[];
+  for(let direction=0;direction<8;direction++){
+    const rig=fixture();
+    try{
+      const angle=direction*Math.PI/4;
+      for(let frame=0;frame<13;frame++)rig.step(Math.cos(angle)*220,Math.sin(angle)*220);
+      expect(rig.motion.gaitYaw).toBe(0);
+      descriptors.push(['footR','footL'].flatMap(name=>{
+        const p=rig.source.root.getObjectByName(name)!.getWorldPosition(new T.Vector3()).sub(rig.root.position);return [p.x,p.y,p.z];
+      }));
+    }finally{rig.dispose();}
+  }
+  for(let a=0;a<8;a++)for(let b=a+1;b<8;b++)expect(Math.hypot(...descriptors[a].map((n,i)=>n-descriptors[b][i])),`${a*45}/${b*45}`).toBeGreaterThan(.10);
+});
+
+it('composes a hit and a rail recoil slide inside the single horizontal body-offset budget',()=>{
+  const rig=fixture(),quiet=fixture();
+  try{
+    rig.step(0,0);quiet.step(0,0);rig.motion.setAction('railbreaker',.5);rig.motion.hit(1,Math.PI,true);
+    for(let frame=0;frame<15;frame++){
+      rig.step(0,0);quiet.step(0,0);
+      const a=rig.source.root.getObjectByName('hips')!.getWorldPosition(new T.Vector3()),b=quiet.source.root.getObjectByName('hips')!.getWorldPosition(new T.Vector3());
+      expect(Math.hypot(a.x-b.x,a.z-b.z)).toBeLessThanOrEqual(MARINE_BODY_OFFSET+1e-8);
+    }
+  }finally{rig.dispose();quiet.dispose();}
+});
+
+it('blends both slam hands and the attached receiver continuously through the overhead-to-kneel transition',()=>{
+  const rig=fixture();
+  try{
+    rig.step(0,0);rig.motion.setAction('seismic-slam',.42999);rig.step(0,0,0);
+    const hand=rig.source.root.getObjectByName('handR')!,before=hand.getWorldPosition(new T.Vector3()),rotation=hand.getWorldQuaternion(new T.Quaternion());
+    rig.motion.setAction('seismic-slam',.43001);rig.step(0,0,0);
+    expect(hand.getWorldPosition(new T.Vector3()).distanceTo(before)).toBeLessThan(.005);
+    expect(hand.getWorldQuaternion(new T.Quaternion()).angleTo(rotation)).toBeLessThan(.005);
+  }finally{rig.dispose();}
 });

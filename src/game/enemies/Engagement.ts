@@ -12,6 +12,7 @@ export type EngagementBody = {
     radius: number;
     attackSlot?: AttackSlot;
     engagement?: EngagementState;
+    meleePhase?: 'approach'|'windup'|'strike'|'recovery';
 };
 const angleDistance = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
 export class Engagement {
@@ -100,7 +101,9 @@ export class Engagement {
             return true;
         };
         for (const body of actors) {
-            const ranged = body.type === 'spitter' || body.type === 'carrier';
+            const ranged = (body.type === 'spitter' || body.type === 'carrier')&&
+                Math.hypot(body.x-player.x,body.y-player.y)>pr+body.radius+20&&
+                (!body.meleePhase||body.meleePhase==='approach');
             if (ranged) {
                 body.attackSlot = undefined;
                 body.engagement = 'ranged';
