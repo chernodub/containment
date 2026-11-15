@@ -19,6 +19,7 @@ describe('template-driven ship architecture',()=>{
    expect(clearPolygonTopology(t,point,point,0)).toBe(true);
   }
   root.updateMatrixWorld(true);
+  root.traverse(o=>{if(o.userData.cutawayHeight===.91)expect(new T.Box3().setFromObject(o).max.y).toBeLessThanOrEqual(.910001);});
   root.traverse(o=>{if(o instanceof T.Mesh&&(o.material as T.Material).name==='ship-interior-cutaway'){
    o.geometry.computeBoundingBox();expect(o.geometry.boundingBox!.max.y).toBeLessThanOrEqual(.91);
   }});

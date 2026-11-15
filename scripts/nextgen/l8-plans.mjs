@@ -1,13 +1,21 @@
 /** File-only labeled plans. Native simulation predicates supply the floor mask. */
 import {build} from 'vite';
+import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {canvas,encode,drawText,drawImage} from './g2-png.mjs';
 const out=resolve(process.argv[2]??'artifacts/nextgen/l8-standard/plans');await mkdir(out,{recursive:true});
 const entry=resolve(out,'entry.ts');
-await writeFile(entry,`export {STORY_ROOM_TEMPLATES as templates} from '${resolve('src/game/roguelike/storyRoomTemplates.ts')}';
-export {SHIP_ARCHITECTURE_PLANS as standards} from '${resolve('src/game/roguelike/shipArchitectureLayouts.ts')}';
+const candidate=process.argv[4],symbol=process.argv[5]??'SHIP_ACT2_PLANS';assert(/^[A-Z0-9_]+$/.test(symbol));
+const selection=candidate?`import {STORY_ROOM_TEMPLATES as baseTemplates} from '${resolve('src/game/roguelike/storyRoomTemplates.ts')}';
+import {SHIP_ARCHITECTURE_PLANS as basePlans} from '${resolve('src/game/roguelike/shipArchitectureLayouts.ts')}';
+import {${symbol} as candidatePlans} from '${resolve(candidate)}';
+export const standards={...basePlans,...candidatePlans};
+export const templates=Object.fromEntries(Object.entries(baseTemplates).map(([id,t])=>[id,{...t,...standards[id]?.topology}]));`:
+`export {STORY_ROOM_TEMPLATES as templates} from '${resolve('src/game/roguelike/storyRoomTemplates.ts')}';
+export {SHIP_ARCHITECTURE_PLANS as standards} from '${resolve('src/game/roguelike/shipArchitectureLayouts.ts')}';`;
+await writeFile(entry,`${selection}
 export {shipSolidStatistics as stats,shipPlanOpeningErrors as openingErrors,shipBlockedOpeningErrors as blockedErrors,insidePlanPolygon as inside} from '${resolve('src/game/roguelike/shipPlanChecks.ts')}';
 export {canOccupyExpedition as occupy,hasClearExpeditionShot as sight,createRoomTemplateGeometry as geometry} from '${resolve('src/game/world/expeditionGeometry.ts')}';
 export {generateRun} from '${resolve('src/game/roguelike/run.ts')}';`);

@@ -82,15 +82,15 @@ export function shipBlockedOpeningErrors(plan:ShipPlan,g:ExpeditionGeometry):str
  for(let y=32;y<g.bounds.height;y+=step)for(let x=32;x<g.bounds.width;x+=step)if(canOccupyExpedition(g,{x,y},32))nodes.set(y/step*cols+x/step,{x,y});
  const adjacency=new Map<number,number[]>();
  for(const [id,p]of nodes){const edges:number[]=[];for(const delta of [-1,1,-cols,cols]){const q=nodes.get(id+delta);if(q&&canTraverseExpedition(g,p,q,32))edges.push(id+delta);}adjacency.set(id,edges);}
- const nearest=(p:Point)=>[...nodes].reduce((a,b)=>Math.hypot(b[1].x-p.x,b[1].y-p.y)<Math.hypot(a[1].x-p.x,a[1].y-p.y)?b:a)[0];
- const anchors=plan.spaces.map(s=>nearest(s.anchor)),errors:string[]=[];
+ const errors:string[]=[];
  for(const [i,o]of plan.openings.entries()){
   const vertical=o.from.x===o.to.x,block={x:Math.min(o.from.x,o.to.x)-(vertical?12:0),y:Math.min(o.from.y,o.to.y)-(vertical?0:12),width:vertical?24:Math.abs(o.to.x-o.from.x),height:vertical?Math.abs(o.to.y-o.from.y):24};
   const blocked={...g,blockers:[...g.blockers,block]};
+  const nearby=(anchor:Point)=>[...nodes].filter(([,p])=>Math.hypot(p.x-anchor.x,p.y-anchor.y)<=step*1.5&&canTraverseExpedition(blocked,p,anchor,32)).map(([key])=>key);
   const seen=new Set<number>(),queue:number[]=[];
-  if(canOccupyExpedition(blocked,nodes.get(anchors[0])!,32)){seen.add(anchors[0]);queue.push(anchors[0]);}
+  if(canOccupyExpedition(blocked,plan.spaces[0].anchor,32))for(const start of nearby(plan.spaces[0].anchor)){seen.add(start);queue.push(start);}
   for(let k=0;k<queue.length;k++)for(const next of adjacency.get(queue[k])!)if(!seen.has(next)&&canTraverseExpedition(blocked,nodes.get(queue[k])!,nodes.get(next)!,32)){seen.add(next);queue.push(next);}
-  for(const [j,a]of anchors.entries())if(!seen.has(a))errors.push(`Opening ${i} sealed: ${plan.spaces[j].name} has no alternate route`);
+  for(const space of plan.spaces)if(!canOccupyExpedition(blocked,space.anchor,32)||!nearby(space.anchor).some(key=>seen.has(key)))errors.push(`Opening ${i} sealed: ${space.name} has no alternate route`);
  }return errors;
 }
 

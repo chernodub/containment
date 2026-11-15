@@ -115,7 +115,14 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
        const h=id==='residential-gallery'?.10:.90;
        const g=new T.BoxGeometry(r.width/32,h,r.height/32).translate((r.x+r.width/2)/32,h/2,(r.y+r.height/2)/32);
        const mesh=new T.Mesh(g,dark.clone());mesh.material.userData.actorMaterial=true;mesh.name='cutaway-equipment-plinth';mesh.castShadow=mesh.receiveShadow=true;equipment.add(mesh);
-      }else equipment.add(environmentObstacle(environment,{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},i,id));
+      }else {
+       const model=environmentObstacle(environment,{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},i,id);
+       model.updateMatrixWorld(true);const sourceHeight=new T.Box3().setFromObject(model).max.y;
+       // Live hull machinery uses the same low cutaway datum as partitions.
+       // Keep the shared source owner, footprint, palette and legacy builder.
+       if(sourceHeight>.91)model.scale.y*=.91/sourceHeight;
+       model.userData.cutawaySourceHeight=sourceHeight;model.userData.cutawayHeight=.91;equipment.add(model);
+      }
     }
   }
   root.userData.templateArchitecture=true;
