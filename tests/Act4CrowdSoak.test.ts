@@ -114,7 +114,7 @@ describe('Act4 prospective A3 native crowd navigation soak', () => {
             }
         }
         const unresolved = game.enemies.snapshot.enemies.filter(enemy => waiting.has(enemy.id));
-        console.info(`[A3 navigation soak] ${node.templateId} ${anchor}: ${initialCount - waiting.size}/${initialCount} exposed blockers cleared, last ${maxOpportunityMs}ms; horizon ${HORIZON_MS}ms; unresolved ${JSON.stringify(unresolved)}`);
+        process.stdout.write(`[Act4 navigation soak] ${node.templateId} ${anchor}: ${initialCount - waiting.size}/${initialCount} exposed blockers cleared, last ${maxOpportunityMs}ms; horizon ${HORIZON_MS}ms; unresolved ${JSON.stringify(unresolved)}\n`);
         expect(unresolved, JSON.stringify(unresolved)).toEqual([]);
         expect(maxOpportunityMs).toBeLessThanOrEqual(60000);
         expect(opportunities.size).toBe(initialCount);

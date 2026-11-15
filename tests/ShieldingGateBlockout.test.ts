@@ -1,9 +1,9 @@
 import {describe,it,expect} from 'vitest';
 import * as T from 'three';
 import {environmentObstacle,appendEnvironment} from '../src/render/ShipEnvironments';
-import {ROOM_TEMPLATES} from '../src/game/roguelike/roomTemplates';
+import {SHIP_ACT4_PLANS} from '../src/game/roguelike/shipArchitectureAct4';
 
-const solids=ROOM_TEMPLATES['shielding-gate'].obstacles;
+const solids=SHIP_ACT4_PLANS['shielding-gate'].topology.obstacles;
 const models=()=>solids.map((s,i)=>environmentObstacle('containment',{x:s.x/32,y:s.y/32,width:s.width/32,height:s.height/32},i,'shielding-gate'));
 const named=(r:T.Object3D,prefix:string)=>{const found:T.Object3D[]=[];r.traverse(o=>{if(o.name.startsWith(prefix))found.push(o);});return found;};
 describe('Room17 rough shield gate',()=>{
@@ -29,14 +29,15 @@ describe('Room17 rough shield gate',()=>{
    }
   }
  });
- it('places gate machinery inside stage1 G1 and G2 reservations without spanning the threshold',()=>{
+ it('fits source gate heads inside their live hull reservations without spanning the threshold',()=>{
   const m=models();
-  for(const [i,x] of [[0,310],[2,810]]){
+  for(const i of [0,2]){
+   const footprint=solids[i],depth=i===0?310:360,gateStart=i===0?205:5;
    m[i].updateMatrixWorld(true);
    const g=m[i].getObjectByName('gate-mechanism');expect(g).toBeDefined();
    const b=new T.Box3().setFromObject(g!,true);
-   expect(b.min.x*32).toBeGreaterThanOrEqual(x-1e-5);expect(b.max.x*32).toBeLessThanOrEqual(x+80+1e-5);
-   expect(b.min.z*32).toBeGreaterThanOrEqual(345-1e-5);expect(b.max.z*32).toBeLessThanOrEqual(435+1e-5);
+   expect(b.min.x*32).toBeGreaterThanOrEqual(footprint.x+10/100*footprint.width-1e-5);expect(b.max.x*32).toBeLessThanOrEqual(footprint.x+90/100*footprint.width+1e-5);
+   expect(b.min.z*32).toBeGreaterThanOrEqual(footprint.y+gateStart/depth*footprint.height-1e-5);expect(b.max.z*32).toBeLessThanOrEqual(footprint.y+(gateStart+90)/depth*footprint.height+1e-5);
   }
  });
  it('uses room-local dull shielding, brushed contacts and nonemissive service paint',()=>{

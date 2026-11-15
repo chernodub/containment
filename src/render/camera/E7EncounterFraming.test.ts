@@ -27,8 +27,8 @@ describe('E7 encounter priority over decorative landmarks',()=>{
    if(sample.room!=='containment-annulus')return new T.Box3().setFromObject(model,true);
    // The unchanged low sealed foundation is collision exposition; measure
    // the raised decorative assembly above .4m, including its shoes and guards.
-   const box=new T.Box3(),p=new T.Vector3();model.updateMatrixWorld(true);
-   model.traverse(o=>{if(!(o instanceof T.Mesh))return;const positions=o.geometry.getAttribute('position');for(let n=0;n<positions.count;n++){p.fromBufferAttribute(positions,n).applyMatrix4(o.matrixWorld);if(p.y>.40&&p.x>11&&p.x<26.5&&p.z>6&&p.z<21.5)box.expandByPoint(p);}});return box;
+   const box=new T.Box3(),p=new T.Vector3(),offset=model.userData.coreOffset??{x:0,y:0};model.updateMatrixWorld(true);
+   model.traverse(o=>{if(!(o instanceof T.Mesh))return;const positions=o.geometry.getAttribute('position');for(let n=0;n<positions.count;n++){p.fromBufferAttribute(positions,n).applyMatrix4(o.matrixWorld);if(p.y>.40&&p.x>11+offset.x/32&&p.x<26.5+offset.x/32&&p.z>6+offset.y/32&&p.z<21.5+offset.y/32)box.expandByPoint(p);}});return box;
   });
   for(const height of[1080,720])for(const reduced of[false,true]){
    const camera=new T.PerspectiveCamera(28,16/9,.1,160),rig=new CameraRig(),hud=new HudCombatFraming(),final=new RoomCombatFraming(),p=new T.Vector3(),target=new T.Vector3();

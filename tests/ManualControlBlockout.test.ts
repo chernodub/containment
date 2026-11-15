@@ -4,9 +4,10 @@ import {environmentObstacle,environmentArchitecture,appendEnvironment} from '../
 import {DepthRenderer} from '../src/render/DepthRenderer';
 import {MAT,disposeModel} from '../src/render/meshParts';
 import {ROOM_TEMPLATES} from '../src/game/roguelike/roomTemplates';
-import {createExpeditionGeometry,canTraverseExpedition} from '../src/game/world/expeditionGeometry';
+import {createRoomTemplateGeometry,canTraverseExpedition} from '../src/game/world/expeditionGeometry';
 
-const template=ROOM_TEMPLATES['manual-control-chamber'];
+import {SHIP_ACT4_PLANS} from '../src/game/roguelike/shipArchitectureAct4';
+const template={...ROOM_TEMPLATES['manual-control-chamber'],...SHIP_ACT4_PLANS['manual-control-chamber'].topology};
 const footprints=template.obstacles.map(f=>({x:f.x/32,y:f.y/32,width:f.width/32,height:f.height/32}));
 const model=(i:number)=>environmentObstacle('reactor',footprints[i],i,template.id);
 const bounds=(o:T.Object3D)=>new T.Box3().setFromObject(o,true);
@@ -100,8 +101,8 @@ describe('Room19 placed rough authorization equipment',()=>{
   }
  });
  it.each([16,28])('retains main crossing, warning approach and both flanks for radius %s',radius=>{
-  const g=createExpeditionGeometry({id:'room19-blockout-test',templateId:template.id,depth:18,kind:'combat',next:[],reward:'upgrade'});
-  const routes=[[template.spawn,{x:220,y:480},{x:980,y:480},template.exit],[{x:600,y:480},{x:600,y:550}],[{x:220,y:480},{x:220,y:140},{x:980,y:140},{x:980,y:480}],[{x:220,y:480},{x:220,y:780},{x:980,y:780},{x:980,y:480}]];
+  const g=createRoomTemplateGeometry(template,'room19-blockout-test');
+  const routes=[[template.spawn,{x:260,y:520},{x:1020,y:520},template.exit],[{x:640,y:520},{x:640,y:180}],[{x:260,y:520},{x:480,y:340},{x:800,y:340},{x:1020,y:520}],[{x:260,y:520},{x:260,y:840},{x:1020,y:840},{x:1020,y:520}]];
   for(const points of routes)for(let i=1;i<points.length;i++)expect(canTraverseExpedition(g,points[i-1],points[i],radius)).toBe(true);
  });
 });
