@@ -11,7 +11,9 @@ export function safetyInterlockArchitecture(parent:T.Group,w:number,h:number,tem
   const m=new T.MeshStandardMaterial({color,metalness,roughness});m.name=`room12-shell-${name}`;m.userData.actorMaterial=true;return m;
  };
  const ceramic=material('ceramic',0xaaa48e,.08,.86),metal=material('steel',0x354246,.55,.72),copper=material('copper',0x624633,.65,.55),orange=material('worn-safety',0x946044,.15,.9),dark=material('recess',0x172123,.1,.95);
- const b=(name:string,x:number,y:number,z:number,width:number,height:number,depth:number,m:T.Material)=>{const mesh=box(shell,x,y,z,width,height,depth,m,.025);mesh.name=name;return mesh;};
+ // These room-owned pieces are static. The existing batcher preserves their
+ // names, parent resource boundaries and original collider parts before mood hooks.
+ const b=(name:string,x:number,y:number,z:number,width:number,height:number,depth:number,m:T.Material)=>{const mesh=box(shell,x,y,z,width,height,depth,m,.025);mesh.name=name;mesh.userData.bakedEnvironment=true;return mesh;};
  // Large insulated rear panels, with a continuous grounded sill. All raised
  // geometry stays outside z=0 so the canonical north bypass stays untouched.
  b('rear-sill',w/2,.16,-.4,w,.32,.65,metal);
@@ -39,7 +41,7 @@ export function safetyInterlockArchitecture(parent:T.Group,w:number,h:number,tem
   return corners.every((p,i)=>clearPolygonTopology(template,p,p)&&clearPolygonTopology(template,p,corners[(i+1)%4]))
    &&clearPolygonTopology(template,corners[0],corners[2])&&clearPolygonTopology(template,corners[1],corners[3]);
  };
- const inlay=(name:string,x:number,z:number,width:number,depth:number,m:T.Material)=>{if(!supported(x,z,width,depth))return;const slot=name==='channel-slot';const mesh=box(deck,x,slot?.018:.006,z,width,slot?.004:.012,depth,m,0);mesh.name=name;mesh.castShadow=false;};
+ const inlay=(name:string,x:number,z:number,width:number,depth:number,m:T.Material)=>{if(!supported(x,z,width,depth))return;const slot=name==='channel-slot';const mesh=box(deck,x,slot?.018:.006,z,width,slot?.004:.012,depth,m,0);mesh.name=name;mesh.castShadow=false;mesh.userData.bakedEnvironment=true;};
  for(const z of [1.75,h-1.75]){
   if(template){for(let x=1.2;x<w-1;x+=.42)inlay('service-channel',x,z,.42,.52,metal);}
   else inlay('service-channel',w/2,z,w-2,.52,metal);
@@ -58,7 +60,7 @@ export function safetyInterlockArchitecture(parent:T.Group,w:number,h:number,tem
     const alongX=width>=depth,cw=template&&alongX?width/count:width,cd=template&&!alongX?depth/count:depth;
     const px=x+(template&&alongX?(n+.5-count/2)*cw:0),pz=z+(template&&!alongX?(n+.5-count/2)*cd:0);
     if(!supported(px,pz,cw,cd))continue;
-    const mesh=box(group,px,y,pz,cw,height,cd,m,0);mesh.name=name;mesh.castShadow=false;
+    const mesh=box(group,px,y,pz,cw,height,cd,m,0);mesh.name=name;mesh.castShadow=false;mesh.userData.bakedEnvironment=true;
    }
   };
   for(let i=1;i<points.length;i++){
