@@ -24,12 +24,12 @@ const FIXTURES = [
 // actual named-space anchors, retaining the same movement policy and bounds.
 const LIVE_FIXTURES=[
   ['transmission-chamber','Uplink chancel','South service chapel'],
-  ['infested-workshop','Loading vestibule','Gantry alcove'],
+  ['infested-workshop','Loading dock','Gantry workbay'],
   ['breached-loading-bay','Port docking apron','Starboard pressure lock'],
   ['relay-racks','Port rack aisle','Starboard rack aisle'],
   ['safety-interlock-station','Port inspection','Starboard gallery'],
   ['manual-control-chamber','Entry vestibule','Authorization booth'],
-].map(([room,from,to])=>{const plan=SHIP_ARCHITECTURE_PLANS[room],node=generateRun(1729).nodes.find(n=>n.templateId===room);return {name:`Live ${room}: ${from} to ${to}`,seed:1729,depth:node.depth,live:true,player:plan.spaces.find(s=>s.name===from).anchor,target:plan.spaces.find(s=>s.name===to).anchor,visible:false};});
+].map(([room,from,to])=>{const plan=SHIP_ARCHITECTURE_PLANS[room],node=generateRun(1729).nodes.find(n=>n.templateId===room),start=plan.spaces.find(s=>s.name===from),end=plan.spaces.find(s=>s.name===to);if(!node||!start||!end)throw new Error(`Missing live navigation fixture: ${room}: ${from} to ${to}`);return {name:`Live ${room}: ${from} to ${to}`,seed:1729,depth:node.depth,live:true,player:start.anchor,target:end.anchor,visible:false};});
 function recordedFixture(fixture=FIXTURES[0], capturedSelfWaypoint=false){
   const game=new DepthGame();
   game.node=generateRun(fixture.seed).nodes[fixture.depth];

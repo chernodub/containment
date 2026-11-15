@@ -42,7 +42,10 @@ describe('rear-vent ingress overrides',()=>{
   expect(JSON.stringify(nodes.map(n=>ROOM_TEMPLATES[n.templateId]))).toBe(snap);
  });
  it.each(rooms)('$id keeps structure, full thresholds, alternate routes and exact R32/R38 ingress clearance',({id,template,plan})=>{
-  const g=createRoomTemplateGeometry(template,'ingress-'+id),a=shipSolidStatistics(template),b=shipSolidStatistics(ROOM_TEMPLATES[id]);expect(a).toEqual(b);expect(shipPlanOpeningErrors(plan,g)).toEqual([]);expect(shipBlockedOpeningErrors(plan,g)).toEqual([]);expect(canOccupyExpedition(g,plan.arena,144)).toBe(true);
+  // This historical ingress-only candidate retains its own pre-partition base.
+  // The live Diagnostic now has additional physical workbay dividers, tested
+  // by L8FinalPartitions; compare candidate structure to its declared source.
+  const g=createRoomTemplateGeometry(template,'ingress-'+id),a=shipSolidStatistics(template),b=shipSolidStatistics(referenceRooms.find(r=>r.id===id)!.template);expect(a).toEqual(b);expect(template.breaches).toEqual(ROOM_TEMPLATES[id].breaches);expect(shipPlanOpeningErrors(plan,g)).toEqual([]);expect(shipBlockedOpeningErrors(plan,g)).toEqual([]);expect(canOccupyExpedition(g,plan.arena,144)).toBe(true);
   for(const breach of g.breaches)for(const p of [breach,{x:breach.x+(breach.facing==='east'?56:-56),y:breach.y}])for(const radius of [32,38])expect(canOccupyExpedition(g,p,radius),JSON.stringify({id,p,radius})).toBe(true);
   for(const [i,b]of template.breaches.entries()){const f=plan.breachFeatures[i];expect(Math.hypot(f.at.x-b.x,f.at.y-b.y)).toBeLessThanOrEqual(140);expect(canOccupyExpedition(g,f.at,0)).toBe(false);expect(f.name).toMatch(/vent|door/);}
  });
