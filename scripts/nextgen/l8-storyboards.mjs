@@ -10,8 +10,8 @@ const report=JSON.parse(await readFile(resolve(source,'report.json'),'utf8'));
 assert.deepEqual(report.errors,[]);assert.deepEqual(report.defects,[]);assert.equal(report.assisted,false);assert.equal(report.fastRendering,false);
 const hash=b=>createHash('sha256').update(b).digest('hex');
 await mkdir(out,{recursive:true});
-const receipts=[];
-for(const board of report.storyboards??[report.storyboard]){
+const receipts=[],selected=(report.storyboards??[report.storyboard]).filter(board=>!process.argv[4]||process.argv[4].split(',').includes(board.room));
+for(const board of selected){
  const frames=selectStoryboardFrames(board.frames),dir=resolve(out,board.room);await mkdir(dir,{recursive:true});
  const color=canvas(1920,888),gray=canvas(1920,888);
  for(const [i,f]of frames.entries()){
@@ -29,4 +29,4 @@ for(const board of report.storyboards??[report.storyboard]){
  await writeFile(resolve(out,board.room+'-storyboard.png'),encode(color));await writeFile(resolve(out,board.room+'-grayscale.png'),encode(gray));
 }
 await writeFile(resolve(out,'receipts.json'),JSON.stringify({source,reportSHA256:hash(await readFile(resolve(source,'report.json'))),application:report.distributionSourceSHA,assets:report.distributionAssets,method:'Twelve unique native entry/fight/clear observations per room; exact4x4 PNG-code area average, no normalization or retouching.',frames:receipts},null,2)+'\n');
-console.log(`${receipts.length} native observations retained across ${report.storyboards?.length??1} real clears`);
+console.log(`${receipts.length} native observations retained across ${selected.length} real clears`);

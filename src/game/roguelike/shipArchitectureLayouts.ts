@@ -1,17 +1,14 @@
 import {RELAY_RACKS_FOOTPRINTS} from './relayRacksLayout';
-import type {Point, Rect, RoomTemplate} from './types';
 import type {StoryTemplateId} from './storyRooms';
-
-type Topology = Pick<RoomTemplate, 'boundary'|'voids'|'spawn'|'exit'|'breaches'|'obstacles'>;
-const points = (pairs: readonly (readonly [number, number])[]): readonly Point[] =>
-  Object.freeze(pairs.map(([x,y]) => Object.freeze({x,y})));
-const rectangles = (rows: readonly (readonly [number,number,number,number])[]): readonly Rect[] =>
-  Object.freeze(rows.map(([x,y,width,height]) => Object.freeze({x,y,width,height})));
-const wall = (x:number,y:number,w:number,h:number) => points([[x,y],[x+w,y],[x+w,y+h],[x,y+h]]);
+import {polygon as points,rectangles,partition as wall,type ShipRoomTopology as Topology} from './shipArchitecturePlan';
+import {SHIP_ACT2_LAYOUTS} from './shipArchitectureAct2';
+import {SHIP_ACT3_LAYOUTS} from './shipArchitectureAct3';
+import {SHIP_ACT4_LAYOUTS} from './shipArchitectureAct4';
 
 /** Collision and presentation share these plans. All dimensions are game units.
  * Open-ended partitions make subspaces without one-door body-blocking pockets. */
 export const SHIP_ARCHITECTURE_LAYOUTS: Readonly<Partial<Record<StoryTemplateId,Topology>>> = Object.freeze({
+  ...SHIP_ACT2_LAYOUTS,...SHIP_ACT3_LAYOUTS,...SHIP_ACT4_LAYOUTS,
   'residential-gallery': Object.freeze({
     boundary: points([[0,160],[160,160],[160,0],[1040,0],[1040,160],[1200,160],[1200,720],[1040,720],[1040,880],[160,880],[160,720],[0,720]]),
     // Cabin furnishings are built into the north/south bulkheads. The open

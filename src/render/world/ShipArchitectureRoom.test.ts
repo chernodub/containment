@@ -1,13 +1,13 @@
 import {describe,it,expect,vi} from 'vitest';
 import * as T from 'three';
-import {shipArchitectureRoom} from './ShipArchitectureRoom';
+import {shipArchitectureRoom,BESPOKE_SHIP_ROOMS} from './ShipArchitectureRoom';
 import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
 import {clearPolygonTopology} from '../../game/world/polygonGeometry';
 import {disposeModel,geometries} from '../meshParts';
 
 describe('template-driven ship architecture',()=>{
- it.each(Object.keys(SHIP_ARCHITECTURE_LAYOUTS))('%s uses exact floor/hull and contained partition meshes with owned disposal',id=>{
+ it.each(Object.keys(SHIP_ARCHITECTURE_LAYOUTS).filter(id=>!BESPOKE_SHIP_ROOMS.has(id)))('%s uses exact floor/hull and contained partition meshes with owned disposal',id=>{
   const t=ROOM_TEMPLATES[id as keyof typeof ROOM_TEMPLATES],before=JSON.stringify(t),root=shipArchitectureRoom(id,t)!;
   expect(root.userData.templateArchitecture).toBe(true);expect(root.userData.lightFixtures.length).toBeGreaterThan(2);
   const floor=root.children.find(o=>o instanceof T.Mesh&&(o.material as T.Material).name==='painted-steel-deck') as T.Mesh;

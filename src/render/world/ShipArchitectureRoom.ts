@@ -3,13 +3,15 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {RoomTemplate,Point} from '../../game/roguelike/types';
 import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import {environmentObstacle,shipEnvironment} from '../ShipEnvironments';
+import {armoryCarousel} from '../ArmoryCarousel';
 import {relayRacksRoom} from '../RelayRacksRoom';
 
 /** One template-driven deck/bulkhead family, batched at the room boundary.
  * Cutaway heights keep foreground walls below bodies. Solids never overhang
  * their collision polygons; external ribs sit outside the authored hull. */
+export const BESPOKE_SHIP_ROOMS=new Set(['awakening-bay','passenger-vault','communal-atrium','service-shaft-landing','containment-annulus','overload-floor','breached-loading-bay']);
 export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
-  if(!Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,id))return null;
+  if(!Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,id)||BESPOKE_SHIP_ROOMS.has(id))return null;
   const root=new T.Group();root.name='l8-ship-architecture';
   const environment=shipEnvironment(id)!;
   const material=(name:string,color:number,metalness=.2)=>{
@@ -64,6 +66,7 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
   }
   for(const [m,parts]of batches){const merged=mergeGeometries(parts,false)!;parts.forEach(p=>p.dispose());const mesh=new T.Mesh(merged,m);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);}
   if(id==='relay-racks')root.add(relayRacksRoom(false));
+  else if(id==='armory')root.add(armoryCarousel());
   else {
     const equipment=new T.Group();equipment.name=id==='residential-gallery'?'residential-gallery-equipment-fallback':'l8-equipment';root.add(equipment);
     for(const [i,r]of t.obstacles.entries())equipment.add(environmentObstacle(environment,{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},i,id));
