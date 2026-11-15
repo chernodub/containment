@@ -16,7 +16,7 @@ const safety=defineShipRoom({width:1280,height:960,
  // The recorder and disconnected AI occupy real booths; battery backs onto hull.
  obstacles:rectangles([[280,0,180,180],[820,0,180,180],[500,820,280,140]]),
  voids:[wall(40,0,1200,40),wall(40,920,460,40),wall(780,920,460,40),wall(40,760,160,160),wall(1080,760,160,160),
-  wall(500,332,280,12),wall(500,344,24,56),wall(756,344,24,56),wall(500,616,280,24),wall(500,560,24,56),wall(756,560,24,56)],
+  wall(516,332,280,12),wall(516,344,24,56),wall(772,344,24,56),wall(500,616,280,24),wall(500,560,24,56),wall(756,560,24,56)],
  spawn:p(100,480),exit:p(1180,480),breaches:poly([[300,260],[980,260],[300,820],[980,820]]),
 });
 const coolant=defineShipRoom({width:1360,height:960,
@@ -46,7 +46,7 @@ export const SHIP_ACT3_PLANS:Readonly<Partial<Record<StoryTemplateId,ShipPlan>>>
   breachFeatures:[feature('Recorder service vent',300,130),feature('Starboard instrument door',1080,220),feature('Port service vent',200,760),feature('Starboard service vent',1080,760)]},
  'safety-interlock-station':{topology:safety,arena:p(350,480),
   spaces:[space('Entry vestibule',0,320,200,320,100,480),space('Port inspection',200,320,300,320,350,480),space('Recorder and AI booths',200,40,880,280,640,200),space('Interlock cage',524,344,232,272,640,480),space('Starboard gallery',780,320,300,320,930,480),space('Battery return',200,640,880,180,640,730),space('Exit lock',1080,320,200,320,1180,480)],
-  openings:[gate('Entry vestibule','Port inspection',200,320,200,460),gate('Entry vestibule','Port inspection',200,500,200,640),gate('Port inspection','Recorder and AI booths',200,320,500,320),gate('Starboard gallery','Recorder and AI booths',780,320,1080,320),
+  openings:[gate('Entry vestibule','Port inspection',200,320,200,460),gate('Entry vestibule','Port inspection',200,500,200,640),gate('Port inspection','Recorder and AI booths',200,320,500,320),gate('Starboard gallery','Recorder and AI booths',812,320,1080,320),
    gate('Port inspection','Interlock cage',512,400,512,560),gate('Interlock cage','Starboard gallery',768,400,768,560),gate('Port inspection','Battery return',200,640,500,640),gate('Starboard gallery','Battery return',780,640,1080,640),gate('Starboard gallery','Exit lock',1080,320,1080,460),gate('Starboard gallery','Exit lock',1080,500,1080,640)],
   bays:[{space:'Entry vestibule',from:p(0,320),to:p(0,640)},{space:'Exit lock',from:p(1280,320),to:p(1280,640)}],
   breachFeatures:[feature('Recorder booth vent',300,180),feature('AI booth vent',980,180),feature('Port return vent',200,820),feature('Starboard return vent',1080,820)]},

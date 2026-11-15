@@ -43,7 +43,7 @@ describe('Room9 source manufacture and live architectural placement',()=>{
   }
  });
  it('uses hull-attached cooling vaults, a service spine and a console bay in the live plan',()=>{
-  expect(template.obstacles.map(r=>[r.x,r.y,r.width,r.height])).toEqual([[40,0,160,340],[40,660,160,340],[1080,0,160,340],[1080,660,160,340],[590,300,100,400],[400,960,480,40]]);
+  expect(template.obstacles.map(r=>[r.x,r.y,r.width,r.height])).toEqual([[40,0,160,340],[40,660,160,340],[1080,0,160,340],[1080,660,160,340],[606,300,100,400],[400,960,480,40]]);
   expect([template.width,template.height]).toEqual([1280,1000]);
   expect(template.spawn).toEqual({x:300,y:500});expect(template.exit).toEqual({x:1180,y:500});
   expect(template.breaches).toEqual([{x:300,y:220},{x:980,y:220},{x:300,y:780},{x:980,y:780}]);

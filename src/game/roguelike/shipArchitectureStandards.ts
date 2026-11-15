@@ -18,7 +18,7 @@ const checkpoint=defineShipRoom({width:1408,height:880,
 });
 const relay=defineShipRoom({width:1280,height:1000,
  boundary:poly([[40,0],[1240,0],[1240,340],[1280,340],[1280,660],[1240,660],[1240,1000],[40,1000],[40,660],[0,660],[0,340],[40,340]]),
- obstacles:rectangles([[40,0,160,340],[40,660,160,340],[1080,0,160,340],[1080,660,160,340],[590,300,100,400],[400,960,480,40]]),voids:[],
+ obstacles:rectangles([[40,0,160,340],[40,660,160,340],[1080,0,160,340],[1080,660,160,340],[606,300,100,400],[400,960,480,40]]),voids:[],
  spawn:p(300,500),exit:p(1180,500),breaches:poly([[300,220],[980,220],[300,780],[980,780]]),
 });
 export const SHIP_STANDARD_PLANS:Readonly<Record<string,ShipPlan>>=Object.freeze({
@@ -39,8 +39,8 @@ export const SHIP_STANDARD_PLANS:Readonly<Record<string,ShipPlan>>=Object.freeze
    gate('North bypass','Guard gallery',920,260,1080,260),gate('South bypass','Guard gallery',920,620,1080,620),gate('Guard gallery','Exit lock',1080,280,1080,420),gate('Guard gallery','Exit lock',1080,460,1080,600)],
   breachFeatures:[feature('Inspection N vent',380,120),feature('North bypass door',1080,160),feature('Inspection S vent',380,760),feature('South bypass door',1080,720)]},
  'relay-racks':{topology:relay,arena:p(395,500),bays:[{space:'Entry lock',from:p(0,340),to:p(0,660)},{space:'Exit lock',from:p(1280,340),to:p(1280,660)}],
-  spaces:[space('North cross aisle',200,0,880,300,640,160),space('Port rack aisle',200,300,390,400,395,500),space('Starboard rack aisle',690,300,390,400,885,500),space('Console bay',200,700,880,260,640,840),space('Entry lock',0,340,200,320,100,500),space('Exit lock',1080,340,200,320,1180,500)],
-  openings:[gate('North cross aisle','Port rack aisle',200,300,590,300),gate('North cross aisle','Starboard rack aisle',690,300,1080,300),gate('Port rack aisle','Console bay',200,700,590,700),gate('Starboard rack aisle','Console bay',690,700,1080,700),
+  spaces:[space('North cross aisle',200,0,880,300,640,160),space('Port rack aisle',200,300,406,400,395,500),space('Starboard rack aisle',706,300,374,400,885,500),space('Console bay',200,700,880,260,640,840),space('Entry lock',0,340,200,320,100,500),space('Exit lock',1080,340,200,320,1180,500)],
+  openings:[gate('North cross aisle','Port rack aisle',200,300,606,300),gate('North cross aisle','Starboard rack aisle',706,300,1080,300),gate('Port rack aisle','Console bay',200,700,606,700),gate('Starboard rack aisle','Console bay',706,700,1080,700),
    gate('Entry lock','Port rack aisle',200,340,200,480),gate('Entry lock','Port rack aisle',200,520,200,660),gate('Starboard rack aisle','Exit lock',1080,340,1080,480),gate('Starboard rack aisle','Exit lock',1080,520,1080,660)],
   breachFeatures:[feature('Port north cooling vent',200,180),feature('Starboard north cooling vent',1080,180),feature('Port south cooling vent',200,820),feature('Starboard south cooling vent',1080,820)]},
 });
