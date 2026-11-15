@@ -669,9 +669,11 @@ it('keeps the native cursor footprint at the denied mark for one second and rest
         });
         let result=await page.evaluate(()=>(window as any).__placement.at(-1));
         expect(result).toMatchObject({ability:'glacier',x:650,y:500,valid:true,pointCount:1,intent:'idle'});
-        await page.evaluate(()=>{const {hud}= (window as any).__live;document.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyF'}));hud.tick(.016);});
+        await page.keyboard.down('f');
+        await page.evaluate(()=> (window as any).__live.hud.tick(.016));
         expect(await page.evaluate(()=>(window as any).__placement.at(-1).intent)).toBe('aiming');
-        await page.evaluate(()=>{const {hud}= (window as any).__live;document.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyF'}));hud.tick(.016);});
+        await page.keyboard.up('f');
+        await page.evaluate(()=> (window as any).__live.hud.tick(.016));
         expect(await page.evaluate(()=>(window as any).__placement.at(-1).intent)).toBe('idle');
         await page.evaluate(()=>{
             const {game,hud}=(window as any).__live;
