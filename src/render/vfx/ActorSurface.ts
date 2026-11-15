@@ -30,7 +30,8 @@ if(ash<actorDissolve)discard;
 float deathFracture=step(1.5,vActorRegion)*step(vActorRegion,2.5);
 if(actorDeathStyle>.5&&actorDeathStyle<1.5)diffuseColor.rgb=diffuseColor.rgb*vec3(.76,1.06,1.18)+vec3(.012,.028,.038);
 if(actorDeathStyle>1.5&&actorDeathStyle<2.5)diffuseColor.rgb*=.54;
-if(actorDeathStyle>2.5)diffuseColor.rgb=diffuseColor.rgb*vec3(.62,.78,.50)+vec3(.006,.014,.003);
+if(actorDeathStyle>3.5)diffuseColor.rgb=diffuseColor.rgb*vec3(.80,.72,1.12)+vec3(.018,.008,.035);
+if(actorDeathStyle>2.5&&actorDeathStyle<3.5)diffuseColor.rgb=diffuseColor.rgb*vec3(.62,.78,.50)+vec3(.006,.014,.003);
 ${friendly ? '' : 'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(dot(diffuseColor.rgb,vec3(.2126,.7152,.0722))),.12)*1.12+vec3(.006,.009,.012);diffuseColor.rgb*=mix(.55,1.0,actorCamouflage);'}
 diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.9,.98,1.0),actorFlash*actorFlashIntensity*.35);`)
         .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
@@ -38,7 +39,7 @@ ${friendly ? '' : 'float actorLitLuma=dot(reflectedLight.directDiffuse+reflected
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),2.6);
 float ashEdge=actorDissolve>0.0?1.0-smoothstep(actorDissolve,actorDissolve+.045,ash):0.0;
-vec3 deathColor=actorDeathStyle>.5&&actorDeathStyle<1.5?vec3(.14,.34,.43):actorDeathStyle>2.5?vec3(.08,.14,.025):vec3(.22,.035,.006);
+vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorDeathStyle<1.5?vec3(.14,.34,.43):actorDeathStyle>2.5?vec3(.08,.14,.025):vec3(.22,.035,.006);
 float deathContact=actorDeathStyle>.5?deathFracture*.26*(1.0-actorDissolve):0.0;
 totalEmissiveRadiance+=actorRimColor*actorRim*actorRimStrength*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity+deathColor*deathContact;`);
     };
@@ -55,7 +56,7 @@ totalEmissiveRadiance+=actorRimColor*actorRim*actorRimStrength*actorStageLight*m
     hit(value: number) { flash.value = T.MathUtils.clamp(value, 0, 1); },
     dissolve(value: number) { dissolve.value = T.MathUtils.clamp(value, 0, 1); },
     setFlashIntensity(value: number) { flashIntensity.value = T.MathUtils.clamp(value, 0, 1); },
-    death(style: 'none'|'frost'|'burn'|'acid') { deathStyle.value = style==='frost'?1:style==='burn'?2:style==='acid'?3:0; },
+    death(style: 'none'|'frost'|'burn'|'acid'|'arc') { deathStyle.value = style==='frost'?1:style==='burn'?2:style==='acid'?3:style==='arc'?4:0; },
     camouflage(value: number) { camouflage.value = T.MathUtils.clamp(value, .15, 1); },
     reset() { stageLight.value=1;plateOpening.value=0;flash.value = dissolve.value = 0; camouflage.value = 1; deathStyle.value = 0; },
   };

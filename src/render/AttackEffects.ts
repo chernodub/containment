@@ -10,13 +10,14 @@ import {wallSurface} from './wallSurface';
 import {GRAPHIC_COMBUSTION_GLSL} from './abilities/GraphicLanguage';
 import type {GraphicsOptions} from './graphicsOptions';
 import type {GraphicsTier} from './FrameBudget';
+import type {DeathCue} from './DeathRagdolls';
 const UP=new T.Vector3(0,1,0),WHITE=new T.Color(0xffffff);
 export type AttackEffectOptions=Partial<GraphicsOptions>&{reducedMotion?:boolean;tier?:GraphicsTier};
 export type AttackFeedback={
  flash?:(event:{position:T.Vector3;color:number;intensity:number;radius:number;duration:number;priority:number})=>void;
  shockwave?:(event:{position:T.Vector3;radius:number;strength:number;duration:number})=>void;
 };
-type Particle={variant?:number;liquid?:boolean;wall?:T.Vector3;growth?:number;aspect?:number;p:T.Vector3;v:T.Vector3;color:T.Color;age:number;life:number;size:number;stretch:number;spin:number;rotation:number;gravity:number;ground:boolean};
+type Particle={variant?:number;liquid?:boolean;wall?:T.Vector3;growth?:number;aspect?:number;direction?:number;p:T.Vector3;v:T.Vector3;color:T.Color;age:number;life:number;size:number;stretch:number;spin:number;rotation:number;gravity:number;ground:boolean};
 type Pulse={p:T.Vector3;color:T.Color;age:number;life:number;radius:number;angle:number;slash:boolean;stable:boolean};
 export const EFFECT_LIMITS={glow:360,smoke:80,debris:80,pulses:24,decals:64,beams:320,fire:16} as const;
 export const PRIORITY_ACTOR_LIMIT=130;
@@ -210,7 +211,7 @@ export class AttackEffects {
   const item=list.length>=cap?list.shift()!:this.particleFree.get(list)!.pop()!;
   item.p.copy(p);if(v)item.v.copy(v);else item.v.set(0,0,0);item.color.setHex(color);item.age=0;item.life=life;item.size=size;item.stretch=stretch;
   item.spin=list===this.decals?0:(Math.random()-.5)*(list===this.smoke?.9:12)*(this.options.reducedMotion?.2:1);item.rotation=Math.random()*6.28;item.gravity=gravity;item.ground=list===this.decals;
-  item.liquid=false;item.wall=undefined;item.growth=undefined;item.aspect=undefined;item.variant=list===this.decals?1:undefined;list.push(item);
+  item.liquid=false;item.wall=undefined;item.growth=undefined;item.aspect=undefined;item.direction=undefined;item.variant=list===this.decals?1:undefined;list.push(item);
  }
  private pulse(p:T.Vector3,color:number,radius:number,life:number,angle=0,slash=false,stable=false){
   if(this.pulses.length>=EFFECT_LIMITS.pulses){
@@ -223,31 +224,42 @@ export class AttackEffects {
  shot(p:T.Vector3,angle:number,id:WeaponId){
   if(this.disposed)return;
   const cfg=WEAPON_APPEARANCE[id],forward=new T.Vector3(Math.cos(angle),0,Math.sin(angle)),right=new T.Vector3(-forward.z,0,forward.x);
-  this.flash(p,cfg.color,id==='rocket'?4:id==='shotgun'?3:1.6,id==='rocket'?6:3.5,.09,2);
-  const count=id==='shotgun'?6:id==='plasma'?4:id==='rocket'?7:3;
-  // A hot core and directional lobes extend from the actual barrel socket.
+  this.flash(p,cfg.color,id==='rocket'?4:id==='shotgun'?3:1.6,id==='rocket'?5:3,.065,2);
+  const count=id==='shotgun'?3:id==='plasma'?3:id==='rocket'?4:id==='rifle'?3:2;
+  // Short aim-aligned needles, a broad shotgun fan, and a compact energy pulse.
+  // These are shapes in the existing batch, never another material/program.
   for(let i=0;i<count;i++){
-   const spread=(i-count/2)*.07,pos=p.clone().addScaledVector(forward,.05+i*.085).addScaledVector(right,spread);
-   this.particle(this.glow,EFFECT_LIMITS.glow,pos,cfg.color,id==='shotgun'?.46:.28,.045+i*.008,forward.clone().multiplyScalar(1.6));
+   const fan=id==='shotgun'?(i-(count-1)/2)*.055:0;
+   const pos=p.clone().addScaledVector(forward,.07+i*(id==='rifle'?.08:.055)).addScaledVector(right,fan);
+   this.particle(this.glow,EFFECT_LIMITS.glow,pos,cfg.color,id==='shotgun'?.42:id==='rocket'?.34:id==='plasma'?.22:.24,id==='plasma'?.075:id==='shotgun'?.055:.038,forward.clone().multiplyScalar(1.1));
+   const lobe=this.glow[this.glow.length-1];lobe.direction=angle+fan;lobe.aspect=id==='rifle'?.22:id==='plasma'?.6:id==='shotgun'?.65:.38;lobe.spin=0;
   }
-  this.particle(this.glow,EFFECT_LIMITS.glow,p,0xfff4df,.2,.045);
-  for(let i=0;i<(id==='shotgun'?8:3);i++){
+  this.particle(this.glow,EFFECT_LIMITS.glow,p,id==='plasma'?0xc8fbff:0xfff4df,id==='shotgun'?.23:.15,.035);
+  for(let i=0;i<(id==='shotgun'?5:id==='rocket'?4:2);i++){
    const v=forward.clone().multiplyScalar(2+Math.random()*5).addScaledVector(right,(Math.random()-.5)*2);v.y=Math.random()*1.4;
-   this.particle(this.glow,EFFECT_LIMITS.glow,p,cfg.color,.075,.14+Math.random()*.14,v,2);
+   this.particle(this.glow,EFFECT_LIMITS.glow,p,cfg.color,.05,.09+Math.random()*.08,v,2);
   }
-  if(id==='plasma')this.pulse(p,cfg.color,.4,.18,angle);
+  if(id==='plasma'){
+   // Cool gas leaves the receiver instead of another bright airborne ring.
+   for(const side of [-1,1]){
+    const vent=p.clone().addScaledVector(forward,-.38).addScaledVector(right,side*.09);
+    this.particle(this.smoke,EFFECT_LIMITS.smoke,vent,0x65b3bd,.13,.22,right.clone().multiplyScalar(side*.4).add(new T.Vector3(0,.15,0)));
+   }
+  }
   else{
-   this.particle(this.smoke,EFFECT_LIMITS.smoke,p,0x82938d,.40,.55,forward.clone().multiplyScalar(.45).add(new T.Vector3(0,.45,0)));
+   const exhaust=id==='rocket'?p.clone().addScaledVector(forward,-.9):p;
+   this.particle(this.smoke,EFFECT_LIMITS.smoke,exhaust,0x82938d,id==='rocket'?.32:.21,id==='rocket'?.30:.22,forward.clone().multiplyScalar(id==='rocket'?-.8:.3).add(new T.Vector3(0,.3,0)));
    if(id!=='rocket'){
     const casing=p.clone().addScaledVector(forward,-.65),v=right.multiplyScalar(1.6+Math.random());v.y=1.7;
-    this.particle(this.debris,EFFECT_LIMITS.debris,casing,id==='shotgun'?0x994b31:0xc69a51,id==='shotgun'?.065:.038,5,v,9.8,2.5);
+    this.particle(this.debris,EFFECT_LIMITS.debris,casing,id==='shotgun'?0x994b31:0xc69a51,id==='shotgun'?.065:.038,2.8,v,9.8,2.5);
    }
   }
  }
- event(e:GameEffect){
+ event(e:GameEffect,deathCue:DeathCue='none'){
   if(this.disposed)return;
   const p=new T.Vector3(e.x/32,(e.type==='explosion'||e.radius!==undefined)? .10:.8,e.y/32);
   if(e.type==='wall-slam'&&e.wall){p.y=.8;this.wallSlam(e,p);return;}
+  if(e.type==='corpse'){this.death(e,p,deathCue);return;}
   const angle=e.angle??0,forward=new T.Vector3(Math.cos(angle),0,Math.sin(angle));
   if(e.contact){
    const blocked=e.contact!=='damage',color=blocked?0x90baca:0xffe6b7;
@@ -356,8 +368,8 @@ export class AttackEffects {
   }
   if(e.type==='pickup'){this.particle(this.glow,EFFECT_LIMITS.glow,p,0x87f3d1,.45,.22,new T.Vector3(0,1,0));return;}
   if(e.type==='hurt'||e.type==='shot'||e.type==='sync-corpse')return;
-  const explosion=e.type==='explosion',acid=e.type==='acid',death=e.type==='corpse';
-  const impactColor=acid||death?0x9ebc5e:e.weapon==='plasma'?0x69ddff:0xffc68b;
+  const explosion=e.type==='explosion',acid=e.type==='acid';
+  const impactColor=acid?0x9ebc5e:e.weapon==='plasma'?0x69ddff:0xffc68b;
   if(explosion||(acid&&e.radius)){
    const r=(e.radius??100)/32,fiery=e.elements?.includes('fire')??false,icy=e.elements?.includes('ice')??false,toxic=e.elements?.includes('poison')??false,color=acid||toxic?0x8dd45a:fiery?0xffb64e:icy?0xb9efff:0xcbd8dc;
    this.flash(p,color,acid?2:8,Math.min(12,r*3),.38,4);
@@ -374,7 +386,7 @@ export class AttackEffects {
    if(!icy)for(let i=0;i<5;i++){this.particle(this.smoke,EFFECT_LIMITS.smoke,p,acid?0x758b50:0x667174,.65+Math.random()*.5,acid||fiery?.85+Math.random()*.4:.4+Math.random()*.15,new T.Vector3((Math.random()-.5)*r,1+Math.random(),(Math.random()-.5)*r));if(fiery)this.smoke[this.smoke.length-1].age=-.09;}
    if(acid||fiery||icy){this.particle(this.decals,EFFECT_LIMITS.decals,new T.Vector3(p.x,.008,p.z),acid?0x283f20:icy?0x72a3ae:0x111719,r*1.4,14);this.decals[this.decals.length-1].variant=acid?2:icy?3:1;}
   }else{
-   if(!acid&&!death){
+   if(!acid){
     this.flash(p,impactColor,.7,1.8,.08,1);
     if(e.targetId===undefined){
      const surface=this.world&&wallSurface(this.world,p,forward.clone().negate(),.3);
@@ -382,20 +394,58 @@ export class AttackEffects {
      const mark=this.decals[this.decals.length-1];mark.variant=e.weapon==='plasma'?1:0;mark.ground=true;mark.spin=0;if(surface?.supported)mark.wall=surface.normal;
     }
    }
-   if(!acid&&!death)for(let i=0;i<(e.targetId!==undefined?4:3);i++){const a=angle+Math.PI+(Math.random()-.5)*1.1,s=1+Math.random()*2,target=e.targetId!==undefined;this.particle(this.debris,EFFECT_LIMITS.debris,p,0x898477,target?.022+Math.random()*.012:.045,target?.35+Math.random()*.3:3.5,new T.Vector3(Math.cos(a)*s,1+Math.random()*1.5,Math.sin(a)*s),9.8,1.8);}
-   for(let i=0;i<(death?16:acid?7:9);i++){
-    const a=acid||death?Math.random()*6.28:angle+Math.PI+(Math.random()-.5)*1.3,s=.8+Math.random()*3,v=new T.Vector3(Math.cos(a)*s,Math.random()*2.8,Math.sin(a)*s).addScaledVector(forward,acid?1.5:-1.5);
+   if(!acid)for(let i=0;i<(e.targetId!==undefined?4:3);i++){const a=angle+Math.PI+(Math.random()-.5)*1.1,s=1+Math.random()*2,target=e.targetId!==undefined;this.particle(this.debris,EFFECT_LIMITS.debris,p,0x898477,target?.022+Math.random()*.012:.045,target?.35+Math.random()*.3:3.5,new T.Vector3(Math.cos(a)*s,1+Math.random()*1.5,Math.sin(a)*s),9.8,1.8);}
+   for(let i=0;i<(acid?7:9);i++){
+    const a=acid?Math.random()*6.28:angle+Math.PI+(Math.random()-.5)*1.3,s=.8+Math.random()*3,v=new T.Vector3(Math.cos(a)*s,Math.random()*2.8,Math.sin(a)*s).addScaledVector(forward,acid?1.5:-1.5);
     this.particle(this.glow,EFFECT_LIMITS.glow,p,impactColor,acid?.095:.065,.15+Math.random()*.24,v,7);
    }
    this.particle(this.glow,EFFECT_LIMITS.glow,p,impactColor,acid?.3:.4,.075);
-   if(!acid&&!death)this.particle(this.smoke,EFFECT_LIMITS.smoke,p,0x8b9185,.35,.45,new T.Vector3(0,.3,0));
-   if(acid||death){
-    this.particle(this.decals,EFFECT_LIMITS.decals,new T.Vector3(p.x,.009,p.z),0x263524,death?1.25:.5,16);
-    this.decals[this.decals.length-1].variant=death?4:2;
-    const target=e.targetId!==undefined,small=death||target;
-    for(let i=0;i<(death?10:target?4:2);i++)this.particle(this.debris,EFFECT_LIMITS.debris,p,i%2?0x4c5541:0x9a9872,small?.025+Math.random()*.025:.075+Math.random()*.08,death?.55+Math.random()*.45:target?.35+Math.random()*.3:6,new T.Vector3((Math.random()-.5)*3,1+Math.random()*3,(Math.random()-.5)*3),9.8,1.7);
+   if(!acid)this.particle(this.smoke,EFFECT_LIMITS.smoke,p,0x8b9185,.35,.45,new T.Vector3(0,.3,0));
+   if(acid){
+    this.particle(this.decals,EFFECT_LIMITS.decals,new T.Vector3(p.x,.009,p.z),0x263524,.5,16);
+    this.decals[this.decals.length-1].variant=2;
+    const target=e.targetId!==undefined;
+    for(let i=0;i<(target?4:2);i++)this.particle(this.debris,EFFECT_LIMITS.debris,p,i%2?0x4c5541:0x9a9872,target?.025+Math.random()*.025:.075+Math.random()*.08,target?.35+Math.random()*.3:6,new T.Vector3((Math.random()-.5)*3,1+Math.random()*3,(Math.random()-.5)*3),9.8,1.7);
    }
   }
+ }
+ /** Family-sized fragments follow the killing impulse, leaving the body readable. */
+ private death(e:GameEffect,p:T.Vector3,cue:DeathCue){
+  if(cue==='none')cue=e.elements?.includes('ice')?'frost':e.elements?.includes('fire')?'burn':e.elements?.includes('poison')?'acid':'none';
+  const large=e.family==='brute'||e.family==='carrier';
+  const baseCount=e.family===undefined||large?10:e.family==='spitter'?7:5;
+  const dx=(e.vx??0)/32,dz=(e.vy??0)/32,speed=Math.hypot(dx,dz);
+  // Native rocket-strength killing momentum gets three longer trailing pieces.
+  // This is an impulse variant, not a claim about unreported health overshoot.
+  const highImpulse=speed>=24,count=baseCount+(highImpulse?3:0);
+  const momentum=Math.min(2.1,speed*.08),direction=Math.atan2(dz,dx);
+  const color=cue==='frost'?0xa3eaf3:cue==='burn'?0xd98643:cue==='arc'?0xc6baff:cue==='acid'?0x79aa58:e.family==='spitter'?0x778c55:e.family==='stalker'?0x665771:0x7d8868;
+  const reduced=this.options.reducedMotion?.45:1;
+  p.y=e.family==='brute'?.55:e.family==='spitter'?.8:.4;
+  for(let i=0;i<count;i++){
+   const trailing=highImpulse&&i>=baseCount;
+   const angle=trailing?direction+(i-baseCount-1)*.16:speed>.001?direction+(i-(baseCount-1)/2)*.37:i*Math.PI*2/baseCount;
+   const v=new T.Vector3((Math.cos(angle)*.7+Math.cos(direction)*momentum)*reduced,(trailing?.35:cue==='frost'?.8:cue==='burn'?.35:1.1)*reduced, (Math.sin(angle)*.7+Math.sin(direction)*momentum)*reduced);
+   this.particle(this.debris,EFFECT_LIMITS.debris,p,color,cue==='frost'?.065:.025+(i%3)*.008,(cue==='frost'?.55:cue==='burn'?.35:.48)+(trailing?.12:0),v,9.8,cue==='frost'?2.6:1.7);
+  }
+  if(cue==='burn'){
+   for(let i=0;i<3;i++)this.particle(this.smoke,EFFECT_LIMITS.smoke,p,0x48504a,.25,.45,new T.Vector3((i-1)*.15,.25+i*.08,0));
+   for(let i=0;i<4;i++)this.particle(this.glow,EFFECT_LIMITS.glow,p,color,.035,.16+i*.035,new T.Vector3((i-1.5)*.15,.6,0));
+  }else if(cue==='arc'){
+   for(let i=0;i<4;i++){
+    const a=i*Math.PI/2;this.particle(this.glow,EFFECT_LIMITS.glow,p,color,.12,.055+i*.012,new T.Vector3(Math.cos(a)*.8,.2,Math.sin(a)*.8));
+    const spark=this.glow[this.glow.length-1];spark.direction=a;spark.aspect=.2;spark.spin=0;
+   }
+  }else if(cue==='frost'){
+   this.particle(this.smoke,EFFECT_LIMITS.smoke,p,0x8aa6ad,.22,.24,new T.Vector3(0,.12,0));
+   for(let i=0;i<3;i++){
+    this.particle(this.glow,EFFECT_LIMITS.glow,p,0xa3eaf3,.16,.09,new T.Vector3(Math.cos(i*2.1)*.6,.2,Math.sin(i*2.1)*.6));
+    const glint=this.glow[this.glow.length-1];glint.direction=i*2.1;glint.aspect=.18;glint.spin=0;
+   }
+  }
+  const mark=new T.Vector3(p.x,.009,p.z);
+  this.particle(this.decals,EFFECT_LIMITS.decals,mark,cue==='frost'?0x5d8290:cue==='burn'?0x18201e:0x263524,large?.65:.42,10);
+  this.decals[this.decals.length-1].variant=cue==='frost'?3:cue==='burn'?1:4;
  }
  private acidSplash(e:GameEffect,p:T.Vector3){
   const area=e.radius!==undefined,r=area?Math.min(3,Math.max(.5,(e.radius??32)/32)):1,count=area?18:10;
@@ -453,7 +503,10 @@ export class AttackEffects {
    }
    if(mode==='decal'||mode==='smoke'&&s.wall){if(s.wall){this.dummy.quaternion.setFromUnitVectors(this.axis,s.wall);this.dummy.rotateZ(s.rotation);}else this.dummy.rotation.set(-Math.PI/2,0,s.rotation);}
    else if(mode==='debris')this.dummy.rotation.set(s.rotation,s.rotation*.7,s.rotation*.4);
-   else this.dummy.rotateZ(s.rotation);
+   else if(s.direction!==undefined){
+    this.forward.set(Math.cos(s.direction),0,Math.sin(s.direction)).applyQuaternion(this.dummy.quaternion.invert());
+    this.dummy.quaternion.copy(camera.quaternion);this.dummy.rotateZ(Math.atan2(this.forward.y,this.forward.x));
+   }else this.dummy.rotateZ(s.rotation);
    const size=s.size*(mode==='smoke'?1+t*(s.growth??2.5):mode==='glow'?1-t*.4:mode==='fire'?1+t*.25:1);
    (mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,mode==='decal'?(s.variant??1):Math.min(mode==='fire'?24:63,Math.floor(t*(mode==='fire'?25:64))));
    this.dummy.scale.set(size,mode==='debris'?size*.5:size*(s.aspect??1),size*s.stretch);this.dummy.updateMatrix();mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,s.color);alpha.setX(index,mode==='decal'?.75*(1-t*t):mode==='debris'?Math.min(1,(1-t)*4):mode==='fire'?Math.min(1,(1-t)*4):(1-t)*(mode==='smoke'?Math.min(1,t*10):1));index++;

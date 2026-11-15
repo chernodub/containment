@@ -1,3 +1,4 @@
+import {actorImpact,actorDeathCue,enemyMotionAim} from './motion/MotionEvents'; // M9 presentation-only routing
 import {act3ShipPresentation,ACT3_PRESENTATION_ROOMS} from './world/Act3ShipPresentation';
 import {act1ShipPresentation} from './world/Act1ShipPresentation';
 import {shipArchitectureRoom} from './world/ShipArchitectureRoom';
@@ -498,21 +499,23 @@ export class DepthRenderer {
   g.updateMatrix();for(const child of [...g.children]){child.applyMatrix4(g.matrix);this.world.add(child);}
  }
  effect(effect:GameEffect){
-  if(effect.type==='ability'){if(effect.ability){this.interimAbilities.event(effect.ability,effect.x,effect.y);}return;}
+  if(effect.type==='ability'){this.player?.motionEvent?.(effect);if(effect.ability){this.interimAbilities.event(effect.ability,effect.x,effect.y);}return;}
   const x=effect.x/UNIT,z=effect.y/UNIT;
-  if(effect.type==='hurt'){this.cameraRig?.addTrauma(.34);this.cameraRig?.punch(.015,180);this.player?.hit?.(.65);return;}if(effect.type==='sync-corpse')return;
+  if(effect.type==='hurt'){this.cameraRig?.addTrauma(.34);this.cameraRig?.punch(.015,180);actorImpact(this.player,effect);return;}if(effect.type==='sync-corpse')return;
   if(effect.type==='explosion'||(effect.type==='boon'&&(effect.boon==='blast'||(effect.boon==='overload'&&effect.radius!==undefined)))){this.lighting.explosion(x,z,(effect.radius??48)/UNIT);this.cameraRig?.addTrauma(.32);this.cameraRig?.punch(.035,240);}
   if(effect.type==='shot'){
    this.recoil=1;this.cameraRig?.kick(effect.angle??0,effect.weapon==='shotgun'?.08:effect.weapon==='rocket'?.12:.025);if(this.pendingShots.length<4)this.pendingShots.push(effect);return;
   }
   if(effect.type==='enemy-attack'){if(effect.id===-1)this.queen?.attack?.();else this.actors.get(effect.id!)?.attack?.();}
-  if((effect.contact==='damage'||effect.contact==='armor')&&effect.targetId!==undefined){if(effect.targetId===-1)this.queen?.hit?.();else this.actors.get(effect.targetId)?.hit?.();}
+  // M9: existing native damage receipts drive bounded local actor feedback.
+  if((effect.contact==='damage'||effect.contact==='armor')&&effect.targetId!==undefined)actorImpact(effect.targetId===-1?this.queen??undefined:this.actors.get(effect.targetId),effect);
+  let motionDeathCue:'none'|'frost'|'burn'|'arc'|'acid'='none';
   if(effect.type==='corpse'){
    if(effect.id===undefined)return;
    this.corpseIds??=new Set();if(this.corpseIds.has(effect.id))return;this.corpseIds.add(effect.id);
-   let existing=this.actors.get(effect.id!);if(!existing&&effect.family){existing=this.actorPool.take(effect.family,effect.elite);existing.root.position.set(x,0,z);registerGeometry(existing.root,GEOMETRY_CLASSES.enemy);this.scene.add(existing.root);}if(existing){existing.root.position.set(x,0,z);freezeCorpse(existing);this.ragdolls.add(effect.id!,existing,effect.family??existing.root.name.replace('alien-',''),{x:(effect.vx??0)/UNIT,z:(effect.vy??0)/UNIT});this.actors.delete(effect.id!);this.corpses.push({model:existing,id:effect.id!,x,y:z,vx:(effect.vx??0)/UNIT,vy:(effect.vy??0)/UNIT,height:.2,lift:3,spin:2.4,age:0});if(this.corpses.length>(this.tier==='low'?6:10)){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}}
+   let existing=this.actors.get(effect.id!);if(!existing&&effect.family){existing=this.actorPool.take(effect.family,effect.elite);existing.root.position.set(x,0,z);registerGeometry(existing.root,GEOMETRY_CLASSES.enemy);this.scene.add(existing.root);}if(existing){motionDeathCue=actorDeathCue(existing);existing.root.userData.motionDeathCue=motionDeathCue;existing.root.position.set(x,0,z);freezeCorpse(existing);this.ragdolls.add(effect.id!,existing,effect.family??existing.root.name.replace('alien-',''),{x:(effect.vx??0)/UNIT,z:(effect.vy??0)/UNIT},motionDeathCue,this.motionQuery?.matches?0:.032*Math.min(this.options.screenShake,this.options.flashIntensity));this.actors.delete(effect.id!);this.corpses.push({model:existing,id:effect.id!,x,y:z,vx:(effect.vx??0)/UNIT,vy:(effect.vy??0)/UNIT,height:.2,lift:3,spin:2.4,age:0});if(this.corpses.length>(this.tier==='low'?6:10)){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}}
   }
-  this.effects.event(effect);
+  this.effects.event(effect,motionDeathCue);
  }
  syncCorpse(id:number,x:number,y:number){const corpse=this.corpses.find(c=>c.id===id);if(corpse){corpse.x=x/UNIT;corpse.y=y/UNIT;corpse.vx=corpse.vy=0;if(this.ragdolls.has(id))this.ragdolls.sync(id,x/UNIT,y/UNIT);else{corpse.model.root.position.x=x/UNIT;corpse.model.root.position.z=y/UNIT;}}}
  get roomLoading(){return this.kitDressing?.state==='loading'||this.roomWarmPending||this.recoveringGraphics||this.communalGarden?.state==='loading'||this.residentialGalleryEquipment?.state==='loading'||this.passengerVault?.state==='loading'||this.recoveryKit?.state==='loading'||this.sealedBank?.state==='loading'||this.releasedBerth?.state==='loading';}
@@ -546,10 +549,12 @@ export class DepthRenderer {
   this.player.setColliderDebug?.(this.colliderDebug,p.radius/UNIT);this.player.root.position.set(p.x/UNIT,0,p.y/UNIT);this.player.root.visible=!menu;this.player.root.rotation.z=game.combat.snapshot.dead?1.4:0;
   const combat=game.combat.snapshot;this.player.equip?.(combat.weaponId);
   this.player.setRig?.(game.abilities?.snapshot.rig??'breacher');this.menuMarine?.setRig?.(game.abilities?.snapshot.rig??'breacher');
+  // M9: preferences scale secondary motion; authoritative roots remain snapshot-owned.
+  this.player.setMotionOptions?.(Math.min(this.options.screenShake,this.options.flashIntensity),!!this.motionQuery?.matches);this.player.setDead?.(combat.dead);
   this.playerVelocity.x=p.vx;this.playerVelocity.y=p.vy;this.player.animate(this.time,p.moving?1:0,p.angle,this.recoil,combat.reloading?Math.max(.001,1-combat.reloadRemainingMs/combat.reloadDurationMs):0,this.playerVelocity);this.recoil=Math.max(0,this.recoil-dt*14);
   this.lighting.setMenu?.(menu);if(this.lighting.setPlayer(menu?TITLE_STAGE.marine.x:p.x/UNIT,menu?TITLE_STAGE.marine.z:p.y/UNIT,menu?TITLE_STAGE.marine.angle:p.angle,this.camera))this.atmosphere?.syncFixtures(this.lighting.fixtures);
   const active=this.activeActorIds;active.clear();let crowding=0;
-  for(const e of enemies){if(Math.hypot(e.x-p.x,e.y-p.y)<80)crowding+=.25;active.add(e.id);let model=this.actors.get(e.id);if(!model){model=this.actorPool.take(e.type,e.elite);model.setFlashIntensity?.(this.options.flashIntensity);this.shadowsDirty=true;this.actors.set(e.id,model);registerGeometry(model.root,(e.elite||e.champion)?GEOMETRY_CLASSES.elite:GEOMETRY_CLASSES.enemy);this.scene.add(model.root);this.contextResources?.track(model.root);}if(!menu)this.effects.addPriorityActor(e.x/UNIT,e.y/UNIT,e.radius/UNIT,model.height);model.setColliderDebug?.(this.colliderDebug,e.radius/UNIT);model.root.position.set(e.x/UNIT,0,e.y/UNIT);const status=game.boonStatuses(e.id);model.setAffliction?.(status);model.root.userData.visualStatus=status;model.setThreat?.(e.windupMs,e.pendingAttack,e.champion,e.alpha);model.animate(this.time+e.id,Math.hypot(e.velocityX,e.velocityY)>2?1:.12,Math.atan2((e.type==='spitter'?game.player.y:e.targetY)-e.y,(e.type==='spitter'?game.player.x:e.targetX)-e.x));}
+  for(const e of enemies){if(Math.hypot(e.x-p.x,e.y-p.y)<80)crowding+=.25;active.add(e.id);let model=this.actors.get(e.id);if(!model){model=this.actorPool.take(e.type,e.elite);model.setMotionSeed?.(e.id);model.setFlashIntensity?.(this.options.flashIntensity);this.shadowsDirty=true;this.actors.set(e.id,model);registerGeometry(model.root,(e.elite||e.champion)?GEOMETRY_CLASSES.elite:GEOMETRY_CLASSES.enemy);this.scene.add(model.root);this.contextResources?.track(model.root);}if(!menu)this.effects.addPriorityActor(e.x/UNIT,e.y/UNIT,e.radius/UNIT,model.height);model.setColliderDebug?.(this.colliderDebug,e.radius/UNIT);model.root.position.set(e.x/UNIT,0,e.y/UNIT);const status=game.boonStatuses(e.id);model.setAffliction?.(status);model.root.userData.visualStatus=status;model.setMotionOptions?.(Math.min(this.options.screenShake,this.options.flashIntensity),!!this.motionQuery?.matches);model.setThreat?.(e.windupMs,e.pendingAttack,e.champion,e.alpha);this.playerVelocity.x=e.velocityX;this.playerVelocity.y=e.velocityY;model.animate(this.time+e.id,Math.hypot(e.velocityX,e.velocityY)>2?1:.12,enemyMotionAim(e,p),0,0,this.playerVelocity);}
   for(const [id,model]of this.actors)if(!active.has(id)){this.actorPool.release(model);this.actors.delete(id);this.shadowsDirty=true;}
   let healthCount=0;for(const e of enemies){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=e.x/UNIT;bar.z=e.y/UNIT;bar.height=this.actors.get(e.id)?.height??1;bar.health=e.health;bar.maxHealth=e.maxHealth;bar.elite=e.elite||!!e.champion;bar.armor=e.armor;bar.status=this.actors.get(e.id)?.root.userData.visualStatus;}for(const n of game.boss.snapshot.nests){if(healthCount===128)break;const bar=this.healthEntries[healthCount++];bar.x=n.x/UNIT;bar.z=n.y/UNIT;bar.height=1.35;bar.health=n.health;bar.maxHealth=n.maxHealth;bar.elite=false;bar.armor=0;bar.status=undefined;}for(let i=healthCount;i<128;i++)this.healthEntries[i].health=0;
   this.healthBars.update(this.healthEntries,this.camera,this.viewportHeight,menu);
