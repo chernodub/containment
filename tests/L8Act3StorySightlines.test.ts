@@ -4,7 +4,8 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {ROOM_TEMPLATES} from '../src/game/roguelike/roomTemplates';
 import {SHIP_ACT3_PLANS} from '../src/game/roguelike/shipArchitectureAct3';
-import {act3ShipPresentation} from '../src/render/world/Act3ShipPresentation';
+import {DepthRenderer} from '../src/render/DepthRenderer';
+import {generateRun} from '../src/game/roguelike/run';
 import {addWorldDressing} from '../src/render/world/WorldDressing';
 import {buildRoomKitDressing} from '../src/render/world/RoomKitDressing';
 import {CameraRig} from '../src/render/camera/CameraRig';
@@ -15,12 +16,12 @@ const sources:T.Group[]=[];
 beforeAll(async()=>{for(const pack of ['kenney-space-station','kenney-furniture','kenney-nature','quaternius-scifi-essentials']){
  const b=await readFile('public/assets/kits/'+pack+'/kit.glb');sources.push((await new GLTFLoader().parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'' )).scene);
 }});
-it.each(['diagnostic-gallery','safety-interlock-station'] as const)('%s prospective service architecture retains all119 fatal-warning rays after asynchronous kits',id=>{
- const t={...ROOM_TEMPLATES[id],...SHIP_ACT3_PLANS[id]!.topology},world=new T.Group();world.add(act3ShipPresentation(id,t)!);
+it.each(['diagnostic-gallery','safety-interlock-station'] as const)('%s live service architecture retains all119 fatal-warning rays after asynchronous kits',id=>{
+ const t={...ROOM_TEMPLATES[id],...SHIP_ACT3_PLANS[id]!.topology},world=new T.Group();world.add(DepthRenderer.prototype['buildRoomArchitecture'].call(Object.create(DepthRenderer.prototype),generateRun(1729,3).nodes.find(n=>n.templateId===id)!,t)!);
  const dressing=addWorldDressing(world,t,'engineering',id);buildRoomKitDressing(world,t,'engineering',id,sources);world.updateWorldMatrix(true,true);
  expect(dressing.userData.displayText[2]).toBe(id==='diagnostic-gallery'?'PURGE IS FATAL':'RECORD LOCKED');
  const display=dressing.userData.storyDisplay as {corners:number[][]},corners=display.corners.map(v=>new T.Vector3().fromArray(v));
- // A full recorder roof, rather than a tiny partition reservation, owns the text.
+ // The actual cabinet supports a full-width physical gantry repeater.
  expect(corners[0].distanceTo(corners[1])).toBeGreaterThanOrEqual(3.2);
  const camera=new T.PerspectiveCamera(28,16/9,.1,160),rig=new CameraRig(),desired=new T.Vector3(),scratch=new T.Vector3(),targetScratch=new T.Vector3(),ray=new T.Raycaster();
  const arena=SHIP_ACT3_PLANS[id]!.arena;

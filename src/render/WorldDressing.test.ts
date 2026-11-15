@@ -1,5 +1,6 @@
 import {describe,expect,it,vi} from 'vitest';
 import * as T from 'three';
+import {WARNING_FRAME_LOWEST} from './world/WarningRepeaters';
 import {addWorldDressing,updateWorldDressing} from './world/WorldDressing';
 import {ROOM_TEMPLATES} from '../game/roguelike/roomTemplates';
 import {DepthRenderer} from './DepthRenderer';
@@ -45,7 +46,10 @@ describe('G2 deterministic world dressing',()=>{
     const x=positions.getX(i)*32,z=positions.getZ(i)*32;
     const supported=template.obstacles.some(r=>x>=r.x-.01&&x<=r.x+r.width+.01&&z>=r.y-.01&&z<=r.y+r.height+.01)||!!template.voids?.some(polygon=>inside(x,z,polygon));
     const hull=template.boundary??[{x:0,y:0},{x:template.width,y:0},{x:template.width,y:template.height},{x:0,y:template.height}];
-    expect(supported||!inside(x,z,hull),`${object.name} ${x}/${z} at ${positions.getY(i)}`).toBe(true);
+    const range=root.userData.warningVertexRanges?.[(object.material as T.Material).name];
+    const overhead=range&&i>=range.start&&i<range.end;
+    if(overhead&&!supported){expect(positions.getY(i)).toBeGreaterThanOrEqual(WARNING_FRAME_LOWEST-.001);expect((object.material as T.Material).transparent).toBe(true);expect((object.material as T.Material).depthWrite).toBe(false);}
+    else expect(supported||!inside(x,z,hull),`${object.name} ${x}/${z} at ${positions.getY(i)}`).toBe(true);
    }
   });
   disposeModel(world);
