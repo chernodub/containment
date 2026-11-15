@@ -23,6 +23,10 @@ Baseline: `7ceefa5a52cc74a6b95712f29653d9bf523906be`. These changes distinguish 
 | `tests/unit/ServiceShaftLanding.test.ts` | Follow the articulated docking recesses while retaining the C balcony, shaft void, two directions and native clearance guarantees. |
 | `tests/unit/__snapshots__/awakeningTopology.test.ts.snap` | Snapshot all16 non-story legacy templates, including `reactor-vault`, exactly. The other19 story rooms are intentionally redesigned, so the old all-other-story snapshot is obsolete. |
 | `tests/unit/__snapshots__/passengerBlockout.test.ts.snap` | Same16 legacy templates preserved exactly; live story geometry is checked behaviorally rather than requiring the removed island layouts. |
+| `tests/A1Balance.test.ts` | Finite Transmission count32→34 and seed137 composition add one crawler/one spitter. Full-kit30–45% attribution and≤1.25× clear-time bounds remain unchanged; all rigs receive the same actual55-kill encounter. |
+| `tests/I5Balance.test.ts` | Exact per-act parent/body counts include the eight authorized requests across four named rooms. Threat, damage, speed, specialist, cap and timing envelopes remain; Transmission tail follows its two actual750ms-spaced requests. |
+| `tests/I5ProductionProfile.test.ts` | Original200-plan fingerprint remains exact after removing only the four two-request tails. Progression and both legacy fingerprints stay exact. New finite counts/tails are explicitly pinned. |
+| `tests/StoryRoute.test.ts` | Transmission34 actual enemies and25400ms schedule tail replace32/23900; ordinary-vs-holdout pacing and all20 route checks remain. |
 
 ## Presentation pins
 
@@ -66,6 +70,8 @@ Baseline: `7ceefa5a52cc74a6b95712f29653d9bf523906be`. These changes distinguish 
 | `tests/SafetyInterlockBlockout.test.ts` | Actual upper/lower cage geometry, recorder and battery reservations replace old blockout coordinates. |
 | `tests/SceneLighting.test.ts` | Test complete production room owners and transformed fixture origins; retain four live fixtures, pooled lifecycle, directional marine light and zero suit-fill pedestal in all20 live rooms. |
 | `tests/ShieldingGateBlockout.test.ts` | Hull-connected shielding banks and actual source ownership replace freestanding source positions. |
+
+`SafetyInterlockBatching.test.ts` additionally proves the live903-piece service shell consolidates to24 static meshes while retaining every triangle, source name, three service routes, projected bounds, sampled surface ray heights and exact-once private resource disposal. Static batching uses the existing part-preserving owner; no low-detail substitute or actor change is involved.
 
 New suites add strict connected-union/opening/sealed-door checks, native per-family attack access, dense navigation, A3 mixed crowds, all-rig replay hashes, true cover/source contact, merged hull-minus-union decks, all20 C6/E7 framing, function-tied floor marks, warning full-native-body envelopes and evidence/provenance controls. Candidate-only tests remain explanatory and are never substituted for the final live-room gates.
 
