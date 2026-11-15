@@ -38,19 +38,15 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 
 | Stream | State | Notes |
 |---|---|---|
-| Waves 0–5 | merged | see git history and reports under docs/nextgen/ |
-| Wave 6 (E6 CC0 environment kits, V6 textured effects, C6 camera/actors, U7 key art/HUD/shop, I10 integration) | merged | `nextgen` @ 4180801: ~3,500 tests, smokes, 20/20 rooms, bot campaigns ×4 (3 endings, 1 death, 0 errors); 80/80 bench trials pass (High p95 ≤ 18.2 ms, scale ≥ 0.90, 289 draws); room prep worst 2.0 s; gallery `artifacts/nextgen/final4/` |
-| R9 independent verdict | done | 6 / 8 / 7 / 5.5 / 5.5 / 6 — "advanced prototype with a polished-indie interface"; biggest blocker: enemy art — `reviews/R9-verdict.md` |
-| **Wave 7** — the named blockers | running | |
-| K7 creature redesign (enemy families, Queen, rig modules on the marine) | running | |
-| E7 functional floors, sculptural infestation, ten lighting compositions, encounter framing, hostile pools | running | |
-| V7 ultimates as state changes, one VFX language, placement footprint at the cursor | running | |
+| Waves 0–6 | merged | see git history and reports under docs/nextgen/ |
+| Wave 7 (K7 creature redesign, E7 floors/infestation/lighting/framing, V7 ultimates + VFX language + placement preview, I11 integration) | merged | `nextgen` @ a63eb1f: 3,852 tests, smokes, 20/20 rooms; bench 77/80 (Freight/Breacher High p95 ≈ 24 ms); gallery `artifacts/nextgen/final5/` |
+| R10 independent verdict | done | 7 / 7.5 / 7 / 5.5 / 6 / 6.5 — biggest blocker: rooms look like modular arenas — `reviews/R10-verdict.md` |
+| **Wave 8** — level architecture | running | |
+| L8 room layouts re-authored as ship architecture (templates + walls + nav + dressing + balance re-verify) | running | |
+| V8 fire shapes, Overclock, Whiteout, quiet placement previews | running | |
+| U9 combat HUD editing, effect-vs-set labels, rig portrait silhouettes | running | |
 
-Next (lead): I11 integration + acceptance, gallery `final5`, sixth independent verdict. Open item not assigned this wave: D10 title figure drawing.
-
-Housekeeping 2026-11-14: build outputs and capture galleries in merged agent worktrees were deleted to recover ~227 GB (disk was at 13 GB free);
-final galleries live in the main checkout under `artifacts/nextgen/final*`. Evidence paths inside older stream reports that point into worktree
-`artifacts/` folders no longer resolve.
+Next (lead): I12 integration + acceptance (fix the Freight/Breacher frame miss), gallery `final6`, seventh independent verdict.
 
 ## Decisions log
 
@@ -63,3 +59,4 @@ final galleries live in the main checkout under `artifacts/nextgen/final*`. Evid
 - 2026-11-11 Integration 1 complete: abilities + UI + graphics live together on `nextgen` (2e228be). Lead review: generational jump achieved in lighting/camera/HUD; weakest links now are enemy readability, prop/surface quality, boss staging, title, ability VFX (interim), audio.
 - 2026-11-12 After R6: commit to a graphic inked look (stylize to unify actors and procedural props) and a strict combat visual priority (danger > marine/cursor > enemies > friendly effects > world > HUD). High tier must hold 60 fps on an M1 Pro.
 - 2026-11-13 After R8: code-authored art has plateaued. Allow artist-authored assets under CC0 only (Quaternius, Kenney, Poly Haven and similar; license text and source URL recorded per pack; no CC-BY-NC/unknown), restyled through the ink/banded pipeline.
+- 2026-11-15 After R10: lift the visual-only rule for ONE deliberate level-architecture pass (L8): room templates may change (boundaries, obstacles, breaches) to become authored ship spaces, with navigation tests, bot soak and balance cohorts re-verified; template ids, the 20-room route and story stay.
