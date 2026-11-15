@@ -17,9 +17,12 @@ export function buildL8ShipSeamGrowth(id:string,t:Plan):T.Group|null{
  // An exact live-plan opt-in preserves historical/legacy construction.
  if(!plan||JSON.stringify(t.boundary)!==JSON.stringify(plan.topology.boundary))return null;
  const root=new T.Group();root.name='l8-ship-seam-growth';
- const body=new T.MeshStandardMaterial({name:'l8-rooted-membrane',color:0x805d72,roughness:.96,metalness:.025,vertexColors:true,side:T.DoubleSide});
- const vein=new T.MeshStandardMaterial({name:'l8-rooted-fibre',color:0x91976c,roughness:.87,metalness:.015,emissive:0x465032,emissiveIntensity:.07,vertexColors:true,side:T.DoubleSide});
+ const body=new T.MeshStandardMaterial({name:'l8-rooted-membrane',color:0x71616a,roughness:.78,metalness:.025,vertexColors:true,side:T.DoubleSide});
+ const vein=new T.MeshStandardMaterial({name:'l8-rooted-fibre',color:0x8b9278,roughness:.74,metalness:.015,emissive:0x465032,emissiveIntensity:.07,vertexColors:true,side:T.DoubleSide});
  body.userData.actorMaterial=vein.userData.actorMaterial=true;
+ // Exact solid faces carry shallow folded skins; offset only resolves their
+ // coplanar attachment to the manufactured wall, without moving any vertex.
+ body.polygonOffset=vein.polygonOffset=true;body.polygonOffsetFactor=vein.polygonOffsetFactor=-1;body.polygonOffsetUnits=vein.polygonOffsetUnits=-1;
  const bins=[{p:[] as number[],c:[] as number[]},{p:[] as number[],c:[] as number[]}],arena=plan.arena;
  const deck=(a:Point,b=a)=>clearPolygonTopology(t,a,b)&&t.obstacles.every(r=>clearRectSweep(a,b,0,r));
  const outsideQuiet=(a:Point,b:Point)=>distanceToSegment(arena,a,b)>=QUIET;
@@ -78,7 +81,37 @@ export function buildL8ShipSeamGrowth(id:string,t:Plan):T.Group|null{
   [{x:joints[0].x,y:joints[0].y+128},{x:joints[0].x+256,y:joints[0].y+128}],
   [{x:joints[3].x,y:joints[3].y-128},{x:joints[3].x-128,y:joints[3].y-128}],
  ];
- for(const [i,path]of seams.entries())ribbon(path,26,i+3,'plate-seam');
+ for(const [i,path]of seams.entries())ribbon(path,11,i+3,'plate-seam');
+ // Folded root collars occupy real cabinet/airway faces, grouped at the
+ // ingress mechanisms. Their raised area is architectural consumption rather
+ // than free-floating floor growth. Near-face stems meet the cap/door seams.
+ const folds:Array<{solid:number;edge:number;width:number;depth:number}>=[];
+ for(const [si,poly]of solids.entries())for(let edge=0;edge<poly.length;edge++){
+  const a=poly[edge],b=poly[(edge+1)%poly.length],length=Math.hypot(b.x-a.x,b.y-a.y);if(length<55)continue;
+  const mx=(a.x+b.x)/2,my=(a.y+b.y)/2,dx=(b.x-a.x)/length,dy=(b.y-a.y)/length;
+  const face=[-1,1].map(sign=>({x:mx-dy*sign*5,y:my+dx*sign*5,sign})).find(q=>deck(q));if(!face)continue;
+  const nearest=Math.min(...plan.breachFeatures.map(f=>distanceToSegment(f.at,a,b)));if(nearest>210)continue;
+  const inwardX=dy*face.sign,inwardY=-dx*face.sign,count=Math.min(3,Math.max(1,Math.floor(length/125)));
+  for(let rootIndex=0;rootIndex<count;rootIndex++){
+   const along=length*(rootIndex+1)/(count+1),spread=Math.min(40,length/(count+1)*.40),depth=si<t.obstacles.length?3.2:.005;
+   const rows=9,cols=6;
+   const v=(row:number,col:number)=>{
+    const rise=row/rows,q=col/cols*2-1,taper=.25+.75*Math.sin(Math.PI*rise)**.35,center=along+Math.sin(rise*5.4+si)*4.2;
+    const offset=.005+depth*(1-Math.cos(q*Math.PI*3+rise*1.8))*.5;
+    return new T.Vector3((a.x+dx*(center+q*spread*taper)+inwardX*offset)/U,.10+rise*.795,(a.y+dy*(center+q*spread*taper)+inwardY*offset)/U);
+   };
+   for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+    const a0=v(row,col),a1=v(row,col+1),b0=v(row+1,col),b1=v(row+1,col+1);emit(a0,b0,a1,0,poly);emit(a1,b0,b1,0,poly);
+    if(col===1||col===4){
+     const f0=a0.clone(),f1=b0.clone(),g0=a0.clone().add(new T.Vector3(dx*.025,0,dy*.025)),g1=b0.clone().add(new T.Vector3(dx*.025,0,dy*.025));
+     for(const p of[f0,f1,g0,g1]){p.x-=inwardX*.00005;p.z-=inwardY*.00005;}
+     emit(f0,f1,g0,1,poly);emit(g0,f1,g1,1,poly);
+    }
+   }
+   folds.push({solid:si,edge,width:spread*2,depth});
+  }
+ }
+ root.userData.foldedRootCollars=folds;
  for(const [i,bin]of bins.entries())if(bin.p.length){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(bin.p,3));g.setAttribute('color',new T.Float32BufferAttribute(bin.c,3));g.computeVertexNormals();g.computeBoundingSphere();const mesh=new T.Mesh(g,i?vein:body);mesh.name=i?'seam-fibres':'seam-membranes';mesh.userData.bakedEnvironment=true;mesh.castShadow=false;mesh.receiveShadow=true;root.add(mesh);}
  else (i?vein:body).dispose();
  root.userData.paths=paths;root.userData.quietRadius=QUIET;root.userData.floorMaxHeight=.0205;root.userData.solidMaxHeight=.909;root.userData.triangles=bins.reduce((n,b)=>n+b.p.length/9,0);

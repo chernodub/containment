@@ -238,7 +238,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   }
   if(overheadWarning){
     const counts=new Map([...buckets].map(([m,list])=>[m,list.reduce((n,g)=>n+g.attributes.position.count,0)]));
-    addWarningRepeaters(world,root,template,templateId,{box,pipe,add},{structure:paint,screen:display,signal});
+    addWarningRepeaters(world,root,template,templateId,{box,pipe,add},{structure:resin,screen:display,signal,case:paint,metal:steel,recess:dark});
     root.userData.warningVertexRanges=Object.fromEntries([...buckets].map(([m,list])=>[m.name,{start:counts.get(m)??0,end:list.reduce((n,g)=>n+g.attributes.position.count,0)}]));
   }
   if(templateId==='passenger-vault'){

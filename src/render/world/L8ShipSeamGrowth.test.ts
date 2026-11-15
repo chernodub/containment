@@ -27,6 +27,10 @@ describe('L8 architecture-consumed seam growth',()=>{
     }
    });expect(floor).toBeGreaterThan(200);expect(caps).toBeGreaterThan(20);expect(nearArena).toBeGreaterThan(100);expect(area).toBeGreaterThan(10000);expect(area/(t.width*t.height)).toBeLessThan(.13);
    expect(root.children).toHaveLength(2);expect(root.userData.triangles).toBeLessThan(12000);
+   expect(root.userData.foldedRootCollars.length).toBeGreaterThan(4);
+   if(process.env.L8_GROWTH_REPORT==='1')process.stdout.write(JSON.stringify({id,draws:root.children.length,triangles:root.userData.triangles,folds:root.userData.foldedRootCollars.length,floorProjectedArea:area,roomRatio:area/(t.width*t.height)})+'\n');
+   const foldHeights:number[]=[];root.traverse(o=>{if(o instanceof T.Mesh){const p=o.geometry.getAttribute('position');for(let j=0;j<p.count;j++)if(p.getY(j)>.1&&p.getY(j)<.899)foldHeights.push(p.getY(j));}});expect(foldHeights.length).toBeGreaterThan(200);
+   expect(root.userData.paths.filter((p:{kind:string})=>p.kind==='plate-seam').every((p:{width:number})=>p.width===11)).toBe(true);
    const paths=root.userData.paths as {kind:string;points:{x:number;y:number}[]}[];
    expect(paths.filter(p=>p.kind==='door-root')).toHaveLength(4);expect(paths.some(p=>p.kind==='solid-cap')).toBe(true);
    for(const path of paths.filter(p=>p.kind==='plate-seam'))for(const q of path.points){expect(q.x%128).toBe(0);expect(q.y%128).toBe(0);}
