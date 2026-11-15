@@ -1,7 +1,7 @@
 import * as T from 'three';
 import type {AttackEffectOptions} from './AttackEffects';
 import {GRAPHIC_COMBUSTION_GLSL} from './abilities/GraphicLanguage';
-export type AfflictionStatus={chilled:boolean;burning:boolean;poisoned?:boolean;chillStacks?:number;frozen?:boolean};
+export type AfflictionStatus={chilled:boolean;burning:boolean;poisoned?:boolean;chillStacks?:number;frozen?:boolean;shocked?:boolean};
 export const NO_AFFLICTION:AfflictionStatus={chilled:false,burning:false,poisoned:false,frozen:false,chillStacks:0};
 type Attachment={status:AfflictionStatus;span:number;height:number;phase:number};
 let serial=0;
