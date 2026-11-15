@@ -176,3 +176,9 @@
  #overlay .ending-ship-bow {transform:translate(17px,-10px) rotate(3deg);}
  #overlay .ending-debris {transform:scale(1.15);}
 }
+@media(min-width:900px) and (max-height:800px) {
+ #overlay .debrief-panel[data-outcome=dead]:has(.result-details[open]) {padding:18px 28px;}
+ #overlay .debrief-panel:has(.result-details[open]) .hero-stats {margin:8px 0;padding:8px 0;}
+ #overlay .debrief-panel:has(.result-details[open]) .result-ability-icons {padding:9px 0;margin-bottom:8px;}
+ #overlay .debrief-panel:has(.result-details[open]) .debrief-heading h2 {font-size:36px;}
+}
