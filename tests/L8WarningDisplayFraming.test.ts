@@ -5,7 +5,7 @@ import {SHIP_ARCHITECTURE_PLANS} from '../src/game/roguelike/shipArchitectureLay
 import {generateRun} from '../src/game/roguelike/run';
 import {createRoomTemplateGeometry,canOccupyExpedition} from '../src/game/world/expeditionGeometry';
 import {DepthRenderer} from '../src/render/DepthRenderer';
-import {addWorldDressing} from '../src/render/world/WorldDressing';
+import {addWorldDressing,updateWorldDressing} from '../src/render/world/WorldDressing';
 import {disposeModel} from '../src/render/meshParts';
 import {CameraRig} from '../src/render/camera/CameraRig';
 import {COMBAT_VIEW_HEIGHT,combatFocusTarget,protectPlayerFrame} from '../src/render/camera/CombatFraming';
@@ -31,6 +31,7 @@ it.each(ids)('%s has a full physical warning quad inside the native HUD-safe vie
   }
   const panels=displays.map(display=>display.corners.map(c=>new T.Vector3().fromArray(c).project(camera)));
   const valid=panels.some(projected=>projected.every(c=>c.z<1&&c.x>=hud.viewport.left&&c.x<=hud.viewport.right&&c.y>=hud.viewport.bottom&&c.y<=hud.viewport.top));
+  if(!mark.crowd){updateWorldDressing(dressing,0,reduced,camera,{x:mark.x,y:mark.y,radius:16},2.05);expect(dressing.userData.warningVisibility.faded,`${id} ${mark.name} quiet marine must not force text cutaway`).toBe(false);expect(dressing.userData.warningVisibility.material.opacity).toBe(.96);}
   if(!valid)failures.push({id,mark:mark.name,height,reduced,panels:panels.map(p=>p.map(c=>c.toArray())),viewport:hud.viewport});
   for(const display of displays)expect(new T.Vector3().fromArray(display.corners[0]).distanceTo(new T.Vector3().fromArray(display.corners[1]))).toBeGreaterThanOrEqual(3.2);
 

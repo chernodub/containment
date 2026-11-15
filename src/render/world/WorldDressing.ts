@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {addWarningRepeaters,updateWarningRepeaterVisibility,WARNING_REPEATER_ROOMS} from './WarningRepeaters';
+import {addWarningRepeaters,prepareWarningVertexColors,updateWarningRepeaterVisibility,WARNING_REPEATER_ROOMS} from './WarningRepeaters';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import type {RoomTemplate} from '../../game/roguelike/types';
@@ -238,7 +238,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   }
   if(overheadWarning){
     const counts=new Map([...buckets].map(([m,list])=>[m,list.reduce((n,g)=>n+g.attributes.position.count,0)]));
-    addWarningRepeaters(world,root,template,templateId,{box,pipe,add},{structure:resin,screen:display,signal,case:paint,metal:steel,recess:dark});
+    addWarningRepeaters(world,root,template,templateId,{box,pipe,add,vertexCount:m=>(buckets.get(m)??[]).reduce((n,g)=>n+g.attributes.position.count,0)},{structure:resin,screen:display,signal,case:paint,metal:steel,recess:dark});
     root.userData.warningVertexRanges=Object.fromEntries([...buckets].map(([m,list])=>[m.name,{start:counts.get(m)??0,end:list.reduce((n,g)=>n+g.attributes.position.count,0)}]));
   }
   if(templateId==='passenger-vault'){
@@ -305,7 +305,7 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   for(const [material,list] of buckets){
     // Every primitive contributes the same position/normal/uv layout.
     const g=mergeGeometries(list,false);for(const part of list)part.dispose();if(!g)throw Error('World dressing geometry mismatch');
-    const mesh=new T.Mesh(g,material);mesh.name=material.name;mesh.userData.bakedEnvironment=true;mesh.castShadow=!material.transparent;mesh.receiveShadow=true;root.add(mesh);
+    prepareWarningVertexColors(root,material,g);const mesh=new T.Mesh(g,material);mesh.name=material.name;mesh.userData.bakedEnvironment=true;mesh.castShadow=!material.transparent;mesh.receiveShadow=true;root.add(mesh);
   }
   for(const material of materials)if(!buckets.has(material))material.dispose();
   world.add(root);return root;
