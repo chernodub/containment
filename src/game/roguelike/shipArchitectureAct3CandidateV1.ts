@@ -1,6 +1,6 @@
 import {SHIP_ACT3_PLANS} from './shipArchitectureAct3';
 import {defineShipRoom,polygon as poly,rectangles,spaceBox as space,opening as gate,breachFeature as feature,type ShipPlan} from './shipArchitecturePlan';
-/** Prospective balance experiment only. Never imported by live registration. */
+/** Preserved V1 experiment; live registration selects its repaired V1.1 derivative. */
 const coolant=SHIP_ACT3_PLANS['coolant-plant']!,workshop=SHIP_ACT3_PLANS['infested-workshop']!;
 export const SHIP_ACT3_CANDIDATE_V1:Readonly<Record<string,ShipPlan>>=Object.freeze({
  'coolant-plant':Object.freeze({...coolant,

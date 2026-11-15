@@ -1,6 +1,6 @@
 import {SHIP_ACT3_CANDIDATE_V1} from './shipArchitectureAct3CandidateV1';
 import {defineShipRoom,rectangles,type ShipPlan} from './shipArchitecturePlan';
-/** Prospective V1.1: close the unused one-ended strip with real bench machinery. */
+/** Reviewed V1.1: close the unused one-ended strip with real bench machinery. */
 const workshop=SHIP_ACT3_CANDIDATE_V1['infested-workshop'];
 export const SHIP_ACT3_CANDIDATE_V11:Readonly<Record<string,ShipPlan>>=Object.freeze({
  ...SHIP_ACT3_CANDIDATE_V1,

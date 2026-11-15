@@ -220,19 +220,19 @@ describe('I5 encounter balance guardrails', () => {
         ehp: [11000, 12200], contactDps: [1330, 1480], bodies: [80, 86],
       },
       {
-        spawns: [108, 108], threat: [246, 272], elite: [.10, .15], ordinaryElite: [.115, .165],
+        spawns: [110, 110], threat: [246, 272], elite: [.10, .15], ordinaryElite: [.115, .165],
         specialist: [.44, .52], cap: [13, 14], tail: [3150, 3350], broadTail: [3200, 3400], damage: [1.015, 1.035], speed: [1.003, 1.012],
         ehp: [16950, 18750], contactDps: [1850, 2050], bodies: [153, 164],
       },
       {
-        spawns: [142, 142], threat: [279, 309], elite: [.60, .67], ordinaryElite: [.60, .66],
+        spawns: [146, 146], threat: [279, 309], elite: [.60, .67], ordinaryElite: [.60, .66],
         specialist: [.55, .61], cap: [15, 15], tail: [4200, 4550], broadTail: [4200, 4550], damage: [.780, .800], speed: [1.02, 1.035],
-        ehp: [26150, 28950], contactDps: [2160, 2395], bodies: [142, 142],
+        ehp: [26150, 28950], contactDps: [2160, 2395], bodies: [146, 146],
       },
       {
-        spawns: [180, 180], threat: [467, 518], elite: [.65, .72], ordinaryElite: [.67, .73],
+        spawns: [182, 182], threat: [467, 518], elite: [.65, .72], ordinaryElite: [.67, .73],
         specialist: [.56, .62], cap: [15, 15], tail: [4250, 4650], broadTail: [4400, 4750], damage: [.887, .910], speed: [1.035, 1.055],
-        ehp: [37150, 41150], contactDps: [3320, 3675], bodies: [183, 183],
+        ehp: [37150, 41150], contactDps: [3320, 3675], bodies: [185, 185],
       },
     ] as const;
     acts.forEach((act, index) => {
@@ -324,9 +324,9 @@ describe('I5 encounter balance guardrails', () => {
     for (const seed of SEEDS) {
       const nodes = generateRun(seed).nodes;
       const transmission = plan(seed, nodes[9]), finale = plan(seed, nodes[19]);
-      expect(transmission).toMatchObject({totalSpawns: 32, concurrentCap: 14});
+      expect(transmission).toMatchObject({totalSpawns: 34, concurrentCap: 14});
       expect(transmission.schedule[0].atMs).toBe(650);
-      expect(transmission.schedule.at(-1)!.atMs).toBe(23900);
+      expect(transmission.schedule.at(-1)!.atMs).toBe(25400);
       transmission.schedule.forEach((spawn, index) => {
         expect(spawn.elite).toBe(false);
         if (index) expect(spawn.atMs - transmission.schedule[index - 1].atMs).toBe(750);
