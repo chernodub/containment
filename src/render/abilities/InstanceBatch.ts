@@ -212,7 +212,8 @@ ${kind === 'front' ? `
  ` : ''}
 ${kind === 'shard' ? GRAPHIC_FRACTURE_FRAGMENT : kind === 'solid' ? GRAPHIC_SOLID_FRAGMENT : ''}
 ${kind === 'shard' ? `
- float cold=step(ink.r*1.1,ink.b);
+ // Manufactured steel owns variants30/31 even when its cool palette is blue.
+ float cold=phase>=30.&&phase<32.?0.:step(ink.r*1.1,ink.b);
  vec4 crystal=effectTile(157.,uvLocal);
  c*=mix(1.,.5+crystal.r*1.1,cold);
  c+=ink*pow(crystal.r,4.)*.42*cold;

@@ -55,7 +55,7 @@ void main(){
  float edge=1.-smoothstep(.92,1.,r);
  // Jittered finite fern clusters: one tapered stem, short sixty-degree twigs,
  // and bare steel between deposits. No periodic intersecting line field.
- vec2 cells=p*5.;vec2 cell=floor(cells),q=fract(cells)-.5;
+ vec2 cells=p*8.;vec2 cell=floor(cells),q=fract(cells)-.5;
  float seed=frostHash(cell),other=frostHash(cell+vec2(19.,7.));
  q-=vec2(seed-.5,other-.5)*.10;
  float theta=seed*6.283185,cosine=cos(theta),sine=sin(theta);
@@ -65,7 +65,7 @@ void main(){
  float vein=(1.-smoothstep(.006,.018,stem))*(1.-smoothstep(halfStem*.65,halfStem,abs(q.y))*.65);
  float twig=0.;
  for(int i=0;i<2;i++){
-  if(i==1&&detail<.5)break;
+  if(i==1&&(detail<.5||seed<.58))break;
   float branchY=-halfStem*.55+float(i)*halfStem*.8;
   float twigLength=(.09+seed*.055)*(1.-float(i)*.18);
   float left=frostSegment(q,vec2(0.,branchY),vec2(-twigLength*.866,branchY+twigLength*.5));
