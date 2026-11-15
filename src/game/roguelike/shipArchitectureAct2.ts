@@ -10,7 +10,7 @@ const armory=defineShipRoom({
 });
 const freight=defineShipRoom({
  boundary:poly([[0,240],[180,240],[180,80],[1000,80],[1000,0],[1200,0],[1200,480],[1120,480],[1120,640],[1200,640],[1200,880],[180,880],[180,640],[0,640]]),
- obstacles:rectangles([[400,80,320,160],[320,816,300,64],[1080,240,120,240],[660,420,260,120]]),
+ obstacles:rectangles([[400,80,320,160],[320,816,300,64],[1080,240,120,240],[660,432,260,108]]),
  // Two sides of the loading booth, with a 160-unit west door and 156-unit
  // south door. The rear stock begins 152 units beyond its southern cheek.
  voids:[poly([[240,480],[420,480],[420,664],[396,664],[396,504],[240,504]])],
