@@ -23,6 +23,7 @@ export type EnemyStrikeShape = {kind: 'arc' | 'cone' | 'line'; range: number; ha
 
 /** Actor-local clocks and reusable bone offsets. No result is returned to gameplay. */
 export class EnemyMotion {
+  authored=false;
   readonly state = {holdMs: 0, offsetX: 0, offsetZ: 0, anticipation: 0, phase: 0,
     offsetLimit: 0, impulseAge: 1, attackPhase: 'approach' as EnemyAttackPhase, strikeRange: 0};
   private readonly profile: Profile;
@@ -156,6 +157,20 @@ export class EnemyMotion {
     this.state.anticipation = winding ? anticipation : 0;
     if (frozen) { this.freeze(); return; }
     const p = this.profile, motion = this.strength * (this.reduced ? .3 : 1);
+    if(this.authored){
+      const contact=this.impact*Math.max(0,1-this.impactAge/ACTOR_IMPULSE_SECONDS)**2*motion;
+      // Authored center travel uses at most .301 radius; reserve .049 for this layer.
+      const direction=aim-this.hitAngle,offset=this.state.offsetLimit*contact*.14;
+      const releaseAge=.42-this.release,extension=this.release>0?Math.sin(Math.min(1,releaseAge/.045)*Math.PI/2)*Math.max(0,1-releaseAge/.15):0;
+      const limit=this.family==='stalker'&&this.strikeRange>0?Math.min(this.strikeRange,2.2):this.state.offsetLimit;
+      const strikeDirection=this.nativePhase&&this.nativePhase!=='approach'?aim-this.nativeAngle:0;
+      this.body.position.set(Math.sin(direction)*offset+Math.sin(strikeDirection)*limit*extension,this.restY,Math.cos(direction)*offset+Math.cos(strikeDirection)*limit*extension);
+      const length=Math.hypot(this.body.position.x,this.body.position.z),bound=extension>0?limit:this.state.offsetLimit;
+      if(length>bound){this.body.position.x*=bound/length;this.body.position.z*=bound/length;}
+      this.body.rotation.set(Math.cos(direction)*contact*.10,0,-Math.sin(direction)*contact*.10);this.body.scale.set(1,1,1);
+      this.state.offsetX=this.body.position.x;this.state.offsetZ=this.body.position.z;return;
+    }
+
     const bold = this.family !== 'queen';
     const impactWindow = Math.max(0, 1 - this.impactAge / ACTOR_IMPULSE_SECONDS);
     const contact = this.impact * impactWindow * impactWindow;

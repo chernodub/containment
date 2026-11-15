@@ -1,7 +1,7 @@
 /** Real-room melee clocks: normal simulation earns each warning/strike/recovery. */
 export function registerM10Scenarios(scenarios) {
   for(const family of ['crawler','stalker','brute','spitter','carrier'])scenarios.push({
-    id:`m10-melee-${family}`,room:'awakening-bay',state:'playing',burst:true,stepMs:50,m10Melee:true,
+    id:`m10-melee-${family}`,room:'awakening-bay',state:'playing',burst:true,stepMs:50,
     setup:new Function(`return (async()=>{
       const d=window.__containmentDebug,g=d.game,r=d.renderer;
       await d.gotoRoom('awakening-bay',{rig:'breacher'});d.invulnerable(true);g.enemies.reset();

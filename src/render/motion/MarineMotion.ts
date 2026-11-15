@@ -51,6 +51,11 @@ type Leg = {
  * mixer and finish after it. All working storage is actor-local.
  */
 export class MarineMotion {
+  authored=false;
+  get actionName(){return this.action;}
+  get actionNormalized(){return this.actionProgress;}
+  private heldCast=false;
+  get actionHeldCast(){return this.heldCast;}
   gaitYaw = 0;
   backwards = false;
   moving = 0;
@@ -181,7 +186,8 @@ export class MarineMotion {
   }
 
   /** Snapshot/event callers own this normalized cast clock. */
-  setAction(id: string, progress: number) {
+  setAction(id: string, progress: number, heldCast=false) {
+    this.heldCast=heldCast;
     this.action = id;
     this.actionProgress = T.MathUtils.clamp(progress, 0, 1);
   }
@@ -250,6 +256,7 @@ export class MarineMotion {
     }
     this.saved = true;
     this.hips?.getWorldPosition(this.hipsBase);
+    if(this.authored){this.finishAuthored(weapon,recoil,aimPitch);return;}
     const stop = T.MathUtils.smoothstep(this.stoppedFor, 0, .14);
     if (!this.moving && !this.dead) for (const rest of this.neutral) {
       rest.bone.quaternion.slerp(rest.q, stop);
@@ -350,6 +357,20 @@ export class MarineMotion {
         this.moveWorld(leg.ankle,Math.cos(this.hitAngle)*step,Math.max(0,step)*.35,Math.sin(this.hitAngle)*step);
       }
     } else if (!cast) for (const leg of this.legs) this.plant(leg);
+  }
+
+  /** Authored base poses retain only responsive aim, acceleration and bounded contact correction. */
+  private finishAuthored(weapon:WeaponId,recoil:number,aimPitch:number){
+    this.root.rotation.z=0;
+    const strength=this.strength*(this.reduced?.25:1);
+    this.rotate(this.ribs,this.up,-T.MathUtils.degToRad(WEAPON_FIT[weapon].aimYaw),this.yawQ);
+    this.axis.set(-Math.sin(this.aim),0,Math.cos(this.aim));
+    this.rotate(this.ribs,this.axis,aimPitch-recoil*WEAPON_MOTION[weapon].pitch*.3*strength,this.yawQ);
+    this.rotate(this.spine,this.axis,(this.leanX*Math.cos(this.aim)+this.leanZ*Math.sin(this.aim))*.35*strength,this.yawQ);
+    const flinch=this.hitAmount*Math.sin(Math.PI*this.hitLife/MARINE_REACTION_SECONDS)*strength;
+    if(flinch){this.axis.set(-Math.sin(this.hitAngle),0,Math.cos(this.hitAngle));this.rotate(this.ribs,this.axis,-flinch*.10,this.yawQ);}
+    if(this.moving&&!this.action&&!flinch)for(const leg of this.legs)this.plant(leg);
+    this.clampHips();
   }
 
   private moveWorld(bone: T.Object3D, x: number, y: number, z: number) {

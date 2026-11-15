@@ -1031,7 +1031,7 @@ quarter contacts. No mask registration/scale fitting is applied; effect/death
 rows remain presentation studies. Inspect native strips as well as reductions.
 Melee attack rows replay native family phase durations and elite scales; marine
 casts replay normalized choreography, while accepted event clocks are covered
-by deterministic adapter tests. Marine death uses the retained articulated body.
+by the native capture/play paths. Marine death uses the retained articulated body.
 
 `m10-melee-{crawler,stalker,brute,spitter,carrier}` uses legal native spawns in
 Awakening Bay and waits for an actual simulation wind-up. Run with `--burst=30`:

@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {loadAuthoredMotion} from './motion/MotionAssets';
 const initDeathPhysics=()=>import('./DeathRagdolls').then(module=>module.initDeathPhysics());
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
@@ -13,7 +14,7 @@ function loadAsset(name:AssetName,loader:GLTFLoader){
  const inFlight=pending.get(name);if(inFlight)return inFlight;
  // Share the entire decode, not just its HTTP transfer: each parser owns its
  // embedded images. A failed request must remain retryable on the next boot.
- const work=loader.loadAsync(`${import.meta.env.BASE_URL}assets/models/${name}.glb`).then(asset=>{registerAsset(name,asset);return asset;}).finally(()=>pending.delete(name));
+ const work=loader.loadAsync(`${import.meta.env.BASE_URL}assets/models/${name}.glb`).then(async asset=>{asset.animations.push(...await loadAuthoredMotion(name,loader));registerAsset(name,asset);return asset;}).finally(()=>pending.delete(name));
  pending.set(name,work);return work;
 }
 export function registerAsset(name:AssetName,asset:GLTF){

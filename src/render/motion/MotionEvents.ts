@@ -30,7 +30,7 @@ export class MarineActionMotion {
     if (!this.id) return;
     this.age += dt;
     const progress=Math.min(1,this.age/this.duration);
-    this.motion.setAction(this.id,this.anticipating?progress*.42:this.phaseStart+(1-this.phaseStart)*progress);
+    this.motion.setAction(this.id,this.anticipating?progress*.42:this.phaseStart+(1-this.phaseStart)*progress,this.anticipating||this.phaseStart>0);
     if (!this.anticipating && this.age >= this.duration) { this.id = ''; this.motion.setAction('', 0); }
   }
 

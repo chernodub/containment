@@ -62,12 +62,14 @@ type BonePose={bone:T.Bone;position:T.Vector3;rotation:T.Quaternion;scale:T.Vect
 type Part={bone:T.Bone;body:RAPIER.RigidBody;bindLinear:T.Matrix4};
 type PoseNode={node:T.Object3D;part:Part|undefined};
 type RagdollRecord={model:ActorModel;cue:DeathCue;terminalTime:number;terminalPulse:number;parts:Part[];hierarchy:PoseNode[];joints:RAPIER.ImpulseJoint[];poses:BonePose[];age:number;holdTicks:number;settled:boolean;falling:boolean;fallSpeed:number;support:T.Vector3;supportLift:number;rootPosition:T.Vector3;anchor:T.Vector3};
+type AuthoredDeath={id:number;model:ActorModel;family:string;velocity:{x:number;z:number};cue:DeathCue;hold:number;age:number;duration:number;poses:BonePose[];rootPosition:T.Vector3;anchor:T.Vector3};
 type Room=Pick<RoomTemplate,'width'|'height'|'obstacles'|'boundary'|'voids'>;
 
 /** Presentation-only world. Never fed back into combat, navigation or mutation state. */
 export class DeathRagdolls {
  private world:RAPIER.World|undefined;
  private records=new Map<number,RagdollRecord>();
+ private authored=new Map<number,AuthoredDeath>();
  private tier:'high'|'low'='high';private accumulator=0;
  private q=new T.Quaternion();private inverse=new T.Matrix4();private rigidWorld=new T.Matrix4();
  private elapsedMs=0;private steps=0;private overflow=0;
@@ -75,7 +77,8 @@ export class DeathRagdolls {
  setQuality(tier:'high'|'low'){
   this.tier=tier;
   const active=[...this.records.values()].filter(r=>!r.settled);
-  while(active.length>RAGDOLL_BUDGET[tier])this.retire(active.shift()!);
+  while(active.length+this.authored.size>RAGDOLL_BUDGET[tier]&&active.length)this.retire(active.shift()!);
+  while(this.authored.size>RAGDOLL_BUDGET[tier])this.remove(this.authored.keys().next().value!);
  }
  private statics:RAPIER.Collider[]=[];
  private fallLimit=-32;
@@ -133,9 +136,16 @@ export class DeathRagdolls {
   const timestep=this.world.timestep;this.world.timestep=0;this.world.step();this.world.timestep=timestep;
   for(const r of this.records.values())if(r.settled){r.falling=true;r.fallSpeed=0;}
  }
- add(id:number,model:ActorModel,family:string,velocity:{x:number;z:number},cue:DeathCue=model.root.userData.motionDeathCue??'none',holdSeconds=0){
-  if(!this.world||this.records.has(id))return false;
+ add(id:number,model:ActorModel,family:string,velocity:{x:number;z:number},cue:DeathCue=model.root.userData.motionDeathCue??'none',holdSeconds=0,skipAuthored=false){
+  if(!this.world||this.records.has(id)||this.authored.has(id))return false;
   if(this.snapshot().active>=RAGDOLL_BUDGET[this.tier]){this.overflow++;return false;}
+  if(!skipAuthored&&model.poseDeath){
+    const poses:BonePose[]=[];model.root.traverse(node=>{if(node instanceof T.Bone){poses.push({bone:node,position:node.position.clone(),rotation:node.quaternion.clone(),scale:node.scale.clone(),auto:node.matrixAutoUpdate});node.matrixAutoUpdate=true;}});
+    const duration=model.poseDeath(cue,0);
+    if(duration>0){this.authored.set(id,{id,model,family,velocity,cue,hold:holdSeconds,age:0,duration,poses,rootPosition:model.root.position.clone(),anchor:model.root.position.clone()});return true;}
+    for(const pose of poses)pose.bone.matrixAutoUpdate=pose.auto;
+  }
+
   model.root.updateMatrixWorld(true);
   const poses:BonePose[]=[],bones:T.Bone[]=[];
   model.root.traverse(o=>{if(o instanceof T.Bone){poses.push({bone:o,position:o.position.clone(),rotation:o.quaternion.clone(),scale:o.scale.clone(),auto:o.matrixAutoUpdate});if(isAnatomicalBone(o.name,family))bones.push(o);}});
@@ -143,7 +153,7 @@ export class DeathRagdolls {
   model.freeze?.();
   const parts:Part[]=[],joints:RAPIER.ImpulseJoint[]=[],mass=family==='brute'?3.5:family==='carrier'?1.8:1;
   const posture=DEATH_POSTURE[family]??DEATH_POSTURE.crawler;
-  const lift=cue==='frost'?.55:cue==='burn'?.08:cue==='acid'?.04:cue==='arc'?.45:posture.lift;
+  const lift=skipAuthored?0:cue==='frost'?.55:cue==='burn'?.08:cue==='acid'?.04:cue==='arc'?.45:posture.lift;
   // Attenuate before capping: native shotgun (12.75) and rocket (33.75)
   // previously both saturated at 12, erasing weapon strength. Preserve direction
   // and family weight while bounding even extreme presentation-only impulses.
@@ -152,7 +162,7 @@ export class DeathRagdolls {
   for(const bone of bones){
    const position=bone.getWorldPosition(new T.Vector3()),rotation=bone.getWorldQuaternion(new T.Quaternion()).normalize();
    const bindLinear=bone.matrixWorld.clone().setPosition(0,0,0);bone.matrixAutoUpdate=false;
-   const body=this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(position.x,position.y,position.z).setRotation({x:0,y:0,z:0,w:1}).setAdditionalSolverIterations(16).setCanSleep(true).setCcdEnabled(true).setLinearDamping(.6).setAngularDamping(cue==='arc'?3.2:cue==='frost'?3:1.8));
+   const body=this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(position.x,position.y,position.z).setRotation({x:0,y:0,z:0,w:1}).setAdditionalSolverIterations(16).setCanSleep(true).setCcdEnabled(true).setLinearDamping(skipAuthored?3.2:.6).setAngularDamping(skipAuthored?4:cue==='arc'?3.2:cue==='frost'?3:1.8));
    const bounds=fits.get(bone)!.bounds;
    // Bone-only fixtures and unweighted controls still need finite inertia.
    if(bounds.isEmpty())bounds.setFromCenterAndSize(new T.Vector3(),new T.Vector3(.1,.1,.1));
@@ -165,7 +175,7 @@ export class DeathRagdolls {
    body.setLinvel({x:launchX*launchScale,y:vertical*launchScale,z:launchZ*launchScale},true);
    // Off-center shot torque tips the body. Limbs subsequently respond to joints,
    // gravity and contacts rather than a canned rotation or independent animation.
-   const convulse=cue==='arc'?(parts.length%2?-3.8:3.8):cue==='frost'?(parts.length%2?-2.5:2.5):cue==='burn'?(parts.length%2?-.9:.9):0;
+   const convulse=skipAuthored?0:cue==='arc'?(parts.length%2?-3.8:3.8):cue==='frost'?(parts.length%2?-2.5:2.5):cue==='burn'?(parts.length%2?-.9:.9):0;
    body.setAngvel({x:velocity.z*scale*posture.torque+convulse,y:0,z:-velocity.x*scale*posture.torque},true);
    parts.push({bone,body,bindLinear});
   }
@@ -192,6 +202,12 @@ export class DeathRagdolls {
  }
  update(dt:number){
   this.elapsedMs=0;if(!this.world||dt<=0)return;
+  const authoredDt=Math.min(dt,.05);
+  for(const [id,death] of this.authored){
+    death.age+=authoredDt;death.model.poseDeath?.(death.cue,Math.min(1,death.age/death.duration));death.model.setDeathAge?.(death.age);
+    death.model.root.updateMatrixWorld(true);
+    if(death.age>=death.duration){this.authored.delete(id);this.add(id,death.model,death.family,death.velocity,death.cue,death.hold,true);}
+  }
   let active=false,falling=false;for(const r of this.records.values()){active ||= !r.settled;falling ||= r.falling;}
   if(!active&&!falling)return;const start=performance.now(),delta=Math.min(dt,.05);
   if(active){this.accumulator+=delta;while(this.accumulator+1e-9>=STEP){
@@ -266,9 +282,10 @@ export class DeathRagdolls {
   r.supportLift=.25;
   for(const p of r.parts){p.body.sleep();this.world!.removeRigidBody(p.body);}r.parts=[];r.hierarchy=[];r.joints=[];r.settled=true;r.falling=true;r.fallSpeed=0;
  }
- has(id:number){return this.records.has(id);}
- position(id:number){return this.records.get(id)?.anchor;}
+ has(id:number){return this.records.has(id)||this.authored.has(id);}
+ position(id:number){return this.records.get(id)?.anchor??this.authored.get(id)?.anchor;}
  sync(id:number,x:number,z:number){
+  const pending=this.authored.get(id);if(pending){pending.model.root.position.x+=x-pending.anchor.x;pending.model.root.position.z+=z-pending.anchor.z;pending.anchor.x=x;pending.anchor.z=z;pending.velocity.x=pending.velocity.z=0;return;}
   const r=this.records.get(id);if(!r)return;const dx=x-r.anchor.x,dz=z-r.anchor.z;
   if(r.settled){r.model.root.position.x+=dx;r.model.root.position.z+=dz;r.support.x+=dx;r.support.z+=dz;r.falling=true;r.fallSpeed=0;}else{
    for(const p of r.parts){const v=p.body.translation();p.body.setTranslation({x:v.x+dx,y:v.y,z:v.z+dz},true);p.body.setLinvel({x:0,y:0,z:0},true);}this.apply(r);
@@ -276,6 +293,7 @@ export class DeathRagdolls {
   r.anchor.x=x;r.anchor.z=z;
  }
  remove(id:number){
+  const pending=this.authored.get(id);if(pending){for(const p of pending.poses){p.bone.position.copy(p.position);p.bone.quaternion.copy(p.rotation);p.bone.scale.copy(p.scale);p.bone.matrixAutoUpdate=p.auto;p.bone.updateMatrix();}pending.model.root.position.copy(pending.rootPosition);this.authored.delete(id);return;}
   const r=this.records.get(id);if(!r)return;
   if(!r.settled)for(const p of r.parts)this.world!.removeRigidBody(p.body);
   for(const p of r.poses){p.bone.position.copy(p.position);p.bone.quaternion.copy(p.rotation);p.bone.scale.copy(p.scale);p.bone.matrixAutoUpdate=p.auto;p.bone.updateMatrix();}
@@ -285,6 +303,6 @@ export class DeathRagdolls {
  maxJointError(id:number){
   let error=0;for(const j of this.records.get(id)?.joints??[]){const a=j.body1(),b=j.body2(),qa=a.rotation(),qb=b.rotation();const va=new T.Vector3().copy(j.anchor1()).applyQuaternion(new T.Quaternion(qa.x,qa.y,qa.z,qa.w)).add(a.translation());const vb=new T.Vector3().copy(j.anchor2()).applyQuaternion(new T.Quaternion(qb.x,qb.y,qb.z,qb.w)).add(b.translation());error=Math.max(error,va.distanceTo(vb));}return error;
  }
- snapshot(){let active=0,falling=0,bodies=0,joints=0;for(const r of this.records.values()){if(!r.settled)active++;if(r.falling)falling++;bodies+=r.parts.length;joints+=r.joints.length;}return{active,falling,bodies,joints,settled:this.records.size-active-falling,budget:RAGDOLL_BUDGET[this.tier],collisionGroups:GROUPS,staticColliders:(this.world?.colliders.len()??0)-bodies,stepMs:this.elapsedMs,steps:this.steps,overflow:this.overflow};}
- dispose(){for(const id of this.records.keys())this.remove(id);this.world?.free();this.world=undefined;this.statics=[];this.accumulator=0;this.elapsedMs=0;}
+ snapshot(){let active=this.authored.size,falling=0,bodies=0,joints=0;for(const r of this.records.values()){if(!r.settled)active++;if(r.falling)falling++;bodies+=r.parts.length;joints+=r.joints.length;}return{active,falling,bodies,joints,settled:this.records.size+this.authored.size-active-falling,budget:RAGDOLL_BUDGET[this.tier],collisionGroups:GROUPS,staticColliders:(this.world?.colliders.len()??0)-bodies,stepMs:this.elapsedMs,steps:this.steps,overflow:this.overflow};}
+ dispose(){for(const id of this.authored.keys())this.remove(id);for(const id of this.records.keys())this.remove(id);this.world?.free();this.world=undefined;this.statics=[];this.accumulator=0;this.elapsedMs=0;}
 }

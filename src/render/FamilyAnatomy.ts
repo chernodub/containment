@@ -23,8 +23,8 @@ export function familyAnatomy(kind: string, span: number, height: number): Actor
       add('plate',10,[side*.095,.55,.395],[.065,.09,.075],'head');
       add('plate',11,[side*.19,.70,.22],[.12,.17,.12],side<0?'forearmr':'forearml');
       limb([side*.17,.64,.16],[side*.29,.36,.22],.095,11,side<0?'forearmr':'forearml');
-      limb([side*.29,.36,.22],[side*.285,.065,.265],.075,2,side<0?'clawr':'clawl');
-      add('plate',4,[side*.26,.065,.25],[.08,.07,.09],side<0?'clawr':'clawl');
+      limb([side*.29,.36,.22],[side*.285,.065,.265],.075,2,side<0?'forearmr':'forearml');
+      add('plate',4,[side*.26,.065,.25],[.08,.07,.09],side<0?'forearmr':'forearml');
       for (const z of [-.22,-.025]) {
         const joint=(z<-.1?'footback':'footfront')+(side<0?'r':'l');
         limb([side*.17,.43,z],[side*.30,.08,z-.04],.065,2,joint);
