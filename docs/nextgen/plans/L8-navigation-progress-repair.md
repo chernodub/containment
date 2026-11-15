@@ -40,5 +40,15 @@ the original six failures; `l8-service-approach/commitment-trace/` retains the
 exact route/commitment observations; `opening-progress-versioned/` contains the
 passing 157-point packet. `navigation-progress/` contains red/green unit logs.
 The three-ingress trial remains dormant and must use a committed source that
-includes this real navigation repair. Full all-room/ability/replay proof and the
-single declared primary 40 diagnostic remain pending.
+includes this real navigation repair. Committed c7c75b9 passes the full31-file,
+1041-test integrated all-room/ability/escape/replay/cadence/full-kit proof and
+75 candidate-overlay tests; shared strict errors are empty and TypeScript
+passes. Root additionally passes six untouched legacy navigation/movement/bot
+contracts (91 tests). Receipts are in `l8-sim/navfix-c7-hardproof/`, with the
+legacy log in `navigation-progress/legacy-contracts.log`.
+
+The separate declared three-ingress diagnostic completes all40 attempts but
+fails balance/pacing (B60/C80/P20/A70%, ordinary29.5333s). Its candidate remains
+dormant; the result does not invalidate the exact six native navigation jam
+regressions. See `L8-service-approach-candidate.md` for complete outcomes and
+the combined-navigation/geometry causality limitation.

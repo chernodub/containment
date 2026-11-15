@@ -34,7 +34,8 @@ features, the shared physical-opening/blocked-opening/clearance rules, native
 five-family access and mixed finite crowds at named spaces and mouth centers,
 dense navigation/escape, and labeled plan inspection. If all pass, run the
 original fixed primary10 seeds per rig ONCE with two workers using an immutable
-geometry override on source659 and unchanged policy/backend inputs. Keep every
+geometry base659 on actual repaired-navigation source c7c75b9 and unchanged
+policy/backend inputs. Keep every
 natural death/censor/error; mark the override diagnostic and never release
 acceptance. No other candidate or seed extension is selected here.
 
@@ -108,3 +109,72 @@ Declared launch: label `l8-service-approach-primary40`, source
 `artifacts/nextgen/l8-service-approach/plans/templates.json`, observations OFF,
 workers2, max-room-seconds240, Breacher/Cryo/Pyro/Arc and exactly the ten primary
 seeds listed above. This declaration precedes all candidate campaign outcomes.
+
+## Complete primary40 result: failed, remain dormant
+
+All40 declared attempts finished naturally:23 complete,17 dead; no errors or
+censors. The two simulation workers and launcher have exited. This is a
+diagnostic override, never release acceptance. Candidate source declaration is
+`9c44b47481e235be970aad2d76e67c64ddd29204`; actual gameplay reference is
+`c7c75b985a30eb297596680cff9735e2ca86d6de`. All rows retain policy976eb173…,
+vanilla backendf7c6d801…, `observationsAdded:false`, and equal original/observed
+core hashes. Geometry bytes match predeclared SHA46742b62250507d12aaeca1905bd9c88d77d7639c8d733a0b59d9abe42cf7b36.
+
+|Fixed primary10 per rig|Baseline7cee|Reviewed659|Candidate + repaired nav|
+|---|---:|---:|---:|
+|Pooled completion|21/40 (52.5%)|22/40 (55%)|23/40 (57.5%)|
+|Breacher|6/10|7/10|6/10|
+|Cryo|7/10|6/10|8/10|
+|Pyro|3/10|3/10|2/10|
+|Arc|5/10|6/10|7/10|
+|Maximum distance from pooled / rig range|22.5 /40pp|25 /40pp|37.5 /60pp|
+|Strict ordinary median|32.2583s|29.6083s|29.5333s|
+|Transmission median|68.6583s|63.7250s|65.4417s|
+
+The candidate fails rig distance and ordinary pacing. Passing pooled completion
+does not establish balance. Per-rig median rooms/Overdrive are B1.392857,
+C1.428571, P1.428571, A1.333333; all first five rooms clear, and ordinary-room
+Overdrive-cap violations remain zero. Death rooms are12×2,14×1,15×2,16×4,17×2,
+20×6. Every attempt stays in the denominator. No additional seed, candidate or
+count change is selected from this result.
+
+For context the earlier complete, predeclared659 N160 packet also failed:
+98/160 (61.25%), B42.5/C82.5/P52.5/A67.5%, max distance21.25pp, ordinary29.9167s.
+The primary subset above is not a replacement for that full result, and this
+candidate's N10 screen is not a new release cohort.
+
+Paired local evidence does not support adopting the three entrances as a
+solution. Diagnostic's ten same-boon pairs give mean incoming B69.93→70.26,
+C81.25→63.43, P44.18→68.22, A62.71→60.06. Breacher enters12.42 vitality lower;
+Pyro enters8.53 higher but takes24.04 more incoming. Workshop's common same-boon
+pairs give B86.63→68.97 (n9), C99.42→41.13 (n8), P47.66→58.97 (n8),
+A65.79→38.75 (n9). Its clear-time median changes B37.77→35.17s,
+C41.85→36.30s, P32.49→35.10s, A33.93→30.92s. In this combined experiment Cryo
+benefits more than Breacher, while Pyro loses ground. Accepted casts remain in
+the raw room records; the trial did not add ready/denial observers, and cannot
+claim cast-denial or Whiteout-overlap causality from unavailable data.
+
+The required navigation repair changes upstream histories: only13/40 first-ten
+room sequences are byte-identical to659. Thus these numbers combine repaired
+navigation with the three entrances. Same-boon pairing and entry-vitality
+accounting qualify the result; they do not isolate ingress causality. The
+shared navigation repair remains justified by the six exact native jams and
+all157 passing opening-midpoint crowds independently of this balance failure.
+
+Recommendation: retain this candidate dormant and the failed packet. A finite
+wave-pressure change is not selected. Nominal4.4s eligibility does not reveal
+actual cap-limited dispatch, and extra bodies may recharge Overdrive. Before
+recommending a bounded late real tail or stagger, a separate declared observer
+must record actual director dispatch times against scheduled requests and live
+Overdrive charge/active intervals. The present trial's frozen backend/policy
+must remain untouched; no additional campaign is authorized by this report.
+
+Raw attempts and generated backend source are in
+`artifacts/nextgen/playtest/l8-service-approach-primary40/`; immutable generated
+runner/meta receipts are in `artifacts/nextgen/l8-sim/diagnostic-runners/`.
+`artifacts/nextgen/l8-service-approach/primary40-comparison.json` retains all
+120 baseline/659/candidate raw-file hashes, all40 matched outcomes, per-rig and
+all20 room summaries, paired incoming/entry-vitality/accepted-cast data and the
+failed target booleans. The matching Markdown is a readable table. The
+prospective `experiment.json`, labeled plans, all passing hard-proof packets
+and original failed native traces remain beside it.
