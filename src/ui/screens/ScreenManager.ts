@@ -16,6 +16,8 @@ import {hasCinematicMenu} from '../integrationPresentation';
 import {controlsScreen,escapeHtml,titleScreen,systemScreen} from './initialTemplates';
 import type {PauseTab} from './templates';
 import '../styles/screens.css';
+import {EFFECT_SET_LESSON, EFFECT_SET_LESSON_KEY, needsEffectSetLesson} from '../boonPresentation';
+import {clearRoomRecord} from '../storyPresentation';
 import {installBoonInspection} from './boonInspection';
 
 export type ScreenSettings = {
@@ -55,6 +57,8 @@ export function createScreens(context: ScreenContext) {
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let screenKey = '';
   let previousStatus = '';
+  let dismissedRecord = '';
+  let lessonSeen = false;
   let selectedRig: RigId = 'breacher';
   let pauseTab: PauseTab = 'resume';
   let legacyQuality: 'high'|'low' = 'high';
@@ -131,6 +135,8 @@ export function createScreens(context: ScreenContext) {
     listen('graphics-continue',continueGraphics);
     listen('close-credits',()=>{creditsOpen=false; playUiCue(audio,'back'); syncScreen(true); el('overlay').querySelector<HTMLElement>('button#menu-credits')?.focus();});
     listen('resume',pause);
+    listen('dismiss-effect-set',()=>{lessonSeen=true;try {storage?.setItem(EFFECT_SET_LESSON_KEY,'seen');}catch {/* Session fallback. */}syncScreen(true);root.querySelector<HTMLElement>('[data-mutation]')?.focus();});
+    listen('skip-clear-record',()=>{dismissedRecord=`${game.expedition.run.seed}:${game.roomRevision}`;syncScreen(true);root.querySelector<HTMLElement>('[data-mutation],#claim,#destroy-ship,[data-route]')?.focus();});
     listen('menu',()=>{
       game.menu(); settingsOpen=false; creditsOpen=false; controlsOpen=false; pauseTab='resume';
       if(hasAudioDirector(audio as object)) {audio.setEnvironment(null);audio.resumeAll();audio.pauseMusic();}
@@ -243,6 +249,13 @@ export function createScreens(context: ScreenContext) {
     else if(status==='reward') html=expeditionRewardOffers(game.expedition).length?secondary!.draftScreen(game):secondary!.shopScreen(game);
     else if(status==='route') html=game.node.templateId==='manual-control-chamber'?secondary!.destroyScreen():secondary!.routeScreen(game,selectedRoute);
     else html=secondary!.resultsScreen(game);
+    if (status === 'reward' && !lessonSeen && needsEffectSetLesson(expeditionRewardOffers(game.expedition),storage)) {
+      html = html.replace('<div class="choice-grid">', `<aside class="effect-set-lesson" role="note"><p>${EFFECT_SET_LESSON}</p><button id="dismiss-effect-set" class="quiet">Got it</button></aside><div class="choice-grid">`);
+    }
+    if (dismissedRecord !== `${run.seed}:${game.roomRevision}` && !graphicsBlocked) {
+      const record = clearRoomRecord(game);
+      if (record) html = html.replace(/(<section[^>]*>)/, '$1' + record);
+    }
     if(game.checkpointWarning&&status!=='paused') html=html.replace(/<\/(main|section)>$/,`<p class="save-note" role="status">${escapeHtml(game.checkpointWarning)}</p></$1>`);
     const active=document.activeElement as HTMLElement|null;
     const focusId=root.contains(active)?active?.id:'';

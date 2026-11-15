@@ -514,7 +514,7 @@ it('labels a held full Overdrive for the next room and preserves its visible met
     } finally { await page.close(); }
 });
 
-it('compacts combat choices after inspection and restores objective details only on held Tab or Alt without changing gameplay', async () => {
+it('compacts combat choices and keeps narrative deferred during held Tab or Alt without changing gameplay', async () => {
     const page=await mountHud(1280,720);
     try {
         await liveHud(page);
@@ -529,7 +529,7 @@ it('compacts combat choices after inspection and restores objective details only
         expect(await page.locator('[data-ability=tactical] kbd').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(12);
         expect(await page.locator('[data-ability=tactical]').getAttribute('data-reason')).toBe('Recharging');
         await page.keyboard.down('Tab');await page.evaluate(()=>(window as any).__live.hud());
-        expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('true');
+        expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('false');
         await page.keyboard.up('Tab');await page.evaluate(()=>(window as any).__live.hud());
         expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('false');
         await page.keyboard.press('Digit3');await page.evaluate(()=>(window as any).__live.hud());
@@ -540,7 +540,7 @@ it('compacts combat choices after inspection and restores objective details only
         await page.mouse.move(room!.x+room!.width/2,room!.y+room!.height/2);await page.evaluate(()=>(window as any).__live.hud());
         expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('false');
         await page.keyboard.down('Alt');
-        expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('true');
+        expect(await page.locator('#status-hud').getAttribute('data-expanded')).toBe('false');
         await page.keyboard.up('Alt');
         const after=await page.evaluate(()=>{const {game}=(window as any).__live;return {health:game.combat.snapshot.health,charges:game.abilities.snapshot.slots,x:game.player.x,y:game.player.y};});
         expect(after).toEqual(before);
@@ -607,7 +607,7 @@ it('bounds the 720p right column, yields radar chrome, and preserves contacts an
             return {width:objective.width,area:objective.width*objective.height+radar.width*radar.height,opacity:getComputedStyle(document.getElementById('radar-hud')!).opacity,faded:document.getElementById('radar-hud')!.dataset.obscuresThreat,critical:document.getElementById('objective-critical')!.textContent};
         });
         expect(result.width).toBeLessThanOrEqual(260);expect(result.area/(1280*720)).toBeLessThan(.14);
-        expect(result.critical).toBe('Overload is NOT armed.');expect(result.faded).toBe('true');
+        expect(result.critical).toBe('PASSENGERS ALIVE. Overload is NOT armed.');expect(result.faded).toBe('true');
         await page.waitForTimeout(180);
         expect(await page.locator('#radar-hud').evaluate(node=>getComputedStyle(node).opacity)).toBe('1');
         expect(await page.locator('#radar-hud').evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgba(7, 17, 24, 0.094)');
@@ -691,5 +691,46 @@ it('keeps the native cursor footprint at the denied mark for one second and rest
         expect(await page.evaluate(()=>(window as any).__placement.at(-1))).toBeNull();
         await page.evaluate(()=>(window as any).__live.hud.dispose());
         expect(await page.locator('#ability-denial').count()).toBe(0);
+    } finally {await page.close();}
+});
+
+it('U9 keeps all twenty story rooms edited, preserves warnings, and reveals changed sets for two seconds', async () => {
+    const page=await mountHud(1920,1080);
+    try {
+        await liveHud(page);
+        const rooms=await page.evaluate(async()=>{
+            const load=new Function('path','return import(path)');
+            return (await load('/src/game/roguelike/storyRooms.ts')).ROOM_STORY_ROUTE.map((room:any)=>room.templateId);
+        });
+        for (const [width,height] of [[1920,1080],[1280,720],[1280/1.5,720/1.5],[1280/2,720/2]]) {
+            await page.setViewportSize({width:Math.floor(width),height:Math.floor(height)});
+            for (const id of rooms) {
+                await page.evaluate(async id=>{
+                    const {game,hud}=(window as any).__live;
+                    const load=new Function('path','return import(path)');
+                    const {generateRun}=await load('/src/game/roguelike/run.ts');
+                    const node=generateRun(1729,3).nodes.find((node:any)=>node.templateId===id);
+                    game.expedition={...game.expedition,run:{...game.expedition.run,version:3,seed:1729,currentNodeId:node.id}};game.node=node;hud();
+                },id);
+                expect(await page.locator('#story-status').isHidden()).toBe(true);
+                expect(await page.locator('#story-presentation').isHidden()).toBe(true);
+                expect(await page.locator('#build-strip').isHidden()).toBe(true);
+                expect(await page.locator('#room-objective').isVisible()).toBe(true);
+                const column=await page.locator('#status-hud').boundingBox();
+                expect(column!.width*column!.height/(Math.floor(width)*Math.floor(height)),id).toBeLessThanOrEqual(width >= 1280 ? .1 : .35);
+                if(id==='containment-annulus')expect(await page.locator('#objective-critical').innerText()).toContain('Overload is NOT armed.');
+                if(id==='manual-control-chamber')expect(await page.locator('#objective-critical').innerText()).toContain('PASSENGERS ALIVE.');
+                if(id==='overload-floor')expect(await page.locator('#objective-critical').innerText()).toContain('Everyone aboard will die.');
+            }
+        }
+        await page.setViewportSize({width:1280,height:720});
+        await page.evaluate(()=>{const {game,hud}=(window as any).__live;game.expedition={...game.expedition,build:{mutations:['breacher','heavy-pellets']}};hud();});
+        expect(await page.locator('#build-strip').isVisible()).toBe(true);
+        expect(await page.locator('.set-chip').innerText()).toContain('Set · Kinetic 2/3');
+        expect(await page.locator('.effect-chip:visible').count()).toBe(1);
+        await page.evaluate(()=>{const {hud}=(window as any).__live;for(let i=0;i<19;i++)hud.tick(.1);hud();});
+        expect(await page.locator('#build-strip').isVisible()).toBe(true);
+        await page.evaluate(()=>{const {hud}=(window as any).__live;hud.tick(.1);hud.tick(.1);hud();});
+        expect(await page.locator('#build-strip').isHidden()).toBe(true);
     } finally {await page.close();}
 });

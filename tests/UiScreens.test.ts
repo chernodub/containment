@@ -539,8 +539,8 @@ test('boon element accents remain separate from family membership throughout dra
     expect(await fire.getAttribute('data-element')).toBe('pyro');
     expect(await fire.getAttribute('data-family')).toBe('Reactor');
     expect(await fire.locator('.boon-emblem').getAttribute('data-icon')).toBe('pyro');
-    expect(await fire.locator('.family-progress').innerText()).toContain('Reactor set');
-    expect(await fire.locator('.family-progress').getAttribute('aria-label')).toContain('Reactor family:');
+    expect(await fire.locator('.set-chip').innerText()).toContain('Set · Reactor 0/3');
+    expect(await fire.locator('.set-chip').getAttribute('aria-label')).toContain('Set · Reactor');
     expect(await fire.locator('.boon-condition').isVisible()).toBe(false);
     await fire.focus();await page.keyboard.press('i');
     expect(await fire.locator('.boon-condition>span').innerText()).toBe('LIMIT');
@@ -707,5 +707,35 @@ test.each([[1280,720,1],[1280,720,1.5],[1280,720,2],[1920,1080,1],[1920,1080,1.5
       expect(reachable.left).toBeGreaterThanOrEqual(0);expect(reachable.right).toBeLessThanOrEqual(width);
       expect(reachable.top).toBeGreaterThanOrEqual(0);expect(reachable.bottom).toBeLessThanOrEqual(height);
     }
+  } finally {await page.close();}
+});
+
+test.each([[1280,720,1],[1280,720,1.5],[1280,720,2],[1920,1080,1],[1920,1080,1.5],[1920,1080,2]])('U9 chips, safe explanation and records remain keyboard reachable at %i × %i / %s zoom',async(physicalWidth,physicalHeight,zoom)=>{
+  const page=await mount(Math.floor(physicalWidth/zoom),Math.floor(physicalHeight/zoom));
+  try {
+    await phase(page,'reward');
+    expect(await page.locator('.effect-set-lesson').isVisible()).toBe(true);
+    await page.locator('#dismiss-effect-set').focus();await page.keyboard.press('Enter');
+    expect(await page.locator('.effect-set-lesson').count()).toBe(0);
+    expect(await page.locator('[data-mutation]').first().evaluate(n=>n===document.activeElement)).toBe(true);
+    const badges=await page.locator('.set-chip').evaluateAll(nodes=>nodes.map(n=>({ink:getComputedStyle(n).color,border:getComputedStyle(n).borderColor,bg:getComputedStyle(n).backgroundColor})));
+    expect(new Set(badges.map(b=>JSON.stringify(b))).size).toBe(1);
+    for(const card of await page.locator('[data-mutation]').all()) {
+      expect(await card.locator('.effect-chip').count()).toBe(1);expect(await card.locator('.set-chip').count()).toBe(1);
+      const chips=await card.locator('.boon-chips').evaluate(n=>({scroll:n.scrollWidth,width:n.clientWidth}));expect(chips.scroll).toBeLessThanOrEqual(chips.width+1);
+    }
+    await page.evaluate(()=>{
+      const {game}=(window as any).ui;
+      game.storyRoom={templateId:'diagnostic-gallery',name:'Diagnostic gallery',objective:'Read the independent service display while clearing the gallery.',story:'PHYSICAL SERVICE DISPLAY: Purge destroys every deck, including occupied cryopods.'};
+    });
+    await phase(page,'reward',10);
+    expect(await page.locator('.record-story').innerText()).toBe('PHYSICAL SERVICE DISPLAY: Purge destroys every deck, including occupied cryopods.');
+    await page.locator('#skip-clear-record').focus();await page.keyboard.press('Enter');
+    expect(await page.locator('.room-record').count()).toBe(0);
+    expect(await page.locator('[data-mutation]').first().evaluate(n=>n===document.activeElement)).toBe(true);
+    await phase(page,'paused',10);
+    expect(await page.locator('.room-record-archive').innerText()).toContain('PHYSICAL SERVICE DISPLAY: Purge destroys every deck, including occupied cryopods.');
+    await page.locator('#resume').focus();await page.keyboard.press('Enter');
+    expect(await page.evaluate(()=>(window as any).ui.actions)).toContain('resume');
   } finally {await page.close();}
 });

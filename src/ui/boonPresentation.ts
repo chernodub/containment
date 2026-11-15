@@ -40,3 +40,22 @@ export function boonRuleLabel(boon: MutationDefinition): string {
   if (/\bonly\b|\bno effect\b|\bcannot\b|\bcapped\b|\bresist\b|\bdoes not\b|\bdoesn.t\b/i.test(boon.tradeoff)) return 'LIMIT';
   return 'RULE';
 }
+
+export const EFFECT_NAMES: Readonly<Record<BoonElement, string>> = {
+  pyro: 'Fire', cryo: 'Cryo', arc: 'Arc', kinetic: 'Kinetic', recovery: 'Recovery', acid: 'Acid',
+};
+
+/** Effect identity and legacy set membership are independent catalog facts. */
+export function boonConcepts(boon: MutationDefinition, installed: number) {
+  const element = boonElement(boon);
+  return {element, effect: EFFECT_NAMES[element], set: boon.family, progress: Math.min(3, Math.max(0, installed))};
+}
+
+export const EFFECT_SET_LESSON_KEY = 'containment.effect-set-lesson.v1';
+export const EFFECT_SET_LESSON = 'Effect tells you what a boon does. Set counts toward a three-boon bonus. Fire can belong to the Reactor set.';
+
+/** First safe draft with a cross-family effect teaches the distinction once. */
+export function needsEffectSetLesson(boons: readonly MutationDefinition[], storage: Pick<Storage, 'getItem'> | null): boolean {
+  try { if (storage?.getItem(EFFECT_SET_LESSON_KEY) === 'seen') return false; } catch { /* Session fallback. */ }
+  return boons.some(boon => ({kinetic:'Kinetic', cryo:'Cryo', arc:'Reactor', recovery:'Recovery', pyro:'Fire', acid:'Acid'}[boonElement(boon)]) !== boon.family);
+}

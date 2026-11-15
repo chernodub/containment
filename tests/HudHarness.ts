@@ -58,7 +58,7 @@ export const overlap = (a: {
 export async function inspectHud(page: Page, x: number, y: number, height = 80) {
     return page.evaluate(({ x, y, height }) => {
         const actor = { left: x - 27, right: x + 27, top: y - height / 2, bottom: y + height / 2 };
-        const selectors = ['.vitals', '.room-label', '#pause', '#build-strip', '#run-stock', '#story-hud', '.weapon-hud', '#weapon-picker', ...(!document.getElementById('boss-hud')!.hidden ? ['#boss-hud'] : [])];
+        const selectors = ['.vitals', '.room-label', '#pause', '#build-strip', '#run-stock', '#story-hud', '.weapon-hud', '#weapon-picker', ...(!document.getElementById('boss-hud')!.hidden ? ['#boss-hud'] : [])].filter(selector => selector !== '#build-strip' || document.querySelector(selector)!.getClientRects().length > 0);
         (window as any).__invalidate();
         const frames: any[] = [];
         for (let i = 0; i < 8; i++) {
@@ -76,7 +76,9 @@ export async function inspectHud(page: Page, x: number, y: number, height = 80) 
         }
         const passThrough: string[] = [];
         for (const s of ['.vitals', '.room-label', '#build-strip', '#run-stock', '.weapon-hud', '#story-status', '#room-objective']) {
-            const r = document.querySelector(s)!.getBoundingClientRect();
+            const node = document.querySelector(s)!;
+            if ((s === '#story-status' || s === '#build-strip') && !node.getClientRects().length) continue;
+            const r = node.getBoundingClientRect();
             const hit = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
             if (hit?.id !== 'world')
                 passThrough.push(s + ' -> ' + (hit?.id || hit?.tagName));

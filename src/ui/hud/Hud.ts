@@ -5,10 +5,13 @@ import type { DepthRenderer } from '../../render/DepthRenderer';
 import { familyCount } from '../../game/roguelike/builds';
 import { MUTATION_CATALOG } from '../../game/roguelike/mutationCatalog';
 import { conciseStoryStatus } from '../../game/roguelike/storyRooms';
+import {combatObjective, combatStoryWarning} from '../storyPresentation';
+export {combatObjective} from '../storyPresentation';
 import { ACT_NAMES, runLength } from '../../game/roguelike/run';
 import { ROOM_TEMPLATES } from '../../game/roguelike/roomTemplates';
 import { ABILITY_CATALOG } from '../../game/abilities/catalog';
 import type { AbilitySlotSnapshot, AbilitiesSnapshot } from '../../game/abilities/contract';
+import {setChip, effectChip} from '../boonChips';
 import { boonElement, boonIcon } from '../boonPresentation';
 import { playerFacingText } from '../units';
 import { getAbilities, setPlacementPreview, createPlacementPreview, readPlacementPreview, placementPointer, setHudInsets, projectWorld, projectActorBounds, visitHostileWarnings } from '../gameAdapter';
@@ -33,25 +36,7 @@ export type HudController = (() => void) & {
 };
 const clamp = (n: number) => Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
 const seconds = (ms: number) => ms >= 10000 ? `${Math.ceil(ms / 1000)}s` : `${(Math.ceil(ms / 100) / 10).toFixed(1)}s`;
-const familyColors: Record<string, string> = { Kinetic: '#ffb454', Cryo: '#7fd6ff', Reactor: '#b79cff', Recovery: '#9fe8ff' };
 const abilityColors: Record<string, string> = { kinetic: '#ffb454', cryo: '#7fd6ff', pyro: '#ff7a2e', arc: '#b79cff', recovery: '#d7ffdb', acid: '#9dff5a' };
-const familyIcons: Record<string, string> = { Kinetic: 'kinetic', Cryo: 'cryo', Reactor: 'arc', Recovery: 'health' };
-/** Short action copy; full authored objectives remain available in Pause. */
-export function combatObjective(id: string | undefined, fallback: string): string {
-    const actions: Record<string, string> = {
-        'awakening-bay':'Restore communications.', 'passenger-vault':'Clear the occupied pod rows.',
-        'residential-gallery':'Fight through the doorways.', 'communal-atrium':'Clear a path to security.',
-        'crew-checkpoint':'Break the fortified checkpoint.', 'armory':'Defeat the armory elite.',
-        'freight-hold':'Clear the colony supplies.', 'breached-loading-bay':'Fight around the sealed breach.',
-        'relay-racks':'Clear aisles. Restore the relay.', 'transmission-chamber':'Defend the warning uplink.',
-        'diagnostic-gallery':'Clear threats. Read service display.', 'safety-interlock-station':'Clear threats. Review local record.',
-        'coolant-plant':'Descend through the coolant pumps.', 'service-shaft-landing':'Reach the lower decks.',
-        'infested-workshop':'Clear the converted workshop.', 'swarm-junction':'Break the reactor guard swarm.',
-        'shielding-gate':'Clear the last defensive line.', 'containment-annulus':'Reach the manual controls.',
-        'manual-control-chamber':'Clear threats. Choose at controls.', 'overload-floor':'Defend the overload sequence.',
-    };
-    return actions[id ?? ''] ?? fallback;
-}
 /** Cached DOM snapshots; events and frame ticks feed bounded presentation pools. */
 export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud: () => void, preferences: () => HudPreferences = () => ({ combatText: true, radar: false }), storage: Pick<Storage,'getItem'|'setItem'> | null = null): HudController {
     const ids = ['hud', 'story-hud', 'story-status', 'room-objective', 'story-presentation', 'story-line', 'health', 'armor', 'hp-bar', 'hp-lag', 'armor-bar', 'armor-lag', 'weapon-name', 'current-weapon-icon', 'magazine', 'reserve', 'reload-label', 'reload-bar', 'depth-label', 'room-name', 'boss-hud', 'boss-phase', 'boss-bar', 'build-strip', 'credits', 'medkit-count', 'grenade-count', 'encounter-count', 'vital-state', 'ability-bar'] as const;
@@ -92,13 +77,15 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     denial.id = 'ability-denial'; denial.className = 'reticle-denial'; denial.hidden = true;
     denial.setAttribute('role','status'); denial.setAttribute('aria-live','polite');
     (document.getElementById('app') ?? nodes.hud).append(denial);
-    let weaponInspect = 0, roomIntro = 4, inspectObjective = false, denialLife = 0;
+    let weaponInspect = 0, buildReveal = 0, inspectObjective = false, denialLife = 0;
     const inspectionKeys = new Set<string>();
     let pointerX = innerWidth * .64, pointerY = innerHeight * .48, pointerActive=false, pointerKnown=false, aimPointerX=0, aimPointerY=0, powerAim=false, deniedPlacementLife=0;
     const placement=createPlacementPreview(),deniedPlacement=createPlacementPreview(),deniedAim={x:0,y:0};
     const refreshInspection = () => {
         const expanded = weaponInspect > 0 || inspectObjective;
-        const narrative = roomIntro > 0 || inspectObjective;
+        const narrative = false;
+        const reveal = buildReveal > 0;
+        if (statusPanel.dataset.buildReveal !== String(reveal)) {statusPanel.dataset.buildReveal=String(reveal);layoutDirty=true;}
         if (weaponBank.dataset.expanded !== String(expanded)) {weaponBank.dataset.expanded=String(expanded);layoutDirty=true;}
         if (statusPanel.dataset.expanded !== String(narrative)) {statusPanel.dataset.expanded=String(narrative);layoutDirty=true;}
     };
@@ -264,7 +251,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (revision !== game.roomRevision) {
             revision = game.roomRevision;
             for (const warning of warnings) warning.life = 0;
-            roomIntro=4;denialLife=0;deniedPlacementLife=0;denial.hidden=true;setPlacementPreview(renderer,null);
+            buildReveal=0;denialLife=0;deniedPlacementLife=0;denial.hidden=true;setPlacementPreview(renderer,null);
             combatText.clear();
             threats.clear();
             toasts.clear();
@@ -277,14 +264,14 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         hidden('story-hud', !game.storyRoom || !playing);
         // Story text remains authored verbatim; the optional line alone is skippable.
         const storyStatus = conciseStoryStatus(game.storyStatus);
-        if (nodes['story-status'].textContent !== storyStatus) roomIntro = 4;
         text('story-status', storyStatus);
         text('room-objective', combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
-        const critical = game.storyRoom?.objective.match(/Overload is NOT armed\.|PASSENGERS ALIVE\..*|No escape\..*/)?.[0] ?? '';
+        const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');
         if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';criticalNode.setAttribute('data-hud-critical','');nodes['story-hud'].append(criticalNode);}
         criticalNode.textContent=critical;criticalNode.hidden=!critical;
-        hidden('story-presentation', !game.storyPresentation);
+        hidden('story-status', playing);
+        hidden('story-presentation', true);
         text('story-line', game.storyPresentation ?? '');
         if (s.health < health)
             hpDelay = .35;
@@ -339,7 +326,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             node.dataset.active = String(node.dataset.bossPhase === phase);
         const build = game.expedition.build, buildKey = build.mutations.join('|');
         if (buildKey !== lastBuild) {
-            if (buildSeen) roomIntro = 4;
+            if (buildSeen && build.mutations.length > 0) buildReveal = 2;
             lastBuild = buildKey;
             layoutDirty = true;
             nodes['build-strip'].replaceChildren();
@@ -351,14 +338,14 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 group.className = 'boon-group';
                 group.dataset.family = family;
                 group.dataset.bonus = String(count >= 3);
-                group.style.setProperty('--family-color', familyColors[family]);
                 const familyBoons = build.mutations.filter(id => MUTATION_CATALOG[id].family === family);
                 const names = familyBoons.map(id => MUTATION_CATALOG[id].name);
                 group.title = `${family}: ${names.join(', ')}${count >= 3 ? ' · Set bonus active' : ''}`;
                 group.setAttribute('aria-label', group.title);
-                group.innerHTML = `${icon(familyIcons[family])}<span>${family}</span><b>${count}</b><span class="boon-set">${count >= 3 ? '◆ SET' : `${count}/3`}</span>`;
+                group.innerHTML = setChip(family,count);
                 const stack = document.createElement('span');
                 stack.className = 'boon-owned-stack';
+                const shownEffects = new Set<string>();
                 for (const id of familyBoons.slice(0, 3)) {
                     const boon = MUTATION_CATALOG[id];
                     const glyph = document.createElement('span');
@@ -369,7 +356,10 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                     glyph.style.color=abilityColors[boonElement(boon)];
                     glyph.style.borderColor=abilityColors[boonElement(boon)];
                     glyph.setAttribute('aria-label', glyph.title);
-                    glyph.innerHTML = icon(boonIcon(boon));
+                    const effect = boonElement(boon);
+                    glyph.dataset.repeatEffect = String(shownEffects.has(effect));
+                    shownEffects.add(effect);
+                    glyph.innerHTML = effectChip(boon);
                     stack.append(glyph);
                 }
                 if (familyBoons.length > 3) {
@@ -379,7 +369,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                     more.title = familyBoons.slice(3).map(id => `${MUTATION_CATALOG[id].name} · ${playerFacingText(MUTATION_CATALOG[id].description)}`).join(' / ');
                     stack.append(more);
                 }
-                group.insertBefore(stack, group.querySelector('.boon-set'));
+                group.append(stack);
                 nodes['build-strip'].append(group);
             }
             // A new expedition drops the previous build. Forget removed ownership so
@@ -514,7 +504,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             return;
         const elapsed = Number.isFinite(dt) ? Math.max(0, Math.min(dt, .1)) : 0;
         for (const warning of warnings) warning.life = Math.max(0, warning.life - elapsed);
-        weaponInspect=Math.max(0,weaponInspect-elapsed);roomIntro=Math.max(0,roomIntro-elapsed);
+        weaponInspect=Math.max(0,weaponInspect-elapsed);buildReveal=Math.max(0,buildReveal-elapsed);
         denialLife=Math.max(0,denialLife-elapsed);deniedPlacementLife=Math.max(0,deniedPlacementLife-elapsed);
         if(!denialLife&&!denial.hidden){denial.hidden=true;setPlacementPreview(renderer,null);}
         refreshInspection();

@@ -449,3 +449,18 @@ body[data-state=playing] #world{cursor:none}
  #hud #action-bar #ability-bar {gap:6px;padding-left:8px;}
 }
 @media(prefers-reduced-motion:reduce) {#hud :is(.vitals,#status-hud,#action-bar,#radar-hud) {transition:none;}}
+
+/* U9: a fixed combat edit, independent of entry/story milestone/inspection. */
+#hud #status-hud[data-expanded=false] #story-status,#hud #status-hud[data-expanded=false] #story-presentation {display:none;}
+#hud #status-hud[data-expanded=false] #credits,#hud #status-hud .encounter-progress {display:none;}
+#hud #status-hud[data-expanded=false] #run-stock {justify-content:flex-end;}
+#hud #status-hud[data-expanded=false] #build-strip {display:none;}
+#hud #status-hud[data-build-reveal=true] #build-strip {display:flex;gap:5px;}
+#hud .boon-group {display:flex;flex-wrap:wrap;gap:4px;padding:0;border:0;background:none;color:#d1dbe1;box-shadow:none;white-space:normal;}
+#hud .boon-owned-stack {display:flex;flex-wrap:wrap;gap:3px;height:auto;margin:0;}
+#hud .boon-owned {display:contents;color:inherit!important;}
+#hud .boon-owned+.boon-owned {margin:0;}
+#hud .effect-chip,#hud .set-chip {font-size:9px;padding:2px 4px;}
+#hud .boon-group .set-chip {min-width:130px;}
+#hud #status-hud[data-expanded=false] #room-objective {font-size:12px;line-height:1.35;}
+#hud .boon-owned[data-repeat-effect=true] {display:none;}
