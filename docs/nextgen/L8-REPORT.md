@@ -76,6 +76,8 @@ Final required gate summaries, native campaign receipts, source-hashed20-up calm
 
 ## Remaining release gates
 
+The659-game/9b6-render preflight now passes the full JavaScript suite (`399 passed | 2 skipped` files; `5040 passed | 2 skipped` tests), build, native desktop smoke and exact `test:authored-smoke:all`: `Authored desktop smoke passed: 20 rooms, native move/fire, Continue/route, pause/resume, Low quality, no browser errors.` The full verify then stops at the documented absent Blender executable in `MonitorArtifacts.test_imported_geometry_regression`; no test or asset was altered to bypass it. Both skips are existing opt-in CPU-profile/historical-camera-replay suites. Logs and hashes: `artifacts/nextgen/l8-sim/verification-preflight-250ee77/receipt.json`. These are source preflight passes, not acceptance of a later geometry revision.
+
 - Final PNG art review and all20 guarded entry/arena/kiting captures.
 - Final fixed160 cohort table and target assessment.
 - Final native browser campaign per rig; desktop smoke, all20 authored smoke and playtest smoke.
