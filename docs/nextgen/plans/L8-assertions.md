@@ -1,0 +1,10 @@
+# L8 assertion migrations
+
+- CrewCheckpointBlockout: old single wall-to-wall crossing becomes main gate plus two independently passable emergency bypasses; production radius16/28 movement still runs through every authored leg. Shielded/open LOS retained. Detailed source-scale shield/wreck/joint ray tests remain on explicit frozen source reservations; a new live-plan projectile-height/footprint test covers fitted equipment. No collision assertion removed.
+- ResidentialGalleryEquipment: source GLB validation and corrupt-resource/lifecycle guards stay exact; loading now asserts the decoded four roots fit the live template rectangles, replacing identity-child-matrix and old room-coordinate pins. Source stays unchanged.
+- RelayRacksRoom: breach/outer-aisle paths follow the new recessed cooling enclosure; all16/28/38 sweeps, LOS, rack shapes, source geometry and resource tests remain.
+- authoredTopology: the three newly authored polygons now assert nonrectangular boundaries and partition voids instead of absence of topology. Existing eight authored rooms and their gameplay sweeps remain.
+- KitDeckArchitecture: three standard rooms retire the long generic wall-feed helper; require it to emit no geometry and test the replacement actual threshold layer via the complete floor's deterministic buffers, valid vertices, height and exact-once disposal. Legacy Transmission helper remains covered.
+- KitFloorSurface / RoomKitDressing: the every-view floor-detail pin becomes explicit absence of the broad patch/scuff/scatter recipe and positive functional threshold marks in opted-in rooms. Quiet circulation is permitted. Hull, void, normals, heights, finite color, support, body/story rays, draw/triangle and lifecycle assertions remain.
+
+New tests: L8ArchitectureClearance supplies connected radius32 continuous-sweep and dense marine-position breach-to-contact routing for14/18/24/28 radii. Existing A3 crowds supply native five-family liveness and accepted-leg legality. ShipArchitectureRoom checks actual upper-deck triangles against collision, finite source ownership and legacy exclusion.

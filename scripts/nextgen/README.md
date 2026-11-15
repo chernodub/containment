@@ -912,3 +912,21 @@ intermediate successful round PNGs may be removed, but failed raw runs stay inta
 `playtest --storyboard-room=awakening-bay` records read-only observations during the ordinary native campaign, without advancing extra simulation or changing inputs. `i11-play-storyboards.mjs artifacts/nextgen/final5/play <campaign-dirs...>` requires a real clear and assembles twelve distinct entry→fight→clear frames per rig with source hashes.
 
 Capture graphics overrides are configured before scenario staging/compile guards and retained across an explicit native tier switch. `i11-legacy-acid-boundary` waits for an actual Queen pool under a fatal zero-compilation guard and aims the native Glacier preview at it. `i11-legacy-acid-probe` and `i11-compile-probe-*` are diagnostic-only traces, excluded from default `all`; they are not performance acceptance. All native actor/action/framing/priority assertions remain.
+
+## L8 ship-architecture review
+
+`node scripts/nextgen/l8-plans.mjs <output> [before-templates.json]` uses the real
+collision predicates to render top-down PNGs and all twenty old/new pairs. Dark
+floor is legal point space; lighter floor admits radius32; cyan/gold are native
+entry/exit, orange marks breaches and muted lines are unobstructed sightlines.
+The sampled area JSON is geometry evidence, not timing or a navigation proof.
+`tests/L8ArchitectureClearance.test.ts` separately checks continuous sweeps and
+largest-enemy margin, dense marine destinations and each native breach offset.
+
+`playtest --storyboard-room=residential-gallery,crew-checkpoint,relay-racks`
+observes several rooms during one ordinary native campaign. Each room has its
+own `report.storyboards` entry and unchanged half-second observation clock;
+`report.storyboard` retains the first entry for existing single-room consumers.
+No extra fixed tick or input decision is added. Each board must be selected and
+validated separately, including a native clear; frames from different rooms
+must never be pooled into a single entry-to-clear sequence.
