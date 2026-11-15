@@ -26,7 +26,9 @@ function inventory(ownerPid){
   return{at:new Date().toISOString(),load:loadavg(),browsers:rows.filter(row=>/\/(?:Google Chrome for Testing|Chromium|chrome-headless-shell)$/.test(row.executable)).map(row=>({...row,owned:owned(row)}))};
 }
 const receipts=[];
-for(const side of ['before','final']){
+const sides=option('sides','before,final').split(',');
+assert(sides.length>0&&new Set(sides).size===sides.length&&sides.every(side=>['before','final'].includes(side)));
+for(const side of sides){
   const dist=resolve(option(side,`artifacts/nextgen/v8/${side==='before'?'before':'shipping'}-dist`));
   const sha=(await readFile(resolve(dist,'SOURCE_SHA'),'utf8')).trim();assert(/^[a-f0-9]{40}$/.test(sha));
   const label=`${prefix}-${side}-native`,before=inventory(null);
