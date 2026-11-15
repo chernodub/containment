@@ -64,7 +64,7 @@ export class FacilityNavigation {
       const candidate=point(next);if(!this.clear(enemy,candidate,enemy.radius+2))break;
       current=next;target=candidate;
     }
-    if(Math.hypot(target.x-enemy.x,target.y-enemy.y)>32)this.commitments.set(enemy,{wave,goal:{x:player.x,y:player.y},point:{x:target.x,y:target.y}});
+    if(Math.hypot(target.x-enemy.x,target.y-enemy.y)>8)this.commitments.set(enemy,{wave,goal:{x:player.x,y:player.y},point:{x:target.x,y:target.y}});
     return {x:target.x,y:target.y};
   }
   reachable(p:FacilityPoint):boolean {return this.closest(p,true)>=0;}
