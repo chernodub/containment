@@ -37,6 +37,12 @@ void main(){
  gl_FragColor.rgb*=gl_FragColor.a;
 }`;
 const groundFragment = `
+// Finite segment support keeps every crystal deposit disconnected from its neighbors.
+float frostSegment(vec2 p,vec2 a,vec2 b){
+ vec2 v=b-a;float t=clamp(dot(p-a,v)/dot(v,v),0.,1.);
+ return length(p-a-v*t);
+}
+float frostHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 uniform float stormTime;uniform float stormAge;uniform vec4 storm;uniform float detail;
 varying vec2 local;varying float crest;
 void main(){
@@ -47,15 +53,29 @@ void main(){
  float reach=r+sin(angle*7.+sin(angle*3.)*1.8)*.055+sin(angle*13.)*.026;
  float spread=smoothstep(reach-.05,reach+.025,creep);
  float edge=1.-smoothstep(.92,1.,r);
- // Constant-width veins prevent broad four-point junctions in the frost.
- vec2 q=p*24.;q+=vec2(sin(q.y*.72),sin(q.x*.63))*.55;
- float mainVein=abs(sin(q.x+q.y*.53));
- float branchVein=abs(sin(q.y-q.x*.31));
- float vein=1.-smoothstep(.025,.10,min(mainVein,branchVein));
- vein*=smoothstep(-.4,.2,sin(q.x*.42-q.y*.37));
- float twig=0.;if(detail>.5)twig=(1.-smoothstep(.025,.095,abs(sin(q.x*2.7-q.y*1.3))))*smoothstep(.4,.85,sin(q.x*.6+q.y));
- float deposit=smoothstep(.69,.88,.5+.25*sin(q.x*.37)+.25*sin(q.y*.43));
- float frost=deposit*.055+vein*.16+twig*.08;
+ // Jittered finite fern clusters: one tapered stem, short sixty-degree twigs,
+ // and bare steel between deposits. No periodic intersecting line field.
+ vec2 cells=p*5.;vec2 cell=floor(cells),q=fract(cells)-.5;
+ float seed=frostHash(cell),other=frostHash(cell+vec2(19.,7.));
+ q-=vec2(seed-.5,other-.5)*.10;
+ float theta=seed*6.283185,c=cos(theta),s=sin(theta);
+ q=mat2(c,-s,s,c)*q;
+ float halfStem=.19+other*.12;
+ float stem=frostSegment(q,vec2(0.,-halfStem),vec2(0.,halfStem));
+ float vein=(1.-smoothstep(.006,.018,stem))*(1.-smoothstep(halfStem*.65,halfStem,abs(q.y))*.65);
+ float twig=0.;
+ for(int i=0;i<2;i++){
+  if(i==1&&detail<.5)break;
+  float branchY=-halfStem*.55+float(i)*halfStem*.8;
+  float twigLength=(.09+seed*.055)*(1.-float(i)*.18);
+  float left=frostSegment(q,vec2(0.,branchY),vec2(-twigLength*.866,branchY+twigLength*.5));
+  float right=frostSegment(q,vec2(0.,branchY+.025),vec2(twigLength*.866,branchY+.025+twigLength*.5));
+  twig=max(twig,1.-smoothstep(.004,.013,min(left,right)));
+ }
+ float cluster=step(.26,seed);
+ float deposit=(1.-smoothstep(.07,.25,length(q*vec2(1.5,1.))))*cluster;
+ vein*=cluster;twig*=cluster;
+ float frost=deposit*.045+vein*.20+twig*.15;
  float leading=1.-smoothstep(.012,.04,abs(reach-creep));
  float pulseAge=mod(stormAge,2.);float front=.245+.75*min(1.,pulseAge/.38);
  // Unequal crystalline teeth replace the luminous circular pulse.
