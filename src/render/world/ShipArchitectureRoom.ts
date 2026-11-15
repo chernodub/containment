@@ -5,6 +5,10 @@ import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLa
 import {environmentObstacle,shipEnvironment} from '../ShipEnvironments';
 import {armoryCarousel} from '../ArmoryCarousel';
 import {relayRacksRoom} from '../RelayRacksRoom';
+import {act3ShipPresentation,ACT3_PRESENTATION_ROOMS} from './Act3ShipPresentation';
+import {act4Architecture} from '../Act4Architecture';
+import {manualControlArchitecture} from '../ManualControlBlockout';
+import {shipDeckGeometry} from './ShipDeckGeometry';
 
 /** One template-driven deck/bulkhead family, batched at the room boundary.
  * Cutaway heights keep foreground walls below bodies. Solids never overhang
@@ -14,6 +18,7 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
   if(!Object.hasOwn(SHIP_ARCHITECTURE_LAYOUTS,id)||BESPOKE_SHIP_ROOMS.has(id))return null;
   const root=new T.Group();root.name='l8-ship-architecture';
   const environment=shipEnvironment(id)!;
+  const act4Room=['swarm-junction','shielding-gate','manual-control-chamber'].includes(id),authoredFixtures=ACT3_PRESENTATION_ROOMS.has(id)||act4Room;
   const material=(name:string,color:number,metalness=.2)=>{
     const m=new T.MeshStandardMaterial({color,metalness,roughness:.83});
     m.name=name;m.userData.actorMaterial=true;return m;
@@ -30,8 +35,7 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
   const box=(x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material,angle=0)=>push(new T.BoxGeometry(w,h,d).rotateY(angle).translate(x,y,z),m);
   const hull=t.boundary??[{x:0,y:0},{x:t.width,y:0},{x:t.width,y:t.height},{x:0,y:t.height}];
   const path=(p:readonly Point[])=>p.map(v=>new T.Vector2(v.x/32,-v.y/32));
-  const shape=new T.Shape(path(hull));for(const p of t.voids??[])shape.holes.push(new T.Path(path(p)));
-  const floor=new T.ExtrudeGeometry(shape,{depth:.28,bevelEnabled:false,steps:1,curveSegments:1});floor.rotateX(-Math.PI/2);floor.translate(0,-.30,0);push(floor,deck);
+  push(shipDeckGeometry(t),deck);
   root.userData.lightFixtures=[];
   // Winding in game XY is clockwise. The left normal is exterior in render XZ.
   for(let i=0;i<hull.length;i++){
@@ -44,9 +48,9 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
     for(let j=0;j<count;j++){
       const f=(j+.5)/count,x=(a.x+(b.x-a.x)*f)/32,z=(a.y+(b.y-a.y)*f)/32;
       box(x+nx*.24,height/2,z+nz*.24,.16,height,.24,dark,angle);
-      if(dx<=0||['residential-gallery','crew-checkpoint','relay-racks'].includes(id))continue;
+      if(dx<=0||authoredFixtures||['residential-gallery','crew-checkpoint','relay-racks'].includes(id))continue;
       box(x+nx*.02,height-.16,z+nz*.02,Math.min(1.1,length/count*.4),.08,.08,practical,angle);
-      root.userData.lightFixtures.push({x:x+nx*.02,y:height-.16,z:z+nz*.02,color:practical.emissive.getHex()});
+      root.userData.lightFixtures.push({x:x+nx*.02,y:height-.16,z:z+nz*.02,color:practical.emissive.getHex(),nativeColor:true,poolStyle:1,poolAngle:angle,poolWidth:.35,poolDepth:5,gain:.55});
     }
   }
   // Partitions are sealed wall ribbons; unlike scenery boxes their top and
@@ -65,8 +69,7 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
       box((a.x+b.x)/64,.91,(a.y+b.y)/64,length,.04,.04,trim,-Math.atan2(dz,dx));
     }
   }
-  const fixture=(x:number,z:number,angle:number,width:number,depth:number,color:number,gain=1)=>{
-   const y=1.30;
+  const fixture=(x:number,z:number,angle:number,width:number,depth:number,color:number,gain=1,y=1.30)=>{
    box(x,y-.045,z,1.65,.16,.20,dark,angle);box(x,y,z,1.45,.07,.08,gain<.2?dark:practical,angle);
    // A failed diffuser remains dark instead of inventing a round task-light pool.
    root.userData.lightFixtures.push({x,y,z,color,nativeColor:true,poolStyle:1,poolAngle:angle,poolWidth:width,poolDepth:depth,gain});
@@ -83,10 +86,29 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
    fixture(196/32,170/32,-Math.PI/2,.4,8,0x89cad5,.82);fixture(1084/32,170/32,Math.PI/2,.4,8,0x9be0d2,.42);
    fixture(640/32,964/32,Math.PI,.55,8,0x9cc8c6,1);fixture(640/32,304/32,Math.PI,.4,6,0xc1e6dc,.48);
   }
+  if(id==='swarm-junction'){
+   for(const [i,p]of [[280,180],[920,180],[280,860],[920,860]].entries())fixture(p[0]/32,p[1]/32,i<2?0:Math.PI,.30,i<2?6:4.5,0xa5c8bc,[.85,.14,.26,.38][i],.84);
+  }else if(id==='shielding-gate'){
+   const north=t.obstacles[0],south=t.obstacles[2];
+   fixture((north.x+north.width/2)/32,(north.y+north.height-2)/32,0,.35,7,0xbad7db,1,.84);
+   fixture((south.x+south.width/2)/32,(south.y+2)/32,Math.PI,.30,6,0xc8ad88,.38,.84);
+   fixture((t.width-4)/32,480/32,-Math.PI/2,.30,5,0xb9cecc,.46,.84);
+  }else if(id==='manual-control-chamber'){
+   fixture(640/32,.12,0,.40,8,0xe0b58a,.92);
+   fixture((t.width-4)/32,520/32,-Math.PI/2,.30,5,0xd3b08a,.36,.84);
+   fixture(164/32,840/32,Math.PI/2,.30,4,0xb5ccca,.24,.84);
+  }
   for(const [m,parts]of batches){const merged=mergeGeometries(parts,false)!;parts.forEach(p=>p.dispose());const mesh=new T.Mesh(merged,m);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);}
+  for(const material of [deck,steel,cutaway,dark,trim,practical])if(!batches.has(material))material.dispose();
+  const act3=act3ShipPresentation(id,t);if(act3){root.userData.lightFixtures.push(...act3.userData.lightFixtures??[]);delete act3.userData.lightFixtures;root.add(act3);}
+  const act4=act4Architecture(id,t);if(act4)root.add(act4);
+  if(id==='manual-control-chamber'){
+   const northY=Math.min(...hull.map(p=>p.y)),north=hull.filter(p=>p.y===northY),left=Math.min(...north.map(p=>p.x)),right=Math.max(...north.map(p=>p.x));
+   const shell=new T.Group();shell.name='manual-control-template-observation';shell.position.set(left/32,0,northY/32);manualControlArchitecture(shell,(right-left)/32);root.add(shell);
+  }
   if(id==='relay-racks')root.add(relayRacksRoom(false,t));
   else if(id==='armory')root.add(armoryCarousel());
-  else {
+  else if(!act3?.userData.replacesGenericObstacles){
     const equipment=new T.Group();equipment.name=id==='residential-gallery'?'residential-gallery-equipment-fallback':'l8-equipment';root.add(equipment);
     for(const [i,r]of t.obstacles.entries()){
       if(id==='residential-gallery'||id==='crew-checkpoint'){
