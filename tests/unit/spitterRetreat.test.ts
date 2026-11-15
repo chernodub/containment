@@ -2,16 +2,21 @@ import {describe,it,expect,vi} from 'vitest';
 import {EnemySystem} from '../../src/game/enemies/EnemySystem';
 import {DepthGame} from '../../src/DepthGame';
 import {generateRun} from '../../src/game/roguelike/run';
-import {createExpeditionGeometry} from '../../src/game/world/expeditionGeometry';
+import {createExpeditionGeometry,createRoomTemplateGeometry} from '../../src/game/world/expeditionGeometry';
+import {ROOM_TEMPLATES} from '../../src/game/roguelike/roomTemplates';
+import {SHIP_ARCHITECTURE_PLANS} from '../../src/game/roguelike/shipArchitectureLayouts';
+import historical from '../fixtures/l8-historical-navigation.json';
+import type {RoomTemplate} from '../../src/game/roguelike/types';
 import {FacilityNavigation} from '../../src/game/world/FacilityNavigation';
 import {canOccupyExpedition,canTraverseExpedition} from '../../src/game/world/expeditionGeometry';
 
 // Fresh bounded fixtures for the illegal-retreat class; not historical replay equality.
-function scene(start:{x:number;y:number},player:{x:number;y:number},specials=true,elite=false,room?:string){
+function scene(start:{x:number;y:number},player:{x:number;y:number},specials=true,elite=false,room?:string,frozen=false){
  const game=new DepthGame();if(room)game.node=generateRun(1729,3).nodes.find(n=>n.templateId===room)!;if(!specials)game.node={...game.node,id:'legacy-test'};
  game.geometry={...game.geometry,bounds:{x:0,y:0,width:1200,height:880},blockers:[],boundary:[{x:0,y:0},{x:1200,y:0},{x:1200,y:880},{x:0,y:880}],voids:undefined};
- if(room)game.geometry=createExpeditionGeometry(game.node);
+ if(room)game.geometry=frozen?createRoomTemplateGeometry({...ROOM_TEMPLATES[game.node.templateId],boundary:undefined,voids:undefined,...historical.templates[room as keyof typeof historical.templates]} as RoomTemplate,game.node.id+':historical'):createExpeditionGeometry(game.node);
  game.navigation=new FacilityNavigation(game.geometry);game.enemies=game['makeEnemies']();Object.assign(game.player,player);game.status='playing';
+ expect(canOccupyExpedition(game.geometry,start,18),'legal initial spitter').toBe(true);expect(canOccupyExpedition(game.geometry,player,16),'legal marine fixture').toBe(true);
  const spawn=game.enemies.spawn('spitter',start.x,start.y,elite);if(!spawn.spawned)throw Error('fixture spawn');
  return {game,id:spawn.enemy.id};
 }
@@ -64,7 +69,8 @@ describe('spitter reachable firing positions',()=>{
   expect(route.mock.calls.length).toBeLessThan(100);
  });
 
- // Fresh executions of the documented Room17 coordinates, not recovered replay bytes.
+ // Fresh executions preserve documented Room17 coordinates on frozen baseline
+ // geometry; current architecture has independent live native cases below.
  it.each([
   [{x:600,y:200},{x:600,y:300}],
   [{x:600,y:550},{x:600,y:500}],
@@ -73,7 +79,7 @@ describe('spitter reachable firing positions',()=>{
   [{x:1044,y:780},{x:480,y:665}],
   [{x:156,y:780},{x:720,y:665}],
  ])('reaches actual damage in Room17 from %j toward %j',(start,player)=>{
-  const {game,id}=scene(start,player,true,false,'shielding-gate');reachesDamage(game,id);
+  const {game,id}=scene(start,player,true,false,'shielding-gate',true);reachesDamage(game,id);
  });
 
  it('recovers after the player moves away from a cached firing goal',()=>{
@@ -87,11 +93,21 @@ describe('spitter reachable firing positions',()=>{
   expect(game.enemies.moveBy(id,0,-60).blocked).toBe(false);reachesDamage(game,id);
  });
 
- // A fresh Room15 breach-to-anchor matrix; historical 300-case bytes remain unavailable.
+ // Frozen Room15 breach-to-anchor matrix; historical300-case bytes remain
+ // unavailable. Keep its original geometry instead of moving this regression.
  it.each([{x:156,y:100},{x:1044,y:100},{x:156,y:780},{x:1044,y:780}].flatMap(start=>
   [{x:600,y:440},{x:600,y:100},{x:600,y:780},{x:200,y:440},{x:1100,y:440}].map(player=>[start,player])))
  ('reaches actual damage in Room15 from %j toward %j',(start,player)=>{
-  const {game,id}=scene(start,player,true,false,'infested-workshop');reachesDamage(game,id);
+  const {game,id}=scene(start,player,true,false,'infested-workshop',true);reachesDamage(game,id);
+ });
+
+ // Native current-room damage, not just a firing-goal or observer witness.
+ const liveCases=(['shielding-gate','infested-workshop'] as const).flatMap(room=>{
+  const node=generateRun(1729,3).nodes.find(n=>n.templateId===room)!,g=createExpeditionGeometry(node);
+  return g.breaches.flatMap(b=>SHIP_ARCHITECTURE_PLANS[room]!.spaces.map(space=>({room,space:space.name,start:{x:b.x+(b.facing==='east'?56:-56),y:b.y},player:space.anchor})));
+ });
+ it.each(liveCases)('reaches actual projectile damage on live $room toward $space from $start',({room,start,player})=>{
+  const {game,id}=scene(start,player,true,false,room);reachesDamage(game,id);
  });
 
 });

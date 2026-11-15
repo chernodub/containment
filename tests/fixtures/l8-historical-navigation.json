@@ -1,0 +1,436 @@
+{
+  "source": "7ceefa5a52cc74a6b95712f29653d9bf523906be",
+  "purpose": "Frozen historical navigation regressions. Do not migrate these coordinates with the live layouts.",
+  "templates": {
+    "transmission-chamber": {
+      "id": "transmission-chamber",
+      "name": "Transmission chamber",
+      "width": 1200,
+      "height": 880,
+      "spawn": {
+        "x": 100,
+        "y": 440
+      },
+      "exit": {
+        "x": 1100,
+        "y": 440
+      },
+      "obstacles": [
+        {
+          "x": 480,
+          "y": 260,
+          "width": 240,
+          "height": 180
+        },
+        {
+          "x": 290,
+          "y": 580,
+          "width": 180,
+          "height": 100
+        },
+        {
+          "x": 770,
+          "y": 580,
+          "width": 180,
+          "height": 100
+        }
+      ],
+      "breaches": [
+        {
+          "x": 100,
+          "y": 100
+        },
+        {
+          "x": 1100,
+          "y": 100
+        },
+        {
+          "x": 100,
+          "y": 780
+        },
+        {
+          "x": 1100,
+          "y": 780
+        }
+      ]
+    },
+    "infested-workshop": {
+      "id": "infested-workshop",
+      "name": "Infested workshop",
+      "width": 1200,
+      "height": 880,
+      "spawn": {
+        "x": 100,
+        "y": 440
+      },
+      "exit": {
+        "x": 1100,
+        "y": 440
+      },
+      "obstacles": [
+        {
+          "x": 280,
+          "y": 220,
+          "width": 190,
+          "height": 140
+        },
+        {
+          "x": 480,
+          "y": 560,
+          "width": 180,
+          "height": 160
+        },
+        {
+          "x": 700,
+          "y": 160,
+          "width": 130,
+          "height": 240
+        },
+        {
+          "x": 850,
+          "y": 550,
+          "width": 150,
+          "height": 140
+        }
+      ],
+      "breaches": [
+        {
+          "x": 100,
+          "y": 100
+        },
+        {
+          "x": 1100,
+          "y": 100
+        },
+        {
+          "x": 100,
+          "y": 780
+        },
+        {
+          "x": 1100,
+          "y": 780
+        }
+      ]
+    },
+    "breached-loading-bay": {
+      "id": "breached-loading-bay",
+      "name": "Breached loading bay",
+      "width": 1200,
+      "height": 880,
+      "spawn": {
+        "x": 140,
+        "y": 440
+      },
+      "exit": {
+        "x": 1080,
+        "y": 520
+      },
+      "obstacles": [
+        {
+          "x": 300,
+          "y": 600,
+          "width": 100,
+          "height": 70
+        },
+        {
+          "x": 640,
+          "y": 740,
+          "width": 120,
+          "height": 50
+        }
+      ],
+      "breaches": [
+        {
+          "x": 220,
+          "y": 260
+        },
+        {
+          "x": 1000,
+          "y": 240
+        },
+        {
+          "x": 300,
+          "y": 740
+        },
+        {
+          "x": 860,
+          "y": 720
+        }
+      ],
+      "boundary": [
+        {
+          "x": 40,
+          "y": 200
+        },
+        {
+          "x": 760,
+          "y": 40
+        },
+        {
+          "x": 1160,
+          "y": 160
+        },
+        {
+          "x": 1160,
+          "y": 640
+        },
+        {
+          "x": 860,
+          "y": 840
+        },
+        {
+          "x": 280,
+          "y": 840
+        },
+        {
+          "x": 40,
+          "y": 600
+        }
+      ],
+      "voids": [
+        [
+          {
+            "x": 440,
+            "y": 300
+          },
+          {
+            "x": 610,
+            "y": 220
+          },
+          {
+            "x": 940,
+            "y": 460
+          },
+          {
+            "x": 820,
+            "y": 570
+          },
+          {
+            "x": 560,
+            "y": 470
+          }
+        ]
+      ]
+    },
+    "relay-racks": {
+      "id": "relay-racks",
+      "name": "Relay racks",
+      "width": 1200,
+      "height": 880,
+      "spawn": {
+        "x": 100,
+        "y": 440
+      },
+      "exit": {
+        "x": 1100,
+        "y": 440
+      },
+      "obstacles": [
+        {
+          "x": 300,
+          "y": 160,
+          "width": 100,
+          "height": 170
+        },
+        {
+          "x": 300,
+          "y": 550,
+          "width": 100,
+          "height": 170
+        },
+        {
+          "x": 800,
+          "y": 160,
+          "width": 100,
+          "height": 170
+        },
+        {
+          "x": 800,
+          "y": 550,
+          "width": 100,
+          "height": 170
+        },
+        {
+          "x": 550,
+          "y": 360,
+          "width": 100,
+          "height": 150
+        }
+      ],
+      "breaches": [
+        {
+          "x": 100,
+          "y": 100
+        },
+        {
+          "x": 1100,
+          "y": 100
+        },
+        {
+          "x": 100,
+          "y": 780
+        },
+        {
+          "x": 1100,
+          "y": 780
+        }
+      ]
+    },
+    "safety-interlock-station": {
+      "id": "safety-interlock-station",
+      "name": "Safety-interlock station",
+      "width": 1200,
+      "height": 880,
+      "spawn": {
+        "x": 100,
+        "y": 440
+      },
+      "exit": {
+        "x": 1100,
+        "y": 440
+      },
+      "obstacles": [
+        {
+          "x": 330,
+          "y": 210,
+          "width": 160,
+          "height": 140
+        },
+        {
+          "x": 700,
+          "y": 210,
+          "width": 160,
+          "height": 140
+        },
+        {
+          "x": 480,
+          "y": 580,
+          "width": 240,
+          "height": 120
+        }
+      ],
+      "breaches": [
+        {
+          "x": 100,
+          "y": 100
+        },
+        {
+          "x": 1100,
+          "y": 100
+        },
+        {
+          "x": 100,
+          "y": 780
+        },
+        {
+          "x": 1100,
+          "y": 780
+        }
+      ]
+    },
+    "manual-control-chamber": {
+      "id": "manual-control-chamber",
+      "name": "Manual-control chamber",
+      "width": 1200,
+      "height": 880,
+      "spawn": {
+        "x": 100,
+        "y": 440
+      },
+      "exit": {
+        "x": 1100,
+        "y": 440
+      },
+      "obstacles": [
+        {
+          "x": 340,
+          "y": 230,
+          "width": 160,
+          "height": 180
+        },
+        {
+          "x": 700,
+          "y": 230,
+          "width": 160,
+          "height": 180
+        },
+        {
+          "x": 470,
+          "y": 610,
+          "width": 260,
+          "height": 100
+        }
+      ],
+      "breaches": [
+        {
+          "x": 100,
+          "y": 100
+        },
+        {
+          "x": 1100,
+          "y": 100
+        },
+        {
+          "x": 100,
+          "y": 780
+        },
+        {
+          "x": 1100,
+          "y": 780
+        }
+      ]
+    },
+    "shielding-gate": {
+      "id": "shielding-gate",
+      "name": "Shielding gate",
+      "width": 1200,
+      "height": 880,
+      "spawn": {
+        "x": 100,
+        "y": 440
+      },
+      "exit": {
+        "x": 1100,
+        "y": 440
+      },
+      "obstacles": [
+        {
+          "x": 300,
+          "y": 140,
+          "width": 100,
+          "height": 310
+        },
+        {
+          "x": 520,
+          "y": 590,
+          "width": 160,
+          "height": 150
+        },
+        {
+          "x": 800,
+          "y": 340,
+          "width": 100,
+          "height": 360
+        }
+      ],
+      "breaches": [
+        {
+          "x": 100,
+          "y": 100
+        },
+        {
+          "x": 1100,
+          "y": 100
+        },
+        {
+          "x": 100,
+          "y": 780
+        },
+        {
+          "x": 1100,
+          "y": 780
+        }
+      ]
+    }
+  }
+}

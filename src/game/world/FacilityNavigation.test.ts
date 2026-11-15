@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FacilityNavigation, type NavigationGeometry } from './FacilityNavigation';
+import {clearRectSweep} from './facilityGeometry';
+import {clearPolygonTopology} from './polygonGeometry';
 
 const geometry: NavigationGeometry = {
   bounds: { x: 0, y: 0, width: 640, height: 448 },
@@ -9,76 +11,24 @@ const geometry: NavigationGeometry = {
 const goal = { x: 528, y: 224 };
 
 describe('navigation grid coordinate reuse', () => {
-  it('preserves the prior waypoint sequence and tie order at standard and wider clearances', () => {
-    const paths = [14, 28, 38].map(radius => {
-      const navigation = new FacilityNavigation(geometry), enemy = { x: 112, y: 224, radius };
-      const path: Array<{ x: number; y: number } | null> = [];
-      for (let step = 0; step < 12; step++) {
-        const waypoint = navigation.waypoint(enemy, goal, 1);
-        path.push(waypoint);
-        if (!waypoint || waypoint === enemy) break;
-        Object.assign(enemy, waypoint);
+  it.each([14,28,38])('reaches the actual goal with deterministic continuously clear radius%s legs',radius=>{
+    const before=JSON.stringify({geometry,goal});
+    const run=()=>{
+      const navigation=new FacilityNavigation(geometry),enemy={x:112,y:224,radius},path:{x:number;y:number}[]=[];
+      for(let step=0;step<12&&Math.hypot(enemy.x-goal.x,enemy.y-goal.y)>.001;step++){
+        const waypoint=navigation.waypoint(enemy,goal,1)??goal;
+        expect(Number.isFinite(waypoint.x+waypoint.y)).toBe(true);
+        expect(Math.hypot(waypoint.x-enemy.x,waypoint.y-enemy.y)).toBeGreaterThan(0);
+        expect(clearPolygonTopology(geometry,enemy,waypoint,radius)).toBe(true);
+        for(const solid of geometry.blockers)expect(clearRectSweep(enemy,waypoint,radius,solid)).toBe(true);
+        path.push({...waypoint});Object.assign(enemy,waypoint);
       }
-      return { radius, path };
-    });
-    expect(paths).toMatchInlineSnapshot(`
-      [
-        {
-          "path": [
-            {
-              "x": 240,
-              "y": 112,
-            },
-            {
-              "x": 272,
-              "y": 48,
-            },
-            {
-              "x": 496,
-              "y": 48,
-            },
-            null,
-          ],
-          "radius": 14,
-        },
-        {
-          "path": [
-            {
-              "x": 240,
-              "y": 112,
-            },
-            {
-              "x": 240,
-              "y": 48,
-            },
-            {
-              "x": 464,
-              "y": 48,
-            },
-            null,
-          ],
-          "radius": 28,
-        },
-        {
-          "path": [
-            {
-              "x": 240,
-              "y": 112,
-            },
-            {
-              "x": 240,
-              "y": 48,
-            },
-            {
-              "x": 464,
-              "y": 48,
-            },
-            null,
-          ],
-          "radius": 38,
-        },
-      ]
-    `);
+      expect(path.length).toBeLessThanOrEqual(12);expect(enemy.x).toBeCloseTo(goal.x);expect(enemy.y).toBeCloseTo(goal.y);
+      return path;
+    };
+    // Exact rounded rectangle sweeps and committed visible legs intentionally
+    // supersede the old square-expanded grid tie-order snapshot.
+    expect(run()).toEqual(run());expect(JSON.stringify({geometry,goal})).toBe(before);
   });
 
   it('returns fresh public waypoints whose mutation cannot change the shared grid', () => {
