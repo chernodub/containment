@@ -1,4 +1,8 @@
 import * as T from 'three';
+import {PASSENGER_BLOCKOUT} from '../game/roguelike/authoredRoomTopologies';
+import type {RoomTemplate} from '../game/roguelike/types';
+import {shipDeckGeometry} from './world/ShipDeckGeometry';
+type PassengerPlan=Pick<RoomTemplate,'width'|'height'|'boundary'|'voids'>;
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {disposeModel} from './meshParts';
@@ -25,7 +29,7 @@ function retire(roots:T.Group[]){
  for(const root of roots){root.traverse(o=>{if(o instanceof T.Mesh){resources.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material]){resources.add(m);for(const t of Object.values(m))if(t instanceof T.Texture){resources.add(t);if(typeof ImageBitmap!=='undefined'&&t.image instanceof ImageBitmap)images.add(t.image);}}}});root.removeFromParent();}
  resources.forEach(r=>r.dispose());images.forEach(i=>i.close());
 }
-export function buildPassengerVault(sources:Sources){
+export function buildPassengerVault(sources:Sources,plan?:PassengerPlan){
  for(const source of new Set(Object.values(sources)))applyOwnedEquipmentPalette(source,PASSENGER_FINISHES);
  const root=new T.Group();root.name='passenger-vault-equipment';
  const bins=new Map<string,{material:T.Material;parts:T.BufferGeometry[];service:boolean}>(),allocated=new Set<T.BufferGeometry>();
@@ -34,6 +38,9 @@ export function buildPassengerVault(sources:Sources){
  try{
   for(const p of placements){const source=sources[p.family];if(!source)throw Error('missing Passenger family');source.updateWorldMatrix(true,true);
    const transform=new T.Matrix4().compose(new T.Vector3(p.x/32,0,p.z/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),p.angle),new T.Vector3(1,1,1)).multiply(new T.Matrix4().makeTranslation(p.dx,0,p.dz));
+   const role=p.family==='row-carrier'||p.family==='chamber'?placements.indexOf(p)/5|0:p.family==='distribution-north'?4:p.family==='distribution-south'?5:p.family==='monitor-north'?6:p.family==='monitor-south'?7:-1;
+   let fit:T.Matrix4|undefined;
+   if(plan?.voids?.length===8&&role>=0){const old=PASSENGER_BLOCKOUT[role].footprint,next=plan.voids[role],xs=next.map(v=>v.x),zs=next.map(v=>v.y),ox=old[0].x,oz=old[0].y,ow=old[1].x-ox,od=old[2].y-oz,nx=Math.min(...xs),nz=Math.min(...zs),nw=Math.max(...xs)-nx,nd=Math.max(...zs)-nz;fit=new T.Matrix4().makeTranslation(nx/32,0,nz/32).multiply(new T.Matrix4().makeScale(nw/ow,1,nd/od)).multiply(new T.Matrix4().makeTranslation(-ox/32,0,-oz/32));}
    let meshes=0;source.traverse(o=>{if(!(o instanceof T.Mesh))return;meshes++;
     if(o instanceof T.SkinnedMesh||Array.isArray(o.material)||!(o.material instanceof T.MeshStandardMaterial)||!o.geometry.attributes.position||!o.geometry.attributes.normal)throw Error('unsupported Passenger mesh');
     materials.add(o.material);if(materials.size>8)throw Error('Passenger material budget exceeded');
@@ -41,6 +48,7 @@ export function buildPassengerVault(sources:Sources){
     triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;if(!Number.isInteger(triangles)||triangles>100000)throw Error('Passenger triangle budget exceeded');
     const g:T.BufferGeometry=o.geometry.clone();allocated.add(g);g.applyMatrix4(new T.Matrix4().multiplyMatrices(transform,o.matrixWorld));g.computeBoundingBox();const b=g.boundingBox!;
     if(![...b.min.toArray(),...b.max.toArray()].every(Number.isFinite)||b.min.x<0||b.max.x>38||b.min.z<0||b.max.z>28||b.min.y< -2||b.max.y>4)throw Error('Passenger room bounds rejected');
+    if(fit)g.applyMatrix4(fit);
     const service=p.family==='service-finish';
     const key=service+o.material.uuid+JSON.stringify([!!g.index,Object.entries(g.attributes).sort(([a],[b])=>a.localeCompare(b)).map(([n,a])=>[n,a.itemSize,a.normalized,a.array.constructor.name])]);
     const bin=bins.get(key)??{material:o.material,parts:[],service};bin.parts.push(g);bins.set(key,bin);
@@ -93,10 +101,24 @@ export function attachPassengerVault(room:T.Group,onChanged:()=>void,load:(signa
  const cancelled=new Promise<never>((_,reject)=>controller.signal.addEventListener('abort',()=>reject(Error('Passenger cancelled')),{once:true}));
  const pending=(async()=>{const s=await load(controller.signal);if(!active){retire([s]);throw Error('stale Passenger source');}source=s;})();
  owner.ready=Promise.race([pending,timeout,cancelled]).then(()=>{if(!active)return;if(!fallback||fallback.parent!==room)throw Error('stale Passenger fallback');
- const sources:Sources={};for(const family of PASSENGER_FAMILIES){const matches=source!.children.filter(o=>o.name===family);if(matches.length!==1)throw Error('missing or duplicate Passenger family');sources[family]=matches[0];}bank=buildPassengerVault(sources);
+ const sources:Sources={};for(const family of PASSENGER_FAMILIES){const matches=source!.children.filter(o=>o.name===family);if(matches.length!==1)throw Error('missing or duplicate Passenger family');sources[family]=matches[0];}bank=buildPassengerVault(sources,room.userData.templateGeometry as PassengerPlan|undefined);
  const decks:T.Mesh[]=[];room.traverse(o=>{if(o instanceof T.Mesh&&!Array.isArray(o.material)&&o.material.name==='painted-steel-deck')decks.push(o);});
  if(decks.length!==1)throw Error('Passenger requires exactly one deck');
- {const deck=decks[0],g=new T.BufferGeometry();for(const [key,name,size] of [['POSITION','position',3],['NORMAL','normal',3],['TEXCOORD_0','uv',2]] as const)g.setAttribute(name,new T.Float32BufferAttribute(floorAttributes[key],size));room.updateMatrixWorld(true);g.applyMatrix4(new T.Matrix4().copy(deck.matrixWorld).invert().multiply(room.matrixWorld));deck.geometry.dispose();deck.geometry=g;}
+ {const deck=decks[0];let g=new T.BufferGeometry();for(const [key,name,size] of [['POSITION','position',3],['NORMAL','normal',3],['TEXCOORD_0','uv',2]] as const)g.setAttribute(name,new T.Float32BufferAttribute(floorAttributes[key],size));
+ const plan=room.userData.templateGeometry as PassengerPlan|undefined;
+ if(plan&&(plan.boundary?.length??0)>8){
+  const bays=shipDeckGeometry({...plan,voids:[[{x:40,y:40},{x:1160,y:40},{x:1160,y:840},{x:40,y:840}]]},.44,-.02),pos=bays.getAttribute('position'),uv=bays.getAttribute('uv');
+  // Extend the source grain into the two new access bays. The source floor and
+  // all its exact original attributes remain untouched inside the old hull.
+  const fp=g.getAttribute('position'),fu=g.getAttribute('uv');
+  for(let i=0;i<pos.count;i++){
+   const x=pos.getX(i),z=pos.getZ(i),edge=Math.max(40/32,Math.min(1160/32,x));let best=Infinity,slot=0;
+   for(let j=0;j<fp.count;j++){const d=(fp.getX(j)-edge)**2+(fp.getZ(j)-z)**2;if(d<best){best=d;slot=j;}}
+   uv.setXY(i,fu.getX(slot)+(x-fp.getX(slot))/8,fu.getY(slot)+(z-fp.getZ(slot))/8);
+  }
+  const merged=mergeGeometries([g,bays],false)!;g.dispose();bays.dispose();g=merged;
+ }
+ room.updateMatrixWorld(true);g.applyMatrix4(new T.Matrix4().copy(deck.matrixWorld).invert().multiply(room.matrixWorld));deck.geometry.dispose();deck.geometry=g;}
  room.add(bank);disposeModel(fallback);owner.state='ready';}).catch(error=>{owner.error=error;cleanup();if(active){active=false;controller.abort();owner.state='fallback';}}).then(()=>{if(owner.state==='ready')try{onChanged();}catch(error){owner.notificationError=error;}}).finally(()=>clearTimeout(timer));
  return owner;
 }

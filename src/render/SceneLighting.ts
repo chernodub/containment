@@ -116,9 +116,9 @@ export class SceneLighting {
  private setFixtureShape(light:T.PointLight,fixture:Fixture,index:number){
   const angle=fixture.poolAngle??Math.atan2(this.width/2-fixture.x,this.height/2-fixture.z);
   light.userData.poolAngle=angle;light.userData.worldBounceGain=ENVIRONMENT_COMPOSITION[this.mood.environment].bounce;
-  const profile=ENVIRONMENT_COMPOSITION[this.mood.environment],style=fixture.poolStyle??APERTURE_STYLE[this.mood.environment];light.userData.poolStyle=style;light.userData.fixtureGain=fixture.gain??1;light.userData.humanFailed=this.mood.environment==='infested'&&fixture.poolStyle===0;light.userData.poolWidth=fixture.poolWidth??profile.width;light.userData.poolDepth=fixture.poolDepth??profile.depth;
+  const profile=ENVIRONMENT_COMPOSITION[this.mood.environment],style=fixture.poolStyle??(this.templateArchitecture?1:APERTURE_STYLE[this.mood.environment]);light.userData.poolStyle=style;light.userData.fixtureGain=fixture.gain??1;light.userData.humanFailed=this.mood.environment==='infested'&&fixture.poolStyle===0;light.userData.poolWidth=fixture.poolWidth??(this.templateArchitecture?.55:profile.width);light.userData.poolDepth=fixture.poolDepth??(this.templateArchitecture?7:profile.depth);
   // Long axis follows the visible emitter toward the room; cross-axis stays narrow.
-  this.practicalShapes[index].set(Math.sin(angle),Math.cos(angle),light.visible?(fixture.poolWidth??profile.width):0,fixture.poolDepth??profile.depth);
+  this.practicalShapes[index].set(Math.sin(angle),Math.cos(angle),light.visible?(fixture.poolWidth??(this.templateArchitecture?.55:profile.width)):0,fixture.poolDepth??(this.templateArchitecture?7:profile.depth));
  }
  setPlayer(x:number,z:number,aimRadians:number,camera?:T.Camera){
   this.lamp.update(x,z,aimRadians);

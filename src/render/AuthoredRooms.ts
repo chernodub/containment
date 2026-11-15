@@ -1,4 +1,8 @@
 import * as T from 'three';
+import {shipDeckGeometry} from './world/ShipDeckGeometry';
+import {act1ShipPresentation} from './world/Act1ShipPresentation';
+import {act4Architecture} from './Act4Architecture';
+import {room8OrganicVoids,room8RepairArchitecture,room8UsesAuthoredLoadingFloor} from './Room8RepairArchitecture';
 import {relayRacksRoom} from './RelayRacksRoom';
 import {PASSENGER_FINISHES} from './RoomEquipmentPalette';
 import {createAwakeningServiceFinish} from './AwakeningServiceFinish';
@@ -429,14 +433,14 @@ function passengerVault(room:Fabricator,t:RoomPlan){
   const b=bounds(t.voids![i]),x=b.x*U,y=b.z*U;
   box(x,role.row?12:role.height/2,y,b.w*U,role.row?24:role.height,b.d*U,f.paint);
   if(!role.row)continue;
-  const north=i<2,cy=north?308:572;
+  const north=i<2,cy=y+(north?8:-8);
   for(let slot=0;slot<4;slot++){
    const cx=b.x0*U+25+slot*50;
    box(cx,32,cy,40,16,88,f.ivory);
    // Broad live band at each working face; no exposed occupants or glass.
-   box(cx,36,north?351:529,32,6,2,f.cold);
+   box(cx,36,north?b.z1*U-9:b.z0*U+9,32,6,2,f.cold);
   }
-  box(x,28,north?248:632,200,8,16,f.dark);
+  box(x,28,north?b.z0*U+8:b.z1*U-8,200,8,16,f.dark);
  }
  // Flush, neutral route annotations. No raised pipes or extra blockers.
  for(const x of [420,780])for(const [y,length] of [[184,128],[696,128]])box(x,.08,y,3,.16,length,f.seam);
@@ -445,14 +449,15 @@ function passengerVault(room:Fabricator,t:RoomPlan){
  room.root.userData.lightFixtures=fallback.userData.lightFixtures;delete fallback.userData.lightFixtures;
  // Perimeter volumes are outside the same boundary queried by actors/shots.
  const wall=(x:number,h:number,y:number,w:number,d:number,l:number)=>room.box(x/U,h/U,y/U,w/U,d/U,l/U,room.paint,0);
- wall(600,24,34,1132,48,12);wall(600,12,846,1132,24,12);
- wall(34,12,440,12,24,800);wall(1166,12,440,12,24,800);
+ if((t.boundary?.length??0)<=8){wall(600,24,34,1132,48,12);wall(600,12,846,1132,24,12);
+ wall(34,12,440,12,24,800);wall(1166,12,440,12,24,800);}
 }
 function breachedBay(f:Fabricator,t:RoomPlan){
  // Stage4: connected growth, torn repair edges and supported freight assemblies.
  // All apron relief is flush. Raised details remain inside existing solid cover.
  f.deck.color.setHex(0x354246);
  f.chitin.color.setHex(0x293c30);f.ribs.color.setHex(0x788167);
+ if(!room8UsesAuthoredLoadingFloor(t)){
  const apron=f.paint.clone();apron.name='room8-freight-apron';apron.color.setHex(0x485357);apron.roughness=.91;
  const markings=f.stencil.clone();markings.name='room8-apron-markings';markings.color.setHex(0xbaa16a);
  const rubber=f.dark.clone();rubber.name='room8-docking-channels';rubber.roughness=.96;
@@ -476,6 +481,7 @@ function breachedBay(f:Fabricator,t:RoomPlan){
  // A dashed freight boundary reads as paint, not an invisible barrier.
  for(let x=470;x<990;x+=34)flush(x,710,19,3,markings,.017);
  for(let z=355;z<570;z+=30)flush(182,z,3,16,markings,.017);
+ }
  // Rear wall reinforcement stays on the existing perimeter. No new lane solids.
  const perimeter=outline(t);
  for(let i=0;i<2;i++){
@@ -489,7 +495,7 @@ function breachedBay(f:Fabricator,t:RoomPlan){
  }
  // The collision polygon is solid cover, never an exposed opening to space.
  const seal=f.paint.clone();seal.name='room8-hull-seal';seal.color.setHex(0x4f6165);
- for(const hole of t.voids??[]){const b=bounds(hole);
+ for(const hole of room8OrganicVoids(t)){const b=bounds(hole);
   f.slab(hole,-.04,.28,seal);
   // Overlapping repair welds and captive bolts read as a closed steel patch.
   for(let z=b.z0+.25;z<b.z1;z+=.78)for(let x=b.x0+.25;x<b.x1;x+=.3){
@@ -637,7 +643,8 @@ function reactorFloor(f:Fabricator,t:RoomPlan){
   for(let i=0;i<3;i++){const a=i*TAU/3+.3,dx=Math.cos(a),dz=Math.sin(a);for(const offset of [-.2,.2])f.pipe(v(b.x+dx*radius*.75,-1,b.z+dz*radius*.75+offset),v(b.x+dx*radius*1.1,-2.8,b.z+dz*radius*1.1+offset),.18,f.paint);}
  }
  const b=bounds(outline(t));f.sign('CORE / MANUAL OVERLOAD',b.x,1.36,b.z0+.35,7);
- equipment(f,t,'reactor');
+ // Live Overload machinery is fitted by act4Architecture; preserve legacy fallback.
+ if((t.boundary?.length??0)<=8)equipment(f,t,'reactor');
 }
 /** Coherent equipment assemblies inside exact collision footprints; no arbitrary object stretching. */
 function equipment(f:Fabricator,t:RoomPlan,kind:'cryo'|'cargo'|'reactor'){
@@ -679,9 +686,14 @@ export function authoredRoom(id:string,t:RoomPlan):T.Group|null{
  if(!(AUTHORED_ROOMS as readonly string[]).includes(id))return null;
  const f=new Fabricator();f.root.name=`authored-${id}`;
  const deckPlan=id==='passenger-vault'?{...t,voids:[]}:t;
- f.add(new T.ExtrudeGeometry(roomDeckShape(deckPlan),{depth:.44,steps:1,bevelEnabled:false}),f.deck,v(0,-.46,0),new T.Euler(-Math.PI/2,0,0));
+ f.add(shipDeckGeometry(deckPlan,.44,-.02),f.deck);
+ f.root.userData.templateGeometry=t;
  if(id==='awakening-bay')awakeningEnvelope(f,t);else if(id!=='passenger-vault')edgeArchitecture(f,t,id==='breached-loading-bay');
- if(id!=='passenger-vault')deckServices(f,t);
+ if(id!=='passenger-vault'&&(t.boundary?.length??0)<=8)deckServices(f,t);
  if(id==='awakening-bay')awakeningBay(f,t);else if(id==='passenger-vault')passengerVault(f,t);else if(id==='breached-loading-bay')breachedBay(f,t);else reactorFloor(f,t);
- return f.finish();
+ const root=f.finish();
+ if(id==='breached-loading-bay')root.add(room8RepairArchitecture(t));
+ const act1=act1ShipPresentation(id,t);if(act1)root.add(act1);
+ if(id==='overload-floor'&&(t.boundary?.length??0)>8){const act4=act4Architecture(id,t);if(act4)root.add(act4);}
+ return root;
 }

@@ -77,7 +77,7 @@ export function act3ShipPresentation(id:string,t:RoomTemplate):T.Group|null {
   const equipment=new T.Group();equipment.name='act3-source-equipment';root.add(equipment);
   for(const [i,r]of t.obstacles.entries())equipment.add(environmentObstacle('engineering',{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},i,id));
   safetyInterlockArchitecture(root,t.width/32,t.height/32,t);
-  fixture(370,176,0,.40,6.3,0xb8d8dd,.92);fixture(910,176,0,.35,5.2,0xb0bfbe,.12);fixture(640,824,Math.PI,.35,5.7,0xc9ad82,.38);fixture(512,370,-Math.PI/2,.30,4.5,0xb2d5d7,.46,.84);
+  fixture(370,176,0,.40,6.3,0xb8d8dd,.92);fixture(910,176,0,.35,5.2,0xb0bfbe,.12);fixture(640,824,Math.PI,.35,5.7,0xc9ad82,.38);fixture(528,370,-Math.PI/2,.30,4.5,0xb2d5d7,.46,.84);
  }else if(id==='coolant-plant'){
   for(const [i,r]of t.obstacles.entries()){
    const x=r.x+r.width/2,z=r.y+r.height/2,w=r.width-16,d=r.height-16;
@@ -123,7 +123,7 @@ export function act3ShipPresentation(id:string,t:RoomTemplate):T.Group|null {
  }
  for(const [m,parts]of batches){
   const merged=mergeGeometries(parts,false)!;parts.forEach(p=>p.dispose());merged.userData.environmentUV=true;
-  const mesh=new T.Mesh(merged,m);mesh.name=`act3-batch-${m.name}`;mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);
+  const mesh=new T.Mesh(merged,m);mesh.name=`act3-batch-${m.name}`;mesh.userData.bakedEnvironment=true;mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);
  }
  // Unused room-private finishes still have one disposal owner.
  for(const m of [steel,edge,dark,paint,lamp,resin])if(!batches.has(m))m.dispose();

@@ -1,4 +1,4 @@
-import {SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
+import {SHIP_ARCHITECTURE_PLANS,SHIP_ARCHITECTURE_LAYOUTS} from '../../game/roguelike/shipArchitectureLayouts';
 import * as T from 'three';
 import type {RoomTemplate} from '../../game/roguelike/types';
 
@@ -60,20 +60,49 @@ export function addKitFloorAftermath(t:RoomTemplate,id:string,reservations:reado
    for(const y of [344,408,472,536])stroke(476/32,y/32,492/32,y/32,.055,0x899889,'scanner-alignment-ticks');
    return {idea:'Inspection booth thresholds and scanner alignment',site:[450/32,440/32],admitted};
   }
-  for(const r of reservations){
-   const x=(r.x+r.width/2)/32,z=(r.y+r.height/2)/32;
-   const front=r.y<440?(r.y+r.height)/32+.2:r.y/32-.2;
-   if(id==='crew-checkpoint'){
-    const gx=r.x/32-.35;
-    for(let n=0;n<3;n++)stroke(gx-.25,z-.5+n*.5,gx+.25,z-.5+n*.5,.06,0x92907b,'inspection-width-marks');
-    stroke(gx,z-.8,gx,z+.8,.045,0x576a70,'screening-plane');
-   }else{
-    const end=(r.y+r.height)/32+.12;
-    stroke(x-r.width/64,end,x+r.width/64,end,.07,0x68797b,'rack-service-threshold');
+  if(id==='relay-racks'){
+   for(const r of reservations){const end=(r.y+r.height)/32+.12,x=(r.x+r.width/2)/32;
+    stroke(r.x/32,end,(r.x+r.width)/32,end,.07,0x68797b,'rack-service-threshold');
     for(const side of [-1,1])stroke(x+side*.25,end,x+side*.25,end+.55,.04,0x34494f,'cooling-access-wear');
    }
+   return {idea:'Rack service thresholds follow the live banks',site:[t.spawn.x/32,t.spawn.y/32],admitted};
   }
-  return {idea:'Wear follows actual cabin, inspection and rack thresholds',site:[t.spawn.x/32,t.spawn.y/32],admitted};
+  const plan=SHIP_ARCHITECTURE_PLANS[id as keyof typeof SHIP_ARCHITECTURE_PLANS];
+  // Other architecture owns its own finish. A single functional annotation
+  // belongs to an actual named threshold, never one patch per obstacle.
+  const functionByRoom:Record<string,{gate:number;kind:string;color:number;paired?:boolean}>={
+   'awakening-bay':{gate:0,kind:'release-hatch-sill',color:0x7c8b86},
+   'passenger-vault':{gate:1,kind:'medical-clean-zone',color:0x637b7c,paired:true},
+   'communal-atrium':{gate:5,kind:'conservatory-finish-joint',color:0x696657},
+   'armory':{gate:0,kind:'ammunition-issue-boundary',color:0x97856a,paired:true},
+   'freight-hold':{gate:1,kind:'loading-clearance-stop',color:0x827a5c,paired:true},
+   'breached-loading-bay':{gate:0,kind:'repair-clearance-sill',color:0x877d69},
+   'transmission-chamber':{gate:0,kind:'uplink-operator-sill',color:0x778589},
+   'diagnostic-gallery':{gate:0,kind:'diagnostic-clean-boundary',color:0x70807e},
+   'safety-interlock-station':{gate:1,kind:'interlock-release-line',color:0x8a8669,paired:true},
+   'coolant-plant':{gate:0,kind:'pump-service-drain',color:0x3d625c},
+   'service-shaft-landing':{gate:0,kind:'lost-deck-access-stop',color:0x8a8060,paired:true},
+   'infested-workshop':{gate:0,kind:'engulfed-service-joint',color:0x52604d},
+   'swarm-junction':{gate:1,kind:'distorted-transit-sill',color:0x575951},
+   'shielding-gate':{gate:0,kind:'field-calibration-baseline',color:0x737f87,paired:true},
+   'containment-annulus':{gate:0,kind:'containment-airlock-sill',color:0x8a936f,paired:true},
+   'manual-control-chamber':{gate:0,kind:'manual-console-access',color:0x8e775f},
+   'overload-floor':{gate:0,kind:'core-control-heat-stop',color:0xa17b5e,paired:true},
+  };
+  const fn=functionByRoom[id],g=plan&&fn?plan.openings[fn.gate]:undefined;
+  if(g){
+   const dx=g.to.x-g.from.x,dy=g.to.y-g.from.y,len=Math.hypot(dx,dy),nx=-dy/len,nz=dx/len;
+   // A bounded door annotation: split sill, two jamb ends and alignment
+   // references share the real opening. No detached mat, scatter or bar recipe.
+   const ux=dx/len,uz=dy/len,cx=(g.from.x+g.to.x)/2,cz=(g.from.y+g.to.y)/2,half=Math.min(48,len/2-12);
+   for(const side of [-1,1]){
+    stroke((cx+ux*side*half)/32,(cz+uz*side*half)/32,(cx+ux*side*6)/32,(cz+uz*side*6)/32,.035,fn.color,fn.kind);
+    const x=cx+ux*side*half,z=cz+uz*side*half;
+    stroke((x-nx*5)/32,(z-nz*5)/32,(x+nx*5)/32,(z+nz*5)/32,.035,fn.color,fn.kind+'-jamb');
+    stroke((cx+ux*side*16+nx*8)/32,(cz+uz*side*16+nz*8)/32,(cx+ux*side*16+nx*14)/32,(cz+uz*side*16+nz*14)/32,.025,fn.color,fn.kind+'-alignment');
+   }
+  }
+  return {idea:fn?.kind??'Architecture owns its working floor',site:[t.spawn.x/32,t.spawn.y/32],admitted};
  }
  const w=t.width/32,h=t.height/32,r=reservations[0];
  const desired:Point=r?[(r.x+r.width*.5)/32,(r.y+r.height)/32+2.1]:[w*.5,h*.5];
