@@ -18,13 +18,13 @@ const directory=resolve('artifacts/nextgen',options.prefix+'-campaigns');
 assert(!existsSync(directory),'Keep every prior dispatch, including failures');
 for(const rig of rigs)assert(!existsSync(resolve('artifacts/nextgen/playtest',options.prefix+'-'+rig)),'Refuse to overwrite native raw run '+rig);
 await mkdir(directory,{recursive:true});
-const dispatch={source,dist,seed:1729,scope:'Four ordinary unassisted native20-room attempts, every fixed tick rendered, one browser at a time. Natural deaths remain attempts; timings are not hardware FPS.',runs:[]};
+const dispatch={source,dist,seed:1729,scope:'Four ordinary unassisted native20-room attempts, every fixed tick rendered, one browser at a time. All rigs record Swarm fighting if reached; Arc also records the three standard rooms. Natural deaths remain attempts; timings are not hardware FPS.',runs:[]};
 const save=()=>writeFile(resolve(directory,'dispatch.json'),JSON.stringify(dispatch,null,2)+'\n');
 await save();
 for(const rig of rigs){
  const label=options.prefix+'-'+rig,logPath=resolve(directory,rig+'.log');
  const args=['run','playtest','--','--rig='+rig,'--seed=1729','--label='+label,'--dist-dir='+dist];
- if(rig==='arc')args.push('--storyboard-room=residential-gallery,crew-checkpoint,relay-racks,swarm-junction');
+ args.push('--storyboard-room='+(rig==='arc'?'residential-gallery,crew-checkpoint,relay-racks,swarm-junction':'swarm-junction'));
  const run={rig,label,argv:['npm',...args],logPath,status:'running'};
  dispatch.runs.push(run);await save();console.log('Native campaign started: '+rig);
  const log=createWriteStream(logPath,{flags:'wx'});
