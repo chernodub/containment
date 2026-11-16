@@ -47,12 +47,13 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | **Wave 11** | running | model routing by owner: Opus only for critical models, Astra for decor and reviews, Sol (low effort) for the rest |
 | K11 original creature families "Lantern Brood" — Opus, modelling only (`streams/K11-original-creatures.md`) | merged | five castes + elites + two boss-class, 7.6–17k tris; Brute, Spitter, Carrier clearly better than before; Crawler/Stalker leaner (Stalker weaker than the old one — follow-up candidate) |
 | K12 hero-quality marine, four rigs, portraits — Opus, modelling only (`streams/K12-hero-closeup.md`) | merged | 24k tris, one 2k set; back view lightened after lead review |
-| I11 model integration from the two handoff notes (deformation strips, lantern materials, weight, credits) — Sol | running | |
-| KA12 title key art and ending around the new hero, second-generation weapons — Astra | running | |
+| I11 model integration (deformation, lantern feedback, support-hand grip, meshopt packing 45.9 → 37.4 MB, credits) — Sol | merged | Unvanquished marine/creature meshes no longer ship; open modelling requests: thin Stalker limbs, tasset overlap, Pyro hoses |
+| KA12 title key art (torn breach, Lantern Brood silhouettes), ending image, second-generation weapons — Astra | merged | title accepted after a second pass with lead direction |
 | P11 one hero set piece per room, kit craft pass, infestation set — Astra (`streams/P11-set-pieces.md`) | running (restarted) | first run stopped after one model |
 | G12 review gallery `final6` — Sol | running (retargeted to the build with new models) | first run stopped after 13 screens |
 | D11 difficulty modes, onboarding hints, "how you died" — Sol | running (restarted) | Story 57.5% novice, Standard 42.5%; Veteran not yet tuned |
-| F11 per-pass GPU/CPU breakdown, then cost cuts — Sol | running (restarted) | was blocked by the lockfile |
+| F11 per-pass GPU/CPU breakdown tool and small cuts — Sol | merged | max 124 draws, zero combat compiles; frame budget cannot be certified on the loaded host; finding: marine textures ≈ 85 MiB GPU → T12 |
+| T12 texture right-sizing and KTX2 compression for actors/weapons — Sol | running | |
 
 Next (lead): R11 independent verdicts by Opus and Astra on `final6` (stills, motion strips, real-play storyboards); merge wave 11; I12 performance certification on a quiet machine; re-review.
 
