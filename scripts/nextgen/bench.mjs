@@ -212,6 +212,7 @@ try{
  }
  report.rooms=rooms;
  for(const room of (args.includes('--scan-only')?[]:rooms))for(const rig of rigs)for(const tier of tiers)for(let repeat=0;repeat<repeats;repeat++){
+  try {
   const name=`${room}-${rig}-${tier}-${repeat}`, before=host();console.log(`bench ${name}, load ${before.load.map(x=>x.toFixed(2)).join('/')}`);
   const profile=args.includes('--profile'),cdp=await page.context().newCDPSession(page);
   const audioContexts=new Map(),audioSamples=[];let audioError=null;
@@ -407,6 +408,7 @@ try{
    if(micro.simulation)assert(micro.simulation.unchanged,'Synthetic micro profile advanced simulation');
    console.table(micro.stages.map(stage=>({scenario:name,stage:stage.name,supported:stage.throughput.supported,throughputMsPerRepeat:stage.throughput.estimateMsPerRepeat??'unsupported',rSquared:stage.throughput.gpuFit?.rSquared??'unavailable',reasons:stage.unsupportedReason??stage.throughput.reasons.join(',')})));
   }
+  } catch(error) {if(!args.includes('--breakdown')&&!args.includes('--continue-on-error'))throw error;report.errors.push({room,rig,tier,repeat,message:String(error)});console.error('Trial failed; continuing matrix:',room,rig,tier,String(error));}
  }
  if(report.auditCosts){
   console.log('Cost audit columns are per-frame p50 / p95 / max counts; timings include probe overhead.');

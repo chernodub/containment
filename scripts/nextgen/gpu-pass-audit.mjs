@@ -126,19 +126,19 @@ export function installGpuPassAudit(configuration = {}) {
     try{return original.call(this,camera,scene,geometry,material,object,group);}
     finally{if(name&&name!=='shadows'){const after=renderer.info.render;count(name,target,Math.max(0,after.calls-before.calls),Math.max(0,after.triangles-before.triangles),(target?.width??gl.drawingBufferWidth)*(target?.height??gl.drawingBufferHeight));}}
   });
-  wrap(r, 'render', original => function (...parameters) {
+  // DepthRenderer resets Three's retained counters exactly once before each
+  // actual scene/post/HUD submission. Debug fixed stepping holds a raw render
+  // closure, so wrapping the public renderer root misses those submissions.
+  wrap(renderer.info, 'reset', original => function (...parameters) {
+    endDirect();
+    if (sampling && (queriedFrame || ++missedSelections >= 2)) { rotation++; missedSelections = 0; }
     poll();
     sampling = frame++ % cadence === 0 && stages.length > 0;
     selectedStage = sampling ? stages[rotation % stages.length] : undefined;
     queriedFrame = false;
     if (sampling) diagnostics.sampledFrames++;
-    try { return measure('frameTotal',null,()=>original.apply(this, parameters)); }
-    finally {
-      // Give intermittent shadow updates a second sampled frame of opposite
-      // parity; absent transient passes cannot stall the stage rotation.
-      if (sampling && (queriedFrame || ++missedSelections >= 2)) { rotation++; missedSelections = 0; }
-      sampling = false;
-    }
+    // Keep this selection alive through the HUD, until the next actual reset.
+    return original.apply(this, parameters);
   });
   wrap(renderer.shadowMap, 'render', original => function (lights, ...parameters) {
     if (!this.enabled || !(this.autoUpdate || this.needsUpdate) || !lights.length) return original.call(this, lights, ...parameters);
@@ -162,6 +162,8 @@ export function installGpuPassAudit(configuration = {}) {
     finally{endDirect();sceneScope=previous;}
   });
   wrap(r.post?.softDepth,'blit',original=>function(...parameters){endDirect();return measure('gasDepthSnapshot',this.target,()=>original.apply(this,parameters));});
+  // UI-independent GPU envelope: actor updates precede this submission; HUD geometry follows it.
+  wrap(r.post,'render',original=>function(...parameters){return measure('frameTotal',renderer.getRenderTarget(),()=>original.apply(this,parameters));});
   wrap(r.post, 'draw', original => function (material, target, ...parameters) {
     const resources = this.resources;
     let name = 'otherPost';
@@ -212,7 +214,7 @@ export function installGpuPassAudit(configuration = {}) {
     supported: !!extension, cadence, capacity, flush, mode: 'one rotating stage per sampled frame', diagnostics, poll,
     snapshot() {
       poll();
-      return { supported: !!extension, cadence, capacity, flush, mode: 'one rotating stage per sampled frame', stageOrder: [...stages], diagnostics: { ...diagnostics, pendingQueries: pending.length }, memory: memoryInventory(), passes: [...passes.values()].map(({frameGpu,invalidFrames,frames,...pass}) => ({ ...pass, samplesMs: [...frameGpu].filter(([id])=>!invalidFrames.has(id)&&!pending.some(entry=>entry.frame===id&&entry.pass.name===pass.name)).map(([,ms])=>ms), counts: [...frames].map(([frame,sample])=>({frame,...sample})), resolutions: pass.resolutions.map(size => ({ ...size })) })) };
+      return { auditVersion: 2, frameBoundary: 'renderer.info.reset: one actual render submission including fixed-step raw closures', actualRenderFrames: frame, supported: !!extension, cadence, capacity, flush, mode: 'one rotating stage per sampled actual render frame', stageOrder: [...stages], diagnostics: { ...diagnostics, pendingQueries: pending.length }, memory: memoryInventory(), passes: [...passes.values()].map(({frameGpu,invalidFrames,frames,...pass}) => ({ ...pass, samplesMs: [...frameGpu].filter(([id])=>!invalidFrames.has(id)&&!pending.some(entry=>entry.frame===id&&entry.pass.name===pass.name)).map(([,ms])=>ms), counts: [...frames].map(([frame,sample])=>({frame,...sample})), resolutions: pass.resolutions.map(size => ({ ...size })) })) };
     },
     dispose() {
       if (disposed) return;

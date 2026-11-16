@@ -59,8 +59,27 @@ const sampleStats = samples => {
   return {p50: sorted[Math.floor((sorted.length - 1) * .5)], p95: sorted[Math.ceil(sorted.length * .95) - 1]};
 };
 const passStats = pass => pass?.summaryMs ?? sampleStats(pass?.samplesMs);
-const meanCount = (run, pass, field) => run && pass?.counts && run.count > 0
-  ? pass.counts.reduce((sum, frame) => sum + (frame[field] ?? 0), 0) / run.count : null;
+const submissionCount = run => {
+  const passes = run?.gpuPassTimings?.passes ?? [];
+  const final = passes.find(pass => pass.name === 'finalAA');
+  const finalDraws = final?.counts?.reduce((sum, row) => sum + (row.draws ?? 0), 0) ?? 0;
+  if (finalDraws > 0) return finalDraws;
+  const maximumFrame = passes.reduce((maximum, pass) => (pass.counts ?? []).reduce((value, row) => Math.max(value, row.frame ?? 0), maximum), 0);
+  return maximumFrame || run?.count || null;
+};
+const legacyFillDerived = (run, pass, field) => field === 'targetPixels' &&
+  (run?.gpuPassTimings?.auditVersion ?? 1) < 2 &&
+  ['mainOpaque', 'transparentVFX'].includes(pass?.name);
+const meanCount = (run, pass, field) => {
+  const denominator = submissionCount(run);
+  if (!run || !pass?.counts || !(denominator > 0)) return null;
+  // Version 1 grouped several actual renders under one public-root frame and
+  // used max() for native footprints, irreversibly losing repeated coverage.
+  const source = legacyFillDerived(run, pass, field)
+    ? run.gpuPassTimings.passes.find(scope => scope.name === 'sceneColor') : pass;
+  if (!source?.counts) return null;
+  return source.counts.reduce((sum, row) => sum + (row[field] ?? 0), 0) / denominator;
+};
 const loadText = run => run ? `${run.before?.load?.map(value => number(value, 2)).join('/') ?? 'unavailable'} → ${run.after?.load?.map(value => number(value, 2)).join('/') ?? 'unavailable'} (${run.before?.cores ?? '?'} cores)` : 'unavailable';
 const lines = [
   '# F11 renderer breakdown comparison', '',
@@ -68,13 +87,17 @@ const lines = [
   `After: ${after.root}; source ${after.report?.sha ?? 'unavailable'}.`, '',
   'GPU timer queries measure device execution intervals and can include shared-device contention. CPU sampling is exclusive sampled wall duration subject to host scheduling, not uncontended subsystem execution time. These instrumented observations do not certify the hardware frame budget.', '',
   'GPU scopes are ranked by before p50 (after p50 when no before sample exists). Never sum independently sampled percentiles. sceneColor includes native opaque, transparent, shadow and depth-copy work; exclusive scopes overlap that inclusive scope. Composite physically combines ink/outline, lens and grade. Missing samples stay unavailable.', '',
-  'Draw/triangle/fill means below divide scope totals by all measured rendered frames, including frames where an intermittent scope did not execute. Fill means render-target footprint × named submissions, not actual fragment invocations or transparent overdraw. Memory is estimated texture payload, not driver allocation telemetry.', '',
+  'Draw/triangle/fill means below divide scope totals by actual render submissions counted by finalAA draws (one per shipping High/Low render), falling back to the maximum recorded frame ID and then observer count. This includes fixed-step refresh and RAF submissions, including frames where an intermittent scope did not execute. Fill means render-target footprint × named submissions, not actual fragment invocations or transparent overdraw. Memory is estimated texture payload, not driver allocation telemetry.', '',
 ];
 const comparisons = [];
 for (const scenario of keys) {
   const a = beforeRuns.get(scenario), b = afterRuns.get(scenario);
   lines.push(`## ${scenario}`, '');
   if (!a || !b) lines.push(`**${!a ? 'Before' : 'After'} run unavailable; this is not a completed before/after comparison.**`, '');
+  for (const [label, run] of [['before', a], ['after', b]]) if (run) {
+    lines.push(`${label} audit version: ${run.gpuPassTimings?.auditVersion ?? '1 (legacy)'}; denominator: ${submissionCount(run) ?? 'unavailable'} actual submissions.`, '');
+    if ((run.gpuPassTimings?.auditVersion ?? 1) < 2) lines.push('Legacy native opaque/transparent fill is derived from summed sceneColor footprints divided by finalAA submissions: the old max-per-group field lost repeated footprints. This estimate assumes each native scope exists in each submission; it cannot recover absent-scope coverage. Legacy GPU frame grouping and counts are retained in the raw input.', '');
+  }
   lines.push(`Host load (1/5/15 minute) before trial → after trial: baseline ${loadText(a)}; changed ${loadText(b)}.`, '',
     '| Observed metric | before → after |', '| --- | ---: |');
   for (const [label, field, statistic] of [
@@ -111,6 +134,7 @@ for (const scenario of keys) {
   const compact = run => run ? {
     name: run.name, room: run.room, rig: run.rig, tier: run.tier, repeat: run.repeat,
     hostBefore: run.before, hostAfter: run.after, summary: run.summary,
+    actualSubmissionDenominator: submissionCount(run), auditVersion: run.gpuPassTimings?.auditVersion ?? 1,
     programs: run.programs, cpuSelf: run.cpuSelf, attributionError: run.attributionError,
     activeSampleMs: run.activeSampleMs, cpuSubsystems: run.cpuSubsystems,
     memory: run.gpuPassTimings?.memory ?? null,
@@ -119,6 +143,7 @@ for (const scenario of keys) {
       samples: pass.samplesMs?.length ?? 0, resolutions: pass.resolutions,
       drawsPerFrame: meanCount(run, pass, 'draws'), trianglesPerFrame: meanCount(run, pass, 'triangles'),
       targetPixelsPerFrame: meanCount(run, pass, 'targetPixels'),
+      targetPixelsDerivedFromLegacySceneColor: legacyFillDerived(run, pass, 'targetPixels'),
     })),
   } : null;
   comparisons.push({scenario, before: compact(a), after: compact(b)});
