@@ -876,3 +876,15 @@ import {registerI11Scenarios} from './i11-scenarios.mjs';
 registerI11Scenarios(SCENARIOS);
 
 SCENARIOS.push(...U9_SCENARIOS);
+
+// K10 reuses the ordinary room/combat fixtures, changing only the selected native rig.
+for (const rig of ['breacher', 'cryo', 'pyro', 'arc']) {
+ for (const mood of ['calm', 'heavy']) {
+  const base = SCENARIOS.find(scenario => scenario.id === `combat-${mood}`);
+  SCENARIOS.push({...base, id: `k10-${mood}-${rig}`, setup: new Function('room', `return (async () => {
+   const d = window.__containmentDebug;
+   await d.gotoRoom(room, {rig: '${rig}'});
+   ${mood === 'calm' ? 'd.invulnerable(true);d.measureLuminance=true;d.refresh();' : ''}
+  })();`)});
+ }
+}

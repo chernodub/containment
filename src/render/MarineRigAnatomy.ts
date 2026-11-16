@@ -1,4 +1,32 @@
+import * as T from 'three';
 import type {ActorPart} from './ActorIdentity';
+
+const ORIGINAL_RIGS = ['breacher', 'cryo', 'pyro', 'arc'] as const;
+
+/** Select the authored, skinned rig meshes without constructing presentation geometry. */
+export function originalMarineRig(root: T.Object3D): {setRig(rig: string): void} | undefined {
+  let original = false;
+  const variants = new Map<string, T.Object3D[]>();
+  root.traverse(object => {
+    const name = String(object.userData.name ?? object.name);
+    if (name === 'k10-body' || name.startsWith('k10-body_')) original = true;
+    const match = /^k10-rig-(breacher|cryo|pyro|arc)(?:_|$)/.exec(name);
+    if (!match) return;
+    const nodes = variants.get(match[1]) ?? [];
+    nodes.push(object);
+    variants.set(match[1], nodes);
+  });
+  if (!original) return;
+  let selected = '';
+  const setRig = (rig: string) => {
+    const next = ORIGINAL_RIGS.includes(rig as typeof ORIGINAL_RIGS[number]) ? rig : 'breacher';
+    if (selected === next) return;
+    selected = next;
+    for (const [name, nodes] of variants) for (const node of nodes) node.visible = name === next;
+  };
+  setRig('breacher');
+  return {setRig};
+}
 
 /** Four restrained silhouettes fit below the existing helmet and inside the suit span. */
 export function marineRigAnatomy(): ActorPart[] {
