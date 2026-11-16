@@ -184,8 +184,8 @@ export class EnemyMotion {
         recovery*.12*motion,-Math.sin(direction)*bend-recovery*.13*motion);
       // Compression and release stay deliberately smaller than the authored
       // poses; this layer must survive replacement meshes on the same rig.
-      this.body.scale.set(1+(brace*p.squashX*.90+strike*.10)*motion,
-        1+(brace*p.squashY*.90-strike*.10-contact*.06)*motion,
+      this.body.scale.set(1+(brace*(this.family==='brute'?.18:p.squashX*.90)+strike*.10)*motion,
+        1+(brace*(this.family==='brute'?-.10:p.squashY*.90)-strike*.10-contact*.06)*motion,
         1+(brace*p.squashZ*.90+strike*.16)*motion);
       this.body.position.y-=contact*.045/p.weight;
       this.body.position.y-=recovery*.025*motion;
