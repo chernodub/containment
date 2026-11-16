@@ -453,7 +453,7 @@ function passengerVault(room:Fabricator,t:RoomPlan){
  wall(34,12,440,12,24,800);wall(1166,12,440,12,24,800);}
 }
 function breachedBay(f:Fabricator,t:RoomPlan){
- // Stage4: connected growth, torn repair edges and supported freight assemblies.
+ // R11: torn pressure plating, exposed frames and supported freight assemblies.
  // All apron relief is flush. Raised details remain inside existing solid cover.
  f.deck.color.setHex(0x354246);
  f.chitin.color.setHex(0x293c30);f.ribs.color.setHex(0x788167);
@@ -510,37 +510,24 @@ function breachedBay(f:Fabricator,t:RoomPlan){
     f.pipe(p,p.clone().setY(.3),.045,f.bolts);
    }
   }
-  const growth=f.chitin.clone();growth.name='room8-seam-growth';growth.color.setHex(0x46523a);
-  // One continuous rooted tissue sheet. Lobes and branching folds are height
-  // variations in the same surface, never plates carried on cylinder supports.
-  growth.metalness=.08;growth.roughness=.93;
+  // Pressure skin has torn along rigid frames. Angular thick plates replace
+  // the former smooth tissue sheet, which read as draped fabric in R11.
   const axis=v(.81,0,.586).normalize(),across=v(-axis.z,0,axis.x),origin=v(b.x,0,b.z);
-  const gaussian=(x:number)=>Math.exp(-(x*x));
-  const positions:number[]=[],uvs:number[]=[],indices:number[]=[],longSteps=112,crossSteps=48;
-  for(let i=0;i<=longSteps;i++){
-   const s=i/longSteps,along=-6.5+s*12.4,envelope=Math.sin(Math.PI*s)**.55;
-   const drift=.25*Math.sin(s*11)-.13;
-   // Unequal fingers spread sideways into the weld bed. A narrow living seam
-   // joins the large colonies without making a regular capsule outline.
-   const left=(.58+1.1*gaussian((s-.27)/.12)+.7*gaussian((s-.69)/.095))*envelope;
-   const right=(.52+1.25*gaussian((s-.48)/.105)+.86*gaussian((s-.82)/.09))*envelope;
-   for(let j=0;j<=crossSteps;j++){
-    const q=j/crossSteps,w=-left+(left+right)*q;
-    const foot=Math.sin(Math.PI*q),end=Math.sin(Math.PI*s);
-    const center=.17*Math.sin(s*17),ridge=gaussian((w-center)/.52);
-    const colonies=.66+1.15*gaussian((s-.3)/.10)+.83*gaussian((s-.64)/.075);
-    const folds=.13*(1+Math.sin(s*61+w*6+Math.sin(s*19)))*Math.exp(-Math.abs(w)*.75);
-    const height=.25+end**.6*foot**.72*(.18+colonies*ridge+folds);
-    const p=origin.clone().addScaledVector(axis,along).addScaledVector(across,w+drift).setY(height);
-    positions.push(p.x,p.y,p.z);uvs.push(s,q);
+  for(const [along,width,height]of [[-3.4,1.35,.72],[-1.4,1.1,.93],[1.1,1.55,.57],[3.3,.9,.84]]){
+   const center=origin.clone().addScaledVector(axis,along);
+   // Three members expose the cut I-section; each frame ends inside the seal.
+   for(const side of [-1,1]){
+    const base=center.clone().addScaledVector(across,side*width);
+    if(!contains(hole,base.x,base.z))continue;
+    const tip=base.clone().addScaledVector(axis,side*.16).setY(height);
+    for(const offset of [-.075,.075]){
+     const shift=across.clone().multiplyScalar(offset);
+     f.pipe(base.clone().setY(.27).add(shift),tip.clone().add(shift),.032,f.edge);
+    }
+    f.pipe(base.clone().setY(.27),tip,.055,f.dark);
+    f.box(tip.x,tip.y,tip.z,.21,.055,.16,f.edge,.005);
    }
   }
-  for(let i=0;i<longSteps;i++)for(let j=0;j<crossSteps;j++){
-   const a=i*(crossSteps+1)+j,b=a+crossSteps+1;
-   indices.push(a,a+1,b,a+1,b+1,b);
-  }
-  const tissue=new T.BufferGeometry();tissue.setAttribute('position',new T.Float32BufferAttribute(positions,3));
-  tissue.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));tissue.setIndex(indices);tissue.computeVertexNormals();f.add(tissue,growth);
   const torn=f.edge.clone();torn.name='room8-torn-metal';torn.color.setHex(0x687773);torn.roughness=.88;
   // Six unequal folded remnants, each with an embedded root and closed thickness.
   const remnants=[[0,.27,1.75,.95,.62],[1,.62,1.15,.74,1.12],[2,.3,.82,.68,.43],[3,.24,1.4,1.05,.9],[3,.72,.92,.78,.52],[4,.55,1.65,.87,1.22]];
@@ -548,14 +535,19 @@ function breachedBay(f:Fabricator,t:RoomPlan){
    const a=hole[edge],q=hole[(edge+1)%hole.length],tangent=v(q.x-a.x,0,q.y-a.y).normalize();
    const p=v((a.x+(q.x-a.x)*s)/U,.25,(a.y+(q.y-a.y)*s)/U);
    const inward=v(b.x-p.x,0,b.z-p.z).normalize();p.addScaledVector(inward,.18);
-   const profile=[[-.5,0,0],[.5,0,0],[.43,.5,.88],[.24,.9,1],[-.19,.78,.82],[-.46,.42,.74]];
+   const skew=edge%2===0?1:-1;
+   const profile=[[-.5,0,0],[.5,0,0],[.46,.46,.62],[.28+skew*.08,.83,1],[-.06,.67,.74],[-.42,.37,.56]];
    const top=profile.map(([u,d,h])=>p.clone().addScaledVector(tangent,u*width).addScaledVector(inward,d*depth).add(v(0,h*rise,0)));
    const bottom=top.map(p=>p.clone().add(v(0,-.12,0))),points=[...top,...bottom];
    const faces=[[0,1,2],[0,2,5],[5,2,3],[5,3,4],[6,8,7],[6,11,8],[11,9,8],[11,10,9]];
    for(let j=0;j<6;j++){const k=(j+1)%6;faces.push([j,j+6,k],[k,j+6,k+6]);}
    const positions:number[]=[];for(const face of faces)for(const i of [...face].reverse()){const p=points[i];positions.push(p.x,p.y,p.z);}
    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setAttribute('uv',new T.Float32BufferAttribute(new Array(positions.length/3*2).fill(0),2));g.computeVertexNormals();f.add(g,torn);
-   for(const j of [2,3,4])f.pipe(top[j],top[j+1],.025,f.rust);
+   // Bright cut thickness and dark seam stop at the torn edge, no soft folds.
+   for(const j of [2,3,4])f.pipe(top[j],top[j+1],.018,f.edge);
+   for(const u of [-.32,0,.32]){const rivet=p.clone().addScaledVector(tangent,u*width).addScaledVector(inward,.08);f.pipe(rivet.clone().setY(.26),rivet.clone().setY(.31),.032,f.bolts);}
+   const brace=p.clone().addScaledVector(inward,depth*.35);
+   f.pipe(p.clone().setY(.29),brace.setY(.29+rise*.38),.045,f.dark);
   }
   for(let i=0;i<hole.length;i++){const a=hole[i],q=hole[(i+1)%hole.length],x=(a.x+q.x)/2/U,z=(a.y+q.y)/2/U,angle=-Math.atan2(q.y-a.y,q.x-a.x);
    const tangent=v(Math.cos(-angle),0,Math.sin(-angle)),inward=v(b.x-x,0,b.z-z).normalize();
