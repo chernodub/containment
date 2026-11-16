@@ -205,6 +205,16 @@ export class DeathRagdolls {
   const authoredDt=Math.min(dt,.05);
   for(const [id,death] of this.authored){
     death.age+=authoredDt;death.model.poseDeath?.(death.cue,Math.min(1,death.age/death.duration));death.model.setDeathAge?.(death.age);
+    // Carry the accepted shot direction through the authored collapse, before
+    // handing the settled pose to physics. A strong small-body kill travels
+    // farther than a rifle drop; heavy castes retain their planted mass.
+    const mass=death.family==='brute'?3.5:death.family==='carrier'?1.8:1;
+    const speed=Math.hypot(death.velocity.x,death.velocity.z);
+    const momentum=Math.min(.22,4/Math.max(.001,speed))/mass;
+    const travel=(Math.exp(-Math.max(0,death.age-authoredDt)*7)-Math.exp(-death.age*7))/7*momentum;
+    const dx=death.velocity.x*travel,dz=death.velocity.z*travel;
+    death.model.root.position.x+=dx;death.model.root.position.z+=dz;
+    death.anchor.x+=dx;death.anchor.z+=dz;
     death.model.root.updateMatrixWorld(true);
     if(death.age>=death.duration){this.authored.delete(id);this.add(id,death.model,death.family,death.velocity,death.cue,death.hold,true);}
   }
