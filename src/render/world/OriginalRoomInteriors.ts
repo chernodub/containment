@@ -30,6 +30,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
     if(id==='infested-workshop'){
         overhead('industrial','workshop-tool-bridge',300,640,5);
         overhead('industrial','workshop-tool-bridge',780,620,5);
+        overhead('industrial','workshop-tool-bridge',650,960,5);
     }
     if(id==='swarm-junction')overhead('industrial','airway-exchanger',750,900,5);
     const hull = t.boundary ?? [{ x: 0, y: 0 }, { x: t.width, y: 0 }, { x: t.width, y: t.height }, { x: 0, y: t.height }];
@@ -95,7 +96,7 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             if (!active)
                 return;
             const instances = instancesFor(t), packs = [...new Set(instances.map(i => i.pack))];
-            const results = await Promise.allSettled([loadDeckSurfaces(world, t, () => active), ...packs.map(async (pack) => {
+            const results = await Promise.allSettled([loadDeckSurfaces(world, t, () => active, dispose => restores.push(dispose)), ...packs.map(async (pack) => {
                 const source = await acquireOriginalShipKit(pack, controller.signal);
                 if (!active) {
                     retireRoomModels(source);

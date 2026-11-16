@@ -19,7 +19,7 @@ export const ACT2_INTERIOR_PROFILES: Record<string, InteriorProfile> = {
     landmark: 'Open service shaft, docking balconies and local lift console',
   },
   'infested-workshop': {
-    kind: 'workshop', deck: 0x4d424e, zone: 0x6d5967, trim: 0xabc3b0, key: 0xb6ca78,
+    kind: 'workshop', deck: 0x4f4a42, zone: 0x6b6856, trim: 0xabc3b0, key: 0xb6ca78,
     landmark: 'Lathe and wall gantry workbays consumed along their service seams',
   },
   'shielding-gate': {
