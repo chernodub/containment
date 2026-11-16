@@ -109,7 +109,7 @@ export function act3ShipPresentation(id:string,t:RoomTemplate):T.Group|null {
  }else if(id==='infested-workshop'){
   const equipment=new T.Group();equipment.name='act3-source-equipment';root.add(equipment);
   for(const [i,r]of t.obstacles.entries()){
-   if(i===1||i===2)continue; // P11 low repair bench and milling machine own these solids.
+   if(i===1||i===4)continue; // P11 low repair bench and north-east milling machine own these solids.
    const source=environmentObstacle('infested',{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},i,id);
    // Foreground workbench and stock do not form a tall actor-hiding wall.
    if(i===1||i===3){const bounds=new T.Box3().setFromObject(source);source.scale.y=Math.min(1,.90/(bounds.max.y||1));}

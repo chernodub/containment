@@ -1,7 +1,7 @@
 import * as T from 'three';
 import type { OriginalKitInstance } from './OriginalShipKitAssets';
 
-/** Sculptural growth stays on existing solid machinery/duct banks, never the fight floor. */
+/** Sculptural growth stays on solid machinery/duct banks, outside the fight circle. */
 export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
   const result: OriginalKitInstance[] = [];
   const add = (asset: string, x: number, z: number, scale: number, y = 0, angle = 0) => result.push({
@@ -11,7 +11,8 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     purpose: 'P11 / living machinery / ' + asset, cutaway: true,
   });
   if (id === 'infested-workshop') {
-    add('engulfed-milling-machine', 1200, 340, 1.8, 0, Math.PI / 2);
+    add('engulfed-milling-machine', 820, 350, 1);
+    result[result.length - 1].cutaway = false; // Grounded north service island, not overhead.
     add('engulfed-repair-bench', 250, 900, .85);
     add('root-saddle', 350, 930, 1);
     add('egg-clutch', 190, 850, 1);
