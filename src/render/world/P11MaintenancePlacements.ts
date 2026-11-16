@@ -14,7 +14,8 @@ export function p11MaintenancePlacements(id: string): OriginalKitInstance[] {
   // Paired emitters occupy x385..535,z281..326 of the existing west
   // shield solid (360..560,80..340), within view of the scanner floor.
   if (id === 'shielding-gate') add('shield-field-emitter', 460, 300, 1);
-  // Mechanical containment hardware sits on the retained sealed core roof.
-  if (id === 'containment-annulus') add('containment-ring-cradle', 800, 520, 1.5, 1.2);
+  // West-facing service ring sits fully on the sealed core roof:
+  // x565.5..734.5,z435.5..607.2, clear of its chamfered corners.
+  if (id === 'containment-annulus') add('containment-ring-cradle', 650, 520, 1.1, 1.2);
   return result;
 }
