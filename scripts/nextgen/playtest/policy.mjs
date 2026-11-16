@@ -250,7 +250,7 @@ export function routeOptions(actions) {
 
 /** Human input assumptions, in milliseconds/degrees unless named otherwise. */
 export const HUMAN_PROFILES = Object.freeze({
-  novice: Object.freeze({reactionMs:360,jitterMs:100,missChance:.24,missPerThreat:.10,aimDegrees:9,trackingMs:300,inputMs:260,movementMs:650,spacingError:90,fixationChance:.28,crowdDashTargets:4}),
+  novice: Object.freeze({reactionMs:300,jitterMs:90,missChance:.20,missPerThreat:.09,aimDegrees:7,trackingMs:200,inputMs:200,movementMs:500,spacingError:80,fixationChance:.20,crowdDashTargets:4}),
   competent: Object.freeze({reactionMs:260,jitterMs:70,missChance:.10,missPerThreat:.07,aimDegrees:4,trackingMs:170,inputMs:160,movementMs:400,spacingError:55,fixationChance:.12,crowdDashTargets:3}),
   expert: Object.freeze({reactionMs:180,jitterMs:40,missChance:.025,missPerThreat:.025,aimDegrees:1.5,trackingMs:80,inputMs:120,movementMs:200,spacingError:25,fixationChance:.025,crowdDashTargets:2}),
 });

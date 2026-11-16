@@ -41,12 +41,12 @@ export const MELEE_ATTACKS: Readonly<Record<StandardEnemyId, MeleeAttackProfile>
   carrier: profile(660, 120, 500, 46, 'cone', 70, 50 * Math.PI / 180, 0, true, 1100, 18),
 });
 
-export const ELITE_MELEE_WINDUP_SCALE = .9;
+export const ELITE_MELEE_WINDUP_SCALE = .95;
 export const ELITE_MELEE_RECOVERY_SCALE = .85;
 export const MELEE_START_STAGGER_MS = 200;
-export const ELITE_MELEE_DAMAGE_SCALE = 1.25;
+export const ELITE_MELEE_DAMAGE_SCALE = 1.15;
 
-/** Authored damage does not compound with depth scaling. Elites/champions gain 25%. */
+/** Authored damage does not compound with depth scaling. Elites/champions gain 15%. */
 export function calculateMeleeDamage(type: StandardEnemyId, elite = false): number {
   return MELEE_ATTACKS[type].damage * (elite ? ELITE_MELEE_DAMAGE_SCALE : 1);
 }

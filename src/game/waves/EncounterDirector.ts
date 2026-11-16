@@ -36,7 +36,7 @@ export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
   if (combat && breachIds.length === 0) throw new Error('Combat encounters need at least one breach.');
   const story=node.id.includes(':v3-'),tuning=story&&I5_ENCOUNTER_TUNING_ENABLED,holdout=story&&(node.depth===9||node.depth===19);
   const guardian=progressionFor(node).guardianKind;
-  const extraSpawns=tuning?(node.depth===0?12:node.depth===1?4:node.depth===2?10:node.depth<5?6:node.depth>=10?8:node.depth>=2&&node.kind==='combat'&&!guardian?2:0):0;
+  const extraSpawns=tuning?(node.depth===0?16:node.depth===1?4:node.depth===2?10:node.depth<5?6:node.depth>=10?16:node.depth>=2&&node.kind==='combat'&&!guardian?2:0):0;
   // L8 measured these four authored approaches after geometry-first trials.
   // Keep those additional requests while B10 applies its cadence to the whole wave.
   const architectureSpawns=tuning&&['transmission-chamber','diagnostic-gallery','safety-interlock-station','shielding-gate'].includes(node.templateId)?2:0;
@@ -59,12 +59,18 @@ export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
     : node.depth < 8 ? ['crawler','crawler','spitter','stalker','carrier']
     : ['crawler', 'crawler', 'brute', 'spitter', 'spitter', 'stalker', 'carrier'];
   const interval = Math.max(430,1050-node.depth*48-(node.kind==='elite'?120:0));
-  const eliteChance=tuning&&node.depth>=10?.22+(node.depth-10)*.008:.14+(node.depth-5)*.018;
+  const eliteChance=tuning&&node.depth>=10?.60+(node.depth-10)*.01:.14+(node.depth-5)*.018;
   // Later four-body pulses leave a readable reset between arrivals. Pressure
   // comes from mixed angles and sustained waves, rather than an elite firing wall.
+  let openingBrutes = 0;
+  const scheduledFamily = (index: number): StandardEnemyId => {
+    const family = index===0&&guardian ? guardian==='matron'?'carrier':'brute' : node.kind==='elite'&&index===0?'brute':pool[Math.floor(random()*pool.length)];
+    if (tuning&&node.depth===0&&family==='brute'&&++openingBrutes>2) return 'crawler';
+    return family;
+  };
   const schedule = Array.from({ length: totalSpawns }, (_, index): EncounterSpawn => Object.freeze({
-    type: 'spawn-request', spawnId: `${node.id}:spawn-${index}`, atMs: story ? 650+(holdout?index*900:tuning?node.depth<5?Math.floor(index/6)*3000+(index%6)*300:Math.floor(index/4)*4000+(index%4)*350:Math.floor(index/6)*1100+(index%6)*100) : 650 + index * interval + Math.floor(index/8)*1800, wave: node.depth + 1,
-    enemyId: index===0&&guardian ? guardian==='matron'?'carrier':'brute' : node.kind==='elite'&&index===0?'brute':pool[Math.floor(random()*pool.length)],
+    type: 'spawn-request', spawnId: `${node.id}:spawn-${index}`, atMs: story ? 650+(holdout?index*(node.depth===9?1500:900):tuning?node.depth<5?Math.floor(index/6)*3000+(index%6)*300:Math.floor(index/4)*4000+(index%4)*350:Math.floor(index/6)*1100+(index%6)*100) : 650 + index * interval + Math.floor(index/8)*1800, wave: node.depth + 1,
+    enemyId: scheduledFamily(index),
     elite: tuning ? node.kind==='elite' ? index===0||random()<(node.depth>=10?eliteChance:.10+node.depth*.008) : node.depth>=5&&node.depth!==9&&(random()<eliteChance||index===0&&!!guardian) : node.kind==='elite'&&(index===0||random()<.10+node.depth*.008),
     breachId: breachIds[Math.floor(random() * breachIds.length)],
   }));

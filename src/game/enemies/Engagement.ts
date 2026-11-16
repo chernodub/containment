@@ -1,7 +1,7 @@
 import {MELEE_ATTACKS} from './meleeAttacks';
 import type {StandardEnemyId} from './types';
 
-/** Stable flanking berths with a marine-width escape wedge. */
+/** Stable flanking berths with an open forward sector. */
 export type EngagementState = 'engaged' | 'waiting' | 'ranged';
 export type AttackSlot = Readonly<{
     angle: number;

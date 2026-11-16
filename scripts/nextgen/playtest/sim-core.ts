@@ -259,7 +259,8 @@ export function runSimulation(options: SimOptions) {
                     if (point)
                         input = { ...input, aimPoint: point, angle: Math.atan2(point.y - game.player.y, point.x - game.player.x) };
                 }
-                if(game.combat.snapshot.health>=game.combat.snapshot.maxHealth)lastFullHealthElapsed=game.elapsed;
+                const vitals=game.combat.mutationResources();
+                if(vitals.health>=vitals.maxHealth)lastFullHealthElapsed=game.elapsed;
                 game.update(step, input);
             });
             camera.update(game, dt / 1000);
