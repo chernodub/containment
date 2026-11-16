@@ -62,12 +62,12 @@ def awakening():
 def passenger():
     L.asset('passenger-sleeper-carrier',12000)
     for sx in (-1,1):
-        L.box('Carrier corner beam',(sx*1.4,0,1.55),(.13,1.4,3.1),'p11-steel',.025)
+        L.box('Carrier corner beam',(sx*1.4,0,1.55),(.13,1.4,3.1),'p11-tint-metal',.025,tint='navy')
         L.box('Captive rail',(sx*1.25,-.68,1.55),(.07,.07,2.9),'e9-trim',.01)
     for row in range(4):
         z=.3+row*.7
         before=set(L.CURRENT.children)
-        L.box('Sleeper drawer',(0,0,z),(2.55,1.25,.57),'p11-steel',.035)
+        L.box('Sleeper drawer',(0,0,z),(2.55,1.25,.57),'p11-tint-metal',.035,tint='navy')
         L.inset_panel('Sleeper lid',(0,-.64,z),2.3,.43,.035,.04,'e9-ceramic','p11-steel')
         L.handle((.75,-.69,z),.48,'X',.055,.022)
         L.stencil('C'+str(row+11),(-.72,-.70,z),.14,'-Y')
@@ -84,7 +84,20 @@ def passenger():
     L.box('Carrier base',(0,0,.08),(2.95,1.5,.16),'p11-steel',.025)
     for sx in (-1,1):
         L.cylinder('Carrier trolley wheel',(sx*1.06,.35,.1),.14,.13,'p11-rubber','X',10,0)
-        L.sweep('Coolant return',[(sx*1.42,.6,.2),(sx*1.42,.6,2.9),(sx*.8,.6,3.13)],.045,'p11-rubber',8)
+        L.sweep('Coolant return',[(sx*1.42,.6,.2),(sx*1.42,.6,2.9)],.045,'p11-rubber',8)
+    # Roof module is an exposed heat exchanger, not another blank drawer lid.
+    L.box('Top service plinth',(0,.12,2.75),(2.35,.85,.12),'p11-rubber',.018)
+    for x in (-.9,.9):
+        L.box('Heat exchanger header',(x,.12,2.91),(.18,.78,.27),'p11-steel',.025)
+    for y in (-.19,.02,.23,.44):
+        L.sweep('Captive cooling loop',[(-.9,y,2.99),(-.675,y,3.08),(.675,y,3.08),(.9,y,2.99)],.024,'p11-steel',6)
+    for x in [-.67+i*.15 for i in range(10)]:L.box('Heat exchanger deep fin',(x,.12,2.94),(.035,.68,.24),'p11-tint-metal',.004,tint='navy')
+    for sx in (-1,1):
+        L.sweep('Connected roof coolant hose',[(sx*1.42,.6,2.9),(sx*1.18,.6,3.13),(sx*.9,.45,3.01)],.042,'p11-rubber',7)
+        L.bolt_row((sx*1.18,-.55,2.73),(sx*1.18,.48,2.73),4,.025,'Z')
+        L.handle((sx*1.30,.15,3.12),.48,'Y',.10,.035,'p11-steel','Z')
+    L.inset_panel('Roof pump hatch',(0,-.5,2.85),.52,.28,.035,.035,'p11-steel','e9-dark')
+    L.gauge((0,-.55,2.85),.075)
     L.box('Rack destination placard',(0,-.55,3.04),(1.4,.09,.16),'p11-steel',.01)
     L.stencil('NEW EARTH',(0,-.60,3.04),.10,'-Y')
 
