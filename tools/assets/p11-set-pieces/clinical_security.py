@@ -194,5 +194,7 @@ def armory():
 L.reset_scene()
 for f in (awakening,passenger,scanner,armory):f()
 L.export('clinical-security',OUT,'clinical-security.glb','Cryogenic recovery and security landmarks.', 'blender -b --factory-startup -P tools/assets/p11-set-pieces/clinical_security.py')
+from compact_uv import compact_uv
+compact_uv(OUT/'clinical-security.glb',OUT/'manifest.json')
 if '--render' in L.args():
  for a in [v for v in L.ASSETS if not any(a.startswith('--only=') for a in L.args()) or '--only='+v.name in L.args()]:L.render(RENDERS/(a.name+'-game.png'),[a.name],'game',scale=1.25 if a.name=='armory-weapon-carousel' else 1.0)

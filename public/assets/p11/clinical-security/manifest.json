@@ -323,9 +323,10 @@
   ],
   "output": {
     "file": "clinical-security.glb",
-    "bytes": 2057784,
-    "sha256": "357928165736e0403b7783213152f840b773670ac1247afa03b86ebf1248dab5",
+    "bytes": 1912340,
+    "sha256": "ee2e8216823ebe1622f761797cdb3495feb1c029722c1a92e91e30f13b933ccf",
     "triangles": 25858
   },
-  "overBudget": []
+  "overBudget": [],
+  "uvEncoding": "normalized UNSIGNED_SHORT; maximum error0.004 atlas texel at512; native glTF2"
 }
