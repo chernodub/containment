@@ -115,11 +115,11 @@ def review(low, high):
             elif view == 'back':
                 d, tgt, lens, res = V((-.7, -1, .45)), V((0, 0, 1.08)), 78, (540, 720)
             else:   # in-game: 50° down, marine ~130 px tall
-                d, tgt, lens, res = V((.3, -.9, 1.25)), V((0, 0, 1.0)), 50, (160, 160)
+                d, tgt, lens, res = V((.3, -.9, 1.6)), V((0, 0, 1.0)), 50, (200, 200)
             d.normalize()
             cam.location = tgt + d * (6.2 if view != 'face' else 2.2); cam.data.lens = lens
             if view == 'game':
-                cam.location = tgt + d * 9.0
+                cam.location = tgt + d * 3.6
             cam.rotation_euler = (-d).to_track_quat('-Z', 'Y').to_euler()
             scene.render.resolution_x, scene.render.resolution_y = res
             floor.hide_render = view == 'game'

@@ -11,7 +11,7 @@ import bpy
 PALETTE = {
     # linear RGB
     'ceramic': (.52, .49, .41),       # warm ivory paint over composite
-    'ceramic_game': (.74, .705, .60),
+    'ceramic_game': (.84, .81, .72),
     'amber': (.86, .34, .02),
     'ice': (.07, .36, .74),
     'fire': (.74, .09, .02),
@@ -30,6 +30,10 @@ PALETTE = {
     'fire_glow': (1.0, .30, .04),
     'arc_glow': (.70, .52, 1.0),
     'primer': (.25, .26, .25),
+    'fabric_game': (.12, .14, .16),
+    'graphite_game': (.11, .12, .135),
+    'gunmetal_game': (.20, .22, .24),
+    'rubber_game': (.06, .065, .07),
 }
 RIG_COLOUR = {'breacher': 'amber', 'cryo': 'ice', 'pyro': 'fire', 'arc': 'violet'}
 RIG_GLOW = {'breacher': 'amber_glow', 'cryo': 'ice_glow', 'pyro': 'fire_glow', 'arc': 'arc_glow'}
@@ -58,7 +62,7 @@ ROLES = {
     'arc_glow': ('glow', 'arc_glow', .3, .0, .0, .0),
 }
 GLOW_STRENGTH = {'glow': 6.0, 'amber_glow': 5.0, 'ice_glow': 5.5, 'fire_glow': 6.0, 'arc_glow': 6.0}
-GAME_VALUE = {'ceramic': 'ceramic_game'}
+GAME_VALUE = {'ceramic': 'ceramic_game', 'fabric': 'fabric_game', 'graphite': 'graphite_game', 'gunmetal': 'gunmetal_game', 'rubber': 'rubber_game'}
 
 _cache = {}
 COORD_SCALE = 1.0   # object-space texture scale (1/6.8 for meshes stored in source units)

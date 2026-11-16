@@ -11,8 +11,8 @@ portraits and the title hero layer. Weapons stay K10 (only the glove grip was fi
 
 | Item | Value |
 | --- | --- |
-| `public/assets/models/marine.glb` | 17.6 MB (K10: 13.6 MB). Nodes `k10-body`, `k10-rig-{breacher,cryo,pyro,arc}`; material extras `k10Original` (runtime contract unchanged, no TS edits). |
-| Triangles (game) | body 20,234; Breacher 3,248, Cryo 3,556, Pyro 3,864, Arc 3,392 → max drawn 24,098 (≤ 25k) |
+| `public/assets/models/marine.glb` | 18.4 MB (K10: 13.6 MB). Nodes `k10-body`, `k10-rig-{breacher,cryo,pyro,arc}`; material extras `k10Original` (runtime contract unchanged, no TS edits). |
+| Triangles (game) | body 20,306; Breacher 3,696, Cryo 4,004, Pyro 4,312, Arc 3,840 → max drawn 24,618 (≤ 25k) |
 | Textures | one shared 2048² RGB8 set: base colour, tangent normal, AO, emission (emissive strength 4) |
 | Close-up source | `artifacts/nextgen/k12-work/hero/marine-hero.glb` (≈ 330k body + 36–46k per rig; rebuilt, gitignored) |
 | Portraits | `public/assets/portraits/u10/{rig}-bust.png` (1024² RGBA) + `-256/-640/-1024.webp` (same names/sizes U10's UI loads) |
@@ -42,6 +42,15 @@ the K10 arsenal and delegates the marine to K12, so it can no longer overwrite t
     62 % y; transparent film. `--preview` writes small review renders; `--hands` renders a grip study.
   - Cycles 128 samples + denoise; the close-up meshes are stored in source units, so `materials.COORD_SCALE` is
     set to 1/6.8 for them (done inside `stage_hero`).
+
+## Gameplay-camera read (follow-up)
+
+The view from above-behind is now mostly light plate: large back carapace, shoulder-blade plates, lumbar, full
+back-of-thigh/calf and rear upper-arm plates, ceramic gorget. Rig identity from above: rig-coloured pauldron cap
+and first lame on both shoulders (Pyro's heat shield is now orange), the rig pack, a rig-coloured dorsal spine with
+a glowing core strip below the pack and a rear collar arc. Game-atlas values are lifted (ceramic .84/.81/.72;
+undersuit .12/.14/.16, graphite, gunmetal and rubber lifted likewise via `materials.GAME_VALUE`); the close-up
+keeps the darker undersuit. Key art: the dorsal spine glow is visible on the back in three-quarter views.
 
 ## For the key-art agent (title set, creatures, haze, layers, ending)
 
