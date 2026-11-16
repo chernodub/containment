@@ -1,77 +1,83 @@
 {
-  "bakeSeconds": 1.895,
-  "blenderPNGDecodeMs": 6.068,
+  "bakeSeconds": 2.947,
+  "blenderPNGDecodeMs": 9.255,
   "file": "maintenance-containment-normal.png",
   "size": 512,
-  "bytes": 324966,
+  "bytes": 377773,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 145046,
+  "nonFlatPixels": 173480,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "frost-manifold-turbines--e9-body",
       "role": "e9-body",
-      "seconds": 0.108,
+      "seconds": 0.083,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "frost-manifold-turbines--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.143,
+      "seconds": 0.108,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "frost-manifold-turbines--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.107,
+      "seconds": 0.096,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "frost-manifold-turbines--p11-frost",
       "role": "p11-frost",
-      "seconds": 0.036,
+      "seconds": 0.055,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "frost-manifold-turbines--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.04,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "frost-manifold-turbines--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.028,
+      "seconds": 0.062,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "frost-manifold-turbines--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.035,
+      "seconds": 0.05,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "frost-manifold-turbines--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.039,
+      "seconds": 0.073,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "lift-winch-machinery--e9-body",
       "role": "e9-body",
-      "seconds": 0.034,
+      "seconds": 0.057,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "lift-winch-machinery--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.033,
+      "seconds": 0.112,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "lift-winch-machinery--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.041,
+      "seconds": 0.059,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "lift-winch-machinery--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.061,
+      "seconds": 0.1,
       "method": "three-segment high bevel"
     },
     {
@@ -83,85 +89,91 @@
     {
       "mesh": "lift-winch-machinery--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.03,
+      "seconds": 0.042,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "shield-field-emitter--e9-body",
       "role": "e9-body",
-      "seconds": 0.027,
+      "seconds": 0.05,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "shield-field-emitter--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.034,
+      "seconds": 0.076,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "shield-field-emitter--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.046,
+      "seconds": 0.075,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "shield-field-emitter--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.051,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "shield-field-emitter--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.027,
+      "seconds": 0.082,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "shield-field-emitter--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.028,
+      "seconds": 0.058,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "shield-field-emitter--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.026,
+      "seconds": 0.045,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "containment-ring-cradle--e9-body",
       "role": "e9-body",
-      "seconds": 0.058,
+      "seconds": 0.061,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "containment-ring-cradle--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.038,
+      "seconds": 0.064,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "containment-ring-cradle--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.049,
+      "seconds": 0.102,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "containment-ring-cradle--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.028,
+      "seconds": 0.064,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "containment-ring-cradle--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.033,
+      "seconds": 0.086,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "containment-ring-cradle--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.025,
+      "seconds": 0.035,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "containment-ring-cradle--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.037,
+      "seconds": 0.052,
       "method": "three-segment high bevel"
     }
   ]
