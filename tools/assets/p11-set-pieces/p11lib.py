@@ -960,7 +960,7 @@ def _stamp_tint(group):
         jitter = 1 - (h % 1000) / 1000 * .07  # +-3.5% value variation per part
         if role in TINTED:
             name = obj.get('tint', 'grey')
-            rgb = srgb(INK.get(name, name if name.startswith('#') else '#7d8789'))
+            rgb = linear(INK.get(name, name if name.startswith('#') else '#7d8789'))
             rgb = tuple(c * (1 - (h % 1000) / 1000 * .05) for c in rgb)
         else:
             rgb = (jitter, jitter, jitter)
@@ -968,7 +968,7 @@ def _stamp_tint(group):
             d.vector = rgb
 
 
-def export(pack: str, out_dir: Path, filename: str, description: str, rebuild: str, preview=None):
+def export(pack: str, out_dir: Path, filename: str, description: str, rebuild: str, preview=None, normal_atlas=True):
     """Merge parts per finish, bake, export GLB + manifest. Returns manifest."""
     out_dir.mkdir(parents=True, exist_ok=True)
     models = []
@@ -1003,6 +1003,10 @@ def export(pack: str, out_dir: Path, filename: str, description: str, rebuild: s
             'triangles': triangles, 'budget': budget,
             'finishes': sorted({obj['finish'] for obj in group.children}),
         })
+    normal_bake = None
+    if normal_atlas:
+        from normal_atlas import bake_normal_atlas
+        normal_bake = bake_normal_atlas(ASSETS, out_dir / (Path(filename).stem + '-normal.png'), size=512)
     bpy.ops.object.select_all(action='DESELECT')
     for group in ASSETS:
         group.select_set(True)
@@ -1013,7 +1017,7 @@ def export(pack: str, out_dir: Path, filename: str, description: str, rebuild: s
         filepath=str(path), export_format='GLB', use_selection=True, export_yup=True, export_apply=True,
         export_extras=True, export_materials='EXPORT', export_vertex_color='ACTIVE',
         export_all_vertex_colors=False, export_animations=False, export_cameras=False, export_lights=False,
-        export_texcoords=False,
+        export_texcoords=True,
     )
     manifest = {
         'name': f'Containment P11 {pack}', 'license': 'MIT', 'author': 'Containment contributors',
@@ -1022,7 +1026,8 @@ def export(pack: str, out_dir: Path, filename: str, description: str, rebuild: s
         'description': description,
         'bake': '16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x '
                 'floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.',
-        'textures': 'none (texture memory 0); detail is modelled geometry',
+        'textures': ('one shared 512-square tangent normal atlas; geometric bevel/sculpt bake' if normal_bake else 'none (texture memory 0); detail is modelled geometry'),
+        'normalAtlas': normal_bake,
         'materials': {k: PALETTE[k] for k in sorted({f for m in models for f in m['finishes']})},
         'models': models,
         'output': {'file': filename, 'bytes': path.stat().st_size,

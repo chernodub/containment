@@ -587,6 +587,10 @@ def export_pack():
         if group.get('mount'):
             models[-1]['mount']='overhead; bottom approximately 5m above deck'
             models[-1]['floorCollider']=False
+    import sys
+    sys.path.insert(0, str(ROOT / 'tools/assets/p11-set-pieces'))
+    from normal_atlas import bake_normal_atlas
+    normal_bake = bake_normal_atlas(ASSETS, OUT / 'industrial-normal.png', size=512)
     bpy.ops.object.select_all(action='DESELECT')
     for group in ASSETS:
         group.select_set(True)
@@ -598,7 +602,7 @@ def export_pack():
                              export_yup=True, export_apply=True, export_extras=True,
                              export_materials='EXPORT', export_vertex_color='ACTIVE',
                              export_all_vertex_colors=False, export_animations=False,
-                             export_cameras=False, export_lights=False)
+                             export_texcoords=True, export_cameras=False, export_lights=False)
     temporary.replace(path)
     manifest = {'name': 'Containment original industrial ship kit', 'license': 'MIT',
                 'author': 'Containment contributors', 'source': str(Path(__file__).relative_to(ROOT)),
@@ -610,6 +614,7 @@ def export_pack():
                 'output': {'file': path.name, 'bytes': path.stat().st_size,
                            'triangles': sum(model['triangles'] for model in models),
                            'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}}
+    manifest['normalAtlas'] = normal_bake
     manifest['craft'] = 'P11 single-facet industrial chamfers; sub-centimetre hardware stays crisp; deterministic convex wear and concave grime multiply original vertex AO, excluding emissive/glass/deck finishes.'
     (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     (OUT / 'LICENSE.txt').write_text((ROOT / 'LICENSE').read_text())

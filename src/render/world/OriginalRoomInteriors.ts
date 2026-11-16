@@ -1,3 +1,4 @@
+import {p11ServicePlacements} from './P11ServicePlacements';
 import {p11MaintenancePlacements} from './P11MaintenancePlacements';
 import {p11CargoPlacements} from './P11CargoPlacements';
 import {p11ClinicalSecurityPlacements} from './P11ClinicalSecurityPlacements';
@@ -10,7 +11,7 @@ import { SHIP_ARCHITECTURE_PLANS } from '../../game/roguelike/shipArchitectureLa
 import { shipInteriorFurnishings } from '../../game/roguelike/shipInteriorFurnishings';
 import { disposeModel, geometries } from '../meshParts';
 import { retireRoomModels } from '../RoomModelCache';
-import { acquireOriginalShipKit, buildOriginalShipKit, type OriginalKitInstance, type OriginalKitPack } from './OriginalShipKitAssets';
+import { acquireOriginalShipKit, buildOriginalShipKit, setOriginalShipKitQuality, type OriginalKitInstance, type OriginalKitPack } from './OriginalShipKitAssets';
 import { interiorFloorServices } from './RoomInteriors';
 import { loadDeckSurfaces } from './E10DeckSurfaces';
 import { addCeilingServices } from './E10CeilingServices';
@@ -31,6 +32,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
             if(p[12]>606/32 && p[12]<706/32 && p[14]>300/32 && p[14]<700/32) instances.splice(i,1);
         }
         instances.push({pack:'p11-comms',asset:'relay-monolith-spine',matrix:matrix(656/32,0,500/32,0),purpose:'P11 central fibre spine',cutaway:true});
+        instances.push({pack:'p11-comms',asset:'relay-crosspatch',matrix:matrix(640/32,0,24/32,0),purpose:'P11 north cross-aisle patch wall',cutaway:true});
     }
     const overhead=(pack:OriginalKitPack,asset:string,x:number,z:number,height:number,angle=0)=>instances.push({pack,asset,matrix:matrix(x/32,height,z/32,angle),purpose:'Suspended '+asset,cutaway:true});
     // Ceiling services occupy no deck area. Their visible manufactured source
@@ -83,12 +85,12 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         const p = opening.from, q = opening.to, dx = (q.x - p.x) / 32, dz = (q.y - p.y) / 32, length = Math.hypot(dx, dz);
         instances.push({ pack: 'structure', asset: 'door-threshold', matrix: matrix((p.x + q.x) / 64, -.025, (p.y + q.y) / 64, -Math.atan2(dz, dx), length / 4.5, 1, 1), purpose: 'Flush manufactured doorway threshold', castShadow: false });
     }
-    instances.push(...p11InfestedPlacements(id),...p11HabitationPlacements(id),...p11ControlPlacements(id),...p11ClinicalSecurityPlacements(id),...p11CargoPlacements(id),...p11MaintenancePlacements(id));
+    instances.push(...p11InfestedPlacements(id),...p11HabitationPlacements(id),...p11ControlPlacements(id),...p11ClinicalSecurityPlacements(id),...p11CargoPlacements(id),...p11MaintenancePlacements(id),...p11ServicePlacements(t));
     return instances;
 }
 /** Original model owner settles before combat warmup. Session transfers survive
  * a room cancellation; partial/late borrows retire independently and quietly. */
-export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onChanged: () => void, prerequisite: Promise<unknown> = Promise.resolve()) {
+export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onChanged: () => void, prerequisite: Promise<unknown> = Promise.resolve(), highQuality: () => boolean = () => true) {
     const controller = new AbortController(), borrowed = new Set<T.Group>(), sources = new Map<OriginalKitPack, T.Group>();
     const restores: (() => void)[] = [], geometryChanges: {
         mesh: T.Mesh;
@@ -142,6 +144,12 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
                     return null;
                 return { x: (bounds.min.x + bounds.max.x) / 2, z: (bounds.min.z + bounds.max.z) / 2, angle: 0, scale: 1, width: bounds.max.x - bounds.min.x + .025, depth: bounds.max.z - bounds.min.z + .025, bottom: -.01, top: 2.2 };
             }).filter((v): v is NonNullable<typeof v> => v !== null);
+            for(const p of root.userData.placements as {pack:string;bounds:number[][]}[]) {
+                if(!p.pack.startsWith('p11-') || p.pack==='p11-service')continue;
+                const [lo,hi]=p.bounds;
+                replacements.push({x:(lo[0]+hi[0])/2,z:(lo[2]+hi[2])/2,angle:0,scale:1,
+                    width:hi[0]-lo[0],depth:hi[2]-lo[2],bottom:Math.max(0,lo[1]),top:hi[1]});
+            }
             const thin = (t.voids ?? []).flatMap(p => {
                 const xs = p.map(v => v.x / 32), zs = p.map(v => v.y / 32), w = Math.max(...xs) - Math.min(...xs), d = Math.max(...zs) - Math.min(...zs);
                 return p.length === 4 && Math.min(w, d) <= 1.55 ? [{ x: (Math.min(...xs) + Math.max(...xs)) / 2, z: (Math.min(...zs) + Math.max(...zs)) / 2, angle: 0, scale: 1, width: w + .01, depth: d + .01, bottom: -.01, top: 2.4 }] : [];
@@ -212,6 +220,7 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
                 const legacy=world.getObjectByName('relay-fixture-4');
                 if(legacy){const visible=legacy.visible;legacy.visible=false;restores.push(()=>{legacy.visible=visible;});}
             }
+            setOriginalShipKitQuality(root,highQuality());
             world.add(root);
             owner.state = 'ready';
             onChanged();
