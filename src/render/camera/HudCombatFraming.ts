@@ -8,7 +8,7 @@ export type CombatViewport = Readonly<{
 export const ZERO_HUD_INSETS:HudInsets=Object.freeze({top:0,right:0,bottom:0,left:0});
 export const FULL_COMBAT_VIEWPORT:CombatViewport=Object.freeze({left:-1,right:1,top:1,bottom:-1,centerX:0,centerY:0,halfX:1,halfY:1});
 
-type Contact=Readonly<{id?:number;x:number;y:number;radius:number;health?:number;windupMs?:number;pendingAttack?:unknown}>;
+type Contact=Readonly<{id?:number;x:number;y:number;radius:number;health?:number;windupMs?:number;pendingAttack?:unknown;meleePhase?:string}>;
 type Camera=T.OrthographicCamera|T.PerspectiveCamera;
 const CAPACITY=6;
 
@@ -61,9 +61,9 @@ export class HudCombatFraming {
       const ex=e.x/units,ez=e.y/units,dx=ex-x,dz=ez-z,distance=Math.hypot(dx,dz);
       if(distance>12.5)continue;
       const alignment=distance>.001?(dx*ax+dz*az)/distance:1;
-      const attacking=!!e.pendingAttack||(e.windupMs??0)>0;
+      const attacking=!!e.pendingAttack||(e.windupMs??0)>0||e.meleePhase==='windup'||e.meleePhase==='strike';
       if(distance>5.5&&alignment<.20&&!attacking)continue;
-      const score=(attacking?1.7:1)*(distance<4?1.5:1)*(.7+Math.max(0,alignment)*1.3)/(1+distance*.18);
+      const score=(attacking?8:1)*(distance<4?1.5:1)*(.7+Math.max(0,alignment)*1.3)/(1+distance*.18);
       let index=this.count;
       if(index===CAPACITY){let weakest=0;for(let n=1;n<CAPACITY;n++)if(this.contacts[n*5+4]<this.contacts[weakest*5+4])weakest=n;if(score<=this.contacts[weakest*5+4])continue;index=weakest;}else this.count++;
       const p=index*5;this.contacts[p]=ex;this.contacts[p+1]=ez;this.contacts[p+2]=Math.max(.18,e.radius/units);this.contacts[p+3]=heightForContact&&e.id!==undefined?Math.max(.1,heightForContact(e.id)):2.65;this.contacts[p+4]=score;this.diagnostics.selectedIds[index]=e.id??-1;
@@ -101,8 +101,8 @@ export class HudCombatFraming {
       nearX+=this.contacts[p]*w;nearZ+=this.contacts[p+1]*w;nearWeight+=w;
     }
     const dx=(nearWeight?nearX/nearWeight:this.centroidX)-x,dz=(nearWeight?nearZ/nearWeight:this.centroidZ)-z,distance=Math.hypot(dx,dz);
-    const amount=distance>.001?Math.min(reducedMotion?1.1:2.4,distance*.38)/distance:0;
-    const aim=reducedMotion?0:.60*Math.min(this.viewport.halfX,this.viewport.halfY);
+    const amount=distance>.001?Math.min(reducedMotion?.8:1.6,distance*.32)/distance:0;
+    const aim=reducedMotion?0:.35*Math.min(this.viewport.halfX,this.viewport.halfY);
     out.set(x+dx*amount+Math.cos(angle)*aim,0,z+dz*amount+Math.sin(angle)*aim);
   }
 
@@ -147,7 +147,7 @@ export class HudCombatFraming {
         // gets additional bounded room before abandoning its actual body bounds;
         // the ordinary marine central composition remains unless the final
         // remote solve explicitly requests literal body-edge clearance.
-        const zoom=Math.max(minimumZoom,selected<0?.85:.5,camera.zoom*Math.min(.96,scale*.98));
+        const zoom=Math.max(minimumZoom,.88,camera.zoom*Math.min(.96,scale*.98));
         if(zoom<camera.zoom-1e-6){camera.zoom=zoom;this.diagnostics.pullback=zoom;camera.updateProjectionMatrix();continue;}
         if(selected<0){selected=0;for(let n=1;n<this.count;n++)if(this.contacts[n*5+4]>this.contacts[selected*5+4])selected=n;this.diagnostics.focusedPair=true;this.diagnostics.focusContactId=this.diagnostics.selectedIds[selected];continue;}
         // Perspective body extents change when the camera moves on the deck.

@@ -11,7 +11,7 @@ export function combatFocusTarget(
   x: number, z: number, angle: number, bossX: number, bossZ: number,
   bossActive: boolean, reducedMotion: boolean, out: T.Vector3,
 ): T.Vector3 {
-  const lead = reducedMotion ? 0 : 1.15;
+  const lead = reducedMotion ? 0 : .65;
   let dx = Math.cos(angle) * lead;
   let dz = Math.sin(angle) * lead;
   if (bossActive) {

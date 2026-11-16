@@ -45,6 +45,7 @@ type Candidate = {
     count: number;
     attacking: boolean;
     inFlight: boolean;
+    approaching: boolean;
     point: ScreenPoint;
 };
 type Direction = {
@@ -132,7 +133,7 @@ export class ThreatIndicators {
             node.append(chevron, type, count);
             host.append(node);
             this.markers.push({ node, glyph, count, x: 0, y: 0, radius: 18, active: false });
-            this.candidates.push({ id: 0, kind: 'standard', score: -Infinity, distance: 0, angle: 0, edgeAngle: 0, count: 0, attacking: false, inFlight: false, point: { x: 0, y: 0, visible: false } });
+            this.candidates.push({ id: 0, kind: 'standard', score: -Infinity, distance: 0, angle: 0, edgeAngle: 0, count: 0, attacking: false, inFlight: false, approaching: false, point: { x: 0, y: 0, visible: false } });
         }
         for (let i = 0; i < 4; i++) {
             const node = document.createElement('div');
@@ -207,7 +208,7 @@ export class ThreatIndicators {
         }
         return false;
     }
-    private consider(id: number, kind: ThreatKind, x: number, y: number, distance: number, attacking: boolean, inFlight: boolean, radius = 16): void {
+    private consider(id: number, kind: ThreatKind, x: number, y: number, distance: number, attacking: boolean, inFlight: boolean, radius = 16, approaching = true): void {
         if (kind !== 'boss' && !attacking && distance > 1000)
             return;
         projectWorld(this.renderer, x, y, this.point);
@@ -224,7 +225,7 @@ export class ThreatIndicators {
         const score = (attacking ? 1000000 : 0) - distance + rank[kind] * 5;
         let candidate: Candidate | undefined;
         for (const existing of this.candidates)
-            if (existing.count > 0 && angularDistance(existing.angle, angle) < .17 && Math.hypot(existing.point.x - this.edge.x, existing.point.y - this.edge.y) < 66) {
+            if (existing.count > 0 && angularDistance(existing.angle, angle) < Math.PI / 8) {
                 candidate = existing;
                 break;
             }
@@ -232,6 +233,7 @@ export class ThreatIndicators {
             candidate.count++;
             candidate.attacking ||= attacking;
             candidate.inFlight ||= inFlight;
+            candidate.approaching ||= approaching;
             if (rank[kind] > rank[candidate.kind])
                 candidate.kind = kind;
             if (score <= candidate.score)
@@ -248,6 +250,7 @@ export class ThreatIndicators {
             candidate.kind = kind;
             candidate.attacking = attacking;
             candidate.inFlight = inFlight;
+            candidate.approaching = approaching;
         }
         candidate.id = id;
         candidate.score = score;
@@ -274,9 +277,9 @@ export class ThreatIndicators {
         for (const enemy of enemies) {
             if (enemy.health <= 0 || enemy.alpha < .2)
                 continue;
-            const flight = this.inFlight(enemy, player, bullets), attacking = enemy.windupMs > 0 || enemy.chargeMs > 0 || !!enemy.pendingAttack || flight;
+            const flight = this.inFlight(enemy, player, bullets), attacking = enemy.windupMs > 0 || enemy.chargeMs > 0 || enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike' || !!enemy.pendingAttack || flight;
             const kind: ThreatKind = enemy.champion ? 'champion' : enemy.elite ? 'elite' : enemy.type === 'spitter' ? 'ranged' : 'standard';
-            this.consider(enemy.id, kind, enemy.x, enemy.y, Math.hypot(enemy.x - player.x, enemy.y - player.y), attacking, flight, enemy.radius);
+            this.consider(enemy.id, kind, enemy.x, enemy.y, Math.hypot(enemy.x - player.x, enemy.y - player.y), attacking, flight, enemy.radius, (player.x - enemy.x) * enemy.velocityX + (player.y - enemy.y) * enemy.velocityY > 0);
         }
         if (boss?.active && boss.health > 0)
             this.consider(-1, 'boss', boss.x, boss.y, Math.hypot(boss.x - player.x, boss.y - player.y), !!boss.pendingTelegraph, false, 92);
@@ -330,10 +333,11 @@ export class ThreatIndicators {
             marker.node.hidden = false;
             marker.node.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%) scale(${scale})`;
             marker.node.style.setProperty('--bearing', `${candidate.angle}rad`);
-            marker.node.style.setProperty('--threat-opacity', String(.88 + near * .12));
+            marker.node.style.setProperty('--threat-opacity', String(candidate.attacking || candidate.approaching ? .88 + near * .12 : .32 + near * .12));
             marker.node.dataset.kind = candidate.kind;
             marker.node.dataset.elite = String(rank[candidate.kind] >= 2);
             marker.node.dataset.attacking = String(candidate.attacking);
+            marker.node.dataset.approaching = String(candidate.approaching);
             marker.node.dataset.inFlight = String(candidate.inFlight);
             marker.node.dataset.enemyId = String(candidate.id);
             marker.node.dataset.bearing = String(candidate.angle);

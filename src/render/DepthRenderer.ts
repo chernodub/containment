@@ -557,10 +557,12 @@ export class DepthRenderer {
   if(menu)this.title?.apply(this.camera,this.time,!!this.motionQuery?.matches,this.tier==='high'&&this.options.atmosphere);
   if(this.title)this.title.root.visible=menu;this.world.visible=!menu;if(this.backdrop)this.backdrop.root.visible=!menu;
   if(!menu)hud.center(this.camera,this.cameraRig.focus,this.screenPoint,this.screenTarget);
-  if(!menu&&!bossWeight)hud.protectEngagement(this.camera,this.focus,p.x/UNIT,p.y/UNIT,p.radius/UNIT,this.player.height,this.screenPoint,this.screenTarget);
-  if(bossWeight)this.protectBossFraming(p.x/UNIT,p.y/UNIT,p.radius/UNIT,bossFrame.x/UNIT,bossFrame.y/UNIT);
-  if(!menu)this.protectPlayerFraming(p.x/UNIT,p.y/UNIT,p.radius/UNIT);
-  if(!menu){this.roomCombatFraming.apply(this.camera,this.cameraRig.focus,p.x/UNIT,p.y/UNIT,p.radius/UNIT,this.player.height,bounds.width/UNIT,bounds.height/UNIT,hud.viewport,this.viewportHeight,dt,!!this.motionQuery?.matches,game.geometry.boundary,hud);hud.refreshFit(this.camera,this.screenPoint);this.focus.copy(this.cameraRig.focus);}
+  // CAM12: rotationally invariant drawn envelope includes barrel, pack and raised cast arms.
+  if(!menu&&!bossWeight)hud.protectEngagement(this.camera,this.focus,p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,1.45),this.player.height+.30,this.screenPoint,this.screenTarget);
+  if(bossWeight)this.protectBossFraming(p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,1.45),bossFrame.x/UNIT,bossFrame.y/UNIT);
+  if(!menu)this.protectPlayerFraming(p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,1.45));
+  if(!menu){this.roomCombatFraming.apply(this.camera,this.cameraRig.focus,p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,1.45),this.player.height+.30,bounds.width/UNIT,bounds.height/UNIT,hud.viewport,this.viewportHeight,dt,!!this.motionQuery?.matches,game.geometry.boundary,hud);hud.refreshFit(this.camera,this.screenPoint);this.focus.copy(this.cameraRig.focus);}
+  // CAM12 framing envelope end.
   this.effects.beginPriorityActors(this.camera);if(!menu)this.effects.addPriorityActor(p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,.78),this.player.height);
   // The shadow projection remains anchored to the room, avoiding subpixel shimmer.
   this.player.setColliderDebug?.(this.colliderDebug,p.radius/UNIT);if(!this.ragdolls.has(-2147483648))this.player.root.position.set(p.x/UNIT,0,p.y/UNIT);this.player.root.visible=!menu;this.player.root.rotation.z=0; // M10 death belongs to bones
