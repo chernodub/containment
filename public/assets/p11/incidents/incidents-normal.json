@@ -1,113 +1,143 @@
 {
-  "bakeSeconds": 3.627,
-  "blenderPNGDecodeMs": 9.179,
+  "bakeSeconds": 2.404,
+  "blenderPNGDecodeMs": 5.723,
   "file": "incidents-normal.png",
   "size": 512,
-  "bytes": 268337,
+  "bytes": 301637,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 150228,
+  "nonFlatPixels": 148127,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "abandoned-winch-repair--e9-body",
       "role": "e9-body",
-      "seconds": 0.081,
+      "seconds": 0.033,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "abandoned-winch-repair--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.064,
+      "seconds": 0.026,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "abandoned-winch-repair--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.073,
+      "seconds": 0.028,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "abandoned-winch-repair--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.077,
+      "seconds": 0.036,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "abandoned-winch-repair--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.066,
+      "seconds": 0.058,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "abandoned-winch-repair--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.06,
+      "seconds": 0.043,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "failed-shield-leaves--e9-body",
       "role": "e9-body",
-      "seconds": 0.088,
+      "seconds": 0.072,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "failed-shield-leaves--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.084,
+      "seconds": 0.056,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "failed-shield-leaves--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.074,
+      "seconds": 0.053,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "failed-shield-leaves--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.033,
+      "seconds": 0.046,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "failed-shield-leaves--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.064,
+      "seconds": 0.057,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "strained-containment-diaphragm--e9-body",
       "role": "e9-body",
-      "seconds": 0.06,
+      "seconds": 0.038,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "strained-containment-diaphragm--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.072,
+      "seconds": 0.074,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "strained-containment-diaphragm--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.159,
+      "seconds": 0.054,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "strained-containment-diaphragm--p11-flesh",
       "role": "p11-flesh",
-      "seconds": 0.152,
+      "seconds": 0.074,
       "method": "sculpted high membrane"
     },
     {
       "mesh": "strained-containment-diaphragm--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.132,
+      "seconds": 0.045,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "strained-containment-diaphragm--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.069,
+      "seconds": 0.073,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "consuming-workstation-mantle--e9-body",
+      "role": "e9-body",
+      "seconds": 0.091,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "consuming-workstation-mantle--p11-flesh",
+      "role": "p11-flesh",
+      "seconds": 0.051,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "consuming-workstation-mantle--p11-growth",
+      "role": "p11-growth",
+      "seconds": 0.102,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "consuming-workstation-mantle--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.05,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "consuming-workstation-mantle--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.066,
       "method": "three-segment high bevel"
     }
   ]

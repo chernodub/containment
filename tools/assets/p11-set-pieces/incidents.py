@@ -76,7 +76,25 @@ def pressure_chamber():
  L.sweep('Captive relief cap tether',[(1.22,.31,1.14),(1.35,.32,1.4),(1.2,.32,1.5)],.018,'p11-steel',4)
  L.gauge((-.65,-1.51,.85),.16)
 
-L.reset_scene();failed_repair();failed_shield();pressure_chamber()
+def consuming_mantle():
+ import infested_craft as C
+ S=C.S
+ L.asset('consuming-workstation-mantle',1500)
+ # A load-bearing wrap with a vertical throat, sculpted rather than piled capsules.
+ primitives=[S.Ellipsoid((-.4,0,.7),(.62,.34,.68)),S.Ellipsoid((.1,.02,.9),(.68,.32,.32)),S.Ellipsoid((.62,.02,.65),(.34,.28,.43))]
+ primitives=[S.Displace(p,.035,13,4+i) for i,p in enumerate(primitives)]
+ primitives.append(S.Ellipsoid((.12,-.25,.6),(.36,.23,.28),op='sub'))
+ C.sculpt('Pitted mass swallowing column',primitives,budget=360,voxel=.03)
+ C.shell('Overlapping anterior armor',(-.35,-.03,1.17),(.65,.39,.22),tilt=.3,seed=9,budget=200)
+ C.shell('Second mantle armor',(.38,-.02,.95),(.56,.34,.18),tilt=.25,seed=12,budget=200)
+ L.lathe('Enclosed violet brood fissure',[(.01,0),(.09,.025),(.08,.05),(.01,.075)],(.08,-.25,.65),'p11-bio-violet',8,'Y')
+ # A consumed service panel remains legible around the mass, forced into a bow.
+ L.profile_x('Distorted service hatch',[(-.05,.18),(.08,.18),(.08,.9),(-.22,1.13),(-.3,1.04),(-.05,.72)],-.78,.6,'e9-body',.015)
+ for x in (-.68,.48):
+  L.cylinder('Retained hatch fixing',(x,-.12,.24),.045,.04,'p11-steel','Y',8,0)
+ L.sweep('Mantle tension tendon',[(-.8,-.1,.8),(-.87,-.2,.37),(-.8,-.25,.03)],.06,'p11-flesh',5)
+
+L.reset_scene();failed_repair();failed_shield();pressure_chamber();consuming_mantle()
 names=[a.name for a in L.ASSETS]
 L.export('incidents',OUT,'incidents.glb','Interrupted repairs and physical consequences on P11 machinery.','blender -b --factory-startup -P tools/assets/p11-set-pieces/incidents.py')
 if '--render' in L.args():

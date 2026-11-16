@@ -12,5 +12,9 @@ export function p11IncidentPlacements(id: string): OriginalKitInstance[] {
   if (id === 'service-shaft-landing') add('abandoned-winch-repair',420,330,1.1,.15);
   if (id === 'shielding-gate') add('failed-shield-leaves',460,300,1);
   if (id === 'containment-annulus') add('strained-containment-diaphragm',650,520,1.1,1.2);
+  if (id === 'infested-workshop') {
+    add('consuming-workstation-mantle',610,276,.7,1.05);
+    result[result.length - 1].matrix.multiply(new T.Matrix4().makeRotationY(Math.PI / 2));
+  }
   return result;
 }
