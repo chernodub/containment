@@ -158,7 +158,9 @@ export class EnemyMotion {
     if (frozen) { this.freeze(); return; }
     const p = this.profile, motion = this.strength * (this.reduced ? .3 : 1);
     if(this.authored){
-      const contact=this.impact*Math.max(0,1-this.impactAge/ACTOR_IMPULSE_SECONDS)**2*motion;
+      // Keep contact loaded for two presentation ticks before the return;
+      // a squared immediate fade vanished between native 4-tick strip cells.
+      const contact=this.impact*(1-T.MathUtils.smoothstep(this.impactAge,.035,ACTOR_IMPULSE_SECONDS))*motion;
       // Authored center travel uses at most .301 radius; reserve .049 for this layer.
       const direction=aim-this.hitAngle,offset=this.state.offsetLimit*contact*.14;
       // Clips supply the limbs; the presentation parent carries the entire mass.
@@ -168,7 +170,7 @@ export class EnemyMotion {
       const recovery=this.nativePhase==='recovery'?.18+.82*(1-this.nativeProgress):0;
       const strike=this.nativePhase==='strike'?1-this.nativeProgress*.55:0;
       const mass=1/Math.sqrt(p.weight);
-      const bend=contact*(this.heavy?.48:.30)*mass;
+      const bend=contact*(this.heavy?.78:.55)*mass;
       // Hit is accepted at strike entry, so extension is already at contact.
       // The off-balance return follows the full native recovery, including elites.
       const extension=this.nativePhase==='strike'?1-.35*this.nativeProgress
