@@ -5,7 +5,7 @@ export function p11ClinicalSecurityPlacements(id:string):OriginalKitInstance[]{
  // Existing north-bank void x440..840,z240..350; full bank skin is replaced.
  if(id==='awakening-bay')return [place('awakening-berth-array',640,295,0,1.15,1,1.42)];
  // Existing A-bank void x320..520,z260..360; keep drawer travel inside it.
- if(id==='passenger-vault')return [place('passenger-sleeper-carrier',420,307,0,1.8,1,1.8)];
+ if(id==='passenger-vault')return [place('passenger-sleeper-carrier',420,307,0,1.8,1,1.45)];
  if(id==='crew-checkpoint')return [place('checkpoint-scanner-gate',208,440,Math.PI/2)];
  if(id==='armory')return [place('armory-weapon-carousel',600,450,0,1.65,1.3,1.65)];
  return [];

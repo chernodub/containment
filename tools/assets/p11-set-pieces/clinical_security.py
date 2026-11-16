@@ -91,9 +91,19 @@ def passenger():
         for sx in (-1,1):
             L.cylinder('Captive lock',(sx*.98,-.72,z),.055,.025,'e9-trim','Y',8,0)
             L.box('Lock tongue',(sx*.98,-.74,z),(.06,.01,.015),'p11-rubber',0)
-        if row==1:
-            for ob in set(L.CURRENT.children)-before:ob.data.transform(Matrix.Translation((0,-.15,0)))
-            L.box('Released slide carriage',(0,-.65,z-.31),(2.45,.28,.045),'p11-rubber',.004)
+        if row==3:
+            for ob in set(L.CURRENT.children)-before:ob.data.transform(Matrix.Translation((0,-.35,0)))
+            L.box('Released slide carriage',(0,-.70,z-.31),(2.45,.40,.045),'p11-rubber',.004)
+            # Drawer C14 was opened for one child; the small personal effects
+            # remain on the exposed tray beside the vacant recovery wrapping.
+            L.box('Drawn drawer vacant recess',(0,-.86,z+.29),(1.9,.27,.015),'p11-rubber',.01)
+            for sx in (-1,1):
+                L.profile_x('Small passengers abandoned boots',[(-1.04,z+.30),(-.78,z+.30),(-.78,z+.53),(-.91,z+.57),(-.92,z+.40),(-1.04,z+.37)],sx*.18-.065,sx*.18+.065,'p11-tint',.015,tint='cushion')
+                L.box('Child boot strap',(sx*.18,-.9,z+.47),(.145,.032,.045),'p11-tint',.004,tint='cream')
+            L.box('Folded recovery wrap',(-.66,-.87,z+.34),(.41,.23,.07),'p11-tint',.02,tint='cream')
+            L.decal_quad('Passenger boarding keepsake',(.64,-.86,z+.31),.31,.20,'Z','paper',rotation=.13)
+            L.decal_quad('Passenger blue destination stamp',(.64,-.86,z+.315),.17,.04,'Z','crayon-blue',rotation=.13)
+            L.sweep('Unclasped identity wristband',[(.35,-1.02,z+.31),(.42,-.98,z+.34),(.48,-.88,z+.35),(.44,-.78,z+.33)],.018,'p11-tint',5,tint='cream')
 
     L.box('Carrier base',(0,0,.08),(2.95,1.5,.16),'p11-steel',.025)
     for sx in (-1,1):
