@@ -81,7 +81,7 @@ def monolith(y0, number, seed, broken=False, height=2.45):
     # Sides (seen at an angle from the aisles): ribbed panels and a hatch.
     for sx in (-1, 1):
         face = 'X' if sx > 0 else '-X'
-        L.inset_panel('Side service hatch', (sx * (w / 2), y0 - .1, 1.25), .8, 1.5, .02, .05, 'e9-dark', 'e9-trim',
+        L.inset_panel('Side service hatch', (sx * (w / 2), y0 - .1, 1.25), .8, 1.5, .02, .05, 'e9-dark', 'e9-dark',
                       face)
         for k in range(3):
             L.decal_quad('Side status strip',(sx*(w/2+.035),y0-.1, .85+k*.35),.48,.035,face,role='e9-cyan')
@@ -95,8 +95,8 @@ def monolith(y0, number, seed, broken=False, height=2.45):
         fx = sx * .78
         L.cylinder('Fan well', (fx, y0, h + .175), .42, .03, 'e9-dark', 'Z', 12, 0)
         L.torus('Fan shroud', (fx, y0, h + .2), .42, .035, 'e9-trim', 'Z', 12, 4)
-        for b in range(6):
-            a = 2 * math.pi * b / 6 + seed
+        for b in range(4):
+            a = 2 * math.pi * b / 4 + seed
             L.box('Fan blade', (fx + math.cos(a) * .2, y0 + math.sin(a) * .2, h + .19), (.32, .11, .012), 'e9-body',
                   0, rotation=(math.radians(25), 0, a + math.pi / 2))
         L.cylinder('Fan hub', (fx, y0, h + .2), .09, .04, 'e9-trim', 'Z', 8, 0)
@@ -182,10 +182,21 @@ def crosspatch():
     for i in range(3):
         z=.5+i*.65
         L.box('Patch cassette',(-.9,-.48,z),(1.35,.12,.38),'e9-body',.02)
+        for k in range(4):
+            x=-1.38+k*.3
+            L.box('Patch socket reveal',(x,-.547,z),(.22,.025,.19),'e9-dark',0)
+            L.box('Patch socket lip',(x,-.57,z+.08),(.22,.04,.025),'e9-trim',0)
+            L.box('Patch contact',(x,-.563,z-.02),(.14,.015,.035),'e9-trim',0)
+        L.handle((-1.65,-.58,z),.24,'Z',.035,.014)
+        for dz in (-.12,.12):L.bolt((-.29,-.56,z+dz),.018)
         L.screen('Crosspatch trace',(.9,-.49,z),1.25,.3,pattern=('bars','schematic','grid')[i])
         L.cable_bundle('Patched fibres',(-.25,-.6,z),( .3,-.6,z+.12),3,.15,.012)
         L.stencil(str(i+1),(-1.8,-.5,z),.17)
-    L.box('Service roof',(0,0,2.45),(5.3,.95,.1),'e9-trim',.015)
+    L.box('Service roof',(0,0,2.45),(5.3,.95,.1),'e9-dark',.015)
+    for x in (-2.3,2.3):
+        L.hinge((x,-.45,2.15),.18,.02)
+        L.cylinder('Roof cable gland',(x,0,2.53),.08,.12,'e9-trim','Z',10)
+        L.sweep('Roof trunk',[(x,0,2.58),(x,.25,2.61),(x,.4,2.5)],.035,'p11-rubber',8)
     L.vent((0,-.44,2.18),4.3,.2,14)
     L.stencil('NORTH BUS',(0,-.5,2.38),.14)
 

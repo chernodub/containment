@@ -9,73 +9,79 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 3.0,
-    "blenderPNGDecodeMs": 14.228,
+    "bakeSeconds": 2.007,
+    "blenderPNGDecodeMs": 11.916,
     "file": "comms-engineering-normal.png",
     "size": 512,
-    "bytes": 318198,
+    "bytes": 327753,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 184851,
+    "nonFlatPixels": 192848,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "relay-monolith-spine--e9-body",
         "role": "e9-body",
-        "seconds": 0.202,
+        "seconds": 0.123,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "relay-monolith-spine--e9-ceramic",
         "role": "e9-ceramic",
-        "seconds": 0.084,
+        "seconds": 0.081,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "relay-monolith-spine--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.128,
+        "seconds": 0.166,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "relay-monolith-spine--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.298,
+        "seconds": 0.182,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "relay-monolith-spine--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.1,
+        "seconds": 0.041,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "relay-monolith-spine--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.179,
+        "seconds": 0.066,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "relay-crosspatch--e9-body",
         "role": "e9-body",
-        "seconds": 0.079,
+        "seconds": 0.036,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "relay-crosspatch--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.189,
+        "seconds": 0.055,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "relay-crosspatch--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.242,
+        "seconds": 0.061,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "relay-crosspatch--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.058,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "relay-crosspatch--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.276,
+        "seconds": 0.09,
         "method": "three-segment high bevel"
       }
     ]
@@ -111,7 +117,7 @@
           6.23
         ]
       },
-      "triangles": 11810,
+      "triangles": 11666,
       "budget": 12000,
       "finishes": [
         "e9-amber",
@@ -129,7 +135,7 @@
       "name": "relay-crosspatch",
       "size": [
         5.3,
-        2.5,
+        2.6439,
         1.1222
       ],
       "bounds": {
@@ -140,16 +146,17 @@
         ],
         "max": [
           2.65,
-          2.5,
+          2.6439,
           0.6472
         ]
       },
-      "triangles": 2544,
+      "triangles": 3524,
       "budget": 12000,
       "finishes": [
         "e9-body",
         "e9-dark",
         "e9-trim",
+        "p11-rubber",
         "p11-screen",
         "p11-tint"
       ]
@@ -157,9 +164,9 @@
   ],
   "output": {
     "file": "comms-engineering.glb",
-    "bytes": 1268692,
-    "sha256": "3a09ba1ea9e3e19823d299416ad11a6da95757d8a172a3a2e518b85263583146",
-    "triangles": 14354
+    "bytes": 1339564,
+    "sha256": "d4512e97bb8268316318d1c2591354d85a3d86bd419f3386cbbcf9df59982f08",
+    "triangles": 15190
   },
   "overBudget": []
 }
