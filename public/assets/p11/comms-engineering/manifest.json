@@ -24,7 +24,7 @@
       "name": "relay-monolith-spine",
       "size": [
         3.06,
-        2.8862,
+        3.06,
         12.43
       ],
       "bounds": {
@@ -35,11 +35,11 @@
         ],
         "max": [
           1.53,
-          2.8862,
+          3.06,
           6.23
         ]
       },
-      "triangles": 11850,
+      "triangles": 11466,
       "budget": 12000,
       "finishes": [
         "e9-amber",
@@ -56,9 +56,9 @@
   ],
   "output": {
     "file": "comms-engineering.glb",
-    "bytes": 381528,
-    "sha256": "d49336c7c281ca444ae1b047e0d9cc478982d299c11b5543c3c21855261fe0ff",
-    "triangles": 11850
+    "bytes": 367824,
+    "sha256": "bb43cbe98b92b9971f94bb6cc9766ee804cb899ba666be3630cacc77b8b83b3d",
+    "triangles": 11466
   },
   "overBudget": []
 }

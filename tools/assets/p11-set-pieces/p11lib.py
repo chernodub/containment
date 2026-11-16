@@ -285,7 +285,7 @@ def lathe(name, profile_rz, location=(0, 0, 0), role='e9-body', segments=24, axi
         a, b = rings[i], rings[(i + 1) % segments]
         for j in range(len(profile_rz) - 1):
             quad = [a[j], b[j], b[j + 1], a[j + 1]]
-            if len({v.index for v in quad}) == 4:
+            if len(set(quad)) == 4:
                 try:
                     bm.faces.new(quad)
                 except ValueError:

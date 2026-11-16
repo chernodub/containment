@@ -1,3 +1,9 @@
+import {p11MaintenancePlacements} from './P11MaintenancePlacements';
+import {p11CargoPlacements} from './P11CargoPlacements';
+import {p11ClinicalSecurityPlacements} from './P11ClinicalSecurityPlacements';
+import {p11ControlPlacements} from './P11ControlPlacements';
+import {p11HabitationPlacements} from './P11HabitationPlacements';
+import {p11InfestedPlacements} from './P11InfestedPlacements';
 import * as T from 'three';
 import type { RoomTemplate } from '../../game/roguelike/types';
 import { SHIP_ARCHITECTURE_PLANS } from '../../game/roguelike/shipArchitectureLayouts';
@@ -18,6 +24,14 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
     const matrix = (x: number, y: number, z: number, angle: number, sx = 1, sy = 1, sz = 1) => new T.Matrix4().compose(new T.Vector3(x, y, z), new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), angle), new T.Vector3(sx, sy, sz));
     for (const furnishing of shipInteriorFurnishings(t))
         instances.push({ pack: furnishing.pack, asset: furnishing.asset, matrix: matrix(furnishing.x / 32, 0, furnishing.z / 32, furnishing.angle, ...furnishing.scale), purpose: furnishing.space + ' / ' + furnishing.asset,cutaway:furnishing.source==='portal' });
+    if(id==='relay-racks') {
+        // Exactly inside the existing 100 × 400-unit central solid.
+        for(let i=instances.length-1;i>=0;i--) {
+            const p=instances[i].matrix.elements;
+            if(p[12]>606/32 && p[12]<706/32 && p[14]>300/32 && p[14]<700/32) instances.splice(i,1);
+        }
+        instances.push({pack:'p11-comms',asset:'relay-monolith-spine',matrix:matrix(656/32,0,500/32,0),purpose:'P11 central fibre spine',cutaway:true});
+    }
     const overhead=(pack:OriginalKitPack,asset:string,x:number,z:number,height:number,angle=0)=>instances.push({pack,asset,matrix:matrix(x/32,height,z/32,angle),purpose:'Suspended '+asset,cutaway:true});
     // Ceiling services occupy no deck area. Their visible manufactured source
     // gives the open nave a landmark where all wall bays lie outside the crop.
@@ -69,6 +83,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         const p = opening.from, q = opening.to, dx = (q.x - p.x) / 32, dz = (q.y - p.y) / 32, length = Math.hypot(dx, dz);
         instances.push({ pack: 'structure', asset: 'door-threshold', matrix: matrix((p.x + q.x) / 64, -.025, (p.y + q.y) / 64, -Math.atan2(dz, dx), length / 4.5, 1, 1), purpose: 'Flush manufactured doorway threshold', castShadow: false });
     }
+    instances.push(...p11InfestedPlacements(id),...p11HabitationPlacements(id),...p11ControlPlacements(id),...p11ClinicalSecurityPlacements(id),...p11CargoPlacements(id),...p11MaintenancePlacements(id));
     return instances;
 }
 /** Original model owner settles before combat warmup. Session transfers survive
@@ -193,6 +208,10 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
                 }[])
                     if (fixture.color === 0x65d8e6)
                         fixture.color = profile.key;
+            if(t.id==='relay-racks') {
+                const legacy=world.getObjectByName('relay-fixture-4');
+                if(legacy){const visible=legacy.visible;legacy.visible=false;restores.push(()=>{legacy.visible=visible;});}
+            }
             world.add(root);
             owner.state = 'ready';
             onChanged();

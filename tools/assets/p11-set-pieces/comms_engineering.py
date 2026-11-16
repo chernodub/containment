@@ -48,20 +48,29 @@ def blade_door(cx, y, width, height, z0, seed):
     L.handle((cx + width / 2 - .05, y - .045, zc), .28, 'Z', .025, .01, 'e9-ceramic', '-Y')
 
 
-def monolith(y0, number, seed, broken=False):
+def monolith(y0, number, seed, broken=False, height=2.45):
     """Server monolith, 2.8 (X) x 1.5 (Y) x 2.45 m; doors face the camera (-Y).
     The never-seen north face stays plain."""
-    w, d, h = 2.8, 1.5, 2.45
+    w, d, h = 2.8, 1.5, height
     front = y0 - d / 2
-    L.box('Monolith core', (0, y0, h / 2), (w - .12, d - .04, h - .1), 'e9-body', .04)
+    L.box('Monolith core', (0, y0, h / 2), (w - .12, d - .04, h - .1), 'p11-tint', .04, tint='navy')
     for sx in (-1, 1):
         for sy in (-1, 1):
             L.box('Monolith corner pillar', (sx * (w / 2 - .08), y0 + sy * (d / 2 - .06), h / 2 - .02),
-                  (.18, .2, h - .06), 'e9-ceramic', .035)
+                  (.18, .2, h - .06), 'p11-tint', .035, tint='dark-grey')
     L.box('Monolith toe plinth', (0, y0, .06), (w + .06, d + .1, .12), 'e9-dark', .02)
     L.vent((0, front - .04, .2), w - .7, .14, 4, '-Y', .03)
     for k, dx in enumerate((-.66, .66)):
-        blade_door(dx, front, 1.2, 1.78, .38, seed + k * 5)
+        if broken and k == 1:
+            L.box('Open backplane cavity', (dx,front-.015,1.24),(1.16,.08,1.68),'e9-dark',0)
+            for card in range(5):
+                cx=dx-.42+card*.20
+                L.box('Exposed card', (cx,front-.13,1.22),(.035,.23,1.3),'p11-tint',0,tint='olive')
+                for chip in range(3):
+                    L.box('Card package', (cx+.025,front-.14,.8+chip*.35),(.025,.14,.12),'e9-dark',0)
+                L.box('Card ejector', (cx,front-.26,.61),(.07,.045,.12),'e9-trim',0)
+        else:
+            blade_door(dx, front, 1.2, 1.78, .38, seed + k * 5)
     L.box('Cooling band', (0, front, 2.26), (w - .36, .06, .16), 'e9-trim', .015)
     for i in range(9):
         L.box('Cooling rib', (-1.0 + i * .25, front - .03, 2.26), (.035, .04, .15), 'e9-dark', 0)
@@ -76,12 +85,12 @@ def monolith(y0, number, seed, broken=False):
         for k in range(3):
             L.box('Side rib', (sx * (w / 2 + .005), y0 + .45, .7 + k * .5), (.03, .1, .3), 'e9-dark', 0)
     # Crown: cap, riser, two fans, patch ridge, number and trunk glands.
-    L.box('Crown cap', (0, y0, h + .04), (w - .04, d + .02, .1), 'e9-ceramic', .03)
+    L.box('Crown cap', (0, y0, h + .04), (w - .04, d + .02, .1), 'p11-tint', .03, tint='navy')
     L.box('Crown riser', (0, y0, h + .13), (w - .5, d - .3, .1), 'e9-body', .025)
     for sx in (-1, 1):
         fx = sx * .78
         L.cylinder('Fan well', (fx, y0, h + .175), .42, .03, 'e9-dark', 'Z', 12, 0)
-        L.torus('Fan shroud', (fx, y0, h + .2), .42, .035, 'e9-trim', 'Z', 14, 4)
+        L.torus('Fan shroud', (fx, y0, h + .2), .42, .035, 'e9-trim', 'Z', 12, 4)
         for b in range(6):
             a = 2 * math.pi * b / 6 + seed
             L.box('Fan blade', (fx + math.cos(a) * .2, y0 + math.sin(a) * .2, h + .19), (.32, .11, .012), 'e9-body',
@@ -130,13 +139,17 @@ def relay_spine():
     L.box('Plinth south nosing', (0, -length / 2, .17), (width, .06, .05), 'e9-ceramic', .01)
     ys = (-3.4, .5, 4.4)
     for i, y in enumerate(ys):
-        monolith(y, i + 1, i * 1.7, broken=i == 1)
+        monolith(y, i + 1, i * 1.7, broken=i == 1, height=(2.45,2.15,2.75)[i])
     h = 2.45 + .3
-    # Crown-to-crown trunks (one lit, one dark) across each gap.
-    trunk((.2, ys[0] + .62, h), (.2, ys[1] - .62, h), .6)
-    trunk((.2, ys[1] + .62, h), (.2, ys[2] - .62, h), .55, glow=False)
-    trunk((-.45, ys[0] + .55, h - .1), (-.45, ys[1] - .55, h - .1), .85, glow=False)
-    trunk((-.45, ys[1] + .55, h - .1), (-.45, ys[2] - .55, h - .1), .8)
+    # Overhead ladder tray and captive fibre routes, inside the solid footprint.
+    for x in (-.28,.28):
+        L.box('Overhead tray rail',(x,.4,3.3),(.045,9.2,.12),'e9-trim',0)
+    for i in range(14):
+        L.box('Tray rung',(0,-4+i*.68,3.28),(.55,.045,.045),'e9-dark',0)
+    for i,y in enumerate(ys):
+        top=(2.45,2.15,2.75)[i]+.29
+        trunk((.2,y+.62,top),(.2,y+.85,3.3),.07,glow=i!=1)
+    trunk((0,-4,3.32),(0,4.9,3.32),.08)
     for i, y in enumerate((ys[0] - .62, ys[2] + .62)):
         side = -1 if i == 0 else 1
         ey = side * 5.6

@@ -3,17 +3,25 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoomModelCache} from '../RoomModelCache';
 import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
 
-export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure';
+export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance';
 
 const base = import.meta.env.BASE_URL + 'assets/e9-ship-kit/';
 const URLs: Record<OriginalKitPack, string> = {
+  'p11-comms': import.meta.env.BASE_URL + 'assets/p11/comms-engineering/comms-engineering.glb',
+  'p11-habitation': import.meta.env.BASE_URL + 'assets/p11/habitation/habitation.glb',
+  'p11-infested': import.meta.env.BASE_URL + 'assets/p11/infested/infested.glb',
+  'p11-control': import.meta.env.BASE_URL + 'assets/p11/control/control.glb',
+  'p11-clinical-security': import.meta.env.BASE_URL + 'assets/p11/clinical-security/clinical-security.glb',
+  'p11-cargo': import.meta.env.BASE_URL + 'assets/p11/cargo/cargo.glb',
+  'p11-service': import.meta.env.BASE_URL + 'assets/p11/service-kit/service-kit.glb',
+  'p11-maintenance': import.meta.env.BASE_URL + 'assets/p11/maintenance-containment/maintenance-containment.glb',
   clinical: base + 'clinical/clinical.glb',
   security: base + 'security/security.glb',
   industrial: base + 'industrial/kit.glb',
   structure: base + 'structure/structure.glb',
 };
 const functionPacks = new RoomModelCache(
-  (['clinical', 'security', 'industrial'] as const).map(pack => ({
+  (['clinical', 'security', 'industrial', 'p11-comms', 'p11-habitation', 'p11-infested', 'p11-control', 'p11-clinical-security', 'p11-cargo', 'p11-service', 'p11-maintenance'] as const).map(pack => ({
     url: URLs[pack], maxBytes: 2_000_000, label: 'Original ' + pack + ' ship kit',
   })),
 );

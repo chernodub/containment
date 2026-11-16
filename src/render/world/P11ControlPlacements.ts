@@ -1,0 +1,14 @@
+import * as T from 'three';
+import type {OriginalKitInstance} from './OriginalShipKitAssets';
+/** Native machinery solids retain collision ownership; these are presentation replacements. */
+export function p11ControlPlacements(id:string):OriginalKitInstance[]{
+ const placements:Record<string,[string,number,number,number,number,number]>={
+  'transmission-chamber':['uplink-tracking-dish',600,90,1.65,1,1.65],
+  'diagnostic-gallery':['specimen-probe-cradle',390,65,2.2,1,2.2],
+  'safety-interlock-station':['key-cylinder-interlock',370,90,1.4,1,1.4],
+  'manual-control-chamber':['manual-authorisation-dais',290,140,1.6,1,1.6],
+  'overload-floor':['reactor-crown',700,500,1.7,1.4,1.7],
+ };
+ const p=placements[id];if(!p)return [];
+ return [{pack:'p11-control',asset:p[0],matrix:new T.Matrix4().compose(new T.Vector3(p[1]/32,0,p[2]/32),new T.Quaternion(),new T.Vector3(p[3],p[4],p[5])),purpose:'P11 / '+p[0],cutaway:true}];
+}
