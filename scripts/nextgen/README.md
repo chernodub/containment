@@ -1093,3 +1093,21 @@ when walking cannot clear that melee warning in time. Crawler reach supplies a
 spacing lower bound. Prior ranged/acid endpoint scoring and hazard dash behavior
 remain; melee warnings are excluded from the approximate generic circle list.
 No enemy future decisions or cooldowns enter those melee choices.
+
+## C10 melee readability review
+
+`c10-melee-swarm` repeats the M10 legal crowd fixture with twenty Crawlers.
+`c10-melee-crew-checkpoint` and `c10-melee-relay-racks` repeat its native Crawler
+warning lane on the pale/dark contrast extremes, adding explicitly labelled
+presentation-only corpse and white/violet Overload replays. Use `--burst=30`;
+normal simulation still owns every hostile phase and footprint. The fixtures do
+not establish balance or performance. The M9 strip runner now imports the actual
+melee catalog and elite phase scales rather than maintaining replay constants.
+
+`node scripts/nextgen/audio-evidence.mjs --out=artifacts/nextgen/c10-final/audio --melee-only`
+measures ordinary/elite family warning/attack recipes, existing layered samples
+and the dense director mix, plus a twenty-event swarm/heavy stress replay with
+pause and mute observations. It uses the production director/mixer; WAV/PNG pairs
+and numerical results are retained. `--out` also works for the full inventory;
+`--reuse-recipes` requires a complete previous full inventory. Measurement is not
+an acoustic listening review. No automated test suite is added.

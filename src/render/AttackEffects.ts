@@ -46,11 +46,21 @@ else if(style>5.5){
  else if(melee){
   float progress=clamp(vFrame-1.0,0.0,1.0),phase=path?vUv.x:d;
   float filled=1.0-smoothstep(progress-.02,progress+.02,phase);
-  float timing=1.0-smoothstep(.006,.018,abs(phase-progress*.98));
-  // Small contact threats get a fine perimeter, not a floor-covering hatch.
-  // The full native footprint remains faintly present; heavy attacks earn weight.
-  color=vec3(1.8,.13,.035);
-  alpha=vAlpha*min(1.0,edge*(.66+.34*progress)+timing*.10+(.035+threat*.13)*(.5+.5*filled));
+  // Derivatives keep the nested rim/keyline legible at desktop review scale.
+  // Both strokes are clipped INSIDE the exact native footprint.
+  float aa=max(fwidth(d),.003),boundary=1.0-d;
+  if(sector)boundary=min(boundary,(vShape.z-abs(atan(p.y,p.x)))*d);
+  float key=1.0-smoothstep(aa*3.0,aa*4.5,boundary);
+  float rim=smoothstep(aa*.5,aa*1.1,boundary)*(1.0-smoothstep(aa*2.0,aa*2.8,boundary));
+  float timing=1.0-smoothstep(aa,aa*2.5,abs(phase-progress));
+  float strike=vFrame>=3.0?(1.0-clamp(vFrame-3.0,0.0,1.0))*flashScale:0.0;
+  color=mix(vec3(.008,.004,.003),vec3(1.0,.21,.075),max(rim,timing*.8));
+  color=mix(color,vec3(1.0,.38,.15),strike*.65);
+  // Family weight affects the quiet interior; edge opacity stays readable.
+  alpha=max(key*.82,rim*.96);
+  alpha=max(alpha,timing*(.30+threat*.20));
+  alpha=max(alpha,(.018+threat*.065)*filled);
+  alpha=max(alpha,strike*(.12+threat*.18));
  }
  else{
   float progress=clamp(vFrame-1.0,0.0,1.0),phase=path?vUv.x:d,filled=1.0-smoothstep(progress-.02,progress+.02,phase);
@@ -119,7 +129,7 @@ function pool(scene:T.Scene,geometry:T.BufferGeometry,count:number,style:number,
 }
 /** Bounded GPU instance pools: no lights or draw call per pellet / particle. */
 export class AttackEffects {
- private readonly nativeWarnings=Array.from({length:32},()=>({active:false,id:0,melee:false,weight:1,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
+ private readonly nativeWarnings=Array.from({length:32},()=>({active:false,id:0,melee:false,striking:false,weight:1,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
  private readonly warningFrom={x:0,y:0};private readonly warningTo={x:0,y:0};
  private warningFrustum:T.Frustum|undefined;private readonly warningBounds=new T.Sphere();
  /** Borrow the renderer's settled frustum; warning state and priority stay live. */
@@ -202,8 +212,8 @@ export class AttackEffects {
    let enemy:typeof enemies[number]|undefined;
    for(const candidate of enemies)if(candidate.id===warning.id){enemy=candidate;break;}
    if(warning.melee){
-    if(!enemy||enemy.health<=0||enemy.meleePhase!=='windup'){warning.active=false;continue;}
-    const w=warning.shape,m=enemy.meleeShape;w.shape=m.kind==='line'?'line':'cone';w.x=enemy.meleeOriginX/32;w.z=enemy.meleeOriginY/32;w.angle=enemy.meleeAngle;w.radius=m.range/32;w.length=m.range/32;w.width=m.width/32;w.arc=m.halfAngle*2;w.progress=enemy.meleeProgress;warning.remainingMs=enemy.meleeRemainingMs;warning.weight=meleeWarningWeight(enemy.type,enemy.elite);continue;
+    if(!enemy||enemy.health<=0||(enemy.meleePhase!=='windup'&&enemy.meleePhase!=='strike')){warning.active=false;continue;}
+    const w=warning.shape,m=enemy.meleeShape;w.shape=m.kind==='line'?'line':'cone';w.x=enemy.meleeOriginX/32;w.z=enemy.meleeOriginY/32;w.angle=enemy.meleeAngle;w.radius=m.range/32;w.length=m.range/32;w.width=m.width/32;w.arc=m.halfAngle*2;w.progress=enemy.meleeProgress;warning.striking=enemy.meleePhase==='strike';warning.remainingMs=enemy.meleeRemainingMs;warning.weight=meleeWarningWeight(enemy.type,enemy.elite);continue;
    }
    if(!enemy||enemy.health<=0||enemy.windupMs<=0||!enemy.pendingAttack){warning.active=false;continue;}
    const shape=warning.shape,charge=enemy.pendingAttack==='charge';
@@ -389,7 +399,9 @@ export class AttackEffects {
    return;
   }
   if(e.type==='enemy-attack'){
-   for(const warning of this.nativeWarnings)if(warning.active&&warning.id===e.id)warning.active=false;
+   for(const warning of this.nativeWarnings)if(warning.active&&warning.id===e.id&&!warning.melee)warning.active=false;
+   // Native melee impact flashes the exact retained footprint, not a generic slash.
+   if(e.meleeShape)return;
    if(e.id===-1)return;
    if(e.family==='spitter'){
     p.y=.8;for(let i=0;i<7;i++)this.particle(this.glow,EFFECT_LIMITS.glow,p,0x9bd25e,.1,.3,forward.clone().multiplyScalar(1+Math.random()*2).add(new T.Vector3(0,Math.random(),0)),2);
@@ -641,7 +653,7 @@ export class AttackEffects {
    this.dummy.position.set(w.x+Math.cos(angle)*length*.5,.04,w.z+Math.sin(angle)*length*.5);this.dummy.rotation.set(-Math.PI/2,0,-angle);this.dummy.scale.set(length*.5+radius,radius,1);this.dummy.updateMatrix();
    this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);
    (this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,sector?2:w.shape==='line'?1:0,length/(2*radius),sector?w.arc!*.5:0,native.melee?1+native.weight:0);
-   (this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress!);
+   (this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,(native.striking?3:1)+w.progress!);
    (this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,native.weight);
   }
   if(this.bossWarning&&this.warningVisible(this.bossWarning.x,this.bossWarning.z,this.bossWarning.radius,0,0,.045)){const w=this.bossWarning;this.dummy.position.set(w.x,.045,w.z);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.setScalar(w.radius);this.dummy.updateMatrix();(this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,0,0,0,0);this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);(this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress);(this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,1);}

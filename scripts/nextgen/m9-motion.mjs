@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 /** Fixed-step native-scale production-rig motion studies; never gameplay evidence. */
 import assert from 'node:assert/strict';
+import ts from 'typescript';
 import {createServer} from 'node:http';
 import {readFile, writeFile, mkdir, stat, readdir} from 'node:fs/promises';
 import {resolve, extname, dirname} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {chromium} from 'playwright';
+
+// Use the existing TypeScript compiler so the capture tool also works on the
+// project's Node22 floor, before native TS loading became enabled by default.
+const meleeSource=await readFile(new URL('../../src/game/enemies/meleeAttacks.ts',import.meta.url),'utf8');
+const meleeModule=ts.transpileModule(meleeSource,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const {MELEE_ATTACKS,ELITE_MELEE_WINDUP_SCALE,ELITE_MELEE_RECOVERY_SCALE}=await import('data:text/javascript;base64,'+Buffer.from(meleeModule).toString('base64'));
 
 const args=process.argv.slice(2);
 const known=new Set(['out','dist','subjects','actions','frames','steps']);for(const arg of args)assert(arg.startsWith('--')&&arg.includes('=')&&known.has(arg.slice(2).split('=')[0]),`Unknown motion capture option ${arg}`);
@@ -19,7 +26,7 @@ const frames=Number(option('frames',12)),steps=Number(option('steps',4));
 assert(Number.isInteger(frames)&&frames>=4&&frames<=30&&Number.isInteger(steps)&&steps>=1&&steps<=12);
 const marineActions=['idle','idle-cryo','idle-pyro','idle-arc',...Array.from({length:8},(_,n)=>`run-${n*45}`),'stop-start',...Array.from({length:8},(_,i)=>`reversal-${i*45}`),...['pistol','rifle','shotgun','plasma','rocket'].map(w=>`fire-${w}`),'reload','weapon-switch','dash','hit','death',...['ram','seismic-slam','bulwark','railbreaker','frost-trail','cryo-nova','glacier','whiteout','afterburn','flashfire','napalm-charge','meltdown','static-step','overload','tesla-pylon','overclock'].map(a=>`cast-${a}`)];
 const enemyActions=['idle','run','attack','light-hit','heavy-hit','side-hit','stagger','frozen','burning','shocked','death','death-frost','death-burn','death-arc','death-acid','death-high-impulse','spawn'];
-const manifest={version:1,sourceSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceStatus:execFileSync('git',['status','--short'],{encoding:'utf8'}).trim(),viewport:{width:1920,height:1080},fixedStepMs:1000/60,frames,steps,shots:[],errors:[],limitations:['Isolated production rig studies at the settled native gameplay camera pixel scale, without world/HUD; fire rows include existing native muzzle/brass/vent pools and death rows include native corpse cue pools. No resizing of cropped pixels.','Actor animation inputs and warning durations are explicit presentation replays. Simulation is frozen and checked unchanged. They do not prove native attack acceptance, foot-world contact, combat priority, physics death, organic pacing or performance.','M10 melee attack studies replay the production snapshot phase adapter with native family timing; simulation stays frozen. Shock is replayed via the model status adapter when supported.','Marine and enemy death use the actual pooled Rapier ragdoll with a prescribed killing impulse. This is a presentation replay, not a native kill.']};
+const manifest={version:1,meleeProfiles:MELEE_ATTACKS,eliteWindupScale:ELITE_MELEE_WINDUP_SCALE,eliteRecoveryScale:ELITE_MELEE_RECOVERY_SCALE,sourceSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceStatus:execFileSync('git',['status','--short'],{encoding:'utf8'}).trim(),viewport:{width:1920,height:1080},fixedStepMs:1000/60,frames,steps,shots:[],errors:[],limitations:['Isolated production rig studies at the settled native gameplay camera pixel scale, without world/HUD; fire rows include existing native muzzle/brass/vent pools and death rows include native corpse cue pools. No resizing of cropped pixels.','Actor animation inputs and warning durations are explicit presentation replays. Simulation is frozen and checked unchanged. They do not prove native attack acceptance, foot-world contact, combat priority, physics death, organic pacing or performance.','M10 melee attack studies replay the production snapshot phase adapter with native family timing; simulation stays frozen. Shock is replayed via the model status adapter when supported.','Marine and enemy death use the actual pooled Rapier ragdoll with a prescribed killing impulse. This is a presentation replay, not a native kill.']};
 await mkdir(out,{recursive:true});await stat(resolve(dist,'index.html'));
 manifest.distAssets=await Promise.all((await readdir(resolve(dist,'assets'))).filter(file=>/\.(js|css)$/.test(file)).sort().map(async file=>{const bytes=await readFile(resolve(dist,'assets',file));return {file,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};}));
 let browser;
@@ -38,7 +45,7 @@ try{
   for(const action of subject==='marine'?marineActions:subject==='crowd'?['run']:enemyActions){
    if(!actionFilter.includes('all')&&!actionFilter.includes(action))continue;
    const actionFrames=/^(attack|death)/.test(action)?Math.max(frames,24):action.startsWith('reversal-')?Math.max(frames,18):frames;
-   const result=await page.evaluate(({subject,action,frames,steps})=>{
+   const result=await page.evaluate(({subject,action,frames,steps,profiles,windupScale,recoveryScale})=>{
     const d=window.__containmentDebug,r=d.renderer,g=d.game,elapsed=g.elapsed,timeBase=d.m9Clock??0;
     const oldRandom=Math.random;let visualSeed=[...`${subject}/${action}`].reduce((n,c)=>(Math.imul(n,31)+c.charCodeAt(0))>>>0,1729);Math.random=()=>{visualSeed=(Math.imul(visualSeed,1664525)+1013904223)>>>0;return visualSeed/4294967296;};
     const abilityUpdate=r.interimAbilities.update.bind(r.interimAbilities),oldAbilityUpdate=r.interimAbilities.update;
@@ -95,7 +102,10 @@ try{
         model.setAction?.(ability,phase);
        }
        if(action==='attack'){
-        const duration=(({crawler:260,stalker:420,brute:650,spitter:350,carrier:620})[family]??650)*(elite?.82:1),remaining=Math.max(0,duration-time*1000);const strike=family==='crawler'?70:family==='stalker'?90:120,recovery=(family==='crawler'?240:family==='stalker'?560:family==='brute'?450:family==='carrier'?460:420)*(elite?.85:1);const ms=time*1000;model.setAttackState?.(ms<duration?'windup':ms<duration+strike?'strike':ms<duration+strike+recovery?'recovery':'approach',ms<duration?ms/duration:ms<duration+strike?(ms-duration)/strike:Math.min(1,(ms-duration-strike)/recovery),0,{kind:family==='stalker'?'line':'arc',range:family==='stalker'?156:family==='brute'?115:76,halfAngle:1,width:40});
+        const profile=profiles[family]??profiles.brute;
+        const duration=profile.windupMs*(elite?windupScale:1),remaining=Math.max(0,duration-time*1000);
+        const strike=profile.strikeMs,recovery=profile.recoveryMs*(elite?recoveryScale:1),ms=time*1000;
+        model.setAttackState?.(ms<duration?'windup':ms<duration+strike?'strike':ms<duration+strike+recovery?'recovery':'approach',ms<duration?ms/duration:ms<duration+strike?(ms-duration)/strike:Math.min(1,(ms-duration-strike)/recovery),0,profile.shape);
         model.setThreat?.(remaining,remaining>0&&(family==='brute'||family==='spitter')?(family==='brute'?'charge':'spit'):null,champion,1);
         if(!triggered&&time*1000>=duration){model.attack?.();triggered=true;}
        }
@@ -159,7 +169,7 @@ try{
      for(let i=1;i<models.length;i++)r.actorPool.release(models[i]);if(!human)r.actorPool.release(model);else{model.root.rotation.z=0;model.setRig?.('breacher');}
      d.refresh();
     }
-   },{subject,action,frames:actionFrames,steps});
+   },{subject,action,frames:actionFrames,steps,profiles:MELEE_ATTACKS,windupScale:ELITE_MELEE_WINDUP_SCALE,recoveryScale:ELITE_MELEE_RECOVERY_SCALE});
    const file=`${subject}-${action}.png`,png=Buffer.from(result.png,'base64');delete result.png;const mask=Buffer.from(result.mask,'base64');delete result.mask;await mkdir(resolve(out,'masks'),{recursive:true});await writeFile(resolve(out,'masks',file),mask);
    await writeFile(resolve(out,file),png);
    manifest.shots.push({subject,action,file,sha256:createHash('sha256').update(png).digest('hex'),...result});

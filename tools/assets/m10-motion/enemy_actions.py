@@ -235,17 +235,17 @@ class Creature:
             if action=='m10-windup':
                 coil=between(t,[(0,0),(.16,.55),(.42,1),(1,1)]);strike=0.;recover=0.
             elif action=='m10-strike':
-                coil=between(t,[(0,1),(.18,.35),(.35,0),(1,0)])
-                strike=between(t,[(0,0),(.20,1),(.42,1.12),(.72,.65),(1,.34)]);recover=0.
+                coil=0.
+                strike=between(t,[(0,1),(.18,1.08),(.60,.65),(1,.34)]);recover=0.
             else:
-                coil=0.;strike=.34*(1-t);recover=between(t,[(0,1),(.55,.85),(.82,.35),(1,0)])
+                coil=0.;strike=.34*(1-t);recover=between(t,[(0,1),(.55,.85),(.90,.40),(.98,.24),(1,0)])
             rear={'crawler':.42,'brute':-.24,'stalker':.42,'spitter':-.28,'carrier':-.18}[self.family]
             extension={'crawler':.48,'brute':.42,'stalker':-.35,'spitter':.30,'carrier':.40}[self.family]
             height={'crawler':-.34,'brute':.10,'stalker':-.28,'spitter':.08,'carrier':.10}[self.family]
             self.rotate(self.center,SIDE,rear*coil+extension*strike)
             self.rotate(self.center,FWD,-.17*recover)
             self.move(self.center,UP*H*(height*coil-.10*strike-.035*recover))
-            if action=='m10-strike': self.move(self.center,FWD*W*(1.2 if self.family=='stalker' else .15)*math.sin(t*math.pi))
+            # Native footprint-scaled travel belongs to EnemyMotion, once only.
             self.mouth(coil*.8+strike*.5)
             if crawler and coil:self.squash(self.center,up=1-.27*coil,side=1+.18*coil,forward=1-.06*coil)
             elif self.family=='stalker' and coil:self.squash(self.center,up=1-.18*coil,side=1+.12*coil)

@@ -51,6 +51,7 @@ export class AudioSystem implements GameAudioDirector {
   private frozenIds = new Set<number>();
   private frozenRoom = -1;
   private readonly variants = new Map<string, number>();
+  private readonly swarmVoices: MixVoice[] = [];
   private readonly lastPlayed = new Map<string, number>();
   private readonly loops = new Map<string, Loop>();
   private readonly pendingLoops = new Set<string>();
@@ -159,7 +160,7 @@ export class AudioSystem implements GameAudioDirector {
   pauseMusic(): void { this.musicPaused = true; this.stopStems(); }
   pauseAll(): void {
     this.effectsPaused = true; this.pauseMusic(); this.stopLoops(); this.stopAmbience(); this.stopHeartbeat();
-    this.mixer?.stopAll(); this.reloadVoices.length = 0;
+    this.mixer?.stopAll(); this.reloadVoices.length = 0; this.swarmVoices.length = 0;
   }
   resumeMusic(): void { if (!this.destroyed) { this.musicPaused = false; this.startMusic(); } }
   resumeAll(): void {
@@ -204,7 +205,7 @@ export class AudioSystem implements GameAudioDirector {
     else if (effect.type === 'explosion') this.explosion((effect.radius ?? 120) > 180 ? 'large-explosion' : (effect.radius ?? 120) < 80 ? 'small-explosion' : 'explosion', pan, distance);
     else if (effect.type === 'enemy-warning' || effect.type === 'enemy-attack') {
       const family = effect.family ?? (effect.id === -1 ? this.bossPhase === 1 ? 'queen' : `queen-phase-${this.bossPhase}` : 'crawler');
-      this.enemy(family, effect.type === 'enemy-warning' ? 'warning' : 'attack', effect.elite, pan, distance);
+      this.enemy(family, effect.type === 'enemy-warning' ? 'warning' : 'attack', effect.elite, pan, distance, effect.durationMs);
     }
     else if (effect.type === 'hurt') this.cue(impactRecipe('hurt'));
     else if (effect.type === 'pickup') this.playPickup();
@@ -318,9 +319,15 @@ export class AudioSystem implements GameAudioDirector {
     this.sample('explosion.wav', kind === 'large-explosion' ? .38 : .28, { bus: 'impacts', priority: 75, pan, distance });
     this.duck(kind === 'large-explosion' ? .25 : .45, .30);
   }
-  private enemy(family: string, phase: 'warning' | 'attack' | 'death', elite = false, pan = 0, distance = 0): void {
-    const voice = this.cue(enemyRecipe(family, phase, elite), { pan, distance, rate: Math.sqrt(this.hostileTimeScale) });
-    if (voice) this.sample('alien-impact.wav', .13, { bus: 'enemies', priority: 25, pan, distance, rate: .7 * Math.sqrt(this.hostileTimeScale) });
+  private enemy(family: string, phase: 'warning' | 'attack' | 'death', elite = false, pan = 0, distance = 0, durationMs?: number): void {
+    const swarm=family==='crawler'&&phase!=='death';
+    for(let i=this.swarmVoices.length-1;i>=0;i--)if(!this.mixer?.voices.has(this.swarmVoices[i])||this.swarmVoices[i].end<=(this.context?.currentTime??0))this.swarmVoices.splice(i,1);
+    if(swarm&&this.swarmVoices.length>=3)return;
+    const recipe=enemyRecipe(family,phase,elite);
+    const voice = this.cue(recipe, { pan, distance, rate: Math.sqrt(this.hostileTimeScale)*(phase==='warning'&&durationMs&&durationMs>0?recipe.duration*1000/durationMs:1) },swarm?`swarm:${phase}`:recipe.id);
+    if(swarm&&voice)this.swarmVoices.push(voice);
+    // Melee tells are entirely synthesized; the old common sample masked identity.
+    if (voice&&phase==='death') this.sample('alien-impact.wav', .13, { bus: 'enemies', priority: 25, pan, distance, rate: .7 * Math.sqrt(this.hostileTimeScale) });
     if (elite || family === 'queen') this.duck(.6, .22);
   }
   private handleAbility(event: AbilityEvent, pan: number, distance: number): void {
