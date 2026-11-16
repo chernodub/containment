@@ -21,5 +21,6 @@ export function p11IncidentPlacements(id: string): OriginalKitInstance[] {
     add('brood-stronghold-wall',855,280,1.8,.1);
     result[result.length - 1].matrix.scale(new T.Vector3(1,.7,1));
   }
+  if (id === 'relay-racks') add('failed-relay-patch',656,530,1,.22);
   return result;
 }

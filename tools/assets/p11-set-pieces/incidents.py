@@ -113,7 +113,31 @@ def brood_bastion():
  for side in (-1,1):
   L.sweep('Anchored brood root',[(side*.8,-.05,.65),(side*1.01,-.18,.35),(side*.99,-.32,.05)],.09,'p11-growth',5)
 
-L.reset_scene();failed_repair();failed_shield();pressure_chamber();consuming_mantle();brood_bastion()
+def failed_patch():
+ L.asset('failed-relay-patch',1500)
+ # Jumper ends descend from the open middle-rack bay; the repair was interrupted.
+ for i in range(3):
+  x=-.55+i*.16
+  L.sweep('Severed rack fibre',[(x,.68,1.2),(x,.53,.85),(x-.05,.25,.55),(x+.1,.05,.4)],.028,'p11-tint',6,tint='teal')
+  L.cylinder('Broken fibre ferrule',(x+.1,.05,.4),.045,.1,'p11-steel','Z',8,0)
+  L.sweep('Loose jumper tail',[(x+.18,-.25,.05),(x+.3,-.48,.04),(x+.12,-.75,.04),(x-.08,-.8,.04)],.025,'p11-tint',5,tint='teal')
+ # Molded equipment case: recessed tray, perimeter rim, open lid and latches.
+ L.box('Open service case bottom',(.62,-.35,.1),(.72,.68,.16),'e9-dark',.025)
+ for x in (.28,.96):L.box('Case side lip',(x,-.35,.22),(.045,.65,.13),'e9-body',.008)
+ for y in (-.66,-.04):L.box('Case end lip',(.62,y,.22),(.7,.045,.13),'e9-body',.008)
+ L.box('Molded tool insert',(.62,-.35,.19),(.54,.48,.03),'p11-rubber',.008)
+ L.box('Hinged case lid',(.62,.02,.47),(.72,.06,.58),'e9-body',.025,rotation=(.22,0,0))
+ L.box('Lid inset',(.62,-.04,.46),(.56,.025,.4),'e9-dark',.01,rotation=(.22,0,0))
+ for x in (.39,.85):
+  L.cylinder('Case hinge',(x,-.005,.22),.03,.12,'p11-steel','X',8,0)
+  L.box('Open case latch',(x,-.7,.22),(.1,.08,.06),'p11-steel',.006)
+ L.handle((.62,-.72,.13),.25,'X',.04,.02)
+ L.box('Withdrawn circuit card',(.57,-.32,.24),(.3,.38,.025),'p11-tint',.004,tint='olive')
+ for i in range(3):L.box('Card package',(.57,-.45+i*.12,.27),(.13,.075,.025),'e9-dark',.004)
+ for i in range(5):L.box('Card edge contact',(.46+i*.045,-.52,.26),(.02,.045,.008),'p11-tint-metal',0,tint='brass')
+ L.box('Fibre extraction tool',(.84,-.35,.25),(.045,.32,.045),'p11-steel',.005)
+
+L.reset_scene();failed_repair();failed_shield();pressure_chamber();consuming_mantle();brood_bastion();failed_patch()
 names=[a.name for a in L.ASSETS]
 L.export('incidents',OUT,'incidents.glb','Interrupted repairs and physical consequences on P11 machinery.','blender -b --factory-startup -P tools/assets/p11-set-pieces/incidents.py')
 if '--render' in L.args():
