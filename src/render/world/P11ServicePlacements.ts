@@ -22,7 +22,7 @@ export function p11ServicePlacements(t:RoomTemplate):OriginalKitInstance[]{
  return candidates.flatMap((f,i)=>{
   const q=new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),f.angle);
   const roof=height[f.asset];
-  const position=new T.Vector3(f.x/32,(roof??1.15)*f.scale[1],f.z/32);
+  const position=new T.Vector3(f.x/32,(roof??0)*f.scale[1],f.z/32);
   if(roof===undefined)position.add(new T.Vector3(0,0,-.5).applyQuaternion(q));
   const asset=roof===undefined?(industrial?'service-valve-manifold':'service-access-hatch'):industrial?(i?'service-pressure-drum':'service-transit-case'):(i?'service-stowage-crate':'service-cable-tray');
   // Tray runs along equipment width, fitting the shallow original roof.

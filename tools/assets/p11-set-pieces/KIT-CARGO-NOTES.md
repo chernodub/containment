@@ -39,8 +39,9 @@ legacy silhouettes. Broad pale caps remain the weakest part of those old packs.
 The existing authored scanner/analyser/dish/hoist/tool-bridge/exchanger are
 multi-part landmark assemblies and stay below the 12k hero budget; they exceed
 1.5k and must not be described as budget-compliant ordinary modules. Repeated
-plenum modules were reauthored at 1,368 triangles each, after a collapsed-mesh
-experiment was rejected for broken panel shading. New intact doors, fan
+plenum modules were reauthored at 1,476 triangles each, after a collapsed-mesh
+experiment was rejected for broken panel shading. Dark door housings and lower cooling louvres remove the pale-appliance read.
+New intact doors, fan
 collars/vanes, pulls and rooted conduits preserve their industrial function.
 
 Limitations: normals are geometric smooth/custom normals, not baked tangent

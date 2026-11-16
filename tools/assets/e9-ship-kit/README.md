@@ -45,3 +45,10 @@ P11 finishing pass: single-facet manufactured chamfers replace the previous soft
 preserving emissive, glass and floor finishes. Asset origins/footprints remain
 unchanged. New service families are authored by
 `tools/assets/p11-set-pieces/kit_families.py` (separate P11 service-kit pack).
+
+Rebuild all four E9 packs serially with four render threads:
+`tools/assets/e9-ship-kit/rebuild.sh`. Set `BLENDER` to override the executable.
+For the current review stage, run
+`blender -b -P tools/assets/e9-ship-kit/review_craft.py -- industrial`
+(or `structure`, `security`, `clinical`). Review images remain in
+`artifacts/nextgen/p11-final/beauty/`, not the shipped pack.

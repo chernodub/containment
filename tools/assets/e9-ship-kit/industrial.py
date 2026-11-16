@@ -213,7 +213,7 @@ def plenum(name, height):
     radius=.26 if height<1 else .36
     z=height*.53
     for i,x in enumerate((-1.55,0,1.55)):
-        box('Independent service door', (x,-.628,z), (1.38,.025,height-.22), 'e9-ceramic',0)
+        box('Independent service door', (x,-.628,z), (1.38,.025,height-.22), 'e9-body',0)
         cylinder('Recessed duct shadow', (x,-.653,z), radius+.045,.015,'e9-dark','Y',12,0)
         ring('Raised duct collar', (x,-.672,z),radius+.045,.025,'e9-trim',segments=12)
         cylinder('Fan bearing', (x,-.683,z),.06,.03,'e9-trim','Y',8,0)
@@ -222,6 +222,8 @@ def plenum(name, height):
             obj=box('Captive fan vane',(x+math.cos(a)*radius*.45,-.678,z+math.sin(a)*radius*.45),
                     (radius*.8,.015,.045),'e9-body',0)
             obj.rotation_euler[1]=-a+.2
+        for slot in range(3):
+            box('Lower cooling louvre',(x,-.65,(.14+slot*.03) if height<1 else (.2+slot*.07)),(.65,.018,.012),'e9-dark',0)
         box('Service door pull',(x+.51,-.66,z-.2),(.05,.035,.18),'e9-dark',0)
         box('Crown access lid',(x,0,height+.015),(1.34,.95,.03),'e9-body',0)
         box('Crown recessed grip',(x,.15,height+.033),(.28,.04,.006),'e9-trim',0)

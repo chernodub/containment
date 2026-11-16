@@ -37,15 +37,14 @@
           0.698
         ]
       },
-      "triangles": 1368,
+      "triangles": 1476,
       "materials": [
         "e9-body",
-        "e9-ceramic",
         "e9-dark",
         "e9-trim",
         "e9-violet"
       ],
-      "primitives": 5
+      "primitives": 4
     },
     {
       "name": "swarm-plenum-tall",
@@ -66,15 +65,14 @@
           0.698
         ]
       },
-      "triangles": 1368,
+      "triangles": 1476,
       "materials": [
         "e9-body",
-        "e9-ceramic",
         "e9-dark",
         "e9-trim",
         "e9-violet"
       ],
-      "primitives": 5
+      "primitives": 4
     },
     {
       "name": "pump-skid",
@@ -403,9 +401,9 @@
   ],
   "output": {
     "file": "kit.glb",
-    "bytes": 602804,
-    "triangles": 23476,
-    "sha256": "547ec03dbb5613f3dc2c6afc768b5ca2fe92b5be22404f8c790ec010f586a977"
+    "bytes": 606784,
+    "triangles": 23692,
+    "sha256": "bafdbdde2c4446709b33d730d3390097fa29b4c3dd73d352827cb20afdce58fc"
   },
   "craft": "P11 single-facet industrial chamfers; sub-centimetre hardware stays crisp; deterministic convex wear and concave grime multiply original vertex AO, excluding emissive/glass/deck finishes."
 }
