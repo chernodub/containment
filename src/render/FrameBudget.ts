@@ -31,13 +31,13 @@ export const RENDER_BUDGET = Object.freeze({
  highFrameP95Ms: 20,
  lowFrameP50Ms: 16.7,
  // Adaptive operating point, not the external frame acceptance limit. Keep
- // ~0.2ms nominal GPU headroom at60Hz; overload remains target+1ms.
+ // The controller starts shedding load 0.5ms below this operating point.
  gpuTargetMs: 16.5,
  drawCalls: 330,
  programs: 400,
  materialFamilies: 160,
  compilePasses: 12,
  preparationMs: 3000,
- adaptiveMinScale: .8,
+ adaptiveMinScale: .9,
  adaptiveMaxScale: 1,
 });
