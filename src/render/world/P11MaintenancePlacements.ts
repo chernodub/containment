@@ -7,9 +7,9 @@ export function p11MaintenancePlacements(id: string): OriginalKitInstance[] {
   const add = (asset: string, x: number, z: number, scale: number, y = 0) => result.push({
     pack: 'p11-maintenance', asset,
     matrix: new T.Matrix4().compose(new T.Vector3(x / 32, y, z / 32), new T.Quaternion(), new T.Vector3(scale, scale, scale)),
-    purpose: 'P11 / engineered machinery / ' + asset, cutaway: true,
+    purpose: 'P11 / engineered machinery / ' + asset, cutaway: false,
   });
-  if (id === 'coolant-plant') add('frost-manifold-turbines', 150, 150, 1.4);
+  if (id === 'coolant-plant') add('frost-manifold-turbines', 680, 350, 1);
   if (id === 'service-shaft-landing') add('lift-winch-machinery', 420, 330, 1.1, .15);
   // The north power-cabinet footprint is 288 by160; the paired emitter occupies
   // only 240 by72, leaving the existing native solid and every lane unchanged.
