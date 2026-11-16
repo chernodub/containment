@@ -1,7 +1,7 @@
 import type {AbilityDefinition, AbilityId} from '../../game/abilities/contract';
 import {escapeHtml} from './initialTemplates';
 
-const marine = (x = 38, y = 42) => `<g class="vignette-marine" transform="translate(${x} ${y})"><circle r="5"/><path d="M0-8V8M-5-3H5M4 0h9"/></g>`;
+const marine = (x = 38, y = 42) => `<g class="vignette-marine" transform="translate(${x} ${y})"><path d="M-4-4Q0-8 4-4L5 3 0 6-5 3Z"/><path d="M0-6V0M-3 0H3M-5 7H5M4 1h9"/></g>`;
 const enemies = (...points: [number, number][]) => points.map(([x,y]) => `<circle class="vignette-enemy" cx="${x}" cy="${y}" r="4"/>`).join('');
 const frozen = (x: number, y: number) => `<path class="vignette-freeze" d="M${x-7} ${y}h14m-7-7v14m-5-12 10 10m0-10-10 10"/>`;
 const flame = (x: number, y: number) => `<path class="shape-fill" d="M${x} ${y+7}q-7-3-3-10l2 3 3-7q8 12-2 14Z"/>`;

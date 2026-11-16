@@ -12,12 +12,13 @@ import type {RigId} from '../../game/abilities/contract';
 import type {HitConfirmation} from '../hud/HitConfirmation';
 import {chooseRig, getAbilities, getRunStats, getUiPhase, hasAudioDirector, playUiCue} from '../gameAdapter';
 import {el} from '../shell';
-import {hasCinematicMenu} from '../integrationPresentation';
 import {controlsScreen,escapeHtml,titleScreen,systemScreen} from './initialTemplates';
 import type {PauseTab} from './templates';
 import '../styles/screens.css';
 import {EFFECT_SET_LESSON, EFFECT_SET_LESSON_KEY, needsEffectSetLesson} from '../boonPresentation';
 import {clearRoomRecord} from '../storyPresentation';
+import {revealTitleLayers} from './title/keyArt';
+import {preloadRigPortraits} from './rigPortraits';
 import {installBoonInspection} from './boonInspection';
 
 export type ScreenSettings = {
@@ -43,6 +44,10 @@ export type ScreenContext = {
 /** Owns blocking screens and native actions; simulation remains behind public methods. */
 export function createScreens(context: ScreenContext) {
   const {game, renderer, input, audio, confirmation, storage, pause, start} = context;
+  const warmPortraits = () => preloadRigPortraits();
+  el('overlay').addEventListener('pointerover', warmPortraits, {once:true});
+  el('overlay').addEventListener('focusin', warmPortraits, {once:true});
+  const portraitWarmup = window.setTimeout(warmPortraits, 1200);
   const disposeBoonInspection = installBoonInspection(el('overlay'));
   let secondary:typeof import('./templates')|undefined;
   let secondaryLoad:Promise<void>|undefined;
@@ -243,7 +248,7 @@ export function createScreens(context: ScreenContext) {
       const restoring=context.graphicsLost()||context.recovering();
       html=`<section class="panel recovery-panel" aria-labelledby="recovery-title"><h2 id="recovery-title">${restoring?'Restoring graphics…':'Graphics restored.'}</h2><p role="status">${restoring?'Your expedition is on hold. Wait for graphics to return, or reload your last checkpoint.':'Your expedition is still on hold. Continue when you are ready.'}</p><button id="graphics-continue" class="primary" ${restoring?'disabled':''}>${recoveryStatus==='paused'||recoveryStatus==='playing'?'Return to pause':'Continue'}</button><button id="recover" class="secondary">Reload game</button></section>`;
     }
-    else if(isMenu) html=titleScreen(game,settingsOpen?settings():'',settingsOpen,creditsOpen,controlsOpen,continuation,hasCinematicMenu(renderer),previousStatus!=='menu');
+    else if(isMenu) html=titleScreen(game,settingsOpen?settings():'',settingsOpen,creditsOpen,controlsOpen,continuation);
     else if(status==='rig-select') html=secondary!.rigScreen(selectedRig);
     else if(status==='paused') html=secondary!.pauseScreen(game,pauseTab,pauseTab==='settings'?settings():'',context.graphicsLost());
     else if(status==='reward') html=expeditionRewardOffers(game.expedition).length?secondary!.draftScreen(game):secondary!.shopScreen(game);
@@ -261,6 +266,7 @@ export function createScreens(context: ScreenContext) {
     const focusId=root.contains(active)?active?.id:'';
     const resultExpanded=status===previousStatus&&!!root.querySelector<HTMLDetailsElement>('.result-details')?.open;
     root.innerHTML=html;
+    revealTitleLayers(root);
     if(resultExpanded) root.querySelector<HTMLDetailsElement>('.result-details')?.setAttribute('open','');
     bindActions(root);
     const focusReplacement=focusId?root.querySelector<HTMLElement>(`[id="${focusId}"]`):null;
@@ -375,6 +381,6 @@ export function createScreens(context: ScreenContext) {
     get graphicsBlocked() {return context.graphicsLost()||recoveryPending;},
     resetSettings() {const notice=el('application-notice');if(notice)notice.hidden=true;settingsOpen=false;creditsOpen=false;controlsOpen=false;pauseTab='resume';context.settings?.reset?.();},
     get quality() {return context.settings?.quality??legacyQuality;},
-    dispose() {disposeBoonInspection();window.removeEventListener('storage',onStorage);el('overlay').removeEventListener('click',onAction,true);window.removeEventListener('resize',onResize);document.removeEventListener('keydown',onKeyDown);document.removeEventListener('pointermove',onPointerMove);},
+    dispose() {window.clearTimeout(portraitWarmup);el('overlay').removeEventListener('pointerover',warmPortraits);el('overlay').removeEventListener('focusin',warmPortraits);disposeBoonInspection();window.removeEventListener('storage',onStorage);el('overlay').removeEventListener('click',onAction,true);window.removeEventListener('resize',onResize);document.removeEventListener('keydown',onKeyDown);document.removeEventListener('pointermove',onPointerMove);},
   };
 }
