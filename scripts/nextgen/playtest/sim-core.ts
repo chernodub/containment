@@ -142,6 +142,19 @@ export function runSimulation(options: SimOptions) {
     const presentations = { breacher: createBreacherPresentation(kit), cryo: createCryoPresentation(kit), pyro: createPyroPresentation(kit), arc: createArcPresentation(kit) };
     const systemPresentation = createSystemPresentation(kit);
     const context = () => ({ dashing: game.abilities.dashing, critical: game.combat.snapshot.health <= 25, remaining: game.encounterRemaining });
+    // Observers only: these counters never enter policy snapshots or game decisions.
+    type FamilyPressure = {windups:number;strikes:number;contacts:number;hits:number;meleeHits:number;damage:number};
+    const pressure = new Map<string, {hitsTaken:number;byFamily:Record<string,FamilyPressure>}>();
+    let observedDamage = 0;
+    const roomPressure = () => {
+        let row = pressure.get(game.node.id);
+        if (!row) {row = {hitsTaken:0,byFamily:{}};pressure.set(game.node.id,row);}
+        return row;
+    };
+    const familyPressure = (family:string) => {
+        const row = roomPressure();
+        return row.byFamily[family] ??= {windups:0,strikes:0,contacts:0,hits:0,meleeHits:0,damage:0};
+    };
     const onEffect = (e: GameEffect) => {
         if(e.type==='sync-corpse') return;
         recordNativeObservedEvent(events, e, game.elapsed);
@@ -159,6 +172,14 @@ export function runSimulation(options: SimOptions) {
         else if (after.hitStopMs > before.hitStopMs)
             camera.rig.punch(.008, 90);
         if (e.type === 'hurt') {
+            const stats = game.stats, amount = stats.damageTaken - observedDamage;
+            observedDamage = stats.damageTaken;
+            if (amount > 0) {
+                const receipt = stats.lastDamage, row = roomPressure();
+                const family = familyPressure(receipt?.enemyFamily ?? receipt?.source ?? 'unknown');
+                row.hitsTaken++;family.hits++;family.damage += amount;
+                if (receipt?.source === 'enemy-contact') family.meleeHits++;
+            }
             camera.rig.addTrauma(.34);
             camera.rig.punch(.015, 180);
         }
@@ -183,6 +204,15 @@ export function runSimulation(options: SimOptions) {
         limitations: ['No GPU, audio or DOM. Uses shared camera follow/framing/ability-event hooks, exact actor metrics and held-screen ray/torso selection; resource preparation and RAF synchronization are omitted. Matched browser validation remains required before using campaign outcomes as native-policy predictions.'],
         rooms: [] as any[], outcome: 'running', finalReason: null as string | null, deathRoom: null as number | null, stats: null as any, final: null as any, wallSeconds: 0, trace: options.trace ? [] as any[] : undefined };
     let room: any, previous = { x: 0, y: 0 }, input: GameInput = { x: 0, y: 0, fire: false, angle: null, autoAim: false }, decisions = 0, hardest = -1;
+    let stopEnemyObserver: (()=>void)|undefined;
+    const observeRoomAttacks = () => {
+        stopEnemyObserver?.();
+        stopEnemyObserver = game.enemies.subscribe(event => {
+            if (event.type === 'melee-warning') familyPressure(event.enemyType).windups++;
+            else if (event.type === 'melee-strike') familyPressure(event.enemyType).strikes++;
+            else if (event.type === 'contact-attack') familyPressure(event.enemyType).contacts++;
+        });
+    };
     let screen: {
         x: number;
         y: number;
@@ -212,9 +242,10 @@ export function runSimulation(options: SimOptions) {
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});
-            }), abilities: game.abilities.snapshot, hazards: [...(telegraph ? [{ x: telegraph.targetX, y: telegraph.targetY, radius: telegraph.radius }] : []), ...game.pools,
-                ...game.bullets.filter(b => b.kind === 'hazard').map(b => ({ x: b.x, y: b.y, radius: 35 })),
-                ...nativeWarningHazards(events, game.elapsed)] };
+            }), abilities: game.abilities.snapshot, hazards: [...(telegraph ? [{ x: telegraph.targetX, y: telegraph.targetY, radius: telegraph.radius, kind:'warning', visible:camera.visible(telegraph.targetX,telegraph.targetY) }] : []),
+                ...game.pools.map(p=>({x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:camera.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),
+                ...game.bullets.filter(b => b.kind === 'hazard').map(b => ({ x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:camera.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale })),
+                ...nativeWarningHazards(events,game.elapsed).map(h=>({...h,visible:camera.visible(h.x,h.y)}))] };
     }
     function advance(ms: number) {
         for (let remaining = ms; remaining > 1e-7;) {
@@ -239,6 +270,7 @@ export function runSimulation(options: SimOptions) {
             return;
         const stats = game.stats;
         Object.assign(room, { result, seconds: game.elapsed - room.startedElapsed, damageTaken: stats.damageTaken - room.startStats.damageTaken,
+            hitsTaken: pressure.get(game.node.id)?.hitsTaken ?? 0, pressure: pressure.get(game.node.id)?.byFamily ?? {},
             damageDealt: Object.fromEntries(Object.entries(stats.damageDealt).map(([key, value]) => [key, value - room.startStats.damageDealt[key]])),
             abilityUses: Object.fromEntries(Object.entries(stats.abilityUses).map(([key, value]) => [key, value - room.startStats.abilityUses[key]])),
             overdrives: stats.overdrivesUsed - room.startStats.overdrivesUsed, endHealth: game.combat.snapshot.health, endArmor: game.combat.snapshot.armor });
@@ -256,7 +288,7 @@ export function runSimulation(options: SimOptions) {
         }
         if (game.status !== 'playing') {
             if (game.status === 'reward' && ['medical', 'armory'].includes(game.node.kind) && game.expedition.run.completedNodeIds.includes(game.node.id) && !report.rooms.some(r => r.nodeId === game.node.id))
-                report.rooms.push({ id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, result: 'clear', autoClear: true, seconds: 0, damageTaken: 0, damageDealt: { weapon: 0, ability: 0, status: 0, boon: 0 }, abilityUses: { dash: 0, tactical: 0, power: 0, overdrive: 0 }, overdrives: 0, boons: [...game.expedition.build.mutations] });
+                report.rooms.push({ id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, result: 'clear', autoClear: true, seconds: 0, damageTaken: 0, hitsTaken: 0, pressure: {}, damageDealt: { weapon: 0, ability: 0, status: 0, boon: 0 }, abilityUses: { dash: 0, tactical: 0, power: 0, overdrive: 0 }, overdrives: 0, boons: [...game.expedition.build.mutations] });
             input = { x: 0, y: 0, fire: false, angle: null, autoAim: false };
             previous = { x: 0, y: 0 };
             screen = null;
@@ -289,6 +321,7 @@ export function runSimulation(options: SimOptions) {
             continue;
         }
         if (!room) {
+            observeRoomAttacks();
             if (report.rooms.filter(r => ['clear', 'complete'].includes(r.result)).length >= (options.rooms ?? 20)) {
                 report.outcome = 'room-limit';
                 break;
@@ -375,7 +408,7 @@ export function summarizeSimulations(reports: ReturnType<typeof runSimulation>[]
             medianRoomsPerOverdrive: median(rs.map(r => r.rooms.filter(room => ['clear', 'complete'].includes(room.result)).length / r.stats.overdrivesUsed)),
             medianRoomSeconds: median(clears.filter(r => ![9, 19].includes(r.depth) && !r.autoClear).map(r => r.seconds)),
             sources: Object.fromEntries(['weapon', 'ability', 'status', 'boon'].map(source => [source, rs.reduce((n, r) => n + r.stats.damageDealt[source], 0)])),
-            byDepth: Array.from({ length: 20 }, (_, depth) => { const all = rooms.filter(r => r.depth === depth), done = all.filter(r => ['clear', 'complete'].includes(r.result)); return { room: depth + 1, entered: all.length, cleared: done.length, medianSeconds: median(done.map(r => r.seconds)), medianDamageTaken: median(all.map(r => r.damageTaken)), medianOverdrives: median(all.map(r => r.overdrives)), maxOverdrives: Math.max(0, ...all.map(r => r.overdrives)) }; }),
+            byDepth: Array.from({ length: 20 }, (_, depth) => { const all = rooms.filter(r => r.depth === depth), done = all.filter(r => ['clear', 'complete'].includes(r.result)); return { room: depth + 1, entered: all.length, cleared: done.length, medianSeconds: median(done.map(r => r.seconds)), medianDamageTaken: median(all.map(r => r.damageTaken)), medianHitsTaken: median(all.map(r => r.hitsTaken)), medianOverdrives: median(all.map(r => r.overdrives)), maxOverdrives: Math.max(0, ...all.map(r => r.overdrives)) }; }),
             wallSeconds: rs.reduce((n, r) => n + r.wallSeconds, 0) };
     };
     return { total: describe(reports), rigs: Object.fromEntries(rigs.map(rig => [rig, describe(reports.filter(r => r.rig === rig))])) };

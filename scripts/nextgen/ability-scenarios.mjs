@@ -46,7 +46,7 @@ async function stageAbility({ rig, slot, id, nativeInput = false }) {
 }
 
 export const ABILITY_SCENARIOS = kits.flatMap(([rig, abilities]) => abilities.map((id, index) => ({
-  id: `ability:${id}`, state: 'playing', room: 'awakening-bay', burst: true, required: ['#ability-bar', `[data-ability="${slots[index]}"] .ability-title`],
+  id: `ability:${id}`, state: 'playing', room: 'awakening-bay', burst: true, required: ['#ability-bar', `[data-ability="${slots[index]}"] .ability-icon`],
   ability: { id, rig, slot: slots[index] }, setupArgument: { id, rig, slot: slots[index] }, setup: stageAbility,
 })));
 

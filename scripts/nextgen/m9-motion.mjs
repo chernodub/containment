@@ -17,9 +17,9 @@ const allowedSubjects=new Set(['marine','crowd','crawler','spitter','brute','sta
 const actionFilter=option('actions','all').split(',');
 const frames=Number(option('frames',12)),steps=Number(option('steps',4));
 assert(Number.isInteger(frames)&&frames>=4&&frames<=30&&Number.isInteger(steps)&&steps>=1&&steps<=12);
-const marineActions=['idle',...Array.from({length:8},(_,n)=>`run-${n*45}`),'stop-start',...['pistol','rifle','shotgun','plasma','rocket'].map(w=>`fire-${w}`),'reload','weapon-switch','dash','hit','death',...['ram','seismic-slam','bulwark','railbreaker','frost-trail','cryo-nova','glacier','whiteout','afterburn','flashfire','napalm-charge','meltdown','static-step','overload','tesla-pylon','overclock'].map(a=>`cast-${a}`)];
-const enemyActions=['idle','run','attack','light-hit','heavy-hit','side-hit','stagger','frozen','burning','shocked','death','death-frost','death-burn','death-arc','death-high-impulse','spawn'];
-const manifest={version:1,sourceSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceStatus:execFileSync('git',['status','--short'],{encoding:'utf8'}).trim(),viewport:{width:1920,height:1080},fixedStepMs:1000/60,frames,steps,shots:[],errors:[],limitations:['Isolated production rig studies at the settled native gameplay camera pixel scale, without world/HUD; fire rows include existing native muzzle/brass/vent pools and death rows include native corpse cue pools. No resizing of cropped pixels.','Actor animation inputs and warning durations are explicit presentation replays. Simulation is frozen and checked unchanged. They do not prove native attack acceptance, foot-world contact, combat priority, physics death, organic pacing or performance.','Contact-only families have no native windup; their attack rows replay the existing attack presentation only. Shock is replayed via the model status adapter when supported.','Marine death records the existing renderer root roll; enemy death uses the actual pooled Rapier ragdoll with a prescribed killing impulse. This is a presentation replay, not a native kill.']};
+const marineActions=['idle','idle-cryo','idle-pyro','idle-arc',...Array.from({length:8},(_,n)=>`run-${n*45}`),'stop-start',...Array.from({length:8},(_,i)=>`reversal-${i*45}`),...['pistol','rifle','shotgun','plasma','rocket'].map(w=>`fire-${w}`),'reload','weapon-switch','dash','hit','death',...['ram','seismic-slam','bulwark','railbreaker','frost-trail','cryo-nova','glacier','whiteout','afterburn','flashfire','napalm-charge','meltdown','static-step','overload','tesla-pylon','overclock'].map(a=>`cast-${a}`)];
+const enemyActions=['idle','run','attack','light-hit','heavy-hit','side-hit','stagger','frozen','burning','shocked','death','death-frost','death-burn','death-arc','death-acid','death-high-impulse','spawn'];
+const manifest={version:1,sourceSHA:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceStatus:execFileSync('git',['status','--short'],{encoding:'utf8'}).trim(),viewport:{width:1920,height:1080},fixedStepMs:1000/60,frames,steps,shots:[],errors:[],limitations:['Isolated production rig studies at the settled native gameplay camera pixel scale, without world/HUD; fire rows include existing native muzzle/brass/vent pools and death rows include native corpse cue pools. No resizing of cropped pixels.','Actor animation inputs and warning durations are explicit presentation replays. Simulation is frozen and checked unchanged. They do not prove native attack acceptance, foot-world contact, combat priority, physics death, organic pacing or performance.','M10 melee attack studies replay the production snapshot phase adapter with native family timing; simulation stays frozen. Shock is replayed via the model status adapter when supported.','Marine and enemy death use the actual pooled Rapier ragdoll with a prescribed killing impulse. This is a presentation replay, not a native kill.']};
 await mkdir(out,{recursive:true});await stat(resolve(dist,'index.html'));
 manifest.distAssets=await Promise.all((await readdir(resolve(dist,'assets'))).filter(file=>/\.(js|css)$/.test(file)).sort().map(async file=>{const bytes=await readFile(resolve(dist,'assets',file));return {file,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};}));
 let browser;
@@ -37,7 +37,7 @@ try{
  for(const subject of subjects){
   for(const action of subject==='marine'?marineActions:subject==='crowd'?['run']:enemyActions){
    if(!actionFilter.includes('all')&&!actionFilter.includes(action))continue;
-   const actionFrames=/^(attack|death)/.test(action)?Math.max(frames,24):frames;
+   const actionFrames=/^(attack|death)/.test(action)?Math.max(frames,24):action.startsWith('reversal-')?Math.max(frames,18):frames;
    const result=await page.evaluate(({subject,action,frames,steps})=>{
     const d=window.__containmentDebug,r=d.renderer,g=d.game,elapsed=g.elapsed,timeBase=d.m9Clock??0;
     const oldRandom=Math.random;let visualSeed=[...`${subject}/${action}`].reduce((n,c)=>(Math.imul(n,31)+c.charCodeAt(0))>>>0,1729);Math.random=()=>{visualSeed=(Math.imul(visualSeed,1664525)+1013904223)>>>0;return visualSeed/4294967296;};
@@ -45,8 +45,9 @@ try{
     r.interimAbilities.clear();
     const human=subject==='marine',crowd=subject==='crowd',family=crowd?'crawler':subject.split('-')[0],elite=subject.includes('-elite'),champion=subject.includes('-warden')?'warden':subject.includes('-matron')?'matron':undefined;
     const model=human?r.player:r.actorPool.take(family,elite),animate=model.animate.bind(model),equip=model.equip?.bind(model),oldAnimate=model.animate,oldEquip=model.equip,oldSetDead=model.setDead,setDead=model.setDead?.bind(model),hasDeathAdapter=typeof model.setDead==='function';
-    model.reset?.();model.setDead?.(false);model.setAction?.('',0);model.setMotionSeed?.([...subject].reduce((n,c)=>(n*31+c.charCodeAt(0))>>>0,1729));model.setMotionOptions?.(1,false);model.setStageLight?.(.65);model.setFlashIntensity?.(1);
+    model.reset?.();model.setAttackState?.('approach',0,0);model.setDead?.(false);model.setAction?.('',0);model.setMotionSeed?.([...subject].reduce((n,c)=>(n*31+c.charCodeAt(0))>>>0,1729));model.setMotionOptions?.(1,false);model.setStageLight?.(.65);model.setFlashIntensity?.(1);
     if(human){
+     model.setRig?.(action.startsWith('idle-')?action.slice(5):'breacher');
      d.m9MarineRest??=[];if(!d.m9MarineRest.length)model.root.traverse(o=>{if(o.isBone)d.m9MarineRest.push({bone:o,p:o.position.clone(),q:o.quaternion.clone(),s:o.scale.clone()});});
      for(const rest of d.m9MarineRest){rest.bone.position.copy(rest.p);rest.bone.quaternion.copy(rest.q);rest.bone.scale.copy(rest.s);rest.bone.matrixAutoUpdate=true;}
     }
@@ -54,7 +55,7 @@ try{
     const models=[model];if(crowd)for(let i=1;i<6;i++){const extra=r.actorPool.take('crawler');extra.reset?.();extra.setMotionSeed?.(1729+i*13);extra.setMotionOptions?.(1,false);extra.setStageLight?.(.65);extra.root.position.set(origin.x+(i%3-1)*1.4,0,origin.z+Math.floor(i/3)*1.4);r.scene.add(extra.root);models.push(extra);}
     const modelRoots=new Set(models.map(m=>m.root));
     model.setThreat?.(0,null,champion,1);if(!human)r.scene.add(model.root);
-    if(action!=='spawn')for(let n=1;n<=30;n++)animate(timeBase+n/60,0,0);
+    if(action!=='spawn')for(let n=1;n<=90;n++){animate(timeBase+n/60,0,0);if(crowd)for(let i=1;i<models.length;i++)models[i].animate(timeBase+n/60+i,0,0);}
     // Stop normal renderer updates from overwriting the controlled production pose.
     model.animate=()=>{};if(human)model.equip=()=>{};if(hasDeathAdapter)model.setDead=()=>{};r.interimAbilities.update=()=>{};
     r.effects.clear();const shotStudy=action.startsWith('fire-'),deathStudy=action.startsWith('death'),effectMeshes=shotStudy||deathStudy?new Set(r.effects.meshes()):new Set();
@@ -81,33 +82,34 @@ try{
        const tick=frame*steps+step,time=(tick+1)/60,phase=tick/(frames*steps-1);
        let moving=0,recoil=0,reload=0,vx=0,vy=0;
        if(action.startsWith('run-')){const angle=Number(action.slice(4))*Math.PI/180;moving=1;vx=Math.cos(angle)*220;vy=Math.sin(angle)*220;}
+       else if(action.startsWith('reversal-')){const angle=Number(action.slice(9))*Math.PI/180+(phase<.4?Math.PI:0);moving=1;vx=Math.cos(angle)*220;vy=Math.sin(angle)*220;}
        else if(action==='run'){moving=1;vx=({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150;}
        else if(action==='stop-start'){moving=phase<.3||phase>.67?1:0;vx=moving*220;}
        if(action.startsWith('fire-'))recoil=Math.exp(-((tick%12)/60)*22);
        if(action==='reload')reload=phase;
        if(action==='weapon-switch'&&tick===Math.floor(frames*steps/2))equip?.('rocket');
-       if(action==='dash'){moving=phase<.22?1:0;vx=moving*1071;}
+       if(action==='dash'){moving=phase<.22?1:0;vx=moving*1071;model.setAction?.('ram',phase);}
        if(isCast){
         // Canonical pose study: normalized progress matches the legacy baseline clocks.
-        // Native event timing is covered separately by the unchanged ability gates.
+        // Native event timing is observed separately in ordinary capture/play.
         model.setAction?.(ability,phase);
        }
        if(action==='attack'){
-        const duration=family==='brute'?650:500,remaining=Math.max(0,duration-time*1000);
+        const duration=(({crawler:260,stalker:420,brute:650,spitter:350,carrier:620})[family]??650)*(elite?.82:1),remaining=Math.max(0,duration-time*1000);const strike=family==='crawler'?70:family==='stalker'?90:120,recovery=(family==='crawler'?240:family==='stalker'?560:family==='brute'?450:family==='carrier'?460:420)*(elite?.85:1);const ms=time*1000;model.setAttackState?.(ms<duration?'windup':ms<duration+strike?'strike':ms<duration+strike+recovery?'recovery':'approach',ms<duration?ms/duration:ms<duration+strike?(ms-duration)/strike:Math.min(1,(ms-duration-strike)/recovery),0,{kind:family==='stalker'?'line':'arc',range:family==='stalker'?156:family==='brute'?115:76,halfAngle:1,width:40});
         model.setThreat?.(remaining,remaining>0&&(family==='brute'||family==='spitter')?(family==='brute'?'charge':'spit'):null,champion,1);
         if(!triggered&&time*1000>=duration){model.attack?.();triggered=true;}
        }
        if(['hit','light-hit','heavy-hit','side-hit','stagger'].includes(action)&&tick===Math.floor(frames*steps*.22))model.hit?.(action==='light-hit'?.35:1,action==='side-hit'?0:Math.PI/2,action!=='light-hit');
-       const status={chilled:action==='frozen'||action==='death-frost',frozen:action==='frozen'||action==='death-frost',burning:action==='burning'||action==='death-burn',poisoned:false,shocked:action==='shocked'||action==='death-arc'};
+       const status={chilled:action==='frozen'||action==='death-frost',frozen:action==='frozen'||action==='death-frost',burning:action==='burning'||action==='death-burn',poisoned:action==='death-acid',shocked:action==='shocked'||action==='death-arc'};
        model.setAffliction?.(status);model.root.userData.visualStatus=status;
        if(action.startsWith('death')&&tick===Math.floor(frames*steps*.2)){
-        const deathCue=action==='death-frost'?'frost':action==='death-burn'?'burn':action==='death-arc'?'arc':'none';
+        const deathCue=action==='death-frost'?'frost':action==='death-burn'?'burn':action==='death-arc'?'arc':action==='death-acid'?'acid':'none';
         model.root.userData.motionDeathCue=deathCue;model.hit?.(1,Math.PI/2,true);if(!human)model.freeze?.();deathStarted=true;if(human)setDead?.(true);
         if(!human)r.effects.event({type:'corpse',id:-900001,x:g.player.x,y:g.player.y,family,elite,vx:action==='death-high-impulse'?960:416,vy:192,elements:deathCue==='frost'?['ice']:deathCue==='burn'?['fire']:[]},deathCue);
-        if(!human){r.ragdolls.add(-900001,model,family,{x:action==='death-high-impulse'?30:13,z:6},model.root.userData.motionDeathCue,.032);ragdollStarted=r.ragdolls.has(-900001);if(!ragdollStarted)throw Error('Native ragdoll was not prepared');}
+        {r.ragdolls.add(-900001,model,human?'marine':family,{x:action==='death-high-impulse'?30:13,z:6},model.root.userData.motionDeathCue,.032);ragdollStarted=r.ragdolls.has(-900001);if(!ragdollStarted)throw Error('Native ragdoll was not prepared');}
        }
-       if(!deathStarted||human&&hasDeathAdapter)animate(timeBase+.5+time,moving,0,recoil,reload,{x:vx,y:vy});
-       if(crowd)for(let i=1;i<models.length;i++){models[i].animate(timeBase+.5+time+i,moving,0,0,0,{x:vx,y:vy});models[i].root.updateWorldMatrix(true,true);}
+       if(!deathStarted||human&&hasDeathAdapter&&!ragdollStarted)animate(timeBase+1.5+time,moving,0,recoil,reload,{x:vx,y:vy});
+       if(crowd)for(let i=1;i<models.length;i++){models[i].animate(timeBase+1.5+time+i,moving,0,0,0,{x:vx,y:vy});models[i].root.updateWorldMatrix(true,true);}
        if(isCast||action==='dash'){
         const snapshot=isCast?abilitySnapshot:JSON.parse(JSON.stringify(g.abilities.snapshot));snapshot.dashing=(action==='dash'||abilitySlot==='dash')&&phase<.18;
         if(isCast)snapshot.slots[abilitySlot].castRemainingMs=Math.max(0,castMs-time*1000);
@@ -117,6 +119,7 @@ try{
         if(tick%12===steps-1)r.effects.shot(model.muzzleWorld(project),0,currentWeapon);
         r.effects.update(1/60,r.camera,[]);
        }else if(deathStudy)r.effects.update(1/60,r.camera,[]);
+       if(human&&ragdollStarted)model.syncWeaponPose?.();
        if(human&&action==='death'&&hasDeathAdapter)controlledRoll=model.root.rotation.z;
        if(ragdollStarted)r.ragdolls.update(1/60);
        if(!ragdollStarted)model.root.position.set(origin.x,0,origin.z);model.root.updateWorldMatrix(true,true);
@@ -145,8 +148,10 @@ try{
      const cellWidth=maxX-minX,cellHeight=maxY-minY,canvas=document.createElement('canvas');canvas.width=columns*cellWidth;canvas.height=Math.ceil(frames/columns)*cellHeight;
      const ctx=canvas.getContext('2d');ctx.fillStyle='#424e54';ctx.fillRect(0,0,canvas.width,canvas.height);
      frameCanvases.forEach((f,i)=>ctx.drawImage(f.canvas,(i%columns)*cellWidth+f.left-minX,Math.floor(i/columns)*cellHeight+f.top-minY));
-     d.m9Clock=timeBase+.5+frames*steps/60;
-     return {frames,diagnosticOnly:action==='side-hit'||action==='death-high-impulse',presentationInputs:{aim:0,movementSpeed:human?220:({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150,attackWindupMs:family==='brute'?650:500,hitDirection:action==='side-hit'?0:Math.PI/2,deathImpulse:{x:action==='death-high-impulse'?30:13,z:6},corpseHoldRequestSeconds:.032,corpseHoldQuantization:'floor(request*120)120Hz ticks; max3ticks/25ms',firePeriodTicks:12,visualSeedAlgorithm:'LCG32 hash31(subject/action,1729)',isolatedBoneReset:human},png:canvas.toDataURL('image/png').split(',')[1],clock,proof,cellWidth,cellHeight,columns,elapsed,abilityAdapter:typeof model.setAction==='function'||typeof model.motionEvent==='function',source:'production model APIs, frozen simulation, explicit presentation inputs'};
+     const mask=document.createElement('canvas');mask.width=canvas.width;mask.height=canvas.height;const mc=mask.getContext('2d');mc.fillStyle='black';mc.fillRect(0,0,mask.width,mask.height);
+     for(let i=0;i<frameCanvases.length;i++){const f=frameCanvases[i],fc=f.canvas.getContext('2d'),pixels=fc.getImageData(0,0,f.canvas.width,f.canvas.height),bg=pixels.data.slice(0,3);for(let n=0;n<pixels.data.length;n+=4){const on=Math.max(Math.abs(pixels.data[n]-bg[0]),Math.abs(pixels.data[n+1]-bg[1]),Math.abs(pixels.data[n+2]-bg[2]))>12;pixels.data[n]=pixels.data[n+1]=pixels.data[n+2]=on?255:0;pixels.data[n+3]=255;}const tile=document.createElement('canvas');tile.width=f.canvas.width;tile.height=f.canvas.height;tile.getContext('2d').putImageData(pixels,0,0);mc.drawImage(tile,(i%columns)*cellWidth+f.left-minX,Math.floor(i/columns)*cellHeight+f.top-minY);}
+     d.m9Clock=timeBase+1.5+frames*steps/60;
+     return {frames,diagnosticOnly:action==='side-hit'||action==='death-high-impulse',presentationInputs:{aim:0,movementSpeed:human?220:({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150,attackWindupMs:(({crawler:260,stalker:420,brute:650,spitter:350,carrier:620})[family]??650)*(elite?.82:1),hitDirection:action==='side-hit'?0:Math.PI/2,deathImpulse:{x:action==='death-high-impulse'?30:13,z:6},corpseHoldRequestSeconds:.032,corpseHoldQuantization:'floor(request*120)120Hz ticks; max3ticks/25ms',firePeriodTicks:12,visualSeedAlgorithm:'LCG32 hash31(subject/action,1729)',isolatedBoneReset:human},png:canvas.toDataURL('image/png').split(',')[1],mask:mask.toDataURL('image/png').split(',')[1],unionCrop:{left:minX,top:minY},clock,proof,cellWidth,cellHeight,columns,elapsed,abilityAdapter:typeof model.setAction==='function'||typeof model.motionEvent==='function',source:'production model APIs, frozen simulation, explicit presentation inputs'};
     }finally{
      if(ragdollStarted)r.ragdolls.remove(-900001);r.effects.clear();r.interimAbilities.clear();r.interimAbilities.update=oldAbilityUpdate;
      Math.random=oldRandom;model.setDead=oldSetDead;setDead?.(false);model.setAction?.('',0);model.animate=oldAnimate;if(human)model.equip=oldEquip;r.scene.onBeforeRender=oldSceneHook;
@@ -155,7 +160,7 @@ try{
      d.refresh();
     }
    },{subject,action,frames:actionFrames,steps});
-   const file=`${subject}-${action}.png`,png=Buffer.from(result.png,'base64');delete result.png;
+   const file=`${subject}-${action}.png`,png=Buffer.from(result.png,'base64');delete result.png;const mask=Buffer.from(result.mask,'base64');delete result.mask;await mkdir(resolve(out,'masks'),{recursive:true});await writeFile(resolve(out,'masks',file),mask);
    await writeFile(resolve(out,file),png);
    manifest.shots.push({subject,action,file,sha256:createHash('sha256').update(png).digest('hex'),...result});
   }
@@ -167,6 +172,6 @@ try{
  await browser?.close();if(server.listening)await new Promise(ok=>server.close(ok));
  await writeFile(resolve(out,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
  const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- await writeFile(resolve(out,'index.html'),`<!doctype html><meta charset="utf-8"><title>M9 motion studies</title><style>body{background:#11181d;color:#d8e1e7;font:15px system-ui;margin:24px}img{max-width:100%;image-rendering:auto}figure{display:inline-block;vertical-align:top;width:min(760px,96vw);margin:16px 12px 24px 0}figcaption{padding:8px}a{color:#9fe8ff}</style><h1>M9 native-scale production-rig motion studies</h1><p>${escape(manifest.sourceSHA)} · ${frames} frames, ${steps} × 60 Hz ticks per cell. Read left to right, then down. Cropped pixels are never resized in the PNG.</p><p>${manifest.limitations.map(escape).join('</p><p>')}</p>${manifest.shots.map(s=>`<figure><a href="${s.file}"><img loading="lazy" src="${s.file}"></a><figcaption>${escape(s.subject)} / ${escape(s.action)} · ${s.frames??s.clock.length} frames · ${s.clock.map(n=>Math.round(n)).join('/')} ms</figcaption></figure>`).join('')}`);
+ await writeFile(resolve(out,'index.html'),`<!doctype html><meta charset="utf-8"><title>Production motion studies</title><style>body{background:#11181d;color:#d8e1e7;font:15px system-ui;margin:24px}img{max-width:100%;image-rendering:auto}figure{display:inline-block;vertical-align:top;width:min(760px,96vw);margin:16px 12px 24px 0}figcaption{padding:8px}a{color:#9fe8ff}</style><h1>Native-scale production-rig motion studies</h1><p>${escape(manifest.sourceSHA)} · ${frames} frames, ${steps} × 60 Hz ticks per cell. Read left to right, then down. Cropped pixels are never resized in the PNG.</p><p>${manifest.limitations.map(escape).join('</p><p>')}</p>${manifest.shots.map(s=>`<figure><a href="${s.file}"><img loading="lazy" src="${s.file}"></a><figcaption>${escape(s.subject)} / ${escape(s.action)} · ${s.frames??s.clock.length} frames · ${s.clock.map(n=>Math.round(n)).join('/')} ms</figcaption></figure>`).join('')}`);
  console.log(`${manifest.shots.length} strips; ${manifest.errors.length} errors; ${out}`);
 }

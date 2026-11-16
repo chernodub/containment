@@ -1,0 +1,82 @@
+/** Real-room melee clocks: normal simulation earns each warning/strike/recovery. */
+export function registerM10Scenarios(scenarios) {
+  for(const family of ['crawler','stalker','brute','spitter','carrier'])scenarios.push({
+    id:`m10-melee-${family}`,room:'awakening-bay',state:'playing',burst:true,stepMs:50,
+    setup:new Function(`return (async()=>{
+      const d=window.__containmentDebug,g=d.game,r=d.renderer;
+      await d.gotoRoom('awakening-bay',{rig:'breacher'});d.invulnerable(true);g.enemies.reset();
+      const bounds=g.geometry.bounds,points=[];
+      for(let y=bounds.y+140;y<bounds.y+bounds.height-140;y+=32)for(let x=bounds.x+140;x<bounds.x+bounds.width-140;x+=32){
+        if(d.canStand(x,y,125)&&d.canStand(x+58,y,32)&&d.clearShot(x+58,y,{x,y}))points.push({x,y,score:Math.hypot(x-bounds.x-bounds.width*.5,y-bounds.y-bounds.height*.5)});
+      }
+      points.sort((a,b)=>a.score-b.score);if(!points.length)throw Error('M10 native melee lane unavailable');
+      const p=points[0];Object.assign(g.player,{x:p.x,y:p.y,vx:0,vy:0,angle:0});d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});
+      d.step(1000);g.enemies.reset();d.settlePresentation(120);
+      const spacing='${family}'==='brute'?64:'${family}'==='carrier'?56:48;const id=d.spawn('${family}',p.x+spacing,p.y,false);if(!id)throw Error('M10 native spawn rejected');
+      // The ranged Spitter retreats; close the last gap with ordinary walking.
+      if('${family}'==='spitter'){d.setInput({x:1,y:0,fire:false,angle:0,autoAim:false});d.step(120);d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});}
+      let e;for(let n=0;n<180;n++){d.step(1000/60);e=g.enemies.getSnapshot(id);if(e?.meleePhase==='windup')break;}
+      if(e?.meleePhase!=='windup')throw Error('M10 native windup never started');
+      d.g5Proof={presentationOnly:false,stagedNativeEncounter:true,invulnerable:true,enemyId:id,family:'${family}'};
+      Object.defineProperty(d.g5Proof,'warningTimeline',{enumerable:true,get(){const e=g.enemies.getSnapshot(id),footprints=[];r.effects.forEachHostilePriority(s=>footprints.push({...s}));return {phase:e?.meleePhase,progress:e?.meleeProgress,angle:e?.meleeAngle,originX:e?.meleeOriginX,originY:e?.meleeOriginY,shape:e?.meleeShape,locked:e?.meleeFacingLocked,remainingMs:e?.meleeRemainingMs,elapsed:g.elapsed,footprints};}});
+      d.refresh();
+    })();`),
+  });
+  scenarios.push({
+    id:'m10-melee-crowd',room:'communal-atrium',state:'playing',diagnosticOnly:true,burst:true,stepMs:50,
+    setup:async()=>{
+      const d=window.__containmentDebug,g=d.game,r=d.renderer;
+      await d.gotoRoom('communal-atrium',{rig:'breacher'});d.invulnerable(true);g.enemies.reset();
+      d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});
+      const bounds=g.geometry.bounds,centers=[];
+      for(let y=bounds.y+100;y<bounds.y+bounds.height-100;y+=64)for(let x=bounds.x+100;x<bounds.x+bounds.width-100;x+=64){
+        if(!d.canStand(x,y,g.player.radius))continue;
+        let floor=0;for(let i=0;i<24;i++)for(const radius of [80,140,200]){
+          const angle=i*Math.PI/12,px=x+Math.cos(angle)*radius,py=y+Math.sin(angle)*radius;
+          if(d.canStand(px,py,28)&&d.clearShot(px,py,{x,y}))floor++;
+        }
+        centers.push({x,y,score:floor-Math.hypot(x-bounds.x-bounds.width*.5,y-bounds.y-bounds.height*.5)/1000});
+      }
+      centers.sort((a,b)=>b.score-a.score);
+      const lanes=[];for(const center of centers){if(lanes.every(p=>Math.hypot(p.x-center.x,p.y-center.y)>=96))lanes.push(center);if(lanes.length===12)break;}
+      // Pack actual walkable, native HUD-visible floor. Presentation settling
+      // moves only the ordinary follow camera; encounter clocks remain frozen.
+      const spacing=58.01,row=spacing*Math.sqrt(3)/2;let choice=null;
+      for(const center of lanes){
+        Object.assign(g.player,{x:center.x,y:center.y,vx:0,vy:0,angle:0});d.settlePresentation(48);
+        for(let layout=0;layout<32;layout++){
+          const points=[];
+          for(let iy=-7;iy<=7;iy++)for(let ix=-7;ix<=7;ix++){
+            const u=(ix+(iy&1)*.5+(layout&3)*.25)*spacing,v=(iy+((layout>>2)&3)*.25)*row;
+            const x=center.x+(layout<16?u:v),y=center.y+(layout<16?v:u),distance=Math.hypot(x-center.x,y-center.y);
+            if(distance<62||distance>320||!d.canStand(x,y,28)||!d.clearShot(x,y)||!r.visible(x,y))continue;
+            if(![[-28,0],[28,0],[0,-28],[0,28]].every(([dx,dy])=>r.visible(x+dx,y+dy)))continue;
+            points.push({x,y,distance});
+          }
+          points.sort((a,b)=>a.distance-b.distance||a.y-b.y||a.x-b.x);
+          const packed=points.slice(0,20),score=packed.length*100000-packed.reduce((sum,p)=>sum+p.distance,0);
+          if(!choice||score>choice.score)choice={center,points:packed,score};
+        }
+        if(choice?.points.length===20)break;
+      }
+      if(!choice||choice.points.length<20)throw Error('M10 crowd has insufficient legal visible floor');
+      Object.assign(g.player,{x:choice.center.x,y:choice.center.y,vx:0,vy:0,angle:0});d.settlePresentation(72);
+      const families=['crawler','crawler','crawler','crawler','crawler','crawler','crawler','crawler','crawler','crawler','brute','stalker','spitter','carrier','brute','stalker','spitter','carrier','brute','stalker'];
+      const actors=choice.points.map((p,i)=>({id:d.spawn(families[i],p.x,p.y,false),family:families[i]}));
+      const started=g.elapsed;
+      // A real approach earns the first crawler warning. No forced phase,
+      // timer, health, speed or damage edits are used to synchronize the crowd.
+      for(let frame=0;frame<36;frame++){
+        d.step(1000/60);
+        if(actors.some(a=>a.family==='crawler'&&g.enemies.getSnapshot(a.id)?.meleePhase==='windup'))break;
+      }
+      d.g5Proof={presentationOnly:false,stagedNativeEncounter:true,invulnerable:true,requestedEnemies:20,requestedFamilies:{crawler:10,brute:3,stalker:3,spitter:2,carrier:2},nativeApproachMs:(g.elapsed-started)*1000,actors};
+      Object.defineProperty(d.g5Proof,'crowd',{enumerable:true,get(){
+        const enemies=g.enemies.snapshot.enemies,families={},windups={},phases={};
+        for(const e of enemies){families[e.type]=(families[e.type]??0)+1;phases[e.meleePhase]=(phases[e.meleePhase]??0)+1;if(e.meleePhase==='windup')windups[e.type]=(windups[e.type]??0)+1;}
+        return {elapsed:g.elapsed,total:enemies.length,visible:enemies.filter(e=>r.visible(e.x,e.y)).length,families,windups,phases};
+      }});
+      d.refresh();
+    },
+  });
+}
