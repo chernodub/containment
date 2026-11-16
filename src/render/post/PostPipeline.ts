@@ -56,6 +56,8 @@ export class PostPipeline {
   get diagnostics() { return { adaptiveScale:this.adaptive.scale, adaptive:this.adaptive.snapshot, gpu:this.gpuTimer?.snapshot, softParticles:this.softDepth.diagnostics }; }
   /** Borrowed current scene depth for the native-resolution occlusion silhouette. */
   get sceneDepthTexture(): DepthTexture | null { return this.resources?.scene.depthTexture ?? null; }
+  /** VFX12: borrowed opaque classification excludes actor self-occlusion. */
+  get sceneGeometryTexture() { return this.resources?.scene.textures[1] ?? null; }
   private styleStrength:GraphicStrength='bold';
   /** Debug art review strengths share the shipping shader programs. */
   setStyleStrength(value:GraphicStrength):void {
