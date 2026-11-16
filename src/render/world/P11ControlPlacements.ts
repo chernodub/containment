@@ -10,5 +10,5 @@ export function p11ControlPlacements(id:string):OriginalKitInstance[]{
   'overload-floor':['reactor-crown',700,500,1.7,1.4,1.7],
  };
  const p=placements[id];if(!p)return [];
- return [{pack:'p11-control',asset:p[0],matrix:new T.Matrix4().compose(new T.Vector3(p[1]/32,0,p[2]/32),new T.Quaternion(),new T.Vector3(p[3],p[4],p[5])),purpose:'P11 / '+p[0],cutaway:true}];
+ return [{pack:(id==='manual-control-chamber'||id==='overload-floor')?'p11-reactor':'p11-control',asset:p[0],matrix:new T.Matrix4().compose(new T.Vector3(p[1]/32,0,p[2]/32),new T.Quaternion(),new T.Vector3(p[3],p[4],p[5])),purpose:'P11 / '+p[0],cutaway:true}];
 }

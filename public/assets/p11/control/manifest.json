@@ -5,167 +5,137 @@
   "source": "tools/assets/p11-set-pieces/control_heroes.py",
   "rebuild": "blender -b --factory-startup -P tools/assets/p11-set-pieces/control_heroes.py",
   "coordinateSystem": "glTF Y-up, metres; bottom-centred origins, fronts face +Z (camera side)",
-  "description": "Original control, diagnostic and reactor hero machinery.",
+  "description": "Original mechanical control, diagnostic and reactor hero machinery.",
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 3.008,
-    "blenderPNGDecodeMs": 7.887,
+    "bakeSeconds": 1.764,
+    "blenderPNGDecodeMs": 6.815,
     "file": "control-normal.png",
     "size": 512,
-    "bytes": 369973,
+    "bytes": 356571,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 177562,
+    "nonFlatPixels": 171622,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "uplink-tracking-dish--e9-body",
         "role": "e9-body",
-        "seconds": 0.066,
+        "seconds": 0.063,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "uplink-tracking-dish--e9-ceramic",
         "role": "e9-ceramic",
-        "seconds": 0.041,
+        "seconds": 0.026,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "uplink-tracking-dish--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.158,
+        "seconds": 0.089,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "uplink-tracking-dish--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.105,
+        "seconds": 0.109,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "uplink-tracking-dish--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.033,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "uplink-tracking-dish--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.037,
+        "seconds": 0.041,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "uplink-tracking-dish--p11-tint-metal",
+        "role": "p11-tint-metal",
+        "seconds": 0.026,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "specimen-probe-cradle--e9-body",
         "role": "e9-body",
-        "seconds": 0.038,
-        "method": "three-segment high bevel"
-      },
-      {
-        "mesh": "specimen-probe-cradle--e9-ceramic",
-        "role": "e9-ceramic",
-        "seconds": 0.044,
+        "seconds": 0.03,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "specimen-probe-cradle--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.118,
+        "seconds": 0.072,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "specimen-probe-cradle--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.106,
+        "seconds": 0.072,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.025,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.026,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "specimen-probe-cradle--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.06,
+        "seconds": 0.03,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--p11-tint-metal",
+        "role": "p11-tint-metal",
+        "seconds": 0.024,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "key-cylinder-interlock--e9-body",
         "role": "e9-body",
-        "seconds": 0.048,
+        "seconds": 0.035,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "key-cylinder-interlock--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.155,
+        "seconds": 0.091,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "key-cylinder-interlock--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.089,
+        "seconds": 0.084,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "key-cylinder-interlock--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.044,
+        "seconds": 0.025,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "key-cylinder-interlock--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.061,
+        "seconds": 0.025,
         "method": "three-segment high bevel"
       },
       {
-        "mesh": "manual-authorisation-dais--e9-body",
-        "role": "e9-body",
-        "seconds": 0.085,
-        "method": "three-segment high bevel"
-      },
-      {
-        "mesh": "manual-authorisation-dais--e9-ceramic",
-        "role": "e9-ceramic",
-        "seconds": 0.053,
-        "method": "three-segment high bevel"
-      },
-      {
-        "mesh": "manual-authorisation-dais--e9-dark",
-        "role": "e9-dark",
-        "seconds": 0.074,
-        "method": "three-segment high bevel"
-      },
-      {
-        "mesh": "manual-authorisation-dais--e9-trim",
-        "role": "e9-trim",
-        "seconds": 0.09,
-        "method": "three-segment high bevel"
-      },
-      {
-        "mesh": "manual-authorisation-dais--p11-rubber",
-        "role": "p11-rubber",
-        "seconds": 0.038,
-        "method": "three-segment high bevel"
-      },
-      {
-        "mesh": "manual-authorisation-dais--p11-tint",
-        "role": "p11-tint",
-        "seconds": 0.049,
-        "method": "three-segment high bevel"
-      },
-      {
-        "mesh": "reactor-crown--e9-body",
-        "role": "e9-body",
-        "seconds": 0.107,
-        "method": "three-segment high bevel"
-      },
-      {
-        "mesh": "reactor-crown--e9-dark",
-        "role": "e9-dark",
-        "seconds": 0.116,
-        "method": "three-segment high bevel"
-      },
-      {
-        "mesh": "reactor-crown--e9-trim",
-        "role": "e9-trim",
-        "seconds": 0.133,
-        "method": "three-segment high bevel"
-      },
-      {
-        "mesh": "reactor-crown--p11-rubber",
-        "role": "p11-rubber",
-        "seconds": 0.064,
+        "mesh": "key-cylinder-interlock--p11-tint-metal",
+        "role": "p11-tint-metal",
+        "seconds": 0.03,
         "method": "three-segment high bevel"
       }
     ]
@@ -177,10 +147,11 @@
     "e9-dark": "#0e1820",
     "e9-glass": "#9dcad1",
     "e9-trim": "#8faaa8",
-    "e9-violet": "#b286d1",
     "p11-rubber": "#16191b",
     "p11-screen": "#9fe8ff",
-    "p11-tint": "#ffffff"
+    "p11-steel": "#6c7a7c",
+    "p11-tint": "#ffffff",
+    "p11-tint-metal": "#ffffff"
   },
   "models": [
     {
@@ -202,7 +173,7 @@
           1.55
         ]
       },
-      "triangles": 4198,
+      "triangles": 6180,
       "budget": 12000,
       "finishes": [
         "e9-body",
@@ -210,8 +181,10 @@
         "e9-cyan",
         "e9-dark",
         "e9-trim",
+        "p11-rubber",
         "p11-screen",
-        "p11-tint"
+        "p11-tint",
+        "p11-tint-metal"
       ]
     },
     {
@@ -219,30 +192,32 @@
       "size": [
         3.4,
         2.83,
-        1.579
+        1.614
       ],
       "bounds": {
         "min": [
           -1.7,
           0.0,
-          -0.75
+          -0.81
         ],
         "max": [
           1.7,
           2.83,
-          0.829
+          0.804
         ]
       },
-      "triangles": 4832,
+      "triangles": 7068,
       "budget": 12000,
       "finishes": [
         "e9-body",
-        "e9-ceramic",
         "e9-dark",
         "e9-glass",
         "e9-trim",
+        "p11-rubber",
         "p11-screen",
-        "p11-tint"
+        "p11-steel",
+        "p11-tint",
+        "p11-tint-metal"
       ]
     },
     {
@@ -250,7 +225,7 @@
       "size": [
         3.62,
         2.56,
-        1.504
+        1.5
       ],
       "bounds": {
         "min": [
@@ -261,10 +236,10 @@
         "max": [
           1.81,
           2.56,
-          0.779
+          0.775
         ]
       },
-      "triangles": 6206,
+      "triangles": 7836,
       "budget": 12000,
       "finishes": [
         "e9-body",
@@ -273,76 +248,16 @@
         "e9-trim",
         "p11-rubber",
         "p11-screen",
-        "p11-tint"
-      ]
-    },
-    {
-      "name": "manual-authorisation-dais",
-      "size": [
-        4.4,
-        2.045,
-        1.81
-      ],
-      "bounds": {
-        "min": [
-          -2.2,
-          0.0,
-          -0.825
-        ],
-        "max": [
-          2.2,
-          2.045,
-          0.985
-        ]
-      },
-      "triangles": 4026,
-      "budget": 12000,
-      "finishes": [
-        "e9-body",
-        "e9-ceramic",
-        "e9-cyan",
-        "e9-dark",
-        "e9-trim",
-        "p11-rubber",
-        "p11-screen",
-        "p11-tint"
-      ]
-    },
-    {
-      "name": "reactor-crown",
-      "size": [
-        4.4,
-        2.8447,
-        4.4
-      ],
-      "bounds": {
-        "min": [
-          -2.2,
-          0.0,
-          -2.2
-        ],
-        "max": [
-          2.2,
-          2.8447,
-          2.2
-        ]
-      },
-      "triangles": 6448,
-      "budget": 12000,
-      "finishes": [
-        "e9-body",
-        "e9-dark",
-        "e9-trim",
-        "e9-violet",
-        "p11-rubber"
+        "p11-tint",
+        "p11-tint-metal"
       ]
     }
   ],
   "output": {
     "file": "control.glb",
-    "bytes": 1870552,
-    "sha256": "915d40f716110b95d7527087402bcb43365784455960af1ee794a21e06d56733",
-    "triangles": 25710
+    "bytes": 1652896,
+    "sha256": "ffa03d3e8faa61cc170eb561dfd7271f8b60ca99758364fa1ad45938e71a1173",
+    "triangles": 21084
   },
   "overBudget": []
 }
