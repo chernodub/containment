@@ -22,8 +22,8 @@ def pump():
   L.lathe('Suction bell',[(.22,0),(.26,.08),(.25,.19),(.18,.29)],(x,-.98,1.02),'e9-dark',14,'Y')
   L.sweep('Suction return elbow',[(x,-.98,1.02),(x,-1.04,.75),(x,-1.04,.4),(x,-.85,.27)],.12,'e9-body',8,bend=.1)
   L.flange((x,-.85,.27),.19,'Z',.06,4)
-  for i in range(8):
-   a=i*math.pi/4;L.bolt((x+math.cos(a)*.51,-.84,1.02+math.sin(a)*.51),.035)
+  for i in range(6):
+   a=i*math.pi/3;L.bolt((x+math.cos(a)*.51,-.84,1.02+math.sin(a)*.51),.035)
   L.cylinder('Coupling shaft',(x,.04,1.02),.14,.55,'p11-steel','Y',12,.01)
   L.box('Coupling guard',(x,.04,1.04),(.51,.4,.5),'e9-dark',.06)
   L.grille_top((x,.03,1.3),.4,.3,6)
@@ -45,8 +45,20 @@ def pump():
   L.stencil('P1' if side==0 else 'P2',(x-.14,-.84,1.23),.1)
   # Frost is discontinuous crust at joints, not white unconnected pipe.
   for yy in (-.28,-.2):L.torus('Frost seam',(x-.28,yy,1.69),.205,.014,'p11-frost','Z',12,4)
- L.sweep('Ship return manifold',[(-2.05,.7,.25),(-2.05,.7,2.05),(2.05,.7,2.05),(2.05,.7,.25)],.14,'e9-body',12,bend=.17)
- for x in (-2.05,2.05):L.flange((x,.7,.28),.23,'Z',.1,6)
+ # Ruptured coupling: two separated pipe ends, displaced clamp, frost runoff.
+ L.sweep('Intact return rise',[(-2.05,-.9,.25),(-2.05,-.9,2.05),(.35,-.9,2.05)],.14,'e9-body',12,bend=.17)
+ L.sweep('Buckled return rise',[(.77,-.76,1.85),(1.45,-.9,2.05),(2.05,-.9,2.05),(2.05,-.9,.25)],.14,'e9-body',12,bend=.17)
+ for x,y,z in ((.35,-.9,2.05),(.77,-.76,1.85)):
+  L.cylinder('Black rupture mouth',(x,y,z),.11,.025,'e9-dark','X',10,0)
+  L.flange((x,y,z),.23,'X',.055,4)
+ for i in range(5):
+  y=-.9+i*.07
+  L.sweep('Frozen escaping coolant',[(.52,y,1.9),(.58+.045*i,y,1.3),(.75+.05*i,y,.1)],.032+i*.005,'p11-frost',5)
+ L.slab('Asymmetric frozen catchpool',[(-.55,-1.01),(-.32,-.9),(.8,-.93),(1.2,-.8),(.82,-.47),(.1,-.4),(-.5,-.62)],.015,.038,'p11-tint',.006,tint='#536c70')
+ for i in range(4):
+  L.slab('Fractured ice scale',[(-.35+i*.2,-.9),(-.12+i*.2,-.83),(-.2+i*.2,-.58),(-.4+i*.2,-.67)],.041,.055,'p11-frost',0)
+ L.box('Displaced coupling clamp',(.6,-.9,.14),(.42,.28,.1),'p11-steel',.02,rotation=(0,.2,.4))
+ for x in (-2.05,2.05):L.flange((x,-.9,.28),.23,'Z',.1,6)
  L.sweep('Common cross connector',[(0,.3,2.05),(0,.7,2.05)],.13,'e9-body',10)
  L.flange((0,.5,2.05),.22,'Y',.06,6)
  L.profile_x('Instrument pedestal',[(-.85,.25),(-.55,.25),(-.55,1.9),(-.75,1.9)],-.22,.22,'e9-dark',.025)
@@ -205,4 +217,4 @@ compact_uv(OUT/'maintenance-containment.glb',OUT/'manifest.json')
 if '--render' in L.args():
  from cpu_preview import stage
  L._stage=stage
- for name in ([names[2]] if '--emitter' in L.args() else names): L.render(L.ROOT/'artifacts/nextgen/p11-final/beauty'/(name+'-hero.png'),[name],'hero',scale=1.18)
+ for name in ([names[0]] if '--pump' in L.args() else ([names[2]] if '--emitter' in L.args() else names)): L.render(L.ROOT/'artifacts/nextgen/p11-final/beauty'/(name+'-hero.png'),[name],'hero',scale=1.18)
