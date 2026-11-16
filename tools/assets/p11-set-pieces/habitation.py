@@ -37,7 +37,18 @@ def drawing(x,z,index):
     for sx in (-1,1):
         L.decal_quad('Tape corner',(x+sx*.19,.605,z+.27),.13,.055,'-Y','sand',rotation=sx*.25)
     # Four individual keepsakes: home, family, garden and the colony ship.
-    line=lambda name,points,tint: L.sweep(name,[(x+px,.60,z+pz) for px,pz in points],.009,'p11-tint',4,tint=tint)
+    def line(name,points,tint):
+        # Ink is a flat ribbon on paper, not miniature pipework to bevel-bake.
+        import bmesh
+        bm=bmesh.new();rows=[]
+        for i,(px,pz) in enumerate(points):
+            prev=Vector(points[max(0,i-1)]);nxt=Vector(points[min(len(points)-1,i+1)])
+            d=nxt-prev
+            if d.length<.001:d=Vector((1,0))
+            d.normalize();side=Vector((-d.y,d.x))*.008
+            rows.append([bm.verts.new((x+px+side.x*s,.589,z+pz+side.y*s)) for s in (-1,1)])
+        for i in range(len(rows)-1):bm.faces.new([rows[i][0],rows[i+1][0],rows[i+1][1],rows[i][1]])
+        L.mesh_object(name,bm,'p11-tint',tint=tint,smooth=False)
     if index==0:
         line('Crayon house',[(-.18,-.17),(-.18,.02),(0,.17),(.18,.02),(.18,-.17),(-.18,-.17)],'crayon-blue')
         line('Crayon door',[(-.035,-.17),(-.035,-.04),(.045,-.04),(.045,-.17)],'crayon-purple')
@@ -77,6 +88,10 @@ def residential():
     for i in range(3):
         painted('Bench cushion',(-2.79+i*.95,.24,.49),(.90,.74,.16),'cushion',.06)
         painted('Bench back cushion',(-2.79+i*.95,.60,.91),(.90,.15,.63),'cushion',.055)
+        cx=-2.79+i*.95
+        L.sweep('Seat sewn piping',[(cx-.39,-.08,.57),(cx+.39,-.08,.57),(cx+.42,.0,.57),(cx+.42,.5,.57)],.009,'p11-tint',4,tint='navy')
+        L.sweep('Back upholstery welt',[(cx-.39,.515,.65),(cx-.39,.515,1.16),(cx+.39,.515,1.16),(cx+.39,.515,.65)],.008,'p11-tint',4,tint='navy')
+        for xx in (-.2,.2):L.box('Back upholstery tuck',(cx+xx,.517,.92),(.008,.006,.35),'p11-tint',0,tint='navy')
     for x in (-3.25,-.37): L.handle((x,.25,.70),.64,'Y',.05,.035,'p11-steel','Z')
     # Offset cantilever table keeps the scene asymmetric.
     L.slab('Table rounded octagonal top',[(-.4,-.61),(1.7,-.61),(1.88,-.43),(1.88,.18),(1.7,.34),(-.4,.34),(-.56,.18),(-.56,-.43)],.86,.96,'p11-tint',.025,tint='wood')
@@ -92,8 +107,17 @@ def residential():
         L.cylinder('Loose crayon',(.44+i*.08,-.40,.99),.012,.21,'p11-tint','Y',6,0,tint=tint)
     chair(2.40,-.30,-.62,True)
     # Small cupboard with open cubby, hook rail, folded blanket and abandoned arrival bag.
-    painted('Folded blanket',(-2.45,.22,.60),(.76,.49,.09),'blanket',.02)
-    for i in range(4): painted('Blanket weave border',(-2.45,.02+i*.025,.647),(.70,.009,.005),'cream',0)
+    # A blanket slumps over the bench lip; irregular folds catch the light.
+    import bmesh
+    bm=bmesh.new();rows=[]
+    for j in range(9):
+        t=j/8;yy=.45-t*.75
+        rows.append([bm.verts.new((-2.45+(i/8-.5)*.76,yy,.625+.018*math.sin(i*2+j*.7)-max(0,t-.65)*.65)) for i in range(9)])
+    for j in range(8):
+        for i in range(8):bm.faces.new([rows[j][i],rows[j][i+1],rows[j+1][i+1],rows[j+1][i]])
+    L.mesh_object('Slumped woven blanket',bm,'p11-tint',tint='blanket',smooth=True)
+    for j in (6,7):
+        t=j/8;L.sweep('Blanket woven border',[(-2.45+(i/8-.5)*.75,.45-t*.75,.63+.018*math.sin(i*2+j*.7)-max(0,t-.65)*.65) for i in range(9)],.006,'p11-tint',4,tint='cream')
     painted('Arrival case',(3.02,.23,.35),(.49,.58,.65),'navy',.06)
     for z in (.15,.55):L.box('Case compression band',(3.02,.23,z),(.51,.60,.045),'p11-rubber',.005)
     L.handle((3.02,.23,.70),.24,'X',.06,.015,'p11-steel','Z')

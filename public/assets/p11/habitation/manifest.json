@@ -9,91 +9,91 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 1.449,
-    "blenderPNGDecodeMs": 6.821,
+    "bakeSeconds": 2.083,
+    "blenderPNGDecodeMs": 6.057,
     "file": "habitation-normal.png",
     "size": 512,
-    "bytes": 244528,
+    "bytes": 242118,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 127140,
+    "nonFlatPixels": 127706,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "residential-story-wall--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.052,
+        "seconds": 0.058,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "residential-story-wall--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.027,
+        "seconds": 0.084,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "residential-story-wall--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.032,
+        "seconds": 0.037,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "residential-story-wall--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.099,
+        "seconds": 0.091,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "residential-common-nook--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.039,
+        "seconds": 0.037,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "residential-common-nook--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.045,
+        "seconds": 0.079,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "residential-common-nook--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.07,
+        "seconds": 0.121,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "atrium-conservatory--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.04,
+        "seconds": 0.034,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "atrium-conservatory--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.049,
+        "seconds": 0.041,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "atrium-conservatory--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.039,
+        "seconds": 0.036,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "atrium-conservatory--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.041,
+        "seconds": 0.051,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "atrium-conservatory--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.085,
+        "seconds": 0.099,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "atrium-conservatory--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.039,
+        "seconds": 0.037,
         "method": "three-segment high bevel"
       }
     ]
@@ -129,7 +129,7 @@
           -0.498
         ]
       },
-      "triangles": 1882,
+      "triangles": 1466,
       "budget": 12000,
       "finishes": [
         "e9-amber",
@@ -158,7 +158,7 @@
           0.809
         ]
       },
-      "triangles": 1800,
+      "triangles": 2212,
       "budget": 12000,
       "finishes": [
         "p11-rubber",
@@ -201,9 +201,9 @@
   ],
   "output": {
     "file": "habitation.glb",
-    "bytes": 850064,
-    "sha256": "0b000316338b562ef200aec226fda8cf431666d01fef23832ffb86752e379ffa",
-    "triangles": 8308
+    "bytes": 837792,
+    "sha256": "c688dfca79778f2e62e6af418010b29ff24ed99cff44a32b1e20cd2212111fb5",
+    "triangles": 8304
   },
   "overBudget": []
 }
