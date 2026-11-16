@@ -2,7 +2,7 @@ import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { RoomTemplate } from '../../game/roguelike/types';
 import { shipEnvironment } from '../ShipEnvironments';
-import { deckLightSources } from './E10DeckSurfaces';
+import { deckLightSources, setDeckQuality } from './E10DeckSurfaces';
 import { INTERIOR_PROFILES } from './RoomInteriorProfiles';
 import { registerOriginalInteriorCutaways, type InteriorCutaway } from './OriginalInteriorCutaways';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -91,5 +91,6 @@ export function addCeilingServices(root: T.Group, t: RoomTemplate): void {
 
 /** Low retains baked decks and recessed kit hardware, without overhead extras. */
 export function setCeilingQuality(world: T.Object3D, high: boolean): void {
+  world.userData.e10LowTier = !high; setDeckQuality(world, high);
   world.traverse(o => { if (o.userData.e10HighDetail) o.visible = high; });
 }

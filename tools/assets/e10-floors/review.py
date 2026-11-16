@@ -16,5 +16,6 @@ for room in rooms:
    board.paste(small,(i*480,row*294+24));d.text((i*480+8,row*294+5),('E9' if row==0 else 'E10')+f' / {room} / {i+1}',fill=(224,235,232))
    if row==1:small.save(out/name)
  board.save(out/f'tour-{room}.png')
- for file in raw.glob(f'g6-kiting-{room}-[0-9][0-9].png'):
-  Image.open(file).convert('RGB').resize((480,270),Image.Resampling.BOX).save(out/file.name)
+ for pattern in [f'g6-kiting-{room}-[0-9][0-9].png',f'combat-kiting-{room}-[0-9][0-9].png']:
+  for file in raw.glob(pattern):
+   Image.open(file).convert('RGB').resize((480,270),Image.Resampling.BOX).save(out/file.name)

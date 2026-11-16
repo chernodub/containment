@@ -246,5 +246,5 @@ export class ContactShadows {
  begin(){this.count=0;}
  add(x:number,z:number,radius:number){if(this.count===64)return;this.dummy.position.set(x,.025,z);this.dummy.scale.set(radius*.98,1,radius*.82);this.dummy.updateMatrix();this.mesh.setMatrixAt(this.count++,this.dummy.matrix);}
  end(){this.mesh.count=this.count;this.mesh.instanceMatrix.needsUpdate=true;}
- dispose(){this.mesh.geometry.dispose();(this.mesh.material as T.Material).dispose();this.mesh.removeFromParent();}
+ dispose(){this.mesh.dispose();this.mesh.geometry.dispose();(this.mesh.material as T.Material).dispose();this.mesh.removeFromParent();}
 }

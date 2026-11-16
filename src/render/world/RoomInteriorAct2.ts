@@ -23,7 +23,7 @@ export const ACT2_INTERIOR_PROFILES: Record<string, InteriorProfile> = {
     landmark: 'Lathe and wall gantry workbays consumed along their service seams',
   },
   'shielding-gate': {
-    kind: 'shielding', deck: 0x333f5d, zone: 0x53627b, trim: 0xdfddc3, key: 0xb9a3e1,
+    kind: 'shielding', deck: 0x46545c, zone: 0x65767a, trim: 0xdfddc3, key: 0xb9a3e1,
     landmark: 'Offset shield banks framing the inspection scanner floor',
   },
   'containment-annulus': {

@@ -2,6 +2,10 @@ import * as T from 'three';
 import type { RoomTemplate } from '../../game/roguelike/types';
 import { SHIP_ARCHITECTURE_PLANS } from '../../game/roguelike/shipArchitectureLayouts';
 import { shipEnvironment } from '../ShipEnvironments';
+import { bakeDeckLighting } from '../lighting/DeckLightBake';
+
+const deckSets = new WeakMap<T.MeshStandardMaterial, { high: T.Texture[]; low: T.Texture[]; selected?: boolean }>();
+const deckDecals = new WeakMap<T.MeshStandardMaterial, { value: T.Texture | null }>();
 
 /** Fixed ceiling-source footprints also drive the static deck illumination. */
 export function deckLightSources(t: RoomTemplate): T.Vector4[] {
@@ -32,22 +36,23 @@ export async function loadDeckSurfaces(world: T.Group, t: RoomTemplate, active: 
   const dispose = () => { if (disposed) return; disposed = true; for (const texture of textures) texture.dispose(); };
   material.addEventListener('dispose', dispose);
   try {
-    const results = await Promise.allSettled(['basecolor', 'normal', 'orm', 'decals', 'trim-basecolor', 'trim-normal'].map(async name => {
-      const texture = await loader.loadAsync(base + (name === 'decals' || name.startsWith('trim-') ? 'shared' : environment) + '/' + name + '.webp');
+    const names = ['basecolor', 'normal', 'orm', 'decals', 'trim-basecolor', 'trim-normal'];
+    const results = await Promise.allSettled([false, true].flatMap(low => names.map(async name => {
+      const texture = await loader.loadAsync(base + (name === 'decals' || name.startsWith('trim-') ? 'shared' : environment) + '/' + name + (low ? '-low' : '') + '.webp');
       if (disposed) { texture.dispose(); return texture; }
       textures.push(texture);
+      await (texture.image as HTMLImageElement).decode();
       texture.wrapS = texture.wrapT = T.RepeatWrapping;
       texture.colorSpace = name === 'basecolor' || name === 'decals' || name === 'trim-basecolor' ? T.SRGBColorSpace : T.NoColorSpace;
       texture.anisotropy = 4;
       return texture;
-    }));
+    })));
     const failure = results.find(r => r.status === 'rejected');
     if (failure?.status === 'rejected') throw failure.reason;
     if (!active() || disposed) { dispose(); return; }
-    const [color, normal, orm, decals, trimColor, trimNormal] = results.map(r => (r as PromiseFulfilledResult<T.Texture>).value);
-    material.userData.e10DecalUniform.value = decals;
-    material.map = color; material.normalMap = normal; material.normalScale.set(2.4, 2.4);
-    material.aoMap = orm; material.aoMapIntensity = .42; material.roughnessMap = orm;
+    const loaded = results.map(r => (r as PromiseFulfilledResult<T.Texture>).value);
+    deckSets.set(material, { high: loaded.slice(0, 6), low: loaded.slice(6) });
+    material.normalScale.set(2.4, 2.4); material.aoMapIntensity = .42;
     material.roughness = 1; material.metalness = .08;
     const geometry = floor.geometry, positions = geometry.getAttribute('position');
     const uv = new Float32Array(positions.count * 2);
@@ -57,13 +62,14 @@ export async function loadDeckSurfaces(world: T.Group, t: RoomTemplate, active: 
     geometry.setAttribute('uv', new T.BufferAttribute(uv, 2));
     const trim = world.getObjectByName('e10-threshold-trims');
     if (trim instanceof T.Mesh && trim.material instanceof T.MeshStandardMaterial) {
-      trim.material.map = trimColor; trim.material.normalMap = trimNormal; trim.material.normalScale.set(1.8, 1.8);
+      trim.material.normalScale.set(1.8, 1.8);
       const p = trim.geometry.getAttribute('position'), uv = new Float32Array(p.count * 2);
       for (let i = 0; i < p.count; i++) { uv[i * 2] = p.getX(i) / 5.6; uv[i * 2 + 1] = -p.getZ(i) / 5.6; }
       trim.geometry.setAttribute('uv', new T.BufferAttribute(uv, 2)); trim.material.needsUpdate = true;
     }
+    setDeckQuality(world, !world.userData.e10LowTier);
     material.needsUpdate = true;
-    floor.userData.e10Deck = { environment, atlas: 'four 2.8m tiles', maps: textures.length, textureBytes: 3 * 1024 * 1024 * 4 * 4 / 3 };
+    floor.userData.e10Deck = { environment, atlas: 'four 2.8m tiles', maps: 6, ownedDecodedMaps: textures.length };
   } catch (error) { dispose(); if (active()) throw error; }
 }
 
@@ -74,27 +80,46 @@ export function shapeDeckLight(material: T.MeshStandardMaterial, t: RoomTemplate
   const pools = deckLightSources(t), plan = SHIP_ARCHITECTURE_PLANS[t.id as keyof typeof SHIP_ARCHITECTURE_PLANS];
   if (!plan) return;
   const decal = { value: null as T.Texture | null };
-  material.userData.e10DecalUniform = decal;
+  deckDecals.set(material, decal);
   const arena = new T.Vector2(plan.arena.x / 32, plan.arena.y / 32);
-  const exit = new T.Vector2(t.exit.x / 32, t.exit.y / 32);
+  const light = bakeDeckLighting(t, pools);
+  let lightDisposed = false;
+  material.addEventListener('dispose', () => { if (!lightDisposed) { lightDisposed = true; light.texture.dispose(); } });
+  const environment = shipEnvironment(t.id);
+  const keyTint = new T.Color(environment === 'habitation' || environment === 'cargo' || environment === 'engineering' ? 0xffddad : environment === 'maintenance' || environment === 'communications' ? 0xb8e1d8 : 0xdbe7f4).lerp(new T.Color(0xffffff), .75);
+  const fillTint = new T.Color(environment === 'infested' ? 0xb1a8bf : 0xa0b9cb).lerp(new T.Color(0xffffff), .75);
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);
-    shader.uniforms.e10Pools = { value: pools }; shader.uniforms.e10Decals = decal;
-    shader.uniforms.e10Arena = { value: arena }; shader.uniforms.e10Exit = { value: exit };
+    shader.uniforms.e10Decals = decal; shader.uniforms.e10Light = {value:light.texture}; shader.uniforms.e10LightBounds = {value:light.bounds}; shader.uniforms.e10KeyTint = {value:keyTint}; shader.uniforms.e10FillTint = {value:fillTint};
+    shader.uniforms.e10Arena = { value: arena };
     shader.vertexShader = 'varying vec3 e10Position;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ne10Position=(modelMatrix*vec4(transformed,1.0)).xyz;');
-    shader.fragmentShader = 'varying vec3 e10Position; uniform vec4 e10Pools[6]; uniform vec2 e10Arena; uniform vec2 e10Exit; uniform sampler2D e10Decals;\n' + shader.fragmentShader;
+    shader.fragmentShader = 'varying vec3 e10Position; uniform vec2 e10Arena; uniform sampler2D e10Decals; uniform sampler2D e10Light; uniform vec4 e10LightBounds; uniform vec3 e10KeyTint; uniform vec3 e10FillTint;\n' + shader.fragmentShader;
     shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `
+      vec2 e10Tile=floor(e10Position.xz/2.8);
+      float e10TileHash=fract(sin(dot(e10Tile,vec2(41.17,73.93)))*17431.37);
+      float e10Variant=e10TileHash<.52?0.0:e10TileHash<.80?1.0:e10TileHash<.90?2.0:3.0;
+      vec2 e10Local=fract(e10Position.xz/2.8);
+      if(fract(e10TileHash*17.0)>.5)e10Local=e10Local.yx;
+      vec2 e10UV=(e10Local*.976+.012+vec2(mod(e10Variant,2.0),floor(e10Variant/2.0)))*.5;
+      #ifdef USE_MAP
+        vec2 vMapUv=e10UV;
+      #endif
+      #ifdef USE_NORMALMAP
+        vec2 vNormalMapUv=e10UV;
+      #endif
+      #ifdef USE_AOMAP
+        vec2 vAoMapUv=e10UV;
+      #endif
+      #ifdef USE_ROUGHNESSMAP
+        vec2 vRoughnessMapUv=e10UV;
+      #endif
       float e10Calm=1.0-smoothstep(3.5,5.2,distance(e10Position.xz,e10Arena));
       ${T.ShaderChunk.map_fragment.replace('diffuseColor *= sampledDiffuseColor;', 'sampledDiffuseColor.rgb=mix(vec3(.78),sampledDiffuseColor.rgb,mix(1.0,.50,e10Calm)); diffuseColor *= sampledDiffuseColor;')}
       // Atlas relief is quieter in the nine-metre combat circle.
-      float e10Pool=0.0;
-      for(int i=0;i<6;i++){
-        vec2 q=abs(e10Position.xz-e10Pools[i].xy)/e10Pools[i].zw;
-        float pool=(1.0-smoothstep(.22,1.45,q.x))*(1.0-smoothstep(.16,1.35,q.y));
-        e10Pool=max(e10Pool,pool);
-      }
-      float e10ExitPool=1.0-smoothstep(.4,3.5,distance(e10Position.xz,e10Exit));
-      diffuseColor.rgb*=mix(.64,1.32,max(e10Pool,e10ExitPool*.8));
+      vec2 e10Irradiance=texture2D(e10Light,(e10Position.xz-e10LightBounds.xy)/e10LightBounds.zw).rg;
+      float e10Pool=e10Irradiance.r;
+      diffuseColor.rgb*=mix(.64,1.32,e10Pool)*mix(.76,1.0,e10Irradiance.g);
+      diffuseColor.rgb*=mix(e10FillTint,e10KeyTint,e10Pool);
       diffuseColor.rgb*=1.18;
       vec2 e10Cell=floor(e10Position.xz/8.0);
       float e10Hash=fract(sin(dot(e10Cell,vec2(17.3,43.1)))*9173.7);
@@ -107,6 +132,25 @@ export function shapeDeckLight(material: T.MeshStandardMaterial, t: RoomTemplate
       reflectedLight.indirectDiffuse+=diffuseColor.rgb*(.025+.035*e10Pool);
     `);
   };
-  material.customProgramCacheKey = () => key + ':e10-static-deck-v1';
+  material.customProgramCacheKey = () => key + ':e10-static-deck-v3';
   material.needsUpdate = true;
+}
+
+/** Both resolutions decode during the room hold. Tier selection swaps already
+ * owned maps before normal preparation, without an asynchronous combat change. */
+export function setDeckQuality(world: T.Object3D, high: boolean): void {
+  const floor = world.getObjectByName('e9-named-space-decks');
+  if (!(floor instanceof T.Mesh) || !(floor.material instanceof T.MeshStandardMaterial)) return;
+  const m = floor.material, sets = deckSets.get(m);
+  if (!sets || sets.selected === high) return;
+  sets.selected = high;
+  const [color, normal, orm, decals, trimColor, trimNormal] = (high ? sets.high : sets.low) as T.Texture[];
+  m.map = color; m.normalMap = normal; m.aoMap = m.roughnessMap = orm;
+  deckDecals.get(m)!.value = decals; m.needsUpdate = true;
+  const trim = world.getObjectByName('e10-threshold-trims');
+  if (trim instanceof T.Mesh && trim.material instanceof T.MeshStandardMaterial) {
+    trim.material.map = trimColor; trim.material.normalMap = trimNormal; trim.material.needsUpdate = true;
+  }
+  floor.userData.e10ActiveTextureBytes = [color, normal, orm, decals, trimColor, trimNormal]
+    .reduce((bytes, texture) => bytes + (texture.image as HTMLImageElement).width * (texture.image as HTMLImageElement).height * 4 * 4 / 3, 256 * 256 * 4);
 }
