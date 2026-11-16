@@ -5,77 +5,77 @@
   "source": "tools/assets/p11-set-pieces/cargo.py",
   "rebuild": "blender -b -P tools/assets/p11-set-pieces/cargo.py",
   "coordinateSystem": "glTF Y-up, metres; bottom-centred origins, fronts face +Z (camera side)",
-  "description": "Suspended working gantry and grounded torn hull around a wedged freight pod.",
+  "description": "Failed sling on a shifted suspended load, crushed pallet and torn restraint; grounded torn hull around a wedged freight pod.",
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 5.078,
-    "blenderPNGDecodeMs": 8.677,
+    "bakeSeconds": 4.331,
+    "blenderPNGDecodeMs": 34.765,
     "file": "cargo-normal.png",
     "size": 512,
-    "bytes": 343361,
+    "bytes": 350968,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 171346,
+    "nonFlatPixels": 167531,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "freight-suspension-gantry--e9-body",
         "role": "e9-body",
-        "seconds": 1.096,
+        "seconds": 0.203,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "freight-suspension-gantry--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.685,
+        "seconds": 0.185,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "freight-suspension-gantry--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.538,
+        "seconds": 0.749,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "freight-suspension-gantry--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.11,
+        "seconds": 0.132,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "freight-suspension-gantry--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.069,
+        "seconds": 0.029,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "loading-wedged-pod--e9-body",
         "role": "e9-body",
-        "seconds": 0.174,
+        "seconds": 0.223,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "loading-wedged-pod--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.083,
+        "seconds": 0.127,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "loading-wedged-pod--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.187,
+        "seconds": 0.825,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "loading-wedged-pod--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.049,
+        "seconds": 0.085,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "loading-wedged-pod--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.027,
+        "seconds": 0.034,
         "method": "three-segment high bevel"
       }
     ]
@@ -93,13 +93,13 @@
       "name": "freight-suspension-gantry",
       "size": [
         7.65,
-        5.6217,
+        5.6266,
         2.8
       ],
       "bounds": {
         "min": [
           -3.825,
-          0.0,
+          -0.005,
           -1.4
         ],
         "max": [
@@ -108,7 +108,7 @@
           1.4
         ]
       },
-      "triangles": 9356,
+      "triangles": 9926,
       "budget": 12000,
       "finishes": [
         "e9-body",
@@ -151,9 +151,9 @@
   ],
   "output": {
     "file": "cargo.glb",
-    "bytes": 1389828,
-    "sha256": "a76fccdf19871a5c008025b912d9f218757e4f3ab157bba3fda4b4796dab8847",
-    "triangles": 15338
+    "bytes": 1437260,
+    "sha256": "3d774fbeff2e1210258fe39827b0321d31579a3ced43e98286de3c6059cef5c8",
+    "triangles": 15908
   },
   "overBudget": []
 }

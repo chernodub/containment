@@ -1,5 +1,6 @@
 """Original P11 cargo heroes. Blender metres; MIT repository license."""
 import sys,math
+from mathutils import Matrix,Vector
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import p11lib as L
@@ -95,12 +96,6 @@ def gantry():
  L.box('Travelling hoist carriage',(.25,0,4.04),(1.45,1.35,.3),'e9-body',.04)
  L.cylinder('Winch drum',(.25,0,3.8),.28,1.1,'e9-trim','X',16,.015)
  for x in [-.25,.75]: L.torus('Winch flange',(x,0,3.8),.29,.045,'e9-dark','X',16,4)
- for x in [-1.5,1.5]:
-  for y in [-.65,.65]: L.sweep('Taut lifting cable',[(x*.2+.25,y*.5,3.9),(x,y,2.85)],.025,'p11-rubber',6)
- for x in [-1.5,1.5]:
-  for y in [-.65,.65]:
-   L.torus('Certified lifting eye',(x,y,2.86),.08,.025,'e9-trim','Y',12,5)
-   L.box('Eye welded foot',(x,y,2.73),(.22,.18,.08),'e9-body',.012)
  for x in [-.3,.8]:
   for y in [-.5,.5]:
    L.cylinder('Trolley wheel',(x,y,4.27),.16,.12,'e9-dark','Y',12,0)
@@ -109,9 +104,34 @@ def gantry():
  for x in [.9,1.05,1.2]: L.torus('Motor cooling ring',(x,0,4.04),.225,.015,'e9-trim','X',12,4)
  for x in [-.15,0,.15,.3,.45,.6]: L.torus('Wound lifting cable',(x,0,3.8),.285,.018,'p11-rubber','X',16,4)
  L.sweep('Terminated power conduit',[(1.3,0,4.1),(1.45,.5,4.1),(.25,.65,4.3)],.035,'p11-rubber',7,bend=.1)
+ # One failed rigging leg has rolled and displaced the suspended load.
+ before=set(L.bpy.data.objects)
  for y in [-.65,.65]: L.box('Spreader side beam',(0,y,2.9),(3.4,.14,.18),'e9-body',.02)
  for x in [-1.5,1.5]: L.box('Spreader cross beam',(x,0,2.9),(.14,1.5,.18),'e9-trim',.02)
  cargo_pod(0,0,.9)
+ for x in [-1.5,1.5]:
+  for y in [-.65,.65]:
+   L.torus('Certified lifting eye',(x,y,2.86),.08,.025,'e9-trim','Y',12,5)
+   L.box('Eye welded foot',(x,y,2.73),(.22,.18,.08),'e9-body',.012)
+ transform=Matrix.Translation((.35,0,1.8))@Matrix.Rotation(.17,4,'Y')@Matrix.Rotation(.065,4,'X')@Matrix.Translation((0,0,-1.8))
+ for obj in set(L.bpy.data.objects)-before: obj.matrix_world=transform@obj.matrix_world
+ for x in [-1.5,1.5]:
+  for y in [-.65,.65]:
+   end=transform@Vector((x,y,2.86));start=Vector((x*.2+.25,y*.5,3.9))
+   if x==1.5 and y==-.65:
+    tip=start+Vector((.06,-.12,-.55))
+    L.sweep('Snapped hanging hoist rope',[start,start+Vector((.10,-.08,-.30)),tip],.035,'p11-rubber',7)
+    for i in range(5):L.sweep('Frayed wire strand',[tip,tip+Vector(((i-2)*.035,-.04,-.12-abs(i-2)*.02))],.008,'e9-trim',4)
+    L.sweep('Broken eye rope tail',[end,end+Vector((.13,-.12,-.20)),end+Vector((.30,-.15,-.22))],.025,'p11-rubber',6)
+   else:L.sweep('Loaded three-leg sling',[start,end],.032,'p11-rubber',7)
+ # Collapsed handling pallet and a torn restraint remain inside the portal feet.
+ for i in range(5):
+  L.box('Split pallet runner',(-1.25+i*.58,.12,.12),(.42,1.48,.12),'e9-body',.012,rotation=(0,(i-2)*.026,(-1)**i*.11))
+ for x in [-1.45,.85]:L.box('Crushed pallet bearer',(x,.05,.055),(.18,1.65,.11),'e9-dark',.008)
+ L.box('Failed restraint ratchet',(2.35,-.80,.13),(.28,.25,.18),'e9-dark',.015)
+ L.cylinder('Ratchet spool',(2.35,-.80,.24),.09,.32,'e9-trim','Y',10,0)
+ L.sweep('Torn restraint laid over deck',[(2.35,-.8,.14),(2.05,-.92,.06),(1.4,-.86,.04),(.9,-1.02,.045)],.045,'p11-rubber',4)
+ L.sweep('Bent ratchet lever',[(2.35,-.98,.23),(2.53,-1.03,.30),(2.73,-1.03,.16)],.03,'e9-trim',6)
  # Brake disc and reduction gearbox connect the motor shaft to the cable drum.
  L.box('Reduction gearbox',(.95,0,3.8),(.38,.60,.48),'e9-dark',.025)
  L.cylinder('Inspection bearing cap',(1.16,0,3.8),.19,.055,'e9-body','X',10,0)
@@ -175,7 +195,7 @@ def tear():
  L.hazard_band((.05,-1.08,.20),.95,.10,stripes=4)
 
 gantry();tear()
-L.export('cargo',L.ROOT/'public/assets/p11/cargo','cargo.glb','Suspended working gantry and grounded torn hull around a wedged freight pod.','blender -b -P tools/assets/p11-set-pieces/cargo.py')
+L.export('cargo',L.ROOT/'public/assets/p11/cargo','cargo.glb','Failed sling on a shifted suspended load, crushed pallet and torn restraint; grounded torn hull around a wedged freight pod.','blender -b -P tools/assets/p11-set-pieces/cargo.py')
 if '--render' in L.args():
  stage=L._stage
  def modest_stage():
