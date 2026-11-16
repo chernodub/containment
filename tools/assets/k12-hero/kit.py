@@ -251,6 +251,15 @@ class Spherical:
         return self.o, east, d.cross(east), d
 
 
+class Isotropic:
+    """Wrap a cylindrical projection so v (metres along the axis) is given in degrees too."""
+    def __init__(self, projection, unit):
+        self.p, self.k = projection, unit
+
+    def ray(self, u, v):
+        return self.p.ray(u, v / self.k)
+
+
 def cast(bvh, projection, u, v):
     origin, direction = projection.ray(u, v)
     hit = bvh.ray_cast(origin, direction, 4.0)
@@ -363,7 +372,7 @@ def finish_shell(obj, thickness, high, chamfer=None, angle=40):
     solid.thickness = thickness
     solid.offset = -1
     solid.use_rim = True
-    solid.use_even_offset = True
+    solid.use_even_offset = False
     bevel = obj.modifiers.new('k12 rim chamfer', 'BEVEL')
     bevel.width = chamfer if chamfer is not None else min(.0035, thickness * .35) if high else min(.0025, thickness * .3)
     bevel.segments = 3 if high else 1

@@ -107,11 +107,11 @@ def review(low, high):
                 is_high = o.name.endswith('-high')
                 o.hide_render = (is_high != use_high) or (o.name.startswith('k10-rig-') and not o.name.startswith('k10-rig-' + rig))
             if view == 'beauty':
-                d, tgt, lens, res = V((.75, 1, .12)), V((0, 0, 1.08)), 50, (700, 900)
+                d, tgt, lens, res = V((.75, 1, .12)), V((0, 0, 1.04)), 78, (540, 720)
             elif view == 'face':
                 d, tgt, lens, res = V((.55, 1, .15)), V((0, .02, 1.70)), 85, (700, 700)
             elif view == 'back':
-                d, tgt, lens, res = V((-.7, -1, .45)), V((0, 0, 1.10)), 50, (560, 720)
+                d, tgt, lens, res = V((-.7, -1, .45)), V((0, 0, 1.08)), 78, (540, 720)
             else:   # in-game: 50° down, marine ~130 px tall
                 d, tgt, lens, res = V((.3, -.9, 1.25)), V((0, 0, 1.0)), 50, (160, 160)
             d.normalize()

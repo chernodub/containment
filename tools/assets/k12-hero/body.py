@@ -89,9 +89,10 @@ class Suit:
                    crown=.006, profile=None, fil=8, radius=.09):
         proj, sign = self.limb(a, b, side)
         # Outline written with +90 = front; the projection's front is -90*sign.
-        pts = [(-sign * d, v) for d, v in outline]
-        pts = kit.fillet(pts, fil, 3 if self.high else 2)
         unit = 1 / (radius * math.pi / 180)
+        pts = [(-sign * d, v * unit) for d, v in outline]
+        pts = kit.fillet(pts, fil, 3 if self.high else 2)
+        proj = kit.Isotropic(proj, unit)
         prof = profile or [(0, 0), (.0025, .0014), (.006, .0016), (.0085, .0002), (.0105, .0002), (.011, .0014)]
         obj = kit.plate(name, pts, proj, self.bvh[loft], standoff, thickness, prof, crown, self.high,
                         count=60 if self.high else 14, unit=unit)
@@ -99,12 +100,13 @@ class Suit:
 
     def torso_plate(self, name, outline, role='ceramic', bone='ribs', standoff=.014, thickness=.011, crown=.010,
                     profile=None, fil=6, loft='torso', mirror=False):
-        proj = kit.Cylindrical((0, .01, 0), (0, 0, 1), (0, 1, 0))
-        pts = [(-d if mirror else d, v) for d, v in outline]
+        unit = 1 / (.2 * math.pi / 180)
+        proj = kit.Isotropic(kit.Cylindrical((0, .01, 0), (0, 0, 1), (0, 1, 0)), unit)
+        pts = [(-d if mirror else d, v * unit) for d, v in outline]
         pts = kit.fillet(pts, fil, 3 if self.high else 2)
         prof = profile or [(0, 0), (.0028, .0015), (.0065, .0018), (.0095, .0003), (.0118, .0003), (.0124, .0016)]
         obj = kit.plate(name, pts, proj, self.bvh[loft], standoff, thickness, prof, crown, self.high,
-                        count=72 if self.high else 16, unit=1 / (.2 * math.pi / 180))
+                        count=72 if self.high else 16, unit=unit)
         return self.add(obj, role, bone)
 
     def ring(self, name, centre, axis, radius, width, role='gunmetal', bone=None, profile=None, weights_from=None):
@@ -128,7 +130,7 @@ class Suit:
         self.group = 'body'
         # Torso: heroic chest, tapered waist, ribbed abdominal bellows.
         torso = []
-        rows = [(.98, .165, .112), (1.03, .185, .122), (1.09, .172, .114), (1.13, .158, .108)]
+        rows = [(.80, .120, .085), (.88, .150, .104), (.98, .165, .112), (1.03, .185, .122), (1.09, .172, .114), (1.13, .158, .108)]
         z = 1.15
         k = 0
         while z < 1.30:   # bellows
