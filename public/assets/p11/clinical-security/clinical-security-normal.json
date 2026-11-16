@@ -1,167 +1,167 @@
 {
-  "bakeSeconds": 6.06,
-  "blenderPNGDecodeMs": 23.576,
+  "bakeSeconds": 3.239,
+  "blenderPNGDecodeMs": 6.144,
   "file": "clinical-security-normal.png",
   "size": 512,
-  "bytes": 388126,
+  "bytes": 388439,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 187901,
+  "nonFlatPixels": 188097,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "awakening-berth-array--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.699,
+      "seconds": 0.144,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "awakening-berth-array--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.474,
+      "seconds": 0.208,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "awakening-berth-array--p11-frost",
       "role": "p11-frost",
-      "seconds": 0.062,
+      "seconds": 0.051,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "awakening-berth-array--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.217,
+      "seconds": 0.191,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "awakening-berth-array--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.3,
+      "seconds": 0.108,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "awakening-berth-array--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.114,
+      "seconds": 0.07,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "awakening-berth-array--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.18,
+      "seconds": 0.058,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "passenger-sleeper-carrier--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.079,
+      "seconds": 0.035,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "passenger-sleeper-carrier--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.073,
+      "seconds": 0.051,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "passenger-sleeper-carrier--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.076,
+      "seconds": 0.071,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "passenger-sleeper-carrier--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.062,
+      "seconds": 0.058,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "passenger-sleeper-carrier--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.061,
+      "seconds": 0.043,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "passenger-sleeper-carrier--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.05,
+      "seconds": 0.044,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "checkpoint-scanner-gate--e9-ceramic",
       "role": "e9-ceramic",
-      "seconds": 0.043,
+      "seconds": 0.037,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "checkpoint-scanner-gate--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.134,
+      "seconds": 0.049,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "checkpoint-scanner-gate--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.243,
+      "seconds": 0.068,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "checkpoint-scanner-gate--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.062,
+      "seconds": 0.037,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "checkpoint-scanner-gate--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.094,
+      "seconds": 0.052,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "checkpoint-scanner-gate--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.067,
+      "seconds": 0.039,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "checkpoint-scanner-gate--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.071,
+      "seconds": 0.043,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "armory-weapon-carousel--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.054,
+      "seconds": 0.036,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "armory-weapon-carousel--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.107,
+      "seconds": 0.064,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "armory-weapon-carousel--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.185,
+      "seconds": 0.073,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "armory-weapon-carousel--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.197,
+      "seconds": 0.078,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "armory-weapon-carousel--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.088,
+      "seconds": 0.029,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "armory-weapon-carousel--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.098,
+      "seconds": 0.064,
       "method": "three-segment high bevel"
     }
   ]
