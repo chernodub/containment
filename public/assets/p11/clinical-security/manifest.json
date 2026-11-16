@@ -9,169 +9,193 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 3.239,
-    "blenderPNGDecodeMs": 6.144,
+    "bakeSeconds": 2.289,
+    "blenderPNGDecodeMs": 6.196,
     "file": "clinical-security-normal.png",
     "size": 512,
-    "bytes": 388439,
+    "bytes": 380678,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 188097,
+    "nonFlatPixels": 187711,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "awakening-berth-array--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.144,
+        "seconds": 0.09,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "awakening-berth-array--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.208,
+        "seconds": 0.085,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "awakening-berth-array--p11-frost",
         "role": "p11-frost",
-        "seconds": 0.051,
+        "seconds": 0.027,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "awakening-berth-array--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.191,
+        "seconds": 0.058,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "awakening-berth-array--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.108,
+        "seconds": 0.122,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "awakening-berth-array--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.07,
+        "seconds": 0.051,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "awakening-berth-array--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.058,
+        "seconds": 0.054,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "passenger-sleeper-carrier--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.035,
+        "seconds": 0.03,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "passenger-sleeper-carrier--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.051,
+        "seconds": 0.054,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "passenger-sleeper-carrier--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.071,
+        "seconds": 0.038,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "passenger-sleeper-carrier--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.058,
+        "seconds": 0.038,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "passenger-sleeper-carrier--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.043,
+        "seconds": 0.033,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "passenger-sleeper-carrier--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.044,
+        "seconds": 0.048,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--e9-ceramic",
         "role": "e9-ceramic",
-        "seconds": 0.037,
+        "seconds": 0.031,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.049,
+        "seconds": 0.05,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.068,
+        "seconds": 0.063,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.037,
+        "seconds": 0.034,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.052,
+        "seconds": 0.042,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.039,
+        "seconds": 0.025,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.043,
+        "seconds": 0.037,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "checkpoint-failed-barrier--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.029,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "checkpoint-failed-barrier--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.039,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "checkpoint-failed-barrier--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.027,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "checkpoint-failed-barrier--p11-tint-metal",
+        "role": "p11-tint-metal",
+        "seconds": 0.032,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "armory-weapon-carousel--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.036,
+        "seconds": 0.032,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "armory-weapon-carousel--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.064,
+        "seconds": 0.052,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "armory-weapon-carousel--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.073,
+        "seconds": 0.1,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "armory-weapon-carousel--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.078,
+        "seconds": 0.069,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "armory-weapon-carousel--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.029,
+        "seconds": 0.025,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "armory-weapon-carousel--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.064,
+        "seconds": 0.037,
         "method": "three-segment high bevel"
       }
     ]
@@ -289,6 +313,34 @@
       ]
     },
     {
+      "name": "checkpoint-failed-barrier",
+      "size": [
+        5.2007,
+        1.1907,
+        0.635
+      ],
+      "bounds": {
+        "min": [
+          -2.65,
+          0.8976,
+          -0.29
+        ],
+        "max": [
+          2.5507,
+          2.0884,
+          0.345
+        ]
+      },
+      "triangles": 950,
+      "budget": 12000,
+      "finishes": [
+        "p11-rubber",
+        "p11-steel",
+        "p11-tint",
+        "p11-tint-metal"
+      ]
+    },
+    {
       "name": "armory-weapon-carousel",
       "size": [
         2.9,
@@ -323,9 +375,9 @@
   ],
   "output": {
     "file": "clinical-security.glb",
-    "bytes": 1918388,
-    "sha256": "205e7d4466ab438d32688eeddbb1cbf0e5d45c960d8a849693673a721c227fc4",
-    "triangles": 25810
+    "bytes": 1970540,
+    "sha256": "7828b1b3af1601eeab18c5027df09c6c6fb747e8b63a00369691adf3dcf18424",
+    "triangles": 26760
   },
   "overBudget": [],
   "uvEncoding": "normalized UNSIGNED_SHORT; maximum error0.004 atlas texel at512; native glTF2"

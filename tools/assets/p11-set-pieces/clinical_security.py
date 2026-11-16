@@ -186,6 +186,33 @@ def scanner():
         L.cylinder('Emitter shield rim',(sx*2.11,.15,1.65),.18,.13,'p11-steel','X',12,.01)
         L.cylinder('Emitter ceramic core',(sx*2.02,.15,1.65),.12,.04,'e9-ceramic','X',12,.01)
 
+
+def broken_barrier():
+    L.asset('checkpoint-failed-barrier',12000)
+    # A captured barrier leaf torn from its drive, folded onto the booth rail.
+    # Complete footprint fits the existing 200x24-unit north guard-cage solid.
+    L.box('Broken gate drive shoe',(-2.30,0,.98),(.70,.58,.16),'p11-tint-metal',.025,tint='navy')
+    L.cylinder('Sheared hinge barrel',(-2.30,0,1.19),.16,.56,'p11-steel','Y',12,.012)
+    L.cylinder('Exposed hinge pin',(-2.30,-.30,1.19),.07,.09,'p11-rubber','Y',10,0)
+    # Profile is authored in X/Z, then rotated into a narrow Y extrusion.
+    def plate(name,points,tint):
+        ob=L.profile_x(name,points,-.085,.085,'p11-tint-metal',.018,tint=tint)
+        ob.data.transform(Matrix.Rotation(-math.pi/2,4,'Z'))
+    plate('Buckled ballistic gate left',[(-2.2,1.02),(-2.2,2.00),(-1.65,2.03),(-.60,1.60),(-.23,1.65),(-.02,1.43),(-.30,1.31),(-.10,1.14),(-.42,.98)],'navy')
+    plate('Torn gate right half',[(.05,1.06),(.23,1.29),(.04,1.49),(.37,1.57),(1.4,1.14),(2.55,1.12),(2.55,.94),(.4,.94)],'service-blue')
+    for points in [[(-2.18,-.12,2.02),(-1.65,-.12,2.05),(-.65,-.12,1.62),(-.21,-.12,1.67)],[(.36,-.12,1.59),(1.43,-.12,1.17),(2.55,-.12,1.15)], [(-2.18,-.12,1.02),(-.44,-.12,.99)]]:
+        L.sweep('Bent exposed gate edge',points,.045,'p11-steel',6)
+    for x,z in [(-1.8,1.5),(-1.1,1.35),(1.2,1.04),(1.9,1.03)]:
+        L.box('Barrier rib',(x,-.13,z),(.10,.055,.48 if x<0 else .18),'p11-steel',.008,rotation=(0,-.35 if x<0 else 0,0))
+    L.box('Broken vision frame',(-1.65,-.14,1.76),(.51,.06,.15),'p11-steel',.008,rotation=(0,-.24,0))
+    L.box('Fractured vision opening',(-1.65,-.177,1.76),(.40,.012,.075),'p11-rubber',0,rotation=(0,-.24,0))
+    for x,z in [(-1.25,1.51),(-.85,1.32),(-1.0,1.43)]:
+        L.cylinder('Barrier impact bare edge',(x,-.102,z),.08,.015,'p11-steel','Y',7,0)
+        L.cylinder('Barrier impact hole',(x,-.114,z),.05,.02,'p11-rubber','Y',7,0)
+    L.sweep('Torn actuator linkage',[(-2.3,.2,1.13),(-1.9,.23,1.32),(-1.2,.24,1.08),(-.7,.24,.94)],.045,'p11-steel',7)
+    L.sweep('Severed barrier power cable',[(-2.3,-.22,1.1),(-2.0,-.25,.96),(-1.7,-.24,.94),(-1.5,-.24,1.08)],.025,'p11-rubber',6)
+    L.stencil('HOLD',(-1.4,-.19,1.19),.15,'-Y','cream')
+
 def armory():
     L.asset('armory-weapon-carousel',12000)
     L.cylinder('Carousel base',(0,0,.16),1.45,.32,'p11-tint-metal','Z',24,.025,tint='navy')
@@ -252,7 +279,7 @@ def armory():
     L.stencil('ISSUE 04',(0,-1.35,.46),.09,'-Y')
 
 L.reset_scene()
-for f in (awakening,passenger,scanner,armory):f()
+for f in (awakening,passenger,scanner,broken_barrier,armory):f()
 L.export('clinical-security',OUT,'clinical-security.glb','Cryogenic recovery and security landmarks.', 'blender -b --factory-startup -P tools/assets/p11-set-pieces/clinical_security.py')
 from compact_uv import compact_uv
 compact_uv(OUT/'clinical-security.glb',OUT/'manifest.json')
