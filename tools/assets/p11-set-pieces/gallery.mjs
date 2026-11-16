@@ -4,7 +4,7 @@
  * --beauties-only refreshes the twenty-hero contact sheet without reading captures.
  * No server/browser, capture mutation, intermediate copying, or acceptance gates.
  */
-import {readFile,writeFile,mkdir,readdir,access} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,readdir,access,stat} from 'node:fs/promises';
 import {resolve,relative,sep} from 'node:path';
 import {canvas,decode,encode,drawImage,drawText} from '../../../scripts/nextgen/g2-png.mjs';
 import {review480} from '../../../scripts/nextgen/l8-review-images.mjs';
@@ -35,12 +35,29 @@ const rooms=[
  ['manual-control-chamber','Manual Control Chamber','manual-authorisation-dais'],
  ['overload-floor','Overload Floor','reactor-crown'],
 ];
+const incidentBoards={
+ 'crew-checkpoint':['checkpoint-failed-barrier'],
+ 'relay-racks':['failed-relay-patch'],
+ 'service-shaft-landing':['abandoned-winch-repair'],
+ 'shielding-gate':['failed-shield-leaves'],
+ 'containment-annulus':['strained-containment-diaphragm'],
+ 'infested-workshop':['consuming-workstation-mantle'],
+ 'swarm-junction':['brood-stronghold-wall'],
+};
 const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const href=path=>relative(out,path).split(sep).map(encodeURIComponent).join('/');
 const exists=async path=>{try{await access(path);return true;}catch(e){if(e.code==='ENOENT')return false;throw e;}};
 const locate=async(dir,file)=>{for(const path of [resolve(dir,file),resolve(dir,'native',file)])if(await exists(path))return path;return null;};
 const thumbDir=resolve(out,'review480','gallery');await mkdir(thumbDir,{recursive:true});
 const missing=[];
+async function beautySource(name){
+ const candidates=[];
+ for(const suffix of ['-hero.png','.png','-game.png']){
+  const path=resolve(beauty,name+suffix);
+  if(await exists(path))candidates.push({path,time:(await stat(path)).mtimeMs});
+ }
+ return candidates.sort((a,b)=>b.time-a.time)[0]?.path??null;
+}
 async function thumbnail(source,name){
  const image=decode(await readFile(source)),scale=Math.min(480/image.width,270/image.height);
  const width=Math.round(image.width*scale),height=Math.round(image.height*scale),small=review480(image,width,height),framed=canvas(480,270);
@@ -49,8 +66,7 @@ async function thumbnail(source,name){
 }
 const contact=canvas(1920,294*5),heroCards=new Map();
 for(let i=0;i<rooms.length;i++){
- const [id,title,hero]=rooms[i];let source=null;
- for(const suffix of ['-hero.png','.png','-game.png']){const path=resolve(beauty,hero+suffix);if(await exists(path)){source=path;break;}}
+ const [id,title,hero]=rooms[i];const source=await beautySource(hero);
  const x=(i%4)*480,y=Math.floor(i/4)*294;drawText(contact,title,x+6,y+6,undefined,1);
  if(source){const small=await thumbnail(source,'beauty-'+id);drawImage(contact,small.image,x,y+24,480,270);heroCards.set(id,{source,thumb:small.path});}
  else {missing.push('Beauty: '+id);drawText(contact,'BEAUTY NOT AVAILABLE',x+6,y+80,undefined,1);}
@@ -75,7 +91,13 @@ else {
    pairs+=`<h3>${esc(label)}</h3><div class="pair">${card('E10 · '+title,old,b?.path)}${card('P11 · '+title,after,a?.path)}</div>`;
   }
   const hero=heroCards.get(id);
-  sections+=`<section id="${id}"><h2>${esc(title)}</h2>${hero?`<p><a href="${href(hero.source)}">Set-piece beauty · native PNG</a></p>`:''}${pairs}<p><a href="#top">Back to room list</a></p></section>`;
+  let incidentCards='';
+  for(const name of incidentBoards[id]??[]){
+   const source=await beautySource(name);
+   if(source){const small=await thumbnail(source,'incident-'+name);incidentCards+=card('Incident · '+name,source,small.path);}
+   else {missing.push('Incident beauty: '+name);incidentCards+=card('Incident · '+name,null,null);}
+  }
+  sections+=`<section id="${id}"><h2>${esc(title)}</h2>${hero?`<p><a href="${href(hero.source)}">Set-piece beauty · native PNG</a></p>`:''}${incidentCards?`<h3>Incident sculpture</h3><div class="pair">${incidentCards}</div>`:''}${pairs}<p><a href="#top">Back to room list</a></p></section>`;
  }
  const beauties=(await readdir(beauty)).filter(n=>n.endsWith('.png')&&!n.endsWith('-480.png')).sort();
  const beautyLinks=beauties.map(n=>`<li><a href="${href(resolve(beauty,n))}">${esc(n.slice(0,-4))}</a></li>`).join('');

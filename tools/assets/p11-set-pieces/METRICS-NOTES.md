@@ -73,10 +73,10 @@ reactor-vault, hence the explicit twenty IDs above are required.
 
 ## Normal-atlas storage and source packs
 
-All thirteen authored packs (four E9, nine P11) currently have one 512×512 normal
+All fourteen authored packs (four E9, ten P11) currently have one 512×512 normal
 atlas each. Manifest `normalAtlas.estimatedRGBA8MipBytes` is 1,398,101 bytes per
-pack (~1.333 MiB, conservative rounded RGBA8 mip estimate). Across all thirteen,
-18,175,313 bytes (~17.333 MiB). These are estimates of distinct atlas storage, not a
+pack (~1.333 MiB, conservative rounded RGBA8 mip estimate). Across all fourteen,
+19,573,414 bytes (~18.667 MiB). These are estimates of distinct atlas storage, not a
 GPU-process measurement. AO and curvature are vertex colors; geometric normals
 plus the selected-to-active tangent-normal atlas supply surface relief. GLBs embed
 the PNG; the external PNG is a rebuild/review resource, not a second runtime image.
@@ -102,23 +102,23 @@ Treat this as source requirements, not an assertion of every object's visibility
 | armory | security, structure | clinical-security, service-kit | 5.333 |
 | freight-hold | industrial, security, structure | cargo, service-kit | 6.667 |
 | breached-loading-bay | industrial, security, structure | cargo, service-kit | 6.667 |
-| relay-racks | clinical, industrial, security, structure | comms-engineering, service-kit | 8.000 |
+| relay-racks | clinical, industrial, security, structure | comms-engineering, service-kit, incidents | 9.333 |
 | transmission-chamber | clinical, industrial, security, structure | control, service-kit | 8.000 |
 | diagnostic-gallery | clinical, structure | control, service-kit | 5.333 |
 | safety-interlock-station | clinical, security, structure | control, service-kit | 6.667 |
 | coolant-plant | industrial, security, structure | maintenance-containment, service-kit | 6.667 |
-| service-shaft-landing | clinical, industrial, security, structure | maintenance-containment, service-kit | 8.000 |
-| infested-workshop | clinical, industrial, structure | infested, service-kit | 6.667 |
-| swarm-junction | industrial, structure | infested, service-kit | 5.333 |
-| shielding-gate | clinical, industrial, security, structure | maintenance-containment, service-kit | 8.000 |
-| containment-annulus | clinical, industrial, security, structure | maintenance-containment, service-kit | 8.000 |
+| service-shaft-landing | clinical, industrial, security, structure | maintenance-containment, service-kit, incidents | 9.333 |
+| infested-workshop | clinical, industrial, structure | infested, service-kit, incidents | 8.000 |
+| swarm-junction | industrial, structure | infested, service-kit, incidents | 6.667 |
+| shielding-gate | clinical, industrial, security, structure | maintenance-containment, service-kit, incidents | 9.333 |
+| containment-annulus | clinical, industrial, security, structure | maintenance-containment, service-kit, incidents | 9.333 |
 | manual-control-chamber | clinical, industrial, security, structure | reactor, service-kit | 8.000 |
 | overload-floor | clinical, industrial, structure | reactor, service-kit | 6.667 |
 
 ## Asset budget facts (second craft pass)
 
 Current source-specific review is `KIT-CRAFT-REVIEW.md`. All ten service pieces
-were revised and remain ≤1,500 triangles (336–1,176); freight hero 9,356 and
+were revised and remain ≤1,500 triangles (336–1,176); freight hero 9,926 and
 loading hero 5,982 remain ≤12,000. Original E9 ordinary modules remain ≤1,500;
 six retained landmark-class exceptions are explicitly listed in that review.
 Current per-pack totals and output bytes follow from final manifests/GLBs.
@@ -129,7 +129,7 @@ Current per-pack totals and output bytes follow from final manifests/GLBs.
 | security | 8480 | 948612 |
 | clinical | 21944 | 1522436 |
 | industrial | 24992 | 1694780 |
-| cargo | 15338 | 1389828 |
+| cargo | 15908 | 1437260 |
 | service-kit | 7572 | 884660 |
 
 All six GLBs are below 2,000,000 bytes. Normal maps split shared finish batches by
@@ -137,3 +137,7 @@ source pack because each pack owns different UVs; measured draws must reflect
 this rather than the earlier texture-free merge estimate. Control now owns three
 heroes and reactor owns Manual Control/Overload; each room still needs one of
 those two packs, so its per-room atlas bound is unchanged by the split.
+
+R11 adds `incidents` (six models) to the six rooms shown above. Its final
+geometry/file totals await the ongoing rebuild; atlas ownership is already
+recorded as one additional 512-square atlas. See `docs/nextgen/plans/P11-R11-review.md`.
