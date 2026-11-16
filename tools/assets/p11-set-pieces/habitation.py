@@ -109,15 +109,13 @@ def residential():
     # Small cupboard with open cubby, hook rail, folded blanket and abandoned arrival bag.
     # A blanket slumps over the bench lip; irregular folds catch the light.
     import bmesh
-    bm=bmesh.new();rows=[]
-    for j in range(9):
-        t=j/8;yy=.45-t*.75
-        rows.append([bm.verts.new((-2.45+(i/8-.5)*.76,yy,.625+.018*math.sin(i*2+j*.7)-max(0,t-.65)*.65)) for i in range(9)])
     for j in range(8):
-        for i in range(8):bm.faces.new([rows[j][i],rows[j][i+1],rows[j+1][i+1],rows[j+1][i]])
-    L.mesh_object('Slumped woven blanket',bm,'p11-tint',tint='blanket',smooth=True)
-    for j in (6,7):
-        t=j/8;L.sweep('Blanket woven border',[(-2.45+(i/8-.5)*.75,.45-t*.75,.63+.018*math.sin(i*2+j*.7)-max(0,t-.65)*.65) for i in range(9)],.006,'p11-tint',4,tint='cream')
+        bm=bmesh.new();rows=[]
+        for jj in (j,j+1):
+            t=jj/8;yy=.45-t*.75
+            rows.append([bm.verts.new((-2.45+(i/8-.5)*.76,yy,.625+.018*math.sin(i*2+jj*.7)-max(0,t-.65)*.65)) for i in range(9)])
+        for i in range(8):bm.faces.new([rows[0][i],rows[0][i+1],rows[1][i+1],rows[1][i]])
+        L.mesh_object('Woven blanket band',bm,'p11-tint',tint='cream' if j==6 else 'blanket',smooth=True)
     painted('Arrival case',(3.02,.23,.35),(.49,.58,.65),'navy',.06)
     for z in (.15,.55):L.box('Case compression band',(3.02,.23,z),(.51,.60,.045),'p11-rubber',.005)
     L.handle((3.02,.23,.70),.24,'X',.06,.015,'p11-steel','Z')

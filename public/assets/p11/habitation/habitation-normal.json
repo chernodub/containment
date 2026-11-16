@@ -1,89 +1,89 @@
 {
-  "bakeSeconds": 1.246,
-  "blenderPNGDecodeMs": 6.57,
+  "bakeSeconds": 1.675,
+  "blenderPNGDecodeMs": 6.722,
   "file": "habitation-normal.png",
   "size": 512,
-  "bytes": 312196,
+  "bytes": 316300,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 145107,
+  "nonFlatPixels": 144818,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "residential-story-wall--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.049,
+      "seconds": 0.05,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "residential-story-wall--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.025,
+      "seconds": 0.023,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "residential-story-wall--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.035,
+      "seconds": 0.029,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "residential-story-wall--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.047,
+      "seconds": 0.044,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "residential-common-nook--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.026,
+      "seconds": 0.025,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "residential-common-nook--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.048,
+      "seconds": 0.034,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "residential-common-nook--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.054,
+      "seconds": 0.049,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "atrium-conservatory--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.028,
+      "seconds": 0.026,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "atrium-conservatory--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.035,
+      "seconds": 0.034,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "atrium-conservatory--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.031,
+      "seconds": 0.029,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "atrium-conservatory--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.042,
+      "seconds": 0.037,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "atrium-conservatory--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.112,
+      "seconds": 0.387,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "atrium-conservatory--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.035,
+      "seconds": 0.172,
       "method": "three-segment high bevel"
     }
   ]
