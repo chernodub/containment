@@ -256,7 +256,7 @@ export class MarineMotion {
     }
     this.saved = true;
     this.hips?.getWorldPosition(this.hipsBase);
-    if(this.authored){this.finishAuthored(weapon,recoil,aimPitch);return;}
+    if(this.authored){this.finishAuthored(weapon,recoil,reload,aimPitch);return;}
     const stop = T.MathUtils.smoothstep(this.stoppedFor, 0, .14);
     if (!this.moving && !this.dead) for (const rest of this.neutral) {
       rest.bone.quaternion.slerp(rest.q, stop);
@@ -360,7 +360,8 @@ export class MarineMotion {
   }
 
   /** Authored base poses retain only responsive aim, acceleration and bounded contact correction. */
-  private finishAuthored(weapon:WeaponId,recoil:number,aimPitch:number){
+  private finishAuthored(weapon:WeaponId,recoil:number,reload:number,aimPitch:number){
+    if(this.weapon!==weapon){if(this.weapon!==undefined)this.switchedFor=0;this.weapon=weapon;}
     this.root.rotation.z=0;
     const strength=this.strength*(this.reduced?.25:1);
     this.rotate(this.ribs,this.up,-T.MathUtils.degToRad(WEAPON_FIT[weapon].aimYaw),this.yawQ);
@@ -371,6 +372,39 @@ export class MarineMotion {
     if(flinch){this.axis.set(-Math.sin(this.hitAngle),0,Math.cos(this.hitAngle));this.rotate(this.ribs,this.axis,-flinch*.10,this.yawQ);}
     if(this.moving&&!this.action&&!flinch)for(const leg of this.legs)this.plant(leg);
     this.clampHips();
+    if(weapon==='rifle'&&!this.dead&&!this.action&&reload===0&&this.hitRecover===0&&this.switchedFor>.18)this.supportGrip(T.MathUtils.smoothstep(this.switchedFor,.18,.35));
+  }
+
+  /** The original rifle is shorter than the retained animation's handguard.
+   * Solve the support arm to its underside without changing the receiver hand,
+   * skeleton, or authored cast/reload/death choreography. Weapon presentation
+   * deliberately drops the source skeleton scale, so this target does too. */
+  private supportGrip(weight:number){
+    if(!this.leftArm||!this.leftForearm||!this.leftHand||!this.weaponSocket)return;
+    this.weaponSocket.getWorldQuaternion(this.parentQ);
+    this.offset.set(.10,-.14,.35).multiplyScalar(WEAPON_FIT.rifle.scale).applyQuaternion(this.parentQ);
+    this.weaponSocket.getWorldPosition(this.target).add(this.offset);
+    this.leftHand.getWorldPosition(this.foot);this.target.lerp(this.foot,1-weight);
+    // The retained rifle pose leaves its clavicle retracted: the short guard
+    // target is beyond the two arm segments. Protract the existing shoulder
+    // toward it before solving, rather than stretching the arm or moving the
+    // wrist independently of its skin.
+    if(this.leftShoulder){
+      this.leftArm.getWorldPosition(this.hip);this.leftForearm.getWorldPosition(this.knee);
+      const reach=this.hip.distanceTo(this.knee)+this.knee.distanceTo(this.foot)-.015;
+      if(this.hip.distanceTo(this.target)>reach){
+        this.leftShoulder.getWorldPosition(this.from);
+        this.direction.copy(this.hip).sub(this.from).normalize();
+        this.to.copy(this.target).sub(this.from).normalize();
+        this.axis.copy(this.direction).cross(this.to);
+        if(this.axis.lengthSq()>1e-10){
+          const angle=Math.acos(T.MathUtils.clamp(this.direction.dot(this.to),-1,1));
+          this.rotate(this.leftShoulder,this.axis.normalize(),Math.min(angle,.85)*weight,this.yawQ);
+          this.leftShoulder.updateWorldMatrix(true,true);
+        }
+      }
+    }
+    this.solveChain(this.leftArm,this.leftForearm,this.leftHand);
   }
 
   private moveWorld(bone: T.Object3D, x: number, y: number, z: number) {

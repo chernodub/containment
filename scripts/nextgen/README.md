@@ -1030,6 +1030,7 @@ attack/death studies extend to24 frames. `--subjects=marine,crawler,spitter` and
 `--actions=run-90,attack,heavy-hit` select standard critique rounds. `--frames`
 and `--steps` are explicit integer controls. `--dist=<frozen-dist>` is supported.
 The runner never builds implicitly; freeze/build the intended source first.
+`--weapon=rifle` (or pistol/shotgun/plasma/rocket) selects the held weapon for non-fire marine studies; default remains shotgun. Fire rows select their named weapon. Requested rig variants are held against normal renderer refreshes during isolated studies.
 
 Every frame projects all deformed actor vertices, adds12px padding and uses the
 union of all frame bounds. No native crop is resized. Manifest entries retain
