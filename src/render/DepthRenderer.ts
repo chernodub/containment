@@ -517,7 +517,7 @@ export class DepthRenderer {
  effect(effect:GameEffect){
   if(effect.type==='ability'){if(effect.ability?.slot==='overdrive'&&effect.ability.phase==='impact')this.presentationHold?.request(.04,this.options.screenShake,!!this.motionQuery?.matches);this.player?.motionEvent?.(effect);if(effect.ability){this.interimAbilities.event(effect.ability,effect.x,effect.y);}return;}
   const x=effect.x/UNIT,z=effect.y/UNIT;
-  if(effect.type==='hurt'){if((effect.damage??0)>=36)this.presentationHold?.request(.045,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig?.addTrauma(.34);this.cameraRig?.punch(.015,180);actorImpact(this.player,effect);return;}if(effect.type==='sync-corpse')return;
+  if(effect.type==='hurt'){/* FEEL12: native receipt drives a stable incoming-side marker. */if(effect.sourceX!==undefined&&effect.sourceY!==undefined||effect.angle!==undefined)this.playerBeacon.hit(effect.sourceX!==undefined&&effect.sourceY!==undefined?Math.atan2(effect.sourceY-effect.y,effect.sourceX-effect.x):(effect.angle??0)+Math.PI,(this.options.flashIntensity??1)*(this.motionQuery?.matches?.65:1));if((effect.damage??0)>=36)this.presentationHold?.request(.045,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig?.addTrauma(.34);this.cameraRig?.punch(.015,180);actorImpact(this.player,effect);return;}if(effect.type==='sync-corpse')return;
   if(effect.type==='explosion'||(effect.type==='boon'&&(effect.boon==='blast'||(effect.boon==='overload'&&effect.radius!==undefined)))){this.lighting.explosion(x,z,(effect.radius??48)/UNIT);this.cameraRig?.addTrauma(.32);this.cameraRig?.punch(.035,240);}
   if(effect.type==='shot'){
    this.recoil=1;this.cameraRig?.kick(effect.angle??0,effect.weapon==='shotgun'?.08:effect.weapon==='rocket'?.12:.025);if(this.pendingShots.length<4)this.pendingShots.push(effect);return;
@@ -636,7 +636,7 @@ export class DepthRenderer {
   // Keep preparation/picking on the normal layer, including after interrupted frames.
   if(menu)this.lighting.suppressCombatFeedback?.(this.muzzle);
   const cameraLayerMask=this.camera.layers.mask,autoClear=this.renderer.autoClear;this.camera.layers.set(menu?CINEMATIC_LAYER:0);
-  try{this.post.render(dt);this.playerBeacon?.setDepthSource(this.post.sceneDepthTexture,this.canvas.width,this.canvas.height);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding);this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
+  try{this.post.render(dt);this.playerBeacon?.setDepthSource(this.post.sceneDepthTexture,this.canvas.width,this.canvas.height);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
   finally{this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}
  }
 

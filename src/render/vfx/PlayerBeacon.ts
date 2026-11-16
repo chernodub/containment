@@ -70,7 +70,7 @@ function locatorTexture():T.DataTexture {
     pixels[i]=Math.round(T.MathUtils.lerp(4,212,band));
     pixels[i+1]=Math.round(T.MathUtils.lerp(12,247,band));
     pixels[i+2]=Math.round(T.MathUtils.lerp(15,255,band));
-    pixels[i+3]=Math.round(Math.max(band*.86,soft*.38)*255);
+    pixels[i+3]=Math.round(Math.max(band*.34,soft*.10)*255);
   }
   const texture=new T.DataTexture(pixels,LOCATOR_SIZE,LOCATOR_SIZE);
   texture.name='marine-locator-radial';texture.colorSpace=T.SRGBColorSpace;
@@ -87,6 +87,11 @@ export class PlayerBeacon {
   private readonly locatorMaterial=new T.MeshBasicMaterial({map:this.locatorMap,transparent:true,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide,forceSinglePass:true});
   private readonly ring = new T.Mesh(new T.RingGeometry(.50,.66,48),this.locatorMaterial);
   private readonly direction = new T.Mesh(new T.ConeGeometry(.10,.23,3),this.locatorMaterial);
+  private readonly hitMaterial=new T.MeshBasicMaterial({color:0xff793c,transparent:true,opacity:0,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide});
+  private readonly hitArc=new T.Mesh(new T.RingGeometry(.72,.83,20,1,-.55,1.1),this.hitMaterial);
+  private hitLife=0;
+  private hitAngle=0;
+  private hitStrength=1;
   private disposed = false;
 
   constructor(player:T.Object3D,scene?:T.Scene){
@@ -109,7 +114,8 @@ export class PlayerBeacon {
     const directionUV=this.direction.geometry.getAttribute('uv');
     for(let i=0;i<directionUV.count;i++)directionUV.setXY(i,(DIRECTION_TEXEL.x+.5)/LOCATOR_SIZE,(DIRECTION_TEXEL.y+.5)/LOCATOR_SIZE);
     directionUV.needsUpdate=true;
-    this.root.add(this.ring,this.direction);scene?.add(this.root);
+    this.hitArc.rotation.x=-Math.PI/2;this.hitArc.renderOrder=27;
+    this.root.add(this.ring,this.direction,this.hitArc);scene?.add(this.root);
   }
 
   private makeOverlay(source:T.SkinnedMesh,geometry:T.BufferGeometry){
@@ -131,9 +137,19 @@ export class PlayerBeacon {
     this.material.depthTest=!depth;this.material.depthFunc=T.GreaterDepth;
   }
 
+  /** Incoming side comes from the native damage receipt; the stable arc avoids motion flashes. */
+  hit(angle:number,strength=1){this.hitAngle=angle;this.hitLife=.32;this.hitStrength=T.MathUtils.clamp(strength,0,1);}
+
   /** Animation remains authoritative; merged buffers only combine identical skin spaces. */
-  update(player:T.Object3D,angle:number,hidden=false,crowding=0){
+  update(player:T.Object3D,angle:number,hidden=false,crowding=0,warning=false,dt=0){
     this.root.visible=!hidden&&!this.disposed;if(!this.root.visible)return;
+    this.locatorMaterial.opacity=warning?.22:1;
+    this.hitLife=Math.max(0,this.hitLife-dt);
+    // Keep the material in the prepared HUD program family, even between hits.
+    this.hitArc.visible=true;
+    this.hitMaterial.opacity=this.hitStrength*Math.min(1,this.hitLife/.12)*.86;
+    this.hitArc.position.set(player.position.x,.09,player.position.z);
+    this.hitArc.rotation.z=-this.hitAngle;
     this.material.uniforms.strength.value=.28+.56*Math.min(1,Math.max(0,crowding));
     player.updateWorldMatrix(true,true);
     for(const group of this.groups){
@@ -156,6 +172,7 @@ export class PlayerBeacon {
 
   dispose(){
     if(this.disposed)return;this.disposed=true;
+    this.hitArc.geometry.dispose();this.hitMaterial.dispose();
     // Only merged buffers are owned here. The pool owns source geometry/skeletons.
     for(const group of this.groups)group.merged?.geometry.dispose();
     this.material.dispose();this.ring.geometry.dispose();this.direction.geometry.dispose();this.locatorMaterial.dispose();this.locatorMap.dispose();

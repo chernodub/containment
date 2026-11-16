@@ -50,16 +50,18 @@ else if(style>5.5){
   // Both strokes are clipped INSIDE the exact native footprint.
   float aa=max(fwidth(d),.003),boundary=1.0-d;
   if(sector)boundary=min(boundary,(vShape.z-abs(atan(p.y,p.x)))*d);
-  float key=1.0-smoothstep(aa*3.0,aa*4.5,boundary);
-  float rim=smoothstep(aa*.5,aa*1.1,boundary)*(1.0-smoothstep(aa*2.0,aa*2.8,boundary));
+  float key=1.0-smoothstep(aa*4.0,aa*5.5,boundary);
+  float rim=smoothstep(aa*.6,aa*1.2,boundary)*(1.0-smoothstep(aa*2.8,aa*3.7,boundary));
   float timing=1.0-smoothstep(aa,aa*2.5,abs(phase-progress));
+  float commitment=smoothstep(0.0,1.0,vAlpha)*flashScale;
   float strike=vFrame>=3.0?(1.0-clamp(vFrame-3.0,0.0,1.0))*flashScale:0.0;
   color=mix(vec3(.008,.004,.003),vec3(1.0,.21,.075),max(rim,timing*.8));
+  color=mix(color,vec3(1.0,.48,.12),commitment*rim*.65);
   color=mix(color,vec3(1.0,.38,.15),strike*.65);
   // Family weight affects the quiet interior; edge opacity stays readable.
   alpha=max(key*.82,rim*.96);
   alpha=max(alpha,timing*(.30+threat*.20));
-  alpha=max(alpha,(.018+threat*.065)*filled);
+  alpha=max(alpha,(.045+threat*.09+commitment*.055)*filled);
   alpha=max(alpha,strike*(.12+threat*.18));
  }
  else{
@@ -139,6 +141,23 @@ export class AttackEffects {
   const halfLength=length*.5;
   this.warningBounds.center.set(x+Math.cos(angle)*halfLength,y,z+Math.sin(angle)*halfLength);this.warningBounds.radius=halfLength+radius;
   return this.warningFrustum.intersectsSphere(this.warningBounds);
+ }
+ /** Presentation-only overlap for the suit locator; no attack acceptance uses this. */
+ warningNear(x:number,z:number,padding=.8):boolean{
+  for(const warning of this.nativeWarnings){
+   if(!warning.active)continue;
+   const w=warning.shape,dx=x-w.x,dz=z-w.z,angle=w.angle??0;
+   if(w.shape==='line'||w.shape==='wall'){
+    const along=dx*Math.cos(angle)+dz*Math.sin(angle),side=-dx*Math.sin(angle)+dz*Math.cos(angle);
+    const outside=Math.max(0,-along,along-(w.length??0)),radius=(w.width??0)*.5+padding;
+    if(outside*outside+side*side<=radius*radius)return true;
+   }else{
+    const radius=(w.radius??0)+padding;
+    if(dx*dx+dz*dz>radius*radius)continue;
+    if(w.shape!=='cone'||Math.abs(Math.atan2(Math.sin(Math.atan2(dz,dx)-angle),Math.cos(Math.atan2(dz,dx)-angle)))<=(w.arc??Math.PI)*.5+Math.asin(Math.min(1,padding/Math.max(padding,Math.hypot(dx,dz)))))return true;
+   }
+  }
+  return false;
  }
  private readonly priorityShape={shape:'circle' as const,x:0,z:0,radius:0};
  /** Read-only live hostile warning footprints for friendly-effect priority. No copies or rendering changes. */
@@ -654,7 +673,7 @@ export class AttackEffects {
    this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);
    (this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,sector?2:w.shape==='line'?1:0,length/(2*radius),sector?w.arc!*.5:0,native.melee?1+native.weight:0);
    (this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,(native.striking?3:1)+w.progress!);
-   (this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,native.weight);
+   (this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,native.melee?T.MathUtils.clamp(1-native.remainingMs/100,0,1):native.weight);
   }
   if(this.bossWarning&&this.warningVisible(this.bossWarning.x,this.bossWarning.z,this.bossWarning.radius,0,0,.045)){const w=this.bossWarning;this.dummy.position.set(w.x,.045,w.z);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.setScalar(w.radius);this.dummy.updateMatrix();(this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,0,0,0,0);this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);(this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress);(this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,1);}
   write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,warning);
