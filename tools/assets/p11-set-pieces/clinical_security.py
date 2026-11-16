@@ -50,8 +50,22 @@ def berth(x,y,open=False,index=0):
 def awakening():
     L.asset('awakening-berth-array',12000)
     for i,x in enumerate([-4.55+i*1.3 for i in range(8)]):
-        berth(x,0,i==3,i)
+        berth(x,0,i in (3,4),i)
         L.stencil(str(i+1).zfill(2),(x,-1.065,.22),.10,'-Y')
+    # The emergency release failed mid-cycle: one canopy is kicked sideways,
+    # its torn tether ends at the exposed socket; the recovery wrap hangs out.
+    for ob in list(L.CURRENT.children):
+        if ob.name.startswith(('Retracted canopy','Retracted lid frost')):
+            center=ob.data.vertices[0].co.x
+            if center>0:
+                ob.data.transform(Matrix.Translation((.65,.6,.95)) @ Matrix.Rotation(-.65,4,'Y') @ Matrix.Translation((-.65,-.6,-.95)))
+    L.sweep('Disconnected recovery tether',[(.96,.8,.8),(1.11,.6,.52),(.9,.3,.35),(.83,-.15,.42),(.93,-.45,.63)],.035,'p11-rubber',6)
+    L.cylinder('Torn tether plug',(.93,-.45,.65),.065,.13,'p11-steel','Z',8,0)
+    L.slab('Emergency wrap caught on rim',[(-.97,-.48),(-.38,-.55),(-.32,.26),(-.79,.33),(-.91,.1)],.74,.755,'p11-tint',0,tint='cream')
+    L.profile_x('Wrap hanging over broken latch',[(-.48,.75),(-.85,.67),(-.89,.25),(-.82,.18),(-.79,.61),(-.46,.73)],-.98,-.72,'p11-tint',0,tint='cream')
+    for xx in (-.91,-.83):L.sweep('Recovery wrap crease',[(xx,-.5,.765),(xx,-.70,.68),(xx,-.84,.26)],.007,'p11-tint',3,tint='sand')
+    L.box('Released manual handle',(.25,-.88,.88),(.24,.06,.05),'p11-steel',.005,rotation=(0,.4,.3))
+    L.box('Release handle socket',(.22,-.87,.72),(.20,.12,.025),'p11-rubber',.008)
     L.box('Supply spine',(0,1.0,.22),(10.6,.3,.38),'p11-tint-metal',.03,tint='navy')
     L.box('Open supply junction recess',(4.9,1.0,.43),(.48,.27,.08),'p11-rubber',.01)
     for x in (4.74,4.89,5.04):L.box('Exposed coolant contact',(x,1.0,.49),(.035,.21,.035),'e9-trim',0)
