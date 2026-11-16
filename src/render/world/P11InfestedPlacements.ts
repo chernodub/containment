@@ -12,8 +12,8 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     highDetail: asset === 'root-saddle' || asset === 'egg-clutch' || asset === 'resin-web',
   });
   if (id === 'infested-workshop') {
-    add('engulfed-milling-machine', 610, 280, 1, 0, Math.PI / 2);
-    // Bounds x592.36..629.55,z226.18..339.30 remain inside the existing mill solid.
+    add('engulfed-milling-machine', 650, 330, 1);
+    // Bounds x590.70..703.82,z312.36..349.55 fit the shallow connected bed.
     result[result.length - 1].matrix.scale(new T.Vector3(.85, .75, .65));
     result[result.length - 1].cutaway = false; // Grounded shallow wall-backed machine, not overhead.
     add('engulfed-repair-bench', 250, 900, .85);

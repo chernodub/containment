@@ -13,8 +13,7 @@ export function p11IncidentPlacements(id: string): OriginalKitInstance[] {
   if (id === 'shielding-gate') add('failed-shield-leaves',460,300,1);
   if (id === 'containment-annulus') add('strained-containment-diaphragm',650,520,1.1,1.2);
   if (id === 'infested-workshop') {
-    add('consuming-workstation-mantle',610,276,.7,1.05);
-    result[result.length - 1].matrix.multiply(new T.Matrix4().makeRotationY(Math.PI / 2));
+    add('consuming-workstation-mantle',650,326,.7,1.05);
   }
   if (id === 'swarm-junction') {
     // Broad but low sculpture remains inside the existing north-bank void.
