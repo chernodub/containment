@@ -532,7 +532,10 @@ export class DepthRenderer {
    this.corpseIds??=new Set();if(this.corpseIds.has(effect.id))return;this.corpseIds.add(effect.id);
    let existing=this.actors.get(effect.id!);if(!existing&&effect.family){existing=this.actorPool.take(effect.family,effect.elite);existing.root.position.set(x,0,z);registerGeometry(existing.root,GEOMETRY_CLASSES.enemy);this.scene.add(existing.root);}if(existing){motionDeathCue=actorDeathCue(existing);existing.root.userData.motionDeathCue=motionDeathCue;existing.root.position.set(x,0,z);freezeCorpse(existing);this.ragdolls.add(effect.id!,existing,effect.family??existing.root.name.replace('alien-',''),{x:(effect.vx??0)/UNIT,z:(effect.vy??0)/UNIT},motionDeathCue,this.motionQuery?.matches?0:.032*Math.min(this.options.screenShake,this.options.flashIntensity));this.actors.delete(effect.id!);this.corpses.push({model:existing,id:effect.id!,x,y:z,vx:(effect.vx??0)/UNIT,vy:(effect.vy??0)/UNIT,height:.2,lift:3,spin:2.4,age:0});if(this.corpses.length>(this.tier==='low'?6:10)){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}}
   }
-  this.effects.event(effect,motionDeathCue);
+  // FEEL12: presentation family survives native lethal-event actor retirement.
+  let targetModel=effect.targetId===undefined?undefined:effect.targetId===-1?this.queen:this.actors.get(effect.targetId);
+  if(!targetModel&&effect.targetId!==undefined)for(const corpse of this.corpses)if(corpse.id===effect.targetId){targetModel=corpse.model;break;}
+  this.effects.event(effect,motionDeathCue,targetModel?.root.name.replace('alien-',''));
  }
  syncCorpse(id:number,x:number,y:number){const corpse=this.corpses.find(c=>c.id===id);if(corpse){corpse.x=x/UNIT;corpse.y=y/UNIT;corpse.vx=corpse.vy=0;if(this.ragdolls.has(id))this.ragdolls.sync(id,x/UNIT,y/UNIT);else{corpse.model.root.position.x=x/UNIT;corpse.model.root.position.z=y/UNIT;}}}
  get roomLoading(){return this.kitDressing?.state==='loading'||this.roomWarmPending||this.recoveringGraphics||this.communalGarden?.state==='loading'||this.residentialGalleryEquipment?.state==='loading'||this.passengerVault?.state==='loading'||this.recoveryKit?.state==='loading'||this.sealedBank?.state==='loading'||this.releasedBerth?.state==='loading';}

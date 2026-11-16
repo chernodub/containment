@@ -6,6 +6,7 @@ import * as T from 'three';
 import type {WeaponId} from '../game/combat/types';
 import type {Bullet,GameEffect} from '../DepthGame';
 import {WEAPON_APPEARANCE} from './weapons';
+import {FAMILY_IDENTITY} from './ActorIdentity';
 import {wallSurface} from './wallSurface';
 import {GRAPHIC_COMBUSTION_GLSL} from './abilities/GraphicLanguage';
 import type {GraphicsOptions} from './graphicsOptions';
@@ -113,7 +114,7 @@ else if(style>3.5){
  color=mix(vec3(.18,.34,.39),vec3(.48,.67,.72),crystal);
  if(d>1.0)discard;
 }
-else if(vFrame<0.0){float drop=length(vec2(p.x/(.76-.18*p.y),p.y));alpha*=1.0-smoothstep(.82,1.0,drop);color*=.72+.28*max(0.0,1.0-drop);color=mix(color,vec3(.64,.78,.33),.35*(1.0-smoothstep(.08,.30,length(p-vec2(-.22,.28)))));}
+else if(vFrame<0.0){float drop=length(vec2(p.x/(.76-.18*p.y),p.y));alpha*=1.0-smoothstep(.82,1.0,drop);color*=.72+.28*max(0.0,1.0-drop);color=mix(color,mix(color,vec3(1.0),.35),.35*(1.0-smoothstep(.08,.30,length(p-vec2(-.22,.28)))));}
 else if(style<0.5){alpha*=pow(max(0.0,1.0-d),1.8);color*=1.0+2.0*pow(max(0.0,1.0-d),5.0);}
 else if(style<1.5){float n=.86+.09*sin(p.x*13.0+p.y*7.0)+.05*sin(p.y*19.0-p.x*4.0);alpha*=(1.0-smoothstep(.15,1.0,d/n))*.48;}
 if(textured>.5&&vFrame>=0.0){float frame=floor(vFrame);vec2 cell=vec2(mod(frame,grid),grid-1.0-floor(frame/grid));vec4 tex=texture2D(map,(cell+clamp(vUv,inset,1.0-inset))/grid,1.5);alpha=vAlpha*graphicCoverage(tex.a)*(style>2.5?.9*smoothstep(.0,.12,vUv.y):.42);color=style>2.5?graphicCombustion(tex):graphicSmoke(tex,vColor);}
@@ -313,17 +314,34 @@ export class AttackEffects {
    }
   }
  }
- event(e:GameEffect,deathCue:DeathCue='none'){
+ event(e:GameEffect,deathCue:DeathCue='none',targetFamily?:string){
   if(this.disposed)return;
   const p=new T.Vector3(e.x/32,(e.type==='explosion'||e.radius!==undefined)? .10:.8,e.y/32);
   if(e.type==='wall-slam'&&e.wall){p.y=.8;this.wallSlam(e,p);return;}
   if(e.type==='corpse'){this.death(e,p,deathCue);return;}
   const angle=e.angle??0,forward=new T.Vector3(Math.cos(angle),0,Math.sin(angle));
   if(e.contact){
-   const blocked=e.contact!=='damage',color=blocked?0x90baca:0xffe6b7;
-   this.flash(p,color,.65,1.7,.07,1);
-   this.particle(this.glow,EFFECT_LIMITS.glow,p,color,blocked?.16:.24,.065);
-   for(let i=0;i<3;i++){const a=angle+Math.PI+(i-1)*.8,v=new T.Vector3(Math.cos(a)*2,.5+i*.3,Math.sin(a)*2);this.particle(this.glow,EFFECT_LIMITS.glow,p,blocked?0x8cafbf:0xb7ba72,.045,.14,v,4);}
+   const blocked=e.contact!=='damage',heavy=e.weapon==='shotgun'||e.weapon==='rocket'||!!e.lethal;
+   const color=blocked?0x90baca:e.weapon==='plasma'?0xa4edff:0xffe6b7;
+   this.flash(p,color,heavy?1.1:.65,heavy?2.1:1.7,.07,1);
+   // A compact point spark and three short backward splinters locate the
+   // accepted impact; the separate liquid follows the shot through the body.
+   this.particle(this.glow,EFFECT_LIMITS.glow,p,color,blocked?.16:heavy?.30:.22,.065);
+   for(let i=0;i<3;i++){
+    const a=angle+Math.PI+(i-1)*.8;
+    this.forward.set(Math.cos(a)*2,.5+i*.3,Math.sin(a)*2);
+    this.particle(this.glow,EFFECT_LIMITS.glow,p,color,.045,.12+i*.025,this.forward,4);
+   }
+   const ichor=targetFamily?FAMILY_IDENTITY[targetFamily as keyof typeof FAMILY_IDENTITY]:undefined;
+   if(!blocked&&ichor!==undefined){
+    const reduced=this.options.reducedMotion?.4:1,count=heavy?5:3;
+    for(let i=0;i<count;i++){
+     const a=angle+(i-(count-1)*.5)*.30,speed=(heavy?2.5:1.4)*reduced;
+     this.forward.set(Math.cos(a)*speed,(.55+(i%2)*.35)*reduced,Math.sin(a)*speed);
+     this.particle(this.smoke,EFFECT_LIMITS.smoke,p,ichor,heavy?.075:.06,.20+i*.025,this.forward,6,1.8);
+     const drop=this.smoke[this.smoke.length-1];drop.liquid=true;drop.spin=0;
+    }
+   }
    return;
   }
   // Successful bullet damage also uses "acid"; only untargeted hazards spray liquid.
@@ -479,7 +497,7 @@ export class AttackEffects {
   // This is an impulse variant, not a claim about unreported health overshoot.
   const highImpulse=speed>=24,count=baseCount+(highImpulse?3:0);
   const momentum=Math.min(2.1,speed*.08),direction=Math.atan2(dz,dx);
-  const color=cue==='frost'?0xa3eaf3:cue==='burn'?0xd98643:cue==='arc'?0xc6baff:cue==='acid'?0x79aa58:e.family==='spitter'?0x778c55:e.family==='stalker'?0x665771:0x7d8868;
+  const color=cue==='frost'?0xa3eaf3:cue==='burn'?0xd98643:cue==='arc'?0xc6baff:cue==='acid'?0x79aa58:FAMILY_IDENTITY[e.family as keyof typeof FAMILY_IDENTITY]??0x7d8868;
   const reduced=this.options.reducedMotion?.45:1;
   p.y=e.family==='brute'?.55:e.family==='spitter'?.8:.4;
   for(let i=0;i<count;i++){
@@ -554,12 +572,13 @@ export class AttackEffects {
    s.age+=dt;if(s.age>=s.life||s.age<0)continue;const t=s.age/s.life;
    if(!s.ground){s.v.y-=s.gravity*dt;s.p.addScaledVector(s.v,dt);s.rotation+=s.spin*dt;if(mode==='debris'&&s.p.y<.035){s.p.y=.035;s.v.y=Math.abs(s.v.y)*.23;s.v.x*=.65;s.v.z*=.65;s.spin*=.55;if(s.v.y<.35&&Math.hypot(s.v.x,s.v.z)<.3){s.ground=true;s.v.set(0,0,0);s.spin=0;}}}
    if(s.liquid&&s.p.y<=.012){s.p.y=.012;s.ground=true;s.v.set(0,0,0);}
+   const priority=this.warningNear(s.p.x,s.p.z,.25)?.24:1;
    this.dummy.position.copy(s.p);this.dummy.quaternion.copy(camera.quaternion);
    if(s.liquid){
     if(s.ground)this.dummy.rotation.set(-Math.PI/2,0,s.rotation);
     else{this.forward.copy(s.v).applyQuaternion(this.dummy.quaternion.invert());this.dummy.quaternion.copy(camera.quaternion);this.dummy.rotateZ(Math.atan2(this.forward.y,this.forward.x)-Math.PI/2);}
     const size=s.size*(s.ground?1.8:1);this.dummy.scale.set(size,size*(s.ground?.8:1.6),1);this.dummy.updateMatrix();
-    mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,s.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,-1);alpha.setX(index,.9*Math.min(1,(1-t)*4));index++;continue;
+    mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,s.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,-1);alpha.setX(index,priority*.9*Math.min(1,(1-t)*4));index++;continue;
    }
    if(mode==='decal'||mode==='smoke'&&s.wall){if(s.wall){this.dummy.quaternion.setFromUnitVectors(this.axis,s.wall);this.dummy.rotateZ(s.rotation);}else this.dummy.rotation.set(-Math.PI/2,0,s.rotation);}
    else if(mode==='debris')this.dummy.rotation.set(s.rotation,s.rotation*.7,s.rotation*.4);
@@ -569,7 +588,7 @@ export class AttackEffects {
    }else this.dummy.rotateZ(s.rotation);
    const size=s.size*(mode==='smoke'?1+t*(s.growth??2.5):mode==='glow'?1-t*.4:mode==='fire'?1+t*.25:1);
    (mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,mode==='decal'?(s.variant??1):Math.min(mode==='fire'?24:63,Math.floor(t*(mode==='fire'?25:64))));
-   this.dummy.scale.set(size,mode==='debris'?size*.5:size*(s.aspect??1),size*s.stretch);this.dummy.updateMatrix();mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,s.color);alpha.setX(index,mode==='decal'?.75*(1-t*t):mode==='debris'?Math.min(1,(1-t)*4):mode==='fire'?Math.min(1,(1-t)*4):(1-t)*(mode==='smoke'?Math.min(1,t*10):1));index++;
+   this.dummy.scale.set(size,mode==='debris'?size*.5:size*(s.aspect??1),size*s.stretch);this.dummy.updateMatrix();mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,s.color);alpha.setX(index,priority*(mode==='decal'?.75*(1-t*t):mode==='debris'?Math.min(1,(1-t)*4):mode==='fire'?Math.min(1,(1-t)*4):(1-t)*(mode==='smoke'?Math.min(1,t*10):1)));index++;
   }
   let write=0;const free=this.particleFree.get(list)!;
   for(let i=0;i<list.length;i++){const item=list[i];if(item.age>=item.life)free.push(item);else list[write++]=item;}list.length=write;
@@ -654,7 +673,7 @@ export class AttackEffects {
    const length=Math.min(.28,speed*.035);
    this.forward.copy(spark.v).normalize();this.dummy.position.copy(spark.p).addScaledVector(this.forward,-length*.5);
    this.dummy.quaternion.setFromUnitVectors(UP,this.forward);this.dummy.scale.set(.009,length,.009);this.dummy.updateMatrix();
-   this.beamMesh.setMatrixAt(beam,this.dummy.matrix);this.beamMesh.setColorAt(beam,spark.color);alpha.setX(beam++,(1-spark.age/spark.life)*.55);
+   this.beamMesh.setMatrixAt(beam,this.dummy.matrix);this.beamMesh.setColorAt(beam,spark.color);alpha.setX(beam++,(1-spark.age/spark.life)*.55*(this.warningNear(spark.p.x,spark.p.z,.25)?.24:1));
   }
   this.finish(this.beamMesh,beam);this.finish(this.hostileMesh,hostile);
   this.drawParticles(this.fire,this.fireMesh,dt,camera,'fire');
