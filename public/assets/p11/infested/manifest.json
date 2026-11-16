@@ -7,7 +7,163 @@
   "coordinateSystem": "glTF Y-up, metres; bottom-centred origins, fronts face +Z (camera side)",
   "description": "Engulfed milling machinery, ruptured brood plenum and three infestation modules.",
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
-  "textures": "none (texture memory 0); detail is modelled geometry",
+  "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
+  "normalAtlas": {
+    "bakeSeconds": 2.043,
+    "blenderPNGDecodeMs": 7.588,
+    "file": "infested-normal.png",
+    "size": 512,
+    "bytes": 332765,
+    "estimatedRGBA8MipBytes": 1398101,
+    "nonFlatPixels": 137486,
+    "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+    "targets": [
+      {
+        "mesh": "engulfed-milling-machine--e9-body",
+        "role": "e9-body",
+        "seconds": 0.088,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "engulfed-milling-machine--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.051,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "engulfed-milling-machine--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.046,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "engulfed-milling-machine--p11-flesh",
+        "role": "p11-flesh",
+        "seconds": 0.045,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "engulfed-milling-machine--p11-growth",
+        "role": "p11-growth",
+        "seconds": 0.093,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "engulfed-milling-machine--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.034,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "engulfed-milling-machine--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.04,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "engulfed-milling-machine--p11-tint-metal",
+        "role": "p11-tint-metal",
+        "seconds": 0.047,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "ruptured-brood-plenum--e9-body",
+        "role": "e9-body",
+        "seconds": 0.036,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "ruptured-brood-plenum--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.035,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "ruptured-brood-plenum--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.059,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "ruptured-brood-plenum--p11-flesh",
+        "role": "p11-flesh",
+        "seconds": 0.075,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "ruptured-brood-plenum--p11-growth",
+        "role": "p11-growth",
+        "seconds": 0.087,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "ruptured-brood-plenum--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.028,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "root-saddle--p11-growth",
+        "role": "p11-growth",
+        "seconds": 0.042,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "egg-clutch--p11-flesh",
+        "role": "p11-flesh",
+        "seconds": 0.039,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "egg-clutch--p11-growth",
+        "role": "p11-growth",
+        "seconds": 0.035,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "resin-web--p11-flesh",
+        "role": "p11-flesh",
+        "seconds": 0.031,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "resin-web--p11-growth",
+        "role": "p11-growth",
+        "seconds": 0.038,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "engulfed-repair-bench--e9-body",
+        "role": "e9-body",
+        "seconds": 0.051,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "engulfed-repair-bench--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.042,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "engulfed-repair-bench--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.049,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "engulfed-repair-bench--p11-flesh",
+        "role": "p11-flesh",
+        "seconds": 0.067,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "engulfed-repair-bench--p11-growth",
+        "role": "p11-growth",
+        "seconds": 0.051,
+        "method": "sculpted high membrane"
+      }
+    ]
+  },
   "materials": {
     "e9-body": "#24343c",
     "e9-dark": "#0e1820",
@@ -195,8 +351,8 @@
   ],
   "output": {
     "file": "infested.glb",
-    "bytes": 411208,
-    "sha256": "7ccf041ceee42e1f539889ff6976e1ec7771d3cf1265be81ba550251b7f0460c",
+    "bytes": 1131560,
+    "sha256": "23ce35329ac5750436e6732842a52b7a6401c231f2ec0ac67eb8620c7c1d7868",
     "triangles": 15454
   },
   "overBudget": []

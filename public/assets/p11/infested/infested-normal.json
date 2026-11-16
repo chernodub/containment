@@ -1,0 +1,156 @@
+{
+  "bakeSeconds": 2.043,
+  "blenderPNGDecodeMs": 7.588,
+  "file": "infested-normal.png",
+  "size": 512,
+  "bytes": 332765,
+  "estimatedRGBA8MipBytes": 1398101,
+  "nonFlatPixels": 137486,
+  "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+  "targets": [
+    {
+      "mesh": "engulfed-milling-machine--e9-body",
+      "role": "e9-body",
+      "seconds": 0.088,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "engulfed-milling-machine--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.051,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "engulfed-milling-machine--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.046,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "engulfed-milling-machine--p11-flesh",
+      "role": "p11-flesh",
+      "seconds": 0.045,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "engulfed-milling-machine--p11-growth",
+      "role": "p11-growth",
+      "seconds": 0.093,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "engulfed-milling-machine--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.034,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "engulfed-milling-machine--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.04,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "engulfed-milling-machine--p11-tint-metal",
+      "role": "p11-tint-metal",
+      "seconds": 0.047,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "ruptured-brood-plenum--e9-body",
+      "role": "e9-body",
+      "seconds": 0.036,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "ruptured-brood-plenum--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.035,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "ruptured-brood-plenum--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.059,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "ruptured-brood-plenum--p11-flesh",
+      "role": "p11-flesh",
+      "seconds": 0.075,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "ruptured-brood-plenum--p11-growth",
+      "role": "p11-growth",
+      "seconds": 0.087,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "ruptured-brood-plenum--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.028,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "root-saddle--p11-growth",
+      "role": "p11-growth",
+      "seconds": 0.042,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "egg-clutch--p11-flesh",
+      "role": "p11-flesh",
+      "seconds": 0.039,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "egg-clutch--p11-growth",
+      "role": "p11-growth",
+      "seconds": 0.035,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "resin-web--p11-flesh",
+      "role": "p11-flesh",
+      "seconds": 0.031,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "resin-web--p11-growth",
+      "role": "p11-growth",
+      "seconds": 0.038,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "engulfed-repair-bench--e9-body",
+      "role": "e9-body",
+      "seconds": 0.051,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "engulfed-repair-bench--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.042,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "engulfed-repair-bench--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.049,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "engulfed-repair-bench--p11-flesh",
+      "role": "p11-flesh",
+      "seconds": 0.067,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "engulfed-repair-bench--p11-growth",
+      "role": "p11-growth",
+      "seconds": 0.051,
+      "method": "sculpted high membrane"
+    }
+  ]
+}

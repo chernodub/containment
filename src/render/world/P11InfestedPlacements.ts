@@ -11,8 +11,9 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     purpose: 'P11 / living machinery / ' + asset, cutaway: true,
   });
   if (id === 'infested-workshop') {
-    add('engulfed-milling-machine', 820, 350, 1);
-    result[result.length - 1].cutaway = false; // Grounded north service island, not overhead.
+    add('engulfed-milling-machine', 610, 266, 1, 0, Math.PI / 2);
+    result[result.length - 1].matrix.scale(new T.Vector3(1, 1, .65));
+    result[result.length - 1].cutaway = false; // Grounded shallow wall-backed machine, not overhead.
     add('engulfed-repair-bench', 250, 900, .85);
     add('root-saddle', 350, 930, 1);
     add('egg-clutch', 190, 850, 1);
