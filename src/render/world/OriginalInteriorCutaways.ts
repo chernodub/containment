@@ -10,6 +10,7 @@ const states = new WeakMap<T.Object3D,State>();
 
 /** Room-owned vertex ranges share the ordinary opaque material batches. */
 export function registerOriginalInteriorCutaways(root:T.Object3D,pieces:InteriorCutaway[]):void {
+  if(states.has(root)){states.get(root)!.pieces.push(...pieces);return;}
   if(pieces.length)states.set(root,{pieces,point:new T.Vector3(),actors:new Float64Array(1025*4),box:new Float64Array(4)});
 }
 

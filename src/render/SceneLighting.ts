@@ -35,10 +35,10 @@ export class SceneLighting {
  private blastLife=0;private time=0;private tier:GraphicsTier='high';private fixtureCount=0;private dynamicLights=true;private flashIntensity=1;private disposed=false;private shadowQuality:ShadowQuality='high';
  constructor(){
   this.directionalKey.castShadow=true;this.coreKey.visible=false;this.coreKey.castShadow=true;
-  this.coreKey.shadow.mapSize.set(1024,1024);this.coreKey.shadow.camera.near=.3;this.coreKey.shadow.camera.far=75;this.coreKey.shadow.normalBias=.025;this.coreKey.shadow.bias=-.0002;this.coreKey.shadow.radius=2;
+  this.coreKey.shadow.mapSize.set(1024,1024);this.coreKey.shadow.camera.near=.3;this.coreKey.shadow.camera.far=75;this.coreKey.shadow.normalBias=.025;this.coreKey.shadow.bias=-.0002;this.coreKey.shadow.radius=3.5;this.coreKey.shadow.intensity=.38;
   const shadow=this.directionalKey.shadow;shadow.mapSize.set(1024,1024);
   Object.assign(shadow.camera,{left:-24,right:24,top:24,bottom:-24,near:.5,far:70});
-  shadow.normalBias=.015;shadow.bias=-.0002;shadow.radius=2;
+  shadow.normalBias=.015;shadow.bias=-.0002;shadow.radius=3.5;shadow.intensity=.38;
   this.root.name='scene-lighting';
   this.root.add(this.ambient,this.directionalKey,this.directionalKey.target,this.coreKey,this.coreKey.target,this.fill,this.fill.target,this.rim,this.rim.target,...this.fixtures,this.blast,this.pool.root,this.lamp.root);
   this.applyMood(0,0);
@@ -222,7 +222,7 @@ export class SceneLighting {
   const mood=this.mood;const reactor=mood.environment==='reactor';this.key.castShadow=this.tier==='high'&&this.shadowQuality!=='off';this.directionalKey.visible=!reactor;this.coreKey.visible=reactor;this.lamp.setRoom(this.templateArchitecture?0:mood.environment==='cargo'?40:this.manualConsole?36:this.overloadFloor?48:24);this.ambient.color.setHex(mood.ambient.sky);this.ambient.groundColor.setHex(mood.ambient.ground);this.ambient.intensity=mood.ambient.intensity;
   this.lamp.light.intensity=mood.environment==='infested'?8:12;
   for(const [light,data] of [[this.key,mood.key],[this.fill,mood.fill],[this.rim,mood.rim]] as const){light.color.setHex(data.color);light.intensity=data.intensity*(data.irradianceScale??1);light.target.position.set(width/2,0,height/2);light.position.set(width/2+data.offset[0],data.offset[1],height/2+data.offset[2]);}
-  if(!reactor){const offset=this.composition===roomComposition()?mood.key.offset:this.composition.keyOffset;this.key.position.set(width/2+offset[0],offset[1],height/2+offset[2]);this.key.intensity*=this.composition.keyGain;this.fill.intensity*=this.composition.fillGain;}
+  if(!reactor){const offset=this.composition===roomComposition()?mood.key.offset:this.composition.keyOffset;this.key.position.set(width/2+offset[0],offset[1],height/2+offset[2]);this.key.intensity*=this.composition.keyGain;this.fill.intensity*=this.composition.fillGain;if(this.interiorPresentation)this.key.position.set(width/2-4,25,height/2-3);}
   if(reactor){
    this.coreKey.angle=this.bossArena?.58:this.manualConsole?Math.PI*.28:Math.PI*.4;this.coreKey.penumbra=.72;const shadowSize=this.shadowQuality==='low'?512:1024;this.coreKey.shadow.mapSize.set(shadowSize,shadowSize);
    const core=this.staging;this.coreKey.position.set(core?.coreX??width/2,core?.coreY??3.2,core?.coreZ??height/2);
@@ -239,11 +239,12 @@ export class ContactShadows {
  private dummy=new T.Object3D();private count=0;
  constructor(){
   const geometry=new T.PlaneGeometry(2,2);geometry.rotateX(-Math.PI/2);
-  const material=groundIndicatorMaterial('contact',new T.Color(.025,.035,.045));
+  const material=groundIndicatorMaterial('contact',new T.Color(.12,.15,.15));
+  material.fragmentShader=material.fragmentShader.replace(')*.4;',')*.22;');
   this.mesh=new T.InstancedMesh(geometry,material,64);this.mesh.name='actor-contact-shadows';this.mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);this.mesh.frustumCulled=false;this.mesh.count=0;
  }
  begin(){this.count=0;}
- add(x:number,z:number,radius:number){if(this.count===64)return;this.dummy.position.set(x,.025,z);this.dummy.scale.set(radius*1.3,1,radius);this.dummy.updateMatrix();this.mesh.setMatrixAt(this.count++,this.dummy.matrix);}
+ add(x:number,z:number,radius:number){if(this.count===64)return;this.dummy.position.set(x,.025,z);this.dummy.scale.set(radius*.98,1,radius*.82);this.dummy.updateMatrix();this.mesh.setMatrixAt(this.count++,this.dummy.matrix);}
  end(){this.mesh.count=this.count;this.mesh.instanceMatrix.needsUpdate=true;}
- dispose(){this.mesh.geometry.dispose();(this.mesh.material as T.Material).dispose();this.mesh.removeFromParent();}
+ dispose(){this.mesh.dispose();this.mesh.geometry.dispose();(this.mesh.material as T.Material).dispose();this.mesh.removeFromParent();}
 }

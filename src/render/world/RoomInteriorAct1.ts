@@ -35,7 +35,7 @@ export const ACT1_INTERIOR_PROFILES:Record<string,InteriorProfile> = {
     landmark:'Retained diagonal hull scar and torn metal along the repaired docking trunk',
   },
   'relay-racks': {
-    kind:'data-relay', deck:0x322f3e, zone:0x4d4658, trim:0xc4d9cb, key:0x74d4b8,
+    kind:'data-relay', deck:0x35484c, zone:0x506267, trim:0xc4d9cb, key:0x74d4b8,
     landmark:'Paired hull-backed relay rack banks and the long central service spine',
   },
   'transmission-chamber': {

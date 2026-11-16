@@ -12,7 +12,7 @@ export type InteriorProfile = {
 };
 export const INTERIOR_PROFILES: Record<string, InteriorProfile> = {
     ...ACT1_INTERIOR_PROFILES, ...ACT2_INTERIOR_PROFILES,
-    'diagnostic-gallery': { kind: 'diagnostics', deck: 0x1d303d, zone: 0x344d5d, trim: 0xd5ded3, key: 0x65d8e6, landmark: 'Probe arch and recorder workbays beneath the fatal-purge gantry' },
+    'diagnostic-gallery': { kind: 'diagnostics', deck: 0x3c5058, zone: 0x5b6c70, trim: 0xd5ded3, key: 0x65d8e6, landmark: 'Probe arch and recorder workbays beneath the fatal-purge gantry' },
     'crew-checkpoint': { kind: 'checkpoint', deck: 0xd5d4bd, zone: 0x95b1b3, trim: 0xb2a15c, key: 0x71c793, landmark: 'Inspection scanner and glazed security booth' },
     'swarm-junction': { kind: 'ventilation', deck: 0x857055, zone: 0x5d6055, trim: 0xb0a58b, key: 0xb286d1, landmark: 'Raised ventilation plenums split by rooted growth' },
 };

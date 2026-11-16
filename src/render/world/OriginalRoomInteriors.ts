@@ -6,6 +6,9 @@ import { disposeModel, geometries } from '../meshParts';
 import { retireRoomModels } from '../RoomModelCache';
 import { acquireOriginalShipKit, buildOriginalShipKit, type OriginalKitInstance, type OriginalKitPack } from './OriginalShipKitAssets';
 import { interiorFloorServices } from './RoomInteriors';
+import { loadDeckSurfaces } from './E10DeckSurfaces';
+import { addCeilingServices } from './E10CeilingServices';
+import { addRecessedServices } from './E10RecessedServices';
 import { cutInteriorWallNiches } from './InteriorWallNiches';
 import { INTERIOR_PROFILES, INTERIOR_WALL_FINISHES } from './RoomInteriorProfiles';
 const floorNames = new Set(['painted-steel-deck', 'annulus-deck', 'annulus-circulation', 'environment-floor', 'shaft-deck', 'shaft-floor-panel']);
@@ -27,6 +30,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
     if(id==='infested-workshop'){
         overhead('industrial','workshop-tool-bridge',300,640,5);
         overhead('industrial','workshop-tool-bridge',780,620,5);
+        overhead('industrial','workshop-tool-bridge',650,960,5);
     }
     if(id==='swarm-junction')overhead('industrial','airway-exchanger',750,900,5);
     const hull = t.boundary ?? [{ x: 0, y: 0 }, { x: t.width, y: 0 }, { x: t.width, y: t.height }, { x: 0, y: t.height }];
@@ -65,8 +69,6 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         const p = opening.from, q = opening.to, dx = (q.x - p.x) / 32, dz = (q.y - p.y) / 32, length = Math.hypot(dx, dz);
         instances.push({ pack: 'structure', asset: 'door-threshold', matrix: matrix((p.x + q.x) / 64, -.025, (p.y + q.y) / 64, -Math.atan2(dz, dx), length / 4.5, 1, 1), purpose: 'Flush manufactured doorway threshold', castShadow: false });
     }
-    for (const s of interiorFloorServices(id, t))
-        instances.push({ pack: s.pack, asset: s.asset, matrix: matrix(s.x / 32, s.asset === 'drainage-grating' ? -.11 : -.085, s.z / 32, s.angle, 1, 1, s.asset === 'drainage-grating' ? .75 : 1), purpose: 'Recessed ' + s.asset, castShadow: false });
     return instances;
 }
 /** Original model owner settles before combat warmup. Session transfers survive
@@ -94,7 +96,7 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             if (!active)
                 return;
             const instances = instancesFor(t), packs = [...new Set(instances.map(i => i.pack))];
-            const results = await Promise.allSettled(packs.map(async (pack) => {
+            const results = await Promise.allSettled([loadDeckSurfaces(world, t, () => active, dispose => restores.push(dispose)), ...packs.map(async (pack) => {
                 const source = await acquireOriginalShipKit(pack, controller.signal);
                 if (!active) {
                     retireRoomModels(source);
@@ -102,13 +104,15 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
                 }
                 borrowed.add(source);
                 sources.set(pack, source);
-            }));
+            })]);
             if (!active)
                 return;
             const failed = results.find(r => r.status === 'rejected');
             if (failed?.status === 'rejected')
                 throw failed.reason;
             root = buildOriginalShipKit(sources, instances);
+            addCeilingServices(root, t);
+            addRecessedServices(root, t);
             // Replace skins on precisely those existing solids occupied by a new
             // original machine. Simulation still owns the old solid plus shallow bays.
             const replacements = shipInteriorFurnishings(t).filter(f => f.source === 'solid').map(f => {
