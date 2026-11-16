@@ -7,7 +7,7 @@ import {defineShipRoom,point as p,polygon as poly,rectangles,partition as wall,s
 const diagnostic=defineShipRoom({width:1280,height:960,
  boundary:poly([[40,0],[1240,0],[1240,320],[1280,320],[1280,640],[1240,640],[1240,960],[40,960],[40,640],[0,640],[0,320],[40,320]]),
  // The warning recorder remains the first equipment role and keeps a full roof.
- obstacles:rectangles([[260,0,260,130],[40,40,160,180],[1080,40,160,180],[40,740,160,180],[1080,740,160,180],[600,830,220,90],[690,270,128,42]]),
+ obstacles:rectangles([[260,0,260,130],[40,40,160,180],[1080,40,160,180],[40,740,160,180],[1080,740,160,180],[600,830,220,90],[726,319,128,42]]),
  voids:[wall(40,0,1200,40),wall(40,920,1200,40),wall(520,40,24,120),wall(820,40,24,140),wall(560,780,24,140)],
  spawn:p(100,480),exit:p(1180,480),breaches:poly([[300,220],[980,220],[300,760],[980,760]]),
 });

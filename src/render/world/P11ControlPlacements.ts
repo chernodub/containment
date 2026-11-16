@@ -4,7 +4,7 @@ import type {OriginalKitInstance} from './OriginalShipKitAssets';
 export function p11ControlPlacements(id:string):OriginalKitInstance[]{
  const placements:Record<string,[string,number,number,number,number,number]>={
   'transmission-chamber':['uplink-tracking-dish',816,338,1,.65,.6],
-  'diagnostic-gallery':['specimen-probe-cradle',754,291,1.1,.85,.8],
+  'diagnostic-gallery':['specimen-probe-cradle',790,340,1.1,.85,.8],
   'safety-interlock-station':['key-cylinder-interlock',650,365,1,.85,.8],
   'manual-control-chamber':['manual-authorisation-dais',640,320,.95,.9,.75],
   'overload-floor':['reactor-crown',700,500,1.7,1.4,1.7],

@@ -39,7 +39,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         if (id === 'passenger-vault' && furnishing.source === 'solid'
             && furnishing.x >= 320 && furnishing.x <= 520
             && furnishing.z >= 260 && furnishing.z <= 360) continue;
-        if (furnishing.source === 'solid' && ((id === 'diagnostic-gallery' && furnishing.x === 754 && furnishing.z === 291)
+        if (furnishing.source === 'solid' && ((id === 'diagnostic-gallery' && furnishing.x === 790 && furnishing.z === 340)
             || (id === 'safety-interlock-station' && furnishing.x === 650 && furnishing.z === 365)
             || (id === 'manual-control-chamber' && furnishing.x === 640 && furnishing.z === 320))) continue;
         instances.push({ pack: furnishing.pack, asset: furnishing.asset, matrix: matrix(furnishing.x / 32, 0, furnishing.z / 32, furnishing.angle, ...furnishing.scale), purpose: furnishing.space + ' / ' + furnishing.asset,cutaway:furnishing.source==='portal' });
