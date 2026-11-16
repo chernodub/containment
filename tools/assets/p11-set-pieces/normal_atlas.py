@@ -49,7 +49,7 @@ def bake_normal_atlas(groups, output_png, size=1024, threads=4):
     scene.render.threads_mode='FIXED';scene.render.threads=threads
     scene.render.bake.use_selected_to_active=True;scene.render.bake.use_clear=False
     scene.render.bake.normal_space='TANGENT';scene.render.bake.margin=4
-    scene.render.bake.cage_extrusion=.05;scene.render.bake.max_ray_distance=.12
+    scene.render.bake.cage_extrusion=.0025;scene.render.bake.max_ray_distance=.025
     records=[]
     for low in targets:
         high=low.copy();high.data=low.data.copy();high.name='P11_BAKE_HIGH_'+low.name
@@ -60,7 +60,7 @@ def bake_normal_atlas(groups, output_png, size=1024, threads=4):
         if role in ('p11-growth','p11-flesh'):
             sub=high.modifiers.new('High sculpt tessellation','SUBSURF');sub.subdivision_type='SIMPLE';sub.levels=1
             texture=bpy.data.textures.new('P11 high sculpt folds','CLOUDS');texture.noise_scale=.12;texture.noise_depth=1
-            displace=high.modifiers.new('Sculpted membrane relief','DISPLACE');displace.texture=texture;displace.strength=.012;displace.mid_level=.5
+            displace=high.modifiers.new('Sculpted membrane relief','DISPLACE');displace.texture=texture;displace.strength=.002;displace.mid_level=.5
         else:
             texture=None
             bevel=high.modifiers.new('High manufactured edge rounding','BEVEL')
