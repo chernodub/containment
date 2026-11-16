@@ -21,7 +21,9 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     add('egg-clutch', 190, 850, 1);
   }
   if (id === 'swarm-junction') {
-    add('ruptured-brood-plenum', 292, 235, 2);
+    // Front inner edge of the attached north duct bank, wholly inside its chamfer.
+    add('ruptured-brood-plenum', 340, 300, 1.2);
+    result[result.length - 1].cutaway = false;
     add('root-saddle', 900, 285, 2);
     add('egg-clutch', 870, 300, 2);
     add('resin-web', 950, 260, 2.5, 1);
