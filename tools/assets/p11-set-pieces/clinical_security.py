@@ -118,10 +118,30 @@ def scanner():
         L.grille_top((x,0,3.30),1.1,.57,7)
         L.bolt_row((x-.5,-.35,3.30),(x+.5,-.35,3.30),4,.022,'Z')
     for x in (-.85,.85):L.box('Header assembly seam',(x,0,3.30),(.035,.88,.012),'p11-rubber',0)
-    L.screen('Scan result',(0,-.46,3.15),1.28,.17,'-Y','bars')
+    L.screen('Scan result',(1.25,-.46,3.15),1.0,.17,'-Y','bars')
     L.box('Scanner threshold',(0,0,.035),(5.7,1.1,.07),'p11-steel',.01)
     for sx in (-1,1):L.lamp_strip('Gate strip',(sx*2.22,-.3,1.65),2.35,'Z','e9-cyan',.025,.03)
-    L.stencil('BIO SCAN',(0,-.46,2.98),.11,'-Y')
+    L.stencil('BIO SCAN',(-1.25,-.46,3.15),.11,'-Y')
+
+    # Suspended scanning head on a captive gimbal and drive carriage.
+    L.box('Scanner carriage',(0,0,3.32),(.76,.72,.16),'p11-rubber',.025)
+    L.grille_top((-.12,.08,3.405),.25,.42,4)
+    L.cylinder('Head cable gland',(.16,.12,3.41),.065,.06,'p11-steel','Z',8,0)
+    L.bolt_row((-.31,-.28,3.405),(.31,-.28,3.405),3,.023,'Z')
+    for sx in (-1,1):
+        L.box('Gimbal clevis',(sx*.32,-.5,2.94),(.10,.24,.48),'p11-steel',.018)
+        L.cylinder('Gimbal pivot',(sx*.34,-.5,2.78),.10,.14,'e9-trim','X',12,.01)
+        L.profile_x('Header corner gusset',[(-.4,2.55),(-.4,3.0),(.3,3.0)],sx*2.22-.04,sx*2.22+.04,'p11-steel',.015)
+        L.bolt_row((sx*2.42,-.5,.8),(sx*2.42,-.5,1.85),4,.024,'-Y')
+    L.cylinder('Scanning head barrel',(0,-.55,2.78),.25,.50,'p11-tint-metal','Y',16,.025,tint='navy')
+    L.cylinder('Lens captive ring',(0,-.82,2.78),.21,.08,'p11-steel','Y',16,.01)
+    L.cylinder('Lens dark aperture',(0,-.87,2.78),.16,.02,'p11-rubber','Y',16,0)
+    L.cylinder('Lens illuminated pupil',(0,-.89,2.78),.095,.012,'e9-cyan','Y',16,0)
+    L.sweep('Scanner head signal cable',[(.16,.12,3.34),(.16,-.13,3.52),(.38,-.49,3.36),(.35,-.6,2.94),(.12,-.4,2.8)],.025,'p11-rubber',6)
+    for sx in (-1,1):
+        L.box('Field emitter cheek',(sx*2.18,.15,1.65),(.12,.42,.75),'p11-tint-metal',.025,tint='navy')
+        L.cylinder('Emitter shield rim',(sx*2.11,.15,1.65),.18,.13,'p11-steel','X',12,.01)
+        L.cylinder('Emitter ceramic core',(sx*2.02,.15,1.65),.12,.04,'e9-ceramic','X',12,.01)
 
 def armory():
     L.asset('armory-weapon-carousel',12000)
