@@ -220,6 +220,12 @@ def dais():
     for x in (-1.4,0,1.4):
         L.sweep('Pod power connection',[(x,.65,.5),(x,.65,1.5)],.045,'p11-rubber',8)
 
+    L.box('Broken automatic control cover',(0,.22,1.82),(.85,.52,.06),'e9-body',.025,rotation=(.3,0,.18))
+    for x in (-.25,0,.25):
+        L.box('Bypass contact',(x,-.14,1.55),(.08,.4,.07),'p11-steel',.01)
+    L.sweep('Hardwired override lead',[(-.22,-.3,1.62),(-.55,-.52,1.8),(-.85,-.52,1.6)],.035,'p11-rubber',6)
+    L.stencil('HAND ONLY',(-.48,-.81,1.17),.1)
+
 def crown():
     L.asset('reactor-crown',12000)
     # A pressure vessel is captured by eight structural quadrants. No loose rods.
