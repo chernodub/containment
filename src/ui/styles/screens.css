@@ -613,3 +613,36 @@
 @media(min-width:900px) and (max-height:760px) {#overlay .panel .room-record p {font-size:12px;line-height:1.3;margin:4px 0;}}
 #overlay .shop-panel>.room-record {grid-column:1 / -1;margin-bottom:0;}
 @media(min-width:900px) and (max-height:760px) {#overlay .panel:has(.room-record) {row-gap:12px;}#overlay .panel .room-record {padding:4px 10px;}#overlay .panel .room-record small {display:none;}#overlay .panel.draft-panel:has(.room-record) .reward-footer {margin-top:6px;}}
+
+/* U10 lock-up: compact signal seal, an open wordmark and a ruled expedition tag. */
+#overlay .title-screen {padding:48px clamp(48px,6.5vw,140px);}
+#overlay .title-screen::before {background:linear-gradient(0deg,#02080e55,transparent 40%,transparent 80%,#02080e33);}
+#overlay .title-copy {width:min(700px,42vw);}
+#overlay .edition {font-size:10px;letter-spacing:.2em;margin-bottom:26px;color:#a8c3cd;}
+#overlay .title-screen h1 {position:relative;}
+#overlay .title-seal {display:flex!important;gap:5px;height:26px;align-items:center;margin-bottom:14px;}
+#overlay .title-seal i {width:6px;height:18px;background:#c6e5e9;transform:skewY(-28deg);}
+#overlay .title-seal i:nth-child(2) {height:26px;}
+#overlay .title-word {font-size:clamp(60px,6.3vw,132px);font-weight:500;letter-spacing:.01em;line-height:.9;}
+#overlay .title-screen h1 .title-depth {display:flex;align-items:center;gap:20px;width:270px;margin-top:18px;font-size:20px;letter-spacing:.42em;line-height:1;color:#a9c8d0;}
+#overlay .title-depth i {height:1px;background:#a9c8d070;flex:1;}
+#overlay .title-screen .premise {font-size:16px;line-height:1.65;margin:32px 0 28px;color:#c1d0d5;}
+#overlay .menu-buttons {width:360px;gap:9px;}
+#overlay .menu-start {min-height:72px;background:#d1e3e6;border-color:#d1e3e6;}
+#overlay #start>span:not(.menu-index) {font-size:27px;letter-spacing:.025em;}
+#overlay #start small {font-size:9px;letter-spacing:.18em;}
+#overlay .menu-continue {min-height:62px;background:#0b1a23c9;}
+#overlay .menu-utility {background:#07151c88;border-color:#97bdca36;}
+#overlay .title-version {font-size:9px;letter-spacing:.14em;margin-top:25px;}
+#overlay .resume-content {grid-template-columns:150px 120px 1fr;gap:24px;}
+@media(max-height:820px) {
+ #overlay .title-screen {padding-top:28px;padding-bottom:28px;}
+ #overlay .edition {margin-bottom:16px;font-size:9px;}
+ #overlay .title-seal {height:20px;margin-bottom:9px;}
+ #overlay .title-screen .premise {margin:22px 0;font-size:14px;}
+ #overlay .title-screen h1 .title-depth {margin-top:12px;font-size:16px;width:230px;}
+ #overlay .menu-start {min-height:62px;}
+ #overlay .menu-continue {min-height:54px;}
+ #overlay .title-version {margin-top:18px;}
+ #overlay .resume-content {grid-template-columns:110px 100px 1fr;gap:18px;padding:20px 0;}
+}

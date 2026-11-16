@@ -43,7 +43,7 @@ export async function bootstrap() {
         el('system-retry').addEventListener('click', () => location.reload());
     };
     function positionHud() { positionHudPanels(renderer.playerScreenBounds(game.player.radius), innerWidth, innerHeight); }
-    el('overlay').innerHTML = `<div class="asset-loading-art">${titleKeyArt(undefined,true)}<div class="asset-loading"><span>CONTAINMENT / DEPTH</span><h2>Establishing connection</h2><p>Synchronizing ship systems</p><div role="progressbar" aria-label="Loading assets" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="asset-track"><i id="asset-progress"></i></div><small>AWAITING MARINE WAKE PROTOCOL</small></div></div>`;
+    el('overlay').innerHTML = `<div class="asset-loading-art">${titleKeyArt(true)}<div class="asset-loading"><span>CONTAINMENT / DEPTH</span><h2>Establishing connection</h2><p>Synchronizing ship systems</p><div role="progressbar" aria-label="Loading assets" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="asset-track"><i id="asset-progress"></i></div><small>AWAITING MARINE WAKE PROTOCOL</small></div></div>`;
     const rendererCode=import('../render/DepthRenderer');
     const audioCode=import('../game/audio/AudioSystem');
     try {
@@ -272,10 +272,13 @@ export async function bootstrap() {
             audio.syncFrozen(game.enemies.snapshot.enemies.filter(e => e.health > 0 && game.boonStatuses(e.id).frozen).map(e => e.id), game.roomRevision);
         const updated = performance.now();
         if (!blocked) {
-            renderer.render(game, recovering ? 0 : dt * feel.renderScale, game.status === 'menu');
-            if(!optionalPresentationStarted) {optionalPresentationStarted=true;setTimeout(()=>{void warmDeathPhysics();},0);}
-            if (game.status === 'playing')
-                positionHud();
+            // Offline title plates need no world draw; recovery still settles normally.
+            if (game.status !== 'menu') {
+                renderer.render(game, recovering ? 0 : dt * feel.renderScale, false);
+                if(!optionalPresentationStarted) {optionalPresentationStarted=true;setTimeout(()=>{void warmDeathPhysics();},0);}
+                if (game.status === 'playing')
+                    positionHud();
+            }
             roomRecovering = false;
             if (recovering)
                 pacer.reset();

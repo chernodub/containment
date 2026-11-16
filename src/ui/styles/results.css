@@ -48,54 +48,42 @@
 #overlay .debrief-panel:has(.result-details[open]) .result-details {margin-top:8px;}
 #overlay .debrief-panel:has(.result-details[open]) .result-details>summary {padding:10px 4px;}
 
-/* The warning travels beyond a broken silhouette; no image assets or world effects. */
-#overlay .ending-transmission { width: min(1200px,100%); margin: 5px 0 0; }
-#overlay .ending-space { display: block; width: 100%; max-height: 38vh; overflow: visible; }
-#overlay .ending-stars { opacity: .55; }
-#overlay .ending-orbit { fill: none; stroke: #36505c; stroke-width: .7; stroke-dasharray: 2 13; }
-#overlay .ending-ship { stroke: #789098; stroke-width: 1.5; fill: #101c26; }
-#overlay .ending-hull { fill: #14212b; }
-#overlay .ending-hull-detail { fill: none; stroke: #56727e; stroke-width: 1; }
-#overlay .ending-engines { fill: #182a35; stroke: #526675; }
-#overlay .ending-window { fill: none; stroke: #a4c9d2; stroke-width: 2; }
-#overlay .ending-fracture { fill: none; stroke: #ff9973; stroke-width: 1.2; }
-#overlay .ending-debris { fill: #263b44; stroke: #91a1a6; stroke-width: 1; animation: ending-debris-drift .8s ease-out both; transform-origin: 295px 167px; }
-#overlay .ending-ship-aft { animation: ending-aft-drift .8s ease-out both; transform-origin: 282px 168px; }
-#overlay .ending-ship-bow { animation: ending-bow-drift .8s ease-out both; transform-origin: 307px 167px; }
-#overlay .ending-signal-track { fill: none; stroke: url(#ending-signal-light); stroke-width: 1; }
-#overlay .ending-signal { fill: none; stroke: #c0f2ff; stroke-width: 2; stroke-dasharray: 8 590; animation: ending-warning-travel 5s linear infinite; }
-#overlay .ending-earth { fill: #132b38; stroke: #a3d4e5; stroke-width: 1.5; }
-#overlay .ending-land { fill: none; stroke: #6797a7; stroke-width: 1.2; }
-#overlay .ending-arrival { fill: none; stroke: #9fe8ff; stroke-width: .8; opacity: .4; animation: ending-warning-received 5s ease-out infinite; }
-#overlay .ending-leader { fill: none; stroke-width: .8; }
-#overlay .ending-leader--loss { stroke: #b17e6c; }
-#overlay .ending-leader--success { stroke: #82b5c8; }
-#overlay .ending-outcomes { display: flex; justify-content: space-between; gap: 30px; margin: -8px 5% 0 8%; text-align: left; }
-#overlay .ending-outcomes>div { display: flex; flex-direction: column; gap: 8px; }
-#overlay .ending-outcomes .eyebrow { font-size: 11px; letter-spacing: .15em; line-height: 1.4; }
-#overlay .ending-outcomes strong { font: 500 clamp(18px,1.6vw,26px)/1.2 var(--font-display); letter-spacing: .035em; }
-#overlay .ending-loss { color: #c6b1a9; }
-#overlay .ending-loss .eyebrow { color: #d19a83; }
-#overlay .ending-success { color: #d9f5ff; text-align: right; }
-#overlay .ending-success .eyebrow { color: #a7ddec; }
-#overlay .debrief-panel:has(.result-details[open]) .ending-transmission { display: none; }
-@keyframes ending-aft-drift { from { transform: translate(4px,0) rotate(0); } to { transform: translate(-7px,5px) rotate(-3deg); } }
-@keyframes ending-bow-drift { from { transform: translate(-3px,0) rotate(0); } to { transform: translate(7px,-5px) rotate(2deg); } }
-@keyframes ending-debris-drift { from { transform: scale(.93); opacity: .5; } to { transform: scale(1.15); opacity: .8; } }
-@keyframes ending-warning-travel { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -598; } }
-@keyframes ending-warning-received { 0%,65%,100% { opacity: .25; } 85% { opacity: .8; } }
-@media (max-height:800px) {
-  #overlay .completion-ending[data-ending='sacrifice'] { min-height: 62vh; padding: 8px 0; }
-  #overlay .ending-space { max-height: 32vh; }
-  #overlay .ending-outcomes { margin-top: 0; }
-  #overlay .completion-ending .ending-exact { font-size: clamp(26px,2.5vw,34px); margin: 20px 0 8px; }
-  #overlay .completion-ending .ending-rule { margin: 12px 0; }
+/* Rendered empty nave plus the selected marine's final archive. */
+#overlay .ending-transmission {width:min(1200px,100%);margin:18px 0 0;}
+#overlay .ending-render {position:relative;height:34vh;min-height:200px;overflow:hidden;border-top:1px solid #9fe8ff50;border-bottom:1px solid #9fe8ff30;background:#06111b;}
+#overlay .ending-set,#overlay .ending-set img {display:block;width:100%;height:100%;object-fit:cover;}
+#overlay .ending-set {opacity:.58;}
+#overlay .ending-render::after {content:'';position:absolute;inset:0;background:linear-gradient(90deg,#030c1166,transparent 40%,#030c11a3);pointer-events:none;}
+#overlay .ending-operator {position:absolute;left:7%;bottom:0;top:0;display:flex;align-items:center;gap:20px;z-index:1;}
+#overlay .ending-operator .marine-portrait {height:100%;width:240px;filter:saturate(.65);opacity:.84;}
+#overlay .ending-operator>span {font:500 9px/1.8 var(--font-body);letter-spacing:.12em;color:#b8c8cc;text-align:left;}
+#overlay .ending-operator b {color:#e9ac93;font-weight:500;}
+#overlay .ending-receipt {position:absolute;z-index:1;right:7%;top:50%;transform:translateY(-50%);text-align:left;}
+#overlay .ending-receipt .eyebrow {font-size:10px;color:#a3d1dc;}
+#overlay .ending-receipt strong {display:block;font:500 clamp(30px,3.3vw,55px)/.95 var(--font-display);letter-spacing:.035em;margin:15px 0;color:#e2f6f9;}
+#overlay .ending-receipt small {font-size:8px;letter-spacing:.14em;color:#a3c3cd;}
+#overlay .ending-signal-line {display:block;width:160px;height:2px;margin:16px 0;background:linear-gradient(90deg,#bee9f3,#bee9f31a);animation:ending-uplink 6s ease-in-out infinite;}
+#overlay .ending-outcomes {display:flex;justify-content:space-between;gap:30px;margin:16px 0 0;text-align:left;}
+#overlay .ending-outcomes>div {display:flex;flex-direction:column;gap:8px;}
+#overlay .ending-outcomes .eyebrow {font-size:10px;letter-spacing:.15em;line-height:1.4;}
+#overlay .ending-outcomes strong {font:500 clamp(18px,1.6vw,26px)/1.2 var(--font-display);letter-spacing:.035em;}
+#overlay .ending-loss {color:#c6b1a9;}
+#overlay .ending-loss .eyebrow {color:#d19a83;}
+#overlay .ending-success {color:#d9f5ff;text-align:right;}
+#overlay .ending-success .eyebrow {color:#a7ddec;}
+#overlay .debrief-panel:has(.result-details[open]) .ending-transmission {display:none;}
+@keyframes ending-uplink {0%,100%{opacity:.5}50%{opacity:1}}
+@media(max-height:800px) {
+ #overlay .completion-ending[data-ending='sacrifice'] {min-height:62vh;padding:8px 0;}
+ #overlay .ending-render {height:29vh;min-height:170px;}
+ #overlay .ending-operator .marine-portrait {width:180px;}
+ #overlay .ending-operator>span {display:none;}
+ #overlay .ending-outcomes {margin-top:12px;}
+ #overlay .completion-ending .ending-exact {font-size:clamp(26px,2.5vw,34px);margin:20px 0 8px;}
+ #overlay .completion-ending .ending-rule {margin:12px 0;}
 }
-@media (prefers-reduced-motion:reduce) {
-  #overlay .ending-transmission * { animation: none !important; }
-  #overlay .ending-signal { stroke-dasharray: 4 12; opacity: .7; }
-  #overlay .ending-ship-aft { transform: translate(-7px,5px) rotate(-3deg); }
-  #overlay .ending-ship-bow { transform: translate(7px,-5px) rotate(2deg); }
+@media(prefers-reduced-motion:reduce) {
+ #overlay .ending-transmission * {animation:none!important;}
 }
 
 /* These totals are accounting categories, not an elemental breakdown. Neutral
@@ -120,65 +108,10 @@
   #overlay .debrief-panel .damage-source-note {margin:4px 0 8px;font-size:12px;line-height:1.4;}
 }
 
-/* The aftermath is a full-bleed plate, followed by a quiet archive footer. */
-#overlay .debrief-panel[data-outcome='complete'] {padding:0;background:#050d19;}
-#overlay .completion-ending[data-ending='sacrifice'] {position:relative;isolation:isolate;min-height:78dvh;padding:0 7vw 5vh;align-items:flex-start;justify-content:flex-end;text-align:left;overflow:hidden;}
-#overlay .completion-ending[data-ending='sacrifice']>.eyebrow {position:absolute;top:5vh;left:7vw;z-index:2;color:#d8eced;letter-spacing:.24em;}
-#overlay .ending-transmission {position:absolute;inset:0;width:100%;margin:0;z-index:-2;}
-#overlay .ending-space {height:100%;width:100%;max-height:none;overflow:hidden;animation:aftermath-reveal 1.6s ease-out both;}
-#overlay .completion-ending[data-ending='sacrifice']::after {content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,#050d19 0%,#050d19d9 12%,#050d1900 48%);pointer-events:none;}
-#overlay .completion-ending[data-ending='sacrifice'] .ending-exact {max-width:1000px;font:500 clamp(30px,3.1vw,54px)/1.16 var(--font-display);letter-spacing:.045em;margin:0;text-shadow:0 2px 12px #02060b;animation:aftermath-caption 1s .55s both;}
-#overlay .completion-ending[data-ending='sacrifice'] .ending-rule {display:none;}
-#overlay .ending-outcomes {position:absolute;top:58%;right:6%;margin:0;gap:18px;display:flex;flex-direction:column;text-align:right;animation:aftermath-caption 1s .8s both;}
-#overlay .ending-outcomes>div {gap:3px;}
-#overlay .ending-outcomes .eyebrow {font-size:9px;}
-#overlay .ending-outcomes strong {font:400 13px var(--font-body);letter-spacing:.01em;}
-#overlay .ending-success,#overlay .ending-loss {text-align:right;}
-#overlay .ending-ship {fill:none;stroke:#030914;stroke-width:8;}
-#overlay .ending-hull {fill:url(#ending-steel);}
-#overlay .ending-hull-detail {stroke:#bac1b8;stroke-width:2;}
-#overlay .ending-earth {fill:url(#ending-earth-light);stroke:#b2dadb;stroke-width:2;}
-#overlay .ending-land {fill:#9cbeb9;stroke:#243d4b;stroke-width:3;}
-#overlay .ending-engines {fill:#2b4555;stroke:#030914;}
-#overlay .ending-window {fill:#c0f4f0;stroke:#030914;stroke-width:5;}
-#overlay .ending-fracture {stroke:#ffd8a4;stroke-width:6;}
-#overlay .ending-debris {fill:#516773;stroke:#030914;stroke-width:4;transform-origin:0 0;animation:aftermath-debris 1.6s ease-out both;}
-#overlay .ending-ship-aft {transform-origin:-90px 0;animation:aftermath-aft 1.6s ease-out both;}
-#overlay .ending-ship-bow {transform-origin:60px 0;animation:aftermath-bow 1.6s ease-out both;}
-#overlay .ending-pods {animation:aftermath-caption 1.6s .3s both;}
-#overlay .ending-signal-track {stroke-width:3;opacity:.85;}
-#overlay .ending-signal {stroke-width:3;stroke-dasharray:20 560;animation:ending-warning-travel 5s linear infinite;}
-#overlay .debrief-panel[data-outcome='complete']>.result-details {margin:0 7vw;padding-top:2vh;animation:aftermath-caption 1s 1.2s both;}
-#overlay .debrief-panel[data-outcome='complete']>.result-actions {margin:0 7vw;padding:12px 0 26px;border-top:1px solid #9fe8ff20;animation:aftermath-caption 1s 1.35s both;}
-#overlay .debrief-panel[data-outcome='complete']>.result-actions>.primary {background:#d2edf01a;color:#d9f2f5;border:1px solid #a9dce077;box-shadow:none;min-width:180px;}
-#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) {padding:24px 7vw;}
-#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .completion-ending {min-height:0;padding:0;overflow:visible;}
-#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .completion-ending::after {display:none;}
-#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .ending-exact {font-size:20px;margin:0 0 12px;max-width:none;}
-#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open])>.result-details,#overlay .debrief-panel[data-outcome='complete']:has(.result-details[open])>.result-actions {margin:0;animation:none;}
-@keyframes aftermath-reveal {from {opacity:0;transform:scale(1.025);}to {opacity:1;transform:scale(1);}}
-@keyframes aftermath-caption {from {opacity:0;transform:translateY(8px);}to {opacity:1;transform:translateY(0);}}
-@keyframes aftermath-debris {from {transform:scale(.85);}to {transform:scale(1.15);}}
-@keyframes aftermath-aft {from {transform:translate(0,0) rotate(0);}to {transform:translate(-16px,12px) rotate(-3deg);}}
-@keyframes aftermath-bow {from {transform:translate(0,0) rotate(0);}to {transform:translate(17px,-10px) rotate(3deg);}}
-@media (max-height:800px) {
- #overlay .completion-ending[data-ending='sacrifice'] {min-height:74dvh;padding-bottom:4vh;}
- #overlay .ending-outcomes {top:55%;right:4%;gap:12px;}
- #overlay .ending-outcomes strong {font-size:11px;}
- #overlay .completion-ending[data-ending='sacrifice'] .ending-exact {font-size:clamp(27px,3vw,38px);max-width:780px;}
- #overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) {padding:18px 5vw;}
- #overlay .debrief-panel[data-outcome='complete']:has(.result-details[open]) .ending-exact {font-size:18px;}
-}
-@media (prefers-reduced-motion:reduce) {
- #overlay .completion-ending *,#overlay .debrief-panel[data-outcome='complete']>.result-details,#overlay .debrief-panel[data-outcome='complete']>.result-actions {animation:none!important;}
- #overlay .ending-signal {stroke-dasharray:4 12;opacity:.7;}
- #overlay .ending-ship-aft {transform:translate(-16px,12px) rotate(-3deg);}
- #overlay .ending-ship-bow {transform:translate(17px,-10px) rotate(3deg);}
- #overlay .ending-debris {transform:scale(1.15);}
-}
 @media(min-width:900px) and (max-height:800px) {
  #overlay .debrief-panel[data-outcome=dead]:has(.result-details[open]) {padding:18px 28px;}
  #overlay .debrief-panel:has(.result-details[open]) .hero-stats {margin:8px 0;padding:8px 0;}
  #overlay .debrief-panel:has(.result-details[open]) .result-ability-icons {padding:9px 0;margin-bottom:8px;}
  #overlay .debrief-panel:has(.result-details[open]) .debrief-heading h2 {font-size:36px;}
 }
+#overlay .ending-operator .marine-portrait {mask-image:linear-gradient(#000 76%,transparent 99%);}
