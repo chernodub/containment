@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image, ImageFilter, ImageEnhance
 ROOT = Path(__file__).resolve().parents[3]
 PORTRAITS = ROOT / 'public/assets/portraits/u10'
-for source in ([] if '--ui-only' in sys.argv else PORTRAITS.glob('*-bust.png')):
+for source in ([] if '--ui-only' in sys.argv or '--title-only' in sys.argv else PORTRAITS.glob('*-bust.png')):
     image = Image.open(source)
     for size in [256, 640, 1024]:
         scaled = image.copy()
@@ -13,7 +13,7 @@ for source in ([] if '--ui-only' in sys.argv else PORTRAITS.glob('*-bust.png')):
 
 UI = ROOT / 'public/assets/ui/u10'
 UI.mkdir(parents=True, exist_ok=True)
-raw = ROOT / 'artifacts/nextgen/u10-rounds/10'
+raw = ROOT / next((a.split('=',1)[1] for a in sys.argv if a.startswith('--raw=')), 'artifacts/nextgen/u10-rounds/10')
 if '--ending-only' not in sys.argv and (raw / 'composition.png').exists():
     for name in (['composition','foreground'] if '--foreground-only' in sys.argv else ['composition','background','midground','hero','foreground','fog']):
         source = raw / f'{name}.png'
@@ -47,8 +47,8 @@ if '--ending-only' not in sys.argv and (raw / 'composition.png').exists():
                         scaled.save(UI / f'{name}-{width}.png', optimize=True)
                     else:
                         scaled.quantize(colors=256,method=Image.Quantize.FASTOCTREE).save(UI / f'{name}-{width}.png', optimize=True)
-ending = ROOT / 'artifacts/nextgen/u10-rounds/ending/composition.png'
-if ending.exists():
+ending = ROOT / next((a.split('=',1)[1] for a in sys.argv if a.startswith('--ending=')), 'artifacts/nextgen/u10-rounds/ending/composition.png')
+if ending.exists() and '--title-only' not in sys.argv:
     image = Image.open(ending).convert('RGB')
     for width in [1280,1920]:
         scaled = image.resize((width,width*9//16),Image.Resampling.LANCZOS)

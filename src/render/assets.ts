@@ -1,3 +1,4 @@
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import * as T from 'three';
 import {loadAuthoredMotion} from './motion/MotionAssets';
 const initDeathPhysics=()=>import('./DeathRagdolls').then(module=>module.initDeathPhysics());
@@ -25,7 +26,7 @@ export function registerAsset(name:AssetName,asset:GLTF){
 export async function preloadAssets(progress:(fraction:number)=>void=()=>{},initializePhysics:()=>Promise<void>=initDeathPhysics){
  // Physics is optional presentation. Asset loading must survive WASM failure.
  try{await initializePhysics();}catch{/* Frozen-pose toss remains available. */}
- const loader=new GLTFLoader();let completed=0;
+ const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);let completed=0;
  // Four concurrent transfers keep startup responsive on slower connections.
  const queue=[...ASSET_NAMES];await Promise.all(Array.from({length:4},async()=>{while(queue.length){const name=queue.shift()!;await loadAsset(name,loader);progress(++completed/ASSET_NAMES.length);}}));
 }

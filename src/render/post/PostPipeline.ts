@@ -8,7 +8,7 @@ import { setGraphicStrength, type GraphicStrength, setGraphicShadingEnabled } fr
 import {
   ACESFilmicToneMapping, AgXToneMapping, BufferGeometry, Camera, Color, DepthTexture,
   Float32BufferAttribute, HalfFloatType, LinearFilter, NearestFilter, Matrix4, Mesh, NoBlending,
-  NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, SRGBColorSpace, RGBFormat, UnsignedInt101111Type, UnsignedIntType, UnsignedByteType, UniformsUtils,
+  NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, SRGBColorSpace, RGBFormat, RedFormat, UnsignedInt101111Type, UnsignedIntType, UnsignedByteType, UniformsUtils,
   Vector2, Vector3, Vector4, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { setRenderDiagnostics, type GraphicsTier } from '../FrameBudget';
@@ -48,6 +48,8 @@ type PostResources = {
 /** HDR post on High; Low owns no post textures and uses one forward render. */
 export class PostPipeline {
   private readonly releaseGeometryClear:()=>void;
+  private readonly discardTargetColor:number[]=[];
+  private readonly discardScreenColor:number[]=[];
   readonly distortion = new DistortionField();
   readonly adaptive = new AdaptiveResolution();
   gpuTimer?: GpuFrameTimer;
@@ -87,7 +89,7 @@ export class PostPipeline {
     private readonly renderer: WebGLRenderer,
     private readonly scene: Scene,
     private camera: Camera,
-  ) { this.softDepth=new SoftParticleDepth(renderer);this.releaseGeometryClear=installGeometryClearPolicy(renderer);setRenderDiagnostics(()=>this.diagnostics);this.distortion.setEnabled(false); if(renderer.getContext)this.gpuTimer=new GpuFrameTimer(renderer.getContext() as WebGL2RenderingContext); }
+  ) { this.softDepth=new SoftParticleDepth(renderer);this.releaseGeometryClear=installGeometryClearPolicy(renderer);setRenderDiagnostics(()=>this.diagnostics);this.distortion.setEnabled(false); if(renderer.getContext){const gl=renderer.getContext() as WebGL2RenderingContext;this.gpuTimer=new GpuFrameTimer(gl);this.discardTargetColor.push(gl.COLOR_ATTACHMENT0);this.discardScreenColor.push(gl.COLOR);} }
 
   /** Borrowed flame/smoke meshes keep their existing preparation/atlas hooks. */
   bindSoftParticles(meshes:readonly Mesh[], receive:(depth:DepthTexture|null)=>void, enabled:()=>boolean, needsDepth:(mesh:Mesh)=>boolean=()=>true):void {
@@ -297,7 +299,14 @@ export class PostPipeline {
     const r = this.resources!;
     r.triangle.material = material;
     this.renderer.setRenderTarget(target);
-    this.renderer.render(r.screenScene, r.screenCamera);
+    // F11: fullscreen replacement passes overwrite every pixel. GTAO/denoise
+    // discard background, so they retain their white clear.
+    const autoClear=this.renderer.autoClear;
+    this.renderer.autoClear=material===r.gtao.material||material===r.gtao.denoiseMaterial;
+    // Preserve discard/load intent for tile renderers without clearing replaced color.
+    const gl=this.renderer.getContext() as WebGL2RenderingContext;
+    if(!this.renderer.autoClear&&gl.invalidateFramebuffer)gl.invalidateFramebuffer(gl.FRAMEBUFFER,target?this.discardTargetColor:this.discardScreenColor);
+    try{this.renderer.render(r.screenScene, r.screenCamera);}finally{this.renderer.autoClear=autoClear;}
   }
 
   private ensureResources(): PostResources {
@@ -307,7 +316,8 @@ export class PostPipeline {
     const antialias=this.material(this.tier==='low'?lowAntialiasFragment:FXAAShader.fragmentShader.replace('gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );','gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );\n#include <colorspace_fragment>'),UniformsUtils.clone(FXAAShader.uniforms));
     antialias.name=this.tier==='low'?'Containment final compact AA':'Containment final FXAA';antialias.uniforms.tDiffuse.value=present.texture;
     const ao = this.target(1, 1);
-    const aoDenoised = this.target(1, 1);
+    // F11: only red is consumed after denoise; retain identical half-float precision.
+    const aoDenoised = this.target(1, 1);aoDenoised.texture.format=RedFormat;
     const gtao = new DepthGTAO(scene.depthTexture!, this.camera, ao.texture, scene.textures[1]);
     const bloomA = this.target(1, 1);
     const bloomB = this.target(1, 1);

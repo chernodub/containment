@@ -6,16 +6,17 @@ import { hudObstructs, setPresentationObstacle } from './hud/layout';
 import './styles/onboarding.css';
 
 export const ONBOARDING_STORAGE_KEY = 'containment.onboarding.v1';
-export const ONBOARDING_ACTIONS = ['move', 'aim', 'fire', 'dash', 'tactical', 'power', 'overdrive', 'reload', 'grenade', 'medkit'] as const;
+export const ONBOARDING_ACTIONS = ['move', 'aim', 'fire', 'dash', 'tactical', 'power', 'overdrive', 'reload', 'switch', 'grenade', 'medkit'] as const;
 export type OnboardingAction = typeof ONBOARDING_ACTIONS[number];
 type PreferenceStorage = Pick<Storage, 'getItem' | 'setItem'> | null;
 type Seen = Partial<Record<OnboardingAction, true>>;
 type Bounds = { left: number; right: number; top: number; bottom: number };
 const prompts: Record<OnboardingAction, readonly [string, string, string]> = {
-  move: ['W A S D', 'Find your footing.', 'Move to keep a lane open.'],
+  move: ['W A S D', 'Move to keep a lane open.', ''],
+  switch: ['1–5', 'Switch weapons to suit the threat.', ''],
   aim: ['MOUSE', 'Watch your aim.', 'Point toward the threat.'],
   fire: ['LMB / SPACE', 'Clear a path.', 'Fire with the mouse, or hold Space for aim assist.'],
-  dash: ['SHIFT', 'Break through.', 'Dash through enemies. Two charges; walls still hold.'],
+  dash: ['SHIFT', 'Step out or dash.', ''],
   tactical: ['Q', 'Make some room.', 'Your tactical ability recharges during combat.'],
   power: ['F', 'Change the fight.', 'Use the cursor or your facing to place your power.'],
   overdrive: ['V', 'Overdrive is charged.', 'Spend the full meter on your strongest ability.'],
@@ -45,6 +46,9 @@ export class ContextualOnboarding {
   private readonly heading = document.createElement('b');
   private readonly copy = document.createElement('span');
   private active: OnboardingAction | null = null;
+  private firstWindup = false;
+  private previousWeapon: string | null = null;
+  private finished = false;
   private previousAngle: number | null = null;
   private previousGrenades: number | null = null;
   private previousMedkits: number | null = null;
@@ -69,6 +73,7 @@ export class ContextualOnboarding {
 
   constructor(private readonly host: HTMLElement, private readonly storage: PreferenceStorage = null) {
     this.seen = loadOnboardingSeen(storage);
+    try { this.finished = storage?.getItem('containment.finished.v1') === 'true'; } catch {}
     this.node.id = 'contextual-onboarding';
     this.node.className = 'contextual-onboarding';
     this.node.hidden = true;
@@ -77,6 +82,8 @@ export class ContextualOnboarding {
     this.node.append(this.key, this.heading, this.copy);
     host.append(this.node);
   }
+
+  get teachingStrike(): boolean { return this.enabled && this.firstRoom && this.firstRoomSeconds < 900 && !this.seen.dash; }
 
   /** Persist once, and only after the action really occurred. */
   mark(action: OnboardingAction): void {
@@ -87,28 +94,33 @@ export class ContextualOnboarding {
   }
 
   effect(effect: HudEffect): void {
+    if (effect.type === 'enemy-warning') this.firstWindup = true;
     if (effect.type === 'shot') this.mark('fire');
-    if (effect.type === 'ability' && effect.ability && ['cast', 'dash-start', 'impact'].includes(effect.ability.phase)) this.mark(effect.ability.slot);
+    if (effect.type === 'ability' && effect.ability && ['cast', 'dash-start', 'impact'].includes(effect.ability.phase) && (effect.ability.slot !== 'dash' || this.firstWindup)) this.mark(effect.ability.slot);
   }
 
   /** Sync at HUD cadence. The single prompt follows its action bar even when it relocates. */
-  update(game: DepthGame, abilities: AbilitiesSnapshot | null, inspect = true): void {
+  update(game: DepthGame, abilities: AbilitiesSnapshot | null, inspect = true, hints = true): void {
     if (this.disposed) return;
     // Slot visibility and labels may resize the bar during this HUD sync.
     // Refresh geometry once at HUD cadence, never on ordinary animation frames.
     this.layoutDirty = true;
-    const playing = game.status === 'playing';
-    const firstRoom = game.node.depth === 0;
+    if (game.status === 'complete' && !this.finished) {this.finished=true;try {this.storage?.setItem('containment.finished.v1','true');}catch{}}
+    const playing = game.status === 'playing' && hints && !this.finished;
+    const firstRoom = game.node.depth < 3;
     this.firstRoom = firstRoom;
     this.enabled = playing;
     if (this.seed !== game.expedition.run.seed) {
       this.seed = game.expedition.run.seed;
+      this.firstWindup = false; this.previousWeapon = null;
       this.previousAngle = this.previousGrenades = this.previousMedkits = null;
       this.active = null; this.activeTime = 0; this.cursor = 0;
       this.firstRoomSeconds = 0;
     }
     const combat = game.combat.snapshot;
     if (playing) {
+      if (this.previousWeapon !== null && combat.weaponId !== this.previousWeapon) this.mark('switch');
+      this.previousWeapon = combat.weaponId;
       if (game.player.moving) this.mark('move');
       if (this.previousAngle !== null && Math.abs(Math.atan2(Math.sin(game.player.angle - this.previousAngle), Math.cos(game.player.angle - this.previousAngle))) > .04) this.mark('aim');
       if (combat.reloading) this.mark('reload');
@@ -118,22 +130,25 @@ export class ContextualOnboarding {
       this.previousGrenades = combat.grenades;
       this.previousMedkits = combat.medkits;
     }
-    if (!playing || (!firstRoom || this.firstRoomSeconds >= 60) && (!abilities?.overdrive.ready || this.seen.overdrive)) { this.node.hidden = true; this.active = null; setPresentationObstacle('onboarding', null); return; }
+    if (!playing || (!firstRoom || this.firstRoomSeconds >= 900) && (!abilities?.overdrive.ready || this.seen.overdrive)) { this.node.hidden = true; this.active = null; setPresentationObstacle('onboarding', null); return; }
     const eligible = (action: OnboardingAction): boolean => {
       if (this.seen[action]) return false;
-      // The HUD owns the single temporary ready callout and persistent V slot.
-      if (action === 'overdrive') return false;
-      if (!firstRoom || this.firstRoomSeconds >= 60) return false;
+      // Charge readiness is authoritative; the prompt retires only after a cast.
+      if (action === 'overdrive') return !!abilities?.overdrive.ready;
+      if (!firstRoom || this.firstRoomSeconds >= 900) return false;
       if (action === 'medkit') return combat.health <= 65 && combat.medkits > 0;
       if (action === 'reload') return combat.magazine < combat.magazineCapacity * .6 && combat.reserve > 0;
       if (action === 'grenade') return combat.grenades > 0 && game.enemies.activeCount >= 3;
-      if (action === 'dash' || action === 'tactical' || action === 'power') return !!abilities?.slots?.[action].ready;
+      if (action === 'dash') return this.firstWindup && !!abilities?.slots?.dash.ready;
+      if (action === 'switch') return this.seen.fire === true;
+      if (action === 'tactical' || action === 'power') return !!abilities?.slots?.[action].ready;
       return true;
     };
-    if (this.active && eligible(this.active) && this.activeTime < 6 && (this.active === 'medkit' || !eligible('medkit'))) { this.node.hidden = !inspect; return; }
+    if (this.active && eligible(this.active) && this.activeTime < 6 && (this.active === 'dash' || !eligible('dash')) && (this.active === 'medkit' || !eligible('medkit'))) { this.node.hidden = !inspect; return; }
     this.active = null;
     // Urgent contextual prompts can interrupt the teaching sequence.
-    if (eligible('medkit')) this.active = 'medkit';
+    if (eligible('dash')) this.active = 'dash';
+    else if (eligible('medkit')) this.active = 'medkit';
     else if (eligible('overdrive')) this.active = 'overdrive';
     else {
       for (let offset = 0; offset < ONBOARDING_ACTIONS.length; offset++) {
@@ -145,11 +160,11 @@ export class ContextualOnboarding {
     if (!this.active) { this.node.hidden = true; setPresentationObstacle('onboarding', null); return; }
     this.activeTime = 0;
     const [key, heading, copy] = prompts[this.active];
-    this.key.textContent = key; this.heading.textContent = heading; this.copy.textContent = copy;
-    if (this.active === 'dash' || this.active === 'tactical' || this.active === 'power') {
+    this.key.textContent = key; this.heading.textContent = copy || heading; this.copy.textContent = '';
+    if (this.active === 'tactical' || this.active === 'power') {
       const ability = abilities?.slots?.[this.active];
       const definition = ability && ABILITY_CATALOG[ability.id];
-      if (definition) { this.heading.textContent = definition.name; this.copy.textContent = definition.summary; }
+      if (definition) { this.heading.textContent = `Use ${definition.name}.`; this.copy.textContent = ''; }
     }
     this.node.dataset.action = this.active;
     this.node.hidden = !inspect;
@@ -157,7 +172,7 @@ export class ContextualOnboarding {
   }
 
   /** Clock is supplied by the application, so capture stepping remains exact. */
-  tick(dt: number, player: Bounds): void {
+  tick(dt: number, player: Bounds, threats: readonly Bounds[] = []): void {
     if (this.disposed) return;
     if (this.enabled && this.firstRoom) this.firstRoomSeconds += dt;
     if (this.node.hidden) {setPresentationObstacle('onboarding', null); return;}
@@ -180,9 +195,10 @@ export class ContextualOnboarding {
       this.promptWidth = size.width; this.promptHeight = size.height;
       this.originX = bar.left + this.host.clientLeft; this.originY = bar.top + this.host.clientTop;
     }
+    const threatened = (left: number, top: number, width: number, height: number) => threats.some(box => left < box.right + 8 && left + width > box.left - 8 && top < box.bottom + 8 && top + height > box.top - 8);
     let left = this.preferredLeft;
     const top = this.preferredTop, width = this.promptWidth, height = this.promptHeight;
-    let blocked = hudObstructs(left, top, left + width, top + height);
+    let blocked = hudObstructs(left, top, left + width, top + height) || threatened(left, top, width, height);
     if (blocked) {
       // The layout already caches toast and chrome bounds. Try nearby horizontal
       // lanes without measuring or allocating, and return to the slot when clear.
@@ -190,7 +206,7 @@ export class ContextualOnboarding {
         const offset = Math.ceil(attempt / 2) * 96 * (attempt % 2 ? 1 : -1);
         const candidate = attempt === 17 ? 8 : attempt === 18 ? innerWidth - width - 8 : Math.max(8, Math.min(innerWidth - width - 8, this.preferredLeft + offset));
         if (candidate < player.right + 12 && candidate + width > player.left - 12 && top < player.bottom + 12 && top + height > player.top - 12) continue;
-        if (hudObstructs(candidate, top, candidate + width, top + height)) continue;
+        if (hudObstructs(candidate, top, candidate + width, top + height) || threatened(candidate, top, width, height)) continue;
         left = candidate; blocked = false; break;
       }
     }

@@ -29,8 +29,8 @@ export class Engagement {
     readonly #legalSamples = new Map<number, Uint8Array>();
     readonly #occupied: EngagementBody[] = [];
     #heavyOccupied = 0;
-    readonly #occupiedX = new Float64Array(3);
-    readonly #occupiedY = new Float64Array(3);
+    readonly #occupiedX = new Float64Array(4);
+    readonly #occupiedY = new Float64Array(4);
     readonly #candidates: EngagementBody[] = [];
     reset(): void {
         this.#escape = 0;
@@ -45,7 +45,8 @@ export class Engagement {
         y: number;
         radius?: number;
         angle?: number;
-    }, legal: (body: T, x: number, y: number) => boolean, escapeLegal: (x: number, y: number) => boolean): void {
+    }, legal: (body: T, x: number, y: number) => boolean, escapeLegal: (x: number, y: number) => boolean, berthLimit = 3): void {
+        const capacity = Math.max(1, Math.min(4, Math.floor(berthLimit)));
         const actors = this.#bodies as T[];
         actors.length = 0;
         for (const body of bodies)
@@ -84,7 +85,7 @@ export class Engagement {
             // of every attacker queuing on the same half of the marine.
             if (angleDistance(angle, this.#escape) < Math.PI / 3)
                 return false;
-            if (this.#occupied.length >= 3)
+            if (this.#occupied.length >= capacity)
                 return false;
             // A waiting heavy must not monopolize a berth that another family
             // can use while the one permitted heavy attack is in progress.
@@ -118,7 +119,7 @@ export class Engagement {
         // must not recycle that ownership or steer its fixed strike origin.
         for (const body of actors) {
             if (!body.meleePhase || body.meleePhase === 'approach' || !body.attackSlot) continue;
-            if (this.#occupied.length >= 3) {
+            if (this.#occupied.length >= capacity) {
                 body.attackSlot = undefined;
                 body.engagement = 'waiting';
                 continue;
@@ -164,7 +165,7 @@ export class Engagement {
         // Nearest first, numeric ID breaks exact ties; existing owners are retained.
         this.#candidates.sort((a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y) || a.id - b.id);
         for (const body of this.#candidates) {
-            if (this.#occupied.length >= 3)
+            if (this.#occupied.length >= capacity)
                 break;
             if (heavy(body) && this.#heavyOccupied >= 1)
                 continue;

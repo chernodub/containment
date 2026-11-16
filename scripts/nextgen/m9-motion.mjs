@@ -16,12 +16,13 @@ const meleeModule=ts.transpileModule(meleeSource,{compilerOptions:{module:ts.Mod
 const {MELEE_ATTACKS,ELITE_MELEE_WINDUP_SCALE,ELITE_MELEE_RECOVERY_SCALE}=await import('data:text/javascript;base64,'+Buffer.from(meleeModule).toString('base64'));
 
 const args=process.argv.slice(2);
-const known=new Set(['out','dist','subjects','actions','frames','steps']);for(const arg of args)assert(arg.startsWith('--')&&arg.includes('=')&&known.has(arg.slice(2).split('=')[0]),`Unknown motion capture option ${arg}`);
+const known=new Set(['out','dist','subjects','actions','frames','steps','weapon']);for(const arg of args)assert(arg.startsWith('--')&&arg.includes('=')&&known.has(arg.slice(2).split('=')[0]),`Unknown motion capture option ${arg}`);
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const out=resolve(option('out','artifacts/nextgen/m9-final/before')),dist=resolve(option('dist','dist'));
 const subjects=option('subjects','marine,crawler,spitter,brute,stalker,carrier,crawler-elite,spitter-elite,brute-elite,stalker-elite,carrier-elite,brute-warden,carrier-matron,crowd').split(',');
 const allowedSubjects=new Set(['marine','crowd','crawler','spitter','brute','stalker','carrier','crawler-elite','spitter-elite','brute-elite','stalker-elite','carrier-elite','brute-warden','carrier-matron']);assert(subjects.every(subject=>allowedSubjects.has(subject)),'Unknown motion subject');
 const actionFilter=option('actions','all').split(',');
+const studyWeapon=option('weapon','shotgun');assert(['pistol','rifle','shotgun','plasma','rocket'].includes(studyWeapon),'Unknown study weapon');
 const frames=Number(option('frames',12)),steps=Number(option('steps',4));
 assert(Number.isInteger(frames)&&frames>=4&&frames<=30&&Number.isInteger(steps)&&steps>=1&&steps<=12);
 const marineActions=['idle','idle-cryo','idle-pyro','idle-arc',...Array.from({length:8},(_,n)=>`run-${n*45}`),'stop-start',...Array.from({length:8},(_,i)=>`reversal-${i*45}`),...['pistol','rifle','shotgun','plasma','rocket'].map(w=>`fire-${w}`),'reload','weapon-switch','dash','hit','death',...['ram','seismic-slam','bulwark','railbreaker','frost-trail','cryo-nova','glacier','whiteout','afterburn','flashfire','napalm-charge','meltdown','static-step','overload','tesla-pylon','overclock'].map(a=>`cast-${a}`)];
@@ -45,13 +46,13 @@ try{
   for(const action of subject==='marine'?marineActions:subject==='crowd'?['run']:enemyActions){
    if(!actionFilter.includes('all')&&!actionFilter.includes(action))continue;
    const actionFrames=/^(attack|death)/.test(action)?Math.max(frames,24):action.startsWith('reversal-')?Math.max(frames,18):frames;
-   const result=await page.evaluate(({subject,action,frames,steps,profiles,windupScale,recoveryScale})=>{
+   const result=await page.evaluate(({subject,action,frames,steps,profiles,windupScale,recoveryScale,studyWeapon})=>{
     const d=window.__containmentDebug,r=d.renderer,g=d.game,elapsed=g.elapsed,timeBase=d.m9Clock??0;
     const oldRandom=Math.random;let visualSeed=[...`${subject}/${action}`].reduce((n,c)=>(Math.imul(n,31)+c.charCodeAt(0))>>>0,1729);Math.random=()=>{visualSeed=(Math.imul(visualSeed,1664525)+1013904223)>>>0;return visualSeed/4294967296;};
     const abilityUpdate=r.interimAbilities.update.bind(r.interimAbilities),oldAbilityUpdate=r.interimAbilities.update;
     r.interimAbilities.clear();
     const human=subject==='marine',crowd=subject==='crowd',family=crowd?'crawler':subject.split('-')[0],elite=subject.includes('-elite'),champion=subject.includes('-warden')?'warden':subject.includes('-matron')?'matron':undefined;
-    const model=human?r.player:r.actorPool.take(family,elite),animate=model.animate.bind(model),equip=model.equip?.bind(model),oldAnimate=model.animate,oldEquip=model.equip,oldSetDead=model.setDead,setDead=model.setDead?.bind(model),hasDeathAdapter=typeof model.setDead==='function';
+    const model=human?r.player:r.actorPool.take(family,elite),animate=model.animate.bind(model),equip=model.equip?.bind(model),oldAnimate=model.animate,oldEquip=model.equip,oldSetRig=model.setRig,oldSetDead=model.setDead,setDead=model.setDead?.bind(model),hasDeathAdapter=typeof model.setDead==='function';
     model.reset?.();model.setAttackState?.('approach',0,0);model.setDead?.(false);model.setAction?.('',0);model.setMotionSeed?.([...subject].reduce((n,c)=>(n*31+c.charCodeAt(0))>>>0,1729));model.setMotionOptions?.(1,false);model.setStageLight?.(.65);model.setFlashIntensity?.(1);
     if(human){
      model.setRig?.(action.startsWith('idle-')?action.slice(5):'breacher');
@@ -72,10 +73,13 @@ try{
      for(const child of r.scene.children)if(!modelRoots.has(child)&&!effectMeshes.has(child)&&!child.isLight&&!child.isCamera){if(!oldVisibility.has(child))oldVisibility.set(child,child.visible);child.visible=false;}
      for(const m of models)m.root.visible=true;if(human&&action==='death')model.root.rotation.z=hasDeathAdapter?controlledRoll:deathStarted?1.4:0;model.root.updateWorldMatrix(true,true);
     };
-    const currentWeapon=action.startsWith('fire-')?action.slice(5):'shotgun';equip?.(currentWeapon);
+    const currentWeapon=action.startsWith('fire-')?action.slice(5):studyWeapon;equip?.(currentWeapon);
     const isCast=action.startsWith('cast-'),ability=isCast?action.slice(5):null;
     const rigs={ram:'breacher','seismic-slam':'breacher',bulwark:'breacher',railbreaker:'breacher','frost-trail':'cryo','cryo-nova':'cryo',glacier:'cryo',whiteout:'cryo',afterburn:'pyro',flashfire:'pyro','napalm-charge':'pyro',meltdown:'pyro','static-step':'arc',overload:'arc','tesla-pylon':'arc',overclock:'arc'};
     if(isCast)model.setRig?.(rigs[ability]);
+    // Keep the requested presentation rig while ordinary renderer refreshes
+    // read the unchanged simulation rig (as animate/equip are held above).
+    if(human)model.setRig=()=>{};
     const columns=4,clock=[],proof=[],project=model.root.position.clone(),frameCanvases=[];
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,deathStarted=false,ragdollStarted=false,controlledRoll=0;
     const abilitySnapshot=JSON.parse(JSON.stringify(g.abilities.snapshot));
@@ -161,15 +165,15 @@ try{
      const mask=document.createElement('canvas');mask.width=canvas.width;mask.height=canvas.height;const mc=mask.getContext('2d');mc.fillStyle='black';mc.fillRect(0,0,mask.width,mask.height);
      for(let i=0;i<frameCanvases.length;i++){const f=frameCanvases[i],fc=f.canvas.getContext('2d'),pixels=fc.getImageData(0,0,f.canvas.width,f.canvas.height),bg=pixels.data.slice(0,3);for(let n=0;n<pixels.data.length;n+=4){const on=Math.max(Math.abs(pixels.data[n]-bg[0]),Math.abs(pixels.data[n+1]-bg[1]),Math.abs(pixels.data[n+2]-bg[2]))>12;pixels.data[n]=pixels.data[n+1]=pixels.data[n+2]=on?255:0;pixels.data[n+3]=255;}const tile=document.createElement('canvas');tile.width=f.canvas.width;tile.height=f.canvas.height;tile.getContext('2d').putImageData(pixels,0,0);mc.drawImage(tile,(i%columns)*cellWidth+f.left-minX,Math.floor(i/columns)*cellHeight+f.top-minY);}
      d.m9Clock=timeBase+1.5+frames*steps/60;
-     return {frames,diagnosticOnly:action==='side-hit'||action==='death-high-impulse',presentationInputs:{aim:0,movementSpeed:human?220:({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150,attackWindupMs:(({crawler:260,stalker:420,brute:650,spitter:350,carrier:620})[family]??650)*(elite?.82:1),hitDirection:action==='side-hit'?0:Math.PI/2,deathImpulse:{x:action==='death-high-impulse'?30:13,z:6},corpseHoldRequestSeconds:.032,corpseHoldQuantization:'floor(request*120)120Hz ticks; max3ticks/25ms',firePeriodTicks:12,visualSeedAlgorithm:'LCG32 hash31(subject/action,1729)',isolatedBoneReset:human},png:canvas.toDataURL('image/png').split(',')[1],mask:mask.toDataURL('image/png').split(',')[1],unionCrop:{left:minX,top:minY},clock,proof,cellWidth,cellHeight,columns,elapsed,abilityAdapter:typeof model.setAction==='function'||typeof model.motionEvent==='function',source:'production model APIs, frozen simulation, explicit presentation inputs'};
+     return {frames,diagnosticOnly:action==='side-hit'||action==='death-high-impulse',presentationInputs:{weapon:currentWeapon,aim:0,movementSpeed:human?220:({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150,attackWindupMs:(({crawler:260,stalker:420,brute:650,spitter:350,carrier:620})[family]??650)*(elite?.82:1),hitDirection:action==='side-hit'?0:Math.PI/2,deathImpulse:{x:action==='death-high-impulse'?30:13,z:6},corpseHoldRequestSeconds:.032,corpseHoldQuantization:'floor(request*120)120Hz ticks; max3ticks/25ms',firePeriodTicks:12,visualSeedAlgorithm:'LCG32 hash31(subject/action,1729)',isolatedBoneReset:human},png:canvas.toDataURL('image/png').split(',')[1],mask:mask.toDataURL('image/png').split(',')[1],unionCrop:{left:minX,top:minY},clock,proof,cellWidth,cellHeight,columns,elapsed,abilityAdapter:typeof model.setAction==='function'||typeof model.motionEvent==='function',source:'production model APIs, frozen simulation, explicit presentation inputs'};
     }finally{
      if(ragdollStarted)r.ragdolls.remove(-900001);r.effects.clear();r.interimAbilities.clear();r.interimAbilities.update=oldAbilityUpdate;
-     Math.random=oldRandom;model.setDead=oldSetDead;setDead?.(false);model.setAction?.('',0);model.animate=oldAnimate;if(human)model.equip=oldEquip;r.scene.onBeforeRender=oldSceneHook;
+     Math.random=oldRandom;model.setDead=oldSetDead;setDead?.(false);model.setAction?.('',0);model.animate=oldAnimate;if(human){model.equip=oldEquip;model.setRig=oldSetRig;}r.scene.onBeforeRender=oldSceneHook;
      for(const [child,visible] of oldVisibility)child.visible=visible;
      for(let i=1;i<models.length;i++)r.actorPool.release(models[i]);if(!human)r.actorPool.release(model);else{model.root.rotation.z=0;model.setRig?.('breacher');}
      d.refresh();
     }
-   },{subject,action,frames:actionFrames,steps,profiles:MELEE_ATTACKS,windupScale:ELITE_MELEE_WINDUP_SCALE,recoveryScale:ELITE_MELEE_RECOVERY_SCALE});
+   },{subject,action,frames:actionFrames,steps,studyWeapon,profiles:MELEE_ATTACKS,windupScale:ELITE_MELEE_WINDUP_SCALE,recoveryScale:ELITE_MELEE_RECOVERY_SCALE});
    const file=`${subject}-${action}.png`,png=Buffer.from(result.png,'base64');delete result.png;const mask=Buffer.from(result.mask,'base64');delete result.mask;await mkdir(resolve(out,'masks'),{recursive:true});await writeFile(resolve(out,'masks',file),mask);
    await writeFile(resolve(out,file),png);
    manifest.shots.push({subject,action,file,sha256:createHash('sha256').update(png).digest('hex'),...result});
