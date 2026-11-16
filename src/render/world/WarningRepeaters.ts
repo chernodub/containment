@@ -13,7 +13,7 @@ type Model={height:number;root?:T.Object3D};
 type Display={center:number[];corners:number[][];normal:number[];support:{x:number;y:number;width:number;height:number};mount:string};
 const EMPTY:readonly NativeBody[]=Object.freeze([]);
 const NORMAL_ALPHA=184,FADED_ALPHA=14;
-type Component={kind:string;min:number[];max:number[];start:number;end:number;faded:boolean;material:T.Material;alpha:number;colors?:T.Uint8BufferAttribute};
+type Component={board?:number;kind:string;min:number[];max:number[];start:number;end:number;faded:boolean;material:T.Material;alpha:number;colors?:T.Uint8BufferAttribute};
 /** Physical, ceiling-supported warning boards. Masts stand on the
  * actual recorder/control cabinet; the entire cross-room span clears champions.
  * Manufactured structure and actor-aware text/structure cutaways preserve silhouettes. */
@@ -48,9 +48,9 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  }
  const canonical=centers.slice(0,canonicalCenters),headerZ=Math.min(...canonical.map(p=>p.z))/32-.70,routeX=source.x;
  const structural=m.structure;structural.color.setHex(id==='manual-control-chamber'?0x71675a:0x64747a);structural.metalness=.65;structural.roughness=.62;structural.transparent=false;structural.opacity=1;structural.vertexColors=true;structural.depthWrite=true;structural.alphaTest=.3;structural.userData.warningCutaway=true;
- const components:Component[]=[];
+ const components:Component[]=[];let board=-1;
  const beam=(kind:string,x:number,y:number,z:number,bw:number,bh:number,bd:number,material:T.Material=structural,alpha=NORMAL_ALPHA)=>{
-  const start=w.vertexCount(material);w.add(new T.BoxGeometry(bw,bh,bd),material,x,y,z);components.push({kind,material,alpha,start,end:w.vertexCount(material),faded:false,min:[x-bw/2,y-bh/2,z-bd/2],max:[x+bw/2,y+bh/2,z+bd/2]});
+  const start=w.vertexCount(material);w.add(new T.BoxGeometry(bw,bh,bd),material,x,y,z);components.push({board,kind,material,alpha,start,end:w.vertexCount(material),faded:false,min:[x-bw/2,y-bh/2,z-bd/2],max:[x+bw/2,y+bh/2,z+bd/2]});
  };
  const tray=(a:T.Vector3,b:T.Vector3,y=ceiling)=>{
   const dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz);if(length<.01)return;
@@ -120,6 +120,7 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  }
  const displays:Display[]=[];
  for(const [index,center]of centers.entries()){
+  board=index;
   const x=center.x/32,z=center.z/32,carrier=index<canonicalCenters?ceiling:extensionHeight;
   const localHeaderZ=index<canonicalCenters?headerZ:z-.70;
   for(const side of[-1,1]){
@@ -130,9 +131,11 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
   }
   beam('display-back-casing',x,height,z,width,panelHeight,.12);beam('display-top-casing',x,height+panelHeight/2,z,width,.045,.20);beam('display-lower-casing',x,height-panelHeight/2,z,width,.045,.20);
   for(const side of[-1,1])beam('display-cable-entry',x+side*(width/2+.06),height+.32,z-.015,.20,.26,.18);
-  w.add(new T.PlaneGeometry(width*.9,panelHeight*.8),m.screen,x,height,z+.067);
+  const faceStart=w.vertexCount(m.screen);w.add(new T.PlaneGeometry(width*.9,panelHeight*.8),m.screen,x,height,z+.067);
+  components.push({board,kind:'warning-face',material:m.screen,alpha:255,start:faceStart,end:w.vertexCount(m.screen),faded:false,min:[x-width*.45,height-panelHeight*.4,z+.065],max:[x+width*.45,height+panelHeight*.4,z+.069]});
   displays.push({center:[x,height,z+.067],corners:[[-.45,-.4],[.45,-.4],[.45,.4],[-.45,.4]].map(([dx,dy])=>[x+dx*width,height+dy*panelHeight,z+.067]),normal:[0,0,1],support:{...r},mount:'physical-overhead-repeater'});
  }
+ board=-1;
  // A real underside service luminaire gives the arena a fixture-shaped
  // source while retaining the low authorization console as the reactor key.
  const lampX=Math.max(left+.5,Math.min(right-.5,(plan.arena.x+(id==='safety-interlock-station'?150:-180))/32));
@@ -144,7 +147,7 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  w.box(m.signal,source.x,source.y+.045,source.z,.28,.06,.14);
  root.userData.lightFixtures=[{x:source.x,y:source.y+.08,z:source.z,color:m.signal.emissive.getHex(),nativeColor:true,poolStyle:1,poolWidth:.35,poolDepth:5},{x:lampX,y:ceiling-.23,z:headerZ,color:lampColor,nativeColor:true,poolStyle:1,poolAngle:Math.PI/2,poolWidth:.7,poolDepth:5.5,distance:10,gain:.8}];
  root.userData.warningStructure=components;root.userData.canonicalWarningDisplays=canonicalCenters;root.userData.storyDisplays=displays;root.userData.storyDisplay=displays[0];root.userData.warningSupports=supports;root.userData.warningClearance=WARNING_FRAME_LOWEST;
- root.userData.warningVisibility={material:m.screen,structure:structural,point:new T.Vector3(),structureBounds:new Float64Array(components.length*4),screenBounds:new Float64Array(displays.length*4),actorBounds:new Float64Array(1025*4),faded:false,normalOpacity:.96};
+ root.userData.warningVisibility={allDisplays:displays,material:m.screen,structure:structural,point:new T.Vector3(),structureBounds:new Float64Array(components.length*4),screenBounds:new Float64Array(displays.length*4),actorBounds:new Float64Array(1025*4),faded:false,normalOpacity:.96};
 }
 
 /** One existing merged batch uses built-in Standard RGBA vertex alpha. The
@@ -152,7 +155,7 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
 export function prepareWarningVertexColors(root:T.Group,material:T.Material,geometry:T.BufferGeometry):void {
  const state=root.userData.warningVisibility;if(!state)return;const components=root.userData.warningStructure as Component[];if(!components.some(c=>c.material===material))return;
  const colors=new T.Uint8BufferAttribute(new Uint8Array(geometry.attributes.position.count*4).fill(255),4,true);colors.setUsage(T.DynamicDrawUsage);
- const normals=geometry.getAttribute('normal');for(let i=0;i<normals.count;i++){const value=normals.getY(i)>.5?255:normals.getZ(i)>.35?130:205;colors.array[i*4]=colors.array[i*4+1]=colors.array[i*4+2]=value;}
+ const normals=geometry.getAttribute('normal');for(let i=0;i<normals.count;i++){const value=material===state.material?255:normals.getY(i)>.5?255:normals.getZ(i)>.35?130:205;colors.array[i*4]=colors.array[i*4+1]=colors.array[i*4+2]=value;}
  for(const component of components)if(component.material===material){component.colors=colors;for(let i=component.start;i<component.end;i++)colors.array[i*4+3]=component.alpha;}
  geometry.setAttribute('color',colors);if(state.structure===material)state.colors=colors;
 }
@@ -160,16 +163,19 @@ export function prepareWarningVertexColors(root:T.Group,material:T.Material,geom
 /** Opacity/vertex-alpha-only cutaway. Actual full body corners participate;
  * only intersected physical beam ranges fade. All scratch storage is retained. */
 export function updateWarningRepeaterVisibility(root:T.Object3D,camera?:T.Camera,marine?:Body,marineHeight=2.05,enemies:readonly NativeBody[]=EMPTY,models?:ReadonlyMap<number,Model>):void {
- const state=root.userData.warningVisibility,displays=root.userData.storyDisplays as Display[]|undefined;if(!state||!displays||!camera||!marine)return;
+ const state=root.userData.warningVisibility,displays=state?.allDisplays as Display[]|undefined;if(!state||!displays||!camera||!marine)return;
  const point=state.point as T.Vector3,screen=state.screenBounds as Float64Array,actors=state.actorBounds as Float64Array,structure=state.structureBounds as Float64Array;
  let bodies=1;projectActor(marine,marineHeight,camera,point,actors,0);
  for(let i=0;i<enemies.length;i++){const enemy=enemies[i],model=models?.get(enemy.id);if(model?.root?.visible===false)continue;if(bodies===1025)break;projectActor(enemy,model?.height??4.7,camera,point,actors,bodies++*4);}
- let fade=false;
+ let fade=false,selected=-1,best=-Infinity;
  for(let i=0;i<displays.length;i++){
   const n=i*4;screen[n]=screen[n+1]=Infinity;screen[n+2]=screen[n+3]=-Infinity;
   for(const corner of displays[i].corners){point.fromArray(corner).applyMatrix4(root.matrixWorld).project(camera);extend(screen,n,point);}
-  if(overlapsBodies(screen,n,actors,bodies))fade=true;
+  const safe=screen[n]>=-.70&&screen[n+2]<=.68&&screen[n+1]>=-.69&&screen[n+3]<=.98;
+  const body=overlapsBodies(screen,n,actors,bodies),score=(safe?100:0)-(body?200:0)-Math.abs((screen[n]+screen[n+2])*.5)-Math.abs((screen[n+1]+screen[n+3])*.5)*.3;
+  if(score>best){best=score;selected=i;fade=body;}
  }
+ root.userData.storyDisplays=selected<0?[]:[displays[selected]];root.userData.storyDisplay=displays[selected];state.selectedDisplay=selected;
  state.faded=fade;(state.material as T.MeshStandardMaterial).opacity=fade?.04:state.normalOpacity;
  const components=root.userData.warningStructure as Component[];let fadedParts=0;
  for(let i=0;i<components.length;i++){
@@ -177,8 +183,8 @@ export function updateWarningRepeaterVisibility(root:T.Object3D,camera?:T.Camera
   for(let x=0;x<2;x++)for(let y=0;y<2;y++)for(let z=0;z<2;z++){
    point.set(x?part.max[0]:part.min[0],y?part.max[1]:part.min[1],z?part.max[2]:part.min[2]).applyMatrix4(root.matrixWorld).project(camera);extend(structure,n,point);
   }
-  const hidden=bodies===1025||overlapsBodies(structure,n,actors,bodies);if(hidden)fadedParts++;
-  if(part.faded!==hidden){const colors=part.colors!;for(let j=part.start;j<part.end;j++)colors.array[j*4+3]=hidden?FADED_ALPHA:part.alpha;part.faded=hidden;colors.needsUpdate=true;}
+  const hidden=part.board!==undefined&&part.board>=0&&part.board!==selected||bodies===1025||overlapsBodies(structure,n,actors,bodies);if(hidden)fadedParts++;
+  if(part.faded!==hidden){const colors=part.colors!;for(let j=part.start;j<part.end;j++)colors.array[j*4+3]=hidden?(part.board!==undefined&&part.board>=0&&part.board!==selected?0:FADED_ALPHA):part.alpha;part.faded=hidden;colors.needsUpdate=true;}
  }
  state.structureFaded=fadedParts>0;state.fadedParts=fadedParts;state.totalParts=components.length;
 }

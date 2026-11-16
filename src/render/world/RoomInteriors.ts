@@ -7,6 +7,7 @@ import { InteriorDeckChart } from './InteriorDeckGeometry';
 import { INTERIOR_PROFILES } from './RoomInteriorProfiles';
 import { buildAct1InteriorInlay } from './RoomInteriorAct1';
 import { buildAct2InteriorInlay } from './RoomInteriorAct2';
+import { shapeDeckLight } from './E10DeckSurfaces';
 export const INTERIOR_ROOMS = FURNISHED_STORY_ROOMS;
 export type InteriorFloorService = {
     asset: string;
@@ -29,7 +30,7 @@ export function interiorFloorServices(id: string, t: RoomTemplate): readonly Int
         return [];
     const occupied = shipInteriorFurnishings(t).flatMap(f => f.colliders), result: InteriorFloorService[] = [];
     const add = (x: number, z: number, industrial: boolean) => {
-        const width = 96, depth = industrial ? 24 : 16;
+        const width = 96, depth = industrial ? 40 : 32;
         const r = { x: x - width / 2, y: z - depth / 2, width, height: depth }, p = rect(r.x, r.y, r.width, r.height);
         if (!p.every((v, n) => clearPolygonTopology(t, v, p[(n + 1) % 4], 0)))
             return false;
@@ -67,7 +68,7 @@ export function interiorFloorServices(id: string, t: RoomTemplate): readonly Int
     }
     for (const [i, space] of plan.spaces.entries()) {
         const industrial = id === 'swarm-junction' || id === 'coolant-plant' || id === 'infested-workshop' || id === 'service-shaft-landing';
-        const width = 96, depth = industrial ? 24 : 16;
+        const width = 96, depth = industrial ? 40 : 32;
         for (const offset of [64, -64, 0, 100, -100]) {
             const x = space.anchor.x, z = space.anchor.y + offset;
             if (result.some(o => Math.hypot(o.x - x, o.z - z) < 120))
@@ -92,7 +93,8 @@ export function buildRoomInteriors(id: string, t: RoomTemplate, _world?: T.Group
     root.userData.visualOnly = true;
     const services = interiorFloorServices(id, t);
     const holes = services.map(s => rect(s.x - s.width * 16, s.z - s.depth * 16, s.width * 32, s.depth * 32));
-    const chart = new InteriorDeckChart({ ...t, voids: [...t.voids ?? [], ...holes] }), base = new T.Color(profile.deck), zone = new T.Color(profile.zone), trim = new T.Color(profile.trim);
+    const deckTemplate = { ...t, voids: [...t.voids ?? [], ...holes] };
+    const chart = new InteriorDeckChart(deckTemplate), trimChart = new InteriorDeckChart(deckTemplate), base = new T.Color(profile.deck), zone = new T.Color(profile.zone), trim = new T.Color(profile.trim);
     const hull = t.boundary ?? rect(0, 0, t.width, t.height);
     const claimed: (readonly Point[])[]=[];
     chart.polygon(hull, base, .005,undefined,plan.spaces.map(s=>s.outline));
@@ -101,9 +103,6 @@ export function buildRoomInteriors(id: string, t: RoomTemplate, _world?: T.Group
         chart.polygon(space.outline, tone, .006, space.name,claimed);
         for (let n = 0; n < space.outline.length; n++)
             chart.strip(space.outline[n], space.outline[(n + 1) % space.outline.length], 2.8, tone.clone().lerp(trim, .26), .012,claimed,space.outline);
-        const xs = space.outline.map(p => p.x), ys = space.outline.map(p => p.y), x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...ys), z1 = Math.max(...ys);
-        for (let n = (i % 2 ? x0 : z0) + 110; n < (i % 2 ? x1 : z1); n += 140)
-            chart.polygon(i % 2 ? rect(n, z0, 1.0, z1 - z0) : rect(x0, n, x1 - x0, 1.0), tone.clone().multiplyScalar(.84), .010,undefined,claimed,space.outline);
         claimed.push(space.outline);
     }
     const a = plan.arena, ink = base.clone().lerp(trim, .12), dark = base.clone().multiplyScalar(.67);
@@ -141,14 +140,18 @@ export function buildRoomInteriors(id: string, t: RoomTemplate, _world?: T.Group
         }
     }
     for (const opening of plan.openings)
-        chart.strip(opening.from, opening.to, 4.5, base.clone().lerp(trim, .24), .016);
+        trimChart.strip(opening.from, opening.to, 4.5, base.clone().lerp(trim, .24), .016);
     const m = new T.MeshStandardMaterial({ name: 'e9-interior-floor', color: 0xffffff, vertexColors: true, roughness: .91, metalness: .03,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2 });
     m.userData.actorMaterial = true;
     m.userData.floorDressing = true;
+    shapeDeckLight(m, t);
     const floor = new T.Mesh(chart.geometry(), m);
     floor.name = 'e9-named-space-decks';
     floor.receiveShadow = true;
     root.add(floor);
+    const trimMaterial = new T.MeshStandardMaterial({ name: 'e10-floor-trim', color: 0xffffff, vertexColors: true, roughness: .85, metalness: .18, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    trimMaterial.userData.actorMaterial = true; trimMaterial.userData.floorDressing = true;
+    const threshold = new T.Mesh(trimChart.geometry(), trimMaterial); threshold.name = 'e10-threshold-trims'; threshold.receiveShadow = true; root.add(threshold);
     root.userData.interior = { room: id, landmark: profile.landmark, floor: chart.zones, clusters: shipInteriorFurnishings(t), services };
     return root;
 }

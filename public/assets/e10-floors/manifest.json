@@ -1,0 +1,339 @@
+{
+  "license": "MIT",
+  "author": "Containment original overhaul",
+  "generator": "tools/assets/e10-floors/bake.py",
+  "tileMetres": 2.8,
+  "variants": 4,
+  "textures": [
+    {
+      "path": "cargo/basecolor-low.webp",
+      "bytes": 1790,
+      "sha256": "3b07e0f38908f35fde15841e639ddc509a767536eea47c6dfd853753f9b69718"
+    },
+    {
+      "path": "cargo/basecolor.webp",
+      "bytes": 1914,
+      "sha256": "7e11d21514d24686586d399f1ceb1a22360fc0a620ac491f5fe68ba38dabfcf6"
+    },
+    {
+      "path": "cargo/normal-low.webp",
+      "bytes": 1658,
+      "sha256": "00ce68cdf93e2fbd4400c08571d8822b7e492ec3c4b23c9028fa00ed521de903"
+    },
+    {
+      "path": "cargo/normal.webp",
+      "bytes": 2452,
+      "sha256": "fa9b3976c8ffdf5cd83943175afee4d6492fe599b97d4fb754887c6726cfe820"
+    },
+    {
+      "path": "cargo/orm-low.webp",
+      "bytes": 33132,
+      "sha256": "795de3c3c0f4dd08eea5ce61ad1c4deccf2ea004f4e053634e6962a44e47b081"
+    },
+    {
+      "path": "cargo/orm.webp",
+      "bytes": 62296,
+      "sha256": "9b3e8cdffda6afa915647bda1f36685728f89c68b8ed5cf3ce8602802aef10ba"
+    },
+    {
+      "path": "communications/basecolor-low.webp",
+      "bytes": 938,
+      "sha256": "e7e6f7f35de4e7575ea25e7b57400daafdbb2c4eb10dff75f3e25ef83c93cc3b"
+    },
+    {
+      "path": "communications/basecolor.webp",
+      "bytes": 838,
+      "sha256": "571057061332b733d791092e0c5a435ecfe65c2ffd530ade35d54ffd8c48c5ef"
+    },
+    {
+      "path": "communications/normal-low.webp",
+      "bytes": 804,
+      "sha256": "0ea4ead00226bab1a4020b4f3a46ee22d028f4bb80f00fec61deb6884b9b949f"
+    },
+    {
+      "path": "communications/normal.webp",
+      "bytes": 1054,
+      "sha256": "6149c4f06465a938816790ac4534c3115d1d501950942e08abcf84b7827c7286"
+    },
+    {
+      "path": "communications/orm-low.webp",
+      "bytes": 41248,
+      "sha256": "c78e52ede0610025177e746b7350b50d17860db9167256a2b320ef77b03d70d6"
+    },
+    {
+      "path": "communications/orm.webp",
+      "bytes": 77440,
+      "sha256": "dca3fadcc83fa2ffa963be50310d5d6e4bf58f32e2f4d9c57c16ea584e0de73b"
+    },
+    {
+      "path": "containment/basecolor-low.webp",
+      "bytes": 860,
+      "sha256": "aade7f1eca155e1501f26d4ba394bfd44c74287ef3e88db6ffd332041b6b9543"
+    },
+    {
+      "path": "containment/basecolor.webp",
+      "bytes": 950,
+      "sha256": "e006deceaaf95858736a07dcff3c1a69c1a19c668e22116d57e463fea566c592"
+    },
+    {
+      "path": "containment/normal-low.webp",
+      "bytes": 720,
+      "sha256": "4540ca0c1dda7a0659ee7ae59bb962e393edf1c5bb9196e9321b347b5d157cb2"
+    },
+    {
+      "path": "containment/normal.webp",
+      "bytes": 1302,
+      "sha256": "9ca55de76e80d143f456451b6496ca2918cd09bd32f44d8b225d58f2eda92c0f"
+    },
+    {
+      "path": "containment/orm-low.webp",
+      "bytes": 18714,
+      "sha256": "4c0719fc6609d05afed2406e117c88050d866d76bc25473811fcf766e887b0ce"
+    },
+    {
+      "path": "containment/orm.webp",
+      "bytes": 33992,
+      "sha256": "777e55c5184beb77afb20c20ec9c99619b2d75cb43ca965900b6d97fb298ba0f"
+    },
+    {
+      "path": "cryogenics/basecolor-low.webp",
+      "bytes": 804,
+      "sha256": "46ed2bdeacd4245cf86fd8aba14a187a32e53437d37c115dfb9bef0856b83c55"
+    },
+    {
+      "path": "cryogenics/basecolor.webp",
+      "bytes": 714,
+      "sha256": "bc33c35d828eb35be5d1015aaabd7881131a286fa49297bac816a502d2946528"
+    },
+    {
+      "path": "cryogenics/normal-low.webp",
+      "bytes": 760,
+      "sha256": "3db63a81753aff6b8634785e73d6f3aab6f0ca32c34e810a985bd810997a282b"
+    },
+    {
+      "path": "cryogenics/normal.webp",
+      "bytes": 984,
+      "sha256": "ca65ee9fa73bf04ce5f4c57f4dbcb4a4171e9da1e964b588a3e591e55fb525d4"
+    },
+    {
+      "path": "cryogenics/orm-low.webp",
+      "bytes": 27940,
+      "sha256": "b26ea8a5c459ddaf9c9c217704419cfe7e0b6c9d91743ee0c235b764bc0b521c"
+    },
+    {
+      "path": "cryogenics/orm.webp",
+      "bytes": 52364,
+      "sha256": "738612630c9323b429b021c95b5985972184e5b1e7947c833249d06abccdc767"
+    },
+    {
+      "path": "engineering/basecolor-low.webp",
+      "bytes": 1554,
+      "sha256": "4647489f2d34a41158c34d5a5e541578ebf1a429c71c729d56b2930121d66924"
+    },
+    {
+      "path": "engineering/basecolor.webp",
+      "bytes": 1870,
+      "sha256": "fb2b80cfba7f3b77f4207053f8ec6af9aa893cd4c3510eed37d998ee24342a66"
+    },
+    {
+      "path": "engineering/normal-low.webp",
+      "bytes": 1548,
+      "sha256": "b22a671816b96c55e46583a34c048dbf6ca17686fae4c036e3c011ffcbc8ab0f"
+    },
+    {
+      "path": "engineering/normal.webp",
+      "bytes": 2224,
+      "sha256": "6f800d4cc81ac14c5f99f1ebcdc23e24632972cda7df713fd0bad5a0b3b98327"
+    },
+    {
+      "path": "engineering/orm-low.webp",
+      "bytes": 28892,
+      "sha256": "4643c6a74a80fba6b54182f53f19e6222b0c3d5f698da1f79cbb5a96fc1fb2c6"
+    },
+    {
+      "path": "engineering/orm.webp",
+      "bytes": 51582,
+      "sha256": "9aa28548082c88670eee154a53a2dd1c77b9da3a29eeb4681fb26115d757d6e8"
+    },
+    {
+      "path": "habitation/basecolor-low.webp",
+      "bytes": 1096,
+      "sha256": "7d372aec5137fad0c9f989daaab749c9bfbfc54d9362d5751c285f62d4725504"
+    },
+    {
+      "path": "habitation/basecolor.webp",
+      "bytes": 1094,
+      "sha256": "599510085da6b40ebae23fcceb96c262a3cbb39561460ccd5d5516229dc2f9d0"
+    },
+    {
+      "path": "habitation/normal-low.webp",
+      "bytes": 870,
+      "sha256": "8e614d7261d5b38ccc358a40b10dd6f957b8f31af9e5c1672e04a8e343f0bb53"
+    },
+    {
+      "path": "habitation/normal.webp",
+      "bytes": 1184,
+      "sha256": "176b2c7f56dc2e007fb26e9f5cff145d8f460c06563595b29c250456b3a6ac2e"
+    },
+    {
+      "path": "habitation/orm-low.webp",
+      "bytes": 27858,
+      "sha256": "b1cbbda3b9b5e208600f2ff8c65dab49e2d96ecd0e58c71fc0af32b1c8172595"
+    },
+    {
+      "path": "habitation/orm.webp",
+      "bytes": 49150,
+      "sha256": "eb796b007d4559028f765212572a303da4c0fca8d86ef2199d9ba99720880dab"
+    },
+    {
+      "path": "infested/basecolor-low.webp",
+      "bytes": 1068,
+      "sha256": "9797ec9c142f8c7d940b5df9f4e48e044b3e6c26570da35ad31709865287fec6"
+    },
+    {
+      "path": "infested/basecolor.webp",
+      "bytes": 1000,
+      "sha256": "e3e9273507f05df850f1bce146e6e12b49585076e8fd6590099c3f22b59f71bd"
+    },
+    {
+      "path": "infested/normal-low.webp",
+      "bytes": 786,
+      "sha256": "dcfee3b6cc50e82a2fa7bfb5d2ebba00abcb1db5046f1eb25596c277a9f98580"
+    },
+    {
+      "path": "infested/normal.webp",
+      "bytes": 1080,
+      "sha256": "747023e55e55f0f882a871387730ac9b0d0617023cd0086d18790ef52ba606db"
+    },
+    {
+      "path": "infested/orm-low.webp",
+      "bytes": 27350,
+      "sha256": "85975fba67b4cea21cb240a59a8e3a50328fe54570b1cc7588427d7a1e820943"
+    },
+    {
+      "path": "infested/orm.webp",
+      "bytes": 52308,
+      "sha256": "796dcb1186b92c6d0dbfebf94c80bdd95fe101fb6f4f034adbd39b6bf718d326"
+    },
+    {
+      "path": "maintenance/basecolor-low.webp",
+      "bytes": 1476,
+      "sha256": "fc1a3aedf1f03aef7709d5f8840944507d5fd3d14de63175357f70716f73dfee"
+    },
+    {
+      "path": "maintenance/basecolor.webp",
+      "bytes": 1668,
+      "sha256": "e698e6b4e74112e55500414ea046bb82577fd7e6184c10237f68b52434a3f2db"
+    },
+    {
+      "path": "maintenance/normal-low.webp",
+      "bytes": 1650,
+      "sha256": "09227fc51151f31b31d0b5f2a84545bfc45a1913e56b014d9f939eca396862e5"
+    },
+    {
+      "path": "maintenance/normal.webp",
+      "bytes": 2286,
+      "sha256": "507f66f7b30f0861a23016daacd08966019214b7212d4a610e8b9ca4ad05b25d"
+    },
+    {
+      "path": "maintenance/orm-low.webp",
+      "bytes": 33660,
+      "sha256": "9708a8273a1fc9cfd48c1908b94259e650387f2b77b64bb5ed82f9d4a65960f3"
+    },
+    {
+      "path": "maintenance/orm.webp",
+      "bytes": 61970,
+      "sha256": "569de7e723303409ef4fed86d43e555c2c98d18562cb9140c66dae9e35be02ca"
+    },
+    {
+      "path": "reactor/basecolor-low.webp",
+      "bytes": 1488,
+      "sha256": "217b63709930118a66a7e21f1ed349f700f98cb3cf691c241411c43c1f4c11f9"
+    },
+    {
+      "path": "reactor/basecolor.webp",
+      "bytes": 1714,
+      "sha256": "6d4c1e2b18af5cdfe37482b7152d2e89535a456d49f3081caa34a5b8bb7ceccf"
+    },
+    {
+      "path": "reactor/normal-low.webp",
+      "bytes": 1650,
+      "sha256": "cc8150497e0d1b99e8380f6342867b66ff1c14280f9d8ddd572500d4d6a1ad58"
+    },
+    {
+      "path": "reactor/normal.webp",
+      "bytes": 2434,
+      "sha256": "68cced5cd4b8600ca9e1d9b999debdaf16ec9828b76740a98ffd0503d13531a6"
+    },
+    {
+      "path": "reactor/orm-low.webp",
+      "bytes": 33284,
+      "sha256": "0e0b0915b659771848771d2574284cdd648ac7f1d15784967eab31d867f475da"
+    },
+    {
+      "path": "reactor/orm.webp",
+      "bytes": 62602,
+      "sha256": "83b4ad5ccb0b28e4d29da13da56a6ab8fa24fc293c988af3bb643beeada3a47b"
+    },
+    {
+      "path": "security/basecolor-low.webp",
+      "bytes": 1258,
+      "sha256": "edef2e5ca359a12787e400a3f8d68c7fe5016805bf2168d526838feb53bb2c8f"
+    },
+    {
+      "path": "security/basecolor.webp",
+      "bytes": 1472,
+      "sha256": "35f00740273555363bbd1729d22382cbbeede4620bc019fb47b2f2d08bb3acb5"
+    },
+    {
+      "path": "security/normal-low.webp",
+      "bytes": 1548,
+      "sha256": "b22a671816b96c55e46583a34c048dbf6ca17686fae4c036e3c011ffcbc8ab0f"
+    },
+    {
+      "path": "security/normal.webp",
+      "bytes": 2224,
+      "sha256": "6f800d4cc81ac14c5f99f1ebcdc23e24632972cda7df713fd0bad5a0b3b98327"
+    },
+    {
+      "path": "security/orm-low.webp",
+      "bytes": 28616,
+      "sha256": "6137bd47a51e138a3ebaad65e10b1b3478928d0798d7451a2b05192d2d907742"
+    },
+    {
+      "path": "security/orm.webp",
+      "bytes": 51154,
+      "sha256": "8cde667c5c60a5f2f4a1f5679e72d9a4be17636298d0d59a10a779abb0f4baf1"
+    },
+    {
+      "path": "shared/decals-low.webp",
+      "bytes": 4638,
+      "sha256": "863dd72b4e9eab9ec5d1a799b10bfd88bd57ec2127b7a34c5c87fa0df56bb0b7"
+    },
+    {
+      "path": "shared/decals.webp",
+      "bytes": 6118,
+      "sha256": "9c45dc20517cc13f7f024052fecfa9008d7a5688302bed87c179260f84afeed0"
+    },
+    {
+      "path": "shared/trim-basecolor-low.webp",
+      "bytes": 150,
+      "sha256": "6dba71bd6749ab45001e9d2899038e8421d4d2e381a199877cb322646d6f8ef3"
+    },
+    {
+      "path": "shared/trim-basecolor.webp",
+      "bytes": 172,
+      "sha256": "6915bd52f33e4e8fd1139814b909d0eb9b299e3fb58dbf6b21daa6055cce271e"
+    },
+    {
+      "path": "shared/trim-normal-low.webp",
+      "bytes": 178,
+      "sha256": "b4561a50c2fecae9a836348b5cc565a933e889399878113945157db375305eaf"
+    },
+    {
+      "path": "shared/trim-normal.webp",
+      "bytes": 246,
+      "sha256": "d6ab1d1cfb3e5a0ecc7a89de205d7a359dd3205fd8c03e9b1700d62ac54a0dde"
+    }
+  ]
+}
