@@ -5,7 +5,6 @@ import {generateRun} from '../../game/roguelike/run';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
 import {SACRIFICE_ENDING} from '../../game/roguelike/storyRooms';
 import {escapeHtml} from './initialTemplates';
-import {getAbilities} from '../gameAdapter';
 import {endingTransmission} from './endingTransmission';
 
 /** Name only the source carried by the actual hurt receipt, never a nearby threat. */
@@ -43,5 +42,5 @@ export function incomingDamageReport(game: DepthGame, stats: RunStatsSnapshot): 
 export function completionEnding(game: DepthGame): string {
   const story = game.storyRoom;
   const exactEnding = story ? SACRIFICE_ENDING : 'Containment restored.';
-  return `<section class="completion-ending" aria-label="Expedition ending" data-ending="${story ? 'sacrifice' : 'restored'}"><span class="eyebrow">${story ? 'FINAL TRANSMISSION' : 'EXPEDITION COMPLETE'}</span>${story ? endingTransmission(getAbilities(game)?.rig??'breacher') : ''}<h2 class="ending-exact">${escapeHtml(exactEnding)}</h2><span class="ending-rule" aria-hidden="true"></span></section>`;
+  return `<section class="completion-ending" aria-label="Expedition ending" data-ending="${story ? 'sacrifice' : 'restored'}"><span class="eyebrow">${story ? 'FINAL TRANSMISSION' : 'EXPEDITION COMPLETE'}</span>${story ? endingTransmission() : ''}<h2 class="ending-exact">${escapeHtml(exactEnding)}</h2><span class="ending-rule" aria-hidden="true"></span></section>`;
 }

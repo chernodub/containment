@@ -17,6 +17,7 @@ import {icon} from '../icons';
 import {boonElement, boonIcon, boonPath, boonRuleLabel} from '../boonPresentation';
 import {boonChips} from '../boonChips';
 import {boonBenefit, boonNumbers} from '../boonBenefits';
+import {rewardArt} from '../rewardArt';
 import {formatDistance, playerFacingText, playerFacingStat} from '../units';
 import {abilityVignette} from './abilityVignettes';
 import {completionEnding, incomingDamageReport} from './damageReport';
@@ -91,6 +92,37 @@ function augmentTarget(mutation: MutationDefinition, rig?: RigId): string {
   return `<span class="augment-target">${icon(ability?.id??'loadout')}<span>MODIFIES <b>${ability?.name??slot.toUpperCase()}</b></span><kbd>${ABILITY_KEYS[slot]}</kbd></span>`;
 }
 
+/** Existing tactical diagram provides context; the change label states the authored delta. */
+function augmentDiagram(mutation: MutationDefinition, rig?: RigId): string {
+  const slot=augmentSlots[mutation.id], selected=mutation.rig??rig;
+  if(!mutation.abilityOnly||!slot||!selected)return '';
+  const ability=ABILITY_CATALOG[RIG_CATALOG[selected].abilities[slot]];
+  return `<span class="reward-diagram"><small>BASE / ${ability.name}</small>${abilityVignette(ability)}<small>AFTER / ${boonBenefit(mutation)}</small></span>`;
+}
+
+/** Only changes that can be represented faithfully reuse the tactical geometry. */
+function augmentCombatPreview(mutation: MutationDefinition, rig?: RigId): string {
+  const slot=augmentSlots[mutation.id], selected=mutation.rig??rig;
+  if(!mutation.abilityOnly||!slot||!selected)return '';
+  const ability=ABILITY_CATALOG[RIG_CATALOG[selected].abilities[slot]];
+  const before=abilityVignette(ability);
+  let after=before;
+  if(mutation.id==='spreading-nova')after=before.replace('r="27"','r="35"');
+  else if(mutation.id==='forked-overload')after=before.replace('</g></svg>','<path d="m171 52 13-17-9-14"/><circle class="vignette-enemy" cx="184" cy="35" r="4"/><circle class="vignette-enemy" cx="175" cy="21" r="4"/></g></svg>');
+  else if(mutation.id==='scorched-fan')after=before.replace('</g></svg>','<ellipse class="shape-fill" cx="108" cy="57" rx="35" ry="15"/></g></svg>');
+  else if(mutation.id==='napalm-triplet')after=before.replace('<ellipse cx="134" cy="49" rx="34" ry="20" class="shape-fill"/>','<ellipse cx="116" cy="45" rx="19" ry="13" class="shape-fill"/><ellipse cx="145" cy="32" rx="19" ry="13" class="shape-fill"/><ellipse cx="148" cy="62" rx="19" ry="13" class="shape-fill"/>');
+  else if(mutation.id==='afterquake')after=before.replace('</g></svg>','<circle cx="99" cy="42" r="34" stroke-dasharray="3 3"/></g></svg>');
+  else if(mutation.id==='twin-glacier')after=before.replace('<path class="shape-fill" d="m88 42 9-12 9 8 8-11 11 12 11-9 10 12v9H88Z"/>','<path class="shape-fill" transform="translate(0 -13)" d="m88 42 9-12 9 8 8-11 11 12 11-9 10 12v9H88Z"/><path class="shape-fill" transform="translate(0 13)" d="m88 42 9-12 9 8 8-11 11 12 11-9 10 12v9H88Z"/>');
+  else if(mutation.id==='twin-pylon')after=before.replace('</g></svg>','<path class="shape-fill" d="m90 55 8-13 8 13-8 13Z"/><path d="M98 63v8m-9 0h18M50 52l21 7 19-4"/></g></svg>');
+  else {
+    const badges:Record<string,string>={'reinforced-bulwark':'+100% HP','reserve-thruster':'+1 CHARGE','tactical-salvage':'KILL: −0.35s','drive-dynamo':'+30% CHARGE','slide-loader':'DASH: RELOAD'};
+    const badge=badges[mutation.id];
+    if(!badge)return '';
+    after=before.replace('</g></svg>',`<rect x="46" y="57" width="143" height="18" fill="#102330" stroke="none"/><text x="117" y="70" text-anchor="middle" font-size="11" fill="currentColor" stroke="none">${badge}</text></g></svg>`);
+  }
+  return `<span class="reward-combat-preview" aria-label="${escapeHtml(boonBenefit(mutation))}"><span><small>BEFORE</small>${before}</span><b aria-hidden="true">→</b><span><small>AFTER</small>${after}</span></span>`;
+}
+
 export function draftScreen(game: DepthGame): string {
   const offers = expeditionRewardOffers(game.expedition);
   const rig = getAbilities(game)?.rig;
@@ -98,7 +130,7 @@ export function draftScreen(game: DepthGame): string {
   const cost = rerollCost(game.expedition);
   const exhausted = (game.expedition.run.draftRoll??0)>=2;
   return `<section class="panel choice-panel draft-panel screen-enter">${tag(`SECTOR ${serial(game.node.depth+1)} / ${total(game)} · ${starting?'BEFORE COMBAT':'CLEAR'}`)}<div class="screen-heading"><div><h2>Choose a boon.</h2><p class="panel-intro">Choose one. Keep it for this descent.</p></div><span class="draft-signal" data-draft-rig="${rig??''}">${icon(rig??'boon-reactor')} ${rig?`${RIG_CATALOG[rig].name.toUpperCase()} RIG · `:''}SUIT REWRITE AVAILABLE</span></div>
-    <div class="choice-grid">${offers.map((mutation,index)=>`<button class="choice-card ${mutation.rarity}" data-family="${mutation.family}" data-element="${boonElement(mutation)}" data-path="${pathFor(mutation.id)?.name??mutation.family}" data-mutation="${mutation.id}" data-risk="${mutation.risk===true}" data-augment="${mutation.abilityOnly===true}" data-augment-rig="${mutation.rig??'universal'}" aria-describedby="benefit-${mutation.id} numbers-${mutation.id}" style="--reveal-order:${index}"><span class="boon-card-top">${icon(boonIcon(mutation),'boon-emblem')}<span class="boon-rarity">${icon(mutation.rarity==='rare'?'rarity-rare':'rarity-common')} ${mutation.rarity.toUpperCase()}</span><kbd>${index+1}</kbd></span><span class="boon-path">${mutation.rig?icon(mutation.rig):mutation.abilityOnly?icon('loadout'):''}${boonPath(mutation)}</span>${boonChips(mutation,familyCount(game.expedition.build,mutation.family))}<h3>${mutation.name}</h3><p class="boon-benefit" id="benefit-${mutation.id}">${boonBenefit(mutation)}</p><p class="boon-numbers" id="numbers-${mutation.id}">${boonNumbers(mutation)}</p><span class="boon-card-footer">${mutation.abilityOnly?augmentTarget(mutation,rig??undefined):`<span class="augment-target">${icon(boonIcon(mutation))}<span>MODIFIES <b>${mutation.family==='Recovery'&&mutation.id!=='blood-price'?'SUIT SYSTEMS':'WEAPON HITS'}</b></span></span>`}</span><span class="boon-inspect-hint">Hold <kbd>Alt</kbd> / <kbd>Tab</kbd> · focus + <kbd>I</kbd> for rules</span><span class="boon-inspect-detail" role="tooltip"><span class="eyebrow">EXACT VALUES / ${mutation.name}</span><p>${playerFacingText(mutation.description)}</p><span class="boon-condition"><span>${boonRuleLabel(mutation)}</span>${playerFacingText(mutation.tradeoff)}</span><span class="boon-hint">${icon('check')}${boonHint(mutation,game.expedition.build)}</span><small>Release inspection key or press I / Esc to close.</small></span><span class="boon-select">INSTALL BOON ${arrow()}</span></button>`).join('')}</div>
+    <div class="choice-grid">${offers.map((mutation,index)=>`<button class="choice-card ${mutation.rarity}" data-family="${mutation.family}" data-element="${boonElement(mutation)}" data-path="${pathFor(mutation.id)?.name??mutation.family}" data-mutation="${mutation.id}" data-risk="${mutation.risk===true}" data-augment="${mutation.abilityOnly===true}" data-augment-rig="${mutation.rig??'universal'}" aria-describedby="benefit-${mutation.id} numbers-${mutation.id}" style="--reveal-order:${index}">${rewardArt(mutation)}<span class="boon-card-top">${icon(boonIcon(mutation),'boon-emblem')}<span class="boon-rarity">${icon(mutation.rarity==='rare'?'rarity-rare':'rarity-common')} ${mutation.rarity.toUpperCase()}</span><kbd>${index+1}</kbd></span><span class="boon-path">${mutation.rig?icon(mutation.rig):mutation.abilityOnly?icon('loadout'):''}${boonPath(mutation)}</span><span class="reward-taxonomy">${mutation.abilityOnly?'ABILITY AUGMENT':'WEAPON BOON'} · ${mutation.family.toUpperCase()} SET</span><h3>${mutation.name}</h3><p class="boon-benefit" id="benefit-${mutation.id}">${boonBenefit(mutation)}</p><p class="boon-numbers" id="numbers-${mutation.id}">${boonNumbers(mutation)}</p>${augmentCombatPreview(mutation,rig??undefined)}<span class="boon-inspect-hint">Focus + <kbd>I</kbd> for rules</span><span class="boon-inspect-detail" role="tooltip"><span class="eyebrow">EXACT VALUES / ${mutation.name}</span>${mutation.abilityOnly?augmentTarget(mutation,rig??undefined):''}${augmentDiagram(mutation,rig??undefined)}<p>${playerFacingText(mutation.description)}</p>${boonChips(mutation,familyCount(game.expedition.build,mutation.family))}<span class="boon-condition"><span>${boonRuleLabel(mutation)}</span>${playerFacingText(mutation.tradeoff)}</span><span class="boon-hint">${icon('check')}${boonHint(mutation,game.expedition.build)}</span><small>Release inspection key or press I / Esc to close.</small></span><span class="boon-select">INSTALL BOON ${arrow()}</span></button>`).join('')}</div>
     <div class="reward-footer"><span class="credit-balance">${icon('credits')} <b>${game.combat.snapshot.credits}</b> CREDITS <small><kbd>1–3</kbd> install · <kbd>R</kbd> reroll</small></span><button id="reroll" class="secondary" ${game.expedition.run.version===1||exhausted||game.combat.snapshot.credits<cost?'disabled':''}>${exhausted?'No rerolls left':`Reroll · ${cost} credits`}</button></div></section>`;
 }
 
@@ -151,7 +183,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
 
 /** Visible compact build, with complete boon rules on pointer hover or keyboard focus. */
 export function buildIcons(game: DepthGame): string {
-  return `<div class="owned-boons" aria-label="Installed boons">${game.expedition.build.mutations.map(id=>{const m=MUTATION_CATALOG[id];return `<article class="owned-boon" tabindex="0" data-family="${m.family}" data-element="${boonElement(m)}" data-boon="${m.id}" data-augment="${m.abilityOnly===true}" aria-label="${escapeHtml(`${m.name}. ${boonPath(m)}. ${playerFacingText(m.description)} ${playerFacingText(m.tradeoff)}. Counts toward ${m.family} set`)}">${icon(boonIcon(m))}<span class="owned-boon-name">${m.name}</span>${boonChips(m,familyCount(game.expedition.build,m.family))}<span class="boon-tooltip" role="tooltip"><span>${boonPath(m)} / ${m.rarity}</span><h4>${m.name}</h4><p>${playerFacingText(m.description)}</p><small>${playerFacingText(m.tradeoff)}</small>${boonChips(m,familyCount(game.expedition.build,m.family))}</span></article>`;}).join('')||'<p class="build-empty">No boons installed yet.</p>'}</div>`;
+  return `<div class="owned-boons" aria-label="Installed boons">${game.expedition.build.mutations.map(id=>{const m=MUTATION_CATALOG[id];return `<article class="owned-boon" tabindex="0" data-family="${m.family}" data-element="${boonElement(m)}" data-boon="${m.id}" data-augment="${m.abilityOnly===true}" aria-label="${escapeHtml(`${m.name}. ${boonPath(m)}. ${playerFacingText(m.description)} ${playerFacingText(m.tradeoff)}. Counts toward ${m.family} set`)}">${rewardArt(m,true)}${icon(boonIcon(m))}<span class="owned-boon-name">${m.name}</span>${boonChips(m,familyCount(game.expedition.build,m.family))}<span class="boon-tooltip" role="tooltip"><span>${boonPath(m)} / ${m.rarity}</span><h4>${m.name}</h4><p>${playerFacingText(m.description)}</p><small>${playerFacingText(m.tradeoff)}</small>${boonChips(m,familyCount(game.expedition.build,m.family))}</span></article>`;}).join('')||'<p class="build-empty">No boons installed yet.</p>'}</div>`;
 }
 
 export function buildRecap(game: DepthGame): string {

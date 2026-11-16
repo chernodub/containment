@@ -79,3 +79,57 @@ body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-i
 #overlay .panel .debrief-build .owned-boon>.boon-chips {grid-column:2;flex-wrap:nowrap;}
 #overlay .panel .debrief-build .owned-boon-name {font-size:11px;line-height:1.1;}
 #overlay .panel .debrief-build .owned-boon>.boon-chips :is(.effect-chip,.set-chip) {padding:1px 3px;font-size:9px;}
+
+/* RW12: illustrated finds, with mechanics available through deliberate inspection. */
+#overlay .panel.draft-panel .choice-card {overflow:visible;padding:0 22px;min-height:0;border:1px solid color-mix(in srgb,var(--boon-color) 45%,#14232c);border-top:3px solid var(--boon-color);background:linear-gradient(165deg,#1c303b,#0b151d 72%);}
+#overlay .panel.draft-panel .choice-card[data-augment='true'] {border-left:4px double var(--boon-color);}
+#overlay .panel.draft-panel .choice-card.rare {box-shadow:0 0 0 1px #cfb07099,inset 0 -3px #cfb070;}
+#overlay .draft-panel .reward-art {position:relative;display:block;flex-shrink:0;height:clamp(160px,22vh,250px);margin:0 -22px 14px;overflow:hidden;background:radial-gradient(ellipse at 60% 55%,color-mix(in srgb,var(--boon-color) 25%,#14232d),#070e15 80%);border-bottom:1px solid color-mix(in srgb,var(--boon-color) 35%,transparent);}
+#overlay .reward-art img {display:block;width:100%;height:100%;object-fit:cover;transition:transform 240ms ease,filter 240ms ease;}
+#overlay .reward-art-grain {position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,#0b151d99,transparent 36%);box-shadow:inset 0 0 30px #0004;}
+#overlay .draft-panel .choice-card:is(:hover,:focus-visible) .reward-art img {transform:scale(1.035);filter:brightness(1.12);}
+#overlay .panel.draft-panel .boon-card-top {position:absolute;top:12px;left:14px;right:14px;width:auto;margin:0;filter:drop-shadow(0 2px 4px #000);}
+#overlay .draft-panel .boon-card-top .boon-emblem {width:28px;height:28px;background:#0a141cd9;padding:4px;}
+#overlay .draft-panel .boon-card-top .boon-rarity {background:#0a141ce8;padding:4px 6px;}
+#overlay .panel.draft-panel .boon-path {display:none;}
+#overlay .draft-panel .reward-taxonomy {display:block;font-size:9px;letter-spacing:.1em;color:var(--boon-color);margin-bottom:4px;}
+#overlay .panel.draft-panel .choice-card h3 {font-size:17px;margin:0 0 7px;color:#becbd2;}
+#overlay .panel.draft-panel .boon-benefit {font-size:clamp(20px,1.7vw,28px);line-height:1.13;margin-bottom:10px;min-height:2.3em;}
+#overlay .panel.draft-panel .boon-numbers {font-size:12px;line-height:1.35;min-height:1.35em;margin-bottom:12px;}
+#overlay .draft-panel .boon-card-footer {padding-top:9px;}
+#overlay .draft-panel .boon-inspect-hint {font-size:9px;margin:9px 0;}
+#overlay .draft-panel .boon-select {margin-left:-22px;margin-right:-22px;}
+#overlay .reward-diagram {display:block;margin:0 0 12px;padding:8px;background:#122734;}
+#overlay .reward-diagram small {display:block;font-size:10px;color:var(--boon-color);}
+#overlay .reward-diagram .ability-vignette {height:90px;width:100%;margin:4px 0;}
+#overlay .panel .owned-boon {isolation:isolate;overflow:visible;min-height:66px;padding-left:65px;grid-template-columns:22px minmax(0,1fr);}
+#overlay .owned-boon>.reward-art-compact {position:absolute;inset:0 auto 0 0;width:58px;z-index:-1;overflow:hidden;background:#0a1821;}
+#overlay .owned-boon>.reward-art-compact img {object-fit:cover;}
+#overlay .owned-boon>.reward-art-compact .reward-art-grain {background:linear-gradient(90deg,transparent,#142935);}
+#overlay .panel .debrief-build .owned-boon {padding-left:5px;min-height:0;}
+#overlay .debrief-build .reward-art-compact {display:none;}
+.reward-acquired {position:fixed;z-index:100;pointer-events:none;border:2px solid var(--boon-color,#bbeeff);background:#10202a;box-shadow:0 0 45px #b7eaff40;}
+@media(max-height:760px) {#overlay .panel.draft-panel .reward-art {height:155px;margin-bottom:10px;}#overlay .panel.draft-panel .boon-benefit {font-size:21px;}#overlay .panel.draft-panel .choice-card {padding-right:18px;padding-left:18px;}#overlay .panel.draft-panel .reward-art {margin-right:-18px;margin-left:-18px;}#overlay .draft-panel .boon-select {margin-right:-18px;margin-left:-18px;}}
+@media(max-height:620px) {#overlay .panel.draft-panel .reward-art {height:110px;}#overlay .panel.draft-panel .boon-benefit {font-size:19px;min-height:2.2em;}#overlay .draft-panel .boon-card-footer {display:none;}#overlay .draft-panel .boon-inspect-hint {margin:5px 0;}}
+@media(prefers-reduced-motion:reduce) {#overlay .reward-art img {transition:none;}#overlay .draft-panel .choice-card:is(:hover,:focus-visible) .reward-art img {transform:none;}.reward-acquired {display:none;}}
+.reward-acquired img {display:block;width:100%;height:100%;object-fit:cover;}
+.reward-acquired .reward-art-grain {display:none;}
+@media(max-height:760px) {#overlay .panel.pause-panel .owned-boon {min-height:42px;padding:4px 6px 4px 48px;gap:2px 5px;}#overlay .pause-panel .owned-boon>.reward-art-compact {width:43px;}#overlay .pause-panel .owned-boon>.boon-chips {margin:0;}#overlay .pause-panel .owned-boon-name {font-size:11px;}}
+#overlay .reward-combat-preview {display:grid;grid-template-columns:1fr 14px 1fr;gap:4px;align-items:center;color:var(--boon-color);border-top:1px solid #9fe8ff24;padding-top:5px;margin-top:auto;}
+#overlay .reward-combat-preview>span {min-width:0;}
+#overlay .reward-combat-preview small {display:block;font-size:8px;letter-spacing:.08em;color:#b3c9d2;}
+#overlay .reward-combat-preview .ability-vignette {display:block;width:100%;height:65px;margin:0;}
+#overlay .draft-panel .boon-inspect-hint {margin:8px 0;}
+#overlay .panel.draft-panel .boon-numbers {min-height:1.45em;margin-bottom:10px;}
+#overlay .draft-panel .reward-art img {object-fit:contain;background:#071019;}
+#overlay .draft-panel .boon-inspect-hint {margin-top:auto;padding-top:8px;}
+#overlay .draft-panel .reward-combat-preview+.boon-inspect-hint {margin-top:0;}
+@media(max-height:760px) {#overlay .panel.draft-panel .reward-art {height:110px;}#overlay .panel.draft-panel .boon-benefit {min-height:0;}#overlay .panel.draft-panel .reward-combat-preview {padding-top:3px;}#overlay .panel.draft-panel .boon-numbers {margin-bottom:7px;}}
+@media(max-height:760px) {#overlay .pause-panel:has(.build-recap) .loadout-rig .marine-portrait {width:72px;height:72px;}#overlay .pause-panel:has(.build-recap) .loadout-rig {margin-bottom:8px;}#overlay .pause-panel:has(.build-recap) .pause-tabs {margin-bottom:8px;}#overlay .pause-panel:has(.build-recap) .pause-footer {margin-top:8px;padding-top:8px;}#overlay .pause-panel:has(.build-recap) .pause-difficulty {margin:8px 0;}}
+@media(max-height:760px) {#overlay .panel.draft-panel .reward-art {height:140px;}#overlay .panel.draft-panel .reward-combat-preview .ability-vignette {height:50px;}#overlay .panel.draft-panel .boon-benefit {margin-bottom:6px;}#overlay .panel.draft-panel .reward-art {margin-bottom:7px;}#overlay .panel.draft-panel .boon-inspect-hint {padding-top:4px;margin-bottom:5px;}}
+.reward-art picture {display:contents;}
+/* The first cross-family room reward can show both contextual banners. */
+#overlay .panel.draft-panel:has(.room-record):has(.effect-set-lesson) .reward-art {height:150px;}
+@media(max-height:760px) {#overlay .panel.draft-panel:has(.room-record):has(.effect-set-lesson) .reward-art {height:100px;}}
+#overlay .panel.draft-panel .boon-inspect-hint {margin-top:auto;}
+#overlay .panel.draft-panel .reward-combat-preview+.boon-inspect-hint {margin-top:0;}
