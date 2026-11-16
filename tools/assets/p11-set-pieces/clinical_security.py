@@ -14,16 +14,25 @@ def preview_stage():
 L._stage=preview_stage
 
 
-def berth(x,y,open=False):
+def berth(x,y,open=False,index=0):
     # Recessed angled cradle, captive shoulder shell, foot manifold and service couplings.
-    L.profile_x('Berth cradle',[(y-.9,.12),(y+.9,.12),(y+.9,.68),(y+.5,.95),(y-.65,.58),(y-.9,.37)],x-.48,x+.48,'p11-steel',.04)
+    L.profile_x('Berth cradle',[(y-.9,.12),(y+.9,.12),(y+.9,.68),(y+.5,.95),(y-.65,.58),(y-.9,.37)],x-.48,x+.48,'p11-tint-metal',.04,tint='navy')
     L.box('Recessed patient pad',(x,y,.65),(.65,1.3,.10),'p11-rubber',.04,rotation=(.20,0,0))
     for sx in (-1,1):
         L.sweep('Cradle perimeter rail',[(x+sx*.46,y-.85,.48),(x+sx*.46,y-.55,.69),(x+sx*.46,y+.55,.94),(x+sx*.46,y+.85,.78)],.065,'p11-steel',6)
         for yy in (-.55,.55):L.cylinder('Lock piston',(x+sx*.5,y+yy,.43),.06,.5,'p11-steel','Z',8,0)
     if not open:
         L.profile_x('Frosted canopy',[(y-.62,.73),(y+.55,.99),(y+.71,1.07),(y+.48,1.31),(y-.48,1.05)],x-.35,x+.35,'p11-steel',.025)
-        L.box('Recessed frosted observation panel',(x,y-.02,1.185),(.49,.74,.028),'p11-frost',.035,rotation=(.28,0,0))
+        L.box('Canopy glass gasket',(x,y-.02,1.185),(.53,.77,.028),'p11-rubber',.025,rotation=(.28,0,0))
+        L.box('Deep observation glass',(x,y-.02,1.205),(.43,.65,.02),'p11-tint',.018,rotation=(.28,0,0),tint='teal' if index%3 else 'navy')
+        # Ice clings unevenly to the pressure glazing edges, leaving a viewing slit.
+        for side in (-1,1):
+            import bmesh
+            bm=bmesh.new()
+            contour=[(.215,-.30),(.215,.30),(.16,.30),(.12,.22),(.17,.13),(.13,.02),(.17,-.08),(.12,-.17),(.17,-.30)]
+            bm.faces.new([bm.verts.new((x+side*xx,y-.02+yy,1.225+yy*math.sin(.28))) for xx,yy in contour])
+            L.mesh_object('Uneven frost accretion',bm,'p11-frost',smooth=False)
+        L.box('Glass pressure mullion',(x,y+.08,1.24),(.46,.035,.025),'p11-steel',0,rotation=(.28,0,0))
         for yy in (-.35,.4): L.box('Canopy pressure strap',(x,y+yy,1.19+yy*.27),(.8,.075,.035),'p11-steel',.008,rotation=(.28,0,0))
     else:
         L.profile_x('Retracted canopy',[(y+.6,.95),(y+.9,1.0),(y+.9,1.85),(y+.65,1.65)],x-.4,x+.4,'p11-steel',.015)
@@ -31,7 +40,7 @@ def berth(x,y,open=False):
         L.box('Head cushion',(x,y+.4,.83),(.45,.30,.14),'p11-rubber',.05)
     for sx in (-1,1):
         for yy in (-.4,.35):L.cylinder('Pressure latch',(x+sx*.43,y+yy,.82+yy*.27),.055,.045,'e9-trim','X',8,0)
-    L.box('Foot service pod',(x,y-.93,.39),(.8,.24,.58),'p11-steel',.035)
+    L.box('Foot service pod',(x,y-.93,.39),(.8,.24,.58),'p11-tint-metal',.035,tint='navy')
     L.screen('Berth vitals',(x,y-1.06,.48),.44,.21,'-Y','bars')
     L.gauge((x+.29,y-1.06,.28),.06)
     for sx in (-1,1):
@@ -41,10 +50,13 @@ def berth(x,y,open=False):
 def awakening():
     L.asset('awakening-berth-array',12000)
     for i,x in enumerate([-4.55+i*1.3 for i in range(8)]):
-        berth(x,0,i==3)
+        berth(x,0,i==3,i)
         L.stencil(str(i+1).zfill(2),(x,-1.065,.22),.10,'-Y')
-    L.box('Supply spine',(0,1.0,.22),(10.6,.3,.38),'p11-steel',.03)
-    for i in range(22):L.box('Cooling fin',(-4.95+i*.47,1.0,.44),(.18,.32,.06),'e9-trim',.006)
+    L.box('Supply spine',(0,1.0,.22),(10.6,.3,.38),'p11-tint-metal',.03,tint='navy')
+    L.box('Open supply junction recess',(4.9,1.0,.43),(.48,.27,.08),'p11-rubber',.01)
+    for x in (4.74,4.89,5.04):L.box('Exposed coolant contact',(x,1.0,.49),(.035,.21,.035),'e9-trim',0)
+    L.box('Hinged service cover',(5.18,1.0,.60),(.28,.28,.035),'p11-tint-metal',.01,rotation=(0,.8,0),tint='navy')
+    for i in range(21):L.box('Cooling fin',(-4.95+i*.47,1.0,.44),(.18,.32,.06),'e9-trim',.006)
     L.lamp_strip('Cryo bank status',(0,1.16,.28),10.0,'X','e9-cyan',.025,.025)
 
 def passenger():
