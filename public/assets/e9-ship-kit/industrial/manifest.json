@@ -78,7 +78,7 @@
       "name": "pump-skid",
       "dimensions": [
         3.5,
-        0.9,
+        0.902,
         1.3
       ],
       "bounds": {
@@ -89,7 +89,7 @@
         ],
         "max": [
           1.75,
-          0.9,
+          0.902,
           0.65
         ]
       },
@@ -136,8 +136,8 @@
       "name": "cargo-restraintbank",
       "dimensions": [
         3.2,
-        0.9,
-        1.3
+        0.902,
+        1.363
       ],
       "bounds": {
         "min": [
@@ -147,11 +147,11 @@
         ],
         "max": [
           1.6,
-          0.9,
-          0.65
+          0.902,
+          0.713
         ]
       },
-      "triangles": 892,
+      "triangles": 1300,
       "materials": [
         "e9-amber",
         "e9-body",
@@ -165,8 +165,8 @@
       "name": "cargo-restraintbank-tall",
       "dimensions": [
         3.2,
-        1.7,
-        1.3
+        1.702,
+        1.363
       ],
       "bounds": {
         "min": [
@@ -176,11 +176,11 @@
         ],
         "max": [
           1.6,
-          1.7,
-          0.65
+          1.702,
+          0.713
         ]
       },
-      "triangles": 892,
+      "triangles": 1300,
       "materials": [
         "e9-amber",
         "e9-body",
@@ -194,8 +194,8 @@
       "name": "shielding-servicebay",
       "dimensions": [
         3.5,
-        0.9,
-        1.2
+        0.902,
+        1.298
       ],
       "bounds": {
         "min": [
@@ -205,11 +205,11 @@
         ],
         "max": [
           1.75,
-          0.9,
-          0.6
+          0.902,
+          0.698
         ]
       },
-      "triangles": 1092,
+      "triangles": 1244,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -224,8 +224,8 @@
       "name": "reactor-servicebay",
       "dimensions": [
         3.5,
-        0.9,
-        1.2
+        0.902,
+        1.3037
       ],
       "bounds": {
         "min": [
@@ -235,11 +235,11 @@
         ],
         "max": [
           1.75,
-          0.9,
-          0.6
+          0.902,
+          0.7037
         ]
       },
-      "triangles": 640,
+      "triangles": 836,
       "materials": [
         "e9-amber",
         "e9-body",
@@ -269,7 +269,7 @@
           0.4
         ]
       },
-      "triangles": 596,
+      "triangles": 708,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -282,7 +282,7 @@
       "name": "drainage-grating",
       "dimensions": [
         3.0,
-        0.12,
+        0.123,
         1.0
       ],
       "bounds": {
@@ -293,11 +293,11 @@
         ],
         "max": [
           1.5,
-          0.12,
+          0.123,
           0.5
         ]
       },
-      "triangles": 324,
+      "triangles": 348,
       "materials": [
         "e9-body",
         "e9-dark",
@@ -401,312 +401,312 @@
   ],
   "output": {
     "file": "kit.glb",
-    "bytes": 1616036,
-    "triangles": 23692,
-    "sha256": "df8e9d485d672b45b14631a0b1585d51e30773b836a5c1f7b462de99ed76bb13"
+    "bytes": 1694780,
+    "triangles": 24992,
+    "sha256": "f9d31e6e3ca1dfb5f6b743fd1faf3124edd77b9169f6e20bfa590260281d3150"
   },
   "normalAtlas": {
-    "bakeSeconds": 6.412,
-    "blenderPNGDecodeMs": 7.275,
+    "bakeSeconds": 2.737,
+    "blenderPNGDecodeMs": 5.43,
     "file": "industrial-normal.png",
     "size": 512,
-    "bytes": 377057,
+    "bytes": 361111,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 181466,
+    "nonFlatPixels": 185966,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "swarm-plenum-low--e9-body",
         "role": "",
-        "seconds": 0.109,
+        "seconds": 0.053,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "swarm-plenum-low--e9-dark",
         "role": "",
-        "seconds": 0.072,
+        "seconds": 0.04,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "swarm-plenum-low--e9-trim",
         "role": "",
-        "seconds": 0.097,
+        "seconds": 0.04,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "swarm-plenum-tall--e9-body",
         "role": "",
-        "seconds": 0.069,
+        "seconds": 0.037,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "swarm-plenum-tall--e9-dark",
         "role": "",
-        "seconds": 0.077,
+        "seconds": 0.037,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "swarm-plenum-tall--e9-trim",
         "role": "",
-        "seconds": 0.093,
+        "seconds": 0.042,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "pump-skid--e9-body",
         "role": "",
-        "seconds": 0.076,
+        "seconds": 0.039,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "pump-skid--e9-ceramic",
         "role": "",
-        "seconds": 0.074,
+        "seconds": 0.031,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "pump-skid--e9-dark",
         "role": "",
-        "seconds": 0.072,
+        "seconds": 0.033,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "pump-skid--e9-trim",
         "role": "",
-        "seconds": 0.123,
+        "seconds": 0.046,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "pipe-manifold--e9-body",
         "role": "",
-        "seconds": 0.091,
+        "seconds": 0.041,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "pipe-manifold--e9-ceramic",
         "role": "",
-        "seconds": 0.076,
+        "seconds": 0.045,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "pipe-manifold--e9-dark",
         "role": "",
-        "seconds": 0.048,
+        "seconds": 0.031,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "pipe-manifold--e9-trim",
         "role": "",
-        "seconds": 0.064,
+        "seconds": 0.041,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cargo-restraintbank--e9-body",
         "role": "",
-        "seconds": 0.076,
+        "seconds": 0.038,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cargo-restraintbank--e9-ceramic",
         "role": "",
-        "seconds": 0.073,
+        "seconds": 0.032,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cargo-restraintbank--e9-dark",
         "role": "",
-        "seconds": 0.05,
+        "seconds": 0.036,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cargo-restraintbank--e9-trim",
         "role": "",
-        "seconds": 0.067,
+        "seconds": 0.041,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cargo-restraintbank-tall--e9-body",
         "role": "",
-        "seconds": 0.059,
+        "seconds": 0.039,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cargo-restraintbank-tall--e9-ceramic",
         "role": "",
-        "seconds": 0.1,
+        "seconds": 0.033,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cargo-restraintbank-tall--e9-dark",
         "role": "",
-        "seconds": 0.05,
+        "seconds": 0.033,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cargo-restraintbank-tall--e9-trim",
         "role": "",
-        "seconds": 0.07,
+        "seconds": 0.042,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "shielding-servicebay--e9-body",
         "role": "",
-        "seconds": 0.076,
+        "seconds": 0.034,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "shielding-servicebay--e9-ceramic",
         "role": "",
-        "seconds": 0.069,
+        "seconds": 0.032,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "shielding-servicebay--e9-dark",
         "role": "",
-        "seconds": 0.067,
+        "seconds": 0.036,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "shielding-servicebay--e9-trim",
         "role": "",
-        "seconds": 0.058,
+        "seconds": 0.037,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "reactor-servicebay--e9-body",
         "role": "",
-        "seconds": 0.076,
+        "seconds": 0.034,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "reactor-servicebay--e9-ceramic",
         "role": "",
-        "seconds": 0.082,
+        "seconds": 0.034,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "reactor-servicebay--e9-dark",
         "role": "",
-        "seconds": 0.109,
+        "seconds": 0.034,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "reactor-servicebay--e9-trim",
         "role": "",
-        "seconds": 0.088,
+        "seconds": 0.039,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cabletray-open-cover--e9-body",
         "role": "",
-        "seconds": 0.075,
+        "seconds": 0.035,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cabletray-open-cover--e9-ceramic",
         "role": "",
-        "seconds": 0.077,
+        "seconds": 0.027,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cabletray-open-cover--e9-dark",
         "role": "",
-        "seconds": 0.081,
+        "seconds": 0.031,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cabletray-open-cover--e9-trim",
         "role": "",
-        "seconds": 0.059,
+        "seconds": 0.033,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "drainage-grating--e9-body",
         "role": "",
-        "seconds": 0.085,
+        "seconds": 0.033,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "drainage-grating--e9-dark",
         "role": "",
-        "seconds": 0.087,
+        "seconds": 0.029,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "drainage-grating--e9-trim",
         "role": "",
-        "seconds": 0.112,
+        "seconds": 0.036,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cargo-hoist-header--e9-body",
         "role": "",
-        "seconds": 0.163,
+        "seconds": 0.048,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cargo-hoist-header--e9-ceramic",
         "role": "",
-        "seconds": 0.074,
+        "seconds": 0.032,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cargo-hoist-header--e9-dark",
         "role": "",
-        "seconds": 0.077,
+        "seconds": 0.043,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "cargo-hoist-header--e9-trim",
         "role": "",
-        "seconds": 0.09,
+        "seconds": 0.044,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "workshop-tool-bridge--e9-body",
         "role": "",
-        "seconds": 0.173,
+        "seconds": 0.053,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "workshop-tool-bridge--e9-ceramic",
         "role": "",
-        "seconds": 0.087,
+        "seconds": 0.038,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "workshop-tool-bridge--e9-dark",
         "role": "",
-        "seconds": 0.089,
+        "seconds": 0.039,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "workshop-tool-bridge--e9-trim",
         "role": "",
-        "seconds": 0.109,
+        "seconds": 0.055,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "airway-exchanger--e9-body",
         "role": "",
-        "seconds": 0.127,
+        "seconds": 0.035,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "airway-exchanger--e9-ceramic",
         "role": "",
-        "seconds": 0.118,
+        "seconds": 0.042,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "airway-exchanger--e9-dark",
         "role": "",
-        "seconds": 0.143,
+        "seconds": 0.048,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "airway-exchanger--e9-trim",
         "role": "",
-        "seconds": 0.216,
+        "seconds": 0.06,
         "method": "three-segment high bevel"
       }
     ]

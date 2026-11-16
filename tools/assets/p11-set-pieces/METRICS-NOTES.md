@@ -73,10 +73,10 @@ reactor-vault, hence the explicit twenty IDs above are required.
 
 ## Normal-atlas storage and source packs
 
-All twelve authored packs (four E9, eight P11) currently have one 512×512 normal
+All thirteen authored packs (four E9, nine P11) currently have one 512×512 normal
 atlas each. Manifest `normalAtlas.estimatedRGBA8MipBytes` is 1,398,101 bytes per
-pack (~1.333 MiB, conservative rounded RGBA8 mip estimate). Across all twelve,
-16,777,212 bytes (~16 MiB). These are estimates of distinct atlas storage, not a
+pack (~1.333 MiB, conservative rounded RGBA8 mip estimate). Across all thirteen,
+18,175,313 bytes (~17.333 MiB). These are estimates of distinct atlas storage, not a
 GPU-process measurement. AO and curvature are vertex colors; geometric normals
 plus the selected-to-active tangent-normal atlas supply surface relief. GLBs embed
 the PNG; the external PNG is a rebuild/review resource, not a second runtime image.
@@ -112,24 +112,28 @@ Treat this as source requirements, not an assertion of every object's visibility
 | swarm-junction | industrial, structure | infested, service-kit | 5.333 |
 | shielding-gate | clinical, industrial, security, structure | maintenance-containment, service-kit | 8.000 |
 | containment-annulus | clinical, industrial, security, structure | maintenance-containment, service-kit | 8.000 |
-| manual-control-chamber | clinical, industrial, security, structure | control, service-kit | 8.000 |
-| overload-floor | clinical, industrial, structure | control, service-kit | 6.667 |
+| manual-control-chamber | clinical, industrial, security, structure | reactor, service-kit | 8.000 |
+| overload-floor | clinical, industrial, structure | reactor, service-kit | 6.667 |
 
-## Asset budget facts
+## Asset budget facts (second craft pass)
 
-Service family triangles: cable tray 252, access hatch 332, transit case 604,
-stowage crate 604, pressure drum 694, safety rail 244, three-step 264,
-console bars 630, console schematic 632, valve manifold 1,472. All ≤1,500.
-Cargo heroes: freight suspension gantry 6,474; wedged loading pod 4,484 (≤12,000).
-E9 pack totals after craft pass: structure 2,792; security 6,984; clinical 19,980;
-industrial 23,692. Ordinary modules ≤1,500. Six retained landmark-class assets
-exceed the ordinary-module target: scanner 2,256, analyser 2,868, uplink dish
-8,980, hoist 2,604, tool bridge 4,696, airway exchanger 6,056. They remain ≤12k;
-do not claim every named mesh asset is ≤1.5k.
+Current source-specific review is `KIT-CRAFT-REVIEW.md`. All ten service pieces
+were revised and remain ≤1,500 triangles (336–1,176); freight hero 9,356 and
+loading hero 5,982 remain ≤12,000. Original E9 ordinary modules remain ≤1,500;
+six retained landmark-class exceptions are explicitly listed in that review.
+Current per-pack totals and output bytes follow from final manifests/GLBs.
 
-Six rebuilt GLB sizes: structure 481,416; security 805,260; clinical 1,375,800;
-industrial 1,627,996; cargo 987,660; service 703,444 bytes. All below 2,000,000.
-For the other P11 pack totals, use their current `manifest.json` records rather
-than copying values from an earlier review round. Normal maps split shared finish
-batches by source pack because each pack owns different UVs; final measured draws
-must reflect this rather than the earlier texture-free merge estimate.
+| Pack | Triangles | GLB bytes |
+|---|---:|---:|
+| structure | 3344 | 509692 |
+| security | 8480 | 948612 |
+| clinical | 21944 | 1522436 |
+| industrial | 24992 | 1694780 |
+| cargo | 15338 | 1389828 |
+| service-kit | 7572 | 884660 |
+
+All six GLBs are below 2,000,000 bytes. Normal maps split shared finish batches by
+source pack because each pack owns different UVs; measured draws must reflect
+this rather than the earlier texture-free merge estimate. Control now owns three
+heroes and reactor owns Manual Control/Overload; each room still needs one of
+those two packs, so its per-room atlas bound is unchanged by the split.

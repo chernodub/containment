@@ -1,185 +1,173 @@
 {
-  "bakeSeconds": 3.787,
-  "blenderPNGDecodeMs": 8.406,
+  "bakeSeconds": 2.327,
+  "blenderPNGDecodeMs": 7.301,
   "file": "structure-normal.png",
   "size": 512,
-  "bytes": 244523,
+  "bytes": 235763,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 197807,
+  "nonFlatPixels": 197854,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "wall-bulkhead--e9-body",
       "role": "",
-      "seconds": 0.225,
-      "method": "three-segment high bevel"
-    },
-    {
-      "mesh": "wall-bulkhead--e9-ceramic",
-      "role": "",
-      "seconds": 0.145,
+      "seconds": 0.119,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "wall-bulkhead--e9-dark",
       "role": "",
-      "seconds": 0.353,
+      "seconds": 0.047,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "wall-bulkhead--e9-trim",
       "role": "",
-      "seconds": 0.191,
+      "seconds": 0.058,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "wall-bulkhead-low--e9-body",
       "role": "",
-      "seconds": 0.11,
-      "method": "three-segment high bevel"
-    },
-    {
-      "mesh": "wall-bulkhead-low--e9-ceramic",
-      "role": "",
-      "seconds": 0.082,
+      "seconds": 0.052,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "wall-bulkhead-low--e9-dark",
       "role": "",
-      "seconds": 0.064,
+      "seconds": 0.069,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "wall-bulkhead-low--e9-trim",
       "role": "",
-      "seconds": 0.083,
+      "seconds": 0.057,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "wall-end-jamb--e9-body",
       "role": "",
-      "seconds": 0.057,
+      "seconds": 0.033,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "wall-end-jamb--e9-ceramic",
       "role": "",
-      "seconds": 0.041,
+      "seconds": 0.031,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "wall-end-jamb--e9-dark",
       "role": "",
-      "seconds": 0.041,
+      "seconds": 0.042,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "wall-end-jamb--e9-trim",
       "role": "",
-      "seconds": 0.04,
+      "seconds": 0.036,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "door-threshold--e9-body",
       "role": "",
-      "seconds": 0.058,
+      "seconds": 0.033,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "door-threshold--e9-dark",
       "role": "",
-      "seconds": 0.045,
+      "seconds": 0.052,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "door-threshold--e9-floor-rubber",
       "role": "",
-      "seconds": 0.083,
+      "seconds": 0.047,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "door-threshold--e9-trim",
       "role": "",
-      "seconds": 0.053,
+      "seconds": 0.041,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "door-threshold--e9-yellow",
       "role": "",
-      "seconds": 0.085,
+      "seconds": 0.032,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-ceramic-panel--e9-dark",
       "role": "",
-      "seconds": 0.041,
+      "seconds": 0.034,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-ceramic-panel--e9-floor-ceramic",
       "role": "",
-      "seconds": 0.068,
+      "seconds": 0.059,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-ceramic-panel--e9-trim",
       "role": "",
-      "seconds": 0.079,
+      "seconds": 0.068,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-rubber-panel--e9-body",
       "role": "",
-      "seconds": 0.076,
+      "seconds": 0.047,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-rubber-panel--e9-dark",
       "role": "",
-      "seconds": 0.059,
+      "seconds": 0.035,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-rubber-panel--e9-floor-rubber",
       "role": "",
-      "seconds": 0.046,
+      "seconds": 0.037,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-oxidised-panel--e9-body",
       "role": "",
-      "seconds": 0.039,
+      "seconds": 0.036,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-oxidised-panel--e9-dark",
       "role": "",
-      "seconds": 0.038,
+      "seconds": 0.042,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-oxidised-panel--e9-floor-oxidised",
       "role": "",
-      "seconds": 0.053,
+      "seconds": 0.038,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-oxidised-panel--e9-trim",
       "role": "",
-      "seconds": 0.034,
+      "seconds": 0.045,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "floor-glass-channel--e9-body",
       "role": "",
-      "seconds": 0.052,
+      "seconds": 0.041,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "floor-glass-channel--e9-dark",
       "role": "",
-      "seconds": 0.037,
+      "seconds": 0.041,
       "method": "three-segment high bevel"
     },
     {

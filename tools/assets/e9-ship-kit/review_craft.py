@@ -5,6 +5,8 @@ ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(ROOT/'tools/assets/p11-set-pieces'))
 import p11lib as L
 import bpy
+from cpu_preview import stage as cpu_stage
+L._stage=cpu_stage
 pack=sys.argv[-1]
 filename='kit.glb' if pack=='industrial' else pack+'.glb'
 L.reset_scene()
@@ -12,6 +14,12 @@ bpy.ops.import_scene.gltf(filepath=str(ROOT/'public/assets/e9-ship-kit'/pack/fil
 names=[o.name for o in bpy.data.objects if o.get('originalAsset')]
 only=next((a.split('=',1)[1].split(',') for a in sys.argv if a.startswith('--only=')),None)
 if only: names=[n for n in names if n in only]
+if '--pieces' in sys.argv:
+ for n in range(0,len(names),3):
+  subset=names[n:n+3];L.layout_row(subset,gap=.5,y=0)
+  L.render(ROOT/'artifacts/nextgen/p11-final/beauty'/f'e9-{pack}-pieces-{n//3+1}.png',subset,'hero',(1280,800),scale=1.3)
+  print('CRAFT_REVIEW',pack,n//3+1,subset,flush=True)
+ raise SystemExit
 # Two staggered rows show each module, including its manufactured upper faces.
 row1=names if only else names[:(len(names)+1)//2];row2=[] if only else names[len(row1):]
 L.layout_row(row1,gap=.6,y=0)

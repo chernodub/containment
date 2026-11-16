@@ -57,8 +57,8 @@
       "name": "security-guard-booth",
       "size": [
         2.8,
-        1.9175,
-        1.4115
+        1.938,
+        1.478
       ],
       "bounds": {
         "min": [
@@ -68,11 +68,11 @@
         ],
         "max": [
           1.4,
-          1.9175,
-          0.7115
+          1.938,
+          0.778
         ]
       },
-      "triangles": 748,
+      "triangles": 996,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -87,7 +87,7 @@
       "size": [
         3.2,
         0.819,
-        1.141
+        1.188
       ],
       "bounds": {
         "min": [
@@ -98,10 +98,10 @@
         "max": [
           1.6,
           0.819,
-          0.591
+          0.638
         ]
       },
-      "triangles": 956,
+      "triangles": 1284,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -116,7 +116,7 @@
       "size": [
         3.0,
         0.9,
-        0.8
+        0.82
       ],
       "bounds": {
         "min": [
@@ -127,10 +127,10 @@
         "max": [
           1.5,
           0.9,
-          0.4
+          0.42
         ]
       },
-      "triangles": 520,
+      "triangles": 780,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -144,7 +144,7 @@
       "size": [
         3.0,
         1.8,
-        0.8
+        0.82
       ],
       "bounds": {
         "min": [
@@ -155,10 +155,10 @@
         "max": [
           1.5,
           1.8,
-          0.4
+          0.42
         ]
       },
-      "triangles": 520,
+      "triangles": 780,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -215,7 +215,7 @@
           0.375
         ]
       },
-      "triangles": 396,
+      "triangles": 432,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -229,21 +229,21 @@
       "size": [
         2.8,
         0.8979,
-        1.2
+        1.23667
       ],
       "bounds": {
         "min": [
           -1.4,
           0.0,
-          -0.6
+          -0.608
         ],
         "max": [
           1.4,
           0.8979,
-          0.6
+          0.62867
         ]
       },
-      "triangles": 508,
+      "triangles": 872,
       "materials": [
         "e9-amber",
         "e9-body",
@@ -287,90 +287,90 @@
   ],
   "output": {
     "file": "security.glb",
-    "bytes": 789040,
-    "sha256": "bfd25d696d8f98a138ea122b45abe2bf160b4c418b1a3fc0a6ed745d9ef0f53e",
-    "triangles": 6984
+    "bytes": 948612,
+    "sha256": "2cdbb004c340f32d154626d3fb65331729c7f8ae4213297aa2ec2147dea47cab",
+    "triangles": 8480
   },
   "normalAtlas": {
-    "bakeSeconds": 3.289,
-    "blenderPNGDecodeMs": 10.175,
+    "bakeSeconds": 4.588,
+    "blenderPNGDecodeMs": 27.721,
     "file": "security-normal.png",
     "size": 512,
-    "bytes": 283691,
+    "bytes": 332081,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 180271,
+    "nonFlatPixels": 188002,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "security-scanner-gate--e9-body",
         "role": "",
-        "seconds": 0.066,
+        "seconds": 0.045,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-scanner-gate--e9-ceramic",
         "role": "",
-        "seconds": 0.089,
+        "seconds": 0.056,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-scanner-gate--e9-dark",
         "role": "",
-        "seconds": 0.063,
+        "seconds": 0.076,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-scanner-gate--e9-trim",
         "role": "",
-        "seconds": 0.092,
+        "seconds": 0.073,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-guard-booth--e9-body",
         "role": "",
-        "seconds": 0.054,
+        "seconds": 0.039,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-guard-booth--e9-ceramic",
         "role": "",
-        "seconds": 0.046,
+        "seconds": 0.038,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-guard-booth--e9-dark",
         "role": "",
-        "seconds": 0.088,
+        "seconds": 0.058,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-guard-booth--e9-trim",
         "role": "",
-        "seconds": 0.062,
+        "seconds": 0.065,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-baggage-conveyor--e9-body",
         "role": "",
-        "seconds": 0.079,
+        "seconds": 0.157,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-baggage-conveyor--e9-ceramic",
         "role": "",
-        "seconds": 0.077,
+        "seconds": 0.1,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-baggage-conveyor--e9-dark",
         "role": "",
-        "seconds": 0.075,
+        "seconds": 0.105,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-baggage-conveyor--e9-trim",
         "role": "",
-        "seconds": 0.069,
+        "seconds": 0.067,
         "method": "three-segment high bevel"
       },
       {
@@ -382,133 +382,133 @@
       {
         "mesh": "security-lockers-low--e9-ceramic",
         "role": "",
-        "seconds": 0.099,
+        "seconds": 0.07,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-lockers-low--e9-dark",
         "role": "",
-        "seconds": 0.063,
+        "seconds": 0.062,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-lockers-low--e9-trim",
         "role": "",
-        "seconds": 0.049,
+        "seconds": 0.125,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-lockers-tall--e9-body",
         "role": "",
-        "seconds": 0.037,
+        "seconds": 0.061,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-lockers-tall--e9-ceramic",
         "role": "",
-        "seconds": 0.041,
+        "seconds": 0.034,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-lockers-tall--e9-dark",
         "role": "",
-        "seconds": 0.094,
+        "seconds": 0.177,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-lockers-tall--e9-trim",
         "role": "",
-        "seconds": 0.052,
+        "seconds": 0.122,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-queue-rail--e9-body",
         "role": "",
-        "seconds": 0.054,
+        "seconds": 0.13,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-queue-rail--e9-ceramic",
         "role": "",
-        "seconds": 0.055,
+        "seconds": 0.18,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-queue-rail--e9-dark",
         "role": "",
-        "seconds": 0.055,
+        "seconds": 0.115,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-queue-rail--e9-trim",
         "role": "",
-        "seconds": 0.042,
+        "seconds": 0.085,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-bench--e9-body",
         "role": "",
-        "seconds": 0.041,
+        "seconds": 0.214,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-bench--e9-ceramic",
         "role": "",
-        "seconds": 0.062,
+        "seconds": 0.185,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-bench--e9-dark",
         "role": "",
-        "seconds": 0.038,
+        "seconds": 0.118,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-bench--e9-trim",
         "role": "",
-        "seconds": 0.044,
+        "seconds": 0.041,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-console--e9-body",
         "role": "",
-        "seconds": 0.045,
+        "seconds": 0.042,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-console--e9-ceramic",
         "role": "",
-        "seconds": 0.033,
+        "seconds": 0.064,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-console--e9-dark",
         "role": "",
-        "seconds": 0.081,
+        "seconds": 0.05,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-console--e9-trim",
         "role": "",
-        "seconds": 0.036,
+        "seconds": 0.063,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-sign-05--e9-ceramic",
         "role": "",
-        "seconds": 0.093,
+        "seconds": 0.049,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-sign-05--e9-dark",
         "role": "",
-        "seconds": 0.051,
+        "seconds": 0.059,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "security-sign-05--e9-trim",
         "role": "",
-        "seconds": 0.051,
+        "seconds": 0.093,
         "method": "three-segment high bevel"
       }
     ]

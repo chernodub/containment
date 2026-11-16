@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from craft import bake_craft
+from craft import bake_craft, craft_forms
 
 import bpy
 from mathutils import Vector
@@ -286,6 +286,7 @@ def bake_vertex_ao(group):
 
 
 def export_pack():
+    craft_forms(globals(), GROUPS)
     models = []
     for group in GROUPS:
         merge_material_primitives(group)
