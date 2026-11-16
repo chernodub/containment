@@ -87,7 +87,7 @@ export class PlayerBeacon {
   private readonly locatorMaterial=new T.MeshBasicMaterial({map:this.locatorMap,transparent:true,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide,forceSinglePass:true});
   private readonly ring = new T.Mesh(new T.RingGeometry(.50,.66,48),this.locatorMaterial);
   private readonly direction = new T.Mesh(new T.ConeGeometry(.10,.23,3),this.locatorMaterial);
-  private readonly hitMaterial=new T.MeshBasicMaterial({color:0xff793c,transparent:true,opacity:0,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide});
+  private readonly hitMaterial=new T.MeshBasicMaterial({color:0xff793c,transparent:true,opacity:0,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide,forceSinglePass:true});
   private readonly hitArc=new T.Mesh(new T.RingGeometry(.72,.83,20,1,-.55,1.1),this.hitMaterial);
   private hitLife=0;
   private hitAngle=0;
@@ -145,8 +145,8 @@ export class PlayerBeacon {
     this.root.visible=!hidden&&!this.disposed;if(!this.root.visible){this.hitLife=0;return;}
     this.locatorMaterial.opacity=warning?.22:1;
     this.hitLife=Math.max(0,this.hitLife-dt);
-    // Keep the material in the prepared HUD program family, even between hits.
-    this.hitArc.visible=true;
+    // HUD preparation compiles constructor-owned materials even while hidden.
+    this.hitArc.visible=this.hitLife>0&&this.hitStrength>0;
     this.hitMaterial.opacity=this.hitStrength*Math.min(1,this.hitLife/.12)*.86;
     this.hitArc.position.set(player.position.x,.09,player.position.z);
     this.hitArc.rotation.z=-this.hitAngle;

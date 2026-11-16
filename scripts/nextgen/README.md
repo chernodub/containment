@@ -1136,3 +1136,11 @@ These are explicitly presentation replays: no simulation damage, collision hit,
 critical roll or natural kill is claimed. `weaponChain` metadata retains this
 boundary. Frozen simulation clocks remain unchanged. Per-frame `weaponForward`
 records the held barrel's world +Z axis for review; it is evidence, not a gate.
+
+FEEL12 family aliases and `feel12-melee-crowd` add capture-only per-vertex
+`g5Proof.deformedBounds` receipts. The native strip tool prefers these over
+collision-cylinder envelopes, which can crop long Crawler/Stalker presentation
+lunges. `boundsMethod` records the actual source per frame. No simulation or
+runtime renderer path changes. `feel12-hit-{east,south,west,north}` are eight-frame
+labelled incoming-side presentation replays over the native Crew warning lane;
+they do not claim accepted damage in the invulnerable fixture.
