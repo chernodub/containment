@@ -11,6 +11,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import p11lib as L  # noqa: E402
+from cpu_preview import stage as cpu_stage
+L._stage = cpu_stage
 from mathutils import Vector  # noqa: E402
 
 PACK = 'comms-engineering'
@@ -70,17 +72,19 @@ def monolith(y0, number, seed, broken=False, height=2.45):
                     L.box('Card package', (cx+.025,front-.14,.8+chip*.35),(.025,.14,.12),'e9-dark',0)
                 L.box('Card ejector', (cx,front-.26,.61),(.07,.045,.12),'e9-trim',0)
         else:
-            blade_door(dx, front, 1.2, 1.78, .38, seed + k * 5)
-    L.box('Cooling band', (0, front, 2.26), (w - .36, .06, .16), 'e9-trim', .015)
+            blade_door(dx, front, 1.2, h - .67, .38, seed + k * 5)
+    L.box('Cooling band', (0, front, h-.19), (w - .36, .06, .16), 'e9-trim', .015)
     for i in range(9):
-        L.box('Cooling rib', (-1.0 + i * .25, front - .03, 2.26), (.035, .04, .15), 'e9-dark', 0)
-    L.decal_quad('Rack plate', (.92, front - .062, 2.26), .4, .12, '-Y', 'black')
-    L.stencil(f'R{number:02d}', (.92, front - .066, 2.26), .085, '-Y', 'stencil')
+        L.box('Cooling rib', (-1.0 + i * .25, front - .03, h-.19), (.035, .04, .15), 'e9-dark', 0)
+    L.decal_quad('Rack plate', (.92, front - .062, h-.19), .4, .12, '-Y', 'black')
+    L.stencil(f'R{number:02d}', (.92, front - .066, h-.19), .085, '-Y', 'stencil')
     # Sides (seen at an angle from the aisles): ribbed panels and a hatch.
     for sx in (-1, 1):
         face = 'X' if sx > 0 else '-X'
-        L.inset_panel('Side service hatch', (sx * (w / 2), y0 - .1, 1.25), .8, 1.5, .02, .05, 'e9-body', 'e9-trim',
+        L.inset_panel('Side service hatch', (sx * (w / 2), y0 - .1, 1.25), .8, 1.5, .02, .05, 'e9-dark', 'e9-trim',
                       face)
+        for k in range(3):
+            L.decal_quad('Side status strip',(sx*(w/2+.035),y0-.1, .85+k*.35),.48,.035,face,role='e9-cyan')
         L.handle((sx * (w / 2 + .02), y0 - .38, 1.25), .22, 'Z', .02, .009, 'e9-ceramic', face)
         for k in range(3):
             L.box('Side rib', (sx * (w / 2 + .005), y0 + .45, .7 + k * .5), (.03, .1, .3), 'e9-dark', 0)
@@ -170,7 +174,22 @@ def relay_spine():
         L.cylinder('Riser gland', (.25, ey, 1.0), .11, .1, 'e9-trim', 'Z', 12, .01)
 
 
-BUILDERS = [relay_spine]
+def crosspatch():
+    L.asset('relay-crosspatch',12000)
+    L.box('Patch wall chassis',(0,0,1.2),(5.2,.85,2.4),'p11-tint',.04,tint='navy')
+    for x in (-2.15,0,2.15):
+        L.box('Cable riser',(x,-.46,1.2),(.15,.12,2.2),'e9-dark',.015)
+    for i in range(3):
+        z=.5+i*.65
+        L.box('Patch cassette',(-.9,-.48,z),(1.35,.12,.38),'e9-body',.02)
+        L.screen('Crosspatch trace',(.9,-.49,z),1.25,.3,pattern=('bars','schematic','grid')[i])
+        L.cable_bundle('Patched fibres',(-.25,-.6,z),( .3,-.6,z+.12),3,.15,.012)
+        L.stencil(str(i+1),(-1.8,-.5,z),.17)
+    L.box('Service roof',(0,0,2.45),(5.3,.95,.1),'e9-trim',.015)
+    L.vent((0,-.44,2.18),4.3,.2,14)
+    L.stencil('NORTH BUS',(0,-.5,2.38),.14)
+
+BUILDERS = [relay_spine,crosspatch]
 
 
 def main():

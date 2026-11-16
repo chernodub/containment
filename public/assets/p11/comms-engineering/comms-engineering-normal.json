@@ -1,0 +1,72 @@
+{
+  "bakeSeconds": 3.0,
+  "blenderPNGDecodeMs": 14.228,
+  "file": "comms-engineering-normal.png",
+  "size": 512,
+  "bytes": 318198,
+  "estimatedRGBA8MipBytes": 1398101,
+  "nonFlatPixels": 184851,
+  "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+  "targets": [
+    {
+      "mesh": "relay-monolith-spine--e9-body",
+      "role": "e9-body",
+      "seconds": 0.202,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "relay-monolith-spine--e9-ceramic",
+      "role": "e9-ceramic",
+      "seconds": 0.084,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "relay-monolith-spine--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.128,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "relay-monolith-spine--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.298,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "relay-monolith-spine--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.1,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "relay-monolith-spine--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.179,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "relay-crosspatch--e9-body",
+      "role": "e9-body",
+      "seconds": 0.079,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "relay-crosspatch--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.189,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "relay-crosspatch--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.242,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "relay-crosspatch--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.276,
+      "method": "three-segment high bevel"
+    }
+  ]
+}
