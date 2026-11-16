@@ -1,0 +1,158 @@
+{
+  "name": "Containment P11 maintenance-containment",
+  "license": "MIT",
+  "author": "Containment contributors",
+  "source": "tools/assets/p11-set-pieces/maintenance_containment.py",
+  "rebuild": "blender -b --factory-startup -P tools/assets/p11-set-pieces/maintenance_containment.py",
+  "coordinateSystem": "glTF Y-up, metres; bottom-centred origins, fronts face +Z (camera side)",
+  "description": "Original pump turbines, lift machinery, paired field emitters and containment ring.",
+  "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
+  "textures": "none (texture memory 0); detail is modelled geometry",
+  "materials": {
+    "e9-body": "#24343c",
+    "e9-dark": "#0e1820",
+    "e9-trim": "#8faaa8",
+    "e9-violet": "#b286d1",
+    "p11-frost": "#d6eaf0",
+    "p11-rubber": "#16191b",
+    "p11-screen": "#9fe8ff",
+    "p11-steel": "#6c7a7c",
+    "p11-tint": "#ffffff",
+    "p11-tint-metal": "#ffffff"
+  },
+  "models": [
+    {
+      "name": "frost-manifold-turbines",
+      "size": [
+        4.6,
+        2.4329,
+        2.4
+      ],
+      "bounds": {
+        "min": [
+          -2.3,
+          0.0,
+          -1.2
+        ],
+        "max": [
+          2.3,
+          2.4329,
+          1.2
+        ]
+      },
+      "triangles": 7284,
+      "budget": 12000,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-frost",
+        "p11-screen",
+        "p11-steel",
+        "p11-tint",
+        "p11-tint-metal"
+      ]
+    },
+    {
+      "name": "lift-winch-machinery",
+      "size": [
+        4.5,
+        2.15,
+        2.5
+      ],
+      "bounds": {
+        "min": [
+          -2.25,
+          0.0,
+          -1.25
+        ],
+        "max": [
+          2.25,
+          2.15,
+          1.25
+        ]
+      },
+      "triangles": 5364,
+      "budget": 12000,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-steel",
+        "p11-tint",
+        "p11-tint-metal"
+      ]
+    },
+    {
+      "name": "shield-field-emitter",
+      "size": [
+        4.6915,
+        3.7923,
+        1.4
+      ],
+      "bounds": {
+        "min": [
+          -2.3457,
+          0.0,
+          -0.6
+        ],
+        "max": [
+          2.3457,
+          3.7923,
+          0.8
+        ]
+      },
+      "triangles": 2436,
+      "budget": 12000,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "e9-violet",
+        "p11-steel",
+        "p11-tint",
+        "p11-tint-metal"
+      ]
+    },
+    {
+      "name": "containment-ring-cradle",
+      "size": [
+        4.8,
+        1.65,
+        4.874
+      ],
+      "bounds": {
+        "min": [
+          -2.4,
+          0.0,
+          -2.4
+        ],
+        "max": [
+          2.4,
+          1.65,
+          2.474
+        ]
+      },
+      "triangles": 4504,
+      "budget": 12000,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "e9-violet",
+        "p11-rubber",
+        "p11-screen",
+        "p11-steel",
+        "p11-tint",
+        "p11-tint-metal"
+      ]
+    }
+  ],
+  "output": {
+    "file": "maintenance-containment.glb",
+    "bytes": 605072,
+    "sha256": "8c0f7203faae8c26d4b6f824c4543c5434720a097eb2012b7dd72821dc3d9912",
+    "triangles": 19588
+  },
+  "overBudget": []
+}
