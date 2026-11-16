@@ -80,11 +80,18 @@ const meanCount = (run, pass, field) => {
   if (!source?.counts) return null;
   return source.counts.reduce((sum, row) => sum + (row[field] ?? 0), 0) / denominator;
 };
+const actualPeak = (run, field) => {
+  if ((run?.gpuPassTimings?.auditVersion ?? 1) < 2) return null;
+  const passes = run.gpuPassTimings.passes;
+  const total = passes.find(pass => pass.name === 'frameTotal');
+  const hud = new Map((passes.find(pass => pass.name === 'hud')?.counts ?? []).map(row => [row.frame, row[field] ?? 0]));
+  return total?.counts?.reduce((maximum, row) => Math.max(maximum, (row[field] ?? 0) + (hud.get(row.frame) ?? 0)), 0);
+};
 const loadText = run => run ? `${run.before?.load?.map(value => number(value, 2)).join('/') ?? 'unavailable'} → ${run.after?.load?.map(value => number(value, 2)).join('/') ?? 'unavailable'} (${run.before?.cores ?? '?'} cores)` : 'unavailable';
 const lines = [
   '# F11 renderer breakdown comparison', '',
-  `Before: ${before.root}; source ${before.report?.sha ?? 'unrecorded'}.`, '',
-  `After: ${after.root}; source ${after.report?.sha ?? 'unavailable'}.`, '',
+  `Before: ${before.root}; source ${before.report?.distSnapshot?.sourceSHA ?? before.report?.sha ?? 'unrecorded'}.`, '',
+  `After: ${after.root}; source ${after.report?.distSnapshot?.sourceSHA ?? after.report?.sha ?? 'unavailable'}.`, '',
   'GPU timer queries measure device execution intervals and can include shared-device contention. CPU sampling is exclusive sampled wall duration subject to host scheduling, not uncontended subsystem execution time. These instrumented observations do not certify the hardware frame budget.', '',
   'GPU scopes are ranked by before p50 (after p50 when no before sample exists). Never sum independently sampled percentiles. sceneColor includes native opaque, transparent, shadow and depth-copy work; exclusive scopes overlap that inclusive scope. Composite physically combines ink/outline, lens and grade. Missing samples stay unavailable.', '',
   'Draw/triangle/fill means below divide scope totals by actual render submissions counted by finalAA draws (one per shipping High/Low render), falling back to the maximum recorded frame ID and then observer count. This includes fixed-step refresh and RAF submissions, including frames where an intermittent scope did not execute. Fill means render-target footprint × named submissions, not actual fragment invocations or transparent overdraw. Memory is estimated texture payload, not driver allocation telemetry.', '',
@@ -106,8 +113,11 @@ for (const scenario of keys) {
     ['UI-independent post envelope GPU p50 ms (frameTotal; ordinary total fallback)', 'gpu', 'p50'],
     ['adaptive scale minimum', 'adaptiveScale', 'min'], ['adaptive scale p50', 'adaptiveScale', 'p50'],
     ['draws maximum', 'draws', 'max'], ['triangles maximum', 'triangles', 'max'],
-  ]) {const metric=run=>field==='gpu'?(passStats(run?.gpuPassTimings?.passes?.find(pass=>pass.name==='frameTotal'))?.[statistic]??run?.summary?.[field]?.[statistic]):run?.summary?.[field]?.[statistic];lines.push(`| ${label} | ${pair(metric(a),metric(b))} |`);}
-  lines.push(`| mid-combat program creations | ${pair(a?.programs, b?.programs, 0)} |`, '');
+  ]) {const metric=run=>field==='draws'&&statistic==='max'?(actualPeak(run,'draws')??run?.summary?.draws?.max):field==='triangles'&&statistic==='max'?(actualPeak(run,'triangles')??run?.summary?.triangles?.max):field==='gpu'?(passStats(run?.gpuPassTimings?.passes?.find(pass=>pass.name==='frameTotal'))?.[statistic]??run?.summary?.[field]?.[statistic]):run?.summary?.[field]?.[statistic];lines.push(`| ${label} | ${pair(metric(a),metric(b))} |`);}
+  lines.push(`| mid-combat program creations | ${pair(a?.programs, b?.programs, 0)} |`);
+  const perTick=(run,field)=>run?.deterministicSegment?.ticks?run.samples?.[field]?.reduce((sum,value)=>sum+value,0)/run.deterministicSegment.ticks:null;
+  for(const [label,field] of [['CSS style setters per fixed tick (includes refresh/RAF)','domStyleWrites'],['GL clears per fixed tick (includes refresh/RAF)','glClearCalls'],['GL invalidates per fixed tick (includes refresh/RAF)','glInvalidateCalls'],['GL calls per fixed tick (includes refresh/RAF)','glDriverCalls']])lines.push(`| ${label} | ${pair(perTick(a,field),perTick(b,field))} |`);
+  lines.push('');
   const aPasses = new Map((a?.gpuPassTimings?.passes ?? []).map(pass => [pass.name, pass]));
   const bPasses = new Map((b?.gpuPassTimings?.passes ?? []).map(pass => [pass.name, pass]));
   const scopes = [...new Set([...aPasses.keys(), ...bPasses.keys()])].sort((x, y) =>
