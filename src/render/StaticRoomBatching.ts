@@ -1,7 +1,8 @@
 import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { geometries } from './meshParts';
+import { geometries, MAT } from './meshParts';
 import { getStaticColliderParts, setStaticColliderParts } from './StaticColliderParts';
+import {hasStaticGeometryPolicy} from './post/GeometryBuffer';
 
 export type StaticRoomBatchStats = Readonly<{
   meshesBefore: number;
@@ -12,6 +13,14 @@ export type StaticRoomBatchStats = Readonly<{
 }>;
 
 type Bucket = { material: T.Material; meshes: T.Mesh[] };
+
+// These constructor-owned groups contain only rigid procedural ship fittings.
+// Loaded/lazy owners, exit signals, live fixtures and other authored roots keep
+// their existing hierarchy and lifecycle boundaries.
+const rigidEquipmentOwners = new Set(['l8-equipment', 'armory-carousel-and-issue-bay']);
+const sharedRoomFinishKeys = new Map<T.Material, string>(
+  Object.values(MAT).map(material => [material, material.customProgramCacheKey()]),
+);
 const unsupported = Symbol('unsupported');
 
 // Inspect values directly: Material.toJSON can serialize entire embedded images.
@@ -49,6 +58,20 @@ function stockMaterial(material: T.Material): boolean {
     material.customProgramCacheKey === T.Material.prototype.customProgramCacheKey;
 }
 
+function rigidMaterial(material: T.Material): boolean {
+  if (stockMaterial(material)) return true;
+  // These exact session-owned finishes can be lit on the title/previous room
+  // before a later procedural room is built. The retained local-light, graphic
+  // and MRT policies are material-only; the same material identity may batch.
+  // Never equate different hooked finishes or accept an unknown shader hook.
+  const original = sharedRoomFinishKeys.get(material);
+  if(original===undefined)return false;
+  const key=material.customProgramCacheKey(),local=`${original}:local-light-rejection-v8`;
+  if(material.onBeforeRender===T.Material.prototype.onBeforeRender)
+    return key===local||key===`${local}:graphic-surface-v1`;
+  return key===`${local}:graphic-surface-v1:geometry-mrt-v1`&&hasStaticGeometryPolicy(material);
+}
+
 function materialKey(material: T.Material): string | undefined {
   // Only room-owned stock finishes may relinquish their separate identities.
   if (!stockMaterial(material) || !material.userData.actorMaterial) return;
@@ -77,11 +100,11 @@ function geometryKey(geometry: T.BufferGeometry): string | undefined {
   return JSON.stringify(layout);
 }
 
-function meshKey(mesh: T.Mesh): string | undefined {
-  if (mesh.constructor !== T.Mesh || !mesh.userData.bakedEnvironment || !mesh.visible ||
+function meshKey(mesh: T.Mesh, rigidEquipment = false): string | undefined {
+  if (mesh.constructor !== T.Mesh || (!rigidEquipment && !mesh.userData.bakedEnvironment) || !mesh.visible ||
       mesh.children.length || Array.isArray(mesh.material) || mesh.material.transparent ||
       mesh.material.alphaHash || !mesh.material.depthTest || !mesh.material.depthWrite ||
-      !mesh.material.visible || !stockMaterial(mesh.material) ||
+      !mesh.material.visible || !(rigidEquipment ? rigidMaterial(mesh.material) : stockMaterial(mesh.material)) ||
       mesh.customDepthMaterial || mesh.customDistanceMaterial ||
       mesh.onBeforeRender !== T.Object3D.prototype.onBeforeRender ||
       mesh.onAfterRender !== T.Object3D.prototype.onAfterRender ||
@@ -97,27 +120,56 @@ function meshKey(mesh: T.Mesh): string | undefined {
 
 /**
  * Consolidate already-baked static room meshes before applyRoomMood adds hooks.
- * Each parent is an independent resource boundary. Instanced/loaded assets,
- * transparent meshes, live dressing and named owner roots remain untouched.
+ * Each parent is an independent resource boundary, except for two explicit
+ * rigid procedural equipment constructors. Instanced/loaded assets, transparent
+ * meshes, live dressing and other named owner roots remain untouched.
  */
 export function batchStaticRoom(root: T.Object3D): StaticRoomBatchStats {
   root.updateWorldMatrix(true, true);
   const parents: T.Object3D[] = [];
+  const rigidOwners: T.Object3D[] = [];
   let meshesBefore = 0;
   root.traverse(object => {
     if (object instanceof T.Mesh) meshesBefore++;
     if (object.children.length) parents.push(object);
+    if (object instanceof T.Group && rigidEquipmentOwners.has(object.name)) rigidOwners.push(object);
   });
   const removedGeometries = new Set<T.BufferGeometry>();
   const removedMaterials = new Set<T.Material>();
   let mergedMeshes = 0;
-  for (const parent of parents) {
+  // Nested equipment remains inside its constructor owner. Empty transform
+  // groups survive so fixture origins and authored group hooks remain valid.
+  // A hidden/reflected/custom hierarchy is an independent boundary, not static
+  // permission inherited from its ancestor's name.
+  const rigidMeshes = (owner: T.Object3D): T.Mesh[] => {
+    const candidates: T.Mesh[] = [];
+    const visit = (parent: T.Object3D) => {
+      for (const child of parent.children) {
+        if (!child.visible || child.matrix.determinant() <= 0) continue;
+        if (child instanceof T.Mesh) { candidates.push(child); continue; }
+        if (Object.getPrototypeOf(child) !== T.Group.prototype ||
+            child.onBeforeRender !== T.Object3D.prototype.onBeforeRender ||
+            child.onAfterRender !== T.Object3D.prototype.onAfterRender ||
+            rigidEquipmentOwners.has(child.name)) continue;
+        visit(child);
+      }
+    };
+    visit(owner);
+    return candidates;
+  };
+  const passes = [
+    ...parents.map(parent => ({ parent, rigid: false })),
+    ...rigidOwners.map(parent => ({ parent, rigid: true })),
+  ];
+  for (const { parent, rigid } of passes) {
+    const inverse = rigid ? parent.matrixWorld.clone().invert() : undefined;
+    const localMatrix = (mesh: T.Mesh) => inverse ? new T.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld) : mesh.matrix;
     const finishes = new Map<string, T.Material>();
     const materialKeys = new Map<T.Material, string | undefined>();
     const buckets = new Map<T.Material, Map<string, Bucket>>();
-    for (const object of parent.children) {
+    for (const object of rigid ? rigidMeshes(parent) : parent.children) {
       if (!(object instanceof T.Mesh)) continue;
-      const key = meshKey(object);
+      const key = meshKey(object, rigid);
       if (!key) continue;
       const source = object.material as T.Material;
       if (!materialKeys.has(source)) materialKeys.set(source, materialKey(source));
@@ -135,7 +187,7 @@ export function batchStaticRoom(root: T.Object3D): StaticRoomBatchStats {
     }
     for (const layouts of buckets.values()) for (const { material, meshes } of layouts.values()) {
       if (meshes.length < 2) continue;
-      const parts = meshes.map(mesh => (mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone()).applyMatrix4(mesh.matrix));
+      const parts = meshes.map(mesh => (mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone()).applyMatrix4(localMatrix(mesh)));
       const geometry = mergeGeometries(parts, false);
       for (const part of parts) part.dispose();
       if (!geometry) continue;
@@ -144,8 +196,8 @@ export function batchStaticRoom(root: T.Object3D): StaticRoomBatchStats {
       const first = meshes[0], merged = new T.Mesh(geometry, material);
       setStaticColliderParts(merged, meshes.flatMap(mesh => {
         const originals = getStaticColliderParts(mesh);
-        return originals ? originals.map(part => ({ ...part, matrix: mesh.matrix.clone().multiply(part.matrix) })) :
-          [{ geometry: mesh.geometry, matrix: mesh.matrix.clone(), name: mesh.name }];
+        return originals ? originals.map(part => ({ ...part, matrix: localMatrix(mesh).clone().multiply(part.matrix) })) :
+          [{ geometry: mesh.geometry, matrix: localMatrix(mesh).clone(), name: mesh.name }];
       }));
       merged.name = first.name;
       merged.userData = { ...first.userData };
@@ -160,6 +212,8 @@ export function batchStaticRoom(root: T.Object3D): StaticRoomBatchStats {
         mesh.removeFromParent();
       }
       parent.add(merged);
+      // A subsequent rigid pass can include meshes consolidated in this pass.
+      merged.updateWorldMatrix(true, false);
       mergedMeshes += meshes.length - 1;
     }
   }

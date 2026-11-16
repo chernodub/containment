@@ -70,9 +70,9 @@ export function act3ShipPresentation(id:string,t:RoomTemplate):T.Group|null {
  };
  if(id==='diagnostic-gallery'){
   t.obstacles.forEach(machinery);
-  floorLine({x:216,y:272},{x:1064,y:272},1.1,dark);
-  floorLine({x:216,y:704},{x:1064,y:704},1.1,dark);
-  fixture(390,126,0,.45,7.2,0xb2dadd,1);fixture(710,826,Math.PI,.40,6.0,0xcdb88e,.42);fixture(1084,180,Math.PI/2,.30,4.5,0x98b4c4,.12);
+  // E9's broad flush thresholds own the open workbay mouths; the old dark
+  // floor hairlines misleadingly read as heightless partitions.
+  fixture(390,126,0,.45,7.2,0x78cddd,.85);fixture(710,826,Math.PI,.40,6.0,0x8bbcc9,.42);fixture(1084,180,Math.PI/2,.30,4.5,0x70c5da,.30);
  }else if(id==='safety-interlock-station'){
   const equipment=new T.Group();equipment.name='act3-source-equipment';root.add(equipment);
   for(const [i,r]of t.obstacles.entries())equipment.add(environmentObstacle('engineering',{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},i,id));

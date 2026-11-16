@@ -1,3 +1,6 @@
+import {attachOriginalRoomInteriors} from './world/OriginalRoomInteriors';
+import {INTERIOR_ROOMS} from './world/RoomInteriors';
+import {buildRoomInteriors} from './world/RoomInteriors';
 import {actorImpact,actorDeathCue,enemyMotionAim} from './motion/MotionEvents'; // M9 presentation-only routing
 import {act3ShipPresentation,ACT3_PRESENTATION_ROOMS} from './world/Act3ShipPresentation';
 import {act1ShipPresentation} from './world/Act1ShipPresentation';
@@ -30,6 +33,7 @@ import {addExitSignal,updateExitSignal} from './world/ExitSignal';
 import {TitlePresentation,TITLE_STAGE,styleTitleActor} from './world/TitlePresentation';
 import {addDeckMarkings} from './world/DeckMarkings';
 import {addWorldDressing,updateWorldDressing} from './world/WorldDressing';
+import {updateOriginalInteriorCutaways} from './world/OriginalInteriorCutaways';
 import {PlayerBeacon} from './vfx/PlayerBeacon';
 import {communalAtrium} from './CommunalAtrium';
 import {attachCommunalGarden} from './CommunalGarden';
@@ -151,6 +155,7 @@ export class DepthRenderer {
  }
  /** Native Start/Continue crosses the lazy gameplay asset boundary once. */
  beginGameplayPresentation(){this.gameplayPresentationStarted=true;}
+ endGameplayPresentation(){this.gameplayPresentationStarted=false;this.kitDressing?.dispose();this.kitDressing=undefined;}
  get qualityTier(){return this.tier;}
  /** Current immutable settings; selecting a tier resets its overrides. */
  get graphicsOptions(){return this.options;}
@@ -202,7 +207,7 @@ export class DepthRenderer {
  }
  private buildAhead(node:RunNode):T.Group|null{
   const t=ROOM_TEMPLATES[node.templateId],environment=shipEnvironment(node.templateId)??(node.templateId==='reactor-vault'?'reactor':'cryogenics');
-  if(KIT_STANDARD_ROOMS.has(node.templateId))prepareKitAssets(environment);
+  if(KIT_STANDARD_ROOMS.has(node.templateId)&&!INTERIOR_ROOMS.has(node.templateId))prepareKitAssets(environment);
   const root=this.buildRoomArchitecture(node,t);
   if(root){batchStaticRoom(root);applyRoomMood(root,environment,node.templateId);this.materialWarmup.register(root);}
   // Link the retained shared shaders against the future light topology without
@@ -484,11 +489,15 @@ export class DepthRenderer {
   batch(this.exit,true);
   // Flat markings and obstacle-supported dressing are registered before room preparation.
   addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id),this.kitStartupComplete&&this.gameplayPresentationStarted&&(node.templateId==='residential-gallery'||node.templateId==='relay-racks'));if(!ACT3_PRESENTATION_ROOMS.has(node.templateId)&&!bespoke?.getObjectByName('l8-ship-seam-growth'))addEnvironmentalStory(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);
+  const interiors=buildRoomInteriors(node.templateId,t,this.world);if(interiors)this.world.add(interiors);
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
   this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.roomCombatFraming?.reset();this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.world.userData.staticBatching=batchStaticRoom(this.world);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId,this.lighting.practicalShapes);
   const leaks=this.world.getObjectByName('g2-world-dressing')?.userData.leakPositions??[];this.world.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial)setFloorLeaks(material,leaks);});
   const mood=getEnvironmentMood(environment);this.scene.fog=new T.FogExp2(mood.fog.color,mood.fog.density*.25);this.scene.background=new T.Color(mood.fog.color).multiplyScalar(.24);this.scene.environmentIntensity=mood.reflectionIntensity;this.post?.setMood(mood);this.atmosphere?.loadRoom(environment,w,h,this.lighting.fixtures);this.backdrop?.loadRoom(this.world,w,h,environment);this.arena?.loadRoom(node.templateId,w,h);this.post?.distortion.clear();this.heatClock=0;
-  if(this.kitStartupComplete&&this.gameplayPresentationStarted&&KIT_STANDARD_ROOMS.has(node.templateId)){const kitWorld=this.world;this.kitDressing=attachRoomKits(kitWorld,t,this.roomEnvironment,node.templateId,()=>{if(this.world!==kitWorld)return;applyRoomMood(kitWorld,this.roomEnvironment,node.templateId,this.lighting.practicalShapes);staticLoaded();},this.residentialGalleryEquipment?.ready);}
+  if(this.kitStartupComplete&&this.gameplayPresentationStarted&&KIT_STANDARD_ROOMS.has(node.templateId)){
+   const kitWorld=this.world,changed=()=>{if(this.world!==kitWorld)return;if(INTERIOR_ROOMS.has(node.templateId))this.lighting.loadRoom(kitWorld,w,h,this.roomEnvironment,node.templateId);applyRoomMood(kitWorld,this.roomEnvironment,node.templateId,this.lighting.practicalShapes);staticLoaded();};
+   this.kitDressing=INTERIOR_ROOMS.has(node.templateId)?attachOriginalRoomInteriors(kitWorld,t,changed,Promise.all([this.passengerVault?.ready,this.communalGarden?.ready,this.residentialGalleryEquipment?.ready])):attachRoomKits(kitWorld,t,this.roomEnvironment,node.templateId,changed,this.residentialGalleryEquipment?.ready);
+  }
   const newProfiles=this.materialWarmup?.register(this.world)??0;this.contextResources?.track(this.world);this.ragdolls?.setRoom(t,this.world);this.staticDirty=false;timing.phases.build=performance.now()-timing.started;if(this.materialWarmup&&(newProfiles||this.forceRoomWarm||keyChanged||this.kitStartupComplete&&this.gameplayPresentationStarted&&!this.interimAbilities.kit?.atlas.loaded))this.queueRoomWarmup();
  }
  private roomSeed(id:string){let seed=2166136261;for(let i=0;i<id.length;i++)seed=Math.imul(seed^id.charCodeAt(i),16777619);return seed>>>0;}
@@ -563,6 +572,7 @@ export class DepthRenderer {
   this.lastMenu=menu;
   const q=game.boss.snapshot;this.lighting.setBossState?.(q.x/UNIT,q.y/UNIT,q.vulnerable,q.defeated);
   this.warning.visible=false;
+  if(!menu)updateOriginalInteriorCutaways(this.world.getObjectByName('e9-original-ship-kit'),this.camera,p,this.player.height,enemies,this.actors);
   const telegraph=q.pendingTelegraph;this.effects.setBossWarning((telegraph?.targetX??0)/UNIT,(telegraph?.targetY??0)/UNIT,(telegraph?.radius??0)/UNIT,1-(telegraph?.delayRemainingMs??0)/AREA_ATTACK_DELAY_MS,!!telegraph&&!menu);
   this.syncPools(game.pools);
 

@@ -1,0 +1,294 @@
+{
+  "name": "Containment original security interiors",
+  "license": "MIT",
+  "author": "Containment contributors",
+  "source": "tools/assets/e9-ship-kit/security.py",
+  "rebuild": "blender -b --factory-startup -P tools/assets/e9-ship-kit/security.py",
+  "coordinateSystem": "glTF Y-up, metres; each named asset origin bottom-centred",
+  "description": "Original manufactured ship security family; no third-party source assets or fonts.",
+  "ao": "12 deterministic BVH hemisphere rays per vertex, 0.38m distance; normalized AO COLOR_0 vertex multiplier",
+  "scannerPassage": {
+    "clearWidthMetres": 4.484,
+    "minimumBeamUndersideMetres": 3.039
+  },
+  "scannerRoof": "Framed inset hatches; original upward05/scanner stencil; muted nonemissive edge-hazard paint; green active/red standby status. Six existing finish batches.",
+  "materials": {
+    "e9-body": "#24343c",
+    "e9-ceramic": "#d5ded3",
+    "e9-trim": "#8faaa8",
+    "e9-dark": "#0e1820",
+    "e9-cyan": "#65d8e6",
+    "e9-amber": "#e0b95a",
+    "e9-green": "#71c793",
+    "e9-red": "#b96755"
+  },
+  "models": [
+    {
+      "name": "security-scanner-gate",
+      "size": [
+        5.7,
+        3.3995,
+        1.2
+      ],
+      "bounds": {
+        "min": [
+          -2.85,
+          0.0,
+          -0.6
+        ],
+        "max": [
+          2.85,
+          3.3995,
+          0.6
+        ]
+      },
+      "triangles": 13104,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-green",
+        "e9-trim"
+      ],
+      "primitives": 6
+    },
+    {
+      "name": "security-guard-booth",
+      "size": [
+        2.8,
+        1.9175,
+        1.4115
+      ],
+      "bounds": {
+        "min": [
+          -1.4,
+          0.0,
+          -0.7
+        ],
+        "max": [
+          1.4,
+          1.9175,
+          0.7115
+        ]
+      },
+      "triangles": 3564,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 5
+    },
+    {
+      "name": "security-baggage-conveyor",
+      "size": [
+        3.2,
+        0.819,
+        1.141
+      ],
+      "bounds": {
+        "min": [
+          -1.6,
+          0.0,
+          -0.55
+        ],
+        "max": [
+          1.6,
+          0.819,
+          0.591
+        ]
+      },
+      "triangles": 4260,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-green",
+        "e9-trim"
+      ],
+      "primitives": 5
+    },
+    {
+      "name": "security-lockers-low",
+      "size": [
+        3.0,
+        0.9,
+        0.8
+      ],
+      "bounds": {
+        "min": [
+          -1.5,
+          0.0,
+          -0.4
+        ],
+        "max": [
+          1.5,
+          0.9,
+          0.4
+        ]
+      },
+      "triangles": 4104,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 4
+    },
+    {
+      "name": "security-lockers-tall",
+      "size": [
+        3.0,
+        1.8,
+        0.8
+      ],
+      "bounds": {
+        "min": [
+          -1.5,
+          0.0,
+          -0.4
+        ],
+        "max": [
+          1.5,
+          1.8,
+          0.4
+        ]
+      },
+      "triangles": 4104,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 4
+    },
+    {
+      "name": "security-queue-rail",
+      "size": [
+        2.52,
+        0.7,
+        0.36
+      ],
+      "bounds": {
+        "min": [
+          -1.26,
+          0.0,
+          -0.18
+        ],
+        "max": [
+          1.26,
+          0.7,
+          0.18
+        ]
+      },
+      "triangles": 1324,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-green",
+        "e9-trim"
+      ],
+      "primitives": 5
+    },
+    {
+      "name": "security-bench",
+      "size": [
+        2.2,
+        0.65,
+        0.75
+      ],
+      "bounds": {
+        "min": [
+          -1.1,
+          0.0,
+          -0.375
+        ],
+        "max": [
+          1.1,
+          0.65,
+          0.375
+        ]
+      },
+      "triangles": 972,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 4
+    },
+    {
+      "name": "security-console",
+      "size": [
+        2.8,
+        0.8979,
+        1.2
+      ],
+      "bounds": {
+        "min": [
+          -1.4,
+          0.0,
+          -0.6
+        ],
+        "max": [
+          1.4,
+          0.8979,
+          0.6
+        ]
+      },
+      "triangles": 3132,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-green",
+        "e9-red",
+        "e9-trim"
+      ],
+      "primitives": 8
+    },
+    {
+      "name": "security-sign-05",
+      "size": [
+        1.8,
+        0.72,
+        0.094
+      ],
+      "bounds": {
+        "min": [
+          -0.9,
+          0.0,
+          -0.04
+        ],
+        "max": [
+          0.9,
+          0.72,
+          0.054
+        ]
+      },
+      "triangles": 2924,
+      "materials": [
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 4
+    }
+  ],
+  "output": {
+    "file": "security.glb",
+    "bytes": 1255244,
+    "sha256": "c430d632ee0a1f68643549f55549805feb9c98bcdd770640c877f2e365b7766c",
+    "triangles": 37488
+  }
+}

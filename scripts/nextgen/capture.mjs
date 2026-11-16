@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {advanceRoomTour,assertRoomTour} from './e9-room-tour.mjs';
 import {assertNativeWarning} from './capture-warning-contract.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -187,9 +188,10 @@ try{
    if(scenario.nativeFocus)await page.locator(scenario.nativeFocus).first().focus();
    for(const key of scenario.nativeHold??[])await page.keyboard.down(key);
    if(scenario.nativeHold?.length)await page.evaluate(()=>window.__containmentDebug.refresh());
-   const count=scenario.burst?burst:1,frameStepMs=scenario.stepMs??stepMs;let projectiles=false,muzzle=false,explosion=false;const observed=new Set(),burstFrames=[];let kitingPrevious=null,feelStart=null;
+   const count=scenario.frameCount??(scenario.burst?burst:1),frameStepMs=scenario.stepMs??stepMs;let projectiles=false,muzzle=false,explosion=false;const observed=new Set(),burstFrames=[];let kitingPrevious=null,feelStart=null;
    for(let frame=0;frame<count;frame++){
-    if(scenario.kiting)await page.evaluate(advanceKiting,{frame,stepMs:frameStepMs});
+    if(scenario.roomTour)await page.evaluate(advanceRoomTour,frame);
+    else if(scenario.kiting)await page.evaluate(advanceKiting,{frame,stepMs:frameStepMs});
     else if(frame)await page.evaluate(ms=>window.__containmentDebug.step(ms),frameStepMs);
     if(scenario.titleArtTimeline) await page.evaluate(ms=>{
      const art=document.querySelector('.title-key-art');
@@ -206,6 +208,7 @@ try{
      return{evidence,camera:{world:r.camera.matrixWorld.toArray(),inverseProjection:r.camera.projectionMatrixInverse.toArray(),zoom:r.camera.zoom,focus:r.cameraRig.focus.toArray(),marineHeight:r.player.height,roomBounds:d.game.geometry.bounds,roomBoundary:d.game.geometry.boundary,actors:Array.from(r.actors,([id,m])=>({id,height:m.height,elevation:m.root.position.y}))}};
     `)):null;
     const evidence=inspected?.evidence??await page.evaluate(inspectFrame);lastEvidence=evidence;lastCamera=inspected?.camera??null;
+    if(scenario.roomTour)evidence.e9RoomTourProof=await page.evaluate(()=>window.__containmentDebug.e9RoomTourProof);
     if(scenario.i10ArmoryReplay)evidence.i10ArmoryReplay=await page.evaluate(inspectI10ArmoryReplay);
     if(scenario.u7Crossing)evidence.u7Crossing=await page.evaluate(()=>window.__containmentDebug.u7Crossing);
     if(scenario.i11NativePointer){
@@ -264,7 +267,8 @@ try{
     if(scenario.id==='results'){assert(evidence.stats.kills.total>0&&evidence.stats.damageDealt.ability>0&&evidence.stats.damageDealt.weapon>0&&evidence.stats.shotsHit>0&&evidence.stats.abilityUses.tactical===1&&evidence.stats.overdrivesUsed===1,'Results lack genuine ability and weapon combat receipts');}
     if(scenario.state==='dead'||scenario.state==='complete')assert(await page.locator('.damage-source-legend [data-stat] b').evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).color==='rgb(240, 251, 255)')),`${name}: source accounting legend implies an element`);
     if(scenario.uiState)assert.equal(evidence.uiState,scenario.uiState,`${name}: wrong fixture UI phase`);
-    assertNativeWarning(evidence,name,{quiet:scenario.id==='combat-calm'||scenario.id==='l8-arena-calm'});
+    assertNativeWarning(evidence,name,{quiet:scenario.roomTour||scenario.id==='combat-calm'||scenario.id==='l8-arena-calm'});
+    if(scenario.roomTour)assertRoomTour(evidence,frame,name);
     if(scenario.id==='combat-calm')assert.equal(evidence.enemies,0,`${name}: calm room contains enemies`);
     if(scenario.id==='l8-arena-calm'){
      assert.equal(evidence.enemies,0,`${name}: arena calm contains enemies`);const proof=evidence.l8ArenaCalmProof;

@@ -26,13 +26,13 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
   };
   const deck=material('painted-steel-deck',environment==='habitation'?0x646861:0x46565c);
   const steel=material('ship-bulkhead',environment==='habitation'?0x6f7568:0x55646b,.45);
-  const cutaway=material('ship-interior-cutaway',0x66726f,.35);
+  const cutaway=material('ship-interior-cutaway',0x758990,.35);cutaway.vertexColors=true;
   const dark=material('ship-bulkhead-recess',0x17232b);
   const trim=material('ship-bulkhead-ribs',0x85908b,.55);
   const practical=material(environment==='habitation'?'ship-warm-practical':'ship-cold-practical',environment==='habitation'?0xe4b37b:0x9bc7d2);
   practical.emissive.copy(practical.color);practical.emissiveIntensity=.65;practical.userData.motivatedEmitter=true;
   const batches=new Map<T.Material,T.BufferGeometry[]>();
-  const push=(g:T.BufferGeometry,m:T.Material)=>{const flat=g.index?g.toNonIndexed():g.clone();g.dispose();const a=batches.get(m)??[];a.push(flat);batches.set(m,a);};
+  const push=(g:T.BufferGeometry,m:T.Material)=>{const flat=g.index?g.toNonIndexed():g.clone();g.dispose();if(m===cutaway){const normal=flat.getAttribute('normal'),values=new Float32Array(normal.count*3);for(let i=0;i<normal.count;i++){const v=normal.getY(i)>.5?1.15:normal.getZ(i)>.35?.38:.72;values.set([v,v,v],i*3);}flat.setAttribute('color',new T.BufferAttribute(values,3));}const a=batches.get(m)??[];a.push(flat);batches.set(m,a);};
   const box=(x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material,angle=0)=>push(new T.BoxGeometry(w,h,d).rotateY(angle).translate(x,y,z),m);
   const hull=t.boundary??[{x:0,y:0},{x:t.width,y:0},{x:t.width,y:t.height},{x:0,y:t.height}];
   const path=(p:readonly Point[])=>p.map(v=>new T.Vector2(v.x/32,-v.y/32));

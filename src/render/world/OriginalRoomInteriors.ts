@@ -1,0 +1,231 @@
+import * as T from 'three';
+import type { RoomTemplate } from '../../game/roguelike/types';
+import { SHIP_ARCHITECTURE_PLANS } from '../../game/roguelike/shipArchitectureLayouts';
+import { shipInteriorFurnishings } from '../../game/roguelike/shipInteriorFurnishings';
+import { disposeModel, geometries } from '../meshParts';
+import { retireRoomModels } from '../RoomModelCache';
+import { acquireOriginalShipKit, buildOriginalShipKit, type OriginalKitInstance, type OriginalKitPack } from './OriginalShipKitAssets';
+import { interiorFloorServices } from './RoomInteriors';
+import { cutInteriorWallNiches } from './InteriorWallNiches';
+import { INTERIOR_PROFILES, INTERIOR_WALL_FINISHES } from './RoomInteriorProfiles';
+const floorNames = new Set(['painted-steel-deck', 'annulus-deck', 'annulus-circulation', 'environment-floor', 'shaft-deck', 'shaft-floor-panel']);
+const legacyFloorNames=new Set([...floorNames,'annulus-sealed','shaft-zinc','shaft-worn-grate','shaft-depth','shaft-amber']);
+function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
+    const instances: OriginalKitInstance[] = [], id = t.id, plan = SHIP_ARCHITECTURE_PLANS[id as keyof typeof SHIP_ARCHITECTURE_PLANS];
+    const matrix = (x: number, y: number, z: number, angle: number, sx = 1, sy = 1, sz = 1) => new T.Matrix4().compose(new T.Vector3(x, y, z), new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), angle), new T.Vector3(sx, sy, sz));
+    for (const furnishing of shipInteriorFurnishings(t))
+        instances.push({ pack: furnishing.pack, asset: furnishing.asset, matrix: matrix(furnishing.x / 32, 0, furnishing.z / 32, furnishing.angle, ...furnishing.scale), purpose: furnishing.space + ' / ' + furnishing.asset,cutaway:furnishing.source==='portal' });
+    const overhead=(pack:OriginalKitPack,asset:string,x:number,z:number,height:number,angle=0)=>instances.push({pack,asset,matrix:matrix(x/32,height,z/32,angle),purpose:'Suspended '+asset,cutaway:true});
+    // Ceiling services occupy no deck area. Their visible manufactured source
+    // gives the open nave a landmark where all wall bays lie outside the crop.
+    if(id==='residential-gallery')overhead('clinical','habitation-gallery-pendant',730,580,5);
+    if(id==='transmission-chamber')overhead('clinical','comms-uplink-dish',850,680,5);
+    if(id==='freight-hold'){
+        overhead('industrial','cargo-hoist-header',350,600,5);
+        overhead('industrial','cargo-hoist-header',900,820,5);
+    }
+    if(id==='infested-workshop'){
+        overhead('industrial','workshop-tool-bridge',300,640,5);
+        overhead('industrial','workshop-tool-bridge',780,620,5);
+    }
+    if(id==='swarm-junction')overhead('industrial','airway-exchanger',750,900,5);
+    const hull = t.boundary ?? [{ x: 0, y: 0 }, { x: t.width, y: 0 }, { x: t.width, y: t.height }, { x: 0, y: t.height }];
+    const addWall = (x: number, z: number, length: number, depth: number, angle: number, near: boolean, purpose: string) => {
+        const count = Math.max(1, Math.ceil(length / 4.1));
+        for (let n = 0; n < count; n++) {
+            const along = -length / 2 + (n + .5) * length / count;
+            instances.push({ pack: 'structure', asset: near ? 'wall-bulkhead-low' : 'wall-bulkhead', matrix: matrix(x + Math.cos(angle) * along, 0, z - Math.sin(angle) * along, angle, length / count / 4, 1, depth / .75), purpose });
+        }
+    };
+    for (let i = 0; i < hull.length; i++) {
+        const p = hull[i], q = hull[(i + 1) % hull.length], dx = (q.x - p.x) / 32, dz = (q.y - p.y) / 32, length = Math.hypot(dx, dz);
+        if (length < .25)
+            continue;
+        const nx = dz / length, nz = -dx / length, angle = -Math.atan2(dz, dx), x = (p.x + q.x) / 64, z = (p.y + q.y) / 64;
+        addWall(x + nx * .375, z + nz * .375, length, .75, angle, dx < 0, 'Hull / manufactured cap, baseboard and source strip');
+    }
+    for (const [index, p] of (t.voids ?? []).entries()) {
+        const xs = p.map(v => v.x / 32), zs = p.map(v => v.y / 32), w = Math.max(...xs) - Math.min(...xs), d = Math.max(...zs) - Math.min(...zs);
+        if (Math.min(w, d) > 1.55 || p.length !== 4)
+            continue;
+        const x = (Math.min(...xs) + Math.max(...xs)) / 2, z = (Math.min(...zs) + Math.max(...zs)) / 2;
+        addWall(x, z, Math.max(w, d), Math.min(w, d), w >= d ? 0 : Math.PI / 2, z > (plan?.arena.y ?? t.height / 2) / 32, 'Partition ' + index + ' / capped panel wall');
+    }
+    const solids = [hull, ...t.voids ?? [], ...t.obstacles.map(r => [{ x: r.x, y: r.y }, { x: r.x + r.width, y: r.y }, { x: r.x + r.width, y: r.y + r.height }, { x: r.x, y: r.y + r.height }])];
+    const touchesConstruction = (p: {
+        x: number;
+        y: number;
+    }) => solids.some(polygon => polygon.some((a, i) => {
+        const b = polygon[(i + 1) % polygon.length], dx = b.x - a.x, dz = b.y - a.y, length = dx * dx + dz * dz;
+        const f = length ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dz) / length)) : 0;
+        return Math.hypot(p.x - a.x - dx * f, p.y - a.y - dz * f) < 4;
+    }));
+    const openings = plan?.apertures ?? plan?.openings.filter(o => touchesConstruction(o.from) || touchesConstruction(o.to)) ?? [];
+    for (const opening of openings) {
+        const p = opening.from, q = opening.to, dx = (q.x - p.x) / 32, dz = (q.y - p.y) / 32, length = Math.hypot(dx, dz);
+        instances.push({ pack: 'structure', asset: 'door-threshold', matrix: matrix((p.x + q.x) / 64, -.025, (p.y + q.y) / 64, -Math.atan2(dz, dx), length / 4.5, 1, 1), purpose: 'Flush manufactured doorway threshold', castShadow: false });
+    }
+    for (const s of interiorFloorServices(id, t))
+        instances.push({ pack: s.pack, asset: s.asset, matrix: matrix(s.x / 32, s.asset === 'drainage-grating' ? -.11 : -.085, s.z / 32, s.angle, 1, 1, s.asset === 'drainage-grating' ? .75 : 1), purpose: 'Recessed ' + s.asset, castShadow: false });
+    return instances;
+}
+/** Original model owner settles before combat warmup. Session transfers survive
+ * a room cancellation; partial/late borrows retire independently and quietly. */
+export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onChanged: () => void, prerequisite: Promise<unknown> = Promise.resolve()) {
+    const controller = new AbortController(), borrowed = new Set<T.Group>(), sources = new Map<OriginalKitPack, T.Group>();
+    const restores: (() => void)[] = [], geometryChanges: {
+        mesh: T.Mesh;
+        old: T.BufferGeometry;
+        next: T.BufferGeometry;
+    }[] = [];
+    let active = true, root: T.Group | undefined, timer: ReturnType<typeof setTimeout>;
+    const retire = () => { for (const source of borrowed)
+        retireRoomModels(source); borrowed.clear(); sources.clear(); };
+    const restore = () => { for (const undo of restores.reverse())
+        undo(); restores.length = 0; };
+    const owner = { state: 'loading', error: undefined as unknown, ready: Promise.resolve(), readyPromise: Promise.resolve(), dispose() { if (owner.state === 'disposed')
+            return; active = false; controller.abort(); clearTimeout(timer); retire(); if (root) {
+            disposeModel(root);
+            root = undefined;
+        } restore(); owner.state = 'disposed'; } };
+    const work = async () => {
+        try {
+            await prerequisite;
+            if (!active)
+                return;
+            const instances = instancesFor(t), packs = [...new Set(instances.map(i => i.pack))];
+            const results = await Promise.allSettled(packs.map(async (pack) => {
+                const source = await acquireOriginalShipKit(pack, controller.signal);
+                if (!active) {
+                    retireRoomModels(source);
+                    return;
+                }
+                borrowed.add(source);
+                sources.set(pack, source);
+            }));
+            if (!active)
+                return;
+            const failed = results.find(r => r.status === 'rejected');
+            if (failed?.status === 'rejected')
+                throw failed.reason;
+            root = buildOriginalShipKit(sources, instances);
+            // Replace skins on precisely those existing solids occupied by a new
+            // original machine. Simulation still owns the old solid plus shallow bays.
+            const replacements = shipInteriorFurnishings(t).filter(f => f.source === 'solid').map(f => {
+                let bounds: T.Box3 | undefined;
+                for (const p of root!.userData.placements as {
+                    purpose: string;
+                    bounds: number[][];
+                }[])
+                    if (p.purpose === f.space + ' / ' + f.asset)
+                        bounds = new T.Box3(new T.Vector3().fromArray(p.bounds[0]), new T.Vector3().fromArray(p.bounds[1]));
+                if (!bounds)
+                    return null;
+                return { x: (bounds.min.x + bounds.max.x) / 2, z: (bounds.min.z + bounds.max.z) / 2, angle: 0, scale: 1, width: bounds.max.x - bounds.min.x + .025, depth: bounds.max.z - bounds.min.z + .025, bottom: -.01, top: 2.2 };
+            }).filter((v): v is NonNullable<typeof v> => v !== null);
+            const thin = (t.voids ?? []).flatMap(p => {
+                const xs = p.map(v => v.x / 32), zs = p.map(v => v.y / 32), w = Math.max(...xs) - Math.min(...xs), d = Math.max(...zs) - Math.min(...zs);
+                return p.length === 4 && Math.min(w, d) <= 1.55 ? [{ x: (Math.min(...xs) + Math.max(...xs)) / 2, z: (Math.min(...zs) + Math.max(...zs)) / 2, angle: 0, scale: 1, width: w + .01, depth: d + .01, bottom: -.01, top: 2.4 }] : [];
+            });
+            const services = interiorFloorServices(t.id, t).map(s => ({ x: s.x / 32, z: s.z / 32, angle: s.angle, scale: 1, width: s.width, depth: s.depth, bottom: -.6, top: .026 }));
+            const shared = new Set(geometries.values()), worldInverse = world.matrixWorld.clone().invert();
+            world.traverse(o => {
+                if (!(o instanceof T.Mesh) || Array.isArray(o.material))
+                    return;
+                for (let p: T.Object3D | null = o; p && p !== world; p = p.parent)
+                    if (p.name === 'g2-world-dressing' || p.name === 'e9-room-interiors')
+                        return;
+                const name = o.material.name;
+                if (name === 'ship-bulkhead' || name === 'ship-bulkhead-ribs') {
+                    const visible = o.visible;
+                    o.visible = false;
+                    restores.push(() => { o.visible = visible; });
+                    return;
+                }
+                const cuts = legacyFloorNames.has(name) ? services : name === 'ship-interior-cutaway' ? [...thin, ...replacements] : replacements;
+                if (!cuts.length&&!legacyFloorNames.has(name))
+                    return;
+                const old = o.geometry, relative = new T.Matrix4().multiplyMatrices(worldInverse, o.matrixWorld);
+                const construction = (old.index?old.toNonIndexed():old.clone()).applyMatrix4(relative);
+                if(legacyFloorNames.has(name)){
+                    const p=construction.getAttribute('position'),n=construction.getAttribute('normal');
+                    // The replacement skin owns these millimetre-high finishes.
+                    // Keep raised hardware and the shaft's retained grain hook;
+                    // move only old horizontal floor faces below the new skin.
+                    for(let i=0;i<p.count;i+=3){
+                        const lo=Math.min(p.getY(i),p.getY(i+1),p.getY(i+2)),hi=Math.max(p.getY(i),p.getY(i+1),p.getY(i+2));
+                        if(lo>=-.00001&&hi<=.026&&hi-lo<.0001&&n.getY(i)>.99)
+                            for(let k=0;k<3;k++)p.setY(i+k,-.025);
+                    }
+                }
+                const next = cuts.length?cutInteriorWallNiches(construction,cuts):construction;
+                if(next!==construction)construction.dispose();
+                next.applyMatrix4(relative.invert());
+                o.geometry = next;
+                // Keep replacement ownership simple: the room's normal disposal owns
+                // new buffers. Retired private source buffers are released here once.
+                geometryChanges.push({ mesh: o, old, next });
+            });
+            const profile = INTERIOR_PROFILES[t.id], finishes = INTERIOR_WALL_FINISHES[t.id];
+            root.traverse(o => {
+                if (!(o instanceof T.Mesh) || Array.isArray(o.material) || !(o.material instanceof T.MeshStandardMaterial))
+                    return;
+                const m = o.material;
+                if (finishes && m.name === 'e9-body')
+                    m.color.setHex(finishes[0]);
+                if (finishes && m.name === 'e9-ceramic')
+                    m.color.setHex(finishes[1]);
+                if (profile && m.name === 'e9-yellow' && !['crew-checkpoint', 'armory', 'freight-hold', 'breached-loading-bay', 'service-shaft-landing', 'infested-workshop', 'swarm-junction'].includes(t.id))
+                    m.color.setHex(profile.trim);
+                if (profile && m.name === 'e9-cyan') {
+                    m.color.setHex(profile.key);
+                    m.emissive.setHex(profile.key);
+                    m.emissiveIntensity = 6;
+                }
+            });
+            if (profile)
+                for (const fixture of root.userData.lightFixtures as {
+                    color: number;
+                }[])
+                    if (fixture.color === 0x65d8e6)
+                        fixture.color = profile.key;
+            world.add(root);
+            owner.state = 'ready';
+            onChanged();
+            const retired = new Set<T.BufferGeometry>();
+            for (const change of geometryChanges)
+                if (!shared.has(change.old) && !change.old.userData.sharedAsset)
+                    retired.add(change.old);
+            for (const geometry of retired)
+                geometry.dispose();
+            geometryChanges.length = 0;
+        }
+        finally {
+            retire();
+        }
+    };
+    const deadline = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Error('Original ship kit preparation timed out')), 3000); });
+    const cancelled = new Promise<void>(resolve => controller.signal.addEventListener('abort', () => resolve(), { once: true }));
+    owner.ready = Promise.race([work(), deadline, cancelled]).catch(error => {
+        if (!active)
+            return;
+        owner.error = error;
+        active = false;
+        controller.abort();
+        retire();
+        for (const change of geometryChanges.reverse()) {
+            change.mesh.geometry = change.old;
+            change.next.dispose();
+        }
+        geometryChanges.length = 0;
+        if (root) {
+            disposeModel(root);
+            root = undefined;
+        }
+        restore();
+        owner.state = 'fallback';
+        console.error('Original ship interiors failed', error);
+    }).finally(() => clearTimeout(timer));
+    owner.readyPromise = owner.ready;
+    return owner;
+}

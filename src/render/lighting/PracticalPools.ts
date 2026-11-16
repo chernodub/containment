@@ -35,7 +35,7 @@ float pool=edge*reach*grille*interruption*(.78+.22*q.y);gl_FragColor=vec4(poolCo
     if(this.disposed)return;
     let count=0,matricesChanged=false,colorsChanged=false,stylesChanged=false;const styles=this.root.geometry.getAttribute('apertureStyleNumber') as T.InstancedBufferAttribute;
     for(const fixture of fixtures){
-      if(!fixture.visible||fixture.intensity<=0||count>=(high?4:2))continue;
+      if(fixture.userData.worldBounceGain===0||!fixture.visible||fixture.intensity<=0||count>=(high?4:2))continue;
       const reactor=!!fixture.userData.reactorMood;
       const radius=reactor?2.5:Math.min(3.5,Math.max(2.3,fixture.distance*.5));
       const angle=fixture.userData.poolAngle??Math.atan2((fixture.userData.poolCenterX??0)-fixture.position.x,(fixture.userData.poolCenterZ??0)-fixture.position.z);

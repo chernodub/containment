@@ -1,0 +1,414 @@
+{
+  "name": "Containment original industrial ship kit",
+  "license": "MIT",
+  "author": "Containment contributors",
+  "source": "tools/assets/e9-ship-kit/industrial.py",
+  "rebuild": "blender -b --factory-startup -P tools/assets/e9-ship-kit/industrial.py",
+  "coordinateSystem": "glTF Y-up, metres; named group origins bottom-centred",
+  "description": "Original low-cutaway ship machinery, embedded infestation, flush access surfaces and overhead hoist/tool/exchanger landmarks; no external source art.",
+  "ao": "Eight deterministic BVH hemisphere rays per vertex, .45m range; baked BYTE_COLOR AO exported as COLOR_0",
+  "materials": {
+    "e9-body": "#24343c",
+    "e9-ceramic": "#d5ded3",
+    "e9-trim": "#8faaa8",
+    "e9-dark": "#0e1820",
+    "e9-cyan": "#65d8e6",
+    "e9-amber": "#e0b95a",
+    "e9-violet": "#b286d1",
+    "e9-green": "#71c793"
+  },
+  "models": [
+    {
+      "name": "swarm-plenum-low",
+      "dimensions": [
+        4.8,
+        0.95,
+        1.4
+      ],
+      "bounds": {
+        "min": [
+          -2.4,
+          0.0,
+          -0.7
+        ],
+        "max": [
+          2.4,
+          0.95,
+          0.7
+        ]
+      },
+      "triangles": 7056,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim",
+        "e9-violet"
+      ],
+      "primitives": 7
+    },
+    {
+      "name": "swarm-plenum-tall",
+      "dimensions": [
+        4.8,
+        1.7,
+        1.4
+      ],
+      "bounds": {
+        "min": [
+          -2.4,
+          0.0,
+          -0.7
+        ],
+        "max": [
+          2.4,
+          1.7,
+          0.7
+        ]
+      },
+      "triangles": 7488,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim",
+        "e9-violet"
+      ],
+      "primitives": 7
+    },
+    {
+      "name": "pump-skid",
+      "dimensions": [
+        3.5,
+        0.9,
+        1.3
+      ],
+      "bounds": {
+        "min": [
+          -1.75,
+          0.0,
+          -0.65
+        ],
+        "max": [
+          1.75,
+          0.9,
+          0.65
+        ]
+      },
+      "triangles": 3228,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-green",
+        "e9-trim"
+      ],
+      "primitives": 5
+    },
+    {
+      "name": "pipe-manifold",
+      "dimensions": [
+        3.2,
+        0.9,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -1.6,
+          0.0,
+          -0.35
+        ],
+        "max": [
+          1.6,
+          0.9,
+          0.35
+        ]
+      },
+      "triangles": 2744,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 5
+    },
+    {
+      "name": "cargo-restraintbank",
+      "dimensions": [
+        3.2,
+        0.9,
+        1.3
+      ],
+      "bounds": {
+        "min": [
+          -1.6,
+          0.0,
+          -0.65
+        ],
+        "max": [
+          1.6,
+          0.9,
+          0.65
+        ]
+      },
+      "triangles": 2556,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 5
+    },
+    {
+      "name": "cargo-restraintbank-tall",
+      "dimensions": [
+        3.2,
+        1.7,
+        1.3
+      ],
+      "bounds": {
+        "min": [
+          -1.6,
+          0.0,
+          -0.65
+        ],
+        "max": [
+          1.6,
+          1.7,
+          0.65
+        ]
+      },
+      "triangles": 2556,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 5
+    },
+    {
+      "name": "shielding-servicebay",
+      "dimensions": [
+        3.5,
+        0.9,
+        1.2
+      ],
+      "bounds": {
+        "min": [
+          -1.75,
+          0.0,
+          -0.6
+        ],
+        "max": [
+          1.75,
+          0.9,
+          0.6
+        ]
+      },
+      "triangles": 2212,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim",
+        "e9-violet"
+      ],
+      "primitives": 6
+    },
+    {
+      "name": "reactor-servicebay",
+      "dimensions": [
+        3.5,
+        0.9,
+        1.2
+      ],
+      "bounds": {
+        "min": [
+          -1.75,
+          0.0,
+          -0.6
+        ],
+        "max": [
+          1.75,
+          0.9,
+          0.6
+        ]
+      },
+      "triangles": 2688,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 6
+    },
+    {
+      "name": "cabletray-open-cover",
+      "dimensions": [
+        3.0,
+        0.1,
+        0.8
+      ],
+      "bounds": {
+        "min": [
+          -1.5,
+          0.0,
+          -0.4
+        ],
+        "max": [
+          1.5,
+          0.1,
+          0.4
+        ]
+      },
+      "triangles": 980,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 4
+    },
+    {
+      "name": "drainage-grating",
+      "dimensions": [
+        3.0,
+        0.12,
+        1.0
+      ],
+      "bounds": {
+        "min": [
+          -1.5,
+          0.0,
+          -0.5
+        ],
+        "max": [
+          1.5,
+          0.12,
+          0.5
+        ]
+      },
+      "triangles": 708,
+      "materials": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 3
+    },
+    {
+      "name": "cargo-hoist-header",
+      "dimensions": [
+        6.0,
+        2.2222,
+        1.5
+      ],
+      "bounds": {
+        "min": [
+          -3.0,
+          0.0,
+          -0.75
+        ],
+        "max": [
+          3.0,
+          2.2222,
+          0.75
+        ]
+      },
+      "triangles": 3964,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 5,
+      "mount": "overhead; bottom approximately 5m above deck",
+      "floorCollider": false
+    },
+    {
+      "name": "workshop-tool-bridge",
+      "dimensions": [
+        6.0,
+        1.2575,
+        1.5
+      ],
+      "bounds": {
+        "min": [
+          -3.0,
+          0.0,
+          -0.75
+        ],
+        "max": [
+          3.0,
+          1.2575,
+          0.75
+        ]
+      },
+      "triangles": 8072,
+      "materials": [
+        "e9-amber",
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim"
+      ],
+      "primitives": 5,
+      "mount": "overhead; bottom approximately 5m above deck",
+      "floorCollider": false
+    },
+    {
+      "name": "airway-exchanger",
+      "dimensions": [
+        4.8,
+        0.96,
+        2.0
+      ],
+      "bounds": {
+        "min": [
+          -2.4,
+          0.0,
+          -1.0
+        ],
+        "max": [
+          2.4,
+          0.96,
+          1.0
+        ]
+      },
+      "triangles": 8860,
+      "materials": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-dark",
+        "e9-trim",
+        "e9-violet"
+      ],
+      "primitives": 5,
+      "mount": "overhead; bottom approximately 5m above deck",
+      "floorCollider": false
+    }
+  ],
+  "output": {
+    "file": "kit.glb",
+    "bytes": 1343668,
+    "triangles": 53112,
+    "sha256": "8e792635ea0e454fb61b7d4233d5ebb38c3d28d728be7c5643ee00b62ecd72f4"
+  }
+}
