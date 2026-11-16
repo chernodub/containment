@@ -103,10 +103,10 @@ for (const scenario of keys) {
   for (const [label, field, statistic] of [
     ['frame p50 ms', 'frame', 'p50'], ['frame p95 ms', 'frame', 'p95'],
     ['CPU update/render/HUD p50 ms', 'cpu', 'p50'], ['CPU update/render/HUD p95 ms', 'cpu', 'p95'],
-    ['total GPU p50 ms (unavailable when stage queries own timer)', 'gpu', 'p50'],
+    ['UI-independent post envelope GPU p50 ms (frameTotal; ordinary total fallback)', 'gpu', 'p50'],
     ['adaptive scale minimum', 'adaptiveScale', 'min'], ['adaptive scale p50', 'adaptiveScale', 'p50'],
     ['draws maximum', 'draws', 'max'], ['triangles maximum', 'triangles', 'max'],
-  ]) lines.push(`| ${label} | ${pair(a?.summary?.[field]?.[statistic], b?.summary?.[field]?.[statistic])} |`);
+  ]) {const metric=run=>field==='gpu'?(passStats(run?.gpuPassTimings?.passes?.find(pass=>pass.name==='frameTotal'))?.[statistic]??run?.summary?.[field]?.[statistic]):run?.summary?.[field]?.[statistic];lines.push(`| ${label} | ${pair(metric(a),metric(b))} |`);}
   lines.push(`| mid-combat program creations | ${pair(a?.programs, b?.programs, 0)} |`, '');
   const aPasses = new Map((a?.gpuPassTimings?.passes ?? []).map(pass => [pass.name, pass]));
   const bPasses = new Map((b?.gpuPassTimings?.passes ?? []).map(pass => [pass.name, pass]));
