@@ -138,6 +138,16 @@ def diagnostic():
         for y in (-.4,.4):L.bolt((x,y,1.13),.025,'Z')
     L.box('Instrument serial plate',(.1,-.76,.93),(.75,.015,.1),'p11-tint',0,tint='cream')
     L.stencil('VAC - 02',(-.23,-.775,.93),.065,tint='black')
+    # Interrupted diagnosis: live specimen cassette removed from an occupied berth.
+    L.box('Open evidence drawer',(-.4,-.6,1.07),(1.25,.32,.07),'e9-dark',.025)
+    for i in range(3):
+        x=-.83+i*.42
+        L.box('Patient evidence cassette',(x,-.6,1.15),(.32,.28,.1),'e9-ceramic',.02)
+        L.box('Casette observation window',(x,-.6,1.21),(.23,.22,.012),'e9-dark',.005)
+        L.box('Life reading',(x,-.6,1.222),(.025,.16,.012),'e9-cyan',0)
+        L.stencil(str(41+i),(x-.1,-.68,1.234),.07,face='Z',tint='cream')
+    L.sweep('Detached patient lead',[(-.8,-.6,1),(-1.1,-.65,1.2),(-1.5,-.5,1.05)],.024,'p11-rubber',6)
+
 
 def interlock():
     L.asset('key-cylinder-interlock',12000)
