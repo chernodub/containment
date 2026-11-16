@@ -43,14 +43,16 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | R10 independent verdict | done | 7 / 7.5 / 7 / 5.5 / 6 / 6.5 — biggest blocker: rooms look like modular arenas — `reviews/R10-verdict.md` |
 | **Wave 8** — level architecture (L8 ship plans, V8 ability polish, U9 combat HUD) | merged | `nextgen` @ 13496bd. L8: all twenty rooms re-authored as hull-connected ship plans with named sub-spaces; 5,264 tests + 20/20 authored rooms on its branch. Accepted balance record (N160): 58.75% completion; misses: rig spread 16.25pp, ordinary median 29.92 s. Open: eleven staged draw-cap misses (Armory, Freight, Transmission kiting), intermittent smoke failure (kit fetch aborted on return to menu), and — lead review of `l8-final` — most gameplay frames still show bare tile grid with walls reading as floor stripes. |
 | **Wave 9** — what the player sees and feels (E9 interiors + original ship kit, M9/M10 motion and melee attack states, K10 original marine + arsenal) | merged | `nextgen` builds with all four merged. E9: palettes, real walls, original Blender ship kit, draw misses fixed (≤ 296 draws); High frame p95 24–33 ms miss. M10: authored clips (69 marine, 23 per family), telegraphed melee strikes; motion self-scores marine 7.33, enemies 7.36; balance "rescued" to 65% bot completion only by raising swarmer damage to 78/100 — rejected by lead, see B10. K10: original marine with four colour-blocked rigs and five weapons (22–25k tris), accepted after a second pass. |
-| **Wave 10** | running | |
-| B10 balance for humans (`streams/B10-human-balance.md`) | merged | human-limited bot profiles; Crawler 320 ms/10, Stalker 460/22, Brute 700/35; competent 42.5% completion (rigs 40/65/30/35), expert 100%, novice 2.5% (target 5–20% missed, accepted for now); 2–4 hits per room median in rooms 1–5 |
-| U10 new marine across the interface (`streams/U10-hero-ui.md`) | merged | Blender-rendered title key art (layered), rig-select portraits, pause/results/ending; title 45 KB composite |
-| E10 baked floor sets, depth, shaped light, soft shadows, low cover, weakest rooms, performance (`streams/E10-floors-and-light.md`) | running | |
-| C10 melee readability: telegraph contrast, lunge/pounce alignment to new footprints, family wind-up/strike audio cues | running | from B10 integration requests |
-| K11 original creature families on the preserved skeletons (same thread/pipeline as K10) | running | removes the last third-party characters |
+| **Wave 10** — B10 human balance, U10 hero UI + rendered title, E10 baked floors/light/shadows/cover, C10 melee readability (telegraph, lunge alignment, family audio cues) | merged | `nextgen` @ 00c91f5f builds. B10: competent bot 42.5%, expert 100%, novice 2.5% (miss → D11). E10: all twenty rooms re-floored and re-lit, draws 149–277; frame time unverified on a loaded host (→ F11). Sol's K11 creature attempt rejected (toy-like), kept on `t3/k11-sol-wip`. |
+| **Wave 11** | running | model routing by owner: Opus models, Sol (low effort) executes, Opus + Astra review |
+| K11 original creature families — Opus (`streams/K11-original-creatures.md`) | running | must beat the current creatures in the same frame |
+| K12 hero-quality marine, arsenal, re-rendered key art and portraits — Opus (`streams/K12-hero-closeup.md`) | running | |
+| P11 one hero set piece per room, kit craft pass, infestation set — Opus (`streams/P11-set-pieces.md`) | running | |
+| G12 review gallery `final6` of the wave-10 build — Sol | running | input for R11 |
+| D11 difficulty modes (Story/Standard/Veteran), in-play onboarding hints, "how you died" — Sol | running | |
+| F11 per-pass GPU/CPU breakdown that survives host load, then real cost cuts — Sol | running | |
 
-Next (lead): I12 integration + acceptance alone (performance certification, per-rig native campaigns), gallery `final6` incl. motion strips, seventh independent verdict (stills + motion). Then, depending on the verdict: original creature families (K11) on the preserved skeletons.
+Next (lead): R11 independent verdicts by Opus and Astra on `final6` (stills, motion strips, real-play storyboards); merge wave 11; I12 performance certification on a quiet machine; re-review.
 
 ## Decisions log
 
@@ -67,3 +69,4 @@ Next (lead): I12 integration + acceptance alone (performance certification, per-
 - 2026-11-15 L8 converged by lead decision after ten hours: balance frozen at the audited c7 source, hairline misses accepted rather than chased with further cohorts. Lead review of `l8-final`: plans are right, frames are not — wave 9 inserts a presentation-only interiors pass (E9) and the first motion/game-feel stream (M9) before the next independent review.
 - 2026-11-15 After M9: contact-only melee damage is replaced by deterministic attack states (wind-up → strike → recovery, telegraphed, dodgeable) — the second authorised gameplay change after L8; balance re-verified with one before/after bot cohort, not an audit programme.
 - 2026-11-15 Owner decisions: (1) all automated tests and test gates removed (commit 4b2a5f4, tag `pre-test-removal`) — verification is build + bot playtest + looking at captures; (2) Blender installed and ground-up remodelling authorised. E9 may model an original ship kit, M10 authors real animation clips, K10 builds an original marine and arsenal. If K10 succeeds, original creature families follow.
+- 2026-11-16 Owner routing: 3D modelling by Claude Opus (subagents on Opus too), all other execution by GPT Sol at low reasoning effort, reviews/feedback by Opus and GPT Astra.
