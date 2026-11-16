@@ -39,11 +39,17 @@ varying vec3 vBeaconNormal;
 varying vec3 vBeaconView;
 uniform float strength;
 uniform sampler2D sceneDepth;
+uniform sampler2D sceneGeometry;
 uniform vec2 inverseViewport;
 uniform float hasSceneDepth;
 void main(){
   if(hasSceneDepth>.5){
-    float surface=texture2D(sceneDepth,gl_FragCoord.xy*inverseViewport).x;
+    vec2 uv=gl_FragCoord.xy*inverseViewport;
+    // Only opaque architecture can warrant an x-ray overlay. In particular,
+    // another part of the marine must never wash out his own visible armor.
+    float kind=mod(floor(texture2D(sceneGeometry,uv).a*255.+.5),8.);
+    if(abs(kind-2.)>.25)discard;
+    float surface=texture2D(sceneDepth,uv).x;
     if(gl_FragCoord.z<=surface+.00008)discard;
   }
   float rim=pow(max(0.0,1.0-abs(dot(normalize(vBeaconNormal),normalize(vBeaconView)))),2.5);
@@ -81,7 +87,7 @@ function locatorTexture():T.DataTexture {
 /** A quiet suit locator and borrowed-skin silhouette keep the marine findable in a crowd. */
 export class PlayerBeacon {
   readonly root = new T.Group();
-  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.28},sceneDepth:{value:null},inverseViewport:{value:new T.Vector2(1,1)},hasSceneDepth:{value:0}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
+  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.28},sceneDepth:{value:null},sceneGeometry:{value:null},inverseViewport:{value:new T.Vector2(1,1)},hasSceneDepth:{value:0}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
   private readonly groups: SkinGroup[] = [];
   private readonly locatorMap=locatorTexture();
   private readonly locatorMaterial=new T.MeshBasicMaterial({map:this.locatorMap,transparent:true,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide,forceSinglePass:true});
@@ -124,8 +130,9 @@ export class PlayerBeacon {
   }
 
   /** Borrow the post depth; the forward path uses the existing scene depth buffer. */
-  setDepthSource(depth:T.DepthTexture|null,width:number,height:number):void {
+  setDepthSource(depth:T.DepthTexture|null,width:number,height:number,geometry:T.Texture|null=null):void {
     this.material.uniforms.sceneDepth.value=depth;
+    this.material.uniforms.sceneGeometry.value=geometry;
     this.material.uniforms.hasSceneDepth.value=depth?1:0;
     this.material.uniforms.inverseViewport.value.set(1/Math.max(1,width),1/Math.max(1,height));
     this.material.depthTest=!depth;this.material.depthFunc=T.GreaterDepth;
