@@ -9,169 +9,169 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 2.259,
-    "blenderPNGDecodeMs": 5.639,
+    "bakeSeconds": 3.308,
+    "blenderPNGDecodeMs": 168.521,
     "file": "clinical-security-normal.png",
     "size": 512,
-    "bytes": 376903,
+    "bytes": 375667,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 186226,
+    "nonFlatPixels": 189463,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "awakening-berth-array--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.105,
+        "seconds": 0.104,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "awakening-berth-array--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.1,
+        "seconds": 0.13,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "awakening-berth-array--p11-frost",
         "role": "p11-frost",
-        "seconds": 0.03,
+        "seconds": 0.036,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "awakening-berth-array--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.065,
+        "seconds": 0.106,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "awakening-berth-array--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.084,
+        "seconds": 0.099,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "awakening-berth-array--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.096,
+        "seconds": 0.063,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "awakening-berth-array--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.067,
+        "seconds": 0.065,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "passenger-sleeper-carrier--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.034,
+        "seconds": 0.061,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "passenger-sleeper-carrier--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.055,
+        "seconds": 0.118,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "passenger-sleeper-carrier--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.042,
+        "seconds": 0.08,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "passenger-sleeper-carrier--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.042,
+        "seconds": 0.094,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "passenger-sleeper-carrier--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.033,
+        "seconds": 0.094,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "passenger-sleeper-carrier--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.041,
+        "seconds": 0.093,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--e9-ceramic",
         "role": "e9-ceramic",
-        "seconds": 0.03,
+        "seconds": 0.076,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.04,
+        "seconds": 0.076,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.059,
+        "seconds": 0.13,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.032,
+        "seconds": 0.048,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.04,
+        "seconds": 0.08,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.03,
+        "seconds": 0.064,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "checkpoint-scanner-gate--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.047,
+        "seconds": 0.062,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "armory-weapon-carousel--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.043,
+        "seconds": 0.05,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "armory-weapon-carousel--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.072,
+        "seconds": 0.096,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "armory-weapon-carousel--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.09,
+        "seconds": 0.105,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "armory-weapon-carousel--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.085,
+        "seconds": 0.112,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "armory-weapon-carousel--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.027,
+        "seconds": 0.033,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "armory-weapon-carousel--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.042,
+        "seconds": 0.057,
         "method": "three-segment high bevel"
       }
     ]
@@ -194,7 +194,7 @@
       "name": "awakening-berth-array",
       "size": [
         10.6,
-        1.8106,
+        1.862,
         2.2815
       ],
       "bounds": {
@@ -205,11 +205,11 @@
         ],
         "max": [
           5.3,
-          1.8406,
+          1.892,
           1.099
         ]
       },
-      "triangles": 11404,
+      "triangles": 11582,
       "budget": 12000,
       "finishes": [
         "e9-cyan",
@@ -323,9 +323,9 @@
   ],
   "output": {
     "file": "clinical-security.glb",
-    "bytes": 1912340,
-    "sha256": "ee2e8216823ebe1622f761797cdb3495feb1c029722c1a92e91e30f13b933ccf",
-    "triangles": 25858
+    "bytes": 1920812,
+    "sha256": "1de7b3dafce5c7775b4b038c8a853d188d85974601608324a0015ef15a72d634",
+    "triangles": 26036
   },
   "overBudget": [],
   "uvEncoding": "normalized UNSIGNED_SHORT; maximum error0.004 atlas texel at512; native glTF2"
