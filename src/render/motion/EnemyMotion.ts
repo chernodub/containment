@@ -180,13 +180,13 @@ export class EnemyMotion {
       const length=Math.hypot(this.body.position.x,this.body.position.z),bound=extension>0?limit:this.state.offsetLimit;
       if(length>bound){this.body.position.x*=bound/length;this.body.position.z*=bound/length;}
       this.body.rotation.set(
-        Math.cos(direction)*bend+(brace*p.rear*.48+strike*p.strike*.32+recovery*.16)*motion,
+        Math.cos(direction)*bend+(brace*p.rear*.90+strike*p.strike*.44+recovery*.22)*motion,
         recovery*.12*motion,-Math.sin(direction)*bend-recovery*.13*motion);
       // Compression and release stay deliberately smaller than the authored
       // poses; this layer must survive replacement meshes on the same rig.
-      this.body.scale.set(1+(brace*p.squashX*.30+strike*.08)*motion,
-        1+(brace*p.squashY*.30-strike*.08-contact*.06)*motion,
-        1+(brace*p.squashZ*.30+strike*.12)*motion);
+      this.body.scale.set(1+(brace*p.squashX*.90+strike*.10)*motion,
+        1+(brace*p.squashY*.90-strike*.10-contact*.06)*motion,
+        1+(brace*p.squashZ*.90+strike*.16)*motion);
       this.body.position.y-=contact*.045/p.weight;
       this.body.position.y-=recovery*.025*motion;
       this.state.offsetX=this.body.position.x;this.state.offsetZ=this.body.position.z;return;
