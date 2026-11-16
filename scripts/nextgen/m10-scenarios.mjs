@@ -80,3 +80,24 @@ export function registerM10Scenarios(scenarios) {
     },
   });
 }
+
+/** C10 repeats the native lane on the contrast extremes; clutter is a labelled
+ * presentation replay over native melee clocks, never collision or damage data. */
+export function registerC10Scenarios(scenarios) {
+  const crowd=scenarios.find(s=>s.id==='m10-melee-crowd');
+  scenarios.push({...crowd,id:'c10-melee-swarm',setup:new Function('return ('+crowd.setup.toString().replace(/const families=\[[^;]+;/,"const families=Array(20).fill('crawler');").replace('requestedFamilies:{crawler:10,brute:3,stalker:3,spitter:2,carrier:2}','requestedFamilies:{crawler:20}')+')()')});
+  for(const room of ['crew-checkpoint','relay-racks']) {
+    const base=scenarios.find(s=>s.id==='m10-melee-crawler');
+    scenarios.push({...base,id:`c10-melee-${room}`,room,setup:new Function(`return (async()=>{
+      const setup=${base.setup.toString().replaceAll('awakening-bay',room)};
+      await setup();
+      const d=window.__containmentDebug,g=d.game,r=d.renderer,p=g.player;
+      // Replay corpse and friendly arc/white feedback through production owners.
+      // The hostile Crawler and its phase/shape remain entirely native.
+      r.effect({type:'corpse',id:900001,family:'crawler',x:p.x+12,y:p.y+20,vx:0,vy:0});
+      r.effect({type:'ability',x:p.x,y:p.y,ability:{ability:'overload',rig:'arc',slot:'tactical',phase:'impact',x:p.x,y:p.y,radius:100,durationMs:500}});
+      r.effect({type:'ability',x:p.x-25,y:p.y+15,ability:{ability:'overload',rig:'arc',slot:'tactical',phase:'link',targetX:p.x+60,targetY:p.y-20}});
+      d.g5Proof.clutterPresentationReplay=true;d.refresh();
+    })();`)});
+  }
+}

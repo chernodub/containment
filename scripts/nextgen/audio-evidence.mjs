@@ -6,7 +6,7 @@ import { chromium } from 'playwright';
 
 // Run: node scripts/nextgen/audio-evidence.mjs. --reuse-recipes retains a prior measured recipe pass.
 // No production entry/server changes. Reuse is explicit and recorded; use a full run after recipe edits.
-const out = path.resolve('artifacts/nextgen/s2-audio');
+const out = path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6) || 'artifacts/nextgen/s2-audio');
 await mkdir(out, { recursive: true });
 const server = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true, include: [] }, server: { middlewareMode: true, hmr: false }, logLevel: 'error' });
 const httpServer = createHttpServer(server.middlewares);
@@ -154,6 +154,28 @@ try {
           synchronousSynthesisCalls: tasks.length, workerPcmCopies: copies.length, workerPcmCopyMaxMs: Math.max(0, ...copies), timerMaxDelayMs, diagnostics,
           note: 'Main-thread wall time around synchronous buffer preparation and transferred-PCM copies, plus a 16ms responsiveness timer. Worker CPU time is excluded. Headless browser measurements are not a hardware frame-time certification.' };
       },
+      async meleeCrowd() {
+        const context=new OfflineAudioContext(2,rate*3,rate);
+        const audio=new AudioSystem({master:1,effects:1,music:0},{context,loadSamples:false,prewarm:false});await audio.unlock();
+        const listener={x:0,y:0};
+        const emit=(family,type,x)=>audio.handleEffect({type,family,x,y:0},listener);
+        const firstPause=context.suspend(.12);
+        const rendering=context.startRendering();
+        const samples=[];
+        for(let i=0;i<18;i++){
+          await (i===0?firstPause:context.suspend((i+1)*.12));
+          // Twenty simultaneous swarm events, plus an independent heavy tell.
+          for(let n=0;n<20;n++)emit('crawler',i%3===0?'enemy-warning':'enemy-attack',n%2?160:-160);
+          if(i%6===0)emit('brute','enemy-warning',-180);
+          if(i%6===5)emit('brute','enemy-attack',-180);
+          samples.push({time:context.currentTime,swarm:audio.swarmVoices.length,...audio.diagnostics});
+          if(i===12){audio.pauseAll();emit('crawler','enemy-warning',0);samples.push({pause:true,...audio.diagnostics});audio.resumeAll();}
+          if(i===14){audio.setMasterVolume(0);const before=audio.diagnostics.admitted;emit('brute','enemy-attack',0);samples.push({mute:true,admittedDelta:audio.diagnostics.admitted-before});audio.setMasterVolume(1);}
+          await context.resume();
+        }
+        const rendered=await rendering;
+        const r=result('melee:swarm-heavy',[rendered.getChannelData(0),rendered.getChannelData(1)],3,{samples,diagnostics:audio.diagnostics});audio.destroy();return r;
+      },
       async fight() {
         const seconds = 12, context = new OfflineAudioContext(16, seconds * rate, rate);
         context.destination.channelInterpretation = 'discrete';
@@ -227,12 +249,14 @@ try {
   } else {
     console.log(`Rendering ${recipes.length} authored recipes through OfflineAudioContext and production MixEngine…`);
     for (let i = 0; i < recipes.length; i++) {
+      if(process.argv.includes('--melee-only')&&!/^enemy:(crawler|stalker|brute|spitter|carrier)(-elite)?:(warning|attack)$/.test(recipes[i].id))continue;
       await save(await page.evaluate(index => window.__evidence.recipe(index), i));
       if ((i + 1) % 50 === 0) console.log(`  ${i + 1}/${recipes.length} recipes`);
     }
   }
   for (const kind of ['pistol', 'rifle', 'shotgun', 'plasma', 'rocket', 'large-explosion']) await save(await page.evaluate(kind => window.__evidence.layered(kind), kind));
   for (const kind of ['freeze', 'shatter', 'reactor']) await save(await page.evaluate(kind => window.__evidence.elemental(kind), kind));
+  if(process.argv.includes('--melee-only'))await save(await page.evaluate(()=>window.__evidence.meleeCrowd()));
   const benchmark = await page.evaluate(() => window.__evidence.benchmark());
   try { for (const result of await page.evaluate(() => window.__evidence.fight())) await save(result); }
   catch (error) { failures.push(`Dense fight render: ${error.message}`); }

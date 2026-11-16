@@ -161,8 +161,12 @@ export class EnemyMotion {
       const contact=this.impact*Math.max(0,1-this.impactAge/ACTOR_IMPULSE_SECONDS)**2*motion;
       // Authored center travel uses at most .301 radius; reserve .049 for this layer.
       const direction=aim-this.hitAngle,offset=this.state.offsetLimit*contact*.14;
-      const releaseAge=.42-this.release,extension=this.release>0?Math.sin(Math.min(1,releaseAge/.045)*Math.PI/2)*Math.max(0,1-releaseAge/.15):0;
-      const limit=this.family==='stalker'&&this.strikeRange>0?Math.min(this.strikeRange,2.2):this.state.offsetLimit;
+      // Hit is accepted at strike entry, so extension is already at contact.
+      // The off-balance return follows the full native recovery, including elites.
+      const extension=this.nativePhase==='strike'?1-.35*this.nativeProgress
+        :this.nativePhase==='recovery'?.65*(1-T.MathUtils.smoothstep(this.nativeProgress,0,1)):0;
+      const lunging=this.family==='stalker'||this.family==='crawler';
+      const limit=lunging&&this.strikeRange>0?Math.max(0,this.strikeRange-(this.root.userData.colliderRadius??.5)):this.state.offsetLimit;
       const strikeDirection=this.nativePhase&&this.nativePhase!=='approach'?aim-this.nativeAngle:0;
       this.body.position.set(Math.sin(direction)*offset+Math.sin(strikeDirection)*limit*extension,this.restY,Math.cos(direction)*offset+Math.cos(strikeDirection)*limit*extension);
       const length=Math.hypot(this.body.position.x,this.body.position.z),bound=extension>0?limit:this.state.offsetLimit;

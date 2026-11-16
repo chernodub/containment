@@ -445,12 +445,12 @@ export class AuthoredEnemyMotion {
         // A fresh native warning/strike must remain visible after thaw even
         // when an older hit reaction was held by the frozen visual clock.
         if (this.phase === 'windup' || this.phase === 'strike')
-            return this.player.sample(this.phase === 'windup' ? 'm10-windup' : 'm10-strike', this.progress, dt, this.phase === 'strike' ? .02 : .04);
+            return this.player.sample(this.phase === 'windup' ? 'm10-windup' : 'm10-strike', this.progress, dt, this.phase === 'strike' ? 0 : .025);
+        if (this.phase === 'recovery')
+            return this.player.sample('m10-recovery', this.progress, dt, .025);
         const hit = (this.heavy ? HEAVY_HITS : LIGHT_HITS)[directionIndex(this.hitDirection, aim)];
         if (this.hitAge < this.player.duration(hit))
             return this.player.sample(hit, this.hitAge / this.player.duration(hit), dt, .025, this.feedback);
-        if (this.phase === 'recovery')
-            return this.player.sample('m10-recovery', this.progress, dt, .04);
         if (winding)
             return this.player.sample('m10-windup', anticipation, dt, .04);
         if (this.attackAge < .16)

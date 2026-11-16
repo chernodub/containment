@@ -137,12 +137,44 @@ function vocalRecipe(family: string, profile: VocalProfile, phase: EnemyCuePhase
   };
 }
 
+/** Dry swarm pulses, breathy predator, low heavy and two wet cavity signatures.
+ * Separate event onsets own warning/strike; no delayed synthetic hit is guessed. */
+function meleeRecipe(family: string, phase: EnemyCuePhase, elite: boolean): CueRecipe | null {
+  if (phase === 'death') return null;
+  const warning=phase==='warning', pitch=elite?.94:1;
+  const durations: Record<string,number>={crawler:.32,stalker:.46,brute:.70,spitter:.40,carrier:.66};
+  if (!(family in durations)) return null;
+  const duration=warning?durations[family]*(elite?.95:1):family==='brute'?.48:family==='carrier'?.32:.18;
+  let layers: SynthLayer[];
+  if(family==='crawler') layers=warning?[
+    noise(.55,2600,duration,{highpass:true,am:.94,pulse:31,decay:.1,attack:.015}),
+    metal(.26,1150*pitch,.07),metal(.32,1650*pitch,.07,{delay:.10}),metal(.40,2250*pitch,.08,{delay:.21}),
+  ]:[noise(.85,4200,.045,{decay:7}),metal(.5,1800*pitch,.075),tone(.28,360,140,.10)];
+  else if(family==='stalker') layers=warning?[
+    noise(.65,1800,duration,{highpass:true,attack:duration*.65,decay:0}),
+    tone(.28,900*pitch,2400*pitch,duration,{fm:1.3,attack:duration*.65,decay:0}),
+  ]:[noise(1,6200,.035,{decay:8}),tone(.65,2400*pitch,130,.12,{fm:2.1,decay:7})];
+  else if(family==='brute') layers=warning?[
+    tone(.8,48*pitch,92*pitch,duration,{fm:2.3,attack:duration*.7,decay:0,am:.4,pulse:19}),
+    noise(.55,540,duration,{attack:duration*.8,decay:0}),
+  ]:[tone(1.1,82*pitch,29,.46,{decay:5}),noise(.55,720,.18),metal(.25,180,.12)];
+  else if(family==='spitter') layers=warning?[
+    tone(.65,240*pitch,430,duration,{fm:5,modRate:.26,am:.8,pulse:23,attack:.06,decay:.2}),noise(.35,1500,duration,{am:.8,pulse:23}),
+  ]:[tone(.8,610*pitch,110,.16,{fm:7,modRate:.23}),noise(.65,2200,.12,{am:.7,pulse:32})];
+  else layers=warning?[
+    tone(.8,82*pitch,150,duration,{fm:4.8,modRate:.31,am:.85,pulse:8,attack:.12,decay:.2}),noise(.45,680,duration,{am:.9,pulse:8}),
+  ]:[tone(.9,150*pitch,48,.31,{fm:5,am:.8,pulse:11}),noise(.6,980,.20)];
+  return {id:`enemy:${family}${elite?'-elite':''}:${phase}`,family:'enemy',bus:'enemies',duration,layers,
+    priority:family==='brute'?84:family==='crawler'?65:78,interval:family==='crawler'?.10:.12,
+    rms:family==='crawler'?.055:family==='brute'?.105:.08,peak:family==='brute'?.55:.42};
+}
+
 const enemyRecipes = new Map<string, CueRecipe>();
 for (const [family, profile] of Object.entries(vocals)) {
   for (const phase of ['warning', 'attack', 'death'] as const) {
-    const recipe = vocalRecipe(family, profile, phase); enemyRecipes.set(recipe.id, recipe);
+    const recipe = meleeRecipe(family, phase, false) ?? vocalRecipe(family, profile, phase); enemyRecipes.set(recipe.id, recipe);
     if (['crawler', 'brute', 'spitter', 'stalker', 'carrier'].includes(family)) {
-      const elite = vocalRecipe(family, profile, phase, true); enemyRecipes.set(elite.id, elite);
+      const elite = meleeRecipe(family, phase, true) ?? vocalRecipe(family, profile, phase, true); enemyRecipes.set(elite.id, elite);
     }
   }
 }
