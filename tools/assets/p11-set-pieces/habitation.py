@@ -132,12 +132,13 @@ def leaf(name,root,tip,width,tint):
     a,b=Vector(root),Vector(tip);d=b-a;side=d.cross(Vector((0,0,1))).normalized()
     bm=bmesh.new();rows=[]
     for i in range(7):
-        t=i/6;center=a+d*t+Vector((0,0,math.sin(t*math.pi)*.055))
+        t=i/6;center=a+d*t+Vector((0,0,math.sin(t*math.pi)*width*.7))
         w=max(.002,math.sin(math.pi*t)**.8*width)
-        rows.append([bm.verts.new(center+side*w*sign-Vector((0,0,abs(sign)*w*.22))) for sign in (-1,0,1)])
+        rows.append([bm.verts.new(center+side*w*sign+Vector((0,0,sign*w*math.sin(t*4)*.6-abs(sign)*w*.4))) for sign in (-1,0,1)])
     for i in range(6):
         for j in range(2):bm.faces.new([rows[i][j],rows[i+1][j],rows[i+1][j+1],rows[i][j+1]])
-    L.mesh_object(name,bm,'p11-tint',tint=tint,smooth=False)
+    L.mesh_object(name,bm,'p11-tint',tint=tint,smooth=True)
+    L.sweep('Leaf midrib',[a+d*(i/6)+Vector((0,0,math.sin(i/6*math.pi)*width*.7+.003)) for i in range(7)],.004,'p11-tint',3,tint='wood')
 
 def atrium():
     L.asset('atrium-conservatory',12000)
@@ -162,10 +163,22 @@ def atrium():
         for j in range(5):
             off=Vector(end)+Vector((rng.uniform(-.3,.3),rng.uniform(-.3,.3),rng.uniform(-.16,.18)))
             L.sweep('Leaf petiole',[Vector(end),off],.009,'p11-tint',4,tint='wood')
-            leaf('Garden leaf',off,off+Vector((math.cos(a+j)*.48,math.sin(a+j)*.48,.09)),.11,'olive' if j%2 else 'mint')
+            leaf('Garden leaf',off,off+Vector((math.cos(a+j)*.48,math.sin(a+j)*.48,rng.uniform(-.15,.25))),.085,'olive' if j%3 else '#495b3e')
     for i in range(14):
         x=rng.uniform(-1.5,1.5);y=rng.uniform(-.9,.9)
         for j in range(3):leaf('Ground fern',(x,y,.55),(x+math.cos(j*2.1)*.35,y+math.sin(j*2.1)*.3,.85),.10,'olive')
+    # Closed water circuit: supply canister, regulator, branch feeds and drip ring.
+    L.cylinder('Irrigation pressure vessel',(-1.37,.62,.88),.23,.65,'p11-tint-metal','Z',12,.025,tint='navy')
+    L.torus('Vessel retaining strap',(-1.37,.62,.78),.24,.025,'p11-steel','Z',12,4)
+    L.cylinder('Regulator neck',(-1.37,.62,1.26),.09,.14,'p11-steel','Z',10,0)
+    L.valve_wheel((-1.37,.62,1.36),.12)
+    L.sweep('Regulated supply',[(-1.37,.62,1.28),(-1.65,.62,1.28),(-1.8,.62,.6),(-1.8,-.75,.6)],.035,'p11-steel',7)
+    L.sweep('Cross bed supply',[(-1.8,-.75,.6),(0,-.75,.6),(1.8,-.75,.6)],.025,'p11-rubber',6)
+    L.torus('Root drip ring',(0,0,.57),.38,.025,'p11-rubber','Z',20,5)
+    L.sweep('Root branch feed',[(0,-.75,.6),(0,-.38,.57)],.025,'p11-rubber',6)
+    for x in (-1.8,1.8):
+        for y in (-.65,.2,.8):L.cylinder('Pipe captive fitting',(x,y,.59),.055,.075,'p11-steel','Y',8,0)
+    for x in (-1.72,1.72):L.bolt_row((x,-.9,.62),(x,.9,.62),4,.022,'Z')
     # Broken overhead glazing ribs: cutaway owner handles marine clearance.
     for x in (-1.9,1.9):
         L.sweep('Skylight support',[(x,1.05,.1),(x,1.05,3.3),(x,.2,3.65),(x,-.9,3.25)],.045,'p11-steel',6)
@@ -174,6 +187,8 @@ def atrium():
     for points in [[(-1.8,.98,3.34),(-1.8,-.25,3.48),(-.9,.45,3.52),(-.25,1,3.34)],[(.5,1,3.34),(1.8,1,3.34),(1.8,.35,3.53)],[(1.8,-.8,3.29),(1.8,-.25,3.50),(1.2,-.8,3.29)]]:
         bm=bmesh.new();bm.faces.new([bm.verts.new(p) for p in points]);L.mesh_object('Fractured skylight pane',bm,'e9-glass',smooth=False)
     L.sweep('Cracked glazing diagonal',[(-1.8,.98,3.34),(-1.4,.65,3.44),(-1.35,.58,3.46),(-.9,.45,3.52)],.009,'e9-cyan',4)
+    for points in [[(-1.8,.98,3.35),(-1.4,.68,3.44),(-1.25,.75,3.42),(-.9,.67,3.44)],[(1.65,.95,3.36),(1.52,.75,3.43),(1.68,.58,3.47)]]:
+        L.sweep('Glazing impact hairline',points,.006,'p11-tint',3,tint='paper')
     L.lamp_strip('Horticultural fixture',(0,.97,3.22),2.9,'X','e9-cyan',.035,.035)
 
 L.reset_scene();residential();atrium()
