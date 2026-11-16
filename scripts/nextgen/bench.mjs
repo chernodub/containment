@@ -131,7 +131,10 @@ async function costAuditSelfTest(){
 
 if(process.argv.includes('--self-test')){await costAuditSelfTest();process.exit(0);}
 
-const args=process.argv.slice(2),baseline=args.includes('--baseline'),heavyScan=!args.includes('--scan-calm');
+const args=process.argv.slice(2);
+// F11: one explicit diagnostic mode, never eligible for timing certification.
+if(args.includes('--breakdown'))args.push('--profile','--gpu-passes','--audit-costs');
+const baseline=args.includes('--baseline'),heavyScan=!args.includes('--scan-calm');
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const label=option('label','integration-4-bench');
 assert(/^[\w.-]+$/.test(label));
@@ -342,7 +345,7 @@ try{
    const outerGC=traceEvents.filter(e=>e.ph==='X'&&/^(MinorGC|MajorGC)$/.test(e.name));
    const gcEvents=outerGC.length?outerGC:traceEvents.filter(e=>e.ph==='X'&&/V8.GC_SCAVENGER$|V8.GC_MARK_COMPACTOR$/.test(e.name));
    const gc=gcEvents.map(e=>(e.dur??0)/1000),gcEventNames=[...new Set(traceEvents.filter(e=>/gc|garbage/i.test(e.name)).map(e=>e.name))];
-   const allocated=heap.profile.samples.reduce((n,s)=>n+s.size,0);profiling={audioContexts:[...audioContexts.values()],audioSamples,audioError,gcEventNames,sampledAllocationBytes:allocated,sampledAllocationBytesPerSecond:allocated/data.wallSeconds,gcPausesMs:gc};await writeFile(resolve(out,name+'.cpuprofile'),JSON.stringify(cpu.profile));await writeFile(resolve(out,name+'.heapprofile'),JSON.stringify(heap.profile));}
+   const allocated=heap.profile.samples.reduce((n,s)=>n+s.size,0);profiling={cpuSelf:attributeCpuSelf(cpu.profile),audioContexts:[...audioContexts.values()],audioSamples,audioError,gcEventNames,sampledAllocationBytes:allocated,sampledAllocationBytesPerSecond:allocated/data.wallSeconds,gcPausesMs:gc};await writeFile(resolve(out,name+'.cpuprofile'),JSON.stringify(cpu.profile));await writeFile(resolve(out,name+'.heapprofile'),JSON.stringify(heap.profile));}
   await cdp.detach();
   const stats=values=>{if(!values.length)return null;const s=[...values].sort((a,b)=>a-b);return {min:s[0],p50:s[Math.floor((s.length-1)*.5)],p95:s[Math.ceil(s.length*.95)-1],max:s.at(-1),average:s.reduce((a,b)=>a+b,0)/s.length};};
   const summary=Object.fromEntries(Object.entries(data.samples).map(([k,v])=>[k,stats(k==='frame'?v.slice(1):v)]));
@@ -354,7 +357,8 @@ try{
   if(data.gpuPassTimings)for(const pass of data.gpuPassTimings.passes)pass.summaryMs=stats(pass.samplesMs);
   const budget={cpuP95:summary.cpu.p95<=8,frameP95:summary.frame.p95<=16.6,highFrameP50:summary.frame.p50<=16.7,highFrameP95:summary.frame.p95<=20,lowFrameP50:summary.frame.p50<=16.7,adaptiveScale:summary.adaptiveScale.min>=.7&&summary.adaptiveScale.max<=1,draws:summary.draws.max<=350,headroomDraws:summary.draws.max<=330,programInventory:data.programInventory<=400,programs:data.programs===0};
   const run={name,room,rig,tier,repeat,timingAcceptanceEligible:!report.gpuFlush&&!report.noSoftDepth,timingScope:report.noSoftDepth?'detached soft-depth disabled A/B diagnostic; ineligible for acceptance':report.gpuFlush?'intrusive gl.flush pass isolation; not production frame timing':'ordinary submission; optional asynchronous query instrumentation',nativeAudioContexts:[...audioContexts.values()],before,after:host(),profile,profiling,summary,budget,...data,cdp:{initial:initial.metrics,final:final.metrics}};
-  report.runs.push(run);await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));
+  report.runs.push(run);
+  if(args.includes('--breakdown'))await writeFile(resolve(out,name+'.md'),breakdownMarkdown(run));await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));
   console.log(`${name}: frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
   if(args.includes('--acceptance')){
    assert(!profile&&!report.auditCosts&&!report.gpuPasses&&!report.gpuFlush&&!report.noSoftDepth,'Acceptance requires ordinary production timing');
@@ -414,3 +418,21 @@ try{
  assert.equal(report.errors.length,0,report.errors.join('\n'));
  if(report.budgetFailures.length){console.error('Final resource budget misses:',JSON.stringify(report.budgetFailures));process.exitCode=2;}
 }catch(error){report.errors.push({type:'runner',message:String(error)});throw error;}finally{for(const timer of timers)clearInterval(timer);await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));await browser?.close();await new Promise(ok=>server.close(ok));}
+
+/** Exclusive sampled CPU time; unknown frames remain visible rather than guessed. */
+function attributeCpuSelf(profile) {
+ const nodes=new Map(profile.nodes.map(node=>[node.id,node]));
+ const rules=[['GC',/garbage collector/i],['simulation step',/DepthGame|game\//],['animation mixers/skinning',/AnimationMixer|AnimationAction|Skeleton|PropertyMixer/],['actor pose/motion',/ActorPool|ActorSkin|MarineMotion|EnemyMotion/],['VFX/telegraph batching',/vfx\/|abilities\/|Telegraph|Effects/],['lighting/shadow update',/lighting\/|Shadow/],['world dressing update',/world\//],['UI/HUD DOM',/ui\/|HUD|Hud/]];
+ const totals={unattributed:0};
+ for(let i=0;i<(profile.samples?.length??0);i++){
+  const frame=nodes.get(profile.samples[i])?.callFrame;
+  const text=(frame?.url??'')+' '+(frame?.functionName??'');
+  const category=rules.find(([,pattern])=>pattern.test(text))?.[0]??'unattributed';
+  totals[category]=(totals[category]??0)+(profile.timeDeltas?.[i]??0)/1000;
+ }
+ return {scope:'exclusive leaf samples; milliseconds of sampled execution, not per-frame latency',milliseconds:totals};
+}
+function breakdownMarkdown(run){
+ const rows=(run.gpuPassTimings?.passes??[]).map(pass=>`| ${pass.name} | ${pass.summaryMs?.p50??'unavailable'} | ${pass.summaryMs?.p95??'unavailable'} | ${pass.samplesMs.length} |`);
+ return `# ${run.name}\n\nHost load: ${run.before.load.join(', ')}; CPU cores: ${run.before.cores}. Instrumented diagnostic; shared GPU contention can affect timer queries too.\n\n| GPU scope | p50 ms | p95 ms | samples |\n| --- | ---: | ---: | ---: |\n${rows.join('\n')}\n\nExclusive CPU sampled milliseconds:\n\n| subsystem | ms |\n| --- | ---: |\n${Object.entries(run.profiling?.cpuSelf?.milliseconds??{}).sort((a,b)=>b[1]-a[1]).map(([key,value])=>`| ${key} | ${value} |`).join('\n')}\n\nScene GPU scopes may include shadow work; percentiles must not be summed. Raw counts, pass resolutions, host load and frame statistics are in benchmark.json.\n`;
+}
