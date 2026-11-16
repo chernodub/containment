@@ -51,18 +51,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         instances.push({pack:'p11-comms',asset:'relay-monolith-spine',matrix:matrix(656/32,0,500/32,0),purpose:'P11 central fibre spine',cutaway:true});
         instances.push({pack:'p11-comms',asset:'relay-crosspatch',matrix:matrix(640/32,0,24/32,0),purpose:'P11 north cross-aisle patch wall',cutaway:true});
     }
-    const overhead=(pack:OriginalKitPack,asset:string,x:number,z:number,height:number,angle=0)=>instances.push({pack,asset,matrix:matrix(x/32,height,z/32,angle),purpose:'Suspended '+asset,cutaway:true});
-    // Ceiling services occupy no deck area. Their visible manufactured source
-    // gives the open nave a landmark where all wall bays lie outside the crop.
-    if(id==='residential-gallery')overhead('clinical','habitation-gallery-pendant',730,580,5);
-    // P11 uplink now occupies the chancel screen; retire the duplicate floating dish.
-    // P11 captive gantry owns the freight landmark; duplicate headers retired.
-    if(id==='infested-workshop'){
-        overhead('industrial','workshop-tool-bridge',300,640,5);
-        // Central overhead retired so the wall-backed P11 mill reads from combat.
-        overhead('industrial','workshop-tool-bridge',650,960,5);
-    }
-    if(id==='swarm-junction')overhead('industrial','airway-exchanger',750,900,5);
+    // P11 landmarks replace the repeated overhead utility rafts.
     const hull = t.boundary ?? [{ x: 0, y: 0 }, { x: t.width, y: 0 }, { x: t.width, y: t.height }, { x: 0, y: t.height }];
     const addWall = (x: number, z: number, length: number, depth: number, angle: number, near: boolean, purpose: string) => {
         const count = Math.max(1, Math.ceil(length / 4.1));
@@ -79,6 +68,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         addWall(x + nx * .375, z + nz * .375, length, .75, angle, dx < 0, 'Hull / manufactured cap, baseboard and source strip');
     }
     for (const [index, p] of (t.voids ?? []).entries()) {
+        if(id==='transmission-chamber' && index===1)continue; // uplink owns chancel screen skin
         const xs = p.map(v => v.x / 32), zs = p.map(v => v.y / 32), w = Math.max(...xs) - Math.min(...xs), d = Math.max(...zs) - Math.min(...zs);
         if (Math.min(w, d) > 1.55 || p.length !== 4)
             continue;

@@ -244,7 +244,7 @@ export function buildOriginalShipKit(
       const angle = Math.atan2(-instance.matrix.elements[2], instance.matrix.elements[0]);
       for (const lamp of (instance.highDetail?[]:lamps).sort((a, b) => b.area - a.area).slice(0, 2)) fixtures.push({
         x: lamp.position.x, y: lamp.position.y, z: lamp.position.z, color: lamp.color,
-        nativeColor: true, poolStyle: 1, poolAngle: angle, gain: .6, poolWidth: .45, poolDepth: 4,
+        nativeColor: true, poolStyle: 1, poolAngle: angle, gain: .18, poolWidth: .35, poolDepth: 1.4,
       });
     }
     for (const [finish, bucket] of buckets) {

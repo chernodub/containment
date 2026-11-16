@@ -30,7 +30,7 @@ export function interiorFloorServices(id: string, t: RoomTemplate): readonly Int
         return [];
     const occupied = shipInteriorFurnishings(t).flatMap(f => f.colliders), result: InteriorFloorService[] = [];
     const add = (x: number, z: number, industrial: boolean) => {
-        const width = 96, depth = industrial ? 40 : 32;
+        const width = 64, depth = industrial ? 22 : 18;
         const r = { x: x - width / 2, y: z - depth / 2, width, height: depth }, p = rect(r.x, r.y, r.width, r.height);
         if (!p.every((v, n) => clearPolygonTopology(t, v, p[(n + 1) % 4], 0)))
             return false;
@@ -41,41 +41,16 @@ export function interiorFloorServices(id: string, t: RoomTemplate): readonly Int
         result.push({ asset: industrial ? 'drainage-grating' : 'floor-glass-channel', pack: industrial ? 'industrial' : 'structure', x, z, width: width / 32, depth: depth / 32, angle: 0 });
         return true;
     };
-    // Connected service runs make the inspection lanes and instrument circuits
-    // actual deck hardware. Pipes and captive covers sit below the walking skin.
-    const a = plan.arena;
-    if (id === 'crew-checkpoint' || id === 'diagnostic-gallery')
-        for (const dz of [-105, 105])
-            for (const dx of [-144, -48, 48, 144])
-                add(a.x + dx, a.y + dz, false);
-    if (id === 'swarm-junction') {
-        for (const dz of [-106, 106])
-            for (const dx of [-96, 0, 96])
-                add(a.x + dx, a.y + dz, true);
-        const south = plan.spaces.find(s => s.name === 'South airway');
-        if (south)
-            for (const dx of [-96, 0, 96])
-                add(south.anchor.x + dx, south.anchor.y, true);
-    }
-    if (!['diagnostic-gallery','crew-checkpoint','swarm-junction'].includes(id)) {
-        const industrial = ['freight-hold','breached-loading-bay','coolant-plant','service-shaft-landing','infested-workshop'].includes(id);
-        for (const space of plan.spaces)
-            add(space.anchor.x + 96, space.anchor.y, industrial);
-        if (['relay-racks','transmission-chamber','shielding-gate'].includes(id))
-            for (const dz of [-106,106])
-                for (const dx of [-144,-48,48,144])
-                    add(a.x + dx, a.y + dz, false);
-    }
-    for (const [i, space] of plan.spaces.entries()) {
-        const industrial = id === 'swarm-junction' || id === 'coolant-plant' || id === 'infested-workshop' || id === 'service-shaft-landing';
-        const width = 96, depth = industrial ? 40 : 32;
-        for (const offset of [64, -64, 0, 100, -100]) {
-            const x = space.anchor.x, z = space.anchor.y + offset;
-            if (result.some(o => Math.hypot(o.x - x, o.z - z) < 120))
-                continue;
-            if (add(x, z, industrial))
-                break;
+    // Two small service windows in peripheral galleries, never repeated across
+    // the fight circle or underneath an ingress grate.
+    for (const space of plan.spaces) {
+        if (Math.hypot(space.anchor.x-plan.arena.x,space.anchor.y-plan.arena.y)<190) continue;
+        for(const dz of [-48,48,0]) {
+            const x=space.anchor.x,z=space.anchor.y+dz;
+            if(t.breaches.some(b=>Math.abs(b.x-x)<64&&Math.abs(b.y-z)<48))continue;
+            if(add(x,z,['coolant-plant','infested-workshop','service-shaft-landing'].includes(id)))break;
         }
+        if(result.length===2)break;
     }
     return result;
 }
