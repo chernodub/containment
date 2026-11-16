@@ -3,9 +3,12 @@ import {spaceBox as space,opening as gate,breachFeature as feature,type ShipPlan
 export type {ShipPlan,ShipSpace,ShipOpening} from './shipArchitecturePlan';
 const cabins=[40,416,808];
 const cabinWidth=(x:number)=>x===416?368:352;
+// P11 north common nook: existing gallery fight floor remains clear; its west
+// bypass is 156 units from the cabin boundary and the solid is 202 units
+// north of the arena centre (native fight radius 144).
 const residential=defineShipRoom({width:1200,height:960,
  boundary:poly([[40,0],[392,0],[392,24],[416,24],[416,0],[784,0],[784,24],[808,24],[808,0],[1160,0],[1160,340],[1200,340],[1200,620],[1160,620],[1160,960],[808,960],[808,936],[784,936],[784,960],[416,960],[416,936],[392,936],[392,960],[40,960],[40,620],[0,620],[0,340],[40,340]]),
- obstacles:rectangles(cabins.flatMap(x=>[[x+24,0,cabinWidth(x)-24,40],[x+24,40,70,100],[x+cabinWidth(x)-68,40,68,60],[x+24,920,cabinWidth(x)-24,40],[x+24,820,70,100],[x+cabinWidth(x)-68,860,68,60]] as [number,number,number,number][]).concat([[0,400,40,160]])),
+ obstacles:rectangles(cabins.flatMap(x=>[[x+24,0,cabinWidth(x)-24,40],[x+24,40,70,100],[x+cabinWidth(x)-68,40,68,60],[x+24,920,cabinWidth(x)-24,40],[x+24,820,70,100],[x+cabinWidth(x)-68,860,68,60]] as [number,number,number,number][]).concat([[0,400,40,160],[572,241,196,38]])),
  voids:[wall(392,24,24,116),wall(784,24,24,116),wall(392,820,24,116),wall(784,820,24,116)],
  spawn:p(200,200),exit:p(1100,480),breaches:poly([[460,200],[860,200],[340,740],[1100,740]]),
 });
