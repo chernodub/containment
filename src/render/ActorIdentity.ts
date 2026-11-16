@@ -4,6 +4,7 @@ import {geometry} from './meshParts';
 import {familyAnatomy,rankAnatomy} from './FamilyAnatomy';
 import {marineRigAnatomy,originalMarineRig} from './MarineRigAnatomy';
 import {queenDesign} from './QueenDesign';
+import {originalCreatureIdentity} from './OriginalCreatureAnatomy';
 
 export const FAMILY_IDENTITY = Object.freeze({
   crawler: 0xb46549,
@@ -155,6 +156,7 @@ function identityGeometry(key:string,parts:readonly Part[],root:T.Group,joints:r
 
 /** Small anatomical emitters follow the existing chest rig; one additional draw per actor. */
 export function alienIdentity(root:T.Group,kind:string,span:number,height:number,elite:boolean) {
+  const original=originalCreatureIdentity(root,kind,elite,span,height);if(original)return original;
   const parts:Part[]=[],s=span,h=height;
   const detail=(shape:Part['shape'],x:number,y:number,z:number,sx:number,sy:number,sz:number,role=0,fitted=true)=>parts.push({position:[x,y,z],scale:[sx,sy,sz],role,shape,fitted});
   // Eyes use a compact cluster; broad white nodules hide the original anatomy at hero scale.

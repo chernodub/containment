@@ -893,3 +893,6 @@ for (const rig of ['breacher', 'cryo', 'pyro', 'arc']) {
 import {registerM10Scenarios,registerC10Scenarios} from './m10-scenarios.mjs';
 registerM10Scenarios(SCENARIOS);
 registerC10Scenarios(SCENARIOS);
+
+import {registerK11Scenarios} from './k11-scenarios.mjs';
+registerK11Scenarios(SCENARIOS);
