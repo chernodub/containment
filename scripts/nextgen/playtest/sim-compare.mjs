@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 /** Compare one explicitly matched native/simulation campaign without hiding divergence. */
 export function compareCampaigns(native, simulation) {
-    if (native.rig !== simulation.rig || native.seed !== simulation.seed || !!native.assisted !== !!simulation.assisted || !!native.legacy !== !!simulation.legacy)
-        throw Error('Campaigns must match rig,seed,assistance and graph');
+    if ((native.difficulty ?? 'standard') !== (simulation.difficulty ?? 'standard') || native.rig !== simulation.rig || native.seed !== simulation.seed || !!native.assisted !== !!simulation.assisted || !!native.legacy !== !!simulation.legacy)
+        throw Error('Campaigns must match difficulty,rig,seed,assistance and graph');
     const nativeStats = native.final?.stats ?? native.stats, simStats = simulation.final?.stats ?? simulation.stats;
     const damage = stats => Object.values(stats.damageDealt).reduce((a, b) => a + b, 0);
     const rooms = native.rooms.map(a => { const b = simulation.rooms.find(b => b.nodeId === a.nodeId); return { room: a.depth + 1, nativeResult: a.result, simResult: b?.result ?? null, nativeSeconds: a.seconds, simSeconds: b?.seconds ?? null, secondsDelta: b ? b.seconds - a.seconds : null, timeRelativeError: b && a.seconds ? Math.abs(b.seconds - a.seconds) / a.seconds : null, nativeDamageTaken: a.damageTaken, simDamageTaken: b?.damageTaken ?? null, nativeOverdrives: a.overdrives, simOverdrives: b?.overdrives ?? null }; });

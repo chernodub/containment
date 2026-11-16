@@ -115,6 +115,7 @@ try {
   for (cycle = 0; cycle < cycles; cycle++) {
     const started = Date.now();
     await page.locator('#start').click();
+    await page.locator('[data-difficulty="standard"]').click();await page.locator('#difficulty-begin').click();
     await page.waitForFunction(() => document.body.dataset.state === 'rig-select');
     await page.locator('#equip-rig').click();
     await selectBoon();

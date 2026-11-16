@@ -56,7 +56,7 @@ export function balanceSummary(reports) {
     }
     return {label, runs: selected.length, sources};
   });
-  const groupKey = r => `${r.assisted ? 'assisted' : 'organic'}:${r.legacy ? 'v2' : 'v3'}:${r.rig}${r.profileTransition ? ':mixed-profile' : typeof r.tuningEnabled === 'boolean' ? r.tuningEnabled ? ':tuning' : ':production' : ''}${cohorts.length > 1 ? `@${cohortName(r)}` : ''}`;
+  const groupKey = r => `${r.assisted ? 'assisted' : 'organic'}:${r.legacy ? 'v2' : 'v3'}:${r.rig}:${r.difficulty ?? 'standard'}${r.profileTransition ? ':mixed-profile' : typeof r.tuningEnabled === 'boolean' ? r.tuningEnabled ? ':tuning' : ':production' : ''}${cohorts.length > 1 ? `@${cohortName(r)}` : ''}`;
   const groups = [...new Set(reports.map(groupKey))].sort().map(key => {
     const runs = reports.filter(r => groupKey(r) === key);
     const rooms = runs.flatMap(r => r.rooms ?? []);

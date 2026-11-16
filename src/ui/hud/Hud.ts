@@ -23,11 +23,13 @@ import { HudToasts } from './Toasts';
 import { Radar } from './Radar';
 import type { HudEffect } from './effects';
 import { ContextualOnboarding } from '../onboarding';
+import {FirstStrikeHighlight} from './FirstStrikeHighlight';
 import { AbilityHints } from './AbilityHints';
 export type HudPreferences = Readonly<{
     combatText?: boolean;
     combatTextDensity?: 'full' | 'reduced';
     radar?: boolean;
+    hints?: boolean;
 }>;
 export type HudController = (() => void) & {
     effect: (effect: HudEffect) => void;
@@ -118,6 +120,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     const toasts = new HudToasts(el('hud-toasts'));
     const radar = new Radar(el('radar-hud'), el('radar-map') as unknown as SVGSVGElement, renderer);
     const onboarding = new ContextualOnboarding(el('action-bar'), storage);
+    const firstStrike = new FirstStrikeHighlight(game,renderer);
     const abilityHints = new AbilityHints(slots);
     const encounterTrack = document.createElement('div');
     encounterTrack.className = 'encounter-progress'; encounterTrack.hidden = true;
@@ -139,6 +142,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     const recentKills = new Int32Array(16).fill(-1);
     const owned = new Set<string>();
     const bounds = { left: 0, right: 0, top: 0, bottom: 0 };
+    const onboardingObstacles: Array<{left:number;right:number;top:number;bottom:number}> = [];
     const actorBounds = { left: 0, right: 0, top: 0, bottom: 0 };
     const projected = {x: 0, y: 0, visible: false};
     const projectedRadius = {x: 0, y: 0, visible: false};
@@ -153,6 +157,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             projectWorld(renderer, x, y + radius, projectedRadius, height);
             size = Math.max(size, Math.hypot(projectedRadius.x - projected.x, projectedRadius.y - projected.y));
         }
+        onboardingObstacles.push({left:projected.x-size,top:projected.y-size,right:projected.x+size,bottom:projected.y+size});
         markHudOcclusion(projected.x - size, projected.y - size, projected.x + size, projected.y + size);
     };
     const obscureWarning = (x: number, y: number, radius: number, endX: number, endY: number) => {
@@ -160,14 +165,18 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (x !== endX || y !== endY) for (let step = 1; step <= 8; step++) obscureWorld(x + (endX - x) * step / 8, y + (endY - y) * step / 8, radius, .05);
     };
     const obscureActor = (id: number, x: number, y: number, radius: number) => {
-        if (projectActorBounds(renderer, id, x, y, radius, actorBounds))
+        if (projectActorBounds(renderer, id, x, y, radius, actorBounds)) {
+            onboardingObstacles.push({...actorBounds});
             markHudOcclusion(actorBounds.left, actorBounds.top, actorBounds.right, actorBounds.bottom);
+        }
         else obscureWorld(x, y, radius);
     };
     const protectPanels = () => {
+        onboardingObstacles.length = 0;
         beginHudOcclusion();
         markHudOcclusion(bounds.left, bounds.top, bounds.right, bounds.bottom);
         for (const enemy of game.enemies.snapshot.enemies) if (enemy.health > 0 && enemy.alpha >= .2) obscureActor(enemy.id, enemy.x, enemy.y, enemy.radius);
+        for (const enemy of game.enemies.snapshot.enemies) if (enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike') obscureWorld(enemy.meleeOriginX, enemy.meleeOriginY, enemy.meleeShape.range + enemy.meleeShape.width, .05);
         const boss = game.boss.snapshot;
         if (boss.active) obscureActor(-1, boss.x, boss.y, 92);
         visitHostileWarnings(game, obscureWarning);
@@ -397,7 +406,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (abilities?.slots)
             for (const entry of slots)
                 updateAbility(entry, abilities.slots[entry.slot], abilities);
-        onboarding.update(game, abilities, inspectObjective && !abilityHints.visible);
+        onboarding.update(game, abilities, inspectObjective && !abilityHints.visible, preferences().hints !== false);
         const pref = preferences();
         combatText.setEnabled(pref.combatText !== false);
         combatText.setReduced(pref.combatTextDensity === 'reduced');
@@ -449,6 +458,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         }
         combatText.effect({...event, damageElement: getCombatDamageElement(game, event)});
         threats.effect(event, game.player);
+        firstStrike.effect(event,onboarding.teachingStrike);
         onboarding.effect(event);
         if (event.lethal && (event.type === 'hit' || event.type === 'acid' || event.contact)) {
             const id = event.targetId ?? event.id;
@@ -517,6 +527,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 entry.node.dataset.flash = 'false';
         }
         if (game.status !== 'playing') {
+            firstStrike.tick(elapsed,false);
             denial.hidden=true;denialLife=0;deniedPlacementLife=0;inspectObjective=false;powerAim=false;setPlacementPreview(renderer,null);
             combatText.clear();
             threats.clear();
@@ -540,7 +551,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         width('hp-lag', hpGhost / 100);
         width('armor-lag', armorGhost / Math.max(1, maxArmor));
         protect();
-        onboarding.tick(elapsed, bounds);
+        onboarding.tick(elapsed, bounds, onboardingObstacles);
+        firstStrike.tick(elapsed,onboarding.teachingStrike);
         abilityHints.tick(bounds, true);
         combatText.tick(elapsed, bounds);
         threats.tick(elapsed);
@@ -558,7 +570,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         radar.dispose();
         panelResize?.disconnect();
         clearHudOcclusion(); setHudInsets(renderer, getHudInsets());
-        onboarding.dispose(); abilityHints.dispose(); encounterTrack.remove(); activeDial.remove(); dashActiveDial.remove();
+        firstStrike.dispose(); onboarding.dispose(); abilityHints.dispose(); encounterTrack.remove(); activeDial.remove(); dashActiveDial.remove();
     };
     return hud;
 }

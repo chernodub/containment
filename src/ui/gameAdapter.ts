@@ -83,7 +83,7 @@ export type UiFixture = Readonly<{
   phase?: string;
   abilities?: AbilitiesSnapshot | null;
   stats?: RunStatsSnapshot;
-  preferences?: Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean}>;
+  preferences?: Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean; hints?: boolean}>;
 }>;
 const fixtures = new WeakMap<DepthGame, UiFixture>();
 const graphics = new WeakMap<DepthRenderer, GraphicsOptions>();
@@ -211,7 +211,7 @@ export function getRunStats(game: DepthGame): RunStatsSnapshot {
 }
 
 /** Presentation fixture overrides stay separate from persisted player preferences. */
-export function getUiPreferences<T extends Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean}>>(game: DepthGame, defaults: T): Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean}> {
+export function getUiPreferences<T extends Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean; hints?: boolean}>>(game: DepthGame, defaults: T): Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean; hints?: boolean}> {
   return fixtures.get(game)?.preferences ?? defaults;
 }
 

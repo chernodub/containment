@@ -104,7 +104,7 @@ export function summarizeRun(report, reportPath = null) {
   }));
   const finalFixedStep = report.final?.performance?.debugFixedStep;
   return {
-    label: report.label, reportPath, rig: report.rig, seed: report.seed,
+    label: report.label, reportPath, rig: report.rig, seed: report.seed, difficulty: report.difficulty ?? 'standard',
     assisted: report.assisted === true, incomingDamageScale: report.incomingDamageScale ?? 1,
     legacy: report.legacy === true, roomLimit: report.roomLimit,
     tuningEnabled: report.tuningEnabled, profileTransition: report.profileTransition ?? null,
@@ -152,7 +152,7 @@ export function summarizeRun(report, reportPath = null) {
 /** Group only explicitly selected runs, separating assistance, graphs and recorded profiles. */
 export function aggregateReports(reports) {
   const runs = reports.map(({report, path, triage}) => summarizeRun(applyTriage(report, triage), path));
-  const groupKey = run => `${run.assisted ? 'assisted' : 'unassisted'}:${run.legacy ? 'legacy-v2' : 'story-v3'}:${run.rig}${run.profileTransition ? ':mixed-profile' : typeof run.tuningEnabled === 'boolean' ? run.tuningEnabled ? ':tuning' : ':production' : ''}`;
+  const groupKey = run => `${run.assisted ? 'assisted' : 'unassisted'}:${run.legacy ? 'legacy-v2' : 'story-v3'}:${run.rig}:${run.difficulty ?? 'standard'}${run.profileTransition ? ':mixed-profile' : typeof run.tuningEnabled === 'boolean' ? run.tuningEnabled ? ':tuning' : ':production' : ''}`;
   const keys = [...new Set(runs.map(groupKey))].sort();
   const groups = keys.map(key => {
     const selected = runs.filter(run => groupKey(run) === key);
