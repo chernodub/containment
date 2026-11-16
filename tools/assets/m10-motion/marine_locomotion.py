@@ -18,7 +18,7 @@ from mathutils import Matrix, Quaternion, Vector
 
 ROOT = Path(__file__).resolve().parents[3]
 FPS = 60
-CYCLE_SECONDS = .40
+CYCLE_SECONDS = 1 / 3
 NOMINAL_SIM_SPEED = 220.0
 UP = Vector((0, -1, 0))
 FORWARD = Vector((1, 0, 0))
@@ -172,7 +172,7 @@ class MarineFootRig:
         # World/armature-space counter-rotation keeps the ribcage and weapon
         # forward while the hips make the visible cross-over weight transfer.
         matrix = spine.matrix.copy()
-        matrix = Quaternion(UP, -yaw * .88).to_matrix().to_4x4() @ matrix
+        matrix = Quaternion(UP, -yaw * 1.18).to_matrix().to_4x4() @ matrix
         rotation = Quaternion(RIGHT, lean)
         matrix = rotation.to_matrix().to_4x4() @ matrix
         matrix.translation = spine.matrix.translation
@@ -184,7 +184,7 @@ class MarineFootRig:
         beat = math.sin(phase * math.tau)
         # Two grounded load/compression beats, with lateral transfer strongest
         # in side travel and a compact, rear-loaded backpedal posture.
-        dip = crouch + .13 * (1 - math.cos(phase * math.tau * 2))
+        dip = crouch + .65 * (1 - math.cos(phase * math.tau * 2))
         angle = math.radians(direction)
         lean = -.13 * math.cos(angle) + .035 * math.sin(phase * math.tau * 2)
         self.torso(dip * weight, beat * rotation * weight, lean * weight,
