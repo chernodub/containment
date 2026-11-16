@@ -14,7 +14,7 @@ const diagnostic=defineShipRoom({width:1280,height:960,
 const safety=defineShipRoom({width:1280,height:960,
  boundary:poly([[40,0],[1240,0],[1240,320],[1280,320],[1280,640],[1240,640],[1240,960],[40,960],[40,640],[0,640],[0,320],[40,320]]),
  // The recorder and disconnected AI occupy real booths; battery backs onto hull.
- obstacles:rectangles([[280,0,180,180],[820,0,180,180],[500,820,280,140]]),
+ obstacles:rectangles([[280,0,180,180],[820,0,180,180],[500,820,280,140],[586,344,128,42]]),
  voids:[wall(40,0,1200,40),wall(40,920,460,40),wall(780,920,460,40),wall(40,760,160,160),wall(1080,760,160,160),
   wall(516,332,280,12),wall(516,344,24,56),wall(772,344,24,56),wall(500,616,280,24),wall(500,560,24,56),wall(756,560,24,56)],
  spawn:p(100,480),exit:p(1180,480),breaches:poly([[300,260],[980,260],[300,820],[980,820]]),
