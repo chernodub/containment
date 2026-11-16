@@ -23,3 +23,8 @@
  .title-key-art .ka-fog,.title-key-art .ka-breath {animation:none!important;}
 }
 body[data-state='menu'] #world {visibility:hidden;}
+/* Keep the menu clear of the breach silhouettes on smaller desktop windows. */
+@media (max-width:1400px) {
+ #overlay .title-screen .menu-buttons {width:320px;}
+ #overlay .title-screen .menu-utility {gap:4px;padding:12px 8px;}
+}
