@@ -8,7 +8,7 @@ import { registerOriginalInteriorCutaways, type InteriorCutaway } from './Origin
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 type Bucket = { material: T.MeshStandardMaterial; geometries: T.BufferGeometry[]; count: number };
-/** Manufactured overhead source/rack assemblies, merged into four finish draws.
+/** Manufactured overhead source/rack assemblies, merged into five finish draws.
  * No deck collision; opaque vertex cutaways share the original kit lifecycle. */
 export function addCeilingServices(root: T.Group, t: RoomTemplate): void {
   const environment = shipEnvironment(t.id) ?? 'cryogenics', profile = INTERIOR_PROFILES[t.id];
@@ -16,9 +16,9 @@ export function addCeilingServices(root: T.Group, t: RoomTemplate): void {
   const domestic = environment === 'habitation', industrial = ['cargo', 'engineering', 'maintenance', 'infested'].includes(environment);
   const finishes = [
     new T.MeshStandardMaterial({ name: 'e10-overhead-steel', color: industrial ? 0x52615c : 0x55646c, roughness: .7, metalness: .45, vertexColors: true, alphaTest: .3 }),
-    new T.MeshStandardMaterial({ name: 'e10-overhead-cap', color: domestic ? 0xc5b897 : 0xadc1bd, roughness: .8, metalness: .15, vertexColors: true, alphaTest: .3 }),
+    new T.MeshStandardMaterial({ name: 'e10-overhead-cap', color: domestic ? 0xc5b897 : environment === 'containment' ? 0x8b70b3 : 0xadc1bd, roughness: .8, metalness: .15, vertexColors: true, alphaTest: .3 }),
     new T.MeshStandardMaterial({ name: 'e10-overhead-service', color: environment === 'infested' ? 0x685467 : industrial ? 0x967d52 : 0x314b53, roughness: .6, metalness: .55, vertexColors: true, alphaTest: .3 }),
-    new T.MeshStandardMaterial({ name: 'e10-fixture-source', color: profile.key, emissive: profile.key, emissiveIntensity: 2.8, roughness: .7, vertexColors: true, alphaTest: .3 }),
+    new T.MeshStandardMaterial({ name: 'e10-fixture-source', color: environment === 'containment' ? 0x7844d8 : profile.key, emissive: environment === 'containment' ? 0x793be0 : profile.key, emissiveIntensity: environment === 'containment' ? 1.6 : 2.8, roughness: .7, vertexColors: true, alphaTest: .3 }),
     new T.MeshStandardMaterial({ name: 'e10-status-lamps', color:0xd6a36a, emissive:0xffb65a, emissiveIntensity:2.5, roughness:.7, vertexColors:true, alphaTest:.3 }),
   ];
   const buckets: Bucket[] = finishes.map(material => { material.userData.actorMaterial = true; if (material.emissiveIntensity > 1) material.userData.motivatedEmitter = true; return { material, geometries: [], count: 0 }; });
