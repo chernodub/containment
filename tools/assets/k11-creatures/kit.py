@@ -406,20 +406,20 @@ def look_at(obj, target):
     obj.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
 
 
-def review_lights(strength=1.0):
+def review_lights(strength=1.0, scale=1.0, center=(0, 0, 0.4)):
     for name, loc, energy, size, color in [
         ("key", (2.6, -3.0, 4.2), 900, 2.5, (1.0, 0.86, 0.72)),
         ("rim", (-3.4, 2.4, 2.2), 700, 2.0, (0.55, 0.75, 1.0)),
         ("fill", (3.5, 3.2, 1.2), 160, 4.0, (0.75, 0.85, 1.0)),
     ]:
         light = bpy.data.lights.new(name, "AREA")
-        light.energy = energy * strength
-        light.size = size
+        light.energy = energy * strength * scale * scale
+        light.size = size * scale
         light.color = color
         obj = bpy.data.objects.new(name, light)
-        obj.location = loc
+        obj.location = Vector(center) + Vector(loc) * scale
         bpy.context.scene.collection.objects.link(obj)
-        look_at(obj, (0, 0, 0.4))
+        look_at(obj, center)
 
 
 def render_setup(engine="CYCLES", samples=48, transparent=True):

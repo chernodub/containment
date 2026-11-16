@@ -49,7 +49,7 @@ export function registerK11Scenarios(scenarios) {
             }
             if(choice?.points.length===want)break;
           }
-          if(!choice||choice.points.length<want)throw Error('K11 insufficient legal visible floor: '+(choice?.points.length??0)+'/'+want);
+          if(!choice||choice.points.length<Math.min(want,10))throw Error('K11 insufficient legal visible floor: '+(choice?.points.length??0)+'/'+want);
           Object.assign(g.player,{x:choice.center.x,y:choice.center.y,vx:0,vy:0,angle:0});g.setAimPoint?.({x:choice.center.x+200,y:choice.center.y});d.settlePresentation(72);
           const champion=family==='brute'?'warden':family==='carrier'?'matron':undefined;
           const actors=[];

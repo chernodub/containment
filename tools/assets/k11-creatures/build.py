@@ -190,7 +190,7 @@ K.log("stats", stats)
 
 # ------------------------------------------------------------------ renders
 K.render_setup("CYCLES", samples=40)
-K.review_lights(1.0)
+K.review_lights(1.0, scale=float(max(hi - lo)) / 1.6, center=tuple(float(c) for c in centre))
 cam = K.camera("ORTHO")
 offset = (hi[1] - lo[1]) * 1.15
 for i, rank in enumerate(ranks):
