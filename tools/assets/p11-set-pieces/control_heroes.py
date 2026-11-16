@@ -181,6 +181,13 @@ def interlock():
         L.bolt_row((x,-.73,1.05),(x,-.73,2.3),5,.02)
     L.sweep('Interlock service rail',[(-1.6,.58,.6),(0,.58,.6),(1.6,.58,.6)],.06,'e9-trim',8)
     L.screen('Release sequence',(0,-.715,.69),.65,.23,pattern='schematic')
+    # Emergency lock welded shut from the operator side; a snapped release handle.
+    L.box('Seal weld backing',(0,-.61,1.53),(2.9,.075,.24),'e9-dark',.018,rotation=(0,.08,0))
+    for i in range(19):
+        L.box('Irregular weld bead',(-1.3+i*.145,-.66,1.53+.035*math.sin(i*2.1)),(.17,.045,.07),'p11-steel',.012)
+    L.sweep('Broken release lever',[(1.1,-.45,1.8),(1.35,-.57,1.88),(1.53,-.55,1.76)],.055,'e9-trim',6)
+    L.stencil('SEALED',(-.36,-.66,1.56),.1)
+
 
 def dais():
     L.asset('manual-authorisation-dais',12000)
