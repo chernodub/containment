@@ -1,71 +1,71 @@
 {
-  "bakeSeconds": 5.043,
-  "blenderPNGDecodeMs": 18.262,
+  "bakeSeconds": 1.33,
+  "blenderPNGDecodeMs": 6.279,
   "file": "cargo-normal.png",
   "size": 512,
-  "bytes": 258808,
+  "bytes": 332766,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 143068,
+  "nonFlatPixels": 167728,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "freight-suspension-gantry--e9-body",
       "role": "e9-body",
-      "seconds": 0.44,
+      "seconds": 0.132,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "freight-suspension-gantry--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.302,
+      "seconds": 0.051,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "freight-suspension-gantry--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.328,
+      "seconds": 0.119,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "freight-suspension-gantry--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.075,
+      "seconds": 0.038,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "freight-suspension-gantry--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.075,
+      "seconds": 0.025,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "loading-wedged-pod--e9-body",
       "role": "e9-body",
-      "seconds": 0.294,
+      "seconds": 0.076,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "loading-wedged-pod--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.308,
+      "seconds": 0.035,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "loading-wedged-pod--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.467,
+      "seconds": 0.098,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "loading-wedged-pod--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.063,
+      "seconds": 0.031,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "loading-wedged-pod--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.029,
+      "seconds": 0.024,
       "method": "three-segment high bevel"
     }
   ]

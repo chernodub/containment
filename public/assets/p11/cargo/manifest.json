@@ -9,73 +9,73 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 5.043,
-    "blenderPNGDecodeMs": 18.262,
+    "bakeSeconds": 1.33,
+    "blenderPNGDecodeMs": 6.279,
     "file": "cargo-normal.png",
     "size": 512,
-    "bytes": 258808,
+    "bytes": 332766,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 143068,
+    "nonFlatPixels": 167728,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "freight-suspension-gantry--e9-body",
         "role": "e9-body",
-        "seconds": 0.44,
+        "seconds": 0.132,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "freight-suspension-gantry--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.302,
+        "seconds": 0.051,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "freight-suspension-gantry--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.328,
+        "seconds": 0.119,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "freight-suspension-gantry--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.075,
+        "seconds": 0.038,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "freight-suspension-gantry--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.075,
+        "seconds": 0.025,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "loading-wedged-pod--e9-body",
         "role": "e9-body",
-        "seconds": 0.294,
+        "seconds": 0.076,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "loading-wedged-pod--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.308,
+        "seconds": 0.035,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "loading-wedged-pod--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.467,
+        "seconds": 0.098,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "loading-wedged-pod--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.063,
+        "seconds": 0.031,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "loading-wedged-pod--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.029,
+        "seconds": 0.024,
         "method": "three-segment high bevel"
       }
     ]
@@ -108,7 +108,7 @@
           1.4
         ]
       },
-      "triangles": 6474,
+      "triangles": 9356,
       "budget": 12000,
       "finishes": [
         "e9-body",
@@ -123,7 +123,7 @@
       "name": "loading-wedged-pod",
       "size": [
         6.9038,
-        1.9345,
+        1.8885,
         2.4124
       ],
       "bounds": {
@@ -134,11 +134,11 @@
         ],
         "max": [
           3.448,
-          1.926,
+          1.88,
           1.2333
         ]
       },
-      "triangles": 4484,
+      "triangles": 6560,
       "budget": 12000,
       "finishes": [
         "e9-body",
@@ -151,9 +151,9 @@
   ],
   "output": {
     "file": "cargo.glb",
-    "bytes": 984028,
-    "sha256": "c4cd95e9b0b3254d60c099237e5a80d36eb600dc2dda985bd9fc3152a789af3c",
-    "triangles": 10958
+    "bytes": 1417412,
+    "sha256": "518955bf16d89cc4c637b90a3b96b7e5fd23ff93ab3e86a1043eb048d0ae3b1d",
+    "triangles": 15916
   },
   "overBudget": []
 }
