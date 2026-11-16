@@ -1,0 +1,27 @@
+# KA12 weapon review
+
+Generating source: `tools/assets/ka12-weapons/weapons.py`, derived from the original MIT K10 profile toolkit. Marine and creature sources untouched. Socket coordinates remain the exact established contract; no simulation or runtime change.
+
+Round 1: actually opened pistol, rifle, shotgun and plasma three-quarter beauty renders. Compact pistol has a useful hooked nose and tactile grip, but top slide is blank and ceramic too pale. Rifle is recognizable with rail, hollow stock, magazine and pierced handguard; muzzle reads too soft/light and optic too solid. Shotgun has a strong twin-bore/drum silhouette, but blank upper breech. Plasma's open forks and luminous ringed core distinguish it immediately; rear shell is still simple. Corrections for round 2: darker ceramic, pistol slide slots, shotgun breech slots, dark rifle muzzle face, optic lens and rear notch. Mechanical charging paddles, bolt races, safety selectors, pistol magazine heel, rifle palm saddle, shotgun drum and plasma capacitor magazine are real geometry.
+
+Review evidence is under `artifacts/nextgen/ka12-final/weapons/`. Beauty renders are 1050×700 Cycles denoised; these are asset inspection evidence, not gameplay or performance evidence.
+
+Round 1 rocket beauty opened: circular launch tube and curved shoulder contact are clear, but upper tube is barren and offset optic blank. Round 2 adds interlock housing/paddle and smoked lens. No mesh claims are based on a render that was not opened.
+
+Round 2: opened all five three-quarter images. Rifle dark crown face and lens now read; the optic remains small but visibly optical. Rocket safety paddle breaks the tube without ruining its circular silhouette. Pistol and shotgun relief slots incorrectly read as raised strips: round 3 cuts actual shallow pockets in their parent chassis and sinks the dark bottoms. Plasma's clean zones are retained for the ink shader. Round 3 also lowers steel roughness for clearer material separation, then bakes final meshes.
+
+Round 3: opened all five final baked beauties. Actual pockets now read correctly. Pistol/shotgun upper edges became more angular after pocket booleans, a tradeoff visible in the close-up; rifle forward shroud remains pale. Normal-map edge softness survives on the other models. Rocket shoulder cradle and tube remain readable; plasma has the strongest distinctive silhouette. These are improvements of the K10 design, not a wholly different design language. No claim of perfect commercial close-up finish: surfaces remain clean, optic bodies simple and tiny edge bake seams visible at inspection size.
+
+All five reviewed GLBs copied to the existing shipping paths. Triangle counts: pistol 2,640; rifle 4,336; shotgun 4,084; plasma 4,672; rocket 4,236. Bytes respectively 436,204 / 561,132 / 508,016 / 593,980 / 535,704. Each has 512² baked base (including restrained AO), tangent normal, and plasma/rocket emission. Muzzle/ejection translations preserved exactly by GLB JSON rewrite. No decimation was needed. Rebuild entry delegates arsenal generation to KA12, preventing subsequent K10 rebuilds overwriting it.
+
+Native hand fitting was subsequently inspected; see the unresolved findings below. No tests were added.
+
+## Native desktop follow-up
+
+`tools/assets/ka12-weapons/capture.mjs` captured all five weapons calm and firing at 1920×1080 and1280×720 (20 PNGs), with zero browser errors. Every fire receipt identifies the requested weapon and increments native `shotsFired` by exactly1. Keyboard path used Enter on the initially focused Start, Digit4, Enter to equip Arc, then Digit1 for the required starting boon, reaching `playing`. First attempt omitted the boon choice and timed out; its report is preserved under `native-weapons-first/keyboard-incomplete-attempt.json`. First completed capture had prior projectiles/new spawns in later calm frames; retained as `native-weapons-first/`. Final fixture clears enemies, prior bullets and presentation effects at each calm boundary; it remains staged evidence, not an organic campaign.
+
+Actually opened full native screenshots during inspection and both native-pixel crop contact sheets plus both full-frame480 contact sheets covering every calm/fire image. Final files: `artifacts/nextgen/ka12-final/native-weapons/`; JSON contains exact weapon IDs, shot deltas and keyboard receipt. Crops retain source pixel size; full native PNGs remain available.
+
+Concrete weakness: at aim angle0, the body and all five weapon models face screen-left while native projectiles/muzzle streaks travel screen-right. This is a pose/facing-frame discrepancy retained across the socket-preserving weapon replacement; rotating weapons alone would leave the body wrong and break the grips. Marine/pose changes are outside this stream. Rifle support glove visibly hangs below the receiver in calm stance; the palm saddle did not close that gap. Other weapons' hands visually overlap their lower grip/body regions at gameplay scale, but these views do not establish precise finger contact. Exact five-weapon hand fitting is therefore **not complete**. Shotgun and rocket have clear broad silhouettes; plasma's luminous open forks read best; pistol/rifle lose fine controls at this camera size and are dark against the nearby berth. At480 the weapons mainly read by length/brightness, not by receiver detail.
+
+Browser closed after the completed serial capture. No runtime socket/pose patch was attempted to disguise the inherited alignment issue.

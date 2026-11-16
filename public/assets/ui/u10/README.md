@@ -1,18 +1,18 @@
-# U10 — At the breach
+# KA12 — At the breach
 
-Original rendered title / ending artwork, repository MIT. The low-camera composition stages the original K10 Crown–keel marine/rifle against a torn E9 pressure bulkhead, original creature silhouettes and a near-field claw. Ship/marine/weapon GLBs are imported read-only. The native grip/animation source retains its separate attribution in `/asset-credits.html`.
+Original rendered title / ending artwork, repository MIT. K12 close-up Crown–keel marine with KA12 rifle, read-only E9 ship kit and K11 Lantern Brood. Marine/creature skeleton and motion attribution remains in `/asset-credits.html`. No source marine or creature asset is modified by this pipeline.
 
-The authoring scene uses a forward torso brace and head turn, a subdivided frozen helmet, luminous visor, and clean render-only amber shoulder paint with a small hazard chevron. Those staging changes do not modify the game meshes, textures or animations.
+Blender 5.3 and Pillow are required. Rebuild the missing local close-up source first if necessary:
 
-Rebuild from the repository root (Blender 5.3, Pillow for conversion):
-
-```
-blender -b -P tools/assets/u10-keyart/stage.py -- --round=10 --layers
-blender -b -P tools/assets/u10-keyart/stage.py -- --round=10 --ending
-blender -b -P tools/assets/u10-keyart/portraits.py
-python tools/assets/u10-keyart/optimize.py
+```sh
+blender -b -t 4 -P tools/assets/k12-hero/marine.py -- --hero
+blender -b -t 4 -P tools/assets/u10-keyart/stage.py -- --round=16 --layers
+blender -b -t 4 -P tools/assets/u10-keyart/stage.py -- --round=19 --ending
+python tools/assets/u10-keyart/optimize.py --ui-only --raw=artifacts/nextgen/u10-rounds/16 --ending=artifacts/nextgen/u10-rounds/ending-19/composition.png
 ```
 
-Final renders use Cycles at 128 samples with denoise. Raw 2560×1440 RGBA plates are retained in the local U10 gallery. `background`, `midground`, `hero`, `foreground` and `fog` share one camera; the immediate composite is assembled from those delivery plates at the neutral light/fog state. Responsive WebP has JPEG composite and transparent PNG fallbacks. Fog is a low-frequency 640/1280px delivery layer with 12-source-pixel blur. The foreground keeps 85% of its rendered brightness.
+Final Cycles renders use 128 samples and denoising. Five aligned 2560×1440 RGBA plates (`background`, `midground`, `hero`, `foreground`, `fog`) retain the existing delivery sizes and filenames. WebP images have JPEG composite and transparent PNG fallbacks. Fog is delivered at 640/1280 with 12px source blur; foreground brightness is 85%. The immediate title composite is assembled from delivery plates.
 
-The title uses only CSS image compositing, small mouse transforms and slow light/fog drift. Reduced motion disables movement. Image requests have independent retained owners, and no image load/decode gates Start or gameplay readiness.
+The ending set remains an abandoned nave; the existing screen overlays the new K12 chosen-rig portrait as a terminated suit archive. It does not imply survival. Title motion, reduced motion, image ownership and nonblocking Start behavior are unchanged.
+
+Review evidence: `artifacts/nextgen/ka12-final/index.html`; written critiques: `docs/nextgen/plans/KA12-review.md`.

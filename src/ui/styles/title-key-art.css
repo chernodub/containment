@@ -11,7 +11,7 @@
 .key-art-layered .ka-fallback {visibility:hidden;}
 .key-art-layered .ka-fog {opacity:.55;animation:u10-fog 24s ease-in-out infinite alternate;}
 .ka-breath {position:absolute;inset:0;background:radial-gradient(ellipse 40px 28px at 73% 41%,#b5f7ff1c,transparent 85%),radial-gradient(ellipse at 74% 35%,#9fe8ff08,transparent 30%),radial-gradient(ellipse at 65% 72%,#ff8c4214,transparent 37%);mix-blend-mode:screen;animation:u10-light 8s ease-in-out infinite;}
-.ka-grade {position:absolute;inset:0;background:linear-gradient(90deg,#030b11ed 0%,#030b11c9 21%,#030b1159 34%,transparent 54%),linear-gradient(0deg,#02070cb3,transparent 25%,transparent 80%,#02070c66);}
+.ka-grade {position:absolute;inset:0;background:linear-gradient(90deg,#030b11d0 0%,#030b11a0 21%,#030b1139 34%,transparent 54%),linear-gradient(0deg,#02070c66,transparent 25%,transparent 80%,#02070c66);}
 @keyframes u10-fog {from{transform:translate(-4px,2px);opacity:.46}to{transform:translate(8px,-3px);opacity:.64}}
 @keyframes u10-light {0%,100%{opacity:.5}46%{opacity:1}48%{opacity:.78}51%{opacity:1}}
 .key-art-still .ka-breath {animation:none;}
