@@ -51,7 +51,7 @@ def pressure_chamber():
  L.asset('strained-containment-diaphragm',1500)
  L.lathe('Pressure vessel recessed skirt',[(1.22,.1),(1.4,.23),(1.46,.55),(1.43,.8)],(0,0,0),'e9-dark',24)
  # The buckled pressure diaphragm has a real missing wedge exposing its contents.
- verts=[];faces=[];n=20
+ verts=[];faces=[];n=16
  for j in range(5):
   t=j/4;r=.06+1.36*t;z=1.48-.68*t*t
   for i in range(n+1):
@@ -62,10 +62,20 @@ def pressure_chamber():
    else:zedge=z
    verts.append((r*math.cos(a),r*math.sin(a),zedge+.08*math.cos(a*3)*t))
    if j and i: k=j*(n+1)+i;faces.append((k,k-1,k-n-2,k-n-1))
+ for edge in (0,n):
+  for j in range(4):
+   a=j*(n+1)+edge;b=(j+1)*(n+1)+edge
+   k=len(verts);verts.extend([(verts[a][0],verts[a][1],verts[a][2]-.055),(verts[b][0],verts[b][1],verts[b][2]-.055)])
+   faces.append((a,b,k+1,k))
  mesh=bpy.data.meshes.new('Split diaphragm');mesh.from_pydata(verts,[],faces);mesh.update()
  obj=L._link(mesh,'Split bowed pressure diaphragm','e9-body',None);L.finish(obj,'e9-body',0)
- L.lathe('Contained dark membrane',[(.05,.25),(.75,.45),(1.18,.8),(.85,1.15),(.2,1.32)],(0,0,0),'p11-flesh',16)
- for z in (.65,.9,1.14):L.box('Exposed inspection lumen',(0,-.88,z),(.12,.06,.045),'e9-violet',.008)
+ L.lathe('Contained dark membrane',[(.05,.2),(1.2,.25),(1.3,.42)],(0,0,0),'e9-dark',8)
+ for i,x in enumerate((-.14,0,.14)):
+  L.cylinder('Exposed pale pressure channel',(x,-.66,1.04),.075,1.15,'e9-trim','Y',8,.005)
+  for y in (-.96,-.55,-.23):L.cylinder('Pressure channel coupling',(x,y,1.04),.094,.07,'e9-dark','Y',8,0)
+ for r in (.65,1.1):
+  for side in (-1,1):L.bolt((side*(.22*r+.09),-r,1.5-.68*(r/1.42)**2),.04,'Z')
+ L.box('Live pressure-channel status',(0,-1.25,1.04),(.08,.015,.035),'e9-violet',0)
  for x in (-.72,.72):
   L.sweep('Bowed restraint strap',[(x,-1.22,.65),(x,-.85,1.3),(x,0,1.7),(x,.85,1.3),(x,1.22,.65)],.055,'p11-steel',5)
   for y in (-1.25,1.25):
@@ -74,7 +84,7 @@ def pressure_chamber():
  L.cylinder('Relief valve neck',(1.08,.3,1.12),.12,.4,'p11-steel','Z',10,.01)
  L.cylinder('Lifted relief cap',(1.12,.32,1.48),.2,.06,'e9-trim','Z',12,.01)
  L.sweep('Captive relief cap tether',[(1.22,.31,1.14),(1.35,.32,1.4),(1.2,.32,1.5)],.018,'p11-steel',4)
- L.gauge((-.65,-1.51,.85),.16)
+
 
 def consuming_mantle():
  import infested_craft as C
@@ -143,4 +153,4 @@ L.export('incidents',OUT,'incidents.glb','Interrupted repairs and physical conse
 if '--render' in L.args():
  from cpu_preview import stage
  L._stage=stage
- for name in ([names[-1]] if '--last' in L.args() else names):L.render(L.ROOT/'artifacts/nextgen/p11-final/beauty'/(name+'-hero.png'),[name],'hero',scale=1.18)
+ for name in ([names[2]] if '--pressure' in L.args() else ([names[-1]] if '--last' in L.args() else names)):L.render(L.ROOT/'artifacts/nextgen/p11-final/beauty'/(name+'-hero.png'),[name],'hero',scale=1.18)
