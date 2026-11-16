@@ -247,7 +247,7 @@ try {
     }
     console.log(`Retaining ${recipes.length} explicitly reused recipe measurements; rendering director samples/fight afresh.`);
   } else {
-    console.log(`Rendering ${recipes.length} authored recipes through OfflineAudioContext and production MixEngine…`);
+    console.log(`Rendering ${process.argv.includes('--melee-only')?'selected melee recipes from': 'all'} ${recipes.length} authored recipes through OfflineAudioContext and production MixEngine…`);
     for (let i = 0; i < recipes.length; i++) {
       if(process.argv.includes('--melee-only')&&!/^enemy:(crawler|stalker|brute|spitter|carrier)(-elite)?:(warning|attack)$/.test(recipes[i].id))continue;
       await save(await page.evaluate(index => window.__evidence.recipe(index), i));
