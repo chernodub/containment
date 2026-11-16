@@ -83,7 +83,7 @@ def tertiary(high, sculpture, seed=0):
         dist = np.linalg.norm(co - a - h[:, None] * ab, axis=1)
         d -= hard * S.smoothstep(1.8 * v, 0.0, dist) * v * 1.1
     crease = np.abs(S.fbm(co / (v * 8.0), 3, 31 + seed))
-    d -= soft * (1 - S.smoothstep(0.0, 0.14, crease)) * v * 0.8
+    d -= soft * (1 - S.smoothstep(0.0, 0.14, crease)) * v * 0.5
     d += soft * S.fbm(co / (v * 3.0), 2, 41 + seed) * v * 0.25
     K.set_verts(high, co + n * d[:, None])
 
@@ -113,7 +113,8 @@ def colorize(high, sculpture):
     edge = np.asarray(P["edge"], np.float32)
     wear = np.where(shellish, 0.85, np.where(zone == S.CLAW, 0.35, 0.15))
     base = base + (edge - base) * (convex * wear)[:, None]
-    base *= (1 - 0.55 * concave)[:, None]
+    soft_z = np.isin(zone, [S.FLESH, S.MEMBRANE, S.ORGAN])
+    base *= (1 - np.where(soft_z, 0.25, 0.55) * concave)[:, None]
     # wet flesh: raw saturated tissue, dark creases, pale wet highlights
     wet = np.isin(zone, [S.FLESH, S.MEMBRANE])
     hi_col = np.asarray(P.get("wet", (0.62, 0.30, 0.26)), np.float32)
@@ -125,6 +126,18 @@ def colorize(high, sculpture):
         sel = zone == z
         g = np.asarray(M.GLOW[key], np.float32)
         glow[sel] = g * (0.55 + 0.45 * np.clip(1 - concave[sel], 0, 1))[:, None]
+    # translucent brood: pods glow through soft skin with distance falloff
+    pods = getattr(M, "GLOW_PODS", [])
+    if pods:
+        soft = np.isin(zone, [S.FLESH, S.MEMBRANE, S.SINEW])
+        g = np.asarray(M.GLOW["organ"], np.float32)
+        through = np.zeros(len(co), np.float32)
+        for c, r in pods:
+            dd = np.linalg.norm(co - np.asarray(c, np.float32), axis=1)
+            through = np.maximum(through, np.exp(-np.maximum(dd - r * 0.9, 0) / (r * 0.35)))
+        through *= soft * (0.55 + 0.45 * (1 - concave))
+        glow += g[None, :] * (0.5 * through)[:, None]
+        base += (np.asarray(P["organ"], np.float32) - base) * (0.45 * through)[:, None]
     ones = np.ones((len(co), 1), np.float32)
     K.write_color(high, "glow", np.hstack([glow, ones]))
     K.write_color(high, "base", np.hstack([np.clip(base, 0, 1), ones]))
