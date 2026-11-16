@@ -77,7 +77,7 @@ def studio(scene, samples=48):
     from render_device import choose_render_device
     scene.render.engine = 'CYCLES'; choose_render_device(scene)
     scene.cycles.samples = samples; scene.cycles.use_denoising = True
-    scene.view_settings.view_transform = 'AgX'; scene.view_settings.look = 'AgX - Medium High Contrast'
+    scene.view_settings.view_transform = 'AgX'; scene.view_settings.look = 'AgX - Medium High Contrast'; scene.view_settings.exposure = -.7
     scene.world.use_nodes = True
     bg = scene.world.node_tree.nodes['Background']; bg.inputs[0].default_value = (.03, .04, .05, 1); bg.inputs[1].default_value = .5
     for name, loc, power, size, colour in [('key', (2.6, 3.2, 3.2), 520, 2.2, (1, .9, .8)), ('rim', (-2.4, -2.6, 3.0), 700, 1.5, (.6, .8, 1)),
@@ -102,6 +102,8 @@ def review(low, high):
     views = arg('views', 'beauty,back,game').split(',')
     for rig in RIGS:
         for view in views:
+            if view == 'face' and rig != 'breacher':
+                continue
             use_high = view != 'game'
             for o in low + high:
                 is_high = o.name.endswith('-high')

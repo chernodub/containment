@@ -10,12 +10,12 @@ import bpy
 
 PALETTE = {
     # linear RGB
-    'ceramic': (.60, .565, .47),       # warm ivory paint over composite
+    'ceramic': (.52, .49, .41),       # warm ivory paint over composite
     'ceramic_game': (.74, .705, .60),
-    'amber': (.93, .45, .035),
-    'ice': (.17, .50, .82),
-    'fire': (.86, .17, .03),
-    'violet': (.36, .13, .72),
+    'amber': (.86, .34, .02),
+    'ice': (.07, .36, .74),
+    'fire': (.74, .09, .02),
+    'violet': (.28, .07, .62),
     'gunmetal': (.055, .065, .072),
     'steel': (.42, .44, .45),
     'graphite': (.03, .035, .04),
@@ -135,29 +135,29 @@ def masks(nodes, links, wear_amount, grime_amount, game=False):
     dot = nodes.new('ShaderNodeVectorMath'); dot.operation = 'DOT_PRODUCT'
     links.new(bev.outputs[0], dot.inputs[0]); links.new(geo.outputs['Normal'], dot.inputs[1])
     edge = _math(nodes, links, 'SUBTRACT', 1.0, dot.outputs['Value'])
-    edge = _math(nodes, links, 'MULTIPLY', edge, 14.0, clamp=True)
+    edge = _math(nodes, links, 'MULTIPLY', edge, 22.0, clamp=True)
     # Break the edge into chips with layered noise.
     chip = nodes.new('ShaderNodeTexNoise'); chip.inputs['Scale'].default_value = 55; chip.inputs['Detail'].default_value = 8
     chip.inputs['Roughness'].default_value = .65
     links.new(obj, chip.inputs['Vector'])
-    breakup = _ramp(nodes, links, chip.outputs['Fac'], [(.42, 0), (.62, 1)])
+    breakup = _ramp(nodes, links, chip.outputs['Fac'], [(.38, 0), (.56, 1)])
     sep = nodes.new('ShaderNodeSeparateColor'); links.new(breakup, sep.inputs[0])
     wear = _math(nodes, links, 'MULTIPLY', edge, sep.outputs[0])
     wear = _math(nodes, links, 'MULTIPLY', wear, 1.6 * wear_amount * (.45 if game else 1), clamp=True)
     # Large-scale scuffs on exposed convex areas (low frequency, sparse).
     scuff = nodes.new('ShaderNodeTexNoise'); scuff.inputs['Scale'].default_value = 9; scuff.inputs['Detail'].default_value = 6
     links.new(obj, scuff.inputs['Vector'])
-    scuff_mask = _ramp(nodes, links, scuff.outputs['Fac'], [(.62, 0), (.70, 1)])
+    scuff_mask = _ramp(nodes, links, scuff.outputs['Fac'], [(.58, 0), (.66, 1)])
     sepc = nodes.new('ShaderNodeSeparateColor'); links.new(scuff_mask, sepc.inputs[0])
     scuff_v = _math(nodes, links, 'MULTIPLY', sepc.outputs[0], .35 * wear_amount * (.3 if game else 1))
     wear = _math(nodes, links, 'MAXIMUM', wear, scuff_v)
     # Cavity grime from short-range local occlusion.
     ao = nodes.new('ShaderNodeAmbientOcclusion'); ao.samples = 12; ao.only_local = True
-    ao.inputs['Distance'].default_value = .035
+    ao.inputs['Distance'].default_value = .014
     grime_noise = nodes.new('ShaderNodeTexNoise'); grime_noise.inputs['Scale'].default_value = 18; grime_noise.inputs['Detail'].default_value = 5
     links.new(obj, grime_noise.inputs['Vector'])
     cav = _math(nodes, links, 'SUBTRACT', 1.0, ao.outputs['AO'])
-    cav = _math(nodes, links, 'MULTIPLY', cav, 2.2, clamp=True)
+    cav = _math(nodes, links, 'MULTIPLY', cav, 1.6, clamp=True)
     gn = nodes.new('ShaderNodeSeparateColor'); links.new(grime_noise.outputs['Color'], gn.inputs[0])
     gmod = _math(nodes, links, 'MULTIPLY_ADD', gn.outputs[0], .8)
     gmod.node.inputs[2].default_value = .55

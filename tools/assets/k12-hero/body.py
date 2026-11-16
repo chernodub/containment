@@ -36,7 +36,7 @@ class Suit:
 
     def loft(self, name, sections, role='fabric', segments=None, forward=(0, 1, 0), register=True, level=None):
         """Sections: (centre, rx, ry, {bone: weight}); elliptical rings with weights."""
-        seg = segments or (24 if self.high else 12)
+        seg = segments or (24 if self.high else 14)
         verts, faces, weights = [], [], []
         for i, (c, rx, ry, w) in enumerate(sections):
             c = V(c)
@@ -65,7 +65,7 @@ class Suit:
                 if bone not in groups:
                     groups[bone] = obj.vertex_groups.new(name=bone)
                 groups[bone].add([i], value, 'REPLACE')
-        lv = level if level is not None else (2 if self.high else 1)
+        lv = level if level is not None else (2 if self.high else 0)
         if lv:
             sub = obj.modifiers.new('k12 loft subdivision', 'SUBSURF'); sub.levels = lv
         self.bvh[name] = kit.bvh_of(obj, subdivide=max(0, 3 - lv))
@@ -114,6 +114,19 @@ class Suit:
         prof = profile or [(radius - .004, -w), (radius, -w), (radius + .002, -w + .002), (radius + .002, w - .002), (radius, w), (radius - .004, w)]
         obj = kit.lathe(name, prof, centre, axis, 32 if self.high else 12, collection=self.col, caps=False)
         return self.add(obj, role, bone, weights_from)
+
+    def stamp(self, plate_obj, text, toward, size, bone, role='marking'):
+        """Stencil text onto a finished plate: ray from ``toward`` to the plate centre."""
+        bvh = kit.bvh_of(plate_obj)
+        centre = sum((v.co for v in plate_obj.data.vertices), V()) / max(1, len(plate_obj.data.vertices))
+        d = (centre - V(toward)).normalized()
+        hit = bvh.ray_cast(V(toward), d, 2.0)
+        if hit[0] is None:
+            return None
+        n = hit[1]
+        up = V((0, 0, 1)) - n * n.z
+        o = kit.text_mesh('stencil ' + text, text, size, hit[0] + n * .0006, n, up if up.length > .1 else V((0, 1, 0)), collection=self.col)
+        return self.add(o, role, bone)
 
     def bolt(self, point, normal, bone, r=.0045):
         if self.high:
@@ -220,6 +233,8 @@ class Suit:
                         [(45, -.075), (135, -.075), (150, .0), (125, .055), (55, .055), (30, .0)], bone=sh, radius=.09, standoff=.020, crown=.012)
         self.limb_plate('shin greave ' + side, name, b, c, side,
                         [(25, .07), (155, .07), (165, .22), (145, .40), (35, .40), (15, .22)], bone=sh, radius=.10, crown=.007)
+        self.limb_plate('hamstring plate ' + side, name, a, b, side,
+                        [(-150, .10), (-40, .10), (-35, .36), (-150, .36)], bone=th, radius=.12, standoff=.012, crown=.006)
         self.limb_plate('calf plate ' + side, name, b, c, side,
                         [(-150, .10), (-30, .10), (-25, .30), (-155, .30)], bone=sh, radius=.10, standoff=.010, crown=.005)
         proj, _ = self.limb(b, c, side)
@@ -316,8 +331,25 @@ class Suit:
     def torso_armour(self):
         # Chest: two pectoral plates with the keel channel between (echo of the helmet).
         pec = [(5, 1.36), (40, 1.34), (78, 1.40), (84, 1.52), (66, 1.615), (30, 1.635), (5, 1.60)]
+        pecs = {}
         for mirror, bone in ((False, 'ribs'), (True, 'ribs')):
-            self.torso_plate('pectoral plate ' + ('L' if not mirror else 'R'), pec, mirror=mirror, crown=.012)
+            side = 'L' if not mirror else 'R'
+            pecs[side] = self.torso_plate('pectoral plate ' + side, pec, mirror=mirror, crown=.012)
+        # Pectoral intake vents: three gunmetal slats on a dark bed, lower outer corner.
+        for mirror in (False, True):
+            sgn = -1 if mirror else 1
+            self.torso_plate('pectoral vent bed', [(sgn * 46, 1.395), (sgn * 70, 1.415), (sgn * 70, 1.465), (sgn * 46, 1.445)], 'graphite',
+                             standoff=.030, thickness=.004, crown=0, profile=[(0, 0)], fil=2)
+            for k in range(3):
+                z = 1.405 + k * .018 + .0
+                self.torso_plate('pectoral vent slat', [(sgn * 48, z), (sgn * 68, z + .02 * 0 + .006), (sgn * 68, z + .014), (sgn * 48, z + .008)], 'gunmetal',
+                                 standoff=.033, thickness=.005, crown=0, profile=[(0, 0)], fil=1)
+        if self.high:
+            self.stamp(pecs['L'], '07', V((-.5, 1.0, 1.52)), .05, 'ribs')
+            self.stamp(pecs['R'], 'CK / KEEL', V((.45, 1.0, 1.58)), .016, 'ribs')
+            proj = kit.Cylindrical((0, .01, 0), (0, 0, 1), (0, 1, 0))
+            for d, z in ((12, 1.60), (70, 1.585), (12, 1.40), (-12, 1.60), (-70, 1.585), (-12, 1.40)):
+                self.cast_bolt('torso', proj, d, z, .023, 'ribs', .005)
         self.torso_plate('sternum keel', [(-3.6, 1.38), (3.6, 1.38), (3.6, 1.63), (-3.6, 1.63)], 'gunmetal', standoff=.020, thickness=.012, crown=.002,
                          profile=[(0, 0), (.003, .001)], fil=1.5)
         self.torso_plate('sternum light', [(-1.4, 1.42), (1.4, 1.42), (1.4, 1.58), (-1.4, 1.58)], 'glow', standoff=.0215, thickness=.002, crown=0,
@@ -326,7 +358,8 @@ class Suit:
         for i, (z0, z1) in enumerate([(1.255, 1.335), (1.175, 1.255)]):
             self.torso_plate(f'abdominal band {i}', [(-34 + i * 3, z0), (34 - i * 3, z0), (36 - i * 3, z1), (-36 + i * 3, z1)], bone='spine', standoff=.012 + i * .002, crown=.006, fil=4)
         # Back plate: rigs mount their modules on it.
-        self.torso_plate('back plate', [(140, 1.33), (220, 1.33), (232, 1.50), (214, 1.63), (146, 1.63), (128, 1.50)], 'ceramic', standoff=.014, crown=.008)
+        self.torso_plate('back plate', [(132, 1.31), (228, 1.31), (246, 1.47), (232, 1.635), (128, 1.635), (114, 1.47)], 'ceramic', standoff=.014, crown=.008)
+        self.torso_plate('lumbar plate', [(146, 1.12), (214, 1.12), (222, 1.27), (138, 1.27)], 'ceramic', bone='spine', standoff=.016, crown=.006, fil=5)
         # Collar ring and belt with buckle and side pouches.
         self.ring('gorget collar', V((0, -.004, 1.648)), (0, 0, 1), .168, .040, profile=[(.10, -.02), (.172, -.02), (.178, -.01), (.172, .016), (.15, .022), (.10, .022)], bone='ribs')
         self.ring('utility belt', V((0, .004, 1.07)), (0, 0, 1), .186, .050, role='graphite',
@@ -358,6 +391,10 @@ class Suit:
         for side in ('R', 'L'):
             self.pauldron(rig, side, col)
         getattr(self, rig)(col)
+        if self.high:
+            # Rig code stencilled on the right pauldron cap.
+            self.stamp(self.pauldron_caps['R'], {'breacher': 'BR-1', 'cryo': 'CR-2', 'pyro': 'PY-3', 'arc': 'AR-4'}[rig],
+                       self.pauldron_centre['R'] + V((.20, .06, .07)), .024, 'upper_arm.R')
         self.group = 'body'
 
     def shoulder_loft(self, side):
@@ -365,7 +402,7 @@ class Suit:
         if name not in self.lofts:
             sign = 1 if side == 'R' else -1
             c = self.j['upper_arm.' + side] + V((sign * .02, -.005, .02))
-            sec = [(c + V((0, 0, z * .13)), .14 * math.sqrt(max(.04, 1 - z * z)), .15 * math.sqrt(max(.04, 1 - z * z)), {'upper_arm.' + side: 1})
+            sec = [(c + V((0, 0, z * .15)), .165 * math.sqrt(max(.04, 1 - z * z)), .175 * math.sqrt(max(.04, 1 - z * z)), {'upper_arm.' + side: 1})
                    for z in (-.98, -.8, -.5, -.15, .2, .5, .8, .98)]
             self.loft(name, sec, register=False)
         return name
@@ -377,18 +414,26 @@ class Suit:
         c = self.j['upper_arm.' + side] + V((sign * .02, -.005, .02))
         proj = kit.Spherical(c, (sign, 0, 0), (0, 0, 1))   # lon: + toward back for R? computed below
         bone = 'upper_arm.' + side
-        unit = 1 / (.14 * math.pi / 180)
+        unit = 1 / (.17 * math.pi / 180)
         big = rig == 'breacher' and side == 'L' or rig == 'pyro' and side == 'R'
         scale = 1.18 if big else (.86 if rig == 'arc' else 1.0)
         def P(pts):
             return [(u * scale, v * scale) for u, v in pts]
         role = 'hazard' if rig == 'breacher' and side == 'L' else ('gunmetal' if rig == 'pyro' and side == 'R' else col)
-        cap = P([(-62, 4), (62, 4), (66, 40), (40, 72), (-40, 72), (-66, 40)])
+        cap = P([(-70, -8), (70, -8), (76, 34), (48, 74), (-48, 74), (-76, 34)])
+        self.__dict__.setdefault('pauldron_caps', {}); self.__dict__.setdefault('pauldron_centre', {})
+        self.pauldron_centre[side] = c
         o = kit.plate(f'{rig} pauldron cap {side}', kit.fillet(cap, 9, 3 if self.high else 2), proj, self.bvh[name], .022 + (.01 if big else 0), .013,
-                      [(0, 0), (.003, .002), (.008, .0024), (.011, .0006), (.0135, .0006), (.014, .0022)], .014, self.high, 72 if self.high else 16, unit=unit)
+                      [(0, 0), (.003, .002), (.008, .0024), (.011, .0006), (.0135, .0006), (.014, .0022)], .006, self.high, 72 if self.high else 16, unit=unit)
         self.add(o, role, bone)
+        self.pauldron_caps[side] = o
+        # Raised dorsal ridge across the cap: breaks the dome into a designed form.
+        ridge = P([(-70, 44), (70, 44), (60, 58), (-60, 58)])
+        r = kit.plate(f'{rig} pauldron ridge {side}', kit.fillet(ridge, 4, 3 if self.high else 1), proj, self.bvh[name], .036 + (.01 if big else 0), .012,
+                      [(0, 0), (.003, .0015)], .003, self.high, 48 if self.high else 12, unit=unit)
+        self.add(r, 'gunmetal', bone)
         for k in range(2 if not rig == 'arc' else 1):
-            lame = P([(-58 + k * 4, -14 - k * 17), (58 - k * 4, -14 - k * 17), (62 - k * 4, 6 - k * 17), (-62 + k * 4, 6 - k * 17)])
+            lame = P([(-62 + k * 5, -30 - k * 18), (62 - k * 5, -30 - k * 18), (66 - k * 5, -6 - k * 18), (-66 + k * 5, -6 - k * 18)])
             o = kit.plate(f'{rig} pauldron lame {k} {side}', kit.fillet(lame, 5, 3 if self.high else 1), proj, self.bvh[name], .018 + (.01 if big else 0) - k * .003, .010,
                           None, .004, self.high, 48 if self.high else 12, unit=unit)
             self.add(o, 'ceramic' if k == 0 and rig != 'pyro' else 'gunmetal', bone)
@@ -404,7 +449,7 @@ class Suit:
 
     def back_frame(self):
         """Common back mounting saddle (each rig module bolts onto it)."""
-        o = self.torso_plate('back saddle', [(150, 1.36), (210, 1.36), (214, 1.60), (146, 1.60)], 'gunmetal', standoff=.028, thickness=.012, crown=.004,
+        o = self.torso_plate('back saddle', [(164, 1.38), (196, 1.38), (198, 1.58), (162, 1.58)], 'gunmetal', standoff=.028, thickness=.012, crown=.004,
                              profile=[(0, 0), (.003, .0012)], fil=4)
         return o
 
