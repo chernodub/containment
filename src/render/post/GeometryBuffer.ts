@@ -22,7 +22,7 @@ function actorIdentity(root:Object3D):number {
  throw new Error('Geometry identity capacity exceeded');
 }
 
-const drawBufferHooks=new WeakSet<Material>();
+const drawBufferHooks=new WeakMap<Material,{hook:Material['onBeforeRender'];stockBase:boolean}>();
 const drawStates=new WeakMap<WebGLRenderer,{target:unknown;frame:number;write:boolean}>();
 const allBuffers=[0x8ce0,0x8ce1],colorOnly=[0x8ce0,0];
 const geometryClear=new Float32Array(4);
@@ -48,9 +48,9 @@ export function installGeometryClearPolicy(renderer:WebGLRenderer):()=>void {
  return ()=>{if(released)return;released=true;if(--owned.users===0){if(renderer.clear===owned.hook)renderer.clear=owned.original;clearHooks.delete(renderer);}};
 }
 function installDrawBufferPolicy(material:Material):void {
- if(drawBufferHooks.has(material))return;drawBufferHooks.add(material);
+ if(drawBufferHooks.has(material))return;
  const previous=material.onBeforeRender;
- material.onBeforeRender=function(renderer,...args) {
+ const hook:Material['onBeforeRender']=function(this:Material,renderer,...args) {
   previous.call(this,renderer,...args);
   const target=renderer.getRenderTarget();
   if(target?.textures[1]?.name!=='Containment geometry normal + identity')return;
@@ -63,6 +63,15 @@ function installDrawBufferPolicy(material:Material):void {
    if(state){state.target=target;state.frame=frame;state.write=write;}else drawStates.set(renderer,{target,frame,write});
   }
  };
+ material.onBeforeRender=hook;
+ drawBufferHooks.set(material,{hook,stockBase:previous===Material.prototype.onBeforeRender});
+}
+
+/** This retained policy depends only on the material/target, not a mesh's local
+ * transform. Rigid architecture using the same material may share one draw. */
+export function hasStaticGeometryPolicy(material:Material):boolean {
+ const policy=drawBufferHooks.get(material);
+ return !!policy?.stockBase&&material.onBeforeRender===policy.hook;
 }
 
 /** Geometry is emitted alongside HDR color: no extra traversal, draw or texture samples. */

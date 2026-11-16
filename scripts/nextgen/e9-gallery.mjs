@@ -46,11 +46,11 @@ for (const parent of parents) {
     assert(m.fatalError || m.failures?.length || m.errors?.length, 'Explicit failed parent has no recorded failure');
     continue;
   }
-  for (const field of ['viewport', 'deviceScaleFactor', 'seed', 'appAssets', 'burstStepMs']) {
+  for (const field of ['viewport', 'deviceScaleFactor', 'seed', 'burstStepMs']) {
     assert.deepEqual(m[field], reference[field], parent.directory + ': mismatched ' + field);
   }
   const actualSource = m.distSnapshot?.sourceSHA ?? m.gitSHA;
-  assert(actualSource && sourceSHA.startsWith(actualSource), parent.directory + ': source mismatch');
+  assert.match(actualSource??'', /^[a-f0-9]{40}$/, parent.directory + ': missing source identity');
   const failed = new Set((m.failures ?? []).map(f => key(f.scenario, f.room)));
   const knownErrors = (m.failures ?? []).flatMap(f => f.errors ?? []).map(e => JSON.stringify(e));
   for (const error of m.errors ?? []) assert(knownErrors.includes(JSON.stringify(error)), 'Unattributed parent error');
@@ -89,7 +89,19 @@ for (const parent of parents) {
     selected.set(id, {parent, shots});
   }
 }
-for (const room of rooms) for (const scenario of expectedScenarios) assert(selected.has(key(scenario, room.id)), 'No complete source for ' + key(scenario, room.id));
+for (const room of rooms) {
+  const parent=selected.get(key('room-tour',room.id))?.parent;
+  for (const scenario of expectedScenarios) {
+    const source=selected.get(key(scenario,room.id));
+    assert(source, 'No complete source for ' + key(scenario, room.id));
+    // A targeted room correction may supersede that room's complete capture
+    // set. Keep its tour/calm/combat on one bundle; retain exact source receipts
+    // for other, visually unchanged rooms rather than relabelling their PNGs.
+    assert.deepEqual(source.parent.manifest.appAssets,parent.manifest.appAssets,room.id+': mixed room bundles');
+    assert.equal(source.parent.manifest.distSnapshot?.sourceSHA??source.parent.manifest.gitSHA,
+      parent.manifest.distSnapshot?.sourceSHA??parent.manifest.gitSHA,room.id+': mixed room sources');
+  }
+}
 
 for (const directory of ['', 'native', 'review480', 'before', 'parents']) await mkdir(resolve(output, directory), {recursive: true});
 for (const [index, parent] of parents.entries()) {
@@ -114,7 +126,7 @@ for (const [roomIndex, room] of rooms.entries()) {
     await copyFile(original, native, constants.COPYFILE_FICLONE);
     await writeFile(resolve(output, 'review480', shot.file), encode(small));
     smallImages.set(shot.file, small); files.push(shot.file);
-    receipts.push({scenario, room: room.id, file: shot.file, source: original, native, sha256: hash(bytes), parentManifestSHA256: parent.manifestSHA256});
+    receipts.push({scenario, room: room.id, file: shot.file, source: original, native, sha256: hash(bytes), sourceSHA:parent.manifest.distSnapshot?.sourceSHA??parent.manifest.gitSHA,parentManifestSHA256: parent.manifestSHA256});
   }
   for (const shot of tour.shots) {
     const x = (shot.frame - 1) * 480, label = shot.evidence.e9RoomTourProof.mark.label;
@@ -141,15 +153,15 @@ for (const [roomIndex, room] of rooms.entries()) {
     drawText(kitingSheet, room.id, sx + 5, sy + 5, undefined, 1);
     drawImage(kitingSheet, smallImages.get(fight.file), sx, sy + 24, 480, 270);
   }
-  rows.push({...room, tour: 'tour-' + room.id + '.png', files, before: oldPath, beforeSHA256: hash(oldBytes),
+  rows.push({...room,sourceSHA:tour.parent.manifest.distSnapshot?.sourceSHA??tour.parent.manifest.gitSHA,appAssets:tour.parent.manifest.appAssets,tour: 'tour-' + room.id + '.png', files, before: oldPath, beforeSHA256: hash(oldBytes),
     metrics: all.map(({scenario, shot}) => ({scenario, frame: shot.frame, ...shot.performance, preparation: shot.evidence.preparation, programs: shot.evidence.renderPrograms, interior: shot.evidence.e9InteriorProof}))});
 }
 await writeFile(resolve(output, 'twenty-calm.png'), encode(calmSheet));
 if (!tourOnly) await writeFile(resolve(output, 'twenty-kiting.png'), encode(kitingSheet));
 await writeFile(resolve(output, 'twenty-before-after.png'), encode(comparison));
 await writeFile(resolve(output, 'residential-standard-comparison.png'), encode(standard));
-const report = {sourceSHA, appAssets: reference.appAssets,
-  method: 'Original guarded native PNG bytes; exact pixel-area480x270 reduction. Five-position tours freeze simulation and settle the native camera for120 presentation ticks. G6 is staged native movement/fire, not hardware FPS or a campaign.',
+const report = {sourceSHA, builds:parents.filter(p=>!p.rejectedOnly).map(p=>({sourceSHA:p.manifest.distSnapshot?.sourceSHA??p.manifest.gitSHA,appAssets:p.manifest.appAssets})),
+  method: 'Original guarded native PNG bytes; exact pixel-area480x270 reduction. Source SHA and application bundle are recorded per room; every room uses one complete source for tour/calm/combat. Five-position tours freeze simulation and settle the native camera for120 presentation ticks. G6 is staged native movement/fire, not hardware FPS or a campaign.',
   parents: parents.map(p => ({directory: p.directory, manifestSHA256: p.manifestSHA256, rejectedOnly: p.rejectedOnly, fatalError: p.manifest.fatalError, failures: p.manifest.failures, errors: p.manifest.errors})), rooms: rows, receipts};
 await writeFile(resolve(output, 'gallery.json'), JSON.stringify(report, null, 2) + '\n');
 await writeFile(resolve(output, 'index.html'), `<!doctype html><meta charset="utf-8"><title>E9 room interiors</title><style>body{background:#10171c;color:#dce9e8;font:16px system-ui;margin:24px}img{max-width:100%;height:auto}a{color:#9cd6dc}.room{margin:32px 0}</style><h1>E9 / room interiors</h1><p>${escape(sourceSHA)}. ${escape(report.method)}</p><p><a href="gallery.json">Source receipts and per-room draw/triangle metrics</a></p><a href="twenty-calm.png"><img src="twenty-calm.png"></a>${tourOnly ? '' : '<h2>Staged native kiting</h2><a href="twenty-kiting.png"><img src="twenty-kiting.png"></a>'}<h2>L8 / E9</h2><a href="twenty-before-after.png"><img src="twenty-before-after.png"></a>${rows.map(room => `<section class="room"><h2>${escape(room.name)}</h2><a href="${room.tour}"><img src="${room.tour}"></a><p>${room.files.map(file => `<a href="native/${file}">${escape(file)}</a>`).join(' · ')}</p></section>`).join('')}`);

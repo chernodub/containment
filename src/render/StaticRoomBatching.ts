@@ -2,6 +2,7 @@ import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { geometries, MAT } from './meshParts';
 import { getStaticColliderParts, setStaticColliderParts } from './StaticColliderParts';
+import {hasStaticGeometryPolicy} from './post/GeometryBuffer';
 
 export type StaticRoomBatchStats = Readonly<{
   meshesBefore: number;
@@ -60,13 +61,15 @@ function stockMaterial(material: T.Material): boolean {
 function rigidMaterial(material: T.Material): boolean {
   if (stockMaterial(material)) return true;
   // These exact session-owned finishes can be lit on the title/previous room
-  // before a later procedural room is built. The retained local-light hook is
-  // material-only; merging vertices with the same material identity is safe.
+  // before a later procedural room is built. The retained local-light, graphic
+  // and MRT policies are material-only; the same material identity may batch.
   // Never equate different hooked finishes or accept an unknown shader hook.
   const original = sharedRoomFinishKeys.get(material);
-  return original !== undefined &&
-    material.onBeforeRender === T.Material.prototype.onBeforeRender &&
-    material.customProgramCacheKey() === `${original}:local-light-rejection-v8`;
+  if(original===undefined)return false;
+  const key=material.customProgramCacheKey(),local=`${original}:local-light-rejection-v8`;
+  if(material.onBeforeRender===T.Material.prototype.onBeforeRender)
+    return key===local||key===`${local}:graphic-surface-v1`;
+  return key===`${local}:graphic-surface-v1:geometry-mrt-v1`&&hasStaticGeometryPolicy(material);
 }
 
 function materialKey(material: T.Material): string | undefined {

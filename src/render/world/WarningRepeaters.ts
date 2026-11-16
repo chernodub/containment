@@ -26,6 +26,9 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
  const height=BOARD_HEIGHT,panelHeight=BOARD_DEPTH,width=3.6,ceiling=6.8,forward=height*19/26*32;
  const centers=[{x:t.spawn.x+220,z:t.spawn.y+forward},{x:plan.arena.x+(id==='safety-interlock-station'?108:96),z:plan.arena.y+forward}];
  if(Math.hypot(centers[0].x-centers[1].x,centers[0].z-centers[1].z)<170)centers.splice(0,1);
+ // Keep the first diagnostic face inside the HUD-safe window while kiting
+ // along the right inspection lane; the second face protects the arena mark.
+ if(id==='diagnostic-gallery')centers[0].x=plan.arena.x-96;
  const canonicalCenters=centers.length;
  // Repeat the same fatal record at the named workbays and exit, rather than
  // covering only the old spawn/arena crops. Lateral clearance keeps every
