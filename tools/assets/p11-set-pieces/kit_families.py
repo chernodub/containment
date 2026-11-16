@@ -10,7 +10,12 @@ def tray():
  for x in [-.3,.3]: L.box('Rolled side channel',(x,0,.12),(.035,2,.18),'e9-body',.008)
  for i in range(9): L.box('Tray rung',(0,-.9+i*.225,.04),(.6,.045,.035),'e9-trim',0)
  for i in range(3): L.sweep('Jacketed through cable',[(-.16+i*.16,-1,.1),(-.16+i*.16,0,.09),(-.16+i*.16,1,.1)],.032,'p11-rubber',6)
- for y in [-.75,.75]: L.box('Cable retaining band',(0,y,.15),(.55,.035,.025),'e9-trim',0)
+ for y in [-.75,.75]:
+  L.box('Cable retaining band',(0,y,.15),(.55,.035,.025),'e9-trim',0)
+  for x in [-.28,.28]:L.box('Tray splice sleeve',(x,y,.11),(.08,.18,.17),'e9-dark',.006)
+ for x in [-.16,0,.16]:
+  L.cylinder('Cable end gland',(x,.88,.10),.05,.12,'e9-body','Y',8,0)
+ L.box('Circuit routing plate',(.22,.15,.22),(.10,.28,.015),'e9-body',0)
 
 def panel():
  L.asset('service-access-hatch')
@@ -21,6 +26,11 @@ def panel():
  L.vent((0,-.13,.29),.55,.18,4)
  L.decal_quad('Service plate',(0,-.135,.92),.44,.13,tint='black')
  L.stencil('A7',(0,-.14,.92),.08)
+ L.box('Captive latch pocket',(.36,-.145,.76),(.13,.025,.13),'e9-dark',.006)
+ L.cylinder('Quarter-turn latch',(.36,-.166,.76),.036,.018,'e9-trim','Y',6,0)
+ for x in [-.3,.28]:
+  L.box('Rear cable-entry boot',(x,.09,.16),(.14,.08,.22),'e9-dark',.008)
+  L.cylinder('Paired cable gland',(x,.145,.16),.055,.08,'e9-trim','Y',8,0)
 
 def crate(name,width,height):
  L.asset(name)
@@ -41,6 +51,14 @@ def crate(name,width,height):
  L.handle((0,-.35,height*.5),width*.35)
  L.decal_quad('Inventory plate',(0,0,height+.035),.3,.18,'Z',tint='paper')
  L.stencil('C2',(0,0,height+.038),.09,'Z',tint='black')
+ for x in [-width*.35,width*.35]:
+  L.box('Toggle latch hinge shoe',(x,-.35,height-.21),(.12,.045,.06),'e9-dark',.005)
+  L.sweep('Latch over-centre bail',[(x-.035,-.39,height-.15),(x-.035,-.39,height-.04),(x+.035,-.39,height-.04),(x+.035,-.39,height-.15)],.009,'e9-trim',5)
+ for sign in [-1,1]:
+  xx=sign*(width/2+.008)
+  L.inset_panel('Recessed lifting grip',(xx,0,height*.48),.34,.16,.016,.035,inner_role='e9-dark',axis='X'if sign>0 else'-X')
+  L.sweep('Lifting grip',[(xx,-.11,height*.45),(xx,-.11,height*.54),(xx,.11,height*.54),(xx,.11,height*.45)],.015,'e9-trim',5)
+ for i in range(3):L.box('Scuffed inventory label',(-.1+i*.08,.055,height+.045),(.025,.012,.003),'e9-body',0)
 
 def barrel():
  L.asset('service-pressure-drum')
@@ -52,6 +70,10 @@ def barrel():
  L.sweep('Welded seam',[(.3,0,.18),(.3,0,.58)],.008,'e9-trim',5)
  L.gauge((0,-.305,.51),.055)
  L.decal_quad('Contents stripe',(0,-.302,.39),.22,.22,tint='service-blue')
+ L.cylinder('Pressure relief boss',(-.12,.07,.81),.055,.09,'e9-trim',vertices=6,bevel=0)
+ L.cylinder('Relief valve capped stem',(-.12,.07,.88),.027,.10,'e9-dark',vertices=8,bevel=0)
+ L.box('Impact cage bridge',(-.12,.07,.94),(.15,.12,.035),'e9-body',.006)
+ L.sweep('Gauge takeoff',[(0,-.27,.48),(0,-.34,.48),(0,-.34,.51)],.018,'e9-trim',6)
 
 def rail():
  L.asset('service-safety-rail')
@@ -60,13 +82,17 @@ def rail():
   L.box('Post',(x,0,.5),(.055,.055,1),'e9-body',.008)
  for z in [.46,.98]: L.sweep('Tubular rail',[(-.8,0,z),(.8,0,z)],.03,'e9-trim',8)
  L.box('Toe guard',(0,0,.13),(1.6,.025,.12),'e9-body',.005)
+ for x in [-.8,.8]:
+  for z in [.46,.98]:L.cylinder('Rail saddle coupling',(x,0,z),.048,.12,'e9-body','X',8,0)
+  for dx in [-.065,.065]:L.bolt((x+dx,0,.054),.018,'Z')
 
 def stairs():
  L.asset('service-three-step')
- for x in [-.48,.48]: L.profile_x('Stringer',[(-.6,0),(.6,0),(.6,.6),(-.6,.12)],x-.025,x+.025,'e9-body',0)
+ for x in [-.48,.48]: L.profile_x('Stringer',[(-.6,.02),(.6,.48),(.6,.63),(-.6,.17)],x-.025,x+.025,'e9-body',0)
  for i in range(3):
   y=-.4+i*.4; z=.2+i*.2
   L.box('Tread',(0,y,z),(.98,.4,.055),'e9-trim',.008)
+  for x in [-.43,.43]:L.box('Tread welded angle',(x,y,z-.055),(.08,.30,.06),'e9-dark',0)
   for j in range(3): L.box('Grip groove',(0,y-.12+j*.1,z+.029),(.82,.018,.006),'e9-dark',0)
 
 def console(pattern):
@@ -80,15 +106,29 @@ def console(pattern):
  L.box('Control shelf',(0,-.43,.8),(.72,.24,.04),'e9-dark',.012)
  for x in [-.2,0,.2]: L.cylinder('Selector',(x,-.43,.84),.035,.04,'e9-trim',vertices=8,bevel=0)
  L.lamp_strip('Status',(0,-.365,.73),.56)
+ L.box('Raised display rain hood',(0,.18,1.045),(.76,.12,.045),'e9-dark',.008)
+ for x,r in [(-.23,.045),(.20,.06)]:
+  L.cylinder('Rear cable gland',(x,.365,.28),r,.09,'e9-trim','Y',8,0)
+  L.sweep('Captive controller cable',[(x,.405,.28),(x,.46,.23),(x,.46,.075),(x,.30,.06)],r*.48,'p11-rubber',6)
+ L.box('Separate rear service lid',(0,.365,.67),(.62,.025,.42),'e9-dark',.012)
+ for x in [-.2,.2]:L.hinge((x,.40,.67),.13,.014)
+ L.box('Foot mounting flange',(0,0,.025),(.88,.74,.05),'e9-dark',.008)
+ if pattern=='schematic':
+  L.box('Program key lock',(.25,-.43,.87),(.09,.08,.045),'e9-dark',.006)
+  L.box('Key paddle',(.25,-.43,.92),(.025,.04,.08),'e9-trim',0)
 
 def pipes():
  L.asset('service-valve-manifold')
- for x in [-.55,.55]: L.box('Mounting channel',(x,.12,.7),(.08,.1,1.4),'e9-body',0)
+ for x in [-.55,.55]:L.box('Slotted mounting channel',(x,.12,.7),(.08,.10,1.4),'e9-body',0)
  for z in [.35,.95]:
   L.sweep('Process pipe',[(-.75,0,z),(.75,0,z)],.065,'e9-trim',8)
-  for x in [-.55,.55]: L.cylinder('Pipe collar',(x,0,z),.09,.06,'e9-dark','X',8,0)
-  L.valve_wheel((-.2,-.1,z),.10,axis='Y')
-  L.gauge((.3,-.09,z+.12),.065)
+  for x in [-.65,.65]:L.cylinder('Threaded union',(x,0,z),.10,.10,'e9-dark','X',8,0)
+  L.cylinder('Valve globe',(-.2,0,z),.105,.20,'e9-body','X',8,0)
+  L.valve_wheel((-.2,-.075,z),.10,axis='-Y')
+  L.sweep('Gauge siphon feed',[(.3,0,z),(.3,-.07,z+.07),(.3,-.09,z+.14)],.018,'e9-trim',6)
+  L.cylinder('Gauge case',(.3,-.095,z+.15),.07,.035,'e9-dark','Y',10,0)
+  L.cylinder('Inset readable gauge dial',(.3,-.117,z+.15),.056,.005,'e9-trim','Y',10,0)
+  L.box('Gauge needle',(.31,-.122,z+.16),(.035,.005,.008),'e9-dark',0,rotation=(0,-.6,0))
 tray(); panel(); crate('service-transit-case',.85,.48); crate('service-stowage-crate',.65,.8); barrel(); rail(); stairs(); console('bars'); console('schematic'); pipes()
 L.export('service-kit',L.ROOT/'public/assets/p11/service-kit','service-kit.glb','Industrial service fittings with modelled hardware and baked AO/curvature.','blender -b -P tools/assets/p11-set-pieces/kit_families.py')
 if '--render' in L.args():
