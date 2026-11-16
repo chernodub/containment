@@ -94,6 +94,14 @@ def uplink():
         L.box('Cable chain shoe',(.9*math.cos(a),.9*math.sin(a),1.15),(.13,.12,.09),'e9-dark',.01,rotation=(0,0,a))
     for z in (1.22,1.34,1.46):L.cylinder('Motor cooling fin',(.9,.3,z),.24,.025,'e9-trim','Z',12)
     L.hazard_band((-.95,-.91,.36),.35,.07)
+    # Failed tracking repair: detached cover, severed loom and exposed terminal bank.
+    L.box('Removed azimuth cover',(-1.16,-.48,1.1),(.58,.48,.055),'p11-tint-metal',.018,rotation=(.15,.12,.3),tint='service-blue')
+    L.box('Exposed terminal recess',(1.25,-.45,1.02),(.58,.48,.06),'e9-dark',.015)
+    for i in range(4):
+        L.box('Terminal ceramic',(1.04+i*.14,-.45,1.075),(.08,.28,.07),'e9-ceramic',.008)
+        L.sweep('Cut drive wire',[(1.04+i*.14,-.42,1.12),(1.22+i*.12,-.61,1.2),(1.28+i*.12,-.78,.8)],.015,'p11-rubber',5)
+    L.stencil('MANUAL',(-1.46,-.68,1.14),.09,face='Z')
+
 
 def diagnostic():
     L.asset('specimen-probe-cradle',12000)
