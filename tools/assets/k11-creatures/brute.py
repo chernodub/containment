@@ -8,12 +8,12 @@ right one heavier), a long armoured hind body on four pillar legs.
 import numpy as np
 
 import sdf as S
-from sdf import SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, Ellipsoid, RoundCone, Plate, frame, v3, normalize
+from sdf import ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, Ellipsoid, RoundCone, Plate, frame, v3, normalize
 import species as A
 
 ASSET = "tyrant"
 FAMILY = "brute"
-ASPECT = 1.7
+ASPECT = 1.8
 VOXEL = 0.024
 TRIS = {"body": 11500, "elite": 1600, "boss": 4200}
 ATLAS = 2048
@@ -21,7 +21,7 @@ GLOW_STRENGTH = 2.0
 PALETTE = {
     "shell": (0.13, 0.035, 0.022), "edge": (0.55, 0.36, 0.20), "membrane": (0.11, 0.022, 0.026),
     "sinew": (0.26, 0.06, 0.05), "claw": (0.022, 0.014, 0.012), "tooth": (0.72, 0.60, 0.42),
-    "organ": (1.0, 0.45, 0.05), "eye": (1.0, 0.6, 0.15), "crest": (0.52, 0.41, 0.27),
+    "organ": (1.0, 0.45, 0.05), "eye": (1.0, 0.6, 0.15), "crest": (0.52, 0.41, 0.27), "armor": (0.24, 0.12, 0.075), "flesh": (0.32, 0.05, 0.05),
     "cavity": (0.03, 0.005, 0.006), "under": (0.08, 0.03, 0.022),
 }
 GLOW = {"organ": (1.0, 0.36, 0.0), "eye": (1.0, 0.55, 0.08)}
@@ -32,7 +32,7 @@ def build(sk):
     z = lambda x, y, zz: v3((x, y, zz * a))
     body = S.Sculpture("brute-body")
     # --- chest bulwark --------------------------------------------------------
-    chest_c, chest_r, chest_R = z(0.15, 0, 3.55), v3((1.05, 1.12, 1.0 * a)), frame((1, 0, 0.25))
+    chest_c, chest_r, chest_R = z(0.15, 0, 3.45), v3((1.15, 1.42, 1.05 * a)), frame((1, 0, 0.25))
     body.add(A.mass(chest_c, chest_r, chest_R, bone="chest", zone=MEMBRANE, lump=0.01, freq=1.5, seed=2))
     body.extend(A.shingles(chest_c, chest_r, chest_R, "chest", rows=2, phis=(0.72, 1.45), u0=0.4, u1=-0.42,
                            size=(0.95, 0.78, 0.42), thickness=0.3, lift=0.3, rings=0.008, seed=40, plate0=1))
@@ -42,6 +42,11 @@ def build(sk):
     la, _ = A.ellipsoid_surface(chest_c, chest_r, chest_R, 0.55, 0.0)
     lb, _ = A.ellipsoid_surface(chest_c, chest_r, chest_R, -0.62, 0.0)
     body.extend(A.lantern(la + v3((0, 0, 0.08)), lb + v3((0, 0, 0.1)), 0.4, "chest", height=1.7, ribs=0.17))
+    body.add(A.mass(z(0.1, 0, 2.55), (1.15, 1.25, 0.62 * a), frame((1, 0, 0.1)), bone=("blend", "chest", "tail", z(0.6, 0, 3), z(-0.8, 0, 2.3)),
+                    zone=FLESH, k=0.45, lump=0.03, freq=1.2, seed=9))
+    for s_ in (-1, 1):
+        body.add(Plate(z(0.3, 1.25 * s_, 2.75), (0.85, 0.6, 0.3), frame((1, 0, 0), (0, s_, -0.35)), 0.2, rings=0.008, lip=0.05,
+                       chip=0.03, zone=ARMOR, bone="chest", plate=12 + s_))
     # --- hind body --------------------------------------------------------------
     hind_c, hind_r, hind_R = z(-1.15, 0, 2.05), v3((1.95, 0.98, 0.62 * a)), frame((1, 0, 0.18))
     body.add(A.mass(hind_c, hind_r, hind_R, bone="tail", zone=MEMBRANE, k=0.35, lump=0.01, freq=1.5, seed=3))
@@ -94,34 +99,38 @@ def build(sk):
     for leg in ("front", "back"):
         for s, side in ((-1, "r"), (1, "l")):
             hip, knee, foot = sk.h(f"leg.{leg}.{side}"), sk.h(f"foot.{leg}.{side}"), sk.end(f"foot.{leg}.{side}")
-            body.extend(A.limb(hip, knee, foot, 0.64, 0.47, 0.2, f"leg.{leg}.{side}", f"foot.{leg}.{side}", spurs=2,
-                               seed=len(leg) + s, tint=0.7, bend=0.2))
+            body.extend(A.limb(hip, knee, foot, 0.95, 0.72, 0.32, f"leg.{leg}.{side}", f"foot.{leg}.{side}",
+                               seed=len(leg) + s, tint=1.0, bend=0.2))
     # --- elite: crest spines along the chest crown, shoulder spikes -------------------
     elite = S.Sculpture("brute-elite")
-    pts, nrm = [], []
-    for u in np.linspace(0.35, -0.5, 4):
-        for phi in (-0.42, 0.42):
-            p, n = A.ellipsoid_surface(chest_c, chest_r, chest_R, float(u), phi)
-            pts.append(p + n * 0.15)
-            nrm.append(n)
-    elite.extend(A.crest_spines(pts, nrm, 0.95, 0.12, lambda p: "chest", sweep=(-1, 0, 0.1)))
-    for s, side in ((-1, "r"), (1, "l")):
-        sh = sk.h(f"shoulder.{side}")
-        elite.add(RoundCone(sh + v3((0, 0.2 * s, 0.3)), sh + v3((-0.5, 0.75 * s, 1.1)), 0.16, 0.02, zone=CREST, bone=f"shoulder.{side}"))
+    for s_, side in ((-1, "r"), (1, "l")):
+        sh, el = sk.h(f"shoulder.{side}"), sk.h(f"forearm.{side}")
+        c = sh + (el - sh) * 0.25 + v3((0, 0.35 * s_, 0.55))
+        for i, (sz, off) in enumerate((((1.05, 0.85, 0.42), 0.0), ((0.8, 0.65, 0.34), 0.38))):
+            elite.add(Plate(c + v3((-0.3 * i, 0.12 * s_ * i, off)), sz, frame((1, 0, -0.2), (0.2, s_ * 0.9, 0.7)), 0.3 - 0.06 * i,
+                            rings=0.01, lip=0.07, chip=0.05, zone=CREST, bone=f"shoulder.{side}", plate=140 + i + 3 * (s_ > 0)))
+        elite.add(RoundCone(c + v3((-0.2, 0.3 * s_, 0.35)), c + v3((-0.9, 0.95 * s_, 1.25)), 0.2, 0.02, zone=TOOTH, bone=f"shoulder.{side}"))
     # --- boss (Brute Warden): bone collar shield and horn crown -----------------------
     boss = S.Sculpture("brute-warden")
-    p, n = A.ellipsoid_surface(chest_c, chest_r, chest_R, 0.55, 0.0)
-    for s in (-1, 0, 1):
-        q, m = A.ellipsoid_surface(chest_c, chest_r * v3((1, 1.08, 1.08)), chest_R, 0.62, 0.75 * s)
-        boss.add(Plate(q + m * 0.2, (0.75, 0.62, 0.32), frame(normalize(v3((1, 0, 0.4))), m), 0.2, rings=0.014,
-                       lip=0.06, chip=0.05, zone=CREST, bone="chest", plate=150 + s))
-    for i, (yy, ln) in enumerate(((-0.55, 1.5), (-0.2, 1.9), (0.2, 1.9), (0.55, 1.5))):
-        base = head_c + z(-0.25, yy, 0.42)
-        boss.extend(A.hook([base, base + z(-0.3, yy * 0.4, 0.5), base + z(-0.8, yy * 0.9, 0.7), base + z(-ln, yy * 1.3, 0.55)],
-                           0.17, 0.02, "head", zone=CREST, tip_zone=TOOTH, k=0.04, tip=0.25))
-    for s, side in ((-1, "r"), (1, "l")):
-        el, wr = sk.h(f"forearm.{side}"), sk.h(f"claw.{side}")
-        for t in (0.35, 0.6, 0.85):
-            c = el + (wr - el) * t + v3((0, 0.4 * s, 0.25))
-            boss.add(RoundCone(c, c + v3((-0.25, 0.5 * s, 0.55)), 0.11, 0.015, zone=TOOTH, bone=f"forearm.{side}"))
+    # broad asymmetric shield grown over the left crusher arm
+    el, wr = sk.h("forearm.l"), sk.h("claw.l")
+    fa = normalize(wr - el)
+    sc = el + (wr - el) * 0.5 + v3((0.1, 0.95, 0.75))
+    boss.add(Plate(sc, (2.1, 1.75, 0.7), frame(fa, (0.2, 1.0, 0.6)), 0.45, rings=0.014, ring_count=5, lip=0.1, chip=0.07,
+                   zone=CREST, bone="forearm.l", plate=150))
+    boss.add(Plate(sc + v3((-0.5, 0.3, 0.5)), (1.4, 1.2, 0.55), frame(fa, (0.1, 1.0, 0.8)), 0.35, rings=0.012, lip=0.08,
+                   chip=0.06, zone=ARMOR, bone="forearm.l", plate=151))
+    boss.add(Ellipsoid(sc - v3((0.1, 0.35, 0.1)), (0.9, 0.35, 0.55), frame(fa), zone=FLESH, bone="forearm.l", k=0.2))
+    # battering ram: a blunt bone ram fused over the brow, the charge's business end
+    ram0, ram1 = head_c + z(-0.4, 0, 0.35), head_c + z(1.25, 0, 0.0)
+    boss.add(RoundCone(ram0, ram1, 0.62, 0.48, zone=CREST, bone="head", k=0.2))
+    boss.add(S.Stretch(Ellipsoid(ram1 + z(0.05, 0, 0), (0.42, 0.62, 0.42 * a), frame(normalize(ram1 - ram0))),
+                       normalize(ram1 - ram0), 0.16, 0.05, zone=CREST, bone="head"))
+    for s_ in (-1, 1):
+        boss.add(RoundCone(ram1 + v3((0, 0.45 * s_, 0.1)), ram1 + v3((0.55, 0.85 * s_, 0.45)), 0.22, 0.03, zone=TOOTH, bone="head"))
+    # heavier right battering forearm: knuckle bosses along the crusher
+    el, wr = sk.h("forearm.r"), sk.h("claw.r")
+    for t in (0.3, 0.55, 0.8):
+        c = el + (wr - el) * t + v3((0.25, -0.45, 0.2))
+        boss.add(Ellipsoid(c, (0.32, 0.3, 0.26), zone=ARMOR, bone="forearm.r", k=0.05))
     return {"body": body, "elite": elite, "boss": boss}

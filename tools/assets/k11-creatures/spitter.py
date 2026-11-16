@@ -8,7 +8,7 @@ throat, and high-arched legs like a harvestman's.
 import numpy as np
 
 import sdf as S
-from sdf import SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, EYE, Ellipsoid, RoundCone, Plate, frame, v3, normalize
+from sdf import ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, EYE, Ellipsoid, RoundCone, Plate, frame, v3, normalize
 import species as A
 
 ASSET = "marauder"
@@ -27,25 +27,27 @@ PALETTE = {
 GLOW = {"organ": (0.2, 1.0, 0.02), "eye": (0.5, 1.0, 0.2)}
 
 
-def chain(body, sk, names, radii, side, plates=(), tint=0.5, claw_hook=False):
+def chain(body, sk, names, radii, side, plates=(), tint=0.5, claw_hook=False, planted=True):
+    """Jointed leg along a bone chain: armoured segments, knuckles, planted foot."""
     pts = [sk.h(n) for n in names] + [sk.end(names[-1])]
     for i, name in enumerate(names):
         p, q = pts[i], pts[i + 1]
         if float(np.linalg.norm(q - p)) < 1e-4:
             continue
         last = i == len(names) - 1
-        zone = CLAW if last else SHELL
-        body.add(RoundCone(p, q, radii[i], radii[i + 1], zone=zone, bone=name, k=radii[i] * 0.35, tint=tint))
-        if 0 < i and not last:
+        if last and planted:
+            stop = q + (p - q) * 0.12
+            body.extend(A.armour_segment(p, stop, radii[i], max(radii[i + 1], radii[i] * 0.45), name, side,
+                                         tint=tint * 1.6, plate=100 + i + 10 * (side > 0)))
+            body.extend(A.foot(q, q - p, max(radii[i] * 0.55, radii[-2] * 0.5), name))
+        elif last:
+            body.add(RoundCone(p, q, radii[i], radii[i + 1], zone=CLAW, bone=name, k=radii[i] * 0.35))
+        else:
+            body.extend(A.armour_segment(p, q, radii[i], radii[i + 1], name, side, tint=tint * 1.6,
+                                         plate=100 + i + 10 * (side > 0)))
+        if 0 < i:
             prev = names[i - 1]
-            body.add(Ellipsoid(p, (radii[i] * 0.95,) * 3, zone=MEMBRANE, bone=("blend", prev, name, pts[i - 1], q), k=radii[i] * 0.3))
-        if i in plates:
-            ax = normalize(q - p)
-            out = normalize(v3((0.0, side, 0.6)))
-            out = normalize(out - ax * float(out @ ax))
-            body.add(Plate((p + q) / 2 + out * radii[i] * 0.6, (float(np.linalg.norm(q - p)) * 0.45, radii[i] * 1.4, radii[i] * 0.8),
-                           frame(ax, out), radii[i] * 0.55, rings=0.006, lip=radii[i] * 0.15, chip=0.01, zone=SHELL,
-                           bone=name, plate=100 + i + 10 * (side > 0), tint=1.05))
+            body.extend(A.knuckle(p, radii[i] * 0.95, prev, name, pts[i - 1], q))
     return pts
 
 
@@ -96,16 +98,16 @@ def build(sk):
     for s, side in ((-1, "R"), (1, "L")):
         for leg in ("m", "b"):
             names = [f"leg_{leg}{i if i else ''}.{side}" for i in range(8)]
-            chain(body, sk, names, [0.34, 0.24, 0.22, 0.2, 0.18, 0.12, 0.1, 0.08, 0.02], s, plates=(2, 4))
+            chain(body, sk, names, [0.5, 0.4, 0.36, 0.33, 0.3, 0.22, 0.17, 0.13, 0.04], s, plates=(2, 4), tint=0.8)
         names = [f"hand.{side}", f"hand1.{side}", f"hand2.{side}", f"claw.{side}"]
-        chain(body, sk, names, [0.3, 0.22, 0.2, 0.17, 0.03], s, plates=(0, 2))
+        chain(body, sk, names, [0.45, 0.36, 0.33, 0.27, 0.05], s, plates=(0, 2), tint=0.8)
     # --- elite: crown of spines around the vessel -----------------------------------
     elite = S.Sculpture("spitter-elite")
-    pts, nrm = [], []
-    for x in np.linspace(-1.1, 1.0, 5):
-        for s in (-1, 1):
-            p = sac_c + v3((x, 0.95 * s, -0.15 * a))
-            pts.append(p)
-            nrm.append(normalize(v3((0, s, 1.2))))
-    elite.extend(A.crest_spines(pts, nrm, 0.9, 0.09, lambda p: bf(float(p[0]) / 2.1), sweep=(-1, 0, 0.2)))
+    # a second acid vessel swelling on the neck root, ringed with sinew
+    nc = sk.h("spine2") + (sk.h("neck") - sk.h("spine2")) * 0.5 + v3((0, 0, 0.75 * a))
+    ves = Ellipsoid(nc, (0.85, 0.7, 0.42 * a), frame((1, 0, 0.3)), zone=ORGAN, bone=("blend", "spine2", "neck", sk.h("spine2"), sk.h("neck")))
+    elite.add(S.Stretch(ves, (1, 0, 0.3), 0.26, 0.05, sharp=3, zone=ORGAN, bone=ves.bone))
+    for x in (-0.45, 0.0, 0.45):
+        elite.add(S.Torus(nc + v3((x, 0, -0.03 * a)), (1, 0, 0.3), 0.62 - abs(x) * 0.4, 0.07, zone=SINEW, bone=ves.bone, k=0.05))
+    elite.add(Ellipsoid(nc - v3((0, 0, 0.35 * a)), (0.9, 0.75, 0.25 * a), zone=FLESH, bone=ves.bone, k=0.2))
     return {"body": body, "elite": elite}

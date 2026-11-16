@@ -9,7 +9,7 @@ import math
 import numpy as np
 
 import sdf as S
-from sdf import (SHELL, MEMBRANE, SINEW, CLAW, ORGAN, EYE, CREST, TOOTH, CAVITY, UNDER,
+from sdf import (SHELL, MEMBRANE, SINEW, CLAW, ORGAN, EYE, CREST, TOOTH, CAVITY, UNDER, ARMOR, FLESH,
                  Ellipsoid, RoundCone, Plate, Tube, Torus, Displace, Stretch, bezier, frame, normalize, v3)
 
 
@@ -82,41 +82,76 @@ def lantern(a, b, radius, bone, height=1.0, ribs=0.035, seed=0):
     return [ribbed] + lips
 
 
-def limb(hip, knee, foot, r_hip, r_knee, r_foot, upper, lower, *, tip=0.22, spurs=2, tendon=True, cuff=True,
-         claw_zone=CLAW, seed=0, bend=0.0, plate_upper=True, tint=1.0):
-    """A rigid chitin limb: thigh tube, knee membrane sleeve, shin, dark claw tip, tendons."""
-    hip, knee, foot = v3(hip), v3(knee), v3(foot)
+def armour_segment(a, b, r0, r1, bone, side, *, tint=1.0, plate=0, outward=None, k=None):
+    """A load-bearing limb segment: dark core tube with a pale armour plate on its outward face."""
+    a, b = v3(a), v3(b)
+    out = [RoundCone(a, b, r0, r1, zone=SHELL, bone=bone, k=(r0 * 0.35 if k is None else k), tint=tint * 0.8)]
+    L = float(np.linalg.norm(b - a))
+    if L < 1e-4:
+        return out
+    ax = normalize(b - a)
+    o = normalize(v3(outward) if outward is not None else v3((0, side, 0.75)))
+    o = normalize(o - ax * float(o @ ax))
+    r = (r0 + r1) / 2
+    out.append(Plate(lerp(a, b, 0.48) + o * r * 0.42, (L * 0.47, r * 1.6, r * 1.05), frame(ax, o), r * 0.55,
+                     rings=r * 0.05, ring_count=3, lip=r * 0.16, chip=r * 0.08, zone=ARMOR, bone=bone, plate=plate, tint=tint))
+    return out
+
+
+def knuckle(p, r, first, second, a, b):
+    """A visible joint: wet flesh sleeve under a pale knuckle ring."""
+    p = v3(p)
+    ax = normalize(v3(b) - v3(a))
+    blend = ("blend", first, second, a, b)
+    return [Ellipsoid(p, (r * 1.02,) * 3, zone=FLESH, bone=blend, k=r * 0.35),
+            Torus(p, ax, r * 0.88, r * 0.3, zone=ARMOR, bone=blend, k=r * 0.2)]
+
+
+def foot(p, direction, r, bone, toes=3):
+    """Planted foot: a flattened pad and short splayed claws on the floor plane."""
+    p = v3(p)
+    d = v3(direction)
+    d[2] = 0
+    d = normalize(d if float(np.linalg.norm(d)) > 1e-4 else v3((1, 0, 0)))
+    side = normalize(np.cross(np.array([0, 0, 1], np.float32), d))
+    c = p + np.array([0, 0, r * 0.55], np.float32)
+    out = [Ellipsoid(c, (r * 1.5, r * 1.3, r * 0.7), frame(d), zone=SHELL, bone=bone, k=r * 0.5, tint=0.85)]
+    for i in range(toes):
+        ang = (i - (toes - 1) / 2) * 0.55
+        t = normalize(d * math.cos(ang) + side * math.sin(ang))
+        out.append(RoundCone(c + t * r * 0.9, p + t * r * 1.8 + np.array([0, 0, r * 0.1], np.float32), r * 0.42, r * 0.12,
+                             zone=CLAW, bone=bone, k=r * 0.25))
+    return out
+
+
+def limb(hip, knee, foot_at, r_hip, r_knee, r_foot, upper, lower, *, tip=0.22, spurs=0, tendon=True, cuff=True,
+         claw_zone=CLAW, seed=0, bend=0.0, plate_upper=True, tint=1.0, planted=True):
+    """Armoured chitin limb: thick plated thigh, knuckle joint, plated shin, planted foot, tendon."""
+    hip, knee, foot_at = v3(hip), v3(knee), v3(foot_at)
+    side = 1.0 if float((knee - hip)[1]) >= 0 else -1.0
     out = []
-    # Upper segment, slightly bowed outward with a dorsal crest ridge.
     mid = lerp(hip, knee, 0.5) + np.array([0, 0, bend], np.float32)
-    out.append(RoundCone(hip, mid, r_hip, r_knee * 1.25, zone=SHELL, bone=upper, k=r_hip * 0.4, tint=tint))
-    out.append(RoundCone(mid, knee, r_knee * 1.25, r_knee, zone=SHELL, bone=upper, k=r_knee * 0.5, tint=tint))
-    if plate_upper:
-        ax = normalize(knee - hip)
-        F = frame(ax, (0, 0, 1))
-        out.append(Plate(lerp(hip, knee, 0.55) + F[:, 2] * r_knee * 0.6, (float(np.linalg.norm(knee - hip)) * 0.42,
-                         r_knee * 1.45, r_knee * 0.9), F, r_knee * 0.55, rings=r_knee * 0.12, ring_count=3,
-                         lip=r_knee * 0.15, zone=SHELL, bone=upper, plate=90 + seed, tint=tint * 1.06))
+    out += armour_segment(hip, mid, r_hip, r_knee * 1.3, upper, side, tint=tint, plate=90 + seed)
+    out += armour_segment(mid, knee, r_knee * 1.3, r_knee, upper, side, tint=tint, plate=91 + seed)
     if cuff:
-        out.append(Ellipsoid(knee, (r_knee * 0.92,) * 3, zone=MEMBRANE, bone=("blend", upper, lower, hip, foot), k=r_knee * 0.4))
-    tip_at = lerp(foot, knee, tip)
-    out.append(RoundCone(knee, tip_at, r_knee * 0.95, r_foot * 1.6, zone=SHELL, bone=lower, k=r_knee * 0.3, tint=tint * 0.92))
-    out.append(RoundCone(tip_at, foot, r_foot * 1.6, r_foot * 0.35, zone=claw_zone, bone=lower, k=r_foot * 0.8))
-    shin = normalize(foot - knee)
-    side = normalize(np.cross(shin, np.array([0, 0, 1], np.float32)))
-    back = normalize(np.cross(side, shin))
-    for s in range(spurs):
-        t = 0.3 + 0.4 * s / max(spurs - 1, 1)
-        base = lerp(knee, foot, t)
-        r = r_knee * (0.9 - 0.3 * t)
-        out.append(RoundCone(base + back * r * 0.5, base + back * r * 2.6 - shin * r * 1.2, r * 0.42, r * 0.05,
-                             zone=CLAW, bone=lower, k=r * 0.3))
+        out += knuckle(knee, r_knee * 0.95, upper, lower, hip, foot_at)
+    shin = normalize(foot_at - knee)
+    if planted:
+        end = lerp(foot_at, knee, 0.12)
+        out += armour_segment(knee, end, r_knee * 0.95, r_foot * 1.8, lower, side, tint=tint * 0.95, plate=92 + seed)
+        out += foot(foot_at, shin, r_foot * 1.6, lower)
+    else:
+        tip_at = lerp(foot_at, knee, tip)
+        out += armour_segment(knee, tip_at, r_knee * 0.95, r_foot * 1.6, lower, side, tint=tint * 0.95, plate=92 + seed)
+        out.append(RoundCone(tip_at, foot_at, r_foot * 1.6, r_foot * 0.35, zone=claw_zone, bone=lower, k=r_foot * 0.8))
     if tendon:
+        sidev = normalize(np.cross(shin, np.array([0, 0, 1], np.float32)))
+        back = normalize(np.cross(sidev, shin))
         under = -back
-        a = lerp(hip, knee, 0.55) - normalize(np.cross(normalize(knee - hip), side)) * r_knee * 0.6
-        b = lerp(knee, foot, 0.28) + under * r_knee * 0.7
-        mid = knee + under * r_knee * 1.25
-        out.append(Tube([a, mid, b], [r_knee * 0.22, r_knee * 0.26, r_knee * 0.2], zone=SINEW,
+        a = lerp(hip, knee, 0.55) - normalize(np.cross(normalize(knee - hip), sidev)) * r_knee * 0.6
+        b = lerp(knee, foot_at, 0.28) + under * r_knee * 0.7
+        m = knee + under * r_knee * 1.25
+        out.append(Tube([a, m, b], [r_knee * 0.26, r_knee * 0.3, r_knee * 0.24], zone=SINEW,
                         bone=("blend", upper, lower, a, b), k=r_knee * 0.2))
     return out
 
