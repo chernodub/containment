@@ -196,7 +196,7 @@
   "output": {
     "file": "infested.glb",
     "bytes": 411208,
-    "sha256": "309658b7d6832df769b6752bd1c9eaf7ae2aa1fba0195d19f630f4e21668a402",
+    "sha256": "7ccf041ceee42e1f539889ff6976e1ec7771d3cf1265be81ba550251b7f0460c",
     "triangles": 15454
   },
   "overBudget": []

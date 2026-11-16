@@ -113,3 +113,9 @@ if '--render' in L.args():
     for name in ([names[0]] if '--workshop' in L.args() else names[:2]):
         L.render(RENDERS/(name+'-hero.png'),[name],'hero')
         L.render(RENDERS/(name+'-game.png'),[name],'game')
+
+if '--modules' in L.args():
+    from cpu_preview import stage
+    L._stage = stage
+    L.layout_row(names[2:])
+    L.render(RENDERS/'infestation-modules.png',names[2:],'hero',resolution=(1280,640),scale=1.2)
