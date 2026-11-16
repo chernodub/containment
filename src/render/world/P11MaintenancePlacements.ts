@@ -11,9 +11,9 @@ export function p11MaintenancePlacements(id: string): OriginalKitInstance[] {
   });
   if (id === 'coolant-plant') add('frost-manifold-turbines', 680, 350, 1);
   if (id === 'service-shaft-landing') add('lift-winch-machinery', 420, 330, 1.1, .15);
-  // The north power-cabinet footprint is 288 by160; the paired emitter occupies
-  // only 240 by72, leaving the existing native solid and every lane unchanged.
-  if (id === 'shielding-gate') add('shield-field-emitter', 704, 80, 1.6);
+  // Paired emitters occupy x385..535,z281..326 of the existing west
+  // shield solid (360..560,80..340), within view of the scanner floor.
+  if (id === 'shielding-gate') add('shield-field-emitter', 460, 300, 1);
   // Mechanical containment hardware sits on the retained sealed core roof.
   if (id === 'containment-annulus') add('containment-ring-cradle', 800, 520, 1.5, 1.2);
   return result;
