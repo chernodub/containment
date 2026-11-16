@@ -13,9 +13,9 @@ const equipment: Readonly<Record<RigId, string>> = {
   pyro: 'Orange vent shield, hot stacks and ribbed gauntlets',
   arc: 'Violet open induction frames, capacitor bows and antenna forks',
 };
-const base = `${import.meta.env.BASE_URL}assets/portraits/k10/`;
+const base = `${import.meta.env.BASE_URL}assets/portraits/u10/`;
 
-/** The shipping K10 marine, rendered from its actual model and native weapon pose. */
+/** The original K10 marine, rendered in a braced cinematic studio pose. */
 export function marinePortrait(rig: RigId, className = '', eager = false): string {
   return `<picture class="marine-portrait ${className}"><source type="image/webp" srcset="${base}${rig}-bust-256.webp 256w, ${base}${rig}-bust-640.webp 640w, ${base}${rig}-bust-1024.webp 1024w" sizes="${className==='rig-portrait-image'?'(max-height: 820px) 340px, 520px':'128px'}"><img src="${base}${rig}-bust.png" width="1024" height="1024" alt="${rig} marine. ${equipment[rig]}." loading="${eager?'eager':'lazy'}" decoding="async"></picture>`;
 }

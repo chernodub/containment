@@ -14,6 +14,7 @@ function retainImage(srcset: string, fallback: string, priority: 'high'|'low'): 
   const image = new Image();
   image.decoding = 'async';
   image.fetchPriority = priority;
+  image.addEventListener('error', () => titleImages.delete(srcset), {once:true});
   image.sizes = '100vw';
   image.srcset = srcset;
   image.src = fallback;

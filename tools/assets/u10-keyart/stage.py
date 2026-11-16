@@ -1,238 +1,186 @@
-"""Original U10 'Last operator' key art, using read-only K10 / E9 exports.
-
-blender -b -P tools/assets/u10-keyart/stage.py -- --round=1
-Add --layers on the approved round to export aligned transparent plates.
-The source helper module is read for functions only; no K10 generator is run.
-"""
-import ast
+"""U10 cinematic restaging. blender -b -P .../stage.py -- --round=6 [--layers]."""
 import math
 from pathlib import Path
 import sys
 import bpy
-from mathutils import Matrix, Vector
-
-ROOT = Path(__file__).resolve().parents[3]
-args = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
-ROUND = int(next((a.split('=')[1] for a in args if a.startswith('--round=')), '1'))
-ONLY = next((a.split('=')[1] for a in args if a.startswith('--plate=')), None)
-LAYERS = '--layers' in args or ONLY is not None
-ENDING = '--ending' in args
-OUT = ROOT / 'artifacts/nextgen/u10-rounds' / ('ending' if ENDING else str(ROUND))
-OUT.mkdir(parents=True, exist_ok=True)
-# Retain the K10 author's exact skeleton / weapon correction functions.
-helper = ROOT / 'tools/assets/k10-marine/portraits.py'
-sys.path.insert(0, str(helper.parent))
-namespace = {'__file__': str(helper), 'ROOT': ROOT}
-module = ast.parse(helper.read_text())
-# Import definitions without executing the portrait generator or creating its output dirs.
-definition_nodes = [node for node in module.body if isinstance(node, (ast.Import, ast.ImportFrom, ast.FunctionDef)) or (isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id in ['WEAPONS', 'ACCENTS'] for target in node.targets))]
-exec(compile(ast.Module(body=definition_nodes, type_ignores=[]), str(helper), 'exec'), namespace)
-for name in ['read_glb', 'pose_matrices', 'apply_pose', 'deformed_points', 'attach_weapon', 'area_light']:
-    globals()[name] = namespace[name]
-
-bpy.ops.object.select_all(action='SELECT')
-bpy.ops.object.delete(use_global=False)
-scene = bpy.context.scene
-scene.render.engine = 'CYCLES'
-sys.path.insert(0, str(helper.parent))
+from mathutils import Matrix,Vector
+from bpy_extras.object_utils import world_to_camera_view
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from actors import ROOT, import_marine, finish_for_render, area_light, material, deformed_points
+sys.path.insert(0,str(ROOT/'tools/assets/k10-marine'))
 from render_device import choose_render_device
-choose_render_device(scene)
-scene.cycles.samples = 24 if ROUND < 4 else 48
-scene.cycles.use_denoising = True
-scene.render.resolution_x, scene.render.resolution_y = 2560, 1440
-scene.render.resolution_percentage = 100
-scene.render.image_settings.file_format = 'PNG'
-scene.render.image_settings.color_mode = 'RGBA'
-scene.view_settings.view_transform = 'AgX'
-scene.view_settings.look = 'AgX - Medium High Contrast'
-scene.view_settings.exposure = -1.6 if ROUND >= 2 else -1.0
-scene.world.use_nodes = True
-scene.world.node_tree.nodes['Background'].inputs[0].default_value = (.07, .12, .17, 1)
-scene.world.node_tree.nodes['Background'].inputs[1].default_value = .055 if ROUND >= 2 else .2
-plates = {name: [] for name in ['background','midground','hero','foreground','fog']}
+args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
+ROUND=int(next((a.split('=')[1] for a in args if a.startswith('--round=')),'6'))
+LAYERS='--layers' in args
+ENDING='--ending' in args
+OUT=ROOT/'artifacts/nextgen/u10-rounds'/('ending' if ENDING else str(ROUND))
+OUT.mkdir(parents=True,exist_ok=True)
+bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
+scene=bpy.context.scene;scene.render.engine='CYCLES';choose_render_device(scene)
+scene.cycles.samples=72 if ROUND<10 else 128;scene.cycles.use_denoising=True
+scene.cycles.volume_bounces=2
+scene.render.resolution_x=2560;scene.render.resolution_y=1440;scene.render.resolution_percentage=100
+scene.render.image_settings.file_format='PNG';scene.render.image_settings.color_mode='RGBA'
+scene.view_settings.view_transform='AgX';scene.view_settings.look='AgX - Medium High Contrast';scene.view_settings.exposure=-1.6 if ROUND>=7 else -1.2
+scene.world.use_nodes=True;scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.025,.055,.075,1);scene.world.node_tree.nodes['Background'].inputs[1].default_value=.006 if ROUND>=7 else .025
+plates={name:[] for name in ['background','midground','hero','foreground','fog']}
+steel=material('Cyan steel',(.025,.07,.085),.8,.24)
+black=material('Unlit threat carapace',(.0005,.001,.0015),0,.85)
+black.node_tree.nodes.get('Principled BSDF').inputs['Specular IOR Level'].default_value=.04
+trim=material('Deck hardware',(.07,.12,.15),.8,.3)
+cyan=material('Cold practical',(.3,.65,.82),.2,.3,1.2 if ROUND>=7 else 5)
+violet=material('Breach violet',(.12,.02,.2),.1,.4,0 if ROUND>=7 else 2)
+eyes=material('Threat pin lights',(.62,.82,.37),0,.3,4)
 
-def remember(name, before):
-    objects = [o for o in bpy.data.objects if o not in before]
-    plates[name].extend(objects)
-    return objects
-
-def mat(name, color, metallic=0, rough=.5, emission=0):
-    material = bpy.data.materials.new(name)
-    material.diffuse_color = (*color, 1)
-    material.use_nodes = True
-    bsdf = material.node_tree.nodes.get('Principled BSDF')
-    bsdf.inputs['Base Color'].default_value = (*color, 1)
-    bsdf.inputs['Metallic'].default_value = metallic
-    bsdf.inputs['Roughness'].default_value = rough
-    bsdf.inputs['Emission Color'].default_value = (*color, 1)
-    bsdf.inputs['Emission Strength'].default_value = emission
-    return material
-
-steel = mat('u10 worn navy steel', (.045,.075,.085), .7, .32)
-dark = mat('u10 shadow rubber', (.009,.016,.02), .1, .65)
-cyan = mat('u10 emergency strip', (.26,.65,.8), .1, .3, 4)
-amber = mat('u10 red service lamps', (1,.21,.055), .1, .3, 5)
-
-def box(name, location, scale, material=steel, plate='background', bevel=.04):
-    bpy.ops.mesh.primitive_cube_add(size=1, location=location)
-    obj = bpy.context.object
-    obj.name = name
-    obj.dimensions = scale
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    obj.data.materials.append(material)
+def box(name,position,size,mat=steel,plate='background',bevel=.025):
+    bpy.ops.mesh.primitive_cube_add(size=1,location=position);obj=bpy.context.object;obj.name=name;obj.dimensions=size
+    bpy.ops.object.transform_apply(location=False,rotation=False,scale=True);obj.data.materials.append(mat)
     if bevel:
-        mod = obj.modifiers.new('Machined arris','BEVEL'); mod.width=bevel; mod.segments=3
-        obj.modifiers.new('Weighted normals','WEIGHTED_NORMAL')
-    plates[plate].append(obj)
-    return obj
+        mod=obj.modifiers.new('Machined edge','BEVEL');mod.width=bevel;mod.segments=3
+        obj.modifiers.new('Weighted arris','WEIGHTED_NORMAL')
+    plates[plate].append(obj);return obj
 
-# Original K10 body and its native held shotgun pose.
-source = ROOT / 'public/assets/models/marine.glb'
-document, binary = read_glb(source)
-before = set(bpy.data.objects)
-bpy.ops.import_scene.gltf(filepath=str(source))
-character = remember('hero', before)
-armature = next(o for o in character if o.type == 'ARMATURE')
-meshes = [o for o in character if o.type == 'MESH']
-for obj in meshes:
-    obj.hide_render = obj.name.startswith('k10-rig-') and obj.name != 'k10-rig-breacher'
-rest = pose_matrices(document,binary)
-posed = pose_matrices(document,binary,'shotgun_delta')
-apply_pose(armature,rest,posed)
-points=deformed_points(meshes)
-low=min(p.z for p in points); factor=2.1/(max(p.z for p in points)-low)
-center = ((min(p.x for p in points)+max(p.x for p in points))/2, (min(p.y for p in points)+max(p.y for p in points))/2)
-print('MARINE SOURCE CENTRE',center,'scale',factor,flush=True)
-normalization=Matrix.Translation((-center[0]*factor,-center[1]*factor,-low*factor)) @ Matrix.Scale(factor,4)
-for obj in [o for o in character if o.parent not in character]:
-    obj.matrix_world=normalization @ obj.matrix_world
+def curve(name,points,radius=.035,mat=black,plate='background'):
+    data=bpy.data.curves.new(name,'CURVE');data.dimensions='3D';data.bevel_depth=radius;data.bevel_resolution=3
+    spline=data.splines.new('BEZIER');spline.bezier_points.add(len(points)-1)
+    for index,(knot,point) in enumerate(zip(spline.bezier_points,points)):
+        knot.co=point
+        if ROUND>=8 and 'Near claw' in name:knot.radius=[1.3,1.0,.5,.015][min(index,3)] if len(points)==4 else [1,.55,.015][index]
+        knot.handle_left_type='VECTOR' if ROUND>=7 and ('silhouette' in name or 'foreclaw' in name) else 'AUTO';knot.handle_right_type=knot.handle_left_type
+    obj=bpy.data.objects.new(name,data);bpy.context.collection.objects.link(obj);obj.data.materials.append(mat);plates[plate].append(obj);return obj
+
+def sphere(name,position,size,mat=black,plate='background'):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=40,ring_count=24,radius=1,location=position)
+    obj=bpy.context.object;obj.name=name;obj.scale=size;obj.data.materials.append(mat)
+    for face in obj.data.polygons:face.use_smooth=True
+    plates[plate].append(obj);return obj
+
+objects,meshes,armature=import_marine('breacher',True)
+finish_for_render(objects,meshes,'breacher');plates['hero'].extend(objects)
+hidden_hero={o for o in objects if o.hide_render}
+# Complete character and weapon remain in the native grip, with an authored forward brace.
+transform=Matrix.Rotation(math.radians(23 if ROUND>=7 else -6),4,'Z')
+for obj in [o for o in objects if o.parent not in objects]:obj.matrix_world=transform @ obj.matrix_world
 bpy.context.view_layer.update()
-weapons=attach_weapon('breacher',posed['tag_weapon'],normalization)
-plates['hero'].extend(weapons)
-hero_position = ((-.85,-.4,.025) if ROUND >= 4 else (-1.6,.2,.025)) if ROUND >= 3 else (1.45,-1.1,.025)
-hero_transform=Matrix.Translation(hero_position) @ Matrix.Rotation(math.radians(55 if ROUND >= 5 else 16 if ROUND >= 3 else -8),4,'Z')
-for obj in [o for o in character+weapons if o.parent not in character+weapons]:
-    obj.matrix_world=hero_transform @ obj.matrix_world
-hidden_hero = {o for o in plates['hero'] if o.hide_render}
 
-# Load E9 kits once, then instance only the named kit groups. Authored GLBs untouched.
+# Read-only E9 library, instanced into an interrupted pressure passage.
 library={}
-for pack,path in [('structure','structure/structure.glb'),('clinical','clinical/clinical.glb'),('industrial','industrial/kit.glb')]:
-    before=set(bpy.data.objects)
-    bpy.ops.import_scene.gltf(filepath=str(ROOT/'public/assets/e9-ship-kit'/path))
+for path in ['structure/structure.glb','clinical/clinical.glb','industrial/kit.glb']:
+    before=set(bpy.data.objects);bpy.ops.import_scene.gltf(filepath=str(ROOT/'public/assets/e9-ship-kit'/path))
     imported=[o for o in bpy.data.objects if o not in before]
-    roots=[o for o in imported if o.parent not in imported]
-    for root in roots:
-        # glTF groups are named by the exported kit asset.
-        if root.type=='EMPTY' and root.name not in ['Scene']:
-            library[root.name.split('.')[0]]=root
-    # All source library objects stay outside rendering.
-    for o in imported:o.hide_render=True
-    print('U10 kit',pack,[(o.name,o.type) for o in roots],flush=True)
+    for obj in imported:
+        if obj.parent not in imported and obj.type=='EMPTY':library[obj.name.split('.')[0]]=obj
+        obj.hide_render=True
 
-def kit(name, location, scale=(1,1,1), angle=0, plate='background'):
-    source=library.get(name)
-    if not source:
-        print('MISSING KIT',name,list(library),flush=True);return
-    transform=Matrix.Translation(location) @ Matrix.Rotation(math.radians(angle),4,'Z') @ Matrix.Diagonal((*scale,1))
-    def clone(obj, parent=None):
-        copy=obj.copy();bpy.context.collection.objects.link(copy)
-        copy.hide_render=False
-        copy.parent=parent
-        copy.matrix_parent_inverse=Matrix.Identity(4)
-        copy.matrix_basis=obj.matrix_local.copy()
-        plates[plate].append(copy)
+def kit(name,position,scale=(1,1,1),angle=0,plate='background'):
+    source=library[name]
+    def clone(obj,parent=None):
+        copy=obj.copy();bpy.context.collection.objects.link(copy);copy.hide_render=False;copy.parent=parent
+        copy.matrix_parent_inverse=Matrix.Identity(4);copy.matrix_basis=obj.matrix_local.copy();plates[plate].append(copy)
         for child in obj.children:clone(child,copy)
         return copy
-    copy=clone(source)
-    copy.matrix_world=transform @ source.matrix_world
-    if ROUND==2: print('KIT',name,'source matrix',list(source.location),list(source.rotation_euler),flush=True)
+    obj=clone(source);obj.matrix_world=Matrix.Translation(position) @ Matrix.Rotation(math.radians(angle),4,'Z') @ Matrix.Diagonal((*scale,1)) @ source.matrix_world
 
-# Deep service nave. Lateral camera views the diagonal across an interrupted arch.
-box('unbroken pressure deck',(0,-5,-.13),(14,23,.25),steel)
-for y in [1,-3,-7,-11,-15]:
-    for x in [-4.8,4.8]:
-        kit('wall-bulkhead',(x,y,0),scale=(1,1,2.8),angle=90)
-    box('overhead pressure rib',(0,y,3.8),(10,.3,.34),dark)
-    box('motivated ceiling strip',(0,y+.14,3.61),(3.3,.065,.04),cyan)
-    area_light('cold overhead',(0,y,3.5),100,3,(.28,.64,.8),target=(0,y,0))
-for y in [-2,-6,-10]:
-    kit('floor-glass-channel',(-1,y,.005),scale=(1,1,1))
-    kit('comms-rack-tall',(-3.8,y,.05),angle=25)
-    kit('cargo-restraintbank-tall',(4,y-2,0),angle=-90)
-kit('clinical-scanner-arch',(0,-5.5,0),scale=(.8,1,1.25))
-kit('pipe-manifold',(-3,-5,0),angle=90)
-kit('airway-exchanger',(0,-10,1),scale=(1,1,1))
-kit('cargo-hoist-header',(0,-7,1.8),angle=0)
-kit('cryo-service-console',(-3.7,-2,0) if ROUND >= 3 else (3.7,-2,0),angle=-55,plate='midground')
-kit('drainage-grating',(2,-1,.01),plate='midground')
-kit('cabletray-open-cover',(1.9,.2,.02) if ROUND >= 5 else (-2.8,1.3,.02),angle=70,plate='foreground')
-if ROUND < 5:
-    kit('pump-skid',(4,2.4,-.2),angle=-25,plate='foreground')
-# Thin access rails lead the eye toward the threat, never across title text.
-for x in [-1.5,2.5]:
-    box('deck guide',(x,-5,.012),(.025,17,.008),steel)
-for y in [-4,-10]:
-    box('warning fixture',(3.7,y,2.9),(.08,.65,.12),amber)
-    area_light('amber failure spill',(3.4,y,2.9),110,1,(1,.18,.04),target=(0,y,1))
-# An original barely resolved segmented organism, half occluded in the rear bay.
-for i,(x,z,r) in enumerate([(0,1.05,.36),(.06,1.5,.3),(.15,1.85,.22)]):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=24,ring_count=12,radius=r,location=(x,-7,z))
-    obj=bpy.context.object;obj.name='threat carapace';obj.scale=(.75,.8,1.3);obj.data.materials.append(dark);plates['background'].append(obj)
+floor=box('Wet pressure deck',(0,-2,-.16),(14,16,.3),steel)
+# Broad wet reflections, restrained micro roughness rather than a noisy floor pattern.
+shader=steel.node_tree.nodes.get('Principled BSDF');shader.inputs['Roughness'].default_value=.15
+for y in [-2,-5,-8]:
+    kit('wall-bulkhead',(3.6,y,0),scale=(1,1,2.7),angle=90)
+    kit('wall-bulkhead',(-3.6,y,0),scale=(1,1,2.7),angle=90)
+    box('Overhead pressure rib',(0,y,3.5),(7.6,.25,.3),trim)
+    box('Ceiling practical',(0,y+.1,3.32),(2.5,.07,.045),cyan)
+kit('comms-rack-tall',(3,-3.4,0),angle=15)
+kit('pipe-manifold',(-2.8,-3.4,0),angle=90)
+kit('cryo-service-console',(-2.6,-1.6,0),angle=-45,plate='midground')
+kit('floor-glass-channel',(1.6,-3,.002),angle=90)
+# A torn throat in a dark pressure bulkhead. The upper-left is a quiet unlit steel field.
+box('Left sealed bulkhead',(3.1,-5,1.9),(3.0,.4,4),black)
+box('Right torn bulkhead',(-2.9,-5,1.9),(2.0,.4,4),black)
+box('Breach lintel',(.2,-5,3.8),(5.0,.6,.6),trim)
 for side in [-1,1]:
-    for i in range(3):
-        a=Vector((side*.2,-6.9,1.6-i*.27));b=Vector((side*(.7+i*.14),-6.7,1.5-i*.45));c=Vector((side*(1.1+i*.1),-6.5,.15))
-        for start,end in [(a,b),(b,c)]:
-            delta=end-start
-            bpy.ops.mesh.primitive_cone_add(vertices=12,radius1=.065,radius2=.025,depth=delta.length,location=(start+end)/2)
-            obj=bpy.context.object;obj.rotation_euler=delta.to_track_quat('Z','Y').to_euler();obj.data.materials.append(dark);plates['background'].append(obj)
-if ROUND >= 4:
+    for index in range(5):
+        obj=box('Torn pressure tooth',(side*(1.8+index*.035),-4.75,.35+index*.59),(.2,.28,.66),trim)
+        obj.rotation_euler.y=math.radians(side*(18+index*3))
+box('Violet rear pressure wall',(0,-7.6,1.7),(4.2,.16,3.6),violet)
+area_light('Breach backlight',(0,-7.0,2.3),500,2.7,(.35,.12,1),target=(0,-3,1.5))
+area_light('Breach sickly side spill',(1.7,-6.3,1.4),120,1,(.35,.54,.3),target=(0,-3.5,1.3))
+
+# Several original shapes at different depths, outlined against the breach, never front-lit.
+def creature(x,y,z,scale=1,turn=0):
+    def p(a,b,c):return (x+a*scale,y+b*scale,z+c*scale)
+    sphere('Silhouette thorax',p(0,0,.8),((.29 if ROUND>=7 else .22)*scale,.24*scale,.38*scale))
+    if ROUND>=9:
+        # A flattened armored mask and overlapping back plates break the two-oval read.
+        coords=[(-.15,-.06,1.24),(.15,-.06,1.24),(.2,.18,1.17),(.12,.43,1.11),(0,.5,1.23),(-.12,.43,1.11),(-.2,.18,1.17),(0,.12,1.37)]
+        mesh=bpy.data.meshes.new('Threat blade mask');mesh.from_pydata([p(*v) for v in coords],[],[(0,1,7),(1,2,7),(2,3,4,7),(4,5,6,7),(6,0,7),(0,6,5,4,3,2,1)])
+        obj=bpy.data.objects.new('Silhouette blade mask',mesh);bpy.context.collection.objects.link(obj);mesh.materials.append(black);plates['background'].append(obj)
+        for i in range(3):
+            shell=sphere('Silhouette overlapping carapace',p(0,-.26+i*.17,.99+i*.055),(.34*scale,.21*scale,.23*scale))
+            shell.rotation_euler.x=math.radians(-18)
+        for side in [-1,1]:
+            curve('silhouette dorsal hook',[p(side*.22,-.27,1.12),p(side*.39,-.4,1.35),p(side*.32,-.24,1.3)],.028*scale)
+    else:
+        sphere('Silhouette blade head',p(0,.22,1.17),(.11*scale,.24*scale,.19*scale))
+    for side in [-1,1]:
+        for i in range(3):
+            curve('Articulated silhouette limb',[p(side*.12,-.16+i*.16,.85),p(side*(.5+i*.08),.06+i*.12,.75+i*.03),p(side*(.65+i*.1),.26+i*.14,.06)],.026*scale)
+        curve('Raised foreclaw',[p(side*.12,.2,1.0),p(side*(.57 if ROUND>=9 else .46),.35,1.1 if ROUND>=9 else 1.35),p(side*(.72 if ROUND>=9 else .32),.58,.92 if ROUND>=9 else 1.18)],.034*scale)
+        if ROUND>=9:
+            curve('silhouette pincer',[p(side*.72,.58,.92),p(side*.68,.72,1.1),p(side*.59,.73,1.02)],.02*scale)
+        sphere('Eye glint',p(side*.062,.414,1.21),(.018*scale,.018*scale,.012*scale),eyes)
+creature(-.5 if ROUND>=9 else .2,-5.4,.35 if ROUND>=8 else 0,1.65 if ROUND>=8 else 1.2)
+creature(-1.1,-6.4,.05,.8)
+creature(1.15,-6.9,.2,.65)
+if ROUND>=7:
     for obj in plates['background']:
-        if obj.name.startswith('threat carapace') or (obj.type=='MESH' and obj.name.startswith('Cone')):
-            obj.location.x=obj.location.x*.65-.4
-            obj.location.y=-8+(obj.location.y+7)*.65
-            obj.location.z*=.65
-            obj.scale*=.65
-area_light('threat sliver',(-1.4,-8.2,2.2),100,1,(.37,.56,.44),target=(0,-7,1.5))
-# Portrait lighting is motivated by the service bay, but gives the crown a clear edge.
-area_light('operator soft key',(-.3,3.3,4.3) if ROUND >= 3 else (4.2,2.8,4.7),400,3,(.63,.83,1),target=(-1.6,.2,1.3) if ROUND >= 3 else (1.15,-.85,1.3))
-area_light('operator amber rim',(-3,-2,3.1) if ROUND >= 3 else (-.7,-3.6,3.1),650,2,(1,.36,.12),target=(-1.6,.2,1.4) if ROUND >= 3 else (1.15,-.85,1.4))
-area_light('operator face fill',(1,4,2.6),85,2,(.43,.7,.9),target=(-1.6,.2,1.6) if ROUND >= 3 else (1,-.8,1.6))
-# A real volume produces the aligned light/fog plate; density changes in critique rounds.
-volume=bpy.data.materials.new('low pressure condensation');volume.use_nodes=True
-nodes=volume.node_tree.nodes;nodes.clear();out=nodes.new('ShaderNodeOutputMaterial');v=nodes.new('ShaderNodeVolumePrincipled')
-v.inputs['Density'].default_value=.018
-v.inputs['Color'].default_value=(.35,.5,.57,1)
-v.inputs['Anisotropy'].default_value=.3
-volume.node_tree.links.new(v.outputs['Volume'],out.inputs['Volume'])
-box('condensation volume',(0,-6,1.8),(11,20,3.6),volume,'fog',0)
-bpy.ops.object.camera_add(location=(1.6,6.5,2.25) if ROUND >= 3 else (4.8,5.8,2.7))
-camera=bpy.context.object;scene.camera=camera
-camera.rotation_euler=(Vector((0,-2.5,1.0 if ROUND >= 4 else 1.4) if ROUND >= 3 else (0,-.7,1.25))-camera.location).to_track_quat('-Z','Y').to_euler()
-camera.data.lens=46 if ROUND >= 3 else 50
-camera.data.dof.use_dof=True
-camera.data.dof.focus_distance=(camera.location-Vector((-.85,-.4,1.25) if ROUND >= 4 else (-1.6,.2,1.25) if ROUND >= 3 else (1.15,-.85,1.25))).length
-camera.data.dof.aperture_fstop=5.6
-scene.render.film_transparent=False
-print('MARINE WORLD BOUNDS',[(min(p[i] for p in deformed_points(meshes)),max(p[i] for p in deformed_points(meshes))) for i in range(3)],flush=True)
-if ENDING:
-    for obj in plates['hero']: obj.hide_render=True
+        if any(token in obj.name for token in ['bulkhead','Breach','Torn pressure','Silhouette','silhouette','foreclaw','Eye glint']):obj.location.x-=.9
     for obj in bpy.data.objects:
-        if obj.type=='LIGHT':
-            obj.data.color=(1,.24,.09) if 'overhead' in obj.name else (.24,.65,.85)
-    scene.view_settings.exposure=-1.3
-    camera.location=(-.8,4.8,2.0)
-    camera.rotation_euler=(Vector((0,-4.5,1.7))-camera.location).to_track_quat('-Z','Y').to_euler()
-scene.render.filepath=str(OUT/'composition.png')
-if not ONLY:
-    bpy.ops.render.render(write_still=True)
+        if obj.type=='LIGHT' and 'Breach' in obj.name:obj.location.x-=.9
+# Large soft foreground claw/cables enter at the extreme edge, leaving the lock-up untouched.
+curve('Near claw',[(-1.3,1.5,.3),(-1.0,1.1,1.15),(-.7,.65,1.8),(-.45,.3,1.6)],.095,black,'foreground')
+curve('Near claw inner talon',[(-1.0,1.1,1.1),(-.5,.7,1.5),(-.25,.4,1.3)],.055,black,'foreground')
+curve('Suspended loose cable',[(2.6,1.0,3.8),(2.4,.7,2.8),(2.8,.3,2.1)],.033,black,'foreground')
+
+if ROUND>=8:
+    for obj in plates['foreground']:
+        if 'Near claw' in obj.name:obj.location+=Vector((1.05,.8,.05) if ROUND>=10 else (1.3,.7,0))
+# Clear focal hierarchy: visor, amber key, cold white shoulder/helmet edge, violet breach.
+area_light('Cold white crown rim',(-1.6,-1.3,3.0),(650 if ROUND>=7 else 1150),.7,(.64,.87,1),target=(0,0,1.65))
+area_light('Amber emergency key',(2.5,1.2,2.6),(240 if ROUND>=7 else 360),1.2,(1,.6,.27),target=(0,0,1.6))
+area_light('Quiet face support',(3.0,3.3,2.0),25,2.2,(.38,.66,.8),target=(0,0,1.6))
+# Physical spot cones through low-density volume, with sources above the nave.
+for x,y in [(-1.8,-1.5),(1.6,-3.0)]:
+    bpy.ops.object.light_add(type='SPOT',location=(x,y,3.3));lamp=bpy.context.object;lamp.name='Cold condensation cone'
+    lamp.data.energy=90 if ROUND>=7 else 260;lamp.data.color=(.45,.72,.9);lamp.data.spot_size=.7;lamp.data.spot_blend=.4
+    lamp.rotation_euler=(Vector((x+.7,y+1.0,0))-lamp.location).to_track_quat('-Z','Y').to_euler()
+volume=bpy.data.materials.new('Condensation volume');volume.use_nodes=True;nodes=volume.node_tree.nodes;nodes.clear()
+out=nodes.new('ShaderNodeOutputMaterial');fog=nodes.new('ShaderNodeVolumePrincipled');fog.inputs['Density'].default_value=.012 if ROUND>=7 else .035;fog.inputs['Color'].default_value=(.3,.45,.58,1);fog.inputs['Anisotropy'].default_value=.25
+volume.node_tree.links.new(fog.outputs['Volume'],out.inputs['Volume']);box('Layered pressure haze',(0,-2,1.9),(10,13,3.8),volume,'fog',0)
+
+bpy.ops.object.camera_add(location=(2.7,3.1,1.05) if ROUND>=7 else (3.7,4.2,1.05));camera=bpy.context.object;scene.camera=camera
+camera.rotation_euler=(Vector((0,0,1.25))-camera.location).to_track_quat('-Z','Y').to_euler();camera.data.lens=44
+# Place the visor on the right third without using a high camera or stretching the image.
+focus=Vector((.1,-.08,1.92))
+bpy.context.view_layer.update()
+def place_projection(axis,target):
+    before=world_to_camera_view(scene,camera,focus)[axis]
+    prop='shift_x' if axis==0 else 'shift_y';setattr(camera.data,prop,.01);bpy.context.view_layer.update()
+    after=world_to_camera_view(scene,camera,focus)[axis];setattr(camera.data,prop,(target-before)*.01/(after-before));bpy.context.view_layer.update()
+place_projection(0,.735);place_projection(1,.62 if ROUND>=7 else .71)
+camera.data.dof.use_dof=True;camera.data.dof.focus_distance=(camera.location-focus).length;camera.data.dof.aperture_fstop=2.3
+if ENDING:
+    for obj in plates['hero']:obj.hide_render=True
+    for obj in plates['background']:
+        if any(token in obj.name.lower() for token in ['silhouette','eye glint','foreclaw']):obj.hide_render=True
+    for obj in plates['foreground']:
+        if 'Near claw' in obj.name:obj.hide_render=True
+    camera.data.shift_x=0;camera.data.shift_y=0;camera.data.lens=48
+    camera.location=(.9,3.4,1.2);camera.rotation_euler=(Vector((0,-5,1.5))-camera.location).to_track_quat('-Z','Y').to_euler()
+    camera.data.dof.focus_distance=(camera.location-Vector((-.9,-5,1.9))).length
+scene.render.film_transparent=False;scene.render.filepath=str(OUT/'composition.png');bpy.ops.render.render(write_still=True)
 if LAYERS:
-    for plate in ([ONLY] if ONLY else plates):
-        for name,objects in plates.items():
-            for obj in objects:
-                obj.hide_render=obj in hidden_hero
-                obj.visible_camera=name==plate
-        scene.render.film_transparent=plate!='background'
-        scene.render.filepath=str(OUT/(plate+'.png'))
-        bpy.ops.render.render(write_still=True)
-print('U10 round rendered',ROUND,OUT,flush=True)
+    for plate in plates:
+        for name,items in plates.items():
+            for obj in items:obj.hide_render=obj in hidden_hero;obj.visible_camera=name==plate
+        scene.render.film_transparent=plate!='background';scene.render.filepath=str(OUT/(plate+'.png'));bpy.ops.render.render(write_still=True)
+print('U10 CINEMATIC ROUND',ROUND,OUT,flush=True)

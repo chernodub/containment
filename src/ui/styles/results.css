@@ -55,7 +55,7 @@
 #overlay .ending-set {opacity:.58;}
 #overlay .ending-render::after {content:'';position:absolute;inset:0;background:linear-gradient(90deg,#030c1166,transparent 40%,#030c11a3);pointer-events:none;}
 #overlay .ending-operator {position:absolute;left:7%;bottom:0;top:0;display:flex;align-items:center;gap:20px;z-index:1;}
-#overlay .ending-operator .marine-portrait {height:100%;width:240px;filter:saturate(.25);opacity:.72;}
+#overlay .ending-operator .marine-portrait {height:100%;width:240px;filter:saturate(.65);opacity:.84;}
 #overlay .ending-operator>span {font:500 9px/1.8 var(--font-body);letter-spacing:.12em;color:#b8c8cc;text-align:left;}
 #overlay .ending-operator b {color:#e9ac93;font-weight:500;}
 #overlay .ending-receipt {position:absolute;z-index:1;right:7%;top:50%;transform:translateY(-50%);text-align:left;}

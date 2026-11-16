@@ -166,6 +166,8 @@ export function createScreens(context: ScreenContext) {
     root.querySelectorAll<HTMLButtonElement>('[data-rig]').forEach(button=>{
       const id=button.dataset.rig as RigId;
       button.addEventListener('click',()=>inspectRig(id,true));
+      // Real mouse movement previews a rig without taking keyboard focus.
+      button.addEventListener('pointermove',()=>{if(selectedRig!==id) inspectRig(id);});
       button.addEventListener('focus',()=>{if(selectedRig!==id) inspectRig(id,true);});
     });
     root.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button=>button.addEventListener('click',()=>setPauseTab(button.dataset.tab as PauseTab,true)));

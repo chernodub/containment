@@ -35,3 +35,30 @@ The 1080p first assembly and final 720p screens were opened at native size. The 
 The final native 1080p Cryo panel showed its three-line slogan pushing Equip 6px across the identity separator. Increased the slogan measure from 12ch to 17ch so the phrase takes two lines and leaves a clear gap above the ability manifest. The 720p layout already uses its own full-width slogan measure; it remains unchanged.
 
 One guarded 1080p run recorded cancelled low-priority plate requests during an immediate title → fixture transition. The failed parent remains under `failed-transition-1080/`. Image requests now have retained off-DOM owners shared with the displayed responsive images, so replacing title markup cannot cancel them. This ownership change does not await decode or gate Start; the one-off keyboard journey also delays title art deliberately to observe this behavior.
+
+# Lead-directed cinematic restaging
+
+The lead rejected the first delivery as a dim wide room shot with a small idle marine and an unreadable threat. New rounds use a low 44mm camera, forward torso brace, clean render-only amber shoulder, a subdivided helmet and luminous visor, torn violet breach, three silhouettes/eyes, wet floor and a soft foreground claw. K10/E9 generating scripts and game GLBs remain read-only.
+
+## Round 6 → 7
+
+Opened `u10-r6-1920.png` and `u10-r6-480.png`. The new breach is legible but too flat/bright, the foreground haze washes the whole room, and the ball-like silhouettes read as cartoon insects. The marine is still almost full-body and too side-on; the bone-parented rifle slipped above the hands. Fix: move camera from 5.6m to 4.1m and lower the projected head to crop at the knees, turn the actor 29° toward camera, carry the weapon with the exact before/after tag matrix delta, cut uniform haze/fixture fill, use a dark rear wall with physical violet backlight, angular asymmetric limbs and a recessed breach shifted away from the logo field. Move the claw into the actual camera frustum.
+
+## Round 7 → 8
+
+Opened `u10-r7-1920.png` and `u10-r7-480.png`. The camera now gives a large knee crop and a readable three-quarter visor. The room falls away and the amber hero is the focal mass. The main threat's head is too low relative to the aim line; its reflective oval body still looks like a model. The entering foreground talons are blunt, shiny pipes. Fix: raise/enlarge the primary silhouette into the marine's sight line, suppress its front/specular response, taper and move the near claw closer for depth blur, strengthen the visor over the crown and add the requested small shoulder chevron. Keep the established camera/hero framing.
+
+## Round 8 → 9
+
+Opened `u10-r8-1920.png` and `u10-r8-480.png`. The visor is the brightest focal surface, the crop is strong, the amber dome/chevron reads, and the large tapered foreground talons supply depth. The giant raised silhouette is legible but still reads as two round eggs with antenna-like arms. Fix: use a flattened angular sensory mask, three overlapping dorsal plates, hooked forward pincers and asymmetric limb levels; move the primary shape rightward out of the menu column and into the rifle's visual sight line. Keep its front dark and retain small eyes rather than exposing anatomy.
+
+## Round 9 → 10 (delivery)
+
+Opened `u10-r9-1920.png` and `u10-r9-480.png`. The large braced marine, luminous visor, amber dome, armored threat/eyes and violated doorway now read immediately at thumbnail size. The threat is clear of the menu field and the rifle visually addresses it. The near claw still merges with the amber shoulder and crosses the focal silhouette. Final fix: shift that soft claw outward so it frames the pack/right edge rather than the visor/shoulder, retain the strong knee crop and render at 128 samples with denoise. Delivery haze/left falloff will preserve the eye and doorway contrast. Re-render the four portraits with the same cool-white rim, rig-colored key, luminous visor and subdivided helmet, and render an empty final-transmission nave in this lighting language.
+
+
+## Round 10 delivery inspection
+
+Opened `u10-r10-1920.png` and `u10-r10-480.png`, then the actual WebP delivery composite at both sizes. The marine occupies about 71% of the frame from crown to cropped knees, the visor stays the brightest focal surface, the claw clears the helmet/shoulder, and three dark silhouettes retain eye points against the violet breach. This meets the requested close-up story read; the simplified creature anatomy and clean ceramic remain visible limitations. The left third is quiet for the lock-up/menu. Four 1024px rig portraits were opened: the cold-white rim, rig-colored key, smooth helmet and bright visor carry consistently across amber, blue, orange and violet equipment.
+
+The first empty-nave render left the `Raised foreclaw` objects visible while hiding silhouette bodies; extended the ending-only visibility filter to those objects and re-rendered. No source model was changed.
