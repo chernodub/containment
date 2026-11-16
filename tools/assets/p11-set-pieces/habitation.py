@@ -36,12 +36,28 @@ def drawing(x,z,index):
     L.decal_quad('Child drawing sheet',(x,.61,z),.56,.63,'-Y','paper',rotation=.04*(index-1))
     for sx in (-1,1):
         L.decal_quad('Tape corner',(x+sx*.19,.605,z+.27),.13,.055,'-Y','sand',rotation=sx*.25)
-    # A crayon house, tiny stick family and an oversized sun: clearly human, not a tech screen.
+    # Four individual keepsakes: home, family, garden and the colony ship.
     line=lambda name,points,tint: L.sweep(name,[(x+px,.60,z+pz) for px,pz in points],.009,'p11-tint',4,tint=tint)
-    line('Crayon house',[(-.18,-.17),(-.18,.02),(0,.17),(.18,.02),(.18,-.17),(-.18,-.17)],'crayon-blue')
-    line('Crayon door',[(-.035,-.17),(-.035,-.04),(.045,-.04),(.045,-.17)],'crayon-purple')
-    L.torus('Crayon sun',(x+.17,.60,z+.21),.055,.008,'p11-tint','Y',10,3,tint='crayon-yellow')
-    line('Crayon grass',[(-.22,-.2),(.22,-.2)],'crayon-green')
+    if index==0:
+        line('Crayon house',[(-.18,-.17),(-.18,.02),(0,.17),(.18,.02),(.18,-.17),(-.18,-.17)],'crayon-blue')
+        line('Crayon door',[(-.035,-.17),(-.035,-.04),(.045,-.04),(.045,-.17)],'crayon-purple')
+        L.torus('Crayon sun',(x+.17,.60,z+.21),.055,.008,'p11-tint','Y',10,3,tint='crayon-yellow')
+    elif index==1:
+        for px,h in ((-.15,.10),(0,-.01),(.15,.08)):
+            L.torus('Family head',(x+px,.60,z+h+.08),.045,.008,'p11-tint','Y',8,3,tint='crayon-purple')
+            line('Family body',[(px,h+.03),(px,h-.12),(px-.05,-.2),(px,h-.12),(px+.05,-.2)],'crayon-blue')
+            line('Family linked hands',[(px-.07,h-.07),(px,h-.02),(px+.07,h-.07)],'crayon-blue')
+    elif index==2:
+        line('Garden trunk',[(0,-.20),(.01,.12),(-.10,.19),(.01,.12),(.13,.20)],'wood-dark')
+        line('Garden crown',[(-.18,.03),(-.20,.15),(-.10,.24),(.03,.27),(.18,.20),(.21,.07),(.08,.01),(-.18,.03)],'crayon-green')
+        for px in (-.12,.1):L.torus('Garden fruit',(x+px,.60,z+.13),.026,.008,'p11-tint','Y',8,3,tint='crayon-yellow')
+    else:
+        line('Colony rocket',[(-.07,-.13),(-.07,.13),(0,.25),(.07,.13),(.07,-.13),(-.07,-.13)],'crayon-purple')
+        line('Rocket fins',[(-.07,-.03),(-.17,-.18),(-.07,-.13),(.07,-.13),(.17,-.18),(.07,-.03)],'crayon-blue')
+        L.torus('Rocket window',(x,.60,z+.07),.037,.008,'p11-tint','Y',8,3,tint='crayon-blue')
+        for px,pz in ((-.18,.18),(.18,.06)):
+            line('Distant star',[(px-.03,pz),(px+.03,pz),(px,pz),(px,pz-.03),(px,pz+.03)],'crayon-yellow')
+    if index!=3:line('Crayon grass',[(-.22,-.22),(.22,-.22)],'crayon-green')
 
 def residential():
     wall=L.asset('residential-story-wall',12000)

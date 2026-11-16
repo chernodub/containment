@@ -9,91 +9,91 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 3.051,
-    "blenderPNGDecodeMs": 14.292,
+    "bakeSeconds": 1.449,
+    "blenderPNGDecodeMs": 6.821,
     "file": "habitation-normal.png",
     "size": 512,
-    "bytes": 262744,
+    "bytes": 244528,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 134567,
+    "nonFlatPixels": 127140,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "residential-story-wall--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.204,
+        "seconds": 0.052,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "residential-story-wall--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.04,
+        "seconds": 0.027,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "residential-story-wall--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.064,
+        "seconds": 0.032,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "residential-story-wall--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.103,
+        "seconds": 0.099,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "residential-common-nook--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.058,
+        "seconds": 0.039,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "residential-common-nook--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.128,
+        "seconds": 0.045,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "residential-common-nook--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.211,
+        "seconds": 0.07,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "atrium-conservatory--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.108,
+        "seconds": 0.04,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "atrium-conservatory--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.122,
+        "seconds": 0.049,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "atrium-conservatory--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.157,
+        "seconds": 0.039,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "atrium-conservatory--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.165,
+        "seconds": 0.041,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "atrium-conservatory--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.101,
+        "seconds": 0.085,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "atrium-conservatory--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.054,
+        "seconds": 0.039,
         "method": "three-segment high bevel"
       }
     ]
@@ -129,7 +129,7 @@
           -0.498
         ]
       },
-      "triangles": 1578,
+      "triangles": 1882,
       "budget": 12000,
       "finishes": [
         "e9-amber",
@@ -201,9 +201,9 @@
   ],
   "output": {
     "file": "habitation.glb",
-    "bytes": 849216,
-    "sha256": "42cece8092276321dfd1a73d913f67463d03b6b97a9d7cec06ad543c0dd94030",
-    "triangles": 8004
+    "bytes": 850064,
+    "sha256": "0b000316338b562ef200aec226fda8cf431666d01fef23832ffb86752e379ffa",
+    "triangles": 8308
   },
   "overBudget": []
 }
