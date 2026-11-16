@@ -172,10 +172,10 @@ def atrium():
         for j in range(5):
             off=Vector(end)+Vector((rng.uniform(-.3,.3),rng.uniform(-.3,.3),rng.uniform(-.16,.18)))
             L.sweep('Leaf petiole',[Vector(end),off],.009,'p11-tint',4,tint='wood')
-            leaf('Garden leaf',off,off+Vector((math.cos(a+j)*.48,math.sin(a+j)*.48,rng.uniform(-.15,.25))),.085,'olive' if j%3 else '#495b3e')
+            leaf('Garden leaf',off,off+Vector((math.cos(a+j)*.48,math.sin(a+j)*.48,rng.uniform(-.15,.25))),.085,'#89946c' if j%3 else '#6c7b55')
     for i in range(14):
         x=rng.uniform(-1.5,1.5);y=rng.uniform(-.9,.9)
-        for j in range(3):leaf('Ground fern',(x,y,.55),(x+math.cos(j*2.1)*.35,y+math.sin(j*2.1)*.3,.85),.10,'olive')
+        for j in range(3):leaf('Ground fern',(x,y,.55),(x+math.cos(j*2.1)*.35,y+math.sin(j*2.1)*.3,.85),.10,'#89946c')
     # Closed water circuit: supply canister, regulator, branch feeds and drip ring.
     L.cylinder('Irrigation pressure vessel',(-1.37,.62,.88),.23,.65,'p11-tint-metal','Z',12,.025,tint='navy')
     L.torus('Vessel retaining strap',(-1.37,.62,.78),.24,.025,'p11-steel','Z',12,4)
