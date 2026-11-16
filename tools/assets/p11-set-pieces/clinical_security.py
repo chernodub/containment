@@ -145,10 +145,23 @@ def scanner():
 
 def armory():
     L.asset('armory-weapon-carousel',12000)
-    L.cylinder('Carousel base',(0,0,.16),1.45,.32,'p11-steel','Z',24,.025)
+    L.cylinder('Carousel base',(0,0,.16),1.45,.32,'p11-tint-metal','Z',24,.025,tint='navy')
     L.cylinder('Rotary bearing',(0,0,.38),1.23,.14,'e9-trim','Z',24,.015)
-    L.cylinder('Weapon hub',(0,0,1.4),.36,2.0,'p11-steel','Z',12,.02)
-    L.torus('Upper retaining hoop',(0,0,2.2),1.02,.065,'p11-steel','Z',24,6)
+    # Open drive shaft and a bolted octagonal motor casing replace the blank drum.
+    L.cylinder('Central drive shaft',(0,0,1.30),.12,1.55,'p11-steel','Z',12,.012)
+    L.cylinder('Motor cast housing',(0,0,.69),.43,.46,'p11-tint-metal','Z',8,.025,tint='navy')
+    L.cylinder('Upper latch distributor',(0,0,1.85),.31,.43,'p11-tint-metal','Z',8,.025,tint='navy')
+    L.cylinder('Distributor end plate',(0,0,2.08),.28,.045,'p11-steel','Z',8,.008)
+    L.cylinder('Recessed shaft cap',(0,0,2.11),.11,.025,'p11-rubber','Z',8,0)
+    for i in range(8):
+        a=i*math.pi/4
+        L.bolt((math.cos(a)*.22,math.sin(a)*.22,2.115),.022,'Z')
+        L.box('Motor cooling rib',(math.cos(a)*.4,math.sin(a)*.4,.69),(.06,.15,.33),'p11-steel',.008,rotation=(0,0,a))
+        L.sweep('Latch actuation cable',[(math.cos(a)*.26,math.sin(a)*.26,1.85),(math.cos(a)*.65,math.sin(a)*.65,1.66),(math.cos(a)*.93,math.sin(a)*.93,1.55)],.018,'p11-rubber',5)
+        L.box('Base captive inspection panel',(math.cos(a)*1.25,math.sin(a)*1.25,.33),(.22,.24,.025),'p11-rubber',.01,rotation=(0,0,a))
+    L.box('Gearbox service hatch',(0,-.435,.7),(.4,.035,.25),'p11-steel',.018)
+    L.bolt_row((-.14,-.46,.78),(.14,-.46,.78),2,.022,'-Y')
+    L.torus('Upper retaining hoop',(0,0,2.2),1.02,.045,'p11-steel','Z',24,6)
     L.torus('Lower retaining hoop',(0,0,.60),1.02,.06,'p11-steel','Z',24,6)
     for i in range(8):
         a=i*math.pi/4;x,y=math.cos(a)*.93,math.sin(a)*.93
@@ -157,6 +170,10 @@ def armory():
         before=set(L.CURRENT.children)
         L.profile_x('Weapon swept stock',[(-.09,.7),(.21,.7),(.21,.82),(.10,.94),(.10,1.05),(-.07,1.05)],-.075,.075,'p11-rubber',.012)
         L.box('Weapon receiver',(0,0,1.30),(.14,.22,.51),'p11-tint-metal',.016,tint='navy')
+        L.box('Receiver ejection recess',(.075,.005,1.40),(.008,.12,.09),'p11-rubber',.004)
+        L.box('Charging lever',(.105,.015,1.43),(.06,.035,.035),'p11-steel',.004)
+        L.box('Stock shoulder pad',(0,.06,.71),(.17,.29,.055),'p11-rubber',.012)
+        for zz in (1.19,1.31):L.bolt((-.078,-.02,zz),.015,'X')
         L.profile_x('Weapon pistol grip',[(-.10,1.30),(-.23,1.22),(-.28,1.02),(-.17,1.02),(-.09,1.19)],-.055,.055,'p11-rubber',.008)
         L.torus('Trigger guard',(0,-.13,1.29),.07,.012,'p11-steel','X',10,4)
         L.box('Weapon magazine',(0,.15,1.10),(.10,.15,.30),'p11-steel',.008,rotation=(.22,0,0))
@@ -167,7 +184,7 @@ def armory():
         L.cylinder('Weapon optic',(0,-.13,1.66),.038,.22,'p11-steel','Z',10,0)
         transform=Matrix.Translation((x,y,0)) @ Matrix.Rotation(a,4,'Z')
         for ob in set(L.CURRENT.children)-before:ob.data.transform(transform)
-        L.box('Captive rifle clamp',(x,y,1.55),(.22,.26,.08),'e9-trim',.01,rotation=(0,0,a))
+        L.box('Captive rifle clamp',(x,y,1.55),(.19,.23,.055),'e9-trim',.008,rotation=(0,0,a))
         L.sweep('Carousel spoke',[(0,0,.61),(x,y,.61)],.035,'p11-steel',6)
         L.cylinder('Slot status',(x,y,.44),.035,.01,'e9-cyan','Z',8,0)
     L.box('Issue console',(0,-1.15,.64),(.65,.36,.48),'p11-steel',.03)
