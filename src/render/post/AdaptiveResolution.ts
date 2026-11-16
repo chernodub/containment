@@ -46,12 +46,12 @@ export class AdaptiveResolution {
       this.smoothedMs = this.smoothedMs === 0 ? measuredMs : this.smoothedMs + (measuredMs - this.smoothedMs) * blend;
     }
     this.holdSeconds = Math.max(0, this.holdSeconds - elapsed);
-    const high = hasGpu ? RENDER_BUDGET.gpuTargetMs + 1 : 20.2;
+    const high = hasGpu ? RENDER_BUDGET.gpuTargetMs - .5 : 18;
     const low = hasGpu ? RENDER_BUDGET.gpuTargetMs - 3 : 17.1;
     this.overloadSeconds = this.smoothedMs > high ? this.overloadSeconds + elapsed : 0;
     this.headroomSeconds = this.smoothedMs < low ? this.headroomSeconds + elapsed : 0;
     if (this.holdSeconds > 0) return this.currentScale;
-    if (this.overloadSeconds >= .65 && this.currentScale > RENDER_BUDGET.adaptiveMinScale) {
+    if (this.overloadSeconds >= .25 && this.currentScale > RENDER_BUDGET.adaptiveMinScale) {
       this.currentScale = Math.max(RENDER_BUDGET.adaptiveMinScale, Math.round((this.currentScale - .025) * 1000) / 1000);
       this.holdSeconds = .5;
       this.overloadSeconds = this.headroomSeconds = 0;

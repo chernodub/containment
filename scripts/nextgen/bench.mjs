@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {attributeCpuSelf} from './bench-cpu.mjs';
 /** Sequential production-browser benchmark. No timing assertions on a shared host. */
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -18,7 +19,7 @@ import {installNoSoftDepthDiagnostic} from './soft-depth-diagnostic.mjs';
 function installCostAudit(r = globalThis.__containmentDebug.renderer) {
  if(r.__benchCostAudit)throw Error('Cost audit already installed');
  const renderer=r.renderer,gl=renderer.getContext(),undo=[];
- const keys=['glDriverCalls','glUseProgramCalls','glProgramSwitches','glStateCalls','glUniformUploads','matrixComposes','localMatrixComposes','worldMatrixRecomputes','shadowMapsRendered','shadowDraws','shadowPixels','postPasses','postPixels','attackParticlesAdvanced','abilityParticlesAdvanced','abilityParticleSlotsScanned','particlesAdvanced'];
+ const keys=['domStyleWrites','glDriverCalls','glUseProgramCalls','glProgramSwitches','glStateCalls','glUniformUploads','matrixComposes','localMatrixComposes','worldMatrixRecomputes','shadowMapsRendered','shadowDraws','shadowPixels','postPasses','postPixels','attackParticlesAdvanced','abilityParticlesAdvanced','abilityParticleSlotsScanned','particlesAdvanced'];
  const postNames=['sceneColor','contactAO','gtao','aoDenoise','bloomExtract','bloomBlurHorizontal','bloomBlurVertical','distortion','composite','finalAA','other'];
  for(const name of postNames)keys.push('post_'+name);
  const counters=Object.fromEntries(keys.map(key=>[key,0]));
@@ -34,6 +35,11 @@ function installCostAudit(r = globalThis.__containmentDebug.renderer) {
  for(let prototype=gl;prototype&&prototype!==Object.prototype;prototype=Object.getPrototypeOf(prototype)){
   for(const [name,descriptor] of Object.entries(Object.getOwnPropertyDescriptors(prototype)))if(name!=='constructor'&&typeof descriptor.value==='function')methods.add(name);
  }
+ for(const property of ['translate','opacity','transform','left','top','width','height','strokeDashoffset']){
+  const prototype=CSSStyleDeclaration.prototype,descriptor=Object.getOwnPropertyDescriptor(prototype,property);
+  if(descriptor?.set&&descriptor.configurable){Object.defineProperty(prototype,property,{...descriptor,set(value){counters.domStyleWrites++;descriptor.set.call(this,value);}});undo.push(()=>Object.defineProperty(prototype,property,descriptor));}
+ }
+ wrap(CSSStyleDeclaration.prototype,'setProperty',original=>function(...parameters){counters.domStyleWrites++;return original.apply(this,parameters);});
  let lastProgram=typeof gl.getParameter==='function'?gl.getParameter(gl.CURRENT_PROGRAM):undefined;
  for(const name of methods)wrap(gl,name,original=>function(...parameters){
   counters.glDriverCalls++;
@@ -140,11 +146,11 @@ const label=option('label','integration-4-bench');
 assert(/^[\w.-]+$/.test(label));
 const seconds=Number(option('seconds',20)), repeats=Number(option('repeat',3));
 assert(seconds>=1&&seconds<=120&&repeats>=1&&repeats<=10);
-const out=resolve('artifacts/nextgen',label), dist=resolve(option('dist','dist'));
+const out=resolve(option('out',resolve('artifacts/nextgen',label))), dist=resolve(option('dist','dist'));
 const tiers=option('tiers','high,low').split(','), rigs=option('rigs','breacher,cryo,pyro,arc').split(',');
 const storyRooms=['awakening-bay','passenger-vault','residential-gallery','communal-atrium','crew-checkpoint','armory','freight-hold','breached-loading-bay','relay-racks','transmission-chamber','diagnostic-gallery','safety-interlock-station','coolant-plant','service-shaft-landing','infested-workshop','swarm-junction','shielding-gate','containment-annulus','manual-control-chamber','overload-floor'];
 await mkdir(out,{recursive:true});
-if(!args.includes('--no-build'))execFileSync('npm',['run','build'],{stdio:'inherit'});
+if(!args.includes('--no-build')){execFileSync('npm',['run','build'],{stdio:'inherit'});if(args.includes('--breakdown'))execFileSync('npx',['vite','build','--sourcemap'],{stdio:'inherit'});}
 const host=()=>({at:new Date().toISOString(),load:loadavg(),cores:cpus().length});
 const report={distSnapshot:{path:dist,sourceSHA:option('dist-source-sha','unrecorded')},baseline,timingAcceptanceEligible:!args.includes('--no-soft-depth')&&!args.includes('--gpu-flush')&&!args.includes('--profile')&&!args.includes('--audit-costs'),noSoftDepth:args.includes('--no-soft-depth'),auditCosts:args.includes('--audit-costs'),gpuPasses:args.includes('--gpu-passes'),gpuFlush:args.includes('--gpu-flush'),gpuMicro:args.includes('--gpu-micro'),sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
 const microStages=option('gpu-micro-stages','gtao,aoDenoise,bloomExtract,bloomBlurHorizontal,bloomBlurVertical,composite,finalAA').split(',');
@@ -231,7 +237,7 @@ try{
   let audioPollWork=Promise.resolve();
   const audioPoll=profile?setInterval(()=>{audioPollWork=audioPollWork.then(async()=>{for(const context of audioContexts.values())if(context.contextType==='realtime'){try{const {realtimeData}=await cdp.send('WebAudio.getRealtimeData',{contextId:context.contextId});audioSamples.push({contextId:context.contextId,...realtimeData});}catch(error){audioError=String(error);}}});},500):null;
   if(audioPoll)timers.add(audioPoll);
-  const data=await page.evaluate(async ({seconds,audit,auditCosts,gpuPasses})=>{
+  const data=await page.evaluate(async ({seconds,audit,auditCosts,gpuPasses,deterministic})=>{
    const d=window.__containmentDebug,g=d.game,r=d.renderer,gl=r.renderer.getContext();
    const capacity=Math.ceil(seconds*240), samples={frame:[],update:[],render:[],hud:[],audio:[],draws:[],triangles:[],lights:[],instances:[],gpu:[],driver:[],enemies:[],sceneInstances:[],sceneLights:[],adaptiveScale:[]};
    const costAudit=auditCosts?r.__benchCostAudit:null,gpuPassAudit=gpuPasses?r.__benchGpuPassAudit:null;
@@ -313,10 +319,11 @@ try{
     }
    };
    costAudit?.reset();
-   d.realtime(true);
+   let fixedTicks=0;
+   d.realtime(!deterministic);
    try{
-    while(performance.now()-start<seconds*1000){
-     const driverStarted=performance.now(),elapsed=(driverStarted-start)/1000;
+    while(deterministic?fixedTicks<Math.round(seconds*60):performance.now()-start<seconds*1000){
+     const driverStarted=performance.now(),elapsed=deterministic?fixedTicks/60:(driverStarted-start)/1000;
      if(elapsed>=nextRefill){refill();nextRefill=elapsed+.02;}
      // Reverse a short, legal kiting vector. Collision remains authoritative.
      const side=Math.sin(elapsed*1.2)>0?1:-1;
@@ -324,6 +331,7 @@ try{
      if(elapsed>=nextPowerTry){tryPower();nextPowerTry=elapsed+.25;}
      for(const slot of ['tactical','dash','overdrive'])if(g.abilities.snapshot.slots[slot].ready&&g.useAbility(slot))uses[slot]++;
      driverMs+=performance.now()-driverStarted;
+     if(deterministic){d.step(1000/60);fixedTicks++;}
      await new Promise(requestAnimationFrame);
     }
    }finally{d.realtime(false);d.observePerformance(undefined);gl.createProgram=create;r.render=original;r.renderer.renderBufferDirect=direct;if(softDepthAudit){softDepthAudit.dispose();softDepthDiagnostic=softDepthAudit.snapshot();}}
@@ -335,7 +343,7 @@ try{
    let finalLightInventory=0,finalInstanceMeshInventory=0;
    r.scene.traverse(o=>{if(o.isLight)finalLightInventory++;if(o.isInstancedMesh)finalInstanceMeshInventory++;});r.hudScene.traverse(o=>{if(o.isInstancedMesh)finalInstanceMeshInventory++;});
    return {softDepthDiagnostic,renderPipeline:r.post?.diagnostics??null,gpuPassTimings,initialStatus,initialPhase,finalStatus:g.status,finalPhase:g.expedition.run.phase,roomLoading:r.roomLoading,bodyState:document.body.dataset.state,roomLoadingIndicatorHidden:document.getElementById('room-loading')?.hidden,costAudit:costAudit?{instrumented:true,postPasses:costAudit.postPasses,particleScope:'CPU AttackEffects.drawParticles lists and live ElementKit particles; ability slot scans retained separately; GPU atmosphere excluded',stateScope:'GL state setter API calls; program switches count changed useProgram handles'}:null,instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,refillAudit,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,combatProgramKeys:r.renderer.info.programs.filter(program=>createdProgramHandles.includes(program.program)).map(program=>({name:program.name,cacheKey:program.cacheKey})),uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
-  },{seconds,audit:args.includes('--audit-draws'),auditCosts:args.includes('--audit-costs'),gpuPasses:report.gpuPasses});
+  },{seconds,audit:args.includes('--audit-draws'),auditCosts:args.includes('--audit-costs'),gpuPasses:report.gpuPasses,deterministic:args.includes('--breakdown')});
   if(audioPoll){clearInterval(audioPoll);timers.delete(audioPoll);}await audioPollWork;
   const final=await cdp.send('Performance.getMetrics');
   let profiling=null;
@@ -345,7 +353,7 @@ try{
    const outerGC=traceEvents.filter(e=>e.ph==='X'&&/^(MinorGC|MajorGC)$/.test(e.name));
    const gcEvents=outerGC.length?outerGC:traceEvents.filter(e=>e.ph==='X'&&/V8.GC_SCAVENGER$|V8.GC_MARK_COMPACTOR$/.test(e.name));
    const gc=gcEvents.map(e=>(e.dur??0)/1000),gcEventNames=[...new Set(traceEvents.filter(e=>/gc|garbage/i.test(e.name)).map(e=>e.name))];
-   const allocated=heap.profile.samples.reduce((n,s)=>n+s.size,0);profiling={cpuSelf:attributeCpuSelf(cpu.profile),audioContexts:[...audioContexts.values()],audioSamples,audioError,gcEventNames,sampledAllocationBytes:allocated,sampledAllocationBytesPerSecond:allocated/data.wallSeconds,gcPausesMs:gc};await writeFile(resolve(out,name+'.cpuprofile'),JSON.stringify(cpu.profile));await writeFile(resolve(out,name+'.heapprofile'),JSON.stringify(heap.profile));}
+   const allocated=heap.profile.samples.reduce((n,s)=>n+s.size,0);profiling={cpuSelf:await attributeCpuSelf(cpu.profile,dist),audioContexts:[...audioContexts.values()],audioSamples,audioError,gcEventNames,sampledAllocationBytes:allocated,sampledAllocationBytesPerSecond:allocated/data.wallSeconds,gcPausesMs:gc};await writeFile(resolve(out,name+'.cpuprofile'),JSON.stringify(cpu.profile));await writeFile(resolve(out,name+'.heapprofile'),JSON.stringify(heap.profile));}
   await cdp.detach();
   const stats=values=>{if(!values.length)return null;const s=[...values].sort((a,b)=>a-b);return {min:s[0],p50:s[Math.floor((s.length-1)*.5)],p95:s[Math.ceil(s.length*.95)-1],max:s.at(-1),average:s.reduce((a,b)=>a+b,0)/s.length};};
   const summary=Object.fromEntries(Object.entries(data.samples).map(([k,v])=>[k,stats(k==='frame'?v.slice(1):v)]));
@@ -419,20 +427,8 @@ try{
  if(report.budgetFailures.length){console.error('Final resource budget misses:',JSON.stringify(report.budgetFailures));process.exitCode=2;}
 }catch(error){report.errors.push({type:'runner',message:String(error)});throw error;}finally{for(const timer of timers)clearInterval(timer);await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));await browser?.close();await new Promise(ok=>server.close(ok));}
 
-/** Exclusive sampled CPU time; unknown frames remain visible rather than guessed. */
-function attributeCpuSelf(profile) {
- const nodes=new Map(profile.nodes.map(node=>[node.id,node]));
- const rules=[['GC',/garbage collector/i],['simulation step',/DepthGame|game\//],['animation mixers/skinning',/AnimationMixer|AnimationAction|Skeleton|PropertyMixer/],['actor pose/motion',/ActorPool|ActorSkin|MarineMotion|EnemyMotion/],['VFX/telegraph batching',/vfx\/|abilities\/|Telegraph|Effects/],['lighting/shadow update',/lighting\/|Shadow/],['world dressing update',/world\//],['UI/HUD DOM',/ui\/|HUD|Hud/]];
- const totals={unattributed:0};
- for(let i=0;i<(profile.samples?.length??0);i++){
-  const frame=nodes.get(profile.samples[i])?.callFrame;
-  const text=(frame?.url??'')+' '+(frame?.functionName??'');
-  const category=rules.find(([,pattern])=>pattern.test(text))?.[0]??'unattributed';
-  totals[category]=(totals[category]??0)+(profile.timeDeltas?.[i]??0)/1000;
- }
- return {scope:'exclusive leaf samples; milliseconds of sampled execution, not per-frame latency',milliseconds:totals};
-}
 function breakdownMarkdown(run){
- const rows=(run.gpuPassTimings?.passes??[]).map(pass=>`| ${pass.name} | ${pass.summaryMs?.p50??'unavailable'} | ${pass.summaryMs?.p95??'unavailable'} | ${pass.samplesMs.length} |`);
- return `# ${run.name}\n\nHost load: ${run.before.load.join(', ')}; CPU cores: ${run.before.cores}. Instrumented diagnostic; shared GPU contention can affect timer queries too.\n\n| GPU scope | p50 ms | p95 ms | samples |\n| --- | ---: | ---: | ---: |\n${rows.join('\n')}\n\nExclusive CPU sampled milliseconds:\n\n| subsystem | ms |\n| --- | ---: |\n${Object.entries(run.profiling?.cpuSelf?.milliseconds??{}).sort((a,b)=>b[1]-a[1]).map(([key,value])=>`| ${key} | ${value} |`).join('\n')}\n\nScene GPU scopes may include shadow work; percentiles must not be summed. Raw counts, pass resolutions, host load and frame statistics are in benchmark.json.\n`;
+ const mean=(pass,key)=>pass.counts?.length?pass.counts.reduce((sum,row)=>sum+row[key],0)/pass.counts.length:0;
+ const rows=(run.gpuPassTimings?.passes??[]).map(pass=>`| ${pass.name} | ${pass.summaryMs?.p50??'unavailable'} | ${pass.summaryMs?.p95??'unavailable'} | ${pass.samplesMs.length} | ${mean(pass,'draws')} | ${mean(pass,'triangles')} | ${mean(pass,'targetPixels')} |`);
+ return `# ${run.name}\n\nHost load: ${run.before.load.join(', ')}; CPU cores: ${run.before.cores}. Instrumented diagnostic; shared GPU contention can affect timer queries too.\n\n| GPU scope | p50 ms | p95 ms | samples | draws/submission | triangles/submission | target pixels/submission |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n${rows.join('\n')}\n\nMemory estimates: textures ${run.gpuPassTimings?.memory?.textureBytes??'unavailable'} bytes; render-target textures ${run.gpuPassTimings?.memory?.renderTargetTextureBytes??'unavailable'} bytes.\n\nExclusive CPU sampled milliseconds:\n\n| subsystem | ms |\n| --- | ---: |\n${Object.entries(run.profiling?.cpuSelf?.milliseconds??{}).sort((a,b)=>b[1]-a[1]).map(([key,value])=>`| ${key} | ${value} |`).join('\n')}\n\nScene GPU scopes may include shadow work; percentiles must not be summed. Raw counts, pass resolutions, host load and frame statistics are in benchmark.json.\n`;
 }

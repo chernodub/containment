@@ -8,7 +8,7 @@ import { setGraphicStrength, type GraphicStrength, setGraphicShadingEnabled } fr
 import {
   ACESFilmicToneMapping, AgXToneMapping, BufferGeometry, Camera, Color, DepthTexture,
   Float32BufferAttribute, HalfFloatType, LinearFilter, NearestFilter, Matrix4, Mesh, NoBlending,
-  NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, SRGBColorSpace, RGBFormat, UnsignedInt101111Type, UnsignedIntType, UnsignedByteType, UniformsUtils,
+  NoToneMapping, OrthographicCamera, Scene, ShaderMaterial, SRGBColorSpace, RGBFormat, RedFormat, UnsignedInt101111Type, UnsignedIntType, UnsignedByteType, UniformsUtils,
   Vector2, Vector3, Vector4, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { setRenderDiagnostics, type GraphicsTier } from '../FrameBudget';
@@ -307,7 +307,8 @@ export class PostPipeline {
     const antialias=this.material(this.tier==='low'?lowAntialiasFragment:FXAAShader.fragmentShader.replace('gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );','gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );\n#include <colorspace_fragment>'),UniformsUtils.clone(FXAAShader.uniforms));
     antialias.name=this.tier==='low'?'Containment final compact AA':'Containment final FXAA';antialias.uniforms.tDiffuse.value=present.texture;
     const ao = this.target(1, 1);
-    const aoDenoised = this.target(1, 1);
+    // F11: only red is consumed after denoise; retain identical half-float precision.
+    const aoDenoised = this.target(1, 1);aoDenoised.texture.format=RedFormat;
     const gtao = new DepthGTAO(scene.depthTexture!, this.camera, ao.texture, scene.textures[1]);
     const bloomA = this.target(1, 1);
     const bloomB = this.target(1, 1);
