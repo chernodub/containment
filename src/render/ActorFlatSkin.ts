@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {batchActorSkins} from './ActorSkinBatching';
 import {originalMarineRig} from './MarineRigAnatomy';
+import {prepareOriginalCreature} from './OriginalCreatureAnatomy';
 
 type SourceFinish = {
   name: string;
@@ -29,6 +30,10 @@ export function prepareFlatActorSkin(
   clips: readonly T.AnimationClip[],
 ): number {
   if (root.userData.actorSkinPreparation) return 0;
+  if (prepareOriginalCreature(root)) {
+    root.userData.actorSkinPreparation = {authoredFinish: true, rankVariants: true};
+    return 0;
+  }
   // The original marine already has designed flat zones and baked surface detail.
   // Its four named skins must remain independent so hidden variants cost no draw.
   if (asset === 'marine' && originalMarineRig(root)) {

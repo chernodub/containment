@@ -51,14 +51,14 @@ export function authorActorRegions(root: T.Object3D, human: boolean): void {
 /** Standard material path, also retained by frozen skins and baked ragdolls. */
 export function patchActorRegions(material: T.MeshStandardMaterial, friendly: boolean): void {
   const previous = material.onBeforeCompile;
-  const authoredFinish = friendly && material.userData.k10Original;
+  const authoredFinish = (friendly && material.userData.k10Original) || material.userData.k11Original;
   const previousKey = authoredFinish ? material.customProgramCacheKey() : '';
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);
     shader.vertexShader = 'attribute float actorRegion;varying float vActorRegion;\n' + shader.vertexShader
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvActorRegion=actorRegion;');
     shader.fragmentShader = 'varying float vActorRegion;\n' + shader.fragmentShader;
-    // Original hard-surface art owns its palette, baked normals and emission mask.
+    // Original art owns its palette, baked normals and emission mask.
     // Region data still feeds the shared hit/death finish through ActorSurface.
     if (authoredFinish) return;
     shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
@@ -73,5 +73,5 @@ export function patchActorRegions(material: T.MeshStandardMaterial, friendly: bo
     `).replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal=nonPerturbedNormal;');
     if(friendly)shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nif(vActorRegion==2.0||vActorRegion==6.0)totalEmissiveRadiance+=vec3(.025,.07,.09);');
   };
-  if (authoredFinish) material.customProgramCacheKey = () => `${previousKey}:k10-authored-regions-v1`;
+  if (authoredFinish) material.customProgramCacheKey = () => `${previousKey}:${material.userData.k11Original?'k11':'k10'}-authored-regions-v1`;
 }
