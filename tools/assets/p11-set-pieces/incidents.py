@@ -94,7 +94,26 @@ def consuming_mantle():
   L.cylinder('Retained hatch fixing',(x,-.12,.24),.045,.04,'p11-steel','Y',8,0)
  L.sweep('Mantle tension tendon',[(-.8,-.1,.8),(-.87,-.2,.37),(-.8,-.25,.03)],.06,'p11-flesh',5)
 
-L.reset_scene();failed_repair();failed_shield();pressure_chamber();consuming_mantle()
+def brood_bastion():
+ import infested_craft as C
+ S=C.S
+ L.asset('brood-stronghold-wall',1500)
+ # Thick annular nest has consumed the duct wall; the cavity is actual geometry.
+ mass=S.Displace(S.Ellipsoid((0,0,.66),(1.15,.46,.64)),.055,11,21)
+ C.sculpt('Hollow brood buttress',[mass,S.Ellipsoid((.16,-.28,.62),(.59,.45,.4),op='sub')],budget=440,voxel=.035)
+ C.shell('Shingled brood roof',(-.3,.03,1.17),(.88,.51,.22),tilt=.12,seed=14,budget=200)
+ # Metal roof ripped into angular sections by the expanding brood, still hinged.
+ for side in (-1,1):
+  L.profile_x('Bowed duct wall rib',[(-.12,.12),(.1,.12),(.1,.62),(-.24,1),(-.42,1.1),(-.45,.99),(-.12,.51)],side*.88-.06,side*.88+.06,'e9-trim',.012)
+ L.slab('Torn duct roof leaf',[(-.91,-.12),(-.45,-.38),(.13,-.25),(.4,-.43),(.85,-.2),(.8,.29),(-.8,.28)],.88,.94,'e9-body',.008)
+ L.lathe('Brood egg in dark throat',[(.03,0),(.13,.08),(.17,.14),(.14,.2),(.16,.26),(.12,.32),(.07,.39),(.01,.44)],(-.12,-.28,.23),'p11-flesh',8)
+ C.shell('Brood egg protective shingle',(-.15,-.21,.55),(.24,.18,.08),tilt=.25,seed=17,budget=65)
+ L.lathe('Enclosed egg glow',[(.02,0),(.05,.025),(.02,.05)],(-.12,-.43,.47),'p11-bio-violet',6,'Y')
+ # Strong braided roots transmit load into the seized duct footings.
+ for side in (-1,1):
+  L.sweep('Anchored brood root',[(side*.8,-.05,.65),(side*1.01,-.18,.35),(side*.99,-.32,.05)],.09,'p11-growth',5)
+
+L.reset_scene();failed_repair();failed_shield();pressure_chamber();consuming_mantle();brood_bastion()
 names=[a.name for a in L.ASSETS]
 L.export('incidents',OUT,'incidents.glb','Interrupted repairs and physical consequences on P11 machinery.','blender -b --factory-startup -P tools/assets/p11-set-pieces/incidents.py')
 if '--render' in L.args():

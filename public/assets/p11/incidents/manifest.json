@@ -9,25 +9,25 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 2.404,
-    "blenderPNGDecodeMs": 5.723,
+    "bakeSeconds": 3.185,
+    "blenderPNGDecodeMs": 7.808,
     "file": "incidents-normal.png",
     "size": 512,
-    "bytes": 301637,
+    "bytes": 307900,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 148127,
+    "nonFlatPixels": 142518,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "abandoned-winch-repair--e9-body",
         "role": "e9-body",
-        "seconds": 0.033,
+        "seconds": 0.091,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "abandoned-winch-repair--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.026,
+        "seconds": 0.047,
         "method": "three-segment high bevel"
       },
       {
@@ -39,115 +39,145 @@
       {
         "mesh": "abandoned-winch-repair--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.036,
+        "seconds": 0.046,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "abandoned-winch-repair--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.058,
+        "seconds": 0.036,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "abandoned-winch-repair--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.043,
+        "seconds": 0.054,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "failed-shield-leaves--e9-body",
         "role": "e9-body",
-        "seconds": 0.072,
+        "seconds": 0.048,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "failed-shield-leaves--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.056,
+        "seconds": 0.052,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "failed-shield-leaves--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.053,
+        "seconds": 0.04,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "failed-shield-leaves--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.046,
+        "seconds": 0.031,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "failed-shield-leaves--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.057,
+        "seconds": 0.041,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "strained-containment-diaphragm--e9-body",
         "role": "e9-body",
-        "seconds": 0.038,
+        "seconds": 0.029,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "strained-containment-diaphragm--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.074,
+        "seconds": 0.073,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "strained-containment-diaphragm--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.054,
+        "seconds": 0.053,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "strained-containment-diaphragm--p11-flesh",
         "role": "p11-flesh",
-        "seconds": 0.074,
+        "seconds": 0.065,
         "method": "sculpted high membrane"
       },
       {
         "mesh": "strained-containment-diaphragm--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.045,
+        "seconds": 0.085,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "strained-containment-diaphragm--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.073,
+        "seconds": 0.052,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "consuming-workstation-mantle--e9-body",
         "role": "e9-body",
-        "seconds": 0.091,
+        "seconds": 0.046,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "consuming-workstation-mantle--p11-flesh",
         "role": "p11-flesh",
-        "seconds": 0.051,
+        "seconds": 0.043,
         "method": "sculpted high membrane"
       },
       {
         "mesh": "consuming-workstation-mantle--p11-growth",
         "role": "p11-growth",
-        "seconds": 0.102,
+        "seconds": 0.064,
         "method": "sculpted high membrane"
       },
       {
         "mesh": "consuming-workstation-mantle--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.05,
+        "seconds": 0.041,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "consuming-workstation-mantle--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.066,
+        "seconds": 0.054,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "brood-stronghold-wall--e9-body",
+        "role": "e9-body",
+        "seconds": 0.036,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "brood-stronghold-wall--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.071,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "brood-stronghold-wall--p11-flesh",
+        "role": "p11-flesh",
+        "seconds": 0.065,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "brood-stronghold-wall--p11-growth",
+        "role": "p11-growth",
+        "seconds": 0.093,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "brood-stronghold-wall--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.05,
         "method": "three-segment high bevel"
       }
     ]
@@ -285,13 +315,43 @@
         "p11-steel",
         "p11-tint"
       ]
+    },
+    {
+      "name": "brood-stronghold-wall",
+      "size": [
+        2.3437,
+        1.4331,
+        0.9349
+      ],
+      "bounds": {
+        "min": [
+          -1.18,
+          -0.0047,
+          -0.4797
+        ],
+        "max": [
+          1.1637,
+          1.4284,
+          0.4552
+        ]
+      },
+      "triangles": 1468,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-trim",
+        "p11-bio-violet",
+        "p11-flesh",
+        "p11-growth",
+        "p11-tint"
+      ]
     }
   ],
   "output": {
     "file": "incidents.glb",
-    "bytes": 578956,
-    "sha256": "47857e2a93cac96ac72ca5e3d03e0e13787636cf045ffd5cdaaabba3a28f9dd5",
-    "triangles": 4694
+    "bytes": 660856,
+    "sha256": "e4ef767df7cba24389a5a9088620bbde61a692815e4303dd075e23d6e70502b0",
+    "triangles": 6162
   },
   "overBudget": []
 }

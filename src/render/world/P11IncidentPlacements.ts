@@ -16,5 +16,10 @@ export function p11IncidentPlacements(id: string): OriginalKitInstance[] {
     add('consuming-workstation-mantle',610,276,.7,1.05);
     result[result.length - 1].matrix.multiply(new T.Matrix4().makeRotationY(Math.PI / 2));
   }
+  if (id === 'swarm-junction') {
+    // Broad but low sculpture remains inside the existing north-bank void.
+    add('brood-stronghold-wall',855,280,1.8,.1);
+    result[result.length - 1].matrix.scale(new T.Vector3(1,.7,1));
+  }
   return result;
 }
