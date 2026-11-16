@@ -27,6 +27,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         // The north common-nook solid owns bespoke furniture. Its split low
         // mesh starts above deck height, so generic 3D hero bounds cannot
         // reliably remove the legacy cabinet mounted on this collider.
+        if (id === 'transmission-chamber' && furnishing.source === 'solid' && furnishing.x === 816 && furnishing.z === 339) continue;
         if (id === 'residential-gallery' && furnishing.source === 'solid'
             && furnishing.x >= 572 && furnishing.x <= 768
             && furnishing.z >= 241 && furnishing.z <= 279) continue;
@@ -45,14 +46,14 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
     // Ceiling services occupy no deck area. Their visible manufactured source
     // gives the open nave a landmark where all wall bays lie outside the crop.
     if(id==='residential-gallery')overhead('clinical','habitation-gallery-pendant',730,580,5);
-    if(id==='transmission-chamber')overhead('clinical','comms-uplink-dish',850,680,5);
+    // P11 uplink now occupies the chancel screen; retire the duplicate floating dish.
     if(id==='freight-hold'){
         overhead('industrial','cargo-hoist-header',350,600,5);
         overhead('industrial','cargo-hoist-header',900,820,5);
     }
     if(id==='infested-workshop'){
         overhead('industrial','workshop-tool-bridge',300,640,5);
-        overhead('industrial','workshop-tool-bridge',780,620,5);
+        // Central overhead retired so the wall-backed P11 mill reads from combat.
         overhead('industrial','workshop-tool-bridge',650,960,5);
     }
     if(id==='swarm-junction')overhead('industrial','airway-exchanger',750,900,5);
