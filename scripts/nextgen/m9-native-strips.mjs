@@ -25,7 +25,7 @@ for(const shots of groups.values()){
  const sprite=original.sprites?.find(s=>s.scenario===shots[0].scenario&&s.room===shots[0].room);
  assert(sprite&&sprite.frames===shots.length,'Original native burst is incomplete');
  shots.forEach((shot,i)=>{assert.equal(shot.frame,i+1,'Native capture frame gap');if(i)assert(shot.simulationMs>shots[i-1].simulationMs,'Native simulation did not advance between frames');});
- const ids=new Set();for(const shot of shots){const proof=shot.evidence.g5Proof;if(proof?.nativeWarning&&Number.isInteger(proof.enemyId))ids.add(proof.enemyId);for(const id of proof?.ids??[])if(Number.isInteger(id))ids.add(id);}
+ const ids=new Set();for(const shot of shots){const proof=shot.evidence.g5Proof;if((proof?.nativeWarning||proof?.stagedNativeEncounter)&&Number.isInteger(proof.enemyId))ids.add(proof.enemyId);for(const id of proof?.ids??[])if(Number.isInteger(id))ids.add(id);for(const actor of proof?.actors??[])if(Number.isInteger(actor.id))ids.add(actor.id);}
  const subjects=[{name:'marine',bounds:shot=>shot.evidence.marineBounds},...Array.from(ids,id=>({name:`enemy-${id}`,bounds:shot=>shot.evidence.g6FramingProof?.contacts.find(e=>e.id===id)?.bounds}))];
  const frames=await Promise.all(shots.map(async shot=>{const png=await readFile(resolve(source,shot.file));return {shot,image:decodePng(png),sha256:hash(png)};}));
  for(const subject of subjects){

@@ -93,6 +93,17 @@ export function registerC10Scenarios(scenarios) {
     scenarios.push({...base,id:`feel12-melee-${family}-${room}`,room,diagnosticOnly:true,
       setup:new Function(`return (${base.setup.toString().replaceAll('awakening-bay',room)})();`)});
   }
+  // Incoming-side markers are presentation replays, clearly separate from the
+  // invulnerable native-warning fixture's damage acceptance.
+  for(const [side,dx,dy] of [['east',100,0],['south',0,100],['west',-100,0],['north',0,-100]]){
+    const base=scenarios.find(s=>s.id==='feel12-melee-crawler-crew-checkpoint');
+    scenarios.push({...base,id:`feel12-hit-${side}`,frameCount:8,
+      setup:new Function(`return (async()=>{await (${base.setup.toString()})();
+       const d=window.__containmentDebug,p=d.game.player;
+       d.renderer.effect({type:'hurt',x:p.x,y:p.y,sourceX:p.x+${dx},sourceY:p.y+${dy}});
+       d.g5Proof.incomingSidePresentationReplay='${side}';d.refresh();
+      })();`)});
+  }
   for(const room of ['crew-checkpoint','relay-racks']) {
     const base=scenarios.find(s=>s.id==='m10-melee-crawler');
     scenarios.push({...base,id:`c10-melee-${room}`,room,setup:new Function(`return (async()=>{

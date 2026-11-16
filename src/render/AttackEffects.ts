@@ -62,7 +62,7 @@ else if(style>5.5){
   // Family weight affects the quiet interior; edge opacity stays readable.
   alpha=max(key*.82,rim*.96);
   alpha=max(alpha,timing*(.30+threat*.20));
-  alpha=max(alpha,(.045+threat*.09+commitment*.055)*filled);
+  alpha=max(alpha,(.045+threat*.09+commitment*.18)*filled);
   alpha=max(alpha,strike*(.12+threat*.18));
  }
  else{
@@ -148,6 +148,8 @@ export class AttackEffects {
   for(const warning of this.nativeWarnings){
    if(!warning.active)continue;
    const w=warning.shape,dx=x-w.x,dz=z-w.z,angle=w.angle??0;
+   const reach=Math.max(w.radius??0,w.length??0)+(w.width??0)*.5+padding;
+   if(Math.abs(dx)>reach||Math.abs(dz)>reach)continue;
    if(w.shape==='line'||w.shape==='wall'){
     const along=dx*Math.cos(angle)+dz*Math.sin(angle),side=-dx*Math.sin(angle)+dz*Math.cos(angle);
     const outside=Math.max(0,-along,along-(w.length??0)),radius=(w.width??0)*.5+padding;
@@ -158,7 +160,9 @@ export class AttackEffects {
     if(w.shape!=='cone'||Math.abs(Math.atan2(Math.sin(Math.atan2(dz,dx)-angle),Math.cos(Math.atan2(dz,dx)-angle)))<=(w.arc??Math.PI)*.5+Math.asin(Math.min(1,padding/Math.max(padding,Math.hypot(dx,dz)))))return true;
    }
   }
-  return false;
+  for(const pulse of this.pulses)if(pulse.stable&&pulse.age<pulse.life&&Math.hypot(x-pulse.p.x,z-pulse.p.z)<=pulse.radius+padding)return true;
+  const boss=this.bossWarning;
+  return !!boss&&Math.hypot(x-boss.x,z-boss.z)<=boss.radius+padding;
  }
  private readonly priorityShape={shape:'circle' as const,x:0,z:0,radius:0};
  /** Read-only live hostile warning footprints for friendly-effect priority. No copies or rendering changes. */

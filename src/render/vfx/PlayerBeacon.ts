@@ -142,7 +142,7 @@ export class PlayerBeacon {
 
   /** Animation remains authoritative; merged buffers only combine identical skin spaces. */
   update(player:T.Object3D,angle:number,hidden=false,crowding=0,warning=false,dt=0){
-    this.root.visible=!hidden&&!this.disposed;if(!this.root.visible)return;
+    this.root.visible=!hidden&&!this.disposed;if(!this.root.visible){this.hitLife=0;return;}
     this.locatorMaterial.opacity=warning?.22:1;
     this.hitLife=Math.max(0,this.hitLife-dt);
     // Keep the material in the prepared HUD program family, even between hits.

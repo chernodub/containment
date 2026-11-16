@@ -29,3 +29,39 @@ arc uses known damage receipt directions and fades over320ms; no invented
 source direction for environmental receipts. This is the first response to the
 R11 look, pending new-source pale/dark/crowd capture review. It is not counted as
 one of the three completed new-source standard rounds.
+
+## Aim round 2 and first native pale-room look
+
+Opened angle45 native Flashfire, Whiteout, rifle and run90 after wrist correction. The receiver is closer to the casting hand and Whiteout no longer lifts its barrel overhead, but cast right elbow/hand still looks contorted. Run90 has conspicuous straight trailing-leg extremes. Requested shorter authored stride, stronger pelvis compression and shoulder counterturn; receiver arm needs a reachable front pocket.
+
+Opened native Crawler Crew Checkpoint frames01,05,10. Warning edge is now immediately visible against pale floor and substantially brighter than the locally dimmed player ring. Frame05 shows a sweep approaching the strike; frame10 warning is gone and Crawler has crossed into contact. Body coil still subtle at gameplay size. Native frame01 exposes the marine's opposing gesture/gun silhouette, so isolated muzzle-direction agreement alone is not acceptance.
+
+## B round 1 — exploratory live-dist pass (superseded)
+
+Opened Crawler Crew native01/06, Stalker Crew06 and Relay06, Brute Crew08/17,
+and complete30-frame Crawler Crew/Relay exact480 contacts. The first native
+Crew Crawler edge now has a clear dark keyline on pale floor and the locator no
+longer dominates; the same edge survives Relay's dark floor and bright grate.
+The exposed Stalker capsule is easy to follow laterally, while its small body
+still needs the held coil/strike change to communicate commitment. Brute08 has a
+raised pointed silhouette and17 compresses into a broader striking mass.
+
+Look → fix: at480 the swept interior/final100ms are still too quiet; the frame
+can read as a static outlined exclusion shape rather than an imminent hit.
+Increase only the final100ms fill contribution from .055 to .18; leave the
+ordinary early fill and exact shape untouched. Add a cheap square broadphase
+before locator/detail overlap trigonometry, clear stale damage arcs at menu or
+death, and let pulse/boss warnings quiet the locator as well. Four explicitly
+labelled presentation-only hurt replays will inspect incoming-side arcs without
+claiming accepted native damage in an invulnerable warning fixture.
+
+Provenance limitation: a concurrent build replaced live `dist/` at
+2026-11-17 02:20:24 +0300 (`DepthRenderer-4G7NGwZK.js`). The pass reloads between
+scenarios, so its starting asset inventory does not certify the whole run.
+Retain it as exploratory opened look/fix evidence, exclude it from final
+same-asset acceptance, and use immutable `--dist` snapshots for rounds2/3.
+The original manifest is unchanged and `PROVENANCE-NOTE.md` flags the issue.
+
+## Brute mass check on merged meshes
+
+Opened native Brute Crew04 and Relay15/20. Raised cleavers communicate commitment; the first upright windup is too narrow compared with its broad released stance. Belly remains above the feet in these views. Requested Brute-only wider compressed held mass (implemented in7a60fd80; needs final clean capture). Relay floor keyline remains legible; sweep still reads much weaker than edge. These B1 frames are exploratory mixed-source after live dist was rebuilt at02:20:24+0300; do not use them for same-build final claims.
