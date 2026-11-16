@@ -23,8 +23,15 @@ const legacyFloorNames=new Set([...floorNames,'annulus-sealed','shaft-zinc','sha
 function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
     const instances: OriginalKitInstance[] = [], id = t.id, plan = SHIP_ARCHITECTURE_PLANS[id as keyof typeof SHIP_ARCHITECTURE_PLANS];
     const matrix = (x: number, y: number, z: number, angle: number, sx = 1, sy = 1, sz = 1) => new T.Matrix4().compose(new T.Vector3(x, y, z), new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), angle), new T.Vector3(sx, sy, sz));
-    for (const furnishing of shipInteriorFurnishings(t))
+    for (const furnishing of shipInteriorFurnishings(t)) {
+        // The north common-nook solid owns bespoke furniture. Its split low
+        // mesh starts above deck height, so generic 3D hero bounds cannot
+        // reliably remove the legacy cabinet mounted on this collider.
+        if (id === 'residential-gallery' && furnishing.source === 'solid'
+            && furnishing.x >= 572 && furnishing.x <= 768
+            && furnishing.z >= 241 && furnishing.z <= 279) continue;
         instances.push({ pack: furnishing.pack, asset: furnishing.asset, matrix: matrix(furnishing.x / 32, 0, furnishing.z / 32, furnishing.angle, ...furnishing.scale), purpose: furnishing.space + ' / ' + furnishing.asset,cutaway:furnishing.source==='portal' });
+    }
     if(id==='relay-racks') {
         // Exactly inside the existing 100 × 400-unit central solid.
         for(let i=instances.length-1;i>=0;i--) {
