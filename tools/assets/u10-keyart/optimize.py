@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image, ImageFilter, ImageEnhance
 ROOT = Path(__file__).resolve().parents[3]
 PORTRAITS = ROOT / 'public/assets/portraits/u10'
-for source in ([] if '--ui-only' in sys.argv else PORTRAITS.glob('*-bust.png')):
+for source in ([] if '--ui-only' in sys.argv or '--title-only' in sys.argv else PORTRAITS.glob('*-bust.png')):
     image = Image.open(source)
     for size in [256, 640, 1024]:
         scaled = image.copy()
@@ -48,7 +48,7 @@ if '--ending-only' not in sys.argv and (raw / 'composition.png').exists():
                     else:
                         scaled.quantize(colors=256,method=Image.Quantize.FASTOCTREE).save(UI / f'{name}-{width}.png', optimize=True)
 ending = ROOT / next((a.split('=',1)[1] for a in sys.argv if a.startswith('--ending=')), 'artifacts/nextgen/u10-rounds/ending/composition.png')
-if ending.exists():
+if ending.exists() and '--title-only' not in sys.argv:
     image = Image.open(ending).convert('RGB')
     for width in [1280,1920]:
         scaled = image.resize((width,width*9//16),Image.Resampling.LANCZOS)
