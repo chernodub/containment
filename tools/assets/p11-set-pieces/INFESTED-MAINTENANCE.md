@@ -59,7 +59,7 @@ These are P11 source triangle counts, not whole-room measured draw totals. Actor
 
 | Room | Hero triangles | P11 instances High / Low triangles | Hero centre x,z; scale; elevation | Pack GLB bytes | Normal GPU estimate |
 |---|---:|---:|---|---:|---:|
-| Infested Workshop | 11,088 | 15,018 / 12,386 | 610,266;1×1×.65;0m; yaw90° | 1,767,052 | 1,398,101B |
+| Infested Workshop | 11,088 | 15,018 / 12,386 | 610,280;.85×.75×.65;0m; yaw90° | 1,767,052 | 1,398,101B |
 | Swarm Junction | 10,170 | 13,402 / 10,170 | 292,235;2;0m | same infested pack | 1,398,101B |
 | Coolant Plant | 10,088 | 10,088 / 10,088 | 150,150;1.4;0m | 1,923,476 | 1,398,101B |
 | Service Shaft Landing | 5,950 | 5,950 / 5,950 | 420,330;1.1;.15m | same maintenance pack | 1,398,101B |
@@ -69,3 +69,10 @@ These are P11 source triangle counts, not whole-room measured draw totals. Actor
 Low uses the existing `highDetail` draw-range omission for separate root saddle, egg clutch and resin web instances. The mill, its rear bench and the brood plenum remain. Embedded hero sculpture remains part of its shared finish meshes; it is not a separate Low mesh. Normal maps remain resident on Low; the current quality owner does not dispose or remove these maps. Memory is per unique lazy-loaded pack, not per instance. No shader recompilation or geometry replacement is introduced by these flags. Grounded Workshop mill remains cutaway=false; other heroes use existing cutaway=true. Its46-unit wall-backed collider and246-unit adjacent aisle remain unchanged by remodelling.
 
 The lead inspected the final mill native hero/game-angle candidate and accepted its functional layout, visible egg cluster, tapered shell rings and ragged burst panel for the next actual room-camera review. A final nest game-angle inspection exposed occluded eggs; two damper leaves were shortened and the clutches moved forward, retaining the same footprint and16 additional triangles from final mesh triangulation. All final native model images are in `artifacts/nextgen/p11-final/beauty/`.
+
+
+## Round4 Workshop actual-room review and next correction
+
+Opened all five native `p11-standard-round4/room-tour-infested-workshop-01..05.png`, native kiting02, and all six corresponding exact480 images. The mill is recognizable in03, but02 and combat02 crop most of its useful table/head off the upper edge. The old overhead bridges still dominate01/02/05.04 remains mostly floor and an enormous retained legacy growth plate; this is still a weak view. Merely declaring the hero placed would overstate this round.
+
+Next placement refinement changes only the existing mill transform: centre610,280, local scale(.85,.75,.65), yaw90 degrees. Its exact horizontal bounds become x592.36..629.55,z226.18..339.30, wholly inside the existing [584,197,46,143] collider and the wall's340-unit end. Height becomes2.204m. This moves the north tip23.5 units toward the fight view and reduces upward projection while preserving every collision lane and the fight circle. Recommended lead-owned change: retire only the legacy workshop-tool-bridge at780,620 in OriginalRoomInteriors; the modelling child did not edit that shared file. Next actual captures must establish whether this correction solves composition; no speculative pass is claimed.
