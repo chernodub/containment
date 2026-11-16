@@ -26,11 +26,11 @@ export function buildDeckStory(t: RoomTemplate, atlas: T.Texture): { high: T.Can
     for(const side of [-1,1])stamp((i+1)%4,3,x+Math.cos(angle)*side*.62,z+Math.sin(angle)*side*.62,.32,2.7,angle,.70);
   }
   for(const [i,breach]of t.breaches.entries()) {
-    const vx=start.x-breach.x,vz=start.y-breach.y,length=Math.hypot(vx,vz)||1;
-    const x=breach.x/32+vx/length*1.0,z=breach.y/32+vz/length*1.0;
-    stamp(i%4,2,x,z,3.8,1.7,Math.atan2(vz,vx),.68);
-    stamp((i+2)%4,2,x+vx/length*.9,z+vz/length*.9,2.4,1.4,Math.atan2(vz,vx)+.6,.38);
-    stamp(i%4,0,x-vx/length*.55,z-vz/length*.55,2.4,.65,Math.atan2(vz,vx)+Math.PI/2,.65);
+    const x=breach.x/32,z=breach.y/32;
+    // Row 2 contains opaque spill silhouettes. Offset beside a flush grille,
+    // those blobs read as detached cast shadows and make the grille float.
+    // Keep wear physically attached to its two fastening rails instead.
+    for(const side of [-1,1])stamp(i%4,3,x+side*.60,z,.12,.96,0,.36);
   }
   // A dragged case crosses a side service approach, never a random central stain.
   const service = plan?.spaces.find(s=>/service|return|bypass|console/i.test(s.name)) ?? plan?.spaces.at(-1);
