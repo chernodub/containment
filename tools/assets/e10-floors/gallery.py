@@ -49,7 +49,15 @@ img{max-width:100%;height:auto}a{color:#9cd6dc}section{margin:48px 0}code{font-s
 Matched tours show E9 above E10. Staged G6 kiting is visual evidence, not hardware timing.</p>
 <p><a href="gallery.json">Source receipts and room metrics</a> ·
 <a href="benchmark/benchmark.json">Live 25-enemy benchmark</a> ·
-<a href="campaign/report.json">Native Cryo campaign</a></p>
+<a href="benchmark/preparation.json">Fresh-room preparation</a> ·
+<a href="campaign/index.html">Native Cryo campaign</a> ·
+<a href="shadow-final/index.html">Final shadow / Low / recovery captures, HUD hidden</a></p>
+<p>The live benchmark and final shadow supplement use runtime 086a4d8.
+The twenty-room gallery preserves its two earlier, individually recorded build identities.
+The later runtime change removes unnecessary architecture-shadow invalidation on actor pool churn.
+Draws and combat compilation pass; the 20ms frame-p95 target remains unmet on this shared host.
+<a href="benchmark-before/benchmark.json">Original benchmark</a> and
+<a href="benchmark-before/draw-audit.json">draw audit</a> retain the measured misses.</p>
 <h2>Calm</h2><a href="twenty-calm.png"><img src="twenty-calm.png"></a>
 <h2>Staged native kiting</h2><a href="twenty-kiting.png"><img src="twenty-kiting.png"></a>
 <h2>E9 / E10</h2><a href="twenty-before-after.png"><img src="twenty-before-after.png"></a>
