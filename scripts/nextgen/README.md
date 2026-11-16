@@ -1121,3 +1121,18 @@ rooms. Use `--burst=30`; they retain 50ms steps, capture-only invulnerability,
 normal attack acceptance/clocks and `g5Proof.warningTimeline`. No enemy phase is
 forced. Use `m10-melee-crowd` and `c10-melee-swarm` for the mixed and all-Crawler
 20-enemy conditions. These are staged readability evidence, not campaigns.
+
+## FEEL12 paired weapon chains
+
+The existing M9 runner accepts enemy actions `weapon-hit-{pistol,rifle,shotgun,plasma,rocket}`
+and `weapon-kill-{pistol,rifle,shotgun,plasma,rocket}`. Each isolated native-pixel
+strip includes the production marine firing at the selected family, the ordinary
+weapon tracer/contact pools, directional victim reaction and, for kill rows,
+the prepared authored-collapse/Rapier path. Projectile speed and prescribed
+killing impulse come from the native weapon catalog (`knockback × 12`, as used
+by the native death receipt). Each row fires once, without spread or eight-pellet
+aggregation; rocket rows study direct contact rather than splash acceptance.
+These are explicitly presentation replays: no simulation damage, collision hit,
+critical roll or natural kill is claimed. `weaponChain` metadata retains this
+boundary. Frozen simulation clocks remain unchanged. Per-frame `weaponForward`
+records the held barrel's world +Z axis for review; it is evidence, not a gate.
