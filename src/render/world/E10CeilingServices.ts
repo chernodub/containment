@@ -45,9 +45,11 @@ export function addCeilingServices(root: T.Group, t: RoomTemplate): void {
   const fixtures = root.userData.lightFixtures ??= [];
   for (const [index, source] of deckLightSources(t).entries()) {
     if (source.z < 1) continue;
-    const x = source.x, z = source.y + 2.4, y = domestic ? 6.4 : 6.9;
+    const x = source.x, airlock = t.id === 'transmission-chamber' && source.x < 6.25;
+    const z = source.y + (airlock ? .6 : 2.4), y = domestic ? 6.4 : 6.9;
     piece = { bounds: new T.Box3(), ranges: [] }; pieces.push(piece);
-    if (t.id === 'transmission-chamber' && source.x < 6.25) {
+    if (airlock) {
+      for (const side of [-1,1]) box(0,x+side*1.55,y+1.35,z,.075,2.1,.09);
       const ring = new T.TorusGeometry(1.55,.13,8,24); ring.rotateX(-Math.PI/2); append(ring,1,x,y+.3,z);
       const gasket = new T.TorusGeometry(1.34,.055,6,24); gasket.rotateX(-Math.PI/2); append(gasket,2,x,y+.3,z);
       for(let n=0;n<8;n++){
