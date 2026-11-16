@@ -30,3 +30,15 @@ Opened all32 native contact pages (`angle-{0,45,90,135,180,225,270,315}/marine-c
 | 315 | Gunfire points upper-right. Shotgun flash coherent; rifle support hand most convincing. Whiteout/Slam keep heading with overhead receiver; Cryo Nova briefly places gun down-left of torso while its barrel still points upper-right. Meltdown/Tesla Pylon crouches make firing elbow look sharply folded. |
 
 The front-pocket arm correction targets these observed overhead/side-loaded receiver poses. The free-arm hemisphere clamp targets casts that signal backwards. These are the questions for round3, not assumed successes.
+
+## Railbreaker source boundary
+
+The native event path is `DepthRenderer.effect` → lazy ability owner → ability registry → Breacher `event`. At Railbreaker impact/burst, its presentation computes endpoint from native origin+length, then emits `heavyBeam` and a white `beam` from `(x,.85,z)`. The same event origin also owns its trench, impact, burst and flash. There is no existing weapon/muzzle anchor service. Moving event coordinates in the renderer would move that entire footprint, while replacing the kit's beam method temporarily would be a fragile interception across the VFX12 ownership boundary. Neither was implemented. A dedicated optional weapon-source anchor for only the physical discharge is the appropriate VFX12 integration; the footprint/endpoints must remain native. Native final Railbreaker capture is still required to assess the visible size of this source-to-socket gap.
+
+## Round3 opened-strip review
+
+Opened all13 complete twelve-frame native strips in `aim-round3/angle45`: run0/90/180/270, rifle, shotgun, Railbreaker, Cryo Nova, Whiteout, Flashfire, Static Step, Overload and Tesla Pylon. The right receiver now stays visibly in front and attached through all seven sampled cast rows. Whiteout's free arm still lifts, while its gun stays forward; Cryo Nova no longer sweeps the gun behind the head. Flashfire/Overload keep their free-hand gestures without the detached low-side receiver. Tesla Pylon's deep forward fold remains, but the receiver no longer floats above or opposite the firing hand. The Railbreaker brace and the two fire rows remain coherent.
+
+The shorter gait has a more compact stance and clearer compression/transfer. Brief straight-leg extremes remain (notably run90 cell8 and run0 cell8); run180 still has a broad split stance. These are residual polish weaknesses, rather than a claim of fully solved foot contact from isolated strips. Native movement remains necessary to assess sliding.
+
+Non-gating metadata inspection of156 sampled frames gives maximum horizontal barrel-heading error0.7862° (Railbreaker), next0.2894° (Tesla Pylon), with other rows below0.00004°. Results are retained in `aim-round3/heading-diagnostics.json`. This measures the model/socket heading, not the ability beam's origin or native attack accuracy.
