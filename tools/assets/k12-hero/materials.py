@@ -61,6 +61,7 @@ GLOW_STRENGTH = {'glow': 6.0, 'amber_glow': 5.0, 'ice_glow': 5.5, 'fire_glow': 6
 GAME_VALUE = {'ceramic': 'ceramic_game'}
 
 _cache = {}
+COORD_SCALE = 1.0   # object-space texture scale (1/6.8 for meshes stored in source units)
 
 
 def colour(role):
@@ -129,6 +130,9 @@ def masks(nodes, links, wear_amount, grime_amount, game=False):
     """Edge wear, cavity grime and scratch masks in object space (bake-stable)."""
     tex = nodes.new('ShaderNodeTexCoord')
     obj = tex.outputs['Object']
+    if COORD_SCALE != 1.0:
+        sc = nodes.new('ShaderNodeVectorMath'); sc.operation = 'SCALE'; sc.inputs['Scale'].default_value = COORD_SCALE
+        links.new(obj, sc.inputs[0]); obj = sc.outputs[0]
     geo = nodes.new('ShaderNodeNewGeometry')
     # Edge detection: rounded shading normal (Bevel node) departs from true normal on arrises.
     bev = nodes.new('ShaderNodeBevel'); bev.samples = 6; bev.inputs['Radius'].default_value = .0035
@@ -237,7 +241,6 @@ def build(role, mode='render'):
         p.inputs['Coat Roughness'].default_value = .04
         p.inputs['Specular IOR Level'].default_value = .8
         tex = nodes.new('ShaderNodeTexCoord')
-        sep = nodes.new('ShaderNodeSeparateXYZ'); links.new(tex.outputs['Object'], sep.inputs[0])
         wave = nodes.new('ShaderNodeTexWave'); wave.wave_type = 'BANDS'; wave.bands_direction = 'Z'
         wave.inputs['Scale'].default_value = 420; links.new(tex.outputs['Object'], wave.inputs['Vector'])
         lines = _ramp(nodes, links, wave.outputs['Fac'], [(0, .78), (1, 1)])

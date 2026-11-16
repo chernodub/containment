@@ -102,7 +102,28 @@ def title_layer(rig='breacher'):
     print('K12 TITLE LAYER', scene.render.filepath, flush=True)
 
 
-if '--title' in ARGS:
+def hands():
+    """Grip study: right and left hand close-ups for several curl axes/amounts."""
+    for axis, amount in (('X', 0), ('X', 40), ('X', -40), ('Z', 40), ('Z', -40)):
+        clear(); scene = bpy.context.scene; setup(scene, (360, 360))
+        objects, meshes, arm = stage_hero('breacher', 'rifle', curl=amount, axis=axis)
+        light_rig('breacher')
+        body = next(o for o in meshes if o.name.startswith('k10-body'))
+        gi = {g.index for g in body.vertex_groups if g.name.endswith('.R') and (g.name.startswith('finger') or g.name.startswith('thumb'))}
+        ids = [v.index for v in body.data.vertices if any(g.group in gi and g.weight > .5 for g in v.groups)]
+        ev = body.evaluated_get(bpy.context.evaluated_depsgraph_get()); me = ev.to_mesh()
+        pts = [body.matrix_world @ me.vertices[i].co for i in ids]; ev.to_mesh_clear()
+        hand = sum(pts, V()) / len(pts)
+        bpy.ops.object.camera_add(); cam = bpy.context.object; scene.camera = cam
+        d = V((.6, 1.2, .2)).normalized(); cam.location = hand + d * .6; cam.data.lens = 70
+        cam.rotation_euler = (-d).to_track_quat('-Z', 'Y').to_euler()
+        REVIEW.mkdir(parents=True, exist_ok=True)
+        scene.render.filepath = str(REVIEW / f'hand-{axis}{amount}.png'); bpy.ops.render.render(write_still=True)
+
+
+if '--hands' in ARGS:
+    hands()
+elif '--title' in ARGS:
     title_layer()
 else:
     for rig in RIGS:
