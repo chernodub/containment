@@ -1,0 +1,246 @@
+{
+  "bakeSeconds": 2.138,
+  "blenderPNGDecodeMs": 5.931,
+  "file": "service-kit-normal.png",
+  "size": 512,
+  "bytes": 280645,
+  "estimatedRGBA8MipBytes": 1398101,
+  "nonFlatPixels": 161309,
+  "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+  "targets": [
+    {
+      "mesh": "service-cable-tray--e9-body",
+      "role": "e9-body",
+      "seconds": 0.039,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-cable-tray--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.03,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-cable-tray--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.03,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-access-hatch--e9-body",
+      "role": "e9-body",
+      "seconds": 0.032,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-access-hatch--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.03,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-access-hatch--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.034,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-access-hatch--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.027,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-transit-case--e9-body",
+      "role": "e9-body",
+      "seconds": 0.039,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-transit-case--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.061,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-transit-case--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.09,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-transit-case--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.073,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-stowage-crate--e9-body",
+      "role": "e9-body",
+      "seconds": 0.042,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-stowage-crate--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.043,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-stowage-crate--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.043,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-stowage-crate--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.029,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-pressure-drum--e9-body",
+      "role": "e9-body",
+      "seconds": 0.032,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-pressure-drum--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.028,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-pressure-drum--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.033,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-pressure-drum--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.03,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-safety-rail--e9-body",
+      "role": "e9-body",
+      "seconds": 0.029,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-safety-rail--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.03,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-safety-rail--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.028,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-three-step--e9-body",
+      "role": "e9-body",
+      "seconds": 0.03,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-three-step--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.034,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-three-step--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.031,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-console-bars--e9-body",
+      "role": "e9-body",
+      "seconds": 0.032,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-console-bars--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.039,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-console-bars--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.035,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-console-bars--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.027,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-console-schematic--e9-body",
+      "role": "e9-body",
+      "seconds": 0.032,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-console-schematic--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.053,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-console-schematic--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.046,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-console-schematic--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.031,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-valve-manifold--e9-body",
+      "role": "e9-body",
+      "seconds": 0.029,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-valve-manifold--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.036,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-valve-manifold--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.047,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-valve-manifold--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.029,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-valve-manifold--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.033,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "service-valve-manifold--p11-tint-metal",
+      "role": "p11-tint-metal",
+      "seconds": 0.037,
+      "method": "three-segment high bevel"
+    }
+  ]
+}

@@ -287,9 +287,231 @@
   ],
   "output": {
     "file": "security.glb",
-    "bytes": 363628,
-    "sha256": "c9feec0b2ba92db6f62bc2edefccdf649ac14691e5cec4fb59f521a45b109cbf",
+    "bytes": 805260,
+    "sha256": "ff539579c4b0af15586bc695be47f8f5c38e3555c9ada749b5fb9e16625f7f2a",
     "triangles": 6984
+  },
+  "normalAtlas": {
+    "bakeSeconds": 4.843,
+    "blenderPNGDecodeMs": 19.546,
+    "file": "security-normal.png",
+    "size": 512,
+    "bytes": 299911,
+    "estimatedRGBA8MipBytes": 1398101,
+    "nonFlatPixels": 186543,
+    "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+    "targets": [
+      {
+        "mesh": "security-scanner-gate--e9-body",
+        "role": "",
+        "seconds": 0.064,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-scanner-gate--e9-ceramic",
+        "role": "",
+        "seconds": 0.065,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-scanner-gate--e9-dark",
+        "role": "",
+        "seconds": 0.062,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-scanner-gate--e9-trim",
+        "role": "",
+        "seconds": 0.089,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-guard-booth--e9-body",
+        "role": "",
+        "seconds": 0.045,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-guard-booth--e9-ceramic",
+        "role": "",
+        "seconds": 0.049,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-guard-booth--e9-dark",
+        "role": "",
+        "seconds": 0.036,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-guard-booth--e9-trim",
+        "role": "",
+        "seconds": 0.031,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-baggage-conveyor--e9-body",
+        "role": "",
+        "seconds": 0.059,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-baggage-conveyor--e9-ceramic",
+        "role": "",
+        "seconds": 0.038,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-baggage-conveyor--e9-dark",
+        "role": "",
+        "seconds": 0.065,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-baggage-conveyor--e9-trim",
+        "role": "",
+        "seconds": 0.066,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-lockers-low--e9-body",
+        "role": "",
+        "seconds": 0.067,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-lockers-low--e9-ceramic",
+        "role": "",
+        "seconds": 0.04,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-lockers-low--e9-dark",
+        "role": "",
+        "seconds": 0.043,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-lockers-low--e9-trim",
+        "role": "",
+        "seconds": 0.048,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-lockers-tall--e9-body",
+        "role": "",
+        "seconds": 0.042,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-lockers-tall--e9-ceramic",
+        "role": "",
+        "seconds": 0.07,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-lockers-tall--e9-dark",
+        "role": "",
+        "seconds": 0.049,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-lockers-tall--e9-trim",
+        "role": "",
+        "seconds": 0.034,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-queue-rail--e9-body",
+        "role": "",
+        "seconds": 0.04,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-queue-rail--e9-ceramic",
+        "role": "",
+        "seconds": 0.052,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-queue-rail--e9-dark",
+        "role": "",
+        "seconds": 0.039,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-queue-rail--e9-trim",
+        "role": "",
+        "seconds": 0.054,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-bench--e9-body",
+        "role": "",
+        "seconds": 0.049,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-bench--e9-ceramic",
+        "role": "",
+        "seconds": 0.033,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-bench--e9-dark",
+        "role": "",
+        "seconds": 0.029,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-bench--e9-trim",
+        "role": "",
+        "seconds": 0.035,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-console--e9-body",
+        "role": "",
+        "seconds": 0.036,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-console--e9-ceramic",
+        "role": "",
+        "seconds": 0.522,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-console--e9-dark",
+        "role": "",
+        "seconds": 0.536,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-console--e9-trim",
+        "role": "",
+        "seconds": 0.279,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-sign-05--e9-ceramic",
+        "role": "",
+        "seconds": 0.237,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-sign-05--e9-dark",
+        "role": "",
+        "seconds": 0.336,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "security-sign-05--e9-trim",
+        "role": "",
+        "seconds": 0.14,
+        "method": "three-segment high bevel"
+      }
+    ]
   },
   "craft": "P11 single-facet industrial chamfers; sub-centimetre hardware stays crisp; deterministic convex wear and concave grime multiply original vertex AO, excluding emissive/glass/deck finishes."
 }
