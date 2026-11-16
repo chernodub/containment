@@ -87,8 +87,9 @@ export class HitConfirmation {
     point(x: number, y: number): void {
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
         this.active = true;
-        if (this.marker.style.left !== `${x}px`) this.marker.style.left = `${x}px`;
-        if (this.marker.style.top !== `${y}px`) this.marker.style.top = `${y}px`;
+        const left=`${x}px`,top=`${y}px`;
+        if (this.marker.style.left !== left) this.marker.style.left = left;
+        if (this.marker.style.top !== top) this.marker.style.top = top;
         if (this.reticle && this.playing) {
             this.setHidden(false);
             if (this.marker.style.opacity !== '1') this.marker.style.opacity = '1';
@@ -123,7 +124,8 @@ export class HitConfirmation {
         this.life = playing ? Math.max(0, this.life - Math.max(0, finite(dt))) : 0;
         const fade = Math.min(1, this.life / .12);
         this.setHidden(this.reticle ? !this.active || !playing : this.life === 0);
-        if (this.marker.style.opacity !== (this.reticle && this.active && playing ? '1' : String(.65 * fade))) this.marker.style.opacity = this.reticle && this.active && playing ? '1' : String(.65 * fade);
+        const opacity=this.reticle && this.active && playing ? '1' : String(.65 * fade);
+        if (this.marker.style.opacity !== opacity) this.marker.style.opacity = opacity;
         this.setContactOpacity(String(fade));
         if (!this.life&&this.marker.dataset.kill!=='false') this.marker.dataset.kill = 'false';
     }
