@@ -42,7 +42,7 @@
           0.6
         ]
       },
-      "triangles": 13104,
+      "triangles": 2256,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -72,7 +72,7 @@
           0.7115
         ]
       },
-      "triangles": 3564,
+      "triangles": 748,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -101,7 +101,7 @@
           0.591
         ]
       },
-      "triangles": 4260,
+      "triangles": 956,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -130,7 +130,7 @@
           0.4
         ]
       },
-      "triangles": 4104,
+      "triangles": 520,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -158,7 +158,7 @@
           0.4
         ]
       },
-      "triangles": 4104,
+      "triangles": 520,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -186,7 +186,7 @@
           0.18
         ]
       },
-      "triangles": 1324,
+      "triangles": 716,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -215,7 +215,7 @@
           0.375
         ]
       },
-      "triangles": 972,
+      "triangles": 396,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -243,7 +243,7 @@
           0.6
         ]
       },
-      "triangles": 3132,
+      "triangles": 508,
       "materials": [
         "e9-amber",
         "e9-body",
@@ -275,7 +275,7 @@
           0.054
         ]
       },
-      "triangles": 2924,
+      "triangles": 364,
       "materials": [
         "e9-ceramic",
         "e9-cyan",
@@ -287,8 +287,9 @@
   ],
   "output": {
     "file": "security.glb",
-    "bytes": 1255244,
-    "sha256": "c430d632ee0a1f68643549f55549805feb9c98bcdd770640c877f2e365b7766c",
-    "triangles": 37488
-  }
+    "bytes": 363628,
+    "sha256": "c9feec0b2ba92db6f62bc2edefccdf649ac14691e5cec4fb59f521a45b109cbf",
+    "triangles": 6984
+  },
+  "craft": "P11 single-facet industrial chamfers; sub-centimetre hardware stays crisp; deterministic convex wear and concave grime multiply original vertex AO, excluding emissive/glass/deck finishes."
 }

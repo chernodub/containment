@@ -14,6 +14,9 @@ import math
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from craft import bake_craft
+
 import bpy
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
@@ -68,9 +71,9 @@ def finish(obj, role, bevel=0):
     obj.parent = CURRENT
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    if bevel:
+    if bevel >= .01:
         modifier = obj.modifiers.new('Manufactured 2-4cm radiused edge', 'BEVEL')
-        modifier.width, modifier.segments = bevel, 2
+        modifier.width, modifier.segments = bevel, 1
         modifier.harden_normals = True
         bpy.ops.object.modifier_apply(modifier=modifier.name)
     for polygon in obj.data.polygons:
@@ -376,7 +379,7 @@ def dish_petal(index, count=12):
     finish(obj,'e9-ceramic' if index%3 else 'e9-trim')
     bpy.context.view_layer.objects.active=obj
     modifier=obj.modifiers.new('Petal outer-edge 12mm bevel','BEVEL')
-    modifier.width,modifier.segments=.012,2
+    modifier.width,modifier.segments=.012,1
     modifier.limit_method='ANGLE'
     modifier.angle_limit=math.radians(35)
     modifier.harden_normals=True
@@ -591,6 +594,7 @@ def export_pack():
     for group in GROUPS:
         join_materials(group)
         bake_ao(group)
+        bake_craft(group)
         bounds=[obj.matrix_world @ Vector(corner) for obj in group.children for corner in obj.bound_box]
         low=[min(point[i] for point in bounds) for i in range(3)]
         high=[max(point[i] for point in bounds) for i in range(3)]
@@ -643,6 +647,7 @@ def export_pack():
                   'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),
                   'triangles':sum(model['triangles'] for model in models)},
     }
+    manifest['craft'] = 'P11 single-facet industrial chamfers; sub-centimetre hardware stays crisp; deterministic convex wear and concave grime multiply original vertex AO, excluding emissive/glass/deck finishes.'
     (OUT/'manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
     (OUT/'LICENSE.txt').write_text((ROOT/'LICENSE').read_text())
     bpy.context.preferences.filepaths.save_version=0

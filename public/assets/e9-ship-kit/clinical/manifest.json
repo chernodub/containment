@@ -36,7 +36,7 @@
           0.593
         ]
       },
-      "triangles": 7028,
+      "triangles": 2868,
       "primitives": 5,
       "materials": [
         "e9-body",
@@ -65,7 +65,7 @@
           0.6
         ]
       },
-      "triangles": 2584,
+      "triangles": 1016,
       "primitives": 5,
       "materials": [
         "e9-body",
@@ -94,7 +94,7 @@
           0.45
         ]
       },
-      "triangles": 1920,
+      "triangles": 752,
       "primitives": 5,
       "materials": [
         "e9-body",
@@ -123,7 +123,7 @@
           0.554
         ]
       },
-      "triangles": 2548,
+      "triangles": 836,
       "primitives": 5,
       "materials": [
         "e9-body",
@@ -152,7 +152,7 @@
           0.4495
         ]
       },
-      "triangles": 2700,
+      "triangles": 428,
       "primitives": 6,
       "materials": [
         "e9-amber",
@@ -182,7 +182,7 @@
           0.4495
         ]
       },
-      "triangles": 4320,
+      "triangles": 608,
       "primitives": 6,
       "materials": [
         "e9-amber",
@@ -212,7 +212,7 @@
           0.4
         ]
       },
-      "triangles": 1520,
+      "triangles": 400,
       "primitives": 5,
       "materials": [
         "e9-amber",
@@ -241,7 +241,7 @@
           0.5985
         ]
       },
-      "triangles": 1080,
+      "triangles": 312,
       "primitives": 5,
       "materials": [
         "e9-amber",
@@ -270,7 +270,7 @@
           0.648
         ]
       },
-      "triangles": 2060,
+      "triangles": 748,
       "primitives": 5,
       "materials": [
         "e9-amber",
@@ -299,7 +299,7 @@
           1.0
         ]
       },
-      "triangles": 652,
+      "triangles": 172,
       "primitives": 3,
       "materials": [
         "e9-body",
@@ -326,7 +326,7 @@
           1.0
         ]
       },
-      "triangles": 264,
+      "triangles": 72,
       "primitives": 2,
       "materials": [
         "e9-body",
@@ -352,7 +352,7 @@
           0.07
         ]
       },
-      "triangles": 380,
+      "triangles": 124,
       "primitives": 4,
       "materials": [
         "e9-body",
@@ -380,7 +380,7 @@
           0.6
         ]
       },
-      "triangles": 5728,
+      "triangles": 1376,
       "primitives": 5,
       "materials": [
         "e9-body",
@@ -409,7 +409,7 @@
           0.7
         ]
       },
-      "triangles": 4168,
+      "triangles": 1288,
       "primitives": 5,
       "materials": [
         "e9-amber",
@@ -438,7 +438,7 @@
           2.4
         ]
       },
-      "triangles": 11668,
+      "triangles": 8980,
       "primitives": 5,
       "materials": [
         "e9-body",
@@ -476,8 +476,9 @@
   },
   "output": {
     "file": "clinical.glb",
-    "bytes": 1109344,
-    "sha256": "1cd0a2702fd04f4bf7790d04247d71371c89aee47a2f94e70ea0d70307714904",
-    "triangles": 48620
-  }
+    "bytes": 523932,
+    "sha256": "b1e9a1bfbd2e23dd09ecad911344538f44efc818fd84b9f695b9fab9dbd28972",
+    "triangles": 19980
+  },
+  "craft": "P11 single-facet industrial chamfers; sub-centimetre hardware stays crisp; deterministic convex wear and concave grime multiply original vertex AO, excluding emissive/glass/deck finishes."
 }

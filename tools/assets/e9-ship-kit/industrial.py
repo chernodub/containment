@@ -13,6 +13,9 @@ import math
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from craft import bake_craft
+
 import bpy
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
@@ -68,10 +71,10 @@ def finish(obj, role='e9-body', bevel=.025, smooth=True):
     obj.data.materials.append(MATERIALS[role])
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    if bevel:
+    if bevel >= .01:
         modifier = obj.modifiers.new('Manufactured edge radius', 'BEVEL')
         modifier.width = bevel
-        modifier.segments = 2
+        modifier.segments = 1
         modifier.affect = 'EDGES'
         modifier.harden_normals = True
         bpy.ops.object.modifier_apply(modifier=modifier.name)
@@ -95,7 +98,7 @@ def box(name, location, size, role='e9-body', bevel=.025):
     return finish(obj, role, min(bevel, min(size) * .22) if min(size) >= .04 else 0)
 
 
-def cylinder(name, location, radius, length, role='e9-trim', axis='Z', vertices=16, bevel=.015):
+def cylinder(name, location, radius, length, role='e9-trim', axis='Z', vertices=12, bevel=.015):
     bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=length, location=location)
     obj = bpy.context.object
     obj.name = name
@@ -114,7 +117,7 @@ def sphere(name, location, scale, role='e9-dark', subdivisions=1):
     return finish(obj, role, 0)
 
 
-def ring(name, location, radius, tube=.025, role='e9-trim', axis='Y', segments=24):
+def ring(name, location, radius, tube=.025, role='e9-trim', axis='Y', segments=12):
     bpy.ops.mesh.primitive_torus_add(major_segments=segments, minor_segments=4,
                                    location=location, major_radius=radius - tube, minor_radius=tube)
     obj = bpy.context.object
@@ -193,78 +196,49 @@ def pierced_panel(name, x, y, z, width, height, hole):
     bpy.ops.object.modifier_apply(modifier=modifier.name)
     bpy.data.objects.remove(cutter, do_unlink=True)
     modifier = panel.modifiers.new('Duct panel soft edge', 'BEVEL')
-    modifier.width, modifier.segments = .022, 2
+    modifier.width, modifier.segments = .022, 1
     bpy.ops.object.modifier_apply(modifier=modifier.name)
     return panel
 
 
 def plenum(name, height):
+    """P11 authored low-density replacement: intact panels and captive ducts."""
     asset(name)
     width, depth = 4.8, 1.4
-    chassis(width, depth, height, True)
-    radius = .285 if height < 1 else .405
-    z = .48 if height < 1 else 1.02
-    for index, x in enumerate([-1.55, 0, 1.55]):
-        pierced_panel('Three independent service duct faces', x, -.56, z, 1.34, radius * 2 + .13, radius)
-        cylinder('Deep black duct throat', (x, -.27, z), radius * .93, .04, 'e9-dark', 'Y', 24, 0)
-        ring('Raised annular duct lip', (x, -.635, z), radius + .025, .035)
-        ring('Inset gasket inside throat', (x, -.49, z), radius * .89, .015, 'e9-dark')
-        cylinder('Stationary fan hub', (x, -.34, z), radius * .17, .075, 'e9-trim', 'Y', 12)
-        for blade in range(5):
-            angle = blade * math.pi * 2 / 5
-            obj = box('Stopped wide impeller blade', (x + math.cos(angle) * radius * .43, -.36, z + math.sin(angle) * radius * .43),
-                      (radius * .78, .038, radius * .18), 'e9-body', .008)
-            obj.rotation_euler[1] = -angle + .22
-        for dx in [-.55, .55]:
-            bolt(x + dx, -.618, z + radius + .025)
-        if index != 1:
-            box('Human emergency diffuser', (x, -.616, height - .165), (.38, .025, .045), 'e9-amber', .008)
-    if height > 1:
-        for x in [-1.55, 0, 1.55]:
-            box('Lower access drawer', (x, -.46, .30), (1.32, .32, .34), 'e9-body')
-            box('Drawer recessed handle', (x, -.635, .34), (.34, .028, .055), 'e9-dark', .009)
-    for side in [-1,1]:
-        box('Lit manufactured end cap', (side*2.335, 0, height-.02), (.13, 1.4, .04), 'e9-trim', .012)
-    instrument(-1.90, -.653, .31, 'e9-cyan', .18, .12)
-    for x in [-1.55, 0, 1.55]:
-        box('Crown recessed inspection hatch', (x, .08, height - .137), (1.32, .87, .025), 'e9-dark', .008)
-        box('Three separated ceramic crown panels', (x, .08, height - .116), (1.20, .76, .025), 'e9-ceramic', .012)
-        box('Crown hatch recessed grip', (x, .23, height - .101), (.30, .065, .006), 'e9-dark', .002)
-    crown_paths = [
-        [(-2.12, .48, height-.12), (-1.72, .20, height-.12), (-.84, -.08, height-.10), (-.45, -.35, height-.18), (.24, -.57, height*.74)],
-        [(2.06, .48, height-.10), (1.72, .09, height-.10), (.95, -.10, height-.13), (.63, -.40, height-.20), (.48, -.60, height*.74)],
-    ]
-    for path in crown_paths:
-        path = [(x,y,min(z,height-.12)) for x,y,z in path]
-        tube('Root bundle breaks through the cutaway crown', path, .105)
-        tube('Visible crown violet vessel', [(x, y-.022, z+.036) for x,y,z in path], .014, 'e9-violet', 6)
-    for x,y in [(-1.1,-.07),(-.68,-.18),(1.20,.08)]:
-        sphere('Crown cyst body', (x,y,height-.10), (.27,.18,.085))
-        sphere('Crown cyst luminous aperture', (x+.018,y-.01,height-.038), (.065,.055,.026), 'e9-violet')
-    # Anchored bundled roots enter the machinery; they never become loose floor strands.
-    h = height / .95
-    paths = [
-        [(-2.23, -.36, .14), (-1.96, -.60, .29 * h), (-1.20, -.65, .73 * h), (-.57, -.36, .82 * h), (.26, -.11, .83 * h)],
-        [(2.22, -.26, .18), (1.98, -.61, .38 * h), (1.29, -.63, .69 * h), (.76, -.40, .78 * h), (.18, -.05, .85 * h)],
-        [(-.25, .46, .16), (-.38, .17, .48 * h), (-.51, -.29, .63 * h), (-.26, -.60, .72 * h), (.48, -.65, .74 * h)],
-    ]
-    for i, path in enumerate(paths):
-        path = [(x, max(-.57, y), z) for x, y, z in path]
-        tube('Embedded heavy root bundle', path, .095 if i < 2 else .073)
-        offset = [(x + .05, y + .032, min(height - .04, z + .045)) for x, y, z in path]
-        tube('Parallel rooting cable', offset, .045, 'e9-body')
-        tube('Sickly violet seam vessel', [(x, y - .025, min(height - .035, z + .025)) for x, y, z in path[1:]], .014, 'e9-violet', 6)
-    for i, (x, z) in enumerate([(-1.08, .67 * h), (-.55, .76 * h), (.58, .74 * h), (1.26, .68 * h), (1.72, .57 * h)]):
-        sphere('Cyst shell grown into metal', (x, -.62, z), (.16, .075, .13), 'e9-dark')
-        sphere('Violet cyst aperture', (x + .02, -.672, z + .015), (.070, .026, .061), 'e9-violet')
+    box('Grounded plenum shell', (0, 0, height/2), (width, depth-.2, height), 'e9-body', .035)
+    box('Rear mounting spine',(0,.68,height/2),(width,.04,height),'e9-body',0)
+    box('Shadowed top service recess', (0, 0, height-.025), (width-.15, depth-.16, .05), 'e9-dark', 0)
+    for sx in (-1, 1):
+        box('Manufactured end stile', (sx*2.34, -.65, height/2), (.12, .08, height), 'e9-trim', .012)
+    radius=.26 if height<1 else .36
+    z=height*.53
+    for i,x in enumerate((-1.55,0,1.55)):
+        box('Independent service door', (x,-.628,z), (1.38,.025,height-.22), 'e9-ceramic',0)
+        cylinder('Recessed duct shadow', (x,-.653,z), radius+.045,.015,'e9-dark','Y',12,0)
+        ring('Raised duct collar', (x,-.672,z),radius+.045,.025,'e9-trim',segments=12)
+        cylinder('Fan bearing', (x,-.683,z),.06,.03,'e9-trim','Y',8,0)
+        for blade in range(4):
+            a=blade*math.pi/2
+            obj=box('Captive fan vane',(x+math.cos(a)*radius*.45,-.678,z+math.sin(a)*radius*.45),
+                    (radius*.8,.015,.045),'e9-body',0)
+            obj.rotation_euler[1]=-a+.2
+        box('Service door pull',(x+.51,-.66,z-.2),(.05,.035,.18),'e9-dark',0)
+        box('Crown access lid',(x,0,height+.015),(1.34,.95,.03),'e9-body',0)
+        box('Crown recessed grip',(x,.15,height+.033),(.28,.04,.006),'e9-trim',0)
+        box('Captive status lamp',(x+.48,-.655,height-.15),(.1,.012,.035),'e9-violet',0)
+    for side in (-1,1):
+        points=[(side*2.16,.45,height+.045),(side*1.5,.16,height+.055),(side*.8,-.2,height+.045),(side*.35,-.55,height*.85)]
+        tube('Rooted crown conduit',points,.055,'e9-dark',6)
+        # A sparse luminous seam stays distinct from the root body.
+        tube('Violet root seam',[(x,y-.025,z+.018) for x,y,z in points],.009,'e9-violet',4)
 
 
 def pump_skid():
     asset('pump-skid')
     chassis(3.5, 1.3, .9)
     for x in [-.83, .83]:
-        cylinder('Horizontal pump motor', (x, -.12, .44), .285, .76, 'e9-body', 'Y', 20)
-        cylinder('Pump service face', (x, -.53, .44), .287, .075, 'e9-ceramic', 'Y', 20)
+        cylinder('Horizontal pump motor', (x, -.12, .44), .285, .76, 'e9-body', 'Y', 12)
+        cylinder('Pump service face', (x, -.53, .44), .287, .075, 'e9-ceramic', 'Y', 12)
         ring('Pump face gasket', (x, -.579, .44), .22, .025)
         cylinder('Recessed pump centre', (x, -.58, .44), .146, .02, 'e9-dark', 'Y', 16, 0)
         for offset in [-.27, .27]:
@@ -322,7 +296,7 @@ def service_bay(name, reactor=False):
             box('Ceramic coil end shield', (x, -.60, .45), (.82, .055, .47), 'e9-ceramic', .028)
             cylinder('Recessed shielding coupler', (x, -.64, .45), .18, .03, 'e9-dark', 'Y', 20, 0)
             ring('Shield coil collar', (x, -.664, .45), .17, .022)
-            ring('Violet coupler charge', (x, -.671, .45), .113, .012, 'e9-violet', segments=20)
+            ring('Violet coupler charge', (x, -.671, .45), .113, .012, 'e9-violet', segments=12)
         box('Central diagnostic plate', (0, -.19, .45), (.84, .79, .61), 'e9-ceramic')
         instrument(0, -.624, .52, 'e9-cyan', .42, .20)
         box('Guarded physical isolator', (0, -.63, .27), (.25, .055, .10), 'e9-dark', .018)
@@ -505,7 +479,7 @@ def airway_exchanger():
         bpy.ops.object.modifier_apply(modifier=modifier.name)
         bpy.data.objects.remove(cutter,do_unlink=True)
         modifier=plate.modifiers.new('Soft manufactured intake panel edge','BEVEL')
-        modifier.width,modifier.segments=.025,2
+        modifier.width,modifier.segments=.025,1
         bpy.ops.object.modifier_apply(modifier=modifier.name)
         cylinder('Deep upward fan throat', (x,0,.215), .54,.035, 'e9-dark','Z',32,0)
         ring('Fat round upward fan mouth', (x,0,.72), .625,.075, 'e9-trim','Z',32)
@@ -595,6 +569,7 @@ def export_pack():
     for group in ASSETS:
         merge_finishes(group)
         bake_ao(group)
+        bake_craft(group)
         points = [obj.matrix_world @ Vector(corner) for obj in group.children for corner in obj.bound_box]
         lo = [min(p[i] for p in points) for i in range(3)]
         hi = [max(p[i] for p in points) for i in range(3)]
@@ -633,6 +608,7 @@ def export_pack():
                 'output': {'file': path.name, 'bytes': path.stat().st_size,
                            'triangles': sum(model['triangles'] for model in models),
                            'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}}
+    manifest['craft'] = 'P11 single-facet industrial chamfers; sub-centimetre hardware stays crisp; deterministic convex wear and concave grime multiply original vertex AO, excluding emissive/glass/deck finishes.'
     (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     (OUT / 'LICENSE.txt').write_text((ROOT / 'LICENSE').read_text())
     bpy.context.preferences.filepaths.save_version = 0

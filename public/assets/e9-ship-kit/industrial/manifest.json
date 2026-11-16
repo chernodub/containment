@@ -22,8 +22,8 @@
       "name": "swarm-plenum-low",
       "dimensions": [
         4.8,
-        0.95,
-        1.4
+        1.053,
+        1.398
       ],
       "bounds": {
         "min": [
@@ -33,28 +33,26 @@
         ],
         "max": [
           2.4,
-          0.95,
-          0.7
+          1.053,
+          0.698
         ]
       },
-      "triangles": 7056,
+      "triangles": 1368,
       "materials": [
-        "e9-amber",
         "e9-body",
         "e9-ceramic",
-        "e9-cyan",
         "e9-dark",
         "e9-trim",
         "e9-violet"
       ],
-      "primitives": 7
+      "primitives": 5
     },
     {
       "name": "swarm-plenum-tall",
       "dimensions": [
         4.8,
-        1.7,
-        1.4
+        1.8109,
+        1.398
       ],
       "bounds": {
         "min": [
@@ -64,21 +62,19 @@
         ],
         "max": [
           2.4,
-          1.7,
-          0.7
+          1.8109,
+          0.698
         ]
       },
-      "triangles": 7488,
+      "triangles": 1368,
       "materials": [
-        "e9-amber",
         "e9-body",
         "e9-ceramic",
-        "e9-cyan",
         "e9-dark",
         "e9-trim",
         "e9-violet"
       ],
-      "primitives": 7
+      "primitives": 5
     },
     {
       "name": "pump-skid",
@@ -99,7 +95,7 @@
           0.65
         ]
       },
-      "triangles": 3228,
+      "triangles": 1500,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -128,7 +124,7 @@
           0.35
         ]
       },
-      "triangles": 2744,
+      "triangles": 1448,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -157,7 +153,7 @@
           0.65
         ]
       },
-      "triangles": 2556,
+      "triangles": 892,
       "materials": [
         "e9-amber",
         "e9-body",
@@ -186,7 +182,7 @@
           0.65
         ]
       },
-      "triangles": 2556,
+      "triangles": 892,
       "materials": [
         "e9-amber",
         "e9-body",
@@ -215,7 +211,7 @@
           0.6
         ]
       },
-      "triangles": 2212,
+      "triangles": 1092,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -245,7 +241,7 @@
           0.6
         ]
       },
-      "triangles": 2688,
+      "triangles": 640,
       "materials": [
         "e9-amber",
         "e9-body",
@@ -275,7 +271,7 @@
           0.4
         ]
       },
-      "triangles": 980,
+      "triangles": 596,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -303,7 +299,7 @@
           0.5
         ]
       },
-      "triangles": 708,
+      "triangles": 324,
       "materials": [
         "e9-body",
         "e9-dark",
@@ -330,7 +326,7 @@
           0.75
         ]
       },
-      "triangles": 3964,
+      "triangles": 2604,
       "materials": [
         "e9-amber",
         "e9-body",
@@ -361,7 +357,7 @@
           0.75
         ]
       },
-      "triangles": 8072,
+      "triangles": 4696,
       "materials": [
         "e9-amber",
         "e9-body",
@@ -392,7 +388,7 @@
           1.0
         ]
       },
-      "triangles": 8860,
+      "triangles": 6056,
       "materials": [
         "e9-body",
         "e9-ceramic",
@@ -407,8 +403,9 @@
   ],
   "output": {
     "file": "kit.glb",
-    "bytes": 1343668,
-    "triangles": 53112,
-    "sha256": "8e792635ea0e454fb61b7d4233d5ebb38c3d28d728be7c5643ee00b62ecd72f4"
-  }
+    "bytes": 602804,
+    "triangles": 23476,
+    "sha256": "547ec03dbb5613f3dc2c6afc768b5ca2fe92b5be22404f8c790ec010f586a977"
+  },
+  "craft": "P11 single-facet industrial chamfers; sub-centimetre hardware stays crisp; deterministic convex wear and concave grime multiply original vertex AO, excluding emissive/glass/deck finishes."
 }

@@ -13,6 +13,9 @@ import math
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from craft import bake_craft
+
 import bpy
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
@@ -77,10 +80,10 @@ def finish(obj, role, bevel=.02):
     obj.data.materials.append(MATERIALS[role])
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    if bevel:
+    if bevel >= .01:
         modifier = obj.modifiers.new('Manufactured 20mm edge', 'BEVEL')
         modifier.width = bevel
-        modifier.segments = 2
+        modifier.segments = 1
         modifier.harden_normals = True
         bpy.ops.object.modifier_apply(modifier=modifier.name)
     for polygon in obj.data.polygons:
@@ -287,6 +290,7 @@ def export_pack():
     for group in GROUPS:
         merge_material_primitives(group)
         bake_vertex_ao(group)
+        bake_craft(group)
         points = [obj.matrix_world @ Vector(corner) for obj in group.children for corner in obj.bound_box]
         low = [min(p[i] for p in points) for i in range(3)]
         high = [max(p[i] for p in points) for i in range(3)]
@@ -327,6 +331,7 @@ def export_pack():
                    'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
                    'triangles': sum(model['triangles'] for model in models)},
     }
+    manifest['craft'] = 'P11 single-facet industrial chamfers; sub-centimetre hardware stays crisp; deterministic convex wear and concave grime multiply original vertex AO, excluding emissive/glass/deck finishes.'
     (OUT / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     (OUT / 'LICENSE.txt').write_text((ROOT / 'LICENSE').read_text())
     bpy.context.preferences.filepaths.save_version = 0

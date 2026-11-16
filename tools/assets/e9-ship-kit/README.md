@@ -38,3 +38,10 @@ The retained native cryo, habitation, garden, armory and reactor landmarks keep
 separate owners and their existing provenance. Older/legacy rooms still use the
 CC0 kit fallback. Keep those pack credits and licenses; this original kit does
 not relicense retained third-party assets.
+
+P11 finishing pass: single-facet manufactured chamfers replace the previous soft
+2-segment bevels; sub-centimetre hardware keeps crisp edges. After original AO,
+`craft.py` bakes convex edge wear and concave grime into existing corner colours,
+preserving emissive, glass and floor finishes. Asset origins/footprints remain
+unchanged. New service families are authored by
+`tools/assets/p11-set-pieces/kit_families.py` (separate P11 service-kit pack).
