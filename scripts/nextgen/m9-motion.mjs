@@ -83,6 +83,9 @@ try{
     if(human)model.setRig=()=>{};
     const columns=4,clock=[],proof=[],project=model.root.position.clone(),frameCanvases=[];
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,deathStarted=false,ragdollStarted=false,controlledRoll=0;
+    // Present the requested aim without writing the frozen simulation player.
+    const presentationPlayer={...g.player,angle:studyAim};
+    const presentationGame=new Proxy(g,{get(target,key){return key==='player'?presentationPlayer:Reflect.get(target,key,target);}});
     const abilitySnapshot=JSON.parse(JSON.stringify(g.abilities.snapshot));
     const abilitySlot=['ram','frost-trail','afterburn','static-step'].includes(ability)?'dash':['railbreaker','whiteout','meltdown','overclock'].includes(ability)?'overdrive':['bulwark','glacier','napalm-charge','tesla-pylon'].includes(ability)?'power':'tactical';
     const castMs={ram:0,'seismic-slam':220,bulwark:0,railbreaker:250,'frost-trail':0,'cryo-nova':0,glacier:150,whiteout:0,afterburn:0,flashfire:0,'napalm-charge':180,meltdown:0,'static-step':0,overload:0,'tesla-pylon':160,overclock:0}[ability]??0;
@@ -128,7 +131,7 @@ try{
        if(isCast||action==='dash'){
         const snapshot=isCast?abilitySnapshot:JSON.parse(JSON.stringify(g.abilities.snapshot));snapshot.dashing=(action==='dash'||abilitySlot==='dash')&&phase<.18;
         if(isCast)snapshot.slots[abilitySlot].castRemainingMs=Math.max(0,castMs-time*1000);
-        abilityUpdate(snapshot,1/60,true,g,model.root,r.camera,model.body);model.syncWeaponPose?.();
+        abilityUpdate(snapshot,1/60,true,presentationGame,model.root,r.camera,model.body);model.syncWeaponPose?.();
        }
        if(shotStudy){
         if(tick%12===steps-1)r.effects.shot(model.muzzleWorld(project),studyAim,currentWeapon);
