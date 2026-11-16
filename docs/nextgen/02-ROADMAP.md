@@ -42,13 +42,13 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | Wave 7 (K7 creature redesign, E7 floors/infestation/lighting/framing, V7 ultimates + VFX language + placement preview, I11 integration) | merged | `nextgen` @ a63eb1f: 3,852 tests, smokes, 20/20 rooms; bench 77/80 (Freight/Breacher High p95 ≈ 24 ms); gallery `artifacts/nextgen/final5/` |
 | R10 independent verdict | done | 7 / 7.5 / 7 / 5.5 / 6 / 6.5 — biggest blocker: rooms look like modular arenas — `reviews/R10-verdict.md` |
 | **Wave 8** — level architecture (L8 ship plans, V8 ability polish, U9 combat HUD) | merged | `nextgen` @ 13496bd. L8: all twenty rooms re-authored as hull-connected ship plans with named sub-spaces; 5,264 tests + 20/20 authored rooms on its branch. Accepted balance record (N160): 58.75% completion; misses: rig spread 16.25pp, ordinary median 29.92 s. Open: eleven staged draw-cap misses (Armory, Freight, Transmission kiting), intermittent smoke failure (kit fetch aborted on return to menu), and — lead review of `l8-final` — most gameplay frames still show bare tile grid with walls reading as floor stripes. |
-| **Wave 9** — what the player sees and feels | running | |
-| E9 room interiors: walls that read as walls, floor zoning per sub-space, function furnishing, fixture light (`streams/E9-room-interiors.md`) | running | also owns the smoke abort bug and the three draw-cap rooms |
-| M9 motion and game feel (`streams/M9-motion-feel.md`) | merged | first motion audit: marine 3.25 → 5.39, enemies 3.27 → 4.79, crowd 4 → 7 (self-scored, harsh scale); 5,403 tests; CPU 7.70 → 7.80 ms. Lead review: poses timid; contact-only melee has no wind-up in the simulation |
-| M10 melee attack states + bold motion (`streams/M10-attacks-and-amplitude.md`) | running | authorised gameplay change: contact damage → wind-up/strike/recovery with telegraph and counterplay; measured silhouette change; marine 8-direction locomotion, 16 cast poses, real death |
-| K10 original marine (four rig variants) and five weapons modelled in Blender on the existing skeleton (`streams/K10-original-marine.md`) | running | replaces the converted third-party marine/weapons |
+| **Wave 9** — what the player sees and feels (E9 interiors + original ship kit, M9/M10 motion and melee attack states, K10 original marine + arsenal) | merged | `nextgen` builds with all four merged. E9: palettes, real walls, original Blender ship kit, draw misses fixed (≤ 296 draws); High frame p95 24–33 ms miss. M10: authored clips (69 marine, 23 per family), telegraphed melee strikes; motion self-scores marine 7.33, enemies 7.36; balance "rescued" to 65% bot completion only by raising swarmer damage to 78/100 — rejected by lead, see B10. K10: original marine with four colour-blocked rigs and five weapons (22–25k tris), accepted after a second pass. |
+| **Wave 10** | running | |
+| B10 balance for humans: human-limited bot profiles, sane attack values, difficulty from cadence/composition (`streams/B10-human-balance.md`) | running | |
+| U10 new marine across the interface; rendered title key art, rig select, ending (`streams/U10-hero-ui.md`) | running | |
+| E10 baked floor sets, depth, shaped light, soft shadows, low cover, weakest rooms, performance (`streams/E10-floors-and-light.md`) | running | |
 
-Next (lead): I12 integration + acceptance alone (Freight/Breacher frame miss, per-rig native campaigns, bench ×5), gallery `final6` incl. motion strips, seventh independent verdict (stills + motion).
+Next (lead): I12 integration + acceptance alone (performance certification, per-rig native campaigns), gallery `final6` incl. motion strips, seventh independent verdict (stills + motion). Then, depending on the verdict: original creature families (K11) on the preserved skeletons.
 
 ## Decisions log
 
