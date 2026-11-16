@@ -9,11 +9,12 @@ import { createHash } from 'node:crypto';
 import { actorMetrics } from './sim-metrics.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 process.chdir(root);
-const allowed = new Set(['label', 'rig', 'rigs', 'seed', 'seeds', 'rooms', 'assisted', 'legacy', 'trace', 'max-room-seconds', 'workers', 'game-ref', 'game-revision', 'policy-revision', 'tuning']);
+const allowed = new Set(['profile', 'label', 'rig', 'rigs', 'seed', 'seeds', 'rooms', 'assisted', 'legacy', 'trace', 'max-room-seconds', 'workers', 'game-ref', 'game-revision', 'policy-revision', 'tuning']);
 const args = Object.fromEntries(process.argv.slice(2).map(arg => { const [key, ...value] = arg.replace(/^--/, '').split('='); return [key, value.length ? value.join('=') : true]; }));
 for (const key of Object.keys(args))
     if (!allowed.has(key))
         throw Error(`Unknown option ${key}`);
+if (args.profile && !['novice','competent','expert'].includes(args.profile)) throw Error('profile must be novice, competent or expert');
 if (args.label && !/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(String(args.label)))
     throw Error('Unsafe label');
 const out = resolve('artifacts/nextgen/playtest', args.label ?? 'sim');
@@ -78,19 +79,19 @@ const newBackendFiles = backendSources.filter(({file})=>{
     try {execFileSync('git',['cat-file','-e',head+':scripts/nextgen/playtest/'+file],{stdio:'ignore'});return false;} catch {return true;}
 });
 const backendPatch = trackedBackendPatch + newBackendFiles.map(({file,bytes})=>'\n--- untracked backend source: '+file+' ---\n'+bytes.toString()).join('');
-const backendProvenance = {workspaceHead:head,mode:'sim-policy-v8',dirtyBackend:backendPatch.length>0,
+const backendProvenance = {workspaceHead:head,mode:'sim-human-v1',dirtyBackend:backendPatch.length>0,
     patchHash:createHash('sha256').update(backendPatch).digest('hex'),backendHash,sourceHashes:backendSourceHashes,
     patchFormat:'git diff --binary HEAD for tracked backend files followed by exact untracked source snapshots'};
 await writeFile(resolve(source,'backend.patch'),backendPatch);
 await writeFile(resolve(source,'backend-provenance.json'),JSON.stringify(backendProvenance,null,2)+'\n');
 const workers = Number(args.workers ?? 1);
-if (![1, 2].includes(workers))
-    throw Error('workers must be 1 or 2');
+if (![1, 2, 3, 4].includes(workers))
+    throw Error('workers must be 1..4');
 const queue = rigs.flatMap(rig => seeds.map(seed => ({ rig, seed })));
 async function worker() {
     while (queue.length) {
         const { rig, seed } = queue.shift();
-        const options = { rig, seed, metrics, rooms: args.rooms ? Number(args.rooms) : undefined, assisted: !!args.assisted, legacy: !!args.legacy, trace: !!args.trace, maxRoomSeconds: args['max-room-seconds'] ? Number(args['max-room-seconds']) : undefined };
+        const options = { rig, seed, profile:args.profile??'competent', metrics, rooms: args.rooms ? Number(args.rooms) : undefined, assisted: !!args.assisted, legacy: !!args.legacy, trace: !!args.trace, maxRoomSeconds: args['max-room-seconds'] ? Number(args['max-room-seconds']) : undefined };
         const report = workers === 1 ? runSimulation(options) : await new Promise((ok, fail) => {
             const child = spawn(process.execPath, [resolve(source,'sim-worker.mjs'), resolve(source, 'sim-core.mjs'), JSON.stringify(options)], { stdio: ['ignore', 'pipe', 'inherit'] });
             const parts = [];
@@ -117,7 +118,7 @@ async function worker() {
         reports.push(report);
         await writeFile(resolve(out, `${rig}-${seed}.json`), JSON.stringify(report, null, 2));
         console.log(`${rig} ${seed}: ${report.outcome}, ${report.rooms.filter(r => ['clear', 'complete'].includes(r.result)).length} clears, ${report.stats.overdrivesUsed} OD, ${report.wallSeconds.toFixed(2)}s wall`);
-        await writeFile(resolve(out, 'summary.json'), JSON.stringify({ head, backendProvenance, gameRef: gameRef ?? 'working-tree', tuningEnabled, bundleHash, policyHash, gameHash, workers, ...summarizeSimulations(reports) }, null, 2));
+        await writeFile(resolve(out, 'summary.json'), JSON.stringify({ head, profile:args.profile??'competent', backendProvenance, gameRef: gameRef ?? 'working-tree', tuningEnabled, bundleHash, policyHash, gameHash, workers, ...summarizeSimulations(reports) }, null, 2));
     }
 }
 await Promise.all(Array.from({ length: workers }, worker));

@@ -170,15 +170,15 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
     const nearest = Math.min(800, ...s.enemies.map(e => distance(c, e)));
     // Swarmer reach is a lower safety bound, not an invitation to rush a firing
     // lane. Keep ordinary weapon stand-off when ranged enemies share the room.
-    const desired = s.combat.weapon === 'shotgun' ? 220 : 360;
+    const desired = s.human ? (s.combat.weapon === 'shotgun' ? 140 : 240) + s.human.spacing : s.combat.weapon === 'shotgun' ? 220 : 360;
     let score = Math.min(nearest, desired) * .6;
     if (target) score -= Math.abs(distance(c, target) - desired) * .3;
-    if (chase && c.waypoint) score -= distance(c, c.waypoint) * 1.5;
-    for (const h of s.hazards) if(h.kind!=='melee-warning')
+    if ((chase || s.human && !target) && c.waypoint) score -= distance(c, c.waypoint) * 1.5;
+    for (const h of s.hazards) if(h.visible!==false&&h.kind!=='melee-warning')
       score -= Math.max(0, h.radius + 100 - distance(c, h)) * 5;
     for (const e of visible) {
       if(insideMeleeWarning(e,next))score-=900;
-      if(e.type!=='crawler'||!e.meleeShape)continue;
+      if(s.human?.exactSpacing===false||e.type!=='crawler'||!e.meleeShape)continue;
       const keepOut=e.meleeShape.range+radius+18;
       score-=Math.max(0,keepOut-distance(next,e))*18;
       const start=distance(s.player,e);
@@ -246,4 +246,114 @@ export function routeOptions(actions) {
     choices.set(id, {id, kind});
   }
   return [...choices.values()];
+}
+
+/** Human input assumptions, in milliseconds/degrees unless named otherwise. */
+export const HUMAN_PROFILES = Object.freeze({
+  novice: Object.freeze({reactionMs:360,jitterMs:100,missChance:.24,missPerThreat:.10,aimDegrees:9,trackingMs:300,inputMs:260,movementMs:650,spacingError:90,fixationChance:.28,crowdDashTargets:4}),
+  competent: Object.freeze({reactionMs:260,jitterMs:70,missChance:.10,missPerThreat:.07,aimDegrees:4,trackingMs:170,inputMs:160,movementMs:400,spacingError:55,fixationChance:.12,crowdDashTargets:3}),
+  expert: Object.freeze({reactionMs:180,jitterMs:40,missChance:.025,missPerThreat:.025,aimDegrees:1.5,trackingMs:80,inputMs:120,movementMs:200,spacingError:25,fixationChance:.025,crowdDashTargets:2}),
+});
+export const HUMAN_OBSERVATION_MS = 100;
+
+/** Shared native/sim controller. Its RNG is independent of the game seed stream. */
+export function createHumanPolicy(seed, profile = 'competent') {
+  const config = HUMAN_PROFILES[profile];
+  if (!config) throw Error(`Unknown human profile ${profile}`);
+  let state = (seed ^ 0xb10b10) >>> 0;
+  const random = () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let value = Math.imul(state ^ state >>> 15, state | 1);
+    value ^= value + Math.imul(value ^ value >>> 7, value | 61);
+    return ((value ^ value >>> 14) >>> 0) / 0x100000000;
+  };
+  const jitter = amount => (random() * 2 - 1) * amount;
+  const warnings = new Map(), hazardWarnings = new Map(), history = [];
+  let roomKey, nextMove = 0, nextInput = 0, nextHabit = 0, spacing = 0;
+  let lastMove = -Infinity;
+  let movement = {dx:0,dy:0}, aimAngle = 0, fixation = false;
+  return {
+    profile, config,
+    decide(s) {
+      const now = s.elapsed * 1000, key = s.nodeId ?? s.node?.id;
+      if (key !== roomKey) {
+        roomKey = key; warnings.clear(); hazardWarnings.clear(); history.length = 0; lastMove = -Infinity;
+        nextMove = nextInput = nextHabit = now; movement = {dx:0,dy:0};
+      }
+      const visible = visibleEnemies(s);
+      const active = visible.filter(e => e.meleePhase === 'windup' && e.meleeShape);
+      const threats = active.length + s.hazards.filter(h => h.visible !== false && h.kind !== 'melee-warning').length;
+      const activeIds = new Set(active.map(e => e.id));
+      for (const id of warnings.keys()) if (!activeIds.has(id)) warnings.delete(id);
+      for (const enemy of active) if (!warnings.has(enemy.id)) {
+        const readyAt = now + config.reactionMs + jitter(config.jitterMs);
+        const missed = random() < Math.min(.8,config.missChance + config.missPerThreat * Math.max(0,threats - 1));
+        warnings.set(enemy.id,{readyAt,missed});
+      }
+      const visibleHazards = s.hazards.filter(h=>h.visible!==false&&h.kind!=='melee-warning');
+      const hazardKey = h => h.id ?? `${h.kind}:${Math.round(h.x)}:${Math.round(h.y)}`;
+      const activeHazards = new Set(visibleHazards.map(hazardKey));
+      for (const id of hazardWarnings.keys()) if (!activeHazards.has(id)) hazardWarnings.delete(id);
+      for (const h of visibleHazards) if (!hazardWarnings.has(hazardKey(h))) {
+        hazardWarnings.set(hazardKey(h),{readyAt:now+config.reactionMs+jitter(config.jitterMs),
+          missed:random()<Math.min(.8,config.missChance+config.missPerThreat*Math.max(0,threats-1))});
+      }
+      const noticedHazards = visibleHazards.filter(h=>{const notice=hazardWarnings.get(hazardKey(h));return !notice.missed&&now>=notice.readyAt;});
+      history.push({at:now,enemies:visible.map(e=>({...e,screen:e.screen?{...e.screen}:undefined})),hazards:noticedHazards});
+      while (history.length > 2 && history[1].at <= now - config.trackingMs) history.shift();
+      const tracked = history[0].enemies;
+      // The radar/navigation waypoint may guide exploration. Only visible, delayed
+      // positions enter spacing, aiming and tactical counts; no cooldown is read.
+      const perceived = {...s,enemies:tracked.filter(old=>visible.some(e=>e.id===old.id)).map(old=>{
+        const current = visible.find(e=>e.id===old.id), warning = warnings.get(old.id);
+        const noticed = warning && !warning.missed && now >= warning.readyAt;
+        return {...old,meleePhase:noticed?current.meleePhase:'approach',
+          meleeShape:noticed?current.meleeShape:undefined,
+          meleeAngle:current.meleeAngle,meleeOriginX:current.meleeOriginX,meleeOriginY:current.meleeOriginY,
+          meleeRemainingMs:current.meleeRemainingMs,meleeDurationMs:current.meleeDurationMs,meleeProgress:current.meleeProgress};
+      }),hazards:noticedHazards.map(h=>h.kind==='projectile'?(history[0].hazards.find(old=>hazardKey(old)===hazardKey(h))??h):h)};
+      if (now >= nextHabit) {
+        spacing = jitter(config.spacingError); aimAngle = jitter(config.aimDegrees) * Math.PI / 180;
+        fixation = random() < config.fixationChance;
+        nextHabit = now + 600 + random() * 600;
+      }
+      perceived.human = {spacing,exactSpacing:false};
+      const escape = meleeEscapePlan(perceived);
+      if (now - lastMove >= config.inputMs && (now >= nextMove || escape)) {
+        const next = chooseMovement(perceived,{x:movement.dx,y:movement.dy});
+        movement = fixation && visible.length && !escape ? {dx:0,dy:0} : next;
+        lastMove = now;
+        nextMove = now + config.movementMs * (.8 + random() * .4);
+      }
+      // Collision feedback is immediate; a committed direction never walks through
+      // a wall. Reconsider at the next movement deadline instead of auto-steering.
+      if (!s.candidates.some(c=>c.legal&&c.dx===movement.dx&&c.dy===movement.dy)) movement = {dx:0,dy:0};
+      let target = chooseTarget(perceived.enemies,s.player);
+      if (target) {
+        const dx=target.x-s.player.x,dy=target.y-s.player.y;
+        const screen=target.screen&&s.player.screen?{
+          x:s.player.screen.x+(target.screen.x-s.player.screen.x)*Math.cos(aimAngle)-(target.screen.y-s.player.screen.y)*Math.sin(aimAngle),
+          y:s.player.screen.y+(target.screen.x-s.player.screen.x)*Math.sin(aimAngle)+(target.screen.y-s.player.screen.y)*Math.cos(aimAngle),
+        }:target.screen;
+        target={...target,x:s.player.x+dx*Math.cos(aimAngle)-dy*Math.sin(aimAngle),y:s.player.y+dx*Math.sin(aimAngle)+dy*Math.cos(aimAngle),screen};
+      }
+      const keys = chooseActions(perceived);
+      const close = perceived.enemies.filter(e=>e.clear&&distance(e,s.player)<140);
+      const nearest = close.toSorted((a,b)=>distance(a,s.player)-distance(b,s.player))[0];
+      // A person can spend a charge to make space before the pack winds up.
+      // This also lets dash signatures participate without deadline-perfect play.
+      if (close.length>=config.crowdDashTargets&&s.abilities.slots?.dash?.ready&&nearest&&
+          movement.dx*(s.player.x-nearest.x)+movement.dy*(s.player.y-nearest.y)>0&&!keys.includes('Shift')) {
+        keys.splice(keys[0]==='e'?1:0,0,'Shift');
+      }
+      const timelyKeys = keys.filter(key=>key!=='Shift'||active.every(e=>!insideMeleeWarning(e,s.player)||warningTime(e,s)>=120));
+      const actions = now >= nextInput ? timelyKeys.slice(0,1) : [];
+      if (actions.length) nextInput = now + config.inputMs;
+      const ammo=s.resources?.ammo, near=Math.min(Infinity,...visible.map(e=>distance(e,s.player)));
+      const desired=ammo?(near<180&&ammo.shotgun.magazine+ammo.shotgun.reserve>0?'shotgun':ammo.rifle.magazine+ammo.rifle.reserve>0?'rifle':ammo.plasma.magazine+ammo.plasma.reserve>0?'plasma':'pistol'):s.combat.weapon;
+      const weapon = !actions.length && now >= nextInput ? desired : s.combat.weapon;
+      if (weapon !== s.combat.weapon) nextInput = now + config.inputMs;
+      return {target,movement,actions,weapon,stepMs:HUMAN_OBSERVATION_MS};
+    },
+  };
 }

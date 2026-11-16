@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {loadavg,cpus} from 'node:os';
 import {chromium} from 'playwright';
-import {BOT_POLICY_VERSION, RIGS, chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, quantiles, distance, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
+import {BOT_POLICY_VERSION, RIGS, chooseBoon, chooseRoute, createHumanPolicy, quantiles, distance, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
 import {sampleWorldPng} from './visuals.mjs';
 import {BOT_NAVIGATION_VERSION} from './bot-navigation-version.mjs';
 import {loadEarnedBoundary} from './resume.mjs';
@@ -25,7 +25,7 @@ const args = process.argv.slice(2);
 const options = Object.fromEntries(args.map(arg => {
   assert(/^--[a-z-]+(?:=.*)?$/.test(arg), `Invalid argument ${arg}`);
   const [key, ...value] = arg.slice(2).split('=');
-  assert(['rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room'].includes(key), `Unknown option ${key}`);
+  assert(['profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room'].includes(key), `Unknown option ${key}`);
   return [key, value.length ? value.join('=') : true];
 }));
 const distRoot=resolve(String(options['dist-dir']??'dist'));
@@ -57,14 +57,16 @@ for(const file of ['runner.mjs','policy.mjs','ability-aim.ts','lifecycle.mjs','s
 const distributionAssets={};
 for(const file of (await readdir(resolve(distRoot,'assets'))).filter(file=>/\.(js|css)$/.test(file)).sort())distributionAssets[file]=createHash('sha256').update(await readFile(resolve(distRoot,'assets',file))).digest('hex');
 const distributionSourceSHA=await readFile(resolve(distRoot,'SOURCE_SHA'),'utf8').then(value=>value.trim()).catch(()=>null);
+const human = createHumanPolicy(seed,options.profile??resumed?.parent.profile??'competent');
 const report = {
+  profile:human.profile, humanParameters:human.config,
   label, rig, seed, hostLoad:{start:loadavg(),logicalCores:cpus().length}, distributionDirectory:distRoot, distributionSourceSHA, distributionAssets, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
   legacy: resumed?.parent.legacy??!!options.legacy, fastRendering:!!options.fast, lifecycleOnly:!!options['death-probe'], presentation:true, roomLimit, harnessHashes, head: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
   branch: execFileSync('git',['branch','--show-current'],{encoding:'utf8'}).trim(), started: new Date().toISOString(),
   policyVersion:BOT_POLICY_VERSION, navigationVersion:BOT_NAVIGATION_VERSION,
   screenProgressGuard:'post-action-observation-v1',
-  policy: 'Native WASD and mouse; spitter/champion focus; obstacle-probed kiting with marine-only fallback navigation for unusable waypoints; rig-path/augment boon heuristic; safer route, medical if health<75; heal<40%; Q/F opportunity; V at 6+ or boss/champion.',
-  clock: options.realtime ? 'native production RAF, passive observation; no audio/effect/core wrappers' : options.fast ? 'native fixed 60Hz; 250ms policy decisions; scene/camera every tick, GPU draw at batch end' : 'native fixed 60Hz; 250ms policy decisions; render every fixed tick',
+  policy: `Seeded ${human.profile} human limits over native WASD/mouse: delayed warning attention, threat-load misses, lagged aim with error, movement commitments and input rate limits. Rig-path drafts, safer routes and native actions.`,
+  clock: options.realtime ? 'native production RAF, passive observation; no audio/effect/core wrappers' : options.fast ? 'native fixed 60Hz; 100ms human-policy observations; scene/camera every tick, GPU draw at batch end' : 'native fixed 60Hz; 100ms human-policy observations; render every fixed tick',
   rooms: resumed?resumed.parent.rooms.filter(r=>['clear','complete'].includes(r.result)&&resumed.checkpoint.run.completedNodeIds.includes(r.nodeId)):[], errors: resumed?[...resumed.parent.errors]:[], defects: resumed?[...resumed.parent.defects]:[], checkpoints: [], screenshots: [], inputs: [], outcome: 'running',
   limitations: ['Incoming damage source is inferred from nearby threats, not authoritative attribution.', 'Accelerated CPU samples include rendering submission, not GPU completion; RAF diagnostics are separately retained.', 'A deterministic seed does not guarantee identical outcomes across policy/render timing; input trace is retained.', 'Audio spy tracks source lifecycle, not perceived sound quality.'],
 };
@@ -129,8 +131,8 @@ async function snapshot() {
     for(const [dx,dy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
       const length=Math.hypot(dx,dy)||1,x=g.player.x+dx/length*90,y=g.player.y+dy/length*90;
       let legal=true;
-      for(let i=1;i<=6;i++) if(!d.canStand(g.player.x+(x-g.player.x)*i/6,g.player.y+(y-g.player.y)*i/6,19)) legal=false;
-      if(g.abilities.blocksMovement(g.player,{x,y},19))legal=false;
+      for(let i=1;i<=6;i++) if(!d.canStand(g.player.x+(x-g.player.x)*i/6,g.player.y+(y-g.player.y)*i/6,g.player.radius)) legal=false;
+      if(g.abilities.blocksMovement(g.player,{x,y},g.player.radius))legal=false;
       candidates.push({x,y,dx,dy,legal,waypoint,clear:nearest?d.clearShot(nearest.x,nearest.y,{x,y}):false});
     }
     const perf=window.__containmentPerformance;
@@ -139,7 +141,7 @@ async function snapshot() {
       encounterGuardian:d.encounterGuardian,rig:g.abilities.snapshot.rig,status:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,
       run:g.expedition.run,build:g.expedition.build,node:g.node,elapsed:g.elapsed,player:{...g.player,screen:project(g.player.x,g.player.y)},
       combat:{...g.combat.snapshot,weapon:g.combat.snapshot.weaponId},resources:g.combat.getRunResources(),abilities:g.abilities.snapshot,abilityAims:Object.fromEntries(Object.entries(d.botAbilityAims(enemies)).map(([slot,aim])=>[slot,aim?{...aim,screen:project(aim.x,aim.y,0)}:null])),enemies,candidates,
-      hazards:[...(g.boss.snapshot.pendingTelegraph?[{x:g.boss.snapshot.pendingTelegraph.targetX,y:g.boss.snapshot.pendingTelegraph.targetY,radius:g.boss.snapshot.pendingTelegraph.radius,kind:'warning',visible:r.visible(g.boss.snapshot.pendingTelegraph.targetX,g.boss.snapshot.pendingTelegraph.targetY)}]:[]),...g.pools.map(p=>({x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:r.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),...g.bullets.filter(b=>b.kind==='hazard').map(b=>({x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:r.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale})),...d.events.filter(e=>e.type==='enemy-warning'&&!e.meleeShape&&g.elapsed-e.at<(e.durationMs??800)/1000).map(e=>({x:e.targetX??e.x,y:e.targetY??e.y,radius:e.radius??50,kind:'warning',warningRemainingMs:Math.max(0,(e.durationMs??800)-(g.elapsed-e.at)*1000),visible:r.visible(e.targetX??e.x,e.targetY??e.y)}))],
+      hazards:[...(g.boss.snapshot.pendingTelegraph?[{x:g.boss.snapshot.pendingTelegraph.targetX,y:g.boss.snapshot.pendingTelegraph.targetY,radius:g.boss.snapshot.pendingTelegraph.radius,kind:'warning',visible:r.visible(g.boss.snapshot.pendingTelegraph.targetX,g.boss.snapshot.pendingTelegraph.targetY)}]:[]),...g.pools.map(p=>({id:`pool:${p.id}`,x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:r.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),...g.bullets.filter(b=>b.kind==='hazard').map(b=>({id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:r.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale})),...d.events.filter(e=>e.type==='enemy-warning'&&!e.meleeShape&&(e.id===undefined||enemies.some(enemy=>enemy.id===e.id&&Math.hypot(enemy.x-e.x,enemy.y-e.y)<2))&&g.elapsed-e.at<(e.durationMs??800)/1000).map(e=>({x:e.targetX??e.x,y:e.targetY??e.y,radius:e.radius??50,kind:'warning',warningRemainingMs:Math.max(0,(e.durationMs??800)-(g.elapsed-e.at)*1000),visible:r.visible(e.targetX??e.x,e.targetY??e.y)}))],
       boss:g.boss.snapshot,remaining:g.encounterRemaining,stats:g.stats,events:d.events,performance:perf,preparation:r.preparationDiagnostics??[],
       memory:{heap:performance.memory?.usedJSHeapSize??null,geometries:perf.geometries,textures:perf.textures,programs:r.renderer.info.programs?.length??null},
       visualOverlays:['#presentation-beat','#contextual-onboarding'].flatMap(selector=>{const el=document.querySelector(selector);if(!el||el.hidden||!el.getClientRects().length)return [];const b=el.getBoundingClientRect();return [{left:b.left,top:b.top,right:b.right,bottom:b.bottom}];}),
@@ -336,16 +338,15 @@ try {
       // Rollback is intentional. Restart this room measurement after re-choosing the boundary.
       room.result='checkpoint-interrupted';room=null;continue;
     }
-    const target=options['death-probe']?null:chooseTarget(s.enemies.filter(e=>e.vulnerable!==false),s.player),movement=options['death-probe']?{dx:0,dy:0}:chooseMovement(s,{x:[...held].includes('d')?1:[...held].includes('a')?-1:0,y:[...held].includes('s')?1:[...held].includes('w')?-1:0});
+    const decision=human.decide(s);
+    const target=options['death-probe']?null:decision.target,movement=options['death-probe']?{dx:0,dy:0}:decision.movement;
     await move(movement.dx,movement.dy);
     if(target){const point={x:Math.max(4,Math.min(1916,target.screen.x)),y:Math.max(4,Math.min(1000,target.screen.y))};for(const action of pointerFirePlan(point,s.hud.marine,shooting)){if(action.type==='down'){await page.mouse.down();shooting=true;}else await page.mouse.move(action.x,action.y);}}
     else if(shooting){await page.mouse.up();shooting=false;}
     // Native weapon switching: rifle for ranged lanes; shotgun when a crowd closes in.
-    const near=Math.min(Infinity,...s.enemies.map(e=>distance(e,s.player)));
-    const ammo=s.resources.ammo;
-    const desired=near<180&&ammo.shotgun.magazine+ammo.shotgun.reserve>0?'shotgun':ammo.rifle.magazine+ammo.rifle.reserve>0?'rifle':ammo.plasma.magazine+ammo.plasma.reserve>0?'plasma':'pistol';
+    const desired=decision.weapon;
     if(s.combat.weapon!==desired)await page.keyboard.press(String(['pistol','rifle','shotgun','plasma','rocket'].indexOf(desired)+1));
-    const actions=options['death-probe']?[]:chooseActions(s);
+    const actions=options['death-probe']?[]:decision.actions;
     for(const key of actions){
       const slot={q:'tactical',f:'power',v:'overdrive'}[key],aim=slot?s.abilityAims[slot]:null;
       if(aim)await page.mouse.move(Math.max(4,Math.min(1916,aim.screen.x)),Math.max(4,Math.min(1000,aim.screen.y)));
@@ -355,14 +356,14 @@ try {
     if(target)await page.mouse.move(Math.max(4,Math.min(1916,target.screen.x)),Math.max(4,Math.min(1000,target.screen.y)));
     const freshEvents=newEventReceipts(previousEvents,s.events);previousEvents=s.events;
     for(const e of freshEvents){if(e.type!=='ability'||!e.ability)continue;const a=e.ability,bucket=room.abilityReceipts[a.ability]??={phases:{},reportedDamage:0};bucket.phases[a.phase]=(bucket.phases[a.phase]??0)+1;bucket.reportedDamage+=a.totalDamage??0;if(a.phase==='denied')room.denials[a.denial]=(room.denials[a.denial]??0)+1;}
-    const input={tick:steps++,elapsed:s.elapsed,room:s.node.templateId,dx:movement.dx,dy:movement.dy,target:target?.id,aim:target?{screen:{x:Math.max(4,Math.min(1916,target.screen.x)),y:Math.max(4,Math.min(1000,target.screen.y))},world:{x:target.x,y:target.y}}:null,fire:!!target,stepMs:250,keys:actions,abilityAims:s.abilityAims,weapon:desired};
+    const input={tick:steps++,elapsed:s.elapsed,room:s.node.templateId,dx:movement.dx,dy:movement.dy,target:target?.id,aim:target?{screen:{x:Math.max(4,Math.min(1916,target.screen.x)),y:Math.max(4,Math.min(1000,target.screen.y))},world:{x:target.x,y:target.y}}:null,fire:!!target,stepMs:decision.stepMs,keys:actions,abilityAims:s.abilityAims,weapon:desired};
     report.inputs.push(input);
     await appendFile(resolve(out,'trace.ndjson'),JSON.stringify({input,events:freshEvents,state:{status:s.status,phase:s.phase,elapsed:s.elapsed,player:s.player,combat:s.combat,remaining:s.remaining,enemies:s.enemies.map(e=>({id:e.id,type:e.type,champion:e.champion,health:e.health,x:e.x,y:e.y,clear:e.clear,visible:e.visible})),stats:s.stats,abilities:s.abilities}})+'\n');
-    if(options.realtime)await page.waitForTimeout(250);else await advance(250);
+    if(options.realtime)await page.waitForTimeout(decision.stepMs);else await advance(decision.stepMs);
     let after=await snapshot();last=after;
         if(options.realtime&&after.status==='playing'&&after.elapsed-room.startedElapsed>4){room.nativeFrameWindows??=[];room.nativeFrameWindows.push({...after.performance.nativeUpdateRenderMs,elapsed:after.elapsed});}
     room.performance=after.performance;room.peakDrawCalls=Math.max(room.peakDrawCalls??0,s.performance.drawCalls,after.performance.drawCalls);room.peakTriangles=Math.max(room.peakTriangles??0,s.performance.triangles,after.performance.triangles);
-    if(after.stats.kills.total!==s.stats.kills.total||Math.floor(after.elapsed)%5===0)await save();
+    if(after.stats.kills.total!==s.stats.kills.total||Math.floor(after.elapsed/5)!==Math.floor(s.elapsed/5))await save();
     const progress=`${after.stats.kills.total}:${after.remaining}:${Math.round(Object.values(after.stats.damageDealt).reduce((a,b)=>a+b,0))}`;
     if(progress!==previousProgress){previousProgress=progress;stagnantSince=after.elapsed;}
     if(after.elapsed-stagnantSince>45||after.elapsed-room.startedElapsed>Number(options['max-room-seconds']??240)) {

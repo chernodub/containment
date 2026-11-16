@@ -585,7 +585,7 @@ export class EnemySystem {
       meleePhase:enemy.meleePhase,meleeProgress:enemy.meleeProgress,meleeAngle:enemy.meleeAngle,meleeFacingLocked:enemy.meleeFacingLocked,meleeShape:enemy.meleeShape,meleeOriginX:enemy.meleeOriginX,meleeOriginY:enemy.meleeOriginY,meleeRemainingMs:enemy.meleeRemainingMs,meleeDurationMs:enemy.meleeDurationMs,
       baseSpeed:enemy.baseSpeed,champion:enemy.champion,windupMs:enemy.windupMs,pendingAttack:enemy.pendingAttack,lockX:enemy.lockX,lockY:enemy.lockY,specialCooldownMs:enemy.specialCooldownMs,chargeMs:enemy.chargeMs,
       contactDamage: enemy.contactDamage,
-      meleeDamage: calculateMeleeDamage(enemy.type,enemy.contactDamage),
+      meleeDamage: calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion),
       creditReward: enemy.creditReward,
       dropChance: enemy.dropChance,
       contactCooldownRemainingMs: enemy.contactCooldownRemainingMs,
@@ -929,7 +929,7 @@ export class EnemySystem {
         enemy.meleeDurationMs=enemy.meleeRemainingMs=profile.strikeMs;
         events.push(freezeEvent({type:'melee-strike',enemyId:enemy.id,enemyType:enemy.type,x:enemy.meleeOriginX,y:enemy.meleeOriginY,angle:enemy.meleeAngle,shape:enemy.meleeShape}));
         if(meleeStrikeContains(enemy.meleeShape,enemy.meleeOriginX,enemy.meleeOriginY,enemy.meleeAngle,player.x,player.y,player.radius??DEFAULT_PLAYER_RADIUS)&&this.#canAttack?.(enemy,player)!==false){
-          events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.contactDamage)}));
+          events.push(freezeEvent({type:'contact-attack',enemyId:enemy.id,enemyType:enemy.type,damage:calculateMeleeDamage(enemy.type,enemy.elite||!!enemy.champion)}));
         }
       }else if(enemy.meleePhase==='strike'){
         enemy.meleePhase='recovery';enemy.meleeProgress=0;

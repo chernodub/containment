@@ -1,7 +1,7 @@
 import {MELEE_ATTACKS} from './meleeAttacks';
 import type {StandardEnemyId} from './types';
 
-/** Stable local attack berths. The forward half-plane remains an escape lane. */
+/** Stable flanking berths with a marine-width escape wedge. */
 export type EngagementState = 'engaged' | 'waiting' | 'ranged';
 export type AttackSlot = Readonly<{
     angle: number;
@@ -80,9 +80,9 @@ export class Engagement {
             if (heavy(body)) this.#heavyOccupied++;
         };
         const fits = (body: T, angle: number, radius: number, sample?: number) => {
-            // Tangent enemies on the other half-plane leave >= one marine diameter
-            // between the two bordering discs, including mixed crawler/brute radii.
-            if (angleDistance(angle, this.#escape) < Math.PI / 2 + .025)
+            // Keep a 120-degree exit wedge; the other berths can flank instead
+            // of every attacker queuing on the same half of the marine.
+            if (angleDistance(angle, this.#escape) < Math.PI / 3)
                 return false;
             if (this.#occupied.length >= 3)
                 return false;
@@ -171,7 +171,7 @@ export class Engagement {
             const radius = pr + body.radius + .25;
             let best = Infinity, angle: number | undefined;
             for (let i = 0; i < 48; i++) {
-                const a = this.#escape + Math.PI / 2 + .025 + i * (Math.PI - .05) / 47;
+                const a = this.#escape + Math.PI / 3 + i * (Math.PI * 4 / 3) / 47;
                 if (!fits(body as T, a, radius, i))
                     continue;
                 const distance = Math.hypot(player.x + Math.cos(a) * radius - body.x, player.y + Math.sin(a) * radius - body.y);
@@ -204,7 +204,7 @@ export class Engagement {
         const current = Math.atan2(body.y - player.y, body.x - player.x);
         // Waiting enemies hold a second ring instead of seeking the marine's center.
         const offset = Math.atan2(Math.sin(current - this.#escape), Math.cos(current - this.#escape));
-        const angle = this.#escape + (offset < 0 ? -1 : 1) * Math.max(Math.PI / 2 + .15, Math.abs(offset));
+        const angle = this.#escape + (offset < 0 ? -1 : 1) * Math.max(Math.PI / 3 + .15, Math.abs(offset));
         return { x: player.x + Math.cos(angle) * radius, y: player.y + Math.sin(angle) * radius };
     }
 }

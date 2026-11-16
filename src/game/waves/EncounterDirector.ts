@@ -36,14 +36,14 @@ export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
   if (combat && breachIds.length === 0) throw new Error('Combat encounters need at least one breach.');
   const story=node.id.includes(':v3-'),tuning=story&&I5_ENCOUNTER_TUNING_ENABLED,holdout=story&&(node.depth===9||node.depth===19);
   const guardian=progressionFor(node).guardianKind;
-  const extraSpawns=tuning?(node.depth>=10?8:node.depth>=2&&node.kind==='combat'&&!guardian?2:0):0;
+  const extraSpawns=tuning?(node.depth===0?12:node.depth===1?4:node.depth===2?10:node.depth<5?6:node.depth>=10?8:node.depth>=2&&node.kind==='combat'&&!guardian?2:0):0;
   // L8 measured these four authored approaches after geometry-first trials.
-  // Append two real requests; every original seeded request and timing stays exact.
+  // Keep those additional requests while B10 applies its cadence to the whole wave.
   const architectureSpawns=tuning&&['transmission-chamber','diagnostic-gallery','safety-interlock-station','shielding-gate'].includes(node.templateId)?2:0;
   const totalSpawns = combat ? story ? holdout ? (node.depth===9?32:48)+architectureSpawns : 12+Math.round(node.depth*.7)+(node.kind==='elite'?5:0)+extraSpawns+architectureSpawns : Math.round((12 + node.depth * 3 + (node.kind === 'elite' ? 5 : 0))*(node.id.includes(':v2-')?1.25:1)) : 0;
   const pressureAct=story?Math.floor(node.depth/5):0;
   // Experimental brood-free mixes have no three-child reservations: normalize their live-body pressure.
-  const concurrentCap = combat ? Math.min(tuning?(node.depth>=10?15:20):18, 7 + Math.floor(node.depth * .8) + (node.kind === 'elite' ? 2 : 0)+(tuning&&!holdout?Math.min(2,pressureAct):0)) : 0;
+  const concurrentCap = combat ? Math.min(tuning?(node.depth>=10?15:20):18, (tuning&&node.depth<5?10:7) + Math.floor(node.depth * .8) + (node.kind === 'elite' ? 2 : 0)+(tuning&&!holdout?Math.min(2,pressureAct):0)) : 0;
   let randomState = (options.seed ^ Math.imul(node.depth + 1, 0x9e3779b9) ^ (node.kind === 'elite' ? 0xabc123 : 0)) >>> 0;
   const random = (): number => {
     randomState = (randomState + 0x6d2b79f5) >>> 0;
@@ -53,15 +53,17 @@ export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
   };
   const pool: readonly StandardEnemyId[] = tuning&&node.depth>=5&&node.depth!==9 ? node.depth<10
     ? ['crawler','crawler','spitter','spitter','stalker','carrier']
-    : ['crawler','crawler','crawler','crawler','crawler','crawler','brute','brute','spitter','spitter','spitter','spitter','spitter','spitter','spitter','spitter','stalker','stalker','stalker','spitter']
-    : node.depth === 0 ? ['crawler', 'crawler', 'crawler', 'brute']
+    : ['crawler','crawler','crawler','crawler','crawler','crawler','crawler','brute','spitter','spitter','spitter','stalker','stalker','carrier']
+    : node.depth === 0 ? tuning ? ['crawler', 'crawler', 'crawler', 'crawler', 'crawler', 'crawler', 'brute'] : ['crawler', 'crawler', 'crawler', 'brute']
     : node.depth < 4 ? ['crawler', 'crawler', 'brute', 'spitter']
     : node.depth < 8 ? ['crawler','crawler','spitter','stalker','carrier']
     : ['crawler', 'crawler', 'brute', 'spitter', 'spitter', 'stalker', 'carrier'];
   const interval = Math.max(430,1050-node.depth*48-(node.kind==='elite'?120:0));
-  const eliteChance=tuning&&node.depth>=10?.60+(node.depth-10)*.01:.14+(node.depth-5)*.018;
+  const eliteChance=tuning&&node.depth>=10?.22+(node.depth-10)*.008:.14+(node.depth-5)*.018;
+  // Later four-body pulses leave a readable reset between arrivals. Pressure
+  // comes from mixed angles and sustained waves, rather than an elite firing wall.
   const schedule = Array.from({ length: totalSpawns }, (_, index): EncounterSpawn => Object.freeze({
-    type: 'spawn-request', spawnId: `${node.id}:spawn-${index}`, atMs: story ? 650+(holdout?index*(node.depth===9?750:900):!tuning||pressureAct===0?Math.floor(index/6)*1100+(index%6)*100:Math.floor(index/6)*(1050-pressureAct*100)+(index%6)*90) : 650 + index * interval + Math.floor(index/8)*1800, wave: node.depth + 1,
+    type: 'spawn-request', spawnId: `${node.id}:spawn-${index}`, atMs: story ? 650+(holdout?index*900:tuning?node.depth<5?Math.floor(index/6)*3000+(index%6)*300:Math.floor(index/4)*4000+(index%4)*350:Math.floor(index/6)*1100+(index%6)*100) : 650 + index * interval + Math.floor(index/8)*1800, wave: node.depth + 1,
     enemyId: index===0&&guardian ? guardian==='matron'?'carrier':'brute' : node.kind==='elite'&&index===0?'brute':pool[Math.floor(random()*pool.length)],
     elite: tuning ? node.kind==='elite' ? index===0||random()<(node.depth>=10?eliteChance:.10+node.depth*.008) : node.depth>=5&&node.depth!==9&&(random()<eliteChance||index===0&&!!guardian) : node.kind==='elite'&&(index===0||random()<.10+node.depth*.008),
     breachId: breachIds[Math.floor(random() * breachIds.length)],
