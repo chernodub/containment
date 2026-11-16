@@ -56,10 +56,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
     // gives the open nave a landmark where all wall bays lie outside the crop.
     if(id==='residential-gallery')overhead('clinical','habitation-gallery-pendant',730,580,5);
     // P11 uplink now occupies the chancel screen; retire the duplicate floating dish.
-    if(id==='freight-hold'){
-        overhead('industrial','cargo-hoist-header',350,600,5);
-        overhead('industrial','cargo-hoist-header',900,820,5);
-    }
+    // P11 captive gantry owns the freight landmark; duplicate headers retired.
     if(id==='infested-workshop'){
         overhead('industrial','workshop-tool-bridge',300,640,5);
         // Central overhead retired so the wall-backed P11 mill reads from combat.
