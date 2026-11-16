@@ -285,7 +285,7 @@ export class DepthRenderer {
   const actorsStarted=performance.now();
   try{
    for(const kind of ['crawler','brute','spitter','stalker','carrier','queen'])for(let i=0;i<(kind==='queen'?1:3);i++){
-    const m=this.actorPool.take(kind,i===2);m.prepare?.();m.animate(0,1,0);m.root.position.copy(this.focus);warm.add(m.root);models.push(m);await yieldTask();
+    const m=this.actorPool.take(kind,i===2);m.prepare?.();if(i===1&&(kind==='brute'||kind==='carrier'))m.setThreat?.(0,null,kind==='brute'?'warden':'matron',1);m.animate(0,1,0);m.root.position.copy(this.focus);warm.add(m.root);models.push(m);await yieldTask();
    }
    for(const id of ['pistol','rifle','shotgun','plasma','rocket'] as const){this.player.equip?.(id);this.player.animate(0,0,0);await yieldTask();}this.player.equip?.('shotgun');useActorContactShadows(this.player.root,true);
    if(this.preparationTiming)this.preparationTiming.phases.actors=performance.now()-actorsStarted;
