@@ -147,6 +147,20 @@ def scanner():
     for sx in (-1,1):L.lamp_strip('Gate strip',(sx*2.22,-.3,1.65),2.35,'Z','e9-cyan',.025,.03)
     L.stencil('BIO SCAN',(-1.25,-.46,3.15),.11,'-Y')
 
+    # Failed barricade: its two shield leaves are folded against the gate
+    # jambs, ripped at the hinge, leaving the full 140-unit opening clear.
+    for sx in (-1,1):
+        x=sx*2.57
+        L.profile_x('Buckled barricade shield',[(-.45,.25),(-.51,1.35),(-.34,1.78),(-.1,1.70),(.12,.45),(-.10,.21)],x-.23,x+.23,'p11-tint-metal',.02,tint='navy')
+        L.box('Ballistic vision slit',(x,-.49,1.43),(.27,.025,.075),'p11-rubber',.008)
+        for zz in (.6,1.1):L.hinge((x+sx*.17,-.49,zz),.24,.027)
+        L.sweep('Bent captive barrier brace',[(x,-.30,.4),(x+sx*.12,-.45,.85),(x+sx*.22,-.41,1.2)],.035,'p11-steel',6)
+        for dx,zz in ((-.10,.88),(.08,.73),(.02,1.12)):
+            L.cylinder('Shield impact chipped metal',(x+dx,-.515,zz),.052,.008,'p11-steel','Y',7,0)
+            L.cylinder('Shield deep impact',(x+dx,-.523,zz),.033,.012,'p11-rubber','Y',7,0)
+    L.sweep('Broken release cable',[(-2.57,.23,1.7),(-2.64,.35,1.28),(-2.69,.40,.73),(-2.63,.30,.32)],.023,'p11-rubber',6)
+    L.box('Barrier torn latch plate',(2.57,-.52,.95),(.22,.035,.16),'p11-steel',.01,rotation=(0,.17,.18))
+
     # Suspended scanning head on a captive gimbal and drive carriage.
     L.box('Scanner carriage',(0,0,3.32),(.76,.72,.16),'p11-rubber',.025)
     L.grille_top((-.12,.08,3.405),.25,.42,4)
