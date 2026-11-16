@@ -48,6 +48,8 @@ type PostResources = {
 /** HDR post on High; Low owns no post textures and uses one forward render. */
 export class PostPipeline {
   private readonly releaseGeometryClear:()=>void;
+  private readonly discardTargetColor:number[]=[];
+  private readonly discardScreenColor:number[]=[];
   readonly distortion = new DistortionField();
   readonly adaptive = new AdaptiveResolution();
   gpuTimer?: GpuFrameTimer;
@@ -87,7 +89,7 @@ export class PostPipeline {
     private readonly renderer: WebGLRenderer,
     private readonly scene: Scene,
     private camera: Camera,
-  ) { this.softDepth=new SoftParticleDepth(renderer);this.releaseGeometryClear=installGeometryClearPolicy(renderer);setRenderDiagnostics(()=>this.diagnostics);this.distortion.setEnabled(false); if(renderer.getContext)this.gpuTimer=new GpuFrameTimer(renderer.getContext() as WebGL2RenderingContext); }
+  ) { this.softDepth=new SoftParticleDepth(renderer);this.releaseGeometryClear=installGeometryClearPolicy(renderer);setRenderDiagnostics(()=>this.diagnostics);this.distortion.setEnabled(false); if(renderer.getContext){const gl=renderer.getContext() as WebGL2RenderingContext;this.gpuTimer=new GpuFrameTimer(gl);this.discardTargetColor.push(gl.COLOR_ATTACHMENT0);this.discardScreenColor.push(gl.COLOR);} }
 
   /** Borrowed flame/smoke meshes keep their existing preparation/atlas hooks. */
   bindSoftParticles(meshes:readonly Mesh[], receive:(depth:DepthTexture|null)=>void, enabled:()=>boolean, needsDepth:(mesh:Mesh)=>boolean=()=>true):void {
@@ -301,6 +303,9 @@ export class PostPipeline {
     // discard background, so they retain their white clear.
     const autoClear=this.renderer.autoClear;
     this.renderer.autoClear=material===r.gtao.material||material===r.gtao.denoiseMaterial;
+    // Preserve discard/load intent for tile renderers without clearing replaced color.
+    const gl=this.renderer.getContext() as WebGL2RenderingContext;
+    if(!this.renderer.autoClear&&gl.invalidateFramebuffer)gl.invalidateFramebuffer(gl.FRAMEBUFFER,target?this.discardTargetColor:this.discardScreenColor);
     try{this.renderer.render(r.screenScene, r.screenCamera);}finally{this.renderer.autoClear=autoClear;}
   }
 

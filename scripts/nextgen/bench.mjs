@@ -19,7 +19,7 @@ import {installNoSoftDepthDiagnostic} from './soft-depth-diagnostic.mjs';
 function installCostAudit(r = globalThis.__containmentDebug.renderer) {
  if(r.__benchCostAudit)throw Error('Cost audit already installed');
  const renderer=r.renderer,gl=renderer.getContext(),undo=[];
- const keys=['glClearCalls','glBlitCalls','domStyleWrites','glDriverCalls','glUseProgramCalls','glProgramSwitches','glStateCalls','glUniformUploads','matrixComposes','localMatrixComposes','worldMatrixRecomputes','shadowMapsRendered','shadowDraws','shadowPixels','postPasses','postPixels','attackParticlesAdvanced','abilityParticlesAdvanced','abilityParticleSlotsScanned','particlesAdvanced'];
+ const keys=['glClearCalls','glInvalidateCalls','glBlitCalls','domStyleWrites','glDriverCalls','glUseProgramCalls','glProgramSwitches','glStateCalls','glUniformUploads','matrixComposes','localMatrixComposes','worldMatrixRecomputes','shadowMapsRendered','shadowDraws','shadowPixels','postPasses','postPixels','attackParticlesAdvanced','abilityParticlesAdvanced','abilityParticleSlotsScanned','particlesAdvanced'];
  const postNames=['sceneColor','contactAO','gtao','aoDenoise','bloomExtract','bloomBlurHorizontal','bloomBlurVertical','distortion','composite','finalAA','other'];
  for(const name of postNames)keys.push('post_'+name);
  const counters=Object.fromEntries(keys.map(key=>[key,0]));
@@ -36,13 +36,14 @@ function installCostAudit(r = globalThis.__containmentDebug.renderer) {
   for(const [name,descriptor] of Object.entries(Object.getOwnPropertyDescriptors(prototype)))if(name!=='constructor'&&typeof descriptor.value==='function')methods.add(name);
  }
  for(const property of ['translate','opacity','transform','left','top','width','height','strokeDashoffset']){
-  const prototype=CSSStyleDeclaration.prototype,descriptor=Object.getOwnPropertyDescriptor(prototype,property);
+  const prototype=globalThis.CSSStyleDeclaration?.prototype;if(!prototype)break;
+  const descriptor=Object.getOwnPropertyDescriptor(prototype,property);
   if(descriptor?.set&&descriptor.configurable){Object.defineProperty(prototype,property,{...descriptor,set(value){counters.domStyleWrites++;descriptor.set.call(this,value);}});undo.push(()=>Object.defineProperty(prototype,property,descriptor));}
  }
- wrap(CSSStyleDeclaration.prototype,'setProperty',original=>function(...parameters){counters.domStyleWrites++;return original.apply(this,parameters);});
+ wrap(globalThis.CSSStyleDeclaration?.prototype,'setProperty',original=>function(...parameters){counters.domStyleWrites++;return original.apply(this,parameters);});
  let lastProgram=typeof gl.getParameter==='function'?gl.getParameter(gl.CURRENT_PROGRAM):undefined;
  for(const name of methods)wrap(gl,name,original=>function(...parameters){
-  counters.glDriverCalls++;if(name==='clear')counters.glClearCalls++;if(name==='blitFramebuffer')counters.glBlitCalls++;
+  counters.glDriverCalls++;if(name==='clear')counters.glClearCalls++;if(name==='invalidateFramebuffer')counters.glInvalidateCalls++;if(name==='blitFramebuffer')counters.glBlitCalls++;
   if(name==='useProgram'){counters.glUseProgramCalls++;if(lastProgram!==parameters[0]){counters.glProgramSwitches++;lastProgram=parameters[0];}}
   if(stateMethods.has(name))counters.glStateCalls++;
   if(/^uniform(?:[1234](?:f|i|ui)v?|Matrix[234](?:x[234])?fv)$/.test(name))counters.glUniformUploads++;
@@ -150,7 +151,7 @@ const out=resolve(option('out',resolve('artifacts/nextgen',label))), dist=resolv
 const tiers=option('tiers','high,low').split(','), rigs=option('rigs','breacher,cryo,pyro,arc').split(',');
 const storyRooms=['awakening-bay','passenger-vault','residential-gallery','communal-atrium','crew-checkpoint','armory','freight-hold','breached-loading-bay','relay-racks','transmission-chamber','diagnostic-gallery','safety-interlock-station','coolant-plant','service-shaft-landing','infested-workshop','swarm-junction','shielding-gate','containment-annulus','manual-control-chamber','overload-floor'];
 await mkdir(out,{recursive:true});
-if(!args.includes('--no-build')){execFileSync('npm',['run','build'],{stdio:'inherit'});if(args.includes('--breakdown'))execFileSync('npx',['vite','build','--sourcemap'],{stdio:'inherit'});}
+if(!args.includes('--no-build'))execFileSync('npm',['run','build',...(args.includes('--breakdown')?['--','--sourcemap']:[])],{stdio:'inherit'});
 const host=()=>({at:new Date().toISOString(),load:loadavg(),cores:cpus().length});
 const report={distSnapshot:{path:dist,sourceSHA:option('dist-source-sha','unrecorded')},baseline,timingAcceptanceEligible:!args.includes('--no-soft-depth')&&!args.includes('--gpu-flush')&&!args.includes('--profile')&&!args.includes('--audit-costs'),noSoftDepth:args.includes('--no-soft-depth'),auditCosts:args.includes('--audit-costs'),gpuPasses:args.includes('--gpu-passes'),gpuFlush:args.includes('--gpu-flush'),gpuMicro:args.includes('--gpu-micro'),sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
 const microStages=option('gpu-micro-stages','gtao,aoDenoise,bloomExtract,bloomBlurHorizontal,bloomBlurVertical,composite,finalAA').split(',');
