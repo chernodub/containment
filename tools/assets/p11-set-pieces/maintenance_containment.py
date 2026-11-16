@@ -84,15 +84,15 @@ def annulus():
  L.torus('Outer guard',(0,0,1.4),2.12,.055,'e9-trim','Z',48,5)
  for i in range(8):
   a=i*math.pi/4;x=1.9*math.cos(a);y=1.9*math.sin(a)
-  L.box('Radial clamp',(x,y,1.38),(.62,.3,.38),'e9-trim',.035,rotation=(0,0,a))
-  L.box('Insulator',(x,y,1.61),(.32,.18,.08),'p11-tint-metal',.015,rotation=(0,0,a),tint='cream')
-  for d in (-.2,.2): L.bolt((x+math.cos(a)*d,y+math.sin(a)*d,1.59),.028,'Z')
+  L.box('Radial clamp',(x,y,1.38),(.62,.3,.5),'e9-trim',.035,rotation=(0,0,a))
+  L.box('Insulator',(x,y,1.67),(.32,.18,.08),'p11-tint-metal',.015,rotation=(0,0,a),tint='cream')
+  for d in (-.2,.2): L.bolt((x+math.cos(a)*d,y+math.sin(a)*d,1.65),.028,'Z')
   # Segmented outer shield panels expose their dark gasket joints.
   b=a+math.pi/8
-  px=2.02*math.cos(b);py=2.02*math.sin(b)
+  px=2.22*math.cos(b);py=2.22*math.sin(b)
   L.box('Shield sector',(px,py,1.32),(.12,1.02,.38),'e9-body',.035,rotation=(0,0,b))
   L.box('Sector inset',(px*1.035,py*1.035,1.32),(.025,.72,.17),'e9-dark',.008,rotation=(0,0,b))
-  L.box('Sector identification',(px*.95,py*.95,1.56),(.22,.32,.025),'e9-trim',.006,rotation=(0,0,b))
+  L.box('Sector identification',(1.9*math.cos(b),1.9*math.sin(b),1.62),(.22,.32,.025),'e9-trim',.006,rotation=(0,0,b))
  for i in range(4):
   a=i*math.pi/2;x=1.9*math.cos(a);y=1.9*math.sin(a)
   L.box('Support shoe',(x,y,.12),(1,.8,.24),'e9-dark',.03,rotation=(0,0,a))
