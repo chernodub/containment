@@ -127,9 +127,9 @@ def atrium():
         L.sweep('Skylight support',[(x,1.05,.1),(x,1.05,3.3),(x,.2,3.65),(x,-.9,3.25)],.045,'p11-steel',6)
     L.sweep('Skylight crossbar',[(-1.9,1.05,3.3),(1.9,1.05,3.3)],.05,'p11-steel',6)
     import bmesh
-    for points in [[(-1.8,.98,3.34),(-.7,.52,3.52),(-.35,.57,3.50),(.5,-.16,3.54),(1.8,-.8,3.29),(1.8,1,3.34)], [(-1.8,.9,3.34),(-.8,.45,3.50),(-.4,.50,3.49),(.4,-.22,3.51),(1.7,-.85,3.27),(-1.8,-.85,3.27)]]:
+    for points in [[(-1.8,.98,3.34),(-1.8,-.25,3.48),(-.9,.45,3.52),(-.25,1,3.34)],[(.5,1,3.34),(1.8,1,3.34),(1.8,.35,3.53)],[(1.8,-.8,3.29),(1.8,-.25,3.50),(1.2,-.8,3.29)]]:
         bm=bmesh.new();bm.faces.new([bm.verts.new(p) for p in points]);L.mesh_object('Fractured skylight pane',bm,'e9-glass',smooth=False)
-    L.sweep('Cracked glazing diagonal',[(-1.8,.98,3.34),(-.7,.52,3.52),(-.35,.57,3.50),(.5,-.16,3.54),(1.8,-.8,3.29)],.016,'e9-cyan',4)
+    L.sweep('Cracked glazing diagonal',[(-1.8,.98,3.34),(-1.4,.65,3.44),(-1.35,.58,3.46),(-.9,.45,3.52)],.009,'e9-cyan',4)
     L.lamp_strip('Horticultural fixture',(0,.97,3.22),2.9,'X','e9-cyan',.035,.035)
 
 L.reset_scene();residential();atrium()

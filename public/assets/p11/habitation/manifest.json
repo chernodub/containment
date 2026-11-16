@@ -68,7 +68,7 @@
           1.3988
         ]
       },
-      "triangles": 4638,
+      "triangles": 4626,
       "budget": 12000,
       "finishes": [
         "e9-cyan",
@@ -84,9 +84,9 @@
   ],
   "output": {
     "file": "habitation.glb",
-    "bytes": 346504,
-    "sha256": "ea4933eb0d0d99992211653557d3ca40cba97a4fc6c153bd454727591652186d",
-    "triangles": 7960
+    "bytes": 346240,
+    "sha256": "fd210335746429a15174b66ce494dab3dec2bf2931f46ae8f5ecde415ce89335",
+    "triangles": 7948
   },
   "overBudget": []
 }
