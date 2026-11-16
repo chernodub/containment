@@ -8,7 +8,7 @@ throat, and high-arched legs like a harvestman's.
 import numpy as np
 
 import sdf as S
-from sdf import SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, EYE, Ellipsoid, RoundCone, Plate, frame, v3, normalize
+from sdf import ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, EYE, Ellipsoid, RoundCone, Plate, frame, v3, normalize
 import species as A
 
 ASSET = "marauder"
@@ -98,16 +98,16 @@ def build(sk):
     for s, side in ((-1, "R"), (1, "L")):
         for leg in ("m", "b"):
             names = [f"leg_{leg}{i if i else ''}.{side}" for i in range(8)]
-            chain(body, sk, names, [0.34, 0.24, 0.22, 0.2, 0.18, 0.12, 0.1, 0.08, 0.02], s, plates=(2, 4))
+            chain(body, sk, names, [0.5, 0.4, 0.36, 0.33, 0.3, 0.22, 0.17, 0.13, 0.04], s, plates=(2, 4), tint=0.8)
         names = [f"hand.{side}", f"hand1.{side}", f"hand2.{side}", f"claw.{side}"]
-        chain(body, sk, names, [0.3, 0.22, 0.2, 0.17, 0.03], s, plates=(0, 2))
+        chain(body, sk, names, [0.45, 0.36, 0.33, 0.27, 0.05], s, plates=(0, 2), tint=0.8)
     # --- elite: crown of spines around the vessel -----------------------------------
     elite = S.Sculpture("spitter-elite")
-    pts, nrm = [], []
-    for x in np.linspace(-1.1, 1.0, 5):
-        for s in (-1, 1):
-            p = sac_c + v3((x, 0.95 * s, -0.15 * a))
-            pts.append(p)
-            nrm.append(normalize(v3((0, s, 1.2))))
-    elite.extend(A.crest_spines(pts, nrm, 0.9, 0.09, lambda p: bf(float(p[0]) / 2.1), sweep=(-1, 0, 0.2)))
+    # a second acid vessel swelling on the neck root, ringed with sinew
+    nc = sk.h("spine2") + (sk.h("neck") - sk.h("spine2")) * 0.5 + v3((0, 0, 0.75 * a))
+    ves = Ellipsoid(nc, (0.85, 0.7, 0.42 * a), frame((1, 0, 0.3)), zone=ORGAN, bone=("blend", "spine2", "neck", sk.h("spine2"), sk.h("neck")))
+    elite.add(S.Stretch(ves, (1, 0, 0.3), 0.26, 0.05, sharp=3, zone=ORGAN, bone=ves.bone))
+    for x in (-0.45, 0.0, 0.45):
+        elite.add(S.Torus(nc + v3((x, 0, -0.03 * a)), (1, 0, 0.3), 0.62 - abs(x) * 0.4, 0.07, zone=SINEW, bone=ves.bone, k=0.05))
+    elite.add(Ellipsoid(nc - v3((0, 0, 0.35 * a)), (0.9, 0.75, 0.25 * a), zone=FLESH, bone=ves.bone, k=0.2))
     return {"body": body, "elite": elite}
