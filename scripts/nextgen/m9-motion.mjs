@@ -51,7 +51,7 @@ try{
     const abilityUpdate=r.interimAbilities.update.bind(r.interimAbilities),oldAbilityUpdate=r.interimAbilities.update;
     r.interimAbilities.clear();
     const human=subject==='marine',crowd=subject==='crowd',family=crowd?'crawler':subject.split('-')[0],elite=subject.includes('-elite'),champion=subject.includes('-warden')?'warden':subject.includes('-matron')?'matron':undefined;
-    const model=human?r.player:r.actorPool.take(family,elite),animate=model.animate.bind(model),equip=model.equip?.bind(model),oldAnimate=model.animate,oldEquip=model.equip,oldSetDead=model.setDead,setDead=model.setDead?.bind(model),hasDeathAdapter=typeof model.setDead==='function';
+    const model=human?r.player:r.actorPool.take(family,elite),animate=model.animate.bind(model),equip=model.equip?.bind(model),oldAnimate=model.animate,oldEquip=model.equip,oldSetRig=model.setRig,oldSetDead=model.setDead,setDead=model.setDead?.bind(model),hasDeathAdapter=typeof model.setDead==='function';
     model.reset?.();model.setAttackState?.('approach',0,0);model.setDead?.(false);model.setAction?.('',0);model.setMotionSeed?.([...subject].reduce((n,c)=>(n*31+c.charCodeAt(0))>>>0,1729));model.setMotionOptions?.(1,false);model.setStageLight?.(.65);model.setFlashIntensity?.(1);
     if(human){
      model.setRig?.(action.startsWith('idle-')?action.slice(5):'breacher');
@@ -76,6 +76,8 @@ try{
     const isCast=action.startsWith('cast-'),ability=isCast?action.slice(5):null;
     const rigs={ram:'breacher','seismic-slam':'breacher',bulwark:'breacher',railbreaker:'breacher','frost-trail':'cryo','cryo-nova':'cryo',glacier:'cryo',whiteout:'cryo',afterburn:'pyro',flashfire:'pyro','napalm-charge':'pyro',meltdown:'pyro','static-step':'arc',overload:'arc','tesla-pylon':'arc',overclock:'arc'};
     if(isCast)model.setRig?.(rigs[ability]);
+    // Keep the isolated study rig while normal renderer updates apply the live run rig.
+    if(human)model.setRig=()=>{};
     const columns=4,clock=[],proof=[],project=model.root.position.clone(),frameCanvases=[];
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,deathStarted=false,ragdollStarted=false,controlledRoll=0;
     const abilitySnapshot=JSON.parse(JSON.stringify(g.abilities.snapshot));
@@ -164,7 +166,7 @@ try{
      return {frames,diagnosticOnly:action==='side-hit'||action==='death-high-impulse',presentationInputs:{aim:0,movementSpeed:human?220:({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150,attackWindupMs:(({crawler:260,stalker:420,brute:650,spitter:350,carrier:620})[family]??650)*(elite?.82:1),hitDirection:action==='side-hit'?0:Math.PI/2,deathImpulse:{x:action==='death-high-impulse'?30:13,z:6},corpseHoldRequestSeconds:.032,corpseHoldQuantization:'floor(request*120)120Hz ticks; max3ticks/25ms',firePeriodTicks:12,visualSeedAlgorithm:'LCG32 hash31(subject/action,1729)',isolatedBoneReset:human},png:canvas.toDataURL('image/png').split(',')[1],mask:mask.toDataURL('image/png').split(',')[1],unionCrop:{left:minX,top:minY},clock,proof,cellWidth,cellHeight,columns,elapsed,abilityAdapter:typeof model.setAction==='function'||typeof model.motionEvent==='function',source:'production model APIs, frozen simulation, explicit presentation inputs'};
     }finally{
      if(ragdollStarted)r.ragdolls.remove(-900001);r.effects.clear();r.interimAbilities.clear();r.interimAbilities.update=oldAbilityUpdate;
-     Math.random=oldRandom;model.setDead=oldSetDead;setDead?.(false);model.setAction?.('',0);model.animate=oldAnimate;if(human)model.equip=oldEquip;r.scene.onBeforeRender=oldSceneHook;
+     Math.random=oldRandom;model.setRig=oldSetRig;model.setDead=oldSetDead;setDead?.(false);model.setAction?.('',0);model.animate=oldAnimate;if(human)model.equip=oldEquip;r.scene.onBeforeRender=oldSceneHook;
      for(const [child,visible] of oldVisibility)child.visible=visible;
      for(let i=1;i<models.length;i++)r.actorPool.release(models[i]);if(!human)r.actorPool.release(model);else{model.root.rotation.z=0;model.setRig?.('breacher');}
      d.refresh();
