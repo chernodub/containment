@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import {attributeCpuSelf} from './bench-cpu.mjs';
+import {attributeCpuSelf,summarizeCpuClock} from './bench-cpu.mjs';
 /** Sequential production-browser benchmark. No timing assertions on a shared host. */
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -140,7 +140,7 @@ if(process.argv.includes('--self-test')){await costAuditSelfTest();process.exit(
 
 const args=process.argv.slice(2);
 // F11: one explicit diagnostic mode, never eligible for timing certification.
-if(args.includes('--breakdown'))args.push('--profile','--gpu-passes','--audit-costs');
+if(args.includes('--breakdown'))args.push('--profile',...(args.includes('--cpu-only')?[]:['--gpu-passes','--audit-costs']));
 const baseline=args.includes('--baseline'),heavyScan=!args.includes('--scan-calm');
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const label=option('label','integration-4-bench');
@@ -153,7 +153,7 @@ const storyRooms=['awakening-bay','passenger-vault','residential-gallery','commu
 await mkdir(out,{recursive:true});
 if(!args.includes('--no-build'))execFileSync('npm',['run','build',...(args.includes('--breakdown')?['--','--sourcemap']:[])],{stdio:'inherit'});
 const host=()=>({at:new Date().toISOString(),load:loadavg(),cores:cpus().length});
-const report={distSnapshot:{path:dist,sourceSHA:option('dist-source-sha','unrecorded')},baseline,timingAcceptanceEligible:!args.includes('--no-soft-depth')&&!args.includes('--gpu-flush')&&!args.includes('--profile')&&!args.includes('--audit-costs'),fixedResolution:args.includes('--fixed-resolution'),noSoftDepth:args.includes('--no-soft-depth'),auditCosts:args.includes('--audit-costs'),gpuPasses:args.includes('--gpu-passes'),gpuFlush:args.includes('--gpu-flush'),gpuMicro:args.includes('--gpu-micro'),sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,minimumSimulationSeconds:Math.max(0,Math.min(60,Number(option('min-simulation-seconds',0))||0)),host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
+const report={distSnapshot:{path:dist,sourceSHA:option('dist-source-sha','unrecorded')},baseline,timingAcceptanceEligible:!args.includes('--no-soft-depth')&&!args.includes('--gpu-flush')&&!args.includes('--profile')&&!args.includes('--audit-costs'),cpuOnly:args.includes('--cpu-only'),fixedResolution:args.includes('--fixed-resolution'),noSoftDepth:args.includes('--no-soft-depth'),auditCosts:args.includes('--audit-costs'),gpuPasses:args.includes('--gpu-passes'),gpuFlush:args.includes('--gpu-flush'),gpuMicro:args.includes('--gpu-micro'),sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seconds,repeats,minimumSimulationSeconds:Math.max(0,Math.min(60,Number(option('min-simulation-seconds',0))||0)),host:host(),scan:[],runs:[],errors:[],budgetFailures:[],notes:['25 legal enemies replenished through native spawns; deaths/corpses retained; native ability cooldowns, Overdrive recharged only by actual damage after initial fill. Invulnerable marine is fixture-only.','Audio is main-thread scheduling time; audio render callback timing is unavailable. GPU time uses EXT_disjoint_timer_query_webgl2 when supported.','Timing runs use retained numeric arrays; instrumentation allocates samples intentionally. Heap/CPU sampling runs are flagged and are not quiet budget certification.']};
 const microStages=option('gpu-micro-stages','gtao,aoDenoise,bloomExtract,bloomBlurHorizontal,bloomBlurVertical,composite,finalAA').split(',');
 const microSamples=Number(option('gpu-micro-samples',2));
 assert(!report.gpuMicro||(Number.isInteger(microSamples)&&microSamples>=2&&microSamples<=4),'--gpu-micro-samples must be2–4');
@@ -240,7 +240,7 @@ try{
   let audioPollWork=Promise.resolve();
   const audioPoll=profile?setInterval(()=>{audioPollWork=audioPollWork.then(async()=>{for(const context of audioContexts.values())if(context.contextType==='realtime'){try{const {realtimeData}=await cdp.send('WebAudio.getRealtimeData',{contextId:context.contextId});audioSamples.push({contextId:context.contextId,...realtimeData});}catch(error){audioError=String(error);}}});},500):null;
   if(audioPoll)timers.add(audioPoll);
-  const data=await page.evaluate(async ({seconds,audit,auditCosts,gpuPasses,deterministic,minSimulationSeconds})=>{
+  const data=await page.evaluate(async ({seconds,audit,auditCosts,gpuPasses,deterministic,minSimulationSeconds,cpuOnly})=>{
    const d=window.__containmentDebug,g=d.game,r=d.renderer,gl=r.renderer.getContext();
    const capacity=Math.ceil(seconds*240), samples={frame:[],update:[],render:[],hud:[],audio:[],draws:[],triangles:[],lights:[],instances:[],gpu:[],driver:[],enemies:[],sceneInstances:[],sceneLights:[],adaptiveScale:[]};
    const costAudit=auditCosts?r.__benchCostAudit:null,gpuPassAudit=gpuPasses?r.__benchGpuPassAudit:null;
@@ -252,11 +252,13 @@ try{
    let count=0,programs=0,peakInstances=0,driverMs=0;const create=gl.createProgram,createdProgramHandles=[];
    gl.createProgram=function(){programs++;const program=create.call(gl);if(program)createdProgramHandles.push(program);return program;};
    const ext=gl.getExtension('EXT_disjoint_timer_query_webgl2'),pending=[];let frame=0;
+   let actualRenderFrames=0;const resetInfo=r.renderer.info.reset,runtimeTimer=r.post.gpuTimer,timerWasEnabled=runtimeTimer?.enabled;
+   if(cpuOnly){r.renderer.info.reset=function(){actualRenderFrames++;return resetInfo.call(this);};runtimeTimer?.setEnabled(false);}
    const original=r.render,direct=r.renderer.renderBufferDirect,drawObjects=new Map();let peakDrawReport=null,peakDrawCalls=0;
    if(audit)r.renderer.renderBufferDirect=function(camera,scene,geometry,material,object,group){const result=direct.call(this,camera,scene,geometry,material,object,group);drawObjects.set(object,(drawObjects.get(object)??0)+1);return result;};
    r.render=function(...args){
     if(audit)drawObjects.clear();
-    const query=!gpuPasses&&ext&&frame++%15===0&&!gl.getQuery(ext.TIME_ELAPSED_EXT,gl.CURRENT_QUERY)?gl.createQuery():null;
+    const query=!cpuOnly&&!gpuPasses&&ext&&frame++%15===0&&!gl.getQuery(ext.TIME_ELAPSED_EXT,gl.CURRENT_QUERY)?gl.createQuery():null;
     if(query)gl.beginQuery(ext.TIME_ELAPSED_EXT,query);
     const result=original.apply(this,args);
     if(audit&&r.renderer.info.render.calls>peakDrawCalls){peakDrawCalls=r.renderer.info.render.calls;const groups=new Map();for(const [object,calls] of drawObjects){let part=object,path='';while(part&&part!==r.scene){if(part.name)path=part.name+(path?'/'+path:'');part=part.parent;}path||=object.material?.name||object.material?.type||'unnamed';groups.set(path,(groups.get(path)??0)+calls);}peakDrawReport=[...groups].sort((a,b)=>b[1]-a[1]);}
@@ -337,7 +339,7 @@ try{
      if(deterministic){d.step(1000/60);fixedTicks++;}
      if(!deterministic||fixedTicks%8===0)await new Promise(requestAnimationFrame);
     }
-   }finally{d.realtime(false);d.observePerformance(undefined);gl.createProgram=create;r.render=original;r.renderer.renderBufferDirect=direct;if(softDepthAudit){softDepthAudit.dispose();softDepthDiagnostic=softDepthAudit.snapshot();}}
+   }finally{d.realtime(false);d.observePerformance(undefined);if(cpuOnly){r.renderer.info.reset=resetInfo;if(timerWasEnabled!==undefined)runtimeTimer?.setEnabled(timerWasEnabled);}gl.createProgram=create;r.render=original;r.renderer.renderBufferDirect=direct;if(softDepthAudit){softDepthAudit.dispose();softDepthDiagnostic=softDepthAudit.snapshot();}}
    // Give submitted queries ordinary RAF opportunities to finish; never block the GPU.
    if(gpuPassAudit)for(let i=0;i<4;i++){await new Promise(requestAnimationFrame);gpuPassAudit.poll();}
    const gpuPassTimings=gpuPassAudit?.snapshot()??null;gpuPassAudit?.dispose();if(gpuPassTimings)gpuPassTimings.diagnostics.abandonedQueries=gpuPassAudit.diagnostics.abandonedQueries;costAudit?.dispose();
@@ -345,8 +347,8 @@ try{
    for(const key of Object.keys(samples))samples[key]=Array.from(values[key].subarray(0,count));samples.gpu=gpu;
    let finalLightInventory=0,finalInstanceMeshInventory=0;
    r.scene.traverse(o=>{if(o.isLight)finalLightInventory++;if(o.isInstancedMesh)finalInstanceMeshInventory++;});r.hudScene.traverse(o=>{if(o.isInstancedMesh)finalInstanceMeshInventory++;});
-   return {deterministicSegment:deterministic?{ticks:fixedTicks,tickMs:1000/60,yieldEveryTicks:8,allTicksRendered:true}:null,preparation:r.preparationDiagnostics,softDepthDiagnostic,renderPipeline:r.post?.diagnostics??null,gpuPassTimings,initialStatus,initialPhase,finalStatus:g.status,finalPhase:g.expedition.run.phase,roomLoading:r.roomLoading,bodyState:document.body.dataset.state,roomLoadingIndicatorHidden:document.getElementById('room-loading')?.hidden,costAudit:costAudit?{instrumented:true,postPasses:costAudit.postPasses,particleScope:'CPU AttackEffects.drawParticles lists and live ElementKit particles; ability slot scans retained separately; GPU atmosphere excluded',stateScope:'GL state setter API calls; program switches count changed useProgram handles'}:null,instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,refillAudit,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,combatProgramKeys:r.renderer.info.programs.filter(program=>createdProgramHandles.includes(program.program)).map(program=>({name:program.name,cacheKey:program.cacheKey})),uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
-  },{seconds,audit:args.includes('--audit-draws'),auditCosts:args.includes('--audit-costs'),gpuPasses:report.gpuPasses,deterministic:args.includes('--breakdown'),minSimulationSeconds:Math.max(0,Math.min(60,Number(option('min-simulation-seconds',0))||0))});
+   return {actualRenderFrames:cpuOnly?actualRenderFrames:gpuPassTimings?.actualRenderFrames??null,cpuOnly,deterministicSegment:deterministic?{ticks:fixedTicks,tickMs:1000/60,yieldEveryTicks:8,allTicksRendered:true}:null,preparation:r.preparationDiagnostics,softDepthDiagnostic,renderPipeline:r.post?.diagnostics??null,gpuPassTimings,initialStatus,initialPhase,finalStatus:g.status,finalPhase:g.expedition.run.phase,roomLoading:r.roomLoading,bodyState:document.body.dataset.state,roomLoadingIndicatorHidden:document.getElementById('room-loading')?.hidden,costAudit:costAudit?{instrumented:true,postPasses:costAudit.postPasses,particleScope:'CPU AttackEffects.drawParticles lists and live ElementKit particles; ability slot scans retained separately; GPU atmosphere excluded',stateScope:'GL state setter API calls; program switches count changed useProgram handles'}:null,instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,refillAudit,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,combatProgramKeys:r.renderer.info.programs.filter(program=>createdProgramHandles.includes(program.program)).map(program=>({name:program.name,cacheKey:program.cacheKey})),uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
+  },{seconds,audit:args.includes('--audit-draws'),auditCosts:args.includes('--audit-costs'),gpuPasses:report.gpuPasses,deterministic:args.includes('--breakdown'),minSimulationSeconds:Math.max(0,Math.min(60,Number(option('min-simulation-seconds',0))||0)),cpuOnly:args.includes('--cpu-only')});
   if(audioPoll){clearInterval(audioPoll);timers.delete(audioPoll);}await audioPollWork;
   const final=await cdp.send('Performance.getMetrics');
   let profiling=null;
@@ -368,6 +370,7 @@ try{
   if(data.gpuPassTimings)for(const pass of data.gpuPassTimings.passes)pass.summaryMs=stats(pass.samplesMs);
   const budget={cpuP95:summary.cpu.p95<=8,frameP95:summary.frame.p95<=16.6,highFrameP50:summary.frame.p50<=16.7,highFrameP95:summary.frame.p95<=20,lowFrameP50:summary.frame.p50<=16.7,adaptiveScale:summary.adaptiveScale.min>=.7&&summary.adaptiveScale.max<=1,draws:summary.draws.max<=350,headroomDraws:summary.draws.max<=330,programInventory:data.programInventory<=400,programs:data.programs===0};
   const run={name,room,rig,tier,repeat,timingAcceptanceEligible:!report.gpuFlush&&!report.noSoftDepth,timingScope:report.noSoftDepth?'detached soft-depth disabled A/B diagnostic; ineligible for acceptance':report.gpuFlush?'intrusive gl.flush pass isolation; not production frame timing':'ordinary submission; optional asynchronous query instrumentation',nativeAudioContexts:[...audioContexts.values()],before,after:host(),profile,profiling,summary,budget,...data,cdp:{initial:initial.metrics,final:final.metrics}};
+  run.cpuBreakdown=summarizeCpuClock(run);
   report.runs.push(run);
   if(args.includes('--breakdown'))await writeFile(resolve(out,name+'.md'),breakdownMarkdown(run));await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));
   console.log(`${name}: frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
@@ -432,7 +435,9 @@ try{
 }catch(error){report.errors.push({type:'runner',message:String(error)});throw error;}finally{for(const timer of timers)clearInterval(timer);await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));await browser?.close();await new Promise(ok=>server.close(ok));}
 
 function breakdownMarkdown(run){
+ const clock=run.cpuBreakdown??summarizeCpuClock(run),format=value=>typeof value==='number'?value.toFixed(3):'unavailable';
+ const cpuRows=clock.subsystems.map(row=>`| ${row.name} | ${format(row.estimatedCpuMsPerRender)} | ${format(row.activeFraction===null?null:row.activeFraction*100)} | ${format(row.milliseconds)} |`).join('\n');
  const mean=(pass,key)=>pass.counts?.length?pass.counts.reduce((sum,row)=>sum+row[key],0)/pass.counts.length:0;
  const rows=(run.gpuPassTimings?.passes??[]).map(pass=>`| ${pass.name} | ${pass.summaryMs?.p50??'unavailable'} | ${pass.summaryMs?.p95??'unavailable'} | ${pass.samplesMs.length} | ${mean(pass,'draws')} | ${mean(pass,'triangles')} | ${mean(pass,'targetPixels')} |`);
- return `# ${run.name}\n\nHost load: ${run.before.load.join(', ')}; CPU cores: ${run.before.cores}. Instrumented diagnostic; shared GPU contention can affect timer queries too.\n\n| GPU scope | p50 ms | p95 ms | samples | draws/submission | triangles/submission | target pixels/submission |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n${rows.join('\n')}\n\nMemory estimates: textures ${run.gpuPassTimings?.memory?.textureBytes??'unavailable'} bytes; render-target textures ${run.gpuPassTimings?.memory?.renderTargetTextureBytes??'unavailable'} bytes.\n\nExclusive CPU sampled milliseconds:\n\n| subsystem | ms |\n| --- | ---: |\n${Object.entries(run.profiling?.cpuSelf?.milliseconds??{}).sort((a,b)=>b[1]-a[1]).map(([key,value])=>`| ${key} | ${value} |`).join('\n')}\n\nScene GPU scopes may include shadow work; percentiles must not be summed. Raw counts, pass resolutions, host load and frame statistics are in benchmark.json.\n`;
+ return `# ${run.name}\n\nHost load: ${run.before.load.join(', ')}; CPU cores: ${run.before.cores}. Instrumented diagnostic; shared GPU contention can affect timer queries too.\n\n| GPU scope | p50 ms | p95 ms | samples | draws/submission | triangles/submission | target pixels/submission |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n${rows.join('\n')}\n\nMemory estimates: textures ${run.gpuPassTimings?.memory?.textureBytes??'unavailable'} bytes; render-target textures ${run.gpuPassTimings?.memory?.renderTargetTextureBytes??'unavailable'} bytes.\n\nCPU phase: ${run.cpuOnly?'CPU-only; pass/count probes and timers disabled':'counter-instrumented; use --cpu-only for a separate profile'}. Measured thread CPU total: ${format(clock.threadCpuMs)} ms; mean per actual render: ${format(clock.threadCpuMeanPerRenderMs)} ms. Subsystem split is estimated from exclusive active samples.\n\n| subsystem | estimated CPU ms/render | active sample % | raw sampled wall ms |\n| --- | ---: | ---: | ---: |\n${cpuRows}\n\nScene GPU scopes may include shadow work; percentiles must not be summed. Raw counts, pass resolutions, host load and frame statistics are in benchmark.json.\n`;
 }
