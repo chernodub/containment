@@ -12,7 +12,7 @@ import {endingTransmission} from './endingTransmission';
 export function incomingDamageLabel(receipt: Pick<IncomingDamageReceipt, 'source' | 'enemyFamily'>): string {
   const family = receipt.enemyFamily ? ENEMIES[receipt.enemyFamily].label : 'Enemy';
   switch (receipt.source) {
-    case 'enemy-contact': return `${family} ${receipt.enemyFamily ? ({crawler:'swipe',stalker:'lunge',brute:'sweep',spitter:'bite',carrier:'slam',queen:'strike'}[receipt.enemyFamily]) : 'melee strike'}`;
+    case 'enemy-contact': return `${family} ${receipt.enemyFamily ? ({crawler:'scythe swipe',stalker:'scythe lunge',brute:'cleaver sweep',spitter:'mortar-mouth bite',carrier:'brood-claw slam',queen:'strike'}[receipt.enemyFamily]) : 'melee strike'}`;
     case 'enemy-projectile': return `${family} ${receipt.enemyFamily === 'spitter' ? 'acid shot' : 'projectile'}`;
     case 'acid-pool': return receipt.enemyFamily ? `${family} acid pool` : 'Acid pool';
     case 'boss-attack': return receipt.enemyFamily ? `${family} area blast` : 'Boss attack';

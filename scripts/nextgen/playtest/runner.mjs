@@ -247,13 +247,8 @@ try {
   for(const [kind,selector]of [['menu-settings','#settings'],['menu-controls','#controls'],['menu-credits','#menu-credits']])if(shouldProbe(kind)){await page.locator(selector).click();await page.locator(kind==='menu-settings'?'.configuration-drawer':kind==='menu-controls'?'.controls-drawer':'.credits-drawer').waitFor({state:'visible'});await probe(kind);}
   await page.locator('#start').click();
   const difficultyCard = page.locator(`[data-difficulty="${difficulty}"]`);
-  if(await difficultyCard.count()) {
-    const experimental = await difficultyCard.isDisabled();
-    if(!experimental) await difficultyCard.click();
-    await page.locator('#difficulty-begin').click();
-    // Explicit diagnostic flag retains access to a mode withheld from player selection.
-    if(experimental) await page.evaluate(({seed,difficulty})=>window.__containmentDebug.game.newRun(seed,{difficulty}),{seed,difficulty});
-  }
+  await difficultyCard.click();
+  await page.locator('#difficulty-begin').click();
   await page.waitForFunction(()=>window.__containmentDebug.game.expedition.run.phase==='rig-select');
   if(options.legacy) {
     await page.locator(`[data-rig="${rig}"]`).click();await page.locator('#equip-rig').click();

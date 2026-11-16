@@ -21,9 +21,6 @@ import {revealTitleLayers} from './title/keyArt';
 import {preloadRigPortraits} from './rigPortraits';
 import {installBoonInspection} from './boonInspection';
 
-/** Veteran remains available to balance tools while campaign tuning is unfinished. */
-export const VETERAN_DIFFICULTY_ENABLED = false;
-
 export type ScreenSettings = {
   render(): string;
   bind(root: HTMLElement): void;
@@ -58,8 +55,8 @@ export function createScreens(context: ScreenContext) {
   let pendingDifficulty = '';
   const modes = ['story','standard','veteran'] as const;
   let selectedDifficulty: typeof modes[number] = 'standard';
-  try { const saved = storage?.getItem('containment.difficulty.v1'); if (modes.includes(saved as typeof modes[number]) && (saved !== 'veteran' || VETERAN_DIFFICULTY_ENABLED)) selectedDifficulty = saved as typeof modes[number]; } catch {}
-  const difficultyCards = () => `<section class="panel difficulty-panel"><span class="eyebrow">BEFORE YOU WAKE</span><h2>Choose your difficulty.</h2><p>Ability rules are the same in every mode.</p><div class="difficulty-cards">${modes.map((mode,index)=>`<button id="difficulty-${mode}" data-difficulty="${mode}" ${mode==='veteran'&&!VETERAN_DIFFICULTY_ENABLED?'disabled':''} aria-pressed="${selectedDifficulty===mode}"><b>${['Story','Standard','Veteran'][index]}</b><span>${mode==='veteran'&&!VETERAN_DIFFICULTY_ENABLED?'Tuning in progress — available after balance review.':['More breathing room, healing and fewer threats.','The original expedition. Every choice counts.','Fiercer attacks and scarce breathing room.'][index]}</span></button>`).join('')}</div><button id="difficulty-begin" class="primary">Begin expedition</button><button id="difficulty-back" class="quiet">Back</button></section>`;
+  try { const saved = storage?.getItem('containment.difficulty.v1'); if (modes.includes(saved as typeof modes[number])) selectedDifficulty = saved as typeof modes[number]; } catch {}
+  const difficultyCards = () => `<section class="panel difficulty-panel"><span class="eyebrow">BEFORE YOU WAKE</span><h2>Choose your difficulty.</h2><p>Ability rules are the same in every mode.</p><div class="difficulty-cards">${modes.map((mode,index)=>`<button id="difficulty-${mode}" data-difficulty="${mode}" aria-pressed="${selectedDifficulty===mode}"><b>${['Story','Standard','Veteran'][index]}</b><span>${['More breathing room, healing and fewer threats.','The original expedition. Every choice counts.','Fiercer attacks and scarce breathing room.'][index]}</span></button>`).join('')}</div><button id="difficulty-begin" class="primary">Begin expedition</button><button id="difficulty-back" class="quiet">Back</button></section>`;
   let settingsOpen = false;
   let creditsOpen = false;
   let controlsOpen = false;
