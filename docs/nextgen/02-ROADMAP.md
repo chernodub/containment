@@ -49,13 +49,21 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | K12 hero-quality marine, four rigs, portraits — Opus, modelling only (`streams/K12-hero-closeup.md`) | merged | 24k tris, one 2k set; back view lightened after lead review |
 | I11 model integration (deformation, lantern feedback, support-hand grip, meshopt packing 45.9 → 37.4 MB, credits) — Sol | merged | Unvanquished marine/creature meshes no longer ship; open modelling requests: thin Stalker limbs, tasset overlap, Pyro hoses |
 | KA12 title key art (torn breach, Lantern Brood silhouettes), ending image, second-generation weapons — Astra | merged | title accepted after a second pass with lead direction |
-| P11 one hero set piece per room, kit craft pass, infestation set — Astra (`streams/P11-set-pieces.md`) | running (restarted) | first run stopped after one model |
-| G12 review gallery `final6` — Sol | running (retargeted to the build with new models) | first run stopped after 13 screens |
-| D11 difficulty modes, onboarding hints, "how you died" — Sol | running (restarted) | Story 57.5% novice, Standard 42.5%; Veteran not yet tuned |
-| F11 per-pass GPU/CPU breakdown tool and small cuts — Sol | merged | max 124 draws, zero combat compiles; frame budget cannot be certified on the loaded host; finding: marine textures ≈ 85 MiB GPU → T12 |
-| T12 texture right-sizing and KTX2 compression for actors/weapons — Sol | running | |
+| P11 one hero set piece per room, kit craft pass, infestation set — Astra (`streams/P11-set-pieces.md`) | running | redirected by R11: fixture hierarchy, one incident per room, infestation masses, per-room punch list |
+| G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
+| D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |
+| F11 per-pass GPU/CPU breakdown tool and small cuts — Sol | merged | max 124 draws, zero combat compiles; frame budget cannot be certified on the loaded host |
+| T12 texture right-sizing and KTX2 compression for actors/weapons — Sol | running | marine textures ≈ 85 MiB GPU |
+| **R11** independent verdicts by two Astra reviewers on `final6` | done | visual 5–7, play 5–7: "advanced prototype with a commercially presentable vertical slice" — `reviews/R11-verdict.md` |
+| **Wave 12** — from the R11 findings | running | |
+| CAM12 camera and framing you can trust (whole marine in the usable viewport, threat-aware bias, edge indicators) — Sol | running | |
+| FEEL12 aim/body/beam agreement, unmistakable small-enemy commitment, hit and kill chains, run conviction — Sol | running | |
+| VFX12 ability effects with force and aftermath; translucent-marine fix — Astra | running | |
+| ENC12 encounter grammar and role AI, elite saturation cut, Warden/Matron demands, teaching beats, eight transformative augments, economy and route — Sol | running | |
+| K11b creature second pass (mass, legs, Stalker, Carrier, elites, boss-class silhouettes) — Opus, modelling only | running | |
+| RW12 reward cards with illustrations, ending composition, re-posed rig portraits — Astra | running | |
 
-Next (lead): R11 independent verdicts by Opus and Astra on `final6` (stills, motion strips, real-play storyboards); merge wave 11; I12 performance certification on a quiet machine; re-review.
+Next (lead): merge wave 12; re-integrate creatures; performance certification on a quiet machine (nothing else running); gallery `final7`; R12 review by the same two lenses.
 
 ## Decisions log
 
