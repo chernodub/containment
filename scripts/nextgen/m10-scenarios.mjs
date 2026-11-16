@@ -86,6 +86,13 @@ export function registerM10Scenarios(scenarios) {
 export function registerC10Scenarios(scenarios) {
   const crowd=scenarios.find(s=>s.id==='m10-melee-crowd');
   scenarios.push({...crowd,id:'c10-melee-swarm',setup:new Function('return ('+crowd.setup.toString().replace(/const families=\[[^;]+;/,"const families=Array(20).fill('crawler');").replace('requestedFamilies:{crawler:10,brute:3,stalker:3,spitter:2,carrier:2}','requestedFamilies:{crawler:20}')+')()')});
+  // FEEL12: repeat each native family lane on both contrast extremes. These
+  // aliases retain ordinary simulation phase clocks and the original proof.
+  for(const family of ['crawler','stalker','brute','spitter','carrier'])for(const room of ['crew-checkpoint','relay-racks']){
+    const base=scenarios.find(s=>s.id===`m10-melee-${family}`);
+    scenarios.push({...base,id:`feel12-melee-${family}-${room}`,room,diagnosticOnly:true,
+      setup:new Function(`return (${base.setup.toString().replaceAll('awakening-bay',room)})();`)});
+  }
   for(const room of ['crew-checkpoint','relay-racks']) {
     const base=scenarios.find(s=>s.id==='m10-melee-crawler');
     scenarios.push({...base,id:`c10-melee-${room}`,room,setup:new Function(`return (async()=>{

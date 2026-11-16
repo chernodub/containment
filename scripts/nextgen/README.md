@@ -1112,3 +1112,12 @@ pause and mute observations. It uses the production director/mixer; WAV/PNG pair
 and numerical results are retained. `--out` also works for the full inventory;
 `--reuse-recipes` requires a complete previous full inventory. Measurement is not
 an acoustic listening review. No automated test suite is added.
+
+## FEEL12 contrast lanes
+
+`feel12-melee-{crawler,stalker,brute,spitter,carrier}-{crew-checkpoint,relay-racks}`
+are opt-in aliases of the existing M10 native family lanes on the pale and dark
+rooms. Use `--burst=30`; they retain 50ms steps, capture-only invulnerability,
+normal attack acceptance/clocks and `g5Proof.warningTimeline`. No enemy phase is
+forced. Use `m10-melee-crowd` and `c10-melee-swarm` for the mixed and all-Crawler
+20-enemy conditions. These are staged readability evidence, not campaigns.
