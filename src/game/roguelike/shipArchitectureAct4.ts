@@ -28,7 +28,7 @@ const manual=defineShipRoom({width:1280,height:1040,
  boundary:poly([[0,360],[160,360],[160,0],[1120,0],[1120,360],[1280,360],[1280,680],[1120,680],[1120,1040],[160,1040],[160,680],[0,680]]),
  // Paired hardwired cabinets define the booth; the cost/status desk terminates
  // the southern gallery. Its broad booth threshold has two independent lanes.
- obstacles:rectangles([[160,0,260,280],[860,0,260,280],[510,920,260,120],[568,298,144,44]]),voids:[],
+ obstacles:rectangles([[160,0,260,280],[860,0,260,280],[510,920,260,120],[568,358,144,44]]),voids:[],
  spawn:p(100,520),exit:p(1180,520),breaches:poly([[340,360],[940,360],[260,840],[1020,840]]),
 });
 const overload=defineShipRoom({width:1280,height:1040,
