@@ -147,6 +147,7 @@ def scanner():
     for sx in (-1,1):L.lamp_strip('Gate strip',(sx*2.22,-.3,1.65),2.35,'Z','e9-cyan',.025,.03)
     L.stencil('BIO SCAN',(-1.25,-.46,3.15),.11,'-Y')
 
+    barricade_before=set(L.CURRENT.children)
     # Failed barricade: its two shield leaves are folded against the gate
     # jambs, ripped at the hinge, leaving the full 140-unit opening clear.
     for sx in (-1,1):
@@ -160,6 +161,10 @@ def scanner():
             L.cylinder('Shield deep impact',(x+dx,-.523,zz),.033,.012,'p11-rubber','Y',7,0)
     L.sweep('Broken release cable',[(-2.57,.23,1.7),(-2.64,.35,1.28),(-2.69,.40,.73),(-2.63,.30,.32)],.023,'p11-rubber',6)
     L.box('Barrier torn latch plate',(2.57,-.52,.95),(.22,.035,.16),'p11-steel',.01,rotation=(0,.17,.18))
+
+    # Bring damaged leaves forward of the scanner access panels; the render
+    # exposed their earlier coplanar concealment. Width/opening is unchanged.
+    for ob in set(L.CURRENT.children)-barricade_before:ob.data.transform(Matrix.Translation((0,-.33,0)))
 
     # Suspended scanning head on a captive gimbal and drive carriage.
     L.box('Scanner carriage',(0,0,3.32),(.76,.72,.16),'p11-rubber',.025)
