@@ -260,6 +260,26 @@ def crown():
     L.box('Core control housing',(0,-1.93,.63),(.8,.3,.55),'e9-body',.035)
     L.screen('Core temperature',(0,-2.1,.7),.58,.23,pattern='bars')
     L.stencil('CORE 20',(-.36,-2.1,.43),.1)
+    # Burst outer shielding: thick torn skins peel clear of exposed hot joints.
+    for i,a in enumerate((-.75,-2.35,2.2)):
+        panel=L.profile_x('Peeled pressure shield',[(-.5,.5),(.52,.5),(.48,1.35),(.28,1.62),(.12,1.25),(-.08,1.55),(-.3,1.38),(-.53,1.5)],1.65,1.73,'p11-tint-metal',.018,tint='service-blue')
+        panel.rotation_euler.z=a
+        panel.rotation_euler.y=-.15-i*.04
+        c,d=math.cos(a),math.sin(a)
+        L.sweep('Failed seal glow',[(1.68*c,1.68*d,.65),(1.8*c,1.8*d,.98),(1.72*c,1.72*d,1.4)],.045,'e9-violet',6)
+        L.sweep('Bowed pressure restraint',[(1.8*c-.3*d,1.8*d+.3*c,.6),(1.97*c,1.97*d,1.1),(1.7*c+.3*d,1.7*d-.3*c,1.5)],.045,'e9-trim',6)
+    # Pressure has lifted the access plates around the crown. All debris remains
+    # on the sealed native core, never on the holdout circulation floor.
+    for i in range(6):
+        a=i*math.tau/6+.18;c,d=math.cos(a),math.sin(a)
+        plate=L.slab('Buckled access petal',[(-.52,-.32),(.48,-.3),(.56,.08),(.31,.36),(-.12,.21),(-.48,.29)],0,.075,'p11-tint-metal',.018,tint='service-blue')
+        plate.rotation_euler=(.3+(i%3)*.2,.13,a);plate.location=(1.9*c,1.9*d,.35+(i%2)*.22)
+        L.sweep('Exposed bent reinforcement',[(1.7*c,1.7*d,.15),(2*c,2*d,.42),(2.28*c,2.28*d,.24)],.045,'e9-dark',6)
+        if i%2==0:
+            L.sweep('Venting induction fissure',[(1.78*c,1.78*d,.18),(2*c,2*d,.28),(2.14*c,2.14*d,.5)],.035,'e9-violet',6)
+        for j in range(2):
+            L.box('Torn coupling fragment',((1.8+j*.24)*c,(1.8+j*.24)*d,.18),(.18,.21,.08),'e9-trim',.012,rotation=(.2,.1,a+j))
+
 
 for pack, builders in (('control',(uplink,diagnostic,interlock)),('reactor',(dais,crown))):
     L.reset_scene()
