@@ -1,5 +1,5 @@
 """P11 cryogenic and security landmarks; original MIT geometry."""
-import sys, math
+import sys, math, bpy
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import p11lib as L
@@ -220,11 +220,28 @@ def armory():
         L.cylinder('Weapon barrel',(0,0,2.0),.032,.44,'p11-steel','Z',8,0)
         L.cylinder('Weapon muzzle',(0,0,2.23),.045,.10,'p11-rubber','Z',8,0)
         L.cylinder('Weapon optic',(0,-.13,1.66),.038,.22,'p11-steel','Z',10,0)
-        transform=Matrix.Translation((x,y,0)) @ Matrix.Rotation(a,4,'Z')
-        for ob in set(L.CURRENT.children)-before:ob.data.transform(transform)
+        weapons=set(L.CURRENT.children)-before
+        if i in (0,1,2):
+            # Empty clamps record an interrupted emergency issue, not a full display.
+            for ob in weapons:bpy.data.objects.remove(ob,do_unlink=True)
+        else:
+            transform=(Matrix.Translation((0,1.2,.62)) @ Matrix.Rotation(math.pi/2,4,'X')) if i==6 else Matrix.Translation((x,y,0)) @ Matrix.Rotation(a,4,'Z')
+            for ob in weapons:ob.data.transform(transform)
         L.box('Captive rifle clamp',(x,y,1.55),(.19,.23,.055),'e9-trim',.008,rotation=(0,0,a))
         L.sweep('Carousel spoke',[(0,0,.61),(x,y,.61)],.035,'p11-steel',6)
         L.cylinder('Slot status',(x,y,.44),.035,.01,'e9-cyan','Z',8,0)
+    # Open ammunition cassette beside the dropped rifle, on the solid base.
+    L.box('Issue cassette shell',(.65,-.32,.50),(.56,.61,.30),'p11-tint-metal',.025,tint='navy')
+    L.box('Cassette recessed interior',(.65,-.32,.655),(.45,.50,.018),'p11-rubber',.015)
+    L.box('Issue cassette flipped lid',(.65,.04,.76),(.56,.045,.47),'p11-tint-metal',.018,rotation=(-.24,0,0),tint='navy')
+    L.handle((.65,-.64,.50),.25,'X',.05,.02)
+    for xx in (.51,.65,.79):
+        for yy in (-.45,-.25):
+            L.cylinder('Foam cartridge socket',(xx,yy,.67),.045,.015,'p11-rubber','Z',8,0)
+            if xx!=.79:L.cylinder('Unissued cartridge',(xx,yy,.74),.032,.15,'p11-steel','Z',8,0)
+    for xx,yy,a in ((-.54,-.65,.4),(-.68,-.51,1.0),(-.43,-.39,-.5)):
+        L.cylinder('Spent cartridge on carousel',(xx,yy,.35),.026,.13,'e9-trim','X',8,0)
+    L.decal_quad('Abandoned issue ticket',(.72,-.91,.331),.25,.21,'Z','paper',rotation=.24)
     L.box('Issue console',(0,-1.15,.64),(.65,.36,.48),'p11-steel',.03)
     L.screen('Issue inventory',(0,-1.34,.7),.48,.26,'-Y','grid')
     L.stencil('ISSUE 04',(0,-1.35,.46),.09,'-Y')
