@@ -1,0 +1,48 @@
+{
+  "bakeSeconds": 2.79,
+  "blenderPNGDecodeMs": 4.904,
+  "file": "incidents-normal.png",
+  "size": 512,
+  "bytes": 215130,
+  "estimatedRGBA8MipBytes": 1398101,
+  "nonFlatPixels": 185792,
+  "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+  "targets": [
+    {
+      "mesh": "abandoned-winch-repair--e9-body",
+      "role": "e9-body",
+      "seconds": 0.037,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "abandoned-winch-repair--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.027,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "abandoned-winch-repair--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.022,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "abandoned-winch-repair--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.026,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "abandoned-winch-repair--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.033,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "abandoned-winch-repair--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.026,
+      "method": "three-segment high bevel"
+    }
+  ]
+}

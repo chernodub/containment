@@ -108,7 +108,7 @@ def shaft():
   L.cylinder('Fairlead sheave',(x,-.91,.56),.2,.15,'e9-dark','X',14,.01)
   L.torus('Fairlead groove',(x,-.91,.56),.19,.025,'p11-steel','X',14,4)
   L.profile_x('Fairlead bracket',[(-1.16,.22),(-.64,.22),(-.72,.63),(-1.05,.63)],x-.15,x+.15,'e9-body',.015)
-  L.sweep('Shaft cable',[(x,.69,1.3),(x,.48,1.8),(x,0,2),(x,-.48,1.8),(x,-.69,1.3),(x,-1.07,.67),(x,-1.1,.08)],.04,'p11-steel',5)
+  L.sweep('Shaft cable',[(x,.69,1.3),(x,.48,1.8),(x,0,2),(x,-.48,1.8),(x,-.69,1.3),(x,-1.07,.9 if x<0 else .67),(x,-1.1,.72 if x<0 else .08)],.04,'p11-steel',5)
  L.box('Winch terminal',(1.9,.26,1.8),(.45,.44,.18),'e9-dark',.025)
  L.cylinder('Terminal gland',(1.9,.54,1.8),.04,.12,'p11-steel','Y',8,0)
  L.stencil('L04',(0,-.96,.25),.12,'Z')

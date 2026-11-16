@@ -9,181 +9,181 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 10.407,
-    "blenderPNGDecodeMs": 13.916,
+    "bakeSeconds": 2.038,
+    "blenderPNGDecodeMs": 6.157,
     "file": "maintenance-containment-normal.png",
     "size": 512,
-    "bytes": 382413,
+    "bytes": 381024,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 176653,
+    "nonFlatPixels": 179133,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "frost-manifold-turbines--e9-body",
         "role": "e9-body",
-        "seconds": 0.293,
+        "seconds": 0.073,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "frost-manifold-turbines--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.321,
+        "seconds": 0.081,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "frost-manifold-turbines--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.139,
+        "seconds": 0.056,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "frost-manifold-turbines--p11-frost",
         "role": "p11-frost",
-        "seconds": 0.108,
+        "seconds": 0.039,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "frost-manifold-turbines--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.067,
+        "seconds": 0.028,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "frost-manifold-turbines--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.158,
+        "seconds": 0.04,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "frost-manifold-turbines--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.088,
+        "seconds": 0.03,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "frost-manifold-turbines--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.142,
+        "seconds": 0.035,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "lift-winch-machinery--e9-body",
         "role": "e9-body",
-        "seconds": 0.286,
+        "seconds": 0.035,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "lift-winch-machinery--e9-dark",
         "role": "e9-dark",
-        "seconds": 1.297,
+        "seconds": 0.051,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "lift-winch-machinery--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.658,
+        "seconds": 0.031,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "lift-winch-machinery--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.97,
+        "seconds": 0.076,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "lift-winch-machinery--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.12,
+        "seconds": 0.025,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "lift-winch-machinery--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.188,
+        "seconds": 0.027,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "shield-field-emitter--e9-body",
         "role": "e9-body",
-        "seconds": 0.079,
+        "seconds": 0.027,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "shield-field-emitter--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.165,
+        "seconds": 0.051,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "shield-field-emitter--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.13,
+        "seconds": 0.051,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "shield-field-emitter--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.07,
+        "seconds": 0.029,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "shield-field-emitter--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.163,
+        "seconds": 0.059,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "shield-field-emitter--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.097,
+        "seconds": 0.031,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "shield-field-emitter--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.091,
+        "seconds": 0.027,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "containment-ring-cradle--e9-body",
         "role": "e9-body",
-        "seconds": 0.206,
+        "seconds": 0.048,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "containment-ring-cradle--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.309,
+        "seconds": 0.048,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "containment-ring-cradle--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.502,
+        "seconds": 0.053,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "containment-ring-cradle--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.141,
+        "seconds": 0.039,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "containment-ring-cradle--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.13,
+        "seconds": 0.099,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "containment-ring-cradle--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.043,
+        "seconds": 0.027,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "containment-ring-cradle--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.133,
+        "seconds": 0.033,
         "method": "three-segment high bevel"
       }
     ]
@@ -332,8 +332,8 @@
   ],
   "output": {
     "file": "maintenance-containment.glb",
-    "bytes": 1989676,
-    "sha256": "6cf67c771045027679f73e27dc503fd757ac8f6518661f407a28497de2b8cd8c",
+    "bytes": 1988284,
+    "sha256": "d23b7bac3bd0f833d1b0a776c1b72604bfce211a70260774f39acde1444cd300",
     "triangles": 29652
   },
   "overBudget": [],
