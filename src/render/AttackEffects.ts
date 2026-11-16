@@ -56,7 +56,7 @@ else if(style>5.5){
   float timing=1.0-smoothstep(aa,aa*2.5,abs(phase-progress));
   float commitment=smoothstep(0.0,1.0,vAlpha)*flashScale;
   float strike=vFrame>=3.0?(1.0-clamp(vFrame-3.0,0.0,1.0))*flashScale:0.0;
-  color=mix(vec3(.008,.004,.003),vec3(1.0,.21,.075),max(rim,timing*.8));
+  color=mix(vec3(.008,.004,.003),vec3(1.0,.21,.075),max(rim,max(timing*.8,filled*(.06+threat*.08+commitment*.36))));
   color=mix(color,vec3(1.0,.48,.12),commitment*rim*.65);
   color=mix(color,vec3(1.0,.38,.15),strike*.65);
   // Family weight affects the quiet interior; edge opacity stays readable.

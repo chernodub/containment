@@ -65,3 +65,26 @@ The original manifest is unchanged and `PROVENANCE-NOTE.md` flags the issue.
 ## Brute mass check on merged meshes
 
 Opened native Brute Crew04 and Relay15/20. Raised cleavers communicate commitment; the first upright windup is too narrow compared with its broad released stance. Belly remains above the feet in these views. Requested Brute-only wider compressed held mass (implemented in7a60fd80; needs final clean capture). Relay floor keyline remains legible; sweep still reads much weaker than edge. These B1 frames are exploratory mixed-source after live dist was rebuilt at02:20:24+0300; do not use them for same-build final claims.
+
+## B round 2 — immutable standard (in progress)
+
+Source21875431, immutable `runtime-b2`; Crawler/Stalker/Brute in both contrast
+rooms plus the real20-Crawler swarm. New capture-only vertex bounds now enclose
+the actual posed lunge rather than the collision cylinder. Opened both Crawler
+native07 and corresponding exact480 frame07, plus the full30-frame native
+Crawler Crew strip. Its strike and asymmetric return now remain in the crop.
+
+Look → fix: the stronger final-fill alpha is visible on pale floor, but the
+Relay interior still reads mainly as dark floor. The shader was leaving filled
+interior color near black and changing color mainly on rim/timing. For round3,
+tint only the swept interior toward warning orange, with the meaningful increase
+confined to native last100ms commitment. Preserve quiet early alpha, exact shape,
+opaque keyline and reduced-motion/flash scaling. Round2's frozen assets stay
+unchanged for comparison. Remaining standard subjects/crowd are still capturing;
+this entry does not claim that unfinished frames have been opened.
+
+Tool correction from round1: its native crop derivative stopped at mixed crowd
+Spitter17 leaving the viewport in frame26. `native-strips/FAILED.txt` retains that
+failure; partial root-envelope strips are not complete body evidence. All360
+round1 native PNGs are retained. Native full frames were sampled at the documented
+phase frames; all12 complete exact480 contacts were opened at original size. The20-Crawler standard avoids the retreating mixed-crowd source limitation.
