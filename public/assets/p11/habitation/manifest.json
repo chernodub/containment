@@ -12,6 +12,7 @@
     "e9-amber": "#e0b95a",
     "e9-cyan": "#65d8e6",
     "e9-dark": "#0e1820",
+    "e9-glass": "#9dcad1",
     "e9-trim": "#8faaa8",
     "p11-rubber": "#16191b",
     "p11-steel": "#6c7a7c",
@@ -22,9 +23,9 @@
     {
       "name": "residential-common-nook",
       "size": [
-        6.868,
+        6.8,
         2.64,
-        1.45
+        1.649
       ],
       "bounds": {
         "min": [
@@ -33,12 +34,12 @@
           -0.84
         ],
         "max": [
-          3.468,
+          3.4,
           2.64,
-          0.61
+          0.809
         ]
       },
-      "triangles": 3366,
+      "triangles": 3322,
       "budget": 12000,
       "finishes": [
         "e9-amber",
@@ -53,13 +54,13 @@
       "size": [
         4.0,
         3.695,
-        2.6988
+        2.7119
       ],
       "bounds": {
         "min": [
           -2.0,
           0.0,
-          -1.3
+          -1.3131
         ],
         "max": [
           2.0,
@@ -67,11 +68,12 @@
           1.3988
         ]
       },
-      "triangles": 2350,
+      "triangles": 4638,
       "budget": 12000,
       "finishes": [
         "e9-cyan",
         "e9-dark",
+        "e9-glass",
         "e9-trim",
         "p11-rubber",
         "p11-steel",
@@ -82,9 +84,9 @@
   ],
   "output": {
     "file": "habitation.glb",
-    "bytes": 221292,
-    "sha256": "d493f54a63386bccde12c7a82b64329fe0078fcbaa4c03a417cad2f652169f94",
-    "triangles": 5716
+    "bytes": 346504,
+    "sha256": "ea4933eb0d0d99992211653557d3ca40cba97a4fc6c153bd454727591652186d",
+    "triangles": 7960
   },
   "overBudget": []
 }

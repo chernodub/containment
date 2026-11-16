@@ -7,7 +7,7 @@ from mathutils import Matrix, Vector
 OUT=L.ROOT/'public/assets/p11/habitation'
 RENDERS=L.ROOT/'artifacts/nextgen/p11-final/beauty'
 # Shared-machine beauty rendering: CPU avoids concurrent Metal compilation; two threads.
-_stage=L._stage
+from cpu_preview import stage as _stage
 def preview_stage():
     scene=_stage();scene.cycles.device='CPU';scene.cycles.samples=16;scene.render.threads=2
     return scene
@@ -33,14 +33,14 @@ def chair(x,y,angle=0,fallen=False):
     for ob in set(L.CURRENT.children)-before: ob.data.transform(transform)
 
 def drawing(x,z,index):
-    L.decal_quad('Child drawing sheet',(x,.713,z),.56,.63,'-Y','paper',rotation=.04*(index-1))
+    L.decal_quad('Child drawing sheet',(x,.61,z),.56,.63,'-Y','paper',rotation=.04*(index-1))
     for sx in (-1,1):
-        L.decal_quad('Tape corner',(x+sx*.19,.709,z+.27),.13,.055,'-Y','sand',rotation=sx*.25)
+        L.decal_quad('Tape corner',(x+sx*.19,.605,z+.27),.13,.055,'-Y','sand',rotation=sx*.25)
     # A crayon house, tiny stick family and an oversized sun: clearly human, not a tech screen.
-    line=lambda name,points,tint: L.sweep(name,[(x+px,.703,z+pz) for px,pz in points],.009,'p11-tint',4,tint=tint)
+    line=lambda name,points,tint: L.sweep(name,[(x+px,.60,z+pz) for px,pz in points],.009,'p11-tint',4,tint=tint)
     line('Crayon house',[(-.18,-.17),(-.18,.02),(0,.17),(.18,.02),(.18,-.17),(-.18,-.17)],'crayon-blue')
     line('Crayon door',[(-.035,-.17),(-.035,-.04),(.045,-.04),(.045,-.17)],'crayon-purple')
-    L.torus('Crayon sun',(x+.17,.703,z+.21),.055,.008,'p11-tint','Y',10,3,tint='crayon-yellow')
+    L.torus('Crayon sun',(x+.17,.60,z+.21),.055,.008,'p11-tint','Y',10,3,tint='crayon-yellow')
     line('Crayon grass',[(-.22,-.2),(.22,-.2)],'crayon-green')
 
 def residential():
@@ -72,9 +72,8 @@ def residential():
     L.box('Crayon tin',(.98,-.42,1.00),(.33,.15,.08),'p11-steel',.012)
     for i,tint in enumerate(('crayon-blue','crayon-green','crayon-purple')):
         L.cylinder('Loose crayon',(.44+i*.08,-.40,.99),.012,.21,'p11-tint','Y',6,0,tint=tint)
-    chair(2.52,-.12,.17,True)
+    chair(2.40,-.30,-.62,True)
     # Small cupboard with open cubby, hook rail, folded blanket and abandoned arrival bag.
-    L.box('Cupboard feet',(-2.8,-.27,.09),(.5,.3,.12),'p11-steel',.02)
     painted('Folded blanket',(-2.45,.22,.60),(.76,.49,.09),'blanket',.02)
     for i in range(4): painted('Blanket weave border',(-2.45,.02+i*.025,.647),(.70,.009,.005),'cream',0)
     painted('Arrival case',(3.02,.23,.35),(.49,.58,.65),'navy',.06)
@@ -85,12 +84,15 @@ def residential():
     L.sweep('Lamp power feed',[(-3,.65,2.46),(-3.3,.65,2.46),(-3.3,.65,.14)],.016,'p11-rubber',6)
 
 def leaf(name,root,tip,width,tint):
-    a,b=Vector(root),Vector(tip); d=b-a; side=d.cross(Vector((0,0,1))).normalized()*width
-    mid=a+d*.55+Vector((0,0,.10))
-    # Folded diamond leaves have real plane changes and legible tapered silhouettes.
     import bmesh
-    bm=bmesh.new();vs=[bm.verts.new(v) for v in (a,mid+side,b,mid-side,mid+Vector((0,0,.05)))];
-    for ids in ((0,1,4),(1,2,4),(2,3,4),(3,0,4)):bm.faces.new([vs[i] for i in ids])
+    a,b=Vector(root),Vector(tip);d=b-a;side=d.cross(Vector((0,0,1))).normalized()
+    bm=bmesh.new();rows=[]
+    for i in range(7):
+        t=i/6;center=a+d*t+Vector((0,0,math.sin(t*math.pi)*.055))
+        w=max(.002,math.sin(math.pi*t)**.8*width)
+        rows.append([bm.verts.new(center+side*w*sign-Vector((0,0,abs(sign)*w*.22))) for sign in (-1,0,1)])
+    for i in range(6):
+        for j in range(2):bm.faces.new([rows[i][j],rows[i+1][j],rows[i+1][j+1],rows[i][j+1]])
     L.mesh_object(name,bm,'p11-tint',tint=tint,smooth=False)
 
 def atrium():
@@ -115,7 +117,8 @@ def atrium():
         L.sweep('Branch',[(0,0,z),(.4*end[0],.4*end[1],z+.4),end],.045,'p11-tint',6,taper=(.045,.012),tint='wood')
         for j in range(5):
             off=Vector(end)+Vector((rng.uniform(-.3,.3),rng.uniform(-.3,.3),rng.uniform(-.16,.18)))
-            leaf('Garden leaf',off,off+Vector((math.cos(a+j)*.35,math.sin(a+j)*.35,.09)),.14,'olive' if j%2 else 'mint')
+            L.sweep('Leaf petiole',[Vector(end),off],.009,'p11-tint',4,tint='wood')
+            leaf('Garden leaf',off,off+Vector((math.cos(a+j)*.48,math.sin(a+j)*.48,.09)),.11,'olive' if j%2 else 'mint')
     for i in range(14):
         x=rng.uniform(-1.5,1.5);y=rng.uniform(-.9,.9)
         for j in range(3):leaf('Ground fern',(x,y,.55),(x+math.cos(j*2.1)*.35,y+math.sin(j*2.1)*.3,.85),.10,'olive')
@@ -123,11 +126,14 @@ def atrium():
     for x in (-1.9,1.9):
         L.sweep('Skylight support',[(x,1.05,.1),(x,1.05,3.3),(x,.2,3.65),(x,-.9,3.25)],.045,'p11-steel',6)
     L.sweep('Skylight crossbar',[(-1.9,1.05,3.3),(1.9,1.05,3.3)],.05,'p11-steel',6)
+    import bmesh
+    for points in [[(-1.8,.98,3.34),(-.7,.52,3.52),(-.35,.57,3.50),(.5,-.16,3.54),(1.8,-.8,3.29),(1.8,1,3.34)], [(-1.8,.9,3.34),(-.8,.45,3.50),(-.4,.50,3.49),(.4,-.22,3.51),(1.7,-.85,3.27),(-1.8,-.85,3.27)]]:
+        bm=bmesh.new();bm.faces.new([bm.verts.new(p) for p in points]);L.mesh_object('Fractured skylight pane',bm,'e9-glass',smooth=False)
     L.sweep('Cracked glazing diagonal',[(-1.8,.98,3.34),(-.7,.52,3.52),(-.35,.57,3.50),(.5,-.16,3.54),(1.8,-.8,3.29)],.016,'e9-cyan',4)
     L.lamp_strip('Horticultural fixture',(0,.97,3.22),2.9,'X','e9-cyan',.035,.035)
 
 L.reset_scene();residential();atrium()
 L.export('habitation',OUT,'habitation.glb','Original lived-in common nook and conservatory garden.', 'blender -b --factory-startup -P tools/assets/p11-set-pieces/habitation.py')
 if '--render' in L.args():
-    for name in [a.name for a in L.ASSETS]:
+    for name in [a.name for a in L.ASSETS if not any(v.startswith('--only=') for v in L.args()) or '--only='+a.name in L.args()]:
         L.render(RENDERS/(name+'-game.png'),[name],'game');L.render(RENDERS/(name+'-hero.png'),[name],'hero')

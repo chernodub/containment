@@ -148,7 +148,7 @@
   "output": {
     "file": "clinical-security.glb",
     "bytes": 382216,
-    "sha256": "9bcf9f8d5a137b7d69dae055a87be4b4047e2bf08badf9ce7bc46e4f1c1bfddf",
+    "sha256": "c43ff64927067646e06842b9d35d9728698ab70aff54e631092f8872f47bffab",
     "triangles": 10532
   },
   "overBudget": []

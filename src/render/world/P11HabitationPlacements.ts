@@ -8,7 +8,7 @@ export function p11HabitationPlacements(id:string):OriginalKitInstance[]{
  });
  // West common-nook footprint x=0..40, z=400..560. Scale along the wall to
  // that existing solid; retain 140+ unit gallery lanes and native colliders.
- if(id==='residential-gallery')return [place('residential-common-nook',23,480,Math.PI/2,.72,1,.78)];
+ if(id==='residential-gallery')return [place('residential-common-nook',21,480,Math.PI/2,.72,1,.70)];
  // The existing 218×90 shared garden void supplies all collision support.
  if(id==='communal-atrium')return [place('atrium-conservatory',589,355,0,1.65,1,1.04)];
  return [];
