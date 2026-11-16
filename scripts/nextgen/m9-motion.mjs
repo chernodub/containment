@@ -91,6 +91,7 @@ try{
     // read the unchanged simulation rig (as animate/equip are held above).
     if(human)model.setRig=()=>{};
     const columns=4,clock=[],proof=[],project=model.root.position.clone(),frameCanvases=[];
+    const headingQuaternion=model.root.quaternion.clone(),headingVector=project.clone();
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,deathStarted=false,ragdollStarted=false,controlledRoll=0;
     // Present the requested aim without writing the frozen simulation player.
     const presentationPlayer={...g.player,angle:studyAim};
@@ -197,7 +198,9 @@ try{
       minX=Math.min(minX,left);minY=Math.min(minY,top);maxX=Math.max(maxX,right);maxY=Math.max(maxY,bottom);
       const frameCanvas=document.createElement('canvas');frameCanvas.width=right-left;frameCanvas.height=bottom-top;
       frameCanvas.getContext('2d').drawImage(r.canvas,left,top,right-left,bottom-top,0,0,right-left,bottom-top);frameCanvases.push({canvas:frameCanvas,left,top});
-      clock.push((frame+1)*steps*1000/60);proof.push({root:model.root.position.toArray(),rootRotation:model.root.rotation.toArray(),body:model.body.position.toArray(),rotation:model.body.rotation.toArray(),crop:{left,top,width:right-left,height:bottom-top},muzzle:model.muzzleWorld?model.muzzleWorld(project).toArray():undefined,ragdoll:ragdollStarted,crowd:!crowd?undefined:models.map(m=>{const pose=[];m.root.traverse(o=>{if(o.isBone&&/leg/.test(o.name))pose.push({name:o.name,q:o.quaternion.toArray()});});return pose;})});
+      const heldWeapon=(shooter??model).root.getObjectByName('weapon-'+currentWeapon);
+      if(heldWeapon){heldWeapon.getWorldQuaternion(headingQuaternion);headingVector.set(0,0,1).applyQuaternion(headingQuaternion);}
+      clock.push((frame+1)*steps*1000/60);proof.push({weaponForward:heldWeapon?headingVector.toArray():undefined,root:model.root.position.toArray(),rootRotation:model.root.rotation.toArray(),body:model.body.position.toArray(),rotation:model.body.rotation.toArray(),crop:{left,top,width:right-left,height:bottom-top},muzzle:model.muzzleWorld?model.muzzleWorld(project).toArray():undefined,ragdoll:ragdollStarted,crowd:!crowd?undefined:models.map(m=>{const pose=[];m.root.traverse(o=>{if(o.isBone&&/leg/.test(o.name))pose.push({name:o.name,q:o.quaternion.toArray()});});return pose;})});
      }
      if(g.elapsed!==elapsed)throw Error('Motion study advanced simulation');
      const cellWidth=maxX-minX,cellHeight=maxY-minY,canvas=document.createElement('canvas');canvas.width=columns*cellWidth;canvas.height=Math.ceil(frames/columns)*cellHeight;
