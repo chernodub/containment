@@ -37,7 +37,8 @@ RADIUS = {"crawler": 14, "stalker": 17, "spitter": 18, "brute": 28, "carrier": 2
 started = time.time()
 
 ZONE_KEY = {S.SHELL: "shell", S.MEMBRANE: "membrane", S.SINEW: "sinew", S.CLAW: "claw", S.ORGAN: "organ",
-            S.EYE: "eye", S.CREST: "crest", S.TOOTH: "tooth", S.CAVITY: "cavity", S.UNDER: "under"}
+            S.EYE: "eye", S.CREST: "crest", S.TOOTH: "tooth", S.CAVITY: "cavity", S.UNDER: "under",
+            S.ARMOR: "armor", S.FLESH: "flesh"}
 
 scene = K.reset_scene()
 arm = K.load_contract(M.ASSET)
@@ -47,6 +48,44 @@ parts = M.build(sk)
 REVIEW.mkdir(parents=True, exist_ok=True)
 BAKES = HERE / "bakes" / M.FAMILY
 BAKES.mkdir(parents=True, exist_ok=True)
+
+
+def palette():
+    P = dict(M.PALETTE)
+    shell, edge = np.asarray(P["shell"], np.float32), np.asarray(P["edge"], np.float32)
+    P.setdefault("armor", tuple(shell * 0.35 + edge * 0.65))
+    P.setdefault("flesh", (0.30, 0.045, 0.055))
+    return P
+
+
+def tertiary(high, sculpture, seed=0):
+    """Baked-only surface character: pitting and scars on hard shell, creased wet flesh."""
+    co, n = K.verts_np(high), K.normals_np(high)
+    _, win = sculpture.evaluate_points(co, track=True)
+    zone = np.array([sculpture.prims[i].zone if i >= 0 else S.SHELL for i in win])
+    v = M.VOXEL
+    hard = np.isin(zone, [S.SHELL, S.ARMOR, S.CREST, S.UNDER]).astype(np.float32)
+    soft = np.isin(zone, [S.MEMBRANE, S.FLESH, S.SINEW]).astype(np.float32)
+    d = np.zeros(len(co), np.float32)
+    f, _ = S.worley(co / (v * 5.5), 11 + seed)
+    d -= hard * S.smoothstep(0.34, 0.0, f) * v * 0.9
+    f, _ = S.worley(co / (v * 2.8), 23 + seed)
+    d -= hard * S.smoothstep(0.26, 0.0, f) * v * 0.45
+    rng = np.random.default_rng(5 + seed)
+    hard_idx = np.nonzero(hard)[0]
+    for _ in range(14 if len(hard_idx) else 0):
+        i = hard_idx[rng.integers(len(hard_idx))]
+        t = np.cross(n[i], rng.normal(size=3).astype(np.float32))
+        t /= max(float(np.linalg.norm(t)), 1e-6)
+        a, b = co[i] - t * v * rng.uniform(8, 20), co[i] + t * v * rng.uniform(8, 20)
+        ab = b - a
+        h = np.clip(((co - a) @ ab) / float(ab @ ab), 0, 1)
+        dist = np.linalg.norm(co - a - h[:, None] * ab, axis=1)
+        d -= hard * S.smoothstep(1.8 * v, 0.0, dist) * v * 1.1
+    crease = np.abs(S.fbm(co / (v * 8.0), 3, 31 + seed))
+    d -= soft * (1 - S.smoothstep(0.0, 0.14, crease)) * v * 0.8
+    d += soft * S.fbm(co / (v * 3.0), 2, 41 + seed) * v * 0.25
+    K.set_verts(high, co + n * d[:, None])
 
 
 def colorize(high, sculpture):
@@ -59,7 +98,7 @@ def colorize(high, sculpture):
     cv = K.curvature(high)
     cv = K.laplacian(cv, K.edges_np(high), len(co), 6, 0.5)
     cv = cv / (np.std(cv) + 1e-6)
-    P = M.PALETTE
+    P = palette()
     base = np.zeros((len(co), 3), np.float32)
     glow = np.zeros((len(co), 3), np.float32)
     for z, key in ZONE_KEY.items():
@@ -67,7 +106,7 @@ def colorize(high, sculpture):
         if sel.any():
             base[sel] = P.get(key, P["shell"])
     plate_var = 0.9 + 0.2 * ((plate * 2654435761) % 997 / 997.0)
-    shellish = np.isin(zone, [S.SHELL, S.CREST, S.UNDER])
+    shellish = np.isin(zone, [S.SHELL, S.CREST, S.UNDER, S.ARMOR])
     base[shellish] *= (tint * plate_var)[shellish, None]
     convex = S.smoothstep(0.6, 1.9, cv)
     concave = S.smoothstep(0.3, 1.5, -cv)
@@ -75,6 +114,10 @@ def colorize(high, sculpture):
     wear = np.where(shellish, 0.85, np.where(zone == S.CLAW, 0.35, 0.15))
     base = base + (edge - base) * (convex * wear)[:, None]
     base *= (1 - 0.55 * concave)[:, None]
+    # wet flesh: raw saturated tissue, dark creases, pale wet highlights
+    wet = np.isin(zone, [S.FLESH, S.MEMBRANE])
+    hi_col = np.asarray(P.get("wet", (0.62, 0.30, 0.26)), np.float32)
+    base[wet] = base[wet] + (hi_col - base[wet]) * (0.55 * convex[wet])[:, None]
     grain = S.fbm(co * 40.0, 2, 7)
     base *= (1 + 0.08 * grain)[:, None]
     for key in ("organ", "eye"):
@@ -93,8 +136,9 @@ for name, sculpture in parts.items():
     high = K.sculpt_mesh(sculpture, M.VOXEL, f"{M.FAMILY}-{name}-high")
     K.smooth_mesh(high, 1, 0.4)
     K.shade_smooth(high)
-    colorize(high, sculpture)
     low = K.duplicate(high, f"{M.FAMILY}-{name}-low")
+    tertiary(high, sculpture)
+    colorize(high, sculpture)
     for attr in list(low.data.color_attributes):
         low.data.color_attributes.remove(attr)
     K.decimate(low, M.TRIS[name])

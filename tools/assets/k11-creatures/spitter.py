@@ -27,25 +27,27 @@ PALETTE = {
 GLOW = {"organ": (0.2, 1.0, 0.02), "eye": (0.5, 1.0, 0.2)}
 
 
-def chain(body, sk, names, radii, side, plates=(), tint=0.5, claw_hook=False):
+def chain(body, sk, names, radii, side, plates=(), tint=0.5, claw_hook=False, planted=True):
+    """Jointed leg along a bone chain: armoured segments, knuckles, planted foot."""
     pts = [sk.h(n) for n in names] + [sk.end(names[-1])]
     for i, name in enumerate(names):
         p, q = pts[i], pts[i + 1]
         if float(np.linalg.norm(q - p)) < 1e-4:
             continue
         last = i == len(names) - 1
-        zone = CLAW if last else SHELL
-        body.add(RoundCone(p, q, radii[i], radii[i + 1], zone=zone, bone=name, k=radii[i] * 0.35, tint=tint))
-        if 0 < i and not last:
+        if last and planted:
+            stop = q + (p - q) * 0.12
+            body.extend(A.armour_segment(p, stop, radii[i], max(radii[i + 1], radii[i] * 0.45), name, side,
+                                         tint=tint * 1.6, plate=100 + i + 10 * (side > 0)))
+            body.extend(A.foot(q, q - p, max(radii[i] * 0.55, radii[-2] * 0.5), name))
+        elif last:
+            body.add(RoundCone(p, q, radii[i], radii[i + 1], zone=CLAW, bone=name, k=radii[i] * 0.35))
+        else:
+            body.extend(A.armour_segment(p, q, radii[i], radii[i + 1], name, side, tint=tint * 1.6,
+                                         plate=100 + i + 10 * (side > 0)))
+        if 0 < i:
             prev = names[i - 1]
-            body.add(Ellipsoid(p, (radii[i] * 0.95,) * 3, zone=MEMBRANE, bone=("blend", prev, name, pts[i - 1], q), k=radii[i] * 0.3))
-        if i in plates:
-            ax = normalize(q - p)
-            out = normalize(v3((0.0, side, 0.6)))
-            out = normalize(out - ax * float(out @ ax))
-            body.add(Plate((p + q) / 2 + out * radii[i] * 0.6, (float(np.linalg.norm(q - p)) * 0.45, radii[i] * 1.4, radii[i] * 0.8),
-                           frame(ax, out), radii[i] * 0.55, rings=0.006, lip=radii[i] * 0.15, chip=0.01, zone=SHELL,
-                           bone=name, plate=100 + i + 10 * (side > 0), tint=1.05))
+            body.extend(A.knuckle(p, radii[i] * 0.95, prev, name, pts[i - 1], q))
     return pts
 
 
