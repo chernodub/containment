@@ -31,6 +31,9 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         if (id === 'residential-gallery' && furnishing.source === 'solid'
             && furnishing.x >= 572 && furnishing.x <= 768
             && furnishing.z >= 241 && furnishing.z <= 279) continue;
+        if (id === 'awakening-bay' && furnishing.source === 'solid'
+            && furnishing.x >= 440 && furnishing.x <= 840
+            && furnishing.z >= 240 && furnishing.z <= 350) continue;
         instances.push({ pack: furnishing.pack, asset: furnishing.asset, matrix: matrix(furnishing.x / 32, 0, furnishing.z / 32, furnishing.angle, ...furnishing.scale), purpose: furnishing.space + ' / ' + furnishing.asset,cutaway:furnishing.source==='portal' });
     }
     if(id==='relay-racks') {
@@ -158,6 +161,10 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
                 replacements.push({x:(lo[0]+hi[0])/2,z:(lo[2]+hi[2])/2,angle:0,scale:1,
                     width:hi[0]-lo[0],depth:hi[2]-lo[2],bottom:Math.max(0,lo[1]),top:hi[1]});
             }
+            // P11 owns the full native north bank, including edge headers that
+            // sit just beyond the imported hero's mesh bounds.
+            if(t.id==='awakening-bay')replacements.push({x:640/32,z:295/32,angle:0,scale:1,
+                width:400/32,depth:110/32,bottom:-.01,top:2.6});
             const thin = (t.voids ?? []).flatMap(p => {
                 const xs = p.map(v => v.x / 32), zs = p.map(v => v.y / 32), w = Math.max(...xs) - Math.min(...xs), d = Math.max(...zs) - Math.min(...zs);
                 return p.length === 4 && Math.min(w, d) <= 1.55 ? [{ x: (Math.min(...xs) + Math.max(...xs)) / 2, z: (Math.min(...zs) + Math.max(...zs)) / 2, angle: 0, scale: 1, width: w + .01, depth: d + .01, bottom: -.01, top: 2.4 }] : [];
