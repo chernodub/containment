@@ -1,156 +1,198 @@
 {
-  "bakeSeconds": 2.043,
-  "blenderPNGDecodeMs": 7.588,
+  "bakeSeconds": 2.647,
+  "blenderPNGDecodeMs": 6.915,
   "file": "infested-normal.png",
   "size": 512,
-  "bytes": 332765,
+  "bytes": 410352,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 137486,
+  "nonFlatPixels": 166447,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "engulfed-milling-machine--e9-body",
       "role": "e9-body",
-      "seconds": 0.088,
+      "seconds": 0.294,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "engulfed-milling-machine--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.051,
+      "seconds": 0.098,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "engulfed-milling-machine--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.046,
+      "seconds": 0.073,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "engulfed-milling-machine--p11-flesh",
       "role": "p11-flesh",
-      "seconds": 0.045,
+      "seconds": 0.051,
       "method": "sculpted high membrane"
     },
     {
       "mesh": "engulfed-milling-machine--p11-growth",
       "role": "p11-growth",
-      "seconds": 0.093,
+      "seconds": 0.077,
       "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "engulfed-milling-machine--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.04,
+      "method": "three-segment high bevel"
     },
     {
       "mesh": "engulfed-milling-machine--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.034,
+      "seconds": 0.06,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "engulfed-milling-machine--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.04,
+      "seconds": 0.078,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "engulfed-milling-machine--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.047,
+      "seconds": 0.031,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "ruptured-brood-plenum--e9-body",
       "role": "e9-body",
-      "seconds": 0.036,
+      "seconds": 0.031,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "ruptured-brood-plenum--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.035,
+      "seconds": 0.044,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "ruptured-brood-plenum--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.059,
+      "seconds": 0.034,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "ruptured-brood-plenum--p11-flesh",
       "role": "p11-flesh",
-      "seconds": 0.075,
+      "seconds": 0.039,
       "method": "sculpted high membrane"
     },
     {
       "mesh": "ruptured-brood-plenum--p11-growth",
       "role": "p11-growth",
-      "seconds": 0.087,
+      "seconds": 0.08,
       "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "ruptured-brood-plenum--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.043,
+      "method": "three-segment high bevel"
     },
     {
       "mesh": "ruptured-brood-plenum--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.028,
+      "seconds": 0.12,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "ruptured-brood-plenum--p11-tint-metal",
+      "role": "p11-tint-metal",
+      "seconds": 0.042,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "root-saddle--p11-growth",
       "role": "p11-growth",
-      "seconds": 0.042,
+      "seconds": 0.054,
       "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "root-saddle--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.037,
+      "method": "three-segment high bevel"
     },
     {
       "mesh": "egg-clutch--p11-flesh",
       "role": "p11-flesh",
-      "seconds": 0.039,
+      "seconds": 0.03,
       "method": "sculpted high membrane"
     },
     {
       "mesh": "egg-clutch--p11-growth",
       "role": "p11-growth",
-      "seconds": 0.035,
+      "seconds": 0.033,
       "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "egg-clutch--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.043,
+      "method": "three-segment high bevel"
     },
     {
       "mesh": "resin-web--p11-flesh",
       "role": "p11-flesh",
-      "seconds": 0.031,
+      "seconds": 0.035,
       "method": "sculpted high membrane"
     },
     {
       "mesh": "resin-web--p11-growth",
       "role": "p11-growth",
-      "seconds": 0.038,
+      "seconds": 0.044,
       "method": "sculpted high membrane"
     },
     {
       "mesh": "engulfed-repair-bench--e9-body",
       "role": "e9-body",
-      "seconds": 0.051,
+      "seconds": 0.033,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "engulfed-repair-bench--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.042,
+      "seconds": 0.04,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "engulfed-repair-bench--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.049,
+      "seconds": 0.03,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "engulfed-repair-bench--p11-flesh",
       "role": "p11-flesh",
-      "seconds": 0.067,
+      "seconds": 0.03,
       "method": "sculpted high membrane"
     },
     {
       "mesh": "engulfed-repair-bench--p11-growth",
       "role": "p11-growth",
-      "seconds": 0.051,
+      "seconds": 0.026,
       "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "engulfed-repair-bench--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.026,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "engulfed-repair-bench--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.03,
+      "method": "three-segment high bevel"
     }
   ]
 }

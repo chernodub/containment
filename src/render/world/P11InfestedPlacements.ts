@@ -9,6 +9,7 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     matrix: new T.Matrix4().compose(new T.Vector3(x / 32, y, z / 32),
       new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), angle), new T.Vector3(scale, scale, scale)),
     purpose: 'P11 / living machinery / ' + asset, cutaway: true,
+    highDetail: asset === 'root-saddle' || asset === 'egg-clutch' || asset === 'resin-web',
   });
   if (id === 'infested-workshop') {
     add('engulfed-milling-machine', 610, 266, 1, 0, Math.PI / 2);
