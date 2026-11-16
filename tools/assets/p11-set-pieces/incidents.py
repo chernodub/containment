@@ -46,7 +46,37 @@ def failed_shield():
  L.box('Sheared locking bolt',(.15,-.38,.8),(.46,.16,.13),'p11-steel',.012,rotation=(0,.15,.24))
  L.box('Detached seal clamp',(.6,-.38,.08),(.55,.26,.1),'e9-dark',.015,rotation=(0,0,.35))
 
-L.reset_scene();failed_repair();failed_shield()
+def pressure_chamber():
+ import bpy
+ L.asset('strained-containment-diaphragm',1500)
+ L.lathe('Pressure vessel recessed skirt',[(1.22,.1),(1.4,.23),(1.46,.55),(1.43,.8)],(0,0,0),'e9-dark',24)
+ # The buckled pressure diaphragm has a real missing wedge exposing its contents.
+ verts=[];faces=[];n=20
+ for j in range(5):
+  t=j/4;r=.06+1.36*t;z=1.48-.68*t*t
+  for i in range(n+1):
+   a=.22+i*(math.tau-.44)/n-math.pi/2
+   if i in (0,n):
+    a+=(.07,-.04,.1,-.02,.04)[j]*(1 if i==0 else -1)
+    zedge=z+(0,.06,.19,.08,.025)[j]
+   else:zedge=z
+   verts.append((r*math.cos(a),r*math.sin(a),zedge+.08*math.cos(a*3)*t))
+   if j and i: k=j*(n+1)+i;faces.append((k,k-1,k-n-2,k-n-1))
+ mesh=bpy.data.meshes.new('Split diaphragm');mesh.from_pydata(verts,[],faces);mesh.update()
+ obj=L._link(mesh,'Split bowed pressure diaphragm','e9-body',None);L.finish(obj,'e9-body',0)
+ L.lathe('Contained dark membrane',[(.05,.25),(.75,.45),(1.18,.8),(.85,1.15),(.2,1.32)],(0,0,0),'p11-flesh',16)
+ for z in (.65,.9,1.14):L.box('Exposed inspection lumen',(0,-.88,z),(.12,.06,.045),'e9-violet',.008)
+ for x in (-.72,.72):
+  L.sweep('Bowed restraint strap',[(x,-1.22,.65),(x,-.85,1.3),(x,0,1.7),(x,.85,1.3),(x,1.22,.65)],.055,'p11-steel',5)
+  for y in (-1.25,1.25):
+   L.box('Strap anchor shoe',(x,y,.68),(.27,.24,.17),'e9-dark',.015)
+   L.bolt((x,y,.79),.055,'Z')
+ L.cylinder('Relief valve neck',(1.08,.3,1.12),.12,.4,'p11-steel','Z',10,.01)
+ L.cylinder('Lifted relief cap',(1.12,.32,1.48),.2,.06,'e9-trim','Z',12,.01)
+ L.sweep('Captive relief cap tether',[(1.22,.31,1.14),(1.35,.32,1.4),(1.2,.32,1.5)],.018,'p11-steel',4)
+ L.gauge((-.65,-1.51,.85),.16)
+
+L.reset_scene();failed_repair();failed_shield();pressure_chamber()
 names=[a.name for a in L.ASSETS]
 L.export('incidents',OUT,'incidents.glb','Interrupted repairs and physical consequences on P11 machinery.','blender -b --factory-startup -P tools/assets/p11-set-pieces/incidents.py')
 if '--render' in L.args():

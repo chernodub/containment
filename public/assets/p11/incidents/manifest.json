@@ -9,79 +9,115 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 2.677,
-    "blenderPNGDecodeMs": 4.727,
+    "bakeSeconds": 3.627,
+    "blenderPNGDecodeMs": 9.179,
     "file": "incidents-normal.png",
     "size": 512,
-    "bytes": 183812,
+    "bytes": 268337,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 132064,
+    "nonFlatPixels": 150228,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "abandoned-winch-repair--e9-body",
         "role": "e9-body",
-        "seconds": 0.047,
+        "seconds": 0.081,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "abandoned-winch-repair--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.03,
+        "seconds": 0.064,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "abandoned-winch-repair--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.029,
+        "seconds": 0.073,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "abandoned-winch-repair--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.05,
+        "seconds": 0.077,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "abandoned-winch-repair--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.049,
+        "seconds": 0.066,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "abandoned-winch-repair--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.037,
+        "seconds": 0.06,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "failed-shield-leaves--e9-body",
         "role": "e9-body",
-        "seconds": 0.082,
+        "seconds": 0.088,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "failed-shield-leaves--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.05,
+        "seconds": 0.084,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "failed-shield-leaves--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.058,
+        "seconds": 0.074,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "failed-shield-leaves--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.043,
+        "seconds": 0.033,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "failed-shield-leaves--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.048,
+        "seconds": 0.064,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "strained-containment-diaphragm--e9-body",
+        "role": "e9-body",
+        "seconds": 0.06,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "strained-containment-diaphragm--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.072,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "strained-containment-diaphragm--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.159,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "strained-containment-diaphragm--p11-flesh",
+        "role": "p11-flesh",
+        "seconds": 0.152,
+        "method": "sculpted high membrane"
+      },
+      {
+        "mesh": "strained-containment-diaphragm--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.132,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "strained-containment-diaphragm--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.069,
         "method": "three-segment high bevel"
       }
     ]
@@ -91,6 +127,7 @@
     "e9-dark": "#0e1820",
     "e9-trim": "#8faaa8",
     "e9-violet": "#b286d1",
+    "p11-flesh": "#6e5266",
     "p11-rubber": "#16191b",
     "p11-steel": "#6c7a7c",
     "p11-tint": "#ffffff"
@@ -155,13 +192,44 @@
         "p11-rubber",
         "p11-steel"
       ]
+    },
+    {
+      "name": "strained-containment-diaphragm",
+      "size": [
+        2.92,
+        1.6523,
+        3.0152
+      ],
+      "bounds": {
+        "min": [
+          -1.46,
+          0.1,
+          -1.46
+        ],
+        "max": [
+          1.46,
+          1.7523,
+          1.5552
+        ]
+      },
+      "triangles": 1464,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "e9-violet",
+        "p11-flesh",
+        "p11-steel",
+        "p11-tint"
+      ]
     }
   ],
   "output": {
     "file": "incidents.glb",
-    "bytes": 314404,
-    "sha256": "b32256e312eae3ad71be9abd114303eb7545d41a9b75a9cd872472448c0cf444",
-    "triangles": 1764
+    "bytes": 479448,
+    "sha256": "b6bbfd511b2ff8e6713b6178743265c4c622293318f584ff0e838c0bdcaf0b55",
+    "triangles": 3228
   },
   "overBudget": []
 }

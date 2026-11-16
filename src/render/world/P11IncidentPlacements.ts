@@ -11,5 +11,6 @@ export function p11IncidentPlacements(id: string): OriginalKitInstance[] {
   } satisfies OriginalKitInstance);
   if (id === 'service-shaft-landing') add('abandoned-winch-repair',420,330,1.1,.15);
   if (id === 'shielding-gate') add('failed-shield-leaves',460,300,1);
+  if (id === 'containment-annulus') add('strained-containment-diaphragm',650,520,1.1,1.2);
   return result;
 }
