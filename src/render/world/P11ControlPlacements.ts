@@ -3,7 +3,7 @@ import type {OriginalKitInstance} from './OriginalShipKitAssets';
 /** Native machinery solids retain collision ownership; these are presentation replacements. */
 export function p11ControlPlacements(id:string):OriginalKitInstance[]{
  const placements:Record<string,[string,number,number,number,number,number]>={
-  'transmission-chamber':['uplink-tracking-dish',816,338,1,.65,.6],
+  'transmission-chamber':['uplink-tracking-dish',816,380,1,.65,.6],
   'diagnostic-gallery':['specimen-probe-cradle',790,340,1.1,.85,.8],
   'safety-interlock-station':['key-cylinder-interlock',650,365,1,.85,.8],
   'manual-control-chamber':['manual-authorisation-dais',640,380,.95,.9,.75],

@@ -7,7 +7,7 @@ export const SHIP_TRANSMISSION_CANDIDATE:Readonly<Record<string,ShipPlan>>=Objec
  'transmission-chamber':Object.freeze({...transmission,
   topology:defineShipRoom({...transmission.topology,
    // P11 shallow chancel machinery bed, outside the R144 holding circle.
-   obstacles:rectangles([[480,0,240,180],[200,720,180,160],[1040,640,160,160],[760,318,112,42]]),
+   obstacles:rectangles([[480,0,240,180],[200,720,180,160],[1040,640,160,160],[760,359,112,42]]),
    breaches:polygon([[260,120],[1120,120],[100,600],[960,800]]),
   }),
   breachFeatures:Object.freeze([

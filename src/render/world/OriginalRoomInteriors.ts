@@ -29,7 +29,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         // mesh starts above deck height, so generic 3D hero bounds cannot
         // reliably remove the legacy cabinet mounted on this collider.
         if (id === 'shielding-gate' && furnishing.source === 'solid' && furnishing.x === 460 && furnishing.z === 210) continue;
-        if (id === 'transmission-chamber' && furnishing.source === 'solid' && furnishing.x === 816 && furnishing.z === 339) continue;
+        if (id === 'transmission-chamber' && furnishing.source === 'solid' && furnishing.x === 816 && furnishing.z === 380) continue;
         if (id === 'residential-gallery' && furnishing.source === 'solid'
             && furnishing.x >= 572 && furnishing.x <= 768
             && furnishing.z >= 241 && furnishing.z <= 279) continue;
