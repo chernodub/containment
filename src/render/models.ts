@@ -106,6 +106,10 @@ export function marine():ActorModel{
  // The marine's weighted torso already fits its .5m collider. Retain a rigid,
  // uniform source transform so authored hand sockets never inherit shear.
  const r=rig('marine',2.05,true),weapon=new T.Group();r.root.name='marine';r.root.userData.colliderRadius=.5;r.root.add(weapon);
+ // The authored clips deliberately leave origin untracked. Retain the ready
+ // origin captured by rig(), then retire legacy stand/weapon bindings before
+ // authored actions capture their original state (same path as pooled reset).
+ r.reset();r.mixer.stopAllAction();
  const surface=actorSurface(r.materials,true),identity=marineIdentity(r.root),authoredPlayer=new AuthoredMotionPlayer(r.mixer,r.clips,r.assetRoot);
  const guns=new Map<WeaponId,GunModel>();let current:GunModel;const socket=r.assetRoot.getObjectByName('tag_weapon')!;let pose=authoredPlayer.available?undefined:r.action('shotgun_delta');
  const equip=(id:WeaponId)=>{if(current?.id===id)return;let gun=guns.get(id);if(!gun){gun=weaponModel(id);guns.set(id,gun);weapon.add(gun.root);}for(const g of guns.values())g.root.visible=g===gun;current=gun;pose?.stop();pose=authoredPlayer.available?undefined:r.action(`${({pistol:'blaster',plasma:'prifle',rocket:'lcannon'} as Partial<Record<WeaponId,string>>)[id]??id}_delta`);if(pose){pose.play();pose.paused=true;}};equip('shotgun');
