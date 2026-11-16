@@ -7,7 +7,169 @@
   "coordinateSystem": "glTF Y-up, metres; bottom-centred origins, fronts face +Z (camera side)",
   "description": "Original control, diagnostic and reactor hero machinery.",
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
-  "textures": "none (texture memory 0); detail is modelled geometry",
+  "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
+  "normalAtlas": {
+    "bakeSeconds": 3.008,
+    "blenderPNGDecodeMs": 7.887,
+    "file": "control-normal.png",
+    "size": 512,
+    "bytes": 369973,
+    "estimatedRGBA8MipBytes": 1398101,
+    "nonFlatPixels": 177562,
+    "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+    "targets": [
+      {
+        "mesh": "uplink-tracking-dish--e9-body",
+        "role": "e9-body",
+        "seconds": 0.066,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "uplink-tracking-dish--e9-ceramic",
+        "role": "e9-ceramic",
+        "seconds": 0.041,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "uplink-tracking-dish--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.158,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "uplink-tracking-dish--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.105,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "uplink-tracking-dish--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.037,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--e9-body",
+        "role": "e9-body",
+        "seconds": 0.038,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--e9-ceramic",
+        "role": "e9-ceramic",
+        "seconds": 0.044,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.118,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.106,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.06,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--e9-body",
+        "role": "e9-body",
+        "seconds": 0.048,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.155,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.089,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.044,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.061,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "manual-authorisation-dais--e9-body",
+        "role": "e9-body",
+        "seconds": 0.085,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "manual-authorisation-dais--e9-ceramic",
+        "role": "e9-ceramic",
+        "seconds": 0.053,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "manual-authorisation-dais--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.074,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "manual-authorisation-dais--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.09,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "manual-authorisation-dais--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.038,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "manual-authorisation-dais--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.049,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "reactor-crown--e9-body",
+        "role": "e9-body",
+        "seconds": 0.107,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "reactor-crown--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.116,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "reactor-crown--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.133,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "reactor-crown--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.064,
+        "method": "three-segment high bevel"
+      }
+    ]
+  },
   "materials": {
     "e9-body": "#24343c",
     "e9-ceramic": "#d5ded3",
@@ -40,7 +202,7 @@
           1.55
         ]
       },
-      "triangles": 2174,
+      "triangles": 4198,
       "budget": 12000,
       "finishes": [
         "e9-body",
@@ -71,7 +233,7 @@
           0.829
         ]
       },
-      "triangles": 1912,
+      "triangles": 4832,
       "budget": 12000,
       "finishes": [
         "e9-body",
@@ -102,13 +264,14 @@
           0.779
         ]
       },
-      "triangles": 3134,
+      "triangles": 6206,
       "budget": 12000,
       "finishes": [
         "e9-body",
         "e9-cyan",
         "e9-dark",
         "e9-trim",
+        "p11-rubber",
         "p11-screen",
         "p11-tint"
       ]
@@ -117,25 +280,27 @@
       "name": "manual-authorisation-dais",
       "size": [
         4.4,
-        2.14,
-        1.679
+        2.045,
+        1.81
       ],
       "bounds": {
         "min": [
           -2.2,
           0.0,
-          -0.8
+          -0.825
         ],
         "max": [
           2.2,
-          2.14,
-          0.879
+          2.045,
+          0.985
         ]
       },
-      "triangles": 1808,
+      "triangles": 4026,
       "budget": 12000,
       "finishes": [
         "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
         "e9-dark",
         "e9-trim",
         "p11-rubber",
@@ -147,7 +312,7 @@
       "name": "reactor-crown",
       "size": [
         4.4,
-        2.8626,
+        2.8447,
         4.4
       ],
       "bounds": {
@@ -158,15 +323,14 @@
         ],
         "max": [
           2.2,
-          2.8626,
+          2.8447,
           2.2
         ]
       },
-      "triangles": 3188,
+      "triangles": 6448,
       "budget": 12000,
       "finishes": [
         "e9-body",
-        "e9-ceramic",
         "e9-dark",
         "e9-trim",
         "e9-violet",
@@ -176,9 +340,9 @@
   ],
   "output": {
     "file": "control.glb",
-    "bytes": 412184,
-    "sha256": "13e856bf7c501840a78e8401a3bb6658e2de56fcd91441a19f1fe436e255b3c9",
-    "triangles": 12216
+    "bytes": 1870552,
+    "sha256": "915d40f716110b95d7527087402bcb43365784455960af1ee794a21e06d56733",
+    "triangles": 25710
   },
   "overBudget": []
 }
