@@ -16,7 +16,7 @@ import {progressionFor} from '../../../src/game/roguelike/progression';
 import { generateRun } from '../../../src/game/roguelike/run';
 import type { RigId } from '../../../src/game/abilities/contract';
 import {observeAbilityAims} from './ability-aim';
-import { BOT_POLICY_VERSION, chooseBoon, chooseRoute, chooseTarget, chooseMovement, chooseActions, distance } from './policy.mjs';
+import { BOT_POLICY_VERSION, chooseBoon, chooseRoute, createHumanPolicy, distance } from './policy.mjs';
 import {botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
 import {applyNativeImmediateKey, recordNativeObservedEvent, nativeWarningHazards, nativeDiagnosticBurst} from './sim-native-emulation';
 const TICK = 1000 / 60;
@@ -119,6 +119,7 @@ export class CameraObserver {
 export type SimOptions = {
     rig: RigId;
     seed: number;
+    profile?: string;
     rooms?: number;
     assisted?: boolean;
     legacy?: boolean;
@@ -132,6 +133,7 @@ export type SimReport = ReturnType<typeof runSimulation>;
 /** Fight a complete earned campaign with the browser player's pure decision helpers. */
 export function runSimulation(options: SimOptions) {
     const started = performance.now(), feel = new GameFeel(), camera = new CameraObserver(options.metrics?.queen?.height??4.5);
+    const human = createHumanPolicy(options.seed, options.profile ?? 'competent');
     let game: DepthGame;
     const events: Array<GameEffect & {
         at: number;
@@ -144,11 +146,11 @@ export function runSimulation(options: SimOptions) {
     const context = () => ({ dashing: game.abilities.dashing, critical: game.combat.snapshot.health <= 25, remaining: game.encounterRemaining });
     // Observers only: these counters never enter policy snapshots or game decisions.
     type FamilyPressure = {windups:number;strikes:number;contacts:number;hits:number;meleeHits:number;damage:number};
-    const pressure = new Map<string, {hitsTaken:number;byFamily:Record<string,FamilyPressure>}>();
-    let observedDamage = 0;
+    const pressure = new Map<string, {hitsTaken:number;firstHitElapsed:number|null;hitTimes:number[];byFamily:Record<string,FamilyPressure>}>();
+    let observedDamage = 0, lastFullHealthElapsed: number | null = null;
     const roomPressure = () => {
         let row = pressure.get(game.node.id);
-        if (!row) {row = {hitsTaken:0,byFamily:{}};pressure.set(game.node.id,row);}
+        if (!row) {row = {hitsTaken:0,firstHitElapsed:null,hitTimes:[],byFamily:{}};pressure.set(game.node.id,row);}
         return row;
     };
     const familyPressure = (family:string) => {
@@ -177,7 +179,7 @@ export function runSimulation(options: SimOptions) {
             if (amount > 0) {
                 const receipt = stats.lastDamage, row = roomPressure();
                 const family = familyPressure(receipt?.enemyFamily ?? receipt?.source ?? 'unknown');
-                row.hitsTaken++;family.hits++;family.damage += amount;
+                row.hitsTaken++;row.firstHitElapsed ??= game.elapsed;row.hitTimes.push(game.elapsed);family.hits++;family.damage += amount;
                 if (receipt?.source === 'enemy-contact') family.meleeHits++;
             }
             camera.rig.addTrauma(.34);
@@ -199,11 +201,11 @@ export function runSimulation(options: SimOptions) {
         const hurt = game.hurt.bind(game);
         game.hurt = (n, origin) => hurt(n * .15, origin);
     }
-    const report = { mode: 'sim-policy-v8', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, assisted: !!options.assisted, legacy: !!options.legacy,
-        policy: 'Shared policy.mjs; 250ms decisions, 60Hz GameFeel, real DepthGame actions; analytic camera observer.',
+    const report = { mode: 'sim-human-v1', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, profile:human.profile, humanParameters:human.config, assisted: !!options.assisted, legacy: !!options.legacy,
+        policy: 'Shared seeded human policy; 100ms observations, rate-limited inputs, 60Hz GameFeel, real DepthGame actions; analytic camera observer.',
         limitations: ['No GPU, audio or DOM. Uses shared camera follow/framing/ability-event hooks, exact actor metrics and held-screen ray/torso selection; resource preparation and RAF synchronization are omitted. Matched browser validation remains required before using campaign outcomes as native-policy predictions.'],
         rooms: [] as any[], outcome: 'running', finalReason: null as string | null, deathRoom: null as number | null, stats: null as any, final: null as any, wallSeconds: 0, trace: options.trace ? [] as any[] : undefined };
-    let room: any, previous = { x: 0, y: 0 }, input: GameInput = { x: 0, y: 0, fire: false, angle: null, autoAim: false }, decisions = 0, hardest = -1;
+    let room: any, input: GameInput = { x: 0, y: 0, fire: false, angle: null, autoAim: false }, decisions = 0, hardest = -1;
     let stopEnemyObserver: (()=>void)|undefined;
     const observeRoomAttacks = () => {
         stopEnemyObserver?.();
@@ -231,21 +233,21 @@ export function runSimulation(options: SimOptions) {
             const len = Math.hypot(dx, dy) || 1, x = game.player.x + dx / len * 90, y = game.player.y + dy / len * 90;
             let legal = true;
             for (let i = 1; i <= 6; i++)
-                if (!canOccupyExpedition(game.geometry, { x: game.player.x + (x - game.player.x) * i / 6, y: game.player.y + (y - game.player.y) * i / 6 }, 19))
+                if (!canOccupyExpedition(game.geometry, { x: game.player.x + (x - game.player.x) * i / 6, y: game.player.y + (y - game.player.y) * i / 6 }, game.player.radius))
                     legal = false;
-            if (game.abilities.blocksMovement(game.player, { x, y }, 19))
+            if (game.abilities.blocksMovement(game.player, { x, y }, game.player.radius))
                 legal = false;
             candidates.push({ x, y, dx, dy, legal, waypoint, clear: nearest ? clear(nearest.x, nearest.y, { x, y }) : false });
         }
         const telegraph = game.boss.snapshot.pendingTelegraph;
-        return { rig: options.rig, player: { ...game.player }, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
+        return { elapsed:game.elapsed, nodeId:game.node.id, resources:game.combat.getRunResources(), rig: options.rig, player: { ...game.player }, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});
             }), abilities: game.abilities.snapshot, hazards: [...(telegraph ? [{ x: telegraph.targetX, y: telegraph.targetY, radius: telegraph.radius, kind:'warning', visible:camera.visible(telegraph.targetX,telegraph.targetY) }] : []),
-                ...game.pools.map(p=>({x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:camera.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),
-                ...game.bullets.filter(b => b.kind === 'hazard').map(b => ({ x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:camera.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale })),
-                ...nativeWarningHazards(events,game.elapsed).map(h=>({...h,visible:camera.visible(h.x,h.y)}))] };
+                ...game.pools.map(p=>({id:`pool:${p.id}`,x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:camera.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),
+                ...game.bullets.filter(b => b.kind === 'hazard').map(b => ({ id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:camera.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale })),
+                ...nativeWarningHazards(events.filter(e=>e.id===undefined||enemies.some(enemy=>enemy.id===e.id&&Math.hypot(enemy.x-e.x,enemy.y-e.y)<2)),game.elapsed).map(h=>({...h,visible:camera.visible(h.x,h.y)}))] };
     }
     function advance(ms: number) {
         for (let remaining = ms; remaining > 1e-7;) {
@@ -257,6 +259,8 @@ export function runSimulation(options: SimOptions) {
                     if (point)
                         input = { ...input, aimPoint: point, angle: Math.atan2(point.y - game.player.y, point.x - game.player.x) };
                 }
+                const vitals=game.combat.mutationResources();
+                if(vitals.health>=vitals.maxHealth)lastFullHealthElapsed=game.elapsed;
                 game.update(step, input);
             });
             camera.update(game, dt / 1000);
@@ -270,7 +274,7 @@ export function runSimulation(options: SimOptions) {
             return;
         const stats = game.stats;
         Object.assign(room, { result, seconds: game.elapsed - room.startedElapsed, damageTaken: stats.damageTaken - room.startStats.damageTaken,
-            hitsTaken: pressure.get(game.node.id)?.hitsTaken ?? 0, pressure: pressure.get(game.node.id)?.byFamily ?? {},
+            hitsTaken: pressure.get(game.node.id)?.hitsTaken ?? 0, firstHitElapsed:pressure.get(game.node.id)?.firstHitElapsed??null, timeToDeathFromFullHealth:result==='dead'&&lastFullHealthElapsed!==null?game.elapsed-lastFullHealthElapsed:null, timeToDeathFromFirstHit:result==='dead'&&pressure.get(game.node.id)?.firstHitElapsed!=null?game.elapsed-pressure.get(game.node.id)!.firstHitElapsed!:null, hitTimes:pressure.get(game.node.id)?.hitTimes??[], pressure: pressure.get(game.node.id)?.byFamily ?? {},
             damageDealt: Object.fromEntries(Object.entries(stats.damageDealt).map(([key, value]) => [key, value - room.startStats.damageDealt[key]])),
             abilityUses: Object.fromEntries(Object.entries(stats.abilityUses).map(([key, value]) => [key, value - room.startStats.abilityUses[key]])),
             overdrives: stats.overdrivesUsed - room.startStats.overdrivesUsed, endHealth: game.combat.snapshot.health, endArmor: game.combat.snapshot.armor });
@@ -278,7 +282,7 @@ export function runSimulation(options: SimOptions) {
         room = null;
     }
     // The bound is simulation decisions rather than wall time, preserving deterministic outcomes under load.
-    while (decisions++ < 30000) {
+    while (decisions++ < 75000) {
         camera.update(game, 0);
         if (game.status === 'dead' || game.status === 'complete') {
             finish(game.status);
@@ -290,7 +294,6 @@ export function runSimulation(options: SimOptions) {
             if (game.status === 'reward' && ['medical', 'armory'].includes(game.node.kind) && game.expedition.run.completedNodeIds.includes(game.node.id) && !report.rooms.some(r => r.nodeId === game.node.id))
                 report.rooms.push({ id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, result: 'clear', autoClear: true, seconds: 0, damageTaken: 0, hitsTaken: 0, pressure: {}, damageDealt: { weapon: 0, ability: 0, status: 0, boon: 0 }, abilityUses: { dash: 0, tactical: 0, power: 0, overdrive: 0 }, overdrives: 0, boons: [...game.expedition.build.mutations] });
             input = { x: 0, y: 0, fire: false, angle: null, autoAim: false };
-            previous = { x: 0, y: 0 };
             screen = null;
             if (game.status === 'reward') {
                 const offers = expeditionRewardOffers(game.expedition);
@@ -332,10 +335,8 @@ export function runSimulation(options: SimOptions) {
             report.rooms.push(room);
         }
         const statsBefore = game.stats, playerBefore = { ...game.player };
-        const s = snapshot(), target = chooseTarget(s.enemies, s.player), move = chooseMovement(s, previous);
-        previous = { x: move.dx, y: move.dy };
-        const ammo = game.combat.getRunResources().ammo, near = Math.min(Infinity, ...s.enemies.map(e => distance(e, s.player)));
-        const weapon = near < 180 && ammo.shotgun.magazine + ammo.shotgun.reserve > 0 ? 'shotgun' : ammo.rifle.magazine + ammo.rifle.reserve > 0 ? 'rifle' : ammo.plasma.magazine + ammo.plasma.reserve > 0 ? 'plasma' : 'pistol';
+        const s = snapshot(), decision = human.decide(s), target = decision.target, move = decision.movement;
+        const weapon = decision.weapon;
         if (s.combat.weapon !== weapon) game.switchWeapon(weapon);
         if (target) {
             const projected = camera.project(target.x, target.y);
@@ -347,7 +348,7 @@ export function runSimulation(options: SimOptions) {
             return {x: move.dx, y: move.dy / .81, fire: !!target, angle: point ? Math.atan2(point.y-game.player.y,point.x-game.player.x) : null, aimPoint: point, autoAim: false};
         };
         input = readInput();
-        const actions = chooseActions(s);
+        const actions = decision.actions;
         recentDecisions.push({elapsed: game.elapsed, nodeId: game.node.id, player: playerBefore,
             target: target ? {id: target.id, type: target.type, x: target.x, y: target.y, health: target.health, clear: target.clear, visible: target.visible} : null,
             movement: {...move}, input: {...input}, actions: [...actions], abilityAims: s.abilityAims, weapon,
@@ -367,7 +368,7 @@ export function runSimulation(options: SimOptions) {
         if (target) screen = weaponScreen;
         input = readInput();
         report.trace?.push({ elapsed: game.elapsed, depth: game.node.depth, input: { ...input }, keys: actions, weapon, stats: statsBefore, player: playerBefore, enemies: s.enemies.map(e => ({ id: e.id, type: e.type, x: e.x, y: e.y, health: e.health, clear: e.clear, visible: e.visible })), screen: { ...screen } });
-        advance(250);
+        advance(decision.stepMs);
         const progressStats = game.stats;
         const signature = `${progressStats.kills.total}:${game.encounterRemaining}:${Math.round(Object.values(progressStats.damageDealt).reduce((a, b) => a + b, 0))}`;
         if (signature !== progressSignature) {progressSignature = signature; lastProgressElapsed = game.elapsed;}
@@ -405,10 +406,12 @@ export function summarizeSimulations(reports: ReturnType<typeof runSimulation>[]
                 histogram[r.deathRoom] = (histogram[r.deathRoom] ?? 0) + 1;
         return { runs: rs.length, seeds: rs.map(r => r.seed), completed: rs.filter(r => r.outcome === 'complete').length, completionPct: rs.filter(r => r.outcome === 'complete').length / rs.length * 100,
             deaths: histogram, outcomes: Object.fromEntries([...new Set(rs.map(r => r.outcome))].map(outcome => [outcome, rs.filter(r => r.outcome === outcome).length])),
+            medianTimeToDeathFromFirstHit:median(rooms.filter(r=>r.result==='dead').map(r=>r.timeToDeathFromFirstHit)),
+            fullHealthDeathSeconds:rooms.filter(r=>r.result==='dead'&&Number.isFinite(r.timeToDeathFromFullHealth)).map(r=>r.timeToDeathFromFullHealth),
             medianRoomsPerOverdrive: median(rs.map(r => r.rooms.filter(room => ['clear', 'complete'].includes(room.result)).length / r.stats.overdrivesUsed)),
             medianRoomSeconds: median(clears.filter(r => ![9, 19].includes(r.depth) && !r.autoClear).map(r => r.seconds)),
             sources: Object.fromEntries(['weapon', 'ability', 'status', 'boon'].map(source => [source, rs.reduce((n, r) => n + r.stats.damageDealt[source], 0)])),
-            byDepth: Array.from({ length: 20 }, (_, depth) => { const all = rooms.filter(r => r.depth === depth), done = all.filter(r => ['clear', 'complete'].includes(r.result)); return { room: depth + 1, entered: all.length, cleared: done.length, medianSeconds: median(done.map(r => r.seconds)), medianDamageTaken: median(all.map(r => r.damageTaken)), medianHitsTaken: median(all.map(r => r.hitsTaken)), medianOverdrives: median(all.map(r => r.overdrives)), maxOverdrives: Math.max(0, ...all.map(r => r.overdrives)) }; }),
+            byDepth: Array.from({ length: 20 }, (_, depth) => { const all = rooms.filter(r => r.depth === depth), done = all.filter(r => ['clear', 'complete'].includes(r.result)); return { room: depth + 1, entered: all.length, cleared: done.length, medianSeconds: median(done.map(r => r.seconds)), medianDamageTaken: median(all.map(r => r.damageTaken)), medianHitsTaken: median(all.map(r => r.hitsTaken)), hitHistogram:Object.fromEntries([...new Set(all.map(r=>r.hitsTaken))].sort((a,b)=>a-b).map(hits=>[hits,all.filter(r=>r.hitsTaken===hits).length])), medianOverdrives: median(all.map(r => r.overdrives)), maxOverdrives: Math.max(0, ...all.map(r => r.overdrives)) }; }),
             wallSeconds: rs.reduce((n, r) => n + r.wallSeconds, 0) };
     };
     return { total: describe(reports), rigs: Object.fromEntries(rigs.map(rig => [rig, describe(reports.filter(r => r.rig === rig))])) };

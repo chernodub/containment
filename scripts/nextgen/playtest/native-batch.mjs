@@ -8,7 +8,7 @@ import {RIGS} from './policy.mjs';
 const args = Object.fromEntries(process.argv.slice(2).map(arg => {
   assert(/^--[a-z-]+(?:=.*)?$/.test(arg), `Invalid argument ${arg}`);
   const [key, ...value] = arg.slice(2).split('=');
-  assert(['label','seeds','rigs','workers','fast','dist-dir','assisted','legacy'].includes(key), `Unknown option ${key}`);
+  assert(['profile','storyboard-room','label','seeds','rigs','workers','fast','dist-dir','assisted','legacy'].includes(key), `Unknown option ${key}`);
   return [key, value.length ? value.join('=') : true];
 }));
 const label = String(args.label ?? 'i5-native');
@@ -31,7 +31,7 @@ async function worker() {
     console.log(`Starting ${job.label}`);
     const command = ['scripts/nextgen/playtest/runner.mjs', `--rig=${job.rig}`, `--seed=${job.seed}`, `--label=${job.label}`];
     for (const key of ['fast','assisted','legacy']) if (args[key]) command.push(`--${key}`);
-    if (args['dist-dir']) command.push(`--dist-dir=${args['dist-dir']}`);
+    for (const key of ['profile','storyboard-room','dist-dir']) if (args[key]) command.push(`--${key}=${args[key]}`);
     const code = await new Promise((ok, fail) => {
       const child = spawn(process.execPath, command, {stdio:['ignore',log.fd,log.fd]});
       child.once('error',fail);child.once('exit',ok);

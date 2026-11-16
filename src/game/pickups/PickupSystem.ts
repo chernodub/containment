@@ -114,8 +114,8 @@ type WeightedKind = Readonly<{
 }>;
 
 const DROP_KIND_WEIGHTS: readonly WeightedKind[] = Object.freeze([
-  Object.freeze({ kind: 'credits', weight: 45 }),
-  Object.freeze({ kind: 'health', weight: 20 }),
+  Object.freeze({ kind: 'credits', weight: 15 }),
+  Object.freeze({ kind: 'health', weight: 50 }),
   Object.freeze({ kind: 'armor', weight: 15 }),
   Object.freeze({ kind: 'ammo', weight: 15 }),
   Object.freeze({ kind: 'grenade', weight: 5 }),
