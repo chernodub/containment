@@ -44,7 +44,7 @@ def drawing(x,z,index):
     line('Crayon grass',[(-.22,-.2),(.22,-.2)],'crayon-green')
 
 def residential():
-    L.asset('residential-common-nook',12000)
+    wall=L.asset('residential-story-wall',12000)
     # Shallow wall-backed common nook; rear wall at +Y, camera-facing front -Y.
     L.box('Nook wall chassis',(0,.78,1.32),(6.8,.12,2.64),'p11-steel',.035)
     painted('Warm acoustic backing',(0,.705,1.37),(6.58,.035,2.34),'wood-dark')
@@ -54,7 +54,9 @@ def residential():
         painted('Slatted acoustic battens',(x,.65,1.43),(.07,.06,2.0),'wood',.005)
     L.box('Picture rail',(1.55,.62,2.43),(2.85,.09,.05),'p11-steel',.005)
     for i,x in enumerate((.52,1.3,2.08,2.85)): drawing(x,1.85+(i%2)*.12,i)
-    L.stencil('OUR NEW HOME',(1.7,.60,2.47),.12,'-Y','cream')
+    L.stencil('OUR NEW HOME',(1.7,.60,2.35),.12,'-Y','cream')
+    # Keep waist-high furniture visible when the taller story wall cuts away.
+    L.asset('residential-common-nook',12000)
     L.box('Seat frame',(-1.83,.30,.25),(2.9,.73,.36),'p11-steel',.035)
     for i in range(3):
         painted('Bench cushion',(-2.79+i*.95,.24,.49),(.90,.74,.16),'cushion',.06)
@@ -80,6 +82,8 @@ def residential():
     for z in (.15,.55):L.box('Case compression band',(3.02,.23,z),(.51,.60,.045),'p11-rubber',.005)
     L.handle((3.02,.23,.70),.24,'X',.06,.015,'p11-steel','Z')
     L.stencil('07',(3.02,-.07,.37),.13,'-Y','cream')
+    L.CURRENT=wall
+    L.lamp_strip('Drawing rail lamp',(1.7,.53,2.60),1.8,'X','e9-amber',.04,.025)
     L.lamp_strip('Domestic wall reading lamp',(-1.8,.53,2.48),2.5,'X','e9-amber',.04,.045)
     L.sweep('Lamp power feed',[(-3,.65,2.46),(-3.3,.65,2.46),(-3.3,.65,.14)],.016,'p11-rubber',6)
 
@@ -136,4 +140,6 @@ L.reset_scene();residential();atrium()
 L.export('habitation',OUT,'habitation.glb','Original lived-in common nook and conservatory garden.', 'blender -b --factory-startup -P tools/assets/p11-set-pieces/habitation.py')
 if '--render' in L.args():
     for name in [a.name for a in L.ASSETS if not any(v.startswith('--only=') for v in L.args()) or '--only='+a.name in L.args()]:
-        L.render(RENDERS/(name+'-game.png'),[name],'game');L.render(RENDERS/(name+'-hero.png'),[name],'hero')
+        if name=='residential-story-wall':continue
+        targets=[name,'residential-story-wall'] if name=='residential-common-nook' else [name]
+        L.render(RENDERS/(name+'-game.png'),targets,'game');L.render(RENDERS/(name+'-hero.png'),targets,'hero')

@@ -7,7 +7,97 @@
   "coordinateSystem": "glTF Y-up, metres; bottom-centred origins, fronts face +Z (camera side)",
   "description": "Original lived-in common nook and conservatory garden.",
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
-  "textures": "none (texture memory 0); detail is modelled geometry",
+  "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
+  "normalAtlas": {
+    "bakeSeconds": 3.051,
+    "blenderPNGDecodeMs": 14.292,
+    "file": "habitation-normal.png",
+    "size": 512,
+    "bytes": 262744,
+    "estimatedRGBA8MipBytes": 1398101,
+    "nonFlatPixels": 134567,
+    "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+    "targets": [
+      {
+        "mesh": "residential-story-wall--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.204,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "residential-story-wall--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.04,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "residential-story-wall--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.064,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "residential-story-wall--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.103,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "residential-common-nook--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.058,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "residential-common-nook--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.128,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "residential-common-nook--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.211,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "atrium-conservatory--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.108,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "atrium-conservatory--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.122,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "atrium-conservatory--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.157,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "atrium-conservatory--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.165,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "atrium-conservatory--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.101,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "atrium-conservatory--p11-tint-metal",
+        "role": "p11-tint-metal",
+        "seconds": 0.054,
+        "method": "three-segment high bevel"
+      }
+    ]
+  },
   "materials": {
     "e9-amber": "#e0b95a",
     "e9-cyan": "#65d8e6",
@@ -21,11 +111,11 @@
   },
   "models": [
     {
-      "name": "residential-common-nook",
+      "name": "residential-story-wall",
       "size": [
         6.8,
         2.64,
-        1.649
+        0.342
       ],
       "bounds": {
         "min": [
@@ -36,14 +126,41 @@
         "max": [
           3.4,
           2.64,
-          0.809
+          -0.498
         ]
       },
-      "triangles": 3322,
+      "triangles": 1578,
       "budget": 12000,
       "finishes": [
         "e9-amber",
         "e9-dark",
+        "p11-rubber",
+        "p11-steel",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "residential-common-nook",
+      "size": [
+        6.6702,
+        1.215,
+        1.484
+      ],
+      "bounds": {
+        "min": [
+          -3.285,
+          0.01,
+          -0.675
+        ],
+        "max": [
+          3.3852,
+          1.225,
+          0.809
+        ]
+      },
+      "triangles": 1800,
+      "budget": 12000,
+      "finishes": [
         "p11-rubber",
         "p11-steel",
         "p11-tint"
@@ -84,9 +201,9 @@
   ],
   "output": {
     "file": "habitation.glb",
-    "bytes": 346240,
-    "sha256": "fd210335746429a15174b66ce494dab3dec2bf2931f46ae8f5ecde415ce89335",
-    "triangles": 7948
+    "bytes": 849216,
+    "sha256": "42cece8092276321dfd1a73d913f67463d03b6b97a9d7cec06ad543c0dd94030",
+    "triangles": 8004
   },
   "overBudget": []
 }

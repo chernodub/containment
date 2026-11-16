@@ -1,0 +1,150 @@
+{
+  "bakeSeconds": 2.921,
+  "blenderPNGDecodeMs": 6.763,
+  "file": "clinical-security-normal.png",
+  "size": 512,
+  "bytes": 383179,
+  "estimatedRGBA8MipBytes": 1398101,
+  "nonFlatPixels": 179158,
+  "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+  "targets": [
+    {
+      "mesh": "awakening-berth-array--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.201,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "awakening-berth-array--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.169,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "awakening-berth-array--p11-frost",
+      "role": "p11-frost",
+      "seconds": 0.036,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "awakening-berth-array--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.138,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "awakening-berth-array--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.124,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "awakening-berth-array--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.043,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "passenger-sleeper-carrier--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.03,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "passenger-sleeper-carrier--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.045,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "passenger-sleeper-carrier--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.064,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "passenger-sleeper-carrier--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.048,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "passenger-sleeper-carrier--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.03,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "checkpoint-scanner-gate--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.086,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "checkpoint-scanner-gate--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.063,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "checkpoint-scanner-gate--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.037,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "checkpoint-scanner-gate--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.076,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "checkpoint-scanner-gate--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.056,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "checkpoint-scanner-gate--p11-tint-metal",
+      "role": "p11-tint-metal",
+      "seconds": 0.049,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "armory-weapon-carousel--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.037,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "armory-weapon-carousel--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.059,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "armory-weapon-carousel--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.123,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "armory-weapon-carousel--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.236,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "armory-weapon-carousel--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.053,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "armory-weapon-carousel--p11-tint-metal",
+      "role": "p11-tint-metal",
+      "seconds": 0.096,
+      "method": "three-segment high bevel"
+    }
+  ]
+}
