@@ -190,7 +190,19 @@ def atrium():
     for x in (-1.72,1.72):L.bolt_row((x,-.9,.62),(x,.9,.62),4,.022,'Z')
     # Broken overhead glazing ribs: cutaway owner handles marine clearance.
     for x in (-1.9,1.9):
-        L.sweep('Skylight support',[(x,1.05,.1),(x,1.05,3.3),(x,.2,3.65),(x,-.9,3.25)],.045,'p11-steel',6)
+        points=[(x,1.05,.1),(x,1.05,3.3),(x,.2,3.65),(x,-.9,3.25)] if x<0 else [(x,1.05,.1),(x,1.05,2.1),(x-.15,.8,2.35),(x-.42,.44,2.16)]
+        L.sweep('Intact left rib and buckled right support',points,.045,'p11-steel',6)
+    L.sweep('Collapsed glazing rib embedded in garden',[(1.48,.76,.61),(.95,.3,.65),(.65,-.05,.84),(.12,-.58,.61)],.05,'p11-steel',6)
+    L.slab('Fallen glazing shard',[(-.25,-.83),(.45,-.51),(.72,-.71),(.21,-1.05)],.56,.572,'e9-glass',0)
+    # Someone stopped repairing the ruptured irrigation circuit to leave.
+    L.box('Open gardener tool satchel',(-1.13,-.84,.72),(.72,.40,.29),'p11-tint',.035,tint='navy')
+    L.box('Satchel dark opening',(-1.13,-.84,.875),(.59,.29,.018),'p11-rubber',.025)
+    L.box('Flap thrown back',(-1.13,-.59,.90),(.70,.30,.035),'p11-tint',.012,rotation=(.32,0,0),tint='navy')
+    L.sweep('Abandoned bag shoulder strap',[(-1.46,-.85,.79),(-1.51,-1.05,.61),(-1.24,-1.23,.58),(-.87,-1.04,.64),(-.80,-.85,.79)],.018,'p11-rubber',5)
+    for xx in (-1.28,-1.03):L.box('Satchel tool grip',(xx,-.86,.93),(.06,.14,.25),'p11-steel',.009,rotation=(.18,0,0))
+    L.sweep('Severed irrigation hose',[(-1.8,-.75,.6),(-1.6,-.65,.63),(-1.2,-.35,.6),(-.83,-.35,.67)],.035,'p11-rubber',6)
+    L.cylinder('Torn hose union',(-.83,-.35,.68),.065,.10,'p11-steel','Z',8,0)
+    L.slab('Wet soil below broken union',[(-1.2,-.4),(-1,-.58),(-.55,-.65),(-.34,-.4),(-.6,-.16),(-.98,-.17)],.55,.558,'p11-tint',0,tint='navy')
     L.sweep('Skylight crossbar',[(-1.9,1.05,3.3),(1.9,1.05,3.3)],.05,'p11-steel',6)
     import bmesh
     for points in [[(-1.8,.98,3.34),(-1.8,-.25,3.48),(-.9,.45,3.52),(-.25,1,3.34)],[(.5,1,3.34),(1.8,1,3.34),(1.8,.35,3.53)],[(1.8,-.8,3.29),(1.8,-.25,3.50),(1.2,-.8,3.29)]]:
