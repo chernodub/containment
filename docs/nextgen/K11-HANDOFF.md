@@ -58,3 +58,26 @@ one material (`k11-<family>`, extras `k11Original`) with baseColor (AO baked in)
 - Leg segments are smooth round cones — the least sculptural parts; Spitter legs read as plain tubes.
 - Carrier head plate with eye dots can read slightly "face-like".
 - No tertiary displacement (pitting/scars) yet; `sdf.worley` is in place for it.
+
+## Second pass (2026-11-17) — what changed for integration
+
+Rebuild order unchanged: `sh tools/assets/k11-creatures/rebuild.sh` → `node tools/assets/i11-models/optimize.mjs` → `npm run build`.
+Skeleton contract, rank node names (`k11-<family>-base|elite|boss`), material layout (base/normal/glow, 3 textures) and
+`k11Aspect` extras are unchanged; no runtime code changed in this pass. Triangle budgets unchanged (≤ 11.5k regular, ≤ 17.3k boss).
+
+Shared (all castes, `species.py` / `build.py`):
+- Limbs are `armour_segment`s: dark core tube + pale ARMOR plate on the outward face; `knuckle` joints (wet flesh sleeve + pale ring); `foot` pads with splayed claws on the floor plane. Spurs removed (they became black tangles at 40 px).
+- New zones ARMOR and FLESH. Baked-only surface character (`tertiary`): worley pitting and random scars on hard shell, creased wet flesh; pale wet highlights on flesh; flesh/organ creases darkened less.
+- `GLOW_PODS` (carrier): soft skin near pods receives glow + organ tint with distance falloff (fake translucency, glow texture only).
+
+Per caste:
+- Crawler: twice-thicker plated legs with planted feet, broad shovel prow with pale tusks, wet waist seam. Elite: tall webbed bone sail + a second lantern on the thorax.
+- Stalker: bulkier thorax/abdomen with pale banded ARMOR shingles, light dorsal ridge head→sting, 60 % larger violet lantern, armoured raptorial arms with longer blades, thick armoured stilt legs. Elite: overgrown second bone scythe on the right arm (`arm_mid.R`) + dorsal spines.
+- Spitter: armoured arched legs ×1.5 girth with knuckles and feet. Elite: second ribbed acid vessel on the neck root (weights blend `spine2`→`neck`).
+- Brute: wider, lower forequarters, hanging flesh belly with armour flank plates, pillar legs (r .95/.72) with foot pads, darker armour value. Elite: stacked pale pauldrons + shoulder horns. Warden: broad asymmetric bone shield over the left crusher (`forearm.l`) and a blunt bone battering ram on the brow (`head`) for the charge; knuckle bosses on the right forearm.
+- Carrier: brood sac now sags low and back as bare stretched flesh (mantle only at root/flanks) with pods glowing through, sinew straps, and a lipped glowing brood opening at the low rear (`tip`); legs ×1.45 girth. Elite: one great horned bone shield over the thorax. Matron: hugely expanded brood mass behind/below with three glowing hatching vents (pod-hatching source) and four attendant pods on sinew stalks on the thorax flanks.
+
+Check during integration:
+- Motion strips for the new mass: brute belly (`chest`/`tail` blend), carrier sagging sac when the tail lifts (`tail`→`tip` blend), stalker elite blade on `arm_mid.R`, spitter elite vessel on the neck.
+- Footprint radius grew slightly (feet pads): in-game scale dropped ~5–10 % for crawler/brute; aspect raised for brute (1.8) to compensate.
+- Ragdoll boxes still fit from skin vertices; the heavier warden shield/ram are rigid on `forearm.l`/`head`.

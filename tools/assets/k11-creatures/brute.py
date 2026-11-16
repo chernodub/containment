@@ -115,10 +115,10 @@ def build(sk):
     # broad asymmetric shield grown over the left crusher arm
     el, wr = sk.h("forearm.l"), sk.h("claw.l")
     fa = normalize(wr - el)
-    sc = el + (wr - el) * 0.55 + v3((0.25, 0.75, 0.2))
-    boss.add(Plate(sc, (1.45, 1.25, 0.55), frame(fa, (0.35, 1.0, 0.25)), 0.38, rings=0.014, ring_count=5, lip=0.1, chip=0.07,
+    sc = el + (wr - el) * 0.5 + v3((0.1, 0.95, 0.75))
+    boss.add(Plate(sc, (2.1, 1.75, 0.7), frame(fa, (0.2, 1.0, 0.6)), 0.45, rings=0.014, ring_count=5, lip=0.1, chip=0.07,
                    zone=CREST, bone="forearm.l", plate=150))
-    boss.add(Plate(sc + v3((-0.35, 0.25, 0.3)), (1.0, 0.9, 0.45), frame(fa, (0.2, 1.0, 0.5)), 0.3, rings=0.012, lip=0.08,
+    boss.add(Plate(sc + v3((-0.5, 0.3, 0.5)), (1.4, 1.2, 0.55), frame(fa, (0.1, 1.0, 0.8)), 0.35, rings=0.012, lip=0.08,
                    chip=0.06, zone=ARMOR, bone="forearm.l", plate=151))
     boss.add(Ellipsoid(sc - v3((0.1, 0.35, 0.1)), (0.9, 0.35, 0.55), frame(fa), zone=FLESH, bone="forearm.l", k=0.2))
     # battering ram: a blunt bone ram fused over the brow, the charge's business end
