@@ -1,23 +1,23 @@
 {
-  "bakeSeconds": 4.087,
-  "blenderPNGDecodeMs": 6.149,
+  "bakeSeconds": 6.388,
+  "blenderPNGDecodeMs": 21.046,
   "file": "clinical-normal.png",
   "size": 512,
-  "bytes": 353740,
+  "bytes": 343435,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 179768,
+  "nonFlatPixels": 176657,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "clinical-analyser--e9-body",
       "role": "",
-      "seconds": 0.097,
+      "seconds": 0.193,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-analyser--e9-ceramic",
       "role": "",
-      "seconds": 0.077,
+      "seconds": 0.064,
       "method": "three-segment high bevel"
     },
     {
@@ -29,319 +29,319 @@
     {
       "mesh": "clinical-analyser--e9-trim",
       "role": "",
-      "seconds": 0.067,
+      "seconds": 0.073,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-testbench--e9-body",
       "role": "",
-      "seconds": 0.061,
+      "seconds": 0.062,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-testbench--e9-ceramic",
       "role": "",
-      "seconds": 0.085,
+      "seconds": 0.043,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-testbench--e9-dark",
       "role": "",
-      "seconds": 0.074,
+      "seconds": 0.079,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-testbench--e9-trim",
       "role": "",
-      "seconds": 0.055,
+      "seconds": 0.054,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-diagnostic-tower--e9-body",
       "role": "",
-      "seconds": 0.089,
+      "seconds": 0.057,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-diagnostic-tower--e9-ceramic",
       "role": "",
-      "seconds": 0.058,
+      "seconds": 0.077,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-diagnostic-tower--e9-dark",
       "role": "",
-      "seconds": 0.054,
+      "seconds": 0.057,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-diagnostic-tower--e9-trim",
       "role": "",
-      "seconds": 0.042,
+      "seconds": 0.094,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "cryo-service-console--e9-body",
       "role": "",
-      "seconds": 0.049,
+      "seconds": 0.204,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "cryo-service-console--e9-ceramic",
       "role": "",
-      "seconds": 0.047,
+      "seconds": 0.06,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "cryo-service-console--e9-dark",
       "role": "",
-      "seconds": 0.051,
+      "seconds": 0.099,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "cryo-service-console--e9-trim",
       "role": "",
-      "seconds": 0.069,
+      "seconds": 0.074,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "comms-rack-low--e9-body",
       "role": "",
-      "seconds": 0.051,
+      "seconds": 0.245,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "comms-rack-low--e9-ceramic",
       "role": "",
-      "seconds": 0.051,
+      "seconds": 0.092,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "comms-rack-low--e9-dark",
       "role": "",
-      "seconds": 0.036,
+      "seconds": 0.076,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "comms-rack-low--e9-trim",
       "role": "",
-      "seconds": 0.036,
+      "seconds": 0.052,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "comms-rack-tall--e9-body",
       "role": "",
-      "seconds": 0.056,
+      "seconds": 0.111,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "comms-rack-tall--e9-ceramic",
       "role": "",
-      "seconds": 0.077,
+      "seconds": 0.074,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "comms-rack-tall--e9-dark",
       "role": "",
-      "seconds": 0.061,
+      "seconds": 0.064,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "comms-rack-tall--e9-trim",
       "role": "",
-      "seconds": 0.037,
+      "seconds": 0.075,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-console-locker--e9-body",
       "role": "",
-      "seconds": 0.033,
+      "seconds": 0.053,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-console-locker--e9-ceramic",
       "role": "",
-      "seconds": 0.036,
+      "seconds": 0.043,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-console-locker--e9-dark",
       "role": "",
-      "seconds": 0.052,
+      "seconds": 0.104,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-console-locker--e9-trim",
       "role": "",
-      "seconds": 0.045,
+      "seconds": 0.071,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-berth--e9-body",
       "role": "",
-      "seconds": 0.074,
+      "seconds": 0.073,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-berth--e9-ceramic",
       "role": "",
-      "seconds": 0.047,
+      "seconds": 0.087,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-berth--e9-dark",
       "role": "",
-      "seconds": 0.041,
+      "seconds": 0.042,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-berth--e9-trim",
       "role": "",
-      "seconds": 0.039,
+      "seconds": 0.061,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-desk--e9-body",
       "role": "",
-      "seconds": 0.052,
+      "seconds": 0.069,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-desk--e9-ceramic",
       "role": "",
-      "seconds": 0.034,
+      "seconds": 0.091,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-desk--e9-dark",
       "role": "",
-      "seconds": 0.038,
+      "seconds": 0.066,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-desk--e9-trim",
       "role": "",
-      "seconds": 0.034,
+      "seconds": 0.085,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-access-panel--e9-body",
       "role": "",
-      "seconds": 0.038,
+      "seconds": 0.073,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-access-panel--e9-dark",
       "role": "",
-      "seconds": 0.052,
+      "seconds": 0.048,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-access-panel--e9-trim",
       "role": "",
-      "seconds": 0.044,
+      "seconds": 0.043,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-rubber-panel--e9-body",
       "role": "",
-      "seconds": 0.038,
+      "seconds": 0.057,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "deck-rubber-panel--e9-dark",
       "role": "",
-      "seconds": 0.034,
+      "seconds": 0.088,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "fixture-glass-strip--e9-body",
       "role": "",
-      "seconds": 0.034,
+      "seconds": 0.135,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "fixture-glass-strip--e9-dark",
       "role": "",
-      "seconds": 0.035,
+      "seconds": 0.054,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "fixture-glass-strip--e9-trim",
       "role": "",
-      "seconds": 0.035,
+      "seconds": 0.087,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-scanner-arch--e9-body",
       "role": "",
-      "seconds": 0.037,
+      "seconds": 0.095,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-scanner-arch--e9-ceramic",
       "role": "",
-      "seconds": 0.038,
+      "seconds": 0.05,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-scanner-arch--e9-dark",
       "role": "",
-      "seconds": 0.053,
+      "seconds": 0.202,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "clinical-scanner-arch--e9-trim",
       "role": "",
-      "seconds": 0.056,
+      "seconds": 0.108,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-gallery-pendant--e9-body",
       "role": "",
-      "seconds": 0.055,
+      "seconds": 0.077,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-gallery-pendant--e9-ceramic",
       "role": "",
-      "seconds": 0.051,
+      "seconds": 0.074,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-gallery-pendant--e9-dark",
       "role": "",
-      "seconds": 0.055,
+      "seconds": 0.049,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "habitation-gallery-pendant--e9-trim",
       "role": "",
-      "seconds": 0.041,
+      "seconds": 0.087,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "comms-uplink-dish--e9-body",
       "role": "",
-      "seconds": 0.051,
+      "seconds": 0.091,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "comms-uplink-dish--e9-ceramic",
       "role": "",
-      "seconds": 0.059,
+      "seconds": 0.144,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "comms-uplink-dish--e9-dark",
       "role": "",
-      "seconds": 0.057,
+      "seconds": 0.071,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "comms-uplink-dish--e9-trim",
       "role": "",
-      "seconds": 0.123,
+      "seconds": 0.118,
       "method": "three-segment high bevel"
     }
   ]

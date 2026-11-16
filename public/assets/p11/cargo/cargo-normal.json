@@ -1,65 +1,65 @@
 {
-  "bakeSeconds": 2.278,
-  "blenderPNGDecodeMs": 73.679,
+  "bakeSeconds": 5.043,
+  "blenderPNGDecodeMs": 18.262,
   "file": "cargo-normal.png",
   "size": 512,
-  "bytes": 262438,
+  "bytes": 258808,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 142938,
+  "nonFlatPixels": 143068,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "freight-suspension-gantry--e9-body",
       "role": "e9-body",
-      "seconds": 0.111,
+      "seconds": 0.44,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "freight-suspension-gantry--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.085,
+      "seconds": 0.302,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "freight-suspension-gantry--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.121,
+      "seconds": 0.328,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "freight-suspension-gantry--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.042,
+      "seconds": 0.075,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "freight-suspension-gantry--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.025,
+      "seconds": 0.075,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "loading-wedged-pod--e9-body",
       "role": "e9-body",
-      "seconds": 0.117,
+      "seconds": 0.294,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "loading-wedged-pod--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.129,
+      "seconds": 0.308,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "loading-wedged-pod--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.163,
+      "seconds": 0.467,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "loading-wedged-pod--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.035,
+      "seconds": 0.063,
       "method": "three-segment high bevel"
     },
     {
