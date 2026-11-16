@@ -15,7 +15,7 @@ from mathutils import Vector  # noqa: E402
 
 PACK = 'comms-engineering'
 OUT = L.ROOT / 'public/assets/p11' / PACK
-RENDERS = L.ROOT / 'artifacts/nextgen/p11-renders'
+RENDERS = L.ROOT / 'artifacts/nextgen/p11-final/beauty'
 
 
 # ---------------------------------------------------------------- Relay Racks
@@ -80,8 +80,8 @@ def monolith(y0, number, seed, broken=False):
     L.box('Crown riser', (0, y0, h + .13), (w - .5, d - .3, .1), 'e9-body', .025)
     for sx in (-1, 1):
         fx = sx * .78
-        L.cylinder('Fan well', (fx, y0, h + .175), .42, .03, 'e9-dark', 'Z', 18, 0)
-        L.torus('Fan shroud', (fx, y0, h + .2), .42, .035, 'e9-trim', 'Z', 16, 4)
+        L.cylinder('Fan well', (fx, y0, h + .175), .42, .03, 'e9-dark', 'Z', 12, 0)
+        L.torus('Fan shroud', (fx, y0, h + .2), .42, .035, 'e9-trim', 'Z', 14, 4)
         for b in range(6):
             a = 2 * math.pi * b / 6 + seed
             L.box('Fan blade', (fx + math.cos(a) * .2, y0 + math.sin(a) * .2, h + .19), (.32, .11, .012), 'e9-body',

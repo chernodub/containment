@@ -39,7 +39,7 @@
           6.23
         ]
       },
-      "triangles": 12090,
+      "triangles": 11850,
       "budget": 12000,
       "finishes": [
         "e9-amber",
@@ -56,11 +56,9 @@
   ],
   "output": {
     "file": "comms-engineering.glb",
-    "bytes": 386812,
-    "sha256": "b722303c090e5b17afacc8e5b3d5324ee27239a85e94afdf83e1e9928948f685",
-    "triangles": 12090
+    "bytes": 381528,
+    "sha256": "d49336c7c281ca444ae1b047e0d9cc478982d299c11b5543c3c21855261fe0ff",
+    "triangles": 11850
   },
-  "overBudget": [
-    "relay-monolith-spine: 12090 > 12000"
-  ]
+  "overBudget": []
 }
