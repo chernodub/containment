@@ -60,7 +60,7 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | FEEL12 aim/body/beam agreement, unmistakable small-enemy commitment, hit and kill chains, run conviction — Sol | running | |
 | VFX12 ability effects with force and aftermath; translucent-marine fix — Astra | running | |
 | ENC12 encounter grammar and role AI, elite saturation cut, Warden/Matron demands, teaching beats, eight transformative augments, economy and route — Sol | running | |
-| K11b creature second pass (mass, legs, Stalker, Carrier, elites, boss-class silhouettes) — Opus, modelling only | running | |
+| K11b creature second pass (mass, armoured legs, Stalker, sagging Carrier, elite add-ons, Warden shield, Matron brood mass) — Opus | merged | second-pass integration (deformation, footprints, ragdolls, emissive regions) running in the I11 thread |
 | RW12 reward cards with illustrations, ending composition, re-posed rig portraits — Astra | running | |
 
 Next (lead): merge wave 12; re-integrate creatures; performance certification on a quiet machine (nothing else running); gallery `final7`; R12 review by the same two lenses.
