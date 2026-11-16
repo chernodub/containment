@@ -1,47 +1,77 @@
 {
-  "bakeSeconds": 2.79,
-  "blenderPNGDecodeMs": 4.904,
+  "bakeSeconds": 2.677,
+  "blenderPNGDecodeMs": 4.727,
   "file": "incidents-normal.png",
   "size": 512,
-  "bytes": 215130,
+  "bytes": 183812,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 185792,
+  "nonFlatPixels": 132064,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "abandoned-winch-repair--e9-body",
       "role": "e9-body",
-      "seconds": 0.037,
+      "seconds": 0.047,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "abandoned-winch-repair--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.027,
+      "seconds": 0.03,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "abandoned-winch-repair--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.022,
+      "seconds": 0.029,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "abandoned-winch-repair--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.026,
+      "seconds": 0.05,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "abandoned-winch-repair--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.033,
+      "seconds": 0.049,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "abandoned-winch-repair--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.026,
+      "seconds": 0.037,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "failed-shield-leaves--e9-body",
+      "role": "e9-body",
+      "seconds": 0.082,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "failed-shield-leaves--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.05,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "failed-shield-leaves--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.058,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "failed-shield-leaves--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.043,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "failed-shield-leaves--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.048,
       "method": "three-segment high bevel"
     }
   ]
