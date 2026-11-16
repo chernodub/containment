@@ -110,9 +110,17 @@ export function marine():ActorModel{
  const guns=new Map<WeaponId,GunModel>();let current:GunModel;const socket=r.assetRoot.getObjectByName('tag_weapon')!;let pose=authoredPlayer.available?undefined:r.action('shotgun_delta');
  const equip=(id:WeaponId)=>{if(current?.id===id)return;let gun=guns.get(id);if(!gun){gun=weaponModel(id);guns.set(id,gun);weapon.add(gun.root);}for(const g of guns.values())g.root.visible=g===gun;current=gun;pose?.stop();pose=authoredPlayer.available?undefined:r.action(`${({pistol:'blaster',plasma:'prifle',rocket:'lcannon'} as Partial<Record<WeaponId,string>>)[id]??id}_delta`);if(pose){pose.play();pose.paused=true;}};equip('shotgun');
  const inverse=new T.Matrix4(),socketMatrix=new T.Matrix4(),scale=new T.Vector3();
+ const barrelForward=new T.Vector3(),aimCorrection=new T.Quaternion(),up=new T.Vector3(0,1,0);
  const syncWeaponPose=()=>{
   socket.updateWorldMatrix(true,false);inverse.copy(r.root.matrixWorld).invert();
   socketMatrix.multiplyMatrices(inverse,socket.matrixWorld);socketMatrix.decompose(weapon.position,weapon.quaternion,scale);weapon.scale.setScalar(1);
+  // Authored cast wrists may yaw the socket away from native aim. Preserve
+  // socket position and elevation while keeping +Z barrel heading root-local.
+  barrelForward.set(0,0,1).applyQuaternion(weapon.quaternion);
+  if(barrelForward.x*barrelForward.x+barrelForward.z*barrelForward.z>1e-8){
+   aimCorrection.setFromAxisAngle(up,-Math.atan2(barrelForward.x,barrelForward.z));
+   weapon.quaternion.premultiply(aimCorrection);
+  }
  };
  const motion=new MarineMotion(r.root,r.assetRoot),actionMotion=new MarineActionMotion(motion),authored=new AuthoredMarineMotion(authoredPlayer,motion);motion.authored=authoredPlayer.available;let aimPitch=0;
  return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,syncWeaponPose,setColliderDebug:colliderDebug(r.root,.5),setAimPitch(radians){aimPitch=T.MathUtils.clamp(radians,-.6,.6);},setRig:identity.setRig,setFlashIntensity:surface.setFlashIntensity,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
