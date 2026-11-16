@@ -125,25 +125,54 @@ def gantry():
  L.stencil('LIFT 7',(0,-.19,4.48),.22)
  L.sweep('Festoon cable',[(-3.4,.6,4.75),(-2.2,.6,4.15),(-.8,.6,4.75),(.25,.6,4.35)],.045,'p11-rubber',7)
 
+def folded_skin(name,side,xs,tops,leans):
+ # Authored cross-sections: buckled knee and independently bent torn lip.
+ # No repeated teeth; every segment has a different crush/shear direction.
+ bm=L.bmesh.new();rows=[]
+ for level in range(3):
+  row=[]
+  for i,x in enumerate(xs):
+   yy=side*(.91 if level==0 else 1.00 if level==1 else leans[i])
+   zz=.07 if level==0 else tops[i]*.38 if level==1 else tops[i]
+   row.append(bm.verts.new((x,yy,zz)))
+  rows.append(row)
+ for level in range(2):
+  for i in range(len(xs)-1):bm.faces.new((rows[level][i],rows[level][i+1],rows[level+1][i+1],rows[level+1][i]))
+ obj=L.mesh_object(name,bm,'e9-body',smooth=False)
+ mod=obj.modifiers.new('Exposed pressure skin thickness','SOLIDIFY');mod.thickness=.035
+ L.bpy.context.view_layer.objects.active=obj;L.bpy.ops.object.modifier_apply(modifier=mod.name)
+ L.sweep('Bright sheared skin lip',[(x,side*lean,top)for x,lean,top in zip(xs,leans,tops)],.012,'e9-trim',5)
+ # Welded lower flange follows the original hull; sheared upper ribs stop visibly.
+ L.sweep('Pressure skin folded knee',[(x,side*1.005,top*.38)for x,top in zip(xs,tops)],.025,'e9-dark',5)
+
 def tear():
  L.asset('loading-wedged-pod',12000)
  cargo_pod(0,0,.22,4.4,1.65,1.6)
- # Two torn pressure-skin bands curl outward around an exposed rib skeleton.
+ folded_skin('Port buckled long sheet',-1,[-3.25,-2.84,-2.30,-1.88],[.25,.54,.83,.62],[1.11,1.14,1.03,.98])
+ folded_skin('Port short peel',-1,[-1.68,-1.30,-.97],[.36,.68,.43],[1.08,1.14,1.02])
+ folded_skin('Port crushed low apron',-1,[-.74,-.18,.35,.75],[.22,.16,.26,.31],[1.10,1.16,1.09,.97])
+ folded_skin('Starboard sheared wrap',-1,[1.05,1.54,1.81,2.15,2.68,3.21],[.43,.63,1.02,.72,.44,.23],[1.12,1.03,.93,1.07,1.15,1.08])
+ folded_skin('Rear peeled plate',1,[-3.10,-2.62,-2.14,-1.63,-1.04],[.18,.35,.70,1.10,.84],[1.10,1.16,1.07,.94,.98])
+ folded_skin('Rear folded pressure wall',1,[-.70,-.12,.40,1.02,1.48],[.35,.72,.58,.28,.44],[1.15,1.07,1.01,1.16,1.10])
+ folded_skin('Rear crushed end',1,[1.72,2.15,2.62,3.23],[.90,.60,.38,.15],[.96,1.04,1.13,1.16])
  for side in [-1,1]:
-  for i in range(7):
-   x=-3+i
-   rise=[.4,.85,1.25,.65,1.4,.9,.3][i]
-   shard=L.slab('Torn pressure skin',[(x-.45,0),(x+.45,0),(x+.4,rise*.48),(x+.23,rise*.95),(x+.03,rise*.6),(x-.12,rise),(x-.29,rise*.56),(x-.45,rise*.72)],0,.055,'e9-body',.006)
-   shard.rotation_euler[0]=math.radians(90-side*10)
-   shard.location.y=side*.94
-   L.sweep('Exposed bright fracture',[(x-.45,side*1.03,rise*.72),(x-.29,side*1.08,rise*.56),(x-.12,side*1.12,rise)],.013,'e9-trim',5)
-   L.box('Exposed hull rib',(x,side*.96,.19),(.08,.24,.38),'e9-trim',.012)
-  L.box('Severed longitudinal girder',(0,side*1.08,.12),(6.7,.13,.15),'e9-dark',.012)
- for x in [-2.6,2.6]:
-  L.sweep('Ruptured hose',[(x,.8,.5),(x+.1,.5,1),(x-.15,-.1,.75)],.055,'p11-rubber',7,bend=.1)
-  L.sweep('Exposed cut conduit',[(x,-.85,.4),(x+.15,-.4,.55),(x+.1,-.3,.8)],.035,'e9-trim',7)
- L.box('Cargo crush contact',(0,0,.1),(4.8,1.75,.2),'e9-dark',.025)
- L.hazard_band((0,-.94,.4),2.6,.14,stripes=9)
+  for i,x in enumerate([-2.85,-1.72,.82,2.66]):
+   h=[.45,.69,.36,.56][i];angle=[-.28,.20,.40,-.16][i]*side
+   # A torn I-section has three visible members and a dark cut cross section.
+   for dx in [-.055,.055]:
+    L.box('Split hull rib flange',(x+dx,side*.97,.10+h/2),(.035,.20,h),'e9-trim',.005,rotation=(angle,0,0))
+   L.box('Exposed hull rib web',(x,side*.97,.10+h/2),(.085,.035,h),'e9-dark',.004,rotation=(angle,0,0))
+  for start,end in [(-3.35,-.4),(-.2,3.35)]:
+   L.box('Severed longitudinal channel',((start+end)/2,side*1.08,.10),(end-start,.14,.12),'e9-dark',.006)
+   L.box('Channel folded flange',((start+end)/2,side*1.14,.15),(end-start,.045,.025),'e9-trim',0)
+ for x in [-2.65,2.62]:
+  L.sweep('Ruptured braided hose',[(x,.80,.19),(x+.12,.60,.64),(x-.18,.15,.87),(x-.27,-.12,.59)],.055,'p11-rubber',7,bend=.08)
+  L.sweep('Torn copper service conduit',[(x,-.85,.14),(x+.15,-.60,.49),(x+.08,-.23,.65)],.028,'e9-trim',7)
+  L.cylinder('Broken pipe open socket',(x,-.85,.15),.09,.14,'e9-dark','Z',8,0)
+ L.box('Crushed deck contact',(0,0,.075),(4.8,1.75,.15),'e9-dark',.02)
+ for x in [-2.5,2.75]:
+  L.box('Detached deck insulation',(x,-.80,.075),(.40,.25,.06),'e9-body',.008,rotation=(0,.06,x*.12))
+ L.hazard_band((.05,-1.08,.20),.95,.10,stripes=4)
 
 gantry();tear()
 L.export('cargo',L.ROOT/'public/assets/p11/cargo','cargo.glb','Suspended working gantry and grounded torn hull around a wedged freight pod.','blender -b -P tools/assets/p11-set-pieces/cargo.py')
