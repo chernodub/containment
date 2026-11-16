@@ -93,7 +93,7 @@ def armour_segment(a, b, r0, r1, bone, side, *, tint=1.0, plate=0, outward=None,
     o = normalize(v3(outward) if outward is not None else v3((0, side, 0.75)))
     o = normalize(o - ax * float(o @ ax))
     r = (r0 + r1) / 2
-    out.append(Plate(lerp(a, b, 0.48) + o * r * 0.62, (L * 0.44, r * 1.25, r * 0.85), frame(ax, o), r * 0.5,
+    out.append(Plate(lerp(a, b, 0.48) + o * r * 0.42, (L * 0.47, r * 1.6, r * 1.05), frame(ax, o), r * 0.55,
                      rings=r * 0.05, ring_count=3, lip=r * 0.16, chip=r * 0.08, zone=ARMOR, bone=bone, plate=plate, tint=tint))
     return out
 
