@@ -116,6 +116,8 @@ async function measure(name,directory,sourceSHA){
   phase='first-gameplay';const actions=[];
   const action=async(name,run)=>{actions.push({action:name,nodeMs:elapsed(),browserMs:await page.evaluate(()=>performance.now())});await run();};
   await action('native #start click',()=>page.locator('#start').click());
+  await action('native Standard difficulty click',()=>page.locator('[data-difficulty="standard"]').click());
+  await action('native difficulty confirmation',()=>page.locator('#difficulty-begin').click());
   await page.waitForFunction(()=>document.body.dataset.state==='rig-select');
   await action('native #equip-rig click (default Breacher)',()=>page.locator('#equip-rig').click());
   await page.waitForFunction(()=>document.body.dataset.state==='reward'&&document.querySelectorAll('[data-mutation]').length>0);

@@ -51,6 +51,12 @@ export function createScreens(context: ScreenContext) {
   const disposeBoonInspection = installBoonInspection(el('overlay'));
   let secondary:typeof import('./templates')|undefined;
   let secondaryLoad:Promise<void>|undefined;
+  let difficultyOpen = false;
+  let pendingDifficulty = '';
+  const modes = ['story','standard','veteran'] as const;
+  let selectedDifficulty: typeof modes[number] = 'standard';
+  try { const saved = storage?.getItem('containment.difficulty.v1'); if (modes.includes(saved as typeof modes[number])) selectedDifficulty = saved as typeof modes[number]; } catch {}
+  const difficultyCards = () => `<section class="panel difficulty-panel"><span class="eyebrow">BEFORE YOU WAKE</span><h2>Choose your difficulty.</h2><p>Ability rules are the same in every mode.</p><div class="difficulty-cards">${modes.map((mode,index)=>`<button id="difficulty-${mode}" data-difficulty="${mode}" aria-pressed="${selectedDifficulty===mode}"><b>${['Story','Standard','Veteran'][index]}</b><span>${['More breathing room, healing and fewer threats.','The original expedition. Every choice counts.','Fiercer attacks and scarce breathing room.'][index]}</span></button>`).join('')}</div><button id="difficulty-begin" class="primary">Begin expedition</button><button id="difficulty-back" class="quiet">Back</button></section>`;
   let settingsOpen = false;
   let creditsOpen = false;
   let controlsOpen = false;
@@ -131,7 +137,13 @@ export function createScreens(context: ScreenContext) {
       if(game.authorizeDestruction()) { input.reset(); playUiCue(audio,'confirm'); syncScreen(); }
     });
     listen('recover',()=>location.reload());
-    listen('start',()=>{playUiCue(audio,'confirm');start();});
+    listen('start',()=>{difficultyOpen=true;syncScreen(true);el(`difficulty-${selectedDifficulty}`)?.focus();});
+    listen('difficulty-back',()=>{difficultyOpen=false;syncScreen(true);el('start')?.focus();});
+    listen('difficulty-begin',()=>{game.setDifficulty(selectedDifficulty);difficultyOpen=false;playUiCue(audio,'confirm');start();});
+    root.querySelectorAll<HTMLButtonElement>('[data-difficulty]').forEach(button=>button.addEventListener('click',()=>{selectedDifficulty=button.dataset.difficulty as typeof modes[number];try{storage?.setItem('containment.difficulty.v1',selectedDifficulty);}catch{}syncScreen(true);}));
+    root.querySelectorAll<HTMLButtonElement>('[data-easier]').forEach(button=>button.addEventListener('click',()=>{pendingDifficulty=button.dataset.easier!;syncScreen(true);el('difficulty-confirm')?.focus();}));
+    listen('difficulty-cancel',()=>{pendingDifficulty='';syncScreen(true);});
+    listen('difficulty-confirm',()=>{game.setDifficulty(pendingDifficulty as typeof modes[number]);pendingDifficulty='';syncScreen(true);});
     listen('continue',()=>{playUiCue(audio,'confirm');start(true);});
     listen('settings',()=>{settingsOpen=!settingsOpen; creditsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);if(settingsOpen)el('close-drawer')?.focus();});
     listen('menu-credits',()=>{creditsOpen=!creditsOpen; settingsOpen=false; controlsOpen=false; playUiCue(audio,'tab'); syncScreen(true);if(creditsOpen)el('close-drawer')?.focus();});
@@ -143,7 +155,7 @@ export function createScreens(context: ScreenContext) {
     listen('dismiss-effect-set',()=>{lessonSeen=true;try {storage?.setItem(EFFECT_SET_LESSON_KEY,'seen');}catch {/* Session fallback. */}syncScreen(true);root.querySelector<HTMLElement>('[data-mutation]')?.focus();});
     listen('skip-clear-record',()=>{dismissedRecord=`${game.expedition.run.seed}:${game.roomRevision}`;syncScreen(true);root.querySelector<HTMLElement>('[data-mutation],#claim,#destroy-ship,[data-route]')?.focus();});
     listen('menu',()=>{
-      game.menu(); settingsOpen=false; creditsOpen=false; controlsOpen=false; pauseTab='resume';
+      game.menu(); pendingDifficulty=''; difficultyOpen=false; settingsOpen=false; creditsOpen=false; controlsOpen=false; pauseTab='resume';
       if(hasAudioDirector(audio as object)) {audio.setEnvironment(null);audio.resumeAll();audio.pauseMusic();}
       playUiCue(audio,'back');
       if(!hasAudioDirector(audio as object)) audio.pauseAll(); syncScreen(true);
@@ -209,7 +221,7 @@ export function createScreens(context: ScreenContext) {
     const savedNode=saved?generateRun(saved.run.seed,saved.run.version).nodes.find(node=>node.id===saved.run.currentNodeId):null;
     const continuation=saved&&savedNode?{rig:saved.run.phase==='rig-select'?'Rig selection':saved.build.rig?RIG_CATALOG[saved.build.rig].name:'Marine',sector:savedNode.depth+1,total:runLength(saved.run.version),boons:saved.build.mutations.length,phase:saved.run.phase}:null;
     // Snapshot values appear in the key only on their relevant screen, never at combat frequency.
-    const key=JSON.stringify([status,phase,game.node.id,settingsOpen,creditsOpen,controlsOpen,pauseTab,selectedRig,selectedRoute,continuation,
+    const key=JSON.stringify([status,phase,game.node.id,difficultyOpen,pendingDifficulty,selectedDifficulty,game.difficulty,settingsOpen,creditsOpen,controlsOpen,pauseTab,selectedRig,selectedRoute,continuation,
       game.checkpointStatus,game.checkpointWarning,game.checkpointNote,context.graphicsLost(),recoveryPending,graphicsBlocked?context.recovering():false,
       blocked?game.storyStatus:null,status==='menu'?game.canContinue:null,
       blocked?game.combat.snapshot.credits:0,status==='reward'?game.combat.snapshot:null,blocked?run.draftRoll:0,
@@ -223,7 +235,7 @@ export function createScreens(context: ScreenContext) {
     el('hud').hidden=isMenu||status==='rig-select';
     el('signature').hidden=!isMenu;
     el('shade').classList.toggle('visible',blocked);
-    el('overlay').className=isMenu&&!graphicsBlocked?'menu-overlay':'modal-overlay';
+    el('overlay').className=isMenu&&!graphicsBlocked&&!difficultyOpen?'menu-overlay':'modal-overlay';
     const root=el('overlay');
     for (const id of ['hud','world','signature']) {
       const background=el(id);
@@ -233,7 +245,7 @@ export function createScreens(context: ScreenContext) {
     }
     root.setAttribute('role',blocked?'dialog':'presentation');
     if(blocked) root.setAttribute('aria-modal','true');else root.removeAttribute('aria-modal');
-    root.setAttribute('aria-label',graphicsBlocked?'Graphics recovery':isMenu?'Main menu':`${status} expedition screen`);
+    root.setAttribute('aria-label',graphicsBlocked?'Graphics recovery':difficultyOpen?'Difficulty selection':isMenu?'Main menu':`${status} expedition screen`);
     if(!blocked) {root.innerHTML='';if(!hasAudioDirector(audio as object)) audio.resumeAll();previousStatus=status;return;}
     input.reset();
     if(!isMenu&&!hasAudioDirector(audio as object)) audio.pauseAll();
@@ -250,12 +262,18 @@ export function createScreens(context: ScreenContext) {
       const restoring=context.graphicsLost()||context.recovering();
       html=`<section class="panel recovery-panel" aria-labelledby="recovery-title"><h2 id="recovery-title">${restoring?'Restoring graphics…':'Graphics restored.'}</h2><p role="status">${restoring?'Your expedition is on hold. Wait for graphics to return, or reload your last checkpoint.':'Your expedition is still on hold. Continue when you are ready.'}</p><button id="graphics-continue" class="primary" ${restoring?'disabled':''}>${recoveryStatus==='paused'||recoveryStatus==='playing'?'Return to pause':'Continue'}</button><button id="recover" class="secondary">Reload game</button></section>`;
     }
+    else if(difficultyOpen) html=difficultyCards();
     else if(isMenu) html=titleScreen(game,settingsOpen?settings():'',settingsOpen,creditsOpen,controlsOpen,continuation);
     else if(status==='rig-select') html=secondary!.rigScreen(selectedRig);
     else if(status==='paused') html=secondary!.pauseScreen(game,pauseTab,pauseTab==='settings'?settings():'',context.graphicsLost());
     else if(status==='reward') html=expeditionRewardOffers(game.expedition).length?secondary!.draftScreen(game):secondary!.shopScreen(game);
     else if(status==='route') html=game.node.templateId==='manual-control-chamber'?secondary!.destroyScreen():secondary!.routeScreen(game,selectedRoute);
     else html=secondary!.resultsScreen(game);
+    if (status === 'paused' && !graphicsBlocked) {
+      const index=modes.indexOf(game.difficulty);
+      const controls=`<aside class="pause-difficulty"><b>Difficulty: ${game.difficulty}</b>${pendingDifficulty?`<p>Change to ${pendingDifficulty==='story'?'Story':'Standard'}? You cannot raise difficulty during this expedition.</p><button id="difficulty-confirm" class="secondary">Confirm easier mode</button><button id="difficulty-cancel" class="secondary">Cancel</button>`:modes.slice(0,index).map(mode=>`<button class="secondary" data-easier="${mode}">Change to ${mode==='story'?'Story':'Standard'}</button>`).join('')}</aside>`;
+      html=html.replace('<footer class="pause-footer">',controls+'<footer class="pause-footer">');
+    }
     if (status === 'reward' && !lessonSeen && needsEffectSetLesson(expeditionRewardOffers(game.expedition),storage)) {
       html = html.replace('<div class="choice-grid">', `<aside class="effect-set-lesson" role="note"><p>${EFFECT_SET_LESSON}</p><button id="dismiss-effect-set" class="quiet">Got it</button></aside><div class="choice-grid">`);
     }
@@ -307,7 +325,8 @@ export function createScreens(context: ScreenContext) {
       return;
     }
     if(event.key==='Escape') {
-      if(status==='menu'&&(settingsOpen||creditsOpen||controlsOpen)) {event.preventDefault();closeDrawer();}
+      if(difficultyOpen) {event.preventDefault();difficultyOpen=false;syncScreen(true);el('start')?.focus();}
+      else if(status==='menu'&&(settingsOpen||creditsOpen||controlsOpen)) {event.preventDefault();closeDrawer();}
       else if(status==='paused') {event.preventDefault();pause();}
       // Mandatory draft/route decisions stay pending. Escape returns focus to
       // the screen heading instead of committing or destroying run progress.

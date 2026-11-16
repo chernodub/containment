@@ -1,3 +1,4 @@
+import {difficultyId} from '../difficulty';
 import {isValidRunStatsSnapshot} from '../abilities/RunStats';
 import {MUTATION_IDS} from './mutationCatalog';
 import { isValidBuildState } from './builds';
@@ -66,7 +67,7 @@ export function isValidCheckpointExtensions(value: unknown): boolean {
 
 function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
-  const optional = ['abilities','stats'].filter(key=>Object.hasOwn(value,key));
+  const optional = ['abilities','stats','difficulty'].filter(key=>Object.hasOwn(value,key));
   if (!exactRecord(value, ['version', 'savedAt', 'run', 'build', 'resources', ...optional]) || !isValidCheckpointExtensions(value) ||
     value.version !== 1 || !boundedNumber(value.savedAt, 0, Number.MAX_SAFE_INTEGER, true) ||
     !validRun(value.run) ||
@@ -140,7 +141,7 @@ export function parseCheckpoint(serialized: unknown): RunCheckpoint | null {
   if (typeof serialized !== 'string' || serialized.length > MAX_CHECKPOINT_LENGTH) return null;
   try {
     const parsed: unknown = JSON.parse(serialized);
-    return validCheckpoint(parsed) ? parsed : null;
+    if(typeof parsed==='object'&&parsed!==null&&!Array.isArray(parsed)){const record=parsed as Record<string,unknown>;record.difficulty=difficultyId(record.difficulty);}return validCheckpoint(parsed) ? parsed : null;
   } catch {
     return null;
   }

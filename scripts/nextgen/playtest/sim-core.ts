@@ -119,6 +119,7 @@ export class CameraObserver {
 export type SimOptions = {
     rig: RigId;
     seed: number;
+    difficulty?: "story" | "standard" | "veteran";
     profile?: string;
     rooms?: number;
     assisted?: boolean;
@@ -193,15 +194,15 @@ export function runSimulation(options: SimOptions) {
             camera.rig.kick(e.angle ?? 0, e.weapon === 'shotgun' ? .08 : e.weapon === 'rocket' ? .12 : .025);
     };
     game = new DepthGame(onEffect);
-    game.newRun(options.seed, { rigSelect: true });
+    game.newRun(options.seed, { rigSelect: true, difficulty: options.difficulty });
     game.chooseRig(options.rig);
     if (options.legacy)
-        game.newRun(options.seed, { version: 2, rig: options.rig });
+        game.newRun(options.seed, { version: 2, rig: options.rig, difficulty: options.difficulty });
     if (options.assisted) {
         const hurt = game.hurt.bind(game);
         game.hurt = (n, origin) => hurt(n * .15, origin);
     }
-    const report = { mode: 'sim-human-v1', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, profile:human.profile, humanParameters:human.config, assisted: !!options.assisted, legacy: !!options.legacy,
+    const report = { mode: 'sim-human-v1', difficulty: options.difficulty ?? 'standard', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, profile:human.profile, humanParameters:human.config, assisted: !!options.assisted, legacy: !!options.legacy,
         policy: 'Shared seeded human policy; 100ms observations, rate-limited inputs, 60Hz GameFeel, real DepthGame actions; analytic camera observer.',
         limitations: ['No GPU, audio or DOM. Uses shared camera follow/framing/ability-event hooks, exact actor metrics and held-screen ray/torso selection; resource preparation and RAF synchronization are omitted. Matched browser validation remains required before using campaign outcomes as native-policy predictions.'],
         rooms: [] as any[], outcome: 'running', finalReason: null as string | null, deathRoom: null as number | null, stats: null as any, final: null as any, wallSeconds: 0, trace: options.trace ? [] as any[] : undefined };

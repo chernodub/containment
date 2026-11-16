@@ -228,6 +228,7 @@ try{
   if(args.includes('--fixed-resolution'))await page.evaluate(configureCaptureGraphics,{adaptiveResolution:false,resolutionScale:1});
   // The actual Start handler owns audio.unlock(). A canvas click cannot unlock it.
   await page.locator('#start').click();
+  await page.locator('[data-difficulty="standard"]').click();await page.locator('#difficulty-begin').click();
   await page.waitForTimeout(500);
   await page.evaluate(stageV2,{rig,room,tier,heavy:true,setupOnly:true});
 
