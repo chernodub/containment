@@ -28,6 +28,7 @@ const svgNamespace = 'http://www.w3.org/2000/svg';
 export class HitConfirmation {
     private life = 0;
     private spreadSize = -1;
+    private setHidden(value:boolean):void {if(this.marker.hidden!==value)this.marker.hidden=value;}
     private contactOpacity = '';
     private setContactOpacity(value:string):void {if(this.contactOpacity!==value){this.contactOpacity=value;this.marker.style.setProperty?.('--contact-opacity',value);}}
     private active = false;
@@ -89,7 +90,7 @@ export class HitConfirmation {
         if (this.marker.style.left !== `${x}px`) this.marker.style.left = `${x}px`;
         if (this.marker.style.top !== `${y}px`) this.marker.style.top = `${y}px`;
         if (this.reticle && this.playing) {
-            this.marker.hidden = false;
+            this.setHidden(false);
             if (this.marker.style.opacity !== '1') this.marker.style.opacity = '1';
         }
     }
@@ -98,7 +99,7 @@ export class HitConfirmation {
         this.life = kill ? .18 : .12;
         this.marker.dataset.contact = contact;
         this.marker.dataset.kill = String(kill);
-        this.marker.hidden = false;
+        this.setHidden(false);
         if (this.marker.style.opacity !== (this.reticle ? '1' : '0.65')) this.marker.style.opacity = this.reticle ? '1' : '0.65';
         this.setContactOpacity('1');
     }
@@ -115,13 +116,13 @@ export class HitConfirmation {
         const reloading=String(state.reloading ?? reload > 0);if(this.marker.dataset.reloading!==reloading)this.marker.dataset.reloading=reloading;
         if (this.ring) {const offset=String(100*(1-reload));if(this.ring.style.strokeDashoffset!==offset)this.ring.style.strokeDashoffset=offset;}
         if (state.kill) this.confirm('damage', true);
-        this.marker.hidden = !this.active || !this.playing;
+        this.setHidden(!this.active || !this.playing);
     }
     update(dt: number, playing: boolean): void {
         this.playing = playing;
         this.life = playing ? Math.max(0, this.life - Math.max(0, finite(dt))) : 0;
         const fade = Math.min(1, this.life / .12);
-        this.marker.hidden = this.reticle ? !this.active || !playing : this.life === 0;
+        this.setHidden(this.reticle ? !this.active || !playing : this.life === 0);
         if (this.marker.style.opacity !== (this.reticle && this.active && playing ? '1' : String(.65 * fade))) this.marker.style.opacity = this.reticle && this.active && playing ? '1' : String(.65 * fade);
         this.setContactOpacity(String(fade));
         if (!this.life&&this.marker.dataset.kill!=='false') this.marker.dataset.kill = 'false';
@@ -129,7 +130,7 @@ export class HitConfirmation {
     clear(): void {
         this.life = 0;
         this.active = false;
-        this.marker.hidden = true;
+        this.setHidden(true);
         if (this.marker.style.opacity !== '0') this.marker.style.opacity = '0';
         this.marker.dataset.contact = '';
         this.marker.dataset.kill = 'false';

@@ -297,7 +297,11 @@ export class PostPipeline {
     const r = this.resources!;
     r.triangle.material = material;
     this.renderer.setRenderTarget(target);
-    this.renderer.render(r.screenScene, r.screenCamera);
+    // F11: fullscreen replacement passes overwrite every pixel. GTAO/denoise
+    // discard background, so they retain their white clear.
+    const autoClear=this.renderer.autoClear;
+    this.renderer.autoClear=material===r.gtao.material||material===r.gtao.denoiseMaterial;
+    try{this.renderer.render(r.screenScene, r.screenCamera);}finally{this.renderer.autoClear=autoClear;}
   }
 
   private ensureResources(): PostResources {
