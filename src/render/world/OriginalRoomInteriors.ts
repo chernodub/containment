@@ -170,6 +170,9 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
                 width:400/32,depth:110/32,bottom:-.01,top:2.6});
             if(t.id==='passenger-vault')replacements.push({x:420/32,z:310/32,angle:0,scale:1,
                 width:200/32,depth:100/32,bottom:-.01,top:3.4});
+            // Retire the old taller mast, not only geometry inside the new motor.
+            if(t.id==='armory')replacements.push({x:600/32,z:450/32,angle:0,scale:1,
+                width:160/32,depth:160/32,bottom:-.01,top:5});
             const thin = (t.voids ?? []).flatMap(p => {
                 const xs = p.map(v => v.x / 32), zs = p.map(v => v.y / 32), w = Math.max(...xs) - Math.min(...xs), d = Math.max(...zs) - Math.min(...zs);
                 return p.length === 4 && Math.min(w, d) <= 1.55 ? [{ x: (Math.min(...xs) + Math.max(...xs)) / 2, z: (Math.min(...zs) + Math.max(...zs)) / 2, angle: 0, scale: 1, width: w + .01, depth: d + .01, bottom: -.01, top: 2.4 }] : [];
