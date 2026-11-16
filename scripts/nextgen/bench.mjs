@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import {attributeCpuSelf,summarizeCpuClock} from './bench-cpu.mjs';
+import {configureCaptureGraphics} from './capture-graphics.mjs';
 /** Sequential production-browser benchmark. No timing assertions on a shared host. */
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -224,11 +225,12 @@ try{
   }
   try{await cdp.send('WebAudio.enable');}catch(error){audioError=String(error);}
   await reset();
+  if(args.includes('--fixed-resolution'))await page.evaluate(configureCaptureGraphics,{adaptiveResolution:false,resolutionScale:1});
   // The actual Start handler owns audio.unlock(). A canvas click cannot unlock it.
   await page.locator('#start').click();
   await page.waitForTimeout(500);
   await page.evaluate(stageV2,{rig,room,tier,heavy:true,setupOnly:true});
-  if(args.includes('--fixed-resolution'))await page.evaluate(async()=>{const d=window.__containmentDebug;d.renderer.setGraphicsOptions({adaptiveResolution:false,resolutionScale:1});await d.prepare();d.refresh();});
+
   if(report.noSoftDepth)await page.evaluate(installNoSoftDepthDiagnostic);
   assert([...audioContexts.values()].some(c=>c.contextType==='realtime'&&c.contextState==='running'),'Native audio context was not unlocked by Start');
   await cdp.send('Performance.enable');

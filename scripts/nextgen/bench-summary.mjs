@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /** Offline F11 attribution and comparison; never launches a browser. */
 import {readFile, writeFile, mkdir} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 import {resolve, dirname, basename, extname} from 'node:path';
 import {attributeCpuSelf,summarizeCpuClock} from './bench-cpu.mjs';
 
@@ -26,7 +27,8 @@ async function load(directory, label) {
     let attributionError = null;
     try {
       const profile = JSON.parse(await readFile(resolve(root, run.name + '.cpuprofile'), 'utf8'));
-      const dist = report.distSnapshot?.path;
+      const retainedMaps=resolve(root,'source-maps');
+      const dist=existsSync(retainedMaps)?retainedMaps:report.distSnapshot?.path;
       if (!dist) throw Error('Report does not record distSnapshot.path');
       cpuSelf = await attributeCpuSelf(profile, dist);
     } catch (error) {
@@ -101,6 +103,7 @@ const lines = [
   'GPU scopes are ranked by before p50 (after p50 when no before sample exists). Never sum independently sampled percentiles. sceneColor includes native opaque, transparent, shadow and depth-copy work; exclusive scopes overlap that inclusive scope. Composite physically combines ink/outline, lens and grade. Missing samples stay unavailable.', '',
   'Draw/triangle/fill means below divide scope totals by actual render submissions counted by finalAA draws (one per shipping High/Low render), falling back to the maximum recorded frame ID and then observer count. This includes fixed-step refresh and RAF submissions, including frames where an intermittent scope did not execute. Fill means render-target footprint × named submissions, not actual fragment invocations or transparent overdraw. Memory is estimated texture payload, not driver allocation telemetry.', '',
 ];
+if(cpuBefore||cpuAfter)lines.push(`Native CPU profile sources: before ${cpuBefore?.report?.distSnapshot?.sourceSHA??'unavailable'}; after ${cpuAfter?.report?.distSnapshot?.sourceSHA??'unavailable'}.`, '');
 const comparisons = [];
 for (const scenario of keys) {
   const a = beforeRuns.get(scenario), b = afterRuns.get(scenario);
