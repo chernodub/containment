@@ -307,13 +307,13 @@
     },
     {
       "path": "shared/decals-low.webp",
-      "bytes": 4638,
-      "sha256": "863dd72b4e9eab9ec5d1a799b10bfd88bd57ec2127b7a34c5c87fa0df56bb0b7"
+      "bytes": 4786,
+      "sha256": "ed1b95030ef5c63bea4380322bcd207a0245be6a708120969d8e9e78fc87b77b"
     },
     {
       "path": "shared/decals.webp",
-      "bytes": 6118,
-      "sha256": "9c45dc20517cc13f7f024052fecfa9008d7a5688302bed87c179260f84afeed0"
+      "bytes": 6088,
+      "sha256": "3fab477a1075de90ca8f7eb7774277922c353ed5564aa3a39eb436ecda027c39"
     },
     {
       "path": "shared/trim-basecolor-low.webp",

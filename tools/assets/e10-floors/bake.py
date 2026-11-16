@@ -101,13 +101,13 @@ if not args or 'cryogenics' in args or 'shared' in args:
  o,m=receiver('Trim');bake(o,m,'DIFFUSE',dest/'trim-basecolor.png',512);bake(o,m,'NORMAL',dest/'trim-normal.png',512)
  clear()
  # White background encoded as no-op; dark atlas details multiply authored deck paint.
- white=mat('No-op decal background',(1,1,1));ink=mat('Deck marking',(.62,.64,.61));stain=mat('Spill and scorch',(.5,.53,.51));scrape=mat('Wear',(.81,.82,.79))
+ white=mat('No-op decal background',(1,1,1));ink=mat('Deck marking',(.5,.52,.49));stain=mat('Spill and scorch',(.34,.36,.35));scrape=mat('Wear',(.45,.48,.47))
  box('Atlas background',0,0,0,5.6,5.6,.02,white,0)
  for cell in range(16):
   cx=-2.1+(cell%4)*1.4;cy=-2.1+(cell//4)*1.4;rng=random.Random(700+cell)
   if cell<4:
    for n in range(15):
-    x=cx+rng.uniform(-.4,.4);y=cy+rng.uniform(-.4,.4);o=box('Boot tyre wear',x,y,.025,.012,rng.uniform(.05,.24),.01,scrape,0);o.rotation_euler.z=.3
+    x=cx+rng.uniform(-.4,.4);y=cy+rng.uniform(-.4,.4);o=box('Boot tyre wear',x,y,.025,.022,rng.uniform(.05,.24),.01,scrape,0);o.rotation_euler.z=.3
   elif cell<8:
    for n in range(14):
     x=cx+rng.uniform(-.26,.26);y=cy+rng.uniform(-.22,.22)

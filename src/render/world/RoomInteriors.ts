@@ -94,13 +94,16 @@ export function buildRoomInteriors(id: string, t: RoomTemplate, _world?: T.Group
     const services = interiorFloorServices(id, t);
     const holes = services.map(s => rect(s.x - s.width * 16, s.z - s.depth * 16, s.width * 32, s.depth * 32));
     const deckTemplate = { ...t, voids: [...t.voids ?? [], ...holes] };
-    const chart = new InteriorDeckChart(deckTemplate), trimChart = new InteriorDeckChart(deckTemplate), base = new T.Color(profile.deck), zone = new T.Color(profile.zone), trim = new T.Color(profile.trim);
+    const chart = new InteriorDeckChart(deckTemplate), serviceChart = new InteriorDeckChart(deckTemplate), trimChart = new InteriorDeckChart(deckTemplate), base = new T.Color(profile.deck), zone = new T.Color(profile.zone), trim = new T.Color(profile.trim);
     const hull = t.boundary ?? rect(0, 0, t.width, t.height);
     const claimed: (readonly Point[])[]=[];
     chart.polygon(hull, base, .005,undefined,plan.spaces.map(s=>s.outline));
     for (const [i, space] of plan.spaces.entries()) {
-        const tone = base.clone().lerp(zone, i % 2 ? .72 : .10).multiplyScalar(1 + (i % 3 - 1) * .045);
-        chart.polygon(space.outline, tone, .006, space.name,claimed);
+        const service = /service|bypass|cross aisle|console bay|pump return|entry lock|exit lock/i.test(space.name);
+        const tone = service ? new T.Color(id==='shielding-gate'?0x655f46:id==='relay-racks'?0x69624e:id==='coolant-plant'?0x414b45:profile.deck).lerp(zone,.15)
+          : base.clone().lerp(zone, i % 2 ? .72 : .10).multiplyScalar(1 + (i % 3 - 1) * .045);
+        const field = service ? serviceChart : chart;
+        field.polygon(space.outline, tone, .006, space.name,claimed);
         for (let n = 0; n < space.outline.length; n++)
             chart.strip(space.outline[n], space.outline[(n + 1) % space.outline.length], 2.8, tone.clone().lerp(trim, .26), .012,claimed,space.outline);
         claimed.push(space.outline);
@@ -149,9 +152,14 @@ export function buildRoomInteriors(id: string, t: RoomTemplate, _world?: T.Group
     floor.name = 'e9-named-space-decks';
     floor.receiveShadow = true;
     root.add(floor);
+    if(serviceChart.positions.length){
+      const serviceMaterial = new T.MeshStandardMaterial({ name:'e10-service-floor',color:0xffffff,vertexColors:true,roughness:.98,metalness:.02,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2 });
+      serviceMaterial.userData.actorMaterial=true;serviceMaterial.userData.floorDressing=true;shapeDeckLight(serviceMaterial,t);
+      const service = new T.Mesh(serviceChart.geometry(),serviceMaterial);service.name='e10-service-lane-decks';service.receiveShadow=true;root.add(service);
+    }
     const trimMaterial = new T.MeshStandardMaterial({ name: 'e10-floor-trim', color: 0xffffff, vertexColors: true, roughness: .85, metalness: .18, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     trimMaterial.userData.actorMaterial = true; trimMaterial.userData.floorDressing = true;
     const threshold = new T.Mesh(trimChart.geometry(), trimMaterial); threshold.name = 'e10-threshold-trims'; threshold.receiveShadow = true; root.add(threshold);
-    root.userData.interior = { room: id, landmark: profile.landmark, floor: chart.zones, clusters: shipInteriorFurnishings(t), services };
+    root.userData.interior = { room: id, landmark: profile.landmark, floor: [...chart.zones,...serviceChart.zones], clusters: shipInteriorFurnishings(t), services };
     return root;
 }

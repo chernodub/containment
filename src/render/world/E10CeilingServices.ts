@@ -19,6 +19,7 @@ export function addCeilingServices(root: T.Group, t: RoomTemplate): void {
     new T.MeshStandardMaterial({ name: 'e10-overhead-cap', color: domestic ? 0xc5b897 : 0xadc1bd, roughness: .8, metalness: .15, vertexColors: true, alphaTest: .3 }),
     new T.MeshStandardMaterial({ name: 'e10-overhead-service', color: environment === 'infested' ? 0x685467 : industrial ? 0x967d52 : 0x314b53, roughness: .6, metalness: .55, vertexColors: true, alphaTest: .3 }),
     new T.MeshStandardMaterial({ name: 'e10-fixture-source', color: profile.key, emissive: profile.key, emissiveIntensity: 2.8, roughness: .7, vertexColors: true, alphaTest: .3 }),
+    new T.MeshStandardMaterial({ name: 'e10-status-lamps', color:0xd6a36a, emissive:0xffb65a, emissiveIntensity:2.5, roughness:.7, vertexColors:true, alphaTest:.3 }),
   ];
   const buckets: Bucket[] = finishes.map(material => { material.userData.actorMaterial = true; if (material.emissiveIntensity > 1) material.userData.motivatedEmitter = true; return { material, geometries: [], count: 0 }; });
   const pieces: { bounds: T.Box3; ranges: { finish: number; start: number; end: number }[] }[] = [];
@@ -80,12 +81,13 @@ export function addCeilingServices(root: T.Group, t: RoomTemplate): void {
     }
     if(!domestic)for(const side of [-1,1])pipe(x,y+.74,z+side*.20,span-.35,.055);
     for (const side of [-1, 1]) {
-      box(0, x + side * span * .43, y + .9, z, .11, .9, .14);
+      box(0, x + side * span * .43, y + 1.55, z, .075, 2.4, .09);
       if (industrial) {
         for (const dz of [-.28, .28]) pipe(x, y + .12, z + dz, span, .11);
         for (let n = -2; n <= 2; n++) box(1, x + n * span / 5, y, z, .09, .09, 1.05);
       }
       const lampX = x + side * span * .30;
+      if(['containment','communications','maintenance'].includes(environment))box(4,lampX,y+.13,z+.25,.18,.08,.14);
       box(0, lampX, y - .12, z, domestic ? .90 : 1.32, .23, domestic ? .7 : .65);
       box(1, lampX, y, z, domestic ? 1 : 1.42, .08, domestic ? .8 : .76);
       box(3, lampX, y - .25, z, domestic ? .68 : 1.12, .03, .43);
@@ -127,7 +129,7 @@ export function addCeilingServices(root: T.Group, t: RoomTemplate): void {
     if (!b.geometries.length) { b.material.dispose(); return undefined; }
     const g = mergeGeometries(b.geometries, false)!; b.geometries.forEach(p => p.dispose());
     const mesh = new T.Mesh(g, b.material); mesh.name = b.material.name;
-    mesh.castShadow = i !== 3; mesh.receiveShadow = i !== 3; mesh.userData.bakedEnvironment = true; mesh.userData.e10HighDetail = true;
+    mesh.castShadow = i < 3; mesh.receiveShadow = i < 3; mesh.userData.bakedEnvironment = true; mesh.userData.e10HighDetail = true;
     (g.getAttribute('color') as T.BufferAttribute).setUsage(T.DynamicDrawUsage); root.add(mesh); return mesh;
   });
   const cutaways: InteriorCutaway[] = pieces.map(p => ({ bounds: p.bounds, hidden: false, parts: p.ranges.map(r => ({ colors: meshes[r.finish]!.geometry.getAttribute('color') as T.BufferAttribute, start: r.start, end: r.end })) }));

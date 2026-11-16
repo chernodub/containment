@@ -36,6 +36,7 @@ export function addRecessedServices(root: T.Group, t: RoomTemplate): void {
         put(collar, 0, x + dx, -.32, z + side * depth * .22);
       }
     }
+    box(3, x, -.535, z, width - .24, .012, depth * .40);
     box(3, x, -.40, z - depth * .36, width - .28, .035, .065);
     if (service.asset === 'drainage-grating') {
       for (let i = 0; i < 13; i++) box(0, x - width / 2 + .14 + i * (width - .28) / 12, -.005, z, .045, .04, depth - .12);

@@ -287,7 +287,7 @@ export class DepthRenderer {
    for(const kind of ['crawler','brute','spitter','stalker','carrier','queen'])for(let i=0;i<(kind==='queen'?1:3);i++){
     const m=this.actorPool.take(kind,i===2);m.prepare?.();m.animate(0,1,0);m.root.position.copy(this.focus);warm.add(m.root);models.push(m);await yieldTask();
    }
-   for(const id of ['pistol','rifle','shotgun','plasma','rocket'] as const){this.player.equip?.(id);this.player.animate(0,0,0);await yieldTask();}this.player.equip?.('shotgun');
+   for(const id of ['pistol','rifle','shotgun','plasma','rocket'] as const){this.player.equip?.(id);this.player.animate(0,0,0);await yieldTask();}this.player.equip?.('shotgun');useActorContactShadows(this.player.root,true);
    if(this.preparationTiming)this.preparationTiming.phases.actors=performance.now()-actorsStarted;
    this.scene.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial&&!material.userData.retainedRoomWarmup)optimizeLocalLights(material);});
    registerGeometry(this.scene);registerGeometry(this.player.root,GEOMETRY_CLASSES.marine);registerGeometry(this.menuMarine.root,GEOMETRY_CLASSES.marine);registerGeometry(this.menuAlien.root,GEOMETRY_CLASSES.enemy);for(const model of models)registerGeometry(model.root,GEOMETRY_CLASSES.enemy);for(const model of this.actors.values())registerGeometry(model.root,model.root.userData.containmentGeometryClass??GEOMETRY_CLASSES.enemy);if(this.queen)registerGeometry(this.queen.root,GEOMETRY_CLASSES.boss);
