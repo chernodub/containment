@@ -1,39 +1,82 @@
 # M10 — melee states and authored combat motion
 
-Branch `t3/enemy-attack-motion`; authored implementation `d2eb25da1bf8cfcd96407c841907ee4a0d207334`, shipping motion/firing correction `adf3c72dbda47c5cc2df3cf22acef4555936cb72` (final report commit supplied at handoff).
+Branch `t3/enemy-attack-motion`; authored implementation `d2eb25da1bf8cfcd96407c841907ee4a0d207334`, motion/firing correction `adf3c72dbda47c5cc2df3cf22acef4555936cb72`, balance/CPU rescue `9d958c5dcc76b93a751b36142d479fac1f8c3603` (final report commit supplied at handoff).
 
-Melee now earns a visible warning and resolves one shaped strike. Blender-authored animation-only packages replace the weakest primary poses while retaining runtime aim/flinch/foot correction and the original skeletons. **Balance does not meet the requested target:** the sole after cohort completed6/80 runs versus39/80 before. The cohort cap is respected; no extra balance cohort or evidence infrastructure was added.
+Melee earns a visible warning and resolves one shaped strike. The lead accepted the authored motion; the balance rescue preserves those clips and all base meshes. The owner lifted the former two-iteration limit for this rescue. Final balance confirmation is recorded below.
 
 ## Attack state contract
 
-All families use approach → windup → strike → recovery. A shared attack slot is required; existing separation, ranged spacing and three-slot limit remain. Origin/facing track during early windup, lock at72%, then remain fixed through strike/recovery. The single windup→strike transition checks circle overlap with the exact sector/capsule and clear shot. Native dash immunity still decides damage acceptance; stepping out misses. Freeze/stun/shove/launch cancel anticipation and require a new warning. Overclock scales the hostile clock. Ranged spit damage/timing and charge movement/warning clocks remain separate. Recurring touch damage is removed even during charge; a following melee hit must earn its own warning.
+All families use approach → windup → strike → recovery. Warnings start at the old body-contact distance, with fixed origins throughout anticipation. Facing locks at a 170ms small / 250ms heavy lead threshold, with a 50ms-step margin over the requested 120ms / 200ms visible lock. A scaled warning shorter than its lock lead locks immediately. Elite Crawler anticipation is 147.6ms. No enemy translates toward the marine during anticipation. The single windup→strike transition checks circle overlap with the exact sector/capsule and clear shot. Native dash immunity decides damage acceptance; leaving the footprint misses.
 
-Values below are base catalog values before story/elite/champion multipliers. Distances are simulation units; arc/cone angles are half angles in radians. Elite windup×.82 and recovery×.85. Cooldown runs from windup start, so minimum repeat cadence is the greater of cooldown and the three phase durations.
+Freeze/stun/shove/launch cancel anticipation and require a fresh warning. A cancelled anticipation has120ms stabilization; a resolved strike still owes its remaining strike/recovery and full rest. Recovery is stationary and cannot attack. Rest starts after recovery and elapses on the hostile clock during freeze; control and owed rest overlap. Frozen actors still cannot reserve or start attacks, and thaw requires a fresh full warning. There are at most two small and one heavy windup/strike, with140ms between starts. Three physical approach berths and the existing escape half-plane remain; at most one heavy may reserve a berth, so idle heavy owners cannot monopolize all three. Resting actors release their berth and hold/circle outside. Player movement has no ordinary-enemy body collider; recurring touch damage is removed, including during charge. Ranged spit and charge travel retain their previous rules and clocks.
 
-| Family | Windup / strike / recovery ms | Strike shape | Damage M9 → M10 | Minimum cadence ms |
+Base catalog values below precede story/elite/champion multipliers. Distances are simulation units; marine radius is added once for intersection. Elite windup×.82 and recovery×.85. Minimum cycle includes windup, strike, recovery and the full post-recovery rest.
+
+| Family | Windup / strike / recovery ms | Strike shape | Damage M9 → M10 rescue | Rest / minimum cycle ms |
 |---|---:|---|---:|---:|
-| Crawler |260 /70 /240|arc range66, half angle.72|12→15|600|
-| Stalker |420 /90 /560|capsule length155, width36|22→26|1070|
-| Brute |650 /120 /450|arc range94, half angle1.08|35→42|1220|
-| Spitter |350 /90 /420|cone range58, half angle.78|10→12 melee; ranged10 unchanged|860|
-| Carrier |620 /120 /460|cone range82, half angle1.15|18→22|1200|
+| Crawler |180 /70 /240|arc range42,100° total|12→78 (scaled cap90)|900 /1390|
+| Stalker |240 /90 /560|capsule length66, width16|22→80 (scaled cap90)|900 /1790|
+| Brute |650 /120 /450|arc range41,110° total|35→35|1200 /2420|
+| Spitter |350 /90 /420|cone range38,90° total|10→10; ranged10 unchanged|1500 /2360|
+| Carrier |620 /120 /460|cone range44,100° total|18→18|1100 /2300|
 
-Additive snapshot fields are `meleePhase`, `meleeProgress`, `meleeAngle`, `meleeFacingLocked`, `meleeShape`, `meleeOriginX/Y`, `meleeRemainingMs`, `meleeDurationMs`, `meleeDamage`. Existing warning/attack effects carry the shape and low danger weight. The warning batch uses filled sectors/capsules matching the simulation footprint. Attack state is room-local; checkpoint bytes/schema do not change and old rooms initialize approach/default clocks. No renderer value participates in hit resolution.
+Engage center distances are30.5/33.5/44.5/34.5/40.5 respectively. Maximum strike center reach, including marine radius, is58/90/57/54/60; the Stalker value includes its capsule end cap. Brute reach is1.281× old contact reach. The current ceiling90 leaves an unmodified full-health100 marine alive after one hit; Blood Price can raise it to108. The scaled small-family strike ceiling is applied in the shared snapshot/strike damage function before native incoming-damage boons. Small-family damage was first restored to original values and raised only after repeated100% completion cohorts; no player, ability, enemy health/speed, ranged damage or room-plan values changed.
 
-## Balance — exactly two cohorts
+Additive snapshot fields remain `meleePhase`, `meleeProgress`, `meleeAngle`, `meleeFacingLocked`, `meleeShape`, `meleeOriginX/Y`, `meleeRemainingMs`, `meleeDurationMs`, `meleeDamage`. The renderer consumes the same exact footprint. Swarm warnings use a thin edge and faint fill with no hatching, weight.12 (.17 elite) versus heavy.48, and retire with native anticipation. Attack state is room-local; checkpoint bytes/schema do not change and old rooms initialize approach/default clocks. No renderer value participates in hit resolution.
 
-Twenty seeds×four rigs, identical seeds before/after:1729,2718,31415,42,137,8675309,2026,9001,65537,123456,17,23,101,256,512,1024,4096,8192,16384,32768. One tuning iteration changes only melee damage/cadence. Before uses frozen original game/policy; after adds simple telegraph avoidance and late dash logic. Player/ability values and ranged damage remain unchanged.
+## Balance rescue
 
-| Measure | Before | After | Target |
-|---|---:|---:|---:|
-| Campaign completion |39/80,48.75%|6/80,7.5%|40–65%|
-| Breacher |6/20,30%|2/20,10%|≥35%|
-| Cryo |11/20,55%|3/20,15%|≥35%|
-| Pyro |10/20,50%|1/20,5%|≥35%|
-| Arc |12/20,60%|0/20,0%|≥35%|
-| Transmission median |64.242s|61.533s|60–75s|
+The owner authorized quick10-seed×four-rig iterations, then one full20×four-rig confirmation. Quick seeds are1729,2718,31415,42,137,8675309,2026,9001,65537,123456; full confirmation adds17,23,101,256,512,1024,4096,8192,16384,32768. Historical baseline uses frozen game and policy; replaying its first ten seeds reproduced every original outcome and total damage exactly. Per-room family counters observe native events only and never enter policy decisions.
 
-Transmission timing passes; completion fails badly. Baseline Breacher already missed the per-rig floor. New close-range shaped attacks can resolve beyond literal body contact, and the policy still has its earlier proximity dash behavior; these are plausible contributors, not experimentally isolated causes. No claim of restored difficulty is made. Raw cohorts and frozen sources are in `artifacts/nextgen/m10-final/balance/{before,after}`. Further balance work needs an owner-authorized evidence budget.
+| Quick iteration | Main change | Completion | Breacher / Cryo / Pyro / Arc | Transmission median s | First-five median hits |
+|---|---|---:|---|---:|---|
+| Before |Original contact rules and policy|20/40,50%|40 /50 /40 /70%|65.442|0 /0 /0 /0 /0|
+| Failed M10 |Delivered broad strikes and policy|6/40,15%|20 /30 /10 /0%|62.567|0 /0 /0 /0 /0|
+|1|Short shapes, original damage, full rest and visible exits|40/40,100%|100 /100 /100 /100%|60.375|0 /1 /0 /0 /0|
+|2|Interrupted-rest debt, berth rotation and hazard exits|40/40,100%|100 /100 /100 /100%|63.758|0 /0 /0 /0 /0|
+|3|Crawler180ms / Stalker240ms anticipation|40/40,100%|100 /100 /100 /100%|62.633|0 /0 /0 /0 /0|
+|4|Old-contact initiation; damage14/25; prior ranged policy|40/40,100%|100 /100 /100 /100%|61.542|0 /0 /0 /0 /0|
+|5|One-heavy reservation limit|40/40,100%|100 /100 /100 /100%|61.767|0 /0 /0 /0 /0|
+|6|Small-family damage40/40|38/40,95%|100 /80 /100 /100%|60.217|0 /0 /0 /0 /0|
+|7|Small-family damage64/64; scaled cap75|28/40,70%|60 /70 /70 /80%|64.833|0 /0 /0 /0 /0|
+|8|Small-family damage72/72; scaled cap80|30/40,75%|60 /80 /80 /80%|62.408|0 /0 /0 /0 /0|
+|9|Base64/64; scaled cap82|27/40,67.5%|50 /70 /70 /80%|64.833|0 /0 /0 /0 /0|
+|10|Stalker anticipation220ms|27/40,67.5%|60 /70 /70 /70%|60.542|0 /0 /0 /0 /0|
+|11|Crawler recovery180ms; Stalker240ms|31/40,77.5%|30 /90 /90 /100%|63.650|0 /0 /0 /0 /0|
+|12|Recovery240ms; rest elapses during freeze|30/40,75%|80 /70 /70 /80%|64.833|0 /0 /0 /0 /0|
+|13|Scaled ceiling90; base64/64|30/40,75%|80 /70 /70 /80%|64.833|0 /0 /0 /0 /0|
+|14|Base80/80; ceiling90|22/40,55%|30 /60 /70 /60%|65.075|0 /0 /0 /0 /0|
+|15|Base70/80; ceiling90|29/40,72.5%|50 /70 /80 /90%|65.075|0 /0 /0 /0 /0|
+|16|Base75/80; ceiling90|28/40,70%|70 /90 /80 /40%|64.833|0 /0 /0 /0 /0|
+|17|Base78/80; ceiling90|25/40,62.5%|70 /60 /70 /50%|64.833|0 /0 /0 /0 /0|
+
+The sole full confirmation used all80 matched runs from implementation `9d958c5`: **52/80,65%**, meeting the inclusive45–65% target. Every rig exceeds35%; Breacher rises from30% to60%. No further tuning or cohorts follow this passing confirmation.
+
+| Measure | Pre-M10 before | Delivered M10 | Confirmed rescue | Target |
+|---|---:|---:|---:|---:|
+| Campaign completion |39/80,48.75%|6/80,7.5%|52/80,65%|45–65%|
+| Breacher |6/20,30%|2/20,10%|12/20,60%|≥35%|
+| Cryo |11/20,55%|3/20,15%|14/20,70%|≥35%|
+| Pyro |10/20,50%|1/20,5%|14/20,70%|≥35%|
+| Arc |12/20,60%|0/20,0%|12/20,60%|≥35%|
+| Transmission median |64.242s|61.533s|61.133s|60–75s|
+| Median hits, rooms1–5 |0 /0 /0 /0 /0|0 /0 /0 /0 /0|0 /0 /0 /0 /0|No increase|
+
+The archived pre-M1080-run baseline has zero damage in78/55/56/46/64 runs in those first five rooms, establishing zero positive-damage-hit medians; the matched quick replay directly records the same hit medians. Rescue per-room hit counters directly establish all five zero medians. Raw cohorts, frozen bundles and room-level family pressure are retained under `balance/rescue/`, including every rejected iteration. Iteration11 was briefly paused for an isolated benchmark; its simulation clock/results are unaffected and its wall time is not performance evidence.
+
+Pressure comparison below uses the same first ten seeds×four rigs. Damage is divided by all entered combat rooms (excluding automatic clears), so zeros and natural deaths remain represented. Spitter damage includes its unchanged ranged shots. Hits/windup counts accepted damaging melee hits; contacts/strike counts exact geometric contacts before native immunity/hurt-cooldown rejection.
+
+| Family | Before damage/room | Failed M10 damage/room | Rescue damage/room | Rescue hits/windup | Rescue contacts/strike |
+|---|---:|---:|---:|---:|---:|
+|crawler|8.64|13.45|15.08|31.3%|46.4%|
+|stalker|8.78|23.69|4.01|7.4%|9.8%|
+|brute|12.82|3.16|0.00|0.0%|0.0%|
+|spitter|6.01|4.84|6.87|7.8%|16.1%|
+|carrier|0.38|0.21|0.00|0.0%|0.0%|
+
+The failed M10 first-ten replay recorded Stalker795 strikes,613 geometric contacts (77.1%),515 accepted hits and14190 damage, versus6541 Stalker damage before despite fewer rooms reached. Crawler strikes connected65.5%. After shortening footprints and fixing origins, iteration2 connected4.2% of Crawler and1.8% of Stalker strikes. Timing3 raised those to12.9%/5.4%; contact initiation4 raised Crawler connection to47.9% while reducing wasted warnings. Heavy reservations could mechanically block small attackers, but correction5 did not materially restore pressure in this cohort. These counts distinguish shape mistakes from accepted-hit cadence.
+
+The bot reads only visible current melee shapes, origins, facing and warning deadlines for new counterplay: shortest legal backward exit for arcs, side exit for lines/cones, and a dash when walking cannot clear in time. Crawler reach is a spacing lower bound. The temporary predictive projectile solver was removed in iteration4; accepted pre-M10 ranged endpoint scoring and ranged/acid dash behavior remain. No hidden future decisions or enemy cooldowns are consulted for melee avoidance. Raw frozen cohorts retain per-room family damage, windups, strikes, contacts and accepted hits.
 
 ## Authored motion and ownership
 
@@ -43,17 +86,17 @@ The marine package contains69 clips:32 travel/transition clips,16 casts,5 class-
 
 Roots, collision, ground rings, telegraphs and health bars stay fixed. Marine authored live pelvis translation peaks at.17183m (<.175m=35% radius) and returns within233.33ms; static/held cards keep planar hips planted. Enemy authored center travel ends by250ms, with the runtime secondary layer reserving≤.049 radius inside the35% combined allowance; strike lunges follow the declared shape. Authored knees/limbs can articulate beyond the idle silhouette without moving the gameplay root. Pooling, skin batching and prepared hostile shader ownership remain; no mid-combat shader family was introduced. A≤45ms global presentation hold has650ms cooldown, scales with screenShake and clears when off/reduced; only Overdrive impact, elite kill and marine heavy hurt request it.
 
-Three authored critique→fix rounds plus fresh acceptance are written in `docs/nextgen/plans/M10-review.md`. All native standard strips and their exact4× reductions were opened before family propagation.
+Three authored critique→fix rounds plus fresh acceptance are written in `docs/nextgen/plans/M10-review.md`. All native standard strips and their exact4× reductions were opened before family propagation. The rescue preserves those accepted clips and measurements; it changes runtime priority/sampling and attack parameters, not meshes or authored poses. Native windup/strike takes precedence over a residual flinch so thaw never hides the fresh warning.
 
 ## Verification and visual review
 
 Owner revision merged as `b725dce` after WIP `81c3e15`. `npm ci` passed. All conflicting and newly authored test files were deleted per the owner decision; no tests, assertion gates or proof infrastructure were added afterward. Verification below uses build, play, ordinary captures and benchmark. Historical test receipts do not establish the final revision.
 
-The full252-strip pass completed with0 errors; all43 complete exact-quarter contact pages were opened, alongside native standard/propagation strips, all16cast poses, selected full elemental deaths and the five real-room phase sheets. A crowd-only resample settles all six pooled actors past their breach entrances; both original/replacement manifests remain in receipts. The final three weapon fire cards were strengthened after review; all five firing rows were resampled after fixing accepted-shot priority over cosmetic switching and are recorded with their own source manifest. Untouched family/ability evidence uses the initial frozen authored build. The firing resample records the reviewed uncommitted changes subsequently committed in adf3c72; shipping heavy combat, benchmark and campaigns use its frozen distribution. Final readability formatting emits identical production JavaScript bundle names/hashes.
+The accepted full 252-strip pass completed with0 errors; all43 complete exact-quarter contact pages were opened, alongside native standard/propagation strips, all16cast poses, selected full elemental deaths and the five real-room phase sheets. A crowd-only resample settles all six pooled actors past their breach entrances; both original/replacement manifests remain in receipts. The final three weapon fire cards were strengthened after review; all five firing rows were resampled after fixing accepted-shot priority over cosmetic switching and are recorded with their own source manifest. Untouched family/ability evidence uses the initial frozen authored build. The firing resample records the reviewed changes subsequently committed in `adf3c72`. Those original heavy-combat captures, benchmark and campaigns remain historical evidence of the accepted art; rescue evidence below supersedes their gameplay/performance results.
 
-Native family capture:150 guarded PNGs,0 failures/errors. Heavy combat plus four public accepted ability bursts:60 guarded PNGs,0 failures/errors. The first extra ability capture stopped on a stale visible-caption requirement: the pre-existing compact HUD intentionally hides captions. Its equivalent fixture now requires the visible ability icon while retaining ID/action/pool checks; no UI code changed. Failed raw parents remain under `native/failed-parent` and `native/failed-ability-parent`.
+Original accepted family capture: 150 PNGs, 0 failures/errors. Heavy combat plus four public accepted ability bursts: 60 PNGs, 0 failures/errors. The first extra ability capture stopped on a stale visible-caption requirement: the pre-existing compact HUD intentionally hides captions. Its equivalent fixture now requires the visible ability icon while retaining ID/action/pool checks; no UI code changed. Failed raw parents remain under `native/failed-parent` and `native/failed-ability-parent`.
 
-Final native campaigns and measured performance follow below.
+Rescue capture adds 180 native PNGs across all five family phases and a 20-enemy crowd with ten Crawlers, with zero failures/errors. All five six-frame phase boards and the crowd board were opened at exact quarter size, alongside selected native frames. A final four-frame crowd resample exercises the final pose sampling/culling code; all 20 enemies are visible in its first frames. Native and exact-quarter images were opened. Small marks remain faint, without a hatched floor. Failed close-spawn and stationary-Spitter fixture parents remain retained. Final native campaigns and measured performance follow below.
 
 ## Silhouette and score results
 
@@ -77,32 +120,36 @@ The weakest remaining motions are restrained idle/gaze, Spitter foot arcs, Stalk
 
 ## Native campaigns — seed1729
 
-Four unassisted native keyboard/mouse runners, every fixed tick rendered, same shipping distribution. All four finish normally with0 errors and0 recorded defects; natural deaths are retained, not campaign victories. These required runs are play verification, not an additional simulation balance cohort.
+Four unassisted native keyboard/mouse campaigns use the same frozen production distribution from `9d958c5`. They run with `--fast`: scene/camera/actor updates remain at 60Hz, while intermediate GPU submissions are omitted; preparation and evidence frames are fully drawn. These runs verify native campaign execution, not hardware performance. Natural deaths are retained. All four campaigns finish normally with zero errors and zero recorded defects. Their outcomes differ from the simulation proxy and do not establish a native 65% completion rate.
 
 | Rig | Terminal outcome | Rooms cleared | Errors / defects | Wall seconds |
 |---|---|---:|---:|---:|
-|breacher|dead|10/20|0 / 0|395.1|
-|cryo|complete|20/20|0 / 0|599.0|
-|pyro|dead|14/20|0 / 0|401.4|
-|arc|dead|16/20|0 / 0|495.6|
+|breacher|dead|5/20|0 / 0|111.4|
+|cryo|complete|20/20|0 / 0|556.3|
+|pyro|dead|17/20|0 / 0|373.2|
+|arc|complete|20/20|0 / 0|457.1|
 
-Full traces, snapshots, per-room PNGs and terminal evidence: [Breacher](../../artifacts/nextgen/m10-final/play/breacher/index.html), [Cryo](../../artifacts/nextgen/m10-final/play/cryo/index.html), [Pyro](../../artifacts/nextgen/m10-final/play/pyro/index.html), [Arc](../../artifacts/nextgen/m10-final/play/arc/index.html). `npm run build` passes after final formatting; no automated suites or new assertion gates were run. The final formatting emits the same runtime JavaScript bundle hashes as the played distribution.
+Full traces, snapshots, per-room PNGs and terminal evidence: [Breacher](../../artifacts/nextgen/m10-final/play/rescue/breacher/index.html), [Cryo](../../artifacts/nextgen/m10-final/play/rescue/cryo/index.html), [Pyro](../../artifacts/nextgen/m10-final/play/rescue/pyro/index.html), [Arc](../../artifacts/nextgen/m10-final/play/rescue/arc/index.html). `npm run build` passes at the frozen implementation revision. No automated suites or new assertion gates were run. Only this report changes after the played implementation.
 
 ## Heavy-combat CPU
 
-Same ordinary benchmark:Containment Annulus, Breacher, High1920×1080,25 legal replenished enemies,3×10s trials. Native effects/deaths/ability rules remain. One local browser; no local capture or Blender export overlapped the shipping trials.
+Same ordinary benchmark:Containment Annulus, Breacher, High1920×1080,25 legal replenished enemies,3×10s trials. Native effects, deaths and ability rules remain. One browser; no M10 simulation, capture or Blender export overlapped the passing measurement.
 
-| Trial | Before CPU average / p50 / p95 ms | After CPU average / p50 / p95 ms | Before → after frame p95 ms | After max draws | New programs |
+| Trial | Before CPU average / p50 / p95 ms | Rescue CPU average / p50 / p95 ms | Before → rescue frame p95 ms | Rescue max draws | New programs |
 |---|---:|---:|---:|---:|---:|
-|0|7.656 /7.3 /10.9|8.140 /7.6 /11.3|18.0→18.2|193|0|
-|1|7.688 /7.4 /10.5|7.963 /7.3 /11.4|18.2→18.1|193|0|
-|2|7.691 /6.9 /10.3|8.288 /7.6 /12.3|18.0→18.1|185|0|
+|0|7.656 /7.3 /10.9|7.817 /7.2 /11.3|18.0→18.0|187|0|
+|1|7.688 /7.4 /10.5|7.566 /7.1 /11.1|18.2→18.1|187|0|
+|2|7.691 /6.9 /10.3|8.130 /7.5 /11.6|18.0→18.0|187|0|
 
-Mean of update+render CPU trial averages:**7.678→8.130ms,+.452ms(+5.9%)**. This slightly misses the engineering8ms mean budget; all shipping CPU p50s are below8ms. Draws stay below350; retained program inventory115 and zero mid-combat creations in every trial. Ordinary frame p95 is18.1–18.2ms, not a16.6ms hardware certificate. Shared-host one-minute load was13.84–15.66 before versus37.28–56.25 after (10 logical cores). This is whole-pipeline submission evidence with encounter/adaptive/load variation, not isolated animation cost or GPU completion. Raw max stalls/samples remain untrimmed. [Before](../../artifacts/nextgen/m10-final/bench/before/benchmark.json), [shipping after](../../artifacts/nextgen/m10-final/bench/after/benchmark.json). Earlier procedural/authored benchmarks are retained as historical intermediates and excluded from this final comparison.
+Mean whole-pipeline update+render+HUD CPU trial averages: **7.678ms before →8.130ms delivered M10 →7.838ms rescue**. The rescue meets≤7.9ms, saving0.292ms against the delivered revision and retaining0.160ms overhead versus M9. Draws remain≤197 across the reviewed rescue trials; the passing run peaks at187. Prepared program inventory114–115, with zero mid-combat creations in every passing trial. Frame tails are retained and do not establish a16.6ms hardware-FPS guarantee.
+
+Marine base/grip/upper layers share one mixer evaluation and retain unchanged action bindings. Hidden enemy poses stop sampling while clocks advance; waiting/circling walk and idle skeletons sample30Hz while roots/facing remain full rate. Berth owners, attacks, hits, status reactions, spawn/death, the marine and direct rig studies remain full rate. Enemy local bone matrices compose only with actual authored samples; pool reset and physics handoff retain their ownership. Off-screen warning instances skip batch writes using the existing actor frustum, while warning state/priority remains live. Berth, escape and firing probes now pass primitive origin/radius overrides instead of copying entire enemy states; collision callback values and frozen context semantics remain unchanged.
+
+Passing host one-minute load was20.47–22.25 on10 cores, versus13.84–15.66 before and37.28–56.25 for delivered M10. Earlier rescue attempts reached load181 with shared simulator/Metal work active; their raw trials are retained. The passing measurement follows the navigation-probe allocation fix; no samples were trimmed or selected from the three trials. These are submission measurements with whole-encounter/load variation, not an isolated animation-cost claim. [Before](../../artifacts/nextgen/m10-final/bench/before/benchmark.json), [delivered M10](../../artifacts/nextgen/m10-final/bench/after/benchmark.json), [passing rescue](../../artifacts/nextgen/m10-final/bench/m10-rescue-bench-probes/benchmark.json). The reviewed working-source patch and bundle hashes are retained beside the passing receipt. Subsequent tuning changed only enemy-damage constants, which the invulnerable benchmark fixture does not consume; motion and navigation code remain unchanged.
 
 ## Gallery and first looks
 
-Absolute gallery:`/Users/chernodub/.t3/worktrees/containment-game/t3-09ec8531/artifacts/nextgen/m10-final/index.html`.
+Absolute gallery: `/Users/chernodub/.t3/worktrees/containment-game/t3-09ec8531/artifacts/nextgen/m10-final/index.html`.
 
 Start with these native-pixel strips:
 
@@ -113,13 +160,13 @@ Start with these native-pixel strips:
 - `/Users/chernodub/.t3/worktrees/containment-game/t3-09ec8531/artifacts/nextgen/m10-final/after/crawler-heavy-hit.png`
 - `/Users/chernodub/.t3/worktrees/containment-game/t3-09ec8531/artifacts/nextgen/m10-final/after/brute-warden-attack.png`
 - `/Users/chernodub/.t3/worktrees/containment-game/t3-09ec8531/artifacts/nextgen/m10-final/after/carrier-matron-death-frost.png`
-- `/Users/chernodub/.t3/worktrees/containment-game/t3-09ec8531/artifacts/nextgen/m10-final/native/families/m10-melee-brute-awakening-bay-06.png`
+- `/Users/chernodub/.t3/worktrees/containment-game/t3-09ec8531/artifacts/nextgen/m10-final/native/rescue/families-and-crowd/m10-melee-brute-awakening-bay-06.png`
 
-Successful intermediate capture rounds are deleted after final review. Failed raw parents remain. The five family native phase boards and heavy/ability images were opened at native size and480×270; all43 exact-quarter strip contacts plus corrected firing/crowd sheets were opened. Queen remains legacy-save-only and is excluded.
+The gallery opens with rescue balance, CPU, current family/crowd captures and native campaigns; original delivered gameplay evidence is labeled historical. Successful intermediate capture rounds are deleted after final review. Failed raw parents remain. The five family native phase boards and heavy/ability images were opened at native size and480×270; all43 exact-quarter strip contacts plus corrected firing/crowd sheets were opened. Queen remains legacy-save-only and is excluded.
 
 ## Integration requests
 
-Audio stream: add family windup and strike cues on the existing enemy-warning/enemy-attack receipts, with swarm concurrency/weight limits. M10 changes no synthesis. K10: preserve original marine bone names/rest transforms when replacing meshes; authored clips bind to those names. Gameplay integration: completion balance is an unresolved release blocker, requiring a newly authorized tuning/evidence pass.
+Audio stream: add family windup and strike cues on the existing enemy-warning/enemy-attack receipts, with swarm concurrency/weight limits. M10 changes no synthesis. K10: preserve original marine bone names/rest transforms when replacing meshes; authored clips bind to those names. Gameplay integration: the one authorized full balance confirmation now passes every requested target; retain the attack-shape and control/rest contracts when integrating.
 
 ## Per-action M9-final → M10 scores
 
