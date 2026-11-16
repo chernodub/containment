@@ -1,0 +1,314 @@
+{
+  "name": "Containment P11 service-kit",
+  "license": "MIT",
+  "author": "Containment contributors",
+  "source": "tools/assets/p11-set-pieces/kit_families.py",
+  "rebuild": "blender -b -P tools/assets/p11-set-pieces/kit_families.py",
+  "coordinateSystem": "glTF Y-up, metres; bottom-centred origins, fronts face +Z (camera side)",
+  "description": "Industrial service fittings with modelled hardware and baked AO/curvature.",
+  "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
+  "textures": "none (texture memory 0); detail is modelled geometry",
+  "materials": {
+    "e9-body": "#24343c",
+    "e9-cyan": "#65d8e6",
+    "e9-dark": "#0e1820",
+    "e9-trim": "#8faaa8",
+    "p11-rubber": "#16191b",
+    "p11-screen": "#9fe8ff",
+    "p11-steel": "#6c7a7c",
+    "p11-tint": "#ffffff",
+    "p11-tint-metal": "#ffffff"
+  },
+  "models": [
+    {
+      "name": "service-cable-tray",
+      "size": [
+        0.635,
+        0.1875,
+        2.0006
+      ],
+      "bounds": {
+        "min": [
+          -0.3175,
+          0.0225,
+          -1.0003
+        ],
+        "max": [
+          0.3175,
+          0.21,
+          1.0003
+        ]
+      },
+      "triangles": 252,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-trim",
+        "p11-rubber"
+      ]
+    },
+    {
+      "name": "service-access-hatch",
+      "size": [
+        1.1,
+        1.2,
+        0.259
+      ],
+      "bounds": {
+        "min": [
+          -0.55,
+          0.0,
+          -0.08
+        ],
+        "max": [
+          0.55,
+          1.2,
+          0.179
+        ]
+      },
+      "triangles": 332,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "service-transit-case",
+      "size": [
+        0.895,
+        0.5195,
+        0.749
+      ],
+      "bounds": {
+        "min": [
+          -0.4475,
+          0.0,
+          -0.36
+        ],
+        "max": [
+          0.4475,
+          0.5195,
+          0.389
+        ]
+      },
+      "triangles": 604,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "service-stowage-crate",
+      "size": [
+        0.715,
+        0.8395,
+        0.749
+      ],
+      "bounds": {
+        "min": [
+          -0.3575,
+          0.0,
+          -0.36
+        ],
+        "max": [
+          0.3575,
+          0.8395,
+          0.389
+        ]
+      },
+      "triangles": 604,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "service-pressure-drum",
+      "size": [
+        0.654,
+        0.8878,
+        0.6708
+      ],
+      "bounds": {
+        "min": [
+          -0.327,
+          0.0,
+          -0.327
+        ],
+        "max": [
+          0.327,
+          0.8878,
+          0.3438
+        ]
+      },
+      "triangles": 694,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "service-safety-rail",
+      "size": [
+        1.8,
+        1.01,
+        0.2
+      ],
+      "bounds": {
+        "min": [
+          -0.9,
+          0.0,
+          -0.1
+        ],
+        "max": [
+          0.9,
+          1.01,
+          0.1
+        ]
+      },
+      "triangles": 244,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "service-three-step",
+      "size": [
+        1.01,
+        0.632,
+        1.2
+      ],
+      "bounds": {
+        "min": [
+          -0.505,
+          0.0,
+          -0.6
+        ],
+        "max": [
+          0.505,
+          0.632,
+          0.6
+        ]
+      },
+      "triangles": 264,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "service-console-bars",
+      "size": [
+        0.84,
+        1.041,
+        0.9
+      ],
+      "bounds": {
+        "min": [
+          -0.42,
+          0.0,
+          -0.35
+        ],
+        "max": [
+          0.42,
+          1.041,
+          0.55
+        ]
+      },
+      "triangles": 630,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim",
+        "p11-screen",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "service-console-schematic",
+      "size": [
+        0.84,
+        1.041,
+        0.9
+      ],
+      "bounds": {
+        "min": [
+          -0.42,
+          0.0,
+          -0.35
+        ],
+        "max": [
+          0.42,
+          1.041,
+          0.55
+        ]
+      },
+      "triangles": 632,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim",
+        "p11-screen",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "service-valve-manifold",
+      "size": [
+        1.5,
+        1.4,
+        0.2993
+      ],
+      "bounds": {
+        "min": [
+          -0.75,
+          0.0,
+          -0.17
+        ],
+        "max": [
+          0.75,
+          1.4,
+          0.1293
+        ]
+      },
+      "triangles": 1472,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-steel",
+        "p11-tint",
+        "p11-tint-metal"
+      ]
+    }
+  ],
+  "output": {
+    "file": "service-kit.glb",
+    "bytes": 208248,
+    "sha256": "89c43789adbf9008c90781201715a1cc55cd2d65a47cac2a9d4398817c96eaeb",
+    "triangles": 5728
+  },
+  "overBudget": []
+}
