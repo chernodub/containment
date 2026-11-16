@@ -55,3 +55,14 @@ Beauty directory: `artifacts/nextgen/p11-final/beauty/`. Nine boards: two servic
 two cargo, four E9 pack boards and one close plenum detail. Corresponding `-480.png` files preserve aspect
 ratio inside 480×270 with side bars. These are art inspection images, not FPS or
 in-game visibility evidence. No intermediate directories were created.
+
+Low presentation follow-up: service instances carry `highDetail`; merged finish
+buffers append their vertices after all hero/stock vertices. The world quality
+setter reduces draw ranges on Low and restores them on High, retaining warmed
+materials and buffers. Hero silhouettes are retained on both tiers; this is a
+secondary-detail simplification, not separately authored hero LOD geometry.
+Small optional service lights do not allocate pool fixtures. Both screen
+variants are explicitly selected on known rack/locker roofs (bars in Relay and
+Checkpoint; schematic in Transmission and Armory), at 65% scale. Hardware is
+omitted when its underlying stock support is replaced by a hero. Runtime capture
+and build validation of this follow-up belong to the lead's final sequence.
