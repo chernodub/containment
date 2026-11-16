@@ -1,89 +1,95 @@
 {
-  "bakeSeconds": 1.751,
-  "blenderPNGDecodeMs": 5.922,
+  "bakeSeconds": 1.272,
+  "blenderPNGDecodeMs": 5.015,
   "file": "reactor-normal.png",
   "size": 512,
-  "bytes": 309172,
+  "bytes": 342754,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 143753,
+  "nonFlatPixels": 151707,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "manual-authorisation-dais--e9-body",
       "role": "e9-body",
-      "seconds": 0.127,
+      "seconds": 0.08,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "manual-authorisation-dais--e9-ceramic",
       "role": "e9-ceramic",
-      "seconds": 0.097,
+      "seconds": 0.046,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "manual-authorisation-dais--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.194,
+      "seconds": 0.059,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "manual-authorisation-dais--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.077,
+      "seconds": 0.058,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "manual-authorisation-dais--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.037,
+      "seconds": 0.033,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "manual-authorisation-dais--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.028,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "manual-authorisation-dais--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.033,
+      "seconds": 0.025,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "manual-authorisation-dais--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.029,
+      "seconds": 0.025,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "reactor-crown--e9-body",
       "role": "e9-body",
-      "seconds": 0.053,
+      "seconds": 0.044,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "reactor-crown--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.054,
+      "seconds": 0.049,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "reactor-crown--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.079,
+      "seconds": 0.091,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "reactor-crown--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.036,
+      "seconds": 0.032,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "reactor-crown--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.029,
+      "seconds": 0.025,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "reactor-crown--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.043,
+      "seconds": 0.054,
       "method": "three-segment high bevel"
     }
   ]

@@ -3,10 +3,11 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoomModelCache} from '../RoomModelCache';
 import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
 
-export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-reactor' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance';
+export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-reactor' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance' | 'p11-incidents';
 
 const base = import.meta.env.BASE_URL + 'assets/e9-ship-kit/';
 const URLs: Record<OriginalKitPack, string> = {
+  'p11-incidents': import.meta.env.BASE_URL + 'assets/p11/incidents/incidents.glb',
   'p11-comms': import.meta.env.BASE_URL + 'assets/p11/comms-engineering/comms-engineering.glb',
   'p11-habitation': import.meta.env.BASE_URL + 'assets/p11/habitation/habitation.glb',
   'p11-infested': import.meta.env.BASE_URL + 'assets/p11/infested/infested.glb',

@@ -1,3 +1,4 @@
+import {p11IncidentPlacements} from './P11IncidentPlacements';
 import {p11ServicePlacements} from './P11ServicePlacements';
 import {p11MaintenancePlacements} from './P11MaintenancePlacements';
 import {p11CargoPlacements} from './P11CargoPlacements';
@@ -27,6 +28,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         // The north common-nook solid owns bespoke furniture. Its split low
         // mesh starts above deck height, so generic 3D hero bounds cannot
         // reliably remove the legacy cabinet mounted on this collider.
+        if (id === 'shielding-gate' && furnishing.source === 'solid' && furnishing.x === 460 && furnishing.z === 210) continue;
         if (id === 'transmission-chamber' && furnishing.source === 'solid' && furnishing.x === 816 && furnishing.z === 339) continue;
         if (id === 'residential-gallery' && furnishing.source === 'solid'
             && furnishing.x >= 572 && furnishing.x <= 768
@@ -89,7 +91,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         const p = opening.from, q = opening.to, dx = (q.x - p.x) / 32, dz = (q.y - p.y) / 32, length = Math.hypot(dx, dz);
         instances.push({ pack: 'structure', asset: 'door-threshold', matrix: matrix((p.x + q.x) / 64, -.025, (p.y + q.y) / 64, -Math.atan2(dz, dx), length / 4.5, 1, 1), purpose: 'Flush manufactured doorway threshold', castShadow: false });
     }
-    instances.push(...p11InfestedPlacements(id),...p11HabitationPlacements(id),...p11ControlPlacements(id),...p11ClinicalSecurityPlacements(id),...p11CargoPlacements(id),...p11MaintenancePlacements(id),...p11ServicePlacements(t));
+    instances.push(...p11IncidentPlacements(id),...p11InfestedPlacements(id),...p11HabitationPlacements(id),...p11ControlPlacements(id),...p11ClinicalSecurityPlacements(id),...p11CargoPlacements(id),...p11MaintenancePlacements(id),...p11ServicePlacements(t));
     return instances;
 }
 /** Original model owner settles before combat warmup. Session transfers survive
@@ -132,6 +134,10 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             if (failed?.status === 'rejected')
                 throw failed.reason;
             root = buildOriginalShipKit(sources, instances);
+            if(t.id==='shielding-gate'){
+                const oldGate=world.getObjectByName('shielding-gate-west');
+                if(oldGate){const visible=oldGate.visible;oldGate.visible=false;restores.push(()=>{oldGate.visible=visible;});}
+            }
             addCeilingServices(root, t);
             addRecessedServices(root, t);
             // Replace skins on precisely those existing solids occupied by a new

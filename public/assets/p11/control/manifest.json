@@ -9,49 +9,49 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 1.764,
-    "blenderPNGDecodeMs": 6.815,
+    "bakeSeconds": 2.047,
+    "blenderPNGDecodeMs": 5.147,
     "file": "control-normal.png",
     "size": 512,
-    "bytes": 356571,
+    "bytes": 363299,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 171622,
+    "nonFlatPixels": 175124,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "uplink-tracking-dish--e9-body",
         "role": "e9-body",
-        "seconds": 0.063,
+        "seconds": 0.056,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "uplink-tracking-dish--e9-ceramic",
         "role": "e9-ceramic",
-        "seconds": 0.026,
+        "seconds": 0.034,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "uplink-tracking-dish--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.089,
+        "seconds": 0.074,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "uplink-tracking-dish--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.109,
+        "seconds": 0.061,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "uplink-tracking-dish--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.033,
+        "seconds": 0.026,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "uplink-tracking-dish--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.041,
+        "seconds": 0.029,
         "method": "three-segment high bevel"
       },
       {
@@ -67,6 +67,12 @@
         "method": "three-segment high bevel"
       },
       {
+        "mesh": "specimen-probe-cradle--e9-ceramic",
+        "role": "e9-ceramic",
+        "seconds": 0.026,
+        "method": "three-segment high bevel"
+      },
+      {
         "mesh": "specimen-probe-cradle--e9-dark",
         "role": "e9-dark",
         "seconds": 0.072,
@@ -75,67 +81,73 @@
       {
         "mesh": "specimen-probe-cradle--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.072,
+        "seconds": 0.234,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "specimen-probe-cradle--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.025,
+        "seconds": 0.084,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "specimen-probe-cradle--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.026,
+        "seconds": 0.098,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "specimen-probe-cradle--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.03,
+        "seconds": 0.091,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "specimen-probe-cradle--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.024,
+        "seconds": 0.054,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "key-cylinder-interlock--e9-body",
         "role": "e9-body",
-        "seconds": 0.035,
+        "seconds": 0.04,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "key-cylinder-interlock--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.091,
+        "seconds": 0.1,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "key-cylinder-interlock--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.084,
+        "seconds": 0.085,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "key-cylinder-interlock--p11-rubber",
         "role": "p11-rubber",
-        "seconds": 0.025,
+        "seconds": 0.028,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.043,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "key-cylinder-interlock--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.025,
+        "seconds": 0.023,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "key-cylinder-interlock--p11-tint-metal",
         "role": "p11-tint-metal",
-        "seconds": 0.03,
+        "seconds": 0.023,
         "method": "three-segment high bevel"
       }
     ]
@@ -173,7 +185,7 @@
           1.55
         ]
       },
-      "triangles": 6180,
+      "triangles": 6608,
       "budget": 12000,
       "finishes": [
         "e9-body",
@@ -206,10 +218,12 @@
           0.804
         ]
       },
-      "triangles": 7068,
+      "triangles": 7396,
       "budget": 12000,
       "finishes": [
         "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
         "e9-dark",
         "e9-glass",
         "e9-trim",
@@ -239,7 +253,7 @@
           0.775
         ]
       },
-      "triangles": 7836,
+      "triangles": 8806,
       "budget": 12000,
       "finishes": [
         "e9-body",
@@ -248,6 +262,7 @@
         "e9-trim",
         "p11-rubber",
         "p11-screen",
+        "p11-steel",
         "p11-tint",
         "p11-tint-metal"
       ]
@@ -255,9 +270,9 @@
   ],
   "output": {
     "file": "control.glb",
-    "bytes": 1652896,
-    "sha256": "ffa03d3e8faa61cc170eb561dfd7271f8b60ca99758364fa1ad45938e71a1173",
-    "triangles": 21084
+    "bytes": 1787608,
+    "sha256": "42550ecfb11a7240f59b0b34ce7d6f0d4edd8d35991d5f38865b1d3a0c7d2bbb",
+    "triangles": 22810
   },
   "overBudget": []
 }
