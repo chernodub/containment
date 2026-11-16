@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {FULL_COMBAT_VIEWPORT,type CombatViewport} from '../camera/HudCombatFraming';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import {SHIP_ARCHITECTURE_PLANS} from '../../game/roguelike/shipArchitectureLayouts';
 
@@ -65,7 +66,7 @@ export function addWarningRepeaters(world:T.Group,root:T.Group,t:RoomTemplate,id
   const count=Math.max(1,Math.ceil(length/3.0));for(let j=0;j<count;j++){const f=(j+.5)/count;beam('tray-cross-rib',a.x+dx*f,y+.20,a.z+dz*f,alongX?.045:.46,.055,alongX?.46:.045);}
  };
  const lampColor=id==='diagnostic-gallery'?0xb4dee5:id==='safety-interlock-station'?0xe5c99c:0xffad61;m.signal.color.setHex(lampColor);m.signal.emissive.setHex(lampColor);
- m.screen.transparent=true;m.screen.opacity=.96;m.screen.depthWrite=false;
+ m.screen.transparent=true;m.screen.opacity=.96;m.screen.depthWrite=false;m.screen.vertexColors=true;
  // Manufactured service fronts occupy the actual sealed machine bays. Deep
  // drawer returns, cable sockets and restrained controls give each case a
  // purpose; there are no loose equipment islands on the combat floor.
@@ -162,7 +163,7 @@ export function prepareWarningVertexColors(root:T.Group,material:T.Material,geom
 
 /** Opacity/vertex-alpha-only cutaway. Actual full body corners participate;
  * only intersected physical beam ranges fade. All scratch storage is retained. */
-export function updateWarningRepeaterVisibility(root:T.Object3D,camera?:T.Camera,marine?:Body,marineHeight=2.05,enemies:readonly NativeBody[]=EMPTY,models?:ReadonlyMap<number,Model>):void {
+export function updateWarningRepeaterVisibility(root:T.Object3D,camera?:T.Camera,marine?:Body,marineHeight=2.05,enemies:readonly NativeBody[]=EMPTY,models?:ReadonlyMap<number,Model>,viewport:CombatViewport=FULL_COMBAT_VIEWPORT):void {
  const state=root.userData.warningVisibility,displays=state?.allDisplays as Display[]|undefined;if(!state||!displays||!camera||!marine)return;
  const point=state.point as T.Vector3,screen=state.screenBounds as Float64Array,actors=state.actorBounds as Float64Array,structure=state.structureBounds as Float64Array;
  let bodies=1;projectActor(marine,marineHeight,camera,point,actors,0);
@@ -171,8 +172,8 @@ export function updateWarningRepeaterVisibility(root:T.Object3D,camera?:T.Camera
  for(let i=0;i<displays.length;i++){
   const n=i*4;screen[n]=screen[n+1]=Infinity;screen[n+2]=screen[n+3]=-Infinity;
   for(const corner of displays[i].corners){point.fromArray(corner).applyMatrix4(root.matrixWorld).project(camera);extend(screen,n,point);}
-  const safe=screen[n]>=-.70&&screen[n+2]<=.68&&screen[n+1]>=-.69&&screen[n+3]<=.98;
-  const body=overlapsBodies(screen,n,actors,bodies),score=(safe?100:0)-(body?200:0)-Math.abs((screen[n]+screen[n+2])*.5)-Math.abs((screen[n+1]+screen[n+3])*.5)*.3;
+  const safe=screen[n]>=viewport.left&&screen[n+2]<=viewport.right&&screen[n+1]>=viewport.bottom&&screen[n+3]<=viewport.top;
+  const body=overlapsBodies(screen,n,actors,bodies),score=(safe?1000:0)-(body?200:0)-Math.abs((screen[n]+screen[n+2])*.5)-Math.abs((screen[n+1]+screen[n+3])*.5)*.3;
   if(score>best){best=score;selected=i;fade=body;}
  }
  root.userData.storyDisplays=selected<0?[]:[displays[selected]];root.userData.storyDisplay=displays[selected];state.selectedDisplay=selected;
