@@ -1,3 +1,4 @@
+import {DIFFICULTIES,type DifficultyId} from '../difficulty';
 import type { StandardEnemyId } from '../enemies/types';
 import type { RunNode } from '../roguelike/types';
 import { generateRun } from '../roguelike/run';
@@ -14,7 +15,7 @@ export type EncounterEvent = EncounterSpawn
   | Readonly<{ type: 'boss-start' }>
   | Readonly<{ type: 'room-clear'; nodeId: string; wave: number }>
   | Readonly<{ type: 'defeat' }>;
-export type EncounterOptions = Readonly<{ seed: number; node: RunNode; breachIds: readonly string[] }>;
+export type EncounterOptions = Readonly<{ seed: number; node: RunNode; difficulty?:DifficultyId; breachIds: readonly string[] }>;
 export type EncounterPlan = Readonly<{
   nodeId: string; kind: RunNode['kind']; wave: number; totalSpawns: number;
   concurrentCap: number; schedule: readonly EncounterSpawn[];
@@ -40,7 +41,9 @@ export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
   // L8 measured these four authored approaches after geometry-first trials.
   // Keep those additional requests while B10 applies its cadence to the whole wave.
   const architectureSpawns=tuning&&['transmission-chamber','diagnostic-gallery','safety-interlock-station','shielding-gate'].includes(node.templateId)?2:0;
-  const totalSpawns = combat ? story ? holdout ? (node.depth===9?32:48)+architectureSpawns : 12+Math.round(node.depth*.7)+(node.kind==='elite'?5:0)+extraSpawns+architectureSpawns : Math.round((12 + node.depth * 3 + (node.kind === 'elite' ? 5 : 0))*(node.id.includes(':v2-')?1.25:1)) : 0;
+  const tuningDifficulty=DIFFICULTIES[options.difficulty??'standard'];
+  const originalTotalSpawns = combat ? story ? holdout ? (node.depth===9?32:48)+architectureSpawns : 12+Math.round(node.depth*.7)+(node.kind==='elite'?5:0)+extraSpawns+architectureSpawns : Math.round((12 + node.depth * 3 + (node.kind === 'elite' ? 5 : 0))*(node.id.includes(':v2-')?1.25:1)) : 0;
+  const totalSpawns=Math.max(0,Math.round(originalTotalSpawns*tuningDifficulty.waves)-(node.depth===0?2:0));
   const pressureAct=story?Math.floor(node.depth/5):0;
   // Experimental brood-free mixes have no three-child reservations: normalize their live-body pressure.
   const concurrentCap = combat ? Math.min(tuning?(node.depth>=10?15:20):18, (tuning&&node.depth<5?10:7) + Math.floor(node.depth * .8) + (node.kind === 'elite' ? 2 : 0)+(tuning&&!holdout?Math.min(2,pressureAct):0)) : 0;
@@ -68,10 +71,12 @@ export function createEncounterPlan(options: EncounterOptions): EncounterPlan {
     if (tuning&&node.depth===0&&family==='brute'&&++openingBrutes>2) return 'crawler';
     return family;
   };
+  // Teach with four widely spaced opening enemies; later waves retain native timing.
+  const nativeArrival=(index:number)=>story ? 650+(holdout?index*(node.depth===9?1500:900):tuning?node.depth<5?Math.floor(index/6)*3000+(index%6)*300:Math.floor(index/4)*4000+(index%4)*350:Math.floor(index/6)*1100+(index%6)*100) : 650 + index * interval + Math.floor(index/8)*1800;
   const schedule = Array.from({ length: totalSpawns }, (_, index): EncounterSpawn => Object.freeze({
-    type: 'spawn-request', spawnId: `${node.id}:spawn-${index}`, atMs: story ? 650+(holdout?index*(node.depth===9?1500:900):tuning?node.depth<5?Math.floor(index/6)*3000+(index%6)*300:Math.floor(index/4)*4000+(index%4)*350:Math.floor(index/6)*1100+(index%6)*100) : 650 + index * interval + Math.floor(index/8)*1800, wave: node.depth + 1,
+    type: 'spawn-request', spawnId: `${node.id}:spawn-${index}`, atMs: node.depth===0?(index<4?1000+index*1600:7400+nativeArrival(index+2)-nativeArrival(6)):nativeArrival(index), wave: node.depth + 1,
     enemyId: scheduledFamily(index),
-    elite: tuning ? node.kind==='elite' ? index===0||random()<(node.depth>=10?eliteChance:.10+node.depth*.008) : node.depth>=5&&node.depth!==9&&(random()<eliteChance||index===0&&!!guardian) : node.kind==='elite'&&(index===0||random()<.10+node.depth*.008),
+    elite: tuning ? node.kind==='elite' ? index===0||random()<(node.depth>=10?eliteChance:.10+node.depth*.008) : node.depth>=5&&node.depth!==9&&(random()<eliteChance*tuningDifficulty.elites||index===0&&!!guardian) : node.kind==='elite'&&(index===0||random()<.10+node.depth*.008),
     breachId: breachIds[Math.floor(random() * breachIds.length)],
   }));
   return Object.freeze({ nodeId: node.id, kind: node.kind, wave: node.depth + 1, totalSpawns, concurrentCap,

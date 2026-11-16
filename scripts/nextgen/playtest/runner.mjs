@@ -25,7 +25,7 @@ const args = process.argv.slice(2);
 const options = Object.fromEntries(args.map(arg => {
   assert(/^--[a-z-]+(?:=.*)?$/.test(arg), `Invalid argument ${arg}`);
   const [key, ...value] = arg.slice(2).split('=');
-  assert(['profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room'].includes(key), `Unknown option ${key}`);
+  assert(['difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room'].includes(key), `Unknown option ${key}`);
   return [key, value.length ? value.join('=') : true];
 }));
 const distRoot=resolve(String(options['dist-dir']??'dist'));
@@ -38,8 +38,10 @@ const checkpointScreens=options['checkpoint-screens']?new Set(String(options['ch
 if(checkpointScreens){options.checkpoints=true;for(const kind of checkpointScreens)assert(['menu','menu-settings','menu-controls','menu-credits','rig-select','starting-boon','combat','pause','pause-loadout','pause-settings','pause-controls','reward','route','shop','destroy-confirm','dead','complete'].includes(kind),`Unknown checkpoint screen ${kind}`);}
 const shouldProbe=kind=>!!options.checkpoints&&(!checkpointScreens||checkpointScreens.has(kind));
 const resumed=options['resume-boundary']?await loadEarnedBoundary(resolve(options['resume-boundary'])):null;
+assert(!options.difficulty || ['story','standard','veteran'].includes(options.difficulty), 'difficulty must be story, standard or veteran');
+const difficulty = options.difficulty ?? resumed?.parent.difficulty ?? 'standard';
 const rig = options.rig ?? resumed?.parent.rig ?? 'arc', seed = Number(options.seed ?? resumed?.checkpoint.run.seed ?? 1729), roomLimit = Number(options.rooms ?? 20);
-if(resumed){assert.equal(rig,resumed.parent.rig,'Cannot change rig while resuming');assert.equal(seed,resumed.checkpoint.run.seed,'Cannot change seed while resuming');assert.equal(!!options.assisted,resumed.parent.assisted,'Cannot change assistance while resuming');}
+if(resumed){assert.equal(difficulty,resumed.parent.difficulty??'standard','Cannot change difficulty while resuming');assert.equal(rig,resumed.parent.rig,'Cannot change rig while resuming');assert.equal(seed,resumed.checkpoint.run.seed,'Cannot change seed while resuming');assert.equal(!!options.assisted,resumed.parent.assisted,'Cannot change assistance while resuming');}
 assert(!(options.fast&&options.realtime),'Fast draw decimation cannot be combined with passive realtime observation');
 assert(!(options.realtime&&options.assisted),'Passive live observation cannot reduce incoming damage; use fixed stepping for assisted coverage');
 assert(RIGS.includes(rig), 'Rig must be breacher/cryo/pyro/arc');
@@ -60,7 +62,7 @@ const distributionSourceSHA=await readFile(resolve(distRoot,'SOURCE_SHA'),'utf8'
 const human = createHumanPolicy(seed,options.profile??resumed?.parent.profile??'competent');
 const report = {
   profile:human.profile, humanParameters:human.config,
-  label, rig, seed, hostLoad:{start:loadavg(),logicalCores:cpus().length}, distributionDirectory:distRoot, distributionSourceSHA, distributionAssets, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
+  label, rig, seed, difficulty, hostLoad:{start:loadavg(),logicalCores:cpus().length}, distributionDirectory:distRoot, distributionSourceSHA, distributionAssets, assisted: !!options.assisted, incomingDamageScale: options.assisted ? .15 : 1,
   legacy: resumed?.parent.legacy??!!options.legacy, fastRendering:!!options.fast, lifecycleOnly:!!options['death-probe'], presentation:true, roomLimit, harnessHashes, head: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),
   branch: execFileSync('git',['branch','--show-current'],{encoding:'utf8'}).trim(), started: new Date().toISOString(),
   policyVersion:BOT_POLICY_VERSION, navigationVersion:BOT_NAVIGATION_VERSION,
@@ -244,6 +246,14 @@ try {
   if(shouldProbe('menu'))await probe('menu');
   for(const [kind,selector]of [['menu-settings','#settings'],['menu-controls','#controls'],['menu-credits','#menu-credits']])if(shouldProbe(kind)){await page.locator(selector).click();await page.locator(kind==='menu-settings'?'.configuration-drawer':kind==='menu-controls'?'.controls-drawer':'.credits-drawer').waitFor({state:'visible'});await probe(kind);}
   await page.locator('#start').click();
+  const difficultyCard = page.locator(`[data-difficulty="${difficulty}"]`);
+  if(await difficultyCard.count()) {
+    const experimental = await difficultyCard.isDisabled();
+    if(!experimental) await difficultyCard.click();
+    await page.locator('#difficulty-begin').click();
+    // Explicit diagnostic flag retains access to a mode withheld from player selection.
+    if(experimental) await page.evaluate(({seed,difficulty})=>window.__containmentDebug.game.newRun(seed,{difficulty}),{seed,difficulty});
+  }
   await page.waitForFunction(()=>window.__containmentDebug.game.expedition.run.phase==='rig-select');
   if(options.legacy) {
     await page.locator(`[data-rig="${rig}"]`).click();await page.locator('#equip-rig').click();
@@ -254,6 +264,7 @@ try {
   }
   }
   assert.equal((await snapshot()).run.seed,seed,'Native Start must honor diagnostic seed');
+  assert.equal(await page.evaluate(()=>window.__containmentDebug.game.difficulty),difficulty,'Native start must honor selected difficulty');
   let previousSnapshot=null;const foundDefects=new Set();
   let loadingSince=null,loadingRecorded=false,screenSince=performance.now(),screenKey='',steps=0,stagnantSince=0,previousProgress='',probed=new Set();
   while(performance.now()-wallStart<maxWallSeconds*1000) {
