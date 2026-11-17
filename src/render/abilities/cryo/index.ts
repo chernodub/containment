@@ -1,7 +1,7 @@
 import type { AbilityEvent, AbilityZoneSnapshot, DeployableSnapshot } from '../../../game/abilities/contract';
 import type { ElementKit } from '../ElementKit';
 import { ELEMENT_COLORS, UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
-import { FxMode } from '../FlagshipFx';
+import { FxMode, type FxSlot } from '../FlagshipFx';
 import type { EnemySnapshot } from '../../../game/enemies/EnemySystem';
 import { authoredVariation } from '../GraphicLanguage';
 import { WhiteoutState } from './WhiteoutState';
@@ -16,7 +16,7 @@ const PULSE_CAPACITY = 24;
 const WALL_SECTIONS = [0, .11, .24, .39, .57, .72, .87, 1] as const;
 const LOW_WALL_SECTIONS = [0, .17, .39, .61, .82, 1] as const;
 type ColdWave = { live: boolean; x: number; z: number; radius: number; age: number; life: number; shatter: boolean; aftermath: boolean };
-type ZoneClock = { id: number; pulse: number; seen: boolean };
+type ZoneClock = { id: number; pulse: number; seen: boolean; fx?: FxSlot; fxSeed?: number };
 type WallState = { id: number; health: number; flash: number; seen: boolean };
 
 /** Four Cryo signatures composed exclusively from the shared, prewarmed instance pools. */
@@ -74,7 +74,8 @@ class CryoPresentation implements AbilityPresentation {
         this.wave(px, pz, radius, .85, true);
         k.debris(px, pz, radius, 'cryo', 18);
         k.burst(px, .9, pz, 'cryo', 10, 5.5, 1.3);
-        k.scar('frost', px, pz, radius, ICE, 7);
+        const frost = k.fx.spawn(FxMode.Frost, px, pz, 7);
+        frost.range = radius; frost.color = ICE; frost.intensity = .7;
         k.distort(px, pz, radius, -.004, .55);
         k.flash(px, pz, CORE, 9, radius + 1, 4, .14);
         k.camera(.3);
@@ -87,7 +88,8 @@ class CryoPresentation implements AbilityPresentation {
         k.flash(px, pz, ICE, 1.5, 4, 3, .12);
         k.camera(.14);
       } else if (event.phase === 'burst') {
-        k.ring(px, pz, (event.radius ?? 100) / UNIT, CORE, .45);
+        const pulse = k.fx.spawn(FxMode.Shock, px, pz, .36);
+        pulse.range = (event.radius ?? 100) / UNIT; pulse.color = CORE; pulse.intensity = .65;
         k.burst(px, .35, pz, 'cryo', 8, 1.4, .45);
       } else if (event.phase === 'end') {
         k.ring(px, pz, (event.radius ?? 300) / UNIT, ICE, .75, true);
@@ -175,8 +177,8 @@ class CryoPresentation implements AbilityPresentation {
       if (wall.kind === 'ice-wall' && wall.health > 0 && wall.remainingMs > 0) this.glacier(wall, dt);
     }
     k.impact();
-    for (const clock of this.zones) if (!clock.seen) clock.id = -1;
-    for (const state of this.walls) if (!state.seen) state.id = -1;
+    for (const clock of this.zones) if (!clock.seen) { if (clock.fx && clock.fx.seed === clock.fxSeed) clock.fx.live = false; clock.fx = undefined; clock.id = -1; }
+    for (const state of this.walls) if (!state.seen) { state.id = -1; }
   }
 
   private frostStrip(zone: AbilityZoneSnapshot, whiteout?: AbilityZoneSnapshot): void {
@@ -187,6 +189,21 @@ class CryoPresentation implements AbilityPresentation {
     if (half <= 0) return;
     const fade = Math.min(1, zone.remainingMs / 450), age = (zone.durationMs - zone.remainingMs) / 1000;
     k.sustain(age);
+    let clock: ZoneClock | undefined;
+    for (const item of this.zones) if (item.id === zone.id) { clock = item; break; }
+    if (!clock) {
+      for (const item of this.zones) if (item.id < 0) { clock = item; break; }
+      if (clock) {
+        clock.id = zone.id;
+        const deposits = k.low ? 3 : 5;
+        for (let i = 0; i < deposits; i++) {
+          const along = length * (i + .5) / deposits;
+          const ice = k.fx.spawn(FxMode.Frost, x + cx * along, z + sz * along, zone.remainingMs / 1000);
+          ice.range = half * .92; ice.color = ICE; ice.intensity = .55;
+        }
+      }
+    }
+    if (clock) clock.seen = true;
     // New contact retains its brief frost hit; settled coverage yields even on
     // unoccupied deck, with the exact capsule and its crystal edges unchanged.
     const covered = whiteout && Math.hypot(zone.x - whiteout.x, zone.y - whiteout.y) < whiteout.radius && Math.hypot(zone.x2 - whiteout.x, zone.y2 - whiteout.y) < whiteout.radius;
@@ -249,10 +266,17 @@ class CryoPresentation implements AbilityPresentation {
     }
     if (clock) {
       clock.seen = true;
+      if (!clock.fx?.live || clock.fx.mode !== FxMode.Aura || clock.fx.seed !== clock.fxSeed) {
+        clock.fx = k.fx.spawn(FxMode.Aura, x, z, 1e6);
+        clock.fx.h0 = .06; clock.fx.arc = 1; clock.fxSeed = clock.fx.seed;
+      }
+      clock.fx.x = x; clock.fx.z = z; clock.fx.range = radius;
+      clock.fx.color = ICE; clock.fx.param = fade * .22; clock.fx.intensity = .45;
       const pulse = Math.floor(age / 2000);
       if (dt > 0 && pulse > clock.pulse) {
         clock.pulse = pulse;
-        // Crystalline pulse tips are drawn by the retained ground surface.
+        const front = k.fx.spawn(FxMode.Shock, x, z, .42);
+        front.range = radius; front.color = ICE; front.intensity = .55; front.h0 = .055;
         k.flash(x, z, ICE, 1.1, 4, 3, .1);
       }
     }
@@ -355,7 +379,8 @@ class CryoPresentation implements AbilityPresentation {
     for (const item of this.walls) if (item.id === wall.id) { state = item; break; }
     if (!state) for (const item of this.walls) if (item.id === -1) {
       state = item; item.id = wall.id; item.health = wall.health; item.flash = 0;
-      k.scar('frost', x, z, length * .52, ICE, wall.remainingMs / 1000 + 3, wall.angle + Math.PI / 2, thickness * 1.2);
+      const base = k.fx.spawn(FxMode.Frost, x, z, wall.remainingMs / 1000 + 3);
+      base.range = Math.min(thickness * .5, length * .5); base.color = ICE; base.intensity = .6;
       break;
     }
     if (state) {
@@ -395,6 +420,16 @@ class CryoPresentation implements AbilityPresentation {
       if (!k.low && this.emitMist && i % 3 === 0) {
         k.mote('smoke', px, .12, pz, faceX * .1, .04, faceZ * .1, .3, .8, 0x8eafc0);
       }
+      // Subsurface core follows each erupting tooth and stays inside its native footprint.
+      k.ribbon(px, .08, pz, px, Math.max(.09, height * .76), pz,
+        CORE, Math.min(.028, depth * .12), fade * (.18 + (state?.flash ?? 0) * .45), false);
+      // Dark oblique seams make health loss read as cracking rather than a white flash.
+      const damage = Math.min(1, (state?.flash ?? 0));
+      if (damage > .05) {
+        k.ribbon(px - alongX * width * .45, height * .28, pz - alongZ * width * .45,
+          px + alongX * width * .35, height * .69, pz + alongZ * width * .35,
+          0x234c64, .018, fade * damage * .72, false);
+      }
       if ((state?.flash ?? 0) > .1 && i % 2 === 0) {
         k.sprite('star', px, height * .57, pz, .14, .3, CORE,
           fade * (state?.flash ?? 0) * .45, seed, 'light');
@@ -408,7 +443,7 @@ class CryoPresentation implements AbilityPresentation {
   clear(): void {
     this.storm?.clear();
     for (const wave of this.waves) wave.live = false;
-    for (const clock of this.zones) { clock.id = -1; clock.pulse = 0; clock.seen = false; }
+    for (const clock of this.zones) { if (clock.fx && clock.fx.seed === clock.fxSeed) clock.fx.live = false; clock.fx = undefined; clock.id = -1; clock.pulse = 0; clock.seen = false; }
     for (const state of this.walls) { state.id = -1; state.flash = 0; state.seen = false; }
     this.cursor = 0; this.mistAge = 0; this.emitMist = false;
   }

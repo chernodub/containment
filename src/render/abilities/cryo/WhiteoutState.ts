@@ -23,13 +23,14 @@ void main(){
  float drift=u-stormTime*.82;
  float lane=local.y+sin(drift*3.)*.12;
  float ribbon=1.-smoothstep(.018,.064,abs(sin(lane*13.+drift*2.)));
- float packet=pow(max(0.,sin(drift*5.+local.y*3.)),3.);
+ float packet=pow(max(0.,sin(drift*5.+local.y*3.)),5.);
+ // Sparse gaps preserve enemy silhouettes through both front and rear dome faces.
  float vertical=smoothstep(0.,.14,local.y)*(1.-smoothstep(.48,.9,local.y));
  float snow=0.;
  if(detail>.5)snow=pow(max(0.,sin(u*73.-stormTime*21.+floor(local.y*13.)*2.4)),12.)
   *pow(max(0.,sin(local.y*49.+u*4.-stormTime*7.)),5.);
  else snow=step(.95,fract(u*31.-stormTime*8.+floor(local.y*9.)*.17))*step(.65,fract(local.y*13.+u*.8))*.6;
- float a=(ribbon*packet*.48+snow*.65)*vertical*storm.w;
+ float a=(ribbon*packet*.29+snow*.48)*vertical*storm.w;
  vec3 cold=mix(vec3(.24,.51,.64),vec3(.83,1.22,1.4),max(ribbon*.6,snow));
  if(a<.004)discard;gl_FragColor=vec4(cold,a);
  #include <tonemapping_fragment>
@@ -90,7 +91,7 @@ void main(){
  gl_FragColor.rgb*=gl_FragColor.a;
 }`;
 
-/** Two prewarmed, fixed meshes: connected perimeter weather and spreading deck frost. */
+/** Two existing prewarmed meshes: open blizzard dome and spreading deck frost. */
 export class WhiteoutState {
   readonly wall: T.Mesh<T.BufferGeometry, T.ShaderMaterial>;
   readonly ground: T.Mesh<T.PlaneGeometry, T.ShaderMaterial>;
@@ -99,7 +100,7 @@ export class WhiteoutState {
   private readonly meshes: readonly T.Mesh<T.BufferGeometry, T.ShaderMaterial>[];
 
   constructor(root: T.Object3D) {
-    const geometry = new T.CylinderGeometry(.955, .955, 2, 96, 1, true).translate(0, 1.04, 0);
+    const geometry = new T.SphereGeometry(.955, 64, 20, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 2.35, 1).translate(0, .04, 0);
     const material = (fragmentShader: string, wallLayer: number) => new T.ShaderMaterial({
       uniforms: { storm: { value: this.data }, stormTime: { value: 0 }, stormAge: { value: 0 }, detail: { value: 1 }, wallLayer: {value:wallLayer} },
       vertexShader: vertex, fragmentShader, transparent: true, premultipliedAlpha: true,
