@@ -53,7 +53,7 @@ export function addEnvironmentalStory(world:T.Group,template:RoomTemplate,enviro
     };
     join('room8-torn-metal',plates);join('room8-docking-channels',cables);
   }
-  if(environment==='infested'){
+  if(environment==='infested' && !['swarm-junction','infested-workshop'].includes(templateId)){
     const inside=(x:number,z:number,polygon:readonly {x:number;y:number}[])=>{let hit=false;for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
       const a=polygon[i],b=polygon[j];if((a.y>z*32)!==(b.y>z*32)&&x*32<(b.x-a.x)*(z*32-a.y)/(b.y-a.y)+a.x)hit=!hit;
     }return hit;};

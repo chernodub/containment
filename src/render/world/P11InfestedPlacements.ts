@@ -17,8 +17,24 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     result[result.length - 1].matrix.scale(new T.Vector3(.85, .75, .65));
     result[result.length - 1].cutaway = false; // Grounded shallow wall-backed machine, not overhead.
     add('engulfed-repair-bench', 250, 900, .85);
-    add('root-saddle', 350, 930, 1);
-    add('egg-clutch', 190, 850, 1);
+    const brood = (asset: string, x: number, z: number, scale = 1, y = 0, angle = 0) => result.push({
+      pack: 'p11-brood', asset, purpose: 'DRESS13 / rear workbay takeover / ' + asset,
+      matrix: new T.Matrix4().compose(new T.Vector3(x / 32, y, z / 32),
+        new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), angle), new T.Vector3(scale, scale, scale)),
+      cutaway: !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
+    });
+    brood('brood-consumed-shell',650,330,1.3);
+    brood('brood-consumed-shell',250,900,1.2);
+    brood('brood-burst-duct',860,95,.85);
+    brood('brood-nest-medium',930,40,1);
+    brood('brood-pods-small',850,125,.85);
+    for(const [x,z,a] of [[850,80,.5],[900,90,1.2],[960,110,2.1],[250,865,.8],[650,345,0]]) {
+      brood('brood-creep-a',x,z,1.1,.002,a);
+      brood('brood-creep-c',x+35,z-15,1,.003,a+.5);
+    }
+    brood('brood-creep-wall',880,2,1.6,.5,0);
+    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-Math.PI/2));
+    brood('brood-web-short',850,65,1,1.6,0);
   }
   if (id === 'swarm-junction') {
     // Front inner edge of the attached north duct bank, wholly inside its chamfer.
@@ -53,10 +69,10 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     // Two doorway-top membranes: anchors land on the north/south plenum mouths.
     brood('brood-web-long',440,320,2,2.8,0);
     result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.65));
-    result[result.length-1].matrix.scale(new T.Vector3(1,.5,.5));
+    result[result.length-1].matrix.scale(new T.Vector3(1,.15,.3));
     brood('brood-web-long',760,720,2,2.8,Math.PI);
     result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.65));
-    result[result.length-1].matrix.scale(new T.Vector3(1,.5,.5));
+    result[result.length-1].matrix.scale(new T.Vector3(1,.15,.3));
   }
   return result;
 }
