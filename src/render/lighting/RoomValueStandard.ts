@@ -111,6 +111,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.58,saturation:.60},floorSaturation:.54,tint:0xd9c4eb,
     fixtures:.22,practicals:.60,ambient:.55,marineGlow:1,exit:.9,
   }),
+  'swarm-junction': profile({
+    // Hive heart and the occupied northern/southern ventilation mouths.
+    fixturesAt:[[470,620],[600,250],[600,790]],
+    floor:{lit:.62,unlit:.30,edge:.14},perimeter:{inner:3.8,outer:10,value:.44,lane:.8},
+    wall:{value:.60,saturation:.60},floorSaturation:.55,tint:0xebbedc,
+    fixtures:.23,practicals:.62,ambient:.55,marineGlow:1,exit:.9,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},

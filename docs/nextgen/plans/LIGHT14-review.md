@@ -47,3 +47,7 @@
 ## 12 Infested Workshop
 - Opened calm/tour03/heavy480 colour/grey: violet floor falls away, machinery and nest lantern dots read in tour; marine leads heavy warning lane.
 - Consumed-machine/nest/repair pools keep occupied bays visible. Build and seven guarded frames pass; sparse spawn view remains intentionally quiet, machine silhouette still subdued.
+
+## 13 Swarm Junction
+- Opened calm/tour03/heavy480 colour/grey: heart's violet lantern ribs and nest dots identify the room; marine remains brighter, growth bodies stay dark.
+- Heart/ventilation-mouth pools retain magenta floor circulation. Seven guarded frames and build pass; north tour is sparse but route edges remain visible.
