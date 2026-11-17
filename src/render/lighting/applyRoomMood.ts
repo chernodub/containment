@@ -81,7 +81,8 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         const base=previous&&material.emissiveIntensity===previous.written?previous.base:material.emissiveIntensity;
         const scale=valueProfile&&peak>0&&chroma<.45?valueProfile.fixtures:1;
         // Neutral fixtures also take a hard ceiling so a 6–10× panel never out-shouts the marine.
-        material.emissiveIntensity=scale<1?Math.min(base*scale,.7):base;fixtureScales.set(material,{base,written:material.emissiveIntensity});
+        // Saturated emitters keep their hue but stop blowing out to white (tone-mapped >1.5 reads as a white strip).
+        material.emissiveIntensity=!valueProfile||peak===0?base:scale<1?Math.min(base*scale,.7):Math.min(base,1.5);fixtureScales.set(material,{base,written:material.emissiveIntensity});
       }
       optimizeLocalLights(material,environment==='reactor'?(templateId==='overload-floor'||templateId==='manual-control-chamber'?.12:1):.02,environment==='cargo'||environment==='communications'?.16:.025,Math.max(templateId==='reactor-vault'?.013:templateId==='manual-control-chamber'?.010:surfaceBounce,legacyBounce));
     }

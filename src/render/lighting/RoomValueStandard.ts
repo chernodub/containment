@@ -46,7 +46,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Already dark: cooling-aisle pools on the lanes, rack backs black, white panels dimmed.
   'relay-racks': profile({
-    floor:{lit:.70,unlit:.30,edge:.14}, perimeter:{inner:4.5,outer:10,value:.30},
+    floor:{lit:.70,unlit:.30,edge:.14}, perimeter:{inner:4.5,outer:10,value:.42,lane:.7},
     wall:{value:.62,saturation:.60}, floorSaturation:.55, tint:0xbfdcd8,
     fixtures:.25, practicals:.75, ambient:.6, marineGlow:1, exit:.9,
   }),
