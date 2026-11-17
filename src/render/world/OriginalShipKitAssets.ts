@@ -1,7 +1,9 @@
 import * as T from 'three';
 import {environmentClock} from '../lighting/HotFixtureSurface';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {RoomModelCache} from '../RoomModelCache';
+import {RoomModelCache, type RoomModelSpec} from '../RoomModelCache';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
 import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
 
 export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-reactor' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance' | 'p11-incidents' | 'p11-brood';
@@ -34,15 +36,34 @@ const structurePack = new RoomModelCache([
   {url: URLs.structure, maxBytes: 2_000_000, label: 'Original ship structure kit'},
 ]);
 
-const p11Packs = new Map<OriginalKitPack,RoomModelCache>();
+const p11Packs = new Map<string,RoomModelCache>();
+const compressedFormats = ['WEBGL_compressed_texture_astc', 'WEBGL_compressed_texture_etc', 'WEBGL_compressed_texture_s3tc', 'EXT_texture_compression_bptc'];
+/** The cache owns decoded textures; a short-lived transcoder owns only workers.
+ * Cancelled room borrowers retire independently through RoomModelCache. */
+async function decodeBrood(spec: RoomModelSpec, renderer: T.WebGLRenderer) {
+  const response = await fetch(spec.url);
+  if (!response.ok) throw Error(`${spec.label} HTTP ${response.status}`);
+  if (Number(response.headers.get('content-length')) > spec.maxBytes) {
+    await response.body?.cancel(); throw Error(`${spec.label} byte budget exceeded`);
+  }
+  const bytes = await response.arrayBuffer();
+  if (bytes.byteLength > spec.maxBytes) throw Error(`${spec.label} byte budget exceeded`);
+  const transcoder = new KTX2Loader().setTranscoderPath(import.meta.env.BASE_URL + 'assets/basis/').setWorkerLimit(1).detectSupport(renderer);
+  try {
+    return await new GLTFLoader().setKTX2Loader(transcoder).parseAsync(bytes, spec.url.slice(0, spec.url.lastIndexOf('/') + 1));
+  } finally { transcoder.dispose(); }
+}
 
 /** Fixed, lazy session templates. The caller retires each returned borrow. */
-export function acquireOriginalShipKit(pack: OriginalKitPack, signal?: AbortSignal): Promise<T.Group> {
-  const url = URLs[pack];
+export function acquireOriginalShipKit(pack: OriginalKitPack, signal?: AbortSignal, renderer?: T.WebGLRenderer): Promise<T.Group> {
+  const formats = pack === 'p11-brood' && renderer ? compressedFormats.filter(name => renderer.extensions.has(name)).join(',') : '';
+  const compressed = Boolean(formats);
+  const url = compressed ? import.meta.env.BASE_URL + 'assets/brood-growth/brood-growth-ktx.glb' : URLs[pack];
   if (!url) return Promise.reject(Error('Unknown original ship kit pack: ' + pack));
   if(pack.startsWith('p11-')) {
-    let cache=p11Packs.get(pack);
-    if(!cache){cache=new RoomModelCache([{url,maxBytes:pack==='p11-brood'?4_000_000:2_000_000,label:'Original '+pack+' set pieces'}]);p11Packs.set(pack,cache);}
+    const cacheKey = url + '/' + formats;
+    let cache=p11Packs.get(cacheKey);
+    if(!cache){cache=new RoomModelCache([{url,maxBytes:pack==='p11-brood'?4_000_000:2_000_000,label:'Original '+pack+' set pieces'}], compressed ? spec => decodeBrood(spec, renderer!) : undefined);p11Packs.set(cacheKey,cache);} 
     return cache.acquire(url,signal);
   }
   return (pack === 'structure' ? structurePack : functionPacks).acquire(url, signal);
