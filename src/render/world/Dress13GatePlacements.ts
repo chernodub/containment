@@ -7,8 +7,10 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
   const add = (asset: string, x: number, z: number, yaw = 0, scale = 1, y = 0, pitch = 0) => {
     pieces.push({pack: 'p11-brood', asset: 'brood-' + asset,
       matrix: new T.Matrix4().compose(new T.Vector3(x / 32, y, z / 32),
-        new T.Quaternion().setFromEuler(new T.Euler(pitch, yaw, 0, 'YXZ')), new T.Vector3(scale, scale, scale)),
+        new T.Quaternion().setFromEuler(new T.Euler(pitch, yaw, 0, 'YXZ')), new T.Vector3(scale, asset.startsWith('web') ? scale * .22 : scale, scale)),
       purpose: 'DRESS13 / architecture under pressure / ' + asset,
+      // Resin stays beneath the actor value range; source atlas and shaders remain shared.
+      surfaceGain: asset.startsWith('creep') ? .55 : asset.startsWith('web') ? .7 : 1,
       cutaway: !asset.startsWith('creep'), castShadow: !asset.startsWith('creep'),
     });
   };
@@ -33,8 +35,10 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
     // Continuous overlapping crust climbs the outer housing lips, leaving the west arena quiet.
     for (const z of [162, 878]) {
       const south = z > 520;
-      for (let x = 224; x <= 1210; x += 76) {
-        add('creep-c', x, z, south ? Math.PI : 0, 1.1);
+      let index = 0;
+      for (let x = 224; x <= 1210; x += 76, index++) {
+        add(index % 3 === 1 ? 'creep-b' : index % 3 === 2 ? 'creep-a' : 'creep-c',
+          x, z + (index % 2 ? 4 : -3), (south ? Math.PI : 0) + (index % 3 - 1) * .13, index % 3 === 1 ? 1.35 : 1.1);
         if (x % 152 === 72) add('creep-wall', x, south ? 900 : 140,
           south ? Math.PI : 0, 1.3, .45, -Math.PI / 2);
       }
