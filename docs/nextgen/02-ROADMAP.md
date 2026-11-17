@@ -53,7 +53,7 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
 | D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |
 | F11 per-pass GPU/CPU breakdown tool and small cuts — Sol | merged | max 124 draws, zero combat compiles; frame budget cannot be certified on the loaded host |
-| T12 texture right-sizing and KTX2 compression for actors/weapons — Sol | running | marine textures ≈ 85 MiB GPU |
+| T12 texture right-sizing and KTX2 (self-hosted Basis transcoder, plain fallback set) — Sol | merged | actor/weapon textures 233 → 8.3 MiB GPU (marine 85 → ~3), scene texture payload 372 → 147 MiB; creature files to be repacked from the second-pass models by the integration stream |
 | **R11** independent verdicts by two Astra reviewers on `final6` | done | visual 5–7, play 5–7: "advanced prototype with a commercially presentable vertical slice" — `reviews/R11-verdict.md` |
 | **Wave 12** — from the R11 findings | running | |
 | CAM12 camera and framing you can trust (whole marine in the usable viewport, threat-aware bias, edge indicators) — Sol | running | |
