@@ -56,3 +56,5 @@ Overclock R2: opened both 480 contacts and pale native 06. Sustained suit/tracer
 Glacier R2: both 480 contacts and dark native 04 preserve the wall and surrounding enemies; shatter wash is reduced. Wall remains edge-on in the original legal lane. Final-check wall studies use the production camera with a legal face-on lane.
 
 Frost Trail R2: both 480 contacts and pale native 05 still lose the sparse deposits against pale decking. Replaced those deposits with one exact-width FrostStrip and dark blue backing; crystals and low mist remain. Final-check must confirm this correction.
+
+Whiteout R2: both 480 contacts and dark native 06 show substantially quieter floor veins with enemies still distinct through the sparse dome. Freeze pulse radius remains native. Weather is readable, but still below flagship art quality because of its procedural pattern.

@@ -268,7 +268,7 @@ class CryoPresentation implements AbilityPresentation {
         clock.fx.h0 = .06; clock.fx.arc = 1; clock.fxSeed = clock.fx.seed;
       }
       clock.fx.x = x; clock.fx.z = z; clock.fx.range = radius;
-      clock.fx.color = ICE; clock.fx.param = fade * .22; clock.fx.intensity = .45;
+      clock.fx.color = ICE; clock.fx.param = fade * .07; clock.fx.intensity = .3;
       const pulse = Math.floor(age / 2000);
       if (dt > 0 && pulse > clock.pulse) {
         clock.pulse = pulse;
