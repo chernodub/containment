@@ -198,14 +198,16 @@ void main(){
   float lim=grow*(.8+n*.32);
   float cover=1.-smoothstep(lim-.4,lim,r);
   cover*=1.-step(R,r);
-  float veins=1.-smoothstep(0.,.06,abs(fxFbm(q*1.6+n)-.5));
-  float fern=pow(abs(sin(a*23.+n*6.+r*3.)),18.)*smoothstep(.3,1.,r/R);
-  float fade=1.-smoothstep(.55,1.,k);
-  float crisp=exp(-age*2.);
-  vec3 ice=vec3(.55,.82,1.);
-  emit=(ice*(veins*.9+fern*.7)*(.55+1.6*crisp)+vec3(1.4,1.8,2.2)*crisp*veins*.6)*cover*fade*fxIntensity;
-  alpha=cover*(.16+veins*.32+fern*.22)*fade;
-  base=vec3(.62,.78,.86);
+  float patchy=smoothstep(.46,.62,fxFbm(q*.45+9.1));
+  float veins=(1.-smoothstep(0.,.03,abs(fxFbm(q*1.7+n)-.5)))*patchy;
+  float band=smoothstep(lim-.7,lim-.12,r)*(1.-smoothstep(lim-.12,lim,r));
+  float fern=pow(abs(sin(a*31.+n*7.+r*4.)),24.)*band;
+  float fade=1.-smoothstep(.5,1.,k);
+  float crisp=exp(-age*2.5);
+  vec3 ice=vec3(.5,.8,1.);
+  emit=(ice*(veins*.32+fern*.5+band*.12)*(.35+1.3*crisp))*cover*fade*fxIntensity;
+  alpha=cover*(.015+patchy*.03+veins*.22+band*.14+fern*.2)*fade;
+  base=vec3(.66,.82,.9);
  }else if(m<6.5){
   // Overdrive floor state: element-coloured energy field around the marine.
   float r=fxLocal.y;float R=fxRange;float a=fxLocal.x*6.2831853;

@@ -24,3 +24,12 @@ muzzle ground rings looked like UI circles.
 R3: rings removed (contact flares + sparks instead; one small ground ring at the wall). Accepted: impact frame is a thin
 blinding lance with bloom, then a twisting segmented wake that cools into a thin heat trail. Weakness: per-target bursts
 are rarely visible because lane targets usually die that frame; the wake at +600 ms is a little thin/red.
+
+## Cryo Nova
+Baseline: soft floor pinwheel (swirl frost decal) with cotton mist cards.
+R1 (`vfx13-cn-r1`): Shock ring (hard leading edge to the exact radius), Frost disc, crystal spike clusters along the
+front. Ring and spikes work; frost was a white crackle carpet over the whole room (lightning-like veins), hiding the deck.
+R2: rime film — patchy veins, crisp creeping edge band, ferns only at the edge; spikes enlarged. Still a pale wash.
+R3: film alpha reduced, mist cards halved. Accepted: hard ring races out, crystals erupt behind it, frost edge creeps and
+fades over 6.5 s; enemies stay readable. Weakness: +30 ms frame is modest (ring still small); mist cards remain the old
+billboard puffs.
