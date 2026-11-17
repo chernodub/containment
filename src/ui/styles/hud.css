@@ -464,3 +464,8 @@ body[data-state=playing] #world{cursor:none}
 #hud .boon-group .set-chip {min-width:130px;}
 #hud #status-hud[data-expanded=false] #room-objective {font-size:12px;line-height:1.35;}
 #hud .boon-owned[data-repeat-effect=true] {display:none;}
+
+/* CAM12: imminent offscreen attacks retain a danger pulse; quiet bearings recede. */
+.threat-marker {transition:opacity .2s ease;}
+.threat-marker[data-attacking=true] {animation:threat-pressure .65s ease-in-out infinite;color:#ff5a36;}
+@media(prefers-reduced-motion:reduce){.threat-marker[data-attacking=true]{animation:none;}}

@@ -14,12 +14,13 @@ export function assertPlayingMarine(evidence, viewport, name='playing capture') 
   assert(['left','top','right','bottom'].every(key=>Number.isFinite(body[key]))
     && body.right>body.left && body.bottom>body.top, `${name}: invalid marine body bounds`);
   assert.deepEqual(proof.marineBounds,body,`${name}: marine body receipts disagree`);
-  // Half a CSS pixel matches the saved-PNG framing audit's projection tolerance.
-  assert(body.left>=left-.5 && body.right<=viewport.width-right+.5
-    && body.top>=top-.5 && body.bottom<=viewport.height-bottom+.5,
+  // HUD layout already reserves8px; add8px there,16px at canvas edges.
+  // Half a CSS pixel matches saved-PNG projection tolerance.
+  assert(body.left>=left+(left?8:16)-.5 && body.right<=viewport.width-right-(right?8:16)+.5
+    && body.top>=top+(top?8:16)-.5 && body.bottom<=viewport.height-bottom-(bottom?8:16)+.5,
   `${name}: complete marine body leaves usable viewport`);
-  assert(Number.isFinite(room.heroPixels) && room.heroPixels>=100*viewport.height/1080-.05,
-    `${name}: marine reference scale below100px`);
+  assert(Number.isFinite(room.heroPixels) && room.heroPixels>=(room.emergencyPullback?85:100)*viewport.height/1080-.05,
+    `${name}: marine reference scale below bounded floor`);
   assert(['outside','outsideX','outsideZ','hullOutside'].every(key=>Number.isFinite(room[key]) && room[key]>=-1e-6)
     && ['smallX','smallZ','centeredX','centeredZ'].every(key=>typeof room[key]==='boolean'),
   `${name}: invalid room-area receipt`);
