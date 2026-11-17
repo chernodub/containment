@@ -39,12 +39,22 @@ varying vec3 vBeaconNormal;
 varying vec3 vBeaconView;
 uniform float strength;
 uniform sampler2D sceneDepth;
+uniform sampler2D sceneGeometry;
+uniform float hasSceneGeometry;
+uniform float marineId;
 uniform vec2 inverseViewport;
 uniform float hasSceneDepth;
 void main(){
   if(hasSceneDepth>.5){
-    float surface=texture2D(sceneDepth,gl_FragCoord.xy*inverseViewport).x;
+    vec2 uv=gl_FragCoord.xy*inverseViewport;
+    float surface=texture2D(sceneDepth,uv).x;
     if(gl_FragCoord.z<=surface+.00008)discard;
+    // B stores the actor identity; A separately packs class and actor region.
+    // A nearer piece of our own armor is self-occlusion, not an obstruction.
+    if(hasSceneGeometry>.5&&marineId>.5){
+      float nearestId=floor(texture2D(sceneGeometry,uv).b*255.0+.5);
+      if(abs(nearestId-marineId)<.5)discard;
+    }
   }
   float rim=pow(max(0.0,1.0-abs(dot(normalize(vBeaconNormal),normalize(vBeaconView)))),2.5);
   float fill=.16*strength;
@@ -81,7 +91,7 @@ function locatorTexture():T.DataTexture {
 /** A quiet suit locator and borrowed-skin silhouette keep the marine findable in a crowd. */
 export class PlayerBeacon {
   readonly root = new T.Group();
-  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.28},sceneDepth:{value:null},inverseViewport:{value:new T.Vector2(1,1)},hasSceneDepth:{value:0}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
+  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.28},sceneDepth:{value:null},inverseViewport:{value:new T.Vector2(1,1)},hasSceneDepth:{value:0},sceneGeometry:{value:null},hasSceneGeometry:{value:0},marineId:{value:0}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
   private readonly groups: SkinGroup[] = [];
   private readonly locatorMap=locatorTexture();
   private readonly locatorMaterial=new T.MeshBasicMaterial({map:this.locatorMap,transparent:true,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide,forceSinglePass:true});
@@ -132,6 +142,12 @@ export class PlayerBeacon {
   /** Borrow the post depth; the forward path uses the existing scene depth buffer. */
   setDepthSource(depth:T.DepthTexture|null,width:number,height:number):void {
     this.material.uniforms.sceneDepth.value=depth;
+    // Public Three texture ownership gives the matching retained MRT attachment.
+    // Borrow only; the post owner handles resize, tier recovery and disposal.
+    const geometry=depth?.renderTarget?.textures[1];
+    const hasGeometry=geometry?.name==='Containment geometry normal + identity';
+    this.material.uniforms.sceneGeometry.value=hasGeometry?geometry:null;
+    this.material.uniforms.hasSceneGeometry.value=hasGeometry?1:0;
     this.material.uniforms.hasSceneDepth.value=depth?1:0;
     this.material.uniforms.inverseViewport.value.set(1/Math.max(1,width),1/Math.max(1,height));
     this.material.depthTest=!depth;this.material.depthFunc=T.GreaterDepth;
@@ -150,6 +166,8 @@ export class PlayerBeacon {
     this.hitMaterial.opacity=this.hitStrength*Math.min(1,this.hitLife/.12)*.86;
     this.hitArc.position.set(player.position.x,.09,player.position.z);
     this.hitArc.rotation.z=-this.hitAngle;
+    const marineId=player.userData.containmentGeometryId;
+    this.material.uniforms.marineId.value=Number.isFinite(marineId)?marineId:0;
     this.material.uniforms.strength.value=.28+.56*Math.min(1,Math.max(0,crowding));
     player.updateWorldMatrix(true,true);
     for(const group of this.groups){

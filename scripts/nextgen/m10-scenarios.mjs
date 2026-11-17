@@ -152,7 +152,7 @@ export function registerC10Scenarios(scenarios) {
       r.effect({type:'corpse',id:900001,family:'crawler',x:p.x+12,y:p.y+20,vx:0,vy:0});
       r.effect({type:'ability',x:p.x,y:p.y,ability:{ability:'overload',rig:'arc',slot:'tactical',phase:'impact',x:p.x,y:p.y,radius:100,durationMs:500}});
       r.effect({type:'ability',x:p.x-25,y:p.y+15,ability:{ability:'overload',rig:'arc',slot:'tactical',phase:'link',targetX:p.x+60,targetY:p.y-20}});
-      d.g5Proof.clutterPresentationReplay=true;d.refresh();
+      d.g5Proof.clutterPresentationReplay=true;(${installDeformedBounds.toString()})();d.refresh();
     })();`)});
   }
 }
