@@ -31,3 +31,7 @@
 ## 8 Transmission Chamber
 - Opened calm/tour03/heavy colour+grey at480: signal-blue floor recedes, tracking dish stays readable, marine and orange warnings lead.
 - Higher dark-deck floor gain preserves chancel circulation without lifting rack backs. Build and guarded seven-frame capture pass; retain warm task dots as secondary accents.
+
+## 9 Diagnostic Gallery
+- Opened calm/tour03/heavy colour+grey480: independent diagnostic warning remains readable, marine leads, probe/cradle and rail cover silhouettes survive.
+- Three authored diffuser centres keep the long recorder lanes visible; cold desaturated steel distinguishes this from signal-blue Transmission. Build/seven guarded frames pass.

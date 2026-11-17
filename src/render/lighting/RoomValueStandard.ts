@@ -83,6 +83,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xbbd0ef,
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.9,
   }),
+  'diagnostic-gallery': profile({
+    // Recorder diffuser, southern service recorder, starboard instrument lamp.
+    fixturesAt:[[390,126],[710,826],[1084,180]],
+    floor:{lit:.42,unlit:.20,edge:.10},perimeter:{inner:3.8,outer:9.5,value:.32,lane:.75},
+    wall:{value:.48,saturation:.55},floorSaturation:.46,tint:0xc7dce5,
+    fixtures:.20,practicals:.46,ambient:.46,marineGlow:1,exit:.9,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},
