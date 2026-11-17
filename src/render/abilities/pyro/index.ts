@@ -31,13 +31,14 @@ type Transient = {
   arc: number;
   /** VFX13 fire volume slices owned by a Flashfire cone (fixed three, reused). */
   slices: (FxSlot | undefined)[];
+  sliceSeeds: number[];
 };
 
 /** Four physical sources: a pressure jet, deck fuel, a liquid fire and a charged suit. */
 class PyroPresentation implements AbilityPresentation {
   private readonly effects: Transient[] = Array.from({ length: TRANSIENT_CAPACITY }, (_, lightId) => ({
     live: false, lightId: 7100 + lightId, kind: 'cone', age: 0, life: 1, x: 0, z: 0, tx: 0, tz: 0,
-    angle: 0, radius: 0, range: 0, arc: 0, slices: [undefined, undefined, undefined],
+    angle: 0, radius: 0, range: 0, arc: 0, slices: [undefined, undefined, undefined], sliceSeeds: [-1, -1, -1],
   }));
   private readonly surfaces = Array.from({ length: 32 }, () => ({ id: -1, part: 0, seen: false, seed: -1, slot: undefined as FxSlot | undefined }));
   private next = 0;
@@ -130,7 +131,7 @@ class PyroPresentation implements AbilityPresentation {
           slot.angle = p.angle; slot.arc = p.arc; slot.range = p.range; slot.inner = .07;
           slot.h0 = .95 + i * .08; slot.h1 = .5 + i * .4; slot.param = layer;
           slot.mx = x + c * .55; slot.my = .95; slot.mz = z + s * .55;
-          p.slices[i] = slot;
+          p.slices[i] = slot; p.sliceSeeds[i] = slot.seed;
         }
         const scorch = kit.fx.spawn(FxMode.Scorch, x, z, 7);
         scorch.angle = p.angle; scorch.arc = p.arc; scorch.range = p.range; scorch.inner = .06; scorch.h0 = scorch.h1 = .034;
@@ -266,8 +267,11 @@ class PyroPresentation implements AbilityPresentation {
     if (!this.muzzle || !this.visibleSocket(this.muzzle, frame.marine)) this.muzzle = frame.marine ? this.findMuzzle(frame.marine) : undefined;
     if (this.muzzle) { frame.marine?.updateWorldMatrix(true, false); this.muzzle.getWorldPosition(this.source); }
     else this.source.set(p.x + c * .55, .95, p.z + s * .55);
-    for (const slot of p.slices) if (slot?.live && slot.mode === FxMode.Fire) {
-      slot.mx = this.source.x; slot.my = this.source.y; slot.mz = this.source.z; slot.h0 = this.source.y;
+    for (let i = 0; i < p.slices.length; i++) {
+      const slot = p.slices[i];
+      if (slot?.live && slot.seed === p.sliceSeeds[i] && slot.mode === FxMode.Fire) {
+        slot.mx = this.source.x; slot.my = this.source.y; slot.mz = this.source.z; slot.h0 = this.source.y;
+      }
     }
     const fade = Math.max(0, 1 - Math.max(0, p.age - .12) / .4);
     kit.impact();
