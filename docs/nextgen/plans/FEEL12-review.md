@@ -66,7 +66,7 @@ The original manifest is unchanged and `PROVENANCE-NOTE.md` flags the issue.
 
 Opened native Brute Crew04 and Relay15/20. Raised cleavers communicate commitment; the first upright windup is too narrow compared with its broad released stance. Belly remains above the feet in these views. Requested Brute-only wider compressed held mass (implemented in7a60fd80; needs final clean capture). Relay floor keyline remains legible; sweep still reads much weaker than edge. These B1 frames are exploratory mixed-source after live dist was rebuilt at02:20:24+0300; do not use them for same-build final claims.
 
-## B round 2 — immutable standard (in progress)
+## B round 2 — immutable standard
 
 Source21875431, immutable `runtime-b2`; Crawler/Stalker/Brute in both contrast
 rooms plus the real20-Crawler swarm. New capture-only vertex bounds now enclose
@@ -80,11 +80,27 @@ interior color near black and changing color mainly on rim/timing. For round3,
 tint only the swept interior toward warning orange, with the meaningful increase
 confined to native last100ms commitment. Preserve quiet early alpha, exact shape,
 opaque keyline and reduced-motion/flash scaling. Round2's frozen assets stay
-unchanged for comparison. Remaining standard subjects/crowd are still capturing;
-this entry does not claim that unfinished frames have been opened.
+unchanged for comparison. The completed pass contains210 native frames, zero capture failures/errors,
+and33 native per-vertex strips. Opened all six core family/room enemy strips,
+swarm actor1/10/20 strips, the documented full native phase frames, and all seven
+complete exact480 contacts. The full20-actor vertex bounds stayed in the viewport
+through all30 swarm frames. Brute holds a visibly raised narrow silhouette,
+compresses broadly into the strike and retains that loaded mass through recovery;
+the small-family recovery reads most clearly in the asymmetric leg spread. These
+are staged art observations, not human dodge-success or performance claims.
 
 Tool correction from round1: its native crop derivative stopped at mixed crowd
 Spitter17 leaving the viewport in frame26. `native-strips/FAILED.txt` retains that
 failure; partial root-envelope strips are not complete body evidence. All360
 round1 native PNGs are retained. Native full frames were sampled at the documented
 phase frames; all12 complete exact480 contacts were opened at original size. The20-Crawler standard avoids the retreating mixed-crowd source limitation.
+
+## C round 1 → 2: paired physical chain
+
+The first paired capture failed because the shooter was placed behind the native spawn near a viewport edge. Retained its error receipt; fixed staging to leave shooter at the native camera mark and put victim ahead, without camera changes. Opened both complete24-cell retry strips: rifle muzzle/tracer/point spark connected, but Crawler whole-body recoil was too brief/small; shotgun kill carried right and settled. Fixed contact envelope to hold35ms before smooth return, and increased mass-weighted light/heavy bend .30/.48→.55/.78, preserving native damage/shove/timing.
+
+Opened round2 complete native Crawler/Brute rifle-hit and exact-quarter Crawler rifle-hit/Stalker shotgun-kill. Collaborating motion review opened all6 complete strips144cells. Abdomen/shoulders now load away from the impact over visible cells; Brute remains restrained, and small shotgun victims carry farther than Brute. Retain this balance rather than amplifying all hits into topples. Round3 expands to every weapon/family, with native room firearm evidence separately: these paired strips are frozen-simulation presentation replays, not collision/damage acceptance.
+
+## Native A startup confirmation
+
+Opened native final Awakening Bay spawn: helmet/chest/gun now point right with the marker. The untracked origin bone had a180° mismatch between initial rest and ready pose; isolated runner reset masked it. Startup now preserves the canonical ready origin before legacy actions stop. Opened native Railbreaker03; heading agrees, but beam originates along body/native lane and extends behind the muzzle. Exact muzzle attachment requires a VFX12 kit/service anchor inside excluded ability modules; changing all event coordinates would move ground/impact shape, so no such workaround was made.

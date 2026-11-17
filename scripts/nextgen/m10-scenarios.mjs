@@ -137,6 +137,10 @@ export function registerC10Scenarios(scenarios) {
        d.g5Proof.incomingSidePresentationReplay='${side}';d.refresh();
       })();`)});
   }
+  for(const id of ['feel12-melee-crawler-relay-racks','feel12-hit-east']){
+    const base=scenarios.find(s=>s.id===id);
+    scenarios.push({...base,id:id+'-reduced',reducedMotion:true});
+  }
   for(const room of ['crew-checkpoint','relay-racks']) {
     const base=scenarios.find(s=>s.id==='m10-melee-crawler');
     scenarios.push({...base,id:`c10-melee-${room}`,room,setup:new Function(`return (async()=>{
