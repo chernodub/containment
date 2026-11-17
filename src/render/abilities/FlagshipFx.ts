@@ -1,0 +1,314 @@
+import * as T from 'three';
+
+/**
+ * VFX13 flagship surfaces: one retained procedural program for the hero
+ * ability moments (fire volume slices, cooling scorch, rail lance and wake,
+ * shock rings, frost, Overdrive floor states). Every pooled mesh shares the
+ * same geometry and shader source; modes are uniforms, so warm-up compiles a
+ * single program and combat never creates one. Shapes are generated in the
+ * vertex shader from the exact simulated cone/strip/radius numbers and never
+ * exceed them (the muzzle pull-in only moves the narrow apex inward).
+ */
+export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6 } as const;
+export type FxMode = (typeof FxMode)[keyof typeof FxMode];
+
+export interface FxSlot {
+  live: boolean;
+  mode: FxMode;
+  age: number;
+  life: number;
+  /** World-space origin (apex/start/centre). */
+  x: number; y: number; z: number;
+  /** Aim angle (fan/strip direction). */
+  angle: number;
+  /** Fan: full arc. Ring: unused. */
+  arc: number;
+  /** Fan/ring: outer radius; strip: length. */
+  range: number;
+  /** Fan: inner radius fraction; ring: inner radius; strip: half width. */
+  inner: number;
+  /** Heights: near/far for fans, constant for others. */
+  h0: number; h1: number;
+  /** Optional muzzle used to pull the fan apex. */
+  mx: number; my: number; mz: number;
+  seed: number;
+  color: number;
+  intensity: number;
+  /** Mode-specific scalar (fire layer: 0 low flame … 1 smoke; aura element). */
+  param: number;
+  readonly mesh: T.Mesh;
+  readonly material: T.ShaderMaterial;
+}
+
+const vertex = `
+uniform float fxMode;uniform vec3 fxOrigin;uniform vec3 fxMuzzle;uniform float fxAngle;uniform float fxArc;
+uniform float fxRange;uniform float fxInner;uniform vec2 fxHeight;uniform float fxAge;uniform float fxParam;
+varying vec2 fxLocal;varying vec3 fxWorld;varying vec4 fxScreen;
+void main(){
+ vec2 g=uv;vec3 w;float m=fxMode;
+ if(m<1.5){
+  // Fan: u across the exact arc, v from inner fraction to the exact range.
+  float s=g.x*2.-1.;float r=mix(fxInner,1.,g.y);
+  float a=fxAngle+s*fxArc*.5;
+  vec2 polar=fxOrigin.xz+vec2(cos(a),sin(a))*r*fxRange;
+  float pull=1.-smoothstep(fxInner,fxInner+.32,r);
+  vec2 xz=mix(polar,fxMuzzle.xz,pull*step(m,.5));
+  float lift=m<.5?fxParam*fxAge*1.1:0.;
+  w=vec3(xz.x,mix(fxHeight.x,fxHeight.y,smoothstep(0.,1.,r))+lift,xz.y);
+  fxLocal=vec2(s,r);
+ }else if(m<3.5){
+  // Strip: u across the half width, v along the exact length.
+  vec2 d=vec2(cos(fxAngle),sin(fxAngle));vec2 n=vec2(-d.y,d.x);
+  float s=g.x*2.-1.;
+  vec2 xz=fxOrigin.xz+d*g.y*fxRange+n*s*fxInner;
+  w=vec3(xz.x,fxHeight.x,xz.y);fxLocal=vec2(s,g.y);
+ }else{
+  // Ring/disc: u around, v from inner radius to outer radius.
+  float a=g.x*6.2831853;float r=mix(fxInner,fxRange,g.y);
+  w=vec3(fxOrigin.x+cos(a)*r,fxHeight.x,fxOrigin.z+sin(a)*r);fxLocal=vec2(g.x,r);
+ }
+ fxWorld=w;
+ gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);fxScreen=gl_Position;
+}`;
+
+const fragment = `
+uniform float fxMode;uniform float fxAge;uniform float fxLife;uniform float fxTime;uniform float fxSeed;
+uniform float fxRange;uniform float fxInner;uniform float fxArc;uniform vec3 fxColor;uniform float fxIntensity;
+uniform float fxParam;uniform float fxLow;uniform vec3 fxOrigin;uniform float fxAngle;
+varying vec2 fxLocal;varying vec3 fxWorld;varying vec4 fxScreen;
+float fxHash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float fxNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+ return mix(mix(fxHash(i),fxHash(i+vec2(1.,0.)),f.x),mix(fxHash(i+vec2(0.,1.)),fxHash(i+vec2(1.)),f.x),f.y);}
+float fxFbm(vec2 p){float s=0.,a=.5;mat2 r=mat2(1.6,1.2,-1.2,1.6);
+ for(int i=0;i<5;i++){if(fxLow>.5&&i>2)break;s+=a*fxNoise(p);p=r*p;a*=.5;}return fxLow>.5?s*1.14:s;}
+// Blackbody-like ramp: smoke, dark red, orange, yellow, white (HDR for bloom).
+vec3 fxHeat(float t){
+ vec3 c=mix(vec3(.035,.022,.018),vec3(.62,.07,.012),smoothstep(.06,.28,t));
+ c=mix(c,vec3(2.3,.62,.09),smoothstep(.24,.48,t));
+ c=mix(c,vec3(4.2,2.5,.62),smoothstep(.48,.74,t));
+ return mix(c,vec3(7.,6.3,4.6),smoothstep(.8,1.,t));
+}
+void main(){
+ float m=fxMode;vec3 emit=vec3(0.);float alpha=0.;vec3 base=vec3(0.);
+ float t=fxTime;float age=fxAge;float k=age/max(.001,fxLife);
+ if(m<.5){
+  // Fire volume slice. param 0 = low hot sheet, .5 = body, 1 = smoke crown.
+  float s=fxLocal.x,r=fxLocal.y,layer=fxParam;
+  float front=1.-pow(1.-clamp(age/.15,0.,1.),3.);
+  vec2 q=vec2(s*(r*1.05+.12)*fxRange*.62,r*fxRange);
+  vec2 flow=vec2(0.,t*(6.5-layer*3.))+fxSeed;
+  vec2 warp=vec2(fxFbm(q*.55-flow*.45),fxFbm(q*.55+vec2(5.2,1.3)-flow*.5));
+  float n=fxFbm(q*1.15+warp*2.2-flow);
+  float fine=fxNoise(q*3.7-flow*1.6+warp*3.);
+  // Ragged lateral edge: tongues break the outer third of the arc.
+  float edge=.62+(n-.45)*.9+fine*.12-layer*.08;
+  float body=1.-smoothstep(edge-.38,edge,abs(s));
+  // Rolling front: thicker billow just behind the advancing edge, nothing past it.
+  float tip=1.-smoothstep(front-.2-n*.18,front,r);
+  float billow=smoothstep(front-.34,front-.06,r)*(1.-smoothstep(front-.06,front,r));
+  float erosion=.2+r*.32+max(0.,age-.16)*(1.9-layer*1.1)+layer*.1;
+  float d=n*body*tip*(1.+billow*.55)+fine*.08;
+  float dens=smoothstep(erosion,erosion+.2,d);
+  float spine=(1.-smoothstep(0.,.3+r*.2,abs(s)))*(1.-smoothstep(.08,.55,r))*(1.-layer);
+  float core=(1.-smoothstep(0.,.11,r-fxInner))*(1.-smoothstep(.0,.55,abs(s)))*(1.-layer*.8);
+  float cool=1.-smoothstep(.12,.5,age);
+  float heat=(dens*(1.18-r*.62)*(.45+.55*cool)+spine*.42*cool+core*1.1*(1.-smoothstep(.05,.24,age)))*(1.-layer*.55);
+  heat=clamp(heat,0.,1.);
+  // Smoke: cold density that outlives the flame, mostly on the crown layer.
+  float smoke=smoothstep(erosion-.1,erosion+.3,n*body*tip)*(1.-heat)*smoothstep(.08,.3,age)*(.25+layer*.75);
+  emit=fxHeat(heat)*smoothstep(.04,.32,heat)*fxIntensity;
+  alpha=max(smoke*.5*(1.-smoothstep(.55,1.,k)),heat*.32);
+  base=mix(vec3(.03,.028,.027),vec3(.2,.07,.02),cool*.6);
+  emit*=1.-smoothstep(.62,1.,k);
+ }else if(m<1.5){
+  // Scorch fan on the deck: glowing fissures cool from orange-white to black soot.
+  float s=fxLocal.x,r=fxLocal.y;
+  float front=1.-pow(1.-clamp(age/.15,0.,1.),3.);
+  vec2 q=vec2(s*(r*1.05+.12)*fxRange*.62,r*fxRange)+fxSeed;
+  float n=fxFbm(q*.9);
+  float ridge=1.-smoothstep(0.,.07,abs(fxFbm(q*2.1+n*1.7)-.5));
+  float body=1.-smoothstep(.55+n*.5-.28,.55+n*.5,abs(s));
+  float soot=smoothstep(.25,.62,n*body*(1.25-r*.55))*step(r,front);
+  float heat=exp(-age*1.25);float hot=exp(-age*4.5);
+  emit=(vec3(2.8,.55,.06)*ridge*heat+vec3(5.,2.2,.55)*ridge*hot+vec3(1.1,.18,.02)*hot*.45)*soot*fxIntensity;
+  alpha=soot*.68*(1.-smoothstep(.55,1.,k));
+  base=vec3(.016,.013,.011);
+  emit*=1.-smoothstep(.55,1.,k);
+ }else if(m<2.5){
+  // Rail lance: hair-thin white core, sharp leading edge for ~2 frames.
+  float s=abs(fxLocal.x),v=fxLocal.y;
+  float lead=clamp(age/.05,0.,1.);
+  float reach=smoothstep(lead+.002,lead-.02,v);
+  float headGlow=exp(-abs(v-lead)*40.)*(1.-step(1.,lead));
+  float life=1.-smoothstep(.03,.16,age);
+  float coreW=.06+.05*life;
+  float core=1.-smoothstep(coreW*.3,coreW,s);
+  float halo=exp(-s*s*9.)*.55;
+  float flick=.85+.15*fxNoise(vec2(v*40.-t*60.,fxSeed));
+  emit=(vec3(9.,8.5,7.5)*core+fxColor*3.*halo*flick)*reach*life*fxIntensity+vec3(10.,9.,8.)*headGlow*core;
+  alpha=(core*.6+halo*.15)*reach*life;
+ }else if(m<3.5){
+  // Rail wake: segmented spiral of charged air that lingers, twists and fades.
+  float s=fxLocal.x,v=fxLocal.y;
+  float along=v*fxRange;
+  float spin=along*3.2-t*7.;
+  float strand=0.;
+  for(int i=0;i<2;i++){float ph=spin+float(i)*3.14159;float c=sin(ph)*.55;
+   strand+=1.-smoothstep(.04,.16,abs(s-c));}
+  float seg=smoothstep(.35,.75,fxNoise(vec2(along*1.7-t*2.,fxSeed)));
+  float fade=1.-smoothstep(.25,1.,k);
+  float breakup=smoothstep(k*.85,k*.85+.25,fxFbm(vec2(along*1.2,s*2.)+fxSeed+t*.6));
+  float trail=exp(-s*s*5.)*.35;
+  float i0=(strand*(.4+seg*.9)+trail)*fade*breakup;
+  emit=fxColor*i0*2.2*fxIntensity+vec3(2.)*strand*seg*fade*breakup*(1.-smoothstep(0.,.25,k));
+  alpha=i0*.18;
+ }else if(m<4.5){
+  // Shock ring: hard bright leading edge racing to the exact radius.
+  float r=fxLocal.y;float R=fxRange;
+  float p=1.-pow(1.-clamp(k*1.25,0.,1.),2.4);
+  float front=R*p;
+  float dist=r-front;
+  float edge=(1.-smoothstep(0.,.05+.07*(1.-p),abs(dist+.03)))*(1.-step(R+.001,r));
+  float wake=smoothstep(-1.2,0.,dist)*(1.-step(0.,dist))*.35;
+  float facets=.65+.35*step(.5,fract(fxLocal.x*48.+fxSeed));
+  float fade=1.-smoothstep(.55,1.,k);
+  emit=(fxColor*2.6*facets+vec3(1.6)*edge)*edge*fade*fxIntensity+fxColor*wake*.6*fade*fxIntensity;
+  alpha=(edge*.55+wake*.25)*fade;
+ }else if(m<5.5){
+  // Frost: crystalline growth spreading from the centre, rime veins, slow fade.
+  float r=fxLocal.y;float R=fxRange;float a=fxLocal.x*6.2831853;
+  vec2 q=(fxWorld.xz-fxOrigin.xz)*1.6+fxSeed;
+  float grow=R*(1.-pow(1.-clamp(age/.4,0.,1.),2.));
+  float n=fxFbm(q*.8);
+  float lim=grow*(.8+n*.32);
+  float cover=1.-smoothstep(lim-.4,lim,r);
+  cover*=1.-step(R,r);
+  float veins=1.-smoothstep(0.,.06,abs(fxFbm(q*1.6+n)-.5));
+  float fern=pow(abs(sin(a*23.+n*6.+r*3.)),18.)*smoothstep(.3,1.,r/R);
+  float fade=1.-smoothstep(.55,1.,k);
+  float crisp=exp(-age*2.);
+  vec3 ice=vec3(.55,.82,1.);
+  emit=(ice*(veins*.9+fern*.7)*(.55+1.6*crisp)+vec3(1.4,1.8,2.2)*crisp*veins*.6)*cover*fade*fxIntensity;
+  alpha=cover*(.16+veins*.32+fern*.22)*fade;
+  base=vec3(.62,.78,.86);
+ }else if(m<6.5){
+  // Overdrive floor state: element-coloured energy field around the marine.
+  float r=fxLocal.y;float R=fxRange;float a=fxLocal.x*6.2831853;
+  vec2 q=(fxWorld.xz-fxOrigin.xz);
+  float n=fxFbm(q*1.3+vec2(t*.4,-t*.3)+fxSeed);
+  float rim=(1.-smoothstep(0.,.08,abs(r-R*(.96+.02*sin(a*7.+t*3.)))));
+  float inner=smoothstep(R,R*.3,r)*smoothstep(.0,R*.25,r);
+  float rays=pow(max(0.,sin(a*9.+n*4.-t*2.)),12.)*smoothstep(R*.2,R*.8,r)*(1.-smoothstep(R*.8,R,r));
+  float pulse=.75+.25*sin(t*6.);
+  float on=smoothstep(0.,.25,age)*(1.-smoothstep(.8,1.,k));
+  float mark=rim*.9+rays*.5+inner*smoothstep(.45,.85,n)*.35;
+  emit=fxColor*mark*(1.4+pulse*.8)*on*fxIntensity;
+  alpha=mark*.1*on;
+ }
+ vec2 screen=fxScreen.xy/max(.001,fxScreen.w)*.5+.5;
+ float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
+ float keep=1.-actionBar*.94;
+ alpha=clamp(alpha*keep,0.,1.);emit*=keep;
+ if(alpha<.002&&dot(emit,vec3(1.))<.004)discard;
+ float fxA0=max(alpha,.005);
+ gl_FragColor=vec4(base*alpha+emit,fxA0);
+ #include <tonemapping_fragment>
+ #include <colorspace_fragment>
+ gl_FragColor.rgb*=gl_FragColor.a/fxA0;
+}`;
+
+const MODE_ORDER: Record<number, number> = { 0: 2, 1: -3, 2: 4, 3: 3, 4: 2, 5: -3, 6: -3 };
+
+/** Fixed pool; spawn() recycles the oldest slot when full, never allocates. */
+export class FlagshipFx {
+  readonly root = new T.Group();
+  readonly slots: FxSlot[] = [];
+  low = false;
+  flashIntensity = 1;
+  private readonly geometry = new T.PlaneGeometry(1, 1, 40, 24);
+  private cursor = 0;
+  private time = 0;
+  private readonly color = new T.Color();
+
+  constructor(parent: T.Object3D, capacity = 24) {
+    this.root.name = 'ability-flagship-fx';
+    // PlaneGeometry spans [-.5,.5]; the shader reads only uv, but bounds must be finite.
+    for (let i = 0; i < capacity; i++) {
+      const material = new T.ShaderMaterial({
+        uniforms: {
+          fxMode: { value: 0 }, fxAge: { value: 0 }, fxLife: { value: 1 }, fxTime: { value: 0 }, fxSeed: { value: 0 },
+          fxOrigin: { value: new T.Vector3() }, fxMuzzle: { value: new T.Vector3() }, fxAngle: { value: 0 }, fxArc: { value: 1 },
+          fxRange: { value: 1 }, fxInner: { value: 0 }, fxHeight: { value: new T.Vector2() }, fxParam: { value: 0 },
+          fxColor: { value: new T.Color() }, fxIntensity: { value: 1 }, fxLow: { value: 0 },
+        },
+        vertexShader: vertex,
+        fragmentShader: fragment,
+        transparent: true,
+        premultipliedAlpha: true,
+        depthWrite: false,
+        side: T.DoubleSide,
+        forceSinglePass: true,
+        blending: T.NormalBlending,
+      });
+      const mesh = new T.Mesh(this.geometry, material);
+      mesh.name = `ability-flagship-${i}`;
+      mesh.frustumCulled = false;
+      mesh.matrixAutoUpdate = false;
+      // Hidden meshes remain in the tree so MaterialWarmup compiles the shared program.
+      mesh.visible = false;
+      this.root.add(mesh);
+      this.slots.push({
+        live: false, mode: FxMode.Fire, age: 0, life: 1, x: 0, y: 0, z: 0, angle: 0, arc: 1, range: 1, inner: 0,
+        h0: 0, h1: 0, mx: 0, my: 0, mz: 0, seed: i * 7.31, color: 0xffffff, intensity: 1, param: 0, mesh, material,
+      });
+    }
+    parent.add(this.root);
+  }
+
+  spawn(mode: FxMode, x: number, z: number, life: number): FxSlot {
+    let slot: FxSlot | undefined;
+    for (const candidate of this.slots) if (!candidate.live) { slot = candidate; break; }
+    if (!slot) slot = this.slots[this.cursor++ % this.slots.length];
+    slot.live = true; slot.mode = mode; slot.age = 0; slot.life = Math.max(.05, life);
+    slot.x = x; slot.y = 0; slot.z = z; slot.mx = x; slot.my = 0; slot.mz = z;
+    slot.angle = 0; slot.arc = Math.PI * 2; slot.range = 1; slot.inner = 0; slot.h0 = slot.h1 = .03;
+    slot.seed = (slot.seed * 1.618 + 3.7) % 97; slot.color = 0xffffff; slot.intensity = 1; slot.param = 0;
+    return slot;
+  }
+
+  /** Called once per presentation frame; dt is the ability clock. */
+  update(dt: number, time: number, reducedMotion: boolean): void {
+    this.time = reducedMotion ? 0 : time;
+    for (const slot of this.slots) {
+      if (!slot.live) { slot.mesh.visible = false; continue; }
+      slot.age += dt;
+      if (slot.age >= slot.life) { slot.live = false; slot.mesh.visible = false; }
+    }
+  }
+
+  /** Writes uniforms after owners spawned or moved slots this frame. */
+  commit(): void {
+    for (const slot of this.slots) {
+      if (!slot.live) { slot.mesh.visible = false; continue; }
+      const u = slot.material.uniforms;
+      u.fxMode.value = slot.mode; u.fxAge.value = slot.age; u.fxLife.value = slot.life; u.fxTime.value = this.time;
+      u.fxSeed.value = slot.seed; (u.fxOrigin.value as T.Vector3).set(slot.x, slot.y, slot.z);
+      (u.fxMuzzle.value as T.Vector3).set(slot.mx, slot.my, slot.mz);
+      u.fxAngle.value = slot.angle; u.fxArc.value = slot.arc; u.fxRange.value = slot.range; u.fxInner.value = slot.inner;
+      (u.fxHeight.value as T.Vector2).set(slot.h0, slot.h1); u.fxParam.value = slot.param;
+      (u.fxColor.value as T.Color).copy(this.color.setHex(slot.color));
+      u.fxIntensity.value = slot.intensity * (.4 + .6 * this.flashIntensity); u.fxLow.value = this.low ? 1 : 0;
+      slot.mesh.renderOrder = MODE_ORDER[slot.mode] ?? 2;
+      slot.mesh.visible = true;
+    }
+  }
+
+  clear(): void { for (const slot of this.slots) { slot.live = false; slot.mesh.visible = false; } }
+
+  dispose(): void {
+    this.clear();
+    for (const slot of this.slots) slot.material.dispose();
+    this.geometry.dispose();
+    this.root.removeFromParent();
+  }
+}
