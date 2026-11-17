@@ -56,6 +56,10 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('service-transit-case',957,101,.23,[.65,.65,.65],.82);
     put('service-transit-case',981,121,.8,[.8,.55,.8]);
     put('service-cable-tray',992,127,.4,[.5,.4,.65]);
+    // The jam's dropped load must also read from the central fight camera.
+    put('service-transit-case',630,540,-.4,[.85,.45,.75]);
+    put('service-transit-case',655,530,.6,[.6,.35,.6]);
+    put('service-cable-tray',660,515,1.1,[.6,.5,.6],.18);
 
   }
   if (id === 'armory') {
@@ -109,10 +113,10 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
   }
   if(id==='crew-checkpoint') {
     // Irregular soot fan has a source at the jammed inspection machinery.
-    flat([[0,0],[-.5,.12],[-1.05,.7],[-.65,.75],[-.18,1.1],[.25,.85],[.65,.91],[.45,.4]],dark,990,131,-.4);
+    flat([[0,0],[-.5,.12],[-1.05,.7],[-.65,.75],[-.18,1.1],[.25,.85],[.65,.91],[.45,.4]],dark,648,543,-.4);
     for(let i=0;i<7;i++) {
       const g=new T.CylinderGeometry(.021,.021,.10,6);g.rotateZ(Math.PI/2);
-      mesh(g,brass,988+(i%3)*8,.035,148+Math.floor(i/3)*8,i*.8);
+      mesh(g,brass,625+(i%3)*8,.035,550+Math.floor(i/3)*8,i*.8);
     }
   }
   if(id==='passenger-vault') {
