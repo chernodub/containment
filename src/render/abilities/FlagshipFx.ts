@@ -9,7 +9,7 @@ import * as T from 'three';
  * vertex shader from the exact simulated cone/strip/radius numbers and never
  * exceed them (the muzzle pull-in only moves the narrow apex inward).
  */
-export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6 } as const;
+export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6, Crack: 7 } as const;
 export type FxMode = (typeof FxMode)[keyof typeof FxMode];
 
 export interface FxSlot {
@@ -61,7 +61,7 @@ void main(){
   vec2 d=vec2(cos(fxAngle),sin(fxAngle));vec2 n=vec2(-d.y,d.x);
   float s=g.x*2.-1.;
   vec2 xz=fxOrigin.xz+d*g.y*fxRange+n*s*fxInner;
-  w=vec3(xz.x,fxHeight.x,xz.y);fxLocal=vec2(s,g.y);
+  w=vec3(xz.x,fxParam>2.5?mix(fxHeight.x,fxHeight.y,g.y):fxHeight.x,xz.y);fxLocal=vec2(s,g.y);
  }else{
   // Ring/disc: u around, v from inner radius to outer radius.
   float a=g.x*6.2831853;float r=mix(fxInner,fxRange,g.y);
@@ -175,8 +175,14 @@ void main(){
   float trail=exp(-s*s*7.)*.3*(1.-smoothstep(0.,.5,k));
   float i0=(strand*seg+trail)*fade*breakup*appear;
   vec3 hot=mix(vec3(2.2,1.9,1.5),fxColor*1.6,smoothstep(0.,.35,k));
-  emit=hot*i0*fxIntensity;
-  alpha=i0*.12;
+  if(fxParam>2.5){
+   float jitter=(fxNoise(vec2(floor(along*12.),floor(t*30.)+fxSeed))-.5)*.8;
+   float bolt=1.-smoothstep(.025,.11,abs(s-jitter));
+   float fork=1.-smoothstep(.015,.055,abs(s-jitter-sin(along*8.+fxSeed)*.35));
+   float gate=(1.-smoothstep(.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
+   emit=(vec3(4.)*bolt+fxColor*(bolt*1.8+fork*.7))*gate*fxIntensity;
+   alpha=(bolt*.12+fork*.04)*gate;
+  }else{emit=hot*i0*fxIntensity;alpha=i0*.12;}
  }else if(m<4.5){
   // Shock ring: hard bright leading edge racing to the exact radius.
   float r=fxLocal.y;float R=fxRange;
@@ -229,6 +235,20 @@ void main(){
   emit=fxColor*mark*(1.3+pulse*.7)*on*fxIntensity;
   alpha=(mark*.12+fall*.05)*on;
   base=fxColor*.15;
+ }else if(m<7.5){
+  // Radial deck fractures: sparse branching seams, never outside the native radius.
+  float r=fxLocal.y, a=fxLocal.x*6.2831853;
+  vec2 q=(fxWorld.xz-fxOrigin.xz);
+  float warp=fxFbm(q*2.+fxSeed);
+  float seam=1.-smoothstep(.012,.045,abs(sin(a*9.+warp*2.2+r*.7)));
+  float branch=1.-smoothstep(.008,.025,abs(sin(a*17.-warp*3.+r*2.)));
+  float front=fxRange*(1.-exp(-age*24.));
+  float mask=(1.-smoothstep(front-.12,front,r))*smoothstep(.15,.5,r)*(1.-smoothstep(fxRange*.8,fxRange,r));
+  float mark=max(seam,branch*.45)*mask;
+  float fade=1.-smoothstep(.6,1.,k);
+  alpha=mark*.62*fade;
+  base=vec3(.025,.03,.035);
+  emit=fxColor*mark*exp(-age*7.)*.55*fxIntensity;
  }
  vec2 screen=fxScreen.xy/max(.001,fxScreen.w)*.5+.5;
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));

@@ -79,13 +79,16 @@ export class BreacherPresentation implements AbilityPresentation {
     if (event.ability === 'seismic-slam') {
       const radius = (event.radius ?? 230) / UNIT;
       this.impact('slam', x, z, angle, radius, 1.05);
-      this.kit.ring(x, z, radius, AMBER, .3);
+      const shock = this.kit.fx.spawn(FxMode.Shock, x, z, .38);
+      shock.range = radius; shock.color = AMBER; shock.h0 = .065;
+      const crack = this.kit.fx.spawn(FxMode.Crack, x, z, 7);
+      crack.range = radius; crack.color = AMBER; crack.h0 = .035;
       this.kit.distort(x, z, radius, .007, .55);
       this.kit.flash(x, z, CORE, 28, radius + 1, 5, .035);
       this.kit.flash(x, z, AMBER, 13, radius, 4, .18);
       this.kit.camera(.54);
       this.kit.anticipate(34, .045);
-      this.kit.scar('crack', x, z, radius, 0x121c23, 10);
+
       this.kit.burst(x, .15, z, 'kinetic', 24, 6, .45);
       this.dust(x, z, radius, this.kit.low ? 5 : 14);
       // drawSlam owns the clipped deck fragments and their radial momentum.

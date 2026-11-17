@@ -98,7 +98,7 @@ export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline
 }
 export const V2_SCENARIOS=[];
 for(const [rig,ids]of Object.entries(rigs)){
- for(let i=0;i<ids.length;i++)for(const room of ['awakening-bay','containment-annulus','infested-workshop'])V2_SCENARIOS.push({
+ for(let i=0;i<ids.length;i++)for(const room of ['awakening-bay','containment-annulus','infested-workshop','crew-checkpoint','relay-racks'])V2_SCENARIOS.push({
   id:`v2-${ids[i]}`,rooms:false,room,state:'playing',burst:true,setupArgument:{rig,id:ids[i],slot:slots[i],room},setup:stageV2,
  });
  // Unique room-qualified IDs allow choosing three lighting moods independently.
