@@ -87,7 +87,7 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
     }
     // The nest stands beside the cost-desk's west face, not on its roof.
     // This puts the complete body inside the south-gallery inspection camera.
-    add('nest-large', 480, 900, -Math.PI / 2, .55);
+    add('nest-large', 490, 900, -Math.PI / 2, .55);
     add('creep-c', 490, 930, -Math.PI / 2, .35);
     add('creep-wall', 509, 940, -Math.PI / 2, .45, .25, Math.PI / 2);
     pieces[pieces.length-1].matrix.scale(new T.Vector3(2,1,1));
