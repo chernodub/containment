@@ -61,6 +61,7 @@ export function setGraphicSurfaceTuning(partial: Partial<GraphicSurfaceTuning>):
 
 const declarations = /* glsl */ `
 uniform float graphicEnabled;
+uniform float graphicMarine;
 uniform vec4 graphicResponse;
 uniform vec2 graphicNormalGain;
 uniform vec2 graphicSurfaceKind;
@@ -129,6 +130,15 @@ const mapResponse = ShaderChunk.map_fragment
     * smoothstep(.12, .30, sampledDiffuseColor.g);
   vec3 graphicFamilyTone = graphicActorBase * graphicActorTone(graphicMapLuma);
   diffuseColor *= sampledDiffuseColor;
+  if(graphicMarine>.5){
+    // K12 keeps the authored palette, but wear/AO must not turn ivory plates blue-grey.
+    float marineValue=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+    float marineMax=max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b));
+    float marineMin=min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b));
+    bool rigPanel=marineMax-marineMin>.075&&marineValue>.025;
+    if(rigPanel)diffuseColor.rgb=max(vec3(0.),diffuseColor.rgb-marineMin*.5)/max(.001,marineMax-marineMin*.5)*.88;
+    else diffuseColor.rgb=marineValue>.20?vec3(.86,.88,.85):marineValue>.055?vec3(.13,.15,.16):vec3(.022,.026,.029);
+  }
   // Family values replace the inherited photographic/material tint together;
   // a pale source multiply must not bleach graphite armor or a russet crawler.
   diffuseColor.rgb = mix(diffuseColor.rgb, graphicFamilyTone,
@@ -149,7 +159,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
   if (installed.has(material) || material.transparent) return;
   const key = material.customProgramCacheKey();
   // Retained preparation proxies copy an already-patched hook and cache key.
-  if (key.includes(':graphic-surface-v1')) return;
+  if (key.includes(':graphic-surface-v2')) return;
   installed.add(material);
   const previous = material.onBeforeCompile;
   // K10's original flat zones replace inherited photographic skins. Keep the
@@ -166,7 +176,7 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);
     Object.assign(shader.uniforms, {
-      graphicEnabled: enabled, graphicResponse: response,
+      graphicEnabled: enabled, graphicMarine:{value:material.userData.containmentMarineSurface?1:0}, graphicResponse: response,
       graphicNormalGain: normalGain, graphicSurfaceKind: kind,
       graphicStrength: strength, graphicActorBase: actorBase,
     });
@@ -204,6 +214,9 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
         float graphicActorLight = .40 + .55 * smoothstep(.40,.44,graphicActorIncident)
           + .60 * smoothstep(1.12,1.17,graphicActorIncident);
         vec3 graphicActorHue = clamp(graphicActorDiffuse / max(.008,dot(graphicActorDiffuse,vec3(.2126,.7152,.0722))),vec3(.55),vec3(1.4));
+        // Marine value steps are diffuse reflectance, not emission. Mostly neutral
+        // incident hue preserves ivory/graphite and the saturated authored rig panels.
+        if(graphicMarine>.5){graphicActorLight=.78+.26*smoothstep(.40,.44,graphicActorIncident)+.22*smoothstep(1.12,1.17,graphicActorIncident);graphicActorHue=mix(vec3(1.),graphicActorHue,.08);}
         vec3 graphicActorBands = diffuseColor.rgb * graphicActorLight * graphicActorHue;
         reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, graphicActorBands,
           graphicEnabled * graphicStrength * graphicSurfaceKind.x);
@@ -218,6 +231,6 @@ export function patchGraphicSurface(material: MeshStandardMaterial): void {
           * smoothstep(.08, .50, dot(graphicBevelNormal, normalize(viewMatrix[1].xyz)));
         totalEmissiveRadiance += vec3(.16, .21, .24) * graphicBevel * graphicEnabled * graphicStrength * mix(1.0,.12,graphicSurfaceKind.x);`);
   };
-  material.customProgramCacheKey = () => `${key}:graphic-surface-v1`;
+  material.customProgramCacheKey = () => `${key}:graphic-surface-v2`;
   material.needsUpdate = true;
 }
