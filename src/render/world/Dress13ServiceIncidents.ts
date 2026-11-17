@@ -29,6 +29,12 @@ const incidents: Record<string, Piece[]> = {
     ['service-pressure-drum', 561, 396, .65, -.6, 1.4, .23],
     ['service-access-hatch', 588, 410, .75, -.58, 1.5, .14],
     ['service-cable-tray', 616, 430, .7, .9],
+    ['service-transit-case', 376, 485, .8, -.58, 1.25, .25],
+    ['service-stowage-crate', 349, 509, .9, -.58, .15, .06],
+    ['service-transit-case', 381, 514, .55, .4],
+    ['service-access-hatch', 414, 480, .55, -.3, 1.5, .1],
+    ['service-cable-tray', 398, 506, .6, -.6],
+    ['service-pressure-drum', 337, 482, .55, -.5, 1.4, .2],
   ],
   // Open rack service is interrupted mid-patch. Captive trays and detached
   // cards remain on the central rack's native footprint.

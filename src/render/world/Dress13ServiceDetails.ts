@@ -39,13 +39,13 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     shards(405, 342, 0x697374);
     for (let i = 0; i < 4; i++) box(405 + i * 15, .04, 339 - i % 2 * 10, .3, .07, .22, 0x65716b, i * .6);
   } else if (id === 'breached-loading-bay') {
-    scuff(391, 457, 2.8, -.58); scuff(415, 434, 2.8, -.58);
+    scuff(345, 522, 3.2, -.58); scuff(382, 485, 3.0, -.58); scuff(415, 434, 2.8, -.58);
     box(399, .024, 451, .075, .002, 2.5, stain, -.58);
     box(412, .025, 443, .06, .002, 2.2, stain, -.58);
     // Suppression foam follows the torn shoulder instead of spilling into the
     // lower turning floor. Low irregular scallops read differently from ice.
     for (let i = 0; i < 14; i++) {
-      const g = new T.SphereGeometry(.18 + i % 3 * .04, 7, 4); g.scale(1, .13, .7); g.translate((548 + i * 8) / 32, .025, (433 + Math.sin(i * 1.7) * 8) / 32); put(g, 0xa3aaa0);
+      const g = new T.SphereGeometry(.18 + i % 3 * .04, 7, 4); g.scale(1, .13, .7); g.translate((470 + i * 5) / 32, .026, (400 + i * 4 + Math.sin(i * 1.7) * 4) / 32); put(g, 0xa3aaa0);
     }
     shards(590, 438, steel);
   } else if (id === 'relay-racks') {
