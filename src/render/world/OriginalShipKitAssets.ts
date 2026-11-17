@@ -50,7 +50,9 @@ async function decodeBrood(spec: RoomModelSpec, renderer: T.WebGLRenderer) {
   if (bytes.byteLength > spec.maxBytes) throw Error(`${spec.label} byte budget exceeded`);
   const transcoder = new KTX2Loader().setTranscoderPath(import.meta.env.BASE_URL + 'assets/basis/').setWorkerLimit(1).detectSupport(renderer);
   try {
-    return await new GLTFLoader().setKTX2Loader(transcoder).parseAsync(bytes, spec.url.slice(0, spec.url.lastIndexOf('/') + 1));
+    const asset = await new GLTFLoader().setKTX2Loader(transcoder).parseAsync(bytes, spec.url.slice(0, spec.url.lastIndexOf('/') + 1));
+    await asset.parser.getDependencies('texture');
+    return asset;
   } finally { transcoder.dispose(); }
 }
 
@@ -63,7 +65,7 @@ export function acquireOriginalShipKit(pack: OriginalKitPack, signal?: AbortSign
   if(pack.startsWith('p11-')) {
     const cacheKey = url + '/' + formats;
     let cache=p11Packs.get(cacheKey);
-    if(!cache){cache=new RoomModelCache([{url,maxBytes:pack==='p11-brood'?4_000_000:2_000_000,label:'Original '+pack+' set pieces'}], compressed ? spec => decodeBrood(spec, renderer!) : undefined);p11Packs.set(cacheKey,cache);} 
+    if(!cache){cache=new RoomModelCache([{url,maxBytes:pack==='p11-brood'?4_000_000:2_000_000,label:'Original '+pack+' set pieces'}], compressed ? spec => decodeBrood(spec, renderer!) : undefined);p11Packs.set(cacheKey,cache);}
     return cache.acquire(url,signal);
   }
   return (pack === 'structure' ? structurePack : functionPacks).acquire(url, signal);
