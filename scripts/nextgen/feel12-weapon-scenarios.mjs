@@ -30,13 +30,13 @@ export function registerFeel12WeaponScenarios(scenarios){
    const actors=lane.points.map(p=>({id:d.spawn(p.family,p.x,p.y,false),family:p.family,x:p.x,y:p.y}));
    if(actors.some(a=>!a.id))throw Error('FEEL12 native weapon spawn rejected');
    g.switchWeapon('${weapon}');const started=g.elapsed,shotsBefore=g.stats.shotsFired;
-   d.g5Proof={presentationOnly:false,stagedNativeEncounter:true,invulnerable:true,weapon:'${weapon}',focusFamily:'${focus}',actors,lane:{x:lane.x,y:lane.y,angle:lane.angle},scope:'Public switch/fire with native projectile, damage and corpse receipts; stationary staged firing lane, not campaign balance or human feel evidence'};
+   d.g5Proof={presentationOnly:false,stagedNativeEncounter:true,invulnerable:true,weapon:'${weapon}',focusFamily:'${focus}',captureOnlyTracking:${focus!=='crawler'},actors,lane:{x:lane.x,y:lane.y,angle:lane.angle},scope:'Public switch/fire with native projectile, damage and corpse receipts; focused victims use existing debug aim tracking, not campaign balance or human feel evidence'};
    Object.defineProperty(d.g5Proof,'weaponTimeline',{enumerable:true,get(){
     return {elapsed:g.elapsed,shotsBefore,shotsAfter:g.stats.shotsFired,selectedWeapon:g.combat.snapshot.weaponId,
      receipts:d.events.filter(e=>e.at>=started&&(e.type==='shot'||e.contact||e.type==='corpse'||e.type==='explosion')).map(e=>({...e})),
      targets:actors.map(a=>({id:a.id,family:a.family,snapshot:g.enemies.getSnapshot(a.id)??null}))};
    }});
-   d.setInput({x:0,y:0,fire:true,angle:lane.angle,autoAim:false});d.step(1000/60);d.refresh();
+   d.setInput({x:0,y:0,fire:true,angle:${focus==='crawler'?'lane.angle':'null'},autoAim:${focus!=='crawler'}});d.step(1000/60);d.refresh();
   })();`),
  });
  }
