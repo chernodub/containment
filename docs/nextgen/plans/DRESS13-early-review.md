@@ -19,3 +19,7 @@ Build passed. Native/480 capture review and visual correction await the shared b
 ## Crew Checkpoint
 Placement pass: baggage remains on and below the north inspection conveyor, beside a severed tray and restrained dark fan mark with four spent-case glints; the scanner fight floor is untouched.
 Build passed. Native/480 capture review and visual correction await the shared browser slot.
+
+## Armory
+Placement pass: half-closed magazine shutters and a dropped, open issue case gather north of the existing emptied carousel; no objects are added to the southern fight circle.
+Build pending shared-dist release. Native/480 capture review and visual correction await the shared browser slot.

@@ -58,5 +58,18 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('deck-rubber-panel',389,147,.35,[.65,.35,.32],.003,'clinical');
     for (let i=0;i<4;i++) put('deck-access-panel',399+i*7,143+(i%2)*9,i*.7,[.028,.3,.06],.004,'clinical');
   }
+  if (id === 'armory') {
+    // Half-closed magazine shutters and an abandoned issue case sit north
+    // of the carousel, leaving the southern issue-court fight circle clean.
+    for (const x of [572,628]) {
+      put('deck-access-panel',x,246,0,[.85,1,1],2.4,'clinical');
+      pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
+    }
+    put('service-transit-case',526,420,-.35,[1.2,.4,.8]);
+    put('deck-access-panel',508,409,-.65,[.48,1,.3],.03,'clinical');
+    put('deck-rubber-panel',532,438,.3,[.35,.3,.22],.003,'clinical');
+    put('service-cable-tray',541,425,.9,[.3,.3,.4]);
+    put('deck-access-panel',516,442,.6,[.035,.3,.08],.005,'clinical');
+  }
   return pieces;
 }
