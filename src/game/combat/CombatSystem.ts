@@ -617,10 +617,10 @@ export class CombatSystem {
     return request;
   }
 
-  applyDamage(amount: number): DamageResult {
-    if (!Number.isFinite(amount) || amount <= 0 || this.#dead) return noDamage();
+  applyDamage(amount: number, maximum = Infinity): DamageResult {
+    if (!Number.isFinite(amount) || amount <= 0 || Number.isNaN(maximum) || maximum <= 0 || this.#dead) return noDamage();
 
-    amount *= deriveBuildStats(this.#build, this.#weaponId).incomingDamageMultiplier;
+    amount = Math.min(maximum, amount * deriveBuildStats(this.#build, this.#weaponId).incomingDamageMultiplier);
     const absorbedByArmor = Math.min(this.#armor, amount);
     this.#armor = Math.max(0, this.#armor - absorbedByArmor);
     const healthDamage = Math.min(this.#health, amount - absorbedByArmor);

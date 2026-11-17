@@ -194,7 +194,7 @@ export function runSimulation(options: SimOptions) {
         game.newRun(options.seed, { version: 2, rig: options.rig, difficulty: options.difficulty });
     if (options.assisted) {
         const hurt = game.hurt.bind(game);
-        game.hurt = (n, origin) => hurt(n * .15, origin);
+        game.hurt = (n, origin, source) => hurt(n * .15, origin, source);
     }
     const report = { mode: 'sim-human-v1', difficulty: options.difficulty ?? 'standard', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, profile:human.profile, humanParameters:human.config, assisted: !!options.assisted, legacy: !!options.legacy,
         policy: 'Shared seeded human policy; 100ms observations, rate-limited inputs, 60Hz GameFeel, real DepthGame actions; analytic camera observer.',
