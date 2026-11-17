@@ -36,3 +36,5 @@ Whiteout: dark 480 timeline is a huge noisy floor field, competing with the enem
 Slam R2: opened both 480 phase contacts and dark native 04. Removing the duplicate sprite leaves a crisp advancing edge and persistent dark seams; still more electrical than fractured deck. Marine/enemy silhouettes remain distinct.
 
 Ram R2: opened native impact on both floors across the review/correction captures and both 480 contacts. Reduced solid prow opacity preserves the struck enemy and marine. Pressure remains restrained and the long skids dominate; below flagship quality.
+
+Bulwark R2: both 480 contacts and dark native 04 show readable supports, contact sparks and collapse shards, but the lane is edge-on. Final-check uses a different legal native lane to inspect the hex face; no camera changes.

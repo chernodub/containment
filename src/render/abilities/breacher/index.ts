@@ -475,6 +475,15 @@ export class BreacherPresentation implements AbilityPresentation {
     }
     if (growth > 0) {
       const halfLength = Math.max(.01, length * .5 - thickness * .16), yaw = Math.PI / 2 - e.angle;
+      // Sequential unfolding ribs establish depth without filling the shield silhouette.
+      for (let panel = 0; panel < 7; panel++) {
+        const along = (panel / 6 - .5) * halfLength * 2;
+        const unfold = k.reducedMotion ? 1 : Math.max(0, Math.min(1, (age - Math.abs(panel - 3) * .025) / .18));
+        if (unfold <= 0) continue;
+        k.ribbon(x + ux * along, .12, z + uz * along,
+          x + ux * along - nx * .08 * (1 - unfold), .12 + h * unfold, z + uz * along - nz * .08 * (1 - unfold),
+          panel % 2 ? EDGE : CORE, .018, fade * .5, false);
+      }
       // Bright friendly-facing hex lattice and restrained far-face scanning light.
       k.sprite(k.low ? 'scan' : 'hex', x - nx * thickness * .12, h * .5 + .12, z - nz * thickness * .12,
         halfLength, h * .5, EDGE, fade * flicker * .36, e.id, 'vertical', yaw);

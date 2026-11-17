@@ -17,7 +17,9 @@ export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline
    if(d.canStand(tx,ty,28)&&d.clearShot(tx,ty,{x,y}))score++;
   }candidates.push({x,y,angle,score});
  }
- candidates.sort((a,b)=>b.score-a.score);if(!candidates.length)throw Error('No V2 legal lane');
+ // Wall studies prefer a legal lane that presents the field face to the production camera.
+ const wallStudy=id==='bulwark'||id==='glacier';
+ candidates.sort((a,b)=>(b.score+(wallStudy?Math.abs(Math.sin(b.angle))*20:0))-(a.score+(wallStudy?Math.abs(Math.sin(a.angle))*20:0)));if(!candidates.length)throw Error('No V2 legal lane');
  let p;for(const candidate of candidates){Object.assign(g.player,{x:candidate.x,y:candidate.y,angle:candidate.angle,vx:0,vy:0});g.setAimPoint({x:candidate.x+Math.cos(candidate.angle)*150,y:candidate.y+Math.sin(candidate.angle)*150});if(g.abilities.snapshot.slots.power.ready){p=candidate;break;}}
  if(!p)throw Error('No authoritative V2 power placement');Object.assign(g.player,{x:p.x,y:p.y,angle:p.angle,vx:0,vy:0});d.setInput({x:0,y:0,fire:false,angle:p.angle,autoAim:false});d.step(3800);g.enemies.reset();d.refresh();
  const population=heavy?(showcase&&room!=='armory'?12:25):5;
