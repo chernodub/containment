@@ -81,3 +81,76 @@ Check during integration:
 - Motion strips for the new mass: brute belly (`chest`/`tail` blend), carrier sagging sac when the tail lifts (`tail`→`tip` blend), stalker elite blade on `arm_mid.R`, spitter elite vessel on the neck.
 - Footprint radius grew slightly (feet pads): in-game scale dropped ~5–10 % for crawler/brute; aspect raised for brute (1.8) to compensate.
 - Ragdoll boxes still fit from skin vertices; the heavier warden shield/ram are rigid on `forearm.l`/`head`.
+
+## Third pass (2026-11-17) — boss tier, brood pod, silhouette fixes
+
+Skeleton contract unchanged (bone names, hierarchy, rest pose, inverse binds, clips). Rank node names unchanged.
+
+### Boss tier: sizes for the integration agent
+
+Each boss rank skin carries node extras `k11RankScale`. The loader (`OriginalCreatureAnatomy.originalCreatureFootprints`,
+`models.ts` `fitFootprint`) now applies it **uniformly** when the champion rank is selected: horizontal fit =
+`k11RankScale × nativeRadius × 0.94 / radial(boss skin)`, vertical × `k11RankScale`, feet kept on the deck by offsetting the
+asset origin (`groundY × (scale − 1)`). The drawn footprint therefore assumes the native collider is scaled by the same factor —
+**you must scale the Warden/Matron collision radius and attack footprints** (simulation side, not done here).
+
+| Rank | `k11RankScale` | In-game height (rest, est.) | Collider radius to use | Attack geometry |
+|---|---:|---:|---:|---|
+| Brute Warden | 2.3 | ≈ 4.0 m (≈ 1.95 × marine 2.05 m) | 0.875 × 2.3 = **2.0 m** | Ram front ≈ 1.4 m ahead of the body centre at rest (inside the collider): charge strike = capsule of radius 2.0 m swept ≥ 1.2 m beyond the collider edge; ram top ≈ 2.6 m |
+| Carrier Matron | 1.4 | ≈ 4.6 m (spire top; ≈ 2.2 × marine) | 0.75 × 1.4 = **1.05 m** | Hatch vents at ≈ 3.2 / 3.7 / 4.1 m height on the spire, facing front-right, back and front-left; spawn hatchlings/pods on a ring of 1.6–2.2 m from the centre |
+| Regular Brute / Carrier | 1 | 1.48 m / 2.02 m | 0.875 / 0.75 m | unchanged |
+
+Per-rank estimates are written to `artifacts/nextgen/k11-final/<caste>/stats.json` (`*_estimate`). Health-bar height uses the
+selected rank's skin bounds — verify it clears the scaled boss (it reads `assetRoot` scale through the world matrix).
+
+### Named emission regions (now authored, not hard-coded)
+
+`_K11REGION` (VEC2 float, x = **`warden-ram`**, y = **`matron-vents`**) is exported on the boss skins from named sculpture
+primitives; `prepareEmissionRegions` uses it when present (the old hard-coded positions remain only as fallback). Warden:
+the whole battering ram and its brow cheek bosses. Matron: the three ribbed vents (lips + glowing cores). The meshopt geometry
+pack preserves the attribute (checked); keep it through the T12/LOD steps (`lod.mjs` reuses vertex accessors, so it should).
+
+### Anatomy changes
+
+- **Warden**: one broad leaning bone shield-wall on the left flank rising above the back (struts into the chest, bound to
+  `chest` so arm swings pass inside it), a continuous sagittal crest fin brow→hind (no spikes), a massive blunt brow ram
+  (`head`) with cheek bosses, right forearm knuckle bosses. Boss rank 21.5k tris.
+- **Matron**: brood mass with mantle shingles, a three-chamber ribbed brood spire leaning back (`tail`→`tail.001` blend)
+  with three vents and a crown lantern, two hanging pod clusters per side on sinew stalks (`tail`/`tip` blend), four
+  attendant stalks with pod bulbs rising from the thorax (`body*`). Boss rank 21.5k tris.
+- **Carrier** (all ranks): sac lowered and heavier, middle/hind legs 1.15×/1.4× girth, sinew slings from the upper legs into the sac.
+- **Stalker**: flared shoulder hood plates on `arm_up.*`, scythes widened (0.26) and held flat-face-up with edges outward.
+  Note: the horizontal collider fit shrinks the whole stalker as its silhouette widens, so the 40 px gain is modest; if more is
+  wanted, raise the stalker's visual radius allowance or `ASPECT` in `stalker.py`.
+- **Spitter**: ribbed glowing acid duct (ORGAN zone, follows `spine1→spine2→neck→head→jaw`) from the vessel along the neck crest
+  into the mortar mouth, with sinew collars.
+
+### Brood pod asset (new)
+
+`public/assets/brood-growth/brood-pod.glb` (+ `brood-pod-normal.png` 512, `manifest-pod.json`), rebuild
+`sh tools/assets/k11-creatures/growth/rebuild.sh --set=pod`. Static P11-format meshes (COLOR_0 × normal atlas):
+nodes **`brood-pod`** and **`brood-pod-hatching`** (1.5k tris each, 0.95 m tall, bottom-centred floor cup with rooted spill).
+Finishes: `brood-pod-shell` (opaque) and **`pod-core`** (emissive magenta core seen through six rib slits; the hatching
+variant splits the crown and bulges the core out). Drive `pod-core` emissiveIntensity ≈ 0.3 → 3.0 as the hatch countdown and
+swap to `brood-pod-hatching` for the final ~0.5 s. Replace the stationary-Crawler stand-in with these meshes (not skinned).
+
+### Repack (toktx was not available on this machine — run these)
+
+```sh
+sh tools/assets/k11-creatures/rebuild.sh                 # all five creature GLBs (PNG source images)
+node tools/assets/i11-models/optimize.mjs                # geometry pack (already run for brute/carrier/stalker/spitter)
+TOKTX=/path/to/toktx node tools/assets/t12-textures/pack.mjs   # KTX2 shipping + plain/ PNG fallbacks
+node tools/assets/i11-models/lod.mjs                     # PERF13 base-rank LOD siblings on both sets
+npm run build
+```
+Until T12 is rerun, `public/assets/models/*.glb` hold the new geometry with PNG images (loads fine on the KTX path) while
+`public/assets/models/plain/` still holds the previous fallback set. The growth kit/pod use their own packers
+(`tools/assets/t12-textures/pack-brood.mjs`, `tools/assets/i11-models/brood-lod.mjs`) — include `brood-pod.glb` there.
+
+### Check in the clips
+
+- Warden **charge**: the ram leads, the shield-wall must not cut through the left crusher at full swing (it is on `chest`);
+  watch the crest fin on hard head pitches. Scale 2.3 magnifies any knee/shoulder pinching — check run and charge strips.
+- Matron **hatch**: vents face outward from the spire; the spire follows the tail lift (`tail`→`tail.001`), hanging pod clusters
+  swing with the brood (`tail`/`tip`); check death/ragdoll (tall spire may need the corpse slump noted in I11).
+- Carrier slings blend leg→`tail`: verify no stretching on long strides; Stalker hood on `arm_up` during strikes.
