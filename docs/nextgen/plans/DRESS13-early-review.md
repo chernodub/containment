@@ -23,3 +23,5 @@ Build passed. Native/480 capture review and visual correction await the shared b
 ## Armory
 Placement pass: half-closed magazine shutters and a dropped, open issue case gather north of the existing emptied carousel; no objects are added to the southern fight circle.
 Build pending shared-dist release. Native/480 capture review and visual correction await the shared browser slot.
+
+Loader review correction: moved the dropped Awakening/Passenger/Armory case origins outside the authored hero AABBs; the loader retires `p11-service` supports inside hero bounds. This avoids silently omitting the incident cases. Type-check passed; visual acceptance still pending.

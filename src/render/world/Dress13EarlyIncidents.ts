@@ -22,15 +22,15 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
   }
   if (id === 'awakening-bay') {
     // Release debris and a dropped recovery kit below the forced-open berths.
-    put('service-transit-case',603,339,-.35,[.75,.5,.7]);
+    put('service-transit-case',603,360,-.35,[.75,.5,.7]);
     put('deck-access-panel',617,330,.55,[.32,1,.25],.02,'clinical');
     for (let i=0;i<6;i++) put('deck-rubber-panel',620+(i%2?7:-7)+i*4,350+i*8,.25,[.07,.35,.12],.002,'clinical');
   }
   if (id === 'passenger-vault') {
     // Empty personal-effects drawer is authored in the carrier; its contents
     // have fallen into the bank's front edge rather than the entry fight lane.
-    put('service-transit-case',446,343,.4,[.5,.32,.5]);
-    put('service-transit-case',472,341,-.6,[.35,.25,.4]);
+    put('service-transit-case',446,369,.4,[.5,.32,.5]);
+    put('service-transit-case',472,365,-.6,[.35,.25,.4]);
     put('deck-access-panel',439,355,.35,[.13,.5,.18],.005,'clinical');
     put('deck-access-panel',456,361,-.35,[.12,.5,.16],.005,'clinical');
     put('deck-rubber-panel',475,355,.8,[.18,.4,.2],.004,'clinical');
@@ -65,10 +65,10 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
       put('deck-access-panel',x,246,0,[.85,1,1],2.4,'clinical');
       pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
     }
-    put('service-transit-case',526,420,-.35,[1.2,.4,.8]);
+    put('service-transit-case',503,420,-.35,[1.2,.4,.8]);
     put('deck-access-panel',508,409,-.65,[.48,1,.3],.03,'clinical');
     put('deck-rubber-panel',532,438,.3,[.35,.3,.22],.003,'clinical');
-    put('service-cable-tray',541,425,.9,[.3,.3,.4]);
+    put('service-cable-tray',506,438,.9,[.3,.3,.4]);
     put('deck-access-panel',516,442,.6,[.035,.3,.08],.005,'clinical');
   }
   return pieces;
