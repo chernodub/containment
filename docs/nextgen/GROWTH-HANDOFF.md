@@ -11,6 +11,11 @@ violet lantern organs. Built with the K11 SDF sculpting pipeline.
   Place it like any P11 piece: `{pack:'p11-brood', asset:'brood-nest-large', matrix, purpose}` in the room's `P11*Placements.ts`.
 - Review images: `artifacts/nextgen/growth-final/` (`review-swarm-junction.png` is the composed test below, in game; `kit-beauty.png`, `kit-gameplay.png`).
 
+## Shipping texture step (DRESS13)
+
+After rebuilding the source GLB, run `TOKTX=/path/to/toktx node tools/assets/t12-textures/pack-brood.mjs`.
+This preserves the source `brood-growth.glb` as the PNG fallback and writes `brood-growth-ktx.glb` with one linear UASTC normal atlas and a full mip chain; `shipping.json` records bytes and bounded texture payload. The runtime selects compressed shipping on supported desktop GPUs, borrowing the decoded atlas through the existing session cache. Its temporary transcoder workers retire after decode; room borrows keep the cache's exact-once ownership.
+
 ## Finishes (emissive names the game can pulse)
 
 | Finish | Role | Pulse |

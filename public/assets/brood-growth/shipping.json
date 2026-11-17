@@ -1,0 +1,16 @@
+{
+  "source": "brood-growth.glb",
+  "compressed": "brood-growth-ktx.glb",
+  "normalAtlas": {
+    "width": 1024,
+    "height": 1024,
+    "encoding": "UASTC quality 4, linear, Zstd 18, full mip chain",
+    "pngBytes": 993516,
+    "ktxBytes": 761897,
+    "rgba8MipBytes": 5592404,
+    "compressed8bppMipBytes": 1398128
+  },
+  "sourceBytes": 2817020,
+  "compressedBytes": 2585452,
+  "rebuild": "TOKTX=/path/to/toktx node tools/assets/t12-textures/pack-brood.mjs"
+}

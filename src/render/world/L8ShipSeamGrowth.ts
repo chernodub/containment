@@ -12,6 +12,7 @@ const distanceToSegment=(p:Point,a:Point,b:Point)=>{const d=(b.x-a.x)**2+(b.y-a.
 /** Dry living membranes follow construction, not random stains. Fixed budget,
  * existing Standard material family, no textures/animation/tier allocations. */
 export function buildL8ShipSeamGrowth(id:string,t:Plan):T.Group|null{
+ if(id === 'swarm-junction' || id === 'infested-workshop') return null; // DRESS13 replaces strands with the authored Brood masses.
  if(!['infested-workshop','swarm-junction'].includes(id))return null;
  const plan=SHIP_ARCHITECTURE_PLANS[id as keyof typeof SHIP_ARCHITECTURE_PLANS];
  // An exact live-plan opt-in preserves historical/legacy construction.

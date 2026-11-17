@@ -270,7 +270,7 @@ export function addConstructionLanguage(
     root.userData.narrativeVignette={id:narratives[id],source:'storyRooms.ts',outboard:true,objective:storyRoomFor(id)?.objective??'The Queen occupies the reactor.'};
   }
   root.userData.narrativeVignette.parts=acceptedParts-beforeNarrative;
-  const consumed=environment==='infested'||id==='breached-loading-bay'||id==='reactor-vault';
+  const consumed=(environment==='infested' && !['swarm-junction','infested-workshop'].includes(id))||id==='breached-loading-bay'||id==='reactor-vault';
   if(consumed){
     type ConsumptionFixture={x:number;y:number;z:number;color:number;nativeColor:true;poolStyle:3;growthSource:true;poolWidth:number;poolDepth:number;poolAngle:number;gain:number};
     const fixtures:ConsumptionFixture[]=[],forms:Array<{kind:string;source:number[];footprint?:Rect}>=[];

@@ -47,10 +47,18 @@ export async function stageGraphicsKiting(room, options={}){
   }
   candidates.sort((a,b)=>b.score-a.score);if(!candidates.length)throw Error('No legal kiting lane');
   const lane=candidates[0];Object.assign(g.player,{x:lane.x,y:lane.y,angle:lane.angle});d.setInput({x:0,y:0,fire:false,angle:lane.angle,autoAim:false});d.step(600);
-  const enemies=[];for(const range of (options.live?[140,190,240,290]:[170,230,290,350]))for(let i=0;i<7&&enemies.length<12;i++){
-   const angle=lane.angle+(i-3)*.24,p={x:lane.x+Math.cos(angle)*range,y:lane.y+Math.sin(angle)*range};
+  const targetCount=options.count??12, spread=targetCount>12?13:7;
+  const enemies=[];for(const range of (options.live?[140,190,240,290]:targetCount>12?[170,230,290,350,410,470]:[170,230,290,350]))for(let i=0;i<spread&&enemies.length<targetCount;i++){
+   const angle=lane.angle+(i-(spread-1)/2)*.24,p={x:lane.x+Math.cos(angle)*range,y:lane.y+Math.sin(angle)*range};
    if(!d.canStand(p.x,p.y,28)||!d.clearShot(p.x,p.y)||enemies.some(e=>Math.hypot(e.x-p.x,e.y-p.y )<(options.live?45:55)))continue;
    const family=['brute','crawler','spitter','stalker','crawler','carrier'][enemies.length%6],elite=enemies.length%5===0,id=d.spawn(family,p.x,p.y,elite);if(id)enemies.push({...p,id,family,elite});
+  }
+  // The twenty-contact dressing study also uses the guaranteed clear arena
+  // interior when surrounding machinery occludes the ordinary forward fan.
+  if(targetCount>12&&enemies.length<targetCount)for(const range of [110,170,230,290])for(let i=0;i<64&&enemies.length<targetCount;i++){
+   const angle=lane.angle+i*Math.PI/32,p={x:lane.x+Math.cos(angle)*range,y:lane.y+Math.sin(angle)*range};
+   if(!d.canStand(p.x,p.y,28)||!d.clearShot(p.x,p.y)||enemies.some(e=>Math.hypot(e.x-p.x,e.y-p.y)<55))continue;
+   const id=d.spawn('crawler',p.x,p.y,false);if(id)enemies.push({...p,id,family:'crawler',elite:false});
   }
   if(enemies.length<10)throw Error('Kiting fixture requires ten spread threats; got '+enemies.length+' at '+JSON.stringify(lane));
   const shotsBefore=g.stats.shotsFired,grenadesBefore=g.bullets.filter(b=>b.kind==='grenade').length;g.switchWeapon('rifle');d.setInput({x:-Math.cos(lane.angle)*.55,y:-Math.sin(lane.angle)*.55,fire:true,angle:lane.angle,autoAim:false});g.grenade();const grenadeThrown=g.bullets.filter(b=>b.kind==='grenade').length>grenadesBefore;d.step(300);

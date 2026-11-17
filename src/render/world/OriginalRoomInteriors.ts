@@ -1,3 +1,5 @@
+import {addDress13EarlyDetails} from './Dress13EarlyIncidents';
+import {addDress13ServiceDetails} from './Dress13ServiceDetails';
 import {p11IncidentPlacements} from './P11IncidentPlacements';
 import {p11ServicePlacements} from './P11ServicePlacements';
 import {p11MaintenancePlacements} from './P11MaintenancePlacements';
@@ -96,7 +98,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
 }
 /** Original model owner settles before combat warmup. Session transfers survive
  * a room cancellation; partial/late borrows retire independently and quietly. */
-export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onChanged: () => void, prerequisite: Promise<unknown> = Promise.resolve(), highQuality: () => boolean = () => true) {
+export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onChanged: () => void, prerequisite: Promise<unknown> = Promise.resolve(), highQuality: () => boolean = () => true, renderer?: T.WebGLRenderer) {
     const controller = new AbortController(), borrowed = new Set<T.Group>(), sources = new Map<OriginalKitPack, T.Group>();
     const restores: (() => void)[] = [], geometryChanges: {
         mesh: T.Mesh;
@@ -120,7 +122,7 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
                 return;
             const instances = instancesFor(t), packs = [...new Set(instances.map(i => i.pack))];
             const results = await Promise.allSettled([loadDeckSurfaces(world, t, () => active, dispose => restores.push(dispose)), ...packs.map(async (pack) => {
-                const source = await acquireOriginalShipKit(pack, controller.signal);
+                const source = await acquireOriginalShipKit(pack, controller.signal, renderer);
                 if (!active) {
                     retireRoomModels(source);
                     return;
@@ -133,7 +135,9 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             const failed = results.find(r => r.status === 'rejected');
             if (failed?.status === 'rejected')
                 throw failed.reason;
-            root = buildOriginalShipKit(sources, instances);
+            root = buildOriginalShipKit(sources, instances, t);
+            addDress13ServiceDetails(root, t.id);
+            addDress13EarlyDetails(root, t.id);
             if(t.id==='shielding-gate'){
                 const oldGate=world.getObjectByName('shielding-gate-west');
                 if(oldGate){const visible=oldGate.visible;oldGate.visible=false;restores.push(()=>{oldGate.visible=visible;});}

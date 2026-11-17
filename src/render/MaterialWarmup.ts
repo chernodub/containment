@@ -287,7 +287,11 @@ export class MaterialWarmup {
       ? Math.max(1, Math.floor(imageHeight!)) : 1;
     const width = source.mapping === T.CubeUVReflectionMapping ? Math.max(1, Math.ceil(height * 3 / 4)) : 1;
     const data = () => samplerPixels(source, width, height);
-    const format = source.format as T.PixelFormat;
+    // Compressed formats are valid only for compressed uploads. The retained
+    // sampler compiles the same sampler2D shader with a tiny RGBA placeholder.
+    const compressed = source instanceof T.CompressedTexture;
+    const format = compressed ? T.RGBAFormat : source.format as T.PixelFormat;
+    const type = compressed ? T.UnsignedByteType : source.type;
     let texture: T.Texture;
     if (source instanceof T.CubeTexture) {
       const faces = Array.from({ length: 6 }, () => new T.DataTexture(data(), 1, 1, format, source.type));
@@ -302,9 +306,9 @@ export class MaterialWarmup {
     texture.mapping = source.mapping;
     texture.channel = source.channel;
     texture.colorSpace = source.colorSpace;
-    texture.format = source.format;
-    texture.type = source.type;
-    texture.internalFormat = source.internalFormat;
+    texture.format = format;
+    texture.type = type;
+    texture.internalFormat = compressed ? null : source.internalFormat;
     (texture as SamplerTexture).normalized = (source as SamplerTexture).normalized;
     texture.generateMipmaps = false;
     texture.minFilter = texture.magFilter = T.NearestFilter;

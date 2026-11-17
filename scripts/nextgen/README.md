@@ -1195,3 +1195,6 @@ historical Crew Checkpoint position/contacts with explicit missing-history limit
 `cam12-heavy-audit.mjs` reads native attack phases from existing burst captures.
 `cam12-review.mjs --sweep=final-sweep` makes exact-area480 reductions and
 reference pairs without opening a browser. Run browser jobs serially.
+
+DRESS13 uses opt-in `dress13-kiting:<room>` for a twenty-contact version of the existing G6 native movement/fire fixture. It widens the legal spawn fan and adds outer rings; ordinary `g6-kiting` retains its twelve-contact contract. Both remain staged art evidence, separate from native campaigns and hardware benchmarks; inspect the retained actor receipts for actual accepted contacts.
+DRESS13's paired all-room benchmark includes110/145-unit refill rings in the native clear arena, alongside the existing outer rings. Spawn points still require radius40 legal floor and the existing live-enemy spacing, with110 units minimum marine separation. The25-contact target and sustained-population checks are unchanged; this repairs insufficient legal refill coverage in Atrium's compartmentalized floor rather than lowering stress acceptance.

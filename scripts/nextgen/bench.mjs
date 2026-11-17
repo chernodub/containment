@@ -291,7 +291,9 @@ try{
    });
    const sceneLightInventory=allSceneLights.length,instanceMeshInventory=allInstanceMeshes.length;
    const lane=d.benchmarkLane,refillPoints=[];
-   for(let radius=180;radius<=480;radius+=60)for(let i=0;i<32;i++){const a=i*Math.PI/16,x=lane.x+Math.cos(a)*radius,y=lane.y+Math.sin(a)*radius;if(d.canStand(x,y,40))refillPoints.push({x,y});}
+   for(const radius of [110,145,180,240,300,360,420,480])for(let i=0;i<32;i++){const a=i*Math.PI/16,x=lane.x+Math.cos(a)*radius,y=lane.y+Math.sin(a)*radius;if(d.canStand(x,y,40))refillPoints.push({x,y});}
+   // Fill legal gaps between polar samples in compartmentalized rooms.
+   for(let y=lane.y-480;y<=lane.y+480;y+=32)for(let x=lane.x-480;x<=lane.x+480;x+=32)if(Math.hypot(x-lane.x,y-lane.y)<=480&&d.canStand(x,y,40))refillPoints.push({x,y});
    const refillTypes=['brute','spitter','crawler','stalker','carrier'];
    let refillCursor=0,refillSerial=0,replenished=0;
    const refillAudit={points:refillPoints.length,passes:0,blockedPasses:0,maxDeficit:0};
@@ -306,7 +308,7 @@ try{
      const enemies=g.enemies.snapshot.enemies;let spawned=false;
      for(let attempt=0;attempt<refillPoints.length;attempt++){
       const point=refillPoints[refillCursor++%refillPoints.length],distance=Math.hypot(point.x-g.player.x,point.y-g.player.y);
-      if(distance<180||distance>620||!d.clearShot(point.x,point.y))continue;
+      if(distance<110||distance>620||!d.clearShot(point.x,point.y))continue;
       let clear=true;for(const e of enemies)if(e.health>0&&Math.hypot(e.x-point.x,e.y-point.y)<e.radius+52){clear=false;break;}
       if(!clear)continue;
       if(d.spawn(refillTypes[refillSerial%5],point.x,point.y,refillSerial%6===0)){replenished++;refillSerial++;spawned=true;break;}

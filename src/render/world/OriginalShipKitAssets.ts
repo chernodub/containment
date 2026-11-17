@@ -1,6 +1,11 @@
 import * as T from 'three';
+import type {RoomTemplate} from '../../game/roguelike/types';
+import {clearPolygonTopology} from '../../game/world/polygonGeometry';
+import {environmentClock} from '../lighting/HotFixtureSurface';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {RoomModelCache} from '../RoomModelCache';
+import {RoomModelCache, type RoomModelSpec} from '../RoomModelCache';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
 import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
 
 export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-reactor' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance' | 'p11-incidents' | 'p11-brood';
@@ -33,15 +38,36 @@ const structurePack = new RoomModelCache([
   {url: URLs.structure, maxBytes: 2_000_000, label: 'Original ship structure kit'},
 ]);
 
-const p11Packs = new Map<OriginalKitPack,RoomModelCache>();
+const p11Packs = new Map<string,RoomModelCache>();
+const compressedFormats = ['WEBGL_compressed_texture_astc', 'WEBGL_compressed_texture_etc', 'WEBGL_compressed_texture_s3tc', 'EXT_texture_compression_bptc'];
+/** The cache owns decoded textures; a short-lived transcoder owns only workers.
+ * Cancelled room borrowers retire independently through RoomModelCache. */
+async function decodeBrood(spec: RoomModelSpec, renderer: T.WebGLRenderer) {
+  const response = await fetch(spec.url);
+  if (!response.ok) throw Error(`${spec.label} HTTP ${response.status}`);
+  if (Number(response.headers.get('content-length')) > spec.maxBytes) {
+    await response.body?.cancel(); throw Error(`${spec.label} byte budget exceeded`);
+  }
+  const bytes = await response.arrayBuffer();
+  if (bytes.byteLength > spec.maxBytes) throw Error(`${spec.label} byte budget exceeded`);
+  const transcoder = new KTX2Loader().setTranscoderPath(import.meta.env.BASE_URL + 'assets/basis/').setWorkerLimit(1).detectSupport(renderer);
+  try {
+    const asset = await new GLTFLoader().setKTX2Loader(transcoder).parseAsync(bytes, spec.url.slice(0, spec.url.lastIndexOf('/') + 1));
+    await asset.parser.getDependencies('texture');
+    return asset;
+  } finally { transcoder.dispose(); }
+}
 
 /** Fixed, lazy session templates. The caller retires each returned borrow. */
-export function acquireOriginalShipKit(pack: OriginalKitPack, signal?: AbortSignal): Promise<T.Group> {
-  const url = URLs[pack];
+export function acquireOriginalShipKit(pack: OriginalKitPack, signal?: AbortSignal, renderer?: T.WebGLRenderer): Promise<T.Group> {
+  const formats = pack === 'p11-brood' && renderer ? compressedFormats.filter(name => renderer.extensions.has(name)).join(',') : '';
+  const compressed = Boolean(formats);
+  const url = compressed ? import.meta.env.BASE_URL + 'assets/brood-growth/brood-growth-ktx.glb' : URLs[pack];
   if (!url) return Promise.reject(Error('Unknown original ship kit pack: ' + pack));
   if(pack.startsWith('p11-')) {
-    let cache=p11Packs.get(pack);
-    if(!cache){cache=new RoomModelCache([{url,maxBytes:pack==='p11-brood'?4_000_000:2_000_000,label:'Original '+pack+' set pieces'}]);p11Packs.set(pack,cache);}
+    const cacheKey = url + '/' + formats;
+    let cache=p11Packs.get(cacheKey);
+    if(!cache){cache=new RoomModelCache([{url,maxBytes:pack==='p11-brood'?4_000_000:2_000_000,label:'Original '+pack+' set pieces'}], compressed ? spec => decodeBrood(spec, renderer!) : undefined);p11Packs.set(cacheKey,cache);}
     return cache.acquire(url,signal);
   }
   return (pack === 'structure' ? structurePack : functionPacks).acquire(url, signal);
@@ -56,6 +82,9 @@ export type OriginalKitInstance = {
   cutaway?: boolean;
   /** Secondary fittings are omitted from the existing batches on Low. */
   highDetail?: boolean;
+  /** Baked presentation gain for heat-killed growth; no new texture or shader family. */
+  surfaceGain?: number;
+  emissionGain?: number;
 };
 
 type Bucket = {material: T.MeshStandardMaterial; geometries: T.BufferGeometry[]; castShadow: boolean; vertices:number; lowVertices:number; cutaway:boolean};
@@ -140,6 +169,7 @@ function sourceEmitters(geometry: T.BufferGeometry): Emitter[] {
 export function buildOriginalShipKit(
   sources: ReadonlyMap<OriginalKitPack, T.Group>,
   instances: readonly OriginalKitInstance[],
+  template?: RoomTemplate,
 ): T.Group {
   const result = new T.Group();
   result.name = 'e9-original-ship-kit'; result.userData.visualOnly = true;
@@ -152,7 +182,7 @@ export function buildOriginalShipKit(
   let totalTriangles = 0;
   const ranges:QualityRange[]=[];
   try {
-    const heroBounds=instances.filter(i=>i.pack.startsWith('p11-') && i.pack!=='p11-service').map(i=>{
+    const heroBounds=instances.filter(i=>i.pack.startsWith('p11-') && i.pack!=='p11-service' && i.pack!=='p11-brood').map(i=>{
       const asset=sources.get(i.pack)?.getObjectByName(i.asset);
       return asset ? new T.Box3().setFromObject(asset).applyMatrix4(i.matrix) : null;
     }).filter((b):b is T.Box3=>b!==null);
@@ -161,11 +191,11 @@ export function buildOriginalShipKit(
     for (const instance of ordered) {
       // Retire a stock furnishing only when its origin lies inside a new hero.
       // Hulls and portal structure retain their independent ownership.
-      if(!instance.pack.startsWith('p11-') && instance.pack!=='structure' &&
+      if(!instance.pack.startsWith('p11-') && instance.pack!=='structure' && !instance.purpose.startsWith('DRESS13 /') &&
          heroBounds.some(b=>b.containsPoint(new T.Vector3().setFromMatrixPosition(instance.matrix)))) continue;
 
       // Roof fittings follow their stock support when a hero replaces it.
-      if(instance.pack==='p11-service'){
+      if(instance.pack==='p11-service' && !instance.purpose.startsWith('DRESS13 /')){
         const support=new T.Vector3().setFromMatrixPosition(instance.matrix);support.y=0;
         if(heroBounds.some(b=>b.containsPoint(support)))continue;
       }
@@ -173,6 +203,7 @@ export function buildOriginalShipKit(
       if (!source || !asset) throw Error(`Original ${instance.pack} ship kit asset missing: ${instance.asset}`);
       if (!instance.matrix.elements.every(Number.isFinite) || Math.abs(instance.matrix.determinant()) < 1e-12)
         throw Error('Invalid original ship kit instance transform: ' + instance.asset);
+      const floorCreep = instance.pack === 'p11-brood' && /^brood-creep-[abc]$/.test(instance.asset);
       const bounds = new T.Box3(), lamps: {position: T.Vector3; area: number; color: number}[] = [];
       const parts:{finish:string;start:number;end:number}[]=[];
       let instanceTriangles = 0, meshCount = 0;
@@ -195,21 +226,50 @@ export function buildOriginalShipKit(
           geometry.userData = {}; ownedGeometry.add(geometry);
           const sourceColor = geometry.getAttribute('color'), rgb = new Float32Array(geometry.getAttribute('position').count * 4);
           for (let i = 0; i < sourceColor.count; i++) {
-            rgb[i * 4] = sourceColor.getX(i); rgb[i * 4 + 1] = sourceColor.getY(i); rgb[i * 4 + 2] = sourceColor.getZ(i);rgb[i*4+3]=1;
+            rgb[i * 4] = sourceColor.getX(i) * (instance.surfaceGain ?? 1); rgb[i * 4 + 1] = sourceColor.getY(i) * (instance.surfaceGain ?? 1); rgb[i * 4 + 2] = sourceColor.getZ(i) * (instance.surfaceGain ?? 1);rgb[i*4+3]=1;
           }
           for (const name of Object.keys(geometry.attributes)) if (name !== 'position' && name !== 'normal' && !(name === 'uv' && sourceMaterial.normalMap)) geometry.deleteAttribute(name);
           geometry.setAttribute('color', new T.BufferAttribute(rgb, 4));
-          geometry.applyMatrix4(combined); geometry.computeBoundingBox(); bounds.union(geometry.boundingBox!);
+          geometry.applyMatrix4(combined);
+          if (floorCreep && template) {
+            // Only owned output triangles are trimmed. Source buffers and native
+            // floor/collision geometry remain untouched; no query mesh is created.
+            const p = geometry.getAttribute('position'), kept: number[] = [];
+            for (let i = 0; i < p.count; i += 3) {
+              const a = {x:p.getX(i)*32,y:p.getZ(i)*32}, b = {x:p.getX(i+1)*32,y:p.getZ(i+1)*32}, c = {x:p.getX(i+2)*32,y:p.getZ(i+2)*32};
+              const center = {x:(a.x+b.x+c.x)/3,y:(a.y+b.y+c.y)/3};
+              if (clearPolygonTopology(template,a,b) && clearPolygonTopology(template,b,c) && clearPolygonTopology(template,c,a) && clearPolygonTopology(template,center,center)) kept.push(i,i+1,i+2);
+            }
+            if (!kept.length) {geometry.dispose();ownedGeometry.delete(geometry);return;}
+            for (const [name, attribute] of Object.entries(geometry.attributes) as [string, T.BufferAttribute | T.InterleavedBufferAttribute][]) {
+              const values = new Float32Array(kept.length * attribute.itemSize);
+              for (let i = 0; i < kept.length; i++) for (let c = 0; c < attribute.itemSize; c++) values[i*attribute.itemSize+c] = c === 0 ? attribute.getX(kept[i]) : c === 1 ? attribute.getY(kept[i]) : c === 2 ? attribute.getZ(kept[i]) : attribute.getW(kept[i]);
+              geometry.setAttribute(name,new T.BufferAttribute(values,attribute.itemSize));
+            }
+          }
+          geometry.computeBoundingBox(); bounds.union(geometry.boundingBox!);
           const count = geometry.getAttribute('position').count / 3;
           totalTriangles += count; instanceTriangles += count;
           const finish = sourceMaterial.name;
           // Each pack owns a distinct UV atlas; equal finish names cannot merge across it.
-          const bucketKey = sourceMaterial.normalMap ? instance.pack + '/' + finish : finish;
+          const bucketKey = (sourceMaterial.normalMap ? instance.pack + '/' + finish : finish) + (instance.emissionGain === undefined ? '' : '/emission-' + instance.emissionGain);
           let bucket = buckets.get(bucketKey);
           if (!bucket) {
             const material = sourceMaterial.clone();
-            ownedMaterials.add(material); material.name = finish; material.vertexColors = true;
+            ownedMaterials.add(material); material.emissiveIntensity *= instance.emissionGain ?? 1; material.name = finish; material.vertexColors = true;
             material.userData.actorMaterial = true; material.userData.originalShipKitFinish = finish;
+            if (finish === 'brood-lantern' || finish === 'brood-pod-glow') {
+              const previous = material.onBeforeCompile, key = material.customProgramCacheKey();
+              const pod = finish === 'brood-pod-glow';
+              material.onBeforeCompile = (shader, renderer) => {
+                previous.call(material, shader, renderer);
+                shader.uniforms.broodTime = environmentClock;
+                shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float broodTime;');
+                shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>',
+                  '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= 1.0 + 0.4 * sin(broodTime * ' + (pod ? '.47 + 2.1' : '.79') + ');');
+              };
+              material.customProgramCacheKey = () => key + ':dress13-brood-' + (pod ? 'pod' : 'lantern');
+            }
             if (finish.startsWith('e9-floor-')) material.userData.floorDressing = true;
             if (material.emissive.getHex() !== 0 && material.emissiveIntensity > 0) material.userData.motivatedEmitter = true;
             if (material.transparent || material.opacity < 1) material.depthWrite = false;
@@ -240,6 +300,7 @@ export function buildOriginalShipKit(
       // The instance matrix replaces the named asset group's placement. Child
       // transforms remain relative to that native bottom-centred group.
       visit(asset, new T.Matrix4());
+      if (floorCreep && template && bounds.isEmpty()) continue;
       if (meshCount === 0 || bounds.isEmpty()) throw Error('Original ship kit asset has no geometry: ' + instance.asset);
       placements.push({pack: instance.pack, asset: instance.asset, purpose: instance.purpose,
         matrix: instance.matrix.toArray(), bounds: [bounds.min.toArray(), bounds.max.toArray()], triangles: instanceTriangles});
