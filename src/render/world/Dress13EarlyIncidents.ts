@@ -47,17 +47,25 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('deck-access-panel',383,381,-.4,[.18,.5,.14],.025,'clinical');
   }
   if (id === 'communal-atrium') {
-    // A failed dining barricade gathers on the conservatory's east foot.
-    for (const [x,z,a] of [[650,414,.25],[685,414,-.3]]) {
-      put('habitation-desk',x,z,a,[.85,.85,.85],.82,'clinical');
+    // Overturned table tops and a fallen bench form a failed line along the
+    // garden's visible south face; the western fight court remains empty.
+    put('habitation-desk',535,419,.25,[.92,.9,.9],.85,'clinical');
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI));
+    for (const [x,z,a] of [[597,414,-.24],[654,414,.2]]) {
+      put('habitation-desk',x,z,a,[.85,.85,.85],.72,'clinical');
       pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationZ(Math.PI/2));
     }
-    put('security-bench',625,415,-.55,[.7,.6,.7],.3,'security');
-    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
-    put('service-transit-case',635,414,.7,[.65,.5,.65]);
-    put('deck-rubber-panel',633,426,.4,[.4,.5,.25],.003,'clinical');
-    put('deck-rubber-panel',659,434,-.3,[.3,.5,.4],.003,'clinical');
-    put('deck-access-panel',685,430,.8,[.25,.5,.3],.006,'clinical');
+    put('security-bench',574,429,-.55,[.8,.45,.45],.2,'security');
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(1.15));
+    put('service-transit-case',614,423,.7,[.7,.4,.6]);
+    put('service-transit-case',673,419,-.3,[.5,.3,.5]);
+    put('deck-rubber-panel',550,432,.4,[.7,.5,.5],.026,'clinical');
+    put('deck-rubber-panel',586,435,-.3,[.5,.5,.35],.026,'clinical');
+    put('deck-access-panel',628,434,.8,[.38,.5,.3],.026,'clinical');
+    put('deck-access-panel',647,428,-.4,[.3,.5,.28],.026,'clinical');
+    put('service-pressure-drum',694,431,.4,[.7,.65,.7],.3);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationZ(1.3));
+    put('service-cable-tray',667,432,1.3,[.4,.25,.5]);
   }
   if (id === 'crew-checkpoint') {
     // The north inspection conveyor was abandoned with baggage still aboard.
@@ -132,7 +140,10 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     mesh(new T.PlaneGeometry(1.1,.275),label,366,.26,379).rotation.x=-.55;
   }
   if(id==='communal-atrium') {
-    for(let i=0;i<5;i++) flat([[-.12,-.32],[.13,-.28],[.1,.3],[-.13,.27]],dark,650+i*9,400+(i%2)*8,.3);
+    const soil=material('dress13-trampled-soil',0x2d3327),leaf=material('dress13-crushed-leaf',0x657454);
+    flat([[0,0],[-.5,-.15],[-2.1,.2],[-2.4,.7],[-1.1,1.0],[-.3,.7],[.7,.9],[.5,.3]],soil,694,432,.1).position.y=.029;
+    for(let i=0;i<8;i++) flat([[-.10,-.24],[.02,-.30],[.13,-.02],[.04,.24],[-.1,.12]],leaf,550+i*17,429+i%3*4,i*.8);
+    for(let i=0;i<5;i++) flat([[-.12,-.32],[.13,-.28],[.1,.3],[-.13,.27]],dark,650+i*9,420+(i%2)*8,.3);
   }
   if(id==='armory') {
     const foam=new T.PlaneGeometry(.95,.48);foam.rotateX(-Math.PI/2);mesh(foam,dark,503,.217,420,-.35);
