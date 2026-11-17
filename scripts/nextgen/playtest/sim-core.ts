@@ -140,7 +140,7 @@ export function runSimulation(options: SimOptions) {
     const events: Array<GameEffect & {
         at: number;
     }> = [];
-    const kit = new Proxy({ time: 0, low: false, reducedMotion: false, camera(weight = .12, angle?: number) { camera.rig.addTrauma(weight); if (weight > .2)
+    const kit = new Proxy({ fx: { spawn: () => ({ seed: 0, live: true }) }, time: 0, low: false, reducedMotion: false, camera(weight = .12, angle?: number) { camera.rig.addTrauma(weight); if (weight > .2)
             camera.rig.punch(Math.min(.035, weight * .06), 220); if (angle !== undefined)
             camera.rig.kick(angle, weight * .1); }, anticipate(ms: number, amount = .012) { camera.rig.punch(amount, ms); } }, { get: (target, key) => key in target ? Reflect.get(target, key) : () => { } }) as any;
     const presentations = { breacher: createBreacherPresentation(kit), cryo: createCryoPresentation(kit), pyro: createPyroPresentation(kit), arc: createArcPresentation(kit) };
