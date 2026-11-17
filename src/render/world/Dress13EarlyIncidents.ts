@@ -1,3 +1,4 @@
+import {dress13ResidentialPlacements, addDress13ResidentialDetails} from './Dress13Residential';
 import * as T from 'three';
 import type {OriginalKitInstance, OriginalKitPack} from './OriginalShipKitAssets';
 
@@ -9,23 +10,23 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
       matrix: new T.Matrix4().compose(new T.Vector3(x / 32,y,z / 32),
         new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),angle),new T.Vector3(...scale))});
   };
-  if (id === 'residential-gallery') {
-    // Evacuation stopped at the north cabin: the existing story wall owns
-    // drawings and the nook owns the fallen chair; cases spill toward that nook.
-    put('service-transit-case',548,267,-.24,[1.2,.55,1]);
-    put('service-transit-case',574,288,.32,[.85,.45,.8]);
-    put('deck-access-panel',548,254,-.24,[.54,1,.38],.24,'clinical');
-    put('deck-rubber-panel',560,286,.7,[.25,.8,.22],.015,'clinical');
-    put('service-access-hatch',759,237,0,[1.6,1.8,1]);
-    put('service-safety-rail',775,252,.23,[1,.65,1]);
-    put('service-cable-tray',768,261,1.5,[.5,.5,.7]);
-    put('deck-access-panel',753,272,-.5,[.34,1,.2],.025,'clinical');
-  }
+  if (id === 'residential-gallery') return dress13ResidentialPlacements();
   if (id === 'awakening-bay') {
-    // Release debris and a dropped recovery kit below the forced-open berths.
-    put('service-transit-case',535,370,-.35,[.75,.5,.7]);
-    put('deck-access-panel',548,362,.55,[.32,1,.25],.02,'clinical');
-
+    // A torn release lid, its hinges and abandoned treatment load connect the
+    // open bank to one readable aftermath at the pod-aisle shoulder.
+    put('service-transit-case',465,370,-.35,[1.15,.65,1]);
+    put('service-access-hatch',414,378,.2,[1.15,.65,.9],.10);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.35));
+    put('service-access-hatch',493,380,-.6,[.7,.4,.7],.08);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.55));
+    put('service-transit-case',514,365,.6,[.6,.35,.65]);
+    put('service-cable-tray',410,366,.3,[.65,.35,.8]);
+    put('deck-rubber-panel',443,385,.6,[.7,.8,.45],.025,'clinical');
+    put('deck-rubber-panel',477,390,-.35,[.5,.7,.4],.025,'clinical');
+    put('deck-access-panel',447,361,.55,[.55,1,.3],.03,'clinical');
+    put('deck-access-panel',497,381,-.35,[.28,1,.22],.025,'clinical');
+    put('service-transit-case',528,367,-.2,[.4,.25,.4]);
+    put('service-cable-tray',452,397,1.5,[.35,.3,.5]);
   }
   if (id === 'passenger-vault') {
     // Empty personal-effects drawer is authored in the carrier; its contents
@@ -80,6 +81,7 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
 
 /** Flush marks and tiny debris use the room owner's disposal/warmup lifecycle. */
 export function addDress13EarlyDetails(root: T.Group, id: string): void {
+  if (id === 'residential-gallery') {addDress13ResidentialDetails(root);return;}
   if (!['residential-gallery','awakening-bay','passenger-vault','communal-atrium','crew-checkpoint','armory'].includes(id)) return;
   const group = new T.Group(); group.name = 'dress13-early-aftermath';
   const material = (name: string, color: number, metalness = 0) => {
@@ -92,24 +94,16 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
   };
   const flat = (points:number[][],m:T.Material,x:number,z:number,angle=0) => {
     const shape = new T.Shape(points.map(p=>new T.Vector2(p[0],p[1])));
-    const g = new T.ShapeGeometry(shape);g.rotateX(-Math.PI/2);return mesh(g,m,x,.008,z,angle);
+    const g = new T.ShapeGeometry(shape);g.rotateX(-Math.PI/2);return mesh(g,m,x,.026,z,angle);
   };
   if(id==='awakening-bay') {
-    for(const [w,d] of [[.26,.08],[.08,.26]]) {const g=new T.PlaneGeometry(w,d);g.rotateX(-Math.PI/2);mesh(g,scratch,535,.27,370,-.35);}
+    const med = material('dress13-medical-label',0xa3b4ac);
+    for(const [w,d] of [[.26,.08],[.08,.26]]) {const g=new T.PlaneGeometry(w,d);g.rotateX(-Math.PI/2);mesh(g,med,465,.37,370,-.35);}
     for(let i=0;i<6;i++) {
-      const x=540+(i%2?7:-7)+i*4,z=380+i*8;
+      const x=461+(i%2?7:-7)-i*7,z=391+i*7;
       flat([[-.075,-.17],[.065,-.17],[.095,-.05],[.075,.16],[.025,.23],[-.06,.18],[-.09,.02]],wet,x,z,.25);
       flat([[-.06,-.04],[.065,-.04],[.065,.05],[-.06,.05]],wet,x-2,z-9,.25);
     }
-  }
-  if(id==='residential-gallery') {
-    const opening=new T.PlaneGeometry(.72,.48);opening.rotateX(-Math.PI/2);mesh(opening,dark,548,.301,267,-.24);
-    const garment=new T.PlaneGeometry(.34,.42);garment.rotateX(-Math.PI/2);mesh(garment,scratch,550,.305,270,-.12);
-    // Four parallel claw cuts on the barricaded hatch, with a dragged scuff below.
-    for(let i=0;i<4;i++) {
-      const g=new T.PlaneGeometry(.025,.60-i*.04);const o=mesh(g,scratch,750+i*5,.9,244);o.rotation.z=-.3;
-    }
-    flat([[-.8,-.08],[.7,-.12],[1,.03],[.35,.08],[-.9,.04]],dark,750,270,.3);
   }
   if(id==='crew-checkpoint') {
     // Irregular soot fan has a source at the jammed inspection machinery.
