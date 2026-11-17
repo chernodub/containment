@@ -455,7 +455,7 @@ class PyroPresentation implements AbilityPresentation {
       kit.draw('spark', bx, base+.1, bz, .18, .14, 1, CORE, .96 * fade);
       kit.sustain(age);
       this.surface(zone.id, side < 0 ? 0 : 1, bx, bz, side < 0 ? .95 : .72,
-        exhaustAngle + side * .32, .85, base, base + .5, .7 * fade);
+        exhaustAngle + side * .32, 1.1, base, base + 1.1, .95 * fade);
       if (!kit.low) {
         // Replace the long parallel backpack tongue with a small moving ember.
         const turn = kit.reducedMotion ? side : kit.time * 4 + side * 1.7;

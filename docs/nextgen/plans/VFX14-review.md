@@ -42,3 +42,5 @@ Bulwark R2: both 480 contacts and dark native 04 show readable supports, contact
 Napalm R2: pale native 05 and both 480 contacts show a footprint that survives the pale floor. The first revision was peach and too flat; reduced body emission, removed the second full-disc sheet and added small interior flame jets for final-check.
 
 Afterburn R2: both 480 contacts and dark native 05 exposed a row of glowing circular stamps. Replaced them with one native-length/width FuelStrip mode. Final-check must confirm the connected line rather than accepting the rejected circles.
+
+Meltdown R2: pale native 06 and both 480 contacts keep the marine clear, but the suit jets are too low and weak. Raised their far height and strengthened the stable saturated core; final-check covers the result. Native kill-burst surfaces remain pooled.
