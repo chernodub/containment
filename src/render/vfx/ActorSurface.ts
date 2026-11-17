@@ -13,7 +13,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   // LIGHT13 hierarchy: marine = brightest, most saturated figure (self-lit plates,
   // rig colour on top-facing armour, hot visor); creatures = dark masses with a
   // cool rim and hot lanterns. x: body value / plate lift, y: rig crown, z: emissive gain.
-  const hierarchy = { value: new T.Vector3(friendly ? .42 : .42, friendly ? .55 : 0, friendly ? 2.2 : elite ? 2.3 : 1.8) };
+  const hierarchy = { value: new T.Vector3(friendly ? .42 : .42, friendly ? 1.1 : 0, friendly ? 2.6 : elite ? 2.3 : 1.8) };
   const rigColor = { value: new T.Color(0xffb454) };
   for (const material of materials) {
     material.userData.containmentMarineSurface=friendly;
@@ -45,7 +45,7 @@ ${friendly ? '' : 'float actorLitLuma=dot(reflectedLight.directDiffuse+reflected
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),2.6);
 ${friendly ? `vec3 marineUp=normalize((viewMatrix*vec4(0.0,1.0,0.0,0.0)).xyz);
-float marineTop=smoothstep(.2,.75,dot(normalize(normal),marineUp));
+float marineTop=smoothstep(.05,.6,dot(normalize(normal),marineUp));
 float marinePlate=smoothstep(.06,.30,dot(diffuseColor.rgb,vec3(.2126,.7152,.0722)));
 totalEmissiveRadiance=totalEmissiveRadiance*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*(.35+.65*marinePlate)*actorStageLight+actorRigColor*marineTop*marinePlate*actorHierarchy.y*actorStageLight;` : `float lanternLuma=dot(totalEmissiveRadiance,vec3(.2126,.7152,.0722));
 totalEmissiveRadiance=max(vec3(0.0),mix(vec3(lanternLuma),totalEmissiveRadiance,1.35))*actorHierarchy.z;`}

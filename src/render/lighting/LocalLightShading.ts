@@ -120,7 +120,7 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
       if(roomValue.z>0.0){
         // LIGHT13 rig lamp: analytic soft pool around the marine, no light or pass.
         float roomLamp=1.0-smoothstep(0.0,1.0,distance(roomWorld.xz,roomMarineGlow.xy)/roomMarineGlow.z);
-        roomLamp*=roomLamp*(1.0-smoothstep(.6,2.2,roomWorld.y));
+        roomLamp=roomLamp*roomLamp*(3.0-2.0*roomLamp)*(1.0-smoothstep(.6,2.2,roomWorld.y));
         reflectedLight.indirectDiffuse+=diffuseColor.rgb*roomMarineGlowColor*roomMarineGlow.w*roomValue.z*roomLamp;
       }`);
   };

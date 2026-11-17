@@ -33,14 +33,14 @@ const profile = (p: RoomValueProfile) => Object.freeze(p);
 export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = Object.freeze({
   // Palest room: cold inspection pools on the portal; cage recesses near-black.
   'crew-checkpoint': profile({
-    floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:4.5,outer:10.5,value:.22},
+    floor:{lit:.34,unlit:.18,edge:.09}, perimeter:{inner:4.5,outer:10.5,value:.22},
     wall:{value:.42,saturation:.55}, floorSaturation:.45, tint:0xd8e2f0,
-    fixtures:.35, practicals:.55, ambient:.45, marineGlow:1, exit:.9,
+    fixtures:.3, practicals:.38, ambient:.45, marineGlow:1, exit:.9,
   }),
   // Wet teal plant: warm copper loops stay as tint, the floor stops being a green wash.
   'coolant-plant': profile({
-    floor:{lit:.45,unlit:.20,edge:.10}, perimeter:{inner:4.5,outer:10,value:.25},
-    wall:{value:.50,saturation:.60}, floorSaturation:.50, tint:0xc4ddd6,
+    floor:{lit:.36,unlit:.18,edge:.09}, perimeter:{inner:4.5,outer:10,value:.25},
+    wall:{value:.45,saturation:.55}, floorSaturation:.42, tint:0xc4ddd6,
     fixtures:.4, practicals:.6, ambient:.45, marineGlow:1, exit:.9,
   }),
   // Already dark: cooling-aisle pools on the lanes, rack backs black, white panels dimmed.
@@ -64,9 +64,9 @@ export function setRoomValueField(arenaX: number, arenaZ: number, exitX: number,
 }
 
 /** World XZ, radius (m) and intensity of the marine rig lamp; one shared uniform for every surface. */
-export const MARINE_FLOOR_GLOW = {value: new T.Vector4(0, 0, 3.2, 0)};
+export const MARINE_FLOOR_GLOW = {value: new T.Vector4(0, 0, 3.4, 0)};
 export const MARINE_FLOOR_GLOW_COLOR = {value: new T.Color(0xbfe6ff)};
 export function setMarineFloorGlow(x: number, z: number, color?: number): void {
-  MARINE_FLOOR_GLOW.value.x = x; MARINE_FLOOR_GLOW.value.y = z; MARINE_FLOOR_GLOW.value.w = .55;
+  MARINE_FLOOR_GLOW.value.x = x; MARINE_FLOOR_GLOW.value.y = z; MARINE_FLOOR_GLOW.value.w = 1.6;
   if (color !== undefined) MARINE_FLOOR_GLOW_COLOR.value.setHex(color).lerp(new T.Color(0xffffff), .55);
 }
