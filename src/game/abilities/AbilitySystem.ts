@@ -1,7 +1,7 @@
 import type {AugmentId} from './augmentCatalog';
 import { sweptCircle } from '../combat/enemyContact';
 import { sweptLinkContact } from './linkGeometry';
-import { ABILITY_CATALOG, ABILITY_SLOTS, RIG_CATALOG, DASH_DURATION_MS, DASH_INVULNERABLE_MS } from './catalog';
+import { ABILITY_CATALOG, ABILITY_SLOTS, RIG_CATALOG, DASH_DURATION_MS, DASH_INVULNERABLE_MS, PYRO_DASH_INVULNERABLE_MS } from './catalog';
 import type { AbilitiesSnapshot, AbilityDefinition, AbilityEvent, AbilityId, AbilitySlot, AbilityZoneSnapshot, DeployableSnapshot, RigId } from './contract';
 import type { MutationId } from '../roguelike/types';
 import type { MutationTarget } from '../roguelike/MutationRuntime';
@@ -292,7 +292,7 @@ export class AbilitySystem {
     if (d.slot === 'dash') {
       const distance = d.shape.kind==='dash'?d.shape.distance:150;
       this.dash = { x: Math.cos(cast.angle) * distance, y: Math.sin(cast.angle) * distance, angle: cast.angle, remaining: DASH_DURATION_MS, hit: new Set(), start: { x: cast.x, y: cast.y } };
-      this.immune = DASH_INVULNERABLE_MS;
+      this.immune = cast.id==='afterburn'?PYRO_DASH_INVULNERABLE_MS:DASH_INVULNERABLE_MS;
       if (this.host.has('slide-loader' as MutationId)) this.host.reload();
       this.event(cast.id, 'dash-start', cast, { angle: cast.angle, targetX: cast.x + this.dash.x, targetY: cast.y + this.dash.y, durationMs: DASH_DURATION_MS });
     } else switch (cast.id) {
