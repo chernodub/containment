@@ -5,17 +5,21 @@ type Piece = [asset: string, x: number, z: number, scale?: number, yaw?: number,
 /** Captive debris tells one incident around each existing machine. These pieces
  * are presentation only: the native machinery retains collision ownership. */
 const incidents: Record<string, Piece[]> = {
-  // The gantry's shifted load has crushed its stack. Cases spill along the
-  // existing 260×108 machinery bed, away from the southern tow floor.
+  // The port stock-bank shoulder carries the collapsed stack in the spawn
+  // view. Its spilled load stops north of the clear crossing and tow floor.
   'freight-hold': [
-    ['service-stowage-crate', 688, 514, 1.25, .12],
-    ['service-stowage-crate', 716, 516, 1.2, -.2, 1.18, .6],
-    ['service-stowage-crate', 746, 516, 1, .4, .38, .15],
-    ['service-transit-case', 780, 521, .8, -.45, 1.35, .35],
-    ['service-transit-case', 817, 506, .7, .62],
-    ['service-transit-case', 839, 508, .5, -.28],
-    ['service-cable-tray', 855, 479, .5, 1.4],
-    ['service-access-hatch', 868, 495, .65, .3, 1.5, .18],
+    ['service-stowage-crate', 290, 286, 1.2, .12],
+    ['service-stowage-crate', 324, 294, 1.15, -.2, 1.18, .55],
+    ['service-stowage-crate', 362, 310, 1, .4, 1.25, .35],
+    ['service-transit-case', 390, 320, .85, -.45, 1.35, .32],
+    ['service-transit-case', 418, 332, .75, 1.1],
+    ['service-transit-case', 443, 318, .6, -.28],
+    ['service-cable-tray', 458, 293, .55, 1.4],
+    ['service-access-hatch', 473, 314, .7, .3, 1.5, .18],
+    ['service-transit-case', 384, 351, .55, .9],
+    ['service-pressure-drum', 306, 339, .7, .4, 1.3, .2],
+    ['service-transit-case', 480, 339, .5, -.4],
+    ['service-access-hatch', 416, 345, .45, -.6, 1.5, .12],
   ],
   // A diagonal chain of dragged cargo terminates at the torn hull shoulder.
   'breached-loading-bay': [
@@ -87,6 +91,6 @@ export function dress13ServiceIncidents(id: string): OriginalKitInstance[] {
       new T.Quaternion().setFromEuler(new T.Euler(
         asset === 'service-access-hatch' ? roll : 0, yaw,
         asset === 'service-access-hatch' ? 0 : roll, 'YXZ')), new T.Vector3().setScalar(scale)),
-    cutaway: true,
+    cutaway: false,
   }));
 }
