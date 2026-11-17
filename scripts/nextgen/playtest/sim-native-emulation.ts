@@ -1,3 +1,4 @@
+import {ENEMY_ATTACK_SHAPES} from '../../../src/game/enemies/attackShapes';
 import type {DepthGame, GameEffect, GameInput} from '../../../src/DepthGame';
 
 const SLOTS = {Shift: 'dash', q: 'tactical', f: 'power', v: 'overdrive'} as const;
@@ -29,9 +30,11 @@ export function recordNativeObservedEvent(events: NativeObservedEvent[], event: 
 }
 
 /** The native debug event observer persists across ordinary route/load-room boundaries. */
-export function nativeWarningHazards(events: readonly NativeObservedEvent[], elapsed: number) {
-    return events.filter(e => e.type === 'enemy-warning' && !e.meleeShape && elapsed - e.at < (e.durationMs ?? 800) / 1000)
-        .map(e => ({x: e.targetX ?? e.x, y: e.targetY ?? e.y, radius:e.radius??50,kind:'warning',warningRemainingMs:Math.max(0,(e.durationMs??800)-(elapsed-e.at)*1000)}));
+export function nativeWarningHazards(events: readonly NativeObservedEvent[], elapsed: number, enemies?:DepthGame['enemies']['snapshot']['enemies']) {
+    const live=(enemies??[]).filter(e=>e.health>0&&e.pendingAttack==='spit'&&e.windupMs>0).map(e=>({id:`native:${e.id}`,x:e.lockX,y:e.lockY,radius:ENEMY_ATTACK_SHAPES.spitterProjectileRadius,kind:'warning',warningRemainingMs:e.windupMs}));
+    const arrivals=events.filter(e=>e.type==='enemy-warning'&&!e.meleeShape&&(enemies===undefined||e.id===undefined)&&elapsed-e.at<(e.durationMs??800)/1000)
+        .map(e=>({x:e.targetX??e.x,y:e.targetY??e.y,radius:e.radius??50,kind:'warning',warningRemainingMs:Math.max(0,(e.durationMs??800)-(elapsed-e.at)*1000)}));
+    return [...live,...arrivals];
 }
 
 /** runner.snapshot includes living standard enemies and living negative-id Queen/nest targets. */

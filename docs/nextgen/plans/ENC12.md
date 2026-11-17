@@ -1,0 +1,5 @@
+# ENC12 — implementation plan
+
+Author combat as room-specific beats with clear lulls, role positioning and priority objectives, replacing routine resistant-elite saturation. Teach first dodge/recovery exchanges in the campaign and retain incomplete lessons. Add mutually exclusive transformative rig augments, an early guaranteed offer, fixed multi-purchase preparation stops and optional risk/reward side objectives while preserving story order.
+
+Disjoint streams own encounters/enemy AI/boss demands; ability catalogs/runtime; economy/routes/checkpoint and onboarding/screens. Integration owns DepthGame, elemental control plumbing, bot visible counterplay, balance and serialized native verification. All simulation remains deterministic; existing presentation events carry new mechanics. No render/world/model/effect edits, tests or proof infrastructure. At most three simulation workers and one browser. Verify build, old save continuation, six natural native attempts, inspected storyboards and three80-attempt confirmations. Report encounter scripts and remaining same-play patterns honestly.

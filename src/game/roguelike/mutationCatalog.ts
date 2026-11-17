@@ -9,6 +9,7 @@ export type MutationDefinition = Readonly<{
   family:BoonFamily;
   name: string;
   description: string;
+  whatChanges?: string;
   tradeoff: string;
   rarity: 'common' | 'rare';
   requires?: readonly MutationId[];

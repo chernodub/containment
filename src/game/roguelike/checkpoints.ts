@@ -1,6 +1,5 @@
 import {difficultyId} from '../difficulty';
 import {isValidRunStatsSnapshot} from '../abilities/RunStats';
-import {MUTATION_IDS} from './mutationCatalog';
 import { isValidBuildState } from './builds';
 import { isValidRunState } from './run';
 import type { RunCheckpoint, RunResources, RunState } from './types';
@@ -48,9 +47,11 @@ function boundedNumber(value: unknown, min: number, max: number, integer = false
 }
 
 function validRun(value: unknown): value is RunState {
-  return (exactRecord(value, RUN_KEYS)||exactRecord(value,[...RUN_KEYS,'draftRoll'])) &&
-    boundedNumber(value.seed, 0, 0xffff_ffff, true) &&
-    Array.isArray(value.completedNodeIds) && value.completedNodeIds.length <= 20 &&
+  if(typeof value!=='object'||value===null||Array.isArray(value))return false;
+  const record=value as Record<string,unknown>;
+  return RUN_KEYS.every(key=>Object.hasOwn(record,key)) &&
+    boundedNumber(record.seed, 0, 0xffff_ffff, true) &&
+    Array.isArray(record.completedNodeIds) && record.completedNodeIds.length <= 20 &&
     isValidRunState(value);
 }
 
@@ -72,8 +73,7 @@ function validCheckpoint(value: unknown): value is RunCheckpoint {
     value.version !== 1 || !boundedNumber(value.savedAt, 0, Number.MAX_SAFE_INTEGER, true) ||
     !validRun(value.run) ||
     !['rig-select','starting-boon','reward','route'].includes(value.run.phase) ||
-    !(exactRecord(value.build, ['mutations']) || exactRecord(value.build,['mutations','rig'])) || !Array.isArray(value.build.mutations) ||
-    value.build.mutations.length > MUTATION_IDS.length || !isValidBuildState(value.build) ||
+    !isValidBuildState(value.build) ||
     !isValidRunResources(value.resources) || value.resources.health <= 0) {
     return false;
   }

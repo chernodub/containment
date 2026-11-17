@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import * as T from 'three';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 /** Read actor dimensions without images, WebGL, DOM, or animation advancement. */
 export async function actorMetrics() {
@@ -24,7 +25,7 @@ export async function actorMetrics() {
         }
         const binStart = 20 + jsonLength, bin = bytes.subarray(binStart + 8, binStart + 8 + bytes.readUInt32LE(binStart));
         doc.buffers[0].uri = `data:application/octet-stream;base64,${bin.toString('base64')}`;
-        const gltf = await new GLTFLoader().parseAsync(JSON.stringify(doc), '');
+        const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(JSON.stringify(doc), '');
         const root = gltf.scene;
         root.rotation.y = -Math.PI / 2;
         const mixer = new T.AnimationMixer(root), idle = gltf.animations.find(c => c.name === 'stand' || c.name === 'idle');

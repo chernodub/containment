@@ -164,13 +164,13 @@ export function createScreens(context: ScreenContext) {
     listen('claim',()=>{game.claimResources();playUiCue(audio,'purchase'); syncScreen();});
     listen('equip-rig',()=>{if(chooseRig(game,selectedRig)) {playUiCue(audio,'rig-equip'); syncScreen(true);} else playUiCue(audio,'denied');});
     root.querySelectorAll<HTMLButtonElement>('[data-purchase]').forEach(button=>button.addEventListener('click',()=>{
-      game.claimResources(button.dataset.purchase as 'heal'|'armor'|'ammo');playUiCue(audio,'purchase'); syncScreen();
+      const purchased=game.purchaseService(button.dataset.purchase as import('../../game/roguelike/economy').ServiceId);playUiCue(audio,purchased?'purchase':'denied'); syncScreen();
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-mutation]').forEach(button=>button.addEventListener('click',()=>{
       game.chooseMutation(button.dataset.mutation as MutationId); playUiCue(audio,'boon-acquired'); syncScreen();
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-route]').forEach(button=>button.addEventListener('click',()=>{
-      game.route(button.dataset.route!); playUiCue(audio,'confirm'); syncScreen();
+      game.route(button.dataset.route!,button.dataset.detour as import('../../game/roguelike/economy').DetourChoice|undefined); playUiCue(audio,'confirm'); syncScreen();
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-inspect-route]').forEach(button=>button.addEventListener('click',()=>{
       selectedRoute=button.dataset.inspectRoute!;playUiCue(audio,'select');syncScreen(true);
@@ -290,7 +290,8 @@ export function createScreens(context: ScreenContext) {
     if(resultExpanded) root.querySelector<HTMLDetailsElement>('.result-details')?.setAttribute('open','');
     bindActions(root);
     const focusReplacement=focusId?root.querySelector<HTMLElement>(`[id="${focusId}"]`):null;
-    if(focusReplacement) focusReplacement.focus({preventScroll:true});
+    if(focusReplacement instanceof HTMLButtonElement&&focusReplacement.disabled&&focusId?.startsWith('purchase-')) (root.querySelector<HTMLElement>('[data-purchase]:not(:disabled)')??root.querySelector<HTMLElement>('#claim'))?.focus({preventScroll:true});
+    else if(focusReplacement) focusReplacement.focus({preventScroll:true});
     else if(status!==previousStatus||graphicsBlocked) {
       // A held fire key must never activate a newly arrived choice or restart.
       // Keyboard users can deliberately Tab to a native action or use its number key.
@@ -362,10 +363,14 @@ export function createScreens(context: ScreenContext) {
       if(reroll) {event.preventDefault();reroll.click();}
     } else if(status==='route'&&root.querySelector('[data-route]')) {
       if(/^[1-9]$/.test(shortcut)) {
+        const prepared=root.querySelectorAll<HTMLButtonElement>('[data-route]')[Number(shortcut)-1];
+        if(prepared?.dataset.detour){event.preventDefault();prepared.click();return;}
         const id=game.node.next[Number(shortcut)-1];
         if(id) {event.preventDefault();game.route(id);playUiCue(audio,'confirm');syncScreen();}
       } else if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
         event.preventDefault();
+        const preparations=[...root.querySelectorAll<HTMLButtonElement>('[data-route][data-detour]')];
+        if(preparations.length){const current=preparations.indexOf(document.activeElement as HTMLButtonElement),step=event.key==='ArrowLeft'||event.key==='ArrowUp'?-1:1;preparations[(current+step+preparations.length)%preparations.length].focus();return;}
         const index=game.node.next.indexOf(selectedRoute),delta=event.key==='ArrowLeft'||event.key==='ArrowUp'?-1:1;
         selectedRoute=game.node.next[(index+delta+game.node.next.length)%game.node.next.length];
         playUiCue(audio,'select');syncScreen(true);

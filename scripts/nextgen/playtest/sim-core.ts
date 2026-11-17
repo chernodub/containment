@@ -1,3 +1,4 @@
+import {SERVICE_IDS,detourOffers} from '../../../src/game/roguelike/economy';
 import * as T from 'three';
 import { DepthGame, type GameEffect, type GameInput } from '../../../src/DepthGame';
 import { GameFeel } from '../../../src/ui/feel';
@@ -16,7 +17,7 @@ import {progressionFor} from '../../../src/game/roguelike/progression';
 import { generateRun } from '../../../src/game/roguelike/run';
 import type { RigId } from '../../../src/game/abilities/contract';
 import {observeAbilityAims} from './ability-aim';
-import { BOT_POLICY_VERSION, chooseBoon, chooseRoute, createHumanPolicy, distance } from './policy.mjs';
+import { BOT_POLICY_VERSION, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, createHumanPolicy, distance } from './policy.mjs';
 import {botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
 import {applyNativeImmediateKey, recordNativeObservedEvent, nativeWarningHazards, nativeDiagnosticBurst} from './sim-native-emulation';
 const TICK = 1000 / 60;
@@ -228,7 +229,8 @@ export function runSimulation(options: SimOptions) {
         for (const t of game.targets().filter(t => t.id < 0 && t.health > 0))
             enemies.push({ ...t, type: 'queen', clear: clear(t.x, t.y), visible: camera.visible(t.x, t.y), vulnerable: t.id !== -1 || game.boss.snapshot.vulnerable });
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
-        const waypoint = nearest ? botWaypoint(game, nearest) ?? nearest : null;
+        const siege=game.siege,goal=siege&&siege.remainingMs>0?siege:nearest;
+        const waypoint = goal ? botWaypoint(game, goal) ?? goal : null;
         const candidates = [];
         for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
             const len = Math.hypot(dx, dy) || 1, x = game.player.x + dx / len * 90, y = game.player.y + dy / len * 90;
@@ -238,17 +240,17 @@ export function runSimulation(options: SimOptions) {
                     legal = false;
             if (game.abilities.blocksMovement(game.player, { x, y }, game.player.radius))
                 legal = false;
-            candidates.push({ x, y, dx, dy, legal, waypoint, clear: nearest ? clear(nearest.x, nearest.y, { x, y }) : false });
+            candidates.push({ x, y, dx, dy, legal, waypoint, rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&clear(e.x,e.y,{x,y})).map(e=>e.id), clear: nearest ? clear(nearest.x, nearest.y, { x, y }) : false });
         }
         const telegraph = game.boss.snapshot.pendingTelegraph;
-        return { elapsed:game.elapsed, nodeId:game.node.id, resources:game.combat.getRunResources(), rig: options.rig, player: { ...game.player }, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
+        return { elapsed:game.elapsed, nodeId:game.node.id, resources:game.combat.getRunResources(), rig: options.rig, siege:game.siege, player: { ...game.player }, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});
             }), abilities: game.abilities.snapshot, hazards: [...(telegraph ? [{ x: telegraph.targetX, y: telegraph.targetY, radius: telegraph.radius, kind:'warning', visible:camera.visible(telegraph.targetX,telegraph.targetY) }] : []),
                 ...game.pools.map(p=>({id:`pool:${p.id}`,x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:camera.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),
                 ...game.bullets.filter(b => b.kind === 'hazard').map(b => ({ id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:camera.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*game.abilities.hostileTimeScale })),
-                ...nativeWarningHazards(events.filter(e=>e.id===undefined||enemies.some(enemy=>enemy.id===e.id&&Math.hypot(enemy.x-e.x,enemy.y-e.y)<2)),game.elapsed).map(h=>({...h,visible:camera.visible(h.x,h.y)}))] };
+                ...nativeWarningHazards(events.filter(e=>e.id===undefined||enemies.some(enemy=>enemy.id===e.id&&Math.hypot(enemy.x-e.x,enemy.y-e.y)<2)),game.elapsed,game.enemies.snapshot.enemies).map(h=>({...h,visible:camera.visible(h.x,h.y)}))] };
     }
     function advance(ms: number) {
         for (let remaining = ms; remaining > 1e-7;) {
@@ -293,15 +295,14 @@ export function runSimulation(options: SimOptions) {
         }
         if (game.status !== 'playing') {
             if (game.status === 'reward' && ['medical', 'armory'].includes(game.node.kind) && game.expedition.run.completedNodeIds.includes(game.node.id) && !report.rooms.some(r => r.nodeId === game.node.id))
-                report.rooms.push({ id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, result: 'clear', autoClear: true, seconds: 0, damageTaken: 0, hitsTaken: 0, pressure: {}, damageDealt: { weapon: 0, ability: 0, status: 0, boon: 0 }, abilityUses: { dash: 0, tactical: 0, power: 0, overdrive: 0 }, overdrives: 0, boons: [...game.expedition.build.mutations] });
+                report.rooms.push({ id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, result: 'clear', autoClear: true, seconds: 0, damageTaken: 0, hitsTaken: 0, pressure: {}, damageDealt: { weapon: 0, ability: 0, status: 0, boon: 0 }, abilityUses: { dash: 0, tactical: 0, power: 0, overdrive: 0 }, overdrives: 0, boons: [...game.expedition.build.mutations] });
             input = { x: 0, y: 0, fire: false, angle: null, autoAim: false };
             screen = null;
             if (game.status === 'reward') {
                 const offers = expeditionRewardOffers(game.expedition);
                 if (offers.length)
                     game.chooseMutation(chooseBoon(offers.map(o => o.id), options.rig, [...game.expedition.build.mutations]));
-                else
-                    game.claimResources(game.combat.snapshot.health < 70 && game.canPurchaseService('heal') ? 'heal' : null);
+                else {const purchase=chooseServicePurchase(SERVICE_IDS.filter(id=>game.canPurchaseService(id)),game.combat.snapshot,game.expedition.build,game.expedition.run);if(purchase)game.purchaseService(purchase);else game.claimResources();}
             }
             else if (game.status === 'route') {
                 const graph = generateRun(options.seed, game.expedition.run.version);
@@ -312,7 +313,7 @@ export function runSimulation(options: SimOptions) {
                     const choice = chooseRoute(choices, game.combat.snapshot.health);
                     if (!choice)
                         throw Error('No earned route');
-                    game.route(choice.id);
+                    game.route(choice.id,detourOffers(game.expedition.run).length?chooseDetour(game.combat.snapshot):undefined);
                 }
                 feel.reset();
                 for (const presentation of Object.values(presentations))
@@ -331,7 +332,7 @@ export function runSimulation(options: SimOptions) {
                 break;
             }
             progressSignature = ''; lastProgressElapsed = game.elapsed;
-            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
+            room = { id: game.node.templateId, nodeId: game.node.id, depth: game.node.depth, nodeKind:game.node.kind, openingGrammar:game.encounter.grammar, holdout:!options.legacy&&[9,19].includes(game.node.depth), guardian:progressionFor(game.node).guardianKind, result: 'playing', startedElapsed: game.elapsed, startStats: game.stats,
                 startHealth: game.combat.snapshot.health, startArmor: game.combat.snapshot.armor, boons: [...game.expedition.build.mutations] };
             report.rooms.push(room);
         }
@@ -371,7 +372,7 @@ export function runSimulation(options: SimOptions) {
         report.trace?.push({ elapsed: game.elapsed, depth: game.node.depth, input: { ...input }, keys: actions, weapon, stats: statsBefore, player: playerBefore, enemies: s.enemies.map(e => ({ id: e.id, type: e.type, x: e.x, y: e.y, health: e.health, clear: e.clear, visible: e.visible })), screen: { ...screen } });
         advance(decision.stepMs);
         const progressStats = game.stats;
-        const signature = `${progressStats.kills.total}:${game.encounterRemaining}:${Math.round(Object.values(progressStats.damageDealt).reduce((a, b) => a + b, 0))}`;
+        const signature = `${Math.ceil((game.siege?.remainingMs??0)/1000)}:${progressStats.kills.total}:${game.encounterRemaining}:${Math.round(Object.values(progressStats.damageDealt).reduce((a, b) => a + b, 0))}`;
         if (signature !== progressSignature) {progressSignature = signature; lastProgressElapsed = game.elapsed;}
         const diagnostic = nativeDiagnosticBurst(game,lastProgressElapsed,room.startedElapsed,options.maxRoomSeconds ?? 240,hardest,advance);
         hardest = diagnostic.hardest;

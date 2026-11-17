@@ -274,7 +274,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         // Story text remains authored verbatim; the optional line alone is skippable.
         const storyStatus = conciseStoryStatus(game.storyStatus);
         text('story-status', storyStatus);
-        text('room-objective', combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
+        text('room-objective', game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
         const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');
         if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';criticalNode.setAttribute('data-hud-critical','');nodes['story-hud'].append(criticalNode);}
@@ -406,7 +406,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (abilities?.slots)
             for (const entry of slots)
                 updateAbility(entry, abilities.slots[entry.slot], abilities);
-        onboarding.update(game, abilities, inspectObjective && !abilityHints.visible, preferences().hints !== false);
+        onboarding.update(game, abilities, !abilityHints.visible, preferences().hints !== false);
         const pref = preferences();
         combatText.setEnabled(pref.combatText !== false);
         combatText.setReduced(pref.combatTextDensity === 'reduced');

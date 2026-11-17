@@ -1,3 +1,5 @@
+import {hasClearExpeditionShot} from '../game/world/expeditionGeometry';
+import {meleeStrikeContains} from '../game/enemies/meleeAttacks';
 import type { DepthGame } from '../DepthGame';
 import type { AbilitiesSnapshot } from '../game/abilities/contract';
 import type { HudEffect } from './hud/effects';
@@ -6,12 +8,17 @@ import { hudObstructs, setPresentationObstacle } from './hud/layout';
 import './styles/onboarding.css';
 
 export const ONBOARDING_STORAGE_KEY = 'containment.onboarding.v1';
-export const ONBOARDING_ACTIONS = ['move', 'aim', 'fire', 'dash', 'tactical', 'power', 'overdrive', 'reload', 'switch', 'grenade', 'medkit'] as const;
+export const ONBOARDING_ACTIONS = ['move', 'aim', 'fire', 'dash', 'tactical', 'power', 'overdrive', 'reload', 'switch', 'grenade', 'medkit', 'brute-evade', 'brute-punish', 'pack-tactical','priority-focus','crossfire-cover'] as const;
 export type OnboardingAction = typeof ONBOARDING_ACTIONS[number];
 type PreferenceStorage = Pick<Storage, 'getItem' | 'setItem'> | null;
 type Seen = Partial<Record<OnboardingAction, true>>;
 type Bounds = { left: number; right: number; top: number; bottom: number };
 const prompts: Record<OnboardingAction, readonly [string, string, string]> = {
+  'priority-focus':['LMB / Q / F','Break the escort — focus the Carrier or heavy guard first.',''],
+  'crossfire-cover':['W A S D','Two firing lines — move behind cover to break one.',''],
+  'pack-tactical':['Q','Pack lined up — use your tactical ability.',''],
+  'brute-evade':['A / D / SHIFT','Sidestep the Brute’s committed strike.',''],
+  'brute-punish':['LMB / Q','The Brute is recovering — punish the opening.',''],
   move: ['W A S D', 'Move to keep a lane open.', ''],
   switch: ['1–5', 'Switch weapons to suit the threat.', ''],
   aim: ['MOUSE', 'Watch your aim.', 'Point toward the threat.'],
@@ -47,6 +54,7 @@ export class ContextualOnboarding {
   private readonly copy = document.createElement('span');
   private active: OnboardingAction | null = null;
   private firstWindup = false;
+  private firstStrike:{id:number;x:number;y:number;vitality:number;damageTaken:number}|null=null;
   private previousWeapon: string | null = null;
   private finished = false;
   private previousAngle: number | null = null;
@@ -56,8 +64,15 @@ export class ContextualOnboarding {
   private activeTime = 0;
   private cursor = 0;
   private enabled = false;
-  private firstRoomSeconds = 0;
-  private firstRoom = false;
+  private packOpportunity=false;
+  private priorityTargets:number[]=[];
+  private trackedRoom=-1;
+  private watchedGame:DepthGame|null=null;
+  private crossfire:{ids:number[];x:number;y:number}|null=null;
+  private crossfireOpportunity=false;
+  private bruteWindup: {id:number;x:number;y:number;vitality:number;damageTaken:number}|null=null;
+  private recoveringBruteId:number|null=null;
+  private bruteWarning=false;
   private disposed = false;
   private layoutDirty = true;
   private translation = '';
@@ -83,7 +98,7 @@ export class ContextualOnboarding {
     host.append(this.node);
   }
 
-  get teachingStrike(): boolean { return this.enabled && this.firstRoom && this.firstRoomSeconds < 900 && !this.seen.dash; }
+  get teachingStrike(): boolean { return this.enabled && !this.seen.dash; }
 
   /** Persist once, and only after the action really occurred. */
   mark(action: OnboardingAction): void {
@@ -94,9 +109,10 @@ export class ContextualOnboarding {
   }
 
   effect(effect: HudEffect): void {
-    if (effect.type === 'enemy-warning') this.firstWindup = true;
+    if(effect.type==='corpse'&&effect.id!==undefined&&this.watchedGame?.roomRevision===this.trackedRoom&&this.priorityTargets.includes(effect.id))this.mark('priority-focus');
+    if(effect.type==='hit'&&effect.targetId===this.recoveringBruteId)this.mark('brute-punish');
     if (effect.type === 'shot') this.mark('fire');
-    if (effect.type === 'ability' && effect.ability && ['cast', 'dash-start', 'impact'].includes(effect.ability.phase) && (effect.ability.slot !== 'dash' || this.firstWindup)) this.mark(effect.ability.slot);
+    if (effect.type === 'ability' && effect.ability && ['cast', 'dash-start', 'impact'].includes(effect.ability.phase) && effect.ability.slot !== 'dash') {if(effect.ability.slot!=='tactical'||this.packOpportunity)this.mark(effect.ability.slot);if(effect.ability.slot==='tactical'&&this.packOpportunity)this.mark('pack-tactical');}
   }
 
   /** Sync at HUD cadence. The single prompt follows its action bar even when it relocates. */
@@ -107,17 +123,38 @@ export class ContextualOnboarding {
     this.layoutDirty = true;
     if (game.status === 'complete' && !this.finished) {this.finished=true;try {this.storage?.setItem('containment.finished.v1','true');}catch{}}
     const playing = game.status === 'playing' && hints && !this.finished;
-    const firstRoom = game.node.depth < 3;
-    this.firstRoom = firstRoom;
+
     this.enabled = playing;
     if (this.seed !== game.expedition.run.seed) {
       this.seed = game.expedition.run.seed;
       this.firstWindup = false; this.previousWeapon = null;
       this.previousAngle = this.previousGrenades = this.previousMedkits = null;
       this.active = null; this.activeTime = 0; this.cursor = 0;
-      this.firstRoomSeconds = 0;
+      this.bruteWindup=null;this.recoveringBruteId=null;
     }
     const combat = game.combat.snapshot;
+    this.watchedGame=game;if(this.trackedRoom!==game.roomRevision){this.trackedRoom=game.roomRevision;this.priorityTargets=[];this.crossfire=null;this.firstStrike=null;this.bruteWindup=null;}
+    const enemies=game.enemies.snapshot.enemies;
+    this.priorityTargets=enemies.filter(enemy=>enemy.priority&&(enemy.type==='carrier'||enemy.controlResistant)).map(enemy=>enemy.id);
+    const spitters=enemies.filter(enemy=>enemy.type==='spitter'&&Math.hypot(enemy.x-game.player.x,enemy.y-game.player.y)<600);
+    const firing=spitters.filter(enemy=>hasClearExpeditionShot(game.geometry,enemy,game.player));this.crossfireOpportunity=firing.length>=2;
+    if(this.crossfireOpportunity&&!this.crossfire)this.crossfire={ids:firing.slice(0,2).map(enemy=>enemy.id),x:game.player.x,y:game.player.y};
+    if(playing&&this.crossfire&&Math.hypot(game.player.x-this.crossfire.x,game.player.y-this.crossfire.y)>24&&this.crossfire.ids.some(id=>{const enemy=spitters.find(e=>e.id===id);return enemy&&!hasClearExpeditionShot(game.geometry,enemy,game.player);}))this.mark('crossfire-cover');
+    this.firstWindup=enemies.some(enemy=>enemy.meleePhase==='windup');
+    const strikeWarning=enemies.find(enemy=>enemy.meleePhase==='windup');
+    if(strikeWarning&&!this.firstStrike)this.firstStrike={id:strikeWarning.id,x:game.player.x,y:game.player.y,vitality:combat.health+combat.armor,damageTaken:game.stats.damageTaken};
+    const watchedStrike=this.firstStrike&&enemies.find(enemy=>enemy.id===this.firstStrike!.id);
+    if(playing&&watchedStrike?.meleePhase==='recovery'&&this.firstStrike){if(Math.hypot(game.player.x-this.firstStrike.x,game.player.y-this.firstStrike.y)>20&&combat.health+combat.armor>=this.firstStrike.vitality&&game.stats.damageTaken===this.firstStrike.damageTaken&&!meleeStrikeContains(watchedStrike.meleeShape,watchedStrike.meleeOriginX,watchedStrike.meleeOriginY,watchedStrike.meleeAngle,game.player.x,game.player.y,game.player.radius))this.mark('dash');this.firstStrike=null;}
+    if(this.firstStrike&&!watchedStrike)this.firstStrike=null;
+    this.packOpportunity=enemies.filter(enemy=>Math.hypot(enemy.x-game.player.x,enemy.y-game.player.y)<=180&&Math.cos(Math.atan2(enemy.y-game.player.y,enemy.x-game.player.x)-game.player.angle)>.5).length>=3;
+    const warning=enemies.find(enemy=>enemy.type==='brute'&&enemy.meleePhase==='windup');
+    this.bruteWarning=!!warning;
+    if(warning&&this.bruteWindup?.id!==warning.id)this.bruteWindup={id:warning.id,x:game.player.x,y:game.player.y,vitality:combat.health+combat.armor,damageTaken:game.stats.damageTaken};
+    const recovering=enemies.find(enemy=>enemy.type==='brute'&&enemy.meleePhase==='recovery');
+    this.recoveringBruteId=recovering?.id??null;
+    if(playing&&recovering&&this.bruteWindup?.id===recovering.id&&Math.hypot(game.player.x-this.bruteWindup.x,game.player.y-this.bruteWindup.y)>20&&combat.health+combat.armor>=this.bruteWindup.vitality&&game.stats.damageTaken===this.bruteWindup.damageTaken&&!meleeStrikeContains(recovering.meleeShape,recovering.meleeOriginX,recovering.meleeOriginY,recovering.meleeAngle,game.player.x,game.player.y,game.player.radius))this.mark('brute-evade');
+    if(recovering&&this.bruteWindup?.id===recovering.id)this.bruteWindup=null;
+
     if (playing) {
       if (this.previousWeapon !== null && combat.weaponId !== this.previousWeapon) this.mark('switch');
       this.previousWeapon = combat.weaponId;
@@ -130,26 +167,36 @@ export class ContextualOnboarding {
       this.previousGrenades = combat.grenades;
       this.previousMedkits = combat.medkits;
     }
-    if (!playing || (!firstRoom || this.firstRoomSeconds >= 900) && (!abilities?.overdrive.ready || this.seen.overdrive)) { this.node.hidden = true; this.active = null; setPresentationObstacle('onboarding', null); return; }
+    if (!playing) { this.node.hidden = true; this.active = null; setPresentationObstacle('onboarding', null); return; }
     const eligible = (action: OnboardingAction): boolean => {
       if (this.seen[action]) return false;
       // Charge readiness is authoritative; the prompt retires only after a cast.
       if (action === 'overdrive') return !!abilities?.overdrive.ready;
-      if (!firstRoom || this.firstRoomSeconds >= 900) return false;
+      if(action==='brute-evade')return this.bruteWarning;
+      if(action==='brute-punish')return this.recoveringBruteId!==null;
       if (action === 'medkit') return combat.health <= 65 && combat.medkits > 0;
       if (action === 'reload') return combat.magazine < combat.magazineCapacity * .6 && combat.reserve > 0;
       if (action === 'grenade') return combat.grenades > 0 && game.enemies.activeCount >= 3;
       if (action === 'dash') return this.firstWindup && !!abilities?.slots?.dash.ready;
       if (action === 'switch') return this.seen.fire === true;
-      if (action === 'tactical' || action === 'power') return !!abilities?.slots?.[action].ready;
+      if(action==='priority-focus')return this.priorityTargets.length>0;
+      if(action==='crossfire-cover')return this.crossfireOpportunity;
+      if (action === 'pack-tactical') return this.packOpportunity&&!!abilities?.slots?.tactical.ready;
+      if (action === 'tactical') return this.packOpportunity&&!!abilities?.slots?.tactical.ready;
+      if(action==='power')return game.enemies.activeCount>=2&&!!abilities?.slots?.power.ready;
       return true;
     };
-    if (this.active && eligible(this.active) && this.activeTime < 6 && (this.active === 'dash' || !eligible('dash')) && (this.active === 'medkit' || !eligible('medkit'))) { this.node.hidden = !inspect; return; }
+    if (this.active && eligible(this.active) && this.activeTime < 6 && (this.active === 'dash' || !eligible('dash')) && (this.active === 'medkit' || !eligible('medkit')) && (this.active==='brute-evade'||!eligible('brute-evade')) && (this.active==='brute-punish'||!eligible('brute-punish'))) { this.node.hidden = !inspect; return; }
     this.active = null;
     // Urgent contextual prompts can interrupt the teaching sequence.
-    if (eligible('dash')) this.active = 'dash';
+    if(eligible('brute-evade'))this.active='brute-evade';
+    else if(eligible('brute-punish'))this.active='brute-punish';
+    else if (eligible('dash')) this.active = 'dash';
     else if (eligible('medkit')) this.active = 'medkit';
     else if (eligible('overdrive')) this.active = 'overdrive';
+    else if(eligible('priority-focus'))this.active='priority-focus';
+    else if(eligible('crossfire-cover'))this.active='crossfire-cover';
+    else if(eligible('pack-tactical'))this.active='pack-tactical';
     else {
       for (let offset = 0; offset < ONBOARDING_ACTIONS.length; offset++) {
         const index = (this.cursor + offset) % ONBOARDING_ACTIONS.length;
@@ -161,10 +208,10 @@ export class ContextualOnboarding {
     this.activeTime = 0;
     const [key, heading, copy] = prompts[this.active];
     this.key.textContent = key; this.heading.textContent = copy || heading; this.copy.textContent = '';
-    if (this.active === 'tactical' || this.active === 'power') {
-      const ability = abilities?.slots?.[this.active];
+    if (this.active === 'tactical' || this.active === 'power' || this.active==='pack-tactical') {
+      const ability = abilities?.slots?.[this.active==='pack-tactical'?'tactical':this.active];
       const definition = ability && ABILITY_CATALOG[ability.id];
-      if (definition) { this.heading.textContent = `Use ${definition.name}.`; this.copy.textContent = ''; }
+      if (definition) { this.heading.textContent = this.active!=='power'?`Pack lined up — use ${definition.name}.`:`Use ${definition.name} to control this approach.`; this.copy.textContent = ''; }
     }
     this.node.dataset.action = this.active;
     this.node.hidden = !inspect;
@@ -174,7 +221,6 @@ export class ContextualOnboarding {
   /** Clock is supplied by the application, so capture stepping remains exact. */
   tick(dt: number, player: Bounds, threats: readonly Bounds[] = []): void {
     if (this.disposed) return;
-    if (this.enabled && this.firstRoom) this.firstRoomSeconds += dt;
     if (this.node.hidden) {setPresentationObstacle('onboarding', null); return;}
     this.activeTime += dt;
     const layoutChanged = this.layoutDirty || this.translation !== this.host.style.translate || this.viewportWidth !== innerWidth || this.viewportHeight !== innerHeight;
@@ -182,7 +228,7 @@ export class ContextualOnboarding {
       this.layoutDirty = false; this.translation = this.host.style.translate;
       this.viewportWidth = innerWidth; this.viewportHeight = innerHeight;
       const bar = this.host.getBoundingClientRect();
-      const anchor = this.active === 'medkit' ? document.getElementById('medkit-count')?.parentElement : this.active === 'grenade' ? document.getElementById('grenade-count')?.parentElement : this.active && ['dash', 'tactical', 'power', 'overdrive'].includes(this.active) ? this.host.querySelector<HTMLElement>(`[data-ability="${this.active}"]`) : this.host.querySelector<HTMLElement>('.weapon-bank');
+      const anchor = this.active === 'medkit' ? document.getElementById('medkit-count')?.parentElement : this.active === 'grenade' ? document.getElementById('grenade-count')?.parentElement : this.active && ['dash', 'tactical', 'power', 'overdrive','pack-tactical'].includes(this.active) ? this.host.querySelector<HTMLElement>(`[data-ability="${this.active==='pack-tactical'?'tactical':this.active}"]`) : this.host.querySelector<HTMLElement>('.weapon-bank');
       const target = anchor?.getBoundingClientRect();
       const size = this.node.getBoundingClientRect();
       const center = Math.max(size.width / 2 + 8, Math.min(innerWidth - size.width / 2 - 8, target ? (target.left + target.right) / 2 : (bar.left + bar.right) / 2));

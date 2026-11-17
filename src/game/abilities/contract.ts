@@ -142,7 +142,7 @@ export type AbilityZoneSnapshot = Readonly<{
 /** Current continuous pylon-to-marine damage link; endpoints are authoritative world coordinates. */
 export type AbilityLinkSnapshot = Readonly<{
   id: number;
-  ability: 'tesla-pylon';
+  ability: 'tesla-pylon' | 'overload';
   element: 'arc';
   x: number;
   y: number;

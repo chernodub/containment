@@ -1,3 +1,4 @@
+import {AUGMENT_IDS,AUGMENT_UPGRADE_RULES,TRANSFORMATIVE_AUGMENT_PAIRS,conflictingAugment} from '../abilities/augmentCatalog';
 import type { BuildState, MutationId } from './types';
 import { MUTATION_CATALOG, MUTATION_IDS, type MutationDefinition } from './mutationCatalog';
 import {BOON_PATHS,activePaths,prerequisitesMet} from './boonPaths';
@@ -15,20 +16,26 @@ const dense = (value: readonly unknown[]): boolean => {
 };
 
 export function isValidBuildState(value: unknown): value is BuildState {
-  return record(value) && Object.hasOwn(value,'mutations') && Object.keys(value).length===(Object.hasOwn(value,'rig')?2:1) && Object.keys(value).every(key=>key==='mutations'||key==='rig') && (!Object.hasOwn(value,'rig') || typeof value.rig==='string' && Object.hasOwn(RIG_CATALOG,value.rig)) && Array.isArray(value.mutations) && value.mutations.length <= MUTATION_IDS.length && dense(value.mutations) && value.mutations.every(ownedId) && new Set(value.mutations).size === value.mutations.length;
+  return record(value) && Object.hasOwn(value,'mutations') && Object.keys(value).every(key=>['mutations','rig','augmentUpgrades'].includes(key)) && (!Object.hasOwn(value,'rig') || typeof value.rig==='string' && Object.hasOwn(RIG_CATALOG,value.rig)) && Array.isArray(value.mutations) && value.mutations.length <= MUTATION_IDS.length && dense(value.mutations) && value.mutations.every(ownedId) && new Set(value.mutations).size === value.mutations.length && Object.values(TRANSFORMATIVE_AUGMENT_PAIRS).every(pair=>!pair.every(id=>(value.mutations as unknown[]).includes(id))) && (value.augmentUpgrades===undefined || Array.isArray(value.augmentUpgrades)&&dense(value.augmentUpgrades)&&new Set(value.augmentUpgrades).size===value.augmentUpgrades.length&&value.augmentUpgrades.every(id=>typeof id==='string'&&Object.hasOwn(AUGMENT_UPGRADE_RULES,id)&&(value.mutations as unknown[]).includes(id)));
+
 }
 export const createBuild = (rig?:RigId): BuildState => rig===undefined?{mutations:[]}:{mutations:[],rig};
 
 export function addMutation(build: BuildState, mutation: MutationId): BuildState {
-  if (!isValidBuildState(build) || !ownedId(mutation) || build.mutations.includes(mutation) || !(MUTATION_CATALOG[mutation].requires??[]).every(id=>build.mutations.includes(id)) || !!MUTATION_CATALOG[mutation].requiresAny?.length && !MUTATION_CATALOG[mutation].requiresAny!.some(id=>build.mutations.includes(id))) throw new Error('Invalid or already owned mutation');
+  if (!isValidBuildState(build) || !ownedId(mutation) || build.mutations.includes(mutation) || !!conflictingAugment(mutation as typeof AUGMENT_IDS[number])&&build.mutations.includes(conflictingAugment(mutation as typeof AUGMENT_IDS[number])!) || !(MUTATION_CATALOG[mutation].requires??[]).every(id=>build.mutations.includes(id)) || !!MUTATION_CATALOG[mutation].requiresAny?.length && !MUTATION_CATALOG[mutation].requiresAny!.some(id=>build.mutations.includes(id))) throw new Error('Invalid or already owned mutation');
   return { ...build, mutations: [...build.mutations, mutation] };
+}
+
+export function upgradeBuildAugment(build:BuildState,augment:typeof AUGMENT_IDS[number]):BuildState{
+ if(!Object.hasOwn(AUGMENT_UPGRADE_RULES,augment)||!isValidBuildState(build)||!build.mutations.includes(augment)||build.augmentUpgrades?.includes(augment))throw new Error('Augment cannot be upgraded');
+ return {...build,augmentUpgrades:[...(build.augmentUpgrades??[]),augment]};
 }
 
 /** Seeded, build-aware sampling without replacement. Rerolls prefer unseen cards. */
 export function draftMutationOffers(seed:number,build:BuildState,rare=false,exclude:readonly MutationId[]=[],depth=0,rig?:RigId):readonly MutationDefinition[]{
  if(!integer(seed,0,0xffffffff)||!isValidBuildState(build)||typeof rare!=='boolean'||rig!==undefined&&!Object.hasOwn(RIG_CATALOG,rig))throw new Error('Invalid mutation draft');
  let state=seed>>>0;const next=()=>{state=(state+0x6d2b79f5)>>>0;let x=Math.imul(state^(state>>>15),1|state);x^=x+Math.imul(x^(x>>>7),61|x);return((x^(x>>>14))>>>0)/4294967296;};
- let pool=MUTATION_IDS.filter(id=>{const m=MUTATION_CATALOG[id];return !build.mutations.includes(id)&&prerequisitesMet(m,build)&&(!m.abilityOnly||rig!==undefined)&&(!m.rig||m.rig===rig);});
+ let pool=MUTATION_IDS.filter(id=>{const m=MUTATION_CATALOG[id];return !build.mutations.includes(id)&&!(conflictingAugment(id as typeof AUGMENT_IDS[number])&&build.mutations.includes(conflictingAugment(id as typeof AUGMENT_IDS[number])!))&&prerequisitesMet(m,build)&&(!m.abilityOnly||rig!==undefined)&&(!m.rig||m.rig===rig);});
  const paths=activePaths(rig===undefined?build:{...build,rig}),result:MutationDefinition[]=[];
  const pick=(candidates:MutationId[])=>{
   const fresh=candidates.filter(id=>!exclude.includes(id));if(fresh.length)candidates=fresh;
@@ -40,6 +47,14 @@ export function draftMutationOffers(seed:number,build:BuildState,rare=false,excl
   let roll=next()*total,index=0;for(;index<weights.length-1&&roll>=weights[index];index++)roll-=weights[index];
   const chosen=candidates[index];if(chosen){result.push(MUTATION_CATALOG[chosen]);pool=pool.filter(id=>id!==chosen);}
  };
+ if(rig&&depth>=1&&depth<=2){
+  const pair=TRANSFORMATIVE_AUGMENT_PAIRS[rig];
+  if(!pair.some(id=>build.mutations.includes(id))){
+   const orderedPair=next()<.5?[...pair]:[...pair].reverse();
+   for(const id of orderedPair){if(pool.includes(id)){result.push(MUTATION_CATALOG[id]);pool=pool.filter(candidate=>candidate!==id);}}
+   if(result.length){while(result.length<3&&pool.length)pick(pool);return Object.freeze(result);}
+  }
+ }
  const starters=()=>pool.filter(id=>BOON_PATHS.some(p=>p.starter===id&&(!build.mutations.length||!paths.includes(p))));
  if(!build.mutations.length&&!rare){
   // Four paths, three choices. Reuse starters only when a reroll exhausts them.

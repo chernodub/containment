@@ -146,6 +146,9 @@ export function createPlacementPreview(): UiPlacementPreview {
 export function readPlacementPreview(game: DepthGame, aim: {x:number;y:number} | null, out: UiPlacementPreview): boolean {
   const snapshot=getAbilities(game),slot=snapshot?.slots?.power;
   if (game.status!=='playing'||!slot||!placementAbilities.has(slot.id)) return false;
+  // Ice Road is traversable and aligned with aim; the retained Glacier preview can only promise a perpendicular barrier.
+  // Native placement still validates the road strip; suppress that misleading presentation until a strip preview exists.
+  if(slot.id==='glacier'&&game.combat.hasMutation('ice-road'))return false;
   if (aim&&(!Number.isFinite(aim.x)||!Number.isFinite(aim.y))) return false;
   const d=ABILITY_CATALOG[slot.id],p=game.player,angle=p.angle;
   if (!Number.isFinite(p.x)||!Number.isFinite(p.y)||!Number.isFinite(angle)) return false;

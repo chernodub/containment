@@ -133,6 +133,7 @@ function meleeEscapePlan(s) {
 export function chooseBoon(ids, rig, owned = []) {
   const score = id => {
     const path = PATHS[rig] ?? [];
+    if(['siege-plow','fault-line','shard-harvest','ice-road','ember-relay','meltdown-core','pilgrim-pylon','live-wire'].includes(id))return 150;
     if (path.slice(-2).includes(id)) return 130;
     if (id === path[0] && !owned.includes(path[0])) return 120;
     if (path.includes(id)) return 100;
@@ -140,7 +141,7 @@ export function chooseBoon(ids, rig, owned = []) {
     if (/plating|armor|vital|scavenger|vamp|recovery/.test(id)) return 60;
     return 10;
   };
-  return [...ids].sort((a, b) => score(b) - score(a) || a.localeCompare(b))[0];
+  return [...ids].sort((a, b) => score(b) - score(a) || (score(a)===150?ids.indexOf(a)-ids.indexOf(b):a.localeCompare(b)))[0];
 }
 /** Safe routes before elites; prefer medical over supplies at low health. */
 export function chooseRoute(routes, health = 100) {
@@ -149,10 +150,23 @@ export function chooseRoute(routes, health = 100) {
     return score(b) - score(a) || a.id.localeCompare(b.id);
   })[0];
 }
-/** Focus a visible spitter/champion; never aim at a dead or occluded target. */
+/** Shop only from currently offered/affordable buttons; no future-room knowledge. */
+export function chooseServicePurchase(available,combat,build={},run={}) {
+  const priorities=[];
+  if(combat.health<70)priorities.push('heal');
+  if(combat.armor<20)priorities.push('armor');
+  if(combat.medkits<2)priorities.push('medkit');
+  priorities.push('upgrade');
+  if(combat.grenades<2)priorities.push('grenade');
+  if((run.rerollTokens??0)<1)priorities.push('reroll');
+  if(combat.reserve<12)priorities.push('ammo');
+  return priorities.find(id=>available.includes(id))??null;
+}
+export function chooseDetour(combat) {return combat.health>=85&&combat.armor>=25&&combat.medkits>0&&combat.credits<240?'salvage':'direct';}
+/** Focus a visible marked priority threat, then ranged pressure; never use hidden state. */
 export function chooseTarget(enemies, player) {
   return enemies.filter(e => e.health > 0 && e.clear && e.visible && e.vulnerable !== false).sort((a, b) => {
-    const score = e => (e.id === -1 ? 1000 : e.champion || e.id < 0 ? 600 : 0) + (e.type === 'spitter' ? 400 : 0) + (e.elite ? 180 : 0) - distance(e, player);
+    const score = e => (e.id === -1 ? 1000 : e.priority ? 850 : e.champion || e.id < 0 ? 600 : 0) + (e.pod ? 650 : e.type === 'spitter' ? 400 : 0) + (e.elite ? 180 : 0) - distance(e, player);
     return score(b) - score(a) || a.id - b.id;
   })[0];
 }
@@ -167,13 +181,19 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
   for (const c of s.candidates.filter(candidate=>candidate.legal)) {
     const velocity=candidateVelocity(s,c),seconds=Math.min(DECISION_MS/1000,distance(c,s.player)/speed);
     const next={x:s.player.x+velocity.x*seconds,y:s.player.y+velocity.y*seconds,radius};
-    const nearest = Math.min(800, ...s.enemies.map(e => distance(c, e)));
+    // Unseen bodies must not make the marine hold stand-off at a navigation cell.
+    const spacingEnemies=target?s.enemies:visible;
+    const nearest = Math.min(800, ...spacingEnemies.map(e => distance(c, e)));
     // Swarmer reach is a lower safety bound, not an invitation to rush a firing
     // lane. Keep ordinary weapon stand-off when ranged enemies share the room.
     const desired = s.human ? (s.combat.weapon === 'shotgun' ? 140 : 240) + s.human.spacing : s.combat.weapon === 'shotgun' ? 220 : 360;
     let score = Math.min(nearest, desired) * .6;
     if (target) score -= Math.abs(distance(c, target) - desired) * .3;
-    if ((chase || s.human && !target) && c.waypoint) score -= distance(c, c.waypoint) * 1.5;
+    // A 90-unit look-ahead can overshoot a nearby waypoint and prefer standing
+    // still. With no firing target, score the next input step toward that waypoint;
+    // ordinary target spacing and evasion keep their existing look-ahead.
+    const objectiveStep=!target?{x:s.player.x+velocity.x*INPUT_MS/1000,y:s.player.y+velocity.y*INPUT_MS/1000}:c;
+    if ((chase || s.human && !target) && c.waypoint) score -= distance(objectiveStep, c.waypoint) * 1.5;
     for (const h of s.hazards) if(h.visible!==false&&h.kind!=='melee-warning')
       score -= Math.max(0, h.radius + 100 - distance(c, h)) * 5;
     for (const e of visible) {
@@ -188,6 +208,9 @@ export function chooseMovement(s, previous = {x: 0, y: 0}) {
       }
     }
     score += (c.dx * previous.x + c.dy * previous.y) * 14;
+    const ranged=visible.filter(e=>e.type==='spitter');
+    if(ranged.length>=2){const exposed=(c.rangedSightlines??[]).filter(id=>ranged.some(e=>e.id===id)).length;score-=Math.max(0,exposed-1)*135;}
+    if(s.siege?.remainingMs>0&&c.waypoint){score-=distance(next,c.waypoint)*1.2;score-=Math.max(0,distance(next,s.siege)-(s.siege.radius-30))*1.5;}
     if (c.clear) score += 45;
     if (score > highest) { highest = score; best = c; }
   }
@@ -280,9 +303,13 @@ export function createHumanPolicy(seed, profile = 'competent') {
         roomKey = key; warnings.clear(); hazardWarnings.clear(); history.length = 0; lastMove = -Infinity;
         nextMove = nextInput = nextHabit = now; movement = {dx:0,dy:0};
       }
-      const visible = visibleEnemies(s);
+      const visible = visibleEnemies(s).map(e=>e.pendingAttack==='charge'&&e.windupMs>0&&e.clear?{...e,
+        meleePhase:'windup',meleeShape:{kind:'line',range:e.chargeWarningLength??214.5,width:e.radius*2},
+        meleeAngle:Math.atan2(e.lockY,e.lockX),meleeOriginX:e.x,meleeOriginY:e.y,
+        meleeRemainingMs:e.windupMs,meleeDurationMs:e.windupMs,meleeProgress:0}:e);
       const active = visible.filter(e => e.meleePhase === 'windup' && e.meleeShape);
-      const threats = active.length + s.hazards.filter(h => h.visible !== false && h.kind !== 'melee-warning').length;
+      const visibleHazards=s.hazards.filter(h=>h.visible!==false&&h.kind!=='melee-warning'&&!visible.some(e=>e.pendingAttack==='charge'&&e.windupMs>0&&h.kind==='warning'&&distance(h,{x:e.x+e.lockX,y:e.y+e.lockY})<2));
+      const threats = active.length + visibleHazards.length;
       const activeIds = new Set(active.map(e => e.id));
       for (const id of warnings.keys()) if (!activeIds.has(id)) warnings.delete(id);
       for (const enemy of active) if (!warnings.has(enemy.id)) {
@@ -290,7 +317,6 @@ export function createHumanPolicy(seed, profile = 'competent') {
         const missed = random() < Math.min(.8,config.missChance + config.missPerThreat * Math.max(0,threats - 1));
         warnings.set(enemy.id,{readyAt,missed});
       }
-      const visibleHazards = s.hazards.filter(h=>h.visible!==false&&h.kind!=='melee-warning');
       const hazardKey = h => h.id ?? `${h.kind}:${Math.round(h.x)}:${Math.round(h.y)}`;
       const activeHazards = new Set(visibleHazards.map(hazardKey));
       for (const id of hazardWarnings.keys()) if (!activeHazards.has(id)) hazardWarnings.delete(id);
