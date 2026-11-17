@@ -163,17 +163,20 @@ void main(){
   // Rail wake: segmented spiral of charged air that lingers, twists and fades.
   float s=fxLocal.x,v=fxLocal.y;
   float along=v*fxRange;
-  float spin=along*3.2-t*7.;
+  float spin=along*2.6-t*9.-age*14.;
   float strand=0.;
-  for(int i=0;i<2;i++){float ph=spin+float(i)*3.14159;float c=sin(ph)*.55;
-   strand+=1.-smoothstep(.04,.16,abs(s-c));}
-  float seg=smoothstep(.35,.75,fxNoise(vec2(along*1.7-t*2.,fxSeed)));
-  float fade=1.-smoothstep(.25,1.,k);
-  float breakup=smoothstep(k*.85,k*.85+.25,fxFbm(vec2(along*1.2,s*2.)+fxSeed+t*.6));
-  float trail=exp(-s*s*5.)*.35;
-  float i0=(strand*(.4+seg*.9)+trail)*fade*breakup;
-  emit=fxColor*i0*2.2*fxIntensity+vec3(2.)*strand*seg*fade*breakup*(1.-smoothstep(0.,.25,k));
-  alpha=i0*.18;
+  for(int i=0;i<2;i++){float ph=spin+float(i)*3.14159;float c=sin(ph)*(.35+.25*smoothstep(0.,.6,k));
+   strand+=(1.-smoothstep(.03,.12,abs(s-c)))*(.55+.45*cos(ph));}
+  // Broken into charged segments that drift apart as the wake cools.
+  float seg=smoothstep(.42,.62,fxNoise(vec2(along*2.3-t*1.5,fxSeed+float(age>.3))));
+  float appear=smoothstep(.03,.14,age);
+  float fade=1.-smoothstep(.2,1.,k);
+  float breakup=smoothstep(k*.9,k*.9+.2,fxFbm(vec2(along*1.4,s*2.)+fxSeed+t*.6));
+  float trail=exp(-s*s*7.)*.3*(1.-smoothstep(0.,.5,k));
+  float i0=(strand*seg+trail)*fade*breakup*appear;
+  vec3 hot=mix(vec3(2.2,1.9,1.5),fxColor*1.6,smoothstep(0.,.35,k));
+  emit=hot*i0*fxIntensity;
+  alpha=i0*.12;
  }else if(m<4.5){
   // Shock ring: hard bright leading edge racing to the exact radius.
   float r=fxLocal.y;float R=fxRange;

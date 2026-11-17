@@ -2,6 +2,7 @@ import { ABILITY_CATALOG } from '../../../game/abilities/catalog';
 import type { AbilityEvent, DeployableSnapshot } from '../../../game/abilities/contract';
 import type { ElementKit } from '../ElementKit';
 import { UNIT, ELEMENT_COLORS, type AbilityFrame, type AbilityPresentation } from '../types';
+import { FxMode } from '../FlagshipFx';
 
 const AMBER = ELEMENT_COLORS.kinetic;
 const EDGE = 0x9fe8ff;
@@ -93,22 +94,42 @@ export class BreacherPresentation implements AbilityPresentation {
       const length = (event.length ?? (shape.kind === 'line' ? shape.length : 900)) / UNIT;
       const endX = x + Math.cos(angle) * length, endZ = z + Math.sin(angle) * length;
       this.impact('rail', x, z, angle, length, 2.6);
-      // Ribbon width is a radius: this is a .7m core, with a broad short corona and .85s air trail.
-      this.kit.heavyBeam(x, .85, z, endX, .85, endZ, AMBER, .35, .85, false);
-      // One near-full-width white pressure core wins the impact frame. It is
-      // shorter than the corona and never exceeds the native damage-lane width.
-      const halfWidth = (event.width ?? (shape.kind === 'line' ? shape.width : 44)) / UNIT * .5;
-      this.kit.beam(x, .85, z, endX, .85, endZ, 0xfffbf2, Math.min(.64, halfWidth * .86), .075, false);
-      this.kit.scar('trench', (x + endX) * .5, (z + endZ) * .5, length * .5, 0x111b22, 12, angle, .62);
-      this.kit.burst(x, .85, z, 'kinetic', 32, 6.5, .6);
-      this.kit.flash(x, z, CORE, 36, 11, 6, .065);
-      this.kit.flash(x, z, AMBER, 14, 9, 5, .24);
-      this.kit.camera(.92, angle);
-      this.kit.anticipate(40, .06);
-      this.kit.exposureFlash(.95);
+      const kit = this.kit, halfWidth = (event.width ?? (shape.kind === 'line' ? shape.width : 44)) / UNIT * .5;
+      // VFX13: hair-thin blinding lance with a sharp leading edge (~2 frames), then a twisting
+      // segmented energy wake that lingers inside the exact lane width.
+      const lance = kit.fx.spawn(FxMode.Lance, x, z, .2);
+      lance.angle = angle; lance.range = length; lance.inner = Math.min(.7, halfWidth); lance.h0 = .85; lance.color = AMBER; lance.intensity = 1.2;
+      const wake = kit.fx.spawn(FxMode.Wake, x, z, kit.low ? .7 : 1.15);
+      wake.angle = angle; wake.range = length; wake.inner = Math.min(.55, halfWidth * .8); wake.h0 = .8; wake.color = AMBER;
+      // A thin short-lived corona keeps the impact frame's bloom without a broad rectangle.
+      kit.beam(x, .85, z, endX, .85, endZ, 0xfff5e5, .06, .06, false);
+      kit.beam(x, .85, z, endX, .85, endZ, AMBER, .12, .16, false);
+      kit.scar('trench', (x + endX) * .5, (z + endZ) * .5, length * .5, 0x111b22, 12, angle, .62);
+      kit.draw('spark', x + Math.cos(angle) * .7, .9, z + Math.sin(angle) * .7, 1.3, .32, 1, CORE, 1, 0, -angle);
+      kit.burst(x, .85, z, 'kinetic', 20, 6.5, .5);
+      kit.flash(x, z, CORE, 36, 11, 6, .065);
+      kit.flash(x + Math.cos(angle) * length * .5, z + Math.sin(angle) * length * .5, AMBER, 18, length * .6, 5, .3);
+      kit.camera(.92, angle);
+      kit.anticipate(40, .06);
+      kit.exposureFlash(.95);
       for (let i = 1; i <= 4; i++) {
         const t = i / 5;
-        this.kit.distort(x + Math.cos(angle) * length * t, z + Math.sin(angle) * length * t, 2, .004, .65, true);
+        kit.distort(x + Math.cos(angle) * length * t, z + Math.sin(angle) * length * t, 2, .004, .65, true);
+      }
+      // Impact burst at each struck enemy: white contact flare, sparks flung along and off the lane.
+      const ids = event.targetIds;
+      if (ids) for (let i = 0; i < ids.length && i < 8; i++) {
+        const actor = kit.statusActor(ids[i]);
+        if (!actor) continue;
+        const m = actor.root.matrixWorld.elements, tx = m[12], tz = m[14], h = Math.min(1.2, actor.height * .55);
+        kit.impact();
+        kit.draw('spark', tx, h, tz, .75, .75, 1, CORE, 1);
+        kit.draw('spark', tx, h, tz, 1.4, .2, 1, AMBER, .9, 0, -angle);
+        for (let j = 0; j < (kit.low ? 3 : 9); j++) {
+          const side = j % 2 ? 1 : -1, a = angle + side * (.5 + (j % 4) * .3);
+          kit.mote('spark', tx, h, tz, Math.cos(a) * (3 + j % 3 * 2), 1 + j % 3, Math.sin(a) * (3 + j % 3 * 2), .03, .45 + j % 3 * .12, j % 3 ? AMBER : CORE);
+        }
+        kit.flash(tx, tz, AMBER, 6, 3, 3, .14);
       }
       const count = this.kit.low ? 6 : 15;
       for (let i = 0; i < count; i++) {
@@ -334,7 +355,7 @@ export class BreacherPresentation implements AbilityPresentation {
       this.railWallImpact(p, frame);
     }
     if (p.age > .85) return;
-    if (p.age < .36) {
+    if (p.age < 0) {
       const rings = this.kit.low ? 3 : 5, shock = 1 - p.age / .36;
       for (let i = 0; i < rings; i++) {
         const distance = (.10 + i * (this.kit.low ? .32 : .19) + Math.sin(i * 2.73) * .025) * p.size, r = (.45 + i * .13) + p.age * (1.7 + i * .3);
@@ -376,6 +397,9 @@ export class BreacherPresentation implements AbilityPresentation {
     const x = p.x + nx * contact, z = p.z + nz * contact, count = this.kit.low ? 8 : 24;
     this.kit.burst(x, .85, z, 'kinetic', this.kit.low ? 8 : 32, 5.5, .65);
     this.kit.flash(x, z, AMBER, 15, 6, 5, .2);
+    this.kit.draw('spark', x - nx * .1, .85, z - nz * .1, 1.1, 1.1, 1, CORE, 1);
+    const ring = this.kit.fx.spawn(FxMode.Shock, x - nx * .15, z - nz * .15, .45);
+    ring.range = 1.1; ring.h0 = .06; ring.color = AMBER; ring.intensity = 1.3;
     for (let i = 0; i < count; i++) {
       const side = (i % 2 ? -1 : 1), lateral = .8 + i % 5 * .45;
       this.kit.mote('solid', x - nx * .08, .5 + i % 4 * .2, z - nz * .08,
