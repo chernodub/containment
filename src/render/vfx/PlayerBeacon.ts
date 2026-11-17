@@ -143,13 +143,17 @@ export class PlayerBeacon {
     overlay.skeleton=source.skeleton;overlay.bindMode=source.bindMode;overlay.bindMatrix.copy(source.bindMatrix);overlay.bindMatrixInverse.copy(source.bindMatrixInverse);
   }
 
-  /** Borrow the post depth; the forward path uses the existing scene depth buffer. */
+  /** Borrow classified post depth; the minimal forward path keeps the locator. */
   setDepthSource(depth:T.DepthTexture|null,width:number,height:number,geometry:T.Texture|null=null):void {
     this.material.uniforms.sceneDepth.value=depth;
     // Public Three texture ownership gives the matching retained MRT attachment.
     // Borrow only; the post owner handles resize, tier recovery and disposal.
     geometry ??= depth?.renderTarget?.textures[1] ?? null;
     const hasGeometry=geometry?.name==='Containment geometry normal + identity';
+    // Unclassified forward depth cannot distinguish a wall from our own armor.
+    // Keep the locator/hit marker, rather than drawing a ghost through the body.
+    // Contour-enabled Low and High already own the classified MRT; no new target.
+    this.material.visible=!!depth&&hasGeometry;
     this.material.uniforms.sceneGeometry.value=hasGeometry?geometry:null;
     this.material.uniforms.hasSceneGeometry.value=hasGeometry?1:0;
     this.material.uniforms.hasSceneDepth.value=depth?1:0;
