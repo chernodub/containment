@@ -1032,6 +1032,8 @@ and `--steps` are explicit integer controls. `--dist=<frozen-dist>` is supported
 The runner never builds implicitly; freeze/build the intended source first.
 `--weapon=rifle` (or pistol/shotgun/plasma/rocket) selects the held weapon for non-fire marine studies; default remains shotgun. Fire rows select their named weapon. Requested rig variants are held against normal renderer refreshes during isolated studies.
 
+`--aim=<degrees>` fixes marine presentation aim. Optional `--travel=<absolute-degrees>` adds 220-unit/s movement to marine idle, fire and reload studies, preserving their named action; other subjects/actions ignore it. The manifest records `travelOverrideAngle` in radians. For the native rifle backpedal case use `--weapon=rifle --aim=-70.089 --travel=90 --actions=idle,fire-rifle,reload`. These remain isolated pose studies, not simulated movement/hit acceptance.
+
 Every frame projects all deformed actor vertices, adds12px padding and uses the
 union of all frame bounds. No native crop is resized. Manifest entries retain
 actual clocks, full crop bounds, body/root transforms, muzzle positions,

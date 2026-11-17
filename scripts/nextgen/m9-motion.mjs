@@ -20,7 +20,7 @@ const weaponModule=ts.transpileModule(weaponSource,{compilerOptions:{module:ts.M
 const {WEAPONS}=await import('data:text/javascript;base64,'+Buffer.from(weaponModule).toString('base64'));
 
 const args=process.argv.slice(2);
-const known=new Set(['out','dist','subjects','actions','frames','steps','weapon','aim']);for(const arg of args)assert(arg.startsWith('--')&&arg.includes('=')&&known.has(arg.slice(2).split('=')[0]),`Unknown motion capture option ${arg}`);
+const known=new Set(['out','dist','subjects','actions','frames','steps','weapon','aim','travel']);for(const arg of args)assert(arg.startsWith('--')&&arg.includes('=')&&known.has(arg.slice(2).split('=')[0]),`Unknown motion capture option ${arg}`);
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const out=resolve(option('out','artifacts/nextgen/m9-final/before')),dist=resolve(option('dist','dist'));
 const subjects=option('subjects','marine,crawler,spitter,brute,stalker,carrier,crawler-elite,spitter-elite,brute-elite,stalker-elite,carrier-elite,brute-warden,carrier-matron,crowd').split(',');
@@ -28,6 +28,7 @@ const allowedSubjects=new Set(['marine','crowd','crawler','spitter','brute','sta
 const actionFilter=option('actions','all').split(',');
 const studyWeapon=option('weapon','shotgun');assert(['pistol','rifle','shotgun','plasma','rocket'].includes(studyWeapon),'Unknown study weapon');
 const studyAim=Number(option('aim',0))*Math.PI/180;assert(Number.isFinite(studyAim),'Invalid aim angle');
+const travelOption=option('travel',null),travelOverrideAngle=travelOption===null?null:Number(travelOption)*Math.PI/180;assert(travelOverrideAngle===null||Number.isFinite(travelOverrideAngle),'Invalid travel angle');
 const frames=Number(option('frames',12)),steps=Number(option('steps',4));
 assert(Number.isInteger(frames)&&frames>=4&&frames<=30&&Number.isInteger(steps)&&steps>=1&&steps<=30);
 const marineActions=['idle','idle-cryo','idle-pyro','idle-arc',...Array.from({length:8},(_,n)=>`run-${n*45}`),'stop-start',...Array.from({length:8},(_,i)=>`reversal-${i*45}`),...['pistol','rifle','shotgun','plasma','rocket'].map(w=>`fire-${w}`),'reload','weapon-switch','dash','hit','death',...['ram','seismic-slam','bulwark','railbreaker','frost-trail','cryo-nova','glacier','whiteout','afterburn','flashfire','napalm-charge','meltdown','static-step','overload','tesla-pylon','overclock'].map(a=>`cast-${a}`)];
@@ -51,7 +52,7 @@ try{
   for(const action of subject==='marine'?marineActions:subject==='crowd'?['run']:enemyActions){
    if(!actionFilter.includes('all')&&!actionFilter.includes(action))continue;
    const actionFrames=/^(attack|death|weapon-)/.test(action)?Math.max(frames,24):action.startsWith('reversal-')?Math.max(frames,18):frames;
-   const result=await page.evaluate(({subject,action,frames,steps,profiles,windupScale,recoveryScale,studyWeapon,studyAim,weapons})=>{
+   const result=await page.evaluate(({subject,action,frames,steps,profiles,windupScale,recoveryScale,studyWeapon,studyAim,travelOverrideAngle,weapons})=>{
     const d=window.__containmentDebug,r=d.renderer,g=d.game,elapsed=g.elapsed,timeBase=d.m9Clock??0;
     const oldRandom=Math.random;let visualSeed=[...`${subject}/${action}`].reduce((n,c)=>(Math.imul(n,31)+c.charCodeAt(0))>>>0,1729);Math.random=()=>{visualSeed=(Math.imul(visualSeed,1664525)+1013904223)>>>0;return visualSeed/4294967296;};
     const abilityUpdate=r.interimAbilities.update.bind(r.interimAbilities),oldAbilityUpdate=r.interimAbilities.update;
@@ -115,6 +116,7 @@ try{
        else if(action.startsWith('reversal-')){const angle=Number(action.slice(9))*Math.PI/180+(phase<.4?Math.PI:0);moving=1;vx=Math.cos(angle)*220;vy=Math.sin(angle)*220;}
        else if(action==='run'){moving=1;vx=({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150;}
        else if(action==='stop-start'){moving=phase<.3||phase>.67?1:0;vx=moving*220;}
+       if(human&&travelOverrideAngle!==null&&(action.startsWith('fire-')||action==='reload'||action.startsWith('idle'))){moving=1;vx=Math.cos(travelOverrideAngle)*220;vy=Math.sin(travelOverrideAngle)*220;}
        if(action.startsWith('fire-'))recoil=Math.exp(-((tick%12)/60)*22);
        if(action==='reload')reload=phase;
        if(action==='weapon-switch'&&tick===Math.floor(frames*steps/2))equip?.('rocket');
@@ -212,7 +214,7 @@ try{
      const mask=document.createElement('canvas');mask.width=canvas.width;mask.height=canvas.height;const mc=mask.getContext('2d');mc.fillStyle='black';mc.fillRect(0,0,mask.width,mask.height);
      for(let i=0;i<frameCanvases.length;i++){const f=frameCanvases[i],fc=f.canvas.getContext('2d'),pixels=fc.getImageData(0,0,f.canvas.width,f.canvas.height),bg=pixels.data.slice(0,3);for(let n=0;n<pixels.data.length;n+=4){const on=Math.max(Math.abs(pixels.data[n]-bg[0]),Math.abs(pixels.data[n+1]-bg[1]),Math.abs(pixels.data[n+2]-bg[2]))>12;pixels.data[n]=pixels.data[n+1]=pixels.data[n+2]=on?255:0;pixels.data[n+3]=255;}const tile=document.createElement('canvas');tile.width=f.canvas.width;tile.height=f.canvas.height;tile.getContext('2d').putImageData(pixels,0,0);mc.drawImage(tile,(i%columns)*cellWidth+f.left-minX,Math.floor(i/columns)*cellHeight+f.top-minY);}
      d.m9Clock=timeBase+1.5+frames*steps/60;
-     return {frames,diagnosticOnly:chain||action==='side-hit'||action==='death-high-impulse',weaponChain:chain?{weapon:chainWeapon,hit:chainHit,kill:chainKill,source:'presentation-only single projectile and prescribed native-catalog corpse impulse; no simulation damage or collision acceptance',nativeKnockback:weapons[chainWeapon].knockback}:undefined,presentationInputs:{weapon:currentWeapon,aim:studyAim,movementSpeed:human?220:({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150,attackWindupMs:(profiles[family]?.windupMs??profiles.brute.windupMs)*(elite?windupScale:1),hitDirection:action==='side-hit'?0:Math.PI/2,deathImpulse:chain?{x:Math.cos(studyAim)*weapons[chainWeapon].knockback*12/32,z:Math.sin(studyAim)*weapons[chainWeapon].knockback*12/32}:{x:action==='death-high-impulse'?30:13,z:6},corpseHoldRequestSeconds:.032,corpseHoldQuantization:'floor(request*120)120Hz ticks; max3ticks/25ms',firePeriodTicks:12,visualSeedAlgorithm:'LCG32 hash31(subject/action,1729)',isolatedBoneReset:human},png:canvas.toDataURL('image/png').split(',')[1],mask:mask.toDataURL('image/png').split(',')[1],unionCrop:{left:minX,top:minY},clock,proof,cellWidth,cellHeight,columns,elapsed,abilityAdapter:typeof model.setAction==='function'||typeof model.motionEvent==='function',source:'production model APIs, frozen simulation, explicit presentation inputs'};
+     return {frames,diagnosticOnly:chain||action==='side-hit'||action==='death-high-impulse',weaponChain:chain?{weapon:chainWeapon,hit:chainHit,kill:chainKill,source:'presentation-only single projectile and prescribed native-catalog corpse impulse; no simulation damage or collision acceptance',nativeKnockback:weapons[chainWeapon].knockback}:undefined,presentationInputs:{weapon:currentWeapon,aim:studyAim,travelOverrideAngle:human?travelOverrideAngle:null,movementSpeed:human?220:({crawler:150,spitter:78,brute:60,stalker:125,carrier:70})[family]??150,attackWindupMs:(profiles[family]?.windupMs??profiles.brute.windupMs)*(elite?windupScale:1),hitDirection:action==='side-hit'?0:Math.PI/2,deathImpulse:chain?{x:Math.cos(studyAim)*weapons[chainWeapon].knockback*12/32,z:Math.sin(studyAim)*weapons[chainWeapon].knockback*12/32}:{x:action==='death-high-impulse'?30:13,z:6},corpseHoldRequestSeconds:.032,corpseHoldQuantization:'floor(request*120)120Hz ticks; max3ticks/25ms',firePeriodTicks:12,visualSeedAlgorithm:'LCG32 hash31(subject/action,1729)',isolatedBoneReset:human},png:canvas.toDataURL('image/png').split(',')[1],mask:mask.toDataURL('image/png').split(',')[1],unionCrop:{left:minX,top:minY},clock,proof,cellWidth,cellHeight,columns,elapsed,abilityAdapter:typeof model.setAction==='function'||typeof model.motionEvent==='function',source:'production model APIs, frozen simulation, explicit presentation inputs'};
     }finally{
      if(ragdollStarted)r.ragdolls.remove(-900001);r.effects.clear();r.interimAbilities.clear();r.interimAbilities.update=oldAbilityUpdate;
      Math.random=oldRandom;model.setDead=oldSetDead;setDead?.(false);model.setAction?.('',0);model.animate=oldAnimate;if(human){model.equip=oldEquip;model.setRig=oldSetRig;}r.scene.onBeforeRender=oldSceneHook;
@@ -221,7 +223,7 @@ try{
      for(let i=1;i<models.length;i++)if(models[i]!==shooter)r.actorPool.release(models[i]);if(!human)r.actorPool.release(model);else{model.root.rotation.z=0;model.setRig?.('breacher');}
      d.refresh();
     }
-   },{subject,action,frames:actionFrames,steps,studyWeapon,studyAim,weapons:WEAPONS,profiles:MELEE_ATTACKS,windupScale:ELITE_MELEE_WINDUP_SCALE,recoveryScale:ELITE_MELEE_RECOVERY_SCALE});
+   },{subject,action,frames:actionFrames,steps,studyWeapon,studyAim,travelOverrideAngle,weapons:WEAPONS,profiles:MELEE_ATTACKS,windupScale:ELITE_MELEE_WINDUP_SCALE,recoveryScale:ELITE_MELEE_RECOVERY_SCALE});
    const file=`${subject}-${action}.png`,png=Buffer.from(result.png,'base64');delete result.png;const mask=Buffer.from(result.mask,'base64');delete result.mask;await mkdir(resolve(out,'masks'),{recursive:true});await writeFile(resolve(out,'masks',file),mask);
    await writeFile(resolve(out,file),png);
    manifest.shots.push({subject,action,file,sha256:createHash('sha256').update(png).digest('hex'),...result});
