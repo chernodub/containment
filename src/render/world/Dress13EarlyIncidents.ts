@@ -80,17 +80,23 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('service-cable-tray',575,345,.3,[.4,.3,.45]);
   }
   if (id === 'armory') {
-    // Half-closed magazine shutters and an abandoned issue case sit north
-    // of the carousel, leaving the southern issue-court fight circle clean.
+    // The interrupted issue load spills outside the port counter, fully in the
+    // spawn camera. The southern native issue-court fight circle stays clear.
     for (const x of [572,628]) {
       put('deck-access-panel',x,246,0,[.85,1,1],2.4,'clinical');
       pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
     }
-    put('service-transit-case',503,420,-.35,[1.2,.4,.8]);
-    put('deck-access-panel',508,409,-.65,[.48,1,.3],.03,'clinical');
-    put('deck-rubber-panel',532,438,.3,[.35,.3,.22],.003,'clinical');
-    put('service-cable-tray',506,438,.9,[.3,.3,.4]);
-    put('deck-access-panel',516,442,.6,[.035,.3,.08],.005,'clinical');
+    put('service-transit-case',268,338,-.25,[1.55,.45,1.05]);
+    put('service-access-hatch',283,332,-.35,[1.25,.6,.75],.08);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.25));
+    put('service-transit-case',245,371,.4,[.85,.4,.65]);
+    put('service-transit-case',285,378,-.5,[.6,.3,.55]);
+    put('service-cable-tray',280,364,.4,[.6,.4,.65]);
+    put('service-cable-tray',253,389,1.35,[.5,.3,.55]);
+    put('deck-access-panel',239,340,-.6,[.4,.5,.24],.026,'clinical');
+    put('deck-access-panel',285,388,.4,[.3,.5,.2],.026,'clinical');
+    put('deck-rubber-panel',255,359,.3,[.55,.5,.35],.026,'clinical');
+    put('deck-rubber-panel',285,371,-.7,[.35,.5,.26],.026,'clinical');
   }
   return pieces;
 }
@@ -161,9 +167,10 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     for(let i=0;i<5;i++) flat([[-.12,-.32],[.13,-.28],[.1,.3],[-.13,.27]],dark,650+i*9,420+(i%2)*8,.3);
   }
   if(id==='armory') {
-    const foam=new T.PlaneGeometry(.95,.48);foam.rotateX(-Math.PI/2);mesh(foam,dark,503,.217,420,-.35);
-    for(const x of [499,507]){const cut=new T.PlaneGeometry(.06,.33);cut.rotateX(-Math.PI/2);mesh(cut,scratch,x,.22,420,-.35);}
-    for(let i=0;i<3;i++) flat([[-.04,-.7],[.03,-.65],[.025,.7],[-.025,.62]],dark,506+i*7,429,-.4);
+    const foam=new T.PlaneGeometry(1.18,.65);foam.rotateX(-Math.PI/2);mesh(foam,scratch,268,.244,338,-.25);
+    const rifle=flat([[-.5,-.12],[-.28,-.12],[-.2,-.045],[.45,-.045],[.45,.025],[.05,.025],[.02,.10],[-.1,.10],[-.1,.025],[-.3,.025],[-.38,.12],[-.5,.12]],dark,268,334,-.25);rifle.position.y=.249;
+    const pistol=flat([[-.21,-.055],[.19,-.055],[.19,.035],[-.02,.035],[-.04,.18],[-.14,.18],[-.17,.035],[-.21,.035]],dark,268,345,-.25);pistol.position.y=.249;
+    for(let i=0;i<4;i++) flat([[-.04,-.7],[.03,-.65],[.025,.7],[-.025,.62]],dark,258+i*7,371,-.4);
   }
   // Unused per-room finishes do not enter the scene or retain resources.
   const used=new Set<T.Material>();group.traverse(o=>{if(o instanceof T.Mesh)used.add(o.material as T.Material);});
