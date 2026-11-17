@@ -27,3 +27,17 @@ R3/R4: forked licking tips, noise-broken body, soft base, temperature by height;
 orange-amber so it never reads as the hostile warning colour. Accepted: dark soot pool, standing flickering tongues with
 height, boiling bright edge at the exact radius, embers and smoke. Weakness: tongues are still on the small side seen
 from the steep camera and their spacing is fairly even.
+
+## Effect priority in full builds (Armory, 25 enemies)
+Before (final7 04): concentric rings and frost/fire sheets over the fight.
+R1 (`vfx15-fb-r1`): native crop shows the hostile priority mask already opens FlagshipFx around actors and warnings;
+what buries the fight is ring count and the bright sustained frost wall.
+R2: shared sustained-coverage budget in FlagshipFx (`fxYield`; impact beats and the first .9 s of a climax exempt;
+cap 110 m² High / 70 m² Low, floor .45). Little visible change at +150 ms (impact frames are exempt by design).
+R3: Shock fronts broken into arcs by angular noise; Cryo Nova's second FriendlyBoundary ring removed; Whiteout's
+sustained wall dims after the race. Accepted: enemies and red warnings read in all three; cryo +150 ms is still the
+busiest frame (Nova arcs + Whiteout front + blizzard streaks overlap).
+
+## 480×270, HUD hidden (`vfx15-480`, `vfx15-480m`)
+Overclock, Railbreaker and Whiteout (+600 ms) identifiable at a glance. Meltdown was thin → cracks widened, spread faster,
+floor glow raised; now reads as a molten floor with enemies standing in flame. Whiteout's +30 ms frame is mostly flash.
