@@ -11,6 +11,9 @@ export function p11ServicePlacements(t:RoomTemplate):OriginalKitInstance[]{
  const plan=SHIP_ARCHITECTURE_PLANS[t.id as keyof typeof SHIP_ARCHITECTURE_PLANS];
  const environment=storyRoomFor(t.id)?.environment;
  if(!plan||!environment)return [];
+ // The interlock hero already owns the room's access/valve detail. Avoid an
+ // extra atlas/material batch for two redundant hatch props in this busy room.
+ if(t.id==='safety-interlock-station')return [];
  const height:Record<string,number>={
   'comms-rack-low':.8885,'cargo-restraintbank':.9,
   'security-lockers-low':.9,
