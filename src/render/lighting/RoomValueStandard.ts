@@ -10,6 +10,8 @@ import * as T from 'three';
 export type RoomValueProfile = Readonly<{
   /** Deck albedo multiplier inside baked fixture pools, outside them, and at hull/void edges. */
   /** Three fixture centres in native room units; the fight circle remains pool zero. */
+  /** Landmark source in native units; bounded self-light and deck spill, below actor plates. */
+  landmark?: Readonly<{at:readonly [number,number];color:number;radius:number;body:number;spill:number}>;
   fixturesAt?: readonly (readonly [number, number])[];
   floor: Readonly<{lit:number; unlit:number; edge:number}>;
   /** Fight-circle falloff from the authored arena centre (metres) toward the perimeter multiplier. */
@@ -140,6 +142,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.46,ambient:.46,marineGlow:1,exit:.9,
   }),
   'overload-floor': profile({
+    landmark:{at:[700,500],color:0xff963c,radius:6,body:.8,spill:.12},
     // Reaction-feed diffuser, core's east rim, exhaust-housing diffuser.
     fixturesAt:[[640,200],[890,480],[640,900]],
     floor:{lit:.48,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:10,value:.40,lane:.85},
@@ -181,8 +184,15 @@ export function roomValueProfile(templateId?: string): RoomValueProfile | undefi
 /** Shared per-room analytic value field: up to four light pools (XZ, inner, outer radius;
  * pool 0 is the fight circle, the rest the room's named-space fixtures) plus exit XZ/radius/gain. */
 export const ROOM_VALUE_FIELD = {value: Array.from({length: 4}, () => new T.Vector4(0, 0, 1e4, 2e4))};
+export const ROOM_LANDMARK = {value:new T.Vector4()};
+export const ROOM_LANDMARK_COLOR = {value:new T.Color(0)};
+export const ROOM_LANDMARK_GAINS = {value:new T.Vector2()};
 export const ROOM_VALUE_EXIT = {value: new T.Vector4(0, 0, 1, 0)};
 export function setRoomValueField(pools: readonly {x:number; z:number}[], exitX: number, exitZ: number, profile?: RoomValueProfile): void {
+  const landmark=profile?.landmark;
+  ROOM_LANDMARK.value.set((landmark?.at[0]??0)/32,(landmark?.at[1]??0)/32,landmark?.radius??1,landmark?1:0);
+  ROOM_LANDMARK_COLOR.value.setHex(landmark?.color??0);
+  ROOM_LANDMARK_GAINS.value.set(landmark?.body??0,landmark?.spill??0);
   ROOM_VALUE_FIELD.value.forEach((pool, i) => {
     const source = pools[i], lane = i > 0 ? profile?.perimeter.lane ?? .55 : 1;
     if (!profile) pool.set(0, 0, 1e4, 2e4);

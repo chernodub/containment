@@ -81,3 +81,9 @@
 ## 20 Final verification
 - Final build passes. Native Cryo/1729 Standard clears 5 rooms then dies in Armory; Story clears 10 then dies in Diagnostic; both 0 errors. No simulation, policy, encounters, difficulty, UI or camera changes.
 - Four-room High/Cryo benchmark: 12 parent + 12 candidate + 4 parent recheck trials, 0 runtime errors/compiles. Existing Freight draw-budget misses affect both; load drifts substantially. Frame/GPU ranges overlap; small-cost neutrality remains uncertified. All raw results and load retained; report includes medians and limits.
+
+# Landmark correction after nextgen merge 450fa1e0
+
+## Overload Floor
+- Opened native calm plus 480 colour/grey calm, landmark tour and heavy: reactor casing/rings now identify the finale above the orange deck spill, while marine plates and hostile lanterns retain priority.
+- First casing fill was too even; reduced body/spill and warmed the retained emitter. Shared bounded landmark self-light and wall-foot wash add no draw/pass/light; build and seven guarded frames pass.
