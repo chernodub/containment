@@ -1,5 +1,7 @@
 # VFX14 review
 
+Final delivery uses runtime source `9fc29a5b`; see the delivery closure and VFX14-REPORT.md for completed verification. Earlier pending notes below record the state at the time of each review round.
+
 ## Seismic Slam
 Round 1: opened Crew Checkpoint impact frame 03 at native resolution. Marine and enemies remain clear, but the glowing radial fissures read as electrical spokes across pale decking. Reduce their emission and cool faster into dark seams; retain the exact-radius shock front. Full native/480 timeline review remains pending.
 
@@ -91,3 +93,10 @@ Flagship floor supplement: opened pale Flashfire native04 beside the original807
 Native footprint audit: `AbilitySystem` measures strip hits with point-to-segment distance <= width/2, including semicircular end caps. The first connected strips under-represented those caps. Extend only the FuelStrip/FrostStrip geometry by the native half-width at each end and clip by the same capsule distance in the shared fragment program, including the zero-length birth circle. This corrects presentation to the native hit area; simulation is unchanged. Focused pale/dark and Pyro/Cryo combat recaptures follow.
 
 Zero-length Afterburn ownership follow-up: use an explicit negative sentinel for non-strip surfaces. A native strip born at zero length must remain FuelStrip (a native-radius birth circle), rather than leasing a circular Fuel slot and abandoning it when the endpoint first moves. This keeps one retained lease throughout native strip growth and retirement.
+
+Final capsule inspection (9fc29a5b): opened native05 on both floors for Afterburn and Frost Trail, then their pale exact480 timelines. Rounded ends now follow the native segment-distance footprint; the damage-warning arcs keep priority over both strips. The late samples retire the strips without the former abandoned circular Fuel lease. These fixes improve correctness rather than making Frost Trail's restrained crystallisation or the small fire jets flagship-quality volume.
+
+## Delivery closure
+Opened final-source native heavy frames for all four rigs, including Pyro High and Cryo Low after the capsule correction, and the final Low Pyro/Cryo exact480 timelines. The charge lane remains crisp over Cryo's frost; the long Pyro lane remains the busiest effect, with the marine's complete outline retained. Opened the exported Napalm and Overload before/after sheets: labels and all four timeline columns are legible, and both floors are represented. Napalm's contrast is substantially improved but its bed remains flat; Overload's link body and contacts are the clearer quality gain.
+
+Final source 9fc29a5b: 301 verified native frames, zero capture failures/errors, zero combat compilations in all 258 measured samples. Build passed. Native unassisted seed 1729 campaigns ended naturally with no errors/defects: Breacher 13, Pyro 14, Arc 12, Cryo 16 cleared rooms. Detailed counts, raw source receipts, the instrumented breakdown and remaining weaknesses are in VFX14-REPORT.md and artifacts/nextgen/vfx14-final/.
