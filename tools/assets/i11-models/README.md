@@ -61,9 +61,10 @@ PERF13 final delivery retains the committed KTX2 and PNG payloads exactly. The
 requested packer was executed, but its stale-cache regenerated creature images
 were not shipped; committed actor GLBs were restored before the final LOD append.
 See `artifacts/nextgen/perf13-final/texture-pack-disposition.json` and
-`authored-preservation.json`. The refreshed local source cache uses the current
-committed fallback PNG pixels and current geometry; it is a shipping-size packing
-source, not a replacement for the original Blender bake sources.
+`final-authored-preservation.json`. The experimental local T12 source cache was
+removed during final cleanup. Recreate a packing source with the helper above;
+committed fallback PNG pixels are shipping-size inputs, not a replacement for the
+original Blender bake sources.
 
 ## PERF13 Brood growth kit
 
