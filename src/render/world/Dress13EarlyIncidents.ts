@@ -1,5 +1,6 @@
 import {dress13ResidentialPlacements, addDress13ResidentialDetails} from './Dress13Residential';
 import * as T from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {OriginalKitInstance, OriginalKitPack} from './OriginalShipKitAssets';
 
 /** Small, grounded aftermath compositions; presentation only, never navigation solids. */
@@ -49,12 +50,7 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
   if (id === 'communal-atrium') {
     // Overturned table tops and a fallen bench form a failed line along the
     // garden's visible south face; the western fight court remains empty.
-    put('habitation-desk',535,419,.25,[.92,.9,.9],.85,'clinical');
-    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI));
-    for (const [x,z,a] of [[597,414,-.24],[654,414,.2]]) {
-      put('habitation-desk',x,z,a,[.85,.85,.85],.72,'clinical');
-      pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationZ(Math.PI/2));
-    }
+    // Three recognisable fallen tables are assembled by the room detail owner.
     put('security-bench',574,429,-.55,[.8,.45,.45],.2,'security');
     pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(1.15));
     put('service-transit-case',614,423,.7,[.7,.4,.6]);
@@ -140,6 +136,21 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     mesh(new T.PlaneGeometry(1.1,.275),label,366,.26,379).rotation.x=-.55;
   }
   if(id==='communal-atrium') {
+    const tables:T.BufferGeometry[]=[];
+    for(const [x,z,y,yaw,roll,flip] of [[535,419,.73,.25,0,1],[597,414,.64,-.24,1.35,0],[654,414,.64,.2,-1.3,0]]){
+      const transform=new T.Matrix4().compose(new T.Vector3(x/32,y,z/32),new T.Quaternion().setFromEuler(new T.Euler(flip?Math.PI:0,yaw,roll,'YXZ')),new T.Vector3(1,1,1));
+      const part=(w:number,h:number,d:number,px:number,py:number,pz:number,color:number)=>{
+        const source=new T.BoxGeometry(w,h,d),g=source.toNonIndexed();source.dispose();g.translate(px,py,pz);g.applyMatrix4(transform);
+        const c=new T.Color(color),values=new Float32Array(g.getAttribute('position').count*3);for(let i=0;i<values.length/3;i++)c.toArray(values,i*3);g.setAttribute('color',new T.BufferAttribute(values,3));tables.push(g);
+      };
+      part(1.5,.08,.9,0,.68,0,0x899184);
+      for(const lx of [-.6,.6])for(const lz of [-.32,.32])part(.065,.64,.065,lx,.32,lz,0x40545a);
+      for(const lz of [-.32,.32])part(1.32,.06,.055,0,.61,lz,0x5c7071);
+    }
+    const tableGeometry=mergeGeometries(tables,false)!;tables.forEach(g=>g.dispose());
+    const tableMaterial=new T.MeshStandardMaterial({vertexColors:true,roughness:.95,metalness:.12});tableMaterial.userData.actorMaterial=true;
+    const fallenTables=mesh(tableGeometry,tableMaterial,0,0,0);fallenTables.name='dress13-atrium-fallen-dining-tables';
+
     const soil=material('dress13-trampled-soil',0x2d3327),leaf=material('dress13-crushed-leaf',0x657454);
     flat([[0,0],[-.5,-.15],[-2.1,.2],[-2.4,.7],[-1.1,1.0],[-.3,.7],[.7,.9],[.5,.3]],soil,694,432,.1).position.y=.029;
     for(let i=0;i<8;i++) flat([[-.10,-.24],[.02,-.30],[.13,-.02],[.04,.24],[-.1,.12]],leaf,550+i*17,429+i%3*4,i*.8);
