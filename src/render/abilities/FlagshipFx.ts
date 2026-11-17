@@ -399,15 +399,15 @@ void main(){
    base=vec3(.72,.88,.97);
   }else if(el<2.5){
    // Meltdown: molten cracks spread irregularly; crust blisters glow near the suit; deck chars dark.
-   float spread=R*(1.-exp(-age*2.6))*(.55+.5*fxFbm(vec2(a*1.6,age*.3)+fxSeed));
+   float spread=R*(1.-exp(-age*4.))*(.55+.5*fxFbm(vec2(a*1.6,age*.3)+fxSeed));
    float reveal=1.-smoothstep(spread-.5,spread,r);
    vec3 c=fxCells(q*1.25+vec2(fxFbm(q*1.1+3.)*1.3));
-   float crack=1.-smoothstep(0.,.045+.05*n,c.y-c.x);
+   float crack=1.-smoothstep(0.,.08+.07*n,c.y-c.x);
    float near=1.-smoothstep(.3,R*.7,r);
    float blister=(1.-smoothstep(.06,.24,c.x))*step(.6,c.z)*(.55+.45*sin(t*4.+c.z*31.));
    float flow=.75+.25*sin(t*3.+c.z*20.-r*2.);
    float heat=crack*reveal*(.5+.5*near)*flow;
-   emit=fxHeat(.3+heat*.6)*heat*1.15+vec3(1.7,.4,.04)*blister*near*reveal*.9+vec3(.55,.07,.01)*near*reveal*.4;
+   emit=fxHeat(.3+heat*.6)*heat*1.15+vec3(1.7,.4,.04)*blister*near*reveal*.9+vec3(.8,.12,.015)*near*reveal*.75;
    alpha=reveal*((.18+.28*near)*(1.-crack)+crack*.45);
    base=vec3(.025,.01,.006);
   }else{
