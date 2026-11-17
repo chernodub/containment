@@ -115,3 +115,7 @@
 ## Freight Hold
 - Opened native gantry-facing tour and 480 colour/grey calm/tour/heavy: suspension gantry now reads as a sodium-lit machine above the amber tow floor; marine and threats retain priority.
 - Gantry-centred source restores structure and cargo identity while the dispatch recess remains dark and exit chevrons clear. Build and seven guarded frames pass.
+
+## Breached Loading Bay
+- Opened native calm and 480 colour/grey calm/tour/heavy: cold scar rim and wedged pod now identify the breach above the grey-blue deck; marine and hot enemy signals remain first/second.
+- Local starlight source leaves the approach and peripheral growth darker while preserving debris, cover and pressure-lock route. Build and seven guarded frames pass.
