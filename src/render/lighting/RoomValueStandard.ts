@@ -34,6 +34,13 @@ export type RoomValueProfile = Readonly<{
 const profile = (p: RoomValueProfile) => Object.freeze(p);
 
 export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = Object.freeze({
+  // Occupied pod windows, medical observation face and south life-support chain.
+  'passenger-vault': profile({
+    fixturesAt:[[600,320],[1000,440],[600,700]],
+    floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.34,lane:.75},
+    wall:{value:.50,saturation:.56},floorSaturation:.48,tint:0xccd7ef,
+    fixtures:.20,practicals:.48,ambient:.46,marineGlow:1,exit:.9,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},
