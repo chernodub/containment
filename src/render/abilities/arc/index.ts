@@ -50,6 +50,7 @@ class ArcPresentation implements AbilityPresentation {
   private dashX = 0;
   private dashZ = 0;
   private timeField?: FxSlot;
+  private timeFieldSeed = -1;
   private disposed = false;
 
   constructor(private readonly kit: ElementKit) { this.nativeEchoes = new NativeMarineEchoes(kit.root); }
@@ -274,7 +275,7 @@ class ArcPresentation implements AbilityPresentation {
     }
     if (frame.snapshot?.hostileTimeScale !== undefined && frame.snapshot.hostileTimeScale < 1) this.overclock(frame, emit);
     else {
-      if (this.timeField) this.timeField.live = false;
+      if (this.timeField && this.timeField.seed === this.timeFieldSeed) this.timeField.live = false;
       this.timeField = undefined;
       this.overclockAge = 0; this.echoAge = 0;
       for (const echo of this.echoes) echo.live = false;
@@ -415,8 +416,9 @@ class ArcPresentation implements AbilityPresentation {
     k.grade(0, fade * .22);
     const starting = this.overclockAge === 0;
     this.overclockAge += frame.dt;
-    if (!this.timeField?.live || this.timeField.mode !== FxMode.Aura || this.timeField.life < 1000) {
+    if (!this.timeField?.live || this.timeField.seed !== this.timeFieldSeed || this.timeField.mode !== FxMode.Aura || this.timeField.life < 1000) {
       this.timeField = k.fx.spawn(FxMode.Aura, x, z, 1e6);
+      this.timeFieldSeed = this.timeField.seed;
       this.timeField.range = 2.6; this.timeField.h0 = .045; this.timeField.arc = 3;
     }
     this.timeField.x = x; this.timeField.z = z; this.timeField.color = VIOLET;
@@ -585,7 +587,7 @@ class ArcPresentation implements AbilityPresentation {
     for (const d of this.discharges) d.live = false;
     for (const echo of this.echoes) echo.live = false;
     for (const shot of this.shotEchoes) shot.live = false;
-    if (this.timeField) this.timeField.live = false;
+    if (this.timeField && this.timeField.seed === this.timeFieldSeed) this.timeField.live = false;
     this.timeField = undefined;
     this.marineEcho.clear(); this.nativeEchoes.clear(); this.nextShot = 0; this.shotsObserved = 0; this.shotBaseline = false;
     this.overclockAge = 0; this.echoAge = 0; this.muzzle = undefined;
