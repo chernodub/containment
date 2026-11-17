@@ -169,3 +169,34 @@ Crawler flinch is still subtler than the impact cue. The existing native-strip
 derivative cannot follow an actor after retirement (enemy-1 bounds absent at
 frame 07); retain the unchanged full native frames as authoritative evidence,
 plus exact-480 derivatives, rather than inventing corpse bounds.
+
+Native weapon expansion look → retain (`native-weapons`, 270 frames, zero
+capture/browser errors): opened native frames 05/15/30 for the nine remaining
+weapon/room lanes, with shotgun 05/10/20; opened the matching exact-480 images.
+Together with rifle Crew pilot this covers all five weapons in pale Crew and
+dark Relay. Final native receipts retain the selected weapon and accepted
+contacts (including armor): shotgun each room 2 shots/16 contacts; rifle Relay
+13/12; pistol each room 6/6; plasma each room 5/9; rocket each room 1/2 plus one
+explosion. Each lane creates one native Crawler corpse. Shotgun carry is clearly
+stronger than rifle (about 408 versus 120 simulation velocity units), visible
+even at 480; connected Brutes keep their planted mass. Pistol contact flash is
+small, plasma's cyan projectile and point impacts are clear, family droplets
+remain brief. Rocket Crew roof/prop occlusion masks part of the carried corpse
+at frames 05/15; Relay keeps it visible. Rocket splash hit receipts still lack
+weapon/angle/source correlation, so no reliable per-victim splash-direction
+claim is made. These lanes exercise accepted firing chains, not every weapon
+killing every family; the 50 paired rows cover that prescribed presentation
+matrix separately. Existing enemy crop derivatives stop on actor retirement;
+full native frames and exact-480 counterparts remain authoritative.
+
+Extended settle look (`settle-final`, six 6-second strips, zero capture errors):
+opened all three native contact pages, all three exact-quarter pages, full
+Crawler/Brute high-impulse strips and both Matron death strips. Brute reaches a
+stable side-on pose; Crawler has small late roll. Matron continues changing sac
+orientation through the end, without detachment or explosive energy. This is
+not evidence of settled Matron corpses: killing begins at 1.2 seconds, followed
+by the authored collapse, while the existing physics retirement occurs after
+six physics seconds. The existing study tool now permits up to 30 steps per
+sample solely to inspect a 10-second follow-up through retirement and support;
+no runtime damping, contact position, collider, or simulation changes follow
+from these samples.
