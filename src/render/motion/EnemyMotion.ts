@@ -158,9 +158,19 @@ export class EnemyMotion {
     if (frozen) { this.freeze(); return; }
     const p = this.profile, motion = this.strength * (this.reduced ? .3 : 1);
     if(this.authored){
-      const contact=this.impact*Math.max(0,1-this.impactAge/ACTOR_IMPULSE_SECONDS)**2*motion;
+      // Keep contact loaded for two presentation ticks before the return;
+      // a squared immediate fade vanished between native 4-tick strip cells.
+      const contact=this.impact*(1-T.MathUtils.smoothstep(this.impactAge,.035,ACTOR_IMPULSE_SECONDS))*motion;
       // Authored center travel uses at most .301 radius; reserve .049 for this layer.
       const direction=aim-this.hitAngle,offset=this.state.offsetLimit*contact*.14;
+      // Clips supply the limbs; the presentation parent carries the entire mass.
+      // Hold a readable silhouette from the first native warning frame, rather
+      // than waiting for the sampled clip to reach its anticipation extreme.
+      const brace=winding?.72+.28*T.MathUtils.smoothstep(anticipation,0,.25):0;
+      const recovery=this.nativePhase==='recovery'?.18+.82*(1-this.nativeProgress):0;
+      const strike=this.nativePhase==='strike'?1-this.nativeProgress*.55:0;
+      const mass=1/Math.sqrt(p.weight);
+      const bend=contact*(this.heavy?.78:.55)*mass;
       // Hit is accepted at strike entry, so extension is already at contact.
       // The off-balance return follows the full native recovery, including elites.
       const extension=this.nativePhase==='strike'?1-.35*this.nativeProgress
@@ -171,7 +181,16 @@ export class EnemyMotion {
       this.body.position.set(Math.sin(direction)*offset+Math.sin(strikeDirection)*limit*extension,this.restY,Math.cos(direction)*offset+Math.cos(strikeDirection)*limit*extension);
       const length=Math.hypot(this.body.position.x,this.body.position.z),bound=extension>0?limit:this.state.offsetLimit;
       if(length>bound){this.body.position.x*=bound/length;this.body.position.z*=bound/length;}
-      this.body.rotation.set(Math.cos(direction)*contact*.10,0,-Math.sin(direction)*contact*.10);this.body.scale.set(1,1,1);
+      this.body.rotation.set(
+        Math.cos(direction)*bend+(brace*(this.family==='carrier'?0:p.rear*.90)+strike*p.strike*.44+recovery*.22)*motion,
+        recovery*.12*motion,-Math.sin(direction)*bend-recovery*.13*motion);
+      // Compression and release stay deliberately smaller than the authored
+      // poses; this layer must survive replacement meshes on the same rig.
+      this.body.scale.set(1+(brace*(this.family==='brute'?.18:p.squashX*.90)+strike*.10)*motion,
+        1+(brace*(this.family==='brute'?-.10:p.squashY*.90)-strike*.10-contact*.06)*motion,
+        1+(brace*p.squashZ*.90+strike*.16)*motion);
+      this.body.position.y-=contact*.045/p.weight;
+      this.body.position.y-=recovery*.025*motion;
       this.state.offsetX=this.body.position.x;this.state.offsetZ=this.body.position.z;return;
     }
 

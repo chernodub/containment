@@ -1032,6 +1032,8 @@ and `--steps` are explicit integer controls. `--dist=<frozen-dist>` is supported
 The runner never builds implicitly; freeze/build the intended source first.
 `--weapon=rifle` (or pistol/shotgun/plasma/rocket) selects the held weapon for non-fire marine studies; default remains shotgun. Fire rows select their named weapon. Requested rig variants are held against normal renderer refreshes during isolated studies.
 
+`--aim=<degrees>` fixes marine presentation aim. Optional `--travel=<absolute-degrees>` adds 220-unit/s movement to marine idle, fire and reload studies, preserving their named action; other subjects/actions ignore it. The manifest records `travelOverrideAngle` in radians. For the native rifle backpedal case use `--weapon=rifle --aim=-70.089 --travel=90 --actions=idle,fire-rifle,reload`. These remain isolated pose studies, not simulated movement/hit acceptance.
+
 Every frame projects all deformed actor vertices, adds12px padding and uses the
 union of all frame bounds. No native crop is resized. Manifest entries retain
 actual clocks, full crop bounds, body/root transforms, muzzle positions,
@@ -1118,3 +1120,47 @@ an acoustic listening review. No automated test suite is added.
 `i11b-{calm,crowd}-{family}-{base,elite,boss}:<room>` separates the twelve shipping caste/rank skins (boss only for Brute/Carrier). Calm uses one actor; crowd requires twenty on legal, non-overlapping floor. Heavy crowd placement also checks projected body height, then repacks edge contacts on legal floor after native contact framing settles. The existing native pointer hook parks the desktop pointer at viewport center. Neither step changes the camera. These opt-in art fixtures hide the HUD scene; use `--canvas-only --width=1920 --height=1080` to exclude DOM UI too.
 
 `i11b-strike-{family}-{base,elite,boss}` reuses existing M10 native encounter staging, selects rank, and enables the existing renderer collider debug rings. Use `--burst=30`; simulation still owns wind-up, strike, recovery and warning shapes. These diagnostic captures are not difficulty or performance evidence.
+
+## FEEL12 contrast lanes
+
+`feel12-melee-{crawler,stalker,brute,spitter,carrier}-{crew-checkpoint,relay-racks}`
+are opt-in aliases of the existing M10 native family lanes on the pale and dark
+rooms. Use `--burst=30`; they retain 50ms steps, capture-only invulnerability,
+normal attack acceptance/clocks and `g5Proof.warningTimeline`. No enemy phase is
+forced. Use `m10-melee-crowd` and `c10-melee-swarm` for the mixed and all-Crawler
+20-enemy conditions. These are staged readability evidence, not campaigns.
+
+## FEEL12 paired weapon chains
+
+The existing M9 runner accepts enemy actions `weapon-hit-{pistol,rifle,shotgun,plasma,rocket}`
+and `weapon-kill-{pistol,rifle,shotgun,plasma,rocket}`. Each isolated native-pixel
+strip includes the production marine firing at the selected family, the ordinary
+weapon tracer/contact pools, directional victim reaction and, for kill rows,
+the prepared authored-collapse/Rapier path. Projectile speed and prescribed
+killing impulse come from the native weapon catalog (`knockback × 12`, as used
+by the native death receipt). Each row fires once, without spread or eight-pellet
+aggregation; rocket rows study direct contact rather than splash acceptance.
+These are explicitly presentation replays: no simulation damage, collision hit,
+critical roll or natural kill is claimed. `weaponChain` metadata retains this
+boundary. Frozen simulation clocks remain unchanged. Per-frame `weaponForward`
+records the held barrel's world +Z axis for review; it is evidence, not a gate.
+
+FEEL12 family aliases and `feel12-melee-crowd` add capture-only per-vertex
+`g5Proof.deformedBounds` receipts. The native strip tool prefers these over
+collision-cylinder envelopes, which can crop long Crawler/Stalker presentation
+lunges. `boundsMethod` records the actual source per frame. No simulation or
+runtime renderer path changes. `feel12-hit-{east,south,west,north}` are eight-frame
+labelled incoming-side presentation replays over the native Crew warning lane;
+they do not claim accepted damage in the invulnerable fixture.
+`feel12-melee-crawler-relay-racks-reduced` and `feel12-hit-east-reduced` reuse
+those exact native/replay scenarios with the ordinary reduced-motion media
+preference, retaining the same simulated attack shape and clocks.
+
+`feel12-weapon-{rifle,shotgun,pistol,plasma,rocket}-{crew-checkpoint,relay-racks}`
+adds native world evidence with `--burst=30`: five ordinary families are legally
+staged on a clear firing lane, then the public weapon switch and fire input run
+ordinary projectiles, damage and deaths. The stationary marine is invulnerable;
+no target health, cooldown, phase or damage is forced. `g5Proof.weaponTimeline`
+retains native shot/contact/corpse/explosion receipts and evolving target
+snapshots. This is a staged encounter, not a campaign or balance measurement;
+only actually recorded contacts and kills establish coverage.

@@ -40,17 +40,25 @@ varying vec3 vBeaconView;
 uniform float strength;
 uniform sampler2D sceneDepth;
 uniform sampler2D sceneGeometry;
+uniform float hasSceneGeometry;
+uniform float marineId;
 uniform vec2 inverseViewport;
 uniform float hasSceneDepth;
 void main(){
   if(hasSceneDepth>.5){
     vec2 uv=gl_FragCoord.xy*inverseViewport;
-    // Only opaque architecture can warrant an x-ray overlay. In particular,
-    // another part of the marine must never wash out his own visible armor.
-    float kind=mod(floor(texture2D(sceneGeometry,uv).a*255.+.5),8.);
-    if(abs(kind-2.)>.25)discard;
+    if(hasSceneGeometry>.5){
+      float kind=mod(floor(texture2D(sceneGeometry,uv).a*255.+.5),8.);
+      if(abs(kind-2.)>.25)discard;
+    }
     float surface=texture2D(sceneDepth,uv).x;
     if(gl_FragCoord.z<=surface+.00008)discard;
+    // B stores the actor identity; A separately packs class and actor region.
+    // A nearer piece of our own armor is self-occlusion, not an obstruction.
+    if(hasSceneGeometry>.5&&marineId>.5){
+      float nearestId=floor(texture2D(sceneGeometry,uv).b*255.0+.5);
+      if(abs(nearestId-marineId)<.5)discard;
+    }
   }
   float rim=pow(max(0.0,1.0-abs(dot(normalize(vBeaconNormal),normalize(vBeaconView)))),2.5);
   float fill=.16*strength;
@@ -76,7 +84,7 @@ function locatorTexture():T.DataTexture {
     pixels[i]=Math.round(T.MathUtils.lerp(4,212,band));
     pixels[i+1]=Math.round(T.MathUtils.lerp(12,247,band));
     pixels[i+2]=Math.round(T.MathUtils.lerp(15,255,band));
-    pixels[i+3]=Math.round(Math.max(band*.86,soft*.38)*255);
+    pixels[i+3]=Math.round(Math.max(band*.34,soft*.10)*255);
   }
   const texture=new T.DataTexture(pixels,LOCATOR_SIZE,LOCATOR_SIZE);
   texture.name='marine-locator-radial';texture.colorSpace=T.SRGBColorSpace;
@@ -87,12 +95,17 @@ function locatorTexture():T.DataTexture {
 /** A quiet suit locator and borrowed-skin silhouette keep the marine findable in a crowd. */
 export class PlayerBeacon {
   readonly root = new T.Group();
-  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.28},sceneDepth:{value:null},sceneGeometry:{value:null},inverseViewport:{value:new T.Vector2(1,1)},hasSceneDepth:{value:0}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
+  private readonly material = new T.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms:{strength:{value:.28},sceneDepth:{value:null},inverseViewport:{value:new T.Vector2(1,1)},hasSceneDepth:{value:0},sceneGeometry:{value:null},hasSceneGeometry:{value:0},marineId:{value:0}},transparent:true,depthTest:false,depthWrite:false,toneMapped:false,blending:T.NormalBlending});
   private readonly groups: SkinGroup[] = [];
   private readonly locatorMap=locatorTexture();
   private readonly locatorMaterial=new T.MeshBasicMaterial({map:this.locatorMap,transparent:true,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide,forceSinglePass:true});
   private readonly ring = new T.Mesh(new T.RingGeometry(.50,.66,48),this.locatorMaterial);
   private readonly direction = new T.Mesh(new T.ConeGeometry(.10,.23,3),this.locatorMaterial);
+  private readonly hitMaterial=new T.MeshBasicMaterial({color:0xff793c,transparent:true,opacity:0,depthTest:false,depthWrite:false,toneMapped:false,side:T.DoubleSide,forceSinglePass:true});
+  private readonly hitArc=new T.Mesh(new T.RingGeometry(.72,.83,20,1,-.55,1.1),this.hitMaterial);
+  private hitLife=0;
+  private hitAngle=0;
+  private hitStrength=1;
   private disposed = false;
 
   constructor(player:T.Object3D,scene?:T.Scene){
@@ -115,7 +128,8 @@ export class PlayerBeacon {
     const directionUV=this.direction.geometry.getAttribute('uv');
     for(let i=0;i<directionUV.count;i++)directionUV.setXY(i,(DIRECTION_TEXEL.x+.5)/LOCATOR_SIZE,(DIRECTION_TEXEL.y+.5)/LOCATOR_SIZE);
     directionUV.needsUpdate=true;
-    this.root.add(this.ring,this.direction);scene?.add(this.root);
+    this.hitArc.rotation.x=-Math.PI/2;this.hitArc.renderOrder=27;
+    this.root.add(this.ring,this.direction,this.hitArc);scene?.add(this.root);
   }
 
   private makeOverlay(source:T.SkinnedMesh,geometry:T.BufferGeometry){
@@ -129,18 +143,39 @@ export class PlayerBeacon {
     overlay.skeleton=source.skeleton;overlay.bindMode=source.bindMode;overlay.bindMatrix.copy(source.bindMatrix);overlay.bindMatrixInverse.copy(source.bindMatrixInverse);
   }
 
-  /** Borrow the post depth; the forward path uses the existing scene depth buffer. */
+  /** Borrow classified post depth; the minimal forward path keeps the locator. */
   setDepthSource(depth:T.DepthTexture|null,width:number,height:number,geometry:T.Texture|null=null):void {
     this.material.uniforms.sceneDepth.value=depth;
-    this.material.uniforms.sceneGeometry.value=geometry;
+    // Public Three texture ownership gives the matching retained MRT attachment.
+    // Borrow only; the post owner handles resize, tier recovery and disposal.
+    geometry ??= depth?.renderTarget?.textures[1] ?? null;
+    const hasGeometry=geometry?.name==='Containment geometry normal + identity';
+    // Unclassified forward depth cannot distinguish a wall from our own armor.
+    // Keep the locator/hit marker, rather than drawing a ghost through the body.
+    // Contour-enabled Low and High already own the classified MRT; no new target.
+    this.material.visible=!!depth&&hasGeometry;
+    this.material.uniforms.sceneGeometry.value=hasGeometry?geometry:null;
+    this.material.uniforms.hasSceneGeometry.value=hasGeometry?1:0;
     this.material.uniforms.hasSceneDepth.value=depth?1:0;
     this.material.uniforms.inverseViewport.value.set(1/Math.max(1,width),1/Math.max(1,height));
     this.material.depthTest=!depth;this.material.depthFunc=T.GreaterDepth;
   }
 
+  /** Incoming side comes from the native damage receipt; the stable arc avoids motion flashes. */
+  hit(angle:number,strength=1){this.hitAngle=angle;this.hitLife=.32;this.hitStrength=T.MathUtils.clamp(strength,0,1);}
+
   /** Animation remains authoritative; merged buffers only combine identical skin spaces. */
-  update(player:T.Object3D,angle:number,hidden=false,crowding=0){
-    this.root.visible=!hidden&&!this.disposed;if(!this.root.visible)return;
+  update(player:T.Object3D,angle:number,hidden=false,crowding=0,warning=false,dt=0){
+    this.root.visible=!hidden&&!this.disposed;if(!this.root.visible){this.hitLife=0;return;}
+    this.locatorMaterial.opacity=warning?.22:1;
+    this.hitLife=Math.max(0,this.hitLife-dt);
+    // HUD preparation compiles constructor-owned materials even while hidden.
+    this.hitArc.visible=this.hitLife>0&&this.hitStrength>0;
+    this.hitMaterial.opacity=this.hitStrength*Math.min(1,this.hitLife/.12)*.86;
+    this.hitArc.position.set(player.position.x,.09,player.position.z);
+    this.hitArc.rotation.z=-this.hitAngle;
+    const marineId=player.userData.containmentGeometryId;
+    this.material.uniforms.marineId.value=Number.isFinite(marineId)?marineId:0;
     this.material.uniforms.strength.value=.28+.56*Math.min(1,Math.max(0,crowding));
     player.updateWorldMatrix(true,true);
     for(const group of this.groups){
@@ -163,6 +198,7 @@ export class PlayerBeacon {
 
   dispose(){
     if(this.disposed)return;this.disposed=true;
+    this.hitArc.geometry.dispose();this.hitMaterial.dispose();
     // Only merged buffers are owned here. The pool owns source geometry/skeletons.
     for(const group of this.groups)group.merged?.geometry.dispose();
     this.material.dispose();this.ring.geometry.dispose();this.direction.geometry.dispose();this.locatorMaterial.dispose();this.locatorMap.dispose();

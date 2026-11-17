@@ -372,7 +372,20 @@ export class MarineMotion {
     if(flinch){this.axis.set(-Math.sin(this.hitAngle),0,Math.cos(this.hitAngle));this.rotate(this.ribs,this.axis,-flinch*.10,this.yawQ);}
     if(this.moving&&!this.action&&!flinch)for(const leg of this.legs)this.plant(leg);
     this.clampHips();
-    if(weapon==='rifle'&&!this.dead&&!this.action&&reload===0&&this.hitRecover===0&&this.switchedFor>.18)this.supportGrip(T.MathUtils.smoothstep(this.switchedFor,.18,.35));
+    // Cast silhouettes live in the torso and free arm. Keep the receiver hand
+    // in a reachable firing pocket rather than twisting an overhead wrist to
+    // bring its barrel back onto the native aim vector.
+    if(this.action&&!this.dead){
+      this.castArm(this.rightArm,this.rightForearm,this.rightHand,.48,-.08,-.13,1);
+      // Retain free-hand height/spread, but never signal a cast backwards while
+      // the marker, receiver and native ability are committed forwards.
+      if(this.leftArm&&this.leftForearm&&this.leftHand){
+        this.leftArm.getWorldPosition(this.foot);this.leftHand.getWorldPosition(this.target);
+        const forward=(this.target.x-this.foot.x)*Math.cos(this.aim)+(this.target.z-this.foot.z)*Math.sin(this.aim);
+        if(forward<.18){this.target.x+=Math.cos(this.aim)*(.18-forward);this.target.z+=Math.sin(this.aim)*(.18-forward);this.solveChain(this.leftArm,this.leftForearm,this.leftHand);}
+      }
+    }
+    if(weapon==='rifle' &&!this.dead&&!this.action&&reload===0&&this.hitRecover===0&&this.switchedFor>.18)this.supportGrip(T.MathUtils.smoothstep(this.switchedFor,.18,.35));
   }
 
   /** The original rifle is shorter than the retained animation's handguard.

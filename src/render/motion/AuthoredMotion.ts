@@ -68,7 +68,12 @@ export class AuthoredMotionPlayer {
                 if (upperNames.size && (clip.name === 'm10-reload' || clip.name === 'm10-switch' || clip.name.startsWith('m10-fire-'))) {
                     const layer = clip.clone();
                     layer.name = clip.name + '-upper';
-                    layer.tracks = layer.tracks.filter(track => upperNames.has(T.PropertyBinding.parseTrackName(track.name).nodeName));
+                    // Blender optimizes constant channels independently per clip. An absent
+                    // reference translation would stay absolute in makeClipAdditive,
+                    // adding the rest offset again and separating the limb armor.
+                    // Upper actions/grips change articulation; local bone offsets
+                    // and scale remain owned by the full base pose.
+                    layer.tracks = layer.tracks.filter(track => upperNames.has(T.PropertyBinding.parseTrackName(track.name).nodeName) && track.name.endsWith('.quaternion'));
                     T.AnimationUtils.makeClipAdditive(layer, 0, clip, 60);
                     const overlay = mixer.clipAction(layer);
                     overlay.setLoop(T.LoopOnce, 1);
@@ -82,7 +87,7 @@ export class AuthoredMotionPlayer {
                 if (clip.name.startsWith('m10-ready-') && clip !== ready) {
                     const layer = clip.clone();
                     layer.name = clip.name + '-grip';
-                    layer.tracks = layer.tracks.filter(track => upperNames.has(T.PropertyBinding.parseTrackName(track.name).nodeName));
+                    layer.tracks = layer.tracks.filter(track => upperNames.has(T.PropertyBinding.parseTrackName(track.name).nodeName) && track.name.endsWith('.quaternion'));
                     T.AnimationUtils.makeClipAdditive(layer, 0, ready, 60);
                     const action = mixer.clipAction(layer);
                     action.setLoop(T.LoopOnce, 1);
@@ -400,7 +405,7 @@ export class AuthoredEnemyMotion {
     private renderManaged = false;
     private quietLocomotion = false;
     private idlePoseTime = -Infinity;
-    constructor(readonly player: AuthoredMotionPlayer) { }
+    constructor(readonly player: AuthoredMotionPlayer, private readonly family = '') { }
     setVisible(visible: boolean, quietLocomotion = false): void {
         this.renderManaged = true;
         this.quietLocomotion = quietLocomotion;
@@ -416,6 +421,10 @@ export class AuthoredEnemyMotion {
             this.hitAge = 10;
     }
     state(phase: EnemyAttackPhase, progress: number): void {
+        // Commitment is already native on this frame: enter the held loaded
+        // silhouette immediately, instead of spending half a short warning
+        // blending out of locomotion and only then beginning to coil.
+        if (phase === 'windup' && this.phase !== 'windup') this.player.snapNext();
         this.phase = phase;
         this.progress = progress;
     }
@@ -445,7 +454,7 @@ export class AuthoredEnemyMotion {
         // A fresh native warning/strike must remain visible after thaw even
         // when an older hit reaction was held by the frozen visual clock.
         if (this.phase === 'windup' || this.phase === 'strike')
-            return this.player.sample(this.phase === 'windup' ? 'm10-windup' : 'm10-strike', this.progress, dt, this.phase === 'strike' ? 0 : .025);
+            return this.player.sample(this.phase === 'windup' ? 'm10-windup' : 'm10-strike', this.phase === 'windup' ? .42 + .58 * this.progress : this.progress, dt, this.phase === 'strike' ? 0 : .025, this.phase === 'windup' && this.family === 'carrier' ? .62 : 1);
         if (this.phase === 'recovery')
             return this.player.sample('m10-recovery', this.progress, dt, .025);
         const hit = (this.heavy ? HEAVY_HITS : LIGHT_HITS)[directionIndex(this.hitDirection, aim)];

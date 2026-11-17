@@ -12,7 +12,7 @@ const bytes=await readFile(resolve(source,'manifest.json')),original=JSON.parse(
 assert.equal(original.failures?.length??0,0,'Native strip source has failed guard scenarios; retain it and recapture under a new label');
 assert.equal(original.errors?.length??0,0,'Native strip source has browser errors');
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
-const manifest={method:'Unresized crops from original guarded production PNGs; no browser, re-render or simulation changes.',source:relative(out,source)||'.',sourceManifestSHA256:hash(bytes),sourceGitSHA:original.gitSHA,sourceDist:original.distSnapshot??null,viewport:original.viewport,shots:[],limitations:['Crop bounds come from the original per-frame projected marine or enemy AABBs; surrounding world and nearby actors remain untouched.','Presentation and simulation clocks are copied verbatim. Scenario-specific step spacing may override the capture CLI, including K7 warning300ms phases.','This derivative does not add action, phase, actor, priority or performance certification beyond the original guarded manifest.']};
+const manifest={method:'Unresized crops from original guarded production PNGs; no browser, re-render or simulation changes.',source:relative(out,source)||'.',sourceManifestSHA256:hash(bytes),sourceGitSHA:original.gitSHA,sourceDist:original.distSnapshot??null,viewport:original.viewport,shots:[],limitations:['Crop bounds come from the original per-frame projected marine or enemy AABBs; surrounding world and nearby actors remain untouched.','Without deformedBounds receipts, root envelopes can crop long presentation lunges; original full native frames remain authoritative.','Presentation and simulation clocks are copied verbatim. Scenario-specific step spacing may override the capture CLI, including K7 warning300ms phases.','This derivative does not add action, phase, actor, priority or performance certification beyond the original guarded manifest.']};
 await mkdir(out,{recursive:true});await writeFile(resolve(out,'source-manifest.json'),bytes);
 const groups=new Map();
 for(const shot of original.shots){
@@ -25,8 +25,8 @@ for(const shots of groups.values()){
  const sprite=original.sprites?.find(s=>s.scenario===shots[0].scenario&&s.room===shots[0].room);
  assert(sprite&&sprite.frames===shots.length,'Original native burst is incomplete');
  shots.forEach((shot,i)=>{assert.equal(shot.frame,i+1,'Native capture frame gap');if(i)assert(shot.simulationMs>shots[i-1].simulationMs,'Native simulation did not advance between frames');});
- const ids=new Set();for(const shot of shots){const proof=shot.evidence.g5Proof;if(proof?.nativeWarning&&Number.isInteger(proof.enemyId))ids.add(proof.enemyId);for(const id of proof?.ids??[])if(Number.isInteger(id))ids.add(id);}
- const subjects=[{name:'marine',bounds:shot=>shot.evidence.marineBounds},...Array.from(ids,id=>({name:`enemy-${id}`,bounds:shot=>shot.evidence.g6FramingProof?.contacts.find(e=>e.id===id)?.bounds}))];
+ const ids=new Set();for(const shot of shots){const proof=shot.evidence.g5Proof;if((proof?.nativeWarning||proof?.stagedNativeEncounter)&&Number.isInteger(proof.enemyId))ids.add(proof.enemyId);for(const id of proof?.ids??[])if(Number.isInteger(id))ids.add(id);for(const actor of proof?.actors??[])if(Number.isInteger(actor.id))ids.add(actor.id);}
+ const subjects=[{name:'marine',deformedKey:'marine',bounds:shot=>shot.evidence.g5Proof?.deformedBounds?.marine??shot.evidence.marineBounds},...Array.from(ids,id=>({name:`enemy-${id}`,deformedKey:id,bounds:shot=>shot.evidence.g5Proof?.deformedBounds?.[id]??shot.evidence.g6FramingProof?.contacts.find(e=>e.id===id)?.bounds}))];
  const frames=await Promise.all(shots.map(async shot=>{const png=await readFile(resolve(source,shot.file));return {shot,image:decodePng(png),sha256:hash(png)};}));
  for(const subject of subjects){
   const first=frames[0].image,scaleX=first.width/original.viewport.width,scaleY=first.height/original.viewport.height;
@@ -38,7 +38,7 @@ for(const shots of groups.values()){
    assert(b.left>=0&&b.top>=0&&b.right<=original.viewport.width&&b.bottom<=original.viewport.height,`${subject.name} full AABB leaves original viewport in ${shot.file}`);
    const crop={left:Math.max(0,Math.floor(b.left*scaleX)-12),top:Math.max(0,Math.floor(b.top*scaleY)-12),right:Math.min(image.width,Math.ceil(b.right*scaleX)+12),bottom:Math.min(image.height,Math.ceil(b.bottom*scaleY)+12)};
    left=Math.min(left,crop.left);top=Math.min(top,crop.top);right=Math.max(right,crop.right);bottom=Math.max(bottom,crop.bottom);
-   return {file:shot.file,sha256,frame:shot.frame,presentationMs:shot.presentationMs,simulationMs:shot.simulationMs,bounds:b,crop};
+   return {file:shot.file,sha256,boundsMethod:shot.evidence.g5Proof?.deformedBounds?.[subject.deformedKey]?'deformed-vertices':'root-envelope',frame:shot.frame,presentationMs:shot.presentationMs,simulationMs:shot.simulationMs,bounds:b,crop};
   });
   const cellWidth=right-left,cellHeight=bottom-top,columns=4,width=columns*cellWidth,height=Math.ceil(frames.length/columns)*cellHeight,pixels=Buffer.alloc(width*height*4);
   for(let i=3;i<pixels.length;i+=4)pixels[i]=255;

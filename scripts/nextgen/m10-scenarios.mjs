@@ -1,3 +1,30 @@
+/** Capture-only deformed bounds. Root collision cylinders do not enclose long
+ * presentation lunges; measuring vertices keeps native strip crops honest. */
+function installDeformedBounds(){
+  const d=window.__containmentDebug,r=d.renderer,proof=d.g5Proof;
+  const ids=proof.actors?.map(a=>a.id)??[proof.enemyId];
+  const models=[{id:'marine',model:r.player},...ids.filter(id=>Number.isInteger(id)).map(id=>({id,model:r.actors.get(id)}))];
+  const point=r.player.root.position.clone(),bounds={};
+  for(const owner of models)bounds[owner.id]={left:0,top:0,right:0,bottom:0};
+  Object.defineProperty(proof,'deformedBounds',{enumerable:true,get(){
+    for(const owner of models){
+      const b=bounds[owner.id],root=owner.model?.root;
+      b.left=b.top=Infinity;b.right=b.bottom=-Infinity;
+      if(!root)continue;root.updateWorldMatrix(true,true);
+      root.traverseVisible(o=>{
+        if(!o.isMesh||!o.geometry?.attributes.position)return;
+        if(o.isSkinnedMesh)o.skeleton.update();
+        for(let i=0;i<o.geometry.attributes.position.count;i++){
+          o.getVertexPosition(i,point);point.applyMatrix4(o.matrixWorld).project(r.camera);
+          const x=(point.x+1)*innerWidth*.5,y=(1-point.y)*innerHeight*.5;
+          b.left=Math.min(b.left,x);b.right=Math.max(b.right,x);b.top=Math.min(b.top,y);b.bottom=Math.max(b.bottom,y);
+        }
+      });
+    }
+    return bounds;
+  }});
+}
+
 /** Real-room melee clocks: normal simulation earns each warning/strike/recovery. */
 export function registerM10Scenarios(scenarios) {
   for(const family of ['crawler','stalker','brute','spitter','carrier'])scenarios.push({
@@ -86,6 +113,34 @@ export function registerM10Scenarios(scenarios) {
 export function registerC10Scenarios(scenarios) {
   const crowd=scenarios.find(s=>s.id==='m10-melee-crowd');
   scenarios.push({...crowd,id:'c10-melee-swarm',setup:new Function('return ('+crowd.setup.toString().replace(/const families=\[[^;]+;/,"const families=Array(20).fill('crawler');").replace('requestedFamilies:{crawler:10,brute:3,stalker:3,spitter:2,carrier:2}','requestedFamilies:{crawler:20}')+')()')});
+  // FEEL12: repeat each native family lane on both contrast extremes. These
+  // aliases retain ordinary simulation phase clocks and the original proof.
+  for(const family of ['crawler','stalker','brute','spitter','carrier'])for(const room of ['crew-checkpoint','relay-racks']){
+    const base=scenarios.find(s=>s.id===`m10-melee-${family}`);
+    scenarios.push({...base,id:`feel12-melee-${family}-${room}`,room,diagnosticOnly:true,
+      setup:new Function(`return (async()=>{await (${base.setup.toString().replaceAll('awakening-bay',room)})();(${installDeformedBounds.toString()})();})();`)});
+  }
+  const nativeCrowd=scenarios.find(s=>s.id==='m10-melee-crowd');
+  scenarios.push({...nativeCrowd,id:'feel12-melee-crowd',
+    setup:new Function(`return (async()=>{await (${nativeCrowd.setup.toString()})();(${installDeformedBounds.toString()})();})();`)});
+  const nativeSwarm=scenarios.find(s=>s.id==='c10-melee-swarm');
+  scenarios.push({...nativeSwarm,id:'feel12-melee-swarm',
+    setup:new Function(`return (async()=>{await (${nativeSwarm.setup.toString()})();(${installDeformedBounds.toString()})();})();`)});
+  // Incoming-side markers are presentation replays, clearly separate from the
+  // invulnerable native-warning fixture's damage acceptance.
+  for(const [side,dx,dy] of [['east',100,0],['south',0,100],['west',-100,0],['north',0,-100]]){
+    const base=scenarios.find(s=>s.id==='feel12-melee-crawler-crew-checkpoint');
+    scenarios.push({...base,id:`feel12-hit-${side}`,frameCount:8,
+      setup:new Function(`return (async()=>{await (${base.setup.toString()})();
+       const d=window.__containmentDebug,p=d.game.player;
+       d.renderer.effect({type:'hurt',x:p.x,y:p.y,sourceX:p.x+${dx},sourceY:p.y+${dy}});
+       d.g5Proof.incomingSidePresentationReplay='${side}';d.refresh();
+      })();`)});
+  }
+  for(const id of ['feel12-melee-crawler-relay-racks','feel12-hit-east']){
+    const base=scenarios.find(s=>s.id===id);
+    scenarios.push({...base,id:id+'-reduced',reducedMotion:true});
+  }
   for(const room of ['crew-checkpoint','relay-racks']) {
     const base=scenarios.find(s=>s.id==='m10-melee-crawler');
     scenarios.push({...base,id:`c10-melee-${room}`,room,setup:new Function(`return (async()=>{
@@ -97,7 +152,7 @@ export function registerC10Scenarios(scenarios) {
       r.effect({type:'corpse',id:900001,family:'crawler',x:p.x+12,y:p.y+20,vx:0,vy:0});
       r.effect({type:'ability',x:p.x,y:p.y,ability:{ability:'overload',rig:'arc',slot:'tactical',phase:'impact',x:p.x,y:p.y,radius:100,durationMs:500}});
       r.effect({type:'ability',x:p.x-25,y:p.y+15,ability:{ability:'overload',rig:'arc',slot:'tactical',phase:'link',targetX:p.x+60,targetY:p.y-20}});
-      d.g5Proof.clutterPresentationReplay=true;d.refresh();
+      d.g5Proof.clutterPresentationReplay=true;(${installDeformedBounds.toString()})();d.refresh();
     })();`)});
   }
 }

@@ -1,0 +1,121 @@
+# FEEL12 aim implementation notes
+
+The root turns on the native aim each presentation frame. Native marine +X forward is converted to +Z through the retained source -90° rotation, then root `PI/2 - aim` maps +Z onto the simulation direction. Feet therefore turn with aim; runtime adds no unbounded torso aim twist.
+
+Round 1 inspected at native size: zero-angle rifle, Railbreaker, Flashfire, Bulwark and Whiteout; pistol at 90°, plasma at 135°, rocket at 180°, Overload at 45°. Rifle/barrel/flash and the sampled other weapon headings agree. However, correcting only the gun group's yaw exposed a visible receiver-to-hand separation during Flashfire, Bulwark and Overload. Whiteout retained a nearly vertical barrel. This was rejected as the final solution.
+
+Round 2 correction moves the actual firing wrist in world space before sampling the attachment socket. The correction maps the socket +Z to native root forward plus explicit aim pitch. Position, receiver orientation and muzzle all then come from that corrected socket. Death disables this constraint. Working vectors/quaternions are actor-owned, with no allocation inside the frame operation. Existing bone restoration removes the preceding additive wrist correction before sampling the next authored pose.
+
+The strip runner accepts `--aim=<degrees>`; ability body-pose adapters receive a presentation-only proxy player with that angle. The frozen simulation player is never changed. Cast study effects remain isolated presentation evidence, not native hit or acceptance evidence.
+
+Pending: inspect round 2 wrist poses and all final angle strips. Plasma support hand looked below the foregrip in the round 1 135° fire study; exact support grip remains weaker than rifle. A numerical heading correction alone is not proof of attractive wrist anatomy or all cast silhouettes.
+
+Round 2 native-size openings: angle45 Flashfire, Whiteout, run90 and run180. Receiver separation improved and Whiteout barrel remained on aim; the overhead firing wrist still looked bent. Run90/180 showed straight, excessively extended leg extremes. The Crew Checkpoint native Crawler frame supplied by the lead also showed a backward-looking free-hand gesture while the receiver and ring pointed right.
+
+Round 3 changes pending capture: receiver-arm two-bone solve holds a reachable forward firing pocket during casts, preserving the authored free arm and torso. Locomotion was reauthored with a precise 20-frame (1/3s) cycle rather than24frames; at the same authored contact speed this shortens stride reach by16.7%. The two compression beats increase from .13 to .65 source units and spine counterturn changes from88% to118% of pelvic yaw. The generating scripts rebuilt69 clips, retaining action choreography, existing skeleton node names/rest transforms and no exported meshes. Final strips must judge whether the remaining free-hand gestures read naturally.
+
+## Complete round1 angle contact review
+
+Opened all32 native contact pages (`angle-{0,45,90,135,180,225,270,315}/marine-contact-{1,2,3,4}.png`), covering four selected native phases of all176 studies (idle, five weapons, sixteen casts at eight headings). This is a contact review, not a claim that every cell of every twelve-frame original was individually opened. Source assets changed during this critique set; later angles contain the wrist fix. It cannot serve as coherent final-source verification.
+
+| Angle | Observed read and remaining oddities |
+|---|---|
+| 0 | All gun flashes point right. Seismic Slam/Whiteout lift gun near vertical; Cryo Nova points its held gun back across shoulder; Bulwark/Flashfire/Overload place receiver beside the held hand. Tesla Pylon folds chest extremely low; Railbreaker remains comparatively coherent. |
+| 45 | Five weapon flashes point lower-right; pistol and rifle are clear. Seismic Slam/Whiteout overhead gun breaks aim. Cryo Nova swings receiver behind head; Static Step starts with receiver above shoulder. Flashfire/Overclock receiver sits apart from wrist early; Tesla Pylon resembles a bow with gun floating to its side. |
+| 90 | Gunfire points down consistently. Rifle foregrip looks firmer than plasma. Whiteout/Slam/Cryo Nova still raise barrel skyward. Meltdown second phase holds receiver high while free hand reaches sideways; Tesla Pylon second phase folds head beneath receiver. |
+| 135 | Gunfire points lower-left; plasma support hand hangs visibly below foregrip. Wrist-corrected cast headings are steadier, but Whiteout/Slam still hold a horizontal gun high over the helmet. Cryo Nova extends firing arm away from shoulder; Tesla Pylon is deeply crouched and side-loaded. |
+| 180 | Five gunfire rows point left; muzzle flash/barrel agree. Whiteout/Slam now keep horizontal heading but lift receiver above brow. Cryo Nova exposes chest toward camera with firing hand/gun behind body; Flashfire/Overload left-hand gesture is clearer than previous angles. |
+| 225 | Gunfire points upper-left. Body/backpack direction does not invert. Whiteout/Slam maintain heading while receiver rises overhead; Cryo Nova second phase places gun low on opposite side of torso. Tesla Pylon low twist makes arm support hard to read; Overclock gesture clear from rear. |
+| 270 | Gunfire points up; pistol/rifle stand out more clearly than large shoulder weapons. Cryo Nova/Meltdown second phase puts gun on lateral edge while torso twists away. Whiteout has steadier heading but elevated wrist. Tesla Pylon has a deep forward fold; free hand and receiver can overlap from this view. |
+| 315 | Gunfire points upper-right. Shotgun flash coherent; rifle support hand most convincing. Whiteout/Slam keep heading with overhead receiver; Cryo Nova briefly places gun down-left of torso while its barrel still points upper-right. Meltdown/Tesla Pylon crouches make firing elbow look sharply folded. |
+
+The front-pocket arm correction targets these observed overhead/side-loaded receiver poses. The free-arm hemisphere clamp targets casts that signal backwards. These are the questions for round3, not assumed successes.
+
+## Railbreaker source boundary
+
+The native event path is `DepthRenderer.effect` → lazy ability owner → ability registry → Breacher `event`. At Railbreaker impact/burst, its presentation computes endpoint from native origin+length, then emits `heavyBeam` and a white `beam` from `(x,.85,z)`. The same event origin also owns its trench, impact, burst and flash. There is no existing weapon/muzzle anchor service. Moving event coordinates in the renderer would move that entire footprint, while replacing the kit's beam method temporarily would be a fragile interception across the VFX12 ownership boundary. Neither was implemented. A dedicated optional weapon-source anchor for only the physical discharge is the appropriate VFX12 integration; the footprint/endpoints must remain native. Native final Railbreaker capture is still required to assess the visible size of this source-to-socket gap.
+
+## Round3 opened-strip review
+
+Opened all13 complete twelve-frame native strips in `aim-round3/angle45`: run0/90/180/270, rifle, shotgun, Railbreaker, Cryo Nova, Whiteout, Flashfire, Static Step, Overload and Tesla Pylon. The right receiver now stays visibly in front and attached through all seven sampled cast rows. Whiteout's free arm still lifts, while its gun stays forward; Cryo Nova no longer sweeps the gun behind the head. Flashfire/Overload keep their free-hand gestures without the detached low-side receiver. Tesla Pylon's deep forward fold remains, but the receiver no longer floats above or opposite the firing hand. The Railbreaker brace and the two fire rows remain coherent.
+
+The shorter gait has a more compact stance and clearer compression/transfer. Brief straight-leg extremes remain (notably run90 cell8 and run0 cell8); run180 still has a broad split stance. These are residual polish weaknesses, rather than a claim of fully solved foot contact from isolated strips. Native movement remains necessary to assess sliding.
+
+Non-gating metadata inspection of156 sampled frames gives maximum horizontal barrel-heading error0.7862° (Railbreaker), next0.2894° (Tesla Pylon), with other rows below0.00004°. Results are retained in `aim-round3/heading-diagnostics.json`. This measures the model/socket heading, not the ability beam's origin or native attack accuracy.
+
+## Final frozen-source angle review
+
+Generated and opened all32 native contact pages in `aim-final/angle-{0,45,90,135,180,225,270,315}`, covering all176studies at four native phases each. Additionally opened all16 complete twelve-frame cast strips at angle0 and the complete worst-case strips Napalm Charge225, Tesla Pylon315, Cryo Nova180 and Whiteout90. The receiver remains ahead of the body and attached to its corrected hand; the old overhead/behind-head/dislocated-gun poses did not recur in these inspected frames. Gunfire flash directions agree with the five visible barrel directions at all eight headings. The free-arm/torso casts remain distinct, although large weapons become one-hand holds during some gestures, and Tesla retains an exaggerated deep fold. Plasma's support grip remains less convincing than rifle.
+
+`aim-final/heading-diagnostics.json` contains the non-gating horizontal-direction readout for all176studies and2112sampled frames. Maximum error is3.02543°, Napalm Charge at225°, frame2. This is within a few degrees and much smaller than the rejected backward/overhead poses, but it is a model/socket observation only. It does not prove native beam attachment or any simulation outcome. The full twelve-frame originals remain available; contact review must not be described as visually opening every cell of all176originals.
+
+## Native startup discrepancy and root cause
+
+The lead's frozen native calm capture `feel12-final/aim-native-before/combat-calm-awakening-bay.png` was opened after the isolated final strips. It still showed the body/free-arm facing left with the marker and weapon facing right. Isolated strip success therefore did not establish native startup correctness.
+
+Decoded the existing marine GLB's meshopt-compressed animation channels directly. Its unanimated `origin` node has quaternion approximately `[0,.70710678,.70710678,0]`; legacy `stand` and `shotgun_delta` first-frame origin quaternions are approximately `[-.70710677,0,0,-.70710677]`. Their quaternion dot product is approximately0: a180° basis difference. The authored motion GLB deliberately contains no origin animation channel. On first authored playback, stopping the legacy actions restores their original pre-stand origin basis. The isolated runner calls model.reset first, which restores the captured stand-ready bone pose and rebinds the legacy original state there; native creation did not take that reset path.
+
+Startup fix082d460f calls `r.reset();r.mixer.stopAllAction()` before constructing marine authored playback. Reset preserves the captured stand-ready origin, then the second operation retires the legacy bindings before authored actions take ownership. It does not uncache or replace the mixer. The isolated startup build passed at `aim-startup-dist`; no live capture dist was overwritten. Native calm and Railbreaker recapture remain required before accepting this fix.
+
+Native startup confirmation: opened `feel12-final/aim-native-final/combat-calm-awakening-bay.png` and native Railbreaker frames02/03/04. The calm helmet, chest and receiver now point right with the marker; the180° origin inversion is resolved. Railbreaker body/gun point up with the warning and discharge direction. The physical discharge still starts at its native body/lane origin, with the broad impact core extending behind the muzzle toward the torso; exact muzzle attachment remains the documented VFX12 service gap. The marine also retains a translucent-looking overlay in calm and rail frames; the startup rotation fix does not address that separate treatment.
+
+Final self-occlusion review: opened source `e0f9final2` native calm and Railbreaker03 in `feel12-solid-marine`, then both exact480×270 BOX reductions written beside them. The torso now reads as solid armor instead of the previous translucent-looking self-overlay; helmet, chest, receiver and ring still agree at spawn. Railbreaker retains its clear forward barrel/heading in the bright impact frame. The self-occlusion correction is accepted for these two inspected views. Exact muzzle-source integration remains the separate Railbreaker VFX12 ownership limit already documented above. The reductions are art inspection only and supply no performance evidence.
+
+## Final absolute gait coverage
+
+The `marine-gait-final` cohort fixes aim at0° and captures all eight absolute travel directions, stop/start and all eight reversals:17studies,24frames at four presentation ticks per cell. This corrects an earlier interpretation limit: at aim45°, travel90° was diagonal relative to aim, not pure strafe.
+
+Generated and opened all three native contact pages, covering all17studies. Generated exact-quarter BOX strips for all17 without rescaling native sources, then opened complete native and quarter run90/run180/run270/reversal180. Pure backpedal180 now reads as a compact alternating rear step with visible knee compression; its feet do not make the broad diagonal splits seen in the earlier aim45 cohort. Pure strafes90/270 retain cross-over/separation and alternating compression, with brief straight supporting legs and some toe/ankle angularity still visible. Reversal180 shows a compressed transfer before opening the new stride; one split-stance frame remains during its forward leg. Across contacts the receiver stays aimed right while lower-body direction changes, and the pelvic/shoulder transfer is visible without a large barrel swing.
+
+These isolated rooted studies establish pose/cadence coverage and reveal residual leg polish; they do not establish zero world-space sliding or native foot contact by themselves. Earlier broad-split comments apply to their explicitly recorded diagonal-relative-to-aim views, rather than pure backpedal.
+
+
+## Complete original-strip pass
+
+Opened all176 full native twelve-cell PNG originals under `aim-final/angle-*`, rather than substituting contacts. The actual opened-path list is `aim-final/opened-full-strips.json` (176 entries,2112 cells). This later pass supersedes the earlier contact-only coverage limitation above. No recurring reversed/overhead receiver pose was found. Remaining isolated weaknesses are the low plasma support hand, one-handed heavy-weapon cast holds, deep torso folds and brief angular leg extremes already recorded. Socket diagnostics remain separate from native beam attachment.
+
+Opened native campaign `playtest/feel12-final-breacher-1729/r5-crew-checkpoint-mid.png` and a fourfold crop. Its raised free left-arm armor visibly separates from the torso silhouette by roughly ten native pixels, with two small distal shapes further above it; this is visibly worse than a merely thin continuous arm. The right receiver/barrel remains aligned north/right toward the cursor. The runtime arm solver rotates existing joints only and clamps target reach to the existing segment lengths; it does not translate or stretch arm bones. The Blender action author uses non-stretch IK. This evidence does not yet distinguish a baked/local transform or skin attachment defect from an extreme pose exposing segmented source geometry, so no speculative source/mesh change was made during the frozen campaign. The native free-arm separation is an unresolved visual weakness and prevents claiming every cast/body attachment is flawless.
+
+
+## Native rifle/backpedal separation diagnosis
+
+Continued offline diagnosis after the campaign snapshot supplied velocity `(0,220)`, aim `-1.223305957` radians and rifle with no active cast/reload. The earlier screenshot uncertainty is resolved: the additive clip preparation, rather than mesh skinning or the support-grip reach correction, doubles two local arm offsets.
+
+The retained body/Breacher rig has no vertices weighted to `hand_armor.L` or IK controls. Left-arm vertices use `upper_arm.L`, `forearm.L`, `hand.L`; runtime aliases match Three's sanitized names. Run90/135/180 deform-bone translation tracks differ from rest by only about1e-6 source units. However, independently optimized `m10-ready-rifle` retains `upper_arm.L.position` and `hand.L.position` while the `m10-ready-shotgun` reference omits them. Three's additive conversion cannot subtract an absent reference track, so those absolute rest translations enter the additive grip unchanged.
+
+Offline replay instantiated the production AuthoredMotion and MarineMotion classes against decoded source clips, with pure backpedal, the supplied aim and a reconstructed uniform source scale0.15375 (absolute meters are approximate; the2×ratio is exact). Across twelve sampled phases, shoulder→upper-arm distance is0.459374m and elbow→hand0.560686m; disabling runtime supportGrip leaves both unchanged. Restricting the two prepared additive upper/grip masks to quaternion tracks restores0.229688m and0.280343m respectively, while upper-arm→elbow stays0.323339m. The source skeleton/rest poses and complete base clip tracks remain unchanged. This is a manual diagnostic replay, not a new test suite/gate. The two constructor masks now discard additive local position/scale tracks; full base choreography retains them. Native rifle/backpedal and original-frame recapture are required before visual acceptance.
+
+
+Rifle moving A/B acceptance: opened all six complete24-cell native strips in `rifle-moving-before` and `rifle-moving-after` (idle with travel, firing, reload), plus all six exact-quarter BOX strips. Both cohorts use aim-70.089°, absolute travel90° and rifle; the matched-before build removes only the additive quaternion predicates from the same merged source. The before strips reproduce the floating orange/gray upper arm and split distal silhouette from the native campaign. After the correction, that gross separation disappears through all three rows; the arm is compact and the shoulder joins the torso. Early idle cells retain a raised equip/transition hand, and reload still has an exaggerated overhead free-arm gesture, but neither retains the doubled-offset gap. The receiver/barrel remains forward through recoil. The quarter strips preserve the same compact before/after silhouette difference. This accepts the diagnosed physical attachment fix for these144 inspected cells; all-five-weapon moving rows are next.
+
+
+## Final moving weapon coverage after additive repair
+
+Captured `moving-weapons-final/{pistol,rifle,shotgun,plasma,rocket}` against frozen `runtime-solid4`, serially with one browser at a time. Each weapon has firing and reload rows at aim-70.089°, absolute travel90°,24cells/four ticks each: ten strips,240sampled poses, zero capture errors. Opened every complete native original and every exact-quarter BOX reduction; the20-path receipt is `moving-weapons-final/opened-files.json`.
+
+The doubled-offset shoulder/forearm separation does not recur in any of these ten rows. Rifle remains compact as in the accepted A/B. Pistol has conspicuous raised one-handed/free-hand motion; shotgun keeps a clearer receiver and larger flash. Plasma's bright long body and rocket's bulky launcher mask some forearm/chest contact from this angle, so their grip read remains weaker than rifle. All five share an exaggerated overhead reload gesture; it is attached but could use more weapon-specific choreography. Brief straight supporting legs remain in backpedal. These are polish limits, not grounds for another speculative runtime change. Barrel/flash directions remain forward; non-gating socket heading diagnostics in the receipt peak below0.000008° across these240poses. This diagnostic does not establish native projectile collision, VFX beam origin or world-space foot sliding.
+
+
+Final release campaign spot review: opened the currently available native `feel12-release-breacher-1729` first-room start/mid, second-room start/mid and all four `hardest-123-*` burst frames; also generated/opened their exact480×270 BOX versions in `feel12-final/release-breacher-aim480`. These eight views show compact joined shoulder/arm silhouettes, with no recurrence of the campaign's earlier floating upper arm. Spawn body/receiver point right with the marker; first-room rifle points up/right toward the cursor; second-room combat points down toward its cursor/marker. The hardest burst keeps the shoulder and shotgun together across the lateral foot transfer. At480 the marine remains identifiable, although small hand contact cannot be judged precisely. No new severe aim/attachment defect found in these available views. This is a spot review of existing frames, not a campaign-completion claim or coverage of future rooms.
+
+
+### Final native campaign supplement, runtime c7967ee7
+
+Opened Breacher Crew Checkpoint mid-fight and its Breached Loading Bay death,
+Cryo Passenger Vault, Relay Racks and Overload Floor mid-fights, Cryo
+`hardest-119-2` (about -157° aim) and Pyro Crew Checkpoint mid-fight at native
+size and exact480. Selected sources and hashes are in
+`artifacts/nextgen/feel12-final/campaign-review480/opened-files.json`.
+The marine retains opaque light plates and the blue/red rig panels across
+frost, fire and the left-facing back view; internal cyan self-lines do not
+recur. The bright Cryo cast is a surrounding ability flash with an outlined
+solid figure, not a status-material tint. Heavy receiver and raised free-hand
+poses remain stylized; no new limb separation was observed. These selected
+frames supplement the complete moving weapon strips; they are not a claim
+that every campaign PNG was opened.
+
+Arc Crew Checkpoint mid-fight was subsequently opened at native and exact480
+(same receipt). Light plates and purple rig panels remain solid during the
+chain effects and reload pose; no cyan self-lines recur. This completes the
+selected native campaign body-readability spot review for all four rigs, not
+the still-running Arc campaign outcome.

@@ -518,7 +518,7 @@ export class DepthRenderer {
  effect(effect:GameEffect){
   if(effect.type==='ability'){if(effect.ability?.slot==='overdrive'&&effect.ability.phase==='impact')this.presentationHold?.request(.04,this.options.screenShake,!!this.motionQuery?.matches);this.player?.motionEvent?.(effect);if(effect.ability){this.interimAbilities.event(effect.ability,effect.x,effect.y);}return;}
   const x=effect.x/UNIT,z=effect.y/UNIT;
-  if(effect.type==='hurt'){if((effect.damage??0)>=36)this.presentationHold?.request(.045,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig?.addTrauma(.34);this.cameraRig?.punch(.015,180);actorImpact(this.player,effect);return;}if(effect.type==='sync-corpse')return;
+  if(effect.type==='hurt'){/* FEEL12: native receipt drives a stable incoming-side marker. */if(effect.sourceX!==undefined&&effect.sourceY!==undefined||effect.angle!==undefined)this.playerBeacon.hit(effect.sourceX!==undefined&&effect.sourceY!==undefined?Math.atan2(effect.sourceY-effect.y,effect.sourceX-effect.x):(effect.angle??0)+Math.PI,(this.options.flashIntensity??1)*(this.motionQuery?.matches?.65:1));if((effect.damage??0)>=36)this.presentationHold?.request(.045,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig?.addTrauma(.34);this.cameraRig?.punch(.015,180);actorImpact(this.player,effect);return;}if(effect.type==='sync-corpse')return;
   if(effect.type==='explosion'||(effect.type==='boon'&&(effect.boon==='blast'||(effect.boon==='overload'&&effect.radius!==undefined)))){this.lighting.explosion(x,z,(effect.radius??48)/UNIT);this.cameraRig?.addTrauma(.32);this.cameraRig?.punch(.035,240);}
   if(effect.type==='shot'){
    this.recoil=1;this.cameraRig?.kick(effect.angle??0,effect.weapon==='shotgun'?.08:effect.weapon==='rocket'?.12:.025);if(this.pendingShots.length<4)this.pendingShots.push(effect);return;
@@ -533,7 +533,10 @@ export class DepthRenderer {
    this.corpseIds??=new Set();if(this.corpseIds.has(effect.id))return;this.corpseIds.add(effect.id);
    let existing=this.actors.get(effect.id!);if(!existing&&effect.family){existing=this.actorPool.take(effect.family,effect.elite);existing.root.position.set(x,0,z);registerGeometry(existing.root,GEOMETRY_CLASSES.enemy);this.scene.add(existing.root);}if(existing){motionDeathCue=actorDeathCue(existing);existing.root.userData.motionDeathCue=motionDeathCue;existing.root.position.set(x,0,z);freezeCorpse(existing);this.ragdolls.add(effect.id!,existing,effect.family??existing.root.name.replace('alien-',''),{x:(effect.vx??0)/UNIT,z:(effect.vy??0)/UNIT},motionDeathCue,this.motionQuery?.matches?0:.032*Math.min(this.options.screenShake,this.options.flashIntensity));this.actors.delete(effect.id!);this.corpses.push({model:existing,id:effect.id!,x,y:z,vx:(effect.vx??0)/UNIT,vy:(effect.vy??0)/UNIT,height:.2,lift:3,spin:2.4,age:0});if(this.corpses.length>(this.tier==='low'?6:10)){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}}
   }
-  this.effects.event(effect,motionDeathCue);
+  // FEEL12: presentation family survives native lethal-event actor retirement.
+  let targetModel=effect.targetId===undefined?undefined:effect.targetId===-1?this.queen:this.actors.get(effect.targetId);
+  if(!targetModel&&effect.targetId!==undefined)for(const corpse of this.corpses)if(corpse.id===effect.targetId){targetModel=corpse.model;break;}
+  this.effects.event(effect,motionDeathCue,targetModel?.root.name.replace('alien-',''));
  }
  syncCorpse(id:number,x:number,y:number){const corpse=this.corpses.find(c=>c.id===id);if(corpse){corpse.x=x/UNIT;corpse.y=y/UNIT;corpse.vx=corpse.vy=0;if(this.ragdolls.has(id))this.ragdolls.sync(id,x/UNIT,y/UNIT);else{corpse.model.root.position.x=x/UNIT;corpse.model.root.position.z=y/UNIT;}}}
  get roomLoading(){return this.kitDressing?.state==='loading'||this.roomWarmPending||this.recoveringGraphics||this.communalGarden?.state==='loading'||this.residentialGalleryEquipment?.state==='loading'||this.passengerVault?.state==='loading'||this.recoveryKit?.state==='loading'||this.sealedBank?.state==='loading'||this.releasedBerth?.state==='loading';}
@@ -637,7 +640,7 @@ export class DepthRenderer {
   // Keep preparation/picking on the normal layer, including after interrupted frames.
   if(menu)this.lighting.suppressCombatFeedback?.(this.muzzle);
   const cameraLayerMask=this.camera.layers.mask,autoClear=this.renderer.autoClear;this.camera.layers.set(menu?CINEMATIC_LAYER:0);
-  try{this.post.render(dt);this.playerBeacon?.setDepthSource(this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding);this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
+  try{this.post.render(dt);this.playerBeacon?.setDepthSource(this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
   finally{this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}
  }
 
