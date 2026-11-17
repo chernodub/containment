@@ -144,9 +144,11 @@ void main(){
   base=mix(vec3(.025,.022,.021),vec3(.2,.035,.008),max(cool,dens*(1.-smoke)));
   emit*=1.-smoothstep(.62,1.,k);
   if(fxParam<-.5){
-   float tongue=(1.-smoothstep(.35+n*.4,.65+n*.35,abs(s)))*(1.-smoothstep(.55+n*.25,.9+n*.1,r));
+   float tongueWidth=.65*pow(max(0.,1.-r),.65)+n*.18;
+   float tongue=(1.-smoothstep(tongueWidth*.55,tongueWidth,abs(s)))*(1.-smoothstep(.55+n*.25,.9+n*.1,r));
+   tongue*=.35+.65*smoothstep(.34,.56,n+fine*.2);
    float hotCore=(1.-smoothstep(.08,.28,abs(s)))*(1.-smoothstep(.15,.55,r));
-   alpha=tongue*.22;
+   alpha=tongue*.46;
    base=vec3(.14,.025,.004);
    emit=(vec3(1.3,.22,.008)*tongue+vec3(2.4,1.3,.16)*hotCore)*fxIntensity;
   }
