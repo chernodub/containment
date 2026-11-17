@@ -45,3 +45,23 @@ Opened native tour02 and exact480 tour01/03 against final6: the central scanner 
 
 ### Round 1 actual image review — Armory
 Opened native tour02 and exact480 tour01/03 against final6: the pale counter no longer dominates the darker carousel; the dropped case is visible beside it and never covers the marine. The case still reads shut, so correction adds a dark foam opening and two muted empty cutouts; north magazine shutters remain a peripheral tour detail rather than a fight-floor feature.
+
+### Round 2 — Residential Gallery
+Opened corrected native tour02 and exact480 tour01/03. The case now has an open dark compartment and folded garment; drawings, fallen chair and skew barricade remain a single peripheral composition. Marine silhouette and quiet fight-floor values are preserved; claw cuts remain small tertiary evidence at 480.
+
+### Round 2 — Awakening Bay
+Opened corrected native tour03 and exact480 tour01/02. The dropped medical case is now exposed beside the console and the forced-open canopy reads above it; wet soles stay subdued and are difficult to pick out at 480. No added mass overlaps the marine or the observation fight floor.
+
+### Round 2 — Passenger Vault
+Opened corrected native tour02 and exact480 tour01/03. The empty extended drawer and its two fallen cases make a clear interruption; paper and drag wear remain supporting details. The marine, ring and aisle stay unobstructed, with the original cyan/blue room hierarchy intact.
+
+### Round 2 — Communal Atrium
+Opened corrected native tour02 and exact480 tour01/03. The two toppled desks and fallen bench now read as a failed barricade at the damaged planter's foot; the former intact garden presentation has a visible consequence. The west fight floor is unchanged and the marine is fully clear; the tables remain secondary to actors.
+
+### Round 2 — Crew Checkpoint
+Opened corrected native tour03 and exact480 tour01/02. Bags now sit on the real conveyor, with a fallen case, broken tray and spent cases at its foot; no piece covers the marine. This remains the weakest early-room incident because it is peripheral to spawn/fight framing; the central pale scanner floor is intentionally kept quiet.
+
+### Round 2 — Armory
+Opened corrected native tour02 and exact480 tour01/03. The issue case now reads open and empty beside the carousel, and the southern fight court stays unobstructed. The carousel remains the room landmark; the north lockdown shutters are less visible than the case in normal fight framing.
+
+Both six-room runs completed their requested five-position tours and calm frames without a capture failure. These are staged presentation reviews, not a campaign or hardware performance result. Round2 frozen build includes the working-tree shared details hook and loader exemption, recorded via app-asset hashes; HEAD label alone does not describe that complete source tree.
