@@ -105,7 +105,7 @@ Treat this as source requirements, not an assertion of every object's visibility
 | relay-racks | clinical, industrial, security, structure | comms-engineering, service-kit, incidents | 9.333 |
 | transmission-chamber | clinical, industrial, security, structure | control, service-kit | 8.000 |
 | diagnostic-gallery | clinical, structure | control, service-kit | 5.333 |
-| safety-interlock-station | clinical, security, structure | control, service-kit | 6.667 |
+| safety-interlock-station | clinical, security, structure | control | 5.333 |
 | coolant-plant | industrial, security, structure | maintenance-containment, service-kit | 6.667 |
 | service-shaft-landing | clinical, industrial, security, structure | maintenance-containment, service-kit, incidents | 9.333 |
 | infested-workshop | clinical, industrial, structure | infested, service-kit, incidents | 8.000 |
@@ -139,5 +139,5 @@ heroes and reactor owns Manual Control/Overload; each room still needs one of
 those two packs, so its per-room atlas bound is unchanged by the split.
 
 R11 adds `incidents` (six models) to the six rooms shown above. Its final
-geometry/file totals await the ongoing rebuild; atlas ownership is already
+geometry/file totals are 6,324 triangles / 814,856 bytes; atlas ownership is
 recorded as one additional 512-square atlas. See `docs/nextgen/plans/P11-R11-review.md`.
