@@ -47,9 +47,9 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       cutaway: !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
-    // The heart owns the deep south service recess, 305 units from the arena.
+    // The heart swallows the starboard plenum shoulder, beyond the fight circle.
     // All tall growth is backed by the duct-bank faces; the crossing stays open.
-    brood('brood-hive-heart', 600, 825, 1, 0, Math.PI);
+    brood('brood-hive-heart', 970, 400, .8);
     brood('brood-nest-large', 300, 222);
     brood('brood-nest-large', 900, 818, 1, 0, Math.PI);
     brood('brood-nest-medium', 950, 225, 1, 0, .15);
