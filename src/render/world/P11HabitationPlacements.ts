@@ -15,6 +15,6 @@ export function p11HabitationPlacements(id:string):OriginalKitInstance[]{
   place('residential-story-wall',670,260,0,.90,1,.70),
  ];
  // The existing 218×90 shared garden void supplies all collision support.
- if(id==='communal-atrium')return [place('atrium-conservatory',589,355,0,1.65,1,1.04)];
+ if(id==='communal-atrium')return [...dress13EarlyIncidents(id),place('atrium-conservatory',589,355,0,1.65,1,1.04)];
  return dress13EarlyIncidents(id);
 }

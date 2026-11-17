@@ -11,3 +11,7 @@ Build passed. Native/480 capture review and visual correction await the shared b
 ## Passenger Vault
 Placement pass: six small personal effects and an identification plaque sit below the existing empty extended drawer, isolated from the west entry fight lane.
 Build passed. Native/480 capture review and visual correction await the shared browser slot.
+
+## Communal Atrium
+Placement pass: two overturned desks and a fallen bench form one failed barricade at the conservatory's east foot; dropped contents and dark trample panels gather beneath it, clear of the west fight floor.
+Build passed. Native/480 capture review and visual correction await the shared browser slot.

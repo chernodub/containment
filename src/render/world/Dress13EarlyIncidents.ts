@@ -36,5 +36,18 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('deck-rubber-panel',475,355,.8,[.18,.4,.2],.004,'clinical');
     put('security-sign-05',424,327,0,[.28,.35,1],.55,'security');
   }
+  if (id === 'communal-atrium') {
+    // A failed dining barricade gathers on the conservatory's east foot.
+    for (const [x,z,a] of [[678,365,.25],[698,395,-.3]]) {
+      put('habitation-desk',x,z,a,[.85,.85,.85],.82,'clinical');
+      pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationZ(Math.PI/2));
+    }
+    put('security-bench',662,394,-.55,[.7,.6,.7],.3,'security');
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
+    put('service-transit-case',650,379,.7,[.65,.5,.65]);
+    put('deck-rubber-panel',641,390,.4,[.4,.5,.25],.003,'clinical');
+    put('deck-rubber-panel',659,409,-.3,[.3,.5,.4],.003,'clinical');
+    put('deck-access-panel',685,415,.8,[.25,.5,.3],.006,'clinical');
+  }
   return pieces;
 }
