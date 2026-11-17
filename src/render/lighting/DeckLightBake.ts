@@ -5,7 +5,7 @@ import type { RoomTemplate } from '../../game/roguelike/types';
 /** Bake stable fixture falloff and construction proximity once at room build.
  * RG stores key-pool coverage and soft enclosure occlusion. No realtime lights,
  * scene queries or combat work; Low uses the identical 256² light field. */
-export function bakeDeckLighting(t: RoomTemplate, pools: readonly T.Vector4[], services: readonly {x:number;z:number;width:number;depth:number}[] = []): { texture: T.DataTexture; bounds: T.Vector4 } {
+export function bakeDeckLighting(t: RoomTemplate, pools: readonly T.Vector4[], services: readonly {x:number;z:number;width:number;depth:number}[] = [], exitGain = .8): { texture: T.DataTexture; bounds: T.Vector4 } {
   const hull = t.boundary ?? [{x: 0, y: 0}, {x: t.width, y: 0}, {x: t.width, y: t.height}, {x: 0, y: t.height}];
   const xs = hull.map(p => p.x / 32), zs = hull.map(p => p.y / 32);
   const x0 = Math.min(...xs), z0 = Math.min(...zs), width = Math.max(...xs) - x0, depth = Math.max(...zs) - z0;
@@ -26,7 +26,7 @@ export function bakeDeckLighting(t: RoomTemplate, pools: readonly T.Vector4[], s
       if (source.z < 1) continue;
       pool = Math.max(pool, (1 - smooth(.22, 1.45, Math.abs(x - source.x) / source.z)) * (1 - smooth(.16, 1.35, Math.abs(z - source.y) / source.w)));
     }
-    pool = Math.max(pool, .8 * (1 - smooth(.4, 3.5, Math.hypot(x - t.exit.x / 32, z - t.exit.y / 32))));
+    pool = Math.max(pool, exitGain * (1 - smooth(.4, 3.5, Math.hypot(x - t.exit.x / 32, z - t.exit.y / 32))));
     for (const [ax, az, dx, dz] of segments) {
       const f = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
       nearest = Math.min(nearest, Math.hypot(x - ax - dx * f, z - az - dz * f));

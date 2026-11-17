@@ -3,10 +3,12 @@ import * as T from 'three';
 import type { ShipEnvironment } from '../ShipEnvironments';
 import { getEnvironmentMood } from './EnvironmentMoods';
 import { applyFloorVariation } from './FloorVariation';
-import { optimizeLocalLights } from './LocalLightShading';
+import { optimizeLocalLights, setRoomValue } from './LocalLightShading';
+import { roomValueProfile } from './RoomValueStandard';
 import { applyHotFixtureSurface } from './HotFixtureSurface';
 import {registerFlatFloorLighting} from './FlatFloorLighting';
 
+const fixtureScales = new WeakMap<T.MeshStandardMaterial, {base:number;written:number}>();
 const originals = new WeakMap<T.MeshStandardMaterial, { color: T.Color; roughness: number; metalness: number; emissiveIntensity: number }>();
 // Subtle surface tint only: environment identity comes from motivated light, not tinted black paint.
 const deckTint: Readonly<Record<ShipEnvironment, number>> = {
@@ -24,7 +26,8 @@ const deckNames = new Set(['painted-steel-deck','annulus-deck','annulus-circulat
 const hardwareBounce:Partial<Record<ShipEnvironment,number>> = {infested:.001,communications:.006,security:.0002,containment:.0005,reactor:.007};
 
 /** Tune room-owned surfaces and hot fixtures without changing warning, enemy or navigation colors. */
-export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 'cryogenics', templateId?:string, practicalShapes?:T.Vector4[]) {
+export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 'cryogenics', templateId?:string, practicalShapes?:T.Vector4[], valueStandard=true) {
+  const valueProfile = roomValueProfile(templateId);
   const mood = getEnvironmentMood(environment), seen = new Set<T.MeshStandardMaterial>();
   const legacyBounce=['cold-aisle','cryo-gallery','turbine-hall','power-conduits'].includes(templateId??'')?.006:0;
   const tint = new T.Color(deckTint[environment]),reactorDeck=templateId==='overload-floor'?new T.Color(0x46505a):reactorSteel;
@@ -67,6 +70,20 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         material.emissiveIntensity = Math.max(2.6, original.emissiveIntensity * 1.75);
       }
       const surfaceBounce=!floor&&hardwareBounce[environment]!==undefined?hardwareBounce[environment]!:deckBounce[environment];
+      // LIGHT13: dark ship, lit actors. Actor finishes are never room surfaces.
+      if(valueStandard&&material.userData.containmentMarineSurface===undefined&&!material.userData.k10Original&&!material.userData.k11Original){
+        const deck=material.userData.light13Deck===true,anyFloor=floor||deckNames.has(material.name);
+        if(valueProfile)setRoomValue(material,deck?1:anyFloor?valueProfile.floor.lit:valueProfile.wall.value,anyFloor?valueProfile.floorSaturation:valueProfile.wall.saturation,valueProfile.tint,valueProfile.marineGlow,valueProfile.perimeter.value);
+        else setRoomValue(material);
+        // Neutral (white/pale) fixtures yield to actors; coloured warning/route emitters keep their meaning.
+        const previous=fixtureScales.get(material);const e=material.emissive,peak=Math.max(e.r,e.g,e.b),chroma=peak>0?(peak-Math.min(e.r,e.g,e.b))/peak:0;
+        // Recover the unscaled base from our own last write; other owners may have reset it since.
+        const base=previous&&material.emissiveIntensity===previous.written?previous.base:material.emissiveIntensity;
+        const scale=valueProfile&&peak>0&&chroma<.45?valueProfile.fixtures:1;
+        // Neutral fixtures also take a hard ceiling so a 6–10× panel never out-shouts the marine.
+        // Saturated emitters keep their hue but stop blowing out to white (tone-mapped >1.5 reads as a white strip).
+        material.emissiveIntensity=!valueProfile||peak===0?base:scale<1?Math.min(base*scale,.7):Math.min(base,1.5);fixtureScales.set(material,{base,written:material.emissiveIntensity});
+      }
       optimizeLocalLights(material,environment==='reactor'?(templateId==='overload-floor'||templateId==='manual-control-chamber'?.12:1):.02,environment==='cargo'||environment==='communications'?.16:.025,Math.max(templateId==='reactor-vault'?.013:templateId==='manual-control-chamber'?.010:surfaceBounce,legacyBounce));
     }
   });

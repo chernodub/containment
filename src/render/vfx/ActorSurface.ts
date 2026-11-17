@@ -10,18 +10,23 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   const rimColor = { value: new T.Color(friendly ? 0x78838c : elite ? 0xc1d8e5 : 0x91b9d1) };
   const camouflage = { value: 1 }, deathStyle = { value: 0 };
   const rimStrength = { value: friendly ? .035 : elite ? .46 : .26 };
+  // LIGHT13 hierarchy: marine = brightest, most saturated figure (self-lit plates,
+  // rig colour on top-facing armour, hot visor); creatures = dark masses with a
+  // cool rim and hot lanterns. x: body value / plate lift, y: rig crown, z: emissive gain.
+  const hierarchy = { value: new T.Vector3(friendly ? .42 : .42, friendly ? 1.1 : 0, friendly ? 2.6 : elite ? 2.3 : 1.8) };
+  const rigColor = { value: new T.Color(0xffb454) };
   for (const material of materials) {
     material.userData.containmentMarineSurface=friendly;
     const previous = material.onBeforeCompile;
     const previousKey = material.customProgramCacheKey();
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
-      Object.assign(shader.uniforms, { actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle });
+      Object.assign(shader.uniforms, { actorStageLight:stageLight,actorPlateTorso:plateTorso,actorPlateOpening:plateOpening,actorPlateBounds:plateBounds,actorFlash: flash, actorDissolve: dissolve, actorFlashIntensity: flashIntensity, actorRimColor: rimColor, actorRimStrength: rimStrength, actorCamouflage: camouflage, actorDeathStyle: deathStyle, actorHierarchy: hierarchy, actorRigColor: rigColor });
       shader.vertexShader = 'uniform float actorPlateOpening;uniform vec4 actorPlateBounds;varying vec3 actorPosition;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nactorPosition=position;').replace('#include <skinning_vertex>', `#include <skinning_vertex>
 float plateTop=smoothstep(.48,.72,(position.y-actorPlateBounds.x)/actorPlateBounds.y);
 transformed.z+=sign(position.z-actorPlateBounds.z)*actorPlateOpening*actorPlateBounds.w*.055*plateTop;
 transformed.y+=actorPlateOpening*actorPlateBounds.y*.025*plateTop;`);
-      shader.fragmentShader = `uniform float actorStageLight;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
+      shader.fragmentShader = `uniform vec3 actorHierarchy;uniform vec3 actorRigColor;uniform float actorStageLight;uniform vec2 actorPlateTorso;uniform float actorPlateOpening;uniform vec4 actorPlateBounds;uniform float actorFlash;uniform float actorDissolve;uniform float actorFlashIntensity;uniform vec3 actorRimColor;uniform float actorRimStrength;uniform float actorCamouflage;uniform float actorDeathStyle;varying vec3 actorPosition;\n` + shader.fragmentShader
         .replace('#include <color_fragment>', `#include <color_fragment>
 float plateHeight=(actorPosition.y-actorPlateBounds.x)/actorPlateBounds.y;
 if(actorPlateOpening>.05&&plateHeight>.72&&abs(actorPosition.x-actorPlateTorso.x)<actorPlateTorso.y&&abs(actorPosition.z-actorPlateBounds.z)<actorPlateBounds.w*.15*actorPlateOpening)discard;
@@ -33,23 +38,29 @@ if(actorDeathStyle>.5&&actorDeathStyle<1.5)diffuseColor.rgb=diffuseColor.rgb*vec
 if(actorDeathStyle>1.5&&actorDeathStyle<2.5)diffuseColor.rgb*=.54;
 if(actorDeathStyle>3.5)diffuseColor.rgb=diffuseColor.rgb*vec3(.80,.72,1.12)+vec3(.018,.008,.035);
 if(actorDeathStyle>2.5&&actorDeathStyle<3.5)diffuseColor.rgb=diffuseColor.rgb*vec3(.62,.78,.50)+vec3(.006,.014,.003);
-${friendly ? '' : 'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(dot(diffuseColor.rgb,vec3(.2126,.7152,.0722))),.12)*1.12+vec3(.006,.009,.012);diffuseColor.rgb*=mix(.55,1.0,actorCamouflage);'}
+${friendly ? '' : 'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(dot(diffuseColor.rgb,vec3(.2126,.7152,.0722))),.12)*1.12+vec3(.006,.009,.012);diffuseColor.rgb*=mix(.55,1.0,actorCamouflage)*actorHierarchy.x;'}
 diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.9,.98,1.0),actorFlash*actorFlashIntensity*.35);`)
         .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
 ${friendly ? '' : 'float actorLitLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));reflectedLight.indirectDiffuse+=vec3(.009,.014,.019)*actorStageLight*(1.0-smoothstep(.005,.04,actorLitLuma));'}`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float actorRim=pow(1.0-clamp(dot(normalize(normal),normalize(vViewPosition)),0.0,1.0),2.6);
+${friendly ? `vec3 marineUp=normalize((viewMatrix*vec4(0.0,1.0,0.0,0.0)).xyz);
+float marineTop=smoothstep(.05,.6,dot(normalize(normal),marineUp));
+float marinePlate=smoothstep(.06,.30,dot(diffuseColor.rgb,vec3(.2126,.7152,.0722)));
+totalEmissiveRadiance=totalEmissiveRadiance*actorHierarchy.z+diffuseColor.rgb*actorHierarchy.x*(.35+.65*marinePlate)*actorStageLight+actorRigColor*marineTop*marinePlate*actorHierarchy.y*actorStageLight;` : `float lanternLuma=dot(totalEmissiveRadiance,vec3(.2126,.7152,.0722));
+totalEmissiveRadiance=max(vec3(0.0),mix(vec3(lanternLuma),totalEmissiveRadiance,1.35))*actorHierarchy.z;`}
 float ashEdge=actorDissolve>0.0?1.0-smoothstep(actorDissolve,actorDissolve+.045,ash):0.0;
 vec3 deathColor=actorDeathStyle>3.5?vec3(.22,.12,.39):actorDeathStyle>.5&&actorDeathStyle<1.5?vec3(.14,.34,.43):actorDeathStyle>2.5?vec3(.08,.14,.025):vec3(.22,.035,.006);
 float deathContact=actorDeathStyle>.5?deathFracture*.26*(1.0-actorDissolve):0.0;
-totalEmissiveRadiance+=actorRimColor*actorRim*actorRimStrength*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity+deathColor*deathContact;`);
+totalEmissiveRadiance+=${friendly?'actorRimColor':'mix(actorRimColor,vec3(.50,.72,1.0),.6)'}*actorRim*actorRimStrength*actorStageLight*mix(.35,1.0,actorCamouflage)+mix(vec3(1.8,.48,.08),deathColor*5.0,step(.5,actorDeathStyle))*ashEdge*actorFlashIntensity+deathColor*deathContact;`);
     };
-    material.customProgramCacheKey = () => `${previousKey}:actor-surface-v5:${friendly ? 'marine' : 'alien'}`;
+    material.customProgramCacheKey = () => `${previousKey}:actor-surface-v6-light13:${friendly ? 'marine' : 'alien'}`;
     material.needsUpdate = true;
     optimizeLocalLights(material);
     patchActorRegions(material,friendly);
   }
   return {
+    rig(color:number) { rigColor.value.setHex(color); },
     stage(value:number) { stageLight.value=T.MathUtils.clamp(value,0,1); },
     plateBounds(minY:number,height:number,centerZ:number,spanZ:number,centerX=0,torsoHalfWidth=1) { plateBounds.value.set(minY,height,centerZ,spanZ);plateTorso.value.set(centerX,torsoHalfWidth); },
     expose(value:number) { plateOpening.value=T.MathUtils.clamp(value,0,1); },

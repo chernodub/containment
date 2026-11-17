@@ -3,6 +3,7 @@ import type { RoomTemplate } from '../../game/roguelike/types';
 import { SHIP_ARCHITECTURE_PLANS } from '../../game/roguelike/shipArchitectureLayouts';
 import { shipEnvironment } from '../ShipEnvironments';
 import { bakeDeckLighting } from '../lighting/DeckLightBake';
+import { roomValueProfile } from '../lighting/RoomValueStandard';
 import { tileDeckGeometry } from './E10DeckTiles';
 import { buildDeckStory } from './E10DeckStory';
 
@@ -66,7 +67,7 @@ export async function loadDeckSurfaces(world: T.Group, t: RoomTemplate, active: 
   const get = (low:boolean,family:string,name:string) => loaded.get(`${low}/${family}/${name}`)!;
   const story = buildDeckStory(t,get(false,'shared','decals')); textures.add(story.high); textures.add(story.low);
   const services = world.getObjectByName('e9-room-interiors')?.userData.interior?.services ?? [];
-  const light = bakeDeckLighting(t,deckLightSources(t),services); textures.add(light.texture);
+  const light = bakeDeckLighting(t,deckLightSources(t),services,roomValueProfile(t.id)?.exit); textures.add(light.texture);
   for (const [index,mesh] of surfaces.entries()) {
     const m = mesh.material as T.MeshStandardMaterial, family = index ? secondary : environment;
     const maps = (low:boolean) => [get(low,family,'basecolor'),get(low,family,'normal'),get(low,family,'orm'),low?story.low:story.high,get(low,'shared','trim-basecolor'),get(low,'shared','trim-normal')];
@@ -96,12 +97,16 @@ export function shapeDeckLight(material: T.MeshStandardMaterial, t: RoomTemplate
   const bounds=new T.Vector4(minX,minZ,Math.max(...xs)-minX,Math.max(...zs)-minZ),environment=shipEnvironment(t.id);
   const keyTint=new T.Color(environment==='habitation'||environment==='cargo'||environment==='engineering'?0xffddad:environment==='maintenance'||environment==='communications'?0xb8e1d8:0xdbe7f4).lerp(new T.Color(0xffffff),.75);
   const fillTint=new T.Color(environment==='infested'?0xb1a8bf:0xa0b9cb).lerp(new T.Color(0xffffff),.75);
+  // LIGHT13 value profile: pools lit, perimeter and hull edges falling to near-black.
+  const valueProfile=roomValueProfile(t.id);material.userData.light13Deck=true;
+  const valueFloor=new T.Vector4(valueProfile?.floor.lit??1,valueProfile?.floor.unlit??1,valueProfile?.floor.edge??1,valueProfile?1:0);
+  const valuePerimeter=new T.Vector4(valueProfile?.perimeter.inner??0,valueProfile?.perimeter.outer??1,1,0);// the shared analytic field owns the perimeter
   const accent=new T.Color(environment==='containment'?0x9e6bff:environment==='maintenance'?0x6cbea9:environment==='communications'?0x62beaa:0x91b3c0);
   material.onBeforeCompile=(shader,renderer)=>{
     previous.call(material,shader,renderer);
-    shader.uniforms.e10LightBounds={value:bounds};shader.uniforms.e10KeyTint={value:keyTint};shader.uniforms.e10FillTint={value:fillTint};shader.uniforms.e10Arena={value:arena};shader.uniforms.e10AccentTint={value:accent};
+    shader.uniforms.e10LightBounds={value:bounds};shader.uniforms.e10KeyTint={value:keyTint};shader.uniforms.e10FillTint={value:fillTint};shader.uniforms.e10Arena={value:arena};shader.uniforms.e10AccentTint={value:accent};shader.uniforms.light13Floor={value:valueFloor};shader.uniforms.light13Perimeter={value:valuePerimeter};
     shader.vertexShader='varying vec3 e10Position;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ne10Position=(modelMatrix*vec4(transformed,1.0)).xyz;');
-    shader.fragmentShader='varying vec3 e10Position;uniform vec2 e10Arena;uniform vec4 e10LightBounds;uniform vec3 e10KeyTint;uniform vec3 e10FillTint;uniform vec3 e10AccentTint;\n'+shader.fragmentShader;
+    shader.fragmentShader='varying vec3 e10Position;uniform vec2 e10Arena;uniform vec4 e10LightBounds;uniform vec3 e10KeyTint;uniform vec3 e10FillTint;uniform vec3 e10AccentTint;uniform vec4 light13Floor;uniform vec4 light13Perimeter;\n'+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
       float e10Calm=1.0-smoothstep(3.5,5.2,distance(e10Position.xz,e10Arena));
       ${T.ShaderChunk.map_fragment.replace('diffuseColor *= sampledDiffuseColor;','sampledDiffuseColor.rgb=mix(vec3(.78),sampledDiffuseColor.rgb,mix(1.0,.50,e10Calm));diffuseColor*=sampledDiffuseColor;')}
@@ -111,7 +116,12 @@ export function shapeDeckLight(material: T.MeshStandardMaterial, t: RoomTemplate
         e10Irradiance=texture2D(lightMap,e10RoomUV);
       #endif
       float e10Pool=e10Irradiance.r;
-      diffuseColor.rgb*=mix(.64,1.32,e10Pool)*mix(.76,1.0,e10Irradiance.g)*mix(e10FillTint,e10KeyTint,e10Pool)*1.18;
+      float e10Value=mix(.64,1.32,e10Pool)*mix(.76,1.0,e10Irradiance.g)*1.18;
+      if(light13Floor.w>.5){
+        float light13Outer=smoothstep(light13Perimeter.x,light13Perimeter.y,distance(e10Position.xz,e10Arena));
+        e10Value=mix(light13Floor.z,mix(light13Floor.y,light13Floor.x,e10Pool),e10Irradiance.g)*mix(1.0,light13Perimeter.z,light13Outer*(1.0-e10Pool*.85));
+      }
+      diffuseColor.rgb*=e10Value*mix(e10FillTint,e10KeyTint,e10Pool);
       #ifdef USE_EMISSIVEMAP
         vec3 e10Story=texture2D(emissiveMap,e10RoomUV).rgb;
         diffuseColor.rgb*=mix(vec3(1.0),e10Story,mix(.78,.22,e10Calm));
@@ -123,7 +133,7 @@ export function shapeDeckLight(material: T.MeshStandardMaterial, t: RoomTemplate
       reflectedLight.indirectDiffuse+=e10AccentTint*e10Irradiance.b*.15+vec3(.76,.36,.09)*e10Irradiance.a*.06;
     `);
   };
-  material.customProgramCacheKey=()=>key+':e10-static-deck-v6';material.needsUpdate=true;
+  material.customProgramCacheKey=()=>key+':e10-static-deck-v7-light13';material.needsUpdate=true;
 }
 
 /** Both image resolutions decode during readiness; switching is synchronous. */
