@@ -86,17 +86,27 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       matrix: new T.Matrix4().compose(new T.Vector3(x/32,/^brood-creep-[abc]$/.test(asset) ? .024 : y,z/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),angle),new T.Vector3(scale,/^brood-creep-[abc]$/.test(asset) ? .015 : scale,scale)),
       surfaceGain: .42, emissionGain: .16, cutaway: asset === 'brood-creep-wall' || !asset.startsWith('brood-creep'), castShadow: false,
     });
-    dead('brood-nest-large',1020,245,.85);
-    dead('brood-nest-large',1010,850,.85,Math.PI);
-    dead('brood-consumed-shell',850,160,1.2);
-    dead('brood-burst-duct',1060,300,.7);
-    dead('brood-pods-hatched',1060,785,.8);
-    for(const [x,z,a] of [[1000,290,.3],[1060,345,.7],[1050,790,2],[980,830,2.7],[850,235,0],[700,855,1]]) {
-      dead('brood-creep-c',x,z,1.2,a);
-      dead('brood-creep-a',x-35,z+12,1,a+.6);
+    result.push({pack:'clinical',asset:'cryo-service-console',purpose:'DRESS13 / scorched gantry machine',cutaway:true,
+      matrix:new T.Matrix4().compose(new T.Vector3(970/32,0,240/32),new T.Quaternion(),new T.Vector3(.7,.7,.7))});
+    dead('brood-consumed-shell',970,240,.8);
+    dead('brood-nest-large',1020,238,.75);
+    dead('brood-nest-large',780,664,.55);
+    dead('brood-burst-duct',1080,265,.55);
+    dead('brood-pods-hatched',860,700,.6);
+    for(const [x,z,a] of [[1020,213,.3],[1060,225,.7],[780,650,2],[815,654,2.7]]) dead('brood-creep-c',x,z,.4,a);
+    for(const [x,z,a] of [[1020,201,0],[780,641,0]]) {
+      dead('brood-creep-wall',x,z,.6,a,.2);
+      result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
     }
-    dead('brood-web-long',920,200,1.2,0,3.4);
-    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.7));
+    // Sloping, short wall-to-crown sheets; each endpoint has real support.
+    for(const [x,y,z,bx,by,bz] of [[986,1.5,201,1020,2.35,238],[800,.85,641,780,1.7,664]]) {
+      const gap=new T.Vector3((bx-x)/32,by-y,(bz-z)/32);
+      dead('brood-web-short',x,z,1,0,y);
+      result[result.length-1].matrix.compose(new T.Vector3(x/32,y,z/32),
+        new T.Quaternion().setFromUnitVectors(new T.Vector3(1,0,0),gap.clone().normalize())
+          .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),.6)),
+        new T.Vector3(gap.length()/1.5,.3,.5));
+    }
   }
   if (id === 'freight-hold' || id === 'breached-loading-bay') {
     const x = id === 'freight-hold' ? 1150 : 215, z = id === 'freight-hold' ? 125 : 265;
