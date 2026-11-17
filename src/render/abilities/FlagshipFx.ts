@@ -53,8 +53,9 @@ void main(){
   fxLocal=g;
  }else if(m>10.5){
   vec2 d=vec2(cos(fxAngle),sin(fxAngle)),n=vec2(-d.y,d.x);
-  float s=g.x*2.-1.;vec2 xz=fxOrigin.xz+d*g.y*fxRange+n*s*fxInner;
-  w=vec3(xz.x,fxHeight.x,xz.y);fxLocal=vec2(s,g.y);
+  float s=g.x*2.-1.,along=mix(-fxInner,fxRange+fxInner,g.y);
+  vec2 xz=fxOrigin.xz+d*along+n*s*fxInner;
+  w=vec3(xz.x,fxHeight.x,xz.y);fxLocal=vec2(s,along);
  }else if(m>9.5){
   float a=g.x*6.2831853;
   float radius=fxRange*(.7+.3*sin(g.y*3.14159));
@@ -233,8 +234,9 @@ void main(){
   float veins=(1.-smoothstep(0.,.03,abs(fxFbm(q*1.7+n)-.5)))*patchy;
   float band=smoothstep(lim-.7,lim-.12,r)*(1.-smoothstep(lim-.12,lim,r));
   if(m>11.5){
-   cover=(1.-smoothstep(.88,1.,abs(fxLocal.x)))*(1.-smoothstep(.98,1.,r));
-   band=smoothstep(.66,.94,abs(fxLocal.x))*cover;
+   float cap=length(vec2(fxLocal.x*fxInner,max(max(-r,r-fxRange),0.)))/max(.001,fxInner);
+   cover=1.-smoothstep(.88,1.,cap);
+   band=smoothstep(.66,.94,cap)*cover;
   }
   float fern=pow(abs(sin(a*31.+n*7.+r*4.)),24.)*band;
   float fade=1.-smoothstep(.5,1.,k);
@@ -291,8 +293,9 @@ void main(){
   vec2 q=(fxWorld.xz-fxOrigin.xz)*2.2;
   float n=fxFbm(q+vec2(t*.65,-t*.9)+fxSeed);
   float fine=fxNoise(q*5.+vec2(-t*2.,t*3.));
-  float edge=m>10.5?(1.-smoothstep(.92,1.,abs(fxLocal.x)))*(1.-smoothstep(.98,1.,r)):1.-smoothstep(R-.08,R,r);
-  float rim=m>10.5?smoothstep(.7,.94,abs(fxLocal.x))*edge:smoothstep(R-.25,R-.08,r)*edge;
+  float cap=length(vec2(fxLocal.x*fxInner,max(max(-r,r-fxRange),0.)))/max(.001,fxInner);
+  float edge=m>10.5?1.-smoothstep(.92,1.,cap):1.-smoothstep(R-.08,R,r);
+  float rim=m>10.5?smoothstep(.7,.94,cap)*edge:smoothstep(R-.25,R-.08,r)*edge;
   float channels=smoothstep(.56,.74,n+fine*.12);
   float boil=pow(max(0.,sin(fxLocal.x*160.+n*12.-t*11.)),8.)*rim;
   float hot=channels*(.55+.35*fine)+boil*.7;
