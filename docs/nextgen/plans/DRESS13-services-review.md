@@ -29,3 +29,8 @@ Pulled the first three cases back along the port shoulder and exposed two low da
 
 Opened native fight-tour02 and exact480 tour02/03 against final6. The rack spine remains dominant and the actor is clear, but tools and cut fibres on its interior bed disappear behind the rack bodies.
 Moved the opened panel and repair spill to the west face below the visible patch gap, with five dangling cut fibres terminating short of their deck-side ends. No route or collider changed; final tour/calm recheck pending the shared second batch.
+
+## Transmission Chamber — round1 → correction
+
+Opened native fight-tour02 and exact480 tour02/03 against final6. The dish reads well, but it completely hides the frozen operator screen and most repair debris.
+Moved the station and its connected spill to the dish's starboard side, with a slightly broader dim screen facing the gameplay camera; the holdout circle and exit approach remain clear. Final tour/calm recheck pending the shared second batch.

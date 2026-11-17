@@ -58,10 +58,10 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     }
     scuff(605, 607, .8, .4);
   } else if (id === 'transmission-chamber') {
-    tool(801, 394, .7, .18); tool(849, 395, 2, .18);
-    line([813, .2, 389], [821, .15, 401], .025, rubber);
-    line([823, .15, 402], [837, .18, 391], .025, rubber);
-    shards(850, 399, 0x526c6d, .14);
+    tool(885, 431, .7); tool(930, 433, 2);
+    line([905, .7, 401], [912, .035, 428], .025, rubber);
+    line([915, .035, 432], [938, .035, 417], .025, rubber);
+    shards(932, 428, 0x526c6d);
     // Frozen last transmission is part of the abandoned operator station.
     const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 256;
     const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#172a2c'; ctx.fillRect(0, 0, 512, 256);
@@ -69,10 +69,10 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     ctx.font = '24px monospace'; ctx.fillText('DO NOT OPEN THE DOCK', 22, 100); ctx.fillText('WE ARE STILL INSIDE', 22, 137);
     ctx.fillStyle = '#5d7770'; ctx.fillText('CARRIER LOST / 00:17', 22, 211);
     const texture = new T.CanvasTexture(canvas); texture.colorSpace = T.SRGBColorSpace;
-    const screen = new T.Mesh(new T.PlaneGeometry(1.5, .75), new T.MeshStandardMaterial({map: texture, roughness: 1, metalness: 0, side: T.DoubleSide}));
+    const screen = new T.Mesh(new T.PlaneGeometry(1.7, .85), new T.MeshStandardMaterial({map: texture, roughness: 1, metalness: 0, emissive: 0xffffff, emissiveMap: texture, emissiveIntensity: .12, side: T.DoubleSide}));
     (screen.material as T.Material).userData.actorMaterial = true;
     (screen.material as T.Material).addEventListener('dispose', () => texture.dispose());
-    screen.name = 'dress13-last-transmission'; screen.rotation.x = -.65; screen.position.set(835 / 32, 1.15, 365 / 32); root.add(screen);
+    screen.name = 'dress13-last-transmission'; screen.rotation.x = -.65; screen.position.set(905 / 32, 1.15, 390 / 32); root.add(screen);
   } else if (id === 'diagnostic-gallery') {
     shards(788, 351, 0x86989a, .18);
     // Torn restraint tongues and severed diagnostic leads leave the empty

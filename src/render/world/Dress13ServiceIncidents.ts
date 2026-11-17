@@ -37,12 +37,12 @@ const incidents: Record<string, Piece[]> = {
     ['service-access-hatch', 650, 600, .4, -.3, 1.5, .1],
   ],
   'transmission-chamber': [
-    ['service-console-schematic', 835, 365, .8],
-    ['service-transit-case', 801, 365, .7, .25],
-    ['service-transit-case', 782, 365, .45, -.4, 1.35, .18],
-    ['service-access-hatch', 814, 390, .6, -.2, 1.45, .12],
-    ['service-cable-tray', 849, 384, .6, 1.5],
-    ['service-access-hatch', 865, 388, .35, .1, 1.5, .1],
+    ['service-console-schematic', 905, 390, .8],
+    ['service-transit-case', 882, 410, .7, .25],
+    ['service-transit-case', 923, 418, .45, -.4, 1.35, .18],
+    ['service-access-hatch', 904, 426, .6, -.2, 1.45, .12],
+    ['service-cable-tray', 941, 402, .6, 1.5],
+    ['service-access-hatch', 943, 421, .35, .1, 1.5, .1],
   ],
   'diagnostic-gallery': [
     ['service-access-hatch', 748, 335, .65, -.3, .8, .3],
