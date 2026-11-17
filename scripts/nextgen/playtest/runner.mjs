@@ -144,7 +144,7 @@ async function snapshot() {
       siege:g.siege,encounter:g.encounter,run:g.expedition.run,build:g.expedition.build,node:g.node,elapsed:g.elapsed,player:{...g.player,screen:project(g.player.x,g.player.y)},
       combat:{...g.combat.snapshot,weapon:g.combat.snapshot.weaponId},resources:g.combat.getRunResources(),abilities:g.abilities.snapshot,abilityAims:Object.fromEntries(Object.entries(d.botAbilityAims(enemies)).map(([slot,aim])=>[slot,aim?{...aim,screen:project(aim.x,aim.y,0)}:null])),enemies,candidates,
       hazards:[...(g.boss.snapshot.pendingTelegraph?[{x:g.boss.snapshot.pendingTelegraph.targetX,y:g.boss.snapshot.pendingTelegraph.targetY,radius:g.boss.snapshot.pendingTelegraph.radius,kind:'warning',visible:r.visible(g.boss.snapshot.pendingTelegraph.targetX,g.boss.snapshot.pendingTelegraph.targetY)}]:[]),...g.pools.map(p=>({id:`pool:${p.id}`,x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:r.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),...g.bullets.filter(b=>b.kind==='hazard').map(b=>({id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:r.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale})),...enemies.filter(e=>e.pendingAttack==='spit'&&e.windupMs>0).map(e=>({id:`native:${e.id}`,x:e.lockX,y:e.lockY,radius:9,kind:'warning',warningRemainingMs:e.windupMs,visible:r.visible(e.lockX,e.lockY)})),...d.events.filter(e=>e.type==='enemy-warning'&&!e.meleeShape&&e.id===undefined&&g.elapsed-e.at<(e.durationMs??800)/1000).map(e=>({x:e.targetX??e.x,y:e.targetY??e.y,radius:e.radius??50,kind:'warning',warningRemainingMs:Math.max(0,(e.durationMs??800)-(g.elapsed-e.at)*1000),visible:r.visible(e.targetX??e.x,e.targetY??e.y)}))],
-      boss:g.boss.snapshot,remaining:g.encounterRemaining,stats:g.stats,events:d.events,performance:perf,preparation:r.preparationDiagnostics??[],
+      boss:g.boss.snapshot,remaining:g.encounterRemaining,stats:g.stats,topDamageSources:g.roomDamage,events:d.events,performance:perf,preparation:r.preparationDiagnostics??[],
       memory:{heap:performance.memory?.usedJSHeapSize??null,geometries:perf.geometries,textures:perf.textures,programs:r.renderer.info.programs?.length??null},
       visualOverlays:['#presentation-beat','#contextual-onboarding'].flatMap(selector=>{const el=document.querySelector(selector);if(!el||el.hidden||!el.getClientRects().length)return [];const b=el.getBoundingClientRect();return [{left:b.left,top:b.top,right:b.right,bottom:b.bottom}];}),
       onboarding:{visible:!document.querySelector('#contextual-onboarding')?.hidden,copy:document.querySelector('#contextual-onboarding')?.textContent,seen:localStorage.getItem('containment.onboarding.v1')},
@@ -211,7 +211,7 @@ async function probe(label) {
 async function finishRoom(s,result) {
   if(!room||room.result!=='playing')return;
   room.result=result;room.seconds=s.elapsed-room.startedElapsed;
-  room.damageTaken=s.stats.damageTaken-room.startStats.damageTaken;
+  room.damageTaken=s.stats.damageTaken-room.startStats.damageTaken;room.topDamageSources=s.topDamageSources;
   room.damageDealt=Object.fromEntries(Object.keys(s.stats.damageDealt).map(k=>[k,s.stats.damageDealt[k]-room.startStats.damageDealt[k]]));
   room.abilityUses=Object.fromEntries(Object.keys(s.stats.abilityUses).map(k=>[k,s.stats.abilityUses[k]-room.startStats.abilityUses[k]]));
   room.overdrives=s.stats.overdrivesUsed-room.startStats.overdrivesUsed;room.memory=s.memory;
@@ -285,7 +285,7 @@ try {
     }
     if(['dead','complete'].includes(s.status)) {
       await release();if(!options.realtime){await advance(750);s=await snapshot();}
-      await finishRoom(s,s.status);await page.waitForFunction(()=>['dead','complete'].includes(document.body.dataset.state));await page.waitForTimeout(220);s=await snapshot();await shot(`terminal-${s.status}`,s);report.outcome=s.status;report.final=s;report.deathCause=s.status==='dead'?{classification:'inferred',sources:room?.damageSourcesInferred??{},nearby:s.enemies.map(e=>({type:e.type,distance:distance(e,s.player)})),hazards:s.hazards}:null;
+      await finishRoom(s,s.status);await page.waitForFunction(()=>['dead','complete'].includes(document.body.dataset.state));await page.waitForTimeout(220);s=await snapshot();await shot(`terminal-${s.status}`,s);report.outcome=s.status;report.final=s;report.deathCause=s.status==='dead'?{classification:'authoritative-room-ledger',sources:s.topDamageSources??[],nearby:s.enemies.map(e=>({type:e.type,distance:distance(e,s.player)})),hazards:s.hazards}:null;
       if(shouldProbe(s.status)){await probe(s.status);}
       break;
     }

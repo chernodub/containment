@@ -226,7 +226,9 @@ export function chooseActions(s) {
   const slots = s.abilities.slots;
   const keys = [];
   const imminent=s.enemies.some(e=>e.visible&&e.meleePhase==='windup'&&e.meleeRemainingMs<250&&distance(e,s.player)<160);
-  const emergency=s.combat.health<=26&&near<200;
+  const visibleHit={crawler:12,stalker:26,spitter:12,carrier:22,brute:42};
+  const lethal=s.enemies.some(e=>e.visible&&distance(e,s.player)<200&&s.combat.health+s.combat.armor<=(visibleHit[e.type]??45));
+  const emergency=lethal||s.combat.health<=35&&s.enemies.filter(e=>distance(e,s.player)<200).length>=2;
   if (s.combat.health <= 55 && s.combat.medkits > 0 && (!imminent||emergency)) keys.push('e');
   if ((escape?.needsDash||hazardDanger) && slots?.dash?.ready) keys.push('Shift');
   if (slots?.tactical?.ready && near < (s.rig === 'arc' ? 500 : 240)) keys.push('q');

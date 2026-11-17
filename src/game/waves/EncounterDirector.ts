@@ -39,7 +39,7 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const beats=source.map((beat,beatIndex)=>{
   const start=schedule.length;let marked=false;
   for(const group of beat.groups){
-   const count=group.guardian?1:group.lesson||group.priority||node.depth===0?group.count:Math.max(1,Math.round(group.count*d.waves*(node.depth>=10?d.lateWaves:1)));
+   const count=group.guardian?1:group.lesson||group.priority||node.depth<4?group.count:Math.max(1,Math.round(group.count*d.waves*(node.depth>=10?d.lateWaves:1)));
    for(let index=0;index<count;index++){
     const ordinal=schedule.length-start;
     const elite=!group.lesson&&node.depth>1&&(!!group.guardian||random()<Math.min(.28,(node.depth>=10?.21:.06+node.depth*.012)*d.elites));
