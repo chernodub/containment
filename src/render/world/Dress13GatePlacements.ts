@@ -11,7 +11,7 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
       purpose: 'DRESS13 / architecture under pressure / ' + asset,
       // Resin stays beneath the actor value range; source atlas and shaders remain shared.
       surfaceGain: asset.startsWith('creep') ? .55 : asset.startsWith('web') ? .7 : 1,
-      cutaway: !asset.startsWith('creep'), castShadow: !asset.startsWith('creep'),
+      cutaway: asset === 'creep-wall' || !asset.startsWith('creep'), castShadow: !asset.startsWith('creep'),
     });
   };
   if (id === 'shielding-gate') {

@@ -21,7 +21,7 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       pack: 'p11-brood', asset, purpose: 'DRESS13 / rear workbay takeover / ' + asset,
       matrix: new T.Matrix4().compose(new T.Vector3(x / 32, y, z / 32),
         new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), angle), new T.Vector3(scale, scale, scale)),
-      cutaway: !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
+      cutaway: asset === 'brood-creep-wall' || !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
     brood('brood-consumed-shell',650,330,1.3);
@@ -44,7 +44,7 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       pack: 'p11-brood', asset, purpose: 'DRESS13 / stronghold / ' + asset,
       matrix: new T.Matrix4().compose(new T.Vector3(x / 32, y, z / 32),
         new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), angle), new T.Vector3(scale, scale, scale)),
-      cutaway: !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
+      cutaway: asset === 'brood-creep-wall' || !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
     // The heart owns the east crossing shoulder, beyond the fight circle.
@@ -73,8 +73,8 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       result[result.length-1].matrix.scale(new T.Vector3(2.5,.3,2.5));
       result[result.length-1].surfaceGain = .38;
     }
-    for (const [x,z,a] of [[300,181,0],[900,859,Math.PI]]) {
-      brood('brood-creep-wall',x,z,1.7,.4,a);
+    for (const [x,z,a] of [[300,430,0],[900,859,Math.PI]]) {
+      brood('brood-creep-wall',x,z,1.7,.7,a);
       result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-Math.PI/2));
     }
     // Two doorway-top membranes: anchors land on the north/south plenum mouths.
@@ -89,7 +89,7 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     const dead = (asset: string, x: number, z: number, scale = 1, angle = 0, y = 0) => result.push({
       pack: 'p11-brood', asset, purpose: 'DRESS13 / heat-killed perimeter / ' + asset,
       matrix: new T.Matrix4().compose(new T.Vector3(x/32,y,z/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),angle),new T.Vector3(scale,scale,scale)),
-      surfaceGain: .42, emissionGain: .16, cutaway: !asset.startsWith('brood-creep'), castShadow: false,
+      surfaceGain: .42, emissionGain: .16, cutaway: asset === 'brood-creep-wall' || !asset.startsWith('brood-creep'), castShadow: false,
     });
     dead('brood-nest-large',1020,245,.85);
     dead('brood-nest-large',1010,850,.85,Math.PI);
