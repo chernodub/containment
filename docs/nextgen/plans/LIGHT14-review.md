@@ -27,3 +27,7 @@
 ## 7 Breached Loading Bay
 - Opened calm/tour03/heavy 480 colour/grey: cold boarding scar and wedged pod silhouette remain readable; marine leads the warning-filled heavy frame.
 - Scar/pod/pressure-lock pools preserve cover edges and route debris. Build and seven guarded frames pass; no global lift needed.
+
+## 8 Transmission Chamber
+- Opened calm/tour03/heavy colour+grey at480: signal-blue floor recedes, tracking dish stays readable, marine and orange warnings lead.
+- Higher dark-deck floor gain preserves chancel circulation without lifting rack backs. Build and guarded seven-frame capture pass; retain warm task dots as secondary accents.

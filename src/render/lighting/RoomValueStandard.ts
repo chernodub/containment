@@ -76,6 +76,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xbfd8ed,
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.9,
   }),
+  // Tracking dish, uplink chancel and service rack.
+  'transmission-chamber': profile({
+    fixturesAt:[[816, 380], [600, 160], [300, 600]],
+    floor:{lit:.66,unlit:.30,edge:.14},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
+    wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xbbd0ef,
+    fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.9,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},
