@@ -123,3 +123,7 @@
 ## Relay Racks
 - Opened native calm and 480 colour/grey calm/tour/heavy: rack rows, status strips and cyan under-glow identify the communications bank above the aisle floor; marine/threats remain brighter.
 - Low-positioned existing practical slot plus bounded bank self-light restores the rack landmark outside the marine pool; backs and far corners stay dark. Build and seven guarded frames pass.
+
+## Transmission Chamber
+- Opened native calm and 480 colour/grey calm/tour/heavy: uplink dish and instruments now own a signal-blue highlight above the chancel floor; marine/hostile highlights remain brighter.
+- Bounded uplink source restores room identity and keeps rack recesses dark. Existing saturated red/green indicators preserve their hue when receiving emitter life. Build and seven guarded frames pass.

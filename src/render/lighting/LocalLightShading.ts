@@ -126,7 +126,9 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
         float landmarkSpill=roomLandmark.w*(1.0-smoothstep(0.0,roomLandmark.z*2.0,landmarkDistance))*(1.0-smoothstep(.05,.25,roomWorld.y));
         float landmarkAlbedo=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
         float landmarkEmitter=clamp(dot(totalEmissiveRadiance,vec3(.2126,.7152,.0722))*2.0,0.0,1.0);
-        totalEmissiveRadiance=mix(totalEmissiveRadiance,mix(roomLandmarkColor,vec3(1.0),.18)*.8,landmarkBody*landmarkEmitter);
+        float signalHue=step(totalEmissiveRadiance.b*1.2,max(totalEmissiveRadiance.r,totalEmissiveRadiance.g));
+        vec3 signalLife=max(totalEmissiveRadiance,totalEmissiveRadiance/max(.0001,max(totalEmissiveRadiance.r,max(totalEmissiveRadiance.g,totalEmissiveRadiance.b)))*.8);
+        totalEmissiveRadiance=mix(totalEmissiveRadiance,mix(mix(roomLandmarkColor,vec3(1.0),.18)*.8,signalLife,signalHue),landmarkBody*landmarkEmitter);
         totalEmissiveRadiance+=roomLandmarkColor*landmarkBody*roomLandmarkGains.x*(.045+.55*sqrt(max(0.0,landmarkAlbedo)))+diffuseColor.rgb*landmarkBody*roomLandmarkGains.x*.35;
         reflectedLight.indirectDiffuse+=roomLandmarkColor*landmarkSpill*roomLandmarkGains.y;
         // Low wall-foot wash outlines navigable boundaries without lifting the floor or far corners.
