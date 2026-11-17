@@ -143,3 +143,29 @@ phase clock, mesh, skeleton rest pose or hit shape changes. Separate
 `runtime-carrier` build passed. A clean supplemental Carrier/elite/Matron strip
 and pale/dark native lane review must establish the final result; the original
 84-row cohort remains evidence of the rejected Carrier extreme.
+
+Carrier supplemental look → retain (`runtime-final2`): opened all three native
+contact pages and all three exact-quarter pages in `carrier-final` (15 rows),
+then full Carrier/elite/Matron attack strips and Matron high-impulse death.
+Compared with the rejected motion-final Carrier, the held body is less pitched
+back and the exposed sac/torso remains a connected, broader mass. It still uses
+an upright raised-abdomen silhouette; no new pose amplification is warranted.
+Native `carrier-native` adds 30 frames each in Crew Checkpoint and Relay Racks:
+opened both unresized enemy strips, native and exact-480 phase frames 01/08/15/20.
+Feet, sac and torso stay connected and clear of the floor; the strike broadens
+then recovery stays loaded. At 480 the warning communicates commitment more
+strongly than the tiny body detail. Retain the Carrier correction. High-impulse
+Matron still rocks/propps sac-up at the final 1.6-second study sample; eventual
+settle remains outside that sample.
+
+Native rifle pilot look → retain: `native-rifle-pilot` uses public rifle fire;
+final receipt records 13 shots, 12 accepted contacts and a Crawler corpse.
+The first two contacts are nonlethal damage 16 at 1.0833/1.2000 s; the third
+kills at 1.3000 s and supplies corpse velocity (119.994, 1.190), carrying the
+shot to the right. Opened original native frames 05/07/15 and exact-480 frames
+01/05/07/15/30: the point spark/orange ichor and body load precede the carried
+collapse; later Brute contacts remain restrained. At quarter size the tiny
+Crawler flinch is still subtler than the impact cue. The existing native-strip
+derivative cannot follow an actor after retirement (enemy-1 bounds absent at
+frame 07); retain the unchanged full native frames as authoritative evidence,
+plus exact-480 derivatives, rather than inventing corpse bounds.
