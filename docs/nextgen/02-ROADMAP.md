@@ -52,7 +52,7 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | P11 one hero set piece per room, kit craft pass, fixture hierarchy — Astra (`streams/P11-set-pieces.md`) | merged | all twenty rooms placed, campaign clears, ≤ 330 draws; lead review: breach and several landmarks improved, but infestation is still thin strands (Swarm Junction) and rooms still lack incidents/belongings (Residential) |
 | GROW13 Brood growth kit, fifteen pieces incl. hive heart — Opus, modelling only | merged | review placement turns Swarm Junction into a stronghold |
 | DRESS13 growth-kit placement in rooms 15–20 and one staged incident per room — Sol | merged; correction pass running | 277 draws peak, campaign 20/20; lead review: creep blobs on the fight floor, masses on wall caps, incidents too thin |
-| PERF13 creature LODs, shadow cost, main-thread CPU — Sol | running | merged build at load ≈ 15: frame p50 17 / p95 25 ms, CPU p95 12–38 ms, ≈ 500k triangles per frame |
+| PERF13 creature LODs, shadow proxies, camera/main-thread CPU — Sol | merged | triangles −32%, profiled thread CPU per render 17.2 → 7.9 ms; frame p95 ≤ 20 ms in 11/16 configurations (all Low, 3 of 8 High) on a loaded host — High still misses in five |
 | G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
 | D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |
 | F11 per-pass GPU/CPU breakdown tool and small cuts — Sol | merged | max 124 draws, zero combat compiles; frame budget cannot be certified on the loaded host |
@@ -88,3 +88,4 @@ Next (lead): merge DRESS13 correction and PERF13; gallery `final7` (same section
 - 2026-11-16 Owner routing: 3D modelling by Claude Opus (subagents on Opus too), all other execution by GPT Sol at low reasoning effort, reviews/feedback by Opus and GPT Astra.
 - 2026-11-16 Owner refinement: Opus tokens are scarce — Opus only for the hero and creature models; decor to Astra; integration and verification to Sol.
 - 2026-11-16 Lockfile regenerated so npm 10 (used by the Codex sandbox) and npm 11 both pass `npm ci`; the lockfile produced after removing the tests had blocked three streams. Low-effort Sol and medium Astra tend to stop early with "incomplete delivery": briefs now say how long the job takes and forbid partial stops; unfinished runs are resumed in the same thread.
+- 2026-11-17 Owner asked to push while iterating: `nextgen` is pushed to the public fork `chernodub/containment` (branch `nextgen`, never `main`) after every merge.
