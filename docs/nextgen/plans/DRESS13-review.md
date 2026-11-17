@@ -15,3 +15,7 @@ Fix: flattened the long overhead membrane's vertical sag and kept the central ho
 ## Breached Loading Bay first trace
 Round 1: opened native entry01 and 480 entry01. A burst duct and connected creep sit by the port tear, well clear of the marine and freight turn floor; warm room lighting makes the flesh brighter than intended.
 Fix: baked trace albedo gain reduced to .65, keeping the early contamination quiet. Complete five-position tour/calm in dress13-edge-final; final source recapture follows.
+
+## Freight Hold first trace
+Round 1: opened five-position tour's north-court reduction03; the added trace stays at the distant dispatch ventilation edge rather than becoming an early room landmark. Native calm and five-position tour completed without capture guards.
+Fix: same .65 trace albedo gain as Loading Bay; no extra masses, no new collision or route obstruction. Final source recapture follows.

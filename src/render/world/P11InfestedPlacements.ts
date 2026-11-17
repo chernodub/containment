@@ -92,7 +92,7 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     dead('brood-web-long',920,200,1.2,0,3.4);
     result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.7));
   }
-  if (id === 'breached-loading-bay') {
+  if (id === 'freight-hold' || id === 'breached-loading-bay') {
     const x = id === 'freight-hold' ? 1150 : 215, z = id === 'freight-hold' ? 125 : 265;
     for(const [asset,dx,dz,scale] of [['brood-burst-duct',0,0,.55],['brood-creep-c',-12,25,.65]] as const) result.push({
       pack:'p11-brood',asset,purpose:'DRESS13 / first trace / '+asset,
