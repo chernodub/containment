@@ -896,3 +896,6 @@ registerC10Scenarios(SCENARIOS);
 
 import {registerK11Scenarios} from './k11-scenarios.mjs';
 registerK11Scenarios(SCENARIOS);
+
+import {registerT12Scenarios} from './t12-scenarios.mjs';
+registerT12Scenarios(SCENARIOS);

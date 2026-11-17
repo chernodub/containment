@@ -25,7 +25,7 @@ const args = process.argv.slice(2);
 const options = Object.fromEntries(args.map(arg => {
   assert(/^--[a-z-]+(?:=.*)?$/.test(arg), `Invalid argument ${arg}`);
   const [key, ...value] = arg.slice(2).split('=');
-  assert(['difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room'].includes(key), `Unknown option ${key}`);
+  assert(['startup-timeout-ms','difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room'].includes(key), `Unknown option ${key}`);
   return [key, value.length ? value.join('=') : true];
 }));
 const distRoot=resolve(String(options['dist-dir']??'dist'));
@@ -234,7 +234,7 @@ try {
   browser=await chromium.launch({channel:'chromium',headless:!options.headed,args:['--no-sandbox','--enable-gpu','--ignore-gpu-blocklist',...(process.platform==='darwin'?['--use-angle=metal']:[])]});
   context=await browser.newContext({viewport:{width:1920,height:1080},deviceScaleFactor:1});
   if(!options.realtime)await installAudioSpy(context);
-  page=await context.newPage();listen(page);
+  page=await context.newPage();page.setDefaultTimeout(Number(options['startup-timeout-ms']??30000));listen(page);
   await page.goto(`http://127.0.0.1:${server.address().port}/containment/?debug=1&seed=${seed}${options.realtime?'&playtest-live=1':''}`);
   await page.waitForFunction(()=>!!window.__containmentDebug);
   await enableNative();

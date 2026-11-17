@@ -46,11 +46,15 @@ export async function bootstrap() {
     el('overlay').innerHTML = `<div class="asset-loading-art">${titleKeyArt(true)}<div class="asset-loading"><span>CONTAINMENT / DEPTH</span><h2>Establishing connection</h2><p>Synchronizing ship systems</p><div role="progressbar" aria-label="Loading assets" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="asset-track"><i id="asset-progress"></i></div><small>AWAITING MARINE WAKE PROTOCOL</small></div></div>`;
     const rendererCode=import('../render/DepthRenderer');
     const audioCode=import('../game/audio/AudioSystem');
+    const {WebGLRenderer}=await import('three');
+    let assetRenderer: InstanceType<typeof WebGLRenderer>;
+    try {assetRenderer=new WebGLRenderer({canvas:el('world') as HTMLCanvasElement,antialias:false,alpha:false,powerPreference:'high-performance'});}
+    catch {fail('3D graphics unavailable', 'Open this game in a browser with WebGL 2 enabled.');throw new Error('WebGL renderer unavailable');}
     try {
         await preloadAssets(fraction => {
             el('asset-progress').style.width = `${fraction * 100}%`;
             el('asset-track').setAttribute('aria-valuenow', String(Math.round(fraction * 100)));
-        }, async()=>{});
+        }, async()=>{},assetRenderer);
         await Promise.all([
             document.fonts.load('400 16px Barlow'),
             document.fonts.load('600 16px Barlow'),
@@ -59,17 +63,18 @@ export async function bootstrap() {
         await document.fonts.ready;
     }
     catch (error) {
+        assetRenderer.dispose();
         fail('Download interrupted', 'Ship assets could not be loaded. Check your connection, then try again.');
         throw error;
     }
     let renderer: DepthRenderer;
     try {
         const {DepthRenderer}=await rendererCode;
-        renderer = new DepthRenderer(el('world') as HTMLCanvasElement);
+        renderer=new DepthRenderer(el('world') as HTMLCanvasElement,assetRenderer);
         renderer.setQuality('high');
         configureIntegratedRenderer(renderer);
-    }
-    catch {
+    } catch {
+        assetRenderer.dispose();
         fail('3D graphics unavailable', 'Open this game in a browser with WebGL 2 enabled.');
         throw new Error('WebGL renderer unavailable');
     }
