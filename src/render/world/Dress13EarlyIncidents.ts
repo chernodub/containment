@@ -49,5 +49,14 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('deck-rubber-panel',659,409,-.3,[.3,.5,.4],.003,'clinical');
     put('deck-access-panel',685,415,.8,[.25,.5,.3],.006,'clinical');
   }
+  if (id === 'crew-checkpoint') {
+    // The north inspection conveyor was abandoned with baggage still aboard.
+    put('service-transit-case',340,104,-.18,[.8,.7,.8],.82);
+    put('service-transit-case',368,106,.23,[.65,.65,.65],.82);
+    put('service-transit-case',393,121,.8,[.8,.55,.8]);
+    put('service-cable-tray',405,127,.4,[.5,.4,.65]);
+    put('deck-rubber-panel',389,147,.35,[.65,.35,.32],.003,'clinical');
+    for (let i=0;i<4;i++) put('deck-access-panel',399+i*7,143+(i%2)*9,i*.7,[.028,.3,.06],.004,'clinical');
+  }
   return pieces;
 }

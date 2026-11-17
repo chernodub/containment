@@ -15,3 +15,7 @@ Build passed. Native/480 capture review and visual correction await the shared b
 ## Communal Atrium
 Placement pass: two overturned desks and a fallen bench form one failed barricade at the conservatory's east foot; dropped contents and dark trample panels gather beneath it, clear of the west fight floor.
 Build passed. Native/480 capture review and visual correction await the shared browser slot.
+
+## Crew Checkpoint
+Placement pass: baggage remains on and below the north inspection conveyor, beside a severed tray and restrained dark fan mark with four spent-case glints; the scanner fight floor is untouched.
+Build passed. Native/480 capture review and visual correction await the shared browser slot.
