@@ -64,8 +64,8 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
     summary: 'Deploy an energy barricade that stops enemies and spit.',
     description: 'Project a wide barricade in front of you for 6 seconds. It blocks enemy movement and enemy projectiles. Your own shots pass through it.',
     targeting: 'direction', shape: { kind: 'wall', length: 220, thickness: 18 },
-    castMs: 0, cooldownMs: 16_000, charges: 1, durationMs: 6_000, range: 70,
-    stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Width', value: '220' }, { label: 'Cooldown', value: seconds(16_000) }],
+    castMs: 0, cooldownMs: 20_000, charges: 1, durationMs: 6_000, range: 70,
+    stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Width', value: '220' }, { label: 'Cooldown', value: seconds(20_000) }],
   }),
   railbreaker: ability({
     id: 'railbreaker', rig: 'breacher', slot: 'overdrive', element: 'kinetic', name: 'Railbreaker',
@@ -116,8 +116,8 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
     summary: 'A wide cone of flame.',
     description: 'Dump the tank in a wide cone along your aim: 25 damage and every enemy hit is ignited. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     targeting: 'direction', shape: { kind: 'cone', range: 300, arcRadians: 1.22 },
-    castMs: 0, cooldownMs: 6_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '25' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(6_000) }],
+    castMs: 0, cooldownMs: 5_000, charges: 1, durationMs: 0, range: 0,
+    stats: [{ label: 'Damage', value: '25' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(5_000) }],
   }),
   'napalm-charge': ability({
     id: 'napalm-charge', rig: 'pyro', slot: 'power', element: 'pyro', name: 'Napalm Charge',
