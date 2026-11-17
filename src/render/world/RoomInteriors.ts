@@ -23,7 +23,10 @@ const overlap = (a: Rect, b: Rect) => a.x < b.x + b.width && a.x + a.width > b.x
 /** Captive, flush service openings are presentation only: native floor remains
  * continuous for movement while glass/grating exposes its actual shallow pipes. */
 export function interiorFloorServices(id: string, t: RoomTemplate): readonly InteriorFloorService[] {
-    if (!INTERIOR_ROOMS.has(id))
+    // Cryogenic floor atlases already carry recessed drain motifs. Additional
+    // glass service windows intersect those baked grilles at the exit views.
+    // Wall/pod practicals provide the light hierarchy in these two rooms.
+    if (!INTERIOR_ROOMS.has(id) || id === 'awakening-bay' || id === 'passenger-vault')
         return [];
     const plan = SHIP_ARCHITECTURE_PLANS[id as keyof typeof SHIP_ARCHITECTURE_PLANS];
     if (!plan)
