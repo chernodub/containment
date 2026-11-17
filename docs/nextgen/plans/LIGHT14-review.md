@@ -63,3 +63,7 @@
 ## 16 Manual Control Chamber
 - Opened calm/tour03/heavy480 colour/grey: authorization warning text stays readable; warm desk/cabinet shapes remain below marine and hostile fill.
 - Desk/status/hardwired-cabinet pools keep the manual decision bay visible, with quiet occupied corners. Build and seven guarded frames pass.
+
+## 17 Overload Floor
+- Opened calm/tour03/heavy480 colour/grey: orange crown/rim gives reactor identity, marine leads and floor warnings remain crisp; control cover survives.
+- Feed/core-rim/exhaust pools leave occupied corners dark. Build and seven guarded frames pass; tour growth is nearly black and remains a weak secondary landmark.

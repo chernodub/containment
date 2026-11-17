@@ -139,6 +139,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.50,saturation:.58},floorSaturation:.50,tint:0xe6d3bd,
     fixtures:.20,practicals:.46,ambient:.46,marineGlow:1,exit:.9,
   }),
+  'overload-floor': profile({
+    // Reaction-feed diffuser, core's east rim, exhaust-housing diffuser.
+    fixturesAt:[[640,200],[890,480],[640,900]],
+    floor:{lit:.48,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:10,value:.40,lane:.85},
+    wall:{value:.52,saturation:.58},floorSaturation:.52,tint:0xf0c49f,
+    fixtures:.20,practicals:.48,ambient:.46,marineGlow:1,exit:.95,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},
