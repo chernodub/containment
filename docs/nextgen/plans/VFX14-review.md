@@ -48,3 +48,5 @@ Meltdown R2: pale native 06 and both 480 contacts keep the marine clear, but the
 Overload R2: pale/dark 480 contacts and dark native 04 show enough body, but stepped noise reads as a fence and the floor beam is a solid ribbon. Continuous jitter and a restrained per-frame floor trace replace those rejected shapes; final-check covers the correction.
 
 Tesla Pylon R2: opened both 480 contacts and pale native 06. Coil silhouette, slam and wavering marine link are distinct. Outgoing strikes inherit the rejected stepped-noise artifact; the shared continuous-jitter correction applies to these native target links too.
+
+Static Step R2: opened both 480 contacts and dark native 03. Silhouette echo and forked arrival contacts remain readable. Shared discharge floor rectangles are too strong; their correction is in the Overload family. No extra ghost was added that could be mistaken for the marine.
