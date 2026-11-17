@@ -25,3 +25,5 @@ Placement pass: half-closed magazine shutters and a dropped, open issue case gat
 Build pending shared-dist release. Native/480 capture review and visual correction await the shared browser slot.
 
 Loader review correction: moved the dropped Awakening/Passenger/Armory case origins outside the authored hero AABBs; the loader retires `p11-service` supports inside hero bounds. This avoids silently omitting the incident cases. Type-check passed; visual acceptance still pending.
+
+Detail correction before capture: replaced panel-shaped footprints/soot/casings with shaped flat wet soles and heels, an irregular dark scorch fan and seven small metallic cases. Added a barricaded hatch with four claw cuts and drag wear, paper spill, trample streaks and armory scuffs. Geometry stays presentation-only under the prepared room owner, with explicit material disposal. Production build passed.

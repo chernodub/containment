@@ -16,6 +16,7 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('service-transit-case',574,288,.32,[.85,.45,.8]);
     put('deck-access-panel',548,254,-.24,[.54,1,.38],.24,'clinical');
     put('deck-rubber-panel',560,286,.7,[.25,.8,.22],.015,'clinical');
+    put('service-access-hatch',759,237,0,[1.6,1.8,1]);
     put('service-safety-rail',775,252,.23,[1,.65,1]);
     put('service-cable-tray',768,261,1.5,[.5,.5,.7]);
     put('deck-access-panel',753,272,-.5,[.34,1,.2],.025,'clinical');
@@ -24,7 +25,7 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     // Release debris and a dropped recovery kit below the forced-open berths.
     put('service-transit-case',603,360,-.35,[.75,.5,.7]);
     put('deck-access-panel',617,330,.55,[.32,1,.25],.02,'clinical');
-    for (let i=0;i<6;i++) put('deck-rubber-panel',620+(i%2?7:-7)+i*4,350+i*8,.25,[.07,.35,.12],.002,'clinical');
+
   }
   if (id === 'passenger-vault') {
     // Empty personal-effects drawer is authored in the carrier; its contents
@@ -55,8 +56,7 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('service-transit-case',368,106,.23,[.65,.65,.65],.82);
     put('service-transit-case',393,121,.8,[.8,.55,.8]);
     put('service-cable-tray',405,127,.4,[.5,.4,.65]);
-    put('deck-rubber-panel',389,147,.35,[.65,.35,.32],.003,'clinical');
-    for (let i=0;i<4;i++) put('deck-access-panel',399+i*7,143+(i%2)*9,i*.7,[.028,.3,.06],.004,'clinical');
+
   }
   if (id === 'armory') {
     // Half-closed magazine shutters and an abandoned issue case sit north
@@ -72,4 +72,57 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('deck-access-panel',516,442,.6,[.035,.3,.08],.005,'clinical');
   }
   return pieces;
+}
+
+/** Flush marks and tiny debris use the room owner's disposal/warmup lifecycle. */
+export function addDress13EarlyDetails(root: T.Group, id: string): void {
+  if (!['residential-gallery','awakening-bay','passenger-vault','communal-atrium','crew-checkpoint','armory'].includes(id)) return;
+  const group = new T.Group(); group.name = 'dress13-early-aftermath';
+  const material = (name: string, color: number, metalness = 0) => {
+    const m = new T.MeshStandardMaterial({color,roughness:.95,metalness,side:T.DoubleSide});
+    m.name = name; m.userData.actorMaterial = true; return m;
+  };
+  const dark = material('dress13-dried-scuff',0x263139), wet = material('dress13-wet-tread',0x142632), scratch = material('dress13-worn-edges',0x6c7270), brass = material('dress13-spent-cases',0x827c62,.65);
+  const mesh = (g:T.BufferGeometry,m:T.Material,x:number,y:number,z:number,angle=0) => {
+    const o = new T.Mesh(g,m); o.position.set(x/32,y,z/32);o.rotation.y=angle;o.receiveShadow=true;group.add(o);return o;
+  };
+  const flat = (points:number[][],m:T.Material,x:number,z:number,angle=0) => {
+    const shape = new T.Shape(points.map(p=>new T.Vector2(p[0],p[1])));
+    const g = new T.ShapeGeometry(shape);g.rotateX(-Math.PI/2);return mesh(g,m,x,.008,z,angle);
+  };
+  if(id==='awakening-bay') {
+    for(let i=0;i<6;i++) {
+      const x=620+(i%2?7:-7)+i*4,z=350+i*8;
+      flat([[-.075,-.17],[.065,-.17],[.095,-.05],[.075,.16],[.025,.23],[-.06,.18],[-.09,.02]],wet,x,z,.25);
+      flat([[-.06,-.04],[.065,-.04],[.065,.05],[-.06,.05]],wet,x-2,z-9,.25);
+    }
+  }
+  if(id==='residential-gallery') {
+    // Four parallel claw cuts on the barricaded hatch, with a dragged scuff below.
+    for(let i=0;i<4;i++) {
+      const g=new T.PlaneGeometry(.025,.60-i*.04);const o=mesh(g,scratch,750+i*5,.9,244);o.rotation.z=-.3;
+    }
+    flat([[-.8,-.08],[.7,-.12],[1,.03],[.35,.08],[-.9,.04]],dark,750,270,.3);
+  }
+  if(id==='crew-checkpoint') {
+    // Irregular soot fan has a source at the jammed inspection machinery.
+    flat([[0,0],[-.5,.12],[-1.05,.7],[-.65,.75],[-.18,1.1],[.25,.85],[.65,.91],[.45,.4]],dark,403,131,-.4);
+    for(let i=0;i<7;i++) {
+      const g=new T.CylinderGeometry(.021,.021,.10,6);g.rotateZ(Math.PI/2);
+      mesh(g,brass,401+(i%3)*8,.035,148+Math.floor(i/3)*8,i*.8);
+    }
+  }
+  if(id==='passenger-vault') {
+    for(let i=0;i<3;i++) flat([[-.16,-.22],[.17,-.21],[.15,.23],[-.17,.2]],scratch,446+i*9,366+i*3,i*.4);
+  }
+  if(id==='communal-atrium') {
+    for(let i=0;i<5;i++) flat([[-.12,-.32],[.13,-.28],[.1,.3],[-.13,.27]],dark,650+i*9,400+(i%2)*8,.3);
+  }
+  if(id==='armory') {
+    for(let i=0;i<3;i++) flat([[-.04,-.7],[.03,-.65],[.025,.7],[-.025,.62]],dark,506+i*7,429,-.4);
+  }
+  // Unused per-room finishes do not enter the scene or retain resources.
+  const used=new Set<T.Material>();group.traverse(o=>{if(o instanceof T.Mesh)used.add(o.material as T.Material);});
+  for(const m of [dark,wet,scratch,brass])if(!used.has(m))m.dispose();
+  root.add(group);
 }
