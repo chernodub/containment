@@ -16,6 +16,8 @@ export function deckLightSources(t: RoomTemplate): T.Vector4[] {
   if (!plan) return [];
   const domestic = shipEnvironment(t.id) === 'habitation';
   const result = [new T.Vector4(plan.arena.x / 32, plan.arena.y / 32, 5.8, 4.8)];
+  const authored=roomValueProfile(t.id)?.fixturesAt;
+  if(authored) return [...result,...authored.map(([x,y])=>new T.Vector4(x/32,y/32,4.1,3.2))];
   for (const space of plan.spaces) {
     if (result.some(p => Math.hypot(p.x - space.anchor.x / 32, p.y - space.anchor.y / 32) < 3)) continue;
     result.push(new T.Vector4(space.anchor.x / 32, space.anchor.y / 32, domestic ? 3.5 : 4.1, 3.2));

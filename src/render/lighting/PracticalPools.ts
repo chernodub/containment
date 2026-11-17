@@ -13,16 +13,9 @@ export class PracticalPools {
     const material=new T.ShaderMaterial({
       transparent:true,depthWrite:false,blending:T.AdditiveBlending,uniforms:{poolIntensity:{value:.22}},
       vertexShader:`attribute float apertureStyleNumber;varying float apertureStyle;attribute float reactorPoolAmount;varying vec2 poolUv;varying vec3 poolColor;varying float reactorPool;void main(){apertureStyle=apertureStyleNumber;poolUv=uv;poolColor=instanceColor;reactorPool=reactorPoolAmount;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`,
-      fragmentShader:`uniform float poolIntensity;varying float apertureStyle;varying vec2 poolUv;varying vec3 poolColor;varying float reactorPool;void main(){vec2 q=poolUv*2.0-1.0;// Visible fixture grammar: strip, doorway spill, grille, organic slit and core shaft.
-float across=abs(q.x+.16*q.y);float edge=1.0-smoothstep(.66,.98,across);
-float reach=1.0-smoothstep(.34,1.0,abs(q.y));
-float grille=1.0-.56*(1.0-smoothstep(.05,.13,abs(q.x+.12+q.y*.29)));
-float interruption=1.0-.34*(1.0-smoothstep(.10,.20,abs(q.y-.16)))*smoothstep(-.6,.6,q.x);
-if(apertureStyle>.5&&apertureStyle<1.5){edge=1.0-smoothstep(.78,.93,abs(q.x)/(1.0-.25*q.y));reach=1.0-smoothstep(.82,1.0,abs(q.y));}
-if(apertureStyle>1.5&&apertureStyle<2.5){grille=mix(.55,1.0,smoothstep(.08,.18,abs(fract(q.y*2.3+.17)-.5)));}
-if(apertureStyle>2.5&&apertureStyle<3.5){float membrane=q.x+.19*sin(q.y*4.7)+.08*sin(q.y*11.0);float lobes=.60+.19*sin(q.y*6.0+.8)+.09*sin(q.y*13.0);edge=1.0-smoothstep(lobes,lobes+.24,abs(membrane));grille=.72+.18*sin(q.y*7.0+q.x*3.0);interruption=1.0-.48*smoothstep(.05,.20,abs(q.x+.29*q.y))*(1.0-smoothstep(.23,.65,abs(q.y-.21)));reach=1.0-smoothstep(.55,1.0,abs(q.y));}
-if(apertureStyle>3.5){edge=1.0-smoothstep(.50,.94,abs(q.x+.3*q.y));grille=.60+.4*smoothstep(-.25,.2,q.x);}
-float pool=edge*reach*grille*interruption*(.78+.22*q.y);gl_FragColor=vec4(poolColor,pool*poolIntensity);
+      fragmentShader:`uniform float poolIntensity;varying float apertureStyle;varying vec2 poolUv;varying vec3 poolColor;varying float reactorPool;void main(){vec2 q=poolUv*2.0-1.0;
+// Soft bounded bounce beneath each physical fixture.
+float pool=pow(1.0-smoothstep(.08,1.0,length(q*vec2(.95,1.0))),2.0);gl_FragColor=vec4(poolColor,pool*poolIntensity);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`,
