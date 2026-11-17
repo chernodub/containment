@@ -18,6 +18,7 @@ const AURA_RADIUS = 2.1;
  */
 export class OverdrivePayoff {
   private aura?: FxSlot;
+  private auraSeed = -1;
   private level = 0;
   private wasActive = false;
   private color = WHITE;
@@ -83,7 +84,7 @@ export class OverdrivePayoff {
     const dt = Math.max(0, frame.dt);
     this.level += ((active ? 1 : 0) - this.level) * Math.min(1, dt * (active ? 5 : 8));
     let slot = this.aura;
-    if (slot && (!slot.live || slot.mode !== FxMode.Aura || slot.life < 1000)) slot = this.aura = undefined;
+    if (slot && (!slot.live || slot.seed !== this.auraSeed || slot.mode !== FxMode.Aura || slot.life < 1000)) slot = this.aura = undefined;
     if (this.level < .01 && !active) {
       if (slot) { slot.live = false; this.aura = undefined; }
       this.level = 0;
@@ -91,6 +92,7 @@ export class OverdrivePayoff {
     }
     if (!slot) {
       slot = this.aura = this.kit.fx.spawn(FxMode.Aura, this.x, this.z, 1e6);
+      this.auraSeed = slot.seed;
       slot.h0 = .045; slot.range = AURA_RADIUS;
     }
     slot.x = this.x; slot.z = this.z; slot.color = this.color; slot.param = this.level;
@@ -101,7 +103,7 @@ export class OverdrivePayoff {
   }
 
   clear(): void {
-    if (this.aura) this.aura.live = false;
+    if (this.aura && this.aura.seed === this.auraSeed) this.aura.live = false;
     this.aura = undefined; this.level = 0; this.wasActive = false;
   }
 }
