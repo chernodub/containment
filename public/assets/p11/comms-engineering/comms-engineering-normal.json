@@ -1,77 +1,77 @@
 {
-  "bakeSeconds": 2.007,
-  "blenderPNGDecodeMs": 11.916,
+  "bakeSeconds": 1.946,
+  "blenderPNGDecodeMs": 12.244,
   "file": "comms-engineering-normal.png",
   "size": 512,
-  "bytes": 327753,
+  "bytes": 331368,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 192848,
+  "nonFlatPixels": 191898,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "relay-monolith-spine--e9-body",
       "role": "e9-body",
-      "seconds": 0.123,
+      "seconds": 0.122,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "relay-monolith-spine--e9-ceramic",
       "role": "e9-ceramic",
-      "seconds": 0.081,
+      "seconds": 0.076,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "relay-monolith-spine--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.166,
+      "seconds": 0.106,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "relay-monolith-spine--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.182,
+      "seconds": 0.185,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "relay-monolith-spine--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.041,
+      "seconds": 0.045,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "relay-monolith-spine--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.066,
+      "seconds": 0.071,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "relay-crosspatch--e9-body",
       "role": "e9-body",
-      "seconds": 0.036,
+      "seconds": 0.047,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "relay-crosspatch--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.055,
+      "seconds": 0.085,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "relay-crosspatch--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.061,
+      "seconds": 0.07,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "relay-crosspatch--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.058,
+      "seconds": 0.036,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "relay-crosspatch--p11-tint",
       "role": "p11-tint",
-      "seconds": 0.09,
+      "seconds": 0.079,
       "method": "three-segment high bevel"
     }
   ]

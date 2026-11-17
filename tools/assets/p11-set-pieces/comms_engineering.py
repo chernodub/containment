@@ -31,7 +31,7 @@ def blade_door(cx, y, width, height, z0, seed):
     for sz in (-1, 1):
         L.box('Rack door rail', (cx, y - .015, zc + sz * (height / 2 - .035)), (width, .05, .07), 'e9-trim', .012)
     L.box('Rack cavity', (cx, y + .01, zc), (width - .08, .02, height - .08), 'e9-dark', 0)
-    rows = 8
+    rows = 6
     pitch = (height - .16) / rows
     for r in range(rows):
         z = z0 + .08 + pitch * (r + .5)
@@ -94,7 +94,7 @@ def monolith(y0, number, seed, broken=False, height=2.45):
     for sx in (-1, 1):
         fx = sx * .78
         L.cylinder('Fan well', (fx, y0, h + .175), .42, .03, 'e9-dark', 'Z', 12, 0)
-        L.torus('Fan shroud', (fx, y0, h + .2), .42, .035, 'e9-trim', 'Z', 12, 4)
+        L.torus('Fan shroud', (fx, y0, h + .2), .42, .035, 'e9-trim', 'Z', 12, 3)
         for b in range(4):
             a = 2 * math.pi * b / 4 + seed
             L.box('Fan blade', (fx + math.cos(a) * .2, y0 + math.sin(a) * .2, h + .19), (.32, .11, .012), 'e9-body',
@@ -115,7 +115,7 @@ def monolith(y0, number, seed, broken=False, height=2.45):
 
 def trunk(a, b, sag, glow=True):
     """Fibre trunk: thick jacketed conduit, a lit core strand and clamps."""
-    pts = L.catenary(a, b, sag, 12)
+    pts = L.catenary(a, b, sag, 8)
     L.sweep('Fibre trunk jacket', pts, .075, 'p11-rubber', 8)
     if glow:
         off = Vector((.06, 0, .035))
