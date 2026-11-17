@@ -44,3 +44,8 @@ Brought a torn cover, opened case and cold shards over the front lip, with sever
 
 Opened native fight-tour02 and exact480 tour02/03 against final6. The rear weld was hidden behind the interlock's cylinder bank, so the room still looked undamaged despite the added tools.
 Transferred the sealed access leaves, weld beads and gouges to the camera-facing frame, keeping the native side doorways and 140-unit cross-cage passage clear. Final tour/calm recheck pending the shared second batch.
+
+## Coolant Plant — round1 → correction
+
+Opened native fight-tour02 and exact480 tour02/03 against final6. The pump and frozen runoff now distinguish this room, but the cut pipe ends are buried in the machine and the safety tape reduces to a line.
+Brought the separated coupling to the front outlet, extended the subdued frozen tail and widened the buff/charcoal tape into a physical ribbon. The pale ice stays peripheral; final tour/calm recheck pending the shared second batch.

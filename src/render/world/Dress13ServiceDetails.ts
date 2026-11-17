@@ -5,7 +5,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
  * collision ownership and each room owns its one vertex-colour finish. */
 export function addDress13ServiceDetails(root: T.Group, id: string): void {
   const parts: T.BufferGeometry[] = [];
-  const steel = 0x657174, rubber = 0x202b30, stain = 0x343739, frost = 0x9baeb3;
+  const steel = 0x657174, rubber = 0x202b30, stain = 0x343739, frost = 0x829ca4;
   const put = (g: T.BufferGeometry, color: number) => {
     const p = g.getAttribute('position'), c = new T.Color(color), colors = new Float32Array(p.count * 3);
     for (let i = 0; i < p.count; i++) c.toArray(colors, i * 3);
@@ -90,13 +90,13 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     tool(620, 410, .2); shards(673, 410);
   } else if (id === 'coolant-plant') {
     for (let i = 0; i < 11; i++) {
-      const g = new T.SphereGeometry(.23 + i % 3 * .06, 7, 4); g.scale(1, .05, 1.5); g.translate((654 + i * 7) / 32, .022, (386 + Math.sin(i * 1.7) * 14) / 32); put(g, frost);
+      const g = new T.SphereGeometry(.23 + i % 3 * .06, 7, 4); g.scale(1, .05, 1.5); g.translate((654 + i * 7) / 32, .022, (389 + i * 2.5 + Math.sin(i * 1.7) * 10) / 32); put(g, frost);
     }
-    line([641, .95, 340], [651, .8, 351], .065, steel);
-    line([657, .75, 357], [670, .65, 365], .065, steel);
+    line([657, .95, 382], [667, .8, 393], .065, steel);
+    line([674, .65, 400], [687, .35, 408], .065, steel);
     // Muted buff/charcoal tape, well below danger's saturated palette.
-    line([626, .67, 407], [729, .67, 398], .016, 0x9a9477);
-    for (let i = 0; i < 10; i++) box(631 + i * 10, .67, 406 - i * .9, .11, .055, .025, i % 2 ? rubber : 0x9a9477);
+    box(678, .67, 403, 3.2, .11, .025, 0x9a9477, .09);
+    for (let i = 0; i < 10; i++) box(631 + i * 10, .67, 407 - i * .9, .11, .12, .03, i % 2 ? rubber : 0x9a9477);
   } else if (id === 'service-shaft-landing') {
     line([430, 1.1, 324], [455, -.7, 370], .045, steel);
     line([471, 1, 328], [491, .25, 347], .04, rubber);
