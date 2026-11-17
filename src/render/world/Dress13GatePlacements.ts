@@ -39,15 +39,18 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
     // The former broad scallops across the ring and roof-top shell are retired.
     for (const z of [149, 891]) {
       const south = z > 520;
-      for (const [i,x] of [250,360,475,590,710,830,950,1070,1190].entries()) {
-        add(i % 2 ? 'creep-c' : 'creep-a', x, z, (south ? Math.PI : 0) + (i % 3 - 1) * .12, .32);
-        if (i % 2 === 0) {
-          add('creep-wall', x, south ? 899 : 141,
-            south ? Math.PI : 0, .45, .25, Math.PI / 2);
-          // The shielding housing is .902m tall: keep the climb below its cap.
-          pieces[pieces.length-1].matrix.scale(new T.Vector3(2.3,1,1));
-          pieces[pieces.length-1].surfaceGain = 1;
-        }
+      for (let i = 0, x = 192; x <= 1216; x += 64, i++) {
+        const offset = (i % 3 - 1) * 3;
+        add(i % 3 === 1 ? 'creep-c' : i % 3 === 2 ? 'creep-b' : 'creep-a',
+          x + offset, z + (i % 2 ? 1 : -1), (south ? Math.PI : 0) + (i % 3 - 1) * .025, .32);
+        // Overlap along the wall, compress across it: a narrow continuous
+        // ragged fringe leaves more than 140 units of the ring unobstructed.
+        pieces[pieces.length-1].matrix.scale(new T.Vector3(3,1,.45));
+        add('creep-wall', x + offset, south ? 899 : 141,
+          south ? Math.PI : 0, .45, .25, Math.PI / 2);
+        // The climb stays below the .902m housing cap and joins its neighbours.
+        pieces[pieces.length-1].matrix.scale(new T.Vector3(2.3 + (i % 3 - 1) * .12,1,1));
+        pieces[pieces.length-1].surfaceGain = 1;
       }
     }
     add('burst-duct', 1128, 156, .1, .35);

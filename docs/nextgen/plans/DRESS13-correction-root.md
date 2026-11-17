@@ -24,3 +24,7 @@ Round 3: reopened native and exact480 spawn. The bedding now visibly falls off t
 
 ## Safety diagnostic tour repair
 The merged CAM12 native view crops the existing fatal-warning sign at the original x640 named-space marks; the pre-correction frozen build reproduces the same failure. Moving to x520 retains the quad but puts the marine through its projected text and correctly triggers the quiet-occlusion guard. The final x580 west-shoulder marks remain in the same two named bays and are native radius32 legal; all five tour positions and calm then pass with unchanged camera, warning/HUD guards, spawn and exit. The original, intermediate and baseline failures remain under `dress13-final/diagnostics/`.
+
+## Final Annulus wall-band follow-up
+The combined native/480 north-ring view still showed isolated base patches despite correct floor support and cap height. Joined the wall-face crust with overlapping, varied-width pieces and compressed the floor fringe across the wall so the walking ring stays wider than 140 units.
+Reopened native north-ring03 and exact480 spawn/centre/north/exit from the follow-up. A continuous ragged colony now follows the vertical housing face below its cap; the central encounter floor and ring route remain bare, and the floor console/duct/web anchors remain visible and grounded.
