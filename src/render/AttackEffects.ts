@@ -54,7 +54,8 @@ else if(style>5.5){
   allKey=max(allKey,key);allRim=max(allRim,rim);crowded=crowded||tm.w>.5;
   if(tm.w>1.5){emphasisRim=max(emphasisRim,rim);emphasisKey=max(emphasisKey,key);}
   float finalBeat=(1.-smoothstep(0.,.100,tm.y))*flashScale;
-  float movingLine=1.-smoothstep(.012,.025,abs(phase-tm.x));
+  float sweepDistance=abs(phase-tm.x)*(sz.w>.5&&sz.w<1.5?sz.y+2.*radius:radius);
+  float movingLine=1.-smoothstep(.012,.025+max(fwidth(sweepDistance),.003),sweepDistance);
   sweep=max(sweep,movingLine*(.22+finalBeat*.35));
   float hatch=step(.72,fract((warningWorld.x+warningWorld.y)*18.));
   float interior=mix(.035,.075,tm.z)+finalBeat*mix(.045,.065,tm.z);
