@@ -59,7 +59,7 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | **R11** independent verdicts by two Astra reviewers on `final6` | done | visual 5–7, play 5–7: "advanced prototype with a commercially presentable vertical slice" — `reviews/R11-verdict.md` |
 | **Wave 12** — from the R11 findings | running | |
 | CAM12 camera and framing you can trust (whole marine in the usable viewport, threat-aware bias, edge indicators) — Sol | running | |
-| FEEL12 aim/body/beam agreement, unmistakable small-enemy commitment, hit and kill chains, run conviction — Sol | running | |
+| FEEL12 aim/body/beam agreement, small-enemy commitment, hit and kill chains, marine solid again — Sol | merged; correction pass running | lead review: warnings overshoot in crowds (red hatch carpets the floor, disc cut-outs around enemies) and the marine still reads dark grey instead of light armour |
 | VFX12 translucent-marine fix — Astra | merged | Astra fixed the x-ray self-occlusion, then could not carry the effects rework |
 | VFX13 flagship effects: Flashfire, Railbreaker, Cryo Nova, Overdrive moments (one pooled shader module) — Opus | merged | clear step up; author says still short of commercial bar (fire is a sheet, not a volume) |
 | VFX14 the other twelve abilities and deployables with the same technique — Sol | running | |
