@@ -39,7 +39,24 @@ class PyroPresentation implements AbilityPresentation {
     live: false, lightId: 7100 + lightId, kind: 'cone', age: 0, life: 1, x: 0, z: 0, tx: 0, tz: 0,
     angle: 0, radius: 0, range: 0, arc: 0, slices: [undefined, undefined, undefined],
   }));
+  private readonly surfaces = Array.from({ length: 32 }, () => ({ id: -1, part: 0, seen: false, slot: undefined as FxSlot | undefined }));
   private next = 0;
+
+  /** Retained procedural surface; refreshed from native snapshots, no per-frame meshes/materials. */
+  private surface(id: number, part: number, x: number, z: number, range: number, angle: number, arc: number, h0: number, h1: number, intensity: number): void {
+    let owner: (typeof this.surfaces)[number] | undefined;
+    for (const candidate of this.surfaces) if (candidate.id === id && candidate.part === part) { owner = candidate; break; }
+    if (!owner) for (const candidate of this.surfaces) if (candidate.id === -1) { owner = candidate; break; }
+    if (!owner) return;
+    owner.id = id; owner.part = part; owner.seen = true;
+    let slot = owner.slot;
+    if (!slot?.live || slot.mode !== FxMode.Fire || slot.life < 1000) slot = owner.slot = this.kit.fx.spawn(FxMode.Fire, x, z, 1e6);
+    slot.x = x; slot.z = z; slot.mx = x; slot.mz = z;
+    slot.range = range; slot.angle = angle; slot.arc = arc; slot.inner = 0;
+    slot.h0 = h0; slot.h1 = h1; slot.param = part % 2 ? .45 : .12;
+    // Hold the hot portion of the Fire envelope; flow still uses the presentation clock.
+    slot.age = .09; slot.intensity = intensity;
+  }
   private emission = 0;
   private shimmer = 0;
   private readonly prints: Footprint[] = Array.from({ length: 12 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
@@ -152,6 +169,11 @@ class PyroPresentation implements AbilityPresentation {
         const radius = (event.radius ?? 130) / UNIT;
         const p = this.acquire('ignition', x, z, event.phase === 'burst' ? .38 : .65); p.radius = radius; p.angle = event.angle ?? 0;
         kit.burst(x, .35, z, 'pyro', event.phase === 'burst' ? 12 : 20, 3, .65);
+        const burst = kit.fx.spawn(FxMode.Fire, x, z, event.phase === 'burst' ? .42 : .6);
+        burst.range = radius; burst.arc = Math.PI * 2; burst.h0 = .2; burst.h1 = .8;
+        burst.param = .2; burst.intensity = .7;
+        const char = kit.fx.spawn(FxMode.Scorch, x, z, 2.5);
+        char.range = radius; char.arc = Math.PI * 2; char.h0 = char.h1 = .035;
         // The authoritative aura boundary is shared; the suit itself is the heat source.
         kit.flash(x, z, FIRE, event.phase === 'burst' ? 5 : 14, 6, event.phase === 'burst' ? 3 : 6, .25);
         kit.distort(x, z, radius, .004, .6, true);
@@ -169,6 +191,7 @@ class PyroPresentation implements AbilityPresentation {
     this.kit.impact();
     if (this.disposed || !frame.visible) return;
     const kit = this.kit, dt = Math.max(0, frame.dt);
+    for (const surface of this.surfaces) surface.seen = false;
     this.emission += dt; this.shimmer += dt;
     const emit = dt > 0 && this.emission >= (kit.low ? .15 : .065);
     const shimmer = dt > 0 && this.shimmer >= .32;
@@ -204,7 +227,10 @@ class PyroPresentation implements AbilityPresentation {
       kit.draw('decal', print.x, .035, print.z, .64, .22, 1, 0x231b16, fade * .58, 0, -print.angle, 9);
       kit.directedFlame(print.x, .04, print.z, .16, .36, print.angle + Math.PI, 1.1, print.angle + print.x, fade * .42);
     }
-    if (!frame.snapshot) { kit.impact(); return; }
+    if (!frame.snapshot) {
+      for (const surface of this.surfaces) { if (surface.slot) surface.slot.live = false; surface.id = -1; surface.slot = undefined; }
+      kit.impact(); return;
+    }
     for (const zone of frame.snapshot.zones) {
       if (zone.element !== 'pyro' || zone.remainingMs <= 0) continue;
       if (zone.shape === 'strip') this.fireStrip(zone, emit);
@@ -221,6 +247,10 @@ class PyroPresentation implements AbilityPresentation {
         kit.ribbon(bx - Math.cos(a) * .9, .85, bz - Math.sin(a) * .9, bx, .85, bz, CORE, .045, .7, false);
         if (emit && !kit.low) kit.mote('spark', bx, .85, bz, -.1 * Math.cos(a), .2, -.1 * Math.sin(a), .035, .32, FIRE);
       }
+    }
+    for (const surface of this.surfaces) if (!surface.seen && surface.id !== -1) {
+      if (surface.slot) surface.slot.live = false;
+      surface.id = -1; surface.slot = undefined;
     }
     kit.impact();
   }
@@ -297,11 +327,8 @@ class PyroPresentation implements AbilityPresentation {
     for (let side = -1; side <= 1; side += 2) {
       const bx = x - cx * .35 - sz * side * .22, bz = z - sz * .35 + cx * side * .22;
       kit.ribbon(bx, .65, bz, bx - cx * .8 * fade, .35, bz - sz * .8 * fade, HOT, .025 * fade, .6, false);
-      for (let i = 0; i < (kit.low ? 1 : 3); i++) {
-        const behind = .2 + i * .38, h = (1.0 - i * .14) * fade;
-        kit.draw('flame', bx - cx * behind, .35 + h * .35, bz - sz * behind,
-          (.35 + i * .05) * fade, h * .5, 1, i === 0 ? CORE : FIRE, (.9 - i * .1) * fade, 0, side * -.15);
-      }
+      this.surface(-100 - p.lightId, side < 0 ? 0 : 1, bx, bz, 1.2 * fade,
+        p.angle + Math.PI, .7, .65, .22, fade * .85);
       if (emit) {
         kit.mote('spark', bx, .5, bz, -cx * 3, .65, -sz * 3, .035, .6, CORE);
         if (!kit.low) kit.mote('smoke', bx - cx * .6, .5, bz - sz * .6, -cx * .6, .35, -sz * .6, .3, .7, SOOT);
@@ -352,14 +379,12 @@ class PyroPresentation implements AbilityPresentation {
     const c = Math.cos(angle), s = Math.sin(angle), length = Math.hypot(ex - x, ez - z);
     const fade = Math.min(1, zone.remainingMs / 350), points = Math.min(kit.low ? 5 : 8, Math.max(4, Math.ceil(length / .85)));
     kit.sustain((zone.durationMs - zone.remainingMs) / 1000);
-    kit.draw('decal', (x + ex) * .5, .045, (z + ez) * .5, length * .5, radius * .42, 1, FIRE, .68 * fade, 0, -angle, 9);
-    for (let i = 0; i <= points; i++) {
-      const variation = .5 + .5 * Math.sin(i * 13.7 + zone.id * 2.1), t = .025 + .95 * i / points;
-      const lateral = Math.sin(i * 2.67 + zone.id) * radius * .25;
-      const px = x + (ex - x) * t - s * lateral, pz = z + (ez - z) * t + c * lateral;
-      // Short flames are swept by dash momentum over one continuous glossy fuel stroke.
-      kit.directedFlame(px, .045, pz, .16 + variation * .08,
-        (.25 + variation * .30) * fade, angle, 1.5, i * 1.73 + zone.id, (.6 + variation * .14) * fade, i % 7 === 0);
+    // Overlapping low fire fans form a continuous fuel line, all clipped inside native strip width.
+    for (let i = 0; i < (kit.low ? 4 : 7); i++) {
+      const count = kit.low ? 4 : 7, t = (i + .5) / count;
+      const r = Math.min(radius, length / count * .5);
+      this.surface(zone.id, i, x + (ex - x) * t, z + (ez - z) * t, r,
+        angle, Math.PI * 2, .065, .22 + .1 * Math.sin(i * 2.7), fade * .72);
     }
     kit.lightAt(zone.id, (x + ex) * .5, (z + ez) * .5, FIRE, 4 * fade, 4);
     if (emit) {
@@ -385,18 +410,9 @@ class PyroPresentation implements AbilityPresentation {
       return;
     }
     kit.sustain(elapsed);
-    kit.liquidFire(x, z, radius * growth, .78 * fade);
-    // Fuel burns at the ragged edge, with two taller interior vents. The center
-    // remains open deck between pockets rather than an opaque orange carpet.
-    const tongues = kit.low ? 4 : 8;
-    for (let i = 0; i < tongues; i++) {
-      const a = i * 2.399963 + zone.id * .71;
-      const variation = .5 + .5 * Math.sin(i * 7.83 + zone.id * 3.17);
-      const r = radius * growth * (i < 2 ? .22 + i * .18 : .74 + variation * .13);
-      kit.directedFlame(x + Math.cos(a) * r, .06, z + Math.sin(a) * r,
-        .23 + variation * .13, (i < 2 ? 1.8 + variation * .85 : .6 + variation * .8) * fade,
-        a, .22, i * 2.17 + zone.id, (i < 2 ? .72 : .60) * fade);
-    }
+    // Two irregular depth layers share the exact native circular footprint.
+    this.surface(zone.id, 0, x, z, radius * growth, 0, Math.PI * 2, .055, .2, fade * .7);
+    if (!kit.low) this.surface(zone.id, 1, x, z, radius * growth, 1.7, Math.PI * 2, .12, .48, fade * .42);
     // A single loose smoke column rises from the hottest interior fuel pocket.
     for (let i = 0; i < (kit.low ? 1 : 4); i++) {
       const rise = kit.reducedMotion ? .5 : (kit.time * .3 + i * .23) % 1;
@@ -433,11 +449,8 @@ class PyroPresentation implements AbilityPresentation {
       kit.draw('solid', bx, base+.06, bz, .32, .20, .35, 0xd95b16, (.9 + pulse * .1) * fade, -angle);
       kit.draw('spark', bx, base+.1, bz, .18, .14, 1, CORE, .96 * fade);
       kit.sustain(age);
-      kit.flowFlame(bx, base, bz, bx-c*.42-s*side*.24, base+.30, bz-s*.42+c*side*.24,
-        kit.low?.12:.18, side+zone.id, .94*fade, true);
-      const height = side < 0 ? 1.10 : .78;
-      kit.directedFlame(bx, base, bz, side < 0 ? .25 : .21, height * (.95 + pulse * .05),
-        exhaustAngle + side * .32, moving ? 1.6 : .95, side + zone.id, .82 * fade);
+      this.surface(zone.id, side < 0 ? 0 : 1, bx, bz, side < 0 ? .95 : .72,
+        exhaustAngle + side * .32, .85, base, base + .5, .7 * fade);
       if (!kit.low) {
         // Replace the long parallel backpack tongue with a small moving ember.
         const turn = kit.reducedMotion ? side : kit.time * 4 + side * 1.7;
@@ -448,13 +461,6 @@ class PyroPresentation implements AbilityPresentation {
     // Low short flank fire and small embers surround the suit without a horn crown.
     // Its narrow shoulders leave the cyan helmet and central aiming silhouette exposed.
     kit.sustain(age);
-    const flanks = kit.low ? 1 : 2;
-    for (let i = 0; i < flanks; i++) {
-      const side = i === 0 ? -1 : 1;
-      kit.directedFlame(x - c * .04 - s * side * .27, .12,
-        z - s * .04 + c * side * .27, .17, .90, exhaustAngle, .45,
-        zone.id + side * 8.1, .68 * fade);
-    }
     kit.impact();
     kit.draw('solid', x - c * .3, 1.12, z - s * .3, .22, .55, .36, 0xb9450e, .94 * fade, -angle);
     // Short heated armor seams describe shoulders, chest and weapon, leaving the helmet open.
@@ -480,6 +486,7 @@ class PyroPresentation implements AbilityPresentation {
   }
 
   clear(): void {
+    for (const surface of this.surfaces) { if (surface.slot) surface.slot.live = false; surface.id = -1; surface.slot = undefined; }
     for (const p of this.effects) p.live = false;
     for (const print of this.prints) print.live = false;
     this.next = 0; this.emission = 0; this.shimmer = 0; this.printCursor = 0; this.printClock = 0; this.muzzle = undefined; this.suit=undefined;this.shoulders.fill(undefined); this.suitAngle=0;
