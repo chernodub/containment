@@ -67,3 +67,7 @@
 ## 17 Overload Floor
 - Opened calm/tour03/heavy480 colour/grey: orange crown/rim gives reactor identity, marine leads and floor warnings remain crisp; control cover survives.
 - Feed/core-rim/exhaust pools leave occupied corners dark. Build and seven guarded frames pass; tour growth is nearly black and remains a weak secondary landmark.
+
+## 18 Shared standard correction
+- Opened shared/fix colour+grey480 contacts (Crew calm/heavy, Coolant heavy, Cryo Relay heavy): reduced creature rim strength and narrowed falloff, dark cool ink replaces pale/bronze contour, marine ink no longer yields to hot warning fill. Rig top tint is broader/more saturated; weapon receiver has a rig-colour material band.
+- Crew gets explicit scanner/inspection/gallery centres and tighter radii; practical bounce is now soft elliptical rather than a trapezoid, local-light aperture transitions broadened. Build and both guarded captures pass. Crew remains a pale slab; Freight's east-edge lit shape persists, so these two weaknesses are improved only partially and must remain reported.

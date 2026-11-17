@@ -154,7 +154,9 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Palest room: cold inspection pools on the portal; cage recesses near-black.
   'crew-checkpoint': profile({
-    floor:{lit:.34,unlit:.18,edge:.09}, perimeter:{inner:4.5,outer:10.5,value:.22},
+    // Scanner arch inspection lamps and guard-gallery ceiling fixture.
+    fixturesAt:[[364,200],[364,680],[1000,440]],
+    floor:{lit:.34,unlit:.18,edge:.09}, perimeter:{inner:1.6,outer:4.8,value:.22,lane:.85},
     wall:{value:.42,saturation:.55}, floorSaturation:.45, tint:0xd8e2f0,
     fixtures:.2, practicals:.38, ambient:.45, marineGlow:1, exit:.9,
   }),

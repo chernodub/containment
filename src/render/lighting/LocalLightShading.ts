@@ -84,7 +84,7 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
   if(diffuseEnvironmentGain!==undefined)environmentGain.value=Math.max(0,Math.min(1,diffuseEnvironmentGain));
   let shadowFill=practicalShadowFills.get(material);if(!shadowFill){shadowFill={value:practicalShadowFill??.025};practicalShadowFills.set(material,shadowFill);}if(practicalShadowFill!==undefined)shadowFill.value=Math.max(.025,Math.min(.25,practicalShadowFill));
   let bounce=shadowReadability.get(material);if(!bounce){bounce={value:readableBounce??0};shadowReadability.set(material,bounce);}if(readableBounce!==undefined)bounce.value=Math.max(0,Math.min(.02,readableBounce));
-  if (installed.has(material)||material.customProgramCacheKey().includes(':local-light-rejection-v9-light13')) return;
+  if (installed.has(material)||material.customProgramCacheKey().includes(':local-light-rejection-v10-light14')) return;
   installed.add(material);
   const previous = material.onBeforeCompile;
   const key = material.customProgramCacheKey();
@@ -97,7 +97,7 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
  if(aperture.z>0.0){
  vec2 chart=vec2(dot(floorDelta,vec2(aperture.y,-aperture.x)),dot(floorDelta,aperture.xy));
  float across=abs(chart.x+chart.y*.10);
- float slit=(1.0-smoothstep(aperture.z*.50,aperture.z*1.35,across))*(1.0-smoothstep(aperture.w*.40,aperture.w,abs(chart.y)));
+ float slit=(1.0-smoothstep(aperture.z*.20,aperture.z*1.65,across))*(1.0-smoothstep(aperture.w*.15,aperture.w*1.2,abs(chart.y)));
  // Cryo strip fixtures have no circular point-light pedestal outside the aperture.
  float stripOnly=max(roomFloorApertureOnly,1.0-step(.5,roomFloorPattern.z));
  directLight.color*=mix(.12+slit*.40,slit*.40,stripOnly);
@@ -126,6 +126,6 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
         reflectedLight.indirectDiffuse+=diffuseColor.rgb*roomMarineGlowColor*roomMarineGlow.w*roomValue.z*roomLamp;
       }`);
   };
-  material.customProgramCacheKey = () => `${key}:local-light-rejection-v9-light13`;
+  material.customProgramCacheKey = () => `${key}:local-light-rejection-v10-light14`;
   material.needsUpdate = true;
 }
