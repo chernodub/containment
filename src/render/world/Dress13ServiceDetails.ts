@@ -60,17 +60,19 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     scuff(550, 435, 1.1, .4); shards(554, 456);
   } else if (id === 'transmission-chamber') {
     tool(885, 431, .7); tool(930, 433, 2);
+    scuff(883, 447, 1.8, .6);
+    for (let i = 0; i < 4; i++) box(859 + i * 12, .04, 431 + i % 2 * 10, .22, .035, .3, 0x778280, i * .5);
     line([905, .7, 401], [912, .035, 428], .025, rubber);
     line([915, .035, 432], [938, .035, 417], .025, rubber);
     shards(932, 428, 0x526c6d);
     // Frozen last transmission is part of the abandoned operator station.
     const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 256;
     const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#172a2c'; ctx.fillRect(0, 0, 512, 256);
-    ctx.fillStyle = '#8ca49a'; ctx.font = 'bold 32px monospace'; ctx.fillText('TRANSMISSION HELD', 22, 48);
+    ctx.fillStyle = '#b1c2b6'; ctx.font = 'bold 32px monospace'; ctx.fillText('TRANSMISSION HELD', 22, 48);
     ctx.font = '24px monospace'; ctx.fillText('DO NOT OPEN THE DOCK', 22, 100); ctx.fillText('WE ARE STILL INSIDE', 22, 137);
     ctx.fillStyle = '#5d7770'; ctx.fillText('CARRIER LOST / 00:17', 22, 211);
     const texture = new T.CanvasTexture(canvas); texture.colorSpace = T.SRGBColorSpace;
-    const screen = new T.Mesh(new T.PlaneGeometry(1.7, .85), new T.MeshStandardMaterial({map: texture, roughness: 1, metalness: 0, emissive: 0xffffff, emissiveMap: texture, emissiveIntensity: .12, side: T.DoubleSide}));
+    const screen = new T.Mesh(new T.PlaneGeometry(2.1, 1.05), new T.MeshStandardMaterial({map: texture, roughness: 1, metalness: 0, emissive: 0xffffff, emissiveMap: texture, emissiveIntensity: .12, side: T.DoubleSide}));
     (screen.material as T.Material).userData.actorMaterial = true;
     (screen.material as T.Material).addEventListener('dispose', () => texture.dispose());
     screen.name = 'dress13-last-transmission'; screen.rotation.x = -.65; screen.position.set(905 / 32, 1.15, 390 / 32); root.add(screen);
