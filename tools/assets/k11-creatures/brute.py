@@ -15,13 +15,14 @@ ASSET = "tyrant"
 FAMILY = "brute"
 ASPECT = 1.8
 VOXEL = 0.024
-TRIS = {"body": 11500, "elite": 1600, "boss": 4200}
+TRIS = {"body": 11500, "elite": 1600, "boss": 8400}
+RANK_SCALE = {"boss": 2.3}   # Brute Warden: uniform boss-tier scale applied by the loader
 ATLAS = 2048
 GLOW_STRENGTH = 2.0
 PALETTE = {
     "shell": (0.13, 0.035, 0.022), "edge": (0.55, 0.36, 0.20), "membrane": (0.11, 0.022, 0.026),
     "sinew": (0.26, 0.06, 0.05), "claw": (0.022, 0.014, 0.012), "tooth": (0.72, 0.60, 0.42),
-    "organ": (1.0, 0.45, 0.05), "eye": (1.0, 0.6, 0.15), "crest": (0.52, 0.41, 0.27), "armor": (0.24, 0.12, 0.075), "flesh": (0.32, 0.05, 0.05),
+    "organ": (1.0, 0.45, 0.05), "eye": (1.0, 0.6, 0.15), "crest": (0.38, 0.29, 0.2), "armor": (0.24, 0.12, 0.075), "flesh": (0.32, 0.05, 0.05),
     "cavity": (0.03, 0.005, 0.006), "under": (0.08, 0.03, 0.022),
 }
 GLOW = {"organ": (1.0, 0.36, 0.0), "eye": (1.0, 0.55, 0.08)}
@@ -112,25 +113,36 @@ def build(sk):
         elite.add(RoundCone(c + v3((-0.2, 0.3 * s_, 0.35)), c + v3((-0.9, 0.95 * s_, 1.25)), 0.2, 0.02, zone=TOOTH, bone=f"shoulder.{side}"))
     # --- boss (Brute Warden): bone collar shield and horn crown -----------------------
     boss = S.Sculpture("brute-warden")
-    # broad asymmetric shield grown over the left crusher arm
-    el, wr = sk.h("forearm.l"), sk.h("claw.l")
-    fa = normalize(wr - el)
-    sc = el + (wr - el) * 0.5 + v3((0.1, 0.95, 0.75))
-    boss.add(Plate(sc, (2.1, 1.75, 0.7), frame(fa, (0.2, 1.0, 0.6)), 0.45, rings=0.014, ring_count=5, lip=0.1, chip=0.07,
-                   zone=CREST, bone="forearm.l", plate=150))
-    boss.add(Plate(sc + v3((-0.5, 0.3, 0.5)), (1.4, 1.2, 0.55), frame(fa, (0.1, 1.0, 0.8)), 0.35, rings=0.012, lip=0.08,
-                   chip=0.06, zone=ARMOR, bone="forearm.l", plate=151))
-    boss.add(Ellipsoid(sc - v3((0.1, 0.35, 0.1)), (0.9, 0.35, 0.55), frame(fa), zone=FLESH, bone="forearm.l", k=0.2))
-    # battering ram: a blunt bone ram fused over the brow, the charge's business end
-    ram0, ram1 = head_c + z(-0.4, 0, 0.35), head_c + z(1.25, 0, 0.0)
-    boss.add(RoundCone(ram0, ram1, 0.62, 0.48, zone=CREST, bone="head", k=0.2))
-    boss.add(S.Stretch(Ellipsoid(ram1 + z(0.05, 0, 0), (0.42, 0.62, 0.42 * a), frame(normalize(ram1 - ram0))),
-                       normalize(ram1 - ram0), 0.16, 0.05, zone=CREST, bone="head"))
+    # --- shield-wall: one broad fused bone wall on the left flank, rising above the back line
+    out = normalize(v3((0.05, 1.0, 0.85)))      # leans outward: its broad face reads from the gameplay camera
+    wall_c = z(-0.1, 2.15, 3.95) + v3((0, 0, 0.9))
+    boss.add(Plate(wall_c, (2.9, 2.0, 0.5), frame(v3((1, 0, 0.12)), out), 0.42, rings=0.018, ring_count=7, lip=0.16, chip=0.12,
+                   seed=150, zone=CREST, bone="chest", plate=150))
+    boss.add(Plate(wall_c + v3((0.9, 0.22, 0.75)), (1.5, 1.3, 0.35), frame(v3((1, 0, 0.35)), out), 0.3, rings=0.016, lip=0.12,
+                   chip=0.1, seed=151, zone=CREST, bone="chest", plate=151))
+    boss.add(Plate(wall_c + v3((-1.3, 0.18, -0.55)), (1.3, 1.2, 0.32), frame(v3((1, 0, -0.2)), out), 0.28, rings=0.016, lip=0.1,
+                   chip=0.1, seed=152, zone=ARMOR, bone="chest", plate=152))
+    for dx in (-1.4, 0.0, 1.3):   # bone struts rooting the wall into the chest
+        boss.add(RoundCone(wall_c + v3((dx, -0.25, -0.6)), chest_c + v3((dx * 0.5, 0.8, 0.1)), 0.34, 0.24, zone=ARMOR, bone="chest", k=0.2))
+    boss.add(Ellipsoid(z(-0.2, 1.6, 3.6), (1.8, 0.45, 0.8 * a), zone=FLESH, bone="chest", k=0.35))
+    # --- heavy sagittal crest: one continuous fused bone fin from brow over the back (no spikes)
+    crest = [head_c + z(-0.1, 0, 0.5), chest_c + z(0.7, 0, 1.1), chest_c + z(-0.4, 0, 1.2), hind_c + z(1.0, 0, 0.9)]
+    for i, (p0, p1) in enumerate(zip(crest[:-1], crest[1:])):
+        c = (p0 + p1) / 2
+        L = float(np.linalg.norm(p1 - p0))
+        h = 1.15 - 0.2 * abs(i - 1)
+        boss.add(Plate(c + v3((0, 0, h * 0.42)), (L * 0.62, h * 0.58, 0.2), frame(normalize(p1 - p0) + v3((0, 0, 0.3)), v3((0, 1, 0))), 0.16,
+                       rings=0.012, lip=0.06, chip=0.07, seed=170 + i, zone=CREST, bone=("head", "chest", "chest")[i], plate=170 + i))
+    # --- battering ram: massive blunt bone ram on the brow (emission region warden-ram)
+    ram0, ram1 = head_c + z(-0.5, 0, 0.3), head_c + z(1.55, 0, -0.05)
+    boss.add(RoundCone(ram0, ram1, 0.85, 0.8, zone=CREST, bone="head", k=0.25, name="warden-ram"))
+    boss.add(S.Stretch(Ellipsoid(ram1 + z(0.15, 0, 0), (0.6, 1.05, 0.62 * a), frame(normalize(ram1 - ram0))),
+                       normalize(ram1 - ram0), 0.2, 0.06, zone=CREST, bone="head", name="warden-ram"))
     for s_ in (-1, 1):
-        boss.add(RoundCone(ram1 + v3((0, 0.45 * s_, 0.1)), ram1 + v3((0.55, 0.85 * s_, 0.45)), 0.22, 0.03, zone=TOOTH, bone="head"))
+        boss.add(RoundCone(ram1 + v3((-0.1, 0.75 * s_, 0.1)), ram1 + v3((0.35, 1.05 * s_, 0.35)), 0.34, 0.16, zone=CREST, bone="head"))
     # heavier right battering forearm: knuckle bosses along the crusher
     el, wr = sk.h("forearm.r"), sk.h("claw.r")
     for t in (0.3, 0.55, 0.8):
         c = el + (wr - el) * t + v3((0.25, -0.45, 0.2))
-        boss.add(Ellipsoid(c, (0.32, 0.3, 0.26), zone=ARMOR, bone="forearm.r", k=0.05))
+        boss.add(Ellipsoid(c, (0.36, 0.34, 0.3), zone=ARMOR, bone="forearm.r", k=0.05))
     return {"body": body, "elite": elite, "boss": boss}

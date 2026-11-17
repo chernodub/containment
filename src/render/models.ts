@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {AuthoredMotionPlayer,AuthoredMarineMotion,AuthoredEnemyMotion} from './motion/AuthoredMotion';
 import {AnatomicalFrost} from './motion/AnatomicalFrost';
-import {originalCreatureFrost,originalCreatureHeight,originalCreatureFootprints,originalCreatureEmission,type CreatureEmissionRegion} from './OriginalCreatureAnatomy';
+import {originalCreatureFrost,originalCreatureHeight,originalCreatureFootprints,originalCreatureRankScale,originalCreatureEmission,type CreatureEmissionRegion} from './OriginalCreatureAnatomy';
 import {EnemyMotion,type EnemyAttackPhase,type EnemyStrikeShape} from './motion/EnemyMotion';
 import {MarineMotion} from './motion/MarineMotion';
 import {MarineActionMotion} from './motion/MotionEvents';
@@ -86,10 +86,13 @@ export function alien(kind:string,elite=false):ActorModel{
  const sourceScale=r.assetRoot.scale.clone(),sourcePosition=r.assetRoot.position.clone(),sourceSpan=r.span;
  const footprintFits=original&&kind!=='queen'?originalCreatureFootprints(r.root,r.assetRoot,r.clips,kind,collisionRadius):{};
  if(original)r.root.userData.k11FootprintFits=footprintFits;
+ const groundY=r.body.position.y;
  const fitFootprint=(rank?:string)=>{
   if(!original||kind==='queen')return;
-  const fit=footprintFits[rank?'boss':elite?'elite':'base']??1;
+  const rankKey=rank?'boss':elite?'elite':'base',fit=footprintFits[rankKey]??1,rankScale=originalCreatureRankScale(kind,rankKey);
   r.assetRoot.scale.x=sourceScale.x*fit;r.assetRoot.scale.z=sourceScale.z*fit;
+  // K11 boss tier: uniform rank scale; keep the feet on the deck by moving the asset origin, not the pooled body.
+  r.assetRoot.scale.y=sourceScale.y*rankScale;r.assetRoot.position.y=sourcePosition.y+groundY*(rankScale-1);
   r.assetRoot.position.x=sourcePosition.x*fit;r.assetRoot.position.z=sourcePosition.z*fit;r.span=sourceSpan*fit;
   if(r.root.userData.affliction)r.root.userData.affliction.span=r.span;
  };
