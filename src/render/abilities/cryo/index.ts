@@ -192,14 +192,21 @@ class CryoPresentation implements AbilityPresentation {
     for (const item of this.zones) if (item.id === zone.id) { clock = item; break; }
     if (!clock) {
       for (const item of this.zones) if (item.id < 0) { clock = item; break; }
-      if (clock) {
-        clock.id = zone.id;
-        const ice = k.fx.spawn(FxMode.FrostStrip, x, z, zone.remainingMs / 1000);
-        ice.angle = direction; ice.range = length; ice.inner = half;
-        ice.h0 = .035; ice.color = ICE; ice.intensity = .75; ice.param = 1;
-      }
+      if (clock) clock.id = zone.id;
     }
-    if (clock) clock.seen = true;
+    if (clock) {
+      clock.seen = true;
+      // Native dash zones grow while the marine moves; the birth snapshot can have zero length.
+      // Refresh the retained strip from every observed snapshot instead of freezing that first extent.
+      if (!clock.fx?.live || clock.fx.mode !== FxMode.FrostStrip || clock.fx.seed !== clock.fxSeed) {
+        clock.fx = k.fx.spawn(FxMode.FrostStrip, x, z, Math.max(.1, zone.remainingMs / 1000));
+        clock.fxSeed = clock.fx.seed;
+      }
+      const ice = clock.fx;
+      ice.x = x; ice.z = z; ice.angle = direction; ice.range = length; ice.inner = half;
+      ice.age = age; ice.life = Math.max(.1, zone.durationMs / 1000);
+      ice.h0 = .035; ice.color = ICE; ice.intensity = .75; ice.param = 1;
+    }
     // New contact retains its brief frost hit; settled coverage yields even on
     // unoccupied deck, with the exact capsule and its crystal edges unchanged.
     const covered = whiteout && Math.hypot(zone.x - whiteout.x, zone.y - whiteout.y) < whiteout.radius && Math.hypot(zone.x2 - whiteout.x, zone.y2 - whiteout.y) < whiteout.radius;
