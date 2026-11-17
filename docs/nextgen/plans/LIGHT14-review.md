@@ -51,3 +51,7 @@
 ## 13 Swarm Junction
 - Opened calm/tour03/heavy480 colour/grey: heart's violet lantern ribs and nest dots identify the room; marine remains brighter, growth bodies stay dark.
 - Heart/ventilation-mouth pools retain magenta floor circulation. Seven guarded frames and build pass; north tour is sparse but route edges remain visible.
+
+## 14 Shielding Gate
+- Opened calm/tour03/heavy480 colour/grey: violet emitters and cabinet faces read, marine leads the dark clinical floor and orange threats.
+- Emitter/cabinet/service-face pools retain cover and lane markings. Build and seven guarded frames pass; broad upper floor stays quieter than actors.

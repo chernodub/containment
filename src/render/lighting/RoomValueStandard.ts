@@ -118,6 +118,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.60,saturation:.60},floorSaturation:.55,tint:0xebbedc,
     fixtures:.23,practicals:.62,ambient:.55,marineGlow:1,exit:.9,
   }),
+  'shielding-gate': profile({
+    // West emitter, northern power cabinet and east emitter service face.
+    fixturesAt:[[460,300],[704,160],[978,620]],
+    floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:10,value:.35,lane:.8},
+    wall:{value:.49,saturation:.56},floorSaturation:.48,tint:0xcac9ef,
+    fixtures:.20,practicals:.48,ambient:.46,marineGlow:1,exit:.9,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},
