@@ -1,3 +1,5 @@
+import {AUGMENT_UPGRADE_RULES,type AugmentId} from '../../game/abilities/augmentCatalog';
+import {SERVICE_IDS,SERVICE_CATALOG,serviceCost,serviceStock,nextAugmentUpgrade,detourOffers} from '../../game/roguelike/economy';
 import {escapeHtml,controlsScreen} from './initialTemplates';
 export {escapeHtml,controlsScreen,titleScreen,systemScreen} from './initialTemplates';
 export type {ContinueSummary} from './initialTemplates';
@@ -12,7 +14,7 @@ import {progressionFor} from '../../game/roguelike/progression';
 import {generateRun, ROOM_REWARD_LABELS, runLength} from '../../game/roguelike/run';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
 import {storyRoomFor} from '../../game/roguelike/storyRooms';
-import {getAbilities, getRunStats, getShopProjection} from '../gameAdapter';
+import {getAbilities, getRunStats} from '../gameAdapter';
 import {icon} from '../icons';
 import {boonElement, boonIcon, boonPath, boonRuleLabel} from '../boonPresentation';
 import {boonChips} from '../boonChips';
@@ -63,7 +65,7 @@ export function rigScreen(selected: RigId): string {
     <div class="rig-identity" data-element="${rig.element}">${rigPortrait(selected)}<div class="rig-identity-copy"><span class="eyebrow">${rig.name.toUpperCase()} / ${rig.boonPath}</span><h3>${RIG_FANTASIES[selected]}</h3><p>${rig.description}</p><button id="equip-rig" class="primary">Equip ${rig.name} ${arrow()}</button><span class="rig-equip-status" aria-hidden="true">SYSTEM LINK / READY</span></div></div>${abilityPreview(selected)}<p class="screen-footnote rig-footnote"><span>WHITE: MARINE · ORANGE: HOSTILE · FOCUS FOR RULES</span>Dash passes through enemies, never walls. Overdrive charges through damage and kills and carries between rooms.</p></section>`;
 }
 
-const augmentSlots: Record<string, 'dash'|'tactical'|'power'|'overdrive'> = {'reserve-thruster':'dash','slide-loader':'dash','tactical-salvage':'tactical','drive-dynamo':'overdrive',afterquake:'tactical','reinforced-bulwark':'power','spreading-nova':'tactical','twin-glacier':'power','scorched-fan':'tactical','napalm-triplet':'power','forked-overload':'tactical','twin-pylon':'power'};
+const augmentSlots: Record<string, 'dash'|'tactical'|'power'|'overdrive'> = {'reserve-thruster':'dash','slide-loader':'dash','tactical-salvage':'tactical','drive-dynamo':'overdrive',afterquake:'tactical','reinforced-bulwark':'power','spreading-nova':'tactical','twin-glacier':'power','scorched-fan':'tactical','napalm-triplet':'power','forked-overload':'tactical','twin-pylon':'power','siege-plow':'power','fault-line':'tactical','ice-road':'power','meltdown-core':'overdrive','pilgrim-pylon':'power','live-wire':'tactical'};
 /** Changed-value readout mirrors catalog augment rules without altering mechanics. */
 function augmentChange(id: string, rig: RigId): string {
   const kit=RIG_CATALOG[rig].abilities;
@@ -82,10 +84,12 @@ function augmentChange(id: string, rig: RigId): string {
     'forked-overload':`${tactical.shape.kind==='chain'?tactical.shape.maxTargets:6} → ${(tactical.shape.kind==='chain'?tactical.shape.maxTargets:6)+2} chain targets`,
     'twin-pylon':'1 → 2 linked pylons',
   };
-  return changes[id]??'';
+  return changes[id]??MUTATION_CATALOG[id as keyof typeof MUTATION_CATALOG]?.whatChanges??'';
 }
 
 function augmentTarget(mutation: MutationDefinition, rig?: RigId): string {
+  const passive=mutation.id==='shard-harvest'?{glyph:'cryo',label:'FROZEN KILLS'}:mutation.id==='ember-relay'?{glyph:'pyro',label:'FIRE ZONES'}:null;
+  if(passive)return `<span class="augment-target">${icon(passive.glyph)}<span>MODIFIES <b>${passive.label}</b></span></span>`;
   const slot=augmentSlots[mutation.id], selected=mutation.rig??rig;
   if(!slot) return '';
   const ability=selected?ABILITY_CATALOG[RIG_CATALOG[selected].abilities[slot]]:null;
@@ -135,25 +139,17 @@ export function draftScreen(game: DepthGame): string {
 }
 
 export function shopScreen(game: DepthGame): string {
-  const healing = game.node.reward==='healing', preview=getShopProjection(game);
-  const number=(n:number)=>n<0?'∞':n.toLocaleString('en-US');
-  const capacity=(r:typeof preview.resources[number])=>['health','armor','grenades'].includes(r.id)?` <small>/ ${number(r.maximum)}</small>`:'';
-  const value=(r:typeof preview.resources[number],after:number)=>`${r.label} <b>${number(r.current)} → ${number(after)}${capacity(r)}</b>`;
-  const services=([['heal','Health service',100,'health',30],['armor','Armor service',90,'armor',25],['ammo','Reserve ammunition',100,'rifle',0]] as const).map(([id,label,cost,symbol,nominal])=>{
-    const affected=preview.resources.filter(r=>r.after[id]>r.free);
-    const capped=affected.length===0, shortfall=Math.max(0,cost-preview.credits);
-    const primary=preview.resources.find(r=>r.id===(id==='heal'?'health':'armor'))!;
-    const waste=nominal&&!capped?Math.max(0,nominal-(primary.after[id]-primary.free)):0;
-    const reason=capped?'No benefit — already full after free allocation':[
-      shortfall?`Need ${shortfall} more credits`:`Balance after purchase: ${preview.credits-cost} CR`,
-      waste?`${waste} ${id==='heal'?'health':'armor'} exceeds capacity`:'',
-    ].filter(Boolean).join(' · ');
-    return `<button class="${capped?'service-capped':'service-card'}" data-purchase="${id}" data-value="${capped?'capped':waste?'partial':'full'}" data-availability="${capped?'full':shortfall?'credits':'available'}" aria-describedby="service-${id}-reason" ${preview.available[id]?'':'disabled'}>${icon(capped?'check':symbol)}<span><b>${label}</b>${capped?'':`<span class="service-outcome">${affected.map(r=>value(r,r.after[id])).join('<br>')}</span>`}<small id="service-${id}-reason">${reason}</small></span>${capped?'':`<strong>${cost} <small>CR</small></strong>${arrow()}`}</button>`;
-  }).join('');
-  const changed=preview.resources.filter(r=>r.free!==r.current), unchanged=preview.resources.filter(r=>r.free===r.current);
-  const ledger=(rows:typeof preview.resources)=>rows.map(r=>`<div data-resource="${r.id}"><dt>${r.label}</dt><dd>${number(r.current)}${r.free===r.current?'':` <span>→</span> <b>${number(r.free)}</b>`}${capacity(r)}${r.free>r.current?`<em>+${number(r.free-r.current)} FREE</em>`:''}</dd></div>`).join('');
-  return `<section class="panel shop-panel screen-enter"><div class="supply-hero">${icon(healing?'medkit':'armory','supply-emblem')}${tag(`RECOVERY STATION / SECTOR ${serial(game.node.depth+1)}`)}<h2>${healing?'Infirmary':'Supply cache'}</h2><p class="panel-intro">Your standard allocation is free.</p>${changed.length?`<dl class="allocation-ledger" aria-label="Current resources and free allocation">${ledger(changed)}</dl>`:'<p class="allocation-full">Free allocation: resources already full.</p>'}${unchanged.length?`<details class="unchanged-stock"><summary>Current stock · ${unchanged.length} unchanged</summary><dl class="allocation-ledger" aria-label="Unchanged current stock">${ledger(unchanged)}</dl></details>`:''}<button id="claim" class="primary">Collect free allocation ${arrow()}</button><span class="supply-label">CURRENT → AFTER FREE ALLOCATION</span></div>
-    <div class="service-shop"><div class="shop-heading">${tag('OPTIONAL REQUISITION')}<h3>Take what you need.</h3><span class="credit-balance" role="status">${icon('credits')} <b>${preview.credits}</b> credits available</span><p>Each preview includes the free allocation. Choose one service, or collect free supplies.</p></div>${services}</div></section>`;
+ const run=game.expedition.run, resources=game.combat.snapshot;
+ const allocated=run.service?.nodeId===run.currentNodeId&&run.service.allocationClaimed;
+ const upgrade=nextAugmentUpgrade(game.expedition.build);
+ const canBuy=(id:typeof SERVICE_IDS[number])=>(game.canPurchaseService as (id:typeof SERVICE_IDS[number])=>boolean)(id);
+ const recommend=resources.health<55&&canBuy('heal')?'heal':resources.medkits===0&&canBuy('medkit')?'medkit':resources.reserve<20&&canBuy('ammo')?'ammo':upgrade&&canBuy('upgrade')?'upgrade':SERVICE_IDS.find(canBuy);
+ return `<section class="panel shop-panel screen-enter"><style>@media(max-height:800px){#overlay .shop-panel .service-shop{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:center}#overlay .shop-panel .service-card{padding:8px;gap:6px;align-items:flex-start;min-height:82px}#overlay .shop-panel .service-card>svg{display:none}#overlay .shop-panel .service-card b{font-size:13px;line-height:1.2}#overlay .shop-panel .service-card strong{font-size:18px;white-space:nowrap}#overlay .shop-panel .service-card small{font-size:10px}#overlay .shop-panel .service-card .service-outcome{font-size:11px;line-height:1.25;column-count:1;margin-bottom:3px}#overlay .shop-panel .supply-hero h2{font-size:32px}}</style><div class="supply-hero">${icon('armory','supply-emblem')}${tag(`SUPPLY STOP / SECTOR ${serial(game.node.depth+1)}`)}<h2>Prepare for the next fight.</h2><p class="panel-intro">Buy several supplies, then leave when ready. Stock is limited at each stop.</p><p role="status">${resources.health} health · ${resources.armor} armor · ${resources.medkits} medkits · ${resources.grenades} grenades</p><p>${allocated?'Free allocation collected.':'Your free allocation is included with your first purchase or departure.'}</p><span class="credit-balance" role="status">${icon('credits')} <b>${resources.credits}</b> credits available</span><button id="claim" class="primary">${allocated?'Leave supply stop':'Collect allocation and leave'} ${arrow()}</button><small>Unspent credits carry forward. Paid services do not end this stop.</small></div><div class="service-shop">${SERVICE_IDS.map(id=>{
+ const item=SERVICE_CATALOG[id],cost=serviceCost(id,game.node.depth),stock=serviceStock(run,id),enabled=canBuy(id);
+ const explanation=id==='upgrade'?(upgrade?`Upgrade ${MUTATION_CATALOG[upgrade].name}: ${AUGMENT_UPGRADE_RULES[upgrade]}`:'Install an augment with an upgrade before buying this service.'):item.description;
+ const reason=!stock?'Sold out':resources.credits<cost?`Need ${cost-resources.credits} more credits`:!enabled?'No useful capacity for this purchase':`${stock} available`;
+ return `<button id="purchase-${id}" class="service-card" data-purchase="${id}" ${enabled?'':'disabled'} aria-describedby="service-${id}-reason"><span><b>${item.name}${recommend===id?' · Recommended':''}</b><span class="service-outcome">${escapeHtml(explanation)}</span><small id="service-${id}-reason">${reason}</small></span><strong>${cost} <small>CR</small></strong>${arrow()}</button>`;
+ }).join('')}</div></section>`;
 }
 
 /** Compact sectional map: environment decks descend, actual graph edges remain intact. */
@@ -173,17 +169,17 @@ export function deckMap(game: DepthGame, selected = game.node.next[0]): string {
   }).join('')}</div><div class="map-descent-label">WAKE DECK <span>↓ DESCENT</span> REACTOR</div></div>`;
 }
 
-export function routeScreen(game: DepthGame, selected = game.node.next[0]): string {
-  const graph = generateRun(game.expedition.run.seed,game.expedition.run.version);
-  const choices=game.node.next.map(id=>graph.nodes.find(node=>node.id===id)!);
-  const node=choices.find(node=>node.id===selected)??choices[0];
-  const environment=node?storyRoomFor(node.templateId)?.environment??'ship systems':'ship systems';
-  return `<section class="panel route-panel screen-enter">${tag('NAVIGATION / COLONY VESSEL')}<div class="screen-heading"><div><h2>${choices.length>1?'Chart the descent.':'Continue the descent.'}</h2><p class="panel-intro">${escapeHtml(game.storyRoom?game.storyStatus:'Reach the next sector.')}</p></div><span class="route-position">${serial(game.node.depth+1)} <small>/ ${total(game)} SECTORS</small></span></div><div class="route-layout"><div class="map-column"><div class="map-legend"><span>✓ VISITED</span><span>◎ CURRENT</span><span>◇ AVAILABLE</span></div>${deckMap(game,node?.id)}</div>${node?`<aside class="route-destination" aria-label="Selected destination"><span class="destination-kicker">${choices.length>1?'SELECT A DESTINATION':'NEXT DESTINATION'}</span><div class="destination-identity">${icon(node.kind)}<span>SECTOR ${serial(node.depth+1)}<small>${escapeHtml(environment.toUpperCase())} / ${node.kind.toUpperCase()}</small></span></div><h3>${ROOM_TEMPLATES[node.templateId].name}</h3><p>${escapeHtml(storyRoomFor(node.templateId)?.objective??'Reach the next sector.')}</p><span class="route-reward">${icon(node.reward==='healing'?'medkit':node.reward==='supplies'?'rifle':'credits')}${playerFacingText(ROOM_REWARD_LABELS[node.reward])}</span>${choices.length>1?`<div class="destination-choices" role="group" aria-label="Available paths">${choices.map((choice,index)=>`<button data-inspect-route="${choice.id}" aria-pressed="${choice.id===node.id}" aria-label="${escapeHtml(`${ROOM_TEMPLATES[choice.templateId].name}. ${choice.kind}. ${playerFacingText(ROOM_REWARD_LABELS[choice.reward])}`)}"><kbd>${index+1}</kbd><span><b>${ROOM_TEMPLATES[choice.templateId].name}</b><small>${choice.kind.toUpperCase()} · ${playerFacingText(ROOM_REWARD_LABELS[choice.reward]).toUpperCase()}</small></span>${icon(choice.kind)}</button>`).join('')}</div>`:''}<button class="primary route-depart" data-route="${node.id}">Enter sector ${arrow()}</button><span class="route-keyboard"><kbd>←</kbd><kbd>→</kbd> inspect · <kbd>${choices.length>1?`1–${choices.length}`:'1'}</kbd> enter · <kbd>Enter</kbd> depart</span></aside>`:''}</div><p class="screen-footnote map-footnote">${icon('check')} Completed sectors stay on the ship record. Your next choice is saved at the boundary.</p></section>`;
+export function routeScreen(game:DepthGame,selected=game.node.next[0]):string{
+ const offers=detourOffers(game.expedition.run);
+ if(offers.length){const next=generateRun(game.expedition.run.seed,game.expedition.run.version).nodes.find(n=>n.id===game.node.next[0])!;
+ return `<section class="panel choice-panel screen-enter">${tag('OPTIONAL PREPARATION / SAME STORY DESTINATION')}<h2>How will you enter ${escapeHtml(ROOM_TEMPLATES[next.templateId].name)}?</h2><p class="panel-intro">Both choices continue to sector ${next.depth+1}. Recovering the cache adds an escorted priority group.</p><div class="choice-grid">${offers.map((offer,index)=>`<button class="choice-card" data-route="${next.id}" data-detour="${offer.id}"><kbd>${index+1}</kbd><h3>${offer.name}</h3><p>${offer.risk}</p><b>${offer.reward}</b><span class="boon-select">Continue ${arrow()}</span></button>`).join('')}</div></section>`;}
+ const next=game.node.next.find(id=>id===selected)??game.node.next[0];
+ return `<section class="panel screen-enter"><h2>Continue the descent.</h2><p>The next story sector is ready.</p><button class="primary" data-route="${next}">Continue ${arrow()}</button></section>`;
 }
 
 /** Visible compact build, with complete boon rules on pointer hover or keyboard focus. */
 export function buildIcons(game: DepthGame): string {
-  return `<div class="owned-boons" aria-label="Installed boons">${game.expedition.build.mutations.map(id=>{const m=MUTATION_CATALOG[id];return `<article class="owned-boon" tabindex="0" data-family="${m.family}" data-element="${boonElement(m)}" data-boon="${m.id}" data-augment="${m.abilityOnly===true}" aria-label="${escapeHtml(`${m.name}. ${boonPath(m)}. ${playerFacingText(m.description)} ${playerFacingText(m.tradeoff)}. Counts toward ${m.family} set`)}">${rewardArt(m,true)}${icon(boonIcon(m))}<span class="owned-boon-name">${m.name}</span>${boonChips(m,familyCount(game.expedition.build,m.family))}<span class="boon-tooltip" role="tooltip"><span>${boonPath(m)} / ${m.rarity}</span><h4>${m.name}</h4><p>${playerFacingText(m.description)}</p><small>${playerFacingText(m.tradeoff)}</small>${boonChips(m,familyCount(game.expedition.build,m.family))}</span></article>`;}).join('')||'<p class="build-empty">No boons installed yet.</p>'}</div>`;
+  return `<div class="owned-boons" aria-label="Installed boons">${game.expedition.build.mutations.map(id=>{const m=MUTATION_CATALOG[id];return `<article class="owned-boon" tabindex="0" data-family="${m.family}" data-element="${boonElement(m)}" data-boon="${m.id}" data-augment="${m.abilityOnly===true}" aria-label="${escapeHtml(`${m.name}. ${boonPath(m)}. ${playerFacingText(m.description)} ${playerFacingText(m.tradeoff)}. Counts toward ${m.family} set`)}">${rewardArt(m,true)}${icon(boonIcon(m))}<span class="owned-boon-name">${m.name}${game.expedition.build.augmentUpgrades?.includes(m.id as AugmentId)?' · UPGRADED':''}</span>${boonChips(m,familyCount(game.expedition.build,m.family))}<span class="boon-tooltip" role="tooltip"><span>${boonPath(m)} / ${m.rarity}</span><h4>${m.name}</h4><p>${playerFacingText(m.description)}</p>${game.expedition.build.augmentUpgrades?.includes(m.id as AugmentId)?`<p><b>Upgraded:</b> ${escapeHtml(AUGMENT_UPGRADE_RULES[m.id as AugmentId]??'')}</p>`:''}<small>${playerFacingText(m.tradeoff)}</small>${boonChips(m,familyCount(game.expedition.build,m.family))}</span></article>`;}).join('')||'<p class="build-empty">No boons installed yet.</p>'}</div>`;
 }
 
 export function buildRecap(game: DepthGame): string {

@@ -36,7 +36,8 @@ function circleIntersections(a: Point, b: Point, ra: number, rb = ra): Point[] {
 export function chooseAbilityAim(definition: AbilityDefinition, player: Point, observed: readonly AimEnemy[], queries: AimQueries): AbilityAim | null {
   const enemies = observed.filter(e => e.health > 0 && e.visible && e.clear && e.vulnerable !== false && queries.visible(player, e)).sort((a, b) => a.id - b.id);
   if (!enemies.length) return null;
-  const shape = definition.shape;
+  const road=definition.id==='glacier'&&queries.has?.('ice-road');
+  const shape = road?{kind:'wall' as const,length:280,thickness:100}:definition.shape;
   const candidates: Point[] = [];
   const range = definition.range || (shape.kind === 'cone' || shape.kind === 'chain' ? shape.range : shape.kind === 'line' ? shape.length : shape.kind === 'dash' ? shape.distance : 0);
   if (definition.targeting === 'self') return null;
@@ -87,7 +88,8 @@ export function chooseAbilityAim(definition: AbilityDefinition, player: Point, o
       candidates.push(pointAt(player,(angles[i]+end)/2,range));
     }
   }
-  let best: AbilityAim | null = null;
+  if(road)candidates.push({...player});
+  let best: AbilityAim | null = null,bestScore=0;
   for (const cursor of candidates) {
     if (distance(player, cursor) > range + epsilon) continue;
     let point = queries.resolveAim ? queries.resolveAim(cursor) : cursor;
@@ -101,10 +103,11 @@ export function chooseAbilityAim(definition: AbilityDefinition, player: Point, o
       const center=definition.targeting==='direction'?pointAt(player,angle,definition.range):point;
       const glacier = definition.id === 'glacier', pylon = definition.id === 'tesla-pylon';
       const triplet = definition.id === 'napalm-charge' && queries.has?.('napalm-triplet');
-      const offsets = glacier && queries.has?.('twin-glacier') ? [-40, 40] : pylon && queries.has?.('twin-pylon') ? [-50, 50] : triplet ? [-100, 0, 100] : [0];
-      placements = offsets.map(offset => ({x: center.x + (glacier ? Math.cos(angle) : -Math.sin(angle)) * offset, y: center.y + (glacier ? Math.sin(angle) : Math.cos(angle)) * offset})).filter(p => {
+      const offsets = glacier && queries.has?.('twin-glacier') ? road?[-60,60]:[-40, 40] : pylon && queries.has?.('twin-pylon') ? [-50, 50] : triplet ? [-100, 0, 100] : [0];
+      placements = offsets.map(offset => ({x: center.x + (glacier&&!road ? Math.cos(angle) : -Math.sin(angle)) * offset, y: center.y + (glacier&&!road ? Math.sin(angle) : Math.cos(angle)) * offset})).filter(p => {
         if (!queries.traverse(player, p, pylon ? 18 : 4)) return false;
         if (shape.kind !== 'wall') return true;
+        if(road)return queries.traverse({x:p.x-Math.cos(angle)*140,y:p.y-Math.sin(angle)*140},{x:p.x+Math.cos(angle)*140,y:p.y+Math.sin(angle)*140},50);
         const start = {x: p.x + Math.sin(angle) * shape.length / 2, y: p.y - Math.cos(angle) * shape.length / 2};
         const end = {x: p.x - Math.sin(angle) * shape.length / 2, y: p.y + Math.cos(angle) * shape.length / 2};
         return queries.traverse(start, end, shape.thickness / 2);
@@ -137,11 +140,14 @@ export function chooseAbilityAim(definition: AbilityDefinition, player: Point, o
       if (shape.kind === 'line' || shape.kind === 'dash') return along >= 0 && along <= (shape.kind === 'line' ? shape.length : shape.distance) && Math.abs(across) <= shape.width / 2;
       if (shape.kind === 'wall') {
         const wx = enemy.x - p.x, wy = enemy.y - p.y;
+        if(road)return Math.abs(wx*Math.cos(angle)+wy*Math.sin(angle))<=140&&Math.abs(-wx*Math.sin(angle)+wy*Math.cos(angle))<=50&&queries.visible(p,enemy);
         return Math.abs(wx * Math.cos(angle) + wy * Math.sin(angle)) <= shape.thickness / 2 && Math.abs(-wx * Math.sin(angle) + wy * Math.cos(angle)) <= shape.length / 2 && queries.visible(p, enemy);
       }
       return false;
     }));
-    if (hits.length && (!best || hits.length > best.targets.length)) best = {...cursor, angle, targets: hits.map(e => e.id)};
+    const riding=road&&placements.some(p=>Math.abs((player.x-p.x)*Math.cos(angle)+(player.y-p.y)*Math.sin(angle))<=140&&Math.abs(-(player.x-p.x)*Math.sin(angle)+(player.y-p.y)*Math.cos(angle))<=50);
+    const score=hits.length+(riding?2:0);
+    if(score>bestScore){bestScore=score;best={...cursor,angle,targets:hits.map(e=>e.id)};}
   }
   return best;
 }

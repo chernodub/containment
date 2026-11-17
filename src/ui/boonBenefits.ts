@@ -1,3 +1,4 @@
+import {AUGMENT_BOONS} from '../game/abilities/augmentCatalog';
 import type {MutationDefinition} from '../game/roguelike/mutationCatalog';
 import type {MutationId} from '../game/roguelike/types';
 import {WORLD_UNITS_PER_METRE} from './units';
@@ -10,6 +11,14 @@ const benefit = (headline: string, metrics: readonly Metric[], fallback?: string
 
 /** Authored benefit language; every displayed number is extracted from catalog prose. */
 export const BOON_BENEFITS: Readonly<Partial<Record<MutationId, Benefit>>> = {
+  'siege-plow': benefit(AUGMENT_BOONS['siege-plow'].whatChanges!, [], 'Behaviour transformation'),
+  'fault-line': benefit(AUGMENT_BOONS['fault-line'].whatChanges!, [], 'Behaviour transformation'),
+  'shard-harvest': benefit(AUGMENT_BOONS['shard-harvest'].whatChanges!, [], 'Behaviour transformation'),
+  'ice-road': benefit(AUGMENT_BOONS['ice-road'].whatChanges!, [], 'Behaviour transformation'),
+  'ember-relay': benefit(AUGMENT_BOONS['ember-relay'].whatChanges!, [], 'Behaviour transformation'),
+  'meltdown-core': benefit(AUGMENT_BOONS['meltdown-core'].whatChanges!, [], 'Behaviour transformation'),
+  'pilgrim-pylon': benefit(AUGMENT_BOONS['pilgrim-pylon'].whatChanges!, [], 'Behaviour transformation'),
+  'live-wire': benefit(AUGMENT_BOONS['live-wire'].whatChanges!, [], 'Behaviour transformation'),
   breacher: benefit('Shotgun launches turn walls into weapons', [metric('slam damage', /up to (\d+) extra damage/, 'number', '+')]),
   'heavy-pellets': benefit('Hit harder and launch farther', [metric('shotgun damage', /damage \+(\d+)%/, 'percent', '+'), metric('launch force', /by (\d+)%/, 'percent', '+')]),
   'chain-reaction': benefit('Launched enemies send the crowd flying', [metric('launch chains', /chain (three) times/)]),

@@ -1,3 +1,4 @@
+import {serviceStock,serviceCost,type ServiceId,type DetourChoice} from './economy';
 import type {RigId} from '../abilities/contract';
 import {RIG_CATALOG} from '../abilities/catalog';
 import {createRun,generateRun,clearRoom,finishReward,enterRoom,endRun,isValidRunState} from './run';
@@ -14,8 +15,8 @@ function assertExpedition(expedition:Expedition):void {
 }
 function snapshot(run:RunState,build:BuildState,resources:RunResources,runtime:ExpeditionRuntimeState={}):Expedition {
   const result=Object.freeze({
-    run:Object.freeze({...run,completedNodeIds:Object.freeze([...run.completedNodeIds])}),
-    build:Object.freeze({...build,mutations:Object.freeze([...build.mutations])}),
+    run:Object.freeze({...run,completedNodeIds:Object.freeze([...run.completedNodeIds]),...(run.service?{service:Object.freeze({...run.service,purchases:Object.freeze([...run.service.purchases])})}:{}),...(run.detour?{detour:Object.freeze({...run.detour})}:{})}),
+    build:Object.freeze({...build,mutations:Object.freeze([...build.mutations]),...(build.augmentUpgrades?{augmentUpgrades:Object.freeze([...build.augmentUpgrades])}:{})}),
     resources:resourcesCopy(resources),
     ...(runtime.abilities?{abilities:Object.freeze({...runtime.abilities})}:{}),
     ...(runtime.stats?{stats:copyStats(runtime.stats)}:{}),
@@ -61,11 +62,11 @@ export function expeditionRewardOffers(expedition:Expedition):ReturnType<typeof 
   }
   return offers;
 }
-export function rerollCost(expedition:Expedition):number{return 75*((expedition.run.draftRoll??0)+1)+currentNode(expedition).depth*10;}
+export function rerollCost(expedition:Expedition):number{if((expedition.run.rerollTokens??0)>0)return 0;return 75*((expedition.run.draftRoll??0)+1)+currentNode(expedition).depth*10;}
 export function rerollExpedition(expedition:Expedition):Expedition{
  const cost=rerollCost(expedition),roll=expedition.run.draftRoll??0;
  if(expedition.run.version===1||roll>=2||!expeditionRewardOffers(expedition).length||expedition.resources.credits<cost)throw new Error('Reroll unavailable');
- return snapshot({...expedition.run,draftRoll:roll+1},expedition.build,{...expedition.resources,credits:expedition.resources.credits-cost},expedition);
+ return snapshot({...expedition.run,draftRoll:roll+1,...((expedition.run.rerollTokens??0)>0?{rerollTokens:expedition.run.rerollTokens!-1}:{})},expedition.build,{...expedition.resources,credits:expedition.resources.credits-cost},expedition);
 }
 /** Commit a valid offered mutation and consume the reward in the same transition. */
 export function claimExpeditionMutation(expedition:Expedition,id:MutationId):Expedition {
@@ -80,8 +81,8 @@ export function claimExpeditionResources(expedition:Expedition,resources:RunReso
   if(!isValidRunResources(resources)||resources.health<=0)throw new Error('Invalid resource receipt');
   return snapshot(finishReward(expedition.run),expedition.build,resources,expedition);
 }
-export function chooseExpeditionRoute(expedition:Expedition,nodeId:string):Expedition {
-  assertExpedition(expedition);return snapshot(enterRoom(expedition.run,nodeId),expedition.build,expedition.resources,expedition);
+export function chooseExpeditionRoute(expedition:Expedition,nodeId:string,detour?:DetourChoice):Expedition {
+  assertExpedition(expedition);return snapshot(enterRoom(expedition.run,nodeId,undefined,detour),expedition.build,expedition.resources,expedition);
 }
 /** Separate from generic routing, so skip/continue can never authorize the sacrifice. */
 export function authorizeExpeditionDestruction(expedition:Expedition):Expedition {
@@ -100,4 +101,16 @@ export function expeditionCheckpoint(expedition:Expedition,savedAt:number,runtim
 export function restoreExpedition(checkpoint:RunCheckpoint):Expedition {
   const serialized=serializeCheckpoint(checkpoint);if(!serialized)throw new Error('Invalid checkpoint');
   const valid=parseCheckpoint(serialized)!;return snapshot(valid.run,{...valid.build,rig:valid.build.rig??'breacher'},valid.resources,valid);
+}
+
+/** Free allocation and paid receipts stay at this service until explicit departure. */
+export function markExpeditionAllocation(expedition:Expedition,resources:RunResources):Expedition{
+ const node=currentNode(expedition);if(expedition.run.phase!=='reward'||!['healing','supplies'].includes(node.reward))throw new Error('Service unavailable');
+ return snapshot({...expedition.run,service:{nodeId:node.id,allocationClaimed:true,purchases:expedition.run.service?.purchases??[]}},expedition.build,resources,expedition);
+}
+export function recordExpeditionPurchase(expedition:Expedition,id:ServiceId,resources:RunResources,build:BuildState=expedition.build):Expedition{
+ const node=currentNode(expedition);if(expedition.run.phase!=='reward'||!['healing','supplies'].includes(node.reward)||!serviceStock(expedition.run,id)||expedition.resources.credits<serviceCost(id,node.depth))throw new Error('Purchase unavailable');
+ if(resources.credits!==expedition.resources.credits-serviceCost(id,node.depth))throw new Error('Invalid purchase receipt');
+ const tokens=expedition.run.rerollTokens??0;if(id==='reroll'&&tokens>=3)throw new Error('Reroll storage full');
+ return snapshot({...expedition.run,...(id==='reroll'?{rerollTokens:tokens+1}:{}),service:{nodeId:node.id,allocationClaimed:expedition.run.service?.allocationClaimed??false,purchases:[...(expedition.run.service?.purchases??[]),id]}},build,resources,expedition);
 }

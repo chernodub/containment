@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {loadavg,cpus} from 'node:os';
 import {chromium} from 'playwright';
-import {BOT_POLICY_VERSION, RIGS, chooseBoon, chooseRoute, createHumanPolicy, quantiles, distance, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
+import {BOT_POLICY_VERSION, RIGS, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, createHumanPolicy, quantiles, distance, pointerFirePlan, assessLoading, routeOptions} from './policy.mjs';
 import {sampleWorldPng} from './visuals.mjs';
 import {BOT_NAVIGATION_VERSION} from './bot-navigation-version.mjs';
 import {loadEarnedBoundary} from './resume.mjs';
@@ -128,29 +128,29 @@ async function snapshot() {
     const enemies=g.enemies.snapshot.enemies.filter(e=>e.health>0).map(e=>({...e,clear:d.clearShot(e.x,e.y),visible:r.visible(e.x,e.y),screen:project(e.x,e.y)}));
     for(const t of g.targets().filter(t=>t.id<0&&t.health>0)) enemies.push({...t,type:'queen',clear:d.clearShot(t.x,t.y),visible:r.visible(t.x,t.y),screen:project(t.x,t.y),vulnerable:t.id!==-1||g.boss.snapshot.vulnerable});
     const nearest=[...enemies].sort((a,b)=>Math.hypot(a.x-g.player.x,a.y-g.player.y)-Math.hypot(b.x-g.player.x,b.y-g.player.y))[0];
-    const waypoint=nearest ? d.botWaypoint(nearest)??nearest : null;
+    const siege=g.siege,goal=siege&&siege.remainingMs>0?siege:nearest;const waypoint=goal ? d.botWaypoint(goal)??goal : null;
     const candidates=[];
     for(const [dx,dy] of [[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
       const length=Math.hypot(dx,dy)||1,x=g.player.x+dx/length*90,y=g.player.y+dy/length*90;
       let legal=true;
       for(let i=1;i<=6;i++) if(!d.canStand(g.player.x+(x-g.player.x)*i/6,g.player.y+(y-g.player.y)*i/6,g.player.radius)) legal=false;
       if(g.abilities.blocksMovement(g.player,{x,y},g.player.radius))legal=false;
-      candidates.push({x,y,dx,dy,legal,waypoint,clear:nearest?d.clearShot(nearest.x,nearest.y,{x,y}):false});
+      candidates.push({x,y,dx,dy,legal,waypoint,rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&d.clearShot(e.x,e.y,{x,y})).map(e=>e.id),clear:nearest?d.clearShot(nearest.x,nearest.y,{x,y}):false});
     }
     const perf=window.__containmentPerformance;
     const slots=[...document.querySelectorAll('[data-ability]')].map(n=>({slot:n.dataset.ability,state:n.dataset.state,value:n.querySelector('.ability-value')?.textContent}));
     return {
       encounterGuardian:d.encounterGuardian,rig:g.abilities.snapshot.rig,status:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,
-      run:g.expedition.run,build:g.expedition.build,node:g.node,elapsed:g.elapsed,player:{...g.player,screen:project(g.player.x,g.player.y)},
+      siege:g.siege,encounter:g.encounter,run:g.expedition.run,build:g.expedition.build,node:g.node,elapsed:g.elapsed,player:{...g.player,screen:project(g.player.x,g.player.y)},
       combat:{...g.combat.snapshot,weapon:g.combat.snapshot.weaponId},resources:g.combat.getRunResources(),abilities:g.abilities.snapshot,abilityAims:Object.fromEntries(Object.entries(d.botAbilityAims(enemies)).map(([slot,aim])=>[slot,aim?{...aim,screen:project(aim.x,aim.y,0)}:null])),enemies,candidates,
-      hazards:[...(g.boss.snapshot.pendingTelegraph?[{x:g.boss.snapshot.pendingTelegraph.targetX,y:g.boss.snapshot.pendingTelegraph.targetY,radius:g.boss.snapshot.pendingTelegraph.radius,kind:'warning',visible:r.visible(g.boss.snapshot.pendingTelegraph.targetX,g.boss.snapshot.pendingTelegraph.targetY)}]:[]),...g.pools.map(p=>({id:`pool:${p.id}`,x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:r.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),...g.bullets.filter(b=>b.kind==='hazard').map(b=>({id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:r.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale})),...d.events.filter(e=>e.type==='enemy-warning'&&!e.meleeShape&&(e.id===undefined||enemies.some(enemy=>enemy.id===e.id&&Math.hypot(enemy.x-e.x,enemy.y-e.y)<2))&&g.elapsed-e.at<(e.durationMs??800)/1000).map(e=>({x:e.targetX??e.x,y:e.targetY??e.y,radius:e.radius??50,kind:'warning',warningRemainingMs:Math.max(0,(e.durationMs??800)-(g.elapsed-e.at)*1000),visible:r.visible(e.targetX??e.x,e.targetY??e.y)}))],
+      hazards:[...(g.boss.snapshot.pendingTelegraph?[{x:g.boss.snapshot.pendingTelegraph.targetX,y:g.boss.snapshot.pendingTelegraph.targetY,radius:g.boss.snapshot.pendingTelegraph.radius,kind:'warning',visible:r.visible(g.boss.snapshot.pendingTelegraph.targetX,g.boss.snapshot.pendingTelegraph.targetY)}]:[]),...g.pools.map(p=>({id:`pool:${p.id}`,x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:r.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),...g.bullets.filter(b=>b.kind==='hazard').map(b=>({id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:r.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale})),...enemies.filter(e=>e.pendingAttack==='spit'&&e.windupMs>0).map(e=>({id:`native:${e.id}`,x:e.lockX,y:e.lockY,radius:9,kind:'warning',warningRemainingMs:e.windupMs,visible:r.visible(e.lockX,e.lockY)})),...d.events.filter(e=>e.type==='enemy-warning'&&!e.meleeShape&&e.id===undefined&&g.elapsed-e.at<(e.durationMs??800)/1000).map(e=>({x:e.targetX??e.x,y:e.targetY??e.y,radius:e.radius??50,kind:'warning',warningRemainingMs:Math.max(0,(e.durationMs??800)-(g.elapsed-e.at)*1000),visible:r.visible(e.targetX??e.x,e.targetY??e.y)}))],
       boss:g.boss.snapshot,remaining:g.encounterRemaining,stats:g.stats,events:d.events,performance:perf,preparation:r.preparationDiagnostics??[],
       memory:{heap:performance.memory?.usedJSHeapSize??null,geometries:perf.geometries,textures:perf.textures,programs:r.renderer.info.programs?.length??null},
       visualOverlays:['#presentation-beat','#contextual-onboarding'].flatMap(selector=>{const el=document.querySelector(selector);if(!el||el.hidden||!el.getClientRects().length)return [];const b=el.getBoundingClientRect();return [{left:b.left,top:b.top,right:b.right,bottom:b.bottom}];}),
       onboarding:{visible:!document.querySelector('#contextual-onboarding')?.hidden,copy:document.querySelector('#contextual-onboarding')?.textContent,seen:localStorage.getItem('containment.onboarding.v1')},
       hud:{slots,insets:{...r.hudInsets},framing:r.combatFramingDiagnostics?{...r.combatFramingDiagnostics,selectedIds:[...r.combatFramingDiagnostics.selectedIds]}:null,viewport:{width:innerWidth,height:innerHeight},marine:r.playerScreenBounds(g.player.radius),health:document.querySelector('#health')?.textContent,magazine:document.querySelector('#magazine')?.textContent,opaqueBounds:['#status-hud','#action-bar','.vitals','#boss-hud','#radar-hud','#hud-toasts'].flatMap(selector=>{const el=document.querySelector(selector);if(!el||el.hidden||!el.getClientRects().length)return [];const b=el.getBoundingClientRect();return b.width&&b.height?[{id:selector,obscuresThreat:el.dataset.obscuresThreat==='true',opacity:getComputedStyle(el).opacity,bounds:{left:b.left,top:b.top,right:b.right,bottom:b.bottom}}]:[];})},
       loading:r.roomLoading||d.canStepNative===false||r.roomKey!==g.node.id||document.querySelector('#world')?.getAttribute('aria-busy')==='true',
-      actions:[...document.querySelectorAll('#overlay button:not(:disabled)')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>({id:b.id,mutation:b.dataset.mutation,route:b.dataset.route,inspect:b.dataset.inspectRoute,purchase:b.dataset.purchase,text:b.textContent})),
+      actions:[...document.querySelectorAll('#overlay button:not(:disabled)')].filter(b=>!b.hidden&&b.getBoundingClientRect().width>0).map(b=>({id:b.id,mutation:b.dataset.mutation,route:b.dataset.route,inspect:b.dataset.inspectRoute,purchase:b.dataset.purchase,detour:b.dataset.detour,text:b.textContent})),
       audio:window.__containmentPlaytestAudio?{starts:window.__containmentPlaytestAudio.starts,stops:window.__containmentPlaytestAudio.stops,loopsStarted:window.__containmentPlaytestAudio.loopsStarted,loopsStopped:window.__containmentPlaytestAudio.loopsStopped}:null,
     };
   });
@@ -291,15 +291,15 @@ try {
     }
     if(s.status!=='playing') {
       await release();
-      if(s.status==='reward'&&['medical','armory'].includes(s.node.kind)&&s.run.completedNodeIds.includes(s.node.id)&&!report.rooms.some(r=>r.nodeId===s.node.id)){report.rooms.push({id:s.node.templateId,nodeId:s.node.id,depth:s.node.depth,nodeKind:s.node.kind,holdout:!report.legacy&&[9,19].includes(s.node.depth),guardian:s.encounterGuardian,result:'clear',autoClear:true,seconds:0,damageTaken:0,damageDealt:{weapon:0,ability:0,status:0,boon:0},abilityUses:{dash:0,tactical:0,power:0,overdrive:0},overdrives:0,boons:s.build.mutations,memoryStart:s.memory,memory:s.memory,performance:s.performance,credits:s.combat.credits});await shot(`r${s.node.depth+1}-${s.node.templateId}-clear`,s);await save();}
+      if(s.status==='reward'&&['medical','armory'].includes(s.node.kind)&&s.run.completedNodeIds.includes(s.node.id)&&!report.rooms.some(r=>r.nodeId===s.node.id)){report.rooms.push({id:s.node.templateId,nodeId:s.node.id,depth:s.node.depth,nodeKind:s.node.kind,openingGrammar:s.encounter?.grammar,holdout:!report.legacy&&[9,19].includes(s.node.depth),guardian:s.encounterGuardian,result:'clear',autoClear:true,seconds:0,damageTaken:0,damageDealt:{weapon:0,ability:0,status:0,boon:0},abilityUses:{dash:0,tactical:0,power:0,overdrive:0},overdrives:0,boons:s.build.mutations,memoryStart:s.memory,memory:s.memory,performance:s.performance,credits:s.combat.credits});await shot(`r${s.node.depth+1}-${s.node.templateId}-clear`,s);await save();}
       if(s.phase==='rig-select') {
         await page.locator(`[data-rig="${rig}"]`).click();await page.locator('#equip-rig').click();
       } else if(s.status==='reward') {
         const ids=s.actions.map(a=>a.mutation).filter(Boolean);
         if(ids.length){const id=chooseBoon(ids,rig,s.build.mutations);await page.locator(`[data-mutation="${id}"]`).click();}
         else {
-          const heal=s.actions.find(a=>a.purchase==='heal');
-          if(s.combat.health<70&&heal)await page.locator('[data-purchase="heal"]').click();
+          const purchase=chooseServicePurchase(s.actions.map(a=>a.purchase).filter(Boolean),s.combat,s.build,s.run);
+          if(purchase)await page.locator(`[data-purchase="${purchase}"]`).click();
           else if(s.actions.some(a=>a.id==='claim'))await page.locator('#claim').click();
         }
       } else if(s.status==='route') {
@@ -307,7 +307,8 @@ try {
         else {
           const routes=routeOptions(s.actions);
           const route=chooseRoute(routes,s.combat.health);
-          if(route){if(s.actions.some(a=>a.inspect===route.id))await page.locator(`[data-inspect-route="${route.id}"]`).last().click();await page.locator(`[data-route="${route.id}"]`).click();}
+          if(s.actions.some(a=>a.detour)){await page.locator(`[data-detour="${chooseDetour(s.combat)}"]`).click();}
+          else if(route){if(s.actions.some(a=>a.inspect===route.id))await page.locator(`[data-inspect-route="${route.id}"]`).last().click();await page.locator(`[data-route="${route.id}"]`).click();}
         }
       } else if(s.status==='paused') await page.keyboard.press('Escape');
       if(performance.now()-screenSince>10000){
@@ -327,7 +328,7 @@ try {
     if(room?.nodeId!==s.node.id) {
       if(room?.result==='playing')await finishRoom(s,'transition');
       if(report.rooms.filter(r=>r.result==='clear').length>=roomLimit){report.outcome='room-limit';report.final=s;break;}
-      room={id:s.node.templateId,nodeId:s.node.id,depth:s.node.depth,nodeKind:s.node.kind,holdout:!report.legacy&&[9,19].includes(s.node.depth),guardian:s.encounterGuardian,startedElapsed:s.elapsed,startStats:s.stats,result:'playing',cpuSamples:[],damageSourcesInferred:{},memoryStart:s.memory,boons:[...s.build.mutations],loadingHolds:[]};
+      room={id:s.node.templateId,nodeId:s.node.id,depth:s.node.depth,nodeKind:s.node.kind,openingGrammar:s.encounter?.grammar,holdout:!report.legacy&&[9,19].includes(s.node.depth),guardian:s.encounterGuardian,startedElapsed:s.elapsed,startStats:s.stats,result:'playing',cpuSamples:[],damageSourcesInferred:{},memoryStart:s.memory,boons:[...s.build.mutations],loadingHolds:[]};
       room.timingReset=await page.evaluate(()=>{const d=window.__containmentDebug;if(!d.resetStepPerformance)return false;d.resetStepPerformance();return true;});
       room.abilityReceipts={};room.denials={};
       report.rooms.push(room);console.log(`${label}: room ${s.node.depth+1} ${s.node.templateId}`);
@@ -370,7 +371,7 @@ try {
         if(options.realtime&&after.status==='playing'&&after.elapsed-room.startedElapsed>4){room.nativeFrameWindows??=[];room.nativeFrameWindows.push({...after.performance.nativeUpdateRenderMs,elapsed:after.elapsed});}
     room.performance=after.performance;room.peakDrawCalls=Math.max(room.peakDrawCalls??0,s.performance.drawCalls,after.performance.drawCalls);room.peakTriangles=Math.max(room.peakTriangles??0,s.performance.triangles,after.performance.triangles);
     if(after.stats.kills.total!==s.stats.kills.total||Math.floor(after.elapsed/5)!==Math.floor(s.elapsed/5))await save();
-    const progress=`${after.stats.kills.total}:${after.remaining}:${Math.round(Object.values(after.stats.damageDealt).reduce((a,b)=>a+b,0))}`;
+    const progress=`${Math.ceil((after.siege?.remainingMs??0)/1000)}:${after.stats.kills.total}:${after.remaining}:${Math.round(Object.values(after.stats.damageDealt).reduce((a,b)=>a+b,0))}`;
     if(progress!==previousProgress){previousProgress=progress;stagnantSince=after.elapsed;}
     if(after.elapsed-stagnantSince>45||after.elapsed-room.startedElapsed>Number(options['max-room-seconds']??240)) {
       report.defects.push({kind:after.elapsed-stagnantSince>45?'no-combat-progress-45s':'room-timeout',room:room.id,remaining:after.remaining,enemies:after.enemies.map(e=>({id:e.id,type:e.type,x:e.x,y:e.y,health:e.health})),evidence:`r${room.depth+1}-${room.id}-stalled.png`});

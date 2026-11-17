@@ -1,3 +1,4 @@
+import type {AugmentId} from './augmentCatalog';
 import { sweptCircle } from '../combat/enemyContact';
 import { sweptLinkContact } from './linkGeometry';
 import { ABILITY_CATALOG, ABILITY_SLOTS, RIG_CATALOG, DASH_DURATION_MS, DASH_INVULNERABLE_MS } from './catalog';
@@ -13,6 +14,7 @@ export type AbilityPoint = Readonly<{ x: number; y: number }>;
 /** Simulation adapters: world collision and all damage/status reactions remain authoritative in the host. */
 export interface AbilityHost {
   enabled?: () => boolean;
+  upgraded?: (id: AugmentId) => boolean;
   /** Accepted Overdrives allowed between room resets; omitted hosts remain unlimited. */
   overdriveRoomLimit?: () => number;
   /** Immutable world-geometry identity/revision for placement-cache invalidation. */
@@ -25,7 +27,7 @@ export interface AbilityHost {
   traverse: (from: AbilityPoint, to: AbilityPoint, radius: number) => boolean;
   movePlayer: (dx: number, dy: number) => void;
   damage: (target: MutationTarget, amount: number) => boolean;
-  statuses: (id: number) => { chilled: boolean; frozen: boolean; shocked?: boolean };
+  statuses: (id: number) => { chilled: boolean; frozen: boolean; burning?: boolean; shocked?: boolean };
   status: (target: MutationTarget, kind: 'chill' | 'freeze' | 'burn' | 'shock', amount: number) => void;
   launch: (target: MutationTarget, x: number, y: number) => void;
   arc: (origin: MutationTarget, targets: readonly MutationTarget[]) => void;
@@ -37,7 +39,7 @@ type SlotState = { cooldowns: number[]; cast: number; active: number };
 type Placement = AbilityPoint & { radius?: number };
 type Cast = { id: AbilityId; x: number; y: number; angle: number; target: AbilityPoint; remaining: number; placements?: readonly Placement[]; radius?: number; ground?: AbilityPoint };
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
-type Zone = Mutable<AbilityZoneSnapshot> & { tick: number; pulses: number; damage: number };
+type Zone = Mutable<AbilityZoneSnapshot> & { tick: number; pulses: number; damage: number; purpose?: 'fissure' | 'ice-road' | 'core' };
 type Deployable = Mutable<DeployableSnapshot> & { tick: number; assault: number; linkCooldowns: Map<number, number> };
 /** Hard caps on persistent entities and per-effect target fanout. */
 export const ABILITY_LIMITS = Object.freeze({ zones: 24, deployables: 8, targets: 64 });
@@ -60,6 +62,8 @@ export class AbilitySystem {
   private casts: Cast[] = [];
   private zones: Zone[] = [];
   private deployables: Deployable[] = [];
+  private tethers: Array<{id:number;targetId:number;remaining:number;tick:number}> = [];
+  private shardDepth = 0;
   private serial = 0;
   private killDepth = 0;
   private afterquakes: Array<Cast & { delay: number }> = [];
@@ -85,6 +89,7 @@ export class AbilitySystem {
   /** Clear casts, zones and deployables at a boundary; preserve the run's Overdrive meter. */
   resetRoom(): void {
     this.casts.length = this.zones.length = this.deployables.length = this.afterquakes.length = 0;
+    this.tethers.length = 0; this.shardDepth = 0;
     this.dash = null; this.immune = 0; this.aimPoint = null; this.movement.x = this.movement.y = 0;
     this.overdriveUses = 0;
     this.previousTargets.clear(); this.currentTargetIds.clear(); this.hasPreviousMarine = false; this.placementCache = null;
@@ -101,7 +106,14 @@ export class AbilitySystem {
   get hostileTimeScale(): number { return this.active('overclock') ? .3 : 1; }
   /** Hostile simulation time for the next friendly step, including a partial Overclock expiry. */
   hostileDelta(ms: number): number { return Number.isFinite(ms) && ms > 0 ? ms - (this.overclocked ? Math.min(ms, this.states.overdrive.active) * .7 : 0) : 0; }
-  get moveSpeedMultiplier(): number { return this.active('meltdown') ? 1.4 : 1; }
+  get moveSpeedMultiplier(): number {
+    const p=this.host.player();
+    const riding=this.zones.some(z=>z.purpose==='ice-road' && segmentDistance(p,z,{x:z.x2,y:z.y2})<=z.width/2 && this.host.visible(this.closestOnStrip(p,z),p));
+    return (this.active('meltdown')?1.4:1)*(riding?1.6:1);
+  }
+  private upgraded(id: AugmentId): boolean {return this.host.upgraded?.(id) === true;}
+  private zoneSlot(zone: Zone): AbilitySlot {return zone.purpose==='ice-road'?'power':ABILITY_CATALOG[zone.ability].slot;}
+
   get overclocked(): boolean { return this.active('overclock'); }
   get ignitingShots(): boolean { return this.active('meltdown'); }
   private active(id: AbilityId): boolean { return !!this.rig && RIG_CATALOG[this.rig].abilities.overdrive === id && this.states.overdrive.active > 0; }
@@ -160,6 +172,34 @@ export class AbilitySystem {
     if (before < 1 && this.charge === 1 && !this.overdriveRoomLimited) this.event(this.definition('overdrive').id, 'overdrive-ready', this.host.player());
   }
 
+  private laneEnd(origin:AbilityPoint,angle:number,length:number):AbilityPoint {
+    let lo=0,hi=length;for(let i=0;i<12;i++){const m=(lo+hi)/2,p={x:origin.x+Math.cos(angle)*m,y:origin.y+Math.sin(angle)*m};if(this.host.traverse(origin,p,4)&&this.host.visible(origin,p))lo=m;else hi=m;}
+    return{x:origin.x+Math.cos(angle)*lo,y:origin.y+Math.sin(angle)*lo};
+  }
+  private moveConstruct(d:Deployable,to:AbilityPoint):void {
+    if(d.kind==='pylon'){if(this.host.traverse(d,to,d.radius)){d.x=to.x;d.y=to.y;}return;}
+    const steps=Math.ceil(d.length/16);for(let i=0;i<=steps;i++){const offset=-d.length/2+d.length*i/steps,dx=-Math.sin(d.angle)*offset,dy=Math.cos(d.angle)*offset;if(!this.host.traverse({x:d.x+dx,y:d.y+dy},{x:to.x+dx,y:to.y+dy},d.thickness/2))return;}
+    d.x=to.x;d.y=to.y;
+  }
+  private relayEmbers(occupants:readonly number[]):void {
+    const struck=new Set<number>();let count=0;
+    for(const id of occupants){const origin=this.host.targets().find(t=>t.id===id&&t.health>0);if(!origin)continue;
+      const target=this.nearby(origin,this.upgraded('ember-relay')?180:120).find(t=>t.id!==id&&!struck.has(t.id)&&!this.host.statuses(t.id).burning);
+      if(!target)continue;struck.add(target.id);this.hit(target,12,'burn');this.event('flashfire','impact',target,{radius:24,length:undefined,arcRadians:undefined,targetIds:[target.id]});if(++count>=4)break;
+    }
+  }
+  private stepTethers(ms:number):void {
+    for(let i=this.tethers.length-1;i>=0;i--){const tether=this.tethers[i],p=this.host.player(),target=this.host.targets().find(t=>t.id===tether.targetId&&t.health>0);
+      if(!target||Math.hypot(target.x-p.x,target.y-p.y)>520||!this.host.visible(p,target)){this.tethers.splice(i,1);continue;}
+      tether.remaining=countdown(tether.remaining,ms);tether.tick-=ms;
+      if(tether.tick<=TIMER_EPSILON){tether.tick+=250;const ids:number[]=[];
+        for(const victim of this.host.targets().slice(0,ABILITY_LIMITS.targets))if(victim.health>0&&segmentDistance(victim,p,target)<=14+victim.radius&&this.host.visible(p,victim)){this.hit(victim,12,'shock',120);ids.push(victim.id);}
+        this.event('overload','link',p,{entityId:tether.id,targetX:target.x,targetY:target.y,width:28,durationMs:250,targetIds:ids});
+      }
+      if(!tether.remaining)this.tethers.splice(i,1);
+    }
+  }
+
   private nearby(point: AbilityPoint, radius: number): MutationTarget[] {
     return this.host.targets().filter(t => t.health > 0 && Math.hypot(t.x - point.x, t.y - point.y) <= radius && this.host.visible(point, t))
       .sort((a, b) => Math.hypot(a.x - point.x, a.y - point.y) - Math.hypot(b.x - point.x, b.y - point.y) || a.id - b.id).slice(0, ABILITY_LIMITS.targets);
@@ -177,12 +217,12 @@ export class AbilitySystem {
     }
     return ids;
   }
-  private addZone(id: AbilityId, p: AbilityPoint, radius: number, duration: number, damage: number, attached = false, end?: AbilityPoint, width = 0): void {
+  private addZone(id: AbilityId, p: AbilityPoint, radius: number, duration: number, damage: number, attached = false, end?: AbilityPoint, width = 0, purpose?: Zone['purpose']): void {
     if (this.zones.length >= ABILITY_LIMITS.zones) { const old = this.zones.shift()!; this.event(old.ability, 'end', old, { entityId: old.id }); }
     const d = ABILITY_CATALOG[id];
-    const zone: Zone = { id: ++this.serial, ability: id, element: d.element, shape: end ? 'strip' : 'circle', x: p.x, y: p.y, x2: end?.x ?? p.x, y2: end?.y ?? p.y, width, radius, attached, remainingMs: duration, durationMs: duration, tick: 250, pulses: 0, damage };
+    const zone: Zone = { id: ++this.serial, ability: id, element: d.element, shape: end ? 'strip' : 'circle', x: p.x, y: p.y, x2: end?.x ?? p.x, y2: end?.y ?? p.y, width, radius, attached, remainingMs: duration, durationMs: duration, tick: 250, pulses: 0, damage, ...(purpose?{purpose}:{}) };
     this.zones.push(zone);
-    this.states[d.slot].active = Math.max(this.states[d.slot].active, duration);
+    this.states[this.zoneSlot(zone)].active = Math.max(this.states[this.zoneSlot(zone)].active, duration);
     this.event(id, 'tick', p, { entityId: zone.id, radius, targetX: zone.x2, targetY: zone.y2, width, durationMs: duration, ...(end ? { length: Math.hypot(end.x - p.x, end.y - p.y) } : id === 'flashfire' ? { length: undefined, arcRadians: undefined } : {}) });
   }
   private wallFits(p: AbilityPoint, angle: number, length: number, thickness: number): boolean {
@@ -198,7 +238,7 @@ export class AbilitySystem {
   }
   private powerPlacementAvailable(): boolean {
     const p = this.host.player(), rig = this.rig!;
-    const augments = +this.host.has('twin-glacier') + 2 * +this.host.has('twin-pylon') + 4 * +this.host.has('napalm-triplet');
+    const augments = 8 * +this.host.has('ice-road') + +this.host.has('twin-glacier') + 2 * +this.host.has('twin-pylon') + 4 * +this.host.has('napalm-triplet');
     const revision = this.host.placementRevision?.(), cached = this.placementCache;
     if (cached && cached.rig === rig && cached.x === p.x && cached.y === p.y && cached.angle === p.angle && cached.aimX === this.aimPoint?.x && cached.aimY === this.aimPoint?.y && cached.augments === augments && cached.revision === revision) return cached.result;
     const d = this.definition('power');
@@ -211,17 +251,18 @@ export class AbilitySystem {
     const d = ABILITY_CATALOG[cast.id];
     const glacier = cast.id === 'glacier', pylon = cast.id === 'tesla-pylon';
     const triplet = cast.id === 'napalm-charge' && this.host.has('napalm-triplet');
-    const offsets = glacier && this.host.has('twin-glacier') ? [-40, 40]
+    const road=glacier&&this.host.has('ice-road');
+    const offsets = glacier && this.host.has('twin-glacier') ? road?[-60,60]:[-40, 40]
       : pylon && this.host.has('twin-pylon') ? [-50, 50] : triplet ? [-100, 0, 100] : [0];
     const radius = triplet ? 80 : d.shape.kind === 'circle' ? d.shape.radius : undefined;
     const result: Placement[] = [];
     for (const offset of offsets) {
-      const along = glacier ? offset : 0, lateral = glacier ? 0 : offset;
+      const along = glacier && !road ? offset : 0, lateral = glacier && !road ? 0 : offset;
       const p: Placement = { x: cast.target.x + Math.cos(cast.angle) * along - Math.sin(cast.angle) * lateral,
         y: cast.target.y + Math.sin(cast.angle) * along + Math.cos(cast.angle) * lateral,
         ...(radius === undefined ? {} : { radius }) };
       if (this.host.traverse(cast, p, pylon ? 18 : 4) &&
-        (d.shape.kind !== 'wall' || this.wallFits(p, cast.angle, d.shape.length, d.shape.thickness))) result.push(p);
+        (road ? this.host.traverse({x:p.x-Math.cos(cast.angle)*140,y:p.y-Math.sin(cast.angle)*140},{x:p.x+Math.cos(cast.angle)*140,y:p.y+Math.sin(cast.angle)*140},50) : d.shape.kind !== 'wall' || this.wallFits(p, cast.angle, d.shape.length, d.shape.thickness))) result.push(p);
     }
     return result;
   }
@@ -257,6 +298,8 @@ export class AbilitySystem {
     } else switch (cast.id) {
       case 'seismic-slam':
         ids = this.radial(cast, 230, 90, undefined, 700);
+        if(this.host.has('fault-line')) {const end=this.laneEnd(cast,cast.angle,320);this.addZone(cast.id,cast,0,this.upgraded('fault-line')?4500:3000,8,false,end,70,'fissure');}
+
         if (this.host.has('afterquake' as MutationId) && this.afterquakes.length < 4) { this.afterquakes.push({ ...cast, delay: 450 }); this.event(cast.id, 'cast', cast, { durationMs: 450 }); }
         break;
       case 'cryo-nova': {
@@ -272,9 +315,19 @@ export class AbilitySystem {
         }
         break;
       }
-      case 'overload': ids = this.chain(cast, 60, this.host.has('forked-overload' as MutationId) ? 8 : 6); break;
+      case 'overload':
+        if(this.host.has('live-wire')) {
+          const cursor=this.aimPoint??{x:cast.x+Math.cos(cast.angle)*520,y:cast.y+Math.sin(cast.angle)*520};
+          const target=this.nearby(cast,520).sort((a,b)=>Math.hypot(a.x-cursor.x,a.y-cursor.y)-Math.hypot(b.x-cursor.x,b.y-cursor.y)||a.id-b.id)[0];
+          if(target){if(this.tethers.length>=4)this.tethers.shift();this.tethers.push({id:++this.serial,targetId:target.id,remaining:this.upgraded('live-wire')?6000:4000,tick:250});ids=[target.id];this.event('overload','link',cast,{targetX:target.x,targetY:target.y,targetIds:ids,width:28,durationMs:250});}
+        } else ids = this.chain(cast, 60, this.host.has('forked-overload') ? 8 : 6);
+        break;
       case 'bulwark': case 'glacier': case 'tesla-pylon': {
         for (const p of cast.placements ?? this.planPlacements(cast)) {
+          if(cast.id==='glacier'&&this.host.has('ice-road')){
+            this.addZone('frost-trail',{x:p.x-Math.cos(cast.angle)*140,y:p.y-Math.sin(cast.angle)*140},0,this.upgraded('ice-road')?8000:5000,0,false,{x:p.x+Math.cos(cast.angle)*140,y:p.y+Math.sin(cast.angle)*140},100,'ice-road');
+            continue;
+          }
           this.deploy(cast, p);
           this.event(cast.id, 'impact', cast, { angle: cast.angle, targetX: p.x, targetY: p.y, ...(p.radius === undefined ? {} : { radius: p.radius }), durationMs: d.durationMs });
         }
@@ -299,10 +352,10 @@ export class AbilitySystem {
         this.event(cast.id, 'link', cast, { angle: cast.angle, targetX: end.x, targetY: end.y, targetIds: ids }); break;
       }
       case 'whiteout': this.addZone(cast.id, cast, 300, 8000, 4, true); break;
-      case 'meltdown': this.addZone(cast.id, cast, 130, 8000, 4, true); break;
+      case 'meltdown': this.addZone(cast.id, cast, 130, this.host.has('meltdown-core')?2000:8000, 4, true, undefined, 0, this.host.has('meltdown-core')?'core':undefined); break;
       case 'overclock': this.states.overdrive.active = 6000; break;
     }
-    this.event(cast.id, 'impact', cast, { angle: cast.angle, targetX: cast.target.x, targetY: cast.target.y, targetIds: ids, durationMs: d.durationMs });
+    this.event(cast.id, 'impact', cast, { angle: cast.angle, targetX: cast.target.x, targetY: cast.target.y, targetIds: ids, durationMs: cast.id==='meltdown'&&this.host.has('meltdown-core')?2000:d.durationMs });
   }
   private chain(cast: Cast, damage: number, cap: number): number[] {
     const targets = this.nearby(cast, 520), aim = { x: cast.x + Math.cos(cast.angle) * 520, y: cast.y + Math.sin(cast.angle) * 520 };
@@ -355,14 +408,17 @@ export class AbilitySystem {
           const inside = zone.shape === 'circle' ? Math.hypot(t.x - zone.x, t.y - zone.y) <= zone.radius : segmentDistance(t, zone, { x: zone.x2, y: zone.y2 }) <= zone.width / 2;
           const origin = zone.shape === 'strip' ? this.closestOnStrip(t, zone) : zone;
           if (!inside || !this.host.visible(origin, t)) continue;
+          if(zone.purpose==='fissure') {if(zone.pulses%2===0){this.host.status(t,'shock',200);this.host.damage(t,zone.damage);}ids.push(t.id);continue;}
           if (zone.ability === 'frost-trail' || zone.ability === 'whiteout') this.host.status(t, 'chill', 1); else this.host.status(t, 'burn', 1);
           if (zone.ability === 'whiteout' && zone.pulses % 8 === 0) this.host.status(t, 'freeze', 1000);
           if (zone.damage) this.host.damage(t, zone.damage);
           ids.push(t.id);
         }
+        if(zone.purpose==='fissure'&&zone.pulses%2===0){for(const f of [.125,.5,.875])this.event('seismic-slam','burst',{x:zone.x+(zone.x2-zone.x)*f,y:zone.y+(zone.y2-zone.y)*f},{radius:35,targetIds:[]});}
+        if(zone.element==='pyro'&&zone.pulses%2===0&&this.host.has('ember-relay'))this.relayEmbers(ids);
         this.event(zone.ability, 'tick', zone, { entityId: zone.id, radius: zone.radius, targetIds: ids, targetX: zone.x2, targetY: zone.y2, width: zone.width, ...(zone.shape === 'strip' ? { length: Math.hypot(zone.x2-zone.x,zone.y2-zone.y) } : zone.ability === 'flashfire' ? { length: undefined, arcRadians: undefined } : {}) });
       }
-      if (zone.remainingMs <= 0) { this.zones.splice(i, 1); this.event(zone.ability, 'end', zone, { entityId: zone.id }); }
+      if (zone.remainingMs <= 0) { this.zones.splice(i, 1); if(zone.purpose==='core'){const ids=this.radial({id:'meltdown',x:zone.x,y:zone.y,angle:0,target:zone,remaining:0},260,this.upgraded('meltdown-core')?320:240,'burn');this.event('meltdown','burst',zone,{radius:260,targetIds:ids});} this.event(zone.ability, 'end', zone, { entityId: zone.id }); }
     }
   }
   private closestOnStrip(t: AbilityPoint, zone: Zone): AbilityPoint {
@@ -376,11 +432,18 @@ export class AbilitySystem {
     for (let i = 0; i < Math.min(targets.length, ABILITY_LIMITS.targets); i++) if (targets[i].health > 0) this.currentTargetIds.add(targets[i].id);
     for (let entityIndex = this.deployables.length - 1; entityIndex >= 0; entityIndex--) {
       const d = this.deployables[entityIndex];
+      if(d.kind==='barrier'&&this.host.has('siege-plow')) this.moveConstruct(d,{x:d.x+Math.cos(d.angle)*(this.upgraded('siege-plow')?120:90)*ms/1000,y:d.y+Math.sin(d.angle)*(this.upgraded('siege-plow')?120:90)*ms/1000});
+      if(d.kind==='pylon'&&this.host.has('pilgrim-pylon')){
+        const goal={x:p.x-Math.cos(p.angle)*100,y:p.y-Math.sin(p.angle)*100},distance=Math.hypot(goal.x-d.x,goal.y-d.y),f=Math.min(1,(this.upgraded('pilgrim-pylon')?260:180)*ms/1000/(distance||1));
+        this.moveConstruct(d,{x:d.x+(goal.x-d.x)*f,y:d.y+(goal.y-d.y)*f});
+      }
+
       const live = Math.min(ms, d.remainingMs); d.remainingMs = countdown(d.remainingMs, ms); d.tick -= live; d.assault -= live * hostileScale;
       if (d.assault <= TIMER_EPSILON) {
         d.assault += 250;
         for (const t of this.host.targets().slice(0, ABILITY_LIMITS.targets)) if (!this.host.statuses(t.id).frozen && !this.host.statuses(t.id).shocked && this.touches(d, t, t, t.radius + 20) && this.host.visible(d, t)) d.health -= 20;
       }
+      if(d.kind==='barrier'&&this.host.has('siege-plow')&&d.tick<=TIMER_EPSILON){d.tick+=500;for(const t of this.nearby(d,d.length/2+50))if(this.touches(d,t,t,t.radius+20)){this.host.launch(t,Math.cos(d.angle)*420,Math.sin(d.angle)*420);this.event('bulwark','impact',d,{entityId:d.id,targetIds:[t.id],angle:d.angle});}}
       if (d.kind === 'pylon' && d.health > 0) {
         const pulse = d.tick <= TIMER_EPSILON;
         if (pulse) {
@@ -466,7 +529,7 @@ export class AbilitySystem {
     const i = this.deployables.indexOf(d); if (i < 0) return;
     this.deployables.splice(i, 1); this.cached = null;
     const slot = ABILITY_CATALOG[d.ability].slot;
-    this.states[slot].active = Math.max(0, ...this.deployables.filter(x => ABILITY_CATALOG[x.ability].slot === slot).map(x => x.remainingMs), ...this.zones.filter(x => ABILITY_CATALOG[x.ability].slot === slot).map(x => x.remainingMs));
+    this.states[slot].active = Math.max(0, ...this.deployables.filter(x => ABILITY_CATALOG[x.ability].slot === slot).map(x => x.remainingMs), ...this.zones.filter(x => this.zoneSlot(x) === slot).map(x => x.remainingMs));
     if (d.kind === 'ice-wall') {
       const ids = this.radial({ id: d.ability, x: d.x, y: d.y, angle: d.angle, target: d, remaining: 0 }, 150, 80, 'chill');
       this.event(d.ability, 'burst', d, { entityId: d.id, radius: 150, targetIds: ids });
@@ -478,6 +541,10 @@ export class AbilitySystem {
     if (this.rig && this.host.has('tactical-salvage' as MutationId)) {
       this.cached = null;
       const state = this.states.tactical; for (let i = state.cooldowns.length - 1; i >= 0; i--) { state.cooldowns[i] = Math.max(0, state.cooldowns[i] - 350); if (!state.cooldowns[i]) { state.cooldowns.splice(i, 1); this.event(this.definition('tactical').id, 'ready', this.host.player()); } }
+    }
+    if(wasFrozen&&this.host.has('shard-harvest')&&!this.shardDepth){
+      this.shardDepth++;
+      try{const ids:number[]=[];for(const victim of this.nearby(target,220).filter(t=>t.id!==target.id).slice(0,this.upgraded('shard-harvest')?5:3)){this.hit(victim,35,'chill');ids.push(victim.id);}this.event('cryo-nova','burst',target,{radius:220,targetIds:ids});}finally{this.shardDepth--;}
     }
     if (this.killDepth >= 3) return;
     const p = this.host.player(), whiteout = this.active('whiteout') && wasFrozen && Math.hypot(target.x - p.x, target.y - p.y) <= 300 && this.host.visible(p, target);
@@ -500,15 +567,16 @@ export class AbilitySystem {
       for (const quake of this.afterquakes) if (quake.delay > TIMER_EPSILON) step = Math.min(step, quake.delay);
       if (this.dash) step = Math.min(step, this.dash.remaining);
       if (this.overclocked) step = Math.min(step, this.states.overdrive.active);
+      for(const tether of this.tethers)step=Math.min(step,tether.tick,tether.remaining);
       for (const zone of this.zones) step = Math.min(step, zone.tick, zone.remainingMs);
-      for (const entity of this.deployables) step = Math.min(step, entity.remainingMs, entity.assault / this.hostileTimeScale, entity.kind === 'pylon' ? entity.tick : remaining);
+      for (const entity of this.deployables) step = Math.min(step, entity.remainingMs, entity.assault / this.hostileTimeScale, entity.kind === 'pylon'||entity.kind==='barrier'&&this.host.has('siege-plow') ? entity.tick : remaining);
       this.advanceStep(step);
       remaining = countdown(remaining, step);
     }
   }
   private advanceStep(ms: number): void {
     this.host.advance?.(ms);
-    if (!this.immune && !this.dash && !this.casts.length && !this.zones.length && !this.deployables.length && !this.afterquakes.length && ABILITY_SLOTS.every(slot => !this.states[slot].cooldowns.length && !this.states[slot].active)) return;
+    if (!this.immune && !this.dash && !this.casts.length && !this.zones.length && !this.deployables.length && !this.afterquakes.length && !this.tethers.length && ABILITY_SLOTS.every(slot => !this.states[slot].cooldowns.length && !this.states[slot].active)) return;
     const hostileScale = this.hostileDelta(ms) / ms;
     this.placementCache = null;
     this.cached = null;
@@ -525,6 +593,7 @@ export class AbilitySystem {
     this.stepDash(ms);
     this.stepZones(ms, existingThrough);
     this.stepDeployables(ms, hostileScale);
+    this.stepTethers(ms);
     // Final zone pulses (and synchronous kill reactions) still belong to the buff.
     for (const slot of ABILITY_SLOTS) {
       const state = this.states[slot], wasActive = state.active > 0;
@@ -540,8 +609,9 @@ export class AbilitySystem {
     for (const slot of ABILITY_SLOTS) {
       if (this.definition(slot).id === 'overclock') continue;
       let active = 0;
-      for (const zone of this.zones) if (ABILITY_CATALOG[zone.ability].slot === slot) active = Math.max(active, zone.remainingMs);
+      for (const zone of this.zones) if (this.zoneSlot(zone) === slot) active = Math.max(active, zone.remainingMs);
       for (const entity of this.deployables) if (ABILITY_CATALOG[entity.ability].slot === slot) active = Math.max(active, entity.remainingMs);
+      if(slot==='tactical')for(const tether of this.tethers)active=Math.max(active,tether.remaining);
       this.states[slot].active = active;
     }
     this.rememberLinkMotion();
@@ -559,11 +629,11 @@ export class AbilitySystem {
     this.cachedLinkX = p.x; this.cachedLinkY = p.y;
     const slots = this.rig ? Object.fromEntries(ABILITY_SLOTS.map(slot => {
       const d = this.definition(slot), state = this.states[slot], charges = slot === 'overdrive' ? +(this.charge >= 1) : Math.max(0, this.maxCharges(slot) - state.cooldowns.length);
-      return [slot, Object.freeze({ slot, id: d.id, ready: enabled && !this.casts.length && !this.dash && charges > 0 && (slot !== 'overdrive' || (!state.active && !roomLimited)) && (slot !== 'power' || powerReady), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs)) })];
+      return [slot, Object.freeze({ slot, id: d.id, ready: enabled && !this.casts.length && !this.dash && charges > 0 && (slot !== 'overdrive' || (!state.active && !roomLimited)) && (slot !== 'power' || powerReady), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.id==='meltdown'&&this.host.has('meltdown-core')?2000:d.id==='overload'&&this.host.has('live-wire')?(this.upgraded('live-wire')?6000:4000):d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => this.zoneSlot(e) === slot).map(e => e.durationMs)) })];
     })) as AbilitiesSnapshot['slots'] : null;
     return this.cached = Object.freeze({ rig: this.rig, slots: slots && Object.freeze(slots), overdrive: Object.freeze({ charge: this.charge, ready: this.charge >= 1 && !roomLimited, active: this.states.overdrive.active > 0, activeRemainingMs: this.states.overdrive.active, ...(roomLimited ? {roomLimited: true} : {}) }), invulnerable: this.invulnerable, dashing: this.dashing, hostileTimeScale: this.hostileTimeScale,
       deployables: Object.freeze(this.deployables.map(d => { const { tick, assault, linkCooldowns, ...entity } = d; return Object.freeze(entity); })),
-      zones: Object.freeze(this.zones.map(z => { const { tick, pulses, damage, ...zone } = z; return Object.freeze(zone); })),
-      links: Object.freeze(this.deployables.filter(d => this.linkActive(d, p)).map(d => Object.freeze({ id: d.id, ability: 'tesla-pylon' as const, element: 'arc' as const, x: d.x, y: d.y, targetX: p.x, targetY: p.y, width: 28 }))) });
+      zones: Object.freeze(this.zones.map(z => { const { tick, pulses, damage, purpose, ...zone } = z; return Object.freeze(zone); })),
+      links: Object.freeze([...this.deployables.filter(d => this.linkActive(d, p)).map(d => Object.freeze({ id: d.id, ability: 'tesla-pylon' as const, element: 'arc' as const, x: d.x, y: d.y, targetX: p.x, targetY: p.y, width: 28 })), ...this.tethers.flatMap(tether=>{const target=this.host.targets().find(t=>t.id===tether.targetId&&t.health>0);return target&&Math.hypot(target.x-p.x,target.y-p.y)<=520&&this.host.visible(p,target)?[Object.freeze({id:tether.id,ability:'overload' as const,element:'arc' as const,x:p.x,y:p.y,targetX:target.x,targetY:target.y,width:28})]:[];})]) });
   }
 }

@@ -17,9 +17,14 @@ export function boonElement(boon: MutationDefinition): BoonElement {
   return 'arc';
 }
 
-/** Augments retain dedicated glyphs; elemental boons show their actual effect. */
+const TRANSFORM_GLYPHS: Readonly<Record<string,string>> = Object.freeze({
+  'siege-plow':'bulwark', 'fault-line':'seismic-slam', 'shard-harvest':'cryo-nova', 'ice-road':'frost-trail',
+  'ember-relay':'flashfire', 'meltdown-core':'meltdown', 'pilgrim-pylon':'tesla-pylon', 'live-wire':'overload',
+});
+
+/** New transforms reuse their ability glyph; existing augments retain dedicated glyphs. */
 export function boonIcon(boon: MutationDefinition): string {
-  if (boon.abilityOnly) return boon.id;
+  if (boon.abilityOnly) return TRANSFORM_GLYPHS[boon.id] ?? boon.id;
   const element = boonElement(boon);
   return element === 'pyro' ? 'pyro' : element === 'acid' ? 'acid'
     : element === 'recovery' ? 'boon-Recovery' : element === 'arc' ? 'arc'
