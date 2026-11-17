@@ -1,3 +1,4 @@
+import { OverdrivePayoff } from '../OverdrivePayoff';
 import type * as T from 'three';
 import { ABILITY_CATALOG } from '../../../game/abilities/catalog';
 import type { AbilityElement, AbilityEvent } from '../../../game/abilities/contract';
@@ -39,12 +40,14 @@ class SystemPresentation implements AbilityPresentation {
   private statusFor?: (id: number) => Status;
   private disposed = false;
 
-  constructor(private readonly kit: ElementKit) {}
+  private readonly payoff: OverdrivePayoff;
+  constructor(private readonly kit: ElementKit) { this.payoff = new OverdrivePayoff(kit); }
 
   event(event: AbilityEvent, x: number, y: number): void {
     if (this.disposed || !Number.isFinite(x) || !Number.isFinite(y)) return;
     const k = this.kit, color = ELEMENT_COLORS[event.element];
     if (event.phase === 'denied' || event.phase === 'ready') return;
+    this.payoff.event(event, x, y);
     if (event.phase === 'cast' || event.phase === 'dash-start') { this.castAge = 0; this.castColor = color; }
     if (event.phase === 'dash-start') {
       this.dashTime = event.ability === 'static-step' ? 0 : .22;
@@ -79,6 +82,7 @@ class SystemPresentation implements AbilityPresentation {
     this.restorePose();
     const k = this.kit, dt = frame.dt;
     k.impact();
+    this.payoff.update(frame);
     if (!frame.visible) return;
     const g = frame.game;
     if (g && this.game !== g) { this.game = g; this.statusFor = g.boonStatuses; }
@@ -275,6 +279,7 @@ class SystemPresentation implements AbilityPresentation {
   }
 
   clear(): void {
+    this.payoff.clear();
     this.restorePose();
     for (const ghost of this.ghosts) ghost.live = false;
     for (const receipt of this.receipts) receipt.live = false;

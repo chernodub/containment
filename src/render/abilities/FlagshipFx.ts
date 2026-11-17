@@ -213,14 +213,22 @@ void main(){
   float r=fxLocal.y;float R=fxRange;float a=fxLocal.x*6.2831853;
   vec2 q=(fxWorld.xz-fxOrigin.xz);
   float n=fxFbm(q*1.3+vec2(t*.4,-t*.3)+fxSeed);
-  float rim=(1.-smoothstep(0.,.08,abs(r-R*(.96+.02*sin(a*7.+t*3.)))));
-  float inner=smoothstep(R,R*.3,r)*smoothstep(.0,R*.25,r);
-  float rays=pow(max(0.,sin(a*9.+n*4.-t*2.)),12.)*smoothstep(R*.2,R*.8,r)*(1.-smoothstep(R*.8,R,r));
+  // Element signature on the deck (fxArc: 1 cryo, 2 pyro, 3 arc, else kinetic).
+  float el=fxArc;
+  float rim=(1.-smoothstep(0.,.07,abs(r-R*(.95+.03*sin(a*7.+t*3.)))))*smoothstep(.35,.6,n+.15*sin(a*3.-t*2.));
+  float fall=smoothstep(R,R*.15,r);
+  float ridge=1.-smoothstep(0.,.045,abs(fxFbm(q*2.2+n*1.3+(el>2.5?vec2(t*1.7,-t*1.3):vec2(0.)))-.5));
+  float sig;
+  if(el>2.5)sig=ridge*step(.35,fxNoise(vec2(t*24.,fxSeed)))*1.3;          // arc: flickering crackle
+  else if(el>1.5)sig=ridge*(.7+.3*sin(t*5.+n*6.))+smoothstep(.5,.8,n)*.25; // pyro: ember fissures + heat
+  else if(el>.5)sig=ridge*.8+pow(abs(sin(a*29.+n*5.)),20.)*.6;            // cryo: rime veins + ferns
+  else sig=ridge*.6;
   float pulse=.75+.25*sin(t*6.);
-  float on=smoothstep(0.,.25,age)*(1.-smoothstep(.8,1.,k));
-  float mark=rim*.9+rays*.5+inner*smoothstep(.45,.85,n)*.35;
-  emit=fxColor*mark*(1.4+pulse*.8)*on*fxIntensity;
-  alpha=mark*.1*on;
+  float on=fxParam;
+  float mark=rim*.8+sig*fall*.9;
+  emit=fxColor*mark*(1.3+pulse*.7)*on*fxIntensity;
+  alpha=(mark*.12+fall*.05)*on;
+  base=fxColor*.15;
  }
  vec2 screen=fxScreen.xy/max(.001,fxScreen.w)*.5+.5;
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
