@@ -75,7 +75,7 @@ class CryoPresentation implements AbilityPresentation {
         k.debris(px, pz, radius, 'cryo', 18);
         k.burst(px, .9, pz, 'cryo', 10, 5.5, 1.3);
         const frost = k.fx.spawn(FxMode.Frost, px, pz, 7);
-        frost.range = radius; frost.color = ICE; frost.intensity = .7;
+        frost.range = radius; frost.color = ICE; frost.intensity = .35;
         k.distort(px, pz, radius, -.004, .55);
         k.flash(px, pz, CORE, 9, radius + 1, 4, .14);
         k.camera(.3);
@@ -147,7 +147,7 @@ class CryoPresentation implements AbilityPresentation {
           size, size * (wave.shatter ? 3.6 : 2.7), size * .8, i % 3 ? ICE : CORE, fade * .85, angle + Math.sin(seed * 2.3) * .55, .1 + Math.sin(seed) * .12);
         if (!k.low && i % 3 === 0) {
           k.draw('smoke', wave.x + c * radius * .89, .3, wave.z + s * radius * .89,
-            .65 + progress * .45, .33 + progress * .2, .1, 0xb2dce8, fade * .38, angle);
+            .65 + progress * .45, .33 + progress * .2, .1, 0xb2dce8, fade * (wave.shatter ? .12 : .38), angle);
         }
       }
       if (wave.aftermath) {
