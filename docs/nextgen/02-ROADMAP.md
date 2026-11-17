@@ -56,7 +56,7 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | **R12** on `final7` — Astra visual and play verdicts, Opus art-director pass | done | visual 5.5–6.5, play 4.5–7; readability, counterplay and feel +1; environments and characters unchanged; pacing worse — `reviews/R12-verdict.md` |
 | **Wave 13** | running | |
 | LIGHT13 "the ship is dark; actors carry the light" standard on three rooms — Opus | merged | data-driven `ROOM_VALUE_PROFILES`; floor luminance roughly halved, marine plates ≈ 210, creatures dark with hot lanterns |
-| LIGHT14 the standard in the other seventeen rooms and its weak points — Sol | running | |
+| LIGHT14 the standard in the other seventeen rooms and its weak points — Sol | merged; correction pass running | marine reads first everywhere; lead review: landmarks buried (Overload reactor near-black, Atrium garden black), several rooms indistinguishable at 480×270 |
 | BAL13 sim-versus-native gap and early deaths; Story must not kill in room three — Sol | running | |
 | VFX15 four different Overdrive climaxes, Napalm with flame tongues, shared effect-area cap — Opus | merged | Frost Trail and Ram left for a later pass |
 | K13 Warden and Matron as a real boss tier (≈ 2× marine), brood pod asset, Stalker/Carrier/Spitter fixes — Opus, modelling only | merged | |
