@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {environmentClock} from '../lighting/HotFixtureSurface';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoomModelCache} from '../RoomModelCache';
 import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
@@ -56,6 +57,9 @@ export type OriginalKitInstance = {
   cutaway?: boolean;
   /** Secondary fittings are omitted from the existing batches on Low. */
   highDetail?: boolean;
+  /** Baked presentation gain for heat-killed growth; no new texture or shader family. */
+  surfaceGain?: number;
+  emissionGain?: number;
 };
 
 type Bucket = {material: T.MeshStandardMaterial; geometries: T.BufferGeometry[]; castShadow: boolean; vertices:number; lowVertices:number; cutaway:boolean};
@@ -152,7 +156,7 @@ export function buildOriginalShipKit(
   let totalTriangles = 0;
   const ranges:QualityRange[]=[];
   try {
-    const heroBounds=instances.filter(i=>i.pack.startsWith('p11-') && i.pack!=='p11-service').map(i=>{
+    const heroBounds=instances.filter(i=>i.pack.startsWith('p11-') && i.pack!=='p11-service' && i.pack!=='p11-brood').map(i=>{
       const asset=sources.get(i.pack)?.getObjectByName(i.asset);
       return asset ? new T.Box3().setFromObject(asset).applyMatrix4(i.matrix) : null;
     }).filter((b):b is T.Box3=>b!==null);
@@ -165,7 +169,7 @@ export function buildOriginalShipKit(
          heroBounds.some(b=>b.containsPoint(new T.Vector3().setFromMatrixPosition(instance.matrix)))) continue;
 
       // Roof fittings follow their stock support when a hero replaces it.
-      if(instance.pack==='p11-service'){
+      if(instance.pack==='p11-service' && !instance.purpose.startsWith('DRESS13 /')){
         const support=new T.Vector3().setFromMatrixPosition(instance.matrix);support.y=0;
         if(heroBounds.some(b=>b.containsPoint(support)))continue;
       }
@@ -195,7 +199,7 @@ export function buildOriginalShipKit(
           geometry.userData = {}; ownedGeometry.add(geometry);
           const sourceColor = geometry.getAttribute('color'), rgb = new Float32Array(geometry.getAttribute('position').count * 4);
           for (let i = 0; i < sourceColor.count; i++) {
-            rgb[i * 4] = sourceColor.getX(i); rgb[i * 4 + 1] = sourceColor.getY(i); rgb[i * 4 + 2] = sourceColor.getZ(i);rgb[i*4+3]=1;
+            rgb[i * 4] = sourceColor.getX(i) * (instance.surfaceGain ?? 1); rgb[i * 4 + 1] = sourceColor.getY(i) * (instance.surfaceGain ?? 1); rgb[i * 4 + 2] = sourceColor.getZ(i) * (instance.surfaceGain ?? 1);rgb[i*4+3]=1;
           }
           for (const name of Object.keys(geometry.attributes)) if (name !== 'position' && name !== 'normal' && !(name === 'uv' && sourceMaterial.normalMap)) geometry.deleteAttribute(name);
           geometry.setAttribute('color', new T.BufferAttribute(rgb, 4));
@@ -204,12 +208,24 @@ export function buildOriginalShipKit(
           totalTriangles += count; instanceTriangles += count;
           const finish = sourceMaterial.name;
           // Each pack owns a distinct UV atlas; equal finish names cannot merge across it.
-          const bucketKey = sourceMaterial.normalMap ? instance.pack + '/' + finish : finish;
+          const bucketKey = (sourceMaterial.normalMap ? instance.pack + '/' + finish : finish) + (instance.emissionGain === undefined ? '' : '/emission-' + instance.emissionGain);
           let bucket = buckets.get(bucketKey);
           if (!bucket) {
             const material = sourceMaterial.clone();
-            ownedMaterials.add(material); material.name = finish; material.vertexColors = true;
+            ownedMaterials.add(material); material.emissiveIntensity *= instance.emissionGain ?? 1; material.name = finish; material.vertexColors = true;
             material.userData.actorMaterial = true; material.userData.originalShipKitFinish = finish;
+            if (finish === 'brood-lantern' || finish === 'brood-pod-glow') {
+              const previous = material.onBeforeCompile, key = material.customProgramCacheKey();
+              const pod = finish === 'brood-pod-glow';
+              material.onBeforeCompile = (shader, renderer) => {
+                previous.call(material, shader, renderer);
+                shader.uniforms.broodTime = environmentClock;
+                shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float broodTime;');
+                shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>',
+                  '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= 1.0 + 0.4 * sin(broodTime * ' + (pod ? '.47 + 2.1' : '.79') + ');');
+              };
+              material.customProgramCacheKey = () => key + ':dress13-brood-' + (pod ? 'pod' : 'lantern');
+            }
             if (finish.startsWith('e9-floor-')) material.userData.floorDressing = true;
             if (material.emissive.getHex() !== 0 && material.emissiveIntensity > 0) material.userData.motivatedEmitter = true;
             if (material.transparent || material.opacity < 1) material.depthWrite = false;
