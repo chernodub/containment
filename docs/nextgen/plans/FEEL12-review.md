@@ -104,3 +104,42 @@ Opened round2 complete native Crawler/Brute rifle-hit and exact-quarter Crawler 
 ## Native A startup confirmation
 
 Opened native final Awakening Bay spawn: helmet/chest/gun now point right with the marker. The untracked origin bone had a180° mismatch between initial rest and ready pose; isolated runner reset masked it. Startup now preserves the canonical ready origin before legacy actions stop. Opened native Railbreaker03; heading agrees, but beam originates along body/native lane and extends behind the muzzle. Exact muzzle attachment requires a VFX12 kit/service anchor inside excluded ability modules; changing all event coordinates would move ground/impact shape, so no such workaround was made.
+
+## C round 3 — all weapon/family chains and merged-body motion
+
+Generated native four-phase contacts and exact-quarter reviews for `chains-final`
+(50 rows) and `motion-final` (84 rows). Opened all ten native chain contacts and
+all ten quarter contacts. Opened 25 complete native chain strips: pistol, rifle,
+shotgun and plasma hit rows plus rocket kill rows for each of Crawler, Stalker,
+Brute, Spitter and Carrier. All 24 quarter cells are visible in the quarter
+contacts; four-phase native contacts alone skip some short impact peaks.
+
+Observed: the point spark locates contact, and short drops retain the family's
+lantern hue. Shotgun nonlethal reactions bend the small bodies more than rifle
+hits, then return; killing impulses carry small victims farther than Brutes.
+The rifle load remains restrained, especially at quarter scale; the flash is
+still its strongest immediate cue. Brute's broad mass remains attached through
+reactions and collapse. No detached limbs or explosive corpse energy observed.
+Rocket paired rows are prescribed direct-contact studies, not proof of native
+splash-direction association; the native firing lanes supply ordinary projectile
+and explosion receipts separately.
+
+Opened all twelve native motion contact pages and all twelve quarter pages,
+covering run, primary attack, light/heavy/side hits, death and high-impulse death
+for all five ordinary/elite families plus Warden and Matron. Opened complete
+Carrier attack strip after its first phases looked too narrow in the contacts.
+Crawler/Stalker loaded coils and Brute raised blades differ from locomotion;
+heavy and side hits move connected bodies. Brute belly stays above the foot line
+in the previously opened native Crew frames. Carrier's early windup instead
+becomes a tall narrow column with hanging legs: unacceptable on the merged sac.
+High-impulse Carrier/Matron corpses can still rock sac-up at the final 1.6-second
+study cell; these short strips do not establish their eventual settled pose.
+
+Look → fix: retain the reviewed hit envelope and killing carry; do not amplify
+rifle feedback into a topple. Carrier-only correction `2d2ed75e` blends its held
+windup at .62 against the already prepared neutral pose and removes the extra
+parent rear tilt. First native warning-frame commitment remains immediate; no
+phase clock, mesh, skeleton rest pose or hit shape changes. Separate
+`runtime-carrier` build passed. A clean supplemental Carrier/elite/Matron strip
+and pale/dark native lane review must establish the final result; the original
+84-row cohort remains evidence of the rejected Carrier extreme.
