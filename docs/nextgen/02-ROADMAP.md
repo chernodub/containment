@@ -58,8 +58,9 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | LIGHT13 "the ship is dark; actors carry the light" standard on three rooms — Opus | merged | data-driven `ROOM_VALUE_PROFILES`; floor luminance roughly halved, marine plates ≈ 210, creatures dark with hot lanterns |
 | LIGHT14 the standard in the other seventeen rooms and its weak points — Sol | running | |
 | BAL13 sim-versus-native gap and early deaths; Story must not kill in room three — Sol | running | |
-| VFX15 four different Overdrive climaxes, Napalm with volume, effect priority in full builds — Opus | running | |
-| K13 Warden and Matron as a real boss tier (≈ 2× marine), brood pod asset, Stalker/Carrier/Spitter silhouette fixes — Opus, modelling only | running | integration (footprints, scale) by Sol afterwards |
+| VFX15 four different Overdrive climaxes, Napalm with flame tongues, shared effect-area cap — Opus | merged | Frost Trail and Ram left for a later pass |
+| K13 Warden and Matron as a real boss tier (≈ 2× marine), brood pod asset, Stalker/Carrier/Spitter fixes — Opus, modelling only | merged | |
+| I13 boss footprints and collision to match, pod countdown, Warden stun, repack — Sol | running | |
 | PERF13 creature LODs, shadow proxies, camera/main-thread CPU — Sol | merged | triangles −32%, profiled thread CPU per render 17.2 → 7.9 ms; frame p95 ≤ 20 ms in 11/16 configurations (all Low, 3 of 8 High) on a loaded host — High still misses in five |
 | G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
 | D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |
