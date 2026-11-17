@@ -282,7 +282,9 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     }return value;};
     return(!template.boundary||inside(template.boundary))&&!template.voids?.some(inside);
   };
-  const organic=environment==='infested'||templateId==='breached-loading-bay'||templateId==='reactor-vault';
+  // The Brood kit replaces the old grate-root strands in these rooms.
+  const replacedGrowth=['swarm-junction','infested-workshop','breached-loading-bay'].includes(templateId);
+  const organic=!replacedGrowth&&(environment==='infested'||templateId==='breached-loading-bay'||templateId==='reactor-vault');
   const growth=environment==='infested'?1:organic?.65:.12;
   for(const [index,b] of template.breaches.entries()){
     const x=b.x/UNIT,z=b.y/UNIT;
