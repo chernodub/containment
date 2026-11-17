@@ -38,6 +38,7 @@ const profile = (p: RoomValueProfile) => Object.freeze(p);
 export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = Object.freeze({
   // Occupied pod windows, medical observation face and south life-support chain.
   'passenger-vault': profile({
+    landmark:{at:[600,420],color:0x97a7ff,radius:10,body:.55,spill:.035},
     fixturesAt:[[600,320],[1000,440],[600,700]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.34,lane:.75},
     wall:{value:.50,saturation:.56},floorSaturation:.48,tint:0xccd7ef,

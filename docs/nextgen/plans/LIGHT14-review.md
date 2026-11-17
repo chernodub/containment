@@ -95,3 +95,7 @@
 ## Awakening Bay
 - Opened native calm and 480 colour/grey calm/tour/heavy: cyan cryo banks are now the landmark highlight below marine plates, with dark bank bases and readable recovery lanes.
 - Broad bank source restores cold colour outside the marine pool; wall feet, cover and exit route remain visible. Build and seven guarded frames pass.
+
+## Passenger Vault
+- Opened native calm and 480 colour/grey calm/tour/heavy: occupied drawer windows and status faces now read in periwinkle light above the blue floor; marine and hostile lanterns remain brighter.
+- Bank-centred body light and restrained aisle spill recover navigation outside the marine pool without exposing far recesses. Build and seven guarded frames pass.
