@@ -11,7 +11,7 @@ export type RoomValueProfile = Readonly<{
   /** Deck albedo multiplier inside baked fixture pools, outside them, and at hull/void edges. */
   /** Three fixture centres in native room units; the fight circle remains pool zero. */
   /** Landmark source in native units; bounded self-light and deck spill, below actor plates. */
-  landmark?: Readonly<{at:readonly [number,number];color:number;radius:number;body:number;spill:number}>;
+  landmark?: Readonly<{at:readonly [number,number];color:number;radius:number;body:number;spill:number;height?:number;keyColor?:number}>;
   fixturesAt?: readonly (readonly [number, number])[];
   floor: Readonly<{lit:number; unlit:number; edge:number}>;
   /** Fight-circle falloff from the authored arena centre (metres) toward the perimeter multiplier. */
@@ -52,6 +52,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Skylight on the garden, water bed and dining court.
   'communal-atrium': profile({
+    landmark:{at:[589,355],color:0x65c978,radius:4.6,body:.65,spill:.045,height:5,keyColor:0xc6e8ff},
     fixturesAt:[[589, 355], [728, 150], [1090, 480]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xd5e4c7,

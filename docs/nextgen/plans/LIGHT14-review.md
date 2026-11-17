@@ -87,3 +87,7 @@
 ## Overload Floor
 - Opened native calm plus 480 colour/grey calm, landmark tour and heavy: reactor casing/rings now identify the finale above the orange deck spill, while marine plates and hostile lanterns retain priority.
 - First casing fill was too even; reduced body/spill and warmed the retained emitter. Shared bounded landmark self-light and wall-foot wash add no draw/pass/light; build and seven guarded frames pass.
+
+## Communal Atrium
+- Opened native calm and 480 colour/grey calm/tour/heavy: green leaf shapes and the planted bed now identify the atrium below marine/threat highlights; surrounding circulation and wall feet remain readable.
+- Reduced the initial pale fill, made the body response greener and reserved an existing cool practical slot above the bed for the skylight shaft. Build and seven guarded frames pass; no light-slot increase.
