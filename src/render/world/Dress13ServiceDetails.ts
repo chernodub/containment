@@ -5,7 +5,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
  * collision ownership and each room owns its one vertex-colour finish. */
 export function addDress13ServiceDetails(root: T.Group, id: string): void {
   const parts: T.BufferGeometry[] = [];
-  const steel = 0x657174, rubber = 0x202b30, stain = 0x343739, frost = 0x829ca4;
+  const steel = 0x657174, rubber = 0x202b30, stain = 0x343739;
   const put = (g: T.BufferGeometry, color: number) => {
     const p = g.getAttribute('position'), c = new T.Color(color), colors = new Float32Array(p.count * 3);
     for (let i = 0; i < p.count; i++) c.toArray(colors, i * 3);
@@ -95,14 +95,25 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     tool(490, 369, .2); tool(484, 340, 1.4); shards(479, 353);
     scuff(481, 353, 1.5, .5);
   } else if (id === 'coolant-plant') {
+    // A connected ragged ice fan reaches clear floor in front of the failed
+    // header hardware. Its bounds stay outside the port fight circle.
+    const ice = 0xa6c2c9;
+    const outline = [[270,314],[281,310],[295,314],[301,320],[317,324],[324,337],[331,343],[325,354],[317,357],[306,349],[292,350],[284,338],[274,335]];
+    const fan = new T.ShapeGeometry(new T.Shape(outline.map(([x,z]) => new T.Vector2(x / 32, -z / 32))));
+    fan.rotateX(-Math.PI / 2); fan.translate(0,.024,0); put(fan,ice);
     for (let i = 0; i < 11; i++) {
-      const g = new T.SphereGeometry(.23 + i % 3 * .06, 7, 4); g.scale(1, .05, 1.5); g.translate((284 + i * 7) / 32, .024, (308 + i * 2 + Math.sin(i * 1.7) * 8) / 32); put(g, frost);
+      const g = new T.SphereGeometry(.21 + i % 3 * .05, 7, 4); g.scale(1, .05, 1.2); g.translate((278 + i * 4) / 32, .026, (316 + i * 2.8) / 32); put(g, ice);
     }
     line([268, 1.5, 282], [279, .8, 294], .09, steel);
-    line([285, .65, 301], [307, .25, 313], .08, steel);
-    box(347, .67, 326, 3.2, .2, .05, 0xb6b19a, .09);
-    for (let i = 0; i < 10; i++) box(300 + i * 10, .67, 330 - i * .9, .16, .21, .07, i % 2 ? rubber : 0xb6b19a);
-    tool(354, 306, .7); shards(325, 333, frost);
+    line([285, .65, 301], [290, .15, 317], .08, steel);
+    // Short ivory/charcoal tape is in front of the rail, on its own two posts.
+    for (const [x,z] of [[278,350],[330,345]]) {
+      box(x,.4,z,.055,.8,.055,steel);
+      box(x,.025,z,.16,.05,.16,steel);
+    }
+    box(304,.8,347.5,1.64,.16,.025,0xc8c5ad,.096);
+    for (let i = 0; i < 6; i++) box(281 + i * 9,.8,349.7 - i * .865,.10,.17,.04,rubber,.096);
+    tool(354, 306, .7); shards(325, 333, ice);
   } else if (id === 'service-shaft-landing') {
     line([337, .9, 421], [376, -.65, 452], .055, steel);
     line([337, .8, 480], [391, -.6, 486], .05, rubber);
