@@ -29,5 +29,23 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
     add('web-long', 365, 336, 0, 1.2, 2.8);
     add('web-medium', 1044, 623, Math.PI, 1.15, 2.7);
   }
+  if (id === 'containment-annulus') {
+    // Continuous overlapping crust climbs the outer housing lips, leaving the west arena quiet.
+    for (const z of [162, 878]) {
+      const south = z > 520;
+      for (let x = 224; x <= 1210; x += 76) {
+        add('creep-c', x, z, south ? Math.PI : 0, 1.1);
+        if (x % 152 === 72) add('creep-wall', x, south ? 900 : 140,
+          south ? Math.PI : 0, 1.3, .45, -Math.PI / 2);
+      }
+    }
+    add('burst-duct', 1128, 179, .1, .9);
+    add('burst-duct', 1128, 861, Math.PI + .1, .9);
+    add('pods-hatched', 1198, 181, .5, .8);
+    add('pods-hatched', 1198, 856, -.5, .8);
+    add('consumed-shell', 1082, 114, .2, 1.35);
+    add('web-medium', 1045, 139, 0, 1.25, 2.6);
+    add('web-medium', 1168, 899, Math.PI, 1.25, 2.6);
+  }
   return pieces;
 }
