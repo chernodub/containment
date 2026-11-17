@@ -39,3 +39,7 @@
 ## 10 Safety Interlock Station
 - Opened calm/tour03/heavy 480 colour/grey: locked safety text stays legible, amber machines and cage rails read, marine remains brightest actor.
 - Recorder/cage/battery pools retain the long return lane without whitening the floor. Seven guarded captures and build pass; pale cabinet tops remain below actor plates.
+
+## 11 Service Shaft Landing
+- Opened calm/tour03/heavy480 colour/grey: winch, shaft lip and railings remain readable above the dark void; marine leads, pickup/exit beacon remains clear.
+- Junction/docking pools keep green service illumination local. Build and seven guarded captures pass; no lift of the shaft void or simulated geometry.

@@ -97,6 +97,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.46,saturation:.55},floorSaturation:.48,tint:0xead9b5,
     fixtures:.20,practicals:.44,ambient:.45,marineGlow:1,exit:.9,
   }),
+  'service-shaft-landing': profile({
+    // Surviving junction above the shaft, upper and lower docking diffusers.
+    fixturesAt:[[359,405],[1060,6],[1060,874]],
+    floor:{lit:.52,unlit:.26,edge:.13},perimeter:{inner:3.8,outer:10,value:.40,lane:.85},
+    wall:{value:.55,saturation:.58},floorSaturation:.50,tint:0xc3e2d7,
+    fixtures:.22,practicals:.58,ambient:.52,marineGlow:1,exit:.95,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},
