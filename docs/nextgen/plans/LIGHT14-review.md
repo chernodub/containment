@@ -59,3 +59,7 @@
 ## 15 Containment Annulus
 - Opened calm/tour03/heavy480 colour/grey: marine leads, ring mechanism remains readable with violet status strips, cover and deck arrows survive.
 - Housing/core-face pools retain the broad circulation floor; it is among the palest converted rooms and needs final whole-game comparison. Build/seven guarded frames pass.
+
+## 16 Manual Control Chamber
+- Opened calm/tour03/heavy480 colour/grey: authorization warning text stays readable; warm desk/cabinet shapes remain below marine and hostile fill.
+- Desk/status/hardwired-cabinet pools keep the manual decision bay visible, with quiet occupied corners. Build and seven guarded frames pass.

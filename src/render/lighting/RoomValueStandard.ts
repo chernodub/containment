@@ -132,6 +132,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.52,saturation:.56},floorSaturation:.48,tint:0xc5dedc,
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.95,
   }),
+  'manual-control-chamber': profile({
+    // Authorization desk, southern cost/status desk and hardwired cabinet.
+    fixturesAt:[[640,380],[640,920],[860,280]],
+    floor:{lit:.46,unlit:.23,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
+    wall:{value:.50,saturation:.58},floorSaturation:.50,tint:0xe6d3bd,
+    fixtures:.20,practicals:.46,ambient:.46,marineGlow:1,exit:.9,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},
