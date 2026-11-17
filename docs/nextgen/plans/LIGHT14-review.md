@@ -111,3 +111,7 @@
 ## Armory
 - Opened native calm and 480 colour/grey calm/tour/heavy: carousel spindle, weapon mounts and control panels now read under white work light above the dark blue magazine floor.
 - Local white body light/spill keeps the ring recognisable without lifting outer benches; marine and threats retain their brighter values. Build and seven guarded frames pass.
+
+## Freight Hold
+- Opened native gantry-facing tour and 480 colour/grey calm/tour/heavy: suspension gantry now reads as a sodium-lit machine above the amber tow floor; marine and threats retain priority.
+- Gantry-centred source restores structure and cargo identity while the dispatch recess remains dark and exit chevrons clear. Build and seven guarded frames pass.
