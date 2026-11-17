@@ -2,7 +2,7 @@ import { ABILITY_CATALOG } from '../../../game/abilities/catalog';
 import type { AbilityEvent, DeployableSnapshot } from '../../../game/abilities/contract';
 import type { ElementKit } from '../ElementKit';
 import { UNIT, ELEMENT_COLORS, type AbilityFrame, type AbilityPresentation } from '../types';
-import { FxMode } from '../FlagshipFx';
+import { FxMode, type FxSlot } from '../FlagshipFx';
 
 const AMBER = ELEMENT_COLORS.kinetic;
 const EDGE = 0x9fe8ff;
@@ -39,6 +39,8 @@ export class BreacherPresentation implements AbilityPresentation {
   private ramStartAge = 0;
   private ramStartValid = false;
   private disposed = false;
+  private pressure?: FxSlot;
+  private pressureSeed = -1;
 
   constructor(private readonly kit: ElementKit) {}
 
@@ -57,6 +59,9 @@ export class BreacherPresentation implements AbilityPresentation {
     if (event.ability === 'ram' && event.phase === 'dash-start') {
       this.ramStartX = x; this.ramStartZ = z; this.ramStartAge = 0; this.ramStartValid = true;
       this.impact('ram', x, z, angle, (event.length ?? 150) / UNIT, .32);
+      const pressure = this.pressure = this.kit.fx.spawn(FxMode.Pressure, x, z, .32);
+      this.pressureSeed = pressure.seed; pressure.angle = angle; pressure.arc = 1.3;
+      pressure.range = .9; pressure.h0 = .12; pressure.h1 = .5; pressure.color = AMBER;
       // Universal dash camera/pose feedback is applied once by the system presentation.
       return;
     }
@@ -262,9 +267,13 @@ export class BreacherPresentation implements AbilityPresentation {
     const x = player ? player.x / UNIT : p.x + Math.cos(p.angle) * p.size * t;
     const z = player ? player.y / UNIT : p.z + Math.sin(p.angle) * p.size * t;
     const fade = Math.max(0, 1 - p.age / p.life), nx = Math.cos(p.angle), nz = Math.sin(p.angle), sx = -nz, sz = nx;
+    if (this.pressure?.live && this.pressure.seed === this.pressureSeed) {
+      this.pressure.x = x + nx * .25; this.pressure.z = z + nz * .25;
+      this.pressure.mx = this.pressure.x; this.pressure.mz = this.pressure.z;
+    }
     // One pressure prow carried by the marine, with an asymmetric hot leading keel.
     this.kit.draw('solid', x + nx * .65, .83, z + nz * .65,
-      1.6, 1.36, .48, STEEL, fade * .7, Math.PI / 2 - p.angle, .06);
+      1.6, 1.36, .12, STEEL, fade * .18, Math.PI / 2 - p.angle, .06);
     for (let side = -1; side <= 1; side += 2) {
       this.kit.ribbon(x + sx * side * .75 + nx * .05, .38, z + sz * side * .75 + nz * .05,
         x + nx * 1.05, 1.05, z + nz * 1.05, side < 0 ? CORE : AMBER, .045, fade * .85, false);
@@ -283,7 +292,7 @@ export class BreacherPresentation implements AbilityPresentation {
     const t = p.age / p.life, fade = 1 - t, nx = Math.cos(p.angle), nz = Math.sin(p.angle);
     const lead = .3 + t * .6, x = p.x + nx * lead, z = p.z + nz * lead;
     // An upright forward cap and two dust shoulders retain a directional shove, never a new ground disc.
-    this.kit.draw('solid', x, .82, z, p.size * 2, 1.4 * (1 - t * .25), .52, STEEL, fade * .6, Math.PI / 2 - p.angle);
+    this.kit.draw('solid', x, .82, z, p.size * 2, 1.4 * (1 - t * .25), .52, STEEL, fade * .14, Math.PI / 2 - p.angle);
     this.kit.sprite('impact', x + nx * .04, .82, z + nz * .04, p.size * .9, p.size * .72, AMBER, fade * (this.kit.low ? .36 : .55), 0, 'light');
     for (let side = -1; side <= 1; side += 2) {
       const offset = side * p.size * .8;
@@ -546,6 +555,8 @@ export class BreacherPresentation implements AbilityPresentation {
     this.crossingCursor = 0;
     this.emissionClock = 0;
     this.ramStartValid = false; this.ramStartAge = 0;
+    if (this.pressure?.seed === this.pressureSeed) this.pressure.live = false;
+    this.pressure = undefined;
   }
 
   dispose(): void {

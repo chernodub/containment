@@ -34,3 +34,5 @@ Frost Trail: pale 480 timeline almost disappears apart from upright shards. Need
 Whiteout: dark 480 timeline is a huge noisy floor field, competing with the enemy silhouettes despite low alpha. Reduce overlapping floor signature and keep the sparse dome gusts/pulses; native close view still pending.
 
 Slam R2: opened both 480 phase contacts and dark native 04. Removing the duplicate sprite leaves a crisp advancing edge and persistent dark seams; still more electrical than fractured deck. Marine/enemy silhouettes remain distinct.
+
+Ram R2: opened native impact on both floors across the review/correction captures and both 480 contacts. Reduced solid prow opacity preserves the struck enemy and marine. Pressure remains restrained and the long skids dominate; below flagship quality.
