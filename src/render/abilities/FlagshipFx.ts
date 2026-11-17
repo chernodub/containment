@@ -9,7 +9,7 @@ import * as T from 'three';
  * vertex shader from the exact simulated cone/strip/radius numbers and never
  * exceed them (the muzzle pull-in only moves the narrow apex inward).
  */
-export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6, Crack: 7, Fuel: 8, Pressure: 9, Pillar: 10, FuelStrip: 11, FrostStrip: 12 } as const;
+export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6, Crack: 7, Fuel: 8, Pressure: 9, Pillar: 10, FuelStrip: 11, FrostStrip: 12, Blizzard: 13 } as const;
 export type FxMode = (typeof FxMode)[keyof typeof FxMode];
 
 export interface FxSlot {
@@ -46,7 +46,12 @@ uniform float fxRange;uniform float fxInner;uniform vec2 fxHeight;uniform float 
 varying vec2 fxLocal;varying vec3 fxWorld;varying vec4 fxScreen;
 void main(){
  vec2 g=uv;vec3 w;float m=fxMode;
- if(m>10.5){
+ if(m>12.5){
+  float a=g.x*6.2831853,polar=g.y*1.5707963;
+  float radius=fxRange*sin(polar);
+  w=vec3(fxOrigin.x+cos(a)*radius,fxHeight.x+cos(polar)*fxHeight.y,fxOrigin.z+sin(a)*radius);
+  fxLocal=g;
+ }else if(m>10.5){
   vec2 d=vec2(cos(fxAngle),sin(fxAngle)),n=vec2(-d.y,d.x);
   float s=g.x*2.-1.;vec2 xz=fxOrigin.xz+d*g.y*fxRange+n*s*fxInner;
   w=vec3(xz.x,fxHeight.x,xz.y);fxLocal=vec2(s,g.y);
@@ -213,7 +218,7 @@ void main(){
   float fade=1.-smoothstep(.55,1.,k);
   emit=(fxColor*2.6*facets+vec3(1.6)*edge)*edge*fade*fxIntensity+fxColor*wake*.6*fade*fxIntensity;
   alpha=(edge*.55+wake*.25)*fade;
- }else if(m<5.5||m>11.5){
+ }else if(m<5.5||(m>11.5&&m<12.5)){
   // Frost: crystalline growth spreading from the centre, rime veins, slow fade.
   float r=fxLocal.y;float R=fxRange;float a=fxLocal.x*6.2831853;
   vec2 q=(fxWorld.xz-fxOrigin.xz)*1.6+fxSeed;
@@ -272,7 +277,7 @@ void main(){
   alpha=mark*.62*fade;
   base=vec3(.008,.011,.014);
   emit=fxColor*mark*exp(-age*7.)*.55*fxIntensity;
- }else if(m<8.5||m>10.5){
+ }else if(m<8.5||(m>10.5&&m<11.5)){
   // Opaque soot counter-layer and flowing fuel share the exact native disc.
   float r=fxLocal.y,R=fxRange;
   vec2 q=(fxWorld.xz-fxOrigin.xz)*2.2;
@@ -298,7 +303,7 @@ void main(){
   float fade=1.-smoothstep(.2,1.,k);
   alpha=(haze*.16+rim*.22)*fade; base=vec3(.12,.1,.07);
   emit=fxColor*rim*.9*fade*fxIntensity;
- }else{
+ }else if(m<10.5){
   float u=fxLocal.x,v=fxLocal.y;
   float twist=u*6.2831853+v*2.-t*3.;
   float ribs=pow(max(0.,cos(twist*7.+fxSeed)),18.);
@@ -307,6 +312,21 @@ void main(){
   float fade=1.-smoothstep(.15,1.,k);
   float mark=ribs*fragments*taper*fade;
   alpha=mark*.14;emit=(fxColor*.7+vec3(.9))*mark*fxIntensity;
+ }else{
+  // Sparse tangential weather on an open native-radius dome; the centre stays clear.
+  float u=fxLocal.x*6.2831853,v=fxLocal.y;
+  float drift=u-t*.82;
+  float lane=v+sin(drift*3.)*.12;
+  float ribbon=1.-smoothstep(.018,.064,abs(sin(lane*13.+drift*2.)));
+  float packet=pow(max(0.,sin(drift*5.+v*3.)),5.);
+  float snow;
+  if(fxLow>.5)snow=step(.97,fract(u*31.-t*8.+floor(v*9.)*.17))*step(.8,fract(v*13.+u*.8))*.6;
+  else snow=pow(max(0.,sin(u*73.-t*21.+floor(v*13.)*2.4)),12.)
+   *pow(max(0.,sin(v*49.+u*4.-t*7.)),5.);
+  float vertical=smoothstep(.12,.3,v)*(1.-smoothstep(.88,1.,v));
+  float mark=(ribbon*packet*.7+snow*.8)*vertical*fxParam;
+  alpha=min(.12,mark*.16);base=vec3(.025,.08,.13);
+  emit=(fxColor*.22+vec3(.12))*mark*fxIntensity;
  }
  vec2 screen=fxScreen.xy/max(.001,fxScreen.w)*.5+.5;
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));

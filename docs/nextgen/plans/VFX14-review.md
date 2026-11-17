@@ -58,3 +58,12 @@ Glacier R2: both 480 contacts and dark native 04 preserve the wall and surroundi
 Frost Trail R2: both 480 contacts and pale native 05 still lose the sparse deposits against pale decking. Replaced those deposits with one exact-width FrostStrip and dark blue backing; crystals and low mist remain. Final-check must confirm this correction.
 
 Whiteout R2: both 480 contacts and dark native 06 show substantially quieter floor veins with enemies still distinct through the sparse dome. Freeze pulse radius remains native. Weather is readable, but still below flagship art quality because of its procedural pattern.
+
+## Third correction pass
+Opened native final-check frames: Overload dark 04 now has continuous violet-white branches instead of stepped fences; Afterburn dark 05 is connected rather than circular stamps; Napalm pale 05 has a dark fuel bed and small vertical tongues, but remains flat and below Flashfire. Bulwark pale 04 in the face-on legal lane shows the hex face, unfolding ribs and contact spark without covering enemies.
+
+Frost Trail pale 05 exposed a functional presentation bug: the native zone can be born with zero length and grows during the dash; the retained surface froze that birth extent. It now refreshes position, angle and extent from each native snapshot, guarded by slot ownership. Focused recapture follows.
+
+Whiteout is being consolidated into the shared pooled program: one open native-radius Blizzard dome replaces the dedicated weather/ground material pair. Native freeze pulses and the restrained floor field remain; central weather opacity stays open around the marine. Focused pale/dark and heavy recapture follows.
+
+Opened native heavy High frame 04 for all rigs in final-check: hostile Arc danger circle remains legible under the link; enemies remain distinct; the marine keeps a complete outline in all four. Pyro is the busiest presentation and its long fuel/flame lane still needs the Low/480 and campaign observations. These screenshots do not establish performance.
