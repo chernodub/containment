@@ -200,3 +200,17 @@ six physics seconds. The existing study tool now permits up to 30 steps per
 sample solely to inspect a 10-second follow-up through retirement and support;
 no runtime damping, contact position, collider, or simulation changes follow
 from these samples.
+
+10-second settle follow-up → retain (`settle-10s`, six strips, zero capture
+errors): opened all six full native strips and all three exact-quarter pages.
+All six final poses stop changing; final three root/crop receipts are identical.
+Brute stabilizes early. Crawler high impulse receives a late shallow support
+correction to root Y +.21089 before remaining still. Matron normal freezes its
+final sac-up pose then lowers root Y to -.23085; high impulse freezes a curled
+pose then falls through -.327/-1.71675 to -1.99732 and remains still in the final
+three samples. The existing six-second physics budget and fixed-world support
+ray therefore bound late movement. The isolated background does not show the
+support surface, so these rows establish bounded retained poses rather than
+prove corpse-to-deck contact at every native room location. Matron's long roll
+and eventual sac-up/curl are still weaker than Brute's immediate heavy settle;
+no unsupported new damping or forced pose correction was added.
