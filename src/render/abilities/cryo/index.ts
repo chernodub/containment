@@ -207,7 +207,7 @@ class CryoPresentation implements AbilityPresentation {
       const ice = clock.fx;
       ice.x = x; ice.z = z; ice.angle = direction; ice.range = length; ice.inner = half;
       ice.age = age; ice.life = Math.max(.1, zone.durationMs / 1000);
-      ice.h0 = .035; ice.color = ICE; ice.intensity = .75; ice.param = 1;
+      ice.h0 = .065; ice.color = ICE; ice.intensity = .75; ice.param = 1;
     }
     // New contact retains its brief frost hit; settled coverage yields even on
     // unoccupied deck, with the exact capsule and its crystal edges unchanged.

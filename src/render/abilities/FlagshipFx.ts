@@ -242,6 +242,12 @@ void main(){
   alpha=cover*(.015+patchy*.03+veins*.22+band*.14+fern*.2)*fade;
   base=fxParam>.5?vec3(.035,.085,.12):vec3(.66,.82,.9);
   if(fxParam>.5)alpha+=cover*(.18+patchy*.18)*fade;
+  if(m>11.5){
+   // Ink under rime keeps the native strip readable on the palest deck.
+   alpha=max(alpha,cover*(.55+patchy*.12)*fade);
+   base=vec3(.002,.008,.012);
+   emit=ice*(veins*.16+fern*.22+band*.3)*cover*fade*fxIntensity;
+  }
  }else if(m<6.5){
   // Overdrive floor state: element-coloured energy field around the marine.
   float r=fxLocal.y;float R=fxRange;float a=fxLocal.x*6.2831853;

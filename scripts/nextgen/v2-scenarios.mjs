@@ -95,7 +95,13 @@ export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline
  const samples=[0,Math.max(16,resolution*.5),resolution+30,resolution+150,resolution+600,resolution+Math.max(1200,duration*.5),resolution+Math.max(1800,duration+300)];
  const original=d.step;let sample=0,elapsed=0;
  // The runner samples at fixed 150ms; map those sampling requests to explicit art-review phases.
- d.step=ms=>{if(ms!==150)return original(ms);sample++;const t=samples[Math.min(sample,samples.length-1)];original(Math.max(0,t-elapsed));elapsed=t;d.v2Proof.sampleMs=t;d.v2Proof.programs=programs;d.shaderCompilations=programs;if(programs)throw Error('V2 timeline shader compiles '+programs);};
+ d.step=ms=>{if(ms!==150)return original(ms);sample++;const t=samples[Math.min(sample,samples.length-1)];original(Math.max(0,t-elapsed));elapsed=t;d.v2Proof.sampleMs=t;
+ if(id==='frost-trail'){
+  const fx=d.renderer.interimAbilities?.kit?.fx;
+  d.v2Proof.surfaces=fx?.slots.filter(s=>s.live).map(s=>({mode:s.mode,range:s.range,inner:s.inner,x:s.x,z:s.z,h0:s.h0,param:s.param,age:s.age,life:s.life,visible:s.mesh.visible,uniformRange:s.material.uniforms.fxRange.value}))??[];
+  d.v2Proof.nativeZones=g.abilities.snapshot.zones;
+ }
+ d.v2Proof.programs=programs;d.shaderCompilations=programs;if(programs)throw Error('V2 timeline shader compiles '+programs);};
  d.refresh();
 }
 export const V2_SCENARIOS=[];
