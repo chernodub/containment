@@ -83,10 +83,10 @@ float fxFbm(vec2 p){float s=0.,a=.5;mat2 r=mat2(1.6,1.2,-1.2,1.6);
  for(int i=0;i<5;i++){if(fxLow>.5&&i>2)break;s+=a*fxNoise(p);p=r*p;a*=.5;}return fxLow>.5?s*1.14:s;}
 // Blackbody-like ramp: smoke, dark red, orange, yellow, white (HDR for bloom).
 vec3 fxHeat(float t){
- vec3 c=mix(vec3(.035,.022,.018),vec3(.62,.07,.012),smoothstep(.06,.28,t));
- c=mix(c,vec3(2.3,.62,.09),smoothstep(.24,.48,t));
- c=mix(c,vec3(4.2,2.5,.62),smoothstep(.48,.74,t));
- return mix(c,vec3(7.,6.3,4.6),smoothstep(.8,1.,t));
+ vec3 c=mix(vec3(.035,.022,.018),vec3(.5,.05,.008),smoothstep(.04,.24,t));
+ c=mix(c,vec3(1.8,.3,.02),smoothstep(.2,.45,t));
+ c=mix(c,vec3(3.,1.35,.12),smoothstep(.45,.72,t));
+ return mix(c,vec3(5.,4.2,2.8),smoothstep(.8,1.,t));
 }
 void main(){
  float m=fxMode;vec3 emit=vec3(0.);float alpha=0.;vec3 base=vec3(0.);
@@ -94,31 +94,40 @@ void main(){
  if(m<.5){
   // Fire volume slice. param 0 = low hot sheet, .5 = body, 1 = smoke crown.
   float s=fxLocal.x,r=fxLocal.y,layer=fxParam;
-  float front=1.-pow(1.-clamp(age/.15,0.,1.),3.);
-  vec2 q=vec2(s*(r*1.05+.12)*fxRange*.62,r*fxRange);
-  vec2 flow=vec2(0.,t*(6.5-layer*3.))+fxSeed;
-  vec2 warp=vec2(fxFbm(q*.55-flow*.45),fxFbm(q*.55+vec2(5.2,1.3)-flow*.5));
-  float n=fxFbm(q*1.15+warp*2.2-flow);
-  float fine=fxNoise(q*3.7-flow*1.6+warp*3.);
-  // Ragged lateral edge: tongues break the outer third of the arc.
-  float edge=.62+(n-.45)*.9+fine*.12-layer*.08;
-  float body=1.-smoothstep(edge-.38,edge,abs(s));
+  float front=1.-pow(1.-clamp(age/.12,0.,1.),3.);
+  // Anisotropic flow space: features stretch along the jet into licking tongues.
+  vec2 q=vec2(s*(r*1.05+.12)*fxRange*.72,r*fxRange*.42);
+  vec2 flow=vec2(0.,t*(3.2-layer*1.4))+fxSeed;
+  // Curl: tongues sway and roll sideways as they travel, more toward the edge.
+  q.x+=sin(q.y*2.1-t*7.+fxSeed)*.32*r+sin(q.y*4.3+t*5.)*.12*r;
+  vec2 warp=vec2(fxFbm(q*.5-flow*.45),fxFbm(q*.5+vec2(5.2,1.3)-flow*.5));
+  vec2 qi=vec2(s*(r*1.05+.12)*fxRange*.62,r*fxRange);
+  float n=fxFbm(q*1.1+warp*1.9-flow)*.42+fxFbm(qi*.75+warp*1.6-vec2(0.,t*(4.2-layer*2.)))*.62;
+  float fine=fxNoise(q*vec2(3.6,1.6)-flow*1.6+warp*2.);
+  // Ragged lateral edge: tongues cut deep into the outer half of the arc.
+  float edge=.6+(n-.45)*1.4+fine*.12-layer*.06;
+  float body=1.-smoothstep(edge-.3,edge,abs(s));
   // Rolling front: thicker billow just behind the advancing edge, nothing past it.
-  float tip=1.-smoothstep(front-.2-n*.18,front,r);
+  float tip=1.-smoothstep(front-.24-n*.22,front,r);
   float billow=smoothstep(front-.34,front-.06,r)*(1.-smoothstep(front-.06,front,r));
-  float erosion=.2+r*.32+max(0.,age-.16)*(1.9-layer*1.1)+layer*.1;
-  float d=n*body*tip*(1.+billow*.55)+fine*.08;
-  float dens=smoothstep(erosion,erosion+.2,d);
-  float spine=(1.-smoothstep(0.,.3+r*.2,abs(s)))*(1.-smoothstep(.08,.55,r))*(1.-layer);
-  float core=(1.-smoothstep(0.,.11,r-fxInner))*(1.-smoothstep(.0,.55,abs(s)))*(1.-layer*.8);
-  float cool=1.-smoothstep(.12,.5,age);
-  float heat=(dens*(1.18-r*.62)*(.45+.55*cool)+spine*.42*cool+core*1.1*(1.-smoothstep(.05,.24,age)))*(1.-layer*.55);
+  float erosion=.3+r*.24+max(0.,age-.14)*(1.9-layer*1.1)+layer*.1;
+  float d=(n*.85+fine*.22)*body*tip*(1.+billow*.45);
+  float dens=smoothstep(erosion,erosion+.07,d);
+  float inside=clamp((d-erosion)/.32,0.,1.);
+  float spine=(1.-smoothstep(0.,.2+r*.15,abs(s)))*(1.-smoothstep(.05,.5,r))*(1.-layer)*tip;
+  float core=(1.-smoothstep(0.,.1,r-fxInner))*(1.-smoothstep(.0,.45,abs(s)))*(1.-layer*.85);
+  float cool=1.-smoothstep(.1,.45,age);
+  dens=max(dens,spine*cool*.9);
+  float heat=inside*(.98-r*.42)*(.45+.55*cool)+spine*.55*cool+core*(1.-smoothstep(.06,.24,age));
+  heat*=1.-layer*.42;
   heat=clamp(heat,0.,1.);
   // Smoke: cold density that outlives the flame, mostly on the crown layer.
-  float smoke=smoothstep(erosion-.1,erosion+.3,n*body*tip)*(1.-heat)*smoothstep(.08,.3,age)*(.25+layer*.75);
-  emit=fxHeat(heat)*smoothstep(.04,.32,heat)*fxIntensity;
-  alpha=max(smoke*.5*(1.-smoothstep(.55,1.,k)),heat*.32);
-  base=mix(vec3(.03,.028,.027),vec3(.2,.07,.02),cool*.6);
+  float smoke=smoothstep(erosion-.12,erosion+.2,d)*(1.-smoothstep(.1,.4,heat))*smoothstep(.06,.3,age)*(.2+layer*.8);
+  emit=fxHeat(heat)*dens*(.34+core*.5+spine*.25)*fxIntensity*(1.-layer*.4);
+  // Inked rim: the tongue edge is opaque dark ember red, the hot interior is light.
+  float rim=dens*(1.-smoothstep(.0,.35,inside));
+  alpha=max(smoke*.45*(1.-smoothstep(.5,1.,k)),dens*.12+rim*.3*(1.-layer*.6));
+  base=mix(vec3(.025,.022,.021),vec3(.2,.035,.008),max(cool,dens*(1.-smoke)));
   emit*=1.-smoothstep(.62,1.,k);
  }else if(m<1.5){
   // Scorch fan on the deck: glowing fissures cool from orange-white to black soot.
@@ -126,13 +135,16 @@ void main(){
   float front=1.-pow(1.-clamp(age/.15,0.,1.),3.);
   vec2 q=vec2(s*(r*1.05+.12)*fxRange*.62,r*fxRange)+fxSeed;
   float n=fxFbm(q*.9);
-  float ridge=1.-smoothstep(0.,.07,abs(fxFbm(q*2.1+n*1.7)-.5));
   float body=1.-smoothstep(.55+n*.5-.28,.55+n*.5,abs(s));
-  float soot=smoothstep(.25,.62,n*body*(1.25-r*.55))*step(r,front);
-  float heat=exp(-age*1.25);float hot=exp(-age*4.5);
-  emit=(vec3(2.8,.55,.06)*ridge*heat+vec3(5.,2.2,.55)*ridge*hot+vec3(1.1,.18,.02)*hot*.45)*soot*fxIntensity;
-  alpha=soot*.68*(1.-smoothstep(.55,1.,k));
-  base=vec3(.016,.013,.011);
+  float soot=smoothstep(.25,.6,n*body*(1.25-r*.55))*step(r,front);
+  // Glowing embers in the char: sparse specks and soft underglow, cooling to black.
+  float speck=smoothstep(.74,.86,fxNoise(q*5.3+n*2.))*smoothstep(.45,.6,fxFbm(q*.6+3.1));
+  float under=smoothstep(.42,.75,fxFbm(q*.7+7.7));
+  float heat=exp(-age*1.0);float hot=exp(-age*4.);
+  float on=smoothstep(.1,.25,age);
+  emit=(vec3(3.2,.75,.08)*speck*heat+vec3(.9,.16,.02)*under*heat*.6+vec3(1.4,.35,.05)*hot*under*.5)*soot*on*fxIntensity;
+  alpha=soot*.62*on*(1.-smoothstep(.55,1.,k));
+  base=vec3(.014,.012,.011);
   emit*=1.-smoothstep(.55,1.,k);
  }else if(m<2.5){
   // Rail lance: hair-thin white core, sharp leading edge for ~2 frames.
