@@ -7,3 +7,7 @@ Round 2: opened revised native tour 03/04. Marine remains exposed in the crossin
 ## Infested Workshop
 Round 1: opened native south/gantry tour04 and exact-size reductions of tour02/04. South-only growth missed the tool-gallery story; moved the duct, medium nest, pods and connected wall creep to the north workbay.
 Round 2 is captured in dress13-edge-final; two machines retain consumed shells, and the fight floor remains free of tall pieces. Calm retry required after concurrent dist rewrite broke a lazy import in the earlier capture.
+
+## Overload Floor
+Round 1: opened native fight02 and exhaust04, plus 480 reductions. Growth stays dark and peripheral, with substantially dimmer lanterns; the reactor and marine dominate.
+Fix: flattened the long overhead membrane's vertical sag and kept the central holdout floor free of all raised growth. Final source capture follows the common build.

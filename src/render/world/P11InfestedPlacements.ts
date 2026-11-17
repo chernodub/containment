@@ -74,5 +74,23 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.65));
     result[result.length-1].matrix.scale(new T.Vector3(1,.15,.3));
   }
+  if (id === 'overload-floor') {
+    const dead = (asset: string, x: number, z: number, scale = 1, angle = 0, y = 0) => result.push({
+      pack: 'p11-brood', asset, purpose: 'DRESS13 / heat-killed perimeter / ' + asset,
+      matrix: new T.Matrix4().compose(new T.Vector3(x/32,y,z/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),angle),new T.Vector3(scale,scale,scale)),
+      surfaceGain: .42, emissionGain: .16, cutaway: !asset.startsWith('brood-creep'), castShadow: false,
+    });
+    dead('brood-nest-large',1020,245,.85);
+    dead('brood-nest-large',1010,850,.85,Math.PI);
+    dead('brood-consumed-shell',850,160,1.2);
+    dead('brood-burst-duct',1060,300,.7);
+    dead('brood-pods-hatched',1060,785,.8);
+    for(const [x,z,a] of [[1000,290,.3],[1060,345,.7],[1050,790,2],[980,830,2.7],[850,235,0],[700,855,1]]) {
+      dead('brood-creep-c',x,z,1.2,a);
+      dead('brood-creep-a',x-35,z+12,1,a+.6);
+    }
+    dead('brood-web-long',920,200,1.2,0,3.4);
+    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.7));
+  }
   return result;
 }
