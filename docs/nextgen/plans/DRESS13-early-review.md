@@ -33,3 +33,6 @@ Opened native tour02 and exact480 tour01/03 against final6 calm native/480: lugg
 
 ### Round 1 actual image review — Awakening Bay
 Opened native tour02 and exact480 tour01/03 against final6: forced-open canopy reads, but the dropped kit is hidden by the bank console and the tread is too far behind it. Correction moves kit and wet trail to the exposed west foot of the bank and adds a restrained pale medical cross; the observation fight floor remains clear.
+
+### Round 1 actual image review — Passenger Vault
+Opened native tour02 and exact480 tour01/03 against final6: the empty pulled drawer is now the dominant personal story, with belongings at its foot and no marine obstruction. The paper spill disappears first at 480; correction enlarges the three sheets slightly and adds one subdued drawer-to-case drag streak instead of more high-contrast detail.

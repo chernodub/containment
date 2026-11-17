@@ -116,7 +116,8 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     }
   }
   if(id==='passenger-vault') {
-    for(let i=0;i<3;i++) flat([[-.16,-.22],[.17,-.21],[.15,.23],[-.17,.2]],scratch,446+i*9,366+i*3,i*.4);
+    for(let i=0;i<3;i++) flat([[-.22,-.27],[.23,-.26],[.21,.28],[-.23,.25]],scratch,446+i*9,366+i*3,i*.4);
+    flat([[-.035,-.7],[.04,-.6],[.025,.65],[-.025,.6]],dark,448,354,.2);
   }
   if(id==='communal-atrium') {
     for(let i=0;i<5;i++) flat([[-.12,-.32],[.13,-.28],[.1,.3],[-.13,.27]],dark,650+i*9,400+(i%2)*8,.3);
