@@ -35,19 +35,19 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   'crew-checkpoint': profile({
     floor:{lit:.34,unlit:.18,edge:.09}, perimeter:{inner:4.5,outer:10.5,value:.22},
     wall:{value:.42,saturation:.55}, floorSaturation:.45, tint:0xd8e2f0,
-    fixtures:.3, practicals:.38, ambient:.45, marineGlow:1, exit:.9,
+    fixtures:.2, practicals:.38, ambient:.45, marineGlow:1, exit:.9,
   }),
   // Wet teal plant: warm copper loops stay as tint, the floor stops being a green wash.
   'coolant-plant': profile({
     floor:{lit:.36,unlit:.18,edge:.09}, perimeter:{inner:4.5,outer:10,value:.25},
     wall:{value:.45,saturation:.55}, floorSaturation:.42, tint:0xc4ddd6,
-    fixtures:.4, practicals:.6, ambient:.45, marineGlow:1, exit:.9,
+    fixtures:.2, practicals:.6, ambient:.45, marineGlow:1, exit:.9,
   }),
   // Already dark: cooling-aisle pools on the lanes, rack backs black, white panels dimmed.
   'relay-racks': profile({
     floor:{lit:.70,unlit:.30,edge:.14}, perimeter:{inner:4.5,outer:10,value:.30},
     wall:{value:.62,saturation:.60}, floorSaturation:.55, tint:0xbfdcd8,
-    fixtures:.35, practicals:.75, ambient:.6, marineGlow:1, exit:.9,
+    fixtures:.25, practicals:.75, ambient:.6, marineGlow:1, exit:.9,
   }),
 });
 
@@ -64,9 +64,9 @@ export function setRoomValueField(arenaX: number, arenaZ: number, exitX: number,
 }
 
 /** World XZ, radius (m) and intensity of the marine rig lamp; one shared uniform for every surface. */
-export const MARINE_FLOOR_GLOW = {value: new T.Vector4(0, 0, 3.4, 0)};
+export const MARINE_FLOOR_GLOW = {value: new T.Vector4(0, 0, 3.0, 0)};
 export const MARINE_FLOOR_GLOW_COLOR = {value: new T.Color(0xbfe6ff)};
 export function setMarineFloorGlow(x: number, z: number, color?: number): void {
-  MARINE_FLOOR_GLOW.value.x = x; MARINE_FLOOR_GLOW.value.y = z; MARINE_FLOOR_GLOW.value.w = 1.6;
+  MARINE_FLOOR_GLOW.value.x = x; MARINE_FLOOR_GLOW.value.y = z; MARINE_FLOOR_GLOW.value.w = 1.3;
   if (color !== undefined) MARINE_FLOOR_GLOW_COLOR.value.setHex(color).lerp(new T.Color(0xffffff), .55);
 }
