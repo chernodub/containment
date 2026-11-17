@@ -195,12 +195,9 @@ class CryoPresentation implements AbilityPresentation {
       for (const item of this.zones) if (item.id < 0) { clock = item; break; }
       if (clock) {
         clock.id = zone.id;
-        const deposits = k.low ? 3 : 5;
-        for (let i = 0; i < deposits; i++) {
-          const along = length * (i + .5) / deposits;
-          const ice = k.fx.spawn(FxMode.Frost, x + cx * along, z + sz * along, zone.remainingMs / 1000);
-          ice.range = half * .92; ice.color = ICE; ice.intensity = .55;
-        }
+        const ice = k.fx.spawn(FxMode.FrostStrip, x, z, zone.remainingMs / 1000);
+        ice.angle = direction; ice.range = length; ice.inner = half;
+        ice.h0 = .035; ice.color = ICE; ice.intensity = .75; ice.param = 1;
       }
     }
     if (clock) clock.seen = true;
