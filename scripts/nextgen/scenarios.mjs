@@ -896,3 +896,6 @@ registerC10Scenarios(SCENARIOS);
 
 import {registerK11Scenarios} from './k11-scenarios.mjs';
 registerK11Scenarios(SCENARIOS);
+
+import {registerFeel12WeaponScenarios} from './feel12-weapon-scenarios.mjs';
+registerFeel12WeaponScenarios(SCENARIOS);
