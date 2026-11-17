@@ -125,6 +125,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.49,saturation:.56},floorSaturation:.48,tint:0xcac9ef,
     fixtures:.20,practicals:.48,ambient:.46,marineGlow:1,exit:.9,
   }),
+  'containment-annulus': profile({
+    // North and south shielding-housing diffusers; east core status face.
+    fixturesAt:[[720,140],[720,900],[1040,520]],
+    floor:{lit:.46,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:10,value:.38,lane:.85},
+    wall:{value:.52,saturation:.56},floorSaturation:.48,tint:0xc5dedc,
+    fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.95,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},

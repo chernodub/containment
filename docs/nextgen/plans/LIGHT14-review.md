@@ -55,3 +55,7 @@
 ## 14 Shielding Gate
 - Opened calm/tour03/heavy480 colour/grey: violet emitters and cabinet faces read, marine leads the dark clinical floor and orange threats.
 - Emitter/cabinet/service-face pools retain cover and lane markings. Build and seven guarded frames pass; broad upper floor stays quieter than actors.
+
+## 15 Containment Annulus
+- Opened calm/tour03/heavy480 colour/grey: marine leads, ring mechanism remains readable with violet status strips, cover and deck arrows survive.
+- Housing/core-face pools retain the broad circulation floor; it is among the palest converted rooms and needs final whole-game comparison. Build/seven guarded frames pass.
