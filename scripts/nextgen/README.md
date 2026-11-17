@@ -1164,3 +1164,5 @@ no target health, cooldown, phase or damage is forced. `g5Proof.weaponTimeline`
 retains native shot/contact/corpse/explosion receipts and evolving target
 snapshots. This is a staged encounter, not a campaign or balance measurement;
 only actually recorded contacts and kills establish coverage.
+
+DRESS13 uses opt-in `dress13-kiting:<room>` for a twenty-contact version of the existing G6 native movement/fire fixture. It widens the legal spawn fan and adds outer rings; ordinary `g6-kiting` retains its twelve-contact contract. Both remain staged art evidence, separate from native campaigns and hardware benchmarks; inspect the retained actor receipts for actual accepted contacts.

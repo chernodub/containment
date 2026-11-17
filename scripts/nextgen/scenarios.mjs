@@ -47,8 +47,9 @@ export async function stageGraphicsKiting(room, options={}){
   }
   candidates.sort((a,b)=>b.score-a.score);if(!candidates.length)throw Error('No legal kiting lane');
   const lane=candidates[0];Object.assign(g.player,{x:lane.x,y:lane.y,angle:lane.angle});d.setInput({x:0,y:0,fire:false,angle:lane.angle,autoAim:false});d.step(600);
-  const enemies=[];for(const range of (options.live?[140,190,240,290]:[170,230,290,350]))for(let i=0;i<7&&enemies.length<12;i++){
-   const angle=lane.angle+(i-3)*.24,p={x:lane.x+Math.cos(angle)*range,y:lane.y+Math.sin(angle)*range};
+  const targetCount=options.count??12, spread=targetCount>12?13:7;
+  const enemies=[];for(const range of (options.live?[140,190,240,290]:targetCount>12?[170,230,290,350,410,470]:[170,230,290,350]))for(let i=0;i<spread&&enemies.length<targetCount;i++){
+   const angle=lane.angle+(i-(spread-1)/2)*.24,p={x:lane.x+Math.cos(angle)*range,y:lane.y+Math.sin(angle)*range};
    if(!d.canStand(p.x,p.y,28)||!d.clearShot(p.x,p.y)||enemies.some(e=>Math.hypot(e.x-p.x,e.y-p.y )<(options.live?45:55)))continue;
    const family=['brute','crawler','spitter','stalker','crawler','carrier'][enemies.length%6],elite=enemies.length%5===0,id=d.spawn(family,p.x,p.y,elite);if(id)enemies.push({...p,id,family,elite});
   }
