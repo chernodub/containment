@@ -96,13 +96,13 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     scuff(481, 353, 1.5, .5);
   } else if (id === 'coolant-plant') {
     for (let i = 0; i < 11; i++) {
-      const g = new T.SphereGeometry(.23 + i % 3 * .06, 7, 4); g.scale(1, .05, 1.5); g.translate((654 + i * 7) / 32, .022, (389 + i * 2.5 + Math.sin(i * 1.7) * 10) / 32); put(g, frost);
+      const g = new T.SphereGeometry(.23 + i % 3 * .06, 7, 4); g.scale(1, .05, 1.5); g.translate((284 + i * 7) / 32, .024, (308 + i * 2 + Math.sin(i * 1.7) * 8) / 32); put(g, frost);
     }
-    line([657, .95, 382], [667, .8, 393], .065, steel);
-    line([674, .65, 400], [687, .35, 408], .065, steel);
-    // Muted buff/charcoal tape, well below danger's saturated palette.
-    box(678, .67, 403, 3.2, .11, .025, 0x9a9477, .09);
-    for (let i = 0; i < 10; i++) box(631 + i * 10, .67, 407 - i * .9, .11, .12, .03, i % 2 ? rubber : 0x9a9477);
+    line([268, 1.5, 282], [279, .8, 294], .09, steel);
+    line([285, .65, 301], [307, .25, 313], .08, steel);
+    box(347, .67, 326, 3.2, .2, .05, 0xb6b19a, .09);
+    for (let i = 0; i < 10; i++) box(300 + i * 10, .67, 330 - i * .9, .16, .21, .07, i % 2 ? rubber : 0xb6b19a);
+    tool(354, 306, .7); shards(325, 333, frost);
   } else if (id === 'service-shaft-landing') {
     line([430, 1.1, 324], [417, -.7, 465], .045, steel);
     line([471, 1, 328], [440, .25, 420], .04, rubber);

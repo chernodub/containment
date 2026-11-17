@@ -91,12 +91,16 @@ const incidents: Record<string, Piece[]> = {
     ['service-transit-case', 477, 369, .45, .6],
   ],
   'coolant-plant': [
-    ['service-valve-manifold', 640, 328, .9, .25],
-    ['service-pressure-drum', 628, 361, .7, -.3, 1.4, .25],
-    ['service-access-hatch', 655, 381, .6, .5, 1.5, .12],
-    ['service-safety-rail', 632, 411, .65, .1],
-    ['service-safety-rail', 723, 399, .65, -.3],
-    ['service-transit-case', 716, 366, .7, .2],
+    ['service-valve-manifold', 278, 292, .9, .25],
+    ['service-pressure-drum', 298, 320, .7, -.3, 1.4, .25],
+    ['service-access-hatch', 325, 294, .6, .5, 1.5, .12],
+    ['service-safety-rail', 306, 338, .65, .1],
+    ['service-safety-rail', 397, 315, .65, -.3],
+    ['service-transit-case', 376, 281, .7, .2],
+    ['service-pressure-drum', 331, 320, .55, .6, 1.4, .2],
+    ['service-access-hatch', 357, 306, .5, -.3, 1.5, .1],
+    ['service-cable-tray', 351, 268, .7, .5],
+    ['service-transit-case', 402, 286, .5, -.4],
   ],
   // The cage is below the walkable C-balcony, held on one remaining cable.
   'service-shaft-landing': [
