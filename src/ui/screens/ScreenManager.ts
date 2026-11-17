@@ -167,6 +167,16 @@ export function createScreens(context: ScreenContext) {
       game.claimResources(button.dataset.purchase as 'heal'|'armor'|'ammo');playUiCue(audio,'purchase'); syncScreen();
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-mutation]').forEach(button=>button.addEventListener('click',()=>{
+      // Presentation completes independently of the immediate native choice transition.
+      const art=button.querySelector<HTMLElement>('.reward-art');
+      if(art&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+        const rect=art.getBoundingClientRect(), echo=art.cloneNode(true) as HTMLElement;
+        echo.className='reward-acquired';
+        Object.assign(echo.style,{left:`${rect.left}px`,top:`${rect.top}px`,width:`${rect.width}px`,height:`${rect.height}px`,color:getComputedStyle(button).getPropertyValue('--boon-color')});
+        echo.style.setProperty('--boon-color',getComputedStyle(button).getPropertyValue('--boon-color'));
+        document.body.append(echo);
+        echo.animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'translateY(-24px) scale(.94)'}],{duration:280,easing:'ease-out'}).finished.finally(()=>echo.remove());
+      }
       game.chooseMutation(button.dataset.mutation as MutationId); playUiCue(audio,'boon-acquired'); syncScreen();
     }));
     root.querySelectorAll<HTMLButtonElement>('[data-route]').forEach(button=>button.addEventListener('click',()=>{

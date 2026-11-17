@@ -9,7 +9,7 @@ const metric = (label: string, source: RegExp, kind: MetricKind = 'number', pref
 const benefit = (headline: string, metrics: readonly Metric[], fallback?: string): Benefit => ({headline, metrics, fallback});
 
 /** Authored benefit language; every displayed number is extracted from catalog prose. */
-export const BOON_BENEFITS: Readonly<Record<MutationId, Benefit>> = {
+export const BOON_BENEFITS: Readonly<Partial<Record<MutationId, Benefit>>> = {
   breacher: benefit('Shotgun launches turn walls into weapons', [metric('slam damage', /up to (\d+) extra damage/, 'number', '+')]),
   'heavy-pellets': benefit('Hit harder and launch farther', [metric('shotgun damage', /damage \+(\d+)%/, 'percent', '+'), metric('launch force', /by (\d+)%/, 'percent', '+')]),
   'chain-reaction': benefit('Launched enemies send the crowd flying', [metric('launch chains', /chain (three) times/)]),
@@ -76,7 +76,7 @@ const wordNumbers: Readonly<Record<string, number>> = {one:1, two:2, three:3, fo
 
 /** Exact values are retained for inspection; overview distances/time/percentages are rounded. */
 export function boonMetrics(boon: MutationDefinition): readonly {value: number; shown: number; label: string; text: string}[] {
-  return BOON_BENEFITS[boon.id].metrics.map(metric => {
+  return (BOON_BENEFITS[boon.id]?.metrics ?? []).map(metric => {
     const token = metric.source.exec(`${boon.description} ${boon.tradeoff}`)?.[1];
     if (!token) throw new Error(`Missing catalog metric for ${boon.id}: ${metric.source}`);
     const value = token.toLowerCase() === 'second' && metric.kind === 'number' ? 2 : wordNumbers[token.toLowerCase()] ?? Number(token);
@@ -90,10 +90,10 @@ export function boonMetrics(boon: MutationDefinition): readonly {value: number; 
 
 /** One comparable summary line, with approximations explicitly marked. */
 export function boonNumbers(boon: MutationDefinition): string {
-  return boonMetrics(boon).map(metric => metric.text).join(' · ') || BOON_BENEFITS[boon.id].fallback || '';
+  return boonMetrics(boon).map(metric => metric.text).join(' · ') || BOON_BENEFITS[boon.id]?.fallback || '';
 }
 
-/** Explicit catalog completeness check is also usable by capture tooling. */
+/** New catalog entries can supply their own behavioral headline without UI wiring. */
 export function boonBenefit(boon: MutationDefinition): string {
-  return BOON_BENEFITS[boon.id].headline;
+  return BOON_BENEFITS[boon.id]?.headline ?? (boon as MutationDefinition & {whatChanges?: string}).whatChanges ?? boon.description.split(/(?<=[.!?])\s/)[0];
 }
