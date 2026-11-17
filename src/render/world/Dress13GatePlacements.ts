@@ -32,24 +32,42 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
     add('web-short', 950, 587, -.75, 1.05, 1.55, -.45);
   }
   if (id === 'containment-annulus') {
-    // Continuous overlapping crust climbs the outer housing lips, leaving the west arena quiet.
-    for (const z of [162, 878]) {
+    // Narrow wall-foot crust leaves at least 140 units of each ring lane clean.
+    // The former broad scallops across the ring and roof-top shell are retired.
+    for (const z of [149, 891]) {
       const south = z > 520;
-      let index = 0;
-      for (let x = 224; x <= 1210; x += 76, index++) {
-        add(index % 3 === 1 ? 'creep-b' : index % 3 === 2 ? 'creep-a' : 'creep-c',
-          x, z + (index % 2 ? 4 : -3), (south ? Math.PI : 0) + (index % 3 - 1) * .13, index % 3 === 1 ? 1.35 : 1.1);
-        if (x % 152 === 72) add('creep-wall', x, south ? 900 : 140,
-          south ? Math.PI : 0, 1.3, .45, -Math.PI / 2);
+      for (const [i,x] of [250,360,475,590,710,830,950,1070,1190].entries()) {
+        add(i % 2 ? 'creep-c' : 'creep-a', x, z, (south ? Math.PI : 0) + (i % 3 - 1) * .12, .32);
+        if (i % 2 === 0) {
+          add('creep-wall', x, south ? 899 : 141,
+            south ? Math.PI : 0, .45, .25, Math.PI / 2);
+          // The shielding housing is .902m tall: keep the climb below its cap.
+          pieces[pieces.length-1].matrix.scale(new T.Vector3(2.3,1,1));
+          pieces[pieces.length-1].surfaceGain = 1;
+        }
       }
     }
-    add('burst-duct', 1128, 179, .1, .9);
-    add('burst-duct', 1128, 861, Math.PI + .1, .9);
-    add('pods-hatched', 1198, 181, .5, .8);
-    add('pods-hatched', 1198, 856, -.5, .8);
-    add('consumed-shell', 1082, 114, .2, 1.35);
-    add('web-medium', 1045, 139, 0, 1.25, 2.6);
-    add('web-medium', 1168, 899, Math.PI, 1.25, 2.6);
+    add('burst-duct', 1128, 160, .1, .45);
+    add('burst-duct', 1128, 880, Math.PI + .1, .45);
+    add('pods-hatched', 1198, 160, .5, .35);
+    add('pods-hatched', 1198, 880, -.5, .35);
+    for (const [z,yaw] of [[162,.2],[882,Math.PI+.2]]) {
+      pieces.push({pack:'p11-service',asset:'service-console-schematic',
+        purpose:'DRESS13 / annulus consumed wall-foot console',cutaway:true,
+        matrix:new T.Matrix4().compose(new T.Vector3(1080/32,0,z/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),yaw),new T.Vector3(.32,.32,.32))});
+      add('consumed-shell', 1080, z, yaw, .45);
+    }
+    // Shell-to-duct webs follow the wall lip, never bridge the walking ring.
+    const link = (ax:number, az:number, ay:number, bx:number, bz:number, by:number) => {
+      add('web-short',ax,az);
+      const from=new T.Vector3(ax/32,ay,az/32), gap=new T.Vector3(bx/32,by,bz/32).sub(from);
+      pieces[pieces.length-1].matrix.compose(from,
+        new T.Quaternion().setFromUnitVectors(new T.Vector3(1,0,0),gap.clone().normalize())
+          .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),.55)),
+        new T.Vector3(gap.length()/1.5,.35,.6));
+    };
+    link(1080,162,.6,1128,160,.32);
+    link(1130,880,.32,1080,882,.6);
   }
   if (id === 'manual-control-chamber') {
     // Four cabinet sections disappear under mantles; the authorisation dais stays readable.
