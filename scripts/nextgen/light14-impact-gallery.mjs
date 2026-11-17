@@ -1,7 +1,7 @@
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {canvas,decode,encode,drawImage,drawText} from './g2-png.mjs';
 import {review480} from './l8-review-images.mjs';
-const root='artifacts/nextgen/light14-impacts-final',out='artifacts/nextgen/light14-final';
+const root='artifacts/nextgen/light14-final/raw/impacts-final',out='artifacts/nextgen/light14-final';
 const ids=['ram','seismic-slam','bulwark','railbreaker','frost-trail','cryo-nova','glacier','whiteout','afterburn','flashfire','napalm-charge','meltdown','static-step','overload','tesla-pylon','overclock'];
 await mkdir(out,{recursive:true});
 for(const room of (process.argv.length>2?process.argv.slice(2):['containment-annulus','infested-workshop']))for(const frame of ['03','05']){
