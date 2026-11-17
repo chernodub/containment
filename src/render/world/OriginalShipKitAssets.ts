@@ -1,4 +1,6 @@
 import * as T from 'three';
+import type {RoomTemplate} from '../../game/roguelike/types';
+import {clearPolygonTopology} from '../../game/world/polygonGeometry';
 import {environmentClock} from '../lighting/HotFixtureSurface';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoomModelCache, type RoomModelSpec} from '../RoomModelCache';
@@ -167,6 +169,7 @@ function sourceEmitters(geometry: T.BufferGeometry): Emitter[] {
 export function buildOriginalShipKit(
   sources: ReadonlyMap<OriginalKitPack, T.Group>,
   instances: readonly OriginalKitInstance[],
+  template?: RoomTemplate,
 ): T.Group {
   const result = new T.Group();
   result.name = 'e9-original-ship-kit'; result.userData.visualOnly = true;
@@ -200,6 +203,7 @@ export function buildOriginalShipKit(
       if (!source || !asset) throw Error(`Original ${instance.pack} ship kit asset missing: ${instance.asset}`);
       if (!instance.matrix.elements.every(Number.isFinite) || Math.abs(instance.matrix.determinant()) < 1e-12)
         throw Error('Invalid original ship kit instance transform: ' + instance.asset);
+      const floorCreep = instance.pack === 'p11-brood' && /^brood-creep-[abc]$/.test(instance.asset);
       const bounds = new T.Box3(), lamps: {position: T.Vector3; area: number; color: number}[] = [];
       const parts:{finish:string;start:number;end:number}[]=[];
       let instanceTriangles = 0, meshCount = 0;
@@ -226,7 +230,24 @@ export function buildOriginalShipKit(
           }
           for (const name of Object.keys(geometry.attributes)) if (name !== 'position' && name !== 'normal' && !(name === 'uv' && sourceMaterial.normalMap)) geometry.deleteAttribute(name);
           geometry.setAttribute('color', new T.BufferAttribute(rgb, 4));
-          geometry.applyMatrix4(combined); geometry.computeBoundingBox(); bounds.union(geometry.boundingBox!);
+          geometry.applyMatrix4(combined);
+          if (floorCreep && template) {
+            // Only owned output triangles are trimmed. Source buffers and native
+            // floor/collision geometry remain untouched; no query mesh is created.
+            const p = geometry.getAttribute('position'), kept: number[] = [];
+            for (let i = 0; i < p.count; i += 3) {
+              const a = {x:p.getX(i)*32,y:p.getZ(i)*32}, b = {x:p.getX(i+1)*32,y:p.getZ(i+1)*32}, c = {x:p.getX(i+2)*32,y:p.getZ(i+2)*32};
+              const center = {x:(a.x+b.x+c.x)/3,y:(a.y+b.y+c.y)/3};
+              if (clearPolygonTopology(template,a,b) && clearPolygonTopology(template,b,c) && clearPolygonTopology(template,c,a) && clearPolygonTopology(template,center,center)) kept.push(i,i+1,i+2);
+            }
+            if (!kept.length) {geometry.dispose();ownedGeometry.delete(geometry);return;}
+            for (const [name, attribute] of Object.entries(geometry.attributes) as [string, T.BufferAttribute | T.InterleavedBufferAttribute][]) {
+              const values = new Float32Array(kept.length * attribute.itemSize);
+              for (let i = 0; i < kept.length; i++) for (let c = 0; c < attribute.itemSize; c++) values[i*attribute.itemSize+c] = c === 0 ? attribute.getX(kept[i]) : c === 1 ? attribute.getY(kept[i]) : c === 2 ? attribute.getZ(kept[i]) : attribute.getW(kept[i]);
+              geometry.setAttribute(name,new T.BufferAttribute(values,attribute.itemSize));
+            }
+          }
+          geometry.computeBoundingBox(); bounds.union(geometry.boundingBox!);
           const count = geometry.getAttribute('position').count / 3;
           totalTriangles += count; instanceTriangles += count;
           const finish = sourceMaterial.name;
@@ -279,6 +300,7 @@ export function buildOriginalShipKit(
       // The instance matrix replaces the named asset group's placement. Child
       // transforms remain relative to that native bottom-centred group.
       visit(asset, new T.Matrix4());
+      if (floorCreep && template && bounds.isEmpty()) continue;
       if (meshCount === 0 || bounds.isEmpty()) throw Error('Original ship kit asset has no geometry: ' + instance.asset);
       placements.push({pack: instance.pack, asset: instance.asset, purpose: instance.purpose,
         matrix: instance.matrix.toArray(), bounds: [bounds.min.toArray(), bounds.max.toArray()], triangles: instanceTriangles});

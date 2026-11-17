@@ -19,8 +19,8 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     add('engulfed-repair-bench', 250, 900, .85);
     const brood = (asset: string, x: number, z: number, scale = 1, y = 0, angle = 0) => result.push({
       pack: 'p11-brood', asset, purpose: 'DRESS13 / rear workbay takeover / ' + asset,
-      matrix: new T.Matrix4().compose(new T.Vector3(x / 32, y, z / 32),
-        new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), angle), new T.Vector3(scale, scale, scale)),
+      matrix: new T.Matrix4().compose(new T.Vector3(x / 32, /^brood-creep-[abc]$/.test(asset) ? .024 : y, z / 32),
+        new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), angle), new T.Vector3(scale, /^brood-creep-[abc]$/.test(asset) ? .015 : scale, scale)),
       cutaway: asset === 'brood-creep-wall' || !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
@@ -42,8 +42,8 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     // The authored Brood kit replaces the thin plenum growth.
     const brood = (asset: string, x: number, z: number, scale = 1, y = 0, angle = 0) => result.push({
       pack: 'p11-brood', asset, purpose: 'DRESS13 / stronghold / ' + asset,
-      matrix: new T.Matrix4().compose(new T.Vector3(x / 32, y, z / 32),
-        new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), angle), new T.Vector3(scale, scale, scale)),
+      matrix: new T.Matrix4().compose(new T.Vector3(x / 32, /^brood-creep-[abc]$/.test(asset) ? .024 : y, z / 32),
+        new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), angle), new T.Vector3(scale, /^brood-creep-[abc]$/.test(asset) ? .015 : scale, scale)),
       cutaway: asset === 'brood-creep-wall' || !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
@@ -66,12 +66,12 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     }
     // The registered north banks advance to z340. Spread shallow crust on
     // the exposed approaches and southern floor, instead of below those banks.
-    const floorPatches = [[280,440],[280,570],[280,700],[430,660],[580,660],[730,660],
-      [880,660],[920,440],[920,570],[920,700],[430,805],[600,805],[770,805],[920,805],[540,180],[650,260]];
+    const floorPatches = [[280,440],[280,570],[280,700],[400,660],[520,660],[640,660],[760,660],
+      [880,660],[920,440],[920,570],[920,700],[430,805],[600,805],[770,805],[920,805],[540,170],[650,160]];
     for (const [i,[x,z]] of floorPatches.entries()) {
       brood(i % 3 === 1 ? 'brood-creep-b' : 'brood-creep-a',x,z,1,.002,(i%3-1)*.08);
-      result[result.length-1].matrix.scale(new T.Vector3(2.5,.3,2.5));
-      result[result.length-1].surfaceGain = .38;
+      result[result.length-1].matrix.scale(new T.Vector3(i % 3 === 1 ? 1.8 : 1.3,1,i % 3 === 1 ? 1.8 : 1.3));
+      result[result.length-1].surfaceGain = .65;
     }
     for (const [x,z,a] of [[300,430,0],[900,859,Math.PI]]) {
       brood('brood-creep-wall',x,z,1.7,.7,a);
@@ -88,7 +88,7 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
   if (id === 'overload-floor') {
     const dead = (asset: string, x: number, z: number, scale = 1, angle = 0, y = 0) => result.push({
       pack: 'p11-brood', asset, purpose: 'DRESS13 / heat-killed perimeter / ' + asset,
-      matrix: new T.Matrix4().compose(new T.Vector3(x/32,y,z/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),angle),new T.Vector3(scale,scale,scale)),
+      matrix: new T.Matrix4().compose(new T.Vector3(x/32,/^brood-creep-[abc]$/.test(asset) ? .024 : y,z/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),angle),new T.Vector3(scale,/^brood-creep-[abc]$/.test(asset) ? .015 : scale,scale)),
       surfaceGain: .42, emissionGain: .16, cutaway: asset === 'brood-creep-wall' || !asset.startsWith('brood-creep'), castShadow: false,
     });
     dead('brood-nest-large',1020,245,.85);
@@ -107,7 +107,7 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     const x = id === 'freight-hold' ? 1150 : 215, z = id === 'freight-hold' ? 125 : 265;
     for(const [asset,dx,dz,scale] of [['brood-burst-duct',0,0,.55],['brood-creep-c',-12,25,.65]] as const) result.push({
       pack:'p11-brood',asset,purpose:'DRESS13 / first trace / '+asset,
-      matrix:new T.Matrix4().compose(new T.Vector3((x+dx)/32,.002,(z+dz)/32),new T.Quaternion(),new T.Vector3(scale,scale,scale)),cutaway:false,castShadow:false,surfaceGain:.65,
+      matrix:new T.Matrix4().compose(new T.Vector3((x+dx)/32,asset.startsWith('brood-creep') ? .024 : .002,(z+dz)/32),new T.Quaternion(),new T.Vector3(scale,asset.startsWith('brood-creep') ? .015 : scale,scale)),cutaway:false,castShadow:false,surfaceGain:.65,
     });
   }
   return result;

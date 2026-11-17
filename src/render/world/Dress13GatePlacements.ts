@@ -6,8 +6,8 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
   const pieces: OriginalKitInstance[] = [];
   const add = (asset: string, x: number, z: number, yaw = 0, scale = 1, y = 0, pitch = 0) => {
     pieces.push({pack: 'p11-brood', asset: 'brood-' + asset,
-      matrix: new T.Matrix4().compose(new T.Vector3(x / 32, y, z / 32),
-        new T.Quaternion().setFromEuler(new T.Euler(pitch, yaw, 0, 'YXZ')), new T.Vector3(scale, asset.startsWith('web') ? scale * .22 : scale, scale)),
+      matrix: new T.Matrix4().compose(new T.Vector3(x / 32, asset.startsWith('creep') && asset !== 'creep-wall' ? .024 : y, z / 32),
+        new T.Quaternion().setFromEuler(new T.Euler(pitch, yaw, 0, 'YXZ')), new T.Vector3(scale, asset.startsWith('creep') && asset !== 'creep-wall' ? .015 : asset.startsWith('web') ? scale * .22 : scale, scale)),
       purpose: 'DRESS13 / architecture under pressure / ' + asset,
       // Resin stays beneath the actor value range; source atlas and shaders remain shared.
       surfaceGain: asset.startsWith('creep') ? .55 : asset.startsWith('web') ? .7 : 1,

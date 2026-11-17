@@ -135,7 +135,7 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             const failed = results.find(r => r.status === 'rejected');
             if (failed?.status === 'rejected')
                 throw failed.reason;
-            root = buildOriginalShipKit(sources, instances);
+            root = buildOriginalShipKit(sources, instances, t);
             addDress13ServiceDetails(root, t.id);
             addDress13EarlyDetails(root, t.id);
             if(t.id==='shielding-gate'){
