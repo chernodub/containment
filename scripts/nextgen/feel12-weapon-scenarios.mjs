@@ -4,7 +4,7 @@ export function registerFeel12WeaponScenarios(scenarios){
   if(focus!=='crawler'&&weapon!=='rifle'&&weapon!=='shotgun')continue;
   scenarios.push({
   // Keep the first live shot and a longer native kill/settle tail for heavy health.
-  id:`feel12-weapon-${focus==='crawler'?'':`${focus}-`}${weapon}-${room}`,room,state:'playing',diagnosticOnly:true,burst:true,stepMs:focus==='crawler'?50:250,...(focus==='crawler'?{}:{frameCount:30}),
+  id:`feel12-weapon-${focus==='crawler'?'':`${focus}-`}${weapon}-${room}`,room,state:'playing',diagnosticOnly:true,burst:true,stepMs:focus==='crawler'?50:focus==='brute'&&room==='relay-racks'?500:250,...(focus==='crawler'?{}:{frameCount:30}),
   setup:new Function(`return (async()=>{
    const d=window.__containmentDebug,g=d.game,r=d.renderer;
    await d.gotoRoom('${room}',{rig:'breacher'});d.invulnerable(true);g.enemies.reset();
