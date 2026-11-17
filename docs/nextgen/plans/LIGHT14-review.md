@@ -71,3 +71,8 @@
 ## 18 Shared standard correction
 - Opened shared/fix colour+grey480 contacts (Crew calm/heavy, Coolant heavy, Cryo Relay heavy): reduced creature rim strength and narrowed falloff, dark cool ink replaces pale/bronze contour, marine ink no longer yields to hot warning fill. Rig top tint is broader/more saturated; weapon receiver has a rig-colour material band.
 - Crew gets explicit scanner/inspection/gallery centres and tighter radii; practical bounce is now soft elliptical rather than a trapezoid, local-light aperture transitions broadened. Build and both guarded captures pass. Crew remains a pale slab; Freight's east-edge lit shape persists, so these two weaknesses are improved only partially and must remain reported.
+
+## 19 Whole-game review (in progress)
+- Opened both new twenty-up sheets and both final7 references: actor/projectile separation improves across the route; palette differences remain. Crew, Freight and Annulus remain the palest; Atrium canopy and Overload tour growth remain weak landmarks.
+- Manual's ordinary G6 and documented DRESS13 bursts fail the existing fatal-warning HUD guard after an initially verified frame; final7 also marks Manual missing. Sheet labels its first verified DRESS13 frame and retains both failed parents. Opened Low/title contact: all three Low palettes/HUD read; static title/gameplay endpoints have compatible dark values, animated transition not established by these stills.
+- Ability/Low completion: canonical seven-phase pale+dark batch produced228 guarded PNGs without errors; opened all16 abilities at phases03/05 in Annulus and Workshop, plus Low/title contact. Effects retain localized cores and readable silhouettes on darker floors; no grade/bloom threshold or ability-module changes needed.
