@@ -53,6 +53,13 @@ export async function stageGraphicsKiting(room, options={}){
    if(!d.canStand(p.x,p.y,28)||!d.clearShot(p.x,p.y)||enemies.some(e=>Math.hypot(e.x-p.x,e.y-p.y )<(options.live?45:55)))continue;
    const family=['brute','crawler','spitter','stalker','crawler','carrier'][enemies.length%6],elite=enemies.length%5===0,id=d.spawn(family,p.x,p.y,elite);if(id)enemies.push({...p,id,family,elite});
   }
+  // The twenty-contact dressing study also uses the guaranteed clear arena
+  // interior when surrounding machinery occludes the ordinary forward fan.
+  if(targetCount>12&&enemies.length<targetCount)for(const range of [110,170,230,290])for(let i=0;i<64&&enemies.length<targetCount;i++){
+   const angle=lane.angle+i*Math.PI/32,p={x:lane.x+Math.cos(angle)*range,y:lane.y+Math.sin(angle)*range};
+   if(!d.canStand(p.x,p.y,28)||!d.clearShot(p.x,p.y)||enemies.some(e=>Math.hypot(e.x-p.x,e.y-p.y)<55))continue;
+   const id=d.spawn('crawler',p.x,p.y,false);if(id)enemies.push({...p,id,family:'crawler',elite:false});
+  }
   if(enemies.length<10)throw Error('Kiting fixture requires ten spread threats; got '+enemies.length+' at '+JSON.stringify(lane));
   const shotsBefore=g.stats.shotsFired,grenadesBefore=g.bullets.filter(b=>b.kind==='grenade').length;g.switchWeapon('rifle');d.setInput({x:-Math.cos(lane.angle)*.55,y:-Math.sin(lane.angle)*.55,fire:true,angle:lane.angle,autoAim:false});g.grenade();const grenadeThrown=g.bullets.filter(b=>b.kind==='grenade').length>grenadesBefore;d.step(300);
   if(options.arena&&(!grenadeThrown||g.stats.shotsFired<=shotsBefore))throw Error('Authored G6 fixture lacks native grenade/fire receipts');
