@@ -1,3 +1,4 @@
+import {writeCombatViewport} from '../../game/observation/combatVisibility';
 import {type DrawnMarineEnvelope} from './DrawnMarineEnvelope';
 import {MARINE_FRAME_MARGIN_CSS,MARINE_FRAMING_FLOOR,MARINE_ENVELOPE_POINTS,marineEnvelopePoint} from './MarineFramingEnvelope';
 import * as T from 'three';
@@ -61,10 +62,7 @@ export class HudCombatFraming {
     const horizontal=Math.min(1,this.width*.65/Math.max(1,i.left+i.right));
     const vertical=Math.min(1,this.height*.65/Math.max(1,i.top+i.bottom));
     e.left=i.left*horizontal;e.right=i.right*horizontal;e.top=i.top*vertical;e.bottom=i.bottom*vertical;
-    const v=this.viewport;v.left=e.left/this.width*2-1;v.right=1-e.right/this.width*2;
-    v.top=1-e.top/this.height*2;v.bottom=e.bottom/this.height*2-1;
-    v.centerX=(v.left+v.right)*.5;v.centerY=(v.top+v.bottom)*.5;
-    v.halfX=(v.right-v.left)*.5;v.halfY=(v.top-v.bottom)*.5;
+    writeCombatViewport(this.width,this.height,e,this.viewport);
   }
 
   /** Nearby danger counts in every direction; farther contacts must be aimed at or attacking. */
