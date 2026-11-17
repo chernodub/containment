@@ -39,3 +39,8 @@ Moved the station and its connected spill to the dish's starboard side, with a s
 
 Opened native fight-tour02 and exact480 tour02/03 against final6. The empty cradle reads, but the restraint damage and debris are too captive inside its base to replace the sign-led storytelling.
 Brought a torn cover, opened case and cold shards over the front lip, with severed restraint tongues falling toward a small dark stain outside the combat circle. Final tour/calm recheck pending the shared second batch.
+
+## Safety Interlock Station — round1 → correction
+
+Opened native fight-tour02 and exact480 tour02/03 against final6. The rear weld was hidden behind the interlock's cylinder bank, so the room still looked undamaged despite the added tools.
+Transferred the sealed access leaves, weld beads and gouges to the camera-facing frame, keeping the native side doorways and 140-unit cross-cage passage clear. Final tour/calm recheck pending the shared second batch.

@@ -53,12 +53,12 @@ const incidents: Record<string, Piece[]> = {
     ['service-access-hatch', 797, 345, .3, .7, 1.5, .22],
   ],
   'safety-interlock-station': [
-    ['service-access-hatch', 619, 345, .7, 0, 0, .15],
-    ['service-access-hatch', 680, 345, .7, 0, 0, .15],
-    ['service-cable-tray', 647, 347, .5, 1.5, 0, 1.3],
-    ['service-transit-case', 616, 368, .45, -.2],
-    ['service-access-hatch', 681, 368, .4, .4, 1.5, .12],
-    ['service-cable-tray', 652, 376, .4, 1.45, 0, .12],
+    ['service-access-hatch', 619, 393, .7, 0, 0, .15],
+    ['service-access-hatch', 680, 393, .7, 0, 0, .15],
+    ['service-cable-tray', 647, 391, .5, 1.5, 0, 1.1],
+    ['service-transit-case', 616, 406, .45, -.2],
+    ['service-access-hatch', 681, 406, .4, .4, 1.5, .12],
+    ['service-cable-tray', 652, 405, .4, 1.45, 0, .12],
   ],
   'coolant-plant': [
     ['service-valve-manifold', 640, 328, .9, .25],

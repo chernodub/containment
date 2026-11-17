@@ -85,9 +85,9 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
   } else if (id === 'safety-interlock-station') {
     // A silvery weld seam and short stress gouges are on the solid rear
     // interlock frame, rather than a new barrier in either native doorway.
-    for (let i = 0; i < 12; i++) box(624 + i * 4.5, .45 + i % 2 * .06, 344, .15, .045, .025, 0x89918b, .1);
-    for (let i = 0; i < 5; i++) line([641 + i * 4, .7, 344], [646 + i * 4, 1.1 + i % 2 * .2, 344], .012, steel);
-    tool(620, 367, .2); shards(673, 369);
+    for (let i = 0; i < 12; i++) box(624 + i * 4.5, .55 + i % 2 * .06, 402, .15, .045, .025, 0x89918b, .1);
+    for (let i = 0; i < 5; i++) line([641 + i * 4, .65, 402], [646 + i * 4, .92 + i % 2 * .06, 402], .02, steel);
+    tool(620, 410, .2); shards(673, 410);
   } else if (id === 'coolant-plant') {
     for (let i = 0; i < 11; i++) {
       const g = new T.SphereGeometry(.23 + i % 3 * .06, 7, 4); g.scale(1, .05, 1.5); g.translate((654 + i * 7) / 32, .022, (386 + Math.sin(i * 1.7) * 14) / 32); put(g, frost);
