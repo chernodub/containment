@@ -1,5 +1,7 @@
 # DRESS13 review
 
+Entries below retain the two look/fix rounds chronologically; later integration notes supersede early pending statements and abandoned heart positions. Final images are consolidated in `artifacts/nextgen/dress13-final/after/`, exact480 images in `reduced/`, and source manifests in `receipts/`; intermediate capture folders have been deleted.
+
 ## Swarm Junction
 Round 1: opened native tour 02/04 and their 480×270 reductions. Creep and nests read as connected edge masses; the web presented as a dark bar, so tilted both membranes .65 radians and removed the former plenum decoration.
 Round 2: opened revised native tour 03/04. Marine remains exposed in the crossing and airway; web retains a heavy silhouette at distance. Heart is relegated to the deep south recess to keep the fight circle open; landmark visibility remains weaker than the modelling reference.
@@ -234,3 +236,7 @@ Workshop/Swarm/Gate/Annulus/Manual/Overload: low crust remains subordinate to ac
 Swarm's active registered north banks end at z340, deeper than the original Act4 plan. Moved four small crust fans out from beneath those banks, and added16 broad, low-relief (.3 vertical scale), dim (.38 albedo) patches across exposed approach/south floor and the north throat. This supplies a continuous infestation field on actual visible non-fight deck without adding a material draw, texture, collision, or raised obstruction. Final shipping Swarm tour/kiting recheck follows.
 Aligned Swarm's northern wall crust with the visible plenum face at z430; the former z181 patch was buried in the deep registered bank. Vertical wall-crust instances now participate in the existing actor cutaway owner in every growth room, while floor crust stays permanently visible and walkable.
 The measured creep bounds (including fringes) exceeded the handoff's nominal dimensions. Final floor patches use smaller XY footprints, native hull/void triangle filtering on owned output buffers, and a floor surface at .024m with .015 vertical scale (top below .027m). This keeps every retained floor triangle supported and friendly/hostile warnings above the crust; source assets, collision geometry and wall growth are unchanged.
+
+## Final supported-floor inspection
+Final ff3a7abb captures completed all eight growth/trace-room tours, calm views and twenty-contact sequences. Reopened native Swarm fight02 and exact480 crowd boards covering all twenty rooms, plus Overload calm: the complete heart remains an edge landmark, creep stays flush with supported deck, and the marine/warning discs remain clear.
+This final placement closes the earlier heart-visibility and floor-fringe concerns. All twenty retained rooms have five tour positions, one calm frame and four staged kiting frames; the final source capture receipts retain the preparation timings.
