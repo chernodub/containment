@@ -1,0 +1,87 @@
+{
+ "name": "Containment Carrier Matron brood pod",
+ "license": "MIT",
+ "author": "Containment contributors",
+ "source": "tools/assets/k11-creatures/growth/build.py",
+ "rebuild": "sh tools/assets/k11-creatures/growth/rebuild.sh --set=pod",
+ "coordinateSystem": "glTF Y-up, metres; bottom-centred origins, fronts face +Z (camera side); wall-backed pieces put the wall at -Z",
+ "format": "P11 set-piece contract: COLOR_0 albedo x baked AO multiplier, one shared tangent normal atlas, single opaque finish + two emissive finishes",
+ "finishes": {
+  "brood-pod-shell": "opaque shell/cup (vertex colour + normal atlas)",
+  "pod-core": "emission region pod-core: drive emissiveIntensity as the hatch countdown"
+ },
+ "normalAtlas": {
+  "file": "brood-pod-normal.png",
+  "size": 512
+ },
+ "models": [
+  {
+   "name": "brood-pod",
+   "triangles": 1500,
+   "budget": 1500,
+   "sizeNote": "size = glTF x, y (height), z",
+   "size": [
+    1.418,
+    0.977,
+    1.203
+   ],
+   "bounds": {
+    "min": [
+     -0.539,
+     0.0,
+     -0.431
+    ],
+    "max": [
+     0.879,
+     0.977,
+     0.772
+    ]
+   },
+   "finishes": [
+    "brood-pod-shell",
+    "pod-core"
+   ],
+   "nominalWidthDepthHeight": [
+    1.5,
+    1.5,
+    0.95
+   ],
+   "anchor": "floor, bottom-centred",
+   "placement": "spawned by the Carrier Matron; drive the pod-core finish emissive 0.3 -> 3.0 as the hatch countdown; swap to brood-pod-hatching for the final 0.5 s"
+  },
+  {
+   "name": "brood-pod-hatching",
+   "triangles": 1500,
+   "budget": 1500,
+   "sizeNote": "size = glTF x, y (height), z",
+   "size": [
+    1.417,
+    1.008,
+    1.308
+   ],
+   "bounds": {
+    "min": [
+     -0.539,
+     0.0,
+     -0.544
+    ],
+    "max": [
+     0.878,
+     1.008,
+     0.764
+    ]
+   },
+   "finishes": [
+    "brood-pod-shell",
+    "pod-core"
+   ],
+   "nominalWidthDepthHeight": [
+    1.5,
+    1.5,
+    0.95
+   ],
+   "anchor": "floor, bottom-centred",
+   "placement": "spawned by the Carrier Matron; drive the pod-core finish emissive 0.3 -> 3.0 as the hatch countdown; swap to brood-pod-hatching for the final 0.5 s"
+  }
+ ]
+}

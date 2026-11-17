@@ -350,3 +350,38 @@ PIECES = {
     "brood-burst-duct": burst_duct,
     "brood-consumed-shell": consumed_shell,
 }
+
+
+def brood_pod(hatching=False):
+    """Matron brood pod: egg in a rooted flesh cup; the inner core (finish pod-core) glows through rib slits."""
+    s = S.Sculpture("brood-pod-hatching" if hatching else "brood-pod")
+    H = 0.95
+    outflow(s, (0, 0, 0), 4, 0.75, 0.06, seed=101)
+    s.add(mound((0, 0, 0.05), (0.42, 0.42, 0.28), zone=FLESH, lump=0.03, freq=6, seed=102))   # floor cup
+    shell_c = v3((0, 0, H * 0.55))
+    shell = Ellipsoid(shell_c, (0.34, 0.34, H * 0.48), zone=MEMBRANE)
+    s.add(Stretch(shell, (0, 0, 1), 0.11, 0.012, sharp=2, zone=MEMBRANE))
+    s.add(Ellipsoid(shell_c, (0.29, 0.29, H * 0.42), op="sub", zone=CAVITY))       # hollow egg
+    for k in range(6):   # vertical slits between shell ribs reveal the core
+        ang = k * math.pi / 3 + 0.3
+        d = v3((math.cos(ang), math.sin(ang), 0))
+        s.add(Ellipsoid(shell_c + d * 0.33 + v3((0, 0, 0.05)), (0.07, 0.085, H * 0.3), frame(d), op="sub", zone=CAVITY, k=0.015))
+        s.add(Tube(bezier(shell_c + d * 0.33 - v3((0, 0, H * 0.4)), shell_c + d * 0.38 - v3((0, 0, 0.1)), shell_c + d * 0.37 + v3((0, 0, 0.15)),
+                          shell_c + d * 0.2 + v3((0, 0, H * 0.45)), 5), [0.035, 0.04, 0.04, 0.035, 0.03, 0.02], zone=ARMOR, k=0.02))
+    core = Ellipsoid(shell_c - v3((0, 0, 0.03)), (0.24, 0.24, H * 0.36), zone=ORGAN)
+    s.add(Stretch(core, (0, 0, 1), 0.09, 0.02, sharp=3, zone=ORGAN))
+    if hatching:
+        # split crown: shell torn open at the top, core bulging out, petals curling back
+        s.add(Ellipsoid(shell_c + v3((0, 0, H * 0.4)), (0.26, 0.24, 0.22), op="sub", zone=CAVITY, k=0.03))
+        s.add(Ellipsoid(shell_c + v3((0, 0, H * 0.33)), (0.2, 0.2, 0.17), zone=ORGAN, k=0.04))
+        for k in range(5):
+            ang = k * 2 * math.pi / 5 + 0.4
+            d = v3((math.cos(ang), math.sin(ang), 0))
+            p0 = shell_c + d * 0.27 + v3((0, 0, H * 0.3))
+            s.add(Tube(bezier(p0, p0 + v3((0, 0, 0.12)) + d * 0.04, p0 + d * 0.16 + v3((0, 0, 0.16)), p0 + d * 0.26 + v3((0, 0, 0.06)), 5),
+                       [0.05, 0.045, 0.04, 0.03, 0.02, 0.01], zone=MEMBRANE, k=0.03))
+    return s, 1500, {"size": [1.5, 1.5, H], "anchor": "floor, bottom-centred",
+                     "placement": "spawned by the Carrier Matron; drive the pod-core finish emissive 0.3 -> 3.0 as the hatch countdown; swap to brood-pod-hatching for the final 0.5 s"}
+
+
+POD_PIECES = {"brood-pod": lambda: brood_pod(False), "brood-pod-hatching": lambda: brood_pod(True)}

@@ -204,6 +204,7 @@ def export_creature(meshes, path, material=None, images=None, contract=None, ext
             mirrored = world.to_3x3().determinant() < 0
             uv = mesh.uv_layers.active
             color = mesh.color_attributes.active_color
+            region = mesh.attributes.get("k11_region")
             groups = {group.index: joints[group.name] for group in obj.vertex_groups
                       if group.name in joints}
             vertex_weights = []
@@ -218,7 +219,7 @@ def export_creature(meshes, path, material=None, images=None, contract=None, ext
                 values = [weight / total for _joint, weight in weights]
                 vertex_weights.append((ids + [0] * (4 - len(ids)),
                                        values + [0.0] * (4 - len(values))))
-            positions, directions, uvs, colors, bone_ids, bone_weights = [], [], [], [], [], []
+            positions, directions, uvs, colors, bone_ids, bone_weights, regions = [], [], [], [], [], [], []
             lookup, indices = {}, []
             for triangle in mesh.loop_triangles:
                 loops = reversed(triangle.loops) if mirrored else triangle.loops
@@ -233,7 +234,8 @@ def export_creature(meshes, path, material=None, images=None, contract=None, ext
                     color_index = loop_index if color and color.domain == "CORNER" else loop.vertex_index
                     rgba = tuple(color.data[color_index].color) if color else ()
                     ids, weights = vertex_weights[loop.vertex_index]
-                    key = (point, direction, texcoord, rgba, tuple(ids), tuple(weights))
+                    reg = tuple(region.data[loop.vertex_index].vector) if region else ()
+                    key = (point, direction, texcoord, rgba, tuple(ids), tuple(weights), reg)
                     vertex_index = lookup.get(key)
                     if vertex_index is None:
                         vertex_index = len(positions)
@@ -242,6 +244,7 @@ def export_creature(meshes, path, material=None, images=None, contract=None, ext
                         if uv: uvs.append(texcoord)
                         if color: colors.append(rgba)
                         bone_ids.append(ids);bone_weights.append(weights)
+                        if region: regions.append(reg)
                     indices.append((vertex_index,))
             attributes = {"POSITION": add_accessor(positions, "VEC3", bounds=True),
                           "NORMAL": add_accessor(directions, "VEC3"),
@@ -253,12 +256,17 @@ def export_creature(meshes, path, material=None, images=None, contract=None, ext
                 attributes["TEXCOORD_1"] = attributes["TEXCOORD_0"]
             if colors:
                 attributes["COLOR_0"] = add_accessor(colors, "VEC4")
+            if regions and any(max(r) > 0 for r in regions):
+                # Named emission masks (x = warden-ram, y = matron-vents); loader maps _K11REGION.
+                attributes["_K11REGION"] = add_accessor(regions, "VEC2")
             index = len(document["meshes"])
             document["meshes"].append({"name": obj.name, "primitives": [
                 {"attributes": attributes, "material": 0, "mode": 4,
                  "indices": add_accessor(indices, "SCALAR", 5123 if len(positions)<65536 else 5125)}]})
             node_extras = {"k11Original": True}
             node_extras.update(extras or {})
+            if obj.get("k11RankScale"):
+                node_extras["k11RankScale"] = float(obj["k11RankScale"])
             document["nodes"].append({"name": obj.name, "mesh": index, "skin": 0, "extras": node_extras})
             document["scenes"][0]["nodes"].append(len(document["nodes"]) - 1)
             summaries.append({"name": obj.name, "triangles": len(indices) // 3})
