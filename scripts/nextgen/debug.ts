@@ -62,6 +62,8 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
   /** Explicit assisted-playtest setting; ordinary runs retain the exact hurt path. */
   incomingDamageScale(value:number){if(!Number.isFinite(value)||value<=0||value>1)throw Error('incomingDamageScale expects 0 < scale <= 1');if(liveObservation&&value!==1)throw Error('Assistance unavailable in live observation mode');incomingDamageScale=value;},
   /** Bounded accelerated-step timings; these are diagnostic CPU costs, not real-time FPS. */
+  /** Presentation-only LOD comparison; never changes native actor state. */
+  studyActorLOD(mode:'auto'|'full'|'low'){if(!['auto','full','low'].includes(mode))throw Error('Unknown LOD study mode');renderer.setActorLODStudy(mode);},
   resetStepPerformance(){stepCosts.length=0;stepCount=stepTotal=stepMaximum=0;},
   get stepPerformance(){const sorted=[...stepCosts].sort((a,b)=>a-b),percentile=(fraction:number)=>sorted[Math.max(0,Math.ceil(sorted.length*fraction)-1)]??0;return {samples:stepCount,retained:sorted.length,updateRenderMs:{average:stepCount?stepTotal/stepCount:0,p50:percentile(.5),p95:percentile(.95),max:stepMaximum}};},
   async startRun(value=seed,options:{rigSelect?:boolean}={}){seed=value;controls={x:0,y:0,fire:false,angle:null,autoAim:true};setUiFixture(game,null);presentationEnabled=false;presentation?.setEnabled(false);presentation?.reset();game.newRun(seed,options);events.length=0;await ready();},

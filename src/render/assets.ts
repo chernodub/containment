@@ -1,3 +1,5 @@
+import {scheduleActorSkeletons} from './ActorSkeletonScheduling';
+import {extractActorLODs} from './ActorLOD';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import * as T from 'three';
 import {loadAuthoredMotion} from './motion/MotionAssets';
@@ -21,8 +23,10 @@ function loadAsset(name:AssetName,loader:GLTFLoader){
  pending.set(name,work);return work;
 }
 export function registerAsset(name:AssetName,asset:GLTF){
+ const finishLOD=extractActorLODs(asset.scene);
  if(['marine','tyrant','marauder','basilisk','dretch','dragoon'].includes(name)){authorActorRegions(asset.scene,name==='marine');prepareFlatActorSkin(asset.scene,name,asset.animations);}
  asset.scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.userData.sharedAsset=true;o.castShadow=o.receiveShadow=true;o.frustumCulled=false;const materials=Array.isArray(o.material)?o.material:[o.material];for(const m of materials)if(m instanceof T.MeshStandardMaterial){for(const map of [m.map,m.normalMap])if(map)map.anisotropy=4;}}});
+ finishLOD();
  templates.set(name,asset);
 }
 export async function preloadAssets(progress:(fraction:number)=>void=()=>{},initializePhysics:()=>Promise<void>=initDeathPhysics,renderer?:T.WebGLRenderer){
@@ -44,5 +48,6 @@ export function instantiateAsset(name:AssetName){
   o.material=Array.isArray(o.material)?o.material.map(copy):copy(o.material);
   if(o instanceof T.SkinnedMesh){const own=o.skeleton,shared=skeletons.find(s=>s.bones.length===own.bones.length&&s.bones.every((b,i)=>b===own.bones[i]&&s.boneInverses[i].equals(own.boneInverses[i])));if(shared)o.skeleton=shared;else skeletons.push(own);}
  }});
+ scheduleActorSkeletons(root);
  return{root,clips:asset.animations,materials};
 }
