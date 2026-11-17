@@ -308,7 +308,7 @@ export class BreacherPresentation implements AbilityPresentation {
     // A low, broad impact edge rolls out first; dust has distinct radial momentum.
     if (frontFade > 0) {
       k.sustain(p.age + .2);
-      k.sprite('shockwave', p.x, .055, p.z, radius, radius, p.age < .075 ? CORE : AMBER, frontFade * .62, 0, 'ground');
+      // The retained procedural shock surface owns the advancing front.
     }
     if (p.age < .065) k.sprite('impact', p.x, .24, p.z, .8, .58, CORE, (1 - p.age / .065) * .75, 0, 'light');
     // Six hinged deck sectors lift from a common impact and settle quickly.
