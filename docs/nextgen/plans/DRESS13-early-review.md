@@ -7,3 +7,7 @@ Build passed. Native/480 capture review and the subsequent visual correction are
 ## Awakening Bay
 Placement pass: existing forced-open berths now connect to a dropped recovery kit and six dark, flush wet tread marks; pieces remain under the north bank, away from the observation fight floor.
 Build passed. Native/480 capture review and visual correction await the shared browser slot.
+
+## Passenger Vault
+Placement pass: six small personal effects and an identification plaque sit below the existing empty extended drawer, isolated from the west entry fight lane.
+Build passed. Native/480 capture review and visual correction await the shared browser slot.

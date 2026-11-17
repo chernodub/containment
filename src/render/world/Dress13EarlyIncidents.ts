@@ -26,5 +26,15 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('deck-access-panel',617,330,.55,[.32,1,.25],.02,'clinical');
     for (let i=0;i<6;i++) put('deck-rubber-panel',620+(i%2?7:-7)+i*4,350+i*8,.25,[.07,.35,.12],.002,'clinical');
   }
+  if (id === 'passenger-vault') {
+    // Empty personal-effects drawer is authored in the carrier; its contents
+    // have fallen into the bank's front edge rather than the entry fight lane.
+    put('service-transit-case',446,343,.4,[.5,.32,.5]);
+    put('service-transit-case',472,341,-.6,[.35,.25,.4]);
+    put('deck-access-panel',439,355,.35,[.13,.5,.18],.005,'clinical');
+    put('deck-access-panel',456,361,-.35,[.12,.5,.16],.005,'clinical');
+    put('deck-rubber-panel',475,355,.8,[.18,.4,.2],.004,'clinical');
+    put('security-sign-05',424,327,0,[.28,.35,1],.55,'security');
+  }
   return pieces;
 }
