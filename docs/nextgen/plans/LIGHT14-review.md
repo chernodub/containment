@@ -107,3 +107,7 @@
 ## Crew Checkpoint
 - Opened native calm and 480 colour/grey calm/tour/heavy: gate faces/lights now read above the inspection floor; marine, hot warnings and creature lanterns retain priority.
 - Gate-centred cool source and wall-foot wash preserve cage/door boundaries. Floor remains the palest route room, but the gate is no longer lost. Build and seven guarded frames pass.
+
+## Armory
+- Opened native calm and 480 colour/grey calm/tour/heavy: carousel spindle, weapon mounts and control panels now read under white work light above the dark blue magazine floor.
+- Local white body light/spill keeps the ring recognisable without lifting outer benches; marine and threats retain their brighter values. Build and seven guarded frames pass.
