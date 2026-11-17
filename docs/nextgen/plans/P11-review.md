@@ -1,4 +1,4 @@
-# P11 review — incomplete initial study
+# P11 — render, look and fix record
 
 2026-11-16. Merged the supplied modelling library and Relay candidate. This is not one of the four required complete standard-room rounds: no in-game placement or captures have been completed.
 
@@ -41,3 +41,13 @@ Frozen source b4b6489396fcc44fb95a95698184dbd507f46277; build passed;36 captures
 Workshop's revised mill is distinct in rear tour03, but too much of it is clipped in centre02/combat02 and the old central tool bridge dominates. Correcting within the same safe collider: centre610,280, scale(.85,.75,.65), height2.204m; retire bridge780,620. Transmission's far-wall hero is absent from centre combat; duplicate old suspended dish dominates the calm view. Reposition the new uplink onto the existing chancel screen, with a42-deep wall-backed bed and retire the duplicate dish. These two placements need another capture; this round is not a blanket approval.
 
 Final kit beauty review: opened all16 E9 close boards covering45 modules, both service boards, every revised hero and infestation board. Industrial fittings now connect to actual housings; structural floors remain intentionally quiet. Remaining plain legacy bed/bench bodies are weaker than the new heroes and will be named in the report rather than described as equivalent craft.
+
+### R11 hierarchy and incident pass — additional rejection and correction
+
+Read both R11 reviews and final6 defects. Removed repeated ceiling rafts and redundant hanging assemblies; reduced floor lighting to two peripheral service windows and softened perimeter pools. Opened the new seven-room lighting captures: the formerly dominant overhead rectangles are gone. Atrium foliage was too dark, and detached oval wear marks falsely read as shadows beneath grates. Raised foliage value, replaced the oval stamps with rail-attached wear, seated grates below .022m and required corner/edge deck support. Passenger glazing now samples actual carrier roof height instead of a hard-coded height.
+
+Diagnostic, Manual and Workshop landmarks were still clipped by the rear framing in this review. Moved each onto shallow connected beds outside the fight circle; Workshop now faces the camera. Transmission moved forward onto a 42-unit bed. These placements require fresh final tours.
+
+Personally opened all revised incident beauties. Rejected the initial smooth Workshop/Swarm growth bags and the Annulus lid with a flat purple tear. Rebuilt growth with overlapping angular shell scales, bowed captured hatch/duct structure and clustered eggs; opened the replacement renders. Requested a further baked ridge/pit pass because the shell facets remained too plain. Annulus now exposes actual ribbed pressure channels through a thick lifted tear. The checkpoint barrier's first damage was too small; the replacement has a broken full-width blade and torn actuator.
+
+Relay budget after adding abandoned repair: reduced redundant server rows and cable tessellation, keeping fan guards and connected fibre routes. Opened the revised game-angle beauty: dark housing, varied heights, exposed cards and ladder tray remain readable. Spine 10,866 + repair 944 = 11,810 triangles. Coolant now anchors existing warmed vapour/drip effects at the physically split return flange. No lighting engine or actor code changed.
