@@ -70,10 +70,10 @@ const incidents: Record<string, Piece[]> = {
   ],
   // The cage is below the walkable C-balcony, held on one remaining cable.
   'service-shaft-landing': [
-    ['service-safety-rail', 458, 370, 1.8, .2, -.15, -.8],
-    ['service-safety-rail', 478, 411, 1.8, 1.7, -.15, -.8],
-    ['service-safety-rail', 516, 380, 1.8, .2, -.15, -.8],
-    ['service-access-hatch', 475, 383, 1.8, .2, 1.57, -1.2],
+    ['service-safety-rail', 420, 465, 1.8, .2, -.15, -.8],
+    ['service-safety-rail', 440, 506, 1.8, 1.7, -.15, -.8],
+    ['service-safety-rail', 478, 475, 1.8, .2, -.15, -.8],
+    ['service-access-hatch', 437, 478, 2.8, .2, 1.57, -1.2],
     ['service-cable-tray', 434, 337, .7, .5, .6, .05],
     ['service-transit-case', 390, 312, .7, -.2],
     ['service-access-hatch', 461, 322, .65, .3, 1.45, .1],

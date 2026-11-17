@@ -98,9 +98,9 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     box(678, .67, 403, 3.2, .11, .025, 0x9a9477, .09);
     for (let i = 0; i < 10; i++) box(631 + i * 10, .67, 407 - i * .9, .11, .12, .03, i % 2 ? rubber : 0x9a9477);
   } else if (id === 'service-shaft-landing') {
-    line([430, 1.1, 324], [455, -.7, 370], .045, steel);
-    line([471, 1, 328], [491, .25, 347], .04, rubber);
-    for (let i = 0; i < 6; i++) line([491, .25, 347], [498 + i * 2, .1 - i * .05, 352 + i * 2], .008, steel);
+    line([430, 1.1, 324], [417, -.7, 465], .045, steel);
+    line([471, 1, 328], [440, .25, 420], .04, rubber);
+    for (let i = 0; i < 6; i++) line([440, .25, 420], [447 + i * 2, .1 - i * .05, 425 + i * 2], .008, steel);
     tool(403, 326, .4, .2); tool(435, 324, 1.4, .2);
     shards(458, 318, steel, .17);
   }
