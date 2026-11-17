@@ -10,7 +10,7 @@ export function registerFeel12WeaponScenarios(scenarios){
    d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});
    const bounds=g.geometry.bounds,lanes=[];
    const radii={crawler:14,stalker:18,brute:28,spitter:18,carrier:28};
-   const formation=[{family:'crawler',forward:112,side:0},{family:'brute',forward:235,side:0},{family:'stalker',forward:170,side:-65},{family:'spitter',forward:250,side:70},{family:'carrier',forward:325,side:-50}].map(a=>{
+   const formation=[{family:'crawler',forward:112,side:0},{family:'brute',forward:235,side:0},{family:'stalker',forward:170,side:-65},{family:'spitter',forward:250,side:70},{family:'carrier',forward:325,side:-50}].filter((_,i)=>'${focus}'==='crawler'||i===0).map(a=>{
     const family=a.family==='crawler'?'${focus}':a.family==='${focus}'?'crawler':a.family;
     return {...a,family,radius:radii[family]};
    });
