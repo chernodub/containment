@@ -19,3 +19,7 @@
 ## 5 Armory
 - Opened calm/tour03/heavy at 480 colour/grey: carousel silhouette and geared base read below the marine; magazine floor remains dark blue, warnings crisp.
 - Explicit spindle pool anchors the landmark without lifting the entire circular deck. Build and guarded seven-frame capture pass; pale crowd rim remains item18.
+
+## 6 Freight Hold
+- Opened calm/tour03/heavy 480 colour/grey: marine first, gantry and dispatch cover readable, amber identity unmistakable; brightest practical wedge still competes on the east edge.
+- Keep gantry/booth/dispatch pools; shared aperture reshape in item18 must remove that edge wedge. Build and seven guarded frames pass. Freight remains a brighter-room review priority.
