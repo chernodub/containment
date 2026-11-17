@@ -3,11 +3,13 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoomModelCache} from '../RoomModelCache';
 import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
 
-export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-reactor' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance' | 'p11-incidents';
+export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-reactor' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance' | 'p11-incidents' | 'p11-brood';
 
 const base = import.meta.env.BASE_URL + 'assets/e9-ship-kit/';
 const URLs: Record<OriginalKitPack, string> = {
   'p11-incidents': import.meta.env.BASE_URL + 'assets/p11/incidents/incidents.glb',
+  // GROW13 Brood growth kit (tools/assets/k11-creatures/growth).
+  'p11-brood': import.meta.env.BASE_URL + 'assets/brood-growth/brood-growth.glb',
   'p11-comms': import.meta.env.BASE_URL + 'assets/p11/comms-engineering/comms-engineering.glb',
   'p11-habitation': import.meta.env.BASE_URL + 'assets/p11/habitation/habitation.glb',
   'p11-infested': import.meta.env.BASE_URL + 'assets/p11/infested/infested.glb',
@@ -39,7 +41,7 @@ export function acquireOriginalShipKit(pack: OriginalKitPack, signal?: AbortSign
   if (!url) return Promise.reject(Error('Unknown original ship kit pack: ' + pack));
   if(pack.startsWith('p11-')) {
     let cache=p11Packs.get(pack);
-    if(!cache){cache=new RoomModelCache([{url,maxBytes:2_000_000,label:'Original '+pack+' set pieces'}]);p11Packs.set(pack,cache);}
+    if(!cache){cache=new RoomModelCache([{url,maxBytes:pack==='p11-brood'?4_000_000:2_000_000,label:'Original '+pack+' set pieces'}]);p11Packs.set(pack,cache);}
     return cache.acquire(url,signal);
   }
   return (pack === 'structure' ? structurePack : functionPacks).acquire(url, signal);
