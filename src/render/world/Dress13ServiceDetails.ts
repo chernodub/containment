@@ -104,12 +104,13 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     for (let i = 0; i < 10; i++) box(300 + i * 10, .67, 330 - i * .9, .16, .21, .07, i % 2 ? rubber : 0xb6b19a);
     tool(354, 306, .7); shards(325, 333, frost);
   } else if (id === 'service-shaft-landing') {
-    line([430, 1.1, 324], [417, -.7, 465], .045, steel);
-    line([471, 1, 328], [440, .25, 420], .04, rubber);
-    for (let i = 0; i < 6; i++) line([440, .25, 420], [447 + i * 2, .1 - i * .05, 425 + i * 2], .008, steel);
-    tool(403, 326, .4, .2); tool(435, 324, 1.4, .2);
-    shards(458, 318, steel, .17);
+    line([337, .9, 421], [376, -.65, 452], .055, steel);
+    line([337, .8, 480], [391, -.6, 486], .05, rubber);
+    for (let i = 0; i < 7; i++) line([365, -.4, 448], [374 + i * 2, -.6 - i * .05, 455 + i * 2], .012, steel);
+    tool(300, 460, .4); tool(316, 505, 1.4);
+    shards(307, 491); scuff(304, 477, 1.7, -.2);
   }
+
   if (!parts.length) return;
   const geometry = mergeGeometries(parts, false)!; for (const p of parts) p.dispose();
   const material = new T.MeshStandardMaterial({vertexColors: true, roughness: .94, metalness: .08}); material.name = 'dress13-incident-evidence'; material.userData.actorMaterial = true;
