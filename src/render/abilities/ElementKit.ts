@@ -11,6 +11,7 @@ import { ELEMENT_COLORS } from './types';
 import { EffectAtlas, EFFECT_TILES } from './EffectAtlas';
 import { InstanceBatch, type Primitive } from './InstanceBatch';
 import { authoredVariation } from './GraphicLanguage';
+import { FlagshipFx } from './FlagshipFx';
 export const ABILITY_VFX_LIMITS = Object.freeze({ particles: 768, rings: 64, beams: 64, decals: 32, instances: 2048 });
 export type ScarKind = 'crack' | 'frost' | 'trench' | 'fan' | 'star' | 'soot';
 const SCAR_KIND = { crack: 0, frost: 1, trench: 2, fan: 3, star: 4, soot: 5 } as const;
@@ -87,6 +88,8 @@ export class ElementKit {
     readonly batches: Record<Primitive, InstanceBatch>;
     readonly rings = new FriendlyBoundaryBatch(this.root, 304);
     readonly ribbons = new AbilityLightningBatch(this.root, 2048);
+    /** VFX13 procedural hero surfaces (fire volume, scorch, lance, rings, frost, Overdrive floor). */
+    readonly fx = new FlagshipFx(this.root);
     /** Claimed only for targets drawn this frame; legacy status batches cover overflow. */
     readonly atlas = new EffectAtlas();
     /** Owner readiness hook for the first room; never creates another texture. */
@@ -146,6 +149,8 @@ export class ElementKit {
 
         }
         this.low = tier === 'low';
+        this.fx.low = this.low;
+        this.fx.flashIntensity = options.flashIntensity * (reducedMotion ? .5 : 1);
         this.batches.flame.maxCoverage = this.low ? .16 : .30;
         this.batches.smoke.maxCoverage = this.low ? .10 : .18;
         this.batches.decal.maxCoverage = this.low ? .14 : .28;
@@ -488,6 +493,7 @@ export class ElementKit {
         this.warm = this.cool = 0;
         this.instanceCount = 0;
         this.rings.setTime(this.time, this.reducedMotion);
+        this.fx.update(dt, this.time, this.reducedMotion);
         this.rings.clear();
         this.ribbons.begin();
         this.ribbons.priorityWeight = 0;
@@ -570,7 +576,7 @@ export class ElementKit {
             this.instanceCount += b.mesh.count - before;
         }
     }
-    end(): void { this.services?.presentation?.setAbilityPresentation(this.exposure, this.warm * this.flashIntensity, this.cool * this.flashIntensity); this.exposure = 0; this.ribbons.end(); this.ribbons.mesh.visible = this.ribbons.mesh.count > 0; this.rings.mesh.visible = this.rings.mesh.count > 0; let n = 0; for (const kind in this.batches) {
+    end(): void { this.fx.commit(); this.services?.presentation?.setAbilityPresentation(this.exposure, this.warm * this.flashIntensity, this.cool * this.flashIntensity); this.exposure = 0; this.ribbons.end(); this.ribbons.mesh.visible = this.ribbons.mesh.count > 0; this.rings.mesh.visible = this.rings.mesh.count > 0; let n = 0; for (const kind in this.batches) {
         const b = this.batches[kind as Primitive];
         b.end();
         n += b.mesh.count;
@@ -586,9 +592,9 @@ export class ElementKit {
         p.live = false; for (const p of this.waves)
         p.live = false; for (const p of this.beams)
         p.live = false; for (const p of this.decals)
-        p.live = false; this.exposure = this.warm = this.cool = 0; this.services?.presentation?.setAbilityPresentation(0, 0, 0); this.rings.clear(); this.ribbons.clear(); for (const k in this.batches)
+        p.live = false; this.exposure = this.warm = this.cool = 0; this.services?.presentation?.setAbilityPresentation(0, 0, 0); this.rings.clear(); this.ribbons.clear(); this.fx.clear(); for (const k in this.batches)
         this.batches[k as Primitive].begin(); }
     dispose(): void { if (this.disposed)
         return; this.disposed = true; this.clear(); for (const k in this.batches)
-        this.batches[k as Primitive].dispose(); this.rings.dispose(); this.ribbons.dispose(); this.atlas.dispose(); this.root.removeFromParent(); }
+        this.batches[k as Primitive].dispose(); this.rings.dispose(); this.ribbons.dispose(); this.fx.dispose(); this.atlas.dispose(); this.root.removeFromParent(); }
 }

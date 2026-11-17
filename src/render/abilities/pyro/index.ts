@@ -3,7 +3,8 @@ import type { AbilityEvent, AbilityZoneSnapshot } from '../../../game/abilities/
 import { ABILITY_CATALOG } from '../../../game/abilities/catalog';
 import type { ElementKit } from '../ElementKit';
 import { UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
-import { impactBeat } from '../GraphicLanguage';
+import { authoredVariation, impactBeat } from '../GraphicLanguage';
+import { FxMode, type FxSlot } from '../FlagshipFx';
 
 const FIRE = 0xff7a2e;
 const CORE = 0xffedb5;
@@ -28,13 +29,15 @@ type Transient = {
   radius: number;
   range: number;
   arc: number;
+  /** VFX13 fire volume slices owned by a Flashfire cone (fixed three, reused). */
+  slices: (FxSlot | undefined)[];
 };
 
 /** Four physical sources: a pressure jet, deck fuel, a liquid fire and a charged suit. */
 class PyroPresentation implements AbilityPresentation {
   private readonly effects: Transient[] = Array.from({ length: TRANSIENT_CAPACITY }, (_, lightId) => ({
     live: false, lightId: 7100 + lightId, kind: 'cone', age: 0, life: 1, x: 0, z: 0, tx: 0, tz: 0,
-    angle: 0, radius: 0, range: 0, arc: 0,
+    angle: 0, radius: 0, range: 0, arc: 0, slices: [undefined, undefined, undefined],
   }));
   private next = 0;
   private emission = 0;
@@ -92,13 +95,35 @@ class PyroPresentation implements AbilityPresentation {
         kit.mote('spark', x + Math.cos(a) * .35, .7, z + Math.sin(a) * .35,
           Math.cos(a) * 1.5, .2, Math.sin(a) * 1.5, .05, .12, CORE);
       } else if (event.phase === 'impact') {
-        const p = this.acquire('cone', x, z, .72);
+        const p = this.acquire('cone', x, z, 1.35);
         p.angle = event.angle ?? 0; p.range = (event.length ?? FAN_RANGE * UNIT) / UNIT;
         p.arc = event.arcRadians ?? FAN_ARC;
-        kit.flash(x + Math.cos(p.angle) * 1.2, z + Math.sin(p.angle) * 1.2, FIRE, 24, 8, 4, .32);
-        kit.distort(x + Math.cos(p.angle) * p.range * .5, z + Math.sin(p.angle) * p.range * .5, p.range * .55, .0045, .65, true);
-        kit.camera(.21, p.angle);
-        this.scorchFan(p);
+        const c = Math.cos(p.angle), s = Math.sin(p.angle);
+        // Volume: a low hot sheet, the rolling body and a smoke crown. Low keeps the body.
+        const layers = kit.low ? 1 : 2;
+        for (let i = 0; i < 3; i++) {
+          if (i >= layers) { p.slices[i] = undefined; continue; }
+          const layer = kit.low ? .35 : i;
+          const slot = kit.fx.spawn(FxMode.Fire, x, z, layer > .9 ? 1.35 : .62);
+          slot.angle = p.angle; slot.arc = p.arc; slot.range = p.range; slot.inner = .07;
+          slot.h0 = .95; slot.h1 = i ? 1.2 : .5; slot.param = layer;
+          slot.mx = x + c * .55; slot.my = .95; slot.mz = z + s * .55;
+          p.slices[i] = slot;
+        }
+        const scorch = kit.fx.spawn(FxMode.Scorch, x, z, 7);
+        scorch.angle = p.angle; scorch.arc = p.arc; scorch.range = p.range; scorch.inner = .06; scorch.h0 = scorch.h1 = .034;
+        kit.flash(x + c * 1.2, z + s * 1.2, HOT, 30, 9, 4, .34);
+        kit.flash(x + c * p.range * .6, z + s * p.range * .6, FIRE, 18, p.range, 3, .45);
+        kit.distort(x + c * p.range * .5, z + s * p.range * .5, p.range * .55, .0055, .8, true);
+        kit.camera(.24, p.angle);
+        kit.exposureFlash(.12);
+        // Embers thrown forward through the cone (inside the arc), falling under gravity.
+        for (let i = 0, n = kit.low ? 8 : 30; i < n; i++) {
+          const v = authoredVariation(i * 1.37 + 2.1), a = p.angle + (authoredVariation(i * 2.71, 3) - .5) * p.arc * .8;
+          const speed = p.range * (.9 + v * 1.1);
+          kit.mote('spark', x + c * .6, .85 + v * .3, z + s * .6, Math.cos(a) * speed, .6 + v * 1.4, Math.sin(a) * speed,
+            .022 + v * .02, .45 + v * .5, i % 3 ? HOT : CORE);
+        }
       }
       return;
     }
@@ -138,10 +163,6 @@ class PyroPresentation implements AbilityPresentation {
         for (let i = 0; i < (kit.low ? 2 : 5); i++) kit.mote('smoke', x + Math.cos(i * 2.4) * .4, .5, z + Math.sin(i * 2.4) * .4, 0, .55, 0, .5, 1.3, SOOT);
       }
     }
-  }
-
-  private scorchFan(p: Transient): void {
-    this.kit.scar('fan', p.x, p.z, p.range, SOOT, 8, p.angle, p.range, p.arc);
   }
 
   update(frame: AbilityFrame): void {
@@ -205,37 +226,26 @@ class PyroPresentation implements AbilityPresentation {
   }
 
   private cone(p: Transient, emit: boolean, frame: AbilityFrame): void {
-    const kit = this.kit, grow = Math.min(1, .6 + p.age / .05);
-    const fade = Math.max(0, 1 - Math.max(0, p.age - .09) / .28), hot = impactBeat(p.age);
+    const kit = this.kit, hot = impactBeat(p.age);
     const c = Math.cos(p.angle), s = Math.sin(p.angle);
     if (!this.muzzle || !this.visibleSocket(this.muzzle, frame.marine)) this.muzzle = frame.marine ? this.findMuzzle(frame.marine) : undefined;
     if (this.muzzle) { frame.marine?.updateWorldMatrix(true, false); this.muzzle.getWorldPosition(this.source); }
-    else this.source.set(p.x + c * .3, .95, p.z + s * .3);
-    kit.sustain(p.age + .20);
-    kit.fireFan(p.x, p.z, p.range * grow, p.angle, p.arc, fade * .85, this.source.y, this.source.x, this.source.z);
-    // The connected tapered family owns the whole cone. Detached explosion
-    // stamps formerly put similar yellow islands over the directional body.
-    kit.lightAt(p.lightId, p.x + Math.cos(p.angle) * p.range * .34,
-      p.z + Math.sin(p.angle) * p.range * .34, FIRE, (12 + 16 * hot) * fade, Math.max(8, p.range * 1.1));
-    // Range curls are downstream, above the jet rather than a wall of ground flames.
-    for (let i = 0; i < (kit.low ? 0 : 5); i++) {
-      const seed = i * 2.731 + .71, a = p.angle + Math.sin(seed * 3.17) * p.arc * .36;
-      const travel = kit.reducedMotion ? .5 : (kit.time * .6 + i * .237) % 1;
-      const r = p.range * grow * (.73 + travel * .17);
-      kit.draw('smoke', p.x + Math.cos(a) * r, 1.2 + travel * .7, p.z + Math.sin(a) * r,
-        .45 + travel * .5, .42 + travel * .25, 1, SOOT, (.28 - travel * .1) * fade);
+    else this.source.set(p.x + c * .55, .95, p.z + s * .55);
+    for (const slot of p.slices) if (slot?.live && slot.mode === FxMode.Fire) {
+      slot.mx = this.source.x; slot.my = this.source.y; slot.mz = this.source.z; slot.h0 = this.source.y;
     }
-    // Hot nozzle is attached to the discharge point, with a thin velocity-stretched core.
+    const fade = Math.max(0, 1 - Math.max(0, p.age - .12) / .4);
     kit.impact();
-    kit.flowFlame(this.source.x, this.source.y, this.source.z,
-      this.muzzle ? this.source.x + c * 1.05 : p.x + c * 1.8, this.source.y,
-      this.muzzle ? this.source.z + s * 1.05 : p.z + s * 1.8,
-      .14 + hot * .055, 7, fade * .96, true);
-    if (emit && !kit.low) {
-      const a = p.angle + Math.sin(p.age * 43) * p.arc * .3, r = p.range * grow * .82;
-      kit.mote('smoke', p.x + Math.cos(a) * r, .8, p.z + Math.sin(a) * r,
-        Math.cos(a) * 1.5, .55, Math.sin(a) * 1.5, .5, .8, SOOT);
-      kit.mote('spark', p.x + c, .65, p.z + s, c * 7, .3, s * 7, .035, .6, CORE);
+    // Compact white-yellow muzzle core, only for the first beats.
+    if (p.age < .2) {
+      const k = 1 - p.age / .2;
+      kit.draw('spark', this.source.x + c * .15, this.source.y, this.source.z + s * .15, .5 * k + .14, .36 * k + .1, 1, CORE, k);
+      kit.draw('spark', this.source.x + c * .4, this.source.y, this.source.z + s * .4, .5 * k, .14 * k, 1, 0xffd27a, .8 * k, 0, -p.angle);
+    }
+    kit.lightAt(p.lightId, p.x + c * p.range * .4, p.z + s * p.range * .4, FIRE, (14 + 18 * hot) * fade, Math.max(8, p.range * 1.2));
+    if (emit && !kit.low && p.age < .5) {
+      const a = p.angle + Math.sin(p.age * 43) * p.arc * .3, r = p.range * (.5 + (p.age * 3.1) % .4);
+      kit.mote('spark', p.x + Math.cos(a) * r, .5, p.z + Math.sin(a) * r, Math.cos(a) * 2, 1.4, Math.sin(a) * 2, .03, .8, HOT);
     }
   }
 
