@@ -4,106 +4,246 @@ import { FxMode, type FxSlot } from './FlagshipFx';
 import { ELEMENT_COLORS, UNIT, type AbilityFrame } from './types';
 
 const WHITE = 0xf4fbff;
-const RIG_COLOR: Readonly<Record<RigId, number>> = {
-  breacher: ELEMENT_COLORS.kinetic, cryo: ELEMENT_COLORS.cryo, pyro: ELEMENT_COLORS.pyro, arc: ELEMENT_COLORS.arc,
-};
-/** Floor-state radius around the marine; presentation only (Overdrive areas keep their own exact boundaries). */
-const AURA_RADIUS = 2.1;
+const ICE = ELEMENT_COLORS.cryo;
+const FIRE = ELEMENT_COLORS.pyro;
+const HOT = 0xffc46a;
+const VIOLET = ELEMENT_COLORS.arc;
+const AMBER = ELEMENT_COLORS.kinetic;
+const RIG_COLOR: Readonly<Record<RigId, number>> = { breacher: AMBER, cryo: ICE, pyro: FIRE, arc: VIOLET };
+/** Overclock has no native area; its fracture field is presentation-only around the marine. */
+const ARC_FIELD = 5.5;
+type Actor = { x: number; y: number; radius: number; id: number };
 
 /**
- * VFX13 shared Overdrive payoff language for every rig:
- * activation = white core flash + element shock ring + vertical light accent + exposure/camera beat;
- * sustained = an element-coloured energy field on the deck that follows the marine;
- * ending = a short contracting ring and spark fall. Uses only FlagshipFx, pooled beams and the light pool.
+ * VFX15: four different Overdrive climaxes (no shared ring template).
+ * - Whiteout: a jagged frost wall races over the deck, ice grows up enemies, freeze pulses travel crack lines.
+ * - Meltdown: the suit vents a heat column, molten cracks and blisters spread under him, nearby enemies stand in flame.
+ * - Overclock: chromatic time-fracture snap, glass cracks flicker, lightning crawls between enemies and machinery.
+ * - Railbreaker: converging charge and a narrow amber column; the lance itself owns the payoff.
+ * Floor states use FlagshipFx Climax (one prepared program); the native area keeps only a thin element line.
  */
 export class OverdrivePayoff {
-  private aura?: FxSlot;
-  private auraSeed = -1;
+  private climax?: FxSlot;
+  private climaxSeed = -1;
   private level = 0;
   private wasActive = false;
-  private color = WHITE;
+  private rig: RigId = 'breacher';
   private x = 0;
   private z = 0;
+  private radius = ARC_FIELD;
+  private age = 0;
+  private arcClock = 0;
 
   constructor(private readonly kit: ElementKit) {}
 
-  /** Exact activation moment from the simulation event stream. */
   event(event: AbilityEvent, x: number, y: number): void {
     if (event.slot !== 'overdrive') return;
-    const instant = event.ability === 'railbreaker';
-    if (instant ? event.phase !== 'cast' : event.phase !== 'impact') return;
-    this.activate(x / UNIT, y / UNIT, ELEMENT_COLORS[event.element], instant ? .6 : 1);
-  }
-
-  private activate(x: number, z: number, color: number, weight: number): void {
-    const k = this.kit;
+    const px = x / UNIT, pz = y / UNIT, k = this.kit;
+    if (event.ability === 'railbreaker') { if (event.phase === 'cast') this.rail(px, pz, (event.durationMs ?? 300) / 1000); return; }
+    if (event.phase !== 'impact') return;
+    this.rig = event.rig; this.x = px; this.z = pz; this.age = 0; this.level = 1;
+    this.radius = event.radius ? event.radius / UNIT : ARC_FIELD;
+    this.ensure();
     k.impact();
-    const core = k.fx.spawn(FxMode.Shock, x, z, .38);
-    core.range = 3.2 * weight; core.h0 = .08; core.color = WHITE; core.intensity = 1.4;
-    const wave = k.fx.spawn(FxMode.Shock, x, z, .55);
-    wave.range = 6 * weight; wave.h0 = .06; wave.color = color; wave.intensity = 1.2;
-    // Vertical accent: a brief pillar of light through the marine.
-    const pillar = k.fx.spawn(FxMode.Pillar, x, z, .32);
-    pillar.range = .38 * weight; pillar.h0 = .05; pillar.h1 = 4.2;
-    pillar.color = color; pillar.intensity = weight;
-    k.draw('spark', x, 1, z, 1.6 * weight, 1.6 * weight, 1, WHITE, 1);
-    k.flash(x, z, WHITE, 30 * weight, 9, 6, .08);
-    k.flash(x, z, color, 18 * weight, 10, 5, .4);
-    k.distort(x, z, 6 * weight, .006, .5);
-    k.exposureFlash(.55 * weight);
-    k.camera(.45 * weight);
-    k.anticipate(30, .04 * weight);
-    for (let i = 0, n = k.low ? 8 : 26; i < n; i++) {
-      const a = i * 2.39996 + .3, v = (i % 5) / 5;
-      k.mote('spark', x, .3 + v, z, Math.cos(a) * (4 + v * 4), 1.5 + v * 3, Math.sin(a) * (4 + v * 4), .03, .5 + v * .4, i % 3 ? color : WHITE);
+    if (event.ability === 'whiteout') {
+      k.flash(px, pz, WHITE, 22, this.radius, 6, .1);
+      k.flash(px, pz, ICE, 12, this.radius + 2, 5, .5);
+      k.exposureFlash(.35);
+      k.camera(.4);
+      k.distort(px, pz, this.radius, -.006, .6);
+      // The air crystallises: a short upward burst of shards, no ring.
+      for (let i = 0, n = k.low ? 8 : 28; i < n; i++) {
+        const a = i * 2.39996, v = (i % 5) / 5;
+        k.mote('shard', px + Math.cos(a) * .6, .3, pz + Math.sin(a) * .6, Math.cos(a) * (3 + v * 5), 1.2 + v * 2.5, Math.sin(a) * (3 + v * 5), .07 + v * .06, .9, i % 3 ? ICE : WHITE);
+      }
+    } else if (event.ability === 'meltdown') {
+      const column = k.fx.spawn(FxMode.Pillar, px, pz, 1.1);
+      column.range = .42; column.h0 = .05; column.h1 = 5.5; column.color = HOT; column.intensity = 1.3;
+      k.flash(px, pz, HOT, 28, 9, 6, .12);
+      k.flash(px, pz, FIRE, 16, 8, 5, .7);
+      k.exposureFlash(.3);
+      k.grade(.8);
+      k.camera(.42);
+      k.distort(px, pz, 3.5, .007, 1.1, true);
+      for (let i = 0, n = k.low ? 6 : 22; i < n; i++) {
+        const a = i * 2.39996, v = (i % 5) / 5;
+        k.mote('spark', px, 1.2 + v, pz, Math.cos(a) * (1 + v * 2), 4 + v * 4, Math.sin(a) * (1 + v * 2), .035, .9 + v * .4, i % 2 ? HOT : FIRE);
+      }
+    } else if (event.ability === 'overclock') {
+      // Hard chromatic snap: white/cyan/violet light split, inward space kick, then the fracture field.
+      k.flash(px, pz, WHITE, 30, 10, 6, .05);
+      k.flash(px + .6, pz, 0x7fe6ff, 14, 8, 5, .14);
+      k.flash(px - .6, pz, 0xd06bff, 14, 8, 5, .14);
+      k.exposureFlash(.6);
+      k.grade(0, .9);
+      k.camera(.45);
+      k.anticipate(28, .05);
+      k.distort(px, pz, 6, -.008, .35);
+      this.arcClock = 0;
     }
   }
 
-  private finish(x: number, z: number, color: number): void {
+  private rail(x: number, z: number, charge: number): void {
     const k = this.kit;
     k.impact();
-    const ring = k.fx.spawn(FxMode.Shock, x, z, .3);
-    ring.range = 1.6; ring.h0 = .06; ring.color = color;
-    k.flash(x, z, color, 10, 5, 4, .25);
-    k.beam(x, .05, z, x, 2.4, z, color, .2, .22, false);
-    for (let i = 0, n = k.low ? 4 : 12; i < n; i++) {
-      const a = i * 2.39996;
-      k.mote('spark', x + Math.cos(a) * .5, 1.6, z + Math.sin(a) * .5, Math.cos(a) * .6, -.5, Math.sin(a) * .6, .03, .6, color);
+    const column = k.fx.spawn(FxMode.Pillar, x, z, Math.max(.25, charge + .1));
+    column.range = .22; column.h0 = .05; column.h1 = 3.6; column.color = AMBER; column.intensity = .9;
+    k.flash(x, z, AMBER, 10, 5, 4, Math.max(.2, charge));
+    k.camera(.18);
+    // Charge converges on the rig: sparks fly inward from a 2.5 m shell.
+    for (let i = 0, n = k.low ? 6 : 20; i < n; i++) {
+      const a = i * 2.39996, d = 2.2 + (i % 4) * .2, life = Math.max(.15, charge * .9);
+      k.mote('spark', x + Math.cos(a) * d, .4 + (i % 3) * .4, z + Math.sin(a) * d,
+        -Math.cos(a) * d / life, .2, -Math.sin(a) * d / life, .03, life, i % 3 ? AMBER : WHITE);
     }
   }
 
-  /** Per-frame: sustained floor state follows the marine; falling edge plays the ending beat. */
+  private ensure(): FxSlot {
+    let slot = this.climax;
+    if (!slot || !slot.live || slot.seed !== this.climaxSeed || slot.mode !== FxMode.Climax) {
+      slot = this.climax = this.kit.fx.spawn(FxMode.Climax, this.x, this.z, 1e6);
+      this.climaxSeed = slot.seed; slot.h0 = .043;
+    }
+    return slot;
+  }
+
+  private finish(): void {
+    const k = this.kit, x = this.x, z = this.z;
+    k.impact();
+    if (this.rig === 'cryo') {
+      const shatter = k.fx.spawn(FxMode.Crack, x, z, .9);
+      shatter.range = Math.min(this.radius, 5); shatter.h0 = .05; shatter.color = ICE;
+      k.debris(x, z, 3, 'cryo', 24);
+      k.flash(x, z, ICE, 10, 7, 4, .25);
+      k.camera(.2);
+    } else if (this.rig === 'pyro') {
+      k.flash(x, z, FIRE, 8, 5, 4, .4);
+      for (let i = 0, n = k.low ? 3 : 9; i < n; i++) {
+        const a = i * 2.39996;
+        k.mote('smoke', x + Math.cos(a) * .7, .4, z + Math.sin(a) * .7, Math.cos(a) * .4, .8, Math.sin(a) * .4, .45, 1.6, 0x1a1512);
+      }
+    } else if (this.rig === 'arc') {
+      // Reverse snap: space kicks outward once, violet light collapses into the suit.
+      k.flash(x, z, WHITE, 18, 7, 5, .05);
+      k.flash(x, z, VIOLET, 10, 6, 4, .2);
+      k.exposureFlash(.3);
+      k.distort(x, z, 5, .006, .25);
+      k.camera(.22);
+      for (let i = 0; i < (k.low ? 3 : 7); i++) {
+        const a = i * 2.39996;
+        k.beam(x + Math.cos(a) * 3.2, .3, z + Math.sin(a) * 3.2, x, 1.1, z, i % 2 ? VIOLET : WHITE, .03, .14, true);
+      }
+    }
+  }
+
   update(frame: AbilityFrame): void {
-    const snapshot = frame.snapshot, player = frame.game?.player;
+    const snapshot = frame.snapshot, game = frame.game, player = game?.player;
     const rig = snapshot?.rig;
     const active = !!(frame.visible && snapshot && rig && rig !== 'breacher' && snapshot.overdrive.active && player);
-    if (player) { this.x = player.x / UNIT; this.z = player.y / UNIT; }
-    if (rig) this.color = RIG_COLOR[rig];
-    if (this.wasActive && !active && frame.visible) this.finish(this.x, this.z, this.color);
-    this.wasActive = active;
     const dt = Math.max(0, frame.dt);
-    this.level += ((active ? 1 : 0) - this.level) * Math.min(1, dt * (active ? 5 : 8));
-    let slot = this.aura;
-    if (slot && (!slot.live || slot.seed !== this.auraSeed || slot.mode !== FxMode.Aura || slot.life < 1000)) slot = this.aura = undefined;
+    if (rig && active) this.rig = rig;
+    if (player) { this.x = player.x / UNIT; this.z = player.y / UNIT; }
+    // Whiteout and Meltdown keep the exact native zone; Overclock follows the marine.
+    if (active && snapshot) for (const zone of snapshot.zones) {
+      if (zone.remainingMs <= 0) continue;
+      if ((this.rig === 'cryo' && zone.ability === 'whiteout') || (this.rig === 'pyro' && zone.ability === 'meltdown')) {
+        this.x = zone.x / UNIT; this.z = zone.y / UNIT; this.radius = zone.radius / UNIT; break;
+      }
+    }
+    if (this.rig === 'arc') this.radius = ARC_FIELD;
+    if (this.wasActive && !active && frame.visible) this.finish();
+    if (!this.wasActive && active && this.level < .5) this.age = 0;
+    this.wasActive = active;
+    this.age += dt;
+    this.level += ((active ? 1 : 0) - this.level) * Math.min(1, dt * (active ? 6 : 5));
+    let slot = this.climax;
+    if (slot && (!slot.live || slot.seed !== this.climaxSeed || slot.mode !== FxMode.Climax)) slot = this.climax = undefined;
     if (this.level < .01 && !active) {
-      if (slot) { slot.live = false; this.aura = undefined; }
+      if (slot) { slot.live = false; this.climax = undefined; }
       this.level = 0;
       return;
     }
-    if (!slot) {
-      slot = this.aura = this.kit.fx.spawn(FxMode.Aura, this.x, this.z, 1e6);
-      this.auraSeed = slot.seed;
-      slot.h0 = .045; slot.range = AURA_RADIUS;
+    slot = this.ensure();
+    slot.x = this.x; slot.z = this.z; slot.range = this.radius; slot.color = RIG_COLOR[this.rig];
+    slot.arc = this.rig === 'cryo' ? 1 : this.rig === 'pyro' ? 2 : 3;
+    slot.param = this.level; slot.intensity = this.kit.low ? .75 : 1;
+    if (!active || !game) return;
+    const k = this.kit, enemies = game.enemies?.snapshot.enemies as readonly Actor[] | undefined;
+    if (!enemies) return;
+    k.sustain(this.age);
+    if (this.rig === 'cryo') this.iceOnEnemies(enemies);
+    else if (this.rig === 'pyro') this.standingFlame(enemies);
+    else this.crawl(enemies, game, dt);
+    k.impact();
+  }
+
+  /** Ice climbs enemies as the frost wall reaches them; bounded clusters at the feet and shins. */
+  private iceOnEnemies(enemies: readonly Actor[]): void {
+    const k = this.kit, front = this.radius * Math.min(1, this.age / .7);
+    let drawn = 0;
+    for (const e of enemies) {
+      if (drawn >= (k.low ? 4 : 10)) break;
+      const ex = e.x / UNIT, ez = e.y / UNIT, d = Math.hypot(ex - this.x, ez - this.z);
+      if (d > front || d > this.radius) continue;
+      drawn++;
+      const grow = Math.min(1, (front - d) / 1.2) * this.level, r = Math.max(.25, e.radius / UNIT);
+      for (let j = 0; j < (k.low ? 2 : 4); j++) {
+        const a = j * 1.9 + e.id, h = (.35 + (j % 2) * .25) * grow;
+        k.draw('shard', ex + Math.cos(a) * r * .8, h * .45, ez + Math.sin(a) * r * .8, .07, h, .06, j % 2 ? WHITE : ICE, .8, -a, .3);
+      }
     }
-    slot.x = this.x; slot.z = this.z; slot.color = this.color; slot.param = this.level;
-    slot.arc = rig === 'cryo' ? 1 : rig === 'pyro' ? 2 : rig === 'arc' ? 3 : 0;
-    slot.intensity = this.kit.low ? .7 : 1;
-    // The suit itself becomes a light source in the element colour.
-    this.kit.lightAt(990001, this.x, this.z, this.color, 6 * this.level, 5);
+  }
+
+  /** Enemies near the suit stand in leaning flame tongues (inside the exact native radius). */
+  private standingFlame(enemies: readonly Actor[]): void {
+    const k = this.kit;
+    let drawn = 0;
+    for (const e of enemies) {
+      if (drawn >= (k.low ? 3 : 8)) break;
+      const ex = e.x / UNIT, ez = e.y / UNIT, d = Math.hypot(ex - this.x, ez - this.z);
+      if (d > this.radius) continue;
+      drawn++;
+      const away = Math.atan2(ez - this.z, ex - this.x), heat = (1 - d / this.radius * .6) * this.level;
+      k.directedFlame(ex, .04, ez, .2 + heat * .1, .55 + heat * .6, away, .45, e.id, .78 * heat);
+      if (!k.low) k.directedFlame(ex + Math.cos(away + 1.7) * .25, .04, ez + Math.sin(away + 1.7) * .25, .14, .4 + heat * .35, away, .6, e.id + 3.1, .6 * heat, true);
+    }
+  }
+
+  /** Lightning crawls between nearby enemies and along nearby machinery edges, re-struck ~9 times a second. */
+  private crawl(enemies: readonly Actor[], game: NonNullable<AbilityFrame['game']>, dt: number): void {
+    const k = this.kit;
+    this.arcClock -= dt;
+    if (this.arcClock > 0) return;
+    this.arcClock = k.low ? .22 : .11;
+    const tick = Math.floor(this.age * 9);
+    let beams = 0, px = 0, pz = 0, has = false;
+    for (let i = 0; i < enemies.length && beams < (k.low ? 1 : 3); i++) {
+      const e = enemies[(i + tick) % enemies.length], ex = e.x / UNIT, ez = e.y / UNIT;
+      if (Math.hypot(ex - this.x, ez - this.z) > 7.5) continue;
+      if (has && Math.hypot(ex - px, ez - pz) < 4) {
+        k.beam(px, .9, pz, ex, .9, ez, beams % 2 ? WHITE : VIOLET, .03, .13, true);
+        beams++;
+      }
+      px = ex; pz = ez; has = true;
+    }
+    const blockers = game.geometry?.blockers;
+    if (!blockers || k.low) return;
+    let lit = 0;
+    for (let i = 0; i < blockers.length && lit < 2; i++) {
+      const b = blockers[(i + tick) % blockers.length];
+      const x0 = b.x / UNIT, z0 = b.y / UNIT, x1 = (b.x + b.width) / UNIT, z1 = (b.y + b.height) / UNIT;
+      const cx = Math.max(x0, Math.min(this.x, x1)), cz = Math.max(z0, Math.min(this.z, z1));
+      if (Math.hypot(cx - this.x, cz - this.z) > 6) continue;
+      lit++;
+      // Crawl along the nearest machinery face, from the marine-side point toward a far corner.
+      const tx = Math.abs(cx - x0) < Math.abs(cx - x1) ? x1 : x0, tz = Math.abs(cz - z0) < Math.abs(cz - z1) ? z1 : z0;
+      k.beam(cx, 1.05, cz, (cx + tx) * .5, .95, (cz + tz) * .5, VIOLET, .028, .12, true);
+      k.flash(cx, cz, VIOLET, 3, 3, 2, .1);
+    }
   }
 
   clear(): void {
-    if (this.aura && this.aura.seed === this.auraSeed) this.aura.live = false;
-    this.aura = undefined; this.level = 0; this.wasActive = false;
+    if (this.climax && this.climax.seed === this.climaxSeed) this.climax.live = false;
+    this.climax = undefined; this.level = 0; this.wasActive = false; this.age = 0;
   }
 }
