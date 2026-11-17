@@ -26,7 +26,7 @@ export const E9_ROOM_TOURS = Object.fromEntries(L8_CAPTURE_ROOMS.map(room => {
     // in view too; neither the game camera nor the warning guard is changed.
     const inspectionAnchor = room.id === 'safety-interlock-station'
       && ['Open recorder and AI gallery', 'Battery return'].includes(space.name)
-      ? {x: 520, y: space.anchor.y} : space.anchor;
+      ? {x: 580, y: space.anchor.y} : space.anchor;
     const points = [inspectionAnchor];
     const xs = space.outline.map(p => p.x), ys = space.outline.map(p => p.y);
     for (let y = Math.min(...ys) + 16; y < Math.max(...ys); y += 16) {
