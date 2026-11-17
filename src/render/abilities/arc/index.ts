@@ -212,9 +212,9 @@ class ArcPresentation implements AbilityPresentation {
         d.fired = true;
         const dx = d.x - d.sx, dz = d.z - d.sz, length = Math.hypot(dx, dz);
         if (length > .01) {
-          const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, .32);
-          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = .24;
-          arc.h0 = d.sy; arc.h1 = .75; arc.param = 3; arc.color = VIOLET; arc.intensity = .9;
+          const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, .55);
+          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = .52;
+          arc.h0 = d.sy; arc.h1 = .75; arc.param = 3; arc.color = VIOLET; arc.intensity = 1.15;
           // Two asymmetric branches meet the same native contact; no invented target.
           for (let side = -1; side <= 1; side += 2) {
             const t = side < 0 ? .43 : .67;
@@ -223,13 +223,16 @@ class ArcPresentation implements AbilityPresentation {
             k.beam(bx, d.sy + .13, bz, d.x, .75, d.z, VIOLET, .018, .18, true);
           }
         }
+        const node = k.fx.spawn(FxMode.Shock, d.x, d.z, .3);
+        node.range = .55; node.h0 = .045; node.color = VIOLET; node.intensity = 1.2;
         k.flash(d.x, d.z, WHITE, 8, 4, 3, .12);
         k.burst(d.x, .7, d.z, 'arc', 9, 1.8, .45);
       }
       k.impact();
       const fade = 1 - (d.age - d.delay) / d.life;
-      const contact = Math.max(0, 1 - (d.age - d.delay) / .12);
-      k.sprite('impact', d.x, .75, d.z, .38, .38, WHITE, contact * .95, d.seed, 'light');
+      k.ribbon(d.sx, .045, d.sz, d.x, .045, d.z, VIOLET, .09, fade * .12, false);
+      const contact = Math.max(0, 1 - (d.age - d.delay) / .22);
+      k.sprite('impact', d.x, .75, d.z, .65, .65, WHITE, contact * .95, d.seed, 'light');
       const count = k.low ? 2 : 5;
       for (let i = 0; i < count; i++) {
         const a = d.seed + i * TAU / count + (k.reducedMotion ? 0 : k.time * 5);

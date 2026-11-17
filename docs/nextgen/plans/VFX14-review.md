@@ -44,3 +44,5 @@ Napalm R2: pale native 05 and both 480 contacts show a footprint that survives t
 Afterburn R2: both 480 contacts and dark native 05 exposed a row of glowing circular stamps. Replaced them with one native-length/width FuelStrip mode. Final-check must confirm the connected line rather than accepting the rejected circles.
 
 Meltdown R2: pale native 06 and both 480 contacts keep the marine clear, but the suit jets are too low and weak. Raised their far height and strengthened the stable saturated core; final-check covers the result. Native kill-burst surfaces remain pooled.
+
+Overload R2: pale/dark 480 contacts and dark native 04 show enough body, but stepped noise reads as a fence and the floor beam is a solid ribbon. Continuous jitter and a restrained per-frame floor trace replace those rejected shapes; final-check covers the correction.
