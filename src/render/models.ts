@@ -14,7 +14,7 @@ import {afflictionEffects,NO_AFFLICTION,type AfflictionStatus} from './afflictio
 import {weaponModel,WEAPON_FIT,WEAPON_APPEARANCE,type GunModel} from './weapons';
 import type {WeaponId} from '../game/combat/types';
 import {actorSurface} from './vfx/ActorSurface';
-import {alienIdentity,marineIdentity,FAMILY_IDENTITY,ENEMY_BODY_COLORS} from './ActorIdentity';
+import {alienIdentity,marineIdentity,FAMILY_IDENTITY,ENEMY_BODY_COLORS,RIG_ACCENTS} from './ActorIdentity';
 export {MAT,box,ball,rod,disposeModel} from './meshParts';
 export type ActorModel={root:T.Group;body:T.Group;limbs:T.Group[];height:number;weapon?:T.Group;
  animate:(time:number,moving:number,aim:number,recoil?:number,reload?:number,velocity?:{x:number;y:number})=>void;
@@ -116,6 +116,9 @@ export function alien(kind:string,elite=false):ActorModel{
   if(!dead){const visualTime=motion.begin(time,!!status.frozen);const speed=motion.rate*(velocity?T.MathUtils.clamp(Math.hypot(velocity.x,velocity.y)/(ENEMIES[kind as keyof typeof ENEMIES]?.speed??150),0,2):1);if(!authored.update(visualTime,moving,aim,windup>0,windup>0?1-Math.min(1,windup/windupDuration):0,!!status.frozen,status.burning,!!status.shocked,speed)&&!status.frozen)r.step(visualTime,windup>0?0:moving,false,speed);motion.apply(time,aim,moving,windup>0?1-Math.min(1,windup/windupDuration):0,windup>0,!!status.frozen,status.burning,!!status.shocked);}
   if(kind==='queen')surface.expose(identity.mesh.material.uniforms.identityOpening.value);identity.update(time,windup>0?1-Math.min(1,windup/windupDuration):0,champion,exposed,kind==='stalker'?alpha:1,dead);if(original&&r.root.userData.affliction)r.root.userData.affliction.height=Math.max(r.height,originalCreatureHeight(r.root));effects?.animate(time);const hex=status.frozen?0x79ddff:exposed?0xff4aa5:0xffdfb0,intensity=flash*.1+(status.frozen?.018:exposed?.025:0);for(const [i,m] of r.materials.entries()){if(original){m.emissive.setHex(0xffffff);m.emissiveIntensity=organStrength[i]*(dead?.10:1+flash*.65+(elite?.28:0)+(champion?.45:0)+(windup>0?(1-Math.min(1,windup/windupDuration))*1.8:0))+intensity;}else{if(hex!==emissiveHex)m.emissive.setHex(hex);m.emissiveIntensity=intensity;}}emissiveHex=hex;}};
 }
+/** LIGHT13: the carried weapon reads mid-grey against a dark deck, never a black hole in the marine. */
+const liftedWeaponMaterials=new WeakSet<T.Material>(),weaponGrey=new T.Color(0x5d666f);
+function liftWeaponValue(root:T.Object3D){root.traverse(object=>{if(!(object instanceof T.Mesh))return;for(const m of Array.isArray(object.material)?object.material:[object.material]){if(!(m instanceof T.MeshStandardMaterial)||liftedWeaponMaterials.has(m))continue;liftedWeaponMaterials.add(m);if(m.color.getHSL({h:0,s:0,l:0}).l<.3)m.color.lerp(weaponGrey,.55);}});}
 export function marine():ActorModel{
  // The marine's weighted torso already fits its .5m collider. Retain a rigid,
  // uniform source transform so authored hand sockets never inherit shear.
@@ -126,7 +129,7 @@ export function marine():ActorModel{
  r.reset();r.mixer.stopAllAction();
  const surface=actorSurface(r.materials,true),identity=marineIdentity(r.root),authoredPlayer=new AuthoredMotionPlayer(r.mixer,r.clips,r.assetRoot);
  const guns=new Map<WeaponId,GunModel>();let current:GunModel;const socket=r.assetRoot.getObjectByName('tag_weapon')!;let pose=authoredPlayer.available?undefined:r.action('shotgun_delta');
- const equip=(id:WeaponId)=>{if(current?.id===id)return;let gun=guns.get(id);if(!gun){gun=weaponModel(id);guns.set(id,gun);weapon.add(gun.root);}for(const g of guns.values())g.root.visible=g===gun;current=gun;pose?.stop();pose=authoredPlayer.available?undefined:r.action(`${({pistol:'blaster',plasma:'prifle',rocket:'lcannon'} as Partial<Record<WeaponId,string>>)[id]??id}_delta`);if(pose){pose.play();pose.paused=true;}};equip('shotgun');
+ const equip=(id:WeaponId)=>{if(current?.id===id)return;let gun=guns.get(id);if(!gun){gun=weaponModel(id);guns.set(id,gun);weapon.add(gun.root);liftWeaponValue(gun.root);}for(const g of guns.values())g.root.visible=g===gun;current=gun;pose?.stop();pose=authoredPlayer.available?undefined:r.action(`${({pistol:'blaster',plasma:'prifle',rocket:'lcannon'} as Partial<Record<WeaponId,string>>)[id]??id}_delta`);if(pose){pose.play();pose.paused=true;}};equip('shotgun');
  const inverse=new T.Matrix4(),socketMatrix=new T.Matrix4(),scale=new T.Vector3();
  const barrelForward=new T.Vector3(),desiredForward=new T.Vector3(),aimCorrection=new T.Quaternion(),handWorld=new T.Quaternion(),parentWorld=new T.Quaternion();
  const firingHand=r.assetRoot.getObjectByName('handR');let aimConstrained=true;
@@ -145,7 +148,7 @@ export function marine():ActorModel{
   socketMatrix.multiplyMatrices(inverse,socket.matrixWorld);socketMatrix.decompose(weapon.position,weapon.quaternion,scale);weapon.scale.setScalar(1);
  };
  const motion=new MarineMotion(r.root,r.assetRoot),actionMotion=new MarineActionMotion(motion),authored=new AuthoredMarineMotion(authoredPlayer,motion);motion.authored=authoredPlayer.available;let aimPitch=0;
- return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,syncWeaponPose,setColliderDebug:colliderDebug(r.root,.5),setAimPitch(radians){aimPitch=T.MathUtils.clamp(radians,-.6,.6);},setRig:identity.setRig,setFlashIntensity:surface.setFlashIntensity,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
+ return{root:r.root,body:r.body,limbs:[],height:r.height,weapon,equip,syncWeaponPose,setColliderDebug:colliderDebug(r.root,.5),setAimPitch(radians){aimPitch=T.MathUtils.clamp(radians,-.6,.6);},setRig(rig){identity.setRig(rig);surface.rig(RIG_ACCENTS[rig as keyof typeof RIG_ACCENTS]??RIG_ACCENTS.breacher);},setFlashIntensity:surface.setFlashIntensity,stop:r.stop,muzzleWorld(target){return current.muzzle.getWorldPosition(target);},
   setMotionOptions(strength,reduced){motion.setOptions(strength,reduced);authored.setOptions(strength,reduced);},setAction:motion.setAction.bind(motion),poseDeath:authored.death.bind(authored),hit(strength=1,direction=0,heavy=false){motion.hit(strength,direction,heavy);authored.hit(strength,direction);},setDead(dead){aimConstrained=!dead;motion.setDead(dead);},motionEvent:actionMotion.event.bind(actionMotion),reset(){aimConstrained=true;authored.reset();actionMotion.reset();motion.reset();r.reset();pose?.play();if(pose)pose.paused=true;r.mixer.update(0);},
  animate(time,moving,aim,recoil=0,reload=0,velocity){r.root.rotation.y=Math.PI/2-aim;
   actionMotion.update(time);motion.begin(time,moving,aim,velocity?.x??Math.cos(aim)*moving*220,velocity?.y??Math.sin(aim)*moving*220);

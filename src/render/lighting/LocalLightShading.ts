@@ -1,9 +1,23 @@
-import { MeshStandardMaterial, ShaderChunk } from 'three';
+import { Color, MeshStandardMaterial, ShaderChunk, Vector4 } from 'three';
+import { MARINE_FLOOR_GLOW, MARINE_FLOOR_GLOW_COLOR, ROOM_VALUE_EXIT, ROOM_VALUE_FIELD } from './RoomValueStandard';
 
 const installed = new WeakSet<MeshStandardMaterial>();
 const environmentGains = new WeakMap<MeshStandardMaterial, {value:number}>();
 const practicalShadowFills = new WeakMap<MeshStandardMaterial, {value:number}>();
 const shadowReadability = new WeakMap<MeshStandardMaterial, {value:number}>();
+const roomValues = new WeakMap<MeshStandardMaterial, {value:Vector4}>();
+const roomTints = new WeakMap<MeshStandardMaterial, {value:Color}>();
+function valueUniforms(material: MeshStandardMaterial){
+  let value=roomValues.get(material),tint=roomTints.get(material);
+  if(!value){value={value:new Vector4(1,1,0,1)};roomValues.set(material,value);}
+  if(!tint){tint={value:new Color(1,1,1)};roomTints.set(material,tint);}
+  return {value,tint};
+}
+/** LIGHT13: final value, saturation, colour-identity tint and marine-glow gain of a lit
+ * room surface. Uniform-only; (1,1,white,0) is exactly the previous response. */
+export function setRoomValue(material: MeshStandardMaterial, value=1, saturation=1, tint=0xffffff, marineGlow=0, perimeter=1): void {
+  const u=valueUniforms(material);u.value.value.set(value,saturation,marineGlow,perimeter);u.tint.value.setHex(tint);
+}
 const reflectionLighting = ShaderChunk.lights_fragment_maps
   .replace('iblIrradiance += getIBLIrradiance( geometryNormal );', 'iblIrradiance += roomDiffuseEnvironmentGain * getIBLIrradiance( geometryNormal );')
   .replace('radiance += getIBLRadiance( geometryViewDir, geometryNormal, material.roughness );', 'radiance += getIBLRadiance( geometryViewDir, geometryNormal, material.roughness ) * mix(1.0,mix(1.0,.02,smoothstep(.15,.5,material.roughness)),1.0-roomDiffuseEnvironmentGain);');
@@ -70,7 +84,7 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
   if(diffuseEnvironmentGain!==undefined)environmentGain.value=Math.max(0,Math.min(1,diffuseEnvironmentGain));
   let shadowFill=practicalShadowFills.get(material);if(!shadowFill){shadowFill={value:practicalShadowFill??.025};practicalShadowFills.set(material,shadowFill);}if(practicalShadowFill!==undefined)shadowFill.value=Math.max(.025,Math.min(.25,practicalShadowFill));
   let bounce=shadowReadability.get(material);if(!bounce){bounce={value:readableBounce??0};shadowReadability.set(material,bounce);}if(readableBounce!==undefined)bounce.value=Math.max(0,Math.min(.02,readableBounce));
-  if (installed.has(material)||material.customProgramCacheKey().includes(':local-light-rejection-v8')) return;
+  if (installed.has(material)||material.customProgramCacheKey().includes(':local-light-rejection-v9-light13')) return;
   installed.add(material);
   const previous = material.onBeforeCompile;
   const key = material.customProgramCacheKey();
@@ -93,11 +107,23 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
   const nearField={value:floor||material.name==='shaft-deck'?3.24:9};
   material.onBeforeCompile = (shader, renderer) => {
     previous.call(material, shader, renderer);
-    shader.uniforms??={};shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;shader.uniforms.roomPracticalShadowFill=shadowFill!;shader.uniforms.roomPracticalNearField=nearField;shader.uniforms.roomShadowReadability=bounce!;
-    shader.fragmentShader = 'uniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', floor?localLights.replace(practicalOcclusion,practicalOcclusion+floorShape):localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
+    shader.uniforms??={};const rv=valueUniforms(material);shader.uniforms.roomValue=rv.value;shader.uniforms.roomValueTint=rv.tint;shader.uniforms.roomMarineGlow=MARINE_FLOOR_GLOW;shader.uniforms.roomMarineGlowColor=MARINE_FLOOR_GLOW_COLOR;shader.uniforms.roomValueField=ROOM_VALUE_FIELD;shader.uniforms.roomValueExit=ROOM_VALUE_EXIT;shader.uniforms.roomDiffuseEnvironmentGain=environmentGain!;shader.uniforms.roomPracticalShadowFill=shadowFill!;shader.uniforms.roomPracticalNearField=nearField;shader.uniforms.roomShadowReadability=bounce!;
+    shader.fragmentShader = 'uniform vec4 roomValue;uniform vec3 roomValueTint;uniform vec4 roomMarineGlow;uniform vec3 roomMarineGlowColor;uniform vec4 roomValueField;uniform vec4 roomValueExit;\nvec3 roomValueGrade(vec3 c){return mix(vec3(dot(c,vec3(.2126,.7152,.0722))),c,roomValue.y)*roomValueTint*roomValue.x;}\nuniform float roomDiffuseEnvironmentGain;uniform float roomPracticalShadowFill;uniform float roomPracticalNearField;uniform float roomShadowReadability;\n'+shader.fragmentShader.replace('#include <lights_fragment_begin>', floor?localLights.replace(practicalOcclusion,practicalOcclusion+floorShape):localLights).replace('#include <lights_fragment_maps>',reflectionLighting).replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
       float roomShadowLuma=dot(reflectedLight.directDiffuse+reflectedLight.indirectDiffuse+reflectedLight.directSpecular,vec3(.2126,.7152,.0722));
-      reflectedLight.indirectDiffuse+=vec3(.68,.82,1.0)*roomShadowReadability*(1.0-smoothstep(.008,.04,roomShadowLuma));`);
+      reflectedLight.indirectDiffuse+=vec3(.68,.82,1.0)*roomShadowReadability*(1.0-smoothstep(.008,.04,roomShadowLuma));
+      vec3 roomWorld=transpose(mat3(viewMatrix))*geometryPosition+cameraPosition;
+      // LIGHT13 field: fight circle and exit in light, perimeter falling to roomValue.w.
+      float roomField=mix(roomValue.w,1.0,1.0-smoothstep(roomValueField.z,roomValueField.w,distance(roomWorld.xz,roomValueField.xy)));
+      roomField=max(roomField,mix(roomValue.w,1.0,roomValueExit.w*(1.0-smoothstep(0.0,roomValueExit.z,distance(roomWorld.xz,roomValueExit.xy)))));
+      reflectedLight.directDiffuse=roomValueGrade(reflectedLight.directDiffuse)*roomField;reflectedLight.indirectDiffuse=roomValueGrade(reflectedLight.indirectDiffuse)*roomField;
+      reflectedLight.directSpecular=roomValueGrade(reflectedLight.directSpecular)*roomField;reflectedLight.indirectSpecular=roomValueGrade(reflectedLight.indirectSpecular)*roomField;
+      if(roomValue.z>0.0){
+        // LIGHT13 rig lamp: analytic soft pool around the marine, no light or pass.
+        float roomLamp=1.0-smoothstep(0.0,1.0,distance(roomWorld.xz,roomMarineGlow.xy)/roomMarineGlow.z);
+        roomLamp*=roomLamp*(1.0-smoothstep(.6,2.2,roomWorld.y));
+        reflectedLight.indirectDiffuse+=diffuseColor.rgb*roomMarineGlowColor*roomMarineGlow.w*roomValue.z*roomLamp;
+      }`);
   };
-  material.customProgramCacheKey = () => `${key}:local-light-rejection-v8`;
+  material.customProgramCacheKey = () => `${key}:local-light-rejection-v9-light13`;
   material.needsUpdate = true;
 }

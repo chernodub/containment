@@ -66,7 +66,7 @@ function rigidMaterial(material: T.Material): boolean {
   // Never equate different hooked finishes or accept an unknown shader hook.
   const original = sharedRoomFinishKeys.get(material);
   if(original===undefined)return false;
-  const key=material.customProgramCacheKey(),local=`${original}:local-light-rejection-v8`;
+  const key=material.customProgramCacheKey(),local=`${original}:local-light-rejection-v9-light13`;
   if(material.onBeforeRender===T.Material.prototype.onBeforeRender)
     return key===local||key===`${local}:graphic-surface-v1`;
   return key===`${local}:graphic-surface-v1:geometry-mrt-v1`&&hasStaticGeometryPolicy(material);

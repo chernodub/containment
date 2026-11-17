@@ -3,10 +3,13 @@ import * as T from 'three';
 import type { ShipEnvironment } from '../ShipEnvironments';
 import { getEnvironmentMood } from './EnvironmentMoods';
 import { applyFloorVariation } from './FloorVariation';
-import { optimizeLocalLights } from './LocalLightShading';
+import { optimizeLocalLights, setRoomValue } from './LocalLightShading';
+import { roomValueProfile } from './RoomValueStandard';
 import { applyHotFixtureSurface } from './HotFixtureSurface';
 import {registerFlatFloorLighting} from './FlatFloorLighting';
 
+const fixtureScales = new WeakMap<T.MeshStandardMaterial, {scale:number;written:number}>();
+const hsl = {h:0,s:0,l:0};
 const originals = new WeakMap<T.MeshStandardMaterial, { color: T.Color; roughness: number; metalness: number; emissiveIntensity: number }>();
 // Subtle surface tint only: environment identity comes from motivated light, not tinted black paint.
 const deckTint: Readonly<Record<ShipEnvironment, number>> = {
@@ -24,7 +27,8 @@ const deckNames = new Set(['painted-steel-deck','annulus-deck','annulus-circulat
 const hardwareBounce:Partial<Record<ShipEnvironment,number>> = {infested:.001,communications:.006,security:.0002,containment:.0005,reactor:.007};
 
 /** Tune room-owned surfaces and hot fixtures without changing warning, enemy or navigation colors. */
-export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 'cryogenics', templateId?:string, practicalShapes?:T.Vector4[]) {
+export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 'cryogenics', templateId?:string, practicalShapes?:T.Vector4[], valueStandard=true) {
+  const valueProfile = roomValueProfile(templateId);
   const mood = getEnvironmentMood(environment), seen = new Set<T.MeshStandardMaterial>();
   const legacyBounce=['cold-aisle','cryo-gallery','turbine-hall','power-conduits'].includes(templateId??'')?.006:0;
   const tint = new T.Color(deckTint[environment]),reactorDeck=templateId==='overload-floor'?new T.Color(0x46505a):reactorSteel;
@@ -67,6 +71,18 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         material.emissiveIntensity = Math.max(2.6, original.emissiveIntensity * 1.75);
       }
       const surfaceBounce=!floor&&hardwareBounce[environment]!==undefined?hardwareBounce[environment]!:deckBounce[environment];
+      // LIGHT13: dark ship, lit actors. Actor finishes are never room surfaces.
+      if(valueStandard&&material.userData.containmentMarineSurface===undefined&&!material.userData.k10Original&&!material.userData.k11Original){
+        const deck=material.userData.light13Deck===true,anyFloor=floor||deckNames.has(material.name);
+        if(valueProfile)setRoomValue(material,deck?1:anyFloor?valueProfile.floor.lit:valueProfile.wall.value,anyFloor?valueProfile.floorSaturation:valueProfile.wall.saturation,valueProfile.tint,valueProfile.marineGlow,valueProfile.perimeter.value);
+        else setRoomValue(material);
+        // Neutral (white/pale) fixtures yield to actors; coloured warning/route emitters keep their meaning.
+        const previous=fixtureScales.get(material);material.emissive.getHSL(hsl);
+        // Divide out only our own last write; other owners may have reset the intensity since.
+        const base=previous&&material.emissiveIntensity===previous.written?previous.written/previous.scale:material.emissiveIntensity;
+        const scale=valueProfile&&material.emissive.getHex()!==0&&hsl.s<.4?valueProfile.fixtures:1;
+        material.emissiveIntensity=base*scale;fixtureScales.set(material,{scale,written:material.emissiveIntensity});
+      }
       optimizeLocalLights(material,environment==='reactor'?(templateId==='overload-floor'||templateId==='manual-control-chamber'?.12:1):.02,environment==='cargo'||environment==='communications'?.16:.025,Math.max(templateId==='reactor-vault'?.013:templateId==='manual-control-chamber'?.010:surfaceBounce,legacyBounce));
     }
   });
