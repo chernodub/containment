@@ -155,7 +155,7 @@ opened both unresized enemy strips, native and exact-480 phase frames 01/08/15/2
 Feet, sac and torso stay connected and clear of the floor; the strike broadens
 then recovery stays loaded. At 480 the warning communicates commitment more
 strongly than the tiny body detail. Retain the Carrier correction. High-impulse
-Matron still rocks/propps sac-up at the final 1.6-second study sample; eventual
+Matron still rocks/props sac-up at the final 1.6-second study sample; eventual
 settle remains outside that sample.
 
 Native rifle pilot look → retain: `native-rifle-pilot` uses public rifle fire;
