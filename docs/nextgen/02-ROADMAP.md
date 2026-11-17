@@ -51,7 +51,8 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | KA12 title key art (torn breach, Lantern Brood silhouettes), ending image, second-generation weapons — Astra | merged | title accepted after a second pass with lead direction |
 | P11 one hero set piece per room, kit craft pass, fixture hierarchy — Astra (`streams/P11-set-pieces.md`) | merged | all twenty rooms placed, campaign clears, ≤ 330 draws; lead review: breach and several landmarks improved, but infestation is still thin strands (Swarm Junction) and rooms still lack incidents/belongings (Residential) |
 | GROW13 Brood growth kit, fifteen pieces incl. hive heart — Opus, modelling only | merged | review placement turns Swarm Junction into a stronghold |
-| DRESS13 growth-kit placement in rooms 15–20 and one staged incident per room in rooms 1–14 — Sol | running | |
+| DRESS13 growth-kit placement in rooms 15–20 and one staged incident per room — Sol | merged; correction pass running | 277 draws peak, campaign 20/20; lead review: creep blobs on the fight floor, masses on wall caps, incidents too thin |
+| PERF13 creature LODs, shadow cost, main-thread CPU — Sol | running | merged build at load ≈ 15: frame p50 17 / p95 25 ms, CPU p95 12–38 ms, ≈ 500k triangles per frame |
 | G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
 | D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |
 | F11 per-pass GPU/CPU breakdown tool and small cuts — Sol | merged | max 124 draws, zero combat compiles; frame budget cannot be certified on the loaded host |
@@ -59,15 +60,15 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | **R11** independent verdicts by two Astra reviewers on `final6` | done | visual 5–7, play 5–7: "advanced prototype with a commercially presentable vertical slice" — `reviews/R11-verdict.md` |
 | **Wave 12** — from the R11 findings | running | |
 | CAM12 whole-marine framing envelope, usable viewport, threat-aware bias, grouped edge indicators — Sol | merged | 41,200-pose sweep: minimum clearance 12 px; open: four room-AABB exceptions, one attacker/bar overlap, higher CPU cost |
-| FEEL12 aim/body/beam agreement, small-enemy commitment, hit and kill chains, marine solid again — Sol | merged; correction pass running | lead review: warnings overshoot in crowds (red hatch carpets the floor, disc cut-outs around enemies) and the marine still reads dark grey instead of light armour |
+| FEEL12 aim/body/beam agreement, small-enemy commitment, hit and kill chains, crowd-safe warnings (outlines, union), marine light and solid — Sol | merged | |
 | VFX12 translucent-marine fix — Astra | merged | Astra fixed the x-ray self-occlusion, then could not carry the effects rework |
 | VFX13 flagship effects: Flashfire, Railbreaker, Cryo Nova, Overdrive moments (one pooled shader module) — Opus | merged | clear step up; author says still short of commercial bar (fire is a sheet, not a volume) |
-| VFX14 the other twelve abilities and deployables with the same technique — Sol | running | |
+| VFX14 the other twelve abilities and deployables with the same technique — Sol | merged | Sol names Napalm Charge, Ram, Frost Trail, Overclock as still weakest |
 | ENC12 encounter scripts per room and role AI, elite saturation cut, Warden/Matron demands, teaching beats, eight transformative augments, supply stops and route choice — Sol | merged | Story/novice 57.5%, Standard/competent 42.5%, Veteran/competent 20%; rig imbalance and pod/relay presentation limits noted in `ENC12-REPORT.md` |
 | K11b creature second pass — Opus; second-pass integration and KTX2 repack — Sol | merged | creature textures 132 → 4.8 MiB, downloads 23.7 → 8.1 MB; named emissive regions `warden-ram`, `matron-vents` |
 | RW12 reward cards with illustrations and behavioural headlines, ending composition (transmission leaving the dying ship), re-posed rig portraits — Astra | merged | illustrations are variations of one canister form — candidate for a later pass |
 
-Next (lead): merge wave 12; re-integrate creatures; performance certification on a quiet machine (nothing else running); gallery `final7`; R12 review by the same two lenses.
+Next (lead): merge DRESS13 correction and PERF13; gallery `final7` (same sections as `final6`); R12 review by the same two lenses; plan wave 13 from it.
 
 ## Decisions log
 
