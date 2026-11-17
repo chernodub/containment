@@ -11,3 +11,7 @@ Round 2 is captured in dress13-edge-final; two machines retain consumed shells, 
 ## Overload Floor
 Round 1: opened native fight02 and exhaust04, plus 480 reductions. Growth stays dark and peripheral, with substantially dimmer lanterns; the reactor and marine dominate.
 Fix: flattened the long overhead membrane's vertical sag and kept the central holdout floor free of all raised growth. Final source capture follows the common build.
+
+## Breached Loading Bay first trace
+Round 1: opened native entry01 and 480 entry01. A burst duct and connected creep sit by the port tear, well clear of the marine and freight turn floor; warm room lighting makes the flesh brighter than intended.
+Fix: baked trace albedo gain reduced to .65, keeping the early contamination quiet. Complete five-position tour/calm in dress13-edge-final; final source recapture follows.
