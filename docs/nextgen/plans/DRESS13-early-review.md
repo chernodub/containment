@@ -30,3 +30,6 @@ Detail correction before capture: replaced panel-shaped footprints/soot/casings 
 
 ### Round 1 actual image review — Residential Gallery
 Opened native tour02 and exact480 tour01/03 against final6 calm native/480: luggage and the skew barricade now register at the nook; the marine remains unobscured and the fight floor retains quiet values. The cases still read too closed, so the correction adds a dark opening and a folded pale garment on the large case rather than more scattered props.
+
+### Round 1 actual image review — Awakening Bay
+Opened native tour02 and exact480 tour01/03 against final6: forced-open canopy reads, but the dropped kit is hidden by the bank console and the tread is too far behind it. Correction moves kit and wet trail to the exposed west foot of the bank and adds a restrained pale medical cross; the observation fight floor remains clear.

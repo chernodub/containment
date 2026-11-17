@@ -23,8 +23,8 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
   }
   if (id === 'awakening-bay') {
     // Release debris and a dropped recovery kit below the forced-open berths.
-    put('service-transit-case',603,360,-.35,[.75,.5,.7]);
-    put('deck-access-panel',617,330,.55,[.32,1,.25],.02,'clinical');
+    put('service-transit-case',535,370,-.35,[.75,.5,.7]);
+    put('deck-access-panel',548,362,.55,[.32,1,.25],.02,'clinical');
 
   }
   if (id === 'passenger-vault') {
@@ -91,8 +91,9 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     const g = new T.ShapeGeometry(shape);g.rotateX(-Math.PI/2);return mesh(g,m,x,.008,z,angle);
   };
   if(id==='awakening-bay') {
+    for(const [w,d] of [[.26,.08],[.08,.26]]) {const g=new T.PlaneGeometry(w,d);g.rotateX(-Math.PI/2);mesh(g,scratch,535,.27,370,-.35);}
     for(let i=0;i<6;i++) {
-      const x=620+(i%2?7:-7)+i*4,z=350+i*8;
+      const x=540+(i%2?7:-7)+i*4,z=380+i*8;
       flat([[-.075,-.17],[.065,-.17],[.095,-.05],[.075,.16],[.025,.23],[-.06,.18],[-.09,.02]],wet,x,z,.25);
       flat([[-.06,-.04],[.065,-.04],[.065,.05],[-.06,.05]],wet,x-2,z-9,.25);
     }
