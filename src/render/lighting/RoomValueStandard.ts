@@ -9,6 +9,8 @@ import * as T from 'three';
  */
 export type RoomValueProfile = Readonly<{
   /** Deck albedo multiplier inside baked fixture pools, outside them, and at hull/void edges. */
+  /** Three fixture centres in native room units; the fight circle remains pool zero. */
+  fixturesAt?: readonly (readonly [number, number])[];
   floor: Readonly<{lit:number; unlit:number; edge:number}>;
   /** Fight-circle falloff from the authored arena centre (metres) toward the perimeter multiplier. */
   perimeter: Readonly<{inner:number; outer:number; value:number; lane?:number}>;
@@ -32,6 +34,12 @@ export type RoomValueProfile = Readonly<{
 const profile = (p: RoomValueProfile) => Object.freeze(p);
 
 export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = Object.freeze({
+  'awakening-bay': profile({
+    fixturesAt:[[440,240],[640,440],[640,800]],
+    floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},
+    wall:{value:.48,saturation:.55}, floorSaturation:.48,tint:0xc1e5ef,
+    fixtures:.20,practicals:.45,ambient:.45,marineGlow:1,exit:.9,
+  }),
   // Palest room: cold inspection pools on the portal; cage recesses near-black.
   'crew-checkpoint': profile({
     floor:{lit:.34,unlit:.18,edge:.09}, perimeter:{inner:4.5,outer:10.5,value:.22},
