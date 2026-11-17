@@ -39,7 +39,9 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     shards(804, 510, 0x697374);
     for (let i = 0; i < 3; i++) box(815 + i * 10, .035, 500 - i * 4, .24, .05, .18, 0x65716b, i * .6);
   } else if (id === 'breached-loading-bay') {
-    scuff(472, 369, 2.8, -.58); scuff(516, 396, 2.8, -.58);
+    scuff(391, 457, 2.8, -.58); scuff(415, 434, 2.8, -.58);
+    box(399, .013, 451, .075, .003, 2.5, stain, -.58);
+    box(412, .014, 443, .06, .003, 2.2, stain, -.58);
     // Suppression foam follows the torn shoulder instead of spilling into the
     // lower turning floor. Low irregular scallops read differently from ice.
     for (let i = 0; i < 14; i++) {

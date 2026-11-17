@@ -19,9 +19,9 @@ const incidents: Record<string, Piece[]> = {
   ],
   // A diagonal chain of dragged cargo terminates at the torn hull shoulder.
   'breached-loading-bay': [
-    ['service-stowage-crate', 485, 350, .9, -.58, .25],
-    ['service-transit-case', 514, 364, .8, -.58],
-    ['service-transit-case', 538, 381, .65, -.4, 1.2, .28],
+    ['service-stowage-crate', 405, 455, .9, -.58, .25, .12],
+    ['service-transit-case', 423, 426, .8, -.58],
+    ['service-transit-case', 445, 403, .65, -.4, 1.2, .28],
     ['service-pressure-drum', 561, 396, .65, -.6, 1.4, .23],
     ['service-access-hatch', 588, 410, .75, -.58, 1.5, .14],
     ['service-cable-tray', 616, 430, .7, .9],

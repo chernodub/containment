@@ -19,3 +19,8 @@ First runtime attempt (`dress13-services-r1`, frozen source67f4007) stopped befo
 
 Opened native fight-tour02 and exact480 tour02/03 against final6. The shifted gantry reads clearly and the marine remains unobstructed, but most added cases were buried behind its load.
 Moved the crushed three-crate stack onto the front-left machinery bed and enlarged it 20–25%; the spill remains north of the fight circle. Final tour/calm recheck pending the shared second batch.
+
+## Breached Loading Bay — round1 → correction
+
+Opened native fight-tour02 and exact480 tour02/03 against final6. Foam and bent hull read, but the dragged cargo was entirely inside the wound and did not connect to the dock floor.
+Pulled the first three cases back along the port shoulder and exposed two low dark drag scars on the apron, preserving the central turning circle and broad port route. Final tour/calm recheck pending the shared second batch.
