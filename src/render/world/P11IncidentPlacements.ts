@@ -17,7 +17,7 @@ export function p11IncidentPlacements(id: string): OriginalKitInstance[] {
   }
   if (id === 'swarm-junction') {
     // Broad but low sculpture remains inside the existing north-bank void.
-    add('brood-stronghold-wall',855,280,1.8,.1);
+    add('brood-stronghold-wall',860,280,1.8,.1);
     result[result.length - 1].matrix.scale(new T.Vector3(1,.7,1));
   }
   if (id === 'relay-racks') add('failed-relay-patch',656,530,1,.22);

@@ -86,42 +86,56 @@ def pressure_chamber():
  L.sweep('Captive relief cap tether',[(1.22,.31,1.14),(1.35,.32,1.4),(1.2,.32,1.5)],.018,'p11-steel',4)
 
 
+def angular_scale(name,c,size=(.46,.3,.2),turn=0,tilt=0):
+ import bpy,bmesh
+ from mathutils import Matrix,Vector
+ outline=[(-1,-.35),(-.55,-.92),(.28,-.8),(.86,-.35),(.72,-.08),(1,.12),(.18,.86),(-.68,.6)]
+ verts=[];faces=[];n=len(outline)
+ rotation=Matrix.Rotation(turn,3,'Z')@Matrix.Rotation(tilt,3,'X')
+ for r,h in ((1,0),(.8,.22),(.55,.52)):
+  for x,y in outline:verts.append(rotation@Vector((x*size[0]*r,y*size[1]*r,h*size[2]))+Vector(c))
+ for row in range(2):
+  for i in range(n):faces.append((row*n+i,row*n+(i+1)%n,(row+1)*n+(i+1)%n,(row+1)*n+i))
+ verts.append(rotation@Vector((-.12*size[0],0,size[2]))+Vector(c))
+ for i in range(n):faces.append((2*n+i,2*n+(i+1)%n,3*n))
+ faces.append(tuple(range(n-1,-1,-1)))
+ mesh=bpy.data.meshes.new(name);mesh.from_pydata(verts,[],faces);mesh.update()
+ bm=bmesh.new();bm.from_mesh(mesh);bmesh.ops.recalc_face_normals(bm,faces=bm.faces);bm.to_mesh(mesh);bm.free()
+ obj=L._link(mesh,name,'p11-tint','#625947');L.finish(obj,'p11-tint',0,smooth=False,tint='#625947')
+ lip=[rotation@Vector((outline[i][0]*size[0],outline[i][1]*size[1],.01))+Vector(c) for i in (2,3,4,5,6)]
+ L.sweep(name+' chipped bone edge',lip,.017,'p11-tint',4,tint='#a2977f')
+
+
 def consuming_mantle():
  import infested_craft as C
  S=C.S
- L.asset('consuming-workstation-mantle',1500)
- # A load-bearing wrap with a vertical throat, sculpted rather than piled capsules.
- primitives=[S.Ellipsoid((-.4,0,.7),(.62,.34,.68)),S.Ellipsoid((.1,.02,.9),(.68,.32,.32)),S.Ellipsoid((.62,.02,.65),(.34,.28,.43))]
- primitives=[S.Displace(p,.035,13,4+i) for i,p in enumerate(primitives)]
- primitives.append(S.Ellipsoid((.12,-.25,.6),(.36,.23,.28),op='sub'))
- C.sculpt('Pitted mass swallowing column',primitives,budget=360,voxel=.03)
- C.shell('Overlapping anterior armor',(-.35,-.03,1.17),(.65,.39,.22),tilt=.3,seed=9,budget=200)
- C.shell('Second mantle armor',(.38,-.02,.95),(.56,.34,.18),tilt=.25,seed=12,budget=200)
- L.lathe('Enclosed violet brood fissure',[(.01,0),(.09,.025),(.08,.05),(.01,.075)],(.08,-.25,.65),'p11-bio-violet',8,'Y')
- # A consumed service panel remains legible around the mass, forced into a bow.
- L.profile_x('Distorted service hatch',[(-.05,.18),(.08,.18),(.08,.9),(-.22,1.13),(-.3,1.04),(-.05,.72)],-.78,.6,'e9-body',.015)
- for x in (-.68,.48):
-  L.cylinder('Retained hatch fixing',(x,-.12,.24),.045,.04,'p11-steel','Y',8,0)
- L.sweep('Mantle tension tendon',[(-.8,-.1,.8),(-.87,-.2,.37),(-.8,-.25,.03)],.06,'p11-flesh',5)
+ L.asset('consuming-workstation-mantle',912)
+ parts=[S.Displace(S.Ellipsoid((-.25,.05,.65),(.65,.26,.43)),.055,12,8),S.Ellipsoid((.38,.03,.65),(.49,.24,.33)),S.Ellipsoid((.12,-.23,.52),(.3,.22,.3),op='sub')]
+ C.sculpt('Dark ridged panel-consuming membrane',parts,role='p11-tint',tint='#40363e',budget=210,voxel=.035)
+ for i,(x,y,z,t) in enumerate([(-.62,.08,1.02,.15),(-.25,.12,1.16,.05),(.15,.11,1.12,-.1),(.54,.07,.98,-.18),(-.02,-.22,.98,.7),(-.66,-.13,.65,.65),(.6,-.13,.56,.6)]):
+  angular_scale('Overlapping column scute '+str(i),(x,y,z),(.38,.27,.23),turn=(i%2-.5)*.3,tilt=t)
+ L.profile_x('Bowed seized hatch',[(-.01,.16),(.07,.16),(.07,.72),(-.22,.96),(-.28,.9),(-.01,.62)],-.72,.64,'e9-body',0)
+ for x in (-.7,.62):
+  L.sweep('Taut anchored column tendon',[(x,-.08,.72),(x*1.08,-.22,.35),(x*.95,-.25,.08)],.018,'p11-flesh',4)
+ L.lathe('Recessed mantle lumen',[(.01,0),(.045,.02),(.01,.04)],(.1,-.22,.53),'p11-bio-violet',6,'Y')
+
 
 def brood_bastion():
  import infested_craft as C
  S=C.S
  L.asset('brood-stronghold-wall',1500)
- # Thick annular nest has consumed the duct wall; the cavity is actual geometry.
- mass=S.Displace(S.Ellipsoid((0,0,.66),(1.15,.46,.64)),.055,11,21)
- C.sculpt('Hollow brood buttress',[mass,S.Ellipsoid((.16,-.28,.62),(.59,.45,.4),op='sub')],budget=440,voxel=.035)
- C.shell('Shingled brood roof',(-.3,.03,1.17),(.88,.51,.22),tilt=.12,seed=14,budget=200)
- # Metal roof ripped into angular sections by the expanding brood, still hinged.
+ C.sculpt('Hollow ridged brood membrane',[S.Displace(S.Ellipsoid((0,0,.62),(1.1,.34,.6)),.065,12,21),S.Ellipsoid((.05,-.22,.52),(.64,.4,.4),op='sub')],role='p11-tint',tint='#40363e',budget=260,voxel=.04)
+ for i,(x,y,z,t) in enumerate([(-.77,.12,1.05,.15),(-.38,.14,1.3,.08),(.06,.16,1.34,0),(.5,.12,1.23,-.14),(.87,.06,.98,-.2),(-.87,-.12,.61,.7),(.86,-.12,.5,.65)]):
+  angular_scale('Brood wall shingle '+str(i),(x,y,z),(.43,.31,.25),turn=(i%3-1)*.3,tilt=t)
+ # Exposed duct braces are deliberately in FRONT of membrane, visibly forced apart.
  for side in (-1,1):
-  L.profile_x('Bowed duct wall rib',[(-.12,.12),(.1,.12),(.1,.62),(-.24,1),(-.42,1.1),(-.45,.99),(-.12,.51)],side*.88-.06,side*.88+.06,'e9-trim',.012)
- L.slab('Torn duct roof leaf',[(-.91,-.12),(-.45,-.38),(.13,-.25),(.4,-.43),(.85,-.2),(.8,.29),(-.8,.28)],.88,.94,'e9-body',.008)
- L.lathe('Brood egg in dark throat',[(.03,0),(.13,.08),(.17,.14),(.14,.2),(.16,.26),(.12,.32),(.07,.39),(.01,.44)],(-.12,-.28,.23),'p11-flesh',8)
- C.shell('Brood egg protective shingle',(-.15,-.21,.55),(.24,.18,.08),tilt=.25,seed=17,budget=65)
- L.lathe('Enclosed egg glow',[(.02,0),(.05,.025),(.02,.05)],(-.12,-.43,.47),'p11-bio-violet',6,'Y')
- # Strong braided roots transmit load into the seized duct footings.
+  L.profile_x('Burst duct upright',[(-.35,.08),(-.24,.08),(-.24,.55),(-.52,.91),(-.64,1.04),(-.71,.98),(-.35,.5)],side*.91-.05,side*.91+.05,'e9-trim',0)
+ L.slab('Torn duct roof leaf',[(-.8,-.18),(-.55,-.45),(.08,-.32),(.3,-.5),(.76,-.22),(.72,.1),(-.75,.08)],.82,.88,'e9-body',0)
+ for i,x in enumerate((-.35,0,.35)):
+  L.lathe('Ribbed egg in brood opening',[(.025,0),(.11,.07),(.13,.12),(.1,.18),(.12,.23),(.08,.29),(.01,.35)],(x,-.33,.12+.03*(i%2)),'p11-flesh',6)
+  L.lathe('Faint egg slit',[(.01,0),(.035,.02),(.01,.04)],(x,-.435,.28),'p11-bio-violet',5,'Y')
  for side in (-1,1):
-  L.sweep('Anchored brood root',[(side*.8,-.05,.65),(side*1.01,-.18,.35),(side*.99,-.32,.05)],.09,'p11-growth',5)
+  for offset in (0,.12):L.sweep('Tensioned duct anchor',[(side*.8,-.1,.65),(side*(.96+offset),-.27,.3),(side*.97,-.4,.04)],.018,'p11-flesh',4)
 
 def failed_patch():
  L.asset('failed-relay-patch',1500)
@@ -153,4 +167,4 @@ L.export('incidents',OUT,'incidents.glb','Interrupted repairs and physical conse
 if '--render' in L.args():
  from cpu_preview import stage
  L._stage=stage
- for name in ([names[2]] if '--pressure' in L.args() else ([names[-1]] if '--last' in L.args() else names)):L.render(L.ROOT/'artifacts/nextgen/p11-final/beauty'/(name+'-hero.png'),[name],'hero',scale=1.18)
+ for name in (names[3:5] if '--growth' in L.args() else ([names[2]] if '--pressure' in L.args() else ([names[-1]] if '--last' in L.args() else names))):L.render(L.ROOT/'artifacts/nextgen/p11-final/beauty'/(name+'-hero.png'),[name],'hero',scale=1.18)
