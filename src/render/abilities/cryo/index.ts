@@ -82,15 +82,13 @@ class CryoPresentation implements AbilityPresentation {
       if (event.phase === 'impact') {
         const radius = (event.radius ?? 300) / UNIT;
         // Whiteout establishes a persistent perimeter; Nova owns the thick rolling front.
-        k.ring(px, pz, radius, ICE, .65);
-        k.flash(px, pz, ICE, 1.5, 4, 3, .12);
-        k.camera(.14);
+        // VFX15: OverdrivePayoff owns the climax (frost wall); no shockwave ring here.
+        void radius;
       } else if (event.phase === 'burst') {
-        const pulse = k.fx.spawn(FxMode.Shock, px, pz, .36);
-        pulse.range = (event.radius ?? 100) / UNIT; pulse.color = CORE; pulse.intensity = .65;
+        // Freeze pulses travel the Climax crack network; only a small shard puff here.
         k.burst(px, .35, pz, 'cryo', 8, 1.4, .45);
       } else if (event.phase === 'end') {
-        k.ring(px, pz, (event.radius ?? 300) / UNIT, ICE, .75, true);
+        // Ending shatter is owned by OverdrivePayoff.
       }
     }
   }
@@ -271,12 +269,6 @@ class CryoPresentation implements AbilityPresentation {
     }
     if (clock) {
       clock.seen = true;
-      if (!clock.fx?.live || clock.fx.mode !== FxMode.Aura || clock.fx.seed !== clock.fxSeed) {
-        clock.fx = k.fx.spawn(FxMode.Aura, x, z, 1e6);
-        clock.fx.h0 = .06; clock.fx.arc = 1; clock.fxSeed = clock.fx.seed;
-      }
-      clock.fx.x = x; clock.fx.z = z; clock.fx.range = radius;
-      clock.fx.color = ICE; clock.fx.param = fade * .07; clock.fx.intensity = .3;
       if (!clock.dome?.live || clock.dome.mode !== FxMode.Blizzard || clock.dome.seed !== clock.domeSeed) {
         clock.dome = k.fx.spawn(FxMode.Blizzard, x, z, 1e6);
         clock.domeSeed = clock.dome.seed;
@@ -287,8 +279,6 @@ class CryoPresentation implements AbilityPresentation {
       const pulse = Math.floor(age / 2000);
       if (dt > 0 && pulse > clock.pulse) {
         clock.pulse = pulse;
-        const front = k.fx.spawn(FxMode.Shock, x, z, .42);
-        front.range = radius; front.color = ICE; front.intensity = .55; front.h0 = .055;
         k.flash(x, z, ICE, 1.1, 4, 3, .1);
       }
     }

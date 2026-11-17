@@ -175,15 +175,17 @@ class PyroPresentation implements AbilityPresentation {
         const radius = (event.radius ?? 130) / UNIT;
         const p = this.acquire('ignition', x, z, event.phase === 'burst' ? .38 : .65); p.radius = radius; p.angle = event.angle ?? 0;
         kit.burst(x, .35, z, 'pyro', event.phase === 'burst' ? 12 : 20, 3, .65);
-        const burst = kit.fx.spawn(FxMode.Fire, x, z, event.phase === 'burst' ? .42 : .6);
-        burst.range = radius; burst.arc = Math.PI * 2; burst.h0 = .2; burst.h1 = .8;
-        burst.param = .2; burst.intensity = .7;
-        const char = kit.fx.spawn(FxMode.Scorch, x, z, 2.5);
-        char.range = radius; char.arc = Math.PI * 2; char.h0 = char.h1 = .035;
+        if (event.phase === 'burst') {
+          // Kill-burst: a small compact fireball, not a full-radius sheet.
+          const ball = kit.fx.spawn(FxMode.Fire, x, z, .42);
+          ball.range = Math.min(radius, 1.3); ball.arc = Math.PI * 2; ball.h0 = .3; ball.h1 = 1.1;
+          ball.param = .2; ball.intensity = .9;
+        }
         // The authoritative aura boundary is shared; the suit itself is the heat source.
         kit.flash(x, z, FIRE, event.phase === 'burst' ? 5 : 14, 6, event.phase === 'burst' ? 3 : 6, .25);
         kit.distort(x, z, radius, .004, .6, true);
-        if (event.phase === 'impact') { kit.ring(x, z, radius, CORE, .38); kit.camera(.34); kit.exposureFlash(.2); }
+        // VFX15: the rupture (heat column, molten floor) lives in OverdrivePayoff; no ring.
+        void radius;
       } else if (event.phase === 'end') {
         const cooling=this.acquire('cooling',x,z,.65);cooling.angle=this.suitAngle;
         kit.ring(x, z, .9, HOT, .35, true);

@@ -9,7 +9,7 @@ import * as T from 'three';
  * vertex shader from the exact simulated cone/strip/radius numbers and never
  * exceed them (the muzzle pull-in only moves the narrow apex inward).
  */
-export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6, Crack: 7, Fuel: 8, Pressure: 9, Pillar: 10, FuelStrip: 11, FrostStrip: 12, Blizzard: 13 } as const;
+export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6, Crack: 7, Fuel: 8, Pressure: 9, Pillar: 10, FuelStrip: 11, FrostStrip: 12, Blizzard: 13, Climax: 14 } as const;
 export type FxMode = (typeof FxMode)[keyof typeof FxMode];
 
 export interface FxSlot {
@@ -46,7 +46,11 @@ uniform float fxRange;uniform float fxInner;uniform vec2 fxHeight;uniform float 
 varying vec2 fxLocal;varying vec3 fxWorld;varying vec4 fxScreen;
 void main(){
  vec2 g=uv;vec3 w;float m=fxMode;
- if(m>12.5){
+ if(m>13.5){
+  // Climax disc (ground): u around, v centre to exact radius.
+  float a=g.x*6.2831853;float r=g.y*fxRange;
+  w=vec3(fxOrigin.x+cos(a)*r,fxHeight.x,fxOrigin.z+sin(a)*r);fxLocal=vec2(g.x,r);
+ }else if(m>12.5){
   float a=g.x*6.2831853,polar=g.y*1.5707963;
   float radius=fxRange*sin(polar);
   w=vec3(fxOrigin.x+cos(a)*radius,fxHeight.x+cos(polar)*fxHeight.y,fxOrigin.z+sin(a)*radius);
@@ -96,6 +100,12 @@ float fxNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
  return mix(mix(fxHash(i),fxHash(i+vec2(1.,0.)),f.x),mix(fxHash(i+vec2(0.,1.)),fxHash(i+vec2(1.)),f.x),f.y);}
 float fxFbm(vec2 p){float s=0.,a=.5;mat2 r=mat2(1.6,1.2,-1.2,1.6);
  for(int i=0;i<5;i++){if(fxLow>.5&&i>2)break;s+=a*fxNoise(p);p=r*p;a*=.5;}return fxLow>.5?s*1.14:s;}
+// Cell noise: x = nearest, y = second nearest, z = cell id hash. Edges where y-x is small.
+vec3 fxCells(vec2 p){vec2 i=floor(p),f=fract(p);float d1=8.,d2=8.;vec2 id=i;
+ for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){vec2 b=vec2(float(x),float(y));
+  vec2 o=vec2(fxHash(i+b),fxHash(i+b+17.31));vec2 r=b+o-f;float d=dot(r,r);
+  if(d<d1){d2=d1;d1=d;id=i+b;}else if(d<d2)d2=d;}
+ return vec3(sqrt(d1),sqrt(d2),fxHash(id+3.3));}
 // Blackbody-like ramp: smoke, dark red, orange, yellow, white (HDR for bloom).
 vec3 fxHeat(float t){
  vec3 c=mix(vec3(.035,.022,.018),vec3(.5,.05,.008),smoothstep(.04,.24,t));
@@ -323,6 +333,58 @@ void main(){
   float fade=1.-smoothstep(.15,1.,k);
   float mark=ribs*fragments*taper*fade;
   alpha=mark*.14;emit=(fxColor*.7+vec3(.9))*mark*fxIntensity;
+ }else if(m>13.5){
+  // VFX15 Overdrive climaxes: three distinct floor events on one disc (fxArc 1 cryo, 2 pyro, 3 arc).
+  float r=fxLocal.y,R=fxRange,a=fxLocal.x*6.2831853,el=fxArc,on=fxParam;
+  vec2 q=fxWorld.xz-fxOrigin.xz;
+  float n=fxFbm(q*.7+fxSeed);
+  // Exact native boundary: a thin element line, never a thick ring (arc has no native area).
+  float line=(1.-smoothstep(.0,.035,abs(r-R+.03)))*step(el,2.5);
+  if(el<1.5){
+   // Whiteout: jagged frost wall racing out, ice plates behind it, pulses travel the crack network.
+   float spread=R*(1.-pow(1.-clamp(age/.7,0.,1.),2.));
+   float teeth=pow(abs(sin(a*23.+n*8.)),5.)*.38+pow(abs(sin(a*61.+n*13.)),9.)*.2;
+   // Angular (seam-free) noise splits the front into uneven tongues racing at different speeds.
+   float an=fxFbm(vec2(cos(a),sin(a))*2.6+fxSeed);
+   float jag=spread*(.62+.5*an)+teeth*smoothstep(R*.3,R,spread)-.2;
+   float inside=1.-smoothstep(jag-.04,jag,r);
+   float wall=smoothstep(jag-.35-.4*(spread/R),jag-.04,r)*inside;
+   vec3 c=fxCells(q*.9+n*.8);
+   float crack=(1.-smoothstep(0.,.045,c.y-c.x))*smoothstep(.35,.6,fxFbm(q*.35+4.));
+   float pulseR=mod(max(0.,age-.7),2.)*R*.8;
+   float pulse=(1.-smoothstep(0.,1.1,abs(r-pulseR)))*step(.7,age)*crack;
+   float fern=pow(abs(sin(a*47.+n*7.+r*4.)),22.)*wall;
+   float crisp=.35+.65*exp(-max(0.,age-.5)*1.5);
+   emit=vec3(.5,.82,1.15)*(wall*crisp*.9+fern*.8+crack*inside*.18)+vec3(1.,1.4,1.9)*pulse*1.3;
+   alpha=inside*(.02+c.z*.03+crack*.2+wall*.24+fern*.18)+pulse*.2;
+   base=vec3(.72,.88,.97);
+  }else if(el<2.5){
+   // Meltdown: molten cracks spread irregularly; crust blisters glow near the suit; deck chars dark.
+   float spread=R*(1.-exp(-age*2.6))*(.55+.5*fxFbm(vec2(a*1.6,age*.3)+fxSeed));
+   float reveal=1.-smoothstep(spread-.5,spread,r);
+   vec3 c=fxCells(q*1.25+vec2(fxFbm(q*1.1+3.)*1.3));
+   float crack=1.-smoothstep(0.,.045+.05*n,c.y-c.x);
+   float near=1.-smoothstep(.3,R*.7,r);
+   float blister=(1.-smoothstep(.06,.24,c.x))*step(.6,c.z)*(.55+.45*sin(t*4.+c.z*31.));
+   float flow=.75+.25*sin(t*3.+c.z*20.-r*2.);
+   float heat=crack*reveal*(.5+.5*near)*flow;
+   emit=fxHeat(.3+heat*.6)*heat*1.15+vec3(1.7,.4,.04)*blister*near*reveal*.9+vec3(.55,.07,.01)*near*reveal*.4;
+   alpha=reveal*((.18+.28*near)*(1.-crack)+crack*.45);
+   base=vec3(.025,.01,.006);
+  }else{
+   // Overclock: time fractures — straight glass cracks with a chromatic split; outward snap, then flicker.
+   vec3 c=fxCells(q*.75+fxSeed),d=fxCells(q*.75+fxSeed+vec2(.07,.03));
+   float e1=1.-smoothstep(0.,.028,c.y-c.x),e2=1.-smoothstep(0.,.028,d.y-d.x);
+   float snapR=R*clamp(age/.16,0.,1.);
+   float snap=(1.-smoothstep(snapR-1.2,snapR,r))*smoothstep(snapR-2.4,snapR-1.2,r)*(1.-smoothstep(.12,.5,age));
+   float flick=step(.55,fxNoise(vec2(floor(t*12.)+c.z*9.,c.z*31.)));
+   float fall=1.-smoothstep(R*.45,R,r);
+   float live=fall*(.35+flick*.9)+snap*2.2;
+   emit=vec3(1.,.35,1.5)*e1*live+vec3(.25,.95,1.5)*e2*live*.8;
+   alpha=(e1+e2)*.12*(fall*flick+snap);
+  }
+  emit+=fxColor*line*1.1;alpha+=line*.32;
+  emit*=on*fxIntensity;alpha*=on;
  }else{
   // Sparse tangential weather on an open native-radius dome; the centre stays clear.
   float u=fxLocal.x*6.2831853,v=fxLocal.y;
@@ -351,7 +413,7 @@ void main(){
  gl_FragColor.rgb*=gl_FragColor.a/fxA0;
 }`;
 
-const MODE_ORDER: Record<number, number> = { 0: 2, 1: -3, 2: 4, 3: 3, 4: 2, 5: -3, 6: -3, 7: -3, 8: -2 };
+const MODE_ORDER: Record<number, number> = { 0: 2, 1: -3, 2: 4, 3: 3, 4: 2, 5: -3, 6: -3, 7: -3, 8: -2, 14: -3 };
 
 /** Fixed pool; spawn() recycles the oldest slot when full, never allocates. */
 export class FlagshipFx {
