@@ -1,7 +1,7 @@
 import * as T from 'three';
 import type { OriginalKitInstance } from './OriginalShipKitAssets';
 
-/** Sculptural growth stays on solid machinery/duct banks, outside the fight circle. */
+/** Tall takeover pieces stay outside the fight circle; shallow crust remains walkable. */
 export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
   const result: OriginalKitInstance[] = [];
   const add = (asset: string, x: number, z: number, scale: number, y = 0, angle = 0) => result.push({
@@ -48,7 +48,7 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
     // The heart owns the east crossing shoulder, beyond the fight circle.
-    // All tall growth is backed by the duct-bank faces; the crossing stays open.
+    // Nests back onto duct-bank faces; the heart leaves the lower crossing open.
     brood('brood-hive-heart', 815, 470, .8);
     brood('brood-nest-large', 300, 222);
     brood('brood-nest-large', 900, 818, 1, 0, Math.PI);
@@ -60,9 +60,18 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
     brood('brood-pods-large', 225, 270, .85);
     brood('brood-pods-small', 970, 770);
     brood('brood-pods-hatched', 475, 865);
-    for (const [x,z,a] of [[300,265,.3],[360,280,.7],[240,330,1.4],[900,780,2.6],[840,770,2.8],[970,710,1.3],[550,890,.4],[620,880,1.2],[680,930,2.1],[920,310,.8]]) {
+    for (const [x,z,a] of [[300,390,.3],[360,405,.7],[240,450,1.4],[900,780,2.6],[840,770,2.8],[970,710,1.3],[550,890,.4],[620,880,1.2],[680,930,2.1],[920,420,.8]]) {
       brood('brood-creep-a', x, z, 1.2, .002, a);
       brood('brood-creep-c', x + 38, z + 18, 1.1, .003, a + .7);
+    }
+    // The registered north banks advance to z340. Spread shallow crust on
+    // the exposed approaches and southern floor, instead of below those banks.
+    const floorPatches = [[280,440],[280,570],[280,700],[430,660],[580,660],[730,660],
+      [880,660],[920,440],[920,570],[920,700],[430,805],[600,805],[770,805],[920,805],[540,180],[650,260]];
+    for (const [i,[x,z]] of floorPatches.entries()) {
+      brood(i % 3 === 1 ? 'brood-creep-b' : 'brood-creep-a',x,z,1,.002,(i%3-1)*.08);
+      result[result.length-1].matrix.scale(new T.Vector3(2.5,.3,2.5));
+      result[result.length-1].surfaceGain = .38;
     }
     for (const [x,z,a] of [[300,181,0],[900,859,Math.PI]]) {
       brood('brood-creep-wall',x,z,1.7,.4,a);
