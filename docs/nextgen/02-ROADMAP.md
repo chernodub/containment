@@ -53,11 +53,13 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | GROW13 Brood growth kit, fifteen pieces incl. hive heart — Opus, modelling only | merged | review placement turns Swarm Junction into a stronghold |
 | DRESS13 growth-kit placement in rooms 15–20 and a staged incident in every room, with a correction pass — Sol | merged | Swarm Junction reads as a stronghold; Residential shows an interrupted evacuation; 277 draws peak |
 | G13 review gallery `final7` — Sol | done | 4,258 images; native campaigns died after 11/6/2/7 rooms (Standard) and 3 rooms (Story novice) — far from the sim's numbers |
-| **R12** on `final7`: Opus art-director pass (R12-C) done; Astra visual (R12-A) and play (R12-B) running | partly done | Opus: interface 7.5, first impression 6, effects 5.5, environments 5, cohesion 5, readability 4.5, characters 4.5 — "no value hierarchy" |
+| **R12** on `final7` — Astra visual and play verdicts, Opus art-director pass | done | visual 5.5–6.5, play 4.5–7; readability, counterplay and feel +1; environments and characters unchanged; pacing worse — `reviews/R12-verdict.md` |
 | **Wave 13** | running | |
 | LIGHT13 "the ship is dark; actors carry the light" standard on three rooms — Opus | merged | data-driven `ROOM_VALUE_PROFILES`; floor luminance roughly halved, marine plates ≈ 210, creatures dark with hot lanterns |
 | LIGHT14 the standard in the other seventeen rooms and its weak points — Sol | running | |
 | BAL13 sim-versus-native gap and early deaths; Story must not kill in room three — Sol | running | |
+| VFX15 four different Overdrive climaxes, Napalm with volume, effect priority in full builds — Opus | running | |
+| K13 Warden and Matron as a real boss tier (≈ 2× marine), brood pod asset, Stalker/Carrier/Spitter silhouette fixes — Opus, modelling only | running | integration (footprints, scale) by Sol afterwards |
 | PERF13 creature LODs, shadow proxies, camera/main-thread CPU — Sol | merged | triangles −32%, profiled thread CPU per render 17.2 → 7.9 ms; frame p95 ≤ 20 ms in 11/16 configurations (all Low, 3 of 8 High) on a loaded host — High still misses in five |
 | G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
 | D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |
@@ -74,7 +76,7 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | K11b creature second pass — Opus; second-pass integration and KTX2 repack — Sol | merged | creature textures 132 → 4.8 MiB, downloads 23.7 → 8.1 MB; named emissive regions `warden-ram`, `matron-vents` |
 | RW12 reward cards with illustrations and behavioural headlines, ending composition (transmission leaving the dying ship), re-posed rig portraits — Astra | merged | illustrations are variations of one canister form — candidate for a later pass |
 
-Next (lead): merge DRESS13 correction and PERF13; gallery `final7` (same sections as `final6`); R12 review by the same two lenses; plan wave 13 from it.
+Next (lead): after BAL13 — COMM13 (mechanics visible on screen: siege radius, pod countdown, priority vs resistance, Warden stun, off-screen shooter cue, Stalker reveal; priority kills with consequences); after LIGHT14 — dominant incident shapes in five signature rooms; then gallery `final8` and R13.
 
 ## Decisions log
 
