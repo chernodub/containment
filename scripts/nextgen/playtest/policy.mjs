@@ -277,7 +277,7 @@ export function routeOptions(actions) {
 
 /** Human input assumptions, in milliseconds/degrees unless named otherwise. */
 export const HUMAN_PROFILES = Object.freeze({
-  novice: Object.freeze({reactionMs:300,jitterMs:90,missChance:.20,missPerThreat:.09,aimDegrees:7,trackingMs:200,inputMs:200,movementMs:500,spacingError:80,fixationChance:.20,crowdDashTargets:4}),
+  novice: Object.freeze({reactionMs:300,jitterMs:90,missChance:.20,missPerThreat:.09,aimDegrees:7,trackingMs:200,inputMs:200,movementMs:500,spacingError:80,fixationChance:.20,crowdDashTargets:4,consumableNoticeMs:200,consumableHesitationChance:.20}),
   competent: Object.freeze({reactionMs:260,jitterMs:70,missChance:.10,missPerThreat:.07,aimDegrees:4,trackingMs:170,inputMs:160,movementMs:400,spacingError:55,fixationChance:.12,crowdDashTargets:3}),
   expert: Object.freeze({reactionMs:180,jitterMs:40,missChance:.025,missPerThreat:.025,aimDegrees:1.5,trackingMs:80,inputMs:120,movementMs:200,spacingError:25,fixationChance:.025,crowdDashTargets:2}),
 });
@@ -296,6 +296,9 @@ export function createHumanPolicy(seed, profile = 'competent') {
   };
   const jitter = amount => (random() * 2 - 1) * amount;
   const warnings = new Map(), hazardWarnings = new Map(), history = [];
+  const consumableNotices = new Map();
+  let consumableState=(seed^0xba113)>>>0;
+  const consumableRandom=()=>{consumableState=(Math.imul(consumableState,1664525)+1013904223)>>>0;return consumableState/0x100000000;};
   let roomKey, nextMove = 0, nextInput = 0, nextHabit = 0, spacing = 0;
   let lastMove = -Infinity;
   let movement = {dx:0,dy:0}, aimAngle = 0, fixation = false;
@@ -304,7 +307,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
     decide(s) {
       const now = s.elapsed * 1000, key = s.nodeId ?? s.node?.id;
       if (key !== roomKey) {
-        roomKey = key; warnings.clear(); hazardWarnings.clear(); history.length = 0; lastMove = -Infinity;
+        roomKey = key; warnings.clear(); hazardWarnings.clear(); consumableNotices.clear(); history.length = 0; lastMove = -Infinity;
         nextMove = nextInput = nextHabit = now; movement = {dx:0,dy:0};
       }
       const visible = visibleEnemies(s).map(e=>e.pendingAttack==='charge'&&e.windupMs>0&&e.clear?{...e,
@@ -368,6 +371,15 @@ export function createHumanPolicy(seed, profile = 'competent') {
         target={...target,x:s.player.x+dx*Math.cos(aimAngle)-dy*Math.sin(aimAngle),y:s.player.y+dx*Math.sin(aimAngle)+dy*Math.cos(aimAngle),screen};
       }
       const keys = chooseActions(perceived);
+      if(profile==='novice') {
+        const eligible=new Set(keys.filter(key=>['e','g','v'].includes(key)));
+        for(const key of consumableNotices.keys())if(!eligible.has(key))consumableNotices.delete(key);
+        for(let index=keys.length-1;index>=0;index--) {
+          const key=keys[index];if(!eligible.has(key))continue;
+          if(!consumableNotices.has(key))consumableNotices.set(key,now+config.consumableNoticeMs+(consumableRandom()<config.consumableHesitationChance?400:0));
+          if(now<consumableNotices.get(key))keys.splice(index,1);
+        }
+      }
       const close = perceived.enemies.filter(e=>e.clear&&distance(e,s.player)<140);
       const nearest = close.toSorted((a,b)=>distance(a,s.player)-distance(b,s.player))[0];
       // A person can spend a charge to make space before the pack winds up.
@@ -378,7 +390,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
       }
       const timelyKeys = keys.filter(key=>key!=='Shift'||active.every(e=>!insideMeleeWarning(e,s.player)||warningTime(e,s)>=120));
       const actions = now >= nextInput ? timelyKeys.slice(0,1) : [];
-      if (actions.length) nextInput = now + config.inputMs;
+      if (actions.length) {nextInput = now + config.inputMs;consumableNotices.delete(actions[0]);}
       const ammo=s.resources?.ammo, near=Math.min(Infinity,...visible.map(e=>distance(e,s.player)));
       const desired=ammo?(near<180&&ammo.shotgun.magazine+ammo.shotgun.reserve>0?'shotgun':ammo.rifle.magazine+ammo.rifle.reserve>0?'rifle':ammo.plasma.magazine+ammo.plasma.reserve>0?'plasma':'pistol'):s.combat.weapon;
       const weapon = !actions.length && now >= nextInput ? desired : s.combat.weapon;
