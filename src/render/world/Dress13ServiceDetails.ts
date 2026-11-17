@@ -23,7 +23,7 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
   };
   // Flush dragged/scuffed paths use broken narrow strokes, not luminous marks.
   const scuff = (x: number, z: number, length: number, yaw: number, color = stain) => {
-    for (let i = 0; i < 4; i++) box(x + i * 3, .012 + i * .0003, z + i * 2, .025 + i * .007, .003, length * (1 - i * .12), color, yaw);
+    for (let i = 0; i < 4; i++) box(x + i * 3, .024 + i * .0003, z + i * 2, .025 + i * .007, .003, length * (1 - i * .12), color, yaw);
   };
   const tool = (x: number, z: number, yaw: number, y = .035) => {
     box(x, y, z, .055, .035, .42, steel, yaw);
@@ -40,8 +40,8 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     for (let i = 0; i < 3; i++) box(815 + i * 10, .035, 500 - i * 4, .24, .05, .18, 0x65716b, i * .6);
   } else if (id === 'breached-loading-bay') {
     scuff(391, 457, 2.8, -.58); scuff(415, 434, 2.8, -.58);
-    box(399, .013, 451, .075, .003, 2.5, stain, -.58);
-    box(412, .014, 443, .06, .003, 2.2, stain, -.58);
+    box(399, .024, 451, .075, .002, 2.5, stain, -.58);
+    box(412, .025, 443, .06, .002, 2.2, stain, -.58);
     // Suppression foam follows the torn shoulder instead of spilling into the
     // lower turning floor. Low irregular scallops read differently from ice.
     for (let i = 0; i < 14; i++) {
@@ -83,10 +83,15 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     }
     scuff(807, 398, .9, 1.2, 0x453b43);
   } else if (id === 'safety-interlock-station') {
+    // Buckled access leaves close the camera-facing equipment opening. Their
+    // plane stays behind the first legal marine centre along this solid.
+    box(632, 1.025, 397, 1.12, 1.95, .09, 0x59666a, -.025);
+    box(668, 1.025, 397, 1.12, 1.95, .09, 0x637075, .025);
+    for (let i = 0; i < 15; i++) box(650 + i % 2, .16 + i * .12, 399, .09, .09, .035, 0x92978c);
     // A silvery weld seam and short stress gouges are on the solid rear
     // interlock frame, rather than a new barrier in either native doorway.
     for (let i = 0; i < 12; i++) box(624 + i * 4.5, .55 + i % 2 * .06, 402, .15, .045, .025, 0x89918b, .1);
-    for (let i = 0; i < 5; i++) line([641 + i * 4, .65, 402], [646 + i * 4, .92 + i % 2 * .06, 402], .02, steel);
+    for (let i = 0; i < 5; i++) line([623 + i * 4, 1.15, 399], [628 + i * 4, 1.65 + i % 2 * .1, 399], .025, rubber);
     tool(620, 410, .2); shards(673, 410);
   } else if (id === 'coolant-plant') {
     for (let i = 0; i < 11; i++) {
