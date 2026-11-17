@@ -131,3 +131,7 @@
 ## Diagnostic Gallery
 - Opened native calm and 480 colour/grey calm/tour/heavy: recorder/probe silhouette and diagnostic display now form the third-level landmark above cyan steel; marine and threats retain priority.
 - Initial source followed the nominal asset placement and missed the visible bay. Moved it to the physical recorder/probe area and reopened corrected frames; fatal text and rail boundaries stay readable. Build/seven frames pass.
+
+## Safety Interlock Station
+- Opened native calm and 480 colour/grey calm/tour/heavy: warm indicator/key-cylinder bank reads above the service floor, with locked-record text crisp and marine/threats brighter.
+- Mechanism-centred source leaves cage recesses dark while rails, battery return and doorway feet remain readable. Build and seven guarded frames pass.
