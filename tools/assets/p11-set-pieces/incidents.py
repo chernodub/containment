@@ -101,15 +101,16 @@ def angular_scale(name,c,size=(.46,.3,.2),turn=0,tilt=0):
  faces.append(tuple(range(n-1,-1,-1)))
  mesh=bpy.data.meshes.new(name);mesh.from_pydata(verts,[],faces);mesh.update()
  bm=bmesh.new();bm.from_mesh(mesh);bmesh.ops.recalc_face_normals(bm,faces=bm.faces);bm.to_mesh(mesh);bm.free()
- obj=L._link(mesh,name,'p11-tint','#625947');L.finish(obj,'p11-tint',0,smooth=False,tint='#625947')
+ obj=L._link(mesh,name,'p11-tint','#514d39');L.finish(obj,'p11-tint',0,smooth=False,tint='#514d39')
  lip=[rotation@Vector((outline[i][0]*size[0],outline[i][1]*size[1],.01))+Vector(c) for i in (2,3,4,5,6)]
- L.sweep(name+' chipped bone edge',lip,.017,'p11-tint',4,tint='#a2977f')
+ L.sweep(name+' chipped bone edge',lip,.017,'p11-tint',4,tint='#8a8870')
 
 
 def consuming_mantle():
  import infested_craft as C
  S=C.S
  L.asset('consuming-workstation-mantle',912)
+ L.CURRENT['p11OrganicRelief']=True
  parts=[S.Displace(S.Ellipsoid((-.25,.05,.65),(.65,.26,.43)),.055,12,8),S.Ellipsoid((.38,.03,.65),(.49,.24,.33)),S.Ellipsoid((.12,-.23,.52),(.3,.22,.3),op='sub')]
  C.sculpt('Dark ridged panel-consuming membrane',parts,role='p11-tint',tint='#40363e',budget=210,voxel=.035)
  for i,(x,y,z,t) in enumerate([(-.62,.08,1.02,.15),(-.25,.12,1.16,.05),(.15,.11,1.12,-.1),(.54,.07,.98,-.18),(-.02,-.22,.98,.7),(-.66,-.13,.65,.65),(.6,-.13,.56,.6)]):
@@ -124,6 +125,7 @@ def brood_bastion():
  import infested_craft as C
  S=C.S
  L.asset('brood-stronghold-wall',1500)
+ L.CURRENT['p11OrganicRelief']=True
  C.sculpt('Hollow ridged brood membrane',[S.Displace(S.Ellipsoid((0,0,.62),(1.1,.34,.6)),.065,12,21),S.Ellipsoid((.05,-.22,.52),(.64,.4,.4),op='sub')],role='p11-tint',tint='#40363e',budget=260,voxel=.04)
  for i,(x,y,z,t) in enumerate([(-.77,.12,1.05,.15),(-.38,.14,1.3,.08),(.06,.16,1.34,0),(.5,.12,1.23,-.14),(.87,.06,.98,-.2),(-.87,-.12,.61,.7),(.86,-.12,.5,.65)]):
   angular_scale('Brood wall shingle '+str(i),(x,y,z),(.43,.31,.25),turn=(i%3-1)*.3,tilt=t)

@@ -57,7 +57,16 @@ def bake_normal_atlas(groups, output_png, size=1024, threads=4):
         # Exact source transforms, including group origin and any authored scale.
         high.matrix_world=low.matrix_world.copy()
         role=low.get('role','')
-        if role in ('p11-growth','p11-flesh'):
+        organic_relief=bool(low.parent and low.parent.get('p11OrganicRelief')) and role=='p11-tint'
+        extra_textures=[]
+        if organic_relief:
+            sub=high.modifiers.new('Disposable dense organic relief source','SUBSURF');sub.subdivision_type='SIMPLE';sub.levels=3
+            texture=bpy.data.textures.new('Organic shell growth ridges','WOOD');texture.wood_type='RINGNOISE';texture.noise_scale=.085;texture.turbulence=5
+            displace=high.modifiers.new('Narrow raised growth ridges','DISPLACE');displace.texture=texture;displace.strength=.006;displace.mid_level=.5
+            pits=bpy.data.textures.new('Organic shallow pits','VORONOI');pits.noise_scale=.04
+            pit_mod=high.modifiers.new('Shallow pitted shell surface','DISPLACE');pit_mod.texture=pits;pit_mod.strength=-.0025;pit_mod.mid_level=.5
+            extra_textures.append(pits)
+        elif role in ('p11-growth','p11-flesh'):
             sub=high.modifiers.new('High sculpt tessellation','SUBSURF');sub.subdivision_type='SIMPLE';sub.levels=1
             texture=bpy.data.textures.new('P11 high sculpt folds','CLOUDS');texture.noise_scale=.12;texture.noise_depth=1
             displace=high.modifiers.new('Sculpted membrane relief','DISPLACE');displace.texture=texture;displace.strength=.002;displace.mid_level=.5
@@ -69,13 +78,15 @@ def bake_normal_atlas(groups, output_png, size=1024, threads=4):
         bpy.ops.object.select_all(action='DESELECT');high.select_set(True);low.select_set(True)
         bpy.context.view_layer.objects.active=low
         print('P11_NORMAL_BAKE '+low.name,flush=True)
+        scene.render.bake.cage_extrusion=.0045 if organic_relief else .0025
         bake_started=time.perf_counter()
         bpy.ops.object.bake(type='NORMAL')
         elapsed=time.perf_counter()-bake_started
-        records.append({'mesh':low.name,'role':role,'seconds':round(elapsed,3),'method':'sculpted high membrane' if texture else 'three-segment high bevel'})
+        records.append({'mesh':low.name,'role':role,'seconds':round(elapsed,3),'method':'dense high organic ridges and pits' if organic_relief else ('sculpted high membrane' if texture else 'three-segment high bevel')})
         mesh=high.data;bpy.data.objects.remove(high,do_unlink=True)
         if mesh.users==0:bpy.data.meshes.remove(mesh)
         if texture:bpy.data.textures.remove(texture)
+        for extra in extra_textures:bpy.data.textures.remove(extra)
     atlas.save()
     # Connect only after every target is baked, avoiding a feedback dependency.
     for m in materials:
