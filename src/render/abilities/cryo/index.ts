@@ -96,7 +96,7 @@ class CryoPresentation implements AbilityPresentation {
   private wave(x: number, z: number, radius: number, life: number, shatter: boolean, aftermath = false): void {
     const wave = this.waves[this.cursor++ % this.waves.length];
     wave.live = true; wave.x = x; wave.z = z; wave.radius = radius; wave.life = life; wave.age = 0; wave.shatter = shatter; wave.aftermath = aftermath;
-    this.kit.ring(x, z, radius, CORE, Math.min(.5, life));
+    // VFX15: the FlagshipFx Shock front owns the edge; no second boundary ring.
   }
 
   update(frame: AbilityFrame): void {

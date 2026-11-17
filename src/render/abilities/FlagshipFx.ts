@@ -107,7 +107,7 @@ void main(){
 const fragment = `
 uniform float fxMode;uniform float fxAge;uniform float fxLife;uniform float fxTime;uniform float fxSeed;
 uniform float fxRange;uniform float fxInner;uniform float fxArc;uniform vec3 fxColor;uniform float fxIntensity;
-uniform float fxParam;uniform float fxLow;uniform vec3 fxOrigin;uniform float fxAngle;
+uniform float fxParam;uniform float fxLow;uniform vec3 fxOrigin;uniform float fxAngle;uniform float fxYield;
 varying vec2 fxLocal;varying vec3 fxWorld;varying vec4 fxScreen;varying float fxSeg;
 float fxHash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
 float fxNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
@@ -242,6 +242,10 @@ void main(){
   float edge=(1.-smoothstep(0.,.05+.07*(1.-p),abs(dist+.03)))*(1.-step(R+.001,r));
   float wake=smoothstep(-.3,0.,dist)*(1.-step(0.,dist))*.35;
   float facets=.65+.35*step(.5,fract(fxLocal.x*48.+fxSeed));
+  // Broken into arcs (seam-free angular noise): an impact front, never a clean UI circle.
+  float sa=fxLocal.x*6.2831853;
+  float brk=smoothstep(.32,.58,fxFbm(vec2(cos(sa),sin(sa))*2.8+fxSeed+k*1.5));
+  edge*=brk;wake*=brk;
   float fade=1.-smoothstep(.55,1.,k);
   emit=(fxColor*2.6*facets+vec3(1.6)*edge)*edge*fade*fxIntensity+fxColor*wake*.6*fade*fxIntensity;
   alpha=(edge*.55+wake*.25)*fade;
@@ -389,9 +393,9 @@ void main(){
    float pulseR=mod(max(0.,age-.7),2.)*R*.8;
    float pulse=(1.-smoothstep(0.,1.1,abs(r-pulseR)))*step(.7,age)*crack;
    float fern=pow(abs(sin(a*47.+n*7.+r*4.)),22.)*wall;
-   float crisp=.35+.65*exp(-max(0.,age-.5)*1.5);
+   float crisp=.18+.82*exp(-max(0.,age-.5)*1.5);
    emit=vec3(.5,.82,1.15)*(wall*crisp*.9+fern*.8+crack*inside*.18)+vec3(1.,1.4,1.9)*pulse*1.3;
-   alpha=inside*(.02+c.z*.03+crack*.2+wall*.24+fern*.18)+pulse*.2;
+   alpha=inside*(.02+c.z*.03+crack*.2+wall*(.1+.14*crisp)+fern*.18)+pulse*.2;
    base=vec3(.72,.88,.97);
   }else if(el<2.5){
    // Meltdown: molten cracks spread irregularly; crust blisters glow near the suit; deck chars dark.
@@ -439,6 +443,8 @@ void main(){
  vec2 screen=fxScreen.xy/max(.001,fxScreen.w)*.5+.5;
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
  float keep=1.-actionBar*.94;
+ // Shared budget: sustained surfaces thin out together when their summed area exceeds the cap.
+ keep*=fxYield;
  alpha=clamp(alpha*keep,0.,1.);emit*=keep;
  if(alpha<.002&&dot(emit,vec3(1.))<.004)discard;
  float fxA0=max(alpha,.005);
@@ -470,7 +476,7 @@ export class FlagshipFx {
           fxMode: { value: 0 }, fxAge: { value: 0 }, fxLife: { value: 1 }, fxTime: { value: 0 }, fxSeed: { value: 0 },
           fxOrigin: { value: new T.Vector3() }, fxMuzzle: { value: new T.Vector3() }, fxAngle: { value: 0 }, fxArc: { value: 1 },
           fxRange: { value: 1 }, fxInner: { value: 0 }, fxHeight: { value: new T.Vector2() }, fxParam: { value: 0 },
-          fxColor: { value: new T.Color() }, fxIntensity: { value: 1 }, fxLow: { value: 0 },
+          fxColor: { value: new T.Color() }, fxIntensity: { value: 1 }, fxLow: { value: 0 }, fxYield: { value: 1 },
         },
         vertexShader: vertex,
         fragmentShader: fragment,
@@ -519,7 +525,13 @@ export class FlagshipFx {
 
   /** Writes uniforms after owners spawned or moved slots this frame. */
   commit(): void {
+    // Sustained (long-lived or settled) surfaces share one area budget; impact beats are exempt.
+    let area = 0;
+    for (const slot of this.slots) if (slot.live && this.sustained(slot)) area += this.area(slot);
+    const cap = this.low ? 70 : 110;
+    const yieldScale = area > cap ? Math.max(.45, cap / area) : 1;
     for (const slot of this.slots) {
+      if (slot.live) slot.material.uniforms.fxYield.value = this.sustained(slot) ? yieldScale : 1;
       if (!slot.live) { slot.mesh.visible = false; continue; }
       const u = slot.material.uniforms;
       u.fxMode.value = slot.mode; u.fxAge.value = slot.age; u.fxLife.value = slot.life; u.fxTime.value = this.time;
@@ -532,6 +544,23 @@ export class FlagshipFx {
       slot.mesh.renderOrder = MODE_ORDER[slot.mode] ?? 2;
       slot.mesh.visible = true;
     }
+  }
+
+  private sustained(slot: FxSlot): boolean {
+    // Long-lived states keep their activation climax (first .9 s) at full strength.
+    if (slot.life >= 1000) return slot.age > .9 || slot.mode === FxMode.Fuel || slot.mode === FxMode.FuelStrip || slot.mode === FxMode.FrostStrip || slot.mode === FxMode.Tongues || slot.mode === FxMode.Fire;
+    return slot.age > .35 && slot.mode !== FxMode.Lance && slot.mode !== FxMode.Shock;
+  }
+
+  /** Projected ground coverage in m², scaled by intensity: discs, fans and strips. */
+  private area(slot: FxSlot): number {
+    const m = slot.mode, r = Math.max(0, slot.range);
+    let a: number;
+    if (m === FxMode.Lance || m === FxMode.Wake || m === FxMode.FuelStrip || m === FxMode.FrostStrip) a = 2 * slot.inner * r;
+    else if (m === FxMode.Fire || m === FxMode.Scorch || m === FxMode.Pressure) a = .5 * slot.arc * r * r;
+    else if (m === FxMode.Tongues || m === FxMode.Pillar) a = 3;
+    else a = Math.PI * r * r * (m === FxMode.Climax ? .45 : m === FxMode.Blizzard ? .25 : 1);
+    return a * Math.min(1.5, Math.max(.2, slot.intensity));
   }
 
   clear(): void { for (const slot of this.slots) { slot.live = false; slot.mesh.visible = false; } }
