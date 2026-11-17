@@ -23,10 +23,13 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
     add('pods-small', 350, 385, .4, .65);
     add('creep-c', 420, 355, .05, .5);
     add('creep-a', 350, 353, -.3, .45);
-    add('creep-wall', 432, 341, 0, .9, .55, -Math.PI / 2);
+    add('creep-wall', 432, 341, 0, .9, .55, Math.PI / 2);
+    pieces[pieces.length-1].surfaceGain = .85;
     add('nest-medium', 976, 553, Math.PI, .75);
     add('creep-c', 972, 606, Math.PI, .35);
-    add('creep-wall', 979, 619, Math.PI, .9, .5, -Math.PI / 2);
+    add('creep-wall', 979, 619, Math.PI, .45, .25, Math.PI / 2);
+    pieces[pieces.length-1].matrix.scale(new T.Vector3(2,1,1));
+    pieces[pieces.length-1].surfaceGain = .85;
     // Short angled membranes terminate on a nest crown and cabinet shoulder.
     add('web-short', 425, 366, -.18, 1.05, 1.55, .55);
     add('web-short', 950, 587, -.75, 1.05, 1.55, -.45);
