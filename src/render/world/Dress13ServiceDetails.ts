@@ -77,14 +77,14 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     (screen.material as T.Material).addEventListener('dispose', () => texture.dispose());
     screen.name = 'dress13-last-transmission'; screen.rotation.x = -.65; screen.position.set(905 / 32, 1.15, 390 / 32); root.add(screen);
   } else if (id === 'diagnostic-gallery') {
-    shards(813, 390, 0x86989a);
-    // Torn restraint tongues and severed diagnostic leads leave the empty
-    // cradle's mouth open; restrained dark ichor is confined to the bed.
+    shards(385, 377, 0x86989a);
+    // Transport cradle lid and restraint tongues were torn toward the aisle.
     for (let i = 0; i < 3; i++) {
-      line([765 + i * 19, .85, 353], [771 + i * 19, .35, 379], .045, rubber);
-      line([774 + i * 19, .35, 384], [781 + i * 19, .035, 394], .035, rubber);
+      line([332 + i * 19, .65, 337], [343 + i * 19, .25, 366], .055, rubber);
+      line([346 + i * 19, .25, 369], [354 + i * 19, .035, 390], .035, rubber);
     }
-    scuff(807, 398, .9, 1.2, 0x453b43);
+    scuff(386, 396, 1.5, 1.2, 0x453b43);
+    scuff(360, 365, 1.2, .25, 0x4b3744);
   } else if (id === 'safety-interlock-station') {
     // Buckled access leaves close the camera-facing equipment opening. Their
     // plane stays behind the first legal marine centre along this solid.

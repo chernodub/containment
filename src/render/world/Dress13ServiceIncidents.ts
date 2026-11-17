@@ -66,12 +66,17 @@ const incidents: Record<string, Piece[]> = {
     ['service-transit-case', 956, 399, .5, .8],
   ],
   'diagnostic-gallery': [
-    ['service-access-hatch', 762, 369, .9, -.3, .8, .3],
-    ['service-access-hatch', 800, 391, 1.1, .2, 1.3, .2],
-    ['service-transit-case', 767, 388, .5, .35],
-    ['service-transit-case', 840, 385, .4, -.3, 1.4, .15],
-    ['service-cable-tray', 780, 338, .6, 1.2, 0, .5],
-    ['service-access-hatch', 797, 345, .3, .7, 1.5, .22],
+    ['specimen-probe-cradle', 357, 324, .6, -.12, .22, .28, 'p11-control'],
+    ['service-access-hatch', 328, 353, .9, -.3, .8, .3],
+    ['service-access-hatch', 385, 377, 1.1, .2, 1.3, .2],
+    ['service-transit-case', 313, 373, .7, .35],
+    ['service-transit-case', 423, 353, .6, -.3, 1.4, .15],
+    ['service-cable-tray', 329, 313, .65, 1.2, 0, .5],
+    ['service-access-hatch', 371, 340, .45, .7, 1.5, .22],
+    ['service-safety-rail', 321, 328, .65, .3, -.4, .3],
+    ['service-safety-rail', 394, 333, .65, .3, .6, .3],
+    ['service-transit-case', 408, 389, .5, .7],
+    ['service-access-hatch', 343, 389, .5, -.8, 1.5, .12],
   ],
   'safety-interlock-station': [
     ['service-access-hatch', 619, 393, .7, 0, 0, .15],
@@ -108,6 +113,6 @@ export function dress13ServiceIncidents(id: string): OriginalKitInstance[] {
       new T.Quaternion().setFromEuler(new T.Euler(
         asset === 'service-access-hatch' ? roll : 0, yaw,
         asset === 'service-access-hatch' ? 0 : roll, 'YXZ')), new T.Vector3().setScalar(scale)),
-    cutaway: false,
+    cutaway: asset === 'specimen-probe-cradle',
   }));
 }
