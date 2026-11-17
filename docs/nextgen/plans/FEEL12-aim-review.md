@@ -97,3 +97,25 @@ The doubled-offset shoulder/forearm separation does not recur in any of these te
 
 
 Final release campaign spot review: opened the currently available native `feel12-release-breacher-1729` first-room start/mid, second-room start/mid and all four `hardest-123-*` burst frames; also generated/opened their exact480×270 BOX versions in `feel12-final/release-breacher-aim480`. These eight views show compact joined shoulder/arm silhouettes, with no recurrence of the campaign's earlier floating upper arm. Spawn body/receiver point right with the marker; first-room rifle points up/right toward the cursor; second-room combat points down toward its cursor/marker. The hardest burst keeps the shoulder and shotgun together across the lateral foot transfer. At480 the marine remains identifiable, although small hand contact cannot be judged precisely. No new severe aim/attachment defect found in these available views. This is a spot review of existing frames, not a campaign-completion claim or coverage of future rooms.
+
+
+### Final native campaign supplement, runtime c7967ee7
+
+Opened Breacher Crew Checkpoint mid-fight and its Breached Loading Bay death,
+Cryo Passenger Vault, Relay Racks and Overload Floor mid-fights, Cryo
+`hardest-119-2` (about -157° aim) and Pyro Crew Checkpoint mid-fight at native
+size and exact480. Selected sources and hashes are in
+`artifacts/nextgen/feel12-final/campaign-review480/opened-files.json`.
+The marine retains opaque light plates and the blue/red rig panels across
+frost, fire and the left-facing back view; internal cyan self-lines do not
+recur. The bright Cryo cast is a surrounding ability flash with an outlined
+solid figure, not a status-material tint. Heavy receiver and raised free-hand
+poses remain stylized; no new limb separation was observed. These selected
+frames supplement the complete moving weapon strips; they are not a claim
+that every campaign PNG was opened.
+
+Arc Crew Checkpoint mid-fight was subsequently opened at native and exact480
+(same receipt). Light plates and purple rig panels remain solid during the
+chain effects and reload pose; no cyan self-lines recur. This completes the
+selected native campaign body-readability spot review for all four rigs, not
+the still-running Arc campaign outcome.

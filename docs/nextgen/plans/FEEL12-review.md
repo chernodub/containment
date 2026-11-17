@@ -316,3 +316,57 @@ This supersedes the earlier final2 note about retaining the unclassified Low
 fallback. The cost is explicit: Low forward has no through-architecture skin
 silhouette, while its locator remains. It avoids presenting self-occlusion as
 world obstruction.
+
+The final lead follow-up was then opened through every captured frame: four
+High rigs × four frames, plus four default Low and four minimal forward Low
+frames (24 total). Official native marine strips and full-frame exact480
+contacts are retained inside `lead-marine/`; `opened-full-bursts.json` lists
+the opened files. Armor stays solid with bounded rig accents as acid puffs
+and the warning's final beat cross it. Low without ink retains its flatter
+faceted shading, but the former cyan internal wire overlay does not recur.
+
+### C native supplement — final merged Stalker and Brute masses
+
+Look: the fixed-aim `native-heavy-before` cohort contains eight 30-frame
+lanes (rifle/shotgun × Stalker/Brute × Crew/Relay), sampled at 250 ms.
+Only the focus Stalker in shotgun/Crew actually dies. In the other seven,
+native attack travel leaves the original ray; later tracers pass the target.
+This is an input-recipe failure, not evidence of a missing kill reaction.
+Early purple Stalker ichor and Brute armor contacts remain visible.
+
+Recipe fix: `native-heavy-tracked` uses the existing debug auto-aim input,
+without changing HP, armor, native attack timings or damage. Its eight lanes
+supply actual focus deaths for all four Stalker lanes and both Crew Brute
+lanes. The two Relay Brutes survive the 7.25-second window (84.04 rifle and
+78.04 shotgun HP); native director refills redirect nearest-target aiming,
+and shotgun reload consumes part of that window. The separate
+`native-heavy-relay-long` 500-ms cohort extends the input/window and records
+both actual focus kills. Rifle's accepted corpse impulse has magnitude 120
+at elapsed 8.6333; shotgun's has magnitude 408 at elapsed 14.65. Receipts are
+filtered by the staged focus ID (`g5Proof.actors[0].id`, 1), rather than by
+all corpses from the still-active native director.
+
+Look again: all 36 generated body/whole-frame contact pages across these
+three cohorts were opened: 18 unresized native body pages and 18 pages of
+exact 480×270 full frames, covering all 540 frames. Native body pages use
+per-frame focus contact bounds; retired-actor cells explicitly refer back
+to full originals, since inventing corpse crop bounds would conceal that
+limitation. Selected original full-native contact, first-corpse and tail
+frames were also opened. Stalker rifle deaths fold and travel a short
+way along the firing vector; shotgun deaths carry farther before folding.
+The final Brute mass stays connected under directional loads: cleavers and
+shoulders lean together, with no detached belly or narrow stretched column.
+Orange ichor is clear at native size; at 480, body load and the point contact
+cue carry more of the hit than individual droplets. Crew Brute shotgun's
+first corpse visibly travels farther sideways than the rifle collapse.
+Relay originals show the focused heavy body down among the subsequent
+native wave, rather than treating a refill's corpse as the selected kill.
+No runtime correction followed this inspection.
+
+Limitations: these 250/500-ms native samples can miss a short flash or the
+peak flinch, so they complement the denser paired presentation strips.
+The long Relay shotgun kill occurs near the final frames; its tail proves
+a real carried collapse, not a completed settle. Final Matron settle and
+light-hit readability limitations above remain unchanged. All three
+cohorts use frozen runtime-solid4 (`c7967ee7`); differing manifest SHAs
+identify input-recipe revisions, not a runtime/damage revision.
