@@ -19,3 +19,6 @@ Fix: baked trace albedo gain reduced to .65, keeping the early contamination qui
 ## Freight Hold first trace
 Round 1: opened five-position tour's north-court reduction03; the added trace stays at the distant dispatch ventilation edge rather than becoming an early room landmark. Native calm and five-position tour completed without capture guards.
 Fix: same .65 trace albedo gain as Loading Bay; no extra masses, no new collision or route obstruction. Final source recapture follows.
+
+## Growth final source corrections
+Inspection of the south recess showed the heart was too far from the toured airway; moved it from z950 to z825, still 305 units from the arena centre with the near edge outside the fight circle. Darkened living creep to .6 albedo gain so actor silhouettes retain priority. Legacy ConstructionLanguage/EnvironmentalStory ribbons are retired in the two takeover rooms, in addition to L8 seams.
