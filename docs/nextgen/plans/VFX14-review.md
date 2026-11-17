@@ -40,3 +40,5 @@ Ram R2: opened native impact on both floors across the review/correction capture
 Bulwark R2: both 480 contacts and dark native 04 show readable supports, contact sparks and collapse shards, but the lane is edge-on. Final-check uses a different legal native lane to inspect the hex face; no camera changes.
 
 Napalm R2: pale native 05 and both 480 contacts show a footprint that survives the pale floor. The first revision was peach and too flat; reduced body emission, removed the second full-disc sheet and added small interior flame jets for final-check.
+
+Afterburn R2: both 480 contacts and dark native 05 exposed a row of glowing circular stamps. Replaced them with one native-length/width FuelStrip mode. Final-check must confirm the connected line rather than accepting the rejected circles.

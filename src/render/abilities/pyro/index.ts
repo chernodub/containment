@@ -384,13 +384,8 @@ class PyroPresentation implements AbilityPresentation {
     const c = Math.cos(angle), s = Math.sin(angle), length = Math.hypot(ex - x, ez - z);
     const fade = Math.min(1, zone.remainingMs / 350), points = Math.min(kit.low ? 5 : 8, Math.max(4, Math.ceil(length / .85)));
     kit.sustain((zone.durationMs - zone.remainingMs) / 1000);
-    // Overlapping low fire fans form a continuous fuel line, all clipped inside native strip width.
-    for (let i = 0; i < (kit.low ? 4 : 7); i++) {
-      const count = kit.low ? 4 : 7, t = (i + .5) / count;
-      const r = Math.min(radius, length / count * .5);
-      this.surface(zone.id, i, x + (ex - x) * t, z + (ez - z) * t, r,
-        angle, Math.PI * 2, .065, .22 + .1 * Math.sin(i * 2.7), fade * .72);
-    }
+    // One connected native-width strip avoids a row of circular fire stamps.
+    this.surface(zone.id, 0, x, z, radius, angle, 0, .038, .038, fade * .85, true, length);
     kit.lightAt(zone.id, (x + ex) * .5, (z + ez) * .5, FIRE, 4 * fade, 4);
     if (emit) {
       const t = (Math.floor(kit.time * 13) * .61803398875) % 1;
