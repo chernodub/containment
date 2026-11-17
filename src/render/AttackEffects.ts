@@ -23,11 +23,12 @@ type Particle={variant?:number;liquid?:boolean;wall?:T.Vector3;growth?:number;as
 type Pulse={p:T.Vector3;color:T.Color;age:number;life:number;radius:number;angle:number;slash:boolean;stable:boolean};
 export const EFFECT_LIMITS={glow:360,smoke:80,debris:80,pulses:24,decals:64,beams:320,fire:16} as const;
 export const PRIORITY_ACTOR_LIMIT=130;
-const vertex=`attribute float effectFrame; varying float vFrame;attribute vec4 effectShape;varying vec4 vShape;attribute float effectAlpha;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
-void main(){vShape=effectShape;vFrame=effectFrame;vUv=uv;vColor=instanceColor;vAlpha=effectAlpha;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`;
+const vertex=`attribute float effectFrame; varying float vFrame;attribute vec4 effectShape;varying vec4 vShape;attribute float effectAlpha;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;varying vec2 warningWorld;
+void main(){vShape=effectShape;vFrame=effectFrame;vUv=uv;vColor=instanceColor;vAlpha=effectAlpha;warningWorld=(modelMatrix*instanceMatrix*vec4(position,1.0)).xz;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`;
 const fragment=`uniform sampler2D map;uniform float inset;uniform float grid;uniform float textured;uniform float flashScale;varying float vFrame;uniform float style;varying vec4 vShape;varying vec2 vUv;varying vec3 vColor;varying float vAlpha;
 ${GRAPHIC_COMBUSTION_GLSL}
-uniform vec4 priorityActors[130];uniform int priorityActorCount;uniform vec2 priorityViewport;
+uniform vec4 warningOrigin[57];uniform vec4 warningSize[57];uniform vec4 warningTime[57];
+uniform int warningCount;uniform float warningFillScale;varying vec2 warningWorld;
 void main(){vec2 p=vUv*2.0-1.0;float d=length(p);float alpha=vAlpha;vec3 color=vColor;
 if(style>6.5){
  if(d>1.0)discard;
@@ -35,55 +36,44 @@ if(style>6.5){
  else{float edge=1.0-smoothstep(.74,.91,d),core=1.0-smoothstep(.20,.36,d);color=mix(vec3(.008,.006,.009),vec3(1.8,.16,.035),edge);color=mix(color,vec3(.055,.008,.006),core);alpha*=1.0-smoothstep(.92,1.0,d);}
 }
 else if(style>5.5){
- bool sector=vShape.x>1.5;bool path=vShape.x>.5&&!sector;
- if(sector&&abs(atan(p.y,p.x))>vShape.z)discard;
- if(path){vec2 capsule=vec2(max(abs(p.x)*(vShape.y+1.0)-vShape.y,0.0),p.y);d=length(capsule);}
- if(d>1.0)discard;
- bool melee=vShape.w>.5;
- float threat=clamp((vShape.w-1.12)/.36,0.0,1.0);
- float edge=melee?1.0-smoothstep(mix(.005,.014,threat),mix(.015,.035,threat),abs(d-.985)):1.0-smoothstep(.020,.055,abs(d-.90));
- if(sector)edge=max(edge,(1.0-smoothstep(melee?mix(.003,.008,threat):.01,melee?mix(.009,.025,threat):.04,abs(abs(atan(p.y,p.x))-vShape.z)))*smoothstep(.08,.2,d));
- if(vFrame<.5){color*=1.2;alpha*=edge;}
- else if(melee){
-  float progress=clamp(vFrame-1.0,0.0,1.0),phase=path?vUv.x:d;
-  float filled=1.0-smoothstep(progress-.02,progress+.02,phase);
-  // Derivatives keep the nested rim/keyline legible at desktop review scale.
-  // Both strokes are clipped INSIDE the exact native footprint.
-  float aa=max(fwidth(d),.003),boundary=1.0-d;
-  if(sector)boundary=min(boundary,(vShape.z-abs(atan(p.y,p.x)))*d);
-  float key=1.0-smoothstep(aa*4.0,aa*5.5,boundary);
-  float rim=smoothstep(aa*.6,aa*1.2,boundary)*(1.0-smoothstep(aa*2.8,aa*3.7,boundary));
-  float timing=1.0-smoothstep(aa,aa*2.5,abs(phase-progress));
-  float commitment=smoothstep(0.0,1.0,vAlpha)*flashScale;
-  float strike=vFrame>=3.0?(1.0-clamp(vFrame-3.0,0.0,1.0))*flashScale:0.0;
-  color=mix(vec3(.008,.004,.003),vec3(1.0,.21,.075),max(rim,max(timing*.8,filled*(.06+threat*.08+commitment*.36))));
-  color=mix(color,vec3(1.0,.48,.12),commitment*rim*.65);
-  color=mix(color,vec3(1.0,.38,.15),strike*.65);
-  // Family weight affects the quiet interior; edge opacity stays readable.
-  alpha=max(key*.82,rim*.96);
-  alpha=max(alpha,timing*(.30+threat*.20));
-  alpha=max(alpha,(.045+threat*.09+commitment*.18)*filled);
-  alpha=max(alpha,strike*(.12+threat*.18));
+ // One fragment evaluates the union. Fill/edges use max, never stacked alpha.
+ float unionInset=-10000.,allRim=0.,allKey=0.,sweep=0.,fill=0.;
+ float soonest=10000.,soonInset=0.,emphasisRim=0.,emphasisKey=0.;int overlaps=0;bool crowded=false;
+ for(int i=0;i<57;i++){
+  if(i>=warningCount)break;
+  vec4 o=warningOrigin[i],sz=warningSize[i],tm=warningTime[i];
+  vec2 delta=warningWorld-o.xy,q=vec2(dot(delta,o.zw),dot(delta,vec2(-o.w,o.z)));
+  float radius=sz.x,inset=radius-length(q),phase=length(q)/max(radius,.001);
+  if(sz.w>.5&&sz.w<1.5){inset=radius-length(vec2(q.x-clamp(q.x,0.,sz.y),q.y));phase=(q.x+radius)/max(sz.y+2.*radius,.001);}
+  if(sz.w>1.5){float angle=abs(atan(q.y,q.x));if(angle>sz.z)continue;inset=min(inset,(sz.z-angle)*length(q));}
+  if(inset<0.)continue;
+  overlaps++;unionInset=max(unionInset,inset);
+  float aa=max(fwidth(inset),.003);
+  float key=1.-smoothstep(.040+aa,.065+aa,inset);
+  float rim=smoothstep(.003,.010,inset)*(1.-smoothstep(.022+aa,.034+aa,inset));
+  allKey=max(allKey,key);allRim=max(allRim,rim);crowded=crowded||tm.w>.5;
+  if(tm.w>1.5){emphasisRim=max(emphasisRim,rim);emphasisKey=max(emphasisKey,key);}
+  float finalBeat=(1.-smoothstep(0.,.100,tm.y))*flashScale;
+  float sweepDistance=abs(phase-tm.x)*(sz.w>.5&&sz.w<1.5?sz.y+2.*radius:radius);
+  float movingLine=1.-smoothstep(.012,.025+max(fwidth(sweepDistance),.003),sweepDistance);
+  sweep=max(sweep,movingLine*(.22+finalBeat*.35));
+  float hatch=step(.72,fract((warningWorld.x+warningWorld.y)*18.));
+  float interior=mix(.035,.075,tm.z)+finalBeat*mix(.045,.065,tm.z);
+  interior=max(interior,hatch*finalBeat*mix(.09,.18,tm.z));
+  fill=max(fill,interior);
+  if(tm.y<soonest){soonest=tm.y;soonInset=inset;}
  }
- else{
-  float progress=clamp(vFrame-1.0,0.0,1.0),phase=path?vUv.x:d,filled=1.0-smoothstep(progress-.02,progress+.02,phase);
-  float hatch=step(.58,fract((p.x*(path?vShape.y+1.0:1.0)+p.y)*10.0-progress*2.0));
-  float timing=1.0-smoothstep(.012,.035,abs(phase-progress*.88));
-  float danger=max(edge,max(timing*.80,hatch*(.14+filled*.30)));
-  color=mix(vec3(.012,.008,.010),vec3(1.8,.13,.035)*(1.0+edge*.2),danger);
-  color=mix(color,vec3(.004,.005,.007),smoothstep(.95,.975,d));
-  alpha=min(1.0,.92+edge*.08+filled*.04)*(vShape.w>.5?vAlpha:min(1.0,vAlpha*2.5));
- }
- // Reject invisible fill before scanning the projected torso masks.
- if(alpha<.003)discard;
- // A bounded projected torso mask keeps bodies visible through the after-post
- // warning overlay. Its unchanged ground footprint remains visible elsewhere.
- vec2 screen=gl_FragCoord.xy/max(priorityViewport,vec2(1.0))*2.0-1.0;
- for(int i=0;i<130;i++){
-  if(i>=priorityActorCount)break;
-  vec4 actor=priorityActors[i];vec2 q=(screen-actor.xy)/max(actor.zw,vec2(.00001));
-  if(dot(q,q)<1.0)discard;
- }
+ if(overlaps==0)discard;
+ float aa=max(fwidth(unionInset),.003);
+ float unionKey=1.-smoothstep(.040+aa,.065+aa,unionInset);
+ float unionRim=smoothstep(.003,.010,unionInset)*(1.-smoothstep(.022+aa,.034+aa,unionInset));
+ float soonRim=1.-smoothstep(.020+aa,.035+aa,soonInset);
+ if(crowded||overlaps>3){allKey=max(unionKey,emphasisKey);allRim=max(unionRim,emphasisRim*.9);fill=0.;sweep=0.;soonRim=emphasisRim;}
+ float finalBeat=(1.-smoothstep(0.,.100,soonest))*flashScale;
+ alpha=max(allKey*.8,max(allRim*.96,max(sweep,fill*warningFillScale)));
+ color=mix(vec3(.006,.004,.003),vec3(1.1,.25,.055),max(allRim,sweep));
+ color=mix(color,vec3(1.35,.55,.16),soonRim*finalBeat*.7);
+ if(allKey<.01&&allRim<.01&&sweep<.01)color=vec3(.95,.19,.045);
 }
 else if(style>4.5){
  float grain=fract(sin(dot(floor(p*80.0),vec2(12.9898,78.233)))*43758.5453);
@@ -132,7 +122,7 @@ function pool(scene:T.Scene,geometry:T.BufferGeometry,count:number,style:number,
 }
 /** Bounded GPU instance pools: no lights or draw call per pellet / particle. */
 export class AttackEffects {
- private readonly nativeWarnings=Array.from({length:32},()=>({active:false,id:0,melee:false,striking:false,weight:1,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
+ private readonly nativeWarnings=Array.from({length:32},()=>({active:false,id:0,melee:false,striking:false,heavy:false,weight:1,durationMs:1,remainingMs:0,shape:{shape:'line',x:0,z:0,length:-1,width:0,angle:0} as Telegraph}));
  private readonly warningFrom={x:0,y:0};private readonly warningTo={x:0,y:0};
  private warningFrustum:T.Frustum|undefined;private readonly warningBounds=new T.Sphere();
  /** Borrow the renderer's settled frustum; warning state and priority stay live. */
@@ -174,9 +164,15 @@ export class AttackEffects {
  private glow:Particle[]=[];private smoke:Particle[]=[];private debris:Particle[]=[];private decals:Particle[]=[];private pulses:Pulse[]=[];
  private glowMesh:T.InstancedMesh;private smokeMesh:T.InstancedMesh;private debrisMesh:T.InstancedMesh;private decalMesh:T.InstancedMesh;private pulseMesh:T.InstancedMesh;private slashMesh:T.InstancedMesh;private beamMesh:T.InstancedMesh;
  private hostileMesh:T.InstancedMesh;private hostileWarningMesh:T.InstancedMesh;private bossWarning:{x:number;z:number;radius:number;progress:number}|null=null;
- private readonly priorityActors=Array.from({length:PRIORITY_ACTOR_LIMIT},()=>new T.Vector4());
- private readonly priorityCount={value:0};private readonly priorityViewport=new T.Vector2(1,1);
- private priorityCamera:T.Camera|undefined;private readonly priorityPoint=new T.Vector3();private readonly prioritySide=new T.Vector3();private readonly priorityUpper=new T.Vector3();private readonly priorityLower=new T.Vector3();
+ private readonly priorityViewport=new T.Vector2(1,1);
+ private priorityCamera:T.Camera|undefined;private readonly priorityPoint=new T.Vector3();
+ private readonly warningOrigins=Array.from({length:57},()=>new T.Vector4());
+ private readonly warningSizes=Array.from({length:57},()=>new T.Vector4());
+ private readonly warningTimes=Array.from({length:57},()=>new T.Vector4());
+ private readonly warningParents=new Int16Array(57);private readonly warningGroupCounts=new Int16Array(57);private readonly warningSoonest=new Int16Array(57);
+ private readonly unionCount={value:0};private readonly unionFillScale={value:1};
+ private warningMinX=0;private warningMinZ=0;private warningMaxX=0;private warningMaxZ=0;private warningCoverage=0;
+
  private dummy=new T.Object3D();private forward=new T.Vector3();private previous=new WeakMap<Bullet,T.Vector3>();private trailClock=0;private boonBursts=0;private arcBursts=0;
  private options:AttackEffectOptions={flashIntensity:1,reducedMotion:false,tier:'high',dynamicLights:true,distortion:true};
  private feedback:AttackFeedback={};private particleFree=new Map<Particle[],Particle[]>();private disposed=false;
@@ -196,8 +192,8 @@ export class AttackEffects {
   scene.remove(this.fireMesh);scene.add(this.fireMesh);
   this.fieldMesh=pool(scene,new T.PlaneGeometry(1,1),4,4);this.fieldMesh.name='frost-fields';
   this.hostileMesh=pool(scene,new T.PlaneGeometry(2,2),320,7);this.hostileMesh.name='hostile-projectiles';this.hostileMesh.renderOrder=40;(this.hostileMesh.material as T.Material).depthTest=false;
-  this.hostileWarningMesh=pool(scene,new T.PlaneGeometry(2,2),EFFECT_LIMITS.pulses+33,6);this.hostileWarningMesh.name='hostile-warning-fills';this.hostileWarningMesh.renderOrder=30;(this.hostileWarningMesh.material as T.Material).depthTest=false;
-  Object.assign((this.hostileWarningMesh.material as T.ShaderMaterial).uniforms,{priorityActors:{value:this.priorityActors},priorityActorCount:this.priorityCount,priorityViewport:{value:this.priorityViewport}});
+  this.hostileWarningMesh=pool(scene,new T.PlaneGeometry(2,2),EFFECT_LIMITS.pulses+33,6);this.hostileWarningMesh.name='hostile-warning-union';this.hostileWarningMesh.renderOrder=30;(this.hostileWarningMesh.material as T.Material).depthTest=true;(this.hostileWarningMesh.material as T.Material).forceSinglePass=true;
+  Object.assign((this.hostileWarningMesh.material as T.ShaderMaterial).uniforms,{warningOrigin:{value:this.warningOrigins},warningSize:{value:this.warningSizes},warningTime:{value:this.warningTimes},warningCount:this.unionCount,warningFillScale:this.unionFillScale});
   for(const [list,limit]of [[this.fire,EFFECT_LIMITS.fire],[this.glow,EFFECT_LIMITS.glow],[this.smoke,EFFECT_LIMITS.smoke],[this.debris,EFFECT_LIMITS.debris],[this.decals,EFFECT_LIMITS.decals]] as const){
    const free:Particle[]=[];for(let i=0;i<limit;i++)free.push({p:new T.Vector3(),v:new T.Vector3(),color:new T.Color(),age:0,life:0,size:0,stretch:1,spin:0,rotation:0,gravity:0,ground:false});this.particleFree.set(list,free);
   }
@@ -210,24 +206,44 @@ export class AttackEffects {
  }
  /** Event-local vectors may be reused; copy the position if a callback retains it. */
  setFeedback(feedback:AttackFeedback){this.feedback=feedback;}
- /** Composite only incoming danger after friendly HDR/post effects. The caller
-  * prepares this scene for its real screen target before releasing gameplay. */
- setPriorityScene(scene:T.Object3D){scene.add(this.hostileWarningMesh,this.hostileMesh);}
+ /** Projectiles retain post-HDR priority; union warnings stay depth-tested
+  * beneath the actual actor silhouettes in the world pass. */
+ setPriorityScene(scene:T.Object3D){scene.add(this.hostileMesh);}
  /** Actual screen framebuffer pixels, matching gl_FragCoord after HDR/post. */
  setPriorityViewport(width:number,height:number){this.priorityViewport.set(Math.max(1,width),Math.max(1,height));}
- /** Reset the bounded torso list after the current camera matrices settle. */
- beginPriorityActors(camera:T.Camera){this.priorityCamera=camera;this.priorityCount.value=0;}
- /** Add a visual torso, in world metres. Limbs and the ground warning remain
-  * outside this conservative ellipse; projectiles never consult these masks. */
- addPriorityActor(x:number,z:number,radius:number,height:number){
-  if(!this.priorityCamera||this.priorityCount.value>=PRIORITY_ACTOR_LIMIT||radius<=0||height<=0)return;
-  const camera=this.priorityCamera,center=this.priorityPoint.set(x,height*.58,z).project(camera);
-  if(center.z< -1||center.z>1)return;
-  const side=this.prioritySide.set(x+radius*.95,height*.58,z).project(camera);
-  const upper=this.priorityUpper.set(x,height*.98,z-radius*.25).project(camera),lower=this.priorityLower.set(x,height*.02,z+radius*.5).project(camera);
-  const rx=Math.max(1/this.priorityViewport.x,Math.abs(side.x-center.x)),ry=Math.max(1/this.priorityViewport.y,Math.abs(upper.y-center.y),Math.abs(lower.y-center.y));
-  if(center.x+rx< -1||center.x-rx>1||center.y+ry< -1||center.y-ry>1)return;
-  this.priorityActors[this.priorityCount.value++].set(center.x,center.y,rx,ry);
+ /** Ground warnings remain in the world depth pass: actors occlude their exact silhouettes. */
+ beginPriorityActors(camera:T.Camera){this.priorityCamera=camera;}
+ /** Retained caller API; no screen-space discs or approximate body cut-outs. */
+ addPriorityActor(_x:number,_z:number,_radius:number,_height:number){}
+ private queueWarning(x:number,z:number,radius:number,length:number,angle:number,arc:number,kind:number,progress:number,remaining:number,heavy:boolean){
+  const i=this.unionCount.value;if(i>=57||radius<=0)return;
+  this.warningOrigins[i].set(x,z,Math.cos(angle),Math.sin(angle));
+  this.warningSizes[i].set(radius,length,arc,kind);this.warningTimes[i].set(progress,Math.max(0,remaining)/1000,heavy?1:0,0);this.unionCount.value++;
+  const reach=radius+length,minX=x-reach,maxX=x+reach,minZ=z-reach,maxZ=z+reach;
+  this.warningMinX=Math.min(this.warningMinX,minX);this.warningMaxX=Math.max(this.warningMaxX,maxX);this.warningMinZ=Math.min(this.warningMinZ,minZ);this.warningMaxZ=Math.max(this.warningMaxZ,maxZ);
+  // Conservative projected AABB × maximum fill alpha bounds total optical fill
+  // coverage to 2.5% of the viewport. Edges are deliberately outside this budget.
+  if(this.priorityCamera){let l=1,r=-1,t=1,b=-1;for(let k=0;k<4;k++){const p=this.priorityPoint.set(k&1?maxX:minX,.04,k&2?maxZ:minZ).project(this.priorityCamera);l=Math.min(l,p.x);r=Math.max(r,p.x);t=Math.min(t,p.y);b=Math.max(b,p.y);}
+   const area=Math.max(0,Math.min(1,r)-Math.max(-1,l))*Math.max(0,Math.min(1,b)-Math.max(-1,t))*.25;
+   this.warningCoverage+=area*(heavy?.18:.09);
+  }
+ }
+ private warningRoot(i:number):number{while(this.warningParents[i]!==i)i=this.warningParents[i];return i;}
+ private groupWarnings(){
+  const n=this.unionCount.value;
+  for(let i=0;i<n;i++){this.warningParents[i]=i;this.warningGroupCounts[i]=1;this.warningSoonest[i]=i;}
+  for(let i=0;i<n;i++)for(let j=0;j<i;j++){
+   const a=this.warningOrigins[i],b=this.warningOrigins[j],sa=this.warningSizes[i],sb=this.warningSizes[j];
+   const la=sa.w>.5&&sa.w<1.5?sa.y:0,lb=sb.w>.5&&sb.w<1.5?sb.y:0;
+   const ax=a.x+a.z*la,az=a.y+a.w*la,bx=b.x+b.z*lb,bz=b.y+b.w*lb;
+   // Conservative footprint AABB components catch crossing lanes whose far
+   // endpoints differ. This changes hierarchy only, never a shape's clip.
+   if(Math.max(a.x,ax)+sa.x<Math.min(b.x,bx)-sb.x||Math.max(b.x,bx)+sb.x<Math.min(a.x,ax)-sa.x||Math.max(a.y,az)+sa.x<Math.min(b.y,bz)-sb.x||Math.max(b.y,bz)+sb.x<Math.min(a.y,az)-sa.x)continue;
+   const ra=this.warningRoot(i),rb=this.warningRoot(j);if(ra===rb)continue;
+   this.warningParents[rb]=ra;this.warningGroupCounts[ra]+=this.warningGroupCounts[rb];
+   if(this.warningTimes[this.warningSoonest[rb]].y<this.warningTimes[this.warningSoonest[ra]].y)this.warningSoonest[ra]=this.warningSoonest[rb];
+  }
+  for(let i=0;i<n;i++){const root=this.warningRoot(i);this.warningTimes[i].w=this.warningGroupCounts[root]>3?(this.warningSoonest[root]===i?2:1):0;}
  }
  /** Synchronize attack presentation to native shape and remaining wind-up; never drives a hit. */
  syncEnemyWarnings(enemies:DepthGame['enemies']['snapshot']['enemies'],geometry:DepthGame['geometry']):void {
@@ -235,6 +251,7 @@ export class AttackEffects {
    if(!warning.active)continue;
    let enemy:typeof enemies[number]|undefined;
    for(const candidate of enemies)if(candidate.id===warning.id){enemy=candidate;break;}
+   warning.heavy=!!enemy&&(enemy.type==='brute'||!!enemy.champion);
    if(warning.melee){
     if(!enemy||enemy.health<=0||(enemy.meleePhase!=='windup'&&enemy.meleePhase!=='strike')){warning.active=false;continue;}
     const w=warning.shape,m=enemy.meleeShape;w.shape=m.kind==='line'?'line':'cone';w.x=enemy.meleeOriginX/32;w.z=enemy.meleeOriginY/32;w.angle=enemy.meleeAngle;w.radius=m.range/32;w.length=m.range/32;w.width=m.width/32;w.arc=m.halfAngle*2;w.progress=enemy.meleeProgress;warning.striking=enemy.meleePhase==='strike';warning.remainingMs=enemy.meleeRemainingMs;warning.weight=meleeWarningWeight(enemy.type,enemy.elite);continue;
@@ -687,21 +704,22 @@ export class AttackEffects {
    this.fieldMesh.setMatrixAt(field,this.dummy.matrix);this.fieldMesh.setColorAt(field,f.color);
    (this.fieldMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(field++,Math.min(1,f.age/.12,(f.life-f.age)/.25));
   }write=0;for(const f of this.fields)if(f.age<f.life)this.fields[write++]=f;this.fields.length=write;this.finish(this.fieldMesh,field);
-  let ring=0,slash=0,warning=0;for(const pulse of this.pulses){pulse.age+=dt;if(pulse.age>=pulse.life)continue;if(pulse.stable&&!this.warningVisible(pulse.p.x,pulse.p.z,pulse.radius,0,0,pulse.p.y))continue;const t=pulse.age/pulse.life,mesh=pulse.stable?this.hostileWarningMesh:pulse.slash?this.slashMesh:this.pulseMesh,index=pulse.stable?warning++:pulse.slash?slash++:ring++;
-   this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);const size=pulse.radius*(pulse.stable?1:pulse.slash?.65+t*.35:.15+t*.85);this.dummy.scale.setScalar(size);this.dummy.updateMatrix();(mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(index,0,0,0,0);mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,pulse.stable?1+t:0);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,pulse.stable?.4+.5*t:(1-t)*.8);
+  this.unionCount.value=0;this.warningCoverage=0;this.warningMinX=this.warningMinZ=Infinity;this.warningMaxX=this.warningMaxZ=-Infinity;
+  let ring=0,slash=0;for(const pulse of this.pulses){pulse.age+=dt;if(pulse.age>=pulse.life)continue;if(pulse.stable){if(this.warningVisible(pulse.p.x,pulse.p.z,pulse.radius))this.queueWarning(pulse.p.x,pulse.p.z,pulse.radius,0,0,0,0,pulse.age/pulse.life,(pulse.life-pulse.age)*1000,pulse.radius>2);continue;}
+   const t=pulse.age/pulse.life,mesh=pulse.slash?this.slashMesh:this.pulseMesh,index=pulse.slash?slash++:ring++;
+   this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);this.dummy.scale.setScalar(pulse.radius*(pulse.slash?.65+t*.35:.15+t*.85));this.dummy.updateMatrix();(mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(index,0,0,0,0);mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,0);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,(1-t)*.8);
   }
-  for(const native of this.nativeWarnings){if(!native.active)continue;const w=native.shape,sector=w.shape==='cone',radius=sector?w.radius!:w.width!*.5,length=sector?0:w.length!,angle=w.angle!;
-   if(!this.warningVisible(w.x,w.z,radius,length,angle))continue;
-   this.dummy.position.set(w.x+Math.cos(angle)*length*.5,.04,w.z+Math.sin(angle)*length*.5);this.dummy.rotation.set(-Math.PI/2,0,-angle);this.dummy.scale.set(length*.5+radius,radius,1);this.dummy.updateMatrix();
-   this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);
-   (this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,sector?2:w.shape==='line'?1:0,length/(2*radius),sector?w.arc!*.5:0,native.melee?1+native.weight:0);
-   (this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,(native.striking?3:1)+w.progress!);
-   (this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,native.melee?T.MathUtils.clamp(1-native.remainingMs/100,0,1):native.weight);
+  for(const native of this.nativeWarnings){if(!native.active)continue;const w=native.shape,sector=w.shape==='cone',circle=w.shape==='circle',radius=sector||circle?w.radius!:w.width!*.5,length=sector||circle?0:w.length!,angle=w.angle??0;
+   if(this.warningVisible(w.x,w.z,radius,length,angle))this.queueWarning(w.x,w.z,radius,length,angle,sector?w.arc!*.5:0,sector?2:circle?0:1,w.progress??0,native.striking?0:native.remainingMs,native.heavy);
   }
-  if(this.bossWarning&&this.warningVisible(this.bossWarning.x,this.bossWarning.z,this.bossWarning.radius,0,0,.045)){const w=this.bossWarning;this.dummy.position.set(w.x,.045,w.z);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.setScalar(w.radius);this.dummy.updateMatrix();(this.hostileWarningMesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(warning,0,0,0,0);this.hostileWarningMesh.setMatrixAt(warning,this.dummy.matrix);this.hostileWarningMesh.setColorAt(warning,WHITE);(this.hostileWarningMesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(warning,1+w.progress);(this.hostileWarningMesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(warning++,1);}
-  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,warning);
+  if(this.bossWarning){const w=this.bossWarning;if(this.warningVisible(w.x,w.z,w.radius))this.queueWarning(w.x,w.z,w.radius,0,0,0,0,w.progress,(1-w.progress)*1000,true);}
+  this.groupWarnings();
+  this.unionFillScale.value=Math.min(1,.025/Math.max(.025,this.warningCoverage));
+  if(this.unionCount.value){this.dummy.position.set((this.warningMinX+this.warningMaxX)*.5,.04,(this.warningMinZ+this.warningMaxZ)*.5);this.dummy.rotation.set(-Math.PI/2,0,0);this.dummy.scale.set((this.warningMaxX-this.warningMinX)*.5,(this.warningMaxZ-this.warningMinZ)*.5,1);this.dummy.updateMatrix();this.hostileWarningMesh.setMatrixAt(0,this.dummy.matrix);this.hostileWarningMesh.setColorAt(0,WHITE);}
+  write=0;for(const p of this.pulses)if(p.age<p.life)this.pulses[write++]=p;this.pulses.length=write;this.finish(this.pulseMesh,ring);this.finish(this.slashMesh,slash);this.finish(this.hostileWarningMesh,this.unionCount.value?1:0);
+
  }
- clear(){for(const warning of this.nativeWarnings)warning.active=false;this.priorityCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
+ clear(){for(const warning of this.nativeWarnings)warning.active=false;this.unionCount.value=0;this.bossWarning=null;this.fields.length=0;this.trailClock=0;this.boonBursts=this.arcBursts=0;this.links.length=this.arcs.length=this.pulses.length=0;for(const [list,free]of this.particleFree){for(const item of list)free.push(item);list.length=0;}this.previous=new WeakMap();for(const m of this.meshes())m.count=0;}
  get counts(){return{fire:this.fire.length,glow:this.glow.length,smoke:this.smoke.length,debris:this.debris.length,pulses:this.pulses.length,decals:this.decals.length};}
  private meshes(){return[this.fireMesh,this.glowMesh,this.smokeMesh,this.debrisMesh,this.decalMesh,this.pulseMesh,this.slashMesh,this.beamMesh,this.fieldMesh,this.hostileMesh,this.hostileWarningMesh];}
  dispose(){if(this.disposed)return;this.clear();this.disposed=true;this.feedback={};for(const t of this.textures)t.dispose();for(const m of this.meshes()){m.geometry.dispose();(m.material as T.Material).dispose();m.removeFromParent();}this.particleFree.clear();}

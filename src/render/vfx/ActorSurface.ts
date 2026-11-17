@@ -11,6 +11,7 @@ export function actorSurface(materials: readonly T.MeshStandardMaterial[], frien
   const camouflage = { value: 1 }, deathStyle = { value: 0 };
   const rimStrength = { value: friendly ? .035 : elite ? .46 : .26 };
   for (const material of materials) {
+    material.userData.containmentMarineSurface=friendly;
     const previous = material.onBeforeCompile;
     const previousKey = material.customProgramCacheKey();
     material.onBeforeCompile = (shader, renderer) => {
