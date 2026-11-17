@@ -64,16 +64,20 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('service-cable-tray',667,432,1.3,[.4,.25,.5]);
   }
   if (id === 'crew-checkpoint') {
-    // The north inspection conveyor was abandoned with baggage still aboard.
-    put('service-transit-case',930,98,-.18,[.8,.7,.8],.82);
-    put('service-transit-case',957,101,.23,[.65,.65,.65],.82);
-    put('service-transit-case',981,121,.8,[.8,.55,.8]);
-    put('service-cable-tray',992,127,.4,[.5,.4,.65]);
-    // The jam's dropped load must also read from the central fight camera.
-    put('service-transit-case',630,540,-.4,[.85,.45,.75]);
-    put('service-transit-case',655,530,.6,[.6,.35,.6]);
-    put('service-cable-tray',660,515,1.1,[.6,.5,.6],.18);
-
+    // The departure gate has caught the abandoned conveyor load. The incident
+    // sits below the gate's north shoe, visible from the scanner-hall spawn.
+    put('security-baggage-conveyor',614,330,0,[.72,.6,.52],0,'security');
+    for (const [x,a,sz] of [[590,-.2,.8],[616,.18,.75],[642,-.3,.65]])
+      put('service-transit-case',x,330,a,[sz,.75,sz],.495);
+    put('service-transit-case',603,359,.6,[.9,.45,.75]);
+    put('service-transit-case',645,356,-.35,[.65,.4,.6]);
+    put('service-cable-tray',654,341,1.3,[.7,.55,.7],.24);
+    put('service-safety-rail',658,345,1.45,[.75,.55,.7],.08);
+    put('service-access-hatch',624,351,-.5,[.75,.4,.65],.06);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.4));
+    put('deck-rubber-panel',586,352,.4,[.5,.5,.3],.026,'clinical');
+    put('deck-access-panel',664,347,-.3,[.3,.5,.2],.026,'clinical');
+    put('service-cable-tray',575,345,.3,[.4,.3,.45]);
   }
   if (id === 'armory') {
     // Half-closed magazine shutters and an abandoned issue case sit north
@@ -119,10 +123,10 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
   }
   if(id==='crew-checkpoint') {
     // Irregular soot fan has a source at the jammed inspection machinery.
-    flat([[0,0],[-.5,.12],[-1.05,.7],[-.65,.75],[-.18,1.1],[.25,.85],[.65,.91],[.45,.4]],dark,648,543,-.4);
+    const scorch=flat([[0,0],[-.5,.12],[-1.05,.7],[-.65,.75],[-.18,1.1],[.25,.85],[.65,.91],[.45,.4]],dark,650,345,-.4);scorch.scale.set(1.5,1,1.5);scorch.position.y=.034;
     for(let i=0;i<7;i++) {
       const g=new T.CylinderGeometry(.021,.021,.10,6);g.rotateZ(Math.PI/2);
-      mesh(g,brass,625+(i%3)*8,.035,550+Math.floor(i/3)*8,i*.8);
+      mesh(g,brass,558+(i%3)*8,.035,352+Math.floor(i/3)*8,i*.8);
     }
   }
   if(id==='passenger-vault') {
