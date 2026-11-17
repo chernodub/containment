@@ -21,14 +21,20 @@ export const E9_ROOM_TOURS = Object.fromEntries(L8_CAPTURE_ROOMS.map(room => {
   assert(legal(room.exit), room.id + ': illegal native exit');
   const fixed = [room.spawn, room.arena, room.exit];
   const candidates = plan.spaces.map(space => {
-    const points = [space.anchor];
+    // CAM12 keeps the actor in its native HUD-safe envelope. Inspect these
+    // same wide bays from their legal west shoulder so the fatal sign remains
+    // in view too; neither the game camera nor the warning guard is changed.
+    const inspectionAnchor = room.id === 'safety-interlock-station'
+      && ['Open recorder and AI gallery', 'Battery return'].includes(space.name)
+      ? {x: 580, y: space.anchor.y} : space.anchor;
+    const points = [inspectionAnchor];
     const xs = space.outline.map(p => p.x), ys = space.outline.map(p => p.y);
     for (let y = Math.min(...ys) + 16; y < Math.max(...ys); y += 16) {
       for (let x = Math.min(...xs) + 16; x < Math.max(...xs); x += 16) points.push({x, y});
     }
     const point = points.filter(p => inside(p, space.outline) && legal(p) && fixed.every(mark => distance(p, mark) >= 96))
-      .sort((a, b) => distance(a, space.anchor) - distance(b, space.anchor))[0];
-    return point ? {label: space.name, x: point.x, y: point.y, desired: {...space.anchor}} : null;
+      .sort((a, b) => distance(a, inspectionAnchor) - distance(b, inspectionAnchor))[0];
+    return point ? {label: space.name, x: point.x, y: point.y, desired: {...inspectionAnchor}} : null;
   }).filter(Boolean);
   let selected = null, best = -Infinity;
   for (let i = 0; i < candidates.length; i++) for (let j = i + 1; j < candidates.length; j++) {

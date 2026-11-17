@@ -24,18 +24,21 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       cutaway: asset === 'brood-creep-wall' || !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
-    brood('brood-consumed-shell',650,330,1.3);
-    brood('brood-consumed-shell',250,900,1.2);
-    brood('brood-burst-duct',860,95,.85);
-    brood('brood-nest-medium',930,40,1);
-    brood('brood-pods-small',850,125,.85);
-    for(const [x,z,a] of [[850,80,.5],[900,90,1.2],[960,110,2.1],[250,865,.8],[650,345,0]]) {
-      brood('brood-creep-a',x,z,1.1,.002,a);
-      brood('brood-creep-c',x+35,z-15,1,.003,a+.5);
-    }
-    brood('brood-creep-wall',880,2,1.6,.5,0);
-    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-Math.PI/2));
-    brood('brood-web-short',850,65,1,1.6,0);
+    brood('brood-consumed-shell',650,330,1.1);
+    // The active tool workbay is x584..876: use its visible right inner
+    // partition, rather than the untoured lathe bay or the far roofline.
+    result.push({pack:'clinical',asset:'clinical-testbench',purpose:'DRESS13 / rear workbay machine',cutaway:true,
+      matrix:new T.Matrix4().compose(new T.Vector3(826/32,0,165/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),-Math.PI/2),new T.Vector3(.8,.8,.8))});
+    brood('brood-consumed-shell',826,165,.85,0,-Math.PI/2);
+    brood('brood-burst-duct',853,230,.5);
+    brood('brood-nest-medium',861,100,.7,0,-Math.PI/2);
+    brood('brood-pods-small',835,240,.6);
+    for(const [x,z,a] of [[860,110,.5],[860,170,1.2],[860,230,2.1]]) brood('brood-creep-c',x,z,.4,.002,a);
+    brood('brood-creep-wall',875,160,.85,.5,-Math.PI/2);
+    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
+    brood('brood-web-short',875,130,1,1.3,-Math.atan2(35,-49));
+    result[result.length-1].matrix.scale(new T.Vector3(Math.hypot(49,35)/48,.22,.55));
+    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.65));
   }
   if (id === 'swarm-junction') {
     // Front inner edge of the attached north duct bank, wholly inside its chamfer.
@@ -47,43 +50,36 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       cutaway: asset === 'brood-creep-wall' || !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
-    // The heart owns the east crossing shoulder, beyond the fight circle.
-    // Nests back onto duct-bank faces; the heart leaves the lower crossing open.
-    brood('brood-hive-heart', 815, 470, .8);
-    brood('brood-nest-large', 300, 222);
-    brood('brood-nest-large', 900, 818, 1, 0, Math.PI);
-    brood('brood-nest-medium', 950, 225, 1, 0, .15);
-    brood('brood-nest-medium', 240, 815, 1, 0, Math.PI);
-    brood('brood-burst-duct', 920, 275, .85);
-    brood('brood-consumed-shell', 300, 195, 1.3);
-    brood('brood-consumed-shell', 900, 845, 1.3, 0, Math.PI);
-    brood('brood-pods-large', 225, 270, .85);
-    brood('brood-pods-small', 970, 770);
-    brood('brood-pods-hatched', 475, 865);
-    for (const [x,z,a] of [[300,390,.3],[360,405,.7],[240,450,1.4],[900,780,2.6],[840,770,2.8],[970,710,1.3],[550,890,.4],[620,880,1.2],[680,930,2.1],[920,420,.8]]) {
-      brood('brood-creep-a', x, z, 1.2, .002, a);
-      brood('brood-creep-c', x + 38, z + 18, 1.1, .003, a + .7);
+    // Recreate the modeller's wall-backed group on the actual registered bank
+    // face (z340), keeping the crossing bare between the banks and heart.
+    brood('brood-hive-heart', 470, 620, .65);
+    brood('brood-nest-large', 300, 375, .8);
+    brood('brood-consumed-shell', 220, 392, 1.05, 0, .3);
+    brood('brood-nest-large', 900, 375, .8);
+    brood('brood-consumed-shell', 975, 392, .85);
+    brood('brood-nest-medium', 250, 831, .8, 0, Math.PI);
+    brood('brood-burst-duct', 370, 399, .55);
+    brood('brood-pods-large', 210, 620, .65);
+    brood('brood-pods-hatched', 360, 407, .6);
+    brood('brood-pods-small', 965, 410, .65);
+    // Small ragged fringes connect each mass to its wall; no free deck fields.
+    for (const [x,z,a] of [[255,365,.3],[335,386,.7],[210,640,1.4],[885,365,2.8],[950,385,1.3],[450,650,.4]]) {
+      brood('brood-creep-c',x,z,.46,.002,a);
     }
-    // The registered north banks advance to z340. Spread shallow crust on
-    // the exposed approaches and southern floor, instead of below those banks.
-    const floorPatches = [[280,440],[280,570],[280,700],[400,660],[520,660],[640,660],[760,660],
-      [880,660],[920,440],[920,570],[920,700],[430,805],[600,805],[770,805],[920,805],[540,170],[650,160]];
-    for (const [i,[x,z]] of floorPatches.entries()) {
-      brood(i % 3 === 1 ? 'brood-creep-b' : 'brood-creep-a',x,z,1,.002,(i%3-1)*.08);
-      result[result.length-1].matrix.scale(new T.Vector3(i % 3 === 1 ? 1.8 : 1.3,1,i % 3 === 1 ? 1.8 : 1.3));
-      result[result.length-1].surfaceGain = .65;
+    for (const [x,z,a] of [[300,341,0],[900,341,0]]) {
+      brood('brood-creep-wall',x,z,.55,.15,a);
+      result[result.length-1].matrix.scale(new T.Vector3(2,1,1));
+      result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
     }
-    for (const [x,z,a] of [[300,430,0],[900,859,Math.PI]]) {
-      brood('brood-creep-wall',x,z,1.7,.7,a);
-      result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-Math.PI/2));
+    // Measured plenum tops (1.81m) to nest crowns: real sloping anchors.
+    for (const [x,y,z,bx,by,bz] of [[235,1.75,365,285,2.5,375],[355,1.75,365,315,2.4,375],[955,1.75,365,908,2.5,375]]) {
+      const gap=new T.Vector3((bx-x)/32,by-y,(bz-z)/32);
+      brood('brood-web-short',x,z,1,y);
+      result[result.length-1].matrix.compose(new T.Vector3(x/32,y,z/32),
+        new T.Quaternion().setFromUnitVectors(new T.Vector3(1,0,0),gap.clone().normalize())
+          .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),.6)),
+        new T.Vector3(gap.length()/1.5,.25,.55));
     }
-    // Two doorway-top membranes: anchors land on the north/south plenum mouths.
-    brood('brood-web-long',440,320,2,2.8,0);
-    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.65));
-    result[result.length-1].matrix.scale(new T.Vector3(1,.15,.3));
-    brood('brood-web-long',760,720,2,2.8,Math.PI);
-    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.65));
-    result[result.length-1].matrix.scale(new T.Vector3(1,.15,.3));
   }
   if (id === 'overload-floor') {
     const dead = (asset: string, x: number, z: number, scale = 1, angle = 0, y = 0) => result.push({
@@ -91,17 +87,27 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       matrix: new T.Matrix4().compose(new T.Vector3(x/32,/^brood-creep-[abc]$/.test(asset) ? .024 : y,z/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),angle),new T.Vector3(scale,/^brood-creep-[abc]$/.test(asset) ? .015 : scale,scale)),
       surfaceGain: .42, emissionGain: .16, cutaway: asset === 'brood-creep-wall' || !asset.startsWith('brood-creep'), castShadow: false,
     });
-    dead('brood-nest-large',1020,245,.85);
-    dead('brood-nest-large',1010,850,.85,Math.PI);
-    dead('brood-consumed-shell',850,160,1.2);
-    dead('brood-burst-duct',1060,300,.7);
-    dead('brood-pods-hatched',1060,785,.8);
-    for(const [x,z,a] of [[1000,290,.3],[1060,345,.7],[1050,790,2],[980,830,2.7],[850,235,0],[700,855,1]]) {
-      dead('brood-creep-c',x,z,1.2,a);
-      dead('brood-creep-a',x-35,z+12,1,a+.6);
+    result.push({pack:'clinical',asset:'cryo-service-console',purpose:'DRESS13 / scorched gantry machine',cutaway:true,
+      matrix:new T.Matrix4().compose(new T.Vector3(970/32,0,240/32),new T.Quaternion(),new T.Vector3(.7,.7,.7))});
+    dead('brood-consumed-shell',970,240,.8);
+    dead('brood-nest-large',1020,238,.75);
+    dead('brood-nest-large',780,664,.55);
+    dead('brood-burst-duct',1080,265,.55);
+    dead('brood-pods-hatched',860,700,.6);
+    for(const [x,z,a] of [[1020,213,.3],[1060,225,.7],[780,650,2],[815,654,2.7]]) dead('brood-creep-c',x,z,.4,a);
+    for(const [x,z,a] of [[1020,201,0],[780,641,0]]) {
+      dead('brood-creep-wall',x,z,.6,a,.2);
+      result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
     }
-    dead('brood-web-long',920,200,1.2,0,3.4);
-    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.7));
+    // Sloping, short wall-to-crown sheets; each endpoint has real support.
+    for(const [x,y,z,bx,by,bz] of [[986,1.5,201,1020,2.35,238],[800,.85,641,780,1.7,664]]) {
+      const gap=new T.Vector3((bx-x)/32,by-y,(bz-z)/32);
+      dead('brood-web-short',x,z,1,0,y);
+      result[result.length-1].matrix.compose(new T.Vector3(x/32,y,z/32),
+        new T.Quaternion().setFromUnitVectors(new T.Vector3(1,0,0),gap.clone().normalize())
+          .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),.6)),
+        new T.Vector3(gap.length()/1.5,.3,.5));
+    }
   }
   if (id === 'freight-hold' || id === 'breached-loading-bay') {
     const x = id === 'freight-hold' ? 1150 : 215, z = id === 'freight-hold' ? 125 : 265;

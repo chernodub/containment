@@ -15,57 +15,91 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
     });
   };
   if (id === 'shielding-gate') {
-    // The infestation presses down the inspection cabinet and stops before the field.
-    add('nest-medium', 437, 326, 0, 1.1);
-    add('burst-duct', 302, 213, .65, .85);
-    add('consumed-shell', 484, 246, .1, 1.2, .25);
-    add('pods-small', 343, 300, .4, .8);
-    add('creep-a', 398, 341, .1, 1.25);
-    add('creep-c', 300, 283, -.45, 1.25);
-    add('creep-b', 487, 327, .6, 1.15);
-    add('creep-wall', 432, 341, 0, 1.2, .5, -Math.PI / 2);
-    // Opposite gate leaf: growth is stranded behind the hot shield rather than spread on the arena.
-    add('nest-medium', 976, 642, Math.PI, 1.15);
-    add('creep-a', 972, 616, Math.PI, 1.25);
-    add('creep-wall', 979, 620, Math.PI, 1.2, .45, -Math.PI / 2);
-    add('web-long', 365, 336, 0, 1.2, 2.8);
-    add('web-medium', 1044, 623, Math.PI, 1.15, 2.7);
+    // Both colonies stand on the deck in front of the inner shield faces.
+    // The middle crossing and the west entry lane receive no floor crust.
+    add('nest-medium', 430, 383, 0, .9);
+    add('burst-duct', 310, 370, .35, .55);
+    add('consumed-shell', 490, 365, .1, .7);
+    add('pods-small', 350, 385, .4, .65);
+    add('creep-c', 420, 355, .05, .5);
+    add('creep-a', 350, 353, -.3, .45);
+    add('creep-wall', 432, 341, 0, .9, .55, Math.PI / 2);
+    pieces[pieces.length-1].surfaceGain = .85;
+    add('nest-medium', 976, 553, Math.PI, .75);
+    add('creep-c', 972, 606, Math.PI, .35);
+    add('creep-wall', 979, 619, Math.PI, .45, .25, Math.PI / 2);
+    pieces[pieces.length-1].matrix.scale(new T.Vector3(2,1,1));
+    pieces[pieces.length-1].surfaceGain = .85;
+    // Short angled membranes terminate on a nest crown and cabinet shoulder.
+    add('web-short', 425, 366, -.18, 1.05, 1.55, .55);
+    add('web-short', 950, 587, -.75, 1.05, 1.55, -.45);
   }
   if (id === 'containment-annulus') {
-    // Continuous overlapping crust climbs the outer housing lips, leaving the west arena quiet.
-    for (const z of [162, 878]) {
+    // Narrow wall-foot crust leaves at least 140 units of each ring lane clean.
+    // The former broad scallops across the ring and roof-top shell are retired.
+    for (const z of [149, 891]) {
       const south = z > 520;
-      let index = 0;
-      for (let x = 224; x <= 1210; x += 76, index++) {
-        add(index % 3 === 1 ? 'creep-b' : index % 3 === 2 ? 'creep-a' : 'creep-c',
-          x, z + (index % 2 ? 4 : -3), (south ? Math.PI : 0) + (index % 3 - 1) * .13, index % 3 === 1 ? 1.35 : 1.1);
-        if (x % 152 === 72) add('creep-wall', x, south ? 900 : 140,
-          south ? Math.PI : 0, 1.3, .45, -Math.PI / 2);
+      for (let i = 0, x = 192; x <= 1216; x += 64, i++) {
+        const offset = (i % 3 - 1) * 3;
+        add(i % 3 === 1 ? 'creep-c' : i % 3 === 2 ? 'creep-b' : 'creep-a',
+          x + offset, z + (i % 2 ? 1 : -1), (south ? Math.PI : 0) + (i % 3 - 1) * .025, .32);
+        // Overlap along the wall, compress across it: a narrow continuous
+        // ragged fringe leaves more than 140 units of the ring unobstructed.
+        pieces[pieces.length-1].matrix.scale(new T.Vector3(3,1,.45));
+        add('creep-wall', x + offset, south ? 899 : 141,
+          south ? Math.PI : 0, .45, .25, Math.PI / 2);
+        // The climb stays below the .902m housing cap and joins its neighbours.
+        pieces[pieces.length-1].matrix.scale(new T.Vector3(2.3 + (i % 3 - 1) * .12,1,1));
+        pieces[pieces.length-1].surfaceGain = 1;
       }
     }
-    add('burst-duct', 1128, 179, .1, .9);
-    add('burst-duct', 1128, 861, Math.PI + .1, .9);
-    add('pods-hatched', 1198, 181, .5, .8);
-    add('pods-hatched', 1198, 856, -.5, .8);
-    add('consumed-shell', 1082, 114, .2, 1.35);
-    add('web-medium', 1045, 139, 0, 1.25, 2.6);
-    add('web-medium', 1168, 899, Math.PI, 1.25, 2.6);
+    add('burst-duct', 1128, 156, .1, .35);
+    add('burst-duct', 1128, 884, Math.PI + .1, .35);
+    add('pods-hatched', 1198, 160, .5, .35);
+    add('pods-hatched', 1198, 880, -.5, .35);
+    for (const [z,yaw] of [[164,.2],[876,Math.PI+.2]]) {
+      pieces.push({pack:'p11-service',asset:'service-console-schematic',
+        purpose:'DRESS13 / annulus consumed wall-foot console',cutaway:true,
+        matrix:new T.Matrix4().compose(new T.Vector3(1080/32,0,z/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),yaw),new T.Vector3(.32,.32,.32))});
+      add('consumed-shell', 1080, z, yaw, .45);
+    }
+    // Shell-to-duct webs follow the wall lip, never bridge the walking ring.
+    const link = (ax:number, az:number, ay:number, bx:number, bz:number, by:number) => {
+      add('web-short',ax,az);
+      const from=new T.Vector3(ax/32,ay,az/32), gap=new T.Vector3(bx/32,by,bz/32).sub(from);
+      pieces[pieces.length-1].matrix.compose(from,
+        new T.Quaternion().setFromUnitVectors(new T.Vector3(1,0,0),gap.clone().normalize())
+          .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),.55)),
+        new T.Vector3(gap.length()/1.5,.35,.6));
+    };
+    link(1080,164,.6,1128,156,.24);
+    link(1128,884,.24,1080,876,.6);
   }
   if (id === 'manual-control-chamber') {
-    // Four cabinet sections disappear under mantles; the authorisation dais stays readable.
+    // Swallowed service consoles stand on the deck before the cabinet faces.
+    // Their small root patches stay at the cabinet foot, off the core floor.
     for (const x of [254, 352, 926, 1024]) {
-      add('consumed-shell', x, 231, 0, 1.65);
-      add('creep-a', x, 283, .1, 1.35);
+      pieces.push({pack:'p11-service',asset:'service-console-schematic',
+        purpose:'DRESS13 / swallowed floor console',cutaway:true,
+        matrix:new T.Matrix4().compose(new T.Vector3(x/32,0,315/32),new T.Quaternion(),new T.Vector3(.55,.55,.5))});
+      add('consumed-shell', x, 315, 0, .65);
+      add('creep-c', x, 289, .1, .38);
+      add('creep-wall', x, 281, 0, .45, .25, Math.PI / 2);
+      pieces[pieces.length-1].matrix.scale(new T.Vector3(2,1,1));
+      pieces[pieces.length-1].surfaceGain = 1;
     }
-    add('nest-large', 239, 126, Math.PI / 2, 1);
-    add('burst-duct', 966, 134, .6, .9);
-    add('creep-b', 254, 168, .5, 1.5);
-    add('creep-wall', 164, 160, Math.PI / 2, 1.5, .65, -Math.PI / 2);
-    add('creep-wall', 1116, 172, -Math.PI / 2, 1.5, .65, -Math.PI / 2);
-    add('web-medium', 254, 230, 0, 1.02, 2.2);
-    add('web-medium', 926, 230, 0, 1.02, 2.2);
-    add('web-long', 166, 34, 0, 1.5, 2.8);
-    add('pods-hatched', 247, 308, .4, .8);
+    // The nest stands beside the cost-desk's west face, not on its roof.
+    // This puts the complete body inside the south-gallery inspection camera.
+    add('nest-large', 490, 900, -Math.PI / 2, .55);
+    add('creep-c', 490, 930, -Math.PI / 2, .35);
+    add('creep-wall', 509, 940, -Math.PI / 2, .45, .25, Math.PI / 2);
+    pieces[pieces.length-1].matrix.scale(new T.Vector3(2,1,1));
+    pieces[pieces.length-1].surfaceGain = 1;
+    add('burst-duct', 1068, 315, .6, .5);
+    add('pods-hatched', 345, 322, .4, .45);
+    // Paired angled membranes join the console tops; no room-wide span.
+    add('web-medium', 254, 315, .02, 1, .85, .65);
+    add('web-medium', 926, 315, -.02, 1, .85, -.65);
   }
   return pieces;
 }

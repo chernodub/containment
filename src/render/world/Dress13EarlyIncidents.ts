@@ -1,4 +1,6 @@
+import {dress13ResidentialPlacements, addDress13ResidentialDetails} from './Dress13Residential';
 import * as T from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {OriginalKitInstance, OriginalKitPack} from './OriginalShipKitAssets';
 
 /** Small, grounded aftermath compositions; presentation only, never navigation solids. */
@@ -9,77 +11,99 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
       matrix: new T.Matrix4().compose(new T.Vector3(x / 32,y,z / 32),
         new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),angle),new T.Vector3(...scale))});
   };
-  if (id === 'residential-gallery') {
-    // Evacuation stopped at the north cabin: the existing story wall owns
-    // drawings and the nook owns the fallen chair; cases spill toward that nook.
-    put('service-transit-case',548,267,-.24,[1.2,.55,1]);
-    put('service-transit-case',574,288,.32,[.85,.45,.8]);
-    put('deck-access-panel',548,254,-.24,[.54,1,.38],.24,'clinical');
-    put('deck-rubber-panel',560,286,.7,[.25,.8,.22],.015,'clinical');
-    put('service-access-hatch',759,237,0,[1.6,1.8,1]);
-    put('service-safety-rail',775,252,.23,[1,.65,1]);
-    put('service-cable-tray',768,261,1.5,[.5,.5,.7]);
-    put('deck-access-panel',753,272,-.5,[.34,1,.2],.025,'clinical');
-  }
+  if (id === 'residential-gallery') return dress13ResidentialPlacements();
   if (id === 'awakening-bay') {
-    // Release debris and a dropped recovery kit below the forced-open berths.
-    put('service-transit-case',535,370,-.35,[.75,.5,.7]);
-    put('deck-access-panel',548,362,.55,[.32,1,.25],.02,'clinical');
-
+    // A torn release lid, its hinges and abandoned treatment load connect the
+    // open bank to one readable aftermath at the pod-aisle shoulder.
+    put('service-transit-case',465,370,-.35,[1.15,.65,1]);
+    put('service-access-hatch',414,378,.2,[1.15,.65,.9],.10);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.35));
+    put('service-access-hatch',493,380,-.6,[.7,.4,.7],.08);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.55));
+    put('service-transit-case',514,365,.6,[.6,.35,.65]);
+    put('service-cable-tray',410,366,.3,[.65,.35,.8]);
+    put('deck-rubber-panel',443,385,.6,[.7,.8,.45],.025,'clinical');
+    put('deck-rubber-panel',477,390,-.35,[.5,.7,.4],.025,'clinical');
+    put('deck-access-panel',447,361,.55,[.55,1,.3],.03,'clinical');
+    put('deck-access-panel',497,381,-.35,[.28,1,.22],.025,'clinical');
+    put('service-transit-case',528,367,-.2,[.4,.25,.4]);
+    put('service-cable-tray',452,397,1.5,[.35,.3,.5]);
   }
   if (id === 'passenger-vault') {
-    // Empty personal-effects drawer is authored in the carrier; its contents
-    // have fallen into the bank's front edge rather than the entry fight lane.
-    put('service-transit-case',446,369,.4,[.5,.32,.5]);
-    put('service-transit-case',472,365,-.6,[.35,.25,.4]);
-    put('deck-access-panel',439,355,.35,[.13,.5,.18],.005,'clinical');
-    put('deck-access-panel',456,361,-.35,[.12,.5,.16],.005,'clinical');
-    put('deck-rubber-panel',475,355,.8,[.18,.4,.2],.004,'clinical');
-    put('security-sign-05',424,327,0,[.28,.35,1],.55,'security');
+    // One empty drawer has been pulled into the aisle shoulder. Its open case,
+    // separate lid, folded clothes and personal objects remain in one trail.
+    put('service-transit-case',366,368,.2,[1.25,.35,.9]);
+    put('service-access-hatch',358,363,.15,[1,.45,.75],.08);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.4));
+    put('service-transit-case',414,369,-.5,[.7,.35,.6]);
+    put('service-transit-case',445,366,.35,[.55,.3,.5]);
+    put('service-access-hatch',438,374,-.3,[.5,.3,.45],.03);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.5));
+    put('deck-access-panel',328,373,.5,[.25,.5,.33],.025,'clinical');
+    put('deck-access-panel',343,379,-.2,[.3,.5,.24],.025,'clinical');
+    put('deck-rubber-panel',396,372,.8,[.6,.5,.42],.026,'clinical');
+    put('deck-rubber-panel',418,380,-.5,[.45,.4,.3],.026,'clinical');
+    put('deck-access-panel',457,379,.6,[.22,.5,.16],.025,'clinical');
+    put('service-transit-case',473,370,-.4,[.36,.25,.36]);
+    put('deck-access-panel',383,381,-.4,[.18,.5,.14],.025,'clinical');
   }
   if (id === 'communal-atrium') {
-    // A failed dining barricade gathers on the conservatory's east foot.
-    for (const [x,z,a] of [[650,414,.25],[685,414,-.3]]) {
-      put('habitation-desk',x,z,a,[.85,.85,.85],.82,'clinical');
-      pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationZ(Math.PI/2));
-    }
-    put('security-bench',625,415,-.55,[.7,.6,.7],.3,'security');
-    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
-    put('service-transit-case',635,414,.7,[.65,.5,.65]);
-    put('deck-rubber-panel',633,426,.4,[.4,.5,.25],.003,'clinical');
-    put('deck-rubber-panel',659,434,-.3,[.3,.5,.4],.003,'clinical');
-    put('deck-access-panel',685,430,.8,[.25,.5,.3],.006,'clinical');
+    // Overturned table tops and a fallen bench form a failed line along the
+    // garden's visible south face; the western fight court remains empty.
+    // Three recognisable fallen tables are assembled by the room detail owner.
+    put('security-bench',574,429,-.55,[.8,.45,.45],.2,'security');
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(1.15));
+    put('service-transit-case',614,423,.7,[.7,.4,.6]);
+    put('service-transit-case',673,419,-.3,[.5,.3,.5]);
+    put('deck-rubber-panel',550,432,.4,[.7,.5,.5],.026,'clinical');
+    put('deck-rubber-panel',586,435,-.3,[.5,.5,.35],.026,'clinical');
+    put('deck-access-panel',628,434,.8,[.38,.5,.3],.026,'clinical');
+    put('deck-access-panel',647,428,-.4,[.3,.5,.28],.026,'clinical');
+    put('service-pressure-drum',694,431,.4,[.7,.65,.7],.3);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationZ(1.3));
+    put('service-cable-tray',667,432,1.3,[.4,.25,.5]);
   }
   if (id === 'crew-checkpoint') {
-    // The north inspection conveyor was abandoned with baggage still aboard.
-    put('service-transit-case',930,98,-.18,[.8,.7,.8],.82);
-    put('service-transit-case',957,101,.23,[.65,.65,.65],.82);
-    put('service-transit-case',981,121,.8,[.8,.55,.8]);
-    put('service-cable-tray',992,127,.4,[.5,.4,.65]);
-    // The jam's dropped load must also read from the central fight camera.
-    put('service-transit-case',630,540,-.4,[.85,.45,.75]);
-    put('service-transit-case',655,530,.6,[.6,.35,.6]);
-    put('service-cable-tray',660,515,1.1,[.6,.5,.6],.18);
-
+    // The departure gate has caught the abandoned conveyor load. The incident
+    // sits below the gate's north shoe, visible from the scanner-hall spawn.
+    put('security-baggage-conveyor',614,330,0,[.72,.6,.52],0,'security');
+    for (const [x,a,sz] of [[590,-.2,.8],[616,.18,.75],[642,-.3,.65]])
+      put('service-transit-case',x,330,a,[sz,.75,sz],.495);
+    put('service-transit-case',603,359,.6,[.9,.45,.75]);
+    put('service-transit-case',645,356,-.35,[.65,.4,.6]);
+    put('service-cable-tray',654,341,1.3,[.7,.55,.7],.24);
+    put('service-safety-rail',658,345,1.45,[.75,.55,.7],.08);
+    put('service-access-hatch',624,351,-.5,[.75,.4,.65],.06);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.4));
+    put('deck-rubber-panel',586,352,.4,[.5,.5,.3],.026,'clinical');
+    put('deck-access-panel',664,347,-.3,[.3,.5,.2],.026,'clinical');
+    put('service-cable-tray',575,345,.3,[.4,.3,.45]);
   }
   if (id === 'armory') {
-    // Half-closed magazine shutters and an abandoned issue case sit north
-    // of the carousel, leaving the southern issue-court fight circle clean.
+    // The interrupted issue load spills outside the port counter, fully in the
+    // spawn camera. The southern native issue-court fight circle stays clear.
     for (const x of [572,628]) {
       put('deck-access-panel',x,246,0,[.85,1,1],2.4,'clinical');
       pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
     }
-    put('service-transit-case',503,420,-.35,[1.2,.4,.8]);
-    put('deck-access-panel',508,409,-.65,[.48,1,.3],.03,'clinical');
-    put('deck-rubber-panel',532,438,.3,[.35,.3,.22],.003,'clinical');
-    put('service-cable-tray',506,438,.9,[.3,.3,.4]);
-    put('deck-access-panel',516,442,.6,[.035,.3,.08],.005,'clinical');
+    put('service-transit-case',268,338,-.25,[1.55,.45,1.05]);
+    put('service-access-hatch',283,332,-.35,[1.25,.6,.75],.08);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.25));
+    put('service-transit-case',245,371,.4,[.85,.4,.65]);
+    put('service-transit-case',285,378,-.5,[.6,.3,.55]);
+    put('service-cable-tray',280,364,.4,[.6,.4,.65]);
+    put('service-cable-tray',253,389,1.35,[.5,.3,.55]);
+    put('deck-access-panel',239,340,-.6,[.4,.5,.24],.026,'clinical');
+    put('deck-access-panel',285,388,.4,[.3,.5,.2],.026,'clinical');
+    put('deck-rubber-panel',255,359,.3,[.55,.5,.35],.026,'clinical');
+    put('deck-rubber-panel',285,371,-.7,[.35,.5,.26],.026,'clinical');
   }
   return pieces;
 }
 
 /** Flush marks and tiny debris use the room owner's disposal/warmup lifecycle. */
 export function addDress13EarlyDetails(root: T.Group, id: string): void {
+  if (id === 'residential-gallery') {addDress13ResidentialDetails(root);return;}
   if (!['residential-gallery','awakening-bay','passenger-vault','communal-atrium','crew-checkpoint','armory'].includes(id)) return;
   const group = new T.Group(); group.name = 'dress13-early-aftermath';
   const material = (name: string, color: number, metalness = 0) => {
@@ -92,44 +116,61 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
   };
   const flat = (points:number[][],m:T.Material,x:number,z:number,angle=0) => {
     const shape = new T.Shape(points.map(p=>new T.Vector2(p[0],p[1])));
-    const g = new T.ShapeGeometry(shape);g.rotateX(-Math.PI/2);return mesh(g,m,x,.008,z,angle);
+    const g = new T.ShapeGeometry(shape);g.rotateX(-Math.PI/2);return mesh(g,m,x,.026,z,angle);
   };
   if(id==='awakening-bay') {
-    for(const [w,d] of [[.26,.08],[.08,.26]]) {const g=new T.PlaneGeometry(w,d);g.rotateX(-Math.PI/2);mesh(g,scratch,535,.27,370,-.35);}
+    const med = material('dress13-medical-label',0xa3b4ac);
+    for(const [w,d] of [[.26,.08],[.08,.26]]) {const g=new T.PlaneGeometry(w,d);g.rotateX(-Math.PI/2);mesh(g,med,465,.37,370,-.35);}
     for(let i=0;i<6;i++) {
-      const x=540+(i%2?7:-7)+i*4,z=380+i*8;
+      const x=461+(i%2?7:-7)-i*7,z=391+i*7;
       flat([[-.075,-.17],[.065,-.17],[.095,-.05],[.075,.16],[.025,.23],[-.06,.18],[-.09,.02]],wet,x,z,.25);
       flat([[-.06,-.04],[.065,-.04],[.065,.05],[-.06,.05]],wet,x-2,z-9,.25);
     }
   }
-  if(id==='residential-gallery') {
-    const opening=new T.PlaneGeometry(.72,.48);opening.rotateX(-Math.PI/2);mesh(opening,dark,548,.301,267,-.24);
-    const garment=new T.PlaneGeometry(.34,.42);garment.rotateX(-Math.PI/2);mesh(garment,scratch,550,.305,270,-.12);
-    // Four parallel claw cuts on the barricaded hatch, with a dragged scuff below.
-    for(let i=0;i<4;i++) {
-      const g=new T.PlaneGeometry(.025,.60-i*.04);const o=mesh(g,scratch,750+i*5,.9,244);o.rotation.z=-.3;
-    }
-    flat([[-.8,-.08],[.7,-.12],[1,.03],[.35,.08],[-.9,.04]],dark,750,270,.3);
-  }
   if(id==='crew-checkpoint') {
     // Irregular soot fan has a source at the jammed inspection machinery.
-    flat([[0,0],[-.5,.12],[-1.05,.7],[-.65,.75],[-.18,1.1],[.25,.85],[.65,.91],[.45,.4]],dark,648,543,-.4);
+    const scorch=flat([[0,0],[-.5,.12],[-1.05,.7],[-.65,.75],[-.18,1.1],[.25,.85],[.65,.91],[.45,.4]],dark,650,345,-.4);scorch.scale.set(1.5,1,1.5);scorch.position.y=.034;
     for(let i=0;i<7;i++) {
       const g=new T.CylinderGeometry(.021,.021,.10,6);g.rotateZ(Math.PI/2);
-      mesh(g,brass,625+(i%3)*8,.035,550+Math.floor(i/3)*8,i*.8);
+      mesh(g,brass,558+(i%3)*8,.035,352+Math.floor(i/3)*8,i*.8);
     }
   }
   if(id==='passenger-vault') {
-    for(let i=0;i<3;i++) flat([[-.22,-.27],[.23,-.26],[.21,.28],[-.23,.25]],scratch,446+i*9,366+i*3,i*.4);
-    flat([[-.035,-.7],[.04,-.6],[.025,.65],[-.025,.6]],dark,448,354,.2);
+    const pocket=new T.PlaneGeometry(.85,.49);pocket.rotateX(-Math.PI/2);mesh(pocket,dark,366,.191,368,.2);
+    for(let i=0;i<4;i++) flat([[-.22,-.27],[.23,-.26],[.21,.28],[-.23,.25]],scratch,328+i*13,377+i%2*3,i*.4);
+    flat([[-.035,-.7],[.04,-.6],[.025,.65],[-.025,.6]],dark,360,374,.2);
+    const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;
+    const ctx=canvas.getContext('2d')!;ctx.fillStyle='#26363c';ctx.fillRect(0,0,512,128);ctx.fillStyle='#b3b9ac';ctx.font='bold 38px monospace';ctx.fillText('K. VOSS / BERTH 04',18,54);ctx.font='24px monospace';ctx.fillText('PERSONAL EFFECTS - RELEASED',18,101);
+    const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
+    const label=new T.MeshStandardMaterial({map:texture,roughness:1,metalness:0,side:T.DoubleSide});label.name='dress13-passenger-nameplate';label.userData.actorMaterial=true;label.addEventListener('dispose',()=>texture.dispose());
+    mesh(new T.PlaneGeometry(1.1,.275),label,366,.26,379).rotation.x=-.55;
   }
   if(id==='communal-atrium') {
-    for(let i=0;i<5;i++) flat([[-.12,-.32],[.13,-.28],[.1,.3],[-.13,.27]],dark,650+i*9,400+(i%2)*8,.3);
+    const tables:T.BufferGeometry[]=[];
+    for(const [x,z,y,yaw,roll,flip] of [[535,419,.73,.25,0,1],[597,414,.64,-.24,1.35,0],[654,414,.64,.2,-1.3,0]]){
+      const transform=new T.Matrix4().compose(new T.Vector3(x/32,y,z/32),new T.Quaternion().setFromEuler(new T.Euler(flip?Math.PI:0,yaw,roll,'YXZ')),new T.Vector3(1,1,1));
+      const part=(w:number,h:number,d:number,px:number,py:number,pz:number,color:number)=>{
+        const source=new T.BoxGeometry(w,h,d),g=source.toNonIndexed();source.dispose();g.translate(px,py,pz);g.applyMatrix4(transform);
+        const c=new T.Color(color),values=new Float32Array(g.getAttribute('position').count*3);for(let i=0;i<values.length/3;i++)c.toArray(values,i*3);g.setAttribute('color',new T.BufferAttribute(values,3));tables.push(g);
+      };
+      part(1.5,.08,.9,0,.68,0,0x899184);
+      for(const lx of [-.6,.6])for(const lz of [-.32,.32])part(.065,.64,.065,lx,.32,lz,0x40545a);
+      for(const lz of [-.32,.32])part(1.32,.06,.055,0,.61,lz,0x5c7071);
+    }
+    const tableGeometry=mergeGeometries(tables,false)!;tables.forEach(g=>g.dispose());
+    const tableMaterial=new T.MeshStandardMaterial({vertexColors:true,roughness:.95,metalness:.12});tableMaterial.userData.actorMaterial=true;
+    const fallenTables=mesh(tableGeometry,tableMaterial,0,0,0);fallenTables.name='dress13-atrium-fallen-dining-tables';
+
+    const soil=material('dress13-trampled-soil',0x2d3327),leaf=material('dress13-crushed-leaf',0x657454);
+    flat([[0,0],[-.5,-.15],[-2.1,.2],[-2.4,.7],[-1.1,1.0],[-.3,.7],[.7,.9],[.5,.3]],soil,694,432,.1).position.y=.029;
+    for(let i=0;i<8;i++) flat([[-.10,-.24],[.02,-.30],[.13,-.02],[.04,.24],[-.1,.12]],leaf,550+i*17,429+i%3*4,i*.8);
+    for(let i=0;i<5;i++) flat([[-.12,-.32],[.13,-.28],[.1,.3],[-.13,.27]],dark,650+i*9,420+(i%2)*8,.3);
   }
   if(id==='armory') {
-    const foam=new T.PlaneGeometry(.95,.48);foam.rotateX(-Math.PI/2);mesh(foam,dark,503,.217,420,-.35);
-    for(const x of [499,507]){const cut=new T.PlaneGeometry(.06,.33);cut.rotateX(-Math.PI/2);mesh(cut,scratch,x,.22,420,-.35);}
-    for(let i=0;i<3;i++) flat([[-.04,-.7],[.03,-.65],[.025,.7],[-.025,.62]],dark,506+i*7,429,-.4);
+    const foam=new T.PlaneGeometry(1.18,.65);foam.rotateX(-Math.PI/2);mesh(foam,scratch,268,.244,338,-.25);
+    const rifle=flat([[-.5,-.12],[-.28,-.12],[-.2,-.045],[.45,-.045],[.45,.025],[.05,.025],[.02,.10],[-.1,.10],[-.1,.025],[-.3,.025],[-.38,.12],[-.5,.12]],dark,268,334,-.25);rifle.position.y=.249;
+    const pistol=flat([[-.21,-.055],[.19,-.055],[.19,.035],[-.02,.035],[-.04,.18],[-.14,.18],[-.17,.035],[-.21,.035]],dark,268,345,-.25);pistol.position.y=.249;
+    for(let i=0;i<4;i++) flat([[-.04,-.7],[.03,-.65],[.025,.7],[-.025,.62]],dark,258+i*7,371,-.4);
   }
   // Unused per-room finishes do not enter the scene or retain resources.
   const used=new Set<T.Material>();group.traverse(o=>{if(o instanceof T.Mesh)used.add(o.material as T.Material);});

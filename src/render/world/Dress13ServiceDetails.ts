@@ -5,7 +5,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
  * collision ownership and each room owns its one vertex-colour finish. */
 export function addDress13ServiceDetails(root: T.Group, id: string): void {
   const parts: T.BufferGeometry[] = [];
-  const steel = 0x657174, rubber = 0x202b30, stain = 0x343739, frost = 0x829ca4;
+  const steel = 0x657174, rubber = 0x202b30, stain = 0x343739;
   const put = (g: T.BufferGeometry, color: number) => {
     const p = g.getAttribute('position'), c = new T.Color(color), colors = new Float32Array(p.count * 3);
     for (let i = 0; i < p.count; i++) c.toArray(colors, i * 3);
@@ -35,80 +35,93 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     }
   };
   if (id === 'freight-hold') {
-    scuff(794, 513, 2.2, 1.3); scuff(835, 514, 1.2, 1.1);
-    shards(804, 510, 0x697374);
-    for (let i = 0; i < 3; i++) box(815 + i * 10, .035, 500 - i * 4, .24, .05, .18, 0x65716b, i * .6);
+    scuff(370, 345, 2.5, 1.1); scuff(424, 349, 1.4, 1.1);
+    shards(405, 342, 0x697374);
+    for (let i = 0; i < 4; i++) box(405 + i * 15, .04, 339 - i % 2 * 10, .3, .07, .22, 0x65716b, i * .6);
   } else if (id === 'breached-loading-bay') {
-    scuff(391, 457, 2.8, -.58); scuff(415, 434, 2.8, -.58);
+    scuff(345, 522, 3.2, -.58); scuff(382, 485, 3.0, -.58); scuff(415, 434, 2.8, -.58);
     box(399, .024, 451, .075, .002, 2.5, stain, -.58);
     box(412, .025, 443, .06, .002, 2.2, stain, -.58);
     // Suppression foam follows the torn shoulder instead of spilling into the
     // lower turning floor. Low irregular scallops read differently from ice.
     for (let i = 0; i < 14; i++) {
-      const g = new T.SphereGeometry(.18 + i % 3 * .04, 7, 4); g.scale(1, .13, .7); g.translate((548 + i * 8) / 32, .025, (433 + Math.sin(i * 1.7) * 8) / 32); put(g, 0xa3aaa0);
+      const g = new T.SphereGeometry(.18 + i % 3 * .04, 7, 4); g.scale(1, .13, .7); g.translate((470 + i * 5) / 32, .026, (400 + i * 4 + Math.sin(i * 1.7) * 4) / 32); put(g, 0xa3aaa0);
     }
     shards(590, 438, steel);
   } else if (id === 'relay-racks') {
-    tool(592, 575, .3); tool(600, 604, 1.7);
+    tool(545, 422, .3); tool(548, 462, 1.7);
     for (let i = 0; i < 5; i++) {
-      const x = 607 + i * 7;
-      line([x, 1.15, 545], [x - 22, .035, 575], .02, 0x677e7d);
-      line([x - 20, .035, 583], [x - 7, .035, 610], .02, rubber);
-      box(605 + i * 7, .025, 610, .08, .015, .2, 0x5b706c, i * .45);
+      const x = 589 + i * 3;
+      line([x + 12, 1.15, 398], [x - 20, .035, 430], .035, 0x677e7d);
+      line([x - 20, .035, 442], [x - 26, .035, 468], .03, rubber);
+      box(566 + i * 7, .025, 465, .14, .025, .28, 0x5b706c, i * .45);
     }
-    scuff(605, 607, .8, .4);
+    box(603, 1.2, 410, .04, 1.5, 1.3, rubber);
+    scuff(550, 435, 1.1, .4); shards(554, 456);
   } else if (id === 'transmission-chamber') {
     tool(885, 431, .7); tool(930, 433, 2);
+    scuff(883, 447, 1.8, .6);
+    for (let i = 0; i < 4; i++) box(859 + i * 12, .04, 431 + i % 2 * 10, .22, .035, .3, 0x778280, i * .5);
     line([905, .7, 401], [912, .035, 428], .025, rubber);
     line([915, .035, 432], [938, .035, 417], .025, rubber);
     shards(932, 428, 0x526c6d);
     // Frozen last transmission is part of the abandoned operator station.
     const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 256;
     const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#172a2c'; ctx.fillRect(0, 0, 512, 256);
-    ctx.fillStyle = '#8ca49a'; ctx.font = 'bold 32px monospace'; ctx.fillText('TRANSMISSION HELD', 22, 48);
+    ctx.fillStyle = '#b1c2b6'; ctx.font = 'bold 32px monospace'; ctx.fillText('TRANSMISSION HELD', 22, 48);
     ctx.font = '24px monospace'; ctx.fillText('DO NOT OPEN THE DOCK', 22, 100); ctx.fillText('WE ARE STILL INSIDE', 22, 137);
     ctx.fillStyle = '#5d7770'; ctx.fillText('CARRIER LOST / 00:17', 22, 211);
     const texture = new T.CanvasTexture(canvas); texture.colorSpace = T.SRGBColorSpace;
-    const screen = new T.Mesh(new T.PlaneGeometry(1.7, .85), new T.MeshStandardMaterial({map: texture, roughness: 1, metalness: 0, emissive: 0xffffff, emissiveMap: texture, emissiveIntensity: .12, side: T.DoubleSide}));
+    const screen = new T.Mesh(new T.PlaneGeometry(2.1, 1.05), new T.MeshStandardMaterial({map: texture, roughness: 1, metalness: 0, emissive: 0xffffff, emissiveMap: texture, emissiveIntensity: .12, side: T.DoubleSide}));
     (screen.material as T.Material).userData.actorMaterial = true;
     (screen.material as T.Material).addEventListener('dispose', () => texture.dispose());
     screen.name = 'dress13-last-transmission'; screen.rotation.x = -.65; screen.position.set(905 / 32, 1.15, 390 / 32); root.add(screen);
   } else if (id === 'diagnostic-gallery') {
-    shards(813, 390, 0x86989a);
-    // Torn restraint tongues and severed diagnostic leads leave the empty
-    // cradle's mouth open; restrained dark ichor is confined to the bed.
+    shards(385, 377, 0x86989a);
+    // Transport cradle lid and restraint tongues were torn toward the aisle.
     for (let i = 0; i < 3; i++) {
-      line([765 + i * 19, .85, 353], [771 + i * 19, .35, 379], .045, rubber);
-      line([774 + i * 19, .35, 384], [781 + i * 19, .035, 394], .035, rubber);
+      line([332 + i * 19, .65, 337], [343 + i * 19, .25, 366], .055, rubber);
+      line([346 + i * 19, .25, 369], [354 + i * 19, .035, 390], .035, rubber);
     }
-    scuff(807, 398, .9, 1.2, 0x453b43);
+    scuff(386, 396, 1.5, 1.2, 0x453b43);
+    scuff(360, 365, 1.2, .25, 0x4b3744);
   } else if (id === 'safety-interlock-station') {
-    // Buckled access leaves close the camera-facing equipment opening. Their
-    // plane stays behind the first legal marine centre along this solid.
-    box(632, 1.025, 397, 1.12, 1.95, .09, 0x59666a, -.025);
-    box(668, 1.025, 397, 1.12, 1.95, .09, 0x637075, .025);
-    for (let i = 0; i < 15; i++) box(650 + i % 2, .16 + i * .12, 399, .09, .09, .035, 0x92978c);
-    // A silvery weld seam and short stress gouges are on the solid rear
-    // interlock frame, rather than a new barrier in either native doorway.
-    for (let i = 0; i < 12; i++) box(624 + i * 4.5, .55 + i % 2 * .06, 402, .15, .045, .025, 0x89918b, .1);
-    for (let i = 0; i < 5; i++) line([623 + i * 4, 1.15, 399], [628 + i * 4, 1.65 + i % 2 * .1, 399], .025, rubber);
-    tool(620, 410, .2); shards(673, 410);
+    // A narrow service door is welded across the cage's existing north wall,
+    // left of the cylinder machine, with its face toward the spawn camera.
+    box(565, 1.025, 350, 1.4, 1.95, .09, 0x839095);
+    for (let i = 0; i < 15; i++) box(565 + i % 2, .16 + i * .12, 352, .09, .09, .035, 0xa8ad9f);
+    for (let i = 0; i < 10; i++) box(545 + i * 4.2, .55 + i % 2 * .06, 353, .15, .045, .025, 0x89918b);
+    for (let i = 0; i < 5; i++) line([546 + i * 4, 1.15, 353], [551 + i * 4, 1.65 + i % 2 * .1, 353], .025, rubber);
+    tool(490, 369, .2); tool(484, 340, 1.4); shards(479, 353);
+    scuff(481, 353, 1.5, .5);
   } else if (id === 'coolant-plant') {
+    // A connected ragged ice fan reaches clear floor in front of the failed
+    // header hardware. Its bounds stay outside the port fight circle.
+    const ice = 0xa6c2c9;
+    const outline = [[270,314],[281,310],[295,314],[301,320],[317,324],[324,337],[331,343],[325,354],[317,357],[306,349],[292,350],[284,338],[274,335]];
+    const fan = new T.ShapeGeometry(new T.Shape(outline.map(([x,z]) => new T.Vector2(x / 32, -z / 32))));
+    fan.rotateX(-Math.PI / 2); fan.translate(0,.024,0); put(fan,ice);
     for (let i = 0; i < 11; i++) {
-      const g = new T.SphereGeometry(.23 + i % 3 * .06, 7, 4); g.scale(1, .05, 1.5); g.translate((654 + i * 7) / 32, .022, (389 + i * 2.5 + Math.sin(i * 1.7) * 10) / 32); put(g, frost);
+      const g = new T.SphereGeometry(.21 + i % 3 * .05, 7, 4); g.scale(1, .05, 1.2); g.translate((278 + i * 4) / 32, .026, (316 + i * 2.8) / 32); put(g, ice);
     }
-    line([657, .95, 382], [667, .8, 393], .065, steel);
-    line([674, .65, 400], [687, .35, 408], .065, steel);
-    // Muted buff/charcoal tape, well below danger's saturated palette.
-    box(678, .67, 403, 3.2, .11, .025, 0x9a9477, .09);
-    for (let i = 0; i < 10; i++) box(631 + i * 10, .67, 407 - i * .9, .11, .12, .03, i % 2 ? rubber : 0x9a9477);
+    line([268, 1.5, 282], [279, .8, 294], .09, steel);
+    line([285, .65, 301], [290, .15, 317], .08, steel);
+    // Short ivory/charcoal tape is in front of the rail, on its own two posts.
+    for (const [x,z] of [[278,350],[330,345]]) {
+      box(x,.4,z,.055,.8,.055,steel);
+      box(x,.025,z,.16,.05,.16,steel);
+    }
+    box(304,.8,347.5,1.64,.16,.025,0xc8c5ad,.096);
+    for (let i = 0; i < 6; i++) box(281 + i * 9,.8,349.7 - i * .865,.10,.17,.04,rubber,.096);
+    tool(354, 306, .7); shards(325, 333, ice);
   } else if (id === 'service-shaft-landing') {
-    line([430, 1.1, 324], [417, -.7, 465], .045, steel);
-    line([471, 1, 328], [440, .25, 420], .04, rubber);
-    for (let i = 0; i < 6; i++) line([440, .25, 420], [447 + i * 2, .1 - i * .05, 425 + i * 2], .008, steel);
-    tool(403, 326, .4, .2); tool(435, 324, 1.4, .2);
-    shards(458, 318, steel, .17);
+    line([337, .9, 421], [376, -.65, 452], .055, steel);
+    line([337, .8, 480], [391, -.6, 486], .05, rubber);
+    for (let i = 0; i < 7; i++) line([365, -.4, 448], [374 + i * 2, -.6 - i * .05, 455 + i * 2], .012, steel);
+    tool(300, 460, .4); tool(316, 505, 1.4);
+    shards(307, 491); scuff(304, 477, 1.7, -.2);
   }
+
   if (!parts.length) return;
   const geometry = mergeGeometries(parts, false)!; for (const p of parts) p.dispose();
   const material = new T.MeshStandardMaterial({vertexColors: true, roughness: .94, metalness: .08}); material.name = 'dress13-incident-evidence'; material.userData.actorMaterial = true;
