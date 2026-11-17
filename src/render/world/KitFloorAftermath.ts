@@ -67,24 +67,6 @@ export function addKitFloorAftermath(t:RoomTemplate,id:string,reservations:reado
    }
    return {idea:'Rack service thresholds follow the live banks',site:[t.spawn.x/32,t.spawn.y/32],admitted};
   }
-  if(id==='overload-floor'){
-   // Terminal heat damage stays flush to the real deck around the core rim.
-   // The west fight circle is deliberately left clear; each fragment is clipped
-   // by the same authored-deck admission used by all floor dressing.
-   for(const [cx,cz,turn] of [[700,310,-1.4],[900,460,.12],[740,690,1.2]] as const){
-    const ux=Math.cos(turn),uz=Math.sin(turn),vx=-uz,vz=ux;
-    const point=(u:number,v:number):Point=>[(cx+ux*u+vx*v)/32,(cz+uz*u+vz*v)/32];
-    const scar=[point(-12,-9),point(18,-17),point(74,-23),point(106,-6),point(83,11),point(28,14),point(-10,6)];
-    if(p.patch(scar,0x20232c,'reactor-rupture-scorch',.019))admitted++;
-    for(let i=0;i<7;i++){
-     const q=point(14+i*11,Math.sin(i*3.7)*15);
-     if(p.quad(q[0],q[1],(7+i%3*3)/32,(10+i%2*6)/32,turn+i*.53,i%2?0x59616a:0x343c49,'torn-deck-fragment',.021))admitted++;
-    }
-    const a=point(-8,0),b=point(38,-4),c=point(76,5);
-    stroke(...a,...b,.055,0x92939e,'exposed-heat-fracture');
-    stroke(...b,...c,.04,0x767787,'exposed-heat-fracture');
-   }
-  }
   const plan=SHIP_ARCHITECTURE_PLANS[id as keyof typeof SHIP_ARCHITECTURE_PLANS];
   // Other architecture owns its own finish. A single functional annotation
   // belongs to an actual named threshold, never one patch per obstacle.

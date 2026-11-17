@@ -39,6 +39,24 @@ export function buildDeckStory(t: RoomTemplate, atlas: T.Texture): { high: T.Can
     stamp(1,0,(opening.from.x+opening.to.x)/64,(opening.from.y+opening.to.y)/64,2.8,.5,
       Math.atan2(opening.to.y-opening.from.y,opening.to.x-opening.from.x),.60);
   }
+  if(t.id==='overload-floor') {
+    // Heat escapes through three split deck seams around the core. Paint into
+    // the visible deck's retained wear texture; the west holdout stays quiet.
+    const polygon=(points:number[][],color:string)=>{
+      context.fillStyle=color;context.beginPath();
+      points.forEach(([x,z],i)=>{const u=(x/32-minX)/width*1024,v=(z/32-minZ)/depth*1024;i?context.lineTo(u,v):context.moveTo(u,v);});
+      context.closePath();context.fill();
+    };
+    for(const [cx,cz,turn] of [[700,310,-1.4],[930,480,.12],[740,700,1.2]]) {
+      const point=(u:number,v:number)=>[cx+Math.cos(turn)*u-Math.sin(turn)*v,cz+Math.sin(turn)*u+Math.cos(turn)*v];
+      polygon([[-25,-10],[10,-25],[47,-20],[85,-38],[110,-14],[89,3],[120,16],[70,26],[20,18],[-18,9]].map(([u,v])=>point(u,v)),'#56616b');
+      polygon([[-18,-4],[26,-8],[65,-18],[91,-8],[57,4],[24,7]].map(([u,v])=>point(u,v)),'#26313e');
+      for(let n=0;n<9;n++) {
+        const u=16+n*10,v=Math.sin(n*3.7)*22;
+        polygon([[u-4,v-3],[u+9,v-6],[u+6,v+5],[u-3,v+8]].map(([x,z])=>point(x,z)),n%2?'#7c8088':'#3c4650');
+      }
+    }
+  }
   const make = (image:HTMLCanvasElement) => {
     const texture = new T.CanvasTexture(image); texture.name = 'e10-placed-evacuation-wear'; texture.colorSpace = T.SRGBColorSpace;
     texture.flipY = false; texture.anisotropy = 2; return texture;
