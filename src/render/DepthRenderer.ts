@@ -129,8 +129,8 @@ export class DepthRenderer {
  setColliderDebug(visible:boolean){this.colliderDebug=visible;}
  private warning=new T.Group();private poolMeshes=new Map<number,T.Mesh<T.CircleGeometry,AcidPoolMaterial>>();private menuActors=new T.Group();private menuMarine=marine();private menuAlien=alien('brute');private lastMenu=false;private menuThreatClock=0;
  private title=new TitlePresentation(this.scene);
- constructor(readonly canvas:HTMLCanvasElement){
-  this.renderer=new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
+ constructor(readonly canvas:HTMLCanvasElement,assetRenderer?:T.WebGLRenderer){
+  this.renderer=assetRenderer??new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
   // Scene roots remain identity; only moving descendants compose local matrices.
   this.scene.matrixAutoUpdate=false;this.hudScene.matrixAutoUpdate=false;
   this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.AgXToneMapping;this.renderer.toneMappingExposure=1.22;
