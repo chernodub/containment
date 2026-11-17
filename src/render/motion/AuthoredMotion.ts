@@ -68,7 +68,12 @@ export class AuthoredMotionPlayer {
                 if (upperNames.size && (clip.name === 'm10-reload' || clip.name === 'm10-switch' || clip.name.startsWith('m10-fire-'))) {
                     const layer = clip.clone();
                     layer.name = clip.name + '-upper';
-                    layer.tracks = layer.tracks.filter(track => upperNames.has(T.PropertyBinding.parseTrackName(track.name).nodeName));
+                    // Blender optimizes constant channels independently per clip. An absent
+                    // reference translation would stay absolute in makeClipAdditive,
+                    // adding the rest offset again and separating the limb armor.
+                    // Upper actions/grips change articulation; local bone offsets
+                    // and scale remain owned by the full base pose.
+                    layer.tracks = layer.tracks.filter(track => upperNames.has(T.PropertyBinding.parseTrackName(track.name).nodeName) && track.name.endsWith('.quaternion'));
                     T.AnimationUtils.makeClipAdditive(layer, 0, clip, 60);
                     const overlay = mixer.clipAction(layer);
                     overlay.setLoop(T.LoopOnce, 1);
@@ -82,7 +87,7 @@ export class AuthoredMotionPlayer {
                 if (clip.name.startsWith('m10-ready-') && clip !== ready) {
                     const layer = clip.clone();
                     layer.name = clip.name + '-grip';
-                    layer.tracks = layer.tracks.filter(track => upperNames.has(T.PropertyBinding.parseTrackName(track.name).nodeName));
+                    layer.tracks = layer.tracks.filter(track => upperNames.has(T.PropertyBinding.parseTrackName(track.name).nodeName) && track.name.endsWith('.quaternion'));
                     T.AnimationUtils.makeClipAdditive(layer, 0, ready, 60);
                     const action = mixer.clipAction(layer);
                     action.setLoop(T.LoopOnce, 1);
