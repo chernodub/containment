@@ -15,21 +15,21 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
     });
   };
   if (id === 'shielding-gate') {
-    // The infestation presses down the inspection cabinet and stops before the field.
-    add('nest-medium', 437, 326, 0, 1.1);
-    add('burst-duct', 302, 213, .65, .85);
-    add('consumed-shell', 484, 246, .1, 1.2, .25);
-    add('pods-small', 343, 300, .4, .8);
-    add('creep-a', 398, 341, .1, 1.25);
-    add('creep-c', 300, 283, -.45, 1.25);
-    add('creep-b', 487, 327, .6, 1.15);
-    add('creep-wall', 432, 341, 0, 1.2, .5, -Math.PI / 2);
-    // Opposite gate leaf: growth is stranded behind the hot shield rather than spread on the arena.
-    add('nest-medium', 976, 642, Math.PI, 1.15);
-    add('creep-a', 972, 616, Math.PI, 1.25);
-    add('creep-wall', 979, 620, Math.PI, 1.2, .45, -Math.PI / 2);
-    add('web-long', 365, 336, 0, 1.2, 2.8);
-    add('web-medium', 1044, 623, Math.PI, 1.15, 2.7);
+    // Both colonies stand on the deck in front of the inner shield faces.
+    // The middle crossing and the west entry lane receive no floor crust.
+    add('nest-medium', 430, 383, 0, .9);
+    add('burst-duct', 310, 370, .35, .55);
+    add('consumed-shell', 490, 365, .1, .7);
+    add('pods-small', 350, 385, .4, .65);
+    add('creep-c', 420, 355, .05, .5);
+    add('creep-a', 350, 353, -.3, .45);
+    add('creep-wall', 432, 341, 0, .9, .55, -Math.PI / 2);
+    add('nest-medium', 976, 553, Math.PI, .75);
+    add('creep-c', 972, 606, Math.PI, .35);
+    add('creep-wall', 979, 619, Math.PI, .9, .5, -Math.PI / 2);
+    // Short angled membranes terminate on a nest crown and cabinet shoulder.
+    add('web-short', 425, 366, -.18, 1.05, 1.55, .55);
+    add('web-short', 950, 587, -.75, 1.05, 1.55, -.45);
   }
   if (id === 'containment-annulus') {
     // Continuous overlapping crust climbs the outer housing lips, leaving the west arena quiet.
