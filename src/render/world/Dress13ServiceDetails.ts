@@ -74,14 +74,14 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     (screen.material as T.Material).addEventListener('dispose', () => texture.dispose());
     screen.name = 'dress13-last-transmission'; screen.rotation.x = -.65; screen.position.set(905 / 32, 1.15, 390 / 32); root.add(screen);
   } else if (id === 'diagnostic-gallery') {
-    shards(788, 351, 0x86989a, .18);
+    shards(813, 390, 0x86989a);
     // Torn restraint tongues and severed diagnostic leads leave the empty
     // cradle's mouth open; restrained dark ichor is confined to the bed.
     for (let i = 0; i < 3; i++) {
-      line([765 + i * 19, .35, 335], [771 + i * 19, .7, 350], .035, rubber);
-      line([774 + i * 19, .7, 352], [781 + i * 19, .3, 358], .025, rubber);
+      line([765 + i * 19, .85, 353], [771 + i * 19, .35, 379], .045, rubber);
+      line([774 + i * 19, .35, 384], [781 + i * 19, .035, 394], .035, rubber);
     }
-    scuff(777, 355, .7, 1.2, 0x453b43);
+    scuff(807, 398, .9, 1.2, 0x453b43);
   } else if (id === 'safety-interlock-station') {
     // A silvery weld seam and short stress gouges are on the solid rear
     // interlock frame, rather than a new barrier in either native doorway.

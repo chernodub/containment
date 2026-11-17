@@ -34,3 +34,8 @@ Moved the opened panel and repair spill to the west face below the visible patch
 
 Opened native fight-tour02 and exact480 tour02/03 against final6. The dish reads well, but it completely hides the frozen operator screen and most repair debris.
 Moved the station and its connected spill to the dish's starboard side, with a slightly broader dim screen facing the gameplay camera; the holdout circle and exit approach remain clear. Final tour/calm recheck pending the shared second batch.
+
+## Diagnostic Gallery — round1 → correction
+
+Opened native fight-tour02 and exact480 tour02/03 against final6. The empty cradle reads, but the restraint damage and debris are too captive inside its base to replace the sign-led storytelling.
+Brought a torn cover, opened case and cold shards over the front lip, with severed restraint tongues falling toward a small dark stain outside the combat circle. Final tour/calm recheck pending the shared second batch.
