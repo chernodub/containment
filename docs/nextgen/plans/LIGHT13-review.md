@@ -19,3 +19,8 @@ Squint test = greyscale 480×270: marine first, threats second, room third.
 - Heavy frames pass the squint in all three rooms. FAIL in tours: the value field was centred on the arena only, so tour positions in Relay's/Coolant's lanes fell to near-black except the rig-lamp disc — "room third" became "room absent".
 - FAIL: Coolant cabinet-top panels (`e9-cyan`, emissive 6 → mood ×1.75 = 10.5) still blow out; scaling by .2 leaves ~2.
 - Fix: field now takes the room's four motivated pools (fight circle + three named-space fixtures from `deckLightSources`, lane radius ×.55); neutral fixtures in profiled rooms get a hard emissive ceiling of .7.
+
+## Final (light13-final, after round-4 fixes)
+- Room-region luminance (sRGB 0–255, central 1300×700 of calm frames) p10/p50/p90 — Crew 110/147/163 → 44/75/90; Coolant 51/99/115 → 12/38/47; Relay 30/51/63 → 7/27/49. Marine box p98 ≈ 210–214 in every room.
+- Squint: heavy frames pass in all three rooms; tours keep lanes readable (four-pool field). Coolant panels now grey, not white. Crew remains the weakest: its floor centre is still a mid-grey slab (p50 75) — darker than before but the room is the least dramatic of the three.
+- Low tier matches High (same uniforms). Cryo in Relay: effects read at full strength on the darker deck; warning outlines unchanged and now higher contrast.
