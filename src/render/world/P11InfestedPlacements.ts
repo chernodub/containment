@@ -24,18 +24,21 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       cutaway: asset === 'brood-creep-wall' || !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
-    brood('brood-consumed-shell',650,330,1.3);
-    brood('brood-consumed-shell',250,900,1.2);
-    brood('brood-burst-duct',860,95,.85);
-    brood('brood-nest-medium',930,40,1);
-    brood('brood-pods-small',850,125,.85);
-    for(const [x,z,a] of [[850,80,.5],[900,90,1.2],[960,110,2.1],[250,865,.8],[650,345,0]]) {
-      brood('brood-creep-a',x,z,1.1,.002,a);
-      brood('brood-creep-c',x+35,z-15,1,.003,a+.5);
-    }
-    brood('brood-creep-wall',880,2,1.6,.5,0);
-    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-Math.PI/2));
-    brood('brood-web-short',850,65,1,1.6,0);
+    brood('brood-consumed-shell',650,330,1.1);
+    // The active tool workbay is x584..876: use its visible right inner
+    // partition, rather than the untoured lathe bay or the far roofline.
+    result.push({pack:'clinical',asset:'clinical-testbench',purpose:'DRESS13 / rear workbay machine',cutaway:true,
+      matrix:new T.Matrix4().compose(new T.Vector3(826/32,0,165/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),-Math.PI/2),new T.Vector3(.8,.8,.8))});
+    brood('brood-consumed-shell',826,165,.85,0,-Math.PI/2);
+    brood('brood-burst-duct',853,230,.5);
+    brood('brood-nest-medium',861,100,.7,0,-Math.PI/2);
+    brood('brood-pods-small',835,240,.6);
+    for(const [x,z,a] of [[860,110,.5],[860,170,1.2],[860,230,2.1]]) brood('brood-creep-c',x,z,.4,.002,a);
+    brood('brood-creep-wall',875,160,.85,.5,-Math.PI/2);
+    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
+    brood('brood-web-short',875,130,1,1.3,-Math.atan2(35,-49));
+    result[result.length-1].matrix.scale(new T.Vector3(Math.hypot(49,35)/48,.22,.55));
+    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.65));
   }
   if (id === 'swarm-junction') {
     // Front inner edge of the attached north duct bank, wholly inside its chamfer.
