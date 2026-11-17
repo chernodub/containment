@@ -20,5 +20,11 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('service-cable-tray',768,261,1.5,[.5,.5,.7]);
     put('deck-access-panel',753,272,-.5,[.34,1,.2],.025,'clinical');
   }
+  if (id === 'awakening-bay') {
+    // Release debris and a dropped recovery kit below the forced-open berths.
+    put('service-transit-case',603,339,-.35,[.75,.5,.7]);
+    put('deck-access-panel',617,330,.55,[.32,1,.25],.02,'clinical');
+    for (let i=0;i<6;i++) put('deck-rubber-panel',620+(i%2?7:-7)+i*4,350+i*8,.25,[.07,.35,.12],.002,'clinical');
+  }
   return pieces;
 }
