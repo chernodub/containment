@@ -146,8 +146,8 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
     summary: 'Chain lightning that stuns.',
     description: 'Lightning jumps from the enemy nearest your aim through up to six targets: 60 damage, falling 15% per jump. Shocked enemies are stunned briefly.',
     targeting: 'direction', shape: { kind: 'chain', range: 520, hopRange: 200, maxTargets: 6 },
-    castMs: 0, cooldownMs: 8_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '60' }, { label: 'Targets', value: '6' }, { label: 'Cooldown', value: seconds(8_000) }],
+    castMs: 0, cooldownMs: 7_000, charges: 1, durationMs: 0, range: 0,
+    stats: [{ label: 'Damage', value: '60' }, { label: 'Targets', value: '6' }, { label: 'Cooldown', value: seconds(7_000) }],
   }),
   'tesla-pylon': ability({
     id: 'tesla-pylon', rig: 'arc', slot: 'power', element: 'arc', name: 'Tesla Pylon',
