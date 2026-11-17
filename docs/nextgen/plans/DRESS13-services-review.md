@@ -12,3 +12,10 @@ Implementation notes below are placement intent, not completed visual review. Na
 - Service Shaft Landing: a tilted three-sided lift cage hangs below the balcony, one intact cable and one frayed cable attached to existing winch machinery.
 
 Resource intent: each room reuses six to eight static service-kit instances in the existing finish batches plus one vertex-colour detail mesh. Transmission alone adds one 512×256 canvas screen (0.667 MiB RGBA8 with full mip upper bound). Material and screen texture disposal belong to the existing room lifecycle. No measured draw/triangle/readiness result is claimed yet.
+
+First runtime attempt (`dress13-services-r1`, frozen source67f4007) stopped before any accepted PNG: Freight Hold tour returned GL_INVALID_ENUM1280 with no page errors. Investigation isolated the new compressed Brood normal map's retained warmup sampler: an ordinary DataTexture inherited a compressed ASTC pixel-format enum. Root is correcting that placeholder; this failed parent is diagnostic history and is not visual acceptance.
+
+## Freight Hold — round1 → correction
+
+Opened native fight-tour02 and exact480 tour02/03 against final6. The shifted gantry reads clearly and the marine remains unobstructed, but most added cases were buried behind its load.
+Moved the crushed three-crate stack onto the front-left machinery bed and enlarged it 20–25%; the spill remains north of the fight circle. Final tour/calm recheck pending the shared second batch.

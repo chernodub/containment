@@ -8,10 +8,10 @@ const incidents: Record<string, Piece[]> = {
   // The gantry's shifted load has crushed its stack. Cases spill along the
   // existing 260×108 machinery bed, away from the southern tow floor.
   'freight-hold': [
-    ['service-stowage-crate', 710, 474, 1, .12],
-    ['service-stowage-crate', 737, 475, 1, -.2, 1.18, .68],
-    ['service-stowage-crate', 762, 479, .9, .4, .38],
-    ['service-transit-case', 790, 489, .8, -.45, 1.35, .35],
+    ['service-stowage-crate', 688, 514, 1.25, .12],
+    ['service-stowage-crate', 716, 516, 1.2, -.2, 1.18, .6],
+    ['service-stowage-crate', 746, 516, 1, .4, .38, .15],
+    ['service-transit-case', 780, 521, .8, -.45, 1.35, .35],
     ['service-transit-case', 817, 506, .7, .62],
     ['service-transit-case', 839, 508, .5, -.28],
     ['service-cable-tray', 855, 479, .5, 1.4],
