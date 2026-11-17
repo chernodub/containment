@@ -90,7 +90,7 @@ export function alien(kind:string,elite=false):ActorModel{
  // contains the caste mass and uses explicit rank/pose clearance below.
  const frameHeight=kind==='brute'&&!original?r.height/.78:r.height;
  const restBodyY=r.body.position.y,emergenceDuration=.22,emergenceDepth=Math.min(.28,r.height*.14);
- const authored=new AuthoredEnemyMotion(new AuthoredMotionPlayer(r.mixer,kind==='queen'?[]:r.clips,undefined,r.assetRoot));
+ const authored=new AuthoredEnemyMotion(new AuthoredMotionPlayer(r.mixer,kind==='queen'?[]:r.clips,undefined,r.assetRoot),kind);
  const motion=new EnemyMotion(r.root,r.body,r.assetRoot,kind);motion.authored=authored.player.available;
  const corpseBounds=new T.Box3(),frost=kind==='queen'?undefined:originalCreatureFrost(r.root,kind)??new AnatomicalFrost(r.root,kind);let deathCue:'none'|'frost'|'burn'|'acid'|'arc'='none',terminalDissolve=0;
  const effects=afflictionEffects(r.root,r.span,r.height),setColliderDebug=colliderDebug(r.root,collisionRadius);

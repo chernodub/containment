@@ -182,7 +182,7 @@ export class EnemyMotion {
       const length=Math.hypot(this.body.position.x,this.body.position.z),bound=extension>0?limit:this.state.offsetLimit;
       if(length>bound){this.body.position.x*=bound/length;this.body.position.z*=bound/length;}
       this.body.rotation.set(
-        Math.cos(direction)*bend+(brace*p.rear*.90+strike*p.strike*.44+recovery*.22)*motion,
+        Math.cos(direction)*bend+(brace*(this.family==='carrier'?0:p.rear*.90)+strike*p.strike*.44+recovery*.22)*motion,
         recovery*.12*motion,-Math.sin(direction)*bend-recovery*.13*motion);
       // Compression and release stay deliberately smaller than the authored
       // poses; this layer must survive replacement meshes on the same rig.
