@@ -70,20 +70,30 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
     link(1130,880,.32,1080,882,.6);
   }
   if (id === 'manual-control-chamber') {
-    // Four cabinet sections disappear under mantles; the authorisation dais stays readable.
+    // Swallowed service consoles stand on the deck before the cabinet faces.
+    // Their small root patches stay at the cabinet foot, off the core floor.
     for (const x of [254, 352, 926, 1024]) {
-      add('consumed-shell', x, 231, 0, 1.65);
-      add('creep-a', x, 283, .1, 1.35);
+      pieces.push({pack:'p11-service',asset:'service-console-schematic',
+        purpose:'DRESS13 / swallowed floor console',cutaway:true,
+        matrix:new T.Matrix4().compose(new T.Vector3(x/32,0,315/32),new T.Quaternion(),new T.Vector3(.55,.55,.5))});
+      add('consumed-shell', x, 315, 0, .65);
+      add('creep-c', x, 289, .1, .38);
+      add('creep-wall', x, 281, 0, .45, .25, Math.PI / 2);
+      pieces[pieces.length-1].matrix.scale(new T.Vector3(2,1,1));
+      pieces[pieces.length-1].surfaceGain = 1;
     }
-    add('nest-large', 239, 126, Math.PI / 2, 1);
-    add('burst-duct', 966, 134, .6, .9);
-    add('creep-b', 254, 168, .5, 1.5);
-    add('creep-wall', 164, 160, Math.PI / 2, 1.5, .65, -Math.PI / 2);
-    add('creep-wall', 1116, 172, -Math.PI / 2, 1.5, .65, -Math.PI / 2);
-    add('web-medium', 254, 230, 0, 1.02, 2.2);
-    add('web-medium', 926, 230, 0, 1.02, 2.2);
-    add('web-long', 166, 34, 0, 1.5, 2.8);
-    add('pods-hatched', 247, 308, .4, .8);
+    // The nest stands beside the cost-desk's west face, not on its roof.
+    // This puts the complete body inside the south-gallery inspection camera.
+    add('nest-large', 480, 900, -Math.PI / 2, .55);
+    add('creep-c', 490, 930, -Math.PI / 2, .35);
+    add('creep-wall', 509, 940, -Math.PI / 2, .45, .25, Math.PI / 2);
+    pieces[pieces.length-1].matrix.scale(new T.Vector3(2,1,1));
+    pieces[pieces.length-1].surfaceGain = 1;
+    add('burst-duct', 1068, 315, .6, .5);
+    add('pods-hatched', 345, 322, .4, .45);
+    // Paired angled membranes join the console tops; no room-wide span.
+    add('web-medium', 254, 315, .02, 1, .85, .65);
+    add('web-medium', 926, 315, -.02, 1, .85, -.65);
   }
   return pieces;
 }
