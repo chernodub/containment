@@ -17,7 +17,9 @@ export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline
    if(d.canStand(tx,ty,28)&&d.clearShot(tx,ty,{x,y}))score++;
   }candidates.push({x,y,angle,score});
  }
- candidates.sort((a,b)=>b.score-a.score);if(!candidates.length)throw Error('No V2 legal lane');
+ // Wall studies prefer a legal lane that presents the field face to the production camera.
+ const wallStudy=id==='bulwark'||id==='glacier';
+ candidates.sort((a,b)=>(b.score+(wallStudy?Math.abs(Math.sin(b.angle))*20:0))-(a.score+(wallStudy?Math.abs(Math.sin(a.angle))*20:0)));if(!candidates.length)throw Error('No V2 legal lane');
  let p;for(const candidate of candidates){Object.assign(g.player,{x:candidate.x,y:candidate.y,angle:candidate.angle,vx:0,vy:0});g.setAimPoint({x:candidate.x+Math.cos(candidate.angle)*150,y:candidate.y+Math.sin(candidate.angle)*150});if(g.abilities.snapshot.slots.power.ready){p=candidate;break;}}
  if(!p)throw Error('No authoritative V2 power placement');Object.assign(g.player,{x:p.x,y:p.y,angle:p.angle,vx:0,vy:0});d.setInput({x:0,y:0,fire:false,angle:p.angle,autoAim:false});d.step(3800);g.enemies.reset();d.refresh();
  const population=heavy?(showcase&&room!=='armory'?12:25):5;
@@ -93,12 +95,18 @@ export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline
  const samples=[0,Math.max(16,resolution*.5),resolution+30,resolution+150,resolution+600,resolution+Math.max(1200,duration*.5),resolution+Math.max(1800,duration+300)];
  const original=d.step;let sample=0,elapsed=0;
  // The runner samples at fixed 150ms; map those sampling requests to explicit art-review phases.
- d.step=ms=>{if(ms!==150)return original(ms);sample++;const t=samples[Math.min(sample,samples.length-1)];original(Math.max(0,t-elapsed));elapsed=t;d.v2Proof.sampleMs=t;d.v2Proof.programs=programs;d.shaderCompilations=programs;if(programs)throw Error('V2 timeline shader compiles '+programs);};
+ d.step=ms=>{if(ms!==150)return original(ms);sample++;const t=samples[Math.min(sample,samples.length-1)];original(Math.max(0,t-elapsed));elapsed=t;d.v2Proof.sampleMs=t;
+ if(id==='frost-trail'){
+  const fx=d.renderer.interimAbilities?.kit?.fx;
+  d.v2Proof.surfaces=fx?.slots.filter(s=>s.live).map(s=>({mode:s.mode,range:s.range,inner:s.inner,x:s.x,z:s.z,h0:s.h0,param:s.param,age:s.age,life:s.life,visible:s.mesh.visible,uniformRange:s.material.uniforms.fxRange.value}))??[];
+  d.v2Proof.nativeZones=g.abilities.snapshot.zones;
+ }
+ d.v2Proof.programs=programs;d.shaderCompilations=programs;if(programs)throw Error('V2 timeline shader compiles '+programs);};
  d.refresh();
 }
 export const V2_SCENARIOS=[];
 for(const [rig,ids]of Object.entries(rigs)){
- for(let i=0;i<ids.length;i++)for(const room of ['awakening-bay','containment-annulus','infested-workshop'])V2_SCENARIOS.push({
+ for(let i=0;i<ids.length;i++)for(const room of ['awakening-bay','containment-annulus','infested-workshop','crew-checkpoint','relay-racks'])V2_SCENARIOS.push({
   id:`v2-${ids[i]}`,rooms:false,room,state:'playing',burst:true,setupArgument:{rig,id:ids[i],slot:slots[i],room},setup:stageV2,
  });
  // Unique room-qualified IDs allow choosing three lighting moods independently.

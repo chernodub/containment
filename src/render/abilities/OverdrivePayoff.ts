@@ -18,6 +18,7 @@ const AURA_RADIUS = 2.1;
  */
 export class OverdrivePayoff {
   private aura?: FxSlot;
+  private auraSeed = -1;
   private level = 0;
   private wasActive = false;
   private color = WHITE;
@@ -42,8 +43,9 @@ export class OverdrivePayoff {
     const wave = k.fx.spawn(FxMode.Shock, x, z, .55);
     wave.range = 6 * weight; wave.h0 = .06; wave.color = color; wave.intensity = 1.2;
     // Vertical accent: a brief pillar of light through the marine.
-    k.beam(x, .05, z, x, 4.5, z, WHITE, .16 * weight, .16, false);
-    k.beam(x, .05, z, x, 3.2, z, color, .38 * weight, .3, false);
+    const pillar = k.fx.spawn(FxMode.Pillar, x, z, .32);
+    pillar.range = .38 * weight; pillar.h0 = .05; pillar.h1 = 4.2;
+    pillar.color = color; pillar.intensity = weight;
     k.draw('spark', x, 1, z, 1.6 * weight, 1.6 * weight, 1, WHITE, 1);
     k.flash(x, z, WHITE, 30 * weight, 9, 6, .08);
     k.flash(x, z, color, 18 * weight, 10, 5, .4);
@@ -82,7 +84,7 @@ export class OverdrivePayoff {
     const dt = Math.max(0, frame.dt);
     this.level += ((active ? 1 : 0) - this.level) * Math.min(1, dt * (active ? 5 : 8));
     let slot = this.aura;
-    if (slot && (!slot.live || slot.mode !== FxMode.Aura || slot.life < 1000)) slot = this.aura = undefined;
+    if (slot && (!slot.live || slot.seed !== this.auraSeed || slot.mode !== FxMode.Aura || slot.life < 1000)) slot = this.aura = undefined;
     if (this.level < .01 && !active) {
       if (slot) { slot.live = false; this.aura = undefined; }
       this.level = 0;
@@ -90,6 +92,7 @@ export class OverdrivePayoff {
     }
     if (!slot) {
       slot = this.aura = this.kit.fx.spawn(FxMode.Aura, this.x, this.z, 1e6);
+      this.auraSeed = slot.seed;
       slot.h0 = .045; slot.range = AURA_RADIUS;
     }
     slot.x = this.x; slot.z = this.z; slot.color = this.color; slot.param = this.level;
@@ -100,7 +103,7 @@ export class OverdrivePayoff {
   }
 
   clear(): void {
-    if (this.aura) this.aura.live = false;
+    if (this.aura && this.aura.seed === this.auraSeed) this.aura.live = false;
     this.aura = undefined; this.level = 0; this.wasActive = false;
   }
 }

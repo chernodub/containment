@@ -1,7 +1,7 @@
 import * as T from 'three';
 
 /**
- * VFX13 flagship surfaces: one retained procedural program for the hero
+ * VFX13/VFX14 surfaces: one retained procedural program for the hero
  * ability moments (fire volume slices, cooling scorch, rail lance and wake,
  * shock rings, frost, Overdrive floor states). Every pooled mesh shares the
  * same geometry and shader source; modes are uniforms, so warm-up compiles a
@@ -9,7 +9,7 @@ import * as T from 'three';
  * vertex shader from the exact simulated cone/strip/radius numbers and never
  * exceed them (the muzzle pull-in only moves the narrow apex inward).
  */
-export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6 } as const;
+export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6, Crack: 7, Fuel: 8, Pressure: 9, Pillar: 10, FuelStrip: 11, FrostStrip: 12, Blizzard: 13 } as const;
 export type FxMode = (typeof FxMode)[keyof typeof FxMode];
 
 export interface FxSlot {
@@ -34,7 +34,7 @@ export interface FxSlot {
   seed: number;
   color: number;
   intensity: number;
-  /** Mode-specific scalar (fire layer: 0 low flame … 1 smoke; aura element). */
+  /** Mode scalar: Fire layer (negative = steady jet), fuel fade, aura strength, Wake lightning selector. */
   param: number;
   readonly mesh: T.Mesh;
   readonly material: T.ShaderMaterial;
@@ -46,7 +46,22 @@ uniform float fxRange;uniform float fxInner;uniform vec2 fxHeight;uniform float 
 varying vec2 fxLocal;varying vec3 fxWorld;varying vec4 fxScreen;
 void main(){
  vec2 g=uv;vec3 w;float m=fxMode;
- if(m<1.5){
+ if(m>12.5){
+  float a=g.x*6.2831853,polar=g.y*1.5707963;
+  float radius=fxRange*sin(polar);
+  w=vec3(fxOrigin.x+cos(a)*radius,fxHeight.x+cos(polar)*fxHeight.y,fxOrigin.z+sin(a)*radius);
+  fxLocal=g;
+ }else if(m>10.5){
+  vec2 d=vec2(cos(fxAngle),sin(fxAngle)),n=vec2(-d.y,d.x);
+  float s=g.x*2.-1.,along=mix(-fxInner,fxRange+fxInner,g.y);
+  vec2 xz=fxOrigin.xz+d*along+n*s*fxInner;
+  w=vec3(xz.x,fxHeight.x,xz.y);fxLocal=vec2(s,along);
+ }else if(m>9.5){
+  float a=g.x*6.2831853;
+  float radius=fxRange*(.7+.3*sin(g.y*3.14159));
+  w=vec3(fxOrigin.x+cos(a)*radius,fxHeight.x+g.y*fxHeight.y,fxOrigin.z+sin(a)*radius);
+  fxLocal=g;
+ }else if(m<1.5||m>8.5){
   // Fan: u across the exact arc, v from inner fraction to the exact range.
   float s=g.x*2.-1.;float r=mix(fxInner,1.,g.y);
   float a=fxAngle+s*fxArc*.5;
@@ -61,7 +76,7 @@ void main(){
   vec2 d=vec2(cos(fxAngle),sin(fxAngle));vec2 n=vec2(-d.y,d.x);
   float s=g.x*2.-1.;
   vec2 xz=fxOrigin.xz+d*g.y*fxRange+n*s*fxInner;
-  w=vec3(xz.x,fxHeight.x,xz.y);fxLocal=vec2(s,g.y);
+  w=vec3(xz.x,fxParam>2.5?mix(fxHeight.x,fxHeight.y,g.y):fxHeight.x,xz.y);fxLocal=vec2(s,g.y);
  }else{
   // Ring/disc: u around, v from inner radius to outer radius.
   float a=g.x*6.2831853;float r=mix(fxInner,fxRange,g.y);
@@ -93,7 +108,7 @@ void main(){
  float t=fxTime;float age=fxAge;float k=age/max(.001,fxLife);
  if(m<.5){
   // Fire volume slice. param 0 = low hot sheet, .5 = body, 1 = smoke crown.
-  float s=fxLocal.x,r=fxLocal.y,layer=fxParam;
+  float s=fxLocal.x,r=fxLocal.y,layer=max(0.,fxParam);
   float front=1.-pow(1.-clamp(age/.12,0.,1.),3.);
   // Anisotropic flow space: features stretch along the jet into licking tongues.
   vec2 q=vec2(s*(r*1.05+.12)*fxRange*.72,r*fxRange*.42);
@@ -115,7 +130,7 @@ void main(){
   float dens=smoothstep(erosion,erosion+.07,d);
   float inside=clamp((d-erosion)/.32,0.,1.);
   float spine=(1.-smoothstep(0.,.2+r*.15,abs(s)))*(1.-smoothstep(.05,.5,r))*(1.-layer)*tip;
-  float core=(1.-smoothstep(0.,.1,r-fxInner))*(1.-smoothstep(.0,.45,abs(s)))*(1.-layer*.85);
+  float core=(1.-smoothstep(0.,.17,r-fxInner))*(1.-smoothstep(.0,.58,abs(s)))*(1.-layer*.85);
   float cool=1.-smoothstep(.1,.45,age);
   dens=max(dens,spine*cool*.9);
   float heat=inside*(.98-r*.42)*(.45+.55*cool)+spine*.55*cool+core*(1.-smoothstep(.06,.24,age));
@@ -129,6 +144,15 @@ void main(){
   alpha=max(smoke*.45*(1.-smoothstep(.5,1.,k)),dens*.12+rim*.3*(1.-layer*.6));
   base=mix(vec3(.025,.022,.021),vec3(.2,.035,.008),max(cool,dens*(1.-smoke)));
   emit*=1.-smoothstep(.62,1.,k);
+  if(fxParam<-.5){
+   float tongueWidth=.65*pow(max(0.,1.-r),.65)+n*.18;
+   float tongue=(1.-smoothstep(tongueWidth*.55,tongueWidth,abs(s)))*(1.-smoothstep(.55+n*.25,.9+n*.1,r));
+   tongue*=.35+.65*smoothstep(.34,.56,n+fine*.2);
+   float hotCore=(1.-smoothstep(.08,.28,abs(s)))*(1.-smoothstep(.15,.55,r));
+   alpha=tongue*.46;
+   base=vec3(.14,.025,.004);
+   emit=(vec3(1.3,.22,.008)*tongue+vec3(2.4,1.3,.16)*hotCore)*fxIntensity;
+  }
  }else if(m<1.5){
   // Scorch fan on the deck: glowing fissures cool from orange-white to black soot.
   float s=fxLocal.x,r=fxLocal.y;
@@ -175,21 +199,29 @@ void main(){
   float trail=exp(-s*s*7.)*.3*(1.-smoothstep(0.,.5,k));
   float i0=(strand*seg+trail)*fade*breakup*appear;
   vec3 hot=mix(vec3(2.2,1.9,1.5),fxColor*1.6,smoothstep(0.,.35,k));
-  emit=hot*i0*fxIntensity;
-  alpha=i0*.12;
+  if(fxParam>2.5){
+   float jitter=(fxNoise(vec2(along*4.,floor(t*18.)+fxSeed))-.5)*.8;
+   float bolt=1.-smoothstep(.025,.09,abs(s-jitter));
+   float body=1.-smoothstep(.08,.3,abs(s-jitter));
+   float halo=exp(-pow((s-jitter)*2.5,2.));
+   float fork=1.-smoothstep(.015,.055,abs(s-jitter-sin(along*8.+fxSeed)*.35));
+   float gate=(1.-smoothstep(.6,1.,k))*smoothstep(0.,.03,v)*(1.-smoothstep(.96,1.,v));
+   emit=(vec3(2.4)*bolt+fxColor*(body*.8+fork*.6+halo*.25))*gate*fxIntensity;
+   alpha=(bolt*.22+fork*.08+halo*.06)*gate;
+  }else{emit=hot*i0*fxIntensity;alpha=i0*.12;}
  }else if(m<4.5){
   // Shock ring: hard bright leading edge racing to the exact radius.
   float r=fxLocal.y;float R=fxRange;
-  float p=1.-pow(1.-clamp(k*1.25,0.,1.),2.4);
+  float p=.1+.9*(1.-pow(1.-clamp(k*1.25,0.,1.),2.4));
   float front=R*p;
   float dist=r-front;
   float edge=(1.-smoothstep(0.,.05+.07*(1.-p),abs(dist+.03)))*(1.-step(R+.001,r));
-  float wake=smoothstep(-1.2,0.,dist)*(1.-step(0.,dist))*.35;
+  float wake=smoothstep(-.3,0.,dist)*(1.-step(0.,dist))*.35;
   float facets=.65+.35*step(.5,fract(fxLocal.x*48.+fxSeed));
   float fade=1.-smoothstep(.55,1.,k);
   emit=(fxColor*2.6*facets+vec3(1.6)*edge)*edge*fade*fxIntensity+fxColor*wake*.6*fade*fxIntensity;
   alpha=(edge*.55+wake*.25)*fade;
- }else if(m<5.5){
+ }else if(m<5.5||(m>11.5&&m<12.5)){
   // Frost: crystalline growth spreading from the centre, rime veins, slow fade.
   float r=fxLocal.y;float R=fxRange;float a=fxLocal.x*6.2831853;
   vec2 q=(fxWorld.xz-fxOrigin.xz)*1.6+fxSeed;
@@ -201,13 +233,25 @@ void main(){
   float patchy=smoothstep(.46,.62,fxFbm(q*.45+9.1));
   float veins=(1.-smoothstep(0.,.03,abs(fxFbm(q*1.7+n)-.5)))*patchy;
   float band=smoothstep(lim-.7,lim-.12,r)*(1.-smoothstep(lim-.12,lim,r));
+  if(m>11.5){
+   float cap=length(vec2(fxLocal.x*fxInner,max(max(-r,r-fxRange),0.)))/max(.001,fxInner);
+   cover=1.-smoothstep(.88,1.,cap);
+   band=smoothstep(.66,.94,cap)*cover;
+  }
   float fern=pow(abs(sin(a*31.+n*7.+r*4.)),24.)*band;
   float fade=1.-smoothstep(.5,1.,k);
   float crisp=exp(-age*2.5);
   vec3 ice=vec3(.5,.8,1.);
   emit=(ice*(veins*.32+fern*.5+band*.12)*(.35+1.3*crisp))*cover*fade*fxIntensity;
   alpha=cover*(.015+patchy*.03+veins*.22+band*.14+fern*.2)*fade;
-  base=vec3(.66,.82,.9);
+  base=fxParam>.5?vec3(.035,.085,.12):vec3(.66,.82,.9);
+  if(fxParam>.5)alpha+=cover*(.18+patchy*.18)*fade;
+  if(m>11.5){
+   // Ink under rime keeps the native strip readable on the palest deck.
+   alpha=max(alpha,cover*(.55+patchy*.12)*fade);
+   base=vec3(.002,.008,.012);
+   emit=ice*(veins*.16+fern*.22+band*.3)*cover*fade*fxIntensity;
+  }
  }else if(m<6.5){
   // Overdrive floor state: element-coloured energy field around the marine.
   float r=fxLocal.y;float R=fxRange;float a=fxLocal.x*6.2831853;
@@ -229,6 +273,71 @@ void main(){
   emit=fxColor*mark*(1.3+pulse*.7)*on*fxIntensity;
   alpha=(mark*.12+fall*.05)*on;
   base=fxColor*.15;
+ }else if(m<7.5){
+  // Radial deck fractures: sparse branching seams, never outside the native radius.
+  float r=fxLocal.y, a=fxLocal.x*6.2831853;
+  vec2 q=(fxWorld.xz-fxOrigin.xz);
+  float warp=fxFbm(q*2.+fxSeed);
+  float seam=1.-smoothstep(.012,.045,abs(sin(a*9.+warp*2.2+r*.7)));
+  float branch=1.-smoothstep(.008,.025,abs(sin(a*17.-warp*3.+r*2.)));
+  float front=fxRange*(1.-exp(-age*24.));
+  float mask=(1.-smoothstep(front-.12,front,r))*smoothstep(.15,.5,r)*(1.-smoothstep(fxRange*.8,fxRange,r));
+  float mark=max(seam,branch*.45)*mask;
+  float fade=1.-smoothstep(.6,1.,k);
+  alpha=mark*.62*fade;
+  base=vec3(.008,.011,.014);
+  emit=fxColor*mark*exp(-age*7.)*.55*fxIntensity;
+ }else if(m<8.5||(m>10.5&&m<11.5)){
+  // Opaque soot counter-layer and flowing fuel share the exact native disc.
+  float r=fxLocal.y,R=fxRange;
+  vec2 q=(fxWorld.xz-fxOrigin.xz)*2.2;
+  float n=fxFbm(q+vec2(t*.65,-t*.9)+fxSeed);
+  float fine=fxNoise(q*5.+vec2(-t*2.,t*3.));
+  float cap=length(vec2(fxLocal.x*fxInner,max(max(-r,r-fxRange),0.)))/max(.001,fxInner);
+  float edge=m>10.5?1.-smoothstep(.92,1.,cap):1.-smoothstep(R-.08,R,r);
+  float rim=m>10.5?smoothstep(.7,.94,cap)*edge:smoothstep(R-.25,R-.08,r)*edge;
+  float channels=smoothstep(.56,.74,n+fine*.12);
+  float boil=pow(max(0.,sin(fxLocal.x*160.+n*12.-t*11.)),8.)*rim;
+  float hot=channels*(.55+.35*fine)+boil*.7;
+  float fade=fxParam;
+  alpha=edge*(.94+channels*.04)*fade;
+  base=vec3(.004,.002,.001);
+  vec3 flame=mix(vec3(.72,.018,.0004),vec3(1.5,.12,.001),smoothstep(.3,.85,hot));
+  flame=mix(flame,vec3(2.6,1.5,.12),smoothstep(.94,1.15,hot));
+  emit=flame*(channels*.62+boil*.8+rim*.12)*edge*fade*fxIntensity;
+ }else if(m<9.5){
+  float s=fxLocal.x,r=fxLocal.y;
+  float front=clamp(age/.09,0.,1.);
+  float dust=fxFbm(vec2(s*5.,r*8.-t*2.)+fxSeed);
+  float rim=(1.-smoothstep(.02,.08,abs(r-front*.95)))*(1.-smoothstep(.65,1.,abs(s)));
+  float haze=smoothstep(.45,.7,dust)*(1.-smoothstep(.55,1.,r))*(1.-smoothstep(.6,1.,abs(s)));
+  float fade=1.-smoothstep(.2,1.,k);
+  alpha=(haze*.16+rim*.22)*fade; base=vec3(.12,.1,.07);
+  emit=fxColor*rim*.9*fade*fxIntensity;
+ }else if(m<10.5){
+  float u=fxLocal.x,v=fxLocal.y;
+  float twist=u*6.2831853+v*2.-t*3.;
+  float ribs=pow(max(0.,cos(twist*7.+fxSeed)),18.);
+  float fragments=smoothstep(.25,.6,fxNoise(vec2(floor(u*40.),v*14.-t*8.)));
+  float taper=smoothstep(0.,.08,v)*(1.-smoothstep(.65,1.,v));
+  float fade=1.-smoothstep(.15,1.,k);
+  float mark=ribs*fragments*taper*fade;
+  alpha=mark*.14;emit=(fxColor*.7+vec3(.9))*mark*fxIntensity;
+ }else{
+  // Sparse tangential weather on an open native-radius dome; the centre stays clear.
+  float u=fxLocal.x*6.2831853,v=fxLocal.y;
+  float drift=u-t*.82;
+  float lane=v+sin(drift*3.)*.12;
+  float ribbon=1.-smoothstep(.018,.064,abs(sin(lane*13.+drift*2.)));
+  float packet=pow(max(0.,sin(drift*5.+v*3.)),5.);
+  float snow;
+  if(fxLow>.5)snow=step(.97,fract(u*31.-t*8.+floor(v*9.)*.17))*step(.8,fract(v*13.+u*.8))*.6;
+  else snow=pow(max(0.,sin(u*73.-t*21.+floor(v*13.)*2.4)),12.)
+   *pow(max(0.,sin(v*49.+u*4.-t*7.)),5.);
+  float vertical=smoothstep(.12,.3,v)*(1.-smoothstep(.88,1.,v));
+  float mark=(ribbon*packet*.7+snow*.8)*vertical*fxParam;
+  alpha=min(.12,mark*.16);base=vec3(.025,.08,.13);
+  emit=(fxColor*.22+vec3(.12))*mark*fxIntensity;
  }
  vec2 screen=fxScreen.xy/max(.001,fxScreen.w)*.5+.5;
  float actionBar=(1.-smoothstep(.14,.23,screen.y))*(1.-smoothstep(.27,.36,abs(screen.x-.5)));
@@ -242,7 +351,7 @@ void main(){
  gl_FragColor.rgb*=gl_FragColor.a/fxA0;
 }`;
 
-const MODE_ORDER: Record<number, number> = { 0: 2, 1: -3, 2: 4, 3: 3, 4: 2, 5: -3, 6: -3 };
+const MODE_ORDER: Record<number, number> = { 0: 2, 1: -3, 2: 4, 3: 3, 4: 2, 5: -3, 6: -3, 7: -3, 8: -2 };
 
 /** Fixed pool; spawn() recycles the oldest slot when full, never allocates. */
 export class FlagshipFx {

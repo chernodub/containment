@@ -2,6 +2,7 @@ import { Vector3, type Object3D } from 'three';
 import type { AbilityEvent, AbilityLinkSnapshot, DeployableSnapshot } from '../../../game/abilities/contract';
 import type { ElementKit } from '../ElementKit';
 import { ELEMENT_COLORS, UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
+import { FxMode, type FxSlot } from '../FlagshipFx';
 import { MarineTimeEcho } from './MarineTimeEcho';
 import { NativeMarineEchoes } from './NativeMarineEchoes';
 
@@ -11,7 +12,7 @@ const STEEL = 0x34414d;
 const TAU = Math.PI * 2;
 const NO_LINKS: readonly AbilityLinkSnapshot[] = [];
 const NO_DEPLOYABLES: readonly DeployableSnapshot[] = [];
-type Discharge = { live: boolean; x: number; z: number; age: number; delay: number; life: number; fired: boolean; seed: number };
+type Discharge = { sx: number; sz: number; sy: number; x: number; z: number; live: boolean; age: number; delay: number; life: number; fired: boolean; seed: number };
 type PylonState = { id: number; health: number; flash: number; seen: boolean };
 type Blink = { live: boolean; x: number; z: number; angle: number; age: number };
 type Bolt = { live: boolean; x: number; z: number; tx: number; tz: number; age: number };
@@ -21,7 +22,7 @@ type Front = { live: boolean; x: number; z: number; radius: number; age: number;
 
 /** Heavy violet-white discharges, grounded machinery and cool time-dilation language. */
 class ArcPresentation implements AbilityPresentation {
-  private discharges: Discharge[] = Array.from({ length: 48 }, () => ({ live: false, x: 0, z: 0, age: 0, delay: 0, life: .55, fired: false, seed: 0 }));
+  private discharges: Discharge[] = Array.from({ length: 48 }, () => ({ sx: 0, sz: 0, sy: .95, live: false, x: 0, z: 0, age: 0, delay: 0, life: .55, fired: false, seed: 0 }));
   private pylons: PylonState[] = Array.from({ length: 8 }, () => ({ id: -1, health: 0, flash: 0, seen: false }));
   private blinks: Blink[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, angle: 0, age: 0 }));
   private bolts: Bolt[] = Array.from({ length: 6 }, () => ({ live: false, x: 0, z: 0, tx: 0, tz: 0, age: 0 }));
@@ -48,6 +49,8 @@ class ArcPresentation implements AbilityPresentation {
   private dashLive = false;
   private dashX = 0;
   private dashZ = 0;
+  private timeField?: FxSlot;
+  private timeFieldSeed = -1;
   private disposed = false;
 
   constructor(private readonly kit: ElementKit) { this.nativeEchoes = new NativeMarineEchoes(kit.root); }
@@ -68,6 +71,11 @@ class ArcPresentation implements AbilityPresentation {
         if (this.dashLive) {
           const bolt = this.bolts[this.nextBolt++ % this.bolts.length];
           bolt.live = true; bolt.x = this.dashX; bolt.z = this.dashZ; bolt.tx = tx; bolt.tz = tz; bolt.age = 0;
+          const dx = tx - this.dashX, dz = tz - this.dashZ;
+          const trail = k.fx.spawn(FxMode.Wake, this.dashX, this.dashZ, .2);
+          trail.angle = Math.atan2(dz, dx); trail.range = Math.hypot(dx, dz);
+          trail.inner = .16; trail.h0 = trail.h1 = .85; trail.param = 3;
+          trail.color = VIOLET; trail.intensity = .65;
         }
         this.dashLive = false;
         this.blink(tx, tz, event.angle ?? 0);
@@ -154,11 +162,13 @@ class ArcPresentation implements AbilityPresentation {
   private strike(event: AbilityEvent, x: number, z: number, delay: number, pylon = false): void {
     if (!Number.isFinite(event.targetX) || !Number.isFinite(event.targetY)) return;
     const k = this.kit, tx = event.targetX! / UNIT, tz = event.targetY! / UNIT;
-    // The shared ribbon draw supplies a white-hot core and restrained violet halo.
+    // The shared procedural surface supplies a white core and violet halo.
     // Only authoritative links create a strike; no decorative bolt invents another target.
-    k.beam(x, pylon ? 1.5 : .95, z, tx, .75, tz, VIOLET, pylon ? .036 : .045, .32, true, delay);
+    // Delay the complete discharge (surface, light and contacts) together.
+    // The source and destination are immutable native link receipts.
     const d = this.discharges[this.nextDischarge++ % this.discharges.length];
-    d.live = true; d.x = tx; d.z = tz; d.age = 0; d.delay = delay; d.life = .38; d.fired = false; d.seed = this.nextDischarge;
+    d.sx = x; d.sz = z; d.sy = pylon ? 1.5 : .95;
+    d.live = true; d.x = tx; d.z = tz; d.age = 0; d.delay = delay; d.life = .65; d.fired = false; d.seed = this.nextDischarge;
   }
 
   update(frame: AbilityFrame): void {
@@ -201,13 +211,29 @@ class ArcPresentation implements AbilityPresentation {
       if (d.age < d.delay) continue;
       if (!d.fired && dt > 0) {
         d.fired = true;
+        const dx = d.x - d.sx, dz = d.z - d.sz, length = Math.hypot(dx, dz);
+        if (length > .01) {
+          const arc = k.fx.spawn(FxMode.Wake, d.sx, d.sz, .55);
+          arc.angle = Math.atan2(dz, dx); arc.range = length; arc.inner = .52;
+          arc.h0 = d.sy; arc.h1 = .75; arc.param = 3; arc.color = VIOLET; arc.intensity = 1.15;
+          // Two asymmetric branches meet the same native contact; no invented target.
+          for (let side = -1; side <= 1; side += 2) {
+            const t = side < 0 ? .43 : .67;
+            const bx = d.sx + dx * t - dz / length * side * .18;
+            const bz = d.sz + dz * t + dx / length * side * .18;
+            k.beam(bx, d.sy + .13, bz, d.x, .75, d.z, VIOLET, .018, .18, true);
+          }
+        }
+        const node = k.fx.spawn(FxMode.Shock, d.x, d.z, .3);
+        node.range = .55; node.h0 = .045; node.color = VIOLET; node.intensity = 1.2;
         k.flash(d.x, d.z, WHITE, 8, 4, 3, .12);
         k.burst(d.x, .7, d.z, 'arc', 9, 1.8, .45);
       }
       k.impact();
       const fade = 1 - (d.age - d.delay) / d.life;
-      const contact = Math.max(0, 1 - (d.age - d.delay) / .12);
-      k.sprite('impact', d.x, .75, d.z, .38, .38, WHITE, contact * .95, d.seed, 'light');
+      k.ribbon(d.sx, .045, d.sz, d.x, .045, d.z, VIOLET, .09, fade * .12, false);
+      const contact = Math.max(0, 1 - (d.age - d.delay) / .22);
+      k.sprite('impact', d.x, .75, d.z, .65, .65, WHITE, contact * .95, d.seed, 'light');
       const count = k.low ? 2 : 5;
       for (let i = 0; i < count; i++) {
         const a = d.seed + i * TAU / count + (k.reducedMotion ? 0 : k.time * 5);
@@ -223,7 +249,7 @@ class ArcPresentation implements AbilityPresentation {
       if (b.age > .19) { b.live = false; continue; }
       const fade = 1 - b.age / .19;
       this.lightningBody(b.x, b.z, b.angle, fade * .75);
-      k.afterImage(b.x, b.z, b.angle, VIOLET, fade * .12);
+      k.afterImage(b.x, b.z, b.angle, VIOLET, fade * .22);
     }
     for (const state of this.pylons) { state.seen = false; state.flash = Math.max(0, state.flash - dt * 6); }
     for (const pylon of frame.snapshot?.deployables ?? NO_DEPLOYABLES) {
@@ -234,7 +260,14 @@ class ArcPresentation implements AbilityPresentation {
       // A live cable is sustained world coverage; contact and suit signals stay unmasked.
       k.sustain();
       const x = link.x / UNIT, z = link.y / UNIT, tx = link.targetX / UNIT, tz = link.targetY / UNIT;
-      k.ribbon(x, 1.5, z, tx, .85, tz, VIOLET, .025, .6, true);
+      // Two drifting bends keep the energized cable visibly alive without widening
+      // its contact support or painting a filled strip over hostile bodies.
+      const dx = tx - x, dz = tz - z, length = Math.max(.001, Math.hypot(dx, dz));
+      const sway = k.reducedMotion ? .05 : Math.sin(k.time * 13 + link.x) * .12;
+      const mx = (x + tx) * .5 - dz / length * sway, mz = (z + tz) * .5 + dx / length * sway;
+      k.ribbon(x, 1.5, z, mx, 1.25, mz, VIOLET, .032, .55, true);
+      k.ribbon(mx, 1.25, mz, tx, .85, tz, VIOLET, .032, .55, true);
+      k.ribbon(x, 1.5, z, mx, 1.25, mz, WHITE, .009, .55, false);
       if (emit && !k.low) {
         const t = (Math.sin(k.time * 1.3) + 1) * .5;
         k.mote('spark', x + (tx - x) * t, 1.5 - t * .65, z + (tz - z) * t, 0, .2, 0, .045, .22, VIOLET);
@@ -242,6 +275,8 @@ class ArcPresentation implements AbilityPresentation {
     }
     if (frame.snapshot?.hostileTimeScale !== undefined && frame.snapshot.hostileTimeScale < 1) this.overclock(frame, emit);
     else {
+      if (this.timeField && this.timeField.seed === this.timeFieldSeed) this.timeField.live = false;
+      this.timeField = undefined;
       this.overclockAge = 0; this.echoAge = 0;
       for (const echo of this.echoes) echo.live = false;
       for (const shot of this.shotEchoes) shot.live = false;
@@ -291,7 +326,9 @@ class ArcPresentation implements AbilityPresentation {
     const k = this.kit, x = p.x / UNIT, z = p.y / UNIT, radius = p.radius / UNIT;
     k.impact();
     const age = (p.durationMs - p.remainingMs) / 1000;
-    const rise = k.reducedMotion ? 1 : Math.min(1, Math.max(.03, age / .15));
+    // Machinery arrives from above, compresses at contact, then settles. The
+    // native deployable remains in place; this is only the coil assembly height.
+    const rise = k.reducedMotion ? 1 : 1 + Math.exp(-age * 18) * 1.8 - Math.sin(Math.min(1, age / .24) * Math.PI) * .16;
     const fade = Math.min(1, p.remainingMs / 220);
     const pulse = k.reducedMotion ? .7 : .6 + Math.sin(age * TAU * 2) * .16;
     const expiry = p.remainingMs < 1000 && !k.reducedMotion ? .75 + Math.sin(k.time * 17) * .15 : 1;
@@ -379,6 +416,13 @@ class ArcPresentation implements AbilityPresentation {
     k.grade(0, fade * .22);
     const starting = this.overclockAge === 0;
     this.overclockAge += frame.dt;
+    if (!this.timeField?.live || this.timeField.seed !== this.timeFieldSeed || this.timeField.mode !== FxMode.Aura || this.timeField.life < 1000) {
+      this.timeField = k.fx.spawn(FxMode.Aura, x, z, 1e6);
+      this.timeFieldSeed = this.timeField.seed;
+      this.timeField.range = 2.6; this.timeField.h0 = .045; this.timeField.arc = 3;
+    }
+    this.timeField.x = x; this.timeField.z = z; this.timeField.color = VIOLET;
+    this.timeField.param = fade * .32; this.timeField.intensity = .65;
     this.echoAge += frame.dt;
     const angle = g.player.angle ?? 0;
     k.impact();
@@ -478,7 +522,7 @@ class ArcPresentation implements AbilityPresentation {
           continue;
         }
         if (bullet.kind !== 'player' || friendly++ >= (k.low ? 24 : 80)) continue;
-        const length = 2.1;
+        const length = k.low ? 2.6 : 3.4;
         k.ribbon(bullet.x / UNIT, bullet.visualMuzzle?.y ?? .9, bullet.y / UNIT,
           bullet.x / UNIT - dx * length, bullet.visualMuzzle?.y ?? .9,
           bullet.y / UNIT - dz * length, WHITE,
@@ -543,6 +587,8 @@ class ArcPresentation implements AbilityPresentation {
     for (const d of this.discharges) d.live = false;
     for (const echo of this.echoes) echo.live = false;
     for (const shot of this.shotEchoes) shot.live = false;
+    if (this.timeField && this.timeField.seed === this.timeFieldSeed) this.timeField.live = false;
+    this.timeField = undefined;
     this.marineEcho.clear(); this.nativeEchoes.clear(); this.nextShot = 0; this.shotsObserved = 0; this.shotBaseline = false;
     this.overclockAge = 0; this.echoAge = 0; this.muzzle = undefined;
     for (const b of this.blinks) b.live = false;

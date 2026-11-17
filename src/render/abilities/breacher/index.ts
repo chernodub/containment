@@ -2,7 +2,7 @@ import { ABILITY_CATALOG } from '../../../game/abilities/catalog';
 import type { AbilityEvent, DeployableSnapshot } from '../../../game/abilities/contract';
 import type { ElementKit } from '../ElementKit';
 import { UNIT, ELEMENT_COLORS, type AbilityFrame, type AbilityPresentation } from '../types';
-import { FxMode } from '../FlagshipFx';
+import { FxMode, type FxSlot } from '../FlagshipFx';
 
 const AMBER = ELEMENT_COLORS.kinetic;
 const EDGE = 0x9fe8ff;
@@ -10,6 +10,7 @@ const CORE = 0xfff2d2;
 const DUST = 0x727675;
 const STEEL = 0x34424a;
 const TAU = Math.PI * 2;
+const NO_ENEMIES = Object.freeze([]);
 const NO_DEPLOYABLES: readonly DeployableSnapshot[] = [];
 export const BREACHER_LIMITS = Object.freeze({ casts: 8, impacts: 12, barriers: 8, panels: 7 });
 
@@ -39,6 +40,10 @@ export class BreacherPresentation implements AbilityPresentation {
   private ramStartAge = 0;
   private ramStartValid = false;
   private disposed = false;
+  private pressure?: FxSlot;
+  private pressureSeed = -1;
+  private readonly contacts = Array.from({ length: 64 }, () => ({ id: -1, x: 0, z: 0, h: .8 }));
+  private contactCursor = 0;
 
   constructor(private readonly kit: ElementKit) {}
 
@@ -57,6 +62,9 @@ export class BreacherPresentation implements AbilityPresentation {
     if (event.ability === 'ram' && event.phase === 'dash-start') {
       this.ramStartX = x; this.ramStartZ = z; this.ramStartAge = 0; this.ramStartValid = true;
       this.impact('ram', x, z, angle, (event.length ?? 150) / UNIT, .32);
+      const pressure = this.pressure = this.kit.fx.spawn(FxMode.Pressure, x, z, .32);
+      this.pressureSeed = pressure.seed; pressure.angle = angle; pressure.arc = 1.3;
+      pressure.range = .9; pressure.h0 = .12; pressure.h1 = .5; pressure.color = AMBER;
       // Universal dash camera/pose feedback is applied once by the system presentation.
       return;
     }
@@ -79,13 +87,16 @@ export class BreacherPresentation implements AbilityPresentation {
     if (event.ability === 'seismic-slam') {
       const radius = (event.radius ?? 230) / UNIT;
       this.impact('slam', x, z, angle, radius, 1.05);
-      this.kit.ring(x, z, radius, AMBER, .3);
+      const shock = this.kit.fx.spawn(FxMode.Shock, x, z, .38);
+      shock.range = radius; shock.color = AMBER; shock.h0 = .065;
+      const crack = this.kit.fx.spawn(FxMode.Crack, x, z, 7);
+      crack.range = radius; crack.color = AMBER; crack.h0 = .035;
       this.kit.distort(x, z, radius, .007, .55);
       this.kit.flash(x, z, CORE, 28, radius + 1, 5, .035);
       this.kit.flash(x, z, AMBER, 13, radius, 4, .18);
       this.kit.camera(.54);
       this.kit.anticipate(34, .045);
-      this.kit.scar('crack', x, z, radius, 0x121c23, 10);
+
       this.kit.burst(x, .15, z, 'kinetic', 24, 6, .45);
       this.dust(x, z, radius, this.kit.low ? 5 : 14);
       // drawSlam owns the clipped deck fragments and their radial momentum.
@@ -120,8 +131,17 @@ export class BreacherPresentation implements AbilityPresentation {
       const ids = event.targetIds;
       if (ids) for (let i = 0; i < ids.length && i < 8; i++) {
         const actor = kit.statusActor(ids[i]);
-        if (!actor) continue;
-        const m = actor.root.matrixWorld.elements, tx = m[12], tz = m[14], h = Math.min(1.2, actor.height * .55);
+        let tx: number, tz: number, h: number;
+        if (actor) {
+          const m = actor.root.matrixWorld.elements; tx = m[12]; tz = m[14]; h = Math.min(1.2, actor.height * .55);
+        } else {
+          // Actors killed by this native hit may have retired before presentation receives it.
+          // Last observed presentation position preserves their contact without inventing a target.
+          let cached: (typeof this.contacts)[number] | undefined;
+          for (const contact of this.contacts) if (contact.id === ids[i]) { cached = contact; break; }
+          if (!cached) continue;
+          tx = cached.x; tz = cached.z; h = cached.h;
+        }
         kit.impact();
         kit.draw('spark', tx, h, tz, .75, .75, 1, CORE, 1);
         kit.draw('spark', tx, h, tz, 1.4, .2, 1, AMBER, .9, 0, -angle);
@@ -182,6 +202,13 @@ export class BreacherPresentation implements AbilityPresentation {
     if (this.disposed) return;
     const dt = Number.isFinite(frame.dt) ? Math.max(0, frame.dt) : 0;
     if (this.ramStartValid) this.ramStartAge += dt;
+    for (const enemy of frame.game?.enemies.snapshot.enemies ?? NO_ENEMIES) {
+      let contact: (typeof this.contacts)[number] | undefined;
+      for (const candidate of this.contacts) if (candidate.id === enemy.id) { contact = candidate; break; }
+      if (!contact) contact = this.contacts[this.contactCursor++ % this.contacts.length];
+      contact.id = enemy.id; contact.x = enemy.x / UNIT; contact.z = enemy.y / UNIT;
+      contact.h = Math.min(1.2, this.kit.statusActor(enemy.id)?.height ?? .8);
+    }
     this.emissionClock += dt;
     const emit = dt > 0 && this.emissionClock >= (this.kit.low ? .1 : .035);
     if (emit) this.emissionClock = 0;
@@ -259,9 +286,13 @@ export class BreacherPresentation implements AbilityPresentation {
     const x = player ? player.x / UNIT : p.x + Math.cos(p.angle) * p.size * t;
     const z = player ? player.y / UNIT : p.z + Math.sin(p.angle) * p.size * t;
     const fade = Math.max(0, 1 - p.age / p.life), nx = Math.cos(p.angle), nz = Math.sin(p.angle), sx = -nz, sz = nx;
+    if (this.pressure?.live && this.pressure.seed === this.pressureSeed) {
+      this.pressure.x = x + nx * .25; this.pressure.z = z + nz * .25;
+      this.pressure.mx = this.pressure.x; this.pressure.mz = this.pressure.z;
+    }
     // One pressure prow carried by the marine, with an asymmetric hot leading keel.
     this.kit.draw('solid', x + nx * .65, .83, z + nz * .65,
-      1.6, 1.36, .48, STEEL, fade * .7, Math.PI / 2 - p.angle, .06);
+      1.6, 1.36, .12, STEEL, fade * .18, Math.PI / 2 - p.angle, .06);
     for (let side = -1; side <= 1; side += 2) {
       this.kit.ribbon(x + sx * side * .75 + nx * .05, .38, z + sz * side * .75 + nz * .05,
         x + nx * 1.05, 1.05, z + nz * 1.05, side < 0 ? CORE : AMBER, .045, fade * .85, false);
@@ -280,7 +311,7 @@ export class BreacherPresentation implements AbilityPresentation {
     const t = p.age / p.life, fade = 1 - t, nx = Math.cos(p.angle), nz = Math.sin(p.angle);
     const lead = .3 + t * .6, x = p.x + nx * lead, z = p.z + nz * lead;
     // An upright forward cap and two dust shoulders retain a directional shove, never a new ground disc.
-    this.kit.draw('solid', x, .82, z, p.size * 2, 1.4 * (1 - t * .25), .52, STEEL, fade * .6, Math.PI / 2 - p.angle);
+    this.kit.draw('solid', x, .82, z, p.size * 2, 1.4 * (1 - t * .25), .52, STEEL, fade * .14, Math.PI / 2 - p.angle);
     this.kit.sprite('impact', x + nx * .04, .82, z + nz * .04, p.size * .9, p.size * .72, AMBER, fade * (this.kit.low ? .36 : .55), 0, 'light');
     for (let side = -1; side <= 1; side += 2) {
       const offset = side * p.size * .8;
@@ -305,7 +336,7 @@ export class BreacherPresentation implements AbilityPresentation {
     // A low, broad impact edge rolls out first; dust has distinct radial momentum.
     if (frontFade > 0) {
       k.sustain(p.age + .2);
-      k.sprite('shockwave', p.x, .055, p.z, radius, radius, p.age < .075 ? CORE : AMBER, frontFade * .62, 0, 'ground');
+      // The retained procedural shock surface owns the advancing front.
     }
     if (p.age < .065) k.sprite('impact', p.x, .24, p.z, .8, .58, CORE, (1 - p.age / .065) * .75, 0, 'light');
     // Six hinged deck sectors lift from a common impact and settle quickly.
@@ -463,6 +494,15 @@ export class BreacherPresentation implements AbilityPresentation {
     }
     if (growth > 0) {
       const halfLength = Math.max(.01, length * .5 - thickness * .16), yaw = Math.PI / 2 - e.angle;
+      // Sequential unfolding ribs establish depth without filling the shield silhouette.
+      for (let panel = 0; panel < 7; panel++) {
+        const along = (panel / 6 - .5) * halfLength * 2;
+        const unfold = k.reducedMotion ? 1 : Math.max(0, Math.min(1, (age - Math.abs(panel - 3) * .025) / .18));
+        if (unfold <= 0) continue;
+        k.ribbon(x + ux * along, .12, z + uz * along,
+          x + ux * along - nx * .08 * (1 - unfold), .12 + h * unfold, z + uz * along - nz * .08 * (1 - unfold),
+          panel % 2 ? EDGE : CORE, .018, fade * .5, false);
+      }
       // Bright friendly-facing hex lattice and restrained far-face scanning light.
       k.sprite(k.low ? 'scan' : 'hex', x - nx * thickness * .12, h * .5 + .12, z - nz * thickness * .12,
         halfLength, h * .5, EDGE, fade * flicker * .36, e.id, 'vertical', yaw);
@@ -541,8 +581,12 @@ export class BreacherPresentation implements AbilityPresentation {
     for (const b of this.barriers) { b.id = -1; b.seen = false; b.pulse = b.shotPulse = 0; b.contact = b.shotContact = b.hostileContact = 0; b.hostileAge = 1; }
     for (const crossing of this.crossings) { crossing.bullet = undefined; crossing.barrier = -1; }
     this.crossingCursor = 0;
+    for (const contact of this.contacts) contact.id = -1;
+    this.contactCursor = 0;
     this.emissionClock = 0;
     this.ramStartValid = false; this.ramStartAge = 0;
+    if (this.pressure?.seed === this.pressureSeed) this.pressure.live = false;
+    this.pressure = undefined;
   }
 
   dispose(): void {
