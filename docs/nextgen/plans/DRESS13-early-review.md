@@ -36,3 +36,6 @@ Opened native tour02 and exact480 tour01/03 against final6: forced-open canopy r
 
 ### Round 1 actual image review — Passenger Vault
 Opened native tour02 and exact480 tour01/03 against final6: the empty pulled drawer is now the dominant personal story, with belongings at its foot and no marine obstruction. The paper spill disappears first at 480; correction enlarges the three sheets slightly and adds one subdued drawer-to-case drag streak instead of more high-contrast detail.
+
+### Round 1 actual image review — Communal Atrium
+Opened native tour02 and exact480 tour01/03 against final6: the damaged conservatory is clearer, but the table barricade is swallowed by foliage and the generic-furnishing retirement filter. Correction exempts explicitly authored DRESS13 furniture from that filter and moves the toppled tables to the garden's front foot, leaving at least 140 units of the south route visually open.
