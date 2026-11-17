@@ -291,15 +291,15 @@ void main(){
   float fine=fxNoise(q*5.+vec2(-t*2.,t*3.));
   float edge=m>10.5?(1.-smoothstep(.92,1.,abs(fxLocal.x)))*(1.-smoothstep(.98,1.,r)):1.-smoothstep(R-.08,R,r);
   float rim=m>10.5?smoothstep(.7,.94,abs(fxLocal.x))*edge:smoothstep(R-.25,R-.08,r)*edge;
-  float channels=smoothstep(.43,.66,n+fine*.16);
+  float channels=smoothstep(.56,.74,n+fine*.12);
   float boil=pow(max(0.,sin(fxLocal.x*160.+n*12.-t*11.)),8.)*rim;
   float hot=channels*(.55+.35*fine)+boil*.7;
   float fade=fxParam;
-  alpha=edge*(.76+channels*.06)*fade;
-  base=vec3(.018,.012,.008);
-  vec3 flame=mix(vec3(.65,.025,.001),vec3(1.1,.13,.003),smoothstep(.3,.85,hot));
+  alpha=edge*(.94+channels*.04)*fade;
+  base=vec3(.004,.002,.001);
+  vec3 flame=mix(vec3(.72,.018,.0004),vec3(1.5,.12,.001),smoothstep(.3,.85,hot));
   flame=mix(flame,vec3(2.6,1.5,.12),smoothstep(.94,1.15,hot));
-  emit=flame*(channels*.55+boil*.8+rim*.16)*edge*fade*fxIntensity;
+  emit=flame*(channels*.62+boil*.8+rim*.12)*edge*fade*fxIntensity;
  }else if(m<9.5){
   float s=fxLocal.x,r=fxLocal.y;
   float front=clamp(age/.09,0.,1.);

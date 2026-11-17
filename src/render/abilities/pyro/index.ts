@@ -420,7 +420,7 @@ class PyroPresentation implements AbilityPresentation {
     for (let i = 0, count = kit.low ? 1 : 3; i < count; i++) {
       const a = i * 2.39996 + zone.id * .73, r = kit.low ? 0 : radius * (.24 + i * .12);
       this.surface(zone.id, i + 1, x + Math.cos(a) * r, z + Math.sin(a) * r,
-        Math.min(.7, radius * .2), a + .7, 1.25, .08, .7 + i * .15, fade * .65);
+        Math.min(.85, radius * .24), a + .7, 1.25, .08, 1.05 + i * .18, fade);
     }
     // A single loose smoke column rises from the hottest interior fuel pocket.
     for (let i = 0; i < (kit.low ? 1 : 4); i++) {
