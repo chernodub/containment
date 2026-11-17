@@ -99,3 +99,7 @@
 ## Passenger Vault
 - Opened native calm and 480 colour/grey calm/tour/heavy: occupied drawer windows and status faces now read in periwinkle light above the blue floor; marine and hostile lanterns remain brighter.
 - Bank-centred body light and restrained aisle spill recover navigation outside the marine pool without exposing far recesses. Build and seven guarded frames pass.
+
+## Residential Gallery
+- Opened native calm and 480 colour/grey calm/tour/heavy: warm cabin berth/doorway is the room landmark; marine and hostile warning/lanterns lead; far cabin recesses remain dark.
+- Initial lamp over-lit packing debris. Moved it inside the cabin, tightened radius and reduced physical gain/spill; reopened corrected frames. Build and seven guarded frames pass.
