@@ -153,8 +153,8 @@ const safeLifetime = (value: unknown): number => {
 };
 
 const safeEfficiency = (value: unknown): number => {
-  if (!isFiniteNumber(value) || value < 1) return 1;
-  return clamp(value, 1, MAX_EFFICIENCY);
+  if (!isFiniteNumber(value) || value <= 0) return 1;
+  return clamp(value, .05, MAX_EFFICIENCY);
 };
 
 const safeRewardAmount = (value: number, efficiency: number): number => {
