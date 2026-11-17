@@ -53,15 +53,17 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
 | D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |
 | F11 per-pass GPU/CPU breakdown tool and small cuts — Sol | merged | max 124 draws, zero combat compiles; frame budget cannot be certified on the loaded host |
-| T12 texture right-sizing and KTX2 compression for actors/weapons — Sol | running | marine textures ≈ 85 MiB GPU |
+| T12 texture right-sizing and KTX2 (self-hosted Basis transcoder, plain fallback set) — Sol | merged | actor/weapon textures 233 → 8.3 MiB GPU (marine 85 → ~3), scene texture payload 372 → 147 MiB; creature files to be repacked from the second-pass models by the integration stream |
 | **R11** independent verdicts by two Astra reviewers on `final6` | done | visual 5–7, play 5–7: "advanced prototype with a commercially presentable vertical slice" — `reviews/R11-verdict.md` |
 | **Wave 12** — from the R11 findings | running | |
 | CAM12 camera and framing you can trust (whole marine in the usable viewport, threat-aware bias, edge indicators) — Sol | running | |
 | FEEL12 aim/body/beam agreement, unmistakable small-enemy commitment, hit and kill chains, run conviction — Sol | running | |
-| VFX12 ability effects with force and aftermath; translucent-marine fix — Astra | running | |
+| VFX12 translucent-marine fix — Astra | merged | Astra fixed the x-ray self-occlusion, then could not carry the effects rework |
+| VFX13 flagship effects: Flashfire, Railbreaker, Cryo Nova, Overdrive moments (one pooled shader module) — Opus | merged | clear step up; author says still short of commercial bar (fire is a sheet, not a volume) |
+| VFX14 the other twelve abilities and deployables with the same technique — Sol | running | |
 | ENC12 encounter grammar and role AI, elite saturation cut, Warden/Matron demands, teaching beats, eight transformative augments, economy and route — Sol | running | |
-| K11b creature second pass (mass, legs, Stalker, Carrier, elites, boss-class silhouettes) — Opus, modelling only | running | |
-| RW12 reward cards with illustrations, ending composition, re-posed rig portraits — Astra | running | |
+| K11b creature second pass (mass, armoured legs, Stalker, sagging Carrier, elite add-ons, Warden shield, Matron brood mass) — Opus | merged | second-pass integration (deformation, footprints, ragdolls, emissive regions) running in the I11 thread |
+| RW12 reward cards with illustrations and behavioural headlines, ending composition (transmission leaving the dying ship), re-posed rig portraits — Astra | merged | illustrations are variations of one canister form — candidate for a later pass |
 
 Next (lead): merge wave 12; re-integrate creatures; performance certification on a quiet machine (nothing else running); gallery `final7`; R12 review by the same two lenses.
 

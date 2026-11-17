@@ -1,6 +1,6 @@
 # FEEL12 visual review
 
-No completed look → fix rounds. Baseline capture failed with sandbox EPERM; the escalated retry stalled without a PNG. No visual findings are claimed from code inspection. Required next steps: finish baseline/final eight-angle weapon and ability strips; inspect Crawler/Stalker/Brute plus rifle/shotgun at native and 480×270 in Crew Checkpoint, Relay Racks and twenty-enemy crowd through three actual rounds; expand to all families/weapons; run all four native campaigns.
+The three B look → fix rounds below are complete. Round 1 is explicitly exploratory because its live dist changed; rounds 2 and 3 use immutable builds. A/C native, angle and campaign closure is recorded in the FEEL12 report.
 
 ## Resumed review: aim round 1
 
@@ -227,3 +227,55 @@ mesh tears, detached parts, exploding corpse energy or clipped actor cells
 appeared. Warden corpses can remain cleaver-up in the short sample, consistent
 with the existing long-settle limitation; tiny light-hit detail remains weaker
 than the point impact cue at quarter size. No new runtime changes followed.
+
+
+## B round 3 — warm commitment fill, full family expansion
+
+Look → retain: `artifacts/nextgen/feel12-final/threats-round3/` contains 460
+native frames in 19 bursts (960.35 seconds), failures `[]`, errors `[]`, from
+immutable `runtime-final`, source `ebc13052b6b773450c1a942bf92237988f26f63b`.
+The last beat now warms the swept interior as well as increasing opacity; the
+Relay floor no longer reads as an empty black footprint. Opened every one of
+57 full native body strips, including all 20 swarm actors, and all 19 complete
+480×270 contact sheets. `opened-files.json` lists the actual opened files and
+SHA256s. Each contact cell is an exact four-by-four area reduction of its native
+source, with no exposure adjustment. Native body crops use deformed vertices,
+so the Crawler/Stalker lunge no longer disappears at the old root envelope.
+
+Crawler coils then stretches into the strike; Stalker keeps its compact held
+coil before the long capsule strike and asymmetric return. Brute's raised,
+narrow anticipation remains held across its longer clock, then compresses into
+a broad strike and loaded recovery. The dark-keyed orange edge reads in both
+Crew Checkpoint and Relay Racks and over the labelled white/violet friendly
+clutter replay. Late orange fill is clear; early interior deliberately remains
+quiet. The 20-Crawler crowd has separate active wedges rather than a luminous
+floor carpet. The marine locator dims beneath nearby native warnings and
+returns after recovery. Spitter remains the weakest: its exposed orange edge
+is small beneath overlapping feet and a bright grate. Its native footprint
+was not inflated to solve that occlusion.
+
+Four incoming-side receipt replays show stable orange arcs on east, south,
+west and north, then fade over 320 ms. The south arc lies outside body-only
+crop bounds: the full native `feel12-hit-south-crew-checkpoint-01.png` clearly
+shows it below the feet. These are labelled presentation replays in an
+invulnerable warning fixture, not claims of accepted simulated damage.
+Reduced-motion Crawler retains the danger boundary and sweep with the flash
+beat suppressed. The reduced-motion hurt arc is absent because existing
+`src/ui/settings.ts` sets effective `flashIntensity` to zero under that media
+preference; the cue honors that existing comfort policy.
+
+Prepared and observed program inventories match across every captured frame
+(`program-inventory.json`); this is retained inventory evidence, not an
+instrumented shader-compile trace or a hardware FPS claim. Native 50 ms stills
+also do not establish human dodge success or continuous-motion smoothness.
+
+Final look → fix → supplement: B3 native marine crops exposed cyan internal
+self-occlusion lines. PlayerBeacon now borrows the existing High geometry-ID
+attachment and rejects its own nearer actor identity while retaining genuine
+world/other-actor obstruction. No attachment is allocated or disposed by the
+beacon; Low keeps its previous depth fallback. Independently opened final2
+`artifacts/nextgen/feel12-solid-marine/combat-calm-awakening-bay.png`: armor is
+solid and internal cyan lines are gone, with body and aim pointing right.
+The parent captures final2 Carrier pale/dark and hit-direction supplements
+from immutable source `e0f9d9af752e8194803675a4e9407d986ee74b3e`; these supersede
+B3's Carrier first-windup blend and old beacon overlay, without relabelling B3.

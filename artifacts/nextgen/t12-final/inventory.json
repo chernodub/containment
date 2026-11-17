@@ -1,0 +1,2845 @@
+{
+  "note": "Folder inventory, not runtime residency. Includes unused assets; excludes UI outside public/assets. GPU is decoded RGBA8 estimate, not driver allocation.",
+  "models": [
+    {
+      "path": "public/assets/awakening/recovery-kit/recovery-kit.glb",
+      "bytes": 666592
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/room-kit.glb",
+      "bytes": 1662788
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/locker.glb",
+      "bytes": 316508
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/satellite-cabinet.glb",
+      "bytes": 333288
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/trolley.glb",
+      "bytes": 349192
+    },
+    {
+      "path": "public/assets/awakening/released-berth/released-berth.glb",
+      "bytes": 636980
+    },
+    {
+      "path": "public/assets/benchmark/sealed-cryo.glb",
+      "bytes": 900288
+    },
+    {
+      "path": "public/assets/communal-atrium/signature-garden.glb",
+      "bytes": 86560
+    },
+    {
+      "path": "public/assets/e9-ship-kit/clinical/clinical.glb",
+      "bytes": 1109344
+    },
+    {
+      "path": "public/assets/e9-ship-kit/industrial/kit.glb",
+      "bytes": 1343668
+    },
+    {
+      "path": "public/assets/e9-ship-kit/security/security.glb",
+      "bytes": 1255244
+    },
+    {
+      "path": "public/assets/e9-ship-kit/structure/structure.glb",
+      "bytes": 625484
+    },
+    {
+      "path": "public/assets/kits/kenney-furniture/kit.glb",
+      "bytes": 116712
+    },
+    {
+      "path": "public/assets/kits/kenney-nature/kit.glb",
+      "bytes": 34424
+    },
+    {
+      "path": "public/assets/kits/kenney-space-station/kit.glb",
+      "bytes": 138332
+    },
+    {
+      "path": "public/assets/kits/quaternius-scifi-essentials/kit.glb",
+      "bytes": 960656
+    },
+    {
+      "path": "public/assets/models/basilisk.glb",
+      "bytes": 2596272
+    },
+    {
+      "path": "public/assets/models/dragoon.glb",
+      "bytes": 6564052
+    },
+    {
+      "path": "public/assets/models/dretch.glb",
+      "bytes": 2700384
+    },
+    {
+      "path": "public/assets/models/marauder.glb",
+      "bytes": 2813504
+    },
+    {
+      "path": "public/assets/models/marine.glb",
+      "bytes": 16262776
+    },
+    {
+      "path": "public/assets/models/motion/brute-motion.glb",
+      "bytes": 1573256
+    },
+    {
+      "path": "public/assets/models/motion/carrier-motion.glb",
+      "bytes": 3210688
+    },
+    {
+      "path": "public/assets/models/motion/crawler-motion.glb",
+      "bytes": 923364
+    },
+    {
+      "path": "public/assets/models/motion/marine-motion.glb",
+      "bytes": 7023936
+    },
+    {
+      "path": "public/assets/models/motion/spitter-motion.glb",
+      "bytes": 1886512
+    },
+    {
+      "path": "public/assets/models/motion/stalker-motion.glb",
+      "bytes": 1074876
+    },
+    {
+      "path": "public/assets/models/pistol.glb",
+      "bytes": 436204
+    },
+    {
+      "path": "public/assets/models/plasma.glb",
+      "bytes": 593980
+    },
+    {
+      "path": "public/assets/models/rifle.glb",
+      "bytes": 561132
+    },
+    {
+      "path": "public/assets/models/rocket.glb",
+      "bytes": 535704
+    },
+    {
+      "path": "public/assets/models/shotgun.glb",
+      "bytes": 508016
+    },
+    {
+      "path": "public/assets/models/tyrant.glb",
+      "bytes": 6480028
+    },
+    {
+      "path": "public/assets/passenger-vault/chamber.glb",
+      "bytes": 234584
+    },
+    {
+      "path": "public/assets/passenger-vault/distribution-north.glb",
+      "bytes": 371848
+    },
+    {
+      "path": "public/assets/passenger-vault/distribution-south.glb",
+      "bytes": 372020
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/chamber.glb",
+      "bytes": 468064
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/distribution-north.glb",
+      "bytes": 371680
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/distribution-south.glb",
+      "bytes": 371852
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/monitor-north.glb",
+      "bytes": 45396
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/monitor-south.glb",
+      "bytes": 45440
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/row-carrier.glb",
+      "bytes": 312788
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/service-finish.glb",
+      "bytes": 42408
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-chamber.glb",
+      "bytes": 441292
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-row-carrier.glb",
+      "bytes": 286016
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/neutral-chamber.glb",
+      "bytes": 290632
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/neutral-row-carrier.glb",
+      "bytes": 135364
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-chamber.glb",
+      "bytes": 468064
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-row-carrier.glb",
+      "bytes": 312788
+    },
+    {
+      "path": "public/assets/passenger-vault/monitor-north.glb",
+      "bytes": 45552
+    },
+    {
+      "path": "public/assets/passenger-vault/monitor-south.glb",
+      "bytes": 45608
+    },
+    {
+      "path": "public/assets/passenger-vault/row-carrier.glb",
+      "bytes": 109896
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/chamber.glb",
+      "bytes": 897948
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/distribution-north.glb",
+      "bytes": 524520
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/distribution-south.glb",
+      "bytes": 524692
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb",
+      "bytes": 2178812
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/monitor-north.glb",
+      "bytes": 152932
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/monitor-south.glb",
+      "bytes": 1261696
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/row-carrier.glb",
+      "bytes": 312788
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/service-finish.glb",
+      "bytes": 114280
+    },
+    {
+      "path": "public/assets/passenger-vault/service-finish.glb",
+      "bytes": 42520
+    },
+    {
+      "path": "public/assets/residential-gallery/residential-gallery-equipment.glb",
+      "bytes": 457332
+    }
+  ],
+  "textures": [
+    {
+      "path": "public/assets/awakening/recovery-kit/kit-display.png",
+      "name": "",
+      "width": 512,
+      "height": 256,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 699052,
+      "fileBytes": 6906
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/recovery-kit.glb#0",
+      "name": "cryo-surface-04-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 16001
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/recovery-kit.glb#1",
+      "name": "cryo-surface-02-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 11398
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/recovery-kit.glb#2",
+      "name": "cryo-surface-02-metallic-cryo-surface-02-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 8912
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/recovery-kit.glb#3",
+      "name": "cryo-surface-01-color",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 35429
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/recovery-kit.glb#4",
+      "name": "cryo-surface-01-metallic-cryo-surface-01-roughness",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 29875
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/recovery-kit.glb#5",
+      "name": "cryo-surface-03-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 24111
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/recovery-kit.glb#6",
+      "name": "cryo-surface-03-metallic-cryo-surface-03-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 23715
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/recovery-kit.glb#7",
+      "name": "kit-display",
+      "width": 512,
+      "height": 256,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 699052,
+      "fileBytes": 6906
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/room-kit.glb#0",
+      "name": "cryo-surface-04-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 16001
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/room-kit.glb#1",
+      "name": "cryo-surface-02-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 11398
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/room-kit.glb#2",
+      "name": "cryo-surface-02-metallic-cryo-surface-02-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 8912
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/room-kit.glb#3",
+      "name": "cryo-surface-01-color",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 35429
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/room-kit.glb#4",
+      "name": "cryo-surface-01-metallic-cryo-surface-01-roughness",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 29875
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/room-kit.glb#5",
+      "name": "cryo-surface-03-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 24111
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/room-kit.glb#6",
+      "name": "cryo-surface-03-metallic-cryo-surface-03-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 23715
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/room-kit.glb#7",
+      "name": "kit-display",
+      "width": 512,
+      "height": 256,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 699052,
+      "fileBytes": 6906
+    },
+    {
+      "path": "public/assets/awakening/recovery-kit/room-kit.glb#8",
+      "name": "locker-label",
+      "width": 256,
+      "height": 128,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 174764,
+      "fileBytes": 1963
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/locker-label.png",
+      "name": "",
+      "width": 256,
+      "height": 128,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 174764,
+      "fileBytes": 1963
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/locker.glb#0",
+      "name": "cryo-surface-04-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 16001
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/locker.glb#1",
+      "name": "cryo-surface-03-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 24111
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/locker.glb#2",
+      "name": "cryo-surface-03-metallic-cryo-surface-03-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 23715
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/locker.glb#3",
+      "name": "cryo-surface-01-color",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 35429
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/locker.glb#4",
+      "name": "cryo-surface-01-metallic-cryo-surface-01-roughness",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 29875
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/locker.glb#5",
+      "name": "cryo-surface-02-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 11398
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/locker.glb#6",
+      "name": "cryo-surface-02-metallic-cryo-surface-02-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 8912
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/locker.glb#7",
+      "name": "locker-label",
+      "width": 256,
+      "height": 128,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 174764,
+      "fileBytes": 1963
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/satellite-cabinet.glb#0",
+      "name": "cryo-surface-04-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 16001
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/satellite-cabinet.glb#1",
+      "name": "cryo-surface-02-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 11398
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/satellite-cabinet.glb#2",
+      "name": "cryo-surface-02-metallic-cryo-surface-02-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 8912
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/satellite-cabinet.glb#3",
+      "name": "cryo-surface-01-color",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 35429
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/satellite-cabinet.glb#4",
+      "name": "cryo-surface-01-metallic-cryo-surface-01-roughness",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 29875
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/satellite-cabinet.glb#5",
+      "name": "cryo-surface-03-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 24111
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/satellite-cabinet.glb#6",
+      "name": "cryo-surface-03-metallic-cryo-surface-03-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 23715
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/trolley.glb#0",
+      "name": "cryo-surface-04-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 16001
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/trolley.glb#1",
+      "name": "cryo-surface-03-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 24111
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/trolley.glb#2",
+      "name": "cryo-surface-03-metallic-cryo-surface-03-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 23715
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/trolley.glb#3",
+      "name": "cryo-surface-02-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 11398
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/trolley.glb#4",
+      "name": "cryo-surface-02-metallic-cryo-surface-02-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 8912
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/trolley.glb#5",
+      "name": "cryo-surface-01-color",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 35429
+    },
+    {
+      "path": "public/assets/awakening/recovery-storage/trolley.glb#6",
+      "name": "cryo-surface-01-metallic-cryo-surface-01-roughness",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 29875
+    },
+    {
+      "path": "public/assets/awakening/released-berth/released-berth-atlas.png",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 16735
+    },
+    {
+      "path": "public/assets/awakening/released-berth/released-berth-roughness.png",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 1885
+    },
+    {
+      "path": "public/assets/awakening/released-berth/released-berth.glb#0",
+      "name": "cryo-surface-02-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 11398
+    },
+    {
+      "path": "public/assets/awakening/released-berth/released-berth.glb#1",
+      "name": "cryo-surface-02-metallic-cryo-surface-02-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 8912
+    },
+    {
+      "path": "public/assets/awakening/released-berth/released-berth.glb#2",
+      "name": "cryo-surface-01-color",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 35429
+    },
+    {
+      "path": "public/assets/awakening/released-berth/released-berth.glb#3",
+      "name": "cryo-surface-01-metallic-cryo-surface-01-roughness",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 29875
+    },
+    {
+      "path": "public/assets/awakening/released-berth/released-berth.glb#4",
+      "name": "cryo-surface-04-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 16001
+    },
+    {
+      "path": "public/assets/awakening/released-berth/released-berth.glb#5",
+      "name": "cryo-surface-03-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 24111
+    },
+    {
+      "path": "public/assets/awakening/released-berth/released-berth.glb#6",
+      "name": "cryo-surface-03-metallic-cryo-surface-03-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 23715
+    },
+    {
+      "path": "public/assets/awakening/released-berth/released-berth.glb#7",
+      "name": "released-berth-atlas",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 16735
+    },
+    {
+      "path": "public/assets/awakening/released-berth/released-berth.glb#8",
+      "name": "released-berth-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 4519
+    },
+    {
+      "path": "public/assets/benchmark/cryo-enamel-roughness.png",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 253094
+    },
+    {
+      "path": "public/assets/benchmark/cryo-graphics-atlas.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 45580
+    },
+    {
+      "path": "public/assets/benchmark/cryo-surface-01-color.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 35429
+    },
+    {
+      "path": "public/assets/benchmark/cryo-surface-01-metallic.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 34708
+    },
+    {
+      "path": "public/assets/benchmark/cryo-surface-01-roughness.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 29762
+    },
+    {
+      "path": "public/assets/benchmark/cryo-surface-02-color.png",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 11398
+    },
+    {
+      "path": "public/assets/benchmark/cryo-surface-02-metallic.png",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 10503
+    },
+    {
+      "path": "public/assets/benchmark/cryo-surface-02-roughness.png",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 10521
+    },
+    {
+      "path": "public/assets/benchmark/cryo-surface-03-color.png",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 24111
+    },
+    {
+      "path": "public/assets/benchmark/cryo-surface-03-metallic.png",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 5733
+    },
+    {
+      "path": "public/assets/benchmark/cryo-surface-03-roughness.png",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 26859
+    },
+    {
+      "path": "public/assets/benchmark/cryo-surface-04-color.png",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 16001
+    },
+    {
+      "path": "public/assets/benchmark/sealed-cryo.glb#0",
+      "name": "cryo-surface-03-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 24111
+    },
+    {
+      "path": "public/assets/benchmark/sealed-cryo.glb#1",
+      "name": "cryo-surface-03-metallic-cryo-surface-03-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 23715
+    },
+    {
+      "path": "public/assets/benchmark/sealed-cryo.glb#2",
+      "name": "cryo-surface-02-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 11398
+    },
+    {
+      "path": "public/assets/benchmark/sealed-cryo.glb#3",
+      "name": "cryo-surface-02-metallic-cryo-surface-02-roughness",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 8912
+    },
+    {
+      "path": "public/assets/benchmark/sealed-cryo.glb#4",
+      "name": "cryo-surface-04-color",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 16001
+    },
+    {
+      "path": "public/assets/benchmark/sealed-cryo.glb#5",
+      "name": "cryo-surface-01-color",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 35429
+    },
+    {
+      "path": "public/assets/benchmark/sealed-cryo.glb#6",
+      "name": "cryo-surface-01-metallic-cryo-surface-01-roughness",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 29875
+    },
+    {
+      "path": "public/assets/benchmark/sealed-cryo.glb#7",
+      "name": "cryo-graphics-atlas",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 45580
+    },
+    {
+      "path": "public/assets/e9-ship-kit/clinical/comms-uplink-dish-preview-480.png",
+      "name": "",
+      "width": 480,
+      "height": 270,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 690620,
+      "fileBytes": 152945
+    },
+    {
+      "path": "public/assets/e9-ship-kit/clinical/comms-uplink-dish-preview.png",
+      "name": "",
+      "width": 1920,
+      "height": 1080,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 11058620,
+      "fileBytes": 2013685
+    },
+    {
+      "path": "public/assets/e9-ship-kit/clinical/habitation-gallery-pendant-preview-480.png",
+      "name": "",
+      "width": 480,
+      "height": 270,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 690620,
+      "fileBytes": 139529
+    },
+    {
+      "path": "public/assets/e9-ship-kit/clinical/habitation-gallery-pendant-preview.png",
+      "name": "",
+      "width": 1920,
+      "height": 1080,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 11058620,
+      "fileBytes": 1776419
+    },
+    {
+      "path": "public/assets/e9-ship-kit/clinical/hero-preview-480.png",
+      "name": "",
+      "width": 480,
+      "height": 270,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 690620,
+      "fileBytes": 164989
+    },
+    {
+      "path": "public/assets/e9-ship-kit/clinical/hero-preview.png",
+      "name": "",
+      "width": 1920,
+      "height": 1080,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 11058620,
+      "fileBytes": 2204335
+    },
+    {
+      "path": "public/assets/e9-ship-kit/clinical/scanner-arch-preview-480.png",
+      "name": "",
+      "width": 480,
+      "height": 270,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 690620,
+      "fileBytes": 131925
+    },
+    {
+      "path": "public/assets/e9-ship-kit/clinical/scanner-arch-preview.png",
+      "name": "",
+      "width": 1920,
+      "height": 1080,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 11058620,
+      "fileBytes": 1832650
+    },
+    {
+      "path": "public/assets/e9-ship-kit/industrial/airway-exchanger-preview-480.png",
+      "name": "",
+      "width": 480,
+      "height": 270,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 690620,
+      "fileBytes": 181629
+    },
+    {
+      "path": "public/assets/e9-ship-kit/industrial/airway-exchanger-preview.png",
+      "name": "",
+      "width": 1920,
+      "height": 1080,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 11058620,
+      "fileBytes": 2270105
+    },
+    {
+      "path": "public/assets/e9-ship-kit/industrial/cargo-hoist-header-preview-480.png",
+      "name": "",
+      "width": 480,
+      "height": 270,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 690620,
+      "fileBytes": 159635
+    },
+    {
+      "path": "public/assets/e9-ship-kit/industrial/cargo-hoist-header-preview.png",
+      "name": "",
+      "width": 1920,
+      "height": 1080,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 11058620,
+      "fileBytes": 2141039
+    },
+    {
+      "path": "public/assets/e9-ship-kit/industrial/hero-preview-480.png",
+      "name": "",
+      "width": 480,
+      "height": 270,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 690620,
+      "fileBytes": 109108
+    },
+    {
+      "path": "public/assets/e9-ship-kit/industrial/hero-preview.png",
+      "name": "",
+      "width": 1280,
+      "height": 720,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 4915052,
+      "fileBytes": 921489
+    },
+    {
+      "path": "public/assets/e9-ship-kit/industrial/kit-preview-480.png",
+      "name": "",
+      "width": 480,
+      "height": 270,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 690620,
+      "fileBytes": 84489
+    },
+    {
+      "path": "public/assets/e9-ship-kit/industrial/kit-preview.png",
+      "name": "",
+      "width": 1920,
+      "height": 1080,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 11058620,
+      "fileBytes": 1821476
+    },
+    {
+      "path": "public/assets/e9-ship-kit/industrial/workshop-tool-bridge-preview-480.png",
+      "name": "",
+      "width": 480,
+      "height": 270,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 690620,
+      "fileBytes": 171401
+    },
+    {
+      "path": "public/assets/e9-ship-kit/industrial/workshop-tool-bridge-preview.png",
+      "name": "",
+      "width": 1920,
+      "height": 1080,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 11058620,
+      "fileBytes": 2229216
+    },
+    {
+      "path": "public/assets/e9-ship-kit/security/hero-preview-480.png",
+      "name": "",
+      "width": 480,
+      "height": 270,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 690620,
+      "fileBytes": 74705
+    },
+    {
+      "path": "public/assets/e9-ship-kit/security/hero-preview.png",
+      "name": "",
+      "width": 1200,
+      "height": 900,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5759464,
+      "fileBytes": 1057184
+    },
+    {
+      "path": "public/assets/e9-ship-kit/security/kit-preview-480.png",
+      "name": "",
+      "width": 480,
+      "height": 270,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 690620,
+      "fileBytes": 72416
+    },
+    {
+      "path": "public/assets/e9-ship-kit/security/kit-preview.png",
+      "name": "",
+      "width": 1920,
+      "height": 1080,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 11058620,
+      "fileBytes": 1729420
+    },
+    {
+      "path": "public/assets/e9-ship-kit/security/roof-preview-480.png",
+      "name": "",
+      "width": 480,
+      "height": 270,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 690620,
+      "fileBytes": 103426
+    },
+    {
+      "path": "public/assets/e9-ship-kit/security/roof-preview.png",
+      "name": "",
+      "width": 1280,
+      "height": 720,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 4915052,
+      "fileBytes": 961214
+    },
+    {
+      "path": "public/assets/e9-ship-kit/structure/kit-preview.png",
+      "name": "",
+      "width": 1500,
+      "height": 1200,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 9599060,
+      "fileBytes": 1579771
+    },
+    {
+      "path": "public/assets/environment/concrete_arm.jpg",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "JPEG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 47712
+    },
+    {
+      "path": "public/assets/environment/concrete_diff.jpg",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "JPEG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 274948
+    },
+    {
+      "path": "public/assets/environment/concrete_nor_gl.jpg",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "JPEG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 161124
+    },
+    {
+      "path": "public/assets/environment/g2_deck_albedo.png",
+      "name": "",
+      "width": 128,
+      "height": 128,
+      "format": "PNG",
+      "mips": 8,
+      "gpuBytes": 87380,
+      "fileBytes": 10125
+    },
+    {
+      "path": "public/assets/environment/g2_deck_arm.png",
+      "name": "",
+      "width": 128,
+      "height": 128,
+      "format": "PNG",
+      "mips": 8,
+      "gpuBytes": 87380,
+      "fileBytes": 10210
+    },
+    {
+      "path": "public/assets/environment/g2_deck_normal.png",
+      "name": "",
+      "width": 128,
+      "height": 128,
+      "format": "PNG",
+      "mips": 8,
+      "gpuBytes": 87380,
+      "fileBytes": 7125
+    },
+    {
+      "path": "public/assets/environment/metal_plate_02_arm.jpg",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "JPEG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 114700
+    },
+    {
+      "path": "public/assets/environment/metal_plate_02_diff.jpg",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "JPEG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 167635
+    },
+    {
+      "path": "public/assets/environment/metal_plate_02_nor_gl.jpg",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "JPEG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 84865
+    },
+    {
+      "path": "public/assets/environment/metal_plate_arm.jpg",
+      "name": "",
+      "width": 512,
+      "height": 512,
+      "format": "JPEG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 117241
+    },
+    {
+      "path": "public/assets/environment/metal_plate_diff.jpg",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "JPEG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 184245
+    },
+    {
+      "path": "public/assets/environment/metal_plate_nor_gl.jpg",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "JPEG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 366065
+    },
+    {
+      "path": "public/assets/materials/steel-floor-albedo.png",
+      "name": "",
+      "width": 1254,
+      "height": 1254,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 8384072,
+      "fileBytes": 2778781
+    },
+    {
+      "path": "public/assets/models/basilisk.glb#0",
+      "name": "stalker-base.png",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 893303
+    },
+    {
+      "path": "public/assets/models/basilisk.glb#1",
+      "name": "stalker-normal.png",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 901265
+    },
+    {
+      "path": "public/assets/models/basilisk.glb#2",
+      "name": "stalker-glow.png",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 17664
+    },
+    {
+      "path": "public/assets/models/dragoon.glb#0",
+      "name": "carrier-base.png",
+      "width": 2048,
+      "height": 2048,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 22369620,
+      "fileBytes": 2390998
+    },
+    {
+      "path": "public/assets/models/dragoon.glb#1",
+      "name": "carrier-normal.png",
+      "width": 2048,
+      "height": 2048,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 22369620,
+      "fileBytes": 2390831
+    },
+    {
+      "path": "public/assets/models/dragoon.glb#2",
+      "name": "carrier-glow.png",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 79256
+    },
+    {
+      "path": "public/assets/models/dretch.glb#0",
+      "name": "crawler-base.png",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 874454
+    },
+    {
+      "path": "public/assets/models/dretch.glb#1",
+      "name": "crawler-normal.png",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 963906
+    },
+    {
+      "path": "public/assets/models/dretch.glb#2",
+      "name": "crawler-glow.png",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 25225
+    },
+    {
+      "path": "public/assets/models/marauder.glb#0",
+      "name": "spitter-base.png",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 897524
+    },
+    {
+      "path": "public/assets/models/marauder.glb#1",
+      "name": "spitter-normal.png",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 893007
+    },
+    {
+      "path": "public/assets/models/marauder.glb#2",
+      "name": "spitter-glow.png",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 27060
+    },
+    {
+      "path": "public/assets/models/marine.glb#0",
+      "name": "marine-basecolor.png",
+      "width": 2048,
+      "height": 2048,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 22369620,
+      "fileBytes": 5649078
+    },
+    {
+      "path": "public/assets/models/marine.glb#1",
+      "name": "marine-normal.png",
+      "width": 2048,
+      "height": 2048,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 22369620,
+      "fileBytes": 5197712
+    },
+    {
+      "path": "public/assets/models/marine.glb#2",
+      "name": "marine-ao.png",
+      "width": 2048,
+      "height": 2048,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 22369620,
+      "fileBytes": 3473172
+    },
+    {
+      "path": "public/assets/models/marine.glb#3",
+      "name": "marine-emissive.png",
+      "width": 2048,
+      "height": 2048,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 22369620,
+      "fileBytes": 121348
+    },
+    {
+      "path": "public/assets/models/pistol.glb#0",
+      "name": "pistol-normal",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 163218
+    },
+    {
+      "path": "public/assets/models/pistol.glb#1",
+      "name": "pistol-base",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 109309
+    },
+    {
+      "path": "public/assets/models/plasma.glb#0",
+      "name": "plasma-emission",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 9855
+    },
+    {
+      "path": "public/assets/models/plasma.glb#1",
+      "name": "plasma-normal",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 187936
+    },
+    {
+      "path": "public/assets/models/plasma.glb#2",
+      "name": "plasma-base",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 127482
+    },
+    {
+      "path": "public/assets/models/rifle.glb#0",
+      "name": "rifle-normal",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 174557
+    },
+    {
+      "path": "public/assets/models/rifle.glb#1",
+      "name": "rifle-base",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 119153
+    },
+    {
+      "path": "public/assets/models/rocket.glb#0",
+      "name": "rocket-emission",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 11612
+    },
+    {
+      "path": "public/assets/models/rocket.glb#1",
+      "name": "rocket-normal",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 167367
+    },
+    {
+      "path": "public/assets/models/rocket.glb#2",
+      "name": "rocket-base",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 116220
+    },
+    {
+      "path": "public/assets/models/shotgun.glb#0",
+      "name": "shotgun-normal",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 162373
+    },
+    {
+      "path": "public/assets/models/shotgun.glb#1",
+      "name": "shotgun-base",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "mips": 10,
+      "gpuBytes": 1398100,
+      "fileBytes": 103356
+    },
+    {
+      "path": "public/assets/models/tyrant.glb#0",
+      "name": "brute-base.png",
+      "width": 2048,
+      "height": 2048,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 22369620,
+      "fileBytes": 2494207
+    },
+    {
+      "path": "public/assets/models/tyrant.glb#1",
+      "name": "brute-normal.png",
+      "width": 2048,
+      "height": 2048,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 22369620,
+      "fileBytes": 2386210
+    },
+    {
+      "path": "public/assets/models/tyrant.glb#2",
+      "name": "brute-glow.png",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 35568
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/chamber.glb#0",
+      "name": "wear-shell-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 13489
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/chamber.glb#1",
+      "name": "wear-shell-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 35528
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/chamber.glb#2",
+      "name": "wear-carrier-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 22879
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/chamber.glb#3",
+      "name": "wear-carrier-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 36757
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/chamber.glb#4",
+      "name": "wear-metal-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 23779
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/chamber.glb#5",
+      "name": "wear-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 43693
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/row-carrier.glb#0",
+      "name": "wear-shell-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 13489
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/row-carrier.glb#1",
+      "name": "wear-shell-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 35528
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/row-carrier.glb#2",
+      "name": "wear-carrier-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 22879
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/row-carrier.glb#3",
+      "name": "wear-carrier-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 36757
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/row-carrier.glb#4",
+      "name": "wear-metal-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 23779
+    },
+    {
+      "path": "public/assets/passenger-vault/material-budget/row-carrier.glb#5",
+      "name": "wear-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 43693
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-carrier-basecolor.png",
+      "name": "",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 21543
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-carrier-orm.png",
+      "name": "",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 32885
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-chamber.glb#0",
+      "name": "material-shell-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 12326
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-chamber.glb#1",
+      "name": "material-shell-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 27358
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-chamber.glb#2",
+      "name": "material-carrier-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 21543
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-chamber.glb#3",
+      "name": "material-carrier-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 32885
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-chamber.glb#4",
+      "name": "material-metal-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 21347
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-chamber.glb#5",
+      "name": "material-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 33870
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-metal-basecolor.png",
+      "name": "",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 21347
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-metal-orm.png",
+      "name": "",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 33870
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-row-carrier.glb#0",
+      "name": "material-shell-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 12326
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-row-carrier.glb#1",
+      "name": "material-shell-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 27358
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-row-carrier.glb#2",
+      "name": "material-carrier-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 21543
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-row-carrier.glb#3",
+      "name": "material-carrier-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 32885
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-row-carrier.glb#4",
+      "name": "material-metal-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 21347
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-row-carrier.glb#5",
+      "name": "material-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 33870
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-shell-basecolor.png",
+      "name": "",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 12326
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/material-shell-orm.png",
+      "name": "",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 27358
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-carrier-basecolor.png",
+      "name": "",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 22879
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-carrier-orm.png",
+      "name": "",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 36757
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-chamber.glb#0",
+      "name": "wear-shell-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 13489
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-chamber.glb#1",
+      "name": "wear-shell-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 35528
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-chamber.glb#2",
+      "name": "wear-carrier-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 22879
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-chamber.glb#3",
+      "name": "wear-carrier-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 36757
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-chamber.glb#4",
+      "name": "wear-metal-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 23779
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-chamber.glb#5",
+      "name": "wear-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 43693
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-metal-basecolor.png",
+      "name": "",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 23779
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-metal-orm.png",
+      "name": "",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 43693
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-row-carrier.glb#0",
+      "name": "wear-shell-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 13489
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-row-carrier.glb#1",
+      "name": "wear-shell-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 35528
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-row-carrier.glb#2",
+      "name": "wear-carrier-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 22879
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-row-carrier.glb#3",
+      "name": "wear-carrier-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 36757
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-row-carrier.glb#4",
+      "name": "wear-metal-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 23779
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-row-carrier.glb#5",
+      "name": "wear-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 43693
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-shell-basecolor.png",
+      "name": "",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 13489
+    },
+    {
+      "path": "public/assets/passenger-vault/materials/wear-shell-orm.png",
+      "name": "",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 35528
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/chamber.glb#0",
+      "name": "wear-shell-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 13489
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/chamber.glb#1",
+      "name": "wear-shell-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 35528
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/chamber.glb#2",
+      "name": "wear-carrier-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 22879
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/chamber.glb#3",
+      "name": "wear-carrier-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 36757
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/chamber.glb#4",
+      "name": "wear-metal-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 23779
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/chamber.glb#5",
+      "name": "wear-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 566
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/chamber.glb#6",
+      "name": "wear-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 43693
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/distribution-north.glb#0",
+      "name": "monitor-atlas-basecolor",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 23777
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/distribution-north.glb#1",
+      "name": "monitor-atlas-orm",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 14428
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/distribution-north.glb#2",
+      "name": "monitor-atlas-emission",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 3690
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/distribution-north.glb#3",
+      "name": "wear-metal-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 23779
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/distribution-north.glb#4",
+      "name": "wear-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 43693
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/distribution-south.glb#0",
+      "name": "monitor-atlas-basecolor",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 23777
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/distribution-south.glb#1",
+      "name": "monitor-atlas-orm",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 14428
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/distribution-south.glb#2",
+      "name": "monitor-atlas-emission",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 3690
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/distribution-south.glb#3",
+      "name": "wear-metal-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 23779
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/distribution-south.glb#4",
+      "name": "wear-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 43693
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb#0",
+      "name": "wear-shell-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 13489
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb#1",
+      "name": "wear-shell-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 35528
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb#2",
+      "name": "wear-carrier-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 22879
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb#3",
+      "name": "wear-carrier-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 36757
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb#4",
+      "name": "wear-metal-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 23779
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb#5",
+      "name": "wear-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 566
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb#6",
+      "name": "wear-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 43693
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb#7",
+      "name": "monitor-atlas-basecolor",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 23777
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb#8",
+      "name": "monitor-atlas-orm",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 14428
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb#9",
+      "name": "monitor-atlas-emission",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 3690
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb#10",
+      "name": "monitor-atlas-basecolor",
+      "width": 1024,
+      "height": 512,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 2796204,
+      "fileBytes": 5122
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/equipment.glb#11",
+      "name": "monitor-atlas-orm",
+      "width": 1024,
+      "height": 512,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 2796204,
+      "fileBytes": 4323
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/monitor-north.glb#0",
+      "name": "monitor-atlas-basecolor",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 23777
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/monitor-north.glb#1",
+      "name": "monitor-atlas-orm",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 14428
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/monitor-north.glb#2",
+      "name": "monitor-atlas-emission",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 3690
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/monitor-south.glb#0",
+      "name": "monitor-atlas-basecolor",
+      "width": 1024,
+      "height": 512,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 2796204,
+      "fileBytes": 5122
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/monitor-south.glb#1",
+      "name": "monitor-atlas-orm",
+      "width": 1024,
+      "height": 512,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 2796204,
+      "fileBytes": 4323
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/monitor-south.glb#2",
+      "name": "monitor-atlas-emission",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 3690
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/monitor-south.glb#3",
+      "name": "monitor-atlas-emission",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 3690
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/monitor-south.glb#4",
+      "name": "monitor-atlas-basecolor",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 23777
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/monitor-south.glb#5",
+      "name": "monitor-atlas-orm",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 14428
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/row-carrier.glb#0",
+      "name": "wear-shell-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 13489
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/row-carrier.glb#1",
+      "name": "wear-shell-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 35528
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/row-carrier.glb#2",
+      "name": "wear-carrier-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 22879
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/row-carrier.glb#3",
+      "name": "wear-carrier-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 36757
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/row-carrier.glb#4",
+      "name": "wear-metal-basecolor",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 23779
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/row-carrier.glb#5",
+      "name": "wear-metal-orm",
+      "width": 256,
+      "height": 256,
+      "format": "PNG",
+      "mips": 9,
+      "gpuBytes": 349524,
+      "fileBytes": 43693
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/service-finish.glb#0",
+      "name": "monitor-atlas-basecolor",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 23777
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/service-finish.glb#1",
+      "name": "monitor-atlas-orm",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 14428
+    },
+    {
+      "path": "public/assets/passenger-vault/runtime/service-finish.glb#2",
+      "name": "monitor-atlas-emission",
+      "width": 2048,
+      "height": 512,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 5592412,
+      "fileBytes": 3690
+    },
+    {
+      "path": "public/assets/portraits/k10/arc-bust.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 927227
+    },
+    {
+      "path": "public/assets/portraits/k10/arc-hero.png",
+      "name": "",
+      "width": 1024,
+      "height": 1280,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 6990500,
+      "fileBytes": 862538
+    },
+    {
+      "path": "public/assets/portraits/k10/breacher-bust.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 944831
+    },
+    {
+      "path": "public/assets/portraits/k10/breacher-hero.png",
+      "name": "",
+      "width": 1024,
+      "height": 1280,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 6990500,
+      "fileBytes": 860882
+    },
+    {
+      "path": "public/assets/portraits/k10/cryo-bust.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 933387
+    },
+    {
+      "path": "public/assets/portraits/k10/cryo-hero.png",
+      "name": "",
+      "width": 1024,
+      "height": 1280,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 6990500,
+      "fileBytes": 859552
+    },
+    {
+      "path": "public/assets/portraits/k10/pyro-bust.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 954144
+    },
+    {
+      "path": "public/assets/portraits/k10/pyro-hero.png",
+      "name": "",
+      "width": 1024,
+      "height": 1280,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 6990500,
+      "fileBytes": 863749
+    },
+    {
+      "path": "public/assets/portraits/u10/arc-bust.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 1026157
+    },
+    {
+      "path": "public/assets/portraits/u10/breacher-bust.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 1043808
+    },
+    {
+      "path": "public/assets/portraits/u10/cryo-bust.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 972072
+    },
+    {
+      "path": "public/assets/portraits/u10/pyro-bust.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 1054922
+    },
+    {
+      "path": "public/assets/ui/u10/background-1280.png",
+      "name": "",
+      "width": 1280,
+      "height": 720,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 4915052,
+      "fileBytes": 44755
+    },
+    {
+      "path": "public/assets/ui/u10/ending-1280.jpg",
+      "name": "",
+      "width": 1280,
+      "height": 720,
+      "format": "JPEG",
+      "mips": 11,
+      "gpuBytes": 4915052,
+      "fileBytes": 70204
+    },
+    {
+      "path": "public/assets/ui/u10/fog-1280.png",
+      "name": "",
+      "width": 1280,
+      "height": 720,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 4915052,
+      "fileBytes": 9926
+    },
+    {
+      "path": "public/assets/ui/u10/foreground-1280.png",
+      "name": "",
+      "width": 1280,
+      "height": 720,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 4915052,
+      "fileBytes": 2021
+    },
+    {
+      "path": "public/assets/ui/u10/hero-1280.png",
+      "name": "",
+      "width": 1280,
+      "height": 720,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 4915052,
+      "fileBytes": 173256
+    },
+    {
+      "path": "public/assets/ui/u10/midground-1280.png",
+      "name": "",
+      "width": 1280,
+      "height": 720,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 4915052,
+      "fileBytes": 19337
+    },
+    {
+      "path": "public/assets/ui/u10/title-1280.jpg",
+      "name": "",
+      "width": 1280,
+      "height": 720,
+      "format": "JPEG",
+      "mips": 11,
+      "gpuBytes": 4915052,
+      "fileBytes": 72563
+    },
+    {
+      "path": "public/assets/vfx/Explosion01.png",
+      "name": "",
+      "width": 1280,
+      "height": 1280,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 8738120,
+      "fileBytes": 1062981
+    },
+    {
+      "path": "public/assets/vfx/Flame02.png",
+      "name": "",
+      "width": 2048,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 11184812,
+      "fileBytes": 1685834
+    },
+    {
+      "path": "public/assets/vfx/WispySmoke02.png",
+      "name": "",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "mips": 11,
+      "gpuBytes": 5592404,
+      "fileBytes": 1282603
+    },
+    {
+      "path": "public/assets/vfx/containment-v6/elements.png",
+      "name": "",
+      "width": 2048,
+      "height": 2048,
+      "format": "PNG",
+      "mips": 12,
+      "gpuBytes": 22369620,
+      "fileBytes": 2759007
+    }
+  ]
+}

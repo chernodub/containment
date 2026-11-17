@@ -48,37 +48,15 @@
 #overlay .debrief-panel:has(.result-details[open]) .result-details {margin-top:8px;}
 #overlay .debrief-panel:has(.result-details[open]) .result-details>summary {padding:10px 4px;}
 
-/* Rendered empty nave plus the selected marine's final archive. */
+/* The authored final image carries the cost; the ending statement sits below. */
 #overlay .ending-transmission {width:min(1200px,100%);margin:18px 0 0;}
-#overlay .ending-render {position:relative;height:34vh;min-height:200px;overflow:hidden;border-top:1px solid #9fe8ff50;border-bottom:1px solid #9fe8ff30;background:#06111b;}
-#overlay .ending-set,#overlay .ending-set img {display:block;width:100%;height:100%;object-fit:cover;}
-#overlay .ending-set {opacity:.58;}
-#overlay .ending-render::after {content:'';position:absolute;inset:0;background:linear-gradient(90deg,#030c1166,transparent 40%,#030c11a3);pointer-events:none;}
-#overlay .ending-operator {position:absolute;left:7%;bottom:0;top:0;display:flex;align-items:center;gap:20px;z-index:1;}
-#overlay .ending-operator .marine-portrait {height:100%;width:240px;filter:saturate(.65);opacity:.84;}
-#overlay .ending-operator>span {font:500 9px/1.8 var(--font-body);letter-spacing:.12em;color:#b8c8cc;text-align:left;}
-#overlay .ending-operator b {color:#e9ac93;font-weight:500;}
-#overlay .ending-receipt {position:absolute;z-index:1;right:7%;top:50%;transform:translateY(-50%);text-align:left;}
-#overlay .ending-receipt .eyebrow {font-size:10px;color:#a3d1dc;}
-#overlay .ending-receipt strong {display:block;font:500 clamp(30px,3.3vw,55px)/.95 var(--font-display);letter-spacing:.035em;margin:15px 0;color:#e2f6f9;}
-#overlay .ending-receipt small {font-size:8px;letter-spacing:.14em;color:#a3c3cd;}
-#overlay .ending-signal-line {display:block;width:160px;height:2px;margin:16px 0;background:linear-gradient(90deg,#bee9f3,#bee9f31a);animation:ending-uplink 6s ease-in-out infinite;}
-#overlay .ending-outcomes {display:flex;justify-content:space-between;gap:30px;margin:16px 0 0;text-align:left;}
-#overlay .ending-outcomes>div {display:flex;flex-direction:column;gap:8px;}
-#overlay .ending-outcomes .eyebrow {font-size:10px;letter-spacing:.15em;line-height:1.4;}
-#overlay .ending-outcomes strong {font:500 clamp(18px,1.6vw,26px)/1.2 var(--font-display);letter-spacing:.035em;}
-#overlay .ending-loss {color:#c6b1a9;}
-#overlay .ending-loss .eyebrow {color:#d19a83;}
-#overlay .ending-success {color:#d9f5ff;text-align:right;}
-#overlay .ending-success .eyebrow {color:#a7ddec;}
+#overlay .ending-render {margin-inline:auto;position:relative;aspect-ratio:16/9;max-height:44vh;overflow:hidden;border-top:1px solid #9fe8ff50;border-bottom:1px solid #9fe8ff30;background:#06111b;}
+#overlay .ending-set,#overlay .ending-set img {display:block;width:100%;height:100%;object-fit:contain;}
 #overlay .debrief-panel:has(.result-details[open]) .ending-transmission {display:none;}
 @keyframes ending-uplink {0%,100%{opacity:.5}50%{opacity:1}}
 @media(max-height:800px) {
  #overlay .completion-ending[data-ending='sacrifice'] {min-height:62vh;padding:8px 0;}
- #overlay .ending-render {height:29vh;min-height:170px;}
- #overlay .ending-operator .marine-portrait {width:180px;}
- #overlay .ending-operator>span {display:none;}
- #overlay .ending-outcomes {margin-top:12px;}
+ #overlay .ending-render {max-height:42vh;}
  #overlay .completion-ending .ending-exact {font-size:clamp(26px,2.5vw,34px);margin:20px 0 8px;}
  #overlay .completion-ending .ending-rule {margin:12px 0;}
 }

@@ -47,6 +47,10 @@ uniform float hasSceneDepth;
 void main(){
   if(hasSceneDepth>.5){
     vec2 uv=gl_FragCoord.xy*inverseViewport;
+    if(hasSceneGeometry>.5){
+      float kind=mod(floor(texture2D(sceneGeometry,uv).a*255.+.5),8.);
+      if(abs(kind-2.)>.25)discard;
+    }
     float surface=texture2D(sceneDepth,uv).x;
     if(gl_FragCoord.z<=surface+.00008)discard;
     // B stores the actor identity; A separately packs class and actor region.
@@ -140,11 +144,11 @@ export class PlayerBeacon {
   }
 
   /** Borrow the post depth; the forward path uses the existing scene depth buffer. */
-  setDepthSource(depth:T.DepthTexture|null,width:number,height:number):void {
+  setDepthSource(depth:T.DepthTexture|null,width:number,height:number,geometry:T.Texture|null=null):void {
     this.material.uniforms.sceneDepth.value=depth;
     // Public Three texture ownership gives the matching retained MRT attachment.
     // Borrow only; the post owner handles resize, tier recovery and disposal.
-    const geometry=depth?.renderTarget?.textures[1];
+    geometry ??= depth?.renderTarget?.textures[1] ?? null;
     const hasGeometry=geometry?.name==='Containment geometry normal + identity';
     this.material.uniforms.sceneGeometry.value=hasGeometry?geometry:null;
     this.material.uniforms.hasSceneGeometry.value=hasGeometry?1:0;

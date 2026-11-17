@@ -129,8 +129,8 @@ export class DepthRenderer {
  setColliderDebug(visible:boolean){this.colliderDebug=visible;}
  private warning=new T.Group();private poolMeshes=new Map<number,T.Mesh<T.CircleGeometry,AcidPoolMaterial>>();private menuActors=new T.Group();private menuMarine=marine();private menuAlien=alien('brute');private lastMenu=false;private menuThreatClock=0;
  private title=new TitlePresentation(this.scene);
- constructor(readonly canvas:HTMLCanvasElement){
-  this.renderer=new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
+ constructor(readonly canvas:HTMLCanvasElement,assetRenderer?:T.WebGLRenderer){
+  this.renderer=assetRenderer??new T.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
   // Scene roots remain identity; only moving descendants compose local matrices.
   this.scene.matrixAutoUpdate=false;this.hudScene.matrixAutoUpdate=false;
   this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.AgXToneMapping;this.renderer.toneMappingExposure=1.22;
@@ -639,7 +639,7 @@ export class DepthRenderer {
   // Keep preparation/picking on the normal layer, including after interrupted frames.
   if(menu)this.lighting.suppressCombatFeedback?.(this.muzzle);
   const cameraLayerMask=this.camera.layers.mask,autoClear=this.renderer.autoClear;this.camera.layers.set(menu?CINEMATIC_LAYER:0);
-  try{this.post.render(dt);this.playerBeacon?.setDepthSource(this.post.sceneDepthTexture,this.canvas.width,this.canvas.height);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
+  try{this.post.render(dt);this.playerBeacon?.setDepthSource(this.post.sceneDepthTexture,this.canvas.width,this.canvas.height,this.post.sceneGeometryTexture);this.playerBeacon?.update(this.player.root,p.angle,menu||combat.dead,crowding,this.effects.warningNear(p.x/UNIT,p.y/UNIT),dt);/* FEEL12: dim only the locator under a nearby native warning. */this.renderer.autoClear=false;this.renderer.render(this.hudScene,this.camera);}
   finally{this.renderer.autoClear=autoClear;this.camera.layers.mask=cameraLayerMask;}
  }
 

@@ -1,6 +1,7 @@
 import type { AbilityEvent, AbilityZoneSnapshot, DeployableSnapshot } from '../../../game/abilities/contract';
 import type { ElementKit } from '../ElementKit';
 import { ELEMENT_COLORS, UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
+import { FxMode } from '../FlagshipFx';
 import type { EnemySnapshot } from '../../../game/enemies/EnemySystem';
 import { authoredVariation } from '../GraphicLanguage';
 import { WhiteoutState } from './WhiteoutState';
@@ -52,7 +53,13 @@ class CryoPresentation implements AbilityPresentation {
       const radius = (event.radius ?? 210) / UNIT;
       this.wave(px, pz, radius, .78, false, true);
       k.burst(px, .18, pz, 'cryo', 32, 5.2, .95);
-      k.scar('frost', px, pz, radius, ICE, 6.5);
+      // VFX13: hard ice shock front racing to the exact radius, then crystalline frost creeping over the deck.
+      const shock = k.fx.spawn(FxMode.Shock, px, pz, .42);
+      shock.range = radius; shock.h0 = .07; shock.color = ICE; shock.intensity = 1.3;
+      const frost = k.fx.spawn(FxMode.Frost, px, pz, 6.5);
+      frost.range = radius; frost.h0 = .036; frost.color = ICE;
+      k.draw('spark', px, .6, pz, 1.4, 1.4, 1, CORE, 1);
+      k.exposureFlash(.1);
       k.flash(px, pz, CORE, 15, Math.min(12, radius + 2), 4, .14);
       k.distort(px, pz, radius, -.005, .55);
       k.camera(.23);
@@ -125,7 +132,7 @@ class CryoPresentation implements AbilityPresentation {
           const r = Math.max(0, radius - width * 1.2);
           k.sprite('mist', wave.x + Math.cos(a) * r, .28 + (1 - curtainYield) * .2,
             wave.z + Math.sin(a) * r, width, .24 + (1 - curtainYield) * .22,
-            CORE, fade * .68 * (1 - curtainYield * .66), i * 1.87,
+            CORE, fade * .4 * (1 - curtainYield * .7), i * 1.87,
             'billboard', 0, -.24);
         }
       }
@@ -142,12 +149,18 @@ class CryoPresentation implements AbilityPresentation {
         }
       }
       if (wave.aftermath) {
-        const needles = k.low ? 6 : 18, lingering = Math.min(1, (wave.life + 2.2 - wave.age) / 1.1);
-        for (let i = 0; i < needles; i++) {
-          const a = i * 2.39996323, r = wave.radius * (.66 + Math.sin(i * 1.71) ** 2 * .22);
-          const growth = Math.min(1, Math.max(0, (wave.age - r / wave.radius * .22) * 8));
-          k.draw('shard', wave.x + Math.cos(a) * r, .1, wave.z + Math.sin(a) * r,
-            .045 + i % 3 * .02, (.14 + i % 4 * .05) * growth, .055, i % 3 ? ICE : CORE, lingering * .30 * localYield, -a, .15);
+        // Crystal spikes erupt from the deck where the front passes, in leaning clusters, then sink.
+        const clusters = k.low ? 6 : 16, lingering = Math.min(1, (wave.life + 2.2 - wave.age) / 1.1);
+        for (let i = 0; i < clusters; i++) {
+          const a = i * 2.39996323 + .4, r = wave.radius * (.38 + ((i * .618034) % 1) * .54);
+          const g0 = Math.min(1, Math.max(0, (radius - r) / .35)), growth = 1 - (1 - g0) ** 3;
+          if (growth <= 0) continue;
+          const tall = (.5 + (i % 4) * .14) * growth * (.55 + .45 * lingering);
+          for (let j = 0; j < (k.low ? 2 : 3); j++) {
+            const ja = a + (j - 1) * .09, jr = r + (j - 1) * .08, h = tall * (j === 1 ? 1 : .62);
+            k.draw('shard', wave.x + Math.cos(ja) * jr, h * .45, wave.z + Math.sin(ja) * jr,
+              .08 + j % 2 * .03, h, .07, j === 1 ? CORE : ICE, lingering * .9 * localYield, -ja, (j - 1) * .35 + .25);
+          }
         }
       }
     }
