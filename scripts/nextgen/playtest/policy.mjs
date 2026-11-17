@@ -225,13 +225,15 @@ export function chooseActions(s) {
   const hazardDanger=s.hazards.some(h=>h.kind!=='melee-warning'&&distance(s.player,h)<h.radius+50);
   const slots = s.abilities.slots;
   const keys = [];
-  if (s.combat.health < 40 && s.combat.medkits > 0) keys.push('e');
+  const imminent=s.enemies.some(e=>e.visible&&e.meleePhase==='windup'&&e.meleeRemainingMs<250&&distance(e,s.player)<160);
+  const emergency=s.combat.health<=26&&near<200;
+  if (s.combat.health <= 55 && s.combat.medkits > 0 && (!imminent||emergency)) keys.push('e');
   if ((escape?.needsDash||hazardDanger) && slots?.dash?.ready) keys.push('Shift');
   if (slots?.tactical?.ready && near < (s.rig === 'arc' ? 500 : 240)) keys.push('q');
   if ((slots?.power?.ready || s.abilityAims?.power && slots?.power?.charges > 0 && !s.abilities.dashing && !Object.values(slots).some(slot => slot.castRemainingMs > 0)) && s.enemies.length >= 2) keys.push('f');
-  if (s.abilities.overdrive.ready && (s.enemies.length >= 6 || s.enemies.some(e => e.champion || e.id < 0))) keys.push('v');
+  if (s.abilities.overdrive.ready && (s.enemies.length >= 6 || emergency && s.enemies.length >= 2 || s.enemies.some(e => e.champion || e.id < 0))) keys.push('v');
   if (s.combat.magazine < s.combat.magazineCapacity * .25 && !s.combat.reloading && near > 300) keys.push('r');
-  if (s.combat.grenades > 0 && s.enemies.filter(e => distance(e, s.player) < 400).length >= 5) keys.push('g');
+  if (s.combat.grenades > 0 && s.enemies.filter(e => distance(e, s.player) < 400).length >= (emergency?2:4)) keys.push('g');
   return keys.filter(key => {
     const slot = {q:'tactical', f:'power', v:'overdrive'}[key];
     return !slot || !s.abilityAims || !(slot in s.abilityAims) || !!s.abilityAims[slot];

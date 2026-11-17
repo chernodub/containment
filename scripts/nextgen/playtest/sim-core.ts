@@ -1,3 +1,4 @@
+import {combatPointVisible} from '../../../src/game/observation/combatVisibility';
 import {SERVICE_IDS,detourOffers} from '../../../src/game/roguelike/economy';
 import * as T from 'three';
 import { DepthGame, type GameEffect, type GameInput } from '../../../src/DepthGame';
@@ -114,7 +115,7 @@ export class CameraObserver {
     }
     visible(x: number, y: number) {
         const p = this.point.set(x / 32, .6, y / 32).project(this.camera);
-        return p.z >= -1 && p.z <= 1 && Math.abs(p.x) < .9 && Math.abs(p.y) < .8;
+        return combatPointVisible(p);
     }
 }
 export type SimOptions = {

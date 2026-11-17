@@ -1,3 +1,4 @@
+import {combatPointVisible} from '../game/observation/combatVisibility';
 import {setActorLOD} from './ActorLOD';
 import {DrawnMarineEnvelope} from './camera/DrawnMarineEnvelope';
 // E10: actor contact ownership; actor models and motion remain unchanged.
@@ -336,7 +337,7 @@ export class DepthRenderer {
   if(selected)return selected;
   const result=new T.Vector3();return this.raycaster.ray.intersectPlane(this.ground,result)?{x:result.x*UNIT,y:result.z*UNIT}:null;
  }
- visible(x:number,y:number){const p=this.visiblePoint.set(x/UNIT,.6,y/UNIT).project(this.camera),v=this.hudFraming?.viewport??FULL_COMBAT_VIEWPORT;return p.z>=-1&&p.z<=1&&Math.abs(p.x-v.centerX)<v.halfX*.9&&Math.abs(p.y-v.centerY)<v.halfY*.8;}
+ visible(x:number,y:number){const p=this.visiblePoint.set(x/UNIT,.6,y/UNIT).project(this.camera),v=this.hudFraming?.viewport??FULL_COMBAT_VIEWPORT;return combatPointVisible(p,v);}
  /** Fill caller-owned CSS bounds for a live body, including its authored family/rank height. */
  actorScreenBounds(id:number,x:number,y:number,radius:number,out:{left:number;top:number;right:number;bottom:number}):boolean {
   const model=id===-1?this.queen:this.actors.get(id);
