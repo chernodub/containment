@@ -44,19 +44,19 @@ class PyroPresentation implements AbilityPresentation {
   private next = 0;
 
   /** Retained procedural surface; refreshed from native snapshots, no per-frame meshes/materials. */
-  private surface(id: number, part: number, x: number, z: number, range: number, angle: number, arc: number, h0: number, h1: number, intensity: number, fuel = false, stripLength = 0): void {
+  private surface(id: number, part: number, x: number, z: number, range: number, angle: number, arc: number, h0: number, h1: number, intensity: number, fuel = false, stripLength = -1): void {
     let owner: (typeof this.surfaces)[number] | undefined;
     for (const candidate of this.surfaces) if (candidate.id === id && candidate.part === part) { owner = candidate; break; }
     if (!owner) for (const candidate of this.surfaces) if (candidate.id === -1) { owner = candidate; break; }
     if (!owner) return;
     owner.id = id; owner.part = part; owner.seen = true;
-    const mode = stripLength > 0 ? FxMode.FuelStrip : fuel ? FxMode.Fuel : FxMode.Fire;
+    const mode = stripLength >= 0 ? FxMode.FuelStrip : fuel ? FxMode.Fuel : FxMode.Fire;
     let slot = owner.slot;
     if (!slot?.live || slot.seed !== owner.seed || slot.mode !== mode || slot.life < 1000) {
       slot = owner.slot = this.kit.fx.spawn(mode, x, z, 1e6); owner.seed = slot.seed;
     }
     slot.x = x; slot.z = z; slot.mx = x; slot.mz = z;
-    slot.range = stripLength > 0 ? stripLength : range; slot.angle = angle; slot.arc = arc; slot.inner = stripLength > 0 ? range : 0;
+    slot.range = stripLength >= 0 ? stripLength : range; slot.angle = angle; slot.arc = arc; slot.inner = stripLength >= 0 ? range : 0;
     slot.h0 = h0; slot.h1 = h1; slot.param = part % 2 ? .45 : .12;
     // Hold the hot portion of the Fire envelope; flow still uses the presentation clock.
     slot.age = .09; slot.intensity = intensity;
