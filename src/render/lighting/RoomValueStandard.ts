@@ -90,6 +90,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.48,saturation:.55},floorSaturation:.46,tint:0xc7dce5,
     fixtures:.20,practicals:.46,ambient:.46,marineGlow:1,exit:.9,
   }),
+  'safety-interlock-station': profile({
+    // Locked recorder, cage inspection diffuser, battery return task light.
+    fixturesAt:[[370,176],[528,370],[640,824]],
+    floor:{lit:.38,unlit:.20,edge:.10},perimeter:{inner:3.8,outer:9.5,value:.32,lane:.75},
+    wall:{value:.46,saturation:.55},floorSaturation:.48,tint:0xead9b5,
+    fixtures:.20,practicals:.44,ambient:.45,marineGlow:1,exit:.9,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},

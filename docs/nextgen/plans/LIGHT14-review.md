@@ -35,3 +35,7 @@
 ## 9 Diagnostic Gallery
 - Opened calm/tour03/heavy colour+grey480: independent diagnostic warning remains readable, marine leads, probe/cradle and rail cover silhouettes survive.
 - Three authored diffuser centres keep the long recorder lanes visible; cold desaturated steel distinguishes this from signal-blue Transmission. Build/seven guarded frames pass.
+
+## 10 Safety Interlock Station
+- Opened calm/tour03/heavy 480 colour/grey: locked safety text stays legible, amber machines and cage rails read, marine remains brightest actor.
+- Recorder/cage/battery pools retain the long return lane without whitening the floor. Seven guarded captures and build pass; pale cabinet tops remain below actor plates.
