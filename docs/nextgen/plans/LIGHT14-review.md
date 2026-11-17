@@ -127,3 +127,7 @@
 ## Transmission Chamber
 - Opened native calm and 480 colour/grey calm/tour/heavy: uplink dish and instruments now own a signal-blue highlight above the chancel floor; marine/hostile highlights remain brighter.
 - Bounded uplink source restores room identity and keeps rack recesses dark. Existing saturated red/green indicators preserve their hue when receiving emitter life. Build and seven guarded frames pass.
+
+## Diagnostic Gallery
+- Opened native calm and 480 colour/grey calm/tour/heavy: recorder/probe silhouette and diagnostic display now form the third-level landmark above cyan steel; marine and threats retain priority.
+- Initial source followed the nominal asset placement and missed the visible bay. Moved it to the physical recorder/probe area and reopened corrected frames; fatal text and rail boundaries stay readable. Build/seven frames pass.

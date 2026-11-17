@@ -93,6 +93,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.9,
   }),
   'diagnostic-gallery': profile({
+    landmark:{at:[390,260],color:0x68dfec,radius:6,body:.65,spill:.03,keyGain:.55},
     // Recorder diffuser, southern service recorder, starboard instrument lamp.
     fixturesAt:[[390,126],[710,826],[1084,180]],
     floor:{lit:.42,unlit:.20,edge:.10},perimeter:{inner:3.8,outer:9.5,value:.32,lane:.75},
