@@ -1,0 +1,144 @@
+{
+  "bakeSeconds": 2.047,
+  "blenderPNGDecodeMs": 5.147,
+  "file": "control-normal.png",
+  "size": 512,
+  "bytes": 363299,
+  "estimatedRGBA8MipBytes": 1398101,
+  "nonFlatPixels": 175124,
+  "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+  "targets": [
+    {
+      "mesh": "uplink-tracking-dish--e9-body",
+      "role": "e9-body",
+      "seconds": 0.056,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "uplink-tracking-dish--e9-ceramic",
+      "role": "e9-ceramic",
+      "seconds": 0.034,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "uplink-tracking-dish--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.074,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "uplink-tracking-dish--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.061,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "uplink-tracking-dish--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.026,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "uplink-tracking-dish--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.029,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "uplink-tracking-dish--p11-tint-metal",
+      "role": "p11-tint-metal",
+      "seconds": 0.026,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "specimen-probe-cradle--e9-body",
+      "role": "e9-body",
+      "seconds": 0.03,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "specimen-probe-cradle--e9-ceramic",
+      "role": "e9-ceramic",
+      "seconds": 0.026,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "specimen-probe-cradle--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.072,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "specimen-probe-cradle--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.234,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "specimen-probe-cradle--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.084,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "specimen-probe-cradle--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.098,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "specimen-probe-cradle--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.091,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "specimen-probe-cradle--p11-tint-metal",
+      "role": "p11-tint-metal",
+      "seconds": 0.054,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "key-cylinder-interlock--e9-body",
+      "role": "e9-body",
+      "seconds": 0.04,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "key-cylinder-interlock--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.1,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "key-cylinder-interlock--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.085,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "key-cylinder-interlock--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.028,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "key-cylinder-interlock--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.043,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "key-cylinder-interlock--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.023,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "key-cylinder-interlock--p11-tint-metal",
+      "role": "p11-tint-metal",
+      "seconds": 0.023,
+      "method": "three-segment high bevel"
+    }
+  ]
+}

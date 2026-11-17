@@ -1,0 +1,278 @@
+{
+  "name": "Containment P11 control-heroes",
+  "license": "MIT",
+  "author": "Containment contributors",
+  "source": "tools/assets/p11-set-pieces/control_heroes.py",
+  "rebuild": "blender -b --factory-startup -P tools/assets/p11-set-pieces/control_heroes.py",
+  "coordinateSystem": "glTF Y-up, metres; bottom-centred origins, fronts face +Z (camera side)",
+  "description": "Original mechanical control, diagnostic and reactor hero machinery.",
+  "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
+  "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
+  "normalAtlas": {
+    "bakeSeconds": 2.047,
+    "blenderPNGDecodeMs": 5.147,
+    "file": "control-normal.png",
+    "size": 512,
+    "bytes": 363299,
+    "estimatedRGBA8MipBytes": 1398101,
+    "nonFlatPixels": 175124,
+    "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+    "targets": [
+      {
+        "mesh": "uplink-tracking-dish--e9-body",
+        "role": "e9-body",
+        "seconds": 0.056,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "uplink-tracking-dish--e9-ceramic",
+        "role": "e9-ceramic",
+        "seconds": 0.034,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "uplink-tracking-dish--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.074,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "uplink-tracking-dish--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.061,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "uplink-tracking-dish--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.026,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "uplink-tracking-dish--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.029,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "uplink-tracking-dish--p11-tint-metal",
+        "role": "p11-tint-metal",
+        "seconds": 0.026,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--e9-body",
+        "role": "e9-body",
+        "seconds": 0.03,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--e9-ceramic",
+        "role": "e9-ceramic",
+        "seconds": 0.026,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.072,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.234,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.084,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.098,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.091,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "specimen-probe-cradle--p11-tint-metal",
+        "role": "p11-tint-metal",
+        "seconds": 0.054,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--e9-body",
+        "role": "e9-body",
+        "seconds": 0.04,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.1,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.085,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.028,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.043,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.023,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "key-cylinder-interlock--p11-tint-metal",
+        "role": "p11-tint-metal",
+        "seconds": 0.023,
+        "method": "three-segment high bevel"
+      }
+    ]
+  },
+  "materials": {
+    "e9-body": "#24343c",
+    "e9-ceramic": "#d5ded3",
+    "e9-cyan": "#65d8e6",
+    "e9-dark": "#0e1820",
+    "e9-glass": "#9dcad1",
+    "e9-trim": "#8faaa8",
+    "p11-rubber": "#16191b",
+    "p11-screen": "#9fe8ff",
+    "p11-steel": "#6c7a7c",
+    "p11-tint": "#ffffff",
+    "p11-tint-metal": "#ffffff"
+  },
+  "models": [
+    {
+      "name": "uplink-tracking-dish",
+      "size": [
+        3.5,
+        3.86,
+        3.1
+      ],
+      "bounds": {
+        "min": [
+          -1.75,
+          0.0,
+          -1.55
+        ],
+        "max": [
+          1.75,
+          3.86,
+          1.55
+        ]
+      },
+      "triangles": 6608,
+      "budget": 12000,
+      "finishes": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim",
+        "p11-rubber",
+        "p11-screen",
+        "p11-tint",
+        "p11-tint-metal"
+      ]
+    },
+    {
+      "name": "specimen-probe-cradle",
+      "size": [
+        3.4,
+        2.83,
+        1.614
+      ],
+      "bounds": {
+        "min": [
+          -1.7,
+          0.0,
+          -0.81
+        ],
+        "max": [
+          1.7,
+          2.83,
+          0.804
+        ]
+      },
+      "triangles": 7396,
+      "budget": 12000,
+      "finishes": [
+        "e9-body",
+        "e9-ceramic",
+        "e9-cyan",
+        "e9-dark",
+        "e9-glass",
+        "e9-trim",
+        "p11-rubber",
+        "p11-screen",
+        "p11-steel",
+        "p11-tint",
+        "p11-tint-metal"
+      ]
+    },
+    {
+      "name": "key-cylinder-interlock",
+      "size": [
+        3.62,
+        2.56,
+        1.5
+      ],
+      "bounds": {
+        "min": [
+          -1.81,
+          0.0,
+          -0.725
+        ],
+        "max": [
+          1.81,
+          2.56,
+          0.775
+        ]
+      },
+      "triangles": 8806,
+      "budget": 12000,
+      "finishes": [
+        "e9-body",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim",
+        "p11-rubber",
+        "p11-screen",
+        "p11-steel",
+        "p11-tint",
+        "p11-tint-metal"
+      ]
+    }
+  ],
+  "output": {
+    "file": "control.glb",
+    "bytes": 1787608,
+    "sha256": "42550ecfb11a7240f59b0b34ce7d6f0d4edd8d35991d5f38865b1d3a0c7d2bbb",
+    "triangles": 22810
+  },
+  "overBudget": []
+}

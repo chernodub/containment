@@ -31,7 +31,7 @@ function boundaryFixtures(boundary?: readonly BoundaryPoint[]): BoundaryFixture[
   }
   if (Math.abs(signedArea) < .001 || perimeter < 1) return;
   const winding = signedArea > 0 ? 1 : -1;
-  const spacing = Math.max(5, perimeter / 32);
+  const spacing = Math.max(8, perimeter / 16);
   const candidates: BoundaryFixture[] = [];
   for (let i = 0; i < boundary.length; i++) {
     const a = boundary[i], b = boundary[(i + 1) % boundary.length];
@@ -58,7 +58,7 @@ export function addRoomPracticals(world:T.Group,width:number,depth:number,enviro
   const polygonFixtures=boundaryFixtures(boundary);
   const organic=environment==='infested',count=polygonFixtures?.length??Math.min(32,Math.max(4,Math.ceil(depth/4.5)*2));
   const geometry=organic?organicFissureGeometry().clone():new T.BoxGeometry(1,1,1);
-  const material=new T.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:organic?.48:1.5,roughness:.45,metalness:.15});
+  const material=new T.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:organic?.48:.65,roughness:.45,metalness:.15});
   const clock={value:0},failureGain={value:1};practicalClocks.set(world,{clock,gain:failureGain});
   geometry.setAttribute('humanFixtureFailure',new T.InstancedBufferAttribute(new Float32Array(count),1));
   material.onBeforeCompile=shader=>{shader.uniforms??={};shader.vertexShader??='';shader.uniforms.roomPracticalTime=clock;shader.uniforms.roomPracticalFailureGain=failureGain;shader.vertexShader='attribute float humanFixtureFailure;varying float vHumanFixtureFailure;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvHumanFixtureFailure=humanFixtureFailure;');shader.fragmentShader='uniform float roomPracticalTime;uniform float roomPracticalFailureGain;varying float vHumanFixtureFailure;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n#ifdef USE_COLOR\n totalEmissiveRadiance*=vColor.rgb;\n#endif\nfloat humanFailure=.16+.84*pow(clamp(sin(roomPracticalTime*5.3)+.35*sin(roomPracticalTime*17.1),0.0,1.0),2.0);totalEmissiveRadiance*=mix(1.0,humanFailure,vHumanFixtureFailure*roomPracticalFailureGain);');};
@@ -75,12 +75,12 @@ export function addRoomPracticals(world:T.Group,width:number,depth:number,enviro
     const right=i>=perSide,index=fixture?i:i%perSide,jitter=organic?Math.sin(i*12.73+width*2.13)*.58:0,tangentX=fixture?Math.sin(fixture.angle):0,tangentZ=fixture?Math.cos(fixture.angle):1,z=(fixture?.z??1.8+(depth-3.6)*(index+.5)/perSide)+jitter*tangentZ,x=(fixture?.x??(right?width-.32:.32))+jitter*tangentX;
     const height=organic?.72+(Math.sin(i*6.71+depth)*.5+.5)*.87:1.65,scale=organic?.7+(Math.sin(i*9.32)*.5+.5)*.65:1;
     const humanFailed=organic&&i%7===0;(geometry.getAttribute('humanFixtureFailure') as T.InstancedBufferAttribute).setX(i,humanFailed?1:0);
-    const sourceGain=wallSourceGain(environment,i);
+    const sourceGain=wallSourceGain(environment,i)*(organic?1:.55);
     const tint=humanFailed?0xbfd2e1:organic?(index%3===1?0xdc68ca:0xa1ef72):environment==='security'?(index%2?0xe8f1ff:0xff6650):getEnvironmentMood(environment).practical.color;
     const organicAngle=Math.atan2(-(fixture?fixture.z-fixture.mountZ:0),fixture?fixture.x-fixture.mountX:right?-1:1);
     dummy.position.set(x,height,z);dummy.rotation.set(0,organic?organicAngle:fixture?.angle??0,0);if(organic)dummy.rotateX(Math.sin(i*2.13)*.23);dummy.scale.set(organic?.22*scale:.09,organic?.52*scale:.12,organic?.55*scale:environment==='cryogenics'?1.45:environment==='communications'?.42:environment==='maintenance'?1.15:.85);if(humanFailed)dummy.scale.set(.14,.055,.75);dummy.updateMatrix();lights.setMatrixAt(i,dummy.matrix);lights.setColorAt(i,color.setHex(tint).multiplyScalar(sourceGain*(breached?(i%3===0?.14:i%3===1?.48:1):1)));
     dummy.position.x=fixture?fixture.mountX+jitter*tangentX:(right?width-.12:.12);dummy.position.z=fixture?fixture.mountZ+jitter*tangentZ:z;dummy.scale.set(organic?.19*scale:.22,organic?.55*scale:.3,organic?.43*scale:environment==='cryogenics'?1.72:environment==='communications'?.72:environment==='maintenance'?1.45:1.15);dummy.updateMatrix();mounts.setMatrixAt(i,dummy.matrix);
-    fixtures.push({x,y:organic?height:1.5,z,color:tint,nativeColor:true,poolStyle:humanFailed?0:organic?3:undefined,poolAngle:fixture?Math.atan2(fixture.x-fixture.mountX,fixture.z-fixture.mountZ):right?-Math.PI/2:Math.PI/2,gain:sourceGain*(humanFailed?.18:breached?(i%3===0?.14:i%3===1?.48:1):1)});
+    fixtures.push({x,y:organic?height:1.5,z,color:tint,nativeColor:true,poolStyle:humanFailed?0:organic?3:0,poolAngle:fixture?Math.atan2(fixture.x-fixture.mountX,fixture.z-fixture.mountZ):right?-Math.PI/2:Math.PI/2,gain:sourceGain*(humanFailed?.18:breached?(i%3===0?.14:i%3===1?.48:1):1)});
   }
   lights.instanceMatrix.needsUpdate=mounts.instanceMatrix.needsUpdate=true;lights.frustumCulled=mounts.frustumCulled=false;world.add(mounts,lights);
 }

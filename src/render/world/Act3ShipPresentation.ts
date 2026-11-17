@@ -80,6 +80,7 @@ export function act3ShipPresentation(id:string,t:RoomTemplate):T.Group|null {
   fixture(370,176,0,.40,6.3,0xb8d8dd,.92);fixture(910,176,0,.35,5.2,0xb0bfbe,.12);fixture(640,824,Math.PI,.35,5.7,0xc9ad82,.38);fixture(528,370,-Math.PI/2,.30,4.5,0xb2d5d7,.46,.84);
  }else if(id==='coolant-plant'){
   for(const [i,r]of t.obstacles.entries()){
+   if(i===4)continue; // P11 turbines replace the visible upper central manifold solid.
    const x=r.x+r.width/2,z=r.y+r.height/2,w=r.width-16,d=r.height-16;
    box(x,3,z,w,6,d,dark);
    // Two serviceable horizontal pump barrels share a wall manifold. A valve
@@ -108,6 +109,7 @@ export function act3ShipPresentation(id:string,t:RoomTemplate):T.Group|null {
  }else if(id==='infested-workshop'){
   const equipment=new T.Group();equipment.name='act3-source-equipment';root.add(equipment);
   for(const [i,r]of t.obstacles.entries()){
+   if(i===1||i===4)continue; // P11 low repair bench and wall-backed milling machine own these solids.
    const source=environmentObstacle('infested',{x:r.x/32,y:r.y/32,width:r.width/32,height:r.height/32},i,id);
    // Foreground workbench and stock do not form a tall actor-hiding wall.
    if(i===1||i===3){const bounds=new T.Box3().setFromObject(source);source.scale.y=Math.min(1,.90/(bounds.max.y||1));}

@@ -11,6 +11,7 @@ import {passengerObservationTexture,serviceCartridge,serviceHousingGeometry} fro
 import {industrialBoxGeometry} from './IndustrialFormKit';
 import {membraneGeometry} from './OrganicGrowth';
 import {addConstructionLanguage} from './ConstructionLanguage';
+import {deckMarkingSupported} from './DeckMarkings';
 
 const UNIT=32;
 const ROOM_IDEAS:Readonly<Record<string,string>>={
@@ -247,16 +248,29 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
     // Dark glazing lies below a narrow metal frame on the existing domed lids.
     // The passenger is behind frosted glass; the reservations and lids remain sealed.
     for(const [rowX,rowZ,angle]of [[420,300,0],[780,300,0],[420,580,Math.PI],[780,580,Math.PI]])for(let slot=0;slot<4;slot++){
+      // P11 owns the opened north-west carrier, including all of its glazing.
+      if(rowX===420&&rowZ===300)continue;
       const dx=(slot-1.5)*1.5625,localZ=.25-.22,c=Math.cos(angle),s=Math.sin(angle);
       const x=rowX/UNIT+c*dx+s*localZ,z=rowZ/UNIT-s*dx+c*localZ;
-      box(dark,x,1.205,z,.64,.022,1.31,angle);
-      box(display,x,1.219,z,.52,.009,1.17,angle);
+      // Authored pod banks are cut down to .91m; the former fixed 1.2m
+      // windows hovered above them. Sample the actual retained lid at all
+      // corners and centre, and omit any unsupported/replaced window.
+      const roof:number[]=[];
+      for(const sx of [-1,0,1])for(const sz of [-1,0,1]){
+        ray.set(point(x+sx*.32,20,z+sz*.655),down);
+        const hit=ray.intersectObject(world,true).find(h=>h.point.y>.2);
+        if(hit)roof.push(hit.point.y);
+      }
+      if(roof.length!==9||Math.max(...roof)-Math.min(...roof)>.08)continue;
+      const lift=Math.max(...roof)-1.19;
+      box(dark,x,1.205+lift,z,.64,.022,1.31,angle);
+      box(display,x,1.219+lift,z,.52,.009,1.17,angle);
       for(const side of [-1,1]){
-        box(steel,x+side*.292,1.227,z,.025,.025,1.27,angle);
-        box(steel,x,1.227,z+side*.625,.59,.025,.025,angle);
+        box(steel,x+side*.292,1.227+lift,z,.025,.025,1.27,angle);
+        box(steel,x,1.227+lift,z+side*.625,.59,.025,.025,angle);
       }
       // Individual life-sign index lights complement the retained embossed ECG displays.
-      for(let tick=0;tick<slot+1;tick++)box(signal,x+(tick-slot*.5)*.055,1.233,z+.54,.023,.009,.028,angle);
+      for(let tick=0;tick<slot+1;tick++)box(signal,x+(tick-slot*.5)*.055,1.233+lift,z+.54,.023,.009,.028,angle);
     }
   }
   // Vent portals are flush gratings: enemies emerge here, but the deck stays traversable.
@@ -272,11 +286,14 @@ export function addWorldDressing(world:T.Group,template:RoomTemplate,environment
   const growth=environment==='infested'?1:organic?.65:.12;
   for(const [index,b] of template.breaches.entries()){
     const x=b.x/UNIT,z=b.y/UNIT;
-    box(dark,x,.009,z,1.28,.018,1.08);
-    for(let slat=-4;slat<=4;slat++)box(steel,x+slat*.13,.026,z,.044,.014,.87);
+    // The complete grate (including rails) must lie on deck, not just its
+    // centre. Omit grates on openings; mounted ingress owns those breaches.
+    if(![-1,0,1].every(sx=>[-1,0,1].every(sz=>deckMarkingSupported(template,x+sx*.70,z+sz*.56))))continue;
+    box(dark,x,.012,z,1.28,.012,1.08);
+    for(let slat=-4;slat<=4;slat++)box(steel,x+slat*.13,.020,z,.044,.004,.87);
     for(const side of [-1,1]){
-      box(steel,x+side*.67,.029,z,.055,.012,1.12);
-      box(signal,x+side*.59,.035,z-.42,.07,.012,.12);
+      box(steel,x+side*.67,.019,z,.055,.006,1.12);
+      box(signal,x+side*.59,.021,z-.42,.07,.002,.12);
     }
     if(organic){
       // Every free-standing growth vertex stays <=3cm: raised eggs only live on solid roofs.

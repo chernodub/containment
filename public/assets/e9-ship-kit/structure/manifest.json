@@ -27,8 +27,8 @@
       "name": "wall-bulkhead",
       "size": [
         4.0,
-        1.2,
-        0.75
+        1.202,
+        0.818
       ],
       "bounds": {
         "min": [
@@ -38,15 +38,14 @@
         ],
         "max": [
           2.0,
-          1.2,
-          0.375
+          1.202,
+          0.443
         ]
       },
-      "triangles": 4552,
-      "primitives": 5,
+      "triangles": 828,
+      "primitives": 4,
       "materials": [
         "e9-body",
-        "e9-ceramic",
         "e9-cyan",
         "e9-dark",
         "e9-trim"
@@ -56,8 +55,8 @@
       "name": "wall-bulkhead-low",
       "size": [
         4.0,
-        0.65,
-        0.75
+        0.652,
+        0.818
       ],
       "bounds": {
         "min": [
@@ -67,15 +66,14 @@
         ],
         "max": [
           2.0,
-          0.65,
-          0.375
+          0.652,
+          0.443
         ]
       },
-      "triangles": 4552,
-      "primitives": 5,
+      "triangles": 828,
+      "primitives": 4,
       "materials": [
         "e9-body",
-        "e9-ceramic",
         "e9-cyan",
         "e9-dark",
         "e9-trim"
@@ -86,7 +84,7 @@
       "size": [
         0.45,
         1.2,
-        0.75
+        0.803
       ],
       "bounds": {
         "min": [
@@ -97,10 +95,10 @@
         "max": [
           0.225,
           1.2,
-          0.375
+          0.428
         ]
       },
-      "triangles": 1620,
+      "triangles": 404,
       "primitives": 5,
       "materials": [
         "e9-body",
@@ -129,7 +127,7 @@
           0.4
         ]
       },
-      "triangles": 916,
+      "triangles": 148,
       "primitives": 5,
       "materials": [
         "e9-body",
@@ -158,7 +156,7 @@
           1.0
         ]
       },
-      "triangles": 1636,
+      "triangles": 228,
       "primitives": 3,
       "materials": [
         "e9-dark",
@@ -185,7 +183,7 @@
           1.0
         ]
       },
-      "triangles": 1620,
+      "triangles": 212,
       "primitives": 3,
       "materials": [
         "e9-body",
@@ -212,7 +210,7 @@
           1.0
         ]
       },
-      "triangles": 1188,
+      "triangles": 164,
       "primitives": 4,
       "materials": [
         "e9-body",
@@ -240,7 +238,7 @@
           0.25
         ]
       },
-      "triangles": 2228,
+      "triangles": 532,
       "primitives": 5,
       "materials": [
         "e9-body",
@@ -253,8 +251,189 @@
   ],
   "output": {
     "file": "structure.glb",
-    "bytes": 625484,
-    "sha256": "b78816093467a775aa2fe94fee62c08cf6d31b07b19388353e3c7cbb42a998ec",
-    "triangles": 18312
-  }
+    "bytes": 509692,
+    "sha256": "14c3d076b2c3131e156ed71694746a9137ad5be97e78db36c31da326736bc977",
+    "triangles": 3344
+  },
+  "normalAtlas": {
+    "bakeSeconds": 2.327,
+    "blenderPNGDecodeMs": 7.301,
+    "file": "structure-normal.png",
+    "size": 512,
+    "bytes": 235763,
+    "estimatedRGBA8MipBytes": 1398101,
+    "nonFlatPixels": 197854,
+    "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+    "targets": [
+      {
+        "mesh": "wall-bulkhead--e9-body",
+        "role": "",
+        "seconds": 0.119,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "wall-bulkhead--e9-dark",
+        "role": "",
+        "seconds": 0.047,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "wall-bulkhead--e9-trim",
+        "role": "",
+        "seconds": 0.058,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "wall-bulkhead-low--e9-body",
+        "role": "",
+        "seconds": 0.052,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "wall-bulkhead-low--e9-dark",
+        "role": "",
+        "seconds": 0.069,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "wall-bulkhead-low--e9-trim",
+        "role": "",
+        "seconds": 0.057,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "wall-end-jamb--e9-body",
+        "role": "",
+        "seconds": 0.033,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "wall-end-jamb--e9-ceramic",
+        "role": "",
+        "seconds": 0.031,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "wall-end-jamb--e9-dark",
+        "role": "",
+        "seconds": 0.042,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "wall-end-jamb--e9-trim",
+        "role": "",
+        "seconds": 0.036,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "door-threshold--e9-body",
+        "role": "",
+        "seconds": 0.033,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "door-threshold--e9-dark",
+        "role": "",
+        "seconds": 0.052,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "door-threshold--e9-floor-rubber",
+        "role": "",
+        "seconds": 0.047,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "door-threshold--e9-trim",
+        "role": "",
+        "seconds": 0.041,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "door-threshold--e9-yellow",
+        "role": "",
+        "seconds": 0.032,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "deck-ceramic-panel--e9-dark",
+        "role": "",
+        "seconds": 0.034,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "deck-ceramic-panel--e9-floor-ceramic",
+        "role": "",
+        "seconds": 0.059,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "deck-ceramic-panel--e9-trim",
+        "role": "",
+        "seconds": 0.068,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "deck-rubber-panel--e9-body",
+        "role": "",
+        "seconds": 0.047,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "deck-rubber-panel--e9-dark",
+        "role": "",
+        "seconds": 0.035,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "deck-rubber-panel--e9-floor-rubber",
+        "role": "",
+        "seconds": 0.037,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "deck-oxidised-panel--e9-body",
+        "role": "",
+        "seconds": 0.036,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "deck-oxidised-panel--e9-dark",
+        "role": "",
+        "seconds": 0.042,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "deck-oxidised-panel--e9-floor-oxidised",
+        "role": "",
+        "seconds": 0.038,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "deck-oxidised-panel--e9-trim",
+        "role": "",
+        "seconds": 0.045,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "floor-glass-channel--e9-body",
+        "role": "",
+        "seconds": 0.041,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "floor-glass-channel--e9-dark",
+        "role": "",
+        "seconds": 0.041,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "floor-glass-channel--e9-trim",
+        "role": "",
+        "seconds": 0.044,
+        "method": "three-segment high bevel"
+      }
+    ]
+  },
+  "craft": "P11 single-facet industrial chamfers; sub-centimetre hardware stays crisp; deterministic convex wear and concave grime multiply original vertex AO, excluding emissive/glass/deck finishes."
 }

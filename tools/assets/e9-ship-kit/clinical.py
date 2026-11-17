@@ -14,6 +14,9 @@ import math
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from craft import bake_craft, craft_forms
+
 import bpy
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
@@ -68,9 +71,9 @@ def finish(obj, role, bevel=0):
     obj.parent = CURRENT
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    if bevel:
+    if bevel >= .01:
         modifier = obj.modifiers.new('Manufactured 2-4cm radiused edge', 'BEVEL')
-        modifier.width, modifier.segments = bevel, 2
+        modifier.width, modifier.segments = bevel, 1
         modifier.harden_normals = True
         bpy.ops.object.modifier_apply(modifier=modifier.name)
     for polygon in obj.data.polygons:
@@ -376,7 +379,7 @@ def dish_petal(index, count=12):
     finish(obj,'e9-ceramic' if index%3 else 'e9-trim')
     bpy.context.view_layer.objects.active=obj
     modifier=obj.modifiers.new('Petal outer-edge 12mm bevel','BEVEL')
-    modifier.width,modifier.segments=.012,2
+    modifier.width,modifier.segments=.012,1
     modifier.limit_method='ANGLE'
     modifier.angle_limit=math.radians(35)
     modifier.harden_normals=True
@@ -587,10 +590,12 @@ def bake_ao(group):
 
 
 def export_pack():
+    craft_forms(globals(), GROUPS)
     models=[]
     for group in GROUPS:
         join_materials(group)
         bake_ao(group)
+        bake_craft(group)
         bounds=[obj.matrix_world @ Vector(corner) for obj in group.children for corner in obj.bound_box]
         low=[min(point[i] for point in bounds) for i in range(3)]
         high=[max(point[i] for point in bounds) for i in range(3)]
@@ -606,6 +611,10 @@ def export_pack():
             'triangles':triangles, 'primitives':len(group.children),
             'materials':sorted({obj.data.materials[0].name for obj in group.children}),
         })
+    import sys
+    sys.path.insert(0, str(ROOT / 'tools/assets/p11-set-pieces'))
+    from normal_atlas import bake_normal_atlas
+    normal_bake = bake_normal_atlas(GROUPS, OUT / 'clinical-normal.png', size=512)
     bpy.ops.object.select_all(action='DESELECT')
     for group in GROUPS:
         group.select_set(True)
@@ -617,7 +626,7 @@ def export_pack():
         export_yup=True, export_apply=True, export_extras=True,
         export_materials='EXPORT', export_vertex_color='ACTIVE',
         export_all_vertex_colors=False, export_animations=False,
-        export_cameras=False, export_lights=False,
+        export_texcoords=True, export_cameras=False, export_lights=False,
     )
     path=OUT/'clinical.glb'
     temporary.replace(path)
@@ -643,6 +652,8 @@ def export_pack():
                   'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),
                   'triangles':sum(model['triangles'] for model in models)},
     }
+    manifest['normalAtlas'] = normal_bake
+    manifest['craft'] = 'P11 single-facet industrial chamfers; sub-centimetre hardware stays crisp; deterministic convex wear and concave grime multiply original vertex AO, excluding emissive/glass/deck finishes.'
     (OUT/'manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
     (OUT/'LICENSE.txt').write_text((ROOT/'LICENSE').read_text())
     bpy.context.preferences.filepaths.save_version=0

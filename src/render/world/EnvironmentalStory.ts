@@ -111,7 +111,14 @@ export function addEnvironmentalStory(world:T.Group,template:RoomTemplate,enviro
   }
   if(environment==='reactor'&&templateId==='overload-floor'&&template.voids?.length){
     const hole=template.voids[0],x=hole.reduce((sum,p)=>sum+p.x,0)/hole.length/32,z=hole.reduce((sum,p)=>sum+p.y,0)/hole.length/32;
-    for(let i=0;i<3;i++)origins.push({x:x+Math.cos(i*2.1)*.24,y:.85,z:z+Math.sin(i*2.1)*.24,kind:3});
+    // Vent from the broken rim, not beneath the opaque crown's centre.
+    for(let i=0;i<3;i++)origins.push({x:x+Math.cos(i*2.1)*3.1,y:2.8,z:z+Math.sin(i*2.1)*3.1,kind:3});
+  }
+  if(templateId==='coolant-plant'){
+    // The P11 split return flange is at local (.52, 1.9, .9), on the
+    // existing pump island. Reuse the warmed story plume/drip owner.
+    origins.push({x:680/32+.52,y:1.9,z:350/32+.9,kind:1},
+      {x:680/32+.58,y:1.3,z:350/32+.83,kind:2});
   }
   if(environment==='maintenance'){
     const leaks=world.getObjectByName('g2-world-dressing')?.userData.leakOrigins as Array<{x:number;y:number;z:number}>|undefined;

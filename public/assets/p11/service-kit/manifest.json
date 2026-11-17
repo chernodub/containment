@@ -1,0 +1,574 @@
+{
+  "name": "Containment P11 service-kit",
+  "license": "MIT",
+  "author": "Containment contributors",
+  "source": "tools/assets/p11-set-pieces/kit_families.py",
+  "rebuild": "blender -b -P tools/assets/p11-set-pieces/kit_families.py",
+  "coordinateSystem": "glTF Y-up, metres; bottom-centred origins, fronts face +Z (camera side)",
+  "description": "Industrial service fittings with modelled hardware and baked AO/curvature.",
+  "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
+  "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
+  "normalAtlas": {
+    "bakeSeconds": 2.764,
+    "blenderPNGDecodeMs": 5.678,
+    "file": "service-kit-normal.png",
+    "size": 512,
+    "bytes": 325859,
+    "estimatedRGBA8MipBytes": 1398101,
+    "nonFlatPixels": 166218,
+    "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+    "targets": [
+      {
+        "mesh": "service-cable-tray--e9-body",
+        "role": "e9-body",
+        "seconds": 0.08,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-cable-tray--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.056,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-cable-tray--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.033,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-cable-tray--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.03,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-access-hatch--e9-body",
+        "role": "e9-body",
+        "seconds": 0.027,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-access-hatch--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.03,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-access-hatch--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.032,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-access-hatch--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.025,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-transit-case--e9-body",
+        "role": "e9-body",
+        "seconds": 0.03,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-transit-case--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.035,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-transit-case--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.039,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-transit-case--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.024,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-stowage-crate--e9-body",
+        "role": "e9-body",
+        "seconds": 0.028,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-stowage-crate--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.035,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-stowage-crate--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.045,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-stowage-crate--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.045,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-pressure-drum--e9-body",
+        "role": "e9-body",
+        "seconds": 0.033,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-pressure-drum--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.03,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-pressure-drum--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.042,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-pressure-drum--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.036,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-safety-rail--e9-body",
+        "role": "e9-body",
+        "seconds": 0.06,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-safety-rail--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.033,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-safety-rail--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.037,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-three-step--e9-body",
+        "role": "e9-body",
+        "seconds": 0.029,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-three-step--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.034,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-three-step--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.04,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-console-bars--e9-body",
+        "role": "e9-body",
+        "seconds": 0.042,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-console-bars--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.068,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-console-bars--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.051,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-console-bars--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.04,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-console-bars--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.034,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-console-schematic--e9-body",
+        "role": "e9-body",
+        "seconds": 0.028,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-console-schematic--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.044,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-console-schematic--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.038,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-console-schematic--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.03,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-console-schematic--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.032,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-valve-manifold--e9-body",
+        "role": "e9-body",
+        "seconds": 0.043,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-valve-manifold--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.069,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-valve-manifold--e9-trim",
+        "role": "e9-trim",
+        "seconds": 0.066,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-valve-manifold--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.048,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "service-valve-manifold--p11-tint-metal",
+        "role": "p11-tint-metal",
+        "seconds": 0.072,
+        "method": "three-segment high bevel"
+      }
+    ]
+  },
+  "materials": {
+    "e9-body": "#24343c",
+    "e9-cyan": "#65d8e6",
+    "e9-dark": "#0e1820",
+    "e9-trim": "#8faaa8",
+    "p11-rubber": "#16191b",
+    "p11-screen": "#9fe8ff",
+    "p11-steel": "#6c7a7c",
+    "p11-tint": "#ffffff",
+    "p11-tint-metal": "#ffffff"
+  },
+  "models": [
+    {
+      "name": "service-cable-tray",
+      "size": [
+        0.64,
+        0.205,
+        2.0006
+      ],
+      "bounds": {
+        "min": [
+          -0.32,
+          0.0225,
+          -1.0003
+        ],
+        "max": [
+          0.32,
+          0.2275,
+          1.0003
+        ]
+      },
+      "triangles": 524,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-rubber"
+      ]
+    },
+    {
+      "name": "service-access-hatch",
+      "size": [
+        1.1,
+        1.2,
+        0.364
+      ],
+      "bounds": {
+        "min": [
+          -0.55,
+          0.0,
+          -0.185
+        ],
+        "max": [
+          0.55,
+          1.2,
+          0.179
+        ]
+      },
+      "triangles": 508,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "service-transit-case",
+      "size": [
+        0.895,
+        0.5265,
+        0.7573
+      ],
+      "bounds": {
+        "min": [
+          -0.4475,
+          0.0,
+          -0.36
+        ],
+        "max": [
+          0.4475,
+          0.5265,
+          0.3973
+        ]
+      },
+      "triangles": 920,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "service-stowage-crate",
+      "size": [
+        0.715,
+        0.8465,
+        0.7573
+      ],
+      "bounds": {
+        "min": [
+          -0.3575,
+          0.0,
+          -0.36
+        ],
+        "max": [
+          0.3575,
+          0.8465,
+          0.3973
+        ]
+      },
+      "triangles": 920,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "service-pressure-drum",
+      "size": [
+        0.654,
+        0.9575,
+        0.6826
+      ],
+      "bounds": {
+        "min": [
+          -0.327,
+          0.0,
+          -0.327
+        ],
+        "max": [
+          0.327,
+          0.9575,
+          0.3556
+        ]
+      },
+      "triangles": 786,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "service-safety-rail",
+      "size": [
+        1.8,
+        1.028,
+        0.2
+      ],
+      "bounds": {
+        "min": [
+          -0.9,
+          0.0,
+          -0.1
+        ],
+        "max": [
+          0.9,
+          1.028,
+          0.1
+        ]
+      },
+      "triangles": 436,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "service-three-step",
+      "size": [
+        1.01,
+        0.612,
+        1.2
+      ],
+      "bounds": {
+        "min": [
+          -0.505,
+          0.02,
+          -0.6
+        ],
+        "max": [
+          0.505,
+          0.632,
+          0.6
+        ]
+      },
+      "triangles": 336,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim"
+      ]
+    },
+    {
+      "name": "service-console-bars",
+      "size": [
+        0.88,
+        1.0675,
+        1.0328
+      ],
+      "bounds": {
+        "min": [
+          -0.44,
+          0.0,
+          -0.4828
+        ],
+        "max": [
+          0.44,
+          1.0675,
+          0.55
+        ]
+      },
+      "triangles": 954,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim",
+        "p11-rubber",
+        "p11-screen",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "service-console-schematic",
+      "size": [
+        0.88,
+        1.0675,
+        1.0328
+      ],
+      "bounds": {
+        "min": [
+          -0.44,
+          0.0,
+          -0.4828
+        ],
+        "max": [
+          0.44,
+          1.0675,
+          0.55
+        ]
+      },
+      "triangles": 1012,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-cyan",
+        "e9-dark",
+        "e9-trim",
+        "p11-rubber",
+        "p11-screen",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "service-valve-manifold",
+      "size": [
+        1.5,
+        1.4,
+        0.3354
+      ],
+      "bounds": {
+        "min": [
+          -0.75,
+          0.0,
+          -0.17
+        ],
+        "max": [
+          0.75,
+          1.4,
+          0.1654
+        ]
+      },
+      "triangles": 1176,
+      "budget": 1500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "e9-trim",
+        "p11-steel",
+        "p11-tint-metal"
+      ]
+    }
+  ],
+  "output": {
+    "file": "service-kit.glb",
+    "bytes": 884660,
+    "sha256": "c7127ccf48e9b2d3af443af8d29abc0d25169a5ae879e2282eb7f8cffd352a71",
+    "triangles": 7572
+  },
+  "overBudget": []
+}

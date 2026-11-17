@@ -1,0 +1,72 @@
+{
+  "bakeSeconds": 4.331,
+  "blenderPNGDecodeMs": 34.765,
+  "file": "cargo-normal.png",
+  "size": 512,
+  "bytes": 350968,
+  "estimatedRGBA8MipBytes": 1398101,
+  "nonFlatPixels": 167531,
+  "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+  "targets": [
+    {
+      "mesh": "freight-suspension-gantry--e9-body",
+      "role": "e9-body",
+      "seconds": 0.203,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "freight-suspension-gantry--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.185,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "freight-suspension-gantry--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.749,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "freight-suspension-gantry--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.132,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "freight-suspension-gantry--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.029,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "loading-wedged-pod--e9-body",
+      "role": "e9-body",
+      "seconds": 0.223,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "loading-wedged-pod--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.127,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "loading-wedged-pod--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.825,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "loading-wedged-pod--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.085,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "loading-wedged-pod--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.034,
+      "method": "three-segment high bevel"
+    }
+  ]
+}

@@ -26,11 +26,11 @@ export function buildDeckStory(t: RoomTemplate, atlas: T.Texture): { high: T.Can
     for(const side of [-1,1])stamp((i+1)%4,3,x+Math.cos(angle)*side*.62,z+Math.sin(angle)*side*.62,.32,2.7,angle,.70);
   }
   for(const [i,breach]of t.breaches.entries()) {
-    const vx=start.x-breach.x,vz=start.y-breach.y,length=Math.hypot(vx,vz)||1;
-    const x=breach.x/32+vx/length*1.0,z=breach.y/32+vz/length*1.0;
-    stamp(i%4,2,x,z,3.8,1.7,Math.atan2(vz,vx),.68);
-    stamp((i+2)%4,2,x+vx/length*.9,z+vz/length*.9,2.4,1.4,Math.atan2(vz,vx)+.6,.38);
-    stamp(i%4,0,x-vx/length*.55,z-vz/length*.55,2.4,.65,Math.atan2(vz,vx)+Math.PI/2,.65);
+    const x=breach.x/32,z=breach.y/32;
+    // Row 2 contains opaque spill silhouettes. Offset beside a flush grille,
+    // those blobs read as detached cast shadows and make the grille float.
+    // Keep wear physically attached to its two fastening rails instead.
+    for(const side of [-1,1])stamp(i%4,3,x+side*.60,z,.12,.96,0,.36);
   }
   // A dragged case crosses a side service approach, never a random central stain.
   const service = plan?.spaces.find(s=>/service|return|bypass|console/i.test(s.name)) ?? plan?.spaces.at(-1);
@@ -38,6 +38,24 @@ export function buildDeckStory(t: RoomTemplate, atlas: T.Texture): { high: T.Can
   for(const opening of plan?.apertures??[]) {
     stamp(1,0,(opening.from.x+opening.to.x)/64,(opening.from.y+opening.to.y)/64,2.8,.5,
       Math.atan2(opening.to.y-opening.from.y,opening.to.x-opening.from.x),.60);
+  }
+  if(t.id==='overload-floor') {
+    // Heat escapes through three split deck seams around the core. Paint into
+    // the visible deck's retained wear texture; the west holdout stays quiet.
+    const polygon=(points:number[][],color:string)=>{
+      context.fillStyle=color;context.beginPath();
+      points.forEach(([x,z],i)=>{const u=(x/32-minX)/width*1024,v=(z/32-minZ)/depth*1024;i?context.lineTo(u,v):context.moveTo(u,v);});
+      context.closePath();context.fill();
+    };
+    for(const [cx,cz,turn] of [[700,310,-1.4],[930,480,.12],[740,700,1.2]]) {
+      const point=(u:number,v:number)=>[cx+Math.cos(turn)*u-Math.sin(turn)*v,cz+Math.sin(turn)*u+Math.cos(turn)*v];
+      polygon([[-25,-10],[10,-25],[47,-20],[85,-38],[110,-14],[89,3],[120,16],[70,26],[20,18],[-18,9]].map(([u,v])=>point(u,v)),'#56616b');
+      polygon([[-18,-4],[26,-8],[65,-18],[91,-8],[57,4],[24,7]].map(([u,v])=>point(u,v)),'#26313e');
+      for(let n=0;n<9;n++) {
+        const u=16+n*10,v=Math.sin(n*3.7)*22;
+        polygon([[u-4,v-3],[u+9,v-6],[u+6,v+5],[u-3,v+8]].map(([x,z])=>point(x,z)),n%2?'#7c8088':'#3c4650');
+      }
+    }
   }
   const make = (image:HTMLCanvasElement) => {
     const texture = new T.CanvasTexture(image); texture.name = 'e10-placed-evacuation-wear'; texture.colorSpace = T.SRGBColorSpace;

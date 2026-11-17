@@ -9,7 +9,7 @@ export function armoryCarousel():T.Group{
  const root=new T.Group();root.name='armory-carousel-and-issue-bay';
  const material=(name:string,color:number,metalness:number)=>{const m=new T.MeshStandardMaterial({color,metalness,roughness:.58});m.name=name;m.userData.actorMaterial=true;
   return m;};
- const graphite=material('armory-graphite',0x28383d,.72),edge=material('armory-brass',0x88724c,.68),pale=material('armory-serial-enamel',0xb7bcae,.35),rubber=material('armory-dark-rubber',0x10191c,.05),worktop=material('armory-matte-worktop',0x798c91,.14);
+ const graphite=material('armory-graphite',0x28383d,.72),edge=material('armory-brass',0x88724c,.68),pale=material('armory-serial-enamel',0x72817f,.35),rubber=material('armory-dark-rubber',0x10191c,.05),worktop=material('armory-matte-worktop',0x34434a,.14);
  worktop.roughness=.88;
  const add=(name:string,g:T.BufferGeometry,m:T.Material,parent:T.Object3D=root)=>{g.userData.environmentUV=true;const mesh=new T.Mesh(g,m);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;};
  const slab=(name:string,points:readonly Point[],bottom:number,height:number,m:T.Material,holes:readonly (readonly Point[])[]=[])=>{

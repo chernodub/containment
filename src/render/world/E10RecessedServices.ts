@@ -10,10 +10,10 @@ export function addRecessedServices(root: T.Group, t: RoomTemplate): void {
   const services = interiorFloorServices(t.id, t), profile = INTERIOR_PROFILES[t.id];
   if (!services.length || !profile) return;
   const materials = [
-    new T.MeshStandardMaterial({ name: 'e10-channel-frames', color: 0x6e8184, roughness: .7, metalness: .5 }),
+    new T.MeshStandardMaterial({ name: 'e10-channel-frames', color: 0x465458, roughness: .7, metalness: .5 }),
     new T.MeshStandardMaterial({ name: 'e10-channel-bed', color: 0x1e3539, roughness: .83, metalness: .25 }),
     new T.MeshStandardMaterial({ name: 'e10-channel-pipes', color: 0x897b60, roughness: .58, metalness: .55 }),
-    new T.MeshStandardMaterial({ name: 'e10-channel-pilot', color: profile.key, emissive: profile.key, emissiveIntensity: 3.2, roughness: .7 }),
+    new T.MeshStandardMaterial({ name: 'e10-channel-pilot', color: profile.key, emissive: profile.key, emissiveIntensity: .45, roughness: .7 }),
     new T.MeshStandardMaterial({ name: 'e10-channel-glass', color: 0x93b6c1, transparent: true, opacity: .13, roughness: .5, metalness: .1, depthWrite: false }),
   ];
   const buckets: T.BufferGeometry[][] = materials.map(m => { m.userData.actorMaterial = true; return []; });
@@ -36,8 +36,9 @@ export function addRecessedServices(root: T.Group, t: RoomTemplate): void {
         put(collar, 0, x + dx, -.32, z + side * depth * .22);
       }
     }
-    box(3, x, -.535, z, width - .24, .012, depth * .40);
-    box(3, x, -.40, z - depth * .36, width - .28, .035, .065);
+    // A short inspection pilot illuminates the service well, not the floor.
+    box(3, x, -.40, z, .24, .012, .035);
+    box(3, x, -.40, z - depth * .36, .18, .025, .035);
     if (service.asset === 'drainage-grating') {
       for (let i = 0; i < 13; i++) box(0, x - width / 2 + .14 + i * (width - .28) / 12, -.005, z, .045, .04, depth - .12);
       box(0, x, -.005, z, width - .12, .04, .045);
