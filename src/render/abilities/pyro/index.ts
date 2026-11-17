@@ -39,7 +39,7 @@ class PyroPresentation implements AbilityPresentation {
     live: false, lightId: 7100 + lightId, kind: 'cone', age: 0, life: 1, x: 0, z: 0, tx: 0, tz: 0,
     angle: 0, radius: 0, range: 0, arc: 0, slices: [undefined, undefined, undefined],
   }));
-  private readonly surfaces = Array.from({ length: 32 }, () => ({ id: -1, part: 0, seen: false, slot: undefined as FxSlot | undefined }));
+  private readonly surfaces = Array.from({ length: 32 }, () => ({ id: -1, part: 0, seen: false, seed: -1, slot: undefined as FxSlot | undefined }));
   private next = 0;
 
   /** Retained procedural surface; refreshed from native snapshots, no per-frame meshes/materials. */
@@ -50,7 +50,9 @@ class PyroPresentation implements AbilityPresentation {
     if (!owner) return;
     owner.id = id; owner.part = part; owner.seen = true;
     let slot = owner.slot;
-    if (!slot?.live || slot.mode !== FxMode.Fire || slot.life < 1000) slot = owner.slot = this.kit.fx.spawn(FxMode.Fire, x, z, 1e6);
+    if (!slot?.live || slot.seed !== owner.seed || slot.mode !== FxMode.Fire || slot.life < 1000) {
+      slot = owner.slot = this.kit.fx.spawn(FxMode.Fire, x, z, 1e6); owner.seed = slot.seed;
+    }
     slot.x = x; slot.z = z; slot.mx = x; slot.mz = z;
     slot.range = range; slot.angle = angle; slot.arc = arc; slot.inner = 0;
     slot.h0 = h0; slot.h1 = h1; slot.param = part % 2 ? .45 : .12;
@@ -228,7 +230,7 @@ class PyroPresentation implements AbilityPresentation {
       kit.directedFlame(print.x, .04, print.z, .16, .36, print.angle + Math.PI, 1.1, print.angle + print.x, fade * .42);
     }
     if (!frame.snapshot) {
-      for (const surface of this.surfaces) { if (surface.slot) surface.slot.live = false; surface.id = -1; surface.slot = undefined; }
+      for (const surface of this.surfaces) { if (surface.slot && surface.slot.seed === surface.seed) surface.slot.live = false; surface.id = -1; surface.slot = undefined; }
       kit.impact(); return;
     }
     for (const zone of frame.snapshot.zones) {
@@ -249,7 +251,7 @@ class PyroPresentation implements AbilityPresentation {
       }
     }
     for (const surface of this.surfaces) if (!surface.seen && surface.id !== -1) {
-      if (surface.slot) surface.slot.live = false;
+      if (surface.slot && surface.slot.seed === surface.seed) surface.slot.live = false;
       surface.id = -1; surface.slot = undefined;
     }
     kit.impact();
@@ -486,7 +488,7 @@ class PyroPresentation implements AbilityPresentation {
   }
 
   clear(): void {
-    for (const surface of this.surfaces) { if (surface.slot) surface.slot.live = false; surface.id = -1; surface.slot = undefined; }
+    for (const surface of this.surfaces) { if (surface.slot && surface.slot.seed === surface.seed) surface.slot.live = false; surface.id = -1; surface.slot = undefined; }
     for (const p of this.effects) p.live = false;
     for (const print of this.prints) print.live = false;
     this.next = 0; this.emission = 0; this.shimmer = 0; this.printCursor = 0; this.printClock = 0; this.muzzle = undefined; this.suit=undefined;this.shoulders.fill(undefined); this.suitAngle=0;
