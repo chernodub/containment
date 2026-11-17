@@ -38,3 +38,5 @@ Slam R2: opened both 480 phase contacts and dark native 04. Removing the duplica
 Ram R2: opened native impact on both floors across the review/correction captures and both 480 contacts. Reduced solid prow opacity preserves the struck enemy and marine. Pressure remains restrained and the long skids dominate; below flagship quality.
 
 Bulwark R2: both 480 contacts and dark native 04 show readable supports, contact sparks and collapse shards, but the lane is edge-on. Final-check uses a different legal native lane to inspect the hex face; no camera changes.
+
+Napalm R2: pale native 05 and both 480 contacts show a footprint that survives the pale floor. The first revision was peach and too flat; reduced body emission, removed the second full-disc sheet and added small interior flame jets for final-check.

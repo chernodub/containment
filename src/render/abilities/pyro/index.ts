@@ -43,21 +43,24 @@ class PyroPresentation implements AbilityPresentation {
   private next = 0;
 
   /** Retained procedural surface; refreshed from native snapshots, no per-frame meshes/materials. */
-  private surface(id: number, part: number, x: number, z: number, range: number, angle: number, arc: number, h0: number, h1: number, intensity: number): void {
+  private surface(id: number, part: number, x: number, z: number, range: number, angle: number, arc: number, h0: number, h1: number, intensity: number, fuel = false, stripLength = 0): void {
     let owner: (typeof this.surfaces)[number] | undefined;
     for (const candidate of this.surfaces) if (candidate.id === id && candidate.part === part) { owner = candidate; break; }
     if (!owner) for (const candidate of this.surfaces) if (candidate.id === -1) { owner = candidate; break; }
     if (!owner) return;
     owner.id = id; owner.part = part; owner.seen = true;
+    const mode = stripLength > 0 ? FxMode.FuelStrip : fuel ? FxMode.Fuel : FxMode.Fire;
     let slot = owner.slot;
-    if (!slot?.live || slot.seed !== owner.seed || slot.mode !== FxMode.Fire || slot.life < 1000) {
-      slot = owner.slot = this.kit.fx.spawn(FxMode.Fire, x, z, 1e6); owner.seed = slot.seed;
+    if (!slot?.live || slot.seed !== owner.seed || slot.mode !== mode || slot.life < 1000) {
+      slot = owner.slot = this.kit.fx.spawn(mode, x, z, 1e6); owner.seed = slot.seed;
     }
     slot.x = x; slot.z = z; slot.mx = x; slot.mz = z;
-    slot.range = range; slot.angle = angle; slot.arc = arc; slot.inner = 0;
+    slot.range = stripLength > 0 ? stripLength : range; slot.angle = angle; slot.arc = arc; slot.inner = stripLength > 0 ? range : 0;
     slot.h0 = h0; slot.h1 = h1; slot.param = part % 2 ? .45 : .12;
     // Hold the hot portion of the Fire envelope; flow still uses the presentation clock.
     slot.age = .09; slot.intensity = intensity;
+    if (fuel) slot.param = intensity;
+    else if (id < 0 || range < 1.5) slot.param = -1;
   }
   private emission = 0;
   private shimmer = 0;
@@ -400,7 +403,7 @@ class PyroPresentation implements AbilityPresentation {
   private firePool(zone: AbilityZoneSnapshot, emit: boolean, shimmer: boolean, frame: AbilityFrame): void {
     const kit = this.kit, x = zone.x / UNIT, z = zone.y / UNIT, radius = zone.radius / UNIT;
     const elapsed = (zone.durationMs - zone.remainingMs) / 1000;
-    const growth = Math.min(1, .25 + elapsed / .25), fade = Math.min(1, zone.remainingMs / 600);
+    const fade = Math.min(1, zone.remainingMs / 600);
     if (zone.ability === 'meltdown') {
       this.meltdown(zone, x, z, fade, frame, emit);
       if (shimmer) {
@@ -413,8 +416,13 @@ class PyroPresentation implements AbilityPresentation {
     }
     kit.sustain(elapsed);
     // Two irregular depth layers share the exact native circular footprint.
-    this.surface(zone.id, 0, x, z, radius * growth, 0, Math.PI * 2, .055, .2, fade * .7);
-    if (!kit.low) this.surface(zone.id, 1, x, z, radius * growth, 1.7, Math.PI * 2, .12, .48, fade * .42);
+    this.surface(zone.id, 0, x, z, radius, 0, Math.PI * 2, .035, .035, fade, true);
+    // Unequal interior tongues supply vertical flame without another full-disc sheet.
+    for (let i = 0, count = kit.low ? 1 : 3; i < count; i++) {
+      const a = i * 2.39996 + zone.id * .73, r = kit.low ? 0 : radius * (.24 + i * .12);
+      this.surface(zone.id, i + 1, x + Math.cos(a) * r, z + Math.sin(a) * r,
+        Math.min(.7, radius * .2), a + .7, 1.25, .08, .7 + i * .15, fade * .65);
+    }
     // A single loose smoke column rises from the hottest interior fuel pocket.
     for (let i = 0; i < (kit.low ? 1 : 4); i++) {
       const rise = kit.reducedMotion ? .5 : (kit.time * .3 + i * .23) % 1;
