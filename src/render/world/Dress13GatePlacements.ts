@@ -47,5 +47,21 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
     add('web-medium', 1045, 139, 0, 1.25, 2.6);
     add('web-medium', 1168, 899, Math.PI, 1.25, 2.6);
   }
+  if (id === 'manual-control-chamber') {
+    // Four cabinet sections disappear under mantles; the authorisation dais stays readable.
+    for (const x of [254, 352, 926, 1024]) {
+      add('consumed-shell', x, 231, 0, 1.65);
+      add('creep-a', x, 283, .1, 1.35);
+    }
+    add('nest-large', 239, 126, Math.PI / 2, 1);
+    add('burst-duct', 966, 134, .6, .9);
+    add('creep-b', 254, 168, .5, 1.5);
+    add('creep-wall', 164, 160, Math.PI / 2, 1.5, .65, -Math.PI / 2);
+    add('creep-wall', 1116, 172, -Math.PI / 2, 1.5, .65, -Math.PI / 2);
+    add('web-medium', 254, 230, 0, 1.02, 2.2);
+    add('web-medium', 926, 230, 0, 1.02, 2.2);
+    add('web-long', 166, 34, 0, 1.5, 2.8);
+    add('pods-hatched', 247, 308, .4, .8);
+  }
   return pieces;
 }
