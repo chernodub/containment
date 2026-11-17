@@ -11,7 +11,8 @@ export type RoomValueProfile = Readonly<{
   /** Deck albedo multiplier inside baked fixture pools, outside them, and at hull/void edges. */
   floor: Readonly<{lit:number; unlit:number; edge:number}>;
   /** Fight-circle falloff from the authored arena centre (metres) toward the perimeter multiplier. */
-  perimeter: Readonly<{inner:number; outer:number; value:number}>;
+  perimeter: Readonly<{inner:number; outer:number; value:number; lane?:number}>;
+  /* lane: radius scale of the secondary named-space pools relative to the fight circle (default .55). */
   /** Final multiplier and saturation of lit architecture/props (floors take saturation only). */
   wall: Readonly<{value:number; saturation:number}>;
   floorSaturation: number;
@@ -55,11 +56,17 @@ export function roomValueProfile(templateId?: string): RoomValueProfile | undefi
   return templateId ? ROOM_VALUE_PROFILES[templateId] : undefined;
 }
 
-/** Shared per-room analytic value field: arena XZ + inner/outer radius; exit XZ + radius/gain. */
-export const ROOM_VALUE_FIELD = {value: new T.Vector4(0, 0, 1e4, 2e4)};
+/** Shared per-room analytic value field: up to four light pools (XZ, inner, outer radius;
+ * pool 0 is the fight circle, the rest the room's named-space fixtures) plus exit XZ/radius/gain. */
+export const ROOM_VALUE_FIELD = {value: Array.from({length: 4}, () => new T.Vector4(0, 0, 1e4, 2e4))};
 export const ROOM_VALUE_EXIT = {value: new T.Vector4(0, 0, 1, 0)};
-export function setRoomValueField(arenaX: number, arenaZ: number, exitX: number, exitZ: number, profile?: RoomValueProfile): void {
-  ROOM_VALUE_FIELD.value.set(arenaX, arenaZ, profile?.perimeter.inner ?? 1e4, profile?.perimeter.outer ?? 2e4);
+export function setRoomValueField(pools: readonly {x:number; z:number}[], exitX: number, exitZ: number, profile?: RoomValueProfile): void {
+  ROOM_VALUE_FIELD.value.forEach((pool, i) => {
+    const source = pools[i], lane = i > 0 ? profile?.perimeter.lane ?? .55 : 1;
+    if (!profile) pool.set(0, 0, 1e4, 2e4);
+    else if (!source) pool.set(0, 0, 0, 0);
+    else pool.set(source.x, source.z, profile.perimeter.inner * lane, profile.perimeter.outer * lane);
+  });
   ROOM_VALUE_EXIT.value.set(exitX, exitZ, 3.2, profile?.exit ?? 0);
 }
 

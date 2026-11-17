@@ -8,7 +8,7 @@ import { roomValueProfile } from './RoomValueStandard';
 import { applyHotFixtureSurface } from './HotFixtureSurface';
 import {registerFlatFloorLighting} from './FlatFloorLighting';
 
-const fixtureScales = new WeakMap<T.MeshStandardMaterial, {scale:number;written:number}>();
+const fixtureScales = new WeakMap<T.MeshStandardMaterial, {base:number;written:number}>();
 const originals = new WeakMap<T.MeshStandardMaterial, { color: T.Color; roughness: number; metalness: number; emissiveIntensity: number }>();
 // Subtle surface tint only: environment identity comes from motivated light, not tinted black paint.
 const deckTint: Readonly<Record<ShipEnvironment, number>> = {
@@ -77,10 +77,11 @@ export function applyRoomMood(world: T.Object3D, environment: ShipEnvironment = 
         else setRoomValue(material);
         // Neutral (white/pale) fixtures yield to actors; coloured warning/route emitters keep their meaning.
         const previous=fixtureScales.get(material);const e=material.emissive,peak=Math.max(e.r,e.g,e.b),chroma=peak>0?(peak-Math.min(e.r,e.g,e.b))/peak:0;
-        // Divide out only our own last write; other owners may have reset the intensity since.
-        const base=previous&&material.emissiveIntensity===previous.written?previous.written/previous.scale:material.emissiveIntensity;
+        // Recover the unscaled base from our own last write; other owners may have reset it since.
+        const base=previous&&material.emissiveIntensity===previous.written?previous.base:material.emissiveIntensity;
         const scale=valueProfile&&peak>0&&chroma<.45?valueProfile.fixtures:1;
-        material.emissiveIntensity=base*scale;fixtureScales.set(material,{scale,written:material.emissiveIntensity});
+        // Neutral fixtures also take a hard ceiling so a 6–10× panel never out-shouts the marine.
+        material.emissiveIntensity=scale<1?Math.min(base*scale,.7):base;fixtureScales.set(material,{base,written:material.emissiveIntensity});
       }
       optimizeLocalLights(material,environment==='reactor'?(templateId==='overload-floor'||templateId==='manual-control-chamber'?.12:1):.02,environment==='cargo'||environment==='communications'?.16:.025,Math.max(templateId==='reactor-vault'?.013:templateId==='manual-control-chamber'?.010:surfaceBounce,legacyBounce));
     }
