@@ -1,3 +1,4 @@
+import {DrawnMarineEnvelope} from './camera/DrawnMarineEnvelope';
 // E10: actor contact ownership; actor models and motion remain unchanged.
 import {useActorContactShadows} from './lighting/ActorContactPolicy';
 import {setCeilingQuality} from './world/E10CeilingServices';
@@ -105,7 +106,7 @@ export class DepthRenderer {
  private focus=new T.Vector3(18,0,14);private raycaster=new T.Raycaster();private ground=new T.Plane(new T.Vector3(0,1,0),0);
  private post:PostPipeline;private tier:GraphicsTier='high';private shadowTime=0;private shadowsDirty=true;private pixelRatio=1;
  private options:GraphicsOptions=GRAPHICS_PRESETS.high;
- private roomCombatFraming=new RoomCombatFraming();private cameraRig=new CameraRig();private viewHeight=13;private viewWidth=13;private desiredFocus=new T.Vector3();private screenPoint=new T.Vector3();private screenTarget=new T.Vector3();private bulletColor=new T.Color();private playerVelocity={x:0,y:0};private attachedLight={x:0,y:1,z:0,color:0xffffff,intensity:1,distance:3,duration:.1,priority:1};
+ private marineEnvelope=new DrawnMarineEnvelope();private roomCombatFraming=new RoomCombatFraming();private cameraRig=new CameraRig();private viewHeight=13;private viewWidth=13;private desiredFocus=new T.Vector3();private screenPoint=new T.Vector3();private screenTarget=new T.Vector3();private bulletColor=new T.Color();private playerVelocity={x:0,y:0};private attachedLight={x:0,y:1,z:0,color:0xffffff,intensity:1,distance:3,duration:.1,priority:1};
  private hudFraming=new HudCombatFraming();
  private cameraContactHeight=(id:number)=>this.actors.get(id)?.height??3.2;
  /** Current effective CSS-pixel HUD reservations; invalid or oversized values are bounded. */
@@ -498,7 +499,7 @@ export class DepthRenderer {
   addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id),this.kitStartupComplete&&this.gameplayPresentationStarted&&(node.templateId==='residential-gallery'||node.templateId==='relay-racks'));if(!ACT3_PRESENTATION_ROOMS.has(node.templateId)&&!bespoke?.getObjectByName('l8-ship-seam-growth'))addEnvironmentalStory(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));setCeilingQuality(this.world,this.tier==='high');setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);
   const interiors=buildRoomInteriors(node.templateId,t,this.world);if(interiors)this.world.add(interiors);
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
-  this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.roomCombatFraming?.reset();this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.world.userData.staticBatching=batchStaticRoom(this.world);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId,this.lighting.practicalShapes);
+  this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.roomCombatFraming?.reset();/* CAM12: retain HUD reservations across rooms; the adapter caches unchanged CSS bounds. */this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');this.world.userData.staticBatching=batchStaticRoom(this.world);this.lighting.loadRoom(this.world,w,h,environment,node.templateId);this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId,this.lighting.practicalShapes);
   const leaks=this.world.getObjectByName('g2-world-dressing')?.userData.leakPositions??[];this.world.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof T.MeshStandardMaterial)setFloorLeaks(material,leaks);});
   const mood=getEnvironmentMood(environment);this.scene.fog=new T.FogExp2(mood.fog.color,mood.fog.density*.25);this.scene.background=new T.Color(mood.fog.color).multiplyScalar(.24);this.scene.environmentIntensity=mood.reflectionIntensity;this.post?.setMood(mood);this.atmosphere?.loadRoom(environment,w,h,this.lighting.fixtures);this.backdrop?.loadRoom(this.world,w,h,environment);this.arena?.loadRoom(node.templateId,w,h);this.post?.distortion.clear();this.heatClock=0;
   if(this.kitStartupComplete&&this.gameplayPresentationStarted&&KIT_STANDARD_ROOMS.has(node.templateId)){
@@ -557,12 +558,7 @@ export class DepthRenderer {
   if(menu)this.title?.apply(this.camera,this.time,!!this.motionQuery?.matches,this.tier==='high'&&this.options.atmosphere);
   if(this.title)this.title.root.visible=menu;this.world.visible=!menu;if(this.backdrop)this.backdrop.root.visible=!menu;
   if(!menu)hud.center(this.camera,this.cameraRig.focus,this.screenPoint,this.screenTarget);
-  // CAM12: rotationally invariant drawn envelope includes barrel, pack and raised cast arms.
-  if(!menu&&!bossWeight)hud.protectEngagement(this.camera,this.focus,p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,1.45),this.player.height+.30,this.screenPoint,this.screenTarget);
-  if(bossWeight)this.protectBossFraming(p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,1.45),bossFrame.x/UNIT,bossFrame.y/UNIT);
-  if(!menu)this.protectPlayerFraming(p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,1.45));
-  if(!menu){this.roomCombatFraming.apply(this.camera,this.cameraRig.focus,p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,1.45),this.player.height+.30,bounds.width/UNIT,bounds.height/UNIT,hud.viewport,this.viewportHeight,dt,!!this.motionQuery?.matches,game.geometry.boundary,hud);hud.refreshFit(this.camera,this.screenPoint);this.focus.copy(this.cameraRig.focus);}
-  // CAM12 framing envelope end.
+
   this.effects.beginPriorityActors(this.camera);if(!menu)this.effects.addPriorityActor(p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,.78),this.player.height);
   // The shadow projection remains anchored to the room, avoiding subpixel shimmer.
   this.player.setColliderDebug?.(this.colliderDebug,p.radius/UNIT);if(!this.ragdolls.has(-2147483648))this.player.root.position.set(p.x/UNIT,0,p.y/UNIT);this.player.root.visible=!menu;this.player.root.rotation.z=0; // M10 death belongs to bones
@@ -622,6 +618,13 @@ export class DepthRenderer {
   this.interimAbilities.update(game.abilities?.snapshot,dt,!menu,game,this.player.root,this.camera,this.player.body);
   // V2 owns body offsets; solve its sibling weapon/socket from that final pose.
   this.player.syncWeaponPose?.();
+  // CAM12: sample the final drawn pose before final room/HUD framing.
+  if(!menu){this.marineEnvelope.capture(this.player.root,this.camera);hud.setMarineEnvelope(this.marineEnvelope);this.roomCombatFraming.apply(this.camera,this.cameraRig.focus,p.x/UNIT,p.y/UNIT,p.radius/UNIT,this.player.height,bounds.width/UNIT,bounds.height/UNIT,hud.viewport,this.viewportHeight,dt,!!this.motionQuery?.matches,game.geometry.boundary,hud,this.player.height,p.angle,this.marineEnvelope);hud.refreshFit(this.camera,this.screenPoint);this.focus.copy(this.cameraRig.focus);}
+  // CAM12: camera-projected presentation consumers use the final matrix.
+  this.effects.beginPriorityActors(this.camera);
+  if(!menu){this.effects.addPriorityActor(p.x/UNIT,p.y/UNIT,Math.max(p.radius/UNIT,.78),this.player.height);for(const e of enemies)this.effects.addPriorityActor(e.x/UNIT,e.y/UNIT,e.radius/UNIT,this.actors.get(e.id)?.height??2.65);if(this.queen&&!q.defeated)this.effects.addPriorityActor(q.x/UNIT,q.y/UNIT,92/UNIT,this.queen.height);for(const n of q.nests)this.effects.addPriorityActor(n.x/UNIT,n.y/UNIT,.7,1.35);}
+  this.healthBars.update(this.healthEntries,this.camera,this.viewportHeight,menu);
+  // CAM12 final-pose framing end.
   const socket=this.player.muzzleWorld!(this.shotSocket);
   for(const shot of this.pendingShots){const id=shot.weapon??'pistol';this.effects.shot(socket,shot.angle??p.angle,id);this.muzzleLife=id==='shotgun'?.075:.045;this.muzzle.color.setHex(WEAPON_APPEARANCE[id].color);this.muzzle.position.copy(socket);}this.pendingShots.length=0;
   for(const b of game.bullets)if(b.kind==='player'&&!b.visualMuzzle){const distance=Math.max(0,(socket.x-p.x/UNIT)*Math.cos(b.request.angle)+(socket.z-p.y/UNIT)*Math.sin(b.request.angle))*UNIT;b.visualMuzzle={x:socket.x,y:socket.y,z:socket.z,distance};}
@@ -674,8 +677,8 @@ export class DepthRenderer {
  }
 
  /** Reserve projected body headroom even while aim lead or recoil is settling. */
- private protectPlayerFraming(x:number,z:number,radius:number){
-  protectPlayerFrame(this.camera,this.cameraRig.focus,x,z,radius,this.player.height,this.screenPoint,this.screenTarget,this.hudFraming?.viewport??FULL_COMBAT_VIEWPORT);this.focus.copy(this.cameraRig.focus);
+ private protectPlayerFraming(x:number,z:number,radius:number,angle=0){
+  protectPlayerFrame(this.camera,this.cameraRig.focus,x,z,radius,this.player.height,this.screenPoint,this.screenTarget,this.hudFraming?.viewport??FULL_COMBAT_VIEWPORT,angle);this.focus.copy(this.cameraRig.focus);
  }
 
  private syncPools(pools:readonly {id:number;x:number;y:number;radius:number;life:number}[]){

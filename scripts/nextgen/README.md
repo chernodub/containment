@@ -1112,3 +1112,34 @@ pause and mute observations. It uses the production director/mixer; WAV/PNG pair
 and numerical results are retained. `--out` also works for the full inventory;
 `--reuse-recipes` requires a complete previous full inventory. Measurement is not
 an acoustic listening review. No automated test suite is added.
+
+## CAM12 camera inspection
+
+`node scripts/nextgen/cam12-sweep.mjs --out=artifacts/nextgen/cam12-final/final-sweep --dist=artifacts/nextgen/cam12-final/runtime --settle=1 --resume=true`
+inspects all twenty story rooms at both desktop resolutions. Every authored hull
+vertex and wall midpoint requests a nearest legal native-radius16 position on an
+8-unit grid; duplicate positions retain their requested labels. Spawn and exit
+remain native. Each position gets eight aims and five explicit weapon/cast cases,
+including raised Glacier/Tesla poses. Marks reset camera owners independently;
+`--settle` records native presentation ticks. Simulation stays frozen. This is a
+capture fixture, not a campaign or timing benchmark.
+
+Receipts retain per-pose deformed-vertex screen and actual DOM-HUD separation,
+usable-viewport clearance, AABB coverage, model configuration and asset hashes.
+Subtracting four CSS pixels supplies a conservative outline allowance; these are
+visible-pixel clearance lower bounds, not segmented raster measurements. Resume
+requires matching assets, marks, pose set and settling settings, plus complete
+physical-clearance room receipts. Per-pose AABB exceptions remain explicit and are not
+counted as AABB passes. Worst-pose PNGs retain their measured camera through the
+native postprocessing path. `--full-envelope=true` selects the separate catalog
+study (four rigs, five weapons, sixteen actions and three phases).
+
+`cam12-motion.mjs` records sixty native frames and camera transforms for entry,
+dash and hurt; native hurt has no positional player knockback. It also observes
+death, desktop resize and a twenty-enemy indicator fixture. The latter records
+stationary spawn snapshots before the first AI tick, then holds a real native
+warning while CSS danger-pulse samples advance; no attack timer is fabricated. `cam12-replay.mjs` reconstructs the
+historical Crew Checkpoint position/contacts with explicit missing-history limits.
+`cam12-heavy-audit.mjs` reads native attack phases from existing burst captures.
+`cam12-review.mjs --sweep=final-sweep` makes exact-area480 reductions and
+reference pairs without opening a browser. Run browser jobs serially.

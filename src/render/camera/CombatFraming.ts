@@ -1,3 +1,4 @@
+import {MARINE_FRAMING_FLOOR,MARINE_ENVELOPE_POINTS,marineEnvelopePoint} from './MarineFramingEnvelope';
 import * as T from 'three';
 import {FULL_COMBAT_VIEWPORT,type CombatViewport} from './HudCombatFraming';
 
@@ -30,13 +31,13 @@ export function combatFocusTarget(
 export function protectPlayerFrame(
   camera: T.OrthographicCamera | T.PerspectiveCamera, focus: T.Vector3,
   x: number, z: number, radius: number, height: number,
-  point: T.Vector3, target: T.Vector3, viewport:CombatViewport=FULL_COMBAT_VIEWPORT,
+  point: T.Vector3, target: T.Vector3, viewport:CombatViewport=FULL_COMBAT_VIEWPORT,marineAngle=0,
 ): boolean {
   let changed = false;
   for (let pass = 0; pass < 3; pass++) {
     let left = Infinity, right = -Infinity, top = -Infinity, bottom = Infinity;
-    for (let ix = -1; ix <= 1; ix += 2) for (let iz = -1; iz <= 1; iz += 2) for (let iy = 0; iy < 2; iy++) {
-      point.set(x + ix * radius, iy * height, z + iz * radius).project(camera);
+    for(let sample=0;sample<MARINE_ENVELOPE_POINTS;sample++){
+      marineEnvelopePoint(point,sample,x,z,marineAngle);point.project(camera);
       left = Math.min(left, point.x);
       right = Math.max(right, point.x);
       top = Math.max(top, point.y);

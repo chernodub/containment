@@ -1,0 +1,18 @@
+#!/usr/bin/env node
+/** Offline evidence reductions and contacts; no browser or simulation. */
+import {readFile,writeFile,mkdir,readdir} from 'node:fs/promises';
+import {resolve,relative,basename} from 'node:path';
+import {createHash} from 'node:crypto';
+import {decode,encode,canvas,drawImage,drawText} from './g2-png.mjs';
+import {review480} from './l8-review-images.mjs';
+const root=resolve(process.argv.find(a=>a.startsWith('--root='))?.slice(7)??'artifacts/nextgen/cam12-final'),out=resolve(root,'review');await mkdir(out,{recursive:true});
+const receipts=[],groups=new Map();
+const sweep=process.argv.find(a=>a.startsWith('--sweep='))?.slice(8);
+const acceptedRoots=['heavy1080','heavy720','refs1080','refs720','replay','motion','campaign','edge',...(sweep?[sweep]:[])];
+async function walk(dir){let entries;try{entries=await readdir(dir,{withFileTypes:true});}catch{return;}for(const e of entries){const p=resolve(dir,e.name);if(e.isDirectory()){await walk(p);}else if(e.name.endsWith('.png')&&!e.name.includes('strip')&&!e.name.includes('sprite')){const bytes=await readFile(p),ratio=bytes.readUInt32BE(16)/bytes.readUInt32BE(20);if(ratio<1.7||ratio>1.8)continue;const im=decode(bytes);const key=relative(root,p).replaceAll('/','--'),small=review480(im);await writeFile(resolve(out,key),encode(small));const rec={source:p,sha256:createHash('sha256').update(bytes).digest('hex'),width:im.width,height:im.height,small:key};receipts.push(rec);const group=relative(root,p).split('/')[0];if(!groups.has(group))groups.set(group,[]);groups.get(group).push(rec);}}}
+for(const directory of acceptedRoots)await walk(resolve(root,directory));
+for(const [group,items] of groups)for(let start=0;start<items.length;start+=6){const batch=items.slice(start,start+6),sheet=canvas(960,Math.ceil(batch.length/2)*300);for(let i=0;i<batch.length;i++){const x=i%2*480,y=Math.floor(i/2)*300;drawText(sheet,basename(batch[i].source).slice(0,39),x+5,y+7,undefined,1);drawImage(sheet,decode(await readFile(resolve(out,batch[i].small))),x,y+30,480,270);}await writeFile(resolve(out,`contact-${group}-${start/6+1}.png`),encode(sheet));}
+const base='/Users/chernodub/.t3/projects/containment-game/artifacts/nextgen/';
+const pairs=[['crew','final6/play/breacher/r5-crew-checkpoint-mid.png','crew-historical-1080.png'],['armory','final6/builds/v2-full-arc-armory-armory-04.png','v2-full-arc-armory-armory-04.png'],['annulus','final6-720/g6-kiting-containment-annulus-03.png','g6-kiting-containment-annulus-03.png']];
+const comparisons=[];for(const [id,before,after] of pairs){const rec=receipts.find(r=>basename(r.source)===after);if(!rec){comparisons.push({id,missingAfter:after});continue;}try{const oldBytes=await readFile(resolve(base,before)),sheet=canvas(960,300);drawText(sheet,'BEFORE',5,8);drawText(sheet,id==='crew'?'AFTER APPROXIMATE STAGED REPLAY':'AFTER NATIVE FIXTURE',485,8);drawImage(sheet,review480(decode(oldBytes)),0,30,480,270);drawImage(sheet,decode(await readFile(resolve(out,rec.small))),480,30,480,270);await writeFile(resolve(out,`pair-${id}.png`),encode(sheet));comparisons.push({id,before:resolve(base,before),beforeSHA256:createHash('sha256').update(oldBytes).digest('hex'),after:rec.source,afterSHA256:rec.sha256});}catch(e){comparisons.push({id,error:e.message});}}
+await writeFile(resolve(out,'review.json'),JSON.stringify({acceptedRoots,sweep:sweep??null,method:'Exact pixel area480 reductions; native sources untouched; contacts at most6 frames. Contacts are inspection aids, not proof of inspection.',receipts,comparisons},null,2));console.log(`${receipts.length} native source receipts; ${groups.size} contact groups`);

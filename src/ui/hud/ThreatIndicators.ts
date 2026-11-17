@@ -36,6 +36,7 @@ type Marker = {
     active: boolean;
 };
 type Candidate = {
+    ids: number[];
     id: number;
     kind: ThreatKind;
     score: number;
@@ -69,7 +70,8 @@ const shapePaths: Record<ThreatKind, string> = {
     boss: 'M7 10l5 5 4-9 4 9 5-5-3 15H10zM12 21h8',
 };
 const rank: Record<ThreatKind, number> = { standard: 0, ranged: 1, elite: 2, champion: 3, boss: 4 };
-const angularDistance = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+// Fixed sectors prevent a changing representative from chaining unrelated bearings.
+const bearingSector = (angle: number) => (Math.round(angle / (Math.PI / 8)) + 16) % 16;
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
 /** Bearing-preserving intersection with one consistent inset desktop edge. */
 export function threatEdgePoint(ox: number, oy: number, angle: number, width: number, height: number, out: Point): Point {
@@ -133,7 +135,7 @@ export class ThreatIndicators {
             node.append(chevron, type, count);
             host.append(node);
             this.markers.push({ node, glyph, count, x: 0, y: 0, radius: 18, active: false });
-            this.candidates.push({ id: 0, kind: 'standard', score: -Infinity, distance: 0, angle: 0, edgeAngle: 0, count: 0, attacking: false, inFlight: false, approaching: false, point: { x: 0, y: 0, visible: false } });
+            this.candidates.push({ ids: [], id: 0, kind: 'standard', score: -Infinity, distance: 0, angle: 0, edgeAngle: 0, count: 0, attacking: false, inFlight: false, approaching: false, point: { x: 0, y: 0, visible: false } });
         }
         for (let i = 0; i < 4; i++) {
             const node = document.createElement('div');
@@ -225,12 +227,13 @@ export class ThreatIndicators {
         const score = (attacking ? 1000000 : 0) - distance + rank[kind] * 5;
         let candidate: Candidate | undefined;
         for (const existing of this.candidates)
-            if (existing.count > 0 && angularDistance(existing.angle, angle) < Math.PI / 8) {
+            if (existing.count > 0 && bearingSector(existing.angle) === bearingSector(angle)) {
                 candidate = existing;
                 break;
             }
         if (candidate) {
             candidate.count++;
+            candidate.ids.push(id);
             candidate.attacking ||= attacking;
             candidate.inFlight ||= inFlight;
             candidate.approaching ||= approaching;
@@ -247,6 +250,8 @@ export class ThreatIndicators {
             if (score <= candidate.score)
                 return;
             candidate.count = 1;
+            candidate.ids.length = 0;
+            candidate.ids.push(id);
             candidate.kind = kind;
             candidate.attacking = attacking;
             candidate.inFlight = inFlight;
@@ -340,6 +345,7 @@ export class ThreatIndicators {
             marker.node.dataset.approaching = String(candidate.approaching);
             marker.node.dataset.inFlight = String(candidate.inFlight);
             marker.node.dataset.enemyId = String(candidate.id);
+            marker.node.dataset.enemyIds = candidate.ids.join(',');
             marker.node.dataset.bearing = String(candidate.angle);
             marker.node.dataset.distance = String(candidate.distance);
             marker.node.dataset.near = String(near);

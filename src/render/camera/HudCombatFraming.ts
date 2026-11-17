@@ -1,3 +1,5 @@
+import {type DrawnMarineEnvelope} from './DrawnMarineEnvelope';
+import {MARINE_FRAME_MARGIN_CSS,MARINE_FRAMING_FLOOR,MARINE_ENVELOPE_POINTS,marineEnvelopePoint} from './MarineFramingEnvelope';
 import * as T from 'three';
 
 export type HudInsets = Readonly<{ top:number; right:number; bottom:number; left:number }>;
@@ -8,7 +10,7 @@ export type CombatViewport = Readonly<{
 export const ZERO_HUD_INSETS:HudInsets=Object.freeze({top:0,right:0,bottom:0,left:0});
 export const FULL_COMBAT_VIEWPORT:CombatViewport=Object.freeze({left:-1,right:1,top:1,bottom:-1,centerX:0,centerY:0,halfX:1,halfY:1});
 
-type Contact=Readonly<{id?:number;x:number;y:number;radius:number;health?:number;windupMs?:number;pendingAttack?:unknown;meleePhase?:string}>;
+type Contact=Readonly<{id?:number;x:number;y:number;radius:number;health?:number;windupMs?:number;chargeMs?:number;pendingAttack?:unknown;meleePhase?:string}>;
 type Camera=T.OrthographicCamera|T.PerspectiveCamera;
 const CAPACITY=6;
 
@@ -19,10 +21,14 @@ export class HudCombatFraming {
   readonly viewport={...FULL_COMBAT_VIEWPORT};
   private width=1;
   private height=1;
+  private releaseReservationsOnNextLayout=false;
   // x,z,radius,height,score. Fixed slots avoid sorting/allocating live snapshots.
   private readonly contacts=new Float64Array(CAPACITY*5);
   private count=0;
   private primary=false;
+  private marineAngle=0;
+  private envelope?:DrawnMarineEnvelope;
+  setMarineEnvelope(envelope?:DrawnMarineEnvelope):void {this.envelope=envelope;}
   private centroidX=0;
   private centroidZ=0;
   private weight=0;
@@ -34,13 +40,22 @@ export class HudCombatFraming {
 
   /** Invalid/negative values become zero. Preserve at least35% of each dimension. */
   setInsets(insets:HudInsets):void {
-    this.requested.top=this.valid(insets.top);this.requested.right=this.valid(insets.right);
-    this.requested.bottom=this.valid(insets.bottom);this.requested.left=this.valid(insets.left);
+    if(this.releaseReservationsOnNextLayout)this.resetReservations();
+    this.requested.top=Math.max(this.requested.top,this.valid(insets.top));this.requested.right=Math.max(this.requested.right,this.valid(insets.right));
+    this.requested.bottom=Math.max(this.requested.bottom,this.valid(insets.bottom));this.requested.left=Math.max(this.requested.left,this.valid(insets.left));
     this.resize(this.width,this.height);
   }
 
+  /** Relocating chrome must not reclaim then reoccupy the marine's space after
+   * camera projection. Peak edge reservations stay stable for this desktop size/layout. */
+  resetReservations():void {this.requested.top=this.requested.right=this.requested.bottom=this.requested.left=0;this.releaseReservationsOnNextLayout=false;}
+
   /** Re-clamp requested CSS pixels after every desktop resize; never use framebuffer pixels. */
   resize(width:number,height:number):void {
+    // Keep the existing chrome reservation on the resize frame. The next
+    // measured layout replaces its peaks, so the camera never sees a HUD-free
+    // viewport between the browser resize and the DOM layout update.
+    if(width!==this.width||height!==this.height)this.releaseReservationsOnNextLayout=true;
     this.width=Number.isFinite(width)?Math.max(1,width):1;this.height=Number.isFinite(height)?Math.max(1,height):1;
     const i=this.requested,e=this.effective;
     const horizontal=Math.min(1,this.width*.65/Math.max(1,i.left+i.right));
@@ -54,14 +69,14 @@ export class HudCombatFraming {
 
   /** Nearby danger counts in every direction; farther contacts must be aimed at or attacking. */
   selectContacts(x:number,z:number,angle:number,enemies:readonly Contact[],units=32,heightForContact?:(id:number)=>number):void {
-    this.primary=false;this.count=0;this.weight=0;this.centroidX=this.centroidZ=0;this.diagnostics.contacts=0;this.diagnostics.selectedIds.fill(-1);this.diagnostics.focusContactId=-1;this.diagnostics.focusedPair=false;this.diagnostics.fit=true;this.diagnostics.pullback=1;
+    this.marineAngle=angle;this.primary=false;this.count=0;this.weight=0;this.centroidX=this.centroidZ=0;this.diagnostics.contacts=0;this.diagnostics.selectedIds.fill(-1);this.diagnostics.focusContactId=-1;this.diagnostics.focusedPair=false;this.diagnostics.fit=true;this.diagnostics.pullback=1;
     const ax=Math.cos(angle),az=Math.sin(angle);
     for(const e of enemies){
       if(e.health!==undefined&&e.health<=0)continue;
       const ex=e.x/units,ez=e.y/units,dx=ex-x,dz=ez-z,distance=Math.hypot(dx,dz);
       if(distance>12.5)continue;
       const alignment=distance>.001?(dx*ax+dz*az)/distance:1;
-      const attacking=!!e.pendingAttack||(e.windupMs??0)>0||e.meleePhase==='windup'||e.meleePhase==='strike';
+      const attacking=!!e.pendingAttack||(e.windupMs??0)>0||(e.chargeMs??0)>0||e.meleePhase==='windup'||e.meleePhase==='strike';
       if(distance>5.5&&alignment<.20&&!attacking)continue;
       const score=(attacking?8:1)*(distance<4?1.5:1)*(.7+Math.max(0,alignment)*1.3)/(1+distance*.18);
       let index=this.count;
@@ -119,7 +134,7 @@ export class HudCombatFraming {
    * to a CSS-pixel body edge; the ordinary solve retains its larger margins. */
   protectEngagement(camera:Camera,focus:T.Vector3,x:number,z:number,radius:number,height:number,point:T.Vector3,target:T.Vector3,minimumZoom=.5,allowMarineMargin=false,bodyEdgePaddingCss?:number):void {
     if(!this.count)return;
-    const v=this.viewport,padX=bodyEdgePaddingCss===undefined?.06*v.halfX:bodyEdgePaddingCss*2/this.width,padY=bodyEdgePaddingCss===undefined?.10*v.halfY:bodyEdgePaddingCss*2/this.height;
+    const v=this.viewport,padX=Math.max(MARINE_FRAME_MARGIN_CSS*2/this.width,bodyEdgePaddingCss===undefined?.06*v.halfX:bodyEdgePaddingCss*2/this.width),padY=Math.max(MARINE_FRAME_MARGIN_CSS*2/this.height,bodyEdgePaddingCss===undefined?.10*v.halfY:bodyEdgePaddingCss*2/this.height);
     const leftLimit=v.left+padX,rightLimit=v.right-padX,topLimit=v.top-padY,bottomLimit=v.bottom+padY;
     let selected=this.primary?0:-1;
     for(let pass=0;pass<32;pass++){
@@ -128,8 +143,8 @@ export class HudCombatFraming {
       for(let actor=-1;actor<this.count;actor++){
         if(actor>=0&&selected>=0&&actor!==selected)continue;
         const offset=actor*5,px=actor<0?x:this.contacts[offset],pz=actor<0?z:this.contacts[offset+1],r=actor<0?radius:this.contacts[offset+2],h=actor<0?height:this.contacts[offset+3];
-        for(let ix=-1;ix<=1;ix+=2)for(let iz=-1;iz<=1;iz+=2)for(let iy=0;iy<2;iy++){
-          point.set(px+ix*r,iy*h,pz+iz*r).project(camera);left=Math.min(left,point.x);right=Math.max(right,point.x);top=Math.max(top,point.y);bottom=Math.min(bottom,point.y);
+        for(let sample=0;sample<(actor<0?(this.envelope?.count||MARINE_ENVELOPE_POINTS):8);sample++){
+          if(actor<0){if(this.envelope?.count)this.envelope.point(point,sample);else marineEnvelopePoint(point,sample,x,z,this.marineAngle);}else point.set(px+(sample&1?1:-1)*r,sample&4?h:0,pz+(sample&2?1:-1)*r);point.project(camera);left=Math.min(left,point.x);right=Math.max(right,point.x);top=Math.max(top,point.y);bottom=Math.min(bottom,point.y);
         }
         if(actor<0){marineLeft=left;marineRight=right;marineTop=top;marineBottom=bottom;}
       }
