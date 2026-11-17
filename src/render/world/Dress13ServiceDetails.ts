@@ -86,16 +86,14 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     scuff(386, 396, 1.5, 1.2, 0x453b43);
     scuff(360, 365, 1.2, .25, 0x4b3744);
   } else if (id === 'safety-interlock-station') {
-    // Buckled access leaves close the camera-facing equipment opening. Their
-    // plane stays behind the first legal marine centre along this solid.
-    box(632, 1.025, 397, 1.12, 1.95, .09, 0x59666a, -.025);
-    box(668, 1.025, 397, 1.12, 1.95, .09, 0x637075, .025);
-    for (let i = 0; i < 15; i++) box(650 + i % 2, .16 + i * .12, 399, .09, .09, .035, 0x92978c);
-    // A silvery weld seam and short stress gouges are on the solid rear
-    // interlock frame, rather than a new barrier in either native doorway.
-    for (let i = 0; i < 12; i++) box(624 + i * 4.5, .55 + i % 2 * .06, 402, .15, .045, .025, 0x89918b, .1);
-    for (let i = 0; i < 5; i++) line([623 + i * 4, 1.15, 399], [628 + i * 4, 1.65 + i % 2 * .1, 399], .025, rubber);
-    tool(620, 410, .2); shards(673, 410);
+    // A narrow service door is welded across the cage's existing north wall,
+    // left of the cylinder machine, with its face toward the spawn camera.
+    box(565, 1.025, 350, 1.4, 1.95, .09, 0x839095);
+    for (let i = 0; i < 15; i++) box(565 + i % 2, .16 + i * .12, 352, .09, .09, .035, 0xa8ad9f);
+    for (let i = 0; i < 10; i++) box(545 + i * 4.2, .55 + i % 2 * .06, 353, .15, .045, .025, 0x89918b);
+    for (let i = 0; i < 5; i++) line([546 + i * 4, 1.15, 353], [551 + i * 4, 1.65 + i % 2 * .1, 353], .025, rubber);
+    tool(490, 369, .2); tool(484, 340, 1.4); shards(479, 353);
+    scuff(481, 353, 1.5, .5);
   } else if (id === 'coolant-plant') {
     for (let i = 0; i < 11; i++) {
       const g = new T.SphereGeometry(.23 + i % 3 * .06, 7, 4); g.scale(1, .05, 1.5); g.translate((654 + i * 7) / 32, .022, (389 + i * 2.5 + Math.sin(i * 1.7) * 10) / 32); put(g, frost);
