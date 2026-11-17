@@ -7,3 +7,7 @@
 ## 2 Passenger Vault
 - Opened calm, five tours and heavy at 480 colour/grey: marine leads, occupied berth silhouettes and east exit stay legible. Cool blue distinguishes it from cyan Awakening.
 - South service pool preserves the darker return lane; no exposure lift needed. Practical wedges and crowd halos remain shared item 18 work. Build/capture pass.
+
+## 3 Residential Gallery
+- Opened calm, cabin tour03 and heavy colour/grey reductions: marine leads; warm cabin furniture and packing trail remain distinct from the cold gallery.
+- Cabin lamp pools leave quiet corners without hiding the berth or doorway; heavy warning remains crisp. Build and seven guarded captures pass; shared wedge/halo correction follows in item18.

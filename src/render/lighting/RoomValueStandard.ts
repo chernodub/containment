@@ -41,6 +41,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.50,saturation:.56},floorSaturation:.48,tint:0xccd7ef,
     fixtures:.20,practicals:.48,ambient:.46,marineGlow:1,exit:.9,
   }),
+  // Warm cabin lamps at interrupted packing, opposite cabin and common nook.
+  'residential-gallery': profile({
+    fixturesAt:[[300, 280], [900, 720], [160, 480]],
+    floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
+    wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xead0a6,
+    fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.9,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},
