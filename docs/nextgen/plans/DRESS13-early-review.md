@@ -27,3 +27,6 @@ Build pending shared-dist release. Native/480 capture review and visual correcti
 Loader review correction: moved the dropped Awakening/Passenger/Armory case origins outside the authored hero AABBs; the loader retires `p11-service` supports inside hero bounds. This avoids silently omitting the incident cases. Type-check passed; visual acceptance still pending.
 
 Detail correction before capture: replaced panel-shaped footprints/soot/casings with shaped flat wet soles and heels, an irregular dark scorch fan and seven small metallic cases. Added a barricaded hatch with four claw cuts and drag wear, paper spill, trample streaks and armory scuffs. Geometry stays presentation-only under the prepared room owner, with explicit material disposal. Production build passed.
+
+### Round 1 actual image review — Residential Gallery
+Opened native tour02 and exact480 tour01/03 against final6 calm native/480: luggage and the skew barricade now register at the nook; the marine remains unobscured and the fight floor retains quiet values. The cases still read too closed, so the correction adds a dark opening and a folded pale garment on the large case rather than more scattered props.

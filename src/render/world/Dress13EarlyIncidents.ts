@@ -98,6 +98,8 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     }
   }
   if(id==='residential-gallery') {
+    const opening=new T.PlaneGeometry(.72,.48);opening.rotateX(-Math.PI/2);mesh(opening,dark,548,.301,267,-.24);
+    const garment=new T.PlaneGeometry(.34,.42);garment.rotateX(-Math.PI/2);mesh(garment,scratch,550,.305,270,-.12);
     // Four parallel claw cuts on the barricaded hatch, with a dragged scuff below.
     for(let i=0;i<4;i++) {
       const g=new T.PlaneGeometry(.025,.60-i*.04);const o=mesh(g,scratch,750+i*5,.9,244);o.rotation.z=-.3;
