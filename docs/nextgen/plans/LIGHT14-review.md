@@ -15,3 +15,7 @@
 ## 4 Communal Atrium
 - Opened calm/tour03/heavy colour+grey; initial pool missed garden centre. Moved skylight footprint to actual garden bed (589,355), rebuilt and reopened corrected reductions.
 - Marine leads and garden frame, seats and dining cover read; canopy remains intentionally dark and is a weaker landmark than the lit bed. Seven guarded frames pass; no exposure compensation.
+
+## 5 Armory
+- Opened calm/tour03/heavy at 480 colour/grey: carousel silhouette and geared base read below the marine; magazine floor remains dark blue, warnings crisp.
+- Explicit spindle pool anchors the landmark without lifting the entire circular deck. Build and guarded seven-frame capture pass; pale crowd rim remains item18.
