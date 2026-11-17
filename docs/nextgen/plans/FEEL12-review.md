@@ -279,3 +279,40 @@ solid and internal cyan lines are gone, with body and aim pointing right.
 The parent captures final2 Carrier pale/dark and hit-direction supplements
 from immutable source `e0f9d9af752e8194803675a4e9407d986ee74b3e`; these supersede
 B3's Carrier first-windup blend and old beacon overlay, without relabelling B3.
+
+
+## Lead marine case — matched occlusion diagnosis and Low fallback
+
+Opened the user's original wave12-t12 `combat-heavy-crew-checkpoint-02.png`,
+the build-only matched High counterfactual, fixed High normal/cryo/pyro/arc,
+and Low default plus Low ink-off before/after. All ten native frame-02 images
+and all ten exact 480×270 reductions are retained and were opened individually:
+`artifacts/nextgen/feel12-final/lead-marine/index.html`; `sources.json` records
+source paths, hashes, immutable served runtimes, overrides and actual opened
+files. The original is historical evidence, with the previously corrected
+left-facing body despite a rightward marker; final facing changes which armor
+surfaces the camera sees. Its broader dark/teal impression cannot be assigned
+to the occlusion shader alone.
+
+The matched High counterfactual was built from source
+`aa769889c8944d73176b233489f3841d5dea42c4` using a Vite transform, without
+tracked source edits: disable only the PlayerBeacon fragment architecture-class
+and own-actor-ID rejects, and force its skin material visible. At the same
+heavy encounter frame/pose/assets, it restores internal cyan self-lines at the
+shoulder, spine and leg. Fixed High `runtime-solid4` source `c7967ee7` removes
+those lines, keeps an opaque armor silhouette and retains the orange native
+threat boundary. Cryo, pyro and arc variants retain their small rig accent
+colors; their armor reads solid rather than a cyan wire overlay. This isolates
+the self-lines, not every original pose/color difference.
+
+The stronger separate failure appears in Low with `inkOutlines: off`: the old
+GreaterDepth fallback draws a bright cyan internal skeleton-like ghost across
+the marine even without a wall in front. Fixed Low forward omits the borrowed
+skin overlay when matching classified scene depth/geometry is unavailable;
+locator and incoming-side marker remain separate and available. No new target,
+world pass or per-frame allocation was introduced. Low default has classified
+ink geometry and already looks solid in this comparison; it remains solid.
+This supersedes the earlier final2 note about retaining the unclassified Low
+fallback. The cost is explicit: Low forward has no through-architecture skin
+silhouette, while its locator remains. It avoids presenting self-occlusion as
+world obstruction.
