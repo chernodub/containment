@@ -188,7 +188,7 @@ export function buildOriginalShipKit(
     for (const instance of ordered) {
       // Retire a stock furnishing only when its origin lies inside a new hero.
       // Hulls and portal structure retain their independent ownership.
-      if(!instance.pack.startsWith('p11-') && instance.pack!=='structure' &&
+      if(!instance.pack.startsWith('p11-') && instance.pack!=='structure' && !instance.purpose.startsWith('DRESS13 /') &&
          heroBounds.some(b=>b.containsPoint(new T.Vector3().setFromMatrixPosition(instance.matrix)))) continue;
 
       // Roof fittings follow their stock support when a hero replaces it.
