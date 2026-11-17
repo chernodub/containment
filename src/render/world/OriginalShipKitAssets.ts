@@ -1,3 +1,4 @@
+import {extractStaticLODs,tagStaticLOD,mergeStaticLOD} from '../StaticGeometryLOD';
 import * as T from 'three';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import {clearPolygonTopology} from '../../game/world/polygonGeometry';
@@ -68,7 +69,7 @@ export function acquireOriginalShipKit(pack: OriginalKitPack, signal?: AbortSign
     const cacheKey = url + '/' + formats;
     let cache=p11Packs.get(cacheKey);
     if(!cache){cache=new RoomModelCache([{url,maxBytes:pack==='p11-brood'?4_000_000:2_000_000,label:'Original '+pack+' set pieces'}], compressed ? spec => decodeBrood(spec, renderer!) : undefined);p11Packs.set(cacheKey,cache);}
-    return cache.acquire(url,signal);
+    return cache.acquire(url,signal).then(root=>{if(pack==='p11-brood')extractStaticLODs(root);return root;});
   }
   return (pack === 'structure' ? structurePack : functionPacks).acquire(url, signal);
 }
@@ -88,7 +89,7 @@ export type OriginalKitInstance = {
 };
 
 type Bucket = {material: T.MeshStandardMaterial; geometries: T.BufferGeometry[]; castShadow: boolean; vertices:number; lowVertices:number; cutaway:boolean};
-type QualityRange = {geometry:T.BufferGeometry; high:number; low:number};
+type QualityRange = {geometry:T.BufferGeometry; high:number; low:number;highIndex?:T.BufferAttribute;lowIndex?:T.BufferAttribute};
 const qualityRanges = new WeakMap<T.Object3D, QualityRange[]>();
 
 /** Reuse warmed geometry/materials when switching tiers; no rebakes or batches. */
@@ -96,7 +97,7 @@ export function setOriginalShipKitQuality(world:T.Object3D, high:boolean):void {
   world.traverse(owner=>{
     const ranges=qualityRanges.get(owner);
     if(!ranges)return;
-    for(const range of ranges)range.geometry.setDrawRange(0,high?range.high:range.low);
+    for(const range of ranges){if(range.highIndex&&range.lowIndex){const index=range.geometry.index!;index.array.set((high?range.highIndex:range.lowIndex).array);index.needsUpdate=true;}range.geometry.setDrawRange(0,high?range.high:range.low);}
     owner.userData.submittedTriangles=ranges.reduce((sum,r)=>sum+(high?r.high:r.low)/3,0);
   });
 }
@@ -247,6 +248,8 @@ export function buildOriginalShipKit(
               geometry.setAttribute(name,new T.BufferAttribute(values,attribute.itemSize));
             }
           }
+          // PERF13: only baked non-floor geometry receives alternate indices; topology trimming stays exact.
+          if(!floorCreep)tagStaticLOD(original,geometry);
           geometry.computeBoundingBox(); bounds.union(geometry.boundingBox!);
           const count = geometry.getAttribute('position').count / 3;
           totalTriangles += count; instanceTriangles += count;
@@ -315,7 +318,9 @@ export function buildOriginalShipKit(
       const geometry = mergeGeometries(bucket.geometries, false);
       if (!geometry) throw Error('Original ship kit finish merge failed: ' + finish);
       ownedGeometry.add(geometry);
-      ranges.push({geometry,high:bucket.vertices,low:bucket.lowVertices});
+      const lod=mergeStaticLOD(bucket.geometries,bucket.lowVertices);
+      if(lod)geometry.setIndex(lod.highIndex.clone());
+      ranges.push({geometry,high:bucket.vertices,low:lod?.lowIndex.count??bucket.lowVertices,...lod});
       for (const part of bucket.geometries) {part.dispose(); ownedGeometry.delete(part);}
       geometry.computeBoundingBox(); geometry.computeBoundingSphere();
       const colors=geometry.getAttribute('color') as T.BufferAttribute;mergedColors.set(finish,colors);

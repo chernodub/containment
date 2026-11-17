@@ -75,6 +75,8 @@ export class ContextualOnboarding {
   private bruteWarning=false;
   private disposed = false;
   private layoutDirty = true;
+  // PERF13: coalesce ordinary HUD sync invalidations; relocation/resizing stays immediate.
+  private layoutAge = Infinity;
   private translation = '';
   private viewportWidth = 0;
   private viewportHeight = 0;
@@ -213,6 +215,7 @@ export class ContextualOnboarding {
       const definition = ability && ABILITY_CATALOG[ability.id];
       if (definition) { this.heading.textContent = this.active!=='power'?`Pack lined up — use ${definition.name}.`:`Use ${definition.name} to control this approach.`; this.copy.textContent = ''; }
     }
+    this.layoutAge = Infinity;
     this.node.dataset.action = this.active;
     this.node.hidden = !inspect;
     this.layoutDirty = true;
@@ -223,9 +226,10 @@ export class ContextualOnboarding {
     if (this.disposed) return;
     if (this.node.hidden) {setPresentationObstacle('onboarding', null); return;}
     this.activeTime += dt;
-    const layoutChanged = this.layoutDirty || this.translation !== this.host.style.translate || this.viewportWidth !== innerWidth || this.viewportHeight !== innerHeight;
+    this.layoutAge += Math.max(0,dt);
+    const layoutChanged = (this.layoutDirty && this.layoutAge >= .1) || this.translation !== this.host.style.translate || this.viewportWidth !== innerWidth || this.viewportHeight !== innerHeight;
     if (layoutChanged) {
-      this.layoutDirty = false; this.translation = this.host.style.translate;
+      this.layoutAge = 0;this.layoutDirty = false; this.translation = this.host.style.translate;
       this.viewportWidth = innerWidth; this.viewportHeight = innerHeight;
       const bar = this.host.getBoundingClientRect();
       const anchor = this.active === 'medkit' ? document.getElementById('medkit-count')?.parentElement : this.active === 'grenade' ? document.getElementById('grenade-count')?.parentElement : this.active && ['dash', 'tactical', 'power', 'overdrive','pack-tactical'].includes(this.active) ? this.host.querySelector<HTMLElement>(`[data-ability="${this.active==='pack-tactical'?'tactical':this.active}"]`) : this.host.querySelector<HTMLElement>('.weapon-bank');

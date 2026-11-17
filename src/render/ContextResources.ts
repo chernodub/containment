@@ -1,3 +1,4 @@
+import {actorLODGeometry} from './ActorLOD';
 import * as T from 'three';
 
 /** Retire old-generation GL listeners while the context is lost, retaining CPU assets. */
@@ -13,6 +14,7 @@ export class ContextResources {
     root.traverse(object=>{
       if(!(object instanceof T.Mesh))return;
       this.geometry(object.geometry);
+      const lod=actorLODGeometry(object.geometry);if(lod)this.geometry(lod);
       for(const material of Array.isArray(object.material)?object.material:[object.material])this.material(material);
       if(object instanceof T.InstancedMesh){
         this.instances.add(object);

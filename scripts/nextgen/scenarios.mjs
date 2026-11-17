@@ -915,3 +915,7 @@ import {registerFeel12WeaponScenarios} from './feel12-weapon-scenarios.mjs';
 registerFeel12WeaponScenarios(SCENARIOS);
 import {registerT12Scenarios} from './t12-scenarios.mjs';
 registerT12Scenarios(SCENARIOS);
+
+// PERF13: identical close-up staging; only presentation LOD differs.
+for(const family of ['crawler','stalker','spitter','brute','carrier']){const base=SCENARIOS.find(s=>s.id===`i11b-calm-${family}-base`);for(const mode of ['full','low'])SCENARIOS.push({...base,id:`perf13-near-${family}-${mode}`,setup:new Function('room',`return(async()=>{await (${base.setup.toString()})(room);window.__containmentDebug.studyActorLOD?.('${mode}');window.__containmentDebug.refresh();})();`)});}
+for(const tier of ['high','low']){const base=SCENARIOS.find(s=>s.id==='k10-calm-breacher');SCENARIOS.push({...base,id:`perf13-growth-${tier}`,setup:new Function('room',`return(async()=>{await (${base.setup.toString()})(room);const d=window.__containmentDebug;d.renderer.setQuality('${tier}');await d.prepare();d.refresh();})();`)});}
