@@ -175,6 +175,10 @@ def bench():
     C.clutch((-.65,.1,.71),.7,9,1)
     for i in range(2): L.sweep('Bench tensioned resin',[(.2,.35,.73),(.1-i*.35,-.05,.72),(-.1-i*.35,-.5,.4)],.018,'p11-growth',5)
 
+# Gameplay review: preserve the dark casting, lift painted bodies and ground metal
+# enough to separate the ram/table/column beneath the room's ink lighting.
+L.PALETTE.update({'e9-body':'#637f82','p11-steel':'#a5b8b4','p11-growth':'#625264','p11-flesh':'#9b8191'})
+L.METALLIC.update({'e9-body':.18,'p11-steel':.38})
 L.reset_scene(); workshop(); nest(); modules(); bench()
 names=[a.name for a in L.ASSETS]
 L.export('infested',OUT,'infested.glb','Engulfed milling machinery, ruptured brood plenum and three infestation modules.','blender -b --factory-startup -P tools/assets/p11-set-pieces/infested.py')
