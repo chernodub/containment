@@ -47,43 +47,35 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       cutaway: asset === 'brood-creep-wall' || !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
-    // The heart owns the east crossing shoulder, beyond the fight circle.
-    // Nests back onto duct-bank faces; the heart leaves the lower crossing open.
-    brood('brood-hive-heart', 815, 470, .8);
-    brood('brood-nest-large', 300, 222);
-    brood('brood-nest-large', 900, 818, 1, 0, Math.PI);
-    brood('brood-nest-medium', 950, 225, 1, 0, .15);
-    brood('brood-nest-medium', 240, 815, 1, 0, Math.PI);
-    brood('brood-burst-duct', 920, 275, .85);
-    brood('brood-consumed-shell', 300, 195, 1.3);
-    brood('brood-consumed-shell', 900, 845, 1.3, 0, Math.PI);
-    brood('brood-pods-large', 225, 270, .85);
-    brood('brood-pods-small', 970, 770);
-    brood('brood-pods-hatched', 475, 865);
-    for (const [x,z,a] of [[300,390,.3],[360,405,.7],[240,450,1.4],[900,780,2.6],[840,770,2.8],[970,710,1.3],[550,890,.4],[620,880,1.2],[680,930,2.1],[920,420,.8]]) {
-      brood('brood-creep-a', x, z, 1.2, .002, a);
-      brood('brood-creep-c', x + 38, z + 18, 1.1, .003, a + .7);
+    // Recreate the modeller's wall-backed group on the actual registered bank
+    // face (z340), with a clear 140-unit east/west lane at z450..590.
+    brood('brood-hive-heart', 470, 610, .65);
+    brood('brood-nest-large', 300, 375, .8);
+    brood('brood-consumed-shell', 220, 392, 1.05, 0, .3);
+    brood('brood-nest-large', 900, 375, .8);
+    brood('brood-consumed-shell', 975, 392, .85);
+    brood('brood-nest-medium', 250, 831, .8, 0, Math.PI);
+    brood('brood-burst-duct', 370, 399, .55);
+    brood('brood-pods-large', 210, 620, .65);
+    brood('brood-pods-hatched', 360, 407, .6);
+    brood('brood-pods-small', 965, 410, .65);
+    // Small ragged fringes connect each mass to its wall; no free deck fields.
+    for (const [x,z,a] of [[255,365,.3],[335,386,.7],[210,640,1.4],[885,365,2.8],[950,385,1.3],[450,650,.4]]) {
+      brood('brood-creep-c',x,z,.46,.002,a);
     }
-    // The registered north banks advance to z340. Spread shallow crust on
-    // the exposed approaches and southern floor, instead of below those banks.
-    const floorPatches = [[280,440],[280,570],[280,700],[400,660],[520,660],[640,660],[760,660],
-      [880,660],[920,440],[920,570],[920,700],[430,805],[600,805],[770,805],[920,805],[540,170],[650,160]];
-    for (const [i,[x,z]] of floorPatches.entries()) {
-      brood(i % 3 === 1 ? 'brood-creep-b' : 'brood-creep-a',x,z,1,.002,(i%3-1)*.08);
-      result[result.length-1].matrix.scale(new T.Vector3(i % 3 === 1 ? 1.8 : 1.3,1,i % 3 === 1 ? 1.8 : 1.3));
-      result[result.length-1].surfaceGain = .65;
-    }
-    for (const [x,z,a] of [[300,430,0],[900,859,Math.PI]]) {
-      brood('brood-creep-wall',x,z,1.7,.7,a);
+    for (const [x,z,a] of [[300,341,0],[900,341,0]]) {
+      brood('brood-creep-wall',x,z,1.15,.65,a);
       result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-Math.PI/2));
     }
-    // Two doorway-top membranes: anchors land on the north/south plenum mouths.
-    brood('brood-web-long',440,320,2,2.8,0);
-    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.65));
-    result[result.length-1].matrix.scale(new T.Vector3(1,.15,.3));
-    brood('brood-web-long',760,720,2,2.8,Math.PI);
-    result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.65));
-    result[result.length-1].matrix.scale(new T.Vector3(1,.15,.3));
+    // Anchors terminate on the bank and adjacent nest crown, never bare deck.
+    const web=(x:number,z:number,bx:number,bz:number,y:number)=>{
+      const dx=(bx-x)/32,dz=(bz-z)/32;
+      brood('brood-web-short',x,z,1,y,-Math.atan2(dz,dx));
+      result[result.length-1].matrix.scale(new T.Vector3(Math.hypot(dx,dz)/1.5,.25,.55));
+      result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.6));
+    };
+    web(230,341,282,375,2.6); web(345,341,315,375,2.5);
+    web(945,341,908,375,2.6);
   }
   if (id === 'overload-floor') {
     const dead = (asset: string, x: number, z: number, scale = 1, angle = 0, y = 0) => result.push({
