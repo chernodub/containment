@@ -1144,3 +1144,15 @@ lunges. `boundsMethod` records the actual source per frame. No simulation or
 runtime renderer path changes. `feel12-hit-{east,south,west,north}` are eight-frame
 labelled incoming-side presentation replays over the native Crew warning lane;
 they do not claim accepted damage in the invulnerable fixture.
+`feel12-melee-crawler-relay-racks-reduced` and `feel12-hit-east-reduced` reuse
+those exact native/replay scenarios with the ordinary reduced-motion media
+preference, retaining the same simulated attack shape and clocks.
+
+`feel12-weapon-{rifle,shotgun,pistol,plasma,rocket}-{crew-checkpoint,relay-racks}`
+adds native world evidence with `--burst=30`: five ordinary families are legally
+staged on a clear firing lane, then the public weapon switch and fire input run
+ordinary projectiles, damage and deaths. The stationary marine is invulnerable;
+no target health, cooldown, phase or damage is forced. `g5Proof.weaponTimeline`
+retains native shot/contact/corpse/explosion receipts and evolving target
+snapshots. This is a staged encounter, not a campaign or balance measurement;
+only actually recorded contacts and kills establish coverage.
