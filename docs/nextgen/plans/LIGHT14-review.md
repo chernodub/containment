@@ -43,3 +43,7 @@
 ## 11 Service Shaft Landing
 - Opened calm/tour03/heavy480 colour/grey: winch, shaft lip and railings remain readable above the dark void; marine leads, pickup/exit beacon remains clear.
 - Junction/docking pools keep green service illumination local. Build and seven guarded captures pass; no lift of the shaft void or simulated geometry.
+
+## 12 Infested Workshop
+- Opened calm/tour03/heavy480 colour/grey: violet floor falls away, machinery and nest lantern dots read in tour; marine leads heavy warning lane.
+- Consumed-machine/nest/repair pools keep occupied bays visible. Build and seven guarded frames pass; sparse spawn view remains intentionally quiet, machine silhouette still subdued.

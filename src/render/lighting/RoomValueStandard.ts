@@ -104,6 +104,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.55,saturation:.58},floorSaturation:.50,tint:0xc3e2d7,
     fixtures:.22,practicals:.58,ambient:.52,marineGlow:1,exit:.95,
   }),
+  'infested-workshop': profile({
+    // Consumed milling machine, rear brood nest, engulfed repair bench.
+    fixturesAt:[[650,330],[861,100],[250,900]],
+    floor:{lit:.62,unlit:.29,edge:.14},perimeter:{inner:3.8,outer:10,value:.42,lane:.8},
+    wall:{value:.58,saturation:.60},floorSaturation:.54,tint:0xd9c4eb,
+    fixtures:.22,practicals:.60,ambient:.55,marineGlow:1,exit:.9,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},
