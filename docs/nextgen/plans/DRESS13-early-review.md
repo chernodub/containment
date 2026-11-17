@@ -42,3 +42,6 @@ Opened native tour02 and exact480 tour01/03 against final6: the damaged conserva
 
 ### Round 1 actual image review — Crew Checkpoint
 Opened native tour02 and exact480 tour01/03 against final6: the central scanner remains exceptionally readable, but the baggage was placed on the wrong north bank and is absent from the intended composition. Correction seats the bags on the actual authored conveyor at (950,98), with the dropped case and soot/casing fan at its foot; this is a north-bypass incident, strongest in tour03 rather than the fight view.
+
+### Round 1 actual image review — Armory
+Opened native tour02 and exact480 tour01/03 against final6: the pale counter no longer dominates the darker carousel; the dropped case is visible beside it and never covers the marine. The case still reads shut, so correction adds a dark foam opening and two muted empty cutouts; north magazine shutters remain a peripheral tour detail rather than a fight-floor feature.

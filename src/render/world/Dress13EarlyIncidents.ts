@@ -123,6 +123,8 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     for(let i=0;i<5;i++) flat([[-.12,-.32],[.13,-.28],[.1,.3],[-.13,.27]],dark,650+i*9,400+(i%2)*8,.3);
   }
   if(id==='armory') {
+    const foam=new T.PlaneGeometry(.95,.48);foam.rotateX(-Math.PI/2);mesh(foam,dark,503,.217,420,-.35);
+    for(const x of [499,507]){const cut=new T.PlaneGeometry(.06,.33);cut.rotateX(-Math.PI/2);mesh(cut,scratch,x,.22,420,-.35);}
     for(let i=0;i<3;i++) flat([[-.04,-.7],[.03,-.65],[.025,.7],[-.025,.62]],dark,506+i*7,429,-.4);
   }
   // Unused per-room finishes do not enter the scene or retain resources.
