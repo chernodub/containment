@@ -1112,3 +1112,9 @@ pause and mute observations. It uses the production director/mixer; WAV/PNG pair
 and numerical results are retained. `--out` also works for the full inventory;
 `--reuse-recipes` requires a complete previous full inventory. Measurement is not
 an acoustic listening review. No automated test suite is added.
+
+## I11 second-pass creature review
+
+`i11b-{calm,crowd}-{family}-{base,elite,boss}:<room>` separates the twelve shipping caste/rank skins (boss only for Brute/Carrier). Calm uses one actor; crowd requires twenty on legal, non-overlapping floor. Heavy crowd placement also checks projected body height, then repacks edge contacts on legal floor after native contact framing settles. The existing native pointer hook parks the desktop pointer at viewport center. Neither step changes the camera. These opt-in art fixtures hide the HUD scene; use `--canvas-only --width=1920 --height=1080` to exclude DOM UI too.
+
+`i11b-strike-{family}-{base,elite,boss}` reuses existing M10 native encounter staging, selects rank, and enables the existing renderer collider debug rings. Use `--burst=30`; simulation still owns wind-up, strike, recovery and warning shapes. These diagnostic captures are not difficulty or performance evidence.

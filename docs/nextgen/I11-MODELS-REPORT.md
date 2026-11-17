@@ -108,3 +108,89 @@ The final clavicle reach refinement followed the campaigns and benchmark cohorts
 Final observed wrist in unscaled weapon space: `[0.060639998, -0.084895987, 0.212240048]` m, matching target `[0.06064, -0.08490, 0.21224]` m to floating-point precision. Clavicle rotation brings the target within arm reach; neither wrist translation nor segment scaling is used. `marine-rifle-final` contains fourteen zero-error rifle-specific strips, all opened: eight run lanes, fire, reload, switch, hit, death and cast release. Root additionally opened firing, run0/run315 and reload. Early run cells include the existing equip-release/reacquisition beat. No severe tearing/collapse observed. Final build log replaces the earlier log at `i11-final/build.log`; the observation and updated before/after rifle comparison are retained.
 
 All browser/tool processes are closed. Final report and source changes are committed together; delivery message records the resulting head SHA. No push or PR.
+
+
+## Second pass integration
+
+2026-11-17: merged `nextgen` by fast-forward from `4bc91c51` to `9c8202fd`. `npm ci && npm run build` passed. This pass preserves FEEL12 motion files and clip clocks, T12 packing settings, camera, effects modules, world, UI and simulation.
+
+### Deformation and corpse review
+
+The unchanged real-clip runner captured all twelve caste/rank subjects × seventeen action/status/death rows: **204 strips, zero errors**. Every native strip and all 36 contact pages were opened. Attack rows include wind-up/strike/recovery at existing phase clocks; spawn covers breach entrance. Evidence is under `artifacts/nextgen/i11b-final/motion/`, with detailed opened-image findings in `REVIEW.md`.
+
+New bellies, sacs, sail, second scythe/vessel, pauldrons, shield/ram, vents and stalked pods remained connected; no demonstrated weight or offset tearing/collapse justified changing the generating scripts. All five models were subsequently rebuilt for the T12 shipping pipeline with unchanged generators; mass and detail are preserved. Short folded Brute crusher/chest overlaps and Spitter vessel silhouette merging remain art/pose issues rather than speculative weighting fixes.
+
+Carrier/Matron corpse sacs can remain conspicuously upright. The current tail/tip follow the nearest simulated ancestor; skin fitting includes their mass. No omitted geometry, exploding joints or demonstrated floating/sinking fit bug was found. A slumped sac rest needs physics/pose ownership work and is reported rather than changing FEEL12 motion or adding speculative articulation beyond the existing body budget.
+
+### Footprint and attachments
+
+A temporary independent mixer samples real `m10-idle` at 0.5 seconds during construction and measures each resident rank skin. Cached horizontal-only fits target 94% of the native collision circle, preserve vertical stature, restore every bone transform/local matrix and refresh attached skin bind inverses with `updateMatrixWorld(true)`. No live pose sampling or traversal occurs on combat/rank switches. Native collision/strike rules are unchanged.
+
+The final frozen native probe measured all twelve ranks at **93.0–94.4%** of their collision-circle radius. Base Crawler horizontal fit is ×1.226 relative to the merged loader, correcting the undersized read; elite fit is ×1.047. Exact factors, bounds and native circle screenshots are in `i11b-final/runtime/measurements.json`. Pilot/stale-bind diagnostics are explicitly rejected and must not be quoted as physical before evidence.
+
+Selected-rank height is cached from actual skin geometry; health clearance floors at measured top +0.08m, fixing the elite Crawler sail above the former anchor. Status attachment height and span follow selected-rank geometry and horizontal fit. No effect module was edited.
+
+### Named emission controls
+
+`ActorModel.setEmissionRegion(region, strength)` accepts finite strength 0–4 (clamped), neutral by default and reset on pool reset/death. Regions are **`warden-ram`** (warm amber brow/ram) and **`matron-vents`** (all three hatching vents, multiplying existing emission within the vent mask including its rim). Normal/elite geometry has zero masks. Two normalized byte channels per vertex follow the skin; atlas, material count and draw count are retained. Activation changes uniforms rather than shader variants. Existing global wind-up/hit/elite organ feedback continues to cover the additional authored lanterns/sacs. Encounter code can drive these named controls later; no encounter behavior was added.
+
+### Readability, native strikes and campaign
+
+The full rank matrix and native campaign results are recorded below.
+
+Second-pass measured idle fits (horizontal scale relative to merged loader; vertical scale unchanged):
+
+| Subject | XZ multiplier | Drawn radius / native radius | Health height (m) |
+| --- | ---: | ---: | ---: |
+| crawler | 1.226 | 0.944 | 0.697 |
+| crawler-elite | 1.047 | 0.938 | 1.025 |
+| stalker | 1.008 | 0.938 | 1.064 |
+| stalker-elite | 0.946 | 0.930 | 1.064 |
+| spitter | 1.010 | 0.938 | 1.408 |
+| spitter-elite | 1.010 | 0.938 | 1.572 |
+| brute | 1.163 | 0.941 | 1.447 |
+| brute-elite | 1.163 | 0.941 | 1.614 |
+| brute-warden | 1.163 | 0.941 | 1.808 |
+| carrier | 1.258 | 0.930 | 2.003 |
+| carrier-elite | 1.258 | 0.930 | 2.236 |
+| carrier-matron | 1.086 | 0.933 | 2.504 |
+
+Native strike evidence: `strikes/` contains twelve native30-frame phase sequences (360 frames, no capture errors), with existing simulation-owned warning geometry/timing. `phase-review/` selects wind-up immediately preceding the first strike, then strike/recovery as native600px crops without resizing. Root opened all twelve phase sheets (all36 phase crops), plus full Stalker strike. `strike-rings/` verifies the existing renderer collider toggle live for Crawler/Warden/Matron (90 frames, no capture errors); root opened their native ring frames. Brute/Carrier arc envelopes visibly extend farther than the near-body cleaver/claw poses in these close-target fixtures; FEEL12 should review visual reach. Enlarging the body to fill those arcs would violate the contact-circle fit, so no motion/telegraph change is made here.
+
+
+### T12 shipping pipeline (lead addition)
+
+Merged `nextgen` again to `807e8a13` after the T12 delivery. Rebuilt all five creatures with Blender 5.3.0, then ran unchanged `node tools/assets/i11-models/optimize.mjs` and `TOKTX=/tmp/t12-ktx/KTX-Software-4.4.2-Darwin-arm64-tools.pkg/Payload/usr/local/bin/toktx node tools/assets/t12-textures/pack.mjs`. This is T12’s existing cached Khronos KTX-Software **4.4.2** binary; no installation or packing policy change was needed.
+
+All five `plain/` files were stale first-pass geometry before this work. Both routes now contain the regenerated second-pass geometry. Offline decoded comparisons preserve full-precision positions, oriented topology, joint indices, skeleton/rest/inverse binds and animation channels; meshopt may cyclically rotate a triangle’s first index without changing winding. Main/plain non-image compressed streams are identical. All twelve marine/weapon main/plain files are byte-identical to T12 shipping output. Receipts and command logs: `i11b-final/textures/`.
+
+| Creature file | PNG body download MB before | KTX2 body MB after | Corrected plain body MB |
+| --- | ---: | ---: | ---: |
+| dretch | 2.787088 | 1.237416 | 1.645336 |
+| basilisk | 2.792992 | 1.158168 | 1.600520 |
+| marauder | 3.028096 | 1.486440 | 2.348436 |
+| tyrant | 7.594232 | 2.045440 | 3.012652 |
+| dragoon | 7.532892 | 2.132680 | 3.134360 |
+| Total | 23.735300 | 8.060144 | 11.741304 |
+
+Decimal MB covers the five body GLBs only, excluding unchanged separate motion files. Clients load one texture route. The old full-resolution PNG textures require approximately **132 MiB** RGBA8 with full mip chains; corrected capped plain textures require **32 MiB**. On the Apple M1 Pro / ANGLE Metal run, ETC2 RGB colour/emission and ASTC 4×4 normals totalled **5,068,384 bytes = 4.834 MiB** of compressed mip data. Forced plain measured **33,554,412 bytes ≈ 32 MiB** of RGBA8 mip allocation. Thus creature texture allocation is **132 → 4.834 MiB** on this compressed path, or **132 → 32 MiB** on fallback. Formats and mip inventory are recorded in `textures/runtime/verification.json`; these are texture allocations, not total GPU memory or a performance claim.
+
+### Requests for the modelling / motion owners
+
+Crawler and Stalker elite add-ons are not reliably distinguishable from their base anatomy alone at 480×270; their orange material rim supplies the strongest rank cue. Spitter’s second vessel is angle dependent. Carrier elite shield and Warden shield/ram read well; Matron’s larger brood mass reads, while individual vents/pods do not at that scale. Marine remains the clearest individual figure in the reviewed scenes. No mass/detail reduction was made.
+
+FEEL12 should review Brute folded crusher/chest overlap and Brute/Carrier strike reach against their wider warning arcs. Carrier/Matron corpse sacs can stand steeply and Crawler corpses can be edge-on/upright; these are visually stiff despite stable joints. No clip timing or motion code was changed. Exact contact-floor clearance of every corpse is not certified by the gray strip background; native room evidence supports grounded visible bodies, with the noted sac posture limitation.
+
+### Native campaign
+
+`npm run playtest -- --rig=arc --seed=1729 --label=i11b-arc-1729` completed with runner exit 0, zero errors and zero defects: natural death in Coolant Plant after twelve room clears / thirteen entered. This was the completed second-pass runtime before the subsequent texture-only T12 merge/repack; final shipping texture paths receive separate native High/fallback staged-combat verification. The campaign was unassisted. Shared host load was approximately 804–940 on ten cores; wall time 2292 seconds is not hardware FPS evidence. Evidence: `i11b-final/campaign/`.
+
+Final shipping verification used one browser, sequential High KTX2 and High forced-fallback pages. Compressed extensions were hidden before renderer creation only in the isolated fallback capture page; production loading logic was not modified. Network receipts show all eleven body assets from the main route on KTX2 and all eleven from `plain/` on fallback, with shared motion assets unchanged. Both runs completed all five caste families in all three rooms (mixed ranks), fifteen images per path, zero browser errors. Two seconds of native plasma firing per family/path reported WebGL error0, no context loss, and unchanged program count (128→128 then129→129). This bounded staged check is not a hardware benchmark or another campaign.
+
+Requests for the modelling agent: strengthen Crawler/Stalker elite silhouette separation at270p and separate the Spitter elite vessel lobes at the production view. Coordinate a Carrier/Matron slumped corpse treatment with the ragdoll/motion owner rather than changing weights blindly; the current Carrier already consumes the twenty-body budget. Folded Brute crusher clearance and visual strike reach belong in FEEL12’s pose review. These are disclosed polish limits, not unobserved tearing fixes.
+
+### Final evidence and verification
+
+The final assembled readability matrix contains **72 no-UI 1920×1080 images**, with exact4×4 BOX reductions to480×270 and twelve rank sheets under `rooms/review480/`. All twelve ranks have calm and twenty-enemy crowd views in Crew Checkpoint, Relay Racks and Infested Workshop. The final eighteen heavy crowds were recaptured after native contact framing settled: twenty legal, non-overlapping native circles each, zero errors/failures and zero projected body-edge contacts. No camera parameters/code were changed. Their final KTX2 parent is `heavy-shipping-parent/`; the other54 accepted views predate T12 packing with identical second-pass geometry. The additional30 shipping texture views cover mixed ranks on both final routes and all three floors. Superseded intermediate images were deleted; diagnostic manifests remain clearly labelled.
+
+`npm run build` passed after the merge/repack and again as part of the final production capture run. Existing large-chunk warnings remain. No automated tests or gates were added. Final High/plain browser checks, native campaign and all required strip/readability reviews are retained under `artifacts/nextgen/i11b-final/`. No browser remains open. No push or PR.

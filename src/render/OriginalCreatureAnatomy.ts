@@ -6,12 +6,80 @@ type CreatureSkin = {
   mesh: T.SkinnedMesh;
   variants: Partial<Record<Rank, T.BufferGeometry>>;
   rank: Rank;
+  height: number;
+  root: T.Object3D;
 };
 const skins = new WeakMap<T.Object3D, CreatureSkin>();
 const frostGeometry = new WeakMap<T.BufferGeometry, T.BufferGeometry>();
 
 function rankOf(name: string): Rank | undefined {
   return name.match(/^k11-[a-z]+-(base|elite|boss)(?:_\d+)?$/)?.[1] as Rank | undefined;
+}
+
+export type CreatureEmissionRegion = 'warden-ram' | 'matron-vents';
+
+/** Source-space masks follow the skin. No atlas copies, extra draws or pose queries. */
+function prepareEmissionRegions(mesh: T.SkinnedMesh, rank: Rank): void {
+  const geometry = mesh.geometry;
+  if (geometry.hasAttribute('k11EmissionRegion')) return;
+  const positions = geometry.getAttribute('position');
+  const values = new Uint8Array(positions.count * 2);
+  const family = mesh.userData.k11Family;
+  const aspect = Number(mesh.userData.k11Aspect) || 1;
+  const point = new T.Vector3();
+  // These are the second-pass carrier.py ellipsoid_surface vent centres,
+  // evaluated in design space; the exporter removes aspect from source Z.
+  const vents: T.Vector3[] = [];
+  if (family === 'carrier' && rank === 'boss') {
+    const forward = new T.Vector3(1, 0, .3).normalize();
+    const side = new T.Vector3(0, 1, 0), up = new T.Vector3().crossVectors(forward, side);
+    for (const phi of [-1.2, .4, 1.2]) {
+      const u = -.55, radius = Math.sqrt(1 - u * u);
+      const q = new T.Vector3(u * 4.6, -Math.sin(phi) * radius * 4.2, Math.cos(phi) * radius * 2.9 * aspect);
+      const normal = new T.Vector3(q.x / (4.6 ** 2), q.y / (4.2 ** 2), q.z / ((2.9 * aspect) ** 2)).normalize();
+      const worldNormal = forward.clone().multiplyScalar(normal.x).addScaledVector(side, normal.y).addScaledVector(up, normal.z);
+      vents.push(new T.Vector3(-5.4, 0, 8.2 * aspect).addScaledVector(forward, q.x).addScaledVector(side, q.y).addScaledVector(up, q.z).addScaledVector(worldNormal, -.35));
+    }
+  }
+  for (let i = 0; i < positions.count; i++) {
+    point.fromBufferAttribute(positions, i);point.z *= aspect;
+    if (rank === 'boss' && family === 'brute') {
+      // Brow ram is forward of the ordinary prow; retain its pale bone finish.
+      const forward = T.MathUtils.smoothstep(point.x, 1.8, 2.35);
+      const width = 1 - T.MathUtils.smoothstep(Math.abs(point.y), .6, 1.0);
+      const height = 1 - T.MathUtils.smoothstep(Math.abs(point.z / aspect - 4.12), .45, .8);
+      values[i * 2] = Math.round(255 * forward * width * height);
+    }
+    if (vents.length) {
+      const distance = Math.min(...vents.map(centre => point.distanceTo(centre)));
+      values[i * 2 + 1] = Math.round(255 * (1 - T.MathUtils.smoothstep(distance, .7, 1.3)));
+    }
+  }
+  geometry.setAttribute('k11EmissionRegion', new T.Uint8BufferAttribute(values, 2, true));
+}
+
+/** Named presentation controls; encounter code can drive these without changing the atlas. */
+export function originalCreatureEmission(materials: readonly T.MeshStandardMaterial[]) {
+  const strength = {value: new T.Vector2()};
+  for (const material of materials) {
+    if (!material.userData.k11Original) continue;
+    const previous = material.onBeforeCompile, key = material.customProgramCacheKey();
+    material.onBeforeCompile = (shader, renderer) => {
+      previous.call(material, shader, renderer);
+      shader.uniforms.k11EmissionStrength = strength;
+      shader.vertexShader = 'attribute vec2 k11EmissionRegion; varying vec2 vK11EmissionRegion;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvK11EmissionRegion=k11EmissionRegion;');
+      shader.fragmentShader = 'uniform vec2 k11EmissionStrength; varying vec2 vK11EmissionRegion;\n' + shader.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance*=1.0+vK11EmissionRegion.y*k11EmissionStrength.y;\ntotalEmissiveRadiance+=vec3(1.0,.36,.0)*vK11EmissionRegion.x*k11EmissionStrength.x;');
+    };
+    material.customProgramCacheKey = () => key + ':k11-named-emission-v1';
+    material.needsUpdate = true;
+  }
+  return {
+    set(region: CreatureEmissionRegion, value: number) {
+      const channel = region === 'warden-ram' ? 'x' : 'y';
+      strength.value[channel] = Number.isFinite(value) ? T.MathUtils.clamp(value, 0, 4) : 0;
+    },
+    reset() {strength.value.set(0, 0);},
+  };
 }
 
 /** Keep alternate ranks resident but out of template metrics and skin batching. */
@@ -23,6 +91,7 @@ export function prepareOriginalCreature(root: T.Object3D): boolean {
     const materials = Array.isArray(object.material) ? object.material : [object.material];
     if (!rank || !materials.some(material => material.userData.k11Original)) return;
     found = true;
+    prepareEmissionRegions(object, rank);
     object.visible = rank === 'base';
     for (const material of materials) {
       material.userData.k11Original = true;
@@ -40,8 +109,14 @@ function select(skin: CreatureSkin, rank: Rank, force = false): void {
   if (!force && resolved === skin.rank) return;
   skin.rank = resolved;
   skin.mesh.geometry = skin.variants[resolved]!;
+  skin.root.updateMatrixWorld(true);
   skin.mesh.computeBoundingBox();
   skin.mesh.computeBoundingSphere();
+  skin.mesh.updateWorldMatrix(true, false);
+  const root = skin.root;
+  const toRoot = root.matrixWorld.clone().invert().multiply(skin.mesh.matrixWorld);
+  skin.height = skin.mesh.boundingBox!.clone().applyMatrix4(toRoot).max.y;
+
 }
 
 /**
@@ -63,7 +138,7 @@ function consolidate(root: T.Object3D, elite: boolean): CreatureSkin | undefined
   }
   mesh.visible = true;
   mesh.userData.geometryVariants = Object.values(variants);
-  const skin: CreatureSkin = {mesh, variants, rank: 'base'};
+  const skin: CreatureSkin = {mesh, variants, rank: 'base', height: 0, root};
   skins.set(root, skin);
   select(skin, elite ? 'elite' : 'base', true);
   return skin;
@@ -140,4 +215,41 @@ export function originalCreatureFrost(root: T.Group, family: string) {
     use() { skin.mesh.geometry = frostGeometry.get(skin.variants[skin.rank]!)!; },
     reset() { skin.mesh.geometry = skin.variants[skin.rank]!; },
   };
+}
+
+/** Cached on rank selection, after that rank's deformed skin bounds are known. */
+export function originalCreatureHeight(root: T.Object3D): number {
+  return skins.get(root)?.height ?? 0;
+}
+
+const footprintFits = new Map<string, Partial<Record<Rank, number>>>();
+/** Construction-only fixed M10 idle sample; never depends on the first combat pose. */
+export function originalCreatureFootprints(root: T.Group, asset: T.Object3D, clips: readonly T.AnimationClip[], family: string, radius: number) {
+  const key = family + ':' + radius;
+  const cached = footprintFits.get(key);if (cached) return cached;
+  const idle = clips.find(clip => clip.name === 'm10-idle');
+  const fits: Partial<Record<Rank, number>> = {};
+  if (!idle) return fits;
+  const poses: Array<{bone:T.Bone;position:T.Vector3;quaternion:T.Quaternion;scale:T.Vector3}> = [];
+  asset.traverse(object => {if(object instanceof T.Bone)poses.push({bone:object,position:object.position.clone(),quaternion:object.quaternion.clone(),scale:object.scale.clone()});});
+  const mixer = new T.AnimationMixer(asset);
+  mixer.clipAction(idle).play();mixer.setTime(Math.min(.5, idle.duration));
+  for(const pose of poses)pose.bone.updateMatrix();
+  root.updateMatrixWorld(true);
+  const inverse = root.matrixWorld.clone().invert(), point = new T.Vector3();
+  asset.traverse(object => {
+    if (!(object instanceof T.SkinnedMesh)) return;
+    const rank = rankOf(object.name);if(!rank)return;
+    let radial = 0;
+    const positions = object.geometry.getAttribute('position');
+    for(let i=0;i<positions.count;i++) {
+      object.getVertexPosition(i,point).applyMatrix4(object.matrixWorld).applyMatrix4(inverse);
+      radial = Math.max(radial,Math.hypot(point.x,point.z));
+    }
+    if(radial>0)fits[rank]=radius*.94/radial;
+  });
+  mixer.stopAllAction();mixer.uncacheRoot(asset);
+  for(const pose of poses){pose.bone.position.copy(pose.position);pose.bone.quaternion.copy(pose.quaternion);pose.bone.scale.copy(pose.scale);pose.bone.updateMatrix();}
+  root.updateMatrixWorld(true);
+  footprintFits.set(key,fits);return fits;
 }
