@@ -49,7 +49,8 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | K12 hero-quality marine, four rigs, portraits — Opus, modelling only (`streams/K12-hero-closeup.md`) | merged | 24k tris, one 2k set; back view lightened after lead review |
 | I11 model integration (deformation, lantern feedback, support-hand grip, meshopt packing 45.9 → 37.4 MB, credits) — Sol | merged | Unvanquished marine/creature meshes no longer ship; open modelling requests: thin Stalker limbs, tasset overlap, Pyro hoses |
 | KA12 title key art (torn breach, Lantern Brood silhouettes), ending image, second-generation weapons — Astra | merged | title accepted after a second pass with lead direction |
-| P11 one hero set piece per room, kit craft pass, infestation set — Astra (`streams/P11-set-pieces.md`) | running | redirected by R11: fixture hierarchy, one incident per room, infestation masses, per-room punch list |
+| P11 one hero set piece per room, kit craft pass, fixture hierarchy — Astra (`streams/P11-set-pieces.md`) | merged | all twenty rooms placed, campaign clears, ≤ 330 draws; lead review: breach and several landmarks improved, but infestation is still thin strands (Swarm Junction) and rooms still lack incidents/belongings (Residential) |
+| GROW13 Brood growth kit (nest masses, creep, webs, pods, burst ducts, hive heart) — Opus, modelling only; placement by Sol afterwards | running | |
 | G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
 | D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |
 | F11 per-pass GPU/CPU breakdown tool and small cuts — Sol | merged | max 124 draws, zero combat compiles; frame budget cannot be certified on the loaded host |
@@ -62,7 +63,7 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | VFX13 flagship effects: Flashfire, Railbreaker, Cryo Nova, Overdrive moments (one pooled shader module) — Opus | merged | clear step up; author says still short of commercial bar (fire is a sheet, not a volume) |
 | VFX14 the other twelve abilities and deployables with the same technique — Sol | running | |
 | ENC12 encounter grammar and role AI, elite saturation cut, Warden/Matron demands, teaching beats, eight transformative augments, economy and route — Sol | running | |
-| K11b creature second pass (mass, armoured legs, Stalker, sagging Carrier, elite add-ons, Warden shield, Matron brood mass) — Opus | merged | second-pass integration (deformation, footprints, ragdolls, emissive regions) running in the I11 thread |
+| K11b creature second pass — Opus; second-pass integration and KTX2 repack — Sol | merged | creature textures 132 → 4.8 MiB, downloads 23.7 → 8.1 MB; named emissive regions `warden-ram`, `matron-vents` |
 | RW12 reward cards with illustrations and behavioural headlines, ending composition (transmission leaving the dying ship), re-posed rig portraits — Astra | merged | illustrations are variations of one canister form — candidate for a later pass |
 
 Next (lead): merge wave 12; re-integrate creatures; performance certification on a quiet machine (nothing else running); gallery `final7`; R12 review by the same two lenses.
