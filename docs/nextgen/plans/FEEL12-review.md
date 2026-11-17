@@ -214,3 +214,16 @@ support surface, so these rows establish bounded retained poses rather than
 prove corpse-to-deck contact at every native room location. Matron's long roll
 and eventual sac-up/curl are still weaker than Brute's immediate heavy settle;
 no unsupported new damping or forced pose correction was added.
+
+Literal full-strip coverage closure: all 50 `chains-final` and all 84
+`motion-final` original strips have now been opened at native resolution with
+all 24 cells visible, in addition to the previously opened native four-phase
+and exact-quarter contact pages. `weight-full-strip-opened.json` in the gallery
+records the exact files and distinguishes the earlier 25 full chain reviews
+from the supplemental sweep. The sweep confirms the already rejected
+Carrier/elite/Matron upright narrow windup in the older cohort, which is
+superseded by `carrier-final` and its native pale/dark bursts. No additional
+mesh tears, detached parts, exploding corpse energy or clipped actor cells
+appeared. Warden corpses can remain cleaver-up in the short sample, consistent
+with the existing long-settle limitation; tiny light-hit detail remains weaker
+than the point impact cue at quarter size. No new runtime changes followed.
