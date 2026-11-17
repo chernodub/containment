@@ -52,7 +52,12 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | P11 one hero set piece per room, kit craft pass, fixture hierarchy — Astra (`streams/P11-set-pieces.md`) | merged | all twenty rooms placed, campaign clears, ≤ 330 draws; lead review: breach and several landmarks improved, but infestation is still thin strands (Swarm Junction) and rooms still lack incidents/belongings (Residential) |
 | GROW13 Brood growth kit, fifteen pieces incl. hive heart — Opus, modelling only | merged | review placement turns Swarm Junction into a stronghold |
 | DRESS13 growth-kit placement in rooms 15–20 and a staged incident in every room, with a correction pass — Sol | merged | Swarm Junction reads as a stronghold; Residential shows an interrupted evacuation; 277 draws peak |
-| G13 review gallery `final7` — Sol | running | then R12 by two Astra reviewers |
+| G13 review gallery `final7` — Sol | done | 4,258 images; native campaigns died after 11/6/2/7 rooms (Standard) and 3 rooms (Story novice) — far from the sim's numbers |
+| **R12** on `final7`: Opus art-director pass (R12-C) done; Astra visual (R12-A) and play (R12-B) running | partly done | Opus: interface 7.5, first impression 6, effects 5.5, environments 5, cohesion 5, readability 4.5, characters 4.5 — "no value hierarchy" |
+| **Wave 13** | running | |
+| LIGHT13 "the ship is dark; actors carry the light" standard on three rooms — Opus | merged | data-driven `ROOM_VALUE_PROFILES`; floor luminance roughly halved, marine plates ≈ 210, creatures dark with hot lanterns |
+| LIGHT14 the standard in the other seventeen rooms and its weak points — Sol | running | |
+| BAL13 sim-versus-native gap and early deaths; Story must not kill in room three — Sol | running | |
 | PERF13 creature LODs, shadow proxies, camera/main-thread CPU — Sol | merged | triangles −32%, profiled thread CPU per render 17.2 → 7.9 ms; frame p95 ≤ 20 ms in 11/16 configurations (all Low, 3 of 8 High) on a loaded host — High still misses in five |
 | G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
 | D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |
@@ -90,3 +95,4 @@ Next (lead): merge DRESS13 correction and PERF13; gallery `final7` (same section
 - 2026-11-16 Owner refinement: Opus tokens are scarce — Opus only for the hero and creature models; decor to Astra; integration and verification to Sol.
 - 2026-11-16 Lockfile regenerated so npm 10 (used by the Codex sandbox) and npm 11 both pass `npm ci`; the lockfile produced after removing the tests had blocked three streams. Low-effort Sol and medium Astra tend to stop early with "incomplete delivery": briefs now say how long the job takes and forbid partial stops; unfinished runs are resumed in the same thread.
 - 2026-11-17 Owner asked to push while iterating: `nextgen` is pushed to the public fork `chernodub/containment` (branch `nextgen`, never `main`) after every merge.
+- 2026-11-17 Owner: reviews by Opus or Astra at high reasoning. R12 uses Astra (extra-high, then high after a request-size failure) for the two exhaustive verdicts and a bounded Opus art-director pass. Adopted from R12-C as the art direction for wave 13: "the ship is dark; actors carry the light".
