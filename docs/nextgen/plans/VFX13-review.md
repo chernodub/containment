@@ -33,3 +33,12 @@ R2: rime film — patchy veins, crisp creeping edge band, ferns only at the edge
 R3: film alpha reduced, mist cards halved. Accepted: hard ring races out, crystals erupt behind it, frost edge creeps and
 fades over 6.5 s; enemies stay readable. Weakness: +30 ms frame is modest (ring still small); mist cards remain the old
 billboard puffs.
+
+## Overdrive payoff (Whiteout, Meltdown, Overclock; Railbreaker activation)
+Baseline: no activation moment beyond rings; sustained state was suit-only or a perimeter.
+R1 (`vfx13-od-r1`): shared OverdrivePayoff — white core + element Shock rings, vertical light pillar, exposure/camera beat,
+spark spray; Aura floor field following the marine; ending ring. Activation is unmistakable; the floor field was a
+generic ring with smeared rays (read like a UI ring).
+R2: element signatures on the deck (cryo rime ferns, pyro ember fissures, arc flickering crackle), rim broken by noise,
+suit light. Accepted. Heavy (25-enemy Armory) and Low frames checked: hostile red telegraphs remain visible.
+Weakness: the large 6 m activation wave is a broad translucent band for ~0.5 s; the pillar is a flat ribbon.
