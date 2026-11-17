@@ -34,7 +34,7 @@ The loader turns emissive triangles into practical lamps; the hive heart therefo
 | `brood-nest-large` | 6000 | 4.6 × 3.3 × 2.6 | wall-backed: back plane at glTF −Z = −1.3 m; flesh climbs the wall to 3.3 m; brood openings low-front, lantern cluster in the crown split, outflow spills ≈2 m toward the room |
 | `brood-nest-medium` | 2000 | 2.1 × 1.8 × 1.3 | wall-backed at −Z = −0.65 m; wall climb to 1.8 m |
 | `brood-creep-a/b/c` | 1200 each | 2.6×1.6 / 1.8×1.8 / 3.2×1.0, ≤8 cm relief | floor crust, walkable, low contrast; rotate/mirror/scale freely, overlap each other and wall feet |
-| `brood-creep-wall` | 1200 | 1.8 × 1.4 | same crust for walls/equipment sides: rotate −90° about X so the underside lies on the wall plane |
+| `brood-creep-wall` | 1200 | 1.8 × 1.4 | same crust for walls/equipment sides: face the relief into the room; current GLB top normal is +Y, so use +90° X for a north face (+Z), then yaw for other faces |
 | `brood-web-short/medium/long` | 1500 each | span 1.5 / 3 / 5 m | anchor A at origin, anchor B at +X = span; **no floor cut** (membrane sags below the A→B line). Scale X to the real gap, rotate about the A→B axis to tilt the sheet |
 | `brood-pods-small/large` | 2000 each | 1.3 / 2.5 m clutch | egg pods in flesh cups with veins on an irregular flesh spill |
 | `brood-pods-hatched` | 2000 | 1.5 m | clutch with one torn-open egg (post-hatch) |
@@ -46,7 +46,7 @@ The loader turns emissive triangles into practical lamps; the hive heart therefo
 1. **Anchor every mass on architecture** — wall, corner, duct bank, equipment — never free-floating in the deck. The nests and burst ducts carry their own spill; extend it with 2–4 creep pieces fanning *away* from the source and *under* nearby props.
 2. **Overlap, don't scatter**: creep pieces overlap each other by 20–40 % and run up wall feet (pair floor creep with `brood-creep-wall` at the same x). Swallow at least one existing prop per room with `brood-consumed-shell`.
 3. **Connect masses with webs** (wall-to-wall across corners, floor-to-wall from a nest to a duct bank, across doorway tops at 2.4–2.8 m). A web's anchors should land on a mass or architecture, never on bare deck.
-4. **Keep the fight lane readable**: only creep under where actors fight (low contrast by design). Nests, pods, ducts and the heart go on edges, corners and behind cover lines. Hatched pods and burst ducts mark where enemies come from — put them at spawn/ingress edges.
+4. **Keep the fight lane readable**: keep the fight circle and main lanes entirely clear of creep. Use small overlapping fringes at wall bases, nest roots and under machines. Nests, pods, ducts and the heart go on edges, corners and behind cover lines. Hatched pods and burst ducts mark where enemies come from — put them at spawn/ingress edges.
 
 ### Composed examples (positions in metres relative to a wall/corner; x along the wall, z out into the room, y up; glTF frame)
 
@@ -66,7 +66,7 @@ C. **Swarm Junction landmark** (as captured in `review-swarm-junction.png`; room
 - `brood-hive-heart` (470, 600); `brood-nest-large` (300, 395) against the north generator bank; `brood-burst-duct` (560, 450);
   `brood-consumed-shell` (240, 470) yaw .3 over the console; `brood-pods-large` (210, 650); `brood-pods-hatched` (420, 480);
   `brood-creep-a` (330, 560) yaw .6; `brood-creep-b` (380, 680) yaw 2.1; `brood-web-long` (300, 330) yaw −1.2, y 0.
-  These were review positions near the marine's calm-camera start; move the heart to the room's centre-back outside the fight circle for the final dressing.
+  These were review positions near the marine's calm-camera start; use the group arrangement rather than copying the old floor-level web. The shipping room has deeper north banks (inner face z340), so floor-back nests just in front of that face. Keep the heart and its spill outside the fight circle, and replace the old long web with short angled spans between measured wall/nest/machine anchors.
 
 ## Escalation, room 15 → 20
 

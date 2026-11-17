@@ -51,8 +51,8 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
     // Recreate the modeller's wall-backed group on the actual registered bank
-    // face (z340), with a clear 140-unit east/west lane at z450..590.
-    brood('brood-hive-heart', 470, 610, .65);
+    // face (z340), keeping the crossing bare between the banks and heart.
+    brood('brood-hive-heart', 470, 620, .65);
     brood('brood-nest-large', 300, 375, .8);
     brood('brood-consumed-shell', 220, 392, 1.05, 0, .3);
     brood('brood-nest-large', 900, 375, .8);
@@ -67,18 +67,19 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       brood('brood-creep-c',x,z,.46,.002,a);
     }
     for (const [x,z,a] of [[300,341,0],[900,341,0]]) {
-      brood('brood-creep-wall',x,z,1.15,.65,a);
-      result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-Math.PI/2));
+      brood('brood-creep-wall',x,z,.55,.15,a);
+      result[result.length-1].matrix.scale(new T.Vector3(2,1,1));
+      result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(Math.PI/2));
     }
-    // Anchors terminate on the bank and adjacent nest crown, never bare deck.
-    const web=(x:number,z:number,bx:number,bz:number,y:number)=>{
-      const dx=(bx-x)/32,dz=(bz-z)/32;
-      brood('brood-web-short',x,z,1,y,-Math.atan2(dz,dx));
-      result[result.length-1].matrix.scale(new T.Vector3(Math.hypot(dx,dz)/1.5,.25,.55));
-      result[result.length-1].matrix.multiply(new T.Matrix4().makeRotationX(.6));
-    };
-    web(230,341,282,375,2.6); web(345,341,315,375,2.5);
-    web(945,341,908,375,2.6);
+    // Measured plenum tops (1.81m) to nest crowns: real sloping anchors.
+    for (const [x,y,z,bx,by,bz] of [[235,1.75,365,285,2.5,375],[355,1.75,365,315,2.4,375],[955,1.75,365,908,2.5,375]]) {
+      const gap=new T.Vector3((bx-x)/32,by-y,(bz-z)/32);
+      brood('brood-web-short',x,z,1,y);
+      result[result.length-1].matrix.compose(new T.Vector3(x/32,y,z/32),
+        new T.Quaternion().setFromUnitVectors(new T.Vector3(1,0,0),gap.clone().normalize())
+          .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),.6)),
+        new T.Vector3(gap.length()/1.5,.25,.55));
+    }
   }
   if (id === 'overload-floor') {
     const dead = (asset: string, x: number, z: number, scale = 1, angle = 0, y = 0) => result.push({

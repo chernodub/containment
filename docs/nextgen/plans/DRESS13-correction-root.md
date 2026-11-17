@@ -28,3 +28,7 @@ The merged CAM12 native view crops the existing fatal-warning sign at the origin
 ## Final Annulus wall-band follow-up
 The combined native/480 north-ring view still showed isolated base patches despite correct floor support and cap height. Joined the wall-face crust with overlapping, varied-width pieces and compressed the floor fringe across the wall so the walking ring stays wider than 140 units.
 Reopened native north-ring03 and exact480 spawn/centre/north/exit from the follow-up. A continuous ragged colony now follows the vertical housing face below its cap; the central encounter floor and ring route remain bare, and the floor console/duct/web anchors remain visible and grounded.
+
+## Final six-room integration look
+Opened final native Swarm spawn, Workshop tool bay, Gate spawn, Annulus north ring, Manual south gallery and Overload exhaust, plus exact480 spawn/centre/exit for every growth room. Swarm's heart is now (470,620), fully readable at spawn, with local spill, floor-backed plenum nests and sloping plenum-top-to-crown webs; the broad deck blobs and roomwide bars are absent.
+The wall-crust relief faces into the room and stays below short housing caps; Manual's complete west-corner nest is now visible at (490,900). Overload's complete lower body and spill are exposed against the reactor base. Across the six rooms the marine remains clear, raised masses stay peripheral, and creep remains at roots/wall feet rather than the fight circle. The final Annulus follow-up supersedes its first combined-batch images.
