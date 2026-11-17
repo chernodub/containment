@@ -48,6 +48,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xead0a6,
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.9,
   }),
+  // Skylight on the garden, water bed and dining court.
+  'communal-atrium': profile({
+    fixturesAt:[[589, 355], [728, 150], [1090, 480]],
+    floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
+    wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xd5e4c7,
+    fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.9,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},

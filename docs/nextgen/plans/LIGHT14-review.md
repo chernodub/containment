@@ -11,3 +11,7 @@
 ## 3 Residential Gallery
 - Opened calm, cabin tour03 and heavy colour/grey reductions: marine leads; warm cabin furniture and packing trail remain distinct from the cold gallery.
 - Cabin lamp pools leave quiet corners without hiding the berth or doorway; heavy warning remains crisp. Build and seven guarded captures pass; shared wedge/halo correction follows in item18.
+
+## 4 Communal Atrium
+- Opened calm/tour03/heavy colour+grey; initial pool missed garden centre. Moved skylight footprint to actual garden bed (589,355), rebuilt and reopened corrected reductions.
+- Marine leads and garden frame, seats and dining cover read; canopy remains intentionally dark and is a weaker landmark than the lit bed. Seven guarded frames pass; no exposure compensation.
