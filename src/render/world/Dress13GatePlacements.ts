@@ -50,11 +50,11 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
         }
       }
     }
-    add('burst-duct', 1128, 160, .1, .45);
-    add('burst-duct', 1128, 880, Math.PI + .1, .45);
+    add('burst-duct', 1128, 156, .1, .35);
+    add('burst-duct', 1128, 884, Math.PI + .1, .35);
     add('pods-hatched', 1198, 160, .5, .35);
     add('pods-hatched', 1198, 880, -.5, .35);
-    for (const [z,yaw] of [[162,.2],[882,Math.PI+.2]]) {
+    for (const [z,yaw] of [[164,.2],[876,Math.PI+.2]]) {
       pieces.push({pack:'p11-service',asset:'service-console-schematic',
         purpose:'DRESS13 / annulus consumed wall-foot console',cutaway:true,
         matrix:new T.Matrix4().compose(new T.Vector3(1080/32,0,z/32),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),yaw),new T.Vector3(.32,.32,.32))});
@@ -69,8 +69,8 @@ export function dress13GatePlacements(id: string): OriginalKitInstance[] {
           .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),.55)),
         new T.Vector3(gap.length()/1.5,.35,.6));
     };
-    link(1080,162,.6,1128,160,.32);
-    link(1130,880,.32,1080,882,.6);
+    link(1080,164,.6,1128,156,.24);
+    link(1128,884,.24,1080,876,.6);
   }
   if (id === 'manual-control-chamber') {
     // Swallowed service consoles stand on the deck before the cabinet faces.
