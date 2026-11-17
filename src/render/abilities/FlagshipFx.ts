@@ -9,7 +9,7 @@ import * as T from 'three';
  * vertex shader from the exact simulated cone/strip/radius numbers and never
  * exceed them (the muzzle pull-in only moves the narrow apex inward).
  */
-export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6, Crack: 7, Fuel: 8, Pressure: 9, Pillar: 10, FuelStrip: 11, FrostStrip: 12, Blizzard: 13, Climax: 14 } as const;
+export const FxMode = { Fire: 0, Scorch: 1, Lance: 2, Wake: 3, Shock: 4, Frost: 5, Aura: 6, Crack: 7, Fuel: 8, Pressure: 9, Pillar: 10, FuelStrip: 11, FrostStrip: 12, Blizzard: 13, Climax: 14, Tongues: 15 } as const;
 export type FxMode = (typeof FxMode)[keyof typeof FxMode];
 
 export interface FxSlot {
@@ -43,10 +43,24 @@ export interface FxSlot {
 const vertex = `
 uniform float fxMode;uniform vec3 fxOrigin;uniform vec3 fxMuzzle;uniform float fxAngle;uniform float fxArc;
 uniform float fxRange;uniform float fxInner;uniform vec2 fxHeight;uniform float fxAge;uniform float fxParam;
-varying vec2 fxLocal;varying vec3 fxWorld;varying vec4 fxScreen;
+varying vec2 fxLocal;varying vec3 fxWorld;varying vec4 fxScreen;varying float fxSeg;
 void main(){
- vec2 g=uv;vec3 w;float m=fxMode;
- if(m>13.5){
+ vec2 g=uv;vec3 w;float m=fxMode;fxSeg=0.;
+ if(m>14.5){
+  // Eight camera-facing standing tongues in one mesh: five grid columns per tongue; the
+  // sliver between tongues carries a fractional segment id and is discarded.
+  float col=floor(g.x*40.+.5);float seg=min(7.,floor(col/5.));float c=col-seg*5.;
+  float s=c/4.*2.-1.;float v=g.y;
+  if(col>39.5){s=1.;}
+  float h1=fract(sin(seg*12.9898+fxAngle*7.1)*43758.5),h2=fract(sin(seg*78.233+fxAngle*3.3)*12543.1),h3=fract(sin(seg*39.425+fxAngle)*24634.6);
+  float ang=seg*2.39996+fxAngle*6.2831853;
+  float rr=fxRange*(.12+.74*sqrt(h1));
+  vec3 base=vec3(fxOrigin.x+cos(ang)*rr,fxHeight.x,fxOrigin.z+sin(ang)*rr);
+  float H=fxHeight.y*(.55+.7*h2)*fxParam;float W=.34+.3*h3;
+  vec3 right=normalize(vec3(viewMatrix[0][0],viewMatrix[1][0],viewMatrix[2][0]));
+  w=base+right*(s*W*(1.-.55*v))+vec3(0.,v*H,0.);
+  fxLocal=vec2(s,v);fxSeg=seg+step(39.5,col)*.5;
+ }else if(m>13.5){
   // Climax disc (ground): u around, v centre to exact radius.
   float a=g.x*6.2831853;float r=g.y*fxRange;
   w=vec3(fxOrigin.x+cos(a)*r,fxHeight.x,fxOrigin.z+sin(a)*r);fxLocal=vec2(g.x,r);
@@ -94,7 +108,7 @@ const fragment = `
 uniform float fxMode;uniform float fxAge;uniform float fxLife;uniform float fxTime;uniform float fxSeed;
 uniform float fxRange;uniform float fxInner;uniform float fxArc;uniform vec3 fxColor;uniform float fxIntensity;
 uniform float fxParam;uniform float fxLow;uniform vec3 fxOrigin;uniform float fxAngle;
-varying vec2 fxLocal;varying vec3 fxWorld;varying vec4 fxScreen;
+varying vec2 fxLocal;varying vec3 fxWorld;varying vec4 fxScreen;varying float fxSeg;
 float fxHash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
 float fxNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
  return mix(mix(fxHash(i),fxHash(i+vec2(1.,0.)),f.x),mix(fxHash(i+vec2(0.,1.)),fxHash(i+vec2(1.)),f.x),f.y);}
@@ -306,15 +320,18 @@ void main(){
   float cap=length(vec2(fxLocal.x*fxInner,max(max(-r,r-fxRange),0.)))/max(.001,fxInner);
   float edge=m>10.5?1.-smoothstep(.92,1.,cap):1.-smoothstep(R-.08,R,r);
   float rim=m>10.5?smoothstep(.7,.94,cap)*edge:smoothstep(R-.25,R-.08,r)*edge;
-  float channels=smoothstep(.56,.74,n+fine*.12);
+  float channels=smoothstep(m>10.5?.56:.72,m>10.5?.74:.86,n+fine*.12);
   float boil=pow(max(0.,sin(fxLocal.x*160.+n*12.-t*11.)),8.)*rim;
   float hot=channels*(.55+.35*fine)+boil*.7;
   float fade=fxParam;
-  alpha=edge*(.94+channels*.04)*fade;
+  // Pool (m 8): soft irregular soot underlay rather than an opaque disc; strips keep the dense film.
+  float soot=m>10.5?.94:(.42+.3*fxFbm(q*.5+7.))*(1.-smoothstep(R*.55,R,r)*.35);
+  alpha=edge*(soot+channels*.2+rim*.3)*fade;
   base=vec3(.004,.002,.001);
-  vec3 flame=mix(vec3(.72,.018,.0004),vec3(1.5,.12,.001),smoothstep(.3,.85,hot));
+  // Pool edge stays orange-amber so it never reads as the hostile red warning.
+  vec3 flame=m>10.5?mix(vec3(.72,.018,.0004),vec3(1.5,.12,.001),smoothstep(.3,.85,hot)):mix(vec3(1.1,.22,.02),vec3(1.9,.6,.06),smoothstep(.3,.85,hot));
   flame=mix(flame,vec3(2.6,1.5,.12),smoothstep(.94,1.15,hot));
-  emit=flame*(channels*.62+boil*.8+rim*.12)*edge*fade*fxIntensity;
+  emit=flame*(channels*(m>10.5?.62:.45)+boil*(m>10.5?.8:1.05)+rim*.12)*edge*fade*fxIntensity;
  }else if(m<9.5){
   float s=fxLocal.x,r=fxLocal.y;
   float front=clamp(age/.09,0.,1.);
@@ -333,6 +350,24 @@ void main(){
   float fade=1.-smoothstep(.15,1.,k);
   float mark=ribs*fragments*taper*fade;
   alpha=mark*.14;emit=(fxColor*.7+vec3(.9))*mark*fxIntensity;
+ }else if(m>14.5){
+  // Standing flame tongue: narrowing body, upward-scrolling erosion, lean and flicker, temperature by height.
+  if(abs(fxSeg-floor(fxSeg+.5))>.01)discard;
+  float sx=fxLocal.x,v=fxLocal.y,seg=floor(fxSeg+.5);
+  float n=fxFbm(vec2(sx*1.6+seg*3.1,v*2.2-t*3.4-seg));
+  float f=fxNoise(vec2(sx*4.+seg,v*5.-t*6.));
+  float lean=(n-.5)*1.3*v+sin(t*5.+seg*2.)*.22*v;
+  float width=pow(max(0.,1.-v),.5)*(.7+.3*sin(v*9.-t*8.+seg))*(.75+.5*n);
+  float body=1.-smoothstep(width*.45,width,abs(sx-lean));
+  // Forked, licking tip: a cavity opens down the centre of the upper half.
+  float fork=smoothstep(.45,.85,v)*(1.-smoothstep(.0,.18+.1*f,abs(sx-lean-(f-.5)*.3)));
+  float top=1.-smoothstep(.4+n*.35,.95,v);
+  float d=max(0.,body*top-fork*.8)*smoothstep(0.,.18,v)+(f-.5)*.25*v;
+  float dens=smoothstep(.2,.42,d);
+  float heat=clamp(d*(.8-v*.6)+(1.-smoothstep(0.,.18,v))*.12,0.,1.);
+  emit=fxHeat(heat)*dens*.5*fxIntensity;
+  float rim=dens*(1.-smoothstep(.2,.5,d));
+  alpha=dens*.1+rim*.28;base=vec3(.2,.035,.008);
  }else if(m>13.5){
   // VFX15 Overdrive climaxes: three distinct floor events on one disc (fxArc 1 cryo, 2 pyro, 3 arc).
   float r=fxLocal.y,R=fxRange,a=fxLocal.x*6.2831853,el=fxArc,on=fxParam;
@@ -413,7 +448,7 @@ void main(){
  gl_FragColor.rgb*=gl_FragColor.a/fxA0;
 }`;
 
-const MODE_ORDER: Record<number, number> = { 0: 2, 1: -3, 2: 4, 3: 3, 4: 2, 5: -3, 6: -3, 7: -3, 8: -2, 14: -3 };
+const MODE_ORDER: Record<number, number> = { 0: 2, 1: -3, 2: 4, 3: 3, 4: 2, 5: -3, 6: -3, 7: -3, 8: -2, 14: -3, 15: 2 };
 
 /** Fixed pool; spawn() recycles the oldest slot when full, never allocates. */
 export class FlagshipFx {
@@ -426,7 +461,7 @@ export class FlagshipFx {
   private time = 0;
   private readonly color = new T.Color();
 
-  constructor(parent: T.Object3D, capacity = 24) {
+  constructor(parent: T.Object3D, capacity = 32) {
     this.root.name = 'ability-flagship-fx';
     // PlaneGeometry spans [-.5,.5]; the shader reads only uv, but bounds must be finite.
     for (let i = 0; i < capacity; i++) {
