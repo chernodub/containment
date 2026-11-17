@@ -10,6 +10,7 @@ const CORE = 0xfff2d2;
 const DUST = 0x727675;
 const STEEL = 0x34424a;
 const TAU = Math.PI * 2;
+const NO_ENEMIES = Object.freeze([]);
 const NO_DEPLOYABLES: readonly DeployableSnapshot[] = [];
 export const BREACHER_LIMITS = Object.freeze({ casts: 8, impacts: 12, barriers: 8, panels: 7 });
 
@@ -41,6 +42,8 @@ export class BreacherPresentation implements AbilityPresentation {
   private disposed = false;
   private pressure?: FxSlot;
   private pressureSeed = -1;
+  private readonly contacts = Array.from({ length: 64 }, () => ({ id: -1, x: 0, z: 0, h: .8 }));
+  private contactCursor = 0;
 
   constructor(private readonly kit: ElementKit) {}
 
@@ -128,8 +131,17 @@ export class BreacherPresentation implements AbilityPresentation {
       const ids = event.targetIds;
       if (ids) for (let i = 0; i < ids.length && i < 8; i++) {
         const actor = kit.statusActor(ids[i]);
-        if (!actor) continue;
-        const m = actor.root.matrixWorld.elements, tx = m[12], tz = m[14], h = Math.min(1.2, actor.height * .55);
+        let tx: number, tz: number, h: number;
+        if (actor) {
+          const m = actor.root.matrixWorld.elements; tx = m[12]; tz = m[14]; h = Math.min(1.2, actor.height * .55);
+        } else {
+          // Actors killed by this native hit may have retired before presentation receives it.
+          // Last observed presentation position preserves their contact without inventing a target.
+          let cached: (typeof this.contacts)[number] | undefined;
+          for (const contact of this.contacts) if (contact.id === ids[i]) { cached = contact; break; }
+          if (!cached) continue;
+          tx = cached.x; tz = cached.z; h = cached.h;
+        }
         kit.impact();
         kit.draw('spark', tx, h, tz, .75, .75, 1, CORE, 1);
         kit.draw('spark', tx, h, tz, 1.4, .2, 1, AMBER, .9, 0, -angle);
@@ -190,6 +202,13 @@ export class BreacherPresentation implements AbilityPresentation {
     if (this.disposed) return;
     const dt = Number.isFinite(frame.dt) ? Math.max(0, frame.dt) : 0;
     if (this.ramStartValid) this.ramStartAge += dt;
+    for (const enemy of frame.game?.enemies.snapshot.enemies ?? NO_ENEMIES) {
+      let contact: (typeof this.contacts)[number] | undefined;
+      for (const candidate of this.contacts) if (candidate.id === enemy.id) { contact = candidate; break; }
+      if (!contact) contact = this.contacts[this.contactCursor++ % this.contacts.length];
+      contact.id = enemy.id; contact.x = enemy.x / UNIT; contact.z = enemy.y / UNIT;
+      contact.h = Math.min(1.2, this.kit.statusActor(enemy.id)?.height ?? .8);
+    }
     this.emissionClock += dt;
     const emit = dt > 0 && this.emissionClock >= (this.kit.low ? .1 : .035);
     if (emit) this.emissionClock = 0;
@@ -562,6 +581,8 @@ export class BreacherPresentation implements AbilityPresentation {
     for (const b of this.barriers) { b.id = -1; b.seen = false; b.pulse = b.shotPulse = 0; b.contact = b.shotContact = b.hostileContact = 0; b.hostileAge = 1; }
     for (const crossing of this.crossings) { crossing.bullet = undefined; crossing.barrier = -1; }
     this.crossingCursor = 0;
+    for (const contact of this.contacts) contact.id = -1;
+    this.contactCursor = 0;
     this.emissionClock = 0;
     this.ramStartValid = false; this.ramStartAge = 0;
     if (this.pressure?.seed === this.pressureSeed) this.pressure.live = false;

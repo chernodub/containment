@@ -122,13 +122,13 @@ class PyroPresentation implements AbilityPresentation {
         p.arc = event.arcRadians ?? FAN_ARC;
         const c = Math.cos(p.angle), s = Math.sin(p.angle);
         // Volume: a low hot sheet, the rolling body and a smoke crown. Low keeps the body.
-        const layers = kit.low ? 1 : 2;
+        const layers = kit.low ? 1 : 3;
         for (let i = 0; i < 3; i++) {
           if (i >= layers) { p.slices[i] = undefined; continue; }
-          const layer = kit.low ? .35 : i;
+          const layer = kit.low ? .35 : i * .5;
           const slot = kit.fx.spawn(FxMode.Fire, x, z, layer > .9 ? 1.35 : .62);
           slot.angle = p.angle; slot.arc = p.arc; slot.range = p.range; slot.inner = .07;
-          slot.h0 = .95; slot.h1 = i ? 1.2 : .5; slot.param = layer;
+          slot.h0 = .95 + i * .08; slot.h1 = .5 + i * .4; slot.param = layer;
           slot.mx = x + c * .55; slot.my = .95; slot.mz = z + s * .55;
           p.slices[i] = slot;
         }

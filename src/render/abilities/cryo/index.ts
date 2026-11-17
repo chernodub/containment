@@ -132,10 +132,9 @@ class CryoPresentation implements AbilityPresentation {
           const a = i * TAU / mistCount + .13;
           const width = Math.min(radius * .17, .58 + progress * .42);
           const r = Math.max(0, radius - width * 1.2);
-          k.sprite('mist', wave.x + Math.cos(a) * r, .28 + (1 - curtainYield) * .2,
-            wave.z + Math.sin(a) * r, width, .24 + (1 - curtainYield) * .22,
-            CORE, fade * .4 * (1 - curtainYield * .7), i * 1.87,
-            'billboard', 0, -.24);
+          k.gust(wave.x + Math.cos(a) * r, wave.z + Math.sin(a) * r,
+            width * 1.5, .14, a + Math.PI / 2, i * 1.87,
+            fade * .22 * (1 - curtainYield * .7));
         }
       }
       const count = k.low ? 8 : 24;

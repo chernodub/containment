@@ -42,8 +42,9 @@ export class OverdrivePayoff {
     const wave = k.fx.spawn(FxMode.Shock, x, z, .55);
     wave.range = 6 * weight; wave.h0 = .06; wave.color = color; wave.intensity = 1.2;
     // Vertical accent: a brief pillar of light through the marine.
-    k.beam(x, .05, z, x, 4.5, z, WHITE, .16 * weight, .16, false);
-    k.beam(x, .05, z, x, 3.2, z, color, .38 * weight, .3, false);
+    const pillar = k.fx.spawn(FxMode.Pillar, x, z, .32);
+    pillar.range = .38 * weight; pillar.h0 = .05; pillar.h1 = 4.2;
+    pillar.color = color; pillar.intensity = weight;
     k.draw('spark', x, 1, z, 1.6 * weight, 1.6 * weight, 1, WHITE, 1);
     k.flash(x, z, WHITE, 30 * weight, 9, 6, .08);
     k.flash(x, z, color, 18 * weight, 10, 5, .4);
