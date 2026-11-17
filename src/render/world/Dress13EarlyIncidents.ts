@@ -29,14 +29,22 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
     put('service-cable-tray',452,397,1.5,[.35,.3,.5]);
   }
   if (id === 'passenger-vault') {
-    // Empty personal-effects drawer is authored in the carrier; its contents
-    // have fallen into the bank's front edge rather than the entry fight lane.
-    put('service-transit-case',446,369,.4,[.5,.32,.5]);
-    put('service-transit-case',472,365,-.6,[.35,.25,.4]);
-    put('deck-access-panel',439,355,.35,[.13,.5,.18],.005,'clinical');
-    put('deck-access-panel',456,361,-.35,[.12,.5,.16],.005,'clinical');
-    put('deck-rubber-panel',475,355,.8,[.18,.4,.2],.004,'clinical');
-    put('security-sign-05',424,327,0,[.28,.35,1],.55,'security');
+    // One empty drawer has been pulled into the aisle shoulder. Its open case,
+    // separate lid, folded clothes and personal objects remain in one trail.
+    put('service-transit-case',366,368,.2,[1.25,.35,.9]);
+    put('service-access-hatch',358,363,.15,[1,.45,.75],.08);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.4));
+    put('service-transit-case',414,369,-.5,[.7,.35,.6]);
+    put('service-transit-case',445,366,.35,[.55,.3,.5]);
+    put('service-access-hatch',438,374,-.3,[.5,.3,.45],.03);
+    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.5));
+    put('deck-access-panel',328,373,.5,[.25,.5,.33],.025,'clinical');
+    put('deck-access-panel',343,379,-.2,[.3,.5,.24],.025,'clinical');
+    put('deck-rubber-panel',396,372,.8,[.6,.5,.42],.026,'clinical');
+    put('deck-rubber-panel',418,380,-.5,[.45,.4,.3],.026,'clinical');
+    put('deck-access-panel',457,379,.6,[.22,.5,.16],.025,'clinical');
+    put('service-transit-case',473,370,-.4,[.36,.25,.36]);
+    put('deck-access-panel',383,381,-.4,[.18,.5,.14],.025,'clinical');
   }
   if (id === 'communal-atrium') {
     // A failed dining barricade gathers on the conservatory's east foot.
@@ -114,8 +122,14 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     }
   }
   if(id==='passenger-vault') {
-    for(let i=0;i<3;i++) flat([[-.22,-.27],[.23,-.26],[.21,.28],[-.23,.25]],scratch,446+i*9,366+i*3,i*.4);
-    flat([[-.035,-.7],[.04,-.6],[.025,.65],[-.025,.6]],dark,448,354,.2);
+    const pocket=new T.PlaneGeometry(.85,.49);pocket.rotateX(-Math.PI/2);mesh(pocket,dark,366,.191,368,.2);
+    for(let i=0;i<4;i++) flat([[-.22,-.27],[.23,-.26],[.21,.28],[-.23,.25]],scratch,328+i*13,377+i%2*3,i*.4);
+    flat([[-.035,-.7],[.04,-.6],[.025,.65],[-.025,.6]],dark,360,374,.2);
+    const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;
+    const ctx=canvas.getContext('2d')!;ctx.fillStyle='#26363c';ctx.fillRect(0,0,512,128);ctx.fillStyle='#b3b9ac';ctx.font='bold 38px monospace';ctx.fillText('K. VOSS / BERTH 04',18,54);ctx.font='24px monospace';ctx.fillText('PERSONAL EFFECTS - RELEASED',18,101);
+    const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
+    const label=new T.MeshStandardMaterial({map:texture,roughness:1,metalness:0,side:T.DoubleSide});label.name='dress13-passenger-nameplate';label.userData.actorMaterial=true;label.addEventListener('dispose',()=>texture.dispose());
+    mesh(new T.PlaneGeometry(1.1,.275),label,366,.26,379).rotation.x=-.55;
   }
   if(id==='communal-atrium') {
     for(let i=0;i<5;i++) flat([[-.12,-.32],[.13,-.28],[.1,.3],[-.13,.27]],dark,650+i*9,400+(i%2)*8,.3);
