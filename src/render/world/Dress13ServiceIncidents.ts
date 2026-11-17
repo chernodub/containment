@@ -29,12 +29,12 @@ const incidents: Record<string, Piece[]> = {
   // Open rack service is interrupted mid-patch. Captive trays and detached
   // cards remain on the central rack's native footprint.
   'relay-racks': [
-    ['service-access-hatch', 620, 425, .75, 0, .32, .4],
-    ['service-cable-tray', 635, 461, .85, 0, 0, .25],
-    ['service-cable-tray', 672, 478, .65, -.13, .2, .3],
-    ['service-transit-case', 634, 520, .65, -.3, 0, .22],
-    ['service-transit-case', 673, 540, .45, .28, 1.5, .23],
-    ['service-access-hatch', 655, 568, .4, -.3, 1.5, .1],
+    ['service-access-hatch', 597, 553, .8, .25, 1.5, .16],
+    ['service-cable-tray', 620, 552, .85, .3, 0, .1],
+    ['service-cable-tray', 631, 578, .65, 1.4, .2, .1],
+    ['service-transit-case', 598, 590, .65, -.3],
+    ['service-transit-case', 628, 608, .45, .28, 1.5, .23],
+    ['service-access-hatch', 650, 600, .4, -.3, 1.5, .1],
   ],
   'transmission-chamber': [
     ['service-console-schematic', 835, 365, .8],

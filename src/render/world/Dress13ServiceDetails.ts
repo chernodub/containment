@@ -49,14 +49,14 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     }
     shards(590, 438, steel);
   } else if (id === 'relay-racks') {
-    tool(622, 538, .3, .29); tool(680, 533, 1.7, .29);
+    tool(592, 575, .3); tool(600, 604, 1.7);
     for (let i = 0; i < 5; i++) {
-      const x = 628 + i * 7;
-      line([x, .5, 452], [x + 5, .26, 479], .014, 0x677e7d);
-      line([x + 3, .26, 490], [x + 10, .24, 511], .014, rubber);
-      box(638 + i * 7, .27, 558, .08, .015, .2, 0x5b706c, i * .45);
+      const x = 607 + i * 7;
+      line([x, 1.15, 545], [x - 22, .035, 575], .02, 0x677e7d);
+      line([x - 20, .035, 583], [x - 7, .035, 610], .02, rubber);
+      box(605 + i * 7, .025, 610, .08, .015, .2, 0x5b706c, i * .45);
     }
-    scuff(640, 571, .8, .4);
+    scuff(605, 607, .8, .4);
   } else if (id === 'transmission-chamber') {
     tool(801, 394, .7, .18); tool(849, 395, 2, .18);
     line([813, .2, 389], [821, .15, 401], .025, rubber);

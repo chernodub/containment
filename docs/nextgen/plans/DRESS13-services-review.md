@@ -24,3 +24,8 @@ Moved the crushed three-crate stack onto the front-left machinery bed and enlarg
 
 Opened native fight-tour02 and exact480 tour02/03 against final6. Foam and bent hull read, but the dragged cargo was entirely inside the wound and did not connect to the dock floor.
 Pulled the first three cases back along the port shoulder and exposed two low dark drag scars on the apron, preserving the central turning circle and broad port route. Final tour/calm recheck pending the shared second batch.
+
+## Relay Racks — round1 → correction
+
+Opened native fight-tour02 and exact480 tour02/03 against final6. The rack spine remains dominant and the actor is clear, but tools and cut fibres on its interior bed disappear behind the rack bodies.
+Moved the opened panel and repair spill to the west face below the visible patch gap, with five dangling cut fibres terminating short of their deck-side ends. No route or collider changed; final tour/calm recheck pending the shared second batch.
