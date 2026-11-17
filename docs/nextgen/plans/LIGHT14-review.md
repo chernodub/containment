@@ -119,3 +119,7 @@
 ## Breached Loading Bay
 - Opened native calm and 480 colour/grey calm/tour/heavy: cold scar rim and wedged pod now identify the breach above the grey-blue deck; marine and hot enemy signals remain first/second.
 - Local starlight source leaves the approach and peripheral growth darker while preserving debris, cover and pressure-lock route. Build and seven guarded frames pass.
+
+## Relay Racks
+- Opened native calm and 480 colour/grey calm/tour/heavy: rack rows, status strips and cyan under-glow identify the communications bank above the aisle floor; marine/threats remain brighter.
+- Low-positioned existing practical slot plus bounded bank self-light restores the rack landmark outside the marine pool; backs and far corners stay dark. Build and seven guarded frames pass.
