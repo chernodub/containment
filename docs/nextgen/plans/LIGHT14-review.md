@@ -103,3 +103,7 @@
 ## Residential Gallery
 - Opened native calm and 480 colour/grey calm/tour/heavy: warm cabin berth/doorway is the room landmark; marine and hostile warning/lanterns lead; far cabin recesses remain dark.
 - Initial lamp over-lit packing debris. Moved it inside the cabin, tightened radius and reduced physical gain/spill; reopened corrected frames. Build and seven guarded frames pass.
+
+## Crew Checkpoint
+- Opened native calm and 480 colour/grey calm/tour/heavy: gate faces/lights now read above the inspection floor; marine, hot warnings and creature lanterns retain priority.
+- Gate-centred cool source and wall-foot wash preserve cage/door boundaries. Floor remains the palest route room, but the gate is no longer lost. Build and seven guarded frames pass.
