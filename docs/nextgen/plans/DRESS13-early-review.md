@@ -39,3 +39,6 @@ Opened native tour02 and exact480 tour01/03 against final6: the empty pulled dra
 
 ### Round 1 actual image review — Communal Atrium
 Opened native tour02 and exact480 tour01/03 against final6: the damaged conservatory is clearer, but the table barricade is swallowed by foliage and the generic-furnishing retirement filter. Correction exempts explicitly authored DRESS13 furniture from that filter and moves the toppled tables to the garden's front foot, leaving at least 140 units of the south route visually open.
+
+### Round 1 actual image review — Crew Checkpoint
+Opened native tour02 and exact480 tour01/03 against final6: the central scanner remains exceptionally readable, but the baggage was placed on the wrong north bank and is absent from the intended composition. Correction seats the bags on the actual authored conveyor at (950,98), with the dropped case and soot/casing fan at its foot; this is a north-bypass incident, strongest in tour03 rather than the fight view.
