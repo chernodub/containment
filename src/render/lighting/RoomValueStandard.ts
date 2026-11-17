@@ -69,6 +69,13 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xefc897,
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.9,
   }),
+  // Boarding scar, wedged pod and pressure lock.
+  'breached-loading-bay': profile({
+    fixturesAt:[[215, 265], [690, 390], [1080, 520]],
+    floor:{lit:.48,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
+    wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xbfd8ed,
+    fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.9,
+  }),
   'awakening-bay': profile({
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},

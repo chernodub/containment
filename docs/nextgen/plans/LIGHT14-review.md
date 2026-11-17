@@ -23,3 +23,7 @@
 ## 6 Freight Hold
 - Opened calm/tour03/heavy 480 colour/grey: marine first, gantry and dispatch cover readable, amber identity unmistakable; brightest practical wedge still competes on the east edge.
 - Keep gantry/booth/dispatch pools; shared aperture reshape in item18 must remove that edge wedge. Build and seven guarded frames pass. Freight remains a brighter-room review priority.
+
+## 7 Breached Loading Bay
+- Opened calm/tour03/heavy 480 colour/grey: cold boarding scar and wedged pod silhouette remain readable; marine leads the warning-filled heavy frame.
+- Scar/pod/pressure-lock pools preserve cover edges and route debris. Build and seven guarded frames pass; no global lift needed.
