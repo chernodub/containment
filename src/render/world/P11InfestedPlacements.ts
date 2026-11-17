@@ -47,9 +47,9 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       cutaway: !asset.startsWith('brood-creep'), castShadow: !asset.startsWith('brood-creep'),
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
-    // The heart owns the southeast crossing shoulder, beyond the fight circle.
+    // The heart owns the east crossing shoulder, beyond the fight circle.
     // All tall growth is backed by the duct-bank faces; the crossing stays open.
-    brood('brood-hive-heart', 820, 640, .8);
+    brood('brood-hive-heart', 815, 470, .8);
     brood('brood-nest-large', 300, 222);
     brood('brood-nest-large', 900, 818, 1, 0, Math.PI);
     brood('brood-nest-medium', 950, 225, 1, 0, .15);
