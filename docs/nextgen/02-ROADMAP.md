@@ -51,7 +51,8 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | KA12 title key art (torn breach, Lantern Brood silhouettes), ending image, second-generation weapons — Astra | merged | title accepted after a second pass with lead direction |
 | P11 one hero set piece per room, kit craft pass, fixture hierarchy — Astra (`streams/P11-set-pieces.md`) | merged | all twenty rooms placed, campaign clears, ≤ 330 draws; lead review: breach and several landmarks improved, but infestation is still thin strands (Swarm Junction) and rooms still lack incidents/belongings (Residential) |
 | GROW13 Brood growth kit, fifteen pieces incl. hive heart — Opus, modelling only | merged | review placement turns Swarm Junction into a stronghold |
-| DRESS13 growth-kit placement in rooms 15–20 and one staged incident per room — Sol | merged; correction pass running | 277 draws peak, campaign 20/20; lead review: creep blobs on the fight floor, masses on wall caps, incidents too thin |
+| DRESS13 growth-kit placement in rooms 15–20 and a staged incident in every room, with a correction pass — Sol | merged | Swarm Junction reads as a stronghold; Residential shows an interrupted evacuation; 277 draws peak |
+| G13 review gallery `final7` — Sol | running | then R12 by two Astra reviewers |
 | PERF13 creature LODs, shadow proxies, camera/main-thread CPU — Sol | merged | triangles −32%, profiled thread CPU per render 17.2 → 7.9 ms; frame p95 ≤ 20 ms in 11/16 configurations (all Low, 3 of 8 High) on a loaded host — High still misses in five |
 | G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
 | D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |
