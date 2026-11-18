@@ -22,10 +22,16 @@ At spawn the original mill and nest are nearly off-screen, leaving the approach 
 The first duct study hid its spindle inside an oversized rib cage. The Blender render and the tour both showed one featureless purple slab.
 The revised taper exposes the machinery between ribs and brings the lantern cluster above the skin. The resin fringe is visible from the fight floor, though the metal and tissue still converge in value.
 
+## Manual Control Chamber
+
+The original spawn frame shows an intact dark deck and a warning sign. The control station is hard to find from the entrance.
+The first soot fan reads as a sharply cut black shape at 480×270. The first incident-facing camera mark also fails the warning-quad clearance check.
+The revised fan breaks into feathered deposits around the ejected chair. The second camera mark shows the bent lever and conduit beneath the hard station light and passes the capture check.
+
 ## Lead review, five-room scale pass
 
 Awakening now exposes four forced berths above a continuous reflective spill, with drifting mist and a wet trail toward the exit. The left diagnostic panel remains visible inside one breach.
 Residential now carries the case trail on a folded runner with a coloured binding, broken check and drag scuffs. The individual drawings remain native-resolution detail.
 Coolant now has a solid cracked sheet from the header to the entrance, including raised source ice and a frozen pump jacket. The dark outline of the turbine still dominates its far end.
-Workshop now extends a resin bed and stretched membranes from the duct into the entry approach. At reduction the parallel floor strands still read more like cables than flesh.
-Manual now has a deformed dais, jammed lever, ejected chair and a narrowing blast shadow. The first soot fan looked cut from black paper; the final fan uses feathered deposits around the chair shadow.
+Workshop now extends a resin bed and stretched membranes from the duct into the entry approach. The last pass widened the blistered crust beneath the parallel strands. The outer strands still resemble cables at reduction.
+Manual now has a deformed dais, jammed lever, ejected chair and a narrowing blast shadow. The first soot fan looked cut from black paper; the final fan uses feathered deposits around the chair shadow. Enlarging the station lifts its broken bus bars above the front lip.
