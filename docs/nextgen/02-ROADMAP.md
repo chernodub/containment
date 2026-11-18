@@ -60,7 +60,7 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | BAL13 sim-versus-native gap and early deaths; Story must not kill in room three — Sol | running | |
 | VFX15 four different Overdrive climaxes, Napalm with flame tongues, shared effect-area cap — Opus | merged | Frost Trail and Ram left for a later pass |
 | K13 Warden and Matron as a real boss tier (≈ 2× marine), brood pod asset, Stalker/Carrier/Spitter fixes — Opus, modelling only | merged | |
-| I13 boss footprints and collision to match, pod countdown, Warden stun, repack — Sol | running | |
+| I13 boss footprints and collision to match, pod prop with hatch countdown, Warden wall-stun cue, LOD/KTX2 repack — Sol | merged | Story/Arc campaign cleared 16 rooms incl. Warden and Matron, zero errors; Matron (1.4×) reads less imposing than the Warden (2.3×) |
 | COMM13 mechanics visible on screen: siege area and charge, priority vs resistance markers, off-screen shot cue, Stalker reveal, beat signals — Sol 6.2 | running | |
 | UI13 varied reward illustrations, transform before/after diagrams, shop and route cards, density pass — Astra 6.2 | running | |
 | PERF13 creature LODs, shadow proxies, camera/main-thread CPU — Sol | merged | triangles −32%, profiled thread CPU per render 17.2 → 7.9 ms; frame p95 ≤ 20 ms in 11/16 configurations (all Low, 3 of 8 High) on a loaded host — High still misses in five |
