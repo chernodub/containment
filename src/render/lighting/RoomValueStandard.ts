@@ -117,6 +117,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.22,practicals:.58,ambient:.52,marineGlow:1,exit:.95,
   }),
   'infested-workshop': profile({
+    landmark:{at:[650,330],color:0xb575ed,radius:7,body:.6,spill:.025,height:1.2,keyGain:.7},
     // Consumed milling machine, rear brood nest, engulfed repair bench.
     fixturesAt:[[650,330],[861,100],[250,900]],
     floor:{lit:.62,unlit:.29,edge:.14},perimeter:{inner:3.8,outer:10,value:.42,lane:.8},

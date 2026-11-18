@@ -143,3 +143,7 @@
 ## Service Shaft Landing
 - Opened native calm and 480 colour/grey calm/tour/heavy: below-deck teal light reveals shaft bracing, landing lip and winch structure while the shaft interior retains depth; marine/threat highlights lead.
 - Source is below deck level, with restrained landing spill and readable rails/exit beacon. Build and seven guarded frames pass; winch cable drum remains deliberately dark.
+
+## Infested Workshop
+- Opened native machine-facing fight-circle and 480 calm/tour/heavy: consumed milling machine and violet tissue now identify the workbay above its floor; marine and hostile signals retain priority.
+- Low living-machine source preserves the dark return bay and makes machine/tissue boundaries readable. Build and seven guarded frames pass; rear nests remain secondary dark masses with lantern dots.
