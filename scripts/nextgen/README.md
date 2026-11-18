@@ -1209,3 +1209,13 @@ The DRESS13 Atrium and Manual twenty-contact frames stop their added movement ho
 `node scripts/nextgen/i13-native.mjs --rooms=relay-racks --out=artifacts/nextgen/i13-final/native` stages legal guardian/regular groups, then records actual native charge, wall stun, brood and pod clocks. It does not inject phase timers or change camera settings. `--mode=plain --cases=warden,matron` forces the existing PNG fallback by hiding compressed-texture extensions before startup. `--before=/tmp/i13-before --cases=stalker,carrier,spitter` serves preserved earlier body GLBs under the same current runtime for art comparison (not historical-runtime performance). Preserve `basilisk.glb`, `dragoon.glb`, and `marauder.glb` from the intended before revision there. The fixture marine is invulnerable and stationary; body bounds, anchor clearance, requests and post-ready program counts are observations, not balance evidence. Death captures reposition the marine legally beside the corpse for the native camera.
 
 Guardian campaign coverage: `npm run playtest -- --rig=arc --seed=1729 --difficulty=story --profile=competent --rooms=16 --label=i13-guardian-review --storyboard-room=armory,swarm-junction --max-wall-seconds=7200`. This ordinary-render, unassisted campaign includes Armory Warden and Swarm Junction Matron; room16 is its explicit integration coverage target. Do not combine storyboards with `--fast`.
+
+## LIGHT14 landmark correction gallery
+
+`node scripts/nextgen/light14-landmark-gallery.mjs [twenty-capture-parent] [manual-dress13-parent] [replacement-json]`
+creates the colour/greyscale calm and kiting twenty-up sheets under
+`artifacts/nextgen/light14-final/landmark-correction/`, alongside previous LIGHT14
+sheets and source/failure receipts. It reads ordinary G6 frame02; only a missing
+Manual Control frame may use an explicitly supplied DRESS13 frame01, labeled on
+the sheet. It does not alter capture guards or turn a failed burst into a pass.
+The room indexes also include historical/current calm pairs with native links. Defaults use the consolidated final gallery parents; replacement JSON names explicitly recaptured cells and retains every parent failure receipt. Per-room native review captures live in `landmark-correction/room-reviews/`.

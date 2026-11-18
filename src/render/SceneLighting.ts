@@ -94,7 +94,7 @@ export class SceneLighting {
    candidates.length=write;
   }
   this.authoredFixtures=candidates.slice();this.playerX=this.playerZ=NaN;
-  const selected:Fixture[]=[];
+  const selected:Fixture[]=this.landmarkFixture()?[this.landmarkFixture()!]:[];
   candidates.sort((a,b)=>Math.hypot(a.x-width/2,a.z-height/2)-Math.hypot(b.x-width/2,b.z-height/2));
   while(candidates.length&&selected.length<this.fixtures.length){
    if(selected.length)candidates.sort((a,b)=>Math.min(...selected.map(s=>Math.hypot(b.x-s.x,b.z-s.z)))-Math.min(...selected.map(s=>Math.hypot(a.x-s.x,a.z-s.z))));
@@ -115,6 +115,10 @@ export class SceneLighting {
    }
   });
  }
+ private landmarkFixture():Fixture|undefined {
+  const source=this.valueProfile?.landmark;
+  return source?{x:source.at[0]/32,z:source.at[1]/32,y:source.height??3.8,color:source.keyColor??source.color,nativeColor:true,gain:source.keyGain??1.4,distance:source.radius*2,poolWidth:source.radius,poolDepth:source.radius*1.6,poolStyle:0}:undefined;
+ }
  private setFixtureShape(light:T.PointLight,fixture:Fixture,index:number){
   const angle=fixture.poolAngle??Math.atan2(this.width/2-fixture.x,this.height/2-fixture.z);
   light.userData.poolAngle=angle;light.userData.worldBounceGain=this.interiorPresentation?0:ENVIRONMENT_COMPOSITION[this.mood.environment].bounce;
@@ -129,6 +133,7 @@ export class SceneLighting {
   this.playerX=x;this.playerZ=z;
   const selected=this.nearbyFixtures;selected.length=0;
   if(this.staging)selected.push({x:this.staging.coreX,y:this.staging.coreY,z:this.staging.coreZ,color:this.staging.coreColor});
+  else {const landmark=this.landmarkFixture();if(landmark)selected.push(landmark);}
   if(this.mood.environment==='reactor'){
    this.authoredFixtures.sort((a,b)=>(a.x-x)**2+(a.z-z)**2-((b.x-x)**2+(b.z-z)**2));
    for(const fixture of this.authoredFixtures){

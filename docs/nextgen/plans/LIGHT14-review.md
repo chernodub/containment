@@ -81,3 +81,97 @@
 ## 20 Final verification
 - Final build passes. Native Cryo/1729 Standard clears 5 rooms then dies in Armory; Story clears 10 then dies in Diagnostic; both 0 errors. No simulation, policy, encounters, difficulty, UI or camera changes.
 - Four-room High/Cryo benchmark: 12 parent + 12 candidate + 4 parent recheck trials, 0 runtime errors/compiles. Existing Freight draw-budget misses affect both; load drifts substantially. Frame/GPU ranges overlap; small-cost neutrality remains uncertified. All raw results and load retained; report includes medians and limits.
+
+# Landmark correction after nextgen merge 450fa1e0
+
+## Overload Floor
+- Opened native calm plus 480 colour/grey calm, landmark tour and heavy: reactor casing/rings now identify the finale above the orange deck spill, while marine plates and hostile lanterns retain priority.
+- First casing fill was too even; reduced body/spill and warmed the retained emitter. Shared bounded landmark self-light and wall-foot wash add no draw/pass/light; build and seven guarded frames pass.
+
+## Communal Atrium
+- Opened native calm and 480 colour/grey calm/tour/heavy: green leaf shapes and the planted bed now identify the atrium below marine/threat highlights; surrounding circulation and wall feet remain readable.
+- Reduced the initial pale fill, made the body response greener and reserved an existing cool practical slot above the bed for the skylight shaft. Build and seven guarded frames pass; no light-slot increase.
+
+## Awakening Bay
+- Opened native calm and 480 colour/grey calm/tour/heavy: cyan cryo banks are now the landmark highlight below marine plates, with dark bank bases and readable recovery lanes.
+- Broad bank source restores cold colour outside the marine pool; wall feet, cover and exit route remain visible. Build and seven guarded frames pass.
+
+## Passenger Vault
+- Opened native calm and 480 colour/grey calm/tour/heavy: occupied drawer windows and status faces now read in periwinkle light above the blue floor; marine and hostile lanterns remain brighter.
+- Bank-centred body light and restrained aisle spill recover navigation outside the marine pool without exposing far recesses. Build and seven guarded frames pass.
+
+## Residential Gallery
+- Opened native calm and 480 colour/grey calm/tour/heavy: warm cabin berth/doorway is the room landmark; marine and hostile warning/lanterns lead; far cabin recesses remain dark.
+- Initial lamp over-lit packing debris. Moved it inside the cabin, tightened radius and reduced physical gain/spill; reopened corrected frames. Build and seven guarded frames pass.
+
+## Crew Checkpoint
+- Opened native calm and 480 colour/grey calm/tour/heavy: gate faces/lights now read above the inspection floor; marine, hot warnings and creature lanterns retain priority.
+- Gate-centred cool source and wall-foot wash preserve cage/door boundaries. Floor remains the palest route room, but the gate is no longer lost. Build and seven guarded frames pass.
+
+## Armory
+- Opened native calm and 480 colour/grey calm/tour/heavy: carousel spindle, weapon mounts and control panels now read under white work light above the dark blue magazine floor.
+- Local white body light/spill keeps the ring recognisable without lifting outer benches; marine and threats retain their brighter values. Build and seven guarded frames pass.
+
+## Freight Hold
+- Opened native gantry-facing tour and 480 colour/grey calm/tour/heavy: suspension gantry now reads as a sodium-lit machine above the amber tow floor; marine and threats retain priority.
+- Gantry-centred source restores structure and cargo identity while the dispatch recess remains dark and exit chevrons clear. Build and seven guarded frames pass.
+
+## Breached Loading Bay
+- Opened native calm and 480 colour/grey calm/tour/heavy: cold scar rim and wedged pod now identify the breach above the grey-blue deck; marine and hot enemy signals remain first/second.
+- Local starlight source leaves the approach and peripheral growth darker while preserving debris, cover and pressure-lock route. Build and seven guarded frames pass.
+
+## Relay Racks
+- Opened native calm and 480 colour/grey calm/tour/heavy: rack rows, status strips and cyan under-glow identify the communications bank above the aisle floor; marine/threats remain brighter.
+- Low-positioned existing practical slot plus bounded bank self-light restores the rack landmark outside the marine pool; backs and far corners stay dark. Build and seven guarded frames pass.
+
+## Transmission Chamber
+- Opened native calm and 480 colour/grey calm/tour/heavy: uplink dish and instruments now own a signal-blue highlight above the chancel floor; marine/hostile highlights remain brighter.
+- Bounded uplink source restores room identity and keeps rack recesses dark. Existing saturated red/green indicators preserve their hue when receiving emitter life. Build and seven guarded frames pass.
+
+## Diagnostic Gallery
+- Opened native calm and 480 colour/grey calm/tour/heavy: recorder/probe silhouette and diagnostic display now form the third-level landmark above cyan steel; marine and threats retain priority.
+- Initial source followed the nominal asset placement and missed the visible bay. Moved it to the physical recorder/probe area and reopened corrected frames; fatal text and rail boundaries stay readable. Build/seven frames pass.
+
+## Safety Interlock Station
+- Opened native calm and 480 colour/grey calm/tour/heavy: warm indicator/key-cylinder bank reads above the service floor, with locked-record text crisp and marine/threats brighter.
+- Mechanism-centred source leaves cage recesses dark while rails, battery return and doorway feet remain readable. Build and seven guarded frames pass.
+
+## Coolant Plant
+- Restarted interrupted work; build passed, first post-restart capture timed out before any frame, retry passed. Opened native heavy/fight-circle and 480 calm/tour/heavy: frost-lit turbine casing reads above the teal floor, with marine/threat highlights leading.
+- Tightened the manifold source and reduced spill from .03 to .012 so the machine owns the light instead of a general green wash. Seven corrected guarded frames pass; existing vapour remains subtle.
+
+## Service Shaft Landing
+- Opened native calm and 480 colour/grey calm/tour/heavy: below-deck teal light reveals shaft bracing, landing lip and winch structure while the shaft interior retains depth; marine/threat highlights lead.
+- Source is below deck level, with restrained landing spill and readable rails/exit beacon. Build and seven guarded frames pass; winch cable drum remains deliberately dark.
+
+## Infested Workshop
+- Opened native machine-facing fight-circle and 480 calm/tour/heavy: consumed milling machine and violet tissue now identify the workbay above its floor; marine and hostile signals retain priority.
+- Low living-machine source preserves the dark return bay and makes machine/tissue boundaries readable. Build and seven guarded frames pass; rear nests remain secondary dark masses with lantern dots.
+
+## Swarm Junction
+- Opened native calm and 480 colour/grey calm/tour/heavy: violet heart ribs identify the hive above its floor while marine and hostile lanterns retain priority.
+- Reduced body fill and spill after the first capture made the casing too pale; the corrected heart retains darker shell relief. Build and seven guarded frames pass.
+
+## Shielding Gate
+- Opened native calm and 480 colour/grey calm/tour/heavy: emitter banks and shield mechanism carry cool lavender life above the deck; marine and hostile lanterns lead.
+- West-emitter source leaves the crossing and far recesses darker, with threshold strips and cover edges readable. Build and seven guarded frames pass.
+
+## Containment Annulus
+- Opened native calm and 480 colour/grey calm/tour/heavy: cool teal cradle and diaphragm ring now identify the sealed core above its deck; marine plates and hostile signals lead.
+- Ring-centred self-light preserves the dark aperture and readable lid/rail boundaries. Build and seven guarded frames pass; the broad circulation floor remains one of the palest rooms.
+
+## Manual Control Chamber
+- Opened native calm/landmark-facing tour and 480 colour/grey calm/tour/heavy: warm authorization instruments identify the dais above its approach; marine and hostile lanterns retain priority.
+- Bounded dais source restores amber identity while cabinet recesses stay dark and fatal-choice text stays crisp. Build and seven guarded frames pass.
+
+## Whole-route landmark comparison
+- Opened current and previous twenty-calm/twenty-kiting in colour and greyscale, plus final7 references: landmark/deck separation improves; Crew, Freight and Annulus retain the broadest pale pools. Manual uses labeled verified DRESS13-01 after the existing HUD-warning failure.
+- Low Atrium/Relay/Overload pass; native Atrium canopy remains below marine plate ROI values. Fresh late-room replacements pass after host-load timeouts; all failed manifests remain retained. Final build passes; native Story campaign running.
+
+## Fragment-cost follow-up
+- Initial four-room GPU samples remained above both bracketing baseline samples, with frame times near25ms and no runtime errors/compiles. Bounded body/emitter work behind its existing positive body weight; zero-weight deck/distant surfaces skip it.
+- Rebuilt and opened Crew/Coolant calm plus Swarm heavy at480 colour/grey and native Coolant: appearance unchanged. Matching room/batching cache keys advance together to v12; final cost and campaign recheck follow.
+
+## Final verification and handoff
+- Final v12 build passes; bounded Crew/Coolant/Swarm views remain unchanged. Both full Story attempts clear 20 rooms with 0 runtime errors; final `2e24807c` has one retained Manual 6.06s loading hold. Earned-boundary continuation aborts in the existing Story difficulty assertion before new gameplay; no guard/runner changes.
+- Sixteen measured trials retain 0 runtime errors/compiles and flat final frame medians; Relay GPU neutrality remains uncertain and Freight keeps its existing draw-budget miss. Current/previous colour/grey sheets, 20 per-room pairs, 3 Low views, full native campaigns and all failures are in light14-final; weakest compositions remain Crew/Freight/Annulus.
