@@ -9,7 +9,7 @@ import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {prepareFlatActorSkin} from './ActorFlatSkin';
 import {authorActorRegions} from './ActorRegions';
-export const ASSET_NAMES=['marine','dretch','basilisk','marauder','dragoon','tyrant','pistol','rifle','shotgun','plasma','rocket'] as const;
+export const ASSET_NAMES=['marine','dretch','basilisk','marauder','dragoon','tyrant','pistol','rifle','shotgun','plasma','rocket','brood-pod'] as const;
 export type AssetName=typeof ASSET_NAMES[number];
 const templates=new Map<AssetName,GLTF>();
 const pending=new Map<AssetName,Promise<GLTF>>();
@@ -19,7 +19,8 @@ function loadAsset(name:AssetName,loader:GLTFLoader){
  const inFlight=pending.get(name);if(inFlight)return inFlight;
  // Share the entire decode, not just its HTTP transfer: each parser owns its
  // embedded images. A failed request must remain retryable on the next boot.
- const work=loader.loadAsync(`${import.meta.env.BASE_URL}${assetDirectory}${name}.glb`).then(async asset=>{asset.animations.push(...await loadAuthoredMotion(name,loader));registerAsset(name,asset);return asset;}).finally(()=>pending.delete(name));
+ const url=name==='brood-pod'?`${import.meta.env.BASE_URL}assets/brood-growth/brood-pod${assetDirectory.endsWith('plain/')?'':'-ktx'}.glb`:`${import.meta.env.BASE_URL}${assetDirectory}${name}.glb`;
+ const work=loader.loadAsync(url).then(async asset=>{asset.animations.push(...await loadAuthoredMotion(name,loader));registerAsset(name,asset);return asset;}).finally(()=>pending.delete(name));
  pending.set(name,work);return work;
 }
 export function registerAsset(name:AssetName,asset:GLTF){
