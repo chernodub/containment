@@ -237,7 +237,8 @@ export function chooseActions(s) {
   const walls = s.abilities.deployables.filter(entity => entity.kind === 'ice-wall');
   const shatter = walls.some(wall => s.enemies.filter(enemy => enemy.visible && distance(wall, enemy) <= 150).length >= 2);
   if (walls.length ? slots.power.ready && shatter : (slots?.power?.ready || s.abilityAims?.power && slots?.power?.charges > 0 && !s.abilities.dashing && !Object.values(slots).some(slot => slot.castRemainingMs > 0)) && s.enemies.length >= 2) keys.push('f');
-  if (s.abilities.overdrive.ready && (s.enemies.length >= 6 || emergency && s.enemies.length >= 2 || s.enemies.some(e => e.champion || e.id < 0))) keys.push('v');
+  const earlyFight = s.node?.depth < 4 && s.enemies.filter(enemy => enemy.visible && distance(enemy, s.player) < 350).length >= 3;
+  if (slots?.overdrive?.ready && (earlyFight || s.enemies.length >= 6 || emergency && s.enemies.length >= 2 || s.enemies.some(e => e.champion || e.id < 0))) keys.push('v');
   if (s.combat.magazine < s.combat.magazineCapacity * .25 && !s.combat.reloading && near > 300) keys.push('r');
   if (s.combat.grenades > 0 && s.enemies.filter(e => distance(e, s.player) < 400).length >= (emergency?2:4)) keys.push('g');
   return keys.filter(key => {
