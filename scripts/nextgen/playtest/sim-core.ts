@@ -46,6 +46,8 @@ export class CameraObserver {
     constructor(private readonly metrics:Record<string,{height:number}> = {}) {
         // Calibrated shipping HUD reservations at the runner's1920x1080 desktop viewport.
         this.hud.resize(WIDTH,HEIGHT);this.hud.setInsets({top:182,right:292,bottom:120,left:0});
+        // Native title establishes this focus; room loads retain spring/impulse state.
+        this.rig.reset(22,14);
     }
     observeEffect(effect:GameEffect) {const seconds=combatPresentationHoldSeconds(effect);if(seconds)this.presentationHold.request(seconds,1,false);}
     private get queenHeight(){return this.metrics.queen?.height??4.5;}
@@ -53,10 +55,7 @@ export class CameraObserver {
         const bounds = game.geometry.bounds;
         if (this.revision !== game.roomRevision) {
             this.revision = game.roomRevision;
-            this.roomFraming.reset();
             this.presentationHold.reset();
-            const f = roomFocus(game.geometry.playerSpawn.x / 32, game.geometry.playerSpawn.y / 32, bounds.width / 32, bounds.height / 32, VIEW * WIDTH / HEIGHT, VIEW, game.node.templateId);
-            this.rig.reset(f.x, f.z);
         }
         const b = game.boss.snapshot, bossActive = b.active && !b.defeated, zoom = bossActive ? .78 : 1;
         const p = game.player;
