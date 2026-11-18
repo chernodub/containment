@@ -38,23 +38,19 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const ids=center&&positions?[...options.breachIds].sort((a,b)=>{const pa=positions.find(p=>p.id===a),pb=positions.find(p=>p.id===b);return pa&&pb?Math.atan2(pa.y-center.y,pa.x-center.x)-Math.atan2(pb.y-center.y,pb.x-center.x):0;}):options.breachIds,rotation=Math.floor(random()*ids.length),schedule:EncounterSpawn[]=[];
  const beats=source.map((beat,beatIndex)=>{
   const start=schedule.length;let marked=false;
-  const groups=beat.groups.flatMap(group=>{
+  for(const group of beat.groups){
    const count=group.guardian?1:group.lesson||group.priority||node.depth<4?group.count:Math.max(1,Math.round(group.count*d.waves*(node.depth>=10?d.lateWaves:1)));
-   // Late Veteran packs exchange one close-pressure body for a readable ranged
-   // threat. Keep total bodies and authored beats; avoid rewarding only area CC.
-   if(options.difficulty==='veteran'&&node.depth>=10&&group.family==='crawler'&&!group.lesson&&!group.priority&&count>1)
-    return [{group,count:count-1},{group:{...group,family:'spitter' as const,role:'ranged' as const},count:1}];
-   return [{group,count}];
-  });
-  for(const {group,count} of groups){
    for(let index=0;index<count;index++){
+    // Exchange only the final body, preserving the pack's original arrival times.
+    const rangedRelief=options.difficulty==='veteran'&&node.depth>=10&&group.family==='crawler'&&!group.lesson&&!group.priority&&count>1&&index===count-1;
+    const family=rangedRelief?'spitter':group.family,role=rangedRelief?'ranged':group.role;
     const ordinal=schedule.length-start;
     const elite=!group.lesson&&node.depth>1&&(!!group.guardian||random()<Math.min(.28,(node.depth>=10?.21:.06+node.depth*.012)*d.elites));
     const resistant=!marked&&(!!group.guardian||elite&&!!group.priority);
     if(resistant)marked=true;
-    const side=group.role==='flanker'?1+index%Math.max(1,ids.length-1):group.role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
+    const side=role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
     const breachId=ids[(rotation+beatIndex+side)%ids.length];
-    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:group.reinforcement?4500+index*650:650+ordinal*450,wave:node.depth+1,enemyId:group.family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role:group.role,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:group.reinforcement??false}));
+    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:group.reinforcement?4500+index*650:650+ordinal*450,wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:group.reinforcement??false}));
    }
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.
