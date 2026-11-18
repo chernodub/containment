@@ -48,8 +48,8 @@ try {
       window.__roomAudit = {gpu:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER), phases:{}, calls:{}};
       const prepare=r.prepare;
       r.prepare=async function(...args){window.__roomAudit.ready=false;const value=await prepare.apply(this,args);window.__roomAudit.ready=true;return value;};
-      const render=r.render;
-      r.render=function(...args){
+      const render=r.post.render;
+      r.post.render=function(...args){
         const audit=window.__roomAudit, measure=audit.ready&&!audit.calls.firstFrame;
         const started=measure?performance.now():0;
         try{return render.apply(this,args);}

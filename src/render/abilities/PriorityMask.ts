@@ -30,6 +30,9 @@ export class AbilityPriorityMask {
   readonly height = 72;
   readonly pixels = new Uint8Array(this.width * this.height);
   readonly texture = new T.DataTexture(this.pixels, this.width, this.height, T.RedFormat);
+  private readonly raster = new Uint8Array(this.pixels.length);
+  private readonly horizontalDistance = new Float64Array(this.width);
+  private hasMask = false;
   private readonly point = new T.Vector3();
   private camera?: T.Camera;
   private disposed = false;
@@ -43,44 +46,50 @@ export class AbilityPriorityMask {
   }
 
   update(game: DepthGame | undefined, camera: T.Camera | undefined, source?: HostilePrioritySource, actorFor?: (id: number) => StatusActor | undefined): void {
-    this.pixels.fill(0);
     this.camera = camera;
-    if (game && camera) {
-      const p = game.player;
-      this.actor(p.x / 32, p.y / 32, .62, 2.05, 1);
-      for (const e of game.enemies.snapshot.enemies) {
-        if (e.health <= 0) continue;
-        const actor = actorFor?.(e.id), span = actor?.root.userData.affliction?.span ?? 0;
-        this.actor(e.x / 32, e.y / 32, Math.max(e.radius / 32 + .13, span * .46), actor?.height ?? (e.type === 'crawler' ? .65 : e.type === 'brute' || e.type === 'carrier' ? 1.65 : 1.15), .95);
-        // Snapshot fallback also works while the world renderer evolves its warning accessor.
-        if (!source?.forEachHostilePriority && e.windupMs > 0 && e.pendingAttack) {
-          const tx = e.pendingAttack === 'charge' ? e.x + e.lockX : e.lockX;
-          const tz = e.pendingAttack === 'charge' ? e.y + e.lockY : e.lockY;
-          this.segment(e.x / 32, .07, e.y / 32, tx / 32, .07, tz / 32, e.pendingAttack === 'charge' ? .8 : .32);
-        }
+    if (!game || !camera) {this.clear();return;}
+    this.raster.fill(0);
+    const p = game.player;
+    this.actor(p.x / 32, p.y / 32, .62, 2.05, 1);
+    for (const e of game.enemies.snapshot.enemies) {
+      if (e.health <= 0) continue;
+      const actor = actorFor?.(e.id), span = actor?.root.userData.affliction?.span ?? 0;
+      this.actor(e.x / 32, e.y / 32, Math.max(e.radius / 32 + .13, span * .46), actor?.height ?? (e.type === 'crawler' ? .65 : e.type === 'brute' || e.type === 'carrier' ? 1.65 : 1.15), .95);
+      // Snapshot fallback also works while the world renderer evolves its warning accessor.
+      if (!source?.forEachHostilePriority && e.windupMs > 0 && e.pendingAttack) {
+        const tx = e.pendingAttack === 'charge' ? e.x + e.lockX : e.lockX;
+        const tz = e.pendingAttack === 'charge' ? e.y + e.lockY : e.lockY;
+        this.segment(e.x / 32, .07, e.y / 32, tx / 32, .07, tz / 32, e.pendingAttack === 'charge' ? .8 : .32);
       }
-      const q = game.boss?.snapshot;
-      if (q?.active && !q.defeated) {
-        const actor = actorFor?.(-1);
-        this.actor(q.x / 32, q.y / 32, 2.8, actor?.height ?? 4.5, 1);
-      }
-      if (q?.pendingTelegraph) {
-        const t = q.pendingTelegraph;
-        this.ground(t.targetX / 32, t.targetY / 32, t.radius / 32 + .18);
-      }
-      // Persistent hostile ground remains dangerous after its wind-up retires.
-      // Friendly weather and placement previews must yield to the pool teeth.
-      for (const pool of game.pools ?? []) if (pool.life > 0)
-        this.ground(pool.x / 32, pool.y / 32, pool.radius / 32 + .18);
-      for (const b of game.bullets) {
-        if (b.kind !== 'hazard') continue;
-        const x = b.x / 32, z = b.y / 32, a = b.request.angle;
-        this.segment(x - Math.cos(a) * .6, .65, z - Math.sin(a) * .6,
-          x + Math.cos(a) * .35, .65, z + Math.sin(a) * .35, .35);
-      }
-      source?.forEachHostilePriority?.(this.visit);
     }
-    this.texture.needsUpdate = true;
+    const q = game.boss?.snapshot;
+    if (q?.active && !q.defeated) {
+      const actor = actorFor?.(-1);
+      this.actor(q.x / 32, q.y / 32, 2.8, actor?.height ?? 4.5, 1);
+    }
+    if (q?.pendingTelegraph) {
+      const t = q.pendingTelegraph;
+      this.ground(t.targetX / 32, t.targetY / 32, t.radius / 32 + .18);
+    }
+    // Persistent hostile ground remains dangerous after its wind-up retires.
+    // Friendly weather and placement previews must yield to the pool teeth.
+    for (const pool of game.pools ?? []) if (pool.life > 0)
+      this.ground(pool.x / 32, pool.y / 32, pool.radius / 32 + .18);
+    for (const b of game.bullets) {
+      if (b.kind !== 'hazard') continue;
+      const x = b.x / 32, z = b.y / 32, a = b.request.angle;
+      this.segment(x - Math.cos(a) * .6, .65, z - Math.sin(a) * .6,
+        x + Math.cos(a) * .35, .65, z + Math.sin(a) * .35, .35);
+    }
+    source?.forEachHostilePriority?.(this.visit);
+    this.hasMask=true;
+    // Camera and actor motion can quantize to the same mask, including paused frames.
+    for(let i=0;i<this.raster.length;i++){
+      if(this.raster[i]===this.pixels[i])continue;
+      this.pixels.set(this.raster);
+      this.texture.needsUpdate=true;
+      break;
+    }
   }
 
   /** Stamp a projected actor capsule including its head, rather than only its ground circle. */
@@ -127,20 +136,26 @@ export class AbilityPriorityMask {
     const y0 = Math.max(0, Math.floor(cy - ry)), y1 = Math.min(this.height - 1, Math.ceil(cy + ry));
     if (x0 > x1 || y0 > y1) return;
     const peak = strength * 255, ceiling = Math.min(255, Math.round(peak));
+    for(let x=x0;x<=x1;x++)this.horizontalDistance[x]=((x-cx)/rx)**2;
     for (let y = y0; y <= y1; y++) {
       const dy2 = ((y - cy) / ry) ** 2, row = y * this.width;
       for (let x = x0; x <= x1; x++) {
         const i = row + x;
         // Max compositing cannot raise a pixel already at this stamp's ceiling.
-        if (this.pixels[i] >= ceiling) continue;
-        const d = ((x - cx) / rx) ** 2 + dy2;
+        if (this.raster[i] >= ceiling) continue;
+        const d = this.horizontalDistance[x] + dy2;
         if (d >= 1) continue;
         const value = Math.min(255, Math.round(peak * Math.min(1, (1 - d) * 3)));
-        if (value > this.pixels[i]) this.pixels[i] = value;
+        if (value > this.raster[i]) this.raster[i] = value;
       }
     }
   }
 
-  clear(): void { this.pixels.fill(0); this.texture.needsUpdate = true; }
+  clear(): void {
+    if(!this.hasMask)return;
+    this.hasMask=false;
+    this.pixels.fill(0);
+    this.texture.needsUpdate=true;
+  }
   dispose(): void { if (this.disposed) return; this.disposed = true; this.texture.dispose(); }
 }

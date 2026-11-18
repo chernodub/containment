@@ -202,7 +202,9 @@ export function roomValueProfile(templateId?: string): RoomValueProfile | undefi
 
 /** Shared per-room analytic value field: up to four light pools (XZ, inner, outer radius;
  * pool 0 is the fight circle, the rest the room's named-space fixtures) plus exit XZ/radius/gain. */
-export const ROOM_VALUE_FIELD = {value: Array.from({length: 4}, () => new T.Vector4(0, 0, 1e4, 2e4))};
+// Scalar uniforms use Three's vec4 value cache. Uniform arrays upload again
+// whenever a draw changes material, even when their shared values are identical.
+export const ROOM_VALUE_FIELD = Array.from({length:4},()=>({value:new T.Vector4(0,0,1e4,2e4)}));
 export const ROOM_LANDMARK = {value:new T.Vector4()};
 export const ROOM_LANDMARK_COLOR = {value:new T.Color(0)};
 export const ROOM_LANDMARK_GAINS = {value:new T.Vector2()};
@@ -212,7 +214,7 @@ export function setRoomValueField(pools: readonly {x:number; z:number}[], exitX:
   ROOM_LANDMARK.value.set((landmark?.at[0]??0)/32,(landmark?.at[1]??0)/32,landmark?.radius??1,landmark?1:0);
   ROOM_LANDMARK_COLOR.value.setHex(landmark?.color??0);
   ROOM_LANDMARK_GAINS.value.set(landmark?.body??0,landmark?.spill??0);
-  ROOM_VALUE_FIELD.value.forEach((pool, i) => {
+  ROOM_VALUE_FIELD.forEach(({value:pool}, i) => {
     const source = pools[i], lane = i > 0 ? profile?.perimeter.lane ?? .55 : 1;
     if (!profile) pool.set(0, 0, 1e4, 2e4);
     else if (!source) pool.set(0, 0, 0, 0);
@@ -224,7 +226,12 @@ export function setRoomValueField(pools: readonly {x:number; z:number}[], exitX:
 /** World XZ, radius (m) and intensity of the marine rig lamp; one shared uniform for every surface. */
 export const MARINE_FLOOR_GLOW = {value: new T.Vector4(0, 0, 3.0, 0)};
 export const MARINE_FLOOR_GLOW_COLOR = {value: new T.Color(0xbfe6ff)};
+const white = new T.Color(0xffffff);
+let glowColor:number|undefined;
 export function setMarineFloorGlow(x: number, z: number, color?: number): void {
   MARINE_FLOOR_GLOW.value.x = x; MARINE_FLOOR_GLOW.value.y = z; MARINE_FLOOR_GLOW.value.w = 1.3;
-  if (color !== undefined) MARINE_FLOOR_GLOW_COLOR.value.setHex(color).lerp(new T.Color(0xffffff), .55);
+  if (color !== undefined && color!==glowColor) {
+    MARINE_FLOOR_GLOW_COLOR.value.setHex(color).lerp(white,.55);
+    glowColor=color;
+  }
 }

@@ -20,7 +20,7 @@ import {installNoSoftDepthDiagnostic} from './soft-depth-diagnostic.mjs';
 function installCostAudit(r = globalThis.__containmentDebug.renderer) {
  if(r.__benchCostAudit)throw Error('Cost audit already installed');
  const renderer=r.renderer,gl=renderer.getContext(),undo=[];
- const keys=['glClearCalls','glInvalidateCalls','glBlitCalls','domStyleWrites','glDriverCalls','glUseProgramCalls','glProgramSwitches','glStateCalls','glUniformUploads','matrixComposes','localMatrixComposes','worldMatrixRecomputes','shadowMapsRendered','shadowDraws','shadowPixels','postPasses','postPixels','attackParticlesAdvanced','abilityParticlesAdvanced','abilityParticleSlotsScanned','particlesAdvanced'];
+ const keys=['glClearCalls','glInvalidateCalls','glBlitCalls','domStyleWrites','glDriverCalls','glUseProgramCalls','glProgramSwitches','glStateCalls','glUniformUploads','glUniform4fvUploads','opaqueListEntries','transparentListEntries','transmissiveListEntries','transparentSortMs','sceneSkinnedDraws','hudSkinnedDraws','matrixComposes','localMatrixComposes','worldMatrixRecomputes','shadowMapsRendered','shadowDraws','shadowPixels','postPasses','postPixels','attackParticlesAdvanced','abilityParticlesAdvanced','abilityParticleSlotsScanned','particlesAdvanced'];
  const postNames=['sceneColor','contactAO','gtao','aoDenoise','bloomExtract','bloomBlurHorizontal','bloomBlurVertical','distortion','composite','finalAA','other'];
  for(const name of postNames)keys.push('post_'+name);
  const counters=Object.fromEntries(keys.map(key=>[key,0]));
@@ -46,6 +46,7 @@ function installCostAudit(r = globalThis.__containmentDebug.renderer) {
  for(const name of methods)wrap(gl,name,original=>function(...parameters){
   counters.glDriverCalls++;if(name==='clear')counters.glClearCalls++;if(name==='invalidateFramebuffer')counters.glInvalidateCalls++;if(name==='blitFramebuffer')counters.glBlitCalls++;
   if(name==='useProgram'){counters.glUseProgramCalls++;if(lastProgram!==parameters[0]){counters.glProgramSwitches++;lastProgram=parameters[0];}}
+  if(name==='uniform4fv')counters.glUniform4fvUploads++;
   if(stateMethods.has(name))counters.glStateCalls++;
   if(/^uniform(?:[1234](?:f|i|ui)v?|Matrix[234](?:x[234])?fv)$/.test(name))counters.glUniformUploads++;
   return original.apply(this,parameters);
@@ -61,13 +62,42 @@ function installCostAudit(r = globalThis.__containmentDebug.renderer) {
  const matrixPrototype=Object.getPrototypeOf(r.scene.matrix);
  wrap(matrixPrototype,'compose',original=>function(...parameters){counters.matrixComposes++;if(localMatrices.has(this))counters.localMatrixComposes++;return original.apply(this,parameters);});
  for(const name of ['copy','multiplyMatrices'])wrap(matrixPrototype,name,original=>function(...parameters){if(worldMatrices.has(this))counters.worldMatrixRecomputes++;return original.apply(this,parameters);});
+ const wrappedLists=new WeakSet();
+ wrap(renderer.renderLists,'get',original=>function(...args){
+  const list=original.apply(this,args);
+  if(!wrappedLists.has(list)){
+   wrappedLists.add(list);
+   for(const [name,entries] of [['opaque',list.opaque],['transparent',list.transparent],['transmissive',list.transmissive]]){
+    wrap(entries,'sort',sort=>function(compare){
+     if(name==='opaque')return sort.call(this,compare);
+     const started=performance.now();
+     try{return sort.call(this,compare);}
+     finally{counters.transparentSortMs+=performance.now()-started;}
+    });
+   }
+   wrap(list,'sort',sort=>function(...parameters){
+    counters.opaqueListEntries+=list.opaque.length;
+    counters.transparentListEntries+=list.transparent.length;
+    counters.transmissiveListEntries+=list.transmissive.length;
+    return sort.apply(this,parameters);
+   });
+  }
+  return list;
+ });
  let shadowLights=null,insidePost=false;
  wrap(renderer.shadowMap,'render',original=>function(lights,...parameters){const previous=shadowLights;shadowLights=lights;try{return original.call(this,lights,...parameters);}finally{shadowLights=previous;}});
  wrap(renderer,'setRenderTarget',original=>function(target,...parameters){
   if(shadowLights&&target&&shadowLights.some(light=>light.shadow?.map===target)){counters.shadowMapsRendered++;counters.shadowPixels+=target.width*target.height;}
   return original.call(this,target,...parameters);
  });
- wrap(renderer,'renderBufferDirect',original=>function(...parameters){if(shadowLights)counters.shadowDraws++;return original.apply(this,parameters);});
+ wrap(renderer,'renderBufferDirect',original=>function(camera,scene,geometry,material,object,...parameters){
+  if(shadowLights)counters.shadowDraws++;
+  else if(object?.isSkinnedMesh){
+   if(scene===r.scene)counters.sceneSkinnedDraws++;
+   if(scene===r.hudScene)counters.hudSkinnedDraws++;
+  }
+  return original.call(this,camera,scene,geometry,material,object,...parameters);
+ });
  function postPass(name,target){
   counters.postPasses++;counters['post_'+name]++;
   const width=target?.width??gl.drawingBufferWidth,height=target?.height??gl.drawingBufferHeight;
