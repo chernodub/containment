@@ -46,7 +46,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Warm cabin lamps at interrupted packing, opposite cabin and common nook.
   'residential-gallery': profile({
-    landmark:{at:[220,180],color:0xffbc72,radius:7,body:.45,spill:.025,height:2.7,keyGain:.4},
+    landmark:{at:[394,250],color:0xffce94,radius:7,body:.45,spill:.025,height:2.7,keyGain:.4},
     fixturesAt:[[300, 280], [900, 720], [160, 480]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xead0a6,

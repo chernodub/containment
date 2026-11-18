@@ -19,9 +19,7 @@ export function dress13ResidentialPlacements(): OriginalKitInstance[] {
   add('service-access-hatch',323,282,-.3,.55,.4,.55,.12);
   out[out.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-Math.PI/2));
   add('service-transit-case',202,252,.05,.9,.35,1,.025);
-  add('habitation-desk',410,255,.12,.8,.8,.8,0,'clinical');
-  add('habitation-console-locker',442,256,.2,.5,.55,.55,.4,'clinical',1.2);
-  add('security-bench',385,282,-.5,.55,.65,.7,.4,'security',1.4);
+  add('last-cabin',410,241,.08,1,1,1,0,'p11-inc13-residential');
   add('deck-rubber-panel',275,322,.3,.45,.5,.4,.025,'clinical');
   return out;
 }
@@ -56,8 +54,15 @@ export function addDress13ResidentialDetails(root:T.Group):void {
   box(202,.27,241,.8,.12,.035,0x8c968d,.05);box(202,.24,264,.25,.035,.06,0x69777a,.05);
   for(let i=0;i<5;i++)box(265+i*18,.027,341+(i%2)*5,.12,.008,.3,0x8d958c,i*.6);
   for(let i=0;i<4;i++)box(248+i*8,.026,345,.018,.004,1.2,0x3d4444,.4);
-  // Flush gouges across the furniture barricading the cabin mouth.
-  for(let i=0;i<4;i++)box(399+i*4,.615,255,.018,.002,.35,0x333e43,-.25);
+  // Paired caster furrows follow the load round the bend to the jammed door.
+  for(const offset of [-6,6]){
+    const track=new T.Shape();
+    track.moveTo(188,235+offset);track.bezierCurveTo(256,339+offset,324,337+offset,418,272+offset);
+    track.bezierCurveTo(329,343+offset,248,341+offset,188,235+offset);
+    const furrow=new T.ShapeGeometry(track,20);
+    furrow.scale(1/32,-1/32,1);furrow.rotateX(-Math.PI/2);furrow.translate(0,.035,0);
+    put(furrow,0x48423c);
+  }
   // A proper four-legged chair lies on its side beside the packing trail.
   const chair:T.BufferGeometry[]=[];
   for(const [x,y,z,w,h,d] of [[0,.45,0,.48,.09,.48],[0,.83,-.22,.48,.68,.07],[-.19,.22,-.19,.055,.44,.055],[.19,.22,-.19,.055,.44,.055],[-.19,.22,.19,.055,.44,.055],[.19,.22,.19,.055,.44,.055]]){const g=new T.BoxGeometry(w,h,d);g.translate(x,y,z);chair.push(g);}
@@ -72,5 +77,12 @@ export function addDress13ResidentialDetails(root:T.Group):void {
   for(const x of [300,390]){c.strokeStyle='#5c7374';c.beginPath();c.arc(x,100,20,0,Math.PI*2);c.moveTo(x,120);c.lineTo(x,180);c.lineTo(x-25,220);c.moveTo(x,180);c.lineTo(x+25,220);c.moveTo(x-30,145);c.lineTo(x+30,145);c.stroke();}
   const texture=new T.CanvasTexture(paper);texture.colorSpace=T.SRGBColorSpace;
   const drawingMaterial=new T.MeshStandardMaterial({map:texture,roughness:1,side:T.DoubleSide});drawingMaterial.userData.actorMaterial=true;drawingMaterial.addEventListener('dispose',()=>texture.dispose());
-  const drawing=new T.Mesh(new T.PlaneGeometry(.65,.4),drawingMaterial);drawing.position.set(404/32,.75,141/32);drawing.name='dress13-child-drawing-left-behind';root.add(drawing);
+  // Mount the children's paper at the front of the torn left leaf, below its lamp.
+  const pictures=new T.Group();
+  pictures.position.set(410/32,0,241/32);pictures.rotation.y=.08;
+  for(const [x,y,tilt,w,h] of [[-1.03,1.88,.08,.72,.44],[-1.12,1.39,-.1,.54,.37],[-.7,2.24,-.12,.48,.33]]){
+    const sheet=new T.Mesh(new T.PlaneGeometry(w,h),drawingMaterial);
+    sheet.position.set(x,y,-.365);sheet.rotation.z=tilt;pictures.add(sheet);
+  }
+  pictures.name='residential-cabin-drawings';root.add(pictures);
 }
