@@ -54,7 +54,7 @@ export type CollisionSteeringContext = Readonly<{
   toY: number;
 }>;
 
-export type EnemySpawnOptions=Readonly<{role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
+export type EnemySpawnOptions=Readonly<{role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
 export type EnemySystemOptions = Readonly<{openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
   balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean;chargeWindupMs?:number;chargeCooldownMs?:number;chargeInitialCooldownMs?:number;championHealth?:number;championDamage?:number};
@@ -121,7 +121,7 @@ export type EnemyEvent =
 
 export type CamouflageState = 'camouflaged' | 'revealed' | 'none';
 
-export type EnemySnapshot = Readonly<{chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute';
+export type EnemySnapshot = Readonly<{chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
   id: number;
   type: StandardEnemyId;
   elite: boolean;
@@ -182,7 +182,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute';pod:boolean;podRemainingMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   blockedMs?: number; yieldMs?: number; yieldX?: number; yieldY?: number;
   stepStartX?: number; stepStartY?: number;
   id: number;
@@ -658,6 +658,7 @@ export class EnemySystem {
   }
 
   #advanceCamouflage(enemy: EnemyState, deltaMs: number): void {
+    if(enemy.lesson==='stalker'){enemy.camouflageState='revealed';enemy.alpha=1;return;}
     if (enemy.type !== 'stalker' || deltaMs === 0) return;
     let remainingDelta = deltaMs;
     while (remainingDelta >= enemy.camouflageRemainingMs) {

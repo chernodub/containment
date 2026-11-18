@@ -2,7 +2,7 @@ import type {StandardEnemyId} from '../enemies/types';
 
 export type EncounterGrammar = 'interception'|'crossfire'|'priority'|'pincer'|'swarm'|'siege';
 export type EnemyRole = 'screen'|'anchor'|'flanker'|'ranged'|'brood';
-export type AuthoredGroup = Readonly<{family:StandardEnemyId;count:number;role:EnemyRole;priority?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute';reinforcement?:boolean}>;
+export type AuthoredGroup = Readonly<{family:StandardEnemyId;count:number;role:EnemyRole;priority?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';reinforcement?:boolean}>;
 export type AuthoredBeat = Readonly<{grammar:EncounterGrammar;label:string;lullMs:number;groups:readonly AuthoredGroup[]}>;
 const g=(family:StandardEnemyId,count:number,role:EnemyRole,extra:Partial<AuthoredGroup>={}):AuthoredGroup=>Object.freeze({family,count,role,...extra});
 const b=(grammar:EncounterGrammar,label:string,...groups:AuthoredGroup[]):AuthoredBeat=>Object.freeze({grammar,label,lullMs:2500,groups:Object.freeze(groups)});
@@ -16,9 +16,9 @@ const siege=(n:number)=>b('siege','Hold a lane, then change position',g('spitter
 /** Twenty room identities, authored in campaign order; seeds vary approach sides, not tactical intent. */
 export const AUTHORED_ENCOUNTERS:readonly (readonly AuthoredBeat[])[]=Object.freeze([
  [b('swarm','One commitment: evade, then punish',g('crawler',1,'screen',{lesson:'crawler'})),swarm(3)],
- [b('priority','One heavy swing: step aside, punish recovery',g('brute',1,'anchor',{lesson:'brute'})),cross(3),swarm(4)],
- [flank(2),swarm(5),cross(3)],
- [pincer(5),priority(3),flank(2)],
+ [b('priority','One heavy swing: step aside, punish recovery',g('brute',1,'anchor',{lesson:'brute'})),cross(1),swarm(2)],
+ [b('interception','One revealed lunge: sidestep, then punish',g('stalker',1,'flanker',{lesson:'stalker'})),swarm(3),cross(1)],
+ [pincer(2),priority(1),flank(1)],
  [cross(4),flank(2),priority(4)],
  [priority(3,'warden'),cross(4),swarm(6)],
  [swarm(7),pincer(5),priority(4)],

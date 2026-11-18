@@ -11,7 +11,7 @@ export type EncounterPhase = 'idle' | 'combat' | 'boss' | 'complete' | 'dead';
 export type EncounterSpawn = Readonly<{
   type: 'spawn-request'; spawnId: string; atMs: number; wave: number;
   enemyId: StandardEnemyId; elite: boolean; breachId: string;
-  beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute';reinforcement?:boolean;
+  beat?:number;grammar?:EncounterGrammar;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;guardian?:'warden'|'matron';lesson?:'crawler'|'brute'|'stalker';reinforcement?:boolean;
 }>;
 export type EncounterEvent = EncounterSpawn
   | Readonly<{ type: 'room-start'; nodeId: string; depth: number; wave: number }>
@@ -39,15 +39,22 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const beats=source.map((beat,beatIndex)=>{
   const start=schedule.length;let marked=false;
   for(const group of beat.groups){
-   const count=group.guardian?1:group.lesson||group.priority||node.depth===0?group.count:Math.max(1,Math.round(group.count*d.waves*(node.depth>=10?d.lateWaves:1)));
+   const baseCount=group.guardian?1:group.lesson||group.priority||node.depth<4?group.count:Math.max(1,Math.round(group.count*d.waves*(node.depth>=10?d.lateWaves:1)));
+   // Later Story and Standard firing lanes retain one more ranged threat.
+   // Earlier teaching beats are unchanged.
+   const extraRanged=group.family==='spitter'&&node.depth>=10&&(options.difficulty==='story'||options.difficulty==='standard');
+   const count=baseCount+(extraRanged?1:0);
    for(let index=0;index<count;index++){
+    // Exchange only the final body, preserving the pack's original arrival times.
+    const rangedRelief=options.difficulty==='veteran'&&node.depth>=10&&group.family==='crawler'&&!group.lesson&&!group.priority&&count>1&&index===count-1;
+    const family=rangedRelief?'spitter':group.family,role=rangedRelief?'ranged':group.role;
     const ordinal=schedule.length-start;
     const elite=!group.lesson&&node.depth>1&&(!!group.guardian||random()<Math.min(.28,(node.depth>=10?.21:.06+node.depth*.012)*d.elites));
     const resistant=!marked&&(!!group.guardian||elite&&!!group.priority);
     if(resistant)marked=true;
-    const side=group.role==='flanker'?1+index%Math.max(1,ids.length-1):group.role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
+    const side=role==='flanker'?1+index%Math.max(1,ids.length-1):role==='ranged'?(index%2?Math.floor(ids.length/2):0):beat.grammar==='pincer'?(ordinal%2?Math.floor(ids.length/2):0):0;
     const breachId=ids[(rotation+beatIndex+side)%ids.length];
-    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:group.reinforcement?4500+index*650:650+ordinal*450,wave:node.depth+1,enemyId:group.family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role:group.role,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:group.reinforcement??false}));
+    schedule.push(Object.freeze({type:'spawn-request',spawnId:`${node.id}:spawn-${schedule.length}`,atMs:group.reinforcement?4500+index*650:650+ordinal*450,wave:node.depth+1,enemyId:family,elite,breachId,beat:beatIndex,grammar:beat.grammar,role,priority:group.priority??false,controlResistant:resistant,...(group.guardian?{guardian:group.guardian}:{}),...(group.lesson?{lesson:group.lesson}:{}),reinforcement:group.reinforcement??false}));
    }
   }
   // Reinforcements are late arrivals even when their group precedes another authored group.

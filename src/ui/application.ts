@@ -150,7 +150,6 @@ export async function bootstrap() {
         }
         syncScreen();
     };
-    game.aimVisible = (x, y) => renderer.visible(x, y);
     try {
         await renderer.prepare(game.node);
     }

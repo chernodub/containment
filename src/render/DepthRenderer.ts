@@ -1,3 +1,5 @@
+import {combatPresentationHoldSeconds} from '../game/observation/combatPresentationClock';
+import {combatPointVisible} from '../game/observation/combatVisibility';
 import {SiegeBoundary} from './markers/SiegeBoundary';
 import {setActorLOD} from './ActorLOD';
 import {DrawnMarineEnvelope} from './camera/DrawnMarineEnvelope';
@@ -339,7 +341,7 @@ export class DepthRenderer {
   if(selected)return selected;
   const result=new T.Vector3();return this.raycaster.ray.intersectPlane(this.ground,result)?{x:result.x*UNIT,y:result.z*UNIT}:null;
  }
- visible(x:number,y:number){const p=this.visiblePoint.set(x/UNIT,.6,y/UNIT).project(this.camera),v=this.hudFraming?.viewport??FULL_COMBAT_VIEWPORT;return p.z>=-1&&p.z<=1&&Math.abs(p.x-v.centerX)<v.halfX*.9&&Math.abs(p.y-v.centerY)<v.halfY*.8;}
+ visible(x:number,y:number){const p=this.visiblePoint.set(x/UNIT,.6,y/UNIT).project(this.camera),v=this.hudFraming?.viewport??FULL_COMBAT_VIEWPORT;return combatPointVisible(p,v);}
  /** Fill caller-owned CSS bounds for a live body, including its authored family/rank height. */
  actorScreenBounds(id:number,x:number,y:number,radius:number,out:{left:number;top:number;right:number;bottom:number}):boolean {
   const model=id===-1?this.queen:this.actors.get(id);
@@ -526,9 +528,10 @@ export class DepthRenderer {
   g.updateMatrix();for(const child of [...g.children]){child.applyMatrix4(g.matrix);this.world.add(child);}
  }
  effect(effect:GameEffect){
-  if(effect.type==='ability'){if(effect.ability?.slot==='overdrive'&&effect.ability.phase==='impact')this.presentationHold?.request(.04,this.options.screenShake,!!this.motionQuery?.matches);this.player?.motionEvent?.(effect);if(effect.ability){this.interimAbilities.event(effect.ability,effect.x,effect.y);}return;}
+  const hold=combatPresentationHoldSeconds(effect);if(hold)this.presentationHold?.request(hold,this.options.screenShake,!!this.motionQuery?.matches);
+  if(effect.type==='ability'){this.player?.motionEvent?.(effect);if(effect.ability){this.interimAbilities.event(effect.ability,effect.x,effect.y);}return;}
   const x=effect.x/UNIT,z=effect.y/UNIT;
-  if(effect.type==='hurt'){/* FEEL12: native receipt drives a stable incoming-side marker. */if(effect.sourceX!==undefined&&effect.sourceY!==undefined||effect.angle!==undefined)this.playerBeacon.hit(effect.sourceX!==undefined&&effect.sourceY!==undefined?Math.atan2(effect.sourceY-effect.y,effect.sourceX-effect.x):(effect.angle??0)+Math.PI,(this.options.flashIntensity??1)*(this.motionQuery?.matches?.65:1));if((effect.damage??0)>=36)this.presentationHold?.request(.045,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig?.addTrauma(.34);this.cameraRig?.punch(.015,180);actorImpact(this.player,effect);return;}if(effect.type==='sync-corpse')return;
+  if(effect.type==='hurt'){/* FEEL12: native receipt drives a stable incoming-side marker. */if(effect.sourceX!==undefined&&effect.sourceY!==undefined||effect.angle!==undefined)this.playerBeacon.hit(effect.sourceX!==undefined&&effect.sourceY!==undefined?Math.atan2(effect.sourceY-effect.y,effect.sourceX-effect.x):(effect.angle??0)+Math.PI,(this.options.flashIntensity??1)*(this.motionQuery?.matches?.65:1));this.cameraRig?.addTrauma(.34);this.cameraRig?.punch(.015,180);actorImpact(this.player,effect);return;}if(effect.type==='sync-corpse')return;
   if(effect.type==='explosion'||(effect.type==='boon'&&(effect.boon==='blast'||(effect.boon==='overload'&&effect.radius!==undefined)))){this.lighting.explosion(x,z,(effect.radius??48)/UNIT);this.cameraRig?.addTrauma(.32);this.cameraRig?.punch(.035,240);}
   if(effect.type==='shot'){
    this.recoil=1;this.cameraRig?.kick(effect.angle??0,effect.weapon==='shotgun'?.08:effect.weapon==='rocket'?.12:.025);if(this.pendingShots.length<4)this.pendingShots.push(effect);return;
@@ -538,7 +541,6 @@ export class DepthRenderer {
   if((effect.contact==='damage'||effect.contact==='armor')&&effect.targetId!==undefined)actorImpact(effect.targetId===-1?this.queen??undefined:this.actors.get(effect.targetId),effect);
   let motionDeathCue:'none'|'frost'|'burn'|'arc'|'acid'='none';
   if(effect.type==='corpse'){
-   if(effect.elite)this.presentationHold?.request(.035,this.options.screenShake,!!this.motionQuery?.matches); // M10 elite-only global beat
    if(effect.id===undefined)return;
    this.corpseIds??=new Set();if(this.corpseIds.has(effect.id))return;this.corpseIds.add(effect.id);
    let existing=this.actors.get(effect.id!);if(!existing&&effect.family){existing=this.actorPool.take(effect.family,effect.elite);existing.root.position.set(x,0,z);registerGeometry(existing.root,GEOMETRY_CLASSES.enemy);this.scene.add(existing.root);}if(existing){motionDeathCue=actorDeathCue(existing);existing.root.userData.motionDeathCue=motionDeathCue;existing.root.position.set(x,0,z);freezeCorpse(existing);this.ragdolls.add(effect.id!,existing,effect.family??existing.root.name.replace('alien-',''),{x:(effect.vx??0)/UNIT,z:(effect.vy??0)/UNIT},motionDeathCue,this.motionQuery?.matches?0:.032*Math.min(this.options.screenShake,this.options.flashIntensity));this.actors.delete(effect.id!);this.corpses.push({model:existing,id:effect.id!,x,y:z,vx:(effect.vx??0)/UNIT,vy:(effect.vy??0)/UNIT,height:.2,lift:3,spin:2.4,age:0});if(this.corpses.length>(this.tier==='low'?6:10)){const oldest=this.corpses.shift()!;this.ragdolls.remove(oldest.id);this.actorPool.release(oldest.model);}}

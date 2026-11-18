@@ -3,7 +3,7 @@ import * as T from 'three';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 /** Read actor dimensions without images, WebGL, DOM, or animation advancement. */
-export async function actorMetrics() {
+export async function actorMetrics(radii) {
     globalThis.ProgressEvent ??= class extends Event {
         constructor(type, options) { super(type); Object.assign(this, options); }
     };
@@ -34,7 +34,15 @@ export async function actorMetrics() {
         mixer.update(0);
         root.updateMatrixWorld(true);
         const bounds = new T.Box3().setFromObject(root, true), size = bounds.getSize(new T.Vector3());
-        result[family] = { height: size.y * span / Math.max(size.x, size.z) };
+        const factor=span/Math.max(size.x,size.z);
+        const horizontal=Math.min(1,radii[family]/32*.94/(Math.hypot(size.x,size.z)*.5*factor));
+        let aspect=0,original=false;
+        root.traverse(o=>{if(o.userData.k11Aspect)aspect=o.userData.k11Aspect;if(o.isMesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m?.userData.k11Original)original=true;});
+        let height=size.y*factor*(aspect?horizontal*aspect:1);
+        if(family==='queen')height*=1.08;
+        if(!original&&family==='brute')height*=.78;
+        if(!original&&family==='stalker')height*=.72;
+        result[family] = {height};
         mixer.stopAllAction();
         mixer.uncacheRoot(root);
     }

@@ -19,6 +19,7 @@ export const DASH_RECHARGE_MS = 2_600;
 export const DASH_DISTANCE = 150;
 export const DASH_DURATION_MS = 140;
 export const DASH_INVULNERABLE_MS = 220;
+export const PYRO_DASH_INVULNERABLE_MS = 400;
 export const PYRO_DASH_DISTANCE = 240;
 export const PYRO_DASH_RECHARGE_MS = 2_500;
 
@@ -63,8 +64,8 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
     summary: 'Deploy an energy barricade that stops enemies and spit.',
     description: 'Project a wide barricade in front of you for 6 seconds. It blocks enemy movement and enemy projectiles. Your own shots pass through it.',
     targeting: 'direction', shape: { kind: 'wall', length: 220, thickness: 18 },
-    castMs: 0, cooldownMs: 16_000, charges: 1, durationMs: 6_000, range: 70,
-    stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Width', value: '220' }, { label: 'Cooldown', value: seconds(16_000) }],
+    castMs: 0, cooldownMs: 20_000, charges: 1, durationMs: 6_000, range: 70,
+    stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Width', value: '220' }, { label: 'Cooldown', value: seconds(20_000) }],
   }),
   railbreaker: ability({
     id: 'railbreaker', rig: 'breacher', slot: 'overdrive', element: 'kinetic', name: 'Railbreaker',
@@ -85,8 +86,8 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
     summary: 'Ring of cold. Chills hard; freezes the already chilled.',
     description: 'Vent coolant in a ring around you: 30 damage and heavy chill. Enemies that were already chilled are frozen solid for 1.5 seconds.',
     targeting: 'self', shape: { kind: 'circle', radius: 210 },
-    castMs: 0, cooldownMs: 9_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '30' }, { label: 'Freeze', value: seconds(1_500) }, { label: 'Cooldown', value: seconds(9_000) }],
+    castMs: 0, cooldownMs: 12_000, charges: 1, durationMs: 0, range: 0,
+    stats: [{ label: 'Damage', value: '30' }, { label: 'Freeze', value: seconds(1_500) }, { label: 'Cooldown', value: seconds(12_000) }],
   }),
   glacier: ability({
     id: 'glacier', rig: 'cryo', slot: 'power', element: 'cryo', name: 'Glacier',
@@ -108,15 +109,15 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   // ── PYRO ────────────────────────────────────────────────────────────────────
   afterburn: dash('afterburn', 'pyro', 'pyro', 'Afterburn',
     'Dash and leave a line of fire.',
-    'Dash 240 units in your movement direction with 0.22 seconds of invulnerability. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    'Dash 240 units in your movement direction with 0.4 seconds of invulnerability. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     2_500, [{ label: 'Fire', value: seconds(2_500) }]),
   flashfire: ability({
     id: 'flashfire', rig: 'pyro', slot: 'tactical', element: 'pyro', name: 'Flashfire',
     summary: 'A wide cone of flame.',
     description: 'Dump the tank in a wide cone along your aim: 25 damage and every enemy hit is ignited. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     targeting: 'direction', shape: { kind: 'cone', range: 300, arcRadians: 1.22 },
-    castMs: 0, cooldownMs: 6_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '25' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(6_000) }],
+    castMs: 0, cooldownMs: 5_000, charges: 1, durationMs: 0, range: 0,
+    stats: [{ label: 'Damage', value: '25' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(5_000) }],
   }),
   'napalm-charge': ability({
     id: 'napalm-charge', rig: 'pyro', slot: 'power', element: 'pyro', name: 'Napalm Charge',
@@ -145,8 +146,8 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
     summary: 'Chain lightning that stuns.',
     description: 'Lightning jumps from the enemy nearest your aim through up to six targets: 60 damage, falling 15% per jump. Shocked enemies are stunned briefly.',
     targeting: 'direction', shape: { kind: 'chain', range: 520, hopRange: 200, maxTargets: 6 },
-    castMs: 0, cooldownMs: 8_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '60' }, { label: 'Targets', value: '6' }, { label: 'Cooldown', value: seconds(8_000) }],
+    castMs: 0, cooldownMs: 7_000, charges: 1, durationMs: 0, range: 0,
+    stats: [{ label: 'Damage', value: '60' }, { label: 'Targets', value: '6' }, { label: 'Cooldown', value: seconds(7_000) }],
   }),
   'tesla-pylon': ability({
     id: 'tesla-pylon', rig: 'arc', slot: 'power', element: 'arc', name: 'Tesla Pylon',

@@ -50,7 +50,7 @@ for (const file of ['sim-core.ts', 'sim-native-emulation.ts', 'sim.mjs', 'sim-me
 await build({ configFile: false, publicDir: false, plugins, logLevel: 'error', build: { ssr: resolve('scripts/nextgen/playtest/sim-core.ts'), outDir: source, emptyOutDir: false, rollupOptions: { output: { entryFileNames: 'sim-core.mjs' } } } });
 if (args.tuning && !sourceCache.has(tuningFile)) throw Error('--tuning requires a game revision with the I5 encounter flag');
 const tuningEnabled = sourceCache.has(tuningFile) ? /I5_ENCOUNTER_TUNING_ENABLED\s*=\s*true\b/.test(sourceCache.get(tuningFile)) : undefined;
-const { runSimulation, summarizeSimulations } = await import(pathToFileURL(resolve(source, 'sim-core.mjs')).href + '?' + Date.now());
+const { runSimulation, summarizeSimulations, SIM_ACTOR_RADII } = await import(pathToFileURL(resolve(source, 'sim-core.mjs')).href + '?' + Date.now());
 const seeds = String(args.seeds ?? args.seed ?? '1729,2718,31415,42,137,8675309,2026,9001,65537,123456').split(',').map(Number);
 const rigs = String(args.rigs ?? args.rig ?? 'breacher,cryo,pyro,arc').split(',');
 if (!seeds.length || seeds.some(seed => !Number.isInteger(seed) || seed < 0 || seed > 0xffffffff))
@@ -59,7 +59,7 @@ if (!rigs.length || rigs.some(rig => !['breacher', 'cryo', 'pyro', 'arc'].includ
     throw Error('Invalid rig');
 if (args.rooms && (!Number.isInteger(Number(args.rooms)) || Number(args.rooms) < 1 || Number(args.rooms) > 20))
     throw Error('rooms must be 1..20');
-const reports = [], metrics = await actorMetrics();
+const reports = [], metrics = await actorMetrics(SIM_ACTOR_RADII);
 const policyHash = createHash('sha256').update(await readFile(resolve(source,'policy.mjs'))).update(await readFile(resolve(source,'ability-aim.ts'))).update(await readFile(resolve(source,'bot-navigation.ts'))).update(await readFile(resolve(source,'bot-navigation-version.mjs'))).digest('hex');
 const gameHash = createHash('sha256').update([...sourceCache].sort(([a], [b]) => a.localeCompare(b)).map(([path, content]) => path.slice(root.length + 1) + '\n' + content).join('\n')).digest('hex');
 for (const path of ['src/DepthGame.ts', 'src/game/abilities/AbilitySystem.ts', 'src/game/roguelike/progression.ts', 'src/game/waves/EncounterDirector.ts', 'src/game/enemies/EnemySystem.ts', 'src/game/roguelike/i5Tuning.ts'])

@@ -1,3 +1,9 @@
+import {combatPresentationHoldSeconds} from '../../../src/game/observation/combatPresentationClock';
+import {PresentationHold} from '../../../src/render/motion/PresentationHold';
+import {ENEMIES} from '../../../src/game/enemies/catalog';
+import {HudCombatFraming} from '../../../src/render/camera/HudCombatFraming';
+import {RoomCombatFraming} from '../../../src/render/camera/RoomCombatFraming';
+import {combatPointVisible} from '../../../src/game/observation/combatVisibility';
 import {SERVICE_IDS,detourOffers} from '../../../src/game/roguelike/economy';
 import * as T from 'three';
 import { DepthGame, type GameEffect, type GameInput } from '../../../src/DepthGame';
@@ -9,7 +15,7 @@ import { createPyroPresentation } from '../../../src/render/abilities/pyro';
 import { createArcPresentation } from '../../../src/render/abilities/arc';
 import { createSystemPresentation } from '../../../src/render/abilities/system';
 import { CameraRig } from '../../../src/render/camera/CameraRig';
-import {COMBAT_VIEW_HEIGHT,combatFocusTarget,protectPlayerFrame} from '../../../src/render/camera/CombatFraming';
+import {COMBAT_VIEW_HEIGHT,combatFocusTarget} from '../../../src/render/camera/CombatFraming';
 import { roomFocus } from '../../../src/render/roomFraming';
 import { canOccupyExpedition, hasClearExpeditionShot } from '../../../src/game/world/expeditionGeometry';
 import { expeditionRewardOffers } from '../../../src/game/roguelike/expedition';
@@ -20,6 +26,7 @@ import {observeAbilityAims} from './ability-aim';
 import { BOT_POLICY_VERSION, chooseBoon, chooseRoute, chooseServicePurchase, chooseDetour, createHumanPolicy, distance } from './policy.mjs';
 import {botWaypoint, BOT_NAVIGATION_VERSION} from './bot-navigation';
 import {applyNativeImmediateKey, recordNativeObservedEvent, nativeWarningHazards, nativeDiagnosticBurst} from './sim-native-emulation';
+export const SIM_ACTOR_RADII=Object.fromEntries(Object.entries(ENEMIES).map(([id,enemy])=>[id,id==='queen'?92:enemy.radius]));
 const TICK = 1000 / 60;
 const WIDTH = 1920, HEIGHT = 1080, VIEW = COMBAT_VIEW_HEIGHT;
 const WEAPONS = ['pistol', 'rifle', 'shotgun', 'plasma', 'rocket'] as const;
@@ -27,53 +34,45 @@ const WEAPONS = ['pistol', 'rifle', 'shotgun', 'plasma', 'rocket'] as const;
 export class CameraObserver {
     readonly camera = new T.PerspectiveCamera(28, WIDTH / HEIGHT, .1, 160);
     readonly rig = new CameraRig();
+    readonly hud = new HudCombatFraming();
+    readonly roomFraming = new RoomCombatFraming();
     private revision = -1;
+    private presentationHold = new PresentationHold();
     private raycaster = new T.Raycaster();
     private point = new T.Vector3();
     private target = new T.Vector3();
     private desired = new T.Vector3();
     private framed = {x:0,z:0};
-    private queenReady = false;
-    constructor(private readonly queenHeight = 4.5) {}
+    constructor(private readonly metrics:Record<string,{height:number}> = {}) {
+        // Calibrated shipping HUD reservations at the runner's1920x1080 desktop viewport.
+        this.hud.resize(WIDTH,HEIGHT);this.hud.setInsets({top:182,right:292,bottom:120,left:0});
+        // Native title establishes this focus; room loads retain spring/impulse state.
+        this.rig.reset(22,14);
+    }
+    observeEffect(effect:GameEffect) {const seconds=combatPresentationHoldSeconds(effect);if(seconds)this.presentationHold.request(seconds,1,false);}
+    private get queenHeight(){return this.metrics.queen?.height??4.5;}
     update(game: DepthGame, dt: number) {
         const bounds = game.geometry.bounds;
         if (this.revision !== game.roomRevision) {
             this.revision = game.roomRevision;
-            this.queenReady = false;
-            const f = roomFocus(game.geometry.playerSpawn.x / 32, game.geometry.playerSpawn.y / 32, bounds.width / 32, bounds.height / 32, VIEW * WIDTH / HEIGHT, VIEW, game.node.templateId);
-            this.rig.reset(f.x, f.z);
+            this.presentationHold.reset();
         }
         const b = game.boss.snapshot, bossActive = b.active && !b.defeated, zoom = bossActive ? .78 : 1;
         const p = game.player;
         combatFocusTarget(p.x/32,p.y/32,p.angle,b.x/32,b.y/32,bossActive,false,this.desired);
+        this.hud.selectContacts(p.x/32,p.y/32,p.angle,game.enemies.snapshot.enemies,32,id=>{const e=game.enemies.getSnapshot(id);return e?(this.metrics[e.type]?.height??3.2)*(e.elite?1.12:1):3.2;});
+        if(bossActive)this.hud.selectPrimaryContact(-1,b.x/32,b.y/32,3.4,this.queenHeight);
+        this.hud.biasTarget(p.x/32,p.y/32,p.angle,false,bossActive,this.desired);
         const f = roomFocus(this.desired.x,this.desired.z,bounds.width/32,bounds.height/32,VIEW*WIDTH/HEIGHT/zoom,VIEW/zoom,game.node.templateId,this.framed);
-        const delta = game.status === 'paused' || game.status === 'reward' || game.status === 'route' ? 0 : Math.min(dt,.05);
-        this.rig.update(delta, f.x, f.z, 1, false);
+        const rawDelta = game.status === 'paused' || game.status === 'reward' || game.status === 'route' ? 0 : Math.min(dt,.05);
+        const delta = this.presentationHold.advance(rawDelta,1,false);
+        if(!this.hud.hasEngagement||bossActive)this.desired.set(f.x,0,f.z);
+        this.rig.update(delta, this.desired.x, this.desired.z, 1, false);
         this.rig.apply(this.camera, zoom, VIEW, 1);
-        if(bossActive)this.protectBoss(p.x/32,p.y/32,p.radius/32,b.x/32,b.y/32);
-        protectPlayerFrame(this.camera,this.rig.focus,p.x/32,p.y/32,p.radius/32,2.05,this.point,this.target);
-        if(b.active)this.queenReady=true;
-    }
-    /** Same two-silhouette envelope/order as DepthRenderer; parity-tested against its real method. */
-    private protectBoss(px:number,pz:number,playerRadius:number,qx:number,qz:number) {
-        const queenHeight=this.queenReady?this.queenHeight:4.5;
-        for(let pass=0;pass<3;pass++){
-            let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
-            for(let actor=0;actor<2;actor++){
-                const x=actor?qx:px,z=actor?qz:pz,radius=actor?3.4:playerRadius,height=actor?queenHeight:2.05;
-                for(let ix=-1;ix<=1;ix+=2)for(let iz=-1;iz<=1;iz+=2)for(let iy=0;iy<2;iy++){
-                    this.point.set(x+ix*radius,iy*height,z+iz*radius).project(this.camera);
-                    left=Math.min(left,this.point.x);right=Math.max(right,this.point.x);top=Math.max(top,this.point.y);bottom=Math.min(bottom,this.point.y);
-                }
-            }
-            const scale=Math.min(1,1.8/(right-left),1.12/(top-bottom));
-            if(scale<1){this.camera.zoom*=scale*.98;this.camera.updateProjectionMatrix();continue;}
-            const dx=(left+right)*.5,dy=(top+bottom)*.5-.08;
-            this.point.set((px+qx)*.5,0,(pz+qz)*.5).project(this.camera);this.target.copy(this.point);this.target.x-=dx;this.target.y-=dy;
-            this.point.unproject(this.camera);this.target.unproject(this.camera);this.point.sub(this.target);
-            this.point.z-=this.point.y*this.camera.matrixWorld.elements[10]/this.camera.matrixWorld.elements[9];this.point.y=0;
-            this.camera.position.add(this.point);this.camera.updateMatrixWorld();
-        }
+        this.hud.center(this.camera,this.rig.focus,this.point,this.target);
+        this.roomFraming.apply(this.camera,this.rig.focus,p.x/32,p.y/32,p.radius/32,2.05,bounds.width/32,bounds.height/32,this.hud.viewport,HEIGHT,delta,false,game.geometry.boundary,this.hud,2.05,p.angle);
+        this.hud.refreshFit(this.camera,this.point);
+        return delta;
     }
     project(x: number, y: number, height = .65) { const p = this.point.set(x / 32, height, y / 32).project(this.camera); return { x: (p.x + 1) * WIDTH / 2, y: (1 - p.y) * HEIGHT / 2 }; }
     pointer(screen: {
@@ -114,7 +113,7 @@ export class CameraObserver {
     }
     visible(x: number, y: number) {
         const p = this.point.set(x / 32, .6, y / 32).project(this.camera);
-        return p.z >= -1 && p.z <= 1 && Math.abs(p.x) < .9 && Math.abs(p.y) < .8;
+        return combatPointVisible(p,this.hud.viewport);
     }
 }
 export type SimOptions = {
@@ -134,13 +133,13 @@ export type SimOptions = {
 export type SimReport = ReturnType<typeof runSimulation>;
 /** Fight a complete earned campaign with the browser player's pure decision helpers. */
 export function runSimulation(options: SimOptions) {
-    const started = performance.now(), feel = new GameFeel(), camera = new CameraObserver(options.metrics?.queen?.height??4.5);
+    const started = performance.now(), feel = new GameFeel(), camera = new CameraObserver(options.metrics??{});
     const human = createHumanPolicy(options.seed, options.profile ?? 'competent');
     let game: DepthGame;
     const events: Array<GameEffect & {
         at: number;
     }> = [];
-    const kit = new Proxy({ time: 0, low: false, reducedMotion: false, camera(weight = .12, angle?: number) { camera.rig.addTrauma(weight); if (weight > .2)
+    const kit = new Proxy({ fx: { spawn: () => ({ seed: 0, live: true }) }, time: 0, low: false, reducedMotion: false, camera(weight = .12, angle?: number) { camera.rig.addTrauma(weight); if (weight > .2)
             camera.rig.punch(Math.min(.035, weight * .06), 220); if (angle !== undefined)
             camera.rig.kick(angle, weight * .1); }, anticipate(ms: number, amount = .012) { camera.rig.punch(amount, ms); } }, { get: (target, key) => key in target ? Reflect.get(target, key) : () => { } }) as any;
     const presentations = { breacher: createBreacherPresentation(kit), cryo: createCryoPresentation(kit), pyro: createPyroPresentation(kit), arc: createArcPresentation(kit) };
@@ -161,6 +160,7 @@ export function runSimulation(options: SimOptions) {
     };
     const onEffect = (e: GameEffect) => {
         if(e.type==='sync-corpse') return;
+        camera.observeEffect(e);
         recordNativeObservedEvent(events, e, game.elapsed);
         if (e.type === 'ability' && e.ability) {
             presentations[e.ability.rig].event(e.ability, e.x, e.y);
@@ -201,7 +201,7 @@ export function runSimulation(options: SimOptions) {
         game.newRun(options.seed, { version: 2, rig: options.rig, difficulty: options.difficulty });
     if (options.assisted) {
         const hurt = game.hurt.bind(game);
-        game.hurt = (n, origin) => hurt(n * .15, origin);
+        game.hurt = (n, origin, source) => hurt(n * .15, origin, source);
     }
     const report = { mode: 'sim-human-v1', difficulty: options.difficulty ?? 'standard', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, profile:human.profile, humanParameters:human.config, assisted: !!options.assisted, legacy: !!options.legacy,
         policy: 'Shared seeded human policy; 100ms observations, rate-limited inputs, 60Hz GameFeel, real DepthGame actions; analytic camera observer.',
@@ -225,9 +225,9 @@ export function runSimulation(options: SimOptions) {
     let progressSignature = '', lastProgressElapsed = 0;
     function snapshot() {
         const clear = (x: number, y: number, from: {x: number; y: number} = game.player) => hasClearExpeditionShot(game.geometry, from, { x, y });
-        const enemies: any[] = game.enemies.snapshot.enemies.filter(e => e.health > 0).map(e => ({ ...e, clear: clear(e.x, e.y), visible: camera.visible(e.x, e.y) }));
+        const enemies: any[] = game.enemies.snapshot.enemies.filter(e => e.health > 0).map(e => ({ ...e, clear: clear(e.x, e.y), visible: camera.visible(e.x, e.y), screen:camera.project(e.x,e.y) }));
         for (const t of game.targets().filter(t => t.id < 0 && t.health > 0))
-            enemies.push({ ...t, type: 'queen', clear: clear(t.x, t.y), visible: camera.visible(t.x, t.y), vulnerable: t.id !== -1 || game.boss.snapshot.vulnerable });
+            enemies.push({ ...t, type: 'queen', clear: clear(t.x, t.y), visible: camera.visible(t.x, t.y), screen:camera.project(t.x,t.y), vulnerable: t.id !== -1 || game.boss.snapshot.vulnerable });
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
         const siege=game.siege,goal=siege&&siege.remainingMs>0?siege:nearest;
         const waypoint = goal ? botWaypoint(game, goal) ?? goal : null;
@@ -243,7 +243,7 @@ export function runSimulation(options: SimOptions) {
             candidates.push({ x, y, dx, dy, legal, waypoint, rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&clear(e.x,e.y,{x,y})).map(e=>e.id), clear: nearest ? clear(nearest.x, nearest.y, { x, y }) : false });
         }
         const telegraph = game.boss.snapshot.pendingTelegraph;
-        return { elapsed:game.elapsed, nodeId:game.node.id, resources:game.combat.getRunResources(), rig: options.rig, siege:game.siege, player: { ...game.player }, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
+        return { elapsed:game.elapsed, difficulty:game.difficulty, nodeId:game.node.id, resources:game.combat.getRunResources(), rig: options.rig, siege:game.siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});
@@ -266,8 +266,7 @@ export function runSimulation(options: SimOptions) {
                 if(vitals.health>=vitals.maxHealth)lastFullHealthElapsed=game.elapsed;
                 game.update(step, input);
             });
-            camera.update(game, dt / 1000);
-            kit.time += dt / 1000;
+            kit.time += camera.update(game, dt / 1000);
             remaining -= dt;
         }
         camera.update(game, 0);
@@ -276,7 +275,7 @@ export function runSimulation(options: SimOptions) {
         if (!room)
             return;
         const stats = game.stats;
-        Object.assign(room, { result, seconds: game.elapsed - room.startedElapsed, damageTaken: stats.damageTaken - room.startStats.damageTaken,
+        Object.assign(room, { result, topDamageSources:game.roomDamage, seconds: game.elapsed - room.startedElapsed, damageTaken: stats.damageTaken - room.startStats.damageTaken,
             hitsTaken: pressure.get(game.node.id)?.hitsTaken ?? 0, firstHitElapsed:pressure.get(game.node.id)?.firstHitElapsed??null, timeToDeathFromFullHealth:result==='dead'&&lastFullHealthElapsed!==null?game.elapsed-lastFullHealthElapsed:null, timeToDeathFromFirstHit:result==='dead'&&pressure.get(game.node.id)?.firstHitElapsed!=null?game.elapsed-pressure.get(game.node.id)!.firstHitElapsed!:null, hitTimes:pressure.get(game.node.id)?.hitTimes??[], pressure: pressure.get(game.node.id)?.byFamily ?? {},
             damageDealt: Object.fromEntries(Object.entries(stats.damageDealt).map(([key, value]) => [key, value - room.startStats.damageDealt[key]])),
             abilityUses: Object.fromEntries(Object.entries(stats.abilityUses).map(([key, value]) => [key, value - room.startStats.abilityUses[key]])),
@@ -341,7 +340,7 @@ export function runSimulation(options: SimOptions) {
         const weapon = decision.weapon;
         if (s.combat.weapon !== weapon) game.switchWeapon(weapon);
         if (target) {
-            const projected = camera.project(target.x, target.y);
+            const projected = target.screen ?? camera.project(target.x, target.y);
             screen = { x: Math.max(4, Math.min(1916, projected.x)), y: Math.max(4, Math.min(1000, projected.y)) };
         }
         const weaponScreen: {x:number;y:number}|null = screen;
