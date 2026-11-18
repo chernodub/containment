@@ -40,9 +40,9 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
   const start=schedule.length;let marked=false;
   for(const group of beat.groups){
    const baseCount=group.guardian?1:group.lesson||group.priority||node.depth<4?group.count:Math.max(1,Math.round(group.count*d.waves*(node.depth>=10?d.lateWaves:1)));
-   // Later Story firing lanes retain one more ranged threat; Standard applies
-   // that extra lane only in the final siege. Earlier teaching beats are unchanged.
-   const extraRanged=group.family==='spitter'&&(options.difficulty==='story'&&node.depth>=10||options.difficulty==='standard'&&node.depth===19);
+   // Later Story and Standard firing lanes retain one more ranged threat.
+   // Earlier teaching beats are unchanged.
+   const extraRanged=group.family==='spitter'&&node.depth>=10&&(options.difficulty==='story'||options.difficulty==='standard');
    const count=baseCount+(extraRanged?1:0);
    for(let index=0;index<count;index++){
     // Exchange only the final body, preserving the pack's original arrival times.
