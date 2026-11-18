@@ -48,9 +48,9 @@ const dash = (
 export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = Object.freeze({
   // ── BREACHER ────────────────────────────────────────────────────────────────
   ram: dash('ram', 'breacher', 'kinetic', 'Ram',
-    'Dash through enemies, shoving them aside.',
-    'Dash in your movement direction. You cannot be hit while dashing. Enemies you pass through take 18 damage and are shoved sideways and staggered.',
-    0, [{ label: 'Damage', value: '18' }]),
+    'Shove enemies aside or crush them against Bulwark.',
+    'Dash in your movement direction. You cannot be hit while dashing. Enemies you pass through take 18 damage and are shoved sideways and staggered. If your shove would hit Bulwark within 90 units, crush the enemy for 68 damage instead.',
+    0, [{ label: 'Damage', value: '18' }, { label: 'Bulwark crush', value: '68 damage' }]),
   'seismic-slam': ability({
     id: 'seismic-slam', rig: 'breacher', slot: 'tactical', element: 'kinetic', name: 'Seismic Slam',
     summary: 'Shockwave that launches everything around you.',
@@ -61,11 +61,11 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   }),
   bulwark: ability({
     id: 'bulwark', rig: 'breacher', slot: 'power', element: 'kinetic', name: 'Bulwark',
-    summary: 'Deploy an energy barricade that stops enemies and spit.',
-    description: 'Project a wide barricade in front of you for 6 seconds. It blocks enemy movement and enemy projectiles. Your own shots pass through it.',
+    summary: 'Block enemies and spit, then crush enemies against the barricade with Ram.',
+    description: 'Project a wide barricade in front of you for 6 seconds. It blocks enemy movement and enemy projectiles. Your own shots pass through it. Ram enemies sideways into the barricade to crush them.',
     targeting: 'direction', shape: { kind: 'wall', length: 220, thickness: 18 },
     castMs: 0, cooldownMs: 20_000, charges: 1, durationMs: 6_000, range: 70,
-    stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Width', value: '220' }, { label: 'Cooldown', value: seconds(20_000) }],
+    stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Width', value: '220' }, { label: 'Ram crush', value: '+50 damage' }, { label: 'Cooldown', value: seconds(20_000) }],
   }),
   railbreaker: ability({
     id: 'railbreaker', rig: 'breacher', slot: 'overdrive', element: 'kinetic', name: 'Railbreaker',

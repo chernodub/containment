@@ -406,7 +406,11 @@ export class AbilitySystem {
     if (id === 'ram') for (const t of this.host.targets().slice(0, ABILITY_LIMITS.targets)) {
       if (dash.hit.has(t.id) || segmentDistance(t, before, p) > 22 || !this.host.visible(p, t)) continue;
       dash.hit.add(t.id); const side = (t.x - p.x) * -Math.sin(dash.angle) + (t.y - p.y) * Math.cos(dash.angle) < 0 ? -1 : 1;
-      this.host.launch(t, -Math.sin(dash.angle) * 350 * side, Math.cos(dash.angle) * 350 * side); this.host.status(t, 'shock', 180); this.hit(t, 18);
+      const dx = -Math.sin(dash.angle) * side, dy = Math.cos(dash.angle) * side;
+      const shove = { x: t.x + dx * 90, y: t.y + dy * 90 };
+      const crush = this.deployables.some(wall => wall.kind === 'barrier' && wall.health > 0 && this.touches(wall, t, shove, t.radius));
+      if (!crush) this.host.launch(t, dx * 350, dy * 350);
+      this.hit(t, crush ? 68 : 18, 'shock', crush ? 450 : 180);
     }
     dash.remaining = countdown(dash.remaining, step);
     const blocked = Math.hypot(p.x - before.x, p.y - before.y) < Math.hypot(dash.x, dash.y) * step / DASH_DURATION_MS - .01;
