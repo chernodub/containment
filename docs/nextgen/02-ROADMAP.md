@@ -61,6 +61,8 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | VFX15 four different Overdrive climaxes, Napalm with flame tongues, shared effect-area cap — Opus | merged | Frost Trail and Ram left for a later pass |
 | K13 Warden and Matron as a real boss tier (≈ 2× marine), brood pod asset, Stalker/Carrier/Spitter fixes — Opus, modelling only | merged | |
 | I13 boss footprints and collision to match, pod countdown, Warden stun, repack — Sol | running | |
+| COMM13 mechanics visible on screen: siege area and charge, priority vs resistance markers, off-screen shot cue, Stalker reveal, beat signals — Sol 6.2 | running | |
+| UI13 varied reward illustrations, transform before/after diagrams, shop and route cards, density pass — Astra 6.2 | running | |
 | PERF13 creature LODs, shadow proxies, camera/main-thread CPU — Sol | merged | triangles −32%, profiled thread CPU per render 17.2 → 7.9 ms; frame p95 ≤ 20 ms in 11/16 configurations (all Low, 3 of 8 High) on a loaded host — High still misses in five |
 | G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
 | D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |
@@ -99,3 +101,4 @@ Next (lead): after BAL13 — COMM13 (mechanics visible on screen: siege radius, 
 - 2026-11-16 Lockfile regenerated so npm 10 (used by the Codex sandbox) and npm 11 both pass `npm ci`; the lockfile produced after removing the tests had blocked three streams. Low-effort Sol and medium Astra tend to stop early with "incomplete delivery": briefs now say how long the job takes and forbid partial stops; unfinished runs are resumed in the same thread.
 - 2026-11-17 Owner asked to push while iterating: `nextgen` is pushed to the public fork `chernodub/containment` (branch `nextgen`, never `main`) after every merge.
 - 2026-11-17 Owner: reviews by Opus or Astra at high reasoning. R12 uses Astra (extra-high, then high after a request-size failure) for the two exhaustive verdicts and a bounded Opus art-director pass. Adopted from R12-C as the art direction for wave 13: "the ship is dark; actors carry the light".
+- 2026-11-18 Owner: new GPT delegates use the 6.2 models (`gpt-6.2-sol`, `gpt-6.2-astra`).
