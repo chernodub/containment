@@ -325,6 +325,27 @@ const incidents:Record<string,Incident>={
       }
     },
   },
+  'shielding-gate':{
+    source:[455,332],bounds:[-190,-46,342,181],
+    paint(c){
+      // Scraped arcs are the real swept paths of the failed shield leaves.
+      // Polished ends stop where the broken carriages jammed.
+      for(const side of [-1,1]){
+        c.save();c.scale(side,1);
+        for(let i=0;i<5;i++)stroke(c,'M'+(24+i*5)+' 3Q'+(47+i*8)+' '+(65+i*4)+' '+(123+i*3)+' '+(91+i*4),i%2?'rgba(131,142,141,.68)':'rgba(53,61,66,.77)',i%2?2:4);
+        for(let i=0;i<9;i++){const x=83+i*5,z=67+i*3;c.fillStyle='#70797b';c.fillRect(x,z,4+i%3,1.4);}
+        c.restore();
+      }
+    },
+    pieces(p){
+      // Lapped plates spread from the shield hinge like a partially closed iris.
+      for(const s of [-1,1])for(let i=0;i<4;i++){
+        const x=s*(10+i*15),h=45-i*5,z=i*4;
+        p.face([[x,3,z],[x+s*19,2,z+4],[x+s*23,h*.67,z+4],[x+s*7,h,z]],i%2?0x697984:0x849499);
+        p.rod([x+s*6,4,z+1],[x+s*10,h-2,z+2],1.8,0x46555f);
+      }
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
