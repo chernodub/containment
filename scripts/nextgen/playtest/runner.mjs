@@ -261,22 +261,28 @@ try {
   assert.equal((await snapshot()).run.seed,seed,'Native Start must honor diagnostic seed');
   assert.equal(await page.evaluate(()=>window.__containmentDebug.game.difficulty),difficulty,'Native start must honor selected difficulty');
   let previousSnapshot=null;const foundDefects=new Set();
-  let loadingSince=null,loadingRecorded=false,screenSince=performance.now(),screenKey='',steps=0,stagnantSince=0,previousProgress='',probed=new Set();
+  let loadingSince=null,loadingHost=null,loadingRecorded=false,screenSince=performance.now(),screenKey='',steps=0,stagnantSince=0,previousProgress='',probed=new Set();
   while(performance.now()-wallStart<maxWallSeconds*1000) {
     let s=await snapshot();last=s;
     for(const defect of detectSnapshotDefects(s,previousSnapshot)){const key=[defect.kind,defect.room,defect.slot??defect.panel??defect.entity??''].join(':');if(foundDefects.has(key))continue;foundDefects.add(key);const stem=`defect-${report.defects.length}`;defect.evidence=`${stem}.png`;report.defects.push(defect);await shot(stem,s);}
     previousSnapshot=s;
     if(s.loading) {
-      if(loadingSince===null){loadingSince=performance.now();await release();}
+      if(loadingSince===null){loadingSince=performance.now();loadingHost=loadavg();await release();}
       if(assessLoading(performance.now()-loadingSince,loadingRecorded).record) {
-        loadingRecorded=true;report.defects.push({kind:'room-loading>5s',area:'render',severity:'medium',room:s.node.templateId,wallMs:performance.now()-loadingSince,evidence:`loading-${steps}.png`});
+        loadingRecorded=true;report.defects.push({kind:'room-loading>5s',area:'render',severity:'medium',room:s.node.templateId,wallMs:performance.now()-loadingSince,hostLoad:{start:loadingHost,observed:loadavg()},evidence:`loading-${steps}.png`});
         await shot(`loading-${steps}`,s);await save();
       }
       if(assessLoading(performance.now()-loadingSince,loadingRecorded).timeout){report.outcome='loading-timeout';report.final=s;break;}
       await page.waitForTimeout(50);continue;
     }
-    if(loadingSince!==null){report.loadingHolds??=[];report.loadingHolds.push({room:s.node.templateId,wallMs:performance.now()-loadingSince});await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));s=await snapshot();last=s;}
-    loadingSince=null;loadingRecorded=false;
+    if(loadingSince!==null){
+      const wallMs=performance.now()-loadingSince,finishedLoad=loadavg();
+      report.loadingHolds??=[];
+      report.loadingHolds.push({room:s.node.templateId,wallMs,hostLoad:{start:loadingHost,end:finishedLoad}});
+      console.log(`${label}: ${s.node.templateId} hold ${wallMs.toFixed(0)} ms (load1m ${loadingHost[0].toFixed(2)} → ${finishedLoad[0].toFixed(2)}, ${report.hostLoad.logicalCores} cores)`);
+      await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));s=await snapshot();last=s;
+    }
+    loadingSince=null;loadingHost=null;loadingRecorded=false;
     const key=screenStateKey(s);
     if(key!==screenKey){screenSince=performance.now();screenKey=key;}
     const checkpointKind=s.phase==='reward'&&s.actions.some(a=>a.id==='claim')?'shop':s.status==='route'&&s.actions.some(a=>a.id==='destroy-ship')?'destroy-confirm':s.phase;
