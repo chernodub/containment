@@ -15,3 +15,9 @@
     stroke: #fff2e7;
     stroke-width: 2.6;
 }
+.threat-marker[data-tactical=arrival],
+.threat-marker[data-tactical=cleanup] { opacity: .8; }
+.threat-marker[data-tactical=arrival] .threat-chevron,
+.threat-marker[data-tactical=cleanup] .threat-chevron {fill:#263434;stroke:#c5c5a0;}
+.threat-marker[data-tactical=arrival] .threat-type,
+.threat-marker[data-tactical=cleanup] .threat-type {fill:#071017;stroke:#eac786;stroke-width:2.8;width:26px;height:26px;left:9px;top:9px;}

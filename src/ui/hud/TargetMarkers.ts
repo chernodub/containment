@@ -3,6 +3,8 @@ import type {DepthRenderer} from '../../render/DepthRenderer';
 import {getViewportWidth, getViewportHeight, projectWorld, projectActorBounds} from '../gameAdapter';
 import {hudObstructs, presentationObstructs} from './layout';
 
+import type {EncounterCues} from './EncounterCues';
+
 const gold = '#eac786';
 const violet = '#c3a9ed';
 
@@ -18,7 +20,7 @@ export class TargetMarkers {
         host.prepend(this.canvas);
     }
 
-    update(game: DepthGame, renderer: DepthRenderer) {
+    update(game: DepthGame, renderer: DepthRenderer, cues: EncounterCues['locations']) {
         const ctx = this.context;
         this.canvas.hidden = game.status !== 'playing';
         if (!ctx || this.canvas.hidden) return;
@@ -26,6 +28,18 @@ export class TargetMarkers {
         if (this.canvas.width !== width) this.canvas.width = width;
         if (this.canvas.height !== height) this.canvas.height = height;
         ctx.clearRect(0, 0, width, height);
+        for (const cue of cues) {
+            if (cue.life <= 0) continue;
+            const point = projectWorld(renderer, cue.x, cue.y, this.point, .12);
+            if (!point.visible || hudObstructs(point.x - 28, point.y - 20, point.x + 28, point.y + 20)) continue;
+            ctx.strokeStyle = cue.kind === 'priority' ? '#81c8b7' : '#eac786';
+            ctx.globalAlpha = cue.life * .8;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(point.x, point.y, 20 + (1 - cue.life) * 16, 9 + (1 - cue.life) * 8, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
         const enemies = game.enemies.snapshot.enemies;
         for (const enemy of enemies) {
             if (enemy.health <= 0 || enemy.alpha < .2 || (!enemy.priority && !enemy.controlResistant)) continue;

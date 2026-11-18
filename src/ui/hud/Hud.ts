@@ -1,3 +1,4 @@
+import {EncounterCues} from './EncounterCues';
 import {TargetMarkers} from './TargetMarkers';
 import {SiegeLabel} from './SiegeLabel';
 import {getCombatDamageElement} from '../gameAdapter';
@@ -118,6 +119,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         denial.style.top=`${Math.max(10,Math.min(innerHeight-80,pointerY))}px`;
     };
     const combatText = new CombatText(el('combat-text'), renderer);
+    const encounterCues = new EncounterCues();
     const targetMarkers = new TargetMarkers(el('threat-indicators'));
     const siegeLabel = new SiegeLabel(el('threat-indicators'));
     const threats = new ThreatIndicators(el('threat-indicators'), el('damage-directions'), renderer);
@@ -263,6 +265,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const s = game.combat.snapshot, playing = game.status === 'playing';
         if (revision !== game.roomRevision) {
             revision = game.roomRevision;
+            encounterCues.clear();
             for (const warning of warnings) warning.life = 0;
             buildReveal=0;denialLife=0;deniedPlacementLife=0;denial.hidden=true;setPlacementPreview(renderer,null);
             combatText.clear();
@@ -278,7 +281,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         // Story text remains authored verbatim; the optional line alone is skippable.
         const storyStatus = conciseStoryStatus(game.storyStatus);
         text('story-status', storyStatus);
-        text('room-objective', game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
+        const encounter = game.encounter;
+        const cue = playing ? encounterCues.update(encounter.beat ?? -1, encounter.canceledReinforcements ?? 0) : '';
+        text('room-objective', cue || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
         siegeLabel.update(renderer, playing ? game.siege : null, game.player);
         const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');
@@ -436,9 +441,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             positionHud();
             setHudInsets(renderer, getHudInsets());
             protectPanels();
-            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q);
+            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, encounterCues.locations, game.encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3);
         }
-        targetMarkers.update(game, renderer);
+        targetMarkers.update(game, renderer, encounterCues.locations);
         if (!playing && wasPlaying) {
             for (const warning of warnings) warning.life = 0;
             clearHudOcclusion(); setHudInsets(renderer, getHudInsets());
@@ -464,6 +469,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         }
         combatText.effect({...event, damageElement: getCombatDamageElement(game, event)});
         threats.effect(event, game.player);
+        encounterCues.effect(event, game.encounter.beat ?? -1);
         firstStrike.effect(event,onboarding.teachingStrike);
         onboarding.effect(event);
         if (event.lethal && (event.type === 'hit' || event.type === 'acid' || event.contact)) {
@@ -520,6 +526,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (disposed)
             return;
         const elapsed = Number.isFinite(dt) ? Math.max(0, Math.min(dt, .1)) : 0;
+        if (game.status === 'playing') encounterCues.tick(elapsed);
         for (const warning of warnings) warning.life = Math.max(0, warning.life - elapsed);
         weaponInspect=Math.max(0,weaponInspect-elapsed);buildReveal=Math.max(0,buildReveal-elapsed);
         denialLife=Math.max(0,denialLife-elapsed);deniedPlacementLife=Math.max(0,deniedPlacementLife-elapsed);
