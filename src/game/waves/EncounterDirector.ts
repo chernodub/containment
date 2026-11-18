@@ -26,7 +26,7 @@ export type EncounterPlan = Readonly<{
 }>;
 export type EncounterSnapshot = Readonly<{
   phase: EncounterPhase; elapsedMs: number; dispatched: number; remaining: number;
-  totalSpawns: number; concurrentCap: number;beat?:number;grammar?:EncounterGrammar;beatLabel?:string;lullRemainingMs?:number;canceledReinforcements?:number;
+  beatRemaining?: number; totalSpawns: number; concurrentCap: number;beat?:number;grammar?:EncounterGrammar;beatLabel?:string;lullRemainingMs?:number;canceledReinforcements?:number;
 }>;
 
 function authoredPlan(options:EncounterOptions):EncounterPlan {
@@ -137,7 +137,7 @@ export class EncounterDirector {
   get currentWave(): number { return this.plan.wave; }
   get snapshot(): EncounterSnapshot {
     return Object.freeze({ phase: this.currentPhase, elapsedMs: this.elapsedMs, dispatched: this.dispatched,
-      remaining: this.plan.totalSpawns - this.dispatched, totalSpawns: this.plan.totalSpawns, concurrentCap: this.plan.concurrentCap,...(this.plan.beats?{beat:this.beatIndex,grammar:this.plan.beats[this.beatIndex]?.grammar,beatLabel:this.plan.beats[this.beatIndex]?.label,lullRemainingMs:this.lullRemainingMs,canceledReinforcements:this.canceledReinforcements}:{}) });
+      remaining: this.plan.totalSpawns - this.dispatched, totalSpawns: this.plan.totalSpawns, concurrentCap: this.plan.concurrentCap,...(this.plan.beats?{beat:this.beatIndex,beatRemaining:Math.max(0,(this.plan.beats[this.beatIndex]?.end??this.dispatched)-this.dispatched),grammar:this.plan.beats[this.beatIndex]?.grammar,beatLabel:this.plan.beats[this.beatIndex]?.label,lullRemainingMs:this.lullRemainingMs,canceledReinforcements:this.canceledReinforcements}:{}) });
   }
 
   start(): readonly EncounterEvent[] {

@@ -1,3 +1,5 @@
+import './tacticalMarkers.css';
+import type {EncounterCues} from './EncounterCues';
 import { hudObstructs, presentationObstructs } from './layout';
 import type { DepthRenderer } from '../../render/DepthRenderer';
 import type { EnemySnapshot } from '../../game/enemies/EnemySystem';
@@ -10,6 +12,8 @@ export type ThreatBullet = Readonly<{
     x: number;
     y: number;
     kind: string;
+    sourceX?: number;
+    sourceY?: number;
     request: Readonly<{
         angle: number;
         speed: number;
@@ -46,6 +50,9 @@ type Candidate = {
     count: number;
     attacking: boolean;
     inFlight: boolean;
+    shotAngle: number;
+    shotCharge: number;
+    tactical: '' | 'arrival' | 'cleanup';
     approaching: boolean;
     point: ScreenPoint;
 };
@@ -102,6 +109,7 @@ export class ThreatIndicators {
     private readonly attacks: Attack[] = [];
     private readonly point: ScreenPoint = { x: 0, y: 0, visible: false };
     private readonly source: ScreenPoint = { x: 0, y: 0, visible: false };
+    private readonly aim: ScreenPoint = {x: 0, y: 0, visible: false};
     private readonly edge: Point = { x: 0, y: 0 };
     private readonly bodyBounds = {left:0,top:0,right:0,bottom:0};
     private recentAttack = -1;
@@ -135,7 +143,7 @@ export class ThreatIndicators {
             node.append(chevron, type, count);
             host.append(node);
             this.markers.push({ node, glyph, count, x: 0, y: 0, radius: 18, active: false });
-            this.candidates.push({ ids: [], id: 0, kind: 'standard', score: -Infinity, distance: 0, angle: 0, edgeAngle: 0, count: 0, attacking: false, inFlight: false, approaching: false, point: { x: 0, y: 0, visible: false } });
+            this.candidates.push({ ids: [], id: 0, kind: 'standard', score: -Infinity, distance: 0, angle: 0, edgeAngle: 0, count: 0, attacking: false, inFlight: false, shotAngle: 0, shotCharge: -1, tactical: '', approaching: false, point: { x: 0, y: 0, visible: false } });
         }
         for (let i = 0; i < 4; i++) {
             const node = document.createElement('div');
@@ -210,8 +218,8 @@ export class ThreatIndicators {
         }
         return false;
     }
-    private consider(id: number, kind: ThreatKind, x: number, y: number, distance: number, attacking: boolean, inFlight: boolean, radius = 16, approaching = true): void {
-        if (kind !== 'boss' && !attacking && distance > 1000)
+    private consider(id: number, kind: ThreatKind, x: number, y: number, distance: number, attacking: boolean, inFlight: boolean, radius = 16, approaching = true, shotCharge = -1, aimX = x, aimY = y, tactical: Candidate['tactical'] = ''): void {
+        if (!tactical && kind !== 'boss' && !attacking && distance > 1000)
             return;
         projectWorld(this.renderer, x, y, this.point);
         if (!Number.isFinite(this.point.x) || !Number.isFinite(this.point.y))
@@ -220,11 +228,11 @@ export class ThreatIndicators {
             const b=this.bodyBounds;
             // A center crossing the frame is not a visible body. Keep the native
             // danger bearing until the complete actor also clears screen/HUD.
-            if(!projectActorBounds(this.renderer,id,x,y,radius,b)||b.left>32&&b.top>32&&b.right<this.width-32&&b.bottom<this.height-32&&!hudObstructs(b.left,b.top,b.right,b.bottom)&&!presentationObstructs(b.left,b.top,b.right,b.bottom))return;
+            if(id < -1 ? !hudObstructs(this.point.x - 5,this.point.y - 5,this.point.x + 5,this.point.y + 5) : !projectActorBounds(this.renderer,id,x,y,radius,b)||b.left>32&&b.top>32&&b.right<this.width-32&&b.bottom<this.height-32&&!hudObstructs(b.left,b.top,b.right,b.bottom)&&!presentationObstructs(b.left,b.top,b.right,b.bottom))return;
         }
         const angle = Math.atan2(this.point.y - this.originY, this.point.x - this.originX);
         threatEdgePoint(this.originX, this.originY, angle, this.width, this.height, this.edge);
-        const score = (attacking ? 1000000 : 0) - distance + rank[kind] * 5;
+        const score = (shotCharge >= 0 ? 2000000 : attacking ? 1000000 : tactical === 'arrival' ? 10000 : 0) - distance + rank[kind] * 5;
         let candidate: Candidate | undefined;
         for (const existing of this.candidates)
             if (existing.count > 0 && bearingSector(existing.angle) === bearingSector(angle)) {
@@ -257,6 +265,12 @@ export class ThreatIndicators {
             candidate.inFlight = inFlight;
             candidate.approaching = approaching;
         }
+        candidate.tactical = tactical;
+        candidate.shotCharge = shotCharge;
+        if (shotCharge >= 0) {
+            projectWorld(this.renderer, aimX, aimY, this.aim, .8);
+            candidate.shotAngle = Math.atan2(this.aim.y - this.point.y, this.aim.x - this.point.x);
+        }
         candidate.id = id;
         candidate.score = score;
         candidate.distance = distance;
@@ -270,7 +284,7 @@ export class ThreatIndicators {
         top: number;
         right: number;
         bottom: number;
-    }, bullets?: readonly ThreatBullet[], boss?: ThreatBoss): void {
+    }, bullets?: readonly ThreatBullet[], boss?: ThreatBoss, cues?: EncounterCues['locations'], cleanup = false): void {
         this.width = getViewportWidth(this.renderer);
         this.height = getViewportHeight(this.renderer);
         this.originX = (bounds.left + bounds.right) / 2;
@@ -282,9 +296,28 @@ export class ThreatIndicators {
         for (const enemy of enemies) {
             if (enemy.health <= 0 || enemy.alpha < .2)
                 continue;
-            const flight = this.inFlight(enemy, player, bullets), attacking = enemy.windupMs > 0 || enemy.chargeMs > 0 || enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike' || !!enemy.pendingAttack || flight;
+            const flight = !bullets && this.inFlight(enemy, player), attacking = enemy.windupMs > 0 || enemy.chargeMs > 0 || enemy.meleePhase === 'windup' || enemy.meleePhase === 'strike' || !!enemy.pendingAttack || flight;
             const kind: ThreatKind = enemy.champion ? 'champion' : enemy.elite ? 'elite' : enemy.type === 'spitter' ? 'ranged' : 'standard';
-            this.consider(enemy.id, kind, enemy.x, enemy.y, Math.hypot(enemy.x - player.x, enemy.y - player.y), attacking, flight, enemy.radius, (player.x - enemy.x) * enemy.velocityX + (player.y - enemy.y) * enemy.velocityY > 0);
+            const winding = enemy.type === 'spitter' && enemy.pendingAttack === 'spit' && enemy.windupMs > 0;
+            const dx = enemy.lockX - enemy.x, dy = enemy.lockY - enemy.y;
+            const length = Math.hypot(dx, dy);
+            const toward = winding && length > 0 && dx * (player.x - enemy.x) + dy * (player.y - enemy.y) > 0 &&
+                Math.abs(dx * (player.y - enemy.y) - dy * (player.x - enemy.x)) < length * 70;
+            this.consider(enemy.id, kind, enemy.x, enemy.y, Math.hypot(enemy.x - player.x, enemy.y - player.y), attacking, flight, enemy.radius, (player.x - enemy.x) * enemy.velocityX + (player.y - enemy.y) * enemy.velocityY > 0,
+                toward ? clamp(1 - enemy.windupMs / 500) : -1, enemy.lockX, enemy.lockY, cleanup && !attacking ? 'cleanup' : '');
+        }
+        if (bullets) for (let i = 0; i < bullets.length; i++) {
+            const bullet = bullets[i];
+            if (!projectileThreatens(bullet, player) || bullet.sourceX === undefined || bullet.sourceY === undefined) continue;
+            projectWorld(this.renderer, bullet.sourceX, bullet.sourceY, this.source);
+            if (this.source.visible && !hudObstructs(this.source.x - 8, this.source.y - 8, this.source.x + 8, this.source.y + 8)) continue;
+            this.consider(-2 - i, 'ranged', bullet.x, bullet.y, Math.hypot(bullet.x - player.x, bullet.y - player.y),
+                true, true, 0, true, 1, bullet.x + Math.cos(bullet.request.angle) * 100, bullet.y + Math.sin(bullet.request.angle) * 100);
+        }
+        if (cues) for (let i = 0; i < cues.length; i++) {
+            const cue = cues[i];
+            if (cue.life > 0) this.consider(-10000 - i, 'standard', cue.x, cue.y,
+                Math.hypot(cue.x - player.x, cue.y - player.y), false, false, 0, false, -1, cue.x, cue.y, 'arrival');
         }
         if (boss?.active && boss.health > 0)
             this.consider(-1, 'boss', boss.x, boss.y, Math.hypot(boss.x - player.x, boss.y - player.y), !!boss.pendingTelegraph, false, 92);
@@ -337,7 +370,7 @@ export class ThreatIndicators {
             marker.active = true;
             marker.node.hidden = false;
             marker.node.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%) scale(${scale})`;
-            marker.node.style.setProperty('--bearing', `${candidate.angle}rad`);
+            marker.node.style.setProperty('--bearing', `${candidate.shotCharge >= 0 ? candidate.shotAngle : candidate.angle}rad`);
             marker.node.style.setProperty('--threat-opacity', String(candidate.attacking || candidate.approaching ? .88 + near * .12 : .32 + near * .12));
             marker.node.dataset.kind = candidate.kind;
             marker.node.dataset.elite = String(rank[candidate.kind] >= 2);
@@ -349,12 +382,16 @@ export class ThreatIndicators {
             marker.node.dataset.bearing = String(candidate.angle);
             marker.node.dataset.distance = String(candidate.distance);
             marker.node.dataset.near = String(near);
-            marker.glyph.setAttribute('d', shapePaths[candidate.kind]);
+            const shot = candidate.shotCharge >= 0;
+            marker.node.dataset.rangedShot = String(shot);
+            marker.node.dataset.tactical = candidate.tactical;
+            marker.glyph.setAttribute('d', shot ? 'M16 3l13 13-13 13L3 16zM16 9v9m0 4v2' : candidate.tactical === 'arrival' ? 'M6 24V8h20v16M11 24v-5h10v5' : candidate.tactical === 'cleanup' ? 'M6 11V6h5m10 0h5v5m0 10v5h-5m-10 0H6v-5M16 13v6' : shapePaths[candidate.kind]);
+            marker.node.style.setProperty('--shot-strength', String(shot ? .7 + candidate.shotCharge * .3 - (candidate.inFlight ? 0 : Math.sin(candidate.shotCharge * Math.PI * 2) ** 2 * .14) : 1));
             const count = -candidate.count;
             marker.count.hidden = count <= 1;
             marker.count.textContent = count > 1 ? String(count) : '';
             marker.node.dataset.count = String(count);
-            marker.node.setAttribute('aria-label', `${count > 1 ? `${count} threats, ` : ''}${candidate.kind}, ${formatDistance(candidate.distance)}${candidate.attacking ? ', attacking' : ''}`);
+            marker.node.setAttribute('aria-label', `${count > 1 ? `${count} threats, ` : ''}${candidate.kind}, ${formatDistance(candidate.distance)}${shot ? candidate.inFlight ? ', incoming projectile' : ', shot charging' : candidate.attacking ? ', attacking' : ''}`);
         }
     }
     tick(dt: number): void {

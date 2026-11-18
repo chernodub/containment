@@ -14,7 +14,7 @@ import type {GraphicsOptions} from './graphicsOptions';
 import type {GraphicsTier} from './FrameBudget';
 import type {DeathCue} from './DeathRagdolls';
 const UP=new T.Vector3(0,1,0),WHITE=new T.Color(0xffffff);
-const meleeWarningWeight=(family:string,elite=false)=>family==='crawler'?(elite?.17:.12):family==='brute'||family==='carrier'?.48:elite?.34:.24;
+const meleeWarningWeight=(family:string,elite=false)=>family==='crawler'?(elite?.17:.12):family==='stalker'?.56:family==='brute'||family==='carrier'?.48:elite?.34:.24;
 export type AttackEffectOptions=Partial<GraphicsOptions>&{reducedMotion?:boolean;tier?:GraphicsTier};
 export type AttackFeedback={
  flash?:(event:{position:T.Vector3;color:number;intensity:number;radius:number;duration:number;priority:number})=>void;
