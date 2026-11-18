@@ -257,7 +257,7 @@ try{
     if(scenario.state!=='playing')for(const box of evidence.ui.layout)assert(!box.overflowX&&!box.outsideViewport&&(!box.overflowY||viewport.height<600&&/auto|scroll/.test(box.overflow)),`${name}: primary screen clips/scrolls: ${JSON.stringify(box)}`);
     if(scenario.phase)assert.equal(evidence.phase,scenario.phase,`${name}: wrong run phase`);
     if(scenario.nativeInput){assert.equal(evidence.abilities.rig,'breacher');for(const slot of ['dash','tactical','power','overdrive'])assert.equal(evidence.stats.abilityUses[slot],1,`Native ${slot} input failed`);assert.equal(evidence.stats.overdrivesUsed,1);}
-    if(scenario.ability){assert.equal(evidence.abilities.rig,scenario.ability.rig);assert.equal(evidence.abilities.slots[scenario.ability.slot].id,scenario.ability.id);assert.equal(evidence.stats.abilityUses[scenario.ability.slot],1);assert(evidence.abilities.zones.length<=24&&evidence.abilities.deployables.length<=8,'Ability counts unbounded');}
+    if(scenario.ability){assert.equal(evidence.abilities.rig,scenario.ability.rig);assert.equal(evidence.abilities.slots[scenario.ability.slot].id,scenario.ability.id);assert.equal(evidence.stats.abilityUses[scenario.ability.slot],scenario.ability.uses??1);assert(evidence.abilities.zones.length<=24&&evidence.abilities.deployables.length<=8,'Ability counts unbounded');}
     if(scenario.ability&&(evidence.abilities.deployables.length||evidence.abilities.zones.length))assert(evidence.interimMeshes>0,`${name}: live ability entities lack world visuals`);
     if(scenario.ability||scenario.nativeInput){
      assert.equal(evidence.ui.abilitySlots.length,4,`${name}: live ability HUD incomplete`);

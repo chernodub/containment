@@ -113,6 +113,10 @@ class PyroPresentation implements AbilityPresentation {
     }
     if (event.ability === 'flashfire') {
       if (event.phase === 'burst') {
+        const ball = kit.fx.spawn(FxMode.Fire, x, z, .42);
+        ball.range = (event.radius ?? 42) / UNIT;
+        ball.arc = Math.PI * 2;
+        ball.h0 = .35; ball.h1 = 1.1; ball.param = .2; ball.intensity = .9;
         kit.burst(x, .6, z, 'pyro', 12, 2.2, .45);
         kit.flash(x, z, FIRE, 6, 3, 3, .18);
         return;

@@ -15,8 +15,8 @@ export type AbilityPoint = Readonly<{ x: number; y: number }>;
 export interface AbilityHost {
   enabled?: () => boolean;
   upgraded?: (id: AugmentId) => boolean;
-  /** Accepted Overdrives allowed between room resets; omitted hosts remain unlimited. */
   roomDepth: () => number;
+  /** Accepted Overdrives allowed between room resets; omitted hosts remain unlimited. */
   overdriveRoomLimit?: () => number;
   /** Immutable world-geometry identity/revision for placement-cache invalidation. */
   placementRevision?: () => unknown;

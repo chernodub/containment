@@ -43,7 +43,7 @@ async function stageAbility({ rig, slot, id, nativeInput = false, kit13 = false,
   if (slot === 'overdrive') d.fillOverdrive();
   if (!g.useAbility(slot)) throw Error(`Ability denied: ${id}`);
   const windup = g.abilities.snapshot.slots[slot].castRemainingMs;
-  const aftermath = id === 'whiteout' ? 2100 : slot === 'dash' ? 440 : id === 'meltdown' ? 1000 : id === 'tesla-pylon' ? 520 : 30;
+  const aftermath = kit13 && ['static-step', 'ram'].includes(id) ? 165 : kit13 && id === 'flashfire' ? 130 : id === 'whiteout' ? 2100 : slot === 'dash' ? 440 : id === 'meltdown' ? 1000 : id === 'tesla-pylon' ? 520 : 30;
   d.step(kit13 && phase === 'cast' ? 16 : windup + aftermath);
   if (kit13) {
     if (id === 'glacier' && phase === 'effect') {
@@ -79,5 +79,6 @@ export const KIT13_ABILITY_SCENARIOS = ABILITY_SCENARIOS
   .filter(scenario => ['ram', 'glacier', 'afterburn', 'flashfire', 'meltdown', 'static-step'].includes(scenario.ability.id))
   .flatMap(scenario => ['cast', 'effect'].map(phase => ({
     ...scenario, id: `kit13-${scenario.ability.id}-${phase}`,
+    ability: { ...scenario.ability, uses: scenario.ability.id === 'glacier' && phase === 'effect' ? 2 : 1 },
     setupArgument: { ...scenario.setupArgument, kit13: true, phase },
   })));
