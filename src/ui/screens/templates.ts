@@ -225,6 +225,9 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
   const offers=detourOffers(run);
   const next=destinations[0];
   const nextName=escapeHtml(ROOM_TEMPLATES[next.templateId].name);
+  if (!offers.length && destinations.length===1) {
+    return `<section class="panel screen-enter"><h2>${nextName}</h2><button class="primary" data-route="${next.id}">Continue ${arrow()}</button></section>`;
+  }
   const options=offers.length
     ? offers.map(offer=>({destination:next, detour:offer.id, title:offer.name,
       risk:offer.id==='salvage'?'Fight one extra enemy group led by a priority target.':undefined,
