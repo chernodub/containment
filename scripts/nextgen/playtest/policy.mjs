@@ -227,7 +227,9 @@ export function chooseActions(s) {
   const keys = [];
   const imminent=s.enemies.some(e=>e.visible&&e.meleePhase==='windup'&&e.meleeRemainingMs<250&&distance(e,s.player)<160);
   const visibleHit={crawler:12,stalker:26,spitter:12,carrier:22,brute:42};
-  const lethal=s.enemies.some(e=>e.visible&&distance(e,s.player)<200&&s.combat.health+s.combat.armor<=(visibleHit[e.type]??45));
+  // Standard caps also conservatively cover Story; Veteran needs its public1.3 factor.
+  const hitScale=s.difficulty==='veteran'?1.3:1;
+  const lethal=s.enemies.some(e=>e.visible&&distance(e,s.player)<200&&s.combat.health+s.combat.armor<=Math.min(45,(visibleHit[e.type]??45)*hitScale));
   const emergency=lethal||s.combat.health<=35&&s.enemies.filter(e=>distance(e,s.player)<200).length>=2;
   if (s.combat.health <= 55 && s.combat.medkits > 0 && (!imminent||emergency)) keys.push('e');
   if ((escape?.needsDash||hazardDanger) && slots?.dash?.ready) keys.push('Shift');
