@@ -413,7 +413,18 @@ export class AbilitySystem {
     if (dash.remaining <= 0 || blocked) {
       this.dash = null;
       if (id === 'frost-trail' || id === 'afterburn') this.addZone(id, dash.start, 0, 2500, 0, false, p, 44);
-      if (id === 'static-step') { const targets = this.nearby(p, 160).slice(0, 3); this.host.arc({ id: 0, x: p.x, y: p.y, radius: 0, health: 1 }, targets); for (const t of targets) { this.hit(t, 22, 'shock', 250); this.event(id, 'link', p, { targetX: t.x, targetY: t.y, targetIds: [t.id] }); }}
+      if (id === 'static-step') {
+        let origin: AbilityPoint = p;
+        const struck = new Set<number>();
+        for (let hop = 0; hop < 3; hop++) {
+          const target = this.nearby(origin, 160).find(enemy => !struck.has(enemy.id));
+          if (!target) break;
+          struck.add(target.id);
+          this.host.status(target, 'shock', 750);
+          this.event(id, 'link', origin, { targetX: target.x, targetY: target.y, targetIds: [target.id] });
+          origin = target;
+        }
+      }
       this.event(id, 'dash-end', dash.start, { targetX: p.x, targetY: p.y, angle: dash.angle, targetIds: [...dash.hit] });
     }
   }

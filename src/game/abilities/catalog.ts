@@ -138,9 +138,9 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
 
   // ── ARC ─────────────────────────────────────────────────────────────────────
   'static-step': dash('static-step', 'arc', 'arc', 'Static Step',
-    'Dash and shock the nearest enemies on arrival.',
-    'Dash in your movement direction. You cannot be hit while dashing. On arrival, discharge into the three nearest enemies for 22 damage each.',
-    0, [{ label: 'Shock', value: '22 × 3' }]),
+    'Dash into range to set up Overload with a chain stun.',
+    'Dash in your movement direction. You cannot be hit while dashing. On arrival, a discharge jumps to the nearest enemy within 160 units, then up to two more nearby enemies. Each hit stuns for 0.75 seconds.',
+    0, [{ label: 'Stun', value: '0.75 s' }, { label: 'Targets', value: '3' }]),
   overload: ability({
     id: 'overload', rig: 'arc', slot: 'tactical', element: 'arc', name: 'Overload',
     summary: 'Chain lightning that stuns.',
