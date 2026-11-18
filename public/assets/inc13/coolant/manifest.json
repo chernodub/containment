@@ -9,49 +9,55 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 1.086,
-    "blenderPNGDecodeMs": 5.463,
+    "bakeSeconds": 0.929,
+    "blenderPNGDecodeMs": 5.265,
     "file": "header-normal.png",
     "size": 512,
-    "bytes": 289274,
+    "bytes": 298019,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 109879,
+    "nonFlatPixels": 115982,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "frozen-header--e9-body",
         "role": "e9-body",
-        "seconds": 0.048,
+        "seconds": 0.045,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "frozen-header--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.046,
+        "seconds": 0.053,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "frozen-header--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.028,
+        "seconds": 0.036,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "frozen-header--p11-frost",
         "role": "p11-frost",
-        "seconds": 0.1,
+        "seconds": 0.068,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "frozen-header--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.07,
+        "seconds": 0.037,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "frozen-header--p11-tint",
         "role": "p11-tint",
-        "seconds": 0.041,
+        "seconds": 0.023,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "frozen-pump-jacket--p11-frost",
+        "role": "p11-frost",
+        "seconds": 0.033,
         "method": "three-segment high bevel"
       }
     ]
@@ -68,23 +74,23 @@
     {
       "name": "frozen-header",
       "size": [
-        7.5,
-        2.22,
-        2.3785
+        7.7785,
+        2.3299,
+        3.0427
       ],
       "bounds": {
         "min": [
           -3.75,
-          0.0,
+          -0.1099,
           -0.6
         ],
         "max": [
-          3.75,
+          4.0285,
           2.22,
-          1.7785
+          2.4427
         ]
       },
-      "triangles": 4280,
+      "triangles": 4508,
       "budget": 12000,
       "finishes": [
         "e9-body",
@@ -94,13 +100,38 @@
         "p11-steel",
         "p11-tint"
       ]
+    },
+    {
+      "name": "frozen-pump-jacket",
+      "size": [
+        1.3461,
+        1.9359,
+        1.1486
+      ],
+      "bounds": {
+        "min": [
+          -1.86,
+          0.2227,
+          -0.2139
+        ],
+        "max": [
+          -0.5139,
+          2.1586,
+          0.9347
+        ]
+      },
+      "triangles": 476,
+      "budget": 1400,
+      "finishes": [
+        "p11-frost"
+      ]
     }
   ],
   "output": {
     "file": "header.glb",
-    "bytes": 539044,
-    "sha256": "61721d9e4c5b26e308b096163c2388482fc3874ba4664cd47537113ab65a715f",
-    "triangles": 4280
+    "bytes": 591960,
+    "sha256": "aedd98c19ead128f05a0603720d9f5f8e879e45a811fac071b5017179cbc0797",
+    "triangles": 4984
   },
   "overBudget": [],
   "uvEncoding": "normalized UNSIGNED_SHORT; maximum error0.004 atlas texel at512; native glTF2"

@@ -11,6 +11,8 @@ export function p11MaintenancePlacements(id: string): OriginalKitInstance[] {
   });
   if (id === 'coolant-plant') {
     add('frost-manifold-turbines', 680, 350, 1);
+    result.push({pack:'p11-inc13-coolant',asset:'frozen-pump-jacket',purpose:'INC13 / frozen pump casing',
+      cutaway:false,matrix:new T.Matrix4().makeTranslation(680/32,0,350/32)});
     result.push({pack:'p11-inc13-coolant',asset:'frozen-header',purpose:'INC13 / burst header',
       cutaway:false,matrix:new T.Matrix4().makeRotationY(-.14).setPosition(401/32,0,300/32)});
   }
