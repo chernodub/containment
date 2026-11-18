@@ -1,0 +1,17 @@
+.threat-marker[data-ranged-shot=true] {
+    animation: none;
+    opacity: var(--shot-strength);
+}
+.threat-marker[data-ranged-shot=true] .threat-chevron {
+    fill: #ff6b3d;
+    stroke-width: 3;
+}
+.threat-marker[data-ranged-shot=true] .threat-type {
+    width: 30px;
+    height: 30px;
+    left: 7px;
+    top: 7px;
+    fill: #25110e;
+    stroke: #fff2e7;
+    stroke-width: 2.6;
+}
