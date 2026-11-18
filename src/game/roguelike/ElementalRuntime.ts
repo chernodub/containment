@@ -48,6 +48,7 @@ export class ElementalRuntime{
  }
  frozen(id:number){return (this.roots.get(id)??0)>this.time;}
  shocked(id:number){return (this.shocks.get(id)??0)>this.time;}
+ controlResisted(id:number){return (this.staggers.get(id)??0)>this.time||this.shocked(id);}
  poisoned(id:number){return (this.poison.get(id)?.until??0)>this.time;}
  slow(t:MutationTarget){if(!t.immovable&&!t.resistant&&(this.frozen(t.id)||this.shocked(t.id)))return 0;const control=(this.staggers.get(t.id)??0)>this.time||this.shocked(t.id)?.65:1;return Math.min(control,this.fields.some(f=>f.until>this.time&&Math.hypot(f.x-t.x,f.y-t.y)<=75&&this.h.visible(f,t))?.75:1);}
 

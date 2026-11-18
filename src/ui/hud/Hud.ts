@@ -1,3 +1,4 @@
+import {TargetMarkers} from './TargetMarkers';
 import {SiegeLabel} from './SiegeLabel';
 import {getCombatDamageElement} from '../gameAdapter';
 import { invalidateHudLayout, getHudInsets, beginHudOcclusion, markHudOcclusion, finishHudOcclusion, clearHudOcclusion } from './layout';
@@ -117,6 +118,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         denial.style.top=`${Math.max(10,Math.min(innerHeight-80,pointerY))}px`;
     };
     const combatText = new CombatText(el('combat-text'), renderer);
+    const targetMarkers = new TargetMarkers(el('threat-indicators'));
     const siegeLabel = new SiegeLabel(el('threat-indicators'));
     const threats = new ThreatIndicators(el('threat-indicators'), el('damage-directions'), renderer);
     const toasts = new HudToasts(el('hud-toasts'));
@@ -436,7 +438,8 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             protectPanels();
             threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q);
         }
-        else if (wasPlaying) {
+        targetMarkers.update(game, renderer);
+        if (!playing && wasPlaying) {
             for (const warning of warnings) warning.life = 0;
             clearHudOcclusion(); setHudInsets(renderer, getHudInsets());
             combatText.clear();
@@ -570,6 +573,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         combatText.dispose();
         threats.dispose();
         siegeLabel.dispose();
+        targetMarkers.dispose();
         toasts.dispose();
         radar.dispose();
         panelResize?.disconnect();

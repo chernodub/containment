@@ -190,7 +190,7 @@ export class MutationRuntime {
     this.#combat.resetMutationEncounter();
   }
 
-  statuses(id:number){const alive=this.#host.targets().some(t=>t.id===id&&t.health>0),chillStacks=alive?this.#stacks(id):0;return{chilled:chillStacks>0,chillStacks,burning:alive&&(this.#burns.get(id)?.expiresAt??0)>this.#time,poisoned:alive&&this.#elements.poisoned(id),frozen:alive&&this.#elements.frozen(id),shocked:alive&&this.#elements.shocked(id)};}
+  statuses(id:number){const alive=this.#host.targets().some(t=>t.id===id&&t.health>0),chillStacks=alive?this.#stacks(id):0;return{chilled:chillStacks>0,chillStacks,controlResisted:alive&&this.#elements.controlResisted(id),burning:alive&&(this.#burns.get(id)?.expiresAt??0)>this.#time,poisoned:alive&&this.#elements.poisoned(id),frozen:alive&&this.#elements.frozen(id),shocked:alive&&this.#elements.shocked(id)};}
   hurt(beforeArmor:number,afterArmor:number,player:{x:number;y:number}){this.#elements.hurt(beforeArmor,afterArmor,player);}
   #stacks(id:number){const c=this.#chill.get(id);return c&&c.expiresAt>this.#time?c.stacks:0;}
   #addChill(t:MutationTarget,stacks:number,duration:number){if(!this.#host.targets().some(x=>x.id===t.id&&x.health>0))return;this.#chill.set(t.id,{stacks:Math.max(stacks,this.#stacks(t.id)),expiresAt:Math.max(this.#time+duration,this.#chill.get(t.id)?.expiresAt??0)});this.#host.boonEffect?.('frost',t.x,t.y);}
