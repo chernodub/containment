@@ -245,9 +245,11 @@ export class PostPipeline {
       this.softParticleBinding?.receive(null);
       this.softDepth.begin(this.tier==='high'&&this.softParticleBinding?.enabled()?r.scene:null);
       try{renderer.render(this.scene, this.camera);}finally{this.softDepth.end();}
-      r.occlusion.uniforms.projectionInverse.value.copy(this.camera.projectionMatrixInverse);
-      r.occlusion.uniforms.projection.value.copy(this.camera.projectionMatrix);
       if (this.tier==='high'&&(this.options.ambientOcclusion || warm)) {
+        if(warm||this.occlusionAlgorithm==='contact'){
+          r.occlusion.uniforms.projectionInverse.value.copy(this.camera.projectionMatrixInverse);
+          r.occlusion.uniforms.projection.value.copy(this.camera.projectionMatrix);
+        }
         // GTAO discards background pixels; white clear preserves unoccluded sky.
         renderer.setClearColor(0xffffff, 1);
         if (warm) this.draw(r.occlusion, r.ao);
@@ -268,10 +270,13 @@ export class PostPipeline {
         r.blur.uniforms.direction.value.set(0, 1 / r.bloomB.height);
         this.draw(r.blur, r.bloomA);
       }
-      this.distortion.update(dt, this.camera);
-      const hasDistortion = this.options.distortion && this.distortion.activeCount > 0;
-      r.distort.uniforms.time.value = this.time;
-      if (this.tier==='high'&&(hasDistortion || warm)) this.draw(r.distort, r.distortion);
+      const distortionEnabled=this.tier==='high'&&this.options.distortion;
+      if(distortionEnabled)this.distortion.update(dt,this.camera);
+      const hasDistortion=distortionEnabled&&this.distortion.activeCount>0;
+      if(this.tier==='high'&&(hasDistortion||warm)){
+        r.distort.uniforms.time.value=this.time;
+        this.draw(r.distort,r.distortion);
+      }
       const u = r.composite.uniforms;
       u.tAO.value = this.occlusionAlgorithm === 'gtao' ? r.aoDenoised.texture : r.ao.texture;
       u.projectionInverse.value.copy(this.camera.projectionMatrixInverse);
