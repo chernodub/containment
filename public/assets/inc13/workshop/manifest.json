@@ -9,49 +9,49 @@
   "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
   "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
   "normalAtlas": {
-    "bakeSeconds": 0.994,
-    "blenderPNGDecodeMs": 5.79,
+    "bakeSeconds": 0.93,
+    "blenderPNGDecodeMs": 6.411,
     "file": "duct-normal.png",
     "size": 512,
-    "bytes": 297439,
+    "bytes": 312411,
     "estimatedRGBA8MipBytes": 1398101,
-    "nonFlatPixels": 139094,
+    "nonFlatPixels": 131022,
     "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
     "targets": [
       {
         "mesh": "swallowed-workbay--e9-body",
         "role": "e9-body",
-        "seconds": 0.055,
+        "seconds": 0.052,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "swallowed-workbay--e9-dark",
         "role": "e9-dark",
-        "seconds": 0.022,
+        "seconds": 0.023,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "swallowed-workbay--e9-trim",
         "role": "e9-trim",
-        "seconds": 0.029,
+        "seconds": 0.027,
         "method": "three-segment high bevel"
       },
       {
         "mesh": "swallowed-workbay--p11-flesh",
         "role": "p11-flesh",
-        "seconds": 0.046,
+        "seconds": 0.059,
         "method": "sculpted high membrane"
       },
       {
         "mesh": "swallowed-workbay--p11-growth",
         "role": "p11-growth",
-        "seconds": 0.042,
+        "seconds": 0.06,
         "method": "sculpted high membrane"
       },
       {
         "mesh": "swallowed-workbay--p11-steel",
         "role": "p11-steel",
-        "seconds": 0.03,
+        "seconds": 0.029,
         "method": "three-segment high bevel"
       }
     ]
@@ -71,7 +71,7 @@
       "size": [
         5.88,
         1.9454,
-        2.2494
+        2.5279
       ],
       "bounds": {
         "min": [
@@ -82,10 +82,10 @@
         "max": [
           2.955,
           1.9504,
-          1.249
+          1.5275
         ]
       },
-      "triangles": 3352,
+      "triangles": 5082,
       "budget": 12000,
       "finishes": [
         "e9-body",
@@ -100,9 +100,9 @@
   ],
   "output": {
     "file": "duct.glb",
-    "bytes": 455108,
-    "sha256": "da1a1684446f40b5577fca39c64c6dee69d43ed97e2b3e459beaf88504512a3b",
-    "triangles": 3352
+    "bytes": 539864,
+    "sha256": "dfc2994b91ff4b02bdab39cb246d8ca207518ed49f5771682bda7b984f919a57",
+    "triangles": 5082
   },
   "overBudget": [],
   "uvEncoding": "normalized UNSIGNED_SHORT; maximum error0.004 atlas texel at512; native glTF2"

@@ -47,7 +47,7 @@ for i in (0,1,3,4,5,7):
                       (.22,-.55,1.09),(.35,-.65,.61)]])
     for j in range(3):
         for k in range(4):
-            bm.faces.new([rows[j][k],rows[j+1][k],rows[j+1][k+1],rows[j][k+1]])
+            bm.faces.new([rows[j][k+1],rows[j+1][k+1],rows[j+1][k],rows[j][k]])
     L.mesh_object('Sagging resin between ribs',bm,'p11-flesh',smooth=True)
 for side in (-1,1):
     L.sweep('Longitudinal tendon',[(-1.66,side*.32,1.12),(-.91,side*.45,1.42),
@@ -55,6 +55,12 @@ for side in (-1,1):
 for i in range(4):
     x=-.48+i*.28
     L.egg('Lantern blister',(x,-.46,1.32),.24+.07*math.sin(i),'p11-bio-violet',i,.5)
+# Narrow coaxial roots break away from the belly and stick to the floor.
+for i in range(5):
+    x=-.99+.52*i
+    L.tendril('Gripping root',[(x,.1,1.42),(x-.12,-.38,1.26),(x+.17,-.68,.75),
+              (x+.29,-.78,.26),(x+.12,-1.0,.075),(x-.32,-1.24,.045),(x-.48,-1.52,.026)],
+              .087,.012,'p11-growth',5,i+62,.027)
 # The brood hangs beneath the overhanging tool bench, held by a resin sling.
 for i in range(6):
     x=.83+i*.34
