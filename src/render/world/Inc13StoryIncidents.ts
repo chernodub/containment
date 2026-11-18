@@ -108,6 +108,28 @@ const incidents:Record<string,Incident>={
       p.rod([-112,1.2,74],[-96,1.2,79],1.2,0x929b91);
     },
   },
+  'crew-checkpoint':{
+    source:[606,338],bounds:[-331,-87,406,228],
+    paint(c){
+      // Skid rubber bunches at the foot of the jam, then diverges along the
+      // inspection lane. Short crosswise scuffs record the wheels turning.
+      const grime=c.createLinearGradient(-295,70,-20,5);
+      grime.addColorStop(0,'rgba(41,48,49,.13)');grime.addColorStop(1,'rgba(37,43,44,.66)');
+      fill(c,'M33 -28 Q-48 -7 -82 12 Q-124 36 -183 32 L-260 62 -289 79 -263 75 -275 94 Q-215 78 -177 71 Q-99 82 -48 45 L20 22Z',grime);
+      for(let i=0;i<4;i++)stroke(c,'M'+(18-i*3)+' '+(4+i*8)+'C-88 '+(23+i*6)+' -86 '+(69+i*6)+' -175 '+(58+i*6)+'S-240 '+(85+i*5)+' -299 '+(92+i*4),'rgba(42,47,45,.69)',2.6);
+      for(let i=0;i<12;i++){c.fillStyle='rgba(106,110,99,.63)';c.fillRect(-63-i*12,35+i*2,3,i%3+3);}
+    },
+    pieces(p){
+      // Telescoping checkpoint leaves have folded toward the baggage conveyor.
+      for(let i=0;i<4;i++){
+        const x=-78+i*23,z=10-i*3,h=10+i*4;
+        p.rod([x,2,z],[x+21,h,z-3],2.1,0x7e8c8b);
+        p.rod([x,h,z],[x+21,2,z-3],2.1,0x656e70);
+        p.box(x,2,z,12,4,9,0x454e50,.13);
+      }
+      p.box(15,21,-2,7,39,8,0x67797b,.14,.17);
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
