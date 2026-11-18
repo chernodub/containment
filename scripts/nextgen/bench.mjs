@@ -412,7 +412,7 @@ try{
   run.cpuBreakdown=summarizeCpuClock(run);
   report.runs.push(run);
   if(args.includes('--breakdown'))await writeFile(resolve(out,name+'.md'),breakdownMarkdown(run));await writeFile(resolve(out,'benchmark.json'),JSON.stringify(report,null,2));
-  console.log(`${name}: frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
+  console.log(`${name} (load1m ${before.load[0].toFixed(2)} → ${run.after.load[0].toFixed(2)}, ${before.cores} cores): frame ${summary.frame.p50.toFixed(2)}/${summary.frame.p95.toFixed(2)}ms CPU ${summary.cpu.p50.toFixed(2)}/${summary.cpu.p95.toFixed(2)}ms draws ${summary.draws.max}, compiles ${data.programs}`);
   if(args.includes('--acceptance')){
    assert(!profile&&!report.auditCosts&&!report.gpuPasses&&!report.gpuFlush&&!report.noSoftDepth,'Acceptance requires ordinary production timing');
    const precision=value=>Math.round(value*10)/10;

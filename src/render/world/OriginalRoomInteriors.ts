@@ -98,10 +98,11 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
     return instances;
 }
 /** Prepare only compressed or raw GLB bytes. Geometry work stays in the hold. */
-export function prefetchOriginalRoomInteriors(t:RoomTemplate, renderer:T.WebGLRenderer):()=>void {
-    if(typeof requestIdleCallback!=='function')return ()=>{};
+export function prefetchOriginalRoomInteriors(t:RoomTemplate, renderer:T.WebGLRenderer):()=>Promise<void> {
+    if(typeof requestIdleCallback!=='function')return async()=>{};
     let cancelled=false,handle:number;
     let packs: Iterator<OriginalKitPack>|undefined;
+    let transfer=Promise.resolve();
     const schedule=()=>{
         handle=requestIdleCallback(deadline=>{
             if(cancelled)return;
@@ -112,11 +113,11 @@ export function prefetchOriginalRoomInteriors(t:RoomTemplate, renderer:T.WebGLRe
                 return;
             }
             const next=packs.next();
-            if(!next.done)void prefetchOriginalShipKit(next.value,renderer).finally(()=>{if(!cancelled)schedule();});
+            if(!next.done)transfer=prefetchOriginalShipKit(next.value,renderer).finally(()=>{if(!cancelled)schedule();});
         });
     };
     schedule();
-    return ()=>{cancelled=true;cancelIdleCallback(handle);};
+    return ()=>{cancelled=true;cancelIdleCallback(handle);return transfer;};
 }
 
 /** Original model owner settles before combat warmup. Session transfers survive

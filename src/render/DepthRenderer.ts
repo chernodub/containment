@@ -105,7 +105,7 @@ export class DepthRenderer {
  /** Bounded room-load evidence; read only by capture/benchmark tooling. */
  get preparationDiagnostics(){return this.preparationHistory.map(row=>({...row,phases:{...row.phases}}));}
  private preparationTargets=new Set<T.WebGLRenderTarget>();private graphicsGeneration=0;private roomWarmPending=false;private roomWarmWork:Promise<void>=Promise.resolve();private roomWarmCompiling=false;private forceRoomWarm=false;private warmAgain=false;private deferredRoom:{node:RunNode;environment?:ShipEnvironment}|null=null;
- private prefetchKey='';private cancelRoomPrefetch?:()=>void;
+ private prefetchKey='';private cancelRoomPrefetch?:()=>Promise<void>;
  private aheadKey='';private aheadRooms=new RoomPreparationCache(node=>this.buildAhead(node),root=>disposeModel(root),2);
  private materialWarmup:MaterialWarmup;private surfaces:EnvironmentMaterials;private floorMaterial:T.MeshStandardMaterial;
  private practicalPools=new PracticalPools(this.scene);private arena=new ArenaStaging(this.scene);private backdrop=new ShipBackdrop(this.scene);private atmosphere=new Atmosphere(this.scene);private heatClock=0;private lighting=new SceneLighting();private contacts=new ContactShadows();private muzzle:T.PointLight;private muzzleLife=0;
@@ -208,6 +208,8 @@ export class DepthRenderer {
  addTrauma(amount:number){this.cameraRig.addTrauma(amount);}
  kick(angle:number,amount:number){this.cameraRig.kick(angle,amount);}
  punch(amount:number,ms:number){this.cameraRig.punch(amount,ms);}
+ /** Let fixed-frame capture settle active transfers before discarding its page. */
+ async finishRoomPrefetch(){await this.cancelRoomPrefetch?.();}
  /** Speculate at most two known route nodes while rewards/routes leave the GPU idle. */
  prepareAhead(nodes:readonly RunNode[]){if(!this.disposed)this.aheadRooms?.prepareAhead(nodes);}
  private buildRoomArchitecture(node:RunNode,t:RoomTemplate):T.Group|null{
