@@ -304,6 +304,27 @@ const incidents:Record<string,Incident>={
       p.rod([-22,3,-33],[-7,26,-31],2.4,0x849486);p.rod([-7,26,-31],[3,14,-3],2.4,0x849486);
     },
   },
+  'swarm-junction':{
+    source:[310,377],bounds:[-166,-52,320,233],
+    paint(c){
+      const web=new Path2D('M-118 -25 Q-68 -2 -48 -13 Q-26 -7 -16 -35 Q3 2 28 -13 L58 -28 Q40 13 73 12 Q109 10 127 -1 Q97 27 67 46 Q38 48 29 79 Q20 92 -7 95 Q-39 106 -39 138 Q-55 158 -96 173 Q-61 137 -72 119 Q-71 93 -113 102 Q-92 83 -76 62 Q-62 40 -96 42 L-139 55 Q-94 28 -101 14Z');
+      c.save();c.clip(web);const g=c.createLinearGradient(0,-25,-57,155);g.addColorStop(0,'#614964');g.addColorStop(1,'rgba(61,46,61,.66)');c.fillStyle=g;c.fillRect(-166,-52,320,233);
+      for(let i=0;i<15;i++){
+        const x=-105+(i*47)%210,z=3+(i*29)%125;
+        c.globalCompositeOperation='destination-out';fill(c,'M'+x+' '+z+'q14 -8 25 -7 -10 7 -18 17 -11 7 -7 -10Z','rgba(0,0,0,.86)');
+        c.globalCompositeOperation='source-over';
+      }c.restore();
+      for(let i=0;i<4;i++)stroke(c,'M'+(-64+i*25)+' 0 Q'+(-74+i*27)+' 54 '+(-53+i*8)+' 80 T'+(-96+i*7)+' '+(164-i*8),'rgba(112,85,112,.68)',3.2-i*.45);
+    },
+    pieces(p){
+      // Split vent louvers remain embedded in the same membrane as the nest.
+      for(let i=0;i<6;i++){
+        const x=-31+i*12;
+        p.face([[x,2,-10],[x+7,2,-10],[x+13,21+i%3*5,4],[x+8,25+i%3*5,6]],0x64686b);
+        p.rod([x+4,7,-7],[x+13,15,12],2.1,0x62435d);
+      }
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {

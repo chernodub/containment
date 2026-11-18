@@ -125,7 +125,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.22,practicals:.60,ambient:.55,marineGlow:1,exit:.9,
   }),
   'swarm-junction': profile({
-    landmark:{at:[470,620],color:0xcf76f5,radius:5.5,body:.45,spill:.025,height:1.3,keyGain:.65},
+    landmark:{at:[307,381],color:0xcf76f5,radius:5.5,body:.45,spill:.025,height:1.3,keyGain:.65},
     // Hive heart and the occupied northern/southern ventilation mouths.
     fixturesAt:[[470,620],[600,250],[600,790]],
     floor:{lit:.62,unlit:.30,edge:.14},perimeter:{inner:3.8,outer:10,value:.44,lane:.8},
