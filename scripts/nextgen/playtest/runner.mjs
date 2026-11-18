@@ -125,8 +125,8 @@ async function snapshot() {
       const v=r.camera.position.clone().set(x/32,height,y/32).project(r.camera);
       return {x:(v.x+1)*innerWidth/2,y:(1-v.y)*innerHeight/2,depth:v.z};
     };
-    const enemies=g.enemies.snapshot.enemies.filter(e=>e.health>0).map(e=>({...e,clear:d.clearShot(e.x,e.y),visible:r.visible(e.x,e.y),screen:project(e.x,e.y)}));
-    for(const t of g.targets().filter(t=>t.id<0&&t.health>0)) enemies.push({...t,type:'queen',clear:d.clearShot(t.x,t.y),visible:r.visible(t.x,t.y),screen:project(t.x,t.y),vulnerable:t.id!==-1||g.boss.snapshot.vulnerable});
+    const enemies=g.enemies.snapshot.enemies.filter(e=>e.health>0).map(e=>({...e,burning:g.boonStatuses(e.id).burning,clear:d.clearShot(e.x,e.y),visible:r.visible(e.x,e.y),screen:project(e.x,e.y)}));
+    for(const t of g.targets().filter(t=>t.id<0&&t.health>0)) enemies.push({...t,burning:g.boonStatuses(t.id).burning,type:'queen',clear:d.clearShot(t.x,t.y),visible:r.visible(t.x,t.y),screen:project(t.x,t.y),vulnerable:t.id!==-1||g.boss.snapshot.vulnerable});
     const nearest=[...enemies].sort((a,b)=>Math.hypot(a.x-g.player.x,a.y-g.player.y)-Math.hypot(b.x-g.player.x,b.y-g.player.y))[0];
     const siege=g.siege,goal=siege&&siege.remainingMs>0?siege:nearest;const waypoint=goal ? d.botWaypoint(goal)??goal : null;
     const candidates=[];

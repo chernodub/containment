@@ -15,6 +15,7 @@ export type AbilityPoint = Readonly<{ x: number; y: number }>;
 export interface AbilityHost {
   enabled?: () => boolean;
   upgraded?: (id: AugmentId) => boolean;
+  roomDepth: () => number;
   /** Accepted Overdrives allowed between room resets; omitted hosts remain unlimited. */
   overdriveRoomLimit?: () => number;
   /** Immutable world-geometry identity/revision for placement-cache invalidation. */
@@ -28,6 +29,8 @@ export interface AbilityHost {
   movePlayer: (dx: number, dy: number) => void;
   damage: (target: MutationTarget, amount: number) => boolean;
   statuses: (id: number) => { chilled: boolean; frozen: boolean; burning?: boolean; shocked?: boolean };
+  consumeBurn: (id: number) => void;
+  impede: (target: MutationTarget) => void;
   status: (target: MutationTarget, kind: 'chill' | 'freeze' | 'burn' | 'shock', amount: number) => void;
   launch: (target: MutationTarget, x: number, y: number) => void;
   arc: (origin: MutationTarget, targets: readonly MutationTarget[]) => void;
@@ -115,6 +118,7 @@ export class AbilitySystem {
   private zoneSlot(zone: Zone): AbilitySlot {return zone.purpose==='ice-road'?'power':ABILITY_CATALOG[zone.ability].slot;}
 
   get overclocked(): boolean { return this.active('overclock'); }
+  get incomingDamageMultiplier(): number { return this.active('meltdown') ? .6 : 1; }
   get ignitingShots(): boolean { return this.active('meltdown'); }
   private active(id: AbilityId): boolean { return !!this.rig && RIG_CATALOG[this.rig].abilities.overdrive === id && this.states.overdrive.active > 0; }
   private get overdriveRoomLimited(): boolean { return this.overdriveUses >= (this.host.overdriveRoomLimit?.() ?? Infinity); }
@@ -133,6 +137,11 @@ export class AbilitySystem {
     if (!this.rig) { this.event(RIG_CATALOG.breacher.abilities[slot], 'denied', this.host.player(), { denial: 'no-rig' }); return false; }
     const d = this.definition(slot), p = this.host.player(), state = this.states[slot];
     enabled = enabled && this.host.enabled?.() !== false;
+    const glacierWalls = d.id === 'glacier' ? this.deployables.filter(entity => entity.kind === 'ice-wall') : [];
+    if (enabled && glacierWalls.length && !this.casts.length && !this.dash) {
+      for (const wall of glacierWalls) this.removeDeployable(wall, true);
+      return true;
+    }
     const denial = !enabled || (slot === 'overdrive' && this.overdriveRoomLimited) || !Number.isFinite(p.x) || !Number.isFinite(p.y) || !Number.isFinite(p.angle) ? 'blocked' : this.casts.length || this.dash ? 'casting' : slot === 'overdrive' ? this.charge < 1 || state.active > 0 ? 'no-charge' : null : state.cooldowns.length >= this.maxCharges(slot) ? 'cooldown' : null;
     if (denial) { this.event(d.id, 'denied', p, { denial }); return false; }
     let angle = p.angle;
@@ -166,7 +175,8 @@ export class AbilitySystem {
   addCharge(damage: number, kills = 0): void {
     if (!this.rig || !Number.isFinite(damage) || !Number.isFinite(kills) || damage < 0 || kills < 0) return;
     const before = this.charge;
-    const next = this.charge + (damage / 12000 + kills * .0125) * (this.host.has('drive-dynamo' as MutationId) ? 1.3 : 1);
+    const earlyGain = this.host.roomDepth() < 4 ? 2.4 : 1;
+    const next = this.charge + earlyGain * (damage / 12000 + kills * .0125) * (this.host.has('drive-dynamo' as MutationId) ? 1.3 : 1);
     this.charge = next >= 1 - TIMER_EPSILON ? 1 : next;
     if (before !== this.charge) this.cached = null;
     if (before < 1 && this.charge === 1 && !this.overdriveRoomLimited) this.event(this.definition('overdrive').id, 'overdrive-ready', this.host.player());
@@ -310,7 +320,20 @@ export class AbilitySystem {
         this.event(cast.id, 'impact', cast, { radius, targetIds: ids }); return;
       }
       case 'flashfire': {
-        for (const t of this.nearby(cast, 300)) { const a = Math.atan2(t.y - cast.y, t.x - cast.x) - cast.angle; if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) <= 1.22 / 2) { this.hit(t, 25, 'burn'); ids.push(t.id); } }
+        for (const target of this.nearby(cast, 300)) {
+          const angle = Math.atan2(target.y - cast.y, target.x - cast.x);
+          const offset = angle - cast.angle;
+          if (Math.abs(Math.atan2(Math.sin(offset), Math.cos(offset))) > 1.22 / 2) continue;
+          if (this.host.statuses(target.id).burning) {
+            this.host.consumeBurn(target.id);
+            this.hit(target, 95, 'shock', 600);
+            this.event(cast.id, 'burst', target, { radius: 42, length: undefined, arcRadians: undefined, targetIds: [target.id] });
+          } else {
+            this.host.launch(target, Math.cos(angle) * 290, Math.sin(angle) * 290);
+            this.hit(target, 18, 'shock', 300);
+            ids.push(target.id);
+          }
+        }
         if (cast.ground) {
           this.addZone(cast.id, cast.ground, 120, 2500, 4);
           this.event(cast.id, 'impact', cast, { targetX: cast.ground.x, targetY: cast.ground.y, radius: 120, length: undefined, arcRadians: undefined, durationMs: 2500 });
@@ -385,14 +408,30 @@ export class AbilitySystem {
     if (id === 'ram') for (const t of this.host.targets().slice(0, ABILITY_LIMITS.targets)) {
       if (dash.hit.has(t.id) || segmentDistance(t, before, p) > 22 || !this.host.visible(p, t)) continue;
       dash.hit.add(t.id); const side = (t.x - p.x) * -Math.sin(dash.angle) + (t.y - p.y) * Math.cos(dash.angle) < 0 ? -1 : 1;
-      this.host.launch(t, -Math.sin(dash.angle) * 350 * side, Math.cos(dash.angle) * 350 * side); this.host.status(t, 'shock', 180); this.hit(t, 18);
+      const dx = -Math.sin(dash.angle) * side, dy = Math.cos(dash.angle) * side;
+      const shove = { x: t.x + dx * 90, y: t.y + dy * 90 };
+      const crush = this.deployables.some(wall => wall.kind === 'barrier' && wall.health > 0 && this.touches(wall, t, shove, t.radius));
+      if (!crush) this.host.launch(t, dx * 350, dy * 350);
+      this.hit(t, crush ? 68 : 18, 'shock', crush ? 450 : 180);
+      if (crush) this.event(id, 'burst', t, { radius: 32, targetIds: [t.id] });
     }
     dash.remaining = countdown(dash.remaining, step);
     const blocked = Math.hypot(p.x - before.x, p.y - before.y) < Math.hypot(dash.x, dash.y) * step / DASH_DURATION_MS - .01;
     if (dash.remaining <= 0 || blocked) {
       this.dash = null;
       if (id === 'frost-trail' || id === 'afterburn') this.addZone(id, dash.start, 0, 2500, 0, false, p, 44);
-      if (id === 'static-step') { const targets = this.nearby(p, 160).slice(0, 3); this.host.arc({ id: 0, x: p.x, y: p.y, radius: 0, health: 1 }, targets); for (const t of targets) { this.hit(t, 22, 'shock', 250); this.event(id, 'link', p, { targetX: t.x, targetY: t.y, targetIds: [t.id] }); }}
+      if (id === 'static-step') {
+        let origin: AbilityPoint = p;
+        const struck = new Set<number>();
+        for (let hop = 0; hop < 3; hop++) {
+          const target = this.nearby(origin, 160).find(enemy => !struck.has(enemy.id));
+          if (!target) break;
+          struck.add(target.id);
+          this.host.status(target, 'shock', 750);
+          this.event(id, 'link', origin, { targetX: target.x, targetY: target.y, targetIds: [target.id] });
+          origin = target;
+        }
+      }
       this.event(id, 'dash-end', dash.start, { targetX: p.x, targetY: p.y, angle: dash.angle, targetIds: [...dash.hit] });
     }
   }
@@ -412,6 +451,7 @@ export class AbilitySystem {
           if (!inside || !this.host.visible(origin, t)) continue;
           if(zone.purpose==='fissure') {if(zone.pulses%2===0){this.host.status(t,'shock',200);this.host.damage(t,zone.damage);}ids.push(t.id);continue;}
           if (zone.ability === 'frost-trail' || zone.ability === 'whiteout') this.host.status(t, 'chill', 1); else this.host.status(t, 'burn', 1);
+          if (zone.ability === 'afterburn') this.host.impede(t);
           if (zone.ability === 'whiteout' && zone.pulses % 8 === 0) this.host.status(t, 'freeze', 1000);
           if (zone.damage) this.host.damage(t, zone.damage);
           ids.push(t.id);
@@ -527,13 +567,13 @@ export class AbilitySystem {
     if (wall.health <= 0) this.removeDeployable(wall);
     return true;
   }
-  private removeDeployable(d: Deployable): void {
+  private removeDeployable(d: Deployable, deliberate = false): void {
     const i = this.deployables.indexOf(d); if (i < 0) return;
     this.deployables.splice(i, 1); this.cached = null;
     const slot = ABILITY_CATALOG[d.ability].slot;
     this.states[slot].active = Math.max(0, ...this.deployables.filter(x => ABILITY_CATALOG[x.ability].slot === slot).map(x => x.remainingMs), ...this.zones.filter(x => this.zoneSlot(x) === slot).map(x => x.remainingMs));
     if (d.kind === 'ice-wall') {
-      const ids = this.radial({ id: d.ability, x: d.x, y: d.y, angle: d.angle, target: d, remaining: 0 }, 150, 80, 'chill');
+      const ids = this.radial({ id: d.ability, x: d.x, y: d.y, angle: d.angle, target: d, remaining: 0 }, 150, deliberate ? 100 : 45, 'chill');
       this.event(d.ability, 'burst', d, { entityId: d.id, radius: 150, targetIds: ids });
     }
     this.event(d.ability, 'end', d, { entityId: d.id });
@@ -625,13 +665,14 @@ export class AbilitySystem {
     const p = this.host.player();
     const enabled = this.host.enabled?.() !== false && Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.angle);
     const roomLimited = this.overdriveRoomLimited;
-    const powerReady = !!this.rig && enabled && !this.casts.length && !this.dash && this.states.power.cooldowns.length < this.maxCharges('power') && this.powerPlacementAvailable();
+    const shatterReady = this.deployables.some(entity => entity.kind === 'ice-wall');
+    const powerReady = !!this.rig && enabled && !this.casts.length && !this.dash && (shatterReady || this.states.power.cooldowns.length < this.maxCharges('power') && this.powerPlacementAvailable());
     if (this.cached && this.cachedEnabled === enabled && !!this.cached.overdrive.roomLimited === roomLimited && (!this.hasPylon() || (this.cachedLinkX === p.x && this.cachedLinkY === p.y)) && (!this.rig || (this.cached.slots?.dash.maxCharges === this.maxCharges('dash') && this.cached.slots?.power.ready === powerReady))) return this.cached;
     this.cachedEnabled = enabled;
     this.cachedLinkX = p.x; this.cachedLinkY = p.y;
     const slots = this.rig ? Object.fromEntries(ABILITY_SLOTS.map(slot => {
       const d = this.definition(slot), state = this.states[slot], charges = slot === 'overdrive' ? +(this.charge >= 1) : Math.max(0, this.maxCharges(slot) - state.cooldowns.length);
-      return [slot, Object.freeze({ slot, id: d.id, ready: enabled && !this.casts.length && !this.dash && charges > 0 && (slot !== 'overdrive' || (!state.active && !roomLimited)) && (slot !== 'power' || powerReady), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.id==='meltdown'&&this.host.has('meltdown-core')?2000:d.id==='overload'&&this.host.has('live-wire')?(this.upgraded('live-wire')?6000:4000):d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => this.zoneSlot(e) === slot).map(e => e.durationMs)) })];
+      return [slot, Object.freeze({ slot, id: d.id, ready: enabled && !this.casts.length && !this.dash && (charges > 0 || slot === 'power' && shatterReady) && (slot !== 'overdrive' || (!state.active && !roomLimited)) && (slot !== 'power' || powerReady), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.id==='meltdown'&&this.host.has('meltdown-core')?2000:d.id==='overload'&&this.host.has('live-wire')?(this.upgraded('live-wire')?6000:4000):d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => this.zoneSlot(e) === slot).map(e => e.durationMs)) })];
     })) as AbilitiesSnapshot['slots'] : null;
     return this.cached = Object.freeze({ rig: this.rig, slots: slots && Object.freeze(slots), overdrive: Object.freeze({ charge: this.charge, ready: this.charge >= 1 && !roomLimited, active: this.states.overdrive.active > 0, activeRemainingMs: this.states.overdrive.active, ...(roomLimited ? {roomLimited: true} : {}) }), invulnerable: this.invulnerable, dashing: this.dashing, hostileTimeScale: this.hostileTimeScale,
       deployables: Object.freeze(this.deployables.map(d => { const { tick, assault, linkCooldowns, ...entity } = d; return Object.freeze(entity); })),

@@ -48,9 +48,9 @@ const dash = (
 export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = Object.freeze({
   // ── BREACHER ────────────────────────────────────────────────────────────────
   ram: dash('ram', 'breacher', 'kinetic', 'Ram',
-    'Dash through enemies, shoving them aside.',
-    'Dash in your movement direction. You cannot be hit while dashing. Enemies you pass through take 18 damage and are shoved sideways and staggered.',
-    0, [{ label: 'Damage', value: '18' }]),
+    'Shove enemies aside or crush them against Bulwark.',
+    'Dash in your movement direction. You cannot be hit while dashing. Enemies you pass through take 18 damage and are shoved sideways and staggered. If your shove would hit Bulwark within 90 units, crush the enemy for 68 damage instead.',
+    0, [{ label: 'Damage', value: '18' }, { label: 'Bulwark crush', value: '68 damage' }]),
   'seismic-slam': ability({
     id: 'seismic-slam', rig: 'breacher', slot: 'tactical', element: 'kinetic', name: 'Seismic Slam',
     summary: 'Shockwave that launches everything around you.',
@@ -61,11 +61,11 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   }),
   bulwark: ability({
     id: 'bulwark', rig: 'breacher', slot: 'power', element: 'kinetic', name: 'Bulwark',
-    summary: 'Deploy an energy barricade that stops enemies and spit.',
-    description: 'Project a wide barricade in front of you for 6 seconds. It blocks enemy movement and enemy projectiles. Your own shots pass through it.',
+    summary: 'Block enemies and spit, then crush enemies against the barricade with Ram.',
+    description: 'Project a wide barricade in front of you for 6 seconds. It blocks enemy movement and enemy projectiles. Your own shots pass through it. Ram enemies sideways into the barricade to crush them.',
     targeting: 'direction', shape: { kind: 'wall', length: 220, thickness: 18 },
     castMs: 0, cooldownMs: 20_000, charges: 1, durationMs: 6_000, range: 70,
-    stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Width', value: '220' }, { label: 'Cooldown', value: seconds(20_000) }],
+    stats: [{ label: 'Duration', value: seconds(6_000) }, { label: 'Width', value: '220' }, { label: 'Ram crush', value: '+50 damage' }, { label: 'Cooldown', value: seconds(20_000) }],
   }),
   railbreaker: ability({
     id: 'railbreaker', rig: 'breacher', slot: 'overdrive', element: 'kinetic', name: 'Railbreaker',
@@ -91,11 +91,11 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   }),
   glacier: ability({
     id: 'glacier', rig: 'cryo', slot: 'power', element: 'cryo', name: 'Glacier',
-    summary: 'Raise an ice wall at the cursor. It shatters when it ends.',
-    description: 'Raise a wall of ice at the cursor for 5 seconds. It blocks enemies and enemy projectiles. When it expires or is broken it shatters for 80 damage and chills everything nearby.',
+    summary: 'Raise an ice wall. Press F again to shatter it early.',
+    description: 'Raise a wall of ice at the cursor for 5 seconds. It blocks enemies and enemy projectiles. Press F again to shatter all active walls for 100 damage each. Walls that expire or break shatter for 45 damage. Both bursts chill nearby enemies.',
     targeting: 'point', shape: { kind: 'wall', length: 200, thickness: 26 },
     castMs: 150, cooldownMs: 18_000, charges: 1, durationMs: 5_000, range: 420,
-    stats: [{ label: 'Duration', value: seconds(5_000) }, { label: 'Shatter', value: '80' }, { label: 'Cooldown', value: seconds(18_000) }],
+    stats: [{ label: 'Duration', value: seconds(5_000) }, { label: 'Manual shatter', value: '100' }, { label: 'Passive shatter', value: '45' }, { label: 'Cooldown', value: seconds(18_000) }],
   }),
   whiteout: ability({
     id: 'whiteout', rig: 'cryo', slot: 'overdrive', element: 'cryo', name: 'Whiteout',
@@ -108,16 +108,16 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
 
   // ── PYRO ────────────────────────────────────────────────────────────────────
   afterburn: dash('afterburn', 'pyro', 'pyro', 'Afterburn',
-    'Dash and leave a line of fire.',
-    'Dash 240 units in your movement direction with 0.4 seconds of invulnerability. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
-    2_500, [{ label: 'Fire', value: seconds(2_500) }]),
+    'Dash and leave fire that slows pursuers.',
+    'Dash 240 units in your movement direction with 0.4 seconds of invulnerability. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies and slows them by 45% for 0.65 seconds on contact. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    2_500, [{ label: 'Fire', value: seconds(2_500) }, { label: 'Slow', value: '45%' }]),
   flashfire: ability({
     id: 'flashfire', rig: 'pyro', slot: 'tactical', element: 'pyro', name: 'Flashfire',
-    summary: 'A wide cone of flame.',
-    description: 'Dump the tank in a wide cone along your aim: 25 damage and every enemy hit is ignited. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    summary: 'Detonate burning enemies or shove back fresh threats.',
+    description: 'Sweep a cone along your aim. Consume existing burns for 95 damage and a 0.6-second stagger. Unburnt enemies take 18 damage and are shoved back.',
     targeting: 'direction', shape: { kind: 'cone', range: 300, arcRadians: 1.22 },
     castMs: 0, cooldownMs: 5_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '25' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(5_000) }],
+    stats: [{ label: 'Detonation', value: '95 damage' }, { label: 'Shove', value: '18 damage' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(5_000) }],
   }),
   'napalm-charge': ability({
     id: 'napalm-charge', rig: 'pyro', slot: 'power', element: 'pyro', name: 'Napalm Charge',
@@ -129,18 +129,18 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   }),
   meltdown: ability({
     id: 'meltdown', rig: 'pyro', slot: 'overdrive', element: 'pyro', name: 'Meltdown',
-    summary: 'Become the fire.',
-    description: 'For 8 seconds you burn everything near you, every shot ignites, kills burst for 20 damage within 85 units, and you move 40% faster. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence. One activation per ordinary story room; charge carries between rooms.',
+    summary: 'Stay in the fight with a moving fire aura and damage resistance.',
+    description: 'For 8 seconds you burn everything near you, every shot ignites, kills burst for 20 damage within 85 units, you move 40% faster, and incoming damage is reduced by 40%. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence. One activation per ordinary story room; charge carries between rooms.',
     targeting: 'self', shape: { kind: 'circle', radius: 130 },
     castMs: 0, cooldownMs: 0, charges: 1, durationMs: 8_000, range: 0,
-    stats: [{ label: 'Duration', value: seconds(8_000) }, { label: 'Speed', value: '+40%' }],
+    stats: [{ label: 'Duration', value: seconds(8_000) }, { label: 'Speed', value: '+40%' }, { label: 'Damage taken', value: '−40%' }],
   }),
 
   // ── ARC ─────────────────────────────────────────────────────────────────────
   'static-step': dash('static-step', 'arc', 'arc', 'Static Step',
-    'Dash and shock the nearest enemies on arrival.',
-    'Dash in your movement direction. You cannot be hit while dashing. On arrival, discharge into the three nearest enemies for 22 damage each.',
-    0, [{ label: 'Shock', value: '22 × 3' }]),
+    'Dash into range to set up Overload with a chain stun.',
+    'Dash in your movement direction. You cannot be hit while dashing. On arrival, a discharge jumps to the nearest enemy within 160 units, then up to two more nearby enemies. Each hit stuns for 0.75 seconds.',
+    0, [{ label: 'Stun', value: '0.75 s' }, { label: 'Targets', value: '3' }]),
   overload: ability({
     id: 'overload', rig: 'arc', slot: 'tactical', element: 'arc', name: 'Overload',
     summary: 'Chain lightning that stuns.',
