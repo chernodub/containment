@@ -126,9 +126,12 @@ export function createScreens(context: ScreenContext) {
   }
 
   function positionBuildTooltip(card: HTMLElement): void {
-    const box=card.getBoundingClientRect(), width=Math.min(240,innerWidth-24);
+    const tooltip=card.querySelector<HTMLElement>('.boon-tooltip');
+    const panel=card.closest('.panel')?.getBoundingClientRect();
+    if (!tooltip || !panel) return;
+    const box=card.getBoundingClientRect(), width=tooltip.offsetWidth;
     const left=box.left+box.width/2-width/2;
-    const shift=Math.max(12-left,Math.min(0,innerWidth-12-left-width));
+    const shift=Math.max(panel.left+8-left,Math.min(0,panel.right-8-left-width));
     card.style.setProperty('--tooltip-shift',`${shift}px`);
   }
 
@@ -384,7 +387,7 @@ export function createScreens(context: ScreenContext) {
         const index=game.node.next.indexOf(selectedRoute),delta=event.key==='ArrowLeft'||event.key==='ArrowUp'?-1:1;
         selectedRoute=game.node.next[(index+delta+game.node.next.length)%game.node.next.length];
         playUiCue(audio,'select');syncScreen(true);
-        root.querySelector<HTMLButtonElement>(`.deck-node[data-inspect-route="${selectedRoute}"]`)?.focus();
+        root.querySelector<HTMLButtonElement>(`.route-option[data-route="${selectedRoute}"],.deck-node[data-inspect-route="${selectedRoute}"]`)?.focus();
       } else if(event.key==='Enter'&&target?.closest('[data-inspect-route]')) {
         event.preventDefault();root.querySelector<HTMLButtonElement>('[data-route]')?.click();
       }
