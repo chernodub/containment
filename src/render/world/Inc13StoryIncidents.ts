@@ -339,6 +339,15 @@ const incidents:Record<string,Incident>={
       }
     },
     pieces(p){
+      // One leaf tore free and lies across its own carriage marks. An open
+      // inspection slot separates the folded face from the sheared rail.
+      const slab:Point3[]=[[-92,2,71],[-66,2,66],[-39,10,37],[-45,15,27],[-70,12,40],[-98,3,65]];
+      p.face(slab,0x747e87);
+      p.face([slab[0],slab[1],[-65,1,69],[-91,1,74]],0x3f4750);
+      p.face([[-93,4,64],[-71,13,40],[-46,16,28],[-51,16,34],[-68,11,44]],0x9aa5aa);
+      p.rod([-81,5,62],[-57,13,39],2,0x424c56);
+      p.rod([-78,6,63],[-54,13,42],1.1,0x929998);
+      for(const [x,z] of [[-98,78],[-86,82],[-68,74]])p.box(x,1.5,z,6,2,4,0x606e75,.41);
       // Lapped plates spread from the shield hinge like a partially closed iris.
       for(const s of [-1,1])for(let i=0;i<4;i++){
         const x=s*(10+i*15),h=45-i*5,z=i*4;
