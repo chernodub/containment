@@ -194,6 +194,28 @@ const incidents:Record<string,Incident>={
       }
     },
   },
+  'relay-racks':{
+    source:[584,421],bounds:[-276,-91,318,225],
+    paint(c){
+      // A whole patch loom has been pulled out as one folded bight. Several
+      // strands are still bound together before their connectors spread apart.
+      for(let i=0;i<11;i++){
+        const k=i-5;
+        const d='M10 '+(-22+k*2)+'C-38 '+(-41+k*2)+' -51 '+(44+k*2)+' -113 '+(48+k*2)+' S-220 '+(21+k*2.2)+' -234 '+(52+k*2)+' C-250 '+(91+k*2)+' -156 '+(108+k*2.4)+' -127 '+(81+k*3)+' Q-89 '+(48+k*4)+' -54 '+(72+k*6);
+        stroke(c,d,'rgba(14,30,32,.85)',4.4);stroke(c,d,i%4===0?'#657c79':'#475c5b',2.2);
+        c.fillStyle='#829087';c.fillRect(-55,69+k*6,5,3.5);
+      }
+      for(const [x,z] of [[-71,33],[-145,49],[-216,40]]){c.save();c.translate(x,z);c.rotate(-.18);c.fillStyle='#8e9584';c.fillRect(-2,-12,4,25);c.restore();}
+    },
+    pieces(p){
+      p.box(4,20,-2,24,27,40,0x3e4d50,-.15,.12);
+      for(let i=0;i<8;i++){
+        p.box(1,28,-18+i*4.4,22,2.4,2.2,0x657b79,-.15);
+        p.rod([-6,27,-18+i*4.4],[-18,11,-19+i*3],1.1,0x526768);
+        p.rod([-18,11,-19+i*3],[-30,1,-24+i*2],1.2,0x485c5c);
+      }
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
