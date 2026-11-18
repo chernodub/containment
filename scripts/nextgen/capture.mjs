@@ -146,7 +146,7 @@ try{
    // chunk during unload. Settle pending modules without ignoring failed requests.
    // Reload isolates renderer animation time, effect pools, caches, and random state.
    if(scenario.resetPreferences)await page.evaluate(keys=>{for(const key of keys)localStorage.removeItem(key);},scenario.resetPreferences);
-   if(scenarioIndex++||scenario.resetPreferences){await page.evaluate(()=>{const d=window.__containmentDebug;d.game.menu();d.refresh();});await page.waitForSelector('.title-key-art');await page.evaluate(()=>Promise.all([...document.querySelectorAll('.title-key-art img')].map(image=>image.decode())));await page.waitForLoadState('networkidle');await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);}
+   if(scenarioIndex++||scenario.resetPreferences){await page.evaluate(()=>{const d=window.__containmentDebug;document.querySelector('#difficulty-back')?.click();d.game.menu();d.refresh();});await page.waitForSelector('.title-key-art');await page.evaluate(()=>Promise.all([...document.querySelectorAll('.title-key-art img')].map(image=>image.decode())));await page.waitForLoadState('networkidle');await page.reload();await page.waitForFunction(()=>!!window.__containmentDebug);await page.evaluate(()=>document.fonts.ready);}
    await page.emulateMedia({reducedMotion:scenario.reducedMotion?'reduce':'no-preference'});
    if(scenario.auditGraphics)await page.evaluate(installDrawAudit);
    await page.evaluate(seed=>{window.__captureSeed(seed);},seed);

@@ -67,10 +67,10 @@ try{
     }
     // In paired studies the marine remains at the native spawn/camera mark;
     // place the victim ahead rather than moving the shooter out of the viewport.
-    const pairStudy=action.startsWith('weapon-');
+    const pairStudy=/^weapon-(hit|kill)-/.test(action);
     const origin={x:g.player.x/32+(pairStudy?Math.cos(studyAim)*2.4:0),z:g.player.y/32+(pairStudy?Math.sin(studyAim)*2.4:0)};model.root.position.set(origin.x,0,origin.z);
     const models=[model];if(crowd)for(let i=1;i<6;i++){const extra=r.actorPool.take('crawler');extra.reset?.();extra.setMotionSeed?.(1729+i*13);extra.setMotionOptions?.(1,false);extra.setStageLight?.(.65);extra.root.position.set(origin.x+(i%3-1)*1.4,0,origin.z+Math.floor(i/3)*1.4);r.scene.add(extra.root);models.push(extra);}
-    const chain=action.startsWith('weapon-'),chainKill=action.startsWith('weapon-kill-'),chainWeapon=chain?action.split('-').at(-1):null;
+    const chain=/^weapon-(hit|kill)-/.test(action),chainKill=action.startsWith('weapon-kill-'),chainWeapon=chain?action.split('-').at(-1):null;
     const shooter=chain?r.player:null,shooterAnimate=shooter?.animate,shooterEquip=shooter?.equip,shooterPosition=shooter?.root.position.clone();
     const shooterOrigin=chain?{x:g.player.x/32,z:g.player.y/32}:null;
     if(shooter){shooter.reset?.();shooter.setRig?.('breacher');shooter.equip(chainWeapon);shooter.setMotionOptions?.(1,false);shooter.animate=()=>{};shooter.equip=()=>{};models.push(shooter);}
