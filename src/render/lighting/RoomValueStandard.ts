@@ -133,6 +133,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.23,practicals:.62,ambient:.55,marineGlow:1,exit:.9,
   }),
   'shielding-gate': profile({
+    landmark:{at:[460,350],color:0x9a9cff,radius:7,body:.55,spill:.025,keyGain:.6},
     // West emitter, northern power cabinet and east emitter service face.
     fixturesAt:[[460,300],[704,160],[978,620]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:10,value:.35,lane:.8},

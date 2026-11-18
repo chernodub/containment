@@ -151,3 +151,7 @@
 ## Swarm Junction
 - Opened native calm and 480 colour/grey calm/tour/heavy: violet heart ribs identify the hive above its floor while marine and hostile lanterns retain priority.
 - Reduced body fill and spill after the first capture made the casing too pale; the corrected heart retains darker shell relief. Build and seven guarded frames pass.
+
+## Shielding Gate
+- Opened native calm and 480 colour/grey calm/tour/heavy: emitter banks and shield mechanism carry cool lavender life above the deck; marine and hostile lanterns lead.
+- West-emitter source leaves the crossing and far recesses darker, with threshold strips and cover edges readable. Build and seven guarded frames pass.
