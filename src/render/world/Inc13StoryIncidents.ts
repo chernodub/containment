@@ -359,15 +359,20 @@ const incidents:Record<string,Incident>={
   'containment-annulus':{
     source:[552,510],bounds:[-256,-165,303,327],
     paint(c){
-      // Spalled concentric pressure rings break into separate fault lines
-      // around the west face of the sealed core.
-      for(let i=0;i<4;i++){
-        const d='M'+(-18-i*12)+' -132 Q'+(-106-i*25)+' -61 '+(-79-i*31)+' 14 T'+(-12-i*14)+' '+(104+i*9);
-        stroke(c,d,'rgba(40,53,56,.71)',5.8-i*.7);c.save();c.translate(-1.7,0);stroke(c,d,'rgba(141,156,152,.48)',1.8);c.restore();
+      // The failed clamp lifted a crescent of poured deck. A jagged inside
+      // fracture, dust and separated flakes interrupt the machined circles.
+      const damage='M-12 -85 L-38 -62 -44 -66 -57 -43 -68 -41 -73 -30 -89 -24 -94 -10 -110 -4 -116 13 -109 27 -117 42 -106 48 -99 62 -84 65 -76 80 -54 83 -42 92 -21 91 L-35 79 -51 76 -61 62 -75 58 -77 46 -88 41 -84 29 -94 20 -88 8 -77 4 -74 -9 -59 -14 -54 -26 -43 -29 -37 -45 -24 -49 Z';
+      const dust=c.createRadialGradient(-75,12,8,-75,12,116);
+      dust.addColorStop(0,'rgba(121,133,130,.55)');dust.addColorStop(1,'rgba(109,123,119,0)');
+      c.fillStyle=dust;c.fillRect(-191,-104,232,232);
+      fill(c,damage,'rgba(41,54,56,.88)');
+      for(const [x,z,w] of [[-51,-43,15],[-75,-23,10],[-88,-12,13],[-99,3,11],[-104,21,12],[-103,44,11],[-85,60,13],[-66,76,9]]){
+        c.save();c.translate(x,z);c.rotate(z*.021);c.scale(w/12,w/12);
+        fill(c,'M-9 -4 L-3 -8 9 -5 12 2 3 7 -6 6Z','#74807d');
+        stroke(c,'M-9 -4l6 -4 12 3','rgba(169,176,164,.68)',1.4);c.restore();
       }
-      for(let i=0;i<6;i++){
-        const x=-58-i*16,z=-48+(i%3)*34;
-        stroke(c,'M'+x+' '+z+'l-25 -9 -18 3 -22 -14 -13 2','rgba(50,65,67,.75)',2.4);
+      for(const d of ['M-91 -23l-16 -6 -9 -18 -15 -4','M-112 15l-21 3 -11 -11 -27 7 -20 -8','M-107 42l-16 12 -3 13 -21 8','M-62 77l-7 16 4 9 -9 10']){
+        stroke(c,d,'rgba(38,50,51,.83)',2.8);
       }
     },
     pieces(p){
