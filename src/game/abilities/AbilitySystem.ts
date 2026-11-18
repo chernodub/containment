@@ -136,6 +136,11 @@ export class AbilitySystem {
     if (!this.rig) { this.event(RIG_CATALOG.breacher.abilities[slot], 'denied', this.host.player(), { denial: 'no-rig' }); return false; }
     const d = this.definition(slot), p = this.host.player(), state = this.states[slot];
     enabled = enabled && this.host.enabled?.() !== false;
+    const glacierWalls = d.id === 'glacier' ? this.deployables.filter(entity => entity.kind === 'ice-wall') : [];
+    if (enabled && glacierWalls.length && !this.casts.length && !this.dash) {
+      for (const wall of glacierWalls) this.removeDeployable(wall, true);
+      return true;
+    }
     const denial = !enabled || (slot === 'overdrive' && this.overdriveRoomLimited) || !Number.isFinite(p.x) || !Number.isFinite(p.y) || !Number.isFinite(p.angle) ? 'blocked' : this.casts.length || this.dash ? 'casting' : slot === 'overdrive' ? this.charge < 1 || state.active > 0 ? 'no-charge' : null : state.cooldowns.length >= this.maxCharges(slot) ? 'cooldown' : null;
     if (denial) { this.event(d.id, 'denied', p, { denial }); return false; }
     let angle = p.angle;
@@ -544,13 +549,13 @@ export class AbilitySystem {
     if (wall.health <= 0) this.removeDeployable(wall);
     return true;
   }
-  private removeDeployable(d: Deployable): void {
+  private removeDeployable(d: Deployable, deliberate = false): void {
     const i = this.deployables.indexOf(d); if (i < 0) return;
     this.deployables.splice(i, 1); this.cached = null;
     const slot = ABILITY_CATALOG[d.ability].slot;
     this.states[slot].active = Math.max(0, ...this.deployables.filter(x => ABILITY_CATALOG[x.ability].slot === slot).map(x => x.remainingMs), ...this.zones.filter(x => this.zoneSlot(x) === slot).map(x => x.remainingMs));
     if (d.kind === 'ice-wall') {
-      const ids = this.radial({ id: d.ability, x: d.x, y: d.y, angle: d.angle, target: d, remaining: 0 }, 150, 80, 'chill');
+      const ids = this.radial({ id: d.ability, x: d.x, y: d.y, angle: d.angle, target: d, remaining: 0 }, 150, deliberate ? 100 : 45, 'chill');
       this.event(d.ability, 'burst', d, { entityId: d.id, radius: 150, targetIds: ids });
     }
     this.event(d.ability, 'end', d, { entityId: d.id });
@@ -642,13 +647,14 @@ export class AbilitySystem {
     const p = this.host.player();
     const enabled = this.host.enabled?.() !== false && Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.angle);
     const roomLimited = this.overdriveRoomLimited;
-    const powerReady = !!this.rig && enabled && !this.casts.length && !this.dash && this.states.power.cooldowns.length < this.maxCharges('power') && this.powerPlacementAvailable();
+    const shatterReady = this.deployables.some(entity => entity.kind === 'ice-wall');
+    const powerReady = !!this.rig && enabled && !this.casts.length && !this.dash && (shatterReady || this.states.power.cooldowns.length < this.maxCharges('power') && this.powerPlacementAvailable());
     if (this.cached && this.cachedEnabled === enabled && !!this.cached.overdrive.roomLimited === roomLimited && (!this.hasPylon() || (this.cachedLinkX === p.x && this.cachedLinkY === p.y)) && (!this.rig || (this.cached.slots?.dash.maxCharges === this.maxCharges('dash') && this.cached.slots?.power.ready === powerReady))) return this.cached;
     this.cachedEnabled = enabled;
     this.cachedLinkX = p.x; this.cachedLinkY = p.y;
     const slots = this.rig ? Object.fromEntries(ABILITY_SLOTS.map(slot => {
       const d = this.definition(slot), state = this.states[slot], charges = slot === 'overdrive' ? +(this.charge >= 1) : Math.max(0, this.maxCharges(slot) - state.cooldowns.length);
-      return [slot, Object.freeze({ slot, id: d.id, ready: enabled && !this.casts.length && !this.dash && charges > 0 && (slot !== 'overdrive' || (!state.active && !roomLimited)) && (slot !== 'power' || powerReady), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.id==='meltdown'&&this.host.has('meltdown-core')?2000:d.id==='overload'&&this.host.has('live-wire')?(this.upgraded('live-wire')?6000:4000):d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => this.zoneSlot(e) === slot).map(e => e.durationMs)) })];
+      return [slot, Object.freeze({ slot, id: d.id, ready: enabled && !this.casts.length && !this.dash && (charges > 0 || slot === 'power' && shatterReady) && (slot !== 'overdrive' || (!state.active && !roomLimited)) && (slot !== 'power' || powerReady), charges, maxCharges: this.maxCharges(slot), cooldownRemainingMs: state.cooldowns.length ? Math.min(...state.cooldowns) : 0, cooldownMs: d.cooldownMs, castRemainingMs: state.cast, activeRemainingMs: state.active, activeMs: Math.max(d.id==='meltdown'&&this.host.has('meltdown-core')?2000:d.id==='overload'&&this.host.has('live-wire')?(this.upgraded('live-wire')?6000:4000):d.durationMs, ...this.deployables.filter(e => ABILITY_CATALOG[e.ability].slot === slot).map(e => e.durationMs), ...this.zones.filter(e => this.zoneSlot(e) === slot).map(e => e.durationMs)) })];
     })) as AbilitiesSnapshot['slots'] : null;
     return this.cached = Object.freeze({ rig: this.rig, slots: slots && Object.freeze(slots), overdrive: Object.freeze({ charge: this.charge, ready: this.charge >= 1 && !roomLimited, active: this.states.overdrive.active > 0, activeRemainingMs: this.states.overdrive.active, ...(roomLimited ? {roomLimited: true} : {}) }), invulnerable: this.invulnerable, dashing: this.dashing, hostileTimeScale: this.hostileTimeScale,
       deployables: Object.freeze(this.deployables.map(d => { const { tick, assault, linkCooldowns, ...entity } = d; return Object.freeze(entity); })),

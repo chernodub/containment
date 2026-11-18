@@ -91,11 +91,11 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   }),
   glacier: ability({
     id: 'glacier', rig: 'cryo', slot: 'power', element: 'cryo', name: 'Glacier',
-    summary: 'Raise an ice wall at the cursor. It shatters when it ends.',
-    description: 'Raise a wall of ice at the cursor for 5 seconds. It blocks enemies and enemy projectiles. When it expires or is broken it shatters for 80 damage and chills everything nearby.',
+    summary: 'Raise an ice wall. Press F again to shatter it early.',
+    description: 'Raise a wall of ice at the cursor for 5 seconds. It blocks enemies and enemy projectiles. Press F again to shatter all active walls for 100 damage each. Walls that expire or break shatter for 45 damage. Both bursts chill nearby enemies.',
     targeting: 'point', shape: { kind: 'wall', length: 200, thickness: 26 },
     castMs: 150, cooldownMs: 18_000, charges: 1, durationMs: 5_000, range: 420,
-    stats: [{ label: 'Duration', value: seconds(5_000) }, { label: 'Shatter', value: '80' }, { label: 'Cooldown', value: seconds(18_000) }],
+    stats: [{ label: 'Duration', value: seconds(5_000) }, { label: 'Manual shatter', value: '100' }, { label: 'Passive shatter', value: '45' }, { label: 'Cooldown', value: seconds(18_000) }],
   }),
   whiteout: ability({
     id: 'whiteout', rig: 'cryo', slot: 'overdrive', element: 'cryo', name: 'Whiteout',

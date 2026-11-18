@@ -234,13 +234,15 @@ export function chooseActions(s) {
   if (s.combat.health <= 55 && s.combat.medkits > 0 && (!imminent||emergency)) keys.push('e');
   if ((escape?.needsDash||hazardDanger) && slots?.dash?.ready) keys.push('Shift');
   if (slots?.tactical?.ready && near < (s.rig === 'arc' ? 500 : 240)) keys.push('q');
-  if ((slots?.power?.ready || s.abilityAims?.power && slots?.power?.charges > 0 && !s.abilities.dashing && !Object.values(slots).some(slot => slot.castRemainingMs > 0)) && s.enemies.length >= 2) keys.push('f');
+  const walls = s.abilities.deployables.filter(entity => entity.kind === 'ice-wall');
+  const shatter = walls.some(wall => s.enemies.filter(enemy => enemy.visible && distance(wall, enemy) <= 150).length >= 2);
+  if (walls.length ? slots.power.ready && shatter : (slots?.power?.ready || s.abilityAims?.power && slots?.power?.charges > 0 && !s.abilities.dashing && !Object.values(slots).some(slot => slot.castRemainingMs > 0)) && s.enemies.length >= 2) keys.push('f');
   if (s.abilities.overdrive.ready && (s.enemies.length >= 6 || emergency && s.enemies.length >= 2 || s.enemies.some(e => e.champion || e.id < 0))) keys.push('v');
   if (s.combat.magazine < s.combat.magazineCapacity * .25 && !s.combat.reloading && near > 300) keys.push('r');
   if (s.combat.grenades > 0 && s.enemies.filter(e => distance(e, s.player) < 400).length >= (emergency?2:4)) keys.push('g');
   return keys.filter(key => {
     const slot = {q:'tactical', f:'power', v:'overdrive'}[key];
-    return !slot || !s.abilityAims || !(slot in s.abilityAims) || !!s.abilityAims[slot];
+    return key === 'f' && walls.length > 0 || !slot || !s.abilityAims || !(slot in s.abilityAims) || !!s.abilityAims[slot];
   });
 }
 /** Exact sample quantiles, avoiding averages-of-percentiles. */
