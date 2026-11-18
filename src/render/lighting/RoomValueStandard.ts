@@ -109,6 +109,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.44,ambient:.45,marineGlow:1,exit:.9,
   }),
   'service-shaft-landing': profile({
+    landmark:{at:[750,440],color:0x53e0bc,radius:8,body:.6,spill:.02,height:-.6,keyGain:1},
     // Surviving junction above the shaft, upper and lower docking diffusers.
     fixturesAt:[[359,405],[1060,6],[1060,874]],
     floor:{lit:.52,unlit:.26,edge:.13},perimeter:{inner:3.8,outer:10,value:.40,lane:.85},

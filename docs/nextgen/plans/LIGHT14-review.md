@@ -139,3 +139,7 @@
 ## Coolant Plant
 - Restarted interrupted work; build passed, first post-restart capture timed out before any frame, retry passed. Opened native heavy/fight-circle and 480 calm/tour/heavy: frost-lit turbine casing reads above the teal floor, with marine/threat highlights leading.
 - Tightened the manifold source and reduced spill from .03 to .012 so the machine owns the light instead of a general green wash. Seven corrected guarded frames pass; existing vapour remains subtle.
+
+## Service Shaft Landing
+- Opened native calm and 480 colour/grey calm/tour/heavy: below-deck teal light reveals shaft bracing, landing lip and winch structure while the shaft interior retains depth; marine/threat highlights lead.
+- Source is below deck level, with restrained landing spill and readable rails/exit beacon. Build and seven guarded frames pass; winch cable drum remains deliberately dark.
