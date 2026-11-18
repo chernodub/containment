@@ -11,8 +11,9 @@ import {boonHint, pathFor} from '../../game/roguelike/boonPaths';
 import {MUTATION_CATALOG, type MutationDefinition} from '../../game/roguelike/mutationCatalog';
 import {expeditionRewardOffers, rerollCost} from '../../game/roguelike/expedition';
 import {progressionFor} from '../../game/roguelike/progression';
-import {generateRun, ROOM_REWARD_LABELS, runLength} from '../../game/roguelike/run';
+import {generateRun, ROOM_KIND_LABELS, ROOM_REWARD_LABELS, runLength} from '../../game/roguelike/run';
 import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
+import {routeVignette} from './routeVignettes';
 import {storyRoomFor} from '../../game/roguelike/storyRooms';
 import {getAbilities, getRunStats} from '../gameAdapter';
 import {icon} from '../icons';
@@ -206,12 +207,41 @@ export function deckMap(game: DepthGame, selected = game.node.next[0]): string {
   }).join('')}</div><div class="map-descent-label">WAKE DECK <span>↓ DESCENT</span> REACTOR</div></div>`;
 }
 
-export function routeScreen(game:DepthGame,selected=game.node.next[0]):string{
- const offers=detourOffers(game.expedition.run);
- if(offers.length){const next=generateRun(game.expedition.run.seed,game.expedition.run.version).nodes.find(n=>n.id===game.node.next[0])!;
- return `<section class="panel choice-panel screen-enter">${tag('OPTIONAL PREPARATION / SAME STORY DESTINATION')}<h2>How will you enter ${escapeHtml(ROOM_TEMPLATES[next.templateId].name)}?</h2><p class="panel-intro">Both choices continue to sector ${next.depth+1}. Recovering the cache adds an escorted priority group.</p><div class="choice-grid">${offers.map((offer,index)=>`<button class="choice-card" data-route="${next.id}" data-detour="${offer.id}"><kbd>${index+1}</kbd><h3>${offer.name}</h3><p>${offer.risk}</p><b>${offer.reward}</b><span class="boon-select">Continue ${arrow()}</span></button>`).join('')}</div></section>`;}
- const next=game.node.next.find(id=>id===selected)??game.node.next[0];
- return `<section class="panel screen-enter"><h2>Continue the descent.</h2><p>The next story sector is ready.</p><button class="primary" data-route="${next}">Continue ${arrow()}</button></section>`;
+export function routeScreen(game: DepthGame, selected = game.node.next[0]): string {
+  const run=game.expedition.run;
+  const graph=generateRun(run.seed,run.version);
+  const destinations=game.node.next.map(id=>graph.nodes.find(node=>node.id===id)!);
+  const offers=detourOffers(run);
+  const next=destinations[0];
+  const nextName=escapeHtml(ROOM_TEMPLATES[next.templateId].name);
+  const options=offers.length
+    ? offers.map(offer=>({destination:next, detour:offer.id, title:offer.name,
+      risk:offer.id==='salvage'?'Fight one extra enemy group led by a priority target.':undefined,
+      reward:offer.id==='salvage'?offer.reward:undefined}))
+    : destinations.map(destination=>({destination, title:ROOM_TEMPLATES[destination.templateId].name,
+      detour:undefined, risk:undefined, reward:undefined}));
+  return `<section class="panel route-briefing screen-enter" aria-labelledby="route-title">
+    ${tag(`SECTOR ${serial(next.depth+1)} / ${total(game)}`)}
+    <h2 id="route-title">${offers.length?nextName:'Choose your next sector'}</h2>
+    ${offers.length?'<p class="panel-intro">Both approaches enter the same sector.</p>':''}
+    <div class="route-briefing-grid">
+      ${options.map(({destination,detour,title,risk,reward},index)=>{
+        const room=ROOM_TEMPLATES[destination.templateId];
+        const encounter=destination.id.endsWith('r3-safe')?'Safer encounter':ROOM_KIND_LABELS[destination.kind];
+        const roomReward=destination.reward==='upgrade'?'Boon':destination.reward==='rare-upgrade'?'Rare boon':ROOM_REWARD_LABELS[destination.reward];
+        return `<button id="route-option-${index}" class="route-option" data-route="${destination.id}" ${detour?`data-detour="${detour}"`:`data-inspected="${destination.id===selected}"`}>
+          <span class="route-option-visual">${routeVignette(room,detour==='salvage')}<kbd aria-hidden="true">${index+1}</kbd></span>
+          <span class="route-option-copy">
+            <strong class="route-option-title">${escapeHtml(title)}</strong>
+            <span class="route-option-terms">${icon(destination.kind)} ${encounter}</span>
+            ${risk?`<span class="route-option-terms" data-route-term="risk">${icon('warning')} ${risk}</span>`:''}
+            <span class="route-option-terms" data-route-term="reward">${icon(reward?'credits':'rarity-rare')} ${escapeHtml(reward??roomReward)}</span>
+          </span>
+          <span class="route-option-action">${detour==='salvage'?'Recover cache and enter':'Enter sector'} ${arrow()}</span>
+        </button>`;
+      }).join('')}
+    </div>
+  </section>`;
 }
 
 /** Visible compact build, with complete boon rules on pointer hover or keyboard focus. */
