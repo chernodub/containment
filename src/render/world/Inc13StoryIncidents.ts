@@ -86,6 +86,28 @@ const incidents:Record<string,Incident>={
       p.box(17,4.2,26,9,.5,12,0x566f74,.18);
     },
   },
+  'communal-atrium':{
+    source:[565,425],bounds:[-206,-52,330,178],
+    paint(c){
+      // An overturned dining table has pulled its long striped cloth around
+      // the planter. Soil and knocked cups interrupt the original pattern.
+      const cloth=new Path2D('M26 -12 Q7 17 -32 20 L-57 31 Q-88 18 -118 35 L-179 60 -166 73 -172 88 -153 87 -145 100 Q-105 77 -80 85 Q-47 89 -22 63 Q15 44 55 55 L67 29 52 25 58 6Z');
+      c.save();c.clip(cloth);c.fillStyle='#797562';c.fillRect(-206,-52,330,178);
+      for(let i=0;i<15;i++)stroke(c,'M'+(-186+i*17)+' 123q22 -22 6 -55t12 -60','#616c63',3.5);
+      for(let i=0;i<4;i++)stroke(c,'M-181 '+(75+i*5)+'Q-104 '+(40+i*5)+' -79 '+(54+i*5)+'T-6 '+(36+i*5)+'Q30 '+(21+i*4)+' 79 '+(29+i*4),'#a39a7c',1.7);
+      c.restore();for(let i=0;i<115;i++){
+        const x=22-i*.88+19*Math.sin(i*4),z=5+i*.38+13*Math.cos(i*7.18);
+        c.fillStyle='rgba(47,50,35,.67)';c.fillRect(x,z,1+i%5,1+i%3);
+      }
+    },
+    pieces(p){
+      for(const [x,z,s] of [[-72,64,1],[-90,50,.78],[-56,55,.60]]){
+        for(let i=0;i<9;i++){const a=i*Math.PI/5,b=(i+1)*Math.PI/5;
+          p.face([[x,1,z],[x+10*s*Math.cos(a),2,z+10*s*Math.sin(a)],[x+10*s*Math.cos(b),2,z+10*s*Math.sin(b)]],0xb1ad95);}
+      }
+      p.rod([-112,1.2,74],[-96,1.2,79],1.2,0x929b91);
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
