@@ -17,9 +17,9 @@ const label = option('label', 'p1-rooms');
 assert(/^[\w.-]+$/.test(label));
 const out = resolve('artifacts/nextgen', label), dist = resolve(option('dist', 'dist'));
 const baseline = args.includes('--baseline');
-const modes=option('modes','fresh,sequential').split(',');assert(modes.every(mode=>['fresh','sequential','ahead'].includes(mode)),'Unknown audit mode');
+const modes=option('modes','fresh,sequential').split(',');assert(modes.every(mode=>['fresh','sequential','ahead','revisit'].includes(mode)),'Unknown audit mode');
 const host = () => ({at: new Date().toISOString(), load: loadavg(), cores: cpus().length});
-const report = {distSourceSHA:option('dist-source-sha','unrecorded'),sha: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(), dist, baseline, host: host(), rows: [], errors: [], failures: [], notes: ['Fresh page per room; sequential rows retain the same renderer through all rooms, using validated checkpoint routes. Sequential staging is accumulation coverage, not an organic twenty-room campaign.', 'Phases are inclusive and may overlap; total is the complete public gotoRoom readiness hold. Instrumentation exists only in this audit.']};
+const report = {distSourceSHA:option('dist-source-sha','unrecorded'),sha: execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(), dist, baseline, host: host(), rows: [], errors: [], failures: [], notes: ['Fresh page per room; sequential rows retain the same renderer through all rooms, using validated checkpoint routes. Sequential staging is accumulation coverage, not an organic twenty-room campaign.', 'Revisit mode primes each room and then repeats the same traversal in the same renderer.', 'Phases are inclusive and may overlap. Model fetch and parse durations sum across parallel loads. Compressed texture loading includes worker setup and is nested within parse. Total is the complete public gotoRoom readiness hold.']};
 await mkdir(out, {recursive: true});
 if (!args.includes('--no-build')) execFileSync('npm',['run','build'],{stdio:'inherit'});
 const mime = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.glb':'model/gltf-binary','.png':'image/png','.jpg':'image/jpeg','.woff2':'font/woff2'};
@@ -48,6 +48,24 @@ try {
       window.__roomAudit = {gpu:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER), phases:{}, calls:{}};
       const prepare=r.prepare;
       r.prepare=async function(...args){window.__roomAudit.ready=false;const value=await prepare.apply(this,args);window.__roomAudit.ready=true;return value;};
+      const render=r.post.render;
+      r.post.render=function(...args){
+        const audit=window.__roomAudit, measure=audit.ready&&!audit.calls.firstFrame;
+        const started=measure?performance.now():0;
+        try{return render.apply(this,args);}
+        finally{if(measure){audit.phases.firstFrame=performance.now()-started;audit.calls.firstFrame=1;}}
+      };
+      const shadow=r.renderer.shadowMap, renderShadows=shadow.render;
+      shadow.render=function(...args){
+        if(!shadow.enabled||!shadow.needsUpdate)return renderShadows.apply(this,args);
+        const started=performance.now();
+        try{return renderShadows.apply(this,args);}
+        finally{
+          const audit=window.__roomAudit;
+          audit.phases.shadowAtlas=(audit.phases.shadowAtlas??0)+performance.now()-started;
+          audit.calls.shadowAtlas=(audit.calls.shadowAtlas??0)+1;
+        }
+      };
       const create=gl.createProgram;
       gl.createProgram=function(){if(window.__roomAudit.ready)window.__roomAudit.postReadyCompiles=(window.__roomAudit.postReadyCompiles??0)+1;return create.call(gl);};
       for (const key of ['loadRoom','prepareScene','captureRoomReflections','compilePrepared','freezeRoomTransforms']) {
@@ -63,7 +81,7 @@ try {
   }
   for (const mode of modes) {
     if (mode!=='fresh') await reset();
-    for (const room of rooms) {
+    for (const room of mode==='revisit'?[...rooms,...rooms]:rooms) {
       if (mode==='fresh') await reset();
       let aheadWork=null;
       if(mode==='ahead'&&allRooms.indexOf(room)>0&&room!=='reactor-vault'){
@@ -77,6 +95,7 @@ try {
           throw Error('Background route preparation did not settle');
         },allRooms[allRooms.indexOf(room)-1]);
       }
+      const visitingAgain=mode==='revisit'&&report.rows.some(row=>row.mode==='revisit-prime'&&row.room===room);
       const before = host();
       const row = await page.evaluate(async ({room,mode}) => {
         const d=window.__containmentDebug,r=d.renderer,a=window.__roomAudit;
@@ -90,7 +109,7 @@ try {
         try {d.invulnerable(true);d.setInput({fire:true,autoAim:true,angle:null});d.step(300);}
         finally {gl.createProgram=create;}
         return {room,mode,total,phases,calls,inventoryBefore:inventory,programs:r.renderer.info.programs.length,newPrograms:r.renderer.info.programs.length-inventory,combatCompiles:compiles,postReadyCompiles,postReadyPrograms:postReadyCompiles?r.renderer.info.programs.slice(-postReadyCompiles).map(p=>({name:p.name,key:p.cacheKey})):[],preparation:r.preparationDiagnostics??null,post:r.post.diagnostics??r.post.performanceDiagnostics??null,resources:{...r.renderer.info.memory},gpu:a.gpu};
-      },{room,mode});
+      },{room,mode:mode==='revisit'&&!visitingAgain?'revisit-prime':mode});
       row.before=before;row.after=host();row.aheadWork=aheadWork;report.rows.push(row);
       assert(!/swiftshader|software|llvmpipe/i.test(row.gpu),'Hardware renderer required');
       if(!baseline && row.postReadyCompiles)report.failures.push({room,mode,metric:'postReadyCompiles',value:row.postReadyCompiles,limit:0});
@@ -100,7 +119,7 @@ try {
       const preparation=row.preparation?.at(-1);
       if(!baseline && preparation?.compilePasses>12)report.failures.push({room,mode,metric:'compilePasses',value:preparation.compilePasses,limit:12});
       if(!baseline && preparation?.materialProfiles>160)report.failures.push({room,mode,metric:'materialProfiles',value:preparation.materialProfiles,limit:160});
-      console.log(`${mode} ${room}: ${row.total.toFixed(1)}ms; build ${row.phases.loadRoom?.toFixed(1)} reflection ${row.phases.captureRoomReflections?.toFixed(1)} warm ${row.phases.prepareScene?.toFixed(1)}; programs ${row.programs}; combat compiles ${row.combatCompiles}`);
+      console.log(`${row.mode} ${room} (load1m ${before.load[0].toFixed(2)} → ${row.after.load[0].toFixed(2)}, ${before.cores} cores): ${row.total.toFixed(1)}ms; build ${row.phases.loadRoom?.toFixed(1)} reflection ${row.phases.captureRoomReflections?.toFixed(1)} warm ${row.phases.prepareScene?.toFixed(1)}; programs ${row.programs}; combat compiles ${row.combatCompiles}`);
       await writeFile(resolve(out,'rooms.json'),JSON.stringify(report,null,2));
     }
   }

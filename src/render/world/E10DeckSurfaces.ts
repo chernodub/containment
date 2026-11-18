@@ -29,7 +29,7 @@ export function deckLightSources(t: RoomTemplate): T.Vector4[] {
 
 /** Decoded maps, placed wear and static light belong to the lazy room owner.
  * Native sampler slots let retained warmup proxies use synthetic images. */
-export async function loadDeckSurfaces(world: T.Group, t: RoomTemplate, active: () => boolean, own: (dispose: () => void) => void): Promise<void> {
+export async function loadDeckSurfaces(world: T.Group, t: RoomTemplate, active: () => boolean, own: (dispose: () => void) => void, record?: (phase:string, ms:number)=>void): Promise<void> {
   const floor = world.getObjectByName(floorNames[0]);
   if (!(floor instanceof T.Mesh) || !(floor.material instanceof T.MeshStandardMaterial)) return;
   const service = world.getObjectByName(floorNames[1]);
@@ -55,6 +55,7 @@ export async function loadDeckSurfaces(world: T.Group, t: RoomTemplate, active: 
     ...families.flatMap(family => ['basecolor','normal','orm'].map(name => ({family,name,low}))),
     ...['decals','trim-basecolor','trim-normal'].map(name => ({family:'shared',name,low})),
   ]);
+  const textureStarted=performance.now();
   const results = await Promise.allSettled(requests.map(async ({family,name,low}) => {
     const texture = await loader.loadAsync(base + family + '/' + name + (low ? '-low' : '') + '.webp');
     if (disposed || !active()) { texture.dispose(); return; }
@@ -63,13 +64,16 @@ export async function loadDeckSurfaces(world: T.Group, t: RoomTemplate, active: 
     texture.colorSpace = name === 'basecolor' || name === 'decals' || name === 'trim-basecolor' ? T.SRGBColorSpace : T.NoColorSpace;
     texture.anisotropy = 4; loaded.set(`${low}/${family}/${name}`,texture);
   }));
+  record?.('deckTextures',performance.now()-textureStarted);
   const failure = results.find(r => r.status === 'rejected');
   if (failure?.status === 'rejected') throw failure.reason;
   if (!active() || disposed) return;
   const get = (low:boolean,family:string,name:string) => loaded.get(`${low}/${family}/${name}`)!;
   const story = buildDeckStory(t,get(false,'shared','decals')); textures.add(story.high); textures.add(story.low);
   const services = world.getObjectByName('e9-room-interiors')?.userData.interior?.services ?? [];
+  const bakeStarted=performance.now();
   const light = bakeDeckLighting(t,deckLightSources(t),services,roomValueProfile(t.id)?.exit); textures.add(light.texture);
+  record?.('deckIrradiance',performance.now()-bakeStarted);
   for (const [index,mesh] of surfaces.entries()) {
     const m = mesh.material as T.MeshStandardMaterial, family = index ? secondary : environment;
     const maps = (low:boolean) => [get(low,family,'basecolor'),get(low,family,'normal'),get(low,family,'orm'),low?story.low:story.high,get(low,'shared','trim-basecolor'),get(low,'shared','trim-normal')];

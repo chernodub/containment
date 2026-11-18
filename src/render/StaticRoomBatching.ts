@@ -1,3 +1,4 @@
+import {LOCAL_LIGHT_CACHE_SUFFIX} from './lighting/LocalLightShading';
 import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { geometries, MAT } from './meshParts';
@@ -66,7 +67,7 @@ function rigidMaterial(material: T.Material): boolean {
   // Never equate different hooked finishes or accept an unknown shader hook.
   const original = sharedRoomFinishKeys.get(material);
   if(original===undefined)return false;
-  const key=material.customProgramCacheKey(),local=`${original}:local-light-rejection-v12-landmark-bounds`;
+  const key=material.customProgramCacheKey(),local=original+LOCAL_LIGHT_CACHE_SUFFIX;
   if(material.onBeforeRender===T.Material.prototype.onBeforeRender)
     return key===local||key===`${local}:graphic-surface-v1`;
   return key===`${local}:graphic-surface-v1:geometry-mrt-v1`&&hasStaticGeometryPolicy(material);

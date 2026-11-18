@@ -10,6 +10,7 @@ let ready=false,initializing:Promise<void>|undefined;
 export function initDeathPhysics(){return initializing??=RAPIER.init().then(()=>{ready=true;});}
 const GROUPS=0x00020001,STATIC_GROUPS=0x00010002,STEP=1/120;
 export const RAGDOLL_BUDGET={high:6,low:3} as const;
+const BODY_BUDGET={high:100,low:50} as const;
 /** Presentation bounds include solver-generated energy as well as the initial shot impulse. */
 export const RAGDOLL_MAX_SPEED=8,RAGDOLL_MAX_SPIN=12;
 /** Read only by presentation; supplied from the last living status snapshot. */
@@ -46,14 +47,17 @@ function fitSkin(root:T.Object3D,bones:T.Bone[]){
   if(!positions||!indices||!weights)return;
   const owners=o.skeleton.bones.map(b=>{let ancestor:T.Object3D|null=b;while(ancestor&&!fits.has(ancestor as T.Bone))ancestor=ancestor.parent;return ancestor?fits.get(ancestor as T.Bone):undefined;});
   const transforms=o.skeleton.bones.map((b,i)=>new T.Matrix4().multiplyMatrices(o.matrixWorld,o.bindMatrixInverse).multiply(b.matrixWorld).multiply(o.skeleton.boneInverses[i]).multiply(o.bindMatrix));
-  const point=new T.Vector3(),roles=o.geometry.getAttribute('identityRole');
+  const point=new T.Vector3(),source=new T.Vector3(),roles=o.geometry.getAttribute('identityRole');
   const anatomy=o.material instanceof T.ShaderMaterial?o.material.uniforms:undefined;
-  for(let i=0;i<positions.count;i++)for(let slot=0;slot<4;slot++){
+  for(let i=0;i<positions.count;i++){
    if(roles&&anatomy&&!identityRoleVisible(roles.getX(i),anatomy.identityElite.value,anatomy.identityChampion.value,anatomy.identityOpening.value,anatomy.identityDeath.value>.5))continue;
-   if(weights.getComponent(i,slot)<=0)continue;
-   const index=indices.getComponent(i,slot),fit=owners[index];if(!fit)continue;
-
-   point.fromBufferAttribute(positions,i).applyMatrix4(transforms[index]).sub(fit.origin).applyQuaternion(fit.inverseRotation);fit.bounds.expandByPoint(point);
+   source.fromBufferAttribute(positions,i);
+   for(let slot=0;slot<4;slot++){
+    if(weights.getComponent(i,slot)<=0)continue;
+    const index=indices.getComponent(i,slot),fit=owners[index];if(!fit)continue;
+    point.copy(source).applyMatrix4(transforms[index]).sub(fit.origin).applyQuaternion(fit.inverseRotation);
+    fit.bounds.expandByPoint(point);
+   }
   }
  });
  return fits;
@@ -78,7 +82,12 @@ export class DeathRagdolls {
  setQuality(tier:'high'|'low'){
   this.tier=tier;
   const active=[...this.records.values()].filter(r=>!r.settled);
-  while(active.length+this.authored.size>RAGDOLL_BUDGET[tier]&&active.length)this.retire(active.shift()!);
+  let bodies=active.reduce((count,r)=>count+r.parts.length,0);
+  while(active.length&&(active.length+this.authored.size>RAGDOLL_BUDGET[tier]||bodies>BODY_BUDGET[tier])){
+   const record=active.shift()!;
+   bodies-=record.parts.length;
+   this.retire(record);
+  }
   while(this.authored.size>RAGDOLL_BUDGET[tier])this.remove(this.authored.keys().next().value!);
  }
  private statics:RAPIER.Collider[]=[];
@@ -151,6 +160,9 @@ export class DeathRagdolls {
   const poses:BonePose[]=[],bones:T.Bone[]=[];let originalCreature=false;
   model.root.traverse(o=>{if(o instanceof T.SkinnedMesh&&(Array.isArray(o.material)?o.material:[o.material]).some(material=>material.userData.k11Original))originalCreature=true;if(o instanceof T.Bone){poses.push({bone:o,position:o.position.clone(),rotation:o.quaternion.clone(),scale:o.scale.clone(),auto:o.matrixAutoUpdate});if(isAnatomicalBone(o.name,family))bones.push(o);}});
   if(bones.length<3||bones.length>20)return false;
+  let bodies=0;
+  for(const record of this.records.values())bodies+=record.parts.length;
+  if(bodies+bones.length>BODY_BUDGET[this.tier]){this.overflow++;return false;}
   model.freeze?.();
   const parts:Part[]=[],joints:RAPIER.ImpulseJoint[]=[],mass=family==='brute'?3.5:family==='carrier'?1.8:1;
   const posture=DEATH_POSTURE[family]??DEATH_POSTURE.crawler;
@@ -204,7 +216,7 @@ export class DeathRagdolls {
   if(holdTicks>0)for(const part of parts)part.body.setEnabled(false);
   this.records.set(id,{skinFloorCheckAt:(family==='carrier'&&originalCreature&&cue!=='frost'&&model.height>=4) ? .75 : undefined,model,cue,terminalTime:0,terminalPulse:0,parts,hierarchy,joints,poses,age:0,holdTicks,settled:false,falling:false,fallSpeed:0,support:new T.Vector3(),supportLift:.25,rootPosition:model.root.position.clone(),anchor:new T.Vector3().copy(parts[0].body.translation())});return true;
  }
- update(dt:number){
+ update(dt:number,marineX?:number,marineZ?:number){
   this.elapsedMs=0;if(!this.world||dt<=0)return;
   const authoredDt=Math.min(dt,.05);
   for(const [id,death] of this.authored){
@@ -249,11 +261,22 @@ export class DeathRagdolls {
    // genuinely suspended skin to the existing support-aware frozen fall.
    if(r.skinFloorCheckAt!==undefined&&r.age>=r.skinFloorCheckAt){
     r.skinFloorCheckAt=undefined;
-    if(this.skinSuspendedAboveSupport(r)){this.retire(r);continue;}
+    if(this.skinSuspendedAboveSupport(r)){this.retire(r,true);continue;}
    }
-   if(r.parts.every(p=>p.body.isSleeping()))this.retire(r);else if(r.age>=6)this.retire(r);
+   const distant=marineX!==undefined&&marineZ!==undefined&&!r.model.root.visible&&r.age>=1.5&&
+    (r.anchor.x-marineX)**2+(r.anchor.z-marineZ)**2>14**2;
+   if(r.parts.every(p=>p.body.isSleeping())||r.age>=6||distant&&this.quiet(r))this.retire(r,true);
   }
   this.elapsedMs=performance.now()-start;
+ }
+ private quiet(r:RagdollRecord):boolean {
+  for(const {body} of r.parts){
+   const linear=body.linvel(this.physicsVelocity);
+   if(linear.x**2+linear.y**2+linear.z**2>.18**2)return false;
+   const angular=body.angvel(this.physicsVelocity);
+   if(angular.x**2+angular.y**2+angular.z**2>.3**2)return false;
+  }
+  return true;
  }
  private skinSuspendedAboveSupport(r:RagdollRecord):boolean {
   r.model.root.updateMatrixWorld(true);
@@ -309,9 +332,10 @@ export class DeathRagdolls {
   }
   r.anchor.copy(r.parts[0].body.translation());
  }
- private retire(r:RagdollRecord){
-  if(r.settled)return;this.apply(r);
-  r.model.root.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(r.model.root,true);
+ private retire(r:RagdollRecord,poseCurrent=false){
+  if(r.settled)return;
+  if(!poseCurrent)this.apply(r);
+  r.model.root.updateMatrixWorld(true);const bounds=this.skinFloorBounds.setFromObject(r.model.root,true);
   if(bounds.isEmpty())r.support.copy(r.anchor).y-=.05;
   else {bounds.getCenter(r.support);r.support.y=bounds.min.y;}
   // Recover only shallow contact slop. A ray above the whole body can catch an overhead table.

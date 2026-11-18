@@ -4,7 +4,7 @@ import type {RoomTemplate} from '../../game/roguelike/types';
 import {clearPolygonTopology} from '../../game/world/polygonGeometry';
 import {environmentClock} from '../lighting/HotFixtureSurface';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {RoomModelCache, type RoomModelSpec} from '../RoomModelCache';
+import {RoomModelCache, fetchRoomModel, type ModelPhase, type RoomModelSpec} from '../RoomModelCache';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
 import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
@@ -48,35 +48,47 @@ const p11Packs = new Map<string,RoomModelCache>();
 const compressedFormats = ['WEBGL_compressed_texture_astc', 'WEBGL_compressed_texture_etc', 'WEBGL_compressed_texture_s3tc', 'EXT_texture_compression_bptc'];
 /** The cache owns decoded textures; a short-lived transcoder owns only workers.
  * Cancelled room borrowers retire independently through RoomModelCache. */
-async function decodeBrood(spec: RoomModelSpec, renderer: T.WebGLRenderer) {
-  const response = await fetch(spec.url);
-  if (!response.ok) throw Error(`${spec.label} HTTP ${response.status}`);
-  if (Number(response.headers.get('content-length')) > spec.maxBytes) {
-    await response.body?.cancel(); throw Error(`${spec.label} byte budget exceeded`);
-  }
-  const bytes = await response.arrayBuffer();
-  if (bytes.byteLength > spec.maxBytes) throw Error(`${spec.label} byte budget exceeded`);
+async function decodeBrood(spec: RoomModelSpec, renderer: T.WebGLRenderer, record?:ModelPhase) {
+  const bytes=await fetchRoomModel(spec,record);
   const transcoder = new KTX2Loader().setTranscoderPath(import.meta.env.BASE_URL + 'assets/basis/').setWorkerLimit(1).detectSupport(renderer);
+  const load=transcoder.load.bind(transcoder);
+  transcoder.load=(url,onLoad,onProgress,onError)=>{
+    const started=performance.now();
+    return load(url,texture=>{record?.('modelTranscode',performance.now()-started);onLoad?.(texture);},onProgress,onError);
+  };
+  const started=performance.now();
   try {
     const asset = await new GLTFLoader().setKTX2Loader(transcoder).parseAsync(bytes, spec.url.slice(0, spec.url.lastIndexOf('/') + 1));
     await asset.parser.getDependencies('texture');
     return asset;
-  } finally { transcoder.dispose(); }
+  } finally { record?.('modelParse',performance.now()-started);transcoder.dispose(); }
 }
 
-/** Fixed, lazy session templates. The caller retires each returned borrow. */
-export function acquireOriginalShipKit(pack: OriginalKitPack, signal?: AbortSignal, renderer?: T.WebGLRenderer): Promise<T.Group> {
+function originalPackCache(pack: OriginalKitPack, renderer?:T.WebGLRenderer) {
   const formats = pack === 'p11-brood' && renderer ? compressedFormats.filter(name => renderer.extensions.has(name)).join(',') : '';
   const compressed = Boolean(formats);
   const url = compressed ? import.meta.env.BASE_URL + 'assets/brood-growth/brood-growth-ktx.glb' : URLs[pack];
-  if (!url) return Promise.reject(Error('Unknown original ship kit pack: ' + pack));
+  if (!url) throw Error('Unknown original ship kit pack: ' + pack);
   if(pack.startsWith('p11-')) {
     const cacheKey = url + '/' + formats;
     let cache=p11Packs.get(cacheKey);
-    if(!cache){cache=new RoomModelCache([{url,maxBytes:pack==='p11-brood'?4_000_000:2_000_000,label:'Original '+pack+' set pieces'}], compressed ? spec => decodeBrood(spec, renderer!) : undefined);p11Packs.set(cacheKey,cache);}
-    return cache.acquire(url,signal).then(root=>{if(pack==='p11-brood')extractStaticLODs(root);return root;});
+    if(!cache){cache=new RoomModelCache([{url,maxBytes:pack==='p11-brood'?4_000_000:2_000_000,label:'Original '+pack+' set pieces'}], compressed ? (spec, phase) => decodeBrood(spec, renderer!, phase) : undefined);p11Packs.set(cacheKey,cache);}
+    return {cache,url};
   }
-  return (pack === 'structure' ? structurePack : functionPacks).acquire(url, signal);
+  return {cache:pack==='structure'?structurePack:functionPacks,url};
+}
+
+/** Fixed, lazy session templates. The caller retires each returned borrow. */
+export async function acquireOriginalShipKit(pack:OriginalKitPack, signal?:AbortSignal, renderer?:T.WebGLRenderer, record?:ModelPhase):Promise<T.Group> {
+  const {cache,url}=originalPackCache(pack,renderer);
+  const root=await cache.acquire(url,signal,record);
+  if(pack==='p11-brood')extractStaticLODs(root);
+  return root;
+}
+
+export function prefetchOriginalShipKit(pack:OriginalKitPack, renderer:T.WebGLRenderer):Promise<void> {
+  const {cache,url}=originalPackCache(pack,renderer);
+  return cache.prefetch(url);
 }
 
 export type OriginalKitInstance = {
@@ -95,19 +107,22 @@ export type OriginalKitInstance = {
 
 type Bucket = {material: T.MeshStandardMaterial; geometries: T.BufferGeometry[]; castShadow: boolean; vertices:number; lowVertices:number; cutaway:boolean};
 type QualityRange = {geometry:T.BufferGeometry; high:number; low:number;highIndex?:T.BufferAttribute;lowIndex?:T.BufferAttribute};
-const qualityRanges = new WeakMap<T.Object3D, QualityRange[]>();
+const qualityRanges = new WeakMap<T.Object3D, {ranges: QualityRange[]; high?: boolean}>();
 
 /** Reuse warmed geometry/materials when switching tiers; no rebakes or batches. */
 export function setOriginalShipKitQuality(world:T.Object3D, high:boolean):void {
   world.traverse(owner=>{
-    const ranges=qualityRanges.get(owner);
-    if(!ranges)return;
+    const quality=qualityRanges.get(owner);
+    if(!quality||quality.high===high)return;
+    quality.high=high;
+    const {ranges}=quality;
     for(const range of ranges){if(range.highIndex&&range.lowIndex){const index=range.geometry.index!;index.array.set((high?range.highIndex:range.lowIndex).array);index.needsUpdate=true;}range.geometry.setDrawRange(0,high?range.high:range.low);}
     owner.userData.submittedTriangles=ranges.reduce((sum,r)=>sum+(high?r.high:r.low)/3,0);
   });
 }
 
 type Emitter = {position: T.Vector3; area: number};
+const emitterCache = new WeakMap<T.BufferGeometry, Emitter[]>();
 type Fixture = {
   x: number; y: number; z: number; color: number;
   nativeColor: true; poolStyle: 1; gain: number;
@@ -179,7 +194,7 @@ export function buildOriginalShipKit(
 ): T.Group {
   const result = new T.Group();
   result.name = 'e9-original-ship-kit'; result.userData.visualOnly = true;
-  const buckets = new Map<string, Bucket>(), emitterCache = new Map<T.BufferGeometry, Emitter[]>();
+  const buckets = new Map<string, Bucket>();
   const ownedGeometry = new Set<T.BufferGeometry>(), ownedMaterials = new Set<T.Material>();
   const placements: {pack: OriginalKitPack; asset: string; purpose: string; matrix: number[]; bounds: number[][]; triangles: number}[] = [];
   const fixtures: Fixture[] = [];
@@ -341,7 +356,7 @@ export function buildOriginalShipKit(
     registerOriginalInteriorCutaways(result,cutaways.map(piece=>({bounds:piece.bounds,hidden:false,
       parts:piece.parts.map(part=>({colors:mergedColors.get(part.finish)!,start:part.start,end:part.end})),
     } satisfies InteriorCutaway)));
-    qualityRanges.set(result,ranges);
+    qualityRanges.set(result,{ranges});
     setOriginalShipKitQuality(result,true);
     return result;
   } catch (error) {

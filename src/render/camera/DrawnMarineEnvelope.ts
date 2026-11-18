@@ -3,10 +3,10 @@ import * as T from 'three';
 const BANDS=160,STEP=.05,STRIDE=6;
 
 type SkinCache={
-  geometry:T.BufferGeometry;position:T.BufferAttribute;
+  geometry:T.BufferGeometry;position:T.BufferAttribute;skeleton:T.Skeleton;
   joints:T.BufferAttribute;weights:T.BufferAttribute;
   positionVersion:number;jointsVersion:number;weightsVersion:number;bindMatrix:T.Matrix4;
-  bound:Float64Array;indices:Uint16Array;influences:Float64Array;weightSums:Float64Array;
+  bound:Float64Array;offsets:Uint32Array;starts:Uint32Array;influences:Float64Array;weightSums:Float64Array;bones:number[];
 };
 
 /** Current deformed pose, sampled after ability/socket posing. Presentation only.
@@ -43,28 +43,37 @@ export class DrawnMarineEnvelope {
     if(!(position instanceof T.BufferAttribute)||!(joints instanceof T.BufferAttribute)||!(weights instanceof T.BufferAttribute)||
       position.itemSize!==3||joints.itemSize!==4||weights.itemSize!==4||position.count!==joints.count||position.count!==weights.count)return false;
     let cache=this.skinCaches.get(mesh);
-    if(!cache||cache.geometry!==geometry||cache.position!==position||cache.joints!==joints||cache.weights!==weights||
+    if(!cache||cache.skeleton!==mesh.skeleton||cache.geometry!==geometry||cache.position!==position||cache.joints!==joints||cache.weights!==weights||
       cache.positionVersion!==position.version||cache.jointsVersion!==joints.version||cache.weightsVersion!==weights.version||!cache.bindMatrix.equals(mesh.bindMatrix)){
-      const bound=new Float64Array(position.count*3),indices=new Uint16Array(position.count*4),influences=new Float64Array(position.count*4),weightSums=new Float64Array(position.count);
+      const bound=new Float64Array(position.count*3),offsets=new Uint32Array(position.count*4);
+      const starts=new Uint32Array(position.count+1),influences=new Float64Array(position.count*4),weightSums=new Float64Array(position.count);
+      const bones=new Set<number>();
+      let next=0;
       for(let i=0;i<position.count;i++){
         this.vertex.fromBufferAttribute(position,i).applyMatrix4(mesh.bindMatrix);
-        const p=i*3,w=i*4;bound[p]=this.vertex.x;bound[p+1]=this.vertex.y;bound[p+2]=this.vertex.z;
+        const p=i*3;bound[p]=this.vertex.x;bound[p+1]=this.vertex.y;bound[p+2]=this.vertex.z;
+        starts[i]=next;
         let total=0;
         for(let j=0;j<4;j++){
           const bone=joints.getComponent(i,j),weight=weights.getComponent(i,j);
           if(bone<0||bone>=mesh.skeleton.bones.length||bone>65535)return false;
-          indices[w+j]=bone;influences[w+j]=weight;total+=weight;
+          total+=weight;
+          if(weight===0)continue;
+          bones.add(bone);
+          offsets[next]=bone*12;
+          influences[next++]=weight;
         }
         weightSums[i]=total;
       }
-      cache={geometry,position,joints,weights,positionVersion:position.version,jointsVersion:joints.version,weightsVersion:weights.version,bindMatrix:mesh.bindMatrix.clone(),bound,indices,influences,weightSums};
+      starts[position.count]=next;
+      cache={geometry,position,skeleton:mesh.skeleton,joints,weights,positionVersion:position.version,jointsVersion:joints.version,weightsVersion:weights.version,bindMatrix:mesh.bindMatrix.clone(),bound,offsets,starts,influences,weightSums,bones:[...bones]};
       this.skinCaches.set(mesh,cache);
     }
     const bones=mesh.skeleton.bones,inverses=mesh.skeleton.boneInverses;
     if(this.projectedBones.length<bones.length*12)this.projectedBones=new Float64Array(bones.length*12);
     this.skinPost.multiplyMatrices(this.cameraFromWorld,mesh.matrixWorld).multiply(mesh.bindMatrixInverse);
     const post=this.skinPost.elements;
-    for(let i=0;i<bones.length;i++){
+    for(const i of cache.bones){
       this.boneTransform.multiplyMatrices(bones[i].matrixWorld,inverses[i]);
       this.projectedBone.multiplyMatrices(this.skinPost,this.boneTransform);
       const source=this.projectedBone.elements,offset=i*12;
@@ -72,15 +81,14 @@ export class DrawnMarineEnvelope {
       this.projectedBones[offset+4]=source[1];this.projectedBones[offset+5]=source[5];this.projectedBones[offset+6]=source[9];this.projectedBones[offset+7]=source[13];
       this.projectedBones[offset+8]=source[2];this.projectedBones[offset+9]=source[6];this.projectedBones[offset+10]=source[10];this.projectedBones[offset+11]=source[14];
     }
-    const {bound,indices,influences,weightSums}=cache,transforms=this.projectedBones;
+    const {bound,offsets,starts,influences,weightSums}=cache,transforms=this.projectedBones;
     for(let i=0;i<position.count;i++){
-      const p=i*3,w=i*4,x=bound[p],y=bound[p+1],z=bound[p+2];
+      const p=i*3,x=bound[p],y=bound[p+1],z=bound[p+2];
       // Three applies bindMatrixInverse/world/camera after the weighted sum.
       // Retain its fixed translation even when source weights do not sum to one.
       let px=(1-weightSums[i])*post[12],py=(1-weightSums[i])*post[13],pz=(1-weightSums[i])*post[14];
-      for(let j=0;j<4;j++){
-        const weight=influences[w+j];if(weight===0)continue;
-        const m=indices[w+j]*12;
+      for(let j=starts[i],end=starts[i+1];j<end;j++){
+        const weight=influences[j],m=offsets[j];
         px+=weight*(transforms[m]*x+transforms[m+1]*y+transforms[m+2]*z+transforms[m+3]);
         py+=weight*(transforms[m+4]*x+transforms[m+5]*y+transforms[m+6]*z+transforms[m+7]);
         pz+=weight*(transforms[m+8]*x+transforms[m+9]*y+transforms[m+10]*z+transforms[m+11]);
