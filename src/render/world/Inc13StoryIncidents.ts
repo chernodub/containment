@@ -237,6 +237,27 @@ const incidents:Record<string,Incident>={
       p.box(-61,9,22,4,15,15,0x667778,.55,.64);
     },
   },
+  'diagnostic-gallery':{
+    source:[362,338],bounds:[-184,-40,311,187],
+    paint(c){
+      const albumen=c.createLinearGradient(0,9,-138,95);
+      albumen.addColorStop(0,'rgba(111,142,138,.76)');albumen.addColorStop(1,'rgba(70,103,101,.42)');
+      fill(c,'M-23 4 Q1 1 21 12 Q50 30 18 43 Q-4 48 -23 46 Q-52 55 -48 72 Q-54 89 -84 86 Q-99 79 -113 98 Q-145 117 -158 101 Q-178 87 -148 76 Q-125 67 -106 72 Q-85 73 -83 50 Q-79 30 -51 31 Q-28 31 -23 4Z',albumen);
+      for(let i=0;i<8;i++)stroke(c,'M'+(-4-i*9)+' '+(28+i*5)+'q-8 8 -23 9','rgba(171,195,185,.43)',1.5);
+    },
+    pieces(p){
+      // The torn restraint leaves define the missing volume of the specimen.
+      for(const s of [-1,1]){
+        p.face([[s*25,7,-26],[s*26,9,17],[s*39,23,20],[s*42,35,-19]],0x8faba9);
+        p.rod([s*25,7,15],[s*39,24,20],2.1,0x536867);
+        p.rod([s*42,35,-19],[s*39,23,20],1.8,0xb1c2b8);
+      }
+      for(let i=0;i<3;i++){
+        const x=-18+i*16;p.rod([x,18,-10],[x-6,26,8],1.5,0x52666b);
+        p.rod([x-6,26,8],[x-13,19,20],1.25,0x939e97);
+      }
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
