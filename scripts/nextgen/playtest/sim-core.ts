@@ -231,6 +231,7 @@ export function runSimulation(options: SimOptions) {
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
         const siege=game.siege,goal=siege&&siege.remainingMs>0?siege:nearest;
         const waypoint = goal ? botWaypoint(game, goal) ?? goal : null;
+        for (const enemy of enemies) Object.assign(enemy, { burning: game.boonStatuses(enemy.id).burning });
         const candidates = [];
         for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
             const len = Math.hypot(dx, dy) || 1, x = game.player.x + dx / len * 90, y = game.player.y + dy / len * 90;
@@ -243,7 +244,7 @@ export function runSimulation(options: SimOptions) {
             candidates.push({ x, y, dx, dy, legal, waypoint, rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&clear(e.x,e.y,{x,y})).map(e=>e.id), clear: nearest ? clear(nearest.x, nearest.y, { x, y }) : false });
         }
         const telegraph = game.boss.snapshot.pendingTelegraph;
-        return { elapsed:game.elapsed, difficulty:game.difficulty, nodeId:game.node.id, resources:game.combat.getRunResources(), rig: options.rig, siege:game.siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
+        return { elapsed:game.elapsed, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), rig: options.rig, siege:game.siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});

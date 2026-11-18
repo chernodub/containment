@@ -42,6 +42,7 @@ export class MutationRuntime {
   #hitCount=0;#directKills=0;
   #activeShot:string|undefined;
   #shotWeapons=new Map<string,BuildWeapon>();
+  #fireSlowUntil = new Map<number, number>();
   #burns=new Map<number,{expiresAt:number;nextTick:number;tickDamage:number;command:BuildCommand}>();
 
   constructor(combat: CombatSystem, host: MutationHost) {
@@ -68,6 +69,13 @@ export class MutationRuntime {
       this.#elements.freeze(target,amount);
     }else if(kind==='shock')this.#elements.shock(target,amount);
     else this.#ignite(target,{type:'damage',targetId:String(target.id),amount:RIG_BURN_DAMAGE,source:'secondary',cause,id},RIG_BURN_DAMAGE);
+    this.#refreshSlow(target);
+  }
+
+  consumeBurn(id: number): void { this.#burns.delete(id); }
+
+  impedeWithFire(target: MutationTarget): void {
+    this.#fireSlowUntil.set(target.id, this.#time + 650);
     this.#refreshSlow(target);
   }
 
@@ -144,7 +152,7 @@ export class MutationRuntime {
       for(const t of nearby)this.#ignite(t,{type:'damage',targetId:String(t.id),amount:4,source:'secondary',id:`${killCause.chainId}:kindling:${target.id}:${t.id}`,cause:{chainId:killCause.chainId,depth:killCause.depth+1}});
     }
     this.#elements.kill(target,source,killCause,this.#activeShot===killCause.chainId);
-    this.#chill.delete(target.id);this.#burns.delete(target.id);
+    this.#chill.delete(target.id);this.#burns.delete(target.id);this.#fireSlowUntil.delete(target.id);
     const id = eventId ?? this.#combat.nextMutationEventId('kill');
     this.#dispatch({ id, cause: killCause, type: 'kill', targetId: String(target.id), source, resources: this.#combat.mutationResources(this.#shotWeapons.get(killCause.chainId)) });
   }
@@ -186,7 +194,7 @@ export class MutationRuntime {
     this.#hits.clear();
     this.#shotWeapons.clear();this.#activeShot=undefined;
     this.#commands.length = 0;
-    this.#elements.reset();this.#slow.clear();this.secondaryBudget.clear();this.#time = 0;this.#hitCount=0;this.#directKills=0;this.#burns.clear();
+    this.#elements.reset();this.#slow.clear();this.secondaryBudget.clear();this.#time = 0;this.#hitCount=0;this.#directKills=0;this.#burns.clear();this.#fireSlowUntil.clear();
     this.#combat.resetMutationEncounter();
   }
 
@@ -194,7 +202,7 @@ export class MutationRuntime {
   hurt(beforeArmor:number,afterArmor:number,player:{x:number;y:number}){this.#elements.hurt(beforeArmor,afterArmor,player);}
   #stacks(id:number){const c=this.#chill.get(id);return c&&c.expiresAt>this.#time?c.stacks:0;}
   #addChill(t:MutationTarget,stacks:number,duration:number){if(!this.#host.targets().some(x=>x.id===t.id&&x.health>0))return;this.#chill.set(t.id,{stacks:Math.max(stacks,this.#stacks(t.id)),expiresAt:Math.max(this.#time+duration,this.#chill.get(t.id)?.expiresAt??0)});this.#host.boonEffect?.('frost',t.x,t.y);}
-  #refreshSlow(t:MutationTarget,cryo=familyBonuses(this.#combat.build).cryo){const stacks=this.#stacks(t.id),slow=Math.min(stacks?1-stacks*.15-(cryo?.05:0):1,this.#elements.slow(t));if((this.#slow.get(t.id)??1)!==slow){this.#slow.set(t.id,slow);this.#host.setSlow(t.id,slow);}}
+  #refreshSlow(t:MutationTarget,cryo=familyBonuses(this.#combat.build).cryo){const stacks=this.#stacks(t.id),slow=Math.min(stacks?1-stacks*.15-(cryo?.05:0):1,this.#elements.slow(t),(this.#fireSlowUntil.get(t.id)??0)>this.#time?.55:1);if((this.#slow.get(t.id)??1)!==slow){this.#slow.set(t.id,slow);this.#host.setSlow(t.id,slow);}}
   completedReload(player:Readonly<{x:number;y:number}>):void{
     this.#elements.reload(player);const build=this.#combat.build,has=(id:import('./types').MutationId)=>build.mutations.includes(id);
     if(has('hot-reload'))this.#host.boonEffect?.('overload',player.x,player.y);

@@ -8,7 +8,7 @@ const kits = [
 const slots = ['dash', 'tactical', 'power', 'overdrive'];
 
 /** Exercise real opt-in rig selection and a single native ability in legal authored space. */
-async function stageAbility({ rig, slot, id, nativeInput = false }) {
+async function stageAbility({ rig, slot, id, nativeInput = false, kit13 = false, phase = 'effect' }) {
   const d = window.__containmentDebug, g = d.game;
   await d.startRun(1729, { rigSelect: true });
   if (g.expedition.run.phase !== 'rig-select' || !g.chooseRig(rig)) throw Error('Rig selection failed');
@@ -25,16 +25,34 @@ async function stageAbility({ rig, slot, id, nativeInput = false }) {
   d.setInput({ x: 0, y: 0, fire: false, angle: -Math.PI / 2, autoAim: false });
   d.step(3800); // Settle the native camera and expire draft/checkpoint toasts before staging targets.
   g.enemies.reset(); d.refresh(); // Retire rendered actors before reset IDs are reused.
-  for (const [x, y] of [[320, 280], [350, 260], [290, 230]]) {
+  const positions = kit13 && id === 'ram' ? [[374, 424]] : [[320, 280], [350, 260], [290, 230]];
+  for (const [x, y] of positions) {
     if (!d.canStand(x, y, 28) || !d.clearShot(x, y) || !d.spawn('brute', x, y)) throw Error(`Illegal ability target ${x},${y}`);
   }
   g.setAimPoint({ x: 320, y: 220 });
   if (nativeInput) { d.fillOverdrive(); d.refresh(); return; }
+  if (kit13 && id === 'flashfire') {
+    for (const enemy of g.targets()) g.mutations.applyAbilityStatus(enemy, 'burn', 1);
+  }
+  if (kit13 && id === 'ram') {
+    g.useAbility('power');
+    g.player.angle = 0;
+    g.abilities.setIntent(1, 0, null);
+    d.setInput({ x: 1, y: 0, fire: false, angle: 0, autoAim: false });
+  }
   if (slot === 'overdrive') d.fillOverdrive();
   if (!g.useAbility(slot)) throw Error(`Ability denied: ${id}`);
   const windup = g.abilities.snapshot.slots[slot].castRemainingMs;
-  const aftermath = id === 'whiteout' ? 2100 : slot === 'dash' ? 440 : id === 'meltdown' ? 1000 : id === 'tesla-pylon' ? 520 : 30;
-  d.step(windup + aftermath);
+  const aftermath = kit13 && ['static-step', 'ram'].includes(id) ? 165 : kit13 && id === 'flashfire' ? 130 : id === 'whiteout' ? 2100 : slot === 'dash' ? 440 : id === 'meltdown' ? 1000 : id === 'tesla-pylon' ? 520 : 30;
+  d.step(kit13 && phase === 'cast' ? 16 : windup + aftermath);
+  if (kit13) {
+    if (id === 'glacier' && phase === 'effect') {
+      g.useAbility('power');
+      d.step(65);
+    }
+    d.refresh();
+    return;
+  }
   const s = g.abilities.snapshot;
   if (s.rig !== rig || s.slots[slot].id !== id || g.stats.abilityUses[slot] !== 1) throw Error('Ability receipt mismatch');
   if (!Number.isFinite(g.player.x) || !d.canStand(g.player.x, g.player.y)) throw Error('Ability left the navigable floor');
@@ -56,3 +74,11 @@ export const DESKTOP_ABILITY_SCENARIO = {
   setupArgument:{rig:'breacher',slot:'dash',id:'ram',nativeInput:true},setup:stageAbility,
   nativeKeys:[['Shift',160],['q',240],['f',20],['v',650]],
 };
+
+export const KIT13_ABILITY_SCENARIOS = ABILITY_SCENARIOS
+  .filter(scenario => ['ram', 'glacier', 'afterburn', 'flashfire', 'meltdown', 'static-step'].includes(scenario.ability.id))
+  .flatMap(scenario => ['cast', 'effect'].map(phase => ({
+    ...scenario, id: `kit13-${scenario.ability.id}-${phase}`,
+    ability: { ...scenario.ability, uses: scenario.ability.id === 'glacier' && phase === 'effect' ? 2 : 1 },
+    setupArgument: { ...scenario.setupArgument, kit13: true, phase },
+  })));
