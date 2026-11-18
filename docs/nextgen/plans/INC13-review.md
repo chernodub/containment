@@ -15,3 +15,9 @@ The second pass mounts the family drawings beneath the reading light and adds a 
 The baseline manifold and cordon disappear into the dark upper edge of the 480×270 spawn view.
 The first pipe was aligned down the wall. Its broken joint was cropped at spawn, and the frost stopped on a straight texture boundary.
 Turning the rack across the header exposes both torn lips and their icicles. The smaller feathered ice fan points directly back to the break and stays above the fight floor.
+
+## Infested Workshop
+
+At spawn the original mill and nest are nearly off-screen, leaving the approach apparently uninfested.
+The first duct study hid its spindle inside an oversized rib cage. The Blender render and the tour both showed one featureless purple slab.
+The revised taper exposes the machinery between ribs and brings the lantern cluster above the skin. The resin fringe is visible from the fight floor, though the metal and tissue still converge in value.

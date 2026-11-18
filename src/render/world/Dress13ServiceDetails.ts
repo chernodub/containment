@@ -95,6 +95,19 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     for (let i = 0; i < 5; i++) line([546 + i * 4, 1.15, 353], [551 + i * 4, 1.65 + i % 2 * .1, 353], .025, rubber);
     tool(490, 369, .2); tool(484, 340, 1.4); shards(479, 353);
     scuff(481, 353, 1.5, .5);
+  } else if (id === 'infested-workshop') {
+    // Thin resin sheets run out from the bench feet. Their short forward
+    // branches end above the north edge of the R144 fight circle.
+    for(let i=0;i<7;i++){
+      const x=466+17*i,z=341+(i%2)*4;
+      const dx=-88+9*i,dz=30+5*(i%3);
+      const shape=new T.Shape();
+      shape.moveTo(x,z);shape.bezierCurveTo(x-13,z+22,x+dx*.75,z+dz-14,x+dx,z+dz);
+      shape.quadraticCurveTo(x+dx*.48,z+dz-12,x+13,z+1);
+      const g=new T.ShapeGeometry(shape,14);
+      g.scale(1/32,-1/32,1);g.rotateX(-Math.PI/2);g.translate(0,.031+i*.0004,0);
+      put(g,i%2?0x4b354c:0x3e303e);
+    }
   } else if (id === 'coolant-plant') {
     addFrozenSpill(root);
   } else if (id === 'service-shaft-landing') {

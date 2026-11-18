@@ -25,6 +25,14 @@ export function p11InfestedPlacements(id: string): OriginalKitInstance[] {
       surfaceGain: asset.startsWith('brood-creep') ? .6 : 1,
     });
     brood('brood-consumed-shell',650,330,1.1);
+    // The ruptured duct and second carriage form a continuous bank ending at
+    // the original mill. The forward edge stays north of the combat circle.
+    result.push({pack:'p11-inc13-workshop',asset:'swallowed-workbay',purpose:'INC13 / infested extraction line',
+      cutaway:false,matrix:new T.Matrix4().makeRotationY(-.08).setPosition(515/32,0,325/32)});
+    brood('brood-creep-b',489,343,.87,.024,.48);
+    brood('brood-creep-a',553,351,.88,.024,-.28);
+    brood('brood-creep-c',609,344,.77,.024,1.32);
+    brood('brood-pods-small',565,339,.55,0,.72);
     // The active tool workbay is x584..876: use its visible right inner
     // partition, rather than the untoured lathe bay or the far roofline.
     result.push({pack:'clinical',asset:'clinical-testbench',purpose:'DRESS13 / rear workbay machine',cutaway:true,
