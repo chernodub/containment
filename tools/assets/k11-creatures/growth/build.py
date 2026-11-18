@@ -27,8 +27,8 @@ args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 ONLY = next((a.split("=", 1)[1].split(",") for a in args if a.startswith("--only=")), None)
 RENDER = "--no-render" not in args
 OUT = K.ROOT / "public/assets/brood-growth"
-REVIEW = K.ROOT / "artifacts/nextgen/growth-final"
-ATLAS = 1024
+REVIEW = K.ROOT / ("artifacts/nextgen/k11-final/brood-pod" if "--set=pod" in args else "artifacts/nextgen/growth-final")
+ATLAS = 512 if "--set=pod" in args else 1024
 started = time.time()
 
 # Two tones (wine flesh, dusky shell/bone ribs) plus the violet lantern. Linear RGB.
@@ -38,7 +38,11 @@ PALETTE = {
     S.UNDER: (0.085, 0.05, 0.055), S.CAVITY: (0.02, 0.005, 0.012), S.ORGAN: (0.55, 0.22, 1.0), S.EYE: (0.2, 0.08, 0.22),
     S.CLAW: (0.03, 0.02, 0.025),
 }
-FINISHES = {"brood-growth": None, "brood-lantern": (0.55, 0.22, 1.0, 3.0), "brood-pod-glow": (0.42, 0.16, 0.62, 0.45)}
+POD_SET = "--set=pod" in args   # Matron brood pod prop (own GLB, finishes brood-pod-shell + pod-core)
+PREFIX = "brood-pod" if POD_SET else "brood-growth"
+FINISHES = ({"brood-pod-shell": None, "pod-core": (0.9, 0.2, 0.55, 1.0)} if POD_SET else
+            {"brood-growth": None, "brood-lantern": (0.55, 0.22, 1.0, 3.0), "brood-pod-glow": (0.42, 0.16, 0.62, 0.45)})
+FIN = list(FINISHES)
 
 scene = K.reset_scene()
 OUT.mkdir(parents=True, exist_ok=True)
@@ -84,7 +88,7 @@ def finish_faces(low, sculpture):
     m.polygons.foreach_get("center", centres)
     _, win = sculpture.evaluate_points(centres.reshape(-1, 3), track=True)
     zone = np.array([sculpture.prims[i].zone if i >= 0 else S.FLESH for i in win])
-    idx = np.where(zone == S.ORGAN, 1, np.where(zone == S.EYE, 2, 0)).astype(np.int32)
+    idx = np.where(zone == S.ORGAN, 1, np.where(zone == S.EYE, 2 if len(FIN) > 2 else 0, 0)).astype(np.int32)
     m.polygons.foreach_set("material_index", idx)
     m.update()
     low["finish_index"] = idx.tolist()
@@ -114,7 +118,7 @@ def vc_bake(kind, low, high, name, ext, dist, samples=1):
 # ------------------------------------------------------------------- materials
 emit_base = K.emission_material("emit-base", "base")
 plain = K.diffuse_material("plain")
-normal_img = K.image("brood-growth-normal", 2048, (0.5, 0.5, 1, 1), data=True)
+normal_img = K.image(f"{PREFIX}-normal", 1024 if POD_SET else 2048, (0.5, 0.5, 1, 1), data=True)
 mats = {}
 for name, glow in FINISHES.items():
     mat = bpy.data.materials.new(name)
@@ -139,7 +143,7 @@ for name, glow in FINISHES.items():
 
 # ---------------------------------------------------------------------- pieces
 built = {}
-for name, fn in PC.PIECES.items():
+for name, fn in (PC.POD_PIECES if POD_SET else PC.PIECES).items():
     if ONLY and name not in ONLY:
         continue
     sculpture, budget, meta = fn()
@@ -155,9 +159,9 @@ for name, fn in PC.PIECES.items():
     K.shade_smooth(high)
     K.decimate(low, budget)
     K.shade_smooth(low)
-    K.set_material(low, mats["brood-growth"])
-    low.data.materials.append(mats["brood-lantern"])
-    low.data.materials.append(mats["brood-pod-glow"])
+    K.set_material(low, mats[FIN[0]])
+    for extra in FIN[1:]:
+        low.data.materials.append(mats[extra])
     finish_faces(low, sculpture)
     built[name] = (low, high, meta, budget, voxel)
     K.log(f"{name}: {len(low.data.polygons)} tris, voxel {voxel:.3f}, {time.time() - started:.0f}s")
@@ -201,11 +205,11 @@ for name, (low, high, meta, budget, voxel) in built.items():
     low.data.materials.clear()
     for m in keep:
         low.data.materials.append(m)
-normal_path = OUT / "brood-growth-normal.png"
+normal_path = OUT / f"{PREFIX}-normal.png"
 K.save_np(K.image_np(normal_img), normal_path, ATLAS, data=True)
 nimg = bpy.data.images.load(str(normal_path))
 nimg.colorspace_settings.name = "Non-Color"
-for name in ("brood-growth",):
+for name in (FIN[0],):
     nt = mats[name].node_tree
     tex = nt.nodes.new("ShaderNodeTexImage")
     tex.image = nimg
@@ -234,7 +238,7 @@ bpy.ops.object.select_all(action="DESELECT")
 for low in lows:
     low.select_set(True)
 bpy.context.view_layer.objects.active = lows[0]
-glb = OUT / "brood-growth.glb"
+glb = OUT / f"{PREFIX}.glb"
 if not ONLY:
     bpy.ops.export_scene.gltf(filepath=str(glb), export_format="GLB", use_selection=True, export_yup=True, export_apply=True,
                               export_extras=True, export_materials="EXPORT", export_vertex_color="ACTIVE",
@@ -252,7 +256,11 @@ if not ONLY:
         "normalAtlas": {"file": normal_path.name, "size": ATLAS},
         "models": models,
     }
-    (OUT / "manifest.json").write_text(json.dumps(manifest, indent=1))
+    if POD_SET:
+        manifest.update({"name": "Containment Carrier Matron brood pod", "rebuild": "sh tools/assets/k11-creatures/growth/rebuild.sh --set=pod",
+                         "finishes": {"brood-pod-shell": "opaque shell/cup (vertex colour + normal atlas)",
+                                      "pod-core": "emission region pod-core: drive emissiveIntensity as the hatch countdown"}})
+    (OUT / ("manifest-pod.json" if POD_SET else "manifest.json")).write_text(json.dumps(manifest, indent=1))
     K.log("exported", glb, glb.stat().st_size)
 
 # ---------------------------------------------------------------------- review
@@ -270,7 +278,7 @@ if RENDER:
         if (i + 1) % cols == 0:
             x, y, row_h = 0.0, y + row_h, 0.0
     centre = sum((Vector(l.location) for l in lows), Vector()) / len(lows)
-    K.review_lights(0.35, scale=6.0, center=tuple(centre))
+    K.review_lights(0.35, scale=1.5 if POD_SET else 6.0, center=tuple(centre))
     cam = K.camera("ORTHO")
     K.frame_objects(cam, lows, (0.6, -1.4, 1.2), pad=1.05)
     K.render(REVIEW / "kit-beauty.png", (900, 600))

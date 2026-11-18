@@ -919,3 +919,16 @@ registerT12Scenarios(SCENARIOS);
 // PERF13: identical close-up staging; only presentation LOD differs.
 for(const family of ['crawler','stalker','spitter','brute','carrier']){const base=SCENARIOS.find(s=>s.id===`i11b-calm-${family}-base`);for(const mode of ['full','low'])SCENARIOS.push({...base,id:`perf13-near-${family}-${mode}`,setup:new Function('room',`return(async()=>{await (${base.setup.toString()})(room);window.__containmentDebug.studyActorLOD?.('${mode}');window.__containmentDebug.refresh();})();`)});}
 for(const tier of ['high','low']){const base=SCENARIOS.find(s=>s.id==='k10-calm-breacher');SCENARIOS.push({...base,id:`perf13-growth-${tier}`,setup:new Function('room',`return(async()=>{await (${base.setup.toString()})(room);const d=window.__containmentDebug;d.renderer.setQuality('${tier}');await d.prepare();d.refresh();})();`)});}
+
+import {COMM13_SCENARIOS} from './comm13-scenarios.mjs';
+SCENARIOS.push(...COMM13_SCENARIOS);
+
+const comm13Crowd = SCENARIOS.find(scenario => scenario.id === 'm10-melee-crowd');
+SCENARIOS.push({
+  ...comm13Crowd,
+  id: 'comm13-crowd',
+  setup: new Function(`return (${comm13Crowd.setup.toString().replace(
+    'd.spawn(families[i],p.x,p.y,false)',
+    "g.enemies.spawn(families[i],p.x,p.y,false,{beat:0,role:i===13?'brood':i<3?'screen':undefined,priority:i===13,controlResistant:i===13}).enemy?.id"
+  )})();`),
+});

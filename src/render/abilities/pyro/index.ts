@@ -44,13 +44,13 @@ class PyroPresentation implements AbilityPresentation {
   private next = 0;
 
   /** Retained procedural surface; refreshed from native snapshots, no per-frame meshes/materials. */
-  private surface(id: number, part: number, x: number, z: number, range: number, angle: number, arc: number, h0: number, h1: number, intensity: number, fuel = false, stripLength = -1): void {
+  private surface(id: number, part: number, x: number, z: number, range: number, angle: number, arc: number, h0: number, h1: number, intensity: number, fuel = false, stripLength = -1, force?: FxMode): void {
     let owner: (typeof this.surfaces)[number] | undefined;
     for (const candidate of this.surfaces) if (candidate.id === id && candidate.part === part) { owner = candidate; break; }
     if (!owner) for (const candidate of this.surfaces) if (candidate.id === -1) { owner = candidate; break; }
     if (!owner) return;
     owner.id = id; owner.part = part; owner.seen = true;
-    const mode = stripLength >= 0 ? FxMode.FuelStrip : fuel ? FxMode.Fuel : FxMode.Fire;
+    const mode = force ?? (stripLength >= 0 ? FxMode.FuelStrip : fuel ? FxMode.Fuel : FxMode.Fire);
     let slot = owner.slot;
     if (!slot?.live || slot.seed !== owner.seed || slot.mode !== mode || slot.life < 1000) {
       slot = owner.slot = this.kit.fx.spawn(mode, x, z, 1e6); owner.seed = slot.seed;
@@ -62,6 +62,7 @@ class PyroPresentation implements AbilityPresentation {
     slot.age = .09; slot.intensity = intensity;
     if (fuel) slot.param = intensity;
     else if (id < 0 || range < 1.5) slot.param = -1;
+    if (mode === FxMode.Tongues) { slot.param = intensity; slot.intensity = 1; slot.angle = angle; }
   }
   private emission = 0;
   private shimmer = 0;
@@ -161,6 +162,10 @@ class PyroPresentation implements AbilityPresentation {
         // Authoritative landing immediately retires matching in-flight canisters.
         for (const p of this.effects) if (p.live && p.kind === 'lob' && Math.hypot(p.tx - tx, p.tz - tz) < .02) p.live = false;
         kit.burst(tx, .25, tz, 'pyro', 36, 3.5, .65);
+        // Hard burst: a short fireball volume inside the exact radius, then the pool takes over.
+        const ball = kit.fx.spawn(FxMode.Fire, tx, tz, .45);
+        ball.range = radius * .85; ball.arc = Math.PI * 2; ball.h0 = .5; ball.h1 = 1.4; ball.param = .25; ball.intensity = 1.1;
+        kit.exposureFlash(.12);
         // Landing splashes are ballistic liquid, never a ring of repeated fire stamps.
         kit.scar('soot', tx, tz, radius, SOOT, 10);
         kit.flash(tx, tz, CORE, 22, Math.max(6, radius * 1.8), 5, .3);
@@ -175,15 +180,17 @@ class PyroPresentation implements AbilityPresentation {
         const radius = (event.radius ?? 130) / UNIT;
         const p = this.acquire('ignition', x, z, event.phase === 'burst' ? .38 : .65); p.radius = radius; p.angle = event.angle ?? 0;
         kit.burst(x, .35, z, 'pyro', event.phase === 'burst' ? 12 : 20, 3, .65);
-        const burst = kit.fx.spawn(FxMode.Fire, x, z, event.phase === 'burst' ? .42 : .6);
-        burst.range = radius; burst.arc = Math.PI * 2; burst.h0 = .2; burst.h1 = .8;
-        burst.param = .2; burst.intensity = .7;
-        const char = kit.fx.spawn(FxMode.Scorch, x, z, 2.5);
-        char.range = radius; char.arc = Math.PI * 2; char.h0 = char.h1 = .035;
+        if (event.phase === 'burst') {
+          // Kill-burst: a small compact fireball, not a full-radius sheet.
+          const ball = kit.fx.spawn(FxMode.Fire, x, z, .42);
+          ball.range = Math.min(radius, 1.3); ball.arc = Math.PI * 2; ball.h0 = .3; ball.h1 = 1.1;
+          ball.param = .2; ball.intensity = .9;
+        }
         // The authoritative aura boundary is shared; the suit itself is the heat source.
         kit.flash(x, z, FIRE, event.phase === 'burst' ? 5 : 14, 6, event.phase === 'burst' ? 3 : 6, .25);
         kit.distort(x, z, radius, .004, .6, true);
-        if (event.phase === 'impact') { kit.ring(x, z, radius, CORE, .38); kit.camera(.34); kit.exposureFlash(.2); }
+        // VFX15: the rupture (heat column, molten floor) lives in OverdrivePayoff; no ring.
+        void radius;
       } else if (event.phase === 'end') {
         const cooling=this.acquire('cooling',x,z,.65);cooling.angle=this.suitAngle;
         kit.ring(x, z, .9, HOT, .35, true);
@@ -310,6 +317,8 @@ class PyroPresentation implements AbilityPresentation {
     const height = .85 * (1 - t) + Math.sin(t * Math.PI) * 2.3 + .15;
     const spin = kit.reducedMotion ? 0 : t * Math.PI * 3;
     kit.draw('solid', x, height, z, .24, .42, .24, 0x283d43, .98, spin, spin);
+    // Landing marker: thin element outline at the exact radius, filling with flight time.
+    kit.outline(p.tx, p.tz, p.radius, FIRE, .38, t);
     kit.draw('solid', x, height + .09, z, .25, .07, .25, CORE, .95, spin, spin);
     kit.draw('spark', x, height + .15, z, .12, .16, 1, CORE, .95);
     if (emit) kit.mote('smoke', x, height, z, 0, .2, 0, .18, .5, SOOT);
@@ -416,12 +425,9 @@ class PyroPresentation implements AbilityPresentation {
     kit.sustain(elapsed);
     // Two irregular depth layers share the exact native circular footprint.
     this.surface(zone.id, 0, x, z, radius, 0, Math.PI * 2, .035, .035, fade, true);
-    // Unequal interior tongues supply vertical flame without another full-disc sheet.
-    for (let i = 0, count = kit.low ? 1 : 3; i < count; i++) {
-      const a = i * 2.39996 + zone.id * .73, r = kit.low ? 0 : radius * (.24 + i * .12);
-      this.surface(zone.id, i + 1, x + Math.cos(a) * r, z + Math.sin(a) * r,
-        Math.min(.85, radius * .24), a + .7, 1.25, .08, 1.05 + i * .18, fade);
-    }
+    // VFX15: eight standing procedural tongues with height (one draw), growing in after the burst.
+    const grow = Math.min(1, Math.max(0, (elapsed - .05) / .3));
+    this.surface(zone.id, 1, x, z, radius * .9, (zone.id * .371) % 1, 0, .03, 1.9, fade * grow * (.9 + .1 * Math.sin(kit.time * 7 + zone.id)), false, -1, FxMode.Tongues);
     // A single loose smoke column rises from the hottest interior fuel pocket.
     for (let i = 0; i < (kit.low ? 1 : 4); i++) {
       const rise = kit.reducedMotion ? .5 : (kit.time * .3 + i * .23) % 1;

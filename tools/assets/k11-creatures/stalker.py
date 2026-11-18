@@ -90,8 +90,15 @@ def build(sk):
         fa = normalize(wr - el)
         body.add(Plate((el + wr) / 2 + v3((0, 0.03 * s, 0.06)), (float(np.linalg.norm(wr - el)) * 0.5, 0.09, 0.05),
                        frame(fa, (0, 0.3 * s, 1)), 0.04, rings=0.003, lip=0.01, zone=CREST, bone=f"arm_mid.{side}", plate=60 + s))
-        body.extend(A.blade(wr, end + (end - wr) * 0.25, v3((-0.6, 0.15 * -s, 0.2)), 0.17 * heavy,
-                            0.045 * heavy, f"claw.{side}", hook=0.5, serrations=4))
+        # scythes held with their flat faces up and edges outward: a wide crescent read from above
+        body.extend(A.blade(wr, end + (end - wr) * 0.3, v3((0.35, 1.0 * s, 0.25)), 0.26 * heavy,
+                            0.05 * heavy, f"claw.{side}", hook=0.55, serrations=4))
+        # flared shoulder hood: the pouncer's wide key silhouette
+        hood_n = normalize(v3((0.1, 0.85 * s, 0.6)))
+        body.add(Plate(up + v3((-0.05, 0.3 * s, 0.1 * a)), (0.42, 0.36, 0.12), frame(v3((1, 0, 0.25)), hood_n), 0.08,
+                       rings=0.004, lip=0.025, chip=0.015, zone=ARMOR, bone=f"arm_up.{side}", plate=66 + s))
+        body.add(Plate(up + v3((-0.25, 0.42 * s, 0.02 * a)), (0.32, 0.28, 0.1), frame(v3((1, 0, 0.1)), hood_n), 0.07,
+                       rings=0.004, lip=0.02, chip=0.015, zone=ARMOR, bone=f"arm_up.{side}", plate=68 + s))
     # --- stilt legs -------------------------------------------------------------------
     for leg in ("front", "back"):
         for s, side in ((-1, "R"), (1, "L")):

@@ -132,18 +132,10 @@ class ArcPresentation implements AbilityPresentation {
     }
     if (event.ability === 'overclock') {
       if (event.phase === 'impact') {
-        k.ring(px, pz, 5.5, VIOLET, .7);
-        k.ring(px, pz, 3.2, WHITE, .45);
-        this.front(px, pz, 6, .85, false, true);
-        k.distort(px, pz, 6, .0045, .7);
-        k.flash(px, pz, WHITE, 13, 7, 5, .16);
+        // VFX15: the chromatic snap and fracture field live in OverdrivePayoff.
         k.burst(px, .65, pz, 'arc', 24, 3.2, .6);
-        k.camera(.27);
       } else if (event.phase === 'end') {
         // A short reverse collapse ends the temporal state in one hard beat.
-        k.ring(px, pz, 5.5, VIOLET, .2, true);
-        this.front(px, pz, 6, .24, true, true);
-        k.distort(px, pz, 5.5, -.0025, .2);
         k.burst(px, .2, pz, 'arc', 12, 1.5, .4);
       }
     }
@@ -416,13 +408,6 @@ class ArcPresentation implements AbilityPresentation {
     k.grade(0, fade * .22);
     const starting = this.overclockAge === 0;
     this.overclockAge += frame.dt;
-    if (!this.timeField?.live || this.timeField.seed !== this.timeFieldSeed || this.timeField.mode !== FxMode.Aura || this.timeField.life < 1000) {
-      this.timeField = k.fx.spawn(FxMode.Aura, x, z, 1e6);
-      this.timeFieldSeed = this.timeField.seed;
-      this.timeField.range = 2.6; this.timeField.h0 = .045; this.timeField.arc = 3;
-    }
-    this.timeField.x = x; this.timeField.z = z; this.timeField.color = VIOLET;
-    this.timeField.param = fade * .32; this.timeField.intensity = .65;
     this.echoAge += frame.dt;
     const angle = g.player.angle ?? 0;
     k.impact();

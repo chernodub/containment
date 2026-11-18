@@ -1,3 +1,4 @@
+import {BOSS_BODIES} from '../game/enemies/bossDefinitions';
 import {ENEMY_ATTACK_SHAPES} from '../game/enemies/attackShapes';
 import {canTraverseExpedition} from '../game/world/expeditionGeometry';
 import type {Telegraph} from './vfx/TelegraphBatch';
@@ -13,7 +14,7 @@ import type {GraphicsOptions} from './graphicsOptions';
 import type {GraphicsTier} from './FrameBudget';
 import type {DeathCue} from './DeathRagdolls';
 const UP=new T.Vector3(0,1,0),WHITE=new T.Color(0xffffff);
-const meleeWarningWeight=(family:string,elite=false)=>family==='crawler'?(elite?.17:.12):family==='brute'||family==='carrier'?.48:elite?.34:.24;
+const meleeWarningWeight=(family:string,elite=false)=>family==='crawler'?(elite?.17:.12):family==='stalker'?.56:family==='brute'||family==='carrier'?.48:elite?.34:.24;
 export type AttackEffectOptions=Partial<GraphicsOptions>&{reducedMotion?:boolean;tier?:GraphicsTier};
 export type AttackFeedback={
  flash?:(event:{position:T.Vector3;color:number;intensity:number;radius:number;duration:number;priority:number})=>void;
@@ -259,11 +260,11 @@ export class AttackEffects {
    if(!enemy||enemy.health<=0||enemy.windupMs<=0||!enemy.pendingAttack){warning.active=false;continue;}
    const shape=warning.shape,charge=enemy.pendingAttack==='charge';
    const angle=charge?Math.atan2(enemy.lockY,enemy.lockX):Math.atan2(enemy.lockY-enemy.y,enemy.lockX-enemy.x);
-   const radius=charge?enemy.radius:ENEMY_ATTACK_SHAPES.spitterProjectileRadius;
+   const radius=charge?enemy.radius:enemy.pod?enemy.radius:(enemy.broodRemainingMs??0)>0?BOSS_BODIES.matron.hatchRingMax:ENEMY_ATTACK_SHAPES.spitterProjectileRadius;
    if(!charge){shape.shape='circle';shape.x=enemy.lockX/32;shape.z=enemy.lockY/32;shape.radius=radius/32;shape.width=radius*2/32;shape.length=0;shape.angle=angle;warning.remainingMs=enemy.windupMs;shape.progress=1-enemy.windupMs/warning.durationMs;continue;}
    shape.shape='line';
    if(shape.length!<0||Math.hypot(shape.x-enemy.x/32,shape.z-enemy.y/32)>.03){
-    const maximum=charge?ENEMY_ATTACK_SHAPES.chargeSpeed*ENEMY_ATTACK_SHAPES.chargeDurationMs/1000:ENEMY_ATTACK_SHAPES.spitterProjectileSpeed*ENEMY_ATTACK_SHAPES.spitterProjectileLife;
+    const maximum=charge?(enemy.chargeWarningLength??ENEMY_ATTACK_SHAPES.chargeSpeed*ENEMY_ATTACK_SHAPES.chargeDurationMs/1000):ENEMY_ATTACK_SHAPES.spitterProjectileSpeed*ENEMY_ATTACK_SHAPES.spitterProjectileLife;
     this.warningFrom.x=enemy.x;this.warningFrom.y=enemy.y;
     let legal=0,blocked=maximum;
     for(let distance=16;distance<=maximum+16;distance+=16){const probe=Math.min(distance,maximum);this.warningTo.x=enemy.x+Math.cos(angle)*probe;this.warningTo.y=enemy.y+Math.sin(angle)*probe;if(!canTraverseExpedition(geometry,this.warningFrom,this.warningTo,radius)){blocked=probe;break;}legal=probe;if(probe===maximum)break;}

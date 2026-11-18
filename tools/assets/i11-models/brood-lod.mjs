@@ -29,7 +29,8 @@ function emit(json,bin){
   bh.writeUInt32LE(bin.length+bp);bh.writeUInt32LE(0x004e4942,4);
   return Buffer.concat([head,text,Buffer.alloc(jp,32),bh,bin,Buffer.alloc(bp)]);
 }
-const source=parse(await readFile(directory+'/brood-growth.glb'));
+for(const asset of ['brood-growth','brood-pod']){
+const source=parse(await readFile(directory+'/'+asset+'.glb'));
 const document=await io.readBinary(emit(source.json,source.bin));
 const meshes=[];
 for(const[index,mesh]of document.getRoot().listMeshes().entries()){
@@ -48,7 +49,7 @@ for(const[index,mesh]of document.getRoot().listMeshes().entries()){
     const target=Math.max(3,Math.floor(indices.length*.5/3)*3);
     // Keep emissive geometry exact: the room loader derives connected lamp
     // positions/areas from these triangles, so LOD must not move illumination.
-    const material=primitive.getMaterial()?.getName(),retainedEmitter=material!=='brood-growth';
+    const material=primitive.getMaterial()?.getName(),retainedEmitter=material!=='brood-growth'&&material!=='brood-pod-shell';
     const[low,error]=retainedEmitter?[indices,0]:MeshoptSimplifier.simplifyWithAttributes(indices,positions,3,attributes,9,
       [1,1,1,10,10,10,10,10,10],null,target,.01,[]);
     results.push({primitiveIndex,material,retainedEmitter,low,sourceTriangles:indices.length/3,triangles:low.length/3,ratio:low.length/indices.length,relativeError:error});
@@ -56,7 +57,7 @@ for(const[index,mesh]of document.getRoot().listMeshes().entries()){
   meshes.push({sourceMesh:index,name:mesh.getName()+'__lod_low',primitives:results});
 }
 const files=[];
-for(const file of['brood-growth.glb','brood-growth-ktx.glb']){
+for(const file of[asset+'.glb',asset+'-ktx.glb']){
   const original=await readFile(directory+'/'+file),{json,bin}=parse(original);
   const contract={version:1,ratio:.5,meshes:json.meshes.length,nodes:json.nodes.length,
     accessors:json.accessors.length,bufferViews:json.bufferViews.length,
@@ -91,5 +92,7 @@ for(const file of['brood-growth.glb','brood-growth-ktx.glb']){
 }
 const receipt={policy:'Index-only meshopt simplifyWithAttributes; seam-preserving default, UV/color weight10 normal1, relative error cap1%; growth target50%; emissive primitives retained exactly to preserve source-derived lamp positions/areas; original normals/UV/vertex colors/material partitions and image bytes retained; no placement changes',
   meshes:meshes.map(mesh=>({...mesh,primitives:mesh.primitives.map(({low,...metrics})=>metrics)})),files};
-await mkdir(out,{recursive:true});await writeFile(out+'/brood-lod-assets.json',JSON.stringify(receipt,null,2)+'\n');
+await mkdir(out,{recursive:true});await writeFile(out+'/'+(asset==='brood-growth'?'brood':'brood-pod')+'-lod-assets.json',JSON.stringify(receipt,null,2)+'\n');
 console.log(JSON.stringify(receipt,null,2));
+
+}

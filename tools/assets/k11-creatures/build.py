@@ -157,6 +157,20 @@ for name, sculpture in parts.items():
     K.decimate(low, M.TRIS[name])
     K.shade_smooth(low)
     K.skin_weights(low, sculpture, sigma=M.VOXEL * 2.5, smooth=2)
+    # named emission regions from the sculpture (prim.name), carried as a 2-channel point attribute
+    reg_prims = [(i, p) for i, p in enumerate(sculpture.prims) if p.name in ("warden-ram", "matron-vents")]
+    if reg_prims:
+        lco = K.verts_np(low)
+        reg = np.zeros((len(lco), 2), np.float32)
+        for i, p in reg_prims:
+            lo_, hi_ = p.bounds()
+            sel = np.all((lco >= lo_ - M.VOXEL * 6) & (lco <= hi_ + M.VOXEL * 6), axis=1)
+            if sel.any():
+                ch = 0 if p.name == "warden-ram" else 1
+                w = 1 - S.smoothstep(M.VOXEL * 1.0, M.VOXEL * 5.0, p.field(lco[sel]))
+                reg[sel, ch] = np.maximum(reg[sel, ch], w)
+        attr = low.data.attributes.new("k11_region", "FLOAT2", "POINT")
+        attr.data.foreach_set("vector", reg.ravel())
     highs[name], lows[name] = high, low
     K.log(f"{name}: sculpted in {time.time() - started:.0f}s")
 
@@ -230,6 +244,8 @@ for rank in ranks:
     v = bpy.context.view_layer.objects.active
     v.name = v.data.name = f"k11-{M.FAMILY}-{rank}"
     variants[rank] = v
+    if getattr(M, "RANK_SCALE", {}).get(rank):
+        v["k11RankScale"] = M.RANK_SCALE[rank]
 for low in lows.values():
     low.hide_render = True
     low.hide_set(True)
@@ -240,8 +256,15 @@ lo, hi = co.min(0), co.max(0)
 centre = (lo + hi) / 2
 radial = float(np.max(np.linalg.norm(co[:, :2] - centre[:2], axis=1)))
 hs = 0.94 * RADIUS / radial   # metres per design unit, mirrors the runtime fit
-stats.update({"hs": hs, "height_m": float((hi[2] - lo[2]) * hs), "radial": radial,
-              "seconds": round(time.time() - started)})
+stats.update({"hs": hs, "height_m": float((hi[2] - lo[2]) * hs), "radial": radial, "seconds": round(time.time() - started)})
+for rank, v in variants.items():   # per-rank in-game estimate incl. boss-tier scale (rest pose, bounds centre)
+    rc = K.verts_np(v)
+    rlo, rhi = rc.min(0), rc.max(0)
+    rr = float(np.max(np.linalg.norm(rc[:, :2] - ((rlo + rhi) / 2)[:2], axis=1)))
+    scale = getattr(M, "RANK_SCALE", {}).get(rank, 1.0)
+    rhs = scale * 0.94 * RADIUS / rr
+    stats[f"{rank}_estimate"] = {"rankScale": scale, "height_m": round(float((rhi[2] - rlo[2]) * rhs), 2),
+                                 "collider_radius_m": round(RADIUS * scale, 3), "metres_per_design_unit": round(rhs, 4)}
 K.log("stats", stats)
 (REVIEW / "stats.json").write_text(json.dumps(stats, indent=1))
 

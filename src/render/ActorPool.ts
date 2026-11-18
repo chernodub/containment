@@ -1,3 +1,4 @@
+import {broodPodModel} from './BroodPodModel';
 import {setActorLOD} from './ActorLOD';
 import {alien,disposeModel,type ActorModel} from './models';
 /** Retain prepared rigs/materials after death instead of rebuilding and releasing GPU programs. */
@@ -5,7 +6,7 @@ export class ActorPool {
  private free=new Map<string,ActorModel[]>();
  private keys=new WeakMap<ActorModel,string>();
  take(kind:string,elite=false){
-  const key=`${kind}:${elite}`,list=this.free.get(key);const model=list?.pop()??alien(kind,elite);
+  const key=`${kind}:${elite}`,list=this.free.get(key);const model=list?.pop()??(kind==='brood-pod'?broodPodModel():alien(kind,elite));
   model.root.visible=true;this.keys.set(model,key);return model;
  }
  release(model:ActorModel){
