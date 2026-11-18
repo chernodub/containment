@@ -294,7 +294,7 @@ export class AbilitySystem {
     if (d.slot === 'dash') {
       const distance = d.shape.kind==='dash'?d.shape.distance:150;
       this.dash = { x: Math.cos(cast.angle) * distance, y: Math.sin(cast.angle) * distance, angle: cast.angle, remaining: DASH_DURATION_MS, hit: new Set(), start: { x: cast.x, y: cast.y } };
-      this.immune = cast.id==='afterburn'?PYRO_DASH_INVULNERABLE_MS:DASH_INVULNERABLE_MS;
+      this.immune = Math.max(this.immune,cast.id==='afterburn'?PYRO_DASH_INVULNERABLE_MS:DASH_INVULNERABLE_MS);
       if (this.host.has('slide-loader' as MutationId)) this.host.reload();
       this.event(cast.id, 'dash-start', cast, { angle: cast.angle, targetX: cast.x + this.dash.x, targetY: cast.y + this.dash.y, durationMs: DASH_DURATION_MS });
     } else switch (cast.id) {
