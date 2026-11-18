@@ -233,7 +233,9 @@ export function chooseActions(s) {
   const emergency=lethal||s.combat.health<=35&&s.enemies.filter(e=>distance(e,s.player)<200).length>=2;
   if (s.combat.health <= 55 && s.combat.medkits > 0 && (!imminent||emergency)) keys.push('e');
   if ((escape?.needsDash||hazardDanger) && slots?.dash?.ready) keys.push('Shift');
-  if (slots?.tactical?.ready && near < (s.rig === 'arc' ? 500 : 240)) keys.push('q');
+  const cashOut = s.abilityAims?.tactical?.targets.some(id => s.enemies.some(enemy => enemy.id === id && enemy.burning));
+  const tacticalOpportunity = s.rig === 'pyro' ? cashOut || near < 155 : near < (s.rig === 'arc' ? 500 : 240);
+  if (slots?.tactical?.ready && tacticalOpportunity) keys.push('q');
   const walls = s.abilities.deployables.filter(entity => entity.kind === 'ice-wall');
   const shatter = walls.some(wall => s.enemies.filter(enemy => enemy.visible && distance(wall, enemy) <= 150).length >= 2);
   if (walls.length ? slots.power.ready && shatter : (slots?.power?.ready || s.abilityAims?.power && slots?.power?.charges > 0 && !s.abilities.dashing && !Object.values(slots).some(slot => slot.castRemainingMs > 0)) && s.enemies.length >= 2) keys.push('f');

@@ -112,6 +112,11 @@ class PyroPresentation implements AbilityPresentation {
       return;
     }
     if (event.ability === 'flashfire') {
+      if (event.phase === 'burst') {
+        kit.burst(x, .6, z, 'pyro', 12, 2.2, .45);
+        kit.flash(x, z, FIRE, 6, 3, 3, .18);
+        return;
+      }
       // Scorched Fan emits a separate circle receipt; its snapshot supplies the pool.
       if (event.radius !== undefined && event.arcRadians === undefined) return;
       if (event.phase === 'cast') {

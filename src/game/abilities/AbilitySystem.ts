@@ -413,6 +413,7 @@ export class AbilitySystem {
       const crush = this.deployables.some(wall => wall.kind === 'barrier' && wall.health > 0 && this.touches(wall, t, shove, t.radius));
       if (!crush) this.host.launch(t, dx * 350, dy * 350);
       this.hit(t, crush ? 68 : 18, 'shock', crush ? 450 : 180);
+      if (crush) this.event(id, 'burst', t, { radius: 32, targetIds: [t.id] });
     }
     dash.remaining = countdown(dash.remaining, step);
     const blocked = Math.hypot(p.x - before.x, p.y - before.y) < Math.hypot(dash.x, dash.y) * step / DASH_DURATION_MS - .01;

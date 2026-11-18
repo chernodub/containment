@@ -11,6 +11,7 @@ export type AimQueries = {
   traverse: (from: Point, to: Point, radius: number) => boolean;
   has?: (augment: string) => boolean;
   /** Native pointer projection/picking; returns the actual aim seen by InputController. */
+  isBurning?: (id: number) => boolean;
   resolveAim?: (cursor: Point) => Point | null;
 };
 const epsilon = 1e-7;
@@ -146,7 +147,11 @@ export function chooseAbilityAim(definition: AbilityDefinition, player: Point, o
       return false;
     }));
     const riding=road&&placements.some(p=>Math.abs((player.x-p.x)*Math.cos(angle)+(player.y-p.y)*Math.sin(angle))<=140&&Math.abs(-(player.x-p.x)*Math.sin(angle)+(player.y-p.y)*Math.cos(angle))<=50);
-    const score=hits.length+(riding?2:0);
+    const burning = definition.id === 'flashfire' ? hits.filter(enemy =>
+      queries.isBurning?.(enemy.id) && distance(player, enemy) <= range &&
+      shape.kind === 'cone' && Math.abs(delta(angleTo(player, enemy), angle)) <= shape.arcRadians / 2
+    ).length : 0;
+    const score=hits.length+burning*4+(riding?2:0);
     if(score>bestScore){bestScore=score;best={...cursor,angle,targets:hits.map(e=>e.id)};}
   }
   return best;
@@ -162,6 +167,7 @@ export function observeAbilityAims(game: DepthGame, enemies: readonly AimEnemy[]
     traverse: (from, to, radius) => canTraverseExpedition(game.geometry, from, to, radius),
     has: id => game.expedition.build.mutations.includes(id as never),
     resolveAim,
+    isBurning: id => game.boonStatuses(id).burning,
   };
   for (const slot of ['tactical', 'power', 'overdrive'] as const) {
     const definition = ABILITY_CATALOG[RIG_CATALOG[rig].abilities[slot]];

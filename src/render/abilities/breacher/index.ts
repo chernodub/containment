@@ -68,6 +68,11 @@ export class BreacherPresentation implements AbilityPresentation {
       // Universal dash camera/pose feedback is applied once by the system presentation.
       return;
     }
+    if (event.ability === 'ram' && event.phase === 'burst') {
+      this.kit.burst(x, .5, z, 'kinetic', 12, 2.5, .4);
+      this.kit.flash(x, z, AMBER, 6, 3, 3, .15);
+      return;
+    }
     if (event.ability === 'ram' && event.phase === 'dash-end') {
       const tx=(event.targetX??worldX)/UNIT,tz=(event.targetY??worldY)/UNIT;
       if (this.ramStartValid && this.ramStartAge <= .5) this.ramSkids(tx, tz);

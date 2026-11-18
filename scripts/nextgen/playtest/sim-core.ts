@@ -231,6 +231,7 @@ export function runSimulation(options: SimOptions) {
         const nearest = [...enemies].sort((a, b) => distance(a, game.player) - distance(b, game.player))[0];
         const siege=game.siege,goal=siege&&siege.remainingMs>0?siege:nearest;
         const waypoint = goal ? botWaypoint(game, goal) ?? goal : null;
+        for (const enemy of enemies) Object.assign(enemy, { burning: game.boonStatuses(enemy.id).burning });
         const candidates = [];
         for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
             const len = Math.hypot(dx, dy) || 1, x = game.player.x + dx / len * 90, y = game.player.y + dy / len * 90;
