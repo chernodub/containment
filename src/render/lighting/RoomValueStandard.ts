@@ -176,6 +176,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Wet teal plant: warm copper loops stay as tint, the floor stops being a green wash.
   'coolant-plant': profile({
+    landmark:{at:[680,350],color:0xa9e8de,radius:5.5,body:.8,spill:.012,keyColor:0xefffff,keyGain:.5},
     floor:{lit:.36,unlit:.18,edge:.09}, perimeter:{inner:4.5,outer:10,value:.25},
     wall:{value:.45,saturation:.55}, floorSaturation:.42, tint:0xc4ddd6,
     fixtures:.2, practicals:.6, ambient:.45, marineGlow:1, exit:.9,

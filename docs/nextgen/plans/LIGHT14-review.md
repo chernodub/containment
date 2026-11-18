@@ -135,3 +135,7 @@
 ## Safety Interlock Station
 - Opened native calm and 480 colour/grey calm/tour/heavy: warm indicator/key-cylinder bank reads above the service floor, with locked-record text crisp and marine/threats brighter.
 - Mechanism-centred source leaves cage recesses dark while rails, battery return and doorway feet remain readable. Build and seven guarded frames pass.
+
+## Coolant Plant
+- Restarted interrupted work; build passed, first post-restart capture timed out before any frame, retry passed. Opened native heavy/fight-circle and 480 calm/tour/heavy: frost-lit turbine casing reads above the teal floor, with marine/threat highlights leading.
+- Tightened the manifold source and reduced spill from .03 to .012 so the machine owns the light instead of a general green wash. Seven corrected guarded frames pass; existing vapour remains subtle.
