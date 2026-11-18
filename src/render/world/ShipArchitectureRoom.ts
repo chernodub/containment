@@ -4,12 +4,39 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {RoomTemplate,Point} from '../../game/roguelike/types';
 import {SHIP_ARCHITECTURE_LAYOUTS,SHIP_ARCHITECTURE_PLANS} from '../../game/roguelike/shipArchitectureLayouts';
 import {environmentObstacle,shipEnvironment} from '../ShipEnvironments';
+import {MAT} from '../meshParts';
 import {armoryCarousel} from '../ArmoryCarousel';
 import {relayRacksRoom} from '../RelayRacksRoom';
 import {act3ShipPresentation,ACT3_PRESENTATION_ROOMS} from './Act3ShipPresentation';
 import {act4Architecture} from '../Act4Architecture';
 import {manualControlArchitecture} from '../ManualControlBlockout';
 import {shipDeckGeometry} from './ShipDeckGeometry';
+
+// The freight crates and uplink racks use six stock finishes. Keep the
+// authored emitter strength, since other rooms grade the shared palette.
+const rackFinishes = new Map([MAT.steel, MAT.orange, MAT.edge, MAT.black, MAT.bone, MAT.cyan]
+  .map(material => [material, material.emissiveIntensity] as const));
+
+function ownRackFinishes(equipment: T.Group): void {
+  const owned = new Map<T.MeshStandardMaterial, T.MeshStandardMaterial>();
+  equipment.traverse(part => {
+    if (!(part instanceof T.Mesh) || !(part.material instanceof T.MeshStandardMaterial)) return;
+    const source = part.material;
+    const intensity = rackFinishes.get(source);
+    if (intensity === undefined) return;
+    let finish = owned.get(source);
+    if (!finish) {
+      // A room gets freshly prepared finishes even after a previous room has
+      // installed graphics hooks on the palette. The existing rigid batcher
+      // retains the original mesh transforms and collision partitions.
+      finish = source.clone();
+      finish.emissiveIntensity = intensity;
+      finish.userData.actorMaterial = true;
+      owned.set(source, finish);
+    }
+    part.material = finish;
+  });
+}
 
 /** One template-driven deck/bulkhead family, batched at the room boundary.
  * Cutaway heights keep foreground walls below bodies. Solids never overhang
@@ -126,6 +153,7 @@ export function shipArchitectureRoom(id:string,t:RoomTemplate):T.Group|null {
        model.userData.cutawaySourceHeight=sourceHeight;model.userData.cutawayHeight=.91;equipment.add(model);
       }
     }
+    if (id === 'freight-hold' || id === 'transmission-chamber') ownRackFinishes(equipment);
   }
   const growth=buildL8ShipSeamGrowth(id,t);if(growth)root.add(growth);
   root.userData.templateArchitecture=true;

@@ -57,13 +57,14 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | **Wave 13** | running | |
 | LIGHT13 "the ship is dark; actors carry the light" standard on three rooms — Opus | merged | data-driven `ROOM_VALUE_PROFILES`; floor luminance roughly halved, marine plates ≈ 210, creatures dark with hot lanterns |
 | LIGHT14 the value standard in all twenty rooms, then a landmark correction — Sol | merged | twenty distinct rooms at 480×270; every landmark lit and emissive; marine first, threats second, landmark third |
-| BAL13 sim-versus-native gap and early deaths; Story must not kill in room three — Sol | running | |
+| BAL13 sim-versus-native gap and early deaths — Sol | merged | causes: 2× incoming damage on Standard, late bot healing, different visibility models. Now: per-hit damage bounds, anti-chain grace, gentle rooms 1–4, shared visibility module. Sim: Story 62.5%, Standard 56%, Veteran 12.5%; no death before room 6 in 240 runs; 4/4 native campaigns completed. Open: Pyro 35% vs Breacher/Cryo 65–80% (→ KIT13) |
+| KIT13 Pyro survivability and burn cash-out, Glacier on-demand shatter, Static Step set-up, earlier first Overdrive — Sol 6.2 | running | |
 | VFX15 four different Overdrive climaxes, Napalm with flame tongues, shared effect-area cap — Opus | merged | Frost Trail and Ram left for a later pass |
 | K13 Warden and Matron as a real boss tier (≈ 2× marine), brood pod asset, Stalker/Carrier/Spitter fixes — Opus, modelling only | merged | |
 | I13 boss footprints and collision to match, pod prop with hatch countdown, Warden wall-stun cue, LOD/KTX2 repack — Sol | merged | Story/Arc campaign cleared 16 rooms incl. Warden and Matron, zero errors; Matron (1.4×) reads less imposing than the Warden (2.3×) |
 | COMM13 siege area and charge, priority vs resistance markers, off-screen shot cue, Stalker reveal, beat signals — Sol 6.2 | merged | finished its whole list in one run; resistance outline, breach flare and Stalker recovery still subtle at 480×270 |
 | UI13 31 distinct reward studies, transform before/after diagrams with "you lose", illustrated shop and route cards, grouped loadout/results — Astra 6.2 | merged | finished its whole list in one run |
-| INC13 one dominant incident per room as a large readable shape with floor carry-over and its own light (five signature rooms first) — Astra 6.2 | running | |
+| INC13 one dominant incident per room as a large readable shape with floor carry-over and its own light — Astra 6.2 | merged | all twenty rooms; ≤ 325 draws (Freight 589 → 135, Transmission 1,801 → 140); weakest: Infested Workshop strands, Shielding Gate |
 | PERF13 creature LODs, shadow proxies, camera/main-thread CPU — Sol | merged | triangles −32%, profiled thread CPU per render 17.2 → 7.9 ms; frame p95 ≤ 20 ms in 11/16 configurations (all Low, 3 of 8 High) on a loaded host — High still misses in five |
 | G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
 | D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |

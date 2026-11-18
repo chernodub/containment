@@ -1,3 +1,4 @@
+import {addRecoverySpill} from './Inc13RecoverySpill';
 import {dress13ResidentialPlacements, addDress13ResidentialDetails} from './Dress13Residential';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -12,23 +13,6 @@ export function dress13EarlyIncidents(id: string): OriginalKitInstance[] {
         new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),angle),new T.Vector3(...scale))});
   };
   if (id === 'residential-gallery') return dress13ResidentialPlacements();
-  if (id === 'awakening-bay') {
-    // A torn release lid, its hinges and abandoned treatment load connect the
-    // open bank to one readable aftermath at the pod-aisle shoulder.
-    put('service-transit-case',465,370,-.35,[1.15,.65,1]);
-    put('service-access-hatch',414,378,.2,[1.15,.65,.9],.10);
-    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.35));
-    put('service-access-hatch',493,380,-.6,[.7,.4,.7],.08);
-    pieces[pieces.length-1].matrix.multiply(new T.Matrix4().makeRotationX(-1.55));
-    put('service-transit-case',514,365,.6,[.6,.35,.65]);
-    put('service-cable-tray',410,366,.3,[.65,.35,.8]);
-    put('deck-rubber-panel',443,385,.6,[.7,.8,.45],.025,'clinical');
-    put('deck-rubber-panel',477,390,-.35,[.5,.7,.4],.025,'clinical');
-    put('deck-access-panel',447,361,.55,[.55,1,.3],.03,'clinical');
-    put('deck-access-panel',497,381,-.35,[.28,1,.22],.025,'clinical');
-    put('service-transit-case',528,367,-.2,[.4,.25,.4]);
-    put('service-cable-tray',452,397,1.5,[.35,.3,.5]);
-  }
   if (id === 'passenger-vault') {
     // One empty drawer has been pulled into the aisle shoulder. Its open case,
     // separate lid, folded clothes and personal objects remain in one trail.
@@ -119,13 +103,7 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     const g = new T.ShapeGeometry(shape);g.rotateX(-Math.PI/2);return mesh(g,m,x,.026,z,angle);
   };
   if(id==='awakening-bay') {
-    const med = material('dress13-medical-label',0xa3b4ac);
-    for(const [w,d] of [[.26,.08],[.08,.26]]) {const g=new T.PlaneGeometry(w,d);g.rotateX(-Math.PI/2);mesh(g,med,465,.37,370,-.35);}
-    for(let i=0;i<6;i++) {
-      const x=461+(i%2?7:-7)-i*7,z=391+i*7;
-      flat([[-.075,-.17],[.065,-.17],[.095,-.05],[.075,.16],[.025,.23],[-.06,.18],[-.09,.02]],wet,x,z,.25);
-      flat([[-.06,-.04],[.065,-.04],[.065,.05],[-.06,.05]],wet,x-2,z-9,.25);
-    }
+    addRecoverySpill(group);
   }
   if(id==='crew-checkpoint') {
     // Irregular soot fan has a source at the jammed inspection machinery.

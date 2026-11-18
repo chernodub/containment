@@ -1,3 +1,4 @@
+import {addStoryIncident} from './Inc13StoryIncidents';
 import {addDress13EarlyDetails} from './Dress13EarlyIncidents';
 import {addDress13ServiceDetails} from './Dress13ServiceDetails';
 import {p11IncidentPlacements} from './P11IncidentPlacements';
@@ -138,6 +139,7 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             root = buildOriginalShipKit(sources, instances, t);
             addDress13ServiceDetails(root, t.id);
             addDress13EarlyDetails(root, t.id);
+            addStoryIncident(root,t);
             if(t.id==='shielding-gate'){
                 const oldGate=world.getObjectByName('shielding-gate-west');
                 if(oldGate){const visible=oldGate.visible;oldGate.visible=false;restores.push(()=>{oldGate.visible=visible;});}

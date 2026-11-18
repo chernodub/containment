@@ -38,7 +38,7 @@ const profile = (p: RoomValueProfile) => Object.freeze(p);
 export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = Object.freeze({
   // Occupied pod windows, medical observation face and south life-support chain.
   'passenger-vault': profile({
-    landmark:{at:[600,420],color:0x97a7ff,radius:10,body:.55,spill:.035},
+    landmark:{at:[368,366],color:0xb3c5e4,radius:10,body:.55,spill:.035},
     fixturesAt:[[600,320],[1000,440],[600,700]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.34,lane:.75},
     wall:{value:.50,saturation:.56},floorSaturation:.48,tint:0xccd7ef,
@@ -46,7 +46,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Warm cabin lamps at interrupted packing, opposite cabin and common nook.
   'residential-gallery': profile({
-    landmark:{at:[220,180],color:0xffbc72,radius:7,body:.45,spill:.025,height:2.7,keyGain:.4},
+    landmark:{at:[394,250],color:0xffce94,radius:7,body:.45,spill:.025,height:2.7,keyGain:.4},
     fixturesAt:[[300, 280], [900, 720], [160, 480]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xead0a6,
@@ -54,7 +54,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Skylight on the garden, water bed and dining court.
   'communal-atrium': profile({
-    landmark:{at:[589,355],color:0x65c978,radius:4.6,body:.65,spill:.045,height:5,keyColor:0xc6e8ff},
+    landmark:{at:[563,422],color:0x65c978,radius:4.6,body:.65,spill:.045,height:5,keyColor:0xc6e8ff},
     fixturesAt:[[589, 355], [728, 150], [1090, 480]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xd5e4c7,
@@ -62,7 +62,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Carousel spindle, port magazine and starboard fitting lamps.
   'armory': profile({
-    landmark:{at:[600,450],color:0xe6efff,radius:5.5,body:.6,spill:.04,height:4.5,keyGain:.75},
+    landmark:{at:[277,342],color:0xe6efff,radius:5.5,body:.6,spill:.04,height:4.5,keyGain:.75},
     fixturesAt:[[600, 450], [180, 380], [1020, 380]],
     floor:{lit:.38,unlit:.20,edge:.10},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xcdd7e9,
@@ -70,7 +70,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Suspension gantry, loading booth and dispatch lamps.
   'freight-hold': profile({
-    landmark:{at:[790,486],color:0xffc260,radius:6.5,body:.55,spill:.035,height:4.2,keyGain:.45},
+    landmark:{at:[317,304],color:0xffc260,radius:6.5,body:.55,spill:.035,height:4.2,keyGain:.45},
     fixturesAt:[[790, 486], [318, 584], [1000, 600]],
     floor:{lit:.48,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xefc897,
@@ -78,7 +78,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Boarding scar, wedged pod and pressure lock.
   'breached-loading-bay': profile({
-    landmark:{at:[690,390],color:0x90cfff,radius:7,body:.55,spill:.035,keyGain:.65},
+    landmark:{at:[503,417],color:0x90cfff,radius:7,body:.55,spill:.035,keyGain:.65},
     fixturesAt:[[215, 265], [690, 390], [1080, 520]],
     floor:{lit:.48,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xbfd8ed,
@@ -86,14 +86,14 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Tracking dish, uplink chancel and service rack.
   'transmission-chamber': profile({
-    landmark:{at:[816,380],color:0x5f9eff,radius:5.5,body:.65,spill:.035,keyGain:.6},
+    landmark:{at:[882,392],color:0x5f9eff,radius:5.5,body:.65,spill:.035,keyGain:.6},
     fixturesAt:[[816, 380], [600, 160], [300, 600]],
     floor:{lit:.66,unlit:.30,edge:.14},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xbbd0ef,
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.9,
   }),
   'diagnostic-gallery': profile({
-    landmark:{at:[390,260],color:0x68dfec,radius:6,body:.65,spill:.03,keyGain:.55},
+    landmark:{at:[359,345],color:0x68dfec,radius:6,body:.65,spill:.03,keyGain:.55},
     // Recorder diffuser, southern service recorder, starboard instrument lamp.
     fixturesAt:[[390,126],[710,826],[1084,180]],
     floor:{lit:.42,unlit:.20,edge:.10},perimeter:{inner:3.8,outer:9.5,value:.32,lane:.75},
@@ -101,7 +101,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.46,ambient:.46,marineGlow:1,exit:.9,
   }),
   'safety-interlock-station': profile({
-    landmark:{at:[650,365],color:0xffc575,radius:6,body:.55,spill:.025,keyGain:.55},
+    landmark:{at:[555,351],color:0xffc575,radius:6,body:.55,spill:.025,keyGain:.55},
     // Locked recorder, cage inspection diffuser, battery return task light.
     fixturesAt:[[370,176],[528,370],[640,824]],
     floor:{lit:.38,unlit:.20,edge:.10},perimeter:{inner:3.8,outer:9.5,value:.32,lane:.75},
@@ -109,7 +109,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.44,ambient:.45,marineGlow:1,exit:.9,
   }),
   'service-shaft-landing': profile({
-    landmark:{at:[750,440],color:0x53e0bc,radius:8,body:.6,spill:.02,height:-.6,keyGain:1},
+    landmark:{at:[334,436],color:0x53e0bc,radius:8,body:.6,spill:.02,height:-.6,keyGain:1},
     // Surviving junction above the shaft, upper and lower docking diffusers.
     fixturesAt:[[359,405],[1060,6],[1060,874]],
     floor:{lit:.52,unlit:.26,edge:.13},perimeter:{inner:3.8,outer:10,value:.40,lane:.85},
@@ -117,15 +117,15 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.22,practicals:.58,ambient:.52,marineGlow:1,exit:.95,
   }),
   'infested-workshop': profile({
-    landmark:{at:[650,330],color:0xb575ed,radius:7,body:.6,spill:.025,height:1.2,keyGain:.7},
+    landmark:{at:[507,328],color:0xba86d5,radius:7,body:.6,spill:.025,height:1.2,keyGain:.7},
     // Consumed milling machine, rear brood nest, engulfed repair bench.
-    fixturesAt:[[650,330],[861,100],[250,900]],
+    fixturesAt:[[507,328],[861,100],[250,900]],
     floor:{lit:.62,unlit:.29,edge:.14},perimeter:{inner:3.8,outer:10,value:.42,lane:.8},
     wall:{value:.58,saturation:.60},floorSaturation:.54,tint:0xd9c4eb,
     fixtures:.22,practicals:.60,ambient:.55,marineGlow:1,exit:.9,
   }),
   'swarm-junction': profile({
-    landmark:{at:[470,620],color:0xcf76f5,radius:5.5,body:.45,spill:.025,height:1.3,keyGain:.65},
+    landmark:{at:[307,381],color:0xcf76f5,radius:5.5,body:.45,spill:.025,height:1.3,keyGain:.65},
     // Hive heart and the occupied northern/southern ventilation mouths.
     fixturesAt:[[470,620],[600,250],[600,790]],
     floor:{lit:.62,unlit:.30,edge:.14},perimeter:{inner:3.8,outer:10,value:.44,lane:.8},
@@ -133,7 +133,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.23,practicals:.62,ambient:.55,marineGlow:1,exit:.9,
   }),
   'shielding-gate': profile({
-    landmark:{at:[460,350],color:0x9a9cff,radius:7,body:.55,spill:.025,keyGain:.6},
+    landmark:{at:[455,333],color:0x9a9cff,radius:7,body:.55,spill:.025,keyGain:.6},
     // West emitter, northern power cabinet and east emitter service face.
     fixturesAt:[[460,300],[704,160],[978,620]],
     floor:{lit:.42,unlit:.22,edge:.11},perimeter:{inner:3.8,outer:10,value:.35,lane:.8},
@@ -141,7 +141,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.48,ambient:.46,marineGlow:1,exit:.9,
   }),
   'containment-annulus': profile({
-    landmark:{at:[650,520],color:0x83d9d5,radius:7,body:.6,spill:.025,keyGain:.55},
+    landmark:{at:[551,508],color:0x83d9d5,radius:7,body:.6,spill:.025,keyGain:.55},
     // North and south shielding-housing diffusers; east core status face.
     fixturesAt:[[720,140],[720,900],[1040,520]],
     floor:{lit:.46,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:10,value:.38,lane:.85},
@@ -149,7 +149,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.95,
   }),
   'manual-control-chamber': profile({
-    landmark:{at:[640,380],color:0xffb278,radius:6,body:.6,spill:.025,keyGain:.5},
+    landmark:{at:[570,386],color:0xffebd3,radius:6.2,body:.81,spill:.046,keyGain:.66},
     // Authorization desk, southern cost/status desk and hardwired cabinet.
     fixturesAt:[[640,380],[640,920],[860,280]],
     floor:{lit:.46,unlit:.23,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
@@ -157,7 +157,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.46,ambient:.46,marineGlow:1,exit:.9,
   }),
   'overload-floor': profile({
-    landmark:{at:[700,500],color:0xff963c,radius:6,body:.8,spill:.12},
+    landmark:{at:[476,460],color:0xff963c,radius:6,body:.8,spill:.12},
     // Reaction-feed diffuser, core's east rim, exhaust-housing diffuser.
     fixturesAt:[[640,200],[890,480],[640,900]],
     floor:{lit:.48,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:10,value:.40,lane:.85},
@@ -165,7 +165,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.48,ambient:.46,marineGlow:1,exit:.95,
   }),
   'awakening-bay': profile({
-    landmark:{at:[640,230],color:0x59d8ff,radius:10,body:.7,spill:.045},
+    landmark:{at:[497,335],color:0x99ddf2,radius:10,body:.7,spill:.045},
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},
     wall:{value:.48,saturation:.55}, floorSaturation:.48,tint:0xc1e5ef,
@@ -173,7 +173,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Palest room: cold inspection pools on the portal; cage recesses near-black.
   'crew-checkpoint': profile({
-    landmark:{at:[730,440],color:0xbddfff,radius:6,body:.45,spill:.025,keyGain:.65},
+    landmark:{at:[603,338],color:0xbddfff,radius:6,body:.45,spill:.025,keyGain:.65},
     // Scanner arch inspection lamps and guard-gallery ceiling fixture.
     fixturesAt:[[364,200],[364,680],[1000,440]],
     floor:{lit:.34,unlit:.18,edge:.09}, perimeter:{inner:1.6,outer:4.8,value:.22,lane:.85},
@@ -182,14 +182,14 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Wet teal plant: warm copper loops stay as tint, the floor stops being a green wash.
   'coolant-plant': profile({
-    landmark:{at:[680,350],color:0xa9e8de,radius:5.5,body:.8,spill:.012,keyColor:0xefffff,keyGain:.5},
+    landmark:{at:[401,302],color:0xb7eafa,radius:7,body:.8,spill:.012,keyColor:0xefffff,keyGain:.5},
     floor:{lit:.36,unlit:.18,edge:.09}, perimeter:{inner:4.5,outer:10,value:.25},
     wall:{value:.45,saturation:.55}, floorSaturation:.42, tint:0xc4ddd6,
     fixtures:.2, practicals:.6, ambient:.45, marineGlow:1, exit:.9,
   }),
   // Already dark: cooling-aisle pools on the lanes, rack backs black, white panels dimmed.
   'relay-racks': profile({
-    landmark:{at:[720,440],color:0x43dbdf,radius:9,body:.6,spill:.035,height:1.2,keyGain:.65},
+    landmark:{at:[584,420],color:0x43dbdf,radius:9,body:.6,spill:.035,height:1.2,keyGain:.65},
     floor:{lit:.70,unlit:.30,edge:.14}, perimeter:{inner:4.5,outer:10,value:.42,lane:.7},
     wall:{value:.62,saturation:.60}, floorSaturation:.55, tint:0xbfdcd8,
     fixtures:.25, practicals:.75, ambient:.6, marineGlow:1, exit:.9,

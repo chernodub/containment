@@ -1,3 +1,6 @@
+import {addWorkshopResin} from './Inc13ResinFloor';
+import {addInc13Manual} from './Inc13Manual';
+import {addFrozenSpill} from './Inc13FrozenSpill';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -34,7 +37,9 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
       const g = new T.CircleGeometry(.09 + i % 3 * .04, 3); g.rotateX(-Math.PI / 2); g.rotateY(i * 1.37); g.translate((x + Math.sin(i * 2.3) * 19) / 32, y + i * .001, (z + Math.cos(i * 1.7) * 10) / 32); put(g, color);
     }
   };
-  if (id === 'freight-hold') {
+  if (id === 'manual-control-chamber') {
+    addInc13Manual(root);
+  } else if (id === 'freight-hold') {
     scuff(370, 345, 2.5, 1.1); scuff(424, 349, 1.4, 1.1);
     shards(405, 342, 0x697374);
     for (let i = 0; i < 4; i++) box(405 + i * 15, .04, 339 - i % 2 * 10, .3, .07, .22, 0x65716b, i * .6);
@@ -94,26 +99,10 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     for (let i = 0; i < 5; i++) line([546 + i * 4, 1.15, 353], [551 + i * 4, 1.65 + i % 2 * .1, 353], .025, rubber);
     tool(490, 369, .2); tool(484, 340, 1.4); shards(479, 353);
     scuff(481, 353, 1.5, .5);
+  } else if (id === 'infested-workshop') {
+    addWorkshopResin(root);
   } else if (id === 'coolant-plant') {
-    // A connected ragged ice fan reaches clear floor in front of the failed
-    // header hardware. Its bounds stay outside the port fight circle.
-    const ice = 0xa6c2c9;
-    const outline = [[270,314],[281,310],[295,314],[301,320],[317,324],[324,337],[331,343],[325,354],[317,357],[306,349],[292,350],[284,338],[274,335]];
-    const fan = new T.ShapeGeometry(new T.Shape(outline.map(([x,z]) => new T.Vector2(x / 32, -z / 32))));
-    fan.rotateX(-Math.PI / 2); fan.translate(0,.024,0); put(fan,ice);
-    for (let i = 0; i < 11; i++) {
-      const g = new T.SphereGeometry(.21 + i % 3 * .05, 7, 4); g.scale(1, .05, 1.2); g.translate((278 + i * 4) / 32, .026, (316 + i * 2.8) / 32); put(g, ice);
-    }
-    line([268, 1.5, 282], [279, .8, 294], .09, steel);
-    line([285, .65, 301], [290, .15, 317], .08, steel);
-    // Short ivory/charcoal tape is in front of the rail, on its own two posts.
-    for (const [x,z] of [[278,350],[330,345]]) {
-      box(x,.4,z,.055,.8,.055,steel);
-      box(x,.025,z,.16,.05,.16,steel);
-    }
-    box(304,.8,347.5,1.64,.16,.025,0xc8c5ad,.096);
-    for (let i = 0; i < 6; i++) box(281 + i * 9,.8,349.7 - i * .865,.10,.17,.04,rubber,.096);
-    tool(354, 306, .7); shards(325, 333, ice);
+    addFrozenSpill(root);
   } else if (id === 'service-shaft-landing') {
     line([337, .9, 421], [376, -.65, 452], .055, steel);
     line([337, .8, 480], [391, -.6, 486], .05, rubber);
