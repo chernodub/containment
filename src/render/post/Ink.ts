@@ -106,15 +106,15 @@ export const inkComposite = /* glsl */ `
   geometry.w=mod(floor(geometry.w+.5),8.0);
   // Hot effects stay above ink; the line inherits a restrained local light tint.
   float hotYield=1.0-smoothstep(1.1,2.4,max(color.r,max(color.g,color.b)));
-  line*=mix(hotYield,1.0,inkStrength*step(2.5,geometry.w));
+  line*=geometry.w>2.5&&geometry.w<3.5?1.0:mix(hotYield,1.0,inkStrength*step(2.5,geometry.w));
   vec3 neutralInk=min(color*.18,vec3(.006,.008,.011)+min(color,vec3(.5))*.04);
   vec3 boldInk=min(color*.20,vec3(.010,.011,.012)+shadowTint*.0015+min(color,vec3(.5))*.006);
   vec3 contour=mix(neutralInk,boldInk,inkStrength);
   float darkBackdrop=(1.0-smoothstep(.008,.027,inkBackdropLuma))*step(3.5,geometry.w)*step(geometry.w,6.5);
-  contour=mix(contour,vec3(.045,.058,.068),darkBackdrop*.82);
+  contour=mix(contour,vec3(.012,.022,.034),darkBackdrop*.55);
   // Elite silhouettes carry a restrained bronze contour in addition to their crest.
   float eliteContour=step(4.5,geometry.w)*step(geometry.w,5.5);
-  contour=mix(contour,vec3(.16,.055,.018),eliteContour*.82);
+  contour=mix(contour,vec3(.018,.035,.055),eliteContour*.55);
   color=mix(color,contour,line);
  }
 `;
