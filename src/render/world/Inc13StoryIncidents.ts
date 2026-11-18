@@ -282,6 +282,28 @@ const incidents:Record<string,Incident>={
       p.rod([-28,28,11],[-35,29,13],2.4,0x697477);
     },
   },
+  'service-shaft-landing':{
+    source:[332,456],bounds:[-214,-132,252,240],
+    paint(c){
+      // One torn lift rope has run back over the landing. A second, still
+      // captive on the drum, ends in a tight loaded loop at the shaft edge.
+      for(let i=0;i<3;i++){
+        const d='M3 '+(-69+i*3)+'C-30 -51 -20 -24 -49 -12 S-142 -33 -158 9 C-173 55 -91 69 -68 45 S-33 11 -16 14';
+        stroke(c,d,'#354444',5);stroke(c,d,i===0?'#8d9282':'#667774',2);
+      }
+      for(let i=0;i<7;i++)stroke(c,'M-157 10 Q-171 '+(20+i*3)+' '+(-185+i*2)+' '+(14+i*6),'rgba(129,138,126,.78)',1.4);
+      for(const off of [-8,5])stroke(c,'M-3 '+(23+off)+'Q-64 '+(25+off)+' -97 '+(51+off)+'T-171 '+(76+off),'rgba(94,100,89,.60)',3.3);
+    },
+    pieces(p){
+      // Torn landing comb and bent brackets fold down into the open shaft.
+      for(let i=0;i<7;i++){
+        const z=-25+i*9,h=5+5*Math.sin(i);
+        p.face([[-7,1,z],[-7,1,z+7],[8,-h,z+8],[12,-h-5,z+3]],0x788780);
+        p.rod([8,-h,z+4],[19,-h-12,z+6],1.5,0x586965);
+      }
+      p.rod([-22,3,-33],[-7,26,-31],2.4,0x849486);p.rod([-7,26,-31],[3,14,-3],2.4,0x849486);
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
