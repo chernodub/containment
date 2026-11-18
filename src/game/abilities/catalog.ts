@@ -108,16 +108,16 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
 
   // ── PYRO ────────────────────────────────────────────────────────────────────
   afterburn: dash('afterburn', 'pyro', 'pyro', 'Afterburn',
-    'Dash and leave a line of fire.',
-    'Dash 240 units in your movement direction with 0.4 seconds of invulnerability. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
-    2_500, [{ label: 'Fire', value: seconds(2_500) }]),
+    'Dash and leave fire that slows pursuers.',
+    'Dash 240 units in your movement direction with 0.4 seconds of invulnerability. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies and slows them by 45% for 0.65 seconds on contact. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    2_500, [{ label: 'Fire', value: seconds(2_500) }, { label: 'Slow', value: '45%' }]),
   flashfire: ability({
     id: 'flashfire', rig: 'pyro', slot: 'tactical', element: 'pyro', name: 'Flashfire',
-    summary: 'A wide cone of flame.',
-    description: 'Dump the tank in a wide cone along your aim: 25 damage and every enemy hit is ignited. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    summary: 'Detonate burning enemies or shove back fresh threats.',
+    description: 'Sweep a cone along your aim. Consume existing burns for 95 damage and a 0.6-second stagger. Unburnt enemies take 18 damage and are shoved back.',
     targeting: 'direction', shape: { kind: 'cone', range: 300, arcRadians: 1.22 },
     castMs: 0, cooldownMs: 5_000, charges: 1, durationMs: 0, range: 0,
-    stats: [{ label: 'Damage', value: '25' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(5_000) }],
+    stats: [{ label: 'Detonation', value: '95 damage' }, { label: 'Shove', value: '18 damage' }, { label: 'Range', value: '300' }, { label: 'Cooldown', value: seconds(5_000) }],
   }),
   'napalm-charge': ability({
     id: 'napalm-charge', rig: 'pyro', slot: 'power', element: 'pyro', name: 'Napalm Charge',
@@ -129,11 +129,11 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   }),
   meltdown: ability({
     id: 'meltdown', rig: 'pyro', slot: 'overdrive', element: 'pyro', name: 'Meltdown',
-    summary: 'Become the fire.',
-    description: 'For 8 seconds you burn everything near you, every shot ignites, kills burst for 20 damage within 85 units, and you move 40% faster. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence. One activation per ordinary story room; charge carries between rooms.',
+    summary: 'Stay in the fight with a moving fire aura and damage resistance.',
+    description: 'For 8 seconds you burn everything near you, every shot ignites, kills burst for 20 damage within 85 units, you move 40% faster, and incoming damage is reduced by 40%. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence. One activation per ordinary story room; charge carries between rooms.',
     targeting: 'self', shape: { kind: 'circle', radius: 130 },
     castMs: 0, cooldownMs: 0, charges: 1, durationMs: 8_000, range: 0,
-    stats: [{ label: 'Duration', value: seconds(8_000) }, { label: 'Speed', value: '+40%' }],
+    stats: [{ label: 'Duration', value: seconds(8_000) }, { label: 'Speed', value: '+40%' }, { label: 'Damage taken', value: '−40%' }],
   }),
 
   // ── ARC ─────────────────────────────────────────────────────────────────────

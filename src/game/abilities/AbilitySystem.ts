@@ -28,6 +28,8 @@ export interface AbilityHost {
   movePlayer: (dx: number, dy: number) => void;
   damage: (target: MutationTarget, amount: number) => boolean;
   statuses: (id: number) => { chilled: boolean; frozen: boolean; burning?: boolean; shocked?: boolean };
+  consumeBurn: (id: number) => void;
+  impede: (target: MutationTarget) => void;
   status: (target: MutationTarget, kind: 'chill' | 'freeze' | 'burn' | 'shock', amount: number) => void;
   launch: (target: MutationTarget, x: number, y: number) => void;
   arc: (origin: MutationTarget, targets: readonly MutationTarget[]) => void;
@@ -115,6 +117,7 @@ export class AbilitySystem {
   private zoneSlot(zone: Zone): AbilitySlot {return zone.purpose==='ice-road'?'power':ABILITY_CATALOG[zone.ability].slot;}
 
   get overclocked(): boolean { return this.active('overclock'); }
+  get incomingDamageMultiplier(): number { return this.active('meltdown') ? .6 : 1; }
   get ignitingShots(): boolean { return this.active('meltdown'); }
   private active(id: AbilityId): boolean { return !!this.rig && RIG_CATALOG[this.rig].abilities.overdrive === id && this.states.overdrive.active > 0; }
   private get overdriveRoomLimited(): boolean { return this.overdriveUses >= (this.host.overdriveRoomLimit?.() ?? Infinity); }
@@ -310,7 +313,20 @@ export class AbilitySystem {
         this.event(cast.id, 'impact', cast, { radius, targetIds: ids }); return;
       }
       case 'flashfire': {
-        for (const t of this.nearby(cast, 300)) { const a = Math.atan2(t.y - cast.y, t.x - cast.x) - cast.angle; if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) <= 1.22 / 2) { this.hit(t, 25, 'burn'); ids.push(t.id); } }
+        for (const target of this.nearby(cast, 300)) {
+          const angle = Math.atan2(target.y - cast.y, target.x - cast.x);
+          const offset = angle - cast.angle;
+          if (Math.abs(Math.atan2(Math.sin(offset), Math.cos(offset))) > 1.22 / 2) continue;
+          if (this.host.statuses(target.id).burning) {
+            this.host.consumeBurn(target.id);
+            this.hit(target, 95, 'shock', 600);
+            this.event(cast.id, 'burst', target, { radius: 42, length: undefined, arcRadians: undefined, targetIds: [target.id] });
+          } else {
+            this.host.launch(target, Math.cos(angle) * 290, Math.sin(angle) * 290);
+            this.hit(target, 18, 'shock', 300);
+            ids.push(target.id);
+          }
+        }
         if (cast.ground) {
           this.addZone(cast.id, cast.ground, 120, 2500, 4);
           this.event(cast.id, 'impact', cast, { targetX: cast.ground.x, targetY: cast.ground.y, radius: 120, length: undefined, arcRadians: undefined, durationMs: 2500 });
@@ -412,6 +428,7 @@ export class AbilitySystem {
           if (!inside || !this.host.visible(origin, t)) continue;
           if(zone.purpose==='fissure') {if(zone.pulses%2===0){this.host.status(t,'shock',200);this.host.damage(t,zone.damage);}ids.push(t.id);continue;}
           if (zone.ability === 'frost-trail' || zone.ability === 'whiteout') this.host.status(t, 'chill', 1); else this.host.status(t, 'burn', 1);
+          if (zone.ability === 'afterburn') this.host.impede(t);
           if (zone.ability === 'whiteout' && zone.pulses % 8 === 0) this.host.status(t, 'freeze', 1000);
           if (zone.damage) this.host.damage(t, zone.damage);
           ids.push(t.id);
