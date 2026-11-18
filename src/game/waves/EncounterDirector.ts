@@ -38,8 +38,15 @@ function authoredPlan(options:EncounterOptions):EncounterPlan {
  const ids=center&&positions?[...options.breachIds].sort((a,b)=>{const pa=positions.find(p=>p.id===a),pb=positions.find(p=>p.id===b);return pa&&pb?Math.atan2(pa.y-center.y,pa.x-center.x)-Math.atan2(pb.y-center.y,pb.x-center.x):0;}):options.breachIds,rotation=Math.floor(random()*ids.length),schedule:EncounterSpawn[]=[];
  const beats=source.map((beat,beatIndex)=>{
   const start=schedule.length;let marked=false;
-  for(const group of beat.groups){
+  const groups=beat.groups.flatMap(group=>{
    const count=group.guardian?1:group.lesson||group.priority||node.depth<4?group.count:Math.max(1,Math.round(group.count*d.waves*(node.depth>=10?d.lateWaves:1)));
+   // Late Veteran packs exchange one close-pressure body for a readable ranged
+   // threat. Keep total bodies and authored beats; avoid rewarding only area CC.
+   if(options.difficulty==='veteran'&&node.depth>=10&&group.family==='crawler'&&!group.lesson&&!group.priority&&count>1)
+    return [{group,count:count-1},{group:{...group,family:'spitter' as const,role:'ranged' as const},count:1}];
+   return [{group,count}];
+  });
+  for(const {group,count} of groups){
    for(let index=0;index<count;index++){
     const ordinal=schedule.length-start;
     const elite=!group.lesson&&node.depth>1&&(!!group.guardian||random()<Math.min(.28,(node.depth>=10?.21:.06+node.depth*.012)*d.elites));
