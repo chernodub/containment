@@ -78,7 +78,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Boarding scar, wedged pod and pressure lock.
   'breached-loading-bay': profile({
-    landmark:{at:[690,390],color:0x90cfff,radius:7,body:.55,spill:.035,keyGain:.65},
+    landmark:{at:[503,417],color:0x90cfff,radius:7,body:.55,spill:.035,keyGain:.65},
     fixturesAt:[[215, 265], [690, 390], [1080, 520]],
     floor:{lit:.48,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xbfd8ed,

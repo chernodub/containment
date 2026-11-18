@@ -175,6 +175,25 @@ const incidents:Record<string,Incident>={
       p.rod([10,66,11],[26,25,26],1.9,0x9b947a);p.rod([26,25,26],[54,1,45],1.9,0x928c79);
     },
   },
+  'breached-loading-bay':{
+    source:[485,427],bounds:[-236,-63,366,234],
+    paint(c){
+      // Oil and paint follow the peel direction toward the torn plating lip.
+      fill(c,'M68 -46 Q21 9 -7 31 Q-42 51 -85 75 L-171 118 -138 109 -167 138 -109 118 -148 155 -84 127 Q-40 84 32 54 L88 5Z','rgba(48,58,59,.73)');
+      for(let i=0;i<10;i++)stroke(c,'M'+(57+i*5)+' '+(-30+i*2)+' Q'+(-10+i*4)+' '+(50+i*2)+' '+(-62+i*3)+' '+(69+i*3)+' T'+(-196+i*6)+' '+(137+i*2),'rgba(118,126,123,.40)',i%3?1.3:2.8);
+    },
+    pieces(p){
+      // Paired faces fold over real transverse ribs; the jagged inner edges
+      // point into the tear while their roots stay under intact deck seams.
+      for(let i=0;i<5;i++){
+        const x=-32+i*20,z=27-i*11,h=17+21*Math.sin((i+1)*.56);
+        p.face([[x-19,1,z+14],[x+1,1,z+18],[x+16,h*.66,z-3],[x+3,h,z-11],[x-9,h*.62,z-2]],0x677980);
+        p.face([[x+3,h,z-11],[x+16,h*.66,z-3],[x+24,h+6,z-15],[x+11,h+10,z-23]],0x89989a);
+        p.rod([x-21,2,z+12],[x+8,h*.58,z-15],2.9,0x46585e);
+        p.rod([x+8,h*.58,z-15],[x+26,h*.36,z-28],2.9,0x46585e);
+      }
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
