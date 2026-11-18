@@ -59,9 +59,9 @@ function fitSkin(root:T.Object3D,bones:T.Bone[]){
  return fits;
 }
 type BonePose={bone:T.Bone;position:T.Vector3;rotation:T.Quaternion;scale:T.Vector3;auto:boolean};
-type Part={bone:T.Bone;body:RAPIER.RigidBody;bindLinear:T.Matrix4};
+type Part={bone:T.Bone;body:RAPIER.RigidBody;bindLinear:T.Matrix4;localAnchor?:T.Vector3};
 type PoseNode={node:T.Object3D;part:Part|undefined};
-type RagdollRecord={model:ActorModel;cue:DeathCue;terminalTime:number;terminalPulse:number;parts:Part[];hierarchy:PoseNode[];joints:RAPIER.ImpulseJoint[];poses:BonePose[];age:number;holdTicks:number;settled:boolean;falling:boolean;fallSpeed:number;support:T.Vector3;supportLift:number;rootPosition:T.Vector3;anchor:T.Vector3};
+type RagdollRecord={skinFloorCheckAt?:number;model:ActorModel;cue:DeathCue;terminalTime:number;terminalPulse:number;parts:Part[];hierarchy:PoseNode[];joints:RAPIER.ImpulseJoint[];poses:BonePose[];age:number;holdTicks:number;settled:boolean;falling:boolean;fallSpeed:number;support:T.Vector3;supportLift:number;rootPosition:T.Vector3;anchor:T.Vector3};
 type AuthoredDeath={id:number;model:ActorModel;family:string;velocity:{x:number;z:number};cue:DeathCue;hold:number;age:number;duration:number;poses:BonePose[];rootPosition:T.Vector3;anchor:T.Vector3};
 type Room=Pick<RoomTemplate,'width'|'height'|'obstacles'|'boundary'|'voids'>;
 
@@ -74,6 +74,7 @@ export class DeathRagdolls {
  private q=new T.Quaternion();private inverse=new T.Matrix4();private rigidWorld=new T.Matrix4();
  private elapsedMs=0;private steps=0;private overflow=0;
  private physicsVelocity={x:0,y:0,z:0};
+ private skinFloorBounds=new T.Box3();
  setQuality(tier:'high'|'low'){
   this.tier=tier;
   const active=[...this.records.values()].filter(r=>!r.settled);
@@ -147,8 +148,8 @@ export class DeathRagdolls {
   }
 
   model.root.updateMatrixWorld(true);
-  const poses:BonePose[]=[],bones:T.Bone[]=[];
-  model.root.traverse(o=>{if(o instanceof T.Bone){poses.push({bone:o,position:o.position.clone(),rotation:o.quaternion.clone(),scale:o.scale.clone(),auto:o.matrixAutoUpdate});if(isAnatomicalBone(o.name,family))bones.push(o);}});
+  const poses:BonePose[]=[],bones:T.Bone[]=[];let originalCreature=false;
+  model.root.traverse(o=>{if(o instanceof T.SkinnedMesh&&(Array.isArray(o.material)?o.material:[o.material]).some(material=>material.userData.k11Original))originalCreature=true;if(o instanceof T.Bone){poses.push({bone:o,position:o.position.clone(),rotation:o.quaternion.clone(),scale:o.scale.clone(),auto:o.matrixAutoUpdate});if(isAnatomicalBone(o.name,family))bones.push(o);}});
   if(bones.length<3||bones.length>20)return false;
   model.freeze?.();
   const parts:Part[]=[],joints:RAPIER.ImpulseJoint[]=[],mass=family==='brute'?3.5:family==='carrier'?1.8:1;
@@ -180,6 +181,9 @@ export class DeathRagdolls {
    parts.push({bone,body,bindLinear});
   }
   for(const part of cue==='frost'?[]:parts.slice(1)){
+   // I13: connected authored creature skins keep anatomical joint offsets.
+   // Physics solver anchor error must not become temporary limb elongation.
+   if(originalCreature)part.localAnchor=part.bone.position.clone();
    let parent=part.bone.parent;while(parent&&!parts.some(p=>p.bone===parent))parent=parent.parent;
    const other=parts.find(p=>p.bone===parent)??parts[0];
    const anchor=part.body.translation(),op=other.body.translation(),oq=other.body.rotation();
@@ -198,7 +202,7 @@ export class DeathRagdolls {
   // Quantize down: the 32ms request holds at most three 120Hz ticks (25ms).
   const holdTicks=Number.isFinite(holdSeconds)?Math.floor(Math.min(.032,Math.max(0,holdSeconds))/STEP):0;
   if(holdTicks>0)for(const part of parts)part.body.setEnabled(false);
-  this.records.set(id,{model,cue,terminalTime:0,terminalPulse:0,parts,hierarchy,joints,poses,age:0,holdTicks,settled:false,falling:false,fallSpeed:0,support:new T.Vector3(),supportLift:.25,rootPosition:model.root.position.clone(),anchor:new T.Vector3().copy(parts[0].body.translation())});return true;
+  this.records.set(id,{skinFloorCheckAt:(family==='carrier'&&originalCreature&&cue!=='frost'&&model.height>=4) ? .75 : undefined,model,cue,terminalTime:0,terminalPulse:0,parts,hierarchy,joints,poses,age:0,holdTicks,settled:false,falling:false,fallSpeed:0,support:new T.Vector3(),supportLift:.25,rootPosition:model.root.position.clone(),anchor:new T.Vector3().copy(parts[0].body.translation())});return true;
  }
  update(dt:number){
   this.elapsedMs=0;if(!this.world||dt<=0)return;
@@ -240,9 +244,27 @@ export class DeathRagdolls {
    this.accumulator-=STEP;this.steps++;}}
   for(const r of this.records.values()){
    r.age+=delta;r.model.setDeathAge?.(r.age);if(r.falling){this.fall(r,delta);continue;}if(r.settled)continue;if(r.holdTicks>0)continue;this.apply(r);
+   // I13: tall Matron proxies can support empty space after connected-skin
+   // joint offsets are restored. Check the drawn bottom once, then hand a
+   // genuinely suspended skin to the existing support-aware frozen fall.
+   if(r.skinFloorCheckAt!==undefined&&r.age>=r.skinFloorCheckAt){
+    r.skinFloorCheckAt=undefined;
+    if(this.skinSuspendedAboveSupport(r)){this.retire(r);continue;}
+   }
    if(r.parts.every(p=>p.body.isSleeping()))this.retire(r);else if(r.age>=6)this.retire(r);
   }
   this.elapsedMs=performance.now()-start;
+ }
+ private skinSuspendedAboveSupport(r:RagdollRecord):boolean {
+  r.model.root.updateMatrixWorld(true);
+  const bounds=this.skinFloorBounds.setFromObject(r.model.root,true);
+  if(bounds.isEmpty())return false;
+  const origin=this.supportRay.origin;
+  origin.x=(bounds.min.x+bounds.max.x)*.5;origin.z=(bounds.min.z+bounds.max.z)*.5;
+  // Start below the skin so an overhead table/ceiling cannot become its support.
+  origin.y=bounds.min.y-.01;
+  const hit=this.world!.castRay(this.supportRay,Math.max(8,r.model.height+4),true,RAPIER.QueryFilterFlags.ONLY_FIXED,GROUPS);
+  return !hit||hit.timeOfImpact>.35;
  }
  private fall(r:RagdollRecord,dt:number){
   r.fallSpeed-=9.81*dt;let dy=r.fallSpeed*dt;
@@ -275,6 +297,10 @@ export class DeathRagdolls {
     this.rigidWorld.makeRotationFromQuaternion(this.q.set(rotation.x,rotation.y,rotation.z,rotation.w));
     this.rigidWorld.setPosition(position.x,position.y,position.z);
     node.matrix.multiplyMatrices(this.inverse,this.rigidWorld).multiply(p.bindLinear);
+    // Keep physics orientation and the captured shear/scale, but attach a
+    // connected child at its captured local joint. Frost islands deliberately
+    // retain independent body translations and therefore have no localAnchor.
+    if(p.localAnchor)node.matrix.setPosition(p.localAnchor);
     node.matrix.decompose(node.position,node.quaternion,node.scale);
    }
    // Frozen unsimulated bones have matrixAutoUpdate=false, so force their world

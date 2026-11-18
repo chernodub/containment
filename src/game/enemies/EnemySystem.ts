@@ -1,3 +1,4 @@
+import {BOSS_BODIES,guardianMeleeShape} from './bossDefinitions';
 import type {EnemyRole} from '../waves/authoredEncounters';
 import {ENEMY_ATTACK_SHAPES} from './attackShapes';
 import {MELEE_ATTACKS, ELITE_MELEE_WINDUP_SCALE, ELITE_MELEE_RECOVERY_SCALE, MELEE_START_STAGGER_MS, calculateMeleeDamage, meleeStrikeContains, type MeleePhase, type MeleeStrikeShape} from './meleeAttacks';
@@ -53,7 +54,7 @@ export type CollisionSteeringContext = Readonly<{
   toY: number;
 }>;
 
-export type EnemySpawnOptions=Readonly<{role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute';pod?:boolean;hatchMs?:number}>;
+export type EnemySpawnOptions=Readonly<{role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;lesson?:'crawler'|'brute';pod?:boolean;hatchMs?:number;podOrigin?:Readonly<{x:number;y:number}>}>;
 
 export type EnemySystemOptions = Readonly<{openingWindup?:number;lateDifficulty?:boolean;difficulty?:()=>{rest:number;windups:number;lateRest?:number;lateWindups?:number;lateStagger?:number;lateMovement?:number};
   balance?: {health:number;damage:number;speed:number;eliteHealth:number;eliteDamage:number;specials:boolean;chargeWindupMs?:number;chargeCooldownMs?:number;chargeInitialCooldownMs?:number;championHealth?:number;championDamage?:number};
@@ -412,7 +413,8 @@ export class EnemySystem {
    // Promotion keeps the authored Warden opening after an ordinary elite received a longer initial delay.
    if(kind==='warden'&&e.type==='brute'&&e.elite&&this.#balance.chargeInitialCooldownMs!==undefined)e.specialCooldownMs=1500;
    if(kind==='matron'){this.#reservedCount-=e.reservedChildren;e.reservedChildren=0;}
-   e.controlResistant=true;e.priority=true;e.champion=kind;e.health=e.maxHealth=(kind==='warden'?760:1150)*(this.#balance.championHealth??1);e.armor=e.maxArmor=kind==='warden'?120:0;e.speed=e.baseSpeed=kind==='warden'?88:76;e.contactDamage=(kind==='warden'?28:24)*(this.#balance.championDamage??1);e.creditReward=kind==='warden'?100:150;
+   // I13 boss body tier: native contact and ordinary strike geometry match the authored rank.
+   e.radius=BOSS_BODIES[kind].radius;e.meleeShape=guardianMeleeShape(kind,MELEE_ATTACKS[e.type].shape);e.controlResistant=true;e.priority=true;e.champion=kind;e.health=e.maxHealth=(kind==='warden'?760:1150)*(this.#balance.championHealth??1);e.armor=e.maxArmor=kind==='warden'?120:0;e.speed=e.baseSpeed=kind==='warden'?88:76;e.contactDamage=(kind==='warden'?28:24)*(this.#balance.championDamage??1);e.creditReward=kind==='warden'?100:150;
   }
 
   update(deltaMs: number, player: EnemyPlayerState): readonly EnemyEvent[] {
@@ -441,7 +443,7 @@ export class EnemySystem {
       if(enemy.stunRemainingMs>0){enemy.velocityX=enemy.velocityY=0;continue;}
       if(enemy.champion==='matron'&&enemy.speed>0&&!this.#launched?.(enemy.id)){
         enemy.specialCooldownMs=Math.max(0,enemy.specialCooldownMs-timerDelta/this.#rest);
-        if(enemy.broodRemainingMs>0){enemy.broodRemainingMs=Math.max(0,enemy.broodRemainingMs-timerDelta);if(enemy.broodRemainingMs===0){for(const side of [-1,1])events.push(freezeEvent({type:'spawn-request',sourceEnemyId:enemy.id,enemyType:'crawler',x:clamp(enemy.x+side*60,0,WORLD_WIDTH),y:enemy.y,elite:false,requestIndex:side<0?0:1,pod:true,hatchMs:2400,beat:enemy.beat}));enemy.specialCooldownMs=6000;}}
+        if(enemy.broodRemainingMs>0){enemy.broodRemainingMs=Math.max(0,enemy.broodRemainingMs-timerDelta);if(enemy.broodRemainingMs===0){/* I13: native brood placement stays on the authored hatch ring. */for(const side of [-1,1])events.push(freezeEvent({type:'spawn-request',sourceEnemyId:enemy.id,enemyType:'crawler',x:enemy.x+Math.cos(enemy.id*2.399+ (side<0?0:Math.PI))*60,y:enemy.y+Math.sin(enemy.id*2.399+(side<0?0:Math.PI))*60,elite:false,requestIndex:side<0?0:1,pod:true,hatchMs:2400,beat:enemy.beat}));enemy.specialCooldownMs=6000;}}
         else if(enemy.specialCooldownMs===0&&this.activeCount+this.reservedCount<MAX_ACTIVE_ENEMIES-2){enemy.broodRemainingMs=1000;enemy.broodDamage=0;enemy.velocityX=enemy.velocityY=0;events.push(freezeEvent({type:'attack-warning',enemyId:enemy.id,enemyType:'carrier',x:enemy.x,y:enemy.y,targetX:enemy.x,targetY:enemy.y,durationMs:1000}));}
       }
       if(enemy.speed===0||this.#launched?.(enemy.id))this.#cancelMelee(enemy);
@@ -486,7 +488,11 @@ export class EnemySystem {
       enemy.yieldMs=Math.max(0,(enemy.yieldMs??0)-movementDelta);
       if(!this.#launched?.(enemy.id)){this.#holdReadyContact(enemy,player);this.#integrate(enemy,movementDelta,player,events);}
     }
-    if(movementDelta>0){this.#resolveCrowd();this.#clearCongestion(movementDelta);}
+    if(movementDelta>0){
+      // I13: discover oversized boss neighbors once; ordinary-only queries retain their28-unit bound.
+      let largestRadius=28;for(const enemy of this.#enemies.values())if(enemy.champion&&enemy.radius>largestRadius)largestRadius=enemy.radius;
+      this.#resolveCrowd(largestRadius);this.#clearCongestion(movementDelta,largestRadius);
+    }
     for(const enemy of this.#enemies.values()){
       if(enemy.speed>0&&!enemy.pod&&enemy.stunRemainingMs===0&&enemy.broodRemainingMs===0)this.#collectAttacks(enemy, player, events);
     }
@@ -792,7 +798,7 @@ export class EnemySystem {
   /** Jacobi projections: all pair corrections read the same positions, then
    * apply together. Frozen bodies are anchors; launches retain swept contacts.
    * A small skin and dead band prevent contact/steering chatter. */
-  #resolveCrowd(): void {
+  #resolveCrowd(largestRadius:number): void {
     const solids=this.#solids;
     for(let iteration=0;iteration<SEPARATION_ITERATIONS;iteration++){
       this.#rebuildSpatialHash();
@@ -801,7 +807,7 @@ export class EnemySystem {
       for(const a of this.#spatialEnemies.values()){
         const enemy=a.enemy;
         if(this.#launched?.(enemy.id))continue;
-        this.#spatialHash.queryRadiusInto(enemy.x,enemy.y,enemy.radius+29,this.#nearby);
+        this.#spatialHash.queryRadiusInto(enemy.x,enemy.y,enemy.radius+largestRadius+1,this.#nearby);
         for(const b of this.#nearby){
           const other=b.enemy;
           if(enemy.id>=other.id||this.#launched?.(other.id))continue;
@@ -840,14 +846,14 @@ export class EnemySystem {
 
   /** Only a stalled follower yields at a shared choke point. Stable numeric
    * priority breaks symmetric two-body jams without constant crowd jitter. */
-  #clearCongestion(deltaMs:number):void {
+  #clearCongestion(deltaMs:number,largestRadius:number):void {
     for(const enemy of this.#enemies.values()){
       if(enemy.speed===0||enemy.meleePhase!=='approach'||this.#launched?.(enemy.id)||(enemy.yieldMs??0)>0)continue;
       const stopped=Math.hypot(enemy.x-enemy.stepStartX!,enemy.y-enemy.stepStartY!)<.5;
       const trying=Math.hypot(enemy.velocityX,enemy.velocityY)>3&&Math.hypot(enemy.targetX-enemy.x,enemy.targetY-enemy.y)>8;
       enemy.blockedMs=stopped&&trying?(enemy.blockedMs??0)+deltaMs:0;
       if(enemy.blockedMs<600)continue;
-      this.#spatialHash.queryRadiusInto(enemy.x,enemy.y,enemy.radius+40,this.#nearby);
+      this.#spatialHash.queryRadiusInto(enemy.x,enemy.y,enemy.radius+largestRadius+12,this.#nearby);
       for(const entry of this.#nearby){const other=entry.enemy;
         if(other.id>=enemy.id||other.speed===0||Math.hypot(other.velocityX,other.velocityY)<3||Math.hypot(enemy.targetX-other.targetX,enemy.targetY-other.targetY)>64)continue;
         const distance=Math.hypot(enemy.x-other.x,enemy.y-other.y);
@@ -1018,7 +1024,7 @@ export class EnemySystem {
     if(enemy.meleePhase!=='approach'||this.#launched?.(enemy.id))return;
     const melee=MELEE_ATTACKS[enemy.type];
     const pressureAvailable=melee.heavy?this.#heavyMeleeActive<1:this.#smallMeleeActive<this.#windups;
-    if(distance<=melee.engageRange+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&this.#canAttack?.(enemy,player)!==false){
+    if(distance<=melee.engageRange*(enemy.champion?BOSS_BODIES[enemy.champion].rankScale:1)+playerRadius&&enemy.attackSlot&&enemy.chargeMs===0&&enemy.contactCooldownRemainingMs===0&&this.#meleeStartGapMs===0&&pressureAvailable&&this.#canAttack?.(enemy,player)!==false){
       enemy.meleePhase='windup';enemy.meleeProgress=0;enemy.meleeFacingLocked=false;
       enemy.meleeAngle=Math.atan2(player.y-enemy.y,player.x-enemy.x);enemy.meleeOriginX=enemy.x;enemy.meleeOriginY=enemy.y;
       enemy.meleeDurationMs=enemy.meleeRemainingMs=melee.windupMs*(enemy.elite?ELITE_MELEE_WINDUP_SCALE:1)*(enemy.lesson?1.65:enemy.id<=4?this.#openingWindup:1);

@@ -126,7 +126,10 @@ function select(skin: CreatureSkin, rank: Rank, force = false): void {
   skin.mesh.updateWorldMatrix(true, false);
   const root = skin.root;
   const toRoot = root.matrixWorld.clone().invert().multiply(skin.mesh.matrixWorld);
-  skin.height = skin.mesh.boundingBox!.clone().applyMatrix4(toRoot).max.y;
+  // The first rank sample may be a compressed spawn/wind-up pose. Keep the
+  // fixed-idle reference, including authored uniform boss scale, as a floor.
+  const reference = rankHeights.get(String(skin.mesh.userData.k11Family))?.[resolved] ?? 0;
+  skin.height = Math.max(reference, skin.mesh.boundingBox!.clone().applyMatrix4(toRoot).max.y);
 
 }
 
@@ -235,6 +238,7 @@ export function originalCreatureHeight(root: T.Object3D): number {
 
 const footprintFits = new Map<string, Partial<Record<Rank, number>>>();
 const rankScales = new Map<string, Partial<Record<Rank, number>>>();
+const rankHeights = new Map<string, Partial<Record<Rank, number>>>();
 /** Boss-tier uniform scale authored per rank skin (mesh extras k11RankScale); 1 when absent. */
 export function originalCreatureRankScale(family: string, rank: Rank): number {
   return rankScales.get(family)?.[rank] ?? 1;
@@ -256,14 +260,17 @@ export function originalCreatureFootprints(root: T.Group, asset: T.Object3D, cli
   asset.traverse(object => {
     if (!(object instanceof T.SkinnedMesh)) return;
     const rank = rankOf(object.name);if(!rank)return;
-    let radial = 0;
+    let radial = 0, top = -Infinity;
     const positions = object.geometry.getAttribute('position');
     for(let i=0;i<positions.count;i++) {
       object.getVertexPosition(i,point).applyMatrix4(object.matrixWorld).applyMatrix4(inverse);
       radial = Math.max(radial,Math.hypot(point.x,point.z));
+      top = Math.max(top, point.y);
     }
     const scale = Number(object.userData.k11RankScale) || 1;
     const scales = rankScales.get(family) ?? {};scales[rank] = scale;rankScales.set(family, scales);
+    // fitFootprint scales from the grounded actor origin, preserving floor contact.
+    const heights = rankHeights.get(family) ?? {};heights[rank] = Math.max(0,top)*scale;rankHeights.set(family,heights);
     // A scaled boss rank owns a proportionally larger collider (integration scales the native radius by the same factor).
     if(radial>0)fits[rank]=scale*radius*.94/radial;
   });
