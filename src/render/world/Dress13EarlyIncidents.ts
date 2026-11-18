@@ -1,3 +1,4 @@
+import {addRecoverySpill} from './Inc13RecoverySpill';
 import {dress13ResidentialPlacements, addDress13ResidentialDetails} from './Dress13Residential';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -102,29 +103,7 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     const g = new T.ShapeGeometry(shape);g.rotateX(-Math.PI/2);return mesh(g,m,x,.026,z,angle);
   };
   if(id==='awakening-bay') {
-    // Feather successive pockets into a single gravity-fed spill on the aisle.
-    const canvas=document.createElement('canvas');
-    canvas.width=512;canvas.height=256;
-    const ctx=canvas.getContext('2d')!;
-    for(let i=0;i<57;i++) {
-      const t=i/56, x=334-226*t+28*Math.sin(9*t)+14*Math.sin(47*i), y=20+185*t+13*Math.cos(5*i);
-      const r=12+29*Math.sin(Math.PI*t)+9*(1+Math.sin(17*t));
-      const cloud=ctx.createRadialGradient(x,y,0,x,y,r);
-      cloud.addColorStop(0,'rgba(175,209,219,.14)');
-      cloud.addColorStop(.58,'rgba(137,186,202,.07)');
-      cloud.addColorStop(1,'rgba(137,186,202,0)');
-      ctx.fillStyle=cloud;ctx.fillRect(x-r,y-r,2*r,2*r);
-    }
-    const vapor=new T.CanvasTexture(canvas);vapor.colorSpace=T.SRGBColorSpace;
-    const veil=new T.MeshBasicMaterial({map:vapor,transparent:true,depthWrite:false});
-    veil.addEventListener('dispose',()=>vapor.dispose());
-    const pool=new T.PlaneGeometry(7,3.5);pool.rotateX(-Math.PI/2);
-    mesh(pool,veil,465,.039,388);
-    for(let i=0;i<12;i++) {
-      const x=493+(i%2?6:-6)-i*9,z=360+i*7;
-      flat([[-.075,-.17],[.065,-.17],[.095,-.05],[.075,.16],[.025,.23],[-.06,.18],[-.09,.02]],wet,x,z,.25);
-      flat([[-.06,-.04],[.065,-.04],[.065,.05],[-.06,.05]],wet,x-2,z-9,.25);
-    }
+    addRecoverySpill(group);
   }
   if(id==='crew-checkpoint') {
     // Irregular soot fan has a source at the jammed inspection machinery.

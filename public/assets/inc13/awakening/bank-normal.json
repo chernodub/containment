@@ -1,47 +1,53 @@
 {
-  "bakeSeconds": 0.983,
-  "blenderPNGDecodeMs": 5.153,
+  "bakeSeconds": 0.945,
+  "blenderPNGDecodeMs": 6.498,
   "file": "bank-normal.png",
   "size": 512,
-  "bytes": 269996,
+  "bytes": 310693,
   "estimatedRGBA8MipBytes": 1398101,
-  "nonFlatPixels": 121630,
+  "nonFlatPixels": 128484,
   "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
   "targets": [
     {
       "mesh": "breached-recovery-bank--e9-body",
       "role": "e9-body",
-      "seconds": 0.075,
+      "seconds": 0.067,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "breached-recovery-bank--e9-ceramic",
+      "role": "e9-ceramic",
+      "seconds": 0.023,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "breached-recovery-bank--e9-dark",
       "role": "e9-dark",
-      "seconds": 0.054,
+      "seconds": 0.041,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "breached-recovery-bank--e9-trim",
       "role": "e9-trim",
-      "seconds": 0.069,
+      "seconds": 0.05,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "breached-recovery-bank--p11-rubber",
       "role": "p11-rubber",
-      "seconds": 0.055,
+      "seconds": 0.06,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "breached-recovery-bank--p11-steel",
       "role": "p11-steel",
-      "seconds": 0.057,
+      "seconds": 0.07,
       "method": "three-segment high bevel"
     },
     {
       "mesh": "breached-recovery-bank--p11-tint-metal",
       "role": "p11-tint-metal",
-      "seconds": 0.033,
+      "seconds": 0.032,
       "method": "three-segment high bevel"
     }
   ]
