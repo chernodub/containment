@@ -1,0 +1,48 @@
+{
+  "bakeSeconds": 1.086,
+  "blenderPNGDecodeMs": 5.463,
+  "file": "header-normal.png",
+  "size": 512,
+  "bytes": 289274,
+  "estimatedRGBA8MipBytes": 1398101,
+  "nonFlatPixels": 109879,
+  "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+  "targets": [
+    {
+      "mesh": "frozen-header--e9-body",
+      "role": "e9-body",
+      "seconds": 0.048,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "frozen-header--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.046,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "frozen-header--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.028,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "frozen-header--p11-frost",
+      "role": "p11-frost",
+      "seconds": 0.1,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "frozen-header--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.07,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "frozen-header--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.041,
+      "method": "three-segment high bevel"
+    }
+  ]
+}

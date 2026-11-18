@@ -9,3 +9,9 @@ The revised bank stays visible from the aisle. The frayed fog edge and overturne
 The before frame has blankets and luggage in the foreground with no clear destination.
 The first tour shows the twin drag marks ending at the bed jammed across a torn door. From the fight floor the incident recedes to the upper left.
 The second pass mounts the family drawings beneath the reading light and adds a latch and pressed ribs. The two-place supper and pictures read best at native size.
+
+## Coolant Plant
+
+The baseline manifold and cordon disappear into the dark upper edge of the 480×270 spawn view.
+The first pipe was aligned down the wall. Its broken joint was cropped at spawn, and the frost stopped on a straight texture boundary.
+Turning the rack across the header exposes both torn lips and their icicles. The smaller feathered ice fan points directly back to the break and stays above the fight floor.

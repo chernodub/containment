@@ -9,7 +9,11 @@ export function p11MaintenancePlacements(id: string): OriginalKitInstance[] {
     matrix: new T.Matrix4().compose(new T.Vector3(x / 32, y, z / 32), new T.Quaternion(), new T.Vector3(scale, scale, scale)),
     purpose: 'P11 / engineered machinery / ' + asset, cutaway: false,
   });
-  if (id === 'coolant-plant') add('frost-manifold-turbines', 680, 350, 1);
+  if (id === 'coolant-plant') {
+    add('frost-manifold-turbines', 680, 350, 1);
+    result.push({pack:'p11-inc13-coolant',asset:'frozen-header',purpose:'INC13 / burst header',
+      cutaway:false,matrix:new T.Matrix4().makeRotationY(-.14).setPosition(401/32,0,300/32)});
+  }
   if (id === 'service-shaft-landing') add('lift-winch-machinery', 420, 330, 1.1, .15);
   // Paired emitters occupy x385..535,z281..326 of the existing west
   // shield solid (360..560,80..340), within view of the scanner floor.
