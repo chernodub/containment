@@ -1,0 +1,54 @@
+{
+  "bakeSeconds": 1.241,
+  "blenderPNGDecodeMs": 4.94,
+  "file": "dais-normal.png",
+  "size": 512,
+  "bytes": 236745,
+  "estimatedRGBA8MipBytes": 1398101,
+  "nonFlatPixels": 114286,
+  "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+  "targets": [
+    {
+      "mesh": "burned-manual-dais--e9-body",
+      "role": "e9-body",
+      "seconds": 0.04,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "burned-manual-dais--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.032,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "burned-manual-dais--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.033,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "burned-manual-dais--p11-rubber",
+      "role": "p11-rubber",
+      "seconds": 0.075,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "burned-manual-dais--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.07,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "burned-manual-dais--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.021,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "burned-manual-dais--p11-tint-metal",
+      "role": "p11-tint-metal",
+      "seconds": 0.045,
+      "method": "three-segment high bevel"
+    }
+  ]
+}

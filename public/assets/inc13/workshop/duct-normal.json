@@ -1,0 +1,48 @@
+{
+  "bakeSeconds": 0.93,
+  "blenderPNGDecodeMs": 6.411,
+  "file": "duct-normal.png",
+  "size": 512,
+  "bytes": 312411,
+  "estimatedRGBA8MipBytes": 1398101,
+  "nonFlatPixels": 131022,
+  "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+  "targets": [
+    {
+      "mesh": "swallowed-workbay--e9-body",
+      "role": "e9-body",
+      "seconds": 0.052,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "swallowed-workbay--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.023,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "swallowed-workbay--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.027,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "swallowed-workbay--p11-flesh",
+      "role": "p11-flesh",
+      "seconds": 0.059,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "swallowed-workbay--p11-growth",
+      "role": "p11-growth",
+      "seconds": 0.06,
+      "method": "sculpted high membrane"
+    },
+    {
+      "mesh": "swallowed-workbay--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.029,
+      "method": "three-segment high bevel"
+    }
+  ]
+}

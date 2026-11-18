@@ -1,0 +1,54 @@
+{
+  "bakeSeconds": 1.423,
+  "blenderPNGDecodeMs": 5.995,
+  "file": "cabin-normal.png",
+  "size": 512,
+  "bytes": 199567,
+  "estimatedRGBA8MipBytes": 1398101,
+  "nonFlatPixels": 125020,
+  "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+  "targets": [
+    {
+      "mesh": "last-cabin--e9-body",
+      "role": "e9-body",
+      "seconds": 0.062,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "last-cabin--e9-ceramic",
+      "role": "e9-ceramic",
+      "seconds": 0.024,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "last-cabin--e9-dark",
+      "role": "e9-dark",
+      "seconds": 0.031,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "last-cabin--e9-trim",
+      "role": "e9-trim",
+      "seconds": 0.039,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "last-cabin--p11-steel",
+      "role": "p11-steel",
+      "seconds": 0.048,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "last-cabin--p11-tint",
+      "role": "p11-tint",
+      "seconds": 0.05,
+      "method": "three-segment high bevel"
+    },
+    {
+      "mesh": "last-cabin--p11-tint-metal",
+      "role": "p11-tint-metal",
+      "seconds": 0.024,
+      "method": "three-segment high bevel"
+    }
+  ]
+}
