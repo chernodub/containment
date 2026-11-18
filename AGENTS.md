@@ -47,7 +47,7 @@ Blender is installed (`blender` on `PATH`, or `/Applications/Blender.app/Content
 
 ## Checkout and licensing
 
-This is a partial, sparse clone. Historical evidence folders `docs/art-evidence`, `docs/pr-screenshots` and `docs/qa-evidence` are intentionally not checked out. Never disable sparse checkout or add files beneath those paths. Work only in the assigned worktree; `nextgen` is the overhaul integration branch of the fork of `cdb-lumen/containment`.
+This is a partial, sparse clone. Historical evidence folders `docs/art-evidence`, `docs/pr-screenshots` and `docs/qa-evidence` are intentionally not checked out. Never disable sparse checkout or add files beneath those paths. Work only in the assigned worktree. The integration branch is `main` of the fork `chernodub/containment` (remote `fork`; owner decision 2026-11-18); the local working branch is still named `nextgen` and is pushed to both `fork/main` and `fork/nextgen` after every merge. Never push to `upstream` (`cdb-lumen/containment`).
 
 Preserve third-party notices. Original overhaul art/audio uses the repository MIT license; retained model, texture, music and recorded-audio licenses remain separate. Fonts are self-hosted OFL Barlow; preserve `THIRD_PARTY/Barlow-OFL.txt` and `public/fonts/OFL.txt`. Check runtime dependency licenses and include required texts in `THIRD_PARTY/`.
 
