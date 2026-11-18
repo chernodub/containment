@@ -41,6 +41,12 @@ export type HudController = (() => void) & {
 };
 const clamp = (n: number) => Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
 const seconds = (ms: number) => ms >= 10000 ? `${Math.ceil(ms / 1000)}s` : `${(Math.ceil(ms / 100) / 10).toFixed(1)}s`;
+function setHudAttribute(node:Element,name:string,value:string):void {
+    if(node.getAttribute(name)!==value)node.setAttribute(name,value);
+}
+function setHudProperty(style:CSSStyleDeclaration,name:string,value:string):void {
+    if(style.getPropertyValue(name)!==value)style.setProperty(name,value);
+}
 const abilityColors: Record<string, string> = { kinetic: '#ffb454', cryo: '#7fd6ff', pyro: '#ff7a2e', arc: '#b79cff', recovery: '#d7ffdb', acid: '#9dff5a' };
 /** Cached DOM snapshots; events and frame ticks feed bounded presentation pools. */
 export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud: () => void, preferences: () => HudPreferences = () => ({ combatText: true, radar: false }), storage: Pick<Storage,'getItem'|'setItem'> | null = null): HudController {
@@ -214,7 +220,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             entry.flash = entry.slot === 'overdrive' ? 0 : .22;
         if (entry.node.dataset.state !== state)
             entry.node.dataset.state = state;
-        entry.node.dataset.flash = String(entry.flash > 0);
+        setHudAttribute(entry.node,'data-flash',String(entry.flash>0));
         let value = 'READY';
         if (state === 'denied')
             value = entry.denial;
@@ -226,20 +232,21 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             value = snapshot.overdrive.roomLimited && snapshot.overdrive.charge >= 1 ? 'NEXT ROOM' : snapshot.overdrive.ready ? 'READY' : `${Math.floor(clamp(snapshot.overdrive.charge) * 100)}%`;
         else if (!s.ready)
             value = s.cooldownRemainingMs > 0 ? seconds(s.cooldownRemainingMs) : s.charges <= 0 ? 'No charge' : snapshot.dashing || snapshot.slots && (snapshot.slots.dash.castRemainingMs > 0 || snapshot.slots.tactical.castRemainingMs > 0 || snapshot.slots.power.castRemainingMs > 0 || snapshot.slots.overdrive.castRemainingMs > 0) ? 'Casting' : entry.slot === 'power' ? 'REPOSITION' : 'Unavailable';
-        entry.node.dataset.reason = state === 'cooling' && s.cooldownRemainingMs > 0 ? 'Recharging' : '';
-        if (entry.node.dataset.reason) entry.node.setAttribute('data-state-label','Recharging');
-        else entry.node.removeAttribute('data-state-label');
+        const reason = state === 'cooling' && s.cooldownRemainingMs > 0 ? 'Recharging' : '';
+        setHudAttribute(entry.node,'data-reason',reason);
+        if(reason)setHudAttribute(entry.node,'data-state-label',reason);
+        else if(entry.node.hasAttribute('data-state-label'))entry.node.removeAttribute('data-state-label');
         if (entry.value.textContent !== value)
             entry.value.textContent = value;
-        entry.node.dataset.charges = String(s.charges);
-        entry.node.dataset.cooldown = String(Math.ceil(s.cooldownRemainingMs));
-        entry.node.setAttribute('aria-label', `${definition.name}, ${entry.node.dataset.reason ? `${entry.node.dataset.reason} ` : ''}${value}${s.maxCharges > 1 ? `, ${s.charges} of ${s.maxCharges} charges` : ''}`);
-        if (entry.charges)
-            entry.charges.textContent = s.maxCharges > 1 ? String(s.charges) : '';
+        const charges=String(s.charges),chargeText=s.maxCharges>1?charges:'';
+        setHudAttribute(entry.node,'data-charges',charges);
+        setHudAttribute(entry.node,'data-cooldown',String(Math.ceil(s.cooldownRemainingMs)));
+        setHudAttribute(entry.node,'aria-label',`${definition.name}, ${reason ? `${reason} ` : ''}${value}${s.maxCharges > 1 ? `, ${charges} of ${s.maxCharges} charges` : ''}`);
+        if(entry.charges&&entry.charges.textContent!==chargeText)entry.charges.textContent=chargeText;
         if (entry.progress) {
             const progress = s.castRemainingMs > 0 ? 1 - s.castRemainingMs / Math.max(1, definition.castMs) : s.activeRemainingMs > 0 ? s.activeRemainingMs / Math.max(1, s.activeMs) : s.ready ? 1 : 1 - s.cooldownRemainingMs / Math.max(1, s.cooldownMs);
             entry.progress.style.strokeDashoffset = String(132 * (1 - clamp(progress)));
-            entry.node.style.setProperty('--cooldown-remaining', String(1 - clamp(progress)));
+            setHudProperty(entry.node.style,'--cooldown-remaining',String(1-clamp(progress)));
         }
         if (entry.meter)
             entry.meter.style.width = `${clamp(snapshot.overdrive.charge) * 100}%`;
@@ -252,11 +259,12 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             dashActiveRing.style.strokeDashoffset = String(132 * (1 - clamp(s.activeRemainingMs / Math.max(1, s.activeMs))));
         }
         for (let i = 0; i < entry.pips.length; i++) {
-            entry.pips[i].hidden = i >= s.maxCharges;
-            entry.pips[i].dataset.empty = String(i >= s.charges);
+            const pip=entry.pips[i],hidden=i>=s.maxCharges;
+            if(pip.hidden!==hidden)pip.hidden=hidden;
+            setHudAttribute(pip,'data-empty',String(i>=s.charges));
             // The snapshot exposes the next independent recharge; subsequent pips remain empty.
             const recharge = i < s.charges ? 1 : i === s.charges ? 1 - s.cooldownRemainingMs / Math.max(1, s.cooldownMs) : 0;
-            entry.pips[i].style.setProperty('--pip-charge', `${clamp(recharge) * 100}%`);
+            setHudProperty(pip.style,'--pip-charge',`${clamp(recharge)*100}%`);
         }
     };
     const hud = (() => {

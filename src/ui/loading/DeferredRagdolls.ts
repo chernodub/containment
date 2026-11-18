@@ -30,7 +30,7 @@ export class DeathRagdolls {
   setRoom(...args:Parameters<PhysicsRagdolls['setRoom']>): void {this.room=args;this.delegate?.setRoom(...args);}
   refreshStatic(...args:Parameters<PhysicsRagdolls['refreshStatic']>): void {this.delegate?.refreshStatic(...args);}
   add(...args:Parameters<PhysicsRagdolls['add']>): void {this.delegate?.add(...args);}
-  update(dt:number): void {this.delegate?.update(dt);}
+  update(...args:Parameters<PhysicsRagdolls['update']>): void {this.delegate?.update(...args);}
   has(id:number): boolean {return this.delegate?.has(id)??false;}
   position(id:number) {return this.delegate?.position(id);}
   sync(id:number,x:number,z:number): void {this.delegate?.sync(id,x,z);}
