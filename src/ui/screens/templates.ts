@@ -21,6 +21,7 @@ import {boonChips} from '../boonChips';
 import {boonBenefit, boonNumbers} from '../boonBenefits';
 import {rewardArt} from '../rewardArt';
 import {formatDistance, playerFacingText, playerFacingStat} from '../units';
+import {serviceArt} from './serviceArt';
 import {abilityVignette, transformationPreview} from './abilityVignettes';
 import {completionEnding, incomingDamageReport} from './damageReport';
 import {pauseRoomRecords} from '../storyPresentation';
@@ -143,17 +144,49 @@ export function draftScreen(game: DepthGame): string {
 }
 
 export function shopScreen(game: DepthGame): string {
- const run=game.expedition.run, resources=game.combat.snapshot;
- const allocated=run.service?.nodeId===run.currentNodeId&&run.service.allocationClaimed;
- const upgrade=nextAugmentUpgrade(game.expedition.build);
- const canBuy=(id:typeof SERVICE_IDS[number])=>(game.canPurchaseService as (id:typeof SERVICE_IDS[number])=>boolean)(id);
- const recommend=resources.health<55&&canBuy('heal')?'heal':resources.medkits===0&&canBuy('medkit')?'medkit':resources.reserve<20&&canBuy('ammo')?'ammo':upgrade&&canBuy('upgrade')?'upgrade':SERVICE_IDS.find(canBuy);
- return `<section class="panel shop-panel screen-enter"><style>@media(max-height:800px){#overlay .shop-panel .service-shop{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:center}#overlay .shop-panel .service-card{padding:8px;gap:6px;align-items:flex-start;min-height:82px}#overlay .shop-panel .service-card>svg{display:none}#overlay .shop-panel .service-card b{font-size:13px;line-height:1.2}#overlay .shop-panel .service-card strong{font-size:18px;white-space:nowrap}#overlay .shop-panel .service-card small{font-size:10px}#overlay .shop-panel .service-card .service-outcome{font-size:11px;line-height:1.25;column-count:1;margin-bottom:3px}#overlay .shop-panel .supply-hero h2{font-size:32px}}</style><div class="supply-hero">${icon('armory','supply-emblem')}${tag(`SUPPLY STOP / SECTOR ${serial(game.node.depth+1)}`)}<h2>Prepare for the next fight.</h2><p class="panel-intro">Buy several supplies, then leave when ready. Stock is limited at each stop.</p><p role="status">${resources.health} health · ${resources.armor} armor · ${resources.medkits} medkits · ${resources.grenades} grenades</p><p>${allocated?'Free allocation collected.':'Your free allocation is included with your first purchase or departure.'}</p><span class="credit-balance" role="status">${icon('credits')} <b>${resources.credits}</b> credits available</span><button id="claim" class="primary">${allocated?'Leave supply stop':'Collect allocation and leave'} ${arrow()}</button><small>Unspent credits carry forward. Paid services do not end this stop.</small></div><div class="service-shop">${SERVICE_IDS.map(id=>{
- const item=SERVICE_CATALOG[id],cost=serviceCost(id,game.node.depth),stock=serviceStock(run,id),enabled=canBuy(id);
- const explanation=id==='upgrade'?(upgrade?`Upgrade ${MUTATION_CATALOG[upgrade].name}: ${AUGMENT_UPGRADE_RULES[upgrade]}`:'Install an augment with an upgrade before buying this service.'):item.description;
- const reason=!stock?'Sold out':resources.credits<cost?`Need ${cost-resources.credits} more credits`:!enabled?'No useful capacity for this purchase':`${stock} available`;
- return `<button id="purchase-${id}" class="service-card" data-purchase="${id}" ${enabled?'':'disabled'} aria-describedby="service-${id}-reason"><span><b>${item.name}${recommend===id?' · Recommended':''}</b><span class="service-outcome">${escapeHtml(explanation)}</span><small id="service-${id}-reason">${reason}</small></span><strong>${cost} <small>CR</small></strong>${arrow()}</button>`;
- }).join('')}</div></section>`;
+  const run=game.expedition.run, resources=game.combat.snapshot;
+  const allocated=run.service?.nodeId===run.currentNodeId&&run.service.allocationClaimed;
+  const upgrade=nextAugmentUpgrade(game.expedition.build);
+  const outcomes = {
+    heal: 'Restore up to 35 health.',
+    armor: 'Restore up to 30 armor.',
+    ammo: 'Resupply every weapon.',
+    medkit: 'Add one medkit.',
+    grenade: 'Add up to two grenades.',
+    reroll: 'Bank one free boon reroll.',
+    upgrade: upgrade?playerFacingText(AUGMENT_UPGRADE_RULES[upgrade]??''):'Improve an installed augment.',
+  };
+  const cards=SERVICE_IDS.map(id=>{
+    const cost=serviceCost(id,game.node.depth), stock=serviceStock(run,id), enabled=game.canPurchaseService(id);
+    const name=id==='upgrade'&&upgrade?`Upgrade ${MUTATION_CATALOG[upgrade].name}`:SERVICE_CATALOG[id].name;
+    let status=`${stock} in stock`;
+    if(!stock) status='Sold out';
+    else if(!enabled) {
+      if(id==='upgrade'&&!upgrade) status='Requires an eligible augment';
+      else if(id==='reroll'&&run.version===1) status='Rerolls unavailable';
+      else if(resources.credits<cost) status=`Need ${cost-resources.credits} more credits`;
+      else if(id==='reroll') status='Reroll bank full';
+      else status='Full after allocation';
+    }
+    return `<button id="purchase-${id}" class="requisition-item" data-purchase="${id}" ${enabled?'':'disabled'}>
+      ${serviceArt(id)}
+      <strong class="requisition-name">${escapeHtml(name)}</strong>
+      <span class="requisition-outcome">${escapeHtml(outcomes[id])}</span>
+      <span class="requisition-item-footer"><span class="requisition-price">${cost} CR</span><span class="requisition-status">${status}</span></span>
+    </button>`;
+  }).join('');
+  return `<section class="panel requisition-panel screen-enter" aria-labelledby="requisition-title">
+    <header class="requisition-header">
+      <div>${tag(`SECTOR ${serial(game.node.depth+1)}`)}<h2 id="requisition-title">Supply stop</h2></div>
+      <span class="requisition-credits" role="status">${icon('credits')} <b>${resources.credits}</b> credits available</span>
+    </header>
+    <p class="requisition-inventory" role="status">${resources.health} health · ${resources.armor} armor · ${resources.medkits} medkits · ${resources.grenades} grenades</p>
+    <div class="requisition-grid" role="group" aria-label="Supplies for purchase">${cards}</div>
+    <footer class="requisition-footer">
+      <p>${allocated?'Free allocation collected.':'Free supplies come with your first purchase or when you leave.'}</p>
+      <button id="claim" class="primary">${allocated?'Leave supply stop':'Collect allocation and leave'} ${arrow()}</button>
+    </footer>
+  </section>`;
 }
 
 /** Compact sectional map: environment decks descend, actual graph edges remain intact. */

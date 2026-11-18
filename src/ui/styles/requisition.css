@@ -1,0 +1,85 @@
+#overlay .panel.requisition-panel {
+  width: min(1230px, 100%);
+  padding: clamp(18px, 3vh, 34px) clamp(18px, 3vw, 36px);
+  background: linear-gradient(135deg, #192e37, #09151d 72%);
+}
+#overlay .requisition-header, #overlay .requisition-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+#overlay .requisition-header h2 { margin: 4px 0 0; font-size: clamp(36px, 4vw, 56px); }
+#overlay .requisition-header .eyebrow { color: #b5d8e0; font-size: 14px; }
+#overlay .requisition-credits {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 16px;
+  border: 1px solid #8b7954;
+  background: #25231d;
+  color: #ffe0a1;
+  font-size: 16px;
+}
+#overlay .requisition-credits b { font: 600 36px/1 var(--font-display); }
+#overlay .requisition-credits svg { width: 24px; height: 24px; }
+#overlay .requisition-inventory { margin: 10px 0 14px; color: #bfd4dd; }
+#overlay .requisition-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+#overlay .requisition-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr auto;
+  align-items: start;
+  gap: 5px;
+  padding: 0 12px 9px;
+  text-align: left;
+  background: linear-gradient(150deg, #213842, #13252e);
+  border: 1px solid #5c7a88;
+  --service-color: #b8e9d8;
+}
+#overlay .requisition-item[data-purchase='armor'] { --service-color: #a3d6ec; }
+#overlay .requisition-item[data-purchase='ammo'] { --service-color: #f2cc87; }
+#overlay .requisition-item[data-purchase='grenade'] { --service-color: #ffb994; }
+#overlay .requisition-item[data-purchase='reroll'] { --service-color: #d9c0fc; }
+#overlay .requisition-item[data-purchase='upgrade'] { --service-color: #9eeaf1; }
+#overlay .requisition-item:enabled:hover { border-color: var(--service-color); background: #254451; }
+#overlay .requisition-item:disabled { opacity: 1; border: 1px dashed #6c8089; background: #13232b; }
+#overlay .requisition-item:disabled .service-illustration { filter: grayscale(.85) brightness(.8); }
+#overlay .requisition-item:disabled .requisition-status { color: #ffc6a6; }
+#overlay .requisition-name { font: 600 22px/1.1 var(--font-display); color: #f1f9fc; }
+#overlay .requisition-outcome, #overlay .requisition-status { font-size: 14px; line-height: 1.2; color: #ccdde5; }
+#overlay .requisition-item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-top: 5px;
+  border-top: 1px solid #6584914d;
+}
+#overlay .requisition-price { color: #ffe0a1; font: 600 21px/1 var(--font-display); white-space: nowrap; }
+#overlay .requisition-footer { margin-top: 14px; }
+#overlay .requisition-footer p { margin: 0; color: #bfd4dd; }
+#overlay .requisition-footer .primary { margin-left: auto; }
+#overlay .service-illustration {
+  display: block;
+  width: calc(100% + 24px);
+  height: clamp(66px, 10vh, 112px);
+  margin: 0 -12px 2px;
+  background: radial-gradient(ellipse at 50% 46%, color-mix(in srgb, var(--service-color) 13%, #12252e), #0b1820 78%);
+  color: var(--service-color);
+}
+.service-art-shadow { fill: #050e13; }
+.service-art-guide { stroke: currentColor; opacity: .24; fill: none; }
+.service-art-body { fill: #24404d; stroke: currentColor; stroke-width: 1.5; }
+.service-art-face { fill: #38535e; stroke: currentColor; }
+.service-art-detail { fill: none; stroke: #c6d8df; opacity: .8; }
+.service-art-mark { fill: currentColor; }
+
+@media (max-width: 900px) {
+  #overlay .requisition-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
