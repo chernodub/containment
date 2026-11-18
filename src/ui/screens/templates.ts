@@ -193,7 +193,7 @@ export function shopScreen(game: DepthGame): string {
       <span class="requisition-credits" role="status">${icon('credits')} <b>${resources.credits}</b> credits available</span>
     </header>
     <p class="requisition-inventory" role="status">${resources.health} health · ${resources.armor} armor · ${resources.medkits} medkits · ${resources.grenades} grenades</p>
-    <div class="requisition-grid" role="group" aria-label="Supplies for purchase">${cards}</div>
+    <div class="service-shop requisition-grid" role="group" aria-label="Supplies for purchase">${cards}</div>
     <footer class="requisition-footer">
       <p>${allocated?'Free allocation collected.':'Free supplies come with your first purchase or when you leave.'}</p>
       <button id="claim" class="primary">${allocated?'Leave supply stop':'Collect allocation and leave'} ${arrow()}</button>

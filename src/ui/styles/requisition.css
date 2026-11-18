@@ -25,8 +25,10 @@
 #overlay .requisition-credits b { font: 600 36px/1 var(--font-display); }
 #overlay .requisition-credits svg { width: 24px; height: 24px; }
 #overlay .requisition-inventory { margin: 10px 0 14px; color: #bfd4dd; }
-#overlay .requisition-grid {
+#overlay .service-shop.requisition-grid {
   display: grid;
+  padding: 0;
+  border: 0;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
@@ -81,5 +83,10 @@
 .service-art-mark { fill: currentColor; }
 
 @media (max-width: 900px) {
-  #overlay .requisition-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #overlay .service-shop.requisition-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+#overlay .panel.requisition-panel .room-record :is(.record-heading, button, p, small, summary),
+#overlay .panel.requisition-panel :is(.requisition-inventory,.requisition-footer p,.requisition-footer button) {
+  font-size: 14px;
 }
