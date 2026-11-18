@@ -142,3 +142,19 @@ body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-i
 #overlay .transformation-loss b {color:#ffcf9e;}
 #overlay .draft-panel .transformation-preview + .boon-inspect-hint {margin-top:0;}
 #overlay :is(.boon-inspect-detail,.boon-tooltip) .transformation-preview {margin:0 0 10px;}
+
+#overlay .installed-group {margin:12px 0;}
+#overlay .installed-group>h3 {display:flex;align-items:baseline;gap:9px;font:600 20px var(--font-display);margin:0 0 6px;}
+#overlay .installed-group>h3 b {color:#b9d8db;font-size:24px;}
+#overlay .panel .installed-group .owned-boon-name {font-size:15px;line-height:1.2;}
+#overlay .equipped-ability header {align-items:baseline;gap:9px;}
+#overlay .equipped-ability header h3 {margin:0;}
+#overlay .panel.pause-panel .equipped-ability p {margin:4px 0;min-height:0;font-size:15px;}
+#overlay .panel .equipped-ability kbd,
+#overlay .panel .equipped-ability .ability-rules,
+#overlay .panel .installed-group .boon-tooltip :is(small,p,.set-chip,.effect-chip,.transformation-loss),
+#overlay .panel .equipped-ability .transformation-loss,
+#overlay .panel .loadout-rig p {font-size:14px;}
+#overlay .panel .installed-group .owned-boon:is(:hover,:focus-within) {z-index:5;}
+#overlay .panel .equipped-ability .reward-combat-preview {color:var(--element);}
+#overlay .panel .equipped-ability .transformation-title {color:var(--element);font-size:15px;}
