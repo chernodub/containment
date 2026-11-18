@@ -19,7 +19,7 @@ export const DASH_RECHARGE_MS = 2_600;
 export const DASH_DISTANCE = 150;
 export const DASH_DURATION_MS = 140;
 export const DASH_INVULNERABLE_MS = 220;
-export const PYRO_DASH_INVULNERABLE_MS = 320;
+export const PYRO_DASH_INVULNERABLE_MS = 400;
 export const PYRO_DASH_DISTANCE = 240;
 export const PYRO_DASH_RECHARGE_MS = 2_500;
 
@@ -109,7 +109,7 @@ export const ABILITY_CATALOG: Readonly<Record<AbilityId, AbilityDefinition>> = O
   // ── PYRO ────────────────────────────────────────────────────────────────────
   afterburn: dash('afterburn', 'pyro', 'pyro', 'Afterburn',
     'Dash and leave a line of fire.',
-    'Dash 240 units in your movement direction with 0.32 seconds of invulnerability. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
+    'Dash 240 units in your movement direction with 0.4 seconds of invulnerability. Your exhaust leaves a line of fire for 2.5 seconds that ignites enemies. Native rig burn deals 2 damage every 0.25 seconds for 1.5 seconds; refreshing preserves its tick cadence.',
     2_500, [{ label: 'Fire', value: seconds(2_500) }]),
   flashfire: ability({
     id: 'flashfire', rig: 'pyro', slot: 'tactical', element: 'pyro', name: 'Flashfire',
