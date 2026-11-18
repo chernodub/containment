@@ -130,6 +130,30 @@ const incidents:Record<string,Incident>={
       p.box(15,21,-2,7,39,8,0x67797b,.14,.17);
     },
   },
+  'armory':{
+    source:[273,336],bounds:[-140,-25,268,217],
+    paint(c){
+      const foam=new Path2D('M-32 -2 L48 14 45 32 31 33 Q13 65 -2 102 L-55 142 -91 132 -67 111 -68 91 -34 66 -36 46 -49 37Z');
+      c.fillStyle='rgba(68,76,76,.88)';c.fill(foam);
+      // The extracted issue tray shows three human-scale weapon-shaped recesses.
+      for(let i=0;i<3;i++){
+        c.save();c.translate(-15-i*18,15+i*33);c.rotate(.32+i*.12);
+        fill(c,'M-20 -5 -9 -5 -6 -8 7 -8 8 -5 27 -5 27 -2 12 -2 10 2 3 2 3 7 -2 6 -4 2 -14 1 -18 5 -22 4Z','#232c30');
+        stroke(c,'M-20 -6l12 0 3 -3 13 0','#7c8988',1);c.restore();
+      }
+      stroke(c,'M-7 22 Q-73 83 -97 148 T-128 175','rgba(86,89,82,.62)',3);
+    },
+    pieces(p){
+      for(let i=0;i<3;i++){
+        const x=-20+i*15;
+        p.rod([x,18,3],[x+17,21,-23],2.2,0x343e42);
+        p.box(x+4,18,-5,5,6,16,0x768989,-.52);
+        p.box(x-3,15,8,5,6,9,0x424742,-.52);
+      }
+      p.face([[-38,0,9],[-22,32,-14],[17,32,-8],[5,0,18]],0x434b49);
+      p.rod([-38,2,9],[-22,33,-14],1.5,0x83918b);
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
