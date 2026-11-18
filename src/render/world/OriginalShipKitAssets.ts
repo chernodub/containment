@@ -9,10 +9,11 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
 import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
 
-export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-reactor' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance' | 'p11-incidents' | 'p11-brood' | 'p11-inc13-awakening' | 'p11-inc13-residential' | 'p11-inc13-coolant' | 'p11-inc13-workshop';
+export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-reactor' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance' | 'p11-incidents' | 'p11-brood' | 'p11-inc13-awakening' | 'p11-inc13-residential' | 'p11-inc13-coolant' | 'p11-inc13-workshop' | 'p11-inc13-manual';
 
 const base = import.meta.env.BASE_URL + 'assets/e9-ship-kit/';
 const URLs: Record<OriginalKitPack, string> = {
+  'p11-inc13-manual': import.meta.env.BASE_URL + 'assets/inc13/manual/dais.glb',
   'p11-inc13-workshop': import.meta.env.BASE_URL + 'assets/inc13/workshop/duct.glb',
   'p11-inc13-coolant': import.meta.env.BASE_URL + 'assets/inc13/coolant/header.glb',
   'p11-inc13-residential': import.meta.env.BASE_URL + 'assets/inc13/residential/cabin.glb',

@@ -21,3 +21,11 @@ Turning the rack across the header exposes both torn lips and their icicles. The
 At spawn the original mill and nest are nearly off-screen, leaving the approach apparently uninfested.
 The first duct study hid its spindle inside an oversized rib cage. The Blender render and the tour both showed one featureless purple slab.
 The revised taper exposes the machinery between ribs and brings the lantern cluster above the skin. The resin fringe is visible from the fight floor, though the metal and tissue still converge in value.
+
+## Lead review, five-room scale pass
+
+Awakening now exposes four forced berths above a continuous reflective spill, with drifting mist and a wet trail toward the exit. The left diagnostic panel remains visible inside one breach.
+Residential now carries the case trail on a folded runner with a coloured binding, broken check and drag scuffs. The individual drawings remain native-resolution detail.
+Coolant now has a solid cracked sheet from the header to the entrance, including raised source ice and a frozen pump jacket. The dark outline of the turbine still dominates its far end.
+Workshop now extends a resin bed and stretched membranes from the duct into the entry approach. At reduction the parallel floor strands still read more like cables than flesh.
+Manual now has a deformed dais, jammed lever, ejected chair and a narrowing blast shadow. The first soot fan looked cut from black paper; the final fan uses feathered deposits around the chair shadow.

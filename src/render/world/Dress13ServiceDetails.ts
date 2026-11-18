@@ -1,4 +1,5 @@
 import {addWorkshopResin} from './Inc13ResinFloor';
+import {addInc13Manual} from './Inc13Manual';
 import {addFrozenSpill} from './Inc13FrozenSpill';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -36,7 +37,9 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
       const g = new T.CircleGeometry(.09 + i % 3 * .04, 3); g.rotateX(-Math.PI / 2); g.rotateY(i * 1.37); g.translate((x + Math.sin(i * 2.3) * 19) / 32, y + i * .001, (z + Math.cos(i * 1.7) * 10) / 32); put(g, color);
     }
   };
-  if (id === 'freight-hold') {
+  if (id === 'manual-control-chamber') {
+    addInc13Manual(root);
+  } else if (id === 'freight-hold') {
     scuff(370, 345, 2.5, 1.1); scuff(424, 349, 1.4, 1.1);
     shards(405, 342, 0x697374);
     for (let i = 0; i < 4; i++) box(405 + i * 15, .04, 339 - i % 2 * 10, .3, .07, .22, 0x65716b, i * .6);
