@@ -101,7 +101,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.46,ambient:.46,marineGlow:1,exit:.9,
   }),
   'safety-interlock-station': profile({
-    landmark:{at:[650,365],color:0xffc575,radius:6,body:.55,spill:.025,keyGain:.55},
+    landmark:{at:[555,351],color:0xffc575,radius:6,body:.55,spill:.025,keyGain:.55},
     // Locked recorder, cage inspection diffuser, battery return task light.
     fixturesAt:[[370,176],[528,370],[640,824]],
     floor:{lit:.38,unlit:.20,edge:.10},perimeter:{inner:3.8,outer:9.5,value:.32,lane:.75},

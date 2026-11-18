@@ -258,6 +258,30 @@ const incidents:Record<string,Incident>={
       }
     },
   },
+  'safety-interlock-station':{
+    source:[550,351],bounds:[-242,-44,303,205],
+    paint(c){
+      // A portable welding blanket was dragged out from under the fused door.
+      // Steel grit fans from the seam and burns small islands through the cloth.
+      const cloth=new Path2D('M-39 -1 7 7 -5 36 -45 49 Q-83 63 -97 95 L-151 123 -182 100 -165 86 -176 78 -132 54 -109 35 -79 27Z');
+      c.save();c.clip(cloth);c.fillStyle='#6c7163';c.fillRect(-242,-44,303,205);
+      for(let i=0;i<38;i++){
+        const x=-20-i*3.7,z=14+i*2.25+14*Math.sin(i*2.15),r=2+i%4;
+        c.fillStyle='rgba(44,42,39,.7)';c.beginPath();c.ellipse(x,z,r,1+r*.55,-.36,0,Math.PI*2);c.fill();
+      }c.restore();
+      for(let i=0;i<5;i++)stroke(c,'M12 '+(-4+i*2)+'Q-53 '+(14+i*3)+' -77 '+(53+i*5)+'T-158 '+(93+i*6),'rgba(89,80,62,.56)',1.4);
+    },
+    pieces(p){
+      // Massive dog bolts cross the welded split, two bent out of their seats.
+      for(let i=0;i<3;i++){
+        const y=18+i*14;
+        p.box(1,y,0,47,4,5,0x77817a,.04,i===2?.14:0);
+        for(const x of [-19,21])p.box(x,y,2,6,7,5,0x585e58);
+      }
+      p.rod([-8,7,5],[-28,28,11],2.4,0x9a977b);
+      p.rod([-28,28,11],[-35,29,13],2.4,0x697477);
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
