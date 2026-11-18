@@ -63,6 +63,7 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | I13 boss footprints and collision to match, pod prop with hatch countdown, Warden wall-stun cue, LOD/KTX2 repack — Sol | merged | Story/Arc campaign cleared 16 rooms incl. Warden and Matron, zero errors; Matron (1.4×) reads less imposing than the Warden (2.3×) |
 | COMM13 siege area and charge, priority vs resistance markers, off-screen shot cue, Stalker reveal, beat signals — Sol 6.2 | merged | finished its whole list in one run; resistance outline, breach flare and Stalker recovery still subtle at 480×270 |
 | UI13 31 distinct reward studies, transform before/after diagrams with "you lose", illustrated shop and route cards, grouped loadout/results — Astra 6.2 | merged | finished its whole list in one run |
+| INC13 one dominant incident per room as a large readable shape with floor carry-over and its own light (five signature rooms first) — Astra 6.2 | running | |
 | PERF13 creature LODs, shadow proxies, camera/main-thread CPU — Sol | merged | triangles −32%, profiled thread CPU per render 17.2 → 7.9 ms; frame p95 ≤ 20 ms in 11/16 configurations (all Low, 3 of 8 High) on a loaded host — High still misses in five |
 | G12 review gallery `final6` — Sol | done | 4,127 images in `artifacts/nextgen/final6/` |
 | D11 difficulty modes (Story/Standard/Veteran), in-play hints, "how you died" — Sol | merged | Story 57.5% novice, Standard 42.5% competent; Veteran expert 96% (too easy for experts, accepted for now) |
