@@ -1,3 +1,5 @@
+import {combatPresentationHoldSeconds} from '../../../src/game/observation/combatPresentationClock';
+import {PresentationHold} from '../../../src/render/motion/PresentationHold';
 import {ENEMIES} from '../../../src/game/enemies/catalog';
 import {HudCombatFraming} from '../../../src/render/camera/HudCombatFraming';
 import {RoomCombatFraming} from '../../../src/render/camera/RoomCombatFraming';
@@ -35,6 +37,7 @@ export class CameraObserver {
     readonly hud = new HudCombatFraming();
     readonly roomFraming = new RoomCombatFraming();
     private revision = -1;
+    private presentationHold = new PresentationHold();
     private raycaster = new T.Raycaster();
     private point = new T.Vector3();
     private target = new T.Vector3();
@@ -44,12 +47,14 @@ export class CameraObserver {
         // Calibrated shipping HUD reservations at the runner's1920x1080 desktop viewport.
         this.hud.resize(WIDTH,HEIGHT);this.hud.setInsets({top:182,right:292,bottom:120,left:0});
     }
+    observeEffect(effect:GameEffect) {const seconds=combatPresentationHoldSeconds(effect);if(seconds)this.presentationHold.request(seconds,1,false);}
     private get queenHeight(){return this.metrics.queen?.height??4.5;}
     update(game: DepthGame, dt: number) {
         const bounds = game.geometry.bounds;
         if (this.revision !== game.roomRevision) {
             this.revision = game.roomRevision;
             this.roomFraming.reset();
+            this.presentationHold.reset();
             const f = roomFocus(game.geometry.playerSpawn.x / 32, game.geometry.playerSpawn.y / 32, bounds.width / 32, bounds.height / 32, VIEW * WIDTH / HEIGHT, VIEW, game.node.templateId);
             this.rig.reset(f.x, f.z);
         }
@@ -60,13 +65,15 @@ export class CameraObserver {
         if(bossActive)this.hud.selectPrimaryContact(-1,b.x/32,b.y/32,3.4,this.queenHeight);
         this.hud.biasTarget(p.x/32,p.y/32,p.angle,false,bossActive,this.desired);
         const f = roomFocus(this.desired.x,this.desired.z,bounds.width/32,bounds.height/32,VIEW*WIDTH/HEIGHT/zoom,VIEW/zoom,game.node.templateId,this.framed);
-        const delta = game.status === 'paused' || game.status === 'reward' || game.status === 'route' ? 0 : Math.min(dt,.05);
+        const rawDelta = game.status === 'paused' || game.status === 'reward' || game.status === 'route' ? 0 : Math.min(dt,.05);
+        const delta = this.presentationHold.advance(rawDelta,1,false);
         if(!this.hud.hasEngagement||bossActive)this.desired.set(f.x,0,f.z);
         this.rig.update(delta, this.desired.x, this.desired.z, 1, false);
         this.rig.apply(this.camera, zoom, VIEW, 1);
         this.hud.center(this.camera,this.rig.focus,this.point,this.target);
         this.roomFraming.apply(this.camera,this.rig.focus,p.x/32,p.y/32,p.radius/32,2.05,bounds.width/32,bounds.height/32,this.hud.viewport,HEIGHT,delta,false,game.geometry.boundary,this.hud,2.05,p.angle);
         this.hud.refreshFit(this.camera,this.point);
+        return delta;
     }
     project(x: number, y: number, height = .65) { const p = this.point.set(x / 32, height, y / 32).project(this.camera); return { x: (p.x + 1) * WIDTH / 2, y: (1 - p.y) * HEIGHT / 2 }; }
     pointer(screen: {
@@ -154,6 +161,7 @@ export function runSimulation(options: SimOptions) {
     };
     const onEffect = (e: GameEffect) => {
         if(e.type==='sync-corpse') return;
+        camera.observeEffect(e);
         recordNativeObservedEvent(events, e, game.elapsed);
         if (e.type === 'ability' && e.ability) {
             presentations[e.ability.rig].event(e.ability, e.x, e.y);
@@ -259,8 +267,7 @@ export function runSimulation(options: SimOptions) {
                 if(vitals.health>=vitals.maxHealth)lastFullHealthElapsed=game.elapsed;
                 game.update(step, input);
             });
-            camera.update(game, dt / 1000);
-            kit.time += dt / 1000;
+            kit.time += camera.update(game, dt / 1000);
             remaining -= dt;
         }
         camera.update(game, 0);
