@@ -158,3 +158,22 @@ body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-i
 #overlay .panel .installed-group .owned-boon:is(:hover,:focus-within) {z-index:5;}
 #overlay .panel .equipped-ability .reward-combat-preview {color:var(--element);}
 #overlay .panel .equipped-ability .transformation-title {color:var(--element);font-size:15px;}
+
+/* A transform already names the affected ability and shows the rule change. */
+#overlay .panel.draft-panel .choice-card:has(.transformation-preview)>.boon-numbers {display:none;}
+#overlay .panel.draft-panel .choice-card:has(.transformation-preview) .transformation-title {font-size:15px;}
+#overlay .panel.draft-panel .choice-card:has(.transformation-preview) .transformation-loss {font-size:14px;}
+#overlay .panel.draft-panel:has(.transformation-preview) .reward-art {height:clamp(100px,16vh,180px);}
+#overlay .panel.draft-panel:has(.transformation-preview) .room-record {
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:22px;
+}
+#overlay .draft-panel:has(.transformation-preview) .room-record .record-heading {grid-column:1/-1;}
+#overlay .draft-panel:has(.transformation-preview) .room-record small {display:none;}
+#overlay .draft-panel:has(.transformation-preview) .room-record .record-context[open] {grid-column:1/-1;}
+
+#overlay .panel.pause-panel .boon-tooltip:has(.transformation-preview) {width:min(430px,85vw);}
+#overlay .panel.pause-panel .transformation-preview .ability-vignette {display:block;height:55px;width:100%;margin:0;}
+@media(max-height:760px) {
+  #overlay .panel.draft-panel:has(.transformation-preview):has(.effect-set-lesson) .reward-art {height:84px;}
+  #overlay .panel.draft-panel:has(.transformation-preview) .effect-set-lesson {padding:4px 8px;margin-bottom:5px;}
+}
