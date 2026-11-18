@@ -15,7 +15,7 @@ import { SHIP_ARCHITECTURE_PLANS } from '../../game/roguelike/shipArchitectureLa
 import { shipInteriorFurnishings } from '../../game/roguelike/shipInteriorFurnishings';
 import { disposeModel, geometries } from '../meshParts';
 import { retireRoomModels } from '../RoomModelCache';
-import { acquireOriginalShipKit, buildOriginalShipKit, setOriginalShipKitQuality, type OriginalKitInstance, type OriginalKitPack } from './OriginalShipKitAssets';
+import { acquireOriginalShipKit, prefetchOriginalShipKit, buildOriginalShipKit, setOriginalShipKitQuality, type OriginalKitInstance, type OriginalKitPack } from './OriginalShipKitAssets';
 import { interiorFloorServices } from './RoomInteriors';
 import { loadDeckSurfaces } from './E10DeckSurfaces';
 import { addCeilingServices } from './E10CeilingServices';
@@ -97,9 +97,31 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
     instances.push(...p11IncidentPlacements(id),...p11InfestedPlacements(id),...p11HabitationPlacements(id),...p11ControlPlacements(id),...p11ClinicalSecurityPlacements(id),...p11CargoPlacements(id),...p11MaintenancePlacements(id),...p11ServicePlacements(t));
     return instances;
 }
+/** Prepare only compressed or raw GLB bytes. Geometry work stays in the hold. */
+export function prefetchOriginalRoomInteriors(t:RoomTemplate, renderer:T.WebGLRenderer):()=>void {
+    if(typeof requestIdleCallback!=='function')return ()=>{};
+    let cancelled=false,handle:number;
+    let packs: Iterator<OriginalKitPack>|undefined;
+    const schedule=()=>{
+        handle=requestIdleCallback(deadline=>{
+            if(cancelled)return;
+            if(deadline.timeRemaining()<4){schedule();return;}
+            if(!packs){
+                packs=new Set(instancesFor(t).map(instance=>instance.pack)).values();
+                schedule();
+                return;
+            }
+            const next=packs.next();
+            if(!next.done)void prefetchOriginalShipKit(next.value,renderer).finally(()=>{if(!cancelled)schedule();});
+        });
+    };
+    schedule();
+    return ()=>{cancelled=true;cancelIdleCallback(handle);};
+}
+
 /** Original model owner settles before combat warmup. Session transfers survive
  * a room cancellation; partial/late borrows retire independently and quietly. */
-export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onChanged: () => void, prerequisite: Promise<unknown> = Promise.resolve(), highQuality: () => boolean = () => true, renderer?: T.WebGLRenderer) {
+export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onChanged: () => void, prerequisite: Promise<unknown> = Promise.resolve(), highQuality: () => boolean = () => true, renderer?: T.WebGLRenderer, record?: (phase:string, ms:number)=>void) {
     const controller = new AbortController(), borrowed = new Set<T.Group>(), sources = new Map<OriginalKitPack, T.Group>();
     const restores: (() => void)[] = [], geometryChanges: {
         mesh: T.Mesh;
@@ -122,8 +144,8 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             if (!active)
                 return;
             const instances = instancesFor(t), packs = [...new Set(instances.map(i => i.pack))];
-            const results = await Promise.allSettled([loadDeckSurfaces(world, t, () => active, dispose => restores.push(dispose)), ...packs.map(async (pack) => {
-                const source = await acquireOriginalShipKit(pack, controller.signal, renderer);
+            const results = await Promise.allSettled([loadDeckSurfaces(world, t, () => active, dispose => restores.push(dispose),record), ...packs.map(async (pack) => {
+                const source = await acquireOriginalShipKit(pack, controller.signal, renderer, record);
                 if (!active) {
                     retireRoomModels(source);
                     return;
@@ -136,7 +158,10 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             const failed = results.find(r => r.status === 'rejected');
             if (failed?.status === 'rejected')
                 throw failed.reason;
+            const mergeStarted=performance.now();
             root = buildOriginalShipKit(sources, instances, t);
+            record?.('kitMerge',performance.now()-mergeStarted);
+            const dressingStarted=performance.now();
             addDress13ServiceDetails(root, t.id);
             addDress13EarlyDetails(root, t.id);
             addStoryIncident(root,t);
@@ -146,6 +171,8 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             }
             addCeilingServices(root, t);
             addRecessedServices(root, t);
+            record?.('incidentDressing',performance.now()-dressingStarted);
+            const cutStarted=performance.now();
             // Replace skins on precisely those existing solids occupied by a new
             // original machine. Simulation still owns the old solid plus shallow bays.
             const replacements = shipInteriorFurnishings(t).filter(f => f.source === 'solid').map(f => {
@@ -218,6 +245,7 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
                 // new buffers. Retired private source buffers are released here once.
                 geometryChanges.push({ mesh: o, old, next });
             });
+            record?.('interiorCuts',performance.now()-cutStarted);
             const profile = INTERIOR_PROFILES[t.id], finishes = INTERIOR_WALL_FINISHES[t.id];
             root.traverse(o => {
                 if (!(o instanceof T.Mesh) || Array.isArray(o.material) || !(o.material instanceof T.MeshStandardMaterial))

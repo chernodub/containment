@@ -1,6 +1,8 @@
 import * as T from 'three';
 import {GLTFLoader, type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 
+export type ModelPhase = (phase: 'modelFetch' | 'modelParse' | 'modelTranscode', ms: number) => void;
+
 type Disposable = {dispose():void};
 export type RoomModelSpec = Readonly<{url:string; maxBytes:number; label:string}>;
 type Resources = {objects:Set<Disposable>; images:Set<ImageBitmap>};
@@ -52,7 +54,25 @@ export function retireRoomModels(...roots:T.Object3D[]):void {
   release.forEach(done => done());
 }
 
-async function decode(spec:RoomModelSpec):Promise<GLTF> {
+// An idle transfer is shared with the eventual load but never starts parsing.
+const prefetched = new Map<string, Promise<ArrayBuffer>>();
+
+export async function fetchRoomModel(spec:RoomModelSpec, record?:ModelPhase):Promise<ArrayBuffer> {
+  const pending=prefetched.get(spec.url);
+  if(!pending)return transferRoomModel(spec,record);
+  prefetched.delete(spec.url);
+  const started=performance.now();
+  try {
+    const bytes=await pending;
+    record?.('modelFetch',performance.now()-started);
+    return bytes;
+  } catch {
+    return transferRoomModel(spec,record);
+  }
+}
+
+async function transferRoomModel(spec:RoomModelSpec, record?:ModelPhase):Promise<ArrayBuffer> {
+  const started=performance.now();
   // The session cache owns this transfer. Individual room cancellation only retires its borrow.
   const response = await fetch(spec.url);
   if (!response.ok) throw Error(`${spec.label} HTTP ${response.status}`);
@@ -62,7 +82,14 @@ async function decode(spec:RoomModelSpec):Promise<GLTF> {
   }
   const bytes = await response.arrayBuffer();
   if (bytes.byteLength > spec.maxBytes) throw Error(`${spec.label} byte budget exceeded`);
-  return new GLTFLoader().parseAsync(bytes, spec.url.slice(0, spec.url.lastIndexOf('/') + 1));
+  record?.('modelFetch',performance.now()-started);
+  return bytes;
+}
+
+async function decode(spec:RoomModelSpec, record?:ModelPhase):Promise<GLTF> {
+  const bytes=await fetchRoomModel(spec,record), started=performance.now();
+  try {return await new GLTFLoader().parseAsync(bytes, spec.url.slice(0, spec.url.lastIndexOf('/') + 1));}
+  finally {record?.('modelParse',performance.now()-started);}
 }
 
 /** Session cache for at most three fixed static room models; never an unbounded URL cache. */
@@ -71,13 +98,25 @@ export class RoomModelCache {
   private readonly entries = new Map<string, Entry>();
   private disposed = false;
 
-  constructor(specs:readonly RoomModelSpec[], private readonly loader:(spec:RoomModelSpec) => Promise<GLTF> = decode) {
+  constructor(specs:readonly RoomModelSpec[], private readonly loader:(spec:RoomModelSpec, record?:ModelPhase) => Promise<GLTF> = decode) {
     if (specs.length > 3 || new Set(specs.map(spec => spec.url)).size !== specs.length) throw Error('Room model cache requires at most three unique URLs');
     this.specs = new Map(specs.map(spec => [spec.url, spec]));
   }
 
+  /** Limit speculative transfers to one active room-pack request at a time. */
+  async prefetch(url:string):Promise<void> {
+    const spec=this.specs.get(url);
+    if(this.disposed||!spec||this.entries.has(url)||prefetched.has(url))return;
+    // Bound retained payloads even when a player takes an alternate route.
+    if(prefetched.size>=8)prefetched.delete(prefetched.keys().next().value!);
+    const work=transferRoomModel(spec);
+    prefetched.set(url,work);
+    try {await work;}
+    catch {if(prefetched.get(url)===work)prefetched.delete(url);}
+  }
+
   /** Coalesce fetch/decode and return independent transforms/materials with borrowed immutable maps. */
-  async acquire(url:string, signal?:AbortSignal):Promise<T.Group> {
+  async acquire(url:string, signal?:AbortSignal, record?:ModelPhase):Promise<T.Group> {
     if (this.disposed) throw Error('Room model cache disposed');
     const spec = this.specs.get(url);
     if (!spec) throw Error('Unknown room model URL');
@@ -86,7 +125,7 @@ export class RoomModelCache {
     if (!entry) {
       entry = {work:Promise.resolve(new T.Group()), references:0, retired:false};
       const current = entry;
-      current.work = Promise.resolve().then(() => this.loader(spec)).then(async asset => {
+      current.work = Promise.resolve().then(() => this.loader(spec,record)).then(async asset => {
         let textures:T.Texture[] = [];
         try {
           // Three resolves missing images as null textures. Never retain that incomplete template.

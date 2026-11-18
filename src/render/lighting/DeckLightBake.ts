@@ -2,10 +2,26 @@ import * as T from 'three';
 import { shipEnvironment } from '../ShipEnvironments';
 import type { RoomTemplate } from '../../game/roguelike/types';
 
+type Bake = { key:string; pixels:Uint8Array; bounds:T.Vector4 };
+const bakes = new WeakMap<RoomTemplate,Bake>();
+
 /** Bake stable fixture falloff and construction proximity once at room build.
  * RG stores key-pool coverage and soft enclosure occlusion. No realtime lights,
  * scene queries or combat work; Low uses the identical 256² light field. */
 export function bakeDeckLighting(t: RoomTemplate, pools: readonly T.Vector4[], services: readonly {x:number;z:number;width:number;depth:number}[] = [], exitGain = .8): { texture: T.DataTexture; bounds: T.Vector4 } {
+  const key=JSON.stringify([pools.map(pool=>pool.toArray()),services,exitGain]);
+  let bake=bakes.get(t);
+  if(bake?.key!==key){
+    bake={key,...buildDeckLighting(t,pools,services,exitGain)};
+    bakes.set(t,bake);
+  }
+  const texture = new T.DataTexture(bake.pixels, 256, 256, T.RGBAFormat);
+  texture.name = 'e10-static-room-irradiance'; texture.minFilter = texture.magFilter = T.LinearFilter;
+  texture.generateMipmaps = false; texture.needsUpdate = true;
+  return {texture, bounds:bake.bounds.clone()};
+}
+
+function buildDeckLighting(t:RoomTemplate,pools:readonly T.Vector4[],services:readonly {x:number;z:number;width:number;depth:number}[],exitGain:number) {
   const hull = t.boundary ?? [{x: 0, y: 0}, {x: t.width, y: 0}, {x: t.width, y: t.height}, {x: 0, y: t.height}];
   const xs = hull.map(p => p.x / 32), zs = hull.map(p => p.y / 32);
   const x0 = Math.min(...xs), z0 = Math.min(...zs), width = Math.max(...xs) - x0, depth = Math.max(...zs) - z0;
@@ -47,8 +63,5 @@ export function bakeDeckLighting(t: RoomTemplate, pools: readonly T.Vector4[], s
     pixels[index] = Math.round(pool * 255); pixels[index + 1] = Math.round(smooth(.1, 1.7, nearest) * 255);
     pixels[index + 2] = Math.round(accent*255); pixels[index + 3] = Math.round(status*255);
   }
-  const texture = new T.DataTexture(pixels, size, size, T.RGBAFormat);
-  texture.name = 'e10-static-room-irradiance'; texture.minFilter = texture.magFilter = T.LinearFilter;
-  texture.generateMipmaps = false; texture.needsUpdate = true;
-  return {texture, bounds: new T.Vector4(x0, z0, width, depth)};
+  return {pixels, bounds: new T.Vector4(x0, z0, width, depth)};
 }

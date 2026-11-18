@@ -1,6 +1,7 @@
 import * as T from 'three';
 
 type Niche = Readonly<{x:number;z:number;angle:number;scale:number;width?:number;depth?:number;bottom?:number;top?:number}>;
+type Plane = readonly [axis: 'x' | 'y' | 'z', edge: number, direction: number];
 type Vertex = {values:number[];local:T.Vector3};
 
 /** Cut shallow service niches into presentation walls, retaining the native
@@ -21,17 +22,29 @@ export function cutInteriorWallNiches(source:T.BufferGeometry,niches:readonly Ni
     }
     return result;
   };
+  const cutters=niches.map(niche=>{
+    const planes:readonly Plane[]=[['x',-(niche.width??4.36*niche.scale)/2,1],['x',(niche.width??4.36*niche.scale)/2,-1],['z',-(niche.depth??1.4*niche.scale)/2,1],['z',(niche.depth??1.4*niche.scale)/2,-1],['y',niche.bottom??.255,1],['y',niche.top??1.74,-1]];
+    return {x:niche.x,z:niche.z,c:Math.cos(niche.angle),s:Math.sin(niche.angle),planes};
+  });
   const p=flat.getAttribute('position');
   for(let i=0;i<p.count;i+=3) {
     let polygons:Vertex[][]=[Array.from({length:3},(_,n)=>({local:new T.Vector3(),values:attributes.flatMap(([,a])=>Array.from({length:a.itemSize},(_,k)=>a.array[(i+n)*a.itemSize+k]))}))];
-    for(const niche of niches){
-      const c=Math.cos(niche.angle),s=Math.sin(niche.angle),next:Vertex[][]=[];
-      const planes:readonly [keyof T.Vector3 & ('x'|'y'|'z'),number,number][]=[['x',-(niche.width??4.36*niche.scale)/2,1],['x',(niche.width??4.36*niche.scale)/2,-1],['z',-(niche.depth??1.4*niche.scale)/2,1],['z',(niche.depth??1.4*niche.scale)/2,-1],['y',niche.bottom??.255,1],['y',niche.top??1.74,-1]];
+    for(const {x:originX,z:originZ,c,s,planes} of cutters){
+      const next:Vertex[][]=[];
       for(const polygon of polygons){
-        for(const v of polygon){const x=v.values[0]-niche.x,z=v.values[2]-niche.z;v.local.set(x*c-z*s,v.values[1],x*s+z*c);}
+        for(const v of polygon){const x=v.values[0]-originX,z=v.values[2]-originZ;v.local.set(x*c-z*s,v.values[1],x*s+z*c);}
         let remainder=polygon;
         for(const [axis,edge,sign]of planes){
           if(remainder.length<3)break;
+          // Strict separation preserves the original tolerance at coincident planes.
+          let allInside=true,allOutside=true;
+          for(const vertex of remainder){
+            const distance=(vertex.local[axis]-edge)*sign;
+            allInside &&= distance>1e-8;
+            allOutside &&= distance< -1e-8;
+          }
+          if(allInside)continue;
+          if(allOutside){next.push(remainder);break;}
           const outside=clip(remainder,axis,edge,sign,false);if(outside.length>=3)next.push(outside);
           remainder=clip(remainder,axis,edge,sign,true);
         }
