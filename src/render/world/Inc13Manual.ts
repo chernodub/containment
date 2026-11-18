@@ -4,7 +4,7 @@ import {environmentClock} from '../lighting/HotFixtureSurface';
 import {paintIncidentDeck} from './Inc13DeckPaint';
 import type {OriginalKitInstance} from './OriginalShipKitAssets';
 
-const dais = new T.Matrix4().makeScale(.95, .9, .75).setPosition(640 / 32, 0, 380 / 32);
+const dais = new T.Matrix4().makeScale(1.28, 1.10, 1.01).setPosition(617 / 32, 0, 386 / 32);
 
 export function inc13ManualPlacement(): OriginalKitInstance {
   return {
@@ -14,8 +14,9 @@ export function inc13ManualPlacement(): OriginalKitInstance {
 }
 
 export function addInc13Manual(root: T.Group): void {
-  paintIncidentDeck(root, 'inc13-manual-explosion-fan', [160, 330, 410, 340], c => {
+  paintIncidentDeck(root, 'inc13-manual-explosion-fan', [105, 334, 417, 350], c => {
     c.save();
+    c.translate(-42, 7);
     let seed=13013;
     const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
     // Smoke is deposited in overlapping, downwind wisps. Their ends feather
