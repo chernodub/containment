@@ -44,6 +44,7 @@ export function addRecoverySpill(root:T.Group):void {
   });
   creepingVapour(root,[[479,369,266,70,.17],[557,379,295,63,-.05],[397,409,220,80,.42],[311,482,249,59,.33]]);
   const lens=new T.MeshBasicMaterial({color:0xc1e9ee});
+  lens.userData.actorMaterial = true;
   const beacon=new T.Mesh(new T.CylinderGeometry(.091,.10,.23,10),lens);
   beacon.position.set(474/32,1.26,320/32);beacon.name='inc13-medical-strobe';
   beacon.onBeforeRender=()=>{const t=environmentClock.value%2.6;

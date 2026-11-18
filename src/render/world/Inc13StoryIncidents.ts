@@ -429,6 +429,7 @@ function addOverloadVents(root:T.Group,x:number,z:number):void {
   for(const [parts,flash] of [[vents,false],[strobes,true]] as const){
     const geo=mergeGeometries(parts.parts,false)!;parts.parts.forEach(g=>g.dispose());geo.scale(1/32,1/32,1/32);
     const material=new T.MeshBasicMaterial({vertexColors:true,side:T.DoubleSide,transparent:true,depthWrite:false});
+    material.userData.actorMaterial = true;
     const mesh=new T.Mesh(geo,material);mesh.position.set(x/32,0,z/32);
     mesh.name=flash?'inc13-overload-repeaters':'inc13-plasma-vents';
     mesh.onBeforeRender=()=>{

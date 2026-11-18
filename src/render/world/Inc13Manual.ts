@@ -65,6 +65,7 @@ export function addInc13Manual(root: T.Group): void {
   const material = new T.MeshBasicMaterial({
     color: 0xd9efff, transparent: true, depthWrite: false, toneMapped: false,
   });
+  material.userData.actorMaterial = true;
   const arc = new T.Mesh(geometry, material);
   arc.name = 'inc13-manual-conductor-arc';
   arc.onBeforeRender = () => {

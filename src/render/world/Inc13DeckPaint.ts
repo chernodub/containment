@@ -12,6 +12,7 @@ export function paintIncidentDeck(root:T.Group,name:string,bounds:[number,number
   c.scale(canvas.width/width,canvas.height/depth);c.translate(-left,-top);paint(c);
   const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;
   const material=new T.MeshBasicMaterial({map,transparent:true,depthWrite:false,toneMapped:false});
+  material.userData.actorMaterial = true;
   material.addEventListener('dispose',()=>map.dispose());
   const mesh=new T.Mesh(new T.PlaneGeometry(width/32,depth/32).rotateX(-Math.PI/2),material);
   mesh.name=name;mesh.position.set((left+width/2)/32,height,(top+depth/2)/32);root.add(mesh);
@@ -29,6 +30,7 @@ export function creepingVapour(root:T.Group,banks:readonly (readonly [number,num
   }
   const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;
   const material=new T.MeshBasicMaterial({map,transparent:true,opacity:.48,depthWrite:false});
+  material.userData.actorMaterial = true;
   material.addEventListener('dispose',()=>map.dispose());
   for(const [x,z,w,d,angle] of banks){
     const mesh=new T.Mesh(new T.PlaneGeometry(w/32,d/32).rotateX(-Math.PI/2),material);
