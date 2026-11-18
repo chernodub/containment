@@ -163,3 +163,11 @@
 ## Manual Control Chamber
 - Opened native calm/landmark-facing tour and 480 colour/grey calm/tour/heavy: warm authorization instruments identify the dais above its approach; marine and hostile lanterns retain priority.
 - Bounded dais source restores amber identity while cabinet recesses stay dark and fatal-choice text stays crisp. Build and seven guarded frames pass.
+
+## Whole-route landmark comparison
+- Opened current and previous twenty-calm/twenty-kiting in colour and greyscale, plus final7 references: landmark/deck separation improves; Crew, Freight and Annulus retain the broadest pale pools. Manual uses labeled verified DRESS13-01 after the existing HUD-warning failure.
+- Low Atrium/Relay/Overload pass; native Atrium canopy remains below marine plate ROI values. Fresh late-room replacements pass after host-load timeouts; all failed manifests remain retained. Final build passes; native Story campaign running.
+
+## Fragment-cost follow-up
+- Initial four-room GPU samples remained above both bracketing baseline samples, with frame times near25ms and no runtime errors/compiles. Bounded body/emitter work behind its existing positive body weight; zero-weight deck/distant surfaces skip it.
+- Rebuilt and opened Crew/Coolant calm plus Swarm heavy at480 colour/grey and native Coolant: appearance unchanged. Matching room/batching cache keys advance together to v12; final cost and campaign recheck follow.

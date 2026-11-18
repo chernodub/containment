@@ -84,7 +84,7 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
   if(diffuseEnvironmentGain!==undefined)environmentGain.value=Math.max(0,Math.min(1,diffuseEnvironmentGain));
   let shadowFill=practicalShadowFills.get(material);if(!shadowFill){shadowFill={value:practicalShadowFill??.025};practicalShadowFills.set(material,shadowFill);}if(practicalShadowFill!==undefined)shadowFill.value=Math.max(.025,Math.min(.25,practicalShadowFill));
   let bounce=shadowReadability.get(material);if(!bounce){bounce={value:readableBounce??0};shadowReadability.set(material,bounce);}if(readableBounce!==undefined)bounce.value=Math.max(0,Math.min(.02,readableBounce));
-  if (installed.has(material)||material.customProgramCacheKey().includes(':local-light-rejection-v11-landmarks')) return;
+  if (installed.has(material)||material.customProgramCacheKey().includes(':local-light-rejection-v12-landmark-bounds')) return;
   installed.add(material);
   const previous = material.onBeforeCompile;
   const key = material.customProgramCacheKey();
@@ -124,12 +124,14 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
         float landmarkDistance=distance(roomWorld.xz,roomLandmark.xy);
         float landmarkBody=roomLandmark.w*(1.0-smoothstep(roomLandmark.z*.25,roomLandmark.z,landmarkDistance))*smoothstep(.08,.35,roomWorld.y);
         float landmarkSpill=roomLandmark.w*(1.0-smoothstep(0.0,roomLandmark.z*2.0,landmarkDistance))*(1.0-smoothstep(.05,.25,roomWorld.y));
+        if(landmarkBody>0.0){
         float landmarkAlbedo=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
         float landmarkEmitter=clamp(dot(totalEmissiveRadiance,vec3(.2126,.7152,.0722))*2.0,0.0,1.0);
         float signalHue=step(totalEmissiveRadiance.b*1.2,max(totalEmissiveRadiance.r,totalEmissiveRadiance.g));
         vec3 signalLife=max(totalEmissiveRadiance,totalEmissiveRadiance/max(.0001,max(totalEmissiveRadiance.r,max(totalEmissiveRadiance.g,totalEmissiveRadiance.b)))*.8);
         totalEmissiveRadiance=mix(totalEmissiveRadiance,mix(mix(roomLandmarkColor,vec3(1.0),.18)*.8,signalLife,signalHue),landmarkBody*landmarkEmitter);
         totalEmissiveRadiance+=roomLandmarkColor*landmarkBody*roomLandmarkGains.x*(.045+.55*sqrt(max(0.0,landmarkAlbedo)))+diffuseColor.rgb*landmarkBody*roomLandmarkGains.x*.35;
+        }
         reflectedLight.indirectDiffuse+=roomLandmarkColor*landmarkSpill*roomLandmarkGains.y;
         // Low wall-foot wash outlines navigable boundaries without lifting the floor or far corners.
         float wallFoot=smoothstep(.025,.10,roomWorld.y)*(1.0-smoothstep(.22,.65,roomWorld.y));
@@ -140,6 +142,6 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
         reflectedLight.indirectDiffuse+=diffuseColor.rgb*roomMarineGlowColor*roomMarineGlow.w*roomValue.z*roomLamp;
       }`);
   };
-  material.customProgramCacheKey = () => `${key}:local-light-rejection-v11-landmarks`;
+  material.customProgramCacheKey = () => `${key}:local-light-rejection-v12-landmark-bounds`;
   material.needsUpdate = true;
 }
