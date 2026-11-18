@@ -165,7 +165,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.48,ambient:.46,marineGlow:1,exit:.95,
   }),
   'awakening-bay': profile({
-    landmark:{at:[640,230],color:0x59d8ff,radius:10,body:.7,spill:.045},
+    landmark:{at:[497,335],color:0x99ddf2,radius:10,body:.7,spill:.045},
     fixturesAt:[[440,240],[640,440],[640,800]],
     floor:{lit:.40,unlit:.20,edge:.10}, perimeter:{inner:3.8,outer:9,value:.30,lane:.7},
     wall:{value:.48,saturation:.55}, floorSaturation:.48,tint:0xc1e5ef,

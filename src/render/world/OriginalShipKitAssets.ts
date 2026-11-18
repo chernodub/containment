@@ -9,10 +9,11 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
 import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
 
-export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-reactor' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance' | 'p11-incidents' | 'p11-brood';
+export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-reactor' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance' | 'p11-incidents' | 'p11-brood' | 'p11-inc13-awakening';
 
 const base = import.meta.env.BASE_URL + 'assets/e9-ship-kit/';
 const URLs: Record<OriginalKitPack, string> = {
+  'p11-inc13-awakening': import.meta.env.BASE_URL + 'assets/inc13/awakening/bank.glb',
   'p11-incidents': import.meta.env.BASE_URL + 'assets/p11/incidents/incidents.glb',
   // GROW13 Brood growth kit (tools/assets/k11-creatures/growth).
   'p11-brood': import.meta.env.BASE_URL + 'assets/brood-growth/brood-growth.glb',
