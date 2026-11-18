@@ -21,7 +21,7 @@ import {boonChips} from '../boonChips';
 import {boonBenefit, boonNumbers} from '../boonBenefits';
 import {rewardArt} from '../rewardArt';
 import {formatDistance, playerFacingText, playerFacingStat} from '../units';
-import {abilityVignette} from './abilityVignettes';
+import {abilityVignette, transformationPreview} from './abilityVignettes';
 import {completionEnding, incomingDamageReport} from './damageReport';
 import {pauseRoomRecords} from '../storyPresentation';
 import {rigPortrait, marinePortrait, RIG_FANTASIES} from './rigPortraits';
@@ -98,6 +98,8 @@ function augmentTarget(mutation: MutationDefinition, rig?: RigId): string {
 
 /** Existing tactical diagram provides context; the change label states the authored delta. */
 function augmentDiagram(mutation: MutationDefinition, rig?: RigId): string {
+  const transformation = transformationPreview(mutation.id);
+  if (transformation) return transformation;
   const slot=augmentSlots[mutation.id], selected=mutation.rig??rig;
   if(!mutation.abilityOnly||!slot||!selected)return '';
   const ability=ABILITY_CATALOG[RIG_CATALOG[selected].abilities[slot]];
@@ -106,6 +108,8 @@ function augmentDiagram(mutation: MutationDefinition, rig?: RigId): string {
 
 /** Only changes that can be represented faithfully reuse the tactical geometry. */
 function augmentCombatPreview(mutation: MutationDefinition, rig?: RigId): string {
+  const transformation = transformationPreview(mutation.id);
+  if (transformation) return transformation;
   const slot=augmentSlots[mutation.id], selected=mutation.rig??rig;
   if(!mutation.abilityOnly||!slot||!selected)return '';
   const ability=ABILITY_CATALOG[RIG_CATALOG[selected].abilities[slot]];
@@ -179,7 +183,7 @@ export function routeScreen(game:DepthGame,selected=game.node.next[0]):string{
 
 /** Visible compact build, with complete boon rules on pointer hover or keyboard focus. */
 export function buildIcons(game: DepthGame): string {
-  return `<div class="owned-boons" aria-label="Installed boons">${game.expedition.build.mutations.map(id=>{const m=MUTATION_CATALOG[id];return `<article class="owned-boon" tabindex="0" data-family="${m.family}" data-element="${boonElement(m)}" data-boon="${m.id}" data-augment="${m.abilityOnly===true}" aria-label="${escapeHtml(`${m.name}. ${boonPath(m)}. ${playerFacingText(m.description)} ${playerFacingText(m.tradeoff)}. Counts toward ${m.family} set`)}">${rewardArt(m,true)}${icon(boonIcon(m))}<span class="owned-boon-name">${m.name}${game.expedition.build.augmentUpgrades?.includes(m.id as AugmentId)?' · UPGRADED':''}</span>${boonChips(m,familyCount(game.expedition.build,m.family))}<span class="boon-tooltip" role="tooltip"><span>${boonPath(m)} / ${m.rarity}</span><h4>${m.name}</h4><p>${playerFacingText(m.description)}</p>${game.expedition.build.augmentUpgrades?.includes(m.id as AugmentId)?`<p><b>Upgraded:</b> ${escapeHtml(AUGMENT_UPGRADE_RULES[m.id as AugmentId]??'')}</p>`:''}<small>${playerFacingText(m.tradeoff)}</small>${boonChips(m,familyCount(game.expedition.build,m.family))}</span></article>`;}).join('')||'<p class="build-empty">No boons installed yet.</p>'}</div>`;
+  return `<div class="owned-boons" aria-label="Installed boons">${game.expedition.build.mutations.map(id=>{const m=MUTATION_CATALOG[id];return `<article class="owned-boon" tabindex="0" data-family="${m.family}" data-element="${boonElement(m)}" data-boon="${m.id}" data-augment="${m.abilityOnly===true}" aria-label="${escapeHtml(`${m.name}. ${boonPath(m)}. ${playerFacingText(m.description)} ${playerFacingText(m.tradeoff)}. Counts toward ${m.family} set`)}">${rewardArt(m,true)}${icon(boonIcon(m))}<span class="owned-boon-name">${m.name}${game.expedition.build.augmentUpgrades?.includes(m.id as AugmentId)?' · UPGRADED':''}</span>${boonChips(m,familyCount(game.expedition.build,m.family))}<span class="boon-tooltip" role="tooltip" data-element="${boonElement(m)}"><span>${boonPath(m)} / ${m.rarity}</span><h4>${m.name}</h4>${transformationPreview(m.id, game.expedition.build.augmentUpgrades?.includes(m.id as AugmentId))}<p>${playerFacingText(m.description)}</p>${game.expedition.build.augmentUpgrades?.includes(m.id as AugmentId)?`<p><b>Upgraded:</b> ${escapeHtml(AUGMENT_UPGRADE_RULES[m.id as AugmentId]??'')}</p>`:''}<small>${playerFacingText(m.tradeoff)}</small>${boonChips(m,familyCount(game.expedition.build,m.family))}</span></article>`;}).join('')||'<p class="build-empty">No boons installed yet.</p>'}</div>`;
 }
 
 export function buildRecap(game: DepthGame): string {

@@ -1,3 +1,4 @@
+import {AUGMENT_BOONS, conflictingAugment, type AugmentId} from '../../game/abilities/augmentCatalog';
 import type {AbilityDefinition, AbilityId} from '../../game/abilities/contract';
 import {escapeHtml} from './initialTemplates';
 
@@ -26,8 +27,113 @@ const scenes: Readonly<Record<AbilityId, {label: string; drawing: string}>> = {
   overclock: {label: 'Time dilation slows enemies and projectiles; your fire stays fast', drawing: `${marine(49)}<circle cx="104" cy="42" r="26"/><path d="M104 23v19l12 8"/>${enemies([157,24],[164,59])}<path class="vignette-ghost" d="M171 24h13m-7 35h10"/><path d="M62 36h24m-24 6h31m-31 6h24M142 25h-9m11 34h-9"/><path d="M144 21v8m-6 26v8"/>`},
 };
 
+type Vignette = {label: string; drawing: string};
+
+function renderVignette(scene: Vignette, data = ''): string {
+  return `<svg class="ability-shape ability-vignette" ${data} viewBox="0 0 200 84" role="img" aria-label="${escapeHtml(scene.label)}"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path class="vignette-arena" d="M8 8H192V76H8ZM54 8v68m46-68v68m46-68v68M8 30h184M8 54h184"/>${scene.drawing}</g></svg>`;
+}
+
 /** Authored tactical stories share one arena, marine silhouette and enemy scale. */
 export function abilityVignette(ability: AbilityDefinition): string {
-  const scene = scenes[ability.id];
-  return `<svg class="ability-shape ability-vignette" data-ability="${ability.id}" data-shape="${ability.shape.kind}" viewBox="0 0 200 84" role="img" aria-label="${escapeHtml(scene.label)}"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path class="vignette-arena" d="M8 8H192V76H8ZM54 8v68m46-68v68m46-68v68M8 30h184M8 54h184"/>${scene.drawing}</g></svg>`;
+  return renderVignette(scenes[ability.id], `data-ability="${ability.id}" data-shape="${ability.shape.kind}"`);
+}
+
+type Transformation = {target: string; lost?: string; before: Vignette; after: Vignette};
+
+const frozenKill = `${marine(31)}${frozen(87,42)}<path class="vignette-hostile" d="m83 38 8 8m0-8-8 8"/>`;
+const shardTargets = enemies([128,20],[153,43],[129,64]);
+const fireZone = `<circle class="shape-fill" cx="65" cy="42" r="25"/>${enemies([69,42],[121,24],[134,57])}${flame(69,35)}`;
+const pylon = '<path class="shape-fill" d="m82 39 8-13 8 13-8 13Z"/><path d="M90 48v15m-9 0h18"/>';
+const pylonArc = `${enemies([124,23])}<path d="m97 36 9-8 2 4 12-9"/>`;
+
+const transformations: Partial<Record<AugmentId, Transformation>> = {
+  'siege-plow': {
+    target: 'Bulwark',
+    lost: 'Stationary cover.',
+    before: scenes.bulwark,
+    after: {
+      label: 'Bulwark moves forward from its original position and launches enemies in its path',
+      drawing: `${marine(43)}<path class="vignette-wall vignette-ghost" d="M91 14v55"/><path class="vignette-wall" d="M122 14v55"/>${arrow(103,42)}${enemies([132,22],[134,57])}${arrow(151,22)}${arrow(152,57)}`,
+    },
+  },
+  'fault-line': {
+    target: 'Seismic Slam',
+    before: scenes['seismic-slam'],
+    after: {
+      label: 'Slam still launches nearby enemies; a fissure along aim repeatedly staggers enemies in the lane',
+      drawing: `<path class="shape-fill" d="M67 34H176V50H67Z"/><path d="m70 42 24 1 9-5 18 6 11-4 18 3 22-2"/>${marine(67)}<circle cx="67" cy="42" r="24" class="shape-fill"/>${enemies([54,21],[69,66],[131,42],[159,44])}${arrow(48,19,220)}${arrow(69,71,90)}<path d="m128 35 6-6m22 8 6-6"/><path class="vignette-wall" d="M178 15v55"/>`,
+    },
+  },
+  'shard-harvest': {
+    target: 'Frozen kills',
+    before: {label: 'A frozen enemy dies; the nearby enemies are untouched', drawing: frozenKill + shardTargets},
+    after: {
+      label: 'The frozen kill fires shards that damage and chill the three nearest visible enemies',
+      drawing: `${frozenKill}${shardTargets}<path d="m95 38 27-15m-26 19 51 1m-52 3 28 15m-5-39 4 1-1 5m21 12 5 3-5 3m-21 10 2 5-5 1"/>`,
+    },
+  },
+  'ice-road': {
+    target: 'Glacier',
+    lost: 'Ice walls that block enemies and shots, plus their shatter burst.',
+    before: scenes.glacier,
+    after: {
+      label: 'The marine moves faster along a traversable ice road that chills enemies standing on it',
+      drawing: `<path class="shape-fill" d="M33 28H171V56H33Z"/><path class="vignette-ghost" d="M40 42h123" stroke-dasharray="3 5"/>${marine(73)}${arrow(103,42)}${arrow(125,42)}${enemies([151,34],[135,52])}<path d="m146 27 3-4m5 3 4-3m-24 36 1 5m6-7 3 4"/>`,
+    },
+  },
+  'ember-relay': {
+    target: 'Fire zones',
+    before: {label: 'The fire zone ignites an enemy inside its edge', drawing: fireZone},
+    after: {
+      label: 'An enemy inside the fire zone relays a spark to the nearest visible non-burning enemy outside',
+      drawing: `${fireZone}<path d="m76 41 15-13 5 4 17-8m-6 0h6l-2 5"/>${flame(121,18)}`,
+    },
+  },
+  'meltdown-core': {
+    target: 'Meltdown',
+    lost: 'The full 8-second aura and its sustained bonuses.',
+    before: scenes.meltdown,
+    after: {
+      label: 'A short fuse follows the marine, then a larger burst damages and ignites nearby enemies',
+      drawing: `<circle cx="57" cy="42" r="15" class="shape-fill"/>${marine(57)}${arrow(100,42)}<circle cx="143" cy="42" r="32" class="shape-fill"/><path d="M143 12v9m0 42v9m-31-30h8m46 0h8m-52-21 6 6m30 30 6 6m0-42-6 6m-30 30-6 6"/>${marine(143)}${enemies([129,28],[162,51])}${flame(129,22)}${flame(162,45)}<text x="57" y="69" text-anchor="middle">2 s fuse</text>`,
+    },
+  },
+  'pilgrim-pylon': {
+    target: 'Tesla Pylon',
+    lost: 'A pylon that stays where you placed it.',
+    before: {
+      label: 'The pylon stays at its placement, arcs to a nearby enemy and links to the marine',
+      drawing: `${pylon}${pylonArc}${marine(148,51)}<path d="m97 43 16 1 3 8 24-1"/>`,
+    },
+    after: {
+      label: 'The pylon follows behind the marine while retaining its arc and live link',
+      drawing: `<g class="vignette-ghost" transform="translate(-41 0)">${pylon}</g>${arrow(68,46)}${pylon}${pylonArc}${marine(148,51)}<path d="m97 43 16 1 3 8 24-1"/>${arrow(174,51)}`,
+    },
+  },
+  'live-wire': {
+    target: 'Overload',
+    lost: 'Chain jumps between targets, including the extra jumps from Forked Overload.',
+    before: scenes.overload,
+    after: {
+      label: 'One enemy anchors a tether to the marine; enemies crossing the line take repeated damage and shock',
+      drawing: `<path class="shape-fill" d="M40 45H169V54H40Z"/>${marine(28,49)}${enemies([65,27],[103,49],[140,24],[169,49])}<path d="m42 49 15-2 5 5 18-4 4 3 20-2 18-2 5 5 17-4 4 2 16-1"/><circle cx="169" cy="49" r="9" stroke-dasharray="2 3"/><path d="m97 42 4-5m4 4 5-4m-5 26 4-5"/>`,
+    },
+  },
+};
+
+export function transformationPreview(id: string, upgraded = false): string {
+  const transformation = transformations[id as AugmentId];
+  const partner = conflictingAugment(id);
+  if (!transformation || !partner) return '';
+  let after = transformation.after;
+  if (id === 'shard-harvest' && upgraded) {
+    after = {
+      label: 'The frozen kill fires shards that damage and chill the five nearest visible enemies',
+      drawing: after.drawing + enemies([105,17],[105,67]) + '<path d="m91 34 11-13m-11 29 11 13"/>',
+    };
+  }
+  const loss = transformation.lost
+    ? `${transformation.lost} Also locks out ${AUGMENT_BOONS[partner].name}.`
+    : `Access to ${AUGMENT_BOONS[partner].name}.`;
+  return `<span class="transformation-preview"><b class="transformation-title">Transforms: ${transformation.target}</b><span class="reward-combat-preview"><span><small>Before</small>${renderVignette(transformation.before)}</span><b aria-hidden="true">→</b><span><small>After</small>${renderVignette(after)}</span></span><span class="transformation-loss"><b>You lose:</b> ${loss}</span></span>`;
 }

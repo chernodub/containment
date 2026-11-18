@@ -133,3 +133,12 @@ body[data-inspect='true'] #overlay .choice-card:is(:hover,:focus-within) .boon-i
 @media(max-height:760px) {#overlay .panel.draft-panel:has(.room-record):has(.effect-set-lesson) .reward-art {height:100px;}}
 #overlay .panel.draft-panel .boon-inspect-hint {margin-top:auto;}
 #overlay .panel.draft-panel .reward-combat-preview+.boon-inspect-hint {margin-top:0;}
+
+#overlay .transformation-preview {display:block;margin-top:auto;padding-top:7px;border-top:1px solid #9fe8ff24;color:var(--boon-color);}
+#overlay .transformation-title {display:block;font-size:13px;line-height:1.2;}
+#overlay .transformation-preview .reward-combat-preview {border:0;padding-top:4px;}
+#overlay .transformation-preview .reward-combat-preview small {margin:0;text-transform:uppercase;}
+#overlay .transformation-loss {display:block;margin-top:4px;color:#d0dce2;font-size:11px;line-height:1.3;}
+#overlay .transformation-loss b {color:#ffcf9e;}
+#overlay .draft-panel .transformation-preview + .boon-inspect-hint {margin-top:0;}
+#overlay :is(.boon-inspect-detail,.boon-tooltip) .transformation-preview {margin:0 0 10px;}
