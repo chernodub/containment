@@ -12,6 +12,7 @@ export class TargetMarkers {
     private readonly canvas = document.createElement('canvas');
     private readonly context = this.canvas.getContext('2d');
     private readonly point = {x: 0, y: 0, visible: false};
+    private painted = false;
     private readonly body = {left: 0, top: 0, right: 0, bottom: 0};
 
     constructor(host: HTMLElement) {
@@ -25,13 +26,16 @@ export class TargetMarkers {
         this.canvas.hidden = game.status !== 'playing';
         if (!ctx || this.canvas.hidden) return;
         const width = getViewportWidth(renderer), height = getViewportHeight(renderer);
+        const enemies = game.enemies.snapshot.enemies;
         if (this.canvas.width !== width) this.canvas.width = width;
         if (this.canvas.height !== height) this.canvas.height = height;
-        ctx.clearRect(0, 0, width, height);
+        if (this.painted) ctx.clearRect(0, 0, width, height);
+        this.painted = false;
         for (const cue of cues) {
             if (cue.life <= 0) continue;
             const point = projectWorld(renderer, cue.x, cue.y, this.point, .12);
             if (!point.visible || hudObstructs(point.x - 28, point.y - 20, point.x + 28, point.y + 20)) continue;
+            this.painted = true;
             ctx.strokeStyle = cue.kind === 'priority' ? '#81c8b7' : '#eac786';
             ctx.globalAlpha = cue.life * .8;
             ctx.lineWidth = 2;
@@ -40,7 +44,6 @@ export class TargetMarkers {
             ctx.stroke();
             ctx.globalAlpha = 1;
         }
-        const enemies = game.enemies.snapshot.enemies;
         for (const enemy of enemies) {
             if (enemy.health <= 0 || enemy.alpha < .2 || (!enemy.priority && !enemy.controlResistant)) continue;
             const body = this.body;
@@ -49,6 +52,7 @@ export class TargetMarkers {
             if (x < 20 || x > width - 20 || y < 34 || y > height - 20 ||
                 hudObstructs(x - 28, y - 24, x + 28, y + 12) ||
                 presentationObstructs(x - 28, y - 24, x + 28, y + 12)) continue;
+            this.painted = true;
             ctx.lineJoin = 'round';
             if (enemy.priority) {
                 ctx.strokeStyle = gold;

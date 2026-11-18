@@ -1,8 +1,6 @@
 import {Group, Mesh, MeshBasicMaterial, RingGeometry} from 'three';
 import type {DepthGame} from '../../DepthGame';
 
-export const SIEGE_CHARGE_MS = 12000;
-
 export class SiegeBoundary {
     readonly root = new Group();
     private readonly track = new Mesh(new RingGeometry(.98, 1, 128), this.material());
@@ -28,9 +26,9 @@ export class SiegeBoundary {
         this.root.position.set(siege.x / this.unit, .026, siege.y / this.unit);
         this.root.scale.setScalar(radius);
         const inside = Math.hypot(player.x - siege.x, player.y - siege.y) <= siege.radius;
-        this.track.material.opacity = inside ? .69 : .4;
-        this.sweep.material.opacity = inside ? .85 : .55;
-        this.sweep.geometry.setDrawRange(0, Math.floor(128 * (1 - siege.remainingMs / SIEGE_CHARGE_MS)) * 6);
+        this.track.material.opacity = inside ? .34 : .23;
+        this.sweep.material.opacity = inside ? .76 : .56;
+        this.sweep.geometry.setDrawRange(0, Math.floor(128 * (1 - siege.remainingMs / siege.durationMs)) * 6);
     }
 
     dispose() {

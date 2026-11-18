@@ -281,10 +281,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         // Story text remains authored verbatim; the optional line alone is skippable.
         const storyStatus = conciseStoryStatus(game.storyStatus);
         text('story-status', storyStatus);
-        const encounter = game.encounter;
+        const encounter = game.encounter, encounterRemaining = game.encounterRemaining;
         const cue = playing ? encounterCues.update(encounter.beat ?? -1, encounter.canceledReinforcements ?? 0) : '';
         text('room-objective', cue || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
-        siegeLabel.update(renderer, playing ? game.siege : null, game.player);
         const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');
         if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';criticalNode.setAttribute('data-hud-critical','');nodes['story-hud'].append(criticalNode);}
@@ -404,13 +403,13 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         text('credits', `${s.credits} CR`);
         text('medkit-count', String(s.medkits));
         text('grenade-count', String(s.grenades));
-        text('encounter-count', playing && game.node.kind !== 'boss' ? `${game.encounterRemaining} remaining` : '');
-        roomPeak = Math.max(roomPeak, game.encounterRemaining);
+        text('encounter-count', playing && game.node.kind !== 'boss' ? `${encounterRemaining} remaining` : '');
+        roomPeak = Math.max(roomPeak, encounterRemaining);
         encounterTrack.hidden = !playing || game.node.kind === 'boss' || roomPeak === 0;
-        const defeated = Math.max(0, roomPeak - game.encounterRemaining);
+        const defeated = Math.max(0, roomPeak - encounterRemaining);
         encounterFill.style.width = `${roomPeak ? defeated / roomPeak * 100 : 0}%`;
         encounterTrack.setAttribute('aria-valuemin','0'); encounterTrack.setAttribute('aria-valuemax',String(roomPeak)); encounterTrack.setAttribute('aria-valuenow',String(defeated));
-        encounterTrack.setAttribute('aria-valuetext',`${game.encounterRemaining} enemies remaining`);
+        encounterTrack.setAttribute('aria-valuetext',`${encounterRemaining} enemies remaining`);
         const abilities = getAbilities(game);
         hidden('ability-bar', !abilities?.rig || !abilities.slots);
         if (abilities?.slots)
@@ -441,8 +440,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
             positionHud();
             setHudInsets(renderer, getHudInsets());
             protectPanels();
-            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, encounterCues.locations, game.encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3);
+            threats.update(game.enemies.snapshot.enemies, game.player, bounds, game.bullets, q, encounterCues.locations, encounterRemaining - encounter.remaining + (encounter.beatRemaining ?? encounter.remaining) <= 3);
         }
+        siegeLabel.update(renderer, playing ? game.siege : null, game.player, bounds);
         targetMarkers.update(game, renderer, encounterCues.locations);
         if (!playing && wasPlaying) {
             for (const warning of warnings) warning.life = 0;

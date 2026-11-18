@@ -13,10 +13,13 @@ export class SiegeLabel {
         host.append(this.node);
     }
 
-    update(renderer: DepthRenderer, siege: DepthGame['siege'], player: DepthGame['player']) {
+    update(renderer: DepthRenderer, siege: DepthGame['siege'], player: DepthGame['player'], marine: {left: number; right: number; top: number; bottom: number}) {
         this.node.hidden = true;
         if (!siege) return;
-        const {x, y, visible} = projectWorld(renderer, siege.x, siege.y, this.point, .48);
+        const {x, y: anchorY, visible} = projectWorld(renderer, siege.x, siege.y, this.point, .48);
+        const overlapsMarine = x + 100 > marine.left && x - 100 < marine.right &&
+            anchorY + 16 > marine.top && anchorY - 16 < marine.bottom;
+        const y = overlapsMarine ? marine.bottom + 22 : anchorY;
         if (!visible || hudObstructs(x - 100, y - 15, x + 100, y + 15)) return;
         const inside = Math.hypot(player.x - siege.x, player.y - siege.y) <= siege.radius;
         this.node.hidden = false;
