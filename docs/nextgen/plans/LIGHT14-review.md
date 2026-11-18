@@ -159,3 +159,7 @@
 ## Containment Annulus
 - Opened native calm and 480 colour/grey calm/tour/heavy: cool teal cradle and diaphragm ring now identify the sealed core above its deck; marine plates and hostile signals lead.
 - Ring-centred self-light preserves the dark aperture and readable lid/rail boundaries. Build and seven guarded frames pass; the broad circulation floor remains one of the palest rooms.
+
+## Manual Control Chamber
+- Opened native calm/landmark-facing tour and 480 colour/grey calm/tour/heavy: warm authorization instruments identify the dais above its approach; marine and hostile lanterns retain priority.
+- Bounded dais source restores amber identity while cabinet recesses stay dark and fatal-choice text stays crisp. Build and seven guarded frames pass.

@@ -149,6 +149,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.50,ambient:.48,marineGlow:1,exit:.95,
   }),
   'manual-control-chamber': profile({
+    landmark:{at:[640,380],color:0xffb278,radius:6,body:.6,spill:.025,keyGain:.5},
     // Authorization desk, southern cost/status desk and hardwired cabinet.
     fixturesAt:[[640,380],[640,920],[860,280]],
     floor:{lit:.46,unlit:.23,edge:.11},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
