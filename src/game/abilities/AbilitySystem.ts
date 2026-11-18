@@ -189,7 +189,9 @@ export class AbilitySystem {
     }
   }
   private stepTethers(ms:number):void {
-    for(let i=this.tethers.length-1;i>=0;i--){const tether=this.tethers[i],p=this.host.player(),target=this.host.targets().find(t=>t.id===tether.targetId&&t.health>0);
+    for(let i=this.tethers.length-1;i>=0;i--){const tether=this.tethers[i],p=this.host.player(),targets=this.host.targets();
+      let target=targets.find(t=>t.id===tether.targetId&&t.health>0);
+      if(!target){target=targets.filter(t=>t.health>0&&Math.hypot(t.x-p.x,t.y-p.y)<=520&&this.host.visible(p,t)).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y)||a.id-b.id)[0];if(target){tether.targetId=target.id;this.cached=null;}}
       if(!target||Math.hypot(target.x-p.x,target.y-p.y)>520||!this.host.visible(p,target)){this.tethers.splice(i,1);continue;}
       tether.remaining=countdown(tether.remaining,ms);tether.tick-=ms;
       if(tether.tick<=TIMER_EPSILON){tether.tick+=250;const ids:number[]=[];
@@ -418,7 +420,7 @@ export class AbilitySystem {
         if(zone.element==='pyro'&&zone.pulses%2===0&&this.host.has('ember-relay'))this.relayEmbers(ids);
         this.event(zone.ability, 'tick', zone, { entityId: zone.id, radius: zone.radius, targetIds: ids, targetX: zone.x2, targetY: zone.y2, width: zone.width, ...(zone.shape === 'strip' ? { length: Math.hypot(zone.x2-zone.x,zone.y2-zone.y) } : zone.ability === 'flashfire' ? { length: undefined, arcRadians: undefined } : {}) });
       }
-      if (zone.remainingMs <= 0) { this.zones.splice(i, 1); if(zone.purpose==='core'){const ids=this.radial({id:'meltdown',x:zone.x,y:zone.y,angle:0,target:zone,remaining:0},260,this.upgraded('meltdown-core')?320:240,'burn');this.event('meltdown','burst',zone,{radius:260,targetIds:ids});} this.event(zone.ability, 'end', zone, { entityId: zone.id }); }
+      if (zone.remainingMs <= 0) { this.zones.splice(i, 1); if(zone.purpose==='core'){this.immune=Math.max(this.immune,600);const ids=this.radial({id:'meltdown',x:zone.x,y:zone.y,angle:0,target:zone,remaining:0},260,this.upgraded('meltdown-core')?320:240,'burn');this.event('meltdown','burst',zone,{radius:260,targetIds:ids});} this.event(zone.ability, 'end', zone, { entityId: zone.id }); }
     }
   }
   private closestOnStrip(t: AbilityPoint, zone: Zone): AbilityPoint {
