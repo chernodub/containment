@@ -1,3 +1,4 @@
+import {environmentClock} from '../lighting/HotFixtureSurface';
 import * as T from 'three';
 import type {RoomTemplate} from '../../game/roguelike/types';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -371,6 +372,28 @@ const incidents:Record<string,Incident>={
       }
     },
   },
+  'overload-floor':{
+    source:[485,477],bounds:[-295,-158,365,279],
+    paint(c){
+      const ash=c.createLinearGradient(6,0,-250,44);ash.addColorStop(0,'rgba(21,23,24,.93)');ash.addColorStop(1,'rgba(38,37,35,.43)');
+      fill(c,'M31 -104 Q2 -68 -30 -60 L-49 -43 -86 -46 -112 -26 -156 -27 -180 -5 -246 4 -266 23 -228 19 -249 37 -194 34 -198 48 -157 41 -129 53 -108 40 -73 55 -49 41 -20 51 22 28Z',ash);
+      const crack='M17 -73 L-24 -48 -29 -29 -65 -32 -84 -12 -125 -9 -142 8 -188 6 -210 20 -257 23';
+      stroke(c,crack,'rgba(93,113,119,.57)',14);stroke(c,crack,'rgba(170,191,192,.72)',3.5);
+      for(const d of ['M-28 -29l-15 31 -37 8 -4 27 -36 21','M-84 -12l-24 -21 -42 3 -22 -12','M-143 8l-4 24 -31 12 -9 18']){
+        stroke(c,d,'rgba(23,30,32,.86)',5);stroke(c,d,'rgba(127,145,147,.56)',1.4);
+      }
+    },
+    pieces(p){
+      // Several buckled leaves share one diagonal seam. Their free corners
+      // rise out of the perimeter, diminishing to flush skin toward the lane.
+      for(let i=0;i<6;i++){
+        const x=21-i*29,z=-56+i*11,h=16-i*2.3;
+        p.face([[x-14,1,z-18],[x+15,1,z-22],[x+24,h,z-3],[x+8,h+3,z+7],[x-8,h*.72,z+5]],i%2?0x5d6260:0x707571);
+        p.face([[x-8,h*.72,z+5],[x+8,h+3,z+7],[x+8,1,z+8],[x-8,1,z+6]],0x383d3d);
+        p.rod([x-6,3,z+7],[x+11,4,z+5],1.8,0x9aadae);
+      }
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
@@ -388,5 +411,29 @@ export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
     c.clip(deck,'evenodd');
     c.translate(x,z);c.lineJoin='round';c.lineCap='round';incident.paint(c);
   },.049);
+  if(id==='overload-floor')addOverloadVents(root,x,z);
   const pieces=new IncidentPieces();incident.pieces(pieces);pieces.finish(root,id,x,z);
+}
+
+/** Short plasma vents stay within the torn perimeter plates. Share one
+ * emissive mesh for the fissure and one for the two emergency repeaters. */
+function addOverloadVents(root:T.Group,x:number,z:number):void {
+  const vents=new IncidentPieces(),strobes=new IncidentPieces();
+  for(let i=0;i<6;i++){
+    const px=21-i*29,pz=-56+i*11;
+    vents.face([[px-8,2,pz+6],[px+7,2,pz+7],[px+11,5+i%2*4,pz+5],[px,4,pz+4]],0xadc8cf);
+  }
+  for(const [px,pz] of [[-61,-22],[18,-64]]){
+    strobes.box(px,6,pz,6,1.6,2,0xbac9c8);
+  }
+  for(const [parts,flash] of [[vents,false],[strobes,true]] as const){
+    const geo=mergeGeometries(parts.parts,false)!;parts.parts.forEach(g=>g.dispose());geo.scale(1/32,1/32,1/32);
+    const material=new T.MeshBasicMaterial({vertexColors:true,side:T.DoubleSide,transparent:true,depthWrite:false});
+    const mesh=new T.Mesh(geo,material);mesh.position.set(x/32,0,z/32);
+    mesh.name=flash?'inc13-overload-repeaters':'inc13-plasma-vents';
+    mesh.onBeforeRender=()=>{
+      const t=environmentClock.value,phase=t%2.2;
+      material.opacity=flash?(phase<.10||(phase>.32&&phase<.42)?.9:.22):.51+.15*Math.sin(t*9)+.08*Math.sin(t*27);
+    };root.add(mesh);
+  }
 }

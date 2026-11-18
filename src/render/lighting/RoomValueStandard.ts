@@ -157,7 +157,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.46,ambient:.46,marineGlow:1,exit:.9,
   }),
   'overload-floor': profile({
-    landmark:{at:[700,500],color:0xff963c,radius:6,body:.8,spill:.12},
+    landmark:{at:[476,460],color:0xff963c,radius:6,body:.8,spill:.12},
     // Reaction-feed diffuser, core's east rim, exhaust-housing diffuser.
     fixturesAt:[[640,200],[890,480],[640,900]],
     floor:{lit:.48,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:10,value:.40,lane:.85},
