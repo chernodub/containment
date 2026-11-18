@@ -155,3 +155,7 @@
 ## Shielding Gate
 - Opened native calm and 480 colour/grey calm/tour/heavy: emitter banks and shield mechanism carry cool lavender life above the deck; marine and hostile lanterns lead.
 - West-emitter source leaves the crossing and far recesses darker, with threshold strips and cover edges readable. Build and seven guarded frames pass.
+
+## Containment Annulus
+- Opened native calm and 480 colour/grey calm/tour/heavy: cool teal cradle and diaphragm ring now identify the sealed core above its deck; marine plates and hostile signals lead.
+- Ring-centred self-light preserves the dark aperture and readable lid/rail boundaries. Build and seven guarded frames pass; the broad circulation floor remains one of the palest rooms.
