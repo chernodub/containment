@@ -171,3 +171,7 @@
 ## Fragment-cost follow-up
 - Initial four-room GPU samples remained above both bracketing baseline samples, with frame times near25ms and no runtime errors/compiles. Bounded body/emitter work behind its existing positive body weight; zero-weight deck/distant surfaces skip it.
 - Rebuilt and opened Crew/Coolant calm plus Swarm heavy at480 colour/grey and native Coolant: appearance unchanged. Matching room/batching cache keys advance together to v12; final cost and campaign recheck follow.
+
+## Final verification and handoff
+- Final v12 build passes; bounded Crew/Coolant/Swarm views remain unchanged. Both full Story attempts clear 20 rooms with 0 runtime errors; final `2e24807c` has one retained Manual 6.06s loading hold. Earned-boundary continuation aborts in the existing Story difficulty assertion before new gameplay; no guard/runner changes.
+- Sixteen measured trials retain 0 runtime errors/compiles and flat final frame medians; Relay GPU neutrality remains uncertain and Freight keeps its existing draw-budget miss. Current/previous colour/grey sheets, 20 per-room pairs, 3 Low views, full native campaigns and all failures are in light14-final; weakest compositions remain Crew/Freight/Annulus.

@@ -1,46 +1,52 @@
-# LIGHT14 — value hierarchy across the twenty-room route
+# LIGHT14 — landmark correction across twenty rooms
 
-Implementation branch: `t3/complete-twenty-room-lighting`. Parent: `76a48c2bb43db7a927427edbbdd4415d4e2b0848`. Room-by-room decisions and opened-frame observations: `plans/LIGHT14-review.md`.
+Branch: `t3/complete-twenty-room-lighting`. Correction base: `450fa1e0` after `git merge nextgen` (boss creatures and Overdrive changes retained). Room-profile implementation: `4064242e`; final bounded shader: `2e24807c369b463c7b216b00ee7dd28a316cbd3a`. Twenty individual room commits and opened-frame notes are recorded in `plans/LIGHT14-review.md`.
 
-## Changes
+## Result and scope
 
-Seventeen room profiles join the three LIGHT13 standards. Each supplies three explicit native fixture/landmark centres after the authored fight circle, exit gain, floor/wall values, tint, neutral fixture scale and practical/ambient gains. The deck bake and analytic surface field consume the same centres. No simulation, encounter, difficulty, camera, UI, model-generation or ability-effect code changed.
+Every room, including the three LIGHT13 standards, now has a bounded landmark source: position, hue, radius, body self-light, deck spill and an existing pooled practical slot. The shader gives source emitters life, preserves saturated red/green status hues, and adds a faint wall-foot wash. Marine/actor grading is unchanged by this correction. No simulation, encounters, difficulty, camera, UI, model-generating or ability-effect modules changed; no grade/bloom thresholds changed.
 
-Crew has explicit inspection/scanner/gallery centres and tighter pool radii. Practical bounce uses a soft elliptical footprint; floor aperture transitions are broader. Creature material rims are thinner and weaker, with dark cool contours replacing the pale/bronze contour treatment. Marine top-facing armour receives broader saturated rig tint; existing weapon materials receive a small shared-uniform rig band. Marine ink retains its contour over hot fills. Existing material preparation and batching cache ownership remain intact. No lights, passes, textures or meshes were added for these changes.
+The source reuses one of the existing four practical slots, retained on Low. No lights, draws, meshes, passes or textures were added. The material/batching cache key changed together; shared room uniforms reset on room load and remain excluded from actor materials. Initial GPU samples prompted a cost simplification: body/emitter arithmetic is skipped when its existing body weight is zero. The room and batching cache keys advance together to v12. Opened Crew/Coolant calm and Swarm heavy reductions plus native Coolant retain the same appearance. The twenty-up sheets and Low frames predate this mathematically equivalent bound; follow-up frames are under `raw/bounded/`.
 
-These shared corrections are **partial art completion**, not a claim that all LIGHT13 weaknesses are solved: Crew's central floor still reads as a grey slab; Freight retains an east-edge bright shape; rig colour remains pale after tone mapping at 480×270. Those need further art work.
+Awakening cryo banks are cyan; Passenger drawers periwinkle; Residential cabins amber; Atrium foliage green under a cool key; Checkpoint gate ice blue; Armory carousel white; Freight gantry sodium; breach pod cold blue; Relay racks cyan; uplink signal blue; Diagnostic probe cyan; Safety bank warm amber; Coolant turbines frost teal; shaft below-light green; Workshop machinery violet; Swarm heart pink-violet; Shielding emitters lavender; Annulus ring cool teal; Manual instruments warm; reactor orange with deck spill toward combat. Sources were tightened or moved after review where the first result lit the floor or the wrong asset area.
 
-## Evidence
+## Visual evidence
 
-`artifacts/nextgen/light14-final/index.html` contains twenty-calm/twenty-kiting sheets, copied final7 reference sheets, all 16 abilities on pale/dark floors at impact and sustained phases, and three Low rooms/title. Native sources are under `raw/` and per-room review captures under `room-reviews/`. `before-final7/` is historical comparison, not an exact parent render. `raw/first-permitted/` is the exact parent Awakening calm capture. `relocated-sources.json` records original capture locations; unchanged manifest paths may retain their original locations.
+Current gallery: `artifacts/nextgen/light14-final/index.html`. Current sheets and native sources: `landmark-correction/` beneath that root. `twenty-source.json` records every selected frame, parent manifest, source SHA and retained failures. `relocated-sources.json` maps per-room capture parents to their final locations. Each room index includes a colour/greyscale previous/current calm pair and native source links; previous images are historical LIGHT14, not an exact new render of 450fa1e0.
 
-All 17 new rooms were built, captured and reviewed before their individual commits. Calm, tour03 and heavy reductions were opened for every room; Awakening/Passenger included all tour marks. Crew heavy was also opened at native size. A seventeen-exit contact from each retained tour 05 was opened at original size: chevrons, door faces and local exit pools remain visible. Both twenty-up sheets and both final7 references were opened. Canonical ability capture produced 228 PNGs: seven phases ×16 abilities ×2 rooms, plus title and three Low views. All16 were opened at phases 03/05 in both Annulus and Workshop. No grade/bloom thresholds were changed; ability effects retain localized cores without a broad white wash.
+All twenty rooms passed their individual build and seven-frame native review batch (calm, five tour marks, one heavy frame); each had 480×270 colour/greyscale reductions and a native frame opened before its room commit. The resumed pass finished Coolant through Manual Control after the restart. Coolant was tightened to light the turbines rather than spread a green floor wash; Swarm body fill was reduced to retain shell relief.
 
-Manual Control has a retained existing fixture defect: ordinary G6 fails the fatal-warning HUD-safe guard; the documented DRESS13 variant passes frame01 then fails later. The sheet explicitly labels the first verified DRESS13 frame. Both failed parents remain under `raw/`; no camera/guard change was made. The final7 DEFECTS log already identifies this exact missing kiting burst. The twenty-up sheet is not a successful twenty-room four-frame G6 certification.
+Both current twenty-up sheets were opened in colour and greyscale against previous LIGHT14 sheets; both final7 historical sheets were opened too. The correction restores visible landmarks without returning to final7's bright general deck lighting. Separate twenty-landmark sheets use labeled entry or selected tour views where a set piece is outside the spawn/kiting camera. The prior first-pass ability, pickup/exit and benchmark evidence remains in the gallery as historical evidence.
 
-Low Awakening/Freight/Swarm retain room identity, marine and HUD readability. Pickups, exits, cover and onboarding text remain visible in the opened room/ability frames. Title/gameplay still endpoints have compatible dark values; these stills do not establish the animated transition's perceptual quality.
+The long all-room batch suffered a screenshot timeout in Shielding, then lost its debug page for some late views. Fresh Shielding/Annulus kiting, Manual calm and Overload calm captures supplied the replacements. Failed parents remain retained. Manual still fails the pre-existing complete-warning HUD-safe guard in ordinary G6 and later DRESS13 frames, as final7 also documented. Its kiting cell explicitly uses the first verified current DRESS13 frame. This is a twenty-room art comparison, not a successful twenty-room four-frame G6 certification. No guard or camera behavior was changed.
+
+Low Atrium, Relay and Overload passed and were opened in colour/greyscale; Atrium was also opened native. Their landmarks stay visible with distinct colours. Low's unshadowed canopy is paler: a manually selected native canopy ROI has sRGB Rec.709 p98 163 versus marine ROI p98 202 (not radiometric luminance or a full-image segmentation). HUD, warning text, route feet, cover and exit chevrons remain readable in the reviewed frames. Far corners/voids remain black; the lit playable approach retains deck seams and boundary feet.
 
 ## Verification
 
-- `npm ci`: passed.
-- Production builds: passed for every room and shared correction; final build passed (normal Vite chunk-size advisory).
-- Standard Cryo/1729 campaign: natural death in Armory after 5 rooms cleared, 0 errors.
-- Story Cryo/1729 campaign: natural death in Diagnostic Gallery after 10 rooms cleared, 0 errors.
-- Four-room benchmark: completed 12 parent + 12 LIGHT14 + 4 parent recheck trials. High/Cryo, fixed resolution 1.0, 10-second trials; parent rebuilt separately under `baseline-runtime/` from the original tracked runtime source. Current source was restored immediately; active production dist was untouched.
-- All 28 trials: 0 runtime errors and 0 combat shader compilations. All three bench commands exit 2 because Freight already exceeds 350 draw calls / 330 headroom on both parent and LIGHT14 (parent 585–599; LIGHT14 570–599; recheck 583). These budgets were not changed.
-- Host has 10 logical cores. One-minute load drifted 67.3→21.8 through the initial parent run; candidate 16.7–26.6; parent recheck 16.7–24.3. Frame/GPU times broadly overlap and the parent recheck reproduces candidate CPU ranges. No clear added frame-time cost is established, but small-cost neutrality is **not certified** on this loaded host. Screenshots and fixed-step campaign timings are not hardware FPS evidence.
+- Final production build: passed (normal Vite chunk-size advisory).
+- Profile-revision Story Cryo/1729 campaign (`4064242e`): completed all twenty rooms, 0 errors and 0 defects; unassisted, normal rendering, 3213.3 wall seconds. Native report/trace/screens are under `landmark-correction/campaigns/story/`.
+- Final bounded-shader Story Cryo/1729 (`2e24807c`): completed all twenty rooms, 0 runtime errors; unassisted, normal rendering, 1727.4 wall seconds. Command exits 1 for one medium performance defect: Manual Control loading exceeded 5s (first flagged at 5.135s; full recorded hold 6.060s). Report/trace/native frames: `landmark-correction/campaigns/story-final/`.
+- Earned Annulus-boundary continuation diagnostic aborted before new gameplay: the existing runner asserts native difficulty as Standard while expecting the inherited Story difficulty. Its one runner error and inherited loading flag remain under `campaigns/late-recheck/`; it is not substituted for either complete campaign. No runner, difficulty, checkpoint or loading-limit code was changed.
+- Current benchmark: sixteen ten-second trials (one per room/source), Cryo High, fixed 1.0 resolution, on ten logical cores. Four rooms × initial baseline `450fa1e0`, initial candidate `4064242e`, bracketing baseline recheck, final bounded `2e24807c`. All 16 have 0 runtime errors and 0 combat shader compilations; light/program inventories remain stable.
+- Trial start/end one-minute load ranged 17.9–51.8. Initial candidate GPU samples exceeded both baseline samples, prompting the bounded shader. Final frame medians match or slightly improve on the initial baseline. Final Relay GPU remains higher; one short trial per source on this shared host does **not certify small GPU-cost neutrality**.
+- Candidate benchmark commands exit 2 for the existing Freight 350/330 draw limits: initial baseline 580, initial candidate 578, baseline recheck 588, final 591. Baselines use the explicit baseline flag; their raw draw counts/budgets remain retained. No budgets were changed.
 
-Median of the three trial p50s, milliseconds (parent → LIGHT14):
+P50 milliseconds, initial baseline → final bounded source:
 
 | Room | Frame | GPU elapsed | CPU submission |
 |---|---:|---:|---:|
-| Crew |24.70 →24.80|43.08 →44.30|13.30 →13.90|
-| Freight |23.70 →23.70|38.98 →39.55|12.10 →13.30|
-| Relay |23.70 →24.40|40.20 →40.66|12.70 →13.30|
-| Swarm |23.90 →23.80|39.90 →39.77|10.70 →11.20|
+| Crew Checkpoint |25.00 → 25.00|49.01 → 47.93|14.90 → 13.80|
+| Freight Hold |24.80 → 24.80|44.04 → 44.54|13.30 → 13.00|
+| Relay Racks |25.00 → 25.00|44.99 → 47.75|12.90 → 11.90|
+| Swarm Junction |24.90 → 24.80|44.56 → 45.11|11.50 → 11.60|
 
-Raw trials, load, budgets and the bracketing parent recheck are retained in `bench-before/`, `bench-after/`, `bench-before-check/`; `benchmark-comparison.json` and its PNG summarize them. Candidate benchmark's short source alias `1ec4d903` resolves to runtime implementation `1ec4d90324f9cafd800f6bd5589a145a393a1804`. Later commits contain gallery/report changes only.
+`landmark-correction/benchmark-comparison.png` / JSON retain all four series and loads; raw datasets are `bench-before/`, `bench-after/`, `bench-before-check/` and `bench-bounded/`. `before-dist/provenance.json` describes the isolated baseline build. Screenshots and fixed-step campaign timings are not hardware FPS evidence.
 
-## Weakest rooms
+Runtime/capture failures are retained explicitly; late capture timeouts coincided with host one-minute load around 643–739 on ten logical cores. This correlation does not prove a game-code cause or certify hardware performance.
 
-Crew Checkpoint (grey centre), Freight Hold (bright east edge), Containment Annulus (broad pale circulation), Communal Atrium (dark canopy), Overload Floor (nearly black secondary growth in tour). Marine rig hue still needs stronger480 identity. Manual's historical warning/HUD fixture defect remains.
+## Weakest rooms and limits
+
+Crew Checkpoint still has a broad grey centre. Containment Annulus has pale circulation and a ring partly outside the spawn view. Freight Hold has a broad amber floor and its gantry reads best from the tour. Marine rig hue is still weaker than plate-value identity. Existing vapour/sparks are subtle; this pass adds source life to existing surfaces rather than new particle systems. Manual's historical warning/HUD fixture defect remains, and the final campaign recorded its six-second preparation hold; the boundary continuation helper could not recheck it because of its startup difficulty assertion.
+
+The original pass's Standard/Story campaigns, sixteen-ability pale/dark impacts and 28 benchmark trials are historical, before this correction and the merged boss/Overdrive content. Their reports and raw data remain in the gallery root under `campaigns/`, `raw/`, `bench-before/`, `bench-after/` and `bench-before-check/`. They are not substituted for current verification. Original bench Freight draw-budget misses and contested-host timing limitations remain documented in `benchmark-comparison.json` and repository history.

@@ -1202,3 +1202,13 @@ DRESS13's paired all-room benchmark includes110/145-unit refill rings in the nat
 DRESS13 correction: the Safety Interlock named-space tour marks use the legal west shoulder (x580) of the same recorder and battery bays. The former x640 marks crop the mandatory fatal-warning quad under the merged CAM12 native framing; this was reproduced against a pre-correction frozen build. The camera, native spawn/exit, five-position coverage and all warning/HUD guards remain unchanged. Failed and baseline receipts are retained with the DRESS13 diagnostics.
 
 The DRESS13 Atrium and Manual twenty-contact frames stop their added movement hold at300ms, while ordinary G6 remains650ms. At650ms the native backpedal reaches an existing foreground block and invokes the existing ghosted-body presentation; that raw frame is retained in DRESS13 diagnostics. Manual’s650ms crop of the mandatory warning quad also reproduces against the merged pre-correction build. The earlier frames keep the same twenty native contact spawns, grenade/fire actions, camera and guards, and inspects the new peripheral barricade from the clear fight floor.
+
+## LIGHT14 landmark correction gallery
+
+`node scripts/nextgen/light14-landmark-gallery.mjs [twenty-capture-parent] [manual-dress13-parent] [replacement-json]`
+creates the colour/greyscale calm and kiting twenty-up sheets under
+`artifacts/nextgen/light14-final/landmark-correction/`, alongside previous LIGHT14
+sheets and source/failure receipts. It reads ordinary G6 frame02; only a missing
+Manual Control frame may use an explicitly supplied DRESS13 frame01, labeled on
+the sheet. It does not alter capture guards or turn a failed burst into a pass.
+The room indexes also include historical/current calm pairs with native links. Defaults use the consolidated final gallery parents; replacement JSON names explicitly recaptured cells and retains every parent failure receipt. Per-room native review captures live in `landmark-correction/room-reviews/`.
