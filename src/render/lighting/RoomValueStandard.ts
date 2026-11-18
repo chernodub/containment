@@ -86,7 +86,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Tracking dish, uplink chancel and service rack.
   'transmission-chamber': profile({
-    landmark:{at:[816,380],color:0x5f9eff,radius:5.5,body:.65,spill:.035,keyGain:.6},
+    landmark:{at:[882,392],color:0x5f9eff,radius:5.5,body:.65,spill:.035,keyGain:.6},
     fixturesAt:[[816, 380], [600, 160], [300, 600]],
     floor:{lit:.66,unlit:.30,edge:.14},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xbbd0ef,

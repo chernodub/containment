@@ -216,6 +216,27 @@ const incidents:Record<string,Incident>={
       }
     },
   },
+  'transmission-chamber':{
+    source:[903,397],bounds:[-279,-69,352,224],
+    paint(c){
+      // The last message has run off a strip printer. The long accordion fold
+      // sits in slack loops of the uplink lead, still plugged into the desk.
+      stroke(c,'M0 -10 C-49 36 -48 2 -81 15 S-151 45 -128 69 C-106 94 -58 61 -91 53 S-188 102 -242 87','#323f49',4.8);
+      for(let i=0;i<16;i++){
+        const x=-i*12,z=16+41*Math.sin(i*.20)+i*2,zz=16+41*Math.sin((i+1)*.20)+(i+1)*2;
+        fill(c,'M'+x+' '+z+'l-1 13 -12 '+(zz-z)+' 1 -13Z',i%2?'#92948a':'#777f7b');
+        c.fillStyle='rgba(45,62,66,.72)';c.fillRect(x-10,z+4,7-i%3,1.4);c.fillRect(x-9,z+7,5,1);
+      }
+    },
+    pieces(p){
+      p.box(-16,24,10,49,3,25,0x737f7d,-.11);for(const x of [-36,4])p.rod([x,1,9],[x,24,9],2.2,0x455354);
+      p.box(-20,28,9,15,5,12,0x414c51,-.11);
+      p.rod([-33,24,15],[-30,32,13],1.1,0x8e9384);p.box(-29,32,12,7,3,3,0x48595d,.18);
+      // Empty operator's chair lies behind the unspooling recorder.
+      p.box(-55,6,29,16,5,15,0x536369,.55,.64);
+      p.box(-61,9,22,4,15,15,0x667778,.55,.64);
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
