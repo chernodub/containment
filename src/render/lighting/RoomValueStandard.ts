@@ -70,7 +70,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
   }),
   // Suspension gantry, loading booth and dispatch lamps.
   'freight-hold': profile({
-    landmark:{at:[790,486],color:0xffc260,radius:6.5,body:.55,spill:.035,height:4.2,keyGain:.45},
+    landmark:{at:[317,304],color:0xffc260,radius:6.5,body:.55,spill:.035,height:4.2,keyGain:.45},
     fixturesAt:[[790, 486], [318, 584], [1000, 600]],
     floor:{lit:.48,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:9.5,value:.36,lane:.8},
     wall:{value:.52,saturation:.56},floorSaturation:.50,tint:0xefc897,

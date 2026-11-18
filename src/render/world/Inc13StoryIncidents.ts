@@ -154,6 +154,27 @@ const incidents:Record<string,Incident>={
       p.rod([-38,2,9],[-22,33,-14],1.5,0x83918b);
     },
   },
+  'freight-hold':{
+    source:[306,292],bounds:[-152,-32,363,216],
+    paint(c){
+      const dirt=c.createLinearGradient(0,0,168,145);dirt.addColorStop(0,'rgba(116,99,69,.64)');dirt.addColorStop(1,'rgba(107,92,68,.14)');
+      fill(c,'M-43 -18 Q19 -6 53 18 L102 63 165 74 191 110 155 103 179 132 133 121 129 141 76 97 45 86 -5 38Z',dirt);
+      for(const offset of [-13,12])stroke(c,'M-23 '+offset+' C24 '+(12+offset)+' 65 '+(61+offset)+' 109 '+(68+offset)+' S158 '+(84+offset)+' 181 '+(115+offset),'rgba(49,49,41,.76)',5);
+      stroke(c,'M27 11Q-30 60 -54 89T-128 139','#615b4a',3);
+    },
+    pieces(p){
+      // High back stack retains its corner posts; the sling has slipped off
+      // one corner and hangs down across the forward fallen load.
+      for(const x of [-23,22]){
+        p.rod([x,1,-16],[x,71,-16],2.6,0x626a64);
+        p.rod([x,62,-16],[x,69,12],2,0x8a8873);
+      }
+      p.box(0,41,-3,42,27,30,0x5f6358,.035);
+      p.box(-7,65,-7,40,21,29,0x777359,-.10,.12);
+      for(const x of [-21,8])p.face([[x,74,-16],[x+4,74,-16],[x+10,68,10],[x+7,68,12]],0xbbb193);
+      p.rod([10,66,11],[26,25,26],1.9,0x9b947a);p.rod([26,25,26],[54,1,45],1.9,0x928c79);
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
