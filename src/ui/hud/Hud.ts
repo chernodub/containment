@@ -1,3 +1,4 @@
+import {SiegeLabel} from './SiegeLabel';
 import {getCombatDamageElement} from '../gameAdapter';
 import { invalidateHudLayout, getHudInsets, beginHudOcclusion, markHudOcclusion, finishHudOcclusion, clearHudOcclusion } from './layout';
 import type { DepthGame } from '../../DepthGame';
@@ -116,6 +117,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         denial.style.top=`${Math.max(10,Math.min(innerHeight-80,pointerY))}px`;
     };
     const combatText = new CombatText(el('combat-text'), renderer);
+    const siegeLabel = new SiegeLabel(el('threat-indicators'));
     const threats = new ThreatIndicators(el('threat-indicators'), el('damage-directions'), renderer);
     const toasts = new HudToasts(el('hud-toasts'));
     const radar = new Radar(el('radar-hud'), el('radar-map') as unknown as SVGSVGElement, renderer);
@@ -275,6 +277,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const storyStatus = conciseStoryStatus(game.storyStatus);
         text('story-status', storyStatus);
         text('room-objective', game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
+        siegeLabel.update(renderer, playing ? game.siege : null, game.player);
         const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');
         if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';criticalNode.setAttribute('data-hud-critical','');nodes['story-hud'].append(criticalNode);}
@@ -566,6 +569,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         denial.remove();setPlacementPreview(renderer,null);
         combatText.dispose();
         threats.dispose();
+        siegeLabel.dispose();
         toasts.dispose();
         radar.dispose();
         panelResize?.disconnect();

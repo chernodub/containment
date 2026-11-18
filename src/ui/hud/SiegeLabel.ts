@@ -1,0 +1,29 @@
+import type {DepthGame} from '../../DepthGame';
+import type {DepthRenderer} from '../../render/DepthRenderer';
+import {projectWorld} from '../gameAdapter';
+import {hudObstructs} from './layout';
+
+export class SiegeLabel {
+    private readonly node = document.createElement('div');
+    private readonly point = {x: 0, y: 0, visible: false};
+
+    constructor(host: HTMLElement) {
+        this.node.hidden = true;
+        this.node.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none;padding:4px 9px;background:#0d201f;color:#acf1dc;border:1px solid #689e91;font:600 18px Barlow,sans-serif;white-space:nowrap';
+        host.append(this.node);
+    }
+
+    update(renderer: DepthRenderer, siege: DepthGame['siege'], player: DepthGame['player']) {
+        this.node.hidden = true;
+        if (!siege) return;
+        const {x, y, visible} = projectWorld(renderer, siege.x, siege.y, this.point, .48);
+        if (!visible || hudObstructs(x - 100, y - 15, x + 100, y + 15)) return;
+        const inside = Math.hypot(player.x - siege.x, player.y - siege.y) <= siege.radius;
+        this.node.hidden = false;
+        this.node.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%)`;
+        const label = siege.remainingMs <= 0 ? 'Relay charged' : `${inside ? 'Charging' : 'Outside hold area'} · ${Math.ceil(siege.remainingMs / 1000)}s`;
+        if (label !== this.node.textContent) this.node.textContent = label;
+    }
+
+    dispose() { this.node.remove(); }
+}
