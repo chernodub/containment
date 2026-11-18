@@ -346,6 +346,31 @@ const incidents:Record<string,Incident>={
       }
     },
   },
+  'containment-annulus':{
+    source:[552,510],bounds:[-256,-165,303,327],
+    paint(c){
+      // Spalled concentric pressure rings break into separate fault lines
+      // around the west face of the sealed core.
+      for(let i=0;i<4;i++){
+        const d='M'+(-18-i*12)+' -132 Q'+(-106-i*25)+' -61 '+(-79-i*31)+' 14 T'+(-12-i*14)+' '+(104+i*9);
+        stroke(c,d,'rgba(40,53,56,.71)',5.8-i*.7);c.save();c.translate(-1.7,0);stroke(c,d,'rgba(141,156,152,.48)',1.8);c.restore();
+      }
+      for(let i=0;i<6;i++){
+        const x=-58-i*16,z=-48+(i%3)*34;
+        stroke(c,'M'+x+' '+z+'l-25 -9 -18 3 -22 -14 -13 2','rgba(50,65,67,.75)',2.4);
+      }
+    },
+    pieces(p){
+      // Retaining bands peeled off the pressure housing expose their bolts.
+      for(let i=0;i<4;i++){
+        const z=-43+i*24;
+        p.rod([9,22,z],[0,30,z+4],2.7,0x809493);
+        p.rod([0,30,z+4],[-10,23,z+9],2.7,0x809493);
+        p.rod([-10,23,z+9],[-13,5,z+12],2.7,0x697b79);
+        p.box(-13,4,z+14,11,6,9,0x4c6261,-.15);
+      }
+    },
+  },
 };
 
 export function addStoryIncident(root:T.Group,room:RoomTemplate):void {

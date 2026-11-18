@@ -141,7 +141,7 @@ export const ROOM_VALUE_PROFILES: Readonly<Record<string, RoomValueProfile>> = O
     fixtures:.20,practicals:.48,ambient:.46,marineGlow:1,exit:.9,
   }),
   'containment-annulus': profile({
-    landmark:{at:[650,520],color:0x83d9d5,radius:7,body:.6,spill:.025,keyGain:.55},
+    landmark:{at:[551,508],color:0x83d9d5,radius:7,body:.6,spill:.025,keyGain:.55},
     // North and south shielding-housing diffusers; east core status face.
     fixturesAt:[[720,140],[720,900],[1040,520]],
     floor:{lit:.46,unlit:.24,edge:.12},perimeter:{inner:3.8,outer:10,value:.38,lane:.85},
