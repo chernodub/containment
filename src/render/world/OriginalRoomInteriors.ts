@@ -181,10 +181,10 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
                     object.updateWorldMatrix(true,false);
                     const ranges=object.geometry.userData.cutawayRanges as {bounds:T.Box3;start:number;end:number}[];
                     return ranges.map(({bounds,start,end})=>({bounds:bounds.clone().applyMatrix4(object.matrixWorld),
-                        parts:[],indices:{attribute:object.geometry.index!,start,end},hidden:false}));
+                        floorCover:t.id==='swarm-junction',parts:[],indices:{attribute:object.geometry.index!,start,end},hidden:false}));
                 }
                 const bounds=new T.Box3().setFromObject(object);
-                return bounds.max.y>.8?[{object,bounds,parts:[],hidden:false}]:[];
+                return bounds.max.y>.8?[{object,bounds,floorCover:t.id==='swarm-junction',parts:[],hidden:false}]:[];
             }));
             if(t.id==='shielding-gate'){
                 const oldGate=world.getObjectByName('shielding-gate-west');
