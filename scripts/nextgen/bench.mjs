@@ -174,6 +174,8 @@ const args=process.argv.slice(2);
 if(args.includes('--breakdown'))args.push('--profile',...(args.includes('--cpu-only')?[]:['--gpu-passes','--audit-costs']));
 const baseline=args.includes('--baseline'),heavyScan=!args.includes('--scan-calm');
 const option=(name,fallback)=>args.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
+const seedArg=option('condition-seed',undefined);
+const conditionSeed=seedArg===undefined?undefined:Number(seedArg);
 const label=option('label','integration-4-bench');
 assert(/^[\w.-]+$/.test(label));
 const seconds=Number(option('seconds',20)), repeats=Number(option('repeat',3));
@@ -216,7 +218,7 @@ try{
  if(args.includes('--scan')||args.includes('--scan-heavy')||!rooms.length){
   for(const room of storyRooms){
    await reset();
-   if(heavyScan)await page.evaluate(stageV2,{rig:'arc',room,tier:'high',heavy:true,setupOnly:true});
+   if(heavyScan)await page.evaluate(stageV2,{rig:'arc',room,tier:'high',heavy:true,setupOnly:true,conditionSeed});
    else await page.evaluate(SCENARIOS.find(s=>s.id==='g2-calm-high').setup,room);
    const counts=await page.evaluate(heavy=>{
     const d=window.__containmentDebug,g=d.game,r=d.renderer;
@@ -235,7 +237,7 @@ try{
      d.setInput({fire:true,autoAim:true,angle:null});d.step(1000);
     }finally{r.renderer.render=render;gl.createProgram=createProgram;}
     if(programs)throw Error('Heavy inventory compiled '+programs+' combat programs');
-    return {calls,triangles,programs,initialEnemies:25,remainingEnemies:g.enemies.activeCount,fixture:'25 legal actors + native full Arc kit, fixed-step draw inventory'};
+    return {calls,triangles,programs,condition:g.conditionState?.condition.id,initialEnemies:25,remainingEnemies:g.enemies.activeCount,fixture:'25 legal actors + native full Arc kit, fixed-step draw inventory'};
    },heavyScan);
    report.scan.push({room,...counts,host:host()});console.log(`scan ${room}: ${counts.calls} draws`);
   }
@@ -260,7 +262,7 @@ try{
   await page.locator('#start').click();
   await page.locator('[data-difficulty="standard"]').click();await page.locator('#difficulty-begin').click();
   await page.waitForTimeout(500);
-  await page.evaluate(stageV2,{rig,room,tier,heavy:true,setupOnly:true});
+  await page.evaluate(stageV2,{rig,room,tier,heavy:true,setupOnly:true,conditionSeed});
 
   if(report.noSoftDepth)await page.evaluate(installNoSoftDepthDiagnostic);
   assert([...audioContexts.values()].some(c=>c.contextType==='realtime'&&c.contextState==='running'),'Native audio context was not unlocked by Start');
@@ -324,6 +326,12 @@ try{
     count++;
    });
    const sceneLightInventory=allSceneLights.length,instanceMeshInventory=allInstanceMeshes.length;
+   // Hatching retires the prepared pod primitives together. Preserve their
+   // identities so removal cannot be mistaken for a new instance allocation.
+   const podBatches=[];
+   for(const mesh of allInstanceMeshes)mesh.traverseAncestors(parent=>{
+    if(parent.userData.broodPod)podBatches.push({mesh,root:parent});
+   });
    const lane=d.benchmarkLane,refillPoints=[];
    for(const radius of [110,145,180,240,300,360,420,480])for(let i=0;i<32;i++){const a=i*Math.PI/16,x=lane.x+Math.cos(a)*radius,y=lane.y+Math.sin(a)*radius;if(d.canStand(x,y,40))refillPoints.push({x,y});}
    // Fill legal gaps between polar samples in compartmentalized rooms.
@@ -386,7 +394,8 @@ try{
    for(const key of Object.keys(samples))samples[key]=Array.from(values[key].subarray(0,count));samples.gpu=gpu;
    let finalLightInventory=0,finalInstanceMeshInventory=0;
    r.scene.traverse(o=>{if(o.isLight)finalLightInventory++;if(o.isInstancedMesh)finalInstanceMeshInventory++;});r.hudScene.traverse(o=>{if(o.isInstancedMesh)finalInstanceMeshInventory++;});
-   return {initialGeometryInventory,finalGeometryInventory:geometryInventory(),actualRenderFrames:cpuOnly?actualRenderFrames:gpuPassTimings?.actualRenderFrames??null,cpuOnly,deterministicSegment:deterministic?{ticks:fixedTicks,tickMs:1000/60,yieldEveryTicks:8,allTicksRendered:true}:null,preparation:r.preparationDiagnostics,softDepthDiagnostic,renderPipeline:r.post?.diagnostics??null,gpuPassTimings,initialStatus,initialPhase,finalStatus:g.status,finalPhase:g.expedition.run.phase,roomLoading:r.roomLoading,bodyState:document.body.dataset.state,roomLoadingIndicatorHidden:document.getElementById('room-loading')?.hidden,costAudit:costAudit?{instrumented:true,postPasses:costAudit.postPasses,particleScope:'CPU AttackEffects.drawParticles lists and live ElementKit particles; ability slot scans retained separately; GPU atmosphere excluded',stateScope:'GL state setter API calls; program switches count changed useProgram handles'}:null,instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,refillAudit,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,combatProgramKeys:r.renderer.info.programs.filter(program=>createdProgramHandles.includes(program.program)).map(program=>({name:program.name,cacheKey:program.cacheKey})),uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
+   const retiredPodBatches=podBatches.filter(({mesh,root})=>!root.parent&&mesh.parent).length;
+   return {retiredPodBatches,initialGeometryInventory,finalGeometryInventory:geometryInventory(),actualRenderFrames:cpuOnly?actualRenderFrames:gpuPassTimings?.actualRenderFrames??null,cpuOnly,deterministicSegment:deterministic?{ticks:fixedTicks,tickMs:1000/60,yieldEveryTicks:8,allTicksRendered:true}:null,preparation:r.preparationDiagnostics,softDepthDiagnostic,renderPipeline:r.post?.diagnostics??null,gpuPassTimings,initialStatus,initialPhase,finalStatus:g.status,finalPhase:g.expedition.run.phase,roomLoading:r.roomLoading,bodyState:document.body.dataset.state,roomLoadingIndicatorHidden:document.getElementById('room-loading')?.hidden,costAudit:costAudit?{instrumented:true,postPasses:costAudit.postPasses,particleScope:'CPU AttackEffects.drawParticles lists and live ElementKit particles; ability slot scans retained separately; GPU atmosphere excluded',stateScope:'GL state setter API calls; program switches count changed useProgram handles'}:null,instanceMeshInventory,finalInstanceMeshInventory,finalLightInventory,peakDrawReport,replenished,refillAudit,build:g.expedition.build,glError:gl.getError(),contextLost:gl.isContextLost(),samples,count,programs,combatProgramKeys:r.renderer.info.programs.filter(program=>createdProgramHandles.includes(program.program)).map(program=>({name:program.name,cacheKey:program.cacheKey})),uses,initialEnemies,remainingEnemies:g.enemies.activeCount,simulationSeconds:g.elapsed-initialElapsed,initialPlayer,finalPlayer:{x:g.player.x,y:g.player.y},sceneLightInventory,wallSeconds:(performance.now()-start)/1000,programInventory:r.renderer.info.programs.length,abilityPool:r.interimAbilities.kit.counts,gpuSupported:!!ext,heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null};
   },{seconds,audit:args.includes('--audit-draws'),auditCosts:args.includes('--audit-costs'),gpuPasses:report.gpuPasses,deterministic:args.includes('--breakdown'),minSimulationSeconds:Math.max(0,Math.min(60,Number(option('min-simulation-seconds',0))||0)),cpuOnly:args.includes('--cpu-only')});
   if(audioPoll){clearInterval(audioPoll);timers.delete(audioPoll);}await audioPollWork;
   const final=await cdp.send('Performance.getMetrics');
@@ -426,7 +435,7 @@ try{
   assert.equal(data.programs,0,'Mid-combat shader compile');
   if(report.noSoftDepth){assert.equal(data.softDepthDiagnostic?.copyDelta,0,'Disabled soft-depth diagnostic copied depth');assert.equal(data.softDepthDiagnostic?.restored,true,'Soft-depth diagnostic did not restore its binding');}
   assert(!data.glError&&!data.contextLost,'WebGL error or lost context during combat');
-  assert.equal(data.finalLightInventory,data.sceneLightInventory,'Combat allocated new scene lights');assert.equal(data.finalInstanceMeshInventory,data.instanceMeshInventory,'Combat allocated new instance meshes');
+  assert.equal(data.finalLightInventory,data.sceneLightInventory,'Combat allocated new scene lights');assert.equal(data.finalInstanceMeshInventory+data.retiredPodBatches,data.instanceMeshInventory,'Combat allocated new instance meshes');
   if(!baseline&&!budget.programInventory)report.budgetFailures.push({scenario:name,metric:'programInventory',observed:data.programInventory,limit:400});
   if(!baseline&&!budget.adaptiveScale)report.budgetFailures.push({scenario:name,metric:'adaptiveScale',observed:[summary.adaptiveScale.min,summary.adaptiveScale.max],limit:[.7,1]});
   if(!baseline&&!budget.draws)report.budgetFailures.push({scenario:name,metric:'draws',observed:summary.draws.max,limit:350});

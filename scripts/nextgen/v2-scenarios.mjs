@@ -4,9 +4,13 @@ const rigs = {
  pyro:['afterburn','flashfire','napalm-charge','meltdown'],arc:['static-step','overload','tesla-pylon','overclock'],
 };
 const slots=['dash','tactical','power','overdrive'];
-export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,showcase=false,boons=[],setupOnly=false}) {
+export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline=false,showcase=false,boons=[],setupOnly=false,conditionSeed}) {
  const d=window.__containmentDebug,g=d.game;
- await d.gotoRoom(room,{rig});d.renderer.setQuality(tier);await d.prepare();if(boons.length)d.grantBoons(boons);d.invulnerable(true);g.enemies.reset();
+ const clearStagingActors=()=>{
+  if(conditionSeed===undefined||g.conditionState?.condition.id!=='brood'){g.enemies.reset();return;}
+  for(const enemy of g.enemies.snapshot.enemies)if(!g.conditionState.eggs.has(enemy.id))g.enemies.remove(enemy.id);
+ };
+ await d.gotoRoom(room,conditionSeed===undefined?{rig}:{rig,seed:conditionSeed,runStructure:true});d.renderer.setQuality(tier);await d.prepare();if(boons.length)d.grantBoons(boons);d.invulnerable(true);clearStagingActors();
  const bounds=g.geometry.bounds,candidates=[];
  for(let y=170;y<bounds.height-170;y+=50)for(let x=170;x<bounds.width-170;x+=50)for(const angle of [-Math.PI/2,0,Math.PI/2,Math.PI]){
   if(!d.canStand(x,y,28)||!d.canStand(x+Math.cos(angle)*150,y+Math.sin(angle)*150,28))continue;
@@ -21,9 +25,9 @@ export async function stageV2({rig,id,slot,room,tier='high',heavy=false,baseline
  const wallStudy=id==='bulwark'||id==='glacier';
  candidates.sort((a,b)=>(b.score+(wallStudy?Math.abs(Math.sin(b.angle))*20:0))-(a.score+(wallStudy?Math.abs(Math.sin(a.angle))*20:0)));if(!candidates.length)throw Error('No V2 legal lane');
  let p;for(const candidate of candidates){Object.assign(g.player,{x:candidate.x,y:candidate.y,angle:candidate.angle,vx:0,vy:0});g.setAimPoint({x:candidate.x+Math.cos(candidate.angle)*150,y:candidate.y+Math.sin(candidate.angle)*150});if(g.abilities.snapshot.slots.power.ready){p=candidate;break;}}
- if(!p)throw Error('No authoritative V2 power placement');Object.assign(g.player,{x:p.x,y:p.y,angle:p.angle,vx:0,vy:0});d.setInput({x:0,y:0,fire:false,angle:p.angle,autoAim:false});d.step(3800);g.enemies.reset();d.refresh();
+ if(!p)throw Error('No authoritative V2 power placement');Object.assign(g.player,{x:p.x,y:p.y,angle:p.angle,vx:0,vy:0});d.setInput({x:0,y:0,fire:false,angle:p.angle,autoAim:false});d.step(3800);clearStagingActors();d.refresh();
  const population=heavy?(showcase&&room!=='armory'?12:25):5;
- const placed=[];
+ const placed=g.enemies.snapshot.enemies.map(({x,y,id})=>({x,y,id}));
  for(const r of (heavy?[170,230,290,350,410,470]:slot==='power'?[300,380]:[170,230,290]))for(const k of (heavy?[-5,-4,-3,-2,-1,0,1,2,3,4,5]:[0,-2,2,-1,1])){
   if(placed.length>=population)break;
   const a=p.angle+k*.22,x=p.x+Math.cos(a)*r,y=p.y+Math.sin(a)*r;

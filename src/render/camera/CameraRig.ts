@@ -33,6 +33,8 @@ export class CameraRig {
     this.trauma = T.MathUtils.clamp(this.trauma + Math.max(0, amount), 0, 1);
   }
 
+  setRumbleFloor(amount:number){this.trauma=Math.max(this.trauma,T.MathUtils.clamp(amount,0,1));}
+
   /** Recoil follows the shot direction in world space. */
   kick(angle: number, amount: number) {
     this.recoil.x -= Math.cos(angle) * Math.min(.25, Math.max(0, amount));
