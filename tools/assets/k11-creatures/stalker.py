@@ -8,7 +8,7 @@ four stilt legs with high knees.
 import numpy as np
 
 import sdf as S
-from sdf import ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, Ellipsoid, RoundCone, Plate, frame, v3, normalize
+from sdf import BONE, ARMOR, FLESH, SHELL, MEMBRANE, CLAW, ORGAN, CREST, TOOTH, CAVITY, SINEW, Ellipsoid, RoundCone, Plate, frame, v3, normalize
 import species as A
 from spitter import chain
 
@@ -91,8 +91,8 @@ def build(sk):
         body.add(Plate((el + wr) / 2 + v3((0, 0.03 * s, 0.06)), (float(np.linalg.norm(wr - el)) * 0.5, 0.09, 0.05),
                        frame(fa, (0, 0.3 * s, 1)), 0.04, rings=0.003, lip=0.01, zone=CREST, bone=f"arm_mid.{side}", plate=60 + s))
         # scythes held with their flat faces up and edges outward: a wide crescent read from above
-        body.extend(A.blade(wr, end + (end - wr) * 0.3, v3((0.35, 1.0 * s, 0.25)), 0.26 * heavy,
-                            0.05 * heavy, f"claw.{side}", hook=0.55, serrations=4))
+        body.extend(A.blade(wr, end + (end - wr) * 0.35, v3((0.35, 1.0 * s, 0.25)), 0.3 * heavy,
+                            0.05 * heavy, f"claw.{side}", hook=0.55, serrations=4, zone=BONE, edge_zone=BONE))
         # flared shoulder hood: the pouncer's wide key silhouette
         hood_n = normalize(v3((0.1, 0.85 * s, 0.6)))
         body.add(Plate(up + v3((-0.05, 0.3 * s, 0.1 * a)), (0.42, 0.36, 0.12), frame(v3((1, 0, 0.25)), hood_n), 0.08,
@@ -109,8 +109,8 @@ def build(sk):
     elite = S.Sculpture("stalker-elite")
     # one overgrown right scythe: a second, larger bone blade fused along the arm
     wr, end, el = sk.h("claw.R"), sk.end("claw.R"), sk.h("arm_mid.R")
-    elite.extend(A.blade(el + (wr - el) * 0.4, end + (end - wr) * 0.7 + v3((0.15, -0.1, 0.1)), v3((-0.4, 0.3, 0.5)), 0.24, 0.055,
-                         "arm_mid.R", hook=0.6, serrations=5, zone=CREST, edge_zone=TOOTH))
+    elite.extend(A.blade(el + (wr - el) * 0.3, end + (end - wr) * 0.55 + v3((0.2, -0.2, 0.15)), v3((0.3, -1.0, 0.4)), 0.4, 0.06,
+                         "arm_mid.R", hook=0.7, serrations=5, zone=BONE, edge_zone=BONE))
     pts, nrm = [], []
     for u in np.linspace(0.45, -0.5, 4):
         p, n = A.ellipsoid_surface(ab_c, ab_r, ab_R, float(u), 0.0)
