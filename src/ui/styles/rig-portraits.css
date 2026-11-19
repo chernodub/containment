@@ -23,7 +23,8 @@
 #overlay .rig-identity-copy>.eyebrow {color:var(--element);font-size:11px;}
 #overlay .rig-identity-copy h3 {font-size:clamp(38px,3.5vw,62px);line-height:1;max-width:17ch;margin:10px 0 12px;letter-spacing:.015em;text-wrap:balance;}
 #overlay .rig-identity-copy p {max-width:48ch;font-size:14px;line-height:1.45;color:#bbd0da;margin:0 0 18px;}
-#overlay .rig-identity-copy #equip-rig {min-width:200px;background:var(--element);border-color:var(--element);color:#07131c;}
+#overlay .rig-identity-copy #recommended-loadout {min-width:200px;}
+#overlay .rig-identity-copy #equip-rig {margin-inline-start:8px;}
 #overlay .rig-equip-status {display:inline-block;margin-left:16px;font-size:9px;letter-spacing:.13em;color:var(--element);}
 #overlay .rig-identity-copy {animation:rig-copy-arrive .18s ease-out both;}
 #overlay .loadout-rig .marine-portrait {width:100px;height:100px;background:radial-gradient(ellipse,color-mix(in srgb,var(--element) 16%,transparent),transparent 70%);}

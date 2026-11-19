@@ -1,3 +1,4 @@
+import {ONB14_SCENARIOS} from "./onb14-scenarios.mjs";
 import {E9_TOUR_SCENARIO} from './e9-room-tour.mjs';
 import {U9_SCENARIOS} from './u9-scenarios.mjs';
 import {L8_CAPTURE_ARENAS} from './l8-capture-data.mjs';
@@ -91,6 +92,7 @@ function integrationKitingSetup(tier){
 }
 
 export const SCENARIOS=[
+ ...ONB14_SCENARIOS,
  E9_TOUR_SCENARIO,
  ...U6_SCENARIOS,...G4_SCENARIOS,...G4_FORM_SCENARIOS,
  ...I4_SCENARIOS,...V2_SCENARIOS,...V3_SCENARIOS,

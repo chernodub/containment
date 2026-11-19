@@ -1,3 +1,4 @@
+import {getAwakeningDrill} from './gameAdapter';
 import {hasClearExpeditionShot} from '../game/world/expeditionGeometry';
 import {meleeStrikeContains} from '../game/enemies/meleeAttacks';
 import type { DepthGame } from '../DepthGame';
@@ -8,12 +9,13 @@ import { hudObstructs, setPresentationObstacle } from './hud/layout';
 import './styles/onboarding.css';
 
 export const ONBOARDING_STORAGE_KEY = 'containment.onboarding.v1';
-export const ONBOARDING_ACTIONS = ['move', 'aim', 'fire', 'dash', 'tactical', 'power', 'overdrive', 'reload', 'switch', 'grenade', 'medkit', 'brute-evade', 'brute-punish', 'pack-tactical','priority-focus','crossfire-cover'] as const;
+export const ONBOARDING_ACTIONS = ['move', 'aim', 'fire', 'dash', 'tactical', 'power', 'overdrive', 'reload', 'switch', 'grenade', 'medkit', 'brute-evade', 'brute-punish', 'evade-punish', 'pack-tactical','priority-focus','crossfire-cover'] as const;
 export type OnboardingAction = typeof ONBOARDING_ACTIONS[number];
 type PreferenceStorage = Pick<Storage, 'getItem' | 'setItem'> | null;
 type Seen = Partial<Record<OnboardingAction, true>>;
 type Bounds = { left: number; right: number; top: number; bottom: number };
 const prompts: Record<OnboardingAction, readonly [string, string, string]> = {
+  'evade-punish':['A / D / LMB','Step across the red edge, then shoot the recovering body.',''],
   'priority-focus':['LMB / Q / F','Break the escort — focus the Carrier or heavy guard first.',''],
   'crossfire-cover':['W A S D','Two firing lines — move behind cover to break one.',''],
   'pack-tactical':['Q','Pack lined up — use your tactical ability.',''],
@@ -53,6 +55,8 @@ export class ContextualOnboarding {
   private readonly heading = document.createElement('b');
   private readonly copy = document.createElement('span');
   private active: OnboardingAction | null = null;
+  private retryShown = false;
+  private evadedTarget: number | null = null;
   private firstWindup = false;
   private firstStrike:{id:number;x:number;y:number;vitality:number;damageTaken:number}|null=null;
   private previousWeapon: string | null = null;
@@ -103,8 +107,8 @@ export class ContextualOnboarding {
   get teachingStrike(): boolean { return this.enabled && !this.seen.dash; }
 
   /** Persist once, and only after the action really occurred. */
-  mark(action: OnboardingAction): void {
-    if (!this.enabled || this.seen[action] || this.disposed) return;
+  mark(action: OnboardingAction, observedDrill = false): void {
+    if ((!this.enabled && !observedDrill) || this.seen[action] || this.disposed) return;
     this.seen[action] = true;
     try { this.storage?.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ version: 1, seen: this.seen })); } catch { /* Session state remains valid. */ }
     if (this.active === action) { this.active = null; this.activeTime = 0; this.node.hidden = true; setPresentationObstacle('onboarding', null); }
@@ -112,7 +116,10 @@ export class ContextualOnboarding {
 
   effect(effect: HudEffect): void {
     if(effect.type==='corpse'&&effect.id!==undefined&&this.watchedGame?.roomRevision===this.trackedRoom&&this.priorityTargets.includes(effect.id))this.mark('priority-focus');
-    if(effect.type==='hit'&&effect.targetId===this.recoveringBruteId)this.mark('brute-punish');
+    if((effect.damage??0)>0&&effect.targetId!==undefined){
+      if(effect.targetId===this.recoveringBruteId)this.mark('brute-punish');
+      if(effect.targetId===this.evadedTarget)this.mark('evade-punish');
+    }
     if (effect.type === 'shot') this.mark('fire');
     if (effect.type === 'ability' && effect.ability && ['cast', 'dash-start', 'impact'].includes(effect.ability.phase) && effect.ability.slot !== 'dash') {if(effect.ability.slot!=='tactical'||this.packOpportunity)this.mark(effect.ability.slot);if(effect.ability.slot==='tactical'&&this.packOpportunity)this.mark('pack-tactical');}
   }
@@ -134,8 +141,10 @@ export class ContextualOnboarding {
       this.active = null; this.activeTime = 0; this.cursor = 0;
       this.bruteWindup=null;this.recoveringBruteId=null;
     }
+    const drill = getAwakeningDrill(game);
+    if((drill?.confirmation??0)>0)this.mark('evade-punish',true);
     const combat = game.combat.snapshot;
-    this.watchedGame=game;if(this.trackedRoom!==game.roomRevision){this.trackedRoom=game.roomRevision;this.priorityTargets=[];this.crossfire=null;this.firstStrike=null;this.bruteWindup=null;}
+    this.watchedGame=game;if(this.trackedRoom!==game.roomRevision){this.trackedRoom=game.roomRevision;this.priorityTargets=[];this.crossfire=null;this.firstStrike=null;this.evadedTarget=null;this.bruteWindup=null;}
     const enemies=game.enemies.snapshot.enemies;
     this.priorityTargets=enemies.filter(enemy=>enemy.priority&&(enemy.type==='carrier'||enemy.controlResistant)).map(enemy=>enemy.id);
     const spitters=enemies.filter(enemy=>enemy.type==='spitter'&&Math.hypot(enemy.x-game.player.x,enemy.y-game.player.y)<600);
@@ -144,9 +153,10 @@ export class ContextualOnboarding {
     if(playing&&this.crossfire&&Math.hypot(game.player.x-this.crossfire.x,game.player.y-this.crossfire.y)>24&&this.crossfire.ids.some(id=>{const enemy=spitters.find(e=>e.id===id);return enemy&&!hasClearExpeditionShot(game.geometry,enemy,game.player);}))this.mark('crossfire-cover');
     this.firstWindup=enemies.some(enemy=>enemy.meleePhase==='windup');
     const strikeWarning=enemies.find(enemy=>enemy.meleePhase==='windup');
-    if(strikeWarning&&!this.firstStrike)this.firstStrike={id:strikeWarning.id,x:game.player.x,y:game.player.y,vitality:combat.health+combat.armor,damageTaken:game.stats.damageTaken};
+    if(this.evadedTarget!==null&&!enemies.some(enemy=>enemy.id===this.evadedTarget&&enemy.meleePhase==='recovery'))this.evadedTarget=null;
+    if(strikeWarning&&!this.firstStrike&&meleeStrikeContains(strikeWarning.meleeShape,strikeWarning.meleeOriginX,strikeWarning.meleeOriginY,strikeWarning.meleeAngle,game.player.x,game.player.y,game.player.radius))this.firstStrike={id:strikeWarning.id,x:game.player.x,y:game.player.y,vitality:combat.health+combat.armor,damageTaken:game.stats.damageTaken};
     const watchedStrike=this.firstStrike&&enemies.find(enemy=>enemy.id===this.firstStrike!.id);
-    if(playing&&watchedStrike?.meleePhase==='recovery'&&this.firstStrike){if(Math.hypot(game.player.x-this.firstStrike.x,game.player.y-this.firstStrike.y)>20&&combat.health+combat.armor>=this.firstStrike.vitality&&game.stats.damageTaken===this.firstStrike.damageTaken&&!meleeStrikeContains(watchedStrike.meleeShape,watchedStrike.meleeOriginX,watchedStrike.meleeOriginY,watchedStrike.meleeAngle,game.player.x,game.player.y,game.player.radius))this.mark('dash');this.firstStrike=null;}
+    if(playing&&watchedStrike?.meleePhase==='recovery'&&this.firstStrike){if(Math.hypot(game.player.x-this.firstStrike.x,game.player.y-this.firstStrike.y)>20&&combat.health+combat.armor>=this.firstStrike.vitality&&game.stats.damageTaken===this.firstStrike.damageTaken&&!meleeStrikeContains(watchedStrike.meleeShape,watchedStrike.meleeOriginX,watchedStrike.meleeOriginY,watchedStrike.meleeAngle,game.player.x,game.player.y,game.player.radius)){this.mark('dash');this.evadedTarget=watchedStrike.id;}this.firstStrike=null;}
     if(this.firstStrike&&!watchedStrike)this.firstStrike=null;
     this.packOpportunity=enemies.filter(enemy=>Math.hypot(enemy.x-game.player.x,enemy.y-game.player.y)<=180&&Math.cos(Math.atan2(enemy.y-game.player.y,enemy.x-game.player.x)-game.player.angle)>.5).length>=3;
     const warning=enemies.find(enemy=>enemy.type==='brute'&&enemy.meleePhase==='windup');
@@ -170,8 +180,18 @@ export class ContextualOnboarding {
       this.previousMedkits = combat.medkits;
     }
     if (!playing) { this.node.hidden = true; this.active = null; setPresentationObstacle('onboarding', null); return; }
+    if(drill){
+      this.active='evade-punish';
+      this.node.dataset.action=this.active;
+      this.key.textContent=drill.confirmation>0?'+20 CR':'MOVE / LMB';
+      this.heading.textContent=drill.confirmation>0?'Punished':prompts['evade-punish'][1];
+      this.copy.textContent='';
+      this.node.hidden=!inspect;
+      return;
+    }
     const eligible = (action: OnboardingAction): boolean => {
       if (this.seen[action]) return false;
+      if(action==='evade-punish')return game.node.depth>=2&&enemies.length===1&&this.firstWindup&&(!this.retryShown||this.active===action);
       // Charge readiness is authoritative; the prompt retires only after a cast.
       if (action === 'overdrive') return !!abilities?.overdrive.ready;
       if(action==='brute-evade')return this.bruteWarning;
@@ -188,10 +208,11 @@ export class ContextualOnboarding {
       if(action==='power')return game.enemies.activeCount>=2&&!!abilities?.slots?.power.ready;
       return true;
     };
-    if (this.active && eligible(this.active) && this.activeTime < 6 && (this.active === 'dash' || !eligible('dash')) && (this.active === 'medkit' || !eligible('medkit')) && (this.active==='brute-evade'||!eligible('brute-evade')) && (this.active==='brute-punish'||!eligible('brute-punish'))) { this.node.hidden = !inspect; return; }
+    if (this.active && eligible(this.active) && this.activeTime < 6 && (this.active === 'dash' || !eligible('dash')) && (this.active === 'medkit' || !eligible('medkit')) && (this.active==='evade-punish'||!eligible('evade-punish')) && (this.active==='brute-evade'||!eligible('brute-evade')) && (this.active==='brute-punish'||!eligible('brute-punish'))) { this.node.hidden = !inspect; return; }
     this.active = null;
     // Urgent contextual prompts can interrupt the teaching sequence.
-    if(eligible('brute-evade'))this.active='brute-evade';
+    if(eligible('evade-punish')){this.active='evade-punish';this.retryShown=true;}
+    else if(eligible('brute-evade'))this.active='brute-evade';
     else if(eligible('brute-punish'))this.active='brute-punish';
     else if (eligible('dash')) this.active = 'dash';
     else if (eligible('medkit')) this.active = 'medkit';

@@ -1219,3 +1219,13 @@ sheets and source/failure receipts. It reads ordinary G6 frame02; only a missing
 Manual Control frame may use an explicitly supplied DRESS13 frame01, labeled on
 the sheet. It does not alter capture guards or turn a failed burst into a pass.
 The room indexes also include historical/current calm pairs with native links. Defaults use the consolidated final gallery parents; replacement JSON names explicitly recaptured cells and retains every parent failure receipt. Per-room native review captures live in `landmark-correction/room-reviews/`.
+
+## ONB14 onboarding review
+
+Capture the native desktop screens with `rig-select,route,starting-boon,augment-draft`.
+The `onb14-drill-{before,during,after}` fixtures stage the opening kills and
+then exercise the practice Brute’s actual warning, missed strike and recovery hit.
+`onb14-mastery-{cryo,pyro,breacher,arc,resisted}` stages the inputs to live preview
+and resistance paths. `onb14-pod-{sealed,swelling,opening}` advances the native
+hatch clock. `onb14-death-{crawler,stalker,spitter}` supplies typed damage to the
+native debrief. See `docs/nextgen/ONB14-REPORT.md` for interpretation.

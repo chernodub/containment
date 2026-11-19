@@ -12,6 +12,8 @@ export class TargetMarkers {
     private readonly canvas = document.createElement('canvas');
     private readonly context = this.canvas.getContext('2d');
     private readonly point = {x: 0, y: 0, visible: false};
+    private readonly resistance = new Map<number,{started:number;active:boolean}>();
+    private room = -1;
     private painted = false;
     private readonly body = {left: 0, top: 0, right: 0, bottom: 0};
 
@@ -44,11 +46,56 @@ export class TargetMarkers {
             ctx.stroke();
             ctx.globalAlpha = 1;
         }
+        if (this.room !== game.roomRevision) {this.room=game.roomRevision;this.resistance.clear();}
+        const tokens = getComputedStyle(this.canvas);
         for (const enemy of enemies) {
+            if (enemy.podStage) {
+                const point = projectWorld(renderer, enemy.x, enemy.y, this.point, .08);
+                if (point.visible) {
+                    this.painted=true;
+                    ctx.strokeStyle=tokens.getPropertyValue('--danger').trim() || tokens.getPropertyValue('--text').trim();
+                    ctx.lineWidth=3;
+                    ctx.beginPath();
+                    ctx.ellipse(point.x,point.y,25,11,0,0,Math.PI*2*(enemy.podStage==='sealed'?1:Math.max(.05,((enemy.podProgress??0)-.2)/.45)));
+                    ctx.stroke();
+                }
+            }
             if (enemy.health <= 0 || enemy.alpha < .2 || (!enemy.priority && !enemy.controlResistant)) continue;
             const body = this.body;
             if (!projectActorBounds(renderer, enemy.id, enemy.x, enemy.y, enemy.radius, body)) continue;
             const x = (body.left + body.right) / 2, y = body.top - 10;
+            let resisted = false;
+            if(enemy.controlResistant){
+                const active = game.boonStatuses(enemy.id).controlResisted;
+                const state = this.resistance.get(enemy.id) ?? {started:-Infinity,active:false};
+                if(active&&!state.active&&game.elapsed-state.started>=1.1)state.started=game.elapsed;
+                state.active=active;
+                this.resistance.set(enemy.id,state);
+                const age = game.elapsed-state.started;
+                resisted = age<.42;
+                if (resisted && !hudObstructs(body.left,body.top,body.right,body.bottom)) {
+                    this.painted=true;
+                    ctx.save();
+                    ctx.globalAlpha=1-age/.5;
+                    ctx.strokeStyle=tokens.getPropertyValue('--arc').trim();
+                    ctx.lineWidth=3;
+                    const cy=(body.top+body.bottom)/2;
+                    const radius=Math.max(12,(body.right-body.left)/2)+age*42;
+                    for(const side of [-1,1]){
+                        ctx.beginPath();
+                        ctx.moveTo(x+side*radius*.4,cy-radius*.65);
+                        ctx.lineTo(x+side*radius,cy-radius*.4);
+                        ctx.lineTo(x+side*radius*.85,cy+radius*.3);
+                        ctx.lineTo(x+side*radius*.35,cy+radius*.65);
+                        ctx.stroke();
+                    }
+                    ctx.font = '700 20px Barlow, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = tokens.getPropertyValue('--text').trim();
+                    ctx.fillText('RESISTED', x, cy);
+                    ctx.restore();
+                }
+            }
             if (x < 20 || x > width - 20 || y < 34 || y > height - 20 ||
                 hudObstructs(x - 28, y - 24, x + 28, y + 12) ||
                 presentationObstructs(x - 28, y - 24, x + 28, y + 12)) continue;
@@ -84,7 +131,6 @@ export class TargetMarkers {
                 }
             }
             if (enemy.controlResistant) {
-                const resisted = game.boonStatuses(enemy.id).controlResisted;
                 const iconX = x + (enemy.priority ? 23 : 0);
                 ctx.strokeStyle = resisted ? '#f2dfff' : violet;
                 ctx.lineWidth = 2.4;
@@ -101,12 +147,7 @@ export class TargetMarkers {
                 ctx.ellipse(x, (body.top + body.bottom) / 2, Math.max(5, (body.right - body.left) / 2),
                     Math.max(5, (body.bottom - body.top) / 2), 0, Math.PI * .78, Math.PI * 1.25);
                 ctx.stroke();
-                if (resisted) {
-                    ctx.font = '700 18px Barlow, sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillStyle = '#f2dfff';
-                    ctx.fillText('RESISTED', x, y - 15);
-                }
+
             }
         }
     }

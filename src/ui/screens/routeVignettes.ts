@@ -1,3 +1,8 @@
+import {MUTATION_CATALOG} from '../../game/roguelike/mutationCatalog';
+import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
+import {SERVICE_IDS, type ServiceId} from '../../game/roguelike/economy';
+import {rewardArt} from '../rewardArt';
+import {serviceArt} from './serviceArt';
 import type {RoomTemplate, TemplateId} from '../../game/roguelike/types';
 import '../styles/route-vignettes.css';
 
@@ -65,13 +70,18 @@ function roomSection(template: RoomTemplate): string {
     </g>`;
 }
 
-export function routeVignette(template: RoomTemplate, salvage: boolean): string {
-  const scene = scenes[template.id];
+export function routeVignette(template: RoomTemplate, key?: string): string {
+  const service = key==='salvage'||key==='cache'?'upgrade':key==='medicine'?'medkit':key;
+  if (service && SERVICE_IDS.includes(service as ServiceId)) {
+    return serviceArt(service as ServiceId).replace('service-illustration','service-illustration route-illustration');
+  }
+  if (key && Object.hasOwn(MUTATION_CATALOG,key)) {
+    return rewardArt(MUTATION_CATALOG[key as keyof typeof MUTATION_CATALOG],true);
+  }
+  const room = key && Object.hasOwn(ROOM_TEMPLATES,key)?ROOM_TEMPLATES[key as TemplateId]:template;
+  const scene = scenes[room.id];
   return `<svg class="route-illustration" style="--route-light:${scene?.light??'#9accdd'}" viewBox="0 0 480 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
     <path class="route-art-lines route-art-deck" d="M142 93 19 160m163-67-79 67m118-67-25 67m63-67 25 67m14-67 79 67m-39-67 123 67M0 145h480M27 124h426M56 110h368"/>
-    ${scene?.geometry??roomSection(template)}
-    ${salvage?`<g class="route-art-cache"><path d="m336 117 48-7 29 11v17l-48 9-29-12z"/>
-      <path d="m336 117 29 11 48-7m-48 7v19m10-13 27-6m-57-8 46-8"/>
-      <path d="M319 118v-12h14m97 12v-12h-14m-97 29v12h14m97-12v12h-14"/></g>`:''}
+    ${scene?.geometry??roomSection(room)}
   </svg>`;
 }

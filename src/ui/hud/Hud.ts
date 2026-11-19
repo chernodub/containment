@@ -1,3 +1,6 @@
+import {captureWeaponPointer} from './weaponInput';
+import {MasteryHints} from './MasteryHints';
+import {getAwakeningDrill, getMasteryPreview} from '../gameAdapter';
 import {EncounterCues} from './EncounterCues';
 import {TargetMarkers} from './TargetMarkers';
 import {SiegeLabel} from './SiegeLabel';
@@ -33,6 +36,7 @@ export type HudPreferences = Readonly<{
     combatTextDensity?: 'full' | 'reduced';
     radar?: boolean;
     hints?: boolean;
+    masteryHints?: boolean;
 }>;
 export type HudController = (() => void) & {
     effect: (effect: HudEffect) => void;
@@ -131,6 +135,15 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     const threats = new ThreatIndicators(el('threat-indicators'), el('damage-directions'), renderer);
     const toasts = new HudToasts(el('hud-toasts'));
     const radar = new Radar(el('radar-hud'), el('radar-map') as unknown as SVGSVGElement, renderer);
+    const skipDrill = document.createElement('button');
+    captureWeaponPointer(skipDrill);
+    skipDrill.style.pointerEvents = 'auto';
+    skipDrill.className = 'quiet';
+    skipDrill.textContent = 'Skip bonus drill';
+    skipDrill.hidden = true;
+    skipDrill.onclick = () => game.skipAwakeningDrill();
+    nodes['story-hud'].append(skipDrill);
+    const masteryHints = new MasteryHints(nodes.hud, storage);
     const onboarding = new ContextualOnboarding(el('action-bar'), storage);
     const firstStrike = new FirstStrikeHighlight(game,renderer);
     const abilityHints = new AbilityHints(slots);
@@ -200,6 +213,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         finishHudOcclusion();
     };
     const protect = () => Object.assign(bounds, renderer.playerScreenBounds(game.player.radius));
+    let mastery: ReturnType<typeof getMasteryPreview> | null = null;
     const updateAbility = (entry: typeof slots[number], s: AbilitySlotSnapshot, snapshot: AbilitiesSnapshot) => {
         const definition = ABILITY_CATALOG[s.id];
         if (entry.ability !== s.id) {
@@ -221,6 +235,10 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         if (entry.node.dataset.state !== state)
             entry.node.dataset.state = state;
         setHudAttribute(entry.node,'data-flash',String(entry.flash>0));
+        const mastering = (s.id==='glacier'&&!!mastery?.walls.length)||(s.id==='flashfire'&&s.ready);
+        const title = s.id==='glacier'&&mastering ? 'Shatter' : s.id==='flashfire'&&mastering ? `Ignite ${mastery?.ignite.length??0}` : definition.name;
+        if(entry.title.textContent!==title)entry.title.textContent=title;
+        setHudAttribute(entry.node,'data-mastery',String(mastering));
         let value = 'READY';
         if (state === 'denied')
             value = entry.denial;
@@ -241,7 +259,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         const charges=String(s.charges),chargeText=s.maxCharges>1?charges:'';
         setHudAttribute(entry.node,'data-charges',charges);
         setHudAttribute(entry.node,'data-cooldown',String(Math.ceil(s.cooldownRemainingMs)));
-        setHudAttribute(entry.node,'aria-label',`${definition.name}, ${reason ? `${reason} ` : ''}${value}${s.maxCharges > 1 ? `, ${charges} of ${s.maxCharges} charges` : ''}`);
+        setHudAttribute(entry.node,'aria-label',`${title}, ${reason ? `${reason} ` : ''}${value}${s.maxCharges > 1 ? `, ${charges} of ${s.maxCharges} charges` : ''}`);
         if(entry.charges&&entry.charges.textContent!==chargeText)entry.charges.textContent=chargeText;
         if (entry.progress) {
             const progress = s.castRemainingMs > 0 ? 1 - s.castRemainingMs / Math.max(1, definition.castMs) : s.activeRemainingMs > 0 ? s.activeRemainingMs / Math.max(1, s.activeMs) : s.ready ? 1 : 1 - s.cooldownRemainingMs / Math.max(1, s.cooldownMs);
@@ -291,7 +309,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         text('story-status', storyStatus);
         const encounter = game.encounter, encounterRemaining = game.encounterRemaining;
         const cue = playing ? encounterCues.update(encounter.beat ?? -1, encounter.canceledReinforcements ?? 0) : '';
-        text('room-objective', cue || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
+        text('room-objective', (getAwakeningDrill(game) ? game.encounterObjective : cue) || game.encounterObjective || combatObjective(game.storyRoom?.templateId, game.storyRoom?.objective ?? ''));
         const critical = combatStoryWarning(game.storyRoom);
         let criticalNode = document.getElementById('objective-critical');
         if (!criticalNode) {criticalNode = document.createElement('p');criticalNode.id='objective-critical';criticalNode.setAttribute('data-hud-critical','');nodes['story-hud'].append(criticalNode);}
@@ -420,9 +438,12 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         encounterTrack.setAttribute('aria-valuetext',`${encounterRemaining} enemies remaining`);
         const abilities = getAbilities(game);
         hidden('ability-bar', !abilities?.rig || !abilities.slots);
+        mastery = playing ? getMasteryPreview(game) : null;
         if (abilities?.slots)
             for (const entry of slots)
                 updateAbility(entry, abilities.slots[entry.slot], abilities);
+        const drill = getAwakeningDrill(game);
+        skipDrill.hidden = !playing || !drill;
         onboarding.update(game, abilities, !abilityHints.visible, preferences().hints !== false);
         const pref = preferences();
         combatText.setEnabled(pref.combatText !== false);
@@ -572,6 +593,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         width('hp-lag', hpGhost / 100);
         width('armor-lag', armorGhost / Math.max(1, maxArmor));
         protect();
+        masteryHints.tick(renderer, game.status==='playing' ? mastery : null, preferences().masteryHints !== false, elapsed);
         onboarding.tick(elapsed, bounds, onboardingObstacles);
         firstStrike.tick(elapsed,onboarding.teachingStrike);
         abilityHints.tick(bounds, true);
@@ -593,7 +615,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         radar.dispose();
         panelResize?.disconnect();
         clearHudOcclusion(); setHudInsets(renderer, getHudInsets());
-        firstStrike.dispose(); onboarding.dispose(); abilityHints.dispose(); encounterTrack.remove(); activeDial.remove(); dashActiveDial.remove();
+        masteryHints.dispose(); skipDrill.remove(); firstStrike.dispose(); onboarding.dispose(); abilityHints.dispose(); encounterTrack.remove(); activeDial.remove(); dashActiveDial.remove();
     };
     return hud;
 }

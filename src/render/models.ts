@@ -23,7 +23,7 @@ export type ActorModel={root:T.Group;body:T.Group;limbs:T.Group[];height:number;
  /** Refresh attached weapon after presentation changes the body pose, before sampling the muzzle. */
  syncWeaponPose?:()=>void;
  setDeathAge?:(seconds:number)=>void;
- setPodCountdown?:(remainingMs:number)=>void;
+ setPodCountdown?:(remainingMs:number,stage?:import('../game/enemies/EnemySystem').PodStage)=>void;
  setBossState?:(stunMs:number,broodMs:number,chargeMs:number)=>void;
  setEmissionRegion?:(region:CreatureEmissionRegion,strength:number)=>void;
  /** Renderer visibility/waiting-pose LOD only; direct rig studies stay full rate. */

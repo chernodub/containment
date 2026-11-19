@@ -21,7 +21,7 @@ export type MutationDefinition = Readonly<{
 }>;
 
 export const MUTATION_CATALOG: Readonly<Record<MutationId, MutationDefinition>> = Object.freeze({
-  breacher: Object.freeze({ id: 'breacher', family:'Kinetic', name: 'Breacher', description: 'Shotgun hits launch bodies. Wall slams deal up to 36 extra damage.', tradeoff: 'Use walls and clustered enemies.', rarity: 'common' }),
+  breacher: Object.freeze({ id: 'breacher', family:'Kinetic', name: 'Wall Slam', description: 'Shotgun hits launch bodies. Wall slams deal up to 36 extra damage.', tradeoff: 'Use walls and clustered enemies.', rarity: 'common' }),
   'heavy-pellets': Object.freeze({ id: 'heavy-pellets', family:'Kinetic', name: 'Heavy Pellets', description: 'Shotgun projectile damage +35%; with Breacher, launch impulse also increases by 50%.', tradeoff: 'Shotgun only.', rarity: 'common' }),
   'chain-reaction': Object.freeze({ id: 'chain-reaction', family:'Kinetic', name: 'Chain Reaction', description: 'Launched bodies damage and launch another enemy with decaying force.', tradeoff: 'Requires Breacher. Each launch can chain three times.', rarity: 'rare', requires: Object.freeze(['breacher'] as const) }),
   'volatile-remains': Object.freeze({ id: 'volatile-remains', family:'Reactor', name: 'Volatile Remains', description: 'Kills explode for 22 damage, hitting up to six nearby enemies.', tradeoff: 'Up to six targets per blast; bounded chains.', rarity: 'rare' }),

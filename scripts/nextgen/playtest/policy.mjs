@@ -237,7 +237,7 @@ export function chooseActions(s) {
   const tacticalOpportunity = s.rig === 'pyro' ? cashOut || near < 155 : near < (s.rig === 'arc' ? 500 : 240);
   if (slots?.tactical?.ready && tacticalOpportunity) keys.push('q');
   const walls = s.abilities.deployables.filter(entity => entity.kind === 'ice-wall');
-  const shatter = walls.some(wall => s.enemies.filter(enemy => enemy.visible && distance(wall, enemy) <= 150).length >= 2);
+  const shatter = walls.some(wall => s.enemies.some(enemy => enemy.visible && distance(wall, enemy) <= 110));
   if (walls.length ? slots.power.ready && shatter : (slots?.power?.ready || s.abilityAims?.power && slots?.power?.charges > 0 && !s.abilities.dashing && !Object.values(slots).some(slot => slot.castRemainingMs > 0)) && s.enemies.length >= 2) keys.push('f');
   const earlyFight = s.node?.depth < 4 && s.enemies.filter(enemy => enemy.visible && distance(enemy, s.player) < 350).length >= 3;
   if (slots?.overdrive?.ready && (earlyFight || s.enemies.length >= 6 || emergency && s.enemies.length >= 2 || s.enemies.some(e => e.champion || e.id < 0))) keys.push('v');
@@ -402,6 +402,20 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const desired=ammo?(near<180&&ammo.shotgun.magazine+ammo.shotgun.reserve>0?'shotgun':ammo.rifle.magazine+ammo.rifle.reserve>0?'rifle':ammo.plasma.magazine+ammo.plasma.reserve>0?'plasma':'pistol'):s.combat.weapon;
       const weapon = !actions.length && now >= nextInput ? desired : s.combat.weapon;
       if (weapon !== s.combat.weapon) nextInput = now + config.inputMs;
+      // The optional drill asks for a committed miss before a recovery shot.
+      const drillEnemy=s.drill&&s.enemies.find(enemy=>enemy.id===s.drill.id);
+      if(drillEnemy){
+        const closeAttack=drillEnemy.meleePhase==='windup'&&drillEnemy.meleeRemainingMs<=450;
+        const retreat=closeAttack||drillEnemy.meleePhase==='strike';
+        const approach=drillEnemy.meleePhase==='approach';
+        const direction=retreat?-1:1;
+        const move=retreat||approach?s.candidates.filter(c=>c.legal)
+          .sort((a,b)=>direction*(distance(a,drillEnemy)-distance(b,drillEnemy)))[0]:null;
+        return {
+          target:s.drill.evaded&&drillEnemy.meleePhase==='recovery'?drillEnemy:null,
+          movement:move??{dx:0,dy:0},actions:[],weapon,stepMs:HUMAN_OBSERVATION_MS,
+        };
+      }
       return {target,movement,actions,weapon,stepMs:HUMAN_OBSERVATION_MS};
     },
   };
