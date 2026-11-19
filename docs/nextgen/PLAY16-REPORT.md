@@ -20,25 +20,25 @@ The ordinary completed-beat tail switches from an extended rush and retreat to a
 
 The baseline game is `c6a09a649f1f1ace1e3b7cc2dacca226a37dc7b5`. Dependency install, type checking and the production build passed. Vite reported its existing large-chunk advisory.
 
-Two early matched Story novice Breacher simulations were available during tuning. These are a partial comparison from the preceding implementation pass. The cleanup mean uses shared room observations for each seed.
+The paired comparison below uses the same bot policy and seeds with game revision `c6a09a64` as control and `4250c1d1` as PLAY16. Each mean weights the matched room observations equally. The Story control was still running at report time. This comparison precedes the final cover-placement follow-up.
 
-| Seed | Shared rooms | Baseline cleanup per room | Early PLAY16 cleanup per room | Baseline → early PLAY16 |
-| --- | ---: | ---: | ---: | --- |
-| 2718 | 19 | 9.86 s | 8.08 s | 19 clears → 20 clears |
-| 31415 | 20 | 8.28 s | 7.63 s | 20 clears → 20 clears |
-| Combined | 39 | 9.05 s | 7.85 s | 13.2% less cleanup |
+| Profile | Rig | Matched runs | Shared rooms | Completions before → after | Cleanup seconds per room before → after |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Story novice | Breacher | 10 | 199 | 9 → 10 | 8.78 → 6.94 |
+| Story novice | Cryo | 10 | 159 | 6 → 7 | 9.95 → 7.62 |
+| Story novice | Pyro | 10 | 191 | 6 → 8 | 8.33 → 6.79 |
+| Story novice | Arc | 2 | 40 | 2 → 2 | 10.86 → 8.39 |
+| Story novice | Combined | 32 | 589 | 23 → 27 | 9.09 → 7.17 (−21.1%) |
+| Standard competent | Breacher | 10 | 200 | 10 → 10 | 9.22 → 7.68 |
+| Standard competent | Cryo | 10 | 152 | 6 → 8 | 9.02 → 7.54 |
+| Standard competent | Pyro | 10 | 193 | 9 → 9 | 7.91 → 6.17 |
+| Standard competent | Arc | 10 | 184 | 8 → 9 | 9.23 → 7.87 |
+| Standard competent | Combined | 40 | 729 | 33 → 36 | 8.83 → 7.30 (−17.4%) |
 
-The next simulation pass used a shorter general tail. These matched samples were available at report time and still cover only Breacher.
+The complete Standard comparison stayed within two completions per rig and fell short of the 25% cleanup target. Exact after cohorts for the cover follow-up are under `artifacts/nextgen/playtest/play16-cover-{story,standard}`. The validated source and per-seed reports are retained with each cohort.
 
-| Profile | Matched runs | Shared rooms | Baseline cleanup per room | PLAY16 cleanup per room | Completion count |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Story novice | 3 | 59 | 8.85 s | 7.54 s (−14.8%) | 2 → 3 |
-| Standard competent | 2 | 40 | 8.83 s | 7.82 s (−11.5%) | 2 → 2 |
+Native and 480×270 frames reviewed include the three pincer states, leader break, brood interruption, Warden opening, pod opening, all mastery hints and rig drills, the first three junctions, the protected passage, and both rig-select action orders. The first Passenger Vault lesson fixture failed to find an isolated lane through the incident. In that room the stock bay and incident overlap. The revised sampler can use their shared shoulder and found legal endpoints for Passenger Vault and Service Shaft Landing in the production geometry. The subsequent capture pass was pending at report time. Captures are staged presentation evidence. [Native and reduced frames](../../artifacts/nextgen/play16/)
 
-The full four-rig, ten-seed cohorts and the 25% cleanup acceptance target remain unverified. The results above precede the final 400 ms escort reveal and the withdrawal after the isolated lunge. Local simulation receipts live under `artifacts/nextgen/playtest/play16-*`.
+The pincer silhouettes are simplified. The HUD supplies the clock and a breach direction when the gate is offscreen. The first Warden frame showed the marine under overlapping geometry. The follow-up widened the crown cutaway and stages the marine stepping out of the committed lane. The reduction shows the Arc line and first route’s supply trade, though smaller route terms and HUD objectives are easiest to read at native resolution.
 
-The staged and sealed flank, rig screen in both action orders, the three junctions, all four mastery prompts, an opening pod, and the Breacher and Cryo drill setups were inspected at native resolution and 480×270. The initial late-flank capture reported a WebGL error. Three other initial captures lost title assets while the shared distribution was rebuilding. A follow-up pass captured the four mastery prompts and the opening pod. Several consequence fixtures still needed correction. The revised fixtures use the opt-in simulation clock and a separate production distribution. Staged frames are evidence of presentation and do not measure learning or difficulty.
-
-The flank silhouettes depend on sight and framing. The HUD supplies the clock and a breach direction when the gate is offscreen. The staged bodies are simplified. The Warden pose follows the impact angle and uses the existing projected cutaway overlap check to retract the crown near the marine. Exact crown placement still needs scene review. Spitter placement depends on a walkable lee and the room's available ranged arrivals. The later junction can still feel more or less dangerous according to its seed, condition and the player's build.
-
-The Pyro Standard native campaign at seed 1729 cleared Awakening Bay and ended on an original ship interior preparation timeout while loading Passenger Vault. The runner recorded one console error. The Cryo Story campaign at the same seed was still running when this report was updated.
+The Pyro Standard campaign at seed 1729 cleared Awakening Bay and then logged one original ship interior preparation error and a loading timeout while entering Passenger Vault. The Cryo Story campaign at seed 1729 cleared fifteen rooms with zero runtime errors and reached the runner’s wall-clock limit in Swarm Junction. The Pyro retry was still progressing at report time. [Pyro receipt](../../artifacts/nextgen/playtest/play16-pyro-standard/report.json) · [Cryo receipt](../../artifacts/nextgen/playtest/play16-cryo-story/report.json)
