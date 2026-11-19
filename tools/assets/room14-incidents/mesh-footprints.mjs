@@ -3,9 +3,12 @@
 import {NodeIO} from '@gltf-transform/core';
 import {ALL_EXTENSIONS} from '@gltf-transform/extensions';
 import {Matrix4,Vector3} from 'three';
+import {MeshoptDecoder} from 'meshoptimizer';
 import {readdirSync} from 'node:fs';
 
-const io=new NodeIO().registerExtensions(ALL_EXTENSIONS),packs=new Map();
+await MeshoptDecoder.ready;
+const io=new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({'meshopt.decoder':MeshoptDecoder});
+const packs=new Map();
 export async function fixtureTriangles(dir,instance,accept){
   if(!packs.has(dir)){
     const name=readdirSync(dir).find(name=>name.endsWith('.glb'));

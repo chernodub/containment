@@ -104,7 +104,8 @@ for(const {id} of rooms){
     if(instance&&await fixtureTriangles('public/assets/'+paths[instance.pack],instance,points=>{
       if(points.every(p=>p.y<=.022001))return true;
       const footprint=points.map(p=>({x:p.x*32,y:p.z*32}));
-      const supported=supports.some(poly=>containsTriangle(poly,footprint));
+      const supported=supports.some(poly=>containsTriangle(poly,footprint))||
+        room.incidentObstacles.some(r=>footprint.every(p=>p.x>=r.x-1.6&&p.x<=r.x+r.width+1.6&&p.y>=r.y-1.6&&p.y<=r.y+r.height+1.6));
       if(!supported&&process.argv.includes('--details'))console.log(id,key,'unsupported triangle',points.map(p=>[p.x*32,p.y,p.z*32].map(v=>v.toFixed(2))).join(' / '));
       return supported;
     }))continue;
