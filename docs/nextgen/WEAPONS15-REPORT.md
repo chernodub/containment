@@ -161,3 +161,169 @@ The completion band was exceeded on all four Standard rigs and on Story Cryo and
 - Cryo, seed 1729, Story. Complete with 20 clears, 0 errors, and 0 defects. [Campaign report](../../artifacts/nextgen/playtest/weapons15-final-cryo/report.json)
 
 Dependency installation and production builds passed. The visual study reported zero browser errors. Vite emitted the large-chunk advisory.
+
+## Lead review retune
+
+`nextgen` was merged as `072da9e4`. Dependency installation and the merged production build passed. The cover-pass reference supplied for this review is Story 18/16/19/18 and Standard 12/15/14/16 in Breacher, Cryo, Pyro and Arc order. ROOM14 also reports a separate final-head ledger. [ROOM14 balance comparison](ROOM14-REPORT.md#balance-comparison)
+
+The submitted weapon mix accelerated both damage and kill-driven Overdrive charge. Plasma alone removed 1.14 million Brute armour and health, and the handgun sustained nearly the old rifle's damage even before repeated recovery bonuses. Stowed reloads and the competent bot's immediate swaps converted those strengths into unusually high firing uptime.
+
+On the matched 40 Standard runs, direct weapon damage per combat second rose from 44.51 to 62.53, an observed increase of 40.5%. All-source damage rose from 106.88 to 124.40 per combat second, an increase of 16.4%. Submitted plasma delivered 112.5 damage per equipped second and rocket 207.6 across the full Standard cohort. Their equipped-time denominators omit reloads completed while stowed, so the per-weapon rates quantify how the policy used each weapon. The sustained estimates below include the full reload or vent cycle.
+
+The DPS model uses nominal, unscaled family health and armour, a fixed 60 Hz cadence, and a full magazine or heat cycle. A cycle includes the greater of the final shot interval and reload or vent. All rifle bullets hit, with continuous same-target tracking. Shotgun uses four to eight pellets according to lane range and target size. The recovery row holds its recovery modifier open and serves as an upper bound. The three-pod row shows raw damage over a 23/60/105-unit cluster before individual pod health clips it. Rocket spends only one shell per reload.
+
+Nominal range samples use 70 units for Crawler, 75 for recovering Stalker, 220 for Spitter, 230 for Brutes, 235 for Carrier and guardians, and 225 for the pod group. Their shotgun samples use 8/8/4/5/4/5/6/4 pellets across Crawler, recovering Stalker, Spitter, Brutes, Carrier, Warden, Matron and pods.
+
+The ideal column compares ready-weapon use, a pistol opener followed by rifle, and plasma plate removal followed by rifle. A rifle already in hand has zero draw delay. Other draws cost 90–150 ms and a plate-to-rifle sequence budgets 300 ms across two draws. This is a fixed encounter model. It excludes boons, stagger chaining, run seed, misses, travel, pierce through extra bodies and background ammo exhaustion.
+
+
+
+
+### Old sustained DPS
+
+| Target | Pistol | Rifle | Shotgun | Plasma | Rocket | Ideal job cycle | vs old rifle/shotgun |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Crawler | 74.8 | 96.3 | 85.0 | 76.8 | 41.3 | 96.3 | +0% |
+| Spitter | 74.8 | 96.3 | 42.5 | 76.8 | 41.3 | 96.3 | +0% |
+| Stalker recovery | 74.8 | 96.3 | 85.0 | 76.8 | 41.3 | 96.3 | +0% |
+| Brute | 74.8 | 96.3 | 53.1 | 76.8 | 41.3 | 96.3 | +0% |
+| Elite Brute | 74.8 | 96.3 | 53.1 | 76.8 | 41.3 | 96.3 | +0% |
+| Carrier | 74.8 | 96.3 | 42.5 | 76.8 | 41.3 | 96.3 | +0% |
+| Warden | 74.8 | 96.3 | 53.1 | 76.8 | 41.3 | 96.3 | +0% |
+| Matron | 74.8 | 96.3 | 63.7 | 76.8 | 41.3 | 96.3 | +0% |
+| Pod trio | 74.8 | 96.3 | 42.5 | 76.8 | 78.8 | 96.3 | +0% |
+
+The fixed roster averages 96.3 effective DPS versus 96.3 for the old rifle/shotgun policy (+0.0%).
+
+### Submitted sustained DPS
+
+| Target | Pistol | Rifle | Shotgun | Plasma | Rocket | Ideal job cycle | vs old rifle/shotgun |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Crawler | 94.9 | 108.5 | 100.4 | 50.5 | 0.0 | 108.5 | +13% |
+| Spitter | 94.9 | 108.5 | 0.0 | 50.5 | 69.2 | 108.5 | +13% |
+| Stalker recovery | 139.5 | 108.5 | 136.6 | 50.5 | 0.0 | 126.3 | +31% |
+| Brute | 94.9 | 86.0 | 0.0 | 65.3 | 45.7 | 118.5 | +23% |
+| Elite Brute | 94.9 | 86.0 | 0.0 | 107.6 | 45.7 | 117.1 | +22% |
+| Carrier | 94.9 | 108.5 | 0.0 | 50.5 | 69.2 | 108.5 | +13% |
+| Warden | 94.9 | 98.0 | 0.0 | 101.0 | 45.7 | 108.6 | +13% |
+| Matron | 94.9 | 108.5 | 0.0 | 50.5 | 45.7 | 108.5 | +13% |
+| Pod trio | 94.9 | 108.5 | 0.0 | 50.5 | 219.5 | 160.7 | +67% |
+
+The fixed roster averages 112.7 effective DPS versus 96.3 for the old rifle/shotgun policy (+17.0%).
+
+### Pass 1 sustained DPS
+
+| Target | Pistol | Rifle | Shotgun | Plasma | Rocket | Ideal job cycle | vs old rifle/shotgun |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Crawler | 60.7 | 93.6 | 85.0 | 22.1 | 0.0 | 93.6 | -3% |
+| Spitter | 60.7 | 93.6 | 0.0 | 22.1 | 39.6 | 93.6 | -3% |
+| Stalker recovery | 60.7 | 93.6 | 108.8 | 22.1 | 0.0 | 95.8 | -1% |
+| Brute | 60.7 | 88.0 | 0.0 | 29.1 | 39.6 | 97.5 | +1% |
+| Elite Brute | 60.7 | 88.0 | 0.0 | 29.1 | 39.6 | 88.0 | -9% |
+| Carrier | 60.7 | 93.6 | 0.0 | 22.1 | 39.6 | 93.6 | -3% |
+| Warden | 60.7 | 91.2 | 0.0 | 24.5 | 39.6 | 91.4 | -5% |
+| Matron | 60.7 | 93.6 | 0.0 | 22.1 | 39.6 | 93.6 | -3% |
+| Pod trio | 60.7 | 93.6 | 0.0 | 22.1 | 148.8 | 119.2 | +24% |
+
+The fixed roster averages 92.9 effective DPS versus 96.3 for the old rifle/shotgun policy (-3.6%).
+
+### Pass 2 sustained DPS
+
+| Target | Pistol | Rifle | Shotgun | Plasma | Rocket | Ideal job cycle | vs old rifle/shotgun |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Crawler | 60.7 | 93.6 | 85.0 | 22.1 | 0.0 | 93.6 | -3% |
+| Spitter | 60.7 | 93.6 | 0.0 | 22.1 | 39.6 | 93.6 | -3% |
+| Stalker recovery | 60.7 | 93.6 | 120.7 | 22.1 | 0.0 | 104.9 | +9% |
+| Brute | 60.7 | 88.0 | 0.0 | 30.1 | 39.6 | 106.2 | +10% |
+| Elite Brute | 60.7 | 88.0 | 0.0 | 30.1 | 39.6 | 105.0 | +9% |
+| Carrier | 60.7 | 93.6 | 0.0 | 22.1 | 39.6 | 93.6 | -3% |
+| Warden | 60.7 | 91.2 | 0.0 | 24.8 | 39.6 | 95.4 | -1% |
+| Matron | 60.7 | 93.6 | 0.0 | 22.1 | 39.6 | 93.6 | -3% |
+| Pod trio | 60.7 | 93.6 | 0.0 | 22.1 | 148.8 | 119.2 | +24% |
+
+The fixed roster averages 98.5 effective DPS versus 96.3 for the old rifle/shotgun policy (+2.2%).
+
+### Pass 3 sustained DPS
+
+| Target | Pistol | Rifle | Shotgun | Plasma | Rocket | Ideal job cycle | vs old rifle/shotgun |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Crawler | 60.7 | 93.6 | 92.7 | 22.1 | 0.0 | 93.6 | -3% |
+| Spitter | 60.7 | 93.6 | 0.0 | 22.1 | 39.6 | 93.6 | -3% |
+| Stalker recovery | 60.7 | 93.6 | 121.5 | 22.1 | 0.0 | 105.4 | +9% |
+| Brute | 60.7 | 87.2 | 0.0 | 30.1 | 39.6 | 106.2 | +10% |
+| Elite Brute | 60.7 | 87.2 | 0.0 | 30.1 | 39.6 | 105.0 | +9% |
+| Carrier | 60.7 | 93.6 | 0.0 | 22.1 | 39.6 | 93.6 | -3% |
+| Warden | 60.7 | 90.8 | 0.0 | 24.8 | 39.6 | 95.4 | -1% |
+| Matron | 60.7 | 93.6 | 0.0 | 22.1 | 39.6 | 93.6 | -3% |
+| Pod trio | 60.7 | 93.6 | 0.0 | 22.1 | 148.8 | 119.2 | +24% |
+
+The fixed roster averages 98.5 effective DPS versus 96.3 for the old rifle/shotgun policy (+2.2%).
+
+### Tuning passes
+
+Pass 1 reduced pistol body damage to 17 with a 1.85× opening shot and a 2× lethal-only bonus on an unarmoured target in recovery or stagger. Rifle uses a 12% tracking ceiling. Shotgun loses 28% after 100 units. Plasma vents after four shots, caps plate damage at the plate, and deals 16 to an exposed body. Rocket kept the same reserve and reload, arms after 135 units, and has a 205-unit blast. The competent bot waits 250 ms for a persistent weapon choice and stays on its current weapon during dodges. Pass 1 was stopped after the following Breacher sample to move to the next candidate.
+
+| Pass and cohort | Clears | Pistol | Rifle | Shotgun | Plasma | Rocket |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 · Standard competent, Breacher | 6/8 | 14.2% | 38.4% | 5.8% | 7.7% | 33.9% |
+| 1 · Story novice, Breacher | 7/7 | 10.0% | 51.9% | 9.1% | 4.7% | 24.3% |
+
+Share columns use direct weapon damage. Pass 2 raised the nominal plate hit from 58 to 80, leaving flesh damage at 16. The shotgun recovery bonus increased to 42%, and the bot can deliberately target a close recovering enemy or intercept a Crawler screen. Clustered rocket damage fell, particularly against targets retaining armour. Both passes used the cover-baseline enemy health.
+
+Pass 3 raised the close pellet to 12 and increased its falloff so shots beyond 100 units remain at 7.8 damage per pellet before the recovery bonus. The recovery multiplier became 1.31×, retaining close recovery burst. Rifle keeps 82% of damage into intact armour. The policy anticipates a Crawler screen inside 190 units and a recovering enemy inside 155. It retains the reaction, dwell and dodge locks. All three passes use the cover-baseline enemy health and the original submission’s reserve caps and presentation.
+
+A submitted plasma shot could carry nearly all 87 points into health when it broke a plate with only a sliver of armour left. Its nominal plate-only sustain was 158 DPS. Pass 3 is about 110 DPS on a repeating plate cycle and 22 DPS into flesh. The plate-then-rifle sequence models at about +10% against a Brute. The Warden’s smaller armour fraction leaves full-target DPS close to the old rifle. Pistol sustained damage is 63% of the old rifle. The raw three-pod model remains above the +15% job target before finite pod health clips the blast.
+
+### Pass 2 and pass 3 results
+
+Pass 2 was superseded after the reported Breacher sample and separate seed-1729 probes for Cryo, Pyro and Arc. Pass 3 uses the full requested 20-seed cohort per rig and difficulty. The rows below count terminal receipts.
+
+| Pass and cohort | Clears / finished runs | Pistol | Rifle | Shotgun | Plasma | Rocket |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 2 · Standard | 6/11 | 14.1% | 41.8% | 6.2% | 9.3% | 28.6% |
+| 2 · Story | 10/11 | 9.6% | 56.5% | 9.7% | 6.3% | 17.9% |
+| 3 · Standard | 51/80 | 12.9% | 38.8% | 8.4% | 10.7% | 29.1% |
+| 3 · Story | 68/80 | 8.1% | 53.1% | 12.4% | 7.1% | 19.2% |
+
+### Final completions by rig
+
+| Difficulty | Rig | Cover reference / 20 | Pass 3 clears / finished runs | Deaths | Stalls |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Standard | Breacher | 12 | 9/20 | 11 | 0 |
+| Standard | Cryo | 15 | 18/20 | 2 | 0 |
+| Standard | Pyro | 14 | 18/20 | 2 | 0 |
+| Standard | Arc | 16 | 6/20 | 14 | 0 |
+| Story | Breacher | 18 | 18/20 | 2 | 0 |
+| Story | Cryo | 16 | 18/20 | 2 | 0 |
+| Story | Pyro | 19 | 20/20 | 0 | 0 |
+| Story | Arc | 18 | 12/20 | 8 | 0 |
+
+### Final weapon usage
+
+| Difficulty | Weapon | Shots | Damage | Kills | Equipped seconds |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Standard | pistol | 26,039 | 447,152 | 2,991 | 13,294.5 |
+| Standard | rifle | 118,445 | 1,344,418 | 7,475 | 31,806.2 |
+| Standard | shotgun | 8,718 | 292,126 | 4,067 | 10,703.1 |
+| Standard | plasma | 4,926 | 369,579 | 110 | 3,226.1 |
+| Standard | rocket | 5,155 | 1,009,182 | 7,191 | 5,310.3 |
+| Story | pistol | 13,556 | 221,087 | 1,504 | 7,093.9 |
+| Story | rifle | 133,229 | 1,442,609 | 8,226 | 37,943.9 |
+| Story | shotgun | 9,729 | 337,913 | 3,692 | 13,561.9 |
+| Story | plasma | 3,841 | 192,891 | 125 | 2,732.3 |
+| Story | rocket | 3,020 | 521,622 | 3,618 | 5,529.3 |
+
+Matched Standard observed direct weapon DPS is 54.73 versus 44.51 in the original 40-run baseline (+23.0%). Behaviour, cover and loadout contribute to that comparison.
+All-source damage rose from 106.88 to 115.94 per combat second (+8.5%) in the same matched sample. The submitted build had reached 124.40.
+
+All five Standard direct-damage shares are within 8–40%.
+The completion band is missed by Standard Breacher (9/20), Standard Cryo (18/20), Standard Pyro (18/20), Standard Arc (6/20), Story Pyro (20/20), Story Arc (12/20).
+
+Arc had the largest decline from the supplied cover reference. Seven of its fourteen Standard deaths fell in rooms 11 and 14. Standard Breacher had six of eleven deaths in rooms 18 and 19. Story Pyro cleared all twenty, and Arc lost eight attempts across four rooms.
+
+### Native campaign verification
+
+- Breacher, seed 1729, Standard. Complete with 20 clears, 0 errors, and 0 defects. [Campaign receipt](../../artifacts/nextgen/playtest/weapons15-lead-final-breacher/report.json)
+- Cryo, seed 1729, Story. Complete with 20 clears, 0 errors, and 0 defects. [Campaign receipt](../../artifacts/nextgen/playtest/weapons15-lead-final-cryo/report.json)
+
+The production build passed after both native campaigns. [Standard cohort](../../artifacts/nextgen/playtest/weapons15-lead-p3-standard/summary.json) · [Story cohort](../../artifacts/nextgen/playtest/weapons15-lead-p3-story/summary.json)

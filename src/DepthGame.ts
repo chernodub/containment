@@ -326,15 +326,25 @@ export class DepthGame {
   const armored=(enemy?.armor??0)>0;
   const {weaponId,damage,precision}=b.request;
   switch(weaponId){
-   case 'pistol': return damage*(recovering?1.55:precision?1.65:1);
+   case 'pistol': {
+    const finishing=recovering&&enemy&&enemy.armor===0&&enemy.health<=damage*2;
+    return damage*(finishing?2:precision?1.85:1);
+   }
    case 'rifle': {
     const previous=this.rifleTrack;
     const count=previous?.id===id&&this.elapsed-previous.time<.32?Math.min(4,previous.count+1):0;
     this.rifleTrack={id,time:this.elapsed,count};
-    return damage*(1+count*.055)*(armored?.56:1);
+    return damage*(1+count*.03)*(armored?.82:1);
    }
-   case 'shotgun': return damage*(recovering?1.36:1);
-   case 'plasma': return damage*(armored?2.35:enemy?.elite&&!enemy.champion?1.38:enemy?.champion==='warden'?1.42:.75);
+   case 'shotgun': {
+    const close=Math.hypot(b.x-b.sourceX!,b.y-b.sourceY!)<=100;
+    return damage*(close?1:.65)*(recovering?1.31:1);
+   }
+   case 'plasma': {
+    const plate=Math.min(enemy?.armor??0,damage*4);
+    // Extra plate damage never transfers into health on the breaking hit.
+    return plate + damage*.8*(1-plate/(damage*4));
+   }
    default: return damage;
   }
  }
@@ -349,8 +359,10 @@ export class DepthGame {
     this.hurt(calculateSplashDamage(72,distance,b.request.splashRadius),b);
    }
   }
-  const elements=new Set<'ice'|'poison'|'fire'>();for(const t of this.targets()){if(Math.hypot(t.x-b.x,t.y-b.y)>b.request.splashRadius||!hasClearExpeditionShot(this.geometry,b,t))continue;const s=this.mutations.statuses(t.id);if(s.chilled||s.frozen)elements.add('ice');if(s.poisoned)elements.add('poison');if(s.burning)elements.add('fire');}this.presentation.push({type:'explosion',x:b.x,y:b.y,radius:b.request.splashRadius,weapon:b.kind==='player'?b.request.weaponId:undefined,elements:[...elements]});const cause={chainId:b.request.mutationShotId??this.combat.nextMutationEventId('blast'),depth:0};for(const t of this.targets()){const distance=Math.hypot(t.x-b.x,t.y-b.y);if(distance>b.request.splashRadius||!hasClearExpeditionShot(this.geometry,b,t))continue;const enemy=b.kind==='player'?this.enemies.getSnapshot(t.id):null;
-   const multiplier=enemy?.pod||enemy?.broodRemainingMs?1.4:enemy?.champion||enemy?.type==='brute'?.66:1;
+  const targets=this.targets().filter(t=>Math.hypot(t.x-b.x,t.y-b.y)<=b.request.splashRadius&&hasClearExpeditionShot(this.geometry,b,t));
+  const clustered=b.kind==='player'&&targets.filter(t=>Math.hypot(t.x-b.x,t.y-b.y)<=b.request.splashRadius*.73).length>=3;
+  const elements=new Set<'ice'|'poison'|'fire'>();for(const t of targets){const s=this.mutations.statuses(t.id);if(s.chilled||s.frozen)elements.add('ice');if(s.poisoned)elements.add('poison');if(s.burning)elements.add('fire');}this.presentation.push({type:'explosion',x:b.x,y:b.y,radius:b.request.splashRadius,weapon:b.kind==='player'?b.request.weaponId:undefined,elements:[...elements]});const cause={chainId:b.request.mutationShotId??this.combat.nextMutationEventId('blast'),depth:0};for(const t of targets){const distance=Math.hypot(t.x-b.x,t.y-b.y);const enemy=b.kind==='player'?this.enemies.getSnapshot(t.id):null;
+   const multiplier=enemy?.pod||enemy?.broodRemainingMs?1.25:clustered?(enemy?.armor?0.96:1.15):b.kind==='player'?.78:1;
    const n=calculateSplashDamage(b.request.damage*multiplier,distance,b.request.splashRadius);if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,n,{x:(t.x-b.x)/(distance||1)*b.request.knockback,y:(t.y-b.y)/(distance||1)*b.request.knockback},'weapon',true,b.kind==='player'?b.request.weaponId:undefined);if(r.applied){if(b.hitReceipt&&!b.hitReceipt.hit){b.hitReceipt.hit=true;this.runStats.recordShotHit();}this.mutations.hit(cause.chainId,b.request.weaponId,t,{x:(t.x-b.x)/(distance||1),y:(t.y-b.y)/(distance||1)},b.request.primed);if(r.died)this.mutations.kill(t,'direct',cause);}}}
  private updateBullets(dt:number,previousTargets:ReadonlyMap<number,{x:number;y:number}>=new Map(),hostileScale=this.abilities.hostileTimeScale){const shotRadii=new Map(this.enemies.snapshot.enemies.map(e=>[e.id,e.champion==='matron'?e.radius:enemyShotRadius(e.type,e.elite)]));for(const b of [...this.bullets]){if(this.status!=='playing')break;const bulletDt=dt*(b.kind==='hazard'?hostileScale:1);b.life-=bulletDt;const dx=Math.cos(b.request.angle)*b.request.speed*bulletDt,dy=Math.sin(b.request.angle)*b.request.speed*bulletDt;const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/7));let done=false;for(let i=0;i<steps&&!done;i++){
    const from={x:b.x,y:b.y},next={x:b.x+dx/steps,y:b.y+dy/steps};const barrierBlocked=b.kind==='hazard'&&this.abilities.interceptProjectile(from,next,b.request.radius,b.request.damage);if(barrierBlocked){done=true;break;}const wallBlocked=!canTraverseExpedition(this.geometry,from,next,b.request.radius);if(wallBlocked&&b.kind!=='player'){if(b.kind==='grenade'){b.request={...b.request,speed:0};break;}if(b.request.splashRadius)this.blast(b);else this.presentation.push({type:'hit',x:b.x,y:b.y,angle:b.request.angle,weapon:b.request.weaponId});done=true;break;}b.x=next.x;b.y=next.y;

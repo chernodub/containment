@@ -9,7 +9,7 @@ export const WEAPONS: Readonly<
   pistol: weapon({
     id: 'pistol',
     label: 'Service pistol',
-    damage: 27,
+    damage: 17,
     roundsPerSecond: 4,
     magazine: 12,
     reserve: Number.POSITIVE_INFINITY,
@@ -28,7 +28,7 @@ export const WEAPONS: Readonly<
   rifle: weapon({
     id: 'rifle',
     label: 'Assault rifle',
-    damage: 15,
+    damage: 14,
     roundsPerSecond: 9,
     magazine: 30,
     reserve: 60,
@@ -47,7 +47,7 @@ export const WEAPONS: Readonly<
   shotgun: weapon({
     id: 'shotgun',
     label: 'Combat shotgun',
-    damage: 13,
+    damage: 12,
     roundsPerSecond: 1.15,
     magazine: 8,
     reserve: 16,
@@ -66,11 +66,11 @@ export const WEAPONS: Readonly<
   plasma: weapon({
     id: 'plasma',
     label: 'Plasma projector',
-    damage: 37,
+    damage: 20,
     roundsPerSecond: 2.5,
     magazine: 20,
     reserve: 22,
-    reloadMs: 1_450,
+    reloadMs: 1_700,
     pellets: 1,
     spreadRadians: 0,
     bloomPerShotRadians: 0,
@@ -85,7 +85,7 @@ export const WEAPONS: Readonly<
   rocket: weapon({
     id: 'rocket',
     label: 'Rocket launcher',
-    damage: 166,
+    damage: 120,
     roundsPerSecond: 0.65,
     magazine: 1,
     reserve: 3,
@@ -98,7 +98,7 @@ export const WEAPONS: Readonly<
     projectileSpeed: 460,
     projectileRadius: 9,
     penetration: 1,
-    splashRadius: 185,
+    splashRadius: 205,
     knockback: 90,
   }),
 });
@@ -111,5 +111,5 @@ export const WEAPON_JOBS = {
   rocket: 'Group Break',
 } as const satisfies Record<WeaponId, string>;
 
-export const SHOTGUN_RANGE = 205;
-export const ROCKET_ARM_DISTANCE = 170;
+export const SHOTGUN_RANGE = 195;
+export const ROCKET_ARM_DISTANCE = 135;

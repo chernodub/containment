@@ -5,7 +5,7 @@ import { isValidRunResources } from '../roguelike/checkpoints';
 import type { BuildState, RunResources } from '../roguelike/types';
 
 const WEAPON_IDS = Object.freeze(Object.keys(WEAPONS) as WeaponId[]);
-const PLASMA_HEAT_LIMIT = 7;
+const PLASMA_HEAT_LIMIT = 4;
 const INITIAL_WEAPON: WeaponId = 'pistol';
 const INITIAL_GRENADES = 3;
 const MAX_GRENADES = 6;

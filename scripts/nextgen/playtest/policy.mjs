@@ -379,10 +379,18 @@ export function createHumanPolicy(seed, profile = 'competent') {
       if (target && s.resources?.ammo.rocket.magazine &&
           (profile !== 'novice' || (seed+s.node.depth)%4!==0) &&
           !target.champion && target.type !== 'brute') {
-        const group = visible.find(e => e.clear && distance(e,s.player)>210 &&
+        const group = visible.find(e => e.clear && distance(e,s.player)>195 &&
           (e.pod || e.broodRemainingMs ||
-            visible.filter(other=>other.clear && distance(other,e)<112).length>=3));
+            visible.filter(other=>other.clear && distance(other,e)<125).length>=3));
         if (group) target=group;
+      }
+      const lightScreen=visible.filter(e=>e.clear&&e.type==='crawler'&&distance(e,s.player)<190);
+      if (target && !target.pod && !target.broodRemainingMs && !target.champion &&
+          s.resources?.ammo.shotgun.magazine > 0) {
+        const recovering=visible.find(e=>e.clear&&e.meleePhase==='recovery'&&distance(e,s.player)<155);
+        const screen=lightScreen.length>=2?lightScreen.reduce((closest,e)=>
+          distance(e,s.player)<distance(closest,s.player)?e:closest):null;
+        target=recovering??screen??target;
       }
       // End WEAPONS15 aim selection.
       if (target) {
@@ -420,26 +428,24 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const range = target ? distance(target, s.player) : Infinity;
       let job = 'rifle';
       if (target) {
-        const cluster = visible.filter(e => e.clear && distance(e, target) < 115);
-        if (range > 207 && (target.pod || target.broodRemainingMs || cluster.length >= 3)) job = 'rocket';
-        else if (target.type === 'brute' || target.champion === 'warden' || target.armor > 0 ||
-            (target.elite && !target.champion && (target.priority || target.health>155))) job = 'plasma';
-        else if (range < 196 && (target.type === 'crawler' || target.meleePhase === 'recovery' ||
-            visible.some(e => e.type==='crawler' && e.clear && distance(e,s.player)<130))) job = 'shotgun';
-        else if (target.health <= 40 && range < 400) job = 'pistol';
+        const cluster = visible.filter(e => e.clear && distance(e, target) < 125);
+        if (range > 195 && (target.pod || target.broodRemainingMs || cluster.length >= 3)) job = 'rocket';
+        else if (range < 191 && (target.type === 'crawler' || target.meleePhase === 'recovery')) job = 'shotgun';
+        else if (target.armor > 0) job = 'plasma';
+        else if (target.health <= (target.meleePhase==='recovery'||target.stunRemainingMs>0?34:25) && !target.armor && range < 400) job = 'pistol';
       }
       const desired = !ammo || !target ? current
         : (s.reloadingWeapons?.includes(job) || job===current && s.combat.reloading) ? 'pistol'
-        : ammo[job].magazine > 0 ? job
-        : job === current && ammo[job].reserve > 0 && !s.combat.reloading ? job
+        : ammo[job].magazine + ammo[job].reserve > 0 ? job
         : 'pistol';
       if (desired !== pendingWeapon) { pendingWeapon = desired; weaponNotice = now; }
-      const noviceReady = profile !== 'novice' || (now - weaponNotice >= 450 &&
-        (desired === 'rifle' || desired === 'shotgun' || (seed + s.node.depth) % 4 !== 0));
-      const weapon = !actions.length && now >= nextInput && noviceReady && now >= weaponHold ? desired : current;
+      const switchReady = now - weaponNotice >= (profile === 'novice' ? 550 : 250) &&
+        (profile !== 'novice' || desired === 'rifle' || desired === 'shotgun' || (seed + s.node.depth) % 4 !== 0);
+      const weapon = !actions.length && !s.abilities.dashing && !escape &&
+        now >= nextInput && switchReady && now >= weaponHold ? desired : current;
       if (weapon !== current) {
         nextInput = now + config.inputMs;
-        weaponHold = now + (profile === 'novice' ? 1000 : 270);
+        weaponHold = now + (profile === 'novice' ? 1100 : 470);
       }
       // End WEAPONS15 weapon selection.
       // The optional drill asks for a committed miss before a recovery shot.

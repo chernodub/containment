@@ -540,8 +540,8 @@ export function getWeaponSituation(game: DepthGame): WeaponId | undefined {
   if (!nearest) return;
   if (distance >= ROCKET_ARM_DISTANCE + 38 &&
       (nearest.pod || nearest.broodRemainingMs || enemies.filter(enemy => Math.hypot(enemy.x-nearest!.x, enemy.y-nearest!.y)<85).length>=3)) return 'rocket';
-  if (nearest.armor > 0 || nearest.champion === 'warden' || (nearest.elite && !nearest.champion)) return 'plasma';
+  if (nearest.armor > 0) return 'plasma';
   if (distance < SHOTGUN_RANGE && (nearest.type === 'crawler' || nearest.meleePhase === 'recovery')) return 'shotgun';
-  if (nearest.health <= 40) return 'pistol';
+  if (nearest.health <= (nearest.stunRemainingMs ? 34 : 31)) return 'pistol';
   return 'rifle';
 }
