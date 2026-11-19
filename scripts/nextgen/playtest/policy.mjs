@@ -344,6 +344,7 @@ export function createHumanPolicy(seed, profile = 'competent') {
   const consumableRandom=()=>{consumableState=(Math.imul(consumableState,1664525)+1013904223)>>>0;return consumableState/0x100000000;};
   let roomKey, nextMove = 0, nextInput = 0, nextHabit = 0, spacing = 0;
   let lastMove = -Infinity;
+  let pendingWeapon, weaponNotice = 0, weaponHold = 0;
   let movement = {dx:0,dy:0}, aimAngle = 0, fixation = false;
   return {
     profile, config,
@@ -407,14 +408,6 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const keys = chooseActions(perceived);
       let {target,movement:conditionMovement}=conditionDecision(s,perceived,movement,chooseTarget(perceived.enemies,s.player),keys);
       movement=conditionMovement;
-      if (target) {
-        const dx=target.x-s.player.x,dy=target.y-s.player.y;
-        const screen=target.screen&&s.player.screen?{
-          x:s.player.screen.x+(target.screen.x-s.player.screen.x)*Math.cos(aimAngle)-(target.screen.y-s.player.screen.y)*Math.sin(aimAngle),
-          y:s.player.screen.y+(target.screen.x-s.player.screen.x)*Math.sin(aimAngle)+(target.screen.y-s.player.screen.y)*Math.cos(aimAngle),
-        }:target.screen;
-        target={...target,x:s.player.x+dx*Math.cos(aimAngle)-dy*Math.sin(aimAngle),y:s.player.y+dx*Math.sin(aimAngle)+dy*Math.cos(aimAngle),screen};
-      }
       if(profile==='novice') {
         const eligible=new Set(keys.filter(key=>['e','g','v'].includes(key)));
         for(const key of consumableNotices.keys())if(!eligible.has(key))consumableNotices.delete(key);
@@ -435,10 +428,55 @@ export function createHumanPolicy(seed, profile = 'competent') {
       const timelyKeys = keys.filter(key=>key!=='Shift'||active.every(e=>!insideMeleeWarning(e,s.player)||warningTime(e,s)>=120));
       const actions = now >= nextInput ? timelyKeys.slice(0,1) : [];
       if (actions.length) {nextInput = now + config.inputMs;consumableNotices.delete(actions[0]);}
-      const ammo=s.resources?.ammo, near=Math.min(Infinity,...visible.map(e=>distance(e,s.player)));
-      const desired=ammo?(near<180&&ammo.shotgun.magazine+ammo.shotgun.reserve>0?'shotgun':ammo.rifle.magazine+ammo.rifle.reserve>0?'rifle':ammo.plasma.magazine+ammo.plasma.reserve>0?'plasma':'pistol'):s.combat.weapon;
-      const weapon = !actions.length && now >= nextInput ? desired : s.combat.weapon;
-      if (weapon !== s.combat.weapon) nextInput = now + config.inputMs;
+      // WEAPONS15 weapon selection.
+      const ammo = s.resources?.ammo;
+      const current = s.combat.weapon;
+      const novice = profile === 'novice';
+      const hasAmmo = id => ammo[id].magazine + ammo[id].reserve > 0;
+      const contacts = novice ? visible : perceived.enemies;
+      const near = Math.min(Infinity, ...contacts.map(enemy => distance(enemy, s.player)));
+      let desired = !ammo ? current
+        : near < 180 && hasAmmo('shotgun') ? 'shotgun'
+        : hasAmmo('rifle') ? 'rifle' : hasAmmo('plasma') ? 'plasma' : 'pistol';
+      let rocketTarget;
+      if (ammo && target && !novice) {
+        const range = distance(target, s.player);
+        const ready = id => ammo[id].magazine > 0 && !s.reloadingWeapons?.includes(id);
+        if (hasAmmo('rocket')) rocketTarget = contacts.find(enemy => {
+          if (!enemy.clear || distance(enemy,s.player) <= 225) return false;
+          if (enemy.pod || enemy.broodRemainingMs > 0) return true;
+          return enemy.role === 'flanker' && contacts.some(other =>
+            other.id !== enemy.id && other.clear && other.role === 'flanker' && distance(other, enemy) < 125);
+        });
+        if (rocketTarget) desired = 'rocket';
+        else if (target.armor >= 40 && range > 150 && ready('plasma')) desired = 'plasma';
+        else if (range > 145 && ready('pistol') &&
+          (s.reloadingWeapons?.includes(desired) ||
+            (target.armor <= 0 && target.health <= 29 && near >= 145))) desired = 'pistol';
+        else if (range < 125 && tracked.find(enemy => enemy.id === target.id)?.meleePhase === 'recovery' &&
+          ready('shotgun')) desired = 'shotgun';
+      }
+      if (desired !== pendingWeapon) { pendingWeapon = desired; weaponNotice = now; }
+      const sidegrade = desired !== 'rifle' && desired !== 'shotgun';
+      // Baseline selection already uses delayed positions, so only specialised
+      // choices add a dwell before the existing input cadence admits a swap.
+      const switchReady = novice || !sidegrade || now - weaponNotice >= 250;
+      const weapon = !actions.length && (novice || !s.abilities.dashing) &&
+        now >= nextInput && switchReady && now >= weaponHold ? desired : current;
+      if (weapon !== current) {
+        nextInput = now + config.inputMs;
+        weaponHold = now + (sidegrade && !novice ? 350 : 0);
+      }
+      if (weapon === 'rocket') target = rocketTarget ?? null;
+      if (target) {
+        const dx=target.x-s.player.x,dy=target.y-s.player.y;
+        const screen=target.screen&&s.player.screen?{
+          x:s.player.screen.x+(target.screen.x-s.player.screen.x)*Math.cos(aimAngle)-(target.screen.y-s.player.screen.y)*Math.sin(aimAngle),
+          y:s.player.screen.y+(target.screen.x-s.player.screen.x)*Math.sin(aimAngle)+(target.screen.y-s.player.screen.y)*Math.cos(aimAngle),
+        }:target.screen;
+        target={...target,x:s.player.x+dx*Math.cos(aimAngle)-dy*Math.sin(aimAngle),y:s.player.y+dx*Math.sin(aimAngle)+dy*Math.cos(aimAngle),screen};
+      }
+      // End WEAPONS15 weapon selection.
       // The optional drill asks for a committed miss before a recovery shot.
       const drillEnemy=s.drill&&s.enemies.find(enemy=>enemy.id===s.drill.id);
       if(drillEnemy){

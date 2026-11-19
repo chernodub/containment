@@ -1,3 +1,4 @@
+import {WEAPON_JOBS} from '../game/combat/catalog';
 import { icon } from './icons';
 export const app = document.getElementById('app')!;
 const key = (label: string) => `<kbd data-hud-critical>${label}</kbd>`;
@@ -19,7 +20,7 @@ export function renderShell(): string {
  </div>
  <div id="action-bar">
   <div class="weapon-bank"><div class="weapon-hud"><div class="weapon-info"><span id="current-weapon-icon">${icon('pistol')}</span><span id="weapon-name">PISTOL</span><span class="reload-key">${key('R')}</span></div><div class="ammo-line"><b id="magazine" data-hud-critical>12</b><span id="reserve" data-hud-critical>/ ∞</span><small id="reload-label" data-hud-critical></small></div><div class="reload-line"><i id="reload-bar"></i></div></div>
-   <div id="weapon-picker" aria-label="Weapons">${(['pistol', 'rifle', 'shotgun', 'plasma', 'rocket'] as const).map((id, i) => `<button data-weapon="${id}" aria-label="Equip ${id}"><small data-hud-critical>${i + 1}</small>${icon(id)}<span>${id}</span></button>`).join('')}</div>
+   <div id="weapon-picker" aria-label="Weapons">${(['pistol', 'rifle', 'shotgun', 'plasma', 'rocket'] as const).map((id, i) => `<button data-weapon="${id}" aria-label="Equip ${id}. ${WEAPON_JOBS[id]}" title="${WEAPON_JOBS[id]}"><small data-hud-critical>${i + 1}</small>${icon(id)}<span>${WEAPON_JOBS[id]}</span></button>`).join('')}</div>
   </div>
   <div id="ability-bar" hidden><div class="dash-slot" data-ability="dash"><span class="ability-icon"></span><div><span class="ability-title">DASH</span><div class="dash-pips"><i></i><i></i><i hidden></i></div><span class="ability-value" data-hud-critical>READY</span></div>${key('SHIFT')}</div>
    ${(['tactical', 'power'] as const).map((slot, i) => `<div class="ability-slot" data-ability="${slot}"><div class="cooldown-dial"><span class="ability-icon"></span><svg viewBox="0 0 48 48" aria-hidden="true"><circle class="dial-track" cx="24" cy="24" r="21"/><circle class="dial-progress" cx="24" cy="24" r="21"/></svg><b class="ability-value" data-hud-critical>READY</b></div><div class="ability-caption">${key(i === 0 ? 'Q' : 'F')}<span class="ability-title"></span><span class="ability-charges"></span></div></div>`).join('')}

@@ -161,8 +161,12 @@ export function runSimulation(options: SimOptions) {
         const row = roomPressure();
         return row.byFamily[family] ??= {windups:0,strikes:0,contacts:0,hits:0,meleeHits:0,damage:0};
     };
+    const weaponUsage = Object.fromEntries(['pistol', 'rifle', 'shotgun', 'plasma', 'rocket'].map(id => [id, {
+        shots: 0, equippedMs: 0, damage: 0, kills: 0, families: {} as Record<string, {damage: number; kills: number}>,
+    }]));
     const onEffect = (e: GameEffect) => {
         if(e.type==='sync-corpse') return;
+        if (e.type === 'shot' && e.weapon) weaponUsage[e.weapon].shots++;
         camera.observeEffect(e);
         recordNativeObservedEvent(events, e, game.elapsed);
         if (e.type === 'ability' && e.ability) {
@@ -198,6 +202,14 @@ export function runSimulation(options: SimOptions) {
             camera.rig.kick(e.angle ?? 0, e.weapon === 'shotgun' ? .08 : e.weapon === 'rocket' ? .12 : .025);
     };
     game = new DepthGame(onEffect);
+    game.observeWeaponDamage = (weapon, family, damage, lethal) => {
+        const usage = weaponUsage[weapon];
+        const target = usage.families[family] ??= {damage: 0, kills: 0};
+        usage.damage += damage;
+        target.damage += damage;
+        usage.kills += Number(lethal);
+        target.kills += Number(lethal);
+    };
     game.newRun(options.seed, { rigSelect: true, difficulty: options.difficulty, shipConditions:!options.conditionsOff });
     game.chooseRig(options.rig);
     if (options.legacy)
@@ -209,7 +221,7 @@ export function runSimulation(options: SimOptions) {
     const report = { mode: 'sim-human-v1', difficulty: options.difficulty ?? 'standard', policyVersion: BOT_POLICY_VERSION, navigationVersion: BOT_NAVIGATION_VERSION, rig: options.rig, seed: options.seed, profile:human.profile, humanParameters:human.config, assisted: !!options.assisted, legacy: !!options.legacy,
         policy: 'Shared seeded human policy; 100ms observations, rate-limited inputs, 60Hz GameFeel, real DepthGame actions; analytic camera observer.',
         limitations: ['No GPU, audio or DOM. Uses shared camera follow/framing/ability-event hooks, exact actor metrics and held-screen ray/torso selection; resource preparation and RAF synchronization are omitted. Matched browser validation remains required before using campaign outcomes as native-policy predictions.'],
-        rooms: [] as any[], outcome: 'running', finalReason: null as string | null, deathRoom: null as number | null, stats: null as any, final: null as any, wallSeconds: 0, trace: options.trace ? [] as any[] : undefined };
+        weaponUsage, rooms: [] as any[], outcome: 'running', finalReason: null as string | null, deathRoom: null as number | null, stats: null as any, final: null as any, wallSeconds: 0, trace: options.trace ? [] as any[] : undefined };
     let room: any, input: GameInput = { x: 0, y: 0, fire: false, angle: null, autoAim: false }, decisions = 0, hardest = -1;
     let stopEnemyObserver: (()=>void)|undefined;
     const observeRoomAttacks = () => {
@@ -247,7 +259,7 @@ export function runSimulation(options: SimOptions) {
             candidates.push({ x, y, dx, dy, legal, waypoint, rangedSightlines:enemies.filter(e=>e.type==='spitter'&&e.visible&&clear(e.x,e.y,{x,y})).map(e=>e.id), clear: nearest ? clear(nearest.x, nearest.y, { x, y }) : false });
         }
         const telegraph = game.boss.snapshot.pendingTelegraph;
-        return { elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), rig: options.rig, siege:game.siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
+        return { elapsed:game.elapsed, drill:game.awakeningDrill, difficulty:game.difficulty, nodeId:game.node.id, node:game.node, resources:game.combat.getRunResources(), reloadingWeapons: Object.keys(game.combat.getRunResources().ammo).filter(id => game.combat.isWeaponReloading(id as import('../../../src/game/combat/types').WeaponId)), rig: options.rig, siege:game.siege, player: { ...game.player, screen:camera.project(game.player.x,game.player.y) }, combat: { ...game.combat.snapshot, weapon: game.combat.snapshot.weaponId }, enemies, candidates,
             abilityAims: observeAbilityAims(game,enemies,point=>{
                 const projected=camera.project(point.x,point.y,0);
                 return camera.pointer({x:Math.max(4,Math.min(1916,projected.x)),y:Math.max(4,Math.min(1000,projected.y))},game,options.metrics??{});
@@ -269,6 +281,7 @@ export function runSimulation(options: SimOptions) {
                 const vitals=game.combat.mutationResources();
                 if(vitals.health>=vitals.maxHealth)lastFullHealthElapsed=game.elapsed;
                 if (room && game.status === 'playing') {
+                    weaponUsage[vitals.weapon].equippedMs += step;
                     const encounter = game.encounter;
                     if (encounter.beat !== undefined && !(encounter.lullRemainingMs ?? 0)) {
                         const enemies = game.enemies.snapshot.enemies.filter(enemy => enemy.beat === encounter.beat);

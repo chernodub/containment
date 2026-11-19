@@ -9,11 +9,11 @@ export const WEAPONS: Readonly<
   pistol: weapon({
     id: 'pistol',
     label: 'Service pistol',
-    damage: 24,
+    damage: 17,
     roundsPerSecond: 4,
     magazine: 12,
     reserve: Number.POSITIVE_INFINITY,
-    reloadMs: 1_100,
+    reloadMs: 850,
     pellets: 1,
     spreadRadians: 0,
     bloomPerShotRadians: 0,
@@ -66,17 +66,17 @@ export const WEAPONS: Readonly<
   plasma: weapon({
     id: 'plasma',
     label: 'Plasma projector',
-    damage: 30,
+    damage: 20,
     roundsPerSecond: 3.2,
     magazine: 20,
-    reserve: 33,
-    reloadMs: 1_800,
+    reserve: 22,
+    reloadMs: 1_700,
     pellets: 1,
     spreadRadians: 0,
     bloomPerShotRadians: 0,
     maxBloomRadians: 0,
     bloomRecoveryMs: 350,
-    projectileSpeed: 650,
+    projectileSpeed: 600,
     projectileRadius: 7,
     penetration: 3,
     splashRadius: 0,
@@ -85,11 +85,11 @@ export const WEAPONS: Readonly<
   rocket: weapon({
     id: 'rocket',
     label: 'Rocket launcher',
-    damage: 120,
+    damage: 100,
     roundsPerSecond: 0.65,
     magazine: 1,
-    reserve: 3,
-    reloadMs: 2_400,
+    reserve: 2,
+    reloadMs: 2_100,
     pellets: 1,
     spreadRadians: 0,
     bloomPerShotRadians: 0,
@@ -98,7 +98,18 @@ export const WEAPONS: Readonly<
     projectileSpeed: 460,
     projectileRadius: 9,
     penetration: 1,
-    splashRadius: 132,
+    splashRadius: 162,
     knockback: 90,
   }),
 });
+
+export const WEAPON_JOBS = {
+  pistol: 'Precision Finish',
+  rifle: 'Sustained Tracking',
+  shotgun: 'Close Quarters',
+  plasma: 'Armour Break',
+  rocket: 'Group Break',
+} as const satisfies Record<WeaponId, string>;
+
+export const SHOTGUN_RANGE = 195;
+export const ROCKET_ARM_DISTANCE = 170;

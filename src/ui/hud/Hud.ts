@@ -1,4 +1,6 @@
 import {conditionChip} from '../conditionChip';
+import {getWeaponSituation} from '../gameAdapter';
+import type {WeaponId} from '../../game/combat/types';
 import {captureWeaponPointer} from './weaponInput';
 import {MasteryHints} from './MasteryHints';
 import {getAwakeningDrill, getMasteryPreview, getRoomOpening, getShipCondition} from '../gameAdapter';
@@ -161,6 +163,9 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     slots.find(entry => entry.slot === 'dash')!.node.append(dashActiveDial);
     const dashActiveRing = dashActiveDial.firstElementChild as SVGCircleElement;
     let health = 100, armor = 50, maxArmor = 50, hpGhost = 100, armorGhost = 50, hpDelay = 0, armorDelay = 0;
+    let situation: WeaponId | undefined, suggestion: WeaponId | undefined, suggestionUntil = 0;
+    let suggestionClock = -1;
+    const situationCount = new Map<WeaponId, number>();
     let lastWeapon = '', lastBuild = '__unbound__', buildSeen = false, lastCheckpoint = '', revision = game.roomRevision, disposed = false, wasPlaying = false;
     let roomPeak = 0, streak = 0, streakWindow = 0, streakCooldown = 0, killCursor = 0;
     const recentKills = new Int32Array(16).fill(-1);
@@ -359,8 +364,27 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         weaponPanel.dataset.ammo = s.magazine === 0 ? 'empty' : s.magazine / Math.max(1, s.magazineCapacity) <= .25 ? 'low' : 'normal';
         weaponPanel.dataset.reloading = String(s.reloading);
         weaponPanel.style.setProperty('--reload-progress', `${s.reloading ? clamp(1 - s.reloadRemainingMs / Math.max(1, s.reloadDurationMs)) * 100 : 0}%`);
-        text('reserve', `/ ${Number.isFinite(s.reserve) ? s.reserve : '∞'}`);
-        text('reload-label', s.reloading ? 'RELOADING' : s.magazine === 0 ? (s.reserve === 0 ? 'EMPTY · SWITCH WEAPON' : 'R · RELOAD') : '');
+        text('reserve', `/ ${Number.isFinite(s.reserve) ? s.reserve : '∞'}${s.weaponId==='plasma'?` · HEAT ${Math.round(s.heatFraction * 100)}%`:''}`);
+        if (game.elapsed < suggestionClock) {
+            situationCount.clear();
+            situation = suggestion = undefined;
+            suggestionUntil = 0;
+        }
+        suggestionClock = game.elapsed;
+        const nextSituation = playing && preferences().masteryHints !== false ? getWeaponSituation(game) : undefined;
+        if (situation !== nextSituation) {
+            situation = nextSituation;
+            if (situation && (situationCount.get(situation) ?? 0) < 3) {
+                situationCount.set(situation, (situationCount.get(situation) ?? 0) + 1);
+                suggestion = situation;
+                suggestionUntil = game.elapsed + 1.55;
+            }
+        }
+        for (const button of weapons) button.classList.toggle('weapon-suggestion',
+            playing && suggestionUntil > game.elapsed && suggestion !== s.weaponId && button.dataset.weapon === suggestion);
+        text('reload-label', s.swapRemainingMs > 0 ? 'DRAWING' : !s.magazine && s.weaponId !== 'pistol'
+            ? (s.weaponId === 'plasma' && s.reloading ? 'VENTING · 1 PISTOL' : '1 · PISTOL')
+            : s.reloading ? (s.weaponId === 'plasma' ? (s.heatFraction >= 1 ? 'OVERHEATED · 1 PISTOL' : 'VENTING') : 'RELOADING') : s.magazine === 0 ? (s.reserve === 0 ? 'EMPTY · SWITCH WEAPON' : 'R · RELOAD') : '');
         width('reload-bar', s.reloading ? 1 - s.reloadRemainingMs / Math.max(1, s.reloadDurationMs) : 0);
         text('depth-label', `${(game.storyRoom?.environment ?? ACT_NAMES[Math.min(2, Math.floor(game.node.depth / 4))]).toUpperCase()} · ${String(game.node.depth + 1).padStart(2, '0')} / ${runLength(game.expedition.run.version)}`);
         text('room-name', ROOM_TEMPLATES[game.node.templateId].name);

@@ -368,7 +368,10 @@ export class AttackEffects {
   const angle=e.angle??0,forward=new T.Vector3(Math.cos(angle),0,Math.sin(angle));
   if(e.contact){
    const blocked=e.contact!=='damage',heavy=e.weapon==='shotgun'||e.weapon==='rocket'||!!e.lethal;
-   const color=blocked?0x90baca:e.weapon==='plasma'?0xa4edff:0xffe6b7;
+   const color=e.weapon==='plasma'?0x82f4ff:blocked?0x90baca:e.weapon==='pistol'?0xfff1cb:0xffe6b7;
+   if(e.weapon==='plasma'&&e.contact==='armor'){
+    this.particle(this.glow,EFFECT_LIMITS.glow,p,color,.33,.23);
+   }
    this.flash(p,color,heavy?1.1:.65,heavy?2.1:1.7,.07,1);
    // A compact point spark and three short backward splinters locate the
    // accepted impact; the separate liquid follows the shot through the body.
@@ -495,9 +498,10 @@ export class AttackEffects {
   const explosion=e.type==='explosion',acid=e.type==='acid';
   const impactColor=acid?0x9ebc5e:e.weapon==='plasma'?0x69ddff:0xffc68b;
   if(explosion||(acid&&e.radius)){
-   const r=(e.radius??100)/32,fiery=e.elements?.includes('fire')??false,icy=e.elements?.includes('ice')??false,toxic=e.elements?.includes('poison')??false,color=acid||toxic?0x8dd45a:fiery?0xffb64e:icy?0xb9efff:0xcbd8dc;
-   this.flash(p,color,acid?2:8,Math.min(12,r*3),.38,4);
-   if(!acid&&this.options.distortion!==false&&!this.options.reducedMotion)this.feedback.shockwave?.({position:p,radius:r,strength:.6*(this.options.flashIntensity??1),duration:.42});
+   const r=(e.radius??100)/32,fiery=e.elements?.includes('fire')??false,icy=e.elements?.includes('ice')??false,toxic=e.elements?.includes('poison')??false,color=acid||toxic?0x8dd45a:fiery||e.weapon==='rocket'?0xffb64e:icy?0xb9efff:0xcbd8dc;
+   const warningOverlap=e.weapon==='rocket'&&this.warningNear(p.x,p.z,r);
+   this.flash(p,color,warningOverlap?1.5:acid?2:8,Math.min(warningOverlap?3:12,r*3),warningOverlap?.10:.38,4);
+   if(!acid&&!warningOverlap&&this.options.distortion!==false&&!this.options.reducedMotion)this.feedback.shockwave?.({position:p,radius:r,strength:.6*(this.options.flashIntensity??1),duration:.42});
    // Mixed statuses compose local cues; no global-build tint or hidden priority.
    if(icy)this.event({type:'boon',boon:'shatter',x:e.x,y:e.y,radius:e.radius});
    if(toxic)for(let i=0;i<8;i++){const a=i*Math.PI/4;this.particle(this.debris,EFFECT_LIMITS.debris,p,0x76d958,.08,.55,new T.Vector3(Math.cos(a)*2,1.5,Math.sin(a)*2),6,0);}
@@ -732,7 +736,7 @@ export class AttackEffects {
   this.primaryWarning.value=-1;this.unionCount.value=0;this.warningCoverage=0;this.warningMinX=this.warningMinZ=Infinity;this.warningMaxX=this.warningMaxZ=-Infinity;
   let ring=0,slash=0;for(const pulse of this.pulses){pulse.age+=dt;if(pulse.age>=pulse.life)continue;if(pulse.stable){if(this.warningVisible(pulse.p.x,pulse.p.z,pulse.radius))this.queueWarning(pulse.p.x,pulse.p.z,pulse.radius,0,0,0,0,pulse.age/pulse.life,(pulse.life-pulse.age)*1000,pulse.radius>2,marineX,marineZ,marineRadius);continue;}
    const t=pulse.age/pulse.life,mesh=pulse.slash?this.slashMesh:this.pulseMesh,index=pulse.slash?slash++:ring++;
-   this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);this.dummy.scale.setScalar(pulse.radius*(pulse.slash?.65+t*.35:.15+t*.85));this.dummy.updateMatrix();(mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(index,0,0,0,0);mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,0);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,(1-t)*.8);
+   this.dummy.position.copy(pulse.p);this.dummy.rotation.set(-Math.PI/2,0,-pulse.angle);this.dummy.scale.setScalar(pulse.radius*(pulse.slash?.65+t*.35:.15+t*.85));this.dummy.updateMatrix();(mesh.geometry.getAttribute('effectShape') as T.InstancedBufferAttribute).setXYZW(index,0,0,0,0);mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,pulse.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,0);(mesh.geometry.getAttribute('effectAlpha') as T.InstancedBufferAttribute).setX(index,(1-t)*(this.warningNear(pulse.p.x,pulse.p.z,pulse.radius)?.20:.8));
   }
   for(const native of this.nativeWarnings){if(!native.active)continue;const w=native.shape,sector=w.shape==='cone',circle=w.shape==='circle',radius=sector||circle?w.radius!:w.width!*.5,length=sector||circle?0:w.length!,angle=w.angle??0;
    if(this.warningVisible(w.x,w.z,radius,length,angle))this.queueWarning(w.x,w.z,radius,length,angle,sector?w.arc!*.5:0,sector?2:circle?0:1,w.progress??0,native.striking?0:native.remainingMs,native.heavy,marineX,marineZ,marineRadius);

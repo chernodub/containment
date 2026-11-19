@@ -1,3 +1,5 @@
+import {ROCKET_ARM_DISTANCE, SHOTGUN_RANGE} from '../game/combat/catalog';
+import type {WeaponId} from '../game/combat/types';
 import {deployableContact} from '../game/abilities/AbilitySystem';
 import type {DepthGame} from '../DepthGame';
 import type {DepthRenderer} from '../render/DepthRenderer';
@@ -528,4 +530,27 @@ export function getRoomOpening(game: DepthGame, depth?: number, salvage?: boolea
 
 export function getShipCondition(game: DepthGame, depth?: number, salvage?: boolean) {
   return depth === undefined ? game.condition : game.conditionFor(depth, salvage);
+}
+
+/** The HUD teaches from the closest enemy in a clear lane. */
+export function getWeaponSituation(game: DepthGame): WeaponId | undefined {
+  const combat = game.combat.snapshot;
+  if ((!combat.magazine || combat.weaponId==='plasma'&&combat.reloading) && combat.weaponId !== 'pistol') return 'pistol';
+  const enemies = game.enemies.snapshot.enemies;
+  let nearest: typeof enemies[number] | undefined;
+  let distance = 460;
+  for (const enemy of enemies) {
+    const range = Math.hypot(enemy.x - game.player.x, enemy.y - game.player.y);
+    if (range < distance && enemy.health > 0 && hasClearExpeditionShot(game.geometry, game.player, enemy)) {
+      nearest = enemy;
+      distance = range;
+    }
+  }
+  if (!nearest) return;
+  if (distance >= ROCKET_ARM_DISTANCE + 38 &&
+      (nearest.pod || nearest.broodRemainingMs || nearest.role === 'flanker' && enemies.some(enemy => enemy.id !== nearest!.id && enemy.role === 'flanker' && Math.hypot(enemy.x-nearest!.x, enemy.y-nearest!.y)<112))) return 'rocket';
+  if (nearest.armor > 0) return 'plasma';
+  if (distance < SHOTGUN_RANGE && (nearest.type === 'crawler' || nearest.meleePhase === 'recovery')) return 'shotgun';
+  if (nearest.health <= (nearest.stunRemainingMs ? 34 : 31)) return 'pistol';
+  return 'rifle';
 }

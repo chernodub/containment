@@ -25,13 +25,15 @@ const args = process.argv.slice(2);
 const options = Object.fromEntries(args.map(arg => {
   assert(/^--[a-z-]+(?:=.*)?$/.test(arg), `Invalid argument ${arg}`);
   const [key, ...value] = arg.slice(2).split('=');
-  assert(['startup-timeout-ms','difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room'].includes(key), `Unknown option ${key}`);
+  assert(['startup-timeout-ms','difficulty','profile','rig','seed','rooms','label','headed','assisted','legacy','checkpoints','realtime','max-room-seconds','max-wall-seconds','resume-boundary','death-probe','checkpoint-screens','fast','dist-dir','storyboard-room','weapon-jobs'].includes(key), `Unknown option ${key}`);
   return [key, value.length ? value.join('=') : true];
 }));
 const distRoot=resolve(String(options['dist-dir']??'dist'));
 const storyboardRoom=options['storyboard-room']??null;
 const storyboardRooms=String(storyboardRoom??'').split(',').filter(Boolean);
 const storyboardIntervalSeconds=.5;
+const jobCaptureDir=options['weapon-jobs']?resolve('artifacts/nextgen/weapons15',String(options.label??'native')):null;
+const capturedJobs=new Set();
 assert(!storyboardRoom||typeof storyboardRoom==='string'&&storyboardRooms.every(id=>/^[a-z][a-z0-9-]+$/.test(id)),'Invalid storyboard room');
 assert(!storyboardRoom||!options.fast&&!options.realtime,'Storyboards require the ordinary fixed clock with every tick rendered');
 const checkpointScreens=options['checkpoint-screens']?new Set(String(options['checkpoint-screens']).split(',')):null;
@@ -51,6 +53,7 @@ const maxWallSeconds=Number(options['max-wall-seconds']??3600);assert(Number.isF
 const label = options.label ?? `${rig}-${seed}${resumed?'-continued':''}${options.assisted ? '-assisted' : ''}${options.legacy ? '-legacy' : ''}`;
 assert(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(label), 'Unsafe label');
 const out = resolve('artifacts/nextgen/playtest', label);
+if(jobCaptureDir)await mkdir(jobCaptureDir,{recursive:true});
 await mkdir(out, {recursive:true});
 await writeFile(resolve(out,'trace.ndjson'),'');
 await mkdir(resolve(out,'source'),{recursive:true});
@@ -142,7 +145,7 @@ async function snapshot() {
     return {
       variant:g.openingName?.(),condition:g.condition?.name,conditionObservation:g.conditionObservation??null,drill:g.awakeningDrill,encounterGuardian:d.encounterGuardian,rig:g.abilities.snapshot.rig,status:g.status,uiState:document.body.dataset.state,phase:g.expedition.run.phase,
       siege:g.siege,encounter:g.encounter,run:g.expedition.run,build:g.expedition.build,node:g.node,elapsed:g.elapsed,difficulty:g.difficulty,player:{...g.player,screen:project(g.player.x,g.player.y)},
-      combat:{...g.combat.snapshot,weapon:g.combat.snapshot.weaponId},resources:g.combat.getRunResources(),abilities:g.abilities.snapshot,abilityAims:Object.fromEntries(Object.entries(d.botAbilityAims(enemies)).map(([slot,aim])=>[slot,aim?{...aim,screen:project(aim.x,aim.y,0)}:null])),enemies,candidates,
+      combat:{...g.combat.snapshot,weapon:g.combat.snapshot.weaponId},resources:g.combat.getRunResources(),reloadingWeapons:Object.keys(g.combat.getRunResources().ammo).filter(id=>g.combat.isWeaponReloading(id)),abilities:g.abilities.snapshot,abilityAims:Object.fromEntries(Object.entries(d.botAbilityAims(enemies)).map(([slot,aim])=>[slot,aim?{...aim,screen:project(aim.x,aim.y,0)}:null])),enemies,candidates,
       hazards:[...(g.boss.snapshot.pendingTelegraph?[{x:g.boss.snapshot.pendingTelegraph.targetX,y:g.boss.snapshot.pendingTelegraph.targetY,radius:g.boss.snapshot.pendingTelegraph.radius,kind:'warning',visible:r.visible(g.boss.snapshot.pendingTelegraph.targetX,g.boss.snapshot.pendingTelegraph.targetY)}]:[]),...g.pools.map(p=>({id:`pool:${p.id}`,x:p.x,y:p.y,radius:p.radius,kind:'pool',visible:r.visible(p.x,p.y),warningRemainingMs:Math.max(0,p.warning)*1000})),...g.bullets.filter(b=>b.kind==='hazard').map(b=>({id:`shot:${b.sourceX}:${b.sourceY}:${b.request.angle}`,x:b.x,y:b.y,radius:35,collisionRadius:b.request.radius,kind:'projectile',visible:r.visible(b.x,b.y),vx:Math.cos(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale,vy:Math.sin(b.request.angle)*b.request.speed*g.abilities.hostileTimeScale})),...enemies.filter(e=>e.pendingAttack==='spit'&&e.windupMs>0).map(e=>({id:`native:${e.id}`,x:e.lockX,y:e.lockY,radius:9,kind:'warning',warningRemainingMs:e.windupMs,visible:r.visible(e.lockX,e.lockY)})),...d.events.filter(e=>e.type==='enemy-warning'&&!e.meleeShape&&e.id===undefined&&g.elapsed-e.at<(e.durationMs??800)/1000).map(e=>({x:e.targetX??e.x,y:e.targetY??e.y,radius:e.radius??50,kind:'warning',warningRemainingMs:Math.max(0,(e.durationMs??800)-(g.elapsed-e.at)*1000),visible:r.visible(e.targetX??e.x,e.targetY??e.y)}))],
       boss:g.boss.snapshot,remaining:g.encounterRemaining,stats:g.stats,topDamageSources:g.roomDamage,events:d.events,performance:perf,preparation:r.preparationDiagnostics??[],
       memory:{heap:performance.memory?.usedJSHeapSize??null,geometries:perf.geometries,textures:perf.textures,programs:r.renderer.info.programs?.length??null},
@@ -368,7 +371,7 @@ try {
     await move(movement.dx,movement.dy);
     if(target){const point={x:Math.max(4,Math.min(1916,target.screen.x)),y:Math.max(4,Math.min(1000,target.screen.y))};for(const action of pointerFirePlan(point,s.hud.marine,shooting)){if(action.type==='down'){await page.mouse.down();shooting=true;}else await page.mouse.move(action.x,action.y);}}
     else if(shooting){await page.mouse.up();shooting=false;}
-    // Native weapon switching: rifle for ranged lanes; shotgun when a crowd closes in.
+    // Execute the shared weapon policy via native keys.
     const desired=decision.weapon;
     if(s.combat.weapon!==desired)await page.keyboard.press(String(['pistol','rifle','shotgun','plasma','rocket'].indexOf(desired)+1));
     const actions=options['death-probe']?[]:decision.actions;
@@ -386,6 +389,26 @@ try {
     await appendFile(resolve(out,'trace.ndjson'),JSON.stringify({input,events:freshEvents,state:{status:s.status,phase:s.phase,elapsed:s.elapsed,player:s.player,combat:s.combat,remaining:s.remaining,enemies:s.enemies.map(e=>({id:e.id,type:e.type,champion:e.champion,health:e.health,x:e.x,y:e.y,clear:e.clear,visible:e.visible})),stats:s.stats,abilities:s.abilities}})+'\n');
     if(options.realtime)await page.waitForTimeout(decision.stepMs);else await advance(decision.stepMs);
     let after=await snapshot();last=after;
+    if(jobCaptureDir&&after.status==='playing'&&capturedJobs.size<5){
+      const events=newEventReceipts(s.events,after.events);
+      for(const event of events){
+        const weapon=event.weapon;
+        if(event.type!=='hit'||!weapon||!event.damage||capturedJobs.has(weapon))continue;
+        const enemy=s.enemies.find(e=>e.id===event.targetId);
+        if(!enemy)continue;
+        const matches={
+          pistol: enemy.health<=45 || s.combat.reloading || enemy.stunRemainingMs>0,
+          rifle: enemy.armor<=0 && distance(enemy,s.player)>160,
+          shotgun: distance(enemy,s.player)<205 && (enemy.type==='crawler'||enemy.meleePhase==='recovery'),
+          plasma: event.contact==='armor' || enemy.elite || enemy.champion==='warden',
+          rocket: enemy.pod || enemy.broodRemainingMs>0 || events.filter(e=>e.type==='hit'&&e.weapon==='rocket'&&e.damage).length>=2,
+        };
+        if(!matches[weapon])continue;
+        capturedJobs.add(weapon);
+        await page.screenshot({path:resolve(jobCaptureDir,`${weapon}.png`)});
+        await writeFile(resolve(jobCaptureDir,`${weapon}.json`),JSON.stringify({room:after.node.templateId,elapsed:after.elapsed,event,enemy},null,2));
+      }
+    }
         if(options.realtime&&after.status==='playing'&&after.elapsed-room.startedElapsed>4){room.nativeFrameWindows??=[];room.nativeFrameWindows.push({...after.performance.nativeUpdateRenderMs,elapsed:after.elapsed});}
     room.performance=after.performance;room.peakDrawCalls=Math.max(room.peakDrawCalls??0,s.performance.drawCalls,after.performance.drawCalls);room.peakTriangles=Math.max(room.peakTriangles??0,s.performance.triangles,after.performance.triangles);
     if(after.stats.kills.total!==s.stats.kills.total||Math.floor(after.elapsed/5)!==Math.floor(s.elapsed/5))await save();
