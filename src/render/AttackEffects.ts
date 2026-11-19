@@ -44,20 +44,17 @@ else if(style>5.5){
   if(i>=warningCount)break;
   vec4 o=warningOrigin[i],sz=warningSize[i],tm=warningTime[i];
   vec2 delta=warningWorld-o.xy,q=vec2(dot(delta,o.zw),dot(delta,vec2(-o.w,o.z)));
-  float radius=sz.x, distanceFromOrigin=length(q);
-  float phase=distanceFromOrigin/max(radius,.001), span=radius;
+  float radius=sz.x, span=radius;
   bool lane=sz.w>.5&&sz.w<1.5;
-  if(lane){
-   distanceFromOrigin=length(vec2(q.x-clamp(q.x,0.,sz.y),q.y));
-   span=sz.y+2.*radius;
-   phase=(q.x+radius)/max(span,.001);
-  }
+  vec2 relative=lane?vec2(q.x-clamp(q.x,0.,sz.y),q.y):q;
+  float distanceFromOrigin=length(relative);
   if(distanceFromOrigin>radius)continue;
   if(sz.w>1.5&&abs(atan(q.y,q.x))>sz.z)continue;
   float urgency=1.-smoothstep(.055,.30,tm.y);
   fill=max(fill,mix(.025,mix(.24,.30,tm.z),urgency));
   if(tm.w>1.5){
-   float distanceToEdge=abs(phase-tm.x)*span;
+   if(lane)span=sz.y+2.*radius;
+   float distanceToEdge=abs((lane?q.x+radius:distanceFromOrigin)-tm.x*span);
    float leadingEdge=1.-smoothstep(.022,.058,distanceToEdge);
    sweep=max(sweep,leadingEdge*urgency);
   }
@@ -161,7 +158,7 @@ export class AttackEffects {
  private readonly warningOrigins=Array.from({length:57},()=>new T.Vector4());
  private readonly warningSizes=Array.from({length:57},()=>new T.Vector4());
  private readonly warningTimes=Array.from({length:57},()=>new T.Vector4());
- private readonly warningParents=new Int16Array(57);private readonly warningGroupCounts=new Int16Array(57);private readonly warningSoonest=new Int16Array(57);
+ private readonly warningParents=new Int16Array(57);private readonly warningSoonest=new Int16Array(57);
  private readonly unionCount={value:0};private readonly unionFillScale={value:1};
  private warningMinX=0;private warningMinZ=0;private warningMaxX=0;private warningMaxZ=0;private warningCoverage=0;
 
@@ -223,7 +220,7 @@ export class AttackEffects {
  private warningRoot(i:number):number{while(this.warningParents[i]!==i)i=this.warningParents[i];return i;}
  private groupWarnings(){
   const n=this.unionCount.value;
-  for(let i=0;i<n;i++){this.warningParents[i]=i;this.warningGroupCounts[i]=1;this.warningSoonest[i]=i;}
+  for(let i=0;i<n;i++){this.warningParents[i]=i;this.warningSoonest[i]=i;}
   for(let i=0;i<n;i++)for(let j=0;j<i;j++){
    const a=this.warningOrigins[i],b=this.warningOrigins[j],sa=this.warningSizes[i],sb=this.warningSizes[j];
    const la=sa.w>.5&&sa.w<1.5?sa.y:0,lb=sb.w>.5&&sb.w<1.5?sb.y:0;
@@ -232,7 +229,7 @@ export class AttackEffects {
    // endpoints differ. This changes hierarchy only, never a shape's clip.
    if(Math.max(a.x,ax)+sa.x<Math.min(b.x,bx)-sb.x||Math.max(b.x,bx)+sb.x<Math.min(a.x,ax)-sa.x||Math.max(a.y,az)+sa.x<Math.min(b.y,bz)-sb.x||Math.max(b.y,bz)+sb.x<Math.min(a.y,az)-sa.x)continue;
    const ra=this.warningRoot(i),rb=this.warningRoot(j);if(ra===rb)continue;
-   this.warningParents[rb]=ra;this.warningGroupCounts[ra]+=this.warningGroupCounts[rb];
+   this.warningParents[rb]=ra;
    if(this.warningTimes[this.warningSoonest[rb]].y<this.warningTimes[this.warningSoonest[ra]].y)this.warningSoonest[ra]=this.warningSoonest[rb];
   }
   for(let i=0;i<n;i++){const root=this.warningRoot(i);this.warningTimes[i].w=this.warningSoonest[root]===i?2:0;}
