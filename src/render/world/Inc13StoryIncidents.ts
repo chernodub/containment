@@ -453,6 +453,7 @@ function addLivingPlenum(root:T.Group,x:number,z:number):void {
     const mesh=batch.finish(root,glow?'plenum-veins':'plenum-mantle',x,z) as T.Mesh<T.BufferGeometry,T.MeshStandardMaterial>;
     mesh.material.roughness=.24;mesh.material.emissive.setHex(glow?0xcc409d:0x701040);
     mesh.material.emissiveIntensity=glow?.43:.45;
+    mesh.castShadow=!glow;
     if(glow)mesh.onBeforeRender=()=>{mesh.material.emissiveIntensity=.46+.13*Math.sin(environmentClock.value*1.45);};
   }
 }

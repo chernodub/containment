@@ -3,11 +3,11 @@ import {environmentClock} from '../lighting/HotFixtureSurface';
 
 /** Draw the shallow relief from the same alpha mask as the deposited material.
  * A smaller normal texture keeps the slopes broad at gameplay camera distance. */
-function relief(canvas: HTMLCanvasElement): T.DataTexture {
+function relief(canvas: HTMLCanvasElement) {
   const height = document.createElement('canvas');
   height.width = 192;
   height.height = Math.max(2, Math.round(192 * canvas.height / canvas.width));
-  const ctx = height.getContext('2d')!;
+  const ctx = height.getContext('2d',{willReadFrequently:true})!;
   ctx.drawImage(canvas, 0, 0, height.width, height.height);
   const {data} = ctx.getImageData(0, 0, height.width, height.height);
   const normal = new Uint8Array(data.length);
@@ -24,7 +24,26 @@ function relief(canvas: HTMLCanvasElement): T.DataTexture {
   const texture=new T.DataTexture(normal,height.width,height.height);
   texture.flipY=true; texture.magFilter=T.LinearFilter; texture.minFilter=T.LinearFilter;
   texture.needsUpdate=true;
-  return texture;
+  return {texture,mask:data,width:height.width,height:height.height};
+}
+
+/** Skip empty deck between Swarm's three long arms. Sample the same relief
+ * mask with a two-texel margin for the filtered fringe. Still one mesh/draw. */
+function membraneGeometry(w:number,d:number,reliefMap:ReturnType<typeof relief>):T.PlaneGeometry {
+  const cols=16,rows=12;
+  const geometry=new T.PlaneGeometry(w,d,cols,rows),indices:number[]=[];
+  const {width,height,mask}=reliefMap;
+  for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+    const x0=Math.max(0,Math.floor(col*width/cols)-2),x1=Math.min(width,Math.ceil((col+1)*width/cols)+2);
+    const y0=Math.max(0,Math.floor(row*height/rows)-2),y1=Math.min(height,Math.ceil((row+1)*height/rows)+2);
+    let ink=false;
+    for(let y=y0;y<y1&&!ink;y++)for(let x=x0;x<x1;x++){
+      if(mask[(y*width+x)*4+3]){ink=true;break;}
+    }
+    if(ink){const a=row*(cols+1)+col,b=a+cols+1;indices.push(a,b,a+1,b,b+1,a+1);}
+  }
+  geometry.setIndex(indices);
+  return geometry;
 }
 
 /** The painter uses room coordinates. Alpha leaves the original floor visible,
@@ -37,7 +56,7 @@ export function paintIncidentDeck(root:T.Group,name:string,bounds:[number,number
   const c=canvas.getContext('2d')!;
   c.scale(canvas.width/width,canvas.height/depth);c.translate(-left,-top);paint(c);
   const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;
-  const normalMap=relief(canvas);
+  const reliefMap=relief(canvas),normalMap=reliefMap.texture;
   const wet=/fluid|frozen|resin|diagnostic|swarm/.test(name);
   const material=new T.MeshStandardMaterial({map,normalMap,roughness:wet?.22:.94,metalness:wet?.13:.02,
     transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
@@ -45,7 +64,8 @@ export function paintIncidentDeck(root:T.Group,name:string,bounds:[number,number
   material.addEventListener('dispose',()=>normalMap.dispose());
   material.userData.actorMaterial = true;
   material.addEventListener('dispose',()=>map.dispose());
-  const mesh=new T.Mesh(new T.PlaneGeometry(width/32,depth/32).rotateX(-Math.PI/2),material);
+  const geometry=name.includes('swarm')?membraneGeometry(width/32,depth/32,reliefMap):new T.PlaneGeometry(width/32,depth/32);
+  const mesh=new T.Mesh(geometry.rotateX(-Math.PI/2),material);
   mesh.receiveShadow=true;mesh.name=name;mesh.position.set((left+width/2)/32,height,(top+depth/2)/32);root.add(mesh);
 }
 
