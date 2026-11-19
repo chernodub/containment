@@ -5,14 +5,16 @@ import {clearPolygonTopology} from '../../game/world/polygonGeometry';
 import {environmentClock} from '../lighting/HotFixtureSurface';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoomModelCache, fetchRoomModel, type ModelPhase, type RoomModelSpec} from '../RoomModelCache';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
 import {registerOriginalInteriorCutaways,type InteriorCutaway} from './OriginalInteriorCutaways';
 
-export type OriginalKitPack = 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-reactor' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance' | 'p11-incidents' | 'p11-brood' | 'p11-inc13-awakening' | 'p11-inc13-residential' | 'p11-inc13-coolant' | 'p11-inc13-workshop' | 'p11-inc13-manual';
+export type OriginalKitPack = 'p11-room14' | 'clinical' | 'security' | 'industrial' | 'structure' | 'p11-comms' | 'p11-habitation' | 'p11-infested' | 'p11-reactor' | 'p11-control' | 'p11-clinical-security' | 'p11-cargo' | 'p11-service' | 'p11-maintenance' | 'p11-incidents' | 'p11-brood' | 'p11-inc13-awakening' | 'p11-inc13-residential' | 'p11-inc13-coolant' | 'p11-inc13-workshop' | 'p11-inc13-manual';
 
 const base = import.meta.env.BASE_URL + 'assets/e9-ship-kit/';
 const URLs: Record<OriginalKitPack, string> = {
+  'p11-room14': import.meta.env.BASE_URL + 'assets/room14/plain/incidents.glb',
   'p11-inc13-manual': import.meta.env.BASE_URL + 'assets/inc13/manual/dais.glb',
   'p11-inc13-workshop': import.meta.env.BASE_URL + 'assets/inc13/workshop/duct.glb',
   'p11-inc13-coolant': import.meta.env.BASE_URL + 'assets/inc13/coolant/header.glb',
@@ -58,21 +60,21 @@ async function decodeBrood(spec: RoomModelSpec, renderer: T.WebGLRenderer, recor
   };
   const started=performance.now();
   try {
-    const asset = await new GLTFLoader().setKTX2Loader(transcoder).parseAsync(bytes, spec.url.slice(0, spec.url.lastIndexOf('/') + 1));
+    const asset = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(transcoder).parseAsync(bytes, spec.url.slice(0, spec.url.lastIndexOf('/') + 1));
     await asset.parser.getDependencies('texture');
     return asset;
   } finally { record?.('modelParse',performance.now()-started);transcoder.dispose(); }
 }
 
 function originalPackCache(pack: OriginalKitPack, renderer?:T.WebGLRenderer) {
-  const formats = pack === 'p11-brood' && renderer ? compressedFormats.filter(name => renderer.extensions.has(name)).join(',') : '';
+  const formats = (pack === 'p11-brood' || pack === 'p11-room14') && renderer ? compressedFormats.filter(name => renderer.extensions.has(name)).join(',') : '';
   const compressed = Boolean(formats);
-  const url = compressed ? import.meta.env.BASE_URL + 'assets/brood-growth/brood-growth-ktx.glb' : URLs[pack];
+  const url = compressed ? (pack === 'p11-room14' ? URLs[pack].replace('/plain/', '/') : import.meta.env.BASE_URL + 'assets/brood-growth/brood-growth-ktx.glb') : URLs[pack];
   if (!url) throw Error('Unknown original ship kit pack: ' + pack);
   if(pack.startsWith('p11-')) {
     const cacheKey = url + '/' + formats;
     let cache=p11Packs.get(cacheKey);
-    if(!cache){cache=new RoomModelCache([{url,maxBytes:pack==='p11-brood'?4_000_000:2_000_000,label:'Original '+pack+' set pieces'}], compressed ? (spec, phase) => decodeBrood(spec, renderer!, phase) : undefined);p11Packs.set(cacheKey,cache);}
+    if(!cache){cache=new RoomModelCache([{url,maxBytes:pack==='p11-brood'?4_000_000:2_000_000,label:'Original '+pack+' set pieces'}], compressed ? (spec, phase) => decodeBrood(spec, renderer!, phase) : pack==='p11-room14' ? async(spec,phase)=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(await fetchRoomModel(spec,phase),spec.url.slice(0,spec.url.lastIndexOf('/')+1)) : undefined);p11Packs.set(cacheKey,cache);}
     return {cache,url};
   }
   return {cache:pack==='structure'?structurePack:functionPacks,url};
@@ -82,7 +84,7 @@ function originalPackCache(pack: OriginalKitPack, renderer?:T.WebGLRenderer) {
 export async function acquireOriginalShipKit(pack:OriginalKitPack, signal?:AbortSignal, renderer?:T.WebGLRenderer, record?:ModelPhase):Promise<T.Group> {
   const {cache,url}=originalPackCache(pack,renderer);
   const root=await cache.acquire(url,signal,record);
-  if(pack==='p11-brood')extractStaticLODs(root);
+  if(pack==='p11-brood'||pack==='p11-room14')extractStaticLODs(root);
   return root;
 }
 
@@ -275,10 +277,15 @@ export function buildOriginalShipKit(
           totalTriangles += count; instanceTriangles += count;
           const finish = sourceMaterial.name;
           // Each pack owns a distinct UV atlas; equal finish names cannot merge across it.
-          const bucketKey = (sourceMaterial.normalMap ? instance.pack + '/' + finish : finish) + (instance.emissionGain === undefined ? '' : '/emission-' + instance.emissionGain);
+          const rooted = instance.asset === 'split-plenum' && finish === 'p11-rubber';
+          const bucketKey = (rooted ? 'torn-root/' : '') + (sourceMaterial.normalMap || instance.pack==='p11-room14' ? instance.pack + '/' + finish : finish) + (instance.emissionGain === undefined ? '' : '/emission-' + instance.emissionGain);
           let bucket = buckets.get(bucketKey);
           if (!bucket) {
             const material = sourceMaterial.clone();
+            if(rooted){
+              material.color.setHex(0x674957);material.roughness=.46;
+              material.emissive.setHex(0x493244);material.emissiveIntensity=.21;
+            }
             ownedMaterials.add(material); material.emissiveIntensity *= instance.emissionGain ?? 1; material.name = finish; material.vertexColors = true;
             material.userData.actorMaterial = true; material.userData.originalShipKitFinish = finish;
             if (finish === 'brood-lantern' || finish === 'brood-pod-glow') {

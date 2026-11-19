@@ -116,7 +116,7 @@ export class SceneLighting {
   });
  }
  private landmarkFixture():Fixture|undefined {
-  const source=this.valueProfile?.landmark;
+  const source=this.tier==='high'?this.valueProfile?.landmark:undefined;
   return source?{x:source.at[0]/32,z:source.at[1]/32,y:source.height??3.8,color:source.keyColor??source.color,nativeColor:true,gain:source.keyGain??1.4,distance:source.radius*2,poolWidth:source.radius,poolDepth:source.radius*1.6,poolStyle:0}:undefined;
  }
  private setFixtureShape(light:T.PointLight,fixture:Fixture,index:number){

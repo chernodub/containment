@@ -1,0 +1,495 @@
+{
+  "name": "Containment P11 room14",
+  "license": "MIT",
+  "author": "Containment contributors",
+  "source": "tools/assets/room14-incidents/kit.py",
+  "rebuild": "blender -b -P tools/assets/room14-incidents/kit.py && node tools/assets/room14-incidents/pack.mjs",
+  "coordinateSystem": "glTF Y-up, metres; bottom-centred origins, fronts face +Z (camera side)",
+  "description": "Original accident assemblies, bevelled steel and captive hardware.",
+  "bake": "16 BVH hemisphere rays + ground plane (0.32m) x per-vertex convex wear / concave grime x floor grime x per-part value jitter; p11-tint finishes carry part colour. COLOR_0 multiplier.",
+  "textures": "one shared 512-square tangent normal atlas; geometric bevel/sculpt bake",
+  "normalAtlas": {
+    "bakeSeconds": 34.942,
+    "blenderPNGDecodeMs": 7.832,
+    "file": "incidents-normal.png",
+    "size": 512,
+    "bytes": 265984,
+    "estimatedRGBA8MipBytes": 1398101,
+    "nonFlatPixels": 136338,
+    "method": "selected-to-active tangent normal; disposable geometric high bevel/sculpt sources",
+    "targets": [
+      {
+        "mesh": "sealed-berth--e9-body",
+        "role": "e9-body",
+        "seconds": 1.249,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "sealed-berth--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.898,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "sealed-berth--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.831,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "sealed-berth--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.426,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "sealed-berth--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.569,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "queue-barrier--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.646,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "queue-barrier--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.215,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "crushed-bench--e9-body",
+        "role": "e9-body",
+        "seconds": 0.45,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "crushed-bench--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.139,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "crushed-bench--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.162,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "crushed-bench--p11-tint",
+        "role": "p11-tint",
+        "seconds": 0.07,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "fallen-ceiling--e9-body",
+        "role": "e9-body",
+        "seconds": 0.116,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "fallen-ceiling--e9-dark",
+        "role": "e9-dark",
+        "seconds": 2.983,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "fallen-ceiling--p11-steel",
+        "role": "p11-steel",
+        "seconds": 2.583,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "shifted-load--e9-body",
+        "role": "e9-body",
+        "seconds": 0.964,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "shifted-load--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.638,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "shifted-load--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.453,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "relay-sled--e9-body",
+        "role": "e9-body",
+        "seconds": 0.424,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "relay-sled--e9-dark",
+        "role": "e9-dark",
+        "seconds": 1.461,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "relay-sled--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.974,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "split-plenum--e9-body",
+        "role": "e9-body",
+        "seconds": 0.623,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "split-plenum--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.714,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "split-plenum--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.375,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "bypass--e9-body",
+        "role": "e9-body",
+        "seconds": 0.119,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "bypass--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.259,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "bypass--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.857,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "escaped-gurney--e9-dark",
+        "role": "e9-dark",
+        "seconds": 0.714,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "escaped-gurney--p11-rubber",
+        "role": "p11-rubber",
+        "seconds": 0.416,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "escaped-gurney--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.543,
+        "method": "three-segment high bevel"
+      },
+      {
+        "mesh": "glazing--p11-steel",
+        "role": "p11-steel",
+        "seconds": 0.355,
+        "method": "three-segment high bevel"
+      }
+    ]
+  },
+  "materials": {
+    "e9-body": "#24343c",
+    "e9-dark": "#0e1820",
+    "p11-rubber": "#16191b",
+    "p11-screen": "#9fe8ff",
+    "p11-steel": "#6c7a7c",
+    "p11-tint": "#ffffff"
+  },
+  "models": [
+    {
+      "name": "sealed-berth",
+      "size": [
+        1.25,
+        2.36,
+        1.63
+      ],
+      "bounds": {
+        "min": [
+          -0.625,
+          0,
+          -0.395
+        ],
+        "max": [
+          0.625,
+          2.36,
+          1.235
+        ]
+      },
+      "triangles": 716,
+      "budget": 5200,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "p11-rubber",
+        "p11-screen",
+        "p11-steel",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "queue-barrier",
+      "size": [
+        2.44,
+        0.58,
+        0.7569
+      ],
+      "bounds": {
+        "min": [
+          -1.19,
+          -0.01,
+          -0.09
+        ],
+        "max": [
+          1.25,
+          0.57,
+          0.6669
+        ]
+      },
+      "triangles": 284,
+      "budget": 2400,
+      "finishes": [
+        "e9-dark",
+        "p11-steel"
+      ]
+    },
+    {
+      "name": "crushed-bench",
+      "size": [
+        2.99,
+        2.1555,
+        0.85
+      ],
+      "bounds": {
+        "min": [
+          -1.495,
+          0.0292,
+          -0.425
+        ],
+        "max": [
+          1.495,
+          2.1848,
+          0.425
+        ]
+      },
+      "triangles": 516,
+      "budget": 2400,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "p11-steel",
+        "p11-tint"
+      ]
+    },
+    {
+      "name": "fallen-ceiling",
+      "size": [
+        1.6166,
+        2.5945,
+        0.95
+      ],
+      "bounds": {
+        "min": [
+          -0.7737,
+          0.0649,
+          -0.475
+        ],
+        "max": [
+          0.8429,
+          2.6593,
+          0.475
+        ]
+      },
+      "triangles": 296,
+      "budget": 2600,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "p11-steel"
+      ]
+    },
+    {
+      "name": "shifted-load",
+      "size": [
+        2.0505,
+        3.2007,
+        1.22
+      ],
+      "bounds": {
+        "min": [
+          -0.69,
+          -0.0264,
+          -0.52
+        ],
+        "max": [
+          1.3605,
+          3.1743,
+          0.7
+        ]
+      },
+      "triangles": 248,
+      "budget": 4200,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "p11-steel"
+      ]
+    },
+    {
+      "name": "relay-sled",
+      "size": [
+        1.25,
+        2.305,
+        2.42
+      ],
+      "bounds": {
+        "min": [
+          -0.625,
+          0.03,
+          -1.15
+        ],
+        "max": [
+          0.625,
+          2.335,
+          1.27
+        ]
+      },
+      "triangles": 452,
+      "budget": 3200,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "p11-screen",
+        "p11-steel"
+      ]
+    },
+    {
+      "name": "split-plenum",
+      "size": [
+        5.5138,
+        2.7826,
+        2.0926
+      ],
+      "bounds": {
+        "min": [
+          -2.5,
+          0.041,
+          -1.3754
+        ],
+        "max": [
+          3.0138,
+          2.8237,
+          0.7172
+        ]
+      },
+      "triangles": 908,
+      "budget": 5200,
+      "finishes": [
+        "e9-body",
+        "p11-rubber",
+        "p11-steel"
+      ]
+    },
+    {
+      "name": "bypass",
+      "size": [
+        2.99,
+        3.1702,
+        1.3897
+      ],
+      "bounds": {
+        "min": [
+          -0.715,
+          -0.0052,
+          -0.275
+        ],
+        "max": [
+          2.275,
+          3.165,
+          1.1147
+        ]
+      },
+      "triangles": 552,
+      "budget": 3500,
+      "finishes": [
+        "e9-body",
+        "e9-dark",
+        "p11-screen",
+        "p11-steel"
+      ]
+    },
+    {
+      "name": "escaped-gurney",
+      "size": [
+        0.8703,
+        1.0454,
+        1.94
+      ],
+      "bounds": {
+        "min": [
+          -0.4351,
+          0.0064,
+          -0.97
+        ],
+        "max": [
+          0.4351,
+          1.0517,
+          0.97
+        ]
+      },
+      "triangles": 512,
+      "budget": 2800,
+      "finishes": [
+        "e9-dark",
+        "p11-rubber",
+        "p11-steel"
+      ]
+    },
+    {
+      "name": "glazing",
+      "size": [
+        1.6657,
+        0.027,
+        0.8058
+      ],
+      "bounds": {
+        "min": [
+          -0.6676,
+          0.01,
+          -0.6279
+        ],
+        "max": [
+          0.9981,
+          0.037,
+          0.1778
+        ]
+      },
+      "triangles": 132,
+      "budget": 1600,
+      "finishes": [
+        "p11-steel"
+      ]
+    }
+  ],
+  "output": {
+    "file": "incidents.glb",
+    "bytes": 441524,
+    "sha256": "32908aa1629b28eaed044f4afb200563c3bf55a72bca0c576db6d0f16b91a952",
+    "triangles": 4616
+  },
+  "overBudget": [],
+  "uvEncoding": "normalized UNSIGNED_SHORT; maximum error0.004 atlas texel at512; native glTF2",
+  "fallback": "plain/incidents.glb"
+}

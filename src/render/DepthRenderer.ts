@@ -1,3 +1,4 @@
+import {RoomCutawayTargets} from './world/RoomCutawayTargets';
 import {combatPresentationHoldSeconds} from '../game/observation/combatPresentationClock';
 import {combatPointVisible} from '../game/observation/combatVisibility';
 import {SiegeBoundary} from './markers/SiegeBoundary';
@@ -613,7 +614,10 @@ export class DepthRenderer {
   this.lastMenu=menu;
   const q=game.boss.snapshot;this.lighting.setBossState?.(q.x/UNIT,q.y/UNIT,q.vulnerable,q.defeated);
   this.warning.visible=false;
-  if(!menu)updateOriginalInteriorCutaways(this.world.getObjectByName('e9-original-ship-kit'),this.camera,p,this.player.height,enemies,this.actors);
+  // ROOM14 shares pickups and live hazard footprints between scenery cutaways.
+  const visiblePickups=game.pickups.snapshot;
+  this.roomCutawayTargets.update(visiblePickups,game,this.effects);
+  if(!menu)updateOriginalInteriorCutaways(this.world.getObjectByName('e9-original-ship-kit'),this.camera,p,this.player.height,enemies,this.actors,this.roomCutawayTargets);
   const telegraph=q.pendingTelegraph;this.effects.setBossWarning((telegraph?.targetX??0)/UNIT,(telegraph?.targetY??0)/UNIT,(telegraph?.radius??0)/UNIT,1-(telegraph?.delayRemainingMs??0)/AREA_ATTACK_DELAY_MS,!!telegraph&&!menu);
   this.syncPools(game.pools);
 
@@ -638,7 +642,7 @@ export class DepthRenderer {
    for(const c of this.corpses)this.contacts.add(c.x,c.y,.45);
   }
   this.contacts.end();
-  this.atmosphere.update(dt,this.camera);this.backdrop?.update(dt,this.focus);this.arena?.update(dt,this.options.flashIntensity,!!this.motionQuery?.matches);updateWorldDressing(this.world,this.time,!!this.motionQuery?.matches,this.camera,p,this.player.height,enemies,this.actors,this.hudFraming.viewport);updateExitSignal(this.exit,this.time,game.status==='reward'||game.status==='route',!!this.motionQuery?.matches);if(this.atmosphere?.root)this.atmosphere.root.visible=!menu&&this.tier==='high'&&this.options.atmosphere;
+  this.atmosphere.update(dt,this.camera);this.backdrop?.update(dt,this.focus);this.arena?.update(dt,this.options.flashIntensity,!!this.motionQuery?.matches);updateWorldDressing(this.world,this.time,!!this.motionQuery?.matches,this.camera,p,this.player.height,enemies,this.actors,this.hudFraming.viewport,this.roomCutawayTargets);updateExitSignal(this.exit,this.time,game.status==='reward'||game.status==='route',!!this.motionQuery?.matches);if(this.atmosphere?.root)this.atmosphere.root.visible=!menu&&this.tier==='high'&&this.options.atmosphere;
   this.heatClock+=dt;if(this.heatClock>1.5&&this.tier==='high'&&this.options.atmosphere&&this.options.distortion&&!this.motionQuery?.matches){this.heatClock=0;if(this.roomEnvironment==='engineering'||this.roomEnvironment==='reactor'||this.roomEnvironment==='cryogenics'){const fixture=this.lighting.fixtures[0],core=game.node.templateId==='overload-floor'?this.lighting.staging:null;this.post.distortion.heat(core?.coreX??fixture.position.x,core?.coreZ??fixture.position.z,core?2.4:3,core?.0024:this.roomEnvironment==='cryogenics'?-.0006:.0012,2.5);}}
   // Age the shared pool before refreshing every continuously attached source.
   if(this.tier==='high'&&this.options.dynamicLights)for(const e of enemies){const status=this.actors.get(e.id)?.root.userData.visualStatus;if(status&&(status.burning||status.frozen||status.poisoned)){const light=this.attachedLight;light.x=e.x/UNIT;light.z=e.y/UNIT;light.color=status.burning?0xff7a2e:status.poisoned?0x9dff5a:0x7fd6ff;light.intensity=status.burning?2:1.1;light.priority=1;this.lighting.pool.attach(e.id,light);}}
@@ -664,7 +668,7 @@ export class DepthRenderer {
   this.effects.update(dt,this.camera,game.bullets);
   let index=0;for(const b of game.bullets){if(b.kind==='hazard')continue;if(index>=320)break;if(b.kind==='player'&&(2-b.life)*b.request.speed<(b.visualMuzzle?.distance??0))continue;this.dummy.position.set(b.x/UNIT,b.kind==='grenade'?1+Math.sin((1-b.life/1.1)*Math.PI)*1.4:b.visualMuzzle?.y??.95,b.y/UNIT);this.dummy.rotation.set(0,Math.PI/2-b.request.angle,0);this.dummy.scale.set(.025,.025,b.request.weaponId==='rocket'?.35:.24);this.dummy.updateMatrix();this.bulletMesh.setMatrixAt(index,this.dummy.matrix);if(this.tier==='high'&&this.options.dynamicLights&&(b.request.weaponId==='plasma'||b.request.weaponId==='rocket')){let id=this.projectileLightIds.get(b);if(id===undefined){id=this.nextProjectileLight--;this.projectileLightIds.set(b,id);}const light=this.attachedLight;light.x=this.dummy.position.x;light.y=this.dummy.position.y;light.z=this.dummy.position.z;light.color=b.request.weaponId==='plasma'?0x9fe8ff:0xffb454;light.intensity=1.7;light.priority=1;this.lighting.pool.attach(id,light);light.y=1;}this.bulletMesh.setColorAt(index,this.bulletColor.setHex(b.request.weaponId==='plasma'?0x73eced:0xffd58f));index++;}this.bulletMesh.count=index;this.bulletMesh.instanceMatrix.needsUpdate=true;if(this.bulletMesh.instanceColor)this.bulletMesh.instanceColor.needsUpdate=true;
 
-  this.pickupInstances?.update(game.pickups.snapshot,this.time);
+  this.pickupInstances?.update(visiblePickups,this.time);
   if(this.pickupInstances)this.pickupInstances.root.visible=!menu;
   this.shadowTime+=dt;this.renderer.shadowMap.needsUpdate=this.shadowsDirty||((menu||!INTERIOR_ROOMS.has(game.node.templateId))&&this.shadowTime>=1/30);
   if(this.renderer.shadowMap.needsUpdate){this.shadowTime=0;this.shadowsDirty=false;}
@@ -713,6 +717,7 @@ export class DepthRenderer {
   protectPlayerFrame(this.camera,this.cameraRig.focus,x,z,radius,this.player.height,this.screenPoint,this.screenTarget,this.hudFraming?.viewport??FULL_COMBAT_VIEWPORT,angle);this.focus.copy(this.cameraRig.focus);
  }
 
+ private readonly roomCutawayTargets=new RoomCutawayTargets();
  private syncPools(pools:readonly {id:number;x:number;y:number;radius:number;life:number}[]){
   const poolIds=this.activePoolIds;poolIds.clear();
   for(const p of pools){

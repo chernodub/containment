@@ -1,3 +1,4 @@
+import type {RoomCutawayTargets} from './RoomCutawayTargets';
 import * as T from 'three';
 import {FULL_COMBAT_VIEWPORT,type CombatViewport} from '../camera/HudCombatFraming';
 import type {RoomTemplate} from '../../game/roguelike/types';
@@ -165,11 +166,13 @@ export function prepareWarningVertexColors(root:T.Group,material:T.Material,geom
 
 /** Opacity/vertex-alpha-only cutaway. Actual full body corners participate;
  * only intersected physical beam ranges fade. All scratch storage is retained. */
-export function updateWarningRepeaterVisibility(root:T.Object3D,camera?:T.Camera,marine?:Body,marineHeight=2.05,enemies:readonly NativeBody[]=EMPTY,models?:ReadonlyMap<number,Model>,viewport:CombatViewport=FULL_COMBAT_VIEWPORT):void {
+export function updateWarningRepeaterVisibility(root:T.Object3D,camera?:T.Camera,marine?:Body,marineHeight=2.05,enemies:readonly NativeBody[]=EMPTY,models?:ReadonlyMap<number,Model>,viewport:CombatViewport=FULL_COMBAT_VIEWPORT,targets?:RoomCutawayTargets):void {
  const state=root.userData.warningVisibility,displays=state?.allDisplays as Display[]|undefined;if(!state||!displays||!camera||!marine)return;
  const point=state.point as T.Vector3,screen=state.screenBounds as Float64Array,actors=state.actorBounds as Float64Array,structure=state.structureBounds as Float64Array;
  let bodies=1;projectActor(marine,marineHeight,camera,point,actors,0);
  for(let i=0;i<enemies.length;i++){const enemy=enemies[i],model=models?.get(enemy.id);if(model?.root?.visible===false)continue;if(bodies===1025)break;projectActor(enemy,model?.height??4.7,camera,point,actors,bodies++*4);}
+  for(let i=0;targets&&i<targets.count&&bodies<1025;i++)
+    projectActor(targets.bodies[i],.6,camera,point,actors,bodies++*4);
  let fade=false,selected=-1,best=-Infinity;
  for(let i=0;i<displays.length;i++){
   const n=i*4;screen[n]=screen[n+1]=Infinity;screen[n+2]=screen[n+3]=-Infinity;

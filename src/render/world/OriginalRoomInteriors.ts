@@ -1,3 +1,5 @@
+import {room14Debris} from './Room14Debris';
+import {addRoom14Fittings} from './Room14Fittings';
 import {addStoryIncident} from './Inc13StoryIncidents';
 import {addDress13EarlyDetails} from './Dress13EarlyIncidents';
 import {addDress13ServiceDetails} from './Dress13ServiceDetails';
@@ -62,7 +64,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         const count = Math.max(1, Math.ceil(length / 4.1));
         for (let n = 0; n < count; n++) {
             const along = -length / 2 + (n + .5) * length / count;
-            instances.push({ pack: 'structure', asset: near ? 'wall-bulkhead-low' : 'wall-bulkhead', matrix: matrix(x + Math.cos(angle) * along, 0, z - Math.sin(angle) * along, angle, length / count / 4, 1, depth / .75), purpose });
+            instances.push({ pack: 'structure', asset: near ? 'wall-bulkhead-low' : 'wall-bulkhead', matrix: matrix(x + Math.cos(angle) * along, 0, z - Math.sin(angle) * along, angle, length / count / 4, 1, depth / .75), purpose, cutaway: near });
         }
     };
     for (let i = 0; i < hull.length; i++) {
@@ -94,7 +96,7 @@ function instancesFor(t: RoomTemplate): OriginalKitInstance[] {
         const p = opening.from, q = opening.to, dx = (q.x - p.x) / 32, dz = (q.y - p.y) / 32, length = Math.hypot(dx, dz);
         instances.push({ pack: 'structure', asset: 'door-threshold', matrix: matrix((p.x + q.x) / 64, -.025, (p.y + q.y) / 64, -Math.atan2(dz, dx), length / 4.5, 1, 1), purpose: 'Flush manufactured doorway threshold', castShadow: false });
     }
-    instances.push(...p11IncidentPlacements(id),...p11InfestedPlacements(id),...p11HabitationPlacements(id),...p11ControlPlacements(id),...p11ClinicalSecurityPlacements(id),...p11CargoPlacements(id),...p11MaintenancePlacements(id),...p11ServicePlacements(t));
+    instances.push(...room14Debris(id),...p11IncidentPlacements(id),...p11InfestedPlacements(id),...p11HabitationPlacements(id),...p11ControlPlacements(id),...p11ClinicalSecurityPlacements(id),...p11CargoPlacements(id),...p11MaintenancePlacements(id),...p11ServicePlacements(t));
     return instances;
 }
 /** Prepare only compressed or raw GLB bytes. Geometry work stays in the hold. */
@@ -166,6 +168,7 @@ export function attachOriginalRoomInteriors(world: T.Group, t: RoomTemplate, onC
             addDress13ServiceDetails(root, t.id);
             addDress13EarlyDetails(root, t.id);
             addStoryIncident(root,t);
+            addRoom14Fittings(root,t.id);
             if(t.id==='shielding-gate'){
                 const oldGate=world.getObjectByName('shielding-gate-west');
                 if(oldGate){const visible=oldGate.visible;oldGate.visible=false;restores.push(()=>{oldGate.visible=visible;});}
