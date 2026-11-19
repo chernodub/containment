@@ -1,0 +1,23 @@
+20 rooms, 190 raised parts, 119 flush surfaces, 0 overlaps.
+Room | body radius | reachable before/after/total | breach markers before/after | minimum authored opening before | narrowed below minimum | Warden bait rays shortened/checked | minimum sampled deck lane before/after | role-specific targets before/after
+awakening-bay | 16 | 5/5/5 | 4/4 | 148 | 0 | 0/0 | 46.9/46.9 | 5/5
+passenger-vault | 28 | 5/5/5 | 4/4 | 140 | 0 | 0/0 | 37.2/37.2 | 5/5
+residential-gallery | 28 | 5/5/5 | 4/4 | 108 | 0 | 0/0 | 32.6/32.6 | 5/5
+communal-atrium | 28 | 5/5/5 | 4/4 | 140 | 0 | 0/0 | 119.5/119.5 | 5/5
+crew-checkpoint | 28 | 5/5/5 | 2/2 | 102 | 0 | 0/0 | 32.8/32.8 | 5/5
+armory | 64 | 4/4/5 | 0/0 | 140 | 0 | 0/16 | 35.2/35.2 | 5/5
+freight-hold | 28 | 5/5/5 | 4/4 | 140 | 0 | 0/0 | 69.4/69.4 | 5/5
+breached-loading-bay | 28 | 5/5/5 | 4/4 | 140 | 0 | 0/0 | 135.2/135.2 | 5/5
+relay-racks | 64 | 5/5/5 | 4/4 | 140 | 0 | 0/13 | 35.2/35.2 | 5/5
+transmission-chamber | 28 | 5/5/5 | 4/4 | 140 | 0 | 0/0 | 43.2/43.2 | 5/5
+diagnostic-gallery | 28 | 5/5/5 | 3/3 | 56 | 0 | 0/0 | 40.0/40.0 | 5/5
+safety-interlock-station | 28 | 6/6/6 | 4/4 | 140 | 0 | 0/0 | 35.2/35.2 | 6/6
+coolant-plant | 64 | 4/4/5 | 4/4 | 140 | 0 | 0/12 | 34.0/34.0 | 5/5
+service-shaft-landing | 28 | 5/5/5 | 4/4 | 160 | 0 | 0/0 | 48.8/48.8 | 5/5
+infested-workshop | 28 | 5/5/5 | 4/4 | 140 | 0 | 0/0 | 32.0/32.0 | 5/5
+swarm-junction | 64 | 5/5/5 | 2/2 | 144 | 0 | 0/8 | 103.2/103.2 | 5/5
+shielding-gate | 28 | 5/5/5 | 4/4 | 140 | 0 | 0/0 | 48.0/48.0 | 5/5
+containment-annulus | 28 | 5/5/5 | 4/4 | 160 | 0 | 0/0 | 75.2/75.2 | 5/5
+manual-control-chamber | 64 | 0/0/5 | 0/0 | 140 | 0 | 0/12 | 35.2/35.2 | 5/5
+overload-floor | 28 | 5/5/5 | 4/4 | 150 | 0 | 0/0 | 65.1/65.1 | 5/5
+Existing largest-body reachability exceptions: crew-checkpoint, armory, diagnostic-gallery, coolant-plant, swarm-junction, manual-control-chamber
