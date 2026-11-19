@@ -144,3 +144,9 @@ PLAY16_SCENARIOS.push(...['breacher','cryo','pyro','arc'].map(rig=>({
   id:`play16-drill-${rig}`, state:'playing', diagnosticOnly:true,
   setup:rigDrill,setupArgument:rig,required:['#room-objective'],
 })));
+
+PLAY16_SCENARIOS.push({
+  id:'play16-protected-passage', diagnosticOnly:true, state:'route',
+  required:['[data-detour="direct"]','[data-detour="salvage"]'],
+  setup:async()=>{await window.__containmentDebug.gotoRoom('containment-annulus',{rig:'pyro',phase:'route'});},
+});

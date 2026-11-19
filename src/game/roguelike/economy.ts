@@ -17,7 +17,14 @@ export function detourOffers(run:RunState){
  const depth=run.completedNodeIds.length-1;
  if(run.version!==3||!Object.hasOwn(DETOURS,depth))return [];
  const deal=DETOURS[depth as keyof typeof DETOURS];
- return [depth===2?{...DIRECT,name:'Emergency supply locker',reward:'Restore up to 25 health and take one grenade immediately'}:depth===fieldWorkshopDepth?{...DIRECT,name:'Protected infirmary',risk:'Protected approach',reward:'Keep supplies and restore 35 health immediately'}:DIRECT,{id:'salvage' as const,...deal}];
+ const protectedRoute = depth===2
+  ? {...DIRECT,name:'Emergency supply locker',reward:'Restore up to 25 health and take one grenade immediately'}
+  : depth===fieldWorkshopDepth
+  ? {...DIRECT,name:'Field infirmary',reward:'Keep supplies and restore 35 health immediately'}
+  : depth===17
+  ? {...DIRECT,name:'Protected passage',reward:'Keep your current supplies and earn the standard sector reward'}
+  : DIRECT;
+ return [protectedRoute,{id:'salvage' as const,...deal}];
 }
 export type ServiceId='heal'|'armor'|'ammo'|'medkit'|'grenade'|'reroll'|'upgrade'|'revive';
 export const SERVICE_CATALOG=Object.freeze({
