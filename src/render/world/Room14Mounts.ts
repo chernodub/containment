@@ -8,10 +8,10 @@ import type {OriginalKitInstance} from './OriginalShipKitAssets';
 // and the plenum against the deck without lowering either silhouette.
 const shifts:Record<string,readonly [number,number,number?]>={
   'awakening-bay':[0,-26], 'passenger-vault':[62,-20], 'residential-gallery':[-4,0],
-  'communal-atrium':[-2,-16], 'breached-loading-bay':[26,-28], 'crew-checkpoint':[78,18], 'freight-hold':[141,144],
-  'relay-racks':[50,0], 'transmission-chamber':[36,-24], 'safety-interlock-station':[-48,0],
+  'communal-atrium':[-2,-16], 'breached-loading-bay':[74,-36], 'crew-checkpoint':[126,10], 'freight-hold':[141,144],
+  'relay-racks':[74,0], 'transmission-chamber':[36,-24], 'safety-interlock-station':[-48,0],
   'diagnostic-gallery':[109,-7], 'service-shaft-landing':[40,0],
-  'coolant-plant':[-72,186,.38], 'infested-workshop':[74,-26],
+  'coolant-plant':[-72,186,.38], 'infested-workshop':[90,-34],
   'swarm-junction':[0,409,.35], 'shielding-gate':[-18,-96], 'overload-floor':[88,-96],
 };
 
