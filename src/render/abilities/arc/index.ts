@@ -257,8 +257,8 @@ class ArcPresentation implements AbilityPresentation {
       const dx = tx - x, dz = tz - z, length = Math.max(.001, Math.hypot(dx, dz));
       const sway = k.reducedMotion ? .05 : Math.sin(k.time * 13 + link.x) * .12;
       const mx = (x + tx) * .5 - dz / length * sway, mz = (z + tz) * .5 + dx / length * sway;
-      k.ribbon(x, 1.5, z, mx, 1.25, mz, VIOLET, .032, .55, true);
-      k.ribbon(mx, 1.25, mz, tx, .85, tz, VIOLET, .032, .55, true);
+      k.ribbon(x, 1.5, z, mx, 1.25, mz, VIOLET, .024, .34, true);
+      k.ribbon(mx, 1.25, mz, tx, .85, tz, VIOLET, .024, .34, true);
       k.ribbon(x, 1.5, z, mx, 1.25, mz, WHITE, .009, .55, false);
       if (emit && !k.low) {
         const t = (Math.sin(k.time * 1.3) + 1) * .5;

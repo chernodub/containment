@@ -36,6 +36,8 @@ export class LazyAbilityVisuals {
   get kit(){return this.owner?.kit;}
   get priorityMask(){return this.owner?.priorityMask;}
 
+  updatePriority(camera:Camera):void { this.owner?.updatePriority(camera); }
+
   /** Coalesce module creation and atlas readiness inside the existing room hold. */
   prepare():Promise<void>{
     if(this.dead)return Promise.resolve();

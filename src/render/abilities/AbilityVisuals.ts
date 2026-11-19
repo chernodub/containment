@@ -79,7 +79,7 @@ export class AbilityVisuals extends AbilityGeometry {
             this.clear();
         this.wasVisible = visible;
         dt = visible && Number.isFinite(dt) ? Math.max(0, dt) : 0;
-        this.priorityMask.update(visible ? game : undefined, camera, this.prioritySource, this.priorityActor);
+
         this.kit.rings.setColdDominance();
         if (visible) for (const zone of snapshot?.zones ?? []) if (zone.ability === 'whiteout' && zone.remainingMs > 0) {
             this.kit.rings.setColdDominance(zone.x / 32, zone.y / 32, zone.radius / 32); break;
@@ -98,6 +98,9 @@ export class AbilityVisuals extends AbilityGeometry {
         this.system?.update(f);
         this.placementPreview.update(this.kit.time, this.kit.reducedMotion, visible);
         this.kit.end();
+    }
+    updatePriority(camera: T.Camera): void {
+        this.priorityMask.update(this.wasVisible ? this.frame.game : undefined, camera, this.prioritySource, this.priorityActor);
     }
     override clear(): void { super.clear(); this.placementPreview?.clear(); this.priorityMask?.clear(); this.kit?.clear(); if (this.registry)
         for (const p of this.registry.values())
