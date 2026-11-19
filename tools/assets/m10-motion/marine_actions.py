@@ -441,16 +441,18 @@ WEAPONS = [
     ], upper="blaster_delta"),
     Clip("m10-fire-rifle", [
         Pose(0),
-        Pose(.02, pelvis=(-.070, -.018, -.065), spine=(-.19, -.12, -.045), ribs=(-.12, .12, .025),
-             head=(.095, .035, .02), left_delta=(-.055, .075, .045), right_delta=(-.065, -.01, .045),
-             right_wrist=(-.095, 0, 0), left_foot=(.02, .03, 0), right_foot=(-.060, -.03, 0)),
-        Pose(.055, pelvis=(-.060, -.012, -.055), spine=(-.17, .09, .035), ribs=(-.11, -.085, -.02),
-             head=(.08, -.025, -.015), left_delta=(-.045, .095, .035), right_delta=(-.055, -.012, .035),
-             right_wrist=(-.08, 0, 0), left_foot=(.018, .025, 0), right_foot=(-.050, -.025, 0)),
-        Pose(.11, pelvis=(.012, .004, -.02), spine=(.065, -.045, -.018), ribs=(.045, .035, .012),
-             head=(-.035, .015, .01), left_delta=(.025, .035, -.022), right_delta=(.025, 0, -.025),
-             right_wrist=(.045, 0, 0), left_foot=(.008, .01, 0), right_foot=(-.020, -.01, 0)),
-        Pose(.17), Pose(.21),
+        # Ballistic contact travels up the chain over three 60 Hz drawings.
+        Pose(1/60, right_delta=(-.08, -.01, .048), right_wrist=(-.19, 0, 0),
+             left_delta=(-.055, .012, .035), ribs=(-.035, .018, 0)),
+        Pose(2/60, right_delta=(-.125, -.028, .065), left_delta=(-.12, .02, .06),
+             right_pole=(-.27, -.91, 1.12), spine=(-.075, -.036, -.022),
+             ribs=(-.12, -.075, -.035), right_wrist=(-.12, 0, 0)),
+        Pose(3/60, pelvis=(-.065, -.018, -.045), spine=(-.15, -.12, -.055),
+             ribs=(-.085, -.10, -.045), head=(.10, .11, .035),
+             right_delta=(-.10, -.045, .045), left_delta=(-.075, .026, .035)),
+        Pose(5/60, pelvis=(-.02, 0, -.02), spine=(-.035, -.055, -.012),
+             ribs=(.035, .025, .01), right_delta=(.012, 0, -.012)),
+        Pose(6/60),
     ], upper="rifle_delta"),
     Clip("m10-fire-shotgun", [
         Pose(0),
@@ -463,9 +465,14 @@ WEAPONS = [
         Pose(.15, pelvis=(-.045, .015, -.06), spine=(.025, -.07, .035), ribs=(.08, -.035, .015),
              left_delta=(-.025, .10, .015), right_delta=(-.035, -.015, .02), right_wrist=(-.025, .015, 0),
              left_foot=(.015, .025, 0), right_foot=(-.045, -.015, 0)),
-        Pose(.23, pelvis=(0, 0, -.02), spine=(.08, .035, -.015), ribs=(.04, .015, 0),
-             left_delta=(.025, .035, -.02), right_delta=(.02, 0, -.025), right_wrist=(.055, 0, 0)),
-        Pose(.36), Pose(.43),
+        # Pull the fore-end to the hip, then send it back to battery.
+        Pose(.22, spine=(.095, -.07, .03), ribs=(.06, -.11, .035),
+             left_delta=(-.23, .038, -.11), right_delta=(-.025, -.012, -.055)),
+        Pose(.31, spine=(.075, -.055, .025), left_delta=(-.26, .07, -.13),
+             left_pole=(-.32, 1.05, 1.04), right_delta=(0, 0, -.045)),
+        Pose(.39, spine=(.02, .045, -.02), left_delta=(.075, .014, .01),
+             right_delta=(.03, 0, .025)),
+        Pose(.53), Pose(.58),
     ]),
     Clip("m10-fire-plasma", [
         Pose(0),
@@ -843,12 +850,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=OUTPUT)
     parser.add_argument("--standard", action="store_true", help="Build only the five reviewed standard clips")
+    parser.add_argument("--clips", help="Comma-separated take names for a selective bake")
+    parser.add_argument("--install", action="store_true")
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     args = parser.parse_args(argv)
     bpy.context.preferences.edit.keyframe_new_handle_type = "AUTO_CLAMPED"
     armature = common.import_existing(SOURCE)
-    clips = author(armature, STANDARD if args.standard else ALL_CLIPS)
+    selected = STANDARD if args.standard else ALL_CLIPS
+    if args.clips:
+        selected = [clip for clip in selected if clip.name in args.clips.split(',')]
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    clips = author(armature, selected)
     common.export_motion(armature, args.out, [action.name for _, action in clips])
+    if args.install:
+        common.replace_motion_clips(ROOT/'public/assets/models/motion/marine-motion.glb', args.out)
 
 
 if __name__ == "__main__":

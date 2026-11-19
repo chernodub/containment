@@ -1219,3 +1219,11 @@ sheets and source/failure receipts. It reads ordinary G6 frame02; only a missing
 Manual Control frame may use an explicitly supplied DRESS13 frame01, labeled on
 the sheet. It does not alter capture guards or turn a failed burst into a pass.
 The room indexes also include historical/current calm pairs with native links. Defaults use the consolidated final gallery parents; replacement JSON names explicitly recaptured cells and retains every parent failure receipt. Per-room native review captures live in `landmark-correction/room-reviews/`.
+
+### MOTION14 editing reel
+
+```sh
+node scripts/nextgen/m9-motion.mjs --collection=motion14 --subjects=marine,crawler,brute,stalker,carrier,spitter --weapon=rifle --steps=3 --lanes=true --overdrives=true --out=artifacts/nextgen/motion14/after/final
+```
+
+The 30-cell crops retain native pixels. The matching `camera/` sheets show the room at 480×270. The paired rifle sequence prescribes three contacts at catalog cadence. The separate `pack/` lane uses ordinary fire input and records accepted contacts with damage numbers hidden. Optional `travel/` lanes sample world-space shoes under native movement, and `overdrives/` records ordinary casts against staged targets. Use `--dist=<saved-build>` to replay a baseline under the same capture driver.

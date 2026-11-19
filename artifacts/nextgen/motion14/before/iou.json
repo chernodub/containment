@@ -1,0 +1,321 @@
+{
+  "method": "Absolute native pixel registration; mask=RGB difference>12 from flat render background; no translation/scale fitting. Idle=middle same-rig idle frame. Peak=min IoU within declared phase.",
+  "rows": [
+    {
+      "subject": "marine",
+      "action": "idle",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.8795,
+          "frame": 29,
+          "ms": 1500
+        }
+      }
+    },
+    {
+      "subject": "marine",
+      "action": "run-0",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.3748,
+          "frame": 10,
+          "ms": 550
+        }
+      }
+    },
+    {
+      "subject": "marine",
+      "action": "run-90",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.411,
+          "frame": 25,
+          "ms": 1300
+        }
+      }
+    },
+    {
+      "subject": "marine",
+      "action": "run-180",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.3959,
+          "frame": 19,
+          "ms": 1000
+        }
+      }
+    },
+    {
+      "subject": "marine",
+      "action": "stop-start",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.4613,
+          "frame": 29,
+          "ms": 1500
+        }
+      }
+    },
+    {
+      "subject": "marine",
+      "action": "fire-rifle",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.6472,
+          "frame": 10,
+          "ms": 550
+        }
+      }
+    },
+    {
+      "subject": "marine",
+      "action": "fire-shotgun",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.6119,
+          "frame": 2,
+          "ms": 150
+        }
+      }
+    },
+    {
+      "subject": "crawler",
+      "action": "idle",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.8416,
+          "frame": 0,
+          "ms": 50
+        }
+      }
+    },
+    {
+      "subject": "crawler",
+      "action": "weapon-sequence-rifle",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.0759,
+          "frame": 5,
+          "ms": 300
+        }
+      }
+    },
+    {
+      "subject": "crawler",
+      "action": "death-high-impulse",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.0423,
+          "frame": 13,
+          "ms": 700
+        }
+      }
+    },
+    {
+      "subject": "crawler",
+      "action": "death-frost",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.0071,
+          "frame": 15,
+          "ms": 800
+        }
+      }
+    },
+    {
+      "subject": "crawler",
+      "action": "death-burn",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.033,
+          "frame": 23,
+          "ms": 1200
+        }
+      }
+    },
+    {
+      "subject": "crawler",
+      "action": "death-arc",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.0627,
+          "frame": 16,
+          "ms": 850
+        }
+      }
+    },
+    {
+      "subject": "brute",
+      "action": "idle",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.8558,
+          "frame": 0,
+          "ms": 50
+        }
+      }
+    },
+    {
+      "subject": "brute",
+      "action": "weapon-hit-shotgun",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.2135,
+          "frame": 5,
+          "ms": 300
+        }
+      }
+    },
+    {
+      "subject": "brute",
+      "action": "weapon-kill-shotgun",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.2137,
+          "frame": 5,
+          "ms": 300
+        }
+      }
+    },
+    {
+      "subject": "brute",
+      "action": "attack",
+      "threshold": null,
+      "peaks": {
+        "anticipation": {
+          "iou": 0.5704,
+          "frame": 3,
+          "ms": 200
+        },
+        "strike": {
+          "iou": 0.3848,
+          "frame": 16,
+          "ms": 850
+        }
+      }
+    },
+    {
+      "subject": "stalker",
+      "action": "idle",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.7108,
+          "frame": 0,
+          "ms": 50
+        }
+      }
+    },
+    {
+      "subject": "stalker",
+      "action": "attack",
+      "threshold": null,
+      "peaks": {
+        "anticipation": {
+          "iou": 0.2293,
+          "frame": 5,
+          "ms": 300
+        },
+        "strike": {
+          "iou": 0.0,
+          "frame": 9,
+          "ms": 500
+        }
+      }
+    },
+    {
+      "subject": "carrier",
+      "action": "idle",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.8084,
+          "frame": 0,
+          "ms": 50
+        }
+      }
+    },
+    {
+      "subject": "carrier",
+      "action": "heavy-hit",
+      "threshold": 0.75,
+      "peaks": {
+        "peak": {
+          "iou": 0.1911,
+          "frame": 7,
+          "ms": 400
+        }
+      }
+    },
+    {
+      "subject": "carrier",
+      "action": "stagger",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.1191,
+          "frame": 9,
+          "ms": 500
+        }
+      }
+    },
+    {
+      "subject": "carrier",
+      "action": "attack",
+      "threshold": null,
+      "peaks": {
+        "anticipation": {
+          "iou": 0.4675,
+          "frame": 3,
+          "ms": 200
+        },
+        "strike": {
+          "iou": 0.3665,
+          "frame": 15,
+          "ms": 800
+        }
+      }
+    },
+    {
+      "subject": "spitter",
+      "action": "idle",
+      "threshold": null,
+      "peaks": {
+        "peak": {
+          "iou": 0.8507,
+          "frame": 0,
+          "ms": 50
+        }
+      }
+    },
+    {
+      "subject": "spitter",
+      "action": "light-hit",
+      "threshold": 0.88,
+      "peaks": {
+        "peak": {
+          "iou": 0.3596,
+          "frame": 6,
+          "ms": 350
+        }
+      }
+    }
+  ],
+  "castPairs": []
+}

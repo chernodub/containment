@@ -370,7 +370,7 @@ export class MarineMotion {
     this.rotate(this.spine,this.axis,(this.leanX*Math.cos(this.aim)+this.leanZ*Math.sin(this.aim))*.35*strength,this.yawQ);
     const flinch=this.hitAmount*Math.sin(Math.PI*this.hitLife/MARINE_REACTION_SECONDS)*strength;
     if(flinch){this.axis.set(-Math.sin(this.hitAngle),0,Math.cos(this.hitAngle));this.rotate(this.ribs,this.axis,-flinch*.10,this.yawQ);}
-    if(this.moving&&!this.action&&!flinch)for(const leg of this.legs)this.plant(leg);
+    if((this.moving||this.stoppedFor<.14)&&!this.action&&!flinch)for(const leg of this.legs)this.plant(leg);
     this.clampHips();
     // Cast silhouettes live in the torso and free arm. Keep the receiver hand
     // in a reachable firing pocket rather than twisting an overhead wrist to

@@ -331,8 +331,9 @@ export class AttackEffects {
    const exhaust=id==='rocket'?p.clone().addScaledVector(forward,-.9):p;
    this.particle(this.smoke,EFFECT_LIMITS.smoke,exhaust,0x82938d,id==='rocket'?.32:.21,id==='rocket'?.30:.22,forward.clone().multiplyScalar(id==='rocket'?-.8:.3).add(new T.Vector3(0,.3,0)));
    if(id!=='rocket'){
-    const casing=p.clone().addScaledVector(forward,-.65),v=right.multiplyScalar(1.6+Math.random());v.y=1.7;
-    this.particle(this.debris,EFFECT_LIMITS.debris,casing,id==='shotgun'?0x994b31:0xc69a51,id==='shotgun'?.065:.038,2.8,v,9.8,2.5);
+    const casing=p.clone().addScaledVector(forward,-.65).addScaledVector(right,.09);
+    const v=right.multiplyScalar(id==='rifle'?2.5:1.6+Math.random()).addScaledVector(forward,-.42);v.y=1.7;
+    this.particle(this.debris,EFFECT_LIMITS.debris,casing,id==='shotgun'?0x994b31:0xe9b450,id==='shotgun'?.065:id==='rifle'?.061:.038,id==='rifle'?.58:2.8,v,9.8,id==='rifle'?1.95:2.5);
    }
   }
  }
@@ -356,12 +357,12 @@ export class AttackEffects {
    }
    const ichor=targetFamily?FAMILY_IDENTITY[targetFamily as keyof typeof FAMILY_IDENTITY]:undefined;
    if(!blocked&&ichor!==undefined){
-    const reduced=this.options.reducedMotion?.4:1,count=heavy?5:3;
+    const reduced=this.options.reducedMotion?.4:1,rifle=e.weapon==='rifle',count=rifle?2:heavy?5:3;
     for(let i=0;i<count;i++){
-     const a=angle+(i-(count-1)*.5)*.30,speed=(heavy?2.5:1.4)*reduced;
+     const a=angle+(i-(count-1)*.5)*.30,speed=(rifle?3.3+i*.7:heavy?2.5:1.4)*reduced;
      this.forward.set(Math.cos(a)*speed,(.55+(i%2)*.35)*reduced,Math.sin(a)*speed);
-     this.particle(this.smoke,EFFECT_LIMITS.smoke,p,ichor,heavy?.075:.06,.20+i*.025,this.forward,6,1.8);
-     const drop=this.smoke[this.smoke.length-1];drop.liquid=true;drop.spin=0;
+     this.particle(this.smoke,EFFECT_LIMITS.smoke,p,ichor,rifle?.09:heavy?.075:.06,rifle?.14:.20+i*.025,this.forward,6,1.8);
+     const drop=this.smoke[this.smoke.length-1];drop.liquid=true;drop.spin=0;if(rifle)drop.aspect=3.5;
     }
    }
    return;
@@ -599,7 +600,7 @@ export class AttackEffects {
    if(s.liquid){
     if(s.ground)this.dummy.rotation.set(-Math.PI/2,0,s.rotation);
     else{this.forward.copy(s.v).applyQuaternion(this.dummy.quaternion.invert());this.dummy.quaternion.copy(camera.quaternion);this.dummy.rotateZ(Math.atan2(this.forward.y,this.forward.x)-Math.PI/2);}
-    const size=s.size*(s.ground?1.8:1);this.dummy.scale.set(size,size*(s.ground?.8:1.6),1);this.dummy.updateMatrix();
+    const size=s.size*(s.ground?1.8:1);this.dummy.scale.set(size,size*(s.ground?.8:s.aspect??1.6),1);this.dummy.updateMatrix();
     mesh.setMatrixAt(index,this.dummy.matrix);mesh.setColorAt(index,s.color);(mesh.geometry.getAttribute('effectFrame') as T.InstancedBufferAttribute).setX(index,-1);alpha.setX(index,priority*.9*Math.min(1,(1-t)*4));index++;continue;
    }
    if(mode==='decal'||mode==='smoke'&&s.wall){if(s.wall){this.dummy.quaternion.setFromUnitVectors(this.axis,s.wall);this.dummy.rotateZ(s.rotation);}else this.dummy.rotation.set(-Math.PI/2,0,s.rotation);}

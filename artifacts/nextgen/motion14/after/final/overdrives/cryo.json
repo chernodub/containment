@@ -1,0 +1,498 @@
+{
+  "accepted": true,
+  "ids": [
+    1,
+    2
+  ],
+  "stepMs": 100,
+  "events": [
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "overdrive-ready",
+        "radius": 300
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 0.9500000000000012
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "cast",
+        "radius": 300,
+        "angle": 0,
+        "targetX": 884.8,
+        "targetY": 352,
+        "durationMs": 0
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 0.9500000000000012
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "durationMs": 8000
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 0.9500000000000012
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "impact",
+        "radius": 300,
+        "angle": 0,
+        "targetX": 884.8,
+        "targetY": 352,
+        "targetIds": [],
+        "durationMs": 8000,
+        "totalDamage": 0
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 0.9500000000000012
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          1,
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 8
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 1.2000000000000006
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 953.168938154802,
+      "y": 359.56827691927083,
+      "targetId": 1,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.2500000000000004
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 1035.080864524343,
+      "y": 346.8898103288627,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.2500000000000004
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          1,
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 8
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 1.4499999999999997
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 953.168938154802,
+      "y": 359.56827691927083,
+      "targetId": 1,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.4999999999999996
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 1022.5099156586111,
+      "y": 343.6320644135129,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.4999999999999996
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          1,
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 8
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 1.6999999999999988
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 950.8337255766188,
+      "y": 368.16899796092196,
+      "targetId": 1,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.7499999999999987
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 1012.1573695338913,
+      "y": 340.9492148361663,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.7499999999999987
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          1,
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 8
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 1.949999999999998
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 944.3214939683614,
+      "y": 386.8234688098321,
+      "targetId": 1,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.9999999999999978
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 1004.0232261501836,
+      "y": 338.84126159682194,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 1.9999999999999978
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          1,
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 8
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 2.199999999999997
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 944.3214939683614,
+      "y": 386.8234688098321,
+      "targetId": 1,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 2.249999999999997
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 995.889082766476,
+      "y": 336.7333083574776,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 2.249999999999997
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          1,
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 8
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 2.449999999999996
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 944.3214939683614,
+      "y": 386.8234688098321,
+      "targetId": 1,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 2.499999999999996
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 987.7549393827684,
+      "y": 334.62535511813326,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 2.499999999999996
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          1,
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 8
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 2.6999999999999953
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 941.2504923027132,
+      "y": 399.04788693598636,
+      "targetId": 1,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 2.749999999999995
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 979.6207959990608,
+      "y": 332.5174018787889,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 2.749999999999995
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          1,
+          2
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 8
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 2.9499999999999944
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 934.1817373912708,
+      "y": 412.37949401570654,
+      "targetId": 1,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 2.9999999999999942
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 971.4866526153531,
+      "y": 330.409448639445,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 2.9999999999999942
+    },
+    {
+      "type": "ability",
+      "ability": {
+        "ability": "whiteout",
+        "slot": "overdrive",
+        "rig": "cryo",
+        "element": "cryo",
+        "phase": "tick",
+        "radius": 300,
+        "entityId": 1,
+        "targetIds": [
+          1,
+          2,
+          4
+        ],
+        "targetX": 884.8,
+        "targetY": 352,
+        "width": 0,
+        "totalDamage": 12
+      },
+      "x": 884.8,
+      "y": 352,
+      "at": 3.1999999999999935
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 934.1817373912708,
+      "y": 412.37949401570654,
+      "targetId": 1,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 3.2499999999999933
+    },
+    {
+      "type": "hit",
+      "contact": "armor",
+      "x": 971.4866526153531,
+      "y": 330.409448639445,
+      "targetId": 2,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 3.2499999999999933
+    },
+    {
+      "type": "hit",
+      "contact": "damage",
+      "x": 955.5161841268967,
+      "y": 239.65814304277228,
+      "targetId": 4,
+      "damage": 4,
+      "lethal": false,
+      "source": "ability",
+      "at": 3.2499999999999933
+    }
+  ]
+}

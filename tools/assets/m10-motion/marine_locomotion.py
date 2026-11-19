@@ -18,7 +18,7 @@ from mathutils import Matrix, Quaternion, Vector
 
 ROOT = Path(__file__).resolve().parents[3]
 FPS = 60
-CYCLE_SECONDS = 1 / 3
+CYCLE_SECONDS = 18 / FPS
 NOMINAL_SIM_SPEED = 220.0
 UP = Vector((0, -1, 0))
 FORWARD = Vector((1, 0, 0))
@@ -50,11 +50,11 @@ def arc(keys, time):
 # Each tuple holds stance fraction, lift, forward swing bow, lateral swing bow,
 # lead offset, foot yaw, pelvic crouch and hip counter-rotation amplitude.
 GAITS = {
-    0: (.43, 1.85, -.32, .12, .50, .015, 1.50, .10),
+    0: (.36, 1.56, -.32, .12, .50, .015, 1.50, .10),
     45: (.45, 1.72, .75, .55, .53, .13, 1.72, .16),
     90: (.45, 1.54, 1.70, .32, .56, .22, 1.90, .24),
     135: (.45, 1.28, 1.15, -.42, .54, .16, 1.82, .19),
-    180: (.40, 1.10, -.90, .18, .50, -.04, 1.60, .12),
+    180: (.35, .88, -.55, .18, .50, -.04, 1.60, .12),
     225: (.45, 1.28, 1.15, .42, .46, -.16, 1.82, .19),
     270: (.45, 1.54, 1.70, -.32, .44, -.22, 1.90, .24),
     315: (.45, 1.72, .75, -.55, .47, -.13, 1.72, .16),
@@ -96,7 +96,7 @@ def foot_path(direction, side, phase, source_speed):
     pitch = arc(((0, .22), (.30, -.30), (.66, -.22), (1, -.14)), swing)[0]
     if direction in (135, 180, 225):
         pitch = arc(((0, -.13), (.34, .30), (.72, .24), (1, .22)), swing)[0]
-    return displacement, pitch, yaw + envelope * (.10 if leading else -.08), False
+    return displacement, pitch, yaw * .78 + envelope * (.065 if leading else -.05), False
 
 
 class MarineFootRig:
@@ -168,49 +168,73 @@ class MarineFootRig:
         matrix.translation = self.base['hips'].translation + UP * -crouch + RIGHT * lateral
         hips.matrix = matrix
         bpy.context.view_layer.update()
-        spine = self.armature.pose.bones['spine']
-        # World/armature-space counter-rotation keeps the ribcage and weapon
-        # forward while the hips make the visible cross-over weight transfer.
-        matrix = spine.matrix.copy()
-        matrix = Quaternion(UP, -yaw * 1.18).to_matrix().to_4x4() @ matrix
-        rotation = Quaternion(RIGHT, lean)
-        matrix = rotation.to_matrix().to_4x4() @ matrix
-        matrix.translation = spine.matrix.translation
-        spine.matrix = matrix
+        # Rotate about each joint, preserving its connected translation.
+        def turn(name, rotation):
+            bone = self.armature.pose.bones[name]
+            matrix = bone.matrix.copy()
+            pivot = matrix.translation.copy()
+            matrix = rotation.to_matrix().to_4x4() @ matrix
+            matrix.translation = pivot
+            bone.matrix = matrix
+
+        turn('spine', Quaternion(RIGHT, lean) @ Quaternion(UP, -1.92 * yaw))
+        bpy.context.view_layer.update()
+        # The pack rides the rib cage. Both hands absorb the descending stock
+        # a little later, while the head keeps its firing orientation.
+        lag = math.sin((phase - .09) * math.tau) * min(1., abs(yaw) * 5 + crouch * .18)
+        turn('ribs', Quaternion(FORWARD, -.64 * yaw) @ Quaternion(UP, -.35 * yaw))
+        bpy.context.view_layer.update()
+        for side in ('L', 'R'):
+            side_sign = 1 if side == 'L' else -1
+            turn('shoulder.' + side, Quaternion(UP, (.13 + side_sign * .10) * lag)
+                 @ Quaternion(RIGHT, -.14 * lag))
+        bpy.context.view_layer.update()
+        head = self.armature.pose.bones['head']
+        level = self.base['head'].copy()
+        level.translation = head.matrix.translation
+        head.matrix = level
 
     def pose_cycle(self, direction, phase, weight=1.0):
         self.reset()
         _, _, _, _, _, _, crouch, rotation = GAITS[direction]
-        beat = math.sin(phase * math.tau)
-        # Two grounded load/compression beats, with lateral transfer strongest
-        # in side travel and a compact, rear-loaded backpedal posture.
-        dip = crouch + .65 * (1 - math.cos(phase * math.tau * 2))
+        # Heel arrives ahead of the weight. Pelvis sinks on the loaded foot,
+        # followed by a narrower passing position and a rising push-off.
+        beat = math.cos((phase - .13) * math.tau)
+        load = (1 + math.cos((phase - .12) * math.tau * 2)) * .5
+        dip = crouch * .70 + 1.28 * load
         angle = math.radians(direction)
-        lean = -.13 * math.cos(angle) + .035 * math.sin(phase * math.tau * 2)
-        self.torso(dip * weight, beat * rotation * weight, lean * weight,
-            math.sin(angle) * beat * .22 * weight, phase)
+        lean = -.17 * math.cos(angle) + .085 * (load - .5)
+        self.torso(dip * weight, beat * (rotation + .23) * weight, lean * weight,
+            beat * (.60 + .18 * abs(math.sin(angle))) * weight, phase)
         for side in ('L', 'R'):
             displacement, pitch, yaw, planted = foot_path(direction, side, phase, self.source_speed)
             self.control(side, displacement * weight, pitch * weight, yaw * weight,
-                math.sin(angle) * (-1 if side == 'R' else .4))
+                math.sin(angle) * (-.78 if side == 'R' else .32))
 
     def pose_transition(self, direction, kind, progress):
         if kind == 'start':
             amount = smooth(progress)
             self.pose_cycle(direction, .62 + progress * .38, amount)
             # A visible compression precedes the first airborne step.
-            if progress < .30:
+            if progress < .55:
                 hips = self.armature.pose.bones['hips']
                 matrix = hips.matrix.copy()
-                matrix.translation += UP * (-.65 * math.sin(math.pi * progress / .30))
+                push = math.sin(math.pi * progress / .55)
+                travel = FORWARD * math.cos(math.radians(direction)) + RIGHT * math.sin(math.radians(direction))
+                matrix.translation += (-UP * 1.05 + travel * .48) * push
                 hips.matrix = matrix
             return
         if kind == 'stop':
             amount = 1 - smooth(progress)
-            self.pose_cycle(direction, progress * .46, amount)
+            self.pose_cycle(direction, .12 + progress * .34, amount)
+            hips = self.armature.pose.bones['hips']
+            matrix = hips.matrix.copy()
+            settle = arc(((0, 0), (.32, .75), (.66, -.15), (1, 0)), progress)[0]
+            matrix.translation -= UP * settle
+            hips.matrix = matrix
             # The final braking plant widens by a small amount before settling.
             for side in ('L', 'R'):
-                displacement, pitch, yaw, _ = foot_path(direction, side, progress * .46, self.source_speed)
+                displacement, pitch, yaw, _ = foot_path(direction, side, .12 + progress * .34, self.source_speed)
                 displacement = displacement * amount + RIGHT * ((-1 if side == 'R' else 1) * .32 * math.sin(math.pi * progress))
                 self.control(side, displacement, pitch * amount, yaw * amount)
             return
@@ -248,8 +272,13 @@ def main():
     parser.add_argument('--source', type=Path, default=ROOT / 'public/assets/models/marine.glb')
     parser.add_argument('--out', type=Path, default=ROOT / 'tools/assets/m10-motion/.build/marine-locomotion-motion.glb')
     parser.add_argument('--cycles-only', action='store_true')
+    parser.add_argument('--install', action='store_true')
+    parser.add_argument('--directions', default=','.join(map(str, GAITS)))
     args = parser.parse_args(argv)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
     build(common, args)
+    if args.install:
+        common.replace_motion_clips(ROOT / 'public/assets/models/motion/marine-motion.glb', args.out)
 
 
 def build(common, args):
@@ -269,7 +298,7 @@ def build(common, args):
     rig = MarineFootRig(armature, base, source_height)
     names = []
     ordered = sorted(armature.pose.bones, key=lambda bone: len(bone.parent_recursive))
-    locomotion_bones = {'hips', 'spine', 'thigh.L', 'thigh.R', 'shin.L', 'shin.R', 'ankle.L', 'ankle.R'}
+    locomotion_bones = {'hips', 'spine', 'ribs', 'head', 'shoulder.L', 'shoulder.R', 'thigh.L', 'thigh.R', 'shin.L', 'shin.R', 'ankle.L', 'ankle.R'}
 
     def record(name, seconds, pose):
         # Author controls first, sample their evaluated two-bone solve, then key
@@ -310,12 +339,13 @@ def build(common, args):
         names.append(name)
         print('M10 authored', name, 'seconds', frames / FPS, 'keys', frames + 1, flush=True)
 
-    for direction in GAITS:
+    directions = [int(d) for d in args.directions.split(',')]
+    for direction in directions:
         record(f'm10-run-{direction}', CYCLE_SECONDS,
             lambda progress, direction=direction: rig.pose_cycle(direction, progress % 1))
     if not args.cycles_only:
-        for kind, seconds in (('start', .35), ('stop', .30), ('reversal', .45)):
-            for direction in GAITS:
+        for kind, seconds in (('start', .20), ('stop', .26), ('reversal', .45)):
+            for direction in directions:
                 record(f'm10-{kind}-{direction}', seconds,
                     lambda progress, direction=direction, kind=kind:
                         rig.pose_transition(direction, kind, progress))

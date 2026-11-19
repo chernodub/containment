@@ -51,7 +51,12 @@ export class EnemyMotion {
   private impact = 0;
   private impactAge = 1;
   private heavy = false;
+  private beamAngle: number | undefined;
+  private beamAge = 1;
   private hitAngle = 0;
+  private fallStarted = false;
+  private fallX = 0;
+  private fallZ = 0;
   private release = 0;
   private emergence = 0;
   private strength = 1;
@@ -112,6 +117,7 @@ export class EnemyMotion {
 
   hit(strength = 1, direction = 0, heavy = false) {
     if (strength <= 0) { this.impact = this.hold = 0; return; }
+    if (this.beamAge > .20) this.beamAngle = undefined;
     this.impact = Math.max(this.impact, Math.min(1, strength));
     this.impactAge = 0;
     this.hitAngle = direction;
@@ -120,6 +126,29 @@ export class EnemyMotion {
       this.hold = HEAVY_HOLD_SECONDS * Math.min(1, .75 + this.profile.weight * .08) * this.strength * Math.min(1, strength);
       this.cooldown = .18;
     }
+  }
+
+  beam(angle: number) {
+    this.hit(1, angle, true);
+    this.beamAngle = angle;
+    this.beamAge = 0;
+  }
+
+  carryIntoFall(progress: number) {
+    if (!this.authored || this.impactAge > .25) return;
+    if (!this.fallStarted) {
+      this.fallStarted = true;
+      this.fallX = this.body.position.x;
+      this.fallZ = this.body.position.z;
+    }
+    const direction = this.beamAngle ?? this.hitAngle;
+    const local = Math.PI / 2 - this.root.rotation.y - direction;
+    const share = this.beamAngle !== undefined ? .68 : this.family === 'crawler' ? .50 : .22;
+    const travel = share * this.state.offsetLimit * this.strength * (this.reduced ? .3 : 1);
+    const slide = T.MathUtils.smoothstep(progress, 0, .53);
+    // Interpolate from the planted impact, including its existing sideways offset.
+    this.body.position.x = T.MathUtils.lerp(this.fallX, Math.sin(local) * travel, slide);
+    this.body.position.z = T.MathUtils.lerp(this.fallZ, Math.cos(local) * travel, slide);
   }
 
   /** Remove last frame's offsets before the source mixer samples any tracks. */
@@ -138,7 +167,7 @@ export class EnemyMotion {
     const stopped = frozen ? dt : Math.min(dt, this.hold);
     this.hold = Math.max(0, this.hold - dt);
     this.visualTime += dt - stopped;
-    this.impactAge += dt;
+    this.impactAge += dt; this.beamAge += dt;
     this.release = Math.max(0, this.release - dt);
     this.emergence = Math.min(.34, this.emergence + dt);
     this.state.holdMs = this.hold * 1000;
@@ -155,26 +184,31 @@ export class EnemyMotion {
       anticipation = this.nativeProgress;
     }
     this.state.anticipation = winding ? anticipation : 0;
-    if (frozen) { this.freeze(); return; }
+    if (frozen) { this.freeze(true); return; }
     const p = this.profile, motion = this.strength * (this.reduced ? .3 : 1);
     if(this.authored){
       // Keep contact loaded for two presentation ticks before the return;
       // a squared immediate fade vanished between native 4-tick strip cells.
       const contact=this.impact*(1-T.MathUtils.smoothstep(this.impactAge,.035,ACTOR_IMPULSE_SECONDS))*motion;
-      // Authored center travel uses at most .301 radius; reserve .049 for this layer.
-      const direction=aim-this.hitAngle,offset=this.state.offsetLimit*contact*.14;
+      // The shorter Crawler centre tracks reserve more of the same radius for shot travel.
+      const direction=aim-this.hitAngle;
+      const share=this.beamAngle!==undefined&&this.impactAge<.25?.64:this.family==='crawler'?(this.heavy?.36:.54):.14;
+      const offset=this.state.offsetLimit*contact*share;
       // Clips supply the limbs; the presentation parent carries the entire mass.
       // Hold a readable silhouette from the first native warning frame, rather
       // than waiting for the sampled clip to reach its anticipation extreme.
-      const brace=winding?.72+.28*T.MathUtils.smoothstep(anticipation,0,.25):0;
+      const staged=this.family==='stalker'||this.family==='brute'||this.family==='carrier';
+      const brace=winding?(staged?.18+.82*T.MathUtils.smoothstep(anticipation,0,.92):.72+.28*T.MathUtils.smoothstep(anticipation,0,.25)):0;
       const recovery=this.nativePhase==='recovery'?.18+.82*(1-this.nativeProgress):0;
       const strike=this.nativePhase==='strike'?1-this.nativeProgress*.55:0;
       const mass=1/Math.sqrt(p.weight);
       const bend=contact*(this.heavy?.78:.55)*mass;
       // Hit is accepted at strike entry, so extension is already at contact.
       // The off-balance return follows the full native recovery, including elites.
-      const extension=this.nativePhase==='strike'?1-.35*this.nativeProgress
-        :this.nativePhase==='recovery'?.65*(1-T.MathUtils.smoothstep(this.nativeProgress,0,1)):0;
+      const extension=this.nativePhase==='strike'?(this.family==='stalker'
+        ? .91+.09*Math.sin(Math.PI*this.nativeProgress)-.18*this.nativeProgress
+        : 1-.35*this.nativeProgress)
+        :this.nativePhase==='recovery'?(this.family==='stalker'?.73:.65)*(1-T.MathUtils.smoothstep(this.nativeProgress,0,1)):0;
       const lunging=this.family==='stalker'||this.family==='crawler';
       const limit=lunging&&this.strikeRange>0?Math.max(0,this.strikeRange-(this.root.userData.colliderRadius??.5)):this.state.offsetLimit;
       const strikeDirection=this.nativePhase&&this.nativePhase!=='approach'?aim-this.nativeAngle:0;
@@ -326,7 +360,7 @@ export class EnemyMotion {
   reset() {
     this.restore(); this.freeze(); this.previous = undefined;
     this.visualTime = this.cooldown = this.impact = this.release = this.emergence = 0;
-    this.impactAge = 1; this.nativePhase = undefined; this.nativeProgress = this.nativeAngle = this.strikeRange = 0;
+    this.beamAge = 1; this.beamAngle = undefined; this.fallStarted = false; this.impactAge = 1; this.nativePhase = undefined; this.nativeProgress = this.nativeAngle = this.strikeRange = 0;
     this.state.holdMs = this.state.offsetX = this.state.offsetZ = this.state.anticipation = 0;
     this.state.attackPhase = 'approach'; this.state.strikeRange = 0;
   }
