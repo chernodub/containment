@@ -7,7 +7,7 @@ const locatorMaterials=new Map<string,T.ShaderMaterial>();
 function supplyLocatorMaterial(kind:string):T.ShaderMaterial {
   let material=locatorMaterials.get(kind);
   if(!material){
-    material=groundIndicatorMaterial('beam',kind==='credits'?0xffd27a:kind==='grenade'?0xffb454:0xb5edff);
+    material=groundIndicatorMaterial('beam',kind==='credits'?0xfff0ce:kind==='grenade'?0xffb454:0xb5edff);
     material.name='supply-locator';locatorMaterials.set(kind,material);
   }
   return material;

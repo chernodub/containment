@@ -34,47 +34,35 @@ void main(){vec2 p=vUv*2.0-1.0;float d=length(p);float alpha=vAlpha;vec3 color=v
 if(style>6.5){
  if(d>1.0)discard;
  if(vFrame<-.5){color=vec3(.006,.008,.009);alpha*=.88*(1.0-smoothstep(.75,1.0,d));}
- else{float edge=1.0-smoothstep(.74,.91,d),core=1.0-smoothstep(.20,.36,d);color=mix(vec3(.008,.006,.009),vec3(1.8,.16,.035),edge);color=mix(color,vec3(.055,.008,.006),core);alpha*=1.0-smoothstep(.92,1.0,d);}
+ else{float edge=1.0-smoothstep(.74,.91,d),core=1.0-smoothstep(.20,.36,d);color=mix(vec3(.008,.006,.009),vec3(1.65,.018,.044),edge);color=mix(color,vec3(.055,.008,.006),core);alpha*=1.0-smoothstep(.92,1.0,d);}
 }
 else if(style>5.5){
- // One fragment evaluates the union. Fill/edges use max, never stacked alpha.
- float unionInset=-10000.,allRim=0.,allKey=0.,sweep=0.,fill=0.;
- float soonest=10000.,soonInset=0.,emphasisRim=0.,emphasisKey=0.;int overlaps=0;bool crowded=false;
+ // The union takes maximum coverage. Only the earliest strike in each
+ // connected group contributes a leading edge.
+ float fill=0.,sweep=0.;
  for(int i=0;i<57;i++){
   if(i>=warningCount)break;
   vec4 o=warningOrigin[i],sz=warningSize[i],tm=warningTime[i];
   vec2 delta=warningWorld-o.xy,q=vec2(dot(delta,o.zw),dot(delta,vec2(-o.w,o.z)));
-  float radius=sz.x,inset=radius-length(q),phase=length(q)/max(radius,.001);
-  if(sz.w>.5&&sz.w<1.5){inset=radius-length(vec2(q.x-clamp(q.x,0.,sz.y),q.y));phase=(q.x+radius)/max(sz.y+2.*radius,.001);}
-  if(sz.w>1.5){float angle=abs(atan(q.y,q.x));if(angle>sz.z)continue;inset=min(inset,(sz.z-angle)*length(q));}
-  if(inset<0.)continue;
-  overlaps++;unionInset=max(unionInset,inset);
-  float aa=max(fwidth(inset),.003);
-  float key=1.-smoothstep(.040+aa,.065+aa,inset);
-  float rim=smoothstep(.003,.010,inset)*(1.-smoothstep(.022+aa,.034+aa,inset));
-  allKey=max(allKey,key);allRim=max(allRim,rim);crowded=crowded||tm.w>.5;
-  if(tm.w>1.5){emphasisRim=max(emphasisRim,rim);emphasisKey=max(emphasisKey,key);}
-  float finalBeat=(1.-smoothstep(0.,.100,tm.y))*flashScale;
-  float sweepDistance=abs(phase-tm.x)*(sz.w>.5&&sz.w<1.5?sz.y+2.*radius:radius);
-  float movingLine=1.-smoothstep(.012,.025+max(fwidth(sweepDistance),.003),sweepDistance);
-  sweep=max(sweep,movingLine*(.22+finalBeat*.35));
-  float hatch=step(.72,fract((warningWorld.x+warningWorld.y)*18.));
-  float interior=mix(.035,.075,tm.z)+finalBeat*mix(.045,.065,tm.z);
-  interior=max(interior,hatch*finalBeat*mix(.09,.18,tm.z));
-  fill=max(fill,interior);
-  if(tm.y<soonest){soonest=tm.y;soonInset=inset;}
+  float radius=sz.x, span=radius;
+  bool lane=sz.w>.5&&sz.w<1.5;
+  vec2 relative=lane?vec2(q.x-clamp(q.x,0.,sz.y),q.y):q;
+  float distanceFromOrigin=length(relative);
+  if(distanceFromOrigin>radius)continue;
+  if(sz.w>1.5&&abs(atan(q.y,q.x))>sz.z)continue;
+  float urgency=1.-smoothstep(.055,.30,tm.y);
+  fill=max(fill,mix(.025,mix(.24,.30,tm.z),urgency));
+  if(tm.w>1.5){
+   if(lane)span=sz.y+2.*radius;
+   float distanceToEdge=abs((lane?q.x+radius:distanceFromOrigin)-tm.x*span);
+   float leadingEdge=1.-smoothstep(.022,.058,distanceToEdge);
+   sweep=max(sweep,leadingEdge*urgency);
+  }
  }
- if(overlaps==0)discard;
- float aa=max(fwidth(unionInset),.003);
- float unionKey=1.-smoothstep(.040+aa,.065+aa,unionInset);
- float unionRim=smoothstep(.003,.010,unionInset)*(1.-smoothstep(.022+aa,.034+aa,unionInset));
- float soonRim=1.-smoothstep(.020+aa,.035+aa,soonInset);
- if(crowded||overlaps>3){allKey=max(unionKey,emphasisKey);allRim=max(unionRim,emphasisRim*.9);fill=0.;sweep=0.;soonRim=emphasisRim;}
- float finalBeat=(1.-smoothstep(0.,.100,soonest))*flashScale;
- alpha=max(allKey*.8,max(allRim*.96,max(sweep,fill*warningFillScale)));
- color=mix(vec3(.006,.004,.003),vec3(1.1,.25,.055),max(allRim,sweep));
- color=mix(color,vec3(1.35,.55,.16),soonRim*finalBeat*.7);
- if(allKey<.01&&allRim<.01&&sweep<.01)color=vec3(.95,.19,.045);
+ alpha=max(fill*warningFillScale,sweep*(.48+.36*flashScale));
+ if(alpha<.005)discard;
+ color=mix(vec3(.89,.002,.014),vec3(1.65,.018,.044),sweep);
+
 }
 else if(style>4.5){
  float grain=fract(sin(dot(floor(p*80.0),vec2(12.9898,78.233)))*43758.5453);
@@ -170,7 +158,7 @@ export class AttackEffects {
  private readonly warningOrigins=Array.from({length:57},()=>new T.Vector4());
  private readonly warningSizes=Array.from({length:57},()=>new T.Vector4());
  private readonly warningTimes=Array.from({length:57},()=>new T.Vector4());
- private readonly warningParents=new Int16Array(57);private readonly warningGroupCounts=new Int16Array(57);private readonly warningSoonest=new Int16Array(57);
+ private readonly warningParents=new Int16Array(57);private readonly warningSoonest=new Int16Array(57);
  private readonly unionCount={value:0};private readonly unionFillScale={value:1};
  private warningMinX=0;private warningMinZ=0;private warningMaxX=0;private warningMaxZ=0;private warningCoverage=0;
 
@@ -226,13 +214,14 @@ export class AttackEffects {
   // coverage to 2.5% of the viewport. Edges are deliberately outside this budget.
   if(this.priorityCamera){let l=1,r=-1,t=1,b=-1;for(let k=0;k<4;k++){const p=this.priorityPoint.set(k&1?maxX:minX,.04,k&2?maxZ:minZ).project(this.priorityCamera);l=Math.min(l,p.x);r=Math.max(r,p.x);t=Math.min(t,p.y);b=Math.max(b,p.y);}
    const area=Math.max(0,Math.min(1,r)-Math.max(-1,l))*Math.max(0,Math.min(1,b)-Math.max(-1,t))*.25;
-   this.warningCoverage+=area*(heavy?.18:.09);
+   const urgency=1-T.MathUtils.smoothstep(Math.max(0,remaining)/1000,.055,.30);
+   this.warningCoverage+=area*T.MathUtils.lerp(.025,heavy?.30:.24,urgency);
   }
  }
  private warningRoot(i:number):number{while(this.warningParents[i]!==i)i=this.warningParents[i];return i;}
  private groupWarnings(){
   const n=this.unionCount.value;
-  for(let i=0;i<n;i++){this.warningParents[i]=i;this.warningGroupCounts[i]=1;this.warningSoonest[i]=i;}
+  for(let i=0;i<n;i++){this.warningParents[i]=i;this.warningSoonest[i]=i;}
   for(let i=0;i<n;i++)for(let j=0;j<i;j++){
    const a=this.warningOrigins[i],b=this.warningOrigins[j],sa=this.warningSizes[i],sb=this.warningSizes[j];
    const la=sa.w>.5&&sa.w<1.5?sa.y:0,lb=sb.w>.5&&sb.w<1.5?sb.y:0;
@@ -241,10 +230,10 @@ export class AttackEffects {
    // endpoints differ. This changes hierarchy only, never a shape's clip.
    if(Math.max(a.x,ax)+sa.x<Math.min(b.x,bx)-sb.x||Math.max(b.x,bx)+sb.x<Math.min(a.x,ax)-sa.x||Math.max(a.y,az)+sa.x<Math.min(b.y,bz)-sb.x||Math.max(b.y,bz)+sb.x<Math.min(a.y,az)-sa.x)continue;
    const ra=this.warningRoot(i),rb=this.warningRoot(j);if(ra===rb)continue;
-   this.warningParents[rb]=ra;this.warningGroupCounts[ra]+=this.warningGroupCounts[rb];
+   this.warningParents[rb]=ra;
    if(this.warningTimes[this.warningSoonest[rb]].y<this.warningTimes[this.warningSoonest[ra]].y)this.warningSoonest[ra]=this.warningSoonest[rb];
   }
-  for(let i=0;i<n;i++){const root=this.warningRoot(i);this.warningTimes[i].w=this.warningGroupCounts[root]>3?(this.warningSoonest[root]===i?2:1):0;}
+  for(let i=0;i<n;i++){const root=this.warningRoot(i);this.warningTimes[i].w=this.warningSoonest[root]===i?2:0;}
  }
  /** Synchronize attack presentation to native shape and remaining wind-up; never drives a hit. */
  syncEnemyWarnings(enemies:DepthGame['enemies']['snapshot']['enemies'],geometry:DepthGame['geometry']):void {
@@ -255,7 +244,7 @@ export class AttackEffects {
    warning.heavy=!!enemy&&(enemy.type==='brute'||!!enemy.champion);
    if(warning.melee){
     if(!enemy||enemy.health<=0||(enemy.meleePhase!=='windup'&&enemy.meleePhase!=='strike')){warning.active=false;continue;}
-    const w=warning.shape,m=enemy.meleeShape;w.shape=m.kind==='line'?'line':'cone';w.x=enemy.meleeOriginX/32;w.z=enemy.meleeOriginY/32;w.angle=enemy.meleeAngle;w.radius=m.range/32;w.length=m.range/32;w.width=m.width/32;w.arc=m.halfAngle*2;w.progress=enemy.meleeProgress;warning.striking=enemy.meleePhase==='strike';warning.remainingMs=enemy.meleeRemainingMs;warning.weight=meleeWarningWeight(enemy.type,enemy.elite);continue;
+    const w=warning.shape,m=enemy.meleeShape;w.shape=m.kind==='line'?'line':'cone';w.x=enemy.meleeOriginX/32;w.z=enemy.meleeOriginY/32;w.angle=enemy.meleeAngle;w.radius=m.range/32;w.length=m.range/32;w.width=m.width/32;w.arc=m.halfAngle*2;warning.striking=enemy.meleePhase==='strike';w.progress=warning.striking?1:enemy.meleeProgress;warning.remainingMs=enemy.meleeRemainingMs;warning.weight=meleeWarningWeight(enemy.type,enemy.elite);continue;
    }
    if(!enemy||enemy.health<=0||enemy.windupMs<=0||!enemy.pendingAttack){warning.active=false;continue;}
    const shape=warning.shape,charge=enemy.pendingAttack==='charge';
@@ -377,8 +366,8 @@ export class AttackEffects {
    }
    p.y=.035;const life=(e.durationMs??650)/1000;
    // A warning always shows its complete hit radius, never an expanding approximation.
-   this.pulse(p,0xff5a36,(e.radius??38)/32,life,0,false,true);
-   if(e.targetX!==undefined&&e.targetY!==undefined){const target=new T.Vector3(e.targetX/32,.04,e.targetY/32);this.pulse(target,0xff5a36,.8,life,0,false,true);const direction=target.clone().sub(p);for(let i=0;i<12;i++)this.particle(this.glow,EFFECT_LIMITS.glow,p.clone().addScaledVector(direction,i/12),0xd98d54,.07,life);}
+   this.pulse(p,0xff2340,(e.radius??38)/32,life,0,false,true);
+   if(e.targetX!==undefined&&e.targetY!==undefined){const target=new T.Vector3(e.targetX/32,.04,e.targetY/32);this.pulse(target,0xff2340,.8,life,0,false,true);const direction=target.clone().sub(p);for(let i=0;i<12;i++)this.particle(this.glow,EFFECT_LIMITS.glow,p.clone().addScaledVector(direction,i/12),0xff2340,.07,life);}
    return;
   }
   if(e.type==='boon'){
@@ -642,12 +631,12 @@ export class AttackEffects {
     this.forward.copy(p).sub(old);const distance=this.forward.length();
     if(distance>.002){
      const width=hazard?.065:id==='plasma'?.065:id==='rocket'?.032:id==='shotgun'?.019:id==='rifle'?.016:.021;
-     this.dummy.position.copy(p).add(old).multiplyScalar(.5);this.dummy.quaternion.setFromUnitVectors(UP,this.forward.normalize());this.dummy.scale.set(width,distance,width);this.dummy.updateMatrix();this.beamMesh.setMatrixAt(beam,this.dummy.matrix);this.beamMesh.setColorAt(beam,this.beamColor.setHex(hazard?0xff5a36:WEAPON_APPEARANCE[id].color).multiplyScalar(id==='plasma'?3.5:2.4));alpha.setX(beam,.85);beam++;
+     this.dummy.position.copy(p).add(old).multiplyScalar(.5);this.dummy.quaternion.setFromUnitVectors(UP,this.forward.normalize());this.dummy.scale.set(width,distance,width);this.dummy.updateMatrix();this.beamMesh.setMatrixAt(beam,this.dummy.matrix);this.beamMesh.setColorAt(beam,this.beamColor.setHex(hazard?0xff2340:WEAPON_APPEARANCE[id].color).multiplyScalar(id==='plasma'?3.5:2.4));alpha.setX(beam,.85);beam++;
     }
    }
    if(old===this.bulletPrevious)this.previous.set(b,p.clone());else old.copy(p);
    if(trail&&(id==='plasma'||id==='rocket'||hazard)&&!grenade){
-    this.particle(this.glow,EFFECT_LIMITS.glow,p,hazard?0xff5a36:WEAPON_APPEARANCE[id].color,hazard?.2:id==='rocket'?.22:.19,.16);
+    this.particle(this.glow,EFFECT_LIMITS.glow,p,hazard?0xff2340:WEAPON_APPEARANCE[id].color,hazard?.2:id==='rocket'?.22:.19,.16);
     if(id==='rocket')this.particle(this.smoke,EFFECT_LIMITS.smoke,p,0x77817d,.25,.6,this.forward.set(0,.2,0));
    }
   }

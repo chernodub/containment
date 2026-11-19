@@ -6,10 +6,10 @@ import { UNIT, type AbilityFrame, type AbilityPresentation } from '../types';
 import { authoredVariation, impactBeat } from '../GraphicLanguage';
 import { FxMode, type FxSlot } from '../FlagshipFx';
 
-const FIRE = 0xff7a2e;
+const FIRE = 0xffa332;
 const CORE = 0xffedb5;
 const SOOT = 0x101619;
-const HOT = 0xff982f;
+const HOT = 0xffbf51;
 const FAN = ABILITY_CATALOG.flashfire.shape;
 const FAN_RANGE = FAN.kind === 'cone' ? FAN.range / UNIT : 0;
 const FAN_ARC = FAN.kind === 'cone' ? FAN.arcRadians : 0;

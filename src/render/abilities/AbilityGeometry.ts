@@ -11,7 +11,7 @@ import type { GraphicsTier } from '../FrameBudget';
 const UNIT = 32;
 /** Interim budgets mirror A1's bounded inventory, with independent event slots. */
 export const ABILITY_GEOMETRY_LIMITS = Object.freeze({ zones: 24, deployables: 8, links: 8, events: 32 });
-const COLORS: Record<AbilityElement, number> = { kinetic: 0xffb454, cryo: 0x7fd6ff, pyro: 0xff7a2e, arc: 0xb79cff };
+const COLORS: Record<AbilityElement, number> = { kinetic: 0xffd063, cryo: 0x7fd6ff, pyro: 0xff7a2e, arc: 0xb79cff };
 type ZoneSlot = {
     body: T.Mesh;
     start: T.Mesh;

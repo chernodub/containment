@@ -29,7 +29,6 @@ import { HudToasts } from './Toasts';
 import { Radar } from './Radar';
 import type { HudEffect } from './effects';
 import { ContextualOnboarding } from '../onboarding';
-import {FirstStrikeHighlight} from './FirstStrikeHighlight';
 import { AbilityHints } from './AbilityHints';
 export type HudPreferences = Readonly<{
     combatText?: boolean;
@@ -51,7 +50,7 @@ function setHudAttribute(node:Element,name:string,value:string):void {
 function setHudProperty(style:CSSStyleDeclaration,name:string,value:string):void {
     if(style.getPropertyValue(name)!==value)style.setProperty(name,value);
 }
-const abilityColors: Record<string, string> = { kinetic: '#ffb454', cryo: '#7fd6ff', pyro: '#ff7a2e', arc: '#b79cff', recovery: '#d7ffdb', acid: '#9dff5a' };
+const abilityColors: Record<string, string> = { kinetic: '#ffd063', cryo: '#7fd6ff', pyro: '#ff7a2e', arc: '#b79cff', recovery: '#d7ffdb', acid: '#9dff5a' };
 /** Cached DOM snapshots; events and frame ticks feed bounded presentation pools. */
 export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud: () => void, preferences: () => HudPreferences = () => ({ combatText: true, radar: false }), storage: Pick<Storage,'getItem'|'setItem'> | null = null): HudController {
     const ids = ['hud', 'story-hud', 'story-status', 'room-objective', 'story-presentation', 'story-line', 'health', 'armor', 'hp-bar', 'hp-lag', 'armor-bar', 'armor-lag', 'weapon-name', 'current-weapon-icon', 'magazine', 'reserve', 'reload-label', 'reload-bar', 'depth-label', 'room-name', 'boss-hud', 'boss-phase', 'boss-bar', 'build-strip', 'credits', 'medkit-count', 'grenade-count', 'encounter-count', 'vital-state', 'ability-bar'] as const;
@@ -145,7 +144,6 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
     nodes['story-hud'].append(skipDrill);
     const masteryHints = new MasteryHints(nodes.hud, storage);
     const onboarding = new ContextualOnboarding(el('action-bar'), storage);
-    const firstStrike = new FirstStrikeHighlight(game,renderer);
     const abilityHints = new AbilityHints(slots);
     const encounterTrack = document.createElement('div');
     encounterTrack.className = 'encounter-progress'; encounterTrack.hidden = true;
@@ -499,7 +497,6 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         combatText.effect({...event, damageElement: getCombatDamageElement(game, event)});
         threats.effect(event, game.player);
         encounterCues.effect(event, game.encounter.beat ?? -1);
-        firstStrike.effect(event,onboarding.teachingStrike);
         onboarding.effect(event);
         if (event.lethal && (event.type === 'hit' || event.type === 'acid' || event.contact)) {
             const id = event.targetId ?? event.id;
@@ -569,7 +566,6 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
                 entry.node.dataset.flash = 'false';
         }
         if (game.status !== 'playing') {
-            firstStrike.tick(elapsed,false);
             denial.hidden=true;denialLife=0;deniedPlacementLife=0;inspectObjective=false;powerAim=false;setPlacementPreview(renderer,null);
             combatText.clear();
             threats.clear();
@@ -595,7 +591,6 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         protect();
         masteryHints.tick(renderer, game.status==='playing' ? mastery : null, preferences().masteryHints !== false, elapsed);
         onboarding.tick(elapsed, bounds, onboardingObstacles);
-        firstStrike.tick(elapsed,onboarding.teachingStrike);
         abilityHints.tick(bounds, true);
         combatText.tick(elapsed, bounds);
         threats.tick(elapsed);
@@ -615,7 +610,7 @@ export function createHud(game: DepthGame, renderer: DepthRenderer, positionHud:
         radar.dispose();
         panelResize?.disconnect();
         clearHudOcclusion(); setHudInsets(renderer, getHudInsets());
-        masteryHints.dispose(); skipDrill.remove(); firstStrike.dispose(); onboarding.dispose(); abilityHints.dispose(); encounterTrack.remove(); activeDial.remove(); dashActiveDial.remove();
+        masteryHints.dispose(); skipDrill.remove(); onboarding.dispose(); abilityHints.dispose(); encounterTrack.remove(); activeDial.remove(); dashActiveDial.remove();
     };
     return hud;
 }

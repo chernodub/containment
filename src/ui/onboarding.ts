@@ -104,7 +104,6 @@ export class ContextualOnboarding {
     host.append(this.node);
   }
 
-  get teachingStrike(): boolean { return this.enabled && !this.seen.dash; }
 
   /** Persist once, and only after the action really occurred. */
   mark(action: OnboardingAction, observedDrill = false): void {

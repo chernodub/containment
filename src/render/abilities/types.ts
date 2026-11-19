@@ -4,7 +4,7 @@ import type { AbilitiesSnapshot, AbilityEvent, AbilityElement } from '../../game
 import type { ElementKit } from './ElementKit';
 export const UNIT = 32;
 export const ELEMENT_COLORS: Readonly<Record<AbilityElement, number>> = Object.freeze({
-    kinetic: 0xffb454, cryo: 0x7fd6ff, pyro: 0xff7a2e, arc: 0xb79cff,
+    kinetic: 0xffd063, cryo: 0x7fd6ff, pyro: 0xff7a2e, arc: 0xb79cff,
 });
 /** Read-only presentation inputs; no component calls simulation actions. */
 export interface AbilityFrame {

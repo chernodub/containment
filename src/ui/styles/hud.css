@@ -36,7 +36,7 @@
 #hud #status-hud .room-label b{font:600 23px/1.05 var(--font-display,'Arial Narrow',sans-serif);margin-top:5px;display:block;max-width:none;overflow-wrap:normal;color:#e8fbff}
 #hud .icon-button{display:grid;place-items:center;width:36px;height:36px;min-height:36px;flex-shrink:0;background:#172b35;border:1px solid #9fe8ff44;border-radius:3px;color:#c8f2ff;padding:6px}
 #hud #run-stock{position:static;width:auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;margin-top:13px;padding-top:10px;border-top:1px solid #9fe8ff26;font-size:12px;line-height:1.4;color:#b7cbd5}
-#hud #credits{color:var(--gold,#ffd27a)}
+#hud #credits{color:var(--neutral-accent)}
 #hud #encounter-count:empty{display:none}
 #hud #status-hud #story-hud{position:static;width:100%;max-width:none;max-height:none;overflow:visible;padding:12px 0 0;margin:10px 0 0;border:0;border-top:1px solid #9fe8ff26;background:none;pointer-events:none;font-size:12px;line-height:1.5;text-shadow:none}
 #hud #story-hud p{margin:0}
@@ -124,8 +124,8 @@
 #combat-text,#threat-indicators,#damage-directions{position:fixed;inset:0;pointer-events:none;overflow:hidden}
 .combat-float{position:absolute;color:#e8fbff;text-shadow:0 1px 2px #000,0 0 5px #000;font:600 23px var(--font-display,sans-serif);white-space:nowrap;will-change:transform;line-height:1;padding:2px 5px;background:#081014c9;border-radius:2px;border-left:2px solid currentColor;pointer-events:none}
 .combat-float[data-kind=status]{font:600 11px var(--font-body,sans-serif);letter-spacing:.08em}.combat-float[data-lethal=true]{color:#ffd27a;font-size:28px}.combat-float[data-element=fire]{color:#ffb580}.combat-float[data-element=ice],.combat-float[data-element=freeze]{color:#9fdfff}.combat-float[data-element=poison]{color:#b6ff84}.combat-float[data-element=shock]{color:#d4c5ff}
-.threat-marker{position:absolute;display:flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid #ff5a3666;background:#081014f2;color:#ffb4a4;border-radius:2px;font-size:10px;white-space:nowrap;line-height:1.25;pointer-events:none}
-.threat-marker .threat-arrow{display:block;width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-right:7px solid currentColor;transform:rotate(var(--angle));margin-right:3px}.threat-label{display:block;max-width:100px}.threat-distance{font-size:10px;color:#e8fbff}.threat-marker[data-elite=true]{border-color:#ffd27a99}.threat-marker[data-attacking=true]{color:#ff5a36;border-color:#ff5a36;background:#211314}
+.threat-marker{position:absolute;display:flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid #ff234066;background:#081014f2;color:#ffb4a4;border-radius:2px;font-size:10px;white-space:nowrap;line-height:1.25;pointer-events:none}
+.threat-marker .threat-arrow{display:block;width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-right:7px solid currentColor;transform:rotate(var(--angle));margin-right:3px}.threat-label{display:block;max-width:100px}.threat-distance{font-size:10px;color:#e8fbff}.threat-marker[data-elite=true]{border-color:#ffd27a99}.threat-marker[data-attacking=true]{color:var(--hostile-warning);border-color:var(--hostile-warning);background:#211314}
 .damage-direction{position:fixed;left:50%;top:50%;width:94px;height:94px;margin:-47px;border-top:3px solid #ff5a36;border-radius:50%;transform:rotate(var(--angle)) translateY(-100px);box-shadow:0 -2px 8px #ff5a3655;pointer-events:none}
 #hud #hud-toasts{position:fixed;left:24px;bottom:24px;width:270px;display:flex;flex-direction:column;gap:7px;pointer-events:none}
 .hud-toast{display:flex;align-items:center;gap:10px;border:1px solid #9fe8ff44;border-left:2px solid #9fe8ff;background:#081014f2;padding:10px 12px;font-size:12px;line-height:1.4;color:#e8fbff;box-shadow:0 8px 20px #0003}
@@ -226,7 +226,7 @@ body[data-state=playing] #world{cursor:none}
 .threat-marker[data-kind=boss] .threat-type{fill:#671e14;stroke:#ffe4dc;stroke-width:2}
 .threat-marker[data-kind=champion] .threat-chevron,.threat-marker[data-kind=boss] .threat-chevron{stroke-width:3.5}
 .threat-marker .threat-count{position:absolute;right:-3px;bottom:-2px;min-width:17px;height:17px;padding:2px 3px;border:1px solid #ff917055;border-radius:50%;background:#100c0af2;color:#fff5ee;text-align:center;font:600 11px/1 var(--font-body,Arial,sans-serif);box-shadow:0 1px 3px #0008}
-.threat-marker[data-attacking=true]{color:#ff5a36;background:none;border:0;animation:threat-pressure .65s ease-in-out infinite;opacity:1}
+.threat-marker[data-attacking=true]{color:var(--hostile-warning);background:none;border:0;animation:threat-pressure .65s ease-in-out infinite;opacity:1}
 .threat-marker[data-attacking=true] .threat-type{stroke:#fff0e8}
 @keyframes threat-pressure{0%,100%{filter:brightness(1);opacity:.85}50%{filter:brightness(1.5);opacity:1}}
 /* A ready rig emits its element. The cooldown arc removes the perimeter while
@@ -338,10 +338,10 @@ body[data-state=playing] #world{cursor:none}
 .threat-marker .threat-type {left:6px;top:9px;width:24px;height:24px;fill:#071017;stroke:#ffdccb;}
 .threat-marker[data-kind=standard] .threat-type {left:10px;top:13px;width:16px;height:16px;fill:#ffdccb;}
 .threat-marker .threat-count {right:-4px;bottom:-3px;min-width:23px;height:23px;border:2px solid #071017;padding:2px 4px;border-radius:3px;background:#3e211b;color:#fff7f1;font-size:15px;font-weight:700;box-shadow:0 0 0 1px #ffb49f;}
-.threat-marker[data-attacking=true] {animation:none;color:#fff2e8;filter:none;opacity:1;}
-.threat-marker[data-attacking=true] .threat-chevron {fill:#ff5a36;stroke:#fff2e8;stroke-width:2.4;filter:drop-shadow(0 0 3px #ff5a3677);}
+.threat-marker[data-attacking=true] {animation:none;color:#fff1f3;filter:none;opacity:1;}
+.threat-marker[data-attacking=true] .threat-chevron {fill:var(--hostile-warning);stroke:#fff1f3;stroke-width:2.4;filter:drop-shadow(0 0 3px #ff234077);}
 .threat-marker[data-attacking=true] .threat-chevron-backing {stroke:#071017;stroke-width:7;fill:#071017;}
-.threat-marker[data-attacking=true]::after {content:'!';position:absolute;left:12px;top:-9px;background:#ff5a36;color:#fff;font:700 11px/15px var(--font-body);width:15px;height:15px;text-align:center;border:1px solid #071017;border-radius:2px;}
+.threat-marker[data-attacking=true]::after {content:'!';position:absolute;left:12px;top:-9px;background:var(--hostile-warning);color:#fff;font:700 11px/15px var(--font-body);width:15px;height:15px;text-align:center;border:1px solid #071017;border-radius:2px;}
 @media(max-width:1000px), (max-height:650px){
  #hud .weapon-bank {width:146px;}#hud #weapon-picker {gap:3px;}#hud #weapon-picker button {width:26px;}#hud #weapon-picker button.selected {width:30px;}
  #hud #action-bar {gap:10px;padding:9px 10px;}#hud #ability-bar {gap:10px;padding-left:10px;}
@@ -428,7 +428,7 @@ body[data-state=playing] #world{cursor:none}
 #hud [data-obscures-threat=true] .ability-icon {background:#071118;border-radius:3px;}
 #hud [data-obscures-threat=true] .dash-pips {background:#071118;box-shadow:0 0 0 2px #071118;}
 @media(prefers-reduced-motion:reduce) {#hud :is(.vitals,#status-hud,#action-bar,#radar-hud) {transition:none;}}
-#hud .hud-panel-threat {position:fixed;z-index:12;width:22px;height:12px;margin:-6px -11px;background:#ff5a36;clip-path:polygon(0 35%,65% 35%,65% 0,100% 50%,65% 100%,65% 65%,0 65%);transform:rotate(var(--hud-threat-angle));filter:drop-shadow(0 0 2px #000);pointer-events:none;}
+#hud .hud-panel-threat {position:fixed;z-index:12;width:22px;height:12px;margin:-6px -11px;background:var(--hostile-warning);clip-path:polygon(0 35%,65% 35%,65% 0,100% 50%,65% 100%,65% 65%,0 65%);transform:rotate(var(--hud-threat-angle));filter:drop-shadow(0 0 2px #000);pointer-events:none;}
 #hud .hud-panel-threat[hidden] {display:none;}
 @media(max-height:800px) {
  #hud #action-bar {height:78px;padding:5px 10px;}
@@ -467,5 +467,5 @@ body[data-state=playing] #world{cursor:none}
 
 /* CAM12: imminent offscreen attacks retain a danger pulse; quiet bearings recede. */
 .threat-marker {transition:opacity .2s ease;}
-.threat-marker[data-attacking=true] {animation:threat-pressure .65s ease-in-out infinite;color:#ff5a36;}
+.threat-marker[data-attacking=true] {animation:threat-pressure .65s ease-in-out infinite;color:var(--hostile-warning);}
 @media(prefers-reduced-motion:reduce){.threat-marker[data-attacking=true]{animation:none;}}

@@ -5,13 +5,13 @@ export function healthFraction(health:number,maxHealth:number){return Number.isF
 /** Critical health stays readable; armor and active statuses tint healthier bars. */
 export function healthBarColor(entry:HealthBarEntry,fraction=healthFraction(entry.health,entry.maxHealth)){
  if(fraction<=.25)return 0xff8b72;
- if((entry.armor??0)>0)return entry.elite?0xffcc86:0xd7e0df;
+ if((entry.armor??0)>0)return entry.elite?0xdbe8f1:0xd7e0df;
  if(entry.status?.frozen)return 0xb6e4ef;
  if(entry.status?.shocked)return 0xb5a4d7;
  if(entry.status?.burning)return 0xd7a374;
  if(entry.status?.poisoned)return 0xa3bf7d;
  if(entry.status?.chilled)return 0x8ec9d5;
- if(entry.elite)return 0xffcc86;
+ if(entry.elite)return 0xdbe8f1;
  return fraction<=.5?0xffa183:0xe8f0ed;
 }
 /** Two shared draw calls for damaged enemies and elites, at a constant pixel size. */

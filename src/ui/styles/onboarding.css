@@ -20,5 +20,3 @@
 @media (prefers-reduced-motion: reduce) { #hud .contextual-onboarding { animation: none; transition: none; } }
 
 #hud .contextual-onboarding{width:max-content;max-width:calc(100vw - 32px);padding:10px 14px}#hud .contextual-onboarding b{display:inline;font-size:16px;margin:0}#hud .contextual-onboarding kbd{float:none;margin:0 10px 0 0}#hud .contextual-onboarding>span:empty{display:none}
-
-#hud .first-strike-highlight{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}#hud .first-strike-highlight path{fill:none;stroke:#ffe8c4;stroke-width:3;stroke-linejoin:round;opacity:.9;vector-effect:non-scaling-stroke}

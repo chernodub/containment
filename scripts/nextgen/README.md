@@ -1229,3 +1229,13 @@ then exercise the practice Brute’s actual warning, missed strike and recovery 
 and resistance paths. `onb14-pod-{sealed,swelling,opening}` advances the native
 hatch clock. `onb14-death-{crawler,stalker,spitter}` supplies typed damage to the
 native debrief. See `docs/nextgen/ONB14-REPORT.md` for interpretation.
+
+## VALUE14 danger and creature value review
+
+The opt-in `value14-crowd-<room>` and `value14-<family>-{calm,attack}-<room>`
+cases replay the existing native melee staging in Relay Racks, Swarm Junction
+and Crew Checkpoint. Use the exact scenario IDs with `--scenarios` and keep seed,
+viewport and burst settings identical across distributions. The crowd requests
+twenty contacts and reports live counts. The `value14-overlap-<rig>` cases use
+native tactical input during the mixed crowd. Use `g4-danger-napalm-charge` for
+the separate sustained Napalm case and its `-low` counterpart for Low.
