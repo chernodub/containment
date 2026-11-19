@@ -11,6 +11,24 @@ const countdown = (remaining: number, ms: number): number => remaining - ms <= T
 
 /** Coordinates in deterministic world units. */
 export type AbilityPoint = Readonly<{ x: number; y: number }>;
+export function deployableContact(d: DeployableSnapshot, from: AbilityPoint, to: AbilityPoint, radius: number): number | null {
+  if (d.kind === 'pylon') return sweptCircle(from, to, d, d.radius + radius);
+  // Exact swept circle against an oriented wall: flat faces plus four rounded corners.
+  const c = Math.cos(d.angle), s = Math.sin(d.angle);
+  const a = { x: (from.x - d.x) * c + (from.y - d.y) * s, y: -(from.x - d.x) * s + (from.y - d.y) * c };
+  const b = { x: (to.x - d.x) * c + (to.y - d.y) * s, y: -(to.x - d.x) * s + (to.y - d.y) * c };
+  const hx = d.thickness / 2, hy = d.length / 2;
+  if (Math.hypot(Math.max(0, Math.abs(a.x) - hx), Math.max(0, Math.abs(a.y) - hy)) <= radius) return 0;
+  let first = Infinity;
+  const dx = b.x - a.x, dy = b.y - a.y;
+  for (const side of [-1, 1]) {
+    if (dx) { const t = (side * (hx + radius) - a.x) / dx; if (t >= 0 && t <= 1 && Math.abs(a.y + dy * t) <= hy) first = Math.min(first, t); }
+    if (dy) { const t = (side * (hy + radius) - a.y) / dy; if (t >= 0 && t <= 1 && Math.abs(a.x + dx * t) <= hx) first = Math.min(first, t); }
+    for (const vertical of [-1, 1]) { const t = sweptCircle(a, b, { x: side * hx, y: vertical * hy }, radius); if (t !== null) first = Math.min(first, t); }
+  }
+  return first === Infinity ? null : first;
+}
+
 /** Simulation adapters: world collision and all damage/status reactions remain authoritative in the host. */
 export interface AbilityHost {
   enabled?: () => boolean;
@@ -536,24 +554,7 @@ export class AbilitySystem {
     for (const id of this.previousTargets.keys()) if (!this.currentTargetIds.has(id)) this.previousTargets.delete(id);
     const p = this.host.player(); this.previousMarine.x = p.x; this.previousMarine.y = p.y; this.hasPreviousMarine = true;
   }
-  private contact(d: Deployable, from: AbilityPoint, to: AbilityPoint, radius: number): number | null {
-    if (d.kind === 'pylon') return sweptCircle(from, to, d, d.radius + radius);
-    // Exact swept circle against an oriented wall: flat faces plus four rounded corners.
-    const c = Math.cos(d.angle), s = Math.sin(d.angle);
-    const a = { x: (from.x - d.x) * c + (from.y - d.y) * s, y: -(from.x - d.x) * s + (from.y - d.y) * c };
-    const b = { x: (to.x - d.x) * c + (to.y - d.y) * s, y: -(to.x - d.x) * s + (to.y - d.y) * c };
-    const hx = d.thickness / 2, hy = d.length / 2;
-    if (Math.hypot(Math.max(0, Math.abs(a.x) - hx), Math.max(0, Math.abs(a.y) - hy)) <= radius) return 0;
-    let first = Infinity;
-    const dx = b.x - a.x, dy = b.y - a.y;
-    for (const side of [-1, 1]) {
-      if (dx) { const t = (side * (hx + radius) - a.x) / dx; if (t >= 0 && t <= 1 && Math.abs(a.y + dy * t) <= hy) first = Math.min(first, t); }
-      if (dy) { const t = (side * (hy + radius) - a.y) / dy; if (t >= 0 && t <= 1 && Math.abs(a.x + dx * t) <= hx) first = Math.min(first, t); }
-      for (const vertical of [-1, 1]) { const t = sweptCircle(a, b, { x: side * hx, y: vertical * hy }, radius); if (t !== null) first = Math.min(first, t); }
-    }
-    return first === Infinity ? null : first;
-  }
-  private touches(d: Deployable, from: AbilityPoint, to: AbilityPoint, radius: number): boolean { return this.contact(d, from, to, radius) !== null; }
+  private touches(d: Deployable, from: AbilityPoint, to: AbilityPoint, radius: number): boolean { return deployableContact(d, from, to, radius) !== null; }
   /** Hostile movement only: the marine and friendly projectiles never collide with rig walls. */
   blocksMovement(from: AbilityPoint, to: AbilityPoint, radius: number): boolean {
     return this.deployables.some(d => d.kind !== 'pylon' && d.health > 0 && this.touches(d, from, to, radius));
@@ -561,7 +562,7 @@ export class AbilitySystem {
   /** Intercept a hostile swept projectile and damage its first blocking wall. */
   interceptProjectile(from: AbilityPoint, to: AbilityPoint, radius: number, damage: number): boolean {
     let wall: Deployable | undefined, first = Infinity;
-    for (const d of this.deployables) { if (d.kind === 'pylon' || d.health <= 0) continue; const entry = this.contact(d, from, to, radius); if (entry !== null && entry < first) { first = entry; wall = d; } }
+    for (const d of this.deployables) { if (d.kind === 'pylon' || d.health <= 0) continue; const entry = deployableContact(d, from, to, radius); if (entry !== null && entry < first) { first = entry; wall = d; } }
     if (!wall) return false;
     wall.health -= Number.isFinite(damage) ? Math.max(0, damage) : 0; this.cached = null;
     if (wall.health <= 0) this.removeDeployable(wall);

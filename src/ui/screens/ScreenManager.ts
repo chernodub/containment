@@ -35,7 +35,7 @@ export type ScreenContext = {
   confirmation: HitConfirmation;
   storage: Storage|null;
   pause: () => void;
-  start: (resume?: boolean) => void;
+  start: (resume?: boolean, retry?: boolean) => void;
   graphicsLost: () => boolean;
   recovering: () => boolean;
   settings?: ScreenSettings;
@@ -71,6 +71,11 @@ export function createScreens(context: ScreenContext) {
   let dismissedRecord = '';
   let lessonSeen = false;
   let selectedRig: RigId = 'breacher';
+  try {
+    const savedRig=storage?.getItem('containment.last-rig.v1');
+    if(RIG_IDS.includes(savedRig as RigId))selectedRig=savedRig as RigId;
+  } catch {}
+  const rememberRig=(rig:RigId)=>{try{storage?.setItem('containment.last-rig.v1',rig);}catch{}};
   let pauseTab: PauseTab = 'resume';
   let legacyQuality: 'high'|'low' = 'high';
   let audioPreferences = loadAudioPreferences(storage);
@@ -165,7 +170,18 @@ export function createScreens(context: ScreenContext) {
     });
     listen('reroll',()=>{if(game.reroll()) {playUiCue(audio,'reroll'); syncScreen(true);} else playUiCue(audio,'denied');});
     listen('claim',()=>{game.claimResources();playUiCue(audio,'purchase'); syncScreen();});
-    listen('equip-rig',()=>{if(chooseRig(game,selectedRig)) {playUiCue(audio,'rig-equip'); syncScreen(true);} else playUiCue(audio,'denied');});
+    listen('retry-rig',()=>{playUiCue(audio,'confirm');start(false,true);});
+    listen('recommended-loadout',()=>{
+      if(!chooseRig(game,'cryo'))return;
+      selectedRig='cryo';
+      rememberRig('cryo');
+      const offers=expeditionRewardOffers(game.expedition);
+      const recommendation=offers.find(offer=>offer.id==='cryogenic')??offers.find(offer=>offer.family==='Recovery')??offers.find(offer=>offer.rarity==='common')??offers[0];
+      if(recommendation)game.chooseMutation(recommendation.id);
+      playUiCue(audio,'rig-equip');
+      syncScreen(true);
+    });
+    listen('equip-rig',()=>{if(chooseRig(game,selectedRig)) {rememberRig(selectedRig);playUiCue(audio,'rig-equip'); syncScreen(true);} else playUiCue(audio,'denied');});
     root.querySelectorAll<HTMLButtonElement>('[data-purchase]').forEach(button=>button.addEventListener('click',()=>{
       const purchased=game.purchaseService(button.dataset.purchase as import('../../game/roguelike/economy').ServiceId);playUiCue(audio,purchased?'purchase':'denied'); syncScreen();
     }));
@@ -292,7 +308,7 @@ export function createScreens(context: ScreenContext) {
     }
     if (dismissedRecord !== `${run.seed}:${game.roomRevision}` && !graphicsBlocked) {
       const record = clearRoomRecord(game);
-      if (record) html = html.replace(/(<section[^>]*>)/, '$1' + record);
+      if (record) html = html.replace(/(<section[^>]*>)/, '$1' + `<details class="clear-record-details"><summary>Room record</summary>${record}</details>`);
     }
     if(game.checkpointWarning&&status!=='paused') html=html.replace(/<\/(main|section)>$/,`<p class="save-note" role="status">${escapeHtml(game.checkpointWarning)}</p></$1>`);
     const active=document.activeElement as HTMLElement|null;
@@ -326,7 +342,7 @@ export function createScreens(context: ScreenContext) {
     if(!root.children.length) return;
     const status=document.body.dataset.state;
     if(event.key==='Tab') {
-      const focusable=[...root.querySelectorAll<HTMLElement>('button:not(:disabled):not([tabindex="-1"]), a[href], input:not(:disabled), select:not(:disabled), summary, [tabindex="0"]')];
+      const focusable=[...root.querySelectorAll<HTMLElement>('button:not(:disabled):not([tabindex="-1"]), a[href], input:not(:disabled), select:not(:disabled), summary, [tabindex="0"]')].filter(node=>node.getClientRects().length>0);
       const first=focusable[0],last=focusable.at(-1);
       if(event.shiftKey&&(document.activeElement===first||!root.contains(document.activeElement))) {event.preventDefault();last?.focus();}
       else if(!event.shiftKey&&(document.activeElement===last||!root.contains(document.activeElement))) {event.preventDefault();first?.focus();}
@@ -363,7 +379,7 @@ export function createScreens(context: ScreenContext) {
         inspectRig(RIG_IDS[(RIG_IDS.indexOf(selectedRig)+delta)%4],true);
       } else if(/^[1-4]$/.test(shortcut)) {
         event.preventDefault(); inspectRig(RIG_IDS[Number(shortcut)-1],true);
-      } else if(event.key==='Enter'&&!target?.closest('#equip-rig')) {
+      } else if(event.key==='Enter'&&(!target?.closest('button,summary')||!!target?.closest('[data-rig]'))) {
         event.preventDefault(); el('equip-rig')?.click();
       }
       return;

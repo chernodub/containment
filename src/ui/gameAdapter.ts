@@ -1,3 +1,4 @@
+import {deployableContact} from '../game/abilities/AbilitySystem';
 import type {DepthGame} from '../DepthGame';
 import type {DepthRenderer} from '../render/DepthRenderer';
 import type {AbilitiesSnapshot, AbilitySlot, RigId} from '../game/abilities/contract';
@@ -83,7 +84,7 @@ export type UiFixture = Readonly<{
   phase?: string;
   abilities?: AbilitiesSnapshot | null;
   stats?: RunStatsSnapshot;
-  preferences?: Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean; hints?: boolean}>;
+  preferences?: Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean; hints?: boolean; masteryHints?: boolean}>;
 }>;
 const fixtures = new WeakMap<DepthGame, UiFixture>();
 const graphics = new WeakMap<DepthRenderer, GraphicsOptions>();
@@ -214,7 +215,7 @@ export function getRunStats(game: DepthGame): RunStatsSnapshot {
 }
 
 /** Presentation fixture overrides stay separate from persisted player preferences. */
-export function getUiPreferences<T extends Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean; hints?: boolean}>>(game: DepthGame, defaults: T): Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean; hints?: boolean}> {
+export function getUiPreferences<T extends Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean; hints?: boolean; masteryHints?: boolean}>>(game: DepthGame, defaults: T): Readonly<{combatText?: boolean; combatTextDensity?: 'full' | 'reduced'; radar?: boolean; hints?: boolean; masteryHints?: boolean}> {
   return fixtures.get(game)?.preferences ?? defaults;
 }
 
@@ -480,4 +481,42 @@ export function getCombatDamageElement(game: DepthGame, event: import('./hud/eff
   const frostbite = mutations.includes('frostbite');
   if (Number(burning) + Number(poisoned) + Number(frostbite) !== 1) return undefined;
   return burning ? 'burn' : poisoned ? 'poison' : 'frost';
+}
+
+export function getRoomDamage(game: DepthGame) {return game.roomDamage;}
+export function getAwakeningDrill(game: DepthGame) {return game.awakeningDrill;}
+
+/** Read-only opportunities sampled from the current combat state. */
+export function getMasteryPreview(game: DepthGame) {
+  const abilities = getAbilities(game);
+  const slots = abilities?.slots;
+  const player = game.player;
+  const targets = game.enemies.snapshot.enemies;
+  const nearby = (point: {x:number;y:number}, range: number) => targets.filter(enemy =>
+    Math.hypot(enemy.x-point.x,enemy.y-point.y)<=range && hasClearExpeditionShot(game.geometry,point,enemy));
+  const walls = abilities?.deployables.filter(entity => entity.kind==='ice-wall') ?? [];
+  const shatter = walls.find(wall => targets.some(enemy =>
+    deployableContact(wall,enemy,enemy,enemy.radius+16)!==null));
+  const ignite = slots?.tactical.id==='flashfire' && slots.tactical.ready ? nearby(player,300).filter(enemy =>
+    Math.cos(Math.atan2(enemy.y-player.y,enemy.x-player.x)-player.angle)>=Math.cos(.61) && game.boonStatuses(enemy.id).burning) : [];
+  const dash = slots && ABILITY_CATALOG[slots.dash.id].shape;
+  const angle = player.moving ? Math.atan2(player.vy,player.vx) : player.angle;
+  const dx=Math.cos(angle),dy=Math.sin(angle),distance=dash?.kind==='dash'?dash.distance:0;
+  const endpoint = {x:player.x+dx*distance,y:player.y+dy*distance};
+  const crush = slots?.dash.id==='ram' && slots.dash.ready ? nearby(player,distance+22).find(enemy => {
+    const x=enemy.x-player.x,y=enemy.y-player.y,along=x*dx+y*dy,side=-x*dy+y*dx;
+    if(along<0||along>distance||Math.abs(side)>22||!canTraverseExpedition(game.geometry,player,enemy,4))return false;
+    const direction=Math.sign(side)||1;
+    const shove={x:enemy.x-dy*90*direction,y:enemy.y+dx*90*direction};
+    return abilities?.deployables.some(wall=>wall.kind==='barrier'&&wall.health>0&&
+      deployableContact(wall,enemy,shove,enemy.radius)!==null);
+  }) : undefined;
+  const arcOrigin = slots?.dash.id==='static-step' && slots.dash.ready && canTraverseExpedition(game.geometry,player,endpoint,player.radius) ? endpoint : null;
+  const first = (point:{x:number;y:number},range:number,aim:{x:number;y:number}) => nearby(point,range)
+    .sort((a,b)=>Math.hypot(a.x-aim.x,a.y-aim.y)-Math.hypot(b.x-aim.x,b.y-aim.y)||a.id-b.id)[0];
+  const overload=slots?.tactical.id==='overload' && slots.tactical.ready ? first(player,520,
+    game.currentAimPoint??{x:player.x+Math.cos(player.angle)*520,y:player.y+Math.sin(player.angle)*520}) : undefined;
+  const step = arcOrigin && first(arcOrigin,160,arcOrigin);
+  const drill = getAwakeningDrill(game);
+  return {walls,shatter,ignite,crush,player:{x:player.x,y:player.y},drill:drill&&!drill.confirmation?targets.find(enemy=>enemy.id===drill.id):undefined,link:step&&arcOrigin?step:overload??null};
 }

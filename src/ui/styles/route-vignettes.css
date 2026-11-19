@@ -58,3 +58,14 @@
   font-weight: 600;
 }
 #overlay .route-briefing .route-option[data-detour='salvage'] .route-option-action { color: #ffe0a1; }
+#overlay .route-option-visual > .service-illustration { --route-light: var(--gold); }
+#overlay .route-option-visual > .reward-art {
+  display: block;
+  height: clamp(112px, 21vh, 238px);
+  overflow: hidden;
+}
+#overlay .route-option-visual > .reward-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

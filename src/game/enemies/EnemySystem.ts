@@ -121,7 +121,8 @@ export type EnemyEvent =
 
 export type CamouflageState = 'camouflaged' | 'revealed' | 'none';
 
-export type EnemySnapshot = Readonly<{chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
+export type PodStage = 'sealed' | 'swelling' | 'opening';
+export type EnemySnapshot = Readonly<{chargeWarningLength?:number;role?:EnemyRole;priority?:boolean;controlResistant?:boolean;beat?:number;pod?:boolean;podRemainingMs?:number;podStage?:PodStage;podProgress?:number;stunRemainingMs?:number;broodRemainingMs?:number;lesson?:'crawler'|'brute'|'stalker';
   id: number;
   type: StandardEnemyId;
   elite: boolean;
@@ -182,7 +183,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podDurationMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   blockedMs?: number; yieldMs?: number; yieldX?: number; yieldY?: number;
   stepStartX?: number; stepStartY?: number;
   id: number;
@@ -360,7 +361,7 @@ export class EnemySystem {
     const reservedChildren =
       type === 'carrier' ? Math.min(CARRIER_CHILD_CAP, availableReservations) : 0;
     const state: EnemyState = {
-      role:options.role,priority:options.priority??false,controlResistant:options.controlResistant??false,beat:options.beat,lesson:options.lesson,pod:options.pod??false,podRemainingMs:options.pod?options.hatchMs??2400:0,podWarned:false,stunRemainingMs:0,broodRemainingMs:0,broodDamage:0,slowMultiplier:1,chargeHit:false,repositionRemainingMs:0,repositionX:clampedX,repositionY:clampedY,
+      role:options.role,priority:options.priority??false,controlResistant:options.controlResistant??false,beat:options.beat,lesson:options.lesson,pod:options.pod??false,podRemainingMs:options.pod?options.hatchMs??2400:0,podDurationMs:options.pod?options.hatchMs??2400:0,podWarned:false,stunRemainingMs:0,broodRemainingMs:0,broodDamage:0,slowMultiplier:1,chargeHit:false,repositionRemainingMs:0,repositionX:clampedX,repositionY:clampedY,
       id: this.#nextId++,
       type,
       elite: elite === true,
@@ -606,7 +607,7 @@ export class EnemySystem {
 
   #snapshotEnemy(enemy: EnemyState): EnemySnapshot {
     return Object.freeze({
-      role:enemy.role,priority:enemy.priority,controlResistant:enemy.controlResistant,beat:enemy.beat,pod:enemy.pod,podRemainingMs:enemy.podRemainingMs,stunRemainingMs:enemy.stunRemainingMs,broodRemainingMs:enemy.broodRemainingMs,lesson:enemy.lesson,
+      role:enemy.role,priority:enemy.priority,controlResistant:enemy.controlResistant,beat:enemy.beat,pod:enemy.pod,podRemainingMs:enemy.podRemainingMs,...(enemy.pod?{podStage:enemy.podRemainingMs<=500?'opening' as const:enemy.podRemainingMs<=enemy.podDurationMs*.65?'swelling' as const:'sealed' as const,podProgress:enemy.podRemainingMs/enemy.podDurationMs}:{}),stunRemainingMs:enemy.stunRemainingMs,broodRemainingMs:enemy.broodRemainingMs,lesson:enemy.lesson,
       id: enemy.id,
       type: enemy.type,
       elite: enemy.elite,

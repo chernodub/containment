@@ -162,12 +162,13 @@ export async function bootstrap() {
     let roomRecovering = true;
     let graphicsLost = false;
     let lastStatus = '', lastRoom = -1;
-    const start = (resume = false) => {
+    const start = (resume = false, retry = false) => {
         if(graphicsLost||screens.graphicsBlocked)return;
         void audio.unlock(); audio.resumeAll(); input.reset(); screens.resetSettings();
         if (resume) {
             if (!game.continueRun()) {screens.continueFailed();syncHud();return;}
-        } else game.newRun(debugRunSeed(location.search), {rigSelect: true});
+        } else if (retry) {if(!game.retryLoadout())return;}
+        else game.newRun(debugRunSeed(location.search), {rigSelect: true});
         feel.reset(); beats?.reset();
         syncScreen(true);
         syncHud();

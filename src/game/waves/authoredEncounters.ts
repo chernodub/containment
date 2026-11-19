@@ -13,6 +13,13 @@ const pincer=(n:number)=>b('pincer','Choose an exit before the arms close',g('cr
 const priority=(n:number,guardian?:'warden'|'matron')=>b('priority',guardian==='warden'?'Bait the Warden into a wall':guardian==='matron'?'Break the Matron brood pods':'Remove the brood leader before reinforcements',g(guardian==='warden'?'brute':'carrier',1,'brood',{priority:true,guardian}),g('brute',1,'anchor'),g('crawler',n,'screen',{reinforcement:true}));
 const siege=(n:number)=>b('siege','Hold a lane, then change position',g('spitter',2,'ranged'),g('brute',1,'anchor'),g('crawler',n,'screen'));
 
+export const AWAKENING_DRILL = Object.freeze({
+  family: 'brute',
+  spawnDistance: 110,
+  credits: 20,
+  confirmationMs: 1100,
+} as const);
+
 /** Twenty room identities, authored in campaign order; seeds vary approach sides, not tactical intent. */
 export const AUTHORED_ENCOUNTERS:readonly (readonly AuthoredBeat[])[]=Object.freeze([
  [b('swarm','One commitment: evade, then punish',g('crawler',1,'screen',{lesson:'crawler'})),swarm(3)],
