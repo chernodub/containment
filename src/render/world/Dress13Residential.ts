@@ -1,3 +1,5 @@
+import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
+import {placeLooseGeometry} from './Room14Mounts';
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {OriginalKitInstance, OriginalKitPack} from './OriginalShipKitAssets';
@@ -26,7 +28,7 @@ export function dress13ResidentialPlacements(): OriginalKitInstance[] {
 
 export function addDress13ResidentialDetails(root:T.Group):void {
   const parts:T.BufferGeometry[]=[];
-  const put=(g:T.BufferGeometry,color:number)=>{const n=g.getAttribute('position').count,c=new T.Color(color),v=new Float32Array(n*3);for(let i=0;i<n;i++)c.toArray(v,i*3);g.setAttribute('color',new T.BufferAttribute(v,3));parts.push(g.index?g.toNonIndexed():g);if(g.index)g.dispose();};
+  const put=(g:T.BufferGeometry,color:number)=>{g.translate(-4/32,0,0);if(!placeLooseGeometry(ROOM_TEMPLATES['residential-gallery'],g)){g.dispose();return;}const n=g.getAttribute('position').count,c=new T.Color(color),v=new Float32Array(n*3);for(let i=0;i<n;i++)c.toArray(v,i*3);g.setAttribute('color',new T.BufferAttribute(v,3));parts.push(g.index?g.toNonIndexed():g);if(g.index)g.dispose();};
   const box=(x:number,y:number,z:number,w:number,h:number,d:number,color:number,yaw=0)=>{const g=new T.BoxGeometry(w,h,d);g.rotateY(yaw);g.translate(x/32,y,z/32);put(g,color);};
   // Folded clothes inside the open cases, restrained cream/grey personal effects.
   for(const [x,z,a] of [[246,303,-.25],[284,326,.45],[328,300,-.3]]){

@@ -48,14 +48,11 @@ export function addInc13Manual(root: T.Group): void {
     if(bank===failing)mesh.onBeforeRender=()=>{lit.color.setScalar(Math.sin(environmentClock.value*9)>.77?.22:.91);};
 
   }
-  paintIncidentDeck(root,'room14-manual-cable',[548,385,111,147],c=>{
-    // Floor return socket and the three leads from the hard-wired panel.
-    c.fillStyle='#484f51';c.fillRect(574,509,26,15);
-    c.fillStyle='#282f32';c.fillRect(578,512,17,8);
+  paintIncidentDeck(root,'room14-manual-cable',[407,548,91,114],c=>{
     c.lineCap='round';
     for(const offset of [-4,0,4]){
       c.save();c.translate(0,offset);
-      const cable=new Path2D('M646 391 C652 422 603 412 608 450 S568 479 571 503 Q572 518 585 517');
+      const cable=new Path2D('M454 570 C459 591 417 594 426 617 S459 622 465 643');
       c.lineWidth=4;c.strokeStyle='#272828';c.stroke(cable);
       c.lineWidth=1.4;c.strokeStyle='#8b8c75';c.stroke(cable);c.restore();
     }

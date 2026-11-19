@@ -45,6 +45,19 @@ export class IncidentPieces {
   }
   finish(root:T.Group,id:string,x:number,z:number,finish?:T.Material):T.Mesh {
     const geometry=mergeGeometries(this.parts,false)!;
+    // The case, rabbit and shoes share a draw, but must cut away independently.
+    if(id==='passenger-vault'){
+      let start=0;
+      geometry.userData.cutawayRanges=this.parts.map(part=>{
+        part.computeBoundingBox();
+        const bounds=part.boundingBox!.clone();
+        bounds.min.multiplyScalar(1/32);bounds.max.multiplyScalar(1/32);
+        const end=start+part.attributes.position.count,range={start,end,bounds};
+        start=end;return range;
+      });
+      geometry.setIndex(Array.from({length:start},(_,i)=>i));
+      geometry.index!.setUsage(T.DynamicDrawUsage);
+    }
     this.parts.forEach(g=>g.dispose());geometry.scale(1/32,1/32,1/32);
     const material=finish??new T.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:.18,side:T.DoubleSide});
     material.userData.actorMaterial=true;
@@ -418,7 +431,8 @@ export function addStoryIncident(root:T.Group,room:RoomTemplate):void {
   },.021);
   if(id==='swarm-junction') addLivingPlenum(root,x,z);
   if(id==='overload-floor')addOverloadVents(root,x,z);
-  const pieces=new IncidentPieces();incident.pieces(pieces);pieces.finish(root,id,x,z);
+  const pieces=new IncidentPieces();incident.pieces(pieces);const hero=pieces.finish(root,id,x,z);
+  if(id==='communal-atrium')hero.scale.y=.22; // plate shards lie flat beyond the bench
 }
 
 /** Short plasma vents stay within the torn perimeter plates. Share one

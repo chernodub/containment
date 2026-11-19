@@ -10,7 +10,7 @@ const debris:Record<string,readonly Placement[]> = {
   'freight-hold': [['shifted-load',327,297,-.24,1.35]],
   'relay-racks': [['relay-sled',571,422,-.62,1.25]],
   'swarm-junction': [['split-plenum',336,473,.62,1.12]],
-  'manual-control-chamber': [['bypass',398,554,-.52,.63]],
+  'manual-control-chamber': [['bypass',465,643,-.52,.63]],
   'diagnostic-gallery': [['escaped-gurney',380,341,.84,1.05],['glazing',364,366,.34,1.2]],
 };
 export function room14Debris(id:string): OriginalKitInstance[] {

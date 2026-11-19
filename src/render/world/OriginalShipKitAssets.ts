@@ -1,3 +1,4 @@
+import {placeLooseInstance} from './Room14Mounts';
 import {extractStaticLODs,tagStaticLOD,mergeStaticLOD} from '../StaticGeometryLOD';
 import * as T from 'three';
 import type {RoomTemplate} from '../../game/roguelike/types';
@@ -227,6 +228,10 @@ export function buildOriginalShipKit(
       if (!instance.matrix.elements.every(Number.isFinite) || Math.abs(instance.matrix.determinant()) < 1e-12)
         throw Error('Invalid original ship kit instance transform: ' + instance.asset);
       const floorCreep = instance.pack === 'p11-brood' && /^brood-creep-[abc]$/.test(instance.asset);
+      if(template&&(instance.purpose.startsWith('DRESS13 /')||instance.pack==='p11-incidents'||instance.pack==='p11-service')){
+        const footprint=new T.Box3().setFromObject(asset).applyMatrix4(instance.matrix);
+        if(!placeLooseInstance(template,instance,footprint))continue;
+      }
       const bounds = new T.Box3(), lamps: {position: T.Vector3; area: number; color: number}[] = [];
       const parts:{finish:string;start:number;end:number}[]=[];
       let instanceTriangles = 0, meshCount = 0;

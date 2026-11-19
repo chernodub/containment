@@ -1,3 +1,4 @@
+import {showIncidentColliders} from './world/IncidentColliderDebug';
 import {RoomCutawayTargets} from './world/RoomCutawayTargets';
 import {OverdriveReactions} from './motion/OverdriveReactions';
 import {combatPresentationHoldSeconds} from '../game/observation/combatPresentationClock';
@@ -141,7 +142,7 @@ export class DepthRenderer {
  private bulletMesh:T.InstancedMesh;private dummy=new T.Object3D();
  private pickupInstances=new PickupInstances();private exit:T.Group|null=null;
  private colliderDebug=false;
- setColliderDebug(visible:boolean){this.colliderDebug=visible;}
+ setColliderDebug(visible:boolean){this.colliderDebug=visible;showIncidentColliders(this.world,visible);}
  private warning=new T.Group();private poolMeshes=new Map<number,T.Mesh<T.CircleGeometry,AcidPoolMaterial>>();private menuActors=new T.Group();private menuMarine=marine();private menuAlien=alien('brute');private lastMenu=false;private menuThreatClock=0;
  private title=new TitlePresentation(this.scene);
  private readonly siegeBoundary=new SiegeBoundary(UNIT);
@@ -521,6 +522,8 @@ export class DepthRenderer {
   batch(this.exit,true);
   // Flat markings and obstacle-supported dressing are registered before room preparation.
   addExitSignal(this.exit);addDeckMarkings(this.world,t,this.roomEnvironment,node.templateId);addWorldDressing(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id),this.kitStartupComplete&&this.gameplayPresentationStarted&&(node.templateId==='residential-gallery'||node.templateId==='relay-racks'));if(!ACT3_PRESENTATION_ROOMS.has(node.templateId)&&!bespoke?.getObjectByName('l8-ship-seam-growth'))addEnvironmentalStory(this.world,t,this.roomEnvironment,node.templateId,this.roomSeed(node.id));setCeilingQuality(this.world,this.tier==='high');setOriginalShipKitQuality(this.world,this.tier==='high');setEnvironmentalStoryOptions(this.world,this.tier==='high'&&this.options.atmosphere);
+  this.world.userData.incidentObstacles=t.incidentObstacles;
+  if(this.colliderDebug)showIncidentColliders(this.world,true);
   const interiors=buildRoomInteriors(node.templateId,t,this.world);if(interiors)this.world.add(interiors);
   const initial=roomFocus(t.spawn.x/UNIT,t.spawn.y/UNIT,w,h,this.camera instanceof T.OrthographicCamera?this.camera.right-this.camera.left:this.viewWidth,this.camera instanceof T.OrthographicCamera?this.camera.top-this.camera.bottom:this.viewHeight,node.templateId);
   this.focus.set(initial.x,0,initial.z);this.cameraRig?.reset(initial.x,initial.z);this.roomCombatFraming?.reset();/* CAM12: retain HUD reservations across rooms; the adapter caches unchanged CSS bounds. */this.world.userData.lightingBoundary=t.boundary?.map(p=>({x:p.x/UNIT,y:p.y/UNIT}));if((!bespoke&&node.templateId!=='armory')||this.roomEnvironment==='containment')addRoomPracticals(this.world,w,h,this.roomEnvironment,this.roomEnvironment==='reactor'?undefined:this.world.userData.lightingBoundary);addInteriorPracticals(this.world,t,this.roomEnvironment,node.templateId==='residential-gallery');const batchStarted=performance.now();this.world.userData.staticBatching=batchStaticRoom(this.world);timing.phases.staticBatching=performance.now()-batchStarted;const lightingStarted=performance.now();this.lighting.loadRoom(this.world,w,h,environment,node.templateId);{const pools=deckLightSources(t).filter(p=>p.z>=1).map(p=>({x:p.x,z:p.y}));setRoomValueField(pools.length?pools:[{x:w/2,z:h/2}],t.exit.x/UNIT,t.exit.y/UNIT,roomValueProfile(node.templateId));}this.floorMaterial.userData.roomBaseColor=(this.floorMaterial.userData.roomBaseColor??new T.Color()).copy(this.floorMaterial.color);applyRoomMood(this.world,environment,node.templateId,this.lighting.practicalShapes);timing.phases.lightingSetup=performance.now()-lightingStarted;

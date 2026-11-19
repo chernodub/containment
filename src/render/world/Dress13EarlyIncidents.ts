@@ -1,3 +1,6 @@
+import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
+import type {TemplateId} from '../../game/roguelike/types';
+import {incidentTransform,placeLooseGeometry} from './Room14Mounts';
 import {addRecoverySpill} from './Inc13RecoverySpill';
 import {dress13ResidentialPlacements, addDress13ResidentialDetails} from './Dress13Residential';
 import * as T from 'three';
@@ -107,7 +110,7 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     const ctx=canvas.getContext('2d')!;ctx.fillStyle='#26363c';ctx.fillRect(0,0,512,128);ctx.fillStyle='#b3b9ac';ctx.font='bold 38px monospace';ctx.fillText('K. VOSS / BERTH 04',18,54);ctx.font='24px monospace';ctx.fillText('PERSONAL EFFECTS - RELEASED',18,101);
     const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
     const label=new T.MeshStandardMaterial({map:texture,roughness:1,metalness:0,side:T.DoubleSide});label.name='dress13-passenger-nameplate';label.userData.actorMaterial=true;label.addEventListener('dispose',()=>texture.dispose());
-    mesh(new T.PlaneGeometry(1.1,.275),label,354,.75,669).rotation.x=-.55;
+    mesh(new T.PlaneGeometry(1.1,.275),label,398,.75,625).rotation.x=-.55;
   }
   if(id==='crew-checkpoint') {
     const rim=material('checkpoint-foot-return',0x79898c,.58);
@@ -142,6 +145,18 @@ export function addDress13EarlyDetails(root: T.Group, id: string): void {
     for(let i=0;i<4;i++) flat([[-.04,-.7],[.03,-.65],[.025,.7],[-.025,.62]],dark,258+i*7,371,-.4);
   }
   // Unused per-room finishes do not enter the scene or retain resources.
+  for(const o of [...group.children]){
+    if(!(o instanceof T.Mesh)||id==='awakening-bay'||o.material.name==='dress13-passenger-nameplate')continue;
+    o.updateMatrix();
+    // Each primitive is unique to this room. Bake the final rotation and
+    // translation before checking its footprint.
+    o.geometry.applyMatrix4(o.matrix).applyMatrix4(incidentTransform(id));
+    o.position.set(0,0,0);o.rotation.set(0,0,0);o.scale.setScalar(1);
+    if(!placeLooseGeometry(ROOM_TEMPLATES[id as TemplateId],o.geometry)){
+      group.remove(o);o.geometry.dispose();
+      if(o.name==='dress13-atrium-fallen-dining-tables')o.material.dispose();
+    }
+  }
   const used=new Set<T.Material>();group.traverse(o=>{if(o instanceof T.Mesh)used.add(o.material as T.Material);});
   for(const m of [dark,wet,scratch,brass])if(!used.has(m))m.dispose();
   root.add(group);

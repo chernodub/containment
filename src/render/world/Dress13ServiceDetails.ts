@@ -1,3 +1,6 @@
+import {ROOM_TEMPLATES} from '../../game/roguelike/roomTemplates';
+import type {TemplateId} from '../../game/roguelike/types';
+import {placeLooseGeometry,incidentTransform} from './Room14Mounts';
 import {addWorkshopResin} from './Inc13ResinFloor';
 import {addInc13Manual} from './Inc13Manual';
 import {addFrozenSpill} from './Inc13FrozenSpill';
@@ -10,6 +13,9 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
   const parts: T.BufferGeometry[] = [];
   const steel = 0x657174, rubber = 0x202b30, stain = 0x343739;
   const put = (g: T.BufferGeometry, color: number) => {
+    const room=ROOM_TEMPLATES[id as TemplateId];
+    g.applyMatrix4(incidentTransform(id));
+    if(room&&!placeLooseGeometry(room,g)){g.dispose();return;}
     const p = g.getAttribute('position'), c = new T.Color(color), colors = new Float32Array(p.count * 3);
     for (let i = 0; i < p.count; i++) c.toArray(colors, i * 3);
     g.setAttribute('color', new T.BufferAttribute(colors, 3));
@@ -80,7 +86,7 @@ export function addDress13ServiceDetails(root: T.Group, id: string): void {
     const screen = new T.Mesh(new T.PlaneGeometry(2.1, 1.05), new T.MeshStandardMaterial({map: texture, roughness: 1, metalness: 0, emissive: 0xffffff, emissiveMap: texture, emissiveIntensity: .12, side: T.DoubleSide}));
     (screen.material as T.Material).userData.actorMaterial = true;
     (screen.material as T.Material).addEventListener('dispose', () => texture.dispose());
-    screen.name = 'dress13-last-transmission'; screen.rotation.x = -.65; screen.position.set(905 / 32, 1.15, 390 / 32); root.add(screen);
+    screen.name = 'dress13-last-transmission'; screen.rotation.x = -.65; screen.position.set(835 / 32, 1.15, 500 / 32);screen.applyMatrix4(incidentTransform(id)); root.add(screen);
   } else if (id === 'diagnostic-gallery') {
     shards(385, 377, 0x86989a);
     // Transport cradle lid and restraint tongues were torn toward the aisle.
