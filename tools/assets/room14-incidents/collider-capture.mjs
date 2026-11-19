@@ -17,29 +17,29 @@ SCENARIOS.push({id:'incident-cover',rooms:true,state:'playing',nativePointerHove
  d.setInput({x:0,y:0,angle,fire:false,autoAim:false});d.settlePresentation(120);
  d.renderer.setColliderDebug(true);d.refresh();
  })();`)});
-// Native marine mark and aim point. Overload uses the open approach beside
-// the relocated vents. Occupied historical marks resolve to the nearest floor.
+// Native marine mark and aim point. Follow the open approach to the relocated
+// floor cover. Occupied marks resolve to the nearest legal floor point.
 const views={
   'passenger-vault': [277.983, 580.492, 366, 368],
-  'residential-gallery': [410, 471, 410, 241],
+  'residential-gallery': [400, 425, 381, 295],
   'communal-atrium': [565, 545, 565, 425],
-  'crew-checkpoint': [606, 568, 606, 338],
+  'crew-checkpoint': [668, 468, 687, 349],
   'armory': [273, 566, 273, 336],
   'freight-hold': [276.736, 439.118, 306, 292],
-  'breached-loading-bay': [485, 657, 485, 427],
-  'relay-racks': [539.129, 646.581, 584, 421],
-  'transmission-chamber': [903, 627, 903, 397],
-  'diagnostic-gallery': [362, 568, 362, 338],
-  'safety-interlock-station': [550, 541, 550, 351],
-  'coolant-plant': [401, 530, 401, 300],
-  'service-shaft-landing': [332, 686, 332, 456],
-  'infested-workshop': [515, 555, 515, 325],
+  'breached-loading-bay': [540, 576, 566, 456],
+  'relay-racks': [545, 562, 620, 422],
+  'transmission-chamber': [870, 565, 864, 469],
+  'diagnostic-gallery': [453, 438, 475, 337],
+  'safety-interlock-station': [504, 451, 491, 345],
+  'coolant-plant': [348, 421, 337, 305],
+  'service-shaft-landing': [307, 618, 335, 507],
+  'infested-workshop': [568, 415, 590, 302],
   'swarm-junction': [310, 607, 310, 377],
-  'shielding-gate': [455, 562, 455, 332],
-  'containment-annulus': [552, 740, 552, 510],
-  'manual-control-chamber': [617, 616, 617, 386],
+  'shielding-gate': [460, 463, 464, 365],
+  'containment-annulus': [563, 628, 546, 513],
+  'manual-control-chamber': [568, 632, 459, 591],
   'overload-floor': [485, 522, 485, 477],
-  'awakening-bay': [640, 495, 640, 295],
+  'awakening-bay': [640, 445, 635, 269],
 };
 SCENARIOS.push({id:'incident-facing',rooms:true,state:'playing',nativePointerHover:'#pause',setup:new Function('room',`return (async()=>{
  const d=window.__containmentDebug,g=d.game;
