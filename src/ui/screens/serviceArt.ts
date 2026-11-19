@@ -36,8 +36,13 @@ const objects: Record<Exclude<ServiceId,'revive'>, string> = {
     <path class="service-art-mark" d="M101 36l18-7 12 6-18 7z"/>`,
 };
 
+/** PROPS14 illustrations: the same original models the player picks up, rendered with ink and banded shading. */
+const propArt: Record<ServiceId, string> = {heal:'health',armor:'armor',ammo:'ammo',medkit:'medkit',grenade:'grenade',reroll:'reroll',upgrade:'upgrade',revive:'resuscitator'};
+const propBase = `${import.meta.env.BASE_URL}assets/ui/props14/`;
+
 export function serviceArt(id: ServiceId): string {
   if (useStudioArt) return studioImage(`service-${id}`, 'service-illustration', 448, 168);
+  if (propArt[id]) return `<img class="service-illustration service-prop" src="${propBase}${propArt[id]}.png" width="300" height="300" alt="" loading="lazy" decoding="async">`;
   return `<svg class="service-illustration" viewBox="0 0 224 84" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
     <path class="service-art-shadow" d="M18 68l95-22 93 22-93 13z"/>
     <path class="service-art-guide" d="M12 22V12h20m160 0h20v10M12 62v10h20m160 0h20V62M17 42h38m114 0h38"/>

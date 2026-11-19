@@ -7,7 +7,7 @@ import type {WeaponId} from '../../src/game/combat/types';
 import type {StandardEnemyId} from '../../src/game/enemies/types';
 import {MELEE_ATTACKS} from '../../src/game/enemies/meleeAttacks';
 import {marine} from '../../src/render/models';
-import {pickupModel} from '../../src/render/PickupModels';
+import {loadPickupModels,pickupModel} from '../../src/render/PickupModels';
 import {weaponModel} from '../../src/render/weapons';
 import {acquireRoomKit, KIT_URLS} from '../../src/render/world/RoomKitAssets';
 import {registerGeometry, GEOMETRY_CLASSES} from '../../src/render/post/GeometryBuffer';
@@ -118,7 +118,7 @@ export async function shootStudio(owner:DepthRenderer, game:DepthGame, shot:Stud
           break;
         }
         case 'pickup':
-          root=pickupModel(subject.id);
+          root=pickupModel(await loadPickupModels(owner.renderer),subject.id);
           for(const mesh of [...root.children])if(mesh instanceof T.Mesh&&mesh.material.name==='supply-locator'){
             mesh.geometry.dispose();mesh.removeFromParent();
           }

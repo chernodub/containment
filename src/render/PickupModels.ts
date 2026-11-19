@@ -1,56 +1,76 @@
 import * as T from 'three';
-import {MAT,box,rod,ring,batch} from './meshParts';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {KTX2Loader} from 'three/addons/loaders/KTX2Loader.js';
+import type {PickupKind} from '../game/pickups/PickupSystem';
 import {groundIndicatorMaterial} from './vfx/GroundIndicatorMaterial';
 
-const point=(x:number,y:number,z:number)=>new T.Vector3(x,y,z);
-const locatorMaterials=new Map<string,T.ShaderMaterial>();
-function supplyLocatorMaterial(kind:string):T.ShaderMaterial {
-  let material=locatorMaterials.get(kind);
-  if(!material){
-    material=groundIndicatorMaterial('beam',kind==='credits'?0xfff0ce:kind==='grenade'?0xffb454:0xb5edff);
-    material.name='supply-locator';locatorMaterials.set(kind,material);
-  }
-  return material;
+const colors:Record<PickupKind,number>={health:0x85ffd1,armor:0x9fe8ff,ammo:0xf2cc87,grenade:0xffb994,credits:0xffd27a};
+export async function loadPickupModels(renderer:T.WebGLRenderer){
+  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+  const base=import.meta.env.BASE_URL+'assets/';
+  const compressed=['WEBGL_compressed_texture_astc','WEBGL_compressed_texture_etc','WEBGL_compressed_texture_s3tc','EXT_texture_compression_bptc'].some(format=>renderer.extensions.has(format));
+  const transcoder=compressed?new KTX2Loader().setTranscoderPath(base+'basis/').setWorkerLimit(1).detectSupport(renderer):undefined;
+  try{
+    if(transcoder)loader.setKTX2Loader(transcoder);
+    return (await loader.loadAsync(base+'props14/'+(compressed?'':'plain/')+'props.glb')).scene;
+  }finally{transcoder?.dispose();}
 }
 
-/** Large semantic pictograms on shallow supply cases; all finishes are shared/prewarmed. */
-export function pickupModel(kind:string):T.Group {
-  const root=new T.Group();root.name=`pickup-${kind}`;
-  if(kind==='credits') {
-    box(root,0,-.04,0,.49,.055,.4,MAT.dark,.02);
-    for(let stack=0;stack<3;stack++)for(let coin=0;coin<=stack;coin++) {
-      const x=(stack-1)*.15,z=stack%2?.06:-.05,y=coin*.035;
-      rod(root,point(x,y,z),point(x,y+.03,z),.12,.12,MAT.reward);
+/** The atlas assigns one constant swatch per face. Group its indices by swatch so
+ * native drops can use the ship's existing untextured instanced shader. */
+const floorSwatches:Record<PickupKind,Record<number,number>>={
+  health:{1:4},
+  armor:{0:13,1:13},
+  ammo:{0:12},
+  grenade:{0:12,1:12,2:3},
+  credits:{3:9},
+};
+function enamelParts(kind:PickupKind,source:T.Mesh,low:T.Mesh):T.Mesh[]{
+  const palette=source.userData.swatches as string[];
+  function partitions(geometry:T.BufferGeometry){
+    const uv=geometry.getAttribute('uv'),index=geometry.getIndex()!;
+    const buckets=new Map<number,number[]>();
+    for(let i=0;i<index.count;i+=3){
+      const v=index.getX(i);
+      const tile=Math.floor(uv.getX(v)*4)+4*Math.floor((1-uv.getY(v))*4);
+      const swatch=floorSwatches[kind][tile]??tile;
+      let bucket=buckets.get(swatch);
+      if(!bucket){bucket=[];buckets.set(swatch,bucket);}
+      bucket.push(v,index.getX(i+1),index.getX(i+2));
     }
-    box(root,0,.14,.04,.035,.014,.17,MAT.supplyWhite,.004);
-  }else if(kind==='health') {
-    box(root,0,-.035,0,.45,.09,.39,MAT.dark,.045);
-    box(root,0,.018,0,.43,.025,.36,MAT.cyan,.025);
-    box(root,0,.045,0,.13,.045,.39,MAT.supplyWhite,.014);
-    box(root,0,.045,0,.39,.045,.13,MAT.supplyWhite,.014);
-  }else if(kind==='armor') {
-    const shield=new T.Shape();shield.moveTo(-.27,-.21);shield.lineTo(.27,-.21);shield.lineTo(.27,.06);shield.lineTo(0,.33);shield.lineTo(-.27,.06);shield.closePath();
-    const geometry=new T.ExtrudeGeometry(shield,{depth:.045,bevelEnabled:true,bevelSegments:1,steps:1,bevelSize:.015,bevelThickness:.01});geometry.rotateX(Math.PI/2);
-    root.add(new T.Mesh(geometry,MAT.dark));
-    for(let i=0;i<3;i++)box(root,0,.045,i*.12-.12,.43-i*.09,.045,.075,MAT.supplyWhite,.01);
-  }else if(kind==='grenade') {
-    rod(root,point(0,-.09,0),point(0,.24,0),.17,.19,MAT.dark);
-    rod(root,point(0,.04,0),point(0,.1,0),.195,.195,MAT.reward);
-    box(root,.15,.22,0,.065,.2,.095,MAT.supplyWhite,.012);
-    ring(root,.025,.35,.01,.085,.018,MAT.supplyWhite);
-  }else {
-    box(root,0,-.04,0,.48,.07,.42,MAT.dark,.025);
-    for(let i=-1;i<=1;i++) {
-      rod(root,point(i*.15,.03,-.18),point(i*.15,.03,.13),.052,.052,MAT.reward);
-      rod(root,point(i*.15,.03,.13),point(i*.15,.03,.22),.008,.052,MAT.supplyWhite);
-    }
+    return buckets;
   }
-  const locatorMaterial=supplyLocatorMaterial(kind);
-  for(const angle of [0,Math.PI/2]) {
-    const geometry=new T.PlaneGeometry(.16,1.25);geometry.translate(0,.73,0);geometry.rotateY(angle);
-    root.add(new T.Mesh(geometry,locatorMaterial));
-  }
-  batch(root);
-  for(const child of root.children)if(child instanceof T.Mesh&&child.material===locatorMaterial)child.castShadow=child.receiveShadow=false;
+  const lowIndices=partitions(low.geometry);
+  return Array.from(partitions(source.geometry),([swatch,indices])=>{
+    const color=new T.Color('#'+palette[swatch]);
+    const lit=swatch>=5&&swatch<=11;
+    const finish=new T.MeshStandardMaterial({color,roughness:.65,emissive:lit?color:0,emissiveIntensity:.65});
+    const geometry=new T.BufferGeometry();
+    geometry.setAttribute('position',source.geometry.getAttribute('position'));
+    geometry.setAttribute('normal',source.geometry.getAttribute('normal'));
+    geometry.setIndex(indices);
+    const part=new T.Mesh(geometry,finish);
+    const reduced=new T.BufferGeometry();
+    reduced.setAttribute('position',low.geometry.getAttribute('position'));
+    reduced.setAttribute('normal',low.geometry.getAttribute('normal'));
+    reduced.setIndex(lowIndices.get(swatch)??[]);
+    part.userData.lowGeometry=reduced;
+    part.scale.setScalar(.78);
+    return part;
+  });
+}
+
+export function pickupModel(templates:T.Group,kind:PickupKind):T.Group {
+  const source=templates.getObjectByName(kind),low=templates.getObjectByName(kind+'__lod_low');
+  if(!(source instanceof T.Mesh&&low instanceof T.Mesh))throw Error('Missing requisition model '+kind);
+  const root=new T.Group();
+  root.name='pickup-'+kind;
+  root.add(...enamelParts(kind,source,low));
+  const contact=new T.Mesh(new T.PlaneGeometry(1.26,1.26),groundIndicatorMaterial('supply',colors[kind]));
+  contact.name='deck-contact';
+  contact.rotation.x=-Math.PI/2;
+  contact.position.y=.025;
+  root.add(contact);
   return root;
 }

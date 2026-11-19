@@ -1,0 +1,83 @@
+{
+  "license": "MIT",
+  "source": "tools/assets/props14/props.py",
+  "rebuild": "sh tools/assets/props14/rebuild.sh",
+  "atlases": [
+    "64x64 base color",
+    "64x64 emission"
+  ],
+  "models": [
+    {
+      "name": "ammo",
+      "high": 476,
+      "low": 238
+    },
+    {
+      "name": "armor",
+      "high": 268,
+      "low": 142
+    },
+    {
+      "name": "cache-closed",
+      "high": 300,
+      "low": 150
+    },
+    {
+      "name": "cache-open",
+      "high": 664,
+      "low": 332
+    },
+    {
+      "name": "credits",
+      "high": 620,
+      "low": 310
+    },
+    {
+      "name": "grenade",
+      "high": 540,
+      "low": 316
+    },
+    {
+      "name": "health",
+      "high": 304,
+      "low": 192
+    },
+    {
+      "name": "medkit",
+      "high": 480,
+      "low": 240
+    },
+    {
+      "name": "overdrive",
+      "high": 256,
+      "low": 128
+    },
+    {
+      "name": "reroll",
+      "high": 254,
+      "low": 126
+    },
+    {
+      "name": "resuscitator",
+      "high": 380,
+      "low": 190
+    },
+    {
+      "name": "upgrade",
+      "high": 500,
+      "low": 250
+    }
+  ],
+  "outputs": [
+    {
+      "path": "props.glb",
+      "bytes": 117692,
+      "sha256": "e4aef3ea720141989e74befa954399095c8efe5c847c11893ec0e998b0f480b2"
+    },
+    {
+      "path": "plain/props.glb",
+      "bytes": 115636,
+      "sha256": "36b4e6f26b44e2d2f94597a088c2ed4eda292dec3a0220bff693b4edfd76ec23"
+    }
+  ]
+}
