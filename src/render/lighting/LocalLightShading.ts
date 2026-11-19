@@ -149,13 +149,15 @@ export function optimizeLocalLights(material: MeshStandardMaterial, diffuseEnvir
         reflectedLight.indirectDiffuse+=diffuseColor.rgb*roomMarineGlowColor*roomMarineGlow.w*roomValue.z*roomLamp;
       }
       if(roomBlackout>0.0&&roomValue.z>0.0){
-        float suitCircle=1.0-smoothstep(1.2,6.56,distance(roomWorld.xz,roomMarineGlow.xy));
-        float deckLight=mix(.10,.95,suitCircle);
+        float suitCircle=1.0-smoothstep(4.0,7.0,distance(roomWorld.xz,roomMarineGlow.xy));
+        float deckLight=mix(.13,.95,suitCircle);
         reflectedLight.directDiffuse*=deckLight;
         reflectedLight.indirectDiffuse*=deckLight;
         reflectedLight.directSpecular*=deckLight;
         reflectedLight.indirectSpecular*=deckLight;
         totalEmissiveRadiance*=.08;
+        float grazing=pow(1.-abs(dot(normal,normalize(vViewPosition))),2.);
+        reflectedLight.indirectDiffuse+=vec3(.006,.011,.014)*grazing*smoothstep(.06,.32,roomWorld.y);
       }`);
   };
   material.customProgramCacheKey = () => key + LOCAL_LIGHT_CACHE_SUFFIX;

@@ -4,7 +4,7 @@ import {execFileSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 const directory='public/assets/brood-growth', encoder=process.env.TOKTX??'toktx';
-for(const asset of ['brood-growth','brood-pod']){
+for(const asset of (process.argv.includes('--pod-only')?['brood-pod']:['brood-growth','brood-pod'])){
 const original=await readFile(directory+'/'+asset+'.glb');
 const jsonLength=original.readUInt32LE(12),json=JSON.parse(original.toString('utf8',20,20+jsonLength)),bin=original.subarray(28+jsonLength);
 if(json.images.length!==1||json.images[0].mimeType!=='image/png')throw Error('Expected one embedded Brood PNG normal atlas');

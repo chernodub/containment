@@ -576,7 +576,7 @@ export class DepthRenderer {
   if(this.roomKey!==game.node.id)this.loadRoom(game.node);
   // RUN15 condition presentation consumes the room's deterministic state.
   const condition=menu?null:game.conditionState,blackout=condition?.condition.id==='dark';
-  this.conditionVisuals.update(condition,this.tier==='low',!!this.motionQuery?.matches,game.player,game.status==='playing'||game.status==='paused');
+  this.conditionVisuals.update(condition,this.tier==='low',!!this.motionQuery?.matches,game,this.lighting.pool,this.interimAbilities.priorityMask?.texture);
   setRoomBlackout(blackout);
   this.lighting.setBlackout(blackout);
   this.scene.environmentIntensity=getEnvironmentMood(this.roomEnvironment).reflectionIntensity*(blackout?.12:1);
@@ -601,6 +601,7 @@ export class DepthRenderer {
   const hud=this.hudFraming??=new HudCombatFraming();hud.selectContacts(p.x/UNIT,p.y/UNIT,p.angle,enemies,UNIT,this.cameraContactHeight);if(bossWeight)hud.selectPrimaryContact(-1,bossFrame.x/UNIT,bossFrame.y/UNIT,3.4,this.queen?.height??4.5);/* I13: tall guardian anatomy must stay paired with the marine during brood/charge. */else{const guardian=enemies.find(e=>e.champion&&e.health>0&&Math.hypot(e.x-p.x,e.y-p.y)<12.5*UNIT);if(guardian)hud.selectPrimaryContact(guardian.id,guardian.x/UNIT,guardian.y/UNIT,guardian.radius/UNIT,this.cameraContactHeight(guardian.id));}hud.biasTarget(p.x/UNIT,p.y/UNIT,p.angle,!!this.motionQuery?.matches,bossWeight,this.desiredFocus);
   const framed=roomFocus(this.desiredFocus.x,this.desiredFocus.z,bounds.width/UNIT,bounds.height/UNIT,this.viewWidth/baseZoom,this.viewHeight/baseZoom,game.node.templateId,this.frameFocus);
   if(!hud.hasEngagement||bossWeight)this.desiredFocus.set(framed.x,0,framed.z);if(menu){this.desiredFocus.set(22,0,14);if(!this.lastMenu)this.cameraRig.reset(22,14);}
+  if(condition?.condition.id==='vent'&&condition.ventLive&&dt>0)this.cameraRig.setRumbleFloor(.19);
   this.cameraRig.update(dt,this.desiredFocus.x,this.desiredFocus.z,this.options.screenShake,!!this.motionQuery?.matches);this.cameraRig.apply(this.camera,baseZoom,this.viewHeight,this.options.screenShake);this.focus.copy(this.cameraRig.focus);
   if(menu)this.title?.apply(this.camera,this.time,!!this.motionQuery?.matches,this.tier==='high'&&this.options.atmosphere);
   if(this.title)this.title.root.visible=menu;this.world.visible=!menu;if(this.backdrop)this.backdrop.root.visible=!menu;

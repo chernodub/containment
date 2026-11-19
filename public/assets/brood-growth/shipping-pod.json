@@ -5,12 +5,12 @@
     "width": 512,
     "height": 512,
     "encoding": "UASTC quality 4, linear, Zstd 18, full mip chain",
-    "pngBytes": 447133,
-    "ktxBytes": 301220,
+    "pngBytes": 457080,
+    "ktxBytes": 301886,
     "rgba8MipBytes": 1398100,
     "compressed8bppMipBytes": 349552
   },
-  "sourceBytes": 609172,
-  "compressedBytes": 463376,
+  "sourceBytes": 625196,
+  "compressedBytes": 470124,
   "rebuild": "TOKTX=/path/to/toktx node tools/assets/t12-textures/pack-brood.mjs"
 }

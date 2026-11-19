@@ -29,7 +29,7 @@ function emit(json,bin){
   bh.writeUInt32LE(bin.length+bp);bh.writeUInt32LE(0x004e4942,4);
   return Buffer.concat([head,text,Buffer.alloc(jp,32),bh,bin,Buffer.alloc(bp)]);
 }
-for(const asset of ['brood-growth','brood-pod']){
+for(const asset of (process.argv.includes('--pod-only')?['brood-pod']:['brood-growth','brood-pod'])){
 const source=parse(await readFile(directory+'/'+asset+'.glb'));
 const document=await io.readBinary(emit(source.json,source.bin));
 const meshes=[];

@@ -368,6 +368,17 @@ def brood_pod(hatching=False):
         s.add(Ellipsoid(shell_c + d * 0.33 + v3((0, 0, 0.05)), (0.07, 0.085, H * 0.3), frame(d), op="sub", zone=CAVITY, k=0.015))
         s.add(Tube(bezier(shell_c + d * 0.33 - v3((0, 0, H * 0.4)), shell_c + d * 0.38 - v3((0, 0, 0.1)), shell_c + d * 0.37 + v3((0, 0, 0.15)),
                           shell_c + d * 0.2 + v3((0, 0, H * 0.45)), 5), [0.035, 0.04, 0.04, 0.035, 0.03, 0.02], zone=ARMOR, k=0.02))
+    # Matron clutch: two younger eggs lean into the parent cup. Veins follow
+    # the membrane silhouette so the split crown stays distinct at deck scale.
+    for x, y, height in ((-0.38, -0.13, 0.49), (0.29, 0.30, 0.62)):
+        centre = v3((x, y, height * 0.44))
+        s.add(Ellipsoid(centre, (0.18, 0.19, height * 0.48), zone=MEMBRANE))
+        for angle in (0.25, 2.34, 4.43):
+            d = v3((math.cos(angle), math.sin(angle), 0))
+            path = bezier(centre + d * 0.10 - v3((0, 0, height * 0.33)),
+                          centre + d * 0.25, centre + d * 0.19 + v3((0, 0, height * 0.21)),
+                          centre + d * 0.04 + v3((0, 0, height * 0.46)), 5)
+            s.add(Tube(path, [0.034, 0.03, 0.027, 0.024, 0.020, 0.016], zone=SINEW, k=0.012))
     core = Ellipsoid(shell_c - v3((0, 0, 0.03)), (0.24, 0.24, H * 0.36), zone=ORGAN)
     s.add(Stretch(core, (0, 0, 1), 0.09, 0.02, sharp=3, zone=ORGAN))
     if hatching:

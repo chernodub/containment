@@ -1,3 +1,4 @@
+import {COND15_SCENARIOS} from './cond15-scenarios.mjs';
 import {ONB14_SCENARIOS} from "./onb14-scenarios.mjs";
 import {ART14_SCENARIOS} from './art14-scenarios.mjs';
 import {E9_TOUR_SCENARIO} from './e9-room-tour.mjs';
@@ -189,6 +190,7 @@ export const SCENARIOS=[
    d.step(3200);
   },
  })),
+ ...COND15_SCENARIOS,
  ...[
   ['dark',6,1800],['coolant',5,1400],['vent',10,13100],
   ['conduit',2,3360],['brood',1,10400],['sealed',4,3600],

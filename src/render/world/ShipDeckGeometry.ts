@@ -52,3 +52,11 @@ export function shipDeckGeometry(t:Plan,depth=.28,top=-.02):T.BufferGeometry{
  if(!parts.length){const empty=new T.BufferGeometry();for(const [name,size]of [['position',3],['normal',3],['uv',2]] as const)empty.setAttribute(name,new T.Float32BufferAttribute([],size));return empty;}
  const merged=mergeGeometries(parts,false)!;parts.forEach(g=>g.dispose());return merged;
 }
+
+/** Clip deck pieces to an axis-aligned fitting. Condition lanes use native X or Y lines. */
+export function clipDeckRect(poly:readonly Point[],left:number,top:number,right:number,bottom:number){
+ const corners=[{x:left,y:top},{x:right,y:top},{x:right,y:bottom},{x:left,y:bottom}];
+ let out=poly;
+ for(let i=0;i<4&&out.length;i++)out=halfPlane(out,corners[i],corners[(i+1)%4],1,true);
+ return out;
+}
