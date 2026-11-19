@@ -8,7 +8,7 @@ import type {BuildState,MutationId,RunCheckpoint,RunResources,RunState} from './
 
 export type Expedition = Readonly<{run:RunState;build:BuildState;resources:RunResources;abilities?:RunCheckpoint['abilities'];stats?:RunCheckpoint['stats']}>;
 export type ExpeditionRuntimeState = Pick<RunCheckpoint,'abilities'|'stats'>;
-export type ExpeditionStartOptions = {difficulty?:import('../difficulty').DifficultyId;rigSelect?:boolean;version?:1|2|3;rig?:RigId;startingBoon?:MutationId};
+export type ExpeditionStartOptions = {shipConditions?:boolean;difficulty?:import('../difficulty').DifficultyId;rigSelect?:boolean;version?:1|2|3;rig?:RigId;startingBoon?:MutationId};
 const resourcesCopy=(resources:RunResources):RunResources=>Object.freeze({...resources,ammo:Object.freeze(Object.fromEntries(Object.entries(resources.ammo).map(([key,ammo])=>[key,Object.freeze({...ammo})])) as RunResources['ammo'])});
 function assertExpedition(expedition:Expedition):void {
   if(!expedition||!isValidRunState(expedition.run)||!isValidBuildState(expedition.build)||!isValidRunResources(expedition.resources)||!isValidCheckpointExtensions(expedition))throw new Error('Invalid expedition');

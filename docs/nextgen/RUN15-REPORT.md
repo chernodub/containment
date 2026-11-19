@@ -26,20 +26,20 @@ The same twenty ship sectors, story events and room layouts appear in the same o
 | 20 · Overload floor | Break the crawler arm | Cut off the brood | Charge the final relay |
 
 
-## Ship conditions
+## Ship conditions · lead review revision
 
-A run assigns six conditions from sector 4 onward. Three appear at junctions, one at Transmission Chamber, one in the service decks and one near the reactor approach. Guarded sectors and the finale are excluded. At least one clear sector separates assignments. The route card gives the reason and both terms, and the HUD names the active condition.
+The ship chooses six conditioned rooms from sector 4 onward. The first three junction destinations, Transmission Chamber, one service-deck room and one reactor-approach room are eligible. A clear room separates any two assignments. Teaching rooms, guardians and the finale retain their original conditions.
 
-| Condition | Benefit | Cost | Presentation |
-| --- | --- | --- | --- |
-| Sealed bulkheads | Admission cap −2 | Regroup windows −500 ms | Reflection intensity ×0.96 |
-| Breach alarms | Regroup windows +1,000 ms | Admission cap +2 | Reflection intensity ×1.08 |
-| Auxiliary power | Entry charge equivalent to 3,000 damage, with ordinary charge scaling | Interval between regular arrivals ×0.90 | Reflection intensity ×1.12 |
-| Emergency lighting | Interval between regular arrivals ×1.10 | Walking speed ×0.95 | Reflection intensity ×0.92 |
-| Pressure purge | Interval between regular arrivals ×1.10 | Walking speed ×0.95 | Fog density ×1.16 |
-| Salvage beacon | +25 credits on clear | Interval between regular arrivals ×0.90 | Reflection intensity ×1.05 |
+| Condition | Mechanic | How it reads |
+| --- | --- | --- |
+| Emergency lighting | First marine hit before an enemy's first attack commitment deals 30% extra. Spitter aim takes 650 ms (+30%). | Room lights cut to 8% and fixtures switch off. The 210-unit suit radius frames combat. Outside it, creatures darken to silhouettes with their own organ lights. Native ground warnings keep their existing pass. |
+| Coolant leak | Three cyan slicks target 23% of the room bounds before cover clips their area. Actor turns retain momentum for about 120 ms for the marine and 155 ms for enemies. Dash range and slick shove travel increase up to 50%. Swept impacts deal 12 damage against a wall or 6 to the body struck. | Flush blue floor decals mark traction loss before movement. |
+| Hull venting | One breach vents every 12 s for 2.5 s, after 1.5 s of warning. Marine pull is 66 units/s unless dashing. Crawlers and Stalkers move at up to 120 units/s and stagger for 230 ms, and heavies move at 26 units/s. Launched hostiles and light enemies dragged within 52 units of the outlet are credited as kills. | Amber markers point toward the outlet. They strobe amber and white before white debris streams toward the breach. Debris uses eight strips on High and three on Low. |
+| Overcharged conduits | Three lanes pulse every 4 s. The final second is live, following a 1 s warning. Each actor shocks once per cycle. The marine takes 3 damage and stalls for 180 ms. Enemies take 6 and stagger for 220 ms, or 1 s when launched onto the lane. Arc chains can reach two extra targets through a conduit. | Cyan floor lines brighten before turning white. The chip counts down to the live second. |
+| Brood-warm deck | Three eggs have 30 health each and turn into Crawler pairs at 10 s. Destroy all three before a hatch to cancel the next unannounced reinforcement group. If the encounter lacks reinforcements, one existing group waits in reserve. Credits earned during combat and collected at room clear receive a rounded 30% bonus. | Existing brood pods appear around the entrance. Their native pod animation and the HUD countdown read together. |
+| Sealed bulkheads | Two nearby breaches close and the director uses the remaining breaches. The exit unlocks at the earlier of room clear and 45 s, or the later of the two for relay-hold openings. | Striped shutters mark the closed breaches and exit. The chip shows the shared room clock. |
 
-Rounding, reinforcement timings and the native admission rules still apply. For example, changing the cap has little effect on a wave that never reaches it.
+The route card puts the opening below the offer title. A condition chip introduces one upside and one downside, each at most eight words. The next consequence appears as one sentence only for the alternate route. The HUD repeats the chip and shows a live timer where relevant. The original reinforcement budgets and contract payouts remain independent of the renderer.
 
 ## Junctions and run record
 
@@ -67,7 +67,78 @@ After a terminal campaign, a separate local profile flag unlocks a seeded option
 
 The marine can reach the same cover and relays as before, but the first pressure can come from a pincer, a firing lane or a leader arriving early. Comparing the two junction terms gives a hurt player a reason to take medicine, while a healthy player might preserve the same boon for the workshop. The downstream payout makes early decisions visible again several rooms later.
 
-## Evidence
+## Lead review verification
+
+I used the I14 seed list for 20 attempts per rig in Story with the novice policy and Standard with the competent policy. The completion reference is ROOM14's fourth cover pass. For damage and time, I ran the same RUN15 campaigns with the room mechanics disabled and the same route offers still available. I paired each condition observation to the same seed, rig, and sector in the condition-off run. Damage includes both clears and deaths. Time includes only pairs that cleared in both runs. Route choices may diverge as the player takes damage or earns credits. [ROOM14 report](ROOM14-REPORT.md) · [I14 report](I14-REPORT.md)
+
+The first pass used 160 ms of marine slide recovery, 82 units/s of marine pull, and five marine damage per conduit shock. The second pass reduced those to 120 ms, 66 units/s, and three damage. It also added slick impact damage and a cancellable reserve group where the base encounter had none. The final numbers are in the condition table above. The first pass cleared 18/13/18/20 Story campaigns and 11/16/15/15 Standard campaigns, in Breacher/Cryo/Pyro/Arc order. All eight cohorts were inside the completion band. [First-pass Story simulation](../../artifacts/nextgen/playtest/run15-conditions-story/summary.json) · [First-pass Standard simulation](../../artifacts/nextgen/playtest/run15-conditions-standard/summary.json)
+
+### Tuned completion cohorts
+
+| Mode | Rig | Attempts | Clear | Cover | Difference | Other outcomes |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Story | Breacher | 20/20 | 18 | 18 | +0 | 2 dead |
+| Story | Cryo | 20/20 | 14 | 16 | -2 | 6 dead |
+| Story | Pyro | 20/20 | 15 | 19 | -4 | 5 dead |
+| Story | Arc | 20/20 | 19 | 18 | +1 | 1 dead |
+| Standard | Breacher | 20/20 | 11 | 12 | -1 | 9 dead |
+| Standard | Cryo | 20/20 | 14 | 15 | -1 | 6 dead |
+| Standard | Pyro | 20/20 | 16 | 14 | +2 | 4 dead |
+| Standard | Arc | 20/20 | 13 | 16 | -3 | 7 dead |
+
+Seven cohorts meet the requested ±3 completion band. Story Pyro reached 15 of 20, four below the ROOM14 reference. Compared with the first pass, seeds 42 and 65537 died in unconditioned Manual Control Chamber, and seed 8192 died in Hull venting at Infested Workshop. Standard Arc reaches the lower edge of the band. [Tuned Story simulation](../../artifacts/nextgen/playtest/run15-conditions-tuned-story/summary.json) · [Tuned Standard simulation](../../artifacts/nextgen/playtest/run15-conditions-tuned-standard/summary.json)
+
+### Tuned room damage and time
+
+| Mode | Condition | Seen | Paired damage n | Damage | Control | Change | Paired clear-time n | Seconds | Control | Change |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Story | Brood-warm deck | 67 | 66 | 34.0 | 38.0 | -10.5% | 66 | 42.3 | 43.5 | -2.8% |
+| Story | Coolant leak | 81 | 80 | 45.7 | 45.3 | +0.8% | 79 | 43.3 | 45.1 | -3.9% |
+| Story | Emergency lighting | 92 | 90 | 38.8 | 48.2 | -19.6% | 89 | 45.8 | 46.9 | -2.3% |
+| Story | Hull venting | 54 | 54 | 53.4 | 58.1 | -8.1% | 53 | 49.2 | 48.3 | +1.9% |
+| Story | Overcharged conduits | 70 | 67 | 47.2 | 47.1 | +0.2% | 66 | 44.9 | 45.5 | -1.3% |
+| Story | Sealed bulkheads | 100 | 99 | 43.0 | 47.8 | -10.1% | 96 | 47.3 | 47.1 | +0.5% |
+| Standard | Brood-warm deck | 57 | 55 | 41.9 | 49.0 | -14.5% | 52 | 45.3 | 46.1 | -1.8% |
+| Standard | Coolant leak | 65 | 61 | 48.9 | 49.7 | -1.6% | 60 | 45.9 | 47.4 | -3.1% |
+| Standard | Emergency lighting | 85 | 81 | 48.3 | 56.0 | -13.7% | 76 | 48.7 | 49.0 | -0.6% |
+| Standard | Hull venting | 60 | 55 | 50.5 | 65.2 | -22.7% | 54 | 53.1 | 53.0 | +0.2% |
+| Standard | Overcharged conduits | 69 | 63 | 53.4 | 56.9 | -6.0% | 58 | 49.8 | 49.9 | -0.2% |
+| Standard | Sealed bulkheads | 97 | 92 | 51.2 | 54.7 | -6.3% | 88 | 50.4 | 51.6 | -2.3% |
+
+Every mean clear time and 11 of 12 damage comparisons fall within ±20%. Standard Hull venting dealt 22.7% less mean damage than the paired condition-off rooms. Requiring the same encounter opening as well gives 50 damage pairs and a 24.5% reduction. The first pass was within both balance bands on the completed samples. Partial first-pass controls had prompted the adjustments, and the second pass completes the requested slick collisions and brood reserve. I kept that implementation after two passes. [Story control](../../artifacts/nextgen/playtest/run15-conditions-control-story/summary.json) · [Standard control](../../artifacts/nextgen/playtest/run15-conditions-control-standard/summary.json)
+
+### Capture views
+
+The entry frames use the same Atrium geometry and 100 ms of combat time. The light pool, frost, amber outlet, blue floor lanes, egg pods and striped shutters distinguish the rooms before reading the HUD. The active frames show the silhouettes, slick dash, moving vent debris, live lines, hatched Crawlers and redirected arrivals. The route comparison removes generic risk and supply lines and gives the variant and tradeoffs a fixed reading order next to the existing reward. I inspected the native and 480×270 views. The final batch produced 13 captures with zero errors, and all 12 combat fixtures recorded zero shader program creations after room readiness. The production build passed.
+
+| Condition | Entry | Active | Entry at 480×270 | Active at 480×270 |
+| --- | --- | --- | --- | --- |
+| Emergency lighting | [PNG](../../artifacts/nextgen/run15/conditions/run15-dark-entry-communal-atrium.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-dark-active-communal-atrium.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-dark-entry-communal-atrium-480.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-dark-active-communal-atrium-480.png) |
+| Coolant leak | [PNG](../../artifacts/nextgen/run15/conditions/run15-coolant-entry-communal-atrium.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-coolant-active-communal-atrium.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-coolant-entry-communal-atrium-480.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-coolant-active-communal-atrium-480.png) |
+| Hull venting | [PNG](../../artifacts/nextgen/run15/conditions/run15-vent-entry-communal-atrium.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-vent-active-communal-atrium.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-vent-entry-communal-atrium-480.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-vent-active-communal-atrium-480.png) |
+| Overcharged conduits | [PNG](../../artifacts/nextgen/run15/conditions/run15-conduit-entry-communal-atrium.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-conduit-active-communal-atrium.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-conduit-entry-communal-atrium-480.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-conduit-active-communal-atrium-480.png) |
+| Brood-warm deck | [PNG](../../artifacts/nextgen/run15/conditions/run15-brood-entry-communal-atrium.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-brood-active-communal-atrium.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-brood-entry-communal-atrium-480.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-brood-active-communal-atrium-480.png) |
+| Sealed bulkheads | [PNG](../../artifacts/nextgen/run15/conditions/run15-sealed-entry-communal-atrium.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-sealed-active-communal-atrium.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-sealed-entry-communal-atrium-480.png) | [PNG](../../artifacts/nextgen/run15/conditions/run15-sealed-active-communal-atrium-480.png) |
+
+[Condition route card](../../artifacts/nextgen/run15/conditions/run15-condition-route.png) · [Pre-RUN15 and revised route cards at 480×270](../../artifacts/nextgen/run15/conditions/route-comparison-480.png) · [Capture manifest](../../artifacts/nextgen/run15/conditions/manifest.json)
+
+### Native replays
+
+| Seed | Rig and mode | Outcome | Runtime errors | Runner defects |
+| ---: | --- | --- | ---: | --- |
+| 1729 | Arc · Story · fast | Complete, 20/20 | 0 | 1 readiness pause |
+| 2718 | Breacher · Standard · fast | Complete, 20/20 | 0 | 0 |
+
+The Arc runner flagged Manual Control Chamber after 6.6 seconds of loading and logged a 9.1-second total hold. The pause occurred in an unconditioned room while the host was heavily loaded. The native pair encountered five distinct conditions. Hull venting is covered by the simulation and the capture fixtures. [Arc replay](../../artifacts/nextgen/playtest/run15-conditions-final-arc/report.json) · [Breacher replay](../../artifacts/nextgen/playtest/run15-conditions-final-breacher/report.json)
+
+### Remaining weaknesses after the review
+
+- The vent's amber markers identify the outlet on entry. The pull is easier to understand once the debris starts moving. The Atrium fixtures show the native hazard and hatch cycles, and they use a staged marine. The native campaigns cover ordinary input and progression.
+- The conduit grants the full one-second stun to swept launches. Ordinary projectile knockback uses the short shock stagger. The extra Arc links need two targets on the same conduit.
+- The three coolant patches target roughly one quarter of the room bounds. The actual patch area a player can reach varies with the authored hull and furniture. Brood's active frame shows the emerging Crawlers, while the recognizable pods and countdown are strongest at entry.
+- The 480×270 route comparison shows the card order and visual hierarchy. The condition chip, tradeoffs and consequence occupy their own lines. The full text is easiest to read at native desktop size.
+
+## First-pass evidence · historical
 
 ### Simulation cohorts
 
@@ -421,7 +492,7 @@ The unchanged gameplay on the pre-RUN15 revision cleared eight rooms with zero e
 
 The final production capture batch covers the three junction panels, three conditioned rooms and the compact results panel as staged fixtures. The campaign receipts above retain native input evidence. [Capture gallery](../../artifacts/nextgen/run15/index.html), [manifest](../../artifacts/nextgen/run15/manifest.json)
 
-## Remaining weaknesses
+## First-pass weaknesses · historical
 
 - The teaching variants change follow-up ingress. The isolated lesson still uses its close-range placement rule. Guardian variants move the same guardian and escort packs through different approaches and beat orders. Their escort rosters are fixed.
 - Most conditions are communicated through the HUD and changes in the arrival or regroup clocks. Existing reflection and fog intensities offer a subtle renderer cue. Emergency lighting and pressure purge share the same walking-speed and arrival-interval modifiers.

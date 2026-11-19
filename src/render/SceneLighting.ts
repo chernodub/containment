@@ -33,6 +33,7 @@ export class SceneLighting {
  private valueProfile:RoomValueProfile|undefined;private composition:RoomComposition=roomComposition();private width=0;private height=0;private bossArena=false;private manualConsole=false;private overloadFloor=false;private menuPresentation=false;
  private templateArchitecture=false;private interiorPresentation=false;
  private coveragePoint=new T.Vector3();private authoredFixtures:Fixture[]=[];private nearbyFixtures:Fixture[]=[];private playerX=NaN;private playerZ=NaN;private fixtureTint=new T.Color();
+ private blackout=false;
  private blastLife=0;private time=0;private tier:GraphicsTier='high';private fixtureCount=0;private dynamicLights=true;private flashIntensity=1;private disposed=false;private shadowQuality:ShadowQuality='high';
  constructor(){
   this.directionalKey.castShadow=true;this.coreKey.visible=false;this.coreKey.castShadow=true;
@@ -66,7 +67,7 @@ export class SceneLighting {
    const consoleFixture=world.getObjectByName('g2-world-dressing')?.userData.lightFixtures?.[0] as Fixture|undefined;
    if(consoleFixture)this.staging={coreX:consoleFixture.x,coreY:consoleFixture.y+1.6,coreZ:consoleFixture.z,coreColor:0xffdfad,coreRadius:3};
   }
-  this.applyMood(width,height);
+  this.blackout=false;this.applyMood(width,height);
   world.updateWorldMatrix(true,true);const candidates:Fixture[]=[],position=new T.Vector3();
   world.traverse(object=>{
    const authored=object.userData.lightFixtures as Fixture[]|undefined;
@@ -181,7 +182,16 @@ export class SceneLighting {
    const animated=behavior==='alarm'?.8+.2*Math.sin(phase*3):behavior==='pulse'?.72+.28*Math.sin(phase*1.4):behavior==='reactor'?(light.userData.reactorCore?.9+.1*Math.sin(this.time*2.1):.65+.35*Math.pow(Math.max(0,Math.cos(this.time*1.2-i*Math.PI/2)),4)):behavior==='flicker'?.93+.045*Math.sin(phase*13)+.025*Math.sin(phase*29):1;
    const climax=this.mood.environment==='reactor'&&!!this.staging&&!this.bossArena;if(climax&&i>0){light.color.setHex(0xff3018);light.distance=4.2;}
    const failed=((this.mood.environment==='habitation'&&i===1)||light.userData.humanFailed)?.35+.65*Math.pow(Math.min(1,Math.max(0,Math.sin(this.time*5.3)+.35*Math.sin(this.time*17.1))),2):1;
-   light.intensity=(light.userData.reactorCore?this.bossArena?25:14:climax?65:this.mood.practical.intensity*this.composition.practicalGain*(this.valueProfile?.practicals??1))*(light.userData.fixtureGain??1)*(1+(animated*failed-1)*this.flashIntensity);
+   light.intensity=this.blackout?0:(light.userData.reactorCore?this.bossArena?25:14:climax?65:this.mood.practical.intensity*this.composition.practicalGain*(this.valueProfile?.practicals??1))*(light.userData.fixtureGain??1)*(1+(animated*failed-1)*this.flashIntensity);
+  }
+ }
+ setBlackout(active:boolean){
+  if(this.blackout===active)return;
+  this.blackout=active;
+  this.applyMood(this.width,this.height);
+  if(active){
+   for(const light of [this.ambient,this.key,this.fill,this.rim])light.intensity*=.08;
+   this.lamp.setRoom(30);
   }
  }
  /** Reuses the prepared fixed lights; menu transitions create no shader topology. */

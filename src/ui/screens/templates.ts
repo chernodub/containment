@@ -1,3 +1,4 @@
+import {conditionChip} from '../conditionChip';
 import type {MutationId} from "../../game/roguelike/types";
 import {AUGMENT_UPGRADE_RULES,type AugmentId} from '../../game/abilities/augmentCatalog';
 import {SERVICE_IDS,SERVICE_CATALOG,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers} from '../../game/roguelike/economy';
@@ -270,7 +271,7 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
     ${tag(`SECTOR ${serial(next.depth+1)} / ${total(game)}`)}
     ${runHeader(run)?`<p>${escapeHtml(runHeader(run)!)}</p>`:''}
     <h2 id="route-title">${offers.length?nextName:'Choose your next sector'}</h2>
-    ${offers.length?'<p class="panel-intro">Both approaches enter the same sector.</p>':''}
+    ${offers.length&&!run.runStructure?'<p class="panel-intro">Both approaches enter the same sector.</p>':''}
     ${contract?`<aside><strong>Optional contract · ${escapeHtml(contract.name)}</strong><p>${escapeHtml(contract.objective)} Each sector pays ${escapeHtml(contract.reward.toLowerCase())}.</p><button id="accept-contract" class="secondary">Accept contract</button></aside>`:run.contract?`<p>Contract · ${escapeHtml(contractFor(run.seed).name)} · ${run.contract.earned}/3 payouts earned</p>`:''}
     <div class="route-briefing-grid">
       ${options.map(({destination,detour,title,risk,reward:deal,vignette,augment,disabled,cost},index)=>{
@@ -278,19 +279,21 @@ export function routeScreen(game: DepthGame, selected = game.node.next[0]): stri
         const condition=getShipCondition(game,destination.depth,detour==='salvage');
         const variant=getRoomOpening(game,destination.depth,detour==='salvage');
         const consequence=run.runStructure?junctionConsequence(destination.depth,detour==='salvage'):undefined;
+        const visibleRisk=variant&&['Standard encounter','No extra enemies','Free'].includes(risk??'')?undefined:risk;
         const encounter=destination.id.endsWith('r3-safe')?'Safer encounter':ROOM_KIND_LABELS[destination.kind];
         const roomReward=destination.reward==='upgrade'?'Boon':destination.reward==='rare-upgrade'?'Rare boon':ROOM_REWARD_LABELS[destination.reward];
+        const visibleReward=variant&&deal==='Keep your current supplies'?undefined:(deal??roomReward);
         const shortfall=Math.max(0,(cost??0)-game.combat.snapshot.credits);
         const unavailable=disabled?(shortfall?`Need ${shortfall} more credits`:'Requires an eligible installed augment'):undefined;
         return `<button id="route-option-${index}" class="route-option" data-route="${destination.id}" ${disabled?'aria-disabled="true"':''} ${augment?`data-augment="${augment}"`:''} ${detour?`data-detour="${detour}"`:`data-inspected="${destination.id===selected}"`}>
           <span class="route-option-visual">${routeVignette(room,vignette)}<kbd aria-hidden="true">${index+1}</kbd></span>
           <span class="route-option-copy">
             <strong class="route-option-title">${escapeHtml(title)}</strong>
-            ${variant?`<span class="route-option-terms">${escapeHtml(variant)}</span>`:''}
-            <span class="route-option-terms">${icon(destination.kind)} ${escapeHtml(risk??encounter)}</span>
-            ${condition?`<span class="route-option-terms" title="${escapeHtml(condition.reason)}"><strong>${escapeHtml(condition.name)}</strong></span><span class="route-option-terms">${escapeHtml(condition.upside)}</span><span class="route-option-terms">${escapeHtml(condition.downside)}</span>`:''}
+            ${variant?`<span class="route-option-subtitle">${escapeHtml(variant)}</span>`:''}
+            ${visibleRisk||!variant?`<span class="route-option-terms">${icon(destination.kind)} ${escapeHtml(visibleRisk??encounter)}</span>`:''}
+            ${condition?`<span class="route-condition">${conditionChip(condition)}<span>+ ${condition.upside}</span><span>− ${condition.downside}</span></span>`:''}
             ${consequence?`<span class="route-option-terms">${escapeHtml(consequence)}</span>`:''}
-            <span class="route-option-terms" data-route-term="reward">${icon(deal?'credits':'rarity-rare')} ${escapeHtml(deal??roomReward)}</span>
+            ${visibleReward?`<span class="route-option-terms" data-route-term="reward">${icon(deal?'credits':'rarity-rare')} ${escapeHtml(visibleReward)}</span>`:''}
           </span>
           <span class="route-option-action">${unavailable??`Enter sector ${arrow()}`}</span>
         </button>`;

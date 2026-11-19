@@ -73,3 +73,6 @@
 
 #overlay .route-option[aria-disabled='true'] { cursor: not-allowed; opacity: 1; filter: none; }
 #overlay .route-option[aria-disabled='true'] .route-option-visual { opacity: .48; }
+
+#overlay .route-option-subtitle { font: 600 19px/1.15 var(--font-display); }
+#overlay .route-condition { display: grid; gap: 3px; margin-block: 4px; line-height: 1.25; }

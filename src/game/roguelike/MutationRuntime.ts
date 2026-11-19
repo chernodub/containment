@@ -20,6 +20,7 @@ export type MutationHost = Readonly<{
   canAffect?:(from:Readonly<{x:number;y:number}>,to:Readonly<{x:number;y:number}>)=>boolean;
   boonEffect?:(kind:BoonEffect,x:number,y:number,targetX?:number,targetY?:number,radius?:number,durationMs?:number)=>void;
   effect?: (x: number, y: number, radius: number) => void;
+  launchCollision?: (from: MutationTarget, target: MutationTarget, wall: boolean) => void;
   /** One presentation contact for an accepted wall collision, before its damage commands. */
   wallSlam?: (from: MutationTarget, to: Readonly<{x:number;y:number}>, impulse:number) => void;
 }>;
@@ -304,11 +305,13 @@ export class MutationRuntime {
       for(const {target:other}of contacts){
         if(!this.#host.targets().some(t=>t.id===other.id&&t.health>0))continue;
         launch.touched.add(other.id);
+        this.#host.launchCollision?.(from,other,false);
         this.#remember(other);
         this.#dispatch({ id: `${launch.commandId}:body:${other.id}`, cause: launch.cause, type: 'body-collision', targetId: String(other.id), impulse: speed, direction: { x: launch.x, y: launch.y } });
       }
       if (blocked) {
         this.#launches.delete(id);
+        if(!launch.ghost)this.#host.launchCollision?.(from,current,true);
         this.#dispatch({ id: `${launch.commandId}:wall`, cause: launch.cause, type: 'wall-hit', targetId: String(id), impulse: speed },()=>this.#host.wallSlam?.(current,{x:from.x+dx,y:from.y+dy},speed));
         continue;
       }
