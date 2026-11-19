@@ -1,23 +1,31 @@
 /** Deterministic image-only GLB rewrite. Geometry, animation and meshopt streams remain byte-identical. */
-import {readFile,writeFile,mkdir,mkdtemp,rm,copyFile} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,mkdtemp,rm,rename} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 const source=resolve(process.argv[2]??'public/assets/models'),target='public/assets/models';
 const encoder=process.env.TOKTX??'toktx',names=['marine','dretch','basilisk','marauder','dragoon','tyrant','pistol','rifle','shotgun','plasma','rocket'];
 const receipt=[];await mkdir(target+'/plain',{recursive:true});
-const cache='artifacts/nextgen/t12-source-models';await mkdir(cache,{recursive:true});
+let rewritten=0;
+async function replaceIfChanged(path,bytes){
+ try{if(bytes.equals(await readFile(path)))return;}
+ catch(error){if(error.code!=='ENOENT')throw error;}
+ const staged=path+'.'+process.pid+'.tmp';
+ try{await writeFile(staged,bytes);await rename(staged,path);}
+ finally{await rm(staged,{force:true});}
+ rewritten++;
+ console.log('Rewrote '+path);
+}
 const temp=await mkdtemp(join(tmpdir(),'t12-pack-'));
 try{for(const name of names){
- let original=await readFile(join(source,name+'.glb'));
- const isPacked=b=>JSON.parse(b.toString('utf8',20,20+b.readUInt32LE(12))).extensionsUsed?.includes('KHR_texture_basisu');
- if(isPacked(original)){
-  try{original=await readFile(join(cache,name+'.glb'));}
-  catch{original=execFileSync('git',['show',`abec3bca71530aec5b40e90dbe95dee9d25371a7:public/assets/models/${name}.glb`],{maxBuffer:64*1024*1024});}
- }
- if(isPacked(original))throw Error('Source cache must contain PNG-image GLBs: '+name);
- await writeFile(join(cache,name+'.glb'),original);
+ const original=await readFile(join(source,name+'.glb'));
  const len=original.readUInt32LE(12),json=JSON.parse(original.toString('utf8',20,20+len)),bin=original.subarray(28+len);
+ // Treat a packed model as the current shipping output. Its older PNG
+ // fallback or an unrelated cache cannot safely reconstruct its source.
+ if(json.extensionsUsed?.includes('KHR_texture_basisu')){
+  console.log('Already packed: '+join(source,name+'.glb'));
+  continue;
+ }
  const originalViews=structuredClone(json.bufferViews);
  const ranges=json.images.map(i=>{const v=json.bufferViews[i.bufferView];return [v.byteOffset??0,(v.byteOffset??0)+((v.byteLength+3)&~3)];}).sort((a,b)=>a[0]-b[0]);
  const unique=ranges.filter((r,i)=>!i||r[0]!==ranges[i-1][0]);
@@ -52,8 +60,16 @@ try{for(const name of names){
  function emit(compressed){const j=structuredClone(json),parts=[core];let offset=core.length;for(const[i,img]of j.images.entries()){const pad=(4-offset%4)%4;parts.push(Buffer.alloc(pad));offset+=pad;const data=compressed?images[i].compressed:images[i].plain;const v=j.bufferViews[img.bufferView];v.byteOffset=offset;v.byteLength=data.length;img.mimeType=compressed?'image/ktx2':'image/png';delete img.uri;parts.push(data);offset+=data.length;}
  if(compressed){j.extensionsUsed=[...new Set([...(j.extensionsUsed??[]),'KHR_texture_basisu'])];j.extensionsRequired=[...new Set([...(j.extensionsRequired??[]),'KHR_texture_basisu'])];for(const t of j.textures){t.extensions={...t.extensions,KHR_texture_basisu:{source:t.source}};delete t.source;}}
  j.buffers[0].byteLength=offset;const payload=Buffer.concat(parts),jb=Buffer.from(JSON.stringify(j)),jp=(4-jb.length%4)%4,bp=(4-payload.length%4)%4,head=Buffer.alloc(20);head.writeUInt32LE(0x46546c67);head.writeUInt32LE(2,4);head.writeUInt32LE(28+jb.length+jp+payload.length+bp,8);head.writeUInt32LE(jb.length+jp,12);head.writeUInt32LE(0x4e4f534a,16);const bh=Buffer.alloc(8);bh.writeUInt32LE(payload.length+bp);bh.writeUInt32LE(0x004e4942,4);return Buffer.concat([head,jb,Buffer.alloc(jp,32),bh,payload,Buffer.alloc(bp)]);}
- const plain=emit(false),packed=emit(true);await writeFile(join(target,'plain',name+'.glb'),plain);await writeFile(join(target,name+'.glb'),packed);receipt.push({name,beforeBytes:original.length,afterBytes:packed.length,fallbackBytes:plain.length,textures:stats});
+ const plain=emit(false),packed=emit(true);await replaceIfChanged(join(target,'plain',name+'.glb'),plain);await replaceIfChanged(join(target,name+'.glb'),packed);receipt.push({name,beforeBytes:original.length,afterBytes:packed.length,fallbackBytes:plain.length,textures:stats});
 }
- await mkdir('public/assets/basis',{recursive:true});for(const f of ['basis_transcoder.js','basis_transcoder.wasm'])await copyFile('node_modules/three/examples/jsm/libs/basis/'+f,'public/assets/basis/'+f);
- await mkdir('artifacts/nextgen/t12-final',{recursive:true});await writeFile('artifacts/nextgen/t12-final/packing.json',JSON.stringify(receipt,null,2));
-}finally{await rm(temp,{recursive:true,force:true});}
+ await mkdir('public/assets/basis',{recursive:true});for(const f of ['basis_transcoder.js','basis_transcoder.wasm'])await replaceIfChanged('public/assets/basis/'+f,await readFile('node_modules/three/examples/jsm/libs/basis/'+f));
+ if(receipt.length){
+  const receiptDir='artifacts/nextgen/t12-final',receiptPath=join(receiptDir,'packing.json');
+  let previous=[];
+  try{previous=JSON.parse(await readFile(receiptPath,'utf8'));}
+  catch(error){if(error.code!=='ENOENT')throw error;}
+  const rows=new Map([...previous,...receipt].map(row=>[row.name,row]));
+  await mkdir(receiptDir,{recursive:true});
+  await writeFile(receiptPath,JSON.stringify(names.flatMap(name=>rows.has(name)?[rows.get(name)]:[]),null,2));
+ }
+}finally{await rm(temp,{recursive:true,force:true});console.log(`${rewritten} shipping files rewritten`);}

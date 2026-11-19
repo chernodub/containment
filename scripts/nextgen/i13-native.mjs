@@ -25,7 +25,7 @@ try{
    row.staging=await page.evaluate(async({room,kind})=>{
     const d=window.__containmentDebug,g=d.game,r=d.renderer;
     await d.gotoRoom(room,{rig:'breacher'});d.invulnerable(true);g.enemies.reset();d.setInput({x:0,y:0,fire:false,angle:0,autoAim:false});
-    const bounds=g.geometry.bounds,boss=kind==='warden'||kind==='matron',radius=kind==='warden'?64:kind==='matron'?34:({stalker:17,carrier:24,spitter:18})[kind],choices=[];
+    const bounds=g.geometry.bounds,boss=kind==='warden'||kind==='matron',radius=kind==='warden'?64:kind==='matron'?46:({stalker:17,carrier:24,spitter:18})[kind],choices=[];
     for(let y=bounds.y+80;y<bounds.y+bounds.height-80;y+=16)for(let x=bounds.x+80;x<bounds.x+bounds.width-80;x+=16){
      if(!d.canStand(x,y,radius))continue;
      for(let i=0;i<16;i++){
@@ -40,7 +40,7 @@ try{
     Object.assign(g.player,{x:c.p.x,y:c.p.y,vx:0,vy:0,angle:c.a+Math.PI});g.setAimPoint({x:c.x,y:c.y});d.step(1000);g.enemies.reset();
     const family=kind==='warden'?'brute':kind==='matron'?'carrier':kind,id=d.spawn(family,c.x,c.y,boss);if(!id)throw Error('I13 native spawn rejected');if(boss)g.enemies.promote(id,kind);
     const escorts=[];if(boss){for(const f of [family,'crawler']){for(let i=0;i<24;i++){const a=i*Math.PI/12,p={x:c.p.x+Math.cos(a)*160,y:c.p.y+Math.sin(a)*160};if(Math.hypot(p.x-c.x,p.y-c.y)<radius+40||!d.canStand(p.x,p.y,30))continue;const e=d.spawn(f,p.x,p.y,false);if(e){escorts.push(e);break;}}}}
-    d.i13={id,kind,family,escorts};d.step(0);d.settlePresentation(120);d.refresh();return{id,family,champion:boss?kind:null,colliderRadius:g.enemies.getSnapshot(id)?.radius,position:{x:c.x,y:c.y},marine:c.p,escorts};
+    r.setColliderDebug(boss);d.i13={id,kind,family,escorts};d.step(0);d.settlePresentation(120);d.refresh();return{id,family,champion:boss?kind:null,colliderRadius:g.enemies.getSnapshot(id)?.radius,position:{x:c.x,y:c.y},marine:c.p,escorts};
    },{room,kind});
    row.programStart=await page.evaluate(()=>{const gl=window.__containmentDebug.renderer.renderer.getContext();if(gl.i13Programs===undefined){gl.i13Programs=0;const create=gl.createProgram;gl.createProgram=function(){gl.i13Programs++;return create.call(this);};}return gl.i13Programs;});
    const seen=new Set();let podsSeen=false,hatched=false;
