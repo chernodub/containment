@@ -81,7 +81,13 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | RUN15 seeded encounter variants (≥ 3 per room), ship conditions, choices that carry forward, run identity, contracts — Sol 6.2 | merged b09f51ed | Three encounter openings per room, carry-forward junctions, run identity, contracts. First ship conditions were invisible number tweaks and were replaced with six visible ones (emergency lighting, coolant leak, hull venting, overcharged conduits, brood-warm deck, sealed bulkheads). |
 | BAL15 combined balance (Story 16–19, Standard 11–15, Veteran 2–6 of 20 per rig; conditions and variants ±20%; bot stalls) — Sol 6.2 | running | |
 | COND15 art pass on the six ship conditions — Astra 6.2 | running | |
-| **R14** on `final9` — Astra 6.2 (high) visual and play verdicts, bounded Opus art-director pass | running | |
+| **R14** on `final9` — Astra 6.2 (high) visual and play verdicts, bounded Opus art-director pass | done | Astra visual 7.0/7.5/6.5/6.0/7.0/6.0/6.0/6.5 (US$10); Astra play 7.0/8.0/7.0/6.5/6.5/7.5/8.0/6.5 ("near release quality as a combat system, late commercial alpha as a twenty-room game"); Opus 6.5/7.5/5.5/5.5/6.5/4.5/6 (US$12–15). Summary in `reviews/R14-verdict.md`. |
+| **Wave 16** (from R14) | running | |
+| SHADE15 actors as value masses: two soft bands, no clipped specular; marine one light mass with a broad rig-colour pauldron and visor, ≥ 15% rig colour; creatures without the head highlight; large three-quarter rig portraits — Opus | running | |
+| WARN16 double-line warning edge, 15–20% fill fading at the origin, marine and committed attackers drawn through effects, one band per attacker group, effects yield near the marine, camera keeps threats off the HUD strip — Sol 6.2 | running | |
+| FRAME16 darker structured floors with contact shadow and hue-varied pools, accidents brought into the approach as cover in five rooms, landmarks clear of the HUD, material separation, three more human traces — Astra 6.2 | running | |
+| MOTION16 upright marine run, recoil in the body for all five weapons, surviving rifle hit readable in a pack, Brute follow-through, attacker ownership poses (Stalker, Crawler), held victim silhouettes after Overdrive flashes — Astra 6.2 (high) | running | |
+| PLAY16 visible encounter wins (sealed flank, breaking escorts, brood collapse), boss openings, cover introduced by the script, mastery hints with the right verb until learned, rig drills, junction trades, honest quick start — Sol 6.2 | running | |
 | PERF14 room load and frame cost — Sol 6.2 | merged | all twenty rooms load in < 3 s cold (worst 2.44 s; campaign median 1.55 s); peak 220 draws, zero combat compiles; High frame p95 still above 20 ms in every measured configuration on a host at load 30–43 — needs a quiet-machine measurement before further cuts |
 | VFX15 four different Overdrive climaxes, Napalm with flame tongues, shared effect-area cap — Opus | merged | Frost Trail and Ram left for a later pass |
 | K13 Warden and Matron as a real boss tier (≈ 2× marine), brood pod asset, Stalker/Carrier/Spitter fixes — Opus, modelling only | merged | |
@@ -105,7 +111,7 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | K11b creature second pass — Opus; second-pass integration and KTX2 repack — Sol | merged | creature textures 132 → 4.8 MiB, downloads 23.7 → 8.1 MB; named emissive regions `warden-ram`, `matron-vents` |
 | RW12 reward cards with illustrations and behavioural headlines, ending composition (transmission leaving the dying ship), re-posed rig portraits — Astra | merged | illustrations are variations of one canister form — candidate for a later pass |
 
-Next (lead): merge HERO14 and VALUE14, then BOSS14 and FX14; merge ENC14, ONB14, ROOM14, MOTION14 as they land; gallery `final9`; R14 (Astra 6.2 high ×2 with image budgets, bounded Opus pass).
+Next (lead): merge BAL15, COND15 and the five wave-16 streams as they land (SHADE15 first — WARN16 and MOTION16 build on its actors); then an attacker/elite pass (Opus, after SHADE15), one memorable aftermath per Overdrive, gallery `final10` and R15. Performance certification still needs a quiet machine.
 
 ## Decisions log
 
