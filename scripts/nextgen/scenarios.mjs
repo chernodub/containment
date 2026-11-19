@@ -1,4 +1,5 @@
 import {ONB14_SCENARIOS} from "./onb14-scenarios.mjs";
+import {ART14_SCENARIOS} from './art14-scenarios.mjs';
 import {E9_TOUR_SCENARIO} from './e9-room-tour.mjs';
 import {U9_SCENARIOS} from './u9-scenarios.mjs';
 import {L8_CAPTURE_ARENAS} from './l8-capture-data.mjs';
@@ -941,3 +942,5 @@ SCENARIOS.push({
 
 import {registerValue14Scenarios} from './value14-scenarios.mjs';
 registerValue14Scenarios(SCENARIOS);
+
+SCENARIOS.push(...ART14_SCENARIOS);

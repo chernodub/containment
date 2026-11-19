@@ -1248,3 +1248,19 @@ node scripts/nextgen/m9-motion.mjs --collection=motion14 --subjects=marine,crawl
 ```
 
 The 30-cell crops retain native pixels. The matching `camera/` sheets show the room at 480×270. The paired rifle sequence prescribes three contacts at catalog cadence. The separate `pack/` lane uses ordinary fire input and records accepted contacts with damage numbers hidden. Optional `travel/` lanes sample world-space shoes under native movement, and `overdrives/` records ordinary casts against staged targets. Use `--dist=<saved-build>` to replay a baseline under the same capture driver.
+
+## ART14 interface studio
+
+Run `npm run studio` from the repository root to build the production renderer,
+open one headless Chromium process and regenerate `public/assets/ui/studio/`.
+The manifest records the shot, encoded file and byte count. The shipped shot
+list lives in `studio-plan.mjs`. An optional `--only=<regex>` restricts the
+batch to matching names. A positional JSON file supplies a named shot map
+using the `StudioShot` shape in `studioFixture.ts`. Custom shots and their manifest
+write to `public/assets/ui/studio/custom/`.
+
+The debug studio works on a prepared production room. It borrows the native
+model builders, ability presentation and postprocessing, then returns the
+encoded frame. Poses, effects and hit reactions are staged presentation
+receipts. Gameplay acceptance still comes from the simulation. For matching
+pixels use the same Chromium, GPU backend, assets, viewport and shot list.

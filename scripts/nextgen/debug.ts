@@ -1,3 +1,4 @@
+import type {StudioShot} from './studioFixture';
 // Imported only by main.ts when ?debug=1. Production gameplay never installs these overrides.
 import {setUiFixture, type UiFixture} from '../../src/ui/gameAdapter';
 import {abilityFixture, type AbilityFixtureState} from '../../src/ui/fixtures';
@@ -43,6 +44,14 @@ export function installDebug(game:DepthGame,renderer:DepthRenderer,sync:()=>void
  const refresh=()=>{render(game,0,game.status==='menu');sync();advanceUi(0);};
  const ready=async()=>{if(game.status!=='menu')renderer.beginGameplayPresentation();beforePrepare();await renderer.prepare(game.node);refresh();};
  const api={game,renderer,events,prepare:ready,
+  async studio(shot:StudioShot){
+   if(liveObservation||renderer.roomLoading)throw Error('Studio requires a prepared fixed-step room');
+   const {shootStudio}=await import('./studioFixture');
+   let seed=1729;
+   const random=Math.random;
+   Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
+   try{return await shootStudio(renderer,game,shot);}finally{Math.random=random;}
+  },
   /** Passive mode keeps the production update/render/audio effect functions intact. */
   get liveObservation(){return liveObservation;},
   /** Benchmark-only observer; the sample is reused and must be copied by consumers. */
