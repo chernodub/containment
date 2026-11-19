@@ -135,9 +135,11 @@ const mapResponse = ShaderChunk.map_fragment
     float marineValue=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
     float marineMax=max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b));
     float marineMin=min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b));
-    bool rigPanel=marineMax-marineMin>.075&&marineValue>.025;
-    if(rigPanel)diffuseColor.rgb=max(vec3(0.),diffuseColor.rgb-marineMin*.5)/max(.001,marineMax-marineMin*.5)*.88;
-    else diffuseColor.rgb=marineValue>.20?vec3(.86,.88,.85):marineValue>.055?vec3(.13,.15,.16):vec3(.022,.026,.029);
+    // HERO14: three value groups. Saturated rig panels keep their hue; everything else is
+    // either cool off-white plate or near-black gunmetal undersuit (never a warm midtone).
+    bool rigPanel=marineMax-marineMin>.16&&marineMax>.18;
+    if(rigPanel)diffuseColor.rgb=max(vec3(0.),diffuseColor.rgb-marineMin*.8)/max(.001,marineMax-marineMin*.8)*.58; // lit tops must not clip to white
+    else diffuseColor.rgb=marineValue>.30?vec3(.80,.85,.90):vec3(.035,.040,.047);
   }
   // Family values replace the inherited photographic/material tint together;
   // a pale source multiply must not bleach graphite armor or a russet crawler.
