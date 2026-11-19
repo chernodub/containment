@@ -182,7 +182,7 @@ export type DamageResult = Readonly<{
   events: readonly EnemyEvent[];
 }>;
 
-type EnemyState = {role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
+type EnemyState = {rushing?:boolean;role?:EnemyRole;priority:boolean;controlResistant:boolean;beat?:number;lesson?:'crawler'|'brute'|'stalker';pod:boolean;podRemainingMs:number;podWarned:boolean;stunRemainingMs:number;broodRemainingMs:number;broodDamage:number;slowMultiplier:number;chargeHit:boolean;repositionRemainingMs:number;repositionX:number;repositionY:number;
   blockedMs?: number; yieldMs?: number; yieldX?: number; yieldY?: number;
   stepStartX?: number; stepStartY?: number;
   id: number;
@@ -572,6 +572,21 @@ export class EnemySystem {
     return result;
   }
 
+  beginRush(id:number):void {
+    const enemy=this.#enemies.get(id);
+    if(enemy){enemy.rushing=true;enemy.decisionCooldownRemainingMs=0;}
+  }
+
+  stagger(id:number,durationMs:number):void {
+    const enemy=this.#enemies.get(id);
+    if(!enemy)return;
+    this.#cachedSnapshot=null;
+    this.#cancelMelee(enemy);
+    enemy.stunRemainingMs=Math.max(enemy.stunRemainingMs,durationMs);
+    enemy.windupMs=enemy.chargeMs=enemy.broodRemainingMs=0;
+    enemy.pendingAttack=null;
+  }
+
   remove(id: number): boolean {
     this.#cachedSnapshot=null;
     if (!Number.isSafeInteger(id)) return false;
@@ -690,6 +705,14 @@ export class EnemySystem {
     let targetX = player.x;
     let targetY = player.y;
     let direction = normalized(player.x - enemy.x, player.y - enemy.y);
+
+    if(enemy.rushing){
+      const aim=this.#canAttack?.(enemy,player)===false?this.#route?.(enemy,player)??player:player;
+      const heading=normalized(aim.x-enemy.x,aim.y-enemy.y);
+      enemy.velocityX=heading.x*enemy.speed*1.6;
+      enemy.velocityY=heading.y*enemy.speed*1.6;
+      return;
+    }
 
     // Seek a clear shot before holding range or retreating.
     if (enemy.type === 'spitter' && this.#canAttack?.(enemy, player) !== false) {

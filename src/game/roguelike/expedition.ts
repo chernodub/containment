@@ -112,5 +112,5 @@ export function recordExpeditionPurchase(expedition:Expedition,id:ServiceId,reso
  const node=currentNode(expedition);if(expedition.run.phase!=='reward'||!['healing','supplies'].includes(node.reward)||!serviceStock(expedition.run,id)||expedition.resources.credits<serviceCost(id,node.depth))throw new Error('Purchase unavailable');
  if(resources.credits!==expedition.resources.credits-serviceCost(id,node.depth))throw new Error('Invalid purchase receipt');
  const tokens=expedition.run.rerollTokens??0;if(id==='reroll'&&tokens>=3)throw new Error('Reroll storage full');
- return snapshot({...expedition.run,...(id==='reroll'?{rerollTokens:tokens+1}:{}),service:{nodeId:node.id,allocationClaimed:expedition.run.service?.allocationClaimed??false,purchases:[...(expedition.run.service?.purchases??[]),id]}},build,resources,expedition);
+ return snapshot({...expedition.run,...(id==='reroll'?{rerollTokens:tokens+1}:{}),...(id==='revive'?{finaleRevive:true as const}:{}),service:{nodeId:node.id,allocationClaimed:expedition.run.service?.allocationClaimed??false,purchases:[...(expedition.run.service?.purchases??[]),id]}},build,resources,expedition);
 }

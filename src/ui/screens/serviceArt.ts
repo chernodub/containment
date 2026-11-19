@@ -1,7 +1,7 @@
 import type {ServiceId} from '../../game/roguelike/economy';
 import '../styles/requisition.css';
 
-const objects: Record<ServiceId, string> = {
+const objects: Record<Exclude<ServiceId,'revive'>, string> = {
   heal: `<path class="service-art-body" d="M94 19h36l11 9v31l-11 10H94L83 59V28z"/>
     <path class="service-art-face" d="M92 35h40v18H92zM95 19v-7h32v7m-30 50v7h28v-7"/>
     <path class="service-art-mark" d="M106 36h10v6h6v6h-6v6h-10v-6h-6v-6h6z"/>
@@ -37,6 +37,6 @@ export function serviceArt(id: ServiceId): string {
   return `<svg class="service-illustration" viewBox="0 0 224 84" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
     <path class="service-art-shadow" d="M18 68l95-22 93 22-93 13z"/>
     <path class="service-art-guide" d="M12 22V12h20m160 0h20v10M12 62v10h20m160 0h20V62M17 42h38m114 0h38"/>
-    ${objects[id]}
+    ${objects[id==='revive'?'medkit':id]}
   </svg>`;
 }

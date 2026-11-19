@@ -152,7 +152,7 @@ export function chooseRoute(routes, health = 100) {
 }
 /** Shop only from currently offered/affordable buttons; no future-room knowledge. */
 export function chooseServicePurchase(available,combat,build={},run={}) {
-  const priorities=[];
+  const priorities=['revive'];
   if(combat.health<70)priorities.push('heal');
   if(combat.armor<20)priorities.push('armor');
   if(combat.medkits<2)priorities.push('medkit');
@@ -162,7 +162,12 @@ export function chooseServicePurchase(available,combat,build={},run={}) {
   if(combat.reserve<12)priorities.push('ammo');
   return priorities.find(id=>available.includes(id))??null;
 }
-export function chooseDetour(combat) {return combat.health>=85&&combat.armor>=25&&combat.medkits>0&&combat.credits<240?'salvage':'direct';}
+export function chooseDetour(combat,depth) {
+  if(depth===2)return 'salvage';
+  if(depth===6)return combat.credits>=70&&(combat.armor<30||combat.grenades<2)?'salvage':'direct';
+  if(depth===10)return combat.health<70?'direct':'salvage';
+  return combat.health>=85&&combat.armor>=25&&combat.medkits>0?'salvage':'direct';
+}
 /** Focus a visible marked priority threat, then ranged pressure; never use hidden state. */
 export function chooseTarget(enemies, player) {
   return enemies.filter(e => e.health > 0 && e.clear && e.visible && e.vulnerable !== false).sort((a, b) => {
