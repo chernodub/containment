@@ -77,8 +77,10 @@ APIs, full gates, capture `integration-1`, lead art/feel review, punch list.
 | POLISH15 thirteen defects from the gallery build (portrait crops, route card contrast, damage source names, decal seams, sign fade, invisible wall, limb rim, Overdrive stills, Meltdown core) — Sol 6.2 | merged 61727253 | |
 | Gallery `final9` — Sol 6.2 | running | |
 | **Wave 15** (started while the gallery builds) | running | |
-| WEAPONS15 five weapons with five jobs (pistol sidearm, rifle sustain, shotgun burst, plasma anti-armour, rocket area), switching, per-weapon feel and audio, HUD job tags, bots use all five — Sol 6.2 | running | |
-| RUN15 seeded encounter variants (≥ 3 per room), ship conditions, choices that carry forward, run identity, contracts — Sol 6.2 | running | |
+| WEAPONS15 five weapons with five jobs (pistol sidearm, rifle sustain, shotgun burst, plasma anti-armour, rocket area), switching, per-weapon feel and audio, HUD job tags, bots use all five — Sol 6.2 | merged 6d6919f9 | Three tuning rounds: first made the game unlosable (79/80), second broke rig balance; final keeps the rifle/shotgun baseline and adds pistol, plasma and rocket as sidegrades (7% / 8.5% / 1.7% of Standard weapon damage), per-weapon feel, audio and HUD job tags. Standard competent 71/80 — handed to BAL15. |
+| RUN15 seeded encounter variants (≥ 3 per room), ship conditions, choices that carry forward, run identity, contracts — Sol 6.2 | merged b09f51ed | Three encounter openings per room, carry-forward junctions, run identity, contracts. First ship conditions were invisible number tweaks and were replaced with six visible ones (emergency lighting, coolant leak, hull venting, overcharged conduits, brood-warm deck, sealed bulkheads). |
+| BAL15 combined balance (Story 16–19, Standard 11–15, Veteran 2–6 of 20 per rig; conditions and variants ±20%; bot stalls) — Sol 6.2 | running | |
+| COND15 art pass on the six ship conditions — Astra 6.2 | running | |
 | Queued: R14 on `final9` | pending | |
 | PERF14 room load and frame cost — Sol 6.2 | merged | all twenty rooms load in < 3 s cold (worst 2.44 s; campaign median 1.55 s); peak 220 draws, zero combat compiles; High frame p95 still above 20 ms in every measured configuration on a host at load 30–43 — needs a quiet-machine measurement before further cuts |
 | VFX15 four different Overdrive climaxes, Napalm with flame tongues, shared effect-area cap — Opus | merged | Frost Trail and Ram left for a later pass |
