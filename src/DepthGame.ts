@@ -1,4 +1,4 @@
-import {ROCKET_ARM_DISTANCE, SHOTGUN_RANGE, WEAPONS} from './game/combat/catalog';
+import {ROCKET_ARM_DISTANCE} from './game/combat/catalog';
 import {AWAKENING_DRILL} from './game/waves/authoredEncounters';
 import {BOSS_BODIES,guardianRadius} from './game/enemies/bossDefinitions';
 import {SERVICE_IDS,serviceCost,serviceStock,availableAugmentUpgrades,fieldWorkshopDepth,detourOffers,type ServiceId,type DetourChoice} from './game/roguelike/economy';
@@ -107,7 +107,7 @@ export class DepthGame {
   this.newRun(undefined,{rig:build.rig,difficulty:this.difficulty,version:run.version,startingBoon:run.version===3?build.mutations[0]:undefined});
   return true;
  }
- private enterRoom(start=true){this.dodgeDrill=null;this.departures.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.broodPodsDestroyed=0;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();this.enemies=this.makeEnemies();this.boss.reset();this.bossSlow=1;this.pickups.reset(this.expedition.run.seed+this.node.depth);this.bullets=[];this.rifleTrack=undefined;this.pools=[];this.pending=[];this.clearRequested=false;this.emergencyUsed=false;this.hurtCooldown=0;this.heavyHitGrace=0;this.recentHits=[];this.mutations=this.makeMutations();this.director=this.makeDirector();this.combat.setBuild(this.expedition.build);this.combat.setWave(this.node.depth+1);Object.assign(this.player,this.geometry.playerSpawn,{angle:0,moving:false,vx:0,vy:0});this.roomRevision++;this.status='playing';
+ private enterRoom(start=true){this.dodgeDrill=null;this.departures.clear();this.cleanupElapsed=0;this.breakAnnounced=false;this.broodPodsDestroyed=0;this.siegeBeat=-1;this.siegeRemainingMs=12000;this.roomDamageLedger.clear();this.presentation.flush();this.presentation.reset();this.abilityPulseDamage=0;this.storySkipped=false;this.aimPoint=null;this.mutations.reset();this.abilities.resetRoom();this.combat.setOverclock(false);this.node=this.findNode();this.runStats.enterRoom(this.node.id);this.geometry=createExpeditionGeometry(this.node);this.navigation=new FacilityNavigation(this.geometry);this.prepareSiegePoint();this.enemies=this.makeEnemies();this.boss.reset();this.bossSlow=1;this.pickups.reset(this.expedition.run.seed+this.node.depth);this.bullets=[];this.pools=[];this.pending=[];this.clearRequested=false;this.emergencyUsed=false;this.hurtCooldown=0;this.heavyHitGrace=0;this.recentHits=[];this.mutations=this.makeMutations();this.director=this.makeDirector();this.combat.setBuild(this.expedition.build);this.combat.setWave(this.node.depth+1);Object.assign(this.player,this.geometry.playerSpawn,{angle:0,moving:false,vx:0,vy:0});this.roomRevision++;this.status='playing';
  if(this.expedition.run.version===3&&this.difficulty==='story'&&this.node.depth===11&&this.combat.snapshot.health<50){
   const entrance=this.moveCorpse({...this.player,radius:14},48,0);
   this.pickups.spawn('health',35,entrance.x,entrance.y);
@@ -124,7 +124,7 @@ export class DepthGame {
  private serviceAllocation(combat:CombatSystem){
   if(this.expedition.run.service?.nodeId===this.node.id&&this.expedition.run.service.allocationClaimed)return;
   if(this.node.reward==='healing')this.applyHealingAllocation(combat);
-  else if(this.node.reward==='supplies'){combat.collectAmmoPack();combat.collectAmmoPack();combat.addGrenades(1);}
+  else if(this.node.reward==='supplies'){combat.collectAmmoPack(false);combat.collectAmmoPack(false);combat.addGrenades(1);}
  }
  private allocateService(){this.serviceAllocation(this.combat);this.expedition=markExpeditionAllocation(this.expedition,this.combat.getRunResources());}
  canPurchaseService(purchase:ServiceId,augment?:string){
@@ -138,7 +138,7 @@ export class DepthGame {
   if(purchase==='reroll')return this.expedition.run.version!==1&&(this.expedition.run.rerollTokens??0)<3;
   if(purchase==='upgrade')return availableAugmentUpgrades(this.expedition.build).some(id=>augment===undefined||id===augment);
   if(purchase==='revive')return !this.expedition.run.finaleRevive;
-  const before=preview.getRunResources();for(let i=0;i<4;i++)preview.collectAmmoPack();const after=preview.getRunResources();return (Object.keys(before.ammo) as WeaponId[]).some(id=>after.ammo[id].reserve>before.ammo[id].reserve);
+  const before=preview.getRunResources();preview.refillShopAmmo();const after=preview.getRunResources();return (Object.keys(before.ammo) as WeaponId[]).some(id=>after.ammo[id].reserve>before.ammo[id].reserve);
  }
  purchaseService(purchase:ServiceId,augment?:string){
   const upgrade=availableAugmentUpgrades(this.expedition.build).find(id=>id===augment);
@@ -146,7 +146,7 @@ export class DepthGame {
   this.allocateService();const before=this.combat.getRunResources();let build=this.expedition.build;
   if(purchase==='heal')this.combat.restoreHealth(35);
   else if(purchase==='armor')this.combat.restoreArmor(30);
-  else if(purchase==='ammo')for(let i=0;i<4;i++)this.combat.collectAmmoPack();
+  else if(purchase==='ammo')this.combat.refillShopAmmo();
   else if(purchase==='medkit')this.combat.restoreRunResources({...before,medkits:Math.min(6,before.medkits+1)});
   else if(purchase==='grenade')this.combat.addGrenades(2);
   else if(purchase==='upgrade')build=upgradeBuildAugment(build,upgrade!);
@@ -319,33 +319,21 @@ export class DepthGame {
  heal(){if(this.status==='playing')this.combat.consumeMedkit();}
  switchWeapon(id:WeaponId){if(this.status==='playing'){const before=this.combat.getRunResources().ammo[id].magazine;if(this.combat.switchWeapon(id)&&this.combat.snapshot.magazine>before)this.mutations.completedReload(this.player);this.syncOverclock();}}
  grenade(){if(this.status!=='playing')return;const r=this.combat.throwGrenade(this.player.angle);if(r)this.bullets.push({x:this.player.x,y:this.player.y,life:1.1,kind:'grenade',request:{...r,weaponId:'rocket',radius:7,penetration:1,mutationShotId:this.combat.nextMutationEventId('grenade')},tracker:new ProjectileHitTracker(1)});}
- private rifleTrack?: {id:number; time:number; count:number};
  private weaponImpactDamage(b:Bullet, id:number){
-  const enemy=this.enemies.getSnapshot(id);
-  const recovering=enemy?.meleePhase==='recovery'||(enemy?.stunRemainingMs??0)>0;
-  const armored=(enemy?.armor??0)>0;
   const {weaponId,damage,precision}=b.request;
+  if(weaponId!=='pistol'&&weaponId!=='plasma')return damage;
+  const enemy=this.enemies.getSnapshot(id);
   switch(weaponId){
    case 'pistol': {
+    const recovering=enemy?.meleePhase==='recovery'||(enemy?.stunRemainingMs??0)>0;
     const finishing=recovering&&enemy&&enemy.armor===0&&enemy.health<=damage*2;
     return damage*(finishing?2:precision?1.85:1);
-   }
-   case 'rifle': {
-    const previous=this.rifleTrack;
-    const count=previous?.id===id&&this.elapsed-previous.time<.32?Math.min(4,previous.count+1):0;
-    this.rifleTrack={id,time:this.elapsed,count};
-    return damage*(1+count*.03)*(armored?.82:1);
-   }
-   case 'shotgun': {
-    const close=Math.hypot(b.x-b.sourceX!,b.y-b.sourceY!)<=100;
-    return damage*(close?1:.65)*(recovering?1.31:1);
    }
    case 'plasma': {
     const plate=Math.min(enemy?.armor??0,damage*4);
     // Extra plate damage never transfers into health on the breaking hit.
     return plate + damage*.8*(1-plate/(damage*4));
    }
-   default: return damage;
   }
  }
  private rocketArmed(b:Bullet){
@@ -360,9 +348,14 @@ export class DepthGame {
    }
   }
   const targets=this.targets().filter(t=>Math.hypot(t.x-b.x,t.y-b.y)<=b.request.splashRadius&&hasClearExpeditionShot(this.geometry,b,t));
-  const clustered=b.kind==='player'&&targets.filter(t=>Math.hypot(t.x-b.x,t.y-b.y)<=b.request.splashRadius*.73).length>=3;
+  const pincer=b.kind==='player'&&targets.filter(t=>this.enemies.getSnapshot(t.id)?.role==='flanker').length>=2;
   const elements=new Set<'ice'|'poison'|'fire'>();for(const t of targets){const s=this.mutations.statuses(t.id);if(s.chilled||s.frozen)elements.add('ice');if(s.poisoned)elements.add('poison');if(s.burning)elements.add('fire');}this.presentation.push({type:'explosion',x:b.x,y:b.y,radius:b.request.splashRadius,weapon:b.kind==='player'?b.request.weaponId:undefined,elements:[...elements]});const cause={chainId:b.request.mutationShotId??this.combat.nextMutationEventId('blast'),depth:0};for(const t of targets){const distance=Math.hypot(t.x-b.x,t.y-b.y);const enemy=b.kind==='player'?this.enemies.getSnapshot(t.id):null;
-   const multiplier=enemy?.pod||enemy?.broodRemainingMs?1.25:clustered?(enemy?.armor?0.96:1.15):b.kind==='player'?.78:1;
+   let multiplier=1;
+   if(b.kind==='player'){
+    if(enemy?.pod||enemy?.broodRemainingMs)multiplier=1.2;
+    else if(pincer&&enemy?.role==='flanker')multiplier=1.1;
+    else multiplier=enemy?.type==='crawler'?.42:.7;
+   }
    const n=calculateSplashDamage(b.request.damage*multiplier,distance,b.request.splashRadius);if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,n,{x:(t.x-b.x)/(distance||1)*b.request.knockback,y:(t.y-b.y)/(distance||1)*b.request.knockback},'weapon',true,b.kind==='player'?b.request.weaponId:undefined);if(r.applied){if(b.hitReceipt&&!b.hitReceipt.hit){b.hitReceipt.hit=true;this.runStats.recordShotHit();}this.mutations.hit(cause.chainId,b.request.weaponId,t,{x:(t.x-b.x)/(distance||1),y:(t.y-b.y)/(distance||1)},b.request.primed);if(r.died)this.mutations.kill(t,'direct',cause);}}}
  private updateBullets(dt:number,previousTargets:ReadonlyMap<number,{x:number;y:number}>=new Map(),hostileScale=this.abilities.hostileTimeScale){const shotRadii=new Map(this.enemies.snapshot.enemies.map(e=>[e.id,e.champion==='matron'?e.radius:enemyShotRadius(e.type,e.elite)]));for(const b of [...this.bullets]){if(this.status!=='playing')break;const bulletDt=dt*(b.kind==='hazard'?hostileScale:1);b.life-=bulletDt;const dx=Math.cos(b.request.angle)*b.request.speed*bulletDt,dy=Math.sin(b.request.angle)*b.request.speed*bulletDt;const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/7));let done=false;for(let i=0;i<steps&&!done;i++){
    const from={x:b.x,y:b.y},next={x:b.x+dx/steps,y:b.y+dy/steps};const barrierBlocked=b.kind==='hazard'&&this.abilities.interceptProjectile(from,next,b.request.radius,b.request.damage);if(barrierBlocked){done=true;break;}const wallBlocked=!canTraverseExpedition(this.geometry,from,next,b.request.radius);if(wallBlocked&&b.kind!=='player'){if(b.kind==='grenade'){b.request={...b.request,speed:0};break;}if(b.request.splashRadius)this.blast(b);else this.presentation.push({type:'hit',x:b.x,y:b.y,angle:b.request.angle,weapon:b.request.weaponId});done=true;break;}b.x=next.x;b.y=next.y;
@@ -370,7 +363,7 @@ export class DepthGame {
    const contacts=this.targets().map(t=>{const radius=shotRadii.get(t.id)??t.radius;const previous=previousTargets.get(t.id)??t,mx=t.x-previous.x,my=t.y-previous.y;
     const start={x:from.x-previous.x-mx*i/steps,y:from.y-previous.y-my*i/steps},end={x:next.x-previous.x-mx*(i+1)/steps,y:next.y-previous.y-my*(i+1)/steps};
     return {t,entry:sweptCircle(start,end,{x:0,y:0},radius+b.request.radius)};}).filter(c=>c.entry!==null&&hasClearExpeditionShot(this.geometry,from,c.t)&&canTraverseExpedition(this.geometry,from,{x:from.x+(next.x-from.x)*c.entry,y:from.y+(next.y-from.y)*c.entry},b.request.radius)).sort((a,b)=>a.entry!-b.entry!);
-   for(const {t,entry} of contacts){const hit=b.tracker.hit(t.id);if(!hit.applied)continue;if(b.request.splashRadius){b.x=from.x+(next.x-from.x)*entry!;b.y=from.y+(next.y-from.y)*entry!;this.blast(b);done=true;break;}const direction={x:Math.cos(b.request.angle),y:Math.sin(b.request.angle)};if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,this.weaponImpactDamage(b,t.id),{x:direction.x*b.request.knockback,y:direction.y*b.request.knockback},'weapon',false,b.request.weaponId);this.presentation.push({type:'hit',contact:r.applied?(r.absorbedByArmor>0?'armor':'damage'):'blocked',x:from.x+(next.x-from.x)*entry!,y:from.y+(next.y-from.y)*entry!,angle:b.request.angle,weapon:b.request.weaponId,targetId:t.id,...(r.applied?{damage:r.damage,lethal:r.died,source:'weapon' as const}:{})});if(r.applied){if(b.request.weaponId==='shotgun'&&!r.died){const enemy=this.enemies.getSnapshot(t.id);if(enemy?.type==='crawler'&&!enemy.elite&&!enemy.pod)this.enemies.stagger(t.id,100);}if(b.hitReceipt&&!b.hitReceipt.hit){b.hitReceipt.hit=true;this.runStats.recordShotHit();}}const shot=b.request.mutationShotId??this.combat.nextMutationEventId('hit');if(r.applied){this.mutations.hit(shot,b.request.weaponId,t,direction,b.request.primed);if(r.died)this.mutations.kill(t,'direct',{chainId:shot,depth:0});}if(hit.exhausted){done=true;break;}}
+   for(const {t,entry} of contacts){const hit=b.tracker.hit(t.id);if(!hit.applied)continue;if(b.request.splashRadius){b.x=from.x+(next.x-from.x)*entry!;b.y=from.y+(next.y-from.y)*entry!;this.blast(b);done=true;break;}const direction={x:Math.cos(b.request.angle),y:Math.sin(b.request.angle)};if(this.abilities.ignitingShots)this.mutations.applyAbilityStatus(t,'burn',1);const r=this.damage(t.id,this.weaponImpactDamage(b,t.id),{x:direction.x*b.request.knockback,y:direction.y*b.request.knockback},'weapon',false,b.request.weaponId);this.presentation.push({type:'hit',contact:r.applied?(r.absorbedByArmor>0?'armor':'damage'):'blocked',x:from.x+(next.x-from.x)*entry!,y:from.y+(next.y-from.y)*entry!,angle:b.request.angle,weapon:b.request.weaponId,targetId:t.id,...(r.applied?{damage:r.damage,lethal:r.died,source:'weapon' as const}:{})});if(r.applied){if(b.hitReceipt&&!b.hitReceipt.hit){b.hitReceipt.hit=true;this.runStats.recordShotHit();}}const shot=b.request.mutationShotId??this.combat.nextMutationEventId('hit');if(r.applied){this.mutations.hit(shot,b.request.weaponId,t,direction,b.request.primed);if(r.died)this.mutations.kill(t,'direct',{chainId:shot,depth:0});}if(hit.exhausted){done=true;break;}}
    if(!done&&wallBlocked){b.x=from.x;b.y=from.y;if(b.request.splashRadius)this.blast(b);else if(b.request.weaponId==='shotgun'){const c=wallContact(this.geometry,from,next,b.request.radius);this.presentation.push({type:'hit',x:c.x,y:c.y,angle:b.request.angle,weapon:'shotgun',shotId:b.request.mutationShotId,wall:c.normal});}else this.presentation.push({type:'hit',x:b.x,y:b.y,angle:b.request.angle,weapon:b.request.weaponId});done=true;}
   }if(b.life<=0){if(b.kind==='grenade')this.blast(b);done=true;}if(done){const i=this.bullets.indexOf(b);if(i>=0)this.bullets.splice(i,1);}}
  }
@@ -424,7 +417,7 @@ export class DepthGame {
  private updateStep(deltaMs:number,input:GameInput){if(this.status!=='playing')return;if(!Number.isFinite(deltaMs))return;const ms=Math.min(50,Math.max(0,deltaMs)),dt=ms/1000;const weaponOverclock=this.abilities.overclocked,hostileMs=this.abilities.hostileDelta(ms),hostileScale=ms?hostileMs/ms:1;this.presentation.update(ms);this.runStats.update(ms,this.expedition.run.currentNodeId);this.elapsed+=dt;this.heavyHitGrace=Math.max(0,this.heavyHitGrace-dt);this.hurtCooldown=Math.max(0,this.hurtCooldown-dt);const length=Math.max(1,Math.hypot(input.x,input.y));if(input.aimPoint!==undefined)this.aimPoint=input.aimPoint;this.abilities.setIntent(input.x,input.y,this.aimPoint);const frameX=this.player.x,frameY=this.player.y;const moved=this.moveCorpse(this.player,this.abilities.dashing?0:input.x/length*220*dt*this.abilities.moveSpeedMultiplier,this.abilities.dashing?0:input.y/length*220*dt*this.abilities.moveSpeedMultiplier);this.player.vx=dt?(moved.x-this.player.x)/dt:0;this.player.vy=dt?(moved.y-this.player.y)/dt:0;this.player.moving=Math.hypot(this.player.vx,this.player.vy)>3;this.player.x=moved.x;this.player.y=moved.y;const siege=this.siege;if(siege){if(this.siegeBeat!==siege.beat){this.siegeBeat=siege.beat;this.siegeRemainingMs=12000;}if(Math.hypot(this.player.x-siege.x,this.player.y-siege.y)<=siege.radius)this.siegeRemainingMs=Math.max(0,this.siegeRemainingMs-ms);}
   if(input.angle!==null&&Number.isFinite(input.angle))this.player.angle=input.angle;else if(input.autoAim){const q=this.boss.snapshot,target=this.targets().filter(t=>(t.id!==-1||q.vulnerable)&&Math.hypot(t.x-this.player.x,t.y-this.player.y)<720&&hasClearExpeditionShot(this.geometry,this.player,t)).sort((a,b)=>Math.hypot(a.x-this.player.x,a.y-this.player.y)-Math.hypot(b.x-this.player.x,b.y-this.player.y))[0];if(target)this.player.angle=Math.atan2(target.y-this.player.y,target.x-this.player.x);}
   this.feedbackBatch=true;try{this.abilities.update(ms);}finally{this.flushFeedback();}this.player.vx=dt?(this.player.x-frameX)/dt:0;this.player.vy=dt?(this.player.y-frameY)/dt:0;this.player.moving=Math.hypot(this.player.vx,this.player.vy)>3;this.syncOverclock(weaponOverclock);if(this.status!=='playing')return;
-  const reloadBefore=this.combat.snapshot;this.combat.regenerateReserves(ms);this.combat.update(ms,input.fire);if(reloadBefore.reloading&&!this.combat.snapshot.reloading&&this.combat.snapshot.magazine>reloadBefore.magazine)this.mutations.completedReload(this.player);if(input.fire){const shots=this.combat.fire(this.player.angle);if(shots.length){this.runStats.recordShot();const hitReceipt={hit:false};this.presentation.push({type:'shot',x:this.player.x,y:this.player.y,weapon:shots[0].weaponId,angle:this.player.angle});for(const request of shots)this.bullets.push({sourceX:this.player.x,sourceY:this.player.y,x:this.player.x,y:this.player.y,life:request.weaponId==='shotgun'?SHOTGUN_RANGE/WEAPONS.shotgun.projectileSpeed:2,kind:'player',request,hitReceipt,tracker:new ProjectileHitTracker(request.penetration)});}}this.combat.reloadIfEmpty();
+  const reloadBefore=this.combat.snapshot;this.combat.regenerateReserves(ms);this.combat.update(ms,input.fire);if(reloadBefore.reloading&&!this.combat.snapshot.reloading&&this.combat.snapshot.magazine>reloadBefore.magazine)this.mutations.completedReload(this.player);if(input.fire){const shots=this.combat.fire(this.player.angle);if(shots.length){this.runStats.recordShot();const hitReceipt={hit:false};this.presentation.push({type:'shot',x:this.player.x,y:this.player.y,weapon:shots[0].weaponId,angle:this.player.angle});for(const request of shots)this.bullets.push({sourceX:this.player.x,sourceY:this.player.y,x:this.player.x,y:this.player.y,life:2,kind:'player',request,hitReceipt,tracker:new ProjectileHitTracker(request.penetration)});}}this.combat.reloadIfEmpty();
   const previousTargets=new Map(this.targets().map(t=>[t.id,{x:t.x,y:t.y}]));
   this.updateCleanup(ms);this.navigation.prepare(this.player,1);this.enemyEvents(this.enemies.update(hostileMs,this.player));if(this.status!=='playing')return;this.updateAwakeningDrill(ms);if(this.status!=='playing')return;this.queenEvents(this.boss.update(hostileMs*this.bossSlow,this.player,this.enemies.activeCount+this.pending.length));this.updateBullets(dt,previousTargets,hostileScale);if(this.status!=='playing')return;
   for(const pool of this.pools){pool.life-=hostileMs/1000;pool.tick-=hostileMs/1000;if(pool.tick<=0){pool.tick=.5;if(Math.hypot(pool.x-this.player.x,pool.y-this.player.y)<pool.radius+16)this.hurt(pool.damage,pool,{source:'acid-pool',enemyFamily:'queen'});}}this.pools=this.pools.filter(p=>p.life>0);if(this.status!=='playing')return;

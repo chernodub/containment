@@ -327,3 +327,75 @@ Arc had the largest decline from the supplied cover reference. Seven of its four
 - Cryo, seed 1729, Story. Complete with 20 clears, 0 errors, and 0 defects. [Campaign receipt](../../artifacts/nextgen/playtest/weapons15-lead-final-cryo/report.json)
 
 The production build passed after both native campaigns. [Standard cohort](../../artifacts/nextgen/playtest/weapons15-lead-p3-standard/summary.json) · [Story cohort](../../artifacts/nextgen/playtest/weapons15-lead-p3-story/summary.json)
+
+## Final baseline restoration
+
+The complete rifle and shotgun catalogue entries match `nextgen`. Rifle impacts apply the catalogue projectile damage at every range and through armour. Shotgun uses its original eight-pellet fan and projectile lifetime, with regular pellet damage and native knockback. Swapping between these two weapons cancels the reload and uses the original fire timing. A deliberate pistol draw lets the current reload run in the background. The WEAPONS15 muzzle, impact, audio, recoil and weapon-strip presentation still applies.
+
+The service pistol keeps the pass-3 opening and lethal recovery bonuses. Its expected magazine-cycle damage is 60.7 DPS including one opening bonus, or 63% of the baseline rifle's 96.3 DPS, using 60 Hz cadence and ordinary reloads. Plasma pays a three-shot heat limit. Its nominal plate output during the firing window is about 253 per second, versus about 137 from rifle. Flesh output is 16 per bolt. Plate damage stops at the remaining armour and only the unused fraction of the 16-point flesh component can carry into health. A nominal 160-armour, 320-health Brute at 210 units takes approximately 3.58 s with a loaded rifle or 3.03–3.07 s with a ready plasma opener and rifle follow-up, including draw and flight. This assumes continuous accurate fire, full magazines, and time zero at the weapon decision.
+
+The launcher arms after 170 units of travel and applies line-of-sight self-damage in the 162-unit blast. Its stronger splash applies to brood, pods and grouped flankers; ordinary Crawlers receive 42% damage. It holds three total rounds, issues one per room and can find one more via field ammo. A shop refill adds up to two rounds within the carry cap. It spends shells during Overclock and can read older saves with the new cap applied.
+
+### Restored catalogue
+
+| Weapon | Damage × pellets | Shots/s | Magazine | Starting reserve | Reload or vent ms | Full spread, rad | Nominal max travel | Pierce | Splash | Knockback |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Pistol | 17 × 1 | 4 | 12 | ∞ | 850 | 0 | 1800 | 1 | 0 | 12 |
+| Rifle | 16 × 1 | 9 | 30 | 60 | 1600 | .012 plus up to .058 bloom | 2100 | 1 | 0 | 10 |
+| Shotgun | 11 × 8 | 1.15 | 8 | 16 | 2100 | .24 | 1520 | 1 | 0 | 34 |
+| Plasma | 20 × 1, up to 80 into plate or 16 into flesh | 3.2 | 20 | 22 | 1700 | 0 | 1200 | 3 | 0 | 18 |
+| Rocket | 100 × 1 before splash modifiers | .65 | 1 | 2 | 2100 | 0 | 920 | 1 | 162 | 90 |
+
+The competent policy uses delayed contact positions for the near-contact shotgun choice. It waits at least 250 ms on specialised choices and defers swaps while dashing. It reserves rockets for pods, active brood and paired flankers and points only the rocket at that separate target. The novice uses the original `nextgen` selection and input cadence.
+
+### Tuning and measured usage
+
+Iteration 1 restored both baseline weapons and introduced the final rocket supply cap. It kept the original aim target and added delay before every competent swap. Its early sample showed low pistol and rocket use. The sample includes the finished Breacher runs and the separate seed-1729 probes on the other rigs.
+
+Iteration 2 kept the damage and supply numbers. It restored the original novice weapon policy and gave competent play a pistol reload-cover window, delayed baseline selection and a separate aim target for a prepared rocket opportunity. The comparison below distinguishes the first sample from the final 80-attempt cohorts.
+
+| Iteration | Difficulty | Clears / terminal runs | Pistol | Rifle | Shotgun | Plasma | Rocket | Rifle + shotgun |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | Standard | 4/6 | 1.2% | 37.1% | 53.2% | 8.2% | 0.3% | 90.3% |
+| 1 | Story | 7/7 | 0.0% | 44.2% | 55.8% | 0.0% | 0.0% | 100.0% |
+| 2 | Standard | 71/80 | 7.0% | 46.7% | 36.2% | 8.5% | 1.7% | 82.8% |
+| 2 | Story | 67/80 | 0.0% | 44.7% | 55.3% | 0.0% | 0.0% | 100.0% |
+
+### Final completions
+
+| Difficulty | Rig | Cover reference | Clears / attempts | Delta | Deaths | Stalls |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Standard | Breacher | 12/20 | 17/20 | +5 | 3 | 0 |
+| Standard | Cryo | 15/20 | 18/20 | +3 | 2 | 0 |
+| Standard | Pyro | 14/20 | 19/20 | +5 | 1 | 0 |
+| Standard | Arc | 16/20 | 17/20 | +1 | 3 | 0 |
+| Story | Breacher | 18/20 | 18/20 | +0 | 2 | 0 |
+| Story | Cryo | 16/20 | 15/20 | -1 | 5 | 0 |
+| Story | Pyro | 19/20 | 16/20 | -3 | 4 | 0 |
+| Story | Arc | 18/20 | 18/20 | +0 | 2 | 0 |
+
+### Final raw weapon usage
+
+| Difficulty | Weapon | Shots | Direct damage | Kills | Equipped seconds |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Standard | pistol | 15,337 | 251,345 | 2,505 | 3,868.4 |
+| Standard | rifle | 135,353 | 1,678,251 | 9,752 | 49,677.0 |
+| Standard | shotgun | 21,179 | 1,301,148 | 8,823 | 16,066.0 |
+| Standard | plasma | 3,365 | 304,631 | 106 | 1,092.4 |
+| Standard | rocket | 1,014 | 61,933 | 317 | 1,114.9 |
+| Story | pistol | 0 | 0 | 0 | 0.0 |
+| Story | rifle | 100,989 | 1,171,000 | 6,186 | 44,268.3 |
+| Story | shotgun | 24,437 | 1,446,833 | 9,245 | 22,084.4 |
+| Story | plasma | 0 | 0 | 0 | 0.0 |
+| Story | rocket | 0 | 0 | 0 | 0.0 |
+
+The final Standard cohort fired 1,014 rockets across 1,551 entered rooms (0.65 per room), down from 5,155 in the lead retune. These were all entered rooms, including rooms without a qualifying brood or flank target. The observed frequency was below the requested 2–4 per room.
+The ±2 completion gate was missed by Standard Breacher (+5), Standard Cryo (+3), Standard Pyro (+5), Story Pyro (-3).
+Usage targets were missed by rifle plus shotgun (82.8%), rocket (1.7%).
+
+### Native verification
+
+- Arc Standard, seed 1729. Complete with 20 clears, 0 errors and 0 defects. [Campaign receipt](../../artifacts/nextgen/playtest/weapons15-restore-final-arc/report.json)
+- Cryo Story, seed 1729. Complete with 20 clears and 0 errors. The runner recorded one 5.41-second loading warning in Manual-Control Chamber. [Campaign receipt](../../artifacts/nextgen/playtest/weapons15-restore-final-cryo/report.json)
+
+The final production build passed after both native campaigns. All four rigs ran the 20 specified seeds in each difficulty. The recorded results close the second tuning iteration.

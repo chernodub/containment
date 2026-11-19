@@ -28,7 +28,7 @@ export const WEAPONS: Readonly<
   rifle: weapon({
     id: 'rifle',
     label: 'Assault rifle',
-    damage: 14,
+    damage: 16,
     roundsPerSecond: 9,
     magazine: 30,
     reserve: 60,
@@ -47,7 +47,7 @@ export const WEAPONS: Readonly<
   shotgun: weapon({
     id: 'shotgun',
     label: 'Combat shotgun',
-    damage: 12,
+    damage: 11,
     roundsPerSecond: 1.15,
     magazine: 8,
     reserve: 16,
@@ -61,13 +61,13 @@ export const WEAPONS: Readonly<
     projectileRadius: 4,
     penetration: 1,
     splashRadius: 0,
-    knockback: 41,
+    knockback: 34,
   }),
   plasma: weapon({
     id: 'plasma',
     label: 'Plasma projector',
     damage: 20,
-    roundsPerSecond: 2.5,
+    roundsPerSecond: 3.2,
     magazine: 20,
     reserve: 22,
     reloadMs: 1_700,
@@ -85,10 +85,10 @@ export const WEAPONS: Readonly<
   rocket: weapon({
     id: 'rocket',
     label: 'Rocket launcher',
-    damage: 120,
+    damage: 100,
     roundsPerSecond: 0.65,
     magazine: 1,
-    reserve: 3,
+    reserve: 2,
     reloadMs: 2_100,
     pellets: 1,
     spreadRadians: 0,
@@ -98,7 +98,7 @@ export const WEAPONS: Readonly<
     projectileSpeed: 460,
     projectileRadius: 9,
     penetration: 1,
-    splashRadius: 205,
+    splashRadius: 162,
     knockback: 90,
   }),
 });
@@ -112,4 +112,4 @@ export const WEAPON_JOBS = {
 } as const satisfies Record<WeaponId, string>;
 
 export const SHOTGUN_RANGE = 195;
-export const ROCKET_ARM_DISTANCE = 135;
+export const ROCKET_ARM_DISTANCE = 170;
