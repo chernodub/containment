@@ -93,3 +93,6 @@
 }
 
 #overlay img.service-illustration { object-fit: contain; background: #081820; }
+
+/* PROPS14: transparent prop renders sit on the card's own floor, not a flat backing. */
+#overlay img.service-illustration.service-prop { background: radial-gradient(ellipse at 50% 78%, #17313b 0%, #0b1c24 58%, #081820 100%); padding: 6px 0; }
